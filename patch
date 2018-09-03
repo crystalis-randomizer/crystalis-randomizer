@@ -1,0 +1,42 @@
+#!/usr/bin/perl
+
+# apply a binary patch of the format
+#   addr val
+# on each line, where numbers are all hex
+
+use strict;
+use warnings;
+use autodie;
+
+my $inf = shift;
+my $outf = shift;
+
+my %patch = ();
+while (<>) {
+  chomp $_;
+  my ($addr, $val) = split / /, $_;
+  $patch{hex $addr} = hex $val;
+}
+
+open my $inh, '-|', 'xxd', $inf;
+open my $outh, '|-', 'xxd', '-r', '-', $outf;
+
+while ($_ = <$inh>) {
+  # format: 00000010: d9d9 d9d9 d9d9 d9d9 c1c1 c1c1 c1c1 c1c1  ..........
+  /^([0-9a-f]+):((?:\s[0-9a-f]+)+)/ or die "bad line: $_";
+  my $addr = hex($1);
+  my $line = $2;
+  printf $outh "%08x:", $addr;
+  while ($line) {
+    print $outh ' ' if $line =~ s/^\s//;
+    $line =~ s/^[0-9a-f]{2}// or die "bad line: $_";
+    my $value = $&;
+    $value = sprintf('%02x', $patch{$addr}) if defined $patch{$addr};
+    print $outh $value;
+    $addr++;
+  }
+  print $outh "\n";
+}
+
+close $inh;
+close $outh;

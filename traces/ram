@@ -1,0 +1,525 @@
+$00
+---
+
+Current value of PPUCTRL, ignoring NMI and increment.
+  - mainly this is nametable selection and sprite pattern table, I think
+
+???
+
+Written in NMI routine, $3eb8d
+ - also written by $3c8b9, $3c8bf, $3ec63, $3ec69 [all in scanlines]
+Tends to be $88, $89, $8a, $8b, sometimes $80
+
+Read all over the place
+
+NMI write just clears the '4' bit and may set the 1 and/or 2 bits.
+     $3eb7d: ad db 07 LDA $07db    ; e.g. 1
+     $3eb80: 2a       ROL          ; e.g. 2 (could be 3, if C set)
+     $3eb81: 29 03    AND #$03     ; 0-3
+     $3eb83: 85 52    STA $52      ; store in $52, to be read soon
+     $3eb85: a5 00    LDA $00
+     $3eb87: 29 fc    AND #$fc     ; clear 4
+     $3eb89: 05 52    ORA $52      ; set 1 or 2
+     $3eb8b: 85 00    STA $00
+
+$07db was set just a bit earlier (but old value held in X and restored later)
+     $3f71e: a9 00    LDA #$00
+     $3f720: ac da 07 LDY $07da
+     $3f723: c0 e8    CPY #$e8     ; sets C if ($7da) >= $e8
+     $3f725: 69 00    ADC #$00
+     $3f727: 8d db 07 STA $07db
+     $3f72a: 20 6d eb JSR $3eb6d
+$07da was set from $4 in ($09 == 0) branch of NMI
+ - read from $3f723, 3eb76, and 3f6f1 - all in NMI
+ - seems to be y-coordinate of the screen, maybe lower bit?
+
+$01
+---
+
+Current value of PPUMASK.
+
+
+$02 .. $05
+----------
+
+Screen coordinates.
+ - $02 is LSB of x-coordinate
+ - $03 is MSB of x-coordinate
+ - $04 is LSB of y-coordinate
+ - $05 is MSB of y-coordinate
+
+As character moves down and right, the numbers increase.  Wraparound
+occurs (e.g. left-hand side of Leaf has $ff at $03).
+
+This is copied to $7d8..$7db after OAMDMA in NMI, provided $9 is zero
+and $51 is neither 7 nor 9.
+
+
+???
+ - copied to $7d8..7db after OAMDMA, unless $51 is 7 or 9
+   (in which case $83, $a3, $c3, and $e3 are copied there instead)
+
+
+$06
+---
+
+If nonzero, then NMI handler exits after only writing $07 <- #$01.
+No other work is done.
+ - set to 1 at 3f4cf
+ -        0 at 3f4d4
+Seems to toggle basically every frame
+
+
+$08
+---
+
+Global counter
+ - updated in $3cac3, during vblank
+ - interestingly, it gets there from $3c904, where it loads x = #$1 from $40,
+   index into jump table at $c91f
+    - this is the first thing out of the $3c902 holding pattern...?
+ 
+
+
+$09
+---
+
+Controls whether OAM DMA will happen at start of NMI routine
+ - OAM DMA only if $09 is zero (checked in $3f3cc)
+     $3f3cc: a5 09    LDA $09     
+     $3f3ce: d0 3a    BNE $3f40a  ; skip OAM DMA directly following
+
+Incremented at the end of the normal DMI routine
+     $3f41a: e6 09    INC $09     
+     $3f41c: 68       PLA         ; restore registers and return
+     $3f41d: aa       TAX         
+     $3f41e: 68       PLA
+     $3f41f: a8       TAY         
+     $3f420: 68       PLA
+     $3f421: 40       RTI
+
+Reset to zero during scanlines
+ - Seems to always trigger an IRQ a few cycles later
+     $3c919: a9 00    LDA #$00    
+     $3c91b: 85 09    STA $09     
+     $3c91d: f0 e1    BEQ $3c900
+     $3f443: 48       PHA         ; IRQ handler
+ - After the IRQ we end up at $3c900 since the BEQ was basically unconditional
+     $3c900: a5 09    LDA $09
+     $3c902: f0 fc    BEQ $3c900  ; Wait for NMI
+ - After NMI we end up with smome follow-up
+     $3c904: a5 40    LDA $40     ; Seems to be index of a follow-up routine? (1)
+     $3c906: 0a       ASL
+     $3c907: aa       TAX
+     $3c908: a9 4c    LDA #$4c    ; ($10) <- [JMP Absolute]
+     $3c90a: 85 10    STA $10
+     $3c90c: bd 1f c9 LDA $c91f,x ; $3c91f is jump table
+     $3c90f: 85 11    STA $11
+     $3c911: bd 20 c9 LDA $c920,x
+     $3c914: 85 12    STA $12
+     $3c916: 20 10 00 JSR $0010
+
+In-scanline reset stops happening when a dialog box is appearing.
+In this case, it eventually gets reset in NMI 6 frames later, after
+storing $ff into [$6200,$621f]
+     $28515: a2 1f    LDX #$1f    
+     $28517: a9 ff    LDA #$ff    
+     $28519: 9d 00 62 STA $6200,x
+     $2851c: ca       DEX         
+     $2851d: 10 fa    BPL $28519
+     $2851f: 60       RTS
+     $3d364: 20 69 c1 JSR $3c169
+     $3c169: a9 00    LDA #$00
+     $3c16b: 85 09    STA $09
+     $3c16d: a5 09    LDA $09
+     $3c16f: f0 fc    BEQ $3c16d   ; wait for an IRQ
+     $3f443: 48       PHA          ; IRQ handler
+     ; ends up polling until NMI
+     $3c171: a9 00    LDA #$00    
+     $3c173: 85 09    STA $09     
+     $3c175: 60       RTS
+     ; returns to...
+     $3d367: a9 01    LDA #$01
+     ; This is confusing because the call was in the middle of NMI...?
+
+
+$0a, $0b
+----------
+
+These seem to be counters, incremented by 4 every couple frames or so,
+and rolling over at $1f (cycle thru 8 possible values).
+
+-- not equal indicates data that needs to be written to PPUDATA
+   -> offsets into $6200,x
+
+$0a is incremented in $3c6e0 (NMI) - what determines???
+
+$0b is incremented in $34dcc and $28855 (scanlines), again once every few
+frames.  These are mostly identical, but differ based on what they do to
+memory locations $6200..3: the $34 version initializes them to statics,
+while the $28 version copies from RAM $21,20,24,25.
+
+
+$0c..$0d
+--------
+
+Temporary variables for NMI
+
+
+$10..$13
+--------
+
+Temporary space for addresses and instructions
+
+
+$23..$25
+--------
+
+Looks like temp vars
+
+
+$26
+---
+
+Direction facing: 0 = up, 2 = right, 4 = down, 6 = left (plus diags)
+But also looks temporary?
+ - written at $35e91 to direction
+ - written at $3edaf to 
+
+
+$28..$2b
+--------
+
+Seem to be temporaries - sometimes hold new screen coordinates.
+
+
+$30, $31
+--------
+
+More temps, seem to be written in pairs:
+ - $3e9af, $3e9d8, $36239, $35cf5, $35d43 ...?
+
+
+$34..$37
+--------
+
+Seems to store coordinates for an object - $35897 transfers from
+these to $[79bd]0,x and $358a8 goes the other way.
+ - these are temp variables
+ $3e0a transfers 
+
+$3c..$3f
+--------
+
+Coordinates of the current screen map within the location (top-left screen corner).
+ - not clear how this differs from $2..$5, though it does by a little.
+   it looks like x is 1 pixel less and y is 8 pixels less, so for
+   $[2345] = (01, 02, 71, 02) we have $3[cdef] = (00, 02, 69, 02)
+   (note: xl, xh, yl, yh)
+
+
+$43, $44
+--------
+
+Buttons pressed (mask):
+ 1 = right,  2 = left,    4 = down, 8 = up
+ 10 = start, 20 = select, 40 = b,   80 = a
+
+$43 = controller 1, $44 = controller 2
+
+
+
+$51
+---
+
+Seems to have something to do with screen mode
+ - it's 0 in normal mode
+ - select-menu => 6 ($86 while transitioning pages, incl save page)
+   0 -> 80 -> 0 -> 6 during first vblank, then 6 -> 86 during first scanline,
+   then 86 -> 6 during next vblank; repeat last bit for transitions
+ - start-menu => 2 ($80 during initial draw)
+   0 -> 80 during vblank, then 80 -> 2 during scanline
+ - dialog, shop => 1
+ - intro movie => 3
+
+ - what are modes 7 and 9 ????? - gets special handling in NMI handler
+   by copying object $13 position into $7d[89ab] rather than from $[2345].
+   could look at the jump table routines - $3f6d6 and $3f731, I guess
+   - these are the same as 0 and 1...? but with different camera?
+MODE 7:
+ - $36416 writes 7, reached via jump table $36314[$3f] at end of $3ccd1
+   (specifically $3cd28).
+ - this happens at frame 78701 (keyframe 7/26) in full.mov upon fighting
+   the giant insect.
+ - $1e885 also writes 7 - this looks oddly similar to the other, it's
+   from a jump table $1e425[9] from $1e400 from $1e675, which ultimately
+   came from this same jump table at $36314[$62].
+   also $1e87e involved here...
+ - we also get a 9 during this fight...
+   written by $3d371 via $3d354 called frames earlier from $3d0bf
+   - this appears to be when a message is written to the screen
+     (e.g. "your magic power is too low" / "magic power replenished")
+
+ - This seems to specifically be a jump table pointer, which is called from some of the IRQ callbacks,
+
+$52..$53
+--------
+Look like temporary vars for NMI handler.
+
+
+$58..$5d
+--------
+In IRQ callback mode 7, these are written to the CHR rom banks, rather than $7f0..$7f5
+
+
+$60
+---
+
+If non-zero, exit NMI handler immediately.
+ - happens during screen scrolls and transitions
+ - set to 1 at 3c73b, 0 at 3c75b
+
+TODO - why would we do DisableNMI and EnableNMI if we have this?
+
+
+$6c
+---
+
+Current map
+ - written at $3eb5d
+ - start = 0, outside cave = 1, leaf = 2, valley = 3, cave to bryn = 4
+   zebu = $10, cave to windmill = $e, windmill = $f
+ - shops and houses:
+   leaf elder = $c0, rabbit = c1, inn = c2,
+        tools = c3, armor = c4, student = c5
+
+Looks like this is co-written with $6d, both from data table
+  $145a9 (), which came from $14300[$6c << 1]  {see $3c7af}
+  this seems to have happened on the previous frame
+  start indexing the table with Y pulled off stack (when exiting leaf
+    north, A = 3 is on stack, so Y = A << 1 = 6)  {see $3c7c8}
+    (who pushed it in the first place??)
+      - seems to have been pushed at $3c7a5 from a hard-coded
+        #$03 loaded before calling the sub at $3eb2d
+
+
+$6d
+---
+
+Set with map via exit - not sure what it's used for
+ - seems to be read in a few places
+ - might be "flavor" of map?  cave vs overworld vs town?
+   - doesn't seem likely
+
+02cd65:32: Read $006d: $02 at $3e408
+02cd75:16: Read $006d: $02 at $3e68d
+02cd75:16: Read $006d: $02 at $3e6a0
+02cd75:16: Read $006d: $02 at $3e6a8
+02cd91:1d: Read $006d: $02 at $3ca55
+
+
+
+
+$70..$ef
+--------
+
+These look like (x, y) coordinates for various objects, in four separate
+rows of $1f coordinates.
+
+  $70..$8f x-coordinate low byte
+  $90..$af x-coordinate high byte
+  $b0..$cf y-coordinate low byte
+  $d0..$ef y-coordinate high byte
+
+ - $70 and $71 both look like the player, ($71,$b1) is rabbit boot position,
+   while ($70,$b0) is actual ground/shadow position
+ - $72 is the sword, it is not updated until the player actually attacks
+   then the X and Y positions are updated and there are two positions:
+   one that leads $73 by 10 while it's out, then once it's back, it
+   leads by 12 (weird - seems like wrong direction)
+ - $73 seems to lead the player by 4 - could be where the sword would hit?
+ - advancing a single frame moves the player coordinate by 2.
+ - tiger moves by 1 every 2 frames
+
+ - sword projectiles spawn in slot $74 (4-6 or 4-a for thunder
+   4-b for blizzard fire 2, and flame, 4-7 for tornado)
+
+ - 80..8f seem to be the enemy slots
+
+ - leaf villagers: $7d..$80
+ - rabbit: 7d
+ - leaf elder: 7d, daughter: 7e
+ - pupil: 7d
+ - zebu: 7e
+
+These also correspond to enemy data that gets loaded into
+($310..$31f) + $20 * n for n = 0..$18 or so (possibly higher?)
+ e.g. $031x is the sprite (loaded from initial data but updated w/ direction, too)
+      $035x is speed, ...
+
+in leaf, student's position is ($7d, $bd) - stationary
+  - elder is there, too...
+  - who initializes this coordinate, and from where?!?
+     - for student, $3e1dc write this (initialize?)
+     - townspeople. $358a3 updates it
+     - doesn't seem to include monsters...?
+  - zebu spawns at $7e
+     but not until spoken to student and elder
+  - initial man outside cave: $7e
+
+
+($2c, $2e) stores the tile-coords of the 'x' NPC
+ - read from y=$9 and y=$b positions of data table at $19567 ($9567)
+   which was written by $3e153 by looking up data table $19201
+
+
+
+
+$8a, $aa, $ca, $ea
+--------
+x, y coordinates for an enemy
+
+(x low, h high, y low, y high)
+ - seems to be whole row?
+
+
+$f0..$17f
+----------
+Music registers.  Unclear where they start; one might be the current
+song number that's playing.
+ - 102 seems to be the current track, but changing it doesn't have the
+   desired effect - $3c139 checks if it's changed before writing it, so
+   presumably that's why it's stored, but the jump table for updating
+   the APU is elsewhere.
+ - 110 is the current playing (or last played) sound effect
+ - 112 is ff is no sound effect is playing, or something else (possibly
+   an indication of when the sound effect will be done) if one is
+
+
+
+
+$480
+----
+seems to be some sort of step counter
+ - when it's odd then diagonal movements travel further
+ - counts down and loops
+ - $48e is the step counter for the $e NPC?
+
+
+
+$5A0
+----
+must wait to move - counts down to zero when able to move again?
+
+
+$0710..$071f
+------------
+  $710 - unknown, seems to be written twice on location transition,
+         at $2fc17 (clears :0f) and $2fc88 (restores)
+            - 2fcfb reads in the middle
+         status in low bits: $352a3 writes a 3
+          - 1 = paralyzed, 2 = stone, 3 = poison, 4 = mutated
+         :40 = riding on dolphin
+         high bits (:40) checked at $35fa9
+         $3d2a0 adds the 4 bit, $35b99 removes it
+       - also read 35b6b, 35bd5, 35b80, 35d9d, 35de7, 35e88, 380b7, 3efc4, 3efde
+         :90 set when changed to soldier
+         :80 = stom, a0 = woman, b0 = akahana
+
+Equipment - see notes at top of Crystalis.asm
+  $711 - equipped sword (0=none, 1..4 for element, 5 for crystalis?)
+  $712 - magic (0=none, 1=refresh, 2=paral, 3=telepathy)
+  $713 - equipped armor index (0=none, 1=leather, ..., 8=psycho)
+  $714 - equipped shield index (0=none, 1=carapace, ..., 8=psycho)
+  $715 - equipped usable item (0=none, $8=warp boots, $15=alarm flute, $16=windmill key)
+         when used, $1c398 resets back to 0
+         when exit menu, $3db27 seems to "confirm" the selection made in $3d900
+### my guess - 716 is accessory, 717 is magic
+  $718 - equipped ball (1..4 for ball, 5..8 for bracelet)
+  $719 - max charge level
+
+sword armor and shield written at $20339 (during inventory selection)
+charge written at $3d900 upon closing
+
+
+$7f0..$7f5
+----------
+Store CHR bank values for bank select 0..5:
+    0: Select 2 KB CHR bank at PPU $0000-$07FF
+    1: Select 2 KB CHR bank at PPU $0800-$0FFF
+       - This is used entirely for terrain animations (water, etc)
+         and the possible values all come from the 32-byte data
+         table at $3e779 (four eight-byte animation sequences)
+    2: Select 1 KB CHR bank at PPU $1000-$13FF
+    3: Select 1 KB CHR bank at PPU $1400-$17FF
+    4: Select 1 KB CHR bank at PPU $1800-$1BFF
+    5: Select 1 KB CHR bank at PPU $1C00-$1FFF
+
+$7ff
+----
+Appears to be a global counter
+
+
+$6000...
+--------
+Staging area for writing to nametable ($3c6b1)
+
+;;; 3ebf7, 3edd2. 34d67, 3ec4b
+
+$6100..$613f
+------------
+attribute table staging area ($3c739, $3c6e7)
+ - potentially this is just always kept up to date?
+
+
+$6140..$615f
+------------
+map palette data
+ - written at 34cb3
+
+
+$6200..$621f
+------------
+PPUDATA write staging area
+
+
+$62f0..$62fb
+------------
+Some sort of nametable-initialization bitset?  might be larger?
+
+$62fc..$62ff
+------------
+Stores location full map geometry (width, height, animation, shop)
+
+
+$648x, $649x
+------------
+condition flags (dialog: w @ $1c121, r @ $1c11c)
+                (populating presence: r @ $1c140)
+                (scanning reads at $2fcfb ... ?)
+                ($36701: reads $6481 for windmill state - sound effects, animation, etc)
+ - 6481:80 = woke windmill keeper
+ - 6481:10 = green man in leaf apologized
+ - 6481:08 = spoke to leaf elder
+ - 6481:04 = windmill running
+ - 6487:04 = spoke to zebu
+ - 6487:02 = got refresh
+ - 648e:08 = exited initial cave
+ - 6490:80 = ball of wind chest
+ - 6491:01 = first talk with windmill keeper ("huh? what was that?")
+ - 6492:80 = red adult in leaf has said "did you visit the elder's house yet?"
+     (reads $6481 before checking $6492)
+ - 6492:40 = elder child toggle for alarm flute clue (reads $6481 as well)
+ - 6493:08 = healed the dolphin [set along with shell flute?]
+             - note: fog lamp only really matters if warps not unlocked
+ - 6494:20 = spoke to zebu student
+ - 6495:08 = medical herb chest in wind cave near ball
+ - 6495:04 = medical herb chest in wind cave in small side room
+ - 6499:01 = warp boots chest in wind cave
+
+walls (written at $3c7a0)
+ - 64dd:08 = rock wall above red slime toward vampire
+ - 64dd:10 = rock wall above ball of wind
+
+
+Need to break on 1c140 and 1c11c for location-triggered dialog to get refresh spell

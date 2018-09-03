@@ -1,0 +1,26 @@
+Generally banks are loaded in parallel, but occasionally not.
+
+The following are "goofy loads" at startup:
+
+Load 8k bank 18000 at a000
+Load 8k bank 18000 at a000
+Load 8k bank 18000 at a000
+Load 8k bank 18000 at a000
+Load 8k bank 4000 at a000
+Load 8k bank 18000 at a000
+Load 8k bank 18000 at a000
+Load 8k bank 18000 at a000
+Load 8k bank 4000 at a000
+Load 8k bank 18000 at a000
+Load 8k bank 4000 at a000
+Load 8k bank 18000 at a000
+Load 8k bank 18000 at a000
+Load 8k bank 4000 at a000
+Load 8k bank 18000 at a000
+Load 8k bank 4000 at a000
+Load 8k bank 18000 at a000
+Load 8k bank 4000 at a000
+Load 8k bank 0 at a000
+
+Might be useful to have a more where we log all jumps to goofy-mode pages?
+ - generally seems problematic to have two different addresses for same data...

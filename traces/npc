@@ -1,0 +1,45 @@
+When are NPCs written/initialized?
+
+Enter a new area:
+ - 443f: press 'up', 0xb0 updates to $8e
+ - 4442: character sprite moves up one
+ - 4448: screen darkens
+ - 4449: screen darkens further
+ - 444b: screen darkens further
+ - 444c: screen darkens further
+ - 444e: screen darkens further
+ - 444f: screen darkens further
+ - 4450: update NPC coordinates, etc
+ - 4451: character and HUD disappear
+ - 4452: screen goes black
+ - 4460: HUD and character reappear, dark
+ - 4463: screen lightens
+ - 4466: screen lightens
+ - 4469: screen lightens
+ - 446a: screen lightens, $5a0 <- 4
+ - 446d: character disappears (only shadow remains) $5a0 <- 3
+ - 446e: character reappears, registers input $5a0 <- 2
+ - 446f: character disappears again (leaving shadow) $5a0 <- 1
+ - 4470: character reappears, is moved $5a0 <- 0
+
+Movement, generally:
+ - press input one frame, moves 2 frames later
+   (up-f-f-f-moved) - so frame 0 read the input, frame 2 updates sprite
+
+
+=====
+
+NPC position written in routine $3e1af
+ - specifically $3e1d3, $3e1dc, $3e1f0, and $3e1fb
+ - these data seem to come from a table: $10 <- 9567
+ - pulled from stack into $10 at $3e29c
+ - before that, pushed from $10 at $3e214
+   - in the interim, calls $3e2a3 (via jump table $3e218 indexed by ($2e & 7) << 1,
+     though it looks like the table is only 5 long)
+ - seems to be originally written at $3e153 via 256-entry data table $19201
+   [cf page change at $3e14a]
+ - indexed by $6c -> map?
+    - zebu = $10, valley = $03, leaf = $02, start = $00, outside start = $01
+    - student house = $c5, elder house = $c0, rabbit house = $c1
+    - armor shop = $c4, tool shop = $c3, inn = c2
+

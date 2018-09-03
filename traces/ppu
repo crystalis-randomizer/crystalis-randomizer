@@ -1,0 +1,504 @@
+Writes to the PPU happen mostly during vblank (scanline -1)
+ - a few writes happen during the scanlines
+
+The display routines seem to live primarily in $3f800..$3f9ff, though I see
+some writes coming from outside ($3f3d2 to $2003, $3f416 to $2001, $3ebxx to $2005 and $2000;
+$3c4xx to $2000 during scanlines, $3f4xx to other registers during scanlines)
+
+nes.debug.watch().add([0x2000, 0x2007], 'ram', 'w', {changed: false, ascii: false})
+
+Observations:
+ - writes to $2000 tend to be $88, but occasionally we see $08, $89, or $09.
+   - generally we want an NMI at vblank start (but not always)
+   - sprite pattern table at $1000
+   - usually nametable $2000 but sometimes switch to $2400 (horiz flip) or $2800 (vert flip)
+   - $3c694 will sometimes write $8c for vertical increment, but just for one frame
+   - $8a can also happen for a period, indicating a vertical flip
+   - other combinations possible, occasionally $8c shows up, or other combinations of bits
+   - $89 is consistent when walking up or down, $8a is more one-off during left-right walks,
+     with $89 also showing up sometimes
+
+NMI: $fffa-$fffb has address $f3b6 = $3f3b6 -> this is NMI routine!
+
+
+====
+Tracing $3c67d:
+
+start by comparing $0a and $0b - $b tends to lead $a, I suspect this is "entries cached" and "entries written" or some such.  e.g. $a is $8 and $b is $c.  They seem to reset at $20 and increment by $4.
+
+point into cache at $6200,x -> first entry stored in $c
+  reads $0, clears :04 bit and compares with $c just written
+    - if $c has bit :40 set, we set the :04 bit again
+  the result is written to PPUCTRL
+  the remainder of [0] and [1] are written to PPUADDR
+  [2] is number of elements to copy
+  [3] is offset into $6000 to start copying
+    if [2] is negative then jump to the next chunk, writing 8 at once to PPUDATA
+  
+
+====
+
+
+STATIONARY
+
+0005d8:-1: Write $2003: $00 -> $00 at $3f3d2
+0005d8:-1: Write $2001: $08 -> $00 at $3f8d4
+0005d8:-1: Write $2000: $88 -> $88 at $3f8db
+0005d8:-1: Write $2006: $00 -> $3f at $3f8e3
+0005d8:-1: Write $2006: $3f -> $00 at $3f8e8
+0005d8:-1: Write $2007: $0f -> $28 at $3f8ee
+0005d8:-1: Write $2007: $28 -> $39 at $3f8f4
+0005d8:-1: Write $2007: $39 -> $0a at $3f8fa
+0005d8:-1: Write $2007: $0a -> $0f at $3f900
+0005d8:-1: Write $2007: $0f -> $28 at $3f906
+0005d8:-1: Write $2007: $28 -> $37 at $3f90c
+0005d8:-1: Write $2007: $37 -> $07 at $3f912
+0005d8:-1: Write $2007: $07 -> $0f at $3f918
+0005d8:-1: Write $2007: $0f -> $28 at $3f91e
+0005d8:-1: Write $2007: $28 -> $2a at $3f924
+0005d8:-1: Write $2007: $2a -> $0a at $3f92a
+0005d8:-1: Write $2007: $0a -> $0f at $3f930
+0005d8:-1: Write $2007: $0f -> $28 at $3f936
+0005d8:-1: Write $2007: $28 -> $30 at $3f93c
+0005d8:-1: Write $2007: $30 -> $11 at $3f942
+0005d8:-1: Write $2007: $11 -> $0f at $3f948
+0005d8:-1: Write $2007: $0f -> $28 at $3f94e
+0005d8:-1: Write $2007: $28 -> $36 at $3f954
+0005d8:-1: Write $2007: $36 -> $14 at $3f95a
+0005d8:-1: Write $2007: $14 -> $0f at $3f960
+0005d8:-1: Write $2007: $0f -> $28 at $3f966
+0005d8:-1: Write $2007: $28 -> $30 at $3f96c
+0005d8:-1: Write $2007: $30 -> $29 at $3f972
+0005d8:-1: Write $2007: $29 -> $0a at $3f978
+0005d8:-1: Write $2007: $0a -> $28 at $3f97e
+0005d8:-1: Write $2007: $28 -> $30 at $3f984
+0005d8:-1: Write $2007: $30 -> $12 at $3f98a
+0005d8:-1: Write $2007: $12 -> $0f at $3f990
+0005d8:-1: Write $2007: $0f -> $28 at $3f996
+0005d8:-1: Write $2007: $28 -> $37 at $3f99c
+0005d8:-1: Write $2007: $37 -> $17 at $3f9a2
+0005d8:-1: Write $2007: $17 -> $0f at $3f9a8
+0005d8:-1: Write $2006: $00 -> $3f at $3f9ad
+0005d8:-1: Write $2006: $3f -> $00 at $3f9b2
+0005d8:-1: Write $2006: $00 -> $00 at $3f9b5
+0005d8:-1: Write $2006: $00 -> $00 at $3f9b8
+0005d8:-1: Write $2001: $00 -> $18 at $3f416
+0005d8:-1: Write $2005: $00 -> $fd at $3eb72
+0005d8:-1: Write $2005: $fd -> $9f at $3eb78
+0005d8:-1: Write $2000: $88 -> $88 at $3eb8f
+0005d8:50: Write $2006: $00 -> $00 at $3f462
+0005d8:50: Write $2006: $00 -> $1f at $3f46b
+0005d8:51: Write $2005: $9f -> $fd at $3f471
+0005d8:bf: Write $2001: $18 -> $08 at $3f49f
+0005d8:bf: Write $2006: $1f -> $2b at $3f4a7
+0005d8:bf: Write $2006: $2b -> $00 at $3f4ac
+0005d8:bf: Write $2005: $fd -> $00 at $3f4b1
+0005d9:-1: Write $2003: $00 -> $00 at $3f3d2
+0005d9:-1: Write $2001: $08 -> $00 at $3f8d4
+0005d9:-1: Write $2000: $88 -> $88 at $3f8db
+0005d9:-1: Write $2006: $00 -> $3f at $3f8e3
+0005d9:-1: Write $2006: $3f -> $00 at $3f8e8
+0005d9:-1: Write $2007: $0f -> $28 at $3f8ee
+0005d9:-1: Write $2007: $28 -> $39 at $3f8f4
+0005d9:-1: Write $2007: $39 -> $0a at $3f8fa
+0005d9:-1: Write $2007: $0a -> $0f at $3f900
+0005d9:-1: Write $2007: $0f -> $28 at $3f906
+0005d9:-1: Write $2007: $28 -> $37 at $3f90c
+0005d9:-1: Write $2007: $37 -> $07 at $3f912
+0005d9:-1: Write $2007: $07 -> $0f at $3f918
+0005d9:-1: Write $2007: $0f -> $28 at $3f91e
+0005d9:-1: Write $2007: $28 -> $2a at $3f924
+0005d9:-1: Write $2007: $2a -> $0a at $3f92a
+0005d9:-1: Write $2007: $0a -> $0f at $3f930
+0005d9:-1: Write $2007: $0f -> $28 at $3f936
+0005d9:-1: Write $2007: $28 -> $30 at $3f93c
+0005d9:-1: Write $2007: $30 -> $11 at $3f942
+0005d9:-1: Write $2007: $11 -> $0f at $3f948
+0005d9:-1: Write $2007: $0f -> $28 at $3f94e
+0005d9:-1: Write $2007: $28 -> $36 at $3f954
+0005d9:-1: Write $2007: $36 -> $14 at $3f95a
+0005d9:-1: Write $2007: $14 -> $0f at $3f960
+0005d9:-1: Write $2007: $0f -> $28 at $3f966
+0005d9:-1: Write $2007: $28 -> $30 at $3f96c
+0005d9:-1: Write $2007: $30 -> $29 at $3f972
+0005d9:-1: Write $2007: $29 -> $0a at $3f978
+0005d9:-1: Write $2007: $0a -> $28 at $3f97e
+0005d9:-1: Write $2007: $28 -> $30 at $3f984
+0005d9:-1: Write $2007: $30 -> $12 at $3f98a
+0005d9:-1: Write $2007: $12 -> $0f at $3f990
+0005d9:-1: Write $2007: $0f -> $28 at $3f996
+0005d9:-1: Write $2007: $28 -> $37 at $3f99c
+0005d9:-1: Write $2007: $37 -> $17 at $3f9a2
+0005d9:-1: Write $2007: $17 -> $0f at $3f9a8
+0005d9:-1: Write $2006: $00 -> $3f at $3f9ad
+0005d9:-1: Write $2006: $3f -> $00 at $3f9b2
+0005d9:-1: Write $2006: $00 -> $00 at $3f9b5
+0005d9:-1: Write $2006: $00 -> $00 at $3f9b8
+0005d9:-1: Write $2001: $00 -> $18 at $3f416
+0005d9:-1: Write $2005: $00 -> $fd at $3eb72
+0005d9:-1: Write $2005: $fd -> $9f at $3eb78
+0005d9:-1: Write $2000: $88 -> $88 at $3eb8f
+0005d9:50: Write $2006: $00 -> $00 at $3f462
+0005d9:50: Write $2006: $00 -> $1f at $3f46b
+0005d9:51: Write $2005: $9f -> $fd at $3f471
+0005d9:bf: Write $2001: $18 -> $08 at $3f49f
+0005d9:bf: Write $2006: $1f -> $2b at $3f4a7
+0005d9:bf: Write $2006: $2b -> $00 at $3f4ac
+0005d9:bf: Write $2005: $fd -> $00 at $3f4b1
+
+
+WALKING UP
+
+note: significantly more activity
+
+000669:-1: Write $2003: $00 -> $00 at $3f3d2
+000669:-1: Write $2000: $88 -> $88 at $3c694
+000669:-1: Write $2006: $00 -> $20 at $3c699
+000669:-1: Write $2006: $20 -> $c0 at $3c69f
+000669:-1: Write $2007: $0f -> $00 at $3c6b6
+000669:-1: Write $2007: $00 -> $00 at $3c6c0
+000669:-1: Write $2007: $00 -> $00 at $3c6ca
+000669:-1: Write $2007: $00 -> $06 at $3c6d4
+000669:-1: Write $2007: $06 -> $2f at $3c6b6
+000669:-1: Write $2007: $2f -> $31 at $3c6c0
+000669:-1: Write $2007: $31 -> $31 at $3c6ca
+000669:-1: Write $2007: $31 -> $31 at $3c6d4
+000669:-1: Write $2007: $31 -> $31 at $3c6b6
+000669:-1: Write $2007: $31 -> $31 at $3c6c0
+000669:-1: Write $2007: $31 -> $31 at $3c6ca
+000669:-1: Write $2007: $31 -> $31 at $3c6d4
+000669:-1: Write $2007: $31 -> $31 at $3c6b6
+000669:-1: Write $2007: $31 -> $31 at $3c6c0
+000669:-1: Write $2007: $31 -> $31 at $3c6ca
+000669:-1: Write $2007: $31 -> $31 at $3c6d4
+000669:-1: Write $2007: $31 -> $31 at $3c6b6
+000669:-1: Write $2007: $31 -> $31 at $3c6c0
+000669:-1: Write $2007: $31 -> $31 at $3c6ca
+000669:-1: Write $2007: $31 -> $31 at $3c6d4
+000669:-1: Write $2007: $31 -> $31 at $3c6b6
+000669:-1: Write $2007: $31 -> $31 at $3c6c0
+000669:-1: Write $2007: $31 -> $31 at $3c6ca
+000669:-1: Write $2007: $31 -> $31 at $3c6d4
+000669:-1: Write $2007: $31 -> $31 at $3c6b6
+000669:-1: Write $2007: $31 -> $31 at $3c6c0
+000669:-1: Write $2007: $31 -> $31 at $3c6ca
+000669:-1: Write $2007: $31 -> $4d at $3c6d4
+000669:-1: Write $2007: $4d -> $00 at $3c6b6
+000669:-1: Write $2007: $00 -> $00 at $3c6c0
+000669:-1: Write $2007: $00 -> $00 at $3c6ca
+000669:-1: Write $2007: $00 -> $00 at $3c6d4
+000669:-1: Write $2001: $08 -> $00 at $3f8d4
+000669:-1: Write $2000: $88 -> $88 at $3f8db
+000669:-1: Write $2006: $c0 -> $3f at $3f8e3
+000669:-1: Write $2006: $3f -> $00 at $3f8e8
+000669:-1: Write $2007: $00 -> $28 at $3f8ee
+000669:-1: Write $2007: $28 -> $39 at $3f8f4
+000669:-1: Write $2007: $39 -> $0a at $3f8fa
+000669:-1: Write $2007: $0a -> $0f at $3f900
+000669:-1: Write $2007: $0f -> $28 at $3f906
+000669:-1: Write $2007: $28 -> $37 at $3f90c
+000669:-1: Write $2007: $37 -> $07 at $3f912
+000669:-1: Write $2007: $07 -> $0f at $3f918
+000669:-1: Write $2007: $0f -> $28 at $3f91e
+000669:-1: Write $2007: $28 -> $2a at $3f924
+000669:-1: Write $2007: $2a -> $0a at $3f92a
+000669:-1: Write $2007: $0a -> $0f at $3f930
+000669:-1: Write $2007: $0f -> $28 at $3f936
+000669:-1: Write $2007: $28 -> $30 at $3f93c
+000669:-1: Write $2007: $30 -> $11 at $3f942
+000669:-1: Write $2007: $11 -> $0f at $3f948
+000669:-1: Write $2007: $0f -> $28 at $3f94e
+000669:-1: Write $2007: $28 -> $36 at $3f954
+000669:-1: Write $2007: $36 -> $14 at $3f95a
+000669:-1: Write $2007: $14 -> $0f at $3f960
+000669:-1: Write $2007: $0f -> $28 at $3f966
+000669:-1: Write $2007: $28 -> $30 at $3f96c
+000669:-1: Write $2007: $30 -> $29 at $3f972
+000669:-1: Write $2007: $29 -> $0a at $3f978
+000669:-1: Write $2007: $0a -> $28 at $3f97e
+000669:-1: Write $2007: $28 -> $30 at $3f984
+000669:-1: Write $2007: $30 -> $12 at $3f98a
+000669:-1: Write $2007: $12 -> $0f at $3f990
+000669:-1: Write $2007: $0f -> $28 at $3f996
+000669:-1: Write $2007: $28 -> $37 at $3f99c
+000669:-1: Write $2007: $37 -> $17 at $3f9a2
+000669:-1: Write $2007: $17 -> $0f at $3f9a8
+000669:-1: Write $2006: $00 -> $3f at $3f9ad
+000669:-1: Write $2006: $3f -> $00 at $3f9b2
+000669:-1: Write $2006: $00 -> $00 at $3f9b5
+000669:-1: Write $2006: $00 -> $00 at $3f9b8
+000669:-1: Write $2001: $00 -> $18 at $3f416
+000669:-1: Write $2005: $00 -> $fd at $3eb72
+000669:-1: Write $2005: $fd -> $37 at $3eb78
+000669:-1: Write $2000: $88 -> $88 at $3eb8f
+000669:b8: Write $2006: $00 -> $00 at $3f462
+000669:b8: Write $2006: $00 -> $1f at $3f46b
+000669:b9: Write $2005: $37 -> $fd at $3f471
+000669:bf: Write $2001: $18 -> $08 at $3f49f
+000669:bf: Write $2006: $1f -> $2b at $3f4a7
+000669:bf: Write $2006: $2b -> $00 at $3f4ac
+000669:bf: Write $2005: $fd -> $00 at $3f4b1
+
+
+WALKING RIGHT
+
+presumably in this snapshot, we're just panning in already-loaded vram
+
+000981:-1: Write $2003: $00 -> $00 at $3f3d2
+000981:-1: Write $2001: $08 -> $00 at $3f8d4
+000981:-1: Write $2000: $89 -> $89 at $3f8db
+000981:-1: Write $2006: $00 -> $3f at $3f8e3
+000981:-1: Write $2006: $3f -> $00 at $3f8e8
+000981:-1: Write $2007: $0f -> $28 at $3f8ee
+000981:-1: Write $2007: $28 -> $39 at $3f8f4
+000981:-1: Write $2007: $39 -> $0a at $3f8fa
+000981:-1: Write $2007: $0a -> $0f at $3f900
+000981:-1: Write $2007: $0f -> $28 at $3f906
+000981:-1: Write $2007: $28 -> $37 at $3f90c
+000981:-1: Write $2007: $37 -> $07 at $3f912
+000981:-1: Write $2007: $07 -> $0f at $3f918
+000981:-1: Write $2007: $0f -> $28 at $3f91e
+000981:-1: Write $2007: $28 -> $2a at $3f924
+000981:-1: Write $2007: $2a -> $0a at $3f92a
+000981:-1: Write $2007: $0a -> $0f at $3f930
+000981:-1: Write $2007: $0f -> $28 at $3f936
+000981:-1: Write $2007: $28 -> $30 at $3f93c
+000981:-1: Write $2007: $30 -> $11 at $3f942
+000981:-1: Write $2007: $11 -> $0f at $3f948
+000981:-1: Write $2007: $0f -> $28 at $3f94e
+000981:-1: Write $2007: $28 -> $36 at $3f954
+000981:-1: Write $2007: $36 -> $14 at $3f95a
+000981:-1: Write $2007: $14 -> $0f at $3f960
+000981:-1: Write $2007: $0f -> $28 at $3f966
+000981:-1: Write $2007: $28 -> $30 at $3f96c
+000981:-1: Write $2007: $30 -> $29 at $3f972
+000981:-1: Write $2007: $29 -> $0a at $3f978
+000981:-1: Write $2007: $0a -> $28 at $3f97e
+000981:-1: Write $2007: $28 -> $30 at $3f984
+000981:-1: Write $2007: $30 -> $12 at $3f98a
+000981:-1: Write $2007: $12 -> $0f at $3f990
+000981:-1: Write $2007: $0f -> $28 at $3f996
+000981:-1: Write $2007: $28 -> $37 at $3f99c
+000981:-1: Write $2007: $37 -> $17 at $3f9a2
+000981:-1: Write $2007: $17 -> $0f at $3f9a8
+000981:-1: Write $2006: $00 -> $3f at $3f9ad
+000981:-1: Write $2006: $3f -> $00 at $3f9b2
+000981:-1: Write $2006: $00 -> $00 at $3f9b5
+000981:-1: Write $2006: $00 -> $00 at $3f9b8
+000981:-1: Write $2001: $00 -> $18 at $3f416
+000981:-1: Write $2005: $00 -> $76 at $3eb72
+000981:-1: Write $2005: $76 -> $dd at $3eb78
+000981:-1: Write $2000: $89 -> $89 at $3eb8f
+000981:12: Write $2006: $00 -> $00 at $3f462
+000981:12: Write $2006: $00 -> $0e at $3f46b
+000981:13: Write $2005: $dd -> $76 at $3f471
+000981:16: Write $2000: $89 -> $09 at $3c444
+000981:16: Write $2000: $09 -> $89 at $3c43c
+000981:7a: Write $2000: $89 -> $09 at $3c444
+000981:7b: Write $2000: $09 -> $89 at $3c43c
+000981:bf: Write $2001: $18 -> $08 at $3f49f
+000981:bf: Write $2006: $0e -> $2b at $3f4a7
+000981:bf: Write $2006: $2b -> $00 at $3f4ac
+000981:bf: Write $2005: $76 -> $00 at $3f4b1
+
+
+WALKING LEFT
+
+Looks like we're actually refilling the vram now
+
+000a2d:-1: Write $2003: $00 -> $00 at $3f3d2
+000a2d:-1: Write $2000: $88 -> $88 at $3c694
+000a2d:-1: Write $2006: $00 -> $23 at $3c699
+000a2d:-1: Write $2006: $23 -> $c0 at $3c69f
+000a2d:-1: Write $2007: $0f -> $aa at $3c6ee
+000a2d:-1: Write $2007: $aa -> $aa at $3c6f4
+000a2d:-1: Write $2007: $aa -> $aa at $3c6fa
+000a2d:-1: Write $2007: $aa -> $aa at $3c700
+000a2d:-1: Write $2007: $aa -> $66 at $3c706
+000a2d:-1: Write $2007: $66 -> $8a at $3c70c
+000a2d:-1: Write $2007: $8a -> $aa at $3c712
+000a2d:-1: Write $2007: $aa -> $aa at $3c718
+000a2d:-1: Write $2007: $aa -> $aa at $3c6ee
+000a2d:-1: Write $2007: $aa -> $aa at $3c6f4
+000a2d:-1: Write $2007: $aa -> $aa at $3c6fa
+000a2d:-1: Write $2007: $aa -> $aa at $3c700
+000a2d:-1: Write $2007: $aa -> $22 at $3c706
+000a2d:-1: Write $2007: $22 -> $00 at $3c70c
+000a2d:-1: Write $2007: $00 -> $08 at $3c712
+000a2d:-1: Write $2007: $08 -> $aa at $3c718
+000a2d:-1: Write $2007: $aa -> $aa at $3c6ee
+000a2d:-1: Write $2007: $aa -> $28 at $3c6f4
+000a2d:-1: Write $2007: $28 -> $0a at $3c6fa
+000a2d:-1: Write $2007: $0a -> $aa at $3c700
+000a2d:-1: Write $2007: $aa -> $22 at $3c706
+000a2d:-1: Write $2007: $22 -> $20 at $3c70c
+000a2d:-1: Write $2007: $20 -> $00 at $3c712
+000a2d:-1: Write $2007: $00 -> $a8 at $3c718
+000a2d:-1: Write $2007: $a8 -> $aa at $3c6ee
+000a2d:-1: Write $2007: $aa -> $a0 at $3c6f4
+000a2d:-1: Write $2007: $a0 -> $aa at $3c6fa
+000a2d:-1: Write $2007: $aa -> $aa at $3c700
+000a2d:-1: Write $2007: $aa -> $aa at $3c706
+000a2d:-1: Write $2007: $aa -> $aa at $3c70c
+000a2d:-1: Write $2007: $aa -> $aa at $3c712
+000a2d:-1: Write $2007: $aa -> $aa at $3c718
+000a2d:-1: Write $2007: $aa -> $aa at $3c6ee
+000a2d:-1: Write $2007: $aa -> $aa at $3c6f4
+000a2d:-1: Write $2007: $aa -> $aa at $3c6fa
+000a2d:-1: Write $2007: $aa -> $aa at $3c700
+000a2d:-1: Write $2007: $aa -> $aa at $3c706
+000a2d:-1: Write $2007: $aa -> $2a at $3c70c
+000a2d:-1: Write $2007: $2a -> $aa at $3c712
+000a2d:-1: Write $2007: $aa -> $aa at $3c718
+000a2d:-1: Write $2007: $aa -> $aa at $3c6ee
+000a2d:-1: Write $2007: $aa -> $aa at $3c6f4
+000a2d:-1: Write $2007: $aa -> $aa at $3c6fa
+000a2d:-1: Write $2007: $aa -> $aa at $3c700
+000a2d:-1: Write $2007: $aa -> $22 at $3c706
+000a2d:-1: Write $2007: $22 -> $00 at $3c70c
+000a2d:-1: Write $2007: $00 -> $88 at $3c712
+000a2d:-1: Write $2007: $88 -> $aa at $3c718
+000a2d:-1: Write $2007: $aa -> $aa at $3c6ee
+000a2d:-1: Write $2007: $aa -> $aa at $3c6f4
+000a2d:-1: Write $2007: $aa -> $aa at $3c6fa
+000a2d:-1: Write $2007: $aa -> $aa at $3c700
+000a2d:-1: Write $2007: $aa -> $62 at $3c706
+000a2d:-1: Write $2007: $62 -> $00 at $3c70c
+000a2d:-1: Write $2007: $00 -> $a8 at $3c712
+000a2d:-1: Write $2007: $a8 -> $aa at $3c718
+000a2d:-1: Write $2007: $aa -> $fa at $3c6ee
+000a2d:-1: Write $2007: $fa -> $fa at $3c6f4
+000a2d:-1: Write $2007: $fa -> $fa at $3c6fa
+000a2d:-1: Write $2007: $fa -> $fa at $3c700
+000a2d:-1: Write $2007: $fa -> $f6 at $3c706
+000a2d:-1: Write $2007: $f6 -> $f8 at $3c70c
+000a2d:-1: Write $2007: $f8 -> $fa at $3c712
+000a2d:-1: Write $2007: $fa -> $fa at $3c718
+000a2d:-1: Write $2001: $08 -> $00 at $3f8d4
+000a2d:-1: Write $2000: $88 -> $88 at $3f8db
+000a2d:-1: Write $2006: $c0 -> $3f at $3f8e3
+000a2d:-1: Write $2006: $3f -> $00 at $3f8e8
+000a2d:-1: Write $2007: $fa -> $28 at $3f8ee
+000a2d:-1: Write $2007: $28 -> $39 at $3f8f4
+000a2d:-1: Write $2007: $39 -> $0a at $3f8fa
+000a2d:-1: Write $2007: $0a -> $0f at $3f900
+000a2d:-1: Write $2007: $0f -> $28 at $3f906
+000a2d:-1: Write $2007: $28 -> $37 at $3f90c
+000a2d:-1: Write $2007: $37 -> $07 at $3f912
+000a2d:-1: Write $2007: $07 -> $0f at $3f918
+000a2d:-1: Write $2007: $0f -> $28 at $3f91e
+000a2d:-1: Write $2007: $28 -> $2a at $3f924
+000a2d:-1: Write $2007: $2a -> $0a at $3f92a
+000a2d:-1: Write $2007: $0a -> $0f at $3f930
+000a2d:-1: Write $2007: $0f -> $28 at $3f936
+000a2d:-1: Write $2007: $28 -> $30 at $3f93c
+000a2d:-1: Write $2007: $30 -> $11 at $3f942
+000a2d:-1: Write $2007: $11 -> $0f at $3f948
+000a2d:-1: Write $2007: $0f -> $28 at $3f94e
+000a2d:-1: Write $2007: $28 -> $36 at $3f954
+000a2d:-1: Write $2007: $36 -> $14 at $3f95a
+000a2d:-1: Write $2007: $14 -> $0f at $3f960
+000a2d:-1: Write $2007: $0f -> $28 at $3f966
+000a2d:-1: Write $2007: $28 -> $30 at $3f96c
+000a2d:-1: Write $2007: $30 -> $29 at $3f972
+000a2d:-1: Write $2007: $29 -> $0a at $3f978
+000a2d:-1: Write $2007: $0a -> $28 at $3f97e
+000a2d:-1: Write $2007: $28 -> $30 at $3f984
+000a2d:-1: Write $2007: $30 -> $12 at $3f98a
+000a2d:-1: Write $2007: $12 -> $0f at $3f990
+000a2d:-1: Write $2007: $0f -> $28 at $3f996
+000a2d:-1: Write $2007: $28 -> $37 at $3f99c
+000a2d:-1: Write $2007: $37 -> $17 at $3f9a2
+000a2d:-1: Write $2007: $17 -> $0f at $3f9a8
+000a2d:-1: Write $2006: $00 -> $3f at $3f9ad
+000a2d:-1: Write $2006: $3f -> $00 at $3f9b2
+000a2d:-1: Write $2006: $00 -> $00 at $3f9b5
+000a2d:-1: Write $2006: $00 -> $00 at $3f9b8
+000a2d:-1: Write $2001: $00 -> $18 at $3f416
+000a2d:-1: Write $2005: $00 -> $8e at $3eb72
+000a2d:-1: Write $2005: $8e -> $dd at $3eb78
+000a2d:-1: Write $2000: $88 -> $88 at $3eb8f
+000a2d:12: Write $2006: $00 -> $00 at $3f462
+000a2d:12: Write $2006: $00 -> $11 at $3f46b
+000a2d:13: Write $2005: $dd -> $8e at $3f471
+000a2d:1c: Write $2000: $88 -> $08 at $3c444
+000a2d:1c: Write $2000: $08 -> $88 at $3c43c
+000a2d:bf: Write $2001: $18 -> $08 at $3f49f
+000a2d:bf: Write $2006: $11 -> $2b at $3f4a7
+000a2d:bf: Write $2006: $2b -> $00 at $3f4ac
+000a2d:bf: Write $2005: $8e -> $00 at $3f4b1
+
+
+STATIONARY, SPRITES MOVING
+
+000c65:-1: Write $2003: $00 -> $00 at $3f3d2
+000c65:-1: Write $2000: $88 -> $88 at $3c694
+000c65:-1: Write $2006: $00 -> $2b at $3c699
+000c65:-1: Write $2006: $2b -> $46 at $3c69f
+000c65:-1: Write $2007: $0f -> $8f at $3c6b6
+000c65:-1: Write $2007: $8f -> $8f at $3c6c0
+000c65:-1: Write $2007: $8f -> $8f at $3c6ca
+000c65:-1: Write $2007: $8f -> $8f at $3c6d4
+000c65:-1: Write $2007: $8f -> $8f at $3c6b6
+000c65:-1: Write $2007: $8f -> $8f at $3c6c0
+000c65:-1: Write $2007: $8f -> $8f at $3c6ca
+000c65:-1: Write $2007: $8f -> $90 at $3c6d4
+000c65:-1: Write $2007: $90 -> $91 at $3c6b6
+000c65:-1: Write $2007: $91 -> $92 at $3c6c0
+000c65:-1: Write $2007: $92 -> $90 at $3c6ca
+000c65:-1: Write $2007: $90 -> $91 at $3c6d4
+000c65:-1: Write $2007: $91 -> $92 at $3c6b6
+000c65:-1: Write $2007: $92 -> $90 at $3c6c0
+000c65:-1: Write $2007: $90 -> $91 at $3c6ca
+000c65:-1: Write $2007: $91 -> $92 at $3c6d4
+000c65:-1: Write $2001: $08 -> $00 at $3f8d4
+000c65:-1: Write $2000: $88 -> $88 at $3f8db
+000c65:-1: Write $2006: $46 -> $3f at $3f8e3
+000c65:-1: Write $2006: $3f -> $00 at $3f8e8
+000c65:-1: Write $2007: $92 -> $28 at $3f8ee
+000c65:-1: Write $2007: $28 -> $39 at $3f8f4
+000c65:-1: Write $2007: $39 -> $0a at $3f8fa
+000c65:-1: Write $2007: $0a -> $0f at $3f900
+000c65:-1: Write $2007: $0f -> $28 at $3f906
+000c65:-1: Write $2007: $28 -> $37 at $3f90c
+000c65:-1: Write $2007: $37 -> $07 at $3f912
+000c65:-1: Write $2007: $07 -> $0f at $3f918
+000c65:-1: Write $2007: $0f -> $28 at $3f91e
+000c65:-1: Write $2007: $28 -> $2a at $3f924
+000c65:-1: Write $2007: $2a -> $0a at $3f92a
+000c65:-1: Write $2007: $0a -> $0f at $3f930
+000c65:-1: Write $2007: $0f -> $28 at $3f936
+000c65:-1: Write $2007: $28 -> $30 at $3f93c
+000c65:-1: Write $2007: $30 -> $11 at $3f942
+000c65:-1: Write $2007: $11 -> $0f at $3f948
+000c65:-1: Write $2007: $0f -> $28 at $3f94e
+000c65:-1: Write $2007: $28 -> $36 at $3f954
+000c65:-1: Write $2007: $36 -> $14 at $3f95a
+000c65:-1: Write $2007: $14 -> $0f at $3f960
+000c65:-1: Write $2007: $0f -> $28 at $3f966
+000c65:-1: Write $2007: $28 -> $30 at $3f96c
+000c65:-1: Write $2007: $30 -> $29 at $3f972
+000c65:-1: Write $2007: $29 -> $0a at $3f978
+000c65:-1: Write $2007: $0a -> $28 at $3f97e
+000c65:-1: Write $2007: $28 -> $30 at $3f984
+000c65:-1: Write $2007: $30 -> $12 at $3f98a
+000c65:-1: Write $2007: $12 -> $0f at $3f990
+000c65:-1: Write $2007: $0f -> $28 at $3f996
+000c65:-1: Write $2007: $28 -> $37 at $3f99c
+000c65:-1: Write $2007: $37 -> $17 at $3f9a2
+000c65:-1: Write $2007: $17 -> $0f at $3f9a8
+000c65:-1: Write $2006: $00 -> $3f at $3f9ad
+000c65:-1: Write $2006: $3f -> $00 at $3f9b2
+000c65:-1: Write $2006: $00 -> $00 at $3f9b5
+000c65:-1: Write $2006: $00 -> $00 at $3f9b8
+000c65:-1: Write $2001: $00 -> $18 at $3f416
+000c65:-1: Write $2005: $00 -> $a9 at $3eb72
+000c65:-1: Write $2005: $a9 -> $ac at $3eb78
+000c65:-1: Write $2000: $88 -> $88 at $3eb8f
+000c65:43: Write $2006: $00 -> $00 at $3f462
+000c65:43: Write $2006: $00 -> $15 at $3f46b
+000c65:44: Write $2005: $ac -> $a9 at $3f471
+000c65:bf: Write $2001: $18 -> $08 at $3f49f
+000c65:bf: Write $2006: $15 -> $2b at $3f4a7
+000c65:bf: Write $2006: $2b -> $00 at $3f4ac
+000c65:bf: Write $2005: $a9 -> $00 at $3f4b1

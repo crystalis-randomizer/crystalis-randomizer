@@ -1,0 +1,140 @@
+1db00:
+
+32: 1e01f : 20 08 00 00 c0 00 ff
+50: 1de10 : 10 08 00 00 40 ab ff
+
+Table structure:
+ [0]: offset from $6430 to start looking for a slot
+ [1]: if positive, number of slots to try before giving up as full
+      if negative, 80 = put directly, c0 = upgrade
+
+
+           row max
+00: 1df3a : 00 80 b0 00 40 0b ff   Sword of Wind
+01: 1df41 : 01 80 b0 00 40 49 ff   Sword of Fire
+02: 1df48 : 02 80 b0 00 40 17 ff   Sword of Water
+03: 1df4f : 03 80 08 00 40 5f ff   Sword of Thunder
+04: 1df56 : 00 80 b0 00 c0 00 ff   Crystalis
+05: 1df5d : 0c 80 00 00 40 87 ff   Ball of Wind
+06: 1df83 : 0c c0 00 00 40 4e ff   Tornado Bracelet
+07: 1df64 : 0d 80 00 00 00 41 00   Ball of Fire
+08: 1df8a : 0d c0 00 00 00 77 41   Flame Bracelet
+09: 1df6f : 0e 80 00 00 01 03 00   Ball of Water
+0a: 1df93 : 0e c0 00 00 40 7a ff   Blizzard Bracelet
+0b: 1df7c : 0f 80 00 00 40 67 ff   Ball of Thunder
+0c: 1df9a : 0f c0 00 00 40 78 ff   Storm Bracelet
+0d: 1e02d : 08 04 00 00 c0 00 ff   Tanned Hide (or carapace?)
+0e: 1e02d : 08 04 00 00 c0 00 ff   ...
+0f: 1e02d : 08 04 00 00 c0 00 ff
+10: 1dfa1 : 08 04 00 00 40 1c ff
+11: 1e02d : 08 04 00 00 c0 00 ff
+12: 1e026 : 08 04 00 00 41 07 ff
+13: 1e02d : 08 04 00 00 c0 00 ff
+14: 1df0f : 08 04 00 00 40 cd ff
+15: 1defd : 04 04 00 00 c0 00 ff
+16: 1defd : 04 04 00 00 c0 00 ff
+17: 1defd : 04 04 00 00 c0 00 ff
+18: 1defd : 04 04 00 00 c0 00 ff
+19: 1defd : 04 04 00 00 c0 00 ff
+1a: 1defd : 04 04 00 00 c0 00 ff
+1b: 1df16 : 04 04 00 00 40 df ff
+1c: 1df04 : 04 04 00 00 01 0b 00
+1d: 1de09 : 10 08 00 00 40 aa ff   Medicinal Herb
+1e: 1de6b : 10 08 00 00 40 b9 ff   Antidote
+1f: 1de56 : 10 08 00 00 40 b6 ff
+20: 1de87 : 10 08 00 00 40 bd ff
+21: 1de8e : 10 08 00 00 40 be ff
+22: 1deb1 : 10 08 00 00 40 c2 ff
+23: 1ded4 : 10 08 00 00 01 06 40
+24: 1dedd : 10 08 00 00 40 c8 ff
+25: 1dfa8 : 20 08 00 00 40 ce ff
+26: 1df31 : 10 08 00 00 01 05 40
+27: 1dfaf : 20 08 00 00 c0 00 ff
+28: 1dfb6 : 20 08 00 00 40 d0 ff
+29: 1e018 : 18 08 00 00 c0 00 ff
+2a: 1def6 : 18 08 00 00 40 cb ff
+2b: 1dfd9 : 18 08 00 00 c0 00 ff
+2c: 1e011 : 18 08 00 00 40 de ff
+2d: 1dfbd : 18 08 00 00 40 2e ff
+2e: 1dfc4 : 18 08 00 00 41 00 ff
+2f: 1dfe0 : 18 08 00 00 40 e7 ff
+30: 1e018 : 18 08 00 00 c0 00 ff
+31: 1dffc : 10 08 00 00 c0 00 ff
+32: 1e01f : 20 08 00 00 c0 00 ff   Windmill Key
+33: 1df23 : 20 08 00 00 40 cf ff
+34: 1e01f : 20 08 00 00 c0 00 ff
+35: 1df2a : 20 08 00 00 40 d1 ff
+36: 1dff5 : 20 08 00 00 40 8b ff
+37: 1e01f : 20 08 00 00 c0 00 ff
+38: 1dfee : 20 08 00 00 40 13 ff
+39: 1e01f : 20 08 00 00 c0 00 ff
+3a: 1e01f : 20 08 00 00 c0 00 ff
+3b: 1dfcb : 20 08 00 00 40 3c ff
+3c: 1ddf4 : 20 08 00 00 40 e4 ff
+3d: 1deeb : 20 08 00 00 01 08 00
+3e: 1e01f : 20 08 00 00 c0 00 ff
+3f: 1dfe7 : 20 08 00 00 40 7d ff
+40: 1dfd2 : 20 08 00 00 40 79 ff
+41: 1e03b : 28 08 00 00 40 39 ff
+42: 1e042 : 28 08 00 00 40 37 ff
+43: 1e049 : 28 08 00 00 40 0e ff
+44: 1e050 : 28 08 00 00 40 3f ff
+45: 1e034 : 28 08 00 00 c0 00 ff
+46: 1e05e : 28 08 00 00 c0 00 ff
+47: 1e057 : 28 08 00 00 40 63 ff
+48: 1e034 : 28 08 00 00 c0 00 ff
+49: 1dffc : 10 08 00 00 c0 00 ff
+4a: 1df3a : 00 80 b0 00 40 0b ff
+4b: 1df3a : 00 80 b0 00 40 0b ff
+4c: 1df3a : 00 80 b0 00 40 0b ff
+4d: 1df3a : 00 80 b0 00 40 0b ff
+4e: 1df3a : 00 80 b0 00 40 0b ff
+4f: 1df3a : 00 80 b0 00 40 0b ff
+50: 1de10 : 10 08 00 00 40 ab ff
+51: 1df1d : 08 04 00 00 40 62 20
+52: 1de17 : 10 08 00 00 40 ad ff
+53: 1de1e : 10 08 00 00 40 ae ff
+54: 1de25 : 10 08 00 00 40 af ff
+55: 1de2c : 10 08 00 00 40 b0 ff
+56: 1de33 : 10 08 00 00 40 b1 ff
+57: 1de3a : 10 08 00 00 40 b2 ff
+58: 1de41 : 10 08 00 00 40 b3 ff
+59: 1de48 : 10 08 00 00 40 b4 ff
+5a: 1de4f : 10 08 00 00 40 b5 ff
+5b: 1de02 : 20 08 00 00 40 d4 ff
+5c: 1de5d : 10 08 00 00 40 b7 ff
+5d: 1de64 : 10 08 00 00 40 b8 ff
+5e: 1de72 : 10 08 00 00 40 ba ff
+5f: 1de79 : 10 08 00 00 40 bb ff
+60: 1de80 : 10 08 00 00 40 bc ff
+61: 1de95 : 10 08 00 00 41 0c ff
+62: 1de9c : 10 08 00 00 40 bf ff
+63: 1dea3 : 10 08 00 00 40 c0 ff
+64: 1deaa : 10 08 00 00 40 c1 ff
+65: 1deb8 : 10 08 00 00 40 c3 ff
+66: 1debf : 10 08 00 00 40 c4 ff
+67: 1df3a : 00 80 b0 00 40 0b ff
+68: 1df3a : 00 80 b0 00 40 0b ff
+69: 1ddfb : 10 08 00 00 40 d2 ff
+6a: 1dee4 : 10 08 00 00 40 c9 ff
+6b: 1dec6 : 10 08 00 00 40 c5 ff
+6c: 1decd : 10 08 00 00 40 c6 ff
+6d: 1dde6 : 10 08 00 00 40 e6 ff
+6e: 1dded : 10 08 00 00 40 e5 ff
+6f: 1e003 : 10 08 00 00 40 dc ff
+70: 1e00a : 10 08 00 00 40 dd ff
+71: 1e065 : 63 01 11 81 40 25 2c
+72: 1e065 : 63 01 11 81 40 25 2c
+73: 1e065 : 63 01 11 81 40 25 2c
+74: 1e065 : 63 01 11 81 40 25 2c
+75: 1e065 : 63 01 11 81 40 25 2c
+76: 1e065 : 63 01 11 81 40 25 2c
+77: 1e065 : 63 01 11 81 40 25 2c
+78: 1e065 : 63 01 11 81 40 25 2c
+79: 1e065 : 63 01 11 81 40 25 2c
+7a: 1e065 : 63 01 11 81 40 25 2c
+7b: 1e065 : 63 01 11 81 40 25 2c
+7c: 1e065 : 63 01 11 81 40 25 2c
+7d: 1e065 : 63 01 11 81 40 25 2c
+7e: 1e065 : 63 01 11 81 40 25 2c
+7f: 1e065 : 63 01 11 81 40 25 2c

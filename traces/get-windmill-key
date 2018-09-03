@@ -1,0 +1,282 @@
+  $3c435:  RTS         
+  $3ffdf:  PLA         
+  $3ffe0:  JMP $c418   
+  $3c418:  STA $6e       write $006e <- $14
+  $3c41a:  LDA #$06    
+  $3c41c:  STA $50       write $0050 <- $6
+  $3c41e:  STA $8000     write $38000 <- $6
+  $3c421:  LDA $6e       read $006e -> $14
+  $3c423:  STA $8001     write $28001 <- $14
+  $3c426:  RTS         
+  $3d3b0:  JSR $c17d   
+  $3c17d:  LDA $04       read $0004 -> $c1
+  $3c17f:  AND #$07    
+  $3c181:  STA $10       write $0010 <- $1
+  $3c183:  LDA #$58    
+  $3c185:  SEC         
+  $3c186:  SBC $10       read $0010 -> $1
+  $3c188:  STA $10       write $0010 <- $57
+  $3c18a:  LDX #$04    
+  $3c18c:  LDA $10       read $0010 -> $57
+  $3c18e:  CMP $0200,x   read $0204 -> $52
+  $3c191:  BCC $3c198  
+  $3c193:  LDA #$f0    
+  $3c195:  STA $0200,x   write $0204 <- $f0
+  $3c198:  INX         
+  $3c199:  INX         
+  $3c19a:  INX         
+  $3c19b:  INX         
+  $3c19c:  BNE $3c18c  
+  $3c18c:  LDA $10       read $0010 -> $57
+  $3c18e:  CMP $0200,x   read $0208 -> $5a
+;;;; seems to be looping until x gets back to 
+;;;; .....
+  $3c18c:  LDA $10       read $0010 -> $57
+  $3c18e:  CMP $0200,x   read $02f8 -> $f0
+  $3c191:  BCC $3c198  
+  $3c198:  INX         
+  $3c199:  INX         
+  $3c19a:  INX         
+  $3c19b:  INX         
+  $3c19c:  BNE $3c18c  
+  $3c18c:  LDA $10       read $0010 -> $57
+  $3c18e:  CMP $0200,x   read $02fc -> $f0
+  $3c191:  BCC $3c198  
+  $3c198:  INX         
+  $3c199:  INX         
+  $3c19a:  INX         
+  $3c19b:  INX         
+  $3c19c:  BNE $3c18c  
+  $3c19e:  RTS         
+  $3d3b3:  DEC $20       read $0020 -> $1  write $0020 <- $0
+  $3d3b5:  BNE $3d3aa  
+  $3d3b7:  LDA #$00    
+  $3d3b9:  STA $51       write $0051 <- $0
+  $3d3bb:  STA $4b       write $004b <- $0
+  $3d3bd:  LDA #$08    
+  $3d3bf:  STA $41       write $0041 <- $8
+  $3d3c1:  RTS         
+  $3d113:  PLA         
+  $3d114:  ASL         
+  $3d115:  TAY         
+  $3d116:  LDA $d123,y   read $3d129 -> $25
+  $3d119:  STA $10       write $0010 <- $25
+  $3d11b:  LDA $d124,y   read $3d12a -> $d2
+  $3d11e:  STA $11       write $0011 <- $d2
+  $3d120:  JMP ($0010)   read $0010 -> $d225
+  $3d225:  LDY $0623     read $0623 -> $e
+  $3d228:  LDA $0680,y   read $068e -> $32
+  $3d22b:  STA $057f     write $057f <- $32
+  $3d22e:  LDA $0623     read $0623 -> $e
+  $3d231:  PHA         
+  $3d232:  LDA #$1f    
+  $3d234:  STA $0623     write $0623 <- $1f
+  $3d237:  JSR $d3eb   
+  $3d3eb:  LDY $0623     read $0623 -> $1f
+  $3d3ee:  LDA $0560,y   read $057f -> $32
+  $3d3f1:  STA $07dc     write $07dc <- $32
+  $3d3f4:  CMP #$80    
+  $3d3f6:  BCC $3d3fb  
+  $3d3fb:  CMP #$70    
+  $3d3fd:  BEQ $3d3da  
+  $3d3ff:  LDA #$00    
+======================== start comparison w/ get-refresh here
+0 $3d401:  JSR $d834   
+1 $3d834:  PHA         
+           LDY $0623     read $0623 -> $1f
+           LDA $0560,y   read $057f -> $32
+           STA $23       write $0023 <- $32
+           LDA #$07    
+  $3d83f:  JSR $c40e   
+2 $3c40e:  ASL         
+           STA $6e       write $006e <- $e
+           ORA #$01    
+  $3c413:  JSR $c427   
+3 $3c427:  STA $6f       write $006f <- $f
+           LDA #$07    
+           STA $50       write $0050 <- $7
+           STA $8000     write $28000 <- $7
+           LDA $6f       read $006f -> $f
+           STA $8001     write $28001 <- $f
+  $3c435:  RTS         
+2 $3c416:  LDA $6e       read $006e -> $e
+           STA $6e       write $006e <- $e
+           LDA #$06    
+           STA $50       write $0050 <- $6
+           STA $8000     write $28000 <- $6
+           LDA $6e       read $006e -> $e
+           STA $8001     write $1c001 <- $e
+  $3c426:  RTS         
+1 $3d842:  PLA         
+           ASL         
+           TAY         
+           LDA #$4c    
+           STA $10       write $0010 <- $4c
+           LDA $d885,y   read $3d885 -> $6f
+           STA $11       write $0011 <- $6f
+           LDA $d886,y   read $3d886 -> $82
+           STA $12       write $0012 <- $82
+  $3d853:  JSR $0010   
+2  $0010:  JMP $1c26f   
+; =======================
+  $1c26f:  LDA $23       (A = $#32)  ;; item number for windmill key = $32
+           TAY           (Y = $#32)
+           ORA #$80      (A = $#b2)
+           STA $23       ($23 = $#b2)
+           ASL           (A = $#64)
+           TAX           (X = $#64)
+           LDA $9b00,x   (A = ($1db64) $#1f)
+           STA $24       ($24 = $#1f)
+           LDA $9b01,x   (A = ($1db65) $#a0)
+           STA $25       ($25 = $#a0  =>  $24 = $#a01f ($1e01f))
+           LDA $9d66,y   (A = ($1dd98) $#32)  ;; second copy of item number...?
+           STA $29       ($29 = $#32)
+  $1c287:  JSR $82a0     (call $1c2a0)
+;;; add to inventory open slot
+3 $1c2a0:  LDY #$00      (Y = $#0)
+           LDA ($24),y   (A = ($1e01f) $#20) <- row index, maybe, cf. 0 for sword
+           TAX           (X = $#20)
+           INY           (Y = $#1)
+           LDA ($24),y   (A = ($1e020) $#8)
+           TAY           (Y = $#8, !N)
+  $1c2a9:  BPL $1c308    (take branch)   ;; this differs from the sword!
+  $1c308:  LDA $6430,x   (A = ($6450) $#ff)
+           CMP #$ff      (Z)
+  $1c30d:  BEQ $1c314    (take branch)
+  $1c314:  LDA $29       (A = $#32)  ; stored from 2nd copy of item # from $1dd66+$32
+           STA $6430,x   ($6450 = $#32)
+           LDA #$00      (A = $#0)
+           STA $23       ($23 = $#0)
+  $1c31d:  RTS
+;;; end add to inventory open slot ???
+2 $1c28a:  LDA $23       (A = $#0)
+  $1c28c:  BPL $1c28f    (branch - huh? that's where it would go anyway!)
+  $1c28f:  LDY #$02      (Y = $#2)
+  $1c291:  JSR $1c078
+;;; sub: read item[2], high 5 bits in $22, low 3 bits in $21, item[3] in $20, inc y
+3 $1c078:  LDA ($24),y   (A = ($1e021) $#0)  ;; 3rd element in item data
+           PHA           (push $#0)
+           AND #$ff      (A = $#0)
+           LSR           (A = $#0)
+           LSR           (A = $#0)
+           LSR           (A = $#0)
+           STA $22       ($22 = $#0)  ;; $22 = upper 5 bits of item[2] (>>3)
+           PLA           (A = $#0)
+           AND #$07      (A = $#0)
+           STA $21       ($21 = $#0)  ;; $21 = lower 3 bits of item[2] (&7)
+           INY           (Y = 3)
+           LDA ($24),y   (A = ($1e022) $#0)
+           STA $20       ($20 = $#0)
+           INY           (Y = 4)
+  $1c08d:  RTS         
+;;; end Unknown_078
+2 $1c294:  JSR $8112   
+;;; sub: Unknown_112
+3 $1c112:  JSR $8148   
+;;; sub: Unknown_148
+4 $1c148:  LDA ($24),y   (A = (item[4]: $1e023) $#c0)
+           STA $26       ($26 = $#c0)
+           STA $27       ($27 = $#c0)
+           INY           (Y = 5)
+           LDA ($24),y   (A = (item[5]: $1e024) $#0)
+           INY           (Y = 6)
+           PHA           (push $#0)
+           AND #$07      (A = 0)
+           TAX           (X = 0)
+           LDA $8167,x   (A = (powers[0]: $1c167) $#1)   ;; 1c167 is powers of 2
+           STA $28       ($28 = $#1)
+           PLA           (A = $#0)
+           LSR $27       ($27 = $#60, !C)
+           ROR           (A = $#0)
+           LSR $27       ($27 = $#30, !C)
+           ROR           (A = $#0)
+           LSR $27       ($27 = $#18, !C)
+           ROR           (A = $#0)
+           TAX           (X = 0)
+  $1c166:  RTS         
+3 $1c115:  LDA $26       (A = $#c0)
+  $1c117:  BMI $1c124    (branches)
+  $1c124:  LDA $28       (A = $#1)   ; = 2^item[5]
+           EOR #$ff      (A = $#fe)
+           AND $6480,x   (A = $#0)   ; Unset the item[5]th bit from $6480
+           STA $6480,x   ($6480 = $#0)  ; (note: no change here, it was already zero)
+           LDA $26       (A = $#c0)  ; from item[4]
+           AND #$40      (A = $#40)  ; bit was set
+  $1c132:  BEQ $1c112    (not taken) ; restart sub 3 if unset - ???
+  $1c134:  RTS         
+2 $1c297:  LDA ($24),y   (A = (item[6]: $1e025) $#ff)  ; Chain - restart sub if >=0
+  $1c299:  BMI $1c29f    (take branch)
+  $1c29f:  RTS         
+; =======================
+1 $3d856:  LDA $23       read $0023 -> $0
+  $3d858:  BMI $3d880  
+  $3d85a:  LDA $20       read $0020 -> $0
+           ORA $21       read $0021 -> $0
+  $3d85e:  BEQ $3d880  
+  $3d880:  LDA #$08    
+           STA $41       write $0041 <- $8
+  $3d884:  RTS         
+0 $3d404:  LDA $23       read $0023 -> $0
+  $3d406:  BMI $3d47c  
+  $3d408:  JSR $d9d8   
+1 $3d9d8:  LDY $0711     read $0711 -> $1
+  $3d9db:  BEQ $3d9fb  
+  $3d9dd:  LDA $0718     read $0718 -> $0
+  $3d9e0:  BEQ $3d9fc  
+  $3d9fc:  LDA $643b,y   read $643c -> $ff
+           CMP #$ff    
+  $3da01:  BNE $3da06  
+  $3da03:  LDY #$00    
+  $3da05:  RTS         
+0 $3d40b:  LDY $0623     read $0623 -> $1f
+           LDA $0560,y   read $057f -> $32
+           CMP #$50    
+  $3d413:  BCC $3d41c  
+  $3d41c:  LDA $07dc     read $07dc -> $32
+           AND #$f0    
+           CMP #$40    
+  $3d423:  BNE $3d435  
+  $3d435:  LDA #$3f    
+  $3d437:  JSR $c125   
+  $3c125:  STY $010f     write $010f <- $1f
+           CMP #$a0    
+  $3c12a:  BCS $3c13f  
+  $3c12c:  BMI $3c13d  
+  $3c13d:  AND #$7f    
+           LDY #$01    
+           STY $0101     write $0101 <- $1
+           LDY $0100     read $0100 -> $0
+           CPY #$05    
+  $3c149:  BNE $3c154  
+  $3c154:  STA $0103,y   write $0103 <- $3f
+           INY         
+           CPY #$06    
+  $3c15a:  BNE $3c15d  
+  $3c15d:  STY $0100     write $0100 <- $1
+           LDA #$00    
+           STA $0101     write $0101 <- $0
+           LDY $010f     read $010f -> $1f
+  $3c168:  RTS         
+  $3d43a:  LDA #$20    
+           STA $07df     write $07df <- $20
+           LDA #$0c    
+           STA $07de     write $07de <- $c
+           LDA $22       read $0022 -> $0
+           PHA         
+  $3d447:  JSR $d354   
+  $3d354:  LDA #$3c    
+           STA $58       write $0058 <- $3c
+           LDA #$38    
+           STA $59       write $0059 <- $38
+           LDA #$14    
+  $3d35e:  JSR $c418   
+  $3c418:  STA $6e       write $006e <- $14
+           LDA #$06    
+           STA $50       write $0050 <- $6
+           STA $8000     write $1c000 <- $6
+           LDA $6e       read $006e -> $14
+           STA $8001     write $28001 <- $14
+  $3c426:  RTS         
+  $3d361:  JSR $8500   
+  $28500:  LDX #$00
+;;;; proceeds to loop x=0..$10

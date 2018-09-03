@@ -1,0 +1,934 @@
+; Opening the inventory seems to write to $6430 and all following
+; Seems to store a temporary copy of everything in $6000 and then later in
+; a few bytes at $60e0, possibly for sorting?
+
+; TODO - create a really jumbled-up inventory and get a trace from that.
+
+  $20071: 20 62 9a JSR $9a62   
+  $21a62: a9 00    LDA #$00    
+  $21a64: 85 18    STA $18       write $0018 <- $0
+  $21a66: a5 18    LDA $18       read $0018 -> $0
+  $21a68: 0a       ASL         
+  $21a69: aa       TAX         
+  $21a6a: bd de 9a LDA $9ade,x   read $21ade -> $30
+  $21a6d: 85 28    STA $28       write $0028 <- $30
+  $21a6f: bd df 9a LDA $9adf,x   read $21adf -> $64
+  $21a72: 85 29    STA $29       write $0029 <- $64
+  $21a74: a6 18    LDX $18       read $0018 -> $0
+  $21a76: bd 28 64 LDA $6428,x   read $6428 -> $0
+  $21a79: 10 05    BPL $21a80  
+  $21a80: a8       TAY         
+  $21a81: b1 28    LDA ($28),y   read $0028 -> $6430  read $6430 -> $0
+  $21a83: a6 18    LDX $18       read $0018 -> $0
+  $21a85: 9d 00 60 STA $6000,x   write $6000 <- $0
+  $21a88: e6 18    INC $18       read $0018 -> $0  write $0018 <- $1
+  $21a8a: a5 18    LDA $18       read $0018 -> $1
+  $21a8c: c9 08    CMP #$08    
+  $21a8e: d0 d6    BNE $21a66  
+  $21a66: a5 18    LDA $18       read $0018 -> $1
+  $21a68: 0a       ASL         
+  $21a69: aa       TAX         
+  $21a6a: bd de 9a LDA $9ade,x   read $21ae0 -> $34
+  $21a6d: 85 28    STA $28       write $0028 <- $34
+  $21a6f: bd df 9a LDA $9adf,x   read $21ae1 -> $64
+  $21a72: 85 29    STA $29       write $0029 <- $64
+  $21a74: a6 18    LDX $18       read $0018 -> $1
+  $21a76: bd 28 64 LDA $6428,x   read $6429 -> $0
+  $21a79: 10 05    BPL $21a80  
+  $21a80: a8       TAY         
+  $21a81: b1 28    LDA ($28),y   read $0028 -> $6434  read $6434 -> $1c
+  $21a83: a6 18    LDX $18       read $0018 -> $1
+  $21a85: 9d 00 60 STA $6000,x   write $6001 <- $1c
+  $21a88: e6 18    INC $18       read $0018 -> $1  write $0018 <- $2
+  $21a8a: a5 18    LDA $18       read $0018 -> $2
+  $21a8c: c9 08    CMP #$08    
+  $21a8e: d0 d6    BNE $21a66  
+  $21a66: a5 18    LDA $18       read $0018 -> $2
+  $21a68: 0a       ASL         
+  $21a69: aa       TAX         
+  $21a6a: bd de 9a LDA $9ade,x   read $21ae2 -> $38
+  $21a6d: 85 28    STA $28       write $0028 <- $38
+  $21a6f: bd df 9a LDA $9adf,x   read $21ae3 -> $64
+  $21a72: 85 29    STA $29       write $0029 <- $64
+  $21a74: a6 18    LDX $18       read $0018 -> $2
+  $21a76: bd 28 64 LDA $6428,x   read $642a -> $0
+  $21a79: 10 05    BPL $21a80  
+  $21a80: a8       TAY         
+  $21a81: b1 28    LDA ($28),y   read $0028 -> $6438  read $6438 -> $14
+  $21a83: a6 18    LDX $18       read $0018 -> $2
+  $21a85: 9d 00 60 STA $6000,x   write $6002 <- $14
+  $21a88: e6 18    INC $18       read $0018 -> $2  write $0018 <- $3
+  $21a8a: a5 18    LDA $18       read $0018 -> $3
+  $21a8c: c9 08    CMP #$08    
+  $21a8e: d0 d6    BNE $21a66  
+  $21a66: a5 18    LDA $18       read $0018 -> $3
+  $21a68: 0a       ASL         
+  $21a69: aa       TAX         
+  $21a6a: bd de 9a LDA $9ade,x   read $21ae4 -> $3c
+  $21a6d: 85 28    STA $28       write $0028 <- $3c
+  $21a6f: bd df 9a LDA $9adf,x   read $21ae5 -> $64
+  $21a72: 85 29    STA $29       write $0029 <- $64
+  $21a74: a6 18    LDX $18       read $0018 -> $3
+  $21a76: bd 28 64 LDA $6428,x   read $642b -> $ff
+  $21a79: 10 05    BPL $21a80  
+  $21a7b: a9 ff    LDA #$ff    
+  $21a7d: 4c 83 9a JMP $9a83   
+  $21a83: a6 18    LDX $18       read $0018 -> $3
+  $21a85: 9d 00 60 STA $6000,x   write $6003 <- $ff
+  $21a88: e6 18    INC $18       read $0018 -> $3  write $0018 <- $4
+  $21a8a: a5 18    LDA $18       read $0018 -> $4
+  $21a8c: c9 08    CMP #$08    
+  $21a8e: d0 d6    BNE $21a66  
+  $21a66: a5 18    LDA $18       read $0018 -> $4
+  $21a68: 0a       ASL         
+  $21a69: aa       TAX         
+  $21a6a: bd de 9a LDA $9ade,x   read $21ae6 -> $40
+  $21a6d: 85 28    STA $28       write $0028 <- $40
+  $21a6f: bd df 9a LDA $9adf,x   read $21ae7 -> $64
+  $21a72: 85 29    STA $29       write $0029 <- $64
+  $21a74: a6 18    LDX $18       read $0018 -> $4
+  $21a76: bd 28 64 LDA $6428,x   read $642c -> $ff
+  $21a79: 10 05    BPL $21a80  
+  $21a7b: a9 ff    LDA #$ff    
+  $21a7d: 4c 83 9a JMP $9a83   
+  $21a83: a6 18    LDX $18       read $0018 -> $4
+  $21a85: 9d 00 60 STA $6000,x   write $6004 <- $ff
+  $21a88: e6 18    INC $18       read $0018 -> $4  write $0018 <- $5
+  $21a8a: a5 18    LDA $18       read $0018 -> $5
+  $21a8c: c9 08    CMP #$08    
+  $21a8e: d0 d6    BNE $21a66  
+  $21a66: a5 18    LDA $18       read $0018 -> $5
+  $21a68: 0a       ASL         
+  $21a69: aa       TAX         
+  $21a6a: bd de 9a LDA $9ade,x   read $21ae8 -> $48
+  $21a6d: 85 28    STA $28       write $0028 <- $48
+  $21a6f: bd df 9a LDA $9adf,x   read $21ae9 -> $64
+  $21a72: 85 29    STA $29       write $0029 <- $64
+  $21a74: a6 18    LDX $18       read $0018 -> $5
+  $21a76: bd 28 64 LDA $6428,x   read $642d -> $ff
+  $21a79: 10 05    BPL $21a80  
+  $21a7b: a9 ff    LDA #$ff    
+  $21a7d: 4c 83 9a JMP $9a83   
+  $21a83: a6 18    LDX $18       read $0018 -> $5
+  $21a85: 9d 00 60 STA $6000,x   write $6005 <- $ff
+  $21a88: e6 18    INC $18       read $0018 -> $5  write $0018 <- $6
+  $21a8a: a5 18    LDA $18       read $0018 -> $6
+  $21a8c: c9 08    CMP #$08    
+  $21a8e: d0 d6    BNE $21a66  
+  $21a66: a5 18    LDA $18       read $0018 -> $6
+  $21a68: 0a       ASL         
+  $21a69: aa       TAX         
+  $21a6a: bd de 9a LDA $9ade,x   read $21aea -> $50
+  $21a6d: 85 28    STA $28       write $0028 <- $50
+  $21a6f: bd df 9a LDA $9adf,x   read $21aeb -> $64
+  $21a72: 85 29    STA $29       write $0029 <- $64
+  $21a74: a6 18    LDX $18       read $0018 -> $6
+  $21a76: bd 28 64 LDA $6428,x   read $642e -> $ff
+  $21a79: 10 05    BPL $21a80  
+  $21a7b: a9 ff    LDA #$ff    
+  $21a7d: 4c 83 9a JMP $9a83   
+  $21a83: a6 18    LDX $18       read $0018 -> $6
+  $21a85: 9d 00 60 STA $6000,x   write $6006 <- $ff
+  $21a88: e6 18    INC $18       read $0018 -> $6  write $0018 <- $7
+  $21a8a: a5 18    LDA $18       read $0018 -> $7
+  $21a8c: c9 08    CMP #$08    
+  $21a8e: d0 d6    BNE $21a66  
+  $21a66: a5 18    LDA $18       read $0018 -> $7
+  $21a68: 0a       ASL         
+  $21a69: aa       TAX         
+  $21a6a: bd de 9a LDA $9ade,x   read $21aec -> $58
+  $21a6d: 85 28    STA $28       write $0028 <- $58
+  $21a6f: bd df 9a LDA $9adf,x   read $21aed -> $64
+  $21a72: 85 29    STA $29       write $0029 <- $64
+  $21a74: a6 18    LDX $18       read $0018 -> $7
+  $21a76: bd 28 64 LDA $6428,x   read $642f -> $ff
+  $21a79: 10 05    BPL $21a80  
+  $21a7b: a9 ff    LDA #$ff    
+  $21a7d: 4c 83 9a JMP $9a83   
+  $21a83: a6 18    LDX $18       read $0018 -> $7
+  $21a85: 9d 00 60 STA $6000,x   write $6007 <- $ff
+  $21a88: e6 18    INC $18       read $0018 -> $7  write $0018 <- $8
+  $21a8a: a5 18    LDA $18       read $0018 -> $8
+  $21a8c: c9 08    CMP #$08    
+  $21a8e: d0 d6    BNE $21a66  
+  $21a90: 60       RTS         
+  $20074: 20 34 85 JSR $8534   
+  $20534: a9 00    LDA #$00    
+  $20536: 85 2e    STA $2e       write $002e <- $0
+  $20538: a6 2e    LDX $2e       read $002e -> $0
+  $2053a: bd 9e 85 LDA $859e,x   read $2059e -> $4
+  $2053d: 85 2d    STA $2d       write $002d <- $4
+  $2053f: bd a6 85 LDA $85a6,x   read $205a6 -> $0
+  $20542: aa       TAX         
+  $20543: a0 00    LDY #$00    
+  $20545: bd 30 64 LDA $6430,x   read $6430 -> $0
+  $20548: 99 e0 60 STA $60e0,y   write $60e0 <- $0
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $4  write $002d <- $3
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6431 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e1 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $3  write $002d <- $2
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6432 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e2 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $2  write $002d <- $1
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6433 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e3 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $1  write $002d <- $0
+  $2054f: d0 f4    BNE $20545  
+  $20551: a6 2e    LDX $2e       read $002e -> $0
+  $20553: bd 9e 85 LDA $859e,x   read $2059e -> $4
+  $20556: aa       TAX         
+  $20557: a9 00    LDA #$00    
+  $20559: 85 2f    STA $2f       write $002f <- $0
+  $2055b: bd df 60 LDA $60df,x   read $60e3 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e2 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e2 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e1 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e1 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e0 -> $0
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e0 -> $0
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20578: a5 2f    LDA $2f       read $002f -> $0
+  $2057a: d0 d5    BNE $20551  
+  $2057c: a6 2e    LDX $2e       read $002e -> $0
+  $2057e: bd 9e 85 LDA $859e,x   read $2059e -> $4
+  $20581: 85 2d    STA $2d       write $002d <- $4
+  $20583: bd a6 85 LDA $85a6,x   read $205a6 -> $0
+  $20586: aa       TAX         
+  $20587: a0 00    LDY #$00    
+  $20589: b9 e0 60 LDA $60e0,y   read $60e0 -> $0
+  $2058c: 9d 30 64 STA $6430,x   write $6430 <- $0
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $4  write $002d <- $3
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e1 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $6431 <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $3  write $002d <- $2
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e2 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $6432 <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $2  write $002d <- $1
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e3 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $6433 <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $1  write $002d <- $0
+  $20593: d0 f4    BNE $20589  
+  $20595: e6 2e    INC $2e       read $002e -> $0  write $002e <- $1
+  $20597: a9 08    LDA #$08    
+  $20599: c5 2e    CMP $2e       read $002e -> $1
+  $2059b: d0 9b    BNE $20538  
+  $20538: a6 2e    LDX $2e       read $002e -> $1
+  $2053a: bd 9e 85 LDA $859e,x   read $2059f -> $4
+  $2053d: 85 2d    STA $2d       write $002d <- $4
+  $2053f: bd a6 85 LDA $85a6,x   read $205a7 -> $4
+  $20542: aa       TAX         
+  $20543: a0 00    LDY #$00    
+  $20545: bd 30 64 LDA $6430,x   read $6434 -> $1c
+  $20548: 99 e0 60 STA $60e0,y   write $60e0 <- $1c
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $4  write $002d <- $3
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6435 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e1 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $3  write $002d <- $2
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6436 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e2 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $2  write $002d <- $1
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6437 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e3 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $1  write $002d <- $0
+  $2054f: d0 f4    BNE $20545  
+  $20551: a6 2e    LDX $2e       read $002e -> $1
+  $20553: bd 9e 85 LDA $859e,x   read $2059f -> $4
+  $20556: aa       TAX         
+  $20557: a9 00    LDA #$00    
+  $20559: 85 2f    STA $2f       write $002f <- $0
+  $2055b: bd df 60 LDA $60df,x   read $60e3 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e2 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e2 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e1 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e1 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e0 -> $1c
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e0 -> $1c
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20578: a5 2f    LDA $2f       read $002f -> $0
+  $2057a: d0 d5    BNE $20551  
+  $2057c: a6 2e    LDX $2e       read $002e -> $1
+  $2057e: bd 9e 85 LDA $859e,x   read $2059f -> $4
+  $20581: 85 2d    STA $2d       write $002d <- $4
+  $20583: bd a6 85 LDA $85a6,x   read $205a7 -> $4
+  $20586: aa       TAX         
+  $20587: a0 00    LDY #$00    
+  $20589: b9 e0 60 LDA $60e0,y   read $60e0 -> $1c
+  $2058c: 9d 30 64 STA $6430,x   write $6434 <- $1c
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $4  write $002d <- $3
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e1 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $6435 <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $3  write $002d <- $2
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e2 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $6436 <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $2  write $002d <- $1
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e3 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $6437 <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $1  write $002d <- $0
+  $20593: d0 f4    BNE $20589  
+  $20595: e6 2e    INC $2e       read $002e -> $1  write $002e <- $2
+  $20597: a9 08    LDA #$08    
+  $20599: c5 2e    CMP $2e       read $002e -> $2
+  $2059b: d0 9b    BNE $20538  
+  $20538: a6 2e    LDX $2e       read $002e -> $2
+  $2053a: bd 9e 85 LDA $859e,x   read $205a0 -> $4
+  $2053d: 85 2d    STA $2d       write $002d <- $4
+  $2053f: bd a6 85 LDA $85a6,x   read $205a8 -> $8
+  $20542: aa       TAX         
+  $20543: a0 00    LDY #$00    
+  $20545: bd 30 64 LDA $6430,x   read $6438 -> $14
+  $20548: 99 e0 60 STA $60e0,y   write $60e0 <- $14
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $4  write $002d <- $3
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6439 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e1 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $3  write $002d <- $2
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $643a -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e2 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $2  write $002d <- $1
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $643b -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e3 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $1  write $002d <- $0
+  $2054f: d0 f4    BNE $20545  
+  $20551: a6 2e    LDX $2e       read $002e -> $2
+  $20553: bd 9e 85 LDA $859e,x   read $205a0 -> $4
+  $20556: aa       TAX         
+  $20557: a9 00    LDA #$00    
+  $20559: 85 2f    STA $2f       write $002f <- $0
+  $2055b: bd df 60 LDA $60df,x   read $60e3 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e2 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e2 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e1 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e1 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e0 -> $14
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e0 -> $14
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20578: a5 2f    LDA $2f       read $002f -> $0
+  $2057a: d0 d5    BNE $20551  
+  $2057c: a6 2e    LDX $2e       read $002e -> $2
+  $2057e: bd 9e 85 LDA $859e,x   read $205a0 -> $4
+  $20581: 85 2d    STA $2d       write $002d <- $4
+  $20583: bd a6 85 LDA $85a6,x   read $205a8 -> $8
+  $20586: aa       TAX         
+  $20587: a0 00    LDY #$00    
+  $20589: b9 e0 60 LDA $60e0,y   read $60e0 -> $14
+  $2058c: 9d 30 64 STA $6430,x   write $6438 <- $14
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $4  write $002d <- $3
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e1 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $6439 <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $3  write $002d <- $2
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e2 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $643a <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $2  write $002d <- $1
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e3 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $643b <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $1  write $002d <- $0
+  $20593: d0 f4    BNE $20589  
+  $20595: e6 2e    INC $2e       read $002e -> $2  write $002e <- $3
+  $20597: a9 08    LDA #$08    
+  $20599: c5 2e    CMP $2e       read $002e -> $3
+  $2059b: d0 9b    BNE $20538  
+  $20538: a6 2e    LDX $2e       read $002e -> $3
+  $2053a: bd 9e 85 LDA $859e,x   read $205a1 -> $4
+  $2053d: 85 2d    STA $2d       write $002d <- $4
+  $2053f: bd a6 85 LDA $85a6,x   read $205a9 -> $c
+  $20542: aa       TAX         
+  $20543: a0 00    LDY #$00    
+  $20545: bd 30 64 LDA $6430,x   read $643c -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e0 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $4  write $002d <- $3
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $643d -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e1 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $3  write $002d <- $2
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $643e -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e2 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $2  write $002d <- $1
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $643f -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e3 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $1  write $002d <- $0
+  $2054f: d0 f4    BNE $20545  
+  $20551: a6 2e    LDX $2e       read $002e -> $3
+  $20553: bd 9e 85 LDA $859e,x   read $205a1 -> $4
+  $20556: aa       TAX         
+  $20557: a9 00    LDA #$00    
+  $20559: 85 2f    STA $2f       write $002f <- $0
+  $2055b: bd df 60 LDA $60df,x   read $60e3 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e2 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e2 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e1 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e1 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e0 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e0 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20578: a5 2f    LDA $2f       read $002f -> $0
+  $2057a: d0 d5    BNE $20551  
+  $2057c: a6 2e    LDX $2e       read $002e -> $3
+  $2057e: bd 9e 85 LDA $859e,x   read $205a1 -> $4
+  $20581: 85 2d    STA $2d       write $002d <- $4
+  $20583: bd a6 85 LDA $85a6,x   read $205a9 -> $c
+  $20586: aa       TAX         
+  $20587: a0 00    LDY #$00    
+  $20589: b9 e0 60 LDA $60e0,y   read $60e0 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $643c <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $4  write $002d <- $3
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e1 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $643d <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $3  write $002d <- $2
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e2 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $643e <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $2  write $002d <- $1
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e3 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $643f <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $1  write $002d <- $0
+  $20593: d0 f4    BNE $20589  
+  $20595: e6 2e    INC $2e       read $002e -> $3  write $002e <- $4
+  $20597: a9 08    LDA #$08    
+  $20599: c5 2e    CMP $2e       read $002e -> $4
+  $2059b: d0 9b    BNE $20538  
+  $20538: a6 2e    LDX $2e       read $002e -> $4
+  $2053a: bd 9e 85 LDA $859e,x   read $205a2 -> $8
+  $2053d: 85 2d    STA $2d       write $002d <- $8
+  $2053f: bd a6 85 LDA $85a6,x   read $205aa -> $10
+  $20542: aa       TAX         
+  $20543: a0 00    LDY #$00    
+  $20545: bd 30 64 LDA $6430,x   read $6440 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e0 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $8  write $002d <- $7
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6441 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e1 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $7  write $002d <- $6
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6442 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e2 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $6  write $002d <- $5
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6443 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e3 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $5  write $002d <- $4
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6444 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e4 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $4  write $002d <- $3
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6445 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e5 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $3  write $002d <- $2
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6446 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e6 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $2  write $002d <- $1
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6447 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e7 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $1  write $002d <- $0
+  $2054f: d0 f4    BNE $20545  
+  $20551: a6 2e    LDX $2e       read $002e -> $4
+  $20553: bd 9e 85 LDA $859e,x   read $205a2 -> $8
+  $20556: aa       TAX         
+  $20557: a9 00    LDA #$00    
+  $20559: 85 2f    STA $2f       write $002f <- $0
+  $2055b: bd df 60 LDA $60df,x   read $60e7 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e6 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e6 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e5 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e5 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e4 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e4 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e3 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e3 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e2 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e2 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e1 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e1 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e0 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e0 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20578: a5 2f    LDA $2f       read $002f -> $0
+  $2057a: d0 d5    BNE $20551  
+  $2057c: a6 2e    LDX $2e       read $002e -> $4
+  $2057e: bd 9e 85 LDA $859e,x   read $205a2 -> $8
+  $20581: 85 2d    STA $2d       write $002d <- $8
+  $20583: bd a6 85 LDA $85a6,x   read $205aa -> $10
+  $20586: aa       TAX         
+  $20587: a0 00    LDY #$00    
+  $20589: b9 e0 60 LDA $60e0,y   read $60e0 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $6440 <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $8  write $002d <- $7
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e1 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $6441 <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $7  write $002d <- $6
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e2 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $6442 <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $6  write $002d <- $5
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e3 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $6443 <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $5  write $002d <- $4
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e4 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $6444 <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $4  write $002d <- $3
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e5 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $6445 <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $3  write $002d <- $2
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e6 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $6446 <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $2  write $002d <- $1
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e7 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $6447 <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $1  write $002d <- $0
+  $20593: d0 f4    BNE $20589  
+  $20595: e6 2e    INC $2e       read $002e -> $4  write $002e <- $5
+  $20597: a9 08    LDA #$08    
+  $20599: c5 2e    CMP $2e       read $002e -> $5
+  $2059b: d0 9b    BNE $20538  
+  $20538: a6 2e    LDX $2e       read $002e -> $5
+  $2053a: bd 9e 85 LDA $859e,x   read $205a3 -> $8
+  $2053d: 85 2d    STA $2d       write $002d <- $8
+  $2053f: bd a6 85 LDA $85a6,x   read $205ab -> $18
+  $20542: aa       TAX         
+  $20543: a0 00    LDY #$00    
+  $20545: bd 30 64 LDA $6430,x   read $6448 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e0 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $8  write $002d <- $7
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6449 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e1 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $7  write $002d <- $6
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $644a -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e2 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $6  write $002d <- $5
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $644b -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e3 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $5  write $002d <- $4
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $644c -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e4 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $4  write $002d <- $3
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $644d -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e5 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $3  write $002d <- $2
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $644e -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e6 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $2  write $002d <- $1
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $644f -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e7 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $1  write $002d <- $0
+  $2054f: d0 f4    BNE $20545  
+  $20551: a6 2e    LDX $2e       read $002e -> $5
+  $20553: bd 9e 85 LDA $859e,x   read $205a3 -> $8
+  $20556: aa       TAX         
+  $20557: a9 00    LDA #$00    
+  $20559: 85 2f    STA $2f       write $002f <- $0
+  $2055b: bd df 60 LDA $60df,x   read $60e7 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e6 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e6 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e5 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e5 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e4 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e4 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e3 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e3 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e2 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e2 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e1 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e1 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e0 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e0 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20578: a5 2f    LDA $2f       read $002f -> $0
+  $2057a: d0 d5    BNE $20551  
+  $2057c: a6 2e    LDX $2e       read $002e -> $5
+  $2057e: bd 9e 85 LDA $859e,x   read $205a3 -> $8
+  $20581: 85 2d    STA $2d       write $002d <- $8
+  $20583: bd a6 85 LDA $85a6,x   read $205ab -> $18
+  $20586: aa       TAX         
+  $20587: a0 00    LDY #$00    
+  $20589: b9 e0 60 LDA $60e0,y   read $60e0 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $6448 <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $8  write $002d <- $7
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e1 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $6449 <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $7  write $002d <- $6
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e2 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $644a <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $6  write $002d <- $5
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e3 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $644b <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $5  write $002d <- $4
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e4 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $644c <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $4  write $002d <- $3
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e5 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $644d <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $3  write $002d <- $2
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e6 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $644e <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $2  write $002d <- $1
+  $20593: d0 f4    BNE $20589  
+  $20589: b9 e0 60 LDA $60e0,y   read $60e7 -> $ff
+  $2058c: 9d 30 64 STA $6430,x   write $644f <- $ff
+  $2058f: e8       INX         
+  $20590: c8       INY         
+  $20591: c6 2d    DEC $2d       read $002d -> $1  write $002d <- $0
+  $20593: d0 f4    BNE $20589  
+  $20595: e6 2e    INC $2e       read $002e -> $5  write $002e <- $6
+  $20597: a9 08    LDA #$08    
+  $20599: c5 2e    CMP $2e       read $002e -> $6
+  $2059b: d0 9b    BNE $20538  
+  $20538: a6 2e    LDX $2e       read $002e -> $6
+  $2053a: bd 9e 85 LDA $859e,x   read $205a4 -> $8
+  $2053d: 85 2d    STA $2d       write $002d <- $8
+  $2053f: bd a6 85 LDA $85a6,x   read $205ac -> $20
+  $20542: aa       TAX         
+  $20543: a0 00    LDY #$00    
+  $20545: bd 30 64 LDA $6430,x   read $6450 -> $32
+  $20548: 99 e0 60 STA $60e0,y   write $60e0 <- $32
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $8  write $002d <- $7
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6451 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e1 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $7  write $002d <- $6
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6452 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e2 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $6  write $002d <- $5
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6453 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e3 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $5  write $002d <- $4
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6454 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e4 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $4  write $002d <- $3
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6455 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e5 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $3  write $002d <- $2
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6456 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e6 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $2  write $002d <- $1
+  $2054f: d0 f4    BNE $20545  
+  $20545: bd 30 64 LDA $6430,x   read $6457 -> $ff
+  $20548: 99 e0 60 STA $60e0,y   write $60e7 <- $ff
+  $2054b: e8       INX         
+  $2054c: c8       INY         
+  $2054d: c6 2d    DEC $2d       read $002d -> $1  write $002d <- $0
+  $2054f: d0 f4    BNE $20545  
+  $20551: a6 2e    LDX $2e       read $002e -> $6
+  $20553: bd 9e 85 LDA $859e,x   read $205a4 -> $8
+  $20556: aa       TAX         
+  $20557: a9 00    LDA #$00    
+  $20559: 85 2f    STA $2f       write $002f <- $0
+  $2055b: bd df 60 LDA $60df,x   read $60e7 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e6 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e6 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e5 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e5 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e4 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e4 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e3 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e3 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e2 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e2 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e1 -> $ff
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e1 -> $ff
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20561: dd df 60 CMP $60df,x   read $60e0 -> $32
+  $20564: b0 f5    BCS $2055b  
+  $2055b: bd df 60 LDA $60df,x   read $60e0 -> $32
+  $2055e: ca       DEX         
+  $2055f: f0 17    BEQ $20578  
+  $20578: a5 2f    LDA $2f       read $002f -> $0
+  $2057a: d0 d5    BNE $20551  
+  $2057c: a6 2e    LDX $2e       read $002e -> $6
+  $2057e: bd 9e 85 LDA $859e,x   read $205a4 -> $8
+  $20581: 85 2d    STA $2d       write $002d <- $8
+  $20583: bd a6 85 LDA $85a6,x   read $205ac -> $20
+  $20586: aa       TAX         
+  $20587: a0 00    LDY #$00    
+  $20589: b9 e0 60 LDA $60e0,y   read $60e0 -> $32
+  $2058c: 9d 30 64 STA $6430,x   write $6450 <- $32

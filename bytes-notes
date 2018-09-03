@@ -1,0 +1,250 @@
+diffs (in ROM space - +$10 from actual memory address):
+$1afff: $2 -> $5  [[ wind lv 1 ]]
+$1b018: $3 -> $7  [[ wind lv 2 ]]
+$1b032: $6 -> $9  [[ wind lv 3 ]]
+$1b123: $6 -> $12 [[ thund lv 1 ]]
+$1b13c: $8 -> $13 [[ thund lv 2 ]]
+$1b16c: $1d -> $14 [[ thund lv 3 ]]
+$1b2b9: $9 -> $7  [[ blue slime damage ]]
+$1b309: $0 -> $1  [[ red slime status pois -> pois+paralysis ]]
+$1b40e: $0 -> $4  [[ giant swamp insect status nothing -> curse ]]
+                  note this is the same byte as 0->1 above - but why was it 0?
+
+$34bd1: $2 -> $36 [[ tanned hide defense ]]
+$34bda: $2 -> $25 [[ carapace defense ]]
+$34be3: $1 -> $3 [[ wind 0 dmg ]]
+$34be7: $8 -> $11 [[ thund 0 dmg ]]
+$34be9: $8 -> $a [[ wind MP ]]
+$34bec: $28 -> $15 [[ thund MP ]]
+$34bf4: $4 -> $40 [[ gold drop bucket ]]
+
+
+
+ [[ bryn item #2: antidote -> wind sword ]]
+
+
+armors
+tanned hide - $2 -> $36, leather 6, bronze $A, platinum $E, soldier $12
+ceramic $18, battle $14, psycho $20
+
+shields
+carapace 2 -> $25, bronze 6, plat 8, mirror $C, ceram $12
+sacred $10, battle $18, psycho $20
+
+gold drops
+16 different buckets:
+0, 1, 2, 4 -> $40, 8, $10, $1E, $32, $64, $C8, $90, $32, $64, $C8, $90, $F4
+
+monsters: 256 of them, but many are unused
+3f sorceror (missile)
+50 blue slime
+      [00 ff 64 00 01 00 09 11 02 09*ff 00 01 00 5f 00   20 00 00 c0 18 01 01 5f]
+      [[ 21st byte - $18 - doesn't map directly to the list below... ]]
+      index: $50, NES: $B2A0, ROM: $1B2B0, Bytes: $18
+      1: 0, 2: $FF
+      sprite (3?): $64
+      4: 0
+      speed/movement (5?): 1
+      6: 0, 7: 9, 8: $11
+      HP: 2, Damage: 9 -> 7  [[[$1b219]]]
+      11: $FF
+      Defense: 0, Lvl to hurt (lower 5 bits, upper unknown): 1
+      14: 0, 15: $5F, 16: 0, 17: $20
+      Atk type: 0   - ranged attacks? 0 defs w/ armor, $ff w/ shield?
+      Extra attack: 0
+      Exp factor: 1   - seems nonlinear
+          ($B2: $320, $B3: $330, $B4: $340)
+          1-$7F are as-is, $80-$87 are disallowed?, $88: $80, and then go by 10
+      Resist - thunder
+      Gold: 1, Lvl to hurt: 1, Exp: 1
+      Status: none (posion, stone, paralysis, curse)
+51 weretiger ($18 bytes)
+52 green jelly
+      $17 bytes - why shorter? how do we know?!?
+53 red slime
+      [00 ff 64 00 01 00 09 11 03 0c ff 03 82 00 5f 00   20 00 00*c0 28 02 01 69]
+    1B2F7 ($18 bytes)
+    status poison -> pois&paralysis  [[[$1b309]]]
+54 rock golem
+      [00 ff 65 00 02 00 09 13 0a 10 ff 03 02 45 57 1f   28 00 1f c0 36 04 02 65]
+    index: $54, ptr: $B2FF, ROM: $1B30F, bytes: $18
+    0, $FF, (spr) $65, 0, 2, 0, 9, 13, (HP) $A, (dmg) 10, FF,
+    (def) 3, (min lvl?) 2, 45, 57, 1F, 28, (atk type) 0, (extra atk attr) 1F,
+    C0, (exp) 4, 2, 65; resist F&W, gold 40, status stone paral, curse (???)
+55 blue bat
+56 green wyvern
+57 vampire 1 (hit)
+58 orc (hit)
+59 red flying swamp insect
+5a blue mushroom
+5b red swamp insect
+5c flying meadow insect (kirisia meadow) (hit)
+5d ???
+5e giant swamp insect (hit)
+    resist earth, status none -> curse   [[[1b40e: 0->4, right before c0]]]
+5f large blue slime
+60 ice zombie
+61 green living rock
+62 green giant spider
+63 red and purple wyverns
+64 dragnoia soldier (hit)
+65 ice entity
+66 red living rock
+67 ice golem (hit)
+68 gen kelbesque first time (hit)
+69 giant red slime
+6a troll (hit)
+6b red jelly
+6c medusa (hit)
+6d red crab
+6e red & purple medusa heads
+6f purple & red evil birds
+70 ???
+71 purple and red mushrooms
+72 violet earth entity
+73 mimic
+74 red giant spider
+75 fishman (hit)
+76 jellyfish
+77 kraken (hit)
+78 dark green wyvern (hit)
+79 sand monster
+7a ???
+7b shadow 1 (evil island castle) (hit)
+7c killer moth
+7d sabera 1 (hit)
+7e ???
+7f ???
+80 draygonia archer (hit)
+81 evil bomber bird (hit)
+82 lavaman (hit)
+83 ???
+84 green and purple lizard man (hit)
+85 purple giant eye (hit)
+86 salamander (hit)
+87 sorcerer (hit)
+88 mado 1 (hit)
+89 draygonian knight (hit)
+8a devil
+8b gen kelb 2 (hit)
+8c shadow 2 (draygonia castle) (hit)
+8d ???
+8e ???
+8f ???
+90 sabera 2 (hit)
+91 tarantula (hit)
+91 skeleton (hit)
+93 mado 2 (hit)
+94 ???
+95 black knight (hit)
+96 ???
+97 karmine (hit)
+98 sandman (hit)
+99 mummy
+9a tomb guardian (hit)
+9b draygon human (hit)
+9c statue of sun
+9d statue of moon
+9e draygon dragon (hit)
+9f ???
+a0 ground sentry (hit)
+a1 tower defense mech (hiy)
+a2 ???
+a3 air sentry
+a4 crystalis
+a5 (null)
+b9 crystalis eye laser
+ba crystalis pod laser
+bc vampire 2 (bat)
+bf draygon dragon (fireball)
+c1 vampire 1 (bat)
+c3 giant swamp insect (poison spit)
+c4 giant swamp insect - summoned flying insect companion (hit)
+c5 gen kelb 1 (rock)
+c6 sabera 1 (fireball)
+c7 gen kelb 2 (fire)
+c9 sabera 2 (fire)
+e8 karmine (fireball)
+cb sun and moon statue (fireballs)
+cc draygon human (lightning)
+cd draygon dragon (laser)
+cd draygon dragon (breath)
+e0 evil bomber bird (bomb)
+e2 giant swmamp insect - summoned flying insect companion (bomb)
+e3 paralysis beam
+e4 stone gaze
+e5 rock golem (rock)
+e6 curse (morph)
+e8 fishman (trident)
+e9 orc (axe)
+ea killer plant (pollen)
+ec draygonia soldier sword
+ed ice golem (rock)
+ee troll (axe)
+ef kraken (ink)
+f0 draygonia archer (arrow)
+f2 draygonian knight (sword)
+f4 ground sentry (laser)
+f5 tower defense mech (laser)
+f6 tower sentinel (laser)
+f9 black knight (flail)
+fa green and purpl lizard men (flail)
+fc mado 1 and 2 (shuriken)
+fd guardian statue (missile)
+fe demon wall (fire)
+
+
+====
+
+Shops
+  seem to be ordered as 5 swords (wind, fire, water, thunder, crystalis) [0-4]
+  then ball/bracelets (intercalated - wind ball, wind bracelet, fire ball, etc)
+       [56789abc]
+  then [0d] shields, armors, consumable items (med herb 1d, antidote 1e, lysis, lime,
+       fruit power, magic ring 22, fruit repun, warp boots 24)
+  then quest items (onyx stat 25, opal stat, insect flute, lime flute, gas mask,
+       power ring 2a, warrior ring, iron necklace, deo's pend, rabbit boots,
+       leather boots 2f, shield ring, alarm flute, windmill key, prison key,
+       styx key 34, fog lamp, shell flute, eye glass, broken statue, glow lamp,
+       gold stat 3a, love pendant, kirisia plant, ivory stat, bow moon, bow sun,
+       bow truth 40)
+  then magics (refr 41, paral, telepathy, teleport, recover, barrier, change,
+       flight 48)
+
+NOTE: putting the wrong type of item in a shop is funky - it basically results
+      in a broken item - e.g. medical herb to sword of fire gives a consumable
+      with a "fruit" icon when unselected and sword of fire when selected, but
+      cannot be used or dropped, and does not behave like sword of fire...
+
+Leaf:
+  slot #1 - med herb @ $1E -> magic ring @ $1F
+  #2 antiote $28, #3 warp boots $3C, #4 Alarm flute $32 -> 1 [[[21e6a]]]
+Brynmaer: 4th slot empty
+  #1 med herb $23, #2 ant $2D -> wind sw $2E [[[21e6e]]],
+  #3  warp boots $41 -> flight $42 [[[21e70]]]
+  #4 -> crystalis @ 3
+
+armor shop knows how to put item in correct slot between armor and shield,
+  but breaks on anything else
+item shop can only sell consumables - anything else is broken
+
+armor shop contents: 21db4-21ddf, but some of the shops are funky
+      - probably correspond to towns that don't have an armor shop...
+ (e.g. 3rd shop @ 21dbc sells 00010203 ???, 5th: 051c14ff, 7th, 9th, 11th empty)
+armor shop costs: 21de0-21e37
+item shop contents: 21e38-21e63 (11 shops, ff is empty slot)
+item shop costs: 21e64-21ebb (little-endian words)
+following is a bunch more words for something?
+
+
+
+Weapons: uncharged, 1, 2, 3, 3 MP
+wind: 1 [34be3] 2 3 6 8 [34be9] ->  3 5 7 9 A
+fire: 2 [34be4] 3 4 4 10 [34bea]
+water: 4 [34be5] 4 6 8 10 [34beb]
+thund: 8 [34be6] 6 8 1D 28 [34bec] -> 11 12 13 14 15
+crystalis: 10 [34be7]
+??? [34be8]
+
+weapons start at 34be3 and are striped: first 5 bytes is uncharged dmg for each
+  sword, then a zero, then MP for each lvl3 

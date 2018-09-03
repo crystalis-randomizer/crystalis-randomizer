@@ -1,0 +1,93 @@
+; Swords (row $0 => $6430)
+00 Sword of Wind
+01 Sword 0f Fire
+02 Sword of Water
+03 Sword of Thunder
+04 Crystalis
+
+; Balls, Bracelets (row $c => $643c)
+05 Ball of Wind
+06 Tornado Bracelet
+07 Ball of Fire
+08 Flame Bracelet
+09 Ball of Water
+0a Blizzard Bracelet
+0b Ball of Thunder
+0c Storm Bracelet
+
+; Shields (row $8 => $6438)
+0d Carapace Shield (def $2)
+0e Bronze Shield (def $6)
+0f Platinum Shield (def $8)
+10 Mirror Shield (def $C)
+11 Ceramic Shield (def $12)
+12 Sacred Shield (def $10)
+13 Battle Shield (def $18)
+14 Psycho Shield (def $20)
+
+; Armors (row $4 => $6434)
+15 Tanned Hide (def $2)
+16 Leather Armor (def $6)
+17 Bronze Armor (def $A)
+18 Platinum Armor (def $E)
+19 Soldier Suit (def $12)
+1a Ceramic Armor (def $18)
+1b Battle Armor (def $14)
+1c Psycho Armor (def $20)
+
+; Items
+;   Consumables (c): row $10 => $6440
+;   Accessories (a): row $18 => $6448
+;   Key Items   (k): row $20 => $6450
+1d Medical Herb (c)
+1e Antidote (c)
+1f Lysis Fruit (c)
+20 Fruit of Lime (c)
+21 Fruit of Power (c)
+22 Magic Ring (c)
+23 Fruit of Repun (c)
+24 Warp Boots (c)
+25 Statue of Onyx (k)
+26 Opal Statue (k)
+27 Insect Flute (k)
+28 Flute of Lime (k)
+29 Gas Mask (a)
+2a Power Ring (a)
+2b Warrior Ring (a)
+2c Iron Necklace (a)
+2d Deo's Pendant (a)
+2e Rabbit Boots (a)
+2f Leather Boots (a)
+30 Shield Ring (a)
+31 Alarm Flute (c)
+32 Windmill Key (k)
+33 Prison Key (k)
+34 Key to Styx (k)
+35 Fog Lamp (k)
+36 Shell Flute (k)
+37 Eye Glass (k)
+38 Broken Statue (k)
+39 Glowing Lamp (k)
+3a Gold Statue (k)
+3b Love Pendant (k)
+3c Kirisia Plant (k)
+3d Ivory Statue (k)
+3e Bow of Moon (k)
+3f Bow of Sun (k)
+40 Bow of Truth (k)
+
+; Magic (row $28 => $6458)
+41 Refresh
+42 Paralysis
+43 Telepathy
+44 Teleport
+45 Recover
+46 Barrier
+47 Change
+48 Flight
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+18 key items - problem? possible to have too many and be stuck?
+ - consider blockers to being able to *use* the items

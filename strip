@@ -1,0 +1,330 @@
+#!/usr/bin/perl
+
+# Converts between stripped templates and infused assembly sources.
+# Stripped templates are missing all the actual bytes and opcodes,
+# but still have comments, labels, and layouts (just with placeholders
+# for .byte directives and instructions).  An infused source can be
+# generated from a stripped source and a legitimately acquired ROM
+# image.
+#
+# This allows working with full sources, commenting and disassembling
+# as necessary, and checking in these edits to GitHub, without actually
+# publishing copyrighted ROM contents.
+#
+# To re-infuse the ROM into the template, run
+#   ./strip -r image.nes source.st > source.s
+#
+# To strip a source before checking it in, run
+#   ./strip source.s > source.st
+#
+# It is a good idea to verify that the round trip is invariant before
+# committing any changes, since it's easy to corrupt assembly source
+# accidentally (and there are some bugs in asm.el that will do it).
+
+use strict;
+use warnings;
+use autodie;
+
+sub main {
+  if ($ARGV[0] eq '-r') {
+    shift @ARGV;
+    my $rom = shift @ARGV;
+    infuse($rom);
+  } else {
+    strip();
+  }
+}
+
+sub strip {
+  while (<>) {
+    chomp $_;
+    my $comment = '';
+    $comment = $& if s/^[^;]*\K;.*$//;
+    $comment = "$&$comment" if $comment and s/\s+$//;
+    if (/^([-+\s]+\$[0-9a-f]+\s*?)((?:\s[0-9a-f]{2})+:\s+)([a-z]{3})(\s.*|)$/i) {
+      # an instruction - figure out if we need to do anything with the argument.
+      my ($address, $bytes, $mnemonic, $argument) = ($1, $2, $3, $4);
+      $bytes =~ s/[0-9a-f]/x/ig;
+      $mnemonic = 'xxx';
+      $argument =~ s/\$[0-9a-f]{4}(?![0-9a-f])/\$xxxx/i;
+      $argument =~ s/\$[0-9a-f]{2}(?![0-9a-f])/\$xx/i;
+      #$argument = " $argument" if $argument;
+      print "$address$bytes$mnemonic$argument$comment\n";
+    } elsif (/^(.*?\.(?:byte|word)\s+)(.*)$/) {
+      my ($prefix, $bytes) = ($1, $2);
+      $bytes =~ s/\$[0-9a-f]+/'$' . 'x' x (length($&) - 1)/ige;
+      print "$prefix$bytes$comment\n";
+    } else {
+      print "$_$comment\n";
+    }
+  }
+}
+
+sub parseRom {
+  my $rom = shift;
+  open my $fh, '<:raw', $rom;
+  my $cnt = read $fh, my $bytes, 16;
+  die 'Could not read header: only got $cnt' unless $cnt == 16;
+  my ($magic, $prgPages, $chrPages, $flags) = unpack 'a4 C C C x9', $bytes;
+  die "Bad header: $magic" unless $magic eq "NES\x1a";
+  if ($flags & 4) {
+    $cnt = read $fh, $bytes, 512;
+    die "Could not skip trainer: only got $cnt" unless $cnt == 512;
+  }
+  my @prg = ();
+  my @chr = ();
+  for (my $i = 0; $i < $prgPages; $i++) {
+    $cnt = read $fh, $bytes, 16384;
+    die "Could not read PRG page $i: only got $cnt" unless $cnt == 16384;
+    my @page = unpack 'C16384', $bytes;
+    push @prg, @page;
+  }
+  for (my $i = 0; $i < $chrPages; $i++) {
+    $cnt = read $fh, $bytes, 8192;
+    die "Could not read CHR page $i: only got $cnt" unless $cnt == 8192;
+    my @page = unpack 'C8192', $bytes;
+    push @chr, @page;
+  }
+  return (\@prg, \@chr);
+}
+
+sub infuse {
+  my $rom = shift;
+  my ($prg, $chr) = parseRom($rom);
+  our @prg = @$prg;
+  my @chr = @$chr;
+  my @opcodes = initializeOpcodes();
+  our $curaddr = 0;
+  sub checkAddress {
+    my $addr = $_[0];
+    die "Got backwards address $addr after $curaddr" if $addr < $curaddr;
+    return if $addr == $curaddr;
+    printf STDERR "WARNING: Missing %d bytes at %x\n", ($addr - $curaddr), $curaddr;
+    while ($curaddr < $addr) {
+      my $end = $curaddr + 16;
+      $end = $addr if $end > $addr;
+      my @bytes = @prg[$curaddr .. $end];
+      @bytes = map { sprintf '$%02x', $_ } @bytes;
+      my $line = join ',', @bytes;
+      printf STDOUT '        $%05x              .byte %s\n', $curaddr, $line;
+      $curaddr = $end;
+    }
+  }
+  while (<>) {
+    chomp $_;
+    my $comment = '';
+    $comment = $& if s/^[^;]*\K;.*$//;
+    $comment = "$&$comment" if $comment and s/\s+$//;
+    if (/^([-+\s]+\$[0-9a-f]+\s*?)((?:\sxx)+:\s+)(xxx)(\s.*|)$/i) {
+      # an instruction - figure out if we need to do anything with the argument.
+      my ($address, $bytes, $mnemonic, $argument) = ($1, $2, $3, $4);
+      $address =~ /[0-9a-f]+/;
+      checkAddress(hex($&));
+      my $op = $opcodes[$prg[$curaddr]];
+      my @bytes = @prg[$curaddr .. ($curaddr + $op->{addr}->{bytes} - 1)];
+      my $arg = ($bytes[1] || 0) + 256 * ($bytes[2] || 0);
+      if ($argument =~ /\$xx/) {
+        $argument = $op->{addr}->{fmt}->($arg, $curaddr);
+      }
+      while (defined (my $byte = shift @bytes)) {
+        $byte = sprintf '%02x', $byte;
+        $bytes =~ s/xx/$byte/;
+      }
+      #$bytes = join '', map {sprintf ' %02x', $_} @bytes;
+      $mnemonic =~ s/xxx/$op->{mnemonic}/e;
+      $curaddr += $op->{addr}->{bytes};
+      print "$address$bytes$mnemonic$argument$comment\n";
+    } elsif (/^\s+\$([0-9a-fA-F]+).*?\.byte\b/) {
+      checkAddress(hex($1));
+      while (s/\$xx/sprintf('$%02x', $prg[$curaddr])/e) {
+        $curaddr++;
+      }
+      print "$_$comment\n";
+    } elsif (/^\s+\$([0-9a-fA-F]+).*?\.word\b/) {
+      checkAddress(hex($1));
+      my $word = sprintf('%04x', $prg[$curaddr] + 256 * $prg[$curaddr + 1]);
+      s/\$xxxx/\$$word/;
+      $curaddr += 2;
+      print "$_$comment\n";
+    } else {
+      print STDERR "WARNING: Failed to parse line:\n$_\n" if /xxx/;
+      print "$_$comment\n";
+    }
+  }
+}
+
+sub initializeOpcodes {
+  my %addrmodes = (
+    ZeroPage => {bytes => 2, fmt => sub {sprintf ' $%02x', $_[0]}},
+    Relative => {bytes => 2, fmt => sub {
+                   my $o = $_[0] > 127 ? -254 : 2;
+                   sprintf ' $%05x', ($_[0] + $_[1] + $o);
+                 }},
+    Implied => {bytes => 1, fmt => sub {''}},
+    Absolute => {bytes => 3, fmt => sub {sprintf ' $%04x', $_[0]}},
+    Accumulator => {bytes => 1, fmt => sub {''}},
+    Immediate => {bytes => 2, fmt => sub {sprintf ' #$%02x', $_[0]}},
+    ZeroPageX => {bytes => 2, fmt => sub {sprintf ' $%02x,x', $_[0]}},
+    ZeroPageY => {bytes => 2, fmt => sub {sprintf ' $%02x,y', $_[0]}},
+    AbsoluteX => {bytes => 3, fmt => sub {sprintf ' $%04x,x', $_[0]}},
+    AbsoluteY => {bytes => 3, fmt => sub {sprintf ' $%04x,y', $_[0]}},
+    PreindexedIndirect => {bytes => 2, fmt => sub {sprintf ' ($%02x,x)', $_[0]}},
+    PostindexedIndirect => {bytes => 2, fmt => sub {sprintf ' ($%02x),y', $_[0]}},
+    IndirectAbsolute => {bytes => 3, fmt => sub {sprintf ' ($%04x)', $_[0]}});
+
+  my @opcodes = ();
+  $opcodes[0x69] = {mnemonic => 'adc', addr => $addrmodes{Immediate}};
+  $opcodes[0x65] = {mnemonic => 'adc', addr => $addrmodes{ZeroPage}};
+  $opcodes[0x75] = {mnemonic => 'adc', addr => $addrmodes{ZeroPageX}};
+  $opcodes[0x6d] = {mnemonic => 'adc', addr => $addrmodes{Absolute}};
+  $opcodes[0x7d] = {mnemonic => 'adc', addr => $addrmodes{AbsoluteX}};
+  $opcodes[0x79] = {mnemonic => 'adc', addr => $addrmodes{AbsoluteY}};
+  $opcodes[0x61] = {mnemonic => 'adc', addr => $addrmodes{PreindexedIndirect}};
+  $opcodes[0x71] = {mnemonic => 'adc', addr => $addrmodes{PostindexedIndirect}};
+  $opcodes[0x29] = {mnemonic => 'and', addr => $addrmodes{Immediate}};
+  $opcodes[0x25] = {mnemonic => 'and', addr => $addrmodes{ZeroPage}};
+  $opcodes[0x35] = {mnemonic => 'and', addr => $addrmodes{ZeroPageX}};
+  $opcodes[0x2d] = {mnemonic => 'and', addr => $addrmodes{Absolute}};
+  $opcodes[0x3d] = {mnemonic => 'and', addr => $addrmodes{AbsoluteX}};
+  $opcodes[0x39] = {mnemonic => 'and', addr => $addrmodes{AbsoluteY}};
+  $opcodes[0x21] = {mnemonic => 'and', addr => $addrmodes{PreindexedIndirect}};
+  $opcodes[0x31] = {mnemonic => 'and', addr => $addrmodes{PostindexedIndirect}};
+  $opcodes[0x0a] = {mnemonic => 'asl', addr => $addrmodes{Accumulator}};
+  $opcodes[0x06] = {mnemonic => 'asl', addr => $addrmodes{ZeroPage}};
+  $opcodes[0x16] = {mnemonic => 'asl', addr => $addrmodes{ZeroPageX}};
+  $opcodes[0x0e] = {mnemonic => 'asl', addr => $addrmodes{Absolute}};
+  $opcodes[0x1e] = {mnemonic => 'asl', addr => $addrmodes{AbsoluteX}};
+  $opcodes[0x90] = {mnemonic => 'bcc', addr => $addrmodes{Relative}};
+  $opcodes[0xb0] = {mnemonic => 'bcs', addr => $addrmodes{Relative}};
+  $opcodes[0xf0] = {mnemonic => 'beq', addr => $addrmodes{Relative}};
+  $opcodes[0x24] = {mnemonic => 'bit', addr => $addrmodes{ZeroPage}};
+  $opcodes[0x2c] = {mnemonic => 'bit', addr => $addrmodes{Absolute}};
+  $opcodes[0x30] = {mnemonic => 'bmi', addr => $addrmodes{Relative}};
+  $opcodes[0xd0] = {mnemonic => 'bne', addr => $addrmodes{Relative}};
+  $opcodes[0x10] = {mnemonic => 'bpl', addr => $addrmodes{Relative}};
+  $opcodes[0x00] = {mnemonic => 'brk', addr => $addrmodes{Implied}};
+  $opcodes[0x50] = {mnemonic => 'bvc', addr => $addrmodes{Relative}};
+  $opcodes[0x70] = {mnemonic => 'bvs', addr => $addrmodes{Relative}};
+  $opcodes[0x18] = {mnemonic => 'clc', addr => $addrmodes{Implied}};
+  $opcodes[0xd8] = {mnemonic => 'cld', addr => $addrmodes{Implied}};
+  $opcodes[0x58] = {mnemonic => 'cli', addr => $addrmodes{Implied}};
+  $opcodes[0xb8] = {mnemonic => 'clv', addr => $addrmodes{Implied}};
+  $opcodes[0xc9] = {mnemonic => 'cmp', addr => $addrmodes{Immediate}};
+  $opcodes[0xc5] = {mnemonic => 'cmp', addr => $addrmodes{ZeroPage}};
+  $opcodes[0xd5] = {mnemonic => 'cmp', addr => $addrmodes{ZeroPageX}};
+  $opcodes[0xcd] = {mnemonic => 'cmp', addr => $addrmodes{Absolute}};
+  $opcodes[0xdd] = {mnemonic => 'cmp', addr => $addrmodes{AbsoluteX}};
+  $opcodes[0xd9] = {mnemonic => 'cmp', addr => $addrmodes{AbsoluteY}};
+  $opcodes[0xc1] = {mnemonic => 'cmp', addr => $addrmodes{PreindexedIndirect}};
+  $opcodes[0xd1] = {mnemonic => 'cmp', addr => $addrmodes{PostindexedIndirect}};
+  $opcodes[0xe0] = {mnemonic => 'cpx', addr => $addrmodes{Immediate}};
+  $opcodes[0xe4] = {mnemonic => 'cpx', addr => $addrmodes{ZeroPage}};
+  $opcodes[0xec] = {mnemonic => 'cpx', addr => $addrmodes{Absolute}};
+  $opcodes[0xc0] = {mnemonic => 'cpy', addr => $addrmodes{Immediate}};
+  $opcodes[0xc4] = {mnemonic => 'cpy', addr => $addrmodes{ZeroPage}};
+  $opcodes[0xcc] = {mnemonic => 'cpy', addr => $addrmodes{Absolute}};
+  $opcodes[0xc6] = {mnemonic => 'dec', addr => $addrmodes{ZeroPage}};
+  $opcodes[0xd6] = {mnemonic => 'dec', addr => $addrmodes{ZeroPageX}};
+  $opcodes[0xce] = {mnemonic => 'dec', addr => $addrmodes{Absolute}};
+  $opcodes[0xde] = {mnemonic => 'dec', addr => $addrmodes{AbsoluteX}};
+  $opcodes[0xca] = {mnemonic => 'dex', addr => $addrmodes{Implied}};
+  $opcodes[0x88] = {mnemonic => 'dey', addr => $addrmodes{Implied}};
+  $opcodes[0x49] = {mnemonic => 'eor', addr => $addrmodes{Immediate}};
+  $opcodes[0x45] = {mnemonic => 'eor', addr => $addrmodes{ZeroPage}};
+  $opcodes[0x55] = {mnemonic => 'eor', addr => $addrmodes{ZeroPageX}};
+  $opcodes[0x4d] = {mnemonic => 'eor', addr => $addrmodes{Absolute}};
+  $opcodes[0x5d] = {mnemonic => 'eor', addr => $addrmodes{AbsoluteX}};
+  $opcodes[0x59] = {mnemonic => 'eor', addr => $addrmodes{AbsoluteY}};
+  $opcodes[0x41] = {mnemonic => 'eor', addr => $addrmodes{PreindexedIndirect}};
+  $opcodes[0x51] = {mnemonic => 'eor', addr => $addrmodes{PostindexedIndirect}};
+  $opcodes[0xe6] = {mnemonic => 'inc', addr => $addrmodes{ZeroPage}};
+  $opcodes[0xf6] = {mnemonic => 'inc', addr => $addrmodes{ZeroPageX}};
+  $opcodes[0xee] = {mnemonic => 'inc', addr => $addrmodes{Absolute}};
+  $opcodes[0xfe] = {mnemonic => 'inc', addr => $addrmodes{AbsoluteX}};
+  $opcodes[0xe8] = {mnemonic => 'inx', addr => $addrmodes{Implied}};
+  $opcodes[0xc8] = {mnemonic => 'iny', addr => $addrmodes{Implied}};
+  $opcodes[0x4c] = {mnemonic => 'jmp', addr => $addrmodes{Absolute}};
+  $opcodes[0x6c] = {mnemonic => 'jmp', addr => $addrmodes{IndirectAbsolute}};
+  $opcodes[0x20] = {mnemonic => 'jsr', addr => $addrmodes{Absolute}};
+  $opcodes[0xa9] = {mnemonic => 'lda', addr => $addrmodes{Immediate}};
+  $opcodes[0xa5] = {mnemonic => 'lda', addr => $addrmodes{ZeroPage}};
+  $opcodes[0xb5] = {mnemonic => 'lda', addr => $addrmodes{ZeroPageX}};
+  $opcodes[0xad] = {mnemonic => 'lda', addr => $addrmodes{Absolute}};
+  $opcodes[0xbd] = {mnemonic => 'lda', addr => $addrmodes{AbsoluteX}};
+  $opcodes[0xb9] = {mnemonic => 'lda', addr => $addrmodes{AbsoluteY}};
+  $opcodes[0xa1] = {mnemonic => 'lda', addr => $addrmodes{PreindexedIndirect}};
+  $opcodes[0xb1] = {mnemonic => 'lda', addr => $addrmodes{PostindexedIndirect}};
+  $opcodes[0xa2] = {mnemonic => 'ldx', addr => $addrmodes{Immediate}};
+  $opcodes[0xa6] = {mnemonic => 'ldx', addr => $addrmodes{ZeroPage}};
+  $opcodes[0xb6] = {mnemonic => 'ldx', addr => $addrmodes{ZeroPageY}};
+  $opcodes[0xae] = {mnemonic => 'ldx', addr => $addrmodes{Absolute}};
+  $opcodes[0xbe] = {mnemonic => 'ldx', addr => $addrmodes{AbsoluteY}};
+  $opcodes[0xa0] = {mnemonic => 'ldy', addr => $addrmodes{Immediate}};
+  $opcodes[0xa4] = {mnemonic => 'ldy', addr => $addrmodes{ZeroPage}};
+  $opcodes[0xb4] = {mnemonic => 'ldy', addr => $addrmodes{ZeroPageX}};
+  $opcodes[0xac] = {mnemonic => 'ldy', addr => $addrmodes{Absolute}};
+  $opcodes[0xbc] = {mnemonic => 'ldy', addr => $addrmodes{AbsoluteX}};
+  $opcodes[0x4a] = {mnemonic => 'lsr', addr => $addrmodes{Accumulator}};
+  $opcodes[0x46] = {mnemonic => 'lsr', addr => $addrmodes{ZeroPage}};
+  $opcodes[0x56] = {mnemonic => 'lsr', addr => $addrmodes{ZeroPageX}};
+  $opcodes[0x4e] = {mnemonic => 'lsr', addr => $addrmodes{Absolute}};
+  $opcodes[0x5e] = {mnemonic => 'lsr', addr => $addrmodes{AbsoluteX}};
+  $opcodes[0xea] = {mnemonic => 'nop', addr => $addrmodes{Implied}};
+  $opcodes[0x09] = {mnemonic => 'ora', addr => $addrmodes{Immediate}};
+  $opcodes[0x05] = {mnemonic => 'ora', addr => $addrmodes{ZeroPage}};
+  $opcodes[0x15] = {mnemonic => 'ora', addr => $addrmodes{ZeroPageX}};
+  $opcodes[0x0d] = {mnemonic => 'ora', addr => $addrmodes{Absolute}};
+  $opcodes[0x1d] = {mnemonic => 'ora', addr => $addrmodes{AbsoluteX}};
+  $opcodes[0x19] = {mnemonic => 'ora', addr => $addrmodes{AbsoluteY}};
+  $opcodes[0x01] = {mnemonic => 'ora', addr => $addrmodes{PreindexedIndirect}};
+  $opcodes[0x11] = {mnemonic => 'ora', addr => $addrmodes{PostindexedIndirect}};
+  $opcodes[0x48] = {mnemonic => 'pha', addr => $addrmodes{Implied}};
+  $opcodes[0x08] = {mnemonic => 'php', addr => $addrmodes{Implied}};
+  $opcodes[0x68] = {mnemonic => 'pla', addr => $addrmodes{Implied}};
+  $opcodes[0x28] = {mnemonic => 'plp', addr => $addrmodes{Implied}};
+  $opcodes[0x2a] = {mnemonic => 'rol', addr => $addrmodes{Accumulator}};
+  $opcodes[0x26] = {mnemonic => 'rol', addr => $addrmodes{ZeroPage}};
+  $opcodes[0x36] = {mnemonic => 'rol', addr => $addrmodes{ZeroPageX}};
+  $opcodes[0x2e] = {mnemonic => 'rol', addr => $addrmodes{Absolute}};
+  $opcodes[0x3e] = {mnemonic => 'rol', addr => $addrmodes{AbsoluteX}};
+  $opcodes[0x6a] = {mnemonic => 'ror', addr => $addrmodes{Accumulator}};
+  $opcodes[0x66] = {mnemonic => 'ror', addr => $addrmodes{ZeroPage}};
+  $opcodes[0x76] = {mnemonic => 'ror', addr => $addrmodes{ZeroPageX}};
+  $opcodes[0x6e] = {mnemonic => 'ror', addr => $addrmodes{Absolute}};
+  $opcodes[0x7e] = {mnemonic => 'ror', addr => $addrmodes{AbsoluteX}};
+  $opcodes[0x40] = {mnemonic => 'rti', addr => $addrmodes{Implied}};
+  $opcodes[0x60] = {mnemonic => 'rts', addr => $addrmodes{Implied}};
+  $opcodes[0xe9] = {mnemonic => 'sbc', addr => $addrmodes{Immediate}};
+  $opcodes[0xe5] = {mnemonic => 'sbc', addr => $addrmodes{ZeroPage}};
+  $opcodes[0xf5] = {mnemonic => 'sbc', addr => $addrmodes{ZeroPageX}};
+  $opcodes[0xed] = {mnemonic => 'sbc', addr => $addrmodes{Absolute}};
+  $opcodes[0xfd] = {mnemonic => 'sbc', addr => $addrmodes{AbsoluteX}};
+  $opcodes[0xf9] = {mnemonic => 'sbc', addr => $addrmodes{AbsoluteY}};
+  $opcodes[0xe1] = {mnemonic => 'sbc', addr => $addrmodes{PreindexedIndirect}};
+  $opcodes[0xf1] = {mnemonic => 'sbc', addr => $addrmodes{PostindexedIndirect}};
+  $opcodes[0x38] = {mnemonic => 'sec', addr => $addrmodes{Implied}};
+  $opcodes[0xf8] = {mnemonic => 'sed', addr => $addrmodes{Implied}};
+  $opcodes[0x78] = {mnemonic => 'sei', addr => $addrmodes{Implied}};
+  $opcodes[0x85] = {mnemonic => 'sta', addr => $addrmodes{ZeroPage}};
+  $opcodes[0x95] = {mnemonic => 'sta', addr => $addrmodes{ZeroPageX}};
+  $opcodes[0x8d] = {mnemonic => 'sta', addr => $addrmodes{Absolute}};
+  $opcodes[0x9d] = {mnemonic => 'sta', addr => $addrmodes{AbsoluteX}};
+  $opcodes[0x99] = {mnemonic => 'sta', addr => $addrmodes{AbsoluteY}};
+  $opcodes[0x81] = {mnemonic => 'sta', addr => $addrmodes{PreindexedIndirect}};
+  $opcodes[0x91] = {mnemonic => 'sta', addr => $addrmodes{PostindexedIndirect}};
+  $opcodes[0x86] = {mnemonic => 'stx', addr => $addrmodes{ZeroPage}};
+  $opcodes[0x96] = {mnemonic => 'stx', addr => $addrmodes{ZeroPageY}};
+  $opcodes[0x8e] = {mnemonic => 'stx', addr => $addrmodes{Absolute}};
+  $opcodes[0x84] = {mnemonic => 'sty', addr => $addrmodes{ZeroPage}};
+  $opcodes[0x94] = {mnemonic => 'sty', addr => $addrmodes{ZeroPageX}};
+  $opcodes[0x8c] = {mnemonic => 'sty', addr => $addrmodes{Absolute}};
+  $opcodes[0xaa] = {mnemonic => 'tax', addr => $addrmodes{Implied}};
+  $opcodes[0xa8] = {mnemonic => 'tay', addr => $addrmodes{Implied}};
+  $opcodes[0xba] = {mnemonic => 'tsx', addr => $addrmodes{Implied}};
+  $opcodes[0x8a] = {mnemonic => 'txa', addr => $addrmodes{Implied}};
+  $opcodes[0x9a] = {mnemonic => 'txs', addr => $addrmodes{Implied}};
+  $opcodes[0x98] = {mnemonic => 'tya', addr => $addrmodes{Implied}};
+  return @opcodes;
+}
+
+main();

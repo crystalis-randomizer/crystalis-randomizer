@@ -1,0 +1,478 @@
+8e3e in RAM (28e4e in .nes file - pages?) -> "Leaf"
+Many more town names in close proximity
+Set breakpoint on read "Leaf", "Brynmaer", "Nadare", and "Joel"
+ - read from 8695, copied into 6024 and f (dialog box?), overwrites spaces
+ - 8695 flowed from 8593, called from 8570
+
+MMC3 mapper - $C000-$FFFF are permanently fixed to last 16k of rom
+ - $Cxxx, $Dxxx, $Exxx, and $Fxxx are all $3Cxxx, $3Dxxx, $3Exxx, $3Fxxx
+
+$C210 - seems to run every frame, at least within a choice box
+upon warping,
+ -> 9b50, then d497, then c4f1 multiple times until the window appears, then c210 while it's open
+
+$28695 -> reads town names while populating warp dialog
+  - when this method gets called, ($002A) contains the address of the town
+    who writes it?  -> $286C6 copies it from ($002C)
+                       $286D7 copies from ($8A14,X)
+                       $28689 copies from ($8A00,X)
+$28573 calls 8593 which eventually ends up reading town
+ - this is clearly some sort of message box populating routine...
+ $287AE seems to be storing chars (A) into a buffer at $6000+($28) and then
+        incrementing ($28) and Y after each...
+ $28693 - copies the string at ($002A) to $6000+($28)
+        * or just in early, $28682 initializes ($002A) to
+          ($8A00+((($2A)+Y)<<1)) after calling $28710
+                                 which inits ($002C):=($002A)
+                                       if (++Y != 0) then inc ($2D) fi
+                                       ($29) := Y
+Note: by the time we're populating the dialog, it's probably already too
+      late?
+Dialog contents @ $6000
+  - a line starts w/ FE 1E, has 29 chars, and then ends with 1F
+  - warp menu seems to have blank line, then Leaf/Brynmaer/Oak (only a single space between B&O, so 8 is max?), then blank line before Nadare's/Portoa/Amazones, then blank line ...
+  - nothing seems to distinguish the visible vs hidden items in this situation.
+
+2A also used while swinging sword - seems to be general purpose
+
+$C427 -> swap 8k bank at a000-bfff to point to page in reg A [memoized in ($6F)]
+$C418 -> swap 8k bank at 8000-9fff to point to page in reg A [memoized in ($6E)]
+$C40E -> swap 16k bank at 8000-bfff to point to pair of pages in reg A (i.e. 0 -> page 0 and 1, 1 -> page 2 and 3, etc)
+   - these two bytes are only ever written to by these routines
+
+
+ --- seems like initialization code? runs at title screen - or screen transitions in general
+   - graying out? also seems relevant for sword swinging
+$3C25D -> if ($11) != 1 then fallthrough to $3C264
+$3C264 -> save x and y on stack, load $1A000-$1BFFF into $A000-$BFFF
+          y:=($11)<<1; ($13):=($1AC01+y)
+          if ($11) & $80 then ($12):=($1AD00+y); ($13):=($1AD01+y); fi
+          if (($12))!=0 then call $3C125; fi   // note: double indirection
+          y:=1; x:=($10); clc;
+          do {
+            ($0300+x):=($0400+x):=($0500+x):=($0700+x):=0; x+=$20
+          } while (!carry on x)
+          if ($11)!=$ff then
+            push ($11)
+            ($11):=(($12)+1)<<1
+            y:=2
+            if (!carry) {
+              ($0300+x):=(($12)+y)
+              y++
+            }
+            ($11) <<= 1
+            if ($11) shifted off a 1 (i.e. was negative) {
+              ($0320+x):=(($12)+y)
+              y++
+            }
+            ... all the way to ($06E0+x):=(($12)+y)  // ($11) should be zero after first 8...?
+            pop ($11)
+          fi
+          pop y and x, return
+          
+                
+
+RAM:
+ $0708 - MP value (2 bytes?)
+ $03C1 - HP value
+ $0702 - money
+   * $6474 seems related to money after buying whatever's selected
+     will be useful to fix the shop glitch? (but it's not quite the same)
+     maybe it's cost of thing selected?
+   * 6d80 / 7d80 seem related to printing or something?
+ $0704 - exp
+ $0706 - required exp
+ $0421 - level (03e1 seems to be lvl+1 ???)
+   - but simple increment after level up... 
+
+ 
+Prior Art:
+ https://www.romhacking.net/hacks/nes/patches/922readme.txt
+   - removes level check, adjusts damage and MP costs for thing
+ consider basing damage on level?!?
+
+ https://www.romhacking.net/utilities/1089/
+   - extensive dictionary of bytes?
+
+
+=========
+
+JSNES exploration:
+ - snapshot RAM, expect target value changed or unchanged
+   - take several snapshots with various states of changed or not
+   - filter out anything that did or didn't change at the wrong time
+   - narrow down to a small number of addresses
+   - keyboard shortcut to avoid needing to blur main canvas
+   - optional known number?
+ - set breakpoint on reading certain address
+   - keep a rolling log of last 10000 opcodes (w/ expanded data about
+   - changes to memory, flag state, values of relevant registers, etc)
+   - whenever breakpoint triggered, just pause and dump the log...
+   - log RAM reads and writes? ROM data reads?
+ - given a value, look for a ROM read of that value...?
+ - event model for reads and writes? - the easy to just use the console to
+   log what i want...?
+
+SRAM support???
+
+========
+
+where is the sword of wind stored?
+ - 1dd66 reads a 0 while talking with elder
+ - 18613 => ???
+
+
+   nes.debug.breakIf = (a,_,v)=>v==0&&(a&0x1ffe)!=0;
+   nes.debug.breakAt([0, 0x30000], 'prg', 'r');
+
+we've got breakpoints, but we really need better change monitoring...
+  -- keybindings for "start tracking", "expect same", "expect changed",
+     and "report" - though we could start simple, with just functions
+     and pause.
+
+
+visited towns:
+ - 118, 119, 15a, 16d, 179, 1e1, 4f1, 7dc, 64de, 6db2, 6e5d, 7db2, 7e0e, 7e5d
+take 2:
+ - 1de, 7dc, 64de, 6e0e, 6e5d, 7e0e, 7e5d
+
+          ==> 7dc, 64de, 6e5d, 7e0e, 7e5d
+add brynmaer
+ - 07dc, 64de  are only ones left
+
+add leaf
+ - 06cf, 06ef, 
+
+
+$64de (and $002c) are the only bytes both written upon entering leaf and read on warping
+ - $64de is $20 in leaf
+            $40 brynmaer
+            $80 oak
+   $64df    $01 nadares
+            $02 portoa
+            $04 amazones
+            $08 joel
+            $10 swan
+            $20 shyron
+            $40 goa
+            $80 sahara
+
+
+These are read in a loop at $3dd64:
+  $3dd64: bd de 64 LDA $64de,x  = check visited town
+  $3dd67: 39 00 c0 AND $c000,y
+  $3dd6a: 60       RTS
+Called from $3dd46
+ - looks like this sub is only used for warping - we could repurpose it...
+
+  $3dd53: c6 11    DEC $11       read $0011 -> $3  write $0011 <- $2
+  $3dd55: 10 ed    BPL $3dd44  
+  $3dd44: a5 11    LDA $11       read $0011 -> $2
+  $3dd46: 20 58 dd JSR $dd58   
+  $3dd58: 18       CLC         
+  $3dd59: 69 05    ADC #$05    
+  $3dd5b: 48       PHA         
+  $3dd5c: 4a       LSR         
+  $3dd5d: 4a       LSR         
+  $3dd5e: 4a       LSR         
+  $3dd5f: aa       TAX         
+  $3dd60: 68       PLA         
+  $3dd61: 29 07    AND #$07    
+  $3dd63: a8       TAY         
+  $3dd64: bd de 64 LDA $64de,x   read $64de -> $20
+  $3dd67: 39 00 c0 AND $c000,y   read $3c007 -> $80
+  $3dd6a: 60       RTS         
+  $3dd49: d0 08    BNE $3dd53  
+  $3dd4b: a5 11    LDA $11       read $0011 -> $2
+  $3dd4d: 18       CLC         
+  $3dd4e: 69 20    ADC #$20    
+  $3dd50: 20 82 c4 JSR $c482   
+
+the code that checks and any code that handles the negative case can all be cut out
+simple patch for now: 3dd64 <- LDA $#ff; RTS  => A9 FF 60
+
+
+contiguous space for swords, armors, shields, accessories
+  6430...643f
+
+===========
+
+initializing ram on new game:
+ $2fcf9 copes from [$7d00,$7d7f] -> [$6400,$647f]
+                   [$7e00,$7eff] -> [$6480,$657f]
+                   [$7d80,$7d9c] -> [$0702,$071e]
+                   [$7db0,$7dd3] -> [$07dc,$07ff]
+
+Who writes $7dxx in the first place? does it come prepopulated?
+ --> $2fc31 is in middle of routine to store immediate values
+     $2fd50 does LDA #$41; STA $7dfd; LDA $#4d; STA $7dfe
+  - seems like a pretty inefficient way to load this
+
+
+========
+get sword
+ - $1c2b5: bne $#04  - seems to be checking if the sword is crystalis
+ - $1c2a0: "give sword" or "give item" maybe?
+ - $1c285 writes 0 to $29 before calling... - where did it come from? 1dd66
+
+ --> came from $1dd66 indeed, but elder still calls it "wind"
+    -- name must be stored elsewhere...  -> $28e81
+    - read at $28794, where $2a temporarily holds the address $8e81
+    - $2a is written at $28788 from $2858c (hardcoded)
+
+  who stored it in $23 to begin with?
+   - $3d83b read it from $057f
+   - $3d22b copied that from $068d
+   - $3e2ee initialized $068d it to the value of $20 on entering room
+     not sure where this value of X came from
+   - $20 was initialized to first element of item table, 21-23 as later elts
+
+  elder's house:
+   - $068d read at $3d22b but written at $3e2f3
+
+patch: 1dd66 -> 1, 28a5c -> 8f
+    - this works by changing the name of the sword of wind to sword of fire
+    - not quite right.  why did we look at that address?!? -
+      28a5c is a lookup table for item names
+      follows directly after lookup table for town names, etc...
+
+before reading 1dd66 it pulled a jsr address from 3d885 -> $826f = $1c26f:
+
+  see (traces/get-sword-of-wind)
+
+3d856 runs every frame in town  
+
+
+would be interesting to run this trace if there's already a sword in that slot!
+  - no luck, it just clobbers no matter what!
+
+1df3a is some sort of table of (x,y) values
+
+refresh ($41) written to $6458
+
+  see (traces/get-refresh)
+
+windmill key ($32) written to $6450
+
+INVENTORY
+  6430 - 6433 = swords       +0
+  6434 - 6437 = armor        +4
+  6438 - 643b = shields      +8
+  643c - 643f = balls        +c
+  6440 - 6447 = consumables  +10
+  6448 - 644f = accessories  +18
+  6450 - 6457 = key items    +20
+  6458 - 645f = magic        +28
+
+$1db00 is item-indexed table of addresses ($8xxx=$1cxxx, $axxx=$1exxx)
+       item attributes seem to go here...?
+       first byte goes into X, second into Y when finding a slot
+$1dd66 is an identity table 00 -> 00 .. 4d -> 4d ??? [note: magic flight = 48]
+       starting at 4e we get 1d 12 1d 1d 22 1d 1d 1d 22 1d 21 28 ...
+       TODO - figure out what's in 49..4d, what the non-identity later slots do
+              these look like herbs, etc...? chest contents?
+       71..7f are back to normal, probably not used.
+
+theory: swords always live in the same slot, so no search happens
+ - that's a problem for us, we'll need to rewrite that code
+ - inventory screen automatically consolidates inventory?
+   where does that code live?  try adding item to middle and watch inv writes
+
+=======
+
+next: figure out where items live (probably right next to weapons)
+ - figure out where chests are stored
+ - figure out how the text works - is it easy to change or do we need to be fancy?
+
+Idea: nes.call(addr): push PC to stack manually, reset PC to the given addr (may need
+to do some page swapping???) and then it will eventually RTS to the original PC...?
+ (but how to handle page swaps?)
+
+
+=====
+Inventory is sorted on bringing up screen
+ - consider not sorting first page?  $20535 => $4 should do it...?
+ - make sure this doesn't screw up assumptions about ordering?
+
+
+======
+Opening a chest
+ - come into 1c26f w/ ($23) holds $50, which the chest table maps to $1d (herb)
+ - where did this number come from???
+    - written in $3d83b, copied from $0574 (also copied into $07dc)
+      [maybe $07dc is read back again if inventory was full???]
+    - $0574 is probably some sort of loaded level data...?
+      - actually $0560,y
+      - Y <- $0623 -- probably stores what we're intersecting
+
+ - $068d and friends come from a lookup table at $085f0, which is
+   presumably a different table for each screen?!?
+$3e2ba
+ - read $2f -> $#14; and 3 -> 0; <<2 | $#f0 -> $f0 => $24
+ - read it again -> >>2 | $#80 -> $85 => $25   get root level item table
+ - for (Y=3, Y>=0, Y--) ($20,y) <- ($24),y
+ - windmill key cave level item table is $85f0
+
+     execute $3e2d6 => level item table loaded, see what happened
+
+item tables (set watch on $24, $25; break on writing $068d or xing 3e2d6?)
+  pre-leaf: $99f4 ???? maybe nothing
+  leaf: 83f8
+  elder's house in leaf: 83f4  -> change [[[83f4 => 1 or 2]]]
+  rabbit shed: 84fc
+  student house: 85f0    - share objects?!?
+  windmill cave: 85f4 before talking to zebu?
+  zebu cave: 88bf? 8188? hmm
+
+not clear where the windmill key is coming from, given that
+it's in the wrong block...?  will need to look at entrance tp
+windmill cave more closely to see what $068d and $068e are doing and
+why we're getting a different value?
+
+  ...
+
+$1c126 and surrounding (shifting by 3, power of 2, xor) is probably
+  marking the item as claimed (makes sense to only do it if it was
+  successfully added to the inventory) - end of _112
+
+====
+
+item availability
+ - 6499 changed from $1 -> $41 when picked up onyx statue
+   - resetting to $1 puts the statue back
+
+=====
+
+telepathy
+ - $0623 seems to be set (to 15) when entering oak and talking with a dwarf
+   and read when entering tornel's house
+   - narrow down to whether it's entering or talking that triggers it...
+   - add a console watch for reading RAM in addition to writing it?
+ - not confident because we probably want sth saved to battery...?
+
+talk to dwarf - writes 6700 and 6701 (plus normal dialog stuff)
+ - figure out how text works... - better watch ---> stored in 6000..60ff
+ - not sure how translated
+
+
+====
+
+talk to student, 6594 written first time, read for second chat
+
+0001b2:dc: Write $6594: $00 -> $00 at $2fceb
+debug.js:468 000447:-1: Write $6594: $00 -> $0c at $1c042
+debug.js:477 000447:-1: Read $6594: $0c at $1c057
+debug.js:468 000447:00: Write $6594: $0c -> $0c at $1c066
+debug.js:115 reset log
+debug.js:468 000780:-1: Write $6594: $0c -> $0c at $1c042
+debug.js:477 000780:-1: Read $6594: $0c at $1c057
+debug.js:468 000780:02: Write $6594: $0c -> $0c at $1c066
+
+ - but simply resetting to 0 doesn't get us the money a second time...
+ - how are these dialog branches triggered?!?!? where is this extra state stored?!?
+
+======
+
+WARP:
+nes.buttonDown(1, 0); nes.buttonDown(1, 1);
+function warp() { nes.buttonDown(2, 0); setTimeout(() => nes.buttonUp(2, 0), 60) }
+ - possibly want to disable this as an option, for races
+
+
+ANGRY SEA:
+ - lots of key items centered on getting from joel to swan.
+   - broken statue, glowing lamp -> gold statue
+   - eye glasses (normally yield glowing lamp) could still be useful, tho
+ - but these are irrelevant if swan is already accessible some other way.
+   - do get a spell (barrier) upon passing barrier
+     - could move it to be when using the gold statue, since you can fly to it or
+       call the dolphin from above...? shouldn't be too hard to move that bit?
+ - how to ensure these aren't just pointless?
+   - if warp closed then we have much more restricted graph, unless doors
+     are randomized...?
+     - remove ice wall behind zebu -> acess oak and brynmaer from start even w/o fire sword
+     - could randomly remove walls?  or ...?
+
+USELESS ITEMS
+ - more generally, which items' sole purpose is to get between areas?
+   - gold statue, but just make it also redeemable for the spell
+   - flute of lime -> try to make it non-glitchable
+   - prison key -> also gets a spell, tho - flight or pause-glitching could circumvent
+   - kirisia plant (+change?) -> fetch quest for another item
+   - love pendant -> spell
+   - shell flute -> opens up evil island and 
+   - windmill key -> opens up sealed cave
+     - easy enough to go in the back if can warp from start - but may not be able to
+       open walls if ball of wind inside...?  ... mostly useless in that case.
+       - vampire does have an item, tho
+       - windmill key does get a spell
+
+ - consider hiding items in other locations, such as the lake in the corner of joel?
+
+
+PATCHES:
+  $20535 => $4 - prevent reordering swords
+     - would be nice to sort armor tho
+     - use an index table rather than just INY ?
+  $83f4 => 1-3 to get different sword  === doesn't seem to work
+     - may need to trace entering the house more closely
+  $3dd64 => A9 FF 60
+     - allow all warps from start
+     - need to tweak damage/weakness/level thresholds
+     - probably just half damage if below level and/or wrong sword
+       - otherwise too easy to get stuck if all enemies in an area are immune!
+
+
+MONSTERS:
+ - to randomize monsters, we basically need to pick two for any given region,
+ - what about cordel east? there's axemen, mushrooms, AND big blobs
+
+
+
+GLITCHES:
+  - shop glitch
+  - talk glitch - skip fruit of lime for kirisia and change for shyron
+  - ghetto flight glitch - skip water cave (sabera fight?)
+    - irrelevant with open warp anyway, and takes a lot of skill/practice
+
+
+FLAGS
+ - around $6480 and following seems to be a bunch of event flags?
+ - enter zebu cave triggers a check for $6494 to nonzero AND with $28 (where does this addr come from?)
+   - check at $1c13d -- follow up with this!
+   -- not sufficiently different, also checks for the elder bit? - next block
+   - $1c883 and $1c885 data table entries ($a5 and $b) turns into $14 and $1, mixed with $1c884
+      -> looks like it's rotating a two-byte word by 3 bits
+         ($24),y with y=(1 and 2), (3 and 4) - low 3 bits of y=2 used for x in $27 <- $1c167,x
+         upper 5 bits of y=2 and low 3 bits of y=1 end up in x for $6480,x at $1c13d
+         (y=1) & #$20 determines whether we're looking for bit to be set or unset
+          -- why always 28?
+         lower three bits of 
+   - index into the 1c5e0 data table (where these bytes are coming from - ($24) - is $5e for zebu
+     cave, came from $19567,$d -- NpcTable - as read by $3e1c5
+      - so the 4th byte in each entry seems to be a pointer into a data table for a condition on
+        whether the NPC appears.
+     
+ - first entrance into leaf sets 64dd:80 and 64de:20
+   - the latter is used for warping, the former who knows
+ - talking with student sets 6494:20 !  -- watch the ram write to see where that addr comes from, too!
+   - resetting this DOES allow getting the money twice
+ - elder => 6481:08
+ - exit cave => 648e:08
+
+ - Need to figure out (1) what these conditions are, (2) the different ways to write and read them
+   - not just NPC spawning, but map locations, etc, seem to affect this
+
+ main.watchPage(0x64) is very useful here! - $65xx appears to also be zeroed out, so there could be
+ some interesting data there, too.
+
+   -> set level to max, get best armor, waltz thru game and watch these memory locations like a hawk,
+      -> break on all writes, maybe?
+
+
+Dialog
+======
+Uses raster effects to swap out the CHR bank at scanline $0d for the text box.
+ - IRQ seems to trigger this,
+
+

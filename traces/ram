@@ -282,6 +282,46 @@ If non-zero, exit NMI handler immediately.
 TODO - why would we do DisableNMI and EnableNMI if we have this?
 
 
+$66..$6b
+--------
+These are three addresses pertaining to the current map.
+ - $3e6d0 writes all three of them from the middle bytes of the graphics table
+   - does it use them all right away? are they temporary?
+But they're also written elsewhere:
+ - $35a87 writes $68 every frame - from $0ff78
+   - different values 80, 10, f7, 55, 1c, 26, ... - sometimes seems to depend on movement
+   - read back at $35a99 (16-bit)
+     - conditionally also at $35ab5 and $6a read at $35aaf ????
+ - $3edc8/$3edd7 writes $67 many times on each screen change/scroll
+   - seem to add 0, 1, 2, or 3 to whatever was written before.
+   - read back a number of places...
+
+($66) points to one of 12 1k blocks of tile ID to pattern number mappings.
+  $66 is always zero, $67 is (at rest) a multiple of 4, though it is
+  temporarily incremented by 1, 2, or 3 to point to the different components
+  of the metatile.  The addresses are into the 16K ROM page at $14000..$16fff
+($68) is still unknown
+($6a) points to an address related to ($66) but in $17e00..$17fff - one of
+  12 32-byte blocks.
+
+
+$68 written in 35a87 from the contents of a table at ($10) (e.g. 02c64)
+ - $11 from 35a5c => read $6300,y (y=9), & #$1f | #$a0 [i.e. move to right bank]
+     y from ($37 << 3) | $35   -> are these object coords? (hi-y << 3 | hi-x)
+      - object was 0, per $35ec2
+ - swap into page ($6300,y >> 5)
+ - $10 gets low bits of coordinates, packed ($36 & #$f0) | ($34 >> 4)
+   -->  $68 <- ($10)
+   -->  $20 <- ($68)
+   if not :08 then pull $62f0,(xhi) and $35ae0,(yhi) and AND them together
+ windmill cave - first reads ($68),y = 4 [y=1], but then after updating
+ $68 from 4 to a, we get $1330a = 0 instead of $13304 = $e
+  - 6300,x was written at $3e665 from the screen data
+ This seems to have to do with conditions, like whether or not to put an
+  exit into sealed cave on valley of wind b4/after widmill
+  But there's more to it, since most pages have this.
+
+
 $6c
 ---
 
@@ -317,6 +357,16 @@ Set with map via exit - not sure what it's used for
 02cd75:16: Read $006d: $02 at $3e6a8
 02cd91:1d: Read $006d: $02 at $3ca55
 
+
+$6e..$6f
+--------
+
+Currently selected PRG banks.  This serves two purposes: (1) so that
+code can temporarily change them (i.e. `lda $6e; pha; lda #$1a; jsr
+SwitchBanks; <do stuff>; pla; jsr SwitchBanks`), and (2) so that
+interrupt handlers can restore pages correctly before returning
+(this insures against an interrupt in the middle of a bank switch
+operation by writing the target page *before* making the switch.
 
 
 
@@ -387,14 +437,14 @@ $f0..$17f
 ----------
 Music registers.  Unclear where they start; one might be the current
 song number that's playing.
- - 102 seems to be the current track, but changing it doesn't have the
+ - 102 seems to be the current bgm track, but changing it doesn't have the
    desired effect - $3c139 checks if it's changed before writing it, so
    presumably that's why it's stored, but the jump table for updating
    the APU is elsewhere.
  - 110 is the current playing (or last played) sound effect
- - 112 is ff is no sound effect is playing, or something else (possibly
+ - 112 is ff if no sound effect is playing, or something else (possibly
    an indication of when the sound effect will be done) if one is
-
+ - 111 is sound effect priority???
 
 
 
@@ -434,6 +484,7 @@ Equipment - see notes at top of Crystalis.asm
   $715 - equipped usable item (0=none, $8=warp boots, $15=alarm flute, $16=windmill key)
          when used, $1c398 resets back to 0
          when exit menu, $3db27 seems to "confirm" the selection made in $3d900
+  $716 - equipped accessory (0=none, 0d=gas m, 12=rabbit b, 14=shield r)
 ### my guess - 716 is accessory, 717 is magic
   $718 - equipped ball (1..4 for ball, 5..8 for bracelet)
   $719 - max charge level
@@ -441,19 +492,43 @@ Equipment - see notes at top of Crystalis.asm
 sword armor and shield written at $20339 (during inventory selection)
 charge written at $3d900 upon closing
 
+$7d7
+----
+Has to do with suppressing scrolling during explosions and before/during/after boss fights
+? zerod in 3e3f3 along w/ $7d6 and $51
+  outside start cave - 37852 writes $10, 3e8fd dec's to $0f alternately
+  also when sealed cave opens - seems to have something to do with explosions
+  also when blowing up
+eventually it stops resetting to $10 and decs down to 0 - each dec seems to disappear
+one metasprite (more or less)
+ - also for ice bridges
+BOSS FIGHT -
+  while scrolling the screen, $1e4ad writes $ff, which triggers the jump 
+  $3e9bb -> $3ea41 to no longer keep player in middle of screen
+  After the scroll, it goes back to the 10/0f loop, but 3e900/1e486
+ - boss explosion -> 37855/3e900
+ - after explosion, while chest unopened -> 1f7c0/3e900
+ - final 0 -> 0 write at 3e3f6
+
+
+$7e0..$7e7
+----------
+Palettes.  These index into the palette tables embedded in $4000..$7fff.
+The first four are bg palettes, the last 4 are sprites.
+
 
 $7f0..$7f5
 ----------
 Store CHR bank values for bank select 0..5:
-    0: Select 2 KB CHR bank at PPU $0000-$07FF
-    1: Select 2 KB CHR bank at PPU $0800-$0FFF
+    0: Select 2 KB CHR bank at PPU $0000-$07FF - background 1
+    1: Select 2 KB CHR bank at PPU $0800-$0FFF - background 2
        - This is used entirely for terrain animations (water, etc)
          and the possible values all come from the 32-byte data
          table at $3e779 (four eight-byte animation sequences)
-    2: Select 1 KB CHR bank at PPU $1000-$13FF
-    3: Select 1 KB CHR bank at PPU $1400-$17FF
-    4: Select 1 KB CHR bank at PPU $1800-$1BFF
-    5: Select 1 KB CHR bank at PPU $1C00-$1FFF
+    2: Select 1 KB CHR bank at PPU $1000-$13FF - player
+    3: Select 1 KB CHR bank at PPU $1400-$17FF - sword
+    4: Select 1 KB CHR bank at PPU $1800-$1BFF - npc 1
+    5: Select 1 KB CHR bank at PPU $1C00-$1FFF - npc 2
 
 $7ff
 ----
@@ -486,10 +561,20 @@ PPUDATA write staging area
 $62f0..$62fb
 ------------
 Some sort of nametable-initialization bitset?  might be larger?
+Location flags copied here form $64c0..$64df based on the location flags table.
+
+Map flags indexed by the tile position are checked when populating the nametable.
+
 
 $62fc..$62ff
 ------------
 Stores location full map geometry (width, height, animation, shop)
+
+$6300..$637f
+------------
+Map screen IDs, stored in 6300,(yh << 3 | xh) - this obviously implies that
+the maximum width of a map is 8, and is consistent with what we've seen
+elsewhere where yh has special handling for >8 but xh does not.
 
 
 $648x, $649x

@@ -463,11 +463,19 @@ a comment then just bail out."
       (asm/delete-range start end)
       (asm/insert-bytes bytes pos))))
 
+(defvar asm/bytes-width 16 "Number of bytes to output on a line.") 
+
+(defun asm-convert-to-bytes-width (start end width)
+  (interactive "r
+nBytes per line: ")
+  (let ((asm/bytes-width width))
+    (asm-convert-to-bytes start end)))
+
 (defun asm/insert-bytes (bytes &optional pos)
   "Inserts a .byte directive (or more, if many arguments)."
   (while bytes
-    (let ((extra (asm/seq-drop bytes 16)))
-      (setq bytes (asm/seq-take bytes 16))
+    (let ((extra (asm/seq-drop bytes asm/bytes-width)))
+      (setq bytes (asm/seq-take bytes asm/bytes-width))
       (insert (if pos (format "        $%05x              " pos) "  ")
               ".byte "
               (mapconcat (lambda (x) (format "$%02x" x)) bytes ",")

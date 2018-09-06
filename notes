@@ -470,9 +470,14 @@ FLAGS
       -> break on all writes, maybe?
 
 
+MAP HACKS
+ - add extra connections between distant towns? - open more randomization possibilities
+ - shuffle dungeons - could even add pit rooms instead of straight corridors...?
+   - we'd need to be able to totally rewrite the MapData table.
+
+
 Dialog
 ======
 Uses raster effects to swap out the CHR bank at scanline $0d for the text box.
  - IRQ seems to trigger this,
-
 

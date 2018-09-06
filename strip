@@ -153,6 +153,37 @@ sub infuse {
   }
 }
 
+# Any argument that matches this regex is unchanged from what we would print
+# without any help, so don't do anything fancy with it.
+my $addrModeRegex = qr/
+  \# \$ [0-9a-f]{2} |                       # Immediate
+  \$ [0-9-a-f]{2} [0-9a-f]{2}? (?:,[xy])? | # ZeroPsge[XY]?, Absolute[XY]?
+  \( \$ [0-9a-f]{2} (?: (?:,x)? \) | \),y ) # Preindexed, Postindex, Indirect
+/x;
+
+# TODO - heuristics for a bunch of things
+# 1. separate code blocks
+#    - if there are relative jumps across hard barriers then it's a single block
+#    - for separate blocks, reset indentation, add a fence, etc
+#    - skip adding the fence within a block???  - should always unindent???
+#    - find all jumps within block, pick temporary relative labels, figure out
+#      conflicts, resolve downward for +, upward for - (based on target).
+# 2. control flow indentation
+#    - indent all lines by one between ref and label?
+#    - if no indentation change across a label or ref, then indent all
+#      same-indented lines above by one more.
+# 3. page swaps and refs
+#    - indicate patterns that change page - spread to calls?
+#    - for each called or jumped address, keep a map of loaded pages
+#      if it's unique then just insert it
+#    - propagate to reading data tables?!?
+#    - for each called address, keep track of page changes within it
+#      - maybe just track register state...
+#    - if an address is unknown then reset after call to it
+#      - though we could possibly infer the fact that it's code and then
+#        disassemble it.
+
+
 sub initializeOpcodes {
   my %addrmodes = (
     ZeroPage => {bytes => 2, fmt => sub {sprintf ' $%02x', $_[0]}},

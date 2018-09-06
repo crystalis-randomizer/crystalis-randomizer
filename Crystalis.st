@@ -87,7 +87,7 @@ define BGM_START         $1f    ; computer booting up sound
 define SFX_MONSTER_HIT       $21
 define SFX_START_DOOR        $23  ; also start of teleport sequence
 define SFX_GET_COIN          $24
-define SFX_25                $25  ; a sort of tinkling chime
+define SFX_RECOVER_MAGIC     $25
 define SFX_SWORD_CHARGED     $26
 define SFX_27                $27  ; door opening??
 define SFX_28                $28  ; enemy sound?
@@ -160,6 +160,11 @@ define SFX_76                $76  ; a different lower sort of klaxon
 define SFX_7F                $7f  ; another explosion
 
 
+;;; Layouts of individual screens below.  Each screen is a 15x16 grid of
+;;; metatile indexes, The 16th row is not included in the map; it may be
+;;; used somehow, though.  Interestingly, ylo coordinates have the odd
+;;; behavior that the wrap around at $ef instead of $ff - I have yet to
+;;; find where this is implemented.
 RomBank_00                      ; @@ $8000
         $00000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $00010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -1187,8 +1192,7 @@ RomBank_01                      ; @@ $a000
         $03fe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $03ff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 RomBank_02                      ; @@ $8000
-;;; The layouts in bank 2 and 3 are smaller: last row is instead four palettes.
-;;; Presumably they're used in cases where there's no vertical scroll...?
+;;; Banks 2 and 3 include palettes in the otherwise-unused last row.
 MapScreen_40
         $04000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $04010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4779,6 +4783,7 @@ RomBank_07                      ; @@ $a000
         $0ffe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0fff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 RomBank_08                      ; @@ $8000
+BackgroundTilePatterns_00_TL
         $10000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10020              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4795,6 +4800,7 @@ RomBank_08                      ; @@ $8000
         $100d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $100e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $100f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_00_TR
         $10100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10110              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10120              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4811,6 +4817,7 @@ RomBank_08                      ; @@ $8000
         $101d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $101e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $101f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_00_BL
         $10200              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10220              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4827,6 +4834,7 @@ RomBank_08                      ; @@ $8000
         $102d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $102e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $102f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_00_BR
         $10300              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10310              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10320              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4843,6 +4851,7 @@ RomBank_08                      ; @@ $8000
         $103d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $103e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $103f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_01_TL
         $10400              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10410              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10420              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4859,6 +4868,7 @@ RomBank_08                      ; @@ $8000
         $104d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $104e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $104f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_01_TR
         $10500              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10510              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10520              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4875,6 +4885,7 @@ RomBank_08                      ; @@ $8000
         $105d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $105e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $105f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_01_BL
         $10600              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10610              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10620              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4891,6 +4902,7 @@ RomBank_08                      ; @@ $8000
         $106d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $106e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $106f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_01_BR
         $10700              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10710              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10720              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4907,6 +4919,7 @@ RomBank_08                      ; @@ $8000
         $107d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $107e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $107f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_02_TL
         $10800              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10810              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10820              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4923,6 +4936,7 @@ RomBank_08                      ; @@ $8000
         $108d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $108e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $108f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_02_TR
         $10900              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10910              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10920              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4939,6 +4953,7 @@ RomBank_08                      ; @@ $8000
         $109d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $109e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $109f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_02_BL
         $10a00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10a10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10a20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4955,6 +4970,7 @@ RomBank_08                      ; @@ $8000
         $10ad0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10ae0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10af0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_02_BR
         $10b00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10b10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10b20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4971,6 +4987,7 @@ RomBank_08                      ; @@ $8000
         $10bd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10be0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10bf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_03_TL
         $10c00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10c10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10c20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4987,6 +5004,7 @@ RomBank_08                      ; @@ $8000
         $10cd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10ce0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10cf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_03_TR
         $10d00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10d10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10d20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5003,6 +5021,7 @@ RomBank_08                      ; @@ $8000
         $10dd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10de0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10df0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_03_BL
         $10e00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10e10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10e20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5019,6 +5038,7 @@ RomBank_08                      ; @@ $8000
         $10ed0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10ee0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10ef0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_03_BR
         $10f00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10f10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $10f20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5040,7 +5060,7 @@ RomBank_08                      ; @@ $8000
 ;;; information, or (b) which CHR page needs to be loaded.  The latter is
 ;;; specified in MapData, while the former is presumably a combination of
 ;;; MapData and per-tile somewhere else.
-BackgroundTilePatternsTopLeft
+BackgroundTilePatterns_04_TL
         $11000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11020              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5057,7 +5077,7 @@ BackgroundTilePatternsTopLeft
         $110d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $110e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $110f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-BackgroundTilePatternsTopRight
+BackgroundTilePatterns_04_TR
         $11100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11110              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11120              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5074,7 +5094,7 @@ BackgroundTilePatternsTopRight
         $111d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $111e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $111f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-BackgroundTilePatternsBottomLeft
+BackgroundTilePatterns_04_BL
         $11200              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11220              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5091,7 +5111,7 @@ BackgroundTilePatternsBottomLeft
         $112d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $112e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $112f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-BackgroundTilePatternsBottomRight
+BackgroundTilePatterns_04_BR
         $11300              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11310              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11320              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5108,6 +5128,7 @@ BackgroundTilePatternsBottomRight
         $113d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $113e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $113f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_05_TL
         $11400              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11410              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11420              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5124,6 +5145,7 @@ BackgroundTilePatternsBottomRight
         $114d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $114e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $114f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_05_TR
         $11500              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11510              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11520              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5140,6 +5162,7 @@ BackgroundTilePatternsBottomRight
         $115d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $115e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $115f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_05_BL
         $11600              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11610              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11620              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5156,6 +5179,7 @@ BackgroundTilePatternsBottomRight
         $116d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $116e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $116f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_05_BR
         $11700              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11710              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11720              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5172,6 +5196,7 @@ BackgroundTilePatternsBottomRight
         $117d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $117e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $117f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_06_TL
         $11800              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11810              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11820              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5188,6 +5213,7 @@ BackgroundTilePatternsBottomRight
         $118d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $118e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $118f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_06_TR
         $11900              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11910              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11920              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5204,6 +5230,7 @@ BackgroundTilePatternsBottomRight
         $119d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $119e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $119f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_06_BL
         $11a00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11a10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11a20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5220,6 +5247,7 @@ BackgroundTilePatternsBottomRight
         $11ad0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11ae0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11af0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_06_BR
         $11b00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11b10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11b20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5236,6 +5264,7 @@ BackgroundTilePatternsBottomRight
         $11bd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11be0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11bf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_07_TL
         $11c00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11c10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11c20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5252,6 +5281,7 @@ BackgroundTilePatternsBottomRight
         $11cd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11ce0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11cf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_07_TR
         $11d00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11d10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11d20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5268,6 +5298,7 @@ BackgroundTilePatternsBottomRight
         $11dd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11de0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11df0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_07_BL
         $11e00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11e10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11e20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5284,6 +5315,7 @@ BackgroundTilePatternsBottomRight
         $11ed0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11ee0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11ef0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_07_BR
         $11f00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11f10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11f20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5301,6 +5333,7 @@ BackgroundTilePatternsBottomRight
         $11fe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $11ff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 RomBank_09                      ; @@ $a000
+BackgroundTilePatterns_08_TL
         $12000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12020              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5317,6 +5350,7 @@ RomBank_09                      ; @@ $a000
         $120d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $120e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $120f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_08_TR
         $12100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12110              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12120              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5333,6 +5367,7 @@ RomBank_09                      ; @@ $a000
         $121d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $121e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $121f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_08_BL
         $12200              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12220              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5349,6 +5384,7 @@ RomBank_09                      ; @@ $a000
         $122d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $122e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $122f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_08_BR
         $12300              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12310              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12320              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5365,6 +5401,7 @@ RomBank_09                      ; @@ $a000
         $123d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $123e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $123f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_09_TL
         $12400              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12410              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12420              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5381,6 +5418,7 @@ RomBank_09                      ; @@ $a000
         $124d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $124e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $124f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_09_TR
         $12500              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12510              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12520              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5397,6 +5435,7 @@ RomBank_09                      ; @@ $a000
         $125d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $125e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $125f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_09_BL
         $12600              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12610              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12620              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5413,6 +5452,7 @@ RomBank_09                      ; @@ $a000
         $126d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $126e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $126f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_09_BR
         $12700              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12710              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12720              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5429,6 +5469,7 @@ RomBank_09                      ; @@ $a000
         $127d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $127e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $127f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_0A_TL
         $12800              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12810              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12820              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5445,6 +5486,7 @@ RomBank_09                      ; @@ $a000
         $128d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $128e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $128f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_0A_TR
         $12900              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12910              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12920              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5461,6 +5503,7 @@ RomBank_09                      ; @@ $a000
         $129d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $129e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $129f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_0A_BL
         $12a00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12a10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12a20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5477,6 +5520,7 @@ RomBank_09                      ; @@ $a000
         $12ad0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12ae0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12af0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_0A_BR
         $12b00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12b10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12b20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5493,6 +5537,7 @@ RomBank_09                      ; @@ $a000
         $12bd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12be0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12bf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_0B_TL
         $12c00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12c10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12c20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5509,6 +5554,7 @@ RomBank_09                      ; @@ $a000
         $12cd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12ce0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12cf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_0B_TR
         $12d00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12d10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12d20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5525,6 +5571,7 @@ RomBank_09                      ; @@ $a000
         $12dd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12de0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12df0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_0B_BL
         $12e00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12e10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12e20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5541,6 +5588,7 @@ RomBank_09                      ; @@ $a000
         $12ed0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12ee0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12ef0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+BackgroundTilePatterns_0B_BR
         $12f00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12f10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $12f20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5559,66 +5607,82 @@ RomBank_09                      ; @@ $a000
         $12ff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         ;; Map tile data here somehow?!?
         ;; Groups of $40 indexed by ($10) set in ...?
+MetatileAttributesMap_00
         $13000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13020              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13030              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAttributesMap_01
         $13040              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13050              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13060              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13070              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAttributesMap_02
         $13080              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13090              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $130a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $130b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAttributesMap_03
         $130c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $130d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $130e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $130f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAttributesMap_04
         $13100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13110              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13120              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13130              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAttributesMap_05
         $13140              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13150              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13160              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13170              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAttributesMap_06
         $13180              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13190              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $131a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $131b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAttributesMap_07
         $131c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $131d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $131e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $131f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAttributesMap_08
         $13200              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13220              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13230              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAttributesMap_09
         $13240              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13250              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13260              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13270              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAttributesMap_0A
         $13280              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13290              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $132a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $132b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAttributesMap_0B
         $132c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $132d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $132e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $132f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAttributesMap_0C
         $13300              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13310              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13320              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13330              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAttributesMap_0D
         $13340              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13350              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13360              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13370              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAttributesMap_0E
         $13380              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13390              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $133a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $133b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAttributesMap_0F
         $133c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $133d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $133e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5783,36 +5847,52 @@ RomBank_09                      ; @@ $a000
         $13dd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13de0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13df0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAlternativesMap_00
         $13e00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13e10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAlternativesMap_01
         $13e20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13e30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAlternativesMap_02
         $13e40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13e50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAlternativesMap_03
         $13e60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13e70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAlternativesMap_04
         $13e80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13e90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAlternativesMap_05
         $13ea0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13eb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAlternativesMap_06
         $13ec0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13ed0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAlternativesMap_07
         $13ee0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13ef0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAlternativesMap_08
         $13f00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13f10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAlternativesMap_09
         $13f20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13f30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAlternativesMap_0A
         $13f40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13f50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAlternativesMap_0B
         $13f60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13f70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAlternativesMap_0C
         $13f80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13f90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAlternativesMap_0D
         $13fa0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13fb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAlternativesMap_0E
         $13fc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13fd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileAlternativesMap_0F
         $13fe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13ff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 RomBank_0a                      ; @@ $8000  -- MAPDATA_BANK
@@ -5881,12 +5961,15 @@ RomBank_0a                      ; @@ $8000  -- MAPDATA_BANK
 ;;;      - The remainder of this chunk is ($62fc + 1) * ($62fd * 1) bytes
 ;;;        referring to the screens of the map.  Each byte is the high byte
 ;;;        of the 16x16 array of tiles in ROM locations $0000..$ffff.
+;;; 
 ;;; The next subtable is graphics info: 3 bytes for the palettes (the 4th
-;;; palette is permanently $7f), followed by two bytes $67 and $69, and then
-;;; two bytes for palette tables ($7f0 and $7f1).  Note that non-zero animation
-;;; mode will clobber $7f1...? so use 0 if there's any animation???
+;;; palette is permanently $7f), followed by a byte for the tile-to-pattern
+;;; mapping ($67) and one for ????? ($69), and then two bytes for pattern tables
+;;; ($7f0 and $7f1).  Note that non-zero animation mode will clobber $7f1...? so
+;;; use 0 if there's any animation???  (doesn't seem to be right -> cordel plains)
 ;;;
-;;; The next [2] table is currently unknown
+;;; The [2] table is entrances.  Each 4-byte entry is a set of object coordinates
+;;; that can be copied to $[79bd]0 for the player to start at the right spot.
 ;;;
 ;;; The [3] table is exits.  Possibly also entrances, though it's not clear how these map.
 ;;; The structure is groups of four bytes: (x, y, dest, entrance).  The x/y coords are
@@ -5896,8 +5979,23 @@ RomBank_0a                      ; @@ $8000  -- MAPDATA_BANK
 ;;; enemies in RAM at once - so the coordinates are unchanged, but the location changes
 ;;; bringing in a new set of NPCs.  The table is terminated by a $ff.
 ;;;
-;;; The [4] table is $ff-terminated pairs (a, b).
-
+;;; The [4] table is a mapping of bits to copy from the flag table $64c0 to the map
+;;; data area $62f0.  The first byte is a bit index into the source $64c0 (5 bits
+;;; for the byte - $64c0..$64df, and 3 bits for the bit :01..:80), while the second
+;;; byte is the target as an index into $62f0, with the :08 bit ignored (so the 4 bits
+;;; to select the byte is just the upper nibble).  These flags indicate blockers that
+;;; can be removed (e.g. the sealed cave, or a rock/ice wall).
+;;;
+;;; An optional [5] table may be specified as well, and will be read on-demand when
+;;; the player falls into a pit.  It is an ff-terminated list of quads:
+;;;   - the location to fall into
+;;;   - (from-x)(to-x) each nibble has a screen index (high nibble) of a coordinate
+;;;   - ??? - does not appear to ever be used - in theory it's the high nibble of
+;;;           the y screen coordinate, but this is (almost?) always zero (always
+;;;           for screens with pits).  For the low nibble, only :08 seems to be
+;;;           used, but even then it's always unset - so I don't know why it's ever
+;;;           nonzero, or even exists at all.
+;;;   - (from-y)(to-y) same as x above
 MapData                         ; Not quite sure where this is going - it's used at $3c7af
         $14300              .word ($xxxx) ; $144f8: 00 Start ("Mezame Shrine")
         $14302              .word ($xxxx) ; $1452f: 01 OutsideStart
@@ -6154,17 +6252,23 @@ MapDataPart2
         $144f6              .word ($xxxx) ; $17a9f: fb =SaharaPawnShop
 ;;; ----------------------------------------------------------------
 MapData_Start                                          ; Location 00
-        $144f8              .word ($xxxx)
-        $144fa              .word ($xxxx)
-        $144fc              .word ($xxxx)
-        $144fe              .word ($xxxx)
-        $14500              .word ($xxxx)
+        $144f8              .word ($xxxx) ; $14502
+        $144fa              .word ($xxxx) ; $14508
+        $144fc              .word ($xxxx) ; $1450f
+        $144fe              .word ($xxxx) ; $14517
+        $14500              .word ($xxxx) ; $1452c
+MapData_Start_Layout
         $14502              .byte $xx
         $14503              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $14507              .byte $xx
-        $14508              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1450f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Start_Graphics
+        $14508              .byte $xx,$xx,$xx
+        $1450b              .byte $xx,$xx
+        $1450d              .byte $xx,$xx
+MapData_Start_Entrances
+        $1450f              .byte $xx,$xx,$xx,$xx ; Entrance at bottom
+        $14513              .byte $xx,$xx,$xx,$xx ; Start door
 MapData_Start_Exits
         $14517              .byte $xx,$xx,$xx,$xx ; Exit to OutsideStart, 5 wide
         $1451b              .byte $xx,$xx,$xx,$xx
@@ -6172,21 +6276,28 @@ MapData_Start_Exits
         $14523              .byte $xx,$xx,$xx,$xx
         $14527              .byte $xx,$xx,$xx,$xx
         $1452b              .byte $xx
-        $1452c              .byte $xx,$xx
+MapData_Start_Flags
+        $1452c              .byte $xx,$xx ; $64dd:80 -> $62f0:01
         $1452e              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_OutsideStart                                   ; Location 01
-        $1452f              .word ($xxxx)
-        $14531              .word ($xxxx)
-        $14533              .word ($xxxx)
-        $14535              .word ($xxxx)
-        $14537              .word ($xxxx)
+        $1452f              .word ($xxxx) ; $14539
+        $14531              .word ($xxxx) ; $1453f
+        $14533              .word ($xxxx) ; $14546
+        $14535              .word ($xxxx) ; $1454e
+        $14537              .word ($xxxx) ; $1456c
+MapData_OutsideStart_Layout
         $14539              .byte $xx
         $1453a              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1453e              .byte $xx
-        $1453f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14546              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_OutsideStart_Graphics
+        $1453f              .byte $xx,$xx,$xx
+        $14542              .byte $xx,$xx
+        $14544              .byte $xx,$xx
+MapData_OutsideStart_Entrances
+        $14546              .byte $xx,$xx,$xx,$xx ; From Start cave
+        $1454a              .byte $xx,$xx,$xx,$xx ; From Leaf
 MapData_OutsideStart_Exits
         $1454e              .byte $xx,$xx,$xx,$xx ; Exit to Start, 2x2 (why?)
         $14552              .byte $xx,$xx,$xx,$xx
@@ -6196,16 +6307,16 @@ MapData_OutsideStart_Exits
         $14562              .byte $xx,$xx,$xx,$xx
         $14566              .byte $xx,$xx,$xx,$xx
         $1456a              .byte $xx,$xx         ; Fall through since $ff below will catch
-        $1456c              .byte $xx,$xx
+MapData_OutsideStart_Flags
+        $1456c              .byte $xx,$xx ; $64dd:80 -> $62f0:01
         $1456e              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Leaf                                           ; Location 02
-        ;; Five different data tables about Leaf...
-        $1456f              .word ($xxxx) ; Layout
-        $14571              .word ($xxxx) ; Graphics
-        $14573              .word ($xxxx)
-        $14575              .word ($xxxx) ; Exits
-        $14577              .word ($xxxx)
+        $1456f              .word ($xxxx) ; $14579
+        $14571              .word ($xxxx) ; $14582
+        $14573              .word ($xxxx) ; $14589
+        $14575              .word ($xxxx) ; $145a9
+        $14577              .word ($xxxx) ; $145d6
 MapData_Leaf_Layout
         $14579              .byte $xx
         $1457a              .byte $xx,$xx,$xx,$xx
@@ -6213,12 +6324,18 @@ MapData_Leaf_Layout
         $1457e              .byte $xx,$xx
         $14580              .byte $xx,$xx
 MapData_Leaf_Graphics
-        $14582              .byte $xx,$xx,$xx ; Palettes
-        $14585              .byte $xx,$xx     ; Attributes ???
-        $14587              .byte $xx,$xx     ; Patterns
-MapData_Leaf_Table2
-        $14589              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14599              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $14582              .byte $xx,$xx,$xx
+        $14585              .byte $xx,$xx
+        $14587              .byte $xx,$xx
+MapData_Leaf_Entrances
+        $14589              .byte $xx,$xx,$xx,$xx ; From cave (or warp)
+        $1458d              .byte $xx,$xx,$xx,$xx ; From valley of wind
+        $14591              .byte $xx,$xx,$xx,$xx ; From elder's house
+        $14595              .byte $xx,$xx,$xx,$xx ; From hut
+        $14599              .byte $xx,$xx,$xx,$xx ; From stdent's house
+        $1459d              .byte $xx,$xx,$xx,$xx ; From tool shop
+        $145a1              .byte $xx,$xx,$xx,$xx ; From armor shop
+        $145a5              .byte $xx,$xx,$xx,$xx ; From inn
 MapData_Leaf_Exits
         $145a9              .byte $xx,$xx,$xx,$xx ; Exit to OutsideStart (3 tall)
         $145ad              .byte $xx,$xx,$xx,$xx
@@ -6232,16 +6349,17 @@ MapData_Leaf_Exits
         $145cd              .byte $xx,$xx,$xx,$xx ; Exit to LeafArmorShop
         $145d1              .byte $xx,$xx,$xx,$xx ; Exit to LeafInn
         $145d5              .byte $xx
-MapData_Leaf_Table4
-        $145d6              .byte $xx,$xx
+MapData_Leaf_Flags
+        $145d6              .byte $xx,$xx ; $64d0:04 -> $62f0:01
         $145d8              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_ValleyOfWind                                   ; Location 03
-        $145d9              .word ($xxxx)
-        $145db              .word ($xxxx)
-        $145dd              .word ($xxxx)
-        $145df              .word ($xxxx)
-        $145e1              .word ($xxxx)
+        $145d9              .word ($xxxx) ; $145e3
+        $145db              .word ($xxxx) ; $1460b
+        $145dd              .word ($xxxx) ; $14612
+        $145df              .word ($xxxx) ; $1462a
+        $145e1              .word ($xxxx) ; $14653
+MapData_ValleyOfWind_Layout
         $145e3              .byte $xx
         $145e4              .byte $xx,$xx,$xx,$xx
         ;; Map 5x7
@@ -6252,9 +6370,17 @@ MapData_ValleyOfWind                                   ; Location 03
         $145fc              .byte $xx,$xx,$xx,$xx,$xx
         $14601              .byte $xx,$xx,$xx,$xx,$xx
         $14606              .byte $xx,$xx,$xx,$xx,$xx
-        $1460b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14612              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14622              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_ValleyOfWind_Graphics
+        $1460b              .byte $xx,$xx,$xx
+        $1460e              .byte $xx,$xx
+        $14610              .byte $xx,$xx
+MapData_ValleyOfWind_Entrances
+        $14612              .byte $xx,$xx,$xx,$xx
+        $14616              .byte $xx,$xx,$xx,$xx
+        $1461a              .byte $xx,$xx,$xx,$xx
+        $1461e              .byte $xx,$xx,$xx,$xx
+        $14622              .byte $xx,$xx,$xx,$xx
+        $14626              .byte $xx,$xx,$xx,$xx
 MapData_ValleyOfWind_Exits
         $1462a              .byte $xx,$xx,$xx,$xx ; Exit to Leaf (2 wide)
         $1462e              .byte $xx,$xx,$xx,$xx
@@ -6267,16 +6393,17 @@ MapData_ValleyOfWind_Exits
         $1464a              .byte $xx,$xx,$xx,$xx ; Exit to Zebu's Cave (2 wide)
         $1464e              .byte $xx,$xx,$xx,$xx
         $14652              .byte $xx
-        $14653              .byte $xx,$xx
+MapData_ValleyOfWind_Flags
+        $14653              .byte $xx,$xx ; $64dd:40 -> $62f1:02 windmill started
         $14655              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_WindmillCave                                   ; Location 0e
-        $14656              .word ($xxxx)
-        $14658              .word ($xxxx)
-        $1465a              .word ($xxxx)
-        $1465c              .word ($xxxx)
-        $1465e              .word ($xxxx)
-MapData_WindmillCave_Map
+        $14656              .word ($xxxx) ; $14660
+        $14658              .word ($xxxx) ; $14671
+        $1465a              .word ($xxxx) ; $14678
+        $1465c              .word ($xxxx) ; $14680
+        $1465e              .word ($xxxx) ; $14691
+MapData_WindmillCave_Layout
         $14660              .byte $xx
         $14661              .byte $xx,$xx,$xx,$xx
         ;; Map 3x4
@@ -6284,39 +6411,52 @@ MapData_WindmillCave_Map
         $14668              .byte $xx,$xx,$xx
         $1466b              .byte $xx,$xx,$xx
         $1466e              .byte $xx,$xx,$xx
-        $14671              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14678              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_WindmillCave_Graphics
+        $14671              .byte $xx,$xx,$xx
+        $14674              .byte $xx,$xx
+        $14676              .byte $xx,$xx
+MapData_WindmillCave_Entrances
+        $14678              .byte $xx,$xx,$xx,$xx
+        $1467c              .byte $xx,$xx,$xx,$xx
 MapData_WindmillCave_Exits
         $14680              .byte $xx,$xx,$xx,$xx
         $14684              .byte $xx,$xx,$xx,$xx
         $14688              .byte $xx,$xx,$xx,$xx
         $1468c              .byte $xx,$xx,$xx,$xx
         $14690              .byte $xx
+MapData_WindmillCave_Flags
         $14691              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Windmill                                       ; Location 0f
-        $14692              .word ($xxxx)
-        $14694              .word ($xxxx)
-        $14696              .word ($xxxx)
-        $14698              .word ($xxxx)
-        $1469a              .word ($xxxx)
+        $14692              .word ($xxxx) ; $1469c
+        $14694              .word ($xxxx) ; $146a2
+        $14696              .word ($xxxx) ; $146a9
+        $14698              .word ($xxxx) ; $146ad
+        $1469a              .word ($xxxx) ; $146b2
+MapData_Windmill_Layout
         $1469c              .byte $xx
         $1469d              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $146a1              .byte $xx
-        $146a2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Windmill_Graphics
+        $146a2              .byte $xx,$xx,$xx
+        $146a5              .byte $xx,$xx
+        $146a7              .byte $xx,$xx
+MapData_Windmill_Entrances
         $146a9              .byte $xx,$xx,$xx,$xx
 MapData_Windmill_Exits
         $146ad              .byte $xx,$xx,$xx,$xx
         $146b1              .byte $xx
+MapData_Windmill_Flags
         $146b2              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_ZebuCave                                       ; Location 10
-        $146b3              .word ($xxxx)
-        $146b5              .word ($xxxx)
-        $146b7              .word ($xxxx)
-        $146b9              .word ($xxxx)
-        $146bb              .word ($xxxx)
+        $146b3              .word ($xxxx) ; $146bd
+        $146b5              .word ($xxxx) ; $146d2
+        $146b7              .word ($xxxx) ; $146d9
+        $146b9              .word ($xxxx) ; $146e1
+        $146bb              .word ($xxxx) ; $146f2
+MapData_ZebuCave_Layout
         $146bd              .byte $xx
         $146be              .byte $xx,$xx,$xx,$xx
         ;; Map 4x4
@@ -6324,23 +6464,30 @@ MapData_ZebuCave                                       ; Location 10
         $146c6              .byte $xx,$xx,$xx,$xx
         $146ca              .byte $xx,$xx,$xx,$xx
         $146ce              .byte $xx,$xx,$xx,$xx
-        $146d2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $146d9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_ZebuCave_Graphics
+        $146d2              .byte $xx,$xx,$xx
+        $146d5              .byte $xx,$xx
+        $146d7              .byte $xx,$xx
+MapData_ZebuCave_Entrances
+        $146d9              .byte $xx,$xx,$xx,$xx
+        $146dd              .byte $xx,$xx,$xx,$xx
 MapData_ZebuCave_Exits
         $146e1              .byte $xx,$xx,$xx,$xx
         $146e5              .byte $xx,$xx,$xx,$xx
         $146e9              .byte $xx,$xx,$xx,$xx
         $146ed              .byte $xx,$xx,$xx,$xx
         $146f1              .byte $xx
-        $146f2              .byte $xx,$xx
+MapData_ZebuCave_Flags
+        $146f2              .byte $xx,$xx ; $64dd:20 -> $62f2:02
         $146f4              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreWestCave1                               ; Location 11
-        $146f5              .word ($xxxx)
-        $146f7              .word ($xxxx)
-        $146f9              .word ($xxxx)
-        $146fb              .word ($xxxx)
-        $146fd              .word ($xxxx)
+        $146f5              .word ($xxxx) ; $146ff
+        $146f7              .word ($xxxx) ; $1470c
+        $146f9              .word ($xxxx) ; $14713
+        $146fb              .word ($xxxx) ; $1471b
+        $146fd              .word ($xxxx) ; $1472c
+MapData_MtSabreWestCave1_Layout
         $146ff              .byte $xx
         $14700              .byte $xx,$xx,$xx,$xx
         ;; Map 2x4
@@ -6348,84 +6495,111 @@ MapData_MtSabreWestCave1                               ; Location 11
         $14706              .byte $xx,$xx
         $14708              .byte $xx,$xx
         $1470a              .byte $xx,$xx
-        $1470c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14713              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_MtSabreWestCave1_Graphics
+        $1470c              .byte $xx,$xx,$xx
+        $1470f              .byte $xx,$xx
+        $14711              .byte $xx,$xx
+MapData_MtSabreWestCave1_Entrances
+        $14713              .byte $xx,$xx,$xx,$xx
+        $14717              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreWestCave1_Exits
         $1471b              .byte $xx,$xx,$xx,$xx ; To Zebu's Cave
         $1471f              .byte $xx,$xx,$xx,$xx
         $14723              .byte $xx,$xx,$xx,$xx ; To Mt Sabre West
         $14727              .byte $xx,$xx,$xx,$xx
         $1472b              .byte $xx
+MapData_MtSabreWestCave1_Flags
         $1472c              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_SealedCave1                                    ; Location 04
-        $1472d              .word ($xxxx)
-        $1472f              .word ($xxxx)
-        $14731              .word ($xxxx)
-        $14733              .word ($xxxx)
-        $14735              .word ($xxxx)
+        $1472d              .word ($xxxx) ; $14737
+        $1472f              .word ($xxxx) ; $14745
+        $14731              .word ($xxxx) ; $1474c
+        $14733              .word ($xxxx) ; $14754
+        $14735              .word ($xxxx) ; $14765
+MapData_SealedCave1_Layout
         $14737              .byte $xx
         $14738              .byte $xx,$xx,$xx,$xx
         ;; Map 3x3
         $1473c              .byte $xx,$xx,$xx
         $1473f              .byte $xx,$xx,$xx
         $14742              .byte $xx,$xx,$xx
-        $14745              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1474c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_SealedCave1_Graphics
+        $14745              .byte $xx,$xx,$xx
+        $14748              .byte $xx,$xx
+        $1474a              .byte $xx,$xx
+MapData_SealedCave1_Entrances
+        $1474c              .byte $xx,$xx,$xx,$xx
+        $14750              .byte $xx,$xx,$xx,$xx
 MapData_SealedCave1_Exits
         $14754              .byte $xx,$xx,$xx,$xx
         $14758              .byte $xx,$xx,$xx,$xx
         $1475c              .byte $xx,$xx,$xx,$xx
         $14760              .byte $xx,$xx,$xx,$xx
         $14764              .byte $xx
+MapData_SealedCave1_Flags
         $14765              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_SealedCave2                                    ; Location 05
-        $14766              .word ($xxxx)
-        $14768              .word ($xxxx)
-        $1476a              .word ($xxxx)
-        $1476c              .word ($xxxx)
-        $1476e              .word ($xxxx)
+        $14766              .word ($xxxx) ; $14770
+        $14768              .word ($xxxx) ; $14781
+        $1476a              .word ($xxxx) ; $14788
+        $1476c              .word ($xxxx) ; $14790
+        $1476e              .word ($xxxx) ; $147a1
+MapData_SealedCave2_Layout
         $14770              .byte $xx
         $14771              .byte $xx,$xx,$xx,$xx
         ;; Map 4x3
         $14775              .byte $xx,$xx,$xx,$xx
         $14779              .byte $xx,$xx,$xx,$xx
         $1477d              .byte $xx,$xx,$xx,$xx
-        $14781              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14788              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_SealedCave2_Graphics
+        $14781              .byte $xx,$xx,$xx
+        $14784              .byte $xx,$xx
+        $14786              .byte $xx,$xx
+MapData_SealedCave2_Entrances
+        $14788              .byte $xx,$xx,$xx,$xx
+        $1478c              .byte $xx,$xx,$xx,$xx
 MapData_SealedCave2_Exits
         $14790              .byte $xx,$xx,$xx,$xx
         $14794              .byte $xx,$xx,$xx,$xx
         $14798              .byte $xx,$xx,$xx,$xx
         $1479c              .byte $xx,$xx,$xx,$xx
         $147a0              .byte $xx
+MapData_SealedCave2_Flags
         $147a1              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_SealedCave3                                    ; Location 06
-        $147a2              .word ($xxxx)
-        $147a4              .word ($xxxx)
-        $147a6              .word ($xxxx)
-        $147a8              .word ($xxxx)
-        $147aa              .word ($xxxx)
+        $147a2              .word ($xxxx) ; $147ac
+        $147a4              .word ($xxxx) ; $147b4
+        $147a6              .word ($xxxx) ; $147bb
+        $147a8              .word ($xxxx) ; $147bf
+        $147aa              .word ($xxxx) ; $147c8
+MapData_SealedCave3_Layout
         $147ac              .byte $xx
         $147ad              .byte $xx,$xx,$xx,$xx
         ;; Map 3x1
         $147b1              .byte $xx,$xx,$xx
-        $147b4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_SealedCave3_Graphics
+        $147b4              .byte $xx,$xx,$xx
+        $147b7              .byte $xx,$xx
+        $147b9              .byte $xx,$xx
+MapData_SealedCave3_Entrances
         $147bb              .byte $xx,$xx,$xx,$xx
 MapData_SealedCave3_Exits
         $147bf              .byte $xx,$xx,$xx,$xx
         $147c3              .byte $xx,$xx,$xx,$xx
         $147c7              .byte $xx
+MapData_SealedCave3_Flags
         $147c8              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_SealedCave4                                    ; Location 07
-        $147c9              .word ($xxxx)
-        $147cb              .word ($xxxx)
-        $147cd              .word ($xxxx)
-        $147cf              .word ($xxxx)
-        $147d1              .word ($xxxx)
+        $147c9              .word ($xxxx) ; $147d3
+        $147cb              .word ($xxxx) ; $147ea
+        $147cd              .word ($xxxx) ; $147f1
+        $147cf              .word ($xxxx) ; $147f5
+        $147d1              .word ($xxxx) ; $147fe
+MapData_SealedCave4_Layout
         $147d3              .byte $xx
         $147d4              .byte $xx,$xx,$xx,$xx
         ;; Map 3x6
@@ -6435,49 +6609,69 @@ MapData_SealedCave4                                    ; Location 07
         $147e1              .byte $xx,$xx,$xx
         $147e4              .byte $xx,$xx,$xx
         $147e7              .byte $xx,$xx,$xx
-        $147ea              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_SealedCave4_Graphics
+        $147ea              .byte $xx,$xx,$xx
+        $147ed              .byte $xx,$xx
+        $147ef              .byte $xx,$xx
+MapData_SealedCave4_Entrances
         $147f1              .byte $xx,$xx,$xx,$xx
 MapData_SealedCave4_Exits
         $147f5              .byte $xx,$xx,$xx,$xx
         $147f9              .byte $xx,$xx,$xx,$xx
         $147fd              .byte $xx
-        $147fe              .byte $xx,$xx,$xx
+MapData_SealedCave4_Flags
+        $147fe              .byte $xx,$xx ; $64dd:10 -> $62f1:04
+        $14800              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_SealedCave5                                    ; Location 08
-        $14801              .word ($xxxx)
-        $14803              .word ($xxxx)
-        $14805              .word ($xxxx)
-        $14807              .word ($xxxx)
-        $14809              .word ($xxxx)
+        $14801              .word ($xxxx) ; $1480b
+        $14803              .word ($xxxx) ; $14813
+        $14805              .word ($xxxx) ; $1481a
+        $14807              .word ($xxxx) ; $1481e
+        $14809              .word ($xxxx) ; $14827
+MapData_SealedCave5_Layout
         $1480b              .byte $xx
         $1480c              .byte $xx,$xx,$xx,$xx
         ;; Map 1x3
         $14810              .byte $xx
         $14811              .byte $xx
         $14812              .byte $xx
-        $14813              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_SealedCave5_Graphics
+        $14813              .byte $xx,$xx,$xx
+        $14816              .byte $xx,$xx
+        $14818              .byte $xx,$xx
+MapData_SealedCave5_Entrances
         $1481a              .byte $xx,$xx,$xx,$xx
 MapData_SealedCave5_Exits
         $1481e              .byte $xx,$xx,$xx,$xx
         $14822              .byte $xx,$xx,$xx,$xx
         $14826              .byte $xx
+MapData_SealedCave5_Flags
         $14827              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_SealedCave6                                    ; Location 09
-        $14828              .word ($xxxx)
-        $1482a              .word ($xxxx)
-        $1482c              .word ($xxxx)
-        $1482e              .word ($xxxx)
-        $14830              .word ($xxxx)
+        $14828              .word ($xxxx) ; $14832
+        $1482a              .word ($xxxx) ; $14846
+        $1482c              .word ($xxxx) ; $1484d
+        $1482e              .word ($xxxx) ; $14861
+        $14830              .word ($xxxx) ; $1488a
+MapData_SealedCave6_Layout
         $14832              .byte $xx
         $14833              .byte $xx,$xx,$xx,$xx
         ;; Map 5x3
         $14837              .byte $xx,$xx,$xx,$xx,$xx
         $1483c              .byte $xx,$xx,$xx,$xx,$xx
         $14841              .byte $xx,$xx,$xx,$xx,$xx
-        $14846              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14850              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14860              .byte $xx
+MapData_SealedCave6_Graphics
+        $14846              .byte $xx,$xx,$xx
+        $14849              .byte $xx,$xx
+        $1484b              .byte $xx,$xx
+MapData_SealedCave6_Entrances
+        $1484d              .byte $xx,$xx,$xx,$xx
+        $14851              .byte $xx,$xx,$xx,$xx
+        $14855              .byte $xx,$xx,$xx,$xx
+        $14859              .byte $xx,$xx,$xx,$xx
+        $1485d              .byte $xx,$xx,$xx,$xx
 MapData_SealedCave6_Exits
         $14861              .byte $xx,$xx,$xx,$xx
         $14865              .byte $xx,$xx,$xx,$xx
@@ -6490,57 +6684,75 @@ MapData_SealedCave6_Exits
         $14881              .byte $xx,$xx,$xx,$xx
         $14885              .byte $xx,$xx,$xx,$xx
         $14889              .byte $xx
-        $1488a              .byte $xx,$xx,$xx
+MapData_SealedCave6_Flags
+        $1488a              .byte $xx,$xx ; $64dd:08 -> $62f1:02
+        $1488c              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_SealedCave7                                    ; Location 0a
-        $1488d              .word ($xxxx)
-        $1488f              .word ($xxxx)
-        $14891              .word ($xxxx)
-        $14893              .word ($xxxx)
-        $14895              .word ($xxxx)
+        $1488d              .word ($xxxx) ; $14897
+        $1488f              .word ($xxxx) ; $148a2
+        $14891              .word ($xxxx) ; $148a9
+        $14893              .word ($xxxx) ; $148b1
+        $14895              .word ($xxxx) ; $148c2
+MapData_SealedCave7_Layout
         $14897              .byte $xx
         $14898              .byte $xx,$xx,$xx,$xx
         ;; Map 3x2
         $1489c              .byte $xx,$xx,$xx
         $1489f              .byte $xx,$xx,$xx
-        $148a2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $148b0              .byte $xx
+MapData_SealedCave7_Graphics
+        $148a2              .byte $xx,$xx,$xx
+        $148a5              .byte $xx,$xx
+        $148a7              .byte $xx,$xx
+MapData_SealedCave7_Entrances
+        $148a9              .byte $xx,$xx,$xx,$xx
+        $148ad              .byte $xx,$xx,$xx,$xx
 MapData_SealedCave7_Exits
         $148b1              .byte $xx,$xx,$xx,$xx
         $148b5              .byte $xx,$xx,$xx,$xx
         $148b9              .byte $xx,$xx,$xx,$xx
         $148bd              .byte $xx,$xx,$xx,$xx
         $148c1              .byte $xx
+MapData_SealedCave7_Flags
         $148c2              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_SealedCave8                                    ; Location 0c
-        $148c3              .word ($xxxx)
-        $148c5              .word ($xxxx)
-        $148c7              .word ($xxxx)
-        $148c9              .word ($xxxx)
-        $148cb              .word ($xxxx)
+        $148c3              .word ($xxxx) ; $148cd
+        $148c5              .word ($xxxx) ; $148d8
+        $148c7              .word ($xxxx) ; $148df
+        $148c9              .word ($xxxx) ; $148e7
+        $148cb              .word ($xxxx) ; $148f8
+MapData_SealedCave8_Layout
         $148cd              .byte $xx
         $148ce              .byte $xx,$xx,$xx,$xx
         ;; Map 2x3
         $148d2              .byte $xx,$xx
         $148d4              .byte $xx,$xx
         $148d6              .byte $xx,$xx
-        $148d8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $148e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_SealedCave8_Graphics
+        $148d8              .byte $xx,$xx,$xx
+        $148db              .byte $xx,$xx
+        $148dd              .byte $xx,$xx
+MapData_SealedCave8_Entrances
+        $148df              .byte $xx,$xx,$xx,$xx
+        $148e3              .byte $xx,$xx,$xx,$xx
 MapData_SealedCave8_Exits
         $148e7              .byte $xx,$xx,$xx,$xx
         $148eb              .byte $xx,$xx,$xx,$xx
         $148ef              .byte $xx,$xx,$xx,$xx
         $148f3              .byte $xx,$xx,$xx,$xx
         $148f7              .byte $xx
-        $148f8              .byte $xx,$xx,$xx
+MapData_SealedCave8_Flags
+        $148f8              .byte $xx,$xx ; $64d0:10 -> $62f1:02
+        $148fa              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_CordelPlainsWest                               ; Location 14
-        $148fb              .word ($xxxx)
-        $148fd              .word ($xxxx)
-        $148ff              .word ($xxxx)
-        $14901              .word ($xxxx)
-        $14903              .word ($xxxx)
+        $148fb              .word ($xxxx) ; $14905
+        $148fd              .word ($xxxx) ; $1494a
+        $148ff              .word ($xxxx) ; $14951
+        $14901              .word ($xxxx) ; $1496d
+        $14903              .word ($xxxx) ; $149b2
+MapData_CordelPlainsWest_Layout
         $14905              .byte $xx
         $14906              .byte $xx,$xx,$xx,$xx
         ;; Map 8x8
@@ -6553,10 +6765,18 @@ MapData_CordelPlainsWest                               ; Location 14
         $1493a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $14942              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         ;; Pattern data [5] -> $7f0 = tiles 0-$7f, [6] -> $7f1 = tiles $80-$ff
-        $1494a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14951              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1495a              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $14960              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_CordelPlainsWest_Graphics
+        $1494a              .byte $xx,$xx,$xx
+        $1494d              .byte $xx,$xx
+        $1494f              .byte $xx,$xx
+MapData_CordelPlainsWest_Entrances
+        $14951              .byte $xx,$xx,$xx,$xx
+        $14955              .byte $xx,$xx,$xx,$xx
+        $14959              .byte $xx,$xx,$xx,$xx
+        $1495d              .byte $xx,$xx,$xx,$xx
+        $14961              .byte $xx,$xx,$xx,$xx
+        $14965              .byte $xx,$xx,$xx,$xx
+        $14969              .byte $xx,$xx,$xx,$xx
 MapData_CordelPlainsWest_Exits
         $1496d              .byte $xx,$xx,$xx,$xx
         $14971              .byte $xx,$xx,$xx,$xx
@@ -6576,15 +6796,18 @@ MapData_CordelPlainsWest_Exits
         $149a9              .byte $xx,$xx,$xx,$xx
         $149ad              .byte $xx,$xx,$xx,$xx
         $149b1              .byte $xx
-        $149b2              .byte $xx,$xx,$xx
+MapData_CordelPlainsWest_Flags
+        $149b2              .byte $xx,$xx ; 64dd:04 -> 62f5:04
+        $149b4              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_CordelPlainsEast                               ; Location 15
         ;; Area south of the bridge, east toward the swamp
-        $149b5              .word ($xxxx)
-        $149b7              .word ($xxxx)
-        $149b9              .word ($xxxx)
-        $149bb              .word ($xxxx)
-        $149bd              .word ($xxxx)
+        $149b5              .word ($xxxx) ; $149bf
+        $149b7              .word ($xxxx) ; $14a04
+        $149b9              .word ($xxxx) ; $14a0b
+        $149bb              .word ($xxxx) ; $14a27
+        $149bd              .word ($xxxx) ; $14a6c
+MapData_CordelPlainsEast_Layout
         $149bf              .byte $xx
         $149c0              .byte $xx,$xx,$xx,$xx
         ;; Map 8x8
@@ -6596,9 +6819,18 @@ MapData_CordelPlainsEast                               ; Location 15
         $149ec              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $149f4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $149fc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14a04              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14a0f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14a1f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_CordelPlainsEast_Graphics
+        $14a04              .byte $xx,$xx,$xx
+        $14a07              .byte $xx,$xx
+        $14a09              .byte $xx,$xx
+MapData_CordelPlainsEast_Entrances
+        $14a0b              .byte $xx,$xx,$xx,$xx
+        $14a0f              .byte $xx,$xx,$xx,$xx
+        $14a13              .byte $xx,$xx,$xx,$xx
+        $14a17              .byte $xx,$xx,$xx,$xx
+        $14a1b              .byte $xx,$xx,$xx,$xx
+        $14a1f              .byte $xx,$xx,$xx,$xx
+        $14a23              .byte $xx,$xx,$xx,$xx
 MapData_CordelPlainsEast_Exits
         $14a27              .byte $xx,$xx,$xx,$xx
         $14a2b              .byte $xx,$xx,$xx,$xx
@@ -6618,22 +6850,32 @@ MapData_CordelPlainsEast_Exits
         $14a63              .byte $xx,$xx,$xx,$xx
         $14a67              .byte $xx,$xx,$xx,$xx
         $14a6b              .byte $xx
+MapData_CordelPlainsEast_Flags
         $14a6c              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Brynmaer                                       ; Location 18
-        $14a6d              .word ($xxxx)
-        $14a6f              .word ($xxxx)
-        $14a71              .word ($xxxx)
-        $14a73              .word ($xxxx)
-        $14a75              .word ($xxxx)
+        $14a6d              .word ($xxxx) ; $14a77
+        $14a6f              .word ($xxxx) ; $14a7f
+        $14a71              .word ($xxxx) ; $14a86
+        $14a73              .word ($xxxx) ; $14aa2
+        $14a75              .word ($xxxx) ; $14abf
+MapData_Brynmaer_Layout
         $14a77              .byte $xx
         $14a78              .byte $xx,$xx,$xx,$xx
         ;; Map 3x1
         $14a7c              .byte $xx,$xx,$xx
-        $14a7f              .byte $xx
-        $14a80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14a90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14aa0              .byte $xx,$xx
+MapData_Brynmaer_Graphics
+        $14a7f              .byte $xx,$xx,$xx
+        $14a82              .byte $xx,$xx
+        $14a84              .byte $xx,$xx
+MapData_Brynmaer_Entrances
+        $14a86              .byte $xx,$xx,$xx,$xx
+        $14a8a              .byte $xx,$xx,$xx,$xx
+        $14a8e              .byte $xx,$xx,$xx,$xx
+        $14a92              .byte $xx,$xx,$xx,$xx
+        $14a96              .byte $xx,$xx,$xx,$xx
+        $14a9a              .byte $xx,$xx,$xx,$xx
+        $14a9e              .byte $xx,$xx,$xx,$xx
 MapData_Brynmaer_Exits
         $14aa2              .byte $xx,$xx,$xx,$xx
         $14aa6              .byte $xx,$xx,$xx,$xx
@@ -6643,50 +6885,68 @@ MapData_Brynmaer_Exits
         $14ab6              .byte $xx,$xx,$xx,$xx
         $14aba              .byte $xx,$xx,$xx,$xx
         $14abe              .byte $xx
+MapData_Brynmaer_Flags
         $14abf              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_OutsideStomHouse                               ; Location 19
-        $14ac0              .word ($xxxx)
-        $14ac2              .word ($xxxx)
-        $14ac4              .word ($xxxx)
-        $14ac6              .word ($xxxx)
-        $14ac8              .word ($xxxx)
+        $14ac0              .word ($xxxx) ; $14aca
+        $14ac2              .word ($xxxx) ; $14ad0
+        $14ac4              .word ($xxxx) ; $14ad7
+        $14ac6              .word ($xxxx) ; $14adf
+        $14ac8              .word ($xxxx) ; $14af0
+MapData_OutsideStomHouse_Layout
         $14aca              .byte $xx
         $14acb              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $14acf              .byte $xx
-        $14ad0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_OutsideStomHouse_Graphics
+        $14ad0              .byte $xx,$xx,$xx
+        $14ad3              .byte $xx,$xx
+        $14ad5              .byte $xx,$xx
+MapData_OutsideStomHouse_Entrances
+        $14ad7              .byte $xx,$xx,$xx,$xx
+        $14adb              .byte $xx,$xx,$xx,$xx
 MapData_OutsideStomHouse_Exits
         $14adf              .byte $xx,$xx,$xx,$xx
         $14ae3              .byte $xx,$xx,$xx,$xx
         $14ae7              .byte $xx,$xx,$xx,$xx
         $14aeb              .byte $xx,$xx,$xx,$xx
         $14aef              .byte $xx
+MapData_OutsideStomHouse_Flags
         $14af0              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_StomHouse                                      ; Location 1e
-        $14af1              .word ($xxxx)
-        $14af3              .word ($xxxx)
-        $14af5              .word ($xxxx)
-        $14af7              .word ($xxxx)
-        $14af9              .word ($xxxx)
+        $14af1              .word ($xxxx) ; $14afb
+        $14af3              .word ($xxxx) ; $14b01
+        $14af5              .word ($xxxx) ; $14b08
+        $14af7              .word ($xxxx) ; $14b0c
+        $14af9              .word ($xxxx) ; $14b15
+MapData_StomHouse_Layout
         $14afb              .byte $xx
         $14afc              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $14b00              .byte $xx
-        $14b01              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_StomHouse_Graphics
+        $14b01              .byte $xx,$xx,$xx
+        $14b04              .byte $xx,$xx
+        $14b06              .byte $xx,$xx
+MapData_StomHouse_Entrances
+        $14b08              .byte $xx,$xx,$xx,$xx
 MapData_StomHouse_Exits
         $14b0c              .byte $xx,$xx,$xx,$xx
         $14b10              .byte $xx,$xx,$xx,$xx
         $14b14              .byte $xx
-        $14b15              .byte $xx,$xx,$xx
+MapData_StomHouse_Flags
+        $14b15              .byte $xx,$xx ; 64d0:04 -> 62f0:01
+        $14b17              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Swamp                                          ; Location 1a
-        $14b18              .word ($xxxx)
-        $14b1a              .word ($xxxx)
-        $14b1c              .word ($xxxx)
-        $14b1e              .word ($xxxx)
-        $14b20              .word ($xxxx)
+        $14b18              .word ($xxxx) ; $14b22
+        $14b1a              .word ($xxxx) ; $14b40
+        $14b1c              .word ($xxxx) ; $14b47
+        $14b1e              .word ($xxxx) ; $14b4f
+        $14b20              .word ($xxxx) ; $14b6c
+MapData_Swamp_Layout
         $14b22              .byte $xx
         $14b23              .byte $xx,$xx,$xx,$xx
         ;; Map 5x5
@@ -6695,7 +6955,13 @@ MapData_Swamp                                          ; Location 1a
         $14b31              .byte $xx,$xx,$xx,$xx,$xx
         $14b36              .byte $xx,$xx,$xx,$xx,$xx
         $14b3b              .byte $xx,$xx,$xx,$xx,$xx
-        $14b40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Swamp_Graphics
+        $14b40              .byte $xx,$xx,$xx
+        $14b43              .byte $xx,$xx
+        $14b45              .byte $xx,$xx
+MapData_Swamp_Entrances
+        $14b47              .byte $xx,$xx,$xx,$xx
+        $14b4b              .byte $xx,$xx,$xx,$xx
 MapData_Swamp_Exits
         $14b4f              .byte $xx,$xx,$xx,$xx
         $14b53              .byte $xx,$xx,$xx,$xx
@@ -6705,21 +6971,30 @@ MapData_Swamp_Exits
         $14b63              .byte $xx,$xx,$xx,$xx
         $14b67              .byte $xx,$xx,$xx,$xx
         $14b6b              .byte $xx
+MapData_Swamp_Flags
         $14b6c              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Amazones                                       ; Location 1b
-        $14b6d              .word ($xxxx)
-        $14b6f              .word ($xxxx)
-        $14b71              .word ($xxxx)
-        $14b73              .word ($xxxx)
-        $14b75              .word ($xxxx)
+        $14b6d              .word ($xxxx) ; $14b77
+        $14b6f              .word ($xxxx) ; $14b7e
+        $14b71              .word ($xxxx) ; $14b85
+        $14b73              .word ($xxxx) ; $14b99
+        $14b75              .word ($xxxx) ; $14bb2
+MapData_Amazones_Layout
         $14b77              .byte $xx
         $14b78              .byte $xx,$xx,$xx,$xx
         ;; Map 2x1
         $14b7c              .byte $xx,$xx
-        $14b7e              .byte $xx,$xx
-        $14b80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14b90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Amazones_Graphics
+        $14b7e              .byte $xx,$xx,$xx
+        $14b81              .byte $xx,$xx
+        $14b83              .byte $xx,$xx
+MapData_Amazones_Entrances
+        $14b85              .byte $xx,$xx,$xx,$xx
+        $14b89              .byte $xx,$xx,$xx,$xx
+        $14b8d              .byte $xx,$xx,$xx,$xx
+        $14b91              .byte $xx,$xx,$xx,$xx
+        $14b95              .byte $xx,$xx,$xx,$xx
 MapData_Amazones_Exits
         $14b99              .byte $xx,$xx,$xx,$xx
         $14b9d              .byte $xx,$xx,$xx,$xx
@@ -6728,22 +7003,32 @@ MapData_Amazones_Exits
         $14ba9              .byte $xx,$xx,$xx,$xx
         $14bad              .byte $xx,$xx,$xx,$xx
         $14bb1              .byte $xx
-        $14bb2              .byte $xx,$xx,$xx
+MapData_Amazones_Flags
+        $14bb2              .byte $xx,$xx ; 64d0:04 -> 62f0:01
+        $14bb4              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Oak                                            ; Location 1c
-        $14bb5              .word ($xxxx)
-        $14bb7              .word ($xxxx)
-        $14bb9              .word ($xxxx)
-        $14bbb              .word ($xxxx)
-        $14bbd              .word ($xxxx)
+        $14bb5              .word ($xxxx) ; $14bbf
+        $14bb7              .word ($xxxx) ; $14bc8
+        $14bb9              .word ($xxxx) ; $14bcf
+        $14bbb              .word ($xxxx) ; $14be3
+        $14bbd              .word ($xxxx) ; $14bfc
+MapData_Oak_Layout
         $14bbf              .byte $xx
         $14bc0              .byte $xx,$xx,$xx,$xx
         ;; Map 2x2
         $14bc4              .byte $xx,$xx
         $14bc6              .byte $xx,$xx
-        $14bc8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14bd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14be0              .byte $xx,$xx,$xx
+MapData_Oak_Graphics
+        $14bc8              .byte $xx,$xx,$xx
+        $14bcb              .byte $xx,$xx
+        $14bcd              .byte $xx,$xx
+MapData_Oak_Entrances
+        $14bcf              .byte $xx,$xx,$xx,$xx
+        $14bd3              .byte $xx,$xx,$xx,$xx
+        $14bd7              .byte $xx,$xx,$xx,$xx
+        $14bdb              .byte $xx,$xx,$xx,$xx
+        $14bdf              .byte $xx,$xx,$xx,$xx
 MapData_Oak_Exits
         $14be3              .byte $xx,$xx,$xx,$xx
         $14be7              .byte $xx,$xx,$xx,$xx
@@ -6752,14 +7037,16 @@ MapData_Oak_Exits
         $14bf3              .byte $xx,$xx,$xx,$xx
         $14bf7              .byte $xx,$xx,$xx,$xx
         $14bfb              .byte $xx
+MapData_Oak_Flags
         $14bfc              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreWestLower                               ; Location 20
-        $14bfd              .word ($xxxx)
-        $14bff              .word ($xxxx)
-        $14c01              .word ($xxxx)
-        $14c03              .word ($xxxx)
-        $14c05              .word ($xxxx)
+        $14bfd              .word ($xxxx) ; $14c07
+        $14bff              .word ($xxxx) ; $14c2a
+        $14c01              .word ($xxxx) ; $14c31
+        $14c03              .word ($xxxx) ; $14c45
+        $14c05              .word ($xxxx) ; $14c86
+MapData_MtSabreWestLower_Layout
         $14c07              .byte $xx
         $14c08              .byte $xx,$xx,$xx,$xx
         ;; Map 6x5
@@ -6768,10 +7055,16 @@ MapData_MtSabreWestLower                               ; Location 20
         $14c18              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $14c1e              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $14c24              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $14c2a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14c31              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14c3a              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $14c40              .byte $xx,$xx,$xx,$xx,$xx
+MapData_MtSabreWestLower_Graphics
+        $14c2a              .byte $xx,$xx,$xx
+        $14c2d              .byte $xx,$xx
+        $14c2f              .byte $xx,$xx
+MapData_MtSabreWestLower_Entrances
+        $14c31              .byte $xx,$xx,$xx,$xx
+        $14c35              .byte $xx,$xx,$xx,$xx
+        $14c39              .byte $xx,$xx,$xx,$xx
+        $14c3d              .byte $xx,$xx,$xx,$xx
+        $14c41              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreWestLower_Exits
         ;; See map http://mikesrpgcenter.com/crystalis/maps/mtsabrewest.html
         $14c45              .byte $xx,$xx,$xx,$xx ; Main entrance to Cordel Plain
@@ -6791,14 +7084,16 @@ MapData_MtSabreWestLower_Exits
         $14c7d              .byte $xx,$xx,$xx,$xx
         $14c81              .byte $xx,$xx,$xx,$xx
         $14c85              .byte $xx
+MapData_MtSabreWestLower_Flags
         $14c86              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreWestUpper                               ; Location 21
-        $14c87              .word ($xxxx)
-        $14c89              .word ($xxxx)
-        $14c8b              .word ($xxxx)
-        $14c8d              .word ($xxxx)
-        $14c8f              .word ($xxxx)
+        $14c87              .word ($xxxx) ; $14c91
+        $14c89              .word ($xxxx) ; $14cb4
+        $14c8b              .word ($xxxx) ; $14cbb
+        $14c8d              .word ($xxxx) ; $14cc7
+        $14c8f              .word ($xxxx) ; $14cf0
+MapData_MtSabreWestUpper_Layout
         $14c91              .byte $xx
         $14c92              .byte $xx,$xx,$xx,$xx
         ;; Map 6x5
@@ -6807,8 +7102,14 @@ MapData_MtSabreWestUpper                               ; Location 21
         $14ca2              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $14ca8              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $14cae              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $14cb4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14cbb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_MtSabreWestUpper_Graphics
+        $14cb4              .byte $xx,$xx,$xx
+        $14cb7              .byte $xx,$xx
+        $14cb9              .byte $xx,$xx
+MapData_MtSabreWestUpper_Entrances
+        $14cbb              .byte $xx,$xx,$xx,$xx
+        $14cbf              .byte $xx,$xx,$xx,$xx
+        $14cc3              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreWestUpper_Exits
         $14cc7              .byte $xx,$xx,$xx,$xx
         $14ccb              .byte $xx,$xx,$xx,$xx
@@ -6821,14 +7122,16 @@ MapData_MtSabreWestUpper_Exits
         $14ce7              .byte $xx,$xx,$xx,$xx
         $14ceb              .byte $xx,$xx,$xx,$xx
         $14cef              .byte $xx
+MapData_MtSabreWestUpper_Flags
         $14cf0              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreWestCave2                               ; Location 22
-        $14cf1              .word ($xxxx)
-        $14cf3              .word ($xxxx)
-        $14cf5              .word ($xxxx)
-        $14cf7              .word ($xxxx)
-        $14cf9              .word ($xxxx)
+        $14cf1              .word ($xxxx) ; $14cfb
+        $14cf3              .word ($xxxx) ; $14d19
+        $14cf5              .word ($xxxx) ; $14d20
+        $14cf7              .word ($xxxx) ; $14d2c
+        $14cf9              .word ($xxxx) ; $14d45
+MapData_MtSabreWestCave2_Layout
         $14cfb              .byte $xx
         $14cfc              .byte $xx,$xx,$xx,$xx
         ;; Map 5x5
@@ -6837,8 +7140,14 @@ MapData_MtSabreWestCave2                               ; Location 22
         $14d0a              .byte $xx,$xx,$xx,$xx,$xx
         $14d0f              .byte $xx,$xx,$xx,$xx,$xx
         $14d14              .byte $xx,$xx,$xx,$xx,$xx
-        $14d19              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14d20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_MtSabreWestCave2_Graphics
+        $14d19              .byte $xx,$xx,$xx
+        $14d1c              .byte $xx,$xx
+        $14d1e              .byte $xx,$xx
+MapData_MtSabreWestCave2_Entrances
+        $14d20              .byte $xx,$xx,$xx,$xx
+        $14d24              .byte $xx,$xx,$xx,$xx
+        $14d28              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreWestCave2_Exits
         $14d2c              .byte $xx,$xx,$xx,$xx ; Entrance from Mt Sabre (B)
         $14d30              .byte $xx,$xx,$xx,$xx
@@ -6847,22 +7156,32 @@ MapData_MtSabreWestCave2_Exits
         $14d3c              .byte $xx,$xx,$xx,$xx ; Dead-end exit to Warp Boots (C)
         $14d40              .byte $xx,$xx,$xx,$xx
         $14d44              .byte $xx
-        $14d45              .byte $xx,$xx,$xx,$xx,$xx
+MapData_MtSabreWestCave2_Flags
+        $14d45              .byte $xx,$xx ; 64dd:01 -> 62f2:08
+        $14d47              .byte $xx,$xx ; 64dd:02 -> 62f2:02
+        $14d49              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreWestCave3                               ; Location 23
-        $14d4a              .word ($xxxx)
-        $14d4c              .word ($xxxx)
-        $14d4e              .word ($xxxx)
-        $14d50              .word ($xxxx)
-        $14d52              .word ($xxxx)
+        $14d4a              .word ($xxxx) ; $14d54
+        $14d4c              .word ($xxxx) ; $14d68
+        $14d4e              .word ($xxxx) ; $14d6f
+        $14d50              .word ($xxxx) ; $14d7b
+        $14d52              .word ($xxxx) ; $14d94
+MapData_MtSabreWestCave3_Layout
         $14d54              .byte $xx
         $14d55              .byte $xx,$xx,$xx,$xx
         ;; Map 5x3
         $14d59              .byte $xx,$xx,$xx,$xx,$xx
         $14d5e              .byte $xx,$xx,$xx,$xx,$xx
         $14d63              .byte $xx,$xx,$xx,$xx,$xx
-        $14d68              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14d70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_MtSabreWestCave3_Graphics
+        $14d68              .byte $xx,$xx,$xx
+        $14d6b              .byte $xx,$xx
+        $14d6d              .byte $xx,$xx
+MapData_MtSabreWestCave3_Entrances
+        $14d6f              .byte $xx,$xx,$xx,$xx
+        $14d73              .byte $xx,$xx,$xx,$xx
+        $14d77              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreWestCave3_Exits
         $14d7b              .byte $xx,$xx,$xx,$xx ; Return to Lower
         $14d7f              .byte $xx,$xx,$xx,$xx
@@ -6871,14 +7190,17 @@ MapData_MtSabreWestCave3_Exits
         $14d8b              .byte $xx,$xx,$xx,$xx ; Exit E to Outside upper
         $14d8f              .byte $xx,$xx,$xx,$xx
         $14d93              .byte $xx
-        $14d94              .byte $xx,$xx,$xx
+MapData_MtSabreWestCave3_Flags
+        $14d94              .byte $xx,$xx ; 64dc:80 -> 62f1:08
+        $14d96              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreWestCave4                               ; Location 24
-        $14d97              .word ($xxxx)
-        $14d99              .word ($xxxx)
-        $14d9b              .word ($xxxx)
-        $14d9d              .word ($xxxx)
-        $14d9f              .word ($xxxx)
+        $14d97              .word ($xxxx) ; $14da1
+        $14d99              .word ($xxxx) ; $14dba
+        $14d9b              .word ($xxxx) ; $14dc1
+        $14d9d              .word ($xxxx) ; $14dcd
+        $14d9f              .word ($xxxx) ; $14de6
+MapData_MtSabreWestCave4_Layout
         $14da1              .byte $xx
         $14da2              .byte $xx,$xx,$xx,$xx
         ;; Map 4x5
@@ -6887,8 +7209,14 @@ MapData_MtSabreWestCave4                               ; Location 24
         $14dae              .byte $xx,$xx,$xx,$xx
         $14db2              .byte $xx,$xx,$xx,$xx
         $14db6              .byte $xx,$xx,$xx,$xx
-        $14dba              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $14dc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_MtSabreWestCave4_Graphics
+        $14dba              .byte $xx,$xx,$xx
+        $14dbd              .byte $xx,$xx
+        $14dbf              .byte $xx,$xx
+MapData_MtSabreWestCave4_Entrances
+        $14dc1              .byte $xx,$xx,$xx,$xx
+        $14dc5              .byte $xx,$xx,$xx,$xx
+        $14dc9              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreWestCave4_Exits
         $14dcd              .byte $xx,$xx,$xx,$xx ; Return to lower (F)
         $14dd1              .byte $xx,$xx,$xx,$xx
@@ -6897,34 +7225,44 @@ MapData_MtSabreWestCave4_Exits
         $14ddd              .byte $xx,$xx,$xx,$xx ; Exit (G) to outside
         $14de1              .byte $xx,$xx,$xx,$xx
         $14de5              .byte $xx
-        $14de6              .byte $xx,$xx,$xx
+MapData_MtSabreWestCave4_Flags
+        $14de6              .byte $xx,$xx ; 64dc:40 -> 62f3:01
+        $14de8              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreWestCave5                               ; Location 25
-        $14de9              .word ($xxxx)
-        $14deb              .word ($xxxx)
-        $14ded              .word ($xxxx)
-        $14def              .word ($xxxx)
-        $14df1              .word ($xxxx)
+        $14de9              .word ($xxxx) ; $14df3
+        $14deb              .word ($xxxx) ; $14dfa
+        $14ded              .word ($xxxx) ; $14e01
+        $14def              .word ($xxxx) ; $14e09
+        $14df1              .word ($xxxx) ; $14e1a
+MapData_MtSabreWestCave5_Layout
         $14df3              .byte $xx
         $14df4              .byte $xx,$xx,$xx,$xx
         ;; Map 2x1
         $14df8              .byte $xx,$xx
-        $14dfa              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $14e00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_MtSabreWestCave5_Graphics
+        $14dfa              .byte $xx,$xx,$xx
+        $14dfd              .byte $xx,$xx
+        $14dff              .byte $xx,$xx
+MapData_MtSabreWestCave5_Entrances
+        $14e01              .byte $xx,$xx,$xx,$xx
+        $14e05              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreWestCave5_Exits
         $14e09              .byte $xx,$xx,$xx,$xx ; Backwards
         $14e0d              .byte $xx,$xx,$xx,$xx
         $14e11              .byte $xx,$xx,$xx,$xx ; Forward towards Tornel
         $14e15              .byte $xx,$xx,$xx,$xx
         $14e19              .byte $xx
+MapData_MtSabreWestCave5_Flags
         $14e1a              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreWestCave6                               ; Location 26
-        $14e1b              .word ($xxxx)
-        $14e1d              .word ($xxxx)
-        $14e1f              .word ($xxxx)
-        $14e21              .word ($xxxx)
-        $14e23              .word ($xxxx)
+        $14e1b              .word ($xxxx) ; $14e25
+        $14e1d              .word ($xxxx) ; $14e34
+        $14e1f              .word ($xxxx) ; $14e3b
+        $14e21              .word ($xxxx) ; $14e43
+        $14e23              .word ($xxxx) ; $14e54
+MapData_MtSabreWestCave6_Layout
         $14e25              .byte $xx
         $14e26              .byte $xx,$xx,$xx,$xx
         ;; Map 2x5
@@ -6933,22 +7271,30 @@ MapData_MtSabreWestCave6                               ; Location 26
         $14e2e              .byte $xx,$xx
         $14e30              .byte $xx,$xx
         $14e32              .byte $xx,$xx
-        $14e34              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14e40              .byte $xx,$xx,$xx
+MapData_MtSabreWestCave6_Graphics
+        $14e34              .byte $xx,$xx,$xx
+        $14e37              .byte $xx,$xx
+        $14e39              .byte $xx,$xx
+MapData_MtSabreWestCave6_Entrances
+        $14e3b              .byte $xx,$xx,$xx,$xx
+        $14e3f              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreWestCave6_Exits
         $14e43              .byte $xx,$xx,$xx,$xx ; Backward to tiny connector
         $14e47              .byte $xx,$xx,$xx,$xx
         $14e4b              .byte $xx,$xx,$xx,$xx ; Tornel
         $14e4f              .byte $xx,$xx,$xx,$xx
         $14e53              .byte $xx
-        $14e54              .byte $xx,$xx,$xx
+MapData_MtSabreWestCave6_Flags
+        $14e54              .byte $xx,$xx ; 64dc:20 -> 62f2:01
+        $14e56              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreWestCave7                               ; Location 27
-        $14e57              .word ($xxxx)
-        $14e59              .word ($xxxx)
-        $14e5b              .word ($xxxx)
-        $14e5d              .word ($xxxx)
-        $14e5f              .word ($xxxx)
+        $14e57              .word ($xxxx) ; $14e61
+        $14e59              .word ($xxxx) ; $14e75
+        $14e5b              .word ($xxxx) ; $14e7c
+        $14e5d              .word ($xxxx) ; $14e80
+        $14e5f              .word ($xxxx) ; $14e89
+MapData_MtSabreWestCave7_Layout
         $14e61              .byte $xx
         $14e62              .byte $xx,$xx,$xx,$xx
         ;; Map 3x5
@@ -6957,21 +7303,30 @@ MapData_MtSabreWestCave7                               ; Location 27
         $14e6c              .byte $xx,$xx,$xx
         $14e6f              .byte $xx,$xx,$xx
         $14e72              .byte $xx,$xx,$xx
-        $14e75              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_MtSabreWestCave7_Graphics
+        $14e75              .byte $xx,$xx,$xx
+        $14e78              .byte $xx,$xx
+        $14e7a              .byte $xx,$xx
+MapData_MtSabreWestCave7_Entrances
+        $14e7c              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreWestCave7_Exits
         $14e80              .byte $xx,$xx,$xx,$xx ; Entrance from lower outside
         $14e84              .byte $xx,$xx,$xx,$xx
         $14e88              .byte $xx
-        $14e89              .byte $xx,$xx,$xx,$xx,$xx
+MapData_MtSabreWestCave7_Flags
+        $14e89              .byte $xx,$xx ; 64dc:10 -> 62f3:02
+        $14e8b              .byte $xx,$xx ; 64dc:08 -> 62f1:02
+        $14e8d              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreNorthMain                               ; Location 28
         ;; See map http://mikesrpgcenter.com/crystalis/maps/mtsabrewest.html
         ;; Seems to also include the summit?!?
-        $14e8e              .word ($xxxx)
-        $14e90              .word ($xxxx)
-        $14e92              .word ($xxxx)
-        $14e94              .word ($xxxx)
-        $14e96              .word ($xxxx)
+        $14e8e              .word ($xxxx) ; $14e98
+        $14e90              .word ($xxxx) ; $14edd
+        $14e92              .word ($xxxx) ; $14ee4
+        $14e94              .word ($xxxx) ; $14f00
+        $14e96              .word ($xxxx) ; $14f41
+MapData_MtSabreNorthMain_Layout
         $14e98              .byte $xx
         $14e99              .byte $xx,$xx,$xx,$xx
         ;; Map 8x8
@@ -6983,9 +7338,18 @@ MapData_MtSabreNorthMain                               ; Location 28
         $14ec5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $14ecd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $14ed5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_MtSabreNorthMain_Graphics
         $14edd              .byte $xx,$xx,$xx
-        $14ee0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14ef0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $14ee0              .byte $xx,$xx
+        $14ee2              .byte $xx,$xx
+MapData_MtSabreNorthMain_Entrances
+        $14ee4              .byte $xx,$xx,$xx,$xx
+        $14ee8              .byte $xx,$xx,$xx,$xx
+        $14eec              .byte $xx,$xx,$xx,$xx
+        $14ef0              .byte $xx,$xx,$xx,$xx
+        $14ef4              .byte $xx,$xx,$xx,$xx
+        $14ef8              .byte $xx,$xx,$xx,$xx
+        $14efc              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreNorthMain_Exits
         $14f00              .byte $xx,$xx,$xx,$xx ; Back to Cordel Plains East
         $14f04              .byte $xx,$xx,$xx,$xx
@@ -7004,14 +7368,17 @@ MapData_MtSabreNorthMain_Exits
         $14f38              .byte $xx,$xx,$xx,$xx
         $14f3c              .byte $xx,$xx,$xx,$xx ; Nadare's
         $14f40              .byte $xx
-        $14f41              .byte $xx,$xx,$xx
+MapData_MtSabreNorthMain_Flags
+        $14f41              .byte $xx,$xx ; 64db:01 -> 62f0:10
+        $14f43              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreNorthMiddle                             ; Location 29
-        $14f44              .word ($xxxx)
-        $14f46              .word ($xxxx)
-        $14f48              .word ($xxxx)
-        $14f4a              .word ($xxxx)
-        $14f4c              .word ($xxxx)
+        $14f44              .word ($xxxx) ; $14f4e
+        $14f46              .word ($xxxx) ; $14f93
+        $14f48              .word ($xxxx) ; $14f9a
+        $14f4a              .word ($xxxx) ; $14fae
+        $14f4c              .word ($xxxx) ; $14fd7
+MapData_MtSabreNorthMiddle_Layout
         $14f4e              .byte $xx
         $14f4f              .byte $xx,$xx,$xx,$xx
         ;; Map 8x8
@@ -7023,8 +7390,16 @@ MapData_MtSabreNorthMiddle                             ; Location 29
         $14f7b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $14f83              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $14f8b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14f93              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $14fa0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_MtSabreNorthMiddle_Graphics
+        $14f93              .byte $xx,$xx,$xx
+        $14f96              .byte $xx,$xx
+        $14f98              .byte $xx,$xx
+MapData_MtSabreNorthMiddle_Entrances
+        $14f9a              .byte $xx,$xx,$xx,$xx
+        $14f9e              .byte $xx,$xx,$xx,$xx
+        $14fa2              .byte $xx,$xx,$xx,$xx
+        $14fa6              .byte $xx,$xx,$xx,$xx
+        $14faa              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreNorthMiddle_Exits
         ;; First two exits are a small connector between lower and the rest of middle
         $14fae              .byte $xx,$xx,$xx,$xx ; Exit B to cave 1 heading back to lower
@@ -7038,14 +7413,16 @@ MapData_MtSabreNorthMiddle_Exits
         $14fce              .byte $xx,$xx,$xx,$xx ; Exit G on far right side to cave 4
         $14fd2              .byte $xx,$xx,$xx,$xx
         $14fd6              .byte $xx
+MapData_MtSabreNorthMiddle_Flags
         $14fd7              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreNorthCave1                              ; Location 2a
-        $14fd8              .word ($xxxx)
-        $14fda              .word ($xxxx)
-        $14fdc              .word ($xxxx)
-        $14fde              .word ($xxxx)
-        $14fe0              .word ($xxxx)
+        $14fd8              .word ($xxxx) ; $14fe2
+        $14fda              .word ($xxxx) ; $14ff7
+        $14fdc              .word ($xxxx) ; $14ffe
+        $14fde              .word ($xxxx) ; $15006
+        $14fe0              .word ($xxxx) ; $15017
+MapData_MtSabreNorthCave1_Layout
         $14fe2              .byte $xx
         $14fe3              .byte $xx,$xx,$xx,$xx
         ;; Map 4x4
@@ -7053,23 +7430,31 @@ MapData_MtSabreNorthCave1                              ; Location 2a
         $14feb              .byte $xx,$xx,$xx,$xx
         $14fef              .byte $xx,$xx,$xx,$xx
         $14ff3              .byte $xx,$xx,$xx,$xx
-        $14ff7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15000              .byte $xx,$xx,$xx,$xx,$xx,$xx
+MapData_MtSabreNorthCave1_Graphics
+        $14ff7              .byte $xx,$xx,$xx
+        $14ffa              .byte $xx,$xx
+        $14ffc              .byte $xx,$xx
+MapData_MtSabreNorthCave1_Entrances
+        $14ffe              .byte $xx,$xx,$xx,$xx
+        $15002              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreNorthCave1_Exits
         $15006              .byte $xx,$xx,$xx,$xx ; Back to entrance cave
         $1500a              .byte $xx,$xx,$xx,$xx
         $1500e              .byte $xx,$xx,$xx,$xx ; Exit B to middle
         $15012              .byte $xx,$xx,$xx,$xx
         $15016              .byte $xx
-        $15017              .byte $xx,$xx,$xx
+MapData_MtSabreNorthCave1_Flags
+        $15017              .byte $xx,$xx ; 64dc:04 -> 62f1:01
+        $15019              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreNorthEntranceCave                       ; Location 38
         ;; Main entrance cave, past the guards.
-        $1501a              .word ($xxxx)
-        $1501c              .word ($xxxx)
-        $1501e              .word ($xxxx)
-        $15020              .word ($xxxx)
-        $15022              .word ($xxxx)
+        $1501a              .word ($xxxx) ; $15024
+        $1501c              .word ($xxxx) ; $1502d
+        $1501e              .word ($xxxx) ; $15034
+        $15020              .word ($xxxx) ; $1503c
+        $15022              .word ($xxxx) ; $1504d
+MapData_MtSabreNorthEntranceCave_Layout
         $15024              .byte $xx
         $15025              .byte $xx,$xx,$xx,$xx
         ;; Map 1x4
@@ -7077,23 +7462,30 @@ MapData_MtSabreNorthEntranceCave                       ; Location 38
         $1502a              .byte $xx
         $1502b              .byte $xx
         $1502c              .byte $xx
+MapData_MtSabreNorthEntranceCave_Graphics
         $1502d              .byte $xx,$xx,$xx
-        $15030              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $15030              .byte $xx,$xx
+        $15032              .byte $xx,$xx
+MapData_MtSabreNorthEntranceCave_Entrances
+        $15034              .byte $xx,$xx,$xx,$xx
+        $15038              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreNorthEntranceCave_Exits
         $1503c              .byte $xx,$xx,$xx,$xx ; Back outside to the bottom
         $15040              .byte $xx,$xx,$xx,$xx
         $15044              .byte $xx,$xx,$xx,$xx ; Into Cave 1
         $15048              .byte $xx,$xx,$xx,$xx
         $1504c              .byte $xx
+MapData_MtSabreNorthEntranceCave_Flags
         $1504d              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreNorthCave2                              ; Location 2b
         ;; C-D-E connector between B-C outside area and the rest of the middle.
-        $1504e              .word ($xxxx)
-        $15050              .word ($xxxx)
-        $15052              .word ($xxxx)
-        $15054              .word ($xxxx)
-        $15056              .word ($xxxx)
+        $1504e              .word ($xxxx) ; $15058
+        $15050              .word ($xxxx) ; $15075
+        $15052              .word ($xxxx) ; $1507c
+        $15054              .word ($xxxx) ; $15088
+        $15056              .word ($xxxx) ; $150a1
+MapData_MtSabreNorthCave2_Layout
         $15058              .byte $xx
         $15059              .byte $xx,$xx,$xx,$xx
         ;; Map 4x6
@@ -7103,8 +7495,14 @@ MapData_MtSabreNorthCave2                              ; Location 2b
         $15069              .byte $xx,$xx,$xx,$xx
         $1506d              .byte $xx,$xx,$xx,$xx
         $15071              .byte $xx,$xx,$xx,$xx
-        $15075              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15080              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_MtSabreNorthCave2_Graphics
+        $15075              .byte $xx,$xx,$xx
+        $15078              .byte $xx,$xx
+        $1507a              .byte $xx,$xx
+MapData_MtSabreNorthCave2_Entrances
+        $1507c              .byte $xx,$xx,$xx,$xx
+        $15080              .byte $xx,$xx,$xx,$xx
+        $15084              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreNorthCave2_Exits
         $15088              .byte $xx,$xx,$xx,$xx ; Exit C
         $1508c              .byte $xx,$xx,$xx,$xx
@@ -7113,15 +7511,19 @@ MapData_MtSabreNorthCave2_Exits
         $15098              .byte $xx,$xx,$xx,$xx ; Exit D
         $1509c              .byte $xx,$xx,$xx,$xx
         $150a0              .byte $xx
-        $150a1              .byte $xx,$xx,$xx,$xx,$xx
+MapData_MtSabreNorthCave2_Flags
+        $150a1              .byte $xx,$xx ; 64dc:02 -> 62f4:04
+        $150a3              .byte $xx,$xx ; 64dc:01 -> 62f3:02
+        $150a5              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreNorthCave3                              ; Location 2c
         ;; Connector cave with bridge between entrances E and F
-        $150a6              .word ($xxxx)
-        $150a8              .word ($xxxx)
-        $150aa              .word ($xxxx)
-        $150ac              .word ($xxxx)
-        $150ae              .word ($xxxx)
+        $150a6              .word ($xxxx) ; $150b0
+        $150a8              .word ($xxxx) ; $150c4
+        $150aa              .word ($xxxx) ; $150cb
+        $150ac              .word ($xxxx) ; $150d3
+        $150ae              .word ($xxxx) ; $150e4
+MapData_MtSabreNorthCave3_Layout
         $150b0              .byte $xx
         $150b1              .byte $xx,$xx,$xx,$xx
         ;; Map 3x5
@@ -7130,32 +7532,45 @@ MapData_MtSabreNorthCave3                              ; Location 2c
         $150bb              .byte $xx,$xx,$xx
         $150be              .byte $xx,$xx,$xx
         $150c1              .byte $xx,$xx,$xx
-        $150c4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $150d0              .byte $xx,$xx,$xx
+MapData_MtSabreNorthCave3_Graphics
+        $150c4              .byte $xx,$xx,$xx
+        $150c7              .byte $xx,$xx
+        $150c9              .byte $xx,$xx
+MapData_MtSabreNorthCave3_Entrances
+        $150cb              .byte $xx,$xx,$xx,$xx
+        $150cf              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreNorthCave3_Exits
         $150d3              .byte $xx,$xx,$xx,$xx ; Exit E
         $150d7              .byte $xx,$xx,$xx,$xx
         $150db              .byte $xx,$xx,$xx,$xx ; Exit F
         $150df              .byte $xx,$xx,$xx,$xx
         $150e3              .byte $xx
-        $150e4              .byte $xx,$xx,$xx
+MapData_MtSabreNorthCave3_Flags
+        $150e4              .byte $xx,$xx ; 64d0:04 -> 62f0:01
+        $150e6              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreNorthCave4                              ; Location 2d
         ;; Cave at entrance G
-        $150e7              .word ($xxxx)
-        $150e9              .word ($xxxx)
-        $150eb              .word ($xxxx)
-        $150ed              .word ($xxxx)
-        $150ef              .word ($xxxx)
+        $150e7              .word ($xxxx) ; $150f1
+        $150e9              .word ($xxxx) ; $150ff
+        $150eb              .word ($xxxx) ; $15106
+        $150ed              .word ($xxxx) ; $15112
+        $150ef              .word ($xxxx) ; $1512b
+MapData_MtSabreNorthCave4_Layout
         $150f1              .byte $xx
         $150f2              .byte $xx,$xx,$xx,$xx
         ;; Map 3x3
         $150f6              .byte $xx,$xx,$xx
         $150f9              .byte $xx,$xx,$xx
         $150fc              .byte $xx,$xx,$xx
-        $150ff              .byte $xx
-        $15100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15110              .byte $xx,$xx
+MapData_MtSabreNorthCave4_Graphics
+        $150ff              .byte $xx,$xx,$xx
+        $15102              .byte $xx,$xx
+        $15104              .byte $xx,$xx
+MapData_MtSabreNorthCave4_Entrances
+        $15106              .byte $xx,$xx,$xx,$xx
+        $1510a              .byte $xx,$xx,$xx,$xx
+        $1510e              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreNorthCave4_Exits
         $15112              .byte $xx,$xx,$xx,$xx ; Exit D to hallway with entrance C
         $15116              .byte $xx,$xx,$xx,$xx
@@ -7164,15 +7579,18 @@ MapData_MtSabreNorthCave4_Exits
         $15122              .byte $xx,$xx,$xx,$xx ; Exit G to outside
         $15126              .byte $xx,$xx,$xx,$xx
         $1512a              .byte $xx
-        $1512b              .byte $xx,$xx,$xx
+MapData_MtSabreNorthCave4_Flags
+        $1512b              .byte $xx,$xx ; 64db:80 -> 62f1:02
+        $1512d              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreNorthCave5                              ; Location 2e
         ;; Cave at entrance H
-        $1512e              .word ($xxxx)
-        $15130              .word ($xxxx)
-        $15132              .word ($xxxx)
-        $15134              .word ($xxxx)
-        $15136              .word ($xxxx)
+        $1512e              .word ($xxxx) ; $15138
+        $15130              .word ($xxxx) ; $15155
+        $15132              .word ($xxxx) ; $1515c
+        $15134              .word ($xxxx) ; $15168
+        $15136              .word ($xxxx) ; $15181
+MapData_MtSabreNorthCave5_Layout
         $15138              .byte $xx
         $15139              .byte $xx,$xx,$xx,$xx
         ;; Map 6x4
@@ -7180,8 +7598,14 @@ MapData_MtSabreNorthCave5                              ; Location 2e
         $15143              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $15149              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $1514f              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $15155              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15160              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_MtSabreNorthCave5_Graphics
+        $15155              .byte $xx,$xx,$xx
+        $15158              .byte $xx,$xx
+        $1515a              .byte $xx,$xx
+MapData_MtSabreNorthCave5_Entrances
+        $1515c              .byte $xx,$xx,$xx,$xx
+        $15160              .byte $xx,$xx,$xx,$xx
+        $15164              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreNorthCave5_Exits
         $15168              .byte $xx,$xx,$xx,$xx ; Unmarked exit to hallway with G entrance
         $1516c              .byte $xx,$xx,$xx,$xx
@@ -7190,43 +7614,59 @@ MapData_MtSabreNorthCave5_Exits
         $15178              .byte $xx,$xx,$xx,$xx ; Unmarked exit to hallway with I toward summit
         $1517c              .byte $xx,$xx,$xx,$xx
         $15180              .byte $xx
-        $15181              .byte $xx,$xx,$xx,$xx,$xx
+MapData_MtSabreNorthCave5_Flags
+        $15181              .byte $xx,$xx ; 64db:40 -> 62f3:04
+        $15183              .byte $xx,$xx ; 64db:20 -> 62f1:10
+        $15185              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreNorthCave5a                             ; Location 39
-        $15186              .word ($xxxx)
-        $15188              .word ($xxxx)
-        $1518a              .word ($xxxx)
-        $1518c              .word ($xxxx)
-        $1518e              .word ($xxxx)
+        $15186              .word ($xxxx) ; $15190
+        $15188              .word ($xxxx) ; $15199
+        $1518a              .word ($xxxx) ; $151a0
+        $1518c              .word ($xxxx) ; $151a8
+        $1518e              .word ($xxxx) ; $151b9
+MapData_MtSabreNorthCave5a_Layout
         $15190              .byte $xx
         $15191              .byte $xx,$xx,$xx,$xx
         ;; Map 2x2
         $15195              .byte $xx,$xx
         $15197              .byte $xx,$xx
-        $15199              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $151a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_MtSabreNorthCave5a_Graphics
+        $15199              .byte $xx,$xx,$xx
+        $1519c              .byte $xx,$xx
+        $1519e              .byte $xx,$xx
+MapData_MtSabreNorthCave5a_Entrances
+        $151a0              .byte $xx,$xx,$xx,$xx
+        $151a4              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreNorthCave5a_Exits
         $151a8              .byte $xx,$xx,$xx,$xx ; Back to cave towards middle
         $151ac              .byte $xx,$xx,$xx,$xx
         $151b0              .byte $xx,$xx,$xx,$xx ; Exit I to upper outside
         $151b4              .byte $xx,$xx,$xx,$xx
         $151b8              .byte $xx
+MapData_MtSabreNorthCave5a_Flags
         $151b9              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreNorthCave6                              ; Location 2f
         ;; hallway with leaf prisoners
-        $151ba              .word ($xxxx)
-        $151bc              .word ($xxxx)
-        $151be              .word ($xxxx)
-        $151c0              .word ($xxxx)
-        $151c2              .word ($xxxx)
+        $151ba              .word ($xxxx) ; $151c4
+        $151bc              .word ($xxxx) ; $151ce
+        $151be              .word ($xxxx) ; $151d5
+        $151c0              .word ($xxxx) ; $151e1
+        $151c2              .word ($xxxx) ; $151fa
+MapData_MtSabreNorthCave6_Layout
         $151c4              .byte $xx
         $151c5              .byte $xx,$xx,$xx,$xx
         ;; Map 5x1
         $151c9              .byte $xx,$xx,$xx,$xx,$xx
-        $151ce              .byte $xx,$xx
-        $151d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $151e0              .byte $xx
+MapData_MtSabreNorthCave6_Graphics
+        $151ce              .byte $xx,$xx,$xx
+        $151d1              .byte $xx,$xx
+        $151d3              .byte $xx,$xx
+MapData_MtSabreNorthCave6_Entrances
+        $151d5              .byte $xx,$xx,$xx,$xx
+        $151d9              .byte $xx,$xx,$xx,$xx
+        $151dd              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreNorthCave6_Exits
         $151e1              .byte $xx,$xx,$xx,$xx ; Exit J from upper outside area
         $151e5              .byte $xx,$xx,$xx,$xx
@@ -7235,21 +7675,30 @@ MapData_MtSabreNorthCave6_Exits
         $151f1              .byte $xx,$xx,$xx,$xx ; Through ice wall up to left-hand cell
         $151f5              .byte $xx,$xx,$xx,$xx
         $151f9              .byte $xx
-        $151fa              .byte $xx,$xx,$xx,$xx,$xx
+MapData_MtSabreNorthCave6_Flags
+        $151fa              .byte $xx,$xx ; 64db:10 -> 62f0:08
+        $151fc              .byte $xx,$xx ; 64db:08 -> 62f0:04
+        $151fe              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreNorthLeftCell                           ; Location 30
         ;; Left-hand cell
-        $151ff              .word ($xxxx)
-        $15201              .word ($xxxx)
-        $15203              .word ($xxxx)
-        $15205              .word ($xxxx)
-        $15207              .word ($xxxx)
+        $151ff              .word ($xxxx) ; $15209
+        $15201              .word ($xxxx) ; $1520f
+        $15203              .word ($xxxx) ; $15216
+        $15205              .word ($xxxx) ; $1521e
+        $15207              .word ($xxxx) ; $15237
+MapData_MtSabreNorthLeftCell_Layout
         $15209              .byte $xx
         $1520a              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1520e              .byte $xx
-        $1520f              .byte $xx
-        $15210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_MtSabreNorthLeftCell_Graphics
+        $1520f              .byte $xx,$xx,$xx
+        $15212              .byte $xx,$xx
+        $15214              .byte $xx,$xx
+MapData_MtSabreNorthLeftCell_Entrances
+        $15216              .byte $xx,$xx,$xx,$xx
+        $1521a              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreNorthLeftCell_Exits
         $1521e              .byte $xx,$xx,$xx,$xx ; Back through ice wall to prison hallway
         $15222              .byte $xx,$xx,$xx,$xx
@@ -7258,43 +7707,57 @@ MapData_MtSabreNorthLeftCell_Exits
         $1522e              .byte $xx,$xx,$xx,$xx ; To hallway with prison key
         $15232              .byte $xx,$xx,$xx,$xx
         $15236              .byte $xx
-        $15237              .byte $xx,$xx,$xx
+MapData_MtSabreNorthLeftCell_Flags
+        $15237              .byte $xx,$xx ; 64db:04 -> 62f0:01
+        $15239              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreNorthPrisonKeyHall                      ; Location 31
         ;; Hallway with prison key
-        $1523a              .word ($xxxx)
-        $1523c              .word ($xxxx)
-        $1523e              .word ($xxxx)
-        $15240              .word ($xxxx)
-        $15242              .word ($xxxx)
+        $1523a              .word ($xxxx) ; $15244
+        $1523c              .word ($xxxx) ; $1524b
+        $1523e              .word ($xxxx) ; $15252
+        $15240              .word ($xxxx) ; $15256
+        $15242              .word ($xxxx) ; $15267
+MapData_MtSabreNorthPrisonKeyHall_Layout
         $15244              .byte $xx
         $15245              .byte $xx,$xx,$xx,$xx
         ;; Map 1x2
         $15249              .byte $xx
         $1524a              .byte $xx
-        $1524b              .byte $xx,$xx,$xx,$xx,$xx
-        $15250              .byte $xx,$xx,$xx,$xx,$xx,$xx
+MapData_MtSabreNorthPrisonKeyHall_Graphics
+        $1524b              .byte $xx,$xx,$xx
+        $1524e              .byte $xx,$xx
+        $15250              .byte $xx,$xx
+MapData_MtSabreNorthPrisonKeyHall_Entrances
+        $15252              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreNorthPrisonKeyHall_Exits
         $15256              .byte $xx,$xx,$xx,$xx ; Back to left cell
         $1525a              .byte $xx,$xx,$xx,$xx
         $1525e              .byte $xx,$xx,$xx,$xx
         $15262              .byte $xx,$xx,$xx,$xx
         $15266              .byte $xx
+MapData_MtSabreNorthPrisonKeyHall_Flags
         $15267              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreNorthRightCell                          ; Location 32
         ;; Right-hand cell, with exit toward summit
-        $15268              .word ($xxxx)
-        $1526a              .word ($xxxx)
-        $1526c              .word ($xxxx)
-        $1526e              .word ($xxxx)
-        $15270              .word ($xxxx)
+        $15268              .word ($xxxx) ; $15272
+        $1526a              .word ($xxxx) ; $15278
+        $1526c              .word ($xxxx) ; $1527f
+        $1526e              .word ($xxxx) ; $15287
+        $15270              .word ($xxxx) ; $152a0
+MapData_MtSabreNorthRightCell_Layout
         $15272              .byte $xx
         $15273              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $15277              .byte $xx
-        $15278              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15280              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_MtSabreNorthRightCell_Graphics
+        $15278              .byte $xx,$xx,$xx
+        $1527b              .byte $xx,$xx
+        $1527d              .byte $xx,$xx
+MapData_MtSabreNorthRightCell_Entrances
+        $1527f              .byte $xx,$xx,$xx,$xx
+        $15283              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreNorthRightCell_Exits
         $15287              .byte $xx,$xx,$xx,$xx ; Back through ice wall to prison hallway
         $1528b              .byte $xx,$xx,$xx,$xx
@@ -7303,22 +7766,30 @@ MapData_MtSabreNorthRightCell_Exits
         $15297              .byte $xx,$xx,$xx,$xx ; To hallway with summit exit
         $1529b              .byte $xx,$xx,$xx,$xx
         $1529f              .byte $xx
-        $152a0              .byte $xx,$xx,$xx
+MapData_MtSabreNorthRightCell_Flags
+        $152a0              .byte $xx,$xx ; 64db:02 -> 62f0:01
+        $152a2              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreNorthCave7                              ; Location 33
         ;; Hallway north out of right-hand cell, toward summit
-        $152a3              .word ($xxxx)
-        $152a5              .word ($xxxx)
-        $152a7              .word ($xxxx)
-        $152a9              .word ($xxxx)
-        $152ab              .word ($xxxx)
+        $152a3              .word ($xxxx) ; $152ad
+        $152a5              .word ($xxxx) ; $152b4
+        $152a7              .word ($xxxx) ; $152bb
+        $152a9              .word ($xxxx) ; $152c3
+        $152ab              .word ($xxxx) ; $152dc
+MapData_MtSabreNorthCave7_Layout
         $152ad              .byte $xx
         $152ae              .byte $xx,$xx,$xx,$xx
         ;; Map 1x2
         $152b2              .byte $xx
         $152b3              .byte $xx
-        $152b4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $152c0              .byte $xx,$xx,$xx
+MapData_MtSabreNorthCave7_Graphics
+        $152b4              .byte $xx,$xx,$xx
+        $152b7              .byte $xx,$xx
+        $152b9              .byte $xx,$xx
+MapData_MtSabreNorthCave7_Entrances
+        $152bb              .byte $xx,$xx,$xx,$xx
+        $152bf              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreNorthCave7_Exits
         $152c3              .byte $xx,$xx,$xx,$xx ; Back to right cell
         $152c7              .byte $xx,$xx,$xx,$xx
@@ -7327,45 +7798,59 @@ MapData_MtSabreNorthCave7_Exits
         $152d3              .byte $xx,$xx,$xx,$xx ; Around to cave 8, up to summit
         $152d7              .byte $xx,$xx,$xx,$xx
         $152db              .byte $xx
+MapData_MtSabreNorthCave7_Flags
         $152dc              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreNorthCave8                              ; Location 34
         ;; short straight connector hallway to bendy hallway with exit K to summit
-        $152dd              .word ($xxxx)
-        $152df              .word ($xxxx)
-        $152e1              .word ($xxxx)
-        $152e3              .word ($xxxx)
-        $152e5              .word ($xxxx)
+        $152dd              .word ($xxxx) ; $152e7
+        $152df              .word ($xxxx) ; $152f2
+        $152e1              .word ($xxxx) ; $152f9
+        $152e3              .word ($xxxx) ; $15301
+        $152e5              .word ($xxxx) ; $15312
+MapData_MtSabreNorthCave8_Layout
         $152e7              .byte $xx
         $152e8              .byte $xx,$xx,$xx,$xx
         ;; Map 2x3
         $152ec              .byte $xx,$xx
         $152ee              .byte $xx,$xx
         $152f0              .byte $xx,$xx
-        $152f2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15300              .byte $xx
+MapData_MtSabreNorthCave8_Graphics
+        $152f2              .byte $xx,$xx,$xx
+        $152f5              .byte $xx,$xx
+        $152f7              .byte $xx,$xx
+MapData_MtSabreNorthCave8_Entrances
+        $152f9              .byte $xx,$xx,$xx,$xx
+        $152fd              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreNorthCave8_Exits
         $15301              .byte $xx,$xx,$xx,$xx ; Back to cave 7
         $15305              .byte $xx,$xx,$xx,$xx
         $15309              .byte $xx,$xx,$xx,$xx ; Out to summit
         $1530d              .byte $xx,$xx,$xx,$xx
         $15311              .byte $xx
+MapData_MtSabreNorthCave8_Flags
         $15312              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MtSabreNorthSummitCave                         ; Location 35
-        $15313              .word ($xxxx)
-        $15315              .word ($xxxx)
-        $15317              .word ($xxxx)
-        $15319              .word ($xxxx)
-        $1531b              .word ($xxxx)
+        $15313              .word ($xxxx) ; $1531d
+        $15315              .word ($xxxx) ; $1532b
+        $15317              .word ($xxxx) ; $15332
+        $15319              .word ($xxxx) ; $1533a
+        $1531b              .word ($xxxx) ; $15353
+MapData_MtSabreNorthSummitCave_Layout
         $1531d              .byte $xx
         $1531e              .byte $xx,$xx,$xx,$xx
         ;; Map 3x3
         $15322              .byte $xx,$xx,$xx
         $15325              .byte $xx,$xx,$xx
         $15328              .byte $xx,$xx,$xx
-        $1532b              .byte $xx,$xx,$xx,$xx,$xx
-        $15330              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_MtSabreNorthSummitCave_Graphics
+        $1532b              .byte $xx,$xx,$xx
+        $1532e              .byte $xx,$xx
+        $15330              .byte $xx,$xx
+MapData_MtSabreNorthSummitCave_Entrances
+        $15332              .byte $xx,$xx,$xx,$xx
+        $15336              .byte $xx,$xx,$xx,$xx
 MapData_MtSabreNorthSummitCave_Exits
         $1533a              .byte $xx,$xx,$xx,$xx ; Back to summit
         $1533e              .byte $xx,$xx,$xx,$xx
@@ -7374,14 +7859,17 @@ MapData_MtSabreNorthSummitCave_Exits
         $1534a              .byte $xx,$xx,$xx,$xx ; Out to waterfall valley
         $1534e              .byte $xx,$xx,$xx,$xx
         $15352              .byte $xx
-        $15353              .byte $xx,$xx,$xx
+MapData_MtSabreNorthSummitCave_Flags
+        $15353              .byte $xx,$xx ; 64da:80 -> 62f2:01
+        $15355              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_WaterfallValleyNorth                           ; Location 40
-        $15356              .word ($xxxx)
-        $15358              .word ($xxxx)
-        $1535a              .word ($xxxx)
-        $1535c              .word ($xxxx)
-        $1535e              .word ($xxxx)
+        $15356              .word ($xxxx) ; $15360
+        $15358              .word ($xxxx) ; $15392
+        $1535a              .word ($xxxx) ; $15399
+        $1535c              .word ($xxxx) ; $153a9
+        $1535e              .word ($xxxx) ; $153da
+MapData_WaterfallValleyNorth_Layout
         $15360              .byte $xx
         $15361              .byte $xx,$xx,$xx,$xx
         ;; Map 5x9
@@ -7394,8 +7882,15 @@ MapData_WaterfallValleyNorth                           ; Location 40
         $15383              .byte $xx,$xx,$xx,$xx,$xx
         $15388              .byte $xx,$xx,$xx,$xx,$xx
         $1538d              .byte $xx,$xx,$xx,$xx,$xx
-        $15392              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $153a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_WaterfallValleyNorth_Graphics
+        $15392              .byte $xx,$xx,$xx
+        $15395              .byte $xx,$xx
+        $15397              .byte $xx,$xx
+MapData_WaterfallValleyNorth_Entrances
+        $15399              .byte $xx,$xx,$xx,$xx
+        $1539d              .byte $xx,$xx,$xx,$xx
+        $153a1              .byte $xx,$xx,$xx,$xx
+        $153a5              .byte $xx,$xx,$xx,$xx
 MapData_WaterfallValleyNorth_Exits
         $153a9              .byte $xx,$xx,$xx,$xx ; Back to Mt Sabre Summit
         $153ad              .byte $xx,$xx,$xx,$xx
@@ -7410,14 +7905,17 @@ MapData_WaterfallValleyNorth_Exits
         $153d1              .byte $xx,$xx,$xx,$xx ; Bridge to south half
         $153d5              .byte $xx,$xx,$xx,$xx
         $153d9              .byte $xx
-        $153da              .byte $xx,$xx,$xx
+MapData_WaterfallValleyNorth_Flags
+        $153da              .byte $xx,$xx ; 64da:40 -> 62f1:08
+        $153dc              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_WaterfallValleySouth                           ; Location 41
-        $153dd              .word ($xxxx)
-        $153df              .word ($xxxx)
-        $153e1              .word ($xxxx)
-        $153e3              .word ($xxxx)
-        $153e5              .word ($xxxx)
+        $153dd              .word ($xxxx) ; $153e7
+        $153df              .word ($xxxx) ; $15419
+        $153e1              .word ($xxxx) ; $15420
+        $153e3              .word ($xxxx) ; $15428
+        $153e5              .word ($xxxx) ; $15445
+MapData_WaterfallValleySouth_Layout
         $153e7              .byte $xx
         $153e8              .byte $xx,$xx,$xx,$xx
         ;; Map 5x9
@@ -7430,8 +7928,13 @@ MapData_WaterfallValleySouth                           ; Location 41
         $1540a              .byte $xx,$xx,$xx,$xx,$xx
         $1540f              .byte $xx,$xx,$xx,$xx,$xx
         $15414              .byte $xx,$xx,$xx,$xx,$xx
-        $15419              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15420              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_WaterfallValleySouth_Graphics
+        $15419              .byte $xx,$xx,$xx
+        $1541c              .byte $xx,$xx
+        $1541e              .byte $xx,$xx
+MapData_WaterfallValleySouth_Entrances
+        $15420              .byte $xx,$xx,$xx,$xx
+        $15424              .byte $xx,$xx,$xx,$xx
 MapData_WaterfallValleySouth_Exits
         $15428              .byte $xx,$xx,$xx,$xx ; To Lime Tree Valley
         $1542c              .byte $xx,$xx,$xx,$xx
@@ -7441,59 +7944,84 @@ MapData_WaterfallValleySouth_Exits
         $1543c              .byte $xx,$xx,$xx,$xx ; Bridge to north half
         $15440              .byte $xx,$xx,$xx,$xx
         $15444              .byte $xx
-        $15445              .byte $xx,$xx,$xx
+MapData_WaterfallValleySouth_Flags
+        $15445              .byte $xx,$xx ; 64da:20 -> 62f7:04
+        $15447              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LimeTreeValley                                 ; Location 42
-        $15448              .word ($xxxx)
-        $1544a              .word ($xxxx)
-        $1544c              .word ($xxxx)
-        $1544e              .word ($xxxx)
-        $15450              .word ($xxxx)
+        $15448              .word ($xxxx) ; $15452
+        $1544a              .word ($xxxx) ; $15460
+        $1544c              .word ($xxxx) ; $15467
+        $1544e              .word ($xxxx) ; $1546f
+        $15450              .word ($xxxx) ; $15480
+MapData_LimeTreeValley_Layout
         $15452              .byte $xx
         $15453              .byte $xx,$xx,$xx,$xx
         ;; Map 3x3
         $15457              .byte $xx,$xx,$xx
         $1545a              .byte $xx,$xx,$xx
         $1545d              .byte $xx,$xx,$xx
-        $15460              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LimeTreeValley_Graphics
+        $15460              .byte $xx,$xx,$xx
+        $15463              .byte $xx,$xx
+        $15465              .byte $xx,$xx
+MapData_LimeTreeValley_Entrances
+        $15467              .byte $xx,$xx,$xx,$xx
+        $1546b              .byte $xx,$xx,$xx,$xx
 MapData_LimeTreeValley_Exits
         $1546f              .byte $xx,$xx,$xx,$xx ; To Waterfall Valley (south)
         $15473              .byte $xx,$xx,$xx,$xx
         $15477              .byte $xx,$xx,$xx,$xx ; To Lime Tree Lake
         $1547b              .byte $xx,$xx,$xx,$xx
         $1547f              .byte $xx
+MapData_LimeTreeValley_Flags
         $15480              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LimeTreeLake                                   ; Location 43
-        $15481              .word ($xxxx)
-        $15483              .word ($xxxx)
-        $15485              .word ($xxxx)
-        $15487              .word ($xxxx)
-        $15489              .word ($xxxx)
+        $15481              .word ($xxxx) ; $1548b
+        $15483              .word ($xxxx) ; $15491
+        $15485              .word ($xxxx) ; $15498
+        $15487              .word ($xxxx) ; $154a0
+        $15489              .word ($xxxx) ; $154b1
+MapData_LimeTreeLake_Layout
         $1548b              .byte $xx
         $1548c              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $15490              .byte $xx
-        $15491              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LimeTreeLake_Graphics
+        $15491              .byte $xx,$xx,$xx
+        $15494              .byte $xx,$xx
+        $15496              .byte $xx,$xx
+MapData_LimeTreeLake_Entrances
+        $15498              .byte $xx,$xx,$xx,$xx
+        $1549c              .byte $xx,$xx,$xx,$xx
 MapData_LimeTreeLake_Exits
         $154a0              .byte $xx,$xx,$xx,$xx ; Out to Lime Tree Valley
         $154a4              .byte $xx,$xx,$xx,$xx
         $154a8              .byte $xx,$xx,$xx,$xx ; In to Mesia's shrine
         $154ac              .byte $xx,$xx,$xx,$xx
         $154b0              .byte $xx
-        $154b1              .byte $xx,$xx,$xx
+MapData_LimeTreeLake_Flags
+        $154b1              .byte $xx,$xx ; 64d9:40 -> 62f0:01
+        $154b3              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_MesiaShrine                                    ; Location 52
-        $154b4              .word ($xxxx)
-        $154b6              .word ($xxxx)
-        $154b8              .word ($xxxx)
-        $154ba              .word ($xxxx)
-        $154bc              .word ($xxxx)
+        $154b4              .word ($xxxx) ; $154be
+        $154b6              .word ($xxxx) ; $154c4
+        $154b8              .word ($xxxx) ; $154cb
+        $154ba              .word ($xxxx) ; $154cf
+        $154bc              .word ($xxxx) ; $154e4
+MapData_MesiaShrine_Layout
         $154be              .byte $xx
         $154bf              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $154c3              .byte $xx
-        $154c4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_MesiaShrine_Graphics
+        $154c4              .byte $xx,$xx,$xx
+        $154c7              .byte $xx,$xx
+        $154c9              .byte $xx,$xx
+MapData_MesiaShrine_Entrances
+        $154cb              .byte $xx,$xx,$xx,$xx
 MapData_MesiaShrine_Exits
         $154cf              .byte $xx,$xx,$xx,$xx ; Out to Lime Tree Lake
         $154d3              .byte $xx,$xx,$xx,$xx
@@ -7501,14 +8029,16 @@ MapData_MesiaShrine_Exits
         $154db              .byte $xx,$xx,$xx,$xx
         $154df              .byte $xx,$xx,$xx,$xx
         $154e3              .byte $xx
+MapData_MesiaShrine_Flags
         $154e4              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_KirisaPlantCave1                               ; Location 44
-        $154e5              .word ($xxxx)
-        $154e7              .word ($xxxx)
-        $154e9              .word ($xxxx)
-        $154eb              .word ($xxxx)
-        $154ed              .word ($xxxx)
+        $154e5              .word ($xxxx) ; $154ef
+        $154e7              .word ($xxxx) ; $154fc
+        $154e9              .word ($xxxx) ; $15503
+        $154eb              .word ($xxxx) ; $1550b
+        $154ed              .word ($xxxx) ; $1551c
+MapData_KirisaPlantCave1_Layout
         $154ef              .byte $xx
         $154f0              .byte $xx,$xx,$xx,$xx
         ;; Map 2x4
@@ -7516,22 +8046,30 @@ MapData_KirisaPlantCave1                               ; Location 44
         $154f6              .byte $xx,$xx
         $154f8              .byte $xx,$xx
         $154fa              .byte $xx,$xx
-        $154fc              .byte $xx,$xx,$xx,$xx
-        $15500              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_KirisaPlantCave1_Graphics
+        $154fc              .byte $xx,$xx,$xx
+        $154ff              .byte $xx,$xx
+        $15501              .byte $xx,$xx
+MapData_KirisaPlantCave1_Entrances
+        $15503              .byte $xx,$xx,$xx,$xx
+        $15507              .byte $xx,$xx,$xx,$xx
 MapData_KirisaPlantCave1_Exits
         $1550b              .byte $xx,$xx,$xx,$xx ; Out to Waterfall Valley (south)
         $1550f              .byte $xx,$xx,$xx,$xx
         $15513              .byte $xx,$xx,$xx,$xx ; To next room in (very linear cave)
         $15517              .byte $xx,$xx,$xx,$xx
         $1551b              .byte $xx
-        $1551c              .byte $xx,$xx,$xx
+MapData_KirisaPlantCave1_Flags
+        $1551c              .byte $xx,$xx ; 64d8:02 -> 62f1:01
+        $1551e              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_KirisaPlantCave2                               ; Location 45
-        $1551f              .word ($xxxx)
-        $15521              .word ($xxxx)
-        $15523              .word ($xxxx)
-        $15525              .word ($xxxx)
-        $15527              .word ($xxxx)
+        $1551f              .word ($xxxx) ; $15529
+        $15521              .word ($xxxx) ; $1553e
+        $15523              .word ($xxxx) ; $15545
+        $15525              .word ($xxxx) ; $1554d
+        $15527              .word ($xxxx) ; $1555e
+MapData_KirisaPlantCave2_Layout
         $15529              .byte $xx
         $1552a              .byte $xx,$xx,$xx,$xx
         ;; Map 4x4
@@ -7539,23 +8077,31 @@ MapData_KirisaPlantCave2                               ; Location 45
         $15532              .byte $xx,$xx,$xx,$xx
         $15536              .byte $xx,$xx,$xx,$xx
         $1553a              .byte $xx,$xx,$xx,$xx
-        $1553e              .byte $xx,$xx
-        $15540              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_KirisaPlantCave2_Graphics
+        $1553e              .byte $xx,$xx,$xx
+        $15541              .byte $xx,$xx
+        $15543              .byte $xx,$xx
+MapData_KirisaPlantCave2_Entrances
+        $15545              .byte $xx,$xx,$xx,$xx
+        $15549              .byte $xx,$xx,$xx,$xx
 MapData_KirisaPlantCave2_Exits
         $1554d              .byte $xx,$xx,$xx,$xx ; Back to room 1
         $15551              .byte $xx,$xx,$xx,$xx
         $15555              .byte $xx,$xx,$xx,$xx ; In to room 3
         $15559              .byte $xx,$xx,$xx,$xx
         $1555d              .byte $xx
-        $1555e              .byte $xx,$xx
-        $15560              .byte $xx,$xx,$xx
+MapData_KirisaPlantCave2_Flags
+        $1555e              .byte $xx,$xx ; 64d8:01 -> 62f2:08
+        $15560              .byte $xx,$xx ; 64d7:80 -> 62f2:02
+        $15562              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_KirisaPlantCave3                               ; Location 46
-        $15563              .word ($xxxx)
-        $15565              .word ($xxxx)
-        $15567              .word ($xxxx)
-        $15569              .word ($xxxx)
-        $1556b              .word ($xxxx)
+        $15563              .word ($xxxx) ; $1556d
+        $15565              .word ($xxxx) ; $1557e
+        $15567              .word ($xxxx) ; $15585
+        $15569              .word ($xxxx) ; $1558d
+        $1556b              .word ($xxxx) ; $1559e
+MapData_KirisaPlantCave3_Layout
         $1556d              .byte $xx
         $1556e              .byte $xx,$xx,$xx,$xx
         ;; Map 3x4
@@ -7563,43 +8109,56 @@ MapData_KirisaPlantCave3                               ; Location 46
         $15575              .byte $xx,$xx,$xx
         $15578              .byte $xx,$xx,$xx
         $1557b              .byte $xx,$xx,$xx
-        $1557e              .byte $xx,$xx
-        $15580              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_KirisaPlantCave3_Graphics
+        $1557e              .byte $xx,$xx,$xx
+        $15581              .byte $xx,$xx
+        $15583              .byte $xx,$xx
+MapData_KirisaPlantCave3_Entrances
+        $15585              .byte $xx,$xx,$xx,$xx
+        $15589              .byte $xx,$xx,$xx,$xx
 MapData_KirisaPlantCave3_Exits
         $1558d              .byte $xx,$xx,$xx,$xx ; Back to room 2
         $15591              .byte $xx,$xx,$xx,$xx
         $15595              .byte $xx,$xx,$xx,$xx ; In to Kirisa Meadow
         $15599              .byte $xx,$xx,$xx,$xx
         $1559d              .byte $xx
-        $1559e              .byte $xx,$xx
+MapData_KirisaPlantCave3_Flags
+        $1559e              .byte $xx,$xx ; 64d0:40 -> 62f2:02
         $155a0              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_KirisaMeadow                                   ; Location 47
-        $155a1              .word ($xxxx)
-        $155a3              .word ($xxxx)
-        $155a5              .word ($xxxx)
-        $155a7              .word ($xxxx)
-        $155a9              .word ($xxxx)
+        $155a1              .word ($xxxx) ; $155ab
+        $155a3              .word ($xxxx) ; $155b6
+        $155a5              .word ($xxxx) ; $155bd
+        $155a7              .word ($xxxx) ; $155c1
+        $155a9              .word ($xxxx) ; $155ca
+MapData_KirisaMeadow_Layout
         $155ab              .byte $xx
         $155ac              .byte $xx,$xx,$xx,$xx
         ;; Map 2x3
         $155b0              .byte $xx,$xx
         $155b2              .byte $xx,$xx
         $155b4              .byte $xx,$xx
-        $155b6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $155c0              .byte $xx
+MapData_KirisaMeadow_Graphics
+        $155b6              .byte $xx,$xx,$xx
+        $155b9              .byte $xx,$xx
+        $155bb              .byte $xx,$xx
+MapData_KirisaMeadow_Entrances
+        $155bd              .byte $xx,$xx,$xx,$xx
 MapData_KirisaMeadow_Exits
         $155c1              .byte $xx,$xx,$xx,$xx ; Back to room 3
         $155c5              .byte $xx,$xx,$xx,$xx
         $155c9              .byte $xx
+MapData_KirisaMeadow_Flags
         $155ca              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_FogLampCave1                                   ; Location 48
-        $155cb              .word ($xxxx)
-        $155cd              .word ($xxxx)
-        $155cf              .word ($xxxx)
-        $155d1              .word ($xxxx)
-        $155d3              .word ($xxxx)
+        $155cb              .word ($xxxx) ; $155d5
+        $155cd              .word ($xxxx) ; $155e9
+        $155cf              .word ($xxxx) ; $155f0
+        $155d1              .word ($xxxx) ; $155f8
+        $155d3              .word ($xxxx) ; $15609
+MapData_FogLampCave1_Layout
         $155d5              .byte $xx
         $155d6              .byte $xx,$xx,$xx,$xx
         ;; Map 3x5
@@ -7608,42 +8167,58 @@ MapData_FogLampCave1                                   ; Location 48
         $155e0              .byte $xx,$xx,$xx
         $155e3              .byte $xx,$xx,$xx
         $155e6              .byte $xx,$xx,$xx
-        $155e9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $155f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_FogLampCave1_Graphics
+        $155e9              .byte $xx,$xx,$xx
+        $155ec              .byte $xx,$xx
+        $155ee              .byte $xx,$xx
+MapData_FogLampCave1_Entrances
+        $155f0              .byte $xx,$xx,$xx,$xx
+        $155f4              .byte $xx,$xx,$xx,$xx
 MapData_FogLampCave1_Exits
         $155f8              .byte $xx,$xx,$xx,$xx ; Out to Waterfall Valley (north)
         $155fc              .byte $xx,$xx,$xx,$xx
         $15600              .byte $xx,$xx,$xx,$xx ; In to next room
         $15604              .byte $xx,$xx,$xx,$xx
         $15608              .byte $xx
-        $15609              .byte $xx,$xx,$xx,$xx,$xx
+MapData_FogLampCave1_Flags
+        $15609              .byte $xx,$xx ; 64d9:20 -> 62f0:02
+        $1560b              .byte $xx,$xx ; 64d9:10 -> 62f3:02
+        $1560d              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_FogLampCave2                                   ; Location 49
-        $1560e              .word ($xxxx)
-        $15610              .word ($xxxx)
-        $15612              .word ($xxxx)
-        $15614              .word ($xxxx)
-        $15616              .word ($xxxx)
+        $1560e              .word ($xxxx) ; $15618
+        $15610              .word ($xxxx) ; $1561f
+        $15612              .word ($xxxx) ; $15626
+        $15614              .word ($xxxx) ; $1562e
+        $15616              .word ($xxxx) ; $1563f
+MapData_FogLampCave2_Layout
         $15618              .byte $xx
         $15619              .byte $xx,$xx,$xx,$xx
         ;; Map 2x1
         $1561d              .byte $xx,$xx
-        $1561f              .byte $xx
-        $15620              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_FogLampCave2_Graphics
+        $1561f              .byte $xx,$xx,$xx
+        $15622              .byte $xx,$xx
+        $15624              .byte $xx,$xx
+MapData_FogLampCave2_Entrances
+        $15626              .byte $xx,$xx,$xx,$xx
+        $1562a              .byte $xx,$xx,$xx,$xx
 MapData_FogLampCave2_Exits
         $1562e              .byte $xx,$xx,$xx,$xx ; Back to previous room
         $15632              .byte $xx,$xx,$xx,$xx
         $15636              .byte $xx,$xx,$xx,$xx ; In to next room
         $1563a              .byte $xx,$xx,$xx,$xx
         $1563e              .byte $xx
+MapData_FogLampCave2_Flags
         $1563f              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_FogLampCave3                                   ; Location 4a
-        $15640              .word ($xxxx)
-        $15642              .word ($xxxx)
-        $15644              .word ($xxxx)
-        $15646              .word ($xxxx)
-        $15648              .word ($xxxx)
+        $15640              .word ($xxxx) ; $1564a
+        $15642              .word ($xxxx) ; $15663
+        $15644              .word ($xxxx) ; $1566a
+        $15646              .word ($xxxx) ; $15676
+        $15648              .word ($xxxx) ; $1568f
+MapData_FogLampCave3_Layout
         $1564a              .byte $xx
         $1564b              .byte $xx,$xx,$xx,$xx
         ;; Map 4x5
@@ -7652,8 +8227,14 @@ MapData_FogLampCave3                                   ; Location 4a
         $15657              .byte $xx,$xx,$xx,$xx
         $1565b              .byte $xx,$xx,$xx,$xx
         $1565f              .byte $xx,$xx,$xx,$xx
-        $15663              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15670              .byte $xx,$xx,$xx,$xx,$xx,$xx
+MapData_FogLampCave3_Graphics
+        $15663              .byte $xx,$xx,$xx
+        $15666              .byte $xx,$xx
+        $15668              .byte $xx,$xx
+MapData_FogLampCave3_Entrances
+        $1566a              .byte $xx,$xx,$xx,$xx
+        $1566e              .byte $xx,$xx,$xx,$xx
+        $15672              .byte $xx,$xx,$xx,$xx
 MapData_FogLampCave3_Exits
         $15676              .byte $xx,$xx,$xx,$xx ; Back to previous room
         $1567a              .byte $xx,$xx,$xx,$xx
@@ -7662,35 +8243,45 @@ MapData_FogLampCave3_Exits
         $15686              .byte $xx,$xx,$xx,$xx ; In to next room
         $1568a              .byte $xx,$xx,$xx,$xx
         $1568e              .byte $xx
-        $1568f              .byte $xx
-        $15690              .byte $xx,$xx,$xx,$xx,$xx,$xx
+MapData_FogLampCave3_Flags
+        $1568f              .byte $xx,$xx ; 64d9:04 -> 62f4:02
+        $15691              .byte $xx,$xx ; 64d9:02 -> 62f3:04
+        $15693              .byte $xx,$xx ; 64d9:01 -> 62f1:08
+        $15695              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_FogLampCaveDeadEnd                             ; Location 4b
-        $15696              .word ($xxxx)
-        $15698              .word ($xxxx)
-        $1569a              .word ($xxxx)
-        $1569c              .word ($xxxx)
-        $1569e              .word ($xxxx)
+        $15696              .word ($xxxx) ; $156a0
+        $15698              .word ($xxxx) ; $156ab
+        $1569a              .word ($xxxx) ; $156b2
+        $1569c              .word ($xxxx) ; $156b6
+        $1569e              .word ($xxxx) ; $156bf
+MapData_FogLampCaveDeadEnd_Layout
         $156a0              .byte $xx
         $156a1              .byte $xx,$xx,$xx,$xx
         ;; Map 3x2
         $156a5              .byte $xx,$xx,$xx
         $156a8              .byte $xx,$xx,$xx
-        $156ab              .byte $xx,$xx,$xx,$xx,$xx
-        $156b0              .byte $xx,$xx,$xx,$xx,$xx,$xx
+MapData_FogLampCaveDeadEnd_Graphics
+        $156ab              .byte $xx,$xx,$xx
+        $156ae              .byte $xx,$xx
+        $156b0              .byte $xx,$xx
+MapData_FogLampCaveDeadEnd_Entrances
+        $156b2              .byte $xx,$xx,$xx,$xx
 MapData_FogLampCaveDeadEnd_Exits
         $156b6              .byte $xx,$xx,$xx,$xx ; Back to previous room
         $156ba              .byte $xx,$xx,$xx,$xx
         $156be              .byte $xx
-        $156bf              .byte $xx
-        $156c0              .byte $xx,$xx
+MapData_FogLampCaveDeadEnd_Flags
+        $156bf              .byte $xx,$xx ; 64d9:08 -> 62f1:02
+        $156c1              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_FogLampCave4                                   ; Location 4c
-        $156c2              .word ($xxxx)
-        $156c4              .word ($xxxx)
-        $156c6              .word ($xxxx)
-        $156c8              .word ($xxxx)
-        $156ca              .word ($xxxx)
+        $156c2              .word ($xxxx) ; $156cc
+        $156c4              .word ($xxxx) ; $156e5
+        $156c6              .word ($xxxx) ; $156ec
+        $156c8              .word ($xxxx) ; $156f8
+        $156ca              .word ($xxxx) ; $15711
+MapData_FogLampCave4_Layout
         $156cc              .byte $xx
         $156cd              .byte $xx,$xx,$xx,$xx
         ;; Map 4x5
@@ -7699,8 +8290,14 @@ MapData_FogLampCave4                                   ; Location 4c
         $156d9              .byte $xx,$xx,$xx,$xx
         $156dd              .byte $xx,$xx,$xx,$xx
         $156e1              .byte $xx,$xx,$xx,$xx
-        $156e5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $156f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_FogLampCave4_Graphics
+        $156e5              .byte $xx,$xx,$xx
+        $156e8              .byte $xx,$xx
+        $156ea              .byte $xx,$xx
+MapData_FogLampCave4_Entrances
+        $156ec              .byte $xx,$xx,$xx,$xx
+        $156f0              .byte $xx,$xx,$xx,$xx
+        $156f4              .byte $xx,$xx,$xx,$xx
 MapData_FogLampCave4_Exits
         $156f8              .byte $xx,$xx,$xx,$xx ; Back to previous room
         $156fc              .byte $xx,$xx,$xx,$xx
@@ -7709,14 +8306,17 @@ MapData_FogLampCave4_Exits
         $15708              .byte $xx,$xx,$xx,$xx ; Right-hand door to next room
         $1570c              .byte $xx,$xx,$xx,$xx
         $15710              .byte $xx
-        $15711              .byte $xx,$xx,$xx
+MapData_FogLampCave4_Flags
+        $15711              .byte $xx,$xx ; 64d8:80 -> 62f2:04
+        $15713              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_FogLampCave5                                   ; Location 4d
-        $15714              .word ($xxxx)
-        $15716              .word ($xxxx)
-        $15718              .word ($xxxx)
-        $1571a              .word ($xxxx)
-        $1571c              .word ($xxxx)
+        $15714              .word ($xxxx) ; $1571e
+        $15716              .word ($xxxx) ; $15737
+        $15718              .word ($xxxx) ; $1573e
+        $1571a              .word ($xxxx) ; $1574a
+        $1571c              .word ($xxxx) ; $15763
+MapData_FogLampCave5_Layout
         $1571e              .byte $xx
         $1571f              .byte $xx,$xx,$xx,$xx
         ;; Map 4x5
@@ -7725,8 +8325,14 @@ MapData_FogLampCave5                                   ; Location 4d
         $1572b              .byte $xx,$xx,$xx,$xx
         $1572f              .byte $xx,$xx,$xx,$xx
         $15733              .byte $xx,$xx,$xx,$xx
-        $15737              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15740              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_FogLampCave5_Graphics
+        $15737              .byte $xx,$xx,$xx
+        $1573a              .byte $xx,$xx
+        $1573c              .byte $xx,$xx
+MapData_FogLampCave5_Entrances
+        $1573e              .byte $xx,$xx,$xx,$xx
+        $15742              .byte $xx,$xx,$xx,$xx
+        $15746              .byte $xx,$xx,$xx,$xx
 MapData_FogLampCave5_Exits
         $1574a              .byte $xx,$xx,$xx,$xx ; Back to previous room (right exit)
         $1574e              .byte $xx,$xx,$xx,$xx
@@ -7735,14 +8341,19 @@ MapData_FogLampCave5_Exits
         $1575a              .byte $xx,$xx,$xx,$xx ; In to next room
         $1575e              .byte $xx,$xx,$xx,$xx
         $15762              .byte $xx
-        $15763              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_FogLampCave5_Flags
+        $15763              .byte $xx,$xx ; 64d8:40 -> 62f2:02
+        $15765              .byte $xx,$xx ; 64d8:20 -> 62f1:02
+        $15767              .byte $xx,$xx ; 64d8:10 -> 62f1:01
+        $15769              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_FogLampCave6                                   ; Location 4e
-        $1576a              .word ($xxxx)
-        $1576c              .word ($xxxx)
-        $1576e              .word ($xxxx)
-        $15770              .word ($xxxx)
-        $15772              .word ($xxxx)
+        $1576a              .word ($xxxx) ; $15774
+        $1576c              .word ($xxxx) ; $1578d
+        $1576e              .word ($xxxx) ; $15794
+        $15770              .word ($xxxx) ; $1579c
+        $15772              .word ($xxxx) ; $157ad
+MapData_FogLampCave6_Layout
         $15774              .byte $xx
         $15775              .byte $xx,$xx,$xx,$xx
         ;; Map 4x5
@@ -7751,22 +8362,30 @@ MapData_FogLampCave6                                   ; Location 4e
         $15781              .byte $xx,$xx,$xx,$xx
         $15785              .byte $xx,$xx,$xx,$xx
         $15789              .byte $xx,$xx,$xx,$xx
+MapData_FogLampCave6_Graphics
         $1578d              .byte $xx,$xx,$xx
-        $15790              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $15790              .byte $xx,$xx
+        $15792              .byte $xx,$xx
+MapData_FogLampCave6_Entrances
+        $15794              .byte $xx,$xx,$xx,$xx
+        $15798              .byte $xx,$xx,$xx,$xx
 MapData_FogLampCave6_Exits
         $1579c              .byte $xx,$xx,$xx,$xx ; Back
         $157a0              .byte $xx,$xx,$xx,$xx
         $157a4              .byte $xx,$xx,$xx,$xx ; Onward
         $157a8              .byte $xx,$xx,$xx,$xx
         $157ac              .byte $xx
-        $157ad              .byte $xx,$xx,$xx
+MapData_FogLampCave6_Flags
+        $157ad              .byte $xx,$xx ; 64d8:08 -> 62f1:04
+        $157af              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_FogLampCave7                                   ; Location 4f
-        $157b0              .word ($xxxx)
-        $157b2              .word ($xxxx)
-        $157b4              .word ($xxxx)
-        $157b6              .word ($xxxx)
-        $157b8              .word ($xxxx)
+        $157b0              .word ($xxxx) ; $157ba
+        $157b2              .word ($xxxx) ; $157d3
+        $157b4              .word ($xxxx) ; $157da
+        $157b6              .word ($xxxx) ; $157de
+        $157b8              .word ($xxxx) ; $157e7
+MapData_FogLampCave7_Layout
         $157ba              .byte $xx
         $157bb              .byte $xx,$xx,$xx,$xx
         ;; Map 4x5
@@ -7775,28 +8394,46 @@ MapData_FogLampCave7                                   ; Location 4f
         $157c7              .byte $xx,$xx,$xx,$xx
         $157cb              .byte $xx,$xx,$xx,$xx
         $157cf              .byte $xx,$xx,$xx,$xx
-        $157d3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_FogLampCave7_Graphics
+        $157d3              .byte $xx,$xx,$xx
+        $157d6              .byte $xx,$xx
+        $157d8              .byte $xx,$xx
+MapData_FogLampCave7_Entrances
+        $157da              .byte $xx,$xx,$xx,$xx
 MapData_FogLampCave7_Exits
         $157de              .byte $xx,$xx,$xx,$xx ; Back
         $157e2              .byte $xx,$xx,$xx,$xx
         $157e6              .byte $xx
-        $157e7              .byte $xx,$xx,$xx
+MapData_FogLampCave7_Flags
+        $157e7              .byte $xx,$xx ; 64d8:04 -> 62f1:02
+        $157e9              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Portoa                                         ; Location 50
-        $157ea              .word ($xxxx)
-        $157ec              .word ($xxxx)
-        $157ee              .word ($xxxx)
-        $157f0              .word ($xxxx)
-        $157f2              .word ($xxxx)
+        $157ea              .word ($xxxx) ; $157f4
+        $157ec              .word ($xxxx) ; $157fd
+        $157ee              .word ($xxxx) ; $15804
+        $157f0              .word ($xxxx) ; $15828
+        $157f2              .word ($xxxx) ; $15859
+MapData_Portoa_Layout
         $157f4              .byte $xx
         $157f5              .byte $xx,$xx,$xx,$xx
         ;; Map 2x2
         $157f9              .byte $xx,$xx
         $157fb              .byte $xx,$xx
+MapData_Portoa_Graphics
         $157fd              .byte $xx,$xx,$xx
-        $15800              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15810              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15820              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $15800              .byte $xx,$xx
+        $15802              .byte $xx,$xx
+MapData_Portoa_Entrances
+        $15804              .byte $xx,$xx,$xx,$xx
+        $15808              .byte $xx,$xx,$xx,$xx
+        $1580c              .byte $xx,$xx,$xx,$xx
+        $15810              .byte $xx,$xx,$xx,$xx
+        $15814              .byte $xx,$xx,$xx,$xx
+        $15818              .byte $xx,$xx,$xx,$xx
+        $1581c              .byte $xx,$xx,$xx,$xx
+        $15820              .byte $xx,$xx,$xx,$xx
+        $15824              .byte $xx,$xx,$xx,$xx
 MapData_Portoa_Exits
         $15828              .byte $xx,$xx,$xx,$xx ; Out to Waterfall Valley
         $1582c              .byte $xx,$xx,$xx,$xx
@@ -7811,20 +8448,29 @@ MapData_Portoa_Exits
         $15850              .byte $xx,$xx,$xx,$xx ; Inn
         $15854              .byte $xx,$xx,$xx,$xx ; Tool Shop
         $15858              .byte $xx
-        $15859              .byte $xx,$xx,$xx
+MapData_Portoa_Flags
+        $15859              .byte $xx,$xx ; 64d0:04 -> 62f0:01
+        $1585b              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_PortoaFishermanIsland                          ; Location 51
-        $1585c              .word ($xxxx)
-        $1585e              .word ($xxxx)
-        $15860              .word ($xxxx)
-        $15862              .word ($xxxx)
-        $15864              .word ($xxxx)
+        $1585c              .word ($xxxx) ; $15866
+        $1585e              .word ($xxxx) ; $1586c
+        $15860              .word ($xxxx) ; $15873
+        $15862              .word ($xxxx) ; $1587f
+        $15864              .word ($xxxx) ; $158a4
+MapData_PortoaFishermanIsland_Layout
         $15866              .byte $xx
         $15867              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1586b              .byte $xx
-        $1586c              .byte $xx,$xx,$xx,$xx
-        $15870              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_PortoaFishermanIsland_Graphics
+        $1586c              .byte $xx,$xx,$xx
+        $1586f              .byte $xx,$xx
+        $15871              .byte $xx,$xx
+MapData_PortoaFishermanIsland_Entrances
+        $15873              .byte $xx,$xx,$xx,$xx
+        $15877              .byte $xx,$xx,$xx,$xx
+        $1587b              .byte $xx,$xx,$xx,$xx
 MapData_PortoaFishermanIsland_Exits
         $1587f              .byte $xx,$xx,$xx,$xx ; Bridge to Portoa
         $15883              .byte $xx,$xx,$xx,$xx
@@ -7836,14 +8482,17 @@ MapData_PortoaFishermanIsland_Exits
         $1589b              .byte $xx,$xx,$xx,$xx
         $1589f              .byte $xx,$xx,$xx,$xx ; In to house
         $158a3              .byte $xx
-        $158a4              .byte $xx,$xx,$xx
+MapData_PortoaFishermanIsland_Flags
+        $158a4              .byte $xx,$xx ; 64d0:04 -> 62f0:01
+        $158a6              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_WaterfallCave1                                 ; Location 54
-        $158a7              .word ($xxxx)
-        $158a9              .word ($xxxx)
-        $158ab              .word ($xxxx)
-        $158ad              .word ($xxxx)
-        $158af              .word ($xxxx)
+        $158a7              .word ($xxxx) ; $158b1
+        $158a9              .word ($xxxx) ; $158d4
+        $158ab              .word ($xxxx) ; $158db
+        $158ad              .word ($xxxx) ; $158e3
+        $158af              .word ($xxxx) ; $158f4
+MapData_WaterfallCave1_Layout
         $158b1              .byte $xx
         $158b2              .byte $xx,$xx,$xx,$xx
         ;; Map 5x6
@@ -7853,42 +8502,60 @@ MapData_WaterfallCave1                                 ; Location 54
         $158c5              .byte $xx,$xx,$xx,$xx,$xx
         $158ca              .byte $xx,$xx,$xx,$xx,$xx
         $158cf              .byte $xx,$xx,$xx,$xx,$xx
-        $158d4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $158e0              .byte $xx,$xx,$xx
+MapData_WaterfallCave1_Graphics
+        $158d4              .byte $xx,$xx,$xx
+        $158d7              .byte $xx,$xx
+        $158d9              .byte $xx,$xx
+MapData_WaterfallCave1_Entrances
+        $158db              .byte $xx,$xx,$xx,$xx
+        $158df              .byte $xx,$xx,$xx,$xx
 MapData_WaterfallCave1_Exits
         $158e3              .byte $xx,$xx,$xx,$xx ; Out to Waterfall Valley
         $158e7              .byte $xx,$xx,$xx,$xx
         $158eb              .byte $xx,$xx,$xx,$xx ; Next room
         $158ef              .byte $xx,$xx,$xx,$xx
         $158f3              .byte $xx
-        $158f4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_WaterfallCave1_Flags
+        $158f4              .byte $xx,$xx ; 64da:10 -> 62f2:01
+        $158f6              .byte $xx,$xx ; 64da:08 -> 62f1:02
+        $158f8              .byte $xx,$xx ; 64da:04 -> 62f1:08
+        $158fa              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_WaterfallCave2                                 ; Location 55
-        $158fb              .word ($xxxx)
-        $158fd              .word ($xxxx)
-        $158ff              .word ($xxxx)
-        $15901              .word ($xxxx)
-        $15903              .word ($xxxx)
+        $158fb              .word ($xxxx) ; $15905
+        $158fd              .word ($xxxx) ; $15910
+        $158ff              .word ($xxxx) ; $15917
+        $15901              .word ($xxxx) ; $1591f
+        $15903              .word ($xxxx) ; $15930
+MapData_WaterfallCave2_Layout
         $15905              .byte $xx
         $15906              .byte $xx,$xx,$xx,$xx
         ;; Map 3x2
         $1590a              .byte $xx,$xx,$xx
         $1590d              .byte $xx,$xx,$xx
-        $15910              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_WaterfallCave2_Graphics
+        $15910              .byte $xx,$xx,$xx
+        $15913              .byte $xx,$xx
+        $15915              .byte $xx,$xx
+MapData_WaterfallCave2_Entrances
+        $15917              .byte $xx,$xx,$xx,$xx
+        $1591b              .byte $xx,$xx,$xx,$xx
 MapData_WaterfallCave3_Exits
         $1591f              .byte $xx,$xx,$xx,$xx ; Last room
         $15923              .byte $xx,$xx,$xx,$xx
         $15927              .byte $xx,$xx,$xx,$xx ; Next room
         $1592b              .byte $xx,$xx,$xx,$xx
         $1592f              .byte $xx
+MapData_WaterfallCave2_Flags
         $15930              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_WaterfallCave3                                 ; Location 56
-        $15931              .word ($xxxx)
-        $15933              .word ($xxxx)
-        $15935              .word ($xxxx)
-        $15937              .word ($xxxx)
-        $15939              .word ($xxxx)
+        $15931              .word ($xxxx) ; $1593b
+        $15933              .word ($xxxx) ; $15959
+        $15935              .word ($xxxx) ; $15960
+        $15937              .word ($xxxx) ; $1596c
+        $15939              .word ($xxxx) ; $15995
+MapData_WaterfallCave3_Layout
         $1593b              .byte $xx
         $1593c              .byte $xx,$xx,$xx,$xx
         ;; Map 5x5
@@ -7897,8 +8564,14 @@ MapData_WaterfallCave3                                 ; Location 56
         $1594a              .byte $xx,$xx,$xx,$xx,$xx
         $1594f              .byte $xx,$xx,$xx,$xx,$xx
         $15954              .byte $xx,$xx,$xx,$xx,$xx
-        $15959              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15960              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_WaterfallCave3_Graphics
+        $15959              .byte $xx,$xx,$xx
+        $1595c              .byte $xx,$xx
+        $1595e              .byte $xx,$xx
+MapData_WaterfallCave3_Entrances
+        $15960              .byte $xx,$xx,$xx,$xx
+        $15964              .byte $xx,$xx,$xx,$xx
+        $15968              .byte $xx,$xx,$xx,$xx
 MapData_WaterfallCave3_Exits
         $1596c              .byte $xx,$xx,$xx,$xx ; Last room
         $15970              .byte $xx,$xx,$xx,$xx
@@ -7911,14 +8584,18 @@ MapData_WaterfallCave3_Exits
         $1598c              .byte $xx,$xx,$xx,$xx
         $15990              .byte $xx,$xx,$xx,$xx
         $15994              .byte $xx
-        $15995              .byte $xx,$xx,$xx,$xx,$xx
+MapData_WaterfallCave3_Flags
+        $15995              .byte $xx,$xx ; 64da:02 -> 62f0:01
+        $15997              .byte $xx,$xx ; 64da:01 -> 62f0:10
+        $15999              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_WaterfallCave4                                 ; Location 57
-        $1599a              .word ($xxxx)
-        $1599c              .word ($xxxx)
-        $1599e              .word ($xxxx)
-        $159a0              .word ($xxxx)
-        $159a2              .word ($xxxx)
+        $1599a              .word ($xxxx) ; $159a4
+        $1599c              .word ($xxxx) ; $159c2
+        $1599e              .word ($xxxx) ; $159c9
+        $159a0              .word ($xxxx) ; $159d1
+        $159a2              .word ($xxxx) ; $159e2
+MapData_WaterfallCave4_Layout
         $159a4              .byte $xx
         $159a5              .byte $xx,$xx,$xx,$xx
         ;; Map 5x5
@@ -7927,22 +8604,30 @@ MapData_WaterfallCave4                                 ; Location 57
         $159b3              .byte $xx,$xx,$xx,$xx,$xx
         $159b8              .byte $xx,$xx,$xx,$xx,$xx
         $159bd              .byte $xx,$xx,$xx,$xx,$xx
-        $159c2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $159d0              .byte $xx
+MapData_WaterfallCave4_Graphics
+        $159c2              .byte $xx,$xx,$xx
+        $159c5              .byte $xx,$xx
+        $159c7              .byte $xx,$xx
+MapData_WaterfallCave4_Entrances
+        $159c9              .byte $xx,$xx,$xx,$xx
+        $159cd              .byte $xx,$xx,$xx,$xx
 MapData_WaterfallCave4_Exits
         $159d1              .byte $xx,$xx,$xx,$xx ; Last room (left route)
         $159d5              .byte $xx,$xx,$xx,$xx
         $159d9              .byte $xx,$xx,$xx,$xx ; Last room (right route)
         $159dd              .byte $xx,$xx,$xx,$xx
         $159e1              .byte $xx
-        $159e2              .byte $xx,$xx,$xx
+MapData_WaterfallCave4_Flags
+        $159e2              .byte $xx,$xx ; 64d9:80 -> 62f1:08
+        $159e4              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_AngrySea                                       ; Location 60
-        $159e5              .word ($xxxx)
-        $159e7              .word ($xxxx)
-        $159e9              .word ($xxxx)
-        $159eb              .word ($xxxx)
-        $159ed              .word ($xxxx)
+        $159e5              .word ($xxxx) ; $159ef
+        $159e7              .word ($xxxx) ; $15a3c
+        $159e9              .word ($xxxx) ; $15a43
+        $159eb              .word ($xxxx) ; $15a67
+        $159ed              .word ($xxxx) ; $15aa8
+MapData_AngrySea_Layout
         $159ef              .byte $xx
         $159f0              .byte $xx,$xx,$xx,$xx
         ;; Map 8x9
@@ -7955,10 +8640,20 @@ MapData_AngrySea                                       ; Location 60
         $15a24              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $15a2c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $15a34              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15a3c              .byte $xx,$xx,$xx,$xx
-        $15a40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15a50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15a60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_AngrySea_Graphics
+        $15a3c              .byte $xx,$xx,$xx
+        $15a3f              .byte $xx,$xx
+        $15a41              .byte $xx,$xx
+MapData_AngrySea_Entrances
+        $15a43              .byte $xx,$xx,$xx,$xx
+        $15a47              .byte $xx,$xx,$xx,$xx
+        $15a4b              .byte $xx,$xx,$xx,$xx
+        $15a4f              .byte $xx,$xx,$xx,$xx
+        $15a53              .byte $xx,$xx,$xx,$xx
+        $15a57              .byte $xx,$xx,$xx,$xx
+        $15a5b              .byte $xx,$xx,$xx,$xx
+        $15a5f              .byte $xx,$xx,$xx,$xx
+        $15a63              .byte $xx,$xx,$xx,$xx
 MapData_AngrySea_Exits
         $15a67              .byte $xx,$xx,$xx,$xx ; To Portoa
         $15a6b              .byte $xx,$xx,$xx,$xx
@@ -7977,41 +8672,57 @@ MapData_AngrySea_Exits
         $15a9f              .byte $xx,$xx,$xx,$xx
         $15aa3              .byte $xx,$xx,$xx,$xx ; Boat House
         $15aa7              .byte $xx
-        $15aa8              .byte $xx,$xx,$xx
+MapData_AngrySea_Flags
+        $15aa8              .byte $xx,$xx ; 64d0:08 -> 62f2:02
+        $15aaa              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_BoatHouse                                      ; Location 61
-        $15aab              .word ($xxxx)
-        $15aad              .word ($xxxx)
-        $15aaf              .word ($xxxx)
-        $15ab1              .word ($xxxx)
-        $15ab3              .word ($xxxx)
+        $15aab              .word ($xxxx) ; $15ab5
+        $15aad              .word ($xxxx) ; $15abb
+        $15aaf              .word ($xxxx) ; $15ac2
+        $15ab1              .word ($xxxx) ; $15ac6
+        $15ab3              .word ($xxxx) ; $15acf
+MapData_BoatHouse_Layout
         $15ab5              .byte $xx
         $15ab6              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $15aba              .byte $xx
-        $15abb              .byte $xx,$xx,$xx,$xx,$xx
-        $15ac0              .byte $xx,$xx,$xx,$xx,$xx,$xx
+MapData_BoatHouse_Graphics
+        $15abb              .byte $xx,$xx,$xx
+        $15abe              .byte $xx,$xx
+        $15ac0              .byte $xx,$xx
+MapData_BoatHouse_Entrances
+        $15ac2              .byte $xx,$xx,$xx,$xx
 MapData_BoatHouse_Exits
         $15ac6              .byte $xx,$xx,$xx,$xx
         $15aca              .byte $xx,$xx,$xx,$xx
         $15ace              .byte $xx
+MapData_BoatHouse_Flags
         $15acf              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_UndergroundChannel                             ; Location 64
-        $15ad0              .word ($xxxx)
-        $15ad2              .word ($xxxx)
-        $15ad4              .word ($xxxx)
-        $15ad6              .word ($xxxx)
-        $15ad8              .word ($xxxx)
+        $15ad0              .word ($xxxx) ; $15ada
+        $15ad2              .word ($xxxx) ; $15aeb
+        $15ad4              .word ($xxxx) ; $15af2
+        $15ad6              .word ($xxxx) ; $15b06
+        $15ad8              .word ($xxxx) ; $15b2b
+MapData_UndergroundChannel_Layout
         $15ada              .byte $xx
         $15adb              .byte $xx,$xx,$xx,$xx
         ;; Map 4x3
         $15adf              .byte $xx,$xx,$xx,$xx
         $15ae3              .byte $xx,$xx,$xx,$xx
         $15ae7              .byte $xx,$xx,$xx,$xx
-        $15aeb              .byte $xx,$xx,$xx,$xx,$xx
-        $15af0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15b00              .byte $xx,$xx,$xx,$xx,$xx,$xx
+MapData_UndergroundChannel_Graphics
+        $15aeb              .byte $xx,$xx,$xx
+        $15aee              .byte $xx,$xx
+        $15af0              .byte $xx,$xx
+MapData_UndergroundChannel_Entrances
+        $15af2              .byte $xx,$xx,$xx,$xx
+        $15af6              .byte $xx,$xx,$xx,$xx
+        $15afa              .byte $xx,$xx,$xx,$xx
+        $15afe              .byte $xx,$xx,$xx,$xx
+        $15b02              .byte $xx,$xx,$xx,$xx
 MapData_UndergroundChannel_Exits
         $15b06              .byte $xx,$xx,$xx,$xx
         $15b0a              .byte $xx,$xx,$xx,$xx
@@ -8023,23 +8734,33 @@ MapData_UndergroundChannel_Exits
         $15b22              .byte $xx,$xx,$xx,$xx
         $15b26              .byte $xx,$xx,$xx,$xx
         $15b2a              .byte $xx
-        $15b2b              .byte $xx,$xx,$xx,$xx,$xx
-        $15b30              .byte $xx,$xx
+MapData_UndergroundChannel_Flags
+        $15b2b              .byte $xx,$xx ; 64d7:40 -> 62f2:02
+        $15b2d              .byte $xx,$xx ; 64d7:20 -> 62f2:08
+        $15b2f              .byte $xx,$xx ; 64d7:10 -> 62f1:04
+        $15b31              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location65                                     ; Location 65
-        $15b32              .word ($xxxx)
-        $15b34              .word ($xxxx)
-        $15b36              .word ($xxxx)
-        $15b38              .word ($xxxx)
-        $15b3a              .word ($xxxx)
+        $15b32              .word ($xxxx) ; $15b3c
+        $15b34              .word ($xxxx) ; $15b44
+        $15b36              .word ($xxxx) ; $15b4b
+        $15b38              .word ($xxxx) ; $15b57
+        $15b3a              .word ($xxxx) ; $15b6c
+MapData_Location65_Layout
         $15b3c              .byte $xx
         $15b3d              .byte $xx,$xx,$xx,$xx
         ;; Map 1x3
         $15b41              .byte $xx
         $15b42              .byte $xx
         $15b43              .byte $xx
-        $15b44              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15b50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location65_Graphics
+        $15b44              .byte $xx,$xx,$xx
+        $15b47              .byte $xx,$xx
+        $15b49              .byte $xx,$xx
+MapData_Location65_Entrances
+        $15b4b              .byte $xx,$xx,$xx,$xx
+        $15b4f              .byte $xx,$xx,$xx,$xx
+        $15b53              .byte $xx,$xx,$xx,$xx
 MapData_Location65_Exits
         $15b57              .byte $xx,$xx,$xx,$xx
         $15b5b              .byte $xx,$xx,$xx,$xx
@@ -8047,33 +8768,43 @@ MapData_Location65_Exits
         $15b63              .byte $xx,$xx,$xx,$xx
         $15b67              .byte $xx,$xx,$xx,$xx
         $15b6b              .byte $xx
+MapData_Location65_Flags
         $15b6c              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_EvilSpiritIslandEntrance                       ; Location 68
-        $15b6d              .word ($xxxx)
-        $15b6f              .word ($xxxx)
-        $15b71              .word ($xxxx)
-        $15b73              .word ($xxxx)
-        $15b75              .word ($xxxx)
+        $15b6d              .word ($xxxx) ; $15b77
+        $15b6f              .word ($xxxx) ; $15b7f
+        $15b71              .word ($xxxx) ; $15b86
+        $15b73              .word ($xxxx) ; $15b8e
+        $15b75              .word ($xxxx) ; $15b9f
+MapData_EvilSpiritIslandEntrance_Layout
         $15b77              .byte $xx
         $15b78              .byte $xx,$xx,$xx,$xx
         ;; Map 3x1
         $15b7c              .byte $xx,$xx,$xx
-        $15b7f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_EvilSpiritIslandEntrance_Graphics
+        $15b7f              .byte $xx,$xx,$xx
+        $15b82              .byte $xx,$xx
+        $15b84              .byte $xx,$xx
+MapData_EvilSpiritIslandEntrance_Entrances
+        $15b86              .byte $xx,$xx,$xx,$xx
+        $15b8a              .byte $xx,$xx,$xx,$xx
 MapData_EvilSpiritIslandEntrance_Exits
         $15b8e              .byte $xx,$xx,$xx,$xx
         $15b92              .byte $xx,$xx,$xx,$xx
         $15b96              .byte $xx,$xx,$xx,$xx
         $15b9a              .byte $xx,$xx,$xx,$xx
         $15b9e              .byte $xx
+MapData_EvilSpiritIslandEntrance_Flags
         $15b9f              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location69                                     ; Location 69
-        $15ba0              .word ($xxxx)
-        $15ba2              .word ($xxxx)
-        $15ba4              .word ($xxxx)
-        $15ba6              .word ($xxxx)
-        $15ba8              .word ($xxxx)
+        $15ba0              .word ($xxxx) ; $15baa
+        $15ba2              .word ($xxxx) ; $15be0
+        $15ba4              .word ($xxxx) ; $15be7
+        $15ba6              .word ($xxxx) ; $15bef
+        $15ba8              .word ($xxxx) ; $15c00
+MapData_Location69_Layout
         $15baa              .byte $xx
         $15bab              .byte $xx,$xx,$xx,$xx
         ;; Map 7x7
@@ -8084,26 +8815,46 @@ MapData_Location69                                     ; Location 69
         $15bcb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $15bd2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $15bd9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15be0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location69_Graphics
+        $15be0              .byte $xx,$xx,$xx
+        $15be3              .byte $xx,$xx
+        $15be5              .byte $xx,$xx
+MapData_Location69_Entrances
+        $15be7              .byte $xx,$xx,$xx,$xx
+        $15beb              .byte $xx,$xx,$xx,$xx
 MapData_Location69_Exits
         $15bef              .byte $xx,$xx,$xx,$xx
         $15bf3              .byte $xx,$xx,$xx,$xx
         $15bf7              .byte $xx,$xx,$xx,$xx
         $15bfb              .byte $xx,$xx,$xx,$xx
         $15bff              .byte $xx
-        $15c00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location69_Flags
+        $15c00              .byte $xx,$xx ; 64d7:08 -> 62f2:04
+        $15c02              .byte $xx,$xx ; 64d7:04 -> 62f1:20
+        $15c04              .byte $xx,$xx ; 64d7:02 -> 62f2:01
+        $15c06              .byte $xx,$xx ; 64d7:01 -> 62f5:10
+        $15c08              .byte $xx,$xx ; 64d6:80 -> 62f4:40
+        $15c0a              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location6A                                     ; Location 6a
-        $15c0b              .word ($xxxx)
-        $15c0d              .word ($xxxx)
-        $15c0f              .word ($xxxx)
-        $15c11              .word ($xxxx)
-        $15c13              .word ($xxxx)
-        $15c15              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $15c0b              .word ($xxxx) ; $15c17
+        $15c0d              .word ($xxxx) ; $15c3f
+        $15c0f              .word ($xxxx) ; $15c46
+        $15c11              .word ($xxxx) ; $15c52
+        $15c13              .word ($xxxx) ; $15c6b
+        $15c15              .word ($xxxx)
+MapData_Location6A_Layout
+        $15c17              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $15c20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15c30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15c40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15c50              .byte $xx,$xx
+        $15c30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location6A_Graphics
+        $15c3f              .byte $xx,$xx,$xx
+        $15c42              .byte $xx,$xx
+        $15c44              .byte $xx,$xx
+MapData_Location6A_Entrances
+        $15c46              .byte $xx,$xx,$xx,$xx
+        $15c4a              .byte $xx,$xx,$xx,$xx
+        $15c4e              .byte $xx,$xx,$xx,$xx
 MapData_Location6A_Exits
         $15c52              .byte $xx,$xx,$xx,$xx
         $15c56              .byte $xx,$xx,$xx,$xx
@@ -8112,31 +8863,44 @@ MapData_Location6A_Exits
         $15c62              .byte $xx,$xx,$xx,$xx
         $15c66              .byte $xx,$xx,$xx,$xx
         $15c6a              .byte $xx
-        $15c6b              .byte $xx,$xx,$xx,$xx,$xx
-        $15c70              .byte $xx,$xx,$xx,$xx,$xx
+MapData_Location6A_Flags
+        $15c6b              .byte $xx,$xx ; 64d6:40 -> 62f1:01
+        $15c6d              .byte $xx,$xx ; 64d6:20 -> 62f2:08
+        $15c6f              .byte $xx
+MapData_Location6A_Pits
+        $15c70              .byte $xx,$xx,$xx,$xx
+        $15c74              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location6B                                     ; Location 6b
-        $15c75              .word ($xxxx)
-        $15c77              .word ($xxxx)
-        $15c79              .word ($xxxx)
-        $15c7b              .word ($xxxx)
-        $15c7d              .word ($xxxx)
+        $15c75              .word ($xxxx) ; $15c7f
+        $15c77              .word ($xxxx) ; $15c8a
+        $15c79              .word ($xxxx) ; $15c91
+        $15c7b              .word ($xxxx) ; $15c95
+        $15c7d              .word ($xxxx) ; $15c9e
+MapData_Location6B_Layout
         $15c7f              .byte $xx
-        $15c80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15c90              .byte $xx,$xx,$xx,$xx,$xx
+        $15c80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location6B_Graphics
+        $15c8a              .byte $xx,$xx,$xx
+        $15c8d              .byte $xx,$xx
+        $15c8f              .byte $xx,$xx
+MapData_Location6B_Entrances
+        $15c91              .byte $xx,$xx,$xx,$xx
 MapData_Location6B_Exits
         $15c95              .byte $xx,$xx,$xx,$xx
         $15c99              .byte $xx,$xx,$xx,$xx
         $15c9d              .byte $xx
-        $15c9e              .byte $xx,$xx
+MapData_Location6B_Flags
+        $15c9e              .byte $xx,$xx ; 64d0:20 -> 62f2:01
         $15ca0              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location6C                                     ; Location 6c
-        $15ca1              .word ($xxxx)
-        $15ca3              .word ($xxxx)
-        $15ca5              .word ($xxxx)
-        $15ca7              .word ($xxxx)
-        $15ca9              .word ($xxxx)
+        $15ca1              .word ($xxxx) ; $15cab
+        $15ca3              .word ($xxxx) ; $15cda
+        $15ca5              .word ($xxxx) ; $15ce1
+        $15ca7              .word ($xxxx) ; $15ced
+        $15ca9              .word ($xxxx) ; $15d06
+MapData_Location6C_Layout
         $15cab              .byte $xx
         $15cac              .byte $xx,$xx,$xx,$xx
         ;; Map 6x7
@@ -8147,8 +8911,14 @@ MapData_Location6C                                     ; Location 6c
         $15cc8              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $15cce              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $15cd4              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $15cda              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $15ce0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location6C_Graphics
+        $15cda              .byte $xx,$xx,$xx
+        $15cdd              .byte $xx,$xx
+        $15cdf              .byte $xx,$xx
+MapData_Location6C_Entrances
+        $15ce1              .byte $xx,$xx,$xx,$xx
+        $15ce5              .byte $xx,$xx,$xx,$xx
+        $15ce9              .byte $xx,$xx,$xx,$xx
 MapData_Location6C_Exits
         $15ced              .byte $xx,$xx,$xx,$xx
         $15cf1              .byte $xx,$xx,$xx,$xx
@@ -8157,18 +8927,35 @@ MapData_Location6C_Exits
         $15cfd              .byte $xx,$xx,$xx,$xx
         $15d01              .byte $xx,$xx,$xx,$xx
         $15d05              .byte $xx
+MapData_Location6C_Flags
         $15d06              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location6D                                     ; Location 6d
-        $15d07              .word ($xxxx)
-        $15d09              .word ($xxxx)
-        $15d0b              .word ($xxxx)
-        $15d0d              .word ($xxxx)
-        $15d0f              .word ($xxxx)
-        $15d11              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15d20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15d30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15d40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $15d07              .word ($xxxx) ; $15d13
+        $15d09              .word ($xxxx) ; $15d3b
+        $15d0b              .word ($xxxx) ; $15d42
+        $15d0d              .word ($xxxx) ; $15d4e
+        $15d0f              .word ($xxxx) ; $15d67
+        $15d11              .word ($xxxx)
+MapData_Location6D_Layout
+        $15d13              .byte $xx
+        $15d14              .byte $xx,$xx,$xx,$xx
+        ;; Map 5x7
+        $15d18              .byte $xx,$xx,$xx,$xx,$xx
+        $15d1d              .byte $xx,$xx,$xx,$xx,$xx
+        $15d22              .byte $xx,$xx,$xx,$xx,$xx
+        $15d27              .byte $xx,$xx,$xx,$xx,$xx
+        $15d2c              .byte $xx,$xx,$xx,$xx,$xx
+        $15d31              .byte $xx,$xx,$xx,$xx,$xx
+        $15d36              .byte $xx,$xx,$xx,$xx,$xx
+MapData_Location6D_Graphics
+        $15d3b              .byte $xx,$xx,$xx
+        $15d3e              .byte $xx,$xx
+        $15d40              .byte $xx,$xx
+MapData_Location6D_Entrances
+        $15d42              .byte $xx,$xx,$xx,$xx
+        $15d46              .byte $xx,$xx,$xx,$xx
+        $15d4a              .byte $xx,$xx,$xx,$xx
 MapData_Location6D_Exits
         $15d4e              .byte $xx,$xx,$xx,$xx
         $15d52              .byte $xx,$xx,$xx,$xx
@@ -8177,87 +8964,125 @@ MapData_Location6D_Exits
         $15d5e              .byte $xx,$xx,$xx,$xx
         $15d62              .byte $xx,$xx,$xx,$xx
         $15d66              .byte $xx
-        $15d67              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location6D_Flags
+        $15d67              .byte $xx
+MapData_Location6D_Pits
+        $15d68              .byte $xx,$xx,$xx,$xx
+        $15d6c              .byte $xx,$xx,$xx,$xx
         $15d70              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location6E                                     ; Location 6e
-        $15d71              .word ($xxxx)
-        $15d73              .word ($xxxx)
-        $15d75              .word ($xxxx)
-        $15d77              .word ($xxxx)
-        $15d79              .word ($xxxx)
-        $15d7b              .byte $xx,$xx,$xx,$xx,$xx
-        $15d80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $15d71              .word ($xxxx) ; $15d7d
+        $15d73              .word ($xxxx) ; $15d85
+        $15d75              .word ($xxxx) ; $15d8c
+        $15d77              .word ($xxxx) ; $15d90
+        $15d79              .word ($xxxx) ; $15d99
+        $15d7b              .word ($xxxx)
+MapData_Location6E_Layout
+        $15d7d              .byte $xx
+        $15d7e              .byte $xx,$xx,$xx,$xx
+        ;; Map 1x3
+        $15d82              .byte $xx
+        $15d83              .byte $xx
+        $15d84              .byte $xx
+MapData_Location6E_Graphics
+        $15d85              .byte $xx,$xx,$xx
+        $15d88              .byte $xx,$xx
+        $15d8a              .byte $xx,$xx
+MapData_Location6E_Entrances
+        $15d8c              .byte $xx,$xx,$xx,$xx
 MapData_Location6E_Exits
         $15d90              .byte $xx,$xx,$xx,$xx
         $15d94              .byte $xx,$xx,$xx,$xx
         $15d98              .byte $xx
-        $15d99              .byte $xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location6E_Flags
+        $15d99              .byte $xx
+MapData_Location6E_Pits
+        $15d9a              .byte $xx,$xx,$xx,$xx
+        $15d9e              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location6F                                     ; Location 6f
-        $15d9f              .word ($xxxx)
-        $15da1              .word ($xxxx)
-        $15da3              .word ($xxxx)
-        $15da5              .word ($xxxx)
-        $15da7              .word ($xxxx)
-        $15da9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15db0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_Location6F_Exits
+        $15d9f              .word ($xxxx) ; $15dab
+        $15da1              .word ($xxxx) ; $15db3
+        $15da3              .word ($xxxx) ; $15dba
+        $15da5              .word ($xxxx) ; $15dba
+        $15da7              .word ($xxxx) ; $15dc3
+        $15da9              .word ($xxxx)
+MapData_Location6F_Layout
+        $15dab              .byte $xx,$xx,$xx,$xx,$xx
+        $15db0              .byte $xx,$xx,$xx
+MapData_Location6F_Graphics
+        $15db3              .byte $xx,$xx,$xx
+        $15db6              .byte $xx,$xx
+        $15db8              .byte $xx,$xx
+MapData_Location6F_Entrances
         $15dba              .byte $xx,$xx,$xx,$xx
         $15dbe              .byte $xx,$xx,$xx,$xx
-        $15dc2              .byte $xx
-        $15dc3              .byte $xx,$xx,$xx,$xx,$xx,$xx
-;;; ----------------------------------------------------------------
-MapData_JoelSecretPassage                              ; Location 70
-        $15dc9              .word ($xxxx)
-        $15dcb              .word ($xxxx)
-        $15dcd              .word ($xxxx)
-        $15dcf              .word ($xxxx)
-        $15dd1              .word ($xxxx)
-        $15dd3              .byte $xx
-        $15dd4              .byte $xx,$xx,$xx,$xx
-        ;; Map 2x2
-        $15dd8              .byte $xx,$xx
-        $15dda              .byte $xx,$xx
-        $15ddc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $15dc2              .byte $xx,$xx,$xx,$xx
+        $15dc6              .byte $xx,$xx,$xx,$xx
+        $15dca              .byte $xx,$xx,$xx,$xx
+        $15dce              .byte $xx,$xx,$xx,$xx
+        $15dd2              .byte $xx,$xx,$xx,$xx
+        $15dd6              .byte $xx,$xx,$xx,$xx
+        $15dda              .byte $xx,$xx,$xx,$xx
+        $15dde              .byte $xx,$xx,$xx,$xx
+        $15de2              .byte $xx,$xx,$xx,$xx
+        $15de6              .byte $xx,$xx,$xx,$xx
+        $15dea              .byte $xx
 MapData_JoelSecretPassage_Exits
         $15deb              .byte $xx,$xx,$xx,$xx ; Angry Sea
         $15def              .byte $xx,$xx,$xx,$xx
         $15df3              .byte $xx,$xx,$xx,$xx ; Joel Shed
         $15df7              .byte $xx,$xx,$xx,$xx
         $15dfb              .byte $xx
+MapData_JoelSecretPassage_Flags
         $15dfc              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_JoelLighthouse                                 ; Location 62
-        $15dfd              .word ($xxxx)
-        $15dff              .word ($xxxx)
-        $15e01              .word ($xxxx)
-        $15e03              .word ($xxxx)
-        $15e05              .word ($xxxx)
+        $15dfd              .word ($xxxx) ; $15e07
+        $15dff              .word ($xxxx) ; $15e0d
+        $15e01              .word ($xxxx) ; $15e14
+        $15e03              .word ($xxxx) ; $15e18
+        $15e05              .word ($xxxx) ; $15e1d
+MapData_JoelLighthouse_Layout
         $15e07              .byte $xx
         $15e08              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $15e0c              .byte $xx
+MapData_JoelLighthouse_Graphics
         $15e0d              .byte $xx,$xx,$xx
-        $15e10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $15e10              .byte $xx,$xx
+        $15e12              .byte $xx,$xx
+MapData_JoelLighthouse_Entrances
+        $15e14              .byte $xx,$xx,$xx,$xx
 MapData_JoelLighthouse_Exits
         $15e18              .byte $xx,$xx,$xx,$xx
         $15e1c              .byte $xx
+MapData_JoelLighthouse_Flags
         $15e1d              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Joel                                           ; Location 71
-        $15e1e              .word ($xxxx)
-        $15e20              .word ($xxxx)
-        $15e22              .word ($xxxx)
-        $15e24              .word ($xxxx)
-        $15e26              .word ($xxxx)
+        $15e1e              .word ($xxxx) ; $15e28
+        $15e20              .word ($xxxx) ; $15e31
+        $15e22              .word ($xxxx) ; $15e38
+        $15e24              .word ($xxxx) ; $15e4c
+        $15e26              .word ($xxxx) ; $15e65
+MapData_Joel_Layout
         $15e28              .byte $xx
         $15e29              .byte $xx,$xx,$xx,$xx
         ;; Map 2x2
         $15e2d              .byte $xx,$xx
         $15e2f              .byte $xx,$xx
-        $15e31              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15e40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Joel_Graphics
+        $15e31              .byte $xx,$xx,$xx
+        $15e34              .byte $xx,$xx
+        $15e36              .byte $xx,$xx
+MapData_Joel_Entrances
+        $15e38              .byte $xx,$xx,$xx,$xx
+        $15e3c              .byte $xx,$xx,$xx,$xx
+        $15e40              .byte $xx,$xx,$xx,$xx
+        $15e44              .byte $xx,$xx,$xx,$xx
+        $15e48              .byte $xx,$xx,$xx,$xx
 MapData_Joel_Exits
         $15e4c              .byte $xx,$xx,$xx,$xx
         $15e50              .byte $xx,$xx,$xx,$xx
@@ -8266,22 +9091,35 @@ MapData_Joel_Exits
         $15e5c              .byte $xx,$xx,$xx,$xx
         $15e60              .byte $xx,$xx,$xx,$xx
         $15e64              .byte $xx
+MapData_Joel_Flags
         $15e65              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Swan                                           ; Location 72
-        $15e66              .word ($xxxx)
-        $15e68              .word ($xxxx)
-        $15e6a              .word ($xxxx)
-        $15e6c              .word ($xxxx)
-        $15e6e              .word ($xxxx)
+        $15e66              .word ($xxxx) ; $15e70
+        $15e68              .word ($xxxx) ; $15e78
+        $15e6a              .word ($xxxx) ; $15e7f
+        $15e6c              .word ($xxxx) ; $15ea7
+        $15e6e              .word ($xxxx) ; $15ed4
+MapData_Swan_Layout
         $15e70              .byte $xx
         $15e71              .byte $xx,$xx,$xx,$xx
         ;; Map 3x1
         $15e75              .byte $xx,$xx,$xx
-        $15e78              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15e80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15e90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15ea0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Swan_Graphics
+        $15e78              .byte $xx,$xx,$xx
+        $15e7b              .byte $xx,$xx
+        $15e7d              .byte $xx,$xx
+MapData_Swan_Entrances
+        $15e7f              .byte $xx,$xx,$xx,$xx
+        $15e83              .byte $xx,$xx,$xx,$xx
+        $15e87              .byte $xx,$xx,$xx,$xx
+        $15e8b              .byte $xx,$xx,$xx,$xx
+        $15e8f              .byte $xx,$xx,$xx,$xx
+        $15e93              .byte $xx,$xx,$xx,$xx
+        $15e97              .byte $xx,$xx,$xx,$xx
+        $15e9b              .byte $xx,$xx,$xx,$xx
+        $15e9f              .byte $xx,$xx,$xx,$xx
+        $15ea3              .byte $xx,$xx,$xx,$xx
 MapData_Swan_Exits
         $15ea7              .byte $xx,$xx,$xx,$xx
         $15eab              .byte $xx,$xx,$xx,$xx
@@ -8295,19 +9133,26 @@ MapData_Swan_Exits
         $15ecb              .byte $xx,$xx,$xx,$xx
         $15ecf              .byte $xx,$xx,$xx,$xx
         $15ed3              .byte $xx
+MapData_Swan_Flags
         $15ed4              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location73                                     ; Location 73
-        $15ed5              .word ($xxxx)
-        $15ed7              .word ($xxxx)
-        $15ed9              .word ($xxxx)
-        $15edb              .word ($xxxx)
-        $15edd              .word ($xxxx)
+        $15ed5              .word ($xxxx) ; $15edf
+        $15ed7              .word ($xxxx) ; $15ee5
+        $15ed9              .word ($xxxx) ; $15eec
+        $15edb              .word ($xxxx) ; $15ef4
+        $15edd              .word ($xxxx) ; $15f05
+MapData_Location73_Layout
         $15edf              .byte $xx
         $15ee0              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $15ee4              .byte $xx
-        $15ee5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location73_Graphics
+        $15ee5              .byte $xx,$xx,$xx
+        $15ee8              .byte $xx,$xx
+        $15eea              .byte $xx,$xx
+MapData_Location73_Entrances
+        $15eec              .byte $xx,$xx,$xx,$xx
         $15ef0              .byte $xx,$xx,$xx,$xx
 MapData_Location73_Exits
         $15ef4              .byte $xx,$xx,$xx,$xx
@@ -8315,14 +9160,17 @@ MapData_Location73_Exits
         $15efc              .byte $xx,$xx,$xx,$xx
         $15f00              .byte $xx,$xx,$xx,$xx
         $15f04              .byte $xx
-        $15f05              .byte $xx,$xx,$xx
+MapData_Location73_Flags
+        $15f05              .byte $xx,$xx ; 64d6:08 -> 62f0:01
+        $15f07              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location78                                     ; Location 78
-        $15f08              .word ($xxxx)
-        $15f0a              .word ($xxxx)
-        $15f0c              .word ($xxxx)
-        $15f0e              .word ($xxxx)
-        $15f10              .word ($xxxx)
+        $15f08              .word ($xxxx) ; $15f12
+        $15f0a              .word ($xxxx) ; $15f30
+        $15f0c              .word ($xxxx) ; $15f37
+        $15f0e              .word ($xxxx) ; $15f4b
+        $15f10              .word ($xxxx) ; $15f78
+MapData_Location78_Layout
         $15f12              .byte $xx
         $15f13              .byte $xx,$xx,$xx,$xx
         ;; Map 5x5
@@ -8331,8 +9179,16 @@ MapData_Location78                                     ; Location 78
         $15f21              .byte $xx,$xx,$xx,$xx,$xx
         $15f26              .byte $xx,$xx,$xx,$xx,$xx
         $15f2b              .byte $xx,$xx,$xx,$xx,$xx
-        $15f30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15f40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location78_Graphics
+        $15f30              .byte $xx,$xx,$xx
+        $15f33              .byte $xx,$xx
+        $15f35              .byte $xx,$xx
+MapData_Location78_Entrances
+        $15f37              .byte $xx,$xx,$xx,$xx
+        $15f3b              .byte $xx,$xx,$xx,$xx
+        $15f3f              .byte $xx,$xx,$xx,$xx
+        $15f43              .byte $xx,$xx,$xx,$xx
+        $15f47              .byte $xx,$xx,$xx,$xx
 MapData_Location78_Exits
         $15f4b              .byte $xx,$xx,$xx,$xx
         $15f4f              .byte $xx,$xx,$xx,$xx
@@ -8346,14 +9202,16 @@ MapData_Location78_Exits
         $15f6f              .byte $xx,$xx,$xx,$xx
         $15f73              .byte $xx,$xx,$xx,$xx
         $15f77              .byte $xx
+MapData_Location78_Flags
         $15f78              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location7C                                     ; Location 7c
-        $15f79              .word ($xxxx)
-        $15f7b              .word ($xxxx)
-        $15f7d              .word ($xxxx)
-        $15f7f              .word ($xxxx)
-        $15f81              .word ($xxxx)
+        $15f79              .word ($xxxx) ; $15f83
+        $15f7b              .word ($xxxx) ; $15fb8
+        $15f7d              .word ($xxxx) ; $15fbf
+        $15f7f              .word ($xxxx) ; $15fe7
+        $15f81              .word ($xxxx) ; $16044
+MapData_Location7C_Layout
         $15f83              .byte $xx
         $15f84              .byte $xx,$xx,$xx,$xx
         ;; Map 6x8
@@ -8365,10 +9223,21 @@ MapData_Location7C                                     ; Location 7c
         $15fa6              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $15fac              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $15fb2              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $15fb8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15fc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15fd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15fe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location7C_Graphics
+        $15fb8              .byte $xx,$xx,$xx
+        $15fbb              .byte $xx,$xx
+        $15fbd              .byte $xx,$xx
+MapData_Location7C_Entrances
+        $15fbf              .byte $xx,$xx,$xx,$xx
+        $15fc3              .byte $xx,$xx,$xx,$xx
+        $15fc7              .byte $xx,$xx,$xx,$xx
+        $15fcb              .byte $xx,$xx,$xx,$xx
+        $15fcf              .byte $xx,$xx,$xx,$xx
+        $15fd3              .byte $xx,$xx,$xx,$xx
+        $15fd7              .byte $xx,$xx,$xx,$xx
+        $15fdb              .byte $xx,$xx,$xx,$xx
+        $15fdf              .byte $xx,$xx,$xx,$xx
+        $15fe3              .byte $xx,$xx,$xx,$xx
 MapData_Location7C_Exits
         $15fe7              .byte $xx,$xx,$xx,$xx
         $15feb              .byte $xx,$xx,$xx,$xx
@@ -8394,61 +9263,87 @@ MapData_Location7C_Exits
         $1603b              .byte $xx,$xx,$xx,$xx
         $1603f              .byte $xx,$xx,$xx,$xx
         $16043              .byte $xx
-        $16044              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location7C_Flags
+        $16044              .byte $xx,$xx ; 64d6:04 -> 62f6:04
+        $16046              .byte $xx,$xx ; 64d6:02 -> 62f3:04
+        $16048              .byte $xx,$xx ; 64d6:01 -> 62f1:01
+        $1604a              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location7D                                     ; Location 7d
-        $1604b              .word ($xxxx)
-        $1604d              .word ($xxxx)
-        $1604f              .word ($xxxx)
-        $16051              .word ($xxxx)
-        $16053              .word ($xxxx)
+        $1604b              .word ($xxxx) ; $16055
+        $1604d              .word ($xxxx) ; $1605e
+        $1604f              .word ($xxxx) ; $16065
+        $16051              .word ($xxxx) ; $1606d
+        $16053              .word ($xxxx) ; $1607e
+MapData_Location7D_Layout
         $16055              .byte $xx
         $16056              .byte $xx,$xx,$xx,$xx
         ;; Map 2x2
         $1605a              .byte $xx,$xx
         $1605c              .byte $xx,$xx
-        $1605e              .byte $xx,$xx
-        $16060              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location7D_Graphics
+        $1605e              .byte $xx,$xx,$xx
+        $16061              .byte $xx,$xx
+        $16063              .byte $xx,$xx
+MapData_Location7D_Entrances
+        $16065              .byte $xx,$xx,$xx,$xx
+        $16069              .byte $xx,$xx,$xx,$xx
 MapData_Location7D_Exits
         $1606d              .byte $xx,$xx,$xx,$xx
         $16071              .byte $xx,$xx,$xx,$xx
         $16075              .byte $xx,$xx,$xx,$xx
         $16079              .byte $xx,$xx,$xx,$xx
         $1607d              .byte $xx
+MapData_Location7D_Flags
         $1607e              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location7E                                     ; Location 7e
-        $1607f              .word ($xxxx)
-        $16081              .word ($xxxx)
-        $16083              .word ($xxxx)
-        $16085              .word ($xxxx)
-        $16087              .word ($xxxx)
+        $1607f              .word ($xxxx) ; $16089
+        $16081              .word ($xxxx) ; $16090
+        $16083              .word ($xxxx) ; $16097
+        $16085              .word ($xxxx) ; $1609f
+        $16087              .word ($xxxx) ; $160b0
+MapData_Location7E_Layout
         $16089              .byte $xx
         $1608a              .byte $xx,$xx,$xx,$xx
         ;; Map 2x1
         $1608e              .byte $xx,$xx
-        $16090              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location7E_Graphics
+        $16090              .byte $xx,$xx,$xx
+        $16093              .byte $xx,$xx
+        $16095              .byte $xx,$xx
+MapData_Location7E_Entrances
+        $16097              .byte $xx,$xx,$xx,$xx
+        $1609b              .byte $xx,$xx,$xx,$xx
 MapData_Location7E_Exits
         $1609f              .byte $xx,$xx,$xx,$xx
         $160a3              .byte $xx,$xx,$xx,$xx
         $160a7              .byte $xx,$xx,$xx,$xx
         $160ab              .byte $xx,$xx,$xx,$xx
         $160af              .byte $xx
+MapData_Location7E_Flags
         $160b0              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location7F                                     ; Location 7f
-        $160b1              .word ($xxxx)
-        $160b3              .word ($xxxx)
-        $160b5              .word ($xxxx)
-        $160b7              .word ($xxxx)
-        $160b9              .word ($xxxx)
+        $160b1              .word ($xxxx) ; $160bb
+        $160b3              .word ($xxxx) ; $160c6
+        $160b5              .word ($xxxx) ; $160cd
+        $160b7              .word ($xxxx) ; $160d9
+        $160b9              .word ($xxxx) ; $160f2
+MapData_Location7F_Layout
         $160bb              .byte $xx
         $160bc              .byte $xx,$xx,$xx,$xx
         ;; Map 3x2
         $160c0              .byte $xx,$xx,$xx
         $160c3              .byte $xx,$xx,$xx
-        $160c6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $160d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location7F_Graphics
+        $160c6              .byte $xx,$xx,$xx
+        $160c9              .byte $xx,$xx
+        $160cb              .byte $xx,$xx
+MapData_Location7F_Entrances
+        $160cd              .byte $xx,$xx,$xx,$xx
+        $160d1              .byte $xx,$xx,$xx,$xx
+        $160d5              .byte $xx,$xx,$xx,$xx
 MapData_Location7F_Exits
         $160d9              .byte $xx,$xx,$xx,$xx
         $160dd              .byte $xx,$xx,$xx,$xx
@@ -8457,22 +9352,31 @@ MapData_Location7F_Exits
         $160e9              .byte $xx,$xx,$xx,$xx
         $160ed              .byte $xx,$xx,$xx,$xx
         $160f1              .byte $xx
+MapData_Location7F_Flags
         $160f2              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location80                                     ; Location 80
-        $160f3              .word ($xxxx)
-        $160f5              .word ($xxxx)
-        $160f7              .word ($xxxx)
-        $160f9              .word ($xxxx)
-        $160fb              .word ($xxxx)
+        $160f3              .word ($xxxx) ; $160fd
+        $160f5              .word ($xxxx) ; $16111
+        $160f7              .word ($xxxx) ; $16118
+        $160f9              .word ($xxxx) ; $16128
+        $160fb              .word ($xxxx) ; $16149
+MapData_Location80_Layout
         $160fd              .byte $xx
         $160fe              .byte $xx,$xx,$xx,$xx
         ;; Map 5x3
         $16102              .byte $xx,$xx,$xx,$xx,$xx
         $16107              .byte $xx,$xx,$xx,$xx,$xx
         $1610c              .byte $xx,$xx,$xx,$xx,$xx
-        $16111              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16120              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location80_Graphics
+        $16111              .byte $xx,$xx,$xx
+        $16114              .byte $xx,$xx
+        $16116              .byte $xx,$xx
+MapData_Location80_Entrances
+        $16118              .byte $xx,$xx,$xx,$xx
+        $1611c              .byte $xx,$xx,$xx,$xx
+        $16120              .byte $xx,$xx,$xx,$xx
+        $16124              .byte $xx,$xx,$xx,$xx
 MapData_Location80_Exits
         $16128              .byte $xx,$xx,$xx,$xx
         $1612c              .byte $xx,$xx,$xx,$xx
@@ -8483,22 +9387,29 @@ MapData_Location80_Exits
         $16140              .byte $xx,$xx,$xx,$xx
         $16144              .byte $xx,$xx,$xx,$xx
         $16148              .byte $xx
+MapData_Location80_Flags
         $16149              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location81                                     ; Location 81
-        $1614a              .word ($xxxx)
-        $1614c              .word ($xxxx)
-        $1614e              .word ($xxxx)
-        $16150              .word ($xxxx)
-        $16152              .word ($xxxx)
+        $1614a              .word ($xxxx) ; $16154
+        $1614c              .word ($xxxx) ; $1615f
+        $1614e              .word ($xxxx) ; $16166
+        $16150              .word ($xxxx) ; $16172
+        $16152              .word ($xxxx) ; $1618b
+MapData_Location81_Layout
         $16154              .byte $xx
         $16155              .byte $xx,$xx,$xx,$xx
         ;; Map 3x2
         $16159              .byte $xx,$xx,$xx
         $1615c              .byte $xx,$xx,$xx
-        $1615f              .byte $xx
-        $16160              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16170              .byte $xx,$xx
+MapData_Location81_Graphics
+        $1615f              .byte $xx,$xx,$xx
+        $16162              .byte $xx,$xx
+        $16164              .byte $xx,$xx
+MapData_Location81_Entrances
+        $16166              .byte $xx,$xx,$xx,$xx
+        $1616a              .byte $xx,$xx,$xx,$xx
+        $1616e              .byte $xx,$xx,$xx,$xx
 MapData_Location81_Exits
         $16172              .byte $xx,$xx,$xx,$xx
         $16176              .byte $xx,$xx,$xx,$xx
@@ -8507,62 +9418,84 @@ MapData_Location81_Exits
         $16182              .byte $xx,$xx,$xx,$xx
         $16186              .byte $xx,$xx,$xx,$xx
         $1618a              .byte $xx
+MapData_Location81_Flags
         $1618b              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location82                                     ; Location 82
-        $1618c              .word ($xxxx)
-        $1618e              .word ($xxxx)
-        $16190              .word ($xxxx)
-        $16192              .word ($xxxx)
-        $16194              .word ($xxxx)
+        $1618c              .word ($xxxx) ; $16196
+        $1618e              .word ($xxxx) ; $1619f
+        $16190              .word ($xxxx) ; $161a6
+        $16192              .word ($xxxx) ; $161aa
+        $16194              .word ($xxxx) ; $161b3
+MapData_Location82_Layout
         $16196              .byte $xx
         $16197              .byte $xx,$xx,$xx,$xx
         ;; Map 2x2
         $1619b              .byte $xx,$xx
         $1619d              .byte $xx,$xx
-        $1619f              .byte $xx
-        $161a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location82_Graphics
+        $1619f              .byte $xx,$xx,$xx
+        $161a2              .byte $xx,$xx
+        $161a4              .byte $xx,$xx
+MapData_Location82_Entrances
+        $161a6              .byte $xx,$xx,$xx,$xx
 MapData_Location82_Exits
         $161aa              .byte $xx,$xx,$xx,$xx
         $161ae              .byte $xx,$xx,$xx,$xx
         $161b2              .byte $xx
+MapData_Location82_Flags
         $161b3              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location83                                     ; Location 83
-        $161b4              .word ($xxxx)
-        $161b6              .word ($xxxx)
-        $161b8              .word ($xxxx)
-        $161ba              .word ($xxxx)
-        $161bc              .word ($xxxx)
+        $161b4              .word ($xxxx) ; $161be
+        $161b6              .word ($xxxx) ; $161c9
+        $161b8              .word ($xxxx) ; $161d0
+        $161ba              .word ($xxxx) ; $161d8
+        $161bc              .word ($xxxx) ; $161e9
+MapData_Location83_Layout
         $161be              .byte $xx
         $161bf              .byte $xx,$xx,$xx,$xx
         ;; Map 2x3
         $161c3              .byte $xx,$xx
         $161c5              .byte $xx,$xx
         $161c7              .byte $xx,$xx
-        $161c9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $161d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location83_Graphics
+        $161c9              .byte $xx,$xx,$xx
+        $161cc              .byte $xx,$xx
+        $161ce              .byte $xx,$xx
+MapData_Location83_Entrances
+        $161d0              .byte $xx,$xx,$xx,$xx
+        $161d4              .byte $xx,$xx,$xx,$xx
 MapData_Location83_Exits
         $161d8              .byte $xx,$xx,$xx,$xx
         $161dc              .byte $xx,$xx,$xx,$xx
         $161e0              .byte $xx,$xx,$xx,$xx
         $161e4              .byte $xx,$xx,$xx,$xx
         $161e8              .byte $xx
-        $161e9              .byte $xx,$xx,$xx
+MapData_Location83_Flags
+        $161e9              .byte $xx,$xx ; 64d5:80 -> 62f1:02
+        $161eb              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location84                                     ; Location 84
-        $161ec              .word ($xxxx)
-        $161ee              .word ($xxxx)
-        $161f0              .word ($xxxx)
-        $161f2              .word ($xxxx)
-        $161f4              .word ($xxxx)
+        $161ec              .word ($xxxx) ; $161f6
+        $161ee              .word ($xxxx) ; $16201
+        $161f0              .word ($xxxx) ; $16208
+        $161f2              .word ($xxxx) ; $16210
+        $161f4              .word ($xxxx) ; $16229
+MapData_Location84_Layout
         $161f6              .byte $xx
         $161f7              .byte $xx,$xx,$xx,$xx
         ;; Map 2x3
         $161fb              .byte $xx,$xx
         $161fd              .byte $xx,$xx
         $161ff              .byte $xx,$xx
-        $16201              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location84_Graphics
+        $16201              .byte $xx,$xx,$xx
+        $16204              .byte $xx,$xx
+        $16206              .byte $xx,$xx
+MapData_Location84_Entrances
+        $16208              .byte $xx,$xx,$xx,$xx
+        $1620c              .byte $xx,$xx,$xx,$xx
 MapData_Location84_Exits
         $16210              .byte $xx,$xx,$xx,$xx
         $16214              .byte $xx,$xx,$xx,$xx
@@ -8571,44 +9504,60 @@ MapData_Location84_Exits
         $16220              .byte $xx,$xx,$xx,$xx
         $16224              .byte $xx,$xx,$xx,$xx
         $16228              .byte $xx
-        $16229              .byte $xx,$xx,$xx
+MapData_Location84_Flags
+        $16229              .byte $xx,$xx ; 64d5:40 -> 62f0:02
+        $1622b              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location85                                     ; Location 85
-        $1622c              .word ($xxxx)
-        $1622e              .word ($xxxx)
-        $16230              .word ($xxxx)
-        $16232              .word ($xxxx)
-        $16234              .word ($xxxx)
+        $1622c              .word ($xxxx) ; $16236
+        $1622e              .word ($xxxx) ; $1623f
+        $16230              .word ($xxxx) ; $16246
+        $16232              .word ($xxxx) ; $1624e
+        $16234              .word ($xxxx) ; $1625f
+MapData_Location85_Layout
         $16236              .byte $xx
         $16237              .byte $xx,$xx,$xx,$xx
         ;; Map 2x2
         $1623b              .byte $xx,$xx
         $1623d              .byte $xx,$xx
-        $1623f              .byte $xx
-        $16240              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location85_Graphics
+        $1623f              .byte $xx,$xx,$xx
+        $16242              .byte $xx,$xx
+        $16244              .byte $xx,$xx
+MapData_Location85_Entrances
+        $16246              .byte $xx,$xx,$xx,$xx
+        $1624a              .byte $xx,$xx,$xx,$xx
 MapData_Location85_Exits
         $1624e              .byte $xx,$xx,$xx,$xx
         $16252              .byte $xx,$xx,$xx,$xx
         $16256              .byte $xx,$xx,$xx,$xx
         $1625a              .byte $xx,$xx,$xx,$xx
         $1625e              .byte $xx
+MapData_Location85_Flags
         $1625f              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location86                                     ; Location 86
-        $16260              .word ($xxxx)
-        $16262              .word ($xxxx)
-        $16264              .word ($xxxx)
-        $16266              .word ($xxxx)
-        $16268              .word ($xxxx)
+        $16260              .word ($xxxx) ; $1626a
+        $16262              .word ($xxxx) ; $1627b
+        $16264              .word ($xxxx) ; $16282
+        $16266              .word ($xxxx) ; $16292
+        $16268              .word ($xxxx) ; $162b3
+MapData_Location86_Layout
         $1626a              .byte $xx
         $1626b              .byte $xx,$xx,$xx,$xx
         ;; Map 4x3
         $1626f              .byte $xx,$xx,$xx,$xx
         $16273              .byte $xx,$xx,$xx,$xx
         $16277              .byte $xx,$xx,$xx,$xx
-        $1627b              .byte $xx,$xx,$xx,$xx,$xx
-        $16280              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16290              .byte $xx,$xx
+MapData_Location86_Graphics
+        $1627b              .byte $xx,$xx,$xx
+        $1627e              .byte $xx,$xx
+        $16280              .byte $xx,$xx
+MapData_Location86_Entrances
+        $16282              .byte $xx,$xx,$xx,$xx
+        $16286              .byte $xx,$xx,$xx,$xx
+        $1628a              .byte $xx,$xx,$xx,$xx
+        $1628e              .byte $xx,$xx,$xx,$xx
 MapData_Location86_Exits
         $16292              .byte $xx,$xx,$xx,$xx
         $16296              .byte $xx,$xx,$xx,$xx
@@ -8619,36 +9568,47 @@ MapData_Location86_Exits
         $162aa              .byte $xx,$xx,$xx,$xx
         $162ae              .byte $xx,$xx,$xx,$xx
         $162b2              .byte $xx
-        $162b3              .byte $xx,$xx,$xx
+MapData_Location86_Flags
+        $162b3              .byte $xx,$xx ; 64d5:20 -> 62f1:02
+        $162b5              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location87                                     ; Location 87
-        $162b6              .word ($xxxx)
-        $162b8              .word ($xxxx)
-        $162ba              .word ($xxxx)
-        $162bc              .word ($xxxx)
-        $162be              .word ($xxxx)
+        $162b6              .word ($xxxx) ; $162c0
+        $162b8              .word ($xxxx) ; $162cb
+        $162ba              .word ($xxxx) ; $162d2
+        $162bc              .word ($xxxx) ; $162da
+        $162be              .word ($xxxx) ; $162eb
+MapData_Location87_Layout
         $162c0              .byte $xx
         $162c1              .byte $xx,$xx,$xx,$xx
         ;; Map 2x3
         $162c5              .byte $xx,$xx
         $162c7              .byte $xx,$xx
         $162c9              .byte $xx,$xx
-        $162cb              .byte $xx,$xx,$xx,$xx,$xx
-        $162d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location87_Graphics
+        $162cb              .byte $xx,$xx,$xx
+        $162ce              .byte $xx,$xx
+        $162d0              .byte $xx,$xx
+MapData_Location87_Entrances
+        $162d2              .byte $xx,$xx,$xx,$xx
+        $162d6              .byte $xx,$xx,$xx,$xx
 MapData_Location87_Exits
         $162da              .byte $xx,$xx,$xx,$xx
         $162de              .byte $xx,$xx,$xx,$xx
         $162e2              .byte $xx,$xx,$xx,$xx
         $162e6              .byte $xx,$xx,$xx,$xx
         $162ea              .byte $xx
-        $162eb              .byte $xx,$xx,$xx
+MapData_Location87_Flags
+        $162eb              .byte $xx,$xx ; 64d5:10 -> 62f1:02
+        $162ed              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location88                                     ; Location 88
-        $162ee              .word ($xxxx)
-        $162f0              .word ($xxxx)
-        $162f2              .word ($xxxx)
-        $162f4              .word ($xxxx)
-        $162f6              .word ($xxxx)
+        $162ee              .word ($xxxx) ; $162f8
+        $162f0              .word ($xxxx) ; $16316
+        $162f2              .word ($xxxx) ; $1631d
+        $162f4              .word ($xxxx) ; $16329
+        $162f6              .word ($xxxx) ; $16342
+MapData_Location88_Layout
         $162f8              .byte $xx
         $162f9              .byte $xx,$xx,$xx,$xx
         ;; Map 5x5
@@ -8657,8 +9617,14 @@ MapData_Location88                                     ; Location 88
         $16307              .byte $xx,$xx,$xx,$xx,$xx
         $1630c              .byte $xx,$xx,$xx,$xx,$xx
         $16311              .byte $xx,$xx,$xx,$xx,$xx
-        $16316              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16320              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location88_Graphics
+        $16316              .byte $xx,$xx,$xx
+        $16319              .byte $xx,$xx
+        $1631b              .byte $xx,$xx
+MapData_Location88_Entrances
+        $1631d              .byte $xx,$xx,$xx,$xx
+        $16321              .byte $xx,$xx,$xx,$xx
+        $16325              .byte $xx,$xx,$xx,$xx
 MapData_Location88_Exits
         $16329              .byte $xx,$xx,$xx,$xx
         $1632d              .byte $xx,$xx,$xx,$xx
@@ -8667,14 +9633,16 @@ MapData_Location88_Exits
         $16339              .byte $xx,$xx,$xx,$xx
         $1633d              .byte $xx,$xx,$xx,$xx
         $16341              .byte $xx
+MapData_Location88_Flags
         $16342              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location89                                     ; Location 89
-        $16343              .word ($xxxx)
-        $16345              .word ($xxxx)
-        $16347              .word ($xxxx)
-        $16349              .word ($xxxx)
-        $1634b              .word ($xxxx)
+        $16343              .word ($xxxx) ; $1634d
+        $16345              .word ($xxxx) ; $16370
+        $16347              .word ($xxxx) ; $16377
+        $16349              .word ($xxxx) ; $16383
+        $1634b              .word ($xxxx) ; $1639c
+MapData_Location89_Layout
         $1634d              .byte $xx
         $1634e              .byte $xx,$xx,$xx,$xx
         ;; Map 5x6
@@ -8684,8 +9652,14 @@ MapData_Location89                                     ; Location 89
         $16361              .byte $xx,$xx,$xx,$xx,$xx
         $16366              .byte $xx,$xx,$xx,$xx,$xx
         $1636b              .byte $xx,$xx,$xx,$xx,$xx
-        $16370              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16380              .byte $xx,$xx,$xx
+MapData_Location89_Graphics
+        $16370              .byte $xx,$xx,$xx
+        $16373              .byte $xx,$xx
+        $16375              .byte $xx,$xx
+MapData_Location89_Entrances
+        $16377              .byte $xx,$xx,$xx,$xx
+        $1637b              .byte $xx,$xx,$xx,$xx
+        $1637f              .byte $xx,$xx,$xx,$xx
 MapData_Location89_Exits
         $16383              .byte $xx,$xx,$xx,$xx
         $16387              .byte $xx,$xx,$xx,$xx
@@ -8694,41 +9668,69 @@ MapData_Location89_Exits
         $16393              .byte $xx,$xx,$xx,$xx
         $16397              .byte $xx,$xx,$xx,$xx
         $1639b              .byte $xx
-        $1639c              .byte $xx,$xx,$xx,$xx
+MapData_Location89_Flags
+        $1639c              .byte $xx,$xx ; 64d5:04 -> 62f1:04
+        $1639e              .byte $xx,$xx ; 64d5:02 -> 62f1:08
         $163a0              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location8A                                     ; Location 8a
-        $163a1              .word ($xxxx)
-        $163a3              .word ($xxxx)
-        $163a5              .word ($xxxx)
-        $163a7              .word ($xxxx)
-        $163a9              .word ($xxxx)
-        $163ab              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $163bb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $163ca              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $163d0              .byte $xx,$xx,$xx,$xx,$xx
+        $163a1              .word ($xxxx) ; $163ad
+        $163a3              .word ($xxxx) ; $163ca
+        $163a5              .word ($xxxx) ; $163d1
+        $163a7              .word ($xxxx) ; $163d5
+        $163a9              .word ($xxxx) ; $163de
+        $163ab              .word ($xxxx)
+MapData_Location8A_Layout
+        $163ad              .byte $xx
+        $163ae              .byte $xx,$xx,$xx,$xx
+        ;; Map 4x6
+        $163b2              .byte $xx,$xx,$xx,$xx
+        $163b6              .byte $xx,$xx,$xx,$xx
+        $163ba              .byte $xx,$xx,$xx,$xx
+        $163be              .byte $xx,$xx,$xx,$xx
+        $163c2              .byte $xx,$xx,$xx,$xx
+        $163c6              .byte $xx,$xx,$xx,$xx
+MapData_Location8A_Graphics
+        $163ca              .byte $xx,$xx,$xx
+        $163cd              .byte $xx,$xx
+        $163cf              .byte $xx,$xx
+MapData_Location8A_Entrances
+        $163d1              .byte $xx,$xx,$xx,$xx
 MapData_Location8A_Exits
         $163d5              .byte $xx,$xx,$xx,$xx
         $163d9              .byte $xx,$xx,$xx,$xx
         $163dd              .byte $xx
-        $163de              .byte $xx,$xx
-        $163e0              .byte $xx,$xx,$xx,$xx
+MapData_Location8A_Flags
+        $163de              .byte $xx
+MapData_Location8A_Pits
+        $163df              .byte $xx,$xx,$xx,$xx
+        $163e3              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location8C                                     ; Location 8c
-        $163e4              .word ($xxxx)
-        $163e6              .word ($xxxx)
-        $163e8              .word ($xxxx)
-        $163ea              .word ($xxxx)
-        $163ec              .word ($xxxx)
+        $163e4              .word ($xxxx) ; $163ee
+        $163e6              .word ($xxxx) ; $163f6
+        $163e8              .word ($xxxx) ; $163fd
+        $163ea              .word ($xxxx) ; $16419
+        $163ec              .word ($xxxx) ; $1643e
+MapData_Location8C_Layout
         $163ee              .byte $xx
         $163ef              .byte $xx,$xx,$xx,$xx
         ;; Map 1x3
         $163f3              .byte $xx
         $163f4              .byte $xx
         $163f5              .byte $xx
-        $163f6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16400              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16410              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location8C_Graphics
+        $163f6              .byte $xx,$xx,$xx
+        $163f9              .byte $xx,$xx
+        $163fb              .byte $xx,$xx
+MapData_Location8C_Entrances
+        $163fd              .byte $xx,$xx,$xx,$xx
+        $16401              .byte $xx,$xx,$xx,$xx
+        $16405              .byte $xx,$xx,$xx,$xx
+        $16409              .byte $xx,$xx,$xx,$xx
+        $1640d              .byte $xx,$xx,$xx,$xx
+        $16411              .byte $xx,$xx,$xx,$xx
+        $16415              .byte $xx,$xx,$xx,$xx
 MapData_Location8C_Exits
         $16419              .byte $xx,$xx,$xx,$xx
         $1641d              .byte $xx,$xx,$xx,$xx
@@ -8740,22 +9742,32 @@ MapData_Location8C_Exits
         $16435              .byte $xx,$xx,$xx,$xx
         $16439              .byte $xx,$xx,$xx,$xx
         $1643d              .byte $xx
+MapData_Location8C_Flags
         $1643e              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location8E                                     ; Location 8e
-        $1643f              .word ($xxxx)
-        $16441              .word ($xxxx)
-        $16443              .word ($xxxx)
-        $16445              .word ($xxxx)
-        $16447              .word ($xxxx)
+        $1643f              .word ($xxxx) ; $16449
+        $16441              .word ($xxxx) ; $16452
+        $16443              .word ($xxxx) ; $16459
+        $16445              .word ($xxxx) ; $16471
+        $16447              .word ($xxxx) ; $16492
+MapData_Location8E_Layout
         $16449              .byte $xx
         $1644a              .byte $xx,$xx,$xx,$xx
         ;; Map 2x2
         $1644e              .byte $xx,$xx
         $16450              .byte $xx,$xx
-        $16452              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16460              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16470              .byte $xx
+MapData_Location8E_Graphics
+        $16452              .byte $xx,$xx,$xx
+        $16455              .byte $xx,$xx
+        $16457              .byte $xx,$xx
+MapData_Location8E_Entrances
+        $16459              .byte $xx,$xx,$xx,$xx
+        $1645d              .byte $xx,$xx,$xx,$xx
+        $16461              .byte $xx,$xx,$xx,$xx
+        $16465              .byte $xx,$xx,$xx,$xx
+        $16469              .byte $xx,$xx,$xx,$xx
+        $1646d              .byte $xx,$xx,$xx,$xx
 MapData_Location8E_Exits
         $16471              .byte $xx,$xx,$xx,$xx
         $16475              .byte $xx,$xx,$xx,$xx
@@ -8766,14 +9778,16 @@ MapData_Location8E_Exits
         $16489              .byte $xx,$xx,$xx,$xx
         $1648d              .byte $xx,$xx,$xx,$xx
         $16491              .byte $xx
+MapData_Location8E_Flags
         $16492              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location90                                     ; Location 90
-        $16493              .word ($xxxx)
-        $16495              .word ($xxxx)
-        $16497              .word ($xxxx)
-        $16499              .word ($xxxx)
-        $1649b              .word ($xxxx)
+        $16493              .word ($xxxx) ; $1649d
+        $16495              .word ($xxxx) ; $164c6
+        $16497              .word ($xxxx) ; $164cd
+        $16499              .word ($xxxx) ; $164d9
+        $1649b              .word ($xxxx) ; $164f2
+MapData_Location90_Layout
         $1649d              .byte $xx
         $1649e              .byte $xx,$xx,$xx,$xx
         ;; Map 6x6
@@ -8783,8 +9797,14 @@ MapData_Location90                                     ; Location 90
         $164b4              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $164ba              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $164c0              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $164c6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $164d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location90_Graphics
+        $164c6              .byte $xx,$xx,$xx
+        $164c9              .byte $xx,$xx
+        $164cb              .byte $xx,$xx
+MapData_Location90_Entrances
+        $164cd              .byte $xx,$xx,$xx,$xx
+        $164d1              .byte $xx,$xx,$xx,$xx
+        $164d5              .byte $xx,$xx,$xx,$xx
 MapData_Location90_Exits
         $164d9              .byte $xx,$xx,$xx,$xx
         $164dd              .byte $xx,$xx,$xx,$xx
@@ -8793,14 +9813,16 @@ MapData_Location90_Exits
         $164e9              .byte $xx,$xx,$xx,$xx
         $164ed              .byte $xx,$xx,$xx,$xx
         $164f1              .byte $xx
+MapData_Location90_Flags
         $164f2              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location91                                     ; Location 91
-        $164f3              .word ($xxxx)
-        $164f5              .word ($xxxx)
-        $164f7              .word ($xxxx)
-        $164f9              .word ($xxxx)
-        $164fb              .word ($xxxx)
+        $164f3              .word ($xxxx) ; $164fd
+        $164f5              .word ($xxxx) ; $1655a
+        $164f7              .word ($xxxx) ; $16561
+        $164f9              .word ($xxxx) ; $16569
+        $164fb              .word ($xxxx) ; $1657a
+MapData_Location91_Layout
         $164fd              .byte $xx
         $164fe              .byte $xx,$xx,$xx,$xx
         ;; Map 8x12
@@ -8815,72 +9837,111 @@ MapData_Location91                                     ; Location 91
         $16542              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1654a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16552              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1655a              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $16560              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location91_Graphics
+        $1655a              .byte $xx,$xx,$xx
+        $1655d              .byte $xx,$xx
+        $1655f              .byte $xx,$xx
+MapData_Location91_Entrances
+        $16561              .byte $xx,$xx,$xx,$xx
+        $16565              .byte $xx,$xx,$xx,$xx
 MapData_Location91_Exits
         $16569              .byte $xx,$xx,$xx,$xx
         $1656d              .byte $xx,$xx,$xx,$xx
         $16571              .byte $xx,$xx,$xx,$xx
         $16575              .byte $xx,$xx,$xx,$xx
         $16579              .byte $xx
-        $1657a              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $16580              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location91_Flags
+        $1657a              .byte $xx,$xx ; 64d3:08 -> 62f1:04
+        $1657c              .byte $xx,$xx ; 64d3:04 -> 62f5:02
+        $1657e              .byte $xx,$xx ; 64d3:02 -> 62f4:04
+        $16580              .byte $xx,$xx ; 64d3:01 -> 62f7:04
+        $16582              .byte $xx,$xx ; 64d2:80 -> 62f3:10
+        $16584              .byte $xx,$xx ; 64d2:40 -> 62f8:10
+        $16586              .byte $xx,$xx ; 64d2:20 -> 62f9:10
+        $16588              .byte $xx,$xx ; 64d2:10 -> 62f5:20
+        $1658a              .byte $xx,$xx ; 64d2:08 -> 62f3:80
+        $1658c              .byte $xx,$xx ; 64d2:04 -> 62f5:80
+        $1658e              .byte $xx,$xx ; 64d2:02 -> 62f8:80
         $16590              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location8F                                     ; Location 8f
-        $16591              .word ($xxxx)
-        $16593              .word ($xxxx)
-        $16595              .word ($xxxx)
-        $16597              .word ($xxxx)
-        $16599              .word ($xxxx)
+        $16591              .word ($xxxx) ; $1659b
+        $16593              .word ($xxxx) ; $165a3
+        $16595              .word ($xxxx) ; $165aa
+        $16597              .word ($xxxx) ; $165ae
+        $16599              .word ($xxxx) ; $165b7
+MapData_Location8F_Layout
         $1659b              .byte $xx
         $1659c              .byte $xx,$xx,$xx,$xx
         ;; Map 1x3
         $165a0              .byte $xx
         $165a1              .byte $xx
         $165a2              .byte $xx
-        $165a3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location8F_Graphics
+        $165a3              .byte $xx,$xx,$xx
+        $165a6              .byte $xx,$xx
+        $165a8              .byte $xx,$xx
+MapData_Location8F_Entrances
+        $165aa              .byte $xx,$xx,$xx,$xx
 MapData_Location8F_Exits
         $165ae              .byte $xx,$xx,$xx,$xx
         $165b2              .byte $xx,$xx,$xx,$xx
         $165b6              .byte $xx
-        $165b7              .byte $xx,$xx,$xx
+MapData_Location8F_Flags
+        $165b7              .byte $xx,$xx ; 64d2:01 -> 62f1:01
+        $165b9              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location92                                     ; Location 92
-        $165ba              .word ($xxxx)
-        $165bc              .word ($xxxx)
-        $165be              .word ($xxxx)
-        $165c0              .word ($xxxx)
-        $165c2              .word ($xxxx)
+        $165ba              .word ($xxxx) ; $165c4
+        $165bc              .word ($xxxx) ; $165d2
+        $165be              .word ($xxxx) ; $165d9
+        $165c0              .word ($xxxx) ; $165e1
+        $165c2              .word ($xxxx) ; $165f2
+MapData_Location92_Layout
         $165c4              .byte $xx
         $165c5              .byte $xx,$xx,$xx,$xx
         ;; Map 3x3
         $165c9              .byte $xx,$xx,$xx
         $165cc              .byte $xx,$xx,$xx
         $165cf              .byte $xx,$xx,$xx
-        $165d2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $165e0              .byte $xx
+MapData_Location92_Graphics
+        $165d2              .byte $xx,$xx,$xx
+        $165d5              .byte $xx,$xx
+        $165d7              .byte $xx,$xx
+MapData_Location92_Entrances
+        $165d9              .byte $xx,$xx,$xx,$xx
+        $165dd              .byte $xx,$xx,$xx,$xx
 MapData_Location92_Exits
         $165e1              .byte $xx,$xx,$xx,$xx
         $165e5              .byte $xx,$xx,$xx,$xx
         $165e9              .byte $xx,$xx,$xx,$xx
         $165ed              .byte $xx,$xx,$xx,$xx
         $165f1              .byte $xx
+MapData_Location92_Flags
         $165f2              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location93                                     ; Location 93
-        $165f3              .word ($xxxx)
-        $165f5              .word ($xxxx)
-        $165f7              .word ($xxxx)
-        $165f9              .word ($xxxx)
-        $165fb              .word ($xxxx)
+        $165f3              .word ($xxxx) ; $165fd
+        $165f5              .word ($xxxx) ; $16604
+        $165f7              .word ($xxxx) ; $1660b
+        $165f9              .word ($xxxx) ; $16623
+        $165fb              .word ($xxxx) ; $16644
+MapData_Location93_Layout
         $165fd              .byte $xx
         $165fe              .byte $xx,$xx,$xx,$xx
         ;; Map 2x1
         $16602              .byte $xx,$xx
-        $16604              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16610              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16620              .byte $xx,$xx,$xx
+MapData_Location93_Graphics
+        $16604              .byte $xx,$xx,$xx
+        $16607              .byte $xx,$xx
+        $16609              .byte $xx,$xx
+MapData_Location93_Entrances
+        $1660b              .byte $xx,$xx,$xx,$xx
+        $1660f              .byte $xx,$xx,$xx,$xx
+        $16613              .byte $xx,$xx,$xx,$xx
+        $16617              .byte $xx,$xx,$xx,$xx
+        $1661b              .byte $xx,$xx,$xx,$xx
+        $1661f              .byte $xx,$xx,$xx,$xx
 MapData_Location93_Exits
         $16623              .byte $xx,$xx,$xx,$xx
         $16627              .byte $xx,$xx,$xx,$xx
@@ -8891,19 +9952,26 @@ MapData_Location93_Exits
         $1663b              .byte $xx,$xx,$xx,$xx
         $1663f              .byte $xx,$xx,$xx,$xx
         $16643              .byte $xx
+MapData_Location93_Flags
         $16644              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location94                                     ; Location 94
-        $16645              .word ($xxxx)
-        $16647              .word ($xxxx)
-        $16649              .word ($xxxx)
-        $1664b              .word ($xxxx)
-        $1664d              .word ($xxxx)
+        $16645              .word ($xxxx) ; $1664f
+        $16647              .word ($xxxx) ; $16655
+        $16649              .word ($xxxx) ; $1665c
+        $1664b              .word ($xxxx) ; $16664
+        $1664d              .word ($xxxx) ; $16675
+MapData_Location94_Layout
         $1664f              .byte $xx
         $16650              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $16654              .byte $xx
-        $16655              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location94_Graphics
+        $16655              .byte $xx,$xx,$xx
+        $16658              .byte $xx,$xx
+        $1665a              .byte $xx,$xx
+MapData_Location94_Entrances
+        $1665c              .byte $xx,$xx,$xx,$xx
         $16660              .byte $xx,$xx,$xx,$xx
 MapData_Location94_Exits
         $16664              .byte $xx,$xx,$xx,$xx
@@ -8911,57 +9979,73 @@ MapData_Location94_Exits
         $1666c              .byte $xx,$xx,$xx,$xx
         $16670              .byte $xx,$xx,$xx,$xx
         $16674              .byte $xx
+MapData_Location94_Flags
         $16675              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location95                                     ; Location 95
-        $16676              .word ($xxxx)
-        $16678              .word ($xxxx)
-        $1667a              .word ($xxxx)
-        $1667c              .word ($xxxx)
-        $1667e              .word ($xxxx)
+        $16676              .word ($xxxx) ; $16680
+        $16678              .word ($xxxx) ; $1668e
+        $1667a              .word ($xxxx) ; $16695
+        $1667c              .word ($xxxx) ; $1669d
+        $1667e              .word ($xxxx) ; $166ae
+MapData_Location95_Layout
         $16680              .byte $xx
         $16681              .byte $xx,$xx,$xx,$xx
         ;; Map 3x3
         $16685              .byte $xx,$xx,$xx
         $16688              .byte $xx,$xx,$xx
         $1668b              .byte $xx,$xx,$xx
-        $1668e              .byte $xx,$xx
-        $16690              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location95_Graphics
+        $1668e              .byte $xx,$xx,$xx
+        $16691              .byte $xx,$xx
+        $16693              .byte $xx,$xx
+MapData_Location95_Entrances
+        $16695              .byte $xx,$xx,$xx,$xx
+        $16699              .byte $xx,$xx,$xx,$xx
 MapData_Location95_Exits
         $1669d              .byte $xx,$xx,$xx,$xx
         $166a1              .byte $xx,$xx,$xx,$xx
         $166a5              .byte $xx,$xx,$xx,$xx
         $166a9              .byte $xx,$xx,$xx,$xx
         $166ad              .byte $xx
+MapData_Location95_Flags
         $166ae              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location96                                     ; Location 96
-        $166af              .word ($xxxx)
-        $166b1              .word ($xxxx)
-        $166b3              .word ($xxxx)
-        $166b5              .word ($xxxx)
-        $166b7              .word ($xxxx)
+        $166af              .word ($xxxx) ; $166b9
+        $166b1              .word ($xxxx) ; $166c4
+        $166b3              .word ($xxxx) ; $166cb
+        $166b5              .word ($xxxx) ; $166d3
+        $166b7              .word ($xxxx) ; $166e4
+MapData_Location96_Layout
         $166b9              .byte $xx
         $166ba              .byte $xx,$xx,$xx,$xx
         ;; Map 3x2
         $166be              .byte $xx,$xx,$xx
         $166c1              .byte $xx,$xx,$xx
-        $166c4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $166d0              .byte $xx,$xx,$xx
+MapData_Location96_Graphics
+        $166c4              .byte $xx,$xx,$xx
+        $166c7              .byte $xx,$xx
+        $166c9              .byte $xx,$xx
+MapData_Location96_Entrances
+        $166cb              .byte $xx,$xx,$xx,$xx
+        $166cf              .byte $xx,$xx,$xx,$xx
 MapData_Location96_Exits
         $166d3              .byte $xx,$xx,$xx,$xx
         $166d7              .byte $xx,$xx,$xx,$xx
         $166db              .byte $xx,$xx,$xx,$xx
         $166df              .byte $xx,$xx,$xx,$xx
         $166e3              .byte $xx
+MapData_Location96_Flags
         $166e4              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location98                                     ; Location 98
-        $166e5              .word ($xxxx)
-        $166e7              .word ($xxxx)
-        $166e9              .word ($xxxx)
-        $166eb              .word ($xxxx)
-        $166ed              .word ($xxxx)
+        $166e5              .word ($xxxx) ; $166ef
+        $166e7              .word ($xxxx) ; $1670c
+        $166e9              .word ($xxxx) ; $16713
+        $166eb              .word ($xxxx) ; $1671f
+        $166ed              .word ($xxxx) ; $16738
+MapData_Location98_Layout
         $166ef              .byte $xx
         $166f0              .byte $xx,$xx,$xx,$xx
         ;; Map 4x6
@@ -8971,8 +10055,14 @@ MapData_Location98                                     ; Location 98
         $16700              .byte $xx,$xx,$xx,$xx
         $16704              .byte $xx,$xx,$xx,$xx
         $16708              .byte $xx,$xx,$xx,$xx
-        $1670c              .byte $xx,$xx,$xx,$xx
-        $16710              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location98_Graphics
+        $1670c              .byte $xx,$xx,$xx
+        $1670f              .byte $xx,$xx
+        $16711              .byte $xx,$xx
+MapData_Location98_Entrances
+        $16713              .byte $xx,$xx,$xx,$xx
+        $16717              .byte $xx,$xx,$xx,$xx
+        $1671b              .byte $xx,$xx,$xx,$xx
 MapData_Location98_Exits
         $1671f              .byte $xx,$xx,$xx,$xx
         $16723              .byte $xx,$xx,$xx,$xx
@@ -8981,42 +10071,57 @@ MapData_Location98_Exits
         $1672f              .byte $xx,$xx,$xx,$xx
         $16733              .byte $xx,$xx,$xx,$xx
         $16737              .byte $xx
+MapData_Location98_Flags
         $16738              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location9C                                     ; Location 9c
-        $16739              .word ($xxxx)
-        $1673b              .word ($xxxx)
-        $1673d              .word ($xxxx)
-        $1673f              .word ($xxxx)
-        $16741              .word ($xxxx)
+        $16739              .word ($xxxx) ; $16743
+        $1673b              .word ($xxxx) ; $1674a
+        $1673d              .word ($xxxx) ; $16751
+        $1673f              .word ($xxxx) ; $16759
+        $16741              .word ($xxxx) ; $1676a
+MapData_Location9C_Layout
         $16743              .byte $xx
         $16744              .byte $xx,$xx,$xx,$xx
         ;; Map 1x2
         $16748              .byte $xx
         $16749              .byte $xx
-        $1674a              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $16750              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location9C_Graphics
+        $1674a              .byte $xx,$xx,$xx
+        $1674d              .byte $xx,$xx
+        $1674f              .byte $xx,$xx
+MapData_Location9C_Entrances
+        $16751              .byte $xx,$xx,$xx,$xx
+        $16755              .byte $xx,$xx,$xx,$xx
 MapData_Location9C_Exits
         $16759              .byte $xx,$xx,$xx,$xx
         $1675d              .byte $xx,$xx,$xx,$xx
         $16761              .byte $xx,$xx,$xx,$xx
         $16765              .byte $xx,$xx,$xx,$xx
         $16769              .byte $xx
+MapData_Location9C_Flags
         $1676a              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location9D                                     ; Location 9d
-        $1676b              .word ($xxxx)
-        $1676d              .word ($xxxx)
-        $1676f              .word ($xxxx)
-        $16771              .word ($xxxx)
-        $16773              .word ($xxxx)
+        $1676b              .word ($xxxx) ; $16775
+        $1676d              .word ($xxxx) ; $16780
+        $1676f              .word ($xxxx) ; $16787
+        $16771              .word ($xxxx) ; $16793
+        $16773              .word ($xxxx) ; $167ac
+MapData_Location9D_Layout
         $16775              .byte $xx
         $16776              .byte $xx,$xx,$xx,$xx
         ;; Map 3x2
         $1677a              .byte $xx,$xx,$xx
         $1677d              .byte $xx,$xx,$xx
-        $16780              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16790              .byte $xx,$xx,$xx
+MapData_Location9D_Graphics
+        $16780              .byte $xx,$xx,$xx
+        $16783              .byte $xx,$xx
+        $16785              .byte $xx,$xx
+MapData_Location9D_Entrances
+        $16787              .byte $xx,$xx,$xx,$xx
+        $1678b              .byte $xx,$xx,$xx,$xx
+        $1678f              .byte $xx,$xx,$xx,$xx
 MapData_Location9D_Exits
         $16793              .byte $xx,$xx,$xx,$xx
         $16797              .byte $xx,$xx,$xx,$xx
@@ -9025,14 +10130,16 @@ MapData_Location9D_Exits
         $167a3              .byte $xx,$xx,$xx,$xx
         $167a7              .byte $xx,$xx,$xx,$xx
         $167ab              .byte $xx
+MapData_Location9D_Flags
         $167ac              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location9E                                     ; Location 9e
-        $167ad              .word ($xxxx)
-        $167af              .word ($xxxx)
-        $167b1              .word ($xxxx)
-        $167b3              .word ($xxxx)
-        $167b5              .word ($xxxx)
+        $167ad              .word ($xxxx) ; $167b7
+        $167af              .word ($xxxx) ; $16809
+        $167b1              .word ($xxxx) ; $16810
+        $167b3              .word ($xxxx) ; $16854
+        $167b5              .word ($xxxx) ; $168dd
+MapData_Location9E_Layout
         $167b7              .byte $xx
         $167b8              .byte $xx,$xx,$xx,$xx
         ;; Map 7x11
@@ -9047,11 +10154,27 @@ MapData_Location9E                                     ; Location 9e
         $167f4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $167fb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16802              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16809              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16810              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16820              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16830              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16840              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location9E_Graphics
+        $16809              .byte $xx,$xx,$xx
+        $1680c              .byte $xx,$xx
+        $1680e              .byte $xx,$xx
+MapData_Location9E_Entrances
+        $16810              .byte $xx,$xx,$xx,$xx
+        $16814              .byte $xx,$xx,$xx,$xx
+        $16818              .byte $xx,$xx,$xx,$xx
+        $1681c              .byte $xx,$xx,$xx,$xx
+        $16820              .byte $xx,$xx,$xx,$xx
+        $16824              .byte $xx,$xx,$xx,$xx
+        $16828              .byte $xx,$xx,$xx,$xx
+        $1682c              .byte $xx,$xx,$xx,$xx
+        $16830              .byte $xx,$xx,$xx,$xx
+        $16834              .byte $xx,$xx,$xx,$xx
+        $16838              .byte $xx,$xx,$xx,$xx
+        $1683c              .byte $xx,$xx,$xx,$xx
+        $16840              .byte $xx,$xx,$xx,$xx
+        $16844              .byte $xx,$xx,$xx,$xx
+        $16848              .byte $xx,$xx,$xx,$xx
+        $1684c              .byte $xx,$xx,$xx,$xx
         $16850              .byte $xx,$xx,$xx,$xx
 MapData_Location9E_Exits
         $16854              .byte $xx,$xx,$xx,$xx
@@ -9089,28 +10212,43 @@ MapData_Location9E_Exits
         $168d4              .byte $xx,$xx,$xx,$xx
         $168d8              .byte $xx,$xx,$xx,$xx
         $168dc              .byte $xx
+MapData_Location9E_Flags
         $168dd              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location9F                                     ; Location 9f
-        $168de              .word ($xxxx)
-        $168e0              .word ($xxxx)
-        $168e2              .word ($xxxx)
-        $168e4              .word ($xxxx)
-        $168e6              .word ($xxxx)
-        $168e8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $168f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $168de              .word ($xxxx) ; $168ea
+        $168e0              .word ($xxxx) ; $168f2
+        $168e2              .word ($xxxx) ; $168f9
+        $168e4              .word ($xxxx) ; $168fd
+        $168e6              .word ($xxxx) ; $16906
+        $168e8              .word ($xxxx)
+MapData_Location9F_Layout
+        $168ea              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $168f0              .byte $xx,$xx
+MapData_Location9F_Graphics
+        $168f2              .byte $xx,$xx,$xx
+        $168f5              .byte $xx,$xx
+        $168f7              .byte $xx,$xx
+MapData_Location9F_Entrances
+        $168f9              .byte $xx,$xx,$xx,$xx
 MapData_Location9F_Exits
         $168fd              .byte $xx,$xx,$xx,$xx
         $16901              .byte $xx,$xx,$xx,$xx
         $16905              .byte $xx
-        $16906              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location9F_Flags
+        $16906              .byte $xx,$xx ; 64d1:80 -> 62f0:01
+        $16908              .byte $xx
+MapData_Location9F_Pits
+        $16909              .byte $xx,$xx,$xx,$xx
+        $1690d              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationA0                                     ; Location a0
-        $1690e              .word ($xxxx)
-        $16910              .word ($xxxx)
-        $16912              .word ($xxxx)
-        $16914              .word ($xxxx)
-        $16916              .word ($xxxx)
+        $1690e              .word ($xxxx) ; $16918
+        $16910              .word ($xxxx) ; $1692c
+        $16912              .word ($xxxx) ; $16933
+        $16914              .word ($xxxx) ; $1693b
+        $16916              .word ($xxxx) ; $1694c
+MapData_LocationA0_Layout
         $16918              .byte $xx
         $16919              .byte $xx,$xx,$xx,$xx
         ;; Map 3x5
@@ -9119,22 +10257,30 @@ MapData_LocationA0                                     ; Location a0
         $16923              .byte $xx,$xx,$xx
         $16926              .byte $xx,$xx,$xx
         $16929              .byte $xx,$xx,$xx
-        $1692c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16933              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationA0_Graphics
+        $1692c              .byte $xx,$xx,$xx
+        $1692f              .byte $xx,$xx
+        $16931              .byte $xx,$xx
+MapData_LocationA0_Entrances
+        $16933              .byte $xx,$xx,$xx,$xx
+        $16937              .byte $xx,$xx,$xx,$xx
 MapData_LocationA0_Exits
         $1693b              .byte $xx,$xx,$xx,$xx
         $1693f              .byte $xx,$xx,$xx,$xx
         $16943              .byte $xx,$xx,$xx,$xx
         $16947              .byte $xx,$xx,$xx,$xx
         $1694b              .byte $xx
-        $1694c              .byte $xx,$xx,$xx
+MapData_LocationA0_Flags
+        $1694c              .byte $xx,$xx ; 64d1:40 -> 62f3:01
+        $1694e              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationA1                                     ; Location a1
-        $1694f              .word ($xxxx)
-        $16951              .word ($xxxx)
-        $16953              .word ($xxxx)
-        $16955              .word ($xxxx)
-        $16957              .word ($xxxx)
+        $1694f              .word ($xxxx) ; $16959
+        $16951              .word ($xxxx) ; $16972
+        $16953              .word ($xxxx) ; $16979
+        $16955              .word ($xxxx) ; $16981
+        $16957              .word ($xxxx) ; $1699a
+MapData_LocationA1_Layout
         $16959              .byte $xx
         $1695a              .byte $xx,$xx,$xx,$xx
         ;; Map 4x5
@@ -9143,8 +10289,13 @@ MapData_LocationA1                                     ; Location a1
         $16966              .byte $xx,$xx,$xx,$xx
         $1696a              .byte $xx,$xx,$xx,$xx
         $1696e              .byte $xx,$xx,$xx,$xx
-        $16972              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16980              .byte $xx
+MapData_LocationA1_Graphics
+        $16972              .byte $xx,$xx,$xx
+        $16975              .byte $xx,$xx
+        $16977              .byte $xx,$xx
+MapData_LocationA1_Entrances
+        $16979              .byte $xx,$xx,$xx,$xx
+        $1697d              .byte $xx,$xx,$xx,$xx
 MapData_LocationA1_Exits
         $16981              .byte $xx,$xx,$xx,$xx
         $16985              .byte $xx,$xx,$xx,$xx
@@ -9153,18 +10304,34 @@ MapData_LocationA1_Exits
         $16991              .byte $xx,$xx,$xx,$xx
         $16995              .byte $xx,$xx,$xx,$xx
         $16999              .byte $xx
+MapData_LocationA1_Flags
         $1699a              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationA2                                     ; Location a2
-        $1699b              .word ($xxxx)
-        $1699d              .word ($xxxx)
-        $1699f              .word ($xxxx)
-        $169a1              .word ($xxxx)
-        $169a3              .word ($xxxx)
-        $169a5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $169b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $169c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $169d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1699b              .word ($xxxx) ; $169a7
+        $1699d              .word ($xxxx) ; $169c5
+        $1699f              .word ($xxxx) ; $169cc
+        $169a1              .word ($xxxx) ; $169dc
+        $169a3              .word ($xxxx) ; $169fd
+        $169a5              .word ($xxxx)
+MapData_LocationA2_Layout
+        $169a7              .byte $xx
+        $169a8              .byte $xx,$xx,$xx,$xx
+        ;; Map 5x5
+        $169ac              .byte $xx,$xx,$xx,$xx,$xx
+        $169b1              .byte $xx,$xx,$xx,$xx,$xx
+        $169b6              .byte $xx,$xx,$xx,$xx,$xx
+        $169bb              .byte $xx,$xx,$xx,$xx,$xx
+        $169c0              .byte $xx,$xx,$xx,$xx,$xx
+MapData_LocationA2_Graphics
+        $169c5              .byte $xx,$xx,$xx
+        $169c8              .byte $xx,$xx
+        $169ca              .byte $xx,$xx
+MapData_LocationA2_Entrances
+        $169cc              .byte $xx,$xx,$xx,$xx
+        $169d0              .byte $xx,$xx,$xx,$xx
+        $169d4              .byte $xx,$xx,$xx,$xx
+        $169d8              .byte $xx,$xx,$xx,$xx
 MapData_LocationA2_Exits
         $169dc              .byte $xx,$xx,$xx,$xx
         $169e0              .byte $xx,$xx,$xx,$xx
@@ -9175,30 +10342,44 @@ MapData_LocationA2_Exits
         $169f4              .byte $xx,$xx,$xx,$xx
         $169f8              .byte $xx,$xx,$xx,$xx
         $169fc              .byte $xx
-        $169fd              .byte $xx,$xx,$xx
-        $16a00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationA2_Flags
+        $169fd              .byte $xx
+MapData_LocationA2_Pits
+        $169fe              .byte $xx,$xx,$xx,$xx
+        $16a02              .byte $xx,$xx,$xx,$xx
+        $16a06              .byte $xx,$xx,$xx,$xx
+        $16a0a              .byte $xx,$xx,$xx,$xx
+        $16a0e              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationA3                                     ; Location a3
-        $16a0f              .word ($xxxx)
-        $16a11              .word ($xxxx)
-        $16a13              .word ($xxxx)
-        $16a15              .word ($xxxx)
-        $16a17              .word ($xxxx)
+        $16a0f              .word ($xxxx) ; $16a19
+        $16a11              .word ($xxxx) ; $16a28
+        $16a13              .word ($xxxx) ; $16a2f
+        $16a15              .word ($xxxx) ; $16a33
+        $16a17              .word ($xxxx) ; $16a3c
+MapData_LocationA3_Layout
         $16a19              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16a20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16a30              .byte $xx,$xx,$xx
+        $16a20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationA3_Graphics
+        $16a28              .byte $xx,$xx,$xx
+        $16a2b              .byte $xx,$xx
+        $16a2d              .byte $xx,$xx
+MapData_LocationA3_Entrances
+        $16a2f              .byte $xx,$xx,$xx,$xx
 MapData_LocationA3_Exits
         $16a33              .byte $xx,$xx,$xx,$xx
         $16a37              .byte $xx,$xx,$xx,$xx
         $16a3b              .byte $xx
+MapData_LocationA3_Flags
         $16a3c              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationA4                                     ; Location a4
-        $16a3d              .word ($xxxx)
-        $16a3f              .word ($xxxx)
-        $16a41              .word ($xxxx)
-        $16a43              .word ($xxxx)
-        $16a45              .word ($xxxx)
+        $16a3d              .word ($xxxx) ; $16a47
+        $16a3f              .word ($xxxx) ; $16a56
+        $16a41              .word ($xxxx) ; $16a5d
+        $16a43              .word ($xxxx) ; $16a61
+        $16a45              .word ($xxxx) ; $16a6a
+MapData_LocationA4_Layout
         $16a47              .byte $xx
         $16a48              .byte $xx,$xx,$xx,$xx
         ;; Map 2x5
@@ -9207,61 +10388,85 @@ MapData_LocationA4                                     ; Location a4
         $16a50              .byte $xx,$xx
         $16a52              .byte $xx,$xx
         $16a54              .byte $xx,$xx
-        $16a56              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16a60              .byte $xx
+MapData_LocationA4_Graphics
+        $16a56              .byte $xx,$xx,$xx
+        $16a59              .byte $xx,$xx
+        $16a5b              .byte $xx,$xx
+MapData_LocationA4_Entrances
+        $16a5d              .byte $xx,$xx,$xx,$xx
 MapData_LocationA4_Exits
         $16a61              .byte $xx,$xx,$xx,$xx
         $16a65              .byte $xx,$xx,$xx,$xx
         $16a69              .byte $xx
+MapData_LocationA4_Flags
         $16a6a              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationA5                                     ; Location a5
-        $16a6b              .word ($xxxx)
-        $16a6d              .word ($xxxx)
-        $16a6f              .word ($xxxx)
-        $16a71              .word ($xxxx)
-        $16a73              .word ($xxxx)
-        $16a75              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16a80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16a90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $16a6b              .word ($xxxx) ; $16a77
+        $16a6d              .word ($xxxx) ; $16a8e
+        $16a6f              .word ($xxxx) ; $16a95
+        $16a71              .word ($xxxx) ; $16a9d
+        $16a73              .word ($xxxx) ; $16aae
+        $16a75              .word ($xxxx)
+MapData_LocationA5_Layout
+        $16a77              .byte $xx
+        ;; Map 3x6
+        $16a78              .byte $xx,$xx,$xx,$xx
+        $16a7c              .byte $xx,$xx,$xx
+        $16a7f              .byte $xx,$xx,$xx
+        $16a82              .byte $xx,$xx,$xx
+        $16a85              .byte $xx,$xx,$xx
+        $16a88              .byte $xx,$xx,$xx
+        $16a8b              .byte $xx,$xx,$xx
+MapData_LocationA5_Graphics
+        $16a8e              .byte $xx,$xx,$xx
+        $16a91              .byte $xx,$xx
+        $16a93              .byte $xx,$xx
+MapData_LocationA5_Entrances
+        $16a95              .byte $xx,$xx,$xx,$xx
+        $16a99              .byte $xx,$xx,$xx,$xx
 MapData_LocationA5_Exits
         $16a9d              .byte $xx,$xx,$xx,$xx
         $16aa1              .byte $xx,$xx,$xx,$xx
         $16aa5              .byte $xx,$xx,$xx,$xx
         $16aa9              .byte $xx,$xx,$xx,$xx
         $16aad              .byte $xx
-        $16aae              .byte $xx,$xx
-        $16ab0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationA5_Flags
+        $16aae              .byte $xx
+MapData_LocationA5_Pits
+        $16aaf              .byte $xx,$xx,$xx,$xx
+        $16ab3              .byte $xx,$xx,$xx,$xx
+        $16ab7              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Draygon2                                       ; Location a6
-        $16ab8              .word ($xxxx)
-        $16aba              .word ($xxxx)
-        $16abc              .word ($xxxx)
-        $16abe              .word ($xxxx)
-        $16ac0              .word ($xxxx)
-        $16ac2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16ad0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_Draygon2
+        $16ab8              .word ($xxxx) ; $16ac2
+        $16aba              .word ($xxxx) ; $16ac9
+        $16abc              .word ($xxxx) ; $16ad0
+        $16abe              .word ($xxxx) ; $16ad8
+        $16ac0              .word ($xxxx) ; $16af1
+MapData_Draygon2_Layout
+        $16ac2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Draygon2_Graphics
+        $16ac9              .byte $xx,$xx,$xx
+        $16acc              .byte $xx,$xx
+        $16ace              .byte $xx,$xx
+MapData_Draygon2_Entrances
+        $16ad0              .byte $xx,$xx,$xx,$xx
+        $16ad4              .byte $xx,$xx,$xx,$xx
         $16ad8              .byte $xx,$xx,$xx,$xx
         $16adc              .byte $xx,$xx,$xx,$xx
         $16ae0              .byte $xx,$xx,$xx,$xx
         $16ae4              .byte $xx,$xx,$xx,$xx
         $16ae8              .byte $xx,$xx,$xx,$xx
         $16aec              .byte $xx,$xx,$xx,$xx
-        $16af0              .byte $xx
-        $16af1              .byte $xx,$xx,$xx
-;;; ----------------------------------------------------------------
-MapData_LocationA7                                     ; Location a7
-        $16af4              .word ($xxxx)
-        $16af6              .word ($xxxx)
-        $16af8              .word ($xxxx)
-        $16afa              .word ($xxxx)
-        $16afc              .word ($xxxx)
-        $16afe              .byte $xx
-        $16aff              .byte $xx,$xx,$xx,$xx
-        ;; Map 1x1
-        $16b03              .byte $xx
-        $16b04              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $16af0              .byte $xx,$xx,$xx,$xx
+        $16af4              .byte $xx,$xx,$xx,$xx
+        $16af8              .byte $xx,$xx,$xx,$xx
+        $16afc              .byte $xx,$xx,$xx,$xx
+        $16b00              .byte $xx,$xx,$xx,$xx
+        $16b04              .byte $xx,$xx,$xx,$xx
+        $16b08              .byte $xx,$xx,$xx,$xx
+        $16b0c              .byte $xx,$xx,$xx
 MapData_LocationA7_Exits
         $16b0f              .byte $xx,$xx,$xx,$xx
         $16b13              .byte $xx,$xx,$xx,$xx
@@ -9270,22 +10475,29 @@ MapData_LocationA7_Exits
         $16b1f              .byte $xx,$xx,$xx,$xx
         $16b23              .byte $xx,$xx,$xx,$xx
         $16b27              .byte $xx
+MapData_LocationA7_Flags
         $16b28              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationA8                                     ; Location a8
-        $16b29              .word ($xxxx)
-        $16b2b              .word ($xxxx)
-        $16b2d              .word ($xxxx)
-        $16b2f              .word ($xxxx)
-        $16b31              .word ($xxxx)
+        $16b29              .word ($xxxx) ; $16b33
+        $16b2b              .word ($xxxx) ; $16b3b
+        $16b2d              .word ($xxxx) ; $16b42
+        $16b2f              .word ($xxxx) ; $16b4a
+        $16b31              .word ($xxxx) ; $16b63
+MapData_LocationA8_Layout
         $16b33              .byte $xx
         $16b34              .byte $xx,$xx,$xx,$xx
         ;; Map 1x3
         $16b38              .byte $xx
         $16b39              .byte $xx
         $16b3a              .byte $xx
-        $16b3b              .byte $xx,$xx,$xx,$xx,$xx
-        $16b40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationA8_Graphics
+        $16b3b              .byte $xx,$xx,$xx
+        $16b3e              .byte $xx,$xx
+        $16b40              .byte $xx,$xx
+MapData_LocationA8_Entrances
+        $16b42              .byte $xx,$xx,$xx,$xx
+        $16b46              .byte $xx,$xx,$xx,$xx
 MapData_LocationA8_Exits
         $16b4a              .byte $xx,$xx,$xx,$xx
         $16b4e              .byte $xx,$xx,$xx,$xx
@@ -9294,14 +10506,17 @@ MapData_LocationA8_Exits
         $16b5a              .byte $xx,$xx,$xx,$xx
         $16b5e              .byte $xx,$xx,$xx,$xx
         $16b62              .byte $xx
-        $16b63              .byte $xx,$xx,$xx
+MapData_LocationA8_Flags
+        $16b63              .byte $xx,$xx ; 64d5:01 -> 62f0:01
+        $16b65              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationA9                                     ; Location a9
-        $16b66              .word ($xxxx)
-        $16b68              .word ($xxxx)
-        $16b6a              .word ($xxxx)
-        $16b6c              .word ($xxxx)
-        $16b6e              .word ($xxxx)
+        $16b66              .word ($xxxx) ; $16b70
+        $16b68              .word ($xxxx) ; $16bb4
+        $16b6a              .word ($xxxx) ; $16bbb
+        $16b6c              .word ($xxxx) ; $16bc3
+        $16b6e              .word ($xxxx) ; $16bdc
+MapData_LocationA9_Layout
         $16b70              .byte $xx
         $16b71              .byte $xx,$xx,$xx,$xx
         ;; Map 7x9
@@ -9314,8 +10529,13 @@ MapData_LocationA9                                     ; Location a9
         $16b9f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16ba6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16bad              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16bb4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16bc0              .byte $xx,$xx,$xx
+MapData_LocationA9_Graphics
+        $16bb4              .byte $xx,$xx,$xx
+        $16bb7              .byte $xx,$xx
+        $16bb9              .byte $xx,$xx
+MapData_LocationA9_Entrances
+        $16bbb              .byte $xx,$xx,$xx,$xx
+        $16bbf              .byte $xx,$xx,$xx,$xx
 MapData_LocationA9_Exits
         $16bc3              .byte $xx,$xx,$xx,$xx
         $16bc7              .byte $xx,$xx,$xx,$xx
@@ -9324,22 +10544,29 @@ MapData_LocationA9_Exits
         $16bd3              .byte $xx,$xx,$xx,$xx
         $16bd7              .byte $xx,$xx,$xx,$xx
         $16bdb              .byte $xx
+MapData_LocationA9_Flags
         $16bdc              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationAA                                     ; Location aa
-        $16bdd              .word ($xxxx)
-        $16bdf              .word ($xxxx)
-        $16be1              .word ($xxxx)
-        $16be3              .word ($xxxx)
-        $16be5              .word ($xxxx)
+        $16bdd              .word ($xxxx) ; $16be7
+        $16bdf              .word ($xxxx) ; $16bef
+        $16be1              .word ($xxxx) ; $16bf6
+        $16be3              .word ($xxxx) ; $16bfe
+        $16be5              .word ($xxxx) ; $16c17
+MapData_LocationAA_Layout
         $16be7              .byte $xx
         $16be8              .byte $xx,$xx,$xx,$xx
         ;; Map 1x3
         $16bec              .byte $xx
         $16bed              .byte $xx
         $16bee              .byte $xx
-        $16bef              .byte $xx
-        $16bf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationAA_Graphics
+        $16bef              .byte $xx,$xx,$xx
+        $16bf2              .byte $xx,$xx
+        $16bf4              .byte $xx,$xx
+MapData_LocationAA_Entrances
+        $16bf6              .byte $xx,$xx,$xx,$xx
+        $16bfa              .byte $xx,$xx,$xx,$xx
 MapData_LocationAA_Exits
         $16bfe              .byte $xx,$xx,$xx,$xx
         $16c02              .byte $xx,$xx,$xx,$xx
@@ -9348,14 +10575,16 @@ MapData_LocationAA_Exits
         $16c0e              .byte $xx,$xx,$xx,$xx
         $16c12              .byte $xx,$xx,$xx,$xx
         $16c16              .byte $xx
+MapData_LocationAA_Flags
         $16c17              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationAB                                     ; Location ab
-        $16c18              .word ($xxxx)
-        $16c1a              .word ($xxxx)
-        $16c1c              .word ($xxxx)
-        $16c1e              .word ($xxxx)
-        $16c20              .word ($xxxx)
+        $16c18              .word ($xxxx) ; $16c22
+        $16c1a              .word ($xxxx) ; $16c6f
+        $16c1c              .word ($xxxx) ; $16c76
+        $16c1e              .word ($xxxx) ; $16c7e
+        $16c20              .word ($xxxx) ; $16c8f
+MapData_LocationAB_Layout
         $16c22              .byte $xx
         $16c23              .byte $xx,$xx,$xx,$xx
         ;; Map 8x9
@@ -9368,24 +10597,38 @@ MapData_LocationAB                                     ; Location ab
         $16c57              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16c5f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16c67              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16c6f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16c76              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationAB_Graphics
+        $16c6f              .byte $xx,$xx,$xx
+        $16c72              .byte $xx,$xx
+        $16c74              .byte $xx,$xx
+MapData_LocationAB_Entrances
+        $16c76              .byte $xx,$xx,$xx,$xx
+        $16c7a              .byte $xx,$xx,$xx,$xx
 MapData_LocationAB_Exits
         $16c7e              .byte $xx,$xx,$xx,$xx
         $16c82              .byte $xx,$xx,$xx,$xx
         $16c86              .byte $xx,$xx,$xx,$xx
         $16c8a              .byte $xx,$xx,$xx,$xx
         $16c8e              .byte $xx
-        $16c8f              .byte $xx
-        $16c90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16ca0              .byte $xx,$xx
+MapData_LocationAB_Flags
+        $16c8f              .byte $xx,$xx ; 64d4:40 -> 62f5:04
+        $16c91              .byte $xx,$xx ; 64d4:20 -> 62f5:20
+        $16c93              .byte $xx,$xx ; 64d4:10 -> 62f4:80
+        $16c95              .byte $xx,$xx ; 64d4:08 -> 62f4:20
+        $16c97              .byte $xx,$xx ; 64d4:04 -> 62f3:80
+        $16c99              .byte $xx,$xx ; 64d4:02 -> 62f2:10
+        $16c9b              .byte $xx,$xx ; 64d4:01 -> 62f8:08
+        $16c9d              .byte $xx,$xx ; 64d3:80 -> 62f3:02
+        $16c9f              .byte $xx,$xx ; 64d3:40 -> 62f1:40
+        $16ca1              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationAC                                     ; Location ac
-        $16ca2              .word ($xxxx)
-        $16ca4              .word ($xxxx)
-        $16ca6              .word ($xxxx)
-        $16ca8              .word ($xxxx)
-        $16caa              .word ($xxxx)
+        $16ca2              .word ($xxxx) ; $16cac
+        $16ca4              .word ($xxxx) ; $16cb8
+        $16ca6              .word ($xxxx) ; $16cbf
+        $16ca8              .word ($xxxx) ; $16cc7
+        $16caa              .word ($xxxx) ; $16cd8
+MapData_LocationAC_Layout
         $16cac              .byte $xx
         $16cad              .byte $xx,$xx,$xx,$xx
         ;; Map 1x7
@@ -9396,22 +10639,29 @@ MapData_LocationAC                                     ; Location ac
         $16cb5              .byte $xx
         $16cb6              .byte $xx
         $16cb7              .byte $xx
-        $16cb8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16cc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationAC_Graphics
+        $16cb8              .byte $xx,$xx,$xx
+        $16cbb              .byte $xx,$xx
+        $16cbd              .byte $xx,$xx
+MapData_LocationAC_Entrances
+        $16cbf              .byte $xx,$xx,$xx,$xx
+        $16cc3              .byte $xx,$xx,$xx,$xx
 MapData_LocationAC_Exits
         $16cc7              .byte $xx,$xx,$xx,$xx
         $16ccb              .byte $xx,$xx,$xx,$xx
         $16ccf              .byte $xx,$xx,$xx,$xx
         $16cd3              .byte $xx,$xx,$xx,$xx
         $16cd7              .byte $xx
+MapData_LocationAC_Flags
         $16cd8              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationAD                                     ; Location ad
-        $16cd9              .word ($xxxx)
-        $16cdb              .word ($xxxx)
-        $16cdd              .word ($xxxx)
-        $16cdf              .word ($xxxx)
-        $16ce1              .word ($xxxx)
+        $16cd9              .word ($xxxx) ; $16ce3
+        $16cdb              .word ($xxxx) ; $16d10
+        $16cdd              .word ($xxxx) ; $16d17
+        $16cdf              .word ($xxxx) ; $16d27
+        $16ce1              .word ($xxxx) ; $16d48
+MapData_LocationAD_Layout
         $16ce3              .byte $xx
         $16ce4              .byte $xx,$xx,$xx,$xx
         ;; Map 5x8
@@ -9423,8 +10673,15 @@ MapData_LocationAD                                     ; Location ad
         $16d01              .byte $xx,$xx,$xx,$xx,$xx
         $16d06              .byte $xx,$xx,$xx,$xx,$xx
         $16d0b              .byte $xx,$xx,$xx,$xx,$xx
-        $16d10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16d20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationAD_Graphics
+        $16d10              .byte $xx,$xx,$xx
+        $16d13              .byte $xx,$xx
+        $16d15              .byte $xx,$xx
+MapData_LocationAD_Entrances
+        $16d17              .byte $xx,$xx,$xx,$xx
+        $16d1b              .byte $xx,$xx,$xx,$xx
+        $16d1f              .byte $xx,$xx,$xx,$xx
+        $16d23              .byte $xx,$xx,$xx,$xx
 MapData_LocationAD_Exits
         $16d27              .byte $xx,$xx,$xx,$xx
         $16d2b              .byte $xx,$xx,$xx,$xx
@@ -9435,37 +10692,79 @@ MapData_LocationAD_Exits
         $16d3f              .byte $xx,$xx,$xx,$xx
         $16d43              .byte $xx,$xx,$xx,$xx
         $16d47              .byte $xx
+MapData_LocationAD_Flags
         $16d48              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationAE                                     ; Location ae
-        $16d49              .word ($xxxx)
-        $16d4b              .word ($xxxx)
-        $16d4d              .word ($xxxx)
-        $16d4f              .word ($xxxx)
-        $16d51              .word ($xxxx)
-        $16d53              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16d60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16d70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $16d49              .word ($xxxx) ; $16d55
+        $16d4b              .word ($xxxx) ; $16d6f
+        $16d4d              .word ($xxxx) ; $16d76
+        $16d4f              .word ($xxxx) ; $16d7e
+        $16d51              .word ($xxxx) ; $16d8f
+        $16d53              .word ($xxxx)
+MapData_LocationAE_Layout
+        $16d55              .byte $xx
+        $16d56              .byte $xx,$xx,$xx,$xx
+        ;; Map 3x7
+        $16d5a              .byte $xx,$xx,$xx
+        $16d5d              .byte $xx,$xx,$xx
+        $16d60              .byte $xx,$xx,$xx
+        $16d63              .byte $xx,$xx,$xx
+        $16d66              .byte $xx,$xx,$xx
+        $16d69              .byte $xx,$xx,$xx
+        $16d6c              .byte $xx,$xx,$xx
+MapData_LocationAE_Graphics
+        $16d6f              .byte $xx,$xx,$xx
+        $16d72              .byte $xx,$xx
+        $16d74              .byte $xx,$xx
+MapData_LocationAE_Entrances
+        $16d76              .byte $xx,$xx,$xx,$xx
+        $16d7a              .byte $xx,$xx,$xx,$xx
 MapData_LocationAE_Exits
         $16d7e              .byte $xx,$xx,$xx,$xx
         $16d82              .byte $xx,$xx,$xx,$xx
         $16d86              .byte $xx,$xx,$xx,$xx
         $16d8a              .byte $xx,$xx,$xx,$xx
         $16d8e              .byte $xx
-        $16d8f              .byte $xx
-        $16d90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationAE_Flags
+        $16d8f              .byte $xx,$xx ; 64d3:20 -> 62f4:02
+        $16d91              .byte $xx
+MapData_LocationAE_Pits
+        $16d92              .byte $xx,$xx,$xx,$xx
+        $16d96              .byte $xx,$xx,$xx,$xx
+        $16d9a              .byte $xx,$xx,$xx,$xx
+        $16d9e              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationAF                                     ; Location af
-        $16d9f              .word ($xxxx)
-        $16da1              .word ($xxxx)
-        $16da3              .word ($xxxx)
-        $16da5              .word ($xxxx)
-        $16da7              .word ($xxxx)
-        $16da9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16db0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16dc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16dd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16de0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $16d9f              .word ($xxxx) ; $16dab
+        $16da1              .word ($xxxx) ; $16ddc
+        $16da3              .word ($xxxx) ; $16de3
+        $16da5              .word ($xxxx) ; $16def
+        $16da7              .word ($xxxx) ; $16e08
+        $16da9              .word ($xxxx)
+MapData_LocationAF_Layout
+        $16dab              .byte $xx
+        $16dac              .byte $xx,$xx,$xx,$xx
+        ;; Map 4x11
+        $16db0              .byte $xx,$xx,$xx,$xx
+        $16db4              .byte $xx,$xx,$xx,$xx
+        $16db8              .byte $xx,$xx,$xx,$xx
+        $16dbc              .byte $xx,$xx,$xx,$xx
+        $16dc0              .byte $xx,$xx,$xx,$xx
+        $16dc4              .byte $xx,$xx,$xx,$xx
+        $16dc8              .byte $xx,$xx,$xx,$xx
+        $16dcc              .byte $xx,$xx,$xx,$xx
+        $16dd0              .byte $xx,$xx,$xx,$xx
+        $16dd4              .byte $xx,$xx,$xx,$xx
+        $16dd8              .byte $xx,$xx,$xx,$xx
+MapData_LocationAF_Graphics
+        $16ddc              .byte $xx,$xx,$xx
+        $16ddf              .byte $xx,$xx
+        $16de1              .byte $xx,$xx
+MapData_LocationAF_Entrances
+        $16de3              .byte $xx,$xx,$xx,$xx
+        $16de7              .byte $xx,$xx,$xx,$xx
+        $16deb              .byte $xx,$xx,$xx,$xx
 MapData_LocationAF_Exits
         $16def              .byte $xx,$xx,$xx,$xx
         $16df3              .byte $xx,$xx,$xx,$xx
@@ -9474,15 +10773,22 @@ MapData_LocationAF_Exits
         $16dff              .byte $xx,$xx,$xx,$xx
         $16e03              .byte $xx,$xx,$xx,$xx
         $16e07              .byte $xx
-        $16e08              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16e10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationAF_Flags
+        $16e08              .byte $xx
+MapData_LocationAF_Pits
+        $16e09              .byte $xx,$xx,$xx,$xx
+        $16e0d              .byte $xx,$xx,$xx,$xx
+        $16e11              .byte $xx,$xx,$xx,$xx
+        $16e15              .byte $xx,$xx,$xx,$xx
+        $16e19              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationB9                                     ; Location b9
-        $16e1a              .word ($xxxx)
-        $16e1c              .word ($xxxx)
-        $16e1e              .word ($xxxx)
-        $16e20              .word ($xxxx)
-        $16e22              .word ($xxxx)
+        $16e1a              .word ($xxxx) ; $16e24
+        $16e1c              .word ($xxxx) ; $16e55
+        $16e1e              .word ($xxxx) ; $16e5c
+        $16e20              .word ($xxxx) ; $16e68
+        $16e22              .word ($xxxx) ; $16e81
+MapData_LocationB9_Layout
         $16e24              .byte $xx
         $16e25              .byte $xx,$xx,$xx,$xx
         ;; Map 4x11
@@ -9497,8 +10803,14 @@ MapData_LocationB9                                     ; Location b9
         $16e49              .byte $xx,$xx,$xx,$xx
         $16e4d              .byte $xx,$xx,$xx,$xx
         $16e51              .byte $xx,$xx,$xx,$xx
-        $16e55              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16e60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationB9_Graphics
+        $16e55              .byte $xx,$xx,$xx
+        $16e58              .byte $xx,$xx
+        $16e5a              .byte $xx,$xx
+MapData_LocationB9_Entrances
+        $16e5c              .byte $xx,$xx,$xx,$xx
+        $16e60              .byte $xx,$xx,$xx,$xx
+        $16e64              .byte $xx,$xx,$xx,$xx
 MapData_LocationB9_Exits
         $16e68              .byte $xx,$xx,$xx,$xx
         $16e6c              .byte $xx,$xx,$xx,$xx
@@ -9507,15 +10819,19 @@ MapData_LocationB9_Exits
         $16e78              .byte $xx,$xx,$xx,$xx
         $16e7c              .byte $xx,$xx,$xx,$xx
         $16e80              .byte $xx
-        $16e81              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16e90              .byte $xx,$xx,$xx
+MapData_LocationB9_Flags
+        $16e81              .byte $xx
+        ;; Extra data???
+        $16e82              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $16e92              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationB0                                     ; Location b0
-        $16e93              .word ($xxxx)
-        $16e95              .word ($xxxx)
-        $16e97              .word ($xxxx)
-        $16e99              .word ($xxxx)
-        $16e9b              .word ($xxxx)
+        $16e93              .word ($xxxx) ; $16e9d
+        $16e95              .word ($xxxx) ; $16eae
+        $16e97              .word ($xxxx) ; $16eb5
+        $16e99              .word ($xxxx) ; $16ec1
+        $16e9b              .word ($xxxx) ; $16eda
+MapData_LocationB0_Layout
         $16e9d              .byte $xx
         $16e9e              .byte $xx,$xx,$xx,$xx
         ;; Map 3x4
@@ -9523,9 +10839,14 @@ MapData_LocationB0                                     ; Location b0
         $16ea5              .byte $xx,$xx,$xx
         $16ea8              .byte $xx,$xx,$xx
         $16eab              .byte $xx,$xx,$xx
-        $16eae              .byte $xx,$xx
-        $16eb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16ec0              .byte $xx
+MapData_LocationB0_Graphics
+        $16eae              .byte $xx,$xx,$xx
+        $16eb1              .byte $xx,$xx
+        $16eb3              .byte $xx,$xx
+MapData_LocationB0_Entrances
+        $16eb5              .byte $xx,$xx,$xx,$xx
+        $16eb9              .byte $xx,$xx,$xx,$xx
+        $16ebd              .byte $xx,$xx,$xx,$xx
 MapData_LocationB0_Exits
         $16ec1              .byte $xx,$xx,$xx,$xx
         $16ec5              .byte $xx,$xx,$xx,$xx
@@ -9534,14 +10855,16 @@ MapData_LocationB0_Exits
         $16ed1              .byte $xx,$xx,$xx,$xx
         $16ed5              .byte $xx,$xx,$xx,$xx
         $16ed9              .byte $xx
+MapData_LocationB0_Flags
         $16eda              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationB1                                     ; Location b1
-        $16edb              .word ($xxxx)
-        $16edd              .word ($xxxx)
-        $16edf              .word ($xxxx)
-        $16ee1              .word ($xxxx)
-        $16ee3              .word ($xxxx)
+        $16edb              .word ($xxxx) ; $16ee5
+        $16edd              .word ($xxxx) ; $16ef2
+        $16edf              .word ($xxxx) ; $16ef9
+        $16ee1              .word ($xxxx) ; $16f01
+        $16ee3              .word ($xxxx) ; $16f12
+MapData_LocationB1_Layout
         $16ee5              .byte $xx
         $16ee6              .byte $xx,$xx,$xx,$xx
         ;; Map 2x4
@@ -9549,22 +10872,29 @@ MapData_LocationB1                                     ; Location b1
         $16eec              .byte $xx,$xx
         $16eee              .byte $xx,$xx
         $16ef0              .byte $xx,$xx
-        $16ef2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16f00              .byte $xx
+MapData_LocationB1_Graphics
+        $16ef2              .byte $xx,$xx,$xx
+        $16ef5              .byte $xx,$xx
+        $16ef7              .byte $xx,$xx
+MapData_LocationB1_Entrances
+        $16ef9              .byte $xx,$xx,$xx,$xx
+        $16efd              .byte $xx,$xx,$xx,$xx
 MapData_LocationB1_Exits
         $16f01              .byte $xx,$xx,$xx,$xx
         $16f05              .byte $xx,$xx,$xx,$xx
         $16f09              .byte $xx,$xx,$xx,$xx
         $16f0d              .byte $xx,$xx,$xx,$xx
         $16f11              .byte $xx
+MapData_LocationB1_Flags
         $16f12              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationB2                                     ; Location b2
-        $16f13              .word ($xxxx)
-        $16f15              .word ($xxxx)
-        $16f17              .word ($xxxx)
-        $16f19              .word ($xxxx)
-        $16f1b              .word ($xxxx)
+        $16f13              .word ($xxxx) ; $16f1d
+        $16f15              .word ($xxxx) ; $16f34
+        $16f17              .word ($xxxx) ; $16f3b
+        $16f19              .word ($xxxx) ; $16f47
+        $16f1b              .word ($xxxx) ; $16f60
+MapData_LocationB2_Layout
         $16f1d              .byte $xx
         $16f1e              .byte $xx,$xx,$xx,$xx
         ;; Map 3x6
@@ -9574,8 +10904,14 @@ MapData_LocationB2                                     ; Location b2
         $16f2b              .byte $xx,$xx,$xx
         $16f2e              .byte $xx,$xx,$xx
         $16f31              .byte $xx,$xx,$xx
-        $16f34              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16f40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationB2_Graphics
+        $16f34              .byte $xx,$xx,$xx
+        $16f37              .byte $xx,$xx
+        $16f39              .byte $xx,$xx
+MapData_LocationB2_Entrances
+        $16f3b              .byte $xx,$xx,$xx,$xx
+        $16f3f              .byte $xx,$xx,$xx,$xx
+        $16f43              .byte $xx,$xx,$xx,$xx
 MapData_LocationB2_Exits
         $16f47              .byte $xx,$xx,$xx,$xx
         $16f4b              .byte $xx,$xx,$xx,$xx
@@ -9584,42 +10920,60 @@ MapData_LocationB2_Exits
         $16f57              .byte $xx,$xx,$xx,$xx
         $16f5b              .byte $xx,$xx,$xx,$xx
         $16f5f              .byte $xx
+MapData_LocationB2_Flags
         $16f60              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationB3                                     ; Location b3
-        $16f61              .word ($xxxx)
-        $16f63              .word ($xxxx)
-        $16f65              .word ($xxxx)
-        $16f67              .word ($xxxx)
-        $16f69              .word ($xxxx)
+        $16f61              .word ($xxxx) ; $16f6b
+        $16f63              .word ($xxxx) ; $16f74
+        $16f65              .word ($xxxx) ; $16f7b
+        $16f67              .word ($xxxx) ; $16f83
+        $16f69              .word ($xxxx) ; $16f94
+MapData_LocationB3_Layout
         $16f6b              .byte $xx
         $16f6c              .byte $xx,$xx,$xx,$xx
         ;; Map 2x2
         $16f70              .byte $xx,$xx
         $16f72              .byte $xx,$xx
-        $16f74              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16f80              .byte $xx,$xx,$xx
+MapData_LocationB3_Graphics
+        $16f74              .byte $xx,$xx,$xx
+        $16f77              .byte $xx,$xx
+        $16f79              .byte $xx,$xx
+MapData_LocationB3_Entrances
+        $16f7b              .byte $xx,$xx,$xx,$xx
+        $16f7f              .byte $xx,$xx,$xx,$xx
 MapData_LocationB3_Exits
         $16f83              .byte $xx,$xx,$xx,$xx
         $16f87              .byte $xx,$xx,$xx,$xx
         $16f8b              .byte $xx,$xx,$xx,$xx
         $16f8f              .byte $xx,$xx,$xx,$xx
         $16f93              .byte $xx
+MapData_LocationB3_Flags
         $16f94              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationB4                                     ; Location b4
-        $16f95              .word ($xxxx)
-        $16f97              .word ($xxxx)
-        $16f99              .word ($xxxx)
-        $16f9b              .word ($xxxx)
-        $16f9d              .word ($xxxx)
-        $16f9f              .byte $xx
-        $16fa0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $16f95              .word ($xxxx) ; $16fa1
+        $16f97              .word ($xxxx) ; $16fe5
+        $16f99              .word ($xxxx) ; $16fec
+        $16f9b              .word ($xxxx) ; $17004
+        $16f9d              .word ($xxxx) ; $17045
+        $16f9f              .word ($xxxx)
+MapData_LocationB4_Layout
+        $16fa1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16fb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16fc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16fd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16fe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16ff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $16fe0              .byte $xx,$xx,$xx,$xx,$xx
+MapData_LocationB4_Graphics
+        $16fe5              .byte $xx,$xx,$xx
+        $16fe8              .byte $xx,$xx
+        $16fea              .byte $xx,$xx
+MapData_LocationB4_Entrances
+        $16fec              .byte $xx,$xx,$xx,$xx
+        $16ff0              .byte $xx,$xx,$xx,$xx
+        $16ff4              .byte $xx,$xx,$xx,$xx
+        $16ff8              .byte $xx,$xx,$xx,$xx
+        $16ffc              .byte $xx,$xx,$xx,$xx
         $17000              .byte $xx,$xx,$xx,$xx
 MapData_LocationB4_Exits
         $17004              .byte $xx,$xx,$xx,$xx
@@ -9639,15 +10993,22 @@ MapData_LocationB4_Exits
         $1703c              .byte $xx,$xx,$xx,$xx
         $17040              .byte $xx,$xx,$xx,$xx
         $17044              .byte $xx
-        $17045              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $17050              .byte $xx,$xx,$xx,$xx,$xx
+MapData_LocationB4_Flags
+        $17045              .byte $xx,$xx ; 64d3:10 -> 62f4:20
+        $17047              .byte $xx
+MapData_LocationB4_Pits
+        $17048              .byte $xx,$xx,$xx,$xx
+        $1704c              .byte $xx,$xx,$xx,$xx
+        $17050              .byte $xx,$xx,$xx,$xx
+        $17054              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationBA                                     ; Location ba
-        $17055              .word ($xxxx)
-        $17057              .word ($xxxx)
-        $17059              .word ($xxxx)
-        $1705b              .word ($xxxx)
-        $1705d              .word ($xxxx)
+        $17055              .word ($xxxx) ; $1705f
+        $17057              .word ($xxxx) ; $170a3
+        $17059              .word ($xxxx) ; $170aa
+        $1705b              .word ($xxxx) ; $170c2
+        $1705d              .word ($xxxx) ; $17103
+MapData_LocationBA_Layout
         $1705f              .byte $xx
         $17060              .byte $xx,$xx,$xx,$xx
         ;; Map 7x9
@@ -9660,9 +11021,17 @@ MapData_LocationBA                                     ; Location ba
         $1708e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $17095              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1709c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $170a3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $170b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $170c0              .byte $xx,$xx
+MapData_LocationBA_Graphics
+        $170a3              .byte $xx,$xx,$xx
+        $170a6              .byte $xx,$xx
+        $170a8              .byte $xx,$xx
+MapData_LocationBA_Entrances
+        $170aa              .byte $xx,$xx,$xx,$xx
+        $170ae              .byte $xx,$xx,$xx,$xx
+        $170b2              .byte $xx,$xx,$xx,$xx
+        $170b6              .byte $xx,$xx,$xx,$xx
+        $170ba              .byte $xx,$xx,$xx,$xx
+        $170be              .byte $xx,$xx,$xx,$xx
 MapData_LocationBA_Exits
         $170c2              .byte $xx,$xx,$xx,$xx
         $170c6              .byte $xx,$xx,$xx,$xx
@@ -9681,14 +11050,16 @@ MapData_LocationBA_Exits
         $170fa              .byte $xx,$xx,$xx,$xx
         $170fe              .byte $xx,$xx,$xx,$xx
         $17102              .byte $xx
+MapData_LocationBA_Flags
         $17103              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationB5                                     ; Location b5
-        $17104              .word ($xxxx)
-        $17106              .word ($xxxx)
-        $17108              .word ($xxxx)
-        $1710a              .word ($xxxx)
-        $1710c              .word ($xxxx)
+        $17104              .word ($xxxx) ; $1710e
+        $17106              .word ($xxxx) ; $17131
+        $17108              .word ($xxxx) ; $17138
+        $1710a              .word ($xxxx) ; $17144
+        $1710c              .word ($xxxx) ; $1715d
+MapData_LocationB5_Layout
         $1710e              .byte $xx
         $1710f              .byte $xx,$xx,$xx,$xx
         ;; Map 6x5
@@ -9697,7 +11068,13 @@ MapData_LocationB5                                     ; Location b5
         $1711f              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $17125              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $1712b              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $17131              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationB5_Graphics
+        $17131              .byte $xx,$xx,$xx
+        $17134              .byte $xx,$xx
+        $17136              .byte $xx,$xx
+MapData_LocationB5_Entrances
+        $17138              .byte $xx,$xx,$xx,$xx
+        $1713c              .byte $xx,$xx,$xx,$xx
         $17140              .byte $xx,$xx,$xx,$xx
 MapData_LocationB5_Exits
         $17144              .byte $xx,$xx,$xx,$xx
@@ -9707,14 +11084,16 @@ MapData_LocationB5_Exits
         $17154              .byte $xx,$xx,$xx,$xx
         $17158              .byte $xx,$xx,$xx,$xx
         $1715c              .byte $xx
+MapData_LocationB5_Flags
         $1715d              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationB6                                     ; Location b6
-        $1715e              .word ($xxxx)
-        $17160              .word ($xxxx)
-        $17162              .word ($xxxx)
-        $17164              .word ($xxxx)
-        $17166              .word ($xxxx)
+        $1715e              .word ($xxxx) ; $17168
+        $17160              .word ($xxxx) ; $17172
+        $17162              .word ($xxxx) ; $17179
+        $17164              .word ($xxxx) ; $1717d
+        $17166              .word ($xxxx) ; $17186
+MapData_LocationB6_Layout
         $17168              .byte $xx
         $17169              .byte $xx,$xx,$xx,$xx
         ;; Map 1x5
@@ -9723,19 +11102,26 @@ MapData_LocationB6                                     ; Location b6
         $1716f              .byte $xx
         $17170              .byte $xx
         $17171              .byte $xx
-        $17172              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationB6_Graphics
+        $17172              .byte $xx,$xx,$xx
+        $17175              .byte $xx,$xx
+        $17177              .byte $xx,$xx
+MapData_LocationB6_Entrances
+        $17179              .byte $xx,$xx,$xx,$xx
 MapData_LocationB6_Exits
         $1717d              .byte $xx,$xx,$xx,$xx
         $17181              .byte $xx,$xx,$xx,$xx
         $17185              .byte $xx
+MapData_LocationB6_Flags
         $17186              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationB7                                     ; Location b7
-        $17187              .word ($xxxx)
-        $17189              .word ($xxxx)
-        $1718b              .word ($xxxx)
-        $1718d              .word ($xxxx)
-        $1718f              .word ($xxxx)
+        $17187              .word ($xxxx) ; $17191
+        $17189              .word ($xxxx) ; $1719e
+        $1718b              .word ($xxxx) ; $171a5
+        $1718d              .word ($xxxx) ; $171c5
+        $1718f              .word ($xxxx) ; $17206
+MapData_LocationB7_Layout
         $17191              .byte $xx
         $17192              .byte $xx,$xx,$xx,$xx
         ;; Map 2x4
@@ -9743,10 +11129,19 @@ MapData_LocationB7                                     ; Location b7
         $17198              .byte $xx,$xx
         $1719a              .byte $xx,$xx
         $1719c              .byte $xx,$xx
-        $1719e              .byte $xx,$xx
-        $171a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $171b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $171c0              .byte $xx,$xx,$xx,$xx,$xx
+MapData_LocationB7_Graphics
+        $1719e              .byte $xx,$xx,$xx
+        $171a1              .byte $xx,$xx
+        $171a3              .byte $xx,$xx
+MapData_LocationB7_Entrances
+        $171a5              .byte $xx,$xx,$xx,$xx
+        $171a9              .byte $xx,$xx,$xx,$xx
+        $171ad              .byte $xx,$xx,$xx,$xx
+        $171b1              .byte $xx,$xx,$xx,$xx
+        $171b5              .byte $xx,$xx,$xx,$xx
+        $171b9              .byte $xx,$xx,$xx,$xx
+        $171bd              .byte $xx,$xx,$xx,$xx
+        $171c1              .byte $xx,$xx,$xx,$xx
 MapData_LocationB7_Exits
         $171c5              .byte $xx,$xx,$xx,$xx
         $171c9              .byte $xx,$xx,$xx,$xx
@@ -9765,14 +11160,16 @@ MapData_LocationB7_Exits
         $171fd              .byte $xx,$xx,$xx,$xx
         $17201              .byte $xx,$xx,$xx,$xx
         $17205              .byte $xx
+MapData_LocationB7_Flags
         $17206              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationB8                                     ; Location b8
-        $17207              .word ($xxxx)
-        $17209              .word ($xxxx)
-        $1720b              .word ($xxxx)
-        $1720d              .word ($xxxx)
-        $1720f              .word ($xxxx)
+        $17207              .word ($xxxx) ; $17211
+        $17209              .word ($xxxx) ; $1723e
+        $1720b              .word ($xxxx) ; $17245
+        $1720d              .word ($xxxx) ; $17251
+        $1720f              .word ($xxxx) ; $1726a
+MapData_LocationB8_Layout
         $17211              .byte $xx
         $17212              .byte $xx,$xx,$xx,$xx
         ;; Map 4x10
@@ -9786,8 +11183,14 @@ MapData_LocationB8                                     ; Location b8
         $17232              .byte $xx,$xx,$xx,$xx
         $17236              .byte $xx,$xx,$xx,$xx
         $1723a              .byte $xx,$xx,$xx,$xx
-        $1723e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $17245              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationB8_Graphics
+        $1723e              .byte $xx,$xx,$xx
+        $17241              .byte $xx,$xx
+        $17243              .byte $xx,$xx
+MapData_LocationB8_Entrances
+        $17245              .byte $xx,$xx,$xx,$xx
+        $17249              .byte $xx,$xx,$xx,$xx
+        $1724d              .byte $xx,$xx,$xx,$xx
 MapData_LocationB8_Exits
         $17251              .byte $xx,$xx,$xx,$xx
         $17255              .byte $xx,$xx,$xx,$xx
@@ -9796,361 +11199,501 @@ MapData_LocationB8_Exits
         $17261              .byte $xx,$xx,$xx,$xx
         $17265              .byte $xx,$xx,$xx,$xx
         $17269              .byte $xx
+MapData_LocationB8_Flags
         $1726a              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationC0                                     ; Location c0
-        $1726b              .word ($xxxx)
-        $1726d              .word ($xxxx)
-        $1726f              .word ($xxxx)
-        $17271              .word ($xxxx)
-        $17273              .word ($xxxx)
+        $1726b              .word ($xxxx) ; $17275
+        $1726d              .word ($xxxx) ; $1727b
+        $1726f              .word ($xxxx) ; $17282
+        $17271              .word ($xxxx) ; $17286
+        $17273              .word ($xxxx) ; $1728f
+MapData_LocationC0_Layout
         $17275              .byte $xx
         $17276              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1727a              .byte $xx
-        $1727b              .byte $xx,$xx,$xx,$xx,$xx
-        $17280              .byte $xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationC0_Graphics
+        $1727b              .byte $xx,$xx,$xx
+        $1727e              .byte $xx,$xx
+        $17280              .byte $xx,$xx
+MapData_LocationC0_Entrances
+        $17282              .byte $xx,$xx,$xx,$xx
 MapData_LocationC0_Exits
         $17286              .byte $xx,$xx,$xx,$xx
         $1728a              .byte $xx,$xx,$xx,$xx
         $1728e              .byte $xx
+MapData_LocationC0_Flags
         $1728f              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationC1                                     ; Location c1
-        $17290              .word ($xxxx)
-        $17292              .word ($xxxx)
-        $17294              .word ($xxxx)
-        $17296              .word ($xxxx)
-        $17298              .word ($xxxx)
+        $17290              .word ($xxxx) ; $1729a
+        $17292              .word ($xxxx) ; $172a0
+        $17294              .word ($xxxx) ; $172a7
+        $17296              .word ($xxxx) ; $172ab
+        $17298              .word ($xxxx) ; $172b4
+MapData_LocationC1_Layout
         $1729a              .byte $xx
         $1729b              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1729f              .byte $xx
-        $172a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationC1_Graphics
+        $172a0              .byte $xx,$xx,$xx
+        $172a3              .byte $xx,$xx
+        $172a5              .byte $xx,$xx
+MapData_LocationC1_Entrances
+        $172a7              .byte $xx,$xx,$xx,$xx
 MapData_LocationC1_Exits
         $172ab              .byte $xx,$xx,$xx,$xx
         $172af              .byte $xx,$xx,$xx,$xx
         $172b3              .byte $xx
+MapData_LocationC1_Flags
         $172b4              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationC2                                     ; Location c2
-        $172b5              .word ($xxxx)
-        $172b7              .word ($xxxx)
-        $172b9              .word ($xxxx)
-        $172bb              .word ($xxxx)
-        $172bd              .word ($xxxx)
+        $172b5              .word ($xxxx) ; $172bf
+        $172b7              .word ($xxxx) ; $172c5
+        $172b9              .word ($xxxx) ; $172cc
+        $172bb              .word ($xxxx) ; $172d0
+        $172bd              .word ($xxxx) ; $172d5
+MapData_LocationC2_Layout
         $172bf              .byte $xx
         $172c0              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $172c4              .byte $xx
-        $172c5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationC2_Graphics
+        $172c5              .byte $xx,$xx,$xx
+        $172c8              .byte $xx,$xx
+        $172ca              .byte $xx,$xx
+MapData_LocationC2_Entrances
+        $172cc              .byte $xx,$xx,$xx,$xx
 MapData_LocationC2_Exits
         $172d0              .byte $xx,$xx,$xx,$xx
         $172d4              .byte $xx
+MapData_LocationC2_Flags
         $172d5              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationC3                                     ; Location c3
-        $172d6              .word ($xxxx)
-        $172d8              .word ($xxxx)
-        $172da              .word ($xxxx)
-        $172dc              .word ($xxxx)
-        $172de              .word ($xxxx)
+        $172d6              .word ($xxxx) ; $172e0
+        $172d8              .word ($xxxx) ; $172e6
+        $172da              .word ($xxxx) ; $172ed
+        $172dc              .word ($xxxx) ; $172f1
+        $172de              .word ($xxxx) ; $172f6
+MapData_LocationC3_Layout
         $172e0              .byte $xx
         $172e1              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $172e5              .byte $xx
-        $172e6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $172f0              .byte $xx
+MapData_LocationC3_Graphics
+        $172e6              .byte $xx,$xx,$xx
+        $172e9              .byte $xx,$xx
+        $172eb              .byte $xx,$xx
+MapData_LocationC3_Entrances
+        $172ed              .byte $xx,$xx,$xx,$xx
 MapData_LocationC3_Exits
         $172f1              .byte $xx,$xx,$xx,$xx
         $172f5              .byte $xx
+MapData_LocationC3_Flags
         $172f6              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationC4                                     ; Location c4
-        $172f7              .word ($xxxx)
-        $172f9              .word ($xxxx)
-        $172fb              .word ($xxxx)
-        $172fd              .word ($xxxx)
-        $172ff              .word ($xxxx)
+        $172f7              .word ($xxxx) ; $17301
+        $172f9              .word ($xxxx) ; $17307
+        $172fb              .word ($xxxx) ; $1730e
+        $172fd              .word ($xxxx) ; $17312
+        $172ff              .word ($xxxx) ; $17317
+MapData_LocationC4_Layout
         $17301              .byte $xx
         $17302              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17306              .byte $xx
-        $17307              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $17310              .byte $xx,$xx
+MapData_LocationC4_Graphics
+        $17307              .byte $xx,$xx,$xx
+        $1730a              .byte $xx,$xx
+        $1730c              .byte $xx,$xx
+MapData_LocationC4_Entrances
+        $1730e              .byte $xx,$xx,$xx,$xx
 MapData_LocationC4_Exits
         $17312              .byte $xx,$xx,$xx,$xx
         $17316              .byte $xx
+MapData_LocationC4_Flags
         $17317              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationC5                                     ; Location c5
-        $17318              .word ($xxxx)
-        $1731a              .word ($xxxx)
-        $1731c              .word ($xxxx)
-        $1731e              .word ($xxxx)
-        $17320              .word ($xxxx)
+        $17318              .word ($xxxx) ; $17322
+        $1731a              .word ($xxxx) ; $17328
+        $1731c              .word ($xxxx) ; $1732f
+        $1731e              .word ($xxxx) ; $17333
+        $17320              .word ($xxxx) ; $1733c
+MapData_LocationC5_Layout
         $17322              .byte $xx
         $17323              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17327              .byte $xx
-        $17328              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $17330              .byte $xx,$xx,$xx
+MapData_LocationC5_Graphics
+        $17328              .byte $xx,$xx,$xx
+        $1732b              .byte $xx,$xx
+        $1732d              .byte $xx,$xx
+MapData_LocationC5_Entrances
+        $1732f              .byte $xx,$xx,$xx,$xx
 MapData_LocationC5_Exits
         $17333              .byte $xx,$xx,$xx,$xx
         $17337              .byte $xx,$xx,$xx,$xx
         $1733b              .byte $xx
+MapData_LocationC5_Flags
         $1733c              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_BrynmaerTavern                                 ; Location c6
-        $1733d              .word ($xxxx)
-        $1733f              .word ($xxxx)
-        $17341              .word ($xxxx)
-        $17343              .word ($xxxx)
-        $17345              .word ($xxxx)
+        $1733d              .word ($xxxx) ; $17347
+        $1733f              .word ($xxxx) ; $1734d
+        $17341              .word ($xxxx) ; $17354
+        $17343              .word ($xxxx) ; $17358
+        $17345              .word ($xxxx) ; $17361
+MapData_BrynmaerTavern_Layout
         $17347              .byte $xx
         $17348              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1734c              .byte $xx
+MapData_BrynmaerTavern_Graphics
         $1734d              .byte $xx,$xx,$xx
-        $17350              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $17350              .byte $xx,$xx
+        $17352              .byte $xx,$xx
+MapData_BrynmaerTavern_Entrances
+        $17354              .byte $xx,$xx,$xx,$xx
 MapData_BrynmaerTavern_Exits
         $17358              .byte $xx,$xx,$xx,$xx
         $1735c              .byte $xx,$xx,$xx,$xx
         $17360              .byte $xx
+MapData_BrynmaerTavern_Flags
         $17361              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_BrynmaerPawnShop                               ; Location c7
-        $17362              .word ($xxxx)
-        $17364              .word ($xxxx)
-        $17366              .word ($xxxx)
-        $17368              .word ($xxxx)
-        $1736a              .word ($xxxx)
+        $17362              .word ($xxxx) ; $1736c
+        $17364              .word ($xxxx) ; $17372
+        $17366              .word ($xxxx) ; $17379
+        $17368              .word ($xxxx) ; $1737d
+        $1736a              .word ($xxxx) ; $17382
+MapData_BrynmaerPawnShop_Layout
         $1736c              .byte $xx
         $1736d              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17371              .byte $xx
-        $17372              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_BrynmaerPawnShop_Graphics
+        $17372              .byte $xx,$xx,$xx
+        $17375              .byte $xx,$xx
+        $17377              .byte $xx,$xx
+MapData_BrynmaerPawnShop_Entrances
+        $17379              .byte $xx,$xx,$xx,$xx
 MapData_BrynmaerPawnShop_Exits
         $1737d              .byte $xx,$xx,$xx,$xx
         $17381              .byte $xx
+MapData_BrynmaerPawnShop_Flags
         $17382              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_BrynmaerInn                                    ; Location c8
-        $17383              .word ($xxxx)
-        $17385              .word ($xxxx)
-        $17387              .word ($xxxx)
-        $17389              .word ($xxxx)
-        $1738b              .word ($xxxx)
+        $17383              .word ($xxxx) ; $1738d
+        $17385              .word ($xxxx) ; $17393
+        $17387              .word ($xxxx) ; $1739a
+        $17389              .word ($xxxx) ; $1739e
+        $1738b              .word ($xxxx) ; $173a3
+MapData_BrynmaerInn_Layout
         $1738d              .byte $xx
         $1738e              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17392              .byte $xx
-        $17393              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_BrynmaerInn_Graphics
+        $17393              .byte $xx,$xx,$xx
+        $17396              .byte $xx,$xx
+        $17398              .byte $xx,$xx
+MapData_BrynmaerInn_Entrances
+        $1739a              .byte $xx,$xx,$xx,$xx
 MapData_BrynmaerInn_Exits
         $1739e              .byte $xx,$xx,$xx,$xx
         $173a2              .byte $xx
+MapData_BrynmaerInn_Flags
         $173a3              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_BrynmaerArmorShop                              ; Location c9
-        $173a4              .word ($xxxx)
-        $173a6              .word ($xxxx)
-        $173a8              .word ($xxxx)
-        $173aa              .word ($xxxx)
-        $173ac              .word ($xxxx)
+        $173a4              .word ($xxxx) ; $173ae
+        $173a6              .word ($xxxx) ; $173b4
+        $173a8              .word ($xxxx) ; $173bb
+        $173aa              .word ($xxxx) ; $173bf
+        $173ac              .word ($xxxx) ; $173c4
+MapData_BrynmaerArmorShop_Layout
         $173ae              .byte $xx
         $173af              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $173b3              .byte $xx
-        $173b4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_BrynmaerArmorShop_Graphics
+        $173b4              .byte $xx,$xx,$xx
+        $173b7              .byte $xx,$xx
+        $173b9              .byte $xx,$xx
+MapData_BrynmaerArmorShop_Entrances
+        $173bb              .byte $xx,$xx,$xx,$xx
 MapData_BrynmaerArmorShop_Exits
         $173bf              .byte $xx,$xx,$xx,$xx
         $173c3              .byte $xx
-        $173c4              .byte $xx,$xx
+MapData_BrynmaerArmorShop_Flags
+        $173c4              .byte $xx
+        $173c5              .byte $xx ; Extra?
 ;;; ----------------------------------------------------------------
 MapData_BrynmaerItemShop                               ; Location cb
-        $173c6              .word ($xxxx)
-        $173c8              .word ($xxxx)
-        $173ca              .word ($xxxx)
-        $173cc              .word ($xxxx)
-        $173ce              .word ($xxxx)
+        $173c6              .word ($xxxx) ; $173d0
+        $173c8              .word ($xxxx) ; $173d6
+        $173ca              .word ($xxxx) ; $173dd
+        $173cc              .word ($xxxx) ; $173e1
+        $173ce              .word ($xxxx) ; $173e6
+MapData_BrynmaerItemShop_Layout
         $173d0              .byte $xx
         $173d1              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $173d5              .byte $xx
-        $173d6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $173e0              .byte $xx
+MapData_BrynmaerItemShop_Graphics
+        $173d6              .byte $xx,$xx,$xx
+        $173d9              .byte $xx,$xx
+        $173db              .byte $xx,$xx
+MapData_BrynmaerItemShop_Entrances
+        $173dd              .byte $xx,$xx,$xx,$xx
 MapData_BrynmaerItemShop_Exits
         $173e1              .byte $xx,$xx,$xx,$xx
         $173e5              .byte $xx
-        $173e6              .byte $xx,$xx
+MapData_BrynmaerItemShop_Flags
+        $173e6              .byte $xx
+        $173e7              .byte $xx ; Extra?
 ;;; ----------------------------------------------------------------
 MapData_OakElderHouse                                  ; Location cd
-        $173e8              .word ($xxxx)
-        $173ea              .word ($xxxx)
-        $173ec              .word ($xxxx)
-        $173ee              .word ($xxxx)
-        $173f0              .word ($xxxx)
+        $173e8              .word ($xxxx) ; $173f2
+        $173ea              .word ($xxxx) ; $173f8
+        $173ec              .word ($xxxx) ; $173ff
+        $173ee              .word ($xxxx) ; $17403
+        $173f0              .word ($xxxx) ; $1740c
+MapData_OakElderHouse_Layout
         $173f2              .byte $xx
         $173f3              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $173f7              .byte $xx
-        $173f8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $17400              .byte $xx,$xx,$xx
+MapData_OakElderHouse_Graphics
+        $173f8              .byte $xx,$xx,$xx
+        $173fb              .byte $xx,$xx
+        $173fd              .byte $xx,$xx
+MapData_OakElderHouse_Entrances
+        $173ff              .byte $xx,$xx,$xx,$xx
 MapData_OakElderHouse_Exits
         $17403              .byte $xx,$xx,$xx,$xx
         $17407              .byte $xx,$xx,$xx,$xx
         $1740b              .byte $xx
+MapData_OakElderHouse_Flags
         $1740c              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_OakMotherHouse                                 ; Location ce
-        $1740d              .word ($xxxx)
-        $1740f              .word ($xxxx)
-        $17411              .word ($xxxx)
-        $17413              .word ($xxxx)
-        $17415              .word ($xxxx)
+        $1740d              .word ($xxxx) ; $17417
+        $1740f              .word ($xxxx) ; $1741d
+        $17411              .word ($xxxx) ; $17424
+        $17413              .word ($xxxx) ; $17428
+        $17415              .word ($xxxx) ; $17431
+MapData_OakMotherHouse_Layout
         $17417              .byte $xx
         $17418              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1741c              .byte $xx
+MapData_OakMotherHouse_Graphics
         $1741d              .byte $xx,$xx,$xx
-        $17420              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $17420              .byte $xx,$xx
+        $17422              .byte $xx,$xx
+MapData_OakMotherHouse_Entrances
+        $17424              .byte $xx,$xx,$xx,$xx
 MapData_OakMotherHouse_Exits
         $17428              .byte $xx,$xx,$xx,$xx
         $1742c              .byte $xx,$xx,$xx,$xx
         $17430              .byte $xx
+MapData_OakMotherHouse_Flags
         $17431              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_OakInn                                         ; Location d0
-        $17432              .word ($xxxx)
-        $17434              .word ($xxxx)
-        $17436              .word ($xxxx)
-        $17438              .word ($xxxx)
-        $1743a              .word ($xxxx)
+        $17432              .word ($xxxx) ; $1743c
+        $17434              .word ($xxxx) ; $17442
+        $17436              .word ($xxxx) ; $17449
+        $17438              .word ($xxxx) ; $1744d
+        $1743a              .word ($xxxx) ; $17452
+MapData_OakInn_Layout
         $1743c              .byte $xx
         $1743d              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17441              .byte $xx
-        $17442              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_OakInn_Graphics
+        $17442              .byte $xx,$xx,$xx
+        $17445              .byte $xx,$xx
+        $17447              .byte $xx,$xx
+MapData_OakInn_Entrances
+        $17449              .byte $xx,$xx,$xx,$xx
 MapData_OakInn_Exits
         $1744d              .byte $xx,$xx,$xx,$xx
         $17451              .byte $xx
+MapData_OakInn_Flags
         $17452              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_OakToolShop                                    ; Location cf
-        $17453              .word ($xxxx)
-        $17455              .word ($xxxx)
-        $17457              .word ($xxxx)
-        $17459              .word ($xxxx)
-        $1745b              .word ($xxxx)
+        $17453              .word ($xxxx) ; $1745d
+        $17455              .word ($xxxx) ; $17463
+        $17457              .word ($xxxx) ; $1746a
+        $17459              .word ($xxxx) ; $1746e
+        $1745b              .word ($xxxx) ; $17473
+MapData_OakToolShop_Layout
         $1745d              .byte $xx
         $1745e              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17462              .byte $xx
-        $17463              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1746d              .byte $xx
+MapData_OakToolShop_Graphics
+        $17463              .byte $xx,$xx,$xx
+        $17466              .byte $xx,$xx
+        $17468              .byte $xx,$xx
+MapData_OakToolShop_Entrances
+        $1746a              .byte $xx,$xx,$xx,$xx
 MapData_OakToolShop_Exits
         $1746e              .byte $xx,$xx,$xx,$xx
         $17472              .byte $xx
+MapData_OakToolShop_Flags
         $17473              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_AmazonesInn                                    ; Location d1
-        $17474              .word ($xxxx)
-        $17476              .word ($xxxx)
-        $17478              .word ($xxxx)
-        $1747a              .word ($xxxx)
-        $1747c              .word ($xxxx)
+        $17474              .word ($xxxx) ; $1747e
+        $17476              .word ($xxxx) ; $17484
+        $17478              .word ($xxxx) ; $1748b
+        $1747a              .word ($xxxx) ; $1748f
+        $1747c              .word ($xxxx) ; $17494
+MapData_AmazonesInn_Layout
         $1747e              .byte $xx
         $1747f              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17483              .byte $xx
-        $17484              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_AmazonesInn_Graphics
+        $17484              .byte $xx,$xx,$xx
+        $17487              .byte $xx,$xx
+        $17489              .byte $xx,$xx
+MapData_AmazonesInn_Entrances
+        $1748b              .byte $xx,$xx,$xx,$xx
 MapData_AmazonesInn_Exits
         $1748f              .byte $xx,$xx,$xx,$xx
         $17493              .byte $xx
+MapData_AmazonesInn_Flags
         $17494              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_AmazonesItemShop                               ; Location d2
-        $17495              .word ($xxxx)
-        $17497              .word ($xxxx)
-        $17499              .word ($xxxx)
-        $1749b              .word ($xxxx)
-        $1749d              .word ($xxxx)
+        $17495              .word ($xxxx) ; $1749f
+        $17497              .word ($xxxx) ; $174a5
+        $17499              .word ($xxxx) ; $174ac
+        $1749b              .word ($xxxx) ; $174b0
+        $1749d              .word ($xxxx) ; $174b5
+MapData_AmazonesItemShop_Layout
         $1749f              .byte $xx
         $174a0              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $174a4              .byte $xx
-        $174a5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_AmazonesItemShop_Graphics
+        $174a5              .byte $xx,$xx,$xx
+        $174a8              .byte $xx,$xx
+        $174aa              .byte $xx,$xx
+MapData_AmazonesItemShop_Entrances
+        $174ac              .byte $xx,$xx,$xx,$xx
 MapData_AmazonesItemShop_Exits
         $174b0              .byte $xx,$xx,$xx,$xx
         $174b4              .byte $xx
+MapData_AmazonesItemShop_Flags
         $174b5              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_AmazonesArmorShop                              ; Location d3
-        $174b6              .word ($xxxx)
-        $174b8              .word ($xxxx)
-        $174ba              .word ($xxxx)
-        $174bc              .word ($xxxx)
-        $174be              .word ($xxxx)
+        $174b6              .word ($xxxx) ; $174c0
+        $174b8              .word ($xxxx) ; $174c6
+        $174ba              .word ($xxxx) ; $174cd
+        $174bc              .word ($xxxx) ; $174d1
+        $174be              .word ($xxxx) ; $174d6
+MapData_AmazonesArmorShop_Layout
         $174c0              .byte $xx
         $174c1              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $174c5              .byte $xx
-        $174c6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $174d0              .byte $xx
+MapData_AmazonesArmorShop_Graphics
+        $174c6              .byte $xx,$xx,$xx
+        $174c9              .byte $xx,$xx
+        $174cb              .byte $xx,$xx
+MapData_AmazonesArmorShop_Entrances
+        $174cd              .byte $xx,$xx,$xx,$xx
 MapData_AmazonesArmorShop_Exits
         $174d1              .byte $xx,$xx,$xx,$xx
         $174d5              .byte $xx
+MapData_AmazonesArmorShop_Flags
         $174d6              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_AmazonesElder                                  ; Location d4
-        $174d7              .word ($xxxx)
-        $174d9              .word ($xxxx)
-        $174db              .word ($xxxx)
-        $174dd              .word ($xxxx)
-        $174df              .word ($xxxx)
+        $174d7              .word ($xxxx) ; $174e1
+        $174d9              .word ($xxxx) ; $174e7
+        $174db              .word ($xxxx) ; $174ee
+        $174dd              .word ($xxxx) ; $174f6
+        $174df              .word ($xxxx) ; $17507
+MapData_AmazonesElder_Layout
         $174e1              .byte $xx
         $174e2              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $174e6              .byte $xx
-        $174e7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $174f0              .byte $xx,$xx,$xx,$xx,$xx,$xx
+MapData_AmazonesElder_Graphics
+        $174e7              .byte $xx,$xx,$xx
+        $174ea              .byte $xx,$xx
+        $174ec              .byte $xx,$xx
+MapData_AmazonesElder_Entrances
+        $174ee              .byte $xx,$xx,$xx,$xx
+        $174f2              .byte $xx,$xx,$xx,$xx
 MapData_AmazonesElder_Exits
         $174f6              .byte $xx,$xx,$xx,$xx
         $174fa              .byte $xx,$xx,$xx,$xx
         $174fe              .byte $xx,$xx,$xx,$xx
         $17502              .byte $xx,$xx,$xx,$xx
         $17506              .byte $xx
+MapData_AmazonesElder_Flags
         $17507              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_AmazonesElderDownstairs                        ; Location e2
-        $17508              .word ($xxxx)
-        $1750a              .word ($xxxx)
-        $1750c              .word ($xxxx)
-        $1750e              .word ($xxxx)
-        $17510              .word ($xxxx)
+        $17508              .word ($xxxx) ; $17512
+        $1750a              .word ($xxxx) ; $17518
+        $1750c              .word ($xxxx) ; $1751f
+        $1750e              .word ($xxxx) ; $17523
+        $17510              .word ($xxxx) ; $17528
+MapData_AmazonesElderDownstairs_Layout
         $17512              .byte $xx
         $17513              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17517              .byte $xx
-        $17518              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $17520              .byte $xx,$xx,$xx
+MapData_AmazonesElderDownstairs_Graphics
+        $17518              .byte $xx,$xx,$xx
+        $1751b              .byte $xx,$xx
+        $1751d              .byte $xx,$xx
+MapData_AmazonesElderDownstairs_Entrances
+        $1751f              .byte $xx,$xx,$xx,$xx
 MapData_AmazonesElderDownstairs_Exits
         $17523              .byte $xx,$xx,$xx,$xx
         $17527              .byte $xx
+MapData_AmazonesElderDownstairs_Flags
         $17528              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationD5                                     ; Location d5
-        $17529              .word ($xxxx)
-        $1752b              .word ($xxxx)
-        $1752d              .word ($xxxx)
-        $1752f              .word ($xxxx)
-        $17531              .word ($xxxx)
+        $17529              .word ($xxxx) ; $17533
+        $1752b              .word ($xxxx) ; $17539
+        $1752d              .word ($xxxx) ; $17540
+        $1752f              .word ($xxxx) ; $17550
+        $17531              .word ($xxxx) ; $17565
+MapData_LocationD5_Layout
         $17533              .byte $xx
         $17534              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17538              .byte $xx
-        $17539              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $17540              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationD5_Graphics
+        $17539              .byte $xx,$xx,$xx
+        $1753c              .byte $xx,$xx
+        $1753e              .byte $xx,$xx
+MapData_LocationD5_Entrances
+        $17540              .byte $xx,$xx,$xx,$xx
+        $17544              .byte $xx,$xx,$xx,$xx
+        $17548              .byte $xx,$xx,$xx,$xx
+        $1754c              .byte $xx,$xx,$xx,$xx
 MapData_LocationD5_Exits
         $17550              .byte $xx,$xx,$xx,$xx
         $17554              .byte $xx,$xx,$xx,$xx
@@ -10158,750 +11701,864 @@ MapData_LocationD5_Exits
         $1755c              .byte $xx,$xx,$xx,$xx
         $17560              .byte $xx,$xx,$xx,$xx
         $17564              .byte $xx
+MapData_LocationD5_Flags
         $17565              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location3C                                     ; Location 3c
-        $17566              .word ($xxxx)
-        $17568              .word ($xxxx)
-        $1756a              .word ($xxxx)
-        $1756c              .word ($xxxx)
-        $1756e              .word ($xxxx)
+        $17566              .word ($xxxx) ; $17570
+        $17568              .word ($xxxx) ; $17576
+        $1756a              .word ($xxxx) ; $1757d
+        $1756c              .word ($xxxx) ; $17581
+        $1756e              .word ($xxxx) ; $17586
+MapData_Location3C_Layout
         $17570              .byte $xx
         $17571              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17575              .byte $xx
-        $17576              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $17580              .byte $xx
+MapData_Location3C_Graphics
+        $17576              .byte $xx,$xx,$xx
+        $17579              .byte $xx,$xx
+        $1757b              .byte $xx,$xx
+MapData_Location3C_Entrances
+        $1757d              .byte $xx,$xx,$xx,$xx
 MapData_Location3C_Exits
         $17581              .byte $xx,$xx,$xx,$xx
         $17585              .byte $xx
+MapData_Location3C_Flags
         $17586              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location3D                                     ; Location 3d
-        $17587              .word ($xxxx)
-        $17589              .word ($xxxx)
-        $1758b              .word ($xxxx)
-        $1758d              .word ($xxxx)
-        $1758f              .word ($xxxx)
+        $17587              .word ($xxxx) ; $17591
+        $17589              .word ($xxxx) ; $17597
+        $1758b              .word ($xxxx) ; $1759e
+        $1758d              .word ($xxxx) ; $175a2
+        $1758f              .word ($xxxx) ; $175a7
+MapData_Location3D_Layout
         $17591              .byte $xx
         $17592              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17596              .byte $xx
-        $17597              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $175a0              .byte $xx,$xx
+MapData_Location3D_Graphics
+        $17597              .byte $xx,$xx,$xx
+        $1759a              .byte $xx,$xx
+        $1759c              .byte $xx,$xx
+MapData_Location3D_Entrances
+        $1759e              .byte $xx,$xx,$xx,$xx
 MapData_Location3D_Exits
         $175a2              .byte $xx,$xx,$xx,$xx
         $175a6              .byte $xx
+MapData_Location3D_Flags
         $175a7              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location3E                                     ; Location 3e
-        $175a8              .word ($xxxx)
-        $175aa              .word ($xxxx)
-        $175ac              .word ($xxxx)
-        $175ae              .word ($xxxx)
-        $175b0              .word ($xxxx)
+        $175a8              .word ($xxxx) ; $175b2
+        $175aa              .word ($xxxx) ; $175b8
+        $175ac              .word ($xxxx) ; $175bf
+        $175ae              .word ($xxxx) ; $175c3
+        $175b0              .word ($xxxx) ; $175cc
+MapData_Location3E_Layout
         $175b2              .byte $xx
         $175b3              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $175b7              .byte $xx
-        $175b8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $175c0              .byte $xx,$xx,$xx
+MapData_Location3E_Graphics
+        $175b8              .byte $xx,$xx,$xx
+        $175bb              .byte $xx,$xx
+        $175bd              .byte $xx,$xx
+MapData_Location3E_Entrances
+        $175bf              .byte $xx,$xx,$xx,$xx
 MapData_Location3E_Exits
         $175c3              .byte $xx,$xx,$xx,$xx
         $175c7              .byte $xx,$xx,$xx,$xx
         $175cb              .byte $xx
+MapData_Location3E_Flags
         $175cc              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_PortoaFishermanHouse                           ; Location d6
-        $175cd              .word ($xxxx)
-        $175cf              .word ($xxxx)
-        $175d1              .word ($xxxx)
-        $175d3              .word ($xxxx)
-        $175d5              .word ($xxxx)
+        $175cd              .word ($xxxx) ; $175d7
+        $175cf              .word ($xxxx) ; $175dd
+        $175d1              .word ($xxxx) ; $175e4
+        $175d3              .word ($xxxx) ; $175e8
+        $175d5              .word ($xxxx) ; $175f1
+MapData_PortoaFishermanHouse_Layout
         $175d7              .byte $xx
         $175d8              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $175dc              .byte $xx
+MapData_PortoaFishermanHouse_Graphics
         $175dd              .byte $xx,$xx,$xx
-        $175e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_PortoaFishermanHouse
+        $175e0              .byte $xx,$xx
+        $175e2              .byte $xx,$xx
+MapData_PortoaFishermanHouse_Entrances
+        $175e4              .byte $xx,$xx,$xx,$xx
         $175e8              .byte $xx,$xx,$xx,$xx
         $175ec              .byte $xx,$xx,$xx,$xx
-        $175f0              .byte $xx
-        $175f1              .byte $xx
-;;; ----------------------------------------------------------------
-MapData_PortoaPalaceEntrance                           ; Location d7
-        $175f2              .word ($xxxx)
-        $175f4              .word ($xxxx)
-        $175f6              .word ($xxxx)
-        $175f8              .word ($xxxx)
-        $175fa              .word ($xxxx)
-        $175fc              .byte $xx
-        $175fd              .byte $xx,$xx,$xx,$xx
-        ;; Map 1x1
-        $17601              .byte $xx
-        $17602              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $17610              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_PortoaPalaceEntrance
-        $17619              .byte $xx,$xx,$xx,$xx
-        $1761d              .byte $xx,$xx,$xx,$xx
-        $17621              .byte $xx,$xx,$xx,$xx
-        $17625              .byte $xx,$xx,$xx,$xx
-        $17629              .byte $xx,$xx,$xx,$xx
-        $1762d              .byte $xx
-        $1762e              .byte $xx
-;;; ----------------------------------------------------------------
-MapData_LocationDE                                     ; Location de
-        $1762f              .word ($xxxx)
-        $17631              .word ($xxxx)
-        $17633              .word ($xxxx)
-        $17635              .word ($xxxx)
-        $17637              .word ($xxxx)
-        $17639              .byte $xx
-        $1763a              .byte $xx,$xx,$xx,$xx
-        ;; Map 1x1
-        $1763e              .byte $xx
-        $1763f              .byte $xx
-        $17640              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $175f0              .byte $xx,$xx,$xx,$xx
+        $175f4              .byte $xx,$xx,$xx,$xx
+        $175f8              .byte $xx,$xx,$xx,$xx
+        $175fc              .byte $xx,$xx,$xx,$xx
+        $17600              .byte $xx,$xx,$xx,$xx
+        $17604              .byte $xx,$xx,$xx,$xx
+        $17608              .byte $xx,$xx,$xx,$xx
+        $1760c              .byte $xx,$xx,$xx,$xx
+        $17610              .byte $xx,$xx,$xx,$xx
+        $17614              .byte $xx,$xx,$xx,$xx
+        $17618              .byte $xx,$xx,$xx,$xx
+        $1761c              .byte $xx,$xx,$xx,$xx
+        $17620              .byte $xx,$xx,$xx,$xx
+        $17624              .byte $xx,$xx,$xx,$xx
+        $17628              .byte $xx,$xx,$xx,$xx
+        $1762c              .byte $xx,$xx,$xx,$xx
+        $17630              .byte $xx,$xx,$xx,$xx
+        $17634              .byte $xx,$xx,$xx,$xx
+        $17638              .byte $xx,$xx,$xx,$xx
+        $1763c              .byte $xx,$xx,$xx,$xx
+        $17640              .byte $xx,$xx,$xx,$xx
+        $17644              .byte $xx,$xx,$xx,$xx
+        $17648              .byte $xx,$xx
 MapData_LocationDE_Exits
         $1764a              .byte $xx,$xx,$xx,$xx
         $1764e              .byte $xx,$xx,$xx,$xx
         $17652              .byte $xx
+MapData_LocationDE_Flags
         $17653              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationDF                                     ; Location df
-        $17654              .word ($xxxx)
-        $17656              .word ($xxxx)
-        $17658              .word ($xxxx)
-        $1765a              .word ($xxxx)
-        $1765c              .word ($xxxx)
+        $17654              .word ($xxxx) ; $1765e
+        $17656              .word ($xxxx) ; $17664
+        $17658              .word ($xxxx) ; $1766b
+        $1765a              .word ($xxxx) ; $17673
+        $1765c              .word ($xxxx) ; $17680
+MapData_LocationDF_Layout
         $1765e              .byte $xx
         $1765f              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17663              .byte $xx
-        $17664              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $17670              .byte $xx,$xx,$xx
+MapData_LocationDF_Graphics
+        $17664              .byte $xx,$xx,$xx
+        $17667              .byte $xx,$xx
+        $17669              .byte $xx,$xx
+MapData_LocationDF_Entrances
+        $1766b              .byte $xx,$xx,$xx,$xx
+        $1766f              .byte $xx,$xx,$xx,$xx
 MapData_LocationDF_Exits
         $17673              .byte $xx,$xx,$xx,$xx
         $17677              .byte $xx,$xx,$xx,$xx
         $1767b              .byte $xx,$xx,$xx,$xx
         $1767f              .byte $xx
+MapData_LocationDF_Flags
         $17680              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationE0                                     ; Location e0
-        $17681              .word ($xxxx)
-        $17683              .word ($xxxx)
-        $17685              .word ($xxxx)
-        $17687              .word ($xxxx)
-        $17689              .word ($xxxx)
+        $17681              .word ($xxxx) ; $1768b
+        $17683              .word ($xxxx) ; $17691
+        $17685              .word ($xxxx) ; $17698
+        $17687              .word ($xxxx) ; $1769c
+        $17689              .word ($xxxx) ; $176a5
+MapData_LocationE0_Layout
         $1768b              .byte $xx
         $1768c              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17690              .byte $xx
-        $17691              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationE0_Graphics
+        $17691              .byte $xx,$xx,$xx
+        $17694              .byte $xx,$xx
+        $17696              .byte $xx,$xx
+MapData_LocationE0_Entrances
+        $17698              .byte $xx,$xx,$xx,$xx
 MapData_LocationE0_Exits
         $1769c              .byte $xx,$xx,$xx,$xx
         $176a0              .byte $xx,$xx,$xx,$xx
         $176a4              .byte $xx
+MapData_LocationE0_Flags
         $176a5              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_PortoaFortuneTeller                            ; Location d8
-        $176a6              .word ($xxxx)
-        $176a8              .word ($xxxx)
-        $176aa              .word ($xxxx)
-        $176ac              .word ($xxxx)
-        $176ae              .word ($xxxx)
+        $176a6              .word ($xxxx) ; $176b0
+        $176a8              .word ($xxxx) ; $176b6
+        $176aa              .word ($xxxx) ; $176bd
+        $176ac              .word ($xxxx) ; $176c9
+        $176ae              .word ($xxxx) ; $176da
+MapData_PortoaFortuneTeller_Layout
         $176b0              .byte $xx
         $176b1              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $176b5              .byte $xx
-        $176b6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $176c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_PortoaFortuneTeller
+MapData_PortoaFortuneTeller_Graphics
+        $176b6              .byte $xx,$xx,$xx
+        $176b9              .byte $xx,$xx
+        $176bb              .byte $xx,$xx
+MapData_PortoaFortuneTeller_Entrances
+        $176bd              .byte $xx,$xx,$xx,$xx
+        $176c1              .byte $xx,$xx,$xx,$xx
+        $176c5              .byte $xx,$xx,$xx,$xx
         $176c9              .byte $xx,$xx,$xx,$xx
         $176cd              .byte $xx,$xx,$xx,$xx
         $176d1              .byte $xx,$xx,$xx,$xx
         $176d5              .byte $xx,$xx,$xx,$xx
-        $176d9              .byte $xx
-        $176da              .byte $xx
-;;; ----------------------------------------------------------------
-MapData_PortoaPawnShop                                 ; Location d9
-        $176db              .word ($xxxx)
-        $176dd              .word ($xxxx)
-        $176df              .word ($xxxx)
-        $176e1              .word ($xxxx)
-        $176e3              .word ($xxxx)
-        $176e5              .byte $xx
-        $176e6              .byte $xx,$xx,$xx,$xx
-        ;; Map 1x1
-        $176ea              .byte $xx
-        $176eb              .byte $xx,$xx,$xx,$xx,$xx
-        $176f0              .byte $xx,$xx,$xx,$xx,$xx,$xx
-MapData_PortoaPawnShop
-        $176f6              .byte $xx,$xx,$xx,$xx
-        $176fa              .byte $xx
-        $176fb              .byte $xx
-;;; ----------------------------------------------------------------
-MapData_PortoaArmorShop                                ; Location da
-        $176fc              .word ($xxxx)
-        $176fe              .word ($xxxx)
-        $17700              .word ($xxxx)
-        $17702              .word ($xxxx)
-        $17704              .word ($xxxx)
-        $17706              .byte $xx
-        $17707              .byte $xx,$xx,$xx,$xx
-        ;; Map 1x1
-        $1770b              .byte $xx
-        $1770c              .byte $xx,$xx,$xx,$xx
-        $17710              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_PortoaArmorShop
-        $17717              .byte $xx,$xx,$xx,$xx
-        $1771b              .byte $xx
-        $1771c              .byte $xx
-        $1771d              .byte $xx
-;;; ----------------------------------------------------------------
-MapData_PortoaInn                                      ; Location dc
-        $1771e              .word ($xxxx)
-        $17720              .word ($xxxx)
-        $17722              .word ($xxxx)
-        $17724              .word ($xxxx)
-        $17726              .word ($xxxx)
-        $17728              .byte $xx
+        $176d9              .byte $xx,$xx,$xx,$xx
+        $176dd              .byte $xx,$xx,$xx,$xx
+        $176e1              .byte $xx,$xx,$xx,$xx
+        $176e5              .byte $xx,$xx,$xx,$xx
+        $176e9              .byte $xx,$xx,$xx,$xx
+        $176ed              .byte $xx,$xx,$xx,$xx
+        $176f1              .byte $xx,$xx,$xx,$xx
+        $176f5              .byte $xx,$xx,$xx,$xx
+        $176f9              .byte $xx,$xx,$xx,$xx
+        $176fd              .byte $xx,$xx,$xx,$xx
+        $17701              .byte $xx,$xx,$xx,$xx
+        $17705              .byte $xx,$xx,$xx,$xx
+        $17709              .byte $xx,$xx,$xx,$xx
+        $1770d              .byte $xx,$xx,$xx,$xx
+        $17711              .byte $xx,$xx,$xx,$xx
+        $17715              .byte $xx,$xx,$xx,$xx
+        $17719              .byte $xx,$xx,$xx,$xx
+        $1771d              .byte $xx,$xx,$xx,$xx
+        $17721              .byte $xx,$xx,$xx,$xx
+        $17725              .byte $xx,$xx,$xx,$xx
         $17729              .byte $xx,$xx,$xx,$xx
-        ;; Map 1x1
-        $1772d              .byte $xx
-        $1772e              .byte $xx,$xx
-        $17730              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_PortoaInn
+        $1772d              .byte $xx,$xx,$xx,$xx
+        $17731              .byte $xx,$xx,$xx,$xx
+        $17735              .byte $xx,$xx,$xx,$xx
         $17739              .byte $xx,$xx,$xx,$xx
-        $1773d              .byte $xx
-        $1773e              .byte $xx
-;;; ----------------------------------------------------------------
-MapData_PortoaToolShop                                 ; Location dd
-        $1773f              .word ($xxxx)
-        $17741              .word ($xxxx)
-        $17743              .word ($xxxx)
-        $17745              .word ($xxxx)
-        $17747              .word ($xxxx)
-        $17749              .byte $xx
-        $1774a              .byte $xx,$xx,$xx,$xx
-        ;; Map 1x1
-        $1774e              .byte $xx
-        $1774f              .byte $xx
-        $17750              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_PortoaToolShop
-        $1775a              .byte $xx,$xx,$xx,$xx
-        $1775e              .byte $xx
-        $1775f              .byte $xx
-;;; ----------------------------------------------------------------
-MapData_LocationE1                                     ; Location e1
-        $17760              .word ($xxxx)
-        $17762              .word ($xxxx)
-        $17764              .word ($xxxx)
-        $17766              .word ($xxxx)
-        $17768              .word ($xxxx)
-        $1776a              .byte $xx
-        $1776b              .byte $xx,$xx,$xx,$xx
-        ;; Map 1x1
-        $1776f              .byte $xx
-        $17770              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1773d              .byte $xx,$xx,$xx,$xx
+        $17741              .byte $xx,$xx,$xx,$xx
+        $17745              .byte $xx,$xx,$xx,$xx
+        $17749              .byte $xx,$xx,$xx,$xx
+        $1774d              .byte $xx,$xx,$xx,$xx
+        $17751              .byte $xx,$xx,$xx,$xx
+        $17755              .byte $xx,$xx,$xx,$xx
+        $17759              .byte $xx,$xx,$xx,$xx
+        $1775d              .byte $xx,$xx,$xx,$xx
+        $17761              .byte $xx,$xx,$xx,$xx
+        $17765              .byte $xx,$xx,$xx,$xx
+        $17769              .byte $xx,$xx,$xx,$xx
+        $1776d              .byte $xx,$xx,$xx,$xx
+        $17771              .byte $xx,$xx,$xx,$xx
+        $17775              .byte $xx,$xx,$xx,$xx
+        $17779              .byte $xx,$xx
 MapData_LocationE1_Exits
         $1777b              .byte $xx,$xx,$xx,$xx
         $1777f              .byte $xx,$xx,$xx,$xx
         $17783              .byte $xx
+MapData_LocationE1_Flags
         $17784              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_JoelElderHouse                                 ; Location e3
-        $17785              .word ($xxxx)
-        $17787              .word ($xxxx)
-        $17789              .word ($xxxx)
-        $1778b              .word ($xxxx)
-        $1778d              .word ($xxxx)
+        $17785              .word ($xxxx) ; $1778f
+        $17787              .word ($xxxx) ; $17795
+        $17789              .word ($xxxx) ; $1779c
+        $1778b              .word ($xxxx) ; $177a0
+        $1778d              .word ($xxxx) ; $177a9
+MapData_JoelElderHouse_Layout
         $1778f              .byte $xx
         $17790              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17794              .byte $xx
-        $17795              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_JoelElderHouse
+MapData_JoelElderHouse_Graphics
+        $17795              .byte $xx,$xx,$xx
+        $17798              .byte $xx,$xx
+        $1779a              .byte $xx,$xx
+MapData_JoelElderHouse_Entrances
+        $1779c              .byte $xx,$xx,$xx,$xx
         $177a0              .byte $xx,$xx,$xx,$xx
         $177a4              .byte $xx,$xx,$xx,$xx
-        $177a8              .byte $xx
-        $177a9              .byte $xx
-;;; ----------------------------------------------------------------
-MapData_JoelShed                                       ; Location e4
-        $177aa              .word ($xxxx)
-        $177ac              .word ($xxxx)
-        $177ae              .word ($xxxx)
-        $177b0              .word ($xxxx)
-        $177b2              .word ($xxxx)
-        $177b4              .byte $xx
-        $177b5              .byte $xx,$xx,$xx,$xx
-        ;; Map 1x1
-        $177b9              .byte $xx
-        $177ba              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $177c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_JoelShed
-        $177c9              .byte $xx,$xx,$xx,$xx
-        $177cd              .byte $xx,$xx,$xx,$xx
-        $177d1              .byte $xx,$xx,$xx,$xx
-        $177d5              .byte $xx,$xx,$xx,$xx
-        $177d9              .byte $xx
-        $177da              .byte $xx,$xx,$xx
-;;; ----------------------------------------------------------------
-MapData_JoelToolShop                                   ; Location e5
-        $177dd              .word ($xxxx)
-        $177df              .word ($xxxx)
-        $177e1              .word ($xxxx)
-        $177e3              .word ($xxxx)
-        $177e5              .word ($xxxx)
-        $177e7              .byte $xx
+        $177a8              .byte $xx,$xx,$xx,$xx
+        $177ac              .byte $xx,$xx,$xx,$xx
+        $177b0              .byte $xx,$xx,$xx,$xx
+        $177b4              .byte $xx,$xx,$xx,$xx
+        $177b8              .byte $xx,$xx,$xx,$xx
+        $177bc              .byte $xx,$xx,$xx,$xx
+        $177c0              .byte $xx,$xx,$xx,$xx
+        $177c4              .byte $xx,$xx,$xx,$xx
+        $177c8              .byte $xx,$xx,$xx,$xx
+        $177cc              .byte $xx,$xx,$xx,$xx
+        $177d0              .byte $xx,$xx,$xx,$xx
+        $177d4              .byte $xx,$xx,$xx,$xx
+        $177d8              .byte $xx,$xx,$xx,$xx
+        $177dc              .byte $xx,$xx,$xx,$xx
+        $177e0              .byte $xx,$xx,$xx,$xx
+        $177e4              .byte $xx,$xx,$xx,$xx
         $177e8              .byte $xx,$xx,$xx,$xx
-        ;; Map 1x1
-        $177ec              .byte $xx
-        $177ed              .byte $xx,$xx,$xx
-        $177f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_JoelToolShop
+        $177ec              .byte $xx,$xx,$xx,$xx
+        $177f0              .byte $xx,$xx,$xx,$xx
+        $177f4              .byte $xx,$xx,$xx,$xx
         $177f8              .byte $xx,$xx,$xx,$xx
-        $177fc              .byte $xx
-        $177fd              .byte $xx
-        $177fe              .byte $xx
-;;; ----------------------------------------------------------------
-MapData_JoelInn                                        ; Location e7
-        $177ff              .word ($xxxx)
-        $17801              .word ($xxxx)
-        $17803              .word ($xxxx)
-        $17805              .word ($xxxx)
-        $17807              .word ($xxxx)
-        $17809              .byte $xx
-        $1780a              .byte $xx,$xx,$xx,$xx
-        ;; Map 1x1
-        $1780e              .byte $xx
-        $1780f              .byte $xx
-        $17810              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_JoelInn
-        $1781a              .byte $xx,$xx,$xx,$xx
-        $1781e              .byte $xx
-        $1781f              .byte $xx
-;;; ----------------------------------------------------------------
-MapData_LocationE8                                     ; Location e8
-        $17820              .word ($xxxx)
-        $17822              .word ($xxxx)
-        $17824              .word ($xxxx)
-        $17826              .word ($xxxx)
-        $17828              .word ($xxxx)
-        $1782a              .byte $xx
-        $1782b              .byte $xx,$xx,$xx,$xx
-        ;; Map 1x1
-        $1782f              .byte $xx
-        $17830              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $177fc              .byte $xx,$xx,$xx,$xx
+        $17800              .byte $xx,$xx,$xx,$xx
+        $17804              .byte $xx,$xx,$xx,$xx
+        $17808              .byte $xx,$xx,$xx,$xx
+        $1780c              .byte $xx,$xx,$xx,$xx
+        $17810              .byte $xx,$xx,$xx,$xx
+        $17814              .byte $xx,$xx,$xx,$xx
+        $17818              .byte $xx,$xx,$xx,$xx
+        $1781c              .byte $xx,$xx,$xx,$xx
+        $17820              .byte $xx,$xx,$xx,$xx
+        $17824              .byte $xx,$xx,$xx,$xx
+        $17828              .byte $xx,$xx,$xx,$xx
+        $1782c              .byte $xx,$xx,$xx,$xx
+        $17830              .byte $xx,$xx,$xx,$xx
+        $17834              .byte $xx,$xx,$xx,$xx
+        $17838              .byte $xx,$xx,$xx,$xx
+        $1783c              .byte $xx,$xx,$xx
 MapData_LocationE8_Exits
         $1783f              .byte $xx,$xx,$xx,$xx
         $17843              .byte $xx,$xx,$xx,$xx
         $17847              .byte $xx,$xx,$xx,$xx
         $1784b              .byte $xx
+MapData_LocationE8_Flags
         $1784c              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationE9                                     ; Location e9
-        $1784d              .word ($xxxx)
-        $1784f              .word ($xxxx)
-        $17851              .word ($xxxx)
-        $17853              .word ($xxxx)
-        $17855              .word ($xxxx)
+        $1784d              .word ($xxxx) ; $17857
+        $1784f              .word ($xxxx) ; $1785d
+        $17851              .word ($xxxx) ; $17864
+        $17853              .word ($xxxx) ; $17868
+        $17855              .word ($xxxx) ; $1786d
+MapData_LocationE9_Layout
         $17857              .byte $xx
         $17858              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1785c              .byte $xx
+MapData_LocationE9_Graphics
         $1785d              .byte $xx,$xx,$xx
-        $17860              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $17860              .byte $xx,$xx
+        $17862              .byte $xx,$xx
+MapData_LocationE9_Entrances
+        $17864              .byte $xx,$xx,$xx,$xx
 MapData_LocationE9_Exits
         $17868              .byte $xx,$xx,$xx,$xx
         $1786c              .byte $xx
+MapData_LocationE9_Flags
         $1786d              .byte $xx
         $1786e              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationEB                                     ; Location eb
-        $1786f              .word ($xxxx)
-        $17871              .word ($xxxx)
-        $17873              .word ($xxxx)
-        $17875              .word ($xxxx)
-        $17877              .word ($xxxx)
+        $1786f              .word ($xxxx) ; $17879
+        $17871              .word ($xxxx) ; $1787f
+        $17873              .word ($xxxx) ; $17886
+        $17875              .word ($xxxx) ; $1788a
+        $17877              .word ($xxxx) ; $1788f
+MapData_LocationEB_Layout
         $17879              .byte $xx
         $1787a              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1787e              .byte $xx
-        $1787f              .byte $xx
-        $17880              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationEB_Graphics
+        $1787f              .byte $xx,$xx,$xx
+        $17882              .byte $xx,$xx
+        $17884              .byte $xx,$xx
+MapData_LocationEB_Entrances
+        $17886              .byte $xx,$xx,$xx,$xx
 MapData_LocationEB_Exits
         $1788a              .byte $xx,$xx,$xx,$xx
         $1788e              .byte $xx
+MapData_LocationEB_Flags
         $1788f              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationEC                                     ; Location ec
-        $17890              .word ($xxxx)
-        $17892              .word ($xxxx)
-        $17894              .word ($xxxx)
-        $17896              .word ($xxxx)
-        $17898              .word ($xxxx)
+        $17890              .word ($xxxx) ; $1789a
+        $17892              .word ($xxxx) ; $178a0
+        $17894              .word ($xxxx) ; $178a7
+        $17896              .word ($xxxx) ; $178ab
+        $17898              .word ($xxxx) ; $178b4
+MapData_LocationEC_Layout
         $1789a              .byte $xx
         $1789b              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1789f              .byte $xx
-        $178a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationEC_Graphics
+        $178a0              .byte $xx,$xx,$xx
+        $178a3              .byte $xx,$xx
+        $178a5              .byte $xx,$xx
+MapData_LocationEC_Entrances
+        $178a7              .byte $xx,$xx,$xx,$xx
 MapData_LocationEC_Exits
         $178ab              .byte $xx,$xx,$xx,$xx
         $178af              .byte $xx,$xx,$xx,$xx
         $178b3              .byte $xx
+MapData_LocationEC_Flags
         $178b4              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationED                                     ; Location ed
-        $178b5              .word ($xxxx)
-        $178b7              .word ($xxxx)
-        $178b9              .word ($xxxx)
-        $178bb              .word ($xxxx)
-        $178bd              .word ($xxxx)
+        $178b5              .word ($xxxx) ; $178bf
+        $178b7              .word ($xxxx) ; $178c5
+        $178b9              .word ($xxxx) ; $178cc
+        $178bb              .word ($xxxx) ; $178d0
+        $178bd              .word ($xxxx) ; $178d5
+MapData_LocationED_Layout
         $178bf              .byte $xx
         $178c0              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $178c4              .byte $xx
-        $178c5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationED_Graphics
+        $178c5              .byte $xx,$xx,$xx
+        $178c8              .byte $xx,$xx
+        $178ca              .byte $xx,$xx
+MapData_LocationED_Entrances
+        $178cc              .byte $xx,$xx,$xx,$xx
 MapData_LocationED_Exits
         $178d0              .byte $xx,$xx,$xx,$xx
         $178d4              .byte $xx
+MapData_LocationED_Flags
         $178d5              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationEE                                     ; Location ee
-        $178d6              .word ($xxxx)
-        $178d8              .word ($xxxx)
-        $178da              .word ($xxxx)
-        $178dc              .word ($xxxx)
-        $178de              .word ($xxxx)
+        $178d6              .word ($xxxx) ; $178e0
+        $178d8              .word ($xxxx) ; $178e6
+        $178da              .word ($xxxx) ; $178ed
+        $178dc              .word ($xxxx) ; $178f1
+        $178de              .word ($xxxx) ; $178f6
+MapData_LocationEE_Layout
         $178e0              .byte $xx
         $178e1              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $178e5              .byte $xx
-        $178e6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $178f0              .byte $xx
+MapData_LocationEE_Graphics
+        $178e6              .byte $xx,$xx,$xx
+        $178e9              .byte $xx,$xx
+        $178eb              .byte $xx,$xx
+MapData_LocationEE_Entrances
+        $178ed              .byte $xx,$xx,$xx,$xx
 MapData_LocationEE_Exits
         $178f1              .byte $xx,$xx,$xx,$xx
         $178f5              .byte $xx
+MapData_LocationEE_Flags
         $178f6              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationEF                                     ; Location ef
-        $178f7              .word ($xxxx)
-        $178f9              .word ($xxxx)
-        $178fb              .word ($xxxx)
-        $178fd              .word ($xxxx)
-        $178ff              .word ($xxxx)
+        $178f7              .word ($xxxx) ; $17901
+        $178f9              .word ($xxxx) ; $17907
+        $178fb              .word ($xxxx) ; $1790e
+        $178fd              .word ($xxxx) ; $17912
+        $178ff              .word ($xxxx) ; $1791b
+MapData_LocationEF_Layout
         $17901              .byte $xx
         $17902              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17906              .byte $xx
-        $17907              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $17910              .byte $xx,$xx
+MapData_LocationEF_Graphics
+        $17907              .byte $xx,$xx,$xx
+        $1790a              .byte $xx,$xx
+        $1790c              .byte $xx,$xx
+MapData_LocationEF_Entrances
+        $1790e              .byte $xx,$xx,$xx,$xx
 MapData_LocationEF_Exits
         $17912              .byte $xx,$xx,$xx,$xx
         $17916              .byte $xx,$xx,$xx,$xx
         $1791a              .byte $xx
+MapData_LocationEF_Flags
         $1791b              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationF0                                     ; Location f0
-        $1791c              .word ($xxxx)
-        $1791e              .word ($xxxx)
-        $17920              .word ($xxxx)
-        $17922              .word ($xxxx)
-        $17924              .word ($xxxx)
+        $1791c              .word ($xxxx) ; $17926
+        $1791e              .word ($xxxx) ; $1792c
+        $17920              .word ($xxxx) ; $17933
+        $17922              .word ($xxxx) ; $17937
+        $17924              .word ($xxxx) ; $1793c
+MapData_LocationF0_Layout
         $17926              .byte $xx
         $17927              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1792b              .byte $xx
-        $1792c              .byte $xx,$xx,$xx,$xx
-        $17930              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationF0_Graphics
+        $1792c              .byte $xx,$xx,$xx
+        $1792f              .byte $xx,$xx
+        $17931              .byte $xx,$xx
+MapData_LocationF0_Entrances
+        $17933              .byte $xx,$xx,$xx,$xx
 MapData_LocationF0_Exits
         $17937              .byte $xx,$xx,$xx,$xx
         $1793b              .byte $xx
+MapData_LocationF0_Flags
         $1793c              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationF1                                     ; Location f1
-        $1793d              .word ($xxxx)
-        $1793f              .word ($xxxx)
-        $17941              .word ($xxxx)
-        $17943              .word ($xxxx)
-        $17945              .word ($xxxx)
+        $1793d              .word ($xxxx) ; $17947
+        $1793f              .word ($xxxx) ; $1794d
+        $17941              .word ($xxxx) ; $17954
+        $17943              .word ($xxxx) ; $17958
+        $17945              .word ($xxxx) ; $17961
+MapData_LocationF1_Layout
         $17947              .byte $xx
         $17948              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1794c              .byte $xx
+MapData_LocationF1_Graphics
         $1794d              .byte $xx,$xx,$xx
-        $17950              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $17950              .byte $xx,$xx
+        $17952              .byte $xx,$xx
+MapData_LocationF1_Entrances
+        $17954              .byte $xx,$xx,$xx,$xx
 MapData_LocationF1_Exits
         $17958              .byte $xx,$xx,$xx,$xx
         $1795c              .byte $xx,$xx,$xx,$xx
         $17960              .byte $xx
+MapData_LocationF1_Flags
         $17961              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationF2                                     ; Location f2
-        $17962              .word ($xxxx)
-        $17964              .word ($xxxx)
-        $17966              .word ($xxxx)
-        $17968              .word ($xxxx)
-        $1796a              .word ($xxxx)
+        $17962              .word ($xxxx) ; $1796c
+        $17964              .word ($xxxx) ; $17972
+        $17966              .word ($xxxx) ; $17979
+        $17968              .word ($xxxx) ; $17981
+        $1796a              .word ($xxxx) ; $1798a
+MapData_LocationF2_Layout
         $1796c              .byte $xx
         $1796d              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17971              .byte $xx
-        $17972              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $17980              .byte $xx
+MapData_LocationF2_Graphics
+        $17972              .byte $xx,$xx,$xx
+        $17975              .byte $xx,$xx
+        $17977              .byte $xx,$xx
+MapData_LocationF2_Entrances
+        $17979              .byte $xx,$xx,$xx,$xx
+        $1797d              .byte $xx,$xx,$xx,$xx
 MapData_LocationF2_Exits
         $17981              .byte $xx,$xx,$xx,$xx
         $17985              .byte $xx,$xx,$xx,$xx
         $17989              .byte $xx
+MapData_LocationF2_Flags
         $1798a              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationF3                                     ; Location f3
-        $1798b              .word ($xxxx)
-        $1798d              .word ($xxxx)
-        $1798f              .word ($xxxx)
-        $17991              .word ($xxxx)
-        $17993              .word ($xxxx)
+        $1798b              .word ($xxxx) ; $17995
+        $1798d              .word ($xxxx) ; $1799b
+        $1798f              .word ($xxxx) ; $179a2
+        $17991              .word ($xxxx) ; $179a6
+        $17993              .word ($xxxx) ; $179af
+MapData_LocationF3_Layout
         $17995              .byte $xx
         $17996              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1799a              .byte $xx
-        $1799b              .byte $xx,$xx,$xx,$xx,$xx
-        $179a0              .byte $xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationF3_Graphics
+        $1799b              .byte $xx,$xx,$xx
+        $1799e              .byte $xx,$xx
+        $179a0              .byte $xx,$xx
+MapData_LocationF3_Entrances
+        $179a2              .byte $xx,$xx,$xx,$xx
 MapData_LocationF3_Exits
         $179a6              .byte $xx,$xx,$xx,$xx
         $179aa              .byte $xx,$xx,$xx,$xx
         $179ae              .byte $xx
+MapData_LocationF3_Flags
         $179af              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationF4                                     ; Location f4
-        $179b0              .word ($xxxx)
-        $179b2              .word ($xxxx)
-        $179b4              .word ($xxxx)
-        $179b6              .word ($xxxx)
-        $179b8              .word ($xxxx)
+        $179b0              .word ($xxxx) ; $179ba
+        $179b2              .word ($xxxx) ; $179c0
+        $179b4              .word ($xxxx) ; $179c7
+        $179b6              .word ($xxxx) ; $179cb
+        $179b8              .word ($xxxx) ; $179d4
+MapData_LocationF4_Layout
         $179ba              .byte $xx
         $179bb              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $179bf              .byte $xx
-        $179c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationF4_Graphics
+        $179c0              .byte $xx,$xx,$xx
+        $179c3              .byte $xx,$xx
+        $179c5              .byte $xx,$xx
+MapData_LocationF4_Entrances
+        $179c7              .byte $xx,$xx,$xx,$xx
 MapData_LocationF4_Exits
         $179cb              .byte $xx,$xx,$xx,$xx
         $179cf              .byte $xx,$xx,$xx,$xx
         $179d3              .byte $xx
+MapData_LocationF4_Flags
         $179d4              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationF5                                     ; Location f5
-        $179d5              .word ($xxxx)
-        $179d7              .word ($xxxx)
-        $179d9              .word ($xxxx)
-        $179db              .word ($xxxx)
-        $179dd              .word ($xxxx)
+        $179d5              .word ($xxxx) ; $179df
+        $179d7              .word ($xxxx) ; $179e5
+        $179d9              .word ($xxxx) ; $179ec
+        $179db              .word ($xxxx) ; $179f0
+        $179dd              .word ($xxxx) ; $179f5
+MapData_LocationF5_Layout
         $179df              .byte $xx
         $179e0              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $179e4              .byte $xx
-        $179e5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationF5_Graphics
+        $179e5              .byte $xx,$xx,$xx
+        $179e8              .byte $xx,$xx
+        $179ea              .byte $xx,$xx
+MapData_LocationF5_Entrances
+        $179ec              .byte $xx,$xx,$xx,$xx
 MapData_LocationF5_Exits
         $179f0              .byte $xx,$xx,$xx,$xx
         $179f4              .byte $xx
+MapData_LocationF5_Flags
         $179f5              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationF6                                     ; Location f6
-        $179f6              .word ($xxxx)
-        $179f8              .word ($xxxx)
-        $179fa              .word ($xxxx)
-        $179fc              .word ($xxxx)
-        $179fe              .word ($xxxx)
+        $179f6              .word ($xxxx) ; $17a00
+        $179f8              .word ($xxxx) ; $17a06
+        $179fa              .word ($xxxx) ; $17a0d
+        $179fc              .word ($xxxx) ; $17a11
+        $179fe              .word ($xxxx) ; $17a16
+MapData_LocationF6_Layout
         $17a00              .byte $xx
         $17a01              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17a05              .byte $xx
-        $17a06              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $17a10              .byte $xx
+MapData_LocationF6_Graphics
+        $17a06              .byte $xx,$xx,$xx
+        $17a09              .byte $xx,$xx
+        $17a0b              .byte $xx,$xx
+MapData_LocationF6_Entrances
+        $17a0d              .byte $xx,$xx,$xx,$xx
 MapData_LocationF6_Exits
         $17a11              .byte $xx,$xx,$xx,$xx
         $17a15              .byte $xx
+MapData_LocationF6_Flags
         $17a16              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationF7                                     ; Location f7
-        $17a17              .word ($xxxx)
-        $17a19              .word ($xxxx)
-        $17a1b              .word ($xxxx)
-        $17a1d              .word ($xxxx)
-        $17a1f              .word ($xxxx)
+        $17a17              .word ($xxxx) ; $17a21
+        $17a19              .word ($xxxx) ; $17a27
+        $17a1b              .word ($xxxx) ; $17a2e
+        $17a1d              .word ($xxxx) ; $17a32
+        $17a1f              .word ($xxxx) ; $17a37
+MapData_LocationF7_Layout
         $17a21              .byte $xx
         $17a22              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17a26              .byte $xx
-        $17a27              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $17a30              .byte $xx,$xx
+MapData_LocationF7_Graphics
+        $17a27              .byte $xx,$xx,$xx
+        $17a2a              .byte $xx,$xx
+        $17a2c              .byte $xx,$xx
+MapData_LocationF7_Entrances
+        $17a2e              .byte $xx,$xx,$xx,$xx
 MapData_LocationF7_Exits
         $17a32              .byte $xx,$xx,$xx,$xx
         $17a36              .byte $xx
+MapData_LocationF7_Flags
         $17a37              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationF8                                     ; Location f8
-        $17a38              .word ($xxxx)
-        $17a3a              .word ($xxxx)
-        $17a3c              .word ($xxxx)
-        $17a3e              .word ($xxxx)
-        $17a40              .word ($xxxx)
+        $17a38              .word ($xxxx) ; $17a42
+        $17a3a              .word ($xxxx) ; $17a48
+        $17a3c              .word ($xxxx) ; $17a4f
+        $17a3e              .word ($xxxx) ; $17a53
+        $17a40              .word ($xxxx) ; $17a58
+MapData_LocationF8_Layout
         $17a42              .byte $xx
         $17a43              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17a47              .byte $xx
-        $17a48              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $17a50              .byte $xx,$xx,$xx
+MapData_LocationF8_Graphics
+        $17a48              .byte $xx,$xx,$xx
+        $17a4b              .byte $xx,$xx
+        $17a4d              .byte $xx,$xx
+MapData_LocationF8_Entrances
+        $17a4f              .byte $xx,$xx,$xx,$xx
 MapData_LocationF8_Exits
         $17a53              .byte $xx,$xx,$xx,$xx
         $17a57              .byte $xx
+MapData_LocationF8_Flags
         $17a58              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationF9                                     ; Location f9
-        $17a59              .word ($xxxx)
-        $17a5b              .word ($xxxx)
-        $17a5d              .word ($xxxx)
-        $17a5f              .word ($xxxx)
-        $17a61              .word ($xxxx)
+        $17a59              .word ($xxxx) ; $17a63
+        $17a5b              .word ($xxxx) ; $17a69
+        $17a5d              .word ($xxxx) ; $17a70
+        $17a5f              .word ($xxxx) ; $17a74
+        $17a61              .word ($xxxx) ; $17a79
+MapData_LocationF9_Layout
         $17a63              .byte $xx
         $17a64              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17a68              .byte $xx
-        $17a69              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationF9_Graphics
+        $17a69              .byte $xx,$xx,$xx
+        $17a6c              .byte $xx,$xx
+        $17a6e              .byte $xx,$xx
+MapData_LocationF9_Entrances
         $17a70              .byte $xx,$xx,$xx,$xx
 MapData_LocationF9_Exits
         $17a74              .byte $xx,$xx,$xx,$xx
         $17a78              .byte $xx
+MapData_LocationF9_Flags
         $17a79              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationFA                                     ; Location fa
-        $17a7a              .word ($xxxx)
-        $17a7c              .word ($xxxx)
-        $17a7e              .word ($xxxx)
-        $17a80              .word ($xxxx)
-        $17a82              .word ($xxxx)
+        $17a7a              .word ($xxxx) ; $17a84
+        $17a7c              .word ($xxxx) ; $17a8a
+        $17a7e              .word ($xxxx) ; $17a91
+        $17a80              .word ($xxxx) ; $17a95
+        $17a82              .word ($xxxx) ; $17a9e
+MapData_LocationFA_Layout
         $17a84              .byte $xx
         $17a85              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17a89              .byte $xx
-        $17a8a              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $17a90              .byte $xx,$xx,$xx,$xx,$xx
+MapData_LocationFA_Graphics
+        $17a8a              .byte $xx,$xx,$xx
+        $17a8d              .byte $xx,$xx
+        $17a8f              .byte $xx,$xx
+MapData_LocationFA_Entrances
+        $17a91              .byte $xx,$xx,$xx,$xx
 MapData_LocationFA_Exits
         $17a95              .byte $xx,$xx,$xx,$xx
         $17a99              .byte $xx,$xx,$xx,$xx
         $17a9d              .byte $xx
+MapData_LocationFA_Flags
         $17a9e              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationFB                                     ; Location fb
-        $17a9f              .word ($xxxx)
-        $17aa1              .word ($xxxx)
-        $17aa3              .word ($xxxx)
-        $17aa5              .word ($xxxx)
-        $17aa7              .word ($xxxx)
+        $17a9f              .word ($xxxx) ; $17aa9
+        $17aa1              .word ($xxxx) ; $17aaf
+        $17aa3              .word ($xxxx) ; $17ab6
+        $17aa5              .word ($xxxx) ; $17aba
+        $17aa7              .word ($xxxx) ; $17abf
+MapData_LocationFB_Layout
         $17aa9              .byte $xx
         $17aaa              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17aae              .byte $xx
-        $17aaf              .byte $xx
-        $17ab0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationFB_Graphics
+        $17aaf              .byte $xx,$xx,$xx
+        $17ab2              .byte $xx,$xx
+        $17ab4              .byte $xx,$xx
+MapData_LocationFB_Entrances
+        $17ab6              .byte $xx,$xx,$xx,$xx
 MapData_LocationFB_Exits
         $17aba              .byte $xx,$xx,$xx,$xx
         $17abe              .byte $xx
+MapData_LocationFB_Flags
         $17abf              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationBB                                     ; Location bb
-        $17ac0              .word ($xxxx)
-        $17ac2              .word ($xxxx)
-        $17ac4              .word ($xxxx)
-        $17ac6              .word ($xxxx)
-        $17ac8              .word ($xxxx)
+        $17ac0              .word ($xxxx) ; $17aca
+        $17ac2              .word ($xxxx) ; $17ad0
+        $17ac4              .word ($xxxx) ; $17ad7
+        $17ac6              .word ($xxxx) ; $17adb
+        $17ac8              .word ($xxxx) ; $17ae4
+MapData_LocationBB_Layout
         $17aca              .byte $xx
         $17acb              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17acf              .byte $xx
-        $17ad0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationBB_Graphics
+        $17ad0              .byte $xx,$xx,$xx
+        $17ad3              .byte $xx,$xx
+        $17ad5              .byte $xx,$xx
+MapData_LocationBB_Entrances
+        $17ad7              .byte $xx,$xx,$xx,$xx
 MapData_LocationBB_Exits
         $17adb              .byte $xx,$xx,$xx,$xx
         $17adf              .byte $xx,$xx,$xx,$xx
         $17ae3              .byte $xx
+MapData_LocationBB_Flags
         $17ae4              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationBC                                     ; Location bc
-        $17ae5              .word ($xxxx)
-        $17ae7              .word ($xxxx)
-        $17ae9              .word ($xxxx)
-        $17aeb              .word ($xxxx)
-        $17aed              .word ($xxxx)
+        $17ae5              .word ($xxxx) ; $17aef
+        $17ae7              .word ($xxxx) ; $17af5
+        $17ae9              .word ($xxxx) ; $17afc
+        $17aeb              .word ($xxxx) ; $17b00
+        $17aed              .word ($xxxx) ; $17b05
+MapData_LocationBC_Layout
         $17aef              .byte $xx
         $17af0              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17af4              .byte $xx
-        $17af5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationBC_Graphics
+        $17af5              .byte $xx,$xx,$xx
+        $17af8              .byte $xx,$xx
+        $17afa              .byte $xx,$xx
+MapData_LocationBC_Entrances
+        $17afc              .byte $xx,$xx,$xx,$xx
 MapData_LocationBC_Exits
         $17b00              .byte $xx,$xx,$xx,$xx
         $17b04              .byte $xx
+MapData_LocationBC_Flags
         $17b05              .byte $xx
         $17b06              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationBE                                     ; Location be
-        $17b07              .word ($xxxx)
-        $17b09              .word ($xxxx)
-        $17b0b              .word ($xxxx)
-        $17b0d              .word ($xxxx)
-        $17b0f              .word ($xxxx)
+        $17b07              .word ($xxxx) ; $17b11
+        $17b09              .word ($xxxx) ; $17b17
+        $17b0b              .word ($xxxx) ; $17b1e
+        $17b0d              .word ($xxxx) ; $17b22
+        $17b0f              .word ($xxxx) ; $17b27
+MapData_LocationBE_Layout
         $17b11              .byte $xx
         $17b12              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17b16              .byte $xx
-        $17b17              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationBE_Graphics
+        $17b17              .byte $xx,$xx,$xx
+        $17b1a              .byte $xx,$xx
+        $17b1c              .byte $xx,$xx
+MapData_LocationBE_Entrances
+        $17b1e              .byte $xx,$xx,$xx,$xx
 MapData_LocationBE_Exits
         $17b22              .byte $xx,$xx,$xx,$xx
         $17b26              .byte $xx
+MapData_LocationBE_Flags
         $17b27              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_LocationBF                                     ; Location bf
-        $17b28              .word ($xxxx)
-        $17b2a              .word ($xxxx)
-        $17b2c              .word ($xxxx)
-        $17b2e              .word ($xxxx)
-        $17b30              .word ($xxxx)
+        $17b28              .word ($xxxx) ; $17b32
+        $17b2a              .word ($xxxx) ; $17b38
+        $17b2c              .word ($xxxx) ; $17b3f
+        $17b2e              .word ($xxxx) ; $17b43
+        $17b30              .word ($xxxx) ; $17b4c
+MapData_LocationBF_Layout
         $17b32              .byte $xx
         $17b33              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17b37              .byte $xx
-        $17b38              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_LocationBF_Graphics
+        $17b38              .byte $xx,$xx,$xx
+        $17b3b              .byte $xx,$xx
+        $17b3d              .byte $xx,$xx
+MapData_LocationBF_Entrances
+        $17b3f              .byte $xx,$xx,$xx,$xx
 MapData_LocationBF_Exits
         $17b43              .byte $xx,$xx,$xx,$xx
         $17b47              .byte $xx,$xx,$xx,$xx
         $17b4b              .byte $xx
+MapData_LocationBF_Flags
         $17b4c              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location58                                     ; Location 58
-        $17b4d              .word ($xxxx)
-        $17b4f              .word ($xxxx)
-        $17b51              .word ($xxxx)
-        $17b53              .word ($xxxx)
-        $17b55              .word ($xxxx)
+        $17b4d              .word ($xxxx) ; $17b57
+        $17b4f              .word ($xxxx) ; $17b5d
+        $17b51              .word ($xxxx) ; $17b64
+        $17b53              .word ($xxxx) ; $17b6c
+        $17b55              .word ($xxxx) ; $17b75
+MapData_Location58_Layout
         $17b57              .byte $xx
         $17b58              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17b5c              .byte $xx
+MapData_Location58_Graphics
         $17b5d              .byte $xx,$xx,$xx
-        $17b60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $17b60              .byte $xx,$xx
+        $17b62              .byte $xx,$xx
+MapData_Location58_Entrances
+        $17b64              .byte $xx,$xx,$xx,$xx
+        $17b68              .byte $xx,$xx,$xx,$xx
 MapData_Location58_Exits
         $17b6c              .byte $xx,$xx,$xx,$xx
         $17b70              .byte $xx,$xx,$xx,$xx
         $17b74              .byte $xx
+MapData_Location58_Flags
         $17b75              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location59                                     ; Location 59
-        $17b76              .word ($xxxx)
-        $17b78              .word ($xxxx)
-        $17b7a              .word ($xxxx)
-        $17b7c              .word ($xxxx)
-        $17b7e              .word ($xxxx)
+        $17b76              .word ($xxxx) ; $17b80
+        $17b78              .word ($xxxx) ; $17b9d
+        $17b7a              .word ($xxxx) ; $17ba4
+        $17b7c              .word ($xxxx) ; $17ba8
+        $17b7e              .word ($xxxx) ; $17bb9
+MapData_Location59_Layout
         $17b80              .byte $xx
         $17b81              .byte $xx,$xx,$xx,$xx
         ;; Map 6x4
@@ -10909,22 +12566,28 @@ MapData_Location59                                     ; Location 59
         $17b8b              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $17b91              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $17b97              .byte $xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location59_Graphics
         $17b9d              .byte $xx,$xx,$xx
-        $17ba0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $17ba0              .byte $xx,$xx
+        $17ba2              .byte $xx,$xx
+MapData_Location59_Entrances
+        $17ba4              .byte $xx,$xx,$xx,$xx
 MapData_Location59_Exits
         $17ba8              .byte $xx,$xx,$xx,$xx
         $17bac              .byte $xx,$xx,$xx,$xx
         $17bb0              .byte $xx,$xx,$xx,$xx
         $17bb4              .byte $xx,$xx,$xx,$xx
         $17bb8              .byte $xx
+MapData_Location59_Flags
         $17bb9              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location5A                                     ; Location 5a
-        $17bba              .word ($xxxx)
-        $17bbc              .word ($xxxx)
-        $17bbe              .word ($xxxx)
-        $17bc0              .word ($xxxx)
-        $17bc2              .word ($xxxx)
+        $17bba              .word ($xxxx) ; $17bc4
+        $17bbc              .word ($xxxx) ; $17be1
+        $17bbe              .word ($xxxx) ; $17be8
+        $17bc0              .word ($xxxx) ; $17be8
+        $17bc2              .word ($xxxx) ; $17bf9
+MapData_Location5A_Layout
         $17bc4              .byte $xx
         $17bc5              .byte $xx,$xx,$xx,$xx
         ;; Map 6x4
@@ -10932,51 +12595,47 @@ MapData_Location5A                                     ; Location 5a
         $17bcf              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $17bd5              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $17bdb              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $17be1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_Location5A_Exits
+MapData_Location5A_Graphics
+        $17be1              .byte $xx,$xx,$xx
+        $17be4              .byte $xx,$xx
+        $17be6              .byte $xx,$xx
+MapData_Location5A_Entrances
         $17be8              .byte $xx,$xx,$xx,$xx
         $17bec              .byte $xx,$xx,$xx,$xx
         $17bf0              .byte $xx,$xx,$xx,$xx
         $17bf4              .byte $xx,$xx,$xx,$xx
-        $17bf8              .byte $xx
-        $17bf9              .byte $xx
-;;; ----------------------------------------------------------------
-MapData_Location5B                                     ; Location 5b
-        $17bfa              .word ($xxxx)
-        $17bfc              .word ($xxxx)
-        $17bfe              .word ($xxxx)
-        $17c00              .word ($xxxx)
-        $17c02              .word ($xxxx)
-        $17c04              .byte $xx
-        $17c05              .byte $xx,$xx,$xx,$xx
-        ;; Map 6x4
-        $17c09              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $17c0f              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $17c15              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $17c1b              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $17c21              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $17bf8              .byte $xx,$xx,$xx,$xx
+        $17bfc              .byte $xx,$xx,$xx,$xx
+        $17c00              .byte $xx,$xx,$xx,$xx
+        $17c04              .byte $xx,$xx,$xx,$xx
+        $17c08              .byte $xx,$xx,$xx,$xx
+        $17c0c              .byte $xx,$xx,$xx,$xx
+        $17c10              .byte $xx,$xx,$xx,$xx
+        $17c14              .byte $xx,$xx,$xx,$xx
+        $17c18              .byte $xx,$xx,$xx,$xx
+        $17c1c              .byte $xx,$xx,$xx,$xx
+        $17c20              .byte $xx,$xx,$xx,$xx
+        $17c24              .byte $xx,$xx,$xx,$xx
 MapData_Location5B_Exits
+MapData_Location5B_Entrances
         $17c28              .byte $xx,$xx,$xx,$xx
         $17c2c              .byte $xx,$xx,$xx,$xx
         $17c30              .byte $xx,$xx,$xx,$xx
         $17c34              .byte $xx,$xx,$xx,$xx
-        $17c38              .byte $xx
-        $17c39              .byte $xx
-;;; ----------------------------------------------------------------
-MapData_Location5C                                     ; Location 5c
-        $17c3a              .word ($xxxx)
-        $17c3c              .word ($xxxx)
-        $17c3e              .word ($xxxx)
-        $17c40              .word ($xxxx)
-        $17c42              .word ($xxxx)
-        $17c44              .byte $xx
-        $17c45              .byte $xx,$xx,$xx,$xx
-        ;; Map 6x4
-        $17c49              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $17c4f              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $17c55              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $17c5b              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $17c61              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $17c38              .byte $xx,$xx,$xx,$xx
+        $17c3c              .byte $xx,$xx,$xx,$xx
+        $17c40              .byte $xx,$xx,$xx,$xx
+        $17c44              .byte $xx,$xx,$xx,$xx
+        $17c48              .byte $xx,$xx,$xx,$xx
+        $17c4c              .byte $xx,$xx,$xx,$xx
+        $17c50              .byte $xx,$xx,$xx,$xx
+        $17c54              .byte $xx,$xx,$xx,$xx
+        $17c58              .byte $xx,$xx,$xx,$xx
+        $17c5c              .byte $xx,$xx,$xx,$xx
+        $17c60              .byte $xx,$xx,$xx,$xx
+        $17c64              .byte $xx,$xx,$xx,$xx
+        $17c68              .byte $xx,$xx,$xx,$xx
+        $17c6c              .byte $xx,$xx,$xx,$xx
         $17c70              .byte $xx,$xx,$xx,$xx
 MapData_Location5C_Exits
         $17c74              .byte $xx,$xx,$xx,$xx
@@ -10986,60 +12645,82 @@ MapData_Location5C_Exits
         $17c84              .byte $xx,$xx,$xx,$xx
         $17c88              .byte $xx,$xx,$xx,$xx
         $17c8c              .byte $xx
+MapData_Location5C_Flags
         $17c8d              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location5D                                     ; Location 5d
-        $17c8e              .word ($xxxx)
-        $17c90              .word ($xxxx)
-        $17c92              .word ($xxxx)
-        $17c94              .word ($xxxx)
-        $17c96              .word ($xxxx)
+        $17c8e              .word ($xxxx) ; $17c98
+        $17c90              .word ($xxxx) ; $17c9f
+        $17c92              .word ($xxxx) ; $17ca6
+        $17c94              .word ($xxxx) ; $17cae
+        $17c96              .word ($xxxx) ; $17cb7
+MapData_Location5D_Layout
         $17c98              .byte $xx
         $17c99              .byte $xx,$xx,$xx,$xx
         ;; Map 1x2
         $17c9d              .byte $xx
         $17c9e              .byte $xx
-        $17c9f              .byte $xx
-        $17ca0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Location5D_Graphics
+        $17c9f              .byte $xx,$xx,$xx
+        $17ca2              .byte $xx,$xx
+        $17ca4              .byte $xx,$xx
+MapData_Location5D_Entrances
+        $17ca6              .byte $xx,$xx,$xx,$xx
+        $17caa              .byte $xx,$xx,$xx,$xx
 MapData_Location5D_Exits
         $17cae              .byte $xx,$xx,$xx,$xx
         $17cb2              .byte $xx,$xx,$xx,$xx
         $17cb6              .byte $xx
+MapData_Location5D_Flags
         $17cb7              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Location5E                                     ; Location 5e
-        $17cb8              .word ($xxxx)
-        $17cba              .word ($xxxx)
-        $17cbc              .word ($xxxx)
-        $17cbe              .word ($xxxx)
-        $17cc0              .word ($xxxx)
+        $17cb8              .word ($xxxx) ; $17cc2
+        $17cba              .word ($xxxx) ; $17cc8
+        $17cbc              .word ($xxxx) ; $17ccf
+        $17cbe              .word ($xxxx) ; $17cd3
+        $17cc0              .word ($xxxx) ; $17cdc
+MapData_Location5E_Layout
         $17cc2              .byte $xx
         $17cc3              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17cc7              .byte $xx
-        $17cc8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $17cd0              .byte $xx,$xx,$xx
+MapData_Location5E_Graphics
+        $17cc8              .byte $xx,$xx,$xx
+        $17ccb              .byte $xx,$xx
+        $17ccd              .byte $xx,$xx
+MapData_Location5E_Entrances
+        $17ccf              .byte $xx,$xx,$xx,$xx
 MapData_Location5E_Exits
         $17cd3              .byte $xx,$xx,$xx,$xx
         $17cd7              .byte $xx,$xx,$xx,$xx
         $17cdb              .byte $xx
+MapData_Location5E_Flags
         $17cdc              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_Dyna                                           ; Location 5f
-        $17cdd              .word ($xxxx)
-        $17cdf              .word ($xxxx)
-        $17ce1              .word ($xxxx)
-        $17ce3              .word ($xxxx)
-        $17ce5              .word ($xxxx)
+        $17cdd              .word ($xxxx) ; $17ce7
+        $17cdf              .word ($xxxx) ; $17ced
+        $17ce1              .word ($xxxx) ; $17cf4
+        $17ce3              .word ($xxxx) ; $17cf8
+        $17ce5              .word ($xxxx) ; $17cf9
+MapData_Dyna_Layout
         $17ce7              .byte $xx
         $17ce8              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17cec              .byte $xx
+MapData_Dyna_Graphics
         $17ced              .byte $xx,$xx,$xx
-        $17cf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $17cf0              .byte $xx,$xx
+        $17cf2              .byte $xx,$xx
+MapData_Dyna_Entrances
+        $17cf4              .byte $xx,$xx,$xx,$xx
 MapData_Dyna_Exits
         $17cf8              .byte $xx
-        $17cf9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapData_Dyna_Flags
+        $17cf9              .byte $xx
+;;; ----------------------------------------------------------------
+        $17cfa              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $17d00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $17d10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $17d20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -19944,11 +21625,45 @@ RomBank_14                      ; @@ $8000
         $283f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $28400              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $28410              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28420              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28430              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28440              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28450              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28460              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $28420              .byte $xx,$xx
+;;; --------------------------------
+        ;; This is some sort of data table, referenced below.
+        $28422              .word ($xxxx)
+        $28424              .word ($xxxx)
+        $28426              .word ($xxxx)
+        $28428              .word ($xxxx)
+        $2842a              .word ($xxxx)
+        $2842c              .word ($xxxx)
+        $2842e              .word ($xxxx)
+        $28430              .word ($xxxx)
+        $28432              .word ($xxxx)
+        $28434              .word ($xxxx)
+        $28436              .word ($xxxx)
+        $28438              .word ($xxxx)
+        $2843a              .word ($xxxx)
+        $2843c              .word ($xxxx)
+        $2843e              .word ($xxxx)
+        $28440              .word ($xxxx)
+        $28442              .word ($xxxx)
+        $28444              .word ($xxxx)
+        $28446              .word ($xxxx)
+        $28448              .word ($xxxx)
+        $2844a              .word ($xxxx)
+        $2844c              .word ($xxxx)
+        $2844e              .word ($xxxx)
+        $28450              .word ($xxxx)
+        $28452              .word ($xxxx)
+        $28454              .word ($xxxx)
+        $28456              .word ($xxxx)
+        $28458              .word ($xxxx)
+        $2845a              .word ($xxxx)
+        $2845c              .word ($xxxx)
+        $2845e              .word ($xxxx)
+        $28460              .word ($xxxx)
+        $28462              .word ($xxxx)
+        $28464              .word ($xxxx)
+;;; --------------------------------
+        $28466              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $28470              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $28480              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $28490              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -19958,6 +21673,7 @@ RomBank_14                      ; @@ $8000
         $284d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $284e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $284f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
         $28500  xx xx:      xxx #$xx
         $28502  xx xx xx:   xxx $28879,x
         $28505  xx xx:      xxx $xx,x
@@ -20078,18 +21794,100 @@ RomBank_14                      ; @@ $8000
         $285e9  xx xx:      xxx $xx
         $285eb  xx xx:      xxx $xx
         $285ed  xx xx:      xxx $285e9
-        $285ef              .byte $xx
-        $285f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28600              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28610              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28620              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28630              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28640              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28650              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28660              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28670              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28680              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28690              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $285ef  xx xx xx:   xxx $28836
+;;; --------------------------------
+        $285f2  xx xx xx:   xxx $28720
+        $285f5  xx xx:      xxx $xx
+        $285f7  xx xx:      xxx $xx
+        $285f9  xx xx:      xxx $xx
+        $285fb  xx xx:      xxx $285f7
+        $285fd  xx xx:      xxx #$xx
+        $285ff  xx xx:      xxx $xx
+        $28601  xx:         xxx
+        $28602  xx xx:      xxx $28606
+        $28604  xx xx:      xxx $xx
+        $28606  xx:         xxx
+;;; --------------------------------
+        $28607  xx:         xxx
+        $28608  xx xx:      xxx $xx
+        $2860a  xx xx:      xxx #$xx
+        $2860c  xx xx:      xxx #$xx
+        $2860e  xx:         xxx
+        $2860f  xx xx:      xxx #$xx
+        $28611  xx xx:      xxx $xx
+        $28613  xx:         xxx
+        $28614  xx xx:      xxx $28618
+        $28616  xx xx:      xxx $xx
+        $28618  xx:         xxx
+;;; --------------------------------
+        $28619  xx xx:      xxx $xx
+        $2861b  xx:         xxx
+        $2861c  xx xx xx:   xxx $285b8
+        $2861f  xx xx:      xxx $xx
+        $28621  xx xx:      xxx $xx
+        $28623  xx xx:      xxx $2861f
+        $28625  xx xx:      xxx #$xx
+        $28627  xx xx:      xxx $xx
+        $28629  xx xx:      xxx #$xx
+        $2862b  xx xx:      xxx $xx
+        $2862d  xx xx:      xxx #$xx
+        $2862f  xx xx:      xxx $xx
+        $28631  xx xx:      xxx #$xx
+        $28633  xx xx:      xxx $xx
+        $28635  xx xx:      xxx #$xx
+        $28637  xx xx xx:   xxx $xxxx
+        $2863a  xx xx xx:   xxx $28836
+        $2863d  xx xx:      xxx #$xx
+        $2863f  xx xx:      xxx $xx
+        $28641  xx xx:      xxx $xx
+        $28643  xx xx:      xxx $28641
+        $28645  xx xx xx:   xxx $3fe80
+        $28648  xx xx xx:   xxx $xxxx
+        $2864b  xx xx xx:   xxx $283fe,x
+        $2864e  xx xx xx:   xxx $2885a
+        $28651  xx xx:      xxx $xx
+        $28653  xx xx:      xxx #$xx
+        $28655  xx xx:      xxx $28660
+        $28657  xx xx:      xxx $xx
+        $28659  xx xx:      xxx #$xx
+        $2865b  xx xx:      xxx $28660
+        $2865d  xx xx xx:   xxx $28641
+;;; --------------------------------
+        $28660  xx xx:      xxx $xx
+        $28662  xx:         xxx
+        $28663  xx xx:      xxx $28667
+        $28665  xx xx:      xxx $xx
+        $28667  xx xx xx:   xxx $28720
+        $2866a  xx:         xxx
+;;; --------------------------------
+        $2866b  xx xx:      xxx $xx
+        $2866d  xx xx:      xxx #$xx
+        $2866f  xx xx xx:   xxx $xxxx,y
+        $28672  xx xx:      xxx $2867a
+        $28674  xx xx xx:   xxx $287ae
+        $28677  xx xx xx:   xxx $2866f
+;;; --------------------------------
+        $2867a  xx xx:      xxx $xx
+        $2867c  xx:         xxx
+        $2867d  xx xx:      xxx $28681
+        $2867f  xx xx:      xxx $xx
+        $28681  xx:         xxx
+;;; --------------------------------
+        $28682  xx xx xx:   xxx $28710
+        $28685  xx xx:      xxx ($xx),y
+        $28687  xx:         xxx
+        $28688  xx:         xxx
+        $28689  xx xx xx:   xxx $28a00,x
+        $2868c  xx xx:      xxx $xx
+        $2868e  xx xx xx:   xxx $28a01,x
+        $28691  xx xx:      xxx $xx
+        $28693  xx xx:      xxx #$xx
+        $28695  xx xx:      xxx ($xx),y
+        $28697  xx xx:      xxx $2869f
+        $28699  xx xx xx:   xxx $287ae
+        $2869c  xx xx xx:   xxx $28695
+;;; --------------------------------
+        $2869f              .byte $xx
         $286a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $286b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $286c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -20097,17 +21895,101 @@ RomBank_14                      ; @@ $8000
         $286e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $286f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $28700              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28710              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28720              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28730              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28740              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28750              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28760              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28770              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28780              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28790              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $287a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $287b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+        $28710  xx xx:      xxx $xx
+        $28712  xx xx:      xxx $xx
+        $28714  xx xx:      xxx $xx
+        $28716  xx xx:      xxx $xx
+        $28718  xx:         xxx
+        $28719  xx xx:      xxx + ; $2871d
+        $2871b  xx xx:       xxx $xx
++       $2871d  xx xx:      xxx $xx
+        $2871f  xx:         xxx
+;;; --------------------------------
+        $28720  xx xx:      xxx $xx
+        $28722  xx xx:      xxx $xx
+        $28724  xx xx:      xxx $xx
+        $28726  xx xx:      xxx $28722
+        $28728  xx xx:      xxx #$xx
+        $2872a  xx xx:      xxx #$xx
+        $2872c  xx xx xx:   xxx $xxxx,x
+        $2872f  xx:         xxx
+        $28730  xx xx:      xxx #$xx
+        $28732  xx xx xx:   xxx $xxxx,x
+        $28735  xx:         xxx
+        $28736  xx xx:      xxx #$xx
+        $28738  xx xx:      xxx $xx
+        $2873a  xx xx:      xxx #$xx
+        $2873c  xx xx xx:   xxx $xxxx,x
+        $2873f  xx:         xxx
+        $28740  xx xx:      xxx $xx
+        $28742  xx xx:      xxx $2873c
+        $28744  xx xx:      xxx #$xx
+        $28746  xx xx xx:   xxx $xxxx,x
+        $28749  xx:         xxx
+        $2874a  xx xx:      xxx $2872a
+        $2874c  xx xx:      xxx #$xx
+        $2874e  xx xx:      xxx $xx
+        $28750  xx xx:      xxx $xx
+        $28752  xx:         xxx
+;;; --------------------------------
+        $28753  xx xx:      xxx $xx
+        $28755  xx:         xxx
+        $28756  xx xx:      xxx ($xx),y
+        $28758  xx:         xxx
+        $28759  xx xx:      xxx #$xx
+        $2875b  xx xx:      xxx $xx
+        $2875d  xx xx xx:   xxx $xxxx,x
+        $28760  xx xx:      xxx $xx
+        $28762  xx:         xxx
+        $28763  xx xx:      xxx $2875b
+        $28765  xx xx:      xxx $xx
+        $28767  xx:         xxx
+        $28768  xx xx:      xxx $2876c
+        $2876a  xx xx:      xxx $xx
+        $2876c  xx:         xxx
+        $2876d  xx xx:      xxx $28771
+        $2876f  xx xx:      xxx $xx
+        $28771  xx:         xxx
+;;; --------------------------------
+        $28772  xx xx:      xxx $xx
+        $28774  xx xx:      xxx $xx
+        $28776  xx xx:      xxx $xx
+        $28778  xx xx:      xxx $xx
+        $2877a  xx xx:      xxx $xx
+        $2877c  xx:         xxx
+        $2877d  xx xx xx:   xxx $xxxx
+        $28780  xx xx:      xxx #$xx
+        $28782  xx xx:      xxx $28786
+        $28784  xx xx:      xxx #$xx
+        $28786  xx:         xxx
+        $28787  xx:         xxx
+        $28788  xx xx xx:   xxx $28a5c,x
+        $2878b  xx xx:      xxx $xx
+        $2878d  xx xx xx:   xxx $28a5d,x
+        $28790  xx xx:      xxx $xx
+        $28792  xx xx:      xxx #$xx
+        $28794  xx xx:      xxx ($xx),y
+        $28796  xx xx:      xxx $2879e
+        $28798  xx xx xx:   xxx $287ae
+        $2879b  xx xx xx:   xxx $28794
+;;; --------------------------------
+        $2879e  xx xx:      xxx $xx
+        $287a0  xx:         xxx
+        $287a1  xx xx:      xxx $287a5
+        $287a3  xx xx:      xxx $xx
+        $287a5  xx xx:      xxx $xx
+        $287a7  xx xx:      xxx $xx
+        $287a9  xx xx:      xxx $xx
+        $287ab  xx xx:      xxx $xx
+        $287ad  xx:         xxx
+;;; --------------------------------
+        $287ae  xx xx:      xxx $xx
+        $287b0  xx xx xx:   xxx $xxxx,x
+        $287b3  xx xx:      xxx $xx
+        $287b5  xx:         xxx
+        $287b6  xx:         xxx
+;;; --------------------------------
         $287b7  xx xx:      xxx #$xx
         $287b9  xx xx xx:   xxx $287ef
         $287bc  xx xx:      xxx #$xx
@@ -20171,7 +22053,7 @@ RomBank_14                      ; @@ $8000
         $28833  xx xx:      xxx $xx
         $28835  xx:         xxx
 ;;; --------------------------------
-        $28836  xx xx xx:   xxx $xxxx
+        $28836  xx xx xx:   xxx $28871
         $28839  xx xx:      xxx $xx
         $2883b  xx xx:      xxx $xx
         $2883d  xx xx xx:   xxx $xxxx,x
@@ -20188,6 +22070,7 @@ RomBank_14                      ; @@ $8000
         $28855  xx xx:      xxx $xx
         $28857  xx xx xx:   xxx $28869
 ;;; --------------------------------
+BankSwitch8k_A000_alt
         $2885a  xx xx:      xxx $xx
         $2885c  xx xx:      xxx #$xx
         $2885e  xx xx:      xxx $xx
@@ -20196,14 +22079,16 @@ RomBank_14                      ; @@ $8000
         $28865  xx xx xx:   xxx $xxxx
         $28868  xx:         xxx
 ;;; --------------------------------
+EnableNMI_alt
         $28869  xx xx:      xxx $xx
         $2886b  xx xx:      xxx #$xx
-        $2886d  xx xx xx:   xxx $xxxx
+        $2886d  xx xx xx:   xxx PPUCTRL
         $28870  xx:         xxx
 ;;; --------------------------------
+DisableNMI_alt
         $28871  xx xx:      xxx $xx
         $28873  xx xx:      xxx #$xx
-        $28875  xx xx xx:   xxx $xxxx
+        $28875  xx xx xx:   xxx PPUCTRL
         $28878  xx:         xxx
 ;;; --------------------------------
 DataTable_28879
@@ -22058,10 +23943,28 @@ RomBank_17                      ; @@ $a000
         $2fba0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2fbb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2fbc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2fbd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2fbe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2fbf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2fc00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $2fbd0              .byte $xx,$xx,$xx,$xx,$xx
+        $2fbd5  xx xx xx:   xxx $xxxx
+        $2fbd8  xx xx:      xxx #$xx
+        $2fbda  xx xx xx:   xxx $xxxx
+        $2fbdd  xx xx:      xxx #SFX_CHANGE_MAGIC
+        $2fbdf  xx xx xx:   xxx $3c125
+        $2fbe2  xx xx:      xxx #$xx
+        $2fbe4  xx xx xx:   xxx $3c17d
+        $2fbe7  xx xx xx:   xxx $3c169
+        $2fbea  xx xx xx:   xxx $3ff8c
+        $2fbed  xx xx xx:   xxx $xxxx
+        $2fbf0  xx xx:      xxx $2fbe7
+        $2fbf2  xx xx xx:   xxx $3c008
+        $2fbf5  xx xx:      xxx #$xx
+        $2fbf7  xx xx xx:   xxx $xxxx
+        $2fbfa  xx xx xx:   xxx $3ff8c
+        $2fbfd  xx xx:      xxx #$xx
+        $2fbff  xx xx:      xxx $xx
+        $2fc01  xx xx:      xxx #$xx
+        $2fc03  xx xx xx:   xxx $2fc8e
+;;; --------------------------------
+        $2fc06  xx xx xx:   xxx $2fcda
 ;;; --------------------------------
         $2fc09  xx:         xxx
         $2fc0a  xx:          xxx
@@ -25848,9 +27751,24 @@ ReadObjectCoordinates
         $35970              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $35980              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $35990              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $359a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $359b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $359c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $359a0              .byte $xx,$xx
+        $359a2  xx xx:      xxx $xx
+        $359a4  xx xx:      xxx $xx
+        $359a6  xx xx:      xxx $xx
+        $359a8  xx xx xx:   xxx $xxxx,x
+        $359ab  xx xx:      xxx #$xx
+        $359ad  xx xx:      xxx $359c4
+        $359af  xx xx xx:   xxx $xxxx
+        $359b2  xx xx:      xxx $359c4
+        $359b4  xx xx:      xxx $3597d
+        $359b6  xx xx:      xxx $xx
+        $359b8  xx xx:      xxx $359be
+        $359ba  xx xx:      xxx #$xx
+        $359bc  xx xx:      xxx $3597d
+        $359be  xx:         xxx
+;;; --------------------------------
+        $359bf              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $359cf              .byte $xx
         $359d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $359e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $359f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -25891,7 +27809,7 @@ ReadObjectCoordinates
         $35a64  xx:         xxx
         $35a65  xx xx:      xxx #$xx
         $35a67  xx xx:      xxx $xx
-        $35a69  xx xx:      xxx #$xx ; $d000 -> $a000
+        $35a69  xx xx:      xxx #$xx ; $a000 -> 0, 2, 4, 6, 8, a, c, or e
         $35a6b  xx xx:      xxx $xx
         $35a6d  xx xx xx:   xxx $xxxx
         $35a70  xx xx xx:   xxx $xxxx
@@ -26108,21 +28026,21 @@ DataTable_35d4d
         $35e0d  xx xx:      xxx $xx
         $35e0f  xx xx:      xxx #$xx
         $35e11  xx xx:      xxx ++ ; $35e39
-        $35e13  xx xx xx:   xxx $xxxx
-        $35e16  xx xx xx:   xxx $xxxx
-        $35e19  xx xx:      xxx #$xx
-        $35e1b  xx xx:      xxx + ; $35e22
-        $35e1d  xx xx:      xxx #$xx
-        $35e1f  xx xx xx:   xxx $xxxx
-+       $35e22  xx xx:      xxx #$xx
-        $35e24  xx xx:      xxx + ; $35e2b
-        $35e26  xx xx:      xxx #SFX_SWORD_CHARGED
-        $35e28  xx xx xx:   xxx StartAudioTrack
-+       $35e2b  xx xx xx:   xxx $xxxx
-        $35e2e  xx xx xx:   xxx $xxxx,y
-        $35e31  xx xx xx:   xxx $xxxx
-        $35e34  xx xx:      xxx ++ ; $35e39
-        $35e36  xx xx xx:   xxx $xxxx
+        $35e13  xx xx xx:    xxx $xxxx
+        $35e16  xx xx xx:    xxx $xxxx
+        $35e19  xx xx:       xxx #$xx
+        $35e1b  xx xx:       xxx + ; $35e22
+        $35e1d  xx xx:        xxx #$xx
+        $35e1f  xx xx xx:     xxx $xxxx
++       $35e22  xx xx:       xxx #$xx
+        $35e24  xx xx:       xxx + ; $35e2b
+        $35e26  xx xx:        xxx #SFX_SWORD_CHARGED
+        $35e28  xx xx xx:     xxx StartAudioTrack
++       $35e2b  xx xx xx:    xxx $xxxx
+        $35e2e  xx xx xx:    xxx $xxxx,y
+        $35e31  xx xx xx:    xxx $xxxx
+        $35e34  xx xx:       xxx ++ ; $35e39
+        $35e36  xx xx xx:     xxx $xxxx
 ++      $35e39  xx xx xx:   xxx $xxxx,x
         $35e3c  xx xx:      xxx +++ ; $35e6f
         $35e3e  xx xx:      xxx #$xx
@@ -28350,37 +30268,252 @@ JumpTable_36314_3f
         $37fe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $37ff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 RomBank_1c                      ; @@ $8000
-        $38000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $38010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $38020              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $38030              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $38040              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $38050              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $38060              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $38070              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $38080              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $38090              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $380a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $380b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $380c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $380d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $380e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $380f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $38100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $38110              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $38120              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $38130              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $38140              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $38150              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $38160              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $38170              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $38180              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $38190              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $381a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $381b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $381c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $381d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $381e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $38000  xx xx:      xxx #$xx
+        $38002  xx xx:      xxx #$xx
+        $38004  xx xx:      xxx $xx
+        $38006  xx xx xx:   xxx $3822e
+;;; --------------------------------
+        $38009              .byte $xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+;;; This looks like it's probably something to do with objects/sprites.
+        $3800e  xx xx:      xxx $xx
+        $38010  xx:         xxx
+        $38011  xx:         xxx
+        $38012  xx xx:      xxx #$xx
+        $38014  xx xx:      xxx $38018
+        $38016  xx xx:      xxx #$xx
+        $38018  xx xx:      xxx $xx
+        $3801a  xx xx xx:   xxx $xxxx
+        $3801d  xx xx xx:   xxx $xxxx
+        $38020  xx xx:      xxx #$xx
+        $38022  xx:         xxx
+        $38023  xx xx xx:   xxx $383d8,y
+        $38026  xx xx:      xxx $xx
+        $38028  xx xx:      xxx #$xx
+        $3802a  xx xx:      xxx $xx
+        $3802c  xx xx:      xxx #$xx
+        $3802e  xx xx:      xxx $xx
+        $38030  xx xx:      xxx $xx
+        $38032  xx xx xx:   xxx $383dc,y
+        $38035  xx:         xxx
+        $38036  xx xx xx:   xxx $xxxx,x
+        $38039  xx xx:      xxx $3809a
+        $3803b  xx xx:      xxx $xx,x
+        $3803d  xx:         xxx
+        $3803e  xx xx:      xxx $xx
+        $38040  xx:         xxx
+        $38041  xx xx:      xxx $xx,x
+        $38043  xx xx:      xxx $xx
+        $38045  xx xx:      xxx $3809a
+        $38047  xx xx:      xxx $xx
+        $38049  xx:         xxx
+        $3804a  xx xx xx:   xxx $xxxx,x
+        $3804d  xx xx:      xxx $xx,x
+        $3804f  xx xx:      xxx $xx
+        $38051  xx xx:      xxx $xx,x
+        $38053  xx xx:      xxx $xx
+        $38055  xx xx:      xxx $3809a
+        $38057  xx xx:      xxx $xx,x
+        $38059  xx:         xxx
+        $3805a  xx xx:      xxx $xx
+        $3805c  xx xx:      xxx $38060
+        $3805e  xx xx:      xxx #$xx
+        $38060  xx xx:      xxx #$xx
+        $38062  xx xx:      xxx $3808e
+        $38064  xx xx:      xxx #$xx
+        $38066  xx xx:      xxx $3809a
+        $38068  xx xx:      xxx $xx
+        $3806a  xx xx xx:   xxx $xxxx,x
+        $3806d  xx xx xx:   xxx $xxxx,x
+        $38070  xx xx:      xxx #$xx
+        $38072  xx xx xx:   xxx $xxxx,x
+        $38075  xx:         xxx
+        $38076  xx xx:      xxx $xx
+        $38078  xx xx:      xxx $xx
+        $3807a  xx xx:      xxx $3808e
+        $3807c  xx xx xx:   xxx $xxxx,x
+        $3807f  xx xx:      xxx #$xx
+        $38081  xx xx:      xxx $3808b
+        $38083  xx:         xxx
+        $38084  xx:         xxx
+        $38085  xx xx xx:   xxx $xxxx
+        $38088  xx:         xxx
+        $38089  xx xx:      xxx $3808e
+        $3808b  xx xx xx:   xxx $3822e
+-       $3808e  xx xx:      xxx $xx
+        $38090  xx xx:      xxx $xx
+        $38092  xx xx:      xxx $38030
+        $38094  xx xx xx:   xxx $380a5
+        $38097  xx xx xx:   xxx $380d6
+        ;; --------------------------------
+        $3809a  xx xx xx:   xxx $xxxx,x
+        $3809d  xx xx:      xxx #$xx
+        $3809f  xx xx xx:   xxx $xxxx,x
+        $380a2  xx xx xx:   xxx - ; $3808e
+;;; --------------------------------
+        $380a5  xx xx:      xxx $xx
+        $380a7  xx xx:      xxx $380b4
+        $380a9  xx xx:      xxx #$xx
+        $380ab  xx xx xx:   xxx $xxxx,x
+        $380ae  xx:         xxx
+        $380af  xx:         xxx
+        $380b0  xx:         xxx
+        $380b1  xx:         xxx
+        $380b2  xx xx:      xxx $380ab
+        $380b4  xx xx xx:   xxx $xxxx
+        $380b7  xx xx:      xxx $380d5
+        $380b9  xx xx:      xxx #$xx
+        $380bb  xx xx xx:   xxx $xxxx
+        $380be  xx:         xxx
+        $380bf  xx xx:      xxx $380c3
+        $380c1  xx xx:      xxx #$xx
+        $380c3  xx xx xx:   xxx $xxxx
+-       $380c6  xx xx xx:    xxx $xxxx,x
+        $380c9  xx xx:       xxx #$xx
+        $380cb  xx xx xx:    xxx $xxxx,x
+        $380ce  xx:          xxx
+        $380cf  xx:          xxx
+        $380d0  xx:          xxx
+        $380d1  xx:          xxx
+        $380d2  xx:          xxx
+        $380d3  xx xx:      xxx - ; $380c6
+        $380d5  xx:         xxx
+;;; --------------------------------
+        $380d6  xx xx xx:   xxx $xxxx
+        $380d9  xx xx:      xxx $38145
+        $380db  xx xx xx:   xxx $xxxx
+        $380de  xx xx:      xxx #$xx
+        $380e0  xx xx:      xxx + ; $380e3
+        $380e2  xx:         xxx
+        ;; --------------------------------
++       $380e3  xx xx:      xxx #$xx
+        $380e5  xx xx:      xxx $xx
+        $380e7  xx xx:      xxx #$xx
+        $380e9  xx xx:      xxx $xx
+        $380eb  xx xx:      xxx #$xx
+        $380ed  xx:         xxx
+        $380ee  xx:         xxx
+        $380ef  xx xx:      xxx $xx
+        $380f1  xx xx:      xxx #$xx
+        $380f3  xx:         xxx
+        $380f4  xx xx:      xxx $xx
+        $380f6  xx:         xxx
+        $380f7  xx xx xx:   xxx $381ba,y
+        $380fa  xx xx:      xxx $38101
+        $380fc  xx xx:      xxx #$xx
+        $380fe  xx:         xxx
+        $380ff  xx xx:      xxx #$xx
+        $38101  xx:         xxx
+        $38102  xx xx:      xxx #$xx
+        $38104  xx xx:      xxx $xx
+        $38106  xx:         xxx
+        $38107  xx xx xx:   xxx $xxxx
+        $3810a  xx xx:      xxx $xx
+        $3810c  xx:         xxx
+        $3810d  xx xx:      xxx $xx
+        $3810f  xx xx:      xxx $3813c
+        $38111  xx xx:      xxx $xx
+        $38113  xx xx xx:   xxx $xxxx,x
+        $38116  xx:         xxx
+        $38117  xx:         xxx
+        $38118  xx xx:      xxx #$xx
+        $3811a  xx xx:      xxx #$xx
+        $3811c  xx:         xxx
+        $3811d  xx xx xx:   xxx $381ba,y
+        $38120  xx:         xxx
+        $38121  xx xx xx:   xxx $xxxx
+        $38124  xx:         xxx
+        $38125  xx xx:      xxx #$xx
+        $38127  xx xx xx:   xxx $xxxx,x ; sprite data
+        $3812a  xx xx xx:   xxx $xxxx
+        $3812d  xx:         xxx
+        $3812e  xx:         xxx
+        $3812f  xx:         xxx
+        $38130  xx:         xxx
+        $38131  xx xx xx:   xxx $381da,y
+        $38134  xx xx xx:   xxx $xxxx,x
+        $38137  xx xx:      xxx #$xx
+        $38139  xx xx xx:   xxx $xxxx,x
+        $3813c  xx:         xxx
+        $3813d  xx:         xxx
+        $3813e  xx:         xxx
+        $3813f  xx:         xxx
+        $38140  xx xx:      xxx $xx
+        $38142  xx xx:      xxx $380e9
+        $38144  xx:         xxx
+;;; --------------------------------
+        $38145  xx xx xx:   xxx $xxxx
+        $38148  xx xx:      xxx $381a4
+        $3814a  xx xx xx:   xxx $xxxx
+        $3814d  xx xx:      xxx #$xx
+        $3814f  xx xx:      xxx $381a4
+        $38151  xx xx:      xxx #$xx
+        $38153  xx xx:      xxx $xx
+        $38155  xx xx:      xxx #$xx
+-       $38157  xx xx:      xxx $xx
+        $38159  xx:         xxx
+        $3815a  xx:         xxx
+        $3815b  xx:         xxx
+        $3815c  xx xx xx:   xxx $381a5
+        $3815f  xx:         xxx
+        $38160  xx xx:      xxx #$xx
+        $38162  xx xx:      xxx $xx
+        $38164  xx:         xxx
+        $38165  xx xx xx:   xxx $xxxx
+        $38168  xx xx:      xxx $xx
+        $3816a  xx:         xxx
+        $3816b  xx xx:      xxx $xx
+        $3816d  xx xx:      xxx $3819c
+        $3816f  xx xx:      xxx $xx
+        $38171  xx xx xx:   xxx $xxxx,x
+        $38174  xx xx:      xxx $xx
+        $38176  xx:         xxx
+        $38177  xx:         xxx
+        $38178  xx:         xxx
+        $38179  xx:         xxx
+        $3817a  xx xx xx:   xxx $381a5
+        $3817d  xx:         xxx
+        $3817e  xx xx:      xxx #$xx
+        $38180  xx xx:      xxx $xx
+        $38182  xx:         xxx
+        $38183  xx xx xx:   xxx $xxxx
+        $38186  xx xx:      xxx $xx
+        $38188  xx:         xxx
+        $38189  xx xx:      xxx $xx
+        $3818b  xx xx:      xxx $3819c
+        $3818d  xx xx:      xxx $xx
+        $3818f  xx xx xx:   xxx $xxxx,x
+        $38192  xx xx:      xxx #$xx
+        $38194  xx xx xx:   xxx $xxxx,x
+        $38197  xx xx:      xxx #$xx
+        $38199  xx xx xx:   xxx $xxxx,x
+        $3819c  xx:         xxx
+        $3819d  xx:         xxx
+        $3819e  xx:         xxx
+        $3819f  xx:         xxx
+        $381a0  xx xx:      xxx $xx
+        $381a2  xx xx:      xxx - ; $38157
+        $381a4  xx:         xxx
+;;; --------------------------------
+        $381a5  xx xx xx:   xxx $381df,y
+        $381a8  xx:         xxx
+        $381a9  xx xx xx:   xxx $381de,y
+        $381ac  xx xx xx:   xxx $xxxx ; this is in the object region but not indexed?
+        $381af  xx:         xxx
+        $381b0  xx xx xx:   xxx $381fe,y
+        $381b3  xx xx:      xxx + ; $381b9
+        $381b5  xx xx:       xxx #$xx
+        $381b7  xx xx:       xxx #$xx
++       $381b9  xx:         xxx
+;;; --------------------------------
+        $381ba              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $381ca              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $381da              .byte $xx,$xx,$xx,$xx
+        $381de              .byte $xx,$xx
+        $381e0              .byte $xx,$xx
+        $381e2              .byte $xx,$xx
+        $381e4              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $381ea              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $381f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $38200              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $38210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -29376,26 +31509,145 @@ RomBank_1d                      ; @@ $a000
         $3bfe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $3bff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 RomBank_1e                      ; @@ $c000
+;;; --------------------------------
 PowersOfTwo
         $3c000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3c008              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3c018              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3c028              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3c038              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3c048              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3c058              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3c068              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3c078              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3c088              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3c098              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3c0a8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3c0b8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3c0c8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3c0d8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3c0e8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3c0f8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3c108              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3c118              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+UpdateEquipmentAndStatus
+        ;; Refreshes everything on a status or equipment change.
+        ;; This includes palettes for changing swords, pattern
+        ;; tables for mutation or change, updating NPC's dialog
+        ;; and behavior due to change magic, etc.
+        $3c008  xx xx:      xxx $xx
+        $3c00a  xx:         xxx
+        $3c00b  xx xx:       xxx #$xx ; 8000 -> 34000
+        $3c00d  xx xx xx:    xxx BankSwitch8k_8000
+        $3c010  xx xx xx:    xxx $xxxx
+        $3c013  xx xx xx:    xxx $xxxx
+        $3c016  xx xx:       xxx #$xx
+        $3c018  xx xx:       xxx + ; $3c01b
+        $3c01a  xx:           xxx
++       $3c01b  xx xx xx:    xxx $xxxx
+        $3c01e  xx:          xxx
+        $3c01f  xx xx xx:    xxx $34bd2,y
+        $3c022  xx xx xx:    xxx $xxxx
+        $3c025  xx xx xx:    xxx $xxxx
+        $3c028  xx xx xx:    xxx $xxxx
+        $3c02b  xx xx:       xxx #$xx
+        $3c02d  xx xx:       xxx + ; $3c030
+        $3c02f  xx:           xxx
++       $3c030  xx xx xx:    xxx $xxxx
+        $3c033  xx:          xxx
+        $3c034  xx xx xx:    xxx $34bc0,y
+        $3c037  xx xx xx:    xxx $xxxx
+        $3c03a  xx xx xx:    xxx $xxxx
+        $3c03d  xx xx xx:    xxx $xxxx
+        $3c040  xx xx:       xxx #$xx
+        $3c042  xx xx:       xxx + ; $3c045
+        $3c044  xx:           xxx
++       $3c045  xx xx xx:    xxx $xxxx
+        $3c048  xx:          xxx
+        $3c049  xx xx xx:    xxx $34bc9,y
+        $3c04c  xx xx xx:    xxx $xxxx
+        $3c04f  xx:         xxx
+        $3c050  xx xx xx:   xxx BankSwitch8k_8000
+        $3c053  xx xx:      xxx #$xx
+        $3c055  xx xx xx:   xxx $xxxx
+        $3c058  xx xx:      xxx #$xx
+        $3c05a  xx xx:      xxx #$xx
+        $3c05c  xx xx:      xxx + ; $3c060
+        $3c05e  xx xx:       xxx #$xx
++       $3c060  xx xx xx:   xxx $xxxx
+        $3c063  xx xx xx:   xxx $xxxx
+        $3c066  xx xx:      xxx #$xx
+        $3c068  xx xx:      xxx $xx
+        $3c06a  xx xx xx:   xxx $xxxx
+        $3c06d  xx xx:      xxx + ; $3c073
+        $3c06f  xx xx:       xxx #$xx
+        $3c071  xx xx:       xxx ++ ; $3c07d
++       $3c073  xx:         xxx
+        $3c074  xx:         xxx
+        $3c075  xx:         xxx
+        $3c076  xx:         xxx
+        $3c077  xx xx:      xxx #$xx
+        $3c079  xx:         xxx
+        $3c07a  xx xx xx:   xxx $3c121,y
+++      $3c07d  xx xx:      xxx $xx
+        $3c07f  xx xx xx:   xxx $xxxx
+        $3c082  xx xx xx:   xxx $xxxx
+        $3c085  xx xx:      xxx + ; $3c08a
+        $3c087  xx xx xx:    xxx $3c107
+        ;; --------------------------------
++       $3c08a  xx xx:      xxx #$xx
+        $3c08c  xx xx:      xxx #$xx
+        $3c08e  xx xx:      xxx ++ ; $3c100
+        $3c090  xx xx:       xxx #$xx
+        $3c092  xx xx xx:    xxx $xxxx
+        $3c095  xx xx xx:    xxx $xxxx
+        $3c098  xx xx:       xxx #$xx
+        $3c09a  xx xx xx:    xxx $xxxx
+        $3c09d  xx xx xx:    xxx $xxxx
+        $3c0a0  xx:          xxx
+        $3c0a1  xx xx:       xxx #$xx
+        $3c0a3  xx xx:       xxx $xx
+        $3c0a5  xx xx:       xxx #$xx
+        $3c0a7  xx xx xx:    xxx $xxxx
+        $3c0aa  xx xx:       xxx #$xx
+        $3c0ac  xx xx xx:    xxx $xxxx
+        $3c0af  xx xx:       xxx + ; $3c0b3
+        $3c0b1  xx xx:        xxx #$xx
++       $3c0b3  xx xx:       xxx $xx
+        $3c0b5  xx xx xx:    xxx $xxxx
+        $3c0b8  xx xx:       xxx #$xx
+        $3c0ba  xx xx xx:    xxx $xxxx
+        $3c0bd  xx xx:       xxx + ; $3c0c0
+        $3c0bf  xx:           xxx
++       $3c0c0  xx xx xx:    xxx $xxxx
+        $3c0c3  xx xx xx:    xxx $xxxx
+        $3c0c6  xx xx:       xxx #$xx
+        $3c0c8  xx xx:       xxx + ; $3c0cc
+        $3c0ca  xx xx:        xxx #$xx
++       $3c0cc  xx:          xxx
+        $3c0cd  xx xx:       xxx + ; $3c0d0
+        $3c0cf  xx:           xxx
++       $3c0d0  xx xx xx:    xxx $xxxx
+        $3c0d3  xx:          xxx
+        $3c0d4  xx:          xxx
+        $3c0d5  xx xx:       xxx #$xx
+        $3c0d7  xx xx xx:    xxx $xxxx ; sword patterns
+-       $3c0da  xx xx:       xxx $xx
+        $3c0dc  xx:          xxx
+        $3c0dd  xx xx:        xxx $xx
+        $3c0df  xx:           xxx
+        $3c0e0  xx xx:         xxx #$xx ; 8000 -> 34000
+        $3c0e2  xx xx xx:      xxx BankSwitch8k_8000
+        $3c0e5  xx xx xx:      xxx $xxxx
+        $3c0e8  xx xx:         xxx + ; $3c0ed
+        $3c0ea  xx xx xx:       xxx LoadPalettesForLocation
++       $3c0ed  xx xx:         xxx #$xx
+        $3c0ef  xx xx xx:      xxx $34e46
+        $3c0f2  xx xx xx:      xxx $34cc0
+        $3c0f5  xx xx xx:      xxx FlushNametableDataWrite
+        $3c0f8  xx:           xxx
+        $3c0f9  xx xx xx:     xxx BankSwitch8k_A000
+        $3c0fc  xx:          xxx
+        $3c0fd  xx xx xx:    xxx BankSwitch8k_8000
+        ;; --------------------------------
+++      $3c100  xx xx:      xxx #$xx
+        $3c102  xx xx xx:   xxx $xxxx
+        $3c105  xx xx:      xxx $3c10c
+        $3c107  xx xx:      xxx #$xx
+        $3c109  xx xx xx:   xxx $xxxx
+        $3c10c  xx xx xx:   xxx $xxxx
+        $3c10f  xx xx:      xxx #$xx
+        $3c111  xx xx xx:   xxx $xxxx
+        $3c114  xx xx:      xxx #$xx
+        $3c116  xx xx xx:   xxx $xxxx
+        $3c119  xx xx:      xxx #$xx
+        $3c11b  xx xx xx:   xxx $xxxx
+        $3c11e  xx xx xx:   xxx - ; $3c0da
+;;; --------------------------------
+        $3c121              .byte $xx,$xx,$xx,$xx
 ;;; --------------------------------
 ;;; Starts playing the audio track number specified in register A.
 ;;; Tracks < $20 are background music.  The current BGM track number
@@ -29417,7 +31669,7 @@ StartAudioTrack
         ;; TODO - figure out what these even are
         ;; first stash y, then look at a.
         ;; if it's >= #$80 but < #$a0 then AND it with #$7f
-        ;; if it's < #$20 and == $0102 then do nothing
+        ;; if it's < #$20 and == $0102 then do nothing (already playing)
         ;; save any other < #$20 in $0102
         ;; $101 <- #$01
         ;; if $100 != #$05 or $108 >= #$20
@@ -30153,8 +32405,8 @@ FlushNametableDataUntilAllOffsetsNonzero
         $3c736  xx xx:      xxx - ; $3c72d
         $3c738  xx:         xxx
 ;;; --------------------------------
-PrepareAttributeTable0Write
-        ;; This is writing to NT0's attribute table.
+RequestAttributeTable0Write
+        ;; This requests an update to NT0's attribute table, reading from $6100.
         ;; It seems to run any time the screen redraws or scrolls
         $3c739  xx xx:      xxx $xx
         $3c73b  xx xx:      xxx $xx
@@ -31850,17 +34102,18 @@ BankSwitch16k_Bank6
         $3e3d4  xx xx:      xxx #$xx
         $3e3d6  xx xx xx:   xxx BankSwitch16k
 ;;; --------------------------------
-        $3e3d9              .word ($xxxx)
-        $3e3db              .word ($xxxx)
-        $3e3dd              .word ($xxxx)
-        $3e3df              .word ($xxxx)
+JumpTable_3e3d9
+        $3e3d9              .word ($xxxx) ; 0x - normal exit
+        $3e3db              .word ($xxxx) ; 20 - large map split
+        $3e3dd              .word ($xxxx) ; 40 - warp
+        $3e3df              .word ($xxxx) ; 60 - fall in pit, cf $3f084
         $3e3e1              .word ($xxxx)
         $3e3e3              .word ($xxxx)
         $3e3e5              .word ($xxxx)
-        $3e3e7              .word ($xxxx)
-        ;; --------------------------------
-        $3e3e9  xx xx xx:   xxx $3ff8c
-        $3e3ec  xx xx xx:   xxx $3c676
+        $3e3e7              .word ($xxxx) ; e0 - ???
+;;; --------------------------------
+        $3e3e9  xx xx xx:   xxx $3ff8c ; probably sth about sprites
+        $3e3ec  xx xx xx:   xxx FlushNametableDataWrite
         $3e3ef  xx xx:      xxx #$xx
         $3e3f1  xx xx:      xxx $xx
         $3e3f3  xx xx xx:   xxx $xxxx
@@ -31869,8 +34122,8 @@ BankSwitch16k_Bank6
         $3e3fb  xx xx xx:   xxx BankSwitch8k_8000
         $3e3fe  xx xx xx:   xxx $xxxx
         $3e401  xx xx:      xxx + ; $3e406
-        $3e403  xx xx xx:   xxx $34c0e
-        ;; the high nibble of the entrance triggers a jump table.
+        $3e403  xx xx xx:   xxx LoadPalettesForLocation
+        ;; the high 3 bytes of the entrance triggers a jump table?
 +       $3e406  xx xx:      xxx $xx
         $3e408  xx xx:      xxx #$xx
         $3e40a  xx:         xxx
@@ -31884,9 +34137,12 @@ BankSwitch16k_Bank6
         $3e417  xx xx:      xxx $xx
         $3e419  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
+JumpTable_3e3d9_7
+        ;; No idea what triggers this... cf. $2fcda writes $6d <- #$ff
         $3e41c  xx xx xx:   xxx $3e61b
         $3e41f  xx xx xx:   xxx + ; $3e439
 ;;; --------------------------------
+JumpTable_3e3d9_0
         $3e422  xx xx xx:   xxx $3e611
         $3e425  xx xx xx:   xxx $xxxx
         $3e428  xx xx:      xxx #$xx
@@ -31998,7 +34254,8 @@ BankSwitch16k_Bank6
         $3e518  xx xx xx:   xxx $xxxx
         $3e51b  xx:         xxx
 ;;; --------------------------------
-;;; Seamless transition between maps.  Correspomds to an exit of type $20.
+JumpTable_3e3d9_1
+        ;; Seamless transition between maps.  Corresponds to an exit of type $20.
         $3e51c  xx xx:      xxx #$xx
         $3e51e  xx xx:      xxx #$xx
 -       $3e520  xx xx xx:   xxx $xxxx,x
@@ -32010,6 +34267,8 @@ BankSwitch16k_Bank6
         $3e52d  xx xx xx:   xxx BankSwitch8k_8000
         $3e530  xx xx xx:   xxx $34c0e
 ;;; --------------------------------
+JumpTable_3e3d9_2
+        ;; Teleport
         $3e533  xx xx:      xxx #$xx ; 2d000 -> a000
         $3e535  xx xx xx:   xxx BankSwitch8k_A000
         $3e538  xx xx xx:   xxx $2ec00
@@ -32017,11 +34276,13 @@ BankSwitch16k_Bank6
         $3e53e  xx xx xx:   xxx $3e61b
         $3e541  xx xx xx:   xxx $3e439
 ;;; --------------------------------
+JumpTable_3e3d9_3
+        ;; Fall into pit
 -       $3e544  xx xx xx:   xxx $3c169
-        $3e547  xx xx:      xxx #$xx ; 34000 -> 8000
+        $3e547  xx xx:      xxx #$xx ; 8000 -> 34000
         $3e549  xx xx xx:   xxx BankSwitch16k
         $3e54c  xx xx:      xxx #$xx
-        $3e54e  xx xx xx:   xxx $358a8
+        $3e54e  xx xx xx:   xxx ReadObjectCoordinates
         $3e551  xx xx:      xxx #$xx
         $3e553  xx xx:      xxx $xx
         $3e555  xx xx:      xxx #$xx
@@ -32032,63 +34293,76 @@ BankSwitch16k_Bank6
         $3e561  xx xx:      xxx $xx
         $3e563  xx:         xxx
         $3e564  xx xx:      xxx + ; $3e573
-        $3e566  xx xx xx:   xxx $35897
+        $3e566  xx xx xx:   xxx WriteObjectCoordinates
         $3e569  xx:         xxx
-        $3e56a  xx xx xx:   xxx $35897
+        $3e56a  xx xx xx:   xxx WriteObjectCoordinates
         $3e56d  xx xx xx:   xxx $3ff8c
         $3e570  xx xx xx:   xxx - ; $3e544
         ;; --------------------------------
+FallIntoPit
+        ;; Loads the pits table into $20,x
 +       $3e573  xx xx xx:   xxx $3e611
         $3e576  xx xx:      xxx #$xx
         $3e578  xx xx xx:   xxx LoadMapData_A ; MapData[$6c][5][y] -> ($10),y
---      $3e57b  xx xx:      xxx #$xx
-        $3e57d  xx xx:      xxx #$xx
-        $3e57f  xx xx:      xxx $xx
--       $3e581  xx xx:      xxx ($xx),y
-        $3e583  xx xx:      xxx $xx,x
-        $3e585  xx:         xxx
-        $3e586  xx:         xxx
-        $3e587  xx xx:      xxx ++ ; $3e603
-        $3e589  xx xx:      xxx $xx
-        $3e58b  xx xx:      xxx - ; $3e581
-        $3e58d  xx xx:      xxx $xx
-        $3e58f  xx:         xxx
-        $3e590  xx:         xxx
-        $3e591  xx:         xxx
-        $3e592  xx:         xxx
-        $3e593  xx xx:      xxx $xx
-        $3e595  xx xx:      xxx -- ; $3e57b
-        $3e597  xx xx:      xxx $xx
-        $3e599  xx xx:      xxx #$xx
-        $3e59b  xx xx:      xxx $xx
-        $3e59d  xx xx:      xxx $xx
-        $3e59f  xx:         xxx
-        $3e5a0  xx:         xxx
-        $3e5a1  xx:         xxx
-        $3e5a2  xx:         xxx
-        $3e5a3  xx xx:      xxx $xx
-        $3e5a5  xx xx:      xxx $xx
+--      $3e57b  xx xx:        xxx #$xx
+        $3e57d  xx xx:        xxx #$xx
+        $3e57f  xx xx:        xxx $xx ; $12 <- 4
+	;; Copy four elements from pits table into $2[0123].
+-       $3e581  xx xx:         xxx ($xx),y
+        $3e583  xx xx:         xxx $xx,x ; $20,x <- element; x starts at zero
+        $3e585  xx:            xxx
+        $3e586  xx:            xxx
+        $3e587  xx xx:         xxx ++ ; $3e603 - failsafe to prevent lockups?
+        $3e589  xx xx:         xxx $xx
+        $3e58b  xx xx:        xxx - ; $3e581
+        ;; Check MSN of the [1] element against $90 (the player's X screen) and
+        ;; loop until we find the right one.
+        $3e58d  xx xx:        xxx $xx
+        $3e58f  xx:           xxx
+        $3e590  xx:           xxx
+        $3e591  xx:           xxx
+        $3e592  xx:           xxx
+        $3e593  xx xx:        xxx $xx
+        $3e595  xx xx:       xxx -- ; $3e57b
+        ;; Check (MSN of [2] | MSN of [3] >> 4) against $d0 (player Y screen)
+        ;; The MSN of this coordinate is never actually used.
+        $3e597  xx xx:       xxx $xx
+        $3e599  xx xx:       xxx #$xx
+        $3e59b  xx xx:       xxx $xx
+        $3e59d  xx xx:       xxx $xx
+        $3e59f  xx:          xxx
+        $3e5a0  xx:          xxx
+        $3e5a1  xx:          xxx
+        $3e5a2  xx:          xxx
+        $3e5a3  xx xx:       xxx $xx
+        $3e5a5  xx xx:       xxx $xx
         $3e5a7  xx xx:      xxx -- ; $3e57b
+        ;; Move player down one tile on the screen (???)
         $3e5a9  xx xx:      xxx $xx
         $3e5ab  xx:         xxx
         $3e5ac  xx xx:      xxx #$xx
         $3e5ae  xx xx:      xxx $xx
         $3e5b0  xx xx:      xxx $xx
+        ;; :80 bit of [2] becomes the :10 bit of $d0 - but this is always zero
         $3e5b2  xx xx:      xxx $xx
         $3e5b4  xx:         xxx
         $3e5b5  xx xx:      xxx #$xx
         $3e5b7  xx xx:      xxx $xx
+        ;; LSN of [3] -> $d0 (player's Y screen)
         $3e5b9  xx xx:      xxx $xx
         $3e5bb  xx xx:      xxx #$xx
         $3e5bd  xx xx:      xxx $xx
         $3e5bf  xx xx:      xxx $xx
         $3e5c1  xx xx:      xxx $xx
+        ;; LSN of [1] -> $90 (player's X screen)
         $3e5c3  xx xx:      xxx $xx
         $3e5c5  xx xx:      xxx #$xx
         $3e5c7  xx xx:      xxx $xx
         $3e5c9  xx xx:      xxx $xx
+        ;; [0] -> $6c
         $3e5cb  xx xx:      xxx $xx
         $3e5cd  xx:         xxx
+        ;; Cure mutation if present (presumably $3c008 destroys $20).
         $3e5ce  xx xx xx:    xxx $xxxx
         $3e5d1  xx xx:       xxx #$xx
         $3e5d3  xx xx:       xxx #$xx
@@ -32096,16 +34370,16 @@ BankSwitch16k_Bank6
         $3e5d7  xx xx xx:    xxx $xxxx
         $3e5da  xx xx:       xxx #$xx
         $3e5dc  xx xx xx:    xxx $xxxx
-        $3e5df  xx xx xx:    xxx $xxxx
+        $3e5df  xx xx xx:    xxx UpdateEquipmentAndStatus
 +       $3e5e2  xx:         xxx
         $3e5e3  xx xx:      xxx $xx
-        $3e5e5  xx xx xx:   xxx $3e628
+        $3e5e5  xx xx xx:   xxx ChangeLocation
         $3e5e8  xx xx:      xxx #$xx ; 34000 -> 8000, 36000 -> a000
         $3e5ea  xx xx xx:   xxx BankSwitch16k
-        $3e5ed  xx xx:      xxx #$xx
-        $3e5ef  xx xx xx:   xxx $358a8
-        $3e5f2  xx:         xxx
-        $3e5f3  xx xx xx:   xxx $35897
+        $3e5ed  xx xx:      xxx #$xx ; player
+        $3e5ef  xx xx xx:   xxx ReadObjectCoordinates
+        $3e5f2  xx:         xxx ; copy to "jump" coordinates
+        $3e5f3  xx xx xx:   xxx WriteObjectCoordinates
         $3e5f6  xx xx:      xxx #$xx
         $3e5f8  xx xx xx:   xxx $xxxx
         $3e5fb  xx xx:      xxx #$xx
@@ -32131,10 +34405,12 @@ BankSwitch16k_Bank6
         $3e625  xx xx:      xxx - ; $3e61f
         $3e627  xx:         xxx
 ;;; --------------------------------
-;;; This table stores background music, scrolling map dimensions and tiles,
-;;; and some CHR page information.  Stores $62fc..$62ff with the dimens.
-ReadMapDataLayoutTable
+;;; Reads the various MapData tables for the new location (in $6c).  Updates
+;;; music, palettes, patterns, and various state.  Does *not* update nametables.
+ChangeLocation
         ;; At this point, $10 stores the *first* MapData table for the $6c location
+        ;; This table stores background music, scrolling map dimensions and tiles,
+        ;; and some CHR page information.  Stores $62fc..$62ff with the dimens.
         $3e628  xx xx:      xxx #$xx
         $3e62a  xx xx xx:   xxx BankSwitch16k
         $3e62d  xx xx:      xxx #$xx
@@ -32155,60 +34431,68 @@ ReadMapDataLayoutTable
         $3e64d  xx xx:      xxx ($xx),y
         $3e64f  xx xx xx:   xxx $xxxx
         $3e652  xx:         xxx
+        ;; First zero out the map.
         $3e653  xx xx:      xxx #$xx
         $3e655  xx xx:      xxx #$xx
--       $3e657  xx xx xx:   xxx $xxxx,x
-        $3e65a  xx:         xxx
+-       $3e657  xx xx xx:    xxx $xxxx,x
+        $3e65a  xx:          xxx
         $3e65b  xx xx:      xxx - ; $3e657
         $3e65d  xx:         xxx
---      $3e65e  xx xx xx:   xxx $xxxx ; just loaded up a few instructions ago: [1]
-        $3e661  xx xx:      xxx $xx
--       $3e663  xx xx:      xxx ($xx),y
-        $3e665  xx xx xx:   xxx $xxxx,x
-        $3e668  xx:         xxx
-        $3e669  xx:         xxx
-        $3e66a  xx xx:      xxx $xx
-        $3e66c  xx xx:      xxx - ; $3e663
-        $3e66e  xx:         xxx
-        $3e66f  xx:         xxx
-        $3e670  xx xx:      xxx #$xx
-        $3e672  xx xx:      xxx #$xx
-        $3e674  xx:         xxx
-        $3e675  xx xx:      xxx $xx
+        ;; Now load the map rows aligned to 8 bytes.
+--      $3e65e  xx xx xx:    xxx $xxxx ; just loaded up a few instructions ago: [1]
+        $3e661  xx xx:       xxx $xx
+-       $3e663  xx xx:        xxx ($xx),y
+        $3e665  xx xx xx:     xxx $xxxx,x
+        $3e668  xx:           xxx
+        $3e669  xx:           xxx
+        $3e66a  xx xx:        xxx $xx
+        $3e66c  xx xx:       xxx - ; $3e663
+        $3e66e  xx:          xxx
+        $3e66f  xx:          xxx
+        $3e670  xx xx:       xxx #$xx ; x=(x+7)&~7 -> round up to next 8 bytes
+        $3e672  xx xx:       xxx #$xx
+        $3e674  xx:          xxx
+        $3e675  xx xx:       xxx $xx
         $3e677  xx xx:      xxx -- ; $3e65e
+        ;; Zero out the flags.
         $3e679  xx xx:      xxx #$xx
         $3e67b  xx xx:      xxx #$xx
--       $3e67d  xx xx xx:   xxx $xxxx,y
-        $3e680  xx:         xxx
+-       $3e67d  xx xx xx:    xxx $xxxx,y
+        $3e680  xx:          xxx
         $3e681  xx xx:      xxx - ; $3e67d
-        $3e683  xx xx xx:   xxx ReadMapDataTable4
+        ;; Copy the requested flags.
+        $3e683  xx xx xx:   xxx CopyMapDataFlags
         $3e686  xx xx:      xxx #$xx
         $3e688  xx xx xx:   xxx LoadMapData_A ; MapData[$6c][2][y] -> ($10),y
         $3e68b  xx xx:      xxx $xx
         $3e68d  xx xx:      xxx #$xx
         $3e68f  xx xx:      xxx + ; $3e69e
-        $3e691  xx xx:      xxx #$xx ; $34000 -> $8000
-        $3e693  xx xx xx:   xxx BankSwitch8k_8000
-        $3e696  xx xx:      xxx #$xx
-        $3e698  xx xx xx:   xxx $358a8
-        $3e69b  xx xx xx:   xxx ++ ; $3e6b9
+        ;; If $6d is #$ff then skip reading the entrances
+        $3e691  xx xx:       xxx #$xx ; $34000 -> $8000
+        $3e693  xx xx xx:    xxx BankSwitch8k_8000
+        $3e696  xx xx:       xxx #$xx
+        $3e698  xx xx xx:    xxx ReadObjectCoordinates
+        $3e69b  xx xx xx:    xxx ReadMapDataGraphicsTable
         ;; --------------------------------
 +       $3e69e  xx xx:      xxx $xx
         $3e6a0  xx xx:      xxx #$xx
-        $3e6a2  xx xx:      xxx #$xx
-        $3e6a4  xx xx:      xxx ++ ; $3e6b9
-        $3e6a6  xx xx:      xxx $xx
-        $3e6a8  xx xx:      xxx #$xx
-        $3e6aa  xx:         xxx
-        $3e6ab  xx:         xxx
-        $3e6ac  xx:         xxx
-        $3e6ad  xx xx:      xxx #$xx
--       $3e6af  xx xx:      xxx ($xx),y
-        $3e6b1  xx xx:      xxx $xx,x
-        $3e6b3  xx:         xxx
-        $3e6b4  xx:         xxx
-        $3e6b5  xx xx:      xxx #$xx
-        $3e6b7  xx xx:      xxx - ; $3e6af
+        $3e6a2  xx xx:      xxx #$xx ; don't read entrances for seamless transitions
+        $3e6a4  xx xx:      xxx ReadMapDataGraphicsTable ; $3e6b9
+        ;; y = 4 * (entrance number) - copy 4 bytes from ($10),y to $34,x
+        ;; which is a temporary coordinate.  This will (presumably) be copied
+        ;; to the player's position at some point.
+        $3e6a6  xx xx:       xxx $xx
+        $3e6a8  xx xx:       xxx #$xx
+        $3e6aa  xx:          xxx
+        $3e6ab  xx:          xxx
+        $3e6ac  xx:          xxx
+        $3e6ad  xx xx:       xxx #$xx
+-       $3e6af  xx xx:        xxx ($xx),y
+        $3e6b1  xx xx:        xxx $xx,x
+        $3e6b3  xx:           xxx
+        $3e6b4  xx:           xxx
+        $3e6b5  xx xx:        xxx #$xx
+        $3e6b7  xx xx:       xxx - ; $3e6af
 ReadMapDataGraphicsTable
         ;; Load $10 = &MapData[loc][1], y=0
         ;; Then we store the first 3 bytes in 7e0..7e2, 7f->7e3, 0->66, 0->68,
@@ -32216,7 +34500,7 @@ ReadMapDataGraphicsTable
         ;; $6a gets something related to $67, but &($3c), shifted <<3 and with
         ;; the carry as a possible one in the MSB $6b.  Then the last two bytes
         ;; go into $7f0 and $7f1, for either patterns or colormaps.
-++      $3e6b9  xx xx:      xxx #$xx
+        $3e6b9  xx xx:      xxx #$xx
         $3e6bb  xx xx xx:   xxx LoadMapData_A ; MapData[$6c][1][y] -> ($10),y
         ;; Copy palettes into $7e0..$7e2
         $3e6be  xx xx:      xxx ($xx),y
@@ -32228,9 +34512,9 @@ ReadMapDataGraphicsTable
         $3e6ca  xx xx:      xxx ($xx),y
         $3e6cc  xx xx xx:   xxx $xxxx
         $3e6cf  xx:         xxx
-        ;; Read the next 2 bytes into $67 and $69 -----> ?
         $3e6d0  xx xx:      xxx #$xx
         $3e6d2  xx xx xx:   xxx $xxxx
+        ;; Read the next 2 bytes into $67 and $69 -----> ?
         $3e6d5  xx xx:      xxx #$xx
         $3e6d7  xx xx:      xxx $xx
         $3e6d9  xx xx:      xxx $xx
@@ -32241,7 +34525,7 @@ ReadMapDataGraphicsTable
         $3e6e2  xx xx:      xxx $xx
         $3e6e4  xx:         xxx
         $3e6e5  xx xx:      xxx $xx
-        $3e6e7  xx xx:      xxx #$xx
+        $3e6e7  xx xx:      xxx #$xx ; unnecessary?
         $3e6e9  xx:         xxx
         $3e6ea  xx:         xxx
         $3e6eb  xx:         xxx
@@ -32257,54 +34541,59 @@ ReadMapDataGraphicsTable
         $3e6fc  xx xx xx:   xxx $xxxx
         $3e6ff  xx xx xx:   xxx $3e148
 ;;; --------------------------------
-ReadMapDataTable4
+CopyMapDataFlags
         ;; Read pairs (p, q) until a == $ff.
-        ;; This happens once upon entering a location
+        ;; This happens once upon entering a location.  The 'p' element
+        ;; is an index into a 32-byte bitset (upper five bits is the
+        ;; byte number, lower is the bit) at $64c0.  The 'q' element
+        ;; indexes a 16-byte bitset at $62f0 (the :08 bit seems unused).
+        ;; Upon entering the location, the 'p' bit is copied into the
+        ;; 'q' bit.
         $3e702  xx xx:      xxx $xx
         $3e704  xx:         xxx
         $3e705  xx xx:       xxx $xx
         $3e707  xx:          xxx
         $3e708  xx xx:        xxx #$xx
         $3e70a  xx xx xx:     xxx LoadMapData_A ; MapData[$6c][4][y] -> ($10),y
--       $3e70d  xx xx:         xxx ($xx),y
-        $3e70f  xx xx:         xxx #$xx
-        $3e711  xx xx:         xxx ++ ; $3e756
-        $3e713  xx:            xxx
-        $3e714  xx:            xxx
-        $3e715  xx:            xxx
-        $3e716  xx:            xxx ; x <- p >> 3
-        $3e717  xx xx xx:      xxx $xxxx,x
-        $3e71a  xx xx:         xxx $xx ; $12 <- 
-        $3e71c  xx xx:         xxx #$xx
-        $3e71e  xx xx:         xxx $xx
-        $3e720  xx xx:         xxx ($xx),y ; NOTE: y unchanged from above
-        $3e722  xx xx:         xxx #$xx
-        $3e724  xx:            xxx
-        $3e725  xx xx xx:      xxx PowersOfTwo,x
-        $3e728  xx xx:         xxx $xx
-        $3e72a  xx xx:         xxx + ; $3e72e
-        $3e72c  xx xx:          xxx $xx
-+       $3e72e  xx:            xxx
-        $3e72f  xx xx:         xxx ($xx),y
-        $3e731  xx xx:         xxx #$xx
-        $3e733  xx:            xxx
-        $3e734  xx xx xx:      xxx PowersOfTwo,x
-        $3e737  xx xx:         xxx $xx
-        $3e739  xx xx:         xxx ($xx),y ; NOTE: y unchanged
-        $3e73b  xx:            xxx
-        $3e73c  xx:            xxx
-        $3e73d  xx:            xxx
-        $3e73e  xx:            xxx
-        $3e73f  xx:            xxx
-        $3e740  xx xx:         xxx $xx
-        $3e742  xx xx:         xxx #$xx
-        $3e744  xx xx xx:      xxx $xxxx,x
-        $3e747  xx xx:         xxx $xx
-        $3e749  xx xx:         xxx $xx
-        $3e74b  xx xx:         xxx $xx
-        $3e74d  xx xx:         xxx $xx
-        $3e74f  xx xx xx:      xxx $xxxx,x
-        $3e752  xx:            xxx
+-       $3e70d  xx xx:        xxx ($xx),y
+        $3e70f  xx xx:        xxx #$xx
+        $3e711  xx xx:        xxx ++ ; $3e756
+        $3e713  xx:           xxx
+        $3e714  xx:           xxx
+        $3e715  xx:           xxx
+        $3e716  xx:           xxx
+        $3e717  xx xx xx:     xxx $xxxx,x
+        $3e71a  xx xx:        xxx $xx ; $12 <- bit from p
+        $3e71c  xx xx:        xxx #$xx
+        $3e71e  xx xx:        xxx $xx
+        $3e720  xx xx:        xxx ($xx),y ; NOTE: y unchanged from above
+        $3e722  xx xx:        xxx #$xx
+        $3e724  xx:           xxx
+        $3e725  xx xx xx:     xxx PowersOfTwo,x
+        $3e728  xx xx:        xxx $xx ; $12 is now the specified bit
+        $3e72a  xx xx:        xxx + ; $3e72e
+        $3e72c  xx xx:         xxx $xx ; $ 13 <- $ff if bit was set
++       $3e72e  xx:           xxx
+        $3e72f  xx xx:        xxx ($xx),y ; cccc.ddd
+        $3e731  xx xx:        xxx #$xx
+        $3e733  xx:           xxx
+        $3e734  xx xx xx:     xxx PowersOfTwo,x
+        $3e737  xx xx:        xxx $xx     ; $12 is now (1 << ddd)
+        $3e739  xx xx:        xxx ($xx),y ; NOTE: y unchanged
+        $3e73b  xx:           xxx
+        $3e73c  xx:           xxx
+        $3e73d  xx:           xxx
+        $3e73e  xx:           xxx
+        $3e73f  xx:           xxx
+        $3e740  xx xx:        xxx $xx
+        $3e742  xx xx:        xxx #$xx ; a = ~(1 << ddd)
+        $3e744  xx xx xx:     xxx $xxxx,x
+        $3e747  xx xx:        xxx $xx
+        $3e749  xx xx:        xxx $xx
+        $3e74b  xx xx:        xxx $xx
+        $3e74d  xx xx:        xxx $xx
+        $3e74f  xx xx xx:     xxx $xxxx,x
+        $3e752  xx:           xxx
         $3e753  xx xx xx:     xxx - ; $3e70d
         ;; --------------------------------
 ++      $3e756  xx:          xxx
@@ -32398,6 +34687,8 @@ ReadMapDataTable4
         $3e932  xx xx:       xxx $xx,x
         $3e934  xx:          xxx
         $3e935  xx xx:      xxx - ; $3e930
+        ;; Re-copy the X screen coordinate and check if it changed from the value
+        ;; saved in $28 by a full 8-pixel tile.  If so, write to the nametable.
         $3e937  xx xx:      xxx $xx
         $3e939  xx xx:      xxx $xx
         $3e93b  xx xx:      xxx $xx
@@ -32405,11 +34696,13 @@ ReadMapDataTable4
         $3e93f  xx xx:      xxx $xx
         $3e941  xx xx:      xxx #$xx
         $3e943  xx xx:      xxx + ; $3e948
-        $3e945  xx xx xx:    xxx PrepareNamestableStageForHorizontalScroll
+        $3e945  xx xx xx:    xxx PrepareNametableStageForHorizontalScroll
 +       $3e948  xx xx:      xxx $xx
         $3e94a  xx xx:      xxx $xx
         $3e94c  xx xx:      xxx $xx
         $3e94e  xx xx:      xxx $xx
+        ;; Re-copy the Y screen coordinate and check if it changed from the value
+        ;; saved in $2a by a full 8-pixel tile.  If so, write to the nametable.
         $3e950  xx xx:      xxx $xx
         $3e952  xx xx:      xxx $xx
         $3e954  xx xx:      xxx $xx
@@ -32417,10 +34710,10 @@ ReadMapDataTable4
         $3e958  xx xx:      xxx $xx
         $3e95a  xx xx:      xxx #$xx
         $3e95c  xx xx:      xxx + ; $3e961
-        $3e95e  xx xx xx:    xxx PrepareNamestableStageForVerticalScroll
+        $3e95e  xx xx xx:    xxx PrepareNametableStageForVerticalScroll
 +       $3e961  xx xx:      xxx $xx
         $3e963  xx xx:      xxx + ; $3e968
-        $3e965  xx xx xx:    xxx PrepareAttributeTable0Write
+        $3e965  xx xx xx:    xxx RequestAttributeTable0Write
 +       $3e968  xx xx xx:   xxx $xxxx
         $3e96b  xx xx:      xxx + ; $3e971
         $3e96d  xx xx:       xxx $xx
@@ -32458,50 +34751,53 @@ ReadMapDataTable4
         $3e9aa  xx xx:      xxx $3e9a5
         $3e9ac  xx:         xxx
 ;;; --------------------------------
+KeepPlayerInCenterOfScreenIfPossible
+        ;; Output:
+        ;;   ($30, $31) is (delta-x, delta-y) to move the screen by to get the
+        ;;              player back into the center.  It is clamped to ±3.
         $3e9ad  xx xx:      xxx #$xx
         $3e9af  xx xx:      xxx $xx
         $3e9b1  xx xx:      xxx $xx
         $3e9b3  xx xx xx:   xxx $xxxx
-        $3e9b6  xx xx xx:   xxx $xxxx
+        $3e9b6  xx xx xx:   xxx $xxxx ; there's an explosion ongoing
         $3e9b9  xx xx:      xxx + ; $3e9be
-        $3e9bb  xx xx xx:   xxx $3ea41
+        $3e9bb  xx xx xx:    xxx $3ea41
         ;; --------------------------------
 	;; looks like we're comparing the player's position to the screen,
-        ;; fencing Y between #$68 and #$78, unless $7d7 is negative (maybe
-        ;; non-scrolling rooms?)
+        ;; fencing Y between #$68 and #$78, unless $7d7 is negative (???)
 +       $3e9be  xx xx:      xxx $xx
         $3e9c0  xx:         xxx
         $3e9c1  xx xx:      xxx $xx
         $3e9c3  xx xx:      xxx + ; $3e9c7
-        $3e9c5  xx xx:      xxx #$xx
+        $3e9c5  xx xx:       xxx #$xx
 +       $3e9c7  xx xx:      xxx $xx
         $3e9c9  xx:         xxx
         $3e9ca  xx xx:      xxx #$xx
-        $3e9cc  xx xx:      xxx ++ ; $3e9d5
-        $3e9ce  xx xx:      xxx $xx
-        $3e9d0  xx:         xxx
-        $3e9d1  xx xx:      xxx #$xx
-        $3e9d3  xx xx:      xxx + ; $3e9da
-++      $3e9d5  xx xx xx:   xxx $3ea2f
-        $3e9d8  xx xx:      xxx $xx
-+       $3e9da  xx xx xx:   xxx $xxxx
+        $3e9cc  xx xx:      xxx + ; $3e9d5
+        $3e9ce  xx xx:        xxx $xx
+        $3e9d0  xx:           xxx
+        $3e9d1  xx xx:        xxx #$xx
+        $3e9d3  xx xx:        xxx ++ ; $3e9da
++       $3e9d5  xx xx xx:    xxx ClampAToPlusMinus3
+        $3e9d8  xx xx:       xxx $xx
+++      $3e9da  xx xx xx:   xxx $xxxx
         $3e9dd  xx xx:      xxx + ; $3e9e5
-        $3e9df  xx xx:      xxx $xx
-        $3e9e1  xx xx:      xxx #$xx
-        $3e9e3  xx xx:      xxx +++ ; $3e9fe
-+       $3e9e5  xx xx:      xxx $xx
-        $3e9e7  xx:         xxx
-        $3e9e8  xx xx:      xxx $xx
-        $3e9ea  xx xx:      xxx $xx
-        $3e9ec  xx:         xxx
-        $3e9ed  xx xx:      xxx #$xx
-        $3e9ef  xx xx:      xxx + ; $3e9f8
-        $3e9f1  xx xx:      xxx $xx
-        $3e9f3  xx:         xxx
-        $3e9f4  xx xx:      xxx #$xx
-        $3e9f6  xx xx:      xxx ++ ; $3e9fd
-+       $3e9f8  xx xx xx:   xxx $3ea2f
-        $3e9fb  xx xx:      xxx $xx
+        $3e9df  xx xx:        xxx $xx
+        $3e9e1  xx xx:        xxx #$xx
+        $3e9e3  xx xx:        xxx +++ ; $3e9fe
++       $3e9e5  xx xx:       xxx $xx
+        $3e9e7  xx:          xxx
+        $3e9e8  xx xx:       xxx $xx
+        $3e9ea  xx xx:       xxx $xx
+        $3e9ec  xx:          xxx
+        $3e9ed  xx xx:       xxx #$xx
+        $3e9ef  xx xx:       xxx + ; $3e9f8
+        $3e9f1  xx xx:        xxx $xx
+        $3e9f3  xx:           xxx
+        $3e9f4  xx xx:        xxx #$xx
+        $3e9f6  xx xx:        xxx ++ ; $3e9fd
++       $3e9f8  xx xx xx:    xxx ClampAToPlusMinus3
+        $3e9fb  xx xx:       xxx $xx
 ++      $3e9fd  xx:         xxx
         ;; --------------------------------
 +++     $3e9fe  xx xx xx:   xxx $xxxx
@@ -32511,39 +34807,44 @@ ReadMapDataTable4
         $3ea05  xx xx:      xxx $xx
         $3ea07  xx xx:      xxx #$xx
         $3ea09  xx xx:      xxx + ; $3ea0e
-        $3ea0b  xx:         xxx
-        $3ea0c  xx xx:      xxx #$xx
+        $3ea0b  xx:          xxx
+        $3ea0c  xx xx:       xxx #$xx
 +       $3ea0e  xx:         xxx
         $3ea0f  xx xx:      xxx $xx
         $3ea11  xx xx:      xxx $xx
         $3ea13  xx:         xxx
         $3ea14  xx xx:      xxx #$xx
         $3ea16  xx xx:      xxx + ; $3ea1f
-        $3ea18  xx xx:      xxx $xx
-        $3ea1a  xx:         xxx
-        $3ea1b  xx xx:      xxx #$xx
-        $3ea1d  xx xx:      xxx ++ ; $3ea2e
+        $3ea18  xx xx:       xxx $xx
+        $3ea1a  xx:          xxx
+        $3ea1b  xx xx:       xxx #$xx
+        $3ea1d  xx xx:       xxx ++ ; $3ea2e
 +       $3ea1f  xx xx:      xxx ++ ; $3ea2e
-        $3ea21  xx xx:      xxx #$xx
-        $3ea23  xx xx:      xxx $xx
-        $3ea25  xx:         xxx
-        $3ea26  xx xx:      xxx + ; $3ea2c
-        $3ea28  xx xx:      xxx $xx
-        $3ea2a  xx xx:      xxx $xx
-+       $3ea2c  xx xx:      xxx $xx
+        $3ea21  xx xx:       xxx #$xx
+        $3ea23  xx xx:       xxx $xx
+        $3ea25  xx:          xxx
+        $3ea26  xx xx:       xxx + ; $3ea2c
+        $3ea28  xx xx:        xxx $xx
+        $3ea2a  xx xx:        xxx $xx
++       $3ea2c  xx xx:       xxx $xx
 ++      $3ea2e  xx:         xxx
 ;;; --------------------------------
-        $3ea2f  xx xx:      xxx + ; $3ea40
-        $3ea31  xx xx:      xxx ++ ; $3ea3a
+;;; Clamp A to the signed range [$fd, $03], i.e. ±3.
+;;; This is used to prevent the screen from scolling too fast
+;;; when it needs to "catch up" with the player's location after
+;;; a period when scrolling was disabled.
+ClampAToPlusMinus3
+        $3ea2f  xx xx:      xxx ++ ; $3ea40
+        $3ea31  xx xx:      xxx + ; $3ea3a
         $3ea33  xx xx:      xxx #$xx
-        $3ea35  xx xx:      xxx + ; $3ea40
+        $3ea35  xx xx:      xxx ++ ; $3ea40
         $3ea37  xx xx:      xxx #$xx
         $3ea39  xx:         xxx
         ;; --------------------------------
-++      $3ea3a  xx xx:      xxx #$xx
-        $3ea3c  xx xx:      xxx + ; $3ea40
++       $3ea3a  xx xx:      xxx #$xx
+        $3ea3c  xx xx:      xxx ++ ; $3ea40
         $3ea3e  xx xx:      xxx #$xx
-+       $3ea40  xx:         xxx
+++      $3ea40  xx:         xxx
 ;;; --------------------------------
         $3ea41  xx xx:      xxx $xx
         $3ea43  xx:         xxx
@@ -32561,6 +34862,7 @@ ReadMapDataTable4
         $3ea5b  xx xx xx:   xxx $xxxx
         $3ea5e  xx:         xxx
         ;; --------------------------------
+        ;; if $3c,y > 0, dec $30,x; if < 0 then inc, if == 0 then nothing
         $3ea5f  xx xx xx:   xxx $xxxx,y
         $3ea62  xx xx:      xxx ++ ; $3ea71
         $3ea64  xx xx:      xxx + ; $3ea6a
@@ -32574,13 +34876,16 @@ ReadMapDataTable4
 ClampScreenPosition
         ;; Compare screen position against map geometry,
         ;; presumably to either scroll or decide not to.
+        ;; Outputs:
+        ;;   $30 - 0 if we clamped the x coordinate
+        ;;   $31 - 0 if we clamped the y coordinate
         $3ea72  xx xx:      xxx #$xx
         $3ea74  xx xx xx:   xxx $xxxx
         $3ea77  xx xx:      xxx + ; $3ea7f
         ;; If width is one, fix camera to zero horizontal, then check vertical.
         $3ea79  xx xx:       xxx $xx
         $3ea7b  xx xx:       xxx $xx
-        $3ea7d  xx xx:       xxx ++ ; $3eaa1
+        $3ea7d  xx xx:       xxx ++ ; $3eaa1 - unconditional
 +       $3ea7f  xx xx:      xxx $xx
         $3ea81  xx xx:      xxx + ; $3ea91
         ;; If the coarse x is negative, we're close up against the left edge.
@@ -32628,7 +34933,7 @@ ClampScreenPosition
         ;; --------------------------------
 +       $3eac8  xx xx xx:   xxx $xxxx
         $3eacb  xx xx:      xxx + ; $3eade
-        ;; Clamp horizontal scroll at (w+1, $28)
+        ;; Clamp vertical scroll at (h+1, $28)
         $3eacd  xx xx:       xxx $xx
         $3eacf  xx xx:       xxx #$xx
         $3ead1  xx xx:       xxx + ; $3eade
@@ -32761,15 +35066,24 @@ UpdatePpuScroll
 ;;; --------------------------------
 ;;; Loads a new row into the nametable to scroll the screen vertically.
 ;;; TODO - where does the tile data come from?
-PrepareNamestableStageForVerticalScroll
+;;; This is run on vertical scrolls, as well as for the entire screen
+;;; on location transitions.  It also runs when barriers break (called
+;;; via $3782f).
+PrepareNametableStageForVerticalScroll
+        ;; Variables:
+        ;;   $20 - current screen map ID
+        ;;   $21 - screen to the right's map ID
+        ;;   $1e - whether $20 has had a blocker destroyed
+        ;;   $1f - whether $21 has had a blocker destroyed 
         $3eb91  xx xx:      xxx #$xx
-        $3eb93  xx xx xx:   xxx $3c72b ; wait until $6203,y are all nonzero
+        $3eb93  xx xx xx:   xxx FlushNametableDataUntilAllOffsetsNonzero
+        ;; What direction are we scrolling? pl = down, mi = up
         $3eb96  xx xx:      xxx $xx
         $3eb98  xx xx:      xxx + ; $3eb9c
-        $3eb9a  xx xx:       xxx $xx
-+       $3eb9c  xx xx xx:   xxx $3ef1f
+        $3eb9a  xx xx:       xxx $xx ; y hi - increment if scrolling down (top -> bottom)
++       $3eb9c  xx xx xx:   xxx LoadScreenMapId
         $3eb9f  xx xx:      xxx $xx
-        $3eba1  xx xx xx:   xxx $3ec6c
+        $3eba1  xx xx xx:   xxx CheckMapFlag_Y
         $3eba4  xx xx:      xxx $xx
         ;; Increment low 3 bits of y, with no carry into upper 5 bits.
         $3eba6  xx:         xxx
@@ -32780,69 +35094,74 @@ PrepareNamestableStageForVerticalScroll
         $3ebad  xx xx:      xxx #$xx
         $3ebaf  xx xx:      xxx $xx
         $3ebb1  xx:         xxx
-        ;; 
+        ;; Load the screen one to the right (wrapping around a torus)
         $3ebb2  xx xx xx:   xxx $xxxx,y
         $3ebb5  xx xx:      xxx $xx
-        $3ebb7  xx xx xx:   xxx CheckBit_62f0_Y
+        $3ebb7  xx xx xx:   xxx CheckMapFlag_Y
         $3ebba  xx xx:      xxx $xx
         $3ebbc  xx xx:      xxx $xx    ; current map index.
         $3ebbe  xx xx xx:   xxx PrepareScreenMapRead
-        $3ebc1  xx xx:      xxx $xx    ; $36 seems to have row,col within $20.
-        $3ebc3  xx xx:      xxx #$xx   ; drop the column, keep the row.
-        $3ebc5  xx xx:      xxx $xx    ; ($10),y is now ($36)th row of screen ($20)
+        $3ebc1  xx xx:      xxx $xx    ; yl of top-left of screen
+        $3ebc3  xx xx:      xxx #$xx   ; ignore fine y
+        $3ebc5  xx xx:      xxx $xx    ; ($10),y is now top row of screen ($20)
         $3ebc7  xx xx:      xxx $xx
         $3ebc9  xx:         xxx
         $3ebca  xx:         xxx
         $3ebcb  xx:         xxx
         $3ebcc  xx:         xxx
-        $3ebcd  xx:         xxx ; y <- $34 >> 4
+        $3ebcd  xx:         xxx ; y <- xl >> 4
         $3ebce  xx xx:      xxx $xx
         $3ebd0  xx xx:      xxx #$xx
         $3ebd2  xx:         xxx
         $3ebd3  xx:         xxx
         $3ebd4  xx:         xxx
-        $3ebd5  xx:         xxx ; x <- ($34 >> 3) & #$1e
+        $3ebd5  xx:         xxx ; x <- y << 1
         $3ebd6  xx xx:      xxx $xx
         $3ebd8  xx xx:      xxx #$xx
         $3ebda  xx:         xxx
         $3ebdb  xx:         xxx
-        $3ebdc  xx:         xxx
+        $3ebdc  xx:         xxx ; a <- 0 (left) or 1 (right) half of tile
         $3ebdd  xx:         xxx
         $3ebde  xx xx:      xxx #$xx
-        $3ebe0  xx xx:      xxx $xx ; $13 <- #$10 | (($34 >> 3) & #$1)
-        $3ebe2  xx xx xx:   xxx $3ed89
+        $3ebe0  xx xx:      xxx $xx ; $13 <- #$10 or #$11 (see above)
+        $3ebe2  xx xx xx:   xxx LoadMetatileFlagAlternativesMap
         $3ebe5  xx xx xx:   xxx $xxxx ; need to switch to 2nd map layout page?
         $3ebe8  xx xx:      xxx + ; $3ebef
-        $3ebea  xx xx:       xxx #$xx ; $8000 -> $14000 instead of $c000
+        $3ebea  xx xx:       xxx #$xx ; $8000 -> $14000 instead of what it was before
         $3ebec  xx xx xx:    xxx BankSwitch8k_8000
-        ;; Note: $10 points to some row of a map in $0000..$ffff
-        ;; e.g. $9c20 - with y=6 we read $9c26, which is a map tile (#$c2)
-        ;; This still needs to be converted into a pattern tile and attribute.
-        ;;   $1e==0 (written in $3eba4) suppresses more work and a bank switch
-	;; NOTE: this appears to read the entire screen upon loading a new map.
-- +     $3ebef  xx xx:      xxx ($xx),y
-        $3ebf1  xx xx xx:   xxx $3ed99
-        $3ebf4  xx xx xx:   xxx $xxxx,x
+        ;; At this point,
+        ;;   ($10),y points to the 16-byte row of metatile IDs to load (PRG $0000..$ffff)
+        ;;   ($23),y maps metatile ID to alternatives in $13e00..$13fff
+        ;;   $13 indicates how many tiles are needed (if the corner is on the
+        ;;       right hand half of a metatile, we need an extra one, though
+        ;;       how does this not clobber the first tile we wrote?).
+        ;;   y is somewhere between 0 and $10, corresponding to the corner.
+        ;;   x is twice y.
+        ;; Now we loop and write a metatile ID into alternating bytes of $6000.
+        ;; A later routine will go back and translate these to actual patterns.
+- +     $3ebef  xx xx:       xxx ($xx),y
+        $3ebf1  xx xx xx:    xxx CheckMetatileAgainstFlag
+        $3ebf4  xx xx xx:    xxx $xxxx,x
         ;; Increment a single tile in the map, but two spots in the staging area
         ;; This leaves space for two CHR tiles for each map tile.  $3eece is the
         ;; next routine that reads the $6000,x data we write here.
-        $3ebf7  xx:         xxx
-        $3ebf8  xx:         xxx
-        $3ebf9  xx:         xxx
-        $3ebfa  xx xx:      xxx $xx
-        $3ebfc  xx xx:      xxx + ; $3ec11
-        $3ebfe  xx xx:       xxx #$xx
-        $3ec00  xx xx:       xxx - ; $3ebef
-        $3ec02  xx xx:        xxx $xx
-        $3ec04  xx xx xx:     xxx $3ef36
-        $3ec07  xx xx:        xxx $xx
-        $3ec09  xx xx:        xxx $xx
-        $3ec0b  xx xx:        xxx #$xx
-        $3ec0d  xx xx:        xxx #$xx
-        $3ec0f  xx xx:        xxx - ; $3ebef
-+       $3ec11  xx xx xx:   xxx $3ede5
-        $3ec14  xx xx:      xxx #$xx
-        $3ec16  xx xx xx:   xxx $3c40e
+        $3ebf7  xx:          xxx
+        $3ebf8  xx:          xxx
+        $3ebf9  xx:          xxx
+        $3ebfa  xx xx:       xxx $xx
+        $3ebfc  xx xx:       xxx + ; $3ec11
+        $3ebfe  xx xx:        xxx #$xx ; hit the end of the row: switch pages
+        $3ec00  xx xx:        xxx - ; $3ebef
+        $3ec02  xx xx:         xxx $xx
+        $3ec04  xx xx xx:      xxx PrepareScreenMapRead
+        $3ec07  xx xx:         xxx $xx
+        $3ec09  xx xx:         xxx $xx
+        $3ec0b  xx xx:         xxx #$xx ; fill in everything we skipped at the start
+        $3ec0d  xx xx:         xxx #$xx
+        $3ec0f  xx xx:         xxx - ; $3ebef - unconditional?
++       $3ec11  xx xx xx:   xxx WriteMetatileAttributesForVerticalScroll
+        $3ec14  xx xx:      xxx #$xx ; 8000 -> 10000
+        $3ec16  xx xx xx:   xxx BankSwitch16k
         $3ec19  xx xx:      xxx $xx
         $3ec1b  xx xx:      xxx #$xx
         $3ec1d  xx:         xxx
@@ -32851,7 +35170,7 @@ PrepareNamestableStageForVerticalScroll
         $3ec21  xx xx:      xxx #$xx
         $3ec23  xx xx:      xxx $xx
         $3ec25  xx xx:      xxx #$xx
-        $3ec27  xx xx xx:   xxx $3edba
+        $3ec27  xx xx xx:   xxx MapMetatilesToPatterns
         $3ec2a  xx xx xx:   xxx $3ed64
         $3ec2d  xx xx xx:   xxx $3c43e
         $3ec30  xx xx:      xxx $xx
@@ -32885,8 +35204,9 @@ PrepareNamestableStageForVerticalScroll
         $3ec67  xx xx:      xxx $xx
         $3ec69  xx xx xx:   xxx $3c436
 ;;; --------------------------------
-;;; Returns the Y-th bit of $62f0 bitset in A.
-CheckBit_62f0_Y
+;;; Returns the Y-th bit of $62f0 bitset in A (and Z).
+;;; This was set based on the flags table...
+CheckMapFlags_Y
         $3ec6c  xx:         xxx
         $3ec6d  xx:         xxx
         $3ec6e  xx:         xxx
@@ -32902,7 +35222,7 @@ CheckBit_62f0_Y
 ;;; --------------------------------
         $3ec7f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-PrepareNamestableStageForHorizontalScroll
+PrepareNametableStageForHorizontalScroll
         ;; writes data to nametable staging area
         $3ec87  xx xx:      xxx #$xx
         $3ec89  xx xx xx:   xxx FlushNametableDataUntilAllOffsetsNonzero
@@ -32911,11 +35231,11 @@ PrepareNamestableStageForHorizontalScroll
         $3ec90  xx xx:      xxx #$xx
         $3ec92  xx xx:      xxx $xx
         $3ec94  xx xx:      xxx $xx
-        $3ec96  xx xx:      xxx $3ec9a
-        $3ec98  xx xx:      xxx $xx
-        $3ec9a  xx xx xx:   xxx $3ef1f
+        $3ec96  xx xx:      xxx + ; $3ec9a
+        $3ec98  xx xx:       xxx $xx ; x hi
++       $3ec9a  xx xx xx:   xxx LoadScreenMapId
         $3ec9d  xx xx:      xxx $xx
-        $3ec9f  xx xx xx:   xxx CheckBit_62f0_Y
+        $3ec9f  xx xx xx:   xxx CheckMapFlag_Y
         $3eca2  xx xx:      xxx $xx
         $3eca4  xx:         xxx
         $3eca5  xx:         xxx
@@ -32928,7 +35248,7 @@ PrepareNamestableStageForHorizontalScroll
         $3ecb2  xx:         xxx
         $3ecb3  xx xx xx:   xxx $xxxx,y
         $3ecb6  xx xx:      xxx $xx
-        $3ecb8  xx xx xx:   xxx CheckBit_62f0_Y
+        $3ecb8  xx xx xx:   xxx CheckMapFlag_Y
         $3ecbb  xx xx:      xxx $xx
         $3ecbd  xx xx:      xxx $xx
         $3ecbf  xx xx xx:   xxx PrepareScreenMapRead
@@ -32963,9 +35283,9 @@ PrepareNamestableStageForHorizontalScroll
         $3ecec  xx xx:      xxx $xx
         $3ecee  xx xx:      xxx #$xx
         $3ecf0  xx xx:      xxx $xx
-        $3ecf2  xx xx xx:   xxx $3ed89
+        $3ecf2  xx xx xx:   xxx LoadMetatileFlagAlternativesMap
         $3ecf5  xx xx:      xxx ($xx),y
-        $3ecf7  xx xx xx:   xxx $3ed99
+        $3ecf7  xx xx xx:   xxx CheckMetatileAgainstFlag
         $3ecfa  xx xx xx:   xxx $xxxx,x
         $3ecfd  xx:         xxx
         $3ecfe  xx:         xxx
@@ -32986,7 +35306,7 @@ PrepareNamestableStageForHorizontalScroll
         $3ed18  xx:         xxx
         $3ed19  xx xx:      xxx #$xx
         $3ed1b  xx xx:      xxx $3ecf5
-        $3ed1d  xx xx xx:   xxx $3ee31
+        $3ed1d  xx xx xx:   xxx WriteMetatileAttributesForHorizontalScroll
         $3ed20  xx xx:      xxx #$xx ; 8000 -> 10000
         $3ed22  xx xx xx:   xxx BankSwitch16k
         $3ed25  xx xx:      xxx $xx
@@ -32998,7 +35318,7 @@ PrepareNamestableStageForHorizontalScroll
         $3ed2e  xx xx:      xxx #$xx
         $3ed30  xx xx:      xxx $xx
         $3ed32  xx xx:      xxx #$xx
-        $3ed34  xx xx xx:   xxx $3edba
+        $3ed34  xx xx xx:   xxx MapMetatilesToPatterns
         $3ed37  xx xx xx:   xxx $3ed64
         $3ed3a  xx xx xx:   xxx DisableNMI
         $3ed3d  xx xx:      xxx $xx
@@ -33046,10 +35366,15 @@ PrepareNamestableStageForHorizontalScroll
         $3ed86  xx xx:      xxx $xx
         $3ed88  xx:         xxx
 ;;; --------------------------------
-        ;; Rearranges $67 into $23 and $24 - what is $67 in the first place?!?
-        ;; seems to be related to screen scrolling - when screen is scrolling,
-        ;; it's changing, i.e. in the slight delay, and then it's fixed.
-        ;; Also initialized when reading MapData[$6c][1][3,4]
+LoadMetatileFlagAlternativesMap
+        ;; Input:
+        ;;   $67: high byte of address into tile-to-pattern map tables.
+        ;;        At rest, this is a multiple of four, but we flip the low two
+        ;;        bits as different rows/columns are loaded.
+        ;; Output:
+        ;;   ($23): 16-bit address of the alternates map for flagged tiles.
+        ;;          Each of the 12 different pattern groups ($67) has a $20-byte
+        ;;          section of $13e00..$13fff.
         $3ed89  xx xx:      xxx $xx
         $3ed8b  xx xx:      xxx #$xx
         $3ed8d  xx:         xxx
@@ -33061,9 +35386,14 @@ PrepareNamestableStageForHorizontalScroll
         $3ed96  xx xx:      xxx $xx ; $24 = $#be | ($67 & #$20 ? 1 : 0)
         $3ed98  xx:         xxx
 ;;; --------------------------------
+;;; Most tiles are returned as-is, but tiles < #$20 get some extra work
+;;; if the flag ($1e) is set.  In that case, we look up an alternative
+;;; tile ID from the alternatives map.
+CheckMetatileAgainstFlag
         $3ed99  xx xx:      xxx #$xx
         $3ed9b  xx xx:      xxx + ; $3ed9e
-        $3ed9d  xx:          xxx  ; <20 skips this for some reason
+        ;; Most tiles (>= #$20) will just return right away.
+        $3ed9d  xx:          xxx
         ;; --------------------------------
 +       $3ed9e  xx xx:      xxx $xx ; temp store y
         $3eda0  xx xx:      xxx $xx
@@ -33081,6 +35411,17 @@ PrepareNamestableStageForHorizontalScroll
 +       $3edb7  xx xx:      xxx $xx
         $3edb9  xx:         xxx
 ;;; --------------------------------
+;;; Input:
+;;;   x: Index into $6000 to operate on.  $6000,x should be a metatile
+;;;      ID and $6001,x is not yet initialized.
+;;;   ($66): Address of the metatile-to-pattern table, $10000..$117ff
+;;;   $12: Corner offset (00 for top-left, 01 for bottom-left, 10 for top-right,
+;;;        and 11 for bottom-right.
+;;;   $13: Increment, indicating direction (1 for rows, $10 for columns)
+;;;   $6000,x: Metatiles
+;;; Output:
+;;;   $6000,x: actual PPU tiles for the relevant row.
+;;; 
 ;;; This routine seems to translate the tile number from the map data
 ;;; into a pattern number that can be written to the nametable.  It
 ;;; writes both tiles in the pair, and clearly needs some indication
@@ -33097,49 +35438,71 @@ PrepareNamestableStageForHorizontalScroll
 ;;;  not quite - it seems to depend on something else - could be 10000..103ff.
 ;;;  Not yet clear what triggers this distinction.  $66 = 8[4567]00 -> 10400..107ff.
 ;;;  So based on what $67 is, there are many possibilities.
+MapMetatilesToPatterns
         $3edba  xx xx:      xxx $xx
         $3edbc  xx xx:      xxx #$xx ; clear low 3 bits
         $3edbe  xx xx:      xxx $xx  ; last written $3ec1f from $36
         $3edc0  xx xx:      xxx $xx
         $3edc2  xx xx:      xxx #$xx
         $3edc4  xx xx:      xxx $xx
-        $3edc6  xx xx:      xxx $xx
-        $3edc8  xx xx:      xxx $xx
-        $3edca  xx xx xx:   xxx $xxxx,x
-        $3edcd  xx xx:      xxx ($xx),y
-        $3edcf  xx xx xx:   xxx $xxxx,x
-        $3edd2  xx xx:      xxx $xx
-        $3edd4  xx:         xxx
-        $3edd5  xx xx:      xxx $xx
-        $3edd7  xx xx:      xxx $xx
-        $3edd9  xx xx:      xxx ($xx),y
-        $3eddb  xx xx xx:   xxx $xxxx,x
-        $3edde  xx:         xxx
-        $3eddf  xx:         xxx
-        $3ede0  xx xx:      xxx $xx
-        $3ede2  xx xx:      xxx $3edc6
+-       $3edc6  xx xx:       xxx $xx
+        $3edc8  xx xx:       xxx $xx
+        $3edca  xx xx xx:    xxx $xxxx,x
+        $3edcd  xx xx:       xxx ($xx),y
+        $3edcf  xx xx xx:    xxx $xxxx,x
+        $3edd2  xx xx:       xxx $xx
+        $3edd4  xx:          xxx
+        $3edd5  xx xx:       xxx $xx
+        $3edd7  xx xx:       xxx $xx
+        $3edd9  xx xx:       xxx ($xx),y
+        $3eddb  xx xx xx:    xxx $xxxx,x
+        $3edde  xx:          xxx
+        $3eddf  xx:          xxx
+        $3ede0  xx xx:       xxx $xx
+        $3ede2  xx xx:      xxx - ; $3edc6 - loop 16 times
         $3ede4  xx:         xxx
 ;;; --------------------------------
+;;; This is similar to WriteMetatileAttributesForHorizontalScroll, though that
+;;; one reads from $34 instead of $36 and does not indirect through
+;;; $3ef07. It also loads $13 from $3ef1c instead of $3ef1d (the bits
+;;; will still always be different).
+;;; Inputs:
+;;;   $31, $36: from ClampScreenPosition or KeepPlayerInCenterOfScreenIfPossible
+;;;   $2f: whether a previous write ocurred, in which case this one is forced.
+;;; Outputs:
+;;;   ($10): Address of appropriate metatile-to-pattern table.
+;;;   $12: Mask of first attribute to populate in a pair.
+;;;   $13: Mask of second attribute to populate in a pair.
+;;;   $14: Remaining bits not in either $12 or $13, so that we can preserve it.
+WriteMetatileAttributesForVerticalScroll
+        ;; Note: $31 is generally close to zero for an actual scroll, though
+        ;; for screen redraws it can be large.  $2f is only set to nonzero
+        ;; in the WriteMetatileAttributesFor*Scroll routines, so it is typically
+        ;; zero unless this method is repeated, either to redraw the entire
+        ;; screen, or else due to diagonal movement when a horizontal and
+        ;; vertical line must both be drawn.  This is only used to indicate
+        ;; whether any work is needed, so it's not terribly harmful to have
+        ;; false positives.
         $3ede5  xx xx:      xxx $xx
         $3ede7  xx:         xxx
         $3ede8  xx:         xxx
         $3ede9  xx:         xxx
         $3edea  xx:         xxx
-        $3edeb  xx xx:      xxx $xx
+        $3edeb  xx xx:      xxx $xx ; screen yl
         $3eded  xx xx:      xxx #$xx
         $3edef  xx xx:      xxx $xx
         $3edf1  xx xx:      xxx $xx
-        $3edf3  xx xx:      xxx $3edf6
-        $3edf5  xx:         xxx
-;;; --------------------------------
-        ;; This is similar to $3ee42, though that one reads from $34 instead of
-        ;; $36 and does not indirect through $3ef07. It also loads $13 from
-        ;; $3ef1c instead of $3ef1d (the bits will still always be different).        
-        $3edf6  xx xx:      xxx #$xx ; $a000 -> $12000
+        $3edf3  xx xx:      xxx + ; $3edf6
+        $3edf5  xx:          xxx
+        ;; --------------------------------
++       $3edf6  xx xx:      xxx #$xx ; $a000 -> $12000
         $3edf8  xx xx xx:   xxx BankSwitch8k_A000
         $3edfb  xx xx:      xxx $xx
         $3edfd  xx xx:      xxx #$xx
         $3edff  xx:         xxx
+        ;; Store the location of the metatile-to-attribute map table in ($10).
+        ;; The lookup table is just ($b000 | y << 6) [b->13] but the 16-bit math
+        ;; is awkward enough that presumably it's worth it (vs tya; asl*6; ...)
         $3ee00  xx:         xxx
         $3ee01  xx xx xx:   xxx $3eeef,y
         $3ee04  xx xx:      xxx $xx
@@ -33165,8 +35528,13 @@ PrepareNamestableStageForHorizontalScroll
         $3ee28  xx xx:      xxx #$xx
         $3ee2a  xx xx:      xxx #$xx
         $3ee2c  xx xx:      xxx $xx
-        $3ee2e  xx xx xx:   xxx MapTilesToPatterns
+        $3ee2e  xx xx xx:   xxx MapTilesToAttributesForVerticalScroll
 ;;; --------------------------------
+WriteMetatileAttributsForHorizontalScroll
+        ;; Initialize ($10) and ($10),y based on $67 and $34
+        ;; Note the similarity to vertical, which reads $36 (ylo) instead of
+        ;; $34 (xlo) and then does a lookup into $3ef07 before doing some
+        ;; follow-up, and uses 3ef1d instead of 3ef1c.
         $3ee31  xx xx:      xxx $xx
         $3ee33  xx:         xxx
         $3ee34  xx:         xxx
@@ -33176,14 +35544,10 @@ PrepareNamestableStageForHorizontalScroll
         $3ee39  xx xx:      xxx #$xx
         $3ee3b  xx xx:      xxx $xx
         $3ee3d  xx xx:      xxx $xx
-        $3ee3f  xx xx:      xxx $3ee42
-        $3ee41  xx:         xxx
-;;; --------------------------------
-        ;; Initialize ($10) and ($10),y based on $67 and $34
-        ;; Note the similarity to $3edf6, which reads $36 instead of $34 and
-        ;; then does a lookup into $3ef07 before doing some follow-up, and
-        ;; uses 3ef1d instead of 3ef1c.
-        $3ee42  xx xx:      xxx #$xx ; $a000 -> $12000
+        $3ee3f  xx xx:      xxx + ; $3ee42
+        $3ee41  xx:          xxx
+        ;; --------------------------------
++       $3ee42  xx xx:      xxx #$xx ; $a000 -> $12000
         $3ee44  xx xx xx:   xxx BankSwitch8k_A000
         $3ee47  xx xx:      xxx $xx
         $3ee49  xx xx:      xxx #$xx
@@ -33216,55 +35580,43 @@ PrepareNamestableStageForHorizontalScroll
         $3ee77  xx xx:      xxx #$xx
         $3ee79  xx xx:      xxx #$xx
         $3ee7b  xx xx:      xxx $xx
-        $3ee7d  xx xx xx:   xxx $3eea4
+        $3ee7d  xx xx xx:   xxx MapTilesToAttributesForHorizontalScroll
 ;;; --------------------------------
-        ;; picks A=0, 55, aa or ff based on the tile in $6000,x.
-        ;; then ANDs with $12 (e.g. $30, but where did it come from?
-        ;;   - written at $3ef4a and $3ee1b - the latter from $3ef1b table)
-        ;; before storing in $15
-        ;; The current tile (6000,x) maps to a number 00,55,aa,ff based on
-        ;; the value in $67.  Then the high 3 bits of $36 select an 8-byte
-        ;; chunk of $6100,y and the :10 bit determines the value of $12
-        ;; (03 if 0 or 30 if 1) so that $15 gets e.g. (55 & 03) == 01.
-        ;;   - this ends up being one of 7 possible values:
-        ;;      00, 00, 01, 10, 02, 20, 03, 30
-        ;; We do it again with the next tile (skipping the gap we left earlier)
-        ;; but this time compare against $13. which is either 0c or c0, leaving
-        ;; the options as 00, 00, 40, 04, 80, 08, c0, 0c.  ORing these together
-        ;; gives some combination of these bits, where at most 4 bits are set,
-        ;; in pairs.  Finally, $14 is the complement of $12|$13, so if these
-        ;; tiles were the same then 0f or f0, or else if different, 3c or c3.
-        ;; These bits are ANDed with $6100,y, which was written ..... ?
-        ;;
-        ;; This whole thing loops, incrementing y once for every four increments
-        ;; to x, for a total of 4 iterations and 8 tiles. why not 16?!?
-MapTilesToPatterns
--       $3ee80  xx xx xx:   xxx $3eecc
-        $3ee83  xx xx:      xxx $xx
-        $3ee85  xx xx:      xxx $xx
-        $3ee87  xx:         xxx
-        $3ee88  xx:         xxx
-        $3ee89  xx xx xx:   xxx $3eecc
-        $3ee8c  xx xx:      xxx $xx
-        $3ee8e  xx xx:      xxx $xx
-        $3ee90  xx xx:      xxx $xx
-        $3ee92  xx xx:      xxx $xx
-        $3ee94  xx xx xx:   xxx $xxxx,y
-        $3ee97  xx xx:      xxx $xx
-        $3ee99  xx xx xx:   xxx $xxxx,y
-        $3ee9c  xx:         xxx
-        $3ee9d  xx:         xxx
-        $3ee9e  xx:         xxx
-        $3ee9f  xx xx:      xxx $xx
+;;; Input:
+;;;   ($10),y: attribute table for location
+;;;   $12 and $13: attribute masks for the even and odd elements of $6000.
+;;;                These are computed by WriteMetatileAttributesFor*Scroll.
+;;;   $14: remaining bits not present in $12 | $13.
+;;; Output:
+;;;   $6100 populated with attributes.
+MapTilesToAttributesForVerticalScroll
+-       $3ee80  xx xx xx:    xxx LoadMetatileAttribute
+        $3ee83  xx xx:       xxx $xx
+        $3ee85  xx xx:       xxx $xx
+        $3ee87  xx:          xxx
+        $3ee88  xx:          xxx
+        $3ee89  xx xx xx:    xxx LoadMetatileAttribute
+        $3ee8c  xx xx:       xxx $xx
+        $3ee8e  xx xx:       xxx $xx
+        $3ee90  xx xx:       xxx $xx
+        $3ee92  xx xx:       xxx $xx
+        $3ee94  xx xx xx:    xxx $xxxx,y
+        $3ee97  xx xx:       xxx $xx
+        $3ee99  xx xx xx:    xxx $xxxx,y
+        $3ee9c  xx:          xxx
+        $3ee9d  xx:          xxx
+        $3ee9e  xx:          xxx
+        $3ee9f  xx xx:       xxx $xx
         $3eea1  xx xx:      xxx - ; $3ee80
         $3eea3  xx:         xxx
 ;;; --------------------------------
--       $3eea4  xx xx xx:   xxx $3eecc
+MapTilesToAttributesForHorizontalScroll
+-       $3eea4  xx xx xx:   xxx LoadMetatileAttribute
         $3eea7  xx xx:      xxx $xx
         $3eea9  xx xx:      xxx $xx
         $3eeab  xx:         xxx
         $3eeac  xx:         xxx
-        $3eead  xx xx xx:   xxx $3eecc
+        $3eead  xx xx xx:   xxx LoadMetatileAttribute
         $3eeb0  xx xx:      xxx $xx
         $3eeb2  xx xx:      xxx $xx
         $3eeb4  xx xx:      xxx $xx
@@ -33288,6 +35640,13 @@ MapTilesToPatterns
 ;;; bits, selected based on $67 in $3ee42.  By way of example, tile $23 would
 ;;; get the 6,7 bits from ($10),8, which is looked up into $3ef17,y to translate
 ;;; to either 0, 55, aa, or ff.
+;;; This is looking like attribute table.
+LoadMetatileAttribute
+        ;; Input:
+        ;;   x: The index into $6000 to read the metatile ID
+        ;;   ($10): The attribute table for this location
+        ;; Output:
+        ;;   a: The (2-bit) attribute for the metatile, copied 4 times
         $3eecc  xx xx:      xxx $xx ; save y, which we just read a bit ago
         $3eece  xx xx xx:   xxx $xxxx,x
         $3eed1  xx xx:      xxx $xx
@@ -33298,11 +35657,11 @@ MapTilesToPatterns
         $3eed8  xx xx:      xxx #$xx
         $3eeda  xx xx:      xxx $xx
         $3eedc  xx xx:      xxx ($xx),y
--       $3eede  xx xx:      xxx $xx
-        $3eee0  xx xx:      xxx + ; $3eee6
-        $3eee2  xx:          xxx
-        $3eee3  xx:          xxx
-        $3eee4  xx xx:       xxx - ; $3eede
+-       $3eede  xx xx:       xxx $xx
+        $3eee0  xx xx:       xxx + ; $3eee6
+        $3eee2  xx:            xxx
+        $3eee3  xx:            xxx
+        $3eee4  xx xx:        xxx - ; $3eede
 +       $3eee6  xx xx:      xxx #$xx
         $3eee8  xx:         xxx
         $3eee9  xx xx xx:   xxx $3ef17,y
@@ -33314,8 +35673,8 @@ DataTable_3eeef
         ;; which is stored in $10 for use by the routines here.  Note that this is just
         ;; the high parts of an address - the next lowest part is stored in y in the next
         ;; table, so that ($10),y points to one of 12*8 blocks of 8 bytes.
-        $3eeef              .word ($xxxx)
-        $3eef1              .word ($xxxx)
+        $3eeef              .word ($xxxx) ; $67 = #$80
+        $3eef1              .word ($xxxx) ; $67 = #$84
         $3eef3              .word ($xxxx)
         $3eef5              .word ($xxxx)
         $3eef7              .word ($xxxx)
@@ -33334,7 +35693,8 @@ DataTable_3ef07
 DataTable_3ef17
         ;; This is for attribute selection.  These bytes apply the 0, 1, 2, or 3
         ;; attribute (respectively) to the four quads of tiles in the block.
-        ;; By masking with 3, 30, c, or c0 we can select one or the other.
+        ;; By masking with 3, 30, c, or c0 we can select one or the other.  Or
+        ;; in other words, this is 0, 1, 2, and 3 copied 4 times each.
         $3ef17              .byte $xx,$xx,$xx,$xx
 DataTable_3ef1b
         ;; These are masks for selecting attributes for a single quad of tiles
@@ -33349,24 +35709,34 @@ DataTable_3ef1b
         $3ef1b              .byte $xx,$xx
 DataTable_3ef1d
         $3ef1d              .byte $xx,$xx
-        $3ef1f  xx xx:      xxx $xx ; $36 written $3584d (e.g. $8b); $37 written $3e921 (e.g. 0)
+;;; --------------------------------
+LoadScreenMapId
+        ;; Loads the screen map ID for the screen in ($35, $37), returning the
+        ;; ID in the A register.  Y is the offset of the tile from $6300.
+        $3ef1f  xx xx:      xxx $xx ; yh
         $3ef21  xx:         xxx
         $3ef22  xx:         xxx
         $3ef23  xx:         xxx
         $3ef24  xx xx:      xxx #$xx
         $3ef26  xx xx:      xxx $xx
-        $3ef28  xx xx:      xxx $xx
+        $3ef28  xx xx:      xxx $xx ; xh
         $3ef2a  xx xx:      xxx #$xx
         $3ef2c  xx xx:      xxx $xx
         $3ef2e  xx:         xxx
         $3ef2f  xx xx xx:   xxx $xxxx,y
         $3ef32  xx:         xxx
 ;;; --------------------------------
-        $3ef33  xx xx xx:    xxx $3ef1f
+        $3ef33  xx xx xx:    xxx LoadScreenMapId
 PrepareScreenMapRead
         ;; This is preparing to read from the ScreenMap data - we bank in a 16k page
         ;; and then store the high bits to access it in $11, so that ($10) can
         ;; be used to read tiles.
+        ;; Input:
+        ;;   A: the screen ID.
+        ;; Output:
+        ;;   Bank a000..bfff: correct bank to read map data from.
+        ;;   $11: high byte of offset of top-left of map ($10 should be 0).
+        ;;   A: offset into the map for the current tile ($34, $36)
         $3ef36  xx:         xxx
         $3ef37  xx xx:       xxx #$xx
         $3ef39  xx xx:       xxx #$xx
@@ -33463,77 +35833,78 @@ PrepareScreenMapRead
 ;;; --------------------------------
         $3effc  xx xx xx:   xxx $xxxx
         $3efff  xx xx:      xxx #$xx
-        $3f001  xx xx:      xxx $3f01d
-        $3f003  xx xx:      xxx $xx
-        $3f005  xx xx:      xxx #$xx
-        $3f007  xx xx:      xxx $3f01d
-        $3f009  xx xx:      xxx $xx
-        $3f00b  xx xx:      xxx #$xx
-        $3f00d  xx xx:      xxx $3f01d
-        $3f00f  xx xx:      xxx #$xx
-        $3f011  xx xx xx:   xxx $xxxx
-        $3f014  xx xx:      xxx #$xx
-        $3f016  xx xx xx:   xxx $xxxx
-        $3f019  xx xx:      xxx #$xx
-        $3f01b  xx xx:      xxx $xx
-        $3f01d  xx xx xx:   xxx $xxxx
+        $3f001  xx xx:      xxx + ; $3f01d
+        $3f003  xx xx:       xxx $xx
+        $3f005  xx xx:       xxx #$xx
+        $3f007  xx xx:       xxx + ; $3f01d
+        $3f009  xx xx:        xxx $xx
+        $3f00b  xx xx:        xxx #$xx
+        $3f00d  xx xx:        xxx + ; $3f01d
+        $3f00f  xx xx:         xxx #$xx ; 8000 -> 34000
+        $3f011  xx xx xx:      xxx BankSwitch8k_8000
+        $3f014  xx xx:         xxx #$xx
+        $3f016  xx xx xx:      xxx $35ae8
+        $3f019  xx xx:         xxx #$xx
+        $3f01b  xx xx:         xxx $xx
++       $3f01d  xx xx xx:   xxx $xxxx
         $3f020  xx xx:      xxx #$xx
-        $3f022  xx xx:      xxx $3f03e
-        $3f024  xx xx:      xxx $xx
-        $3f026  xx xx:      xxx $3f03e
-        $3f028  xx xx:      xxx $xx
-        $3f02a  xx xx:      xxx #$xx
-        $3f02c  xx xx:      xxx $3f03e
-        $3f02e  xx xx xx:   xxx $xxxx
-        $3f031  xx xx xx:   xxx $xxxx
-        $3f034  xx xx:      xxx $3f03e
-        $3f036  xx xx xx:   xxx $xxxx
-        $3f039  xx xx:      xxx #$xx
-        $3f03b  xx xx xx:   xxx $xxxx
-        $3f03e  xx xx xx:   xxx $xxxx
+        $3f022  xx xx:      xxx + ; $3f03e
+        $3f024  xx xx:       xxx $xx
+        $3f026  xx xx:       xxx + ; $3f03e
+        $3f028  xx xx:        xxx $xx
+        $3f02a  xx xx:        xxx #$xx
+        $3f02c  xx xx:        xxx + ; $3f03e
+        $3f02e  xx xx xx:      xxx $xxxx
+        $3f031  xx xx xx:      xxx $xxxx
+        $3f034  xx xx:         xxx + ; $3f03e
+        $3f036  xx xx xx:       xxx $xxxx
+        $3f039  xx xx:          xxx #$xx
+        $3f03b  xx xx xx:       xxx $34e46
++       $3f03e  xx xx xx:   xxx $xxxx
         $3f041  xx xx:      xxx #$xx
-        $3f043  xx xx:      xxx $3f05f
-        $3f045  xx xx:      xxx $xx
-        $3f047  xx xx:      xxx $3f05f
-        $3f049  xx xx xx:   xxx $xxxx
-        $3f04c  xx xx xx:   xxx $xxxx
-        $3f04f  xx xx:      xxx $3f05f
-        $3f051  xx xx:      xxx $xx
-        $3f053  xx xx:      xxx #$xx
-        $3f055  xx xx:      xxx $3f05f
-        $3f057  xx xx xx:   xxx $xxxx
-        $3f05a  xx xx:      xxx #$xx
-        $3f05c  xx xx xx:   xxx $xxxx
-        $3f05f  xx xx:      xxx $xx
+        $3f043  xx xx:      xxx + ; $3f05f
+        $3f045  xx xx:       xxx $xx
+        $3f047  xx xx:       xxx + ; $3f05f
+        $3f049  xx xx xx:     xxx $xxxx
+        $3f04c  xx xx xx:     xxx $xxxx
+        $3f04f  xx xx:        xxx + ; $3f05f
+        $3f051  xx xx:         xxx $xx
+        $3f053  xx xx:         xxx #$xx
+        $3f055  xx xx:         xxx + ; $3f05f
+        $3f057  xx xx xx:       xxx $xxxx
+        $3f05a  xx xx:          xxx #$xx
+        $3f05c  xx xx xx:       xxx $34cc0
++       $3f05f  xx xx:      xxx $xx
         $3f061  xx xx:      xxx #$xx
-        $3f063  xx xx:      xxx $3f068
-        $3f065  xx xx xx:   xxx $xxxx
-        $3f068  xx xx xx:   xxx $xxxx
-        $3f06b  xx xx:      xxx $3f089
+        $3f063  xx xx:      xxx + ; $3f068
+        $3f065  xx xx xx:    xxx $xxxx
++       $3f068  xx xx xx:   xxx $xxxx
+        $3f06b  xx xx:      xxx + ; $3f089
         $3f06d  xx xx xx:   xxx $xxxx
         $3f070  xx:         xxx
-        $3f071  xx xx:      xxx $3f089
+        $3f071  xx xx:      xxx + ; $3f089
         $3f073  xx xx xx:   xxx $xxxx
-        $3f076  xx xx:      xxx $3f089
-        $3f078  xx xx:      xxx #$xx
-        $3f07a  xx xx:      xxx $xx
-        $3f07c  xx xx:      xxx $xx
-        $3f07e  xx xx:      xxx #$xx
-        $3f080  xx xx:      xxx #$xx
-        $3f082  xx xx:      xxx $xx
-        $3f084  xx xx:      xxx #$xx
-        $3f086  xx xx xx:   xxx $xxxx
-        $3f089  xx xx xx:   xxx $xxxx
-        $3f08c  xx xx:      xxx $3f09b
-        $3f08e  xx xx xx:   xxx $xxxx
-        $3f091  xx xx xx:   xxx $xxxx
-        $3f094  xx xx:      xxx #$xx
-        $3f096  xx xx xx:   xxx $xxxx
-        $3f099  xx xx:      xxx $3f0a3
-        $3f09b  xx xx xx:   xxx $xxxx
+        $3f076  xx xx:      xxx + ; $3f089
+        ;; Fall down a pit: set $6f:60 bit.
+        $3f078  xx xx:       xxx #$xx
+        $3f07a  xx xx:       xxx $xx
+        $3f07c  xx xx:       xxx $xx
+        $3f07e  xx xx:       xxx #$xx
+        $3f080  xx xx:       xxx #$xx
+        $3f082  xx xx:       xxx $xx
+        $3f084  xx xx:       xxx #$xx
+        $3f086  xx xx xx:    xxx $xxxx
++       $3f089  xx xx xx:   xxx $xxxx
+        $3f08c  xx xx:      xxx + ; $3f09b
+        $3f08e  xx xx xx:    xxx $xxxx
+        $3f091  xx xx xx:    xxx $xxxx
+        $3f094  xx xx:       xxx #$xx
+        $3f096  xx xx xx:    xxx $xxxx
+        $3f099  xx xx:       xxx ++ ; $3f0a3
++       $3f09b  xx xx xx:   xxx $xxxx
         $3f09e  xx xx:      xxx #$xx
         $3f0a0  xx xx xx:   xxx $xxxx
-        $3f0a3  xx:         xxx
+++      $3f0a3  xx:         xxx
 ;;; --------------------------------
         $3f0a4  xx xx:      xxx #$xx
         $3f0a6  xx xx xx:   xxx $xxxx
@@ -34829,7 +37200,7 @@ LoadOneMonsterData         ; ... and restore banks afterwards
         $3ff9f  xx:         xxx
         $3ffa0  xx xx:       xxx $xx
         $3ffa2  xx:          xxx
-        $3ffa3  xx xx xx:     xxx $3eb91
+        $3ffa3  xx xx xx:     xxx PrepareNametableStageForVerticalScroll
         $3ffa6  xx xx xx:     xxx RestoreBanks
 ;;; --------------------------------
         ;; Call $34e46 and restore banks afterwards

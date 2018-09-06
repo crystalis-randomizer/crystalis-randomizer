@@ -2,6 +2,11 @@
 
 # Usage: ./update.sh /path/to/rom
 
+if [ ! -e "$1" ]; then
+  echo Usage: ./update.sh /path/to/rom.nes
+  exit 2
+fi
+
 if ! ./strip Crystalis.s >| Crystalis.st; then
   echo Strip faied.
   exit 1

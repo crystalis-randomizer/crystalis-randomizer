@@ -98,3 +98,97 @@
 ; Looks for ": e7 =JoelInn" and replaces "LocationE7" with "JoelInn", maintaining comment position, etc
 (fset 'km-apply-location-names
    (lambda (&optional arg) "Keyboard macro." (interactive "p") (kmacro-exec-ring-item (quote ([134217788 134217747 58 32 46 46 32 61 13 127 left 67108896 left left 24 114 115 49 right right right 67108896 5 24 114 115 50 134217788 134217786 40 114 101 45 115 101 97 114 99 104 45 102 111 114 119 97 114 100 32 34 34 41 left left 58 32 24 114 105 49 36 13 32 24 114 105 50 134217788 134217786 40 114 101 45 115 101 97 114 99 104 45 102 111 116 119 97 114 100 127 127 127 127 127 114 119 97 114 100 32 34 76 111 99 97 116 105 111 110 32 127 24 114 105 49 left left 134217845 34 41 13 18 95 right 67108896 19 59 left 24 119 24 114 105 50 134217848 115 100 104 32 112 117 115 104 9 13 53 53 13 134217786 40 114 101 45 115 101 97 114 99 104 45 102 111 116 119 97 114 100 127 127 127 127 127 114 119 97 114 100 32 34 76 111 99 97 116 105 111 110 32 127 24 114 105 49 left left 134217845 34 41 13 18 95 right 67108896 5 24 119 24 114 105 50 134217786 40 114 101 45 115 101 97 114 99 104 45 102 111 116 119 97 114 100 127 127 127 127 127 114 119 97 114 100 32 34 76 111 99 97 116 105 111 110 32 127 24 114 105 49 left left 134217845 34 41 13 18 95 right 67108896 19 59 left 24 119 24 114 105 50 134217848 115 100 104 32 112 117 115 104 9 13 53 53 13] 0 "%d")) arg)))
+
+;; does this work?
+;; (fset 'km-find-next-code
+;;    (lambda () (kmacro-exec-ring-item (kbd "C-x o M-C-s \ b[^0]0 \ b RET 3*<left> C-SPC C-x r SPC 1 C-x o (format SPC \"%x\" S-SPC (/ SPC C-x r i 1 SPC 3)) LFD <up> <right> C-SPC <C-right> M-w <right> M-> C-x o C-c a C-y RET C-SPC C-x o M-C-s \ b[ DEL 0[^0] \ b RET 3*<left> C-x r SPC 2 C-x r j 1 C-SPC C-x r j 2 M-: (add-text-properties(region-be ginning)(region-end)'(face SPC font-lock-warning-face)) RET C-x o (format SPC \"%x\" S-SPC (/ SPC C-x r i 2 SPC 3)) LFD <up> <right> C-SPC <C-right> M-w C-x o C-SPC C-c a C-y RET C-x q <C-return> C-a C-x C-x <C-return> C-a C-x C-a C-c C-c C-s $ RET C-SPC <C-right> M-w C-u C-SPC C-a C-o DEL DataTable_ C-y C-x C-x C-c i -"))))
+
+(fset 'km-find-next-code
+   (lambda (&optional arg) (interactive "p") (kmacro-exec-ring-item `(,(kbd "C-x o M-C-s \\ b[1-9a-f][0-9a-f] \\ b RET 3*<left> C-SPC C-x r SPC 1 C-x o (format SPC \"%x\" S-SPC (/ SPC C-x r i 1 SPC 3)) LFD <up> <right> C-SPC <C-right> M-w <right> M-> C-x o C-c a C-y RET C-SPC C-x o M-C-s \\ b 0[01-9a-f] \\ b RET 3*<left> C-x r SPC 2 C-x r j 1 C-SPC C-x r j 2 C-c 1 h C-x o (format SPC \"%x\" S-SPC (/ SPC C-x r i 2 SPC 3)) LFD <up> <right> C-SPC <C-right> M-w C-x o C-SPC C-c a C-y RET") 0 "%d") arg)))
+(define-key asm-mode-map (kbd "C-.") 'km-find-next-code)
+
+(fset 'km-disassemble-next-code
+   (lambda (&optional arg) (interactive "p") (kmacro-exec-ring-item `(,(kbd "C-c x <C-return> C-a C-x C-x <C-return> C-a C-x C-a C-c C-c C-c i d C-x C-x C-c i -") 0 "%d") arg)))
+(define-key asm-mode-map (kbd "C-/ C-.") 'km-disassemble-next-code)
+
+
+(defun sdh-ensure-point-after-mark ()
+  (interactive)
+  (if (< (point) (mark)) (exchange-point-and-mark)))
+(global-set-key (kbd "C-c x") 'sdh-ensure-point-after-mark)
+
+(defun sdh-highlight-region ()
+  (interactive)
+  (add-text-properties
+   (region-beginning) (region-end) '(face font-lock-warning-face)))
+(global-set-key (kbd "C-c 1 h") 'sdh-highlight-region)
+
+(defun sdh-insert-datatable-label ()
+  (interactive)
+  (save-excursion
+    (let (b e a)
+      (beginning-of-line)
+      (re-search-forward "\\$")
+      (setq b (point))
+      (re-search-forward " ")
+      (setq e (point))
+      (setq a (buffer-substring-no-properties b e))
+      (beginning-of-line)
+      (insert "DataTable_" a "\n"))))
+(define-key asm-mode-map (kbd "C-c i d") 'sdh-insert-datatable-label)
+
+; assoc
+; save-excursion doesn't help for switch-to-buffer...?
+;  - could require window to be open???
+;  - with-current-buffer
+
+;; NOTE: leaving out (asl dec inc lsr rol ror sta stx sty) because
+;; we only care about paged ROM, so mutating is irrelevant.
+(defconst sdh-banked-read-re
+  (rx
+   (or
+    "adc"
+    "and"
+    "cmp"
+    "cpx"
+    "cpy"
+    "eor"
+    "jmp"
+    "jsr"
+    "lda"
+    "ldx"
+    "ldy"
+    "ora"
+    "sbc")
+   (one-or-more space)
+   (repeat 0 2 "(")
+   "$"
+   (any "8-9a-f") (= 3 (any "0-9a-f")))
+   word-end)))
+
+(defconst sdh-banked-pages
+  (mapcar (lambda (x)
+            (cons (format "%08x" (lsh 1 x)) (lsh x 13)))
+          (number-sequence 0 #x1f)))
+
+(defun sdh-find-banked-read ()
+  (interactive)
+  (let (addr num cov pages)
+    (re-search-forward sdh-banked-read-re)
+    (backward-char)
+    (setq num (asm/parse-number))
+    (cond
+     ((< num #xc000)
+      (setq cov (if (< num #xa000) "cov.lo" "cov.hi"))
+      (setq addr (asm/get-position))
+      (setq page
+            (with-current-buffer cov
+              (goto-char (+ (* addr 9) 1))
+              (assoc (buffer-substring-no-properties (point) (+ 8 (point)))
+                     sdh-banked-pages)))
+      (if page
+          (progn
+            (backward-char 3)
+            (delete-char 4)
+            (insert (format "%05x" (logior (cdr page) (logand #x1fff num)))))
+        (error "Non-unique page"))))))

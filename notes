@@ -409,11 +409,19 @@ USELESS ITEMS
 
  - consider hiding items in other locations, such as the lake in the corner of joel?
 
+ - medical herb could be un-nerfed, particularly if refresh is not forthcoming?
+
 
 PATCHES:
   $20535 => $4 - prevent reordering swords
      - would be nice to sort armor tho
      - use an index table rather than just INY ?
+     - actually, just shuffle the order of the tables at 2059e and 205a6
+       $20535 => $02
+       $205a7 => $0c ; may not even be needed?
+       $205a9 => $04
+     - TODO - make this patch, then have student give sword of fire instead of cash to test?
+     - TODO - still need to deal with bracelet before ball... try to block?
   $83f4 => 1-3 to get different sword  === doesn't seem to work
      - may need to trace entering the house more closely
   $3dd64 => A9 FF 60
@@ -421,6 +429,7 @@ PATCHES:
      - need to tweak damage/weakness/level thresholds
      - probably just half damage if below level and/or wrong sword
        - otherwise too easy to get stuck if all enemies in an area are immune!
+
 
 
 MONSTERS:

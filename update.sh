@@ -17,7 +17,7 @@ if ! ./strip -r $1 Crystalis.st >| Crystalis.s1; then
   exit 1
 fi
 
-if git diff Crystalis.s Crystalis.s1; then
+if diff -u Crystalis.s Crystalis.s1; then
   rm -f Crystalis.s1
 else
   echo Differences found.

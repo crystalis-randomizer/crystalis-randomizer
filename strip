@@ -45,6 +45,7 @@ sub strip {
       # an instruction - figure out if we need to do anything with the argument.
       my ($address, $bytes, $mnemonic, $argument) = ($1, $2, $3, $4);
       $bytes =~ s/[0-9a-f]/x/ig;
+      $argument =~ s/\$[0-9a-f]{5}(?![0-9a-f])/\$xx/i if $mnemonic =~ /^b(?!it|rk)/;
       $mnemonic = 'xxx';
       $argument =~ s/\$[0-9a-f]{4}(?![0-9a-f])/\$xxxx/i;
       $argument =~ s/\$[0-9a-f]{2}(?![0-9a-f])/\$xx/i;
@@ -157,8 +158,10 @@ sub infuse {
 # without any help, so don't do anything fancy with it.
 my $addrModeRegex = qr/
   \# \$ [0-9a-f]{2} |                       # Immediate
-  \$ [0-9-a-f]{2} [0-9a-f]{2}? (?:,[xy])? | # ZeroPsge[XY]?, Absolute[XY]?
+  \$ [0-9-a-f]{2} [0-9a-f]{2}? (?:,[xy])? | # ZeroPage[XY]?, Absolute[XY]?
   \( \$ [0-9a-f]{2} (?: (?:,x)? \) | \),y ) # Preindexed, Postindex, Indirect
+  # NOTE: Relative is tricky, because a five-digit hex for non-relative jump
+  # *is* significant.
 /x;
 
 # TODO - heuristics for a bunch of things

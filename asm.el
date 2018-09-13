@@ -923,6 +923,12 @@ of a non-divisible line, then the entire line will be deleted."
       (setq arg (lsh arg -1)))
     bits))
 
+(defun asm-insert-break (arg) 
+  (interactive "p")
+  (save-excursion
+    (beginning-of-line)
+    (insert (if (> arg 1) "        " ";") ";; --------------------------------\n")))
+
 ;;;;;
 ; Disassembly table for 6502
 
@@ -1130,3 +1136,4 @@ of a non-divisible line, then the entire line will be deleted."
 (define-key asm-mode-map (kbd "C-c .") 'asm-goto-position-at-point)
 (define-key asm-mode-map (kbd "C-c -") 'asm-relativize-jump)
 (define-key asm-mode-map (kbd "C-c l") 'asm-convert-address-to-label)
+(define-key asm-mode-map (kbd "C-c i -") 'asm-insert-break)

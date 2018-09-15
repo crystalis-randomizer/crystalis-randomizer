@@ -184,6 +184,22 @@ class MapsView extends View {
       `  Palettes: [pal<0:1:$ff>:$${pal.join(',$')},]`,
       `  Tileset:  [ts<$80:4:$fc>:$${ts.join(',$')},]`,
       `  Patterns: [pat<0:1:$ff>:$${pat.join(',$')},]`);
+    lines.push(`\nExits:`);
+    for (let i = 0; i < exits.length && exits[i] < 0xff; i += 4) {
+      const x = exits[i];
+      const y = exits[i + 1];
+      const s = exits[i + 2];
+      const e = exits[i + 3];
+      lines.push(`  [@${x * 16}x${(y>>4)*240+(y&15)*16}+16x16]($${
+          x.toString(16).padStart(2, 0)}, $${y.toString(16).padStart(2, 0)
+          }) => [#loc=${s.toString(16)}:$${s.toString(16).padStart(2, 0)}]:$${
+          e.toString(16).padStart(2, 0)}`);
+    }
+    // TODO - entrances and exits
+    // Entrances:
+    //   [entrances.0<0:$fff>:$062,$023,]
+    // Exits:
+    //   [exits.0:$65,$32,] => [#loc=01:$01]:$01
     lines.push('\nFlags:');
     for (let i = 0; i < flags.length && flags[i] < 0xff; i += 2) {
       const flag = flags[i];
@@ -193,11 +209,6 @@ class MapsView extends View {
       const x = tile & 0xf;
       lines.push(`  $${addr} => (${x}, ${y}) [flags.${y}.${x}<checkbox>:0]`);
     }
-    // TODO - entrances and exits
-    // Entrances:
-    //   [entrances.0<0:$fff>:$062,$023,]
-    // Exits:
-    //   [exits.0:$65,$32,] => [#loc=01:$01]:$01
     this.setControls(lines.join('\n'));
     this.update();
   }

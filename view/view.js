@@ -11,13 +11,10 @@ export class View {
 
   constructor() {
     this.element = document.createElement('div');
-    this.element.style.display = 'flex';
+    this.element.classList.add('main');
     const canvasDiv = document.createElement('div');
     this.element.appendChild(canvasDiv);
-    Object.assign(canvasDiv.style, {
-      flexGrow: '1',
-      overflow: 'auto',
-    });
+    canvasDiv.classList.add('canvas');
     this.canvas = document.createElement('canvas');
     canvasDiv.appendChild(this.canvas);
 
@@ -26,11 +23,7 @@ export class View {
 
     this.controls = document.createElement('div');
     this.element.appendChild(this.controls);
-    Object.assign(this.controls.style, {
-      resize: 'horizontal',
-      whiteSpace: 'pre',
-      fontFamily: 'monospace',
-    });
+    this.controls.classList.add('controls');
     this.options = {};
 
     this.scale = 0;
@@ -39,6 +32,29 @@ export class View {
     document.body.addEventListener('keyup', e => keyup(this, e));
     this.element.addEventListener('click', e => click(this, e));
     // handler for hovering over the canvas?  clicking on it?
+
+    document.body.addEventListener('mouseover', e => {
+      let t = e.target;
+      while (t && !t.dataset['overlay']) t = t.parentElement;
+      if (!t) return;
+      if (t.dataset['overlay']) {
+        for (const el of document.querySelectorAll(
+            `[data-overlay="${t.dataset['overlay']}"]`)) {
+          el.classList.add('show');
+        }
+      }
+    });
+    document.body.addEventListener('mouseout', e => {
+      let t = e.target;
+      while (t && !t.dataset['overlay']) t = t.parentElement;
+      if (!t) return;
+      if (t.dataset['overlay']) {
+        for (const el of document.querySelectorAll(
+            `[data-overlay="${t.dataset['overlay']}"]`)) {
+          el.classList.remove('show');
+        }
+      }
+    });
   }
 
   setControls(text) {
@@ -56,9 +72,12 @@ export class View {
     //   Entrances:
     //     [entrances.0<0:$fff>:$062,$023,]
     //   Exits:
-    //     [exits.0:$65,$32,] => [#loc=01:$01]:$01
+    //     [@256x240+16x16][exits.0:$65,$32,] => [#loc=01:$01]:$01
     //     ...
     const controls = document.createElement('div');
+    let overlayIndex = 0;
+    // Clear out the overlays
+    while (this.canvas.nextSibling) this.canvas.nextSibling.remove();
     this.options = {};
     const lines = text.split('\n');
     for (let line of lines) {
@@ -107,6 +126,23 @@ export class View {
           anchor.href = match[1];
           anchor.textContent = match[2];
           div.appendChild(anchor);
+        } else if ((match = /^@([0-9]+)x([0-9]+)\+([0-9]+)x([0-9]+)$/.exec(field))) {
+          const [_, left, top, width, height] = match;
+          // make an overlay element
+          const overlay = document.createElement('div');
+          const inner = document.createElement('div');
+          overlay.appendChild(inner);
+          overlay.classList.add('overlay');
+          Object.assign(overlay.style, {
+            left:   `${left}px`,
+            top:    `${top}px`,
+            width:  `${width}px`,
+            height: `${height}px`,
+          });
+          this.canvas.parentElement.appendChild(overlay);
+          div.dataset['overlay'] = overlayIndex;
+          overlay.dataset['overlay'] = overlayIndex;
+          overlayIndex++;
         } else {
           throw new Error(`Bad field spec: ${field}`);
         }
@@ -129,11 +165,10 @@ export class View {
     if (this.scale) {
       const s = 2 / (this.scale + 2);
       const t = (1 - s) * 50;
-      this.canvas.style.transform = `translate(-${t}%,-${t}%) scale(${s})`;
+      this.canvas.parentElement.style.transform = `translate(-${t}%,-${t}%) scale(${s})`;
     } else {
-      this.canvas.style.transform = '';
+      this.canvas.parentElement.style.transform = '';
     }
-
 
     if (buffer.root) throw new Error('Cannot show subarray');
     if (!buffer.w || !buffer.h) return; // blank out the canvas?

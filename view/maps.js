@@ -120,6 +120,11 @@ class Rom {
     if (mapdata < 0x10000) return new Array(length).fill(0);
     return this.prg.subarray(this.prgWord(mapdata + (table << 1)) + 0xc000);
   }
+
+  npcData(loc) {
+    const addr = this.prg[0x19201 + (loc << 1)] | this.prg[0x19202 + (loc << 1)] << 8;
+    return this.prg.subarray(addr + 0x10000);
+  }
 }
 
 const colors = [
@@ -140,13 +145,19 @@ class MapsView extends View {
 
     this.rom = rom;
     this.location = -1;
-    const match = /\bloc=([0-9a-f]*)\b/.exec(window.location.hash);
-    this.setLocation(match ? Number.parseInt(match[1]) : 0);
+    this.readHash();
+    window.addEventListener('hashchange', () => this.readHash());
     this.handle('j', () => this.setLocation((this.location + 1) & 0xff));
     this.handle('k', () => this.setLocation((this.location + 0xff ) & 0xff));
   }
 
+  readHash() {
+    const match = /\bloc=([0-9a-f]*)\b/.exec(window.location.hash);
+    this.setLocation(match ? Number.parseInt(match[1], 16) : 0);
+  }
+
   setLocation(loc, wd = undefined, ht = undefined) {
+    window.history.pushState({}, '', '#loc=' + loc.toString(16));
     this.location = loc;
     const hex = (x) => x.toString(16).padStart(2, 0);
     const lines = [
@@ -161,6 +172,8 @@ class MapsView extends View {
     const pal = [0, 1, 2].map(x => hex(graphics[x]));
     const ts = [3, 4].map(x => hex(graphics[x]));
     const pat = [5, 6].map(x => hex(graphics[x]));
+    const npcData = this.rom.npcData(loc)
+    const invalid = !!npcData[0];
     if (!wd) wd = mapWd + 1;
     if (!ht) ht = mapHt + 1;
     if (wd > 8 || ht > 16) {
@@ -185,7 +198,7 @@ class MapsView extends View {
       `  Tileset:  [ts<$80:4:$fc>:$${ts.join(',$')},]`,
       `  Patterns: [pat<0:1:$ff>:$${pat.join(',$')},]`);
     lines.push(`\nExits:`);
-    for (let i = 0; i < exits.length && exits[i] < 0xff; i += 4) {
+    for (let i = 0; !invalid && i < exits.length && exits[i] < 0xff; i += 4) {
       const x = exits[i];
       const y = exits[i + 1];
       const s = exits[i + 2];
@@ -201,7 +214,7 @@ class MapsView extends View {
     // Exits:
     //   [exits.0:$65,$32,] => [#loc=01:$01]:$01
     lines.push('\nFlags:');
-    for (let i = 0; i < flags.length && flags[i] < 0xff; i += 2) {
+    for (let i = 0; !invalid && i < flags.length && flags[i] < 0xff; i += 2) {
       const flag = flags[i];
       const addr = hex(0x64c0 | (flag >> 3)) + ':' + hex(1 << (flag & 7));
       const tile = flags[i + 1];
@@ -209,6 +222,18 @@ class MapsView extends View {
       const x = tile & 0xf;
       lines.push(`  $${addr} => (${x}, ${y}) [flags.${y}.${x}<checkbox>:0]`);
     }
+
+    // Look at NpcData, too!
+    lines.push(`\nNPCs:`);
+    let id = 0xd;
+    for (let i = 5; !invalid && i < npcData.length - 4 && npcData[i] < 0xff; i += 4) {
+      const [y, x, e, f] = npcData.subarray(i, i + 4);
+      lines.push(`[@${((x & 0x7f) << 4) + (e & 0x40 ? 8 : 0)}x${fromTileY(y) - 4}+16x32]` +
+                 `  ${(id++).toString(16).padStart(2, 0)}: $${
+                    y.toString(16).padStart(2, 0)}, $${x.toString(16).padStart(2, 0)}, $${
+                    e.toString(16).padStart(2, 0)}, $${f.toString(16).padStart(2, 0)}`);
+    }
+
     this.setControls(lines.join('\n'));
     this.update();
   }
@@ -295,7 +320,6 @@ const run = async () => {
       }
     }
     img.show(canvas);
-    window.location.hash = '#' + locationSelect.value.toString(16);
   };
 
   for (const el of [flagSelect].concat(styleSelect)) {
@@ -451,5 +475,7 @@ class ImageBuffer2 {
   }
 
 }
+
+const fromTileY = (y) => (y >> 4) * 240 + (y & 0xf) * 16;
 
 run();

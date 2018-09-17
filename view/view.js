@@ -115,7 +115,7 @@ export class View {
               elem.value = fieldValue;
               elem.type = 'text';
               elem.dataset.fmt = fieldValue.length > 1 ? fieldValue[0] : '';
-              elem.style.width = `${elem.value.length + 2}em`;
+              elem.style.width = `${Math.max(2, elem.value.length)}em`;
               if (range) elem.dataset.range = range;
             }
             div.appendChild(elem);
@@ -332,6 +332,8 @@ const replaceChildren = (target, source) => {
         continue;
       }
       targetChild.value = sourceChild.value;
+    } else if (targetChild.tagName == 'A') {
+      targetChild.href = sourceChild.href;
     }
     for (const key in targetChild.dataset) {
       if (!(key in sourceChild.dataset)) delete targetChild.dataset[key];

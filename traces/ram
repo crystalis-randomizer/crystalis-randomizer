@@ -450,6 +450,7 @@ song number that's playing.
 
 $300,x
 ------
+Metasprite ID.
 
 
 $320,x
@@ -458,10 +459,15 @@ $320,x
 
 $340,x
 ------
+knockback/recoil (if it's negative)
+ - each frame it increases a bit while the object is knocked back
+not sure what positive values mean
 
 
 $360,x
 ------
+direction facing: 0 = up, 2 = right, 4 = down, 6 = left (odds diagonal)
+ - used for metasprite selection when 380,x is odd (??)
 
 
 $380,x
@@ -470,11 +476,16 @@ updated in $35acb after reading ($68),y for y = metatile that 'x' is standing on
  - only if $14:40 - $14 initialized from A upon calling $35a30 (it's called with various
    constant values - 0, #$40, $#c0)
  - $380,x <- ($380,x & %1010 1111 | (($68),y & $460,x & %0101 0000))
- So $460,x seems to enable copying the :40 and/r the :10 bits from $(68),y
+ So $460,x seems to enable copying the :40 and/or the :10 bits from $(68),y
 
 
 $3a0,x
 ------
+something about hitboxes and intersections? written 369f9 after checking a bunch
+of screen positions?
+ - the upper nibble seems to be written in various spots
+ - the lower nibble seems to be mostly constant, though it's written in a
+   few spots, mainly boss initializations - possibly converting to coin, etc...?
 
 
 $3c0,x
@@ -491,6 +502,8 @@ $400,x
 
 $420,x
 ------
+const
+:40 bit seems to affect hitboxes
 
 
 $440,x
@@ -512,6 +525,8 @@ seems to be some sort of step counter
 
 $4a0,x
 ------
+if this is zero, then do not show a sprite...?
+but it clearly does more than that...
 
 
 $4c0,x
@@ -520,6 +535,9 @@ $4c0,x
 
 $4e0,x
 ------
+Step counter - counts down with some sort of increment (1 or 2?)
+The upper 5 bits of this are ANDed with the 2nd byte of the
+metasprite data table to pick the specific version to use
 
 
 $500,x
@@ -540,6 +558,8 @@ $560,x
 
 $580,x
 ------
+some sort of alternative/additional metatile ID.  It's only ever read in two places:
+$368c5 and $3824e.  These run if $6e0,x is zero, or if 
 
 
 $5a0,x
@@ -549,10 +569,14 @@ must wait to move - counts down to zero when able to move again?
 
 $5c0,x
 ------
+sprite's x-coordinate (relative to corner of screen)
+ - this is never initialized in ObjectData
 
 
 $5e0,x
 ------
+sprite's x-coordinate (relative to corner of screen)
+ - this is never initialized in ObjectData
 
 
 $600,x
@@ -565,6 +589,8 @@ $620,x
 
 $640,x
 ------
+ - $643: ID (0..$1f) of the non-monster NPC in front of the player.
+   set by $34f73 and/or $354b0
 
 
 $660,x
@@ -734,3 +760,5 @@ walls (written at $3c7a0)
 
 
 Need to break on 1c140 and 1c11c for location-triggered dialog to get refresh spell
+
+need to talk to asina before dolphin shows up - remove block??? maybe pointless

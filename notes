@@ -429,7 +429,10 @@ PATCHES:
      - need to tweak damage/weakness/level thresholds
      - probably just half damage if below level and/or wrong sword
        - otherwise too easy to get stuck if all enemies in an area are immune!
-
+  $1c4ea => higher
+     - increases potency of medical herbs
+     - important if refresh is not readily available
+  $1c2de => see source for comment about how to avoid ball clobbering bracelet?
 
 
 MONSTERS:
@@ -490,3 +493,21 @@ Dialog
 Uses raster effects to swap out the CHR bank at scanline $0d for the text box.
  - IRQ seems to trigger this,
 
+
+Enemy Difficulty
+================
+Would be best if it could scale with time.
+ - easy -> everything scales up the same
+   downside - can grind anywhere, no need to find new grind spots
+ - harder -> enemies scale up as you meet (kill?) them
+   difficulty - need to keep track of an extra ~32 bytes across saves
+   roughly 64 enemies, would probably have 16 levels of difficulty,
+   so can pack in two per byte.
+   probably still want to nerf the armors a bit so that they're less
+   important?
+   in this case, repurpose one of the monsterdata bits to be a 6-bit ID
+   to indirect over to get the correct atk/def values.
+If scale with level then what's the point of leveling at all?
+ - so we want it to scale independently
+   - # of monsters killed? too similar
+     # of treasure chests (key items?) found?  probably the best bet

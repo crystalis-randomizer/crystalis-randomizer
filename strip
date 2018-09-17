@@ -53,7 +53,7 @@ sub strip {
       print "$address$bytes$mnemonic$argument$comment\n";
     } elsif (/^(.*?\.(?:byte|word)\s+)(.*)$/) {
       my ($prefix, $bytes) = ($1, $2);
-      $bytes =~ s/\$[0-9a-f]+/'$' . 'x' x (length($&) - 1)/ige;
+      $bytes =~ s/\$[0-9a-f]+/'$' . 'x' x (length($&) - 1)/ige unless $bytes =~ /\$[0-9a-f]{5}/;
       print "$prefix$bytes$comment\n";
     } else {
       print "$_$comment\n";

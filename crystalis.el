@@ -105,11 +105,11 @@
 
 (fset 'km-find-next-code
    (lambda (&optional arg) (interactive "p") (kmacro-exec-ring-item `(,(kbd "C-x o M-C-s \\ b[1-9a-f][0-9a-f] \\ b RET 3*<left> C-SPC C-x r SPC 1 C-x o (format SPC \"%x\" S-SPC (/ SPC C-x r i 1 SPC 3)) LFD <up> <right> C-SPC <C-right> M-w <right> M-> C-x o C-c a C-y RET C-SPC C-x o M-C-s \\ b 0[01-9a-f] \\ b RET 3*<left> C-x r SPC 2 C-x r j 1 C-SPC C-x r j 2 C-c 1 h C-x o (format SPC \"%x\" S-SPC (/ SPC C-x r i 2 SPC 3)) LFD <up> <right> C-SPC <C-right> M-w C-x o C-SPC C-c a C-y RET") 0 "%d") arg)))
-(define-key asm-mode-map (kbd "C-.") 'km-find-next-code)
+;(define-key asm-mode-map (kbd "C-.") 'km-find-next-code)
 
 (fset 'km-disassemble-next-code
    (lambda (&optional arg) (interactive "p") (kmacro-exec-ring-item `(,(kbd "C-c x <C-return> C-a C-x C-x <C-return> C-a C-x C-a C-c C-c C-c i d C-x C-x C-c i -") 0 "%d") arg)))
-(define-key asm-mode-map (kbd "C-/ C-.") 'km-disassemble-next-code)
+;(define-key asm-mode-map (kbd "C-/ C-.") 'km-disassemble-next-code)
 
 
 (defun sdh-ensure-point-after-mark ()
@@ -171,9 +171,14 @@
             (cons (format "%08x" (lsh 1 x)) (lsh x 13)))
           (number-sequence 0 #x1f)))
 
+(setq sdh-find-banked-read-repeat-keymap
+      (let ((map (make-sparse-keymap)))
+        (define-key map (kbd "C-f") 'sdh-find-banked-read)
+        map))
+
 (defun sdh-find-banked-read ()
   (interactive)
-  (let (addr num cov pages)
+  (let (addr num cov pages page)
     (re-search-forward sdh-banked-read-re)
     (backward-char)
     (setq num (asm/parse-number))
@@ -181,14 +186,20 @@
      ((< num #xc000)
       (setq cov (if (< num #xa000) "cov.lo" "cov.hi"))
       (setq addr (asm/get-position))
-      (setq page
+      (setq pages
             (with-current-buffer cov
               (goto-char (+ (* addr 9) 1))
-              (assoc (buffer-substring-no-properties (point) (+ 8 (point)))
-                     sdh-banked-pages)))
+              (buffer-substring-no-properties (point) (+ 8 (point)))))
+      (setq page (assoc pages sdh-banked-pages))
       (if page
           (progn
             (backward-char 3)
             (delete-char 4)
             (insert (format "%05x" (logior (cdr page) (logand #x1fff num)))))
-        (error "Non-unique page"))))))
+        (error "Non-unique page: %s" pages)))
+     (t
+      (backward-char 3)
+      (insert "3"))))
+  (set-transient-map sdh-find-banked-read-repeat-keymap))
+
+;(define-key asm-mode-map (kbd "C-c C-f") 'sdh-find-banked-read)

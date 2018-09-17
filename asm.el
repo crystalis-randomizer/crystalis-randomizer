@@ -1130,6 +1130,7 @@ of a non-divisible line, then the entire line will be deleted."
 (define-key asm-mode-map (kbd "C-,") 'asm-join)
 (define-key asm-mode-map (kbd "C-c C-c") 'asm-disassemble)
 (define-key asm-mode-map (kbd "C-c C-b") 'asm-convert-to-bytes)
+(define-key asm-mode-map (kbd "C-c C-v") 'asm-convert-to-bytes-width)
 (define-key asm-mode-map (kbd "C-c C-w") 'asm-convert-to-word)
 (define-key asm-mode-map (kbd "C-c h +") 'asm-add-to-number)
 (define-key asm-mode-map (kbd "C-c a") 'asm-goto-position)

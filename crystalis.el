@@ -203,3 +203,43 @@
   (set-transient-map sdh-find-banked-read-repeat-keymap))
 
 ;(define-key asm-mode-map (kbd "C-c C-f") 'sdh-find-banked-read)
+
+(fset 'kb-convert-next-ascii
+   [?\C-  C-return ?\C-a ?\C-  ?\C-s ?\M-r ?\\ ?$ ?\[ ?0 ?1 ?8 ?9 ?a ?b ?c ?d ?e ?f ?\] C-left C-return ?\C-a ?\C-x ?\C-a ?\C-c ?\C-t ?\C-, ?\C-e ?\C-,])
+
+(defun sdh-next-value ()
+  (interactive)
+  (if (looking-at "^\\|$") (re-search-forward "\\.byte[ \t]*"))
+  (while (looking-at "[ \t,]") (forward-char))
+  (cond
+   ((looking-at "\\$") (forward-word))
+   ((looking-at "\"") (forward-char) (re-search-forward "\"") (forward-char))
+   (t (error "Unknown value"))))
+
+(defun sdh-maybe-asm-join ()
+  (cond
+   ((looking-back ","))
+   ((looking-at ","))
+   (t (message "eek") (asm-join))))
+
+(defun sdh-process-dialog ()
+  (interactive)
+  (if (looking-at "^\\|$") (re-search-forward "\\.byte[ \t]*"))
+  (while (looking-at "[ \t,]") (forward-char))
+  (cond
+   ((looking-at "\\$01") (asm-split) (sdh-next-value) (sdh-maybe-asm-join))
+   ((looking-at "\\$02") (sdh-next-value) (asm-split) (insert "    "))
+   ((looking-at "\\$0[03]") (sdh-next-value) (asm-split))
+   ((looking-at "\\$0[5-9]") (sdh-next-value) (sdh-maybe-asm-join) (sdh-next-value) (sdh-maybe-asm-join))
+   ((looking-at "\\$[89abcdef]\\|\\$\\(?:04\\|22\\)\\|\"") (sdh-next-value) (sdh-maybe-asm-join))
+   (t (error "unexpected"))))
+(global-set-key (kbd "C-4") 'sdh-process-dialog)
+
+;; (defun sdh-process-dialog ()
+;;   (interactive)
+;;   (let (s e)
+;;     (cond
+;;      ((looking-at "\\$[")
+;;       (setq s (point))
+;;       (re-search-forward "$"
+

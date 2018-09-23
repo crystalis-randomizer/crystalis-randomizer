@@ -13,12 +13,15 @@
 ; need a quick convenient binding to (activate-mark)
 
 (defun asm-split ()
-  "Split a '.bytes' directive at the given position. "
+  "Split a '.byte' directive at the given position. "
   (interactive)
   (let (pos bol addr colon byte isHex splitAddr)
     (if (not (asm/re/on-line asm/re/byte-line)) (error "Can only split .byte lines."))
     (cond
-     ((looking-back "^"))
+     ((looking-at "$") (re-search-forward "\\.byte "))
+     ((looking-back "^") (re-search-forward "\\.byte "))
+     ((looking-back "\\.byte[ \t]*") (beginning-of-line) (re-search-forward "\\.byte "))
+     ((looking-at "\\.byte[ \t]*") (beginning-of-line) (re-search-forward "\\.byte "))
      (t
       (asm/find-break)
       (save-excursion
@@ -146,7 +149,7 @@ line if 'name' were defined there."
           limit callers)
       (cond
        ((= dir ?-)
-        (if (re-search-forward (concat "^\\(?:[-+]+[ \t]+\\)*"
+        (if (re-search-forward (concat "^\\(?:\\(?:[-+]+\\|@[^:]+:\\)[ \t]+\\)*"
                                        (regexp-quote name) "[ \t]+")
                                nil t)
             (setq limit (line-end-position))
@@ -161,7 +164,7 @@ line if 'name' were defined there."
         (setq search 're-search-backward)
         (setq limit (buffer-end -1))
 
-        (if (re-search-backward (concat "^\\(?:[-+]+[ \t]+\\)*"
+        (if (re-search-backward (concat "^\\(?:\\(?:[-+]+\\|@[^:]+:\\)[ \t]+\\)*"
                                         (regexp-quote name) "[ \t]+")
                                 nil t)
             (setq limit (line-beginning-position))
@@ -207,7 +210,8 @@ line if 'name' were defined there."
        ((= dir ?-) (end-of-line) (setq search 're-search-backward))
        ((= dir ?+) (setq search 're-search-forward))
        (t          (error "Bad relative name: %s" name)))
-      (if (funcall search (concat "^\\(?:[-+]+[ \t]+\\)*" (regexp-quote name) "[ \t]")
+      (if (funcall search (concat "^\\(?:\\(?:[-+]+\\|@[^:]+:\\)[ \t]+\\)*"
+                                  (regexp-quote name) "[ \t]")
                    nil t)
           (asm/get-position)))))
 
@@ -215,9 +219,9 @@ line if 'name' were defined there."
 
 (defun asm/find-position/line-addr (line)
   (goto-line line)
-  (or (re-search-forward "^[-+ \t]+\\$[0-9a-fA-f]+" nil t)
-      (progn (re-search-backward "^[-+ \t]+\\$[0-9a-fA-f]+")
-             (re-search-forward "^[-+ \t]+\\$[0-9a-fA-f]+")))
+  (or (re-search-forward "^\\(?:[-+ \t]\\|@[^:]+: \\)+\\$[0-9a-fA-f]+" nil t)
+      (progn (re-search-backward "^\\(?:[-+ \t]\\|@[^:]+: \\)+\\$[0-9a-fA-f]+")
+             (re-search-forward  "^\\(?:[-+ \t]\\|@[^:]+: \\)+\\$[0-9a-fA-f]+")))
   (backward-char)
   (asm/parse-number))
 
@@ -246,14 +250,17 @@ line if 'name' were defined there."
       (setq rest (- addr (asm/find-position/line-addr start)))
       (goto-line start)
       ;(message "line %d rest %d" start rest)
-      (if (and (> rest 0) (looking-at "^[-+ \t]+\\$[0-9a-fA-F]+[ \t]+\\.byte"))
-          (progn
-            (re-search-forward "\\.byte")
-            (while (> rest 0)
-              (re-search-forward "," nil t)
-              (setq rest (- rest 1)))
-            (+ 1 (point)))
-        (point)))))
+      (cond
+       ((and (> rest 0) (looking-at "^\\(?:[-+ \t]\\|@[^:]+: \\)+\\$[0-9a-fA-F]+[ \t]+\\.byte"))
+        (re-search-forward "\\.byte")
+        (while (> rest 0)
+          (re-search-forward "," nil t)
+          (setq rest (- rest 1)))
+        (+ 1 (point)))
+       ((and (> rest 0) (looking-at "^\\(?:[-+ \t]\\|@[^:]+: \\)+\\$[0-9a-fA-F]+[ \t]+\\.text"))
+        (re-search-forward "\\.text[ \t]*\"")
+        (+ rest (point)))
+       (t (point))))))
 
 (defun asm-goto-position (addr)
   "Go to the given position"
@@ -342,11 +349,11 @@ a comment then just bail out."
   (if (save-excursion
         (backward-word) (looking-at "\\$[0-9a-fA-F]*[ \t]*\\.byte"))
       (backward-word))
-  (if (looking-back "^[-+ \t]*") (beginning-of-line))
+  (if (looking-back "^\\(?:[-+ \t]\\|@[^:]+:\\)*") (beginning-of-line))
   (cond
-   ((not (looking-back "[$ ,][0-9a-fA-F][0-9a-fA-F]\n"))
+   ((not (looking-back "\\(?:[$ ,][0-9a-fA-F][0-9a-fA-F]\\|\"\\)\n"))
     (error "Not immediately after a .byte block"))
-   ((not (re-search-forward "^[-+ \t]*\\$[0-9a-fA-F]*[ \t]+\\.byte[ \t]+" nil t))
+   ((not (re-search-forward "^\\(?:[-+ \t]\\|@[^:]+:\\)*\\$[0-9a-fA-F]*[ \t]+\\.byte[ \t]+" nil t))
     (error "Not immediately before a .byte block"))
    (t
     (delete-region (- (line-beginning-position) 1) (point))
@@ -405,13 +412,25 @@ a comment then just bail out."
       (asm/disassemble-region start end)
     (asm/disassemble-one)))
 
-(defun asm-convert-to-bytes (start end)
+(defvar asm/bytes-width 16 "Number of bytes to output on a line.") 
+
+(defun asm-convert-to-bytes (prefix start end)
   "Convert to .byte lines"
   ;; TODO - add an option to actually assemble, rather than just reuse stored bytes
+  (interactive "P\nr")
+  (let* ((x asm/bytes-width) ; weird hack to make a local copy of the outer var
+         (asm/bytes-width x))
+    (if prefix
+        (setq asm/bytes-width (prefix-numeric-value prefix)))
+    (if mark-active
+        (asm/convert-to-bytes-region start end)
+      (asm/convert-to-bytes-one))))
+
+(defun asm-convert-to-text (start end)
+  "Convert to .byte lines with strings embedded"
+  ;; TODO - consider adding a "one" version for non-active marks?
   (interactive "r")
-  (if mark-active
-      (asm/convert-to-bytes-region start end)
-    (asm/convert-to-bytes-one)))
+  (asm/convert-to-text-region start end))
 
 (defun asm-convert-to-word (start end)
   "Convert to .word lines"
@@ -463,13 +482,11 @@ a comment then just bail out."
       (asm/delete-range start end)
       (asm/insert-bytes bytes pos))))
 
-(defvar asm/bytes-width 16 "Number of bytes to output on a line.") 
-
-(defun asm-convert-to-bytes-width (start end width)
-  (interactive "r
-nBytes per line: ")
-  (let ((asm/bytes-width width))
-    (asm-convert-to-bytes start end)))
+;; (defun asm-convert-to-bytes-width (start end width)
+;;   (interactive "r
+;; nBytes per line: ")
+;;   (let ((asm/bytes-width width))
+;;     (asm-convert-to-bytes start end)))
 
 (defun asm/insert-bytes (bytes &optional pos)
   "Inserts a .byte directive (or more, if many arguments)."
@@ -482,6 +499,94 @@ nBytes per line: ")
               "\n")
       (if pos (setq pos (+ pos (length bytes))))
       (setq bytes extra))))
+
+;; TODO - track line size, wrap at fixed number, or after a zero? predicate on byte & length?
+(defun asm/insert-text (bytes &optional pos break)
+  "Inserts a single .byte directive with printable chars as strings."
+  (if (null break) (setq break (lambda (c w) nil)))
+  (let ((quot nil)
+        (comma "")
+        start byte)
+    (while bytes
+      (setq byte (car bytes))
+      (setq bytes (cdr bytes))
+      (if (string= comma "")
+          (progn
+            (insert (if pos (format "        $%05x              " pos) "  ") ".byte ")
+            (setq start (point))))
+      (if (or (>= byte #x7f) (< byte #x20) (= byte ?\") (= byte ?\\))
+          (progn
+            ;; Should be unquoted
+            (if quot (insert "\""))
+            (setq quot nil)
+            (insert (format "%s$%02x" comma byte)))
+        ;; Should be quoted
+        (if (not quot) (insert comma "\""))
+        (setq quot t)
+        (insert byte))
+      ;; See if we should break the line here
+      (if (and (not quot) (apply break (list byte (- (point) start))))
+          (progn
+            (setq comma "")
+            (insert "\n"))
+        (setq comma ",")))
+    ;; Add final line break
+    (if quot (insert "\""))
+    (if (string= comma ",")
+        (insert "\n"))))
+
+;; get-bytes-until ???
+;; (defun asm/convert-to-text-one ()
+;;   (let* ((pos   (asm/get-position))
+;;          (start (point))
+;;          (bytes (asm/get-number-of-bytes 1))
+;;          (inst  (aref asm/opcodes (car bytes)))
+;;          (mode  (and inst (assoc (cdr inst) asm/addrmodes)))
+;;          (len   (and mode (cadr mode)))
+;;          extra)
+;;     (if len
+;;         (progn
+;;           ;; check if we need more bytes
+;;           (if (< (length bytes) len)
+;;               (setq bytes
+;;                     (append bytes (asm/get-number-of-bytes (- len (length bytes))))))
+;;           ;; check if we have too many bytes
+;;           (if (< (length bytes) len)
+;;               (progn
+;;                 (setq extra (asm/seq-drop bytes len))
+;;                 (setq bytes (asm/seq-take bytes len))))
+;;           ;; now bytes is just right, pass it through insert-disasm
+;;           (asm/delete-range start (point))
+;;           (asm/insert-disasm bytes pos)
+;;           (if extra
+;;               (asm/insert-bytes extra (+ pos len)))))))
+
+(defun asm/convert-to-text-region (start end)
+  (save-excursion
+    (goto-char start)
+    (let* ((pos   (asm/get-position))
+           (bytes (asm/get-bytes-until end)))
+      (asm/delete-range start end)
+      (asm/insert-text bytes pos)))) ; (lambda (c w) (> w 50))))))
+;; TODO - use prefix argument to set width or something?
+
+;; (defun asm/insert-text (bytes &optional pos)
+;;   "Inserts .byte directives with printable chars as strings."
+;;   (let (word)
+;;     (while bytes
+;;       (setq word (asm/seq-take-while (lambda (x) (not (= 0 x))) bytes))
+;;       (if (< (length word) (length bytes))
+;;           (progn
+;;             ;; Found a delimiter
+;;             (setq bytes (asm/seq-drop bytes (+ 1 (length word))))
+;;             (insert (if pos (format "        $%05x              " pos) "  ")
+;;                     ".text \"")
+;;             (if pos (setq pos (+ pos 1 (length word))))
+;;             (mapcar (lambda (x) (insert x)) word)
+;;             (insert "\"\n"))
+;;         ;; No delimiter
+;;         (asm/insert-bytes bytes pos)
+;;         (setq bytes nil)))))
 
 (defun asm/convert-to-words-one ()
   (let* ((pos   (asm/get-position))
@@ -584,16 +689,29 @@ nBytes per line: ")
 ; TODO - could make address optional, but we kind of rely on it right now
 ; Likewise, would be nice to parse the mnemonic and address modes/args, but
 ; labels and defines make this much more difficult.
+(defconst asm/re/byte-value
+  (mapconcat 'identity
+             '("\\(?:\\$[0-9a-fA-F]\\{2\\}" ; hex value
+               "%[01]\\{1,8\\}" ; binary value
+               "[1-9][0-9]*" ; decimal value
+               "0[0-7]*" ; octal value
+               "[a-zA-Z_][a-zA-Z0-9_]*" ; symbol name
+               "\"[^\"]+\"\\)") ; ascii value
+             "\\|"))
 (defconst asm/re/address
-  "^[-+ \t]+\\$[0-9a-fA-F]+")
+  "^\\(?:[-+ \t]\\|@[^:]+: \\)+\\$[0-9a-fA-F]+")
 (defun asm/re/addr-line (re)
-  (concat asm/re/address re "[ \t]*\\(?:;.*\\)?$"))
+  (concat asm/re/address re "\\(?:[ \t]\\|@[^:]+: \\)*\\(?:;.*\\)?$"))
 (defconst asm/re/label-line
-  "^[A-Za-z_][A-Za-z_0-9]+[ \t]*:?[ \t]*\\(?:;.*\\)?$")
+  "^@?[A-Za-z_][A-Za-z_0-9]+[ \t]*:?[ \t]*\\(?:;.*\\)?$")
 (defconst asm/re/comment-line
   "^[ \t]*\\(?:;.*\\)?$")
 (defconst asm/re/byte-line
-  (asm/re/addr-line "[ \t]*\\.byte[ \t]+\\([$0-9a-fA-F,]+\\)"))
+  (asm/re/addr-line (concat "[ \t]*\\.byte[ \t]+\\("
+                            asm/re/byte-value
+                            "\\(?:[ \t]*,[ \t]*"
+                            asm/re/byte-value
+                            "\\)*\\)")))
 (defconst asm/re/word-line
   (asm/re/addr-line
    "[ \t]*\\.word[ \t]+(\\(\\$?[0-9a-fA-F]+\\|[A-Za-z_][A-Za-z_0-9]*\\))"))
@@ -630,10 +748,9 @@ Destroys point, and ignores address labels."
        ;; .byte lines need some actual handling
        ((asm/re/on-line asm/re/byte-line)
         ;; It matters if start or end is in the middle of the line.
-        (re-search-forward "\\.byte" end t) ; skip past addr, don't want to match it
-        (if (re-search-forward "\\([0-9a-fA-F\\$,]+\\)" end t)
-            (setq bytes (append bytes (asm/bytes-from-line (match-string 1))))
-          (setq done t))
+        (re-search-forward "\\.byte" (min (line-end-position) end) t) ; skip past addr, don't want to match it
+        (setq bytes (append bytes (asm/bytes-from-line (point) (min (line-end-position) end))))
+        (end-of-line)
         (forward-char))
        ;; .word lines are a little easier, with helepr functions.
        ((asm/re/on-line asm/re/word-line)
@@ -663,6 +780,7 @@ Destroys point, and ignores address labels."
   )
     bytes))
 
+; TODO - handle text correctly...
 ; TODO - asm/get-bytes, asm/insert-disasm       
 (defun asm/get-number-of-bytes (count)
   "Return a list of integers corresponding to the byte values in the range.
@@ -746,14 +864,39 @@ extra elements if an instruction, .byte, or .word needed to be broken up."
         (error "Argument to .word may only be 16 bits: %x" result))
     (list (logand #xff result) (lsh result -8))))
 
-(defun asm/bytes-from-line (str)
+(defun asm/bytes-from-line (start end)
   "Returns a list of numbers from a comma-separated line."
-  (message (format "reading bytes from '%s'" str))
-  (mapcar (lambda (x)
-            (if (string= "$" (substring x 0 1))
-                (string-to-number (substring x 1) 16)
-              (string-to-number x 10)))
-          (split-string str "," t))) ; "[ \\t]*"  emacs 24 added trim arg
+  (let (quot bytes)
+    (save-excursion
+      (goto-char start)
+      (beginning-of-line)
+      (re-search-forward "\\.byte") ; TODO - consider handling .word as well?
+      (while (< (point) end)
+        (cond
+         ((looking-at "\"")
+          (setq quot (not quot)) (forward-char))
+         (quot
+          (setq bytes (append bytes (list (char-after (point))))) (forward-char))
+         ((looking-at "[ \t,]")
+          (forward-char))
+         ((looking-at "\\$[0-9a-fA-F]\\{2\\}\\b")
+          (setq bytes (append bytes (list (asm/parse-number))))
+          (forward-char 3))
+         ;; TODO - supper other kinds of numbers?!?
+         ((looking-at ";")
+          (re-search-forward "\n"))
+         (t
+          (error "Bad pattern")))))
+    bytes))
+
+;; (defun asm/bytes-from-line (str)
+;;   "Returns a list of numbers from a comma-separated line."
+;;   (message (format "reading bytes from '%s'" str))
+;;   (mapcar (lambda (x)
+;;             (if (string= "$" (substring x 0 1))
+;;                 (string-to-number (substring x 1) 16)
+;;               (string-to-number x 10)))
+;;           (split-string str "," t))) ; "[ \\t]*"  emacs 24 added trim arg
 
 (defun asm/delete-range (start end)
   "Deletes a range from the buffer, handles lines and intra-line boundaries.
@@ -845,6 +988,12 @@ of a non-divisible line, then the entire line will be deleted."
    ((null list) nil)
    (t (cons (car list) (asm/seq-take (cdr list) (- num 1))))))
 
+(defun asm/seq-take-while (pred list)
+  (cond
+   ((null list) nil)
+   ((apply pred (list (car list))) (cons (car list) (asm/seq-take-while pred (cdr list))))
+   (t nil)))
+
 (defun asm/read-bytes (num list)
   (cond
    ((= 0 num) 0)
@@ -860,10 +1009,11 @@ of a non-divisible line, then the entire line will be deleted."
   (let (commas base)
     (save-excursion
       (if pos (goto-char pos))
-      (setq commas (asm/count-commas "^[-+ \\t]*\\$?[0-9a-fA-F]+"))
-      (re-search-forward "[0-9a-fA-F]")
-      (setq base (asm/parse-number)))
-    (+ base commas)))
+      (setq commas (asm/count-offset))
+      (end-of-line)
+      (re-search-backward "^[ \t]*\\(?:\\(?:[-+]+\\|@[^:]+:\\)[ \t]+\\)*\\$\\([0-9a-fA-F]+\\)")
+      (setq base (string-to-number (substring-no-properties (match-string 1)) 16))
+      (+ base commas))))
 
 (defun asm/parse-number ()
   "Reads the current number."
@@ -899,13 +1049,37 @@ of a non-divisible line, then the entire line will be deleted."
         (setq fmt (format "%%0%dd" (- p2 p1))))
       (insert (format fmt (+ num arg))))))
 
-(defun asm/count-commas (regexp)
-  "Walk backwards until we find the .byte directive, counting commas"
-  (cond
-   ((looking-at ",") (backward-char) (+ 1 (asm/count-commas regexp)))
-   ((looking-at regexp) 0)
-   ((looking-at "^") (error "Could not find pattern"))
-   (t (backward-char) (asm/count-commas regexp))))
+(defun asm/count-offset ()
+  "Determine the offset of point within its line."
+  (if (not (asm/re/on-line asm/re/byte-line))
+      0
+    (let ((p (point))
+          (q nil)
+          (o 0))
+      (save-excursion
+        (beginning-of-line)
+        (re-search-forward "\\.byte")
+        (while (< (point) p)
+         (cond
+          ((looking-at "\"")
+           (setq q (not q)) (forward-char))
+          (q
+           (setq o (+ 1 o)) (forward-char))
+          ((looking-at "[ \t,]")
+           (forward-char))
+          ((re-search-forward asm/re/byte-value nil t)
+           (if (<= (point) p) (setq o (+ 1 o))))
+          (t
+           (error "Bad pattern"))))
+        o))))
+
+;; (defun asm/count-offset (regexp)
+;;   "Walk backwards until we find the .byte directive, counting commas"
+;;   (cond
+;;    ((looking-at ",") (backward-char) (+ 1 (asm/count-offset regexp)))
+;;    ((looking-at regexp) 0)
+;;    ((looking-at "^") (error "Could not find pattern"))
+;;    (t (backward-char) (asm/count-offset regexp))))
 
 
 (defun asm/find-break ()
@@ -928,6 +1102,42 @@ of a non-divisible line, then the entire line will be deleted."
   (save-excursion
     (beginning-of-line)
     (insert (if (> arg 1) "        " ";") ";; --------------------------------\n")))
+
+;;; TODO - integrate with labels, too.
+(defun asm-cycle-define ()
+  "Cycle the value at point between a literal and a defined value."
+  (interactive)
+  (save-excursion
+    (let (end arg)
+      ;; First find the symbol at point.
+      (beginning-of-line)
+      (setq end (line-end-position))
+      (if (re-search-forward ";" end t) (backward-char) (end-of-line))
+      (while (cond
+              ((looking-back "[ \t)]") (backward-char) t)
+              ((looking-back ",[xy]") (backward-char 2) t)
+              ((looking-back "\\+\\$?[0-9a-fA-F]+") (re-search-backward "\\+"))))
+      ;; We should now be at the end of the numeric argument, if there is one.
+      (setq end (point))
+      (re-search-backward "[^0-9a-zA-Z_$]")
+      (forward-char)
+      ;; This is the start of the numeric argument.
+      (setq arg (buffer-substring-no-properties (point) end))
+      ;; Is it a name or a number?
+      (save-excursion
+        (beginning-of-buffer)
+
+        (if (not (string-match "^\\$[0-9a-fA-F]\\{2,4\\}$" arg))
+            ;; 'arg' is currently a name - find it and replace 'arg' with the value
+            (progn
+              (re-search-forward (concat "^define[ \t]+" arg "[ \t]+\\(\\$[0-9a-f]\\{2,4\\}\\)\\b"))
+              (setq arg (match-string 1))))
+        ;; Find the next define of 'arg'
+        (if (re-search-forward (concat "^define[ \t]+\\([A-Za-z0-9_]+\\)[ \t]+\\" arg "\\b") nil t)
+            (setq arg (match-string 1))))
+      ;; Replace the argument with 'arg'
+      (delete-char (- end (point)))
+      (insert arg))))
 
 ;;;;;
 ; Disassembly table for 6502
@@ -1130,7 +1340,8 @@ of a non-divisible line, then the entire line will be deleted."
 (define-key asm-mode-map (kbd "C-,") 'asm-join)
 (define-key asm-mode-map (kbd "C-c C-c") 'asm-disassemble)
 (define-key asm-mode-map (kbd "C-c C-b") 'asm-convert-to-bytes)
-(define-key asm-mode-map (kbd "C-c C-v") 'asm-convert-to-bytes-width)
+(define-key asm-mode-map (kbd "C-c C-t") 'asm-convert-to-text)
+;(define-key asm-mode-map (kbd "C-c C-v") 'asm-convert-to-bytes-width)
 (define-key asm-mode-map (kbd "C-c C-w") 'asm-convert-to-word)
 (define-key asm-mode-map (kbd "C-c h +") 'asm-add-to-number)
 (define-key asm-mode-map (kbd "C-c a") 'asm-goto-position)
@@ -1138,3 +1349,4 @@ of a non-divisible line, then the entire line will be deleted."
 (define-key asm-mode-map (kbd "C-c -") 'asm-relativize-jump)
 (define-key asm-mode-map (kbd "C-c l") 'asm-convert-address-to-label)
 (define-key asm-mode-map (kbd "C-c i -") 'asm-insert-break)
+(define-key asm-mode-map (kbd "C-'") 'asm-cycle-define)

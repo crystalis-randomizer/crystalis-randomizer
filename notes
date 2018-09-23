@@ -491,7 +491,11 @@ MAP HACKS
 Dialog
 ======
 Uses raster effects to swap out the CHR bank at scanline $0d for the text box.
- - IRQ seems to trigger this,
+ - IRQ seems to trigger this
+ - might be possible to fix the jitter if we figure out what causes it?
+
+$28af0 is start of .asciiz blocks, the preceding block seems to be a lookup table
+into it
 
 
 Enemy Difficulty
@@ -511,3 +515,20 @@ If scale with level then what's the point of leveling at all?
  - so we want it to scale independently
    - # of monsters killed? too similar
      # of treasure chests (key items?) found?  probably the best bet
+     # of bosses defeated - ? - skip kelby2 and mado2? vamp2?
+
+
+Interesting options:
+--------------------
+* Speed boots - when worn, increases player speed, maybe nullifies terrain lag?
+* Swap palettes - group together all known locations, and good possible
+  palette combos for them?
+* Deo's pendant -> don't actually use MP from sword attacks? or use less?
+
+
+UNUSED PRG
+----------
+The rendering toggles at $3c446..$3c581 are totally unused, we can freely replace
+with our own code as needed (60 bytes in the last page).
+64 bytes at $3c8c0
+

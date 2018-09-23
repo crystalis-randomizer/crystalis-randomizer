@@ -13,10 +13,12 @@ export class View {
     this.element = document.createElement('div');
     this.element.classList.add('main');
     const canvasDiv = document.createElement('div');
+    const canvasInner = document.createElement('div');
     this.element.appendChild(canvasDiv);
     canvasDiv.classList.add('canvas');
+    canvasDiv.appendChild(canvasInner);
     this.canvas = document.createElement('canvas');
-    canvasDiv.appendChild(this.canvas);
+    canvasInner.appendChild(this.canvas);
 
     this.buffer = null;
     this.highlights = [];
@@ -28,6 +30,7 @@ export class View {
 
     this.scale = 0;
     this.handlers = {};
+    this.floater = null;
 
     document.body.addEventListener('keyup', e => keyup(this, e));
     this.element.addEventListener('click', e => click(this, e));
@@ -54,6 +57,21 @@ export class View {
           el.classList.remove('show');
         }
       }
+    });
+    this.canvas.parentElement.addEventListener('mousemove', e => {
+      let x = e.offsetX;
+      let y = e.offsetY;
+      let t = e.target;
+      while (t && t != this.canvas.parentElement) {
+        x += t.offsetLeft;
+        y += t.offsetTop;
+        t = t.parentElement;
+      }
+      // e.target is an overlay, we need to add the overlay position...
+      this.mousemove(x, y);
+    });
+    this.canvas.parentElement.addEventListener('mouseout', e => {
+      if (this.floater) this.floater.remove();
     });
   }
 
@@ -192,6 +210,29 @@ export class View {
   update() {
     throw new Error('abstract');
   }
+
+  showFloater(x, y, text) {
+    if (this.floater &&
+        this.floater.parentElement != this.canvas.parentElement) {
+      this.floater = null;
+    }
+    if (!this.floater) {
+      this.floater = document.createElement('div');
+      this.canvas.parentElement.appendChild(this.floater);
+      this.floater.classList.add('floater');
+    }
+    this.floater.style.left = `${x + 16}px`;
+    this.floater.style.top = `${y + 12}px`;
+    const s = (this.scale + 2) / 2;
+    this.floater.style.fontSize = `${100 * s}%`;
+    
+    //this.floater.style.width = `${Math.max(text.split('\n').map(x => x.length)) * 12}px`;
+    //this.floater.style.height = `${(text.split('\n').length + 1) * 16}px`;
+
+    this.floater.textContent = text;
+  }
+
+  mousemove(x, y) {}
 }
 
 class Highlight {

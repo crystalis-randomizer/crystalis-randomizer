@@ -218,15 +218,53 @@ Coordinates of the current screen map within the location (top-left screen corne
    (note: xl, xh, yl, yh)
 
 
+$40
+---
+Primary game mode
+ 01 = playing the game
+ 03 = title sequence, through entering name
+Indexes jump table $3c91f in main game loop $3c900
+
+
+
+$41
+---
+Secondary game mode
+ 08 = normal movement, usually (sometimes 07, 09, others)
+ menu gets 12, etc
+Indexes jump table $3cade in 3c91f_01
+
+
 $43, $44
 --------
-
 Buttons pressed (mask):
  1 = right,  2 = left,    4 = down, 8 = up
  10 = start, 20 = select, 40 = b,   80 = a
 
 $43 = controller 1, $44 = controller 2
 
+
+$45, $46
+--------
+dpad repeat timer (goes from $c->0->3->0) for each controller
+
+ TODO - consider piggybacking on this for "newly released" keys?
+      - then switch menus to be on release so that start+button
+        could be used to switch selected sword and/or magic,
+        then only show menu on release if no fast-switch
+
+ could also use ctrl2 dpad for this, but it may be harder to manage?
+
+
+$4b, $4c
+--------
+
+Bitmask of newly-pressed buttons this frame (cf $43 for mapping).
+
+
+$50
+---
+Shadow variable for $8000 during rendering
 
 
 $51
@@ -250,7 +288,7 @@ MODE 7:
  - $36416 writes 7, reached via jump table $36314[$3f] at end of $3ccd1
    (specifically $3cd28).
  - this happens at frame 78701 (keyframe 7/26) in full.mov upon fighting
-   the giant insect.
+   the giant insect. 0 also Draygon 2
  - $1e885 also writes 7 - this looks oddly similar to the other, it's
    from a jump table $1e425[9] from $1e400 from $1e675, which ultimately
    came from this same jump table at $36314[$62].
@@ -322,6 +360,30 @@ $68 written in 35a87 from the contents of a table at ($10) (e.g. 02c64)
   exit into sealed cave on valley of wind b4/after widmill
   But there's more to it, since most pages have this.
 
+($68),y has the following values:
+  00 - normal tile, open door
+  02 - water cave door, water in portoa
+  06 - impassible
+  0e - door to sabera fortress (doesn't open permanently), near rock wall
+  10 - walking space under bridge, trees that can be walked behind, behind waterfall
+  16 - wall under bridge, waterfall
+  18 - near rock wall
+  20 - snow drift
+  40 - bushes  
+  42 - water
+  46 - water in portoa
+  4a - ice bridge
+  c0 - marsh
+
+Bits (hypothesis):
+  01: pit
+  02: impassible on foot
+  04: impassible on dolphin or flying
+  08: changes with flag ???
+  10: in front (sprite priority)
+  20: push down
+  40: slow
+  80: inflicts pain
 
 $6c
 ---
@@ -368,7 +430,6 @@ SwitchBanks; <do stuff>; pla; jsr SwitchBanks`), and (2) so that
 interrupt handlers can restore pages correctly before returning
 (this insures against an interrupt in the middle of a bank switch
 operation by writing the target page *before* making the switch.
-
 
 
 $70..$ef
@@ -451,6 +512,7 @@ song number that's playing.
 $300,x
 ------
 Metasprite ID.
+$301 is player - $300 seems not to be drawn.
 
 
 $320,x
@@ -459,9 +521,21 @@ $320,x
 
 $340,x
 ------
-knockback/recoil (if it's negative)
+knockback/recoil (if it's negative??)
  - each frame it increases a bit while the object is knocked back
 not sure what positive values mean
+
+Normally 35bff writes $06 to $340.  it clears the :0f bits and ORs in A,
+  which comes from an immediate LDA #$?? right before the call, except when
+  called by 35b5f where it just preserves the current value.
+
+Looks like maybe player turns positive while enemies turn negative,
+  count up from 82->92->a2->b2->c2->d2->e2->f2->02->02...
+
+lower nibble has other information
+for player (see SetPlayer340Lower),
+ - 2 = mutated, 5 = changed, 9 = dolphin
+ - 
 
 
 $360,x
@@ -472,11 +546,23 @@ direction facing: 0 = up, 2 = right, 4 = down, 6 = left (odds diagonal)
 
 $380,x
 ------
+current terrain effects
 updated in $35acb after reading ($68),y for y = metatile that 'x' is standing on
  - only if $14:40 - $14 initialized from A upon calling $35a30 (it's called with various
    constant values - 0, #$40, $#c0)
  - $380,x <- ($380,x & %1010 1111 | (($68),y & $460,x & %0101 0000))
  So $460,x seems to enable copying the :40 and/or the :10 bits from $(68),y
+
+Looks like terrain effects, read from the graphics[4] == tileset[1] data table
+  :40 adjusts speed (2 steps slower if set)
+  :10 sprite behind background
+
+  Birds: $a1
+
+:80 seems to indicate off-screen?
+
+Recall: 01=pit, 02=impassible/foot, 04=impassible/fly, 08=changes w/ flag?
+        10=behind, 20=slide, 40=slow, 80=pain
 
 
 $3a0,x
@@ -486,6 +572,11 @@ of screen positions?
  - the upper nibble seems to be written in various spots
  - the lower nibble seems to be mostly constant, though it's written in a
    few spots, mainly boss initializations - possibly converting to coin, etc...?
+ - lower nibble indicates which hitbox we have (plus $420:40 for :10 bit)
+ - zero upper nibble means no hitbox checking at all, among other things?
+ - upper nibble is collision plane - two objects must share at least one bit
+   in order to be able to collide.  Player on ground is 50, in air is 60.
+   both will collide with a 4x, but many enemies are 1x.  May be more complex, tho
 
 
 $3c0,x
@@ -503,7 +594,7 @@ $400,x
 $420,x
 ------
 const
-:40 bit seems to affect hitboxes
+:40 bit seems to select hitboxes 16-23.
 
 
 $440,x
@@ -512,21 +603,41 @@ $440,x
 
 $460,x
 ------
-Seems to enable copying the :40 and/r the :10 bits from $(68),y into $380,x
-
+Terrain susceptibility?
+Seems to enable copying the :40 and/or the :10 bits from $(68),y into $380,x
+The :06 bit indicates flying - 02 = not flying, 04 = flying (at least for player)
+ - not clear what these bits are...
+ - birds/flyers seem to have $00 for this, since they're not affected by terrain
+ - land creatures are $57 (pit, impassibility, behind, slow)
+ - some are $77, which also includes push-down slides
+ - salamander is $5f, so we copy the transforms w/ flag bit for some reason???
+ - player is 32 while grounded (incl rabbit boots), 34 while flying
+   - this does not include slow, pit, pain, etc -> why not? handled elsewhere?
 
 $480,x
 ------
 seems to be some sort of step counter
- - when it's odd then diagonal movements travel further
+ - when it's odd then diagonal movements travel further?
  - counts down and loops
  - $48e is the step counter for the $e NPC?
+
+NOTE: $480 and $4e0 both seem to be step counters, though $4e0 is used
+for animation and seems to count down by 2 whenever $480 counts down
+by one.  Interestingly, the player's steps decrement $480 and $4e1, but
+leave $481 and $4e0 alone.
+
 
 
 $4a0,x
 ------
 if this is zero, then do not show a sprite...?
 but it clearly does more than that...
+ - looks to index jump table at $36314
+ - not sure when that runs?
+   kinda looks like every frame, provided 3cade_08 jump is run
+   - that's run from 3c91f_01, where 08 is indexed from $41
+     - that's run from 3c900, with 01 from $40
+     - 3c900 is reset handler, looks like main loop.
 
 
 $4c0,x
@@ -559,7 +670,10 @@ $560,x
 $580,x
 ------
 some sort of alternative/additional metatile ID.  It's only ever read in two places:
-$368c5 and $3824e.  These run if $6e0,x is zero, or if 
+$368c5 and $3824e.  These run if $6e0,x is zero, or if ...?
+
+$581 is normally $0f, but goes to $a3 when a spider web is draining MP...?
+ - the object stays around, too, so it's probably handled by the object's update method
 
 
 $5a0,x
@@ -581,10 +695,17 @@ sprite's x-coordinate (relative to corner of screen)
 
 $600,x
 ------
+$603 seems to be a countdown timer that's set to #$10 when bumping into somebody
+and then counts down once the dialog disappears, during which no other interactions
+will occur.  Hits from enemies don't seem to trigger this.
 
 
 $620,x
 ------
+$620 is the current jump displacement, from 0 to $13.  As rising or falling
+this number is changing.  It presumably means something else for somebody else.
+ - probably also fires when falling into a pit - starts at $30, decreases down to 0
+
 
 
 $640,x
@@ -616,17 +737,25 @@ $6e0,x
 
 $0710..$071f
 ------------
-  $710 - unknown, seems to be written twice on location transition,
+  $710 - status
+     low nibble is status ailments:
+       01 = paralyzed
+       02 = stone
+       03 = poison
+       04 = mutated/cursed
+     high nibble is good status:
+       40 = riding on dolphin
+       80 = changed into stom
+       90 = changed into soldier
+       a0 = changed into woman
+       b0 = changed into akahana
+     seems to be written twice on location transition,
          at $2fc17 (clears :0f) and $2fc88 (restores)
             - 2fcfb reads in the middle
-         status in low bits: $352a3 writes a 3
-          - 1 = paralyzed, 2 = stone, 3 = poison, 4 = mutated
-         :40 = riding on dolphin
+         $352a3 writes a 3
          high bits (:40) checked at $35fa9
          $3d2a0 adds the 4 bit, $35b99 removes it
        - also read 35b6b, 35bd5, 35b80, 35d9d, 35de7, 35e88, 380b7, 3efc4, 3efde
-         :90 set when changed to soldier
-         :80 = stom, a0 = woman, b0 = akahana
 
 Equipment - see notes at top of Crystalis.asm
   $711 - equipped sword (0=none, 1..4 for element, 5 for crystalis?)
@@ -662,6 +791,8 @@ BOSS FIGHT -
  - after explosion, while chest unopened -> 1f7c0/3e900
  - final 0 -> 0 write at 3e3f6
 
+When fall sound happens ($35d34) $7d7 and $7d6 are both set to #$10
+
 
 $7e0..$7e7
 ----------
@@ -693,6 +824,7 @@ Staging area for writing to nametable ($3c6b1)
 
 ;;; 3ebf7, 3edd2. 34d67, 3ec4b
 
+
 $6100..$613f
 ------------
 attribute table staging area ($3c739, $3c6e7)
@@ -708,6 +840,14 @@ map palette data
 $6200..$621f
 ------------
 PPUDATA write staging area
+$b is the position written to this part of RAM, $a is the position that's been
+committed to the PPU, and thus lags $b.  The data go in quads:
+  6200,x:3f - high 6 bits of PPUADDR (1st write)
+        :40 - PPUCTRL increment (0 = vertical, 1 = horizontal)
+        :80 - check for another chunk immediately afterwards
+  6201,x    - low byte of PPUADDR (2nd write)
+  6202,x    - number of data bytes to write
+  6203,x    - offset into $6000 to copy from
 
 
 $62f0..$62fb

@@ -159,7 +159,6 @@ class MapsView extends View {
   setLocation(loc, wd = undefined, ht = undefined) {
     window.history.pushState({}, '', '#loc=' + loc.toString(16));
     this.location = loc;
-    const hex = (x) => x.toString(16).padStart(2, 0);
     const lines = [
       `# Location [loc<0:1:$ff>:$${hex(loc)}]`,
     ];
@@ -260,139 +259,36 @@ class MapsView extends View {
     }
     this.draw(buf);
   }
+
+  mousemove(x, y) {
+    const scrX = Math.floor(x / 256);
+    const scrY = Math.floor(y / 240);
+    const tileX = x % 256 >> 4;
+    const tileY = y % 240 >> 4;
+    const fineX = x % 256 & 15;
+    const fineY = y % 240 & 15;
+    const scrId = this.options.screens[scrY][scrX];
+    const metatileBase = scrId << 8;
+    const metatileId = this.rom.prg[metatileBase | tileY << 4 | tileX];
+    // TODO - subtile ID, flags, etc
+    const attrBase = (this.options.ts[1] << 8) & 0x1fff | 0x12000;
+    const attributes = this.rom.prg[attrBase | metatileId];
+
+    const lines = [
+      `Screen (${scrX}, ${scrY}): $${hex(scrId)}`,
+      `Metatile (${tileX.toString(16)}, ${tileY.toString(16)}): $${hex(metatileId)}`,
+      `Attributes: ${hex(attributes)}`,
+    ];
+    this.showFloater(x, y, lines.join('\n'));
+  }
 }
 
 const run = async () => {
   const rom = new Rom(await pickFile());
 
-  if (true) {
-    const view = new MapsView(rom);
-    document.body.appendChild(view.element);
-    return;
-  }
-
-
-
-  // const controls = document.createElement('div');
-  // document.body.appendChild(controls);
-  // const screenSelect = numberInput(controls, 0, 0xff); // Consider 0x13f for ext
-  // TODO - populate a grid that we can edit - possibly even w,h ?
-
-
-
-  const styleControls = document.createElement('div');
-  document.body.appendChild(styleControls);
-  const flagSelect = checkboxInput(styleControls);
-  const locationSelect = numberInput(styleControls, 0, 0xff);
-  locationSelect.value = Number.parseInt(window.location.hash.substring(1), 16) || 0;
-  const textNode = document.createTextNode(' => ');
-  styleControls.appendChild(textNode);
-  const styleSelect = [
-    numberInput(styleControls, 0, 0xff),
-    numberInput(styleControls, 0, 0xff),
-    numberInput(styleControls, 0, 0xff),
-    numberInput(styleControls, 0, 0xfc, 4),
-    numberInput(styleControls, 0, 0xff),
-    numberInput(styleControls, 0, 0x3f),
-    numberInput(styleControls, 0, 0x3f),
-  ];
-
-  let scale = 0; // fraction = 2 / (scale + 2)
-
-  const canvas = document.createElement('canvas');
-  document.body.appendChild(canvas);
-
-  const update = () => {
-    const loc = locationSelect.value;
-    const flag = flagSelect.checked;
-    const style = styleSelect.map(x => x.value);
-
-    const [w, h] = rom.mapSize(loc);
-    canvas.width = 256 * w;
-    canvas.height = 240 * h;
-    const img =
-        ImageBuffer2.create(256 * w, 240 * h).fill(rom.getColor(style[0], 0));
-    for (let x = 0; x < w; x++) {
-      for (let y = 0; y < h; y++) {
-        const screen = rom.getScreen(locationSelect.value, x, y);
-        rom.drawScreen(img.shift(256 * x, 240 * y, 256, 240),
-                       screen, style, flag);
-      }
-    }
-    img.show(canvas);
-  };
-
-  for (const el of [flagSelect].concat(styleSelect)) {
-    el.addEventListener('change', update);
-  }
-
-  const updateLocation = () => {
-    const style = rom.getStyle(locationSelect.value);
-    for (let i = 0; i < 7; i++) {
-      styleSelect[i].value = style[i];
-    }
-    update();
-  };
-  locationSelect.addEventListener('change', updateLocation);
-  locationSelect.value = 0;
-  updateLocation();
-
-  document.body.addEventListener('keyup', e => {
-    if (e.target.tagName == 'INPUT') return;
-    if (e.key == 'j') {
-      locationSelect.value++;
-    } else if (e.key == 'k') {
-      locationSelect.value--;
-    } else if (e.key == 'l') {
-      flagSelect.checked = !flagSelect.checked;
-    } else if (e.key == 's') {
-      scale = (scale + 1) % 5;
-    } else {
-      return;
-    }
-    updateLocation();
-  });
+  const view = new MapsView(rom);
+  document.body.appendChild(view.element);
 };
-
-const checkboxInput = (parent) => {
-  const el = document.createElement('input');
-  el.type = 'checkbox';
-  parent.appendChild(el);
-  return el;
-};
-
-// silly number input doesn't support hex
-// for now just work around with an extra span
-const numberInput = (parent, min = 0, max = 0xff, step = 1) => {
-  const el = document.createElement('input');
-  let value = () => Number.parseInt(el.value, 16);
-  const pad = max.toString(16).length;
-  let setValue = (x) => el.value = x.toString(16).padStart(pad, 0);
-  el.type = 'text';
-  el.style.width = (max.toString(16).length + 2) + 'em';
-  el.value = min.toString(16).padStart(pad, 0);
-  el.addEventListener('keyup', e => {
-    if (e.key == 'ArrowUp') {
-      setValue(Math.min(max, e.ctrlKey ? max : value() + step))
-    } else if (e.key == 'ArrowDown') {
-      setValue(Math.max(min, e.ctrlKey ? min : value() - step));
-    } else {
-      return;
-    }
-    el.dispatchEvent(new Event('change'));
-  });
-  parent.appendChild(el);
-  return {
-    get value() {
-      return value();
-    },
-    set value(x) {
-      setValue(x);
-    },
-    addEventListener: el.addEventListener.bind(el),
-  };
-};
-
 
 const pickFile = () => {
   return new Promise((resolve, reject) => {
@@ -424,58 +320,8 @@ const pickFile = () => {
   });
 }
 
-class ImageBuffer2 {
-  constructor(data, dataWidth, x, y, w, h) {
-    this.data = data;
-    this.dataWidth = dataWidth;
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-  }
-
-  static create(w, h) {
-    return new ImageBuffer2(new Uint32Array(w * h), w, 0, 0, w, h);
-  }
-
-  fill(color) {
-    this.data.fill(color | 0xff000000);
-    return this;
-  }
-
-  draw(x, y, color) {
-    this.check(this.x + x, this.y + y);
-    this.data[(this.y + y) * this.dataWidth + this.x + x] = color | 0xff000000;
-  }
-
-  shift(dx, dy, w = this.w - dx, h = this.h - dy) {
-    this.check(this.x + dx, this.y + dy, w, h);
-    return new ImageBuffer2(this.data, this.dataWidth, this.x + dx, this.y + dy, w, h);
-  }
-
-  show(canvas, x, y) {
-    if (this.w * this.h != this.data.length) {
-      throw new Error('Cannot show subarray');
-    } else if (!this.w || !this.h) return;
-    const uint8 = new Uint8Array(this.data.buffer);
-    const ctx = canvas.getContext('2d');
-    const data = ctx.getImageData(x, y, this.w, this.h);
-    data.data.set(uint8);
-    ctx.putImageData(data, x, y);
-  }
-
-  check(x, y, w = 1, h = 1) {
-    if (x < this.x || x >= this.x + this.w ||
-        y < this.y || y >= this.y + this.h ||
-        x + w > this.x + this.w || w < 1 ||
-        y + h > this.y + this.h || h < 1) {
-      throw new Error(
-          `Out of bounds: ${[x, y, w, h]} vs ${[this.x, this.y, this.w, this.h]}`);
-    }
-  }
-
-}
-
 const fromTileY = (y) => (y >> 4) * 240 + (y & 0xf) * 16;
+
+const hex = (x) => x.toString(16).padStart(2, 0);
 
 run();

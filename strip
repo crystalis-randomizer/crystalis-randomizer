@@ -41,7 +41,7 @@ sub strip {
     my $comment = '';
     $comment = $& if s/^[^;]*\K;.*$//;
     $comment = "$&$comment" if $comment and s/\s+$//;
-    if (/^([-+\s]+\$[0-9a-f]+\s*?)((?:\s[0-9a-f]{2})+:\s+)([a-z]{3})(\s.*|)$/i) {
+    if (/^((?:[-+\s]|@[^:]+:)+\$[0-9a-f]+\s*?)((?:\s[0-9a-f]{2})+:\s+)([a-z]{3})(\s.*|)$/i) {
       # an instruction - figure out if we need to do anything with the argument.
       my ($address, $bytes, $mnemonic, $argument) = ($1, $2, $3, $4);
       $bytes =~ s/[0-9a-f]/x/ig;
@@ -53,7 +53,8 @@ sub strip {
       print "$address$bytes$mnemonic$argument$comment\n";
     } elsif (/^(.*?\.(?:byte|word)\s+)(.*)$/) {
       my ($prefix, $bytes) = ($1, $2);
-      $bytes =~ s/\$[0-9a-f]+/'$' . 'x' x (length($&) - 1)/ige unless $bytes =~ /\$[0-9a-f]{5}/;
+      $bytes =~ s/\$([0-9a-f]+)/'$' . 'x' x length($1)/ige unless $bytes =~ /\$[0-9a-f]{5}/;
+      $bytes =~ s/"([^"]+)"/'"' . 'x' x length($1) . '"'/ige;
       print "$prefix$bytes$comment\n";
     } else {
       print "$_$comment\n";
@@ -116,9 +117,9 @@ sub infuse {
     my $comment = '';
     $comment = $& if s/^[^;]*\K;.*$//;
     $comment = "$&$comment" if $comment and s/\s+$//;
-    if (/^([-+\s]+\$[0-9a-f]+\s*?)((?:\sxx)+:\s+)(xxx)(\s.*|)$/i) {
+    if (/^((?:[-+\s]|@[^:]+:)+)(\$[0-9a-f]+\s*?)((?:\sxx)+:\s+)(xxx)(\s.*|)$/i) {
       # an instruction - figure out if we need to do anything with the argument.
-      my ($address, $bytes, $mnemonic, $argument) = ($1, $2, $3, $4);
+      my ($label, $address, $bytes, $mnemonic, $argument) = ($1, $2, $3, $4, $5);
       $address =~ /[0-9a-f]+/;
       checkAddress(hex($&));
       my $op = $opcodes[$prg[$curaddr]];
@@ -134,12 +135,15 @@ sub infuse {
       #$bytes = join '', map {sprintf ' %02x', $_} @bytes;
       $mnemonic =~ s/xxx/$op->{mnemonic}/e;
       $curaddr += $op->{addr}->{bytes};
-      print "$address$bytes$mnemonic$argument$comment\n";
+      print "$label$address$bytes$mnemonic$argument$comment\n";
     } elsif (/^\s+\$([0-9a-fA-F]+).*?\.byte\b/) {
       checkAddress(hex($1));
+      # easy approach - preprocess quotes into the same thing as non-quotes
+      while (s/x"/",#\$xx/) {}
       while (s/\$xx/sprintf('$%02x', $prg[$curaddr])/e) {
         $curaddr++;
       }
+      while (s/",#\$([0-9a-f]{2})/chr(hex($1)) . '"'/e) {}
       print "$_$comment\n";
     } elsif (/^\s+\$([0-9a-fA-F]+).*?\.word\b/) {
       checkAddress(hex($1));

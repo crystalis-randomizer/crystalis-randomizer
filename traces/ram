@@ -304,6 +304,11 @@ $52..$53
 --------
 Look like temporary vars for NMI handler.
 
+$54..$56
+--------
+IRQ Callback
+  $54$55 is the address of the jump table entry
+  $56 is the index of the current callback
 
 $58..$5d
 --------
@@ -517,6 +522,12 @@ $301 is player - $300 seems not to be drawn.
 
 $320,x
 ------
+Some monsters (bosses?) have $80 here, some people have 10, 20, 30;
+something else writes $40.
+  - PersonData[i][2] & #$70  -> 320,x
+
+Usage: $3dada looks like nonzero causes some sort of "chain" to the next object?
+       - this routine looks to be zeroing out the sprites (specifically $4a0, the action)
 
 
 $340,x
@@ -532,10 +543,12 @@ Normally 35bff writes $06 to $340.  it clears the :0f bits and ORs in A,
 Looks like maybe player turns positive while enemies turn negative,
   count up from 82->92->a2->b2->c2->d2->e2->f2->02->02...
 
-lower nibble has other information
+lower nibble of $340 has other information
 for player (see SetPlayer340Lower),
  - 2 = mutated, 5 = changed, 9 = dolphin
  - 
+
+for all others (341, etc) this is walking speed in low nibble
 
 
 $360,x
@@ -581,20 +594,24 @@ of screen positions?
 
 $3c0,x
 ------
+HP
 
 
 $3e0,x
 ------
+Attack
 
 
 $400,x
 ------
+Defense
 
 
 $420,x
 ------
 const
 :40 bit seems to select hitboxes 16-23.
+low nibble is required level - consistent with 421 being player level
 
 
 $440,x
@@ -613,6 +630,7 @@ The :06 bit indicates flying - 02 = not flying, 04 = flying (at least for player
  - salamander is $5f, so we copy the transforms w/ flag bit for some reason???
  - player is 32 while grounded (incl rabbit boots), 34 while flying
    - this does not include slow, pit, pain, etc -> why not? handled elsewhere?
+
 
 $480,x
 ------
@@ -642,6 +660,7 @@ but it clearly does more than that...
 
 $4c0,x
 ------
+on death action???
 
 
 $4e0,x
@@ -653,10 +672,13 @@ metasprite data table to pick the specific version to use
 
 $500,x
 ------
+high nibble - gold drop index
+low nibble - elemental defense
 
 
 $520,x
 ------
+exp for killing
 
 
 $540,x
@@ -794,6 +816,15 @@ BOSS FIGHT -
 When fall sound happens ($35d34) $7d7 and $7d6 are both set to #$10
 
 
+$7de..$7df
+----------
+Looks related to text - $2853a stores $7df in $6700 and $7de into $6701
+ - the $6700 addresses look pretty unread - written but never read
+$7df - message table part to look in
+$7de:1f - message index within the part
+
+
+
 $7e0..$7e7
 ----------
 Palettes.  These index into the palette tables embedded in $4000..$7fff.
@@ -805,7 +836,7 @@ $7f0..$7f5
 Store CHR bank values for bank select 0..5:
     0: Select 2 KB CHR bank at PPU $0000-$07FF - background 1
     1: Select 2 KB CHR bank at PPU $0800-$0FFF - background 2
-       - This is used entirely for terrain animations (water, etc)
+       - This is used for terrain animations (water, etc)
          and the possible values all come from the 32-byte data
          table at $3e779 (four eight-byte animation sequences)
     2: Select 1 KB CHR bank at PPU $1000-$13FF - player

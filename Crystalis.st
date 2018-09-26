@@ -1,10 +1,12 @@
 define Inventory $6430
 define Inventory_ScratchSortRow $60e0
 
-define ScreenX_Low          $02     ; also stored in $34,$36 during map scroll
-define ScreenX_High         $03
-define ScreenY_Low          $04
-define ScreenY_High         $05
+define ScreenXLo            $02     ; also stored in $34,$36 during map scroll
+define ScreenXHi            $03
+define ScreenYLo            $04
+define ScreenYHi            $05
+
+define GlobalCounter        $08
 
 define MainLoopMode         $40
 define GameMode             $41
@@ -24,21 +26,36 @@ define Ctrl2NewlyPressed     $4c
 define Ctrl1NewlyPressedAB   $4d ; in normal mode, may add A or B repeats
 define Ctrl2NewlyPressedAB   $4e ; in normal mode, may add A or B repeats
 
+define ScreenMode  $51
+
 define CurrentLocation   $6c
 define CurrentEntrance   $6d
 define PrgPageShadowLo   $6e
 define PrgPageShadowHi   $6f
 
-        
+define SpriteRam           $0200
+define SpriteRamY          $0200
+define SpriteRamPattern    $0201
+define SpriteRamAttributes $0202
+define SpriteRamX          $0203
+
 define PlayerMaxHP          $03c0
 define PlayerHP             $03c1
 define PlayerLevel          $0421
 define PlayerMoney          $0702 ; 2 bytes
 define PlayerExp            $0704 ; 2 bytes
 define PlayerExpToNextLevel $0706 ; 2 bytes
-define PlayerMP             $0708 ; 2 bytes
+define PlayerMP             $0708
+define PlayerMaxMP          $0709
+define PlayerStatus         $0710
 
-define SelectedConsumableItem  $0715
+define EquippedSword           $0711
+define EquippedMagic           $0712
+define EquippedArmor           $0713
+define EquippedShield          $0714
+define EquippedConsumableItem  $0715
+define EquippedPassiveItem     $0716
+define EquippedBracelet        $0718
 
 
 
@@ -167,6 +184,55 @@ define INV_MAGIC_BARRIER     $46
 define INV_MAGIC_CHANGE      $47
 define INV_MAGIC_FLIGHT      $48
 
+;;; Magic stored in $712 is just the low nibble of the inventory version
+define MAGIC_REFRESH     $01
+define MAGIC_PARALYSIS   $02
+define MAGIC_TELEPATHY   $03
+define MAGIC_TELEPORT    $04
+define MAGIC_RECOVER     $05
+define MAGIC_BARRIER     $06
+define MAGIC_CHANGE      $07
+define MAGIC_FLIGHT      $08
+
+;;; Items stored in $715 and $716 are $1c less than inventory numbers
+define ITEM_MEDICAL_HERB     $01
+define ITEM_ANTIDOTE         $02
+define ITEM_LYSIS_PLANT      $03
+define ITEM_FRUIT_OF_LIME    $04
+define ITEM_FRUIT_OF_POWER   $05
+define ITEM_MAGIC_RING       $06
+define ITEM_FRUIT_OF_REPUN   $07
+define ITEM_WARP_BOOTS       $08
+define ITEM_STATUE_OF_ONYX   $09
+define ITEM_OPEL_STATUE      $0a
+define ITEM_INSECT_FLUTE     $0b
+define ITEM_FLUTE_OF_LIME    $0c
+define ITEM_GAS_MASK         $0d
+define ITEM_POWER_RING       $0e
+define ITEM_WARRIOR_RING     $0f
+define ITEM_IRON_NECKLACE    $10
+define ITEM_DEOS_PENDANT     $11
+define ITEM_RABBIT_BOOTS     $12
+define ITEM_LEATHER_BOOTS    $13
+define ITEM_SHIELD_RING      $14
+define ITEM_ALARM_FLUTE      $15
+define ITEM_WINDMILL_KEY     $16
+define ITEM_KEY_TO_PRISON    $17
+define ITEM_KEY_TO_STYX      $18
+define ITEM_FOG_LAMP         $19
+define ITEM_SHELL_FLUTE      $1a
+define ITEM_EYE_GLASSES      $1b
+define ITEM_BROKEN_STATUE    $1c
+define ITEM_GLOWING_LAMP     $1d
+define ITEM_STATUE_OF_GOLD   $1e
+define ITEM_LOVE_PENDANT     $1f
+define ITEM_KIRISA_PLANT     $20
+define ITEM_IVORY_STATUE     $21
+define ITEM_BOW_OF_MOON      $22
+define ITEM_BOW_OF_SUN       $23
+define ITEM_BOW_OF_TRUTH     $24
+
+
 define BGM_PLAINS        $01
 define BGM_SWAMP         $03
 define BGM_DESERT        $04
@@ -275,6 +341,7 @@ define SFX_75                $75  ; similar to 6b, but a little different
 define SFX_76                $76  ; a different lower sort of klaxon
 define SFX_7F                $7f  ; another explosion
 
+;;; Corresponds to values of $40
 define MAIN_LOOP_PREPARE_GAME_START  $00
 define MAIN_LOOP_GAME                $01
 define MAIN_LOOP_PREPARE_TITLE_MOVIE $02
@@ -283,10 +350,11 @@ define MAIN_LOOP_PREPARE_ENDING      $04
 define MAIN_LOOP_ENDING              $05
 define MAIN_LOOP_PREPARE_CONTINUE    $08
 
+;;; Corresponds to values of $41
 define GAME_MODE_INITIAL_START   $00
 define GAME_MODE_CHANGE_LOCATION $01
 define GAME_MODE_DEATH           $03
-define GAME_MODE_ITEM_USE    $06
+define GAME_MODE_ITEM_USE        $06
 define GAME_MODE_TRIGGER_TILE    $07
 define GAME_MODE_NORMAL          $08
 define GAME_MODE_STATUS_MSG      $10
@@ -309,12 +377,26 @@ define GAME_MODE_INN             $22
 define GAME_MODE_PAWN_SHOP       $23
 define GAME_MODE_EMPTY_SHOP      $24
 
+;;; Corresponds to values of $51
+define SCREEN_MODE_NORMAL      $00
+define SCREEN_MODE_TEXT        $01
+define SCREEN_MODE_MOVIE       $03
+        ;; The giant insect and Draygon 2 are rendered in the background.
+        ;; There are two dedicated screen modes for this: $07 is the normal
+        ;; mode (equivalent to $00) and $09 is the analogue to $01 for
+        ;; displaying messages like "Not enough MP" or "Life replenished".
+define SCREEN_MODE_NTBOSS      $07
+define SCREEN_MODE_NTBOSS_TEXT $09
+
+;;; Corresponds to values of $6c
 define LOC_START         $00
 define LOC_OUTSIDE_START $01
 define LOC_LEAF          $02
 ;;; ...
+define LOC_MESIA_SHRINE  $52
 define LOC_DYNA          $5f
-        
+
+;;; Bit mask for buttons in $43 and $44, etc.
 define BUTTON_A      $80
 define BUTTON_B      $40
 define BUTTON_SELECT $20
@@ -18336,40 +18418,40 @@ RomBank_0e                      ; @@ $8000
         $1c000  xx xx:      xxx $xx
         $1c002  xx:         xxx
         $1c003  xx:         xxx
-        $1c004  xx xx:      xxx $xx
-        $1c006  xx xx xx:   xxx $1c95d,x
-        $1c009  xx xx:      xxx $xx
-        $1c00b  xx xx xx:   xxx $1c95e,x
-        $1c00e  xx xx xx:   xxx $1c019
-;;; --------------------------------
-        $1c011  xx xx xx:   xxx $1ca5d,x
-        $1c014  xx xx:      xxx $xx
-        $1c016  xx xx xx:   xxx $1ca5e,x
-        $1c019  xx xx:      xxx $xx
+        $1c004  xx xx:      xxx +
+        $1c006  xx xx xx:     xxx $1c95d,x
+        $1c009  xx xx:        xxx $xx
+        $1c00b  xx xx xx:     xxx $1c95e,x
+        $1c00e  xx xx xx:     xxx ++
+        ;;                    ------
++       $1c011  xx xx xx:    xxx $1ca5d,x
+        $1c014  xx xx:       xxx $xx
+        $1c016  xx xx xx:    xxx $1ca5e,x
+++      $1c019  xx xx:      xxx $xx
         $1c01b  xx xx:      xxx #$xx
-        $1c01d  xx xx xx:   xxx $1c135
-        $1c020  xx xx:      xxx $xx
-        $1c022  xx xx xx:   xxx $1c078
-;;; --------------------------------
-        $1c025  xx xx xx:   xxx $1c08f
-        $1c028  xx xx:      xxx $xx
-        $1c02a  xx xx:      xxx $xx
-        $1c02c  xx xx:      xxx ($xx),y
-        $1c02e  xx:         xxx
-        $1c02f  xx xx:      xxx #$xx
-        $1c031  xx xx:      xxx $xx
-        $1c033  xx xx:      xxx $xx
-        $1c035  xx xx:      xxx $xx
-        $1c037  xx:         xxx
-        $1c038  xx xx xx:   xxx $1c02c
-;;; --------------------------------
-        $1c03b  xx xx:      xxx ($xx),y
+-       $1c01d  xx xx xx:    xxx $1c135
+        $1c020  xx xx:       xxx +
+        $1c022  xx xx xx:     xxx $1c078
+        ;;                    ----------
++       $1c025  xx xx xx:    xxx $1c08f
+        $1c028  xx xx:       xxx $xx
+        $1c02a  xx xx:      xxx -
+-       $1c02c  xx xx:       xxx ($xx),y
+        $1c02e  xx:          xxx
+        $1c02f  xx xx:       xxx #$xx
+        $1c031  xx xx:       xxx ++
+        $1c033  xx xx:       xxx $xx
+        $1c035  xx xx:       xxx +
+        $1c037  xx:          xxx
+        $1c038  xx xx xx:   xxx -
+        ;; --------------------------------
++       $1c03b  xx xx:      xxx ($xx),y
         $1c03d  xx xx:      xxx $xx
         $1c03f  xx xx xx:   xxx $xxxx,x
         $1c042  xx:         xxx
-        $1c043  xx xx xx:   xxx $1c02c
-;;; --------------------------------
-        $1c046  xx:         xxx
+        $1c043  xx xx xx:   xxx -
+        ;; --------------------------------
+++      $1c046  xx:         xxx
         $1c047  xx:         xxx
         $1c048  xx xx:      xxx $xx
         $1c04a  xx xx:      xxx $xx
@@ -18378,26 +18460,27 @@ RomBank_0e                      ; @@ $8000
         $1c050  xx xx:      xxx $xx
         $1c052  xx xx:      xxx $xx
         $1c054  xx xx xx:   xxx $xxxx,x
-        $1c057  xx xx xx:   xxx $1c135
-        $1c05a  xx xx:      xxx $xx
+-       $1c057  xx xx xx:   xxx $1c135
+        $1c05a  xx xx:      xxx + ; $1c071
         $1c05c  xx xx xx:   xxx $1c078
         $1c05f  xx xx:      xxx $xx
         $1c061  xx xx:      xxx ($xx),y
         $1c063  xx xx xx:   xxx $xxxx,x
         $1c066  xx xx:      xxx $xx
         $1c068  xx xx:      xxx #$xx
-        $1c06a  xx xx:      xxx $xx
+        $1c06a  xx xx:      xxx @rts
         $1c06c  xx:         xxx
         $1c06d  xx xx xx:   xxx $1c112
-        $1c070  xx:         xxx
-;;; --------------------------------
-        $1c071  xx xx xx:   xxx $1c08e
+@rts:   $1c070  xx:         xxx
+        ;; --------------------------------
++       $1c071  xx xx xx:   xxx $1c08e
         $1c074  xx xx:      xxx $xx
-        $1c076  xx xx:      xxx $xx
+        $1c076  xx xx:      xxx - ; $1c057
         ;; NOTE: this is an entry point, too, from ItemUse.
         ;; read [2] and [3] from ItemUseData[item]
         ;;   $21 gets the low 3 bits from [2], $22 gets the high 5 (shifted)
         ;;   $20 gets [3]
+        ;; Ordinary dialog -> ($24) => $1cf26 @@@@@@
         $1c078  xx xx:      xxx ($xx),y
         $1c07a  xx:         xxx
         $1c07b  xx xx:       xxx #$xx
@@ -18419,13 +18502,13 @@ RomBank_0e                      ; @@ $8000
         $1c090  xx:         xxx
         $1c091  xx xx:      xxx $xx
         $1c093  xx xx:      xxx #$xx
-        $1c095  xx xx:      xxx $xx
-        $1c097  xx xx:      xxx ($xx),y
-        $1c099  xx:         xxx
-        $1c09a  xx:         xxx
-        $1c09b  xx xx:      xxx #$xx
-        $1c09d  xx xx:      xxx $xx
-        $1c09f  xx:         xxx
+        $1c095  xx xx:      xxx + ; $1c09f
+-       $1c097  xx xx:        xxx ($xx),y
+        $1c099  xx:           xxx
+        $1c09a  xx:           xxx
+        $1c09b  xx xx:        xxx #$xx
+        $1c09d  xx xx:       xxx - ; $1c097
++       $1c09f  xx:         xxx
 ;;; --------------------------------
         $1c0a0  xx xx:      xxx #$xx
         $1c0a2  xx xx:      xxx $xx
@@ -18446,7 +18529,7 @@ RomBank_0e                      ; @@ $8000
         $1c0c0  xx xx:      xxx ($xx),y
         $1c0c2  xx:         xxx
         $1c0c3  xx xx:      xxx #$xx
-        $1c0c5  xx xx:      xxx $xx
+        $1c0c5  xx xx:      xxx @rts2
         $1c0c7  xx xx:      xxx $xx
         $1c0c9  xx xx:      xxx $xx
         $1c0cb  xx xx xx:   xxx $1c135
@@ -18466,7 +18549,7 @@ CheckConditions
         $1c0dd  xx:         xxx
         $1c0de  xx xx:      xxx $xx
         $1c0e0  xx xx:      xxx $xx
-        $1c0e2  xx:         xxx
+@rts2:  $1c0e2  xx:         xxx
 ;;; --------------------------------
         $1c0e3  xx xx:      xxx $xx
         $1c0e5  xx:         xxx
@@ -18518,9 +18601,9 @@ CheckConditions
         $1c13c  xx:         xxx
         $1c13d  xx xx xx:    xxx $xxxx,x
         $1c140  xx:         xxx
-        $1c141  xx xx:      xxx $xx
-        $1c143  xx xx:      xxx #$xx
-        $1c145  xx xx:      xxx $xx
+        $1c141  xx xx:      xxx + ; $1c145
+        $1c143  xx xx:       xxx #$xx
++       $1c145  xx xx:      xxx $xx
         $1c147  xx:         xxx
 ;;; --------------------------------
 ;;; Reads the next two bytes from ($24),y: (%abcd efgh) and (%ijkl mnop).
@@ -18540,7 +18623,7 @@ CheckConditions
         $1c152  xx:         xxx
         $1c153  xx xx:       xxx #$xx
         $1c155  xx:          xxx
-        $1c156  xx xx xx:    xxx $1c167,x ; powers of two
+        $1c156  xx xx xx:    xxx PowersOfTwo_1c,x
         $1c159  xx xx:       xxx $xx      ; $28 <- 1 << $24[1]&7
         $1c15b  xx:         xxx
         $1c15c  xx xx:      xxx $xx
@@ -18552,7 +18635,7 @@ CheckConditions
         $1c165  xx:         xxx
         $1c166  xx:         xxx
 ;;; --------------------------------
-DataTable_1c167 
+PowersOfTwo_1c 
         $1c167              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
         $1c16f  xx:         xxx
@@ -19573,35 +19656,213 @@ Condition_ca
 Condition_cb
         $1c955              .byte $xx,$xx,$xx,$xx
 Condition_cc
-        $1c959              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1c960              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1c970              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1c980              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1c990              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1c9a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1c9b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1c9c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1c9d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1c9e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1c9f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ca00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ca10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ca20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ca30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ca40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ca50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ca60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ca70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ca80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ca90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1caa0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cab0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cac0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cad0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cae0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1caf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cb00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cb10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1c959              .byte $xx,$xx,$xx,$xx
+DataTable_1c95d
+        ;; STRIP: word=$14000
+        $1c95d              .word ($1d186)
+        $1c95f              .word ($1cd61)
+        $1c961              .word ($1cd9c)
+        $1c963              .word ($1d167)
+        $1c965              .word ($1d0c1)
+        $1c967              .word ($1cec2)
+        $1c969              .word ($1d14f)
+        $1c96b              .word ($1d070)
+        $1c96d              .word ($1cf1d)
+        $1c96f              .word ($1d33f)
+        $1c971              .word ($1d35a)
+        $1c973              .word ($1d633)
+        $1c975              .word ($1d429)
+        $1c977              .word ($1cb43)
+        $1c979              .word ($1cb86)
+        $1c97b              .word ($1cbbb)
+        $1c97d              .word ($1cbed)
+        $1c97f              .word ($1cc1b)
+        $1c981              .word ($1cc4d)
+        $1c983              .word ($1cc76)
+        $1c985              .word ($1ccc5)
+        $1c987              .word ($1ccf2)
+        $1c989              .word ($1d6cd)
+        $1c98b              .word ($1cd39)
+        $1c98d              .word ($1cd43)
+        $1c98f              .word ($1cd4d)
+        $1c991              .word ($1cd57)
+        $1c993              .word ($1ccfc)
+        $1c995              .word ($1cd08)
+        $1c997              .word ($1cdaf)
+        $1c999              .word ($1cde8)
+        $1c99b              .word ($1ce15)
+        $1c99d              .word ($1ce3b)
+        $1c99f              .word ($1ce5f)
+        $1c9a1              .word ($1ce83)
+        $1c9a3              .word ($1cea7)
+        $1c9a5              .word ($1cedf)
+        $1c9a7              .word ($1cefd)
+        $1c9a9              .word ($1cee9)
+        $1c9ab              .word ($1cef3)
+        $1c9ad              .word ($1cf13)
+        $1c9af              .word ($1cf55)
+        $1c9b1              .word ($1cf3a)
+        $1c9b3              .word ($1cf30)
+        $1c9b5              .word ($1cd28)
+        $1c9b7              .word ($1cf79)
+        $1c9b9              .word ($1ccb1)
+        $1c9bb              .word ($1ccbb)
+        $1c9bd              .word ($1cc9d)
+        $1c9bf              .word ($1cca7)
+        $1c9c1              .word ($1d0ab)
+        $1c9c3              .word ($1d055)
+        $1c9c5              .word ($1d030)
+        $1c9c7              .word ($1d0fe)
+        $1c9c9              .word ($1d119)
+        $1c9cb              .word ($1d134)
+        $1c9cd              .word ($1cf91)
+        $1c9cf              .word ($1d004)
+        $1c9d1              .word ($1d1e5)
+        $1c9d3              .word ($1d1fd)
+        $1c9d5              .word ($1d20c)
+        $1c9d7              .word ($1d21b)
+        $1c9d9              .word ($1d27b)
+        $1c9db              .word ($1d29b)
+        $1c9dd              .word ($1d2bb)
+        $1c9df              .word ($1d25b)
+        $1c9e1              .word ($1d23b)
+        $1c9e3              .word ($1d2db)
+        $1c9e5              .word ($1d390)
+        $1c9e7              .word ($1d2fb)
+        $1c9e9              .word ($1d31d)
+        $1c9eb              .word ($1d375)
+        $1c9ed              .word ($1d3d8)
+        $1c9ef              .word ($1cb08)
+        $1c9f1              .word ($1d44d)
+        $1c9f3              .word ($1cb12)
+        $1c9f5              .word ($1cb25)
+        $1c9f7              .word ($1cb2f)
+        $1c9f9              .word ($1d477)
+        $1c9fb              .word ($1d4e8)
+        $1c9fd              .word ($1d503)
+        $1c9ff              .word ($1d4b9)
+        $1ca01              .word ($1d52a)
+        $1ca03              .word ($1d4d5)
+        $1ca05              .word ($1d5bf)
+        $1ca07              .word ($1d5fd)
+        $1ca09              .word ($1d56e)
+        $1ca0b              .word ($1d589)
+        $1ca0d              .word ($1d5a4)
+        $1ca0f              .word ($1d669)
+        $1ca11              .word ($1d64b)
+        $1ca13              .word ($1d67f)
+        $1ca15              .word ($1d69c)
+        $1ca17              .word ($1d51e)
+        $1ca19              .word ($1d755)
+        $1ca1b              .word ($1d7a6)
+        $1ca1d              .word ($1d719)
+        $1ca1f              .word ($1cb39)
+        $1ca21              .word ($1d7ef)
+        $1ca23              .word ($1d6b9)
+        $1ca25              .word ($1d1a3)
+        $1ca27              .word ($1cb7a)
+        $1ca29              .word ($1cb39)
+        $1ca2b              .word ($1cb39)
+        $1ca2d              .word ($1d860)
+        $1ca2f              .word ($1d6c3)
+        $1ca31              .word ($1cb39)
+        $1ca33              .word ($1d86c)
+        $1ca35              .word ($1d897)
+        $1ca37              .word ($1d876)
+        $1ca39              .word ($1caf4)
+        $1ca3b              .word ($1d3f3)
+        $1ca3d              .word ($1d708)
+        $1ca3f              .word ($1d545)
+        $1ca41              .word ($1d55d)
+        $1ca43              .word ($1cb39)
+        $1ca45              .word ($1d836)
+        $1ca47              .word ($1d8ad)
+        $1ca49              .word ($1d4ad)
+        $1ca4b              .word ($1d3bd)
+        $1ca4d              .word ($1d5e2)
+        $1ca4f              .word ($1d40e)
+        $1ca51              .word ($1d618)
+        $1ca53              .word ($1d1c5)
+        $1ca55              .word ($1ce3b)
+        $1ca57              .word ($1ce5f)
+        $1ca59              .word ($1d836)
+        $1ca5b              .word ($1cafe)
+        $1ca5d              .word ($1cae5)
+        $1ca5f              .word ($1cae5)
+        $1ca61              .word ($1cb39)
+        $1ca63              .word ($1d8d2)
+        $1ca65              .word ($1d8c8)
+        $1ca67              .word ($1d1e5)
+        $1ca69              .word ($1d1fd)
+        $1ca6b              .word ($1d20c)
+        $1ca6d              .word ($1d6cd)
+        $1ca6f              .word ($1cb39)
+        $1ca71              .word ($1cb39)
+        $1ca73              .word ($1cb39)
+        $1ca75              .word ($1cb39)
+        $1ca77              .word ($1cb39)
+        $1ca79              .word ($1d8b7)
+        $1ca7b              .word ($1cb39)
+        $1ca7d              .word ($1cb39)
+        $1ca7f              .word ($1cb39)
+        $1ca81              .word ($1cb39)
+        $1ca83              .word ($1cb39)
+        $1ca85              .word ($1cb39)
+        $1ca87              .word ($1cb39)
+        $1ca89              .word ($1cb39)
+        $1ca8b              .word ($1cb39)
+        $1ca8d              .word ($1cb39)
+        $1ca8f              .word ($1cb39)
+        $1ca91              .word ($1cb39)
+        $1ca93              .word ($1cb39)
+        $1ca95              .word ($1cb39)
+        $1ca97              .word ($1cb39)
+        $1ca99              .word ($1cb39)
+        $1ca9b              .word ($1cb39)
+        $1ca9d              .word ($1cb39)
+        $1ca9f              .word ($1cb39)
+        $1caa1              .word ($1cb39)
+        $1caa3              .word ($1cb39)
+        $1caa5              .word ($1cb39)
+        $1caa7              .word ($1cb39)
+        $1caa9              .word ($1cb39)
+        $1caab              .word ($1cb39)
+        $1caad              .word ($1cb39)
+        $1caaf              .word ($1cb39)
+        $1cab1              .word ($1cb39)
+        $1cab3              .word ($1cb39)
+        $1cab5              .word ($1cb39)
+        $1cab7              .word ($1cb39)
+        $1cab9              .word ($1cb39)
+        $1cabb              .word ($1cb39)
+        $1cabd              .word ($1cb39)
+        $1cabf              .word ($1cb39)
+        $1cac1              .word ($1cb39)
+        $1cac3              .word ($1cb39)
+        $1cac5              .word ($1cb39)
+        $1cac7              .word ($1cb39)
+        $1cac9              .word ($1cb39)
+        $1cacb              .word ($1cb39)
+        $1cacd              .word ($1cb39)
+        $1cacf              .word ($1cb39)
+        $1cad1              .word ($1cb39)
+        $1cad3              .word ($1cb39)
+        $1cad5              .word ($1cb39)
+        $1cad7              .word ($1cb39)
+        $1cad9              .word ($1cb39)
+        $1cadb              .word ($1cb39)
+        $1cadd              .word ($1cb39)
+        $1cadf              .word ($1cb39)
+        $1cae1              .word ($1cb39)
+        $1cae3              .word ($1d8e5)
+        $1cae5              .byte $xx,$xx
+        $1cae7              .byte $xx,$xx
+        $1cae9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1caf4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cafe              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cb08              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cb12              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1cb18              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1cb20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1cb30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1cb40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -31154,7 +31415,7 @@ MainGameModeJump_03_DeathAnimation
 ;;; --------------------------------
         $279fb  xx xx:      xxx #$xx
         $279fd  xx xx xx:   xxx $3c418
-        $27a00  xx xx xx:   xxx $34cc0
+        $27a00  xx xx xx:   xxx UpdateHPDisplayInternal
 ;;; --------------------------------
         $27a03  xx xx xx:   xxx $3c169
         $27a06  xx xx xx:   xxx $3ff8c
@@ -31231,7 +31492,7 @@ InitializeStatusBarNametable
         $27abc  xx xx xx:   xxx StageNametableWrite
         $27abf  xx xx:      xxx #$xx ; 8000 -> 34000
         $27ac1  xx xx xx:   xxx BankSwitch8k_8000
-        $27ac4  xx xx xx:   xxx $34cc0
+        $27ac4  xx xx xx:   xxx UpdateHPDisplayInternal
         $27ac7  xx xx xx:   xxx $34d59
         $27aca  xx xx:      xxx #$xx ; LV, Money, EXP, EXP left, MP, and Max MP
 -       $27acc  xx:          xxx
@@ -31323,7 +31584,7 @@ MainGameModeJump_19_ChangeMagicRevertAnimation
         $27bdd  xx xx:      xxx #SFX_CHANGE_MAGIC
         $27bdf  xx xx xx:   xxx StartAudioTrack
         $27be2  xx xx:      xxx #$xx
-        $27be4  xx xx xx:   xxx $3c17d
+        $27be4  xx xx xx:   xxx RemoveSpritesBehindMessageBox
         $27be7  xx xx xx:   xxx $3c169
         $27bea  xx xx xx:   xxx $3ff8c
         $27bed  xx xx xx:   xxx $xxxx
@@ -31361,7 +31622,7 @@ MainGameModeJump_1a_SwordInAir
         $27c38  xx xx:        xxx #BGM_PROGRESS_ALT
         $27c3a  xx xx xx:     xxx StartAudioTrack
         $27c3d  xx xx:        xxx #$xx
-        $27c3f  xx xx xx:     xxx $3c17d
+        $27c3f  xx xx xx:     xxx RemoveSpritesBehindMessageBox
         $27c42  xx xx xx:     xxx $3c169
         $27c45  xx xx xx:     xxx $3ff8c
         $27c48  xx xx xx:     xxx $xxxx
@@ -31373,7 +31634,7 @@ MainGameModeJump_1a_SwordInAir
         $27c55  xx xx xx:   xxx $xxxx
         $27c58  xx xx xx:   xxx $3c008
         $27c5b  xx xx:      xxx #$xx
-        $27c5d  xx xx xx:   xxx $3c17d
+        $27c5d  xx xx xx:   xxx RemoveSpritesBehindMessageBox
         $27c60  xx xx xx:   xxx $3ff8c
         $27c63  xx xx xx:   xxx $3c169
         $27c66  xx xx:      xxx #$xx
@@ -31763,562 +32024,614 @@ MainGameModeJump_1e_ThrustCrystalis
 DataTable_27fe8 
         $27fe8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $27ff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; ----------------------------------------------------------------
 RomBank_14                      ; @@ $8000
-        ;; It's not clear what this is, but it looks like 512 different(?)
-        ;; addresses in this or more likely some other bank.
-        $28000              .word ($xxxx)
-        $28002              .word ($xxxx)
-        $28004              .word ($xxxx)
-        $28006              .word ($xxxx)
-        $28008              .word ($xxxx)
-        $2800a              .word ($xxxx)
-        $2800c              .word ($xxxx)
-        $2800e              .word ($xxxx)
-        $28010              .word ($xxxx)
-        $28012              .word ($xxxx)
-        $28014              .word ($xxxx)
-        $28016              .word ($xxxx)
-        $28018              .word ($xxxx)
-        $2801a              .word ($xxxx)
-        $2801c              .word ($xxxx)
-        $2801e              .word ($xxxx)
-        $28020              .word ($xxxx)
-        $28022              .word ($xxxx)
-        $28024              .word ($xxxx)
-        $28026              .word ($xxxx)
-        $28028              .word ($xxxx)
-        $2802a              .word ($xxxx)
-        $2802c              .word ($xxxx)
-        $2802e              .word ($xxxx)
-        $28030              .word ($xxxx)
-        $28032              .word ($xxxx)
-        $28034              .word ($xxxx)
-        $28036              .word ($xxxx)
-        $28038              .word ($xxxx)
-        $2803a              .word ($xxxx)
-        $2803c              .word ($xxxx)
-        $2803e              .word ($xxxx)
-        $28040              .word ($xxxx)
-        $28042              .word ($xxxx)
-        $28044              .word ($xxxx)
-        $28046              .word ($xxxx)
-        $28048              .word ($xxxx)
-        $2804a              .word ($xxxx)
-        $2804c              .word ($xxxx)
-        $2804e              .word ($xxxx)
-        $28050              .word ($xxxx)
-        $28052              .word ($xxxx)
-        $28054              .word ($xxxx)
-        $28056              .word ($xxxx)
-        $28058              .word ($xxxx)
-        $2805a              .word ($xxxx)
-        $2805c              .word ($xxxx)
-        $2805e              .word ($xxxx)
-        $28060              .word ($xxxx)
-        $28062              .word ($xxxx)
-        $28064              .word ($xxxx)
-        $28066              .word ($xxxx)
-        $28068              .word ($xxxx)
-        $2806a              .word ($xxxx)
-        $2806c              .word ($xxxx)
-        $2806e              .word ($xxxx)
-        $28070              .word ($xxxx)
-        $28072              .word ($xxxx)
-        $28074              .word ($xxxx)
-        $28076              .word ($xxxx)
-        $28078              .word ($xxxx)
-        $2807a              .word ($xxxx)
-        $2807c              .word ($xxxx)
-        $2807e              .word ($xxxx)
-        $28080              .word ($xxxx)
-        $28082              .word ($xxxx)
-        $28084              .word ($xxxx)
-        $28086              .word ($xxxx)
-        $28088              .word ($xxxx)
-        $2808a              .word ($xxxx)
-        $2808c              .word ($xxxx)
-        $2808e              .word ($xxxx)
-        $28090              .word ($xxxx)
-        $28092              .word ($xxxx)
-        $28094              .word ($xxxx)
-        $28096              .word ($xxxx)
-        $28098              .word ($xxxx)
-        $2809a              .word ($xxxx)
-        $2809c              .word ($xxxx)
-        $2809e              .word ($xxxx)
-        $280a0              .word ($xxxx)
-        $280a2              .word ($xxxx)
-        $280a4              .word ($xxxx)
-        $280a6              .word ($xxxx)
-        $280a8              .word ($xxxx)
-        $280aa              .word ($xxxx)
-        $280ac              .word ($xxxx)
-        $280ae              .word ($xxxx)
-        $280b0              .word ($xxxx)
-        $280b2              .word ($xxxx)
-        $280b4              .word ($xxxx)
-        $280b6              .word ($xxxx)
-        $280b8              .word ($xxxx)
-        $280ba              .word ($xxxx)
-        $280bc              .word ($xxxx)
-        $280be              .word ($xxxx)
-        $280c0              .word ($xxxx)
-        $280c2              .word ($xxxx)
-        $280c4              .word ($xxxx)
-        $280c6              .word ($xxxx)
-        $280c8              .word ($xxxx)
-        $280ca              .word ($xxxx)
-        $280cc              .word ($xxxx)
-        $280ce              .word ($xxxx)
-        $280d0              .word ($xxxx)
-        $280d2              .word ($xxxx)
-        $280d4              .word ($xxxx)
-        $280d6              .word ($xxxx)
-        $280d8              .word ($xxxx)
-        $280da              .word ($xxxx)
-        $280dc              .word ($xxxx)
-        $280de              .word ($xxxx)
-        $280e0              .word ($xxxx)
-        $280e2              .word ($xxxx)
-        $280e4              .word ($xxxx)
-        $280e6              .word ($xxxx)
-        $280e8              .word ($xxxx)
-        $280ea              .word ($xxxx)
-        $280ec              .word ($xxxx)
-        $280ee              .word ($xxxx)
-        $280f0              .word ($xxxx)
-        $280f2              .word ($xxxx)
-        $280f4              .word ($xxxx)
-        $280f6              .word ($xxxx)
-        $280f8              .word ($xxxx)
-        $280fa              .word ($xxxx)
-        $280fc              .word ($xxxx)
-        $280fe              .word ($xxxx)
-        $28100              .word ($xxxx)
-        $28102              .word ($xxxx)
-        $28104              .word ($xxxx)
-        $28106              .word ($xxxx)
-        $28108              .word ($xxxx)
-        $2810a              .word ($xxxx)
-        $2810c              .word ($xxxx)
-        $2810e              .word ($xxxx)
-        $28110              .word ($xxxx)
-        $28112              .word ($xxxx)
-        $28114              .word ($xxxx)
-        $28116              .word ($xxxx)
-        $28118              .word ($xxxx)
-        $2811a              .word ($xxxx)
-        $2811c              .word ($xxxx)
-        $2811e              .word ($xxxx)
-        $28120              .word ($xxxx)
-        $28122              .word ($xxxx)
-        $28124              .word ($xxxx)
-        $28126              .word ($xxxx)
-        $28128              .word ($xxxx)
-        $2812a              .word ($xxxx)
-        $2812c              .word ($xxxx)
-        $2812e              .word ($xxxx)
-        $28130              .word ($xxxx)
-        $28132              .word ($xxxx)
-        $28134              .word ($xxxx)
-        $28136              .word ($xxxx)
-        $28138              .word ($xxxx)
-        $2813a              .word ($xxxx)
-        $2813c              .word ($xxxx)
-        $2813e              .word ($xxxx)
-        $28140              .word ($xxxx)
-        $28142              .word ($xxxx)
-        $28144              .word ($xxxx)
-        $28146              .word ($xxxx)
-        $28148              .word ($xxxx)
-        $2814a              .word ($xxxx)
-        $2814c              .word ($xxxx)
-        $2814e              .word ($xxxx)
-        $28150              .word ($xxxx)
-        $28152              .word ($xxxx)
-        $28154              .word ($xxxx)
-        $28156              .word ($xxxx)
-        $28158              .word ($xxxx)
-        $2815a              .word ($xxxx)
-        $2815c              .word ($xxxx)
-        $2815e              .word ($xxxx)
-        $28160              .word ($xxxx)
-        $28162              .word ($xxxx)
-        $28164              .word ($xxxx)
-        $28166              .word ($xxxx)
-        $28168              .word ($xxxx)
-        $2816a              .word ($xxxx)
-        $2816c              .word ($xxxx)
-        $2816e              .word ($xxxx)
-        $28170              .word ($xxxx)
-        $28172              .word ($xxxx)
-        $28174              .word ($xxxx)
-        $28176              .word ($xxxx)
-        $28178              .word ($xxxx)
-        $2817a              .word ($xxxx)
-        $2817c              .word ($xxxx)
-        $2817e              .word ($xxxx)
-        $28180              .word ($xxxx)
-        $28182              .word ($xxxx)
-        $28184              .word ($xxxx)
-        $28186              .word ($xxxx)
-        $28188              .word ($xxxx)
-        $2818a              .word ($xxxx)
-        $2818c              .word ($xxxx)
-        $2818e              .word ($xxxx)
-        $28190              .word ($xxxx)
-        $28192              .word ($xxxx)
-        $28194              .word ($xxxx)
-        $28196              .word ($xxxx)
-        $28198              .word ($xxxx)
-        $2819a              .word ($xxxx)
-        $2819c              .word ($xxxx)
-        $2819e              .word ($xxxx)
-        $281a0              .word ($xxxx)
-        $281a2              .word ($xxxx)
-        $281a4              .word ($xxxx)
-        $281a6              .word ($xxxx)
-        $281a8              .word ($xxxx)
-        $281aa              .word ($xxxx)
-        $281ac              .word ($xxxx)
-        $281ae              .word ($xxxx)
-        $281b0              .word ($xxxx)
-        $281b2              .word ($xxxx)
-        $281b4              .word ($xxxx)
-        $281b6              .word ($xxxx)
-        $281b8              .word ($xxxx)
-        $281ba              .word ($xxxx)
-        $281bc              .word ($xxxx)
-        $281be              .word ($xxxx)
-        $281c0              .word ($xxxx)
-        $281c2              .word ($xxxx)
-        $281c4              .word ($xxxx)
-        $281c6              .word ($xxxx)
-        $281c8              .word ($xxxx)
-        $281ca              .word ($xxxx)
-        $281cc              .word ($xxxx)
-        $281ce              .word ($xxxx)
-        $281d0              .word ($xxxx)
-        $281d2              .word ($xxxx)
-        $281d4              .word ($xxxx)
-        $281d6              .word ($xxxx)
-        $281d8              .word ($xxxx)
-        $281da              .word ($xxxx)
-        $281dc              .word ($xxxx)
-        $281de              .word ($xxxx)
-        $281e0              .word ($xxxx)
-        $281e2              .word ($xxxx)
-        $281e4              .word ($xxxx)
-        $281e6              .word ($xxxx)
-        $281e8              .word ($xxxx)
-        $281ea              .word ($xxxx)
-        $281ec              .word ($xxxx)
-        $281ee              .word ($xxxx)
-        $281f0              .word ($xxxx)
-        $281f2              .word ($xxxx)
-        $281f4              .word ($xxxx)
-        $281f6              .word ($xxxx)
-        $281f8              .word ($xxxx)
-        $281fa              .word ($xxxx)
-        $281fc              .word ($xxxx)
-        $281fe              .word ($xxxx)
-        $28200              .word ($xxxx)
-        $28202              .word ($xxxx)
-        $28204              .word ($xxxx)
-        $28206              .word ($xxxx)
-        $28208              .word ($xxxx)
-        $2820a              .word ($xxxx)
-        $2820c              .word ($xxxx)
-        $2820e              .word ($xxxx)
-        $28210              .word ($xxxx)
-        $28212              .word ($xxxx)
-        $28214              .word ($xxxx)
-        $28216              .word ($xxxx)
-        $28218              .word ($xxxx)
-        $2821a              .word ($xxxx)
-        $2821c              .word ($xxxx)
-        $2821e              .word ($xxxx)
-        $28220              .word ($xxxx)
-        $28222              .word ($xxxx)
-        $28224              .word ($xxxx)
-        $28226              .word ($xxxx)
-        $28228              .word ($xxxx)
-        $2822a              .word ($xxxx)
-        $2822c              .word ($xxxx)
-        $2822e              .word ($xxxx)
-        $28230              .word ($xxxx)
-        $28232              .word ($xxxx)
-        $28234              .word ($xxxx)
-        $28236              .word ($xxxx)
-        $28238              .word ($xxxx)
-        $2823a              .word ($xxxx)
-        $2823c              .word ($xxxx)
-        $2823e              .word ($xxxx)
-        $28240              .word ($xxxx)
-        $28242              .word ($xxxx)
-        $28244              .word ($xxxx)
-        $28246              .word ($xxxx)
-        $28248              .word ($xxxx)
-        $2824a              .word ($xxxx)
-        $2824c              .word ($xxxx)
-        $2824e              .word ($xxxx)
-        $28250              .word ($xxxx)
-        $28252              .word ($xxxx)
-        $28254              .word ($xxxx)
-        $28256              .word ($xxxx)
-        $28258              .word ($xxxx)
-        $2825a              .word ($xxxx)
-        $2825c              .word ($xxxx)
-        $2825e              .word ($xxxx)
-        $28260              .word ($xxxx)
-        $28262              .word ($xxxx)
-        $28264              .word ($xxxx)
-        $28266              .word ($xxxx)
-        $28268              .word ($xxxx)
-        $2826a              .word ($xxxx)
-        $2826c              .word ($xxxx)
-        $2826e              .word ($xxxx)
-        $28270              .word ($xxxx)
-        $28272              .word ($xxxx)
-        $28274              .word ($xxxx)
-        $28276              .word ($xxxx)
-        $28278              .word ($xxxx)
-        $2827a              .word ($xxxx)
-        $2827c              .word ($xxxx)
-        $2827e              .word ($xxxx)
-        $28280              .word ($xxxx)
-        $28282              .word ($xxxx)
-        $28284              .word ($xxxx)
-        $28286              .word ($xxxx)
-        $28288              .word ($xxxx)
-        $2828a              .word ($xxxx)
-        $2828c              .word ($xxxx)
-        $2828e              .word ($xxxx)
-        $28290              .word ($xxxx)
-        $28292              .word ($xxxx)
-        $28294              .word ($xxxx)
-        $28296              .word ($xxxx)
-        $28298              .word ($xxxx)
-        $2829a              .word ($xxxx)
-        $2829c              .word ($xxxx)
-        $2829e              .word ($xxxx)
-        $282a0              .word ($xxxx)
-        $282a2              .word ($xxxx)
-        $282a4              .word ($xxxx)
-        $282a6              .word ($xxxx)
-        $282a8              .word ($xxxx)
-        $282aa              .word ($xxxx)
-        $282ac              .word ($xxxx)
-        $282ae              .word ($xxxx)
-        $282b0              .word ($xxxx)
-        $282b2              .word ($xxxx)
-        $282b4              .word ($xxxx)
-        $282b6              .word ($xxxx)
-        $282b8              .word ($xxxx)
-        $282ba              .word ($xxxx)
-        $282bc              .word ($xxxx)
-        $282be              .word ($xxxx)
-        $282c0              .word ($xxxx)
-        $282c2              .word ($xxxx)
-        $282c4              .word ($xxxx)
-        $282c6              .word ($xxxx)
-        $282c8              .word ($xxxx)
-        $282ca              .word ($xxxx)
-        $282cc              .word ($xxxx)
-        $282ce              .word ($xxxx)
-        $282d0              .word ($xxxx)
-        $282d2              .word ($xxxx)
-        $282d4              .word ($xxxx)
-        $282d6              .word ($xxxx)
-        $282d8              .word ($xxxx)
-        $282da              .word ($xxxx)
-        $282dc              .word ($xxxx)
-        $282de              .word ($xxxx)
-        $282e0              .word ($xxxx)
-        $282e2              .word ($xxxx)
-        $282e4              .word ($xxxx)
-        $282e6              .word ($xxxx)
-        $282e8              .word ($xxxx)
-        $282ea              .word ($xxxx)
-        $282ec              .word ($xxxx)
-        $282ee              .word ($xxxx)
-        $282f0              .word ($xxxx)
-        $282f2              .word ($xxxx)
-        $282f4              .word ($xxxx)
-        $282f6              .word ($xxxx)
-        $282f8              .word ($xxxx)
-        $282fa              .word ($xxxx)
-        $282fc              .word ($xxxx)
-        $282fe              .word ($xxxx)
-        $28300              .word ($xxxx)
-        $28302              .word ($xxxx)
-        $28304              .word ($xxxx)
-        $28306              .word ($xxxx)
-        $28308              .word ($xxxx)
-        $2830a              .word ($xxxx)
-        $2830c              .word ($xxxx)
-        $2830e              .word ($xxxx)
-        $28310              .word ($xxxx)
-        $28312              .word ($xxxx)
-        $28314              .word ($xxxx)
-        $28316              .word ($xxxx)
-        $28318              .word ($xxxx)
-        $2831a              .word ($xxxx)
-        $2831c              .word ($xxxx)
-        $2831e              .word ($xxxx)
-        $28320              .word ($xxxx)
-        $28322              .word ($xxxx)
-        $28324              .word ($xxxx)
-        $28326              .word ($xxxx)
-        $28328              .word ($xxxx)
-        $2832a              .word ($xxxx)
-        $2832c              .word ($xxxx)
-        $2832e              .word ($xxxx)
-        $28330              .word ($xxxx)
-        $28332              .word ($xxxx)
-        $28334              .word ($xxxx)
-        $28336              .word ($xxxx)
-        $28338              .word ($xxxx)
-        $2833a              .word ($xxxx)
-        $2833c              .word ($xxxx)
-        $2833e              .word ($xxxx)
-        $28340              .word ($xxxx)
-        $28342              .word ($xxxx)
-        $28344              .word ($xxxx)
-        $28346              .word ($xxxx)
-        $28348              .word ($xxxx)
-        $2834a              .word ($xxxx)
-        $2834c              .word ($xxxx)
-        $2834e              .word ($xxxx)
-        $28350              .word ($xxxx)
-        $28352              .word ($xxxx)
-        $28354              .word ($xxxx)
-        $28356              .word ($xxxx)
-        $28358              .word ($xxxx)
-        $2835a              .word ($xxxx)
-        $2835c              .word ($xxxx)
-        $2835e              .word ($xxxx)
-        $28360              .word ($xxxx)
-        $28362              .word ($xxxx)
-        $28364              .word ($xxxx)
-        $28366              .word ($xxxx)
-        $28368              .word ($xxxx)
-        $2836a              .word ($xxxx)
-        $2836c              .word ($xxxx)
-        $2836e              .word ($xxxx)
-        $28370              .word ($xxxx)
-        $28372              .word ($xxxx)
-        $28374              .word ($xxxx)
-        $28376              .word ($xxxx)
-        $28378              .word ($xxxx)
-        $2837a              .word ($xxxx)
-        $2837c              .word ($xxxx)
-        $2837e              .word ($xxxx)
-        $28380              .word ($xxxx)
-        $28382              .word ($xxxx)
-        $28384              .word ($xxxx)
-        $28386              .word ($xxxx)
-        $28388              .word ($xxxx)
-        $2838a              .word ($xxxx)
-        $2838c              .word ($xxxx)
-        $2838e              .word ($xxxx)
-        $28390              .word ($xxxx)
-        $28392              .word ($xxxx)
-        $28394              .word ($xxxx)
-        $28396              .word ($xxxx)
-        $28398              .word ($xxxx)
-        $2839a              .word ($xxxx)
-        $2839c              .word ($xxxx)
-        $2839e              .word ($xxxx)
-        $283a0              .word ($xxxx)
-        $283a2              .word ($xxxx)
-        $283a4              .word ($xxxx)
-        $283a6              .word ($xxxx)
-        $283a8              .word ($xxxx)
-        $283aa              .word ($xxxx)
-        $283ac              .word ($xxxx)
-        $283ae              .word ($xxxx)
-        $283b0              .word ($xxxx)
-        $283b2              .word ($xxxx)
-        $283b4              .word ($xxxx)
-        $283b6              .word ($xxxx)
-        $283b8              .word ($xxxx)
-        $283ba              .word ($xxxx)
-        $283bc              .word ($xxxx)
-        $283be              .word ($xxxx)
-        $283c0              .word ($xxxx)
-        $283c2              .word ($xxxx)
-        $283c4              .word ($xxxx)
-        $283c6              .word ($xxxx)
-        $283c8              .word ($xxxx)
-        $283ca              .word ($xxxx)
-        $283cc              .word ($xxxx)
-        $283ce              .word ($xxxx)
-        $283d0              .word ($xxxx)
-        $283d2              .word ($xxxx)
-        $283d4              .word ($xxxx)
-        $283d6              .word ($xxxx)
-        $283d8              .word ($xxxx)
-        $283da              .word ($xxxx)
-        $283dc              .word ($xxxx)
-        $283de              .word ($xxxx)
-        $283e0              .word ($xxxx)
-        $283e2              .word ($xxxx)
-        $283e4              .word ($xxxx)
-        $283e6              .word ($xxxx)
-        $283e8              .word ($xxxx)
-        $283ea              .word ($xxxx)
-        $283ec              .word ($xxxx)
-        $283ee              .word ($xxxx)
-        $283f0              .word ($xxxx)
-        $283f2              .word ($xxxx)
-        $283f4              .word ($xxxx)
-        $283f6              .word ($xxxx)
-        $283f8              .word ($xxxx)
-        $283fa              .word ($xxxx)
-        $283fc              .word ($xxxx)
-        $283fe              .byte $xx,$xx
-        $28400              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28410              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $28420              .byte $xx,$xx
+;;; The next four banks (through $2ffff) are all code and data related
+;;; to displaying text messages in dialog boxes.
+;;; The MessageTable is the main bulk of this.  MessageTable_PartXX is
+;;; thrice-indirected table of roughly 512 (mostly unique) messages,
+;;; a accessed via MessageTableParts and MessageTableBanks (since the
+;;; pointers in this table refer to data acros three 8k ROM banks).
+;;; The text lives in CHR banks $60 and $61 at positions 0..$7f.
+;;; STRIP: word=$20000
+MessageTable_Part00
+        $28000              .word ($2a000) ; 00
+        $28002              .word ($2a01c) ; 01
+        $28004              .word ($2a036) ; 02
+        $28006              .word ($2a046) ; 03
+        $28008              .word ($2a077) ; 04
+        $2800a              .word ($2a036) ; 05
+        $2800c              .word ($2a0ab) ; 06
+        $2800e              .word ($2a0cb) ; 07
+        $28010              .word ($2a036) ; 08
+        $28012              .word ($2a0e6) ; 09
+        $28014              .word ($2a101) ; 0a
+        $28016              .word ($2a12a) ; 0b
+        $28018              .word ($2a16a) ; 0c
+        $2801a              .word ($2a036) ; 0d
+        $2801c              .word ($2a1a3) ; 0e
+        $2801e              .word ($2a243) ; 0f
+        $28020              .word ($2a267) ; 10
+        $28022              .word ($2a036) ; 11
+        $28024              .word ($2a267) ; 12
+        $28026              .word ($2a284) ; 13
+        $28028              .word ($2a293) ; 14
+        $2802a              .word ($2a29f) ; 15
+        $2802c              .word ($2a2c4) ; 16
+        $2802e              .word ($2a2ea) ; 17
+        $28030              .word ($2a30c) ; 18
+        $28032              .word ($2a036) ; 19
+        $28034              .word ($2a34a) ; 1a
+        $28036              .word ($2a39f) ; 1b
+        $28038              .word ($2a3bc) ; 1c
+        $2803a              .word ($2a3e4) ; 1d
+MessageTable_Part01
+        $2803c              .word ($2a3f7) ; 00
+        $2803e              .word ($2a3fd) ; 01
+        $28040              .word ($2a412) ; 02
+        $28042              .word ($2a43f) ; 03
+        $28044              .word ($2a48b) ; 04
+        $28046              .word ($2a49d) ; 05
+MessageTable_Part02
+        $28048              .word ($2a4a5) ; 00
+        $2804a              .word ($2a4d2) ; 01
+        $2804c              .word ($2a538) ; 02
+        $2804e              .word ($2a59b) ; 03
+        $28050              .word ($2a5dc) ; 04
+        $28052              .word ($2a60f) ; 05
+        $28054              .word ($2a657) ; 06
+        $28056              .word ($2a680) ; 07
+        $28058              .word ($2a6c3) ; 08
+        $2805a              .word ($2a6e2) ; 09
+        $2805c              .word ($2a727) ; 0a
+        $2805e              .word ($2a751) ; 0b
+        $28060              .word ($2a751) ; 0c
+MessageTable_Part03
+        $28062              .word ($2a790) ; 00
+        $28064              .word ($2a802) ; 01
+        $28066              .word ($2a8b2) ; 02
+        $28068              .word ($2a8e3) ; 03
+        $2806a              .word ($2a904) ; 04
+        $2806c              .word ($2a93c) ; 05
+        $2806e              .word ($2a964) ; 06
+MessageTable_Part04
+        $28070              .word ($2a972) ; 00
+        $28072              .word ($2a9a3) ; 01
+        $28074              .word ($2a9ca) ; 02
+        $28076              .word ($2a9ca) ; 03
+        $28078              .word ($2a9e0) ; 04
+        $2807a              .word ($2a9e0) ; 05
+        $2807c              .word ($2aa13) ; 06
+        $2807e              .word ($2aa13) ; 07
+        $28080              .word ($2aa24) ; 08
+        $28082              .word ($2aa24) ; 09
+        $28084              .word ($2aa4c) ; 0a
+        $28086              .word ($2aa93) ; 0b
+        $28088              .word ($2aad9) ; 0c
+        $2808a              .word ($2aad9) ; 0d
+        $2808c              .word ($2aaf8) ; 0e
+        $2808e              .word ($2ab22) ; 0f
+        $28090              .word ($2ab3b) ; 10
+        $28092              .word ($2ab3f) ; 11
+        $28094              .word ($2ab5c) ; 12
+        $28096              .word ($2ab7e) ; 13
+        $28098              .word ($2ab7e) ; 14
+        $2809a              .word ($2aba5) ; 15
+        $2809c              .word ($2ac7e) ; 16
+        $2809e              .word ($2ac85) ; 17
+        $280a0              .word ($2ad10) ; 18
+        $280a2              .word ($2ad52) ; 19
+        $280a4              .word ($2ad72) ; 1a
+MessageTable_Part05
+        $280a6              .word ($2ad7e) ; 00
+        $280a8              .word ($2adb1) ; 01
+        $280aa              .word ($2adbe) ; 02
+        $280ac              .word ($2ae03) ; 03
+        $280ae              .word ($2ae41) ; 04
+        $280b0              .word ($2ae4e) ; 05
+        $280b2              .word ($2ae86) ; 06
+        $280b4              .word ($2aeb7) ; 07
+        $280b6              .word ($2aefb) ; 08
+        $280b8              .word ($2af2b) ; 09
+        $280ba              .word ($2af98) ; 0a
+        $280bc              .word ($2afc4) ; 0b
+        $280be              .word ($2b02e) ; 0c
+        $280c0              .word ($2b043) ; 0d
+        $280c2              .word ($2b05f) ; 0e
+        $280c4              .word ($2b157) ; 0f
+        $280c6              .word ($2b236) ; 10
+MessageTable_Part06
+        $280c8              .word ($2b255) ; 00
+        $280ca              .word ($2b29e) ; 01
+MessageTable_Part07
+        $280cc              .word ($2b2e3) ; 00
+        $280ce              .word ($2b322) ; 01
+        $280d0              .word ($2b353) ; 02
+        $280d2              .word ($2b381) ; 03
+        $280d4              .word ($2b3b0) ; 04
+        $280d6              .word ($2b3a0) ; 05
+        $280d8              .word ($2b3a0) ; 06
+        $280da              .word ($2b3b0) ; 07
+        $280dc              .word ($2b3b0) ; 08
+        $280de              .word ($2b3c7) ; 09
+        $280e0              .word ($2b45e) ; 0a
+MessageTable_Part08
+        $280e2              .word ($2b471) ; 00
+        $280e4              .word ($2b485) ; 01
+        $280e6              .word ($2b499) ; 02
+        $280e8              .word ($2b4bb) ; 03
+        $280ea              .word ($2b4d9) ; 04
+        $280ec              .word ($2b4e6) ; 05
+        $280ee              .word ($2b520) ; 06
+        $280f0              .word ($2b543) ; 07
+        $280f2              .word ($2b55f) ; 08
+        $280f4              .word ($2b574) ; 09
+        $280f6              .word ($2b5c0) ; 0a
+        $280f8              .word ($2b5e5) ; 0b
+        $280fa              .word ($2b61c) ; 0c
+        $280fc              .word ($2b662) ; 0d
+        $280fe              .word ($2b662) ; 0e
+        $28100              .word ($2b67c) ; 0f
+        $28102              .word ($2b6b2) ; 10
+        $28104              .word ($2b6eb) ; 11
+        $28106              .word ($2b722) ; 12
+        $28108              .word ($2b793) ; 13
+        $2810a              .word ($2b7c3) ; 14
+        $2810c              .word ($2b7f3) ; 15
+MessageTable_Part09
+        $2810e              .word ($2b82a) ; 00
+        $28110              .word ($2b844) ; 01
+        $28112              .word ($2b892) ; 02
+        $28114              .word ($2b8ac) ; 03
+        $28116              .word ($2b8bb) ; 04
+        $28118              .word ($2b8ed) ; 05
+        $2811a              .word ($2b903) ; 06
+MessageTable_Part0a
+        $2811c              .word ($2b931) ; 00
+        $2811e              .word ($2b977) ; 01
+        $28120              .word ($2b9a4) ; 02
+        $28122              .word ($2b9db) ; 03
+        $28124              .word ($2b9fc) ; 04
+        $28126              .word ($2ba8f) ; 05
+        $28128              .word ($2ba8f) ; 06
+        $2812a              .word ($2bac6) ; 07
+        $2812c              .word ($2bb15) ; 08
+        $2812e              .word ($2bb62) ; 09
+        $28130              .word ($2bbca) ; 0a
+        $28132              .word ($2bbf9) ; 0b
+        $28134              .word ($2bc02) ; 0c
+        $28136              .word ($2bc52) ; 0d
+        $28138              .word ($2bc9d) ; 0e
+        $2813a              .word ($2bcaa) ; 0f
+MessageTable_Part0b
+        $2813c              .word ($2bcb1) ; 00
+        $2813e              .word ($2bd61) ; 01
+        $28140              .word ($2bdca) ; 02
+        $28142              .word ($2bde0) ; 03
+MessageTable_Part0c
+        $28144              .word ($2be14) ; 00
+        $28146              .word ($2be3b) ; 01
+        $28148              .word ($2be84) ; 02
+        $2814a              .word ($2be84) ; 03
+        $2814c              .word ($2bea5) ; 04
+        $2814e              .word ($2bea5) ; 05
+MessageTable_Part0d
+        $28150              .word ($2bead) ; 00
+        $28152              .word ($2bee3) ; 01
+        $28154              .word ($2bf1c) ; 02
+        $28156              .word ($2bf24) ; 03
+        $28158              .word ($2bf2c) ; 04
+        ;; STRIP: word=$22000
+MessageTable_Part0e
+        $2815a              .word ($2c000) ; 00
+        $2815c              .word ($2c031) ; 01
+        $2815e              .word ($2c038) ; 02
+        $28160              .word ($2c03f) ; 03
+        $28162              .word ($2c0fb) ; 04
+        $28164              .word ($2c0fb) ; 05
+MessageTable_Part0f
+        $28166              .word ($2c15b) ; 00
+        $28168              .word ($2c201) ; 01
+        $2816a              .word ($2c21f) ; 02
+        $2816c              .word ($2c235) ; 03
+        $2816e              .word ($2c24c) ; 04
+        $28170              .word ($2c265) ; 05
+        $28172              .word ($2c28f) ; 06
+        $28174              .word ($2c21f) ; 07
+        $28176              .word ($2c2a9) ; 08
+        $28178              .word ($2c2d8) ; 09
+        $2817a              .word ($2c2e9) ; 0a
+        $2817c              .word ($2c315) ; 0b
+        $2817e              .word ($2c31f) ; 0c
+        $28180              .word ($2c388) ; 0d
+        $28182              .word ($2c3c1) ; 0e
+        $28184              .word ($2c3f7) ; 0f
+        $28186              .word ($2c428) ; 10
+        $28188              .word ($2c440) ; 11
+        $2818a              .word ($2c463) ; 12
+        $2818c              .word ($2c489) ; 13
+        $2818e              .word ($2c49a) ; 14
+        $28190              .word ($2c4b0) ; 15
+        $28192              .word ($2c4e1) ; 16
+        $28194              .word ($2c4e1) ; 17
+        $28196              .word ($2c4f4) ; 18
+MessageTable_Part10
+        $28198              .word ($2c543) ; 00
+        $2819a              .word ($2c5b2) ; 01
+        $2819c              .word ($2c5dd) ; 02
+        $2819e              .word ($2c608) ; 03
+        $281a0              .word ($2c660) ; 04
+        $281a2              .word ($2c684) ; 05
+        $281a4              .word ($2c6df) ; 06
+        $281a6              .word ($2c720) ; 07
+        $281a8              .word ($2c73b) ; 08
+        $281aa              .word ($2c766) ; 09
+        $281ac              .word ($2c781) ; 0a
+        $281ae              .word ($2c7b3) ; 0b
+        $281b0              .word ($2c7ce) ; 0c
+        $281b2              .word ($2c807) ; 0d
+        $281b4              .word ($2c816) ; 0e
+        $281b6              .word ($2c838) ; 0f
+        $281b8              .word ($2c85e) ; 10
+        $281ba              .word ($2c871) ; 11
+        $281bc              .word ($2c88b) ; 12
+        $281be              .word ($2c907) ; 13
+MessageTable_Part11
+        $281c0              .word ($2c95b) ; 00
+        $281c2              .word ($2c978) ; 01
+MessageTable_Part12
+        $281c4              .word ($2c99f) ; 00
+        $281c6              .word ($2c9bb) ; 01
+        $281c8              .word ($2c9ce) ; 02
+        $281ca              .word ($2c9e5) ; 03
+        $281cc              .word ($2ca0c) ; 04
+        $281ce              .word ($2ca30) ; 05
+        $281d0              .word ($2ca58) ; 06
+        $281d2              .word ($2ca84) ; 07
+        $281d4              .word ($2ca91) ; 08
+        $281d6              .word ($2cabd) ; 09
+        $281d8              .word ($2cad5) ; 0a
+        $281da              .word ($2caf1) ; 0b
+        $281dc              .word ($2cb12) ; 0c
+        $281de              .word ($2cb12) ; 0d
+        $281e0              .word ($2cb12) ; 0e
+        $281e2              .word ($2cb5a) ; 0f
+        $281e4              .word ($2cb81) ; 10
+        $281e6              .word ($2cbd7) ; 11
+        $281e8              .word ($2cc16) ; 12
+MessageTable_Part13
+        $281ea              .word ($2cc34) ; 00
+        $281ec              .word ($2cc76) ; 01
+        $281ee              .word ($2cc90) ; 02
+        $281f0              .word ($2cd15) ; 03
+        $281f2              .word ($2cd2e) ; 04
+        $281f4              .word ($2cd39) ; 05
+        $281f6              .word ($2cd62) ; 06
+        $281f8              .word ($2cd6e) ; 07
+        $281fa              .word ($2cdbb) ; 08
+        $281fc              .word ($2cde7) ; 09
+        $281fe              .word ($2ce23) ; 0a
+        $28200              .word ($2ce38) ; 0b
+        $28202              .word ($2cea2) ; 0c
+        $28204              .word ($2ced4) ; 0d
+        $28206              .word ($2cef2) ; 0e
+        $28208              .word ($2cf2b) ; 0f
+        $2820a              .word ($2cf87) ; 10
+        $2820c              .word ($2cfae) ; 11
+        $2820e              .word ($2cfba) ; 12
+        $28210              .word ($2cfd2) ; 13
+        $28212              .word ($2cff4) ; 14
+        $28214              .word ($2d016) ; 15
+MessageTable_Part14
+        $28216              .word ($2d028) ; 00
+        $28218              .word ($2d04c) ; 01
+        $2821a              .word ($2dff4) ; 02
+        $2821c              .word ($2d05f) ; 03
+        $2821e              .word ($2d070) ; 04
+        $28220              .word ($2d078) ; 05
+        $28222              .word ($2d0c1) ; 06
+        $28224              .word ($2d0e2) ; 07
+        $28226              .word ($2d13d) ; 08
+        $28228              .word ($2d172) ; 09
+        $2822a              .word ($2d17c) ; 0a
+        $2822c              .word ($2d20a) ; 0b
+        $2822e              .word ($2d224) ; 0c
+        $28230              .word ($2d24b) ; 0d
+        $28232              .word ($2d283) ; 0e
+        $28234              .word ($2d297) ; 0f
+        $28236              .word ($2d2a1) ; 10
+        $28238              .word ($2d2a1) ; 11
+        $2823a              .word ($2d2dc) ; 12
+        $2823c              .word ($2d2ea) ; 13
+        $2823e              .word ($2d30a) ; 14
+        $28240              .word ($2d30f) ; 15
+        $28242              .word ($2d31c) ; 16
+        $28244              .word ($2d335) ; 17
+        $28246              .word ($2d6be) ; 18
+MessageTable_Part15
+        $28248              .word ($2d3f5) ; 00
+        $2824a              .word ($2d40a) ; 01
+        $2824c              .word ($2d41c) ; 02
+        $2824e              .word ($2d436) ; 03
+        $28250              .word ($2d45e) ; 04
+        $28252              .word ($2d488) ; 05
+        $28254              .word ($2d4a8) ; 06
+        $28256              .word ($2d4d4) ; 07
+        $28258              .word ($2d4f5) ; 08
+        $2825a              .word ($2d51c) ; 09
+        $2825c              .word ($2d524) ; 0a
+        $2825e              .word ($2d531) ; 0b
+        $28260              .word ($2d541) ; 0c
+MessageTable_Part16
+        $28262              .word ($2d566) ; 00
+        $28264              .word ($2d5f6) ; 01
+        $28266              .word ($2d60b) ; 02
+        $28268              .word ($2d6be) ; 03
+        $2826a              .word ($2d6c8) ; 04
+        $2826c              .word ($2d720) ; 05
+        $2826e              .word ($2d737) ; 06
+        $28270              .word ($2d794) ; 07
+MessageTable_Part17
+        $28272              .word ($2d7af) ; 00
+        $28274              .word ($2d7c4) ; 01
+        $28276              .word ($2d7e2) ; 02
+        $28278              .word ($2d811) ; 03
+        $2827a              .word ($2d83e) ; 04
+        $2827c              .word ($2d876) ; 05
+        $2827e              .word ($2d8ac) ; 06
+        $28280              .word ($2d8d2) ; 07
+        $28282              .word ($2d8f5) ; 08
+        $28284              .word ($2d92a) ; 09
+        $28286              .word ($2d96d) ; 0a
+        $28288              .word ($2d98e) ; 0b
+        $2828a              .word ($2d9b2) ; 0c
+        $2828c              .word ($2d9de) ; 0d
+        $2828e              .word ($2da0b) ; 0e
+        $28290              .word ($2daca) ; 0f
+        $28292              .word ($2daf7) ; 10
+MessageTable_Part18
+        $28294              .word ($2db0b) ; 00
+        $28296              .word ($2db32) ; 01
+        $28298              .word ($2db74) ; 02
+        $2829a              .word ($2dba6) ; 03
+        $2829c              .word ($2dc10) ; 04
+        $2829e              .word ($2dc4f) ; 05
+        $282a0              .word ($2dcb1) ; 06
+        $282a2              .word ($2dd1c) ; 07
+        $282a4              .word ($2ddd2) ; 08
+MessageTable_Part19
+        $282a6              .word ($2de0f) ; 00
+        $282a8              .word ($2de54) ; 01
+        $282aa              .word ($2de69) ; 02
+        $282ac              .word ($2de83) ; 03
+        $282ae              .word ($2df1f) ; 04
+        $282b0              .word ($2df66) ; 05
+        ;; STRIP: word=$24000
+MessageTable_Part1a
+        $282b2              .word ($2e000) ; 00
+        $282b4              .word ($2e03b) ; 01
+        $282b6              .word ($2e082) ; 02
+        $282b8              .word ($2e0af) ; 03
+        $282ba              .word ($2e0e1) ; 04
+        $282bc              .word ($2e106) ; 05
+        $282be              .word ($2e1c8) ; 06
+        $282c0              .word ($2e231) ; 07
+        $282c2              .word ($2e1ee) ; 08
+        $282c4              .word ($2e253) ; 09
+        $282c6              .word ($2e278) ; 0a
+        $282c8              .word ($2e288) ; 0b
+        $282ca              .word ($2e297) ; 0c
+        $282cc              .word ($2e2b3) ; 0d
+        $282ce              .word ($2e2dd) ; 0e
+        $282d0              .word ($2e2ea) ; 0f
+        $282d2              .word ($2e32c) ; 10
+        $282d4              .word ($2e3bf) ; 11
+        $282d6              .word ($2e3d9) ; 12
+        $282d8              .word ($2e3d9) ; 13
+MessageTable_Part1b
+        $282da              .word ($2e3e5) ; 00
+        $282dc              .word ($2e40c) ; 01
+        $282de              .word ($2e4cc) ; 02
+        $282e0              .word ($2e4ea) ; 03
+        $282e2              .word ($2e518) ; 04
+        $282e4              .word ($2e556) ; 05
+        $282e6              .word ($2e654) ; 06
+        $282e8              .word ($2e708) ; 07
+        $282ea              .word ($2e741) ; 08
+        $282ec              .word ($2e83f) ; 09
+        $282ee              .word ($2e906) ; 0a
+        $282f0              .word ($2e9c9) ; 0b
+        $282f2              .word ($2ea23) ; 0c
+        $282f4              .word ($2ea72) ; 0d
+        $282f6              .word ($2ea9f) ; 0e
+        $282f8              .word ($2eaaa) ; 0f
+        $282fa              .word ($2eae5) ; 10
+        $282fc              .word ($2eb77) ; 11
+        $282fe              .word ($2ebd9) ; 12
+MessageTable_Part1c
+        $28300              .word ($2ebf5) ; 00
+        $28302              .word ($2ec03) ; 01
+        $28304              .word ($2ec20) ; 02
+        $28306              .word ($2ec47) ; 03
+        $28308              .word ($2ec77) ; 04
+        $2830a              .word ($2ecad) ; 05
+        $2830c              .word ($2ecdd) ; 06
+        $2830e              .word ($2ed0c) ; 07
+        $28310              .word ($2ed4b) ; 08
+        $28312              .word ($2ed70) ; 09
+        $28314              .word ($2ed92) ; 0a
+        $28316              .word ($2edc3) ; 0b
+        $28318              .word ($2edfe) ; 0c
+        $2831a              .word ($2ee1e) ; 0d
+        $2831c              .word ($2ee36) ; 0e
+        $2831e              .word ($2ee50) ; 0f
+        $28320              .word ($2ee7e) ; 10
+        $28322              .word ($2eee6) ; 11
+        $28324              .word ($2ef4f) ; 12
+        $28326              .word ($2ef56) ; 13
+        $28328              .word ($2ef80) ; 14
+        $2832a              .word ($2efa7) ; 15
+        $2832c              .word ($2efc8) ; 16
+        $2832e              .word ($2efea) ; 17
+        $28330              .word ($2f006) ; 18
+        $28332              .word ($2f03c) ; 19
+        $28334              .word ($2f065) ; 1a
+        $28336              .word ($2f0b3) ; 1b
+        $28338              .word ($2f0dd) ; 1c
+        $2833a              .word ($2f0ff) ; 1d
+        $2833c              .word ($2f135) ; 1e
+        $2833e              .word ($2f152) ; 1f
+MessageTable_Part1d
+        $28340              .word ($2f18c) ; 00
+        $28342              .word ($2f1bb) ; 01
+        $28344              .word ($2f1ec) ; 02
+        $28346              .word ($2f220) ; 03
+        $28348              .word ($2f23d) ; 04
+        $2834a              .word ($2f257) ; 05
+        $2834c              .word ($2f274) ; 06
+        $2834e              .word ($2f2b4) ; 07
+        $28350              .word ($2f2e5) ; 08
+        $28352              .word ($2f2f2) ; 09
+        $28354              .word ($2f30e) ; 0a
+        $28356              .word ($2f348) ; 0b
+        $28358              .word ($2f37c) ; 0c
+        $2835a              .word ($2f394) ; 0d
+        $2835c              .word ($2f3b8) ; 0e
+        $2835e              .word ($2f3ce) ; 0f
+        $28360              .word ($2f3e0) ; 10
+        $28362              .word ($2f3fa) ; 11
+        $28364              .word ($2f3fa) ; 12
+        $28366              .word ($2f4ae) ; 13
+        $28368              .word ($2f4fb) ; 14
+        $2836a              .word ($2f500) ; 15
+        $2836c              .word ($2f518) ; 16
+        $2836e              .word ($2f564) ; 17
+        $28370              .word ($2f574) ; 18
+        $28372              .word ($2f592) ; 19
+        $28374              .word ($2f5c3) ; 1a
+        $28376              .word ($2f5ea) ; 1b
+        $28378              .word ($2f5f8) ; 1c
+        $2837a              .word ($2f62b) ; 1d
+MessageTable_Part1e
+        $2837c              .word ($2f661) ; 00
+        $2837e              .word ($2f689) ; 01
+        $28380              .word ($2f69c) ; 02
+        $28382              .word ($2f6b6) ; 03
+        $28384              .word ($2f6d2) ; 04
+        $28386              .word ($2f6d2) ; 05
+        $28388              .word ($2f6d2) ; 06
+        $2838a              .word ($2f6db) ; 07
+        $2838c              .word ($2f6db) ; 08
+        $2838e              .word ($2f6db) ; 09
+        $28390              .word ($2f6db) ; 0a
+        $28392              .word ($2f6db) ; 0b
+        $28394              .word ($2f6db) ; 0c
+        $28396              .word ($2f6db) ; 0d
+        $28398              .word ($2f6db) ; 0e
+        $2839a              .word ($2f6e1) ; 0f
+        $2839c              .word ($2f6fb) ; 10
+        $2839e              .word ($2f6fb) ; 11
+        $283a0              .word ($2f704) ; 12
+        $283a2              .word ($2f734) ; 13
+        $283a4              .word ($2f745) ; 14
+        $283a6              .word ($2f758) ; 15
+        $283a8              .word ($2f758) ; 16
+        $283aa              .word ($2f75f) ; 17
+        $283ac              .word ($2f771) ; 18
+        $283ae              .word ($2f77e) ; 19
+        $283b0              .word ($2f7b9) ; 1a
+        $283b2              .word ($2f7f0) ; 1b
+        $283b4              .word ($2f7f0) ; 1c
+        $283b6              .word ($2f7f0) ; 1d
+        $283b8              .word ($2f7f0) ; 1e
+MessageTable_Part1f
+        $283ba              .word ($2f7f7) ; 00
+MessageTable_Part20
+        $283bc              .word ($2f7fe) ; 00
+        $283be              .word ($2f814) ; 01
+        $283c0              .word ($2f830) ; 02
+        $283c2              .word ($2f851) ; 03
+        $283c4              .word ($2f869) ; 04
+        $283c6              .word ($2f884) ; 05
+        $283c8              .word ($2f8a7) ; 06
+        $283ca              .word ($2f8d8) ; 07
+        $283cc              .word ($2f8ef) ; 08
+        $283ce              .word ($2f914) ; 09
+        $283d0              .word ($2f931) ; 0a
+        $283d2              .word ($2f94f) ; 0b
+        $283d4              .word ($2f992) ; 0c
+        $283d6              .word ($2f99f) ; 0d
+        $283d8              .word ($2f9c5) ; 0e
+        $283da              .word ($2f9dc) ; 0f
+        $283dc              .word ($2f9ee) ; 10
+        $283de              .word ($2fa05) ; 11
+        $283e0              .word ($2fa15) ; 12
+        $283e2              .word ($2fa2b) ; 13
+        $283e4              .word ($2fa3d) ; 14
+        $283e6              .word ($2fa62) ; 15
+        $283e8              .word ($2fa82) ; 16
+        $283ea              .word ($2faa2) ; 17
+        $283ec              .word ($2fac2) ; 18
+        $283ee              .word ($2fae5) ; 19
+        $283f0              .word ($2faf7) ; 1a
+        $283f2              .word ($2fb0f) ; 1b
+        $283f4              .word ($2fb2c) ; 1c
+        $283f6              .word ($2fb46) ; 1d
+MessageTable_Part21
+        $283f8              .word ($2fb61) ; 00
+        $283fa              .word ($2fb9d) ; 01
+        $283fc              .word ($2fbb2) ; 02
+MessageTableBanks
+        $283fe              .byte $xx,$xx,$xx,$xx ; 00..03
+        $28402              .byte $xx,$xx,$xx,$xx ; 04..07
+        $28406              .byte $xx,$xx,$xx,$xx ; 08..0b
+        $2840a              .byte $xx,$xx,$xx,$xx ; 0c..0f
+        $2840e              .byte $xx,$xx,$xx,$xx ; 10..13
+        $28412              .byte $xx,$xx,$xx,$xx ; 14..17
+        $28416              .byte $xx,$xx,$xx,$xx ; 18..1b
+        $2841a              .byte $xx,$xx,$xx,$xx ; 1c..1f
+        $2841e              .byte $xx,$xx,$xx,$xx ; 20..23
 ;;; --------------------------------
-        ;; This is some sort of data table, referenced below.
-        $28422              .word ($xxxx)
-        $28424              .word ($xxxx)
-        $28426              .word ($xxxx)
-        $28428              .word ($xxxx)
-        $2842a              .word ($xxxx)
-        $2842c              .word ($xxxx)
-        $2842e              .word ($xxxx)
-        $28430              .word ($xxxx)
-        $28432              .word ($xxxx)
-        $28434              .word ($xxxx)
-        $28436              .word ($xxxx)
-        $28438              .word ($xxxx)
-        $2843a              .word ($xxxx)
-        $2843c              .word ($xxxx)
-        $2843e              .word ($xxxx)
-        $28440              .word ($xxxx)
-        $28442              .word ($xxxx)
-        $28444              .word ($xxxx)
-        $28446              .word ($xxxx)
-        $28448              .word ($xxxx)
-        $2844a              .word ($xxxx)
-        $2844c              .word ($xxxx)
-        $2844e              .word ($xxxx)
-        $28450              .word ($xxxx)
-        $28452              .word ($xxxx)
-        $28454              .word ($xxxx)
-        $28456              .word ($xxxx)
-        $28458              .word ($xxxx)
-        $2845a              .word ($xxxx)
-        $2845c              .word ($xxxx)
-        $2845e              .word ($xxxx)
-        $28460              .word ($xxxx)
-        $28462              .word ($xxxx)
-        $28464              .word ($xxxx)
+;;; This is the primary entry point to the message table.  Since the table is
+;;; so long, it is split into 34 parts, each with at most 32 elements.
+;;; STRIP: word=$20000
+MessageTableParts
+        $28422              .word ($28000) ; 00
+        $28424              .word ($2803c) ; 01
+        $28426              .word ($28048) ; 02
+        $28428              .word ($28062) ; 03
+        $2842a              .word ($28070) ; 04
+        $2842c              .word ($280a6) ; 05
+        $2842e              .word ($280c8) ; 06
+        $28430              .word ($280cc) ; 07
+        $28432              .word ($280e2) ; 08
+        $28434              .word ($2810e) ; 09
+        $28436              .word ($2811c) ; 0a
+        $28438              .word ($2813c) ; 0b
+        $2843a              .word ($28144) ; 0c
+        $2843c              .word ($28150) ; 0d
+        $2843e              .word ($2815a) ; 0e
+        $28440              .word ($28166) ; 0f
+        $28442              .word ($28198) ; 10
+        $28444              .word ($281c0) ; 11
+        $28446              .word ($281c4) ; 12
+        $28448              .word ($281ea) ; 13
+        $2844a              .word ($28216) ; 14
+        $2844c              .word ($28248) ; 15
+        $2844e              .word ($28262) ; 16
+        $28450              .word ($28272) ; 17
+        $28452              .word ($28294) ; 18
+        $28454              .word ($282a6) ; 19
+        $28456              .word ($282b2) ; 1a
+        $28458              .word ($282da) ; 1b
+        $2845a              .word ($28300) ; 1c
+        $2845c              .word ($28340) ; 1d
+        $2845e              .word ($2837c) ; 1e
+        $28460              .word ($283ba) ; 1f
+        $28462              .word ($283bc) ; 20
+        $28464              .word ($283f8) ; 21
 ;;; --------------------------------
-DataTable_28466 
+;;; UNUSED
         $28466              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $28470              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $28480              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -32330,47 +32643,63 @@ DataTable_28466
         $284e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $284f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+;;; This is an entry point from outside - it draws the entire message box,
+;;; but does not cause it to actually appear yet (still need to set $41 and/or
+;;; $51 somewhere else, I think).
+DrawMessageBoxBackground
+        ;; Initialize $20..$2f for drawing message box background.
         $28500  xx xx:      xxx #$xx
-        $28502  xx xx xx:   xxx $28879,x
-        $28505  xx xx:      xxx $xx,x
-        $28507  xx:         xxx
-        $28508  xx xx:      xxx #$xx
-        $2850a  xx xx:      xxx $xx
-        $2850c  xx xx xx:   xxx $287b7
-        $2850f  xx xx:      xxx $xx
-        $28511  xx xx:      xxx $xx
-        $28513  xx xx:      xxx $xx ; Holding pattern, wait for NMI
-        $28515  xx xx:      xxx #$xx
-        $28517  xx xx:      xxx #$xx
-        $28519  xx xx xx:   xxx $xxxx,x
-        $2851c  xx:         xxx
-        $2851d  xx xx:      xxx $xx
-        $2851f  xx:         xxx
+-       $28502  xx xx xx:    xxx MessageBoxBackgroundParameters,x
+        $28505  xx xx:       xxx $xx,x
+        $28507  xx:          xxx
+        $28508  xx xx:       xxx #$xx
+        $2850a  xx xx:      xxx -
+        ;; Copy all the data
+        $2850c  xx xx xx:   xxx DrawMessageBoxBackgroundAllRows
+        ;; Flush nametable write
+--      $2850f  xx xx:        xxx $xx
+        $28511  xx xx:        xxx $xx
+        $28513  xx xx:       xxx --
+        ;; Clear the nametable staging area completely
+        $28515  xx xx:       xxx #$xx
+        $28517  xx xx:       xxx #$xx
+-       $28519  xx xx xx:     xxx $xxxx,x
+        $2851c  xx:           xxx
+        $2851d  xx xx:       xxx -
+        $2851f  xx:          xxx
 ;;; --------------------------------
-DataTable_28520 
-        $28520              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+DataTable_28520                 ; UNUSED?
+        $28520              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-        $28527  xx:         xxx
+;;; This appears to be the main entry point into the message
+;;; decoding logic.
+ShowMessage                     ; TODO - consider renaming once we figure out what it does
         $28528  xx xx:      xxx #$xx
-        $2852a  xx xx xx:   xxx $28889,x
-        $2852d  xx xx:      xxx $xx,x
-        $2852f  xx:         xxx
-        $28530  xx xx:      xxx #$xx
-        $28532  xx xx:      xxx $xx
-        $28534  xx xx xx:   xxx $2853a
-        $28537  xx xx xx:   xxx $2850f
+-       $2852a  xx xx xx:    xxx MessageBoxTextParameters,x
+        $2852d  xx xx:       xxx $xx,x
+        $2852f  xx:          xxx
+        $28530  xx xx:       xxx #$xx
+        $28532  xx xx:      xxx -
+        $28534  xx xx xx:   xxx LookupMessageInternal
+        $28537  xx xx xx:   xxx --
 ;;; --------------------------------
+;;; Input:
+;;;   $7df     message table part to look in
+;;;   $7de:1f  message index within the part
+LookupMessageInternal
+        ;; Look up both the bank and the part offset from $7df
         $2853a  xx xx xx:   xxx $xxxx
         $2853d  xx xx xx:   xxx $xxxx
-        $28540  xx xx xx:   xxx $283fe,x
+        $28540  xx xx xx:   xxx MessageTableBanks,x
         $28543  xx xx xx:   xxx BankSwitch8k_A000_alt
         $28546  xx xx xx:   xxx $xxxx
         $28549  xx:         xxx
         $2854a  xx:         xxx
-        $2854b  xx xx xx:   xxx $28422,x
+        $2854b  xx xx xx:   xxx MessageTableParts,x
         $2854e  xx xx:      xxx $xx
-        $28550  xx xx xx:   xxx $28423,x
+        $28550  xx xx xx:   xxx MessageTableParts+1,x
         $28553  xx xx:      xxx $xx
+        ;; Look up the $7de'th address from this part
         $28555  xx xx xx:   xxx $xxxx
         $28558  xx xx xx:   xxx $xxxx
         $2855b  xx xx:      xxx #$xx
@@ -32382,39 +32711,48 @@ DataTable_28520
         $28564  xx xx:      xxx ($xx),y
         $28566  xx xx:      xxx $xx
         $28568  xx xx:      xxx #$xx
-        $2856a  xx xx:      xxx ($xx),y
-        $2856c  xx xx:      xxx #$xx
-        $2856e  xx xx:      xxx $xx
-        $28570  xx xx xx:   xxx $28593
-        $28573  xx xx xx:   xxx $2856a
+        ;; ($2a),y is now the actual message
+        ;; Loop over the contents to decode.
+-       $2856a  xx xx:       xxx ($xx),y
+        $2856c  xx xx:       xxx #$xx
+        $2856e  xx xx:       xxx + ; $28576
+        ;;                     Control byte (00..09)
+        $28570  xx xx xx:     xxx DecodeMessageControlByte
+        $28573  xx xx xx:     xxx - ; $2856a
+        ;;                    -----
++       $28576  xx xx:       xxx ($xx),y
+        $28578  xx xx:       xxx + ; $28580
+        ;;                    Abbreviation (80..ff)
+        $2857a  xx xx xx:     xxx LookupCommonWord
+        $2857d  xx xx xx:     xxx - ; $2856a
+        ;;                    -----
+        ;;                    Ordinary character (20..7f)
++       $28580  xx xx xx:    xxx WriteCharacterToMessageBuffer
+        $28583  xx xx xx:   xxx - ; $2856a
 ;;; --------------------------------
-        $28576  xx xx:      xxx ($xx),y
-        $28578  xx xx:      xxx $xx
-        $2857a  xx xx xx:   xxx $286f5
-        $2857d  xx xx xx:   xxx $2856a
-;;; --------------------------------
-        $28580  xx xx xx:   xxx $287ae
-        $28583  xx xx xx:   xxx $2856a
-;;; --------------------------------
+;;; UNUSED?
         $28586  xx:         xxx
         $28587  xx:         xxx
         $28588  xx xx:      xxx $xx
         $2858a  xx xx:      xxx $xx
-        $2858c  xx xx:      xxx $xx
-        $2858e  xx xx:      xxx $xx
-        $28590  xx xx:      xxx #$xx
-        $28592  xx:         xxx
+        $2858c  xx xx:      xxx + ; $28592
+        $2858e  xx xx:       xxx $xx
+        $28590  xx xx:       xxx #$xx
++       $28592  xx:         xxx
 ;;; --------------------------------
+;;; Handle bytes $00..$09 in message text via a jump table.
+DecodeMessageControlByte
         $28593  xx:         xxx
         $28594  xx:         xxx
-        $28595  xx xx xx:   xxx $285a2,x
+        $28595  xx xx xx:   xxx MessageDecodeJump,x
         $28598  xx xx:      xxx $xx
-        $2859a  xx xx xx:   xxx $285a3,x
+        $2859a  xx xx xx:   xxx MessageDecodeJump+1,x
         $2859d  xx xx:      xxx $xx
         $2859f  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
+;;; Jump table for handling small bytes (0-9) in encoded messages.
 ;;; STRIP: word=$20000
-JumpTable_285a2
+MessageDecodeJump
         $285a2              .word ($285b6) ; 00
         $285a4              .word ($285f2) ; 01
         $285a6              .word ($28607) ; 02
@@ -32426,7 +32764,7 @@ JumpTable_285a2
         $285b2              .word ($28772) ; 08
         $285b4              .word ($28753) ; 09
 ;;; --------------------------------
-JumpTable_285a2_00
+MessageDecodeJump_00
         $285b6  xx:         xxx
         $285b7  xx:         xxx
         $285b8  xx xx:      xxx #$xx
@@ -32452,12 +32790,13 @@ JumpTable_285a2_00
         $285e3  xx xx:      xxx $xx
         $285e5  xx xx:      xxx #$xx
         $285e7  xx xx:      xxx $xx
-        $285e9  xx xx:      xxx $xx
-        $285eb  xx xx:      xxx $xx
-        $285ed  xx xx:      xxx $xx
-        $285ef  xx xx xx:   xxx $28836
+        ;; Flush nametable write
+-       $285e9  xx xx:       xxx $xx
+        $285eb  xx xx:       xxx $xx
+        $285ed  xx xx:      xxx -
+        $285ef  xx xx xx:   xxx StageNametableWriteForMessage
 ;;; --------------------------------
-JumpTable_285a2_01
+MessageDecodeJump_01_StartMessage
         $285f2  xx xx xx:   xxx $28720
         $285f5  xx xx:      xxx $xx
         $285f7  xx xx:      xxx $xx
@@ -32470,7 +32809,7 @@ JumpTable_285a2_01
         $28604  xx xx:      xxx $xx
         $28606  xx:         xxx
 ;;; --------------------------------
-JumpTable_285a2_02
+MessageDecodeJump_02_EndLine
         $28607  xx:         xxx
         $28608  xx xx:      xxx $xx
         $2860a  xx xx:      xxx #$xx
@@ -32483,7 +32822,7 @@ JumpTable_285a2_02
         $28616  xx xx:      xxx $xx
         $28618  xx:         xxx
 ;;; --------------------------------
-JumpTable_285a2_03
+MessageDecodeJump_03_EndPage
         $28619  xx xx:      xxx $xx
         $2861b  xx:         xxx
         $2861c  xx xx xx:   xxx $285b8
@@ -32500,14 +32839,14 @@ JumpTable_285a2_03
         $28633  xx xx:      xxx $xx
         $28635  xx xx:      xxx #$xx
         $28637  xx xx xx:   xxx $xxxx
-        $2863a  xx xx xx:   xxx $28836
+        $2863a  xx xx xx:   xxx StageNametableWriteForMessage
         $2863d  xx xx:      xxx #$xx
         $2863f  xx xx:      xxx $xx
         $28641  xx xx:      xxx $xx
         $28643  xx xx:      xxx $xx
         $28645  xx xx xx:   xxx ReadControllersWithDirections
         $28648  xx xx xx:   xxx $xxxx
-        $2864b  xx xx xx:   xxx $283fe,x
+        $2864b  xx xx xx:   xxx MessageTableBanks,x
         $2864e  xx xx xx:   xxx BankSwitch8k_A000_alt
         $28651  xx xx:      xxx $xx
         $28653  xx xx:      xxx #$xx
@@ -32524,12 +32863,12 @@ JumpTable_285a2_03
         $28667  xx xx xx:   xxx $28720
         $2866a  xx:         xxx
 ;;; --------------------------------
-JumpTable_285a2_04
+MessageDecodeJump_04_PlayerName
         $2866b  xx xx:      xxx $xx
         $2866d  xx xx:      xxx #$xx
         $2866f  xx xx xx:   xxx $xxxx,y
         $28672  xx xx:      xxx $xx
-        $28674  xx xx xx:   xxx $287ae
+        $28674  xx xx xx:   xxx WriteCharacterToMessageBuffer
         $28677  xx xx xx:   xxx $2866f
 ;;; --------------------------------
         $2867a  xx xx:      xxx $xx
@@ -32538,7 +32877,7 @@ JumpTable_285a2_04
         $2867f  xx xx:      xxx $xx
         $28681  xx:         xxx
 ;;; --------------------------------
-JumpTable_285a2_05
+MessageDecodeJump_05_LessCommonWord
         $28682  xx xx xx:   xxx $28710
         $28685  xx xx:      xxx ($xx),y
         $28687  xx:         xxx
@@ -32547,14 +32886,18 @@ JumpTable_285a2_05
         $2868c  xx xx:      xxx $xx
         $2868e  xx xx xx:   xxx $28a01,x
         $28691  xx xx:      xxx $xx
+CopyWordToMessageBuffer
+        ;; Copies the word at ($2a) to the message buffer.
         $28693  xx xx:      xxx #$xx
-        $28695  xx xx:      xxx ($xx),y
-        $28697  xx xx:      xxx $xx
-        $28699  xx xx xx:   xxx $287ae
-        $2869c  xx xx xx:   xxx $28695
-;;; --------------------------------
-        $2869f  xx xx:      xxx $xx
+-       $28695  xx xx:       xxx ($xx),y
+        $28697  xx xx:       xxx + ; $2869f
+        $28699  xx xx xx:      xxx WriteCharacterToMessageBuffer
+        $2869c  xx xx xx:     xxx - ; $28695
+        ;;                    -----
+        ;; Finish writing to the message buffer and return.
++       $2869f  xx xx:      xxx $xx
         $286a1  xx:         xxx
+        ;; 2c is probably the jump table... :-/ ?
         $286a2  xx xx:      xxx ($xx),y
         $286a4  xx xx:      xxx #$xx
         $286a6  xx xx:      xxx $xx
@@ -32578,7 +32921,7 @@ JumpTable_285a2_05
         $286ca  xx xx:      xxx $xx
         $286cc  xx:         xxx
 ;;; --------------------------------
-JumpTable_285a2_06
+MessageDecodeJump_06_PersonName
         $286cd  xx xx xx:   xxx $28710
         $286d0  xx xx:      xxx ($xx),y
         $286d2  xx:         xxx
@@ -32589,7 +32932,7 @@ JumpTable_285a2_06
         $286dc  xx xx:      xxx $xx
         $286de  xx xx xx:   xxx $28693
 ;;; --------------------------------
-JumpTable_285a2_07
+MessageDecodeJump_07_ItemName
         $286e1  xx xx xx:   xxx $28710
         $286e4  xx xx:      xxx ($xx),y
         $286e6  xx:         xxx
@@ -32600,6 +32943,8 @@ JumpTable_285a2_07
         $286f0  xx xx:      xxx $xx
         $286f2  xx xx xx:   xxx $28693
 ;;; --------------------------------
+;;; Input: $2a$2b address of data table mapping 
+LookupCommonWord
         $286f5  xx xx:      xxx $xx
         $286f7  xx xx:      xxx $xx
         $286f9  xx xx:      xxx $xx
@@ -32608,9 +32953,9 @@ JumpTable_285a2_07
         $286ff  xx xx:      xxx ($xx),y
         $28701  xx:         xxx
         $28702  xx:         xxx
-        $28703  xx xx xx:   xxx $28900,x
+        $28703  xx xx xx:   xxx CommonWords,x
         $28706  xx xx:      xxx $xx
-        $28708  xx xx xx:   xxx $28901,x
+        $28708  xx xx xx:   xxx CommonWords+1,x
         $2870b  xx xx:      xxx $xx
         $2870d  xx xx xx:   xxx $28693
 ;;; --------------------------------
@@ -32651,27 +32996,27 @@ JumpTable_285a2_07
         $28750  xx xx:      xxx $xx
         $28752  xx:         xxx
 ;;; --------------------------------
-JumpTable_285a2_09
+MessageDecodeJump_09
         $28753  xx xx:      xxx $xx
         $28755  xx:         xxx
         $28756  xx xx:      xxx ($xx),y
         $28758  xx:         xxx
         $28759  xx xx:      xxx #$xx
-        $2875b  xx xx:      xxx $xx
-        $2875d  xx xx xx:   xxx $xxxx,x
-        $28760  xx xx:      xxx $xx
-        $28762  xx:         xxx
-        $28763  xx xx:      xxx $xx
+-       $2875b  xx xx:       xxx $xx
+        $2875d  xx xx xx:    xxx $xxxx,x
+        $28760  xx xx:       xxx $xx
+        $28762  xx:          xxx
+        $28763  xx xx:      xxx - ; $2875b
         $28765  xx xx:      xxx $xx
         $28767  xx:         xxx
-        $28768  xx xx:      xxx $xx
-        $2876a  xx xx:      xxx $xx
-        $2876c  xx:         xxx
-        $2876d  xx xx:      xxx $xx
-        $2876f  xx xx:      xxx $xx
-        $28771  xx:         xxx
+        $28768  xx xx:      xxx + ; $2876c
+        $2876a  xx xx:       xxx $xx
++       $2876c  xx:         xxx
+        $2876d  xx xx:      xxx + ; $28771
+        $2876f  xx xx:       xxx $xx
++       $28771  xx:         xxx
 ;;; --------------------------------
-JumpTable_285a2_08
+MessageDecodeJump_08
         $28772  xx xx:      xxx $xx
         $28774  xx xx:      xxx $xx
         $28776  xx xx:      xxx $xx
@@ -32691,7 +33036,7 @@ JumpTable_285a2_08
         $28792  xx xx:      xxx #$xx
         $28794  xx xx:      xxx ($xx),y
         $28796  xx xx:      xxx $xx
-        $28798  xx xx xx:   xxx $287ae
+        $28798  xx xx xx:   xxx WriteCharacterToMessageBuffer
         $2879b  xx xx xx:   xxx $28794
 ;;; --------------------------------
         $2879e  xx xx:      xxx $xx
@@ -32704,67 +33049,95 @@ JumpTable_285a2_08
         $287ab  xx xx:      xxx $xx
         $287ad  xx:         xxx
 ;;; --------------------------------
+;;; Write a character into the currently-displaying message.
+;;; Input:
+;;;   A     The character to write
+;;;   $28   The current message index
+;;; Output:
+;;;   $6000 The message buffer is written to
+;;;   Y     Incremented to get the next char
+WriteCharacterToMessageBuffer
         $287ae  xx xx:      xxx $xx
         $287b0  xx xx xx:   xxx $xxxx,x
         $287b3  xx xx:      xxx $xx
         $287b5  xx:         xxx
         $287b6  xx:         xxx
 ;;; --------------------------------
+;;; The message box is 10 rows (80 pixels) high and consists of nine different
+;;; sprites (18 19 1a;1e 20 1f;1b 1c 1d).  We draw two rows per frame to the
+;;; nametable while it is paged out, then we can populate only the individual
+;;; letters afterwards.
+DrawMessageBoxBackgroundAllRows
         $287b7  xx xx:      xxx #$xx
-        $287b9  xx xx xx:   xxx $287ef
+        $287b9  xx xx xx:   xxx DrawMessageBoxBackgroundRows ; rows 0-1
         $287bc  xx xx:      xxx #$xx
-        $287be  xx xx xx:   xxx $287ef
+        $287be  xx xx xx:   xxx DrawMessageBoxBackgroundRows ; rows 2-3
         $287c1  xx xx:      xxx #$xx
-        $287c3  xx xx xx:   xxx $287ef
+        $287c3  xx xx xx:   xxx DrawMessageBoxBackgroundRows ; rows 4-5
         $287c6  xx xx:      xxx #$xx
-        $287c8  xx xx xx:   xxx $287ef
+        $287c8  xx xx xx:   xxx DrawMessageBoxBackgroundRows ; rows 6-7
         $287cb  xx xx:      xxx #$xx
-        $287cd  xx xx xx:   xxx $287ef
-        $287d0  xx xx:      xxx $xx
-        $287d2  xx xx:      xxx $xx
-        $287d4  xx xx:      xxx $xx
+        $287cd  xx xx xx:   xxx DrawMessageBoxBackgroundRows ; rows 8-9
+	;; Wait for nametable flush in NMI
+-       $287d0  xx xx:       xxx $xx
+        $287d2  xx xx:       xxx $xx
+        $287d4  xx xx:      xxx -
+        ;; Write two rows of $ff 
         $287d6  xx xx:      xxx #$xx
         $287d8  xx xx:      xxx #$xx
-        $287da  xx xx xx:   xxx $xxxx,x
-        $287dd  xx:         xxx
-        $287de  xx xx:      xxx $xx
+-       $287da  xx xx xx:    xxx $xxxx,x
+        $287dd  xx:          xxx
+        $287de  xx xx:      xxx -
         $287e0  xx xx:      xxx #$xx
         $287e2  xx xx:      xxx $xx
         $287e4  xx xx:      xxx #$xx
         $287e6  xx xx:      xxx $xx
         $287e8  xx xx:      xxx #$xx
         $287ea  xx xx:      xxx $xx
-        $287ec  xx xx xx:   xxx $28836
+        $287ec  xx xx xx:   xxx StageNametableWriteForMessage
 ;;; --------------------------------
-        $287ef  xx xx:      xxx $xx
-        $287f1  xx xx:      xxx $xx
-        $287f3  xx xx:      xxx $xx ; Holding pattern, wait for NMI
-        $287f5  xx xx:      xxx #$xx
+;;; Writes two rows of the message box to the nametable stage.
+;;; Inputs:
+;;;    x: row to draw (0 for top, 3 for middle, 6 for bottom)
+;;;    $20,$21  Should point to correct nametable row already
+;;;    $24,$25  Must be pre-initialized to (#$20, #$0)
+;;;    $22.#23  Increment for PPUADDR between frames.
+DrawMessageBoxBackgroundRows
+        ;; Wait for nametable flush in NMI
+-       $287ef  xx xx:       xxx $xx
+        $287f1  xx xx:       xxx $xx
+        $287f3  xx xx:      xxx -
+        ;; Stage 64 bytes (two rows) to the nametable, as given by two
+        ;; triples in $28899,x.  For each triple, the first byte is written
+        ;; once, then 30 copies of the second byte, then the third byte.
+        ;; This makes 3 different possible writes (x=0, 3, or 6).
+        $287f5  xx xx:      xxx #$xx ; start writing directly to $6000
         $287f7  xx xx:      xxx #$xx
-        $287f9  xx xx:      xxx $xx
-        $287fb  xx xx:      xxx #$xx
-        $287fd  xx xx xx:   xxx $xxxx,y
-        $28800  xx:         xxx
-        $28801  xx xx xx:   xxx $28899,x
-        $28804  xx xx xx:   xxx $xxxx,y
-        $28807  xx:         xxx
-        $28808  xx:         xxx
-        $28809  xx xx:      xxx #$xx
-        $2880b  xx xx:      xxx $xx
-        $2880d  xx xx xx:   xxx $28899,x
-        $28810  xx xx xx:   xxx $xxxx,y
-        $28813  xx:         xxx
-        $28814  xx xx:      xxx $xx
-        $28816  xx xx:      xxx $xx
-        $28818  xx:         xxx
-        $28819  xx xx xx:   xxx $28899,x
-        $2881c  xx xx xx:   xxx $xxxx,y
-        $2881f  xx:         xxx
-        $28820  xx:         xxx
-        $28821  xx xx:      xxx $xx
-        $28823  xx xx:      xxx $xx
-        $28825  xx xx xx:   xxx $28836
+        $287f9  xx xx:      xxx $xx ; $2f = loop index -> 2 times
+--      $287fb  xx xx:       xxx #$xx
+        $287fd  xx xx xx:    xxx $xxxx,y
+        $28800  xx:          xxx
+        $28801  xx xx xx:    xxx MessageBoxBackgroundSprites,x
+        $28804  xx xx xx:    xxx $xxxx,y
+        $28807  xx:          xxx
+        $28808  xx:          xxx
+        $28809  xx xx:       xxx #$xx
+        $2880b  xx xx:       xxx $xx
+-       $2880d  xx xx xx:     xxx MessageBoxBackgroundSprites,x
+        $28810  xx xx xx:     xxx $xxxx,y
+        $28813  xx:           xxx
+        $28814  xx xx:        xxx $xx
+        $28816  xx xx:       xxx - ; $2880d
+        $28818  xx:          xxx
+        $28819  xx xx xx:    xxx MessageBoxBackgroundSprites,x
+        $2881c  xx xx xx:    xxx $xxxx,y
+        $2881f  xx:          xxx
+        $28820  xx:          xxx
+        $28821  xx xx:       xxx $xx
+        $28823  xx xx:      xxx -- ; $287fb
+        $28825  xx xx xx:   xxx StageNametableWriteForMessage
         $28828  xx:         xxx
+        ;; Increment PPUADDR by $22$23 (who sets that?)
         $28829  xx xx:      xxx $xx
         $2882b  xx xx:      xxx $xx
         $2882d  xx xx:      xxx $xx
@@ -32773,6 +33146,13 @@ JumpTable_285a2_08
         $28833  xx xx:      xxx $xx
         $28835  xx:         xxx
 ;;; --------------------------------
+;;; Inputs:
+;;;   $6000,x should have already been written.
+;;;   $21 -> $6200,x  high 6 bits of PPUADDR, increment in :40, continue in :80
+;;;   $20 -> $6201,x  low byte of PPUADDR
+;;;   $24 -> $6202,x  Count
+;;;   $25 -> $6203,x  Offset into $5200,x
+StageNametableWriteForMessage
         $28836  xx xx xx:   xxx DisableNMI_alt
         $28839  xx xx:      xxx $xx
         $2883b  xx xx:      xxx $xx
@@ -32811,514 +33191,557 @@ DisableNMI_alt
         $28875  xx xx xx:   xxx PPUCTRL
         $28878  xx:         xxx
 ;;; --------------------------------
-DataTable_28879
-        $28879              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_28889
-        $28889              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_28899
-        $28899              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MessageBoxBackgroundParameters
+        $28879              .word ($xxxx) ; $20$21 - initial value for PPUADDR
+        $2887b              .word ($xxxx) ; $22$23 - PPUADDR increment between frames
+        $2887d              .byte $xx     ; $24    - byte count to write per frame
+        $2887e              .byte $xx     ; $25    - $6000,x offset to write
+        $2887f              .byte $xx     ; $26
+        $28880              .byte $xx     ; $27
+        $28881              .byte $xx     ; $28
+        $28882              .byte $xx     ; $29
+        $28883              .byte $xx     ; $2a
+        $28884              .byte $xx     ; $2b
+        $28885              .byte $xx     ; $2c
+        $28886              .byte $xx     ; $2d
+        $28887              .byte $xx     ; $2e
+        $28888              .byte $xx     ; $2f
+MessageBoxTextParameters
+        $28889              .word ($xxxx) ; $20$21 - initial value for PPUADDR
+        $2888b              .word ($xxxx) ; $22$23 - PPUADDR increment between frames
+        $2888d              .byte $xx     ; $24    - byte count to write per frame
+        $2888e              .byte $xx     ; $25    - $6000,x offset to write      
+        $2888f              .byte $xx     ; $26
+        $28890              .byte $xx     ; $27
+        $28891              .byte $xx     ; $28
+        $28892              .byte $xx     ; $29
+        $28893              .byte $xx     ; $2a
+        $28894              .byte $xx     ; $2b
+        $28895              .byte $xx     ; $2c
+        $28896              .byte $xx     ; $2d
+        $28897              .byte $xx     ; $2e
+        $28898              .byte $xx     ; $2f
+MessageBoxBackgroundSprites
+        $28899              .byte $xx,$xx,$xx ; 00
+        $2889c              .byte $xx,$xx,$xx ; 03
+        $2889f              .byte $xx,$xx,$xx ; 06
+        $288a2              .byte $xx,$xx,$xx ; 09
+;;; --------------------------------
+;;; This appears to be an unused scrap that was duplicated from elsewhere.
+        $288a5              .byte $xx
         $288a6              .byte $xx,"xxxxxxxxxxx",$xx,"xxxxxxxxxxx"
         $288be              .byte     $xx,"xxxxxx",$xx,$xx,"xx",$xx,$xx,"xxxxx"
         $288d0              .byte     $xx,"xxxxxxx",$xx,$xx,"xx",$xx,$xx,$xx,$xx
         $288e0              .byte $xx,"x",$xx,$xx,$xx,$xx,$xx,$xx,$xx,"xx"
         $288eb              .byte     $xx,"xxxxxxxxxxxxxxx",$xx,$xx,"xx"
         $288ff              .byte $xx
-        $28900              .word ($xxxx)
-        $28902              .word ($xxxx)
-        $28904              .word ($xxxx)
-        $28906              .word ($xxxx)
-        $28908              .word ($xxxx)
-        $2890a              .word ($xxxx)
-        $2890c              .word ($xxxx)
-        $2890e              .word ($xxxx)
-        $28910              .word ($xxxx)
-        $28912              .word ($xxxx)
-        $28914              .word ($xxxx)
-        $28916              .word ($xxxx)
-        $28918              .word ($xxxx)
-        $2891a              .word ($xxxx)
-        $2891c              .word ($xxxx)
-        $2891e              .word ($xxxx)
-        $28920              .word ($xxxx)
-        $28922              .word ($xxxx)
-        $28924              .word ($xxxx)
-        $28926              .word ($xxxx)
-        $28928              .word ($xxxx)
-        $2892a              .word ($xxxx)
-        $2892c              .word ($xxxx)
-        $2892e              .word ($xxxx)
-        $28930              .word ($xxxx)
-        $28932              .word ($xxxx)
-        $28934              .word ($xxxx)
-        $28936              .word ($xxxx)
-        $28938              .word ($xxxx)
-        $2893a              .word ($xxxx)
-        $2893c              .word ($xxxx)
-        $2893e              .word ($xxxx)
-        $28940              .word ($xxxx)
-        $28942              .word ($xxxx)
-        $28944              .word ($xxxx)
-        $28946              .word ($xxxx)
-        $28948              .word ($xxxx)
-        $2894a              .word ($xxxx)
-        $2894c              .word ($xxxx)
-        $2894e              .word ($xxxx)
-        $28950              .word ($xxxx)
-        $28952              .word ($xxxx)
-        $28954              .word ($xxxx)
-        $28956              .word ($xxxx)
-        $28958              .word ($xxxx)
-        $2895a              .word ($xxxx)
-        $2895c              .word ($xxxx)
-        $2895e              .word ($xxxx)
-        $28960              .word ($xxxx)
-        $28962              .word ($xxxx)
-        $28964              .word ($xxxx)
-        $28966              .word ($xxxx)
-        $28968              .word ($xxxx)
-        $2896a              .word ($xxxx)
-        $2896c              .word ($xxxx)
-        $2896e              .word ($xxxx)
-        $28970              .word ($xxxx)
-        $28972              .word ($xxxx)
-        $28974              .word ($xxxx)
-        $28976              .word ($xxxx)
-        $28978              .word ($xxxx)
-        $2897a              .word ($xxxx)
-        $2897c              .word ($xxxx)
-        $2897e              .word ($xxxx)
-        $28980              .word ($xxxx)
-        $28982              .word ($xxxx)
-        $28984              .word ($xxxx)
-        $28986              .word ($xxxx)
-        $28988              .word ($xxxx)
-        $2898a              .word ($xxxx)
-        $2898c              .word ($xxxx)
-        $2898e              .word ($xxxx)
-        $28990              .word ($xxxx)
-        $28992              .word ($xxxx)
-        $28994              .word ($xxxx)
-        $28996              .word ($xxxx)
-        $28998              .word ($xxxx)
-        $2899a              .word ($xxxx)
-        $2899c              .word ($xxxx)
-        $2899e              .word ($xxxx)
-        $289a0              .word ($xxxx)
-        $289a2              .word ($xxxx)
-        $289a4              .word ($xxxx)
-        $289a6              .word ($xxxx)
-        $289a8              .word ($xxxx)
-        $289aa              .word ($xxxx)
-        $289ac              .word ($xxxx)
-        $289ae              .word ($xxxx)
-        $289b0              .word ($xxxx)
-        $289b2              .word ($xxxx)
-        $289b4              .word ($xxxx)
-        $289b6              .word ($xxxx)
-        $289b8              .word ($xxxx)
-        $289ba              .word ($xxxx)
-        $289bc              .word ($xxxx)
-        $289be              .word ($xxxx)
-        $289c0              .word ($xxxx)
-        $289c2              .word ($xxxx)
-        $289c4              .word ($xxxx)
-        $289c6              .word ($xxxx)
-        $289c8              .word ($xxxx)
-        $289ca              .word ($xxxx)
-        $289cc              .word ($xxxx)
-        $289ce              .word ($xxxx)
-        $289d0              .word ($xxxx)
-        $289d2              .word ($xxxx)
-        $289d4              .word ($xxxx)
-        $289d6              .word ($xxxx)
-        $289d8              .word ($xxxx)
-        $289da              .word ($xxxx)
-        $289dc              .word ($xxxx)
-        $289de              .word ($xxxx)
-        $289e0              .word ($xxxx)
-        $289e2              .word ($xxxx)
-        $289e4              .word ($xxxx)
-        $289e6              .word ($xxxx)
-        $289e8              .word ($xxxx)
-        $289ea              .word ($xxxx)
-        $289ec              .word ($xxxx)
-        $289ee              .word ($xxxx)
-        $289f0              .word ($xxxx)
-        $289f2              .word ($xxxx)
-        $289f4              .word ($xxxx)
-        $289f6              .word ($xxxx)
-        $289f8              .word ($xxxx)
-        $289fa              .word ($xxxx)
-        $289fc              .word ($xxxx)
-        $289fe              .word ($xxxx)
-        $28a00              .word ($xxxx)
-        $28a02              .word ($xxxx)
-        $28a04              .word ($xxxx)
-        $28a06              .word ($xxxx)
-        $28a08              .word ($xxxx)
-        $28a0a              .word ($xxxx)
-        $28a0c              .word ($xxxx)
-        $28a0e              .word ($xxxx)
-        $28a10              .word ($xxxx)
-        $28a12              .word ($xxxx)
-        $28a14              .word ($xxxx)
-        $28a16              .word ($xxxx)
-        $28a18              .word ($xxxx)
-        $28a1a              .word ($xxxx)
-        $28a1c              .word ($xxxx)
-        $28a1e              .word ($xxxx)
-        $28a20              .word ($xxxx)
-        $28a22              .word ($xxxx)
-        $28a24              .word ($xxxx)
-        $28a26              .word ($xxxx)
-        $28a28              .word ($xxxx)
-        $28a2a              .word ($xxxx)
-        $28a2c              .word ($xxxx)
-        $28a2e              .word ($xxxx)
-        $28a30              .word ($xxxx)
-        $28a32              .word ($xxxx)
-        $28a34              .word ($xxxx)
-        $28a36              .word ($xxxx)
-        $28a38              .word ($xxxx)
-        $28a3a              .word ($xxxx)
-        $28a3c              .word ($xxxx)
-        $28a3e              .word ($xxxx)
-        $28a40              .word ($xxxx)
-        $28a42              .word ($xxxx)
-        $28a44              .word ($xxxx)
-        $28a46              .word ($xxxx)
-        $28a48              .word ($xxxx)
-        $28a4a              .word ($xxxx)
-        $28a4c              .word ($xxxx)
-        $28a4e              .word ($xxxx)
-        $28a50              .word ($xxxx)
-        $28a52              .word ($xxxx)
-        $28a54              .word ($xxxx)
-        $28a56              .word ($xxxx)
-        $28a58              .word ($xxxx)
-        $28a5a              .word ($xxxx)
-        $28a5c              .word ($xxxx)
-        $28a5e              .word ($xxxx)
-        $28a60              .word ($xxxx)
-        $28a62              .word ($xxxx)
-        $28a64              .word ($xxxx)
-        $28a66              .word ($xxxx)
-        $28a68              .word ($xxxx)
-        $28a6a              .word ($xxxx)
-        $28a6c              .word ($xxxx)
-        $28a6e              .word ($xxxx)
-        $28a70              .word ($xxxx)
-        $28a72              .word ($xxxx)
-        $28a74              .word ($xxxx)
-        $28a76              .word ($xxxx)
-        $28a78              .word ($xxxx)
-        $28a7a              .word ($xxxx)
-        $28a7c              .word ($xxxx)
-        $28a7e              .word ($xxxx)
-        $28a80              .word ($xxxx)
-        $28a82              .word ($xxxx)
-        $28a84              .word ($xxxx)
-        $28a86              .word ($xxxx)
-        $28a88              .word ($xxxx)
-        $28a8a              .word ($xxxx)
-        $28a8c              .word ($xxxx)
-        $28a8e              .word ($xxxx)
-        $28a90              .word ($xxxx)
-        $28a92              .word ($xxxx)
-        $28a94              .word ($xxxx)
-        $28a96              .word ($xxxx)
-        $28a98              .word ($xxxx)
-        $28a9a              .word ($xxxx)
-        $28a9c              .word ($xxxx)
-        $28a9e              .word ($xxxx)
-        $28aa0              .word ($xxxx)
-        $28aa2              .word ($xxxx)
-        $28aa4              .word ($xxxx)
-        $28aa6              .word ($xxxx)
-        $28aa8              .word ($xxxx)
-        $28aaa              .word ($xxxx)
-        $28aac              .word ($xxxx)
-        $28aae              .word ($xxxx)
-        $28ab0              .word ($xxxx)
-        $28ab2              .word ($xxxx)
-        $28ab4              .word ($xxxx)
-        $28ab6              .word ($xxxx)
-        $28ab8              .word ($xxxx)
-        $28aba              .word ($xxxx)
-        $28abc              .word ($xxxx)
-        $28abe              .word ($xxxx)
-        $28ac0              .word ($xxxx)
-        $28ac2              .word ($xxxx)
-        $28ac4              .word ($xxxx)
-        $28ac6              .word ($xxxx)
-        $28ac8              .word ($xxxx)
-        $28aca              .word ($xxxx)
-        $28acc              .word ($xxxx)
-        $28ace              .word ($xxxx)
-        $28ad0              .word ($xxxx)
-        $28ad2              .word ($xxxx)
-        $28ad4              .word ($xxxx)
-        $28ad6              .word ($xxxx)
-        $28ad8              .word ($xxxx)
-        $28ada              .word ($xxxx)
-        $28adc              .word ($xxxx)
-        $28ade              .word ($xxxx)
-        $28ae0              .word ($xxxx)
-        $28ae2              .word ($xxxx)
-        $28ae4              .word ($xxxx)
-        $28ae6              .word ($xxxx)
-        $28ae8              .word ($xxxx)
-        $28aea              .word ($xxxx)
-        $28aec              .word ($xxxx)
-        $28aee              .word ($xxxx)
-        $28af0              .byte "xx",$xx
-        $28af3              .byte "xx",$xx
-        $28af6              .byte "xx",$xx
-        $28af9              .byte "xxx",$xx
-        $28afd              .byte "xxxx",$xx
-        $28b02              .byte "xxx",$xx
-        $28b06              .byte "xx",$xx
-        $28b09              .byte "xx",$xx
-        $28b0c              .byte "xxx",$xx
-        $28b10              .byte "xxx",$xx
-        $28b14              .byte "xxxxx",$xx
-        $28b1a              .byte "xxxxxx",$xx
-        $28b21              .byte "xxxx",$xx
-        $28b26              .byte "xxxx",$xx
-        $28b2b              .byte "xx",$xx
-        $28b2e              .byte "xx",$xx
-        $28b31              .byte "xxxx",$xx
-        $28b36              .byte "xxxxx",$xx
-        $28b3c              .byte "xxx",$xx
-        $28b40              .byte "xxx",$xx
-        $28b44              .byte "xxxx",$xx
-        $28b49              .byte "xxxx",$xx
-        $28b4e              .byte "xxxxx",$xx
-        $28b54              .byte "xx",$xx
-        $28b57              .byte "xx",$xx
-        $28b5a              .byte "xxx",$xx
-        $28b5e              .byte "xxxx",$xx
-        $28b63              .byte "xxxx",$xx
-        $28b68              .byte "xxxx",$xx
-        $28b6d              .byte "xxxx",$xx
-        $28b72              .byte "xxxx",$xx
-        $28b77              .byte "xxx",$xx
-        $28b7b              .byte "xxxx",$xx
-        $28b80              .byte "xxx",$xx
-        $28b84              .byte "xxx",$xx
-        $28b88              .byte "xxx",$xx
-        $28b8c              .byte "xxxx",$xx
-        $28b91              .byte "xxxx",$xx
-        $28b96              .byte "xxxx",$xx
-        $28b9b              .byte "xxxx",$xx
-        $28ba0              .byte "xxxx",$xx
-        $28ba5              .byte "xxxx",$xx
-        $28baa              .byte "xxxxxxx",$xx
-        $28bb2              .byte "xx",$xx
-        $28bb5              .byte "xxx",$xx
-        $28bb9              .byte "xx",$xx
-        $28bbc              .byte "xxxx",$xx
-        $28bc1              .byte "xxxx",$xx
-        $28bc6              .byte "xxx",$xx
-        $28bca              .byte "xx",$xx
-        $28bcd              .byte "xxxx",$xx
-        $28bd2              .byte "xxxx",$xx
-        $28bd7              .byte "xxxxx",$xx
-        $28bdd              .byte "xxxx",$xx
-        $28be2              .byte "xxxx",$xx
-        $28be7              .byte "xxxx",$xx
-        $28bec              .byte "xxxx",$xx
-        $28bf1              .byte "xxxx",$xx
-        $28bf6              .byte "xxxx",$xx
-        $28bfb              .byte "xxxx",$xx
-        $28c00              .byte "xxxx",$xx
-        $28c05              .byte "xx",$xx
-        $28c08              .byte "xxxx",$xx
-        $28c0d              .byte "xxxx",$xx
-        $28c12              .byte "xxxx",$xx
-        $28c17              .byte "xxxx",$xx
-        $28c1c              .byte "xxxx",$xx
-        $28c21              .byte "xxxx",$xx
-        $28c26              .byte "xxxx",$xx
-        $28c2b              .byte "xx",$xx
-        $28c2e              .byte "xxx",$xx
-        $28c32              .byte "xxx",$xx
-        $28c36              .byte "xxx",$xx
-        $28c3a              .byte "xxxx",$xx
-        $28c3f              .byte "xxxx",$xx
-        $28c44              .byte "xxxx",$xx
-        $28c49              .byte "xxxxx",$xx
-        $28c4f              .byte "xx",$xx
-        $28c52              .byte "xx",$xx
-        $28c55              .byte "xx",$xx
-        $28c58              .byte "xxx",$xx
-        $28c5c              .byte "xxx",$xx
-        $28c60              .byte "xxxx",$xx
-        $28c65              .byte "xxxx",$xx
-        $28c6a              .byte "xxxxx",$xx
-        $28c70              .byte "xxxx",$xx
-        $28c75              .byte "xxxx",$xx
-        $28c7a              .byte "xxxxx",$xx
-        $28c80              .byte "xx",$xx
-        $28c83              .byte "xxx",$xx
-        $28c87              .byte "xxx",$xx
-        $28c8b              .byte "xxxx",$xx
-        $28c90              .byte "xxxx",$xx
-        $28c95              .byte "xxxx",$xx
-        $28c9a              .byte "xxxx",$xx
-        $28c9f              .byte "xxxx",$xx
-        $28ca4              .byte "xxxx",$xx
-        $28ca9              .byte "xxxx",$xx
-        $28cae              .byte "xxxxx",$xx
-        $28cb4              .byte "xx",$xx
-        $28cb7              .byte "xx",$xx
-        $28cba              .byte "xxx",$xx
-        $28cbe              .byte "xxxx",$xx
-        $28cc3              .byte "xxxx",$xx
-        $28cc8              .byte "xxx",$xx
-        $28ccc              .byte "xxx",$xx
-        $28cd0              .byte "xxxx",$xx
-        $28cd5              .byte "xxxx",$xx
-        $28cda              .byte "xxxx",$xx
-        $28cdf              .byte "xxxx",$xx
-        $28ce4              .byte "xxxx",$xx
-        $28ce9              .byte "xxxx",$xx
-        $28cee              .byte "xxxx",$xx
-        $28cf3              .byte "xxxx",$xx
-        $28cf8              .byte "xxxxx",$xx
-        $28cfe              .byte "xxx",$xx
-        $28d02              .byte "xxxx",$xx
-        $28d07              .byte "xxxxxx",$xx
-        $28d0e              .byte "xxxxxx",$xx
-        $28d15              .byte "xxx",$xx
-        $28d19              .byte "xxx",$xx
-        $28d1d              .byte "xxxx",$xx
-        $28d22              .byte "xx",$xx
-        $28d25              .byte "x",$xx
-        $28d27              .byte "xxxx",$xx
-        $28d2c              .byte "xxxx",$xx
-        $28d31              .byte "xxx",$xx
-        $28d35              .byte "xx",$xx
-        $28d38              .byte "xxxxxx",$xx
-        $28d3f              .byte "xxxxxx",$xx
-        $28d46              .byte "xxx",$xx
-        $28d4a              .byte "xxxxx",$xx
-        $28d50              .byte "xxxxx",$xx
-        $28d56              .byte "xxxxxxx",$xx
-        $28d5e              .byte "xxxxxx",$xx
-        $28d65              .byte "xxxxxx",$xx
-        $28d6c              .byte "xxxxxxxxxx",$xx
-        $28d77              .byte "xxxxxxxx",$xx
-        $28d80              .byte "xxxxxxxxxxxxx",$xx
-        $28d8e              .byte "xxxxxxx",$xx
-        $28d96              .byte "xxxxxxx",$xx
-        $28d9e              .byte "xxxxx",$xx
-        $28da4              .byte "xxxxxx",$xx
-        $28dab              .byte "xxxxx",$xx
-        $28db1              .byte "xxx",$xx
-        $28db5              .byte "xxxxx",$xx
-        $28dbb              .byte "xxxxxx",$xx
-        $28dc2              .byte "xxxxx",$xx
-        $28dc8              .byte "xxxxxxxxx",$xx
-        $28dd2              .byte "xxxxx",$xx
-        $28dd8              .byte "xxxxxxx",$xx
-        $28de0              .byte "xxxxxx",$xx
-        $28de7              .byte "xxxx",$xx
-        $28dec              .byte "xxxx",$xx
-        $28df1              .byte "xxxxx",$xx
-        $28df7              .byte "xxxxxx",$xx
-        $28dfe              .byte "xxxx",$xx
-        $28e03              .byte "xxxxxx",$xx
-        $28e0a              .byte "xxxx",$xx
-        $28e0f              .byte "xxxxxxxx",$xx
-        $28e18              .byte "xxxxxxxxx",$xx
-        $28e22              .byte "xxxxxxxx",$xx
-        $28e2b              .byte "xxxxxxxxx",$xx
-        $28e35              .byte "xxx",$xx
-        $28e39              .byte "xxxx",$xx
-        $28e3e              .byte "xxxx",$xx
-        $28e43              .byte "xxxxxxxx",$xx
-        $28e4c              .byte "xxxxxxxx",$xx
-        $28e55              .byte "xxx",$xx
-        $28e59              .byte "xxxxxx",$xx
-        $28e60              .byte "xxxxxxx",$xx
-        $28e68              .byte "xxxx",$xx
-        $28e6d              .byte "xxxxxx",$xx
-        $28e74              .byte "xxxxx",$xx
-        $28e7a              .byte "xxxxxx",$xx
-        $28e81              .byte "xxxxxxxxxxxxx",$xx
-        $28e8f              .byte "xxxxxxxxxxxxx",$xx
-        $28e9d              .byte "xxxxxxxxxxxxxx",$xx
-        $28eac              .byte "xxxxxxxxxxxxxxxx",$xx
-        $28ebd              .byte "xxxxxxxxx",$xx
-        $28ec7              .byte "xxxxxxxxxxxx",$xx
-        $28ed4              .byte "xxxxxxxxxxxxxxxx",$xx
-        $28ee5              .byte "xxxxxxxxxxxx",$xx
-        $28ef2              .byte "xxxxxxxxxxxxxx",$xx
-        $28f01              .byte "xxxxxxxxxxxxx",$xx
-        $28f0f              .byte "xxxxxxxxxxxxxxxxx",$xx
-        $28f21              .byte "xxxxxxxxxxxxxxx",$xx
-        $28f31              .byte "xxxxxxxxxxxxxx",$xx
-        $28f40              .byte "xxxxxxxxxxxxxxx",$xx
-        $28f50              .byte "xxxxxxxxxxxxx",$xx
-        $28f5e              .byte "xxxxxxxxxxxxxxx",$xx
-        $28f6e              .byte "xxxxxxxxxxxxxxx",$xx
-        $28f7e              .byte "xxxxxxxxxxxxxx",$xx
-        $28f8d              .byte "xxxxxxxxxxxxx",$xx
-        $28f9b              .byte "xxxxxxxxxxxxx",$xx
-        $28fa9              .byte "xxxxxxxxxxxxx",$xx
-        $28fb7              .byte "xxxxxxxxxxx",$xx
-        $28fc3              .byte "xxxxxxxxxxxxx",$xx
-        $28fd1              .byte "xxxxxxxxxxxx",$xx
-        $28fde              .byte "xxxxxxxxxxxxxx",$xx
-        $28fed              .byte "xxxxxxxxxxxx",$xx
-        $28ffa              .byte "xxxxxxxxxxxx",$xx
-        $29007              .byte "xxxxxxxxxxxx",$xx
-        $29014              .byte "xxxxxxxxxxxx",$xx
-        $29021              .byte "xxxxxxxxxxxx",$xx
-        $2902e              .byte "xxxxxxxx",$xx
-        $29037              .byte "xxxxxxxxxxx",$xx
-        $29043              .byte "xxxxxxxxxxxxx",$xx
-        $29051              .byte "xxxxxxxxxxxxxx",$xx
-        $29060              .byte "xxxxxxxxxx",$xx
-        $2906b              .byte "xxxxxxxxxxxxxx",$xx
-        $2907a              .byte "xxxxxxxxxx",$xx
-        $29085              .byte "xxxxxxxxxxxxxx",$xx
-        $29094              .byte "xxxxxxxxxxx",$xx
-        $290a0              .byte "xxxxxxxxxxxx",$xx
-        $290ad              .byte "xxxxxxxxxxxxx",$xx
-        $290bb              .byte "xxxxxxxx",$xx
-        $290c4              .byte "xxxxxxxxxx",$xx
-        $290cf              .byte "xxxxxxxxxxxx",$xx
-        $290dc              .byte "xxxxxxxxxxxxx",$xx
-        $290ea              .byte "xxxxxxxxxxxxx",$xx
-        $290f8              .byte "xxxxxxxxxxxx",$xx
-        $29105              .byte "xxxxxxxxxxxxx",$xx
-        $29113              .byte "xxxxxxxxxxx",$xx
-        $2911f              .byte "xxxxxxxxxxx",$xx
-        $2912b              .byte "xxxxxxxxxxxx",$xx
-        $29138              .byte "xxxxxxxxxxxxx",$xx
-        $29146              .byte "xxxxxxxxxxx",$xx
-        $29152              .byte "xxxxxxxx",$xx
-        $2915b              .byte "xxxxxxxxxxx",$xx
-        $29167              .byte "xxxxxxxxxxx",$xx
-        $29173              .byte "xxxxxxxxxxxxx",$xx
-        $29181              .byte "xxxxxxxxxxxx",$xx
-        $2918e              .byte "xxxxxxxxxxxxxx",$xx
-        $2919d              .byte "xxxxxxxxxxxx",$xx
-        $291aa              .byte "xxxxxxxxxxxx",$xx
-        $291b7              .byte "xxxxxxxxxxxx",$xx
-        $291c4              .byte "xxxxxxxxxxx",$xx
-        $291d0              .byte "xxxxxxxxxx",$xx
-        $291db              .byte "xxxxxxxxxxxx",$xx
-        $291e8              .byte "xxxxxxx",$xx
-        $291f0              .byte "xxxxxxxxx",$xx
-        $291fa              .byte "xxxxxxxxx",$xx
-        $29204              .byte "xxxxxxxx",$xx
-        $2920d              .byte "xxxxxxx",$xx
-        $29215              .byte "xxxxxxx",$xx
-        $2921d              .byte "xxxxxx",$xx
-        $29224              .byte "xxxxxx",$xx
+;;; --------------------------------
+;;; Data table of addresses for common words.
+;;; STRIP: word=$20000
+CommonWords
+        $28900              .word ($28af0)
+        $28902              .word ($28af3)
+        $28904              .word ($28af6)
+        $28906              .word ($28af9)
+        $28908              .word ($28afd)
+        $2890a              .word ($28b02)
+        $2890c              .word ($28b06)
+        $2890e              .word ($28b09)
+        $28910              .word ($28b0c)
+        $28912              .word ($28b10)
+        $28914              .word ($28b14)
+        $28916              .word ($28b1a)
+        $28918              .word ($28b21)
+        $2891a              .word ($28b26)
+        $2891c              .word ($28b2b)
+        $2891e              .word ($28b2e)
+        $28920              .word ($28b31)
+        $28922              .word ($28b36)
+        $28924              .word ($28b3c)
+        $28926              .word ($28b40)
+        $28928              .word ($28b44)
+        $2892a              .word ($28b49)
+        $2892c              .word ($28b4e)
+        $2892e              .word ($28b54)
+        $28930              .word ($28b57)
+        $28932              .word ($28b5a)
+        $28934              .word ($28b5e)
+        $28936              .word ($28b63)
+        $28938              .word ($28b68)
+        $2893a              .word ($28b6d)
+        $2893c              .word ($28b72)
+        $2893e              .word ($28b77)
+        $28940              .word ($28b7b)
+        $28942              .word ($28b80)
+        $28944              .word ($28b84)
+        $28946              .word ($28b88)
+        $28948              .word ($28b8c)
+        $2894a              .word ($28b91)
+        $2894c              .word ($28b96)
+        $2894e              .word ($28b9b)
+        $28950              .word ($28ba0)
+        $28952              .word ($28ba5)
+        $28954              .word ($28baa)
+        $28956              .word ($28bb2)
+        $28958              .word ($28bb5)
+        $2895a              .word ($28bb9)
+        $2895c              .word ($28bbc)
+        $2895e              .word ($28bc1)
+        $28960              .word ($28bc6)
+        $28962              .word ($28bca)
+        $28964              .word ($28bcd)
+        $28966              .word ($28bd2)
+        $28968              .word ($28bd7)
+        $2896a              .word ($28bdd)
+        $2896c              .word ($28be2)
+        $2896e              .word ($28be7)
+        $28970              .word ($28bec)
+        $28972              .word ($28bf1)
+        $28974              .word ($28bf6)
+        $28976              .word ($28bfb)
+        $28978              .word ($28c00)
+        $2897a              .word ($28c05)
+        $2897c              .word ($28c08)
+        $2897e              .word ($28c0d)
+        $28980              .word ($28c12)
+        $28982              .word ($28c17)
+        $28984              .word ($28c1c)
+        $28986              .word ($28c21)
+        $28988              .word ($28c26)
+        $2898a              .word ($28c2b)
+        $2898c              .word ($28c2e)
+        $2898e              .word ($28c32)
+        $28990              .word ($28c36)
+        $28992              .word ($28c3a)
+        $28994              .word ($28c3f)
+        $28996              .word ($28c44)
+        $28998              .word ($28c49)
+        $2899a              .word ($28c4f)
+        $2899c              .word ($28c52)
+        $2899e              .word ($28c55)
+        $289a0              .word ($28c58)
+        $289a2              .word ($28c5c)
+        $289a4              .word ($28c60)
+        $289a6              .word ($28c65)
+        $289a8              .word ($28c6a)
+        $289aa              .word ($28c70)
+        $289ac              .word ($28c75)
+        $289ae              .word ($28c7a)
+        $289b0              .word ($28c80)
+        $289b2              .word ($28c83)
+        $289b4              .word ($28c87)
+        $289b6              .word ($28c8b)
+        $289b8              .word ($28c90)
+        $289ba              .word ($28c95)
+        $289bc              .word ($28c9a)
+        $289be              .word ($28c9f)
+        $289c0              .word ($28ca4)
+        $289c2              .word ($28ca9)
+        $289c4              .word ($28cae)
+        $289c6              .word ($28cb4)
+        $289c8              .word ($28cb7)
+        $289ca              .word ($28cba)
+        $289cc              .word ($28cbe)
+        $289ce              .word ($28cc3)
+        $289d0              .word ($28cc8)
+        $289d2              .word ($28ccc)
+        $289d4              .word ($28cd0)
+        $289d6              .word ($28cd5)
+        $289d8              .word ($28cda)
+        $289da              .word ($28cdf)
+        $289dc              .word ($28ce4)
+        $289de              .word ($28ce9)
+        $289e0              .word ($28cee)
+        $289e2              .word ($28cf3)
+        $289e4              .word ($28cf8)
+        $289e6              .word ($28cfe)
+        $289e8              .word ($28d02)
+        $289ea              .word ($28d07)
+        $289ec              .word ($28d0e)
+        $289ee              .word ($28d15)
+        $289f0              .word ($28d19)
+        $289f2              .word ($28d1d)
+        $289f4              .word ($28d22)
+        $289f6              .word ($28d25)
+        $289f8              .word ($28d27)
+        $289fa              .word ($28d2c)
+        $289fc              .word ($28d31)
+        $289fe              .word ($28d35)
+LessCommonWords
+        $28a00              .word ($28d38)
+        $28a02              .word ($28d3f)
+        $28a04              .word ($28d46)
+        $28a06              .word ($28d4a)
+        $28a08              .word ($28d50)
+        $28a0a              .word ($28d56)
+        $28a0c              .word ($28d5e)
+        $28a0e              .word ($28d65)
+        $28a10              .word ($28d6c)
+        $28a12              .word ($28d77)
+PersonNames
+        $28a14              .word ($28d8e)
+        $28a16              .word ($28d96)
+        $28a18              .word ($28d9e)
+        $28a1a              .word ($28da4)
+        $28a1c              .word ($28dab)
+        $28a1e              .word ($28db1)
+        $28a20              .word ($28db5)
+        $28a22              .word ($28dbb)
+        $28a24              .word ($28dc2)
+        $28a26              .word ($28dc8)
+        $28a28              .word ($28dd2)
+        $28a2a              .word ($28dd8)
+        $28a2c              .word ($28de0)
+        $28a2e              .word ($28de7)
+        $28a30              .word ($28dec)
+        $28a32              .word ($28df1)
+        $28a34              .word ($28df7)
+        $28a36              .word ($28dfe)
+        $28a38              .word ($28e03)
+        $28a3a              .word ($28e0a)
+        $28a3c              .word ($28e0f)
+        $28a3e              .word ($28e18)
+        $28a40              .word ($28e22)
+        $28a42              .word ($28e2b)
+        $28a44              .word ($28e35)
+        $28a46              .word ($28e39)
+        $28a48              .word ($28e3e)
+        $28a4a              .word ($28e43)
+        $28a4c              .word ($28e4c)
+        $28a4e              .word ($28e55)
+        $28a50              .word ($28e59)
+        $28a52              .word ($28e60)
+        $28a54              .word ($28e68)
+        $28a56              .word ($28e6d)
+        $28a58              .word ($28e74)
+        $28a5a              .word ($28e7a)
+ItemNames
+        $28a5c              .word ($28e81)
+        $28a5e              .word ($28e8f)
+        $28a60              .word ($28e9d)
+        $28a62              .word ($28eac)
+        $28a64              .word ($28ebd)
+        $28a66              .word ($28ec7)
+        $28a68              .word ($28ed4)
+        $28a6a              .word ($28ee5)
+        $28a6c              .word ($28ef2)
+        $28a6e              .word ($28f01)
+        $28a70              .word ($28f0f)
+        $28a72              .word ($28f21)
+        $28a74              .word ($28f31)
+        $28a76              .word ($28f40)
+        $28a78              .word ($28f50)
+        $28a7a              .word ($28f5e)
+        $28a7c              .word ($28f6e)
+        $28a7e              .word ($28f7e)
+        $28a80              .word ($28f8d)
+        $28a82              .word ($28f9b)
+        $28a84              .word ($28fa9)
+        $28a86              .word ($28fb7)
+        $28a88              .word ($28fc3)
+        $28a8a              .word ($28fd1)
+        $28a8c              .word ($28fde)
+        $28a8e              .word ($28fed)
+        $28a90              .word ($28ffa)
+        $28a92              .word ($29007)
+        $28a94              .word ($29014)
+        $28a96              .word ($29021)
+        $28a98              .word ($2902e)
+        $28a9a              .word ($29037)
+        $28a9c              .word ($29043)
+        $28a9e              .word ($29051)
+        $28aa0              .word ($29060)
+        $28aa2              .word ($2906b)
+        $28aa4              .word ($2907a)
+        $28aa6              .word ($29085)
+        $28aa8              .word ($29094)
+        $28aaa              .word ($290a0)
+        $28aac              .word ($290ad)
+        $28aae              .word ($290bb)
+        $28ab0              .word ($290c4)
+        $28ab2              .word ($290cf)
+        $28ab4              .word ($290dc)
+        $28ab6              .word ($290ea)
+        $28ab8              .word ($290f8)
+        $28aba              .word ($29105)
+        $28abc              .word ($29113)
+        $28abe              .word ($2911f)
+        $28ac0              .word ($2912b)
+        $28ac2              .word ($29138)
+        $28ac4              .word ($29146)
+        $28ac6              .word ($29152)
+        $28ac8              .word ($2915b)
+        $28aca              .word ($29167)
+        $28acc              .word ($29173)
+        $28ace              .word ($29181)
+        $28ad0              .word ($2918e)
+        $28ad2              .word ($2919d)
+        $28ad4              .word ($291aa)
+        $28ad6              .word ($291b7)
+        $28ad8              .word ($291c4)
+        $28ada              .word ($291d0)
+        $28adc              .word ($291db)
+        $28ade              .word ($291e8)
+        $28ae0              .word ($291f0)
+        $28ae2              .word ($291fa)
+        $28ae4              .word ($29204)
+        $28ae6              .word ($2920d)
+        $28ae8              .word ($29215)
+        $28aea              .word ($2921d)
+        $28aec              .word ($29224)
+        $28aee              .word ($2922b)
+        ;; Common words
+        $28af0              .byte "xx",$xx      ; 80
+        $28af3              .byte "xx",$xx      ; 81
+        $28af6              .byte "xx",$xx      ; 82
+        $28af9              .byte "xxx",$xx     ; 83
+        $28afd              .byte "xxxx",$xx    ; 84
+        $28b02              .byte "xxx",$xx     ; 85
+        $28b06              .byte "xx",$xx      ; 86
+        $28b09              .byte "xx",$xx      ; 87
+        $28b0c              .byte "xxx",$xx     ; 88
+        $28b10              .byte "xxx",$xx     ; 89
+        $28b14              .byte "xxxxx",$xx   ; 8a
+        $28b1a              .byte "xxxxxx",$xx  ; 8b
+        $28b21              .byte "xxxx",$xx    ; 8c
+        $28b26              .byte "xxxx",$xx    ; 8d
+        $28b2b              .byte "xx",$xx      ; 8e
+        $28b2e              .byte "xx",$xx      ; 8f
+        $28b31              .byte "xxxx",$xx    ; 90
+        $28b36              .byte "xxxxx",$xx   ; 91
+        $28b3c              .byte "xxx",$xx     ; 92
+        $28b40              .byte "xxx",$xx     ; 93
+        $28b44              .byte "xxxx",$xx    ; 94
+        $28b49              .byte "xxxx",$xx    ; 95
+        $28b4e              .byte "xxxxx",$xx   ; 96
+        $28b54              .byte "xx",$xx      ; 97
+        $28b57              .byte "xx",$xx      ; 98
+        $28b5a              .byte "xxx",$xx     ; 99
+        $28b5e              .byte "xxxx",$xx    ; 9a
+        $28b63              .byte "xxxx",$xx    ; 9b
+        $28b68              .byte "xxxx",$xx    ; 9c
+        $28b6d              .byte "xxxx",$xx    ; 9d
+        $28b72              .byte "xxxx",$xx    ; 9e
+        $28b77              .byte "xxx",$xx     ; 9f
+        $28b7b              .byte "xxxx",$xx    ; a0
+        $28b80              .byte "xxx",$xx     ; a1
+        $28b84              .byte "xxx",$xx     ; a2
+        $28b88              .byte "xxx",$xx     ; a3
+        $28b8c              .byte "xxxx",$xx    ; a4
+        $28b91              .byte "xxxx",$xx    ; a5
+        $28b96              .byte "xxxx",$xx    ; a6
+        $28b9b              .byte "xxxx",$xx    ; a7
+        $28ba0              .byte "xxxx",$xx    ; a8
+        $28ba5              .byte "xxxx",$xx    ; a9
+        $28baa              .byte "xxxxxxx",$xx ; aa
+        $28bb2              .byte "xx",$xx      ; ab
+        $28bb5              .byte "xxx",$xx     ; ac
+        $28bb9              .byte "xx",$xx      ; ad
+        $28bbc              .byte "xxxx",$xx    ; ae
+        $28bc1              .byte "xxxx",$xx    ; af
+        $28bc6              .byte "xxx",$xx     ; b0
+        $28bca              .byte "xx",$xx      ; b1
+        $28bcd              .byte "xxxx",$xx    ; b2
+        $28bd2              .byte "xxxx",$xx    ; b3
+        $28bd7              .byte "xxxxx",$xx   ; b4
+        $28bdd              .byte "xxxx",$xx    ; b5
+        $28be2              .byte "xxxx",$xx    ; b6
+        $28be7              .byte "xxxx",$xx    ; b7
+        $28bec              .byte "xxxx",$xx    ; b8
+        $28bf1              .byte "xxxx",$xx    ; b9
+        $28bf6              .byte "xxxx",$xx    ; ba
+        $28bfb              .byte "xxxx",$xx    ; bb
+        $28c00              .byte "xxxx",$xx    ; bc
+        $28c05              .byte "xx",$xx      ; bd
+        $28c08              .byte "xxxx",$xx    ; be
+        $28c0d              .byte "xxxx",$xx    ; bf
+        $28c12              .byte "xxxx",$xx    ; c0
+        $28c17              .byte "xxxx",$xx    ; c1
+        $28c1c              .byte "xxxx",$xx    ; c2
+        $28c21              .byte "xxxx",$xx    ; c3
+        $28c26              .byte "xxxx",$xx    ; c4
+        $28c2b              .byte "xx",$xx      ; c5
+        $28c2e              .byte "xxx",$xx     ; c6
+        $28c32              .byte "xxx",$xx     ; c7
+        $28c36              .byte "xxx",$xx     ; c8
+        $28c3a              .byte "xxxx",$xx    ; c9
+        $28c3f              .byte "xxxx",$xx    ; ca
+        $28c44              .byte "xxxx",$xx    ; cb
+        $28c49              .byte "xxxxx",$xx   ; cc
+        $28c4f              .byte "xx",$xx      ; cd
+        $28c52              .byte "xx",$xx      ; ce
+        $28c55              .byte "xx",$xx      ; cf
+        $28c58              .byte "xxx",$xx     ; d0
+        $28c5c              .byte "xxx",$xx     ; d1
+        $28c60              .byte "xxxx",$xx    ; d2
+        $28c65              .byte "xxxx",$xx    ; d3
+        $28c6a              .byte "xxxxx",$xx   ; d4
+        $28c70              .byte "xxxx",$xx    ; d5
+        $28c75              .byte "xxxx",$xx    ; d6
+        $28c7a              .byte "xxxxx",$xx   ; d7
+        $28c80              .byte "xx",$xx      ; d8
+        $28c83              .byte "xxx",$xx     ; d9
+        $28c87              .byte "xxx",$xx     ; da
+        $28c8b              .byte "xxxx",$xx    ; db
+        $28c90              .byte "xxxx",$xx    ; dc
+        $28c95              .byte "xxxx",$xx    ; dd
+        $28c9a              .byte "xxxx",$xx    ; de
+        $28c9f              .byte "xxxx",$xx    ; df
+        $28ca4              .byte "xxxx",$xx    ; e0
+        $28ca9              .byte "xxxx",$xx    ; e1
+        $28cae              .byte "xxxxx",$xx   ; e2
+        $28cb4              .byte "xx",$xx      ; e3
+        $28cb7              .byte "xx",$xx      ; e4
+        $28cba              .byte "xxx",$xx     ; e5
+        $28cbe              .byte "xxxx",$xx    ; e6
+        $28cc3              .byte "xxxx",$xx    ; e7
+        $28cc8              .byte "xxx",$xx     ; e8
+        $28ccc              .byte "xxx",$xx     ; e9
+        $28cd0              .byte "xxxx",$xx    ; ea
+        $28cd5              .byte "xxxx",$xx    ; eb
+        $28cda              .byte "xxxx",$xx    ; ec
+        $28cdf              .byte "xxxx",$xx    ; ed
+        $28ce4              .byte "xxxx",$xx    ; ee
+        $28ce9              .byte "xxxx",$xx    ; ef
+        $28cee              .byte "xxxx",$xx    ; f0
+        $28cf3              .byte "xxxx",$xx    ; f1
+        $28cf8              .byte "xxxxx",$xx   ; f2
+        $28cfe              .byte "xxx",$xx     ; f3
+        $28d02              .byte "xxxx",$xx    ; f4
+        $28d07              .byte "xxxxxx",$xx  ; f5
+        $28d0e              .byte "xxxxxx",$xx  ; f6
+        $28d15              .byte "xxx",$xx     ; f7
+        $28d19              .byte "xxx",$xx     ; f8
+        $28d1d              .byte "xxxx",$xx    ; f9
+        $28d22              .byte "xx",$xx      ; fa
+        $28d25              .byte "x",$xx       ; fb
+        $28d27              .byte "xxxx",$xx    ; fc
+        $28d2c              .byte "xxxx",$xx    ; fd
+        $28d31              .byte "xxx",$xx     ; fe
+        $28d35              .byte "xx",$xx      ; ff
+        ;; Less common words (05)
+        $28d38              .byte "xxxxxx",$xx        ; 05 00
+        $28d3f              .byte "xxxxxx",$xx        ; 05 01
+        $28d46              .byte "xxx",$xx           ; 05 02
+        $28d4a              .byte "xxxxx",$xx         ; 05 03
+        $28d50              .byte "xxxxx",$xx         ; 05 04
+        $28d56              .byte "xxxxxxx",$xx       ; 05 05
+        $28d5e              .byte "xxxxxx",$xx        ; 05 06
+        $28d65              .byte "xxxxxx",$xx        ; 05 07
+        $28d6c              .byte "xxxxxxxxxx",$xx    ; 05 08
+        $28d77              .byte "xxxxxxxx",$xx      ; 05 09
+        $28d80              .byte "xxxxxxxxxxxxx",$xx ; 05 0a
+        ;; Person names (06)
+        $28d8e              .byte "xxxxxxx",$xx   ; 06 00
+        $28d96              .byte "xxxxxxx",$xx   ; 06 01
+        $28d9e              .byte "xxxxx",$xx     ; 06 02
+        $28da4              .byte "xxxxxx",$xx    ; 06 03
+        $28dab              .byte "xxxxx",$xx     ; 06 04
+        $28db1              .byte "xxx",$xx       ; 06 05
+        $28db5              .byte "xxxxx",$xx     ; 06 06
+        $28dbb              .byte "xxxxxx",$xx    ; 06 07
+        $28dc2              .byte "xxxxx",$xx     ; 06 08
+        $28dc8              .byte "xxxxxxxxx",$xx ; 06 09
+        $28dd2              .byte "xxxxx",$xx     ; 06 0a
+        $28dd8              .byte "xxxxxxx",$xx   ; 06 0b
+        $28de0              .byte "xxxxxx",$xx    ; 06 0c
+        $28de7              .byte "xxxx",$xx      ; 06 0d
+        $28dec              .byte "xxxx",$xx      ; 06 0e
+        $28df1              .byte "xxxxx",$xx     ; 06 0f
+        $28df7              .byte "xxxxxx",$xx    ; 06 10
+        $28dfe              .byte "xxxx",$xx      ; 06 11
+        $28e03              .byte "xxxxxx",$xx    ; 06 12
+        $28e0a              .byte "xxxx",$xx      ; 06 13
+        $28e0f              .byte "xxxxxxxx",$xx  ; 06 14
+        $28e18              .byte "xxxxxxxxx",$xx ; 06 15
+        $28e22              .byte "xxxxxxxx",$xx  ; 06 16
+        $28e2b              .byte "xxxxxxxxx",$xx ; 06 17
+        $28e35              .byte "xxx",$xx       ; 06 18
+        $28e39              .byte "xxxx",$xx      ; 06 19
+        $28e3e              .byte "xxxx",$xx      ; 06 1a
+        $28e43              .byte "xxxxxxxx",$xx  ; 06 1b
+        $28e4c              .byte "xxxxxxxx",$xx  ; 06 1c
+        $28e55              .byte "xxx",$xx       ; 06 1d
+        $28e59              .byte "xxxxxx",$xx    ; 06 1e
+        $28e60              .byte "xxxxxxx",$xx   ; 06 1f
+        $28e68              .byte "xxxx",$xx      ; 06 20
+        $28e6d              .byte "xxxxxx",$xx    ; 06 21
+        $28e74              .byte "xxxxx",$xx     ; 06 22
+        $28e7a              .byte "xxxxxx",$xx    ; 06 23
+	;; Item names (07, 08)
+        $28e81              .byte "xxxxxxxxxxxxx",$xx     ; 00
+        $28e8f              .byte "xxxxxxxxxxxxx",$xx     ; 01
+        $28e9d              .byte "xxxxxxxxxxxxxx",$xx    ; 02
+        $28eac              .byte "xxxxxxxxxxxxxxxx",$xx  ; 03
+        $28ebd              .byte "xxxxxxxxx",$xx         ; 04
+        $28ec7              .byte "xxxxxxxxxxxx",$xx      ; 05
+        $28ed4              .byte "xxxxxxxxxxxxxxxx",$xx  ; 06
+        $28ee5              .byte "xxxxxxxxxxxx",$xx      ; 07
+        $28ef2              .byte "xxxxxxxxxxxxxx",$xx    ; 08
+        $28f01              .byte "xxxxxxxxxxxxx",$xx     ; 09
+        $28f0f              .byte "xxxxxxxxxxxxxxxxx",$xx ; 0a
+        $28f21              .byte "xxxxxxxxxxxxxxx",$xx   ; 0b
+        $28f31              .byte "xxxxxxxxxxxxxx",$xx    ; 0c
+        $28f40              .byte "xxxxxxxxxxxxxxx",$xx   ; 0d
+        $28f50              .byte "xxxxxxxxxxxxx",$xx     ; 0e
+        $28f5e              .byte "xxxxxxxxxxxxxxx",$xx   ; 0f
+        $28f6e              .byte "xxxxxxxxxxxxxxx",$xx   ; 10
+        $28f7e              .byte "xxxxxxxxxxxxxx",$xx    ; 11
+        $28f8d              .byte "xxxxxxxxxxxxx",$xx     ; 12
+        $28f9b              .byte "xxxxxxxxxxxxx",$xx     ; 13
+        $28fa9              .byte "xxxxxxxxxxxxx",$xx     ; 14
+        $28fb7              .byte "xxxxxxxxxxx",$xx       ; 15
+        $28fc3              .byte "xxxxxxxxxxxxx",$xx     ; 16
+        $28fd1              .byte "xxxxxxxxxxxx",$xx      ; 17
+        $28fde              .byte "xxxxxxxxxxxxxx",$xx    ; 18
+        $28fed              .byte "xxxxxxxxxxxx",$xx      ; 19
+        $28ffa              .byte "xxxxxxxxxxxx",$xx      ; 1a
+        $29007              .byte "xxxxxxxxxxxx",$xx      ; 1b
+        $29014              .byte "xxxxxxxxxxxx",$xx      ; 1c
+        $29021              .byte "xxxxxxxxxxxx",$xx      ; 1d
+        $2902e              .byte "xxxxxxxx",$xx          ; 1e
+        $29037              .byte "xxxxxxxxxxx",$xx       ; 1f
+        $29043              .byte "xxxxxxxxxxxxx",$xx     ; 20
+        $29051              .byte "xxxxxxxxxxxxxx",$xx    ; 21
+        $29060              .byte "xxxxxxxxxx",$xx        ; 22
+        $2906b              .byte "xxxxxxxxxxxxxx",$xx    ; 23
+        $2907a              .byte "xxxxxxxxxx",$xx        ; 24
+        $29085              .byte "xxxxxxxxxxxxxx",$xx    ; 25
+        $29094              .byte "xxxxxxxxxxx",$xx       ; 26
+        $290a0              .byte "xxxxxxxxxxxx",$xx      ; 27
+        $290ad              .byte "xxxxxxxxxxxxx",$xx     ; 28
+        $290bb              .byte "xxxxxxxx",$xx          ; 29
+        $290c4              .byte "xxxxxxxxxx",$xx        ; 2a
+        $290cf              .byte "xxxxxxxxxxxx",$xx      ; 2b
+        $290dc              .byte "xxxxxxxxxxxxx",$xx     ; 2c
+        $290ea              .byte "xxxxxxxxxxxxx",$xx     ; 2d
+        $290f8              .byte "xxxxxxxxxxxx",$xx      ; 2e
+        $29105              .byte "xxxxxxxxxxxxx",$xx     ; 2f
+        $29113              .byte "xxxxxxxxxxx",$xx       ; 30
+        $2911f              .byte "xxxxxxxxxxx",$xx       ; 31
+        $2912b              .byte "xxxxxxxxxxxx",$xx      ; 32
+        $29138              .byte "xxxxxxxxxxxxx",$xx     ; 33
+        $29146              .byte "xxxxxxxxxxx",$xx       ; 34
+        $29152              .byte "xxxxxxxx",$xx          ; 35
+        $2915b              .byte "xxxxxxxxxxx",$xx       ; 36
+        $29167              .byte "xxxxxxxxxxx",$xx       ; 37
+        $29173              .byte "xxxxxxxxxxxxx",$xx     ; 38
+        $29181              .byte "xxxxxxxxxxxx",$xx      ; 39
+        $2918e              .byte "xxxxxxxxxxxxxx",$xx    ; 3a
+        $2919d              .byte "xxxxxxxxxxxx",$xx      ; 3b
+        $291aa              .byte "xxxxxxxxxxxx",$xx      ; 3c
+        $291b7              .byte "xxxxxxxxxxxx",$xx      ; 3d
+        $291c4              .byte "xxxxxxxxxxx",$xx       ; 3e
+        $291d0              .byte "xxxxxxxxxx",$xx        ; 3f
+        $291db              .byte "xxxxxxxxxxxx",$xx      ; 40
+        $291e8              .byte "xxxxxxx",$xx           ; 41
+        $291f0              .byte "xxxxxxxxx",$xx         ; 42
+        $291fa              .byte "xxxxxxxxx",$xx         ; 43
+        $29204              .byte "xxxxxxxx",$xx          ; 44
+        $2920d              .byte "xxxxxxx",$xx           ; 45
+        $29215              .byte "xxxxxxx",$xx           ; 46
+        $2921d              .byte "xxxxxx",$xx            ; 47
+        $29224              .byte "xxxxxx",$xx            ; 48
         $2922b              .byte "xxxxxxxxxxxxxxxxx",$xx
         $2923d              .byte $xx,$xx,$xx
         $29240              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -33456,11 +33879,11 @@ DataTable_28899
         $294d5  xx xx:      xxx #$xx
         $294d7  xx xx:      xxx $xx
         $294d9  xx xx:      xxx #$xx
-        $294db  xx xx:      xxx ($xx),y
-        $294dd  xx xx xx:   xxx $xxxx,y
-        $294e0  xx:         xxx
-        $294e1  xx xx:      xxx $xx
-        $294e3  xx xx:      xxx $xx
+-       $294db  xx xx:       xxx ($xx),y
+        $294dd  xx xx xx:    xxx $xxxx,y
+        $294e0  xx:          xxx
+        $294e1  xx xx:       xxx $xx
+        $294e3  xx xx:      xxx -
         $294e5  xx xx xx:   xxx $xxxx
         $294e8  xx xx xx:   xxx $xxxx
         $294eb  xx xx xx:   xxx $xxxx
@@ -34571,7 +34994,7 @@ JumpTable_36314_75
         $2ca63              .byte     $xx,$xx,"xxxxxxxxxx",$xx,"xxxx",$xx,$xx
         $2ca76              .byte     $xx,$xx,"xxxxxxxx",$xx,$xx,"x",$xx
         $2ca84              .byte $xx,$xx,$xx,$xx,"xxxx",$xx,$xx,$xx,"x",$xx
-        $2ca91              .byte     $xx,"xxx",$xx,$xx,$xx,$xx,$xx,"x",$xx
+        $2ca91              .byte $xx,"xxx",$xx,$xx,$xx,$xx,$xx,"x",$xx
         $2ca9c              .byte     "xxxx",$xx,$xx,$xx,"xxxx",$xx,$xx,$xx
         $2caaa              .byte     "xxxxx",$xx,$xx,$xx,"xxxxxxxxxx",$xx
         $2cabd              .byte $xx,$xx,$xx,"xxxxxxx",$xx
@@ -35428,21 +35851,26 @@ RomBank_17                      ; @@ $a000
         $2fbb2              .byte $xx,"xxxxxxxxxxx",$xx,$xx,"xxxxxx",$xx
         $2fbc7              .byte     $xx,$xx,$xx,$xx,"xx",$xx,$xx,"x",$xx,$xx,$xx
         $2fbd3              .byte $xx,$xx
+;;; --------------------------------
+RevertChangeMagic
+        ;; Remove the status bits used by change magic
         $2fbd5  xx xx xx:   xxx $xxxx
         $2fbd8  xx xx:      xxx #$xx
         $2fbda  xx xx xx:   xxx $xxxx
+        ;; Play the revert sound
         $2fbdd  xx xx:      xxx #SFX_CHANGE_MAGIC
         $2fbdf  xx xx xx:   xxx StartAudioTrack
-        $2fbe2  xx xx:      xxx #$xx
-        $2fbe4  xx xx xx:   xxx $3c17d
-        $2fbe7  xx xx xx:   xxx $3c169
-        $2fbea  xx xx xx:   xxx $3ff8c
-        $2fbed  xx xx xx:   xxx $xxxx
-        $2fbf0  xx xx:      xxx $xx
-        $2fbf2  xx xx xx:   xxx $3c008
+        ;; Was this supposed to remove *all* sprites? It doesn't seem to work.
+        $2fbe2  xx xx:      xxx #$xx ; totally unused
+        $2fbe4  xx xx xx:   xxx RemoveSpritesBehindMessageBox
+-       $2fbe7  xx xx xx:    xxx WaitForOAMDMA
+        $2fbea  xx xx xx:    xxx DrawAllObjectSprites
+        $2fbed  xx xx xx:    xxx $xxxx ; Player step count, set to $1f at start of animation
+        $2fbf0  xx xx:      xxx - ; $2fbe7
+        $2fbf2  xx xx xx:   xxx UpdateEquipmentAndStatus
         $2fbf5  xx xx:      xxx #$xx
         $2fbf7  xx xx xx:   xxx $xxxx
-        $2fbfa  xx xx xx:   xxx $3ff8c
+        $2fbfa  xx xx xx:   xxx DrawAllObjectSprites
         $2fbfd  xx xx:      xxx #$xx
         $2fbff  xx xx:      xxx $xx
         $2fc01  xx xx:      xxx #$xx
@@ -35526,38 +35954,38 @@ RomBank_17                      ; @@ $a000
         $2fc91  xx:           xxx
         $2fc92  xx:           xxx
         $2fc93  xx xx:         xxx #$xx
--       $2fc95  xx xx:         xxx $xx,x
-        $2fc97  xx xx xx:      xxx $xxxx,x
-        $2fc9a  xx:            xxx
-        $2fc9b  xx xx:         xxx #$xx
+-       $2fc95  xx xx:          xxx $xx,x
+        $2fc97  xx xx xx:       xxx $xxxx,x
+        $2fc9a  xx:             xxx
+        $2fc9b  xx xx:          xxx #$xx
         $2fc9d  xx xx:         xxx - ; $2fc95
         $2fc9f  xx xx:         xxx #$xx
         $2fca1  xx xx:         xxx $xx
---      $2fca3  xx xx:         xxx $xx
-        $2fca5  xx:            xxx
-        $2fca6  xx xx:         xxx $xx
-        $2fca8  xx:            xxx
-        $2fca9  xx:            xxx
-        $2fcaa  xx xx:         xxx $xx
-        $2fcac  xx:            xxx
-        $2fcad  xx xx:         xxx #$xx
--       $2fcaf  xx xx xx:       xxx $2fdde,y
-        $2fcb2  xx xx:          xxx $xx,x
-        $2fcb4  xx:             xxx
-        $2fcb5  xx:             xxx
-        $2fcb6  xx xx:          xxx #$xx
-        $2fcb8  xx xx:         xxx - ; $2fcaf
-        $2fcba  xx xx xx:      xxx CopyBytes
-        $2fcbd  xx xx:         xxx $xx
-        $2fcbf  xx xx:         xxx $xx
-        $2fcc1  xx xx:         xxx #$xx
+--      $2fca3  xx xx:          xxx $xx
+        $2fca5  xx:             xxx
+        $2fca6  xx xx:          xxx $xx
+        $2fca8  xx:             xxx
+        $2fca9  xx:             xxx
+        $2fcaa  xx xx:          xxx $xx
+        $2fcac  xx:             xxx
+        $2fcad  xx xx:          xxx #$xx
+-       $2fcaf  xx xx xx:        xxx $2fdde,y
+        $2fcb2  xx xx:           xxx $xx,x
+        $2fcb4  xx:              xxx
+        $2fcb5  xx:              xxx
+        $2fcb6  xx xx:           xxx #$xx
+        $2fcb8  xx xx:          xxx - ; $2fcaf
+        $2fcba  xx xx xx:       xxx CopyBytes
+        $2fcbd  xx xx:          xxx $xx
+        $2fcbf  xx xx:          xxx $xx
+        $2fcc1  xx xx:          xxx #$xx
         $2fcc3  xx xx:         xxx -- ; $2fca3
         $2fcc5  xx xx xx:      xxx $2fd60
         $2fcc8  xx xx:         xxx #$xx
--       $2fcca  xx xx xx:      xxx $xxxx,x
-        $2fccd  xx xx:         xxx $xx,x
-        $2fccf  xx:            xxx
-        $2fcd0  xx xx:         xxx #$xx
+-       $2fcca  xx xx xx:       xxx $xxxx,x
+        $2fccd  xx xx:          xxx $xx,x
+        $2fccf  xx:             xxx
+        $2fcd0  xx xx:          xxx #$xx
         $2fcd2  xx xx:         xxx - ; $2fcca
         $2fcd4  xx:           xxx
         $2fcd5  xx:           xxx
@@ -35726,26 +36154,30 @@ RomBank_18                      ; @@ $8000
 ;;; ----------------------------------------------------------------
 ;;; This jump table is referenced in $30361. It's not yet clear to
 ;;; me whether it's used for bgm, sfx, or both.
+;;; STRIP: word=$28000
 AudioJumpTable
-        $30000              .word ($xxxx) ; $30364: 00
-        $30002              .word ($xxxx) ; $30364: 01
-        $30004              .word ($xxxx) ; $303e5: 02
-        $30006              .word ($xxxx) ; $30422: 03
-        $30008              .word ($xxxx) ; $30436: 04
-        $3000a              .word ($xxxx) ; $3047d: 05
-        $3000c              .word ($xxxx) ; $3047d: 06
-        $3000e              .word ($xxxx) ; $3048a: 07
-        $30010              .word ($xxxx) ; $30532: 08
-        $30012              .word ($xxxx) ; $3054d: 09
-        $30014              .word ($xxxx) ; $30584: 0a
-        $30016              .word ($xxxx) ; $303e2: 0b
-        $30018              .word ($xxxx) ; $30395: 0c
-        $3001a              .word ($xxxx) ; $303c2: 0d
-        $3001c              .word ($xxxx) ; $305f7: 0e
-        $3001e              .word ($xxxx) ; $30685: 0f
+        $30000              .word ($30364) ; 00
+        $30002              .word ($30364) ; 01
+        $30004              .word ($303e5) ; 02
+        $30006              .word ($30422) ; 03
+        $30008              .word ($30436) ; 04
+        $3000a              .word ($3047d) ; 05
+        $3000c              .word ($3047d) ; 06
+        $3000e              .word ($3048a) ; 07
+        $30010              .word ($30532) ; 08
+        $30012              .word ($3054d) ; 09
+        $30014              .word ($30584) ; 0a
+        $30016              .word ($303e2) ; 0b
+        $30018              .word ($30395) ; 0c
+        $3001a              .word ($303c2) ; 0d
+        $3001c              .word ($305f7) ; 0e
+        $3001e              .word ($30685) ; 0f
 ;;; ----------------------------------------------------------------
 ;;; The following are routines to deal with audio.
-;;; Runs during rendering.
+;;; Runs mostly during IRQ.
+;;; --------------------------------
+;;; Called from the reset routine.  Zeros out the relevant memory.
+InitializeAudio
         $30020  xx xx:      xxx #$xx
         $30022  xx xx:      xxx $xx
         $30024  xx xx:      xxx #$xx
@@ -35763,32 +36195,34 @@ AudioJumpTable
         $30045  xx xx:      xxx $xx
         $30047  xx:         xxx
 ;;; --------------------------------
+ResumeAudio
         $30048  xx xx:      xxx $xx
         $3004a  xx xx:      xxx #$xx
         $3004c  xx xx:      xxx $xx
-        $3004e  xx xx xx:   xxx + ; $30058
+        $3004e  xx xx xx:   xxx ResumeAudioInner
         $30051  xx xx:      xxx $xx
         $30053  xx xx:      xxx #$xx
         $30055  xx xx:      xxx $xx
         $30057  xx:         xxx
 ;;; --------------------------------
-+       $30058  xx xx xx:   xxx $xxxx
+ResumeAudioInner
+        $30058  xx xx xx:   xxx $xxxx
         $3005b  xx xx:      xxx #$xx
         $3005d  xx xx:      xxx + ; $30064
         $3005f  xx xx:      xxx #$xx
         $30061  xx xx:      xxx $xx
         $30063  xx:         xxx
-;;; --------------------------------
+        ;; --------------------------------
 +       $30064  xx xx xx:   xxx $xxxx
         $30067  xx xx:      xxx + ; $30071
         $30069  xx xx:      xxx #$xx
         $3006b  xx xx:      xxx ++ ; $30094
         $3006d  xx xx xx:   xxx $300e4
-;;; --------------------------------
--       $30070  xx:         xxx
-;;; --------------------------------
+        ;; --------------------------------
+@rts:   $30070  xx:         xxx
+        ;; --------------------------------
 +       $30071  xx xx xx:   xxx $xxxx
-        $30074  xx xx:      xxx - ; $30070
+        $30074  xx xx:      xxx @rts
         $30076  xx xx:      xxx $xx
         $30078  xx xx xx:   xxx $xxxx
         $3007b  xx xx:      xxx $xx
@@ -35797,16 +36231,16 @@ AudioJumpTable
         $30081  xx xx:      xxx #$xx
         $30083  xx xx:      xxx + ; $30086
         $30085  xx:         xxx
-;;; --------------------------------
+        ;; --------------------------------
 +       $30086  xx xx:      xxx #$xx
--       $30088  xx xx xx:   xxx $30465
-        $3008b  xx xx xx:   xxx $30388
-        $3008e  xx:         xxx
-        $3008f  xx xx:      xxx #$xx
+-       $30088  xx xx xx:    xxx $30465
+        $3008b  xx xx xx:    xxx $30388
+        $3008e  xx:          xxx
+        $3008f  xx xx:       xxx #$xx
         $30091  xx xx:      xxx - ; $30088
--       $30093  xx:         xxx
+@rts2:  $30093  xx:         xxx
 ;;; --------------------------------
-	;; Map $18000 -> $a000 (note: misaligned)
+	;; Map $18000 -> $a000
 ++      $30094  xx xx:      xxx #$xx
         $30096  xx xx xx:   xxx $xxxx
         $30099  xx xx:      xxx #$xx
@@ -35817,15 +36251,15 @@ AudioJumpTable
         ;; So all this data actually comes from the 18000 bank
         ;; in the $a000-$bfff block.  This is consistent with
         ;; sound effects starting at $20.
-        $300a0  xx xx xx:   xxx $31fc0,x
+        $300a0  xx xx xx:   xxx $17fc0,x
         $300a3  xx xx:      xxx $xx
-        $300a5  xx xx xx:   xxx $31fc1,x
+        $300a5  xx xx xx:   xxx $17fc1,x
         $300a8  xx xx:      xxx $xx
         $300aa  xx xx:      xxx $xx
-        $300ac  xx xx:      xxx - ; $30093
+        $300ac  xx xx:      xxx @rts2
         $300ae  xx xx:      xxx $xx
         $300b0  xx xx:      xxx #$xx
-        $300b2  xx xx:      xxx - ; $30093
+        $300b2  xx xx:      xxx @rts2
         $300b4  xx xx:      xxx #$xx
         $300b6  xx xx:      xxx ($xx),y
         $300b8  xx xx xx:   xxx $xxxx
@@ -35834,7 +36268,7 @@ AudioJumpTable
         ;; plays, it will override a larger (lower) priority
         ;; SFX in progress.
         $300bb  xx xx:      xxx + ; $300bf
-        $300bd  xx xx:      xxx - ; $30093
+        $300bd  xx xx:      xxx @rts2
 +       $300bf  xx xx xx:   xxx $xxxx
         $300c2  xx:         xxx
         $300c3  xx xx:      xxx #$xx
@@ -38259,6 +38693,7 @@ PreparePaletteData
         $34cbd  xx xx:      xxx $xx
         $34cbf  xx:         xxx
 ;;; --------------------------------
+UpdateHPDisplayInternal
         ;; Seems to initialize everything for the PPU interaction
         $34cc0  xx:         xxx
         $34cc1  xx:         xxx
@@ -38590,9 +39025,12 @@ PowersOfTen
         $34fb8  xx xx:      xxx $xx
         $34fba  xx:         xxx
 ;;; --------------------------------
-DataTable_34fbb 
-        $34fbb              .byte $xx,$xx,$xx,$xx,$xx
-        $34fc0              .byte $xx,$xx,$xx
+;;; STRIP: word=$2c000
+JumpTable_34fbb
+        $34fbb              .word ($350aa)
+        $34fbd              .word ($35357)
+        $34fbf              .word ($354b0)
+        $34fc1              .word ($34fc4)
 ;;; --------------------------------
         $34fc3  xx:         xxx
 ;;; --------------------------------
@@ -38680,27 +39118,27 @@ DataTable_35045
         $35081  xx:         xxx
 ;;; --------------------------------
         ;; NOTE: This is covered when a monster gets hit
----     $35082  xx xx xx:   xxx $xxxx,x
+--      $35082  xx xx xx:   xxx $xxxx,x
         $35085  xx xx:      xxx #$xx
-        $35087  xx xx:      xxx + ; $35093 => rts
+        $35087  xx xx:      xxx @rts
         $35089  xx xx xx:   xxx $xxxx,y
         $3508c  xx xx:      xxx $xx
         $3508e  xx xx:      xxx $xx
         $35090  xx xx xx:   xxx LoadOneObjectData
 ;;; --------------------------------
-+ --    $35093  xx:         xxx
+@rts:   $35093  xx:         xxx
 ;;; --------------------------------
 -       $35094  xx xx xx:   xxx $xxxx,y
         $35097  xx xx xx:   xxx $xxxx,x
         $3509a  xx xx:      xxx #$xx
-        $3509c  xx xx:      xxx -- ; $35093 => rts
+        $3509c  xx xx:      xxx @rts
         $3509e  xx xx xx:   xxx $xxxx,x
         $350a1  xx xx:      xxx #$xx
-        $350a3  xx xx:      xxx -- ; $35093 => rts
-        $350a5  xx xx:      xxx + ; $350aa
+        $350a3  xx xx:      xxx @rts
+        $350a5  xx xx:      xxx + ; never taken?
         $350a7  xx xx xx:   xxx $35152
 ;;; --------------------------------
-        ;; Entry point???
+        ;; Entry point??? - $34fb1
 +       $350aa  xx xx:      xxx $xx
         $350ac  xx xx:      xxx #$xx
         $350ae  xx xx:      xxx + ; $350bb
@@ -38737,7 +39175,7 @@ DataTable_35045
         $350f1  xx xx:      xxx - ; $35094
         $350f3  xx xx xx:   xxx $xxxx,y
         $350f6  xx xx:      xxx #$xx
-        $350f8  xx xx:      xxx --- ; $35082
+        $350f8  xx xx:      xxx -- ; $35082
         $350fa  xx xx xx:   xxx $xxxx,y
         $350fd  xx xx:      xxx #$xx
         $350ff  xx xx:      xxx $xx
@@ -38825,7 +39263,7 @@ DataTable_35045
         $351be  xx xx xx:   xxx $xxxx
         $351c1  xx xx xx:   xxx $34b9f,y
         $351c4  xx xx xx:   xxx $xxxx
-        $351c7  xx xx xx:   xxx $34cc0
+        $351c7  xx xx xx:   xxx UpdateHPDisplayInternal
         $351ca  xx xx:      xxx #$xx ; LV (status bar)
         $351cc  xx xx xx:   xxx DisplayNumberInternal
         $351cf  xx xx:      xxx #$xx ; EXP left
@@ -39119,7 +39557,7 @@ PlayerHit_ApplyStatus
         $35427  xx xx:      xxx $xx
         $35429  xx xx:      xxx #$xx
         $3542b  xx xx xx:   xxx $xxxx,y
-        $3542e  xx xx xx:   xxx $34cc0
+        $3542e  xx xx xx:   xxx UpdateHPDisplayInternal
 ;;; --------------------------------
         $35431  xx xx:      xxx #$xx
         $35433  xx xx xx:   xxx $xxxx
@@ -39478,6 +39916,7 @@ Hitboxes
 ;;; It's used by 34fac.
 ;;; Possibly the first column is the other object, since
 ;;; it should cover all the sword hits?
+;;; The 4th column is a reference into jump table $34fbb
         $356f1              .byte $xx,$xx,$xx,$xx
         $356f5              .byte $xx,$xx,$xx,$xx
         $356f9              .byte $xx,$xx,$xx,$xx
@@ -40043,20 +40482,28 @@ CheckTerrainUnderObject
 PowersOfTwo_35ae0 
         $35ae0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+;;; Inputs:
+;;;   A:     MP to spend
+;;;   $0708: Player's current MP
+;;; Output:
+;;;   Decreases MP.  Double-returns if insufficient.
+SpendMPOrDoubleReturn
         $35ae8  xx xx:      xxx $xx
-        $35aea  xx xx xx:   xxx $xxxx
-        $35aed  xx xx:      xxx $xx
-        $35aef  xx xx xx:   xxx $xxxx
-        $35af2  xx:         xxx
-        $35af3  xx xx:      xxx $xx
-        $35af5  xx xx:      xxx $xx
-        $35af7  xx xx:      xxx #$xx
-        $35af9  xx xx:      xxx $xx
-        $35afb  xx:         xxx
-        $35afc  xx:         xxx
-        $35afd  xx:         xxx
-;;; --------------------------------
-        $35afe  xx xx xx:   xxx $xxxx
+        $35aea  xx xx xx:   xxx PlayerMP
+        $35aed  xx xx:      xxx + ; $35af7
+        $35aef  xx xx xx:     xxx PlayerMP
+        $35af2  xx:           xxx
+        $35af3  xx xx:        xxx $xx
+        $35af5  xx xx:        xxx ++ ; $35afe
+        ;; Insufficient MP - double-return to skip the rest of the routine
++       $35af7  xx xx:       xxx #GAME_MODE_INSUFFICIENT_MP
+        $35af9  xx xx:       xxx GameMode
+        $35afb  xx:          xxx
+        $35afc  xx:          xxx
+        $35afd  xx:          xxx
+        ;;                   ---
+        ;; Update the MP display
+++      $35afe  xx xx xx:   xxx PlayerMP
         $35b01  xx xx:      xxx #$xx ; MP
         $35b03  xx xx xx:   xxx DisplayNumberInternal
         $35b06  xx:         xxx
@@ -40103,7 +40550,7 @@ JumpTable_36314_01
         $35b45  xx xx:      xxx Ctrl1NewlyPressed
         $35b47  xx xx:      xxx #BUTTON_B
         $35b49  xx xx:      xxx + ; $35b5a
-        $35b4b  xx xx xx:    xxx SelectedConsumableItem
+        $35b4b  xx xx xx:    xxx EquippedConsumableItem
         $35b4e  xx xx:       xxx + ; $35b5a
         $35b50  xx xx:        xxx GameMode
         $35b52  xx xx:        xxx #GAME_MODE_NORMAL
@@ -40289,7 +40736,7 @@ DataTable_35c66
         $35cc6  xx xx:      xxx $xx
         $35cc8  xx xx xx:   xxx $xxxx
         $35ccb  xx xx xx:   xxx $34bd8,y
-        $35cce  xx xx xx:   xxx $35ae8
+        $35cce  xx xx xx:   xxx SpendMPOrDoubleReturn
         $35cd1  xx xx:      xxx #$xx
         $35cd3  xx xx xx:   xxx $xxxx
         $35cd6  xx xx xx:   xxx $xxxx
@@ -40547,7 +40994,7 @@ JumpTable_36314_03
         $35f2e  xx xx:          xxx #$xx
         $35f30  xx xx:          xxx + ; $35f37
         $35f32  xx xx:           xxx #$xx
-        $35f34  xx xx xx:        xxx $35ae8
+        $35f34  xx xx xx:        xxx SpendMPOrDoubleReturn
 +       $35f37  xx xx xx:   xxx $xxxx,x
         $35f3a  xx xx:      xxx + ; $35f4c
         $35f3c  xx xx:      xxx $xx
@@ -40715,9 +41162,9 @@ DataTable_36071
         $360c4  xx xx:      xxx $xx
         $360c6  xx xx:      xxx #$xx
         $360c8  xx xx:      xxx $xx
-        $360ca  xx xx xx:   xxx $34cc0
+        $360ca  xx xx xx:   xxx UpdateHPDisplayInternal
         $360cd  xx xx:      xxx #$xx
-        $360cf  xx xx xx:   xxx $35ae8
+        $360cf  xx xx xx:   xxx SpendMPOrDoubleReturn
         $360d2  xx xx:      xxx #$xx
         $360d4  xx xx:      xxx $xx
         $360d6  xx:         xxx
@@ -40726,7 +41173,7 @@ DataTable_36071
         $360da  xx xx xx:   xxx $xxxx
         $360dd  xx xx:      xxx $xx
         $360df  xx xx:      xxx #$xx
-        $360e1  xx xx xx:   xxx $35ae8
+        $360e1  xx xx xx:   xxx SpendMPOrDoubleReturn
         $360e4  xx xx:      xxx #$xx
         $360e6  xx xx:      xxx $xx
         $360e8  xx xx xx:   xxx $xxxx
@@ -40746,7 +41193,7 @@ DataTable_36071
         $36103  xx xx:      xxx #$xx
         $36105  xx xx:      xxx $xx
         $36107  xx xx:      xxx #$xx
-        $36109  xx xx xx:   xxx $35ae8
+        $36109  xx xx xx:   xxx SpendMPOrDoubleReturn
         $3610c  xx xx:      xxx #$xx
         $3610e  xx xx:      xxx $xx
         $36110  xx xx:      xxx $xx
@@ -40756,7 +41203,7 @@ DataTable_36071
         $36119  xx xx:      xxx #$xx
         $3611b  xx xx:      xxx $xx
         $3611d  xx xx:      xxx #$xx
-        $3611f  xx xx xx:   xxx $35ae8
+        $3611f  xx xx xx:   xxx SpendMPOrDoubleReturn
         $36122  xx xx xx:   xxx $xxxx,x
         $36125  xx xx:      xxx $xx
         $36127  xx xx xx:   xxx $xxxx
@@ -40805,7 +41252,7 @@ DataTable_36071
         $36180  xx xx:      xxx #$xx
         $36182  xx xx:      xxx $xx
         $36184  xx xx:      xxx #$xx
-        $36186  xx xx xx:   xxx $35ae8
+        $36186  xx xx xx:   xxx SpendMPOrDoubleReturn
         $36189  xx xx:      xxx #$xx
         $3618b  xx xx:      xxx $xx
         $3618d  xx:         xxx
@@ -43938,7 +44385,7 @@ DataTable_37a9a
         $37b55  xx xx xx:    xxx $3c125
         $37b58  xx xx xx:    xxx $xxxx
         $37b5b  xx xx xx:    xxx $xxxx
-        $37b5e  xx xx xx:    xxx $34cc0
+        $37b5e  xx xx xx:    xxx UpdateHPDisplayInternal
         $37b61  xx xx xx:    xxx $xxxx
         $37b64  xx xx xx:    xxx $xxxx
         $37b67  xx xx:       xxx #$xx ; MP
@@ -44664,7 +45111,7 @@ DrawMetasprite
 ++      $382b9  xx xx:      xxx $xx
         $382bb  xx xx:      xxx $xx
         $382bd  xx:         xxx
-        $382be  xx xx xx:   xxx $xxxx,x
+        $382be  xx xx xx:   xxx $xxxx,x ; countdown timer
         $382c1  xx:         xxx
         $382c2  xx:         xxx
         $382c3  xx:         xxx
@@ -50095,7 +50542,7 @@ UpdateEquipmentAndStatus
         $3c0ea  xx xx xx:       xxx LoadPalettesForLocation
 +       $3c0ed  xx xx:         xxx #$xx ; MP
         $3c0ef  xx xx xx:      xxx DisplayNumberInternal
-        $3c0f2  xx xx xx:      xxx $34cc0
+        $3c0f2  xx xx xx:      xxx UpdateHPDisplayInternal
         $3c0f5  xx xx xx:      xxx FlushNametableDataWrite
         $3c0f8  xx:           xxx
         $3c0f9  xx xx xx:     xxx BankSwitch8k_A000
@@ -50173,8 +50620,8 @@ StartAudioTrack
 +       $3c154  xx xx xx:   xxx $xxxx,y
         $3c157  xx:         xxx
         $3c158  xx xx:      xxx #$xx
-        $3c15a  xx xx:      xxx + ; $3c15d
-        $3c15c  xx:         xxx
+        $3c15a  xx xx:      xxx +
+        $3c15c  xx:          xxx
 +       $3c15d  xx xx xx:   xxx $xxxx
 ++      $3c160  xx xx:      xxx #$xx
         $3c162  xx xx xx:   xxx $xxxx
@@ -50182,40 +50629,42 @@ StartAudioTrack
         $3c168  xx:         xxx
 ;;; --------------------------------
 WaitForOAMDMA
---      $3c169  xx xx:      xxx #$xx
+        $3c169  xx xx:      xxx #$xx
         $3c16b  xx xx:      xxx $xx
         ;; Holding pattern waiting for NMI when OAM DMA is needed
--       $3c16d  xx xx:      xxx $xx
-        $3c16f  xx xx:      xxx - ; $3c16d
+-       $3c16d  xx xx:       xxx $xx
+        $3c16f  xx xx:      xxx -
         $3c171  xx xx:      xxx #$xx
         $3c173  xx xx:      xxx $xx
         $3c175  xx:         xxx
-        ;; --------------------------------
+;;; --------------------------------
 WaitForMultipleOAMDMA
 	;; But who changes the sprite RAM?  ?NMI handler?!?
--       $3c176  xx xx xx:   xxx -- ; $3c169
-        $3c179  xx:         xxx
-        $3c17a  xx xx:      xxx - ; $3c176
+-       $3c176  xx xx xx:    xxx WaitForOAMDMA
+        $3c179  xx:          xxx
+        $3c17a  xx xx:      xxx -
         $3c17c  xx:         xxx
 ;;; --------------------------------
-        $3c17d  xx xx:      xxx $xx
-        $3c17f  xx xx:      xxx #$xx
+RemoveSpritesBehindMessageBox
+        $3c17d  xx xx:      xxx ScreenYLo
+        $3c17f  xx xx:      xxx #$xx ; fine Y offset of screen
         $3c181  xx xx:      xxx $xx
         $3c183  xx xx:      xxx #$xx
         $3c185  xx:         xxx
         $3c186  xx xx:      xxx $xx
-        $3c188  xx xx:      xxx $xx
+        $3c188  xx xx:      xxx $xx ; $10 <- #$58 - (ScreenYLo & #$07)
         $3c18a  xx xx:      xxx #$xx
--       $3c18c  xx xx:      xxx $xx
-        $3c18e  xx xx xx:   xxx $xxxx,x
-        $3c191  xx xx:      xxx + ; $3c198
-        $3c193  xx xx:      xxx #$xx
-        $3c195  xx xx xx:   xxx $xxxx,x
-+       $3c198  xx:         xxx
-        $3c199  xx:         xxx
-        $3c19a  xx:         xxx
-        $3c19b  xx:         xxx
-        $3c19c  xx xx:      xxx - ; $3c18c
+-       $3c18c  xx xx:       xxx $xx
+        $3c18e  xx xx xx:    xxx SpriteRamY,x
+        $3c191  xx xx:       xxx +
+        ;;                    spriteY <= 58-yf
+        $3c193  xx xx:        xxx #$xx
+        $3c195  xx xx xx:     xxx SpriteRamY,x
++       $3c198  xx:          xxx
+        $3c199  xx:          xxx
+        $3c19a  xx:          xxx
+        $3c19b  xx:          xxx
+        $3c19c  xx xx:      xxx -
         $3c19e  xx:         xxx
 ;;; --------------------------------
 ;;; Moves sprite 0 to (f0, f0).
@@ -51365,7 +51814,7 @@ MainGameModeJump_00_Initialize
         $3ca67  xx xx xx:   xxx FlushNametableDataWrite
         $3ca6a  xx xx:      xxx #$xx ; 8000 -> 34000
         $3ca6c  xx xx xx:   xxx BankSwitch8k_8000
-        $3ca6f  xx xx xx:   xxx $34cc0
+        $3ca6f  xx xx xx:   xxx UpdateHPDisplayInternal
         $3ca72  xx xx xx:   xxx FlushNametableDataWrite
         $3ca75  xx xx:      xxx #$xx
         $3ca77  xx xx xx:   xxx $xxxx
@@ -51559,8 +52008,8 @@ MainGameModeJump_1c_ErrorMessage
         $3cc17  xx xx xx:   xxx $3c89e
         $3cc1a  xx xx:      xxx #SFX_CURSOR_ERROR
         $3cc1c  xx xx xx:   xxx StartAudioTrack
-        $3cc1f  xx xx:      xxx #$xx
-        $3cc21  xx xx:      xxx $xx
+        $3cc1f  xx xx:      xxx #GAME_MODE_STATUS_MSG
+        $3cc21  xx xx:      xxx GameMode
         $3cc23  xx xx:      xxx #$xx
         $3cc25  xx xx xx:   xxx $xxxx
         $3cc28  xx xx:      xxx #$xx
@@ -51569,18 +52018,18 @@ MainGameModeJump_1c_ErrorMessage
 ;;; --------------------------------
         $3cc2e  xx xx xx:   xxx $xxxx
         $3cc31  xx xx:      xxx #$xx
-        $3cc33  xx xx:      xxx $xx
-        $3cc35  xx xx:      xxx #$xx
-        $3cc37  xx xx xx:   xxx $xxxx
-        $3cc3a  xx xx:      xxx #$xx
-        $3cc3c  xx xx xx:   xxx BankSwitch8k_8000
-        $3cc3f  xx xx xx:   xxx $34c0e
-        $3cc42  xx xx:      xxx $xx
-        $3cc44  xx xx:      xxx #$xx
-        $3cc46  xx xx:      xxx $xx
-        $3cc48  xx xx:      xxx #$xx
-        $3cc4a  xx xx:      xxx $xx
-        $3cc4c  xx:         xxx
+        $3cc33  xx xx:      xxx @rts
+        $3cc35  xx xx:       xxx #$xx
+        $3cc37  xx xx xx:    xxx $xxxx
+        $3cc3a  xx xx:       xxx #$xx
+        $3cc3c  xx xx xx:    xxx BankSwitch8k_8000
+        $3cc3f  xx xx xx:    xxx LoadPalettesForLocation
+        $3cc42  xx xx:       xxx ScreenMode
+        $3cc44  xx xx:       xxx #$xx ; TODO - what is screen mode 2? uncovered...
+        $3cc46  xx xx:       xxx @rts
+        $3cc48  xx xx:        xxx #SCREEN_MODE_NORMAL
+        $3cc4a  xx xx:        xxx ScreenMode
+@rts:   $3cc4c  xx:         xxx
 ;;; --------------------------------
 MainGameModeJump_1f_DynaAppears
         $3cc4d  xx xx xx:   xxx $3c676
@@ -52206,7 +52655,7 @@ MainGameModeJump_11_Dialog
         $3d17b  xx xx xx:   xxx $xxxx
         $3d17e  xx xx:      xxx #$xx
         $3d180  xx xx xx:   xxx BankSwitch8k_8000
-        $3d183  xx xx xx:   xxx $34cc0
+        $3d183  xx xx xx:   xxx UpdateHPDisplayInternal
         $3d186  xx xx:      xxx #$xx ; MP
         $3d188  xx xx xx:   xxx DisplayNumberInternal
         $3d18b  xx xx xx:   xxx $3d31c
@@ -52413,58 +52862,61 @@ MainGameModeJump_11_Dialog
         $3d34c  xx xx:      xxx $xx
         $3d34e  xx xx xx:   xxx $xxxx
         $3d351  xx xx xx:   xxx $3d3c2
-;;; --------------------------------
-        $3d354  xx xx:      xxx #$xx
-        $3d356  xx xx:      xxx $xx
-        $3d358  xx xx:      xxx #$xx
-        $3d35a  xx xx:      xxx $xx
-        $3d35c  xx xx:      xxx #$xx
-        $3d35e  xx xx xx:   xxx BankSwitch8k_8000
-        $3d361  xx xx xx:   xxx $28500
-        $3d364  xx xx xx:   xxx $3c169
-        $3d367  xx xx:      xxx #$xx
-        $3d369  xx xx:      xxx $xx
-        $3d36b  xx xx:      xxx #$xx
-        $3d36d  xx xx:      xxx $xx
-        $3d36f  xx xx:      xxx #$xx
-        $3d371  xx xx:      xxx $xx
-        $3d373  xx xx xx:   xxx $3ff8c
-        $3d376  xx xx xx:   xxx $3c17d
-        $3d379  xx xx:      xxx $xx
-        $3d37b  xx xx:      xxx #$xx
-        $3d37d  xx xx:      xxx $xx
-        $3d37f  xx xx xx:   xxx $3d896
-        $3d382  xx xx:      xxx #$xx
-        $3d384  xx xx xx:   xxx BankSwitch8k_8000
-        $3d387  xx xx xx:   xxx $28528
-        $3d38a  xx xx:      xxx $xx
-        $3d38c  xx xx:      xxx $xx
-        $3d38e  xx xx xx:   xxx ReadControllersWithDirections
-        $3d391  xx xx xx:   xxx $3ff8c
-        $3d394  xx xx xx:   xxx $3c17d
-        $3d397  xx xx:      xxx $xx
-        $3d399  xx xx:      xxx #$xx
-        $3d39b  xx xx:      xxx $xx
-        $3d39d  xx xx xx:   xxx $3d354
-;;; --------------------------------
-        $3d3a0  xx xx:      xxx $xx
+--      $3d354  xx xx:       xxx #$xx
+        $3d356  xx xx:       xxx $xx
+        $3d358  xx xx:       xxx #$xx
+        $3d35a  xx xx:       xxx $xx
+        $3d35c  xx xx:       xxx #$xx
+        $3d35e  xx xx xx:    xxx BankSwitch8k_8000
+        $3d361  xx xx xx:    xxx DrawMessageBoxBackground
+        $3d364  xx xx xx:    xxx WaitForOAMDMA
+        $3d367  xx xx:       xxx #SCREEN_MODE_NORMAL
+        $3d369  xx xx:       xxx ScreenMode
+        $3d36b  xx xx:       xxx #SCREEN_MODE_NTBOSS
+        $3d36d  xx xx:       xxx + ; $3d371
+        $3d36f  xx xx:        xxx #SCREEN_MODE_NTBOSS_TEXT
++       $3d371  xx xx:       xxx ScreenMode
+        $3d373  xx xx xx:    xxx DrawAllObjectSprites
+        $3d376  xx xx xx:    xxx RemoveSpritesBehindMessageBox
+        $3d379  xx xx:       xxx GameMode
+        $3d37b  xx xx:       xxx #$xx
+        $3d37d  xx xx:       xxx + ; $3d382
+        $3d37f  xx xx xx:     xxx $3d896
++       $3d382  xx xx:       xxx #$xx
+        $3d384  xx xx xx:    xxx BankSwitch8k_8000
+        $3d387  xx xx xx:    xxx ShowMessage
+-       $3d38a  xx xx:        xxx $xx ; wait for OAM DMA
+        $3d38c  xx xx:       xxx - ; $3d38a
+        $3d38e  xx xx xx:    xxx ReadControllersWithDirections
+        $3d391  xx xx xx:    xxx DrawAllObjectSprites
+        $3d394  xx xx xx:    xxx RemoveSpritesBehindMessageBox
+        $3d397  xx xx:       xxx $xx
+        $3d399  xx xx:       xxx #$xx
+        $3d39b  xx xx:       xxx + ; $3d3a0
+        $3d39d  xx xx xx:     xxx -- ; $3d354
+        ;;                    ------
++       $3d3a0  xx xx:      xxx $xx
         $3d3a2  xx xx:      xxx #$xx
-        $3d3a4  xx xx:      xxx $xx
+        $3d3a4  xx xx:      xxx - ; $3d38a
         $3d3a6  xx xx:      xxx #$xx
         $3d3a8  xx xx:      xxx $xx
-        $3d3aa  xx xx xx:   xxx $3c169
-        $3d3ad  xx xx xx:   xxx $3ff8c
-        $3d3b0  xx xx xx:   xxx $3c17d
-        $3d3b3  xx xx:      xxx $xx
-        $3d3b5  xx xx:      xxx $xx
+-       $3d3aa  xx xx xx:    xxx WaitForOAMDMA
+        $3d3ad  xx xx xx:    xxx DrawAllObjectSprites
+        $3d3b0  xx xx xx:    xxx RemoveSpritesBehindMessageBox
+        $3d3b3  xx xx:       xxx $xx
+        $3d3b5  xx xx:      xxx - ; $3d3aa
         $3d3b7  xx xx:      xxx #$xx
-        $3d3b9  xx xx:      xxx $xx
+        $3d3b9  xx xx:      xxx ScreenMode
         $3d3bb  xx xx:      xxx $xx
-        $3d3bd  xx xx:      xxx #$xx
-        $3d3bf  xx xx:      xxx $xx
+        $3d3bd  xx xx:      xxx #GAME_MODE_NORMAL
+        $3d3bf  xx xx:      xxx GameMode
         $3d3c1  xx:         xxx
 ;;; --------------------------------
-        $3d3c2  xx xx xx:   xxx $xxxx
+;;; Rotate the high three bits of $7de (the message index) into $7df
+;;; (the message table part), then remove those bits.  In both calls
+;;; these came from $20 and $21, but it's not clear yet where those
+;;; came from - $1c078
+        $3d3c2  xx xx xx:   xxx $xxxx ;@@@@@
         $3d3c5  xx:         xxx
         $3d3c6  xx xx xx:   xxx $xxxx
         $3d3c9  xx:         xxx
@@ -53034,7 +53486,7 @@ DataTable_3d885
         $3d8af  xx xx:      xxx $xx
         $3d8b1  xx xx xx:   xxx $3c169
         $3d8b4  xx xx xx:   xxx $3ff8c
-        $3d8b7  xx xx xx:   xxx $3c17d
+        $3d8b7  xx xx xx:   xxx RemoveSpritesBehindMessageBox
         $3d8ba  xx xx:      xxx $xx
         $3d8bc  xx xx:      xxx $xx
         $3d8be  xx xx:      xxx #$xx
@@ -53147,7 +53599,7 @@ MainGameModeJump_22_Inn
         $3d99f  xx xx xx:   xxx BankSwitch8k_8000
         $3d9a2  xx xx:      xxx #$xx ; MP
         $3d9a4  xx xx xx:   xxx DisplayNumberInternal
-        $3d9a7  xx xx xx:   xxx $34cc0
+        $3d9a7  xx xx xx:   xxx UpdateHPDisplayInternal
         $3d9aa  xx xx xx:   xxx $3da72
 ;;; --------------------------------
 MainGameModeJump_23_PawnShop
@@ -53293,38 +53745,38 @@ MainGameModeJump_24_EmptyShop
         $3dad7  xx xx xx:   xxx $3ff8c
 ;;; --------------------------------
         $3dada  xx xx:      xxx #$xx
-        $3dadc  xx xx xx:   xxx $xxxx,y
-        $3dadf  xx xx:      xxx $xx
-        $3dae1  xx xx xx:   xxx $xxxx,y
-        $3dae4  xx xx:      xxx #$xx
-        $3dae6  xx xx:      xxx $xx
-        $3dae8  xx xx:      xxx #$xx
-        $3daea  xx xx:      xxx $xx
-        $3daec  xx xx xx:   xxx $xxxx,y
-        $3daef  xx xx:      xxx $xx
-        $3daf1  xx xx:      xxx #$xx
-        $3daf3  xx xx xx:   xxx $xxxx,y
-        $3daf6  xx:         xxx
-        $3daf7  xx xx:      xxx #$xx
-        $3daf9  xx xx:      xxx $xx
+-       $3dadc  xx xx xx:    xxx $xxxx,y
+        $3dadf  xx xx:       xxx ++ ; $3daf6
+        $3dae1  xx xx xx:     xxx $xxxx,y
+        $3dae4  xx xx:        xxx #$xx
+        $3dae6  xx xx:        xxx + ; $3daec
+        $3dae8  xx xx:          xxx #$xx
+        $3daea  xx xx:          xxx ++ ; $3daf6
++       $3daec  xx xx xx:      xxx $xxxx,y
+        $3daef  xx xx:         xxx ++ ; $3daf6
+        $3daf1  xx xx:          xxx #$xx
+        $3daf3  xx xx xx:       xxx $xxxx,y
+++      $3daf6  xx:          xxx
+        $3daf7  xx xx:       xxx #$xx
+        $3daf9  xx xx:      xxx - ; $3dadc
         $3dafb  xx:         xxx
 ;;; --------------------------------
         $3dafc  xx xx:      xxx #$xx
         $3dafe  xx xx xx:   xxx $xxxx
         $3db01  xx xx:      xxx #$xx
         $3db03  xx xx:      xxx #$xx
-        $3db05  xx xx xx:   xxx $xxxx,x
-        $3db08  xx:         xxx
-        $3db09  xx xx:      xxx #$xx
-        $3db0b  xx xx:      xxx $xx
+-       $3db05  xx xx xx:    xxx $xxxx,x
+        $3db08  xx:          xxx
+        $3db09  xx xx:       xxx #$xx
+        $3db0b  xx xx:      xxx - ; $3db05
         $3db0d  xx:         xxx
 ;;; --------------------------------
         $3db0e  xx xx xx:   xxx $xxxx
-        $3db11  xx xx:      xxx $xx
-        $3db13  xx xx xx:   xxx $xxxx,y
-        $3db16  xx xx xx:   xxx $3db21
-;;; --------------------------------
-        $3db19  xx xx xx:   xxx $xxxx
+        $3db11  xx xx:      xxx + ; $3db19
+        $3db13  xx xx xx:    xxx $xxxx,y
+        $3db16  xx xx xx:    xxx $3db21
+        ;; --------------------------------
++       $3db19  xx xx xx:   xxx $xxxx
         $3db1c  xx xx:      xxx $xx
         $3db1e  xx xx xx:   xxx $xxxx,y
         $3db21  xx:         xxx
@@ -53366,8 +53818,8 @@ MainGameModeJump_1d
         $3db67  xx xx xx:   xxx $xxxx
         $3db6a  xx xx:      xxx #$xx
         $3db6c  xx xx xx:   xxx BankSwitch8k_8000
-        $3db6f  xx xx xx:   xxx $28500
-        $3db72  xx xx xx:   xxx $28528
+        $3db6f  xx xx xx:   xxx DrawMessageBoxBackground
+        $3db72  xx xx xx:   xxx ShowMessage
         $3db75  xx xx xx:   xxx $3dd36
         $3db78  xx xx xx:   xxx $3c169
         $3db7b  xx xx:      xxx #$xx
@@ -53404,7 +53856,7 @@ MainGameModeJump_1d
         $3dbb9  xx xx xx:   xxx $xxxx
         $3dbbc  xx xx xx:   xxx ReadControllersWithRepeat
         $3dbbf  xx xx xx:   xxx $3ff8c
-        $3dbc2  xx xx xx:   xxx $3c17d
+        $3dbc2  xx xx xx:   xxx RemoveSpritesBehindMessageBox
         $3dbc5  xx xx xx:   xxx $3c169
         $3dbc8  xx xx xx:   xxx $3c210
         $3dbcb  xx xx:      xxx $xx
@@ -53515,7 +53967,7 @@ DataTable_3dc58
         $3dc9f  xx xx:      xxx #$xx
         $3dca1  xx xx xx:   xxx BankSwitch8k_8000
         $3dca4  xx xx:      xxx #$xx
-        $3dca6  xx xx xx:   xxx $35ae8
+        $3dca6  xx xx xx:   xxx SpendMPOrDoubleReturn
         $3dca9  xx xx:      xxx $xx
         $3dcab  xx:         xxx
         $3dcac  xx xx:      xxx $xx
@@ -53683,7 +54135,7 @@ JumpTable_3ddbd                 ; TODO - expand these labels
 ;;; --------------------------------
 MainGameModeJump_16
         $3de04  xx xx xx:   xxx $3c19f
-        $3de07  xx xx xx:   xxx $3c17d
+        $3de07  xx xx xx:   xxx RemoveSpritesBehindMessageBox
         $3de0a  xx xx:      xxx $xx
         $3de0c  xx:         xxx
         $3de0d  xx xx:       xxx $xx
@@ -53697,7 +54149,7 @@ MainGameModeJump_16
         $3de21  xx xx xx:    xxx $3d3c2
         $3de24  xx xx:       xxx #$xx
         $3de26  xx xx xx:    xxx BankSwitch8k_8000
-        $3de29  xx xx xx:    xxx $28528
+        $3de29  xx xx xx:    xxx ShowMessage
         $3de2c  xx:         xxx
         $3de2d  xx xx:      xxx $xx
         $3de2f  xx xx xx:   xxx $3c169
@@ -53857,7 +54309,7 @@ JumpTable_3df0e_00
         $3df82  xx xx:      xxx #$xx
         $3df84  xx xx xx:   xxx BankSwitch8k_8000
         $3df87  xx xx:      xxx #$xx
-        $3df89  xx xx xx:   xxx $35ae8
+        $3df89  xx xx xx:   xxx SpendMPOrDoubleReturn
         $3df8c  xx xx xx:   xxx $3de51
 ;;; --------------------------------
         $3df8f  xx xx:      xxx #$xx
@@ -53865,8 +54317,8 @@ JumpTable_3df0e_00
         $3df94  xx xx xx:   xxx $3c676
         $3df97  xx xx:      xxx #$xx
         $3df99  xx xx xx:   xxx BankSwitch8k_8000
-        $3df9c  xx xx xx:   xxx $28500
-        $3df9f  xx xx xx:   xxx $28528
+        $3df9c  xx xx xx:   xxx DrawMessageBoxBackground
+        $3df9f  xx xx xx:   xxx ShowMessage
         $3dfa2  xx xx xx:   xxx ClearBackgroundPaletteAndAttributes
         $3dfa5  xx xx:      xxx #$xx
         $3dfa7  xx xx:      xxx $xx
@@ -56322,7 +56774,7 @@ PrepareScreenMapRead
         $3efae  xx xx xx:   xxx $3c169
         $3efb1  xx xx:      xxx #$xx
         $3efb3  xx xx xx:   xxx BankSwitch8k_8000
-        $3efb6  xx xx xx:   xxx $34cc0
+        $3efb6  xx xx xx:   xxx UpdateHPDisplayInternal
         $3efb9  xx xx xx:   xxx $34c0e
         $3efbc  xx xx:      xxx #$xx
         $3efbe  xx xx xx:   xxx BankSwitch8k_8000
@@ -56340,7 +56792,7 @@ PrepareScreenMapRead
         $3efdb  xx xx xx:   xxx $xxxx
         $3efde  xx xx:      xxx #$xx
         $3efe0  xx xx:      xxx #$xx
-        $3efe2  xx xx:      xxx $xx
+        $3efe2  xx xx:      xxx GrantPassiveBonuses
         $3efe4  xx xx xx:   xxx $xxxx
         $3efe7  xx xx:      xxx $xx
         $3efe9  xx xx xx:   xxx $xxxx
@@ -56349,55 +56801,64 @@ PrepareScreenMapRead
         $3eff1  xx xx:      xxx #$xx
         $3eff3  xx xx xx:   xxx $xxxx
         $3eff6  xx xx xx:   xxx $34c0e
-        $3eff9  xx xx xx:   xxx $3f01d
+        $3eff9  xx xx xx:   xxx GrantPassiveBonuses
 ;;; --------------------------------
-        $3effc  xx xx xx:   xxx $xxxx
-        $3efff  xx xx:      xxx #$xx
-        $3f001  xx xx:      xxx + ; $3f01d
-        $3f003  xx xx:       xxx $xx
-        $3f005  xx xx:       xxx #$xx
-        $3f007  xx xx:       xxx + ; $3f01d
-        $3f009  xx xx:        xxx $xx
-        $3f00b  xx xx:        xxx #$xx
-        $3f00d  xx xx:        xxx + ; $3f01d
+        $3effc  xx xx xx:   xxx EquippedMagic
+        $3efff  xx xx:      xxx #MAGIC_RECOVER
+        $3f001  xx xx:      xxx GrantPassiveBonuses
+        $3f003  xx xx:       xxx Ctrl1NewlyPressed
+        $3f005  xx xx:       xxx #BUTTON_A
+        $3f007  xx xx:       xxx GrantPassiveBonuses
+        $3f009  xx xx:        xxx GameMode
+        $3f00b  xx xx:        xxx #GAME_MODE_NORMAL
+        $3f00d  xx xx:        xxx GrantPassiveBonuses
         $3f00f  xx xx:         xxx #$xx ; 8000 -> 34000
         $3f011  xx xx xx:      xxx BankSwitch8k_8000
         $3f014  xx xx:         xxx #$xx
-        $3f016  xx xx xx:      xxx $35ae8
-        $3f019  xx xx:         xxx #$xx
-        $3f01b  xx xx:         xxx $xx
-+       $3f01d  xx xx xx:   xxx $xxxx
-        $3f020  xx xx:      xxx #$xx
+        $3f016  xx xx xx:      xxx SpendMPOrDoubleReturn
+        $3f019  xx xx:         xxx #GAME_MODE_RECOVER_MAGIC
+        $3f01b  xx xx:         xxx GameMode
+GrantPassiveBonuses
+        ;; If wearing Deo's Pendant: +1 MP on 64th frame unless moving
+        $3f01d  xx xx xx:   xxx EquippedPassiveItem
+        $3f020  xx xx:      xxx #ITEM_DEOS_PENDANT
         $3f022  xx xx:      xxx + ; $3f03e
-        $3f024  xx xx:       xxx $xx
+        $3f024  xx xx:       xxx Ctrl1CurrentDirection ; $ff if still
         $3f026  xx xx:       xxx + ; $3f03e
-        $3f028  xx xx:        xxx $xx
+        $3f028  xx xx:        xxx GlobalCounter
         $3f02a  xx xx:        xxx #$xx
         $3f02c  xx xx:        xxx + ; $3f03e
-        $3f02e  xx xx xx:      xxx $xxxx
-        $3f031  xx xx xx:      xxx $xxxx
+        $3f02e  xx xx xx:      xxx PlayerMP
+        $3f031  xx xx xx:      xxx PlayerMaxMP
         $3f034  xx xx:         xxx + ; $3f03e
-        $3f036  xx xx xx:       xxx $xxxx
+        $3f036  xx xx xx:       xxx PlayerMP
         $3f039  xx xx:          xxx #$xx ; MP
         $3f03b  xx xx xx:       xxx DisplayNumberInternal
-+       $3f03e  xx xx xx:   xxx $xxxx
-        $3f041  xx xx:      xxx #$xx
+        ;; If wearing Psycho Armor: +1 HP on 16th frame unless moving
++       $3f03e  xx xx xx:   xxx EquippedArmor
+        $3f041  xx xx:      xxx #$xx ; Psycho Armor
         $3f043  xx xx:      xxx + ; $3f05f
-        $3f045  xx xx:       xxx $xx
+        $3f045  xx xx:       xxx Ctrl1CurrentDirection ; $ff if still
         $3f047  xx xx:       xxx + ; $3f05f
-        $3f049  xx xx xx:     xxx $xxxx
-        $3f04c  xx xx xx:     xxx $xxxx
+        $3f049  xx xx xx:     xxx PlayerMaxHP
+        $3f04c  xx xx xx:     xxx PlayerHP
         $3f04f  xx xx:        xxx + ; $3f05f
-        $3f051  xx xx:         xxx $xx
+        $3f051  xx xx:         xxx GlobalCounter
         $3f053  xx xx:         xxx #$xx
         $3f055  xx xx:         xxx + ; $3f05f
-        $3f057  xx xx xx:       xxx $xxxx
-        $3f05a  xx xx:          xxx #$xx
-        $3f05c  xx xx xx:       xxx $34cc0
-+       $3f05f  xx xx:      xxx $xx
-        $3f061  xx xx:      xxx #$xx
+        $3f057  xx xx xx:       xxx PlayerHP
+        $3f05a  xx xx:          xxx #$xx ; ignored - stale from an earlier version?
+        $3f05c  xx xx xx:       xxx UpdateHPDisplayInternal
++       $3f05f  xx xx:      xxx CurrentLocation
+        $3f061  xx xx:      xxx #LOC_MESIA_SHRINE
         $3f063  xx xx:      xxx + ; $3f068
+        ;;                   If we're in Mesia's shrine, dec $4fe - why?!?
+        ;;                   This is read at 382be 7 frames later...?
+        ;;                   But this doesn't seem to matter - it's possible
+        ;;                   Mesia somehow spawns in $1e, even though there's
+        ;;                   no NpcData entry there.
         $3f065  xx xx xx:    xxx $xxxx
+        ;; Check pits???
 +       $3f068  xx xx xx:   xxx $xxxx
         $3f06b  xx xx:      xxx + ; $3f089
         $3f06d  xx xx xx:   xxx $xxxx
@@ -56887,7 +57348,7 @@ KillSomeCycles
         $3f454  xx:         xxx
         ;; --------------------------------
 IRQCallback_00
-        $3f455  xx xx xx:      xxx $xxxx
+        $3f455  xx xx xx:      xxx $xxxx          ; X = 9 always?
         $3f458  xx xx xx:      xxx KillSomeCycles ; $3f451
         $3f45b  xx xx xx:      xxx PPUSTATUS ; reset address latch
         $3f45e  xx xx:         xxx #$xx
@@ -56916,7 +57377,7 @@ IRQCallback_00
 IRQCallback_01
         $3f488  xx xx xx:   xxx IRQDISABLE
         $3f48b  xx xx xx:   xxx PPUSTATUS
-        $3f48e  xx xx xx:   xxx $xxxx
+        $3f48e  xx xx xx:   xxx $xxxx ; X = 9 always
         $3f491  xx:         xxx
         $3f492  xx:         xxx
         $3f493  xx:         xxx
@@ -56944,7 +57405,7 @@ IRQCallback_01
         $3f4c8  xx xx xx:   xxx $xxxx
         $3f4cb  xx xx:      xxx #$xx
         $3f4cd  xx xx:      xxx $xx
-        $3f4cf  xx xx xx:   xxx $3f7fe
+        $3f4cf  xx xx xx:   xxx MaybeUpdateMusic
         $3f4d2  xx xx:      xxx $xx
         $3f4d4  xx xx:      xxx $xx
         $3f4d6  xx xx:      xxx $xx
@@ -57095,7 +57556,7 @@ IRQCallback_04
 ;;; --------------------------------
 IRQCallback_05
         $3f60e  xx xx xx:   xxx $xxxx
-        $3f611  xx xx xx:   xxx $3f7fe
+        $3f611  xx xx xx:   xxx MaybeUpdateMusic
         $3f614  xx:         xxx
         $3f615  xx:         xxx
         $3f616  xx:         xxx
@@ -57213,7 +57674,7 @@ ScreenModeJumpTable_07
         $3f6d6  xx xx:      xxx $xx
         $3f6d8  xx xx:      xxx #$xx
         $3f6da  xx xx:      xxx + ; $3f6df
-        $3f6dc  xx xx xx:   xxx $3f7fe
+        $3f6dc  xx xx xx:   xxx MaybeUpdateMusic
         ;; --------------------------------
 +       $3f6df  xx xx xx:   xxx $3f71b
         $3f6e2  xx xx xx:   xxx SelectCHRRomBanks
@@ -57284,8 +57745,8 @@ ScreenModeJumpTable_02
         $3f765  xx xx:      xxx $xx
         $3f767  xx xx:      xxx #$xx
         $3f769  xx xx:      xxx + ; $3f76e
-        $3f76b  xx xx xx:   xxx $3f7fe
-;;; --------------------------------
+        $3f76b  xx xx xx:    xxx MaybeUpdateMusic
+        ;;                   ----------
 +       $3f76e  xx xx xx:   xxx $3f705
 ;;; --------------------------------
 ScreenModeJumpTable_03
@@ -57294,35 +57755,34 @@ ScreenModeJumpTable_03
         $3f776  xx xx xx:   xxx $3eb6d
         $3f779  xx xx xx:   xxx $3f883
         $3f77c  xx xx xx:   xxx $xxxx
-        $3f77f  xx xx xx:   xxx $3f7fe
+        $3f77f  xx xx xx:   xxx MaybeUpdateMusic
 ;;; --------------------------------
 ScreenModeJumpTable_04
         $3f782  xx xx xx:   xxx $3eb6d
         $3f785  xx xx xx:   xxx $3f883
         $3f788  xx xx:      xxx $xx
-        $3f78a  xx xx:      xxx $xx
-        $3f78c  xx xx:      xxx $xx
-        $3f78e  xx xx xx:   xxx $3f7b5,y
-        $3f791  xx xx:      xxx $xx
-        $3f793  xx xx:      xxx #$xx
-        $3f795  xx xx:      xxx $xx
-        $3f797  xx xx:      xxx #$xx
-        $3f799  xx xx xx:   xxx $xxxx
-        $3f79c  xx xx xx:   xxx $xxxx
-        $3f79f  xx xx xx:   xxx $xxxx
-        $3f7a2  xx xx xx:   xxx $xxxx
-        $3f7a5  xx xx:      xxx #$xx
-        $3f7a7  xx xx xx:   xxx $3f424
-;;; --------------------------------
-        $3f7aa  xx xx:      xxx $xx
+        $3f78a  xx xx:      xxx + ; $3f7aa
+        $3f78c  xx xx:       xxx $xx
+        $3f78e  xx xx xx:    xxx $3f7b5,y
+        $3f791  xx xx:       xxx $xx
+        $3f793  xx xx:       xxx #$xx
+        $3f795  xx xx:       xxx $xx
+        $3f797  xx xx:       xxx #$xx
+        $3f799  xx xx xx:    xxx $xxxx
+        $3f79c  xx xx xx:    xxx $xxxx
+        $3f79f  xx xx xx:    xxx $xxxx
+        $3f7a2  xx xx xx:    xxx $xxxx
+        $3f7a5  xx xx:       xxx #$xx
+        $3f7a7  xx xx xx:    xxx $3f424
+        ;;                   ----------
++       $3f7aa  xx xx:      xxx $xx
         $3f7ac  xx xx:      xxx #$xx
         $3f7ae  xx xx xx:   xxx $xxxx
         $3f7b1  xx xx xx:   xxx $xxxx
         $3f7b4  xx:         xxx
 ;;; --------------------------------
 DataTable_3f7b5 
-        $3f7b5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3f7c0              .byte $xx,$xx,$xx,$xx,$xx
+        $3f7b5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 ScreenModeJumpTable_05
         $3f7c5  xx xx xx:   xxx $3eb6d
@@ -57353,7 +57813,7 @@ ScreenModeJumpTable_06
 ;;; This is one of the common flow-into points for many of the
 ;;; different IRQ/NMI mode callbacks. There may be others.
 ;;; It's looking a lot at parts of RAM that are for audio.
-UpdateMusic
+MaybeUpdateMusic
         ;; 
         $3f7fe  xx xx:      xxx #$xx
         $3f800  xx xx:      xxx #$xx ; $8000 -> $30000
@@ -57381,7 +57841,7 @@ UpdateMusic
         $3f835  xx xx:      xxx #$xx
         $3f837  xx xx xx:   xxx $xxxx
         $3f83a  xx xx xx:   xxx $xxxx
-        $3f83d  xx xx xx:   xxx $30048
+        $3f83d  xx xx xx:   xxx ResumeAudio
         $3f840  xx xx xx:   xxx + ; $3f866
         ;; --------------------------------
 +++     $3f843  xx xx xx:   xxx $xxxx
@@ -57390,7 +57850,7 @@ UpdateMusic
         $3f84b  xx xx:      xxx + ; $3f866
         $3f84d  xx xx xx:   xxx $xxxx
         $3f850  xx xx xx:   xxx $xxxx
-        $3f853  xx xx xx:   xxx $30048
+        $3f853  xx xx xx:   xxx ResumeAudio
         $3f856  xx xx:      xxx #$xx
 -       $3f858  xx xx xx:   xxx $xxxx,y ; Move 104,...,109 -> 103,...,108 - why?
         $3f85b  xx xx xx:   xxx $xxxx,y ; Seems to be progressing something.
@@ -57401,7 +57861,7 @@ UpdateMusic
 +       $3f866  xx xx:      xxx #$xx
         $3f868  xx xx xx:   xxx $xxxx
         $3f86b  xx xx:      xxx #$xx
-        $3f86d  xx xx xx:   xxx $xxxx ; NOTE: $30048 may change $a000 page.
+        $3f86d  xx xx xx:   xxx $xxxx ; NOTE: ResumeAudio may change $a000 page.
         $3f870  xx xx xx:   xxx $30186
         $3f873  xx xx:      xxx $xx
         ;; Restore banks that were present before.
@@ -57821,14 +58281,15 @@ DisplayNumber
         $3ffb8  xx xx xx:     xxx DisplayNumberInternal
         $3ffbb  xx xx xx:     xxx RestoreBanks
 ;;; --------------------------------
-        ;; Call $34cc0 and restore banks afterwards (not covered?)
+;;; Call UpdateHPDisplayInternal and restore banks afterwards (unused?)
+UpdateHPDisplay
         $3ffbe  xx xx:      xxx $xx
         $3ffc0  xx:         xxx
         $3ffc1  xx xx:       xxx $xx
         $3ffc3  xx:          xxx
         $3ffc4  xx xx:        xxx #$xx ; 34000 -> 8000
         $3ffc6  xx xx xx:     xxx BankSwitch8k_8000
-        $3ffc9  xx xx xx:     xxx $34cc0
+        $3ffc9  xx xx xx:     xxx UpdateHPDisplayInternal
         $3ffcc  xx xx xx:     xxx RestoreBanks
 ;;; --------------------------------
         ;; Call $3d354 and restore banks afterwards

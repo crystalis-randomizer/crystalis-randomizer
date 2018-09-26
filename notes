@@ -434,6 +434,15 @@ PATCHES:
      - important if refresh is not readily available
   $1c2de => see source for comment about how to avoid ball clobbering bracelet?
 
+  $3f4eb => bad timing causes flickering
+    - replace five ea (nop) bytes with (a2 03 ca 10 fd == ldx #$03; dex; bpl -3)
+    - seems to fix it very well? might also be possible to wait shorter at KillSomeCycles?
+        - see below, ldx #$07; nop instead of ldx $7de
+    - still an issue with map screen seams
+      replace the ldx at $3f455 with (a2 07 ea = ldx #$07; nop)
+
+  Fun%: Swap Simea and Mesia (should just be able to swap the patterns and palettes)
+    - mesia is metasprite d3, I think - check the NpcData tables (52?) to see pattern page, etc
 
 MONSTERS:
  - to randomize monsters, we basically need to pick two for any given region,

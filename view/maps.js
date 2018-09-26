@@ -127,6 +127,11 @@ class Rom {
   }
 }
 
+// TODO - move colors to view.js?
+//   - maybe the API I want is drawTile(x, y, id, attr)?
+//     -- attr = 18 bits of colors for palette, 1 bit for hflip, 1 bit for vflip ?
+// Will also want to pull out the ROM, and probably cache the tables into
+// simple data structures (don't need to be live or smart...)
 const colors = [
   0x525252, 0xB40000, 0xA00000, 0xB1003D, 0x740069, 0x00005B, 0x00005F, 0x001840,
   0x002F10, 0x084A08, 0x006700, 0x124200, 0x6D2800, 0x000000, 0x000000, 0x000000,
@@ -245,19 +250,32 @@ class MapsView extends View {
     } else if (changed.wd || changed.ht) {
       this.setLocation(loc, this.options.wd, this.options.ht);
     }
-    const {pal = [], pat = [], ts = [], wd, ht, ext, screens = [], flags = []} = this.options;
-    const buf = ImageBuffer.create(256 * wd, 240 * ht).fill(this.rom.getColor(pal[0], 0));
-    const style = [pal[0], pal[1], pal[2], ts[0], ts[1], pat[0], pat[1]];
-    for (let x = 0; x < wd; x++) {
-      for (let y = 0; y < ht; y++) {
-        const screen = (screens[y] || [])[x];
-        if (screen != null) {
-          this.rom.drawScreen(buf.shift(256 * x, 240 * y, 256, 240),
-                              screen + (ext ? 0x140 : 0), style, (flags[y] || [])[x]);
+    let lastIndex = -1;
+    this.animate((frame, draw) => {
+      const {pal = [], pat = [], ts = [], wd, ht, anim, ext, screens = [], flags = []} = this.options;
+      const buf = ImageBuffer.create(256 * wd, 240 * ht).fill(this.rom.getColor(pal[0], 0));
+      let pat1 = pat[1];
+      if (anim) {
+        let index = frame >> 3 & 7;
+        if (index == lastIndex) return;
+        lastIndex = index;
+        pat1 = this.rom.prg[0x3e779 + (anim << 3) + index];
+      } else {
+        if (lastIndex == 0) return;
+        lastIndex = 0;
+      }
+      const style = [pal[0], pal[1], pal[2], ts[0], ts[1], pat[0], pat1];
+      for (let x = 0; x < wd; x++) {
+        for (let y = 0; y < ht; y++) {
+          const screen = (screens[y] || [])[x];
+          if (screen != null) {
+            this.rom.drawScreen(buf.shift(256 * x, 240 * y, 256, 240),
+                                screen + (ext ? 0x140 : 0), style, (flags[y] || [])[x]);
+          }
         }
       }
-    }
-    this.draw(buf);
+      draw(buf);
+    });
   }
 
   mousemove(x, y) {
@@ -268,6 +286,7 @@ class MapsView extends View {
     const fineX = x % 256 & 15;
     const fineY = y % 240 & 15;
     const scrId = this.options.screens[scrY][scrX];
+    if (!scrId) return;
     const metatileBase = scrId << 8;
     const metatileId = this.rom.prg[metatileBase | tileY << 4 | tileX];
     // TODO - subtile ID, flags, etc

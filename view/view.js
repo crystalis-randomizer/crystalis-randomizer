@@ -28,6 +28,7 @@ export class View {
     this.controls.classList.add('controls');
     this.options = {};
 
+    this.animated = null;
     this.scale = 0;
     this.handlers = {};
     this.floater = null;
@@ -179,7 +180,7 @@ export class View {
   }
 
   draw(/** ImageBuffer */ buffer) {
-
+    this.animated = null;
     if (this.scale) {
       const s = 2 / (this.scale + 2);
       const t = (1 - s) * 50;
@@ -209,6 +210,27 @@ export class View {
 
   update() {
     throw new Error('abstract');
+  }
+
+  animate(f) {
+    // usage:
+    //   update() {
+    //     this.animate(f => {
+    //       this.draw(...);
+    //     });
+    //   }
+    let timer = 0;
+    const animation = this.animated = {};
+    const frame = () => {
+      if (this.animated != animation) return;
+      timer = (timer + 0xff) & 0xff;
+      f(timer, (...args) => {
+        this.draw(...args);
+        this.animated = animation; // override draw
+      });
+      requestAnimationFrame(() => frame());
+    };
+    frame();
   }
 
   showFloater(x, y, text) {

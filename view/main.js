@@ -19,7 +19,7 @@ const drawLocation = (rom, id) => {
   }
   const viz = new Viz(loc.width * 256, loc.height * 240, loc.animation ? 8 : 1);
   viz.fill(rom.palettes[loc.tilePalettes[0]].colors[0]);
-  const tileset = rom.tileset(loc.tileset);
+  const tileset = rom.tilesets[loc.tileset >> 2 & 0xf];
   // get the palettes, patterns, etc
   for (let scrX = 0; scrX < loc.width; scrX++) {
     for (let scrY = 0; scrY < loc.height; scrY++) {

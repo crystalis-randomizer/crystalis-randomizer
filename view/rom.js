@@ -10,11 +10,17 @@ const varSlice = (arr, start, width, sentinel, end = Infinity) => {
   return out;
 };
 
-const addr = (arr, i, offset) => (arr[i] | arr[i + 1] << 8) + offset;
+const addr = (arr, i, offset = 0) => (arr[i] | arr[i + 1] << 8) + offset;
 const group = (width, arr) =>
       seq(arr.length / width, i => slice(arr, i * width, width));
 const reverseBits = (x) => 
       ((x * 0x0802 & 0x22110) | (x * 0x8020 & 0x88440)) * 0x10101 >>> 16 & 0xff;
+const countBits = (x) => {
+  x -= x >> 1 & 0x55;
+  x = (x & 0x33) + (x >> 2 & 0x33);
+  return (x + (x >> 4)) & 0xf;
+};
+      
 
 // We could add new locations at these spots, if we want,
 // but we should just not bother serializing them into the
@@ -24,8 +30,8 @@ const INVALID_LOCATIONS = new Set([
   0x0b, 0x0d, 0x12, 0x13, 0x16, 0x17, 0x1d, 0x1f,
   0x36, 0x37, 0x3a, 0x3b, 0x3f, 0x53, 0x63, 0x66,
   0x67, 0x74, 0x75, 0x76, 0x77, 0x79, 0x7a, 0x7b,
-  0x8b, 0x8d, 0x97, 0x99, 0x9a, 0x9b, 0xca, 0xcc,
-  0xdb, 0xe6, 0xea, 0xfc, 0xfd, 0xfe, 0xff]);
+  0x8b, 0x8d, 0x97, 0x99, 0x9a, 0x9b, 0xbd, 0xca,
+  0xcc, 0xdb, 0xe6, 0xea, 0xfc, 0xfd, 0xfe, 0xff]);
 
 // TODO - consider adding prepopulated name maps for data
 // tables, e.g. my location names, so that an editor could
@@ -63,10 +69,22 @@ class Tileset {
     this.rom = rom;
     this.id = id;
     const map = id & 0x3f;
-    this.tileBase = 0x10000 | (map << 8);
-    this.attrBase = 0x13000 | (map << 4);
+    this.tileBase = 0x10000 | map << 8;
+    this.attrBase = 0x13000 | map << 4;
+    this.alternatesBase = 0x13e00 | map << 3;
     this.tiles = seq(4, q => slice(rom.prg, this.tileBase | q << 8 , 256));
     this.attrs = seq(256, i => rom.prg[this.attrBase | i >> 2] >> ((i & 3) << 1) & 3);
+    this.alternates = slice(rom.prg, this.alternatesBase, 32);
+  }
+}
+
+class TileEffects {
+  constructor(rom, id) {
+    // `id` is MapData[1][4], which ranges from $b3..$bd
+    this.rom = rom;
+    this.id = id;
+    this.base = (id << 8) & 0x1fff | 0x12000;
+    this.effects = slice(rom.prg, this.base, 256);
   }
 }
 
@@ -128,6 +146,8 @@ class Location {
 
     this.mapDataPointer = 0x14300 + (id << 1);
     this.mapDataBase = addr(rom.prg, this.mapDataPointer, 0xc000);
+    this.valid = this.mapDataBase > 0xc000 && !INVALID_LOCATIONS.has(id);
+
     this.layoutBase = addr(rom.prg, this.mapDataBase, 0xc000);
     this.graphicsBase = addr(rom.prg, this.mapDataBase + 2, 0xc000);
     this.entrancesBase = addr(rom.prg, this.mapDataBase + 4, 0xc000);
@@ -171,6 +191,71 @@ class Location {
   get height() { return this.layoutHeight + 1; }
 }
 
+class ObjectData {
+  constructor(rom, id) {
+    this.rom = rom;
+    this.id = id;
+
+    this.objectDataPointer = 0x1ac00 + (id << 1);
+    this.objectDataBase = addr(rom.prg, this.objectDataPointer, 0x10000);
+    this.sfx = rom.prg[this.objectDataBase];
+
+    let a = this.objectDataBase + 1;
+    this.objectData = [];
+    let m = 0;
+    for (let i = 0; i < 32; i++) {
+      if (!(i & 7)) {
+        m = rom.prg[a++];
+      }
+      this.objectData.push(m & 0x80 ? rom.prg[a++] : 0);
+      m <<= 1;
+    }
+  }
+}
+
+class Metasprite {
+  constructor(rom, id) {
+    this.rom = rom;
+    this.id = id;
+
+    this.base = addr(rom.prg, 0x3845c + (this.id << 1), 0x30000);
+    this.valid = this.base > 0x30000;
+
+    if (rom.prg[this.base] == 0xff) {
+      // find the ID of the sprite that's mirrored.
+      const target = addr(rom.prg, this.base + 1);
+      for (let i = 0; i < 256; i++) {
+        if (addr(rom.prg, 0x3845c + (i << 1)) == target) {
+          this.mirrored = i;
+          break;
+        }
+      }
+      if (this.mirrored == null) throw new Error('could not find mirrored sprite');
+      this.size = 0;
+      this.frames = 0;
+      this.sprites = [];
+    } else {
+      this.mirrored = null;
+      this.size = this.mirrored ? 0 : rom.prg[this.base];
+      this.frames = this.mirrored ? 0 : 1 << countBits(rom.prg[this.base + 1]);
+
+      this.sprites = seq(this.frames, f => {
+        const a = this.base + 2 + f * 4 * this.size;
+        const sprites = [];
+        for (let i = 0; i < this.size; i++) {
+          if (rom.prg[a + 4 * i] == 0x80) break;
+          sprites.push(slice(rom.prg, a + 4 * i, 4));
+        }
+        return sprites;
+      });
+      // NOTE: when re-encoding this, fill in $80 for all
+      // missing rows from non-final frames.  For the final
+      // frame, just write a single row of $80 (or maybe
+      // even just a single one, if only the first is used).
+    }
+  }
+}
+
 export class Rom {
   constructor(rom) {
     this.prg = rom.slice(0x10, 0x40010);
@@ -192,12 +277,15 @@ export class Rom {
     // allocate methods - one where the content is known and one where only the
     // length is known.
     this.screens = seq(0x103, i => new Screen(this, i));
-    this.tilesets = seq(0x10, i => new Tileset(this, i << 2 | 0x80));
+    this.tilesets = seq(12, i => new Tileset(this, i << 2 | 0x80));
+    this.tileEffects = seq(11, i => new TileEffects(this, i + 0xb3));
     this.patterns = seq(this.chr.length >> 4, i => new Pattern(this, i));
     this.palettes = seq(0x100, i => new Palette(this, i));
     this.locations = seq(
         0x100, i => INVALID_LOCATIONS.has(i) ? null : new Location(this, i));
     this.tileAnimations = seq(4, i => new TileAnimation(this, i));
+    this.objects = seq(0x100, i => new ObjectData(this, i));
+    this.metasprites = seq(0x100, i => new Metasprite(this, i));
   }
 
   tileset(i) {

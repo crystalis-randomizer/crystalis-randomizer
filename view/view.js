@@ -357,7 +357,7 @@ const parseName = (view, name) => {
   let obj = view.options;
   for (let i = 0; i < split.length - 1; i++) {
     const term = split[i];
-    const num = /^[0-9]+$/.test(term);
+    const num = /^[0-9]+$/.test(split[i + 1]);
     obj = (obj[term] || (obj[term] = (num ? [] : {})));
   }
   return [obj, split[split.length - 1]];

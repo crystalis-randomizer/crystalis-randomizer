@@ -1,66 +1,77 @@
-import * as views from './views.js';
-import {Component} from './component.js';
-import {FileSystem} from './fs.js';
-import {Menu} from './menu.js';
+import {Viz} from './viz.js';
+import {Rom} from './rom.js';
 
-import {Rom} from '../rom/rom.js';
-
-window.snapshot;
-window.main = new Main(document.getElementById('screen'));
-
-const promptForNumbers = (text, callback) => {
-  const numbers = prompt(text);
-  if (!numbers) return;
-  const result = [];
-  // TODO(sdh): consider supporting ranges?
-  for (const num of numbers.split(/[^0-9a-fA-F$]+/)) {
-    result.push(
-        num.startsWith('$') ?
-            Number.parseInt(num.substring(1), 16) :
-            Number.parseInt(num, 10));
+const drawLocation = (rom, id) => {
+  let idEl = document.getElementById('loc');
+  if (!idEl) {
+    idEl = document.createElement('div');
+    idEl.id = 'loc';
+    document.body.appendChild(idEl);
   }
-  callback(result);
+  idEl.textContent = id.toString(16);
+  // return the viz
+  const loc = rom.locations[id];
+  if (!loc) { // TODO - streamline this
+    const err = new Viz(10, 10, 1);
+    err.fill(0);
+    document.body.appendChild(err.element);
+    return err;
+  }
+  const viz = new Viz(loc.width * 256, loc.height * 240, loc.animation ? 8 : 1);
+  viz.fill(rom.palettes[loc.tilePalettes[0]].colors[0]);
+  const tileset = rom.tileset(loc.tileset);
+  // get the palettes, patterns, etc
+  for (let scrX = 0; scrX < loc.width; scrX++) {
+    for (let scrY = 0; scrY < loc.height; scrY++) {
+      const screen = rom.screens[(loc.extended ? 0x100 : 0) | loc.screens[scrY][scrX]];
+      for (let mtX = 0; mtX < 16; mtX++) {
+        for (let mtY = 0; mtY < 15; mtY++) {
+          const metatileId = screen.tiles[mtY][mtX];
+          // get the metatile
+          const attr = tileset.attrs[metatileId];
+          const palette = attr < 3 ? loc.tilePalettes[attr] : 0x7f;
+          for (let tX = 0; tX < 2; tX++) {
+            for (let tY = 0; tY < 2; tY++) {
+              const x = scrX << 8 | mtX << 4 | tX << 3;
+              const y = scrY * 240 + (mtY << 4 | tY << 3);
+              const tile = tileset.tiles[tY << 1 | tX][metatileId];
+              let patternPage = loc.tilePatterns[tile & 0x80 ? 1 : 0];
+              for (let i = 0; i < 8; i++) {
+                if (loc.animation && tile & 0x80) {
+                  // animated
+                  patternPage = rom.tileAnimations[loc.animation].pages[7 ^ i];
+                }
+                viz.drawTile(x, y, rom.patterns[patternPage << 6 | tile & 0x7f],
+                             rom.palettes[palette].colors, i);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  document.body.appendChild(viz.element);
+  return viz;
 };
 
-new Menu('File')
-    // TODO - file manager
-    .addItem('Load ROM', () => main.load());
-new Menu('NES')
-    // TODO - hard reset (need to figure out how)
-    .addItem('Reset', () => main.nes.cpu.softReset());
-new Menu('Movie')
-    .addItem('Playback', async () => {
-      
-      if (!(main.nes.movie instanceof Playback)) {
-        const file = await main.fs.pick('Select movie to play');
-        main.nes.movie =
-            new Playback(main.nes, file.data, {onStop: () => main.stop()});
-        main.nes.movie.start();
-      }
-      new debug.PlaybackPanel(main.nes);
-    })
-    .addItem('Record', async () => {
-      const file = await main.fs.pick('Select movie to record');
-      const movie = file.data && file.data.length ?
-          Movie.parse(file.data, 'NES-MOV\x1a') : undefined;
-      if (!(main.nes.movie instanceof Recorder) || movie) {
-        main.nes.movie = new Recorder(main.nes, movie);
-        //main.nes.movie.start();
-      }
-      if (movie) {
-        // TODO - seek to last keyframe, pause emulation to continue recording.
-      }
-      new debug.RecordPanel(main, file.name);
-    });
+const main = async () => {
+  const rom = await Rom.load();
 
-new Menu('Debug')
-    .addItem('Watch Page', () => promptForNumbers('Pages', pages => {
-      for (const page of pages) new debug.WatchPage(main.nes, page);
-    }))
-    .addItem('Nametable', () => new debug.NametableTextViewer(main.nes))
-    .addItem('Pattern Table', () => new debug.PatternTableViewer(main.nes))
-    .addItem('CHR Viewer', () => promptForNumbers('Banks', banks => {
-      new debug.ChrRomViewer(main.nes, banks);
-    }))
-    .addItem('Virtual Controllers', () => new debug.ControllerPanel(main.nes));
+  let loc = 0;
+  let viz = drawLocation(rom, 0);
+  document.body.addEventListener('keypress', (e) => {
+    let newLoc;
+    if (e.key == 'j') {
+      newLoc = (loc + 1) & 0xff;
+    } else if (e.key == 'k') {
+      newLoc = (loc - 1) & 0xff;
+    }
+    if (newLoc != null) {
+      loc = newLoc;
+      viz.element.remove();
+      viz = drawLocation(rom, loc);
+    }
+  });
+};
 
+window.addEventListener('load', main);

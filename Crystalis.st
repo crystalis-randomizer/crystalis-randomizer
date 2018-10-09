@@ -1,6 +1,9 @@
 define Inventory $6430
 define Inventory_ScratchSortRow $60e0
 
+define PpuCtrlShadow        $00
+define PpuMaskShadow        $01
+
 define ScreenXLo            $02     ; also stored in $34,$36 during map scroll
 define ScreenXHi            $03
 define ScreenYLo            $04
@@ -33,21 +36,76 @@ define CurrentEntrance   $6d
 define PrgPageShadowLo   $6e
 define PrgPageShadowHi   $6f
 
+define PlayerXLo   $70
+define PlayerXHi   $90
+define PlayerYLo   $b0
+define PlayerYHi   $d0
+
+;;; Both absolute and zeropage versions...
+define ObjXLo      $70
+define ObjXHi      $90
+define ObjYLo      $b0
+define ObjYHi      $d0
+define ObjectXLo   $0070
+define ObjectXHi   $0090
+define ObjectYLo   $00b0
+define ObjectYHi   $00d0
+
+
 define SpriteRam           $0200
 define SpriteRamY          $0200
 define SpriteRamPattern    $0201
 define SpriteRamAttributes $0202
 define SpriteRamX          $0203
 
-define PlayerMaxHP          $03c0
-define PlayerHP             $03c1
-define PlayerLevel          $0421
-define PlayerMoney          $0702 ; 2 bytes
-define PlayerExp            $0704 ; 2 bytes
-define PlayerExpToNextLevel $0706 ; 2 bytes
-define PlayerMP             $0708
-define PlayerMaxMP          $0709
-define PlayerStatus         $0710
+define ObjectMetasprite       $0300
+;;; if this is $80 when object dies, then next object dies too.
+;;; might only apply for bosses? it's also added to pattern id of each sprite.
+define ObjectDeathChain       $0320
+define ObjectKnockback        $0340 ; upper bit(s)
+define ObjectSpeed            $0340 ; lower nibble
+define ObjectDirection        $0360
+define ObjectOnScreen         $0380 ; sign bit: minus if off-screen
+define ObjectTerrain          $0380
+define ObjectHitbox           $03a0
+define ObjectHP               $03c0
+define ObjectAttack           $03e0
+define ObjectDefense          $0400
+define ObjectLevel            $0420 ; also :40 selects ext hitboxes
+define ObjectChildSpawn       $0440
+define ObjectTerrainSusceptibility  $0460
+;;; 480 ?
+define ObjectActionScript     $04a0 ; also includes presence in :80
+define ObjectReplacement      $04c0 ; ???
+define ObjectAnimationCounter $04e0
+define ObjectGoldDropBucket   $0500 ; hi nibble
+define ObjectElementalDefense $0500 ; lo nibble
+define ObjectExperiencePoints $0520
+define ObjectDamageType       $0540
+define ObjectProjectileStatus $0560
+;;; 560 ? other effects?
+;;; 580 - alternative metasprite ID?
+define ObjectDelay            $05a0
+define ObjectSpriteX          $05c0
+define ObjectSpriteY          $05e0
+define ObjectBossMode         $0600
+;;; 620 ?
+define ObjectShooterShooting     $0640
+define ObjectDirMetaspriteBase   $06c0
+define ObjectShootMetaspriteBase $06e0
+
+
+define PlayerMaxHP            $03c0
+define PlayerHP               $03c1
+define PlayerAttack           $03e1
+define PlayerLevel            $0421
+define PlayerJumpDisplacement $0620
+define PlayerMoney            $0702 ; 2 bytes
+define PlayerExp              $0704 ; 2 bytes
+define PlayerExpToNextLevel   $0706 ; 2 bytes
+define PlayerMP               $0708
+define PlayerMaxMP            $0709
+define PlayerStatus           $0710
 
 define EquippedSword           $0711
 define EquippedMagic           $0712
@@ -184,6 +242,13 @@ define INV_MAGIC_BARRIER     $46
 define INV_MAGIC_CHANGE      $47
 define INV_MAGIC_FLIGHT      $48
 
+;;; Swords
+define SWORD_WIND        $01
+define SWORD_FIRE        $02
+define SWORD_WATER       $03
+define SWORD_THUNDER     $04
+define SWORD_CRYSTALIS   $05
+
 ;;; Magic stored in $712 is just the low nibble of the inventory version
 define MAGIC_REFRESH     $01
 define MAGIC_PARALYSIS   $02
@@ -232,6 +297,12 @@ define ITEM_BOW_OF_MOON      $22
 define ITEM_BOW_OF_SUN       $23
 define ITEM_BOW_OF_TRUTH     $24
 
+define ARMOR_BATTLE      $07
+define ARMOR_PSYCHO      $08
+
+define SHIELD_MIRRORED   $04
+define SHIELD_SACRED     $06
+define SHIELD_PSYCHO     $08
 
 define BGM_PLAINS        $01
 define BGM_SWAMP         $03
@@ -239,7 +310,7 @@ define BGM_DESERT        $04
 define BGM_OCEAN         $06
 define BGM_FORTRESS      $07    ; sabera, goa, etc?
 define BGM_08            $08    ; one of the later dungeons
-define BGM_START         $09    ; music that plays after hitting 'start'
+define BGM_START_MOVIE   $09    ; music that plays after hitting 'start'
 define BGM_INTRO         $0a    ; music that plays in intro movie
 define BGM_TITLE         $0b    ; music just for title screen
 define BGM_0C            $0c    ; another later dungeon
@@ -260,7 +331,7 @@ define BGM_WISDOM        $1b    ; wise men areas
 define BGM_1C            $1c    ; ending credits???
 define BGM_1D            $1d    ; ending credits???
 define BGM_1E            $1e    ; basically just a heart beat - fight with dyna?
-define BGM_START         $1f    ; computer booting up sound
+define BGM_START_BOOT    $1f    ; computer booting up sound
 define BGM_PROGRESS_ALT  $93    ; TODO - what does the $80 bit do?
 
 ;;; Sound effects (nes.cpu.REG_ACC = 0x21;nes.debug.call(0xc125))
@@ -337,7 +408,7 @@ define SFX_CALM_SEAS         $6e  ; after using golden statue at the altar
 define SFX_MNST_FLAIL        $6f  ; black knight, lizard man, etc
 define SFX_DRAYGON_LIGHTNING $72  ; sounds like computer destruct sound maybe?
 define SFX_DYNA_EYE_LASER    $74
-define SFX_75                $75  ; similar to 6b, but a little different
+define SFX_CRYSTALIS_SHOT    $75  ; similar to 6b, but a little different
 define SFX_76                $76  ; a different lower sort of klaxon
 define SFX_7F                $7f  ; another explosion
 
@@ -393,8 +464,13 @@ define LOC_START         $00
 define LOC_OUTSIDE_START $01
 define LOC_LEAF          $02
 ;;; ...
+define LOC_SWAMP         $1a
+define LOC_MT_SABRE_NORTH_MAIN  $28
 define LOC_MESIA_SHRINE  $52
 define LOC_DYNA          $5f
+define LOC_SWAN_GATE     $73
+define LOC_MT_HYDRA      $7c
+define LOC_JOEL_SHED     $e4
 
 ;;; Bit mask for buttons in $43 and $44, etc.
 define BUTTON_A      $80
@@ -405,6 +481,11 @@ define BUTTON_UP     $08
 define BUTTON_DOWN   $04
 define BUTTON_LEFT   $02
 define BUTTON_RIGHT  $01
+
+define STATUS_PARALYZED  $01
+define STATUS_STONE      $02
+define STATUS_POISON     $03
+define STATUS_CURSED     $04
 
 define OP_JMP_ABS  $4c
 
@@ -6560,7 +6641,9 @@ MetatileAttributesMap_0B
         $132d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $132e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $132f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileFoo
+;;; The following tables are tile effects, indexed by
+;;; the value stored in $6a (MapData[$6c].Graphics[4]).
+MetatileEffectsMap_B3
         $13300              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13310              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13320              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -6577,6 +6660,7 @@ MetatileFoo
         $133d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $133e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $133f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileEffectsMap_B4
         $13400              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13410              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13420              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -6593,6 +6677,7 @@ MetatileFoo
         $134d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $134e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $134f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileEffectsMap_B5
         $13500              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13510              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13520              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -6609,6 +6694,7 @@ MetatileFoo
         $135d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $135e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $135f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileEffectsMap_B6
         $13600              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13610              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13620              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -6625,6 +6711,7 @@ MetatileFoo
         $136d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $136e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $136f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileEffectsMap_B7
         $13700              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13710              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13720              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -6641,6 +6728,7 @@ MetatileFoo
         $137d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $137e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $137f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileEffectsMap_B8
         $13800              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13810              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13820              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -6657,6 +6745,7 @@ MetatileFoo
         $138d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $138e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $138f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileEffectsMap_B9
         $13900              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13910              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13920              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -6673,6 +6762,7 @@ MetatileFoo
         $139d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $139e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $139f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileEffectsMap_BA
         $13a00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13a10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13a20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -6689,6 +6779,7 @@ MetatileFoo
         $13ad0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13ae0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13af0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileEffectsMap_BB
         $13b00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13b10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13b20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -6705,6 +6796,7 @@ MetatileFoo
         $13bd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13be0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13bf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileEffectsMap_BC
         $13c00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13c10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13c20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -6721,6 +6813,7 @@ MetatileFoo
         $13cd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13ce0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13cf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MetatileEffectsMap_BD
         $13d00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13d10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13d20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -6773,21 +6866,16 @@ MetatileAlternativesMap_0A
 MetatileAlternativesMap_0B
         $13f60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13f70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAlternativesMap_0C
+;;; --------------------------------
         $13f80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13f90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAlternativesMap_0D
         $13fa0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13fb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAlternativesMap_0E
         $13fc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13fd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAlternativesMap_0F
         $13fe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13ff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 RomBank_0a                      ; @@ $8000  -- MAPDATA_BANK
-JumpTable_1e413_1a
-JumpTable_1e413_1b
         $14000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $14010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $14020              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -14265,7 +14353,7 @@ RomBank_0c_Remainder            ; @@ $9201  -- NPCDATA_BANK
 ;;;   * byte 5..?: individual NPCs, in quads ($2c..$2f in TryNpcSpawn)
 ;;;       - 2c is y-tile coordinate (yh,yt)
 ;;;       - 2d:7f is x-tile coordinate (xh,xt)
-;;;         2d:80 indicates a timer-based spawn
+;;;         2d:80 indicates a timer-based spawn (cf. $3e10e)
 ;;;       - 2e:40 is a half-tile fine x offset
 ;;;       - 2e:07 is a jump table index into NpcDataJump:
 ;;;           0: enemy
@@ -16631,7 +16719,7 @@ ObjectData
         $1ac0c              .word ($xxxx) ; $1ae05: 06
         $1ac0e              .word ($xxxx)
         $1ac10              .word ($xxxx) ; $1ae2f: 08
-        $1ac12              .word ($xxxx)
+        $1ac12              .word ($xxxx) ; $1ae2f: 09
         $1ac14              .word ($xxxx) ; $1ae24: 0a
         $1ac16              .word ($xxxx) ; $1afdb: 0b
         $1ac18              .word ($xxxx) ; $1b290: 0c
@@ -16908,8 +16996,8 @@ ObjectData_Object0A                                      ; Object 0a
         $1ae2d              .byte $xx
         $1ae2e              .byte $xx
 ;;; ----------------------------------------------------------------
-ObjectData_Object08                                      ; Object 08
-;;; ----------------------------------------------------------------
+ObjectData_SwordStab                                     ; Object 08
+ObjectData_Object09                                      ; Object 09
 ObjectData_Object27                                      ; Object 27
         $1ae2f              .byte $xx
         $1ae30              .byte $xx,$xx,$xx,$xx,$xx,$xx
@@ -17240,14 +17328,18 @@ ObjectData_FlameAttack                                   ; Object 1a
         $1b0c7              .byte $xx,$xx
         $1b0c9              .byte $xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_Object13                                      ; Object 13
+ObjectData_FireAttack2Child                              ; Object 13
+        ;; Level 2 fire attack spawns a single object (19) that in
+        ;; turn spawns 6-7 of these children.
         $1b0cd              .byte $xx
         $1b0ce              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b0d7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b0e0              .byte $xx,$xx
         $1b0e2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_Object17                                      ; Object 17
+ObjectData_FlameAttackChild                              ; Object 17
+        ;; Level 3 flame attack spawns a single object (1a) that in
+        ;; turn spawns 6-7 of these children.
         $1b0eb              .byte $xx
         $1b0ec              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b0f5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -17272,30 +17364,32 @@ ObjectData_ThunderAttack2                                ; Object 1e
         $1b136              .byte $xx,$xx
         $1b138              .byte $xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_Object1F                                      ; Object 1f
-        ;; Possibly the storm attack - read once during
+ObjectData_StormAttack                                   ; Object 1f
+        ;; Read once during the Level 3 storm attack
         $1b13c              .byte $xx
         $1b13d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b146              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b14f              .byte $xx,$xx
         $1b151              .byte $xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_Object1B                                      ; Object 1b
-        ;; Possibly the storm attack - read many times during
+ObjectData_StormAttackChild                              ; Object 1b
+        ;; Related to storm attack - read many times during duration
         $1b155              .byte $xx
         $1b156              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b15f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b168              .byte $xx,$xx
         $1b16a              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_Object33                                      ; Object 33
+ObjectData_CrystalisShot1                                ; Object 33
         $1b16c              .byte $xx
         $1b16d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b176              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b17f              .byte $xx,$xx
         $1b181              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_Object32                                      ; Object 32
+ObjectData_CrystalisShot2                                ; Object 32
+        ;; Note: shooting Crystalis spawns two different objects at once.
+        ;; I don't know which is which, but it's not too important.
         $1b184              .byte $xx
         $1b185              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b18e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -17346,7 +17440,8 @@ ObjectData_ObjectD5                                      ; Object d5
         $1b21f              .byte $xx
         $1b220              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_ObjectD6                                      ; Object d6
+ObjectData_BridgeFormation                               ; Object d6
+        ;; Animation for making a bridge
         $1b222              .byte $xx
         $1b223              .byte $xx,$xx,$xx
         $1b226              .byte $xx,$xx,$xx,$xx
@@ -17383,7 +17478,7 @@ ObjectData_Object21                                      ; Object 21
         $1b261              .byte $xx
         $1b262              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_Object22                                      ; Object 22
+ObjectData_RefreshMagicAnimation                         ; Object 22
 	$1b265              .byte $xx
         $1b266              .byte $xx,$xx,$xx
         $1b269              .byte $xx,$xx,$xx,$xx
@@ -17639,6 +17734,7 @@ ObjectData_RedCrab                                       ; Object 6d
         $1b56a              .byte $xx
 ;;; ----------------------------------------------------------------
 ObjectData_MedusaHead                                    ; Object 6e
+        ;; Red medusa-haired flyers in waterfall valley
         $1b56b              .byte $xx
         $1b56c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b575              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -17729,7 +17825,8 @@ ObjectData_Shadow1                                       ; Object 7b
         $1b692              .byte $xx
         $1b693              .byte $xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_Object4F                                      ; Object 4f
+ObjectData_Wraith                                        ; Object 4f
+        ;; This is what (both) shadows turn into when hit with magic
         $1b697              .byte $xx
         $1b698              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b6a1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -17807,6 +17904,8 @@ ObjectData_Salamander                                    ; Object 86
         $1b792              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 ObjectData_Sorcerer                                      ; Object 87
+        ;; These are the ones at the top of the two rooms in Styx,
+        ;; which fire a flurry of shots in all diretions
         $1b795              .byte $xx
         $1b796              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b79f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -17820,7 +17919,7 @@ ObjectData_Mado1                                         ; Object 88
         $1b7c0              .byte $xx,$xx,$xx,$xx,$xx
         $1b7c5              .byte $xx
 ;;; ----------------------------------------------------------------
-ObjectData_DragoniaKnight                                ; Object 89
+ObjectData_DraygoniaKnight                               ; Object 89
         $1b7c6              .byte $xx
         $1b7c7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b7d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -17876,7 +17975,8 @@ ObjectData_Tarantula                                     ; Object 91
         $1b881              .byte $xx,$xx,$xx
         $1b884              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_Object8F                                      ; Object 8f
+ObjectData_GuardianStatue                                ; Object 8f
+        ;; Shooting statue in Styx and fortress entrance
         $1b887              .byte $xx
         $1b888              .byte $xx,$xx,$xx
         $1b88b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -17897,7 +17997,8 @@ ObjectData_Mado2                                         ; Object 93
         $1b8c2              .byte $xx,$xx,$xx,$xx,$xx
         $1b8c7              .byte $xx
 ;;; ----------------------------------------------------------------
-ObjectData_Object94                                      ; Object 94
+ObjectData_PurpleGiantEye                                ; Object 94
+        ;; These are the ones in the pyramid
         $1b8c8              .byte $xx
         $1b8c9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b8d2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -17911,7 +18012,7 @@ ObjectData_BlackKnight                                   ; Object 95
         $1b8f3              .byte $xx,$xx,$xx
         $1b8f6              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_Object96                                      ; Object 96
+ObjectData_Scorpion                                      ; Object 96
         $1b8f9              .byte $xx
         $1b8fa              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b903              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -17940,6 +18041,7 @@ ObjectData_Mummy                                         ; Object 99
         $1b954              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 ObjectData_TombGuardian                                  ; Object 9a
+        ;; These are the funny thing that shoot curse beams
         $1b957              .byte $xx
         $1b958              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b961              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -18037,7 +18139,7 @@ ObjectData_ObjectA5                                      ; Object a5
         $1ba93              .byte $xx,$xx,$xx,$xx
         $1ba97              .byte $xx
 ;;; ----------------------------------------------------------------
-ObjectData_ObjectBE                                      ; Object be
+ObjectData_GroundSentry_Laser                            ; Object be
         $1ba98              .byte $xx
         $1ba99              .byte $xx,$xx,$xx
         $1ba9c              .byte $xx,$xx,$xx,$xx
@@ -18163,7 +18265,7 @@ ObjectData_DynaPodLaser                                  ; Object ba
         $1bbf8              .byte $xx,$xx,$xx
         $1bbfb              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_Sorcerer_Missle                               ; Object 3f
+ObjectData_Sorcerer_Missile                               ; Object 3f
         $1bbfd              .byte $xx
         $1bbfe              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1bc07              .byte $xx,$xx,$xx,$xx,$xx,$xx
@@ -18219,7 +18321,10 @@ ObjectData_Beam_Curse                                    ; Object e6
         $1bc9d              .byte $xx,$xx,$xx
         $1bca0              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_ObjectE7                                      ; Object e7
+ObjectData_Beam_MPDrain                                  ; Object e7
+        ;; This appears to be the web/missile that causes MP drain
+        ;; it's unclear how this differs from f1, f7, and f8 (the
+        ;; latter of which are identical to this).
         $1bca2              .byte $xx
         $1bca3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1bcac              .byte $xx,$xx,$xx,$xx,$xx,$xx
@@ -20869,8 +20974,15 @@ DataTable_1e17a_42
         $1e3e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1e3f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-        $1e400  xx:         xxx
-        $1e401  xx xx xx:   xxx $xxxx,x
+;;; This seems to be called on every frame of a boss room, before the boss fight
+;;; actually starts.  It's called from 1e488 (36314:60) when $4a0,x:7f == $60, and
+;;; then looks at $600,x for another jump table.
+;;; For the vampire (both times), A=0, $60d=0; for the giant bug, A=8, $60d=0.
+;;; For Gen Kelby, A=$a and $60d=0.  For Sabera, A=$17, $60e=0.  For mado, A=$1b.
+;;;   --> During the fight, $60d changes - seems to be the boss's current pattern.
+;;;       e.g. mado as a ball => $03, throwing starts => $05, hunkered down => $02
+        $1e400  xx:         xxx         ; A = 0, 8, $a, $f, $17, $1b, $21, $24, @27, $2b
+        $1e401  xx xx xx:   xxx $xxxx,x ; X = $d or $e
         $1e404  xx:         xxx
         $1e405  xx:         xxx
         $1e406  xx xx xx:   xxx $1e413,y
@@ -20879,59 +20991,61 @@ DataTable_1e17a_42
         $1e40e  xx xx:      xxx $xx
         $1e410  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
-JumpTable_1e413
-        $1e413              .word ($xxxx)
-        $1e415              .word ($xxxx)
-        $1e417              .word ($xxxx)
-        $1e419              .word ($xxxx)
-        $1e41b              .word ($xxxx)
-        $1e41d              .word ($xxxx)
-        $1e41f              .word ($xxxx)
-        $1e421              .word ($xxxx)
-        $1e423              .word ($xxxx)
-        $1e425              .word ($xxxx)
-        $1e427              .word ($xxxx)
-        $1e429              .word ($xxxx)
-        $1e42b              .word ($xxxx)
-        $1e42d              .word ($xxxx)
-        $1e42f              .word ($xxxx)
-        $1e431              .word ($xxxx)
-        $1e433              .word ($xxxx)
-        $1e435              .word ($xxxx)
-        $1e437              .word ($xxxx)
-        $1e439              .word ($xxxx)
-        $1e43b              .word ($xxxx)
-        $1e43d              .word ($xxxx)
-        $1e43f              .word ($xxxx)
-        $1e441              .word ($xxxx)
-        $1e443              .word ($xxxx)
+;;; Jump table for boss patterns
+;;; STRIP: word=$1c000
+BossPatternJump
+        $1e413              .word ($1e48b) ; 00 Vampire 0
+        $1e415              .word ($1e4c3) ; 01 Vampire 1
+        $1e417              .word ($1e4cc) ; 02 Vampire 2
+        $1e419              .word ($1e4d8) ; 03 Vampire 3
+        $1e41b              .word ($1e50b) ; 04 Vampire 4
+        $1e41d              .word ($1e54a) ; 05 Vampire 5
+        $1e41f              .word ($1e565) ; 06 Vampire 6
+        $1e421              .word ($1e581) ; 07 Vampire 7
+        $1e423              .word ($1e684) ; 08 Insect 0
+        $1e425              .word ($1e87e) ; 09 Insect 1
+        $1e427              .word ($1e971) ; 0a Kelbesque 0
+        $1e429              .word ($1e9c6) ; 0b Kelbesque 1
+        $1e42b              .word ($1ea46) ; 0c Kelbesque 2
+        $1e42d              .word ($1eaa7) ; 0d Kelbesque 3
+        $1e42f              .word ($1eae6) ; 0e Kelbesque 4
+        $1e431              .word ($1ebe4) ; 0f LimeTreeGuardian 0
+        $1e433              .word ($1ebfc) ; 10 LimeTreeGuardian 1
+        $1e435              .word ($1ec0f) ; 11 LimeTreeGuardian 2 ???
+        $1e437              .word ($1ec1a) ; 12 LimeTreeGuardian 3 ???
+        $1e439              .word ($1ec1e) ; 13 LimeTreeGuardian 4 ???
+        $1e43b              .word ($1ec31) ; 14 LimeTreeGuardian 5 ???
+        $1e43d              .word ($1ec41) ; 15 LimeTreeGuardian 6 ???
+        $1e43f              .word ($1ec5b) ; 16 LimeTreeGuardian 7 ???
+        $1e441              .word ($1ec8f) ; 17 Sabera 0
+        $1e443              .word ($1ecf5) ; 18 Sabera 1
         $1e445              .word ($xxxx)
         $1e447              .word ($xxxx)
-        $1e449              .word ($xxxx)
-        $1e44b              .word ($xxxx)
-        $1e44d              .word ($xxxx)
-        $1e44f              .word ($xxxx)
-        $1e451              .word ($xxxx)
-        $1e453              .word ($xxxx)
-        $1e455              .word ($xxxx)
-        $1e457              .word ($xxxx)
-        $1e459              .word ($xxxx)
-        $1e45b              .word ($xxxx)
-        $1e45d              .word ($xxxx)
-        $1e45f              .word ($xxxx)
-        $1e461              .word ($xxxx)
-        $1e463              .word ($xxxx)
-        $1e465              .word ($xxxx)
-        $1e467              .word ($xxxx)
-        $1e469              .word ($xxxx)
-        $1e46b              .word ($xxxx)
-        $1e46d              .word ($xxxx)
-        $1e46f              .word ($xxxx)
-        $1e471              .word ($xxxx)
-        $1e473              .word ($xxxx)
-        $1e475              .word ($xxxx)
+        $1e449              .word ($1ede8) ; 1b Mado 0
+        $1e44b              .word ($1ee35) ; 1c Mado 1
+        $1e44d              .word ($1ee43) ; 1d Mado 2
+        $1e44f              .word ($1ee5a) ; 1e Mado 3
+        $1e451              .word ($1eec9) ; 1f Mado 4
+        $1e453              .word ($1eeec) ; 20 Mado 5
+        $1e455              .word ($1ef5c) ; 21 Karmine 0
+        $1e457              .word ($1efad) ; 22 Karmine 1
+        $1e459              .word ($1f051) ; 23 Karmine 2
+        $1e45b              .word ($1f0c5) ; 24 Statues 0
+        $1e45d              .word ($1f0f4) ; 25 Statues 1
+        $1e45f              .word ($1f105) ; 26 Statues 2
+        $1e461              .word ($1f14f) ; 27 Draygon 0
+        $1e463              .word ($1f1a5) ; 28 Draygon 1
+        $1e465              .word ($1f215) ; 29 Draygon 2
+        $1e467              .word ($1f22c) ; 2a Draygon 3
+        $1e469              .word ($1f301) ; 2b Draygon2 0
+        $1e46b              .word ($1f3bc) ; 2c Draygon2 1
+        $1e46d              .word ($1f4dd) ; 2d Draygon2 2
+        $1e46f              .word ($1f524) ; 2e Draygon2 3
+        $1e471              .word ($1f552) ; 2f Draygon2 4
+        $1e473              .word ($1f587) ; 30 Draygon2 5
+        $1e475              .word ($1f67a) ; 31 Draygon2 6
 ;;; --------------------------------
-JumpTable_36314_60
+ObjectActionJump_60_Vampire
         $1e477  xx xx:      xxx #$xx
         $1e479  xx xx xx:   xxx $35b07
         $1e47c  xx xx xx:   xxx $xxxx,x
@@ -20941,7 +21055,7 @@ JumpTable_36314_60
         $1e486  xx xx:      xxx #$xx
         $1e488  xx xx xx:   xxx $1e400
 ;;; --------------------------------
-JumpTable_1e413_00
+BossPatternJump_00
         $1e48b  xx xx xx:   xxx $xxxx,x
         $1e48e  xx xx:      xxx $xx
         $1e490  xx xx xx:   xxx $1fb29
@@ -20965,20 +21079,20 @@ JumpTable_1e413_00
         $1e4bf  xx xx xx:   xxx $xxxx,x
         $1e4c2  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_01
+BossPatternJump_01
         $1e4c3  xx xx xx:   xxx $xxxx,x
         $1e4c6  xx xx:      xxx $xx
         $1e4c8  xx xx xx:   xxx $xxxx,x
         $1e4cb  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_03
+BossPatternJump_03
         $1e4cc  xx xx xx:   xxx $1e5d5
         $1e4cf  xx xx:      xxx #$xx
         $1e4d1  xx xx xx:   xxx $xxxx,x
         $1e4d4  xx xx xx:   xxx $xxxx,x
         $1e4d7  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_04
+BossPatternJump_04
         $1e4d8  xx xx xx:   xxx $xxxx,x
         $1e4db  xx xx xx:   xxx $xxxx,x
         $1e4de  xx xx:      xxx #$xx
@@ -20997,7 +21111,7 @@ JumpTable_1e413_04
 DataTable_1e4fb
         $1e4fb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_1e413_05
+BossPatternJump_05
         $1e50b  xx xx xx:   xxx $xxxx,x
         $1e50e  xx:         xxx
         $1e50f  xx xx:      xxx #$xx
@@ -21030,7 +21144,7 @@ JumpTable_1e413_05
         $1e547  xx xx:      xxx $xx,x
         $1e549  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_06
+BossPatternJump_06
         $1e54a  xx xx:      xxx #$xx
         $1e54c  xx xx xx:   xxx $xxxx,x
         $1e54f  xx xx xx:   xxx $xxxx,x
@@ -21042,7 +21156,7 @@ JumpTable_1e413_06
         $1e55f  xx xx xx:   xxx $xxxx,x
         $1e562  xx xx xx:   xxx $1e5a2
 ;;; --------------------------------
-JumpTable_1e413_07
+BossPatternJump_07
         $1e565  xx xx xx:   xxx $xxxx,x
         $1e568  xx xx xx:   xxx $xxxx,x
         $1e56b  xx xx:      xxx #$xx
@@ -21057,7 +21171,7 @@ JumpTable_1e413_07
         $1e57d  xx xx xx:   xxx $xxxx,x
         $1e580  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_08
+BossPatternJump_08
         $1e581  xx xx xx:   xxx $xxxx,x
         $1e584  xx xx:      xxx $xx
         $1e586  xx xx xx:   xxx $xxxx,x
@@ -21066,7 +21180,7 @@ JumpTable_1e413_08
         $1e58e  xx xx:      xxx #$xx
         $1e590  xx xx:      xxx $xx
         $1e592  xx xx:      xxx #$xx
-        $1e594  xx xx xx:   xxx $34409
+        $1e594  xx xx xx:   xxx VectorBetweenObjectsXY
         $1e597  xx xx:      xxx $xx
         $1e599  xx xx xx:   xxx $xxxx,x
         $1e59c  xx xx:      xxx #$xx
@@ -21112,7 +21226,7 @@ JumpTable_1e413_08
         $1e5eb  xx xx:      xxx $xx
         $1e5ed  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_61
+ObjectActionJump_61
         $1e5ee  xx xx:      xxx $xx
         $1e5f0  xx xx:      xxx #$xx
         $1e5f2  xx xx xx:   xxx $1d8a8
@@ -21180,7 +21294,7 @@ JumpTable_36314_61
         $1e672  xx xx:      xxx #$xx
         $1e674  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_62
+ObjectActionJump_62_GiantInsect
         $1e675  xx xx:      xxx #$xx
         $1e677  xx xx xx:   xxx $35b07
         $1e67a  xx xx:      xxx #$xx
@@ -21188,7 +21302,7 @@ JumpTable_36314_62
         $1e67f  xx xx:      xxx #$xx
         $1e681  xx xx xx:   xxx $1e400
 ;;; --------------------------------
-JumpTable_1e413_09
+BossPatternJump_09
         $1e684  xx xx:      xxx #$xx
         $1e686  xx xx xx:   xxx $xxxx
         $1e689  xx xx xx:   xxx $xxxx
@@ -21215,7 +21329,7 @@ JumpTable_1e413_09
         $1e6b8  xx xx:       xxx #$xx
         $1e6ba  xx xx xx:    xxx $xxxx
         $1e6bd  xx xx xx:    xxx $xxxx
-        $1e6c0  xx xx xx:    xxx $34c0e
+        $1e6c0  xx xx xx:    xxx LoadPalettesForLocation
         $1e6c3  xx xx:       xxx #$xx
         $1e6c5  xx xx xx:    xxx $1e73c
         $1e6c8  xx xx:       xxx #$xx
@@ -21325,7 +21439,7 @@ DataTable_1e77c
         $1e855  xx xx xx:   xxx $xxxx,x
         $1e858  xx xx:      xxx #$xx
         $1e85a  xx xx:      xxx $xx
-        $1e85c  xx xx xx:   xxx $357d7
+        $1e85c  xx xx xx:   xxx GenerateRandomNumber
         $1e85f  xx xx:      xxx $xx
         $1e861  xx xx:      xxx #$xx
         $1e863  xx xx:      xxx #$xx
@@ -21342,22 +21456,22 @@ DataTable_1e77c
         $1e87b  xx xx:      xxx $xx
         $1e87d  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_0a
+BossPatternJump_0a
         $1e87e  xx xx:      xxx #$xx
         $1e880  xx xx xx:   xxx $xxxx,x
-        $1e883  xx xx:      xxx #$xx
-        $1e885  xx xx:      xxx $xx
+        $1e883  xx xx:      xxx #SCREEN_MODE_NTBOSS
+        $1e885  xx xx:      xxx ScreenMode
         $1e887  xx xx xx:   xxx $xxxx,x
         $1e88a  xx xx:      xxx $xx
         $1e88c  xx xx xx:   xxx $xxxx,x
         $1e88f  xx xx:      xxx $xx
-        $1e891  xx xx xx:   xxx $357d7
+        $1e891  xx xx xx:   xxx GenerateRandomNumber
         $1e894  xx xx:      xxx $xx
         $1e896  xx xx:      xxx #$xx
         $1e898  xx:         xxx
         $1e899  xx xx:      xxx #$xx
         $1e89b  xx xx xx:   xxx $xxxx,x
-        $1e89e  xx xx xx:   xxx $357d7
+        $1e89e  xx xx xx:   xxx GenerateRandomNumber
         $1e8a1  xx xx:      xxx #$xx
         $1e8a3  xx xx:      xxx $xx
         $1e8a5  xx xx:      xxx #$xx
@@ -21447,7 +21561,7 @@ JumpTable_1e413_0a
         $1e959  xx xx xx:   xxx $xxxx
         $1e95c  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_63
+ObjectActionJump_63_GeneralKelbesque
         $1e95d  xx xx xx:   xxx $xxxx,x
         $1e960  xx xx:      xxx $xx
         $1e962  xx xx:      xxx #$xx
@@ -21457,7 +21571,7 @@ JumpTable_36314_63
         $1e96c  xx xx:      xxx #$xx
         $1e96e  xx xx xx:   xxx $1e400
 ;;; --------------------------------
-JumpTable_1e413_0b
+BossPatternJump_0b
         $1e971  xx xx xx:   xxx $xxxx,x
         $1e974  xx xx:      xxx $xx
         $1e976  xx xx:      xxx #$xx
@@ -21485,8 +21599,8 @@ JumpTable_1e413_0b
         $1e9ad  xx xx:      xxx $xx
         $1e9af  xx xx:      xxx #$xx
         $1e9b1  xx xx xx:   xxx $xxxx
-        $1e9b4  xx xx:      xxx #$xx
-        $1e9b6  xx xx:      xxx $xx
+        $1e9b4  xx xx:      xxx #GAME_MODE_STATUS_MSG
+        $1e9b6  xx xx:      xxx GameMode
         $1e9b8  xx xx:      xxx #$xx
         $1e9ba  xx xx xx:   xxx $xxxx,x
         $1e9bd  xx xx:      xxx #$xx
@@ -21494,13 +21608,13 @@ JumpTable_1e413_0b
         $1e9c2  xx xx xx:   xxx $xxxx,x
         $1e9c5  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_0c
+BossPatternJump_0c
         $1e9c6  xx xx xx:   xxx $xxxx,x
         $1e9c9  xx xx:      xxx $xx
         $1e9cb  xx xx:      xxx $xx
         $1e9cd  xx xx:      xxx #$xx
         $1e9cf  xx xx:      xxx $xx
-        $1e9d1  xx xx xx:   xxx $357d7
+        $1e9d1  xx xx xx:   xxx GenerateRandomNumber
         $1e9d4  xx xx:      xxx $xx
         $1e9d6  xx xx:      xxx #$xx
         $1e9d8  xx xx xx:   xxx $xxxx,x
@@ -21512,7 +21626,7 @@ JumpTable_1e413_0c
         $1e9e7  xx xx:      xxx #$xx
         $1e9e9  xx xx:      xxx $xx
         $1e9eb  xx xx:      xxx #$xx
-        $1e9ed  xx xx xx:   xxx $34409
+        $1e9ed  xx xx xx:   xxx VectorBetweenObjectsXY
         $1e9f0  xx xx:      xxx $xx
         $1e9f2  xx:         xxx
         $1e9f3  xx xx xx:   xxx $xxxx,x
@@ -21533,7 +21647,7 @@ JumpTable_1e413_0c
         $1ea16  xx xx xx:   xxx $1ea89
 ;;; --------------------------------
         $1ea19  xx xx:      xxx #$xx
-        $1ea1b  xx xx xx:   xxx $34409
+        $1ea1b  xx xx xx:   xxx VectorBetweenObjectsXY
         $1ea1e  xx xx:      xxx $xx
         $1ea20  xx xx xx:   xxx $xxxx,x
         $1ea23  xx xx:      xxx $xx
@@ -21551,7 +21665,7 @@ JumpTable_1e413_0c
         $1ea40  xx xx xx:   xxx AddDisplacementVectorLong
         $1ea43  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
 ;;; --------------------------------
-JumpTable_1e413_0d
+BossPatternJump_0d
         $1ea46  xx xx xx:   xxx $xxxx,x
         $1ea49  xx xx xx:   xxx $xxxx,x
         $1ea4c  xx xx:      xxx $xx
@@ -21565,7 +21679,7 @@ JumpTable_1e413_0d
         $1ea5d  xx xx:      xxx #$xx
         $1ea5f  xx xx:      xxx $xx
         $1ea61  xx xx:      xxx #$xx
-        $1ea63  xx xx xx:   xxx $34409
+        $1ea63  xx xx xx:   xxx VectorBetweenObjectsXY
         $1ea66  xx xx:      xxx $xx
         $1ea68  xx:         xxx
         $1ea69  xx xx:      xxx #$xx
@@ -21583,7 +21697,7 @@ JumpTable_1e413_0d
         $1ea82  xx xx:      xxx $xx
         $1ea84  xx xx:      xxx #$xx
         $1ea86  xx xx xx:   xxx $xxxx,x
-        $1ea89  xx xx xx:   xxx $357d7
+        $1ea89  xx xx xx:   xxx GenerateRandomNumber
         $1ea8c  xx:         xxx
         $1ea8d  xx xx xx:   xxx $1ea9f,y
         $1ea90  xx xx xx:   xxx $xxxx,x
@@ -21593,7 +21707,7 @@ JumpTable_1e413_0d
 DataTable_1ea97 
         $1ea97              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_1e413_0e
+BossPatternJump_0e
         $1eaa7  xx xx xx:   xxx $xxxx,x
         $1eaaa  xx xx:      xxx $xx
         $1eaac  xx xx xx:   xxx $xxxx,x
@@ -21625,7 +21739,7 @@ JumpTable_1e413_0e
 ;;; --------------------------------
         $1eae5  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_0f
+BossPatternJump_0f
         $1eae6  xx xx:      xxx #$xx
         $1eae8  xx xx xx:   xxx $xxxx,x
         $1eaeb  xx xx xx:   xxx $xxxx,x
@@ -21646,7 +21760,7 @@ JumpTable_1e413_0f
         $1eb0d  xx xx:      xxx #$xx
         $1eb0f  xx xx:      xxx $xx
         $1eb11  xx xx:      xxx #$xx
-        $1eb13  xx xx xx:   xxx $34409
+        $1eb13  xx xx xx:   xxx VectorBetweenObjectsXY
         $1eb16  xx xx:      xxx $xx
         $1eb18  xx:         xxx
         $1eb19  xx xx xx:   xxx $1eb25
@@ -21670,15 +21784,15 @@ JumpTable_1e413_0f
         $1eb3a  xx xx xx:   xxx $xxxx,x
         $1eb3d  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_64
+ObjectActionJump_64
         $1eb3e  xx xx xx:   xxx $xxxx,x
         $1eb41  xx xx:      xxx $xx
         $1eb43  xx xx xx:   xxx $xxxx,x
-        $1eb46  xx xx xx:   xxx $357d7
+        $1eb46  xx xx xx:   xxx GenerateRandomNumber
         $1eb49  xx xx:      xxx $xx
         $1eb4b  xx xx:      xxx $xx
         $1eb4d  xx:         xxx
-        $1eb4e  xx xx xx:    xxx $357d7
+        $1eb4e  xx xx xx:    xxx GenerateRandomNumber
         $1eb51  xx xx xx:    xxx $3c418
         $1eb54  xx xx:       xxx $xx
         $1eb56  xx:          xxx
@@ -21734,7 +21848,7 @@ JumpTable_36314_64
         $1ebb9  xx xx:      xxx #$xx
         $1ebbb  xx xx xx:   xxx $xxxx,x
         $1ebbe  xx xx:      xxx #$xx
-        $1ebc0  xx xx xx:   xxx $34409
+        $1ebc0  xx xx xx:   xxx VectorBetweenObjectsXY
         $1ebc3  xx xx:      xxx $xx
         $1ebc5  xx:         xxx
         $1ebc6  xx:         xxx
@@ -21750,13 +21864,13 @@ JumpTable_36314_64
 DataTable_1ebd6 
         $1ebd6              .byte $xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_36314_65
+ObjectActionJump_65_LimeTreeGuardian
         $1ebda  xx xx:      xxx #$xx
         $1ebdc  xx xx xx:   xxx $xxxx
         $1ebdf  xx xx:      xxx #$xx
         $1ebe1  xx xx xx:   xxx $1e400
 ;;; --------------------------------
-JumpTable_1e413_10
+BossPatternJump_10
         $1ebe4  xx xx:      xxx #$xx
         $1ebe6  xx xx xx:   xxx $xxxx,x
         $1ebe9  xx xx xx:   xxx $xxxx,x
@@ -21768,7 +21882,7 @@ JumpTable_1e413_10
         $1ebf8  xx xx xx:   xxx $xxxx,x
         $1ebfb  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_11
+BossPatternJump_11
         $1ebfc  xx xx xx:   xxx $xxxx,x
         $1ebff  xx xx:      xxx $xx
         $1ec01  xx xx xx:   xxx $xxxx,x
@@ -21778,18 +21892,18 @@ JumpTable_1e413_11
         $1ec0b  xx xx xx:   xxx $xxxx,x
         $1ec0e  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_12
-        $1ec0f  xx xx:      xxx #$xx
-        $1ec11  xx xx:      xxx $xx
+BossPatternJump_12
+        $1ec0f  xx xx:      xxx #GAME_MODE_DIALOG
+        $1ec11  xx xx:      xxx GameMode
         $1ec13  xx xx xx:   xxx $xxxx
         $1ec16  xx xx xx:   xxx $xxxx,x
         $1ec19  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_13
+BossPatternJump_13
         $1ec1a  xx xx xx:   xxx $xxxx,x
         $1ec1d  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_14
+BossPatternJump_14
         $1ec1e  xx xx:      xxx #$xx
         $1ec20  xx xx xx:   xxx $xxxx,x
         $1ec23  xx xx:      xxx #$xx
@@ -21799,7 +21913,7 @@ JumpTable_1e413_14
         $1ec2d  xx xx xx:   xxx $xxxx,x
         $1ec30  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_15
+BossPatternJump_15
         $1ec31  xx xx xx:   xxx $xxxx,x
         $1ec34  xx xx xx:   xxx $xxxx,x
         $1ec37  xx xx:      xxx #$xx
@@ -21808,7 +21922,7 @@ JumpTable_1e413_15
         $1ec3d  xx xx xx:   xxx $xxxx,x
         $1ec40  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_16
+BossPatternJump_16
         $1ec41  xx xx:      xxx #$xx
         $1ec43  xx xx xx:   xxx $xxxx,x
         $1ec46  xx xx:      xxx #$xx
@@ -21821,7 +21935,7 @@ JumpTable_1e413_16
         $1ec57  xx xx xx:   xxx $xxxx,x
         $1ec5a  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_17
+BossPatternJump_17
         $1ec5b  xx xx xx:   xxx $xxxx,x
         $1ec5e  xx xx:      xxx $xx
         $1ec60  xx xx:      xxx $xx
@@ -21838,7 +21952,7 @@ JumpTable_1e413_17
         $1ec77  xx xx xx:   xxx $xxxx,x
         $1ec7a  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_66
+ObjectActionJump_66_Sabera
         $1ec7b  xx xx xx:   xxx $xxxx,x
         $1ec7e  xx xx:      xxx $xx
         $1ec80  xx xx:      xxx #$xx
@@ -21848,7 +21962,7 @@ JumpTable_36314_66
         $1ec8a  xx xx:      xxx #$xx
         $1ec8c  xx xx xx:   xxx $1e400
 ;;; --------------------------------
-JumpTable_1e413_18
+BossPatternJump_18
         $1ec8f  xx xx xx:   xxx $xxxx,x
         $1ec92  xx xx:      xxx $xx
         $1ec94  xx xx:      xxx #$xx
@@ -21888,11 +22002,11 @@ JumpTable_1e413_18
         $1ece8  xx xx xx:   xxx $xxxx
         $1eceb  xx xx:      xxx #$xx
         $1eced  xx xx xx:   xxx $xxxx
-        $1ecf0  xx xx:      xxx #$xx
-        $1ecf2  xx xx:      xxx $xx
+        $1ecf0  xx xx:      xxx #GAME_MODE_STATUS_MSG
+        $1ecf2  xx xx:      xxx GameMode
         $1ecf4  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_19
+BossPatternJump_19
         $1ecf5  xx xx:      xxx $xx
         $1ecf7  xx xx:      xxx #$xx
         $1ecf9  xx xx:      xxx $xx
@@ -21918,7 +22032,7 @@ JumpTable_1e413_19
         $1ed22  xx xx:       xxx #$xx
         $1ed24  xx xx:       xxx $xx
         $1ed26  xx xx:       xxx #$xx
-        $1ed28  xx xx xx:    xxx $34409
+        $1ed28  xx xx xx:    xxx VectorBetweenObjectsXY
         $1ed2b  xx:         xxx
         $1ed2c  xx xx:      xxx $xx
         $1ed2e  xx xx:      xxx $xx
@@ -21935,10 +22049,10 @@ JumpTable_1e413_19
         $1ed41  xx xx xx:   xxx $xxxx,x
         $1ed44  xx xx:      xxx #$xx
         $1ed46  xx xx xx:   xxx $xxxx,x
-        $1ed49  xx xx xx:   xxx $357d7
+        $1ed49  xx xx xx:   xxx GenerateRandomNumber
         $1ed4c  xx xx:      xxx $xx
         $1ed4e  xx xx:      xxx #$xx
-        $1ed50  xx xx xx:   xxx $34409
+        $1ed50  xx xx xx:   xxx VectorBetweenObjectsXY
         $1ed53  xx xx:      xxx #$xx
         $1ed55  xx xx xx:   xxx $xxxx,x
         $1ed58  xx xx:      xxx $xx
@@ -21996,7 +22110,7 @@ DataTable_1ed82
         $1edce  xx xx xx:   xxx $xxxx,x
         $1edd1  xx xx xx:   xxx $3572d
 ;;; --------------------------------
-JumpTable_36314_67
+ObjectActionJump_67_Mado
         $1edd4  xx xx xx:   xxx $xxxx,x
         $1edd7  xx xx:      xxx $xx
         $1edd9  xx xx:      xxx #$xx
@@ -22006,7 +22120,7 @@ JumpTable_36314_67
         $1ede3  xx xx:      xxx #$xx
         $1ede5  xx xx xx:   xxx $1e400
 ;;; --------------------------------
-JumpTable_1e413_1c
+BossPatternJump_1c
         $1ede8  xx xx xx:   xxx $xxxx,x
         $1edeb  xx xx:      xxx $xx
         $1eded  xx xx xx:   xxx $1fb29
@@ -22036,11 +22150,11 @@ JumpTable_1e413_1c
         $1ee28  xx xx xx:   xxx $xxxx
         $1ee2b  xx xx:      xxx #$xx
         $1ee2d  xx xx xx:   xxx $xxxx
-        $1ee30  xx xx:      xxx #$xx
-        $1ee32  xx xx:      xxx $xx
+        $1ee30  xx xx:      xxx #GAME_MODE_STATUS_MSG
+        $1ee32  xx xx:      xxx GameMode
         $1ee34  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_1d
+BossPatternJump_1d
         $1ee35  xx xx xx:   xxx $xxxx,x
         $1ee38  xx xx:      xxx #$xx
         $1ee3a  xx xx xx:   xxx $xxxx,x
@@ -22048,7 +22162,7 @@ JumpTable_1e413_1d
         $1ee3f  xx xx xx:   xxx $xxxx,x
         $1ee42  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_1e
+BossPatternJump_1e
         $1ee43  xx xx xx:   xxx $xxxx,x
         $1ee46  xx xx:      xxx $xx
         $1ee48  xx xx xx:   xxx $xxxx,x
@@ -22060,7 +22174,7 @@ JumpTable_1e413_1e
         $1ee56  xx xx xx:   xxx $xxxx,x
         $1ee59  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_1f
+BossPatternJump_1f
         $1ee5a  xx xx xx:   xxx $xxxx,x
         $1ee5d  xx xx xx:   xxx $xxxx,x
         $1ee60  xx xx xx:   xxx $xxxx,x
@@ -22084,7 +22198,7 @@ JumpTable_1e413_1f
         $1ee86  xx xx xx:   xxx StartAudioTrack
         $1ee89  xx xx:      xxx #$xx
         $1ee8b  xx xx xx:   xxx $xxxx
-        $1ee8e  xx xx xx:   xxx $357d7
+        $1ee8e  xx xx xx:   xxx GenerateRandomNumber
         $1ee91  xx:         xxx
         $1ee92  xx xx:      xxx $xx
         $1ee94  xx:         xxx
@@ -22110,7 +22224,7 @@ JumpTable_1e413_1f
         $1eec3  xx xx xx:   xxx AddDisplacementVectorShort
         $1eec6  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
 ;;; --------------------------------
-JumpTable_1e413_20
+BossPatternJump_20
         $1eec9  xx xx xx:   xxx $xxxx,x
         $1eecc  xx xx xx:   xxx $xxxx,x
         $1eecf  xx xx:      xxx #$xx
@@ -22119,7 +22233,7 @@ JumpTable_1e413_20
         $1eed6  xx xx:      xxx #$xx
         $1eed8  xx xx xx:   xxx $xxxx,x
         $1eedb  xx xx:      xxx #$xx
-        $1eedd  xx xx xx:   xxx $34409
+        $1eedd  xx xx xx:   xxx VectorBetweenObjectsXY
         $1eee0  xx xx:      xxx $xx
         $1eee2  xx:         xxx
         $1eee3  xx xx xx:   xxx $xxxx,x
@@ -22127,7 +22241,7 @@ JumpTable_1e413_20
         $1eee8  xx xx xx:   xxx $xxxx,x
         $1eeeb  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_21
+BossPatternJump_21
         $1eeec  xx xx xx:   xxx $xxxx,x
         $1eeef  xx xx:      xxx $xx
         $1eef1  xx xx xx:   xxx $xxxx,x
@@ -22165,7 +22279,7 @@ DataTable_1ef28
         $1ef28              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1ef38              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_36314_68
+ObjectActionJump_68_Karmine
         $1ef48  xx xx xx:   xxx $xxxx,x
         $1ef4b  xx xx:      xxx $xx
         $1ef4d  xx xx:      xxx #$xx
@@ -22175,7 +22289,7 @@ JumpTable_36314_68
         $1ef57  xx xx:      xxx #$xx
         $1ef59  xx xx xx:   xxx $1e400
 ;;; --------------------------------
-JumpTable_1e413_22
+BossPatternJump_22
         $1ef5c  xx xx xx:   xxx $xxxx,x
         $1ef5f  xx xx:      xxx $xx
         $1ef61  xx xx:      xxx #$xx
@@ -22198,8 +22312,8 @@ JumpTable_1e413_22
         $1ef8c  xx xx xx:   xxx $xxxx
         $1ef8f  xx xx:      xxx #$xx
         $1ef91  xx xx xx:   xxx $xxxx
-        $1ef94  xx xx:      xxx #$xx
-        $1ef96  xx xx:      xxx $xx
+        $1ef94  xx xx:      xxx #GAME_MODE_STATUS_MSG
+        $1ef96  xx xx:      xxx GameMode
         $1ef98  xx xx:      xxx #$xx
         $1ef9a  xx xx xx:   xxx $xxxx,x
         $1ef9d  xx xx:      xxx #$xx
@@ -22210,7 +22324,7 @@ JumpTable_1e413_22
         $1efa9  xx xx xx:   xxx $xxxx,x
         $1efac  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_23
+BossPatternJump_23
         $1efad  xx xx:      xxx #$xx
         $1efaf  xx xx xx:   xxx $xxxx,x
         $1efb2  xx xx:      xxx #$xx
@@ -22229,7 +22343,7 @@ JumpTable_1e413_23
         $1efcd  xx xx xx:   xxx $xxxx,x
         $1efd0  xx xx:      xxx #$xx
         $1efd2  xx xx xx:   xxx $xxxx,x
-        $1efd5  xx xx xx:   xxx $357d7
+        $1efd5  xx xx xx:   xxx GenerateRandomNumber
         $1efd8  xx xx xx:   xxx $xxxx,x
         $1efdb  xx:         xxx
 ;;; --------------------------------
@@ -22265,7 +22379,7 @@ JumpTable_1e413_23
         $1f00f  xx xx:      xxx $xx
         $1f011  xx xx xx:   xxx $1e602
         $1f014  xx xx:      xxx #$xx
-        $1f016  xx xx xx:   xxx $34409
+        $1f016  xx xx xx:   xxx VectorBetweenObjectsXY
         $1f019  xx xx xx:   xxx $xxxx,x
         $1f01c  xx xx:      xxx $xx
         $1f01e  xx xx:      xxx $xx
@@ -22280,7 +22394,7 @@ DataTable_1f02b
         $1f03b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1f04b              .byte $xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_1e413_24
+BossPatternJump_24
         $1f051  xx xx xx:   xxx $xxxx,x
         $1f054  xx xx:      xxx #$xx
         $1f056  xx xx:      xxx $xx
@@ -22316,7 +22430,7 @@ JumpTable_1e413_24
         $1f095  xx xx:      xxx #$xx
         $1f097  xx xx:      xxx $xx
         $1f099  xx xx:      xxx #$xx
-        $1f09b  xx xx xx:   xxx $34409
+        $1f09b  xx xx xx:   xxx VectorBetweenObjectsXY
         $1f09e  xx xx:      xxx $xx
         $1f0a0  xx xx:      xxx #$xx
         $1f0a2  xx xx xx:   xxx $3572d
@@ -22329,7 +22443,7 @@ JumpTable_1e413_24
         $1f0b2  xx xx xx:   xxx $xxxx,x
         $1f0b5  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_69
+ObjectActionJump_69_Statues
         $1f0b6  xx xx xx:   xxx $xxxx,x
         $1f0b9  xx xx:      xxx $xx
         $1f0bb  xx xx:      xxx #$xx
@@ -22337,7 +22451,7 @@ JumpTable_36314_69
         $1f0c0  xx xx:      xxx #$xx
         $1f0c2  xx xx xx:   xxx $1e400
 ;;; --------------------------------
-JumpTable_1e413_25
+BossPatternJump_25
         $1f0c5  xx xx xx:   xxx $xxxx,x
         $1f0c8  xx xx:      xxx $xx
         $1f0ca  xx xx:      xxx #$xx
@@ -22355,11 +22469,11 @@ JumpTable_1e413_25
         $1f0e7  xx xx xx:   xxx $xxxx
         $1f0ea  xx xx:      xxx #$xx
         $1f0ec  xx xx xx:   xxx $xxxx
-        $1f0ef  xx xx:      xxx #$xx
-        $1f0f1  xx xx:      xxx $xx
+        $1f0ef  xx xx:      xxx #GAME_MODE_STATUS_MSG
+        $1f0f1  xx xx:      xxx GameMode
         $1f0f3  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_26
+BossPatternJump_26
         $1f0f4  xx xx xx:   xxx $xxxx,x
         $1f0f7  xx xx:      xxx $xx
         $1f0f9  xx xx:      xxx $xx,x
@@ -22369,7 +22483,7 @@ JumpTable_1e413_26
         $1f101  xx xx xx:   xxx $xxxx,x
         $1f104  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_27
+BossPatternJump_27
         $1f105  xx xx xx:   xxx $xxxx,x
         $1f108  xx:         xxx
         $1f109  xx xx:      xxx #$xx
@@ -22377,9 +22491,9 @@ JumpTable_1e413_27
         $1f10e  xx xx:      xxx #$xx
         $1f110  xx xx:      xxx $xx
         $1f112  xx xx:      xxx #$xx
-        $1f114  xx xx xx:   xxx $34409
+        $1f114  xx xx xx:   xxx VectorBetweenObjectsXY
         $1f117  xx xx:      xxx $xx
-        $1f119  xx xx xx:   xxx $357d7
+        $1f119  xx xx xx:   xxx GenerateRandomNumber
         $1f11c  xx xx:      xxx #$xx
         $1f11e  xx:         xxx
         $1f11f  xx xx xx:   xxx $1f12c,y
@@ -22392,7 +22506,7 @@ JumpTable_1e413_27
 DataTable_1f12c
         $1f12c              .byte $xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_36314_6a
+ObjectActionJump_6a_Draygon
         $1f130  xx xx:      xxx #$xx
         $1f132  xx xx xx:   xxx $35b07
         $1f135  xx xx:      xxx $xx
@@ -22407,7 +22521,7 @@ JumpTable_36314_6a
         $1f14a  xx xx:      xxx #$xx
         $1f14c  xx xx xx:   xxx $1e400
 ;;; --------------------------------
-JumpTable_1e413_28
+BossPatternJump_28
         $1f14f  xx xx xx:   xxx $xxxx,x
         $1f152  xx xx:      xxx $xx
         $1f154  xx xx:      xxx #$xx
@@ -22440,12 +22554,12 @@ JumpTable_1e413_28
         $1f195  xx xx xx:   xxx $xxxx
         $1f198  xx xx:      xxx #$xx
         $1f19a  xx xx xx:   xxx $xxxx
-        $1f19d  xx xx:      xxx #$xx
-        $1f19f  xx xx:      xxx $xx
+        $1f19d  xx xx:      xxx #GAME_MODE_STATUS_MSG
+        $1f19f  xx xx:      xxx GameMode
         $1f1a1  xx xx xx:   xxx $xxxx,x
         $1f1a4  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_29
+BossPatternJump_29
         $1f1a5  xx xx xx:   xxx $xxxx,x
         $1f1a8  xx xx:      xxx $xx
         $1f1aa  xx xx xx:   xxx $1f278
@@ -22462,7 +22576,7 @@ JumpTable_1e413_29
         $1f1c4  xx xx:      xxx $xx
         $1f1c6  xx xx:      xxx #$xx
         $1f1c8  xx xx:      xxx $xx
-        $1f1ca  xx xx xx:   xxx $357d7
+        $1f1ca  xx xx xx:   xxx GenerateRandomNumber
         $1f1cd  xx:         xxx
         $1f1ce  xx xx:      xxx $xx
         $1f1d0  xx xx:      xxx #$xx
@@ -22499,7 +22613,7 @@ JumpTable_1e413_29
         $1f20f  xx xx xx:   xxx AddDisplacementVectorShort
         $1f212  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
 ;;; --------------------------------
-JumpTable_1e413_2a
+BossPatternJump_2a
         $1f215  xx xx:      xxx $xx,x
         $1f217  xx xx:      xxx #$xx
         $1f219  xx xx:      xxx $xx
@@ -22512,7 +22626,7 @@ JumpTable_1e413_2a
         $1f226  xx xx xx:   xxx $xxxx,x
         $1f229  xx xx xx:   xxx $1f203
 ;;; --------------------------------
-JumpTable_1e413_2b
+BossPatternJump_2b
         $1f22c  xx xx xx:   xxx $xxxx,x
         $1f22f  xx xx:      xxx #$xx
         $1f231  xx xx xx:   xxx $xxxx,x
@@ -22535,7 +22649,7 @@ JumpTable_1e413_2b
         $1f256  xx xx:      xxx $xx
         $1f258  xx xx:      xxx #$xx
         $1f25a  xx xx xx:   xxx $xxxx,x
-        $1f25d  xx xx xx:   xxx $357d7
+        $1f25d  xx xx xx:   xxx GenerateRandomNumber
         $1f260  xx:         xxx
         $1f261  xx xx:      xxx #$xx
         $1f263  xx xx:      xxx $xx
@@ -22595,7 +22709,7 @@ JumpTable_1e413_2b
 DataTable_1f2d2 
         $1f2d2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_36314_6b
+ObjectActionJump_6b_Draygon2
         $1f2da  xx xx:      xxx #$xx
         $1f2dc  xx xx xx:   xxx $35b07
         $1f2df  xx xx xx:   xxx $xxxx,x
@@ -22605,8 +22719,8 @@ JumpTable_36314_6b
         $1f2e9  xx xx:      xxx $xx
         $1f2eb  xx xx:      xxx #$xx
         $1f2ed  xx xx:      xxx $xx
-        $1f2ef  xx xx:      xxx #$xx
-        $1f2f1  xx xx:      xxx $xx
+        $1f2ef  xx xx:      xxx #SCREEN_MODE_NTBOSS
+        $1f2f1  xx xx:      xxx ScreenMode
         $1f2f3  xx xx:      xxx #$xx
         $1f2f5  xx xx xx:   xxx $1e400
 ;;; --------------------------------
@@ -22616,7 +22730,7 @@ JumpTable_36314_6b
         $1f2fe  xx xx:      xxx $xx
         $1f300  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_2c
+BossPatternJump_2c
         $1f301  xx xx:      xxx $xx
         $1f303  xx xx xx:   xxx $3ff8c
         $1f306  xx xx:      xxx #$xx
@@ -22697,7 +22811,7 @@ JumpTable_1e413_2c
         $1f3b8  xx xx xx:   xxx $xxxx
         $1f3bb  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_2d
+BossPatternJump_2d
         $1f3bc  xx xx:      xxx #$xx
         $1f3be  xx xx xx:   xxx $xxxx,x
         $1f3c1  xx xx xx:   xxx $xxxx,x
@@ -22707,7 +22821,7 @@ JumpTable_1e413_2d
         $1f3cc  xx xx xx:   xxx $xxxx,x
         $1f3cf  xx xx:      xxx #$xx
         $1f3d1  xx xx:      xxx $xx
-        $1f3d3  xx xx xx:   xxx $357d7
+        $1f3d3  xx xx xx:   xxx GenerateRandomNumber
         $1f3d6  xx:         xxx
         $1f3d7  xx xx:      xxx $xx
         $1f3d9  xx xx:      xxx #$xx
@@ -22768,7 +22882,7 @@ JumpTable_1e413_2d
         $1f44f  xx xx xx:   xxx $xxxx,x
         $1f452  xx xx:      xxx #$xx
         $1f454  xx xx:      xxx $xx
-        $1f456  xx xx xx:   xxx $357d7
+        $1f456  xx xx xx:   xxx GenerateRandomNumber
         $1f459  xx:         xxx
         $1f45a  xx xx:      xxx #$xx
         $1f45c  xx xx:      xxx #$xx
@@ -22798,12 +22912,12 @@ DataTable_1f48b
         $1f48b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
         $1f493  xx xx xx:   xxx $1f71d
-        $1f496  xx xx xx:   xxx $357d7
+        $1f496  xx xx xx:   xxx GenerateRandomNumber
         $1f499  xx:         xxx
         $1f49a  xx xx:      xxx $xx
         $1f49c  xx xx:      xxx #$xx
         $1f49e  xx xx xx:   xxx $xxxx,x
-        $1f4a1  xx xx xx:   xxx $357d7
+        $1f4a1  xx xx xx:   xxx GenerateRandomNumber
         $1f4a4  xx:         xxx
         $1f4a5  xx xx xx:   xxx $1f4bb,y
         $1f4a8  xx xx xx:   xxx $xxxx,x
@@ -22831,7 +22945,7 @@ DataTable_1f4bb
         $1f4d9  xx xx xx:   xxx $xxxx,x
         $1f4dc  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_2e
+BossPatternJump_2e
         $1f4dd  xx xx xx:   xxx $xxxx
         $1f4e0  xx xx xx:   xxx $xxxx,x
         $1f4e3  xx xx xx:   xxx $xxxx,x
@@ -22845,7 +22959,7 @@ JumpTable_1e413_2e
 ;;; --------------------------------
         $1f4f7  xx xx:      xxx #$xx
         $1f4f9  xx xx xx:   xxx $xxxx,x
-        $1f4fc  xx xx xx:   xxx $357d7
+        $1f4fc  xx xx xx:   xxx GenerateRandomNumber
         $1f4ff  xx:         xxx
         $1f500  xx xx xx:   xxx $1f51c,y
         $1f503  xx xx xx:   xxx $xxxx,x
@@ -22857,7 +22971,7 @@ DataTable_1f50c
         $1f50c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1f51c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_1e413_2f
+BossPatternJump_2f
         $1f524  xx xx xx:   xxx $xxxx
         $1f527  xx xx xx:   xxx $xxxx,x
         $1f52a  xx xx xx:   xxx $xxxx,x
@@ -22873,13 +22987,13 @@ JumpTable_1e413_2f
         $1f541  xx xx:      xxx #$xx
         $1f543  xx xx xx:   xxx $xxxx,x
         $1f546  xx xx:      xxx #$xx
-        $1f548  xx xx xx:   xxx $34409
+        $1f548  xx xx xx:   xxx VectorBetweenObjectsXY
         $1f54b  xx xx:      xxx $xx
         $1f54d  xx:         xxx
         $1f54e  xx xx xx:   xxx $xxxx,x
         $1f551  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_30
+BossPatternJump_30
         $1f552  xx xx xx:   xxx $xxxx,x
         $1f555  xx xx:      xxx #$xx
         $1f557  xx xx:      xxx $xx
@@ -22889,7 +23003,7 @@ JumpTable_1e413_30
         $1f562  xx xx:      xxx #$xx
         $1f564  xx xx:      xxx $xx
         $1f566  xx xx:      xxx #$xx
-        $1f568  xx xx xx:   xxx $34409
+        $1f568  xx xx xx:   xxx VectorBetweenObjectsXY
         $1f56b  xx xx:      xxx $xx
         $1f56d  xx xx:      xxx #$xx
         $1f56f  xx xx xx:   xxx $3572d
@@ -22904,7 +23018,7 @@ JumpTable_1e413_30
         $1f583  xx xx xx:   xxx $xxxx,x
         $1f586  xx:         xxx
 ;;; --------------------------------
-JumpTable_1e413_31
+BossPatternJump_31
         $1f587  xx xx:      xxx #$xx
         $1f589  xx xx xx:   xxx $1f618
         $1f58c  xx xx xx:   xxx $xxxx,x
@@ -22912,7 +23026,7 @@ JumpTable_1e413_31
         $1f591  xx xx xx:   xxx $1f4c8
         $1f594  xx xx xx:   xxx $xxxx,x
         $1f597  xx xx:      xxx $xx
-        $1f599  xx xx xx:   xxx $357d7
+        $1f599  xx xx xx:   xxx GenerateRandomNumber
         $1f59c  xx:         xxx
         $1f59d  xx xx:      xxx #$xx
         $1f59f  xx xx:      xxx $xx
@@ -23019,7 +23133,7 @@ DataTable_1f5f9
 DataTable_1f672 
         $1f672              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_1e413_32
+BossPatternJump_32
         $1f67a  xx xx:      xxx #$xx
         $1f67c  xx xx xx:   xxx $xxxx
         $1f67f  xx xx xx:   xxx $xxxx,x
@@ -23103,9 +23217,9 @@ DataTable_1f709
         $1f724  xx xx xx:   xxx $xxxx
         $1f727  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_6c
-JumpTable_36314_6d
-JumpTable_36314_6e
+ObjectActionJump_6c
+ObjectActionJump_6d
+ObjectActionJump_6e
         $1f728  xx xx xx:   xxx $xxxx,x
         $1f72b  xx xx:      xxx $xx
         $1f72d  xx xx:      xxx $xx
@@ -23168,8 +23282,8 @@ JumpTable_36314_6e
         $1f7ac  xx xx xx:   xxx $xxxx
         $1f7af  xx xx xx:   xxx $xxxx
         $1f7b2  xx xx:      xxx $xx
-        $1f7b4  xx xx:      xxx #$xx
-        $1f7b6  xx xx:      xxx $xx
+        $1f7b4  xx xx:      xxx #GAME_MODE_STATUS_MSG
+        $1f7b6  xx xx:      xxx GameMode
         $1f7b8  xx xx xx:   xxx $34c0e
         $1f7bb  xx xx:      xxx #$xx
         $1f7bd  xx xx xx:   xxx $xxxx
@@ -23191,7 +23305,7 @@ DataTable_1f7c1                 ; This table is read in fives
         $1f7fd              .byte $xx,$xx,$xx,$xx,$xx
         $1f802              .byte $xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_36314_6f
+ObjectActionJump_6f
         $1f807  xx xx:      xxx $xx
         $1f809  xx xx:      xxx #$xx
         $1f80b  xx xx:      xxx $xx
@@ -23320,8 +23434,8 @@ JumpTable_36314_6f
         $1f8f8  xx xx:      xxx $xx
         $1f8fa  xx xx xx:   xxx $3ff80
 ;;; --------------------------------
-        $1f8fd  xx xx:      xxx #$xx
-        $1f8ff  xx xx:      xxx $xx
+        $1f8fd  xx xx:      xxx #SCREEN_MODE_NORMAL
+        $1f8ff  xx xx:      xxx ScreenMode
         $1f901  xx xx:      xxx #$xx
         $1f903  xx xx:      xxx #$xx
         $1f905  xx xx xx:   xxx $xxxx,y
@@ -23504,9 +23618,9 @@ MainGameModeJump_0c
         $1fc42  xx:         xxx
         $1fc43  xx xx xx:   xxx FlushNametableDataWrite
         $1fc46  xx xx xx:   xxx $3c169
-        $1fc49  xx xx:      xxx $xx
+        $1fc49  xx xx:      xxx ScreenMode
         $1fc4b  xx xx:      xxx #$xx
-        $1fc4d  xx xx:      xxx $xx
+        $1fc4d  xx xx:      xxx ScreenMode
         $1fc4f  xx xx:      xxx $xx
         $1fc51  xx xx:      xxx $xx
         $1fc53  xx xx:      xxx #$xx
@@ -23566,7 +23680,7 @@ MainGameModeJump_0c
         $1fccc  xx xx:      xxx #$xx
         $1fcce  xx xx:      xxx $xx
         $1fcd0  xx xx:      xxx #$xx
-        $1fcd2  xx xx:      xxx $xx
+        $1fcd2  xx xx:      xxx ScreenMode
         $1fcd4  xx xx:      xxx #$xx
         $1fcd6  xx xx:      xxx $xx
         $1fcd8  xx xx:      xxx #$xx
@@ -23642,11 +23756,11 @@ MainGameModeJump_0c
         $1fd71  xx xx:      xxx $xx
         $1fd73  xx xx:      xxx $xx
         $1fd75  xx xx:      xxx #$xx
-        $1fd77  xx xx:      xxx $xx
+        $1fd77  xx xx:      xxx ScreenMode
         $1fd79  xx xx:      xxx $xx
         $1fd7b  xx xx:      xxx #$xx
         $1fd7d  xx xx:      xxx $xx
-        $1fd7f  xx xx:      xxx $xx
+        $1fd7f  xx xx:      xxx GameMode
         $1fd81  xx xx xx:   xxx $1fddb
 ;;; --------------------------------
 DataTable_1fd84 
@@ -23676,10 +23790,10 @@ MainGameModeJump_0d
         $1fdff  xx xx xx:   xxx $3c008
         $1fe02  xx xx:      xxx #$xx
         $1fe04  xx xx xx:   xxx $xxxx
-        $1fe07  xx xx:      xxx #$xx
-        $1fe09  xx xx:      xxx $xx
+        $1fe07  xx xx:      xxx #GAME_MODE_NORMAL
+        $1fe09  xx xx:      xxx GameMode
         $1fe0b  xx:         xxx
-        $1fe0c  xx xx:      xxx $xx
+        $1fe0c  xx xx:      xxx ScreenMode
         $1fe0e  xx xx xx:   xxx ReadControllersWithDirections
 ;;; --------------------------------
         $1fe11  xx xx xx:   xxx $xxxx
@@ -23830,8 +23944,8 @@ DataTable_1ff7f
         $1ffef              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1ffff              .byte $xx
 RomBank_10                      ; @@ $8000
-        $20000  xx xx xx:   xxx $20605
-        $20003  xx xx xx:   xxx $3c169
+        $20000  xx xx xx:   xxx ClearSpriteMemory
+        $20003  xx xx xx:   xxx WaitForOAMDMA
         $20006  xx xx:      xxx #$xx
         $20008  xx xx xx:   xxx $xxxx
         $2000b  xx xx:      xxx #$xx
@@ -23853,9 +23967,9 @@ RomBank_10                      ; @@ $8000
         $20028  xx xx:      xxx #$xx
         $2002a  xx xx:      xxx $xx
         $2002c  xx xx xx:   xxx $2081e
-        $2002f  xx xx xx:   xxx $3c169
+        $2002f  xx xx xx:   xxx WaitForOAMDMA
         $20032  xx xx:      xxx #$xx
-        $20034  xx xx:      xxx $xx
+        $20034  xx xx:      xxx ScreenMode
         $20036  xx xx:      xxx $xx
         $20038  xx xx:      xxx #$xx
         $2003a  xx xx:      xxx #$xx
@@ -23896,7 +24010,7 @@ RomBank_10                      ; @@ $8000
         $20094  xx xx:      xxx $xx
         $20096  xx xx:      xxx #$xx
         $20098  xx xx xx:   xxx $20a9f
-        $2009b  xx xx xx:   xxx $20605
+        $2009b  xx xx xx:   xxx ClearSpriteMemory
         $2009e  xx xx xx:   xxx $3c80c
 ;;; --------------------------------
         $200a1  xx xx:      xxx #$xx
@@ -23904,7 +24018,7 @@ RomBank_10                      ; @@ $8000
         $200a5  xx xx:      xxx #$xx
         $200a7  xx xx:      xxx $xx
         $200a9  xx xx:      xxx #$xx
-        $200ab  xx xx:      xxx $xx
+        $200ab  xx xx:      xxx ScreenMode
         $200ad  xx xx:      xxx $xx
         $200af  xx:         xxx
         $200b0  xx xx:       xxx $xx
@@ -23921,10 +24035,10 @@ RomBank_10                      ; @@ $8000
         $200c5  xx xx:      xxx $xx
         $200c7  xx xx xx:   xxx $2023a
         $200ca  xx xx:      xxx #$xx
-        $200cc  xx xx:      xxx $xx
+        $200cc  xx xx:      xxx ScreenMode
         $200ce  xx xx xx:   xxx $20171
 ;;; --------------------------------
-        $200d1  xx xx xx:   xxx $3c169
+        $200d1  xx xx xx:   xxx WaitForOAMDMA
         $200d4  xx xx xx:   xxx ReadControllersWithRepeat
         $200d7  xx xx:      xxx $xx
         $200d9  xx xx:      xxx #$xx
@@ -24777,17 +24891,17 @@ DisplayNumberInShop
         $20788  xx xx:      xxx $xx
         $2078a  xx xx:      xxx #$xx
         $2078c  xx xx:      xxx $xx
-        $2078e  xx xx:      xxx $xx
+        $2078e  xx xx:      xxx ScreenMode
         $20790  xx xx:      xxx #$xx
-        $20792  xx xx:      xxx $xx
+        $20792  xx xx:      xxx ScreenMode
         $20794  xx:         xxx
 ;;; --------------------------------
         $20795  xx xx:      xxx #$xx
         $20797  xx xx:      xxx $xx
         $20799  xx xx xx:   xxx $3c676
-        $2079c  xx xx:      xxx $xx
+        $2079c  xx xx:      xxx ScreenMode
         $2079e  xx xx:      xxx #$xx
-        $207a0  xx xx:      xxx $xx
+        $207a0  xx xx:      xxx ScreenMode
         $207a2  xx xx xx:   xxx $20ab0
         $207a5  xx xx xx:   xxx $3c676
         $207a8  xx:         xxx
@@ -24860,10 +24974,10 @@ DisplayNumberInShop
         $2081a  xx xx xx:   xxx $xxxx,x
         $2081d  xx:         xxx
 ;;; --------------------------------
-        $2081e  xx xx:      xxx $xx
+        $2081e  xx xx:      xxx ScreenMode
         $20820  xx:         xxx
         $20821  xx xx:       xxx #$xx
-        $20823  xx xx:       xxx $xx
+        $20823  xx xx:       xxx ScreenMode
         $20825  xx xx:       xxx #$xx
         $20827  xx xx xx:    xxx $20864
         $2082a  xx xx:       xxx #$xx
@@ -24891,7 +25005,7 @@ DisplayNumberInShop
         $2085a  xx xx xx:    xxx $20ab0
         $2085d  xx xx xx:    xxx $3c676
         $20860  xx:         xxx
-        $20861  xx xx:      xxx $xx
+        $20861  xx xx:      xxx ScreenMode
         $20863  xx:         xxx
 ;;; --------------------------------
         $20864  xx xx xx:   xxx $3c676
@@ -25409,8 +25523,8 @@ DataTable_20aed
         $2152b  xx xx:      xxx $xx
         $2152d  xx xx xx:   xxx $21912
         $21530  xx xx xx:   xxx $3c169
-        $21533  xx xx:      xxx #$xx
-        $21535  xx xx:      xxx $xx
+        $21533  xx xx:      xxx #SCREEN_MODE_TEXT
+        $21535  xx xx:      xxx ScreenMode
         $21537  xx xx:      xxx #$xx
         $21539  xx xx xx:   xxx $xxxx
         $2153c  xx xx xx:   xxx $xxxx
@@ -26207,28 +26321,28 @@ DataTable_21ade
 ;;; --------------------------------
         $21be1  xx xx:      xxx #$xx
         $21be3  xx xx xx:   xxx $xxxx
-        $21be6  xx xx:      xxx $xx
+        $21be6  xx xx:      xxx CurrentLocation
         $21be8  xx xx xx:   xxx $2ff00,x
         $21beb  xx:         xxx
-        $21bec  xx xx:      xxx $xx
-        $21bee  xx xx:      xxx #$xx
-        $21bf0  xx xx xx:   xxx $20a9f
-        $21bf3  xx xx:      xxx #$xx
-        $21bf5  xx xx xx:   xxx $20933
-        $21bf8  xx xx:      xxx #$xx
-        $21bfa  xx xx xx:   xxx $20933
-        $21bfd  xx xx:      xxx #$xx
-        $21bff  xx xx:      xxx $xx
-        $21c01  xx xx:      xxx $xx
-        $21c03  xx:         xxx
-        $21c04  xx xx:      xxx $xx
-        $21c06  xx xx:      xxx #$xx
-        $21c08  xx xx:      xxx $xx
-        $21c0a  xx xx:      xxx #$xx
-        $21c0c  xx xx xx:   xxx $xxxx
-        $21c0f  xx xx xx:   xxx $21c7a
-;;; --------------------------------
-        $21c12  xx xx xx:   xxx $xxxx
+        $21bec  xx xx:      xxx + ; $21c12
+        $21bee  xx xx:       xxx #$xx
+        $21bf0  xx xx xx:    xxx $20a9f
+        $21bf3  xx xx:       xxx #$xx
+        $21bf5  xx xx xx:    xxx $20933
+        $21bf8  xx xx:       xxx #$xx
+        $21bfa  xx xx xx:    xxx $20933
+        $21bfd  xx xx:       xxx #$xx
+-       $21bff  xx xx:         xxx $xx ; Maybe wait for OAM DMA?
+        $21c01  xx xx:        xxx - ; $21bff
+        $21c03  xx:           xxx
+        $21c04  xx xx:       xxx - ; $21bff
+        $21c06  xx xx:       xxx #$xx
+        $21c08  xx xx:       xxx $xx
+        $21c0a  xx xx:       xxx #$xx
+        $21c0c  xx xx xx:    xxx $xxxx
+        $21c0f  xx xx xx:    xxx $21c7a
+        ;; --------------------------------
++       $21c12  xx xx xx:   xxx $xxxx
         $21c15  xx xx:      xxx #$xx
         $21c17  xx xx:      xxx $xx
         $21c19  xx xx:      xxx #$xx
@@ -26545,8 +26659,8 @@ MainLoop_PrepareEndingSequence
         $22013  xx xx:      xxx #$xx
         $22015  xx xx xx:   xxx $22751
         $22018  xx xx xx:   xxx $22788
-        $2201b  xx xx:      xxx #$xx
-        $2201d  xx xx:      xxx $xx
+        $2201b  xx xx:      xxx #SCREEN_MODE_MOVIE
+        $2201d  xx xx:      xxx ScreenMode
         $2201f  xx xx:      xxx #$xx
         $22021  xx xx:      xxx $xx
         $22023  xx xx:      xxx $xx
@@ -29151,8 +29265,8 @@ MainLoop_PrepareTitleScreen
         $25fcc  xx xx xx:   xxx $242b3
         $25fcf  xx xx xx:   xxx $241d8
         $25fd2  xx xx xx:   xxx $24198
-        $25fd5  xx xx:      xxx #$xx
-        $25fd7  xx xx:      xxx $xx
+        $25fd5  xx xx:      xxx #SCREEN_MODE_MOVIE
+        $25fd7  xx xx:      xxx ScreenMode
         $25fd9  xx xx:      xxx #$xx
         $25fdb  xx xx:      xxx #$xx
         $25fdd  xx xx:      xxx $xx,x
@@ -30011,8 +30125,8 @@ DataTable_266dd
 DataTable_266f3
         $266f3              .byte $xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-        $266f9  xx xx:      xxx #$xx
-        $266fb  xx xx:      xxx $xx
+        $266f9  xx xx:      xxx #MAIN_LOOP_PREPARE_GAME_START
+        $266fb  xx xx:      xxx MainLoopMode
         $266fd  xx:         xxx
 ;;; --------------------------------
         $266fe  xx xx:      xxx #$xx
@@ -30089,8 +30203,8 @@ DataTable_2677b
         $26784  xx xx xx:   xxx $xxxx
         $26787  xx xx:      xxx $xx
         $26789  xx xx:      xxx $xx
-        $2678b  xx xx:      xxx #$xx
-        $2678d  xx xx:      xxx $xx
+        $2678b  xx xx:      xxx #MAIN_LOOP_PREPARE_CONTINUE
+        $2678d  xx xx:      xxx MainLoopMode
         $2678f  xx:         xxx
 ;;; --------------------------------
         $26790  xx xx:      xxx #$xx
@@ -30584,8 +30698,8 @@ JumpTable_267bc_18
 ;;; --------------------------------
         $26bb4  xx xx xx:   xxx $242b3
         $26bb7  xx xx xx:   xxx $24198
-        $26bba  xx xx:      xxx #$xx
-        $26bbc  xx xx:      xxx $xx
+        $26bba  xx xx:      xxx #SCREEN_MODE_MOVIE
+        $26bbc  xx xx:      xxx ScreenMode
         $26bbe  xx xx:      xxx #$xx
         $26bc0  xx xx xx:   xxx $xxxx
         $26bc3  xx xx:      xxx #$xx
@@ -31315,7 +31429,7 @@ MainGameModeJump_03_DeathAnimation
         $27908  xx xx xx:   xxx $3c008
         $2790b  xx xx:      xxx #$xx
         $2790d  xx xx xx:   xxx $xxxx,x
-        $27910  xx xx:      xxx $xx
+        $27910  xx xx:      xxx ScreenMode
         $27912  xx xx xx:   xxx $xxxx
         $27915  xx xx:      xxx #$xx
         $27917  xx xx:      xxx $xx
@@ -31377,8 +31491,8 @@ MainGameModeJump_03_DeathAnimation
         $279a3  xx xx:      xxx #$xx
         $279a5  xx xx xx:   xxx $34c3d
         $279a8  xx xx xx:   xxx $27a0f
-        $279ab  xx xx:      xxx #$xx
-        $279ad  xx xx:      xxx $xx
+        $279ab  xx xx:      xxx #MAIN_LOOP_PREPARE_TITLE_MOVIE
+        $279ad  xx xx:      xxx MainLoopMode
         $279af  xx:         xxx
 ;;; --------------------------------
         $279b0  xx xx:      xxx #$xx
@@ -31409,8 +31523,8 @@ MainGameModeJump_03_DeathAnimation
         $279ee  xx xx xx:   xxx $xxxx
         $279f1  xx xx:      xxx #$xx
         $279f3  xx xx xx:   xxx $3c176
-        $279f6  xx xx:      xxx #$xx
-        $279f8  xx xx:      xxx $xx
+        $279f6  xx xx:      xxx #GAME_MODE_ITEM_USE
+        $279f8  xx xx:      xxx GameMode
         $279fa  xx:         xxx
 ;;; --------------------------------
         $279fb  xx xx:      xxx #$xx
@@ -31547,8 +31661,8 @@ MainGameModeJump_18_RecoverMagicAnimation
         $27b84  xx xx xx:   xxx $3c008
         $27b87  xx xx:      xxx #$xx
         $27b89  xx xx xx:   xxx $xxxx
-        $27b8c  xx xx:      xxx #$xx
-        $27b8e  xx xx:      xxx $xx
+        $27b8c  xx xx:      xxx #GAME_MODE_STATUS_MSG
+        $27b8e  xx xx:      xxx GameMode
         $27b90  xx xx:      xxx #$xx
         $27b92  xx xx xx:   xxx $xxxx
         $27b95  xx xx:      xxx #$xx
@@ -31593,8 +31707,8 @@ MainGameModeJump_19_ChangeMagicRevertAnimation
         $27bf5  xx xx:      xxx #$xx
         $27bf7  xx xx xx:   xxx $xxxx
         $27bfa  xx xx xx:   xxx $3ff8c
-        $27bfd  xx xx:      xxx #$xx
-        $27bff  xx xx:      xxx $xx
+        $27bfd  xx xx:      xxx #GAME_MODE_NORMAL
+        $27bff  xx xx:      xxx GameMode
         $27c01  xx xx xx:   xxx $3c739
 ;;; --------------------------------
 MainGameModeJump_1a_SwordInAir
@@ -31637,8 +31751,8 @@ MainGameModeJump_1a_SwordInAir
         $27c5d  xx xx xx:   xxx RemoveSpritesBehindMessageBox
         $27c60  xx xx xx:   xxx $3ff8c
         $27c63  xx xx xx:   xxx $3c169
-        $27c66  xx xx:      xxx #$xx
-        $27c68  xx xx:      xxx $xx
+        $27c66  xx xx:      xxx #GAME_MODE_NORMAL
+        $27c68  xx xx:      xxx GameMode
         $27c6a  xx:         xxx
 ;;; --------------------------------
 MainGameModeJump_1b_ForgeCrystalis
@@ -31667,8 +31781,8 @@ MainGameModeJump_1b_ForgeCrystalis
         $27ca3  xx xx xx:   xxx $xxxx
         $27ca6  xx xx:      xxx #$xx
         $27ca8  xx xx xx:   xxx $xxxx
-        $27cab  xx xx:      xxx #$xx
-        $27cad  xx xx:      xxx $xx
+        $27cab  xx xx:      xxx #GAME_MODE_TRIGGER_TILE
+        $27cad  xx xx:      xxx GameMode
         $27caf  xx:         xxx
 ;;; --------------------------------
         $27cb0  xx xx:      xxx $xx
@@ -31810,8 +31924,8 @@ MainGameModeJump_1e_ThrustCrystalis
         $27df9  xx:         xxx
         $27dfa  xx xx:      xxx #$xx
         $27dfc  xx xx:      xxx $xx
-        $27dfe  xx xx:      xxx #$xx
-        $27e00  xx xx:      xxx $xx
+        $27dfe  xx xx:      xxx #SCREEN_MODE_NORMAL
+        $27e00  xx xx:      xxx ScreenMode
         $27e02  xx xx:      xxx $xx
         $27e04  xx xx xx:   xxx $xxxx
         $27e07  xx xx xx:   xxx $xxxx
@@ -32001,8 +32115,8 @@ MainGameModeJump_1e_ThrustCrystalis
         $27fbd  xx xx:      xxx $xx
         $27fbf  xx xx:      xxx #$xx
         $27fc1  xx xx xx:   xxx $34c3d
-        $27fc4  xx xx:      xxx #$xx
-        $27fc6  xx xx:      xxx $xx
+        $27fc4  xx xx:      xxx #MAIN_LOOP_PREPARE_ENDING
+        $27fc6  xx xx:      xxx MainLoopMode
         $27fc8  xx:         xxx
 ;;; --------------------------------
         $27fc9  xx xx:      xxx $xx
@@ -33835,8 +33949,8 @@ ItemNames
         $29485  xx xx:      xxx $xx
         $29487  xx:         xxx
         $29488  xx xx:      xxx $xx
-        $2948a  xx xx:      xxx #$xx
-        $2948c  xx xx:      xxx $xx
+        $2948a  xx xx:      xxx #GAME_MODE_NORMAL
+        $2948c  xx xx:      xxx GameMode
         $2948e  xx:         xxx
 ;;; --------------------------------
         $2948f  xx xx xx:   xxx $xxxx
@@ -34205,46 +34319,249 @@ DataTable_29767
         $29bd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $29be0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $29bf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29c00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29c10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29c20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29c30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29c40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29c50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29c60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29c70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29c80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29c90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29ca0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29cb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29cc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29cd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29ce0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29cf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29d00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29d10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29d20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29d30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29d40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29d50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29d60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29d70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29d80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29d90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29da0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29db0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29dc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29dd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29de0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29df0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29e00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29e10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29e20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29e30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29e40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29e50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29e60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29e70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+;;; Table of "ad hoc" spawns.  These are objects that can spawn in a variety of
+;;; spawn slots, on demand, rather than being statically specified in NpcData.
+;;; The quads contain the (half-open) range of slots that are possible, followed
+;;; by the object ID, and then the number of instances to spawn.
+;;; When these spawn, the "source object" is taken into account to determine
+;;; position and direction.
+;;; QUESTION: how do the multiple-spawns get the right directions?
+AdHocSpawns
+        $29c00              .byte $xx,$xx,$xx,$xx
+        $29c04              .byte $xx,$xx,$xx,$xx ; 01 Wind attack 1
+        $29c08              .byte $xx,$xx,$xx,$xx ; 02 Wind attack 2
+        $29c0c              .byte $xx,$xx,$xx,$xx ; 03 Tornado attack
+        $29c10              .byte $xx,$xx,$xx,$xx
+        $29c14              .byte $xx,$xx,$xx,$xx ; 05 Fire attack 1
+        $29c18              .byte $xx,$xx,$xx,$xx ; 06 Fire attack 2
+        $29c1c              .byte $xx,$xx,$xx,$xx ; 07 Flame attack
+        $29c20              .byte $xx,$xx,$xx,$xx
+        $29c24              .byte $xx,$xx,$xx,$xx ; 09 Water attack 1
+        $29c28              .byte $xx,$xx,$xx,$xx ; 0a Water attack 2
+        $29c2c              .byte $xx,$xx,$xx,$xx ; 0b Blizzard attack
+        $29c30              .byte $xx,$xx,$xx,$xx
+        $29c34              .byte $xx,$xx,$xx,$xx ; 0d Thunder attack 1
+        $29c38              .byte $xx,$xx,$xx,$xx ; 0e Thunder attack 2
+        $29c3c              .byte $xx,$xx,$xx,$xx ; 0f Storm attack
+        $29c40              .byte $xx,$xx,$xx,$xx ; 10 Paralysis magic
+        $29c44              .byte $xx,$xx,$xx,$xx ; 11 Barrier magic
+        $29c48              .byte $xx,$xx,$xx,$xx ; 12 Refresh magic animation
+        $29c4c              .byte $xx,$xx,$xx,$xx ; 13 Crystalis shot 1
+        $29c50              .byte $xx,$xx,$xx,$xx ; 14 Crystalis shot 2
+        $29c54              .byte $xx,$xx,$xx,$xx
+        $29c58              .byte $xx,$xx,$xx,$xx ; 16 Monster paralysis beam
+        $29c5c              .byte $xx,$xx,$xx,$xx ; 17 Flame attack child
+        $29c60              .byte $xx,$xx,$xx,$xx
+        $29c64              .byte $xx,$xx,$xx,$xx ; 19 Sword stab ??
+        $29c68              .byte $xx,$xx,$xx,$xx ; 1a ?? also a stab ??
+        $29c6c              .byte $xx,$xx,$xx,$xx ; 1b ?? during start flashing
+        $29c70              .byte $xx,$xx,$xx,$xx ; 1c Fire attack 2 child
+        $29c74              .byte $xx,$xx,$xx,$xx ; 1d Flame attack child (?)
+        $29c78              .byte $xx,$xx,$xx,$xx ; 1e Storm attack child
+        $29c7c              .byte $xx,$xx,$xx,$xx
+        $29c80              .byte $xx,$xx,$xx,$xx ; 20 - 0b appears to be the web when it's on the player???
+        $29c84              .byte $xx,$xx,$xx,$xx ; 21
+        $29c88              .byte $xx,$xx,$xx,$xx ; 22
+        $29c8c              .byte $xx,$xx,$xx,$xx ; 23
+        $29c90              .byte $xx,$xx,$xx,$xx ; 24
+        $29c94              .byte $xx,$xx,$xx,$xx ; 25
+        $29c98              .byte $xx,$xx,$xx,$xx ; 26
+        $29c9c              .byte $xx,$xx,$xx,$xx ; 27
+        $29ca0              .byte $xx,$xx,$xx,$xx ; 28
+        $29ca4              .byte $xx,$xx,$xx,$xx ; 29
+        $29ca8              .byte $xx,$xx,$xx,$xx ; 2a
+        $29cac              .byte $xx,$xx,$xx,$xx ; 2b
+        $29cb0              .byte $xx,$xx,$xx,$xx ; 2c
+        $29cb4              .byte $xx,$xx,$xx,$xx ; 2d
+        $29cb8              .byte $xx,$xx,$xx,$xx ; 2e
+        $29cbc              .byte $xx,$xx,$xx,$xx ; 2f
+        $29cc0              .byte $xx,$xx,$xx,$xx ; 30
+        $29cc4              .byte $xx,$xx,$xx,$xx ; 31
+        $29cc8              .byte $xx,$xx,$xx,$xx ; 32
+        $29ccc              .byte $xx,$xx,$xx,$xx ; 33
+        $29cd0              .byte $xx,$xx,$xx,$xx ; 34
+        $29cd4              .byte $xx,$xx,$xx,$xx ; 35
+        $29cd8              .byte $xx,$xx,$xx,$xx ; 36
+        $29cdc              .byte $xx,$xx,$xx,$xx ; 37
+        $29ce0              .byte $xx,$xx,$xx,$xx ; 38
+        $29ce4              .byte $xx,$xx,$xx,$xx ; 39
+        $29ce8              .byte $xx,$xx,$xx,$xx ; 3a
+        $29cec              .byte $xx,$xx,$xx,$xx ; 3b
+        $29cf0              .byte $xx,$xx,$xx,$xx ; 3c
+        $29cf4              .byte $xx,$xx,$xx,$xx ; 3d
+        $29cf8              .byte $xx,$xx,$xx,$xx ; 3e
+        $29cfc              .byte $xx,$xx,$xx,$xx ; 3f
+AdHocSpawnsPart2
+        $29d00              .byte $xx,$xx,$xx,$xx ; 40
+        $29d04              .byte $xx,$xx,$xx,$xx ; 41
+        $29d08              .byte $xx,$xx,$xx,$xx ; 42
+        $29d0c              .byte $xx,$xx,$xx,$xx ; 43
+        $29d10              .byte $xx,$xx,$xx,$xx ; 44
+        $29d14              .byte $xx,$xx,$xx,$xx ; 45
+        $29d18              .byte $xx,$xx,$xx,$xx ; 46
+        $29d1c              .byte $xx,$xx,$xx,$xx ; 47
+        $29d20              .byte $xx,$xx,$xx,$xx ; 48
+        $29d24              .byte $xx,$xx,$xx,$xx ; 49
+        $29d28              .byte $xx,$xx,$xx,$xx ; 4a
+        $29d2c              .byte $xx,$xx,$xx,$xx ; 4b
+        $29d30              .byte $xx,$xx,$xx,$xx ; 4c
+        $29d34              .byte $xx,$xx,$xx,$xx ; 4d
+        $29d38              .byte $xx,$xx,$xx,$xx ; 4e
+        $29d3c              .byte $xx,$xx,$xx,$xx ; 4f
+        $29d40              .byte $xx,$xx,$xx,$xx ; 50
+        $29d44              .byte $xx,$xx,$xx,$xx ; 51
+        $29d48              .byte $xx,$xx,$xx,$xx ; 52
+        $29d4c              .byte $xx,$xx,$xx,$xx ; 53
+        $29d50              .byte $xx,$xx,$xx,$xx ; 54
+        $29d54              .byte $xx,$xx,$xx,$xx ; 55
+        $29d58              .byte $xx,$xx,$xx,$xx ; 56
+        $29d5c              .byte $xx,$xx,$xx,$xx ; 57
+        $29d60              .byte $xx,$xx,$xx,$xx ; 58
+        $29d64              .byte $xx,$xx,$xx,$xx ; 59
+        $29d68              .byte $xx,$xx,$xx,$xx ; 5a
+        $29d6c              .byte $xx,$xx,$xx,$xx ; 5b
+        $29d70              .byte $xx,$xx,$xx,$xx ; 5c
+        $29d74              .byte $xx,$xx,$xx,$xx ; 5d
+        $29d78              .byte $xx,$xx,$xx,$xx ; 5e
+        $29d7c              .byte $xx,$xx,$xx,$xx ; 5f
+;;; --------------------------------
+;;; These are pairs used for ad-hoc spawning.  The key is
+;;; %aaaa.ddd0 where %aaaa is the low nibble of the spawned
+;;; object's $6e0 and %ddd is the direction.  The first byte
+;;; is stored in $30, which is ..., and the second byte is
+;;; added to 0 (normally) or 2 (if origin slowed by terrain).
+;;; So basically, this is a displacement vector.
+AdHocSpawnDisplacements
+        $29d80              .byte $xx,$xx ; 0, up
+        $29d82              .byte $xx,$xx
+        $29d84              .byte $xx,$xx ; 0, right
+        $29d86              .byte $xx,$xx
+        $29d88              .byte $xx,$xx ; 0, down
+        $29d8a              .byte $xx,$xx
+        $29d8c              .byte $xx,$xx ; 0, left
+        $29d8e              .byte $xx,$xx
+        $29d90              .byte $xx,$xx ; 1, up
+        $29d92              .byte $xx,$xx
+        $29d94              .byte $xx,$xx ; 1, right
+        $29d96              .byte $xx,$xx
+        $29d98              .byte $xx,$xx ; 1, down
+        $29d9a              .byte $xx,$xx
+        $29d9c              .byte $xx,$xx ; 1, left
+        $29d9e              .byte $xx,$xx
+        $29da0              .byte $xx,$xx ; 2, up
+        $29da2              .byte $xx,$xx
+        $29da4              .byte $xx,$xx ; 2, right
+        $29da6              .byte $xx,$xx
+        $29da8              .byte $xx,$xx ; 2, down
+        $29daa              .byte $xx,$xx
+        $29dac              .byte $xx,$xx ; 2, left
+        $29dae              .byte $xx,$xx
+        $29db0              .byte $xx,$xx ; 3, up
+        $29db2              .byte $xx,$xx
+        $29db4              .byte $xx,$xx ; 3, right
+        $29db6              .byte $xx,$xx
+        $29db8              .byte $xx,$xx ; 3, down
+        $29dba              .byte $xx,$xx
+        $29dbc              .byte $xx,$xx ; 3, left
+        $29dbe              .byte $xx,$xx
+        $29dc0              .byte $xx,$xx ; 4, up
+        $29dc2              .byte $xx,$xx
+        $29dc4              .byte $xx,$xx ; 4, right
+        $29dc6              .byte $xx,$xx
+        $29dc8              .byte $xx,$xx ; 4, down
+        $29dca              .byte $xx,$xx
+        $29dcc              .byte $xx,$xx ; 4, left
+        $29dce              .byte $xx,$xx
+        $29dd0              .byte $xx,$xx ; 5, up
+        $29dd2              .byte $xx,$xx
+        $29dd4              .byte $xx,$xx ; 5, right
+        $29dd6              .byte $xx,$xx
+        $29dd8              .byte $xx,$xx ; 5, down
+        $29dda              .byte $xx,$xx
+        $29ddc              .byte $xx,$xx ; 5, left
+        $29dde              .byte $xx,$xx
+        $29de0              .byte $xx,$xx ; 6, up
+        $29de2              .byte $xx,$xx
+        $29de4              .byte $xx,$xx ; 6, right
+        $29de6              .byte $xx,$xx
+        $29de8              .byte $xx,$xx ; 6, down
+        $29dea              .byte $xx,$xx
+        $29dec              .byte $xx,$xx ; 6, left
+        $29dee              .byte $xx,$xx
+        $29df0              .byte $xx,$xx ; 7, up
+        $29df2              .byte $xx,$xx
+        $29df4              .byte $xx,$xx ; 7, right
+        $29df6              .byte $xx,$xx
+        $29df8              .byte $xx,$xx ; 7, down
+        $29dfa              .byte $xx,$xx
+        $29dfc              .byte $xx,$xx ; 7, left
+        $29dfe              .byte $xx,$xx
+        $29e00              .byte $xx,$xx ; 8, up
+        $29e02              .byte $xx,$xx
+        $29e04              .byte $xx,$xx ; 8, right
+        $29e06              .byte $xx,$xx
+        $29e08              .byte $xx,$xx ; 8, down
+        $29e0a              .byte $xx,$xx
+        $29e0c              .byte $xx,$xx ; 8, left
+        $29e0e              .byte $xx,$xx
+        $29e10              .byte $xx,$xx ; 9, up
+        $29e12              .byte $xx,$xx
+        $29e14              .byte $xx,$xx ; 9, right
+        $29e16              .byte $xx,$xx
+        $29e18              .byte $xx,$xx ; 9, down
+        $29e1a              .byte $xx,$xx
+        $29e1c              .byte $xx,$xx ; 9, left
+        $29e1e              .byte $xx,$xx
+        $29e20              .byte $xx,$xx ; a, up
+        $29e22              .byte $xx,$xx
+        $29e24              .byte $xx,$xx ; a, right
+        $29e26              .byte $xx,$xx
+        $29e28              .byte $xx,$xx ; a, down
+        $29e2a              .byte $xx,$xx
+        $29e2c              .byte $xx,$xx ; a, left
+        $29e2e              .byte $xx,$xx
+        $29e30              .byte $xx,$xx ; b, up
+        $29e32              .byte $xx,$xx
+        $29e34              .byte $xx,$xx ; b, right
+        $29e36              .byte $xx,$xx
+        $29e38              .byte $xx,$xx ; b, down
+        $29e3a              .byte $xx,$xx
+        $29e3c              .byte $xx,$xx ; b, left
+        $29e3e              .byte $xx,$xx
+        $29e40              .byte $xx,$xx ; c, up
+        $29e42              .byte $xx,$xx
+        $29e44              .byte $xx,$xx ; c, right
+        $29e46              .byte $xx,$xx
+        $29e48              .byte $xx,$xx ; c, down
+        $29e4a              .byte $xx,$xx
+        $29e4c              .byte $xx,$xx ; c, left
+        $29e4e              .byte $xx,$xx
+        $29e50              .byte $xx,$xx ; d, up
+        $29e52              .byte $xx,$xx
+        $29e54              .byte $xx,$xx ; d, right
+        $29e56              .byte $xx,$xx
+        $29e58              .byte $xx,$xx ; d, down
+        $29e5a              .byte $xx,$xx
+        $29e5c              .byte $xx,$xx ; d, left
+        $29e5e              .byte $xx,$xx
+        $29e60              .byte $xx,$xx ; e, up
+        $29e62              .byte $xx,$xx
+        $29e64              .byte $xx,$xx ; e, right
+        $29e66              .byte $xx,$xx
+        $29e68              .byte $xx,$xx ; e, down
+        $29e6a              .byte $xx,$xx
+        $29e6c              .byte $xx,$xx ; e, left
+        $29e6e              .byte $xx,$xx
+        $29e70              .byte $xx,$xx ; f, up
+        $29e72              .byte $xx,$xx
+        $29e74              .byte $xx,$xx ; f, right
+        $29e76              .byte $xx,$xx
+        $29e78              .byte $xx,$xx ; f, down
+        $29e7a              .byte $xx,$xx
+        $29e7c              .byte $xx,$xx ; f, left
+        $29e7e              .byte $xx,$xx
+;;; --------------------------------
         $29e80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $29e90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $29ea0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -34815,7 +35132,6 @@ RomBank_15                      ; @@ $a000
         $2bfe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2bff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 RomBank_16                      ; @@ $8000
-JumpTable_36314_75
         $2c000              .byte $xx,$xx,"xxxxxxxxx",$xx,"xxx",$xx
         $2c010              .byte     "xxxxxxxxxxx",$xx,"xxxxxxxx",$xx
         $2c025              .byte     "xxxxxxxxx",$xx,"x",$xx
@@ -35902,7 +36218,7 @@ RevertChangeMagic
         $2fc31  xx xx xx:         xxx $xxxx,x
         $2fc34  xx:               xxx
         $2fc35  xx xx:           xxx - ; $2fc2b
-        $2fc37  xx xx xx:        xxx $3bd1f
+        $2fc37  xx xx xx:        xxx $2fd1f
         $2fc3a  xx xx:           xxx #$xx
         $2fc3c  xx xx:           xxx $xx
 --      $2fc3e  xx xx:            xxx $xx
@@ -36005,8 +36321,8 @@ RevertChangeMagic
         $2fcec  xx xx:      xxx - ; $2fcdf
         $2fcee  xx xx:      xxx #$xx
         $2fcf0  xx xx:      xxx $xx
-        $2fcf2  xx xx:      xxx #$xx
-        $2fcf4  xx xx:      xxx $xx
+        $2fcf2  xx xx:      xxx #GAME_MODE_CHANGE_LOCATION
+        $2fcf4  xx xx:      xxx GameMode
         $2fcf6  xx:         xxx
 ;;; --------------------------------
 ;;; Copy $14$15 bytes from ($10) to ($12).  This is used on
@@ -36088,33 +36404,35 @@ CopyBytes
         $2fd94  xx xx xx:   xxx $xxxx
         $2fd97  xx xx xx:   xxx $xxxx
         $2fd9a  xx:         xxx
--       $2fd9b  xx xx xx:   xxx $xxxx,x
-        $2fd9e  xx:         xxx
-        $2fd9f  xx xx xx:   xxx $xxxx
-        $2fda2  xx xx xx:   xxx $xxxx
-        $2fda5  xx xx xx:   xxx $xxxx,x
-        $2fda8  xx:         xxx
-        $2fda9  xx xx xx:   xxx $xxxx
-        $2fdac  xx xx xx:   xxx $xxxx
-        $2fdaf  xx xx xx:   xxx $xxxx,x
-        $2fdb2  xx:         xxx
-        $2fdb3  xx xx xx:   xxx $xxxx
-        $2fdb6  xx xx xx:   xxx $xxxx
-        $2fdb9  xx xx xx:   xxx $xxxx
-        $2fdbc  xx:         xxx
+-       $2fd9b  xx xx xx:    xxx $xxxx,x
+        $2fd9e  xx:          xxx
+        $2fd9f  xx xx xx:    xxx $xxxx
+        $2fda2  xx xx xx:    xxx $xxxx
+        $2fda5  xx xx xx:    xxx $xxxx,x
+        $2fda8  xx:          xxx
+        $2fda9  xx xx xx:    xxx $xxxx
+        $2fdac  xx xx xx:    xxx $xxxx
+        $2fdaf  xx xx xx:    xxx $xxxx,x
+        $2fdb2  xx:          xxx
+        $2fdb3  xx xx xx:    xxx $xxxx
+        $2fdb6  xx xx xx:    xxx $xxxx
+        $2fdb9  xx xx xx:    xxx $xxxx
+        $2fdbc  xx:          xxx
         $2fdbd  xx xx:      xxx - ; $2fd9b
         $2fdbf  xx:         xxx
 ;;; --------------------------------
+DataTable_2fdc0 
         $2fdc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2fdd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2fde0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2fdf0              .byte $xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-        $2fdf6  xx xx:      xxx $xx
+        $2fdf6  xx xx:      xxx CurrentLocation
         $2fdf8  xx xx xx:   xxx $2ff00,x
         $2fdfb  xx:         xxx
         $2fdfc  xx:         xxx
 ;;; --------------------------------
+;;; This table appears to be unused??? we could add extra save/load code here.
 DataTable_2fdfd 
         $2fdfd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2fe0d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -36133,6 +36451,10 @@ DataTable_2fdfd
         $2fedd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2feed              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2fefd              .byte $xx,$xx,$xx
+;;; --------------------------------
+;;; This data table is indexed by location.  Only the low and high bits are
+;;; read, depending on who's reading it.  My guess is that the :80 bit
+;;; indicates that the location allows saving.
 DataTable_2ff00 
         $2ff00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2ff10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -36219,10 +36541,10 @@ ResumeAudioInner
         $3006b  xx xx:      xxx ++ ; $30094
         $3006d  xx xx xx:   xxx $300e4
         ;; --------------------------------
-@rts:   $30070  xx:         xxx
+        $30070  xx:         xxx
         ;; --------------------------------
 +       $30071  xx xx xx:   xxx $xxxx
-        $30074  xx xx:      xxx @rts
+        $30074  xx xx:      xxx <rts
         $30076  xx xx:      xxx $xx
         $30078  xx xx xx:   xxx $xxxx
         $3007b  xx xx:      xxx $xx
@@ -36238,7 +36560,7 @@ ResumeAudioInner
         $3008e  xx:          xxx
         $3008f  xx xx:       xxx #$xx
         $30091  xx xx:      xxx - ; $30088
-@rts2:  $30093  xx:         xxx
+        $30093  xx:         xxx
 ;;; --------------------------------
 	;; Map $18000 -> $a000
 ++      $30094  xx xx:      xxx #$xx
@@ -36256,10 +36578,10 @@ ResumeAudioInner
         $300a5  xx xx xx:   xxx $17fc1,x
         $300a8  xx xx:      xxx $xx
         $300aa  xx xx:      xxx $xx
-        $300ac  xx xx:      xxx @rts2
+        $300ac  xx xx:      xxx <rts
         $300ae  xx xx:      xxx $xx
         $300b0  xx xx:      xxx #$xx
-        $300b2  xx xx:      xxx @rts2
+        $300b2  xx xx:      xxx <rts
         $300b4  xx xx:      xxx #$xx
         $300b6  xx xx:      xxx ($xx),y
         $300b8  xx xx xx:   xxx $xxxx
@@ -36268,7 +36590,7 @@ ResumeAudioInner
         ;; plays, it will override a larger (lower) priority
         ;; SFX in progress.
         $300bb  xx xx:      xxx + ; $300bf
-        $300bd  xx xx:      xxx @rts2
+        $300bd  xx xx:      xxx <rts
 +       $300bf  xx xx xx:   xxx $xxxx
         $300c2  xx:         xxx
         $300c3  xx xx:      xxx #$xx
@@ -38141,125 +38463,123 @@ BackgroundMusicData_Track1f                               ; Track 1f
         $33fd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33fe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33ff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
 RomBank_1a                      ; @@ $8000
-        $34000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34020              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34030              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34040              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34050              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34060              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34070              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34080              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34090              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $340a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $340b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $340c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $340d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $340e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $340f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34110              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34120              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34130              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34140              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34150              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34160              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34170              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34180              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34190              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $341a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $341b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $341c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $341d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $341e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $341f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34200              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34220              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34230              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34240              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34250              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34260              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34270              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34280              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34290              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $342a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $342b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $342c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $342d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $342e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $342f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34300              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34310              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34320              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34330              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34340              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34350              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34360              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34370              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34380              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34390              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $343a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $343b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $343c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $343d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $343e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $343f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34400              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; NOTE - this looks like it's doing some sort of collision detection?
+;;; 32x32 table mapping tile displacements to two nibbles of information:
+;;;   in the low nibble, the direction from the center;
+;;;   in the high nibble, the distance (in units of ~32 pixels == 2 metatiles)
+;;; The center is $341f0, the $02 surrounded by $00..$07 going around the circle.
+DisplacementToDirectionTable
+        $34000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $34020              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $34040              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $34060              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $34080              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $340a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $340c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $340e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $34100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $34120              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $34140              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $34160              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $34180              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $341a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $341c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $341e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $34200              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $34220              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $34240              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $34260              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $34280              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $342a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $342c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $342e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $34300              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $34320              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $34340              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $34360              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $34380              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $343a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $343c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $343e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+        $34400  xx xx:      xxx #$xx
+        $34402  xx xx:      xxx $xx
+        $34404  xx xx:      xxx #$xx
+        $34406  xx xx:      xxx $xx
+        $34408  xx:         xxx
+;;; --------------------------------
+;;; Point object X toward object Y.
+;;; Puts a result in $20 and/or $21.
+VectorBetweenObjectsXY
         $34409  xx:         xxx
-        $3440a  xx xx xx:   xxx $xxxx,y
-        $3440d  xx xx:      xxx $xx,x
+        $3440a  xx xx xx:   xxx ObjectXLo,y
+        $3440d  xx xx:      xxx ObjXLo,x
         $3440f  xx xx:      xxx $xx
-        $34411  xx xx xx:   xxx $xxxx,y
-        $34414  xx xx:      xxx $xx,x
+        $34411  xx xx xx:   xxx ObjectXHi,y
+        $34414  xx xx:      xxx ObjXHi,x
         $34416  xx xx:      xxx $xx
-        $34418  xx xx:      xxx $xx
-        $3441a  xx xx:      xxx #$xx
-        $3441c  xx xx:      xxx $xx
-        $3441e  xx xx:      xxx $xx
-        $34420  xx xx:      xxx $xx
-        $34422  xx xx:      xxx $xx
-        $34424  xx xx:      xxx $xx
-        $34426  xx:         xxx
-        $34427  xx xx:      xxx $xx
-        $34429  xx:         xxx
-        $3442a  xx xx:      xxx $xx
-        $3442c  xx:         xxx
-        $3442d  xx xx:      xxx $xx
-        $3442f  xx:         xxx
-        $34430  xx:         xxx
+        $34418  xx xx:      xxx + ; $3441c
+        ;; if dx < 0 then take the ones complement (so 0 and -1 both => 0)
+        $3441a  xx xx:       xxx #$xx
++       $3441c  xx xx:      xxx + ; $34422
+        ;; x coordinates don't line up - so $11 definitely != 0
+        $3441e  xx xx:        xxx $xx
+        $34420  xx xx:        xxx ++ ; $34430 uncond
+        ;;                    ------
+        ;; hi x coordinates are equal - check lo, extending the sign bit of
+        ;; xhi as we shift it right four bits.
++       $34422  xx xx:       xxx $xx
+        $34424  xx xx:       xxx $xx
+        $34426  xx:          xxx
+        $34427  xx xx:       xxx $xx
+        $34429  xx:          xxx
+        $3442a  xx xx:       xxx $xx
+        $3442c  xx:          xxx
+        $3442d  xx xx:       xxx $xx
+        $3442f  xx:          xxx
+        ;; At this point A is some measure of dx (but might be units of screens
+        ;; or tiles, if within a screen). This ensures that it is only a single
+        ;; nibble, plus sign bit.  So shift it to the range [0, 1f] where 10 is
+        ;; dead center (zero).
+++      $34430  xx:         xxx
         $34431  xx xx:      xxx #$xx
         $34433  xx xx:      xxx #$xx
         $34435  xx xx:      xxx $xx
+        ;; Repeat the operation with y coordinates.
         $34437  xx:         xxx
-        $34438  xx xx xx:   xxx $xxxx,y
-        $3443b  xx xx:      xxx $xx,x
+        $34438  xx xx xx:   xxx ObjectYLo,y
+        $3443b  xx xx:      xxx ObjYLo,x
         $3443d  xx xx:      xxx $xx
-        $3443f  xx xx xx:   xxx $xxxx,y
-        $34442  xx xx:      xxx $xx,x
+        $3443f  xx xx xx:   xxx ObjectYHi,y
+        $34442  xx xx:      xxx ObjYHi,x
         $34444  xx:         xxx
-        $34445  xx xx:      xxx $xx
-        $34447  xx xx:      xxx #$xx
-        $34449  xx xx:      xxx $xx
-        $3444b  xx:         xxx
-        $3444c  xx:         xxx
-        $3444d  xx:         xxx
-        $3444e  xx:         xxx
-        $3444f  xx:         xxx
-        $34450  xx xx:      xxx $xx
-        $34452  xx:         xxx
-        $34453  xx:         xxx
-        $34454  xx:         xxx
-        $34455  xx:         xxx
-        $34456  xx:         xxx
-        $34457  xx:         xxx
-        $34458  xx xx:      xxx $xx
+        $34445  xx xx:      xxx + ; $34449
+        $34447  xx xx:       xxx #$xx
++       $34449  xx xx:      xxx + ; $34458
+        ;; yhi diff is nonzero: shift hi left 1 nibble -> $11, lo right 1 nibble -> y
+        $3444b  xx:          xxx
+        $3444c  xx:          xxx
+        $3444d  xx:          xxx
+        $3444e  xx:          xxx
+        $3444f  xx:          xxx
+        $34450  xx xx:       xxx $xx
+        $34452  xx:          xxx
+        $34453  xx:          xxx
+        $34454  xx:          xxx
+        $34455  xx:          xxx
+        $34456  xx:          xxx
+        $34457  xx:          xxx
++       $34458  xx xx:      xxx $xx
         $3445a  xx xx:      xxx #$xx
         $3445c  xx:         xxx
         $3445d  xx xx:      xxx $xx
         $3445f  xx xx:      xxx $xx
+        ;; Looks like $10 is now two nibbles? dy in hi, dx in lo?
+        ;; Except we just wrote 5 bits for dx. ?
+        ;; We're assembling an address - $10$11 - in the range [$8000,$83ff],
+        ;; which translates to the current bank ($34000..$343ff).
+        ;;   This looks like a 1k space, so 32x32 should be fine.
         $34461  xx:         xxx
         $34462  xx:         xxx
         $34463  xx:         xxx
@@ -38539,13 +38859,38 @@ DataTable_344bc_0f              ; SPD == $f
         $34b5c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $34b6c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-        $34b7c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34b8c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34b9c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34bac              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34bbc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34bcc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34bdc              .byte $xx,$xx
+        $34b7c              .byte $xx,$xx,$xx ; never used?
+;;; --------------------------------
+MaxHPByLevel
+        $34b7f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MaxMPByLevel
+        $34b8f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+NextLevelExpByLevel
+        $34b9f              .byte $xx,$xx
+        $34ba1              .byte $xx,$xx
+        $34ba3              .byte $xx,$xx
+        $34ba5              .byte $xx,$xx
+        $34ba7              .byte $xx,$xx
+        $34ba9              .byte $xx,$xx
+        $34bab              .byte $xx,$xx
+        $34bad              .byte $xx,$xx
+        $34baf              .byte $xx,$xx
+        $34bb1              .byte $xx,$xx
+        $34bb3              .byte $xx,$xx
+        $34bb5              .byte $xx,$xx
+        $34bb7              .byte $xx,$xx
+        $34bb9              .byte $xx,$xx
+        $34bbb              .byte $xx,$xx
+        $34bbd              .byte $xx,$xx
+        $34bbf              .byte $xx
+ArmorDefense
+        $34bc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+ShieldDefense
+        $34bc9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+SwordStabDamage
+        $34bd2              .byte $xx,$xx,$xx,$xx,$xx,$xx
+SwordMagicCost
+        $34bd8              .byte $xx,$xx,$xx,$xx,$xx,$xx
 CoinAmounts
         $34bde              .word ($xxxx)
         $34be0              .word ($xxxx)
@@ -38563,8 +38908,9 @@ CoinAmounts
         $34bf8              .word ($xxxx)
         $34bfa              .word ($xxxx)
         $34bfc              .word ($xxxx)
-        $34bfe              .byte $xx,$xx
-        $34c00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+        $34bfe              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
 LoadPalettesForLocation
         ;; Prepares a write of palettes indexed by $7e0..$7e7.
         $34c0e  xx xx:      xxx #$xx
@@ -38642,7 +38988,7 @@ PreparePaletteData
         $34c6e  xx xx:      xxx #$xx
         $34c70  xx xx:      xxx + ; $34c75
         $34c72  xx:          xxx
-        $34c73  xx xx:       xxx #$xx
+        $34c73  xx xx:       xxx #$xx ; Sprite palettes are +$b0
 +       $34c75  xx xx:      xxx $xx ; $1c <- abcd efgh (assume bg, not sprite)
         $34c77  xx xx:      xxx #$xx
         $34c79  xx:         xxx
@@ -38987,53 +39333,63 @@ PowersOfTen
         $34f6a              .word ($xxxx) ; 1000
         $34f6c              .word ($xxxx) ; 10000
 ;;; --------------------------------
+;;; Checks collisions between all objects, based on rows of the
+;;; CollisionTable.   Because there are 12 different collision
+;;; entries, which would take too long to do every frame, it is
+;;; broken up into two halves.  The important cases are done in
+;;; both halves, but the various sword shots are each only
+;;; checked every other frame.
+CheckAllObjectCollisions
         $34f6e  xx xx:      xxx #$xx
         $34f70  xx xx xx:   xxx $xxxx
         $34f73  xx xx xx:   xxx $xxxx
+        ;; Even frames: $2f = 7, $2e = 8
         $34f76  xx xx:      xxx #$xx
         $34f78  xx xx:      xxx #$xx
-        $34f7a  xx xx:      xxx $xx
+        $34f7a  xx xx:      xxx GlobalCounter
         $34f7c  xx:         xxx
-        $34f7d  xx xx:      xxx $xx
-        $34f7f  xx xx:      xxx #$xx
-        $34f81  xx xx:      xxx #$xx
-        $34f83  xx xx:      xxx $xx
+        $34f7d  xx xx:      xxx + ; $34f83
+        ;; Odd frames: $2f = #$e, $2e = 7
+        $34f7f  xx xx:       xxx #$xx
+        $34f81  xx xx:       xxx #$xx
++       $34f83  xx xx:      xxx $xx
         $34f85  xx xx:      xxx $xx
-        $34f87  xx xx:      xxx $xx
-        $34f89  xx:         xxx
-        $34f8a  xx:         xxx
-        $34f8b  xx:         xxx
-        $34f8c  xx xx xx:   xxx $356f1,y
-        $34f8f  xx:         xxx
-        $34f90  xx xx xx:   xxx $356f2,y
-        $34f93  xx xx:      xxx $xx
-        $34f95  xx xx xx:   xxx $356f3,y
-        $34f98  xx xx:      xxx $xx
-        $34f9a  xx xx xx:   xxx $356f4,y
-        $34f9d  xx:         xxx
-        $34f9e  xx xx:      xxx #$xx
-        $34fa0  xx xx:      xxx $xx
-        $34fa2  xx xx xx:   xxx $34fbb,y
-        $34fa5  xx xx:      xxx $xx
-        $34fa7  xx xx xx:   xxx $34fbc,y
-        $34faa  xx xx:      xxx $xx
-        $34fac  xx xx xx:   xxx CheckHitbox
-        $34faf  xx xx:      xxx $xx
-        $34fb1  xx xx xx:   xxx $xxxx
-        $34fb4  xx xx:      xxx $xx
-        $34fb6  xx xx:      xxx $xx
-        $34fb8  xx xx:      xxx $xx
+-       $34f87  xx xx:       xxx $xx
+        $34f89  xx:          xxx
+        $34f8a  xx:          xxx
+        $34f8b  xx:          xxx
+        $34f8c  xx xx xx:    xxx $356f1,y
+        $34f8f  xx:          xxx
+        $34f90  xx xx xx:    xxx $356f2,y
+        $34f93  xx xx:       xxx $xx
+        $34f95  xx xx xx:    xxx $356f3,y
+        $34f98  xx xx:       xxx $xx
+        $34f9a  xx xx xx:    xxx $356f4,y
+        $34f9d  xx:          xxx
+        $34f9e  xx xx:       xxx #OP_JMP_ABS
+        $34fa0  xx xx:       xxx $xx
+        $34fa2  xx xx xx:    xxx CollisionJump,y
+        $34fa5  xx xx:       xxx $xx
+        $34fa7  xx xx xx:    xxx CollisionJump+1,y
+        $34faa  xx xx:       xxx $xx
+        $34fac  xx xx xx:    xxx CheckHitbox ; set carry if hit
+        $34faf  xx xx:       xxx +
+        $34fb1  xx xx xx:     xxx $xxxx
++       $34fb4  xx xx:       xxx $xx
+        $34fb6  xx xx:       xxx $xx
+        $34fb8  xx xx:      xxx - ; $34f87
         $34fba  xx:         xxx
 ;;; --------------------------------
 ;;; STRIP: word=$2c000
-JumpTable_34fbb
-        $34fbb              .word ($350aa)
-        $34fbd              .word ($35357)
-        $34fbf              .word ($354b0)
-        $34fc1              .word ($34fc4)
+CollisionJump
+        $34fbb              .word ($350aa) ; sword (blast) hits enemy
+        $34fbd              .word ($35357) ; enemy hits player
+        $34fbf              .word ($354b0) ; front of player hits person/trigger
+        $34fc1              .word ($34fc4) ; paralysis beam ($c) hits npc/enemy
 ;;; --------------------------------
         $34fc3  xx:         xxx
 ;;; --------------------------------
+CollisionJump_03_ParalysisBeam
         $34fc4  xx xx xx:   xxx $xxxx,x
         $34fc7  xx xx:      xxx #$xx
         $34fc9  xx xx:      xxx $xx
@@ -39082,10 +39438,10 @@ JumpTable_34fbb
         $35023  xx:         xxx
         $35024  xx xx:       xxx #$xx
         $35026  xx:          xxx
-        $35027  xx xx xx:    xxx $3c000,y
+        $35027  xx xx xx:    xxx PowersOfTwo,y
         $3502a  xx xx:       xxx #$xx
         $3502c  xx xx:       xxx $xx
-        $3502e  xx xx xx:    xxx $3c000,y
+        $3502e  xx xx xx:    xxx PowersOfTwo,y
         $35031  xx xx:       xxx $xx
         $35033  xx xx:       xxx $xx
         $35035  xx:         xxx
@@ -39117,203 +39473,251 @@ DataTable_35045
         $3507f  xx xx:      xxx #$xx
         $35081  xx:         xxx
 ;;; --------------------------------
-        ;; NOTE: This is covered when a monster gets hit
---      $35082  xx xx xx:   xxx $xxxx,x
+;;; When the player hits an invisible shadow with magic, it
+;;; becomes its replacement (a visible wraith).
+PlayerHitInvisibleShadow
+        $35082  xx xx xx:   xxx ObjectLevel,x
         $35085  xx xx:      xxx #$xx
-        $35087  xx xx:      xxx @rts
-        $35089  xx xx xx:   xxx $xxxx,y
+        $35087  xx xx:      xxx >rts
+        ;; Object was hit with a level 3 shot.
+        $35089  xx xx xx:   xxx ObjectReplacement,y
         $3508c  xx xx:      xxx $xx
         $3508e  xx xx:      xxx $xx
         $35090  xx xx xx:   xxx LoadOneObjectData
 ;;; --------------------------------
-@rts:   $35093  xx:         xxx
+        $35093  xx:         xxx
 ;;; --------------------------------
--       $35094  xx xx xx:   xxx $xxxx,y
-        $35097  xx xx xx:   xxx $xxxx,x
+;;; The player hit a rock/ice/iron wall or a water channel.
+;;; All of these have $4a0,y == $87.  In this case, check
+;;; the elemental type for the wall and compare it with the
+;;; sword.
+PlayerHitFlagWallOrChannel
+        ;; If elements don't match, do nothing.
+        $35094  xx xx xx:   xxx ObjectElementalDefense,y
+        $35097  xx xx xx:   xxx ObjectElementalDefense,x
         $3509a  xx xx:      xxx #$xx
-        $3509c  xx xx:      xxx @rts
-        $3509e  xx xx xx:   xxx $xxxx,x
+        $3509c  xx xx:      xxx <rts
+        ;; If level is 1 (bare sword or lvl1 shot), do nothing.
+        $3509e  xx xx xx:   xxx ObjectLevel,x
         $350a1  xx xx:      xxx #$xx
-        $350a3  xx xx:      xxx @rts
-        $350a5  xx xx:      xxx + ; never taken?
-        $350a7  xx xx xx:   xxx $35152
+        $350a3  xx xx:      xxx <rts
+        $350a5  xx xx:      xxx $xx ; never taken
+        $350a7  xx xx xx:   xxx KillObject
 ;;; --------------------------------
+;;; Inputs:
+;;;   x - index of the player's sword (2 for sword, 4..b for projectiles).
+;;;   y - index of the object that was hit.
+CollisionJump_00_SwordHitsEnemy
         ;; Entry point??? - $34fb1
-+       $350aa  xx xx:      xxx $xx
-        $350ac  xx xx:      xxx #$xx
+        $350aa  xx xx:      xxx CurrentLocation
+        $350ac  xx xx:      xxx #LOC_DYNA
         $350ae  xx xx:      xxx + ; $350bb
+        ;; Dyna-only handling
         $350b0  xx xx:       xxx #$xx
         $350b2  xx xx xx:    xxx $xxxx
         $350b5  xx xx xx:    xxx $xxxx
         $350b8  xx xx xx:    xxx $xxxx
-+       $350bb  xx xx xx:   xxx $35229
-        $350be  xx xx xx:   xxx $xxxx,y
++       $350bb  xx xx xx:   xxx CheckThunderSwordReaction
+        $350be  xx xx xx:   xxx ObjectActionScript,y
         $350c1  xx xx:      xxx #$xx
         $350c3  xx xx:      xxx ++ ; $350e4
+        ;; This happens for the Stom fight: $4a0,x == #$52
+        ;; Note: persons' 4a0 and 6e0 both come from PersonData[id][2]:7f,
+        ;; provided that [2] is negative; if it's negative then it's stored
+        ;; in $6e0 but not $4a0.  Given that this looks like it's shifting
+        ;; two objects' up one tile, that's consistent with this actually
+        ;; being the code for hitting Stom.
         $350c5  xx xx xx:    xxx $xxxx
         $350c8  xx xx xx:    xxx $xxxx
         $350cb  xx xx:       xxx #$xx
         $350cd  xx xx:       xxx + ; $350df
-        $350cf  xx xx:        xxx $xx
+        $350cf  xx xx:        xxx PlayerYLo
         $350d1  xx:           xxx
         $350d2  xx xx:        xxx #$xx
-        $350d4  xx xx:        xxx $xx
-        $350d6  xx xx xx:     xxx $xxxx,y
+        $350d4  xx xx:        xxx PlayerYLo
+        $350d6  xx xx xx:     xxx ObjectYLo,y
         $350d9  xx:           xxx
         $350da  xx xx:        xxx #$xx
-        $350dc  xx xx xx:     xxx $xxxx,y
+        $350dc  xx xx xx:     xxx ObjectYLo,y
 +       $350df  xx xx:       xxx #SFX_MONSTER_HIT
         $350e1  xx xx xx:    xxx StartAudioTrack
         ;;                   -------------------
-++      $350e4  xx xx xx:   xxx $xxxx,y
+++      $350e4  xx xx xx:   xxx ObjectActionScript,y
         $350e7  xx xx:      xxx #$xx
         $350e9  xx xx:      xxx + ; $350ec
+        ;; Don't do anything for hitting an object with action #$10.
+        ;; This seems to mainly include enemies' swords and projectiles.
         $350eb  xx:          xxx
         ;;                   ---
-+       $350ec  xx xx xx:   xxx $xxxx,y
++       $350ec  xx xx xx:   xxx ObjectActionScript,y
         $350ef  xx xx:      xxx #$xx
-        $350f1  xx xx:      xxx - ; $35094
-        $350f3  xx xx xx:   xxx $xxxx,y
+        $350f1  xx xx:      xxx PlayerHitFlagWallOrChannel
+        $350f3  xx xx xx:   xxx ObjectMetasprite,y
         $350f6  xx xx:      xxx #$xx
-        $350f8  xx xx:      xxx -- ; $35082
-        $350fa  xx xx xx:   xxx $xxxx,y
-        $350fd  xx xx:      xxx #$xx
+        $350f8  xx xx:      xxx PlayerHitInvisibleShadow
+        ;; Done with special cases - now compute damage
+        $350fa  xx xx xx:   xxx ObjectLevel,y
+        $350fd  xx xx:      xxx #$xx ; Required level to inflict damage
         $350ff  xx xx:      xxx $xx
-        $35101  xx xx xx:   xxx $xxxx
+        $35101  xx xx xx:   xxx PlayerLevel
         $35104  xx xx:      xxx $xx
-        $35106  xx xx:      xxx + ; $35125
-        $35108  xx xx xx:    xxx $xxxx
-        $3510b  xx:          xxx
-        $3510c  xx xx xx:    xxx $xxxx,x
-        $3510f  xx xx:       xxx $xx
-        $35111  xx xx xx:    xxx $xxxx,y
-        $35114  xx xx xx:    xxx $xxxx,x
-        $35117  xx xx:       xxx #$xx
-        $35119  xx xx:       xxx + ; $35125
-        $3511b  xx xx:        xxx $xx
-        $3511d  xx:           xxx
-        $3511e  xx xx xx:     xxx $xxxx,y
-        $35121  xx xx:        xxx $xx
-        $35123  xx xx:        xxx ++ ; $3513b
-+       $35125  xx xx:       xxx #$xx
-        $35127  xx xx xx:    xxx $xxxx,x
+        $35106  xx xx:      xxx AttackEnemy_Immune
+        ;; $421 >= $420,y so level is high enough to damage.
+        ;; Now figure out the attack vs defense.  Add the player's attack with
+        ;; the actual shot's attack.  This player's attack already takes into
+        ;; account the sword, as does the object attack.
+        $35108  xx xx xx:   xxx PlayerAttack
+        $3510b  xx:         xxx
+        $3510c  xx xx xx:   xxx ObjectAttack,x
+        $3510f  xx xx:      xxx $xx
+        ;; Check elemental defenses - 500,x is a single bit, 500,y bits are set
+        ;; if the enemy is immune to that element.
+        $35111  xx xx xx:   xxx ObjectElementalDefense,y
+        $35114  xx xx xx:   xxx ObjectElementalDefense,x
+        $35117  xx xx:      xxx #$xx
+        $35119  xx xx:      xxx AttackEnemy_Immune
+        $3511b  xx xx:      xxx $xx
+        $3511d  xx:         xxx
+        $3511e  xx xx xx:   xxx ObjectDefense,y
+        $35121  xx xx:      xxx $xx
+        $35123  xx xx:      xxx AttackEnemy_DealDamage
+AttackEnemy_Immune
+        ;; Remove the attacking object
+        $35125  xx xx:       xxx #$xx
+        $35127  xx xx xx:    xxx ObjectActionScript,x
         $3512a  xx xx:       xxx $xx
         $3512c  xx xx:       xxx $xx
-        $3512e  xx xx xx:    xxx $xxxx,y
+        $3512e  xx xx xx:    xxx ObjectActionScript,y
         $35131  xx xx:       xxx + ; $35136
-        $35133  xx xx xx:     xxx $355c0
+        $35133  xx xx xx:     xxx KnockbackObject
 +       $35136  xx xx:       xxx #SFX_ATTACK_IMMUNE
         $35138  xx xx xx:    xxx StartAudioTrack
-;;;                          -------------------
-++      $3513b  xx xx xx:   xxx $xxxx,y
+;;; --------------------------------
+AttackEnemy_DealDamage
+        ;; Deal damage to an enemy
+        $3513b  xx xx xx:   xxx ObjectHP,y
         $3513e  xx:         xxx
         $3513f  xx xx:      xxx $xx
-        $35141  xx xx xx:   xxx $xxxx,y
-        $35144  xx xx:      xxx $xx
-        $35146  xx xx:      xxx $xx
-        $35148  xx xx:      xxx $xx
-        $3514a  xx xx xx:   xxx $355c0
-        $3514d  xx xx:      xxx #SFX_MONSTER_HIT
-        $3514f  xx xx xx:   xxx StartAudioTrack
+        $35141  xx xx xx:   xxx ObjectHP,y
+        $35144  xx xx:      xxx KillObject
+        $35146  xx xx:       xxx $xx
+        $35148  xx xx:       xxx $xx
+        $3514a  xx xx xx:    xxx KnockbackObject
+        $3514d  xx xx:       xxx #SFX_MONSTER_HIT
+        $3514f  xx xx xx:    xxx StartAudioTrack
 ;;; --------------------------------
-        $35152  xx xx xx:   xxx $3524b
-        $35155  xx xx xx:   xxx $xxxx,y
+;;; Kills object Y, awarding experience and/or performing any death actions.
+KillObject
+        $35152  xx xx xx:   xxx AwardExperiencePoints
+        $35155  xx xx xx:   xxx ObjectReplacement,y
         $35158  xx xx:      xxx + ; $35160
-        $3515a  xx xx xx:   xxx $351fa
-        $3515d  xx xx xx:   xxx ++ ; $3516a
-;;; --------------------------------
-+       $35160  xx xx:      xxx $xx
-        $35162  xx xx xx:   xxx $xxxx,y
-        $35165  xx xx:      xxx $xx
-        $35167  xx xx xx:   xxx LoadOneObjectData
-++      $3516a  xx xx xx:   xxx $xxxx
+        ;; If no replacement then do standard monster death animation
+          $3515a  xx xx xx:   xxx StartMonsterDeathAnimation
+          $3515d  xx xx xx:   xxx ++
+        ;;                    ------
+        ;; Otherwise, swap out the object for its replacement
++        $35160  xx xx:      xxx $xx
+         $35162  xx xx xx:   xxx ObjectReplacement,y
+         $35165  xx xx:      xxx $xx
+         $35167  xx xx xx:   xxx LoadOneObjectData
+	;; Check experience to see if we're at the next level yet.
+++      $3516a  xx xx xx:   xxx PlayerExp
         $3516d  xx:         xxx
-        $3516e  xx xx xx:   xxx $xxxx
-        $35171  xx xx xx:   xxx $xxxx
-        $35174  xx xx xx:   xxx $xxxx
+        $3516e  xx xx xx:   xxx PlayerExpToNextLevel
+        $35171  xx xx xx:   xxx PlayerExp+1
+        $35174  xx xx xx:   xxx PlayerExpToNextLevel+1
         $35177  xx xx:      xxx + ; $351ef
-        $35179  xx xx:      xxx #$xx
-        $3517b  xx xx xx:   xxx $xxxx
-        $3517e  xx xx xx:   xxx $xxxx
-        $35181  xx xx xx:   xxx $xxxx
-        $35184  xx xx:      xxx #$xx
-        $35186  xx xx:      xxx + ; $351ef
-        $35188  xx xx xx:   xxx $xxxx
-        $3518b  xx xx xx:   xxx $xxxx
-        $3518e  xx xx xx:   xxx $34b7f,y
-        $35191  xx xx xx:   xxx $xxxx
-        $35194  xx xx xx:   xxx $34b8f,y
-        $35197  xx xx xx:   xxx $xxxx
-        $3519a  xx:         xxx
-        $3519b  xx xx xx:   xxx $34b7f,y
-        $3519e  xx xx xx:   xxx $34b7e,y
-        $351a1  xx:         xxx
-        $351a2  xx xx xx:   xxx $xxxx
-        $351a5  xx xx xx:   xxx $xxxx
-        $351a8  xx:         xxx
-        $351a9  xx xx xx:   xxx $34b8f,y
-        $351ac  xx xx xx:   xxx $34b8e,y
-        $351af  xx:         xxx
-        $351b0  xx xx xx:   xxx $xxxx
-        $351b3  xx xx xx:   xxx $xxxx
-        $351b6  xx xx xx:   xxx $xxxx
-        $351b9  xx:         xxx
-        $351ba  xx:         xxx
-        $351bb  xx xx xx:   xxx $34b9e,y
-        $351be  xx xx xx:   xxx $xxxx
-        $351c1  xx xx xx:   xxx $34b9f,y
-        $351c4  xx xx xx:   xxx $xxxx
-        $351c7  xx xx xx:   xxx UpdateHPDisplayInternal
-        $351ca  xx xx:      xxx #$xx ; LV (status bar)
-        $351cc  xx xx xx:   xxx DisplayNumberInternal
-        $351cf  xx xx:      xxx #$xx ; EXP left
-        $351d1  xx xx xx:   xxx DisplayNumberInternal
-        $351d4  xx xx:      xxx #$xx ; MP
-        $351d6  xx xx xx:   xxx DisplayNumberInternal
-        $351d9  xx xx:      xxx #$xx ; Max MP
-        $351db  xx xx xx:   xxx DisplayNumberInternal
-        $351de  xx xx:      xxx #$xx
-        $351e0  xx xx:      xxx $xx
-        $351e2  xx xx:      xxx #$xx
-        $351e4  xx xx xx:   xxx $xxxx
-        $351e7  xx xx:      xxx #$xx
-        $351e9  xx xx xx:   xxx $xxxx
-        $351ec  xx xx xx:   xxx $3c008
+        $35179  xx xx:       xxx #$xx
+        $3517b  xx xx xx:    xxx PlayerExp
+        $3517e  xx xx xx:    xxx PlayerExp+1
+        $35181  xx xx xx:    xxx PlayerLevel
+        $35184  xx xx:       xxx #$xx
+        $35186  xx xx:       xxx + ; $351ef
+        $35188  xx xx xx:     xxx PlayerLevel
+        $3518b  xx xx xx:     xxx PlayerLevel
+        $3518e  xx xx xx:     xxx $34b7f,y
+        $35191  xx xx xx:     xxx PlayerMaxHP
+        $35194  xx xx xx:     xxx $34b8f,y
+        $35197  xx xx xx:     xxx PlayerMaxMP
+        ;; Add the delta of the max HP/MP to the current
+        $3519a  xx:           xxx
+        $3519b  xx xx xx:     xxx $34b7f,y
+        $3519e  xx xx xx:     xxx $34b7e,y
+        $351a1  xx:           xxx
+        $351a2  xx xx xx:     xxx PlayerHP
+        $351a5  xx xx xx:     xxx PlayerHP
+        $351a8  xx:           xxx
+        $351a9  xx xx xx:     xxx $34b8f,y
+        $351ac  xx xx xx:     xxx $34b8e,y
+        $351af  xx:           xxx
+        $351b0  xx xx xx:     xxx PlayerMP
+        $351b3  xx xx xx:     xxx PlayerMP
+        ;; Load the exp to next level
+        $351b6  xx xx xx:     xxx PlayerLevel
+        $351b9  xx:           xxx
+        $351ba  xx:           xxx
+        $351bb  xx xx xx:     xxx $34b9e,y
+        $351be  xx xx xx:     xxx PlayerExpToNextLevel
+        $351c1  xx xx xx:     xxx $34b9f,y
+        $351c4  xx xx xx:     xxx PlayerExpToNextLevel+1
+        ;; Update the display
+        $351c7  xx xx xx:     xxx UpdateHPDisplayInternal
+        $351ca  xx xx:        xxx #$xx ; LV (status bar)
+        $351cc  xx xx xx:     xxx DisplayNumberInternal
+        $351cf  xx xx:        xxx #$xx ; EXP left
+        $351d1  xx xx xx:     xxx DisplayNumberInternal
+        $351d4  xx xx:        xxx #$xx ; MP
+        $351d6  xx xx xx:     xxx DisplayNumberInternal
+        $351d9  xx xx:        xxx #$xx ; Max MP
+        $351db  xx xx xx:     xxx DisplayNumberInternal
+        $351de  xx xx:        xxx #GAME_MODE_STATUS_MSG
+        $351e0  xx xx:        xxx GameMode
+        $351e2  xx xx:        xxx #$xx
+        $351e4  xx xx xx:     xxx $xxxx
+        $351e7  xx xx:        xxx #$xx
+        $351e9  xx xx xx:     xxx $xxxx
+        $351ec  xx xx xx:     xxx UpdateEquipmentAndStatus
 +       $351ef  xx xx:      xxx #$xx ; EXP
         $351f1  xx xx xx:   xxx DisplayNumberInternal
         $351f4  xx xx:      xxx #SFX_MONSTER_HIT
         $351f6  xx xx xx:   xxx StartAudioTrack
         $351f9  xx:         xxx
 ;;; --------------------------------
+StartMonsterDeathAnimation
         $351fa  xx xx:      xxx #$xx
         $351fc  xx xx xx:   xxx $xxxx,y
-        $351ff  xx xx xx:   xxx $xxxx,y
+        $351ff  xx xx xx:   xxx ObjectTerrain,y
         $35202  xx xx:      xxx #$xx
         $35204  xx xx:      xxx #$xx
-        $35206  xx xx xx:   xxx $xxxx,y
+        $35206  xx xx xx:   xxx ObjectTerrain,y
         $35209  xx xx:      xxx #$xx
-        $3520b  xx xx xx:   xxx $xxxx,y
+        $3520b  xx xx xx:   xxx ObjectKnockback,y
         $3520e  xx xx:      xxx #$xx
-        $35210  xx xx xx:   xxx $xxxx,y
+        $35210  xx xx xx:   xxx ObjectActionScript,y
         $35213  xx xx:      xxx #$xx
-        $35215  xx xx xx:   xxx $xxxx,y
+        $35215  xx xx xx:   xxx ObjectAnimationCounter,y
         $35218  xx xx:      xxx #$xx
         $3521a  xx xx xx:   xxx $xxxx,y
-        $3521d  xx xx xx:   xxx $xxxx,y
-        $35220  xx xx xx:   xxx $xxxx,y
+        $3521d  xx xx xx:   xxx ObjectHitbox,y
+        $35220  xx xx xx:   xxx ObjectDelay,y
         $35223  xx xx:      xxx #$xx
-        $35225  xx xx xx:   xxx $xxxx,y
+        $35225  xx xx xx:   xxx ObjectReplacement,y
         $35228  xx:         xxx
 ;;; --------------------------------
-        $35229  xx xx xx:   xxx $xxxx
-        $3522c  xx xx:      xxx #$xx
-        $3522e  xx xx:      xxx ++ ; $3524a
+;;; When hitting a small slime with the thunder sword, the slime turns into
+;;; a big slime.  The Object ID of the big slime is at $6e0,y, but this is
+;;; not used unless $540,y is zero and $560,y is not 3.  If this does trigger
+;;; then we double-return out of CollisionJump_00_SwordHitsEnemy
+CheckThunderSwordReaction
+        $35229  xx xx xx:   xxx EquippedSword
+        $3522c  xx xx:      xxx #SWORD_THUNDER
+        $3522e  xx xx:      xxx >rts
         $35230  xx xx xx:   xxx $xxxx,y
-        $35233  xx xx:      xxx ++ ; $3524a
+        $35233  xx xx:      xxx >rts
         $35235  xx xx xx:   xxx $xxxx,y
-        $35238  xx xx:      xxx + ; $3523e
-        $3523a  xx xx:      xxx #$xx
-        $3523c  xx xx:      xxx ++ ; $3524a
+        $35238  xx xx:      xxx + ; pointless? shouldn't the bne cover this?
+        $3523a  xx xx:       xxx #$xx
+        $3523c  xx xx:       xxx >rts
         ;; NOTE: when hitting a slime with a thunder sword, this path
         ;; replaces it with a big blue slime; seems to also apply to
         ;; red slimes; several other monsters have this bit set, but it
@@ -39325,22 +39729,26 @@ DataTable_35045
         $35241  xx xx:      xxx $xx
         $35243  xx xx:      xxx $xx
         $35245  xx xx xx:   xxx LoadOneObjectData
+        ;; Double-return
         $35248  xx:         xxx
         $35249  xx:         xxx
-++      $3524a  xx:         xxx
+        $3524a  xx:         xxx
 ;;; --------------------------------
-        $3524b  xx xx xx:   xxx $xxxx,y
-        $3524e  xx xx:      xxx $xx
+AwardExperiencePoints
+        $3524b  xx xx xx:   xxx ObjectExperiencePoints,y
+        $3524e  xx xx:      xxx ++ ; $3525d
+        ;; exp < $80 are as-is.
         $35250  xx:         xxx
-        $35251  xx xx xx:   xxx $xxxx
-        $35254  xx xx xx:   xxx $xxxx
-        $35257  xx xx:      xxx $xx
-        $35259  xx xx xx:   xxx $xxxx
-        $3525c  xx:         xxx
-;;; --------------------------------
-        $3525d  xx xx:      xxx #$xx
+        $35251  xx xx xx:   xxx PlayerExp
+        $35254  xx xx xx:   xxx PlayerExp
+        $35257  xx xx:      xxx + ; $3525c
+        $35259  xx xx xx:    xxx PlayerExp+1
++       $3525c  xx:         xxx
+        ;; --------------------------------
+        ;; exp >= $80: subtract $80, multiply by $10.
+++      $3525d  xx xx:      xxx #$xx
         $3525f  xx xx:      xxx $xx
-        $35261  xx xx xx:   xxx $xxxx,y
+        $35261  xx xx xx:   xxx ObjectExperiencePoints,y
         $35264  xx:         xxx
         $35265  xx:         xxx
         $35266  xx xx:      xxx $xx
@@ -39349,85 +39757,98 @@ DataTable_35045
         $3526b  xx:         xxx
         $3526c  xx xx:      xxx $xx
         $3526e  xx:         xxx
-        $3526f  xx xx xx:   xxx $xxxx
-        $35272  xx xx xx:   xxx $xxxx
+        $3526f  xx xx xx:   xxx PlayerExp
+        $35272  xx xx xx:   xxx PlayerExp
         $35275  xx xx:      xxx $xx
-        $35277  xx xx xx:   xxx $xxxx
-        $3527a  xx xx xx:   xxx $xxxx
+        $35277  xx xx xx:   xxx PlayerExp+1
+        $3527a  xx xx xx:   xxx PlayerExp+1
         $3527d  xx:         xxx
 ;;; --------------------------------
+;;; TODO - how does this only add status sometimes?
+;;; TODO - is this just poison?
 PlayerHit_ApplyStatus
-        $3527e  xx xx xx:   xxx $xxxx,x
+        $3527e  xx xx xx:   xxx ObjectTerrain,x
         $35281  xx xx:      xxx #$xx
-        $35283  xx xx:      xxx + ; $352be
-        $35285  xx xx xx:    xxx $xxxx
-        $35288  xx xx:       xxx #$xx
-        $3528a  xx xx:       xxx + ; $352be
-        $3528c  xx xx xx:     xxx $xxxx,y
-        $3528f  xx xx:        xxx + ; $352be
-        $35291  xx xx:         xxx $xx
-        $35293  xx xx xx:      xxx $357d7
-        $35296  xx xx:         xxx $xx
-        $35298  xx xx:         xxx #$xx
-        $3529a  xx xx:         xxx + ; $352be
+        $35283  xx xx:       xxx >rts
+        $35285  xx xx xx:   xxx EquippedArmor
+        $35288  xx xx:      xxx #ARMOR_BATTLE
+        $3528a  xx xx:       xxx >rts
+        $3528c  xx xx xx:   xxx ObjectLevel,y
+        $3528f  xx xx:       xxx >rts
+        $35291  xx xx:      xxx $xx
+        $35293  xx xx xx:   xxx GenerateRandomNumber
+        $35296  xx xx:      xxx $xx
+        $35298  xx xx:      xxx #$xx
+        $3529a  xx xx:       xxx >rts ; 50% chance of doing nothing
         ;; add poison status   
-        $3529c  xx xx xx:       xxx $xxxx
-        $3529f  xx xx:          xxx #$xx
-        $352a1  xx xx:          xxx #$xx
-        $352a3  xx xx xx:       xxx $xxxx
-        $352a6  xx xx:          xxx #$xx
-        $352a8  xx xx:          xxx $xx
-        $352aa  xx xx:          xxx #$xx
-        $352ac  xx xx xx:       xxx $xxxx
-        $352af  xx xx:          xxx #$xx
-        $352b1  xx xx xx:       xxx $xxxx
-        $352b4  xx xx xx:       xxx $35431
-        $352b7  xx xx:          xxx #SFX_POISON
-        $352b9  xx xx xx:       xxx StartAudioTrack
-        $352bc  xx xx:          xxx $xx
-+       $352be  xx:         xxx
+        $3529c  xx xx xx:   xxx PlayerStatus
+        $3529f  xx xx:      xxx #$xx
+        $352a1  xx xx:      xxx #$xx
+        $352a3  xx xx xx:   xxx PlayerStatus
+        $352a6  xx xx:      xxx #GAME_MODE_STATUS_MSG
+        $352a8  xx xx:      xxx GameMode
+        $352aa  xx xx:      xxx #$xx
+        $352ac  xx xx xx:   xxx $xxxx
+        $352af  xx xx:      xxx #$xx
+        $352b1  xx xx xx:   xxx $xxxx
+        $352b4  xx xx xx:   xxx SetTemporaryInvincibility
+        $352b7  xx xx:      xxx #SFX_POISON
+        $352b9  xx xx xx:   xxx StartAudioTrack
+        $352bc  xx xx:      xxx $xx
+        $352be  xx:         xxx
 ;;; --------------------------------
+;;; Projectiles have 540,y set to $ff to indicate that shield def is used.
+;;; This also triggers this path to apply status effects.
+PlayerHit_ApplyProjectileStatus
         $352bf  xx xx xx:   xxx $xxxx,y
-        $352c2  xx xx:      xxx + ; $352c7
-        $352c4  xx xx xx:    xxx $35361
+        $352c2  xx xx:      xxx PlayerHit_CheckParalysis
+        $352c4  xx xx xx:    xxx PlayerHit_CalculateDamage
         ;; --------------------------------
-+       $352c7  xx xx:      xxx #$xx
-        $352c9  xx xx:      xxx ++ ; $352fb
-        $352cb  xx xx xx:   xxx $xxxx
-        $352ce  xx xx:      xxx #$xx
-        $352d0  xx xx:      xxx + ; $352f5
-        $352d2  xx xx:      xxx #$xx
-        $352d4  xx xx:      xxx + ; $352f5
+PlayerHit_CheckParalysis
+        $352c7  xx xx:      xxx #STATUS_PARALYZED
+        $352c9  xx xx:       xxx PlayerHit_CheckStone
+        ;; Projectile causes paralysis (prevented by certain shields),
+        ;; but no damage, so don't return back to damage calculation.
+        $352cb  xx xx xx:   xxx EquippedShield
+        $352ce  xx xx:      xxx #SHIELD_SACRED
+        $352d0  xx xx:       xxx RemoveObjectY ; and return
+        $352d2  xx xx:      xxx #SHIELD_PSYCHO
+        $352d4  xx xx:       xxx RemoveObjectY ; and return
         $352d6  xx xx:      xxx #$SFX_PARALYZED
         $352d8  xx xx xx:   xxx StartAudioTrack
-        $352db  xx xx:      xxx #$xx
-        $352dd  xx xx:      xxx $xx
+        $352db  xx xx:      xxx #GAME_MODE_STATUS_MSG
+        $352dd  xx xx:      xxx GameMode
         $352df  xx xx:      xxx #$xx
         $352e1  xx xx xx:   xxx $xxxx
         $352e4  xx xx:      xxx #$xx
         $352e6  xx xx xx:   xxx $xxxx
-        $352e9  xx xx xx:   xxx $xxxx
+        $352e9  xx xx xx:   xxx PlayerStatus
         $352ec  xx xx:      xxx #$xx
-        $352ee  xx xx:      xxx #$xx
-        $352f0  xx xx xx:   xxx $xxxx
-        $352f3  xx xx:      xxx + ; $352f5
-- +     $352f5  xx xx:      xxx #$xx
-        $352f7  xx xx xx:   xxx $xxxx,y
+        $352ee  xx xx:      xxx #STATUS_PARALYZED
+        $352f0  xx xx xx:   xxx PlayerStatus
+        $352f3  xx xx:      xxx RemoveObjectY ; uncond, but irrelevant
+;;; --------------------------------
+RemoveObjectY
+        $352f5  xx xx:      xxx #$xx
+        $352f7  xx xx xx:   xxx ObjectActionScript,y
         $352fa  xx:         xxx
-        ;; --------------------------------
-++      $352fb  xx xx:      xxx #$xx
-        $352fd  xx xx:      xxx $xx
-        $352ff  xx xx xx:   xxx $xxxx
+;;; --------------------------------
+PlayerHit_CheckStone
+        $352fb  xx xx:      xxx #STATUS_STONE
+        $352fd  xx xx:       xxx PlayerHit_CheckPoison
+        ;; Projectile causes stone (prevented by certain shields),
+        ;; but no damage, so don't return back to damage calculation.
+        $352ff  xx xx xx:   xxx PlayerStatus
         $35302  xx xx:      xxx #$xx
-        $35304  xx xx:      xxx #$xx
-        $35306  xx xx:      xxx - ; $352f5
-        $35308  xx xx xx:   xxx $xxxx
-        $3530b  xx xx:      xxx #$xx
-        $3530d  xx xx:      xxx - ; $352f5
-        $3530f  xx xx:      xxx #$xx
-        $35311  xx xx:      xxx - ; $352f5
-        $35313  xx xx:      xxx #$xx
-        $35315  xx xx:      xxx $xx
+        $35304  xx xx:      xxx #STATUS_STONE
+        $35306  xx xx:       xxx RemoveObjectY ; already stone
+        $35308  xx xx xx:   xxx EquippedShield
+        $3530b  xx xx:      xxx #SHIELD_MIRRORED
+        $3530d  xx xx:       xxx RemoveObjectY
+        $3530f  xx xx:      xxx #SHIELD_PSYCHO
+        $35311  xx xx:       xxx RemoveObjectY
+        $35313  xx xx:      xxx #GAME_MODE_STATUS_MSG
+        $35315  xx xx:      xxx GameMode
         $35317  xx xx:      xxx #$xx
         $35319  xx xx xx:   xxx $xxxx
         $3531c  xx xx:      xxx #$xx
@@ -39439,48 +39860,59 @@ PlayerHit_ApplyStatus
         $3532b  xx xx:      xxx #$xx
         $3532d  xx xx xx:   xxx $xxxx
         $35330  xx xx xx:   xxx $38c0e
-        $35333  xx xx xx:   xxx $xxxx
+        $35333  xx xx xx:   xxx PlayerStatus
         $35336  xx xx:      xxx #$xx
-        $35338  xx xx:      xxx #$xx
-        $3533a  xx xx xx:   xxx $xxxx
-        $3533d  xx xx:      xxx $xx
-        $3533f  xx xx:      xxx #$xx
-        $35341  xx xx:      xxx $xx
+        $35338  xx xx:      xxx #STATUS_STONE
+        $3533a  xx xx xx:   xxx PlayerStatus
+        $3533d  xx xx:      xxx RemoveObjectY
+;;; --------------------------------
+PlayerHit_CheckMPDrain
+        $3533f  xx xx:      xxx #$xx ; for a projectile, indicates MP drain.
+        $35341  xx xx:      xxx PlayerHit_Curse
         $35343  xx xx:      xxx $xx
-        $35345  xx xx:      xxx #$xx
+        $35345  xx xx:      xxx #$xx ; MP drain web
         $35347  xx xx:      xxx $xx
-        $35349  xx xx xx:   xxx $3ff80
+        ;; Replace the projectile with the MP drain web, keeping same position.
+        $35349  xx xx xx:   xxx LoadOneObjectData
 ;;; --------------------------------
-        $3534c  xx xx xx:   xxx $352f5
-        $3534f  xx xx:      xxx #$xx
-        $35351  xx xx xx:   xxx $xxxx
-        $35354  xx xx xx:   xxx $3c008
+PlayerHit_Curse
+        ;; If it wasn't one of the above, then it's a curse beam.
+        $3534c  xx xx xx:   xxx RemoveObjectY
+        $3534f  xx xx:      xxx #STATUS_CURSED
+        $35351  xx xx xx:   xxx PlayerStatus
+        $35354  xx xx xx:   xxx UpdateEquipmentAndStatus
 ;;; --------------------------------
+CollisionJump_01_EnemyHitsPlayer
         $35357  xx xx xx:   xxx $xxxx,y
         $3535a  xx xx:      xxx #$xx
-        $3535c  xx xx:      xxx $xx
-        $3535e  xx xx xx:   xxx $352bf
+        $3535c  xx xx:      xxx PlayerHit_CalculateDamage
+        ;; 540,y == $ff -> do something else
+        $3535e  xx xx xx:    xxx $352bf
 ;;; --------------------------------
-        $35361  xx xx xx:   xxx $3527e
+PlayerHit_CalculateDamage
+        $35361  xx xx xx:   xxx PlayerHit_ApplyStatus
         $35364  xx xx xx:   xxx $xxxx
-        $35367  xx xx:      xxx #$xx
-        $35369  xx xx:      xxx $xx
+        $35367  xx xx:      xxx #$xx ; Stom
+        $35369  xx xx:      xxx ++ ; $35388
+        ;; This is the Stom fight.  $661 tracks how many times the player's been hit.
+        ;; Presumably once it gets really low, Stom basically just stops attacking,
+        ;; but I can't find where this happens.
         $3536b  xx xx xx:   xxx $xxxx
         $3536e  xx xx xx:   xxx $xxxx
         $35371  xx xx:      xxx #$xx
-        $35373  xx xx:      xxx $xx
-        $35375  xx xx:      xxx $xx
-        $35377  xx:         xxx
-        $35378  xx xx:      xxx #$xx
-        $3537a  xx xx:      xxx $xx
-        $3537c  xx xx:      xxx $xx
-        $3537e  xx:         xxx
-        $3537f  xx xx:      xxx #$xx
-        $35381  xx xx:      xxx $xx
-        $35383  xx xx:      xxx #SFX_PLAYER_HIT
+        $35373  xx xx:      xxx + ; $35383
+        $35375  xx xx:       xxx $xx
+        $35377  xx:          xxx
+        $35378  xx xx:       xxx #$xx
+        $3537a  xx xx:       xxx $xx
+        $3537c  xx xx:       xxx $xx
+        $3537e  xx:          xxx
+        $3537f  xx xx:       xxx #$xx
+        $35381  xx xx:       xxx $xx
++       $35383  xx xx:      xxx #SFX_PLAYER_HIT
         $35385  xx xx xx:   xxx StartAudioTrack
 ;;; --------------------------------
-        $35388  xx xx xx:   xxx $xxxx,y
+++      $35388  xx xx xx:   xxx $xxxx,y
         $3538b  xx xx:      xxx #$xx
         $3538d  xx xx:      xxx #$xx
         $3538f  xx xx:      xxx $xx
@@ -39494,6 +39926,7 @@ PlayerHit_ApplyStatus
         $3539e  xx xx:      xxx $xx
         $353a0  xx xx:      xxx #$xx
         $353a2  xx xx:      xxx $xx
+        ;; Done with special cases?
         $353a4  xx xx xx:   xxx $xxxx
         $353a7  xx xx:      xxx #$xx
         $353a9  xx xx:      xxx $xx
@@ -39501,35 +39934,35 @@ PlayerHit_ApplyStatus
 ;;; --------------------------------
         $353ac  xx xx:      xxx $xx
         $353ae  xx xx:      xxx $xx
-        $353b0  xx xx xx:   xxx $355c0
-        $353b3  xx xx:      xxx $xx
-        $353b5  xx xx:      xxx #$xx
-        $353b7  xx xx:      xxx $xx
-        $353b9  xx xx xx:   xxx $xxxx
-        $353bc  xx xx:      xxx $xx
-        $353be  xx xx xx:   xxx $xxxx,x
-        $353c1  xx xx:      xxx #$xx
-        $353c3  xx xx xx:   xxx $xxxx,x
-        $353c6  xx xx xx:   xxx $xxxx,x
-        $353c9  xx xx xx:   xxx $xxxx
-        $353cc  xx xx xx:   xxx $xxxx,x
-        $353cf  xx xx xx:   xxx $xxxx
+        $353b0  xx xx xx:   xxx KnockbackObject
+        $353b3  xx xx:      xxx CurrentLocation
+        $353b5  xx xx:      xxx #LOC_SWAMP
+        $353b7  xx xx:      xxx + ; $353c6
+        $353b9  xx xx xx:    xxx $xxxx
+        $353bc  xx xx:       xxx + ; $353c6
+        $353be  xx xx xx:     xxx ObjectDirection,x ; note: X=1
+        $353c1  xx xx:        xxx #$xx
+        $353c3  xx xx xx:     xxx ObjectDirection,x
++       $353c6  xx xx xx:   xxx ObjectDirection,x
+        $353c9  xx xx xx:   xxx ObjectDirection
+        $353cc  xx xx xx:   xxx ObjectKnockback,x
+        $353cf  xx xx xx:   xxx ObjectKnockback
         $353d2  xx xx:      xxx #$xx
         $353d4  xx xx xx:   xxx $xxxx
-        $353d7  xx xx xx:   xxx $xxxx,x
+        $353d7  xx xx xx:   xxx ObjectDefense,x ; $401 is armor def
         $353da  xx xx:      xxx $xx
-        $353dc  xx xx xx:   xxx $xxxx,y
-        $353df  xx xx:      xxx #$xx
-        $353e1  xx xx:      xxx $xx
-        $353e3  xx xx xx:   xxx $xxxx
-        $353e6  xx xx:      xxx $xx
-        $353e8  xx xx:      xxx $xx
-        $353ea  xx xx:      xxx #$xx
+        $353dc  xx xx xx:   xxx ObjectDamageType,y
+        $353df  xx xx:      xxx #$xx ; projectile -> shield
+        $353e1  xx xx:      xxx + ; $353e8
+        $353e3  xx xx xx:    xxx ObjectDefense ; $400 is shield def
+        $353e6  xx xx:       xxx $xx
++       $353e8  xx xx:      xxx $xx
+        $353ea  xx xx:      xxx #$xx ; twos complement
         $353ec  xx:         xxx
         $353ed  xx xx:      xxx #$xx
         $353ef  xx:         xxx
-        $353f0  xx xx xx:   xxx $xxxx,y
-        $353f3  xx xx:      xxx $xx
+        $353f0  xx xx xx:   xxx ObjectAttack,y
+        $353f3  xx xx:       xxx PlayerHit_SubtractDamage
         $353f5  xx xx:      xxx #SFX_ATTACK_IMMUNE
         $353f7  xx xx xx:   xxx StartAudioTrack
         $353fa  xx xx xx:   xxx $35422
@@ -39538,27 +39971,37 @@ PlayerHit_ApplyStatus
 ;;; --------------------------------
         $353fe  xx xx xx:   xxx $3543f
 ;;; --------------------------------
+;;; Input:
+;;;   A = damage to subtract
+;;;   X = 1 (player HP)
+;;; Note: this checks the player's level against 17. It's not
+;;; clear when this should ever happen, except as some sort of
+;;; cheat mode where damage is not dealt.
+PlayerHit_SubtractDamage
         $35401  xx xx:      xxx $xx
-        $35403  xx xx xx:   xxx $xxxx
+        $35403  xx xx xx:   xxx PlayerLevel
         $35406  xx xx:      xxx #$xx
-        $35408  xx xx:      xxx $xx
-        $3540a  xx xx xx:   xxx $xxxx,x
-        $3540d  xx:         xxx
-        $3540e  xx xx:      xxx $xx
-        $35410  xx xx xx:   xxx $xxxx,x
-        $35413  xx xx:      xxx $xx
-        $35415  xx xx:      xxx #$xx
-        $35417  xx xx xx:   xxx $xxxx,x
-        $3541a  xx xx:      xxx #SFX_PLAYER_HIT
-        $3541c  xx xx xx:   xxx StartAudioTrack
-        $3541f  xx xx xx:   xxx $35431
-        $35422  xx xx xx:   xxx $xxxx,y
+        $35408  xx xx:      xxx ++ ; $35422
+        $3540a  xx xx xx:    xxx ObjectHP,x
+        $3540d  xx:          xxx
+        $3540e  xx xx:       xxx $xx
+        $35410  xx xx xx:    xxx ObjectHP,x
+        $35413  xx xx:       xxx + ; $3541a
+        ;; Subtraction crossed zero - player is dead
+        $35415  xx xx:        xxx #$xx
+        $35417  xx xx xx:     xxx ObjectHP,x
++       $3541a  xx xx:       xxx #SFX_PLAYER_HIT
+        $3541c  xx xx xx:    xxx StartAudioTrack
+        $3541f  xx xx xx:    xxx SetTemporaryInvincibility
+++      $35422  xx xx xx:   xxx ObjectDamageType,y
         $35425  xx xx:      xxx #$xx
-        $35427  xx xx:      xxx $xx
-        $35429  xx xx:      xxx #$xx
-        $3542b  xx xx xx:   xxx $xxxx,y
-        $3542e  xx xx xx:   xxx UpdateHPDisplayInternal
+        $35427  xx xx:      xxx + ; $3542e
+        ;; projectiles despawn after dealing damage.
+        $35429  xx xx:       xxx #$xx
+        $3542b  xx xx xx:    xxx ObjectActionScript,y
++       $3542e  xx xx xx:   xxx UpdateHPDisplayInternal
 ;;; --------------------------------
+SetTemporaryInvincibility
         $35431  xx xx:      xxx #$xx
         $35433  xx xx xx:   xxx $xxxx
         $35436  xx xx xx:   xxx $xxxx
@@ -39580,7 +40023,7 @@ PlayerHit_ApplyStatus
         $35458  xx xx xx:     xxx $xxxx,x
         $3545b  xx xx xx:     xxx $xxxx,y
         $3545e  xx xx xx:     xxx $xxxx,x
-        $35461  xx xx xx:     xxx $358d7
+        $35461  xx xx xx:     xxx MoveObjectWithSpeedAndDirection
         $35464  xx:          xxx
         $35465  xx xx xx:    xxx $xxxx,x
         $35468  xx:         xxx
@@ -39616,10 +40059,11 @@ PlayerHit_ApplyStatus
         $354a4  xx xx:      xxx #$xx
         $354a6  xx xx:      xxx $xx
         $354a8  xx xx xx:   xxx $xxxx
-        $354ab  xx xx:      xxx #$xx
-        $354ad  xx xx:      xxx $xx
+        $354ab  xx xx:      xxx #GAME_MODE_TRIGGER_TILE
+        $354ad  xx xx:      xxx GameMode
         $354af  xx:         xxx
 ;;; --------------------------------
+CollisionJump_02_PlayerInFrontOfNpcOrTrigger
         $354b0  xx xx xx:   xxx $xxxx
         $354b3  xx xx xx:   xxx $xxxx,y
         $354b6  xx xx:      xxx #$xx
@@ -39666,8 +40110,8 @@ PlayerHit_ApplyStatus
         $35508  xx xx:      xxx #$xx
         $3550a  xx xx xx:   xxx $xxxx
         $3550d  xx xx xx:   xxx $xxxx
-        $35510  xx xx:      xxx #$xx
-        $35512  xx xx:      xxx $xx
+        $35510  xx xx:      xxx #GAME_MODE_DIALOG
+        $35512  xx xx:      xxx GameMode
         $35514  xx xx xx:   xxx $xxxx,x
         $35517  xx xx:      xxx $xx
         $35519  xx xx xx:   xxx $xxxx,x
@@ -39738,7 +40182,7 @@ PlayerHit_ApplyStatus
         $35598  xx xx:         xxx #$xx
         $3559a  xx xx:         xxx #$xx
         $3559c  xx xx xx:      xxx $xxxx,x
-        $3559f  xx xx xx:      xxx $358d7
+        $3559f  xx xx xx:      xxx MoveObjectWithSpeedAndDirection
         $355a2  xx:           xxx
         $355a3  xx xx xx:     xxx $xxxx,x
         $355a6  xx:          xxx
@@ -39754,29 +40198,32 @@ PlayerHit_ApplyStatus
 ;;; --------------------------------
         $355b7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+;;; Knocks back the object indexed $11 in the direction of object indexed $10?
+;;; Not entirely sure about this - since it looks like direction,x is not used?
+KnockbackObject
         $355c0  xx xx:      xxx $xx
         $355c2  xx xx:      xxx $xx
         $355c4  xx xx:      xxx $xx
         $355c6  xx xx:      xxx $xx
-        $355c8  xx xx xx:   xxx $xxxx,y
-        $355cb  xx xx:      xxx $xx
-        $355cd  xx xx:      xxx #$xx
-        $355cf  xx xx:      xxx #$xx
-        $355d1  xx xx xx:   xxx $xxxx,y
-        $355d4  xx xx xx:   xxx $xxxx,x
+        $355c8  xx xx xx:   xxx ObjectKnockback,y
+        $355cb  xx xx:      xxx + ; $355d4
+        $355cd  xx xx:       xxx #$xx
+        $355cf  xx xx:       xxx #$xx
+        $355d1  xx xx xx:    xxx ObjectKnockback,y
++       $355d4  xx xx xx:   xxx ObjectKnockback,x
         $355d7  xx xx:      xxx #$xx
-        $355d9  xx xx xx:   xxx $xxxx,x
-        $355dc  xx xx:      xxx $xx
-        $355de  xx:         xxx
-        $355df  xx:         xxx
+        $355d9  xx xx xx:   xxx ObjectDirection,x
+        $355dc  xx xx:      xxx + ; $355df
+        $355de  xx:          xxx
++       $355df  xx:         xxx
         $355e0  xx:         xxx
         $355e1  xx:         xxx
         $355e2  xx:         xxx
         $355e3  xx xx:      xxx $xx
-        $355e5  xx xx xx:   xxx $xxxx,y
+        $355e5  xx xx xx:   xxx ObjectDirection,y
         $355e8  xx xx:      xxx #$xx
         $355ea  xx xx:      xxx $xx
-        $355ec  xx xx xx:   xxx $xxxx,y
+        $355ec  xx xx xx:   xxx ObjectDirection,y
         $355ef  xx xx:      xxx $xx
         $355f1  xx xx:      xxx $xx
         $355f3  xx:         xxx
@@ -39800,23 +40247,23 @@ PlayerHit_ApplyStatus
 ;;; Look at $3a0,x nibbles
 ;;;   - hi nibble zero => quit (clc), otherwise store $1f
 ;;;   - lo nibble => $15 (shifted << 2)
-;;; Next $420,x:40 | $3a0,x<<2 => hitbox shape
+;;; Next $420,x:40 | $3a0,x:0f<<2 => hitbox shape
 CheckHitbox
         $355f8  xx xx:      xxx $xx
-        $355fa  xx xx xx:    xxx $xxxx,x
+        $355fa  xx xx xx:    xxx ObjectTerrain,x
         $355fd  xx xx:       xxx -- ; $355f4 off screen => no hit
-        $355ff  xx xx xx:    xxx $xxxx,x
+        $355ff  xx xx xx:    xxx ObjectKnockback,x
         $35602  xx xx:       xxx -- ; $355f4 being knocked back => no hit
-        $35604  xx xx xx:    xxx $xxxx,x
+        $35604  xx xx xx:    xxx ObjectHitbox,x
         $35607  xx xx:       xxx #$xx
         $35609  xx xx:       xxx -- ; $355f4 -> no hit (not spawned? exploding walls have zero)
         $3560b  xx xx:       xxx $xx
-        $3560d  xx xx xx:    xxx $xxxx,x
+        $3560d  xx xx xx:    xxx ObjectHitbox,x
         $35610  xx xx:       xxx #$xx
         $35612  xx:          xxx
         $35613  xx:          xxx
         $35614  xx xx:       xxx $xx
-        $35616  xx xx xx:    xxx $xxxx,x
+        $35616  xx xx xx:    xxx ObjectLevel,x
         $35619  xx xx:       xxx #$xx
         $3561b  xx xx:       xxx $xx
         $3561d  xx:          xxx
@@ -39862,18 +40309,18 @@ CheckHitbox
         $3566c  xx:              xxx
         $3566d  xx xx xx:        xxx Hitboxes,x
         $35670  xx xx:           xxx $xx
-        $35672  xx xx:          xxx - ; $3563e
+        $35672  xx xx:          xxx -
         $35674  xx xx xx:       xxx Hitboxes+1,x
         $35677  xx xx:          xxx $xx
-        $35679  xx xx:         xxx - ; $3563e
+        $35679  xx xx:         xxx -
         $3567b  xx xx xx:      xxx $xxxx,y
         $3567e  xx:            xxx
         $3567f  xx xx xx:      xxx Hitboxes+2,x
         $35682  xx xx:         xxx $xx
-        $35684  xx xx:        xxx - ; $3563e
+        $35684  xx xx:        xxx -
         $35686  xx xx xx:     xxx Hitboxes+3,x
         $35689  xx xx:        xxx $xx
-        $3568b  xx xx:       xxx - ; $3563e
+        $3568b  xx xx:       xxx -
         $3568d  xx xx:      xxx $xx
         $3568f  xx:         xxx
         $35690  xx:         xxx
@@ -39885,30 +40332,30 @@ CheckHitbox
 ;;; The elements of the quad are (x0,w,y0,h) of the hitbox
 ;;; bounds relative to the object's screen position.
 Hitboxes
-        $35691              .byte $xx,$xx,$xx,$xx ; player
-        $35695              .byte $xx,$xx,$xx,$xx
-        $35699              .byte $xx,$xx,$xx,$xx
-        $3569d              .byte $xx,$xx,$xx,$xx
-        $356a1              .byte $xx,$xx,$xx,$xx
-        $356a5              .byte $xx,$xx,$xx,$xx
-        $356a9              .byte $xx,$xx,$xx,$xx
-        $356ad              .byte $xx,$xx,$xx,$xx
-        $356b1              .byte $xx,$xx,$xx,$xx
-        $356b5              .byte $xx,$xx,$xx,$xx
-        $356b9              .byte $xx,$xx,$xx,$xx
-        $356bd              .byte $xx,$xx,$xx,$xx
-        $356c1              .byte $xx,$xx,$xx,$xx
-        $356c5              .byte $xx,$xx,$xx,$xx
-        $356c9              .byte $xx,$xx,$xx,$xx
-        $356cd              .byte $xx,$xx,$xx,$xx
-        $356d1              .byte $xx,$xx,$xx,$xx
-        $356d5              .byte $xx,$xx,$xx,$xx
-        $356d9              .byte $xx,$xx,$xx,$xx
-        $356dd              .byte $xx,$xx,$xx,$xx
-        $356e1              .byte $xx,$xx,$xx,$xx
-        $356e5              .byte $xx,$xx,$xx,$xx
-        $356e9              .byte $xx,$xx,$xx,$xx
-        $356ed              .byte $xx,$xx,$xx,$xx
+        $35691              .byte $xx,$xx,$xx,$xx ; 00 player
+        $35695              .byte $xx,$xx,$xx,$xx ; 01
+        $35699              .byte $xx,$xx,$xx,$xx ; 02
+        $3569d              .byte $xx,$xx,$xx,$xx ; 03
+        $356a1              .byte $xx,$xx,$xx,$xx ; 04
+        $356a5              .byte $xx,$xx,$xx,$xx ; 05
+        $356a9              .byte $xx,$xx,$xx,$xx ; 06
+        $356ad              .byte $xx,$xx,$xx,$xx ; 07
+        $356b1              .byte $xx,$xx,$xx,$xx ; 08
+        $356b5              .byte $xx,$xx,$xx,$xx ; 09
+        $356b9              .byte $xx,$xx,$xx,$xx ; 0a
+        $356bd              .byte $xx,$xx,$xx,$xx ; 0b
+        $356c1              .byte $xx,$xx,$xx,$xx ; 0c
+        $356c5              .byte $xx,$xx,$xx,$xx ; 0d
+        $356c9              .byte $xx,$xx,$xx,$xx ; 0e
+        $356cd              .byte $xx,$xx,$xx,$xx ; 0f
+        $356d1              .byte $xx,$xx,$xx,$xx ; 10
+        $356d5              .byte $xx,$xx,$xx,$xx ; 11
+        $356d9              .byte $xx,$xx,$xx,$xx ; 12
+        $356dd              .byte $xx,$xx,$xx,$xx ; 13
+        $356e1              .byte $xx,$xx,$xx,$xx ; 14
+        $356e5              .byte $xx,$xx,$xx,$xx ; 15
+        $356e9              .byte $xx,$xx,$xx,$xx ; 16
+        $356ed              .byte $xx,$xx,$xx,$xx ; 17
 ;;; --------------------------------
 ;;; These seem to be some sort of hitbox check conditions.
 ;;; Each one says to check all NPC hitboxes (c-1f),
@@ -39916,23 +40363,34 @@ Hitboxes
 ;;; It's used by 34fac.
 ;;; Possibly the first column is the other object, since
 ;;; it should cover all the sword hits?
-;;; The 4th column is a reference into jump table $34fbb
-        $356f1              .byte $xx,$xx,$xx,$xx
-        $356f5              .byte $xx,$xx,$xx,$xx
-        $356f9              .byte $xx,$xx,$xx,$xx
-        $356fd              .byte $xx,$xx,$xx,$xx
-        $35701              .byte $xx,$xx,$xx,$xx
-        $35705              .byte $xx,$xx,$xx,$xx
-        $35709              .byte $xx,$xx,$xx,$xx
-        $3570d              .byte $xx,$xx,$xx,$xx
-        $35711              .byte $xx,$xx,$xx,$xx
-        $35715              .byte $xx,$xx,$xx,$xx
-        $35719              .byte $xx,$xx,$xx,$xx
-        $3571d              .byte $xx,$xx,$xx,$xx
-        $35721              .byte $xx,$xx,$xx,$xx
-        $35725              .byte $xx,$xx,$xx,$xx
-        $35729              .byte $xx,$xx,$xx,$xx
+;;; The 4th column is a reference into CollisionJump ($34fbb)
+CollisionTable
+        $356f1              .byte $xx,$xx,$xx,$xx ; 00 sword blast hits enemy
+        $356f5              .byte $xx,$xx,$xx,$xx ; 01 " "
+        $356f9              .byte $xx,$xx,$xx,$xx ; 02 " "
+        $356fd              .byte $xx,$xx,$xx,$xx ; 03 " "
+        $35701              .byte $xx,$xx,$xx,$xx ; 04 " "
+        $35705              .byte $xx,$xx,$xx,$xx ; 05 paralysis beam hits npc/enemy
+        $35709              .byte $xx,$xx,$xx,$xx ; 06 enemy hits player
+        $3570d              .byte $xx,$xx,$xx,$xx ; 07 front of player hits npc/trigger
+        $35711              .byte $xx,$xx,$xx,$xx ; 08 sword blast hits enemy
+        $35715              .byte $xx,$xx,$xx,$xx ; 09 " "
+        $35719              .byte $xx,$xx,$xx,$xx ; 0a " "
+        $3571d              .byte $xx,$xx,$xx,$xx ; 0b paralysis beam hits npc/enemy
+        $35721              .byte $xx,$xx,$xx,$xx ; 0c sword hits enemy
+        $35725              .byte $xx,$xx,$xx,$xx ; 0d enemy hits player
+        $35729              .byte $xx,$xx,$xx,$xx ; 0e front of player hits npc/trigger
 ;;; --------------------------------
+;;; Input: A - the index of the ad-hoc spawn in $29c00 (up to $5e or so)
+;;;        X - index of the originating object
+;;;        Y - direction of spawned object (0..7)
+;;; The spawn table holds quads, which end up in $21,$22,$11,$20.
+;;; The $11 is passed to LoadOneObjectData as the objid to load.
+;;; $23 is temporarily init to 0.
+;;; Output: C   - set if successful
+;;;         $10 - object index, if successful
+AdHocSpawnObject
+        ;; Spawn a projectile or some sort?
         $3572d  xx xx:      xxx $xx
         $3572f  xx:         xxx
         $35730  xx:         xxx
@@ -39943,92 +40401,100 @@ Hitboxes
         $35737  xx xx xx:    xxx BankSwitch8k_A000
         $3573a  xx xx:       xxx #$xx
         $3573c  xx xx:       xxx $xx
-        $3573e  xx xx xx:    xxx $29c00,y
+        $3573e  xx xx xx:    xxx AdHocSpawns,y
         $35741  xx xx:       xxx $xx
-        $35743  xx xx xx:    xxx $29c01,y
+        $35743  xx xx xx:    xxx AdHocSpawns+1,y
         $35746  xx xx:       xxx $xx
-        $35748  xx xx xx:    xxx $29c02,y
+        $35748  xx xx xx:    xxx AdHocSpawns+2,y
         $3574b  xx xx:       xxx $xx
-        $3574d  xx xx xx:    xxx $29c03,y
+        $3574d  xx xx xx:    xxx AdHocSpawns+3,y
         $35750  xx xx:       xxx $xx
-        $35752  xx xx:       xxx $xx
-        $35754  xx xx xx:    xxx $29d00,y
-        $35757  xx xx:       xxx $xx
-        $35759  xx xx xx:    xxx $29d01,y
-        $3575c  xx xx:       xxx $xx
-        $3575e  xx xx xx:    xxx $29d02,y
-        $35761  xx xx:       xxx $xx
-        $35763  xx xx xx:    xxx $29d03,y
-        $35766  xx xx:       xxx $xx
-        $35768  xx xx:       xxx $xx
+        $35752  xx xx:       xxx + ; $35768
+        $35754  xx xx xx:     xxx AdHocSpawnsPart2,y
+        $35757  xx xx:        xxx $xx
+        $35759  xx xx xx:     xxx AdHocSpawnsPart2+1,y
+        $3575c  xx xx:        xxx $xx
+        $3575e  xx xx xx:     xxx AdHocSpawnsPart2+2,y
+        $35761  xx xx:        xxx $xx
+        $35763  xx xx xx:     xxx AdHocSpawnsPart2+3,y
+        $35766  xx xx:        xxx $xx
++       $35768  xx xx:       xxx $xx
         $3576a  xx:          xxx
-        $3576b  xx xx:       xxx $xx
+        ;; a few entries in 29c00 have #$ff for $21 -> return right away
+        $3576b  xx xx:       xxx @loop
         $3576d  xx:         xxx
         $3576e  xx xx xx:   xxx BankSwitch8k_A000
         $35771  xx:         xxx
         $35772  xx:         xxx
-;;; --------------------------------
-        $35773  xx xx:      xxx $xx
-        $35775  xx xx:      xxx $xx
-        $35777  xx xx:      xxx $xx
-        $35779  xx xx xx:   xxx $358b9
-        $3577c  xx xx:      xxx $xx
-        $3577e  xx xx:      xxx $xx
-        $35780  xx xx xx:   xxx LoadOneObjectData
-        $35783  xx:         xxx
-        $35784  xx:         xxx
-        $35785  xx xx xx:    xxx ReadObjectCoordinatesInto_34_37
-        $35788  xx xx xx:    xxx $xxxx,x
-        $3578b  xx xx:       xxx $xx
-        $3578d  xx xx:       xxx #$xx
-        $3578f  xx xx:       xxx $xx
-        $35791  xx xx xx:    xxx $xxxx,x
-        $35794  xx xx xx:    xxx $xxxx,x
-        $35797  xx xx:       xxx $xx
-        $35799  xx xx:       xxx #$xx
-        $3579b  xx xx:       xxx $xx
-        $3579d  xx xx:       xxx #$xx
-        $3579f  xx xx:       xxx $xx
-        $357a1  xx xx:       xxx $xx
-        $357a3  xx xx xx:    xxx $xxxx,x
-        $357a6  xx:          xxx
-        $357a7  xx xx:       xxx #$xx
-        $357a9  xx xx:       xxx $xx
-        $357ab  xx xx xx:    xxx $xxxx,x
-        $357ae  xx:          xxx
-        $357af  xx:          xxx
-        $357b0  xx:          xxx
-        $357b1  xx:          xxx
-        $357b2  xx xx:       xxx $xx
-        $357b4  xx:          xxx
-        $357b5  xx xx xx:    xxx $29d80,y ; TODO - what page loaded?
-        $357b8  xx xx:       xxx $xx
-        $357ba  xx xx xx:    xxx $29d81,y
-        $357bd  xx:          xxx
-        $357be  xx xx:       xxx $xx
-        $357c0  xx xx:       xxx $xx
-        $357c2  xx xx xx:    xxx AddDisplacementVectorLong
-        $357c5  xx xx xx:    xxx WriteObjectCoordinatesFrom_34_37
-        $357c8  xx xx:       xxx $xx
-        $357ca  xx:         xxx
-        $357cb  xx:         xxx
-        $357cc  xx xx:      xxx $xx
-        $357ce  xx xx:      xxx $xx
-        $357d0  xx:         xxx
+        ;; --------------------------------
+        ;; Actually spawn something.  Check slots [$21,$22) for empty.
+@loop:  $35773  xx xx:       xxx $xx
+        $35775  xx xx:       xxx $xx
+        $35777  xx xx:       xxx $xx
+        $35779  xx xx xx:    xxx FindEmptySpawnSlot
+        $3577c  xx xx:       xxx @quit ; restore bank, return
+        $3577e  xx xx:       xxx $xx   ; load into the empty slot
+        $35780  xx xx xx:    xxx LoadOneObjectData
+        ;; Save X on stack - will soon point to new object
+        $35783  xx:          xxx
+        $35784  xx:          xxx
+        $35785  xx xx xx:     xxx ReadObjectCoordinatesInto_34_37
+        $35788  xx xx xx:     xxx ObjectTerrain,x
+        $3578b  xx xx:        xxx $xx ; $12 <- parent's terrain
+        $3578d  xx xx:        xxx #$xx
+        $3578f  xx xx:        xxx $xx
+        ;; Now X points to the new object, rather than the old one.
+        $35791  xx xx xx:     xxx ObjectTerrain,x
+        $35794  xx xx xx:     xxx ObjectTerrain,x
+        $35797  xx xx:        xxx $xx
+        $35799  xx xx:        xxx #$xx
+        $3579b  xx xx:        xxx +
+        $3579d  xx xx:         xxx #$xx
++       $3579f  xx xx:        xxx $xx ; $31 <- 2 if origin slow else 0
+        $357a1  xx xx:        xxx $xx ; direction
+        $357a3  xx xx xx:     xxx ObjectDirection,x
+        $357a6  xx:           xxx
+        $357a7  xx xx:        xxx #$xx
+        $357a9  xx xx:        xxx $xx
+        $357ab  xx xx xx:     xxx $xxxx,x
+        $357ae  xx:           xxx
+        $357af  xx:           xxx
+        $357b0  xx:           xxx
+        $357b1  xx:           xxx
+        $357b2  xx xx:        xxx $xx
+        $357b4  xx:           xxx
+        ;; Y looks like %aaaa_ddd0 where aaaa is the low nibble of
+        ;; the spawned object's $6e0, and ddd is the direction.
+        $357b5  xx xx xx:     xxx AdHocSpawnDisplacements,y
+        $357b8  xx xx:        xxx $xx
+        $357ba  xx xx xx:     xxx AdHocSpawnDisplacements+1,y
+        $357bd  xx:           xxx
+        $357be  xx xx:        xxx $xx
+        $357c0  xx xx:        xxx $xx
+        $357c2  xx xx xx:     xxx AddDisplacementVectorLong
+        $357c5  xx xx xx:     xxx WriteObjectCoordinatesFrom_34_37
+        $357c8  xx xx:        xxx $xx ; $23 will have sign bit -> asl sets carry
+        $357ca  xx:          xxx
+        $357cb  xx:          xxx
+        $357cc  xx xx:       xxx $xx
+        $357ce  xx xx:       xxx @loop
+@quit:  $357d0  xx:         xxx
         $357d1  xx xx xx:   xxx BankSwitch8k_A000
         $357d4  xx xx:      xxx $xx
         $357d6  xx:         xxx
 ;;; --------------------------------
+;;; Generates a pseudorandom number from 0..7 using a data table.
+;;; Returns result in A, destroys Y.
+GenerateRandomNumber
         $357d7  xx xx:      xxx $xx
         $357d9  xx xx:      xxx $xx
         $357db  xx xx:      xxx #$xx
         $357dd  xx xx:      xxx $xx
         $357df  xx:         xxx
-        $357e0  xx xx xx:   xxx $357e4,y
+        $357e0  xx xx xx:   xxx RandomNumbers,y
         $357e3  xx:         xxx
 ;;; --------------------------------
-;;; This is clearly a data table
-DataTable_357e4 
+RandomNumbers
         $357e4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $357f4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $35804              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -40138,15 +40604,19 @@ ReadObjectCoordinatesInto_34_37
         $358b6  xx xx:      xxx $xx
         $358b8  xx:         xxx
 ;;; --------------------------------
-        $358b9  xx xx xx:   xxx $xxxx,y
-        $358bc  xx xx:      xxx $xx
-        $358be  xx:         xxx
-        $358bf  xx xx:      xxx $xx
-        $358c1  xx xx:      xxx $xx
+;;; Increment 'y' until either finding an empty spawn slot, or
+;;; else reaching $10, exclusive (e.g. $1f).  Returns carry set
+;;; and 'y' pointing to an empty slot if it was successful.
+FindEmptySpawnSlot
+-       $358b9  xx xx xx:    xxx ObjectActionScript,y
+        $358bc  xx xx:       xxx >sec ; then rts
+        $358be  xx:          xxx
+        $358bf  xx xx:       xxx $xx
+        $358c1  xx xx:      xxx - ; $358b9
         $358c3  xx:         xxx
         $358c4  xx:         xxx
-;;; --------------------------------
-        $358c5  xx:         xxx
+        ;; --------------------------------
++       $358c5  xx:         xxx
         $358c6  xx:         xxx
 ;;; --------------------------------
         $358c7  xx xx:      xxx #$xx
@@ -40161,26 +40631,32 @@ ReadObjectCoordinatesInto_34_37
 ;;; Input:
 ;;;   x:                Object to work on
 ;;;   70,x, ..., d0,x:  Object's coordinates
-;;;   
+;;;   360,x:            Object direction (etc)
+;;; Result:
+;;;   C - set if we collided with an impassible tile.
+;;;       clear if the movement was successful.
+;;;   Object coords and direction updated.
+MoveObjectWithSpeedAndDirection
         $358d7  xx xx:      xxx #$xx
         $358d9  xx xx:      xxx $xx
-        $358db  xx xx xx:   xxx $xxxx,x
+        $358db  xx xx xx:   xxx ObjectDirection,x
         $358de  xx xx:      xxx $xx
-        $358e0  xx xx xx:   xxx $35947
-        $358e3  xx xx xx:   xxx $xxxx,x
+        $358e0  xx xx xx:   xxx CheckDirectionAgainstTerrain
+        $358e3  xx xx xx:   xxx ObjectDirection,x
         $358e6  xx:         xxx
         $358e7  xx xx:      xxx + ; $35900
+        ;; diagonal direction: check either adjacent cardinal dir, too
         $358e9  xx xx:       xxx #$xx
         $358eb  xx xx:       xxx $xx
-        $358ed  xx xx xx:    xxx $xxxx,x
-        $358f0  xx xx xx:    xxx $35947
+        $358ed  xx xx xx:    xxx ObjectDirection,x
+        $358f0  xx xx xx:    xxx CheckDirectionAgainstTerrain
         $358f3  xx xx:       xxx #$xx
         $358f5  xx xx:       xxx $xx
-        $358f7  xx xx xx:    xxx $xxxx,x
-        $358fa  xx xx xx:    xxx $xxxx,x
-        $358fd  xx xx xx:    xxx $35947
+        $358f7  xx xx xx:    xxx ObjectDirection,x
+        $358fa  xx xx xx:    xxx ObjectDirection,x
+        $358fd  xx xx xx:    xxx CheckDirectionAgainstTerrain
 +       $35900  xx xx:      xxx $xx
-        $35902  xx xx xx:   xxx $xxxx,x
+        $35902  xx xx xx:   xxx ObjectDirection,x
         $35905  xx:         xxx
         $35906  xx:         xxx
 ;;; --------------------------------
@@ -40196,13 +40672,21 @@ ReadObjectCoordinatesInto_34_37
 ;;; putting the object on an adjacent tile if there's an obstacle?  But I don't
 ;;; see where it's checking for obstacles?
 DataTable_35907
+        ;;                          U-L     U-R
         $35907              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; up
+        ;;                          U-L     U-R     D-R 
         $3590f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; up-right
+        ;;                          U-R     D-R
         $35917              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; right
+        ;;                          U-R     D-R     D-L
         $3591f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; down-right
+        ;;                          D-L     D-R
         $35927              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; down
+        ;;                          D-R     D-L     U-L
         $3592f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; down-left
+        ;;                          U-L     D-L
         $35937              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; left
+        ;;                          U-R     U-L     D-L
         $3593f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; up-left
 ;;; --------------------------------
 ;;; Possibly double-returns.
@@ -40211,22 +40695,24 @@ DataTable_35907
 ;;;   - this becomes the index of the $35907 table, which is pairs.
 ;;;     we try up to four different options.
 ;;; Calls: $34480, $35861 (AddDisplacementVector) x2, $359ff, $35a30 (CheckTerrainUnderObject) x3
-        $35947  xx xx:      xxx $xx,x ; why is this not just jsr $358a8 ???
+;;; Might update $360,x.
+CheckDirectionAgainstTerrain
+        $35947  xx xx:      xxx ObjXLo,x ; why is this not just jsr $358a8 ???
         $35949  xx xx:      xxx $xx
-        $3594b  xx xx:      xxx $xx,x
+        $3594b  xx xx:      xxx ObjXHi,x
         $3594d  xx xx:      xxx $xx
-        $3594f  xx xx:      xxx $xx,x
+        $3594f  xx xx:      xxx ObjYLo,x
         $35951  xx xx:      xxx $xx
-        $35953  xx xx:      xxx $xx,x
+        $35953  xx xx:      xxx ObjYHi,x
         $35955  xx xx:      xxx $xx
-        $35957  xx xx xx:   xxx $xxxx,x
+        $35957  xx xx xx:   xxx ObjectDirection,x
         $3595a  xx xx:      xxx #$xx
-        $3595c  xx xx xx:   xxx $xxxx,x
+        $3595c  xx xx xx:   xxx ObjectDirection,x
         $3595f  xx:         xxx
         $35960  xx:         xxx
         $35961  xx:         xxx
         $35962  xx xx:      xxx $xx ; temp, loaded back into y
-        $35964  xx xx xx:   xxx $xxxx,x
+        $35964  xx xx xx:   xxx ObjectDirection,x
         $35967  xx xx xx:   xxx ComputeDisplacementVector ; initialize $30,$31 from SPD,DIR,48x
         $3596a  xx xx xx:   xxx AddDisplacementVectorShort ; presumably uses $30,$31???
         ;; move new displaced position into $1c..$1f.
@@ -40253,7 +40739,7 @@ DataTable_35907
         $35991  xx xx xx:      xxx AddDisplacementVectorShort
         $35994  xx xx:         xxx #$xx
         $35996  xx xx:         xxx ++ ; $359bf
-        ;; special handling for player only here?!?
+        ;; special handling for player only here (x=0)
         $35998  xx xx xx:       xxx ApplyInvisibleWallAtScreenEdge
         $3599b  xx xx:          xxx + ; $359be -> rts
         ;; screen position okay, check terrain
@@ -40263,11 +40749,12 @@ DataTable_35907
         $359a4  xx xx:             xxx $xx ; $25 always starts zero
         $359a6  xx xx:             xxx $xx
         ;; Only proceed straight if $340,x == #$8 exactly (what does this mean?)
-        $359a8  xx xx xx:          xxx $xxxx,x
+        ;;   - not being knocked back, certain speed ??? why not just cmp?
+        $359a8  xx xx xx:          xxx ObjectKnockback,x
         $359ab  xx xx:             xxx #$xx
         $359ad  xx xx:             xxx +++ ; $359c4
         ;; Check if we're riding on a dolphin - jump away if *not*
-        $359af  xx xx xx:          xxx $xxxx
+        $359af  xx xx xx:          xxx PlayerStatus
         $359b2  xx xx:             xxx +++ ; $359c4
         ;; At this point we know we're on a dolphin - so water becomes passable.
         $359b4  xx xx:            xxx - ; $3597d
@@ -40289,7 +40776,7 @@ DataTable_35907
         $359c8  xx xx:       xxx + ; $359cc
         $359ca  xx xx:        xxx #$xx
 +       $359cc  xx xx:       xxx $xx
-        $359ce  xx xx xx:    xxx $xxxx,x
+        $359ce  xx xx xx:    xxx ObjectTerrainSusceptibility,x
         ;; this AND means that either if the feature wasn't there or the object
         ;; isn't susceptible to it, then we end up with zero, allowing another
         ;; loop - this seems backwards.
@@ -40301,26 +40788,26 @@ DataTable_35907
         $359d5  xx:         xxx
         ;; Copy positions from $1c..$1f into the actual position *and* $34..$37
         $359d6  xx xx:      xxx $xx
-        $359d8  xx xx:      xxx $xx,x
+        $359d8  xx xx:      xxx ObjXLo,x
         $359da  xx xx:      xxx $xx
         $359dc  xx xx:      xxx $xx
-        $359de  xx xx:      xxx $xx,x
+        $359de  xx xx:      xxx ObjXHi,x
         $359e0  xx xx:      xxx $xx
         $359e2  xx xx:      xxx $xx
-        $359e4  xx xx:      xxx $xx,x
+        $359e4  xx xx:      xxx ObjYLo,x
         $359e6  xx xx:      xxx $xx
         $359e8  xx xx:      xxx $xx
-        $359ea  xx xx:      xxx $xx,x
+        $359ea  xx xx:      xxx ObjYHi,x
         $359ec  xx xx:      xxx $xx
         ;; ???
         $359ee  xx xx:      xxx #$xx ; do update $380,x
         $359f0  xx xx xx:   xxx CheckTerrainUnderObject
         ;; Swap $360,x and $23 - why?
-        $359f3  xx xx xx:   xxx $xxxx,x
+        $359f3  xx xx xx:   xxx ObjectDirection,x
         $359f6  xx xx:      xxx $xx
-        $359f8  xx xx xx:   xxx $xxxx,x
+        $359f8  xx xx xx:   xxx ObjectDirection,x
         $359fb  xx xx:      xxx $xx
-        $359fd  xx:         xxx ; signal the double-return
+        $359fd  xx:         xxx ; signal that we double-returned
         $359fe  xx:         xxx
 ;;; --------------------------------
 ;;; Keeps the player bounded in x ($0a, $fc) and y ($18, $d0) directions.
@@ -40546,7 +41033,7 @@ DataTable_35b41
 ;;; --------------------------------
 ;;; This looks like it's used for X=1 (i.e. the player's position plus jump)
 ;;; This only runs for X=1.
-JumpTable_36314_01
+ObjectActionJump_01
         $35b45  xx xx:      xxx Ctrl1NewlyPressed
         $35b47  xx xx:      xxx #BUTTON_B
         $35b49  xx xx:      xxx + ; $35b5a
@@ -40610,7 +41097,7 @@ JumpTable_36314_01
         $35bca  xx xx:          xxx ++ ; $35bd2
 +       $35bcc  xx xx xx:    xxx $xxxx
         $35bcf  xx xx xx:    xxx $xxxx
-++      $35bd2  xx xx xx:   xxx $xxxx
+++      $35bd2  xx xx xx:   xxx PlayerStatus
         $35bd5  xx xx:      xxx $xx
         ;; Player is changed
         $35bd7  xx xx:      xxx #$xx
@@ -40640,26 +41127,33 @@ SetPlayer340Lower
         $35bff  xx xx xx:   xxx $xxxx
         $35c02  xx:         xxx
 ;;; --------------------------------
+;;; NOTE: X=1 throughout here, it comes from ObjectActionJump_01
+;;; This looks like it's initializing a sword swing?
         ;; Handle various player status effects (ailments, dolphin, change)
-        $35c03  xx xx xx:   xxx $xxxx
-        $35c06  xx xx:      xxx $xx
-        $35c08  xx xx xx:   xxx $xxxx,x
-        $35c0b  xx xx:      xxx #$xx
-        $35c0d  xx xx:      xxx #$xx
-        $35c0f  xx:         xxx
-        $35c10  xx xx xx:   xxx $xxxx,x
-        $35c13  xx xx:      xxx #$xx
-        $35c15  xx xx:      xxx + ; $35c19
-        $35c17  xx xx:       xxx #$xx
-+       $35c19  xx:         xxx
-        $35c1a  xx xx xx:   xxx $xxxx,x
-        $35c1d  xx xx:      xxx + ; $35c2a
-        $35c1f  xx xx xx:    xxx $xxxx,x
+        $35c03  xx xx xx:   xxx EquippedShield
+        $35c06  xx xx:      xxx ++ ; $35c1f
+        ;; If there is no shield, look at the current player sprite direction
+        ;; shifted to 8..b, unless it's already swinging the sword, in which
+        ;; case it;'s just 4c.  This is stored in 580 - I don't know what this
+        ;; does yet, it seems to be temporarily swapped into $300,x during
+        ;; sprite drawing if $380,x:02 is set (cf $3822e).
+        $35c08  xx xx xx:     xxx ObjectMetasprite,x ; X=1 -> ??
+        $35c0b  xx xx:        xxx #$xx
+        $35c0d  xx xx:        xxx #$xx
+        $35c0f  xx:           xxx
+        $35c10  xx xx xx:     xxx ObjectMetasprite,x
+        $35c13  xx xx:        xxx #$xx
+        $35c15  xx xx:        xxx +
+        $35c17  xx xx:         xxx #$xx
++       $35c19  xx:           xxx
+        $35c1a  xx xx xx:     xxx $xxxx,x
+        $35c1d  xx xx:        xxx +++ ; unconditional
+++      $35c1f  xx xx xx:    xxx ObjectMetasprite,x
         $35c22  xx xx:       xxx #$xx
         $35c24  xx:          xxx
         $35c25  xx xx:       xxx #$xx
         $35c27  xx xx xx:    xxx $xxxx,x
-+       $35c2a  xx xx xx:   xxx $xxxx,x
++++     $35c2a  xx xx xx:   xxx $xxxx,x
         $35c2d  xx:         xxx
         $35c2e  xx xx:      xxx #$xx
         $35c30  xx:         xxx
@@ -40682,7 +41176,7 @@ SetPlayer340Lower
         $35c56  xx xx xx:   xxx $xxxx
         $35c59  xx xx xx:   xxx $35c66,y
         $35c5c  xx xx xx:   xxx $xxxx
-        $35c5f  xx xx xx:   xxx $34bd2,y
+        $35c5f  xx xx xx:   xxx SwordStabDamage,y
         $35c62  xx xx xx:   xxx $xxxx
 ++      $35c65  xx:         xxx
 ;;; --------------------------------
@@ -40806,7 +41300,7 @@ FallDisplacements
         $35d6d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $35d7d              .byte $xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_36314_02
+ObjectActionJump_02
         $35d81  xx xx:      xxx #$xx
         $35d83  xx xx:      xxx $xx
         $35d85  xx xx:      xxx $xx
@@ -40819,7 +41313,7 @@ JumpTable_36314_02
         $35d93  xx xx xx:   xxx $xxxx,x
         $35d96  xx xx:      xxx #$xx
         $35d98  xx xx:      xxx $xx
-JumpTable_36314_03
+ObjectActionJump_03
 +       $35d9a  xx xx xx:   xxx $xxxx
         $35d9d  xx xx:      xxx + ; $35db7
         $35d9f  xx xx:      xxx #$xx
@@ -40867,7 +41361,7 @@ JumpTable_36314_03
         $35dfe  xx xx:      xxx + ; $35e03
         $35e00  xx xx xx:   xxx ++ ; $35e39
         ;; --------------------------------
-+       $35e03  xx xx xx:   xxx $xxxx
++       $35e03  xx xx xx:   xxx EquippedSword
         $35e06  xx xx:      xxx ++ ; $35e39
         $35e08  xx xx:      xxx #$xx
         $35e0a  xx xx xx:   xxx $xxxx,x
@@ -40884,7 +41378,7 @@ JumpTable_36314_03
         $35e24  xx xx:       xxx + ; $35e2b
         $35e26  xx xx:        xxx #SFX_SWORD_CHARGED
         $35e28  xx xx xx:     xxx StartAudioTrack
-+       $35e2b  xx xx xx:    xxx $xxxx
++       $35e2b  xx xx xx:    xxx MaxChargeLevel
         $35e2e  xx xx xx:    xxx $35d7e,y
         $35e31  xx xx xx:    xxx $xxxx
         $35e34  xx xx:       xxx ++ ; $35e39
@@ -40922,7 +41416,7 @@ JumpTable_36314_03
         $35e7e  xx xx:      xxx $xx
         $35e80  xx xx:      xxx + ; $35e85
         $35e82  xx xx xx:   xxx $xxxx
-+       $35e85  xx xx xx:   xxx $xxxx
++       $35e85  xx xx xx:   xxx PlayerStatus
         $35e88  xx xx:      xxx + ; $35e8f
         $35e8a  xx xx:      xxx #$xx
         $35e8c  xx xx xx:   xxx $xxxx
@@ -40947,21 +41441,22 @@ JumpTable_36314_03
 +       $35eba  xx xx:      xxx $xx
         $35ebc  xx xx xx:   xxx $xxxx,x
         $35ebf  xx xx xx:   xxx $xxxx,x
-        $35ec2  xx xx xx:   xxx $358d7
+        $35ec2  xx xx xx:   xxx MoveObjectWithSpeedAndDirection
         $35ec5  xx xx:      xxx + ; $35ed8
-        $35ec7  xx xx:      xxx $xx
-        $35ec9  xx xx xx:   xxx $xxxx
-        $35ecc  xx xx:      xxx $xx
-        $35ece  xx xx xx:   xxx $xxxx,x
-        $35ed1  xx xx:      xxx #$xx
-        $35ed3  xx xx xx:   xxx $xxxx,x
-        $35ed6  xx xx:      xxx ++ ; $35eef
+        $35ec7  xx xx:       xxx $xx
+        $35ec9  xx xx xx:    xxx $xxxx
+        $35ecc  xx xx:       xxx $xx
+        $35ece  xx xx xx:    xxx $xxxx,x
+        $35ed1  xx xx:       xxx #$xx
+        $35ed3  xx xx xx:    xxx $xxxx,x
+        $35ed6  xx xx:       xxx ++ ; $35eef - uncond
+        ;;                   ------
 +       $35ed8  xx xx xx:   xxx $xxxx,x
         $35edb  xx xx:      xxx ++ ; $35eef
         $35edd  xx xx xx:   xxx $xxxx,x
         $35ee0  xx xx:      xxx $xx
         $35ee2  xx xx xx:   xxx $xxxx,x
-        $35ee5  xx xx xx:   xxx $358d7
+        $35ee5  xx xx xx:   xxx MoveObjectWithSpeedAndDirection
         $35ee8  xx xx:      xxx ++ ; $35eef
         $35eea  xx xx:       xxx $xx
         $35eec  xx xx xx:    xxx $xxxx
@@ -41076,7 +41571,7 @@ JumpTable_36314_03
         $35fe9  xx xx xx:      xxx $xxxx,x
         $35fec  xx xx:         xxx #$xx
         $35fee  xx xx xx:      xxx $xxxx,x
-        $35ff1  xx xx xx:      xxx $358d7
+        $35ff1  xx xx xx:      xxx MoveObjectWithSpeedAndDirection
         $35ff4  xx xx:         xxx + ; $36002
         $35ff6  xx xx xx:      xxx $xxxx,x
         $35ff9  xx xx:         xxx #$xx
@@ -41117,61 +41612,83 @@ DataTable_36017
         $36043  xx xx:      xxx $xx
         $36045  xx xx:      xxx $xx
         $36047  xx xx:      xxx #$xx
-        $36049  xx xx:      xxx $xx
-        $3604b  xx xx:      xxx #$xx
-        $3604d  xx xx:      xxx $xx
-        $3604f  xx xx xx:   xxx $xxxx
-        $36052  xx xx:      xxx $xx
-        $36054  xx xx:      xxx #$xx
-        $36056  xx xx xx:   xxx $xxxx
-        $36059  xx xx:      xxx $xx
-        $3605b  xx xx xx:   xxx $361ad
-;;; --------------------------------
-        $3605e  xx xx:      xxx $xx
+        $36049  xx xx:      xxx + ; $36054
+        $3604b  xx xx:       xxx #$xx
+        $3604d  xx xx:       xxx + ; $36054
+        $3604f  xx xx xx:     xxx $xxxx
+        $36052  xx xx:        xxx $xx ; actually jmp -> $361bb
++       $36054  xx xx:      xxx #$xx
+        $36056  xx xx xx:   xxx PlayerStatus
+        $36059  xx xx:      xxx + ; $3605e
+        $3605b  xx xx xx:    xxx $361ad ; currently changed
+        ;; --------------------------------
++       $3605e  xx xx:      xxx $xx
         $36060  xx xx:      xxx #$xx
         $36062  xx:         xxx
         $36063  xx:         xxx
-        $36064  xx xx xx:   xxx $36072,y
+        $36064  xx xx xx:   xxx UseMagicJump,y
         $36067  xx xx:      xxx $xx
-        $36069  xx xx xx:   xxx $36073,y
+        $36069  xx xx xx:   xxx UseMagicJump+1,y
         $3606c  xx xx:      xxx $xx
         $3606e  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
-DataTable_36071 
-        $36071              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $36080              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $36090              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $36071              .byte $xx ; UNUSED
+;;; --------------------------------
+;;; SRTIP: word=$2c000
+UseMagicJump
+        $36072              .word ($360a2) ; 00 rts
+        $36074              .word ($360a3) ; 01 refresh
+        $36076              .word ($360d7) ; 02 paralysis
+        $36078              .word ($3618e) ; 03 telepathy
+        $3607a              .word ($361a1) ; 04 teleport
+        $3607c              .word ($3617d) ; 05 recover
+        $3607e              .word ($360f4) ; 06 barrier
+        $36080              .word ($36161) ; 07 change
+        $36082              .word ($36112) ; 08 flight
+        $36084              .word ($36143) ; 09 ??
+        $36086              .word ($360a2)
+        $36088              .word ($360a2)
+        $3608a              .word ($360a2)
+        $3608c              .word ($360a2)
+        $3608e              .word ($360a2)
+        $36090              .word ($360a2)
+;;; --------------------------------
+        $36092              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $360a0              .byte $xx,$xx
 ;;; --------------------------------
+UseMagicJump_00_Nothing
         $360a2  xx:         xxx
 ;;; --------------------------------
+;;; Use refresh magic - where is the jump table for this?
+UseMagicJump_01_Refresh
         $360a3  xx xx xx:   xxx $361b0
-        $360a6  xx xx xx:   xxx $xxxx
+        $360a6  xx xx xx:   xxx PlayerMP
         $360a9  xx xx:      xxx #$xx
-        $360ab  xx xx:      xxx $xx
+        $360ab  xx xx:      xxx + ; $360b0
         $360ad  xx xx xx:   xxx $3615c
-;;; --------------------------------
-        $360b0  xx xx xx:   xxx $360b3
-        $360b3  xx xx xx:   xxx $xxxx
-        $360b6  xx xx xx:   xxx $xxxx,x
-        $360b9  xx xx:      xxx $xx
+        ;; --------------------------------
++       $360b0  xx xx xx:   xxx $360b3
+        $360b3  xx xx xx:   xxx PlayerHP
+        $360b6  xx xx xx:   xxx $xxxx,x ; x=0 always here? MaxHP
+        $360b9  xx xx:      xxx @rts
         $360bb  xx:         xxx
         $360bc  xx xx:      xxx #$xx
-        $360be  xx xx xx:   xxx $xxxx
+        $360be  xx xx xx:   xxx PlayerHP ; +1 HP
         $360c1  xx xx xx:   xxx $xxxx,x
-        $360c4  xx xx:      xxx $xx
-        $360c6  xx xx:      xxx #$xx
-        $360c8  xx xx:      xxx $xx
-        $360ca  xx xx xx:   xxx UpdateHPDisplayInternal
+        $360c4  xx xx:      xxx + ; $360ca
+        $360c6  xx xx:       xxx #$xx ; each bar is 4 HP
+        $360c8  xx xx:       xxx @rts
++       $360ca  xx xx xx:   xxx UpdateHPDisplayInternal
         $360cd  xx xx:      xxx #$xx
         $360cf  xx xx xx:   xxx SpendMPOrDoubleReturn
         $360d2  xx xx:      xxx #$xx
         $360d4  xx xx:      xxx $xx
-        $360d6  xx:         xxx
+@rts:   $360d6  xx:         xxx
 ;;; --------------------------------
+UseMagicJump_02_Paralysis
         $360d7  xx xx xx:   xxx $361b0
         $360da  xx xx xx:   xxx $xxxx
-        $360dd  xx xx:      xxx $xx
+        $360dd  xx xx:      xxx @rts
         $360df  xx xx:      xxx #$xx
         $360e1  xx xx xx:   xxx SpendMPOrDoubleReturn
         $360e4  xx xx:      xxx #$xx
@@ -41183,111 +41700,124 @@ DataTable_36071
         $360ef  xx xx:      xxx $xx
         $360f1  xx xx xx:   xxx $3572d
 ;;; --------------------------------
+UseMagicJump_06_Barrier
         $360f4  xx xx xx:   xxx $xxxx
-        $360f7  xx xx:      xxx $xx
-        $360f9  xx xx xx:   xxx $361bb
-;;; --------------------------------
-        $360fc  xx xx xx:   xxx $xxxx
+        $360f7  xx xx:      xxx + ; $360fc
+        $360f9  xx xx xx:    xxx $361bb
+;       ; --------------------------------
++       $360fc  xx xx xx:   xxx PlayerMP
         $360ff  xx xx:      xxx $xx
-        $36101  xx xx:      xxx $xx
-        $36103  xx xx:      xxx #$xx
-        $36105  xx xx:      xxx $xx
-        $36107  xx xx:      xxx #$xx
-        $36109  xx xx xx:   xxx SpendMPOrDoubleReturn
-        $3610c  xx xx:      xxx #$xx
+        $36101  xx xx:      xxx GlobalCounter
+        $36103  xx xx:      xxx #$xx ; spend 1MP every 8 frames (8/sec)
+        $36105  xx xx:      xxx + ; $3610c
+        $36107  xx xx:       xxx #$xx
+        $36109  xx xx xx:    xxx SpendMPOrDoubleReturn
++       $3610c  xx xx:      xxx #$xx
         $3610e  xx xx:      xxx $xx
-        $36110  xx xx:      xxx $xx
-        $36112  xx xx xx:   xxx $xxxx
-        $36115  xx xx:      xxx $xx
-        $36117  xx xx:      xxx $xx
+        $36110  xx xx:      xxx $xx ; unconditional
+;;; --------------------------------
+UseMagicJump_08_Flight
+        $36112  xx xx xx:   xxx PlayerStatus
+        $36115  xx xx:      xxx @rts ; if on dolphin
+        $36117  xx xx:      xxx GlobalCounter
         $36119  xx xx:      xxx #$xx
-        $3611b  xx xx:      xxx $xx
-        $3611d  xx xx:      xxx #$xx
-        $3611f  xx xx xx:   xxx SpendMPOrDoubleReturn
-        $36122  xx xx xx:   xxx $xxxx,x
-        $36125  xx xx:      xxx $xx
-        $36127  xx xx xx:   xxx $xxxx
-        $3612a  xx xx:      xxx $xx
-        $3612c  xx xx:      xxx #$xx
-        $3612e  xx xx xx:   xxx $xxxx,x
-        $36131  xx xx:      xxx $xx
-        $36133  xx xx xx:   xxx $xxxx,x
+        $3611b  xx xx:      xxx + ; $36122
+        $3611d  xx xx:       xxx #$xx
+        $3611f  xx xx xx:    xxx SpendMPOrDoubleReturn
++       $36122  xx xx xx:   xxx $xxxx,x
+        $36125  xx xx:      xxx + ; $36133
+        $36127  xx xx xx:    xxx PlayerMP
+        $3612a  xx xx:       xxx UseMagic_InsufficientMP
+        $3612c  xx xx:       xxx #$xx
+        $3612e  xx xx xx:    xxx $xxxx,x
+        $36131  xx xx:       xxx ++ ; $3614d
++       $36133  xx xx xx:   xxx $xxxx,x
         $36136  xx xx:      xxx #$xx
-        $36138  xx xx:      xxx $xx
-        $3613a  xx xx xx:   xxx $xxxx,x
-        $3613d  xx xx:      xxx $xx
+        $36138  xx xx:      xxx + ; $3613d
+        $3613a  xx xx xx:    xxx $xxxx,x
++       $3613d  xx xx:      xxx Ctrl1CurrentDirection
         $3613f  xx xx xx:   xxx $xxxx,x
-        $36142  xx:         xxx
+@rts:   $36142  xx:         xxx
 ;;; --------------------------------
-        $36143  xx xx xx:   xxx $xxxx
-        $36146  xx xx:      xxx $xx
+UseMagicJump_09
+        $36143  xx xx xx:   xxx PlayerStatus
+        $36146  xx xx:      xxx @rts ; if on dolphin
         $36148  xx xx xx:   xxx $xxxx,x
-        $3614b  xx xx:      xxx $xx
-        $3614d  xx xx:      xxx #$xx
+        $3614b  xx xx:      xxx @rts
+++      $3614d  xx xx:      xxx #$xx
         $3614f  xx xx xx:   xxx $xxxx,x
-        $36152  xx xx:      xxx $xx
+        $36152  xx xx:      xxx Ctrl1CurrentDirection
         $36154  xx xx xx:   xxx $xxxx,x
-        $36157  xx xx:      xxx #$xx
-        $36159  xx xx xx:   xxx $3c125
+        $36157  xx xx:      xxx #SFX_JUMP
+        $36159  xx xx xx:   xxx StartAudioTrack
 ;;; --------------------------------
-        $3615c  xx xx:      xxx #$xx
-        $3615e  xx xx:      xxx $xx
+UseMagic_InsufficientMP
+        $3615c  xx xx:      xxx #GAME_MODE_INSUFFICIENT_MP
+        $3615e  xx xx:      xxx GameMode
         $36160  xx:         xxx
 ;;; --------------------------------
-        $36161  xx xx:      xxx $xx
+UseMagicJump_07_Change
+        $36161  xx xx:      xxx CurrentLocation
         $36163  xx xx:      xxx #$xx
-        $36165  xx xx:      xxx #$xx
-        $36167  xx xx:      xxx $xx
+        $36165  xx xx:      xxx #$xx ; inside the tower
+        $36167  xx xx:      xxx $xx ; -> error and return, no message
         $36169  xx xx xx:   xxx $361b0
         $3616c  xx xx xx:   xxx $xxxx,x
         $3616f  xx xx:      xxx $xx
-        $36171  xx:         xxx
+        $36171  xx:          xxx
+        ;; --------------------------------
+        $36172  xx xx xx:   xxx PlayerMP
+        $36175  xx xx:      xxx #$xx ; 20
+        $36177  xx xx:      xxx UseMagic_InsufficientMP
+        $36179  xx xx:      xxx #GAME_MODE_CHANGE_MENU
+        $3617b  xx xx:      xxx UseMagic_SetGameMode ; unconditional
 ;;; --------------------------------
-        $36172  xx xx xx:   xxx $xxxx
-        $36175  xx xx:      xxx #$xx
-        $36177  xx xx:      xxx $xx
-        $36179  xx xx:      xxx #$xx
-        $3617b  xx xx:      xxx $xx
-        $3617d  xx xx xx:   xxx $xxxx
+UseMagicJump_05_Recover
+        $3617d  xx xx xx:   xxx PlayerStatus
         $36180  xx xx:      xxx #$xx
-        $36182  xx xx:      xxx $xx
-        $36184  xx xx:      xxx #$xx
+        $36182  xx xx:      xxx @rts ; skip unless there's status to recover
+        $36184  xx xx:      xxx #$xx ; 24
         $36186  xx xx xx:   xxx SpendMPOrDoubleReturn
-        $36189  xx xx:      xxx #$xx
-        $3618b  xx xx:      xxx $xx
-        $3618d  xx:         xxx
+        $36189  xx xx:      xxx #GAME_MODE_RECOVER_MAGIC
+        $3618b  xx xx:      xxx UseMagic_SetGameMode ; unconditional
 ;;; --------------------------------
+@rts:   $3618d  xx:         xxx
+;;; --------------------------------
+UseMagicJump_03_Telepathy
         $3618e  xx xx:      xxx $xx
         $36190  xx xx:      xxx #$xx
         $36192  xx xx:      xxx #$xx
         $36194  xx xx:      xxx $xx
-        $36196  xx xx xx:   xxx $xxxx
+        $36196  xx xx xx:   xxx PlayerMP
         $36199  xx xx:      xxx #$xx
-        $3619b  xx xx:      xxx $xx
+        $3619b  xx xx:      xxx UseMagic_InsufficientMP
         $3619d  xx xx:      xxx #$xx
-        $3619f  xx xx:      xxx $xx
+        $3619f  xx xx:      xxx UseMagic_SetGameMode ; unconditional
+;;; --------------------------------
+UseMagicJump_04_Teleport
         $361a1  xx xx xx:   xxx $361b0
-        $361a4  xx xx xx:   xxx $xxxx
-        $361a7  xx xx:      xxx #$xx
-        $361a9  xx xx:      xxx $xx
-        $361ab  xx xx:      xxx #$xx
-        $361ad  xx xx:      xxx $xx
+        $361a4  xx xx xx:   xxx PlayerMP
+        $361a7  xx xx:      xxx #$xx ; 20 MP
+        $361a9  xx xx:      xxx UseMagic_InsufficientMP
+        $361ab  xx xx:      xxx #GAME_MODE_TELEPORT_MENU
+UseMagic_SetGameMode
+        $361ad  xx xx:      xxx GameMode
         $361af  xx:         xxx
 ;;; --------------------------------
-        $361b0  xx xx xx:   xxx $xxxx
+        $361b0  xx xx xx:   xxx PlayerStatus
         $361b3  xx xx:      xxx #$xx
         $361b5  xx xx:      xxx #$xx
         $361b7  xx xx:      xxx $xx
         $361b9  xx:         xxx
         $361ba  xx:         xxx
-        $361bb  xx xx:      xxx #$xx
-        $361bd  xx xx xx:   xxx $3c125
+        $361bb  xx xx:      xxx #SFX_CURSOR_ERROR
+        $361bd  xx xx xx:   xxx StartAudioTrack
 ;;; --------------------------------
         $361c0  xx:         xxx
 ;;; --------------------------------
         $361c1  xx:         xxx
         $361c2  xx:         xxx
-        $361c3  xx xx xx:    xxx $3ff8c
+        $361c3  xx xx xx:    xxx DrawAllObjectSprites
         $361c6  xx:         xxx
         $361c7  xx:         xxx
         $361c8  xx:         xxx
@@ -41335,7 +41865,7 @@ DataTable_36071
 DataTable_36211 
         $36211              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_36314_05
+ObjectActionJump_05
         $36219  xx xx xx:   xxx $xxxx
         $3621c  xx xx:      xxx $xx
         $3621e  xx xx xx:   xxx $xxxx
@@ -41359,7 +41889,7 @@ JumpTable_36314_05
 DataTable_36242 
         $36242              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_36314_0b
+ObjectActionJump_0b             ; Stom fight (in $4a0)
         $3624a  xx xx xx:   xxx $362b4
         $3624d  xx xx:      xxx #$xx
         $3624f  xx xx xx:   xxx $xxxx,x
@@ -41443,8 +41973,8 @@ DataTable_362ac
         $362f4  xx xx xx:   xxx $xxxx
         $362f7  xx xx:      xxx #$xx
         $362f9  xx xx xx:   xxx $xxxx
-        $362fc  xx xx:      xxx #$xx
-        $362fe  xx xx:      xxx $xx
+        $362fc  xx xx:      xxx #GAME_MODE_STATUS_MSG
+        $362fe  xx xx:      xxx GameMode
         $36300  xx xx xx:   xxx $xxxx
         $36303  xx xx xx:   xxx $xxxx
         $36306  xx xx:      xxx #$xx
@@ -41455,10 +41985,10 @@ DataTable_362ac
 DataTable_36313 
         $36313              .byte $xx
 ;;; --------------------------------
-;;; This is called by $3cd28 using $4a0,x as the index.
+;;; This is called by $3cd28 using $4a0,x:7f as the index.
 ;;; Note that entries $60..$6f are on a different page.
 ;;; STRIP: word=$2c000
-JumpTable_36314
+ObjectActionJump
         $36314              .word ($xxxx)
         $36316              .word ($35b45) ; 01
         $36318              .word ($35d81) ; 02
@@ -41491,53 +42021,53 @@ JumpTable_36314
         $3634e              .word ($3702c) ; 1d
         $36350              .word ($37094) ; 1e
         $36352              .word ($370a2) ; 1f
-        $36354              .word ($36915) ; 20
-        $36356              .word ($36969) ; 21
-        $36358              .word ($36b42) ; 22
+        $36354              .word ($36915) ; 20 monster
+        $36356              .word ($36969) ; 21 monster
+        $36358              .word ($36b42) ; 22 monster
         $3635a              .word ($xxxx)
-        $3635c              .word ($36a57) ; 24
-        $3635e              .word ($369d2) ; 25
-        $36360              .word ($369e4) ; 26
-        $36362              .word ($369db) ; 27
-        $36364              .word ($36b61) ; 28
-        $36366              .word ($36b9e) ; 29
-        $36368              .word ($36bf8) ; 2a
+        $3635c              .word ($36a57) ; 24 monster
+        $3635e              .word ($369d2) ; 25 monster
+        $36360              .word ($369e4) ; 26 monster
+        $36362              .word ($369db) ; 27 monster
+        $36364              .word ($36b61) ; 28 monster
+        $36366              .word ($36b9e) ; 29 monster
+        $36368              .word ($36bf8) ; 2a monster
         $3636a              .word ($36c60) ; 2b
         $3636c              .word ($36cc0) ; 2c
         $3636e              .word ($xxxx)
-        $36370              .word ($369b4) ; 2e
+        $36370              .word ($369b4) ; 2e monster
         $36372              .word ($37048) ; 2f
         $36374              .word ($36cd9) ; 30
         $36376              .word ($36e16) ; 31
         $36378              .word ($36e31) ; 32
         $3637a              .word ($364c6) ; 33
-        $3637c              .word ($37318) ; 34
+        $3637c              .word ($37318) ; 34 monster
         $3637e              .word ($xxxx)
         $36380              .word ($37070) ; 36
         $36382              .word ($xxxx)
-        $36384              .word ($36fa9) ; 38
+        $36384              .word ($36fa9) ; 38 monster
         $36386              .word ($36519) ; 39
         $36388              .word ($36555) ; 3a
         $3638a              .word ($xxxx)
-        $3638c              .word ($36ff5) ; 3c
+        $3638c              .word ($36ff5) ; 3c monster
         $3638e              .word ($xxxx)
         $36390              .word ($xxxx)
         $36392              .word ($36414) ; 3f
-        $36394              .word ($3739e) ; 40
-        $36396              .word ($37339) ; 41
+        $36394              .word ($3739e) ; 40 monster
+        $36396              .word ($37339) ; 41 monster (c1)
         $36398              .word ($xxxx)
         $3639a              .word ($xxxx)
-        $3639c              .word ($37436) ; 44
-        $3639e              .word ($374ba) ; 45
+        $3639c              .word ($37436) ; 44 monster
+        $3639e              .word ($374ba) ; 45 monster
         $363a0              .word ($xxxx)
         $363a2              .word ($xxxx)
         $363a4              .word ($3755a) ; 48
         $363a6              .word ($xxxx)
         $363a8              .word ($xxxx)
         $363aa              .word ($xxxx)
-        $363ac              .word ($37595) ; 4c
-        $363ae              .word ($37595) ; 4d
-        $363b0              .word ($375d9) ; 4e
+        $363ac              .word ($37595) ; 4c monster (cc)
+        $363ae              .word ($37595) ; 4d monster (cd)
+        $363b0              .word ($375d9) ; 4e monster (ce)
         $363b2              .word ($xxxx)
         $363b4              .word ($36660) ; 50
         $363b6              .word ($366c5) ; 51
@@ -41551,23 +42081,23 @@ JumpTable_36314
         $363c6              .word ($xxxx)
         $363c8              .word ($xxxx)
         $363ca              .word ($xxxx)
-        $363cc              .word ($37626) ; 5c
-        $363ce              .word ($37690) ; 5d
-        $363d0              .word ($375f3) ; 5e
+        $363cc              .word ($37626) ; 5c monster (dc)
+        $363ce              .word ($37690) ; 5d monster
+        $363d0              .word ($375f3) ; 5e monster
         $363d2              .word ($3641a) ; 5f
         ;; STRIP: word=$14000
-        $363d4              .word ($1e477) ; 60
+        $363d4              .word ($1e477) ; 60 vammpire
         $363d6              .word ($1e5ee) ; 61
-        $363d8              .word ($1e675) ; 62
-        $363da              .word ($1e95d) ; 63
+        $363d8              .word ($1e675) ; 62 giant insect
+        $363da              .word ($1e95d) ; 63 general kelbesque
         $363dc              .word ($1eb3e) ; 64
-        $363de              .word ($1ebda) ; 65
-        $363e0              .word ($1ec7b) ; 66
-        $363e2              .word ($1edd4) ; 67
-        $363e4              .word ($1ef48) ; 68
-        $363e6              .word ($1f0b6) ; 69
-        $363e8              .word ($1f130) ; 6a
-        $363ea              .word ($1f2da) ; 6b
+        $363de              .word ($1ebda) ; 65 lime tree guardian
+        $363e0              .word ($1ec7b) ; 66 sabera
+        $363e2              .word ($1edd4) ; 67 mado
+        $363e4              .word ($1ef48) ; 68 karmine
+        $363e6              .word ($1f0b6) ; 69 guardian statues
+        $363e8              .word ($1f130) ; 6a draygon
+        $363ea              .word ($1f2da) ; 6b draygon 2
         $363ec              .word ($1f728) ; 6c
         $363ee              .word ($1f728) ; 6d
         $363f0              .word ($1f728) ; 6e
@@ -41586,19 +42116,19 @@ JumpTable_36314
         $36408              .word ($xxxx)
         $3640a              .word ($37778) ; 7b
         $3640c              .word ($377f6) ; 7c
-        $3640e              .word ($379aa) ; 7d
+        $3640e              .word ($379aa) ; 7d - shaking for 16 frames or so btw death and coin
         $36410              .word ($xxxx)
         $36412              .word ($36419) ; 7f
 ;;; --------------------------------
-JumpTable_36314_3f
-        $36414  xx xx:      xxx #$xx
-        $36416  xx xx:      xxx $xx
+ObjectActionJump_3f
+        $36414  xx xx:      xxx #SCREEN_MODE_NTBOSS
+        $36416  xx xx:      xxx ScreenMode
         $36418  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_7f
+ObjectActionJump_7f
         $36419  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_5f
+ObjectActionJump_5f
         $3641a  xx xx xx:   xxx $xxxx,x
         $3641d  xx xx:      xxx $xx
         $3641f  xx xx xx:   xxx $3648c
@@ -41642,7 +42172,7 @@ JumpTable_36314_5f
         $36475  xx xx:       xxx $xx
         $36477  xx xx:       xxx #$xx
         $36479  xx xx:       xxx $xx
-        $3647b  xx xx xx:    xxx $3c169
+        $3647b  xx xx xx:    xxx WaitForOAMDMA
         $3647e  xx xx:       xxx #$xx
         $36480  xx xx xx:    xxx $3c831
         $36483  xx xx:       xxx $xx
@@ -41685,7 +42215,7 @@ JumpTable_36314_5f
         $364c3  xx xx:      xxx $xx
         $364c5  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_33
+ObjectActionJump_33
         $364c6  xx xx xx:   xxx $xxxx,x
         $364c9  xx xx xx:   xxx $xxxx,x
         $364cc  xx xx:      xxx #$xx
@@ -41696,10 +42226,10 @@ JumpTable_36314_33
         $364d8  xx xx xx:   xxx $xxxx,x
         $364db  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_76
+ObjectActionJump_76
         $364dc  xx xx:      xxx #$xx
         $364de  xx xx:      xxx $xx
-JumpTable_36314_77
+ObjectActionJump_77
         $364e0  xx xx:      xxx #$xx
         $364e2  xx xx xx:   xxx $xxxx
         $364e5  xx xx:      xxx $xx
@@ -41726,7 +42256,7 @@ JumpTable_36314_77
         $36515  xx xx xx:   xxx $xxxx,x
         $36518  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_39
+ObjectActionJump_39
         $36519  xx xx xx:   xxx $xxxx,x
         $3651c  xx xx:      xxx $xx
         $3651e  xx xx xx:   xxx $xxxx,x
@@ -41757,7 +42287,7 @@ JumpTable_36314_39
         $36551  xx xx xx:   xxx $xxxx
         $36554  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_3a
+ObjectActionJump_3a
         $36555  xx xx xx:   xxx $xxxx,x
         $36558  xx xx:      xxx $xx
         $3655a  xx xx xx:   xxx $xxxx,x
@@ -41806,21 +42336,21 @@ JumpTable_36314_3a
         $365b3  xx xx xx:   xxx $xxxx
         $365b6  xx xx:      xxx #$xx
         $365b8  xx xx xx:   xxx $xxxx
-        $365bb  xx xx:      xxx #$xx
-        $365bd  xx xx:      xxx $xx
+        $365bb  xx xx:      xxx #GAME_MODE_STATUS_MSG
+        $365bd  xx xx:      xxx GameMode
         $365bf  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_0e
-        $365c0  xx xx:      xxx #$xx
-        $365c2  xx xx:      xxx $xx
+ObjectActionJump_0e
+        $365c0  xx xx:      xxx #GAME_MODE_EMPTY_SHOP
+        $365c2  xx xx:      xxx GameMode
         $365c4  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_0f
+ObjectActionJump_0f             ; used by objects $40..$48
         $365c5  xx xx xx:   xxx $xxxx,x
-        $365c8  xx xx:      xxx $xx
+        $365c8  xx xx:      xxx GameMode
         $365ca  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_0c
+ObjectActionJump_0c
         $365cb  xx xx xx:   xxx $xxxx
         $365ce  xx xx xx:   xxx $xxxx
         $365d1  xx xx:      xxx $xx
@@ -41837,7 +42367,7 @@ JumpTable_36314_0c
         $365e8  xx xx:      xxx $xx
         $365ea  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
 ;;; --------------------------------
-JumpTable_36314_0d
+ObjectActionJump_0d
         $365ed  xx xx:      xxx #$xx
         $365ef  xx xx xx:   xxx $xxxx,x
         $365f2  xx xx xx:   xxx $xxxx,x
@@ -41855,11 +42385,11 @@ JumpTable_36314_0d
         $36609  xx xx xx:   xxx $xxxx
         $3660c  xx xx:      xxx #$xx
         $3660e  xx xx xx:   xxx $xxxx
-        $36611  xx xx:      xxx #$xx
-        $36613  xx xx:      xxx $xx
+        $36611  xx xx:      xxx #GAME_MODE_STATUS_MSG
+        $36613  xx xx:      xxx GameMode
         $36615  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_55
+ObjectActionJump_55
         $36616  xx xx:      xxx $xx
         $36618  xx xx:      xxx #$xx
         $3661a  xx xx:      xxx $xx
@@ -41895,7 +42425,7 @@ JumpTable_36314_55
         $3665c  xx xx xx:   xxx $xxxx,x
         $3665f  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_50
+ObjectActionJump_50
         $36660  xx xx xx:   xxx $xxxx,x
         $36663  xx xx:      xxx $xx
         $36665  xx xx xx:   xxx $xxxx
@@ -41919,8 +42449,8 @@ JumpTable_36314_50
         $36689  xx xx:      xxx #$xx
         $3668b  xx xx xx:   xxx $xxxx,x
         $3668e  xx xx xx:   xxx $xxxx,x
-        $36691  xx xx:      xxx #$xx
-        $36693  xx xx:      xxx $xx
+        $36691  xx xx:      xxx #GAME_MODE_DIALOG
+        $36693  xx xx:      xxx GameMode
         $36695  xx xx xx:   xxx $xxxx
         $36698  xx xx:      xxx #$xx
         $3669a  xx xx xx:   xxx $xxxx,x
@@ -41937,13 +42467,13 @@ JumpTable_36314_50
         $366b3  xx xx xx:   xxx $xxxx,x
         $366b6  xx xx:      xxx #$xx
         $366b8  xx xx xx:   xxx $xxxx,x
-        $366bb  xx xx xx:   xxx $358d7
+        $366bb  xx xx xx:   xxx MoveObjectWithSpeedAndDirection
         $366be  xx xx:      xxx + ; $366c4
         $366c0  xx xx:       xxx #$xx
         $366c2  xx xx:       xxx $xx,x
 +       $366c4  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_51
+ObjectActionJump_51
         $366c5  xx xx xx:   xxx $366fb
         $366c8  xx xx xx:   xxx $xxxx,x
         $366cb  xx xx xx:   xxx $xxxx,x
@@ -41980,7 +42510,7 @@ JumpTable_36314_51
         $3670c  xx:          xxx
 +       $3670d  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_0a
+ObjectActionJump_0a
         $3670e  xx xx xx:   xxx $xxxx,x
         $36711  xx xx:      xxx + ; $36725
         $36713  xx xx xx:   xxx $xxxx,x
@@ -41988,8 +42518,8 @@ JumpTable_36314_0a
         $36718  xx xx xx:   xxx $xxxx
         $3671b  xx xx:      xxx #$xx
         $3671d  xx xx xx:   xxx $xxxx
-        $36720  xx xx:      xxx #$xx
-        $36722  xx xx:      xxx $xx
+        $36720  xx xx:      xxx #GAME_MODE_STATUS_MSG
+        $36722  xx xx:      xxx GameMode
         $36724  xx:         xxx
         ;; --------------------------------
 +       $36725  xx xx:      xxx $xx
@@ -42013,7 +42543,7 @@ JumpTable_36314_0a
         $3674f  xx xx xx:   xxx $xxxx
         $36752  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_52
+ObjectActionJump_52
         $36753  xx xx xx:   xxx $xxxx,x
         $36756  xx xx:      xxx $xx
         $36758  xx xx xx:   xxx $xxxx,x
@@ -42058,7 +42588,7 @@ JumpTable_36314_52
         $367aa  xx xx:       xxx #$xx
         $367ac  xx xx:       xxx #$xx
         $367ae  xx xx:       xxx $xx
-        $367b0  xx xx xx:    xxx $357d7
+        $367b0  xx xx xx:    xxx GenerateRandomNumber
         $367b3  xx xx:       xxx $xx
         $367b5  xx xx:       xxx ++ ; $367cc
         $367b7  xx:          xxx
@@ -42074,7 +42604,7 @@ JumpTable_36314_52
         $367c9  xx xx xx:     xxx $xxxx,x
 ++      $367cc  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_53
+ObjectActionJump_53
         $367cd  xx xx xx:   xxx $xxxx,x
         $367d0  xx xx:      xxx ++ ; $367ea
         $367d2  xx xx xx:   xxx $xxxx,x
@@ -42096,11 +42626,11 @@ JumpTable_36314_53
         $367f5  xx xx xx:   xxx $xxxx
         $367f8  xx xx:      xxx #$xx
         $367fa  xx xx xx:   xxx $xxxx
-        $367fd  xx xx:      xxx #$xx
-        $367ff  xx xx:      xxx $xx
+        $367fd  xx xx:      xxx #GAME_MODE_TRIGGER_TILE
+        $367ff  xx xx:      xxx GameMode
         $36801  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_54
+ObjectActionJump_54
         $36802  xx xx xx:   xxx $xxxx
         $36805  xx xx:      xxx $xx
         $36807  xx xx:      xxx $xx
@@ -42112,7 +42642,7 @@ JumpTable_36314_54
         $36814  xx xx:      xxx #$xx
         $36816  xx xx xx:   xxx $xxxx,x
         $36819  xx xx:      xxx #$xx
-        $3681b  xx xx xx:   xxx $34409
+        $3681b  xx xx xx:   xxx VectorBetweenObjectsXY
         $3681e  xx xx:      xxx $xx
         $36820  xx xx xx:   xxx $xxxx,x
         $36823  xx xx:      xxx #$xx
@@ -42142,7 +42672,7 @@ JumpTable_36314_54
 ;;; --------------------------------
         $3685e  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_07
+ObjectActionJump_07
         $3685f  xx xx xx:   xxx $xxxx,x
         $36862  xx xx:      xxx ++ ; $368b0
         $36864  xx xx:      xxx $xx
@@ -42165,7 +42695,7 @@ JumpTable_36314_07
         $3688b  xx xx:        xxx #$xx
         $3688d  xx xx xx:     xxx $3572d
         $36890  xx xx:        xxx ++ ; $368b0
-        $36892  xx xx xx:      xxx $357d7
+        $36892  xx xx xx:      xxx GenerateRandomNumber
         $36895  xx xx:         xxx #$xx
         $36897  xx:            xxx
         $36898  xx xx xx:      xxx $368a2,y
@@ -42217,24 +42747,29 @@ DataTable_368fc
         $36904              .byte $xx,$xx,$xx,$xx
         $36908              .byte $xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_36314_79
+ObjectActionJump_79
         $3690c  xx xx:      xxx #$xx
         $3690e  xx xx xx:   xxx BankSwitch8k_A000
         $36911  xx xx xx:   xxx $37728
 ;;; --------------------------------
-JumpTable_36314_78
+ObjectActionJump_78
         $36914  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_20
-        $36915  xx xx xx:   xxx $xxxx,x
+;;; Used by slimes, jellies, living rocks, scorpions, crabs, spiders, jellyfish
+ObjectActionJump_20_RandomMovement
+        $36915  xx xx xx:   xxx ObjectTerrain,x
         $36918  xx xx:      xxx + ; $36923
+        ;; $380,x:80 is set (object is off screen) - only move every 4th frame,
+        ;; staggered by object index.
         $3691a  xx:          xxx
         $3691b  xx:          xxx
-        $3691c  xx xx:       xxx $xx
+        $3691c  xx xx:       xxx GlobalCounter
         $3691e  xx xx:       xxx #$xx
         $36920  xx xx:       xxx + ; $36923
         $36922  xx:           xxx
         ;; --------------------------------
+        ;; For random movement, $600,x is a wait timer.  If it's nonzero,
+        ;; we just decrement it.  Also dec $4a0,x until its :07 bit zeros.
 +       $36923  xx xx xx:   xxx $xxxx,x
         $36926  xx xx:      xxx ++ ; $36936
         $36928  xx xx xx:    xxx $xxxx,x
@@ -42244,25 +42779,31 @@ JumpTable_36314_20
         $36932  xx xx xx:     xxx $xxxx,x
 +       $36935  xx:          xxx
         ;; --------------------------------
-++      $36936  xx xx xx:   xxx $xxxx,x
+++      $36936  xx xx xx:   xxx $xxxx,x ; also some kind of step counter
         $36939  xx xx:      xxx + ; $3693e
-        $3693b  xx xx xx:   xxx $3694a
+        ;; After we've taken the pre-determined number of steps, stop and turn.
+        $3693b  xx xx xx:    xxx ObjectAction_RandomMovement_PickNewDirection
 +       $3693e  xx xx xx:   xxx $xxxx,x
         $36941  xx xx xx:   xxx $xxxx,x
-        $36944  xx xx xx:   xxx $358d7
-        $36947  xx xx:      xxx $xx
-        $36949  xx:         xxx
+        $36944  xx xx xx:   xxx MoveObjectWithSpeedAndDirection
+        ;; If we just tried to move onto an impassible tile, then stop and turn.
+        $36947  xx xx:      xxx ObjectAction_RandomMovement_PickNewDirection
+        $36949  xx:          xxx
 ;;; --------------------------------
-        $3694a  xx xx xx:   xxx $357d7
+;;; Picks a new direction at random (out of the 4 cardinals) as well as
+;;; a random value for the step length and uses the global counter (<< 3)
+;;; as the delay.
+ObjectAction_RandomMovement_PickNewDirection
+        $3694a  xx xx xx:   xxx GenerateRandomNumber
         $3694d  xx xx:      xxx #$xx
-        $3694f  xx xx xx:   xxx $xxxx,x
-        $36952  xx xx xx:   xxx $357d7
+        $3694f  xx xx xx:   xxx ObjectDirection,x
+        $36952  xx xx xx:   xxx GenerateRandomNumber
         $36955  xx:         xxx
         $36956  xx:         xxx
         $36957  xx:         xxx
         $36958  xx xx:      xxx #$xx
         $3695a  xx xx xx:   xxx $xxxx,x
-        $3695d  xx xx:      xxx $xx
+        $3695d  xx xx:      xxx GlobalCounter
         $3695f  xx xx:      xxx #$xx
         $36961  xx:         xxx
         $36962  xx:         xxx
@@ -42271,205 +42812,237 @@ JumpTable_36314_20
         $36965  xx xx xx:   xxx $xxxx,x
         $36968  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_21
+ObjectActionJump_21_StoneGazer
         $36969  xx xx xx:   xxx $xxxx,x
-        $3696c  xx xx xx:   xxx $xxxx,x
+        $3696c  xx xx xx:   xxx $xxxx,x ; unused / redundant.
         $3696f  xx xx:      xxx + ; $36998
         $36971  xx xx xx:    xxx $xxxx,x
         $36974  xx xx xx:    xxx $xxxx,x
         $36977  xx:          xxx
-        $36978  xx xx:       xxx ++ ; $369b3
+        $36978  xx xx:        xxx >rts ; every other frame do nothing
         $3697a  xx xx xx:    xxx $xxxx,x
         $3697d  xx xx xx:    xxx $xxxx,x
         $36980  xx:          xxx
         $36981  xx xx xx:    xxx $xxxx,x
         $36984  xx xx xx:    xxx $xxxx,x
-        $36987  xx xx:       xxx #$xx
-        $36989  xx xx:       xxx ++ ; $369b3
-        $3698b  xx xx xx:    xxx $xxxx,x
+        $36987  xx xx:       xxx #$xx ; Shoot in the direct middle of the wait
+        $36989  xx xx:        xxx >rts
+        ;; Use the metasprite ID to determine direction, rather than $360,x ...?
+        $3698b  xx xx xx:    xxx ObjectMetasprite,x
         $3698e  xx:          xxx
         $3698f  xx xx:       xxx #$xx
         $36991  xx:          xxx
         $36992  xx xx xx:    xxx $xxxx,x
-        $36995  xx xx xx:    xxx $3572d
-;;; --------------------------------
-+       $36998  xx xx xx:   xxx $37714
-        $3699b  xx xx xx:   xxx $36915
-        $3699e  xx xx xx:   xxx $xxxx,x
+        $36995  xx xx xx:    xxx AdHocSpawnObject
+        ;; --------------------------------
++       $36998  xx xx xx:   xxx CheckToShootProjectile
+        $3699b  xx xx xx:   xxx ObjectActionJump_20_RandomMovement
+        $3699e  xx xx xx:   xxx ObjectMetasprite,x
         $369a1  xx xx:      xxx #$xx
         $369a3  xx xx:      xxx $xx
-        $369a5  xx xx xx:   xxx $xxxx,x
+        $369a5  xx xx xx:   xxx ObjectDirection,x
         $369a8  xx:         xxx
         $369a9  xx xx:      xxx $xx
-        $369ab  xx xx xx:   xxx $xxxx,x
-        $369ae  xx xx:      xxx #$xx
+        $369ab  xx xx xx:   xxx ObjectMetasprite,x
+        $369ae  xx xx:      xxx #$xx ; no delay between directions
         $369b0  xx xx xx:   xxx $xxxx,x
 ++      $369b3  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_2e
+ObjectActionJump_2e
         $369b4  xx xx xx:   xxx $xxxx,x
         $369b7  xx xx:      xxx + ; $369cf
-        $369b9  xx xx:      xxx #$xx
-        $369bb  xx xx xx:   xxx $xxxx,x
-        $369be  xx xx xx:   xxx $3572d
-        $369c1  xx xx:      xxx + ; $369cf
-        $369c3  xx xx:      xxx $xx
-        $369c5  xx:         xxx
-        $369c6  xx xx xx:   xxx $xxxx,y
-        $369c9  xx xx:      xxx #$xx
-        $369cb  xx xx xx:   xxx $xxxx,x
-        $369ce  xx:         xxx
-        ;; --------------------------------
-+       $369cf  xx xx xx:   xxx $36bf8
+        $369b9  xx xx:       xxx #$xx
+        $369bb  xx xx xx:    xxx $xxxx,x
+        $369be  xx xx xx:    xxx AdHocSpawnObject
+        $369c1  xx xx:       xxx + ; $369cf
+        $369c3  xx xx:        xxx $xx
+        $369c5  xx:           xxx
+        $369c6  xx xx xx:     xxx $xxxx,y
+        $369c9  xx xx:        xxx #$xx
+        $369cb  xx xx xx:     xxx $xxxx,x
+        $369ce  xx:           xxx
+        ;;                    ---
++       $369cf  xx xx xx:   xxx ObjectActionJump_2a_Soldier
 ;;; --------------------------------
-JumpTable_36314_25
+ObjectActionJump_25_MushroomMovement
+        ;; Mushrooms and mt sabre plants ("ice entity")
         $369d2  xx xx xx:   xxx $xxxx,x
-        $369d5  xx xx:      xxx + ; $369da
-        $369d7  xx xx xx:   xxx $36a57
+        $369d5  xx xx:       xxx >rts
+        $369d7  xx xx xx:   xxx ObjectActionJump_24_HomingMovement
         ;; --------------------------------
-+       $369da  xx:         xxx
+        $369da  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_27
+ObjectActionJump_27_TrollMoveOrThrow
         $369db  xx xx xx:   xxx $xxxx,x
-        $369de  xx xx:      xxx + ; $369e3
-        $369e0  xx xx xx:   xxx ++ ; $369e4
+        $369de  xx xx:       xxx >rts
+        $369e0  xx xx xx:   xxx ObjectActionJump_26_OrcMoveOrThrow
         ;; --------------------------------
-+       $369e3  xx:         xxx
+        $369e3  xx:         xxx
         ;; --------------------------------
-JumpTable_36314_26
-++      $369e4  xx xx xx:   xxx $xxxx,x
-        $369e7  xx xx:      xxx +++ ; $36a31
+ObjectActionJump_26_OrcMoveOrThrow
+        $369e4  xx xx xx:   xxx $xxxx,x
+        $369e7  xx xx:       xxx ObjectAction_OrcMove
+ObjectAction_OrcThrowing
+        ;; At this point we're throwing.
+        ;; Check 380:08, whether this is a directional sprite.
+        ;; If it's clear then it is directional so read direction into A,
+        ;; otherwise set A to zero.
         $369e9  xx xx xx:   xxx $xxxx,x
         $369ec  xx xx:      xxx #$xx
         $369ee  xx xx:      xxx + ; $369f4
-        $369f0  xx xx:      xxx #$xx
-        $369f2  xx xx:      xxx ++ ; $369fa
-+       $369f4  xx xx xx:   xxx $xxxx,x
-        $369f7  xx xx:      xxx #$xx
-        $369f9  xx:         xxx
+        $369f0  xx xx:        xxx #$xx
+        $369f2  xx xx:        xxx ++ ; $369fa - uncond
++       $369f4  xx xx xx:    xxx ObjectDirection,x
+        $369f7  xx xx:       xxx #$xx
+        $369f9  xx:          xxx
+        ;; At this point, A is cardinal direction (0..3) or zero.
+        ;; 6e0 allows a separate set of metasprites for when the orc throws.
 ++      $369fa  xx xx xx:   xxx $xxxx,x
-        $369fd  xx xx xx:   xxx $xxxx,x
+        $369fd  xx xx xx:   xxx ObjectMetasprite,x
+        ;; Now check if we're ready to actually throw the object. Also
+        ;; reset the animation timer to line up with the spawn timing.
         $36a00  xx xx xx:   xxx $xxxx,x
         $36a03  xx xx xx:   xxx $xxxx,x
         $36a06  xx:         xxx
         $36a07  xx xx xx:   xxx $xxxx,x
         $36a0a  xx xx xx:   xxx $xxxx,x
         $36a0d  xx xx:      xxx #$xx
-        $36a0f  xx xx:      xxx ++++ ; $36a56
+        $36a0f  xx xx:      xxx >rts
         $36a11  xx xx xx:   xxx $xxxx,x
         $36a14  xx xx:      xxx #$xx
-        $36a16  xx xx:      xxx + ; $36a25
-        $36a18  xx xx xx:   xxx $xxxx,x
-        $36a1b  xx xx:      xxx #$xx
-        $36a1d  xx:         xxx
-        $36a1e  xx:         xxx
-        $36a1f  xx xx xx:   xxx $xxxx,x
-        $36a22  xx xx xx:   xxx $3572d
-        ;; --------------------------------
-+       $36a25  xx xx xx:   xxx $xxxx,x
+        $36a16  xx xx:      xxx + ; $36a25 (instead: beq $3698b, delete branch)
+        ;; Pull direction from the sprite (note: redundant with $3698b)
+        ;; This is for directional sprites
+        $36a18  xx xx xx:    xxx ObjectMetasprite,x
+        $36a1b  xx xx:       xxx #$xx
+        $36a1d  xx:          xxx
+        $36a1e  xx:          xxx
+        $36a1f  xx xx xx:    xxx $xxxx,x
+        $36a22  xx xx xx:    xxx AdHocSpawnObject
+        ;;                   --------------------
+        ;; For non-directional sprites, use ObjectDirection instead.
++       $36a25  xx xx xx:   xxx ObjectDirection,x
         $36a28  xx xx:      xxx #$xx
         $36a2a  xx:         xxx
         $36a2b  xx xx xx:   xxx $xxxx,x
-        $36a2e  xx xx xx:   xxx $3572d
+        $36a2e  xx xx xx:   xxx AdHocSpawnObject
         ;; --------------------------------
-+++     $36a31  xx xx xx:   xxx $xxxx,x
+ObjectAction_OrcMove
+        ;; $300 <- $6c0
+        $36a31  xx xx xx:   xxx $xxxx,x
         $36a34  xx xx:      xxx #$xx
         $36a36  xx xx:      xxx + ; $36a3c
         $36a38  xx xx:      xxx #$xx
         $36a3a  xx xx:      xxx ++ ; $36a42
-+       $36a3c  xx xx xx:   xxx $xxxx,x
++       $36a3c  xx xx xx:   xxx ObjectDirection,x
         $36a3f  xx xx:      xxx #$xx
         $36a41  xx:         xxx
 ++      $36a42  xx xx xx:   xxx $xxxx,x
-        $36a45  xx xx xx:   xxx $xxxx,x
-        $36a48  xx xx xx:   xxx $xxxx,x
+        $36a45  xx xx xx:   xxx ObjectMetasprite,x
+        ;; After setting sprite, we muck with 320...? it's unclear who
+        ;; set it before or who else reads it.
+        $36a48  xx xx xx:   xxx $xxxx,x ; unused?!?
         $36a4b  xx xx:      xxx #$xx
         $36a4d  xx xx xx:   xxx $xxxx,x
-        $36a50  xx xx xx:   xxx $37714
-        $36a53  xx xx xx:   xxx $36a57 ; TODO: name me
+        ;; Maybe shoot (and double-return), else move.
+        $36a50  xx xx xx:   xxx CheckToShootProjectile
+        $36a53  xx xx xx:    xxx ObjectActionJump_24_HomingMovement
         ;; --------------------------------
-++++    $36a56  xx:         xxx
+        $36a56  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_24
+ObjectActionJump_24_HomingMovement
+        ;; weretiger, wyvern, large slime, earth entity (cave plants)
+        ;; Update every 8 frames if off screen, every frame if on screen
         $36a57  xx xx:      xxx #$xx
         $36a59  xx xx xx:   xxx $xxxx,x
         $36a5c  xx xx:      xxx + ; $36a60
-        $36a5e  xx xx:      xxx #$xx
-+       $36a60  xx xx:      xxx $xx
+        $36a5e  xx xx:       xxx #$xx
++       $36a60  xx xx:      xxx $xx ; $10 <- on screen ? 1 : 7
         $36a62  xx:         xxx
         $36a63  xx:         xxx
-        $36a64  xx xx:      xxx $xx
-        $36a66  xx xx:      xxx $xx
+        $36a64  xx xx:      xxx GlobalCounter
+        $36a66  xx xx:      xxx $xx ; update frequency
         $36a68  xx xx:      xxx + ; $36a6b
-        $36a6a  xx:         xxx
+        $36a6a  xx:          xxx
         ;; --------------------------------
+	;; Tick the non-looping counter (4e0) twice, the step counter once
 +       $36a6b  xx xx xx:   xxx $xxxx,x
         $36a6e  xx xx xx:   xxx $xxxx,x
         $36a71  xx xx xx:   xxx $xxxx,x
+        ;; 
         $36a74  xx xx xx:   xxx $xxxx,x
-        $36a77  xx xx:      xxx ++ ; $36ac0
+        $36a77  xx xx:       xxx ObjectAction_HomingMovement_Swerving
         $36a79  xx xx xx:   xxx $xxxx,x
         $36a7c  xx xx:      xxx #$xx
         $36a7e  xx xx:      xxx + ; $36a96
-        $36a80  xx xx:      xxx #$xx
-        $36a82  xx xx xx:   xxx $34409
-        $36a85  xx xx:      xxx $xx
-        $36a87  xx xx:      xxx #$xx
-        $36a89  xx xx xx:   xxx $xxxx,x
-        $36a8c  xx xx xx:   xxx $xxxx,x
-        $36a8f  xx xx:      xxx #$xx
-        $36a91  xx xx:      xxx + ; $36a96
-        $36a93  xx xx xx:   xxx $36b2d
-+       $36a96  xx xx xx:   xxx $358d7
-        $36a99  xx xx:      xxx + ; $36a9c
-        $36a9b  xx:         xxx
+        $36a80  xx xx:       xxx #$xx
+        $36a82  xx xx xx:    xxx VectorBetweenObjectsXY
+        $36a85  xx xx:       xxx $xx ; presumably this is a direction - maybe return?
+        $36a87  xx xx:       xxx #$xx ; normalize diagonals into cardinal direction
+        $36a89  xx xx xx:    xxx ObjectDirection,x
+        $36a8c  xx xx xx:    xxx ObjectTerrain,x
+        $36a8f  xx xx:       xxx #$xx
+        $36a91  xx xx:       xxx + ; $36a96
+        $36a93  xx xx xx:     xxx UpdateMetaspriteForDirectionChange
++       $36a96  xx xx xx:   xxx MoveObjectWithSpeedAndDirection
+        $36a99  xx xx:      xxx ObjectAction_HomingMovement_Bumped
+        $36a9b  xx:          xxx  ; movement was clear, return
         ;; --------------------------------
-+       $36a9c  xx xx:      xxx #$xx
+ObjectAction_HomingMovement_Bumped
+        $36a9c  xx xx:      xxx #$xx
         $36a9e  xx xx xx:   xxx $xxxx,x
         $36aa1  xx:         xxx
-        $36aa2  xx xx:      xxx $xx
+        $36aa2  xx xx:      xxx GlobalCounter
         $36aa4  xx:         xxx
         $36aa5  xx:         xxx
         $36aa6  xx xx:      xxx #$xx
-        $36aa8  xx xx xx:   xxx $xxxx,x
+        $36aa8  xx xx xx:   xxx $xxxx,x ; 0 or 1
+ObjectAction_HomingMovement_PickOppositeDirection
         $36aab  xx xx xx:   xxx $xxxx,x
         $36aae  xx xx:      xxx #$xx
--       $36ab0  xx:         xxx
-        $36ab1  xx xx xx:   xxx $xxxx,x
-        $36ab4  xx:         xxx
-        $36ab5  xx xx:      xxx + ; $36ab9
-        $36ab7  xx:         xxx
-        $36ab8  xx:         xxx
-+       $36ab9  xx:         xxx
-        $36aba  xx xx:      xxx #$xx
-        $36abc  xx xx xx:   xxx $xxxx,x
-        $36abf  xx:         xxx
+ObjectAction_HomingMovement_PickDirection
+        $36ab0  xx:          xxx
+        $36ab1  xx xx xx:    xxx ObjectDirection,x
+        $36ab4  xx:          xxx
+        $36ab5  xx xx:       xxx + ; $36ab9
+        $36ab7  xx:           xxx
+        $36ab8  xx:           xxx
++       $36ab9  xx:          xxx
+        $36aba  xx xx:       xxx #$xx
+        $36abc  xx xx xx:    xxx ObjectDirection,x
+        $36abf  xx:          xxx
         ;; --------------------------------
-++      $36ac0  xx xx xx:   xxx $xxxx,x
+ObjectAction_HomingMovement_Swerving
+        $36ac0  xx xx xx:   xxx $xxxx,x
         $36ac3  xx xx xx:   xxx $xxxx,x
         $36ac6  xx xx:      xxx #$xx
         $36ac8  xx xx:      xxx + ; $36ae0
+        ;; Turn every four frames.
         $36aca  xx xx xx:   xxx $xxxx,x
-        $36acd  xx xx xx:   xxx - ; $36ab0
-        $36ad0  xx xx xx:   xxx $36afa
+        $36acd  xx xx xx:   xxx ObjectAction_HomingMovement_PickDirection
+        $36ad0  xx xx xx:   xxx CheckMovementInDirection
         $36ad3  xx xx:      xxx ++ ; $36aef
-        $36ad5  xx xx xx:   xxx $36aab
-        $36ad8  xx xx xx:   xxx $36afa
+        $36ad5  xx xx xx:   xxx ObjectAction_HomingMovement_PickOppositeDirection
+        $36ad8  xx xx xx:   xxx CheckMovementInDirection
         $36adb  xx xx:      xxx + ; $36ae0
-        $36add  xx xx xx:   xxx $36aab
+        $36add  xx xx xx:   xxx ObjectAction_HomingMovement_PickOppositeDirection
         ;; --------------------------------
-+       $36ae0  xx xx xx:   xxx $358d7
-        $36ae3  xx xx:      xxx $xx
++       $36ae0  xx xx xx:   xxx MoveObjectWithSpeedAndDirection
+        $36ae3  xx xx:      xxx $xx ; zero if clear? why not just bcs?
         $36ae5  xx xx:      xxx + ; $36aec
-        $36ae7  xx xx:      xxx $xx
-        $36ae9  xx xx xx:   xxx $xxxx,x
-+       $36aec  xx xx xx:   xxx $36b2d
+        $36ae7  xx xx:       xxx $xx ; update direction with what was actually moved
+        $36ae9  xx xx xx:    xxx ObjectDirection,x ; (if it was clear ahead)
++       $36aec  xx xx xx:   xxx UpdateMetaspriteForDirectionChange
         ;; --------------------------------
 ++      $36aef  xx xx:      xxx $xx
-        $36af1  xx xx xx:   xxx $xxxx,x
-        $36af4  xx xx xx:   xxx $358d7
-        $36af7  xx xx xx:   xxx $36b2d
+        $36af1  xx xx xx:   xxx ObjectDirection,x
+        $36af4  xx xx xx:   xxx MoveObjectWithSpeedAndDirection
+        $36af7  xx xx xx:   xxx UpdateMetaspriteForDirectionChange
 ;;; --------------------------------
+;;; Attempts movement in the current direction of object X, but do not
+;;; actually move.  Checks a displacement of one tile in 360,x direction.
+;;; Returns the result in the carry flag (set == blocked).
+CheckMovementInDirection
         ;; This reads the coords, saves them in $2b..$2f, makes a call, then restores.
         ;; It's sometimes called twice.
         $36afa  xx xx:      xxx $xx,x
@@ -42484,7 +43057,7 @@ JumpTable_36314_24
         $36b0d  xx xx:      xxx $xx
         $36b0f  xx xx:      xxx #$xx
         $36b11  xx xx xx:   xxx $xxxx,x
-        $36b14  xx xx xx:   xxx $358d7
+        $36b14  xx xx xx:   xxx MoveObjectWithSpeedAndDirection
         $36b17  xx xx:      xxx $xx
         $36b19  xx xx:      xxx $xx,x
         $36b1b  xx xx:      xxx $xx
@@ -42497,11 +43070,14 @@ JumpTable_36314_24
         $36b29  xx xx xx:   xxx $xxxx,x
         $36b2c  xx:         xxx
 ;;; --------------------------------
+UpdateMetaspriteForDirectionChange
         $36b2d  xx xx xx:   xxx $xxxx,x
         $36b30  xx xx:      xxx #$xx
         $36b32  xx xx:      xxx + ; $36b35
-        $36b34  xx:         xxx
+        ;; sprite doesn't need to update $300,x to change direction
+        $36b34  xx:          xxx
         ;; --------------------------------
+        ;; sprite does need to update $300,x to change direction
 +       $36b35  xx xx xx:   xxx $xxxx,x
         $36b38  xx xx:      xxx #$xx
         $36b3a  xx:         xxx
@@ -42509,96 +43085,107 @@ JumpTable_36314_24
         $36b3e  xx xx xx:   xxx $xxxx,x
         $36b41  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_22
+ObjectActionJump_22_BuriedMonster
+        ;; Ice zombie and sand monster, both of which become $25 after waking up
         $36b42  xx xx xx:   xxx $xxxx,x
-        $36b45  xx xx:      xxx + ; $36b60
+        $36b45  xx xx:      xxx >rts
         $36b47  xx xx xx:   xxx $xxxx,x
-        $36b4a  xx xx:      xxx + ; $36b60
+        $36b4a  xx xx:      xxx >rts
+        ;; After $4e0,x frames, load $4a0,x <- $6a0,x
         $36b4c  xx xx xx:   xxx $xxxx,x
-        $36b4f  xx xx xx:   xxx $xxxx,x
+        $36b4f  xx xx xx:   xxx ObjectActionScript,x
         $36b52  xx xx xx:   xxx $xxxx,x
         $36b55  xx xx xx:   xxx $xxxx,x
         $36b58  xx xx xx:   xxx $xxxx,x
         $36b5b  xx xx:      xxx #$xx
         $36b5d  xx xx xx:   xxx $xxxx,x
-+       $36b60  xx:         xxx
+        $36b60  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_28
+;;; Seems to do a one-time count-down of 4e0 before moving at all.
+ObjectActionJump_28_Golem
         $36b61  xx xx xx:   xxx $xxxx,x
-        $36b64  xx xx:      xxx ++ ; $36b6f
-        $36b66  xx xx xx:   xxx $xxxx,x
-        $36b69  xx xx:      xxx + ; $36b6e
-        $36b6b  xx xx xx:   xxx $xxxx,x
-- +     $36b6e  xx:         xxx
+        $36b64  xx xx:      xxx + ; $36b6f
+        ;; If 660 is zero, just tick some counters and return.
+        $36b66  xx xx xx:    xxx $xxxx,x
+        $36b69  xx xx:       xxx >rts
+        ;; Only tick 660 once 4e0 hits zero.
+        $36b6b  xx xx xx:    xxx $xxxx,x
+        $36b6e  xx:          xxx
         ;; --------------------------------
-++      $36b6f  xx xx:      xxx #$xx
-        $36b71  xx xx xx:   xxx $xxxx,x
+        ;; Main movement code - after 
++       $36b6f  xx xx:      xxx #$xx
+        $36b71  xx xx xx:   xxx ObjectMetasprite,x
         $36b74  xx xx xx:   xxx $xxxx,x
         $36b77  xx xx:      xxx + ; $36b98
-        $36b79  xx xx:      xxx #$xx
-        $36b7b  xx xx xx:   xxx $xxxx,x
-        $36b7e  xx xx xx:   xxx $xxxx,x
-        $36b81  xx xx xx:   xxx $xxxx,x
-        $36b84  xx xx xx:   xxx $xxxx,x
-        $36b87  xx xx:      xxx #$xx
-        $36b89  xx xx:      xxx - ; $36b6e
-        $36b8b  xx xx:      xxx #$xx
-        $36b8d  xx xx xx:   xxx $34409
-        $36b90  xx xx:      xxx $xx
-        $36b92  xx xx xx:   xxx $xxxx,x
-        $36b95  xx xx xx:   xxx $3572d
+        $36b79  xx xx:       xxx #$xx ; temporarily change to #$91 to when shooting
+        $36b7b  xx xx xx:    xxx ObjectMetasprite,x
+        $36b7e  xx xx xx:    xxx $xxxx,x
+        $36b81  xx xx xx:    xxx $xxxx,x
+        $36b84  xx xx xx:    xxx $xxxx,x
+        $36b87  xx xx:       xxx #$xx ; sync animation with shooting sequence
+        $36b89  xx xx:        xxx <rts
+        $36b8b  xx xx:       xxx #$xx
+        $36b8d  xx xx xx:    xxx VectorBetweenObjectsXY
+        $36b90  xx xx:       xxx $xx
+        $36b92  xx xx xx:    xxx $xxxx,x
+        $36b95  xx xx xx:    xxx AdHocSpawnObject
         ;; --------------------------------
-+       $36b98  xx xx xx:   xxx $37714
-        $36b9b  xx xx xx:   xxx $36a57
++       $36b98  xx xx xx:   xxx CheckToShootProjectile
+        $36b9b  xx xx xx:   xxx ObjectActionJump_24_HomingMovement
 ;;; --------------------------------
-JumpTable_36314_29
+ObjectActionJump_29_AmorphousBlob
         $36b9e  xx xx xx:   xxx $36bac
         $36ba1  xx xx xx:   xxx $xxxx
-        $36ba4  xx xx:      xxx + ; $36bab
+        $36ba4  xx xx:       xxx >rts
+        ;; If $620 is nonzero, object is unhittable.
         $36ba6  xx xx:      xxx #$xx
-        $36ba8  xx xx xx:   xxx $xxxx,x
-+       $36bab  xx:         xxx
+        $36ba8  xx xx xx:   xxx ObjectHitbox,x
+        $36bab  xx:         xxx
 ;;; --------------------------------
-        $36bac  xx xx:      xxx #$xx
-        $36bae  xx xx xx:   xxx $xxxx,x
-        $36bb1  xx xx:      xxx #$xx
-        $36bb3  xx xx xx:   xxx $xxxx,x
-        $36bb6  xx xx xx:   xxx $xxxx,x
-        $36bb9  xx xx:      xxx ++ ; $36bf2
-        $36bbb  xx xx:      xxx #$xx
-        $36bbd  xx xx xx:   xxx $xxxx,x
-        $36bc0  xx xx:      xxx #$xx
-        $36bc2  xx xx xx:   xxx $xxxx,x
+ObjectAction_AmorphousBlob_Main
+        $36bac  xx xx:      xxx #$xx ; cannot be hit by sword
+        $36bae  xx xx xx:   xxx ObjectHitbox,x
+        $36bb1  xx xx:      xxx #$xx ; submerged
+        $36bb3  xx xx xx:   xxx ObjectMetasprite,x
+        $36bb6  xx xx xx:   xxx $xxxx,x ; maybe shoot
+        $36bb9  xx xx:       xxx ObjectAction_AmorphousBlob_MaybeShoot
+        $36bbb  xx xx:      xxx #$xx ; standard ground monster
+        $36bbd  xx xx xx:   xxx ObjectHitbox,x
+        $36bc0  xx xx:      xxx #$xx ; up
+        $36bc2  xx xx xx:   xxx ObjectMetasprite,x
         $36bc5  xx xx xx:   xxx $xxxx,x
         $36bc8  xx xx:      xxx #$xx
         $36bca  xx xx:      xxx + ; $36bd9
-        $36bcc  xx xx:      xxx #$xx
-        $36bce  xx xx xx:   xxx $34409
-        $36bd1  xx xx:      xxx $xx
-        $36bd3  xx xx xx:   xxx $xxxx,x
-        $36bd6  xx xx xx:   xxx $3572d
+        $36bcc  xx xx:       xxx #$xx
+        $36bce  xx xx xx:    xxx VectorBetweenObjectsXY
+        $36bd1  xx xx:       xxx $xx ; direction to player
+        $36bd3  xx xx xx:    xxx $xxxx,x
+        $36bd6  xx xx xx:    xxx AdHocSpawnObject
 +       $36bd9  xx xx xx:   xxx $xxxx,x
         $36bdc  xx xx xx:   xxx $xxxx,x
         $36bdf  xx xx xx:   xxx $xxxx,x
         $36be2  xx xx:      xxx #$xx
-        $36be4  xx xx:      xxx + ; $36be9
+        $36be4  xx xx:       xxx >rts
+        ;; Every other frame decrement 640
         $36be6  xx xx xx:   xxx $xxxx,x
-+       $36be9  xx:         xxx
+        $36be9  xx:         xxx
 ;;; --------------------------------
 DataTable_36bea
         ;; NOTE - uncovered
         $36bea              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-++      $36bf2  xx xx xx:   xxx $37714
-        $36bf5  xx xx xx:   xxx $36a57
+ObjectAction_AmorphousBlob_MaybeShoot
+        $36bf2  xx xx xx:   xxx CheckToShootProjectile
+        $36bf5  xx xx xx:   xxx ObjectActionJump_24_HomingMovement
 ;;; --------------------------------
-JumpTable_36314_2a
+ObjectActionJump_2a_Soldier
         $36bf8  xx xx xx:   xxx $xxxx,x
-        $36bfb  xx xx:      xxx + ; $36bfe
-        $36bfd  xx:         xxx
-;;; --------------------------------
+        $36bfb  xx xx:      xxx +
+        $36bfd  xx:          xxx  ; no update when off screen
+        ;; --------------------------------
 +       $36bfe  xx xx xx:   xxx $xxxx,x
-        $36c01  xx xx:      xxx + ; $36c30
+        $36c01  xx xx:      xxx ObjectAction_Soldier_Move
+ObjectAction_Soldier_Shooting
         $36c03  xx xx xx:   xxx $xxxx,x
         $36c06  xx:         xxx
         $36c07  xx xx xx:   xxx $xxxx,x
@@ -42606,43 +43193,49 @@ JumpTable_36314_2a
         $36c0d  xx xx xx:   xxx $xxxx,x
         $36c10  xx xx xx:   xxx $xxxx,x
         $36c13  xx:         xxx
-        $36c14  xx xx:      xxx ++ ; $36c5f
+        $36c14  xx xx:       xxx >rts
         $36c16  xx xx xx:   xxx $xxxx,x
         $36c19  xx xx xx:   xxx $xxxx,x
         $36c1c  xx xx xx:   xxx $xxxx,x
         $36c1f  xx xx:      xxx #$xx
-        $36c21  xx xx:      xxx ++ ; $36c5f
-        $36c23  xx xx xx:   xxx $xxxx,x
-        $36c26  xx xx:      xxx #$xx
+        $36c21  xx xx:       xxx >rts
+        $36c23  xx xx xx:   xxx ObjectMetasprite,x ; get dir from metasprite id
+        $36c26  xx xx:      xxx #$xx               ; cardinal directions only
         $36c28  xx:         xxx
         $36c29  xx:         xxx
         $36c2a  xx xx xx:   xxx $xxxx,x
-        $36c2d  xx xx xx:   xxx $3572d
+        $36c2d  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
-+       $36c30  xx xx xx:   xxx $xxxx,x
+ObjectAction_Soldier_Move
+        $36c30  xx xx xx:   xxx ObjectDirection,x
         $36c33  xx:         xxx
         $36c34  xx xx xx:   xxx $xxxx,x
-        $36c37  xx xx xx:   xxx $xxxx,x
-        $36c3a  xx xx xx:   xxx $36c40
-        $36c3d  xx xx xx:   xxx $36a57
+        $36c37  xx xx xx:   xxx ObjectMetasprite,x
+        $36c3a  xx xx xx:   xxx ObjectAction_Soldier_CheckShoot
+        $36c3d  xx xx xx:   xxx ObjectActionJump_24_HomingMovement
 ;;; --------------------------------
+ObjectAction_Soldier_CheckShoot
+        ;; slightly different criterion than normal shooters - shorter distance,
+        ;; but will swing a lot more often, and specifically lines up the shot
+        ;; directly toward the player - i.e. basically only swings/shoots if
+        ;; reasonably confident that it will land.
         $36c40  xx xx:        xxx #$xx
-        $36c42  xx xx xx:     xxx $34409
+        $36c42  xx xx xx:     xxx VectorBetweenObjectsXY
         $36c45  xx xx:        xxx $xx
         $36c47  xx xx:        xxx #$xx
-        $36c49  xx xx:        xxx ++ ; $36c5f
-        $36c4b  xx xx xx:     xxx $357d7
-        $36c4e  xx xx:        xxx ++ ; $36c5f
+        $36c49  xx xx:         xxx >rts ; only shoot if very close (within 4 tiles)
+        $36c4b  xx xx xx:     xxx GenerateRandomNumber
+        $36c4e  xx xx:         xxx >rts ; also only 1 in 8
         $36c50  xx xx:        xxx $xx
-        $36c52  xx xx xx:     xxx $xxxx,x
+        $36c52  xx xx xx:     xxx ObjectDirection,x ; Line up with player
         $36c55  xx xx:        xxx #$xx
         $36c57  xx xx xx:     xxx $xxxx,x
         $36c5a  xx xx xx:     xxx $xxxx,x
         $36c5d  xx:          xxx
         $36c5e  xx:         xxx
-++      $36c5f  xx:         xxx
+        $36c5f  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_2b
+ObjectActionJump_2b
         $36c60  xx xx xx:   xxx $xxxx,x
         $36c63  xx xx:      xxx ++ ; $36cae
         $36c65  xx xx xx:   xxx $xxxx,x
@@ -42673,7 +43266,7 @@ JumpTable_36314_2b
         $36ca2  xx:         xxx
         ;; --------------------------------
 +       $36ca3  xx xx:      xxx #$xx
-        $36ca5  xx xx xx:   xxx $34409
+        $36ca5  xx xx xx:   xxx VectorBetweenObjectsXY
         $36ca8  xx xx:      xxx $xx
         $36caa  xx xx xx:   xxx $xxxx,x
         $36cad  xx:         xxx
@@ -42681,16 +43274,16 @@ JumpTable_36314_2b
 ++      $36cae  xx xx:      xxx #$xx
         $36cb0  xx xx xx:   xxx $xxxx,x
         $36cb3  xx xx:      xxx #$xx
-        $36cb5  xx xx xx:   xxx $34409
+        $36cb5  xx xx xx:   xxx VectorBetweenObjectsXY
         $36cb8  xx xx:      xxx $xx
         $36cba  xx xx:      xxx $xx
         $36cbc  xx xx xx:   xxx $xxxx,x
         $36cbf  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_2c
+ObjectActionJump_2c
         $36cc0  xx xx:      xxx #$xx
         $36cc2  xx xx:      xxx $xx
--       $36cc4  xx xx xx:   xxx $357d7
+-       $36cc4  xx xx xx:   xxx GenerateRandomNumber
         $36cc7  xx:         xxx
         $36cc8  xx xx xx:   xxx $xxxx,x
         $36ccb  xx xx xx:   xxx $3572d
@@ -42702,7 +43295,7 @@ JumpTable_36314_2c
 ;;; --------------------------------
 -       $36cd8  xx:         xxx
         ;; --------------------------------
-JumpTable_36314_30
+ObjectActionJump_30
         $36cd9  xx xx xx:   xxx $xxxx,x
         $36cdc  xx xx:      xxx + ; $36ce2
         $36cde  xx xx xx:   xxx $xxxx,x
@@ -42729,7 +43322,7 @@ JumpTable_36314_30
         $36d07  xx xx xx:   xxx $xxxx,x
         $36d0a  xx xx:      xxx #$xx
         $36d0c  xx xx:      xxx + ; $36d1e
-        $36d0e  xx xx xx:   xxx $357d7
+        $36d0e  xx xx xx:   xxx GenerateRandomNumber
         $36d11  xx xx:      xxx $xx
         $36d13  xx xx:      xxx #$xx
         $36d15  xx xx:      xxx + ; $36d1e
@@ -42864,7 +43457,7 @@ DataTable_36d9c
         $36e14  xx:         xxx
         $36e15  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_31
+ObjectActionJump_31
         $36e16  xx xx xx:   xxx $xxxx,x
         $36e19  xx xx:      xxx #$xx
         $36e1b  xx xx:      xxx $xx
@@ -42879,7 +43472,7 @@ JumpTable_36314_31
         $36e2d  xx xx xx:   xxx $xxxx,x
         $36e30  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_32
+ObjectActionJump_32
         $36e31  xx xx:      xxx #$xx
         $36e33  xx xx xx:   xxx $xxxx
         $36e36  xx xx:      xxx $xx
@@ -43028,7 +43621,7 @@ DataDataTable_36f04_0e
 DataDataTable_36f04_0f
         $36fa5              .byte $xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_36314_38
+ObjectActionJump_38
         $36fa9  xx xx xx:   xxx $xxxx,x
         $36fac  xx xx xx:   xxx ReadObjectCoordinatesInto_34_37
         $36faf  xx xx xx:   xxx $xxxx,x
@@ -43065,7 +43658,7 @@ DataTable_36fed
         $36ff1              .byte $xx,$xx
         $36ff3              .byte $xx,$xx
 ;;; --------------------------------
-JumpTable_36314_3c
+ObjectActionJump_3c
         $36ff5  xx xx xx:    xxx $36ffb
         $36ff8  xx xx xx:    xxx $36fa9
 ;;; --------------------------------
@@ -43092,7 +43685,7 @@ JumpTable_36314_3c
         $37028  xx xx xx:   xxx $xxxx,x
         $3702b  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_1d
+ObjectActionJump_1d
         $3702c  xx xx xx:   xxx $xxxx,x
         $3702f  xx xx:      xxx $xx
         $37031  xx xx:      xxx #$xx
@@ -43109,7 +43702,7 @@ JumpTable_36314_1d
 ;;; --------------------------------
         $37047  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_2f
+ObjectActionJump_2f
         $37048  xx xx xx:   xxx ReadObjectCoordinatesInto_34_37
         $3704b  xx xx:      xxx #$xx
         $3704d  xx xx:      xxx $xx
@@ -43128,7 +43721,7 @@ JumpTable_36314_2f
         $3706c  xx xx xx:   xxx $xxxx,x
         $3706f  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_36
+ObjectActionJump_36
         $37070  xx xx:      xxx #$xx
         $37072  xx xx xx:   xxx $xxxx,x
         $37075  xx xx xx:   xxx $xxxx,x
@@ -43145,7 +43738,7 @@ JumpTable_36314_36
         $3708e  xx xx xx:   xxx $xxxx,y
         $37091  xx xx xx:   xxx $370be
 ;;; --------------------------------
-JumpTable_36314_1e
+ObjectActionJump_1e
         $37094  xx xx xx:   xxx $xxxx,x
         $37097  xx xx:      xxx #$xx
         $37099  xx:         xxx
@@ -43154,22 +43747,22 @@ JumpTable_36314_1e
         $3709c  xx xx xx:   xxx $xxxx,x
         $3709f  xx xx xx:   xxx $370be
 ;;; --------------------------------
-JumpTable_36314_1f
+ObjectActionJump_1f
         $370a2  xx xx xx:   xxx $xxxx,x
         $370a5  xx xx xx:   xxx $370be
 ;;; --------------------------------
-JumpTable_36314_11
+ObjectActionJump_11
         $370a8  xx xx xx:   xxx $xxxx,x
         $370ab  xx:         xxx
         $370ac  xx xx xx:   xxx $xxxx,x
         $370af  xx xx xx:   xxx $xxxx,x
         $370b2  xx xx xx:   xxx $xxxx,x
-JumpTable_36314_10
+ObjectActionJump_10
         $370b5  xx xx xx:   xxx $xxxx,x
         $370b8  xx:         xxx
         $370b9  xx xx:      xxx #$xx
         $370bb  xx xx xx:   xxx $xxxx,x
-JumpTable_36314_57
+ObjectActionJump_57
         $370be  xx xx xx:   xxx $xxxx,x
         $370c1  xx xx:      xxx $xx
         $370c3  xx xx xx:   xxx $358c7
@@ -43196,7 +43789,7 @@ JumpTable_36314_57
 ;;; --------------------------------
         $370f3  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
 ;;; --------------------------------
-JumpTable_36314_16
+ObjectActionJump_16
         $370f6  xx xx xx:   xxx $xxxx,x
         $370f9  xx xx xx:   xxx $xxxx,x
         $370fc  xx xx xx:   xxx $xxxx,x
@@ -43213,7 +43806,7 @@ JumpTable_36314_16
         $37115  xx xx xx:   xxx $xxxx,x
         $37118  xx xx xx:   xxx $370be
 ;;; --------------------------------
-JumpTable_36314_17
+ObjectActionJump_17
         $3711b  xx xx xx:   xxx $xxxx,x
         $3711e  xx xx xx:   xxx $xxxx,x
         $37121  xx xx:      xxx $xx
@@ -43221,7 +43814,7 @@ JumpTable_36314_17
         $37126  xx xx:      xxx #$xx
         $37128  xx xx xx:   xxx $xxxx,x
         $3712b  xx xx:      xxx $xx
-JumpTable_36314_1b
+ObjectActionJump_1b
         $3712d  xx xx xx:   xxx $xxxx,x
         $37130  xx xx:      xxx $xx
         $37132  xx xx xx:   xxx $358c7
@@ -43255,7 +43848,7 @@ JumpTable_36314_1b
         $37170  xx xx xx:   xxx $xxxx,x
         $37173  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_12
+ObjectActionJump_12
         $37174  xx xx xx:   xxx $xxxx,x
         $37177  xx xx:      xxx $xx
         $37179  xx xx xx:   xxx $xxxx,x
@@ -43314,7 +43907,7 @@ DataTable_371e9
         $37220              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $37230              .byte $xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_36314_13
+ObjectActionJump_13
         $37235  xx xx xx:   xxx $xxxx,x
         $37238  xx xx:      xxx #$xx
         $3723a  xx xx xx:   xxx $xxxx,x
@@ -43345,7 +43938,7 @@ JumpTable_36314_13
         $37274  xx xx xx:   xxx AddDisplacementVectorShort
         $37277  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
 ;;; --------------------------------
-JumpTable_36314_15
+ObjectActionJump_15
         $3727a  xx xx xx:   xxx $xxxx,x
         $3727d  xx xx:      xxx $xx
         $3727f  xx xx xx:   xxx $358c7
@@ -43363,7 +43956,7 @@ JumpTable_36314_15
         $3729e  xx xx xx:   xxx AddDisplacementVectorShort
         $372a1  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
 ;;; --------------------------------
-JumpTable_36314_1c
+ObjectActionJump_1c
         $372a4  xx xx xx:   xxx $xxxx,x
         $372a7  xx xx xx:   xxx $xxxx,x
         $372aa  xx:         xxx
@@ -43380,7 +43973,7 @@ JumpTable_36314_1c
         $372c0  xx xx:      xxx #$xx
         $372c2  xx xx xx:   xxx $3572d
 ;;; --------------------------------
-JumpTable_36314_14
+ObjectActionJump_14
         $372c5  xx xx xx:   xxx $xxxx,x
         $372c8  xx:         xxx
         $372c9  xx xx xx:   xxx $xxxx,x
@@ -43390,13 +43983,13 @@ JumpTable_36314_14
 ;;; --------------------------------
         $372d4  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_18
+ObjectActionJump_18
         $372d5  xx xx xx:   xxx $xxxx,x
         $372d8  xx xx xx:   xxx $xxxx,x
         $372db  xx:         xxx
         $372dc  xx xx xx:   xxx $xxxx,x
         $372df  xx xx xx:   xxx $xxxx,x
-JumpTable_36314_19
+ObjectActionJump_19
         $372e2  xx xx xx:   xxx $xxxx,x
         $372e5  xx:         xxx
         $372e6  xx:         xxx
@@ -43405,13 +43998,13 @@ JumpTable_36314_19
         $372ec  xx xx xx:   xxx $xxxx,x
         $372ef  xx xx:      xxx #$xx
         $372f1  xx xx xx:   xxx $xxxx,x
-JumpTable_36314_1a
+ObjectActionJump_1a
         $372f4  xx:         xxx
 ;;; --------------------------------
 DataTable_372f5 
         $372f5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_36314_04
+ObjectActionJump_04
         $372fc  xx xx:      xxx #$xx
         $372fe  xx xx xx:   xxx ReadObjectCoordinatesInto_34_37
         $37301  xx xx:      xxx #$xx
@@ -43425,7 +44018,7 @@ JumpTable_36314_04
         $37314  xx xx xx:   xxx $xxxx,x
         $37317  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_34
+ObjectActionJump_34
         $37318  xx xx xx:   xxx $xxxx,x
         $3731b  xx xx xx:   xxx $xxxx,x
         $3731e  xx xx:      xxx #$xx
@@ -43445,7 +44038,7 @@ JumpTable_36314_34
         $37333  xx xx xx:   xxx $xxxx,x
         $37336  xx xx xx:   xxx $3572d
 ;;; --------------------------------
-JumpTable_36314_41
+ObjectActionJump_41
         $37339  xx xx xx:   xxx $xxxx,x
         $3733c  xx xx:      xxx $xx
         $3733e  xx xx xx:   xxx $xxxx,x
@@ -43492,14 +44085,14 @@ JumpTable_36314_41
         $37398  xx xx xx:   xxx $xxxx,x
         $3739b  xx xx xx:   xxx $369e4
 ;;; --------------------------------
-JumpTable_36314_40
-        $3739e  xx xx xx:   xxx $37769
+ObjectActionJump_40
+        $3739e  xx xx xx:   xxx ReturnEveryOtherFrameIfOffScreen
         $373a1  xx xx xx:   xxx $xxxx,x
         $373a4  xx xx:      xxx $xx
         $373a6  xx xx:      xxx #$xx
         $373a8  xx xx xx:   xxx $xxxx,x
         $373ab  xx xx:      xxx #$xx
-        $373ad  xx xx xx:   xxx $34409
+        $373ad  xx xx xx:   xxx VectorBetweenObjectsXY
         $373b0  xx xx:      xxx $xx
         $373b2  xx:         xxx
         $373b3  xx xx:      xxx $xx
@@ -43547,9 +44140,8 @@ JumpTable_36314_40
         $3740b  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
 ;;; --------------------------------
 DataTable_3740e 
-        $3740e              .byte $xx,$xx
-        $37410              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $37420              .byte $xx,$xx
+        $3740e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $3741e              .byte $xx,$xx,$xx,$xx
 ;;; --------------------------------
         $37422  xx xx xx:   xxx $xxxx,x
         $37425  xx xx xx:   xxx $xxxx,x
@@ -43559,11 +44151,11 @@ DataTable_3740e
         $37430  xx xx xx:   xxx $xxxx,x
         $37433  xx xx xx:   xxx $373f9
 ;;; --------------------------------
-JumpTable_36314_44
+ObjectActionJump_44
         $37436  xx xx xx:   xxx $xxxx,x
         $37439  xx xx:      xxx #$xx
         $3743b  xx xx:      xxx $xx
-        $3743d  xx xx xx:   xxx $37769
+        $3743d  xx xx xx:   xxx ReturnEveryOtherFrameIfOffScreen
         $37440  xx xx xx:   xxx $xxxx,x
         $37443  xx xx:      xxx $xx
         $37445  xx xx xx:   xxx $xxxx,x
@@ -43585,17 +44177,17 @@ JumpTable_36314_44
         $3746b  xx xx xx:   xxx $xxxx,x
         $3746e  xx xx xx:   xxx ComputeDisplacementVector
         $37471  xx xx xx:   xxx AddDisplacementVectorShort
-        $37474  xx xx xx:   xxx $358d7
+        $37474  xx xx xx:   xxx MoveObjectWithSpeedAndDirection
         $37477  xx xx:      xxx $xx
         $37479  xx xx xx:   xxx ReadObjectCoordinatesInto_34_37
         $3747c  xx xx:      xxx #$xx ; update $380,x
         $3747e  xx xx xx:   xxx CheckTerrainUnderObject
-        $37481  xx xx xx:   xxx $357d7
+        $37481  xx xx xx:   xxx GenerateRandomNumber
         $37484  xx xx:      xxx #$xx
         $37486  xx xx xx:   xxx $xxxx,x
         $37489  xx xx:      xxx #$xx
         $3748b  xx xx xx:   xxx $xxxx,x
-        $3748e  xx xx xx:   xxx $357d7
+        $3748e  xx xx xx:   xxx GenerateRandomNumber
         $37491  xx:         xxx
         $37492  xx xx xx:   xxx $374aa,y
         $37495  xx xx xx:   xxx $xxxx,x
@@ -43614,44 +44206,49 @@ DataTable_374aa
         $374aa              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $374b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_36314_45
+ObjectActionJump_45_BasicFlyer
+        ;; The summoned insect ($c4) sets 560 to 1 indicating that it needs to
+        ;; despawn when the giant insect (position $d) is killed.
         $374ba  xx xx xx:   xxx $xxxx,x
         $374bd  xx xx:      xxx #$xx
-        $374bf  xx xx:      xxx $xx
-        $374c1  xx xx xx:   xxx $xxxx,x
-        $374c4  xx xx:      xxx #$xx
-        $374c6  xx xx:      xxx $xx
-        $374c8  xx xx xx:   xxx $xxxx
-        $374cb  xx xx:      xxx $xx
-        $374cd  xx xx:      xxx #$xx
-        $374cf  xx xx xx:   xxx $xxxx,x
-        $374d2  xx:         xxx
-;;; --------------------------------
-        $374d3  xx xx xx:   xxx $37769
+        $374bf  xx xx:      xxx + ; $374d3
+        $374c1  xx xx xx:    xxx $xxxx,x ; redundant - just checked this!
+        $374c4  xx xx:       xxx #$xx
+        $374c6  xx xx:       xxx + ; $374d3
+        $374c8  xx xx xx:     xxx $xxxx
+        $374cb  xx xx:        xxx + ; $374d3
+        $374cd  xx xx:         xxx #$xx
+        $374cf  xx xx xx:      xxx $xxxx,x ; despawn
+        $374d2  xx:            xxx
+        ;;                  ---
++       $374d3  xx xx xx:   xxx ReturnEveryOtherFrameIfOffScreen
+        ;; Remove the :10 bit of 380. (unknown what this does)
         $374d6  xx xx xx:   xxx $xxxx,x
         $374d9  xx xx:      xxx #$xx
         $374db  xx xx xx:   xxx $xxxx,x
+        ;; Only change direction every 16 frames
         $374de  xx xx xx:   xxx $xxxx,x
         $374e1  xx xx:      xxx #$xx
-        $374e3  xx xx:      xxx $xx
-        $374e5  xx xx:      xxx #$xx
-        $374e7  xx xx xx:   xxx $34409
-        $374ea  xx xx:      xxx $xx
-        $374ec  xx:         xxx
-        $374ed  xx xx xx:   xxx $3773e
-        $374f0  xx xx xx:   xxx $xxxx,x
-        $374f3  xx xx:      xxx $xx
-        $374f5  xx xx:      xxx $xx
-        $374f7  xx xx xx:   xxx $xxxx,x
-        $374fa  xx xx xx:   xxx $xxxx,x
-        $374fd  xx xx xx:   xxx $xxxx,x
-        $37500  xx:         xxx
-        $37501  xx xx xx:   xxx $37550,y
-        $37504  xx xx xx:   xxx $xxxx,x
-        $37507  xx:         xxx
-        $37508  xx xx xx:   xxx $3754c,y
-        $3750b  xx xx xx:   xxx $xxxx,x
-        $3750e  xx xx xx:   xxx $xxxx,x
+        $374e3  xx xx:      xxx ++ ; $3750e
+        $374e5  xx xx:       xxx #$xx
+        $374e7  xx xx xx:    xxx VectorBetweenObjectsXY
+        $374ea  xx xx:       xxx $xx ; direction
+        $374ec  xx:          xxx
+        $374ed  xx xx xx:    xxx ObjectAction_BasicFlyer_AdjustDirectionTowardPlayer
+        $374f0  xx xx xx:    xxx $xxxx,x
+        $374f3  xx xx:       xxx $xx
+        $374f5  xx xx:       xxx + ; $374fd
+        ;;                    direction turned
+        $374f7  xx xx xx:     xxx $xxxx,x
+        $374fa  xx xx xx:     xxx $xxxx,x
++       $374fd  xx xx xx:    xxx $xxxx,x
+        $37500  xx:          xxx
+        $37501  xx xx xx:    xxx $37550,y
+        $37504  xx xx xx:    xxx $xxxx,x
+        $37507  xx:          xxx
+        $37508  xx xx xx:    xxx $3754c,y
+        $3750b  xx xx xx:    xxx $xxxx,x
+++      $3750e  xx xx xx:   xxx $xxxx,x
         $37511  xx xx xx:   xxx $xxxx,x
         $37514  xx:         xxx
         $37515  xx xx xx:   xxx $37556,y
@@ -43663,25 +44260,29 @@ JumpTable_36314_45
         $37527  xx xx xx:   xxx AddDisplacementVectorShort
         $3752a  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
         $3752d  xx xx xx:   xxx $xxxx,x
-        $37530  xx xx:      xxx $xx
-        $37532  xx xx:      xxx $xx
+        $37530  xx xx:       xxx >rts
+        $37532  xx xx:      xxx GlobalCounter
         $37534  xx xx:      xxx #$xx
-        $37536  xx xx:      xxx $xx
-        $37538  xx xx xx:   xxx $357d7
-        $3753b  xx xx:      xxx $xx
+        $37536  xx xx:       xxx >rts
+        $37538  xx xx xx:   xxx GenerateRandomNumber
+        $3753b  xx xx:       xxx >rts
         $3753d  xx xx:      xxx #$xx
-        $3753f  xx xx xx:   xxx $34409
+        $3753f  xx xx xx:   xxx VectorBetweenObjectsXY
         $37542  xx xx:      xxx $xx
         $37544  xx:         xxx
         $37545  xx xx xx:   xxx $xxxx,x
-        $37548  xx xx xx:   xxx $3572d
-;;; --------------------------------
+        $37548  xx xx xx:   xxx AdHocSpawnObject
+        ;; --------------------------------
         $3754b  xx:         xxx
 ;;; --------------------------------
 DataTable_3754c 
-        $3754c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $3754c              .byte $xx,$xx,$xx,$xx
+DataTable_37550 
+        $37550              .byte $xx,$xx,$xx,$xx,$xx,$xx
+DataTable_37556 
+        $37556              .byte $xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_36314_48
+ObjectActionJump_48
         $3755a  xx xx xx:   xxx $xxxx,x
         $3755d  xx xx:      xxx $xx
         $3755f  xx xx xx:   xxx $xxxx,x
@@ -43695,7 +44296,7 @@ JumpTable_36314_48
         $37572  xx:         xxx
 ;;; --------------------------------
         $37573  xx xx:      xxx #$xx
-        $37575  xx xx xx:   xxx $34409
+        $37575  xx xx xx:   xxx VectorBetweenObjectsXY
         $37578  xx xx:      xxx $xx
         $3757a  xx:         xxx
         $3757b  xx xx xx:   xxx $xxxx,x
@@ -43711,8 +44312,8 @@ JumpTable_36314_48
 ;;; --------------------------------
         $37594  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_4c
-JumpTable_36314_4d
+ObjectActionJump_4c
+ObjectActionJump_4d
         $37595  xx xx xx:   xxx $xxxx,x
         $37598  xx xx:      xxx $xx
         $3759a  xx xx xx:   xxx $xxxx,x
@@ -43727,7 +44328,7 @@ JumpTable_36314_4d
         $375af  xx:         xxx
 ;;; --------------------------------
         $375b0  xx xx:      xxx #$xx
-        $375b2  xx xx xx:   xxx $34409
+        $375b2  xx xx xx:   xxx VectorBetweenObjectsXY
         $375b5  xx xx xx:   xxx $xxxx,x
         $375b8  xx xx:      xxx #$xx
         $375ba  xx:         xxx
@@ -43749,13 +44350,13 @@ DataTable_375d0
         $375d3  xx xx xx:   xxx $xxxx,x
         $375d6  xx xx xx:   xxx $37714
 ;;; --------------------------------
-JumpTable_36314_4e
+ObjectActionJump_4e
         $375d9  xx xx xx:   xxx $xxxx,x
         $375dc  xx xx xx:   xxx $xxxx,x
         $375df  xx xx:      xxx #$xx
         $375e1  xx xx:      xxx $xx
         $375e3  xx xx:      xxx #$xx
-        $375e5  xx xx xx:   xxx $34409
+        $375e5  xx xx xx:   xxx VectorBetweenObjectsXY
         $375e8  xx xx:      xxx $xx
         $375ea  xx:         xxx
         $375eb  xx:         xxx
@@ -43764,7 +44365,7 @@ JumpTable_36314_4e
 ;;; --------------------------------
         $375f2  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_5e
+ObjectActionJump_5e
         $375f3  xx:         xxx
         $375f4  xx:         xxx
         $375f5  xx:         xxx
@@ -43793,7 +44394,7 @@ JumpTable_36314_5e
         $37622  xx xx xx:   xxx $xxxx,x
         $37625  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_5c
+ObjectActionJump_5c
         $37626  xx xx:      xxx #$xx
         $37628  xx xx xx:   xxx $xxxx,x
         $3762b  xx xx xx:   xxx $xxxx,x
@@ -43814,7 +44415,7 @@ JumpTable_36314_5c
         $3764d  xx xx xx:   xxx $xxxx,x
         $37650  xx xx:      xxx #$xx
         $37652  xx xx:      xxx $xx
-        $37654  xx xx xx:   xxx $357d7
+        $37654  xx xx xx:   xxx GenerateRandomNumber
         $37657  xx:         xxx
         $37658  xx xx:      xxx $xx
         $3765a  xx xx:      xxx #$xx
@@ -43834,26 +44435,26 @@ JumpTable_36314_5c
         $3767e  xx xx:      xxx #$xx
         $37680  xx xx:      xxx $xx
         $37682  xx xx:      xxx #$xx
-        $37684  xx xx xx:   xxx $34409
+        $37684  xx xx xx:   xxx VectorBetweenObjectsXY
         $37687  xx xx:      xxx $xx
         $37689  xx xx xx:   xxx $xxxx,x
         $3768c  xx xx xx:   xxx $3572d
 ;;; --------------------------------
         $3768f  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_5d
+ObjectActionJump_5d
         $37690  xx xx xx:   xxx $xxxx,x
         $37693  xx xx xx:   xxx $xxxx,x
         $37696  xx xx xx:   xxx $xxxx,x
         $37699  xx xx:      xxx #$xx
         $3769b  xx xx:      xxx $xx
         $3769d  xx xx:      xxx #$xx
-        $3769f  xx xx xx:   xxx $34409
+        $3769f  xx xx xx:   xxx VectorBetweenObjectsXY
         $376a2  xx xx:      xxx $xx
         $376a4  xx xx xx:   xxx $xxxx,x
         $376a7  xx xx xx:   xxx $3765f
 ;;; --------------------------------
-JumpTable_36314_58
+ObjectActionJump_58
         $376aa  xx:         xxx
         $376ab  xx:         xxx
         $376ac  xx:         xxx
@@ -43883,10 +44484,10 @@ JumpTable_36314_58
         $376da  xx xx xx:   xxx $xxxx,x
         $376dd  xx xx:      xxx #$xx
         $376df  xx xx:      xxx $xx
-        $376e1  xx xx xx:   xxx $357d7
+        $376e1  xx xx xx:   xxx GenerateRandomNumber
         $376e4  xx xx:      xxx $xx
         $376e6  xx xx:      xxx #$xx
-        $376e8  xx xx xx:   xxx $34409
+        $376e8  xx xx xx:   xxx VectorBetweenObjectsXY
         $376eb  xx xx:      xxx $xx
         $376ed  xx xx xx:   xxx $xxxx,x
         $376f0  xx xx xx:   xxx $3572d
@@ -43898,63 +44499,78 @@ DataTable_376f4
         $37700              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $37710              .byte $xx,$xx,$xx,$xx
 ;;; --------------------------------
+;;; Sets $640,x <- #$1f and double-returns if conditions met.
+CheckToShootProjectile
         $37714  xx xx xx:   xxx $xxxx,x
-        $37717  xx xx:      xxx $xx
+        $37717  xx xx:       xxx >>rts ; do nothing if off-screen
         $37719  xx:         xxx
         $3771a  xx:         xxx
         $3771b  xx:         xxx
         $3771c  xx:         xxx
         $3771d  xx:         xxx
         $3771e  xx:         xxx
-        $3771f  xx xx:      xxx $xx
+        $3771f  xx xx:      xxx GlobalCounter
         $37721  xx xx:      xxx #$xx
-        $37723  xx xx:      xxx $xx
-        $37725  xx xx xx:   xxx $357d7
-        $37728  xx xx:      xxx $xx
+        $37723  xx xx:       xxx >>rts ; only go past here twice a second
+        $37725  xx xx xx:   xxx GenerateRandomNumber
+        $37728  xx xx:       xxx >>rts ; and then 1/8 from there
         $3772a  xx xx:      xxx #$xx
-        $3772c  xx xx xx:   xxx $34409
+        $3772c  xx xx xx:   xxx VectorBetweenObjectsXY
         $3772f  xx xx:      xxx $xx
         $37731  xx xx:      xxx #$xx
-        $37733  xx xx:      xxx $xx
-        $37735  xx:         xxx
-;;; --------------------------------
-        $37736  xx xx:      xxx #$xx
+        $37733  xx xx:      xxx + ; why not bcs >rts ???
+        $37735  xx:          xxx  ; skip if distance > 10 metatiles
+        ;;                   ---
++       $37736  xx xx:      xxx #$xx
         $37738  xx xx xx:   xxx $xxxx,x
-        $3773b  xx:         xxx
+        $3773b  xx:         xxx ; double-return
         $3773c  xx:         xxx
         $3773d  xx:         xxx
 ;;; --------------------------------
+;;; Inputs:
+;;;   x = index of object
+;;;   360,x = current direction
+;;;   player position
+;;; Outputs:
+;;;   360,x = previous direction ±1
+;;;   $10 = the increment
+ObjectAction_BasicFlyer_AdjustDirectionTowardPlayer
+        ;; twos complement
         $3773e  xx xx:      xxx #$xx
         $37740  xx:         xxx
         $37741  xx xx:      xxx #$xx
         $37743  xx:         xxx
-        $37744  xx xx xx:   xxx $xxxx,x
+        $37744  xx xx xx:   xxx ObjectDirection,x
         $37747  xx xx:      xxx #$xx
+        ;; A = current direction minus twice the direction to player
+        ;; This looks like some sort of calculus to account for acceleration?
+        ;; Or maybe geometry for the double angle of a circle?
+        ;; Either way, we only adjust direction by 1, simulating inertia.
         $37749  xx:         xxx
         $3774a  xx xx xx:   xxx $37759,y
         $3774d  xx xx:      xxx $xx
         $3774f  xx:         xxx
-        $37750  xx xx xx:   xxx $xxxx,x
-        $37753  xx xx:      xxx #$xx
-        $37755  xx xx xx:   xxx $xxxx,x
+        $37750  xx xx xx:   xxx ObjectDirection,x
+        $37753  xx xx:      xxx #$xx ; why is this $f instead of 7?
+        $37755  xx xx xx:   xxx ObjectDirection,x
         $37758  xx:         xxx
 ;;; --------------------------------
 DataTable_37759 
-        $37759              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $37760              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $37759              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+ReturnEveryOtherFrameIfOffScreen
         $37769  xx xx xx:   xxx $xxxx,x
-        $3776c  xx xx:      xxx $xx
+        $3776c  xx xx:       xxx >rts
         $3776e  xx:         xxx
         $3776f  xx:         xxx
-        $37770  xx xx:      xxx $xx
+        $37770  xx xx:      xxx GlobalCounter
         $37772  xx:         xxx
-        $37773  xx xx:      xxx $xx
-        $37775  xx:         xxx
+        $37773  xx xx:       xxx >rts
+        $37775  xx:         xxx ; double return
         $37776  xx:         xxx
         $37777  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_7b
+ObjectActionJump_7b
         $37778  xx xx xx:   xxx $xxxx,x
         $3777b  xx xx xx:   xxx $xxxx,x
         $3777e  xx xx xx:   xxx $xxxx,x
@@ -44000,8 +44616,8 @@ DataTable_377c6
         $377e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $377f0              .byte $xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_36314_08
-JumpTable_36314_7c
+ObjectActionJump_08
+ObjectActionJump_7c
         $377f6  xx xx xx:   xxx $37850
         $377f9  xx xx xx:   xxx $xxxx,x
         $377fc  xx xx xx:   xxx $xxxx,x
@@ -44038,43 +44654,43 @@ JumpTable_36314_7c
         $37839  xx:         xxx
         $3783a  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_74
-        $3783b  xx xx:      xxx $xx
-        $3783d  xx xx:      xxx #$xx
-        $3783f  xx xx:      xxx $xx
-        $37841  xx xx:      xxx #$xx
-        $37843  xx xx:      xxx $xx
-        $37845  xx xx:      xxx $xx
-        $37847  xx xx:      xxx #$xx
-        $37849  xx xx:      xxx $xx
-        $3784b  xx xx:      xxx #$xx
-        $3784d  xx xx xx:   xxx $xxxx
-        $37850  xx xx:      xxx #$xx
+ObjectActionJump_74
+        $3783b  xx xx:      xxx CurrentLocation
+        $3783d  xx xx:      xxx #LOC_DYNA
+        $3783f  xx xx:      xxx +
+        $37841  xx xx:       xxx #SCREEN_MODE_NORMAL
+        $37843  xx xx:       xxx ScreenMode
++       $37845  xx xx:      xxx CurrentLocation
+        $37847  xx xx:      xxx #LOC_SWAMP
+        $37849  xx xx:      xxx +
+        $3784b  xx xx:       xxx #$xx
+        $3784d  xx xx xx:    xxx $xxxx
++       $37850  xx xx:      xxx #$xx
         $37852  xx xx xx:   xxx $xxxx
         $37855  xx xx xx:   xxx $xxxx,x
-        $37858  xx xx:      xxx $xx
-        $3785a  xx:         xxx
-;;; --------------------------------
-        $3785b  xx xx xx:   xxx $xxxx,x
+        $37858  xx xx:      xxx + ; $3785b
+        $3785a  xx:          xxx
+        ;; --------------------------------
++       $3785b  xx xx xx:   xxx $xxxx,x
         $3785e  xx xx:      xxx #$xx
         $37860  xx xx:      xxx $xx
         $37862  xx xx:      xxx #$xx
-        $37864  xx xx xx:   xxx $3c125
+        $37864  xx xx xx:   xxx StartAudioTrack
         $37867  xx xx:      xxx #$xx
         $37869  xx xx xx:   xxx $xxxx
         $3786c  xx xx:      xxx #$xx
         $3786e  xx xx xx:   xxx $xxxx,x
         $37871  xx xx:      xxx #$xx
         $37873  xx xx xx:   xxx $xxxx
-        $37876  xx xx xx:   xxx $34c0e
-        $37879  xx xx:      xxx $xx
-        $3787b  xx xx:      xxx #$xx
+        $37876  xx xx xx:   xxx LoadPalettesForLocation
+        $37879  xx xx:      xxx CurrentLocation
+        $3787b  xx xx:      xxx #LOC_JOEL_SHED
         $3787d  xx xx:      xxx $xx
-        $3787f  xx xx:      xxx #$xx
+        $3787f  xx xx:      xxx #LOC_SWAN_GATE
         $37881  xx xx:      xxx $xx
-        $37883  xx xx:      xxx #$xx
+        $37883  xx xx:      xxx #LOC_MT_SABRE_NORTH_MAIN
         $37885  xx xx:      xxx $xx
-        $37887  xx xx:      xxx #$xx
+        $37887  xx xx:      xxx #LOC_MT_HYDRA
         $37889  xx xx:      xxx $xx
         $3788b  xx xx:      xxx #$xx
         $3788d  xx xx:      xxx $xx
@@ -44128,7 +44744,7 @@ DataTable_378e6
         $37920              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $37930              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_36314_06
+ObjectActionJump_06
         $3793e  xx xx:      xxx #$xx
         $37940  xx xx xx:   xxx $xxxx
         $37943  xx xx xx:   xxx $37955
@@ -44180,7 +44796,7 @@ JumpTable_36314_06
 ;;; --------------------------------
         $379a9  xx:         xxx
 ;;; --------------------------------
-JumpTable_36314_7d
+ObjectActionJump_7d
         $379aa  xx xx xx:   xxx $xxxx,x
         $379ad  xx xx:      xxx $xx
         $379af  xx xx xx:   xxx ReadObjectCoordinatesInto_34_37
@@ -44246,7 +44862,7 @@ JumpTable_36314_7d
 DataTable_37a2c 
         $37a2c              .byte $xx,$xx
 ;;; --------------------------------
-JumpTable_36314_70
+ObjectActionJump_70
         $37a2e  xx xx xx:   xxx $xxxx,x
         $37a31  xx:         xxx
         $37a32  xx:         xxx
@@ -44256,14 +44872,26 @@ JumpTable_36314_70
         $37a3b  xx xx:      xxx $xx
         $37a3d  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
-DataTable_37a40 
-        $37a40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $37a50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; STRIP: word=$2c000
+JumpTable_37a40
+        $37a40              .word ($37a5a) ; 00 object $b2
+        $37a42              .word ($37af5) ; 01 object $b3
+        $37a44              .word ($37be7) ; 02
+        $37a46              .word ($37c0c) ; 03
+        $37a48              .word ($37c37) ; 04
+        $37a4a              .word ($37c71) ; 05
+        $37a4c              .word ($37c94) ; 06
+        $37a4e              .word ($xxxx)
+        $37a50              .word ($37d29) ; 08
+        $37a52              .word ($37cf6) ; 09 object b5
+        $37a54              .word ($37d19) ; 0a
+        $37a56              .word ($xxxx)
+        $37a58              .word ($37da9) ; 0c flail
 ;;; --------------------------------
         $37a5a  xx xx xx:   xxx $xxxx
-        $37a5d  xx xx:      xxx $xx
-        $37a5f  xx xx:      xxx #$xx
-        $37a61  xx xx xx:   xxx $3c125
+        $37a5d  xx xx:      xxx >rts
+        $37a5f  xx xx:      xxx #SFX_CALM_SEAS
+        $37a61  xx xx xx:   xxx StartAudioTrack
         $37a64  xx xx:      xxx $xx
         $37a66  xx xx xx:   xxx $37a71
         $37a69  xx xx:      xxx $xx
@@ -44271,11 +44899,11 @@ DataTable_37a40
         $37a6d  xx xx xx:   xxx $xxxx,x
         $37a70  xx:         xxx
 ;;; --------------------------------
-        $37a71  xx xx xx:   xxx $3c676
+        $37a71  xx xx xx:   xxx FlushNametableDataWrite
         $37a74  xx xx xx:   xxx $37ab8
         $37a77  xx xx:      xxx #$xx
         $37a79  xx xx:      xxx $xx
-        $37a7b  xx xx xx:   xxx $3c676
+        $37a7b  xx xx xx:   xxx FlushNametableDataWrite
         $37a7e  xx xx:      xxx #$xx
         $37a80  xx xx:      xxx $xx
         $37a82  xx xx:      xxx $xx
@@ -44291,8 +44919,7 @@ DataTable_37a40
         $37a99  xx:         xxx
 ;;; --------------------------------
 DataTable_37a9a 
-        $37a9a              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $37aa0              .byte $xx,$xx
+        $37a9a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
         $37aa2  xx xx xx:   xxx $xxxx,x
         $37aa5  xx xx:      xxx #$xx
@@ -44368,8 +44995,8 @@ DataTable_37a9a
         $37b2d  xx xx xx:   xxx $xxxx
         $37b30  xx:         xxx
         $37b31  xx:         xxx
-        $37b32  xx xx:       xxx #$xx
-        $37b34  xx xx xx:    xxx $3c125
+        $37b32  xx xx:       xxx #SFX_DIALOG
+        $37b34  xx xx xx:    xxx StartAudioTrack
         $37b37  xx xx xx:    xxx $3ffcf
         $37b3a  xx xx xx:    xxx $xxxx
         $37b3d  xx xx xx:    xxx $xxxx
@@ -44381,10 +45008,10 @@ DataTable_37a9a
         $37b4b  xx xx xx:    xxx $xxxx
         $37b4e  xx xx:       xxx #$xx
         $37b50  xx xx xx:    xxx $xxxx
-        $37b53  xx xx:       xxx #$xx
-        $37b55  xx xx xx:    xxx $3c125
-        $37b58  xx xx xx:    xxx $xxxx
-        $37b5b  xx xx xx:    xxx $xxxx
+        $37b53  xx xx:       xxx #SFX_RECOVER_MAGIC
+        $37b55  xx xx xx:    xxx StartAudioTrack
+        $37b58  xx xx xx:    xxx PlayerMaxHP
+        $37b5b  xx xx xx:    xxx PlayerHP
         $37b5e  xx xx xx:    xxx UpdateHPDisplayInternal
         $37b61  xx xx xx:    xxx $xxxx
         $37b64  xx xx xx:    xxx $xxxx
@@ -44413,7 +45040,7 @@ DataTable_37a9a
         $37b89  xx xx:       xxx $xx
         $37b8b  xx xx:       xxx #$xx
         $37b8d  xx xx:       xxx $xx
-        $37b8f  xx xx xx:    xxx $3ff80
+        $37b8f  xx xx xx:    xxx LoadOneObjectData
         $37b92  xx xx xx:    xxx $37bce,y
         $37b95  xx xx:       xxx $xx,x
         $37b97  xx xx:       xxx #$xx
@@ -44442,11 +45069,10 @@ DataTable_37a9a
         $37bcd  xx:         xxx
 ;;; --------------------------------
 DataTable_37bce 
-        $37bce              .byte $xx,$xx
-        $37bd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $37be0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $37bce              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $37bde              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-        $37be7  xx xx xx:   xxx $3c676
+        $37be7  xx xx xx:   xxx FlushNametableDataWrite
         $37bea  xx xx:      xxx #$xx
         $37bec  xx xx:      xxx #$xx
         $37bee  xx xx xx:   xxx $xxxx,y
@@ -44459,8 +45085,8 @@ DataTable_37bce
         $37bfd  xx xx:      xxx $xx
         $37bff  xx xx:      xxx #$xx
         $37c01  xx xx xx:   xxx StageNametableWrite
-        $37c04  xx xx:      xxx #$xx
-        $37c06  xx xx:      xxx $xx
+        $37c04  xx xx:      xxx #GAME_MODE_DYNA_APPEARS
+        $37c06  xx xx:      xxx GameMode
         $37c08  xx xx xx:   xxx $xxxx,x
         $37c0b  xx:         xxx
 ;;; --------------------------------
@@ -44480,8 +45106,8 @@ DataTable_37bce
         $37c28  xx xx:      xxx #$xx
         $37c2a  xx xx xx:   xxx $xxxx
         $37c2d  xx xx:      xxx $xx
-        $37c2f  xx xx:      xxx #$xx
-        $37c31  xx xx xx:   xxx $3c125
+        $37c2f  xx xx:      xxx #$xx ; BGM 14
+        $37c31  xx xx xx:   xxx StartAudioTrack
 ;;; --------------------------------
 DataTable_37c34 
         $37c34              .byte $xx,$xx,$xx
@@ -44554,13 +45180,13 @@ DataTable_37c61
 ;;; --------------------------------
         $37cd7  xx xx:      xxx #$xx
         $37cd9  xx xx xx:   xxx $35b07
-        $37cdc  xx xx:      xxx #$xx
-        $37cde  xx xx:      xxx $xx
+        $37cdc  xx xx:      xxx #SCREEN_MODE_NORMAL
+        $37cde  xx xx:      xxx ScreenMode
         $37ce0  xx xx:      xxx $xx
         $37ce2  xx xx:      xxx #$xx
         $37ce4  xx xx:      xxx $xx
         $37ce6  xx xx:      xxx #$xx
-        $37ce8  xx xx:      xxx $xx
+        $37ce8  xx xx:      xxx ScreenMode
         $37cea  xx xx:      xxx #$xx
         $37cec  xx xx xx:   xxx $xxxx,y
         $37cef  xx xx xx:   xxx $xxxx,y
@@ -44587,8 +45213,8 @@ DataTable_37c61
         $37d1c  xx xx:      xxx $xx
         $37d1e  xx:         xxx
 ;;; --------------------------------
-        $37d1f  xx xx:      xxx #$xx
-        $37d21  xx xx:      xxx $xx
+        $37d1f  xx xx:      xxx #GAME_MODE_DYNA_DEFEATED
+        $37d21  xx xx:      xxx GameMode
         $37d23  xx xx:      xxx #$xx
         $37d25  xx xx xx:   xxx $xxxx,x
         $37d28  xx:         xxx
@@ -44649,65 +45275,71 @@ DataTable_37d89
         $37d89              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $37d99              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-        $37da9  xx xx xx:   xxx $xxxx,x
-        $37dac  xx xx xx:   xxx $xxxx,y
+;;; Lizardman Flail: $4a0 == #$70 and $600 == #$0c
+ObjectAction_70_0c
+        $37da9  xx xx xx:   xxx $xxxx,x ; this is the object index of the parent
+        $37dac  xx xx xx:   xxx $xxxx,y ; check that the parent still exists
         $37daf  xx xx:      xxx #$xx
-        $37db1  xx xx:      xxx $xx
-        $37db3  xx xx:      xxx #$xx
-        $37db5  xx xx xx:   xxx $xxxx,x
-        $37db8  xx:         xxx
-;;; --------------------------------
-        $37db9  xx xx xx:   xxx $xxxx,y
-        $37dbc  xx xx:      xxx $xx
-        $37dbe  xx xx:      xxx #$xx
-        $37dc0  xx xx xx:   xxx $xxxx,x
-        $37dc3  xx xx:      xxx #$xx
-        $37dc5  xx xx xx:   xxx $xxxx,x
-        $37dc8  xx xx xx:   xxx $xxxx,x
-        $37dcb  xx:         xxx
-        $37dcc  xx xx:      xxx #$xx
-        $37dce  xx xx xx:   xxx $xxxx,x
-        $37dd1  xx xx:      xxx #$xx
-        $37dd3  xx xx:      xxx $xx
-        $37dd5  xx xx xx:   xxx $xxxx,x
-        $37dd8  xx xx:      xxx $xx
-        $37dda  xx xx:      xxx #$xx ; enemy sound - green lizard flail??
-        $37ddc  xx xx xx:   xxx StartAudioTrack
-        $37ddf  xx xx:      xxx $xx
-        $37de1  xx xx xx:   xxx $xxxx,x
-        $37de4  xx:         xxx
-        $37de5  xx xx xx:   xxx ReadObjectCoordinatesInto_34_37
-        $37de8  xx xx xx:   xxx $xxxx,x
-        $37deb  xx xx:      xxx $xx
-        $37ded  xx xx xx:   xxx $xxxx,x
-        $37df0  xx xx:      xxx #$xx
-        $37df2  xx xx:      xxx $xx
-        $37df4  xx:         xxx
-        $37df5  xx:         xxx
+        $37db1  xx xx:      xxx +
+        $37db3  xx xx:       xxx #$xx    ; if the parent is gone, then despawn
+        $37db5  xx xx xx:    xxx $xxxx,x
+        $37db8  xx:          xxx
+        ;; --------------------------------
+        ;; At this point, the parent object's index is y.
++       $37db9  xx xx xx:   xxx $xxxx,y
+        $37dbc  xx xx:      xxx +
+        ;; When the parent's 5a0 is zero, update the flail
+        $37dbe  xx xx:       xxx #$xx
+        $37dc0  xx xx xx:    xxx ObjectHitbox,x     ; not on any collision plane
+        $37dc3  xx xx:       xxx #$xx
+        $37dc5  xx xx xx:    xxx ObjectMetasprite,x ; hard-code sprite as #$f4
+        ;; Tick the animation counter by 4 every frame (that 5a0 is zero)
+        $37dc8  xx xx xx:    xxx ObjectAnimationCounter,x
+        $37dcb  xx:          xxx
+        $37dcc  xx xx:       xxx #$xx
+        $37dce  xx xx xx:    xxx ObjectAnimationCounter,x
+        ;; Play sound every 32 frames (since $4e0 ticks by 4) if on-screen
+        $37dd1  xx xx:       xxx #$xx
+        $37dd3  xx xx:       xxx +
+        $37dd5  xx xx xx:     xxx ObjectOnScreen,x
+        $37dd8  xx xx:        xxx +
+        $37dda  xx xx:         xxx #SFX_MNST_FLAIL
+        $37ddc  xx xx xx:      xxx StartAudioTrack
++       $37ddf  xx xx:      xxx $xx
+        $37de1  xx xx xx:    xxx $xxxx,x ; parent index
+        $37de4  xx:          xxx
+        $37de5  xx xx xx:    xxx ReadObjectCoordinatesInto_34_37
+        $37de8  xx xx xx:    xxx $xxxx,x ; parent shooting? maybe triggers spin?
+        $37deb  xx xx:       xxx $xx
+        $37ded  xx xx xx:    xxx ObjectMetasprite,x
+        $37df0  xx xx:       xxx #$xx
+        $37df2  xx xx:       xxx $xx
+        $37df4  xx:          xxx
+        $37df5  xx:          xxx
         $37df6  xx xx:      xxx $xx
         $37df8  xx xx:      xxx $xx
-        $37dfa  xx xx:      xxx $xx
-        $37dfc  xx:         xxx
-        $37dfd  xx xx:      xxx #$xx
-        $37dff  xx:         xxx
-        $37e00  xx xx:      xxx $xx
-        $37e02  xx:         xxx
-        $37e03  xx xx:      xxx #$xx
-        $37e05  xx xx xx:   xxx $xxxx,x
-        $37e08  xx xx:      xxx $xx
-        $37e0a  xx:         xxx
-        $37e0b  xx:         xxx
-        $37e0c  xx:         xxx
-        $37e0d  xx:         xxx
-        $37e0e  xx xx xx:   xxx $xxxx,x
-        $37e11  xx xx:      xxx $xx
-        $37e13  xx xx:      xxx #$xx
-        $37e15  xx xx:      xxx #$xx
-        $37e17  xx xx xx:   xxx $xxxx,x
-        $37e1a  xx xx:      xxx $xx
-        $37e1c  xx:         xxx
-        $37e1d  xx xx xx:   xxx $xxxx,x
-        $37e20  xx xx xx:   xxx $37e30,y
+        $37dfa  xx xx:      xxx + ; $37e20
+        $37dfc  xx:          xxx
+        $37dfd  xx xx:       xxx #$xx
+        $37dff  xx:          xxx
+        $37e00  xx xx:       xxx $xx
+        $37e02  xx:          xxx
+        $37e03  xx xx:       xxx #$xx
+        $37e05  xx xx xx:    xxx ObjectMetasprite,x
+        $37e08  xx xx:       xxx $xx
+        $37e0a  xx:          xxx
+        $37e0b  xx:          xxx
+        $37e0c  xx:          xxx
+        $37e0d  xx:          xxx
+        $37e0e  xx xx xx:    xxx ObjectAnimationCounter,x
+        $37e11  xx xx:       xxx $xx
+        $37e13  xx xx:       xxx #$xx
+        $37e15  xx xx:       xxx #$xx
+        $37e17  xx xx xx:    xxx ObjectHitbox,x ; pick appropriate hitbox
+        $37e1a  xx xx:       xxx $xx
+        $37e1c  xx:          xxx
+        $37e1d  xx xx xx:    xxx $xxxx,x
++       $37e20  xx xx xx:   xxx $37e30,y
         $37e23  xx xx:      xxx $xx
         $37e25  xx xx xx:   xxx $37e31,y
         $37e28  xx xx:      xxx $xx
@@ -44776,7 +45408,7 @@ DrawAllObjectSpritesInternal
         $38012  xx xx:      xxx #$xx
         $38014  xx xx:      xxx + ; $38018
         $38016  xx xx:       xxx #$xx
-+       $38018  xx xx:      xxx $xx ; $1e <- $08 & 2 ? 3 : 0
+       $38018  xx xx:      xxx $xx ; $1e <- $08 & 2 ? 3 : 0
         $3801a  xx xx xx:   xxx $xxxx
         $3801d  xx xx xx:   xxx $xxxx
         $38020  xx xx:      xxx #$xx
@@ -45016,6 +45648,9 @@ DataTable_381ba
         $38210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $38220              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+        ;; Input: $17 is a $380,x << 1 (for some x, presumably this one,
+        ;;        unless we're on the start (status) screen, in which case
+        ;;        it's $39f)
         $3822e  xx xx:      xxx $xx
         $38230  xx:         xxx
         $38231  xx xx:      xxx + ; $38239
@@ -45069,7 +45704,7 @@ DrawMetasprite
         $38275  xx xx:      xxx $xx
         $38277  xx xx xx:   xxx $xxxx,x
         $3827a  xx:         xxx
-        $3827b  xx xx xx:   xxx $xxxx,x
+        $3827b  xx xx xx:   xxx ObjectMetasprite,x
         $3827e  xx xx:      xxx + ; $38283
         $38280  xx xx xx:    xxx $xxxx,x
 +       $38283  xx:         xxx
@@ -45079,7 +45714,7 @@ DrawMetasprite
         $3828a  xx xx:       xxx $xx
         $3828c  xx xx xx:    xxx MetaspriteTable+1,y
         $3828f  xx xx:       xxx $xx
-        $38291  xx xx:       xxx ++ ; $3829d
+        $38291  xx xx:       xxx ++ ; $3829d (uncond)
         ;;                   ------
 +       $38293  xx xx xx:    xxx MetaspriteTablePart2,y
         $38296  xx xx:       xxx $xx
@@ -45111,7 +45746,7 @@ DrawMetasprite
 ++      $382b9  xx xx:      xxx $xx
         $382bb  xx xx:      xxx $xx
         $382bd  xx:         xxx
-        $382be  xx xx xx:   xxx $xxxx,x ; countdown timer
+        $382be  xx xx xx:   xxx $xxxx,x ; countdown step timer
         $382c1  xx:         xxx
         $382c2  xx:         xxx
         $382c3  xx:         xxx
@@ -45183,6 +45818,7 @@ DrawMetasprite
         $3832b  xx xx:      xxx #$xx
         $3832d  xx xx:      xxx $xx
         $3832f  xx xx:      xxx DrawMirroredMetasprite
+        ;; Actually draw the sprites
 ---     $38331  xx xx:      xxx ($xx),y
         $38333  xx xx:      xxx #$xx
         $38335  xx xx:      xxx + ; $3836b - nothing else to do - last tile
@@ -45199,14 +45835,14 @@ DrawMetasprite
         $38348  xx xx xx:    xxx $xxxx,x
         $3834b  xx:          xxx
         $3834c  xx xx:       xxx ($xx),y
-        $3834e  xx:          xxx
-        $3834f  xx xx:       xxx $xx
+        $3834e  xx:          xxx                        
+        $3834f  xx xx:       xxx $xx ; priority bit (#$20 if behind background, from $380,x)
         $38351  xx xx xx:    xxx $xxxx,x
         $38354  xx xx:       xxx #$xx
         $38356  xx xx:       xxx +++ ; $38379
 --      $38358  xx xx:       xxx ($xx),y
         $3835a  xx:          xxx
-        $3835b  xx xx:       xxx $xx
+        $3835b  xx xx:       xxx $xx ; Add $320,x, plus $#40 if $380,x:20 set
         $3835d  xx xx xx:    xxx $xxxx,x
         $38360  xx:          xxx
         $38361  xx:          xxx
@@ -45311,7 +45947,7 @@ ObjectSpriteOrderTable
 ;;; Then for each version, each component sprite has a quad of (dx, dy, attr, pattern).
 ;;; For NPCs (people and enemies), the attribute and pattern are given under the assumption
 ;;; that the graphics are in the first slot - the attribute and pattern are xor'd with
-;;; $01 and $c0, respectively, for second-slot NPCs.
+;;; $01 and $c0, respectively, for second-slot NPCs (?).
 ;;; STRIP: word=$30000
 MetaspriteTable
         $3845c              .word ($3868e) ; 00
@@ -45573,6 +46209,7 @@ MetaspriteTablePart2
         $3865a              .word ($39041) ; ff
 ;;; ----------------------------------------------------------------
 Metasprite_02                   ; Metasprite 02
+        ;; Player facing south
         $3865c              .byte $xx,$xx
         ;; Variant 0
         $3865e              .byte $xx,$xx,$xx,$xx
@@ -45590,6 +46227,7 @@ Metasprite_02                   ; Metasprite 02
         $3868a              .byte $xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 Metasprite_00                   ; Metasprite 00
+        ;; Player facing north
         $3868e              .byte $xx,$xx
         ;; Variant 0
         $38690              .byte $xx,$xx,$xx,$xx
@@ -45607,6 +46245,7 @@ Metasprite_00                   ; Metasprite 00
         $386bc              .byte $xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 Metasprite_01                   ; Metasprite 01
+        ;; Player facing east
         $386c0              .byte $xx,$xx
         ;; Variant 0
         $386c2              .byte $xx,$xx,$xx,$xx
@@ -45624,6 +46263,7 @@ Metasprite_01                   ; Metasprite 01
         $386ee              .byte $xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 Metasprite_03                   ; Metasprite 03
+        ;; Player facing west
         $386f2              .byte $xx
         $386f3              .word ($xxxx)
 ;;; ----------------------------------------------------------------
@@ -45680,6 +46320,7 @@ Metasprite_0a                   ; Metasprite 0a
         $38749              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
 Metasprite_04                   ; Metasprite 04
+        ;; Player sword thrust north
         $3874b              .byte $xx,$xx
         ;; Variant 0
         $3874d              .byte $xx,$xx,$xx,$xx
@@ -45726,6 +46367,7 @@ Metasprite_10                   ; Metasprite 10
         $387cb              .byte $xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 Metasprite_06                   ; Metasprite 06
+        ;; Player sword thrust south
         $387cf              .byte $xx,$xx
         ;; Variant 0
         $387d1              .byte $xx,$xx,$xx,$xx
@@ -45772,6 +46414,7 @@ Metasprite_12                   ; Metasprite 12
         $3884f              .byte $xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 Metasprite_07                   ; Metasprite 07
+        ;; Player sword thrust west
         $38853              .byte $xx
         $38854              .word ($xxxx)
 ;;; ----------------------------------------------------------------
@@ -45780,6 +46423,7 @@ Metasprite_13                   ; Metasprite 13
         $38857              .word ($xxxx)
 ;;; ----------------------------------------------------------------
 Metasprite_05                   ; Metasprite 05
+        ;; Player sword thrust east
         $38859              .byte $xx,$xx
         ;; Variant 0
         $3885b              .byte $xx,$xx,$xx,$xx
@@ -48601,6 +49245,7 @@ Metasprite_ac                   ; Metasprite ac
         $3a873              .byte $xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 Metasprite_a7                   ; Metasprite a7
+        ;; Player shadow
         $3a877              .byte $xx,$xx
         ;; Variant 0
         $3a879              .byte $xx,$xx,$xx,$xx
@@ -50434,50 +51079,50 @@ UpdateEquipmentAndStatus
         ;; This includes palettes for changing swords, pattern
         ;; tables for mutation or change, updating NPC's dialog
         ;; and behavior due to change magic, etc.
-        $3c008  xx xx:      xxx $xx
+        $3c008  xx xx:      xxx PrgPageShadowLo
         $3c00a  xx:         xxx
         $3c00b  xx xx:       xxx #$xx ; 8000 -> 34000
         $3c00d  xx xx xx:    xxx BankSwitch8k_8000
-        $3c010  xx xx xx:    xxx $xxxx
-        $3c013  xx xx xx:    xxx $xxxx
-        $3c016  xx xx:       xxx #$xx
+        $3c010  xx xx xx:    xxx PlayerLevel
+        $3c013  xx xx xx:    xxx EquippedPassiveItem
+        $3c016  xx xx:       xxx #ITEM_POWER_RING
         $3c018  xx xx:       xxx + ; $3c01b
         $3c01a  xx:           xxx
-+       $3c01b  xx xx xx:    xxx $xxxx
++       $3c01b  xx xx xx:    xxx EquippedSword
         $3c01e  xx:          xxx
-        $3c01f  xx xx xx:    xxx $34bd2,y
-        $3c022  xx xx xx:    xxx $xxxx
-        $3c025  xx xx xx:    xxx $xxxx
-        $3c028  xx xx xx:    xxx $xxxx
-        $3c02b  xx xx:       xxx #$xx
+        $3c01f  xx xx xx:    xxx SwordStabDamage,y
+        $3c022  xx xx xx:    xxx PlayerAttack
+        $3c025  xx xx xx:    xxx PlayerLevel
+        $3c028  xx xx xx:    xxx EquippedPassiveItem
+        $3c02b  xx xx:       xxx #ITEM_IRON_NECKLACE
         $3c02d  xx xx:       xxx + ; $3c030
         $3c02f  xx:           xxx
-+       $3c030  xx xx xx:    xxx $xxxx
++       $3c030  xx xx xx:    xxx EquippedArmor
         $3c033  xx:          xxx
-        $3c034  xx xx xx:    xxx $34bc0,y
+        $3c034  xx xx xx:    xxx ArmorDefense,y
         $3c037  xx xx xx:    xxx $xxxx
-        $3c03a  xx xx xx:    xxx $xxxx
-        $3c03d  xx xx xx:    xxx $xxxx
-        $3c040  xx xx:       xxx #$xx
+        $3c03a  xx xx xx:    xxx PlayerLevel
+        $3c03d  xx xx xx:    xxx EquippedPassiveItem
+        $3c040  xx xx:       xxx #ITEM_SHIELD_RING
         $3c042  xx xx:       xxx + ; $3c045
         $3c044  xx:           xxx
-+       $3c045  xx xx xx:    xxx $xxxx
++       $3c045  xx xx xx:    xxx EquippedShield
         $3c048  xx:          xxx
-        $3c049  xx xx xx:    xxx $34bc9,y
-        $3c04c  xx xx xx:    xxx $xxxx
+        $3c049  xx xx xx:    xxx ShieldDefense,y
+        $3c04c  xx xx xx:    xxx ObjectDefense
         $3c04f  xx:         xxx
         $3c050  xx xx xx:   xxx BankSwitch8k_8000
         $3c053  xx xx:      xxx #$xx
-        $3c055  xx xx xx:   xxx $xxxx
+        $3c055  xx xx xx:   xxx PlayerStatus
         $3c058  xx xx:      xxx #$xx
-        $3c05a  xx xx:      xxx #$xx
+        $3c05a  xx xx:      xxx #STATUS_STONE
         $3c05c  xx xx:      xxx + ; $3c060
         $3c05e  xx xx:       xxx #$xx
 +       $3c060  xx xx xx:   xxx $xxxx
         $3c063  xx xx xx:   xxx $xxxx
         $3c066  xx xx:      xxx #$xx
         $3c068  xx xx:      xxx $xx
-        $3c06a  xx xx xx:   xxx $xxxx
+        $3c06a  xx xx xx:   xxx PlayerStatus
         $3c06d  xx xx:      xxx + ; $3c073
         $3c06f  xx xx:       xxx #$xx
         $3c071  xx xx:       xxx ++ ; $3c07d
@@ -50490,7 +51135,7 @@ UpdateEquipmentAndStatus
         $3c07a  xx xx xx:   xxx $3c121,y
 ++      $3c07d  xx xx:      xxx $xx
         $3c07f  xx xx xx:   xxx $xxxx
-        $3c082  xx xx xx:   xxx $xxxx
+        $3c082  xx xx xx:   xxx PlayerStatus
         $3c085  xx xx:      xxx + ; $3c08a
         $3c087  xx xx xx:    xxx $3c107
         ;; --------------------------------
@@ -50676,6 +51321,7 @@ SetSprite0_F0
         $3c1aa  xx xx xx:   xxx $xxxx
         $3c1ad  xx:         xxx
 ;;; --------------------------------
+        ;; This seems to run every frame of the 'start' status screen
         $3c1ae  xx xx:      xxx $xx
         $3c1b0  xx:         xxx
         $3c1b1  xx xx:       xxx $xx
@@ -51526,8 +52172,8 @@ LoadMapData_A
         $3c813  xx xx xx:   xxx $34c3d
         $3c816  xx xx:      xxx $xx
         $3c818  xx xx:      xxx $xx
-        $3c81a  xx xx:      xxx #$xx
-        $3c81c  xx xx:      xxx $xx
+        $3c81a  xx xx:      xxx #SCREEN_MODE_NORMAL
+        $3c81c  xx xx:      xxx ScreenMode
         $3c81e  xx xx:      xxx #$xx
         $3c820  xx xx:      xxx $xx
         $3c822  xx xx:      xxx $xx
@@ -51597,13 +52243,13 @@ ClearBackgroundPaletteAndAttributes
         $3c894  xx xx:      xxx - ; $3c88e
         $3c896  xx xx:      xxx #$xx ; write #$40 bytes $6000 -> v$23c0 (attr0)
         $3c898  xx xx xx:   xxx StageNametableWrite
-        $3c89b  xx xx xx:   xxx $3c169
+        $3c89b  xx xx xx:   xxx WaitForOAMDMA
 ;;; --------------------------------
         $3c89e  xx xx:      xxx $xx
         $3c8a0  xx xx:      xxx #$xx
         $3c8a2  xx xx:      xxx + ; $3c8a8
-        $3c8a4  xx xx:      xxx #$xx
-        $3c8a6  xx xx:      xxx $xx
+        $3c8a4  xx xx:      xxx #SCREEN_MODE_NORMAL
+        $3c8a6  xx xx:      xxx ScreenMode
 + -     $3c8a8  xx:         xxx
         ;; --------------------------------
         $3c8a9  xx xx:      xxx $xx
@@ -51705,10 +52351,10 @@ MainLoopJump_00_PrepareGame
         $3c96f  xx xx:      xxx $xx
         $3c971  xx xx:      xxx #$xx
         $3c973  xx xx:      xxx $xx
-        $3c975  xx xx:      xxx #$xx
-        $3c977  xx xx:      xxx $xx
-        $3c979  xx xx:      xxx #$xx
-        $3c97b  xx xx:      xxx $xx
+        $3c975  xx xx:      xxx #MAIN_LOOP_GAME
+        $3c977  xx xx:      xxx MainLoopMode
+        $3c979  xx xx:      xxx #GAME_MODE_INITIAL_START
+        $3c97b  xx xx:      xxx GameMode
         $3c97d  xx xx xx:   xxx $3c9ff
         $3c980  xx xx:      xxx #$xx
         $3c982  xx xx xx:   xxx $xxxx
@@ -51736,7 +52382,7 @@ MainLoopJump_00_PrepareGame
         $3c9c3  xx xx xx:   xxx $xxxx
         $3c9c6  xx xx xx:   xxx $xxxx
         $3c9c9  xx xx xx:   xxx $xxxx
-        $3c9cc  xx xx:      xxx $xx
+        $3c9cc  xx xx:      xxx ScreenMode
         $3c9ce  xx xx:      xxx #$xx
         $3c9d0  xx xx xx:   xxx $xxxx
         $3c9d3  xx xx xx:   xxx $xxxx
@@ -51753,22 +52399,22 @@ MainLoopJump_08_ContinueGame
         $3c9eb  xx xx:      xxx #$xx ; 8000 -> 24000
         $3c9ed  xx xx xx:   xxx BankSwitch16k
         $3c9f0  xx xx xx:   xxx $3fa65
-        $3c9f3  xx xx:      xxx #$xx
-        $3c9f5  xx xx:      xxx $xx
-        $3c9f7  xx xx:      xxx $xx
+        $3c9f3  xx xx:      xxx #MAIN_LOOP_GAME ; Also GAME_MODE_CHANGE_LOCATION
+        $3c9f5  xx xx:      xxx MainLoopMode
+        $3c9f7  xx xx:      xxx GameMode
         $3c9f9  xx xx:      xxx #$xx
         $3c9fb  xx xx xx:   xxx $xxxx
         $3c9fe  xx:         xxx
 ;;; --------------------------------
         $3c9ff  xx xx:      xxx #$xx
         $3ca01  xx xx:      xxx #$xx
-        $3ca03  xx xx xx:   xxx $xxxx,x
+        $3ca03  xx xx xx:   xxx ObjectActionScript,x
         $3ca06  xx:         xxx
         $3ca07  xx xx:      xxx $xx
         $3ca09  xx xx:      xxx #$xx
-        $3ca0b  xx xx:      xxx $xx
-        $3ca0d  xx xx:      xxx $xx
-        $3ca0f  xx xx xx:   xxx $3c169
+        $3ca0b  xx xx:      xxx PpuMaskShadow
+        $3ca0d  xx xx:      xxx ScreenMode
+        $3ca0f  xx xx xx:   xxx WaitForOAMDMA
         $3ca12  xx xx:      xxx #$xx
         $3ca14  xx xx xx:   xxx $3ca26,y
         $3ca17  xx xx:      xxx $xx
@@ -51792,13 +52438,13 @@ MainGameModeJump_01_LocationChange
         $3ca3b  xx xx:      xxx #$xx ; update $380,x
         $3ca3d  xx xx xx:   xxx CheckTerrainUnderObject
         $3ca40  xx xx:      xxx #$xx
-        $3ca42  xx xx:      xxx $xx ; display mode: normal
+        $3ca42  xx xx:      xxx ScreenMode ; display mode: normal
         $3ca44  xx xx xx:   xxx $xxxx
         $3ca47  xx xx xx:   xxx $xxxx,x
         $3ca4a  xx xx:      xxx #$xx ; remove "slow" bit from player
         $3ca4c  xx xx xx:   xxx $xxxx,x
-        $3ca4f  xx xx:      xxx #$xx
-        $3ca51  xx xx:      xxx $xx ; game mode: normal
+        $3ca4f  xx xx:      xxx #GAME_MODE_NORMAL
+        $3ca51  xx xx:      xxx GameMode
         $3ca53  xx xx:      xxx $xx ; check exit type
         $3ca55  xx xx:      xxx #$xx
         $3ca57  xx xx:      xxx #$xx
@@ -51831,15 +52477,15 @@ MainGameModeJump_00_Initialize
         $3ca96  xx xx:      xxx #$xx
         $3ca98  xx xx xx:   xxx $xxxx
         $3ca9b  xx xx xx:   xxx $3ca2e
-        $3ca9e  xx xx:      xxx #$xx
-        $3caa0  xx xx:      xxx $xx
+        $3ca9e  xx xx:      xxx #GAME_MODE_FLASH_AT_START
+        $3caa0  xx xx:      xxx GameMode
         $3caa2  xx xx:      xxx #$xx
         $3caa4  xx xx xx:   xxx $xxxx
         $3caa7  xx xx xx:   xxx ReadControllersWithDirections
         $3caaa  xx xx:      xxx $xx
         $3caac  xx xx:      xxx + ; $3cab5
-        $3caae  xx xx:      xxx #$xx
-        $3cab0  xx xx:      xxx $xx
+        $3caae  xx xx:      xxx #GAME_MODE_NORMAL
+        $3cab0  xx xx:      xxx GameMode
         $3cab2  xx xx xx:   xxx $3c008
         ;; --------------------------------
 +       $3cab5  xx:         xxx
@@ -51917,7 +52563,7 @@ MainGameModeJumpBank
 ;;; Normal mode: player is moving on the main map.  This runs nearly every frame.
 MainGameModeJump_08_Normal
         $3cb62  xx xx xx:   xxx ReadControllersWithDirections
-        $3cb65  xx xx xx:   xxx $3cb84
+        $3cb65  xx xx xx:   xxx CheckForPlayerDeath
         $3cb68  xx xx xx:   xxx $3ef55
         $3cb6b  xx xx xx:   xxx $3cccc
         $3cb6e  xx xx xx:   xxx $3e8f6
@@ -51926,13 +52572,14 @@ MainGameModeJump_08_Normal
         $3cb76  xx xx xx:   xxx DrawAllObjectSpritesInternal
         $3cb79  xx xx:      xxx #$xx
         $3cb7b  xx xx xx:   xxx BankSwitch16k
-        $3cb7e  xx xx xx:   xxx $34f6e
-        $3cb81  xx xx xx:   xxx $3e0b8
+        $3cb7e  xx xx xx:   xxx CheckAllObjectCollisions
+        $3cb81  xx xx xx:   xxx AnimateBackgroundAndRespawn
 ;;; --------------------------------
-        $3cb84  xx xx xx:     xxx $xxxx
+CheckForPlayerDeath
+        $3cb84  xx xx xx:     xxx PlayerHP
         $3cb87  xx xx:        xxx + ; $3cb90
-        $3cb89  xx xx:         xxx #$xx
-        $3cb8b  xx xx:         xxx $xx
+        $3cb89  xx xx:         xxx #GAME_MODE_DEATH
+        $3cb8b  xx xx:         xxx GameMode
         $3cb8d  xx:          xxx
         $3cb8e  xx:         xxx
 @rst:   $3cb8f  xx:         xxx
@@ -51944,8 +52591,8 @@ MainGameModeJump_08_Normal
         $3cb99  xx xx:      xxx $xx
         $3cb9b  xx xx:      xxx #$xx
         $3cb9d  xx xx:      xxx + ; $3cba3
-        $3cb9f  xx xx:      xxx #$xx
-        $3cba1  xx xx:      xxx $xx
+        $3cb9f  xx xx:      xxx #SCREEN_MODE_NORMAL
+        $3cba1  xx xx:      xxx ScreenMode
 +       $3cba3  xx xx:      xxx #$xx
         $3cba5  xx xx xx:   xxx BankSwitch16k
         $3cba8  xx xx xx:   xxx $1fc40
@@ -51957,8 +52604,8 @@ MainGameModeJump_08_Normal
 ++      $3cbb4  xx xx:      xxx $xx
         $3cbb6  xx xx:      xxx #$xx
         $3cbb8  xx xx:      xxx $xx
-        $3cbba  xx xx:      xxx #$xx
-        $3cbbc  xx xx:      xxx $xx
+        $3cbba  xx xx:      xxx #GAME_MODE_SELECT_MENU
+        $3cbbc  xx xx:      xxx GameMode
         $3cbbe  xx:         xxx
         $3cbbf  xx:         xxx
         $3cbc0  xx:         xxx
@@ -51980,8 +52627,8 @@ MainGameModeJump_08_Normal
         $3cbde  xx xx:      xxx #$xx
         $3cbe0  xx xx:      xxx $xx
         $3cbe2  xx xx xx:   xxx $xxxx
-        $3cbe5  xx xx:      xxx #$xx
-        $3cbe7  xx xx:      xxx $xx
+        $3cbe5  xx xx:      xxx #GAME_MODE_CHANGE_LOCATION
+        $3cbe7  xx xx:      xxx GameMode
         $3cbe9  xx:         xxx
         $3cbea  xx:         xxx
         $3cbeb  xx:         xxx
@@ -51998,8 +52645,8 @@ MainGameModeJump_04
         $3cc05  xx xx:      xxx $xx
         $3cc07  xx xx:      xxx #$xx
         $3cc09  xx xx:      xxx $xx
-        $3cc0b  xx xx:      xxx #$xx
-        $3cc0d  xx xx:      xxx $xx
+        $3cc0b  xx xx:      xxx #GAME_MODE_NORMAL
+        $3cc0d  xx xx:      xxx GameMode
         $3cc0f  xx xx:      xxx #$xx
         $3cc11  xx xx xx:   xxx WaitForMultipleOAMDMA
         $3cc14  xx xx xx:   xxx ReadControllersWithDirections
@@ -52036,7 +52683,7 @@ MainGameModeJump_1f_DynaAppears
         $3cc50  xx xx:      xxx $xx
         $3cc52  xx xx:      xxx #$xx
         $3cc54  xx xx:      xxx $xx
-        $3cc56  xx xx xx:   xxx $3c169
+        $3cc56  xx xx xx:   xxx WaitForOAMDMA
         $3cc59  xx xx:      xxx $xx
         $3cc5b  xx xx:      xxx $xx
         $3cc5d  xx xx:      xxx $xx
@@ -52054,7 +52701,7 @@ MainGameModeJump_1f_DynaAppears
         $3cc78  xx xx:      xxx #$xx
         $3cc7a  xx xx xx:   xxx BankSwitch16k
         $3cc7d  xx xx xx:   xxx $27a65
-        $3cc80  xx xx xx:   xxx $3c169
+        $3cc80  xx xx xx:   xxx WaitForOAMDMA
         $3cc83  xx xx:      xxx #$xx
         $3cc85  xx xx:      xxx #$xx
 -       $3cc87  xx xx xx:    xxx $xxxx,y
@@ -52093,57 +52740,57 @@ MainGameModeJump_1f_DynaAppears
         $3ccbe  xx xx:      xxx $xx
         $3ccc0  xx xx:      xxx #$xx
         $3ccc2  xx xx:      xxx $xx
-        $3ccc4  xx xx xx:   xxx $3c169
-        $3ccc7  xx xx:      xxx #$xx
-        $3ccc9  xx xx:      xxx $xx
+        $3ccc4  xx xx xx:   xxx WaitForOAMDMA
+        $3ccc7  xx xx:      xxx #GAME_MODE_NORMAL
+        $3ccc9  xx xx:      xxx GameMode
         $3cccb  xx:         xxx
 ;;; --------------------------------
         $3cccc  xx xx:      xxx #$xx
         $3ccce  xx xx xx:   xxx $xxxx
--       $3ccd1  xx xx:      xxx #$xx ; $8000 -> $34000
-        $3ccd3  xx xx xx:   xxx BankSwitch16k
-        $3ccd6  xx xx xx:   xxx $xxxx,x
-        $3ccd9  xx xx:      xxx #$xx
-        $3ccdb  xx xx:      xxx $xx
-        $3ccdd  xx xx xx:   xxx $xxxx,x
-        $3cce0  xx xx:      xxx $xx
-        $3cce2  xx xx xx:   xxx $xxxx,x
-        $3cce5  xx xx:      xxx ++ ; $3cd2b
-        $3cce7  xx xx xx:   xxx $xxxx,x
-        $3ccea  xx xx:      xxx #$xx
-        $3ccec  xx xx:      xxx + ; $3ccfa
-        $3ccee  xx xx:      xxx #$xx
-        $3ccf0  xx xx:      xxx $xx
-        $3ccf2  xx xx xx:   xxx $xxxx,x
-        $3ccf5  xx xx:      xxx $xx
-        $3ccf7  xx xx xx:   xxx $35011
-+       $3ccfa  xx xx xx:   xxx $xxxx,x
-        $3ccfd  xx xx:      xxx #$xx
-        $3ccff  xx xx:      xxx #$xx ; ObjectUpdate_1A does not run???
-        $3cd01  xx xx:      xxx + ; $3cd06
-        $3cd03  xx xx xx:    xxx $3cd7f
-        ;;                   ----------
-+       $3cd06  xx:         xxx
-        $3cd07  xx:         xxx
-        $3cd08  xx xx:      xxx #$xx
-        $3cd0a  xx xx:      xxx $xx
-        $3cd0c  xx xx xx:   xxx $36314,y
-        $3cd0f  xx xx:      xxx $xx
-        $3cd11  xx xx xx:   xxx $36315,y
-        $3cd14  xx xx:      xxx $xx
-        $3cd16  xx xx:      xxx $xx
-        $3cd18  xx xx:      xxx ++ ; $3cd2b
-        $3cd1a  xx xx xx:   xxx $xxxx,x
-        $3cd1d  xx xx:      xxx #$xx
-        $3cd1f  xx xx:      xxx #$xx
-        $3cd21  xx xx:      xxx + ; $3cd28
+@loop:  $3ccd1  xx xx:       xxx #$xx ; $8000 -> $34000
+        $3ccd3  xx xx xx:    xxx BankSwitch16k
+        $3ccd6  xx xx xx:    xxx $xxxx,x
+        $3ccd9  xx xx:       xxx #$xx
+        $3ccdb  xx xx:       xxx $xx
+        $3ccdd  xx xx xx:    xxx $xxxx,x
+        $3cce0  xx xx:       xxx $xx
+        $3cce2  xx xx xx:    xxx $xxxx,x
+        $3cce5  xx xx:       xxx ++ ; $3cd2b
+        $3cce7  xx xx xx:    xxx $xxxx,x
+        $3ccea  xx xx:       xxx #$xx
+        $3ccec  xx xx:       xxx + ; $3ccfa
+        $3ccee  xx xx:       xxx #$xx
+        $3ccf0  xx xx:       xxx $xx
+        $3ccf2  xx xx xx:    xxx $xxxx,x
+        $3ccf5  xx xx:       xxx $xx
+        $3ccf7  xx xx xx:    xxx $35011
++       $3ccfa  xx xx xx:    xxx $xxxx,x
+        $3ccfd  xx xx:       xxx #$xx
+        $3ccff  xx xx:       xxx #$xx ; ObjectUpdate_1A does not run???
+        $3cd01  xx xx:       xxx + ; $3cd06
+        $3cd03  xx xx xx:     xxx $3cd7f
+        ;;                    ----------
++       $3cd06  xx:          xxx
+        $3cd07  xx:          xxx
+        $3cd08  xx xx:       xxx #$xx
+        $3cd0a  xx xx:       xxx $xx
+        $3cd0c  xx xx xx:    xxx ObjectActionJump,y
+        $3cd0f  xx xx:       xxx $xx
+        $3cd11  xx xx xx:    xxx ObjectActionJump+1,y
+        $3cd14  xx xx:       xxx $xx
+        $3cd16  xx xx:       xxx $xx
+        $3cd18  xx xx:       xxx ++ ; $3cd2b
+        $3cd1a  xx xx xx:    xxx $xxxx,x
+        $3cd1d  xx xx:       xxx #$xx
+        $3cd1f  xx xx:       xxx #$xx
+        $3cd21  xx xx:       xxx + ; $3cd28
         ;; Routines 60..6f are in a different page
-        $3cd23  xx xx:       xxx #$xx
-        $3cd25  xx xx xx:    xxx BankSwitch8k_A000
-+       $3cd28  xx xx xx:   xxx $xxxx
-++      $3cd2b  xx:         xxx
-        $3cd2c  xx xx:      xxx #$xx
-        $3cd2e  xx xx:      xxx - ; $3ccd1
+        $3cd23  xx xx:        xxx #$xx
+        $3cd25  xx xx xx:     xxx BankSwitch8k_A000
++       $3cd28  xx xx xx:    xxx $xxxx
+++      $3cd2b  xx:          xxx
+        $3cd2c  xx xx:       xxx #$xx
+        $3cd2e  xx xx:      xxx @loop ; $3ccd1
         $3cd30  xx:         xxx
 ;;; --------------------------------
         $3cd31  xx xx xx:   xxx $xxxx,x
@@ -52171,7 +52818,7 @@ MainGameModeJump_1f_DynaAppears
         $3cd5b  xx xx xx:   xxx $xxxx,x
         $3cd5e  xx xx:      xxx #$xx
         $3cd60  xx xx xx:   xxx BankSwitch8k_8000
-        $3cd63  xx xx xx:   xxx $358d7
+        $3cd63  xx xx xx:   xxx MoveObjectWithSpeedAndDirection
         $3cd66  xx xx xx:   xxx $xxxx,x
         $3cd69  xx:         xxx
         $3cd6a  xx xx xx:   xxx $xxxx,x
@@ -52199,7 +52846,7 @@ MainGameModeJump_1f_DynaAppears
         $3cd98  xx xx xx:     xxx $xxxx,x
         $3cd9b  xx xx xx:     xxx $3ce12
         $3cd9e  xx:          xxx
-        $3cd9f  xx xx:       xxx $xx
+        $3cd9f  xx xx:       xxx ScreenMode
         $3cda1  xx:         xxx
         $3cda2  xx:         xxx
         $3cda3  xx xx xx:   xxx $xxxx,x
@@ -52208,9 +52855,9 @@ MainGameModeJump_1f_DynaAppears
         $3cdaa  xx xx:      xxx #$xx
         $3cdac  xx xx:      xxx $xx
         $3cdae  xx xx xx:   xxx $xxxx,x
-        $3cdb1  xx xx xx:   xxx $3c169
-        $3cdb4  xx xx:      xxx #$xx
-        $3cdb6  xx xx:      xxx $xx
+        $3cdb1  xx xx xx:   xxx WaitForOAMDMA
+        $3cdb4  xx xx:      xxx #SCREEN_MODE_NORMAL
+        $3cdb6  xx xx:      xxx ScreenMode
         $3cdb8  xx xx:      xxx #$xx
         $3cdba  xx xx xx:   xxx BankSwitch8k_8000
         $3cdbd  xx xx xx:   xxx $34c0e
@@ -52324,7 +52971,7 @@ MainGameModeJump_1f_DynaAppears
         $3ce82  xx:          xxx
         $3ce83  xx:          xxx
         $3ce84  xx xx:      xxx - ; $3ce77
-        $3ce86  xx xx xx:   xxx $3c169
+        $3ce86  xx xx xx:   xxx WaitForOAMDMA
 ;;; --------------------------------
 ;;; Copy 16 nibbles (high-first) from ($10),y to $6000,x.
 ;;; Add #$70 to each nibble to line them up with the correct
@@ -52377,11 +53024,11 @@ MainGameModeJump_1f_DynaAppears
         $3ced8  xx:         xxx
         $3ced9  xx xx:      xxx #$xx
         $3cedb  xx xx:      xxx $xx
-        $3cedd  xx xx xx:   xxx $3c169
+        $3cedd  xx xx xx:   xxx WaitForOAMDMA
 ;;; --------------------------------
         $3cee0  xx xx:      xxx #$xx
         $3cee2  xx xx:      xxx $xx
-        $3cee4  xx xx xx:   xxx $3c169
+        $3cee4  xx xx xx:   xxx WaitForOAMDMA
         $3cee7  xx xx:      xxx #STORM_ATTACK
         $3cee9  xx xx xx:   xxx StartAudioTrack
         $3ceec  xx xx xx:   xxx $3cf28
@@ -52399,20 +53046,20 @@ MainGameModeJump_1f_DynaAppears
         $3cf09  xx xx:      xxx $xx
         $3cf0b  xx xx:      xxx #$xx
         $3cf0d  xx xx xx:   xxx StageNametableWrite
-        $3cf10  xx xx xx:   xxx $3c169
+        $3cf10  xx xx xx:   xxx WaitForOAMDMA
 ;;; --------------------------------
         $3cf13  xx xx:      xxx $xx
         $3cf15  xx xx:      xxx #$xx
         $3cf17  xx xx:      xxx $xx
-        $3cf19  xx xx:      xxx #$xx
-        $3cf1b  xx xx:      xxx $xx
+        $3cf19  xx xx:      xxx #SCREEN_MODE_NORMAL
+        $3cf1b  xx xx:      xxx ScreenMode
         $3cf1d  xx xx:      xxx #$xx
         $3cf1f  xx xx xx:   xxx BankSwitch8k_8000
         $3cf22  xx xx xx:   xxx $34c0e
-        $3cf25  xx xx xx:   xxx $3c169
+        $3cf25  xx xx xx:   xxx WaitForOAMDMA
 ;;; --------------------------------
         $3cf28  xx xx:      xxx #$xx
-        $3cf2a  xx xx:      xxx $xx
+        $3cf2a  xx xx:      xxx ScreenMode
         $3cf2c  xx xx:      xxx #$xx
         $3cf2e  xx xx:      xxx $xx
         $3cf30  xx xx:      xxx $xx
@@ -52539,7 +53186,7 @@ MainGameModeJump_10_StatusMessage
         $3d088  xx xx:      xxx $xx
         $3d08a  xx:         xxx
         $3d08b  xx xx:       xxx #$xx
-        $3d08d  xx xx xx:    xxx $3c176
+        $3d08d  xx xx xx:    xxx WaitForMultipleOAMDMA
         $3d090  xx xx xx:    xxx $xxxx
         $3d093  xx xx:       xxx #$xx
         $3d095  xx xx:       xxx + ; $3d0ae
@@ -52561,7 +53208,7 @@ MainGameModeJump_10_StatusMessage
         $3d0bc  xx xx xx:    xxx $xxxx
         $3d0bf  xx xx xx:    xxx $3d354
         $3d0c2  xx:         xxx
-        $3d0c3  xx xx:      xxx $xx
+        $3d0c3  xx xx:      xxx ScreenMode
         $3d0c5  xx xx xx:   xxx $3c8a9
 ;;; --------------------------------
 MainGameModeJump_11_Dialog
@@ -52647,12 +53294,13 @@ MainGameModeJump_11_Dialog
         $3d169  xx xx xx:   xxx $xxxx
         $3d16c  xx:         xxx
 ;;; --------------------------------
+;;; stay at inn???
         $3d16d  xx xx:      xxx #$xx
         $3d16f  xx xx xx:   xxx $xxxx
-        $3d172  xx xx xx:   xxx $xxxx
-        $3d175  xx xx xx:   xxx $xxxx
-        $3d178  xx xx xx:   xxx $xxxx
-        $3d17b  xx xx xx:   xxx $xxxx
+        $3d172  xx xx xx:   xxx PlayerMaxHP
+        $3d175  xx xx xx:   xxx PlayerHP
+        $3d178  xx xx xx:   xxx PlayerMaxMP
+        $3d17b  xx xx xx:   xxx PlayerMP
         $3d17e  xx xx:      xxx #$xx
         $3d180  xx xx xx:   xxx BankSwitch8k_8000
         $3d183  xx xx xx:   xxx UpdateHPDisplayInternal
@@ -52719,7 +53367,7 @@ MainGameModeJump_11_Dialog
         $3d20b  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
         $3d20e  xx xx:      xxx #$xx
         $3d210  xx xx:      xxx $xx
-        $3d212  xx xx xx:   xxx $3c25d
+        $3d212  xx xx xx:   xxx LoadOneObjectDataInternal
         $3d215  xx xx:      xxx #$xx
         $3d217  xx xx xx:   xxx $xxxx,x
         $3d21a  xx xx xx:   xxx $3e148
@@ -52933,8 +53581,8 @@ MainGameModeJump_11_Dialog
         $3d3df  xx xx:      xxx #$xx
         $3d3e1  xx xx:      xxx $xx
         $3d3e3  xx xx xx:   xxx $3c25d
-        $3d3e6  xx xx:      xxx #$xx
-        $3d3e8  xx xx:      xxx $xx
+        $3d3e6  xx xx:      xxx #GAME_MODE_NORMAL
+        $3d3e8  xx xx:      xxx GameMode
         $3d3ea  xx:         xxx
 ;;; --------------------------------
 MainGameModeJump_07_TriggerSquare
@@ -52968,7 +53616,7 @@ MainGameModeJump_07_TriggerSquare
         $3d428  xx xx:      xxx #$xx
         $3d42a  xx xx xx:   xxx $xxxx
         $3d42d  xx xx:      xxx #$xx
-        $3d42f  xx xx xx:   xxx $3c125
+        $3d42f  xx xx xx:   xxx StartAudioTrack
         $3d432  xx xx xx:   xxx $3d43a
 ;;; --------------------------------
         $3d435  xx xx:      xxx #SFX_TREASURE
@@ -53014,8 +53662,8 @@ MainGameModeJump_06_ItemUseMessage
         $3d49e  xx xx xx:   xxx $xxxx
         $3d4a1  xx xx:      xxx $xx
         $3d4a3  xx xx:      xxx $xx
-        $3d4a5  xx xx:      xxx #$xx
-        $3d4a7  xx xx:      xxx $xx
+        $3d4a5  xx xx:      xxx #GAME_MODE_NORMAL
+        $3d4a7  xx xx:      xxx GameMode
         $3d4a9  xx xx xx:   xxx $3cab6
 ;;; --------------------------------
         $3d4ac  xx xx:      xxx #$xx
@@ -53028,8 +53676,8 @@ MainGameModeJump_06_ItemUseMessage
         $3d4bd  xx xx:      xxx #$xx
         $3d4bf  xx xx:      xxx #$xx
         $3d4c1  xx xx:      xxx $xx
-        $3d4c3  xx xx:      xxx #$xx
-        $3d4c5  xx xx:      xxx $xx
+        $3d4c3  xx xx:      xxx #GAME_MODE_NORMAL
+        $3d4c5  xx xx:      xxx GameMode
         $3d4c7  xx:         xxx
 ;;; --------------------------------
         $3d4c8  xx xx xx:   xxx $xxxx
@@ -53037,8 +53685,8 @@ MainGameModeJump_06_ItemUseMessage
         $3d4cd  xx xx:      xxx $xx
         $3d4cf  xx xx xx:   xxx $xxxx
         $3d4d2  xx xx:      xxx $xx
-        $3d4d4  xx xx:      xxx #$xx
-        $3d4d6  xx xx:      xxx $xx
+        $3d4d4  xx xx:      xxx #GAME_MODE_NORMAL
+        $3d4d6  xx xx:      xxx GameMode
         $3d4d8  xx:         xxx
 ;;; --------------------------------
         $3d4d9  xx xx:      xxx $xx
@@ -53070,16 +53718,16 @@ MainGameModeJump_06_ItemUseMessage
         $3d50f  xx xx:      xxx #$xx
         $3d511  xx xx xx:   xxx $xxxx
         $3d514  xx xx:      xxx $xx
-        $3d516  xx xx:      xxx #$xx
-        $3d518  xx xx:      xxx $xx
+        $3d516  xx xx:      xxx #GAME_MODE_NORMAL
+        $3d518  xx xx:      xxx GameMode
         $3d51a  xx xx:      xxx #$xx
         $3d51c  xx xx xx:   xxx $3d834
         $3d51f  xx xx:      xxx $xx
         $3d521  xx xx:      xxx $xx
         $3d523  xx xx xx:   xxx $3d552
 ;;; --------------------------------
-        $3d526  xx xx:      xxx #$xx
-        $3d528  xx xx:      xxx $xx
+        $3d526  xx xx:      xxx #GAME_MODE_STATUS_MSG
+        $3d528  xx xx:      xxx GameMode
         $3d52a  xx xx:      xxx #$xx
         $3d52c  xx xx xx:   xxx $xxxx
         $3d52f  xx xx:      xxx #$xx
@@ -53087,16 +53735,16 @@ MainGameModeJump_06_ItemUseMessage
         $3d534  xx xx:      xxx #SFX_CURSOR_ERROR
         $3d536  xx xx xx:   xxx StartAudioTrack
 ;;; --------------------------------
-        $3d539  xx xx:      xxx $xx
-        $3d53b  xx xx:      xxx $xx
-        $3d53d  xx xx:      xxx $xx
+        $3d539  xx xx:      xxx GameMode
+        $3d53b  xx xx:      xxx GameMode
+        $3d53d  xx xx:      xxx GlobalCounter
         $3d53f  xx xx:      xxx #$xx
         $3d541  xx xx xx:   xxx $3d834
         $3d544  xx xx:      xxx $xx
         $3d546  xx xx:      xxx $xx
         $3d548  xx xx xx:   xxx $3d552
-        $3d54b  xx xx:      xxx #$xx
-        $3d54d  xx xx:      xxx $xx
+        $3d54b  xx xx:      xxx #GAME_MODE_NORMAL
+        $3d54d  xx xx:      xxx GameMode
         $3d54f  xx xx xx:   xxx $3cab6
 ;;; --------------------------------
         $3d552  xx xx:      xxx $xx
@@ -53108,13 +53756,47 @@ MainGameModeJump_06_ItemUseMessage
         $3d55e  xx xx:      xxx $xx
         $3d560  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
+;;; STRIP: word=$30000
 JumpTable_3d563                 ; TODO - Label the destinations
-        $3d563              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3d573              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3d583              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3d593              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $3d563              .word ($3d5a3) ; 00
+        $3d565              .word ($3d5a4) ; 01
+        $3d567              .word ($3d5d6) ; 02
+        $3d569              .word ($3d5a3) ; 03
+        $3d56b              .word ($3d653) ; 04
+        $3d56d              .word ($3d5a3) ; 05
+        $3d56f              .word ($3d6d5) ; 06
+        $3d571              .word ($3d5e6) ; 07
+        $3d573              .word ($3d654) ; 08
+        $3d575              .word ($3d659) ; 09
+        $3d577              .word ($3d63a) ; 0a
+        $3d579              .word ($3d6d8) ; 0b
+        $3d57b              .word ($3d6dd) ; 0c
+        $3d57d              .word ($3d6e7) ; 0d
+        $3d57f              .word ($3d6ec) ; 0e
+        $3d581              .word ($3d70d) ; 0f
+        $3d583              .word ($3d63f) ; 10
+        $3d585              .word ($3d6d5) ; 11
+        $3d587              .word ($3d5a3) ; 12
+        $3d589              .word ($3d718) ; 13
+        $3d58b              .word ($3d71f) ; 14
+        $3d58d              .word ($3d746) ; 15
+        $3d58f              .word ($3d78c) ; 16
+        $3d591              .word ($3d791) ; 17
+        $3d593              .word ($3d75e) ; 18
+        $3d595              .word ($3d7b7) ; 19
+        $3d597              .word ($3d5a3) ; 1a
+        $3d599              .word ($3d7ce) ; 1b
+        $3d59b              .word ($3d7fd) ; 1c
+        $3d59d              .word ($3d805) ; 1d
+        $3d59f              .word ($3d827) ; 1e
 ;;; --------------------------------
+JumpTable_3d563_00
+JumpTable_3d563_03
+JumpTable_3d563_05
+JumpTable_3d563_12
+JumpTable_3d563_1a
         $3d5a1  xx xx xx:   xxx $xxxx
+JumpTable_3d563_01
         $3d5a4  xx xx:      xxx #$xx
         $3d5a6  xx xx xx:   xxx $xxxx
         $3d5a9  xx xx xx:   xxx $xxxx
@@ -53133,10 +53815,11 @@ JumpTable_3d563                 ; TODO - Label the destinations
         $3d5cb  xx xx:      xxx $xx
         $3d5cd  xx xx:      xxx #$xx
         $3d5cf  xx xx:      xxx $xx
-        $3d5d1  xx xx:      xxx #$xx
-        $3d5d3  xx xx:      xxx $xx
+        $3d5d1  xx xx:      xxx #GAME_MODE_CHANGE_LOCATION
+        $3d5d3  xx xx:      xxx GameMode
         $3d5d5  xx:         xxx
 ;;; --------------------------------
+JumpTable_3d563_02
         $3d5d6  xx xx:      xxx #$xx
         $3d5d8  xx xx xx:   xxx $xxxx
         $3d5db  xx xx xx:   xxx $3d21d
@@ -53144,6 +53827,7 @@ JumpTable_3d563                 ; TODO - Label the destinations
         $3d5e0  xx xx xx:   xxx $xxxx
         $3d5e3  xx xx xx:   xxx $3d23f
 ;;; --------------------------------
+JumpTable_3d563_07
         $3d5e6  xx xx xx:   xxx $xxxx
         $3d5e9  xx xx:      xxx #$xx
         $3d5eb  xx xx xx:   xxx $xxxx,y
@@ -53156,7 +53840,7 @@ JumpTable_3d563                 ; TODO - Label the destinations
         $3d5fe  xx xx:      xxx #$xx
         $3d600  xx xx xx:   xxx $xxxx
         $3d603  xx xx xx:   xxx $xxxx
-        $3d606  xx xx xx:   xxx $3ff8c
+        $3d606  xx xx xx:   xxx DrawAllObjectSprites
         $3d609  xx xx:      xxx #$xx
         $3d60b  xx xx xx:   xxx BankSwitch8k_8000
         $3d60e  xx xx:      xxx #$xx
@@ -53173,15 +53857,17 @@ JumpTable_3d563                 ; TODO - Label the destinations
         $3d628  xx xx xx:   xxx $xxxx
         $3d62b  xx xx xx:   xxx $3d354
 ;;; --------------------------------
-        $3d62e  xx xx xx:   xxx $3c169
-        $3d631  xx xx xx:   xxx $3ff8c
+        $3d62e  xx xx xx:   xxx WaitForOAMDMA
+        $3d631  xx xx xx:   xxx DrawAllObjectSprites
         $3d634  xx xx xx:   xxx $xxxx
         $3d637  xx xx:      xxx $xx
         $3d639  xx:         xxx
 ;;; --------------------------------
+JumpTable_3d563_0a
         $3d63a  xx xx:      xxx #SFX_CALM_SEAS
         $3d63c  xx xx xx:   xxx StartAudioTrack
 ;;; --------------------------------
+JumpTable_3d563_10
         $3d63f  xx xx xx:   xxx $xxxx
         $3d642  xx xx:      xxx #$xx
         $3d644  xx xx:      xxx $xx
@@ -53193,17 +53879,20 @@ JumpTable_3d563                 ; TODO - Label the destinations
 ;;; --------------------------------
         $3d652  xx:         xxx
 ;;; --------------------------------
+JumpTable_3d563_04
         $3d653  xx:         xxx
 ;;; --------------------------------
+JumpTable_3d563_08
         $3d654  xx xx:      xxx #$xx
         $3d656  xx xx xx:   xxx $3d22b
 ;;; --------------------------------
-        $3d659  xx xx xx:   xxx $xxxx
+JumpTable_3d563_09
+        $3d659  xx xx xx:   xxx PlayerStatus
         $3d65c  xx xx:      xxx $xx
         $3d65e  xx xx xx:   xxx $xxxx
         $3d661  xx xx:      xxx $xx
         $3d663  xx xx:      xxx #$xx
-        $3d665  xx xx:      xxx $xx
+        $3d665  xx xx:      xxx CurrentLocation
         $3d667  xx xx:      xxx #$xx
         $3d669  xx xx:      xxx $xx
         $3d66b  xx xx:      xxx #$xx
@@ -53248,19 +53937,25 @@ DataTable_3d6a8                 ; grouped in fives
         $3d6cb              .byte $xx,$xx,$xx,$xx,$xx
         $3d6d0              .byte $xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+JumpTable_3d563_06
+JumpTable_3d563_11
         $3d6d5  xx xx xx:   xxx $3e148
 ;;; --------------------------------
+JumpTable_3d563_0b
         $3d6d8  xx xx:      xxx #$xx
         $3d6da  xx xx xx:   xxx $3d22b
 ;;; --------------------------------
+JumpTable_3d563_0c
         $3d6dd  xx xx:      xxx #$xx
         $3d6df  xx xx xx:   xxx $3d22b
         $3d6e2  xx xx:      xxx #$xx
         $3d6e4  xx xx xx:   xxx $3d31f
 ;;; --------------------------------
+JumpTable_3d563_0d
         $3d6e7  xx xx:      xxx #$xx
         $3d6e9  xx xx xx:   xxx $3d22b
 ;;; --------------------------------
+JumpTable_3d563_0e
         $3d6ec  xx xx xx:   xxx $3e144
         $3d6ef  xx xx:      xxx #$xx
         $3d6f1  xx xx:      xxx #$xx
@@ -53276,14 +53971,17 @@ DataTable_3d6a8                 ; grouped in fives
         $3d709  xx xx xx:   xxx $xxxx
         $3d70c  xx:         xxx
 ;;; --------------------------------
+JumpTable_3d563_0f
         $3d70d  xx xx xx:   xxx $xxxx
         $3d710  xx xx:      xxx #$xx
         $3d712  xx xx xx:   xxx $xxxx,y
         $3d715  xx xx xx:   xxx $3d3eb
 ;;; --------------------------------
+JumpTable_3d563_13
         $3d718  xx xx:      xxx #$xx
         $3d71a  xx xx xx:   xxx $xxxx
         $3d71d  xx xx:      xxx $xx
+JumpTable_3d563_14
         $3d71f  xx xx:      xxx #$xx
         $3d721  xx xx xx:   xxx $xxxx
         $3d724  xx xx:      xxx #$xx
@@ -53302,6 +54000,7 @@ DataTable_3d6a8                 ; grouped in fives
 ;;; --------------------------------
         $3d745  xx:         xxx
 ;;; --------------------------------
+JumpTable_3d563_15
         $3d746  xx xx:      xxx #$xx ; SFX_6B - unknown
         $3d748  xx xx xx:   xxx StartAudioTrack
         $3d74b  xx xx:      xxx #$xx ; nothing?
@@ -53313,6 +54012,7 @@ DataTable_3d6a8                 ; grouped in fives
         $3d759  xx xx:      xxx $xx
         $3d75b  xx xx xx:   xxx $3c25d
 ;;; --------------------------------
+JumpTable_3d563_18
         $3d75e  xx xx:      xxx #$xx
         $3d760  xx xx xx:   xxx $xxxx
         $3d763  xx:         xxx
@@ -53332,10 +54032,12 @@ DataTable_3d6a8                 ; grouped in fives
         $3d788  xx xx xx:   xxx $xxxx
         $3d78b  xx:         xxx
 ;;; --------------------------------
-        $3d78c  xx xx:      xxx #$xx
-        $3d78e  xx xx:      xxx $xx
+JumpTable_3d563_16
+        $3d78c  xx xx:      xxx #GAME_MODE_SWORD_GET
+        $3d78e  xx xx:      xxx GameMode
         $3d790  xx:         xxx
 ;;; --------------------------------
+JumpTable_3d563_17
         $3d791  xx xx xx:   xxx $3ff8c
         $3d794  xx xx xx:   xxx $xxxx
         $3d797  xx xx:      xxx #$xx
@@ -53352,6 +54054,7 @@ DataTable_3d6a8                 ; grouped in fives
         $3d7b4  xx xx:      xxx $xx
         $3d7b6  xx:         xxx
 ;;; --------------------------------
+JumpTable_3d563_19
         $3d7b7  xx xx:      xxx $xx
         $3d7b9  xx:         xxx
         $3d7ba  xx xx:      xxx #$xx
@@ -53366,6 +54069,7 @@ DataTable_3d6a8                 ; grouped in fives
         $3d7cb  xx xx:      xxx $xx
         $3d7cd  xx:         xxx
 ;;; --------------------------------
+JumpTable_3d563_1b
         $3d7ce  xx xx xx:   xxx $xxxx
         $3d7d1  xx xx:      xxx #$xx
         $3d7d3  xx xx xx:   xxx $xxxx,y
@@ -53389,10 +54093,12 @@ DataTable_3d6a8                 ; grouped in fives
         $3d7fa  xx xx:      xxx $xx
         $3d7fc  xx:         xxx
 ;;; --------------------------------
+JumpTable_3d563_1c
         $3d7fd  xx xx:      xxx #$xx
         $3d7ff  xx xx xx:   xxx $3d22b
         $3d802  xx xx xx:   xxx $3d23f
 ;;; --------------------------------
+JumpTable_3d563_1d
         $3d805  xx xx xx:   xxx $xxxx
         $3d808  xx xx:      xxx #$xx
         $3d80a  xx xx xx:   xxx $xxxx,y
@@ -53411,8 +54117,9 @@ DataTable_3d6a8                 ; grouped in fives
 ;;; --------------------------------
         $3d826  xx:         xxx
 ;;; --------------------------------
-        $3d827  xx xx:      xxx #$xx
-        $3d829  xx xx:      xxx $xx
+JumpTable_3d563_1e
+        $3d827  xx xx:      xxx #GAME_MODE_FORGE_CRYSTALIS
+        $3d829  xx xx:      xxx GameMode
         $3d82b  xx:         xxx
         $3d82c  xx:         xxx
         $3d82d  xx:         xxx
@@ -53449,7 +54156,7 @@ DataTable_3d6a8                 ; grouped in fives
         $3d866  xx xx xx:     xxx $3cc2e
         $3d869  xx xx xx:     xxx $3c89e
         $3d86c  xx xx:        xxx #$xx
-        $3d86e  xx xx xx:     xxx $3c125
+        $3d86e  xx xx xx:     xxx StartAudioTrack
         $3d871  xx xx xx:     xxx $3d347
         $3d874  xx xx xx:     xxx $3c008
         $3d877  xx xx xx:     xxx $3c8a9
@@ -53457,14 +54164,14 @@ DataTable_3d6a8                 ; grouped in fives
         $3d87b  xx xx:       xxx $xx
         $3d87d  xx:         xxx
         $3d87e  xx xx:      xxx $xx
-        $3d880  xx xx:      xxx #$xx
-        $3d882  xx xx:      xxx $xx
+        $3d880  xx xx:      xxx #GAME_MODE_NORMAL
+        $3d882  xx xx:      xxx GameMode
         $3d884  xx:         xxx
 ;;; --------------------------------
 DataTable_3d885 
         $3d885              .byte $xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-        $3d88b  xx xx xx:   xxx $3c169
+        $3d88b  xx xx xx:   xxx WaitForOAMDMA
         $3d88e  xx xx xx:   xxx $xxxx
         $3d891  xx xx:      xxx #$xx
         $3d893  xx xx:      xxx $xx
@@ -53473,37 +54180,37 @@ DataTable_3d885
         $3d896  xx xx:      xxx #$xx
         $3d898  xx xx:      xxx $xx
         $3d89a  xx xx:      xxx #$xx
-        $3d89c  xx xx:      xxx $xx
-        $3d89e  xx xx xx:   xxx $3c169
-        $3d8a1  xx xx:      xxx #$xx
-        $3d8a3  xx xx:      xxx $xx
-        $3d8a5  xx xx xx:   xxx $3c169
+        $3d89c  xx xx:      xxx ScreenMode
+        $3d89e  xx xx xx:   xxx WaitForOAMDMA
+        $3d8a1  xx xx:      xxx #ITEM_MEDICAL_HERB
+        $3d8a3  xx xx:      xxx ScreenMode
+        $3d8a5  xx xx xx:   xxx WaitForOAMDMA
         $3d8a8  xx xx:      xxx $xx
         $3d8aa  xx xx:      xxx $xx
         $3d8ac  xx:         xxx
 ;;; --------------------------------
         $3d8ad  xx xx:      xxx #$xx
         $3d8af  xx xx:      xxx $xx
-        $3d8b1  xx xx xx:   xxx $3c169
+        $3d8b1  xx xx xx:   xxx WaitForOAMDMA
         $3d8b4  xx xx xx:   xxx $3ff8c
         $3d8b7  xx xx xx:   xxx RemoveSpritesBehindMessageBox
         $3d8ba  xx xx:      xxx $xx
         $3d8bc  xx xx:      xxx $xx
         $3d8be  xx xx:      xxx #$xx
         $3d8c0  xx xx:      xxx $xx
-        $3d8c2  xx xx:      xxx #$xx
-        $3d8c4  xx xx:      xxx $xx
+        $3d8c2  xx xx:      xxx #GAME_MODE_NORMAL
+        $3d8c4  xx xx:      xxx GameMode
         $3d8c6  xx:         xxx
 ;;; --------------------------------
 MainGameModeJump_12_Inventory
-        $3d8c7  xx xx:      xxx $xx
-        $3d8c9  xx xx:      xxx #$xx
-        $3d8cb  xx xx:      xxx $xx
-        $3d8cd  xx xx:      xxx #$xx
-        $3d8cf  xx xx:      xxx $xx
-        $3d8d1  xx xx xx:   xxx $xxxx
+        $3d8c7  xx xx:      xxx CurrentLocation
+        $3d8c9  xx xx:      xxx #LOC_DYNA
+        $3d8cb  xx xx:      xxx + ; $3d8d1
+        $3d8cd  xx xx:       xxx #SCREEN_MODE_NORMAL
+        $3d8cf  xx xx:       xxx ScreenMode
++       $3d8d1  xx xx xx:   xxx EquippedSword
         $3d8d4  xx:         xxx
-        $3d8d5  xx xx:       xxx $xx
+        $3d8d5  xx xx:       xxx ScreenMode
         $3d8d7  xx:          xxx
         $3d8d8  xx xx:        xxx #$xx
         $3d8da  xx xx xx:     xxx BankSwitch8k_8000
@@ -53511,7 +54218,7 @@ MainGameModeJump_12_Inventory
         $3d8df  xx xx xx:     xxx BankSwitch8k_A000
         $3d8e2  xx xx xx:     xxx $20000
         $3d8e5  xx xx:        xxx #$xx
-        $3d8e7  xx xx xx:     xxx $3c169
+        $3d8e7  xx xx xx:     xxx WaitForOAMDMA
         $3d8ea  xx xx xx:     xxx ReadControllersWithDirections
         $3d8ed  xx xx:        xxx #$xx
         $3d8ef  xx xx:        xxx #$xx
@@ -53522,7 +54229,7 @@ MainGameModeJump_12_Inventory
         $3d8fa  xx xx xx:     xxx $3d9d8
         $3d8fd  xx xx xx:     xxx $xxxx
         $3d900  xx:          xxx
-        $3d901  xx xx:       xxx $xx
+        $3d901  xx xx:       xxx ScreenMode
         $3d903  xx:         xxx
         $3d904  xx xx xx:   xxx $xxxx
         $3d907  xx xx:      xxx $xx
@@ -53547,39 +54254,39 @@ MainGameModeJump_12_Inventory
         $3d935  xx xx:      xxx $xx
         $3d937  xx xx:      xxx #$xx
         $3d939  xx xx:      xxx $xx
-        $3d93b  xx xx xx:   xxx $3c169
+        $3d93b  xx xx xx:   xxx WaitForOAMDMA
         $3d93e  xx xx xx:   xxx $xxxx
         $3d941  xx:         xxx
-        $3d942  xx xx xx:    xxx $xxxx
+        $3d942  xx xx xx:    xxx PlayerHP
         $3d945  xx:          xxx
-        $3d946  xx xx xx:     xxx $xxxx
+        $3d946  xx xx xx:     xxx PlayerMaxHP
         $3d949  xx:           xxx
         $3d94a  xx xx:         xxx #$xx
         $3d94c  xx xx:         xxx $xx
         $3d94e  xx xx:         xxx #$xx
         $3d950  xx xx:         xxx $xx
-        $3d952  xx xx xx:      xxx $3c25d
+        $3d952  xx xx xx:      xxx LoadOneObjectDataInternal
         $3d955  xx xx:         xxx #$xx
         $3d957  xx xx:         xxx $xx
         $3d959  xx xx:         xxx #$xx
         $3d95b  xx xx:         xxx $xx
         $3d95d  xx xx xx:      xxx $3c25d
         $3d960  xx:           xxx
-        $3d961  xx xx xx:     xxx $xxxx
+        $3d961  xx xx xx:     xxx PlayerMaxHP
         $3d964  xx:          xxx
-        $3d965  xx xx xx:    xxx $xxxx
+        $3d965  xx xx xx:    xxx PlayerHP
         $3d968  xx:         xxx
-        $3d969  xx xx xx:   xxx $xxxx
+        $3d969  xx xx xx:   xxx PlayerLevel
         $3d96c  xx xx:      xxx #$xx
         $3d96e  xx xx xx:   xxx $xxxx
-        $3d971  xx xx xx:   xxx $3c008
+        $3d971  xx xx xx:   xxx UpdateEquipmentAndStatus
         $3d974  xx xx:      xxx #$xx
         $3d976  xx xx xx:   xxx BankSwitch16k
-        $3d979  xx xx xx:   xxx $27a65
+        $3d979  xx xx xx:   xxx InitializeStatusBarNametable
         $3d97c  xx xx:      xxx #$xx
-        $3d97e  xx xx:      xxx $xx
-        $3d980  xx xx:      xxx #$xx
-        $3d982  xx xx:      xxx $xx
+        $3d97e  xx xx:      xxx CurrentEntrance
+        $3d980  xx xx:      xxx #GAME_MODE_CHANGE_LOCATION
+        $3d982  xx xx:      xxx GameMode
         $3d984  xx:         xxx
 ;;; --------------------------------
 MainGameModeJump_20_ArmorShop
@@ -53620,8 +54327,8 @@ MainGameModeJump_24_EmptyShop
         $3d9c9  xx xx:      xxx #$xx
         $3d9cb  xx xx xx:   xxx $xxxx
         $3d9ce  xx xx xx:   xxx $3d354
-        $3d9d1  xx xx:      xxx #$xx
-        $3d9d3  xx xx:      xxx $xx
+        $3d9d1  xx xx:      xxx #GAME_MODE_EMPTY_SHOP
+        $3d9d3  xx xx:      xxx GameMode
         $3d9d5  xx xx xx:   xxx $3da72
 ;;; --------------------------------
         $3d9d8  xx xx xx:   xxx $xxxx
@@ -53700,9 +54407,9 @@ MainGameModeJump_24_EmptyShop
         $3da72  xx xx xx:   xxx $3fe17
         $3da75  xx xx:      xxx #$xx
         $3da77  xx xx xx:   xxx BankSwitch8k_8000
-        $3da7a  xx xx xx:   xxx $34c0e
-        $3da7d  xx xx:      xxx #$xx
-        $3da7f  xx xx:      xxx $xx
+        $3da7a  xx xx xx:   xxx LoadPalettesForLocation
+        $3da7d  xx xx:      xxx #SCREEN_MODE_NORMAL
+        $3da7f  xx xx:      xxx ScreenMode
         $3da81  xx xx:      xxx #$xx
         $3da83  xx xx xx:   xxx $xxxx
         $3da86  xx xx xx:   xxx $3dabf
@@ -53722,18 +54429,18 @@ MainGameModeJump_24_EmptyShop
         $3daa5  xx xx xx:   xxx $3ff8c
         $3daa8  xx xx xx:   xxx $3eb09
         $3daab  xx xx:      xxx ($xx),y
-        $3daad  xx xx:      xxx $xx
+        $3daad  xx xx:      xxx CurrentLocation
         $3daaf  xx:         xxx
         $3dab0  xx xx:      xxx ($xx),y
-        $3dab2  xx xx:      xxx $xx
+        $3dab2  xx xx:      xxx CurrentEntrance
         $3dab4  xx xx:      xxx #$xx
-        $3dab6  xx xx:      xxx $xx
-        $3dab8  xx xx:      xxx $xx
-        $3daba  xx xx:      xxx #$xx
-        $3dabc  xx xx:      xxx $xx
+        $3dab6  xx xx:      xxx ScreenMode
+        $3dab8  xx xx:      xxx Ctrl1NewlyPressed
+        $3daba  xx xx:      xxx #GAME_MODE_CHANGE_LOCATION
+        $3dabc  xx xx:      xxx GameMode
         $3dabe  xx:         xxx
 ;;; --------------------------------
-        $3dabf  xx xx xx:   xxx $3c169
+        $3dabf  xx xx xx:   xxx WaitForOAMDMA
         $3dac2  xx xx:      xxx #$xx
         $3dac4  xx xx xx:   xxx BankSwitch16k
         $3dac7  xx xx:      xxx #$xx
@@ -53786,32 +54493,32 @@ MainGameModeJump_24_EmptyShop
 ;;; --------------------------------
 MainGameModeJump_14_TeleportMagic
 MainGameModeJump_1d
-        $3db28  xx xx xx:   xxx $xxxx
+        $3db28  xx xx xx:   xxx PlayerHP
         $3db2b  xx xx:      xxx $xx
         $3db2d  xx xx xx:   xxx $xxxx
         $3db30  xx xx:      xxx $xx
-        $3db32  xx xx:      xxx $xx
+        $3db32  xx xx:      xxx CurrentLocation
         $3db34  xx xx:      xxx #$xx
         $3db36  xx xx:      xxx #$xx
         $3db38  xx xx:      xxx $xx
-        $3db3a  xx xx xx:   xxx $xxxx
+        $3db3a  xx xx xx:   xxx PlayerStatus
         $3db3d  xx xx:      xxx #$xx
         $3db3f  xx xx:      xxx #$xx
         $3db41  xx xx:      xxx $xx
         $3db43  xx xx:      xxx $xx
-        $3db45  xx xx:      xxx #$xx
-        $3db47  xx xx xx:   xxx $3c125
-        $3db4a  xx xx:      xxx #$xx
-        $3db4c  xx xx:      xxx $xx
+        $3db45  xx xx:      xxx #SFX_CURSOR_ERROR
+        $3db47  xx xx xx:   xxx StartAudioTrack
+        $3db4a  xx xx:      xxx #GAME_MODE_NORMAL
+        $3db4c  xx xx:      xxx GameMode
         $3db4e  xx:         xxx
 ;;; --------------------------------
         $3db4f  xx xx:      xxx #$xx
         $3db51  xx xx xx:   xxx $xxxx
         $3db54  xx xx:      xxx #$xx
         $3db56  xx xx xx:   xxx BankSwitch8k_8000
-        $3db59  xx xx xx:   xxx $34c0e
-        $3db5c  xx xx:      xxx #$xx
-        $3db5e  xx xx:      xxx $xx
+        $3db59  xx xx xx:   xxx LoadPalettesForLocation
+        $3db5c  xx xx:      xxx #SCREEN_MODE_NORMAL
+        $3db5e  xx xx:      xxx ScreenMode
         $3db60  xx xx:      xxx #$xx
         $3db62  xx xx xx:   xxx $xxxx
         $3db65  xx xx:      xxx #$xx
@@ -53821,7 +54528,7 @@ MainGameModeJump_1d
         $3db6f  xx xx xx:   xxx DrawMessageBoxBackground
         $3db72  xx xx xx:   xxx ShowMessage
         $3db75  xx xx xx:   xxx $3dd36
-        $3db78  xx xx xx:   xxx $3c169
+        $3db78  xx xx xx:   xxx WaitForOAMDMA
         $3db7b  xx xx:      xxx #$xx
         $3db7d  xx xx:      xxx $xx
         $3db7f  xx xx:      xxx #$xx
@@ -53843,8 +54550,8 @@ MainGameModeJump_1d
         $3dba1  xx xx:      xxx $xx
         $3dba3  xx xx:      xxx $xx
         $3dba5  xx xx xx:   xxx $3ff8c
-        $3dba8  xx xx:      xxx #$xx
-        $3dbaa  xx xx:      xxx $xx
+        $3dba8  xx xx:      xxx #SCREEN_MODE_TEXT
+        $3dbaa  xx xx:      xxx ScreenMode
         $3dbac  xx xx xx:   xxx $xxxx
         $3dbaf  xx:         xxx
         $3dbb0  xx:         xxx
@@ -53857,7 +54564,7 @@ MainGameModeJump_1d
         $3dbbc  xx xx xx:   xxx ReadControllersWithRepeat
         $3dbbf  xx xx xx:   xxx $3ff8c
         $3dbc2  xx xx xx:   xxx RemoveSpritesBehindMessageBox
-        $3dbc5  xx xx xx:   xxx $3c169
+        $3dbc5  xx xx xx:   xxx WaitForOAMDMA
         $3dbc8  xx xx xx:   xxx $3c210
         $3dbcb  xx xx:      xxx $xx
         $3dbcd  xx:         xxx
@@ -53871,8 +54578,8 @@ MainGameModeJump_1d
 DataTable_3dbdc 
         $3dbdc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-        $3dbec  xx xx:      xxx #$xx
-        $3dbee  xx xx xx:   xxx $3c125
+        $3dbec  xx xx:      xxx #SFX_CURSOR_MOVE
+        $3dbee  xx xx xx:   xxx StartAudioTrack
         $3dbf1  xx xx xx:   xxx $3dbac
 ;;; --------------------------------
         $3dbf4  xx xx xx:   xxx $xxxx
@@ -53932,11 +54639,11 @@ DataTable_3dbdc
 DataTable_3dc58 
         $3dc58              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-        $3dc64  xx xx xx:   xxx $3c19f
-        $3dc67  xx xx:      xxx #$xx
-        $3dc69  xx xx:      xxx $xx
-        $3dc6b  xx xx:      xxx #$xx
-        $3dc6d  xx xx:      xxx $xx
+        $3dc64  xx xx xx:   xxx SetSprite0_F0
+        $3dc67  xx xx:      xxx #SCREEN_MODE_NORMAL
+        $3dc69  xx xx:      xxx ScreenMode
+        $3dc6b  xx xx:      xxx #GAME_MODE_NORMAL
+        $3dc6d  xx xx:      xxx GameMode
         $3dc6f  xx:         xxx
 ;;; --------------------------------
         $3dc70  xx xx:      xxx $xx
@@ -53954,24 +54661,25 @@ DataTable_3dc58
         $3dc85  xx xx:      xxx $xx
         $3dc87  xx xx xx:   xxx $3dbac
 ;;; --------------------------------
+;;; This runs once a warp/teleport location is selected
         $3dc8a  xx xx:      xxx $xx
         $3dc8c  xx xx xx:   xxx $3dc58,y
-        $3dc8f  xx xx:      xxx $xx
+        $3dc8f  xx xx:      xxx CurrentLocation
         $3dc91  xx xx:      xxx $xx
-        $3dc93  xx xx:      xxx $xx
+        $3dc93  xx xx:      xxx CurrentLocation
         $3dc95  xx xx:      xxx #$xx
-        $3dc97  xx xx:      xxx $xx
-        $3dc99  xx xx:      xxx $xx
-        $3dc9b  xx xx:      xxx #$xx
-        $3dc9d  xx xx:      xxx $xx
+        $3dc97  xx xx:      xxx CurrentEntrance
+        $3dc99  xx xx:      xxx GameMode
+        $3dc9b  xx xx:      xxx #GAME_MODE_TELEPORT_MENU
+        $3dc9d  xx xx:      xxx + ; $3dca9
         $3dc9f  xx xx:      xxx #$xx
         $3dca1  xx xx xx:   xxx BankSwitch8k_8000
-        $3dca4  xx xx:      xxx #$xx
+        $3dca4  xx xx:      xxx #$xx ; 20
         $3dca6  xx xx xx:   xxx SpendMPOrDoubleReturn
-        $3dca9  xx xx:      xxx $xx
-        $3dcab  xx:         xxx
-        $3dcac  xx xx:      xxx $xx
-        $3dcae  xx xx xx:   xxx $3c19f
++ -     $3dca9  xx xx:       xxx $xx ; holding pattern
+        $3dcab  xx:          xxx
+        $3dcac  xx xx:      xxx - ; $3dca9
+        $3dcae  xx xx xx:   xxx SetSprite0_F0
         $3dcb1  xx xx xx:   xxx $xxxx
         $3dcb4  xx:         xxx
         $3dcb5  xx xx xx:    xxx $xxxx
@@ -53984,27 +54692,27 @@ DataTable_3dc58
         $3dcc6  xx xx:        xxx #$xx
         $3dcc8  xx xx xx:     xxx $xxxx
         $3dccb  xx xx:        xxx #$xx
-        $3dccd  xx xx xx:     xxx $xxxx
+        $3dccd  xx xx xx:     xxx $xxxx ; $03b1 with mirroring
         $3dcd0  xx xx:        xxx #$xx
         $3dcd2  xx xx xx:     xxx $xxxx,x
         $3dcd5  xx:           xxx
         $3dcd6  xx xx:        xxx #$xx
         $3dcd8  xx xx:        xxx $xx
-        $3dcda  xx xx:        xxx #$xx
-        $3dcdc  xx xx xx:     xxx $3c125
-        $3dcdf  xx xx:        xxx #$xx
-        $3dce1  xx xx xx:     xxx $xxxx
-        $3dce4  xx xx:        xxx #$xx
-        $3dce6  xx xx:        xxx $xx
-        $3dce8  xx xx xx:     xxx $3ff8c
-        $3dceb  xx xx xx:     xxx $3c169
+        $3dcda  xx xx:        xxx #SFX_START_DOOR
+        $3dcdc  xx xx xx:     xxx StartAudioTrack
+        $3dcdf  xx xx:        xxx #$xx  ; normally this is $41
+        $3dce1  xx xx xx:     xxx $xxxx ; sprite pattern bank 0..3f, normally the player
+        $3dce4  xx xx:        xxx #SCREEN_MODE_NORMAL
+        $3dce6  xx xx:        xxx ScreenMode
+        $3dce8  xx xx xx:     xxx DrawAllObjectSprites
+        $3dceb  xx xx xx:     xxx WaitForOAMDMA
         $3dcee  xx xx xx:     xxx $xxxx
         $3dcf1  xx xx:        xxx $xx
-        $3dcf3  xx xx:        xxx #$xx
+        $3dcf3  xx xx:        xxx #$xx ; player metasprite??? (normally $a7. $00)
         $3dcf5  xx xx xx:     xxx $xxxx
         $3dcf8  xx xx xx:     xxx $xxxx
-        $3dcfb  xx xx xx:     xxx $3ff8c
-        $3dcfe  xx xx xx:     xxx $3ca2e
+        $3dcfb  xx xx xx:     xxx DrawAllObjectSprites
+        $3dcfe  xx xx xx:     xxx MainGameModeJump_01_LocationChange
         $3dd01  xx xx xx:     xxx $xxxx
         $3dd04  xx xx:        xxx #$xx
         $3dd06  xx xx xx:     xxx $xxxx
@@ -54014,18 +54722,18 @@ DataTable_3dc58
         $3dd10  xx xx xx:     xxx $xxxx
         $3dd13  xx xx:        xxx #$xx
         $3dd15  xx xx xx:     xxx $xxxx
-        $3dd18  xx xx:        xxx #$xx
-        $3dd1a  xx xx xx:     xxx $3c125
-        $3dd1d  xx xx xx:     xxx $3ff8c
-        $3dd20  xx xx xx:     xxx $3c169
+        $3dd18  xx xx:        xxx #SFX_TELEPORT_LAND
+        $3dd1a  xx xx xx:     xxx StartAudioTrack
+        $3dd1d  xx xx xx:     xxx DrawAllObjectSprites
+        $3dd20  xx xx xx:     xxx WaitForOAMDMA
         $3dd23  xx xx xx:     xxx $xxxx
         $3dd26  xx xx:        xxx $xx
         $3dd28  xx:          xxx
         $3dd29  xx xx xx:    xxx $xxxx
         $3dd2c  xx:         xxx
         $3dd2d  xx xx xx:   xxx $xxxx
-        $3dd30  xx xx xx:   xxx $3c008
-        $3dd33  xx xx xx:   xxx $3ff8c
+        $3dd30  xx xx xx:   xxx UpdateEquipmentAndStatus
+        $3dd33  xx xx xx:   xxx DrawAllObjectSprites
 ;;; --------------------------------
         $3dd36  xx xx:      xxx #$xx
         $3dd38  xx xx:      xxx #$xx
@@ -54056,7 +54764,7 @@ DataTable_3dc58
         $3dd61  xx xx:      xxx #$xx
         $3dd63  xx:         xxx
         $3dd64  xx xx xx:   xxx $xxxx,x
-        $3dd67  xx xx xx:   xxx $3c000,y
+        $3dd67  xx xx xx:   xxx PowersOfTwo,y
         $3dd6a  xx:         xxx
 ;;; --------------------------------
 MainGameModeJump_15_TelepathyMagic
@@ -54084,7 +54792,7 @@ MainGameModeJump_15_TelepathyMagic
         $3dd9a  xx xx xx:    xxx $3de72
         $3dd9d  xx xx xx:    xxx $3ddcd
         $3dda0  xx xx xx:    xxx $3dfce
-        $3dda3  xx xx xx:    xxx $3c169
+        $3dda3  xx xx xx:    xxx WaitForOAMDMA
         $3dda6  xx xx xx:    xxx ReadControllersWithRepeat
         $3dda9  xx xx xx:    xxx $3c210
         $3ddac  xx xx:       xxx $xx
@@ -54134,7 +54842,7 @@ JumpTable_3ddbd                 ; TODO - expand these labels
         $3de03  xx:         xxx
 ;;; --------------------------------
 MainGameModeJump_16
-        $3de04  xx xx xx:   xxx $3c19f
+        $3de04  xx xx xx:   xxx SetSprite0_F0
         $3de07  xx xx xx:   xxx RemoveSpritesBehindMessageBox
         $3de0a  xx xx:      xxx $xx
         $3de0c  xx:         xxx
@@ -54152,8 +54860,8 @@ MainGameModeJump_16
         $3de29  xx xx xx:    xxx ShowMessage
         $3de2c  xx:         xxx
         $3de2d  xx xx:      xxx $xx
-        $3de2f  xx xx xx:   xxx $3c169
-        $3de32  xx xx xx:   xxx $3c676
+        $3de2f  xx xx xx:   xxx WaitForOAMDMA
+        $3de32  xx xx xx:   xxx FlushNametableDataWrite
         $3de35  xx xx xx:   xxx $3de72
         $3de38  xx xx xx:   xxx $xxxx
         $3de3b  xx xx:      xxx #$xx
@@ -54168,26 +54876,26 @@ MainGameModeJump_16
 JumpTable_3df0e_01
 JumpTable_3df0e_02
 JumpTable_3df0e_03
-        $3de51  xx xx xx:   xxx $3c19f
-        $3de54  xx xx:      xxx #$xx
-        $3de56  xx xx xx:   xxx $3c188
-        $3de59  xx xx:      xxx #$xx
-        $3de5b  xx xx xx:   xxx BankSwitch8k_8000
-        $3de5e  xx xx xx:   xxx $34c0e
-        $3de61  xx xx xx:   xxx $3c739
-        $3de64  xx xx xx:   xxx $3c169
-        $3de67  xx xx xx:   xxx $3c008
+        $3de51  xx xx xx:    xxx SetSprite0_F0
+        $3de54  xx xx:       xxx #$xx
+        $3de56  xx xx xx:    xxx $3c188
+        $3de59  xx xx:       xxx #$xx
+        $3de5b  xx xx xx:    xxx BankSwitch8k_8000
+        $3de5e  xx xx xx:    xxx LoadPalettesForLocation
+        $3de61  xx xx xx:    xxx RequestAttributeTable0Write
+        $3de64  xx xx xx:    xxx WaitForOAMDMA
+        $3de67  xx xx xx:    xxx UpdateEquipmentAndStatus
         $3de6a  xx:         xxx
-        $3de6b  xx xx:      xxx $xx
-        $3de6d  xx xx:      xxx #$xx
-        $3de6f  xx xx:      xxx $xx
+        $3de6b  xx xx:      xxx ScreenMode
+        $3de6d  xx xx:      xxx #GAME_MODE_NORMAL
+        $3de6f  xx xx:      xxx GameMode
         $3de71  xx:         xxx
 ;;; --------------------------------
         $3de72  xx xx xx:   xxx $xxxx
         $3de75  xx xx:      xxx #$xx
         $3de77  xx xx:      xxx $xx
-        $3de79  xx xx:      xxx #$xx
-        $3de7b  xx xx xx:   xxx $3c125
+        $3de79  xx xx:      xxx #SFX_TELEPATHY
+        $3de7b  xx xx xx:   xxx StartAudioTrack
 ;;; --------------------------------
         $3de7e  xx xx:      xxx $xx
         $3de80  xx:         xxx
@@ -54238,7 +54946,7 @@ JumpTable_3df0e_05
         $3deeb  xx xx xx:    xxx $3e038
         $3deee  xx xx xx:    xxx $3dfd4
         $3def1  xx xx xx:    xxx $3e077
-        $3def4  xx xx xx:    xxx $3c169
+        $3def4  xx xx xx:    xxx WaitForOAMDMA
         $3def7  xx xx xx:    xxx ReadControllersWithRepeat
         $3defa  xx xx xx:    xxx $3c210
         $3defd  xx xx:       xxx $xx
@@ -54266,14 +54974,14 @@ JumpTable_3df0e_07
 JumpTable_3df0e_06
         $3df22  xx xx:      xxx $xx
         $3df24  xx xx xx:   xxx $3dded
-        $3df27  xx xx:      xxx #$xx
-        $3df29  xx xx xx:   xxx $3c125
-        $3df2c  xx xx xx:   xxx $3dee4
+        $3df27  xx xx:      xxx #SFX_CURSOR_MOVE
+        $3df29  xx xx xx:   xxx StartAudioTrack
+        $3df2c  xx xx xx:   xxx JumpTable_3df0e_05
 ;;; --------------------------------
 JumpTable_3df0e_00 
-        $3df2f  xx xx:      xxx #$xx
-        $3df31  xx xx xx:   xxx $3c125
-        $3df34  xx xx xx:   xxx $3c19f
+        $3df2f  xx xx:      xxx #SFX_CHANGE_MAGIC
+        $3df31  xx xx xx:   xxx StartAudioTrack
+        $3df34  xx xx xx:   xxx SetSprite0_F0
         $3df37  xx xx:      xxx #$xx
         $3df39  xx xx xx:   xxx $xxxx
         $3df3c  xx xx:      xxx $xx
@@ -54281,7 +54989,7 @@ JumpTable_3df0e_00
         $3df41  xx:         xxx
         $3df42  xx xx:       xxx #$xx
         $3df44  xx xx xx:    xxx $xxxx
-        $3df47  xx xx xx:    xxx $3c169
+        $3df47  xx xx xx:    xxx WaitForOAMDMA
         $3df4a  xx xx xx:    xxx $3e038
         $3df4d  xx xx xx:    xxx $3dfd4
         $3df50  xx xx xx:    xxx $3e077
@@ -54292,10 +55000,10 @@ JumpTable_3df0e_00
         $3df5d  xx xx xx:    xxx $3dfd4
         $3df60  xx xx xx:    xxx $3e077
         $3df63  xx xx:       xxx #$xx
-        $3df65  xx xx xx:    xxx $3c176
+        $3df65  xx xx xx:    xxx WaitForMultipleOAMDMA
         $3df68  xx xx:       xxx #$xx
         $3df6a  xx xx xx:    xxx $3c188
-        $3df6d  xx xx xx:    xxx $3c169
+        $3df6d  xx xx xx:    xxx WaitForOAMDMA
         $3df70  xx:         xxx
         $3df71  xx xx xx:   xxx $xxxx
         $3df74  xx xx:      xxx $xx
@@ -54335,8 +55043,8 @@ JumpTable_3df0e_00
         $3dfbd  xx xx xx:   xxx $xxxx
         $3dfc0  xx xx:      xxx #$xx
         $3dfc2  xx xx xx:   xxx $xxxx
-        $3dfc5  xx xx:      xxx #$xx
-        $3dfc7  xx xx:      xxx $xx
+        $3dfc5  xx xx:      xxx #SCREEN_MODE_TEXT
+        $3dfc7  xx xx:      xxx ScreenMode
         $3dfc9  xx xx:      xxx #$xx
         $3dfcb  xx xx:      xxx $xx
         $3dfcd  xx:         xxx
@@ -54440,13 +55148,17 @@ DataTable_3e088
         $3e0a8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $3e0b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+;;; Performs two tasks based on the global counter, provided $7d7 is zero.
+;;;   1. Animate the background, if applicable.  This consists of updating
+;;;      a pattern table based on an animation data table.
+AnimateBackgroundAndRespawn
         $3e0b8  xx xx xx:   xxx $xxxx
-        $3e0bb  xx xx:      xxx $xx
-        $3e0bd  xx xx xx:   xxx $3e75e
-        $3e0c0  xx xx:      xxx $xx
+        $3e0bb  xx xx:      xxx >>>rts
+        $3e0bd  xx xx xx:   xxx AnimateBackground
+        $3e0c0  xx xx:      xxx GlobalCounter
         $3e0c2  xx xx:      xxx #$xx
-        $3e0c4  xx xx:      xxx $xx
-        $3e0c6  xx xx:      xxx $xx
+        $3e0c4  xx xx:      xxx >>>rts
+        $3e0c6  xx xx:      xxx GlobalCounter
         $3e0c8  xx:         xxx
         $3e0c9  xx:         xxx
         $3e0ca  xx:         xxx
@@ -54455,57 +55167,64 @@ DataTable_3e088
         $3e0cd  xx xx:      xxx #$xx
         $3e0cf  xx xx:      xxx $xx
         $3e0d1  xx:         xxx
-        $3e0d2  xx xx xx:   xxx $xxxx,x
-        $3e0d5  xx xx:      xxx + ; $3e0d8
-        $3e0d7  xx:         xxx
+        $3e0d2  xx xx xx:   xxx ObjectActionScript,x
+        $3e0d5  xx xx:      xxx +
+        $3e0d7  xx:          xxx
         ;; --------------------------------
         ;; Load the NpcData table for the current location
-+       $3e0d8  xx xx xx:   xxx BankSwitch16k_Bank6 ; $3e3d4
-        $3e0db  xx xx:      xxx $xx
+        ;; Looks like this is checking whether to spawn a new enemy
+        ;; in an empty slot?
++       $3e0d8  xx xx xx:   xxx BankSwitch16k_Bank6
+        $3e0db  xx xx:      xxx CurrentLocation
         $3e0dd  xx:         xxx
         $3e0de  xx:         xxx
         $3e0df  xx xx xx:   xxx NpcData,y
         $3e0e2  xx xx:      xxx $xx
         $3e0e4  xx xx xx:   xxx NpcData+1,y
         $3e0e7  xx xx:      xxx $xx
-        $3e0e9  xx xx:      xxx + ; $3e0f5, skip 
-        $3e0eb  xx xx xx:   xxx NpcDataPart2,y ; NpcData+$100
-        $3e0ee  xx xx:      xxx $xx
-        $3e0f0  xx xx xx:   xxx NpcDataPart2+1,y ; NpcData+$101
-        $3e0f3  xx xx:      xxx $xx
+        $3e0e9  xx xx:      xxx +
+        $3e0eb  xx xx xx:    xxx NpcDataPart2,y
+        $3e0ee  xx xx:       xxx $xx
+        $3e0f0  xx xx xx:    xxx NpcDataPart2+1,y
+        $3e0f3  xx xx:       xxx $xx
         ;; At this point, ($10),y == NpcData[$6c][y]
 +       $3e0f5  xx xx:      xxx $xx
-        $3e0f7  xx xx:      xxx ++ ; $3e12a: rts, e.g. if NpcData[$6c] is $0000
+        $3e0f7  xx xx:      xxx >>rts ; e.g. if NpcData[$6c] is $0000
+        ;; Start at byte 5, slot $d, look for the slot to spawn in.
+        ;; The loop is just to get to the right pair (x,y) and ensure
+        ;; it's valid (not past the last entry).
         $3e0f9  xx xx:      xxx #$xx
         $3e0fb  xx xx:      xxx #$xx
--       $3e0fd  xx xx:      xxx ($xx),y
-        $3e0ff  xx xx:      xxx #$xx
-        $3e101  xx xx:      xxx #$xx
-        $3e103  xx xx:      xxx ++ ; $3e12a: rts
-        $3e105  xx xx:      xxx $xx
-        $3e107  xx xx:      xxx + ; $3e11e
-        $3e109  xx:         xxx
-        $3e10a  xx xx:      xxx ($xx),y
-        $3e10c  xx:         xxx
-        $3e10d  xx:         xxx
-        $3e10e  xx xx:      xxx ++ ; $3e12a: rts
-        $3e110  xx xx xx:   xxx $3e1b6
-        $3e113  xx xx xx:   xxx ClcIfObjectIsOnScreen
-        $3e116  xx xx:      xxx ++ ; $3e12a: rts
-        $3e118  xx xx:      xxx #$xx
-        $3e11a  xx xx xx:   xxx $xxxx,x
-        $3e11d  xx:         xxx
-;;; --------------------------------
-+       $3e11e  xx:         xxx
-        $3e11f  xx:         xxx
-        $3e120  xx:         xxx
-        $3e121  xx:         xxx
-        $3e122  xx:         xxx
-        $3e123  xx xx:      xxx #$xx
-        $3e125  xx xx:      xxx ++ ; $3e12a: rts
-        $3e127  xx xx xx:   xxx - ; $3e0fd
+-       $3e0fd  xx xx:       xxx ($xx),y
+        $3e0ff  xx xx:       xxx #$xx
+        $3e101  xx xx:       xxx #$xx
+        $3e103  xx xx:       xxx >>rts ; $fx in first slot => quit (why the and?)
+        $3e105  xx xx:       xxx $xx ; $13 is (GlobalCounter>>4)+$d
+        $3e107  xx xx:       xxx +
+        ;; global counter $0x -> spawn slot $d; $1x -> slot $e; ... $fx -> slot $1c
+        $3e109  xx:           xxx
+        $3e10a  xx xx:        xxx ($xx),y ; :80 bit set in 2nd element => timer spawn
+        $3e10c  xx:           xxx
+        $3e10d  xx:           xxx
+        $3e10e  xx xx:        xxx >>rts
+        $3e110  xx xx xx:     xxx TryNpcSpawn
+        $3e113  xx xx xx:     xxx ClcIfObjectIsOnScreen
+        $3e116  xx xx:        xxx >>rts
+        ;; Don't spawn an object on screen - so if it's on screen "unspawn" it.
+        $3e118  xx xx:        xxx #$xx
+        $3e11a  xx xx xx:     xxx ObjectActionScript,x
+        $3e11d  xx:           xxx
+        ;;                    ---
++       $3e11e  xx:          xxx
+        $3e11f  xx:          xxx
+        $3e120  xx:          xxx
+        $3e121  xx:          xxx
+        $3e122  xx:          xxx
+        $3e123  xx xx:       xxx #$xx ; objects $1d..$1f are never respawned.
+        $3e125  xx xx:       xxx >rts
+        $3e127  xx xx xx:   xxx -
         ;; --------------------------------
-++      $3e12a  xx:         xxx
+        $3e12a  xx:         xxx
 ;;; --------------------------------
 ;;; Checks whether the object in the given slot is on the screen.
 ;;; Params:
@@ -54953,10 +55672,10 @@ ExitTypeJump
         $3e3e5              .word ($xxxx)
         $3e3e7              .word ($xxxx) ; e0 - ???
 ;;; --------------------------------
-        $3e3e9  xx xx xx:   xxx $3ff8c ; probably sth about sprites
+        $3e3e9  xx xx xx:   xxx DrawAllObjectSprites ; probably sth about sprites
         $3e3ec  xx xx xx:   xxx FlushNametableDataWrite
-        $3e3ef  xx xx:      xxx #$xx
-        $3e3f1  xx xx:      xxx $xx
+        $3e3ef  xx xx:      xxx #SCREEN_MODE_NORMAL
+        $3e3f1  xx xx:      xxx ScreenMode
         $3e3f3  xx xx xx:   xxx $xxxx
         $3e3f6  xx xx xx:   xxx $xxxx
         $3e3f9  xx xx:      xxx #$xx ; 34000 -> 8000
@@ -55045,15 +55764,15 @@ ExitTypeJump_0_Normal
         $3e4a5  xx xx:      xxx #$xx
         $3e4a7  xx xx:      xxx $xx
         $3e4a9  xx xx:      xxx #$xx
-        $3e4ab  xx xx:      xxx $xx
+        $3e4ab  xx xx:      xxx ScreenMode
         $3e4ad  xx xx:      xxx $xx
         $3e4af  xx xx:      xxx #$xx
         $3e4b1  xx xx:      xxx $xx
-        $3e4b3  xx xx xx:   xxx $3c169
-        $3e4b6  xx xx xx:   xxx $3c676
+        $3e4b3  xx xx xx:   xxx WaitForOAMDMA
+        $3e4b6  xx xx xx:   xxx FlushNametableDataWrite
         $3e4b9  xx xx:      xxx #$xx
         $3e4bb  xx xx xx:   xxx $3c831
-        $3e4be  xx xx xx:   xxx $3c676
+        $3e4be  xx xx xx:   xxx FlushNametableDataWrite
         $3e4c1  xx xx:      xxx #$xx
 -       $3e4c3  xx:         xxx
         $3e4c4  xx:         xxx
@@ -55062,29 +55781,29 @@ ExitTypeJump_0_Normal
         $3e4c9  xx:         xxx
         $3e4ca  xx:         xxx
         $3e4cb  xx xx:      xxx - ; $3e4c3
-        $3e4cd  xx xx:      xxx #$xx ; 28000 -> 8000
+        $3e4cd  xx xx:      xxx #$xx ; 8000 -> 38000
         $3e4cf  xx xx xx:   xxx BankSwitch16k
-        $3e4d2  xx xx xx:   xxx $2800e
-        $3e4d5  xx xx xx:   xxx $3c169
-        $3e4d8  xx xx:      xxx #$xx
-        $3e4da  xx xx:      xxx $xx
-        $3e4dc  xx xx:      xxx $xx
+        $3e4d2  xx xx xx:   xxx DrawAllObjectSpritesInternal
+        $3e4d5  xx xx xx:   xxx WaitForOAMDMA
+        $3e4d8  xx xx:      xxx #SCREEN_MODE_NORMAL
+        $3e4da  xx xx:      xxx ScreenMode
+        $3e4dc  xx xx:      xxx PpuMaskShadow
         $3e4de  xx xx:      xxx #$xx
-        $3e4e0  xx xx:      xxx $xx
-        $3e4e2  xx xx xx:   xxx $3c169
+        $3e4e0  xx xx:      xxx PpuMaskShadow
+        $3e4e2  xx xx xx:   xxx WaitForOAMDMA
         $3e4e5  xx xx xx:   xxx $xxxx
         $3e4e8  xx xx:      xxx + ; $3e4ef
         $3e4ea  xx xx:      xxx #SFX_LOCATION_CHANGE
         $3e4ec  xx xx xx:   xxx StartAudioTrack
-+       $3e4ef  xx xx:      xxx #$xx
++       $3e4ef  xx xx:      xxx #$xx ; 8000 -> 34000
         $3e4f1  xx xx xx:   xxx BankSwitch8k_8000
         $3e4f4  xx xx xx:   xxx $xxxx
         $3e4f7  xx xx:      xxx + ; $3e4fe
         $3e4f9  xx xx:      xxx #$xx
-        $3e4fb  xx xx xx:   xxx $28c49
-+       $3e4fe  xx xx:      xxx #$xx
+        $3e4fb  xx xx xx:   xxx $34c49
++       $3e4fe  xx xx:      xxx #$xx ; a000 -> 2e000
         $3e500  xx xx xx:   xxx BankSwitch8k_A000
-        $3e503  xx xx xx:   xxx $2bc00
+        $3e503  xx xx xx:   xxx $2fc00
         $3e506  xx xx:      xxx #$xx
         $3e508  xx xx xx:   xxx $xxxx
         $3e50b  xx xx xx:   xxx $xxxx
@@ -55119,7 +55838,7 @@ ExitTypeJump_2_Warp
 ;;; --------------------------------
 ExitTypeJump_3_Pit
         ;; Fall into pit
--       $3e544  xx xx xx:   xxx $3c169
+-       $3e544  xx xx xx:   xxx WaitForOAMDMA
         $3e547  xx xx:      xxx #$xx ; 8000 -> 34000
         $3e549  xx xx xx:   xxx BankSwitch16k
         $3e54c  xx xx:      xxx #$xx
@@ -55227,8 +55946,8 @@ FallIntoPit
         $3e5fd  xx xx xx:   xxx $xxxx
         $3e600  xx xx xx:   xxx $3e44a
         ;; --------------------------------
-++      $3e603  xx xx:      xxx #$xx
-        $3e605  xx xx:      xxx $xx
+++      $3e603  xx xx:      xxx #GAME_MODE_NORMAL
+        $3e605  xx xx:      xxx GameMode
         $3e607  xx xx:      xxx #$xx
         $3e609  xx xx xx:   xxx BankSwitch8k_8000
         $3e60c  xx xx:      xxx #$xx
@@ -55448,9 +56167,9 @@ CopyMapDataFlags
 ;;; --------------------------------
 ;;; Compare $62fe (MapData[loc][0][2] << 3) against the middle three
 ;;; bits of the global counter ($8:38) >>> 3.
-        ($08 >>> 3)
 ;;; OR them together, and use as index into $3e779, storing result
 ;;; in $07f1, which seems to include more bits than just the map data.
+AnimateBackground
         $3e75e  xx xx xx:   xxx $xxxx
         $3e761  xx:         xxx
         $3e762  xx:         xxx
@@ -55464,7 +56183,7 @@ CopyMapDataFlags
         $3e76d  xx xx:      xxx #$xx
         $3e76f  xx xx:      xxx $xx
         $3e771  xx:         xxx
-        $3e772  xx xx xx:   xxx $3e779,y
+        $3e772  xx xx xx:   xxx BackgroundAnimationTable,y
         $3e775  xx xx xx:   xxx $xxxx
 +       $3e778  xx:         xxx
 ;;; --------------------------------
@@ -55599,10 +56318,10 @@ BackgroundAnimationTable
         $3e894  xx xx:       xxx $xx
         $3e896  xx xx:       xxx $xx
         $3e898  xx xx:       xxx $xx
-        $3e89a  xx xx xx:    xxx $3c739
+        $3e89a  xx xx xx:    xxx RequestAttributeTable0Write
         $3e89d  xx xx:       xxx $xx
         $3e89f  xx xx:       xxx #$xx
-        $3e8a1  xx xx xx:    xxx $3c176
+        $3e8a1  xx xx xx:    xxx WaitForMultipleOAMDMA
         $3e8a4  xx:          xxx
         $3e8a5  xx:          xxx
         $3e8a6  xx:          xxx
@@ -55612,7 +56331,7 @@ BackgroundAnimationTable
         $3e8ac  xx xx:       xxx #$xx
         $3e8ae  xx xx xx:    xxx $34c3d
         $3e8b1  xx:         xxx
-        $3e8b2  xx xx xx:   xxx $xxxx
+        $3e8b2  xx xx xx:   xxx $xxxx ; bg palette
         $3e8b5  xx:         xxx
 ;;; --------------------------------
 DataTable_3e8b6 
@@ -56004,8 +56723,8 @@ TakeExit
         $3eb5f  xx:         xxx
         $3eb60  xx xx:      xxx ($xx),y
         $3eb62  xx xx:      xxx $xx
-        $3eb64  xx xx:      xxx #$xx
-        $3eb66  xx xx:      xxx $xx
+        $3eb64  xx xx:      xxx #GAME_MODE_CHANGE_LOCATION
+        $3eb66  xx xx:      xxx GameMode
         $3eb68  xx:         xxx
         $3eb69  xx:         xxx
         $3eb6a  xx:         xxx
@@ -56730,40 +57449,42 @@ PrepareScreenMapRead
         $3ef52  xx xx:      xxx $xx
         $3ef54  xx:         xxx
 ;;; --------------------------------
-        $3ef55  xx xx:      xxx $xx
+        $3ef55  xx xx:      xxx GlobalCounter
         $3ef57  xx:         xxx
         $3ef58  xx xx:      xxx $xx
-        $3ef5a  xx xx xx:   xxx $xxxx
+        $3ef5a  xx xx xx:   xxx PlayerStatus
         $3ef5d  xx xx:      xxx #$xx
-        $3ef5f  xx xx:      xxx #$xx
-        $3ef61  xx xx:      xxx $xx
-        $3ef63  xx xx xx:   xxx $xxxx
-        $3ef66  xx xx:      xxx #$xx
-        $3ef68  xx xx:      xxx $xx
-        $3ef6a  xx xx xx:   xxx $xxxx
-        $3ef6d  xx xx:      xxx $xx
-        $3ef6f  xx xx xx:   xxx $xxxx
-        $3ef72  xx xx xx:   xxx $xxxx
-        $3ef75  xx xx:      xxx $xx
-        $3ef77  xx xx:      xxx $xx
-        $3ef79  xx xx:      xxx #$xx
-        $3ef7b  xx xx:      xxx $xx
-        $3ef7d  xx xx xx:   xxx $xxxx
-        $3ef80  xx xx:      xxx #$xx
-        $3ef82  xx xx:      xxx $xx
-        $3ef84  xx xx:      xxx $xx
-        $3ef86  xx xx:      xxx #$xx
-        $3ef88  xx xx:      xxx $xx
-        $3ef8a  xx xx:      xxx $xx
-        $3ef8c  xx xx:      xxx $xx
+        $3ef5f  xx xx:      xxx #STATUS_POISON
+        $3ef61  xx xx:      xxx ++ ; $3ef8c
+        $3ef63  xx xx xx:    xxx EquippedPassiveItem
+        $3ef66  xx xx:       xxx #ITEM_LEATHER_BOOTS
+        $3ef68  xx xx:       xxx + ; $3ef77
+        $3ef6a  xx xx xx:     xxx PlayerJumpDisplacement
+        $3ef6d  xx xx:        xxx + ; $3ef77
+        $3ef6f  xx xx xx:      xxx $xxxx ; ?? susceptibility ?? currrent terrain ??
+        $3ef72  xx xx xx:      xxx $xxxx
+        $3ef75  xx xx:         xxx ++ ; $3ef8c
++       $3ef77  xx xx:       xxx CurrentLocation
+        $3ef79  xx xx:       xxx #LOC_SWAMP
+        $3ef7b  xx xx:       xxx $xx
+        $3ef7d  xx xx xx:    xxx EquippedPassiveItem
+        $3ef80  xx xx:       xxx #ITEM_GAS_MASK
+        $3ef82  xx xx:       xxx $xx
+        $3ef84  xx xx:       xxx GlobalCounter
+        $3ef86  xx xx:       xxx #$xx
+        $3ef88  xx xx:       xxx $xx
+        $3ef8a  xx xx:       xxx $xx
+        ;;                   ----------
+++      $3ef8c  xx xx:      xxx GlobalCounter
         $3ef8e  xx xx:      xxx #$xx
         $3ef90  xx xx:      xxx $xx
-        $3ef92  xx xx xx:   xxx $xxxx
+        ;; Every 32 frames, poison takes 4 HP
+        $3ef92  xx xx xx:   xxx PlayerHP
         $3ef95  xx:         xxx
         $3ef96  xx xx:      xxx #$xx
-        $3ef98  xx xx:      xxx $xx
-        $3ef9a  xx xx:      xxx #$xx
-        $3ef9c  xx xx xx:   xxx $xxxx
+        $3ef98  xx xx:      xxx + ; $3ef9c
+        $3ef9a  xx xx:       xxx #$xx ; don't wrap past zero
++       $3ef9c  xx xx xx:   xxx PlayerHP
         $3ef9f  xx xx:      xxx #SFX_POISON
         $3efa1  xx xx xx:   xxx StartAudioTrack
         $3efa4  xx xx:      xxx #$xx
@@ -56771,14 +57492,14 @@ PrepareScreenMapRead
         $3efa8  xx xx xx:   xxx $xxxx,x
         $3efab  xx:         xxx
         $3efac  xx xx:      xxx $xx
-        $3efae  xx xx xx:   xxx $3c169
+        $3efae  xx xx xx:   xxx WaitForOAMDMA
         $3efb1  xx xx:      xxx #$xx
         $3efb3  xx xx xx:   xxx BankSwitch8k_8000
         $3efb6  xx xx xx:   xxx UpdateHPDisplayInternal
-        $3efb9  xx xx xx:   xxx $34c0e
+        $3efb9  xx xx xx:   xxx LoadPalettesForLocation
         $3efbc  xx xx:      xxx #$xx
         $3efbe  xx xx xx:   xxx BankSwitch8k_8000
-        $3efc1  xx xx xx:   xxx $xxxx
+        $3efc1  xx xx xx:   xxx PlayerStatus
         $3efc4  xx xx:      xxx #$xx
         $3efc6  xx xx:      xxx #$xx
         $3efc8  xx xx:      xxx $xx
@@ -56792,33 +57513,38 @@ PrepareScreenMapRead
         $3efdb  xx xx xx:   xxx $xxxx
         $3efde  xx xx:      xxx #$xx
         $3efe0  xx xx:      xxx #$xx
-        $3efe2  xx xx:      xxx GrantPassiveBonuses
-        $3efe4  xx xx xx:   xxx $xxxx
-        $3efe7  xx xx:      xxx $xx
-        $3efe9  xx xx xx:   xxx $xxxx
+        $3efe2  xx xx:      xxx CheckPassiveEffects
+        $3efe4  xx xx xx:    xxx $xxxx ; only nonzero if stoned?
+        $3efe7  xx xx:       xxx CheckRecoverMagic
+        $3efe9  xx xx xx:   xxx PlayerStatus
         $3efec  xx xx:      xxx #$xx
-        $3efee  xx xx xx:   xxx $xxxx
+        $3efee  xx xx xx:   xxx PlayerStatus
         $3eff1  xx xx:      xxx #$xx
         $3eff3  xx xx xx:   xxx $xxxx
-        $3eff6  xx xx xx:   xxx $34c0e
-        $3eff9  xx xx xx:   xxx GrantPassiveBonuses
-;;; --------------------------------
+        $3eff6  xx xx xx:   xxx LoadPalettesForLocation
+        $3eff9  xx xx xx:   xxx CheckPassiveEffects
+        ;; --------------------------------
+CheckRecoverMagic
+        ;; This is a special case to allow casting recover when stoned.
         $3effc  xx xx xx:   xxx EquippedMagic
         $3efff  xx xx:      xxx #MAGIC_RECOVER
-        $3f001  xx xx:      xxx GrantPassiveBonuses
+        $3f001  xx xx:      xxx CheckPassiveEffects
+        ;; If 'recover' is equipped ...
         $3f003  xx xx:       xxx Ctrl1NewlyPressed
         $3f005  xx xx:       xxx #BUTTON_A
-        $3f007  xx xx:       xxx GrantPassiveBonuses
+        $3f007  xx xx:       xxx CheckPassiveEffects
+        ;; ... and button A was just pressed ...
         $3f009  xx xx:        xxx GameMode
         $3f00b  xx xx:        xxx #GAME_MODE_NORMAL
-        $3f00d  xx xx:        xxx GrantPassiveBonuses
+        $3f00d  xx xx:        xxx CheckPassiveEffects
+        ;;  ... and we're in normal game mode, then try to cast 'recover'
         $3f00f  xx xx:         xxx #$xx ; 8000 -> 34000
         $3f011  xx xx xx:      xxx BankSwitch8k_8000
         $3f014  xx xx:         xxx #$xx
         $3f016  xx xx xx:      xxx SpendMPOrDoubleReturn
         $3f019  xx xx:         xxx #GAME_MODE_RECOVER_MAGIC
         $3f01b  xx xx:         xxx GameMode
-GrantPassiveBonuses
+CheckPassiveEffects
         ;; If wearing Deo's Pendant: +1 MP on 64th frame unless moving
         $3f01d  xx xx xx:   xxx EquippedPassiveItem
         $3f020  xx xx:      xxx #ITEM_DEOS_PENDANT
@@ -56867,8 +57593,8 @@ GrantPassiveBonuses
         $3f073  xx xx xx:   xxx $xxxx
         $3f076  xx xx:      xxx + ; $3f089
         ;; Fall down a pit: set $6f:60 bit.
-        $3f078  xx xx:       xxx #$xx
-        $3f07a  xx xx:       xxx $xx
+        $3f078  xx xx:       xxx #GAME_MODE_CHANGE_LOCATION
+        $3f07a  xx xx:       xxx GameMode
         $3f07c  xx xx:       xxx $xx
         $3f07e  xx xx:       xxx #$xx
         $3f080  xx xx:       xxx #$xx
@@ -57142,8 +57868,8 @@ HandleReset
         $3f2db  xx xx xx:   xxx $xxxx
         $3f2de  xx xx:      xxx #$xx
         $3f2e0  xx xx xx:   xxx $xxxx
-        $3f2e3  xx xx:      xxx #$xx
-        $3f2e5  xx xx:      xxx $xx
+        $3f2e3  xx xx:      xxx #SCREEN_MODE_MOVIE
+        $3f2e5  xx xx:      xxx ScreenMode
         $3f2e7  xx xx:      xxx #$xx
         $3f2e9  xx xx xx:   xxx $xxxx
         $3f2ec  xx xx xx:   xxx $xxxx
@@ -57175,8 +57901,8 @@ HandleReset
         $3f32a  xx xx:      xxx $xx
         $3f32c  xx xx:      xxx $xx
         $3f32e  xx xx xx:   xxx $xxxx
-        $3f331  xx xx:      xxx #$xx
-        $3f333  xx xx:      xxx $xx
+        $3f331  xx xx:      xxx #MAIN_LOOP_PREPARE_TITLE_MOVIE
+        $3f333  xx xx:      xxx MainLoopMode
         $3f335  xx xx:      xxx #$xx
         $3f337  xx xx:      xxx $xx
         $3f339  xx xx:      xxx $xx
@@ -57654,16 +58380,16 @@ ExecuteScreenMode
         $3f6bf  xx xx xx:   xxx ($xxxx)
         ;; --------------------------------
 ScreenModeJumpTable
-        $3f6c2              .word (ScreenModeJumpTable_00) ; $f6d6
-        $3f6c4              .word (ScreenModeJumpTable_01) ; $f731
-        $3f6c6              .word (ScreenModeJumpTable_02) ; $f751
-        $3f6c8              .word (ScreenModeJumpTable_03) ; $f771
-        $3f6ca              .word (ScreenModeJumpTable_04) ; $f782
-        $3f6cc              .word (ScreenModeJumpTable_05) ; $f7c5
-        $3f6ce              .word (ScreenModeJumpTable_06) ; $f7db
-        $3f6d0              .word (ScreenModeJumpTable_07) ; $f6d6
+        $3f6c2              .word (ScreenModeJumpTable_00) ; 00 $f6d6
+        $3f6c4              .word (ScreenModeJumpTable_01) ; 01 $f731
+        $3f6c6              .word (ScreenModeJumpTable_02) ; 02 $f751
+        $3f6c8              .word (ScreenModeJumpTable_03) ; 03 $f771
+        $3f6ca              .word (ScreenModeJumpTable_04) ; 04 $f782
+        $3f6cc              .word (ScreenModeJumpTable_05) ; 05 $f7c5
+        $3f6ce              .word (ScreenModeJumpTable_06) ; 06 $f7db
+        $3f6d0              .word (ScreenModeJumpTable_07) ; 07 $f6d6
         $3f6d2              .word ($xxxx)
-        $3f6d4              .word (ScreenModeJumpTable_09) ; $f731
+        $3f6d4              .word (ScreenModeJumpTable_09) ; 09 $f731
 ;;; --------------------------------
 ;;; Normal playfield.  Mode 7 happens during the insect fight: since the
 ;;; giant insect is 84 tiles, which is more than the 64 sprites that the
@@ -58065,11 +58791,11 @@ WritePaletteDataToPpu
         $3fe00  xx:         xxx
 ;;; --------------------------------
         $3fe01  xx xx:      xxx #$xx
-        $3fe03  xx xx:      xxx $xx
+        $3fe03  xx xx:      xxx ScreenMode
         $3fe05  xx xx:      xxx #$xx
         $3fe07  xx xx:      xxx $xx
         $3fe09  xx xx:      xxx #$xx
-        $3fe0b  xx xx xx:   xxx $3c176
+        $3fe0b  xx xx xx:   xxx WaitForMultipleOAMDMA
         $3fe0e  xx xx:      xxx $xx
         $3fe10  xx xx:      xxx $xx
         $3fe12  xx xx:      xxx #$xx
@@ -58079,11 +58805,11 @@ WritePaletteDataToPpu
         $3fe17  xx:         xxx
 ;;; --------------------------------
         $3fe18  xx xx:      xxx #$xx
-        $3fe1a  xx xx:      xxx $xx
+        $3fe1a  xx xx:      xxx ScreenMode
         $3fe1c  xx xx:      xxx #$xx
         $3fe1e  xx xx:      xxx $xx
         $3fe20  xx xx:      xxx #$xx
-        $3fe22  xx xx xx:   xxx $3c176
+        $3fe22  xx xx xx:   xxx WaitForMultipleOAMDMA
         $3fe25  xx xx:      xxx $xx
         $3fe27  xx xx:      xxx $xx
         $3fe29  xx xx:      xxx #$xx

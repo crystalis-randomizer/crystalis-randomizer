@@ -1,5 +1,6 @@
 const seq = (x, f = (i) => i) =>  new Array(x).fill(0).map((_, i) => f(i));
 const slice = (arr, start, len) => arr.slice(start, start + len);
+const signed = (x) => x < 0x80 ? x : x - 0x100;
 
 const varSlice = (arr, start, width, sentinel, end = Infinity) => {
   const out = [];
@@ -33,14 +34,24 @@ const INVALID_LOCATIONS = new Set([
   0x8b, 0x8d, 0x97, 0x99, 0x9a, 0x9b, 0xbd, 0xca,
   0xcc, 0xdb, 0xe6, 0xea, 0xfc, 0xfd, 0xfe, 0xff]);
 
+class Entity {
+  constructor(rom, id) {
+    this.rom = rom;
+    this.id = id;
+  }
+
+  toString() {
+    return this.constructor.name + ' $' + this.id.toString(16).padStart(2, 0);
+  }
+}
+
 // TODO - consider adding prepopulated name maps for data
 // tables, e.g. my location names, so that an editor could
 // use a drop-down menu and show something meaningful.
 
-class Screen {
+class Screen extends Entity {
   constructor(rom, id) {
-    this.rom = rom;
-    this.id = id;
+    super(rom, id);
     this.base = (id > 0xff ? 0x40 + id : id) << 8;
     // metatile index
     this.tiles = seq(15, y => slice(rom.prg, this.base | y << 4, 16));
@@ -63,11 +74,10 @@ class Screen {
 // }
 
 // Mappping from metatile ID to tile quads and palette number.
-class Tileset {
+class Tileset extends Entity {
   constructor(rom, id) {
     // `id` is MapData[1][3], ranges from $80..$bc in increments of 4.
-    this.rom = rom;
-    this.id = id;
+    super(rom, id);
     const map = id & 0x3f;
     this.tileBase = 0x10000 | map << 8;
     this.attrBase = 0x13000 | map << 4;
@@ -78,20 +88,18 @@ class Tileset {
   }
 }
 
-class TileEffects {
+class TileEffects extends Entity {
   constructor(rom, id) {
     // `id` is MapData[1][4], which ranges from $b3..$bd
-    this.rom = rom;
-    this.id = id;
+    super(rom, id);
     this.base = (id << 8) & 0x1fff | 0x12000;
     this.effects = slice(rom.prg, this.base, 256);
   }
 }
 
-class Palette {
+class Palette extends Entity {
   constructor(rom, id) {
-    this.rom = rom;
-    this.id = id;
+    super(rom, id);
     this.base = (id & 3) << 2 | (id & 0xfc) << 6 | 0x40f0;
     this.colors = slice(rom.prg, this.base, 4);
   }
@@ -102,11 +110,10 @@ class Palette {
   }
 }
 
-class Pattern {
+class Pattern extends Entity {
   constructor(rom, id, pixels = undefined) {
-    this.rom = rom;
-    this.id = id;
-    this.pixels = slice(rom.chr, id << 4, 16);
+    super(rom, id);
+    this.pixels = pixels || slice(rom.chr, id << 4, 16);
   }
 
   pixelAt(y, x) {
@@ -114,35 +121,60 @@ class Pattern {
   }
 
   flipH() {
-    return new Pattern(this.rom, this.id, this.pixels.map(x => reverseBits(x)));
+    return new Pattern(this.rom, -1, this.pixels.map(reverseBits));
   }
 
   flipV() {
-    return new Pattern(this.rom, this.id, seq(16, y => this.pixels[y & 8 | ~y & 7]));
+    return new Pattern(this.rom, -1, seq(16, y => this.pixels[y & 8 | ~y & 7]));
   }
 
   flip(type) {
     let p = this;
-    if (type & 1) p = p.flipH();
-    if (type & 2) p = p.flipV();
+    if (type & 0x40) p = p.flipH();
+    if (type & 0x80) p = p.flipV();
     return p;
   }
 }
 
-class TileAnimation {
+class TileAnimation extends Entity {
   constructor(rom, id) {
-    this.rom = rom;
-    this.id = id;
+    super(rom, id);
     this.base = 0x3e779 + (id << 3);
     this.pages = slice(rom.prg, this.base, 8);
   }
 }
 
-class Location {
+class Hitbox extends Entity {
+  constructor(rom, id) {
+    super(rom, id);
+    this.base = 0x35691 + (id << 2);
+    this.coordinates = slice(rom.prg, this.base, 4);
+  }
+
+  get w() { return this.coordinates[1]; }
+  get x0() { return signed(this.coordinates[0]); }
+  get x1() { return this.x0 + this.w; }
+  get h() { return this.coordinates[3]; }
+  get y0() { return signed(this.coordinates[2]); }
+  get y1() { return this.y0 + this.h; }
+}
+
+class AdHocSpawn extends Entity {
+  constructor(rom, id) {
+    // `id` is MapData[1][4], which ranges from $b3..$bd
+    super(rom, id);
+    this.base = (id << 2) + 0x29c00;
+    this.lowerSlot = rom.prg[this.base];
+    this.upperSlot = rom.prg[this.base + 1];
+    this.object = rom.prg[this.base + 2];
+    this.count = rom.prg[this.base + 3];
+  }
+}
+
+class Location extends Entity {
   constructor(rom, id) {
     // will include both MapData *and* NpcData, since they share a key.
-    this.rom = rom;
-    this.id = id;
+    super(rom, id);
 
     this.mapDataPointer = 0x14300 + (id << 1);
     this.mapDataBase = addr(rom.prg, this.mapDataPointer, 0xc000);
@@ -191,10 +223,9 @@ class Location {
   get height() { return this.layoutHeight + 1; }
 }
 
-class ObjectData {
+class ObjectData extends Entity {
   constructor(rom, id) {
-    this.rom = rom;
-    this.id = id;
+    super(rom, id);
 
     this.objectDataPointer = 0x1ac00 + (id << 1);
     this.objectDataBase = addr(rom.prg, this.objectDataPointer, 0x10000);
@@ -211,12 +242,72 @@ class ObjectData {
       m <<= 1;
     }
   }
-}
 
-class Metasprite {
+  get(addr) {
+    return this.objectData[(addr - 0x300) >>> 5];
+  }
+
+  static setupProps() {
+    // bits is ...[addr, mask = 0xff, shift = 0]
+    const prop = (...bits) => ({
+      get() {
+        let value = 0;
+        for (const [addr, mask = 0xff, shift = 0] of bits) {
+          const lsh = shift < 0 ? -shift : 0;
+          const rsh = shift < 0 ? 0 : shift;
+          value |= ((this.objectData[(addr - 0x300) >>> 5] & mask) >>> rsh) << lsh;
+        }
+        return value;
+      },
+      set(value) {
+        for (const [addr, mask = 0xff, shift = 0] of bits) {
+          const lsh = shift < 0 ? -shift : 0;
+          const rsh = shift < 0 ? 0 : shift;
+          const v = (value >>> lsh) << rsh & mask;
+          const index = (addr - 0x300) >>> 5;
+          this.objectData[index] = this.objectData[index] & ~mask | v;
+        }
+      },
+    });
+    Object.defineProperties(this.prototype, {
+      metasprite: prop([0x300]),
+      collisionPlane: prop([0x3a0, 0xf0, 4]),
+      hitbox: prop([0x420, 0x40, 2], [0x3a0, 0x0f]),
+      hp: prop([0x3c0]),
+      atk: prop([0x3e0]),
+      def: prop([0x400]),
+      level: prop([0x420, 0x1f]),
+      child: prop([0x440]), // ad-hoc spawn ID
+      terrainSusceptibility: prop([0x460]),
+      immobile: prop([0x4a0, 0x80, 7]), // will not be knocked back
+      action: prop([0x4a0, 0x7f]),
+      replacement: prop([0x4c0]),
+      goldDrop: prop([0x500, 0xf0, 4]),
+      elements: prop([0x500, 0xf]),
+      expReward: prop([0x520]),
+      attackType: prop([0x540]),
+    });
+  }
+
+  parents() {
+    // If this is a projectile that is the parent of some monster,
+    // return an array of parents that spawned it.
+    return rom.monsters.filter(m => m.child && rom.adHocSpawns[m.child].object == this.id);
+  }
+
+  locations() {
+    // TODO - handle non-monster NPCs.
+    return rom.locations.filter(l =>
+        l && l.objects && l.objects.some(o =>
+            (o[2] & 7) == 0 && ((o[3] + 0x50) & 0xff) == this.id));
+  }
+}
+ObjectData.setupProps();
+
+
+class Metasprite extends Entity {
   constructor(rom, id) {
-    this.rom = rom;
-    this.id = id;
+    super(rom, id);
 
     this.base = addr(rom.prg, 0x3845c + (this.id << 1), 0x30000);
     this.valid = this.base > 0x30000;
@@ -232,12 +323,14 @@ class Metasprite {
       }
       if (this.mirrored == null) throw new Error('could not find mirrored sprite');
       this.size = 0;
+      this.frameMask = 0;
       this.frames = 0;
       this.sprites = [];
     } else {
       this.mirrored = null;
-      this.size = this.mirrored ? 0 : rom.prg[this.base];
-      this.frames = this.mirrored ? 0 : 1 << countBits(rom.prg[this.base + 1]);
+      this.size = rom.prg[this.base];
+      this.frameMask = rom.prg[this.base + 1];
+      this.frames = this.frameMask + 1;
 
       this.sprites = seq(this.frames, f => {
         const a = this.base + 2 + f * 4 * this.size;
@@ -284,12 +377,36 @@ export class Rom {
     this.locations = seq(
         0x100, i => INVALID_LOCATIONS.has(i) ? null : new Location(this, i));
     this.tileAnimations = seq(4, i => new TileAnimation(this, i));
+    this.hitboxes = seq(24, i => new Hitbox(this, i));
     this.objects = seq(0x100, i => new ObjectData(this, i));
+    this.adHocSpawns = seq(0x60, i => new AdHocSpawn(this, i));
     this.metasprites = seq(0x100, i => new Metasprite(this, i));
   }
 
-  tileset(i) {
-    return this.tilesets[(i & 0x3f) >> 2];
+  // TODO - cross-reference monsters/metasprites/metatiles/screens with patterns/palettes
+  get monsters() {
+    let monsters = new Set();
+    for (const l of this.locations) {
+      if (!l || !l.objects) continue;
+      for (const o of l.objects) {
+        if ((o[2] & 7) == 0) monsters.add(this.objects[(o[3] + 0x50) & 0xff]);
+      }
+    }
+    monsters = [...monsters];
+    monsters.sort((x, y) => (x.id - y.id));
+    return monsters;
+  }
+
+  get projectiles() {
+    let projectiles = new Set();
+    for (const m of this.monsters) {
+      if (m.child) {
+        projectiles.add(rom.objects[rom.adHocSpawns[m.child].object]);
+      }
+    }
+    projectiles = [...projectiles];
+    projectiles.sort((x, y) => (x.id - y.id));
+    return projectiles;
   }
 
   // Use the browser API to load the ROM.  Use #reset to forget and reload.

@@ -26,7 +26,8 @@ export class ImageBuffer {
   }
 
   draw(x, y, color) {
-    check(this, this.x + x, this.y + y);
+    //check(this, this.x + x, this.y + y);
+    if (x < 0 || x >= this.w || y < 0 || y >= this.h) return;
     const w = this.root ? this.root.w : this.w;
     this.data[(this.y + y) * w + this.x + x] = color | 0xff000000;
   }

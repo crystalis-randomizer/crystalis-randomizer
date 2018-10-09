@@ -1,0 +1,307 @@
+MAPS -*- mode: org; -*-
+
+* Lime tree
+
+| $14 | $18 | $2a | $0e |
+| $0c | $35 | $16 | $0d |
+| $0f | $02 | $37 | $10 |
+| $90 | $10 | $0e | $0f |
+
+or just keep same size and replace (0, 1) tile with $1a
+
+next screen:
+
+  anim: 1
+  screens: $a8
+    - could also turn down/up w/ $a9/$ab on left or $b9*/$af on right
+      * $b9 does not work quite as well - bigger exit
+    - $b4 is straight left/right, could even put in a "patch cave" with $b8
+      and send through to Sahara area, or leaf?
+  pal: $6 (or $a, $d, $16, $42, $53, $83, $87), $12 (irrelevant?), $18 (or $1f)
+  tileset: $9c, $ba
+  pat: $14, $04
+
+    - also need a flag, obviously
+
+
+one-way passage -> giant hole in cave - could make several holey screens and pass
+  through all to simulate a huge drop...?
+
+ - what other blockers could we introduce between leaf and goa?
+
+   -- otherwise it's still just a little too predictable?
+
+ - really probably want to open things up.
+   - non-blocked connectors to everything? or random unblocking?
+
+   --> figure out how to add blocked and unblocked connections between areas
+       - one simple way is open (or semi-open) warp.
+
+================================================================
+
+
+* Swamp ($1a)
+Change (4, 2) to $7d to make a right-hand exit, or a bottom exit by changing
+(3, 4) to $78 or {(3, 4) to $7d and (4, 4) to $7e}
+ - what could it connect to?
+ - could go to Leaf for a gas-mask connection to somewhere...
+ - could also randomize the whole swamp maze
+ - in "totally nuts" mode, could even hide random chests in it.
+
+
+* Coverage
+Tile $93 was unused in full2.mov. Where is it?  $9d also, except for $9dfx,
+which may not be related?!?  $be unused (it's same as $bd!)
+ - looks like they're not actually used, either - they're different kinds of
+   pits.  We could coopt any of these for a new map structure if we wanted to.
+   - different kind of water crossing or west exit?
+
+
+
+* Blockers
+
+** Ball of X
+Easy - put a wall (or river) in the way
+ - Flight eliminates need for ball of water
+
+** Rabbit boots
+Can put a slide, possibly even outside Mt Sabre (see waterfall valley)
+ - could we do two slides so that both directions require the boots?
+ - may not need to block both directions.
+
+** Leather boots
+Giant area of desert mush?  Would be hard to pull off.
+
+** Gas mask
+Particularly useful if we make the swamp a pass-through.
+
+** Flute of Lime
+Only if the glitch is fixed, and only good once.
+
+** Flight
+Cross rivers, but also invalidates ball of water, etc, so not great to use.
+
+** Change
+Used in Shyron, Amazones, Swan - not obvious how to take advantage.
+
+** Various keys
+If we randomize all the entrances, this could be interesting, but otherwise not so much
+ - e.g. windmill key leading into styx
+
+** Shell flute
+Again, useful if we randomize entrances, but otherwise just blocks Joel/Sabera
+ - could do an early shell flute and add a bunch of caves and entrances to all over...?
+
+** Fetch quests
+ - Statue of Onyx -> Gas Mask
+ - Eye glasses -> Glowing Lamp
+ - Broken Statue + Glowing Lamp -> Gold Lamp -?-> Barrier
+ - Flute of Lime -> Flute of Lime 2 + Sword of Water
+ - Flute of Lime 2 -> Shield Ring
+ - Fog Lamp + Shell Flute -> Boat to Angry Sea
+ - Insect Flute -> Ball of Fire
+ - Love Pendant -> Change
+ - Ivory Statue -> Flight
+ - Kirisa Plant (+ Change) -> Bow of Moon
+
+* Areas
+
+** Valley of Wind
+Items:
+ - (Free) -> Sword of Wind
+ - Alarm Flute -> Windmill Key
+ - Windmill Key -> Refresh
+Exits:
+ - Windmill Key -> Sealed Cave
+ - Ball of Fire -> Mt Sabre West
+
+
+** Sealed Cave
+Requires:
+ - Valley of Wind + Windmill Key
+ - Cordel Plain
+Items:
+ - (Free) -> Ball of Wind
+ - Ball of Wind -> Rabbit Boots
+Exits:
+ - Valley of Wind
+ - Ball of Wind -> Cordel Plain
+
+
+** Cordel Plain and Mt Sabre West
+Requires: (one of)
+ - Sealed Cave + Ball of Wind
+ - Valley of Wind + Ball of Fire
+ - Amazones + Ball of Water
+Items:
+ - (Free) -> Statue of Onyx
+ - Statue of Onyx -> Gas Mask
+ - Ball of Fire -> Tornado Bracelet
+ - Tornado Bracelet -> Teleport
+Exits:
+ - Ball of Fire -> Valley of Wind
+ - Ball of Wind -> Sealed Cave
+ - Teleport (ish), Ball of Fire - Mt Sabre North    - remove flag?
+
+
+** Amazones
+Requires:
+ - Cordel Plain + Ball of Water
+Items:
+ - Change -> Blizzard Bracelet
+ - Change + Kirisa Plant -> Bow of Moon
+Exits:
+ - Ball of Water -> Cordel Plain
+
+
+** Swamp
+Requires:
+ - Cordel Plain + Gas Mask
+Items:
+ - Telepathy -> Insect Flute
+ - Telepathy -> Sword of Fire
+ - Sword of Fire + Insect Flute -> Ball of Fire
+Exits:
+ - Cordel Plain
+
+
+** Mt Sabre North
+Requires:
+ - Cordel Plain + Teleport (sort of)
+Items:
+ - Ball of Fire -> Prison Key
+ - Ball of Fire (+ Tornado Bracelet) -> Flame Bracelet
+ - Ball of Fire (+ Tornado Bracelet) + Prison Key -> Paralysis
+Exits:
+ - Ball of Fire (+ Tornado Bracelet) + Prison Key -> Waterfall Valley
+
+
+** Waterfall Valley and Lime Tree
+Requires:
+ - Mt Sabre North + Ball of Fire (+ Tornado Bracelet) + Prison Key
+Items:
+ - Ball of Fire + Flute of Lime -> Sword of Water + Flute of Lime 2
+ - Sword of Water -> Ball of Water
+ - Ball of Fire + Flute of Lime 2 -> Shield Ring
+ - Ball of Water -> Shell Flute
+ - Ball of Water -> Recover
+Exits:
+ - Ball of Water -> Fog Lamp / Kirisa Cave
+ - Fog Lamp + Shell Flute -> Angry Sea (can't call dolphin before boarding boat)
+
+
+** Fog Lamp Cave and Kirisa Cave
+Requires:
+ - Waterfall Valley + Ball of Water
+Items:
+ - Ball of Wind -> Kirisa Plant
+ - Ball of Wind -> Fog Lamp
+
+
+** Angry Sea
+Requires:
+ - Waterfall Valley + Fog Lamp + Shell Flute
+Items:
+ - (Free) -> Love Pendant
+ - Ball of Wind + Ball of Water -> Iron Necklace
+ - Ball of Wind + Ball of Water (+ Flame Bracelet) -> Broken Statue
+ - Ball of Wind + Ball of Water (+ Flame Bracelet) -> Eye Glasses
+ - Eye Glasses -> Glowing Lamp
+ - Glowing Lamp + Broken Statue -> Gold Statue
+ - Gold Statue -> Barrier
+Exits:
+ - Waterfall Valley
+ - (Gold Statue) -> Swan
+
+
+** Swan
+Requires:
+ - Angry Sea + Gold Status
+Items:
+ - Paralysis + Love Pendant -> Change
+Exits:
+ - Angry Sea
+ - Change -> Goa
+
+
+** Goa
+Requires: (any)
+ - Swan + Change
+ - Desert
+Items:
+ - (Free) -> Leather Boots
+ - Ball of Water -> Power Ring
+ - Flight -> Battle Armor
+Exits:
+ - Sword of Water -> Mt Hydra
+ - Ball of Thunder -> Fortress
+ - Flight -> Fortress (middle)
+ - Flight -> Sahara
+
+
+** Mt Hydra
+Requires:
+ - Goa + Sword of Water
+Items:
+ - Flight + Ball of Wind -> Bow of Sun
+Exits: 
+ - Sword of Water -> Goa
+ - Key to Styx -> Styx
+
+
+** Shyron
+Requires:
+ - Mt Hydra (+ Change)
+Items:
+ - (Free) -> Key to Styx
+ - Sword of Thunder (+ Blizzard Bracelet) -> Ball of Thunder
+Exits:
+ - Mt Hydra
+
+
+** Styx
+Requires:
+ - Mt Hydra + Key to Styx
+Items:
+ - Ball of Water -> Sword of Thunder
+ - Flight -> Psycho Shield
+
+
+** Fortress
+Requires:
+ - Goa + Ball of Thunder
+ - Goa + Flight (backwards?)
+Items:
+ - Ball of Water (+ Blizzard Bracelet) -> Sacred Shield
+ - Ball of Water -> Storm Bracelet
+ - Ball of Water (+ Storm Bracelet) -> Ivory Statue
+ - Ball of Water + Ivory Statue -> Flight
+Exits:
+ - Goa
+
+** Sahara
+Requires:
+ - Goa + Flight
+Items:
+ - Change -> Deo's Pendant
+ - Sword of Thunder -> Psycho Armor
+ - Sword of Thunder -> Bow of Truth
+Exits:
+ - Flight -> Goa
+ - Flight -> Pyramid
+
+
+** Pyramid (Back)
+Requires:
+ - Sahara + Flight + Bow of Sun + Bow of Moon
+Exits:
+ - Bow of Truth + Storm Bracelet + Power Ring -> Tower
+
+
+** Tower
+Requires:
+ - Pyramid + Bow of Truth + Storm Bracelet + Power Ring
+Items:
+ - Crystalis
+Exits:
+ - Win

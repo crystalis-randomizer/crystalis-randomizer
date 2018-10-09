@@ -48,6 +48,7 @@ class MapsView extends View {
     this.location = id;
     const lines = [
       `# Location [loc<0:1:$ff>:$${hex(id)}]`,
+      `animated [animated<checkbox>:0]`,
     ];
     // update the controls, then the canvas
     const loc = this.rom.locations[id] || this.rom.locations[0];
@@ -120,8 +121,13 @@ class MapsView extends View {
     for (let i = 0; !invalid && i < objects.length; i++) {
       const line = Array.from(objects[i], hex).join(',$');
       const [y, x, e, f] = objects[i];
-      const pos = [((x & 0x7f) << 4) + (e & 0x40 ? 8 : 0), fromTileY(y) - 4].join('x');
-      lines.push(`  [@${pos}+16x32]${hex(sprId++)}: [objs.${i}<0:1:$ff>:$${line},]`);
+      const hitbox = e & 7 ? null : this.rom.hitboxes[this.rom.objects[(f + 0x50) & 0xff].hitbox];
+      const xc = Math.max(0, ((x & 0x7f) << 4) + (e & 0x40 ? 8 : 0) + (hitbox ? hitbox.x0 + 8 : 0));
+      const yc = fromTileY(y) + (hitbox ? hitbox.y0 + 12 : -4);
+      const w = hitbox ? hitbox.w : 16
+      const h = hitbox ? hitbox.h : 32;
+      // const pos = [((x & 0x7f) << 4) + (e & 0x40 ? 8 : 0), Math.max(0, fromTileY(y) - 4)].join('x');
+      lines.push(`  [@${xc}x${yc}+${w}x${h}]${hex(sprId++)}: [objs.${i}<0:1:$ff>:$${line},]`);
     }
 
     this.setControls(lines.join('\n'));
@@ -130,56 +136,68 @@ class MapsView extends View {
 
   update(changed = {}) {
     // redraw the canvas, since some parameter changed
-    const {loc, objs} = this.options;
-    if (changed.loc || this.location != loc) {
-      this.setLocation(loc);
+    const opts = Object.assign({
+      pal: [], pat: [], ts: [], screens: [], flags: [],
+      objs: [], spritePal: [], spritePat: [],
+    }, this.options);
+    if (changed.loc || this.location != opts.loc) {
+      this.setLocation(opts.loc);
     } else if (changed.wd || changed.ht) {
-      this.setLocation(loc, this.options.wd, this.options.ht);
+      this.setLocation(opts.loc, opts.wd, opts.ht);
     }
     let lastIndex = -1;
-    this.animate((frame, draw) => {
-      const {pal = [], pat = [], ts = [], wd, ht, anim, ext, screens = [], flags = []} =
-            this.options;
-      let tilePat = [...pat];
-      if (anim) {
+    const draw = (frame, draw) => {
+      let tilePat = [...opts.pat];
+      // if (opts.anim) {
         let index = frame >> 3 & 7;
         if (index == lastIndex) return;
         lastIndex = index;
-        tilePat[1] = this.rom.prg[0x3e779 + (anim << 3) + index];
-      } else {
-        if (lastIndex == 0) return;
-        lastIndex = 0;
-      }
-      const tileset = this.rom.tilesets[ts[0] >> 2 & 0xf];
-      const tilePal = [...pal, 0x7f].map(p => this.rom.palettes[p]);
-      const buf = ImageBuffer.create(256 * wd, 240 * ht)
+        if (opts.anim) tilePat[1] = this.rom.tileAnimations[opts.anim].pages[index];
+      // } else {
+      //   if (lastIndex == 0) return;
+      //   lastIndex = 0;
+      // }
+      const tileset = this.rom.tilesets[opts.ts[0] >> 2 & 0xf];
+      const tilePal = [...opts.pal, 0x7f].map(p => this.rom.palettes[p]);
+      const buf = ImageBuffer.create(256 * opts.wd, 240 * opts.ht)
             .fill(colors[tilePal[0].colors[0]]);
       // draw background
-      for (let x = 0; x < wd; x++) {
-        for (let y = 0; y < ht; y++) {
-          const screenId = (screens[y] || [])[x];
+      for (let x = 0; x < opts.wd; x++) {
+        for (let y = 0; y < opts.ht; y++) {
+          const screenId = (opts.screens[y] || [])[x];
           if (screen != null) {
-            const screen = this.rom.screens[screenId + (ext ? 0x100 : 0)];
-            this.drawScreen(buf.shift(x << 8, 240 * y, 256, 240),
-                            screen, tileset, tilePal, tilePat, (flags[y] || [])[x]);
+            const screen = this.rom.screens[screenId + (opts.ext ? 0x100 : 0)];
+            this.drawScreen(buf, x << 8, 240 * y,
+                            screen, tileset, tilePal, tilePat, (opts.flags[y] || [])[x]);
           }
         }
       }
       // draw monsters
-      for (const obj of objs) {
-        if (obj[2] & 7 != 0) continue;
+      for (const obj of opts.objs) {
+        if ((obj[2] & 7) != 0) continue;
         const objId = obj[3] + 0x50;
-        const pal = this.options.spritePal[obj[2] & 0x80 ? 1 : 0];
-        const pat = this.options.spritePat[obj[2] & 0x80 ? 1 : 0];
-        // ..... animate???
-              
+        // NOTE: 1 is for wind sword; other swords are 2-4?
+        const pal = [0, 1, ...opts.spritePal].map(p => this.rom.palettes[p + 0xb0 & 0xff]);
+        const pat = opts.spritePat[obj[2] & 0x80 ? 1 : 0];
+        const objData = this.rom.objects[objId];
+        if (!objData) continue;
+        let metasprite = this.rom.metasprites[objData.metasprite];
+        const y = fromTileY(obj[0]) + 0xc;
+        const x = ((obj[1] & 0x7f) << 4) + (obj[2] & 0x40 ? 8 : 0) + 8;
+        this.drawMetasprite(buf, x, y, metasprite, pal, pat, frame >> 3);
       }
       // done
       draw(buf);
-    });
+    };
+
+    if (opts.animated) { // cheap way to prevent excessive cpu
+      this.animate(draw);
+    } else {
+      draw(0, (...args) => this.draw(...args));
+    }
   }
 
-  drawScreen(img, screen, tileset, palettes, patterns, flag) {
+  drawScreen(img, x0, y0, screen, tileset, palettes, patterns, flag) {
     for (let y = 0; y < 15; y++) {
       for (let x = 0; x < 16; x++) {
         let metatileId = screen.tiles[y][x];
@@ -192,15 +210,36 @@ class MapsView extends View {
           for (let c = 0; c < 2; c++) {
             const tile = tileset.tiles[r << 1 | c][metatileId];
             const pattern = patterns[tile & 0x80 ? 1 : 0] << 6 | tile & 0x7f;
-            const shifted = img.shift(x << 4 | c << 3, y << 4 | r << 3);
-            this.drawTile(shifted, pattern, palette);
+            const x1 = x0 + (x << 4 | c << 3);
+            const y1 = y0 + (y << 4 | r << 3);
+            this.drawTile(img, x1, y1, pattern, palette);
           }
         }
       }
     }
   }
 
-  drawTile(img, id, palette, flip = 0) {
+  drawMetasprite(img, x, y, metasprite, palettes, patternPage, frame) {
+    let mirrored = false;
+    if (metasprite.mirrored != null) {
+      metasprite = this.rom.metasprites[metasprite.mirrored];
+      mirrored = true;
+    }
+    if (!metasprite || !metasprite.valid) return;
+    const version = frame >> 2 & metasprite.frameMask;
+    for (let [dx, dy, attr, tile] of metasprite.sprites[version]) {
+      //  becomes attr byte, maybe with #$20 (priority) ORed in
+      if (dx == 0x80) break;
+      dx = signed(dx);
+      dy = signed(dy);
+      const pattern = patternPage << 6 | tile & 0x3f;
+      // TODO - mirroring!!!
+      if (x + dx + 8 >= img.w || y + dy + 8 >= img.h) continue;
+      this.drawTile(img, x + dx, y + dy, pattern, palettes[attr & 3], attr);
+    }
+  }
+
+  drawTile(img, x, y, id, palette, flip = 0) {
     const pat = this.rom.patterns[id].flip(flip);
     for (let r = 0; r < 8; r++) {
       let hi = pat.pixels[8 | r] << 1;
@@ -208,7 +247,7 @@ class MapsView extends View {
       for (let c = 7; c >= 0; c--) {
         const z = hi & 2 | lo & 1;
         hi >>>= 1; lo >>>= 1;
-        if (z) img.draw(c, r, colors[palette.colors[z]]);
+        if (z) img.draw(x + c, y + r, colors[palette.colors[z]]);
       }
     }
   }
@@ -220,16 +259,19 @@ class MapsView extends View {
     const tileY = y % 240 >> 4;
     const fineX = x % 256 & 15;
     const fineY = y % 240 & 15;
-    const scrId = this.options.screens[scrY][scrX];
+    const opts = Object.assign({
+      screens: [], flags: [],
+    }, this.options);
+    const scrId = opts.screens[scrY][scrX];
     if (!scrId) return;
-    const metatileId = this.rom.screens[(this.options.ext ? 0x100 : 0) | scrId]
+    const metatileId = this.rom.screens[(opts.ext ? 0x100 : 0) | scrId]
           .tiles[tileY][tileX];
     const flagged =
-          metatileId < 0x20 && ((this.options.flags || [])[scrY] || [])[scrX] ?
-              this.rom.tilesets[this.options.ts[0] >> 2 & 0xf]
+          metatileId < 0x20 && (opts.flags[scrY] || [])[scrX] ?
+              this.rom.tilesets[opts.ts[0] >> 2 & 0xf]
                   .alternates[metatileId] :
               metatileId;
-    const attributes = this.rom.tileEffects[this.options.ts[1] - 0xb3].effects[flagged];
+    const attributes = this.rom.tileEffects[opts.ts[1] - 0xb3].effects[flagged];
     // TODO - subtile ID, flags, objects, exits, etc
 
     const lines = [
@@ -253,5 +295,7 @@ const run = async () => {
 const fromTileY = (y) => (y >> 4) * 240 + (y & 0xf) * 16;
 
 const hex = (x) => x.toString(16).padStart(2, 0);
+
+const signed = (x) => x < 0x80 ? x : x - 0x100;
 
 run();

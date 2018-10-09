@@ -525,7 +525,31 @@ If scale with level then what's the point of leveling at all?
    - # of monsters killed? too similar
      # of treasure chests (key items?) found?  probably the best bet
      # of bosses defeated - ? - skip kelby2 and mado2? vamp2?
+ - where to store? $481 is a possibility, it initializes to zero at start
+   and seems to only be read in ComputeDisplacementVector in very limited cases
+   (not sure when X=1, tho).  But that only cares about :07 so we could use
+   higher bits for our counter and keep the low bits zero.
+   we might need a few HP/ATK/DEF lookup tables?
+   4c0, 4c1, 4c3 seem to never be read at all...?
+   other possibilities: 4e3, 462, 463, 440..443, 423, 402, 403, 3e0, 3e3, 3c2, 3c3, 3a0,
+      320, 322, 323, 500, 501, 503, 520..52c (?!), 540, 542..54c, 560, 562..56c,
+      580, 582, 583, 5a1..5a3, 642, 662..66c, 681..68c, 6a1..6a3,
 
+main.setFrameSkip(60); nes.debug.logMem = (op, addr, v, w) => { if(nes.cpu.REG_PC==0x84a8)return; if (addr == 0x481||addr==0x4c0||addr==0x4c1||addr==0x4c3) { console.log(`${op.toString(2)} ${(op & Debug.MEM_RD)==Debug.MEM_RD ? 'read ' : ''}${(op & Debug.MEM_WR)==Debug.MEM_WR ? 'write ' : ''}${addr.toString(16)}: ${v.toString(16)} ${w!=null?w.toString(16):''} at ${nes.mmap.prgRomAddress(nes.mmap.prgRomBank(nes.cpu.REG_PC), nes.cpu.REG_PC).toString(16)}`); nes.debug.break = true; } };
+
+  - not actually saved/restored.
+    cf 421 - written $2fd88 (and $3c29a, $3c31f, $3d969), read $3d93e
+           on save, read at $2fd44
+        on continue, written 3c29a, 3c319, 2fd88
+
+ - but not sure about just adding extra bytes withing more fully understanding it - instead,
+   we could coopt some of the redundant data that's already being written
+    - lvl and maxhp are both written, so write mnstlvl instead of maxhp and just
+      compute maxhp on the fly when needed.
+        $3518b  ac 21 04:     ldy PlayerLevel ; $421
+        $3518e  b9 7f 8b:     lda $34b7f,y    ; will need to bank this in
+        $35191  8d c0 03:     sta PlayerMaxHP ; $3c0
+    - or just store it in the high nibble of lvl??
 
 Interesting options:
 --------------------
@@ -541,3 +565,22 @@ The rendering toggles at $3c446..$3c581 are totally unused, we can freely replac
 with our own code as needed (60 bytes in the last page).
 64 bytes at $3c8c0
 
+
+Controller
+==========
+Would be nice to make a quick toggle for item selection.
+ - how to display?
+ - ideal: icon in lower 3x4 of status bar
+   - but only magics are in that pattern page
+ - could also just do text...?
+   - sword, A, B, ambient - but only room for 3x3
+   - win/fir/wat/thu/cry
+   - ref/par/tel/war/rec/bar/cha/fli
+   - her/ant/lys/rep/pow/mag/
+
+
+=======
+debugging
+
+nes.debug.breakIf = (op, addr) => { if ((addr & 0xffff) == 0xc25d) { console.log(`Spawning ${nes.cpu.ram[0x10].toString(16)} at ${nes.cpu.ram[0x11].toString(16)}`); return false; } return true; };
+nes.debug.breakAt(0x3c25d, 'prg', 'x');

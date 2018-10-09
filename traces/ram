@@ -255,6 +255,15 @@ dpad repeat timer (goes from $c->0->3->0) for each controller
 
  could also use ctrl2 dpad for this, but it may be harder to manage?
 
+In normal mode (not menus):
+;;;   $43: Current state (A=80, B=40, Sel=20, St=10, Up=8, Dn=4, Lf=2, Rt=1)
+;;;   $45: Number of frames 'A' has been pressed, up to $1f, after which
+;;;   $47: Number of frames 'B' has been pressed, 
+;;;   $49: Current direction pressed (0=up, 2=right, etc)
+;;;   $4b: Bitmask of newly-pressed buttons
+;;;   $4d: Same as $4b, but with 'A' (80) repeating every frame after the 31st,
+;;;        and 'B' (40) repeating every 32nd frame it's held.
+;;; Outputs for controller 2 are one later ($44, $46, ..., $4c)
 
 $4b, $4c
 --------
@@ -529,6 +538,11 @@ something else writes $40.
 Usage: $3dada looks like nonzero causes some sort of "chain" to the next object?
        - this routine looks to be zeroing out the sprites (specifically $4a0, the action)
 
+This is added to the pattern ID.
+It's zero for all monsters.
+Orcs zero out the upper 6 bits when moving (but it was already 0 and nobody's reading it?)
+  - it's possible this was a mistake and should have been a different register
+
 
 $340,x
 ------
@@ -559,6 +573,25 @@ direction facing: 0 = up, 2 = right, 4 = down, 6 = left (odds diagonal)
 
 $380,x
 ------
+For monsters:
+  :80 = off screen
+  :40 = behind background
+  :20 = something else to do with sprites? -> +#$40 to all pattern ids
+  :10 = ??
+  :08 = non-directional sprite
+        when clear, sprite changes on each dir change - $300,x actually updates
+        when set, sprite is fixed at whatever it was before.
+  :04 = touch inflicts poison
+        or else shimmering (but not invincible?)
+  :02 = use $580,x as the metasprite instead of $300,x.
+  :01 = non-directional sprite
+        when clear, sprite changes with direction,
+        but $300 is fixed - seems to just add the dir.
+        when set, it doesn't seem to
+        but weretiger has this set, so that's weird.
+
+
+
 current terrain effects
 updated in $35acb after reading ($68),y for y = metatile that 'x' is standing on
  - only if $14:40 - $14 initialized from A upon calling $35a30 (it's called with various
@@ -573,9 +606,17 @@ Looks like terrain effects, read from the graphics[4] == tileset[1] data table
   Birds: $a1
 
 :80 seems to indicate off-screen?
+:04 = inflicts poison --> not?
+
 
 Recall: 01=pit, 02=impassible/foot, 04=impassible/fly, 08=changes w/ flag?
         10=behind, 20=slide, 40=slow, 80=pain
+
+$38c goes from $81 to $01 when barrier is active.
+$381 is some sort of player status bitset?
+  - :04 set when taking damage (briefly - invinsible)
+     - who is in charge of flickering?
+  - :03 seems to be the standard value
 
 
 $3a0,x
@@ -591,6 +632,21 @@ of screen positions?
    in order to be able to collide.  Player on ground is 50, in air is 60.
    both will collide with a 4x, but many enemies are 1x.  May be more complex, tho
 
+Collision Planes:
+ - player on ground: %0101
+ - player in air:    %0110
+ - sword:            %0011
+ - ground enemies:   %0001
+ - flying enemies:   %0011
+ - paralysis beam:   %1001
+ - barrier:          %1100
+ - amorphous blob:   %0100 when sunken, %0001 when up
+ - projectiles:      %1100
+
+ bits: 1 = ground
+       2 = air
+       4 = both (but blocked by barrier)
+       8 = blocked by barrier
 
 $3c0,x
 ------
@@ -616,6 +672,15 @@ low nibble is required level - consistent with 421 being player level
 
 $440,x
 ------
+for enemies that throw things, this is what they throw
+ - Troll ($6a) throws Troll_Axe ($ee), and its $440 is $4e,
+   so it looks like we add $a0 to get the missile. ($4a0:$27)
+ - DraygoniaKnight ($89) swings sword ($f2) and has $440 of $52 ($4a0:$2a)
+BUT.
+ - statues have $32 yet their missiles are $fd.
+ - probably depends on action script.
+not a simple addition - looks up in $80-element table of quads 29c00
+
 
 
 $460,x
@@ -641,8 +706,14 @@ seems to be some sort of step counter
 
 NOTE: $480 and $4e0 both seem to be step counters, though $4e0 is used
 for animation and seems to count down by 2 whenever $480 counts down
-by one.  Interestingly, the player's steps decrement $480 and $4e1, but
-leave $481 and $4e0 alone.
+by one (deps on 4a0).  Interestingly, the player's steps decrement $480
+and $4e1, but leave $481 and $4e0 alone.
+
+Random movement: seems to be reset to some small number (20s or 30s) and
+controls how far the random step will be, though sometimes we stop in
+the middle (e.g. $2c).  Monster always stops moving when it his zero, then
+resetsit again. (unlike $4e0 that's never reset).  This alternates with
+$600 in ticking it down.
 
 
 
@@ -656,11 +727,14 @@ but it clearly does more than that...
    - that's run from 3c91f_01, where 08 is indexed from $41
      - that's run from 3c900, with 01 from $40
      - 3c900 is reset handler, looks like main loop.
+The upper :80 bit indicates whether an immune hit causes knockback
+    (no knockback if set)
+
 
 
 $4c0,x
 ------
-on death action???
+on death action??? death replacement...
 
 
 $4e0,x
@@ -683,10 +757,18 @@ exp for killing
 
 $540,x
 ------
+const, loaded from $2e&3 for NPCs
+if #$ff then use shield defense, anything else uses armor
+ - 209 objects have 00, 45 have ff, 2 have 01.
+ - CollisionJump_01_EnemyHitsPlayer takes a totally different
+   path in this case.
 
 
 $560,x
 ------
+?? somethingb about terrain - cf 3ef6f checking $561:80 to skip pain land?
+for projectiles (540==ff), 560 is imputed status
+ - 1 = paralyze, 2 = stone, 3 = mp drain, 4 = curse
 
 
 $580,x
@@ -694,8 +776,9 @@ $580,x
 some sort of alternative/additional metatile ID.  It's only ever read in two places:
 $368c5 and $3824e.  These run if $6e0,x is zero, or if ...?
 
-$581 is normally $0f, but goes to $a3 when a spider web is draining MP...?
+$581 is normally $0f or $0a or something, but goes to $a3 when a spider web is draining MP...?
  - the object stays around, too, so it's probably handled by the object's update method
+ - no idea what this actually does...
 
 
 $5a0,x
@@ -711,7 +794,7 @@ sprite's x-coordinate (relative to corner of screen)
 
 $5e0,x
 ------
-sprite's x-coordinate (relative to corner of screen)
+sprite's y-coordinate (relative to corner of screen)
  - this is never initialized in ObjectData
 
 
@@ -721,23 +804,35 @@ $603 seems to be a countdown timer that's set to #$10 when bumping into somebody
 and then counts down once the dialog disappears, during which no other interactions
 will occur.  Hits from enemies don't seem to trigger this.
 
+For bosses, this is the current action mode, indexes a jump table for the boss
+which is run during its update action
+
+For random movement, this is a wait timer.
+
 
 $620,x
 ------
 $620 is the current jump displacement, from 0 to $13.  As rising or falling
 this number is changing.  It presumably means something else for somebody else.
  - probably also fires when falling into a pit - starts at $30, decreases down to 0
+for action script $0f, $620,x is the game mode to load.
+
+Weretiger Movement:
+ - Number of frames remaining for swerving around obstacles
 
 
 
 $640,x
 ------
- - $643: ID (0..$1f) of the non-monster NPC in front of the player.
+ - $643: index (0..$1f) of the non-monster NPC in front of the player.
    set by $34f73 and/or $354b0
+?? somethingb about terrain - cf 3ef72 checking $641:80 to skip pain land?
 
 
 $660,x
 ------
+$661 is a countdown timer used only in stom fight, but apparently never read
+to affect anything other than checking for a multiple of 4?
 
 
 $680,x
@@ -754,7 +849,7 @@ $6c0,x
 
 $6e0,x
 ------
-
+used for ad-hoc spawns? mixed in with direction.
 
 
 $0710..$071f
@@ -815,6 +910,7 @@ BOSS FIGHT -
 
 When fall sound happens ($35d34) $7d7 and $7d6 are both set to #$10
 
+When nonzero, background no longer animated???
 
 $7de..$7df
 ----------

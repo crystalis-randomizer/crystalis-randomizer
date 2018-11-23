@@ -583,7 +583,7 @@ For monsters:
         when set, sprite is fixed at whatever it was before.
   :04 = touch inflicts poison
         or else shimmering (but not invincible?)
-  :02 = use $580,x as the metasprite instead of $300,x.
+  :02 = use $580,x as an additional metasprite (e.g. shield)
   :01 = non-directional sprite
         when clear, sprite changes with direction,
         but $300 is fixed - seems to just add the dir.
@@ -780,6 +780,9 @@ $581 is normally $0f or $0a or something, but goes to $a3 when a spider web is d
  - the object stays around, too, so it's probably handled by the object's update method
  - no idea what this actually does...
 
+$580 is basically the player's sprite plus $c (c..f if walking; 10..13 if stab)
+ - if no shield is equipped, it's 8..b for walking and always 4c for stab
+
 
 $5a0,x
 ------
@@ -800,6 +803,10 @@ sprite's y-coordinate (relative to corner of screen)
 
 $600,x
 ------
+$600 is a countdown timer for swinging the sword.
+ - when initiating the swing, it's set to #$11, when
+   it's $b or less, another tap of B will swing it again.
+
 $603 seems to be a countdown timer that's set to #$10 when bumping into somebody
 and then counts down once the dialog disappears, during which no other interactions
 will occur.  Hits from enemies don't seem to trigger this.
@@ -850,6 +857,11 @@ $6c0,x
 $6e0,x
 ------
 used for ad-hoc spawns? mixed in with direction.
+
+
+$0708
+-----
+Player MP
 
 
 $0710..$071f
@@ -924,7 +936,8 @@ $7de:1f - message index within the part
 $7e0..$7e7
 ----------
 Palettes.  These index into the palette tables embedded in $4000..$7fff.
-The first four are bg palettes, the last 4 are sprites.
+The first four are bg palettes, the last 4 are sprites, and are offset by $b0
+(i.e. $7e5 of $01 means the 2nd sprite palette is $b1).
 
 
 $7f0..$7f5

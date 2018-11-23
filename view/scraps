@@ -1,0 +1,171 @@
+// Maps 2d rectangular regions onto one or more values.
+// This is the illegitimate child of a quad tree and a bloom filter.
+
+// Ideal: use persistent sorted map of persistent sorted maps
+//  - this allows a pretty decent amount of sharing.
+// http://groups.csail.mit.edu/mac/users/adams/BB/
+
+// Except... it might not be any better than non-persistent if we end up
+// needing to add the same element to lots of maps - it won't share very
+// well unless it's confluently persistent... and that would be hard
+//   - insert(many maps, key, value) -> many maps
+
+// so maybe it's pointless...
+
+const ALPHA = 2; // actually 1/alpha
+const OMEGA = 5;
+
+// We represent a map as an array.
+
+
+// Basic plan: store a pair of sorted maps, one for x and one for y.
+// Operations:
+//   insert(x0, x1, y0, y1, v) => insert v into both the x and y maps
+//   get(x, y) => checks both maps, returns the intersection.
+//     - don't bother with two maps: 
+// Entries are stored so that set intersection is O(log(n)) or something.
+
+class RegionMap {
+  constructor() {
+    this.x = [[-Infinity, new Set()]]; // map of [left, set]
+    this.y = [[-Infinity, new Set()]];
+    // TODO - could add an array of entries, for iteration and
+    // then just store indexes in the array - trivial ordering,
+    // so intersection becomes O(n) in the two buckets.
+  }
+
+  insert(x0, x1, y0, y1, v) {
+    const e = [x0, x1, y0, y1, v];
+    // find the entry in x - binary search.
+    insert(this.x, x0, x1, e);
+    insert(this.y, y0, y1, e);
+  }
+
+
+
+}
+
+
+// better structure: use empty set for full coverage - fewer special cases.
+
+const insert = (arr, x0, x1, e) => {
+  const i0 = find(arr, 0, arr.length, x0);
+  const i1 = find(arr, (i0 < 0 ? ~i0 : i0), arr.length. x1);
+
+  const incr = (i) => {
+    if (i < 0) return (~i < arr.length) ? ~i : i;
+    const b = arr[i++][1];
+    if (i < arr.length && arr[i][0] == b) return i;
+    return ~i;
+  };
+
+  let i = i0;
+  do {
+    if (i == i0) {
+      // may need to split on left
+      
+
+    }
+
+
+  } while (i != i1);
+
+  const splice = [i0 < 0 ? ~i0 : i0, i1 < 0 ? ~i1 : i1];
+  if (i0 < 0) {
+    const upper = i0 == i1 ? x1 : arr[~i0][0];
+    splice.push([x0, upper, new Set([e])]);
+    x0 = upper;
+    i0 = ~i0;
+  } else {
+    const [a, b, s] = arr[i0];
+    if (a < x0) splice.push([a, x0, new Set(s)]);
+    splice.push([x0, Math.min(b, x1), s]);
+    if (b > x1) splice.push([x1, b, new Set(s)]);
+    s.add(e);
+    x0 = b;
+    i0++;
+    if (i0 >= arr.length || arr[i0][0] > b) i0 = ~i0;
+  }
+  while (i0 != i1) {
+    
+
+
+  }    
+
+
+    
+    if (i0 < 0) {
+      arr.splice(~i0, 0, [x0, x1, new Set([e])]);
+    } else {
+      const [a, b, s] = arr[i0];
+      const entries = [];
+      if (a < x0) entries.push([a, x0, new Set(s)]);
+      entries.push([x0, x1, s]);
+      if (b > x1) entries.push([x1, b, new Set(s)]);
+      s.add(e);
+    }
+  } else {
+    // adding/modifying multiple entries.
+      
+
+
+  // three cases for start:
+  //  - i0 > 0 && x0 == arr[i0][0] -> no need to split
+  //  - i0 > 0 && x0 < arr[i0][1]  -> split
+  //  - i0 < 0                     -> add new
+  if (i0 < 0) {
+    // add a new entry
+    if (~i0 == arr.length || x1 < arr[~i0][0]) {
+      // only need one
+      arr.splice(~i0, 0, [x0, x1, new Set([e])]);
+      return;
+    }
+    entries.push([x0, arr[~i0][0], new Set([e])]);
+  } else 
+    if (arr[i0][0] < x0) {
+      splice[0]++;
+      entries.push([x0, arr[i0][1], new Set(arr[i0][2])]);
+      arr[i0][1] = x0;
+    } else {
+
+  }
+    
+
+};
+
+// given bounds [a,b) find a <= i < b such that
+//     arr[i][0] <= x and not arr[i+1][0] <= x
+const find = (arr, a, b, x) => {
+  for (;;) {
+    if (a == b || x < arr[a][0]) return ~a;
+    if (b > 0 && x >= arr[b - 1][1]) return ~b;
+    const m = Math.floor((a + b) / 2);
+    if (x < arr[m][0]) {
+      b = m;
+    } else if (x >= arr[m][1]) {
+      a = m;
+    } else {
+      return m;
+    }
+  }
+};
+
+// const find = (arr, a, b, x) => {
+//   for (;;) {
+//     if (a == b || x < arr[a][0]) return ~a;
+//     if (b > 0 && x >= arr[b - 1][1]) return ~b;
+//     const m = Math.floor((a + b) / 2);
+//     if (x < arr[m][0]) {
+//       b = m;
+//     } else if (x >= arr[m][1]) {
+//       a = m;
+//     } else {
+//       return m;
+//     }
+//   }
+// };
+
+// for (let i = 0; i < 14; i++) {
+//   console.log(`${i} => ${find([[1,3],[4,6],[10,12]], 0, 3, i)}`);
+// }
+

@@ -32,6 +32,7 @@ export class View {
     this.scale = 0;
     this.handlers = {};
     this.floater = null;
+    this.advanceAnimation = null;
 
     document.body.addEventListener('keyup', e => keyup(this, e));
     this.element.addEventListener('click', e => click(this, e));
@@ -212,7 +213,7 @@ export class View {
     throw new Error('abstract');
   }
 
-  animate(f) {
+  animate(f, manual = false) {
     // usage:
     //   update() {
     //     this.animate(f => {
@@ -228,9 +229,17 @@ export class View {
         this.draw(...args);
         this.animated = animation; // override draw
       });
-      requestAnimationFrame(() => frame());
+      this.requestAnimationFrame(() => frame(), manual);
     };
     frame();
+  }
+
+  requestAnimationFrame(f, manual) {
+    if (!manual) {
+      requestAnimationFrame(f);
+    } else {
+      this.advanceAnimation = f;
+    }
   }
 
   showFloater(x, y, text) {
@@ -345,6 +354,12 @@ const keyup = (v, e) => {
     if (e.key == 's') {
       v.scale = (v.scale + 1) % 5;
       v.update();
+    } else if (e.key == 'l') {
+      if (v.advanceAnimation) {
+        const f = v.advanceAnimation;
+        v.advanceAnimation = null;
+        f();
+      }
     } else if (e.key in v.handlers) {
       v.handlers[e.key].call(v, e);
     }

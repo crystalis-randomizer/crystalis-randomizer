@@ -243,3 +243,10 @@
 ;;       (setq s (point))
 ;;       (re-search-forward "$"
 
+(defun sdh-cov ()
+  (interactive)
+  (save-excursion
+    (beginning-of-line)
+    (re-search-forward "^\\(?:[-+ \t]\\|[a-z]+:[ \t]\\)*\\$\\([0-9a-f]\\{5\\}\\)")
+    (message (shell-command-to-string (format "echo -n `./cov %d`" (asm/parse-number))))))
+(define-key asm-mode-map (kbd "C-c C-f") 'sdh-cov)

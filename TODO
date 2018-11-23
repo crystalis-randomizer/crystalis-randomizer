@@ -1,0 +1,30 @@
+Damage calculations
+ - figure out how to scale
+ - current plan - have tables for HP, atk, def at each difficulty level
+ - each monster's data has a multiplier (0 .. 2 ?  .5 .. 1.5 ?) and adder (-8 .. 7)
+ - TODO - figure out if there's any attribute always set on monsters and use that to trigger
+
+
+SetPlayer340Lower
+ - what is this actually doing?
+
+
+crap... lost the buffer positions!
+
+
+Text - how is the message ID populated?
+Triggers - still not clear on how other NPC types work
+         - people and bosses...?
+
+
+Graphics
+ - for each pattern table, list out available metasprites/metatiles
+ - palettes, too?
+
+
+
+
+Prototype
+ - code up damage scalaing, then randomize just enemies - try to play, see how it goes?
+   - will need to pay attention to vulnerabilities...
+ - next can try randomizing items.

@@ -534,6 +534,8 @@ If scale with level then what's the point of leveling at all?
    other possibilities: 4e3, 462, 463, 440..443, 423, 402, 403, 3e0, 3e3, 3c2, 3c3, 3a0,
       320, 322, 323, 500, 501, 503, 520..52c (?!), 540, 542..54c, 560, 562..56c,
       580, 582, 583, 5a1..5a3, 642, 662..66c, 681..68c, 6a1..6a3,
+   $65 ?
+
 
 main.setFrameSkip(60); nes.debug.logMem = (op, addr, v, w) => { if(nes.cpu.REG_PC==0x84a8)return; if (addr == 0x481||addr==0x4c0||addr==0x4c1||addr==0x4c3) { console.log(`${op.toString(2)} ${(op & Debug.MEM_RD)==Debug.MEM_RD ? 'read ' : ''}${(op & Debug.MEM_WR)==Debug.MEM_WR ? 'write ' : ''}${addr.toString(16)}: ${v.toString(16)} ${w!=null?w.toString(16):''} at ${nes.mmap.prgRomAddress(nes.mmap.prgRomBank(nes.cpu.REG_PC), nes.cpu.REG_PC).toString(16)}`); nes.debug.break = true; } };
 
@@ -542,14 +544,15 @@ main.setFrameSkip(60); nes.debug.logMem = (op, addr, v, w) => { if(nes.cpu.REG_P
            on save, read at $2fd44
         on continue, written 3c29a, 3c319, 2fd88
 
- - but not sure about just adding extra bytes withing more fully understanding it - instead,
+ - but not sure about just adding extra bytes without more fully understanding it - instead,
    we could coopt some of the redundant data that's already being written
     - lvl and maxhp are both written, so write mnstlvl instead of maxhp and just
       compute maxhp on the fly when needed.
         $3518b  ac 21 04:     ldy PlayerLevel ; $421
         $3518e  b9 7f 8b:     lda $34b7f,y    ; will need to bank this in
         $35191  8d c0 03:     sta PlayerMaxHP ; $3c0
-    - or just store it in the high nibble of lvl??
+    - or just store it in the high nibble of lvl??  but lvl goes to 16?
+      - would need to decr first, since it starts at 1
 
 Interesting options:
 --------------------

@@ -1,0 +1,198 @@
+Basic routines:
+
+Random Movement
+  $380:80 set
+    only update every 8 frames when off screen
+  $480
+    seems to be reset to some small number (20s or 30s) and
+    controls how far the random step will be, though sometimes we stop in
+    the middle (e.g. $2c).  Monster always stops moving when it his zero, then
+    resetsit again. (unlike $4e0 that's never reset).  This alternates with
+    $600 in ticking it down.
+  $4a0
+    animation countdown timer, one tick per frame
+  $600
+    wait time to move - alternates with $480 - one or other ticks each frame
+  Calls GenerateRandomNumber to determine which direction
+  Immediately picks a new direction (with a delay and random step length)
+  on bump
+
+Homing Movement
+  $380:80 set
+    only update every 8 frames when off screen
+  $380:08 clear
+    update $300 with new metasprite ID on each direction change
+  $480
+    timer to change directions every 16 frames
+  $4a0
+    animation countdown timer, two ticks per frame
+  $600
+    random swerve direction, initialized on a bump to 0 or 1 based
+    on the global counter; every four frames while swerving we try
+    turning; this is the first direction we try, but if it's blocked,
+    we turn the other way.
+  $620
+    swerve timer, counts frames to spin around in different directions
+    to avoid obstacles; set to #$60 on bump
+  $6c0
+    metasprite base for directions (for directional sprites)
+    when turning, $300 <- $6c0 | ($360 >> 1)
+
+Shoot
+  $440
+    ad-hoc spawn index of shot
+  $640
+    whether to shoot
+    set to $1f before double-return in $37714, provided everything is
+    aligned (on screen, roughly once every 4 seconds)
+    when this is nonzero, we prepare to shoot instead of moving
+
+
+
+================================================================
+
+$20 Random Movement
+  Slimes $50 $53, Jellies $52 $6b, Living rocks $61 $66, Spider $62
+  Crab $6d, Jellyfish $76, Scorpion $96
+
+
+$21 Stone Gazer : Random Movement, Shoot
+  Medusa $6c, Giant Eyes $85 $94
+
+  $660
+    seems to never actually be reset, just decremented so that
+    it can do nothing every other frame while preparing to shoot    
+
+
+$22 Buried Monster
+  Ice zombie $60, Sand monster $79
+
+  $4e0
+    timer to "wake up"
+  $6a0
+    replacement object action (-> $480 after timer)
+  $6c0
+    replacement sprite (-> $300 after timer)
+    note that for a homing (or subclass) follow-on this may be reused
+    as the directional base
+
+
+$24 Homing Movement
+  Weretiger $51, Wyverns $56 $63, Large slimes $5f (blue), Earth entity $72
+
+
+$25 Mushroom Movement : Homing Movement
+  Mushrooms $5a $71, Ice entity $65
+
+  Also includes buried monsters Ice zombie $60 and Sand monster $79
+  Same as weretiger, only diff is that it doesn't chase when off screen
+
+$26 Orc Move Or Throw : Homing Movement, Shoot
+  Orc $58, Dark green wyvern $78, Shadows $7b $8c
+
+  Main difference from normal homing movement + shoot is that it adds
+  a new directional metasprite base to use when the ammunition is loaded
+  or just released.
+  $320
+    when moving (not throwing) this gets bits :1c cleared (& #$03).
+    not clear who previously wrote, or who reads, this - it was
+    probably a mistake and should have been some other address?
+  $6e0
+    metasprite base when directional and shooting
+    
+
+$27 Troll Move Or Throw : $26 Orc Move Or Throw
+  Troll $6a, Red spider $74, Fishman $75, Salamander $86,
+  Tarantula $91, Mummy $99, Tomb guardian $9a
+            TODO - what are fishman and tomb guardian?
+
+  Main difference from $26 is that off-screen objects stop moving entirely
+
+
+$28 Golem Move Or Throw : Homing Movement, Shoot
+  Rock golem $54, Ice golem $67
+
+  This ticks down 4e0 to zero before incrementing 660 allowing
+  it to move at all.  Seems kind of silly.
+
+  Hard-codes metasprite IDs #$65 and #$91 (when shooting)
+  Diagonal shots allowed
+
+  $660
+    initial timer before any moves happen (why?)
+
+
+$29 Amorphous Blob : Homing Motion, Shoot
+  Lavaman $82, Sandman $98
+
+  Changes planes from 1 to 4 when sunken (sword is 3, so can't hit 4)
+  Also changes hardcoded metasprite IDs
+
+  $620
+    swerving
+    when swerving, zero out the collision planes (upper nibble 3a0).
+  $640
+    shooting
+    
+
+$2a Solider : Homing Motion, Shoot 2
+  Soldiers $64 $89, Archer $80, Ground Sentry $a0 (kind of like an archer)
+
+  Custom shoot routine (does not delegate to CheckToShootProjectile)
+  Still uses $440 and $640 the same, though $640 runs from $f to $0 and
+  fires on $8.
+
+  $6e0
+    alternate base metasprite for shooting frames
+
+
+$2e Flail Knights
+  Lizardman $84, Black Knight $95
+
+  First time through for any given knight, 6a0 is zero.
+  In this case, we spawn a child and zero out 440 to
+  prevent the soldier script from spawning any more
+  When it successfully spawns, we write its $6a0 to
+  point to the parent object's index.
+
+  $5a0
+    (referenced via flail's action script)
+  
+  $6a0
+    when nonzero, just do soldier action
+
+
+$45 Basic Flyer
+  Flying Insects $59 $5c, Flying Medusa head $6e, Birds $6f $81, Devil $8a
+
+  $380:10
+    removed at start of action ... ?
+
+  $440
+    projectile spawn if nonzero, shot randomly on average once a second
+
+  $560
+    summoned insect ($c4) sets to 1 to indicate it needs to despawn
+    as soon as the giant insect is killed ($4ad positive, presumably
+    it's replaced by an explosion or something).
+
+  $600
+    incremented each frame no turn, decremented each frame turned
+    used as key to data table and then stored back to $600.
+    (actually it looks like +2 on straight and +0 on turn)
+    then look up another data table with new $600 to get $340
+    (knockback/speed)
+    TODO - haven't really figured this one out
+
+
+$70 Flail
+  Lizardman Flail $fa, Black knight flail $f9
+  Also b2 ($600 -> 0), b3 ($600 -> 1), b5 ($600 -> 9)
+    - when meeting dyna there's a 2 that show up in $60d,
+
+  $600
+    index into a secondary jump table - $c for flails
+    not clear what writes this...
+
+
+

@@ -1,0 +1,716 @@
+# Damage calculations
+
+## Sword hits enemy
+
+Starts at $350aa
+
+- Special handling for Dyna
+- Check thunder sword reaction (is thunder equipped, does enemy have various bits set -> replace)
+- Check a few special cases, keyed by $4a0,x:
+  - #$52 (Stom) => move both objects up by 8
+  - #$10 (Projectile?) => do nothing
+  - #$87 (Breakable wall/channel) => kill if matching lvl2
+  - #$a7 (Shadow) => make visible if lvl3
+- Check level ($421) against enemy level ($420,y & $1f) and elemental defense
+  mismatch - indicate immune if no good.
+- Sum $3e1 (player attack) with $3e0,x (shot attack), subtract $400,y (enemy defense)
+- Subtract from $3c0,y (enemy HP)
+
+## Enemy hits player
+
+Starts at $35357
+
+- Check $540,y (y is who hit the player) - $ff does something different entirely
+  - looks like it's handling status-afflicting projectiles?
+- Apply status from monster hit (this seems to just be poison)
+- Special handling for Stom
+- Special handling for $4a0,y:
+  - #$06 => ?
+  - #$07 => ?
+  - #$7b => ?
+  - #$38 => ?
+  - #$3c => ?
+- Check $381 => ?
+- Knockback the player
+- Check if we're in the swamp => possibly zero upper nibble of $360,x
+  (what does upper nibble do?)
+- Store $361 and $341 into $360 and $340
+- $640 <- #$ff (invincible timer?)
+- Compare correct defense ($400 or $401) against attack ($3e0,y)
+  if positive, damage
+
+# Question: what determines ATK and DEF?
+  - check the UpdateEquipment routine - builds in equip and level.
+  - ATK = level * (power ring ? 2 : 1) + sword {}
+  - ADEF = level * (iron necklace ? 2 : 1) + armor
+  - SDEF = level * (shield ring ? 2 : 1) + shield
+  Armor and shield range from 2..32
+  Level ranges from 1..15 - so less variation unless equipped ring
+  Want most monsters to damage even w/ psycho equip
+  Assume def at start is 3, at end is 48
+    - gain 5 per difficulty until end?
+
+  ATK at start is 2, at end is 29
+    - gain 3 per difficulty?
+
+=======
+
+How to balance
+ - need to figure out what all the damage amounts are
+ - need to find all the projectiles and organize by who shot them
+ - big spreadsheet of level/atk/def/hp
+   - make a new formula?
+   - goal: roughly same # of hits at normal level?
+ - consider adding code to NpcDataJump_00_MonsterSpawn
+   to "patch" the built-in values?
+   - not really any other way to adjust HP?
+
+
+======
+
+Swinging the sword $35c03
+ - player sprite with no sword is 0..3 in $301, 4e1 counts down steps
+   for animation. when swing, swap out sprite for 4..7 and count
+   down animation from #$12 (?)
+ - $300 is sprite of player's shadow
+ - if no shield, sets $581 to something different
+
+======
+
+scratch calculations
+
+enemy atk -
+  low-level varies from 6..20
+  high-level varies from 60..120
+  - factor of 6..10 -> call it 8?
+
+child atk - 16 .. 94
+  - factor of 5 (but lower-levels don't have one - so go w/ 8
+
+enemy def -
+  low-level: 0, 2..6
+  high-level 0, 6..10
+  a few top out at 13..18 - require power ring or big sword...?
+  - factor of 2..3 -> call it 4, lower numbers could round down to zero
+
+enemy hp -
+  low-level 2..20
+  high      50..150
+  a few top out at 180..230
+  - factor of 8..25 -> call it 16?
+
+exp -
+  1 .. 512 => factor of .34, or 11 shifts
+  - but need to do 16-bit math because of funny numbers?
+  - if we skip the last difficulty level, then it's a factor of 4 each time
+    - easy math
+    - but complicated by the weird numbers...
+    - but once we shift by 4, we can retain all sigfigs?
+      88 => 80
+      89 => 90
+      90 => 100
+      91 => 110
+      f0 => 700
+    - shift 2 => ???
+    - shift 4 => subtract 80
+    - then keep shifting
+  - but we have an odd # of shifts, so we're out of luck.
+  => 2, 4, 4, 4, 4, 4, 1
+  or shifts => 1, 2, 2, 2, 2, 2, 0
+  To shift 1, (if >= 80) subtract 80, shift, re-add 80
+  To shift 4, subtract 80
+
+;;; Args: A = full experience
+;;;       $11 = shifts (> 0 ?)
+;;; Outs: A = divided exp
+DivideExp:
+    ldx $11
+    beq Done
+    sec
+    cmp #$80
+    bcc ++
+     cpx #$04
+     bcc +
+      ;; need to shift by >= 4 and >= $80, so do shortcut
+      sbc #$80
+      dex
+      dex
+      dex
+      dex
+      jmp DivideExp
+     ;; >= 80 but only shift by 1
++    sec
+     sbc #$80
+     dex
+     lsr
+     cmp #$08
+     bcs +
+      ;; we're < $88, so don't go back to the shifted version
+      ;; instead, drop into smaller values by just shifting 4
+      asl
+      asl
+      asl
+      asl
+      bcc DivideExp  ; unconditional
+     ;; ordinary add back the 80 we took off
++    clc
+     adc #$80
+     bcc DivideExp  ; uncond
+++  lsr
+    ;; TODO - consider { bcc +1; inc } to round up?
+    dex
+    jmp DivideExp
+Done:
+
+
+
+
+how to do division?
+ - (1/4)^(1/7) = .82 => 7/8   => factor of 2.5
+                     => 13/16 => factor of 4.2
+ - (1/8)^(1/7) = .74 => 3/4   => factor of 7.5
+ - (1/16)^(1/7) = .67 => 5/8  => factor of 27
+
+
+division algorithm
+ multiply a by a multiple of (255-x)/256
+
+   sta $10
+   lda #$00
+   stx $11
+ - lsr $10
+   rol $11
+   bcs +
+   adc $10
+ + bit $11
+   bne -
+
+could also just do actual 16-bit multiplication? but that's slow
+probably want a lookup table w/
+  address (1 byte, shift 5 to get actual base address)
+  7 multiplication factors (skip the 0) - allows quick navigation when skipping
+this would need 40 bytes for hp/atk/def/gp/exp
+     - we could up it to 80 bytes if we used other milestones?
+
+- alternative would be to split by difficulty first and then
+  duplicate the address for each one - would be nearly double
+  the bytes - 70 - or 7*16=112 if we want simpler math
+  - but the code would be simpler?
+  
+
+
+UPSHOT:
+it's about 62 bytes of code and 81 bytes of data to adjust the difficulties
+
+BUT... this doesn't work w/ gold drops. it's already logarithmic, just do linear delta
+ - exp is also a little funny and may need special handling?  presumably all the full/base
+   ones are in the upper half, so we could adjust from there?  how to do the math?
+
+;;; run this if difficulty level is not 0 and object gets adjusted
+a9 00      lda #$00
+85 12      sta $12
+           ;; we're doing postincrement indirect on what used to be x,
+           ;; so move it to y instead.
+8a         txa
+a8         tay
+         MainLoop:
+           ;; get the current position, shift by 8
+a5 12      lda $12
+0a         asl
+0a         asl
+0a         asl
+aa         tax
+           ;; look it up in the table to see which attr we're handling
+           ;; shuffle and set it to ($10),x - only we can't do that, so
+           ;; need to swap x and y
+bd XX XX   lda DifficultyTable,x
+f0 2d      beq End
+29 e0      and #$e0
+85 10      sta $10
+bd XX XX   lda DifficultyTable,x
+29 0f      and #$0f
+85 11      sta $11
+           ;; add the expected amount to get the actual factor
+18         clc
+8a         txa
+6d XX XX   adc DifficultyLevel
+aa         tax
+bd XX XX   lda DifficultyTable,x
+85 13      sta $13
+           ;; get the actual number to adjust
+b1 10      lda ($10),x
+85 14      sta $14
+           ;; do the adjustment
+a9 00      lda #$00
+46 14    - lsr $14
+26 13      rol $13
+b0 02      bcs +
+65 14      adc $14
+24 13    + bit $13
+d0 f4      bne -
+91 10      sta ($10),y
+           ;; increment stuff
+e6         inc $12
+d0 c8      bne MainLoop   ; unconditional
+         End:
+98         tya
+aa         tax
+
+
+
+boss milestones - need 7
+ - vampire
+ - insect
+ - kelbesque
+ - sabera
+ - mado -> need a new way to trigger mado fight?
+ - karmine
+ - draygon 1
+
+
+
+
+trade-off between def and hp
+ - say player atk is 8 (wind) or 15 (thunder)
+   wind - def 2 hp 30 => 5 hits
+          def 4 hp 20 => 5 hits
+          def 6 hp 9  => 5 hits
+   thunder -
+          def 2 hp 30 => 3 hits
+          def 4 hp 20 => 2 hits
+          def 6 hp 9  => 1 hit
+ - higher hp and lower def means less variation between swords ??
+   - how do we even handle hp? - could use a separate lookup table on spawn
+
+
+
+QUESTION
+who needs this treatment?
+what are the ratios for gold and exp?
+
+ - gold drops are a single nibble, 1..14
+   
+
+
+=====
+
+kelby to sabera is a big gap - consider adding a step at boat?
+ - may want to use a bitmask so we can have multiple triggers
+   e.g. location trigger for difficulty???
+ - what happens if player increases difficulty too fast?
+   - need availability of low-defense monsters?
+   - or ensure def > atk doesn't ping...? minimum?
+     - large HP could make it *very* painful?
+     - if bosses have higher def then it could be impossible to
+       get into this situation?  sword issues tho... and boat bump
+
+really want to figure up atk/def scaling first
+then look at (1) scaled atk/def, (2) action, (3) status
+  --> these should determine scaled exp
+
+if underleveled, then at least gaining exp should be easy since
+   don't need to kill too many enemies; so taking twice as many
+   hits is maybe fine
+   - atk<def could mean dmg=1, so if hp is small then not a huge
+     problem; by the time hp increases, we've seen a lot of enemies
+     and can find the "easier" ones that take fewer hits
+      -> make sure there's a fair number of zero-def enemies?
+
+======
+
+Equivalent enemies
+
+sabera fireballs: c6 and c9 (note: need to fix up the ad hoc spawn)
+statue fireballs - might fit in, but have a few diff stats
+bird and insect missiles - wrong relative difficulties
+ - but could group the unused one in with with the bird maybe?
+   - diff $320
+rock and ice golem shots: e5 and ed
+axes: e9 and ee
+wraith shadows: 7b and 8c (6a0:04 diff ??)
+vampires: 57 and a5 - only diff is one elemental resistance on vamp2
+webs: e7, f7, f8
+
+
+function SCALETABLE(table, bits, col, muls, adds) {
+  // does the entire stat all at once
+  // table is the entire table from the other page
+  // col is the column number into the table
+  // mul is a column of multipliers
+  // add is a column of addends
+  // some mul/add will be empty string (from difficulty header rows), ignore these
+  
+  var multiplierFactor = bits[0][0];
+  var multiplierStart = bits[1][0];
+  var addShift = bits[2][0];
+  var addBits = bits[3][0];
+
+  function scale(unscaled, mul, add) {
+    add = ((add >>> addShift) & (1 << (addBits - 1))) << addShift;
+    unscaled += add;
+    mul = Math.floor(mul * multiplierFactor);
+    var v = 0;
+    var mask = 1 << (7 - addBits);
+    var term = multiplierStart < 0 ?
+      unscaled >>> -multiplierStart : unscaled << multiplierStart;
+    for (var i = addBits; i < 8; i++) {
+      if (mul & mask) v += term;
+      mask >>>= 1;
+      term >>>= 1;
+    }
+    return v;
+  }
+  
+  var out = [];
+  for (var i = 0; i < mul.length; i++) {
+    var row = [];
+    out.push(row);
+    var mul = muls[i][0];
+    var add = adds[i][0];
+    if (typeof mul !== 'number') continue;
+    for (var j = 0; j < table.length; j++) {
+      var unscaled = table[j][col];
+      row.push(scale(unscaled, mul, add));
+    }
+  }
+  return out;
+}
+
+
+
+exp
+30
+60
+150
+300
+700
+1200
+1600
+3500
+5800
+8000
+10000
+20000
+30000
+40000
+50000
+
+
+===============================
+
+Scaled damage calculations:
+
+Store the following stats:
+
+LAdj: 0..2
+Hits: 0..90
+SDef: 0..15 (plus dyna pod => 255)
+SwdB: 0..4  (lowest possible sword)
+SAtk: 0..104
+SExp: 0..32
+SGld: 0..9
+
+Global:
+Diff <- difficulty 0..9
+
+Plan: pack LAdj into SExp?
+HP  <- Hits
+Def <- SDef << 3 | SwdB
+Atk <- SAtk
+Exp <- SExp << 2 | LAdj
+Gld <- SGld
+
+
+Difficulty Tables:
+DDef: base defense at each difficulty level
+DLvl: expected level at end of each difficulty level
+DExp: base experience for difficulty level
+PDef: expected defense for difficulty level
+
+LVL = DLvl - LAdj
+DEF = (SDef * DDef) >> 3
+      NOTE: unshifted quantity should fit in 8 bits
+HP  = (LVL + (2 << SwdB) - DEF) * Hits
+      NOTE: multiplication overflow caps to 255
+PHP = (LVL + 2) << 4
+      NOTE: probably just update LVL in place
+ATK = ((SAtk * PHP) >> 8) + PDef - LAdj
+      NOTE: 16-bit multiplication probably required?
+      or maybe find a shortcut to only get the high bit
+EXP = (SExp * DExp) >> 3
+      NOTE: multiplication will overflow, plus
+      we need to handle fancy scaling
+GLD = Diff + SGld
+      NOTE: cap at 15
+
+===============
+
+.org CoinAmounts
+  .word 0,1,2,4,8,16,30,50,100,200,300,400,500,600,700,800
+
+.org ???
+.define Difficulty $4c0
+.define TempLevel $4c1 or $12
+.define SwordLevel $4c3 or $13
+DiffBaseDefense:
+  .byte 4,6,8,10,12,14,16,16,16,18
+DiffPlayerDefense:
+  .byte 5,11,13,18,25,30,38,39,48,48
+DiffPlayerLevel:
+  .byte 3,5,7,9,11,12,14,15,16,18
+DiffBaseExperience:
+  .byte 3,8,22,85,141,152,178,208,208,208
+
+ComputeEnemyStats:
+  tya
+  pha
+   ;; Read the difficulty
+   ldy Difficulty
+   ;; Compute the expected player level
+   lda DiffPlayerLevel,y
+   ;; Subtract 1 or 2 based on LAdj in high bits of Exp
+   ;; Note: we need to store *3* to subtract 2!
+   lsr ObjectExp,x
+   bcc +
+    dec
++  lsr ObjectExp,x
+   bcc +
+    dec
++  sta TempLevel
+   ;; Compute sword level
+   ;; 0: wind. 1: fire, 2: water, 3: thunder: 7: crystalis
+   lda #$2
+   lsr ObjectDef,x
+   bcc +
+    asl
++  lsr ObjectDef,x
+   bcc +
+    asl
+    asl
++  lsr ObjectDef,x
+   bcc +
+    asl
++  sta SwordLevel
+   ;; Compute defense
+   lda DiffBaseDefense,y
+   sta $61
+   lda ObjectDef,x
+   beq +
+    sta $62
+    jsr Multiply16Bit
+    jsr Shift3_16Bit
++  sta ObjectDef,x
+   ;; Compute HP
+   lda ObjectHP,x
+   beq SkipHP
+   pha
+    lda TempLevel
+    clc
+    adc SwordLevel ; should never carry - 32 is max sword, 18 max level
+    sec
+    sbc ObjectDef,x
+    beq +
+     bpl ++  
++     lda $#01
+++  sta $61
+   pla
+   sta $62
+   jsr Multiply16Bit
+   lda $61
+   bit $62
+   beq +
+    lda #$ff
++  sta ObjectHP,x
+SkipHP:
+   ;; compute ATK from max hp
+   lda ObjectAttack,x
+   beq SkipAttack
+   sta $61
+   ;; compute the player's expected max HP
+   lda TempLevel
+   inc
+   inc
+   asl
+   asl
+   asl
+   asl
+   bcc +
+    lda #$ff
++  sta $62
+   jsr Multiply16Bit
+   lda $62 ; pull out the high bit only
+   clc
+   adc DiffPlayerDefense,y
+   adc TempLevel
+   sec
+   sbc DiffPlayerLevel,y ; we've forgotten LAdj, so recompute on the fly
+   sta ObjectAttack,x
+SkipAttack:
+   ;; compute EXP
+   lda ObjectExperience,x
+   beq SkipExperience
+   sta $61
+   lda DiffBaseExperience,y
+   bpl +
+    and #$7f ; big exp
++  sta $62
+   jsr Multiply16Bit
+   jsr Shift3_16Bit
+   bit DiffBaseExperience,y
+   bpl +
+    eor #$80 ; big exp
+    bmi ++   
+     lda #$ff ; overflowed
+     bmi ++   ; uncond
++   ora #$0  ; check overflow
+    bpl ++
+     lsr
+     lsr
+     lsr
+     lsr
+     ora #$80
+++ sta ObjectExperience,x
+SkipExperience:
+   ;; compute gold
+   lda ObjectGold,x
+   and #$f0
+   beq SkipGold
+   lda Difficulty
+   asl
+   asl
+   asl
+   asl ; carry will be clear
+   adc ObjectGold,x
+   bcc +
+    ora #$f0
++  sta ObjectGold,x
+SkipGold:
+  pla
+  tay
+  rts
+
+Shift3_16Bit:
+  ;; Shifts the value in $61$62 by 3 bits, returning result in A.
+  ;; If overflows, returns #$ff.
+  lda $61
+  lsr $62
+  ror
+  lsr $62
+  ror
+  lsr $62
+  ror
+  bit $62
+  beq >rts
+   lda #$ff
+  rts
+
+Multiply16Bit:
+  ;; Multiplies inputs in $61 and $62, then shifts
+  ;; right A times.
+  ;; Result goes $61$62 (lo hi), preserves XY
+  txa
+  pha
+  lda #$00
+  ldx #$08
+  clc
+-  bcc +
+    clc
+    adc $62
++  ror
+   ror $61
+   dex
+  bpl -
+  sta $62
+  pla
+  tax
+  rts
+
+RightShift16Bit:  ;; clamp??
+  lsr $62
+  ror $61
+  dec
+  bne RightShift16Bit
+  lda $61
+  rts
+
+
+===============
+
+Usable registers:
+  $12, $13
+We could possibly push a few others?
+  $10 and $11 are semi-available but need to be restored at end
+    - 6 bytes for each location to allocate
+      lda $10
+      pha
+      lda $11
+      pha
+      ...
+      pla
+      sta $11
+      pla
+      sta $10
+
+We can also use $5a0,x $5c0,x $5e0,x $620,x $640,x $680,x
+ - need to restore back to zero afterwards
+ - one extra byte per access, 1+3n bytes to restore
+Both of these can be streamlined if we needed a whole lot, tho
+
+It also looks like $61..$65 are untouched!
+
+
+Multiply16Bit:
+  ;; multiplies inputs in $61 and $62, result goes in $63$64
+  ;; destroys $61, $62, and $65
+  lda #$0
+  sta $63
+  sta $64
+  sta $65
+- lsr $61
+  bcc +
+   lda $63
+   clc
+   adc $62
+   sta $63
+   lda $64
+   adc $65
+   sta $64
++ asl $62
+  rol $65
+  bit $61
+  bne -
+
+Can I possibly do this with fewer bytes?
+If I only care about the upper byte then maybe...
+
+a3a2a1a0 * b3b2b1b0
+if a3 then upper byte adds 0b3b2b1
+if a2 then upper byte adds 00b3b2
+if a1 then upper byte adds 000b3
+if a0 then upper byte adds 0
+but there's also various carries - we could lose as much as 7?
+
+
+If we stash Y then we can use
+  - or just add 4 bytes to push it on the stack first...
+
+Multiply16Bit:
+  ;; Multiplies inputs in $61 and $62
+  ;; Result goes $61$62 (lo hi)
+  txa
+  pha
+  lda #$00
+  ldx #$08
+  clc
+-  bcc +
+    clc
+    adc $62
++  ror
+   ror $61
+   dex
+  bpl -
+  sta $62
+  pla
+  tax
+  rts
+

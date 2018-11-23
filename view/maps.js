@@ -123,7 +123,7 @@ class MapsView extends View {
       const [y, x, e, f] = objects[i];
       const hitbox = e & 7 ? null : this.rom.hitboxes[this.rom.objects[(f + 0x50) & 0xff].hitbox];
       const xc = Math.max(0, ((x & 0x7f) << 4) + (e & 0x40 ? 8 : 0) + (hitbox ? hitbox.x0 + 8 : 0));
-      const yc = fromTileY(y) + (hitbox ? hitbox.y0 + 12 : -4);
+      const yc = Math.max(0, fromTileY(y) + (hitbox ? hitbox.y0 + 12 : -4));
       const w = hitbox ? hitbox.w : 16
       const h = hitbox ? hitbox.h : 32;
       // const pos = [((x & 0x7f) << 4) + (e & 0x40 ? 8 : 0), Math.max(0, fromTileY(y) - 4)].join('x');

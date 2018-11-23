@@ -95,6 +95,7 @@ define ObjectDirMetaspriteBase   $06c0
 define ObjectShootMetaspriteBase $06e0
 
 
+define PlayerMetaspriteBase   $0301
 define PlayerMaxHP            $03c0
 define PlayerHP               $03c1
 define PlayerAttack           $03e1
@@ -16909,10 +16910,10 @@ ObjectDataPart2
         $1ad86              .word ($xxxx) ; $1badf: c3 GiantSwampInsect_PoisonSpit
         $1ad88              .word ($xxxx) ; $1bac5: c4 GiantSwampInsect_SummonedInsect
         $1ad8a              .word ($xxxx) ; $1baf3: c5 Kelbesque1_Rock
-        $1ad8c              .word ($xxxx) ; $1bb1c: c6 Sabera1_Fire
+        $1ad8c              .word ($xxxx) ; $1bb1c: c6 Sabera1_Fireballs
         $1ad8e              .word ($xxxx) ; $1bb08: c7 Kelbesque2_Fire
-        $1ad90              .word ($xxxx) ; $1b855: c8
-        $1ad92              .word ($xxxx) ; $1bb30: c9 Sabera2_Fire
+        $1ad90              .word ($xxxx) ; $1b855: c8 Sabera2_OrbitFlame
+        $1ad92              .word ($xxxx) ; $1bb30: c9 Sabera2_Fireballs
         $1ad94              .word ($xxxx) ; $1bb44: ca
         $1ad96              .word ($xxxx) ; $1bb59: cb SunAndMoonStatueFireball
         $1ad98              .word ($xxxx) ; $1bb6d: cc Draygon1_Lightning
@@ -16945,7 +16946,7 @@ ObjectDataPart2
         $1adce              .word ($xxxx) ; $1bca2: e7
         $1add0              .word ($xxxx) ; $1bcb7: e8 Fishman_Trident
         $1add2              .word ($xxxx) ; $1bccb: e9 Orc_Axe
-        $1add4              .word ($xxxx) ; $1bce0: ea KillerPlant_Pollen
+        $1add4              .word ($xxxx) ; $1bce0: ea SwampPlant_Pollen
         $1add6              .word ($xxxx) ; $1bcf4: eb
         $1add8              .word ($xxxx) ; $1bd08: ec DraygoniaSoldier_Sword
         $1adda              .word ($xxxx) ; $1bd1d: ed IceGolem_Rock
@@ -16976,6 +16977,8 @@ ObjectData_Object00                                      ; Object 00
         $1ae04              .byte $xx
 ;;; ----------------------------------------------------------------
 ObjectData_Object06                                      ; Object 06
+        ;; 06, 04, and 0a below seem to only trigger at the very start of the
+        ;; game, while the screen is flashing before the door opens.
         $1ae05              .byte $xx
         $1ae06              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1ae0d              .byte $xx,$xx,$xx,$xx
@@ -17239,7 +17242,7 @@ ObjectData_ObjectCF                                      ; Object cf
         $1afcd              .byte $xx,$xx
         $1afcf              .byte $xx
         $1afd0              .byte $xx
-        ;; This is a whole other item
+        ;; This is a whole other item - unused?
         $1afd1              .byte $xx
         $1afd2              .byte $xx,$xx,$xx,$xx
         $1afd6              .byte $xx
@@ -17358,6 +17361,7 @@ ObjectData_ThunderAttack1                                ; Object 1d
 ;;; ----------------------------------------------------------------
 ObjectData_ThunderAttack2                                ; Object 1e
         ;; Level 2 shot from Sword of Thunder
+        ;; Also used when Rage kicks the player out for not having water sword
         $1b123              .byte $xx
         $1b124              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b12d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -17614,7 +17618,7 @@ ObjectData_FlyingMeadowInsect                            ; Object 5c
         $1b3d0              .byte $xx,$xx,$xx,$xx
         $1b3d4              .byte $xx
 ;;; ----------------------------------------------------------------
-ObjectData_Object5D                                      ; Object 5d
+ObjectData_SwampPlant                                    ; Object 5d
         $1b3d5              .byte $xx
         $1b3d6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b3df              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -17639,7 +17643,7 @@ ObjectData_IceZombie                                     ; Object 60
         $1b41c              .byte $xx
         $1b41d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b426              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1b42f              .byte $xx,$xx,$xx
+        $1b42f              .byte $xx,$xx,$xxG
         $1b432              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 ObjectData_GreenLivingRock                               ; Object 61
@@ -17671,6 +17675,7 @@ ObjectData_DraygoniaSoldier                              ; Object 64
         $1b493              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 ObjectData_IceEntity                                     ; Object 65
+        ;; This is the weird purple plant-like things that we level-up on
         $1b496              .byte $xx
         $1b497              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b4a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -17734,7 +17739,7 @@ ObjectData_RedCrab                                       ; Object 6d
         $1b56a              .byte $xx
 ;;; ----------------------------------------------------------------
 ObjectData_MedusaHead                                    ; Object 6e
-        ;; Red medusa-haired flyers in waterfall valley
+        ;; Red medusa-haired/spinning flyers in waterfall valley
         $1b56b              .byte $xx
         $1b56c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b575              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -17748,7 +17753,8 @@ ObjectData_EvilBird                                      ; Object 6f
         $1b595              .byte $xx,$xx,$xx
         $1b598              .byte $xx
 ;;; ----------------------------------------------------------------
-ObjectData_Object70                                      ; Object 70
+ObjectData_Rage                                          ; Object 70
+        ;; In lime tree lake
         $1b599              .byte $xx
         $1b59a              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $1b5a0              .byte $xx,$xx,$xx,$xx,$xx,$xx
@@ -17834,6 +17840,7 @@ ObjectData_Wraith                                        ; Object 4f
         $1b6b0              .byte $xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 ObjectData_KillerMoth                                    ; Object 7c
+        ;; Moth from fortress and sabera
         $1b6b4              .byte $xx
         $1b6b5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b6be              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -17948,6 +17955,7 @@ ObjectData_Shadow2                                       ; Object 8c
         $1b81d              .byte $xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 ObjectData_Object4B                                      ; Object 4b
+        ;; never covered...? looks like some sort of wraith?
         $1b821              .byte $xx
         $1b822              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b82b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -17961,7 +17969,8 @@ ObjectData_Sabera2                                       ; Object 90
         $1b851              .byte $xx,$xx,$xx
         $1b854              .byte $xx
 ;;; ----------------------------------------------------------------
-ObjectData_ObjectC8                                      ; Object c8
+ObjectData_Sabera2_OrbitFlame                            ; Object c8
+        ;; Fire(s) that orbits around Sabera.
         $1b855              .byte $xx
         $1b856              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b85f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -18076,7 +18085,7 @@ ObjectData_Draygon2                                      ; Object 9e
         $1b9c9              .byte $xx,$xx,$xx,$xx,$xx
         $1b9ce              .byte $xx
 ;;; ----------------------------------------------------------------
-ObjectData_Object9F                                      ; Object 9f
+ObjectData_PyramidMoth                                   ; Object 9f
         $1b9cf              .byte $xx
         $1b9d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b9d9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -18084,6 +18093,7 @@ ObjectData_Object9F                                      ; Object 9f
         $1b9e3              .byte $xx
 ;;; ----------------------------------------------------------------
 ObjectData_GroundSentry                                  ; Object a0
+        ;; First wave of robots
         $1b9e4              .byte $xx
         $1b9e5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1b9ee              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -18091,13 +18101,15 @@ ObjectData_GroundSentry                                  ; Object a0
         $1b9fa              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 ObjectData_TowerDefenseMech                              ; Object a1
+        ;; Second wave of robots
         $1b9fd              .byte $xx
         $1b9fe              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1ba07              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1ba10              .byte $xx,$xx,$xx
         $1ba13              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_ObjectA2                                      ; Object a2
+ObjectData_TowerSentinel                                 ; Object a2
+        ;; Cannon on the rail above one of the doors
         $1ba16              .byte $xx
         $1ba17              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1ba20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -18105,20 +18117,25 @@ ObjectData_ObjectA2                                      ; Object a2
         $1ba2c              .byte $xx
 ;;; ----------------------------------------------------------------
 ObjectData_AirSentry                                     ; Object a3
+        ;; Flyer
         $1ba2d              .byte $xx
         $1ba2e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1ba37              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1ba40              .byte $xx,$xx,$xx
         $1ba43              .byte $xx
 ;;; ----------------------------------------------------------------
-ObjectData_Dyna                                          ; Object a4
+ObjectData_DynaEye                                       ; Object a4
+        ;; This is the main hit box for dyna, which shoots the purple laser
         $1ba44              .byte $xx
         $1ba45              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $1ba4b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1ba54              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $1ba5a              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_ObjectB4                                      ; Object b4
+ObjectData_DynaPod                                       ; Object b4
+        ;; Looks like this is each of the two circles on the arches to
+        ;; either side of Dyna, which shoots the tons of blue balls and
+        ;; the purple counterattack
         $1ba5c              .byte $xx
         $1ba5d              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $1ba63              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -18132,7 +18149,7 @@ ObjectData_ObjectB5                                      ; Object b5
         $1ba79              .byte $xx,$xx,$xx,$xx,$xx
         $1ba7e              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_ObjectA5                                      ; Object a5
+ObjectData_Vampire2                                      ; Object a5
         $1ba80              .byte $xx
         $1ba81              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1ba8a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -18181,35 +18198,38 @@ ObjectData_Kelbesque1_Rock                               ; Object c5
         $1bb03              .byte $xx,$xx,$xx
         $1bb06              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_Kelbesque2_Fire                               ; Object c7
+ObjectData_Kelbesque2_Fireball                           ; Object c7
+        ;; The green fireballs he shoots
         $1bb08              .byte $xx
         $1bb09              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1bb12              .byte $xx,$xx,$xx,$xx,$xx
         $1bb17              .byte $xx,$xx,$xx
         $1bb1a              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_Sabera1_Fire                                  ; Object c6
+ObjectData_Sabera1_Fireball                              ; Object c6
         $1bb1c              .byte $xx
         $1bb1d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1bb26              .byte $xx,$xx,$xx,$xx,$xx
         $1bb2b              .byte $xx,$xx,$xx
         $1bb2e              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_Sabera2_Fire                                  ; Object c9
+ObjectData_Sabera2_Fireball                              ; Object c9
+        ;; Bouncing fireballs
         $1bb30              .byte $xx
         $1bb31              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1bb3a              .byte $xx,$xx,$xx,$xx,$xx
         $1bb3f              .byte $xx,$xx,$xx
         $1bb42              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_ObjectCA                                      ; Object ca
+ObjectData_Karmine_Fireball                              ; Object ca
+        ;; Bouncing fireballs
         $1bb44              .byte $xx
         $1bb45              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1bb4e              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $1bb54              .byte $xx,$xx,$xx
         $1bb57              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_SunAndMoonStatueFireball                      ; Object cb
+ObjectData_SunAndMoonStatue_Fireball                     ; Object cb
         $1bb59              .byte $xx
         $1bb5a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1bb63              .byte $xx,$xx,$xx,$xx,$xx
@@ -18244,7 +18264,8 @@ ObjectData_Draygon2_Fireball                             ; Object bf
         $1bbb9              .byte $xx,$xx,$xx
         $1bbbc              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_ObjectB8                                      ; Object b8
+ObjectData_DynaCounterattack                             ; Object b8
+        ;; Pair of purple shots fired out of side pods whenever eye hit
         $1bbbe              .byte $xx
         $1bbbf              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1bbc8              .byte $xx,$xx,$xx,$xx,$xx,$xx
@@ -18252,13 +18273,15 @@ ObjectData_ObjectB8                                      ; Object b8
         $1bbd1              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
 ObjectData_DynaEyeLaser                                  ; Object b9
+        ;; Vertical projectile from dyna's main eye
         $1bbd3              .byte $xx
         $1bbd4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1bbdd              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $1bbe3              .byte $xx,$xx,$xx
         $1bbe6              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_DynaPodLaser                                  ; Object ba
+ObjectData_DynaPodBubble                                 ; Object ba
+        ;; Bubbles sprayed out from side pods
         $1bbe8              .byte $xx
         $1bbe9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1bbf2              .byte $xx,$xx,$xx,$xx,$xx,$xx
@@ -18280,6 +18303,11 @@ ObjectData_EvilBomberBird_Bomb                           ; Object e0
         $1bc25              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
 ObjectData_ObjectE1                                      ; Object e1
+        ;; Looks like some sort og projectile, same data as the bomber
+        ;; bird's bomb and summoned insect's bomb, but with in-between
+        ;; ATK stat (and a different $320, whatever that is).
+        ;; Spawned by adhoc spawn $41, but only violet earth entity
+        ;; has this as a child, and it doesn't seem to shoot anything?
         $1bc27              .byte $xx
         $1bc28              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1bc31              .byte $xx,$xx,$xx,$xx,$xx,$xx
@@ -18287,6 +18315,7 @@ ObjectData_ObjectE1                                      ; Object e1
         $1bc3a              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
 ObjectData_GiantSwampInsect_SummonedInsect_Bomb          ; Object e2
+        ;; I think this may be the x-shaped shot
         $1bc3c              .byte $xx
         $1bc3d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1bc46              .byte $xx,$xx,$xx,$xx,$xx,$xx
@@ -18345,14 +18374,15 @@ ObjectData_Orc_Axe                                       ; Object e9
         $1bcdb              .byte $xx,$xx,$xx
         $1bcde              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_KillerPlant_Pollen                            ; Object ea
+ObjectData_SwampPlant_Pollen                             ; Object ea
         $1bce0              .byte $xx
         $1bce1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1bcea              .byte $xx,$xx,$xx,$xx,$xx
         $1bcef              .byte $xx,$xx,$xx
         $1bcf2              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_ObjectEB                                      ; Object eb
+ObjectData_ParalysisPowder                               ; Object eb
+        ;; Dropped by flying bugs in desert cave
         $1bcf4              .byte $xx
         $1bcf5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1bcfe              .byte $xx,$xx,$xx,$xx,$xx
@@ -18395,6 +18425,8 @@ ObjectData_DraygoniaArcher_Arrow                         ; Object f0
         $1bd6e              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
 ObjectData_ObjectF1                                      ; Object f1
+        ;; uncovered???
+        ;; ad hoc spawn $51, but nothing has this as child.
         $1bd70              .byte $xx
         $1bd71              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1bd7a              .byte $xx,$xx,$xx,$xx,$xx,$xx
@@ -18408,7 +18440,7 @@ ObjectData_DraygoniaKnight_Sword                         ; Object f2
         $1bd95              .byte $xx,$xx,$xx
         $1bd98              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_ObjectF3                                      ; Object f3
+ObjectData_KillerMothResidue                             ; Object f3
         $1bd9a              .byte $xx
         $1bd9b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1bda4              .byte $xx,$xx,$xx,$xx,$xx
@@ -18436,14 +18468,17 @@ ObjectData_TowerSentinel_Laser                           ; Object f6
         $1bde5              .byte $xx,$xx,$xx
         $1bde8              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_ObjectF7                                      ; Object f7
+ObjectData_Skeleton_Shot                                 ; Object f7
+        ;; This is an MP-draining shot, identical to E7 (spider web)
         $1bdea              .byte $xx
         $1bdeb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1bdf4              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $1bdfa              .byte $xx,$xx,$xx
         $1bdfd              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_ObjectF8                                      ; Object f8
+ObjectData_Lavaman_Shot                                  ; Object f8
+        ;; Lavamen under karmine, same MP drain as spider/skeleton,
+        ;; though they shoot 4 in close succession
         $1bdff              .byte $xx
         $1be00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1be09              .byte $xx,$xx,$xx,$xx,$xx,$xx
@@ -18464,7 +18499,8 @@ ObjectData_LizardMan_Flail                               ; Object fa
         $1be3a              .byte $xx,$xx,$xx
         $1be3d              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_ObjectFB                                      ; Object fb
+ObjectData_StomSword                                     ; Object fb
+        ;; Spawns during stom duel
         $1be40              .byte $xx
         $1be41              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1be4a              .byte $xx,$xx,$xx,$xx,$xx,$xx
@@ -32867,16 +32903,16 @@ DecodeMessageControlByte
 ;;; Jump table for handling small bytes (0-9) in encoded messages.
 ;;; STRIP: word=$20000
 MessageDecodeJump
-        $285a2              .word ($285b6) ; 00
-        $285a4              .word ($285f2) ; 01
-        $285a6              .word ($28607) ; 02
-        $285a8              .word ($28619) ; 03
-        $285aa              .word ($2866b) ; 04
-        $285ac              .word ($28682) ; 05
-        $285ae              .word ($286cd) ; 06
-        $285b0              .word ($286e1) ; 07
-        $285b2              .word ($28772) ; 08
-        $285b4              .word ($28753) ; 09
+        $285a2              .word ($285b6) ; 00 end of message
+        $285a4              .word ($285f2) ; 01 start of page
+        $285a6              .word ($28607) ; 02 new line
+        $285a8              .word ($28619) ; 03 continue on next page
+        $285aa              .word ($2866b) ; 04 player name
+        $285ac              .word ($28682) ; 05 less common words (arg follows)
+        $285ae              .word ($286cd) ; 06 person names (arg follows)
+        $285b0              .word ($286e1) ; 07 item names (arg follows)
+        $285b2              .word ($28772) ; 08 currently gained item name
+        $285b4              .word ($28753) ; 09 spaces (arg follows for count)
 ;;; --------------------------------
 MessageDecodeJump_00
         $285b6  xx:         xxx
@@ -33110,7 +33146,7 @@ LookupCommonWord
         $28750  xx xx:      xxx $xx
         $28752  xx:         xxx
 ;;; --------------------------------
-MessageDecodeJump_09
+MessageDecodeJump_09_Spaces
         $28753  xx xx:      xxx $xx
         $28755  xx:         xxx
         $28756  xx xx:      xxx ($xx),y
@@ -33130,7 +33166,7 @@ MessageDecodeJump_09
         $2876f  xx xx:       xxx $xx
 +       $28771  xx:         xxx
 ;;; --------------------------------
-MessageDecodeJump_08
+MessageDecodeJump_08_CurrentItemName
         $28772  xx xx:      xxx $xx
         $28774  xx xx:      xxx $xx
         $28776  xx xx:      xxx $xx
@@ -33856,6 +33892,7 @@ ItemNames
         $29215              .byte "xxxxxxx",$xx           ; 46
         $2921d              .byte "xxxxxx",$xx            ; 47
         $29224              .byte "xxxxxx",$xx            ; 48
+        ;; Everything from here down to $29400 appears to be uncovered
         $2922b              .byte "xxxxxxxxxxxxxxxxx",$xx
         $2923d              .byte $xx,$xx,$xx
         $29240              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -34651,7 +34688,7 @@ RomBank_15                      ; @@ $a000
         $2a398              .byte     "xxxxxx",$xx
         $2a39f              .byte $xx,$xx,$xx,"x",$xx,$xx,$xx,"xx",$xx,$xx,$xx
         $2a3ab              .byte     $xx,"xxxxxx",$xx,$xx,$xx,$xx,$xx,$xx
-        $2a3b8              .byte     $xx,"xx",$xx
+        $2a3b8              .byte     $xx,$xx,"x",$xx
         $2a3bc              .byte $xx,$xx,"xxxxx",$xx,"xxxx",$xx,$xx,$xx
         $2a3cb              .byte     "xxxxxxxxxxxxxxx",$xx,$xx,$xx,$xx
         $2a3de              .byte     "xxxxx",$xx
@@ -34765,7 +34802,7 @@ RomBank_15                      ; @@ $a000
         $2aa1c              .byte     $xx,"xxxxxx",$xx
         $2aa24              .byte $xx,"xx",$xx,$xx,$xx,"xxxxxxxx",$xx,$xx,$xx,"x",$xx
         $2aa37              .byte     "xxxxx",$xx,"xxxxxxxxxxxx",$xx,"x",$xx
-        $2aa4c              .byte $xx,$xx,$xx,"x",$xx,"x",$xx
+        $2aa4c              .byte $xx,$xx,$xx,$xx,$xx,"x",$xx
         $2aa53              .byte     "xxxxxxxxxxxxxxx",$xx,$xx,"xx",$xx
         $2aa67              .byte     "xxxxxxxxxxxxxx",$xx,$xx,$xx,$xx
         $2aa79              .byte     "xxxxxxxxxxxxxxxxxx",$xx,"xxxxxx",$xx
@@ -34856,7 +34893,7 @@ RomBank_15                      ; @@ $a000
         $2afc4              .byte $xx,$xx,$xx,"x",$xx,$xx,"x",$xx
         $2afcc              .byte     $xx,"xxxxxxx",$xx,$xx,$xx,$xx,$xx
         $2afd9              .byte     "xxxxxx",$xx,$xx,"xxxxxx",$xx,"x",$xx,$xx
-        $2afeb              .byte $xx,$xx,$xx,"xxxxx",$xx,$xx,$xx,$xx
+        $2afeb              .byte $xx,$xx,$xx,$xx,"xxxx",$xx,$xx,$xx,$xx
         $2aff7              .byte     "xxxxxxx",$xx,$xx,"xxxxx",$xx,$xx
         $2b007              .byte     $xx,$xx,$xx,"xxxxxxxxxx",$xx,$xx
         $2b016              .byte $xx,$xx,"xxxxxxxxxxxxxxxxxxxx",$xx,$xx
@@ -34995,7 +35032,7 @@ RomBank_15                      ; @@ $a000
         $2b83b              .byte     "xxxxxxxx",$xx
         $2b844              .byte $xx,$xx
         $2b846              .byte     $xx,$xx,"xxxxxxx",$xx,$xx
-        $2b851              .byte     $xx,$xx,"xxxxxxxx",$xx,$xx,"xx",$xx
+        $2b851              .byte     $xx,$xx,"xxxxxxxx",$xx,$xx,$xx,"x",$xx
         $2b860              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2b868              .byte     $xx,$xx,$xx,$xx,"xx",$xx,$xx,$xx
         $2b871              .byte     "xxxxxxxxxxxxxxx",$xx,$xx,$xx,$xx
@@ -35003,7 +35040,7 @@ RomBank_15                      ; @@ $a000
         $2b892              .byte $xx,$xx,"xxxxxxxxxxxxxx",$xx,$xx
         $2b8a4              .byte     "xxxxxxx",$xx
         $2b8ac              .byte $xx,$xx,"xx",$xx,$xx,$xx,"xxxxxxx",$xx
-        $2b8bb              .byte $xx,"xxxxxxx",$xx,$xx,"x",$xx,$xx,"x",$xx
+        $2b8bb              .byte $xx,"xxxxxxx",$xx,$xx,"x",$xx,$xx,$xx,$xx
         $2b8ca              .byte     $xx,$xx,"xxxx",$xx,"xxxxxxx",$xx,$xx
         $2b8da              .byte     "xxxxxxx",$xx,"xxxxxxxx",$xx,"x",$xx
         $2b8ed              .byte $xx,"xxxxx",$xx,$xx,$xx,$xx,$xx
@@ -35245,14 +35282,14 @@ RomBank_16                      ; @@ $8000
         $2c6be              .byte $xx,$xx,"x",$xx,$xx,$xx,$xx,"xxxxxx",$xx,$xx
         $2c6cd              .byte     "xxxxxxxxxxxx",$xx,$xx,$xx,"x",$xx,$xx
         $2c6df              .byte $xx,"xxxxx",$xx,"xxxxx",$xx,"xxx",$xx,$xx
-        $2c6f1              .byte     $xx,"x",$xx,"xxxx",$xx,$xx
+        $2c6f1              .byte     $xx,$xx,$xx,"xxxx",$xx,$xx
         $2c6fa              .byte     "xxxxxxxxxx",$xx,$xx,"xxxxxx",$xx
         $2c70d              .byte     "xxxxxxx",$xx,"xxxxxxxxxx",$xx
         $2c720              .byte $xx,"xxx",$xx,$xx,"xxxxx",$xx,"xxxxxx",$xx,$xx
         $2c734              .byte     $xx,"xxxxx",$xx
         $2c73b              .byte $xx,"xxxxxx",$xx,$xx,"xxx",$xx,$xx,"x",$xx
         $2c74b              .byte     "xxxxxxxxx",$xx,$xx,$xx
-        $2c757              .byte     $xx,"x",$xx,"xxxxx",$xx
+        $2c757              .byte     $xx,$xx,$xx,"xxxxx",$xx
         $2c760              .byte     $xx,$xx,$xx,$xx,"x",$xx
         $2c766              .byte $xx,$xx,$xx,$xx,"xx",$xx,"xx",$xx,$xx,$xx
         $2c772              .byte     $xx,$xx,"xxxxxxxxxxxx",$xx
@@ -35262,7 +35299,7 @@ RomBank_16                      ; @@ $8000
         $2c7b3              .byte $xx,"xxxxxxxxxx",$xx,$xx,$xx,$xx
         $2c7c2              .byte     $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2c7ca              .byte     $xx,$xx,"x",$xx
-        $2c7ce              .byte $xx,"xxx",$xx,"xxxx",$xx,"x",$xx
+        $2c7ce              .byte $xx,"xxx",$xx,"xxxx",$xx,$xx,$xx
         $2c7da              .byte     "xxxxxxxxxxxx",$xx,"xxxxxxxxxx",$xx
         $2c7f2              .byte     "xxxxxxx",$xx,$xx,$xx,$xx
         $2c7fd              .byte     "xxxxxxx",$xx,"x",$xx
@@ -35304,7 +35341,7 @@ RomBank_16                      ; @@ $8000
         $2ca21              .byte     $xx,"xxxxxxxxxxx",$xx,"x",$xx
         $2ca30              .byte $xx,$xx,$xx,$xx,$xx,"xxxxx",$xx,"x",$xx
         $2ca3d              .byte     "xxxx",$xx,"xxxx",$xx,$xx,$xx,$xx
-        $2ca4a              .byte     $xx,"x",$xx,$xx,$xx,$xx
+        $2ca4a              .byte     $xx,$xx,$xx,$xx,$xx,$xx
         $2ca50              .byte     "xxxxx",$xx,"x",$xx
         $2ca58              .byte $xx,"xx",$xx,$xx,$xx,"xx",$xx,$xx,$xx
         $2ca63              .byte     $xx,$xx,"xxxxxxxxxx",$xx,"xxxx",$xx,$xx
@@ -35313,9 +35350,9 @@ RomBank_16                      ; @@ $8000
         $2ca91              .byte $xx,"xxx",$xx,$xx,$xx,$xx,$xx,"x",$xx
         $2ca9c              .byte     "xxxx",$xx,$xx,$xx,"xxxx",$xx,$xx,$xx
         $2caaa              .byte     "xxxxx",$xx,$xx,$xx,"xxxxxxxxxx",$xx
-        $2cabd              .byte $xx,$xx,$xx,"xxxxxxx",$xx
+        $2cabd              .byte $xx,$xx,$xx,$xx,"xxxxxx",$xx
         $2cac8              .byte     $xx,"xx",$xx,"xxxxx",$xx,$xx,"x",$xx
-        $2cad5              .byte $xx,$xx,$xx,"xxxxxxx",$xx
+        $2cad5              .byte $xx,$xx,$xx,$xx,"xxxxxx",$xx
         $2cae0              .byte     $xx,"xxxxxxxxxxxx",$xx,$xx,"x",$xx
         $2caf1              .byte $xx,"xx",$xx,$xx,"xxxxxx",$xx,"xxxxxx",$xx
         $2cb04              .byte     "xxxxxxxxxxxxx",$xx
@@ -35328,7 +35365,7 @@ RomBank_16                      ; @@ $8000
         $2cb6e              .byte     $xx,"xx",$xx,$xx,"xxxxxxxxxxxxx",$xx
         $2cb81              .byte $xx,$xx
         $2cb83              .byte     $xx,$xx,"xxxxxxxx",$xx,"xxxxxx",$xx
-        $2cb95              .byte $xx,"xxx",$xx,"xx",$xx,$xx,"xx",$xx
+        $2cb95              .byte $xx,"xxx",$xx,"xx",$xx,$xx,$xx,"x",$xx
         $2cba1              .byte     "xxx",$xx,$xx,$xx,"x",$xx
         $2cba9              .byte $xx,"x",$xx,"xxxxxxxxx",$xx,$xx,$xx
         $2cbb8              .byte     "xxxxxxx",$xx,"xxxx",$xx,$xx,$xx,$xx
@@ -35352,7 +35389,7 @@ RomBank_16                      ; @@ $8000
         $2ccb6              .byte     $xx,"xxx",$xx,$xx,$xx,"xxxxxx",$xx,$xx
         $2ccc5              .byte     "xxxxxxxxxxx",$xx,$xx,"x",$xx,$xx
         $2ccd5              .byte $xx,$xx,"xxxxxxxxx",$xx,"xx",$xx,"xxxxx",$xx
-        $2ccea              .byte     $xx,$xx,"xxxxxx",$xx,$xx,"xx",$xx
+        $2ccea              .byte     $xx,$xx,"xxxxxx",$xx,$xx,$xx,"x",$xx
         $2ccf7              .byte     $xx,$xx,$xx,"xxx",$xx,$xx,"xxx",$xx,$xx
         $2cd04              .byte     "xxxxxxxxxxx",$xx,$xx,$xx,"x",$xx,$xx
         $2cd15              .byte $xx,"xxxxxxxxxxxx",$xx,$xx,$xx
@@ -35362,7 +35399,7 @@ RomBank_16                      ; @@ $8000
         $2cd47              .byte     "xxxxxxxxxx",$xx,$xx,$xx
         $2cd54              .byte     "xxxxxxx",$xx,$xx,"xxxx",$xx
         $2cd62              .byte $xx,$xx,$xx,"x",$xx,"xxxxxx",$xx
-        $2cd6e              .byte $xx,"xx",$xx,$xx,$xx,"xxx",$xx,$xx,$xx
+        $2cd6e              .byte $xx,"xx",$xx,$xx,$xx,$xx,"xx",$xx,$xx,$xx
         $2cd7a              .byte     "xxxxxxx",$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2cd88              .byte     "xxxxxx",$xx
         $2cd8f              .byte $xx,$xx,"xxxxx",$xx,$xx,$xx,"xxxxx",$xx,$xx
@@ -35381,9 +35418,9 @@ RomBank_16                      ; @@ $8000
         $2ce4b              .byte     "xxxxxxxxx",$xx,$xx,"xxxx",$xx
         $2ce5b              .byte     "xxxxxxxxxxxxxxxxxxxxxxxx",$xx
         $2ce74              .byte $xx,"xxx",$xx,"xxxxxx",$xx,$xx,"xxxxxx",$xx
-        $2ce88              .byte     "xxxxxxx",$xx,"xxxxxxxxxx",$xx
+        $2ce88              .byte     "xxxxxxx",$xx,$xx,"xxxxxxxxx",$xx
         $2ce9b              .byte     $xx,$xx,"xxxx",$xx
-        $2cea2              .byte $xx,"xxxxx",$xx,"xxxxxx",$xx,"x",$xx,$xx
+        $2cea2              .byte $xx,"xxxxx",$xx,"xxxxxx",$xx,$xx,$xx,$xx
         $2ceb3              .byte     "xxxxxxx",$xx,"xx",$xx,"xxxxxxxx",$xx,$xx
         $2cec8              .byte     "xxxxx",$xx,$xx,"xx",$xx,"x",$xx
         $2ced4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -35408,14 +35445,14 @@ RomBank_16                      ; @@ $8000
         $2cff4              .byte $xx,"xxxxxxxxx",$xx,$xx,$xx,"x",$xx
         $2d003              .byte     "xxxxxxxxxxxxxxxxxx",$xx
         $2d016              .byte $xx,"xxxxx",$xx,"xxxxx",$xx,"xxxx",$xx
-        $2d028              .byte $xx,"xx",$xx,$xx,$xx,"xxxxxxxx",$xx
+        $2d028              .byte $xx,"xx",$xx,$xx,$xx,$xx,"xxxxxxx",$xx
         $2d037              .byte     "xx",$xx,"xxxxxxxxxxxx",$xx,$xx,$xx
         $2d049              .byte     $xx,"x",$xx
         $2d04c              .byte $xx,"xxxxxx",$xx,$xx,"xx",$xx,$xx,"xxx",$xx,"x",$xx
         $2d05f              .byte $xx,$xx,"xx",$xx,$xx,$xx,$xx
         $2d067              .byte     "xxxxxx",$xx,"x",$xx
         $2d070              .byte $xx,$xx,"xxxxx",$xx
-        $2d078              .byte $xx,"xx",$xx,$xx,$xx,"xxxxxxxxx",$xx
+        $2d078              .byte $xx,"xx",$xx,$xx,$xx,$xx,"xxxxxxxx",$xx
         $2d088              .byte     $xx,$xx,$xx,"xxx",$xx,$xx,$xx,$xx
         $2d092              .byte     $xx,$xx,$xx,"xxxxx",$xx,$xx,$xx
         $2d09d              .byte $xx,"x",$xx,$xx,$xx,$xx,"xx",$xx,$xx
@@ -35552,7 +35589,7 @@ RomBank_16                      ; @@ $8000
         $2d837              .byte     "xxxx",$xx,"x",$xx
         $2d83e              .byte $xx,$xx,"xxxxxx",$xx,$xx,$xx,"xx",$xx
         $2d84c              .byte     "xxxxxxxxxxxxxxxxxxx",$xx,$xx
-        $2d861              .byte     $xx,$xx,"xxx",$xx,$xx,$xx,$xx
+        $2d861              .byte     $xx,$xx,$xx,"xx",$xx,$xx,$xx,$xx
         $2d86a              .byte     $xx,"xxxx",$xx,"xxxxx",$xx
         $2d876              .byte $xx,"xxx",$xx,"xxxx",$xx,"xxxxxxxxxx",$xx
         $2d88b              .byte     $xx,"xxxx",$xx,"xxxxxx",$xx,$xx
@@ -35599,7 +35636,7 @@ RomBank_16                      ; @@ $8000
         $2dafe              .byte     "xxxxx",$xx,"xxx",$xx,$xx,"x",$xx
         $2db0b              .byte $xx,$xx,$xx,"x",$xx,"xxxxxxxxxxxx",$xx
         $2db1d              .byte     "xxxxx",$xx,$xx,$xx,"xx",$xx,$xx
-        $2db29              .byte     $xx,$xx,$xx,$xx,$xx,"xx",$xx,$xx
+        $2db29              .byte     $xx,$xx,$xx,$xx,$xx,$xx,"x",$xx,$xx
         $2db32              .byte $xx,$xx,$xx,"x",$xx,"xxxxxxxxxxx",$xx,$xx,$xx
         $2db45              .byte     "xxx",$xx,$xx,$xx,$xx,"xxxxx",$xx
         $2db52              .byte     "xxxxxxxxx",$xx,$xx,"xxxxx",$xx,$xx
@@ -35628,10 +35665,10 @@ RomBank_16                      ; @@ $8000
         $2dcc5              .byte     "xxxxxxx",$xx,$xx,"xxxxxx",$xx
         $2dcd5              .byte     $xx,$xx,"x",$xx,$xx
         $2dcda              .byte $xx,$xx,"xxxxxx",$xx,$xx,"xxxxx",$xx,"xxx",$xx
-        $2dcee              .byte     $xx,$xx,$xx,"xx",$xx
+        $2dcee              .byte     $xx,$xx,$xx,$xx,"x",$xx
         $2dcf4              .byte     "xxxxx",$xx,"xxxxxxxxxxxxxxxxxx",$xx
         $2dd0d              .byte     "xxxx",$xx,"xxxxx",$xx,$xx,"x",$xx,$xx
-        $2dd1c              .byte $xx,$xx,$xx,$xx,"x",$xx
+        $2dd1c              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $2dd22              .byte     $xx,$xx,$xx,"xxxxxx",$xx,$xx,$xx,"x",$xx
         $2dd30              .byte $xx,$xx,$xx,"x",$xx,"xxxxxxxxxxxxxxxxxxxx",$xx
         $2dd4a              .byte     $xx,$xx,"xxxxx",$xx,"xxxxxxx",$xx
@@ -35640,7 +35677,7 @@ RomBank_16                      ; @@ $8000
         $2dd7c              .byte     $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2dd84              .byte     "xxxxx",$xx,"xxx",$xx,"xx",$xx,"xx",$xx,"x",$xx
         $2dd96              .byte $xx,$xx,"x",$xx,$xx,$xx,$xx,$xx,"xx",$xx,$xx
-        $2dda2              .byte     "xxxxxx",$xx,$xx,"x",$xx,"xxx",$xx
+        $2dda2              .byte     "xxxxxx",$xx,$xx,$xx,$xx,"xxx",$xx
         $2ddb0              .byte     $xx,"xx",$xx,"xx",$xx,$xx,"xxxxx",$xx
         $2ddbe              .byte     "xxxxxxxxxxxx",$xx,"xxxxx",$xx,$xx
         $2ddd2              .byte $xx,"xxx",$xx,$xx,"xx",$xx,$xx,$xx,$xx
@@ -35669,7 +35706,7 @@ RomBank_16                      ; @@ $8000
         $2df36              .byte     "xxxxxxxxxxxx",$xx,$xx,$xx
         $2df45              .byte     "xxxxxxxx",$xx,"xxxxx",$xx,"x",$xx
         $2df56              .byte $xx,$xx,$xx,$xx,"xx",$xx,$xx,$xx
-        $2df5f              .byte     $xx,$xx,$xx,$xx,"xx",$xx
+        $2df5f              .byte     $xx,$xx,$xx,$xx,$xx,"x",$xx
         $2df66              .byte $xx,$xx,"xxxxxx",$xx,$xx,$xx
         $2df71              .byte     "xxxxx",$xx,"xxx",$xx,$xx,"xxxxx",$xx
         $2df82              .byte     $xx,$xx,$xx,$xx,$xx,"xxx",$xx,$xx
@@ -35683,7 +35720,7 @@ RomBank_16                      ; @@ $8000
         $2dff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 RomBank_17                      ; @@ $a000
         $2e000              .byte $xx,"xx",$xx,$xx,$xx,"xxxxxxx",$xx,$xx,$xx
-        $2e010              .byte     $xx,"xxx",$xx,"xxxxx",$xx,$xx,$xx
+        $2e010              .byte     $xx,$xx,"xx",$xx,"xxxxx",$xx,$xx,$xx
         $2e01d              .byte     "xxxxxxxxxxxxxx",$xx,$xx,"xxxxx",$xx
         $2e033              .byte     $xx,$xx,"xxxxx",$xx
         $2e03b              .byte $xx,"xxxxxxxxxxxxxxxxxxx",$xx,$xx,$xx
@@ -35864,7 +35901,7 @@ RomBank_17                      ; @@ $a000
         $2ebd9              .byte $xx,"x",$xx,"x",$xx,"xx",$xx,$xx,"xxxxxx",$xx,$xx
         $2ebea              .byte     $xx
         $2ebeb              .byte     $xx,$xx,"x",$xx,$xx,$xx,$xx,"x",$xx,$xx
-        $2ebf5              .byte $xx,"xxxx",$xx,"x",$xx,$xx,$xx,$xx
+        $2ebf5              .byte $xx,"xxxx",$xx,$xx,$xx,$xx,$xx,$xx
         $2ec00              .byte     $xx,"x",$xx
         $2ec03              .byte $xx,$xx,"xxxxxxxxxxxxx",$xx,$xx,$xx
         $2ec15              .byte     $xx,$xx,$xx,$xx,"xxxx",$xx,"x",$xx
@@ -35884,7 +35921,7 @@ RomBank_17                      ; @@ $a000
         $2ecdd              .byte $xx,$xx,$xx,$xx,$xx,$xx,"x",$xx,$xx
         $2ece6              .byte     $xx,$xx,"xxxxx",$xx,$xx,$xx,"xxx",$xx
         $2ecf4              .byte     "x",$xx,"xxxxxxxxxxxxxx",$xx
-        $2ed05              .byte     $xx,"x",$xx,$xx,$xx,"x",$xx
+        $2ed05              .byte     $xx,$xx,$xx,$xx,$xx,"x",$xx
         $2ed0c              .byte $xx,"xxxxxxxxxxxxxxxxxxxxxxx",$xx,$xx
         $2ed26              .byte     "xxxxxx",$xx,$xx,"xxxxxxxxxxxx",$xx
         $2ed3b              .byte     "xxxxxxxxxxxxx",$xx,"x",$xx
@@ -35911,7 +35948,7 @@ RomBank_17                      ; @@ $a000
         $2ee70              .byte     "xxxxxxx",$xx,$xx,$xx,$xx,$xx,"x",$xx
         $2ee7e              .byte $xx,"xxx",$xx,"xx",$xx,"xxxxx",$xx,$xx
         $2ee8d              .byte     $xx,"xxxxxx",$xx,$xx,$xx,$xx,$xx,$xx
-        $2ee9a              .byte     $xx,"xx",$xx
+        $2ee9a              .byte     $xx,$xx,"x",$xx
         $2ee9e              .byte $xx,"xxx",$xx,"xxxxxxxxx",$xx,$xx
         $2eeae              .byte     "xxxxxxxxx",$xx,"xxxxxxxxxxxx",$xx
         $2eec5              .byte     $xx,"xxxxxxxxxxxxxxxx",$xx,$xx,$xx
@@ -35936,7 +35973,7 @@ RomBank_17                      ; @@ $a000
         $2efc5              .byte     $xx,$xx,$xx
         $2efc8              .byte $xx,$xx,"xxxxx",$xx,"xxxxxxxx",$xx,$xx
         $2efda              .byte     "xxxxxxxxx",$xx,$xx,$xx
-        $2efe6              .byte     $xx,"xx",$xx
+        $2efe6              .byte     $xx,$xx,"x",$xx
         $2efea              .byte $xx,"xxxxxx",$xx,"xxxxxxxxxxxxx",$xx,$xx
         $2f001              .byte     $xx,$xx,$xx,"x",$xx
         $2f006              .byte $xx,$xx,$xx,"xxxxxxxxx",$xx,"xxxxx",$xx
@@ -35953,7 +35990,7 @@ RomBank_17                      ; @@ $a000
         $2f0c3              .byte     "xxxxxxxxxxx",$xx,$xx,$xx,$xx
         $2f0d2              .byte     "xxxxxxxxxx",$xx
         $2f0dd              .byte $xx,"xxxxx",$xx,$xx,$xx,$xx
-        $2f0e7              .byte     $xx,"x",$xx,$xx,"xxxxx",$xx
+        $2f0e7              .byte     $xx,$xx,$xx,$xx,"xxxxx",$xx
         $2f0f1              .byte     "xxxxxxxxxxxxx",$xx
         $2f0ff              .byte $xx,"xxxxxxxxxxxx",$xx,"xxx",$xx
         $2f111              .byte     "xxxxxx",$xx,$xx,"xxxx",$xx,"xxxxxx",$xx
@@ -35975,9 +36012,9 @@ RomBank_17                      ; @@ $a000
         $2f20d              .byte     "xxxxxxxxxxxxxxxxxx",$xx
         $2f220              .byte $xx,$xx,$xx,$xx,"xx",$xx,"xxxx",$xx,$xx
         $2f22d              .byte     "xxxxxxxx",$xx,"xxx",$xx,$xx,"x",$xx
-        $2f23d              .byte $xx,$xx,"x",$xx,$xx,"xxxx",$xx
+        $2f23d              .byte $xx,$xx,$xx,$xx,$xx,"xxxx",$xx
         $2f247              .byte     $xx,"xxxxxxxxxxxx",$xx,"x",$xx
-        $2f257              .byte $xx,"xxxxxxx",$xx,$xx,"x",$xx
+        $2f257              .byte $xx,"xxxxxxx",$xx,$xx,$xx,$xx
         $2f263              .byte     "xxxxxxxxx",$xx,$xx,"xxxxx",$xx
         $2f274              .byte $xx,"xxxxx",$xx,"xxxxx",$xx,$xx
         $2f282              .byte     "xxxxxxxxxxxxxxxxxxx",$xx
@@ -35987,7 +36024,7 @@ RomBank_17                      ; @@ $a000
         $2f2c8              .byte     "xxxxx",$xx,$xx,"xxxxxx",$xx,$xx,$xx
         $2f2d8              .byte     "xxxxxxxxxxxx",$xx
         $2f2e5              .byte $xx,"xxxx",$xx,$xx,$xx,$xx
-        $2f2ee              .byte     $xx,"xx",$xx
+        $2f2ee              .byte     $xx,$xx,"x",$xx
         $2f2f2              .byte $xx,$xx,$xx,$xx,$xx
         $2f2f7              .byte     $xx,$xx,$xx,"xxxxxxx",$xx
         $2f302              .byte     $xx,"xxxxxxxxxx",$xx
@@ -36010,17 +36047,17 @@ RomBank_17                      ; @@ $a000
         $2f3fa              .byte $xx,$xx,"xx",$xx,"xxxxxxxx",$xx,$xx,$xx
         $2f40a              .byte     "xxxxxxxxxxx",$xx,"xxx",$xx
         $2f41a              .byte     "xxxxxx",$xx,$xx,$xx,$xx,$xx,"x",$xx
-        $2f427              .byte $xx,"x",$xx,"x",$xx,"xxxxxx",$xx,"x",$xx
+        $2f427              .byte $xx,"x",$xx,$xx,$xx,"xxxxxx",$xx,"x",$xx
         $2f435              .byte     "xxxxxxxxxxxxx",$xx,"xxxxx",$xx
-        $2f449              .byte     $xx,$xx,"x",$xx,$xx,$xx,"x",$xx
+        $2f449              .byte     $xx,$xx,$xx,$xx,$xx,$xx,"x",$xx
         $2f451              .byte $xx,$xx,$xx,"xx",$xx,"xxxxxxxxxxx",$xx
         $2f463              .byte     "xxxxxx",$xx,"xxxxxx",$xx,$xx,$xx
         $2f473              .byte     $xx,$xx,$xx,"xxxx",$xx,$xx,"x",$xx
         $2f47e              .byte $xx,"xxxxxxxxxxxxxxx",$xx,$xx,$xx
         $2f491              .byte     "xxxxxx",$xx,$xx,"xx",$xx,"xxxxxxx",$xx
         $2f4a4              .byte     $xx,$xx,$xx,$xx,$xx,$xx
-        $2f4aa              .byte     $xx,"xx",$xx
-        $2f4ae              .byte $xx,$xx,"xx",$xx,"x",$xx,"xxx",$xx,$xx
+        $2f4aa              .byte     $xx,$xx,"x",$xx
+        $2f4ae              .byte $xx,$xx,"xx",$xx,$xx,$xx,"xxx",$xx,$xx
         $2f4ba              .byte     "xxxxxxxx",$xx,$xx,"xxxxxx",$xx,$xx
         $2f4cc              .byte     $xx,"xxx",$xx
         $2f4d1              .byte $xx,"xxxxxxxxxxxx",$xx,$xx,$xx,"xx",$xx,"x",$xx
@@ -36040,7 +36077,7 @@ RomBank_17                      ; @@ $a000
         $2f5ba              .byte     "xxxxxxxx",$xx
         $2f5c3              .byte $xx,"xxxxxx",$xx,$xx,$xx,"xxxxxxx",$xx
         $2f5d5              .byte     "xxxxxxxxx",$xx,$xx,$xx,$xx
-        $2f5e2              .byte     $xx,$xx,$xx,$xx,$xx,"xx",$xx
+        $2f5e2              .byte     $xx,$xx,$xx,$xx,$xx,$xx,"x",$xx
         $2f5ea              .byte $xx,$xx,$xx,"xxxx",$xx,$xx,"xxxx",$xx
         $2f5f8              .byte $xx,"xxxxxxxxxxxxxxxxxx",$xx,$xx
         $2f60d              .byte     "xxxxx",$xx,"xxxxxx",$xx,"xx",$xx,$xx
@@ -36095,13 +36132,13 @@ RomBank_17                      ; @@ $a000
         $2f886              .byte     $xx,$xx,"xxxxxxx",$xx,"xx",$xx,$xx,$xx
         $2f895              .byte     $xx,$xx,"xxxxxxx",$xx,"xxxxxxx",$xx
         $2f8a7              .byte $xx,$xx
-        $2f8a9              .byte     $xx,$xx,$xx,$xx,"x",$xx
+        $2f8a9              .byte     $xx,$xx,$xx,$xx,$xx,$xx
         $2f8af              .byte     $xx,$xx,$xx,"xxxxxxxxxxx",$xx,$xx,$xx
         $2f8c0              .byte     "xxxxxxxxxxxxxxxxx",$xx,"xxxxx",$xx
         $2f8d8              .byte $xx,$xx
         $2f8da              .byte     $xx,$xx,$xx,"xxxxxxxxxxxxxxx",$xx,"x",$xx
         $2f8ef              .byte $xx,$xx
-        $2f8f1              .byte     $xx,$xx,$xx,$xx,"x",$xx,$xx
+        $2f8f1              .byte     $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2f8f8              .byte     "xxxxx",$xx,$xx,$xx,"xxxxxx",$xx,$xx
         $2f908              .byte     "x",$xx,$xx,$xx,$xx,"xxxx",$xx,"x",$xx
         $2f914              .byte $xx,$xx
@@ -36143,6 +36180,8 @@ RomBank_17                      ; @@ $a000
         $2faa2              .byte $xx,$xx
         $2faa4              .byte     $xx,$xx,$xx,$xx,$xx
         $2faa9              .byte     $xx,$xx,"xxxxxxxxxxxxxxxxxxxxxx",$xx
+        ;; Not sure what happened here - this is in the original ROM, but it
+        ;; somehow renders properly without the null terminator.
         $2fac2              .byte $xx,$xx
         $2fac4              .byte     $xx,$xx,$xx,$xx,$xx
         $2fac9              .byte     $xx,$xx,"xxxxxxxxxxxxxxxxxxxxxxxxxx"
@@ -36161,8 +36200,8 @@ RomBank_17                      ; @@ $a000
         $2fb54              .byte     $xx,$xx,$xx,$xx,"xxxxxxxx",$xx
         $2fb61              .byte $xx,"x",$xx,$xx,"xxxxxx",$xx,$xx,"x",$xx,$xx,$xx
         $2fb71              .byte     $xx,$xx,"xxxx",$xx,$xx,"xxx",$xx,$xx,$xx
-        $2fb7f              .byte     $xx,$xx,"xxxxxx",$xx,"xxxxxx",$xx,"x",$xx
-        $2fb91              .byte     $xx,$xx,"xxxxxxx",$xx,"x",$xx
+        $2fb7f              .byte     $xx,$xx,"xxxxxx",$xx,$xx,"xxxxx",$xx,$xx,$xx
+        $2fb91              .byte     $xx,$xx,"xxxxxxx",$xx,$xx,$xx
         $2fb9d              .byte $xx,"xxxxxxxxxxxx",$xx,$xx,"xxxxx",$xx
         $2fbb2              .byte $xx,"xxxxxxxxxxx",$xx,$xx,"xxxxxx",$xx
         $2fbc7              .byte     $xx,$xx,$xx,$xx,"xx",$xx,$xx,"x",$xx,$xx,$xx
@@ -38866,23 +38905,23 @@ MaxHPByLevel
 MaxMPByLevel
         $34b8f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 NextLevelExpByLevel
-        $34b9f              .byte $xx,$xx
-        $34ba1              .byte $xx,$xx
-        $34ba3              .byte $xx,$xx
-        $34ba5              .byte $xx,$xx
-        $34ba7              .byte $xx,$xx
-        $34ba9              .byte $xx,$xx
-        $34bab              .byte $xx,$xx
-        $34bad              .byte $xx,$xx
-        $34baf              .byte $xx,$xx
-        $34bb1              .byte $xx,$xx
-        $34bb3              .byte $xx,$xx
-        $34bb5              .byte $xx,$xx
-        $34bb7              .byte $xx,$xx
-        $34bb9              .byte $xx,$xx
-        $34bbb              .byte $xx,$xx
-        $34bbd              .byte $xx,$xx
-        $34bbf              .byte $xx
+        $34b9f              .byte $xx
+        $34ba0              .byte $xx,$xx
+        $34ba2              .byte $xx,$xx
+        $34ba4              .byte $xx,$xx
+        $34ba6              .byte $xx,$xx
+        $34ba8              .byte $xx,$xx
+        $34baa              .byte $xx,$xx
+        $34bac              .byte $xx,$xx
+        $34bae              .byte $xx,$xx
+        $34bb0              .byte $xx,$xx
+        $34bb2              .byte $xx,$xx
+        $34bb4              .byte $xx,$xx
+        $34bb6              .byte $xx,$xx
+        $34bb8              .byte $xx,$xx
+        $34bba              .byte $xx,$xx
+        $34bbc              .byte $xx,$xx
+        $34bbe              .byte $xx,$xx
 ArmorDefense
         $34bc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ShieldDefense
@@ -38892,22 +38931,22 @@ SwordStabDamage
 SwordMagicCost
         $34bd8              .byte $xx,$xx,$xx,$xx,$xx,$xx
 CoinAmounts
-        $34bde              .word ($xxxx)
-        $34be0              .word ($xxxx)
-        $34be2              .word ($xxxx)
-        $34be4              .word ($xxxx)
-        $34be6              .word ($xxxx)
-        $34be8              .word ($xxxx)
-        $34bea              .word ($xxxx)
-        $34bec              .word ($xxxx)
-        $34bee              .word ($xxxx)
-        $34bf0              .word ($xxxx)
-        $34bf2              .word ($xxxx)
-        $34bf4              .word ($xxxx)
-        $34bf6              .word ($xxxx)
-        $34bf8              .word ($xxxx)
-        $34bfa              .word ($xxxx)
-        $34bfc              .word ($xxxx)
+        $34bde              .word ($xxxx) ; 0: 0
+        $34be0              .word ($xxxx) ; 1: 1
+        $34be2              .word ($xxxx) ; 2: 2
+        $34be4              .word ($xxxx) ; 3: 4
+        $34be6              .word ($xxxx) ; 4: 8
+        $34be8              .word ($xxxx) ; 5: 16
+        $34bea              .word ($xxxx) ; 6: 30
+        $34bec              .word ($xxxx) ; 7: 50
+        $34bee              .word ($xxxx) ; 8: 100
+        $34bf0              .word ($xxxx) ; 9: 200
+        $34bf2              .word ($xxxx) ; a: 400
+        $34bf4              .word ($xxxx) ; b: 50
+        $34bf6              .word ($xxxx) ; c: 100
+        $34bf8              .word ($xxxx) ; d: 200
+        $34bfa              .word ($xxxx) ; e: 400
+        $34bfc              .word ($xxxx) ; f: 500
 ;;; --------------------------------
         $34bfe              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
@@ -40039,16 +40078,16 @@ SetTemporaryInvincibility
         $35475  xx:         xxx
         $35476  xx xx xx:   xxx CoinAmounts,x
         $35479  xx:         xxx
-        $3547a  xx xx xx:   xxx $xxxx
-        $3547d  xx xx xx:   xxx $xxxx
+        $3547a  xx xx xx:   xxx PlayerMoney
+        $3547d  xx xx xx:   xxx PlayerMoney
         $35480  xx xx xx:   xxx CoinAmounts+1,x
-        $35483  xx xx xx:   xxx $xxxx
-        $35486  xx xx xx:   xxx $xxxx
-        $35489  xx xx:      xxx $xx
-        $3548b  xx xx:      xxx #$xx
-        $3548d  xx xx xx:   xxx $xxxx
-        $35490  xx xx xx:   xxx $xxxx
-        $35493  xx xx:      xxx #$xx
+        $35483  xx xx xx:   xxx PlayerMoney+1
+        $35486  xx xx xx:   xxx PlayerMoney+1
+        $35489  xx xx:      xxx +
+        $3548b  xx xx:       xxx #$xx
+        $3548d  xx xx xx:    xxx PlayerMoney
+        $35490  xx xx xx:    xxx PlayerMoney+1
++       $35493  xx xx:      xxx #$xx
         $35495  xx xx xx:   xxx $xxxx,y
         $35498  xx xx:      xxx #SFX_GET_COIN
         $3549a  xx xx xx:   xxx StartAudioTrack
@@ -40057,7 +40096,7 @@ SetTemporaryInvincibility
 ;;; --------------------------------
         $354a2  xx xx:      xxx $xx
         $354a4  xx xx:      xxx #$xx
-        $354a6  xx xx:      xxx $xx
+        $354a6  xx xx:       xxx >rts
         $354a8  xx xx xx:   xxx $xxxx
         $354ab  xx xx:      xxx #GAME_MODE_TRIGGER_TILE
         $354ad  xx xx:      xxx GameMode
@@ -41037,6 +41076,7 @@ ObjectActionJump_01
         $35b45  xx xx:      xxx Ctrl1NewlyPressed
         $35b47  xx xx:      xxx #BUTTON_B
         $35b49  xx xx:      xxx + ; $35b5a
+        ;; Just pressed B - check if there's a consumable item to use
         $35b4b  xx xx xx:    xxx EquippedConsumableItem
         $35b4e  xx xx:       xxx + ; $35b5a
         $35b50  xx xx:        xxx GameMode
@@ -41045,22 +41085,22 @@ ObjectActionJump_01
         $35b56  xx xx:         xxx #GAME_MODE_ITEM_USE
         $35b58  xx xx:         xxx GameMode
         ;; Copy the lower nibble of $341 into $340.
-+       $35b5a  xx xx xx:   xxx $xxxx,x
++       $35b5a  xx xx xx:   xxx $xxxx,x ; $341
         $35b5d  xx xx:      xxx #$xx
         $35b5f  xx xx xx:   xxx SetPlayer340Lower
         $35b62  xx xx xx:   xxx $35cef
         $35b65  xx xx xx:   xxx $361c9
-        $35b68  xx xx xx:   xxx $xxxx
+        $35b68  xx xx xx:   xxx PlayerStatus
         $35b6b  xx xx:      xxx #$xx
-        $35b6d  xx xx:      xxx #$xx
+        $35b6d  xx xx:      xxx #STATUS_CURSED
         $35b6f  xx xx:      xxx + ; $35b7d
         ;;                   Mutated
         $35b71  xx xx:       xxx #$xx
         $35b73  xx xx xx:    xxx SetPlayer340Lower
         $35b76  xx xx:       xxx #$xx ; metasprite for blue slime
-        $35b78  xx xx xx:    xxx $xxxx,x
+        $35b78  xx xx xx:    xxx ObjectMetasprite,x
         $35b7b  xx xx:       xxx ++ ; $35bd2 - unconditional
-+       $35b7d  xx xx xx:   xxx $xxxx
++       $35b7d  xx xx xx:   xxx PlayerStatus
         $35b80  xx xx:      xxx ++ ; $35bd2
         ;;                   Riding on dolphin
         $35b82  xx xx:       xxx #$xx
@@ -41069,17 +41109,17 @@ ObjectActionJump_01
         $35b8a  xx xx xx:    xxx $xxxx
         $35b8d  xx xx:       xxx #$xx
         $35b8f  xx xx:       xxx + ; $35b9c
-        ;; Remove the dolphin-riding bit
-        $35b91  xx xx xx:     xxx $xxxx
+        ;; Remove the dolphin-riding bit (because we're on land now?)
+        $35b91  xx xx xx:     xxx PlayerStatus
         $35b94  xx xx:        xxx #$xx
-        $35b96  xx xx xx:     xxx $xxxx
+        $35b96  xx xx xx:     xxx PlayerStatus
         $35b99  xx xx xx:     xxx ++ ; $35bd2
         ;;                    ----------
-+       $35b9c  xx xx xx:    xxx $xxxx
++       $35b9c  xx xx xx:    xxx PlayerMetaspriteBase
         $35b9f  xx xx:       xxx #$xx
         $35ba1  xx:          xxx
         $35ba2  xx xx xx:    xxx $35b41,y
-        $35ba5  xx xx xx:    xxx $xxxx
+        $35ba5  xx xx xx:    xxx $xxxx ; this should be shadow metasprite???
         $35ba8  xx xx xx:    xxx $xxxx
         $35bab  xx xx:       xxx #$xx
         $35bad  xx xx xx:    xxx $xxxx
@@ -41098,7 +41138,7 @@ ObjectActionJump_01
 +       $35bcc  xx xx xx:    xxx $xxxx
         $35bcf  xx xx xx:    xxx $xxxx
 ++      $35bd2  xx xx xx:   xxx PlayerStatus
-        $35bd5  xx xx:      xxx $xx
+        $35bd5  xx xx:       xxx $xx ; not changed
         ;; Player is changed
         $35bd7  xx xx:      xxx #$xx
         $35bd9  xx:         xxx
@@ -41128,6 +41168,7 @@ SetPlayer340Lower
         $35c02  xx:         xxx
 ;;; --------------------------------
 ;;; NOTE: X=1 throughout here, it comes from ObjectActionJump_01
+;;; and looks like it's called any time the player is not changed.
 ;;; This looks like it's initializing a sword swing?
         ;; Handle various player status effects (ailments, dolphin, change)
         $35c03  xx xx xx:   xxx EquippedShield
@@ -41137,7 +41178,7 @@ SetPlayer340Lower
         ;; case it;'s just 4c.  This is stored in 580 - I don't know what this
         ;; does yet, it seems to be temporarily swapped into $300,x during
         ;; sprite drawing if $380,x:02 is set (cf $3822e).
-        $35c08  xx xx xx:     xxx ObjectMetasprite,x ; X=1 -> ??
+        $35c08  xx xx xx:     xxx ObjectMetasprite,x ; X=1 -> player
         $35c0b  xx xx:        xxx #$xx
         $35c0d  xx xx:        xxx #$xx
         $35c0f  xx:           xxx
@@ -41153,64 +41194,68 @@ SetPlayer340Lower
         $35c24  xx:          xxx
         $35c25  xx xx:       xxx #$xx
         $35c27  xx xx xx:    xxx $xxxx,x
+        ;; Come back together from the two branches above
+        ;; We don't bother to call the load/spawn subroutines
+        ;; to spawn the sword.  Instead, we just copy some things
+        ;; manually into $4a2 (action), $3e2 (damage), etc.
 +++     $35c2a  xx xx xx:   xxx $xxxx,x
         $35c2d  xx:         xxx
         $35c2e  xx xx:      xxx #$xx
-        $35c30  xx:         xxx
-        $35c31  xx xx xx:   xxx $xxxx
+        $35c30  xx:         xxx       ; Y = current direction
+        $35c31  xx xx xx:   xxx $xxxx ; Countdown timer for sword swing
         $35c34  xx xx:      xxx #$xx
-        $35c36  xx xx:      xxx +++ ; $35c6c
-        $35c38  xx xx:      xxx ++ ; $35c65
-        $35c3a  xx xx:      xxx #$xx
-        $35c3c  xx xx:      xxx ++ ; $35c65
-        $35c3e  xx xx xx:   xxx $xxxx
-        $35c41  xx xx:      xxx #$xx
-        $35c43  xx xx:      xxx + ; $35c4c
-        $35c45  xx xx xx:    xxx $xxxx
-        $35c48  xx xx:       xxx #$xx
-        $35c4a  xx xx:       xxx ++ ; $35c65
-+       $35c4c  xx xx:      xxx #$xx
-        $35c4e  xx xx xx:   xxx $xxxx
-        $35c51  xx xx:      xxx #$xx
-        $35c53  xx xx xx:   xxx $3572d
-        $35c56  xx xx xx:   xxx $xxxx
-        $35c59  xx xx xx:   xxx $35c66,y
-        $35c5c  xx xx xx:   xxx $xxxx
-        $35c5f  xx xx xx:   xxx SwordStabDamage,y
-        $35c62  xx xx xx:   xxx $xxxx
-++      $35c65  xx:         xxx
+        $35c36  xx xx:      xxx ++  ; $35c6c
+        $35c38  xx xx:       xxx >rts ; $35c65
+        $35c3a  xx xx:       xxx #$xx
+        $35c3c  xx xx:       xxx >rts ; $35c65
+        $35c3e  xx xx xx:    xxx $xxxx
+        $35c41  xx xx:       xxx #$xx
+        $35c43  xx xx:       xxx + ; $35c4c
+        $35c45  xx xx xx:     xxx $xxxx
+        $35c48  xx xx:        xxx #$xx
+        $35c4a  xx xx:        xxx >rts ; $35c65
++       $35c4c  xx xx:       xxx #$xx  ; zero out the action - remove sword?
+        $35c4e  xx xx xx:    xxx $xxxx
+        $35c51  xx xx:       xxx #$xx
+        $35c53  xx xx xx:    xxx $3572d
+        $35c56  xx xx xx:    xxx EquippedSword
+        $35c59  xx xx xx:    xxx $35c66,y
+        $35c5c  xx xx xx:    xxx $xxxx ; Sword's Element
+        $35c5f  xx xx xx:    xxx SwordStabDamage,y
+        $35c62  xx xx xx:    xxx $xxxx
+        $35c65  xx:          xxx
 ;;; --------------------------------
 DataTable_35c66
         $35c66              .byte $xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-+++     $35c6c  xx xx xx:   xxx $xxxx
-        $35c6f  xx xx:      xxx $xx
-        $35c71  xx xx:      xxx #$xx
-        $35c73  xx xx:      xxx $xx
+++      $35c6c  xx xx xx:   xxx EquippedSword
+        $35c6f  xx xx:       xxx SwordSwingEnd ; no sword equipped
+        $35c71  xx xx:      xxx #SWORD_CRYSTALIS
+        $35c73  xx xx:       xxx SwordSwingCrystalis
         $35c75  xx xx xx:   xxx $xxxx
         $35c78  xx:         xxx
         $35c79  xx:         xxx
         $35c7a  xx:         xxx
         $35c7b  xx xx:      xxx $xx
-        $35c7d  xx xx:      xxx $xx
-        $35c7f  xx xx xx:   xxx $xxxx
-        $35c82  xx xx:      xxx #$xx
-        $35c84  xx xx:      xxx #$xx
-        $35c86  xx xx:      xxx $xx
-        $35c88  xx xx xx:   xxx $xxxx
-        $35c8b  xx xx:      xxx #$xx
-        $35c8d  xx xx:      xxx $xx
-        $35c8f  xx xx:      xxx $xx
-        $35c91  xx xx:      xxx $xx
+        $35c7d  xx xx:      xxx + ; $35c91
+        $35c7f  xx xx xx:    xxx PlayerStatus
+        $35c82  xx xx:       xxx #$xx
+        $35c84  xx xx:       xxx #STATUS_PARALYZED
+        $35c86  xx xx:       xxx + ; $35c91
+        $35c88  xx xx xx:     xxx EquippedPassiveItem
+        $35c8b  xx xx:        xxx #ITEM_WARRIOR_RING
+        $35c8d  xx xx:        xxx + ; $35c91
+        $35c8f  xx xx:         xxx $xx
++       $35c91  xx xx:      xxx $xx
         $35c93  xx xx:      xxx #$xx
-        $35c95  xx xx:      xxx $xx
-        $35c97  xx xx xx:   xxx $xxxx
-        $35c9a  xx xx xx:   xxx $34bd8,y
-        $35c9d  xx xx xx:   xxx $xxxx
-        $35ca0  xx xx:      xxx $xx
-        $35ca2  xx xx:      xxx $xx
-        $35ca4  xx xx xx:   xxx $xxxx
-        $35ca7  xx xx xx:   xxx $xxxx
+        $35c95  xx xx:      xxx + ; $35ca7
+        $35c97  xx xx xx:    xxx $xxxx
+        $35c9a  xx xx xx:    xxx $34bd8,y
+        $35c9d  xx xx xx:    xxx $xxxx
+        $35ca0  xx xx:       xxx + ; $35ca7
+        $35ca2  xx xx:        xxx $xx
+        $35ca4  xx xx xx:     xxx $xxxx
++       $35ca7  xx xx xx:   xxx EquippedSword
         $35caa  xx:         xxx
         $35cab  xx xx:      xxx #$xx
         $35cad  xx:         xxx
@@ -41231,13 +41276,15 @@ DataTable_35c66
         $35cc8  xx xx xx:   xxx $xxxx
         $35ccb  xx xx xx:   xxx $34bd8,y
         $35cce  xx xx xx:   xxx SpendMPOrDoubleReturn
+SwordSwingEnd
         $35cd1  xx xx:      xxx #$xx
         $35cd3  xx xx xx:   xxx $xxxx
         $35cd6  xx xx xx:   xxx $xxxx
         $35cd9  xx:         xxx
 ;;; --------------------------------
-        $35cda  xx xx:      xxx $xx
-        $35cdc  xx xx:      xxx #$xx
+SwordSwingCrystalis
+        $35cda  xx xx:      xxx CurrentLocation
+        $35cdc  xx xx:      xxx #LOC_DYNA
         $35cde  xx xx:      xxx $xx
         $35ce0  xx xx xx:   xxx $xxxx,x
         $35ce3  xx xx:      xxx #$xx
@@ -41314,8 +41361,9 @@ ObjectActionJump_02
         $35d96  xx xx:      xxx #$xx
         $35d98  xx xx:      xxx $xx
 ObjectActionJump_03
-+       $35d9a  xx xx xx:   xxx $xxxx
-        $35d9d  xx xx:      xxx + ; $35db7
+        ;; This runs on X=0
++       $35d9a  xx xx xx:   xxx PlayerStatus
+        $35d9d  xx xx:      xxx + ; $35db7 - changed
         $35d9f  xx xx:      xxx #$xx
         $35da1  xx xx:      xxx #$xx
         $35da3  xx xx:      xxx + ; $35db7
@@ -43134,6 +43182,7 @@ ObjectActionJump_28_Golem
         $36b9b  xx xx xx:   xxx ObjectActionJump_24_HomingMovement
 ;;; --------------------------------
 ObjectActionJump_29_AmorphousBlob
+        ;; e.g. the acid/lava creatures that can't be hit unless head is up
         $36b9e  xx xx xx:   xxx $36bac
         $36ba1  xx xx xx:   xxx $xxxx
         $36ba4  xx xx:       xxx >rts
@@ -46227,7 +46276,7 @@ Metasprite_02                   ; Metasprite 02
         $3868a              .byte $xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 Metasprite_00                   ; Metasprite 00
-        ;; Player facing north
+        ;; Player facing north ?
         $3868e              .byte $xx,$xx
         ;; Variant 0
         $38690              .byte $xx,$xx,$xx,$xx
@@ -47215,6 +47264,7 @@ Metasprite_4c                   ; Metasprite 4c
         $39165              .byte $xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 Metasprite_2c                   ; Metasprite 2c
+        ;; mesia north
         $39169              .byte $xx,$xx
         ;; Variant 0
         $3916b              .byte $xx,$xx,$xx,$xx
@@ -47232,6 +47282,7 @@ Metasprite_2c                   ; Metasprite 2c
         $39197              .byte $xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 Metasprite_2d                   ; Metasprite 2d
+        ;; mesia east
         $3919b              .byte $xx,$xx
         ;; Variant 0
         $3919d              .byte $xx,$xx,$xx,$xx
@@ -47249,6 +47300,8 @@ Metasprite_2d                   ; Metasprite 2d
         $391c9              .byte $xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 Metasprite_2e                   ; Metasprite 2e
+        ;; mesia south (pattern bank $47, palette $06)
+        ;; as opposed to simea pattern bank $41 palette $01
         $391cd              .byte $xx,$xx
         ;; Variant 0
         $391cf              .byte $xx,$xx,$xx,$xx
@@ -47266,6 +47319,7 @@ Metasprite_2e                   ; Metasprite 2e
         $391fb              .byte $xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 Metasprite_2f                   ; Metasprite 2f
+        ;; mesia west
         $391ff              .byte $xx
         $39200              .word ($xxxx)
 ;;; ----------------------------------------------------------------
@@ -51322,6 +51376,7 @@ SetSprite0_F0
         $3c1ad  xx:         xxx
 ;;; --------------------------------
         ;; This seems to run every frame of the 'start' status screen
+        ;; Also runs every frame of "change" menu.
         $3c1ae  xx xx:      xxx $xx
         $3c1b0  xx:         xxx
         $3c1b1  xx xx:       xxx $xx
@@ -52420,7 +52475,7 @@ MainLoopJump_08_ContinueGame
         $3ca17  xx xx:      xxx $xx
         $3ca19  xx xx xx:   xxx $3ca27,y
         $3ca1c  xx xx:      xxx $xx
-        $3ca1e  xx xx xx:   xxx $3c25d
+        $3ca1e  xx xx xx:   xxx LoadOneObjectDataInternal
         $3ca21  xx:         xxx
         $3ca22  xx:         xxx
         $3ca23  xx xx:      xxx $xx
@@ -53324,9 +53379,9 @@ MainGameModeJump_11_Dialog
         $3d1a7  xx xx:      xxx $xx
         $3d1a9  xx xx:      xxx #$xx
         $3d1ab  xx xx:      xxx $xx
-        $3d1ad  xx xx xx:   xxx $3c25d
+        $3d1ad  xx xx xx:   xxx LoadOneObjectDataInternal
         $3d1b0  xx xx:      xxx $xx
-        $3d1b2  xx xx xx:   xxx $3c25d
+        $3d1b2  xx xx xx:   xxx LoadOneObjectDataInternal
 ;;; --------------------------------
         $3d1b5  xx xx xx:   xxx $xxxx
         $3d1b8  xx xx xx:   xxx $3d1ff
@@ -53505,6 +53560,11 @@ MainGameModeJump_11_Dialog
         $3d343  xx xx xx:   xxx $xxxx
         $3d346  xx:         xxx
 ;;; --------------------------------
+        ;; This initializes dialog box when talking to somebody.
+        ;; $20$21 was written by $1c085.
+        ;;   - this same memory ($7de) is also written elsewhere,
+        ;;     e.g. $3decb for change menu, $3d0b6 for
+        ;;     "not enough mp" and "nothing happens" messages
         $3d347  xx xx:      xxx $xx
         $3d349  xx xx xx:   xxx $xxxx
         $3d34c  xx xx:      xxx $xx
@@ -53580,7 +53640,7 @@ MainGameModeJump_11_Dialog
         $3d3dd  xx xx:      xxx $xx
         $3d3df  xx xx:      xxx #$xx
         $3d3e1  xx xx:      xxx $xx
-        $3d3e3  xx xx xx:   xxx $3c25d
+        $3d3e3  xx xx xx:   xxx LoadOneObjectDataInternal
         $3d3e6  xx xx:      xxx #GAME_MODE_NORMAL
         $3d3e8  xx xx:      xxx GameMode
         $3d3ea  xx:         xxx
@@ -53875,7 +53935,7 @@ JumpTable_3d563_10
         $3d648  xx xx:      xxx $xx
         $3d64a  xx xx xx:   xxx $xxxx
         $3d64d  xx xx:      xxx $xx
-        $3d64f  xx xx xx:   xxx $3c25d
+        $3d64f  xx xx xx:   xxx LoadOneObjectDataInternal
 ;;; --------------------------------
         $3d652  xx:         xxx
 ;;; --------------------------------
@@ -53912,7 +53972,7 @@ JumpTable_3d563_09
         $3d684  xx xx:      xxx $xx
         $3d686  xx xx:      xxx #$xx
         $3d688  xx xx:      xxx $xx
-        $3d68a  xx xx xx:   xxx $3c25d
+        $3d68a  xx xx xx:   xxx LoadOneObjectDataInternal
         $3d68d  xx xx xx:   xxx $3d6a9,y
         $3d690  xx xx:      xxx $xx
         $3d692  xx xx xx:   xxx $3d6aa,y
@@ -53996,7 +54056,7 @@ JumpTable_3d563_14
         $3d73c  xx xx:      xxx $xx
         $3d73e  xx xx:      xxx #$xx
         $3d740  xx xx:      xxx $xx
-        $3d742  xx xx xx:   xxx $3c25d
+        $3d742  xx xx xx:   xxx LoadOneObjectDataInternal
 ;;; --------------------------------
         $3d745  xx:         xxx
 ;;; --------------------------------
@@ -54010,7 +54070,7 @@ JumpTable_3d563_15
         $3d755  xx xx:      xxx $xx
         $3d757  xx xx:      xxx #$xx
         $3d759  xx xx:      xxx $xx
-        $3d75b  xx xx xx:   xxx $3c25d
+        $3d75b  xx xx xx:   xxx LoadOneObjectDataInternal
 ;;; --------------------------------
 JumpTable_3d563_18
         $3d75e  xx xx:      xxx #$xx
@@ -54270,7 +54330,7 @@ MainGameModeJump_12_Inventory
         $3d957  xx xx:         xxx $xx
         $3d959  xx xx:         xxx #$xx
         $3d95b  xx xx:         xxx $xx
-        $3d95d  xx xx xx:      xxx $3c25d
+        $3d95d  xx xx xx:      xxx LoadOneObjectDataInternal
         $3d960  xx:           xxx
         $3d961  xx xx xx:     xxx PlayerMaxHP
         $3d964  xx:          xxx
@@ -55441,7 +55501,7 @@ NpcDataJump_4                   ; Called from $3e215
 -       $3e22a  xx xx:         xxx $xx
         $3e22c  xx xx:         xxx $xx
         $3e22e  xx xx:         xxx $xx
-        $3e230  xx xx xx:      xxx $3c25d
+        $3e230  xx xx xx:      xxx LoadOneObjectDataInternal
         $3e233  xx xx xx:      xxx SetBit_380_20_BasedOn_2e_80
         $3e236  xx xx xx:      xxx NpcDataJump_Finish
         ;;                     ----------------------

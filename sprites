@@ -1,0 +1,107 @@
+Palettes:
+  All sprite palettes in $7e4..7e7 are relative to $b0.
+  The first position is for the player and is fixed at 0.
+  The second position is for the sword and runs from 1..5.
+  The third and fourth positions are for NPCs.
+
+Patterns:
+  Sprites have four banks stored in $7f2..7f5.
+  The first position is for the player and is fixed at $41.
+  The second position is for the sword and runs $42..46.
+  Third and fourth positions are for NPCs.
+
+Metasprites:
+  Player:
+    0..3: player facing NESW, no shield
+    4..7: same as above, but in varying stages of stabbing the sword
+    8..b: overlay for 0..3 - hand with no shield
+    c..f: overlay for 0..3 - with shield
+    10..13: overlay for 4..7 - with shield
+
+  Sword shots:
+    14..?
+
+  NPCs:
+    2c..2f: NPC 1
+      pat $47 / pal $06 - Mesia
+      pat $48 / pal ??? - Man
+      pat $49 / pal ??? - Woman in dress w/ pigtails
+      pat $4a / pal ??? - Female soldiers in amazones
+      pat $4b / 
+          $4c
+          $4d - Stom
+          $4e..4f - nonsense
+          $50 - Tornel
+    30..33: NPC 2
+      pat $47 - nonsense
+          $48 - man in cloak
+          $49 - young man
+          ...
+          $4d - soldier
+          $4e..4f - nonsense
+          $50 - Zebu
+    34..37: NPC 3
+          $48
+          ...
+          $4d - woman from change spell
+          ...
+          $50 - Asina
+    38..3b: NPC 4
+          $48
+          ...
+          $4d - akahana
+          ... - nonsense
+          $50 - kensu
+    3c..3f: Small NPC 1
+          $4e - kid
+          $4f - dwarf
+    40..43: Small NPC 2
+          $4e - girl
+          $4f - long-haired dwarf
+    44..47: NPC 4 but with palette 1
+    48..4b: Small NPC 3
+          $4e - rabbit
+          $4f - dwarf child
+    4c: empty
+    4d: {$51 - sitting kensu, $5c and $5d look similar to simea}
+    4e: $47 - fortune teller (sitting)
+    4f: $51 - sleeping kensu
+    50: $51 - dead stom
+        $53 - top of rage (probably not the real thing)
+    51: ???
+    52: flyer
+        62 - moth
+        63 - devil
+        66 - flying medusa head
+        68 - bird
+    53: 57 - some sort of laser source?
+        5f - blob kensu
+        64 - slime
+        65 - jelly
+        67 - living rock
+        68 - similar to living rock, but tend to be red
+        6a - turtle
+        6c - bat
+    54: 51 - some dead person
+    55: 4e - stom?
+
+    58..5b: 5f - skeleton-ish, but not quite
+            60 - weretiger
+            63 - black knight
+            64 - horned monster???
+            65 - trolls/orcs outside portoa
+            66 - wyvern
+            67 - zombie
+            68 - skeleton
+            69 - visible wraith
+            6a - water monsters with the spears
+            6b - soldier
+            6c - 
+
+    60..63: 56 - tower mech(not clear which)
+            5e - giant floating eye
+            6e - medusa
+
+I'm doing this all backwards, though the other direction is
+not particularly feasible...
+    - 64 rows of 128 items?

@@ -243,6 +243,30 @@ class ObjectData extends Entity {
     }
   }
 
+  // Returns a byte array for this entry
+  serialize() {
+    const out = [this.sfx];
+    for (let i = 0; i < 4; i++) {
+      let k = out.length;
+      out.push(0);
+      for (let j = 0; j < 8; j++) {
+        if (this.objectData[8 * i + j]) {
+          out[k] |= (0x80 >>> j);
+          out.push(this.objectData[8 * i + j]);
+        }
+      }
+    }
+    return Uint8Array.from(out);
+  }
+
+  write() {
+    // Note: shift of 0x10000 is irrelevant
+    rom.prg[this.objectDataPointer] = this.objectDataBase & 0xff;
+    rom.prg[this.objectDataPointer + 1] = (this.objectDataBase >>> 8) & 0xff;
+    const data = this.serialize();
+    rom.prg.subarray(this.objectDataBase, this.objectDataBase + data.length).set(data);
+  }
+
   get(addr) {
     return this.objectData[(addr - 0x300) >>> 5];
   }
@@ -349,6 +373,117 @@ class Metasprite extends Entity {
   }
 }
 
+class DataTable extends Array {
+  constructor(rom, base, count, width, func = width > 1 ? (...i) => i : i => i) {
+    super(count);
+    this.rom = rom;
+    this.base = base;
+    this.count = count;
+    this.width = width;
+    for (let i = 0; i < count; i++) {
+      this[i] = func(...slice(rom.prg, base + i * width, width));
+    }
+  }
+}
+
+class AddressTable extends Array {
+  constructor(rom, base, count, offset, func = i => i) {
+    super(count);
+    this.rom = rom;
+    this.base = base;
+    this.count = count;
+    this.offset = offset;
+    this.addresses = seq(this.count, i => addr(rom.prg, base + 2 * i, offset));
+    for (let i = 0; i < count; i++) {
+      this[i] = func(this.addresses[i], i, this.addresses);
+    }
+  }
+}
+
+class Message {
+  constructor(messages, part, id, addr) {
+    this.messages = messages;
+    this.part = part;
+    this.id = id;
+    this.addr = addr;
+
+    // Parse the message
+    const prg = messages.rom.prg;
+    const parts = [];
+    this.bytes = [];
+    for (let i = addr; prg[i]; i++) {
+      let b = prg[i];
+      this.bytes.push(b);
+      if (b == 1) {
+        // NOTE - there is one case where two messages seem to abut without a
+        // null terminator - $2ca91 ($12:$08) falls through from 12:07.
+        // if (i != addr && prg[i - 1] != 3) {
+        //   throw new Error(`Unexpected start message signal at ${i.toString(16)}`);
+        // }
+      } else if (b == 2) {
+        parts.push('\n');
+      } else if (b == 3) {
+        parts.push('\u25bc\n'); // black down-pointing triangle
+      } else if (b == 4) {
+        parts.push('SIMEA');
+      } else if (b == 8) {
+        parts.push('ITEM');
+      } else if (b >= 5 && b <= 9) {
+        const next = prg[++i];
+        if (b == 9) {
+          parts.push(' '.repeat(next));
+          continue;
+        }        
+        parts.push(messages.extraWords[b][next]);
+        if (!PUNCTUATION[String.fromCharCode(prg[i + 1])]) {
+          parts.push(' ');
+        }
+      } else if (b >= 0x80) {
+        parts.push(messages.basicWords[b - 0x80]);
+        if (!PUNCTUATION[String.fromCharCode(prg[i + 1])]) {
+          parts.push(' ');
+        }
+      } else if (b >= 0x20) {
+        parts.push(String.fromCharCode(b));
+      } else {
+        throw new Error(`Non-exhaustive switch: ${b} at ${i.toString(16)}`);
+      }
+    }
+    this.text = parts.join('');
+  }
+}
+
+const PUNCTUATION = {
+  '\0': true, '.': true, ',': true, '_': true, ':': true, '!': true, '?': true,
+  '\'': true, ' ': true,
+};
+
+class Messages {
+  constructor(rom) {
+    this.rom = rom;
+
+    const str = (a) => readString(rom.prg, a);
+    this.basicWords = new AddressTable(rom, 0x28900, 0x80, 0x20000, str);
+    this.extraWords = {
+      5: new AddressTable(rom, 0x28a00, 10, 0x20000, str), // less common
+      6: new AddressTable(rom, 0x28a14, 36, 0x20000, str), // people
+      7: new AddressTable(rom, 0x28a5c, 74, 0x20000, str), // items (also 8?)
+    };
+
+    this.banks = new DataTable(rom, 0x283fe, 0x24, 1);
+    this.parts = new AddressTable(
+        rom, 0x28422, 0x22, 0x20000,
+        (addr, part, addrs) => {
+          // need to compute the end based on the array?
+          const count = part == 0x21 ? 3 : (addrs[part + 1] - addr) >>> 1;
+          // offset: bank=15 => 20000, bank=16 => 22000, bank=17 => 24000
+          return new AddressTable(
+              rom, addr, count, (this.banks[part] << 13) - 0xa000,
+              (m, id) => new Message(this, part, id, m));
+        });
+  }
+}
+
 export class Rom {
   constructor(rom) {
     this.prg = rom.slice(0x10, 0x40010);
@@ -381,6 +516,7 @@ export class Rom {
     this.objects = seq(0x100, i => new ObjectData(this, i));
     this.adHocSpawns = seq(0x60, i => new AdHocSpawn(this, i));
     this.metasprites = seq(0x100, i => new Metasprite(this, i));
+    this.messages = new Messages(this);
   }
 
   // TODO - cross-reference monsters/metasprites/metatiles/screens with patterns/palettes
@@ -409,11 +545,77 @@ export class Rom {
     return projectiles;
   }
 
+  // build up a map of monster ID to "default difficulty"
+  get monsterLevels() {
+    const locationDifficulty = [
+      [0x00, 0x0b, 0],
+      [0x0c, 0x13, 2],
+      [0x14, 0x1f, 1],
+      [0x20, 0x3f, 2], // includes both west and north
+      [0x40, 0x57, 3], // waterfall valley
+      [0x58, 0x5f, 7],
+      [0x60, 0x71, 3], // angry sea
+      [0x72, 0x8e, 4], // hydra
+      [0x8f, 0x9f, 6], // desert, pyramid front
+      [0xa0, 0xa6, 7], // pyramid back
+      [0xa7, 0xf1, 5], // fortress, etc
+      [0xf2, 0xff, 4], // mado
+    ];
+    const difficulties = [];
+    for (const [a, b, d] of locationDifficulty) {
+      for (let i = a; i <= b; i++) {
+        difficulties[i] = d;
+      }
+    }
+    let monsters = new Map();
+    for (const l of this.locations) {
+      if (!l || !l.objects) continue;
+      for (const o of l.objects) {
+        if ((o[2] & 7) != 0) continue;
+        const id = (o[3] + 0x50) & 0xff;
+        const diff = monsters.has(id) ? monsters.get(id) : 8;
+        monsters.set(id, Math.min(diff, difficulties[l.id]));
+      }
+    }
+    monsters = [...monsters];
+    monsters.sort((x, y) => (x[0] - y[0]));
+    return monsters;
+  }
+
   // Use the browser API to load the ROM.  Use #reset to forget and reload.
   static async load() {
     return new Rom(await pickFile());
   }
+
+  // Don't worry about other datas yet
+  writeObjectData() {
+    // build up a map from actual data to indexes that point to it
+    let addr = 0x1ae00;
+    const datas = {};
+    for (const object of this.objects) {
+      const ser = object.serialize();
+      const data = ser.join(' ');
+      if (data in datas) {
+        object.objectDataBase = datas[data];
+      } else {
+        object.objectDataBase = addr;
+        datas[data] = addr;
+        addr += ser.length;
+      }
+      object.write();
+    }
+    console.log(`Wrote object data from $1ac00 to $${addr.toString(16).padStart(5, 0)}, saving ${0x1be91 - addr} bytes.`);
+    return addr;
+  }
 }
+
+const readString = (arr, addr) => {
+  const bytes = [];
+  while (arr[addr]) {
+    bytes.push(arr[addr++]);
+  }
+  return String.fromCharCode(...bytes);
+};
 
 // Only makes sense in the browser.
 const pickFile = () => {

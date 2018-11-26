@@ -206,19 +206,18 @@ a6:
    ;; Compute HP
    lda ObjectHP,x
    beq SkipHP
-   pha
-    lda TempLevel
-    clc
-    adc SwordLevel ; should never carry - 32 is max sword, 18 max level
-    sec
-    sbc ObjectDef,x
-    beq a7
-     bpl a8
+   sta $61
+   dec $61 ; 0 is still alive, so subtract 1 - this gives minimum HP for #hits
+   lda TempLevel
+   clc
+   adc SwordLevel ; should never carry - 32 is max sword, 18 max level
+   sec
+   sbc ObjectDef,x
+   beq a7
+    bpl a8
 a7:
-      lda $#01
+     lda $#01
 a8:
-    sta $61
-   pla
    sta $62
    jsr Multiply16Bit
    lda $61

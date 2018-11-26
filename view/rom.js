@@ -259,12 +259,12 @@ class ObjectData extends Entity {
     return Uint8Array.from(out);
   }
 
-  write() {
+  write(rom) {
     // Note: shift of 0x10000 is irrelevant
-    rom.prg[this.objectDataPointer] = this.objectDataBase & 0xff;
-    rom.prg[this.objectDataPointer + 1] = (this.objectDataBase >>> 8) & 0xff;
+    this.rom.prg[this.objectDataPointer] = this.objectDataBase & 0xff;
+    this.rom.prg[this.objectDataPointer + 1] = (this.objectDataBase >>> 8) & 0xff;
     const data = this.serialize();
-    rom.prg.subarray(this.objectDataBase, this.objectDataBase + data.length).set(data);
+    this.rom.prg.subarray(this.objectDataBase, this.objectDataBase + data.length).set(data);
   }
 
   get(addr) {
@@ -486,8 +486,8 @@ class Messages {
 
 export class Rom {
   constructor(rom) {
-    this.prg = rom.slice(0x10, 0x40010);
-    this.chr = rom.slice(0x40010);
+    this.prg = rom.subarray(0x10, 0x40010);
+    this.chr = rom.subarray(0x40010);
 
     // Load up a bunch of data tables.  This will include a large number of the
     // data tables in the ROM.  The idea is that we can edit the arrays locally

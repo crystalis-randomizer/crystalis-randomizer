@@ -4,9 +4,17 @@ class Assembler {
     this.labels = {};
     this.lines = [];
     this.pc = 0;
+    this.lineNumber = -1;
+    this.lineContents = '';
+  }
+
+  addLine(line) {
+    this.lines.push(line.orig(this.lineNumber, this.lineContents));
   }
 
   ingest(line) {
+    this.lineNumber++;
+    this.lineContents = line;
     // remove comments
     line = line.replace(/;.*/, '');
     // trim the string, leave at most one space at start
@@ -19,18 +27,18 @@ class Assembler {
     let match;
 
     if ((match = /^\s*\.org\s+(\S+)/i.exec(line))) {
-      this.lines.push(new OrgLine((this.pc = parseNumber(match[1]))));
+      this.addLine(new OrgLine((this.pc = parseNumber(match[1]))));
       return;
     } else if ((match = /^\s*\.bank\s+(\S+)\s+(\S+)\s*:\s*(\S+)/i.exec(line))) {
       const [_, prg, cpu, length] = match;
-      this.lines.push(new BankLine(parseNumber(prg), parseNumber(cpu), parseNumber(length)));
+      this.addLine(new BankLine(parseNumber(prg), parseNumber(cpu), parseNumber(length)));
       return;
     } else if ((match = /^\s*\.(byte|word)\s+(.*)/i.exec(line))) {
       const line = (match[1] == 'word' ? WordLine : ByteLine).parse(match[2]);
-      this.lines.push(line);
+      this.addLine(line);
       this.pc += line.size();
       return;
-    } else if ((match = /^define\s+(\S+)\s+(.*)/)) {
+    } else if ((match = /^define\s+(\S+)\s+(.*)/.exec(line))) {
       const label = match[1];
       this.labels[label] = parseNumber(match[2]); // not twos complement, but will still be absolute
       return;
@@ -42,7 +50,7 @@ class Assembler {
     }
     if ((match = /^\s+([a-z]{3})(\s+.*)?$/.exec(line))) {
       const line = new Opcode(match[1], (match[2] || '').trim(), this.pc);
-      this.lines.push(line);
+      this.addLine(line);
       this.pc += line.size();
     } else if (/\S/.test(line)) {
       throw new Error(`Could not parse line ${line}`);
@@ -54,7 +62,14 @@ class Assembler {
     const context = new Context(this.labels);
     const output = [];
     for (const line of this.lines) {
-      line.expand(context);
+      try {
+        line.expand(context);
+      } catch (e) {
+        const stack = e.stack.replace(`Error: ${e.message}`, '');
+        const message = e.message;
+        const pos = ` from line ${line.origLineNumber}: \`${line.origContent}\``;
+        throw new Error(`${message}${pos}${stack}\n================`);
+      }
       for (const b of line.bytes()) {
         output[context.pc++] = b;
       }
@@ -62,7 +77,7 @@ class Assembler {
     // output is a sparse array - find the first indices.
     const starts = [];
     for (const i in output) {
-      if (!(i - 1 in output)) starts.push(i);
+      if (!(i - 1 in output)) starts.push(Number(i));
     }
     // now output chunks.
     const chunks = [];
@@ -77,7 +92,19 @@ class Assembler {
   }
 }
 
-class ByteLine {
+// Base class so that we can track where errors come from
+class AbstractLine {
+  orig(number, content) {
+    this.origLineNumber = number;
+    this.origContent = content;
+    return this;
+  }
+
+  expand() { throw new Error(`abstract: ${this.constructor}`); }
+  bytes() { throw new Error(`abstract: ${this.constructor}`); }
+}
+
+class ByteLine extends AbstractLine {
   static parse(line) {
     const bytes = [];
     for (let part of line.split(',')) {
@@ -93,6 +120,7 @@ class ByteLine {
   }
 
   constructor(bytes) {
+    super();
     this.bytes_ = bytes;
   }
 
@@ -107,8 +135,19 @@ class ByteLine {
   expand() {}
 }
 
-class WordLine {
+class WordLine extends AbstractLine {
+  static parse(line) {
+    const words = [];
+    for (let part of line.split(',')) {
+      part = part.trim();
+      part = part.replace(/[()]/g, ''); // handle these differently? complement?
+      words.push(parseNumber(part));
+    }
+    return new WordLine(words);
+  }
+
   constructor(words) {
+    super();
     this.words = words;
   }
 
@@ -118,6 +157,7 @@ class WordLine {
       bytes.push(w & 0xff);
       bytes.push(w >>> 8);
     }
+    return bytes;
   }
 
   size() {
@@ -133,8 +173,9 @@ class WordLine {
   }
 }
 
-class OrgLine {
+class OrgLine extends AbstractLine {
   constructor(pc) {
+    super();
     this.pc = pc;
   }
 
@@ -147,8 +188,9 @@ class OrgLine {
   }
 }
 
-class BankLine {
+class BankLine extends AbstractLine {
   constructor(prg, cpu, length) {
+    super();
     this.prg = prg
     this.cpu = cpu;
     this.length = length;
@@ -200,7 +242,8 @@ class Context {
 
   mapPrgToCpu(prgAddr) {
     const cpuAddr = this.prgToCpu[prgAddr];
-    if (cpuAddr == null) throw new Error(`PRG address unmapped: ${prgAddr}`);
+    // If this errors, we probably need to add a .bank directive.
+    if (cpuAddr == null) throw new Error(`PRG address unmapped: $${prgAddr.toString(16)}`);
     return cpuAddr;
   }
 
@@ -255,6 +298,7 @@ class Patch {
       arr.set(chunk, 5);
       arrays.push(arr);
       length += arr.length;
+      console.log(`Patch from $${chunk.start.toString(16)}..$${(chunk.start+chunk.length).toString(16)}`);
     }
     const data = new Uint8Array(length);
     let i = 5;
@@ -323,8 +367,9 @@ export const buildRomPatch = (prg, chr, prgSize) => {
 // Opcode data for 6502
 // Does not need to be as thorough as JSNES's data
 
-class Opcode {
+class Opcode extends AbstractLine {
   constructor(mnemonic, arg, pc) {
+    super();
     this.mnemonic = mnemonic;
     this.arg = mode(mnemonic, arg);
     this.pc = pc;
@@ -352,7 +397,8 @@ class Opcode {
   }
 
   expand(context) {
-    this.arg[2] = context.map(this.arg[2]);
+try{    this.arg[2] = context.map(this.arg[2]);
+}catch(err){console.error(this);throw err;}
     this.pc = context.map(~this.pc);
   }
 }
@@ -366,23 +412,24 @@ const mode = (mnemonic, arg) => {
     if (!(mnemonic in opcodes)) throw new Error(`Bad mnemonic: ${mnemonic}`);
     if (mode[0] in opcodes[mnemonic]) return mode;
   }
-  throw new Error(`Could not find mode for ${mnemonic} ${arg}`);
+  throw new Error(`Could not find mode for ${mnemonic} ${arg}
+Expected one of [${Object.keys(opcodes[mnemonic]).join(', ')}]`);
 };
 
 const modes = [
   // NOTE: relative is tricky because it only applies to jumps
   [/^$/, () => ['Implied', 0]],
-  [/^#(.*)$/, (x) => ['Immediate', 1, parseNumber(x, true)]],
+  [/^#(.+)$/, (x) => ['Immediate', 1, parseNumber(x, true)]],
   [/^(\$..)$/, (x) => ['ZeroPage', 1, parseNumber(x, true)]],
   [/^(\$..),x$/, (x) => ['ZeroPageX', 1, parseNumber(x, true)]],
   [/^(\$..),y$/, (x) => ['ZeroPageY', 1, parseNumber(x, true)]],
   [/^\((\$..),x\)$/, (x) => ['PreindexedIndirect', 1, parseNumber(x, true)]],
   [/^\((\$..)\),y$/, (x) => ['PostindexedIndirect', 1, parseNumber(x, true)]],
-  [/^\((.*)\)$/, (x) => ['IndirectAbsolute', 2, parseNumber(x, true)]],
-  [/^(.*),x$/, (x) => ['AbsoluteX', 2, parseNumber(x, true)]],
-  [/^(.*),y$/, (x) => ['AbsoluteY', 2, parseNumber(x, true)]],
-  [/^(.*)$/, (x) => ['Absolute', 2, parseNumber(x, true)]],
-  [/^(.*)$/, (x) => ['Relative', 1, parseNumber(x, true)]],
+  [/^\((.+)\)$/, (x) => ['IndirectAbsolute', 2, parseNumber(x, true)]],
+  [/^(.+),x$/, (x) => ['AbsoluteX', 2, parseNumber(x, true)]],
+  [/^(.+),y$/, (x) => ['AbsoluteY', 2, parseNumber(x, true)]],
+  [/^(.+)$/, (x) => ['Absolute', 2, parseNumber(x, true)]],
+  [/^(.+)$/, (x) => ['Relative', 1, parseNumber(x, true)]],
 ];
 
 const parseNumber = (str, allowLabels = false) => {

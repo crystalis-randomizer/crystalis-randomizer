@@ -29,6 +29,10 @@ loop1:
 `));
 
 
+// PLAN - coopt the 'level' stat which is no longer used to indicate
+// bosses that increase difficulty when they're killed.
+
+
 
 // // Extra code for difficulty scaling
 // export const scaleDifficultyLib = buildRomPatch(assemble(`
@@ -132,12 +136,56 @@ define ObjectExp $520
 CoinAmounts:
   .word 0,1,2,4,8,16,30,50,100,200,300,400,500,600,700,800
 
-.bank $34000 $8000:$2000 ; collision code
+.bank $1c000 $8000:$4000 ; item use code
+.org $1c494
+  jmp CheckForFogLamp
+.org $1c4db
+ItemUseJump_Invalid:
+
+.org $3ff44
+CheckForFogLamp:
+  beq CFFL1
+   jmp ItemUseJump_Invalid
+CFFL1:
+  lda $23
+  cmp #$35
+  bne CFFL2
+   inc Difficulty
+CFFL2:
+  rts
+
+.org $3ffe3
+.bank $34000 $8000:$4000 ; collision code
+KillObjectPatchImpl:
+  lda $420,y
+  lsr
+  lda #$0
+  adc Difficulty
+  jmp KillObject
+
 .org $350fa
-  clc
-  bcc SkipLevelCheck
+  bne SkipLevelCheck
+EnsureNonzeroDamage:
+  ;; TODO - what do we do with immune enemies?
+  ;; we could possibly allow any sword but halve the damage?
+  ;;   - would be nice to get a different SFX for that...?
+  bit $10
+  bne DealDamage
+  inc $10
+  bne DealDamage
+KillObjectPatched:
+  jmp KillObjectPatchImpl
 .org $35108
 SkipLevelCheck:
+.org $35123
+  bcs EnsureNonzeroDamage
+.org $3513b
+DealDamage:
+.org $35144
+  bcc KillObjectPatched
+.org $35152
+KillObject:
+
 
 .bank $1a000 $a000:$2000 ; object data
 .org $3c409
@@ -363,11 +411,13 @@ const adjustObjectDifficultyStats = (data, rom) => {
   for (const [id, {ladj, sword, hits, def, atk, exp, gold}] of SCALED_MONSTERS) {
     // indicate that this object needs scaling
     const o = rom.objects[id].objectData;
+    const boss = [0x57, 0x5e, 0x68, 0x7d, 0x88, 0x97, 0x9b, 0x9e].contains(id) ? 1 : 0;
     o[2] |= 0x80; // recoil
     o[6] = hits; // HP
     o[7] = atk;  // ATK
     // Sword: 0..3 (wind - thunder) preserved, 4 (crystalis) => 7
     o[8] = def << 3 | (sword < 4 ? sword : sword == 4 ? 7 : 0); // DEF
+    o[10] = o[10] & 0xe0 | boss;
     o[16] = o[16] & 0x0f | gold << 4; // GLD
     o[17] = exp << 2 | ladj; // EXP
   }

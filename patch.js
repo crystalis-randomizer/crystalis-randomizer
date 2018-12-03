@@ -117,6 +117,15 @@ loop1:
 // `));
 
 
+
+// TODO - vampire fight gets messed up
+//   - instead of bats coming out, a weird green thing shows up on the player's
+//     face.  we need to make a snapshot right before going into the room so as
+//     to debug this more easily with different patches.
+//   - also, difficulty does not increment after the kill.
+//   - this seems weird - what would cause it?
+
+
 // NOTE: if we insert at $3c406 then we have $11 as scratch space, too!
 // Extra code for difficulty scaling
 export const scaleDifficultyLib = buildRomPatch(assemble(`
@@ -144,15 +153,13 @@ ItemUseJump_Invalid:
 
 .org $3ff44
 CheckForFogLamp:
-  beq CFFL1
+  beq +
    jmp ItemUseJump_Invalid
-CFFL1:
-  lda $23
++ lda $23
   cmp #$35
-  bne CFFL2
+  bne +
    inc Difficulty
-CFFL2:
-  rts
++ rts
 
 .org $3ffe3
 .bank $34000 $8000:$4000 ; collision code
@@ -203,10 +210,9 @@ DiffBaseExperience:
 
 ComputeEnemyStats:
   lda ObjectRecoil,x
-  bmi a0
+  bmi +
    jmp $3c2af ; exit point
-a0:
-  and #$7f
++ and #$7f
   sta ObjectRecoil,x
   ;;tya  ;; inserted where we don't need to preserve y
   ;;pha
@@ -216,41 +222,35 @@ a0:
    lda DiffPlayerLevel,y
    ;; Subtract 1 or 2 based on LAdj in high bits of Exp
    lsr ObjectExp,x
-   bcc a1
+   bcc +
     sbc #$01  ; note: carry already set
-a1:
-   lsr ObjectExp,x
-   bcc a2
++  lsr ObjectExp,x
+   bcc +
     sbc #$02  ; note: carry already set
-a2:
-   sta TempLevel
++  sta TempLevel
    ;; Compute sword level
    ;; 0: wind. 1: fire, 2: water, 3: thunder: 7: crystalis
    lda #$2
    lsr ObjectDef,x
-   bcc a3
+   bcc +
     asl
-a3:
-   lsr ObjectDef,x
-   bcc a4
++  lsr ObjectDef,x
+   bcc +
     asl
     asl
-a4:
-   lsr ObjectDef,x
-   bcc a5
++  lsr ObjectDef,x
+   bcc +
     asl
-a5:
-   sta SwordLevel
++  sta SwordLevel
    ;; Compute defense
    lda DiffBaseDefense,y
    sta $61
    lda ObjectDef,x
-   beq a6
+   beq +
     sta $62
     jsr Multiply16Bit
     jsr Shift3_16Bit
-a6:
-   sta ObjectDef,x
++  sta ObjectDef,x
    ;; Compute HP
    lda ObjectHP,x
    beq SkipHP
@@ -261,19 +261,16 @@ a6:
    adc SwordLevel ; should never carry - 32 is max sword, 18 max level
    sec
    sbc ObjectDef,x
-   beq a7
-    bpl a8
-a7:
-     lda $#01
-a8:
-   sta $62
+   beq +
+    bpl ++
++    lda $#01
+++ sta $62
    jsr Multiply16Bit
    lda $61
    bit $62
-   beq a9
+   beq +
     lda #$ff
-a9:
-   sta ObjectHP,x
++  sta ObjectHP,x
 SkipHP:
    ;; compute ATK from max hp
    lda ObjectAtk,x
@@ -287,10 +284,9 @@ SkipHP:
    asl
    asl
    asl
-   bcc b1
+   bcc +
     lda #$ff
-b1:
-   sta $62
++  sta $62
    jsr Multiply16Bit
    lda $62 ; pull out the high bit only
    clc
@@ -305,33 +301,30 @@ SkipAttack:
    beq SkipExperience
    sta $61
    lda DiffBaseExperience,y
-   bpl b2
+   bpl +
     and #$7f ; big exp
-b2:
-   sta $62
++  sta $62
    jsr Multiply16Bit
    jsr Shift3_16Bit
    pha
    lda DiffBaseExperience,y
-   bpl b3
+   bpl +
     pla
     eor #$80 ; big exp
-    bmi b5
+    bmi StoreExp
      lda #$ff ; overflowed to max
-     bmi b5   ; uncond
-b3:
-   pla
-   bpl b4
+     bmi StoreExp  ; uncond
++  pla
+   bpl +
     ;; overflowed into the big regime
     lsr
     lsr
     lsr
     lsr
     ora #$80
-b4:
-   bne b5
++  bne StoreExp
     lda #$01 ; minimum of 1
-b5:
+StoreExp:
    sta ObjectExp,x
 SkipExperience:
    ;; compute gold
@@ -344,10 +337,9 @@ SkipExperience:
    asl
    asl ; carry will be clear
    adc ObjectGold,x
-   bcc c1
+   bcc +
     ora #$f0
-c1:
-   sta ObjectGold,x
++  sta ObjectGold,x
 SkipGold:
   ;;pla
   ;;tay
@@ -365,10 +357,9 @@ Shift3_16Bit:
   lsr $62
   ror
   bit $62
-  beq rts
+  beq +
    lda #$ff
-rts:
-  rts
++ rts
 
 Multiply16Bit:
   ;; Multiplies inputs in $61 and $62, then shifts
@@ -379,15 +370,13 @@ Multiply16Bit:
   lda #$00
   ldx #$08
   clc
-d1:
-   bcc d2
+-  bcc +
     clc
     adc $62
-d2:
-   ror
++  ror
    ror $61
    dex
-  bpl d1
+  bpl -
   sta $62
   pla
   tax
@@ -411,7 +400,7 @@ const adjustObjectDifficultyStats = (data, rom) => {
   for (const [id, {ladj, sword, hits, def, atk, exp, gold}] of SCALED_MONSTERS) {
     // indicate that this object needs scaling
     const o = rom.objects[id].objectData;
-    const boss = [0x57, 0x5e, 0x68, 0x7d, 0x88, 0x97, 0x9b, 0x9e].contains(id) ? 1 : 0;
+    const boss = [0x57, 0x5e, 0x68, 0x7d, 0x88, 0x97, 0x9b, 0x9e].includes(id) ? 1 : 0;
     o[2] |= 0x80; // recoil
     o[6] = hits; // HP
     o[7] = atk;  // ATK

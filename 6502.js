@@ -12,6 +12,14 @@ class Assembler {
     this.lines.push(line.orig(this.lineNumber, this.lineContents));
   }
 
+  addLabel(label, address) {
+    if (typeof address !== 'number') throw new Error('Expected a number');
+    const arr = this.labels[label] || [];
+    this.labels[label] = arr;
+    const index = find(arr, address);
+    if (index < 0) arr.splice(~index, 0, address);
+  }
+
   ingest(line) {
     this.lineNumber++;
     this.lineContents = line;
@@ -40,13 +48,20 @@ class Assembler {
       return;
     } else if ((match = /^define\s+(\S+)\s+(.*)/.exec(line))) {
       const label = match[1];
-      this.labels[label] = parseNumber(match[2]); // not twos complement, but will still be absolute
+      this.addLabel(label, parseNumber(match[2])); // not twos complement, but will still be abs
       return;
     } else if ((match = /^(\S+?):(.*)$/.exec(line))) {
       // label - extract and record.
       const label = match[1];
       line = ' ' + match[2];
-      this.labels[label] = ~this.pc;
+      this.addLabel(label, ~this.pc);
+    } else if ((match = /^((?:[-+]+\s+)+)(.*)$/.exec(line))) {
+      // relative labels (multiple allowed) - extract and record.
+      const labels = match[1];
+      for (const label of labels.trim().split(' ')) {
+        this.addLabel(label, ~this.pc);
+      }
+      line = ' ' + match[2];
     }
     if ((match = /^\s+([a-z]{3})(\s+.*)?$/.exec(line))) {
       const line = new Opcode(match[1], (match[2] || '').trim(), this.pc);
@@ -234,10 +249,24 @@ class Context {
     }
   }
 
-  mapLabel(label) {
-    const addr = this.labels[label];
-    if (!addr) throw new Error(`Label not found: ${label}`);
-    return addr;
+  mapLabel(label, pc) {
+    let addrs = this.labels[label];
+    if (!addrs) throw new Error(`Label not found: ${label}`);
+    if (pc == null) {
+      if (addrs.length > 1) throw new Error(`Ambiguous label: ${label}`);
+      return addrs[0];
+    }
+    // find the relevant label.
+    pc = ~(pc + 2);
+    const index = find(addrs, pc);
+    if (index >= 0) return addrs[index]; // should never happen.
+    if (index == -1) return addrs[0];
+    if (index == ~addrs.length) return addrs[addrs.length - 1];
+    addrs = addrs.slice(~index -1, ~index + 1);
+    if (label.startsWith('-')) return addrs[1];
+    if (label.startsWith('+')) return addrs[0];
+    const mid = (addrs[0] + addrs[1]) / 2;
+    return pc < mid ? addrs[0] : addrs[1];
   }
 
   mapPrgToCpu(prgAddr) {
@@ -248,11 +277,11 @@ class Context {
   }
 
   // return CPU address or throw - main external entry point.
-  map(prgAddr) {
+  map(prgAddr, pc = undefined) {
     let addr = prgAddr;
     if (addr == null) return addr;
     if (typeof addr == 'string') {
-      addr = this.mapLabel(addr);
+      addr = this.mapLabel(addr, pc);
     }
     if (addr < 0) { // the label map returns ~address if it should be mapped
       addr = this.mapPrgToCpu(~addr);
@@ -260,7 +289,6 @@ class Context {
     return addr;
   }
 }
-
 
 // A single change.
 class Chunk extends Uint8Array {
@@ -397,11 +425,33 @@ class Opcode extends AbstractLine {
   }
 
   expand(context) {
-try{    this.arg[2] = context.map(this.arg[2]);
+try{
+    this.arg[2] = context.map(this.arg[2], this.pc);
 }catch(err){console.error(this);throw err;}
     this.pc = context.map(~this.pc);
   }
 }
+
+// binary search. returns index or complement for splice point
+const find = (arr, val) => {
+  let a = 0;
+  let b = arr.length - 1;
+  if (b < 0) return ~0;
+  if (val < arr[0]) return ~0;
+  let fb = arr[b];
+  if (val == fb) return b;
+  if (val > fb) return ~arr.length;
+  while (b - a > 1) {
+    let mid = (a + b) >> 1;
+    let fmid = arr[mid];
+    if (val < fmid) {
+      b = mid;
+    } else {
+      a = mid;
+    }
+  }
+  return val == arr[a] ? a : ~b;
+};
 
 
 const mode = (mnemonic, arg) => {

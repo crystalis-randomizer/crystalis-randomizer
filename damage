@@ -430,7 +430,7 @@ PDef: expected defense for difficulty level
 LVL = DLvl - LAdj
 DEF = (SDef * DDef) >> 3
       NOTE: unshifted quantity should fit in 8 bits
-HP  = (LVL + (2 << SwdB) - DEF) * Hits
+HP  = (LVL + (2 << SwdB) - DEF) * (Diff * HitsHi + HitsLo)
       NOTE: multiplication overflow caps to 255
 PHP = (LVL + 2) << 4
       NOTE: probably just update LVL in place

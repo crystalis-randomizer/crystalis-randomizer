@@ -168,6 +168,7 @@ KillObjectPatchImpl:
   lsr
   lda #$0
   adc Difficulty
+  sta Difficulty
   jmp KillObject
 
 .org $350fa
@@ -406,7 +407,7 @@ const adjustObjectDifficultyStats = (data, rom) => {
     o[7] = atk;  // ATK
     // Sword: 0..3 (wind - thunder) preserved, 4 (crystalis) => 7
     o[8] = def << 3 | (sword < 4 ? sword : sword == 4 ? 7 : 0); // DEF
-    o[10] = o[10] & 0xe0 | boss;
+    o[9] = o[9] & 0xe0 | boss;
     o[16] = o[16] & 0x0f | gold << 4; // GLD
     o[17] = exp << 2 | ladj; // EXP
   }

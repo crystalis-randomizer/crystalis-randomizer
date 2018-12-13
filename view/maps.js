@@ -44,7 +44,7 @@ class MapsView extends View {
   }
 
   setLocation(id, wd = undefined, ht = undefined) {
-    window.history.pushState({}, '', '#loc=' + id.toString(16));
+    window.history.replaceState({}, '', '#loc=' + id.toString(16));
     this.location = id;
     const lines = [
       `# Location [loc<0:1:$ff>:$${hex(id)}]`,

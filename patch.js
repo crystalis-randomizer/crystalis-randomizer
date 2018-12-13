@@ -1,5 +1,6 @@
 import {assemble, buildRomPatch} from './6502.js';
 import {Rom} from './view/rom.js';
+import {random} from './random.js';
 
 // TODO - to shuffle the monsters, we need to find the sprite palttes and
 // patterns for each monster.  Each location supports up to two matchups,
@@ -635,11 +636,71 @@ class MonsterPool {
     while (this.locations.length) {
       const {location, slots} = this.locations.pop();
       const {maxFlyers, nonFlyers = {}} = MONSTER_ADJUSTMENTS[location.id] || {};
+      // Keep track of pattern and palette slots we've pinned.
+      // It might be nice to have a mode where palette conflicts are allowed,
+      // and we just go with one or the other, though this could lead to poisonous
+      // blue slimes and non-poisonous red slimes by accident.
       let pat0 = null;
       let pat1 = null;
       let pal2 = null;
       let pal3 = null;
       let flyers = maxFlyers; // count down...
+
+      const tryAddMonster = (m) => {
+        const flyer = FLYERS.has(m.id);
+        const moth = MOTHS_AND_BATS.has(m.id);
+        if (flyer) {
+          if (!flyers) return false;
+          --flyers;
+        }
+        if (pal2 != null && m.pal2 != null && pal2 != m.pal2 ||
+            pal3 != null && m.pal3 != null && pal3 != m.pal3) {
+          return false;
+        }
+        let patSlot;
+        if (pat0 == null || pat0 == m.pat) {
+          pat0 = m.pat;
+          patSlot = 0;
+        } else if (pat1 == null || pat1 == m.pat) {
+          pat1 = m.pat;
+          patSlot = 0x80;
+        } else {              
+          return false;
+        }
+        if (m.pal2 != null) pal2 = m.pal2;
+        if (m.pal3 != null) pal3 = m.pal3;
+
+        // Pick the slot only after we know for sure that it will fit.
+        let eligible = 0;
+        if (flyer || moth) {
+          // look for a flyer slot if possible.
+          for (let i = 0; i < slots.length; i++) {
+            if (slots[i] in nonFlyers) {
+              eligible = i;
+              break;
+            }
+          }
+        } else {
+          // Prefer non-flyer slots, but adjust if we get a flyer.
+          for (let i = 0; i < slots.length; i++) {
+            if (slots[i] in nonFlyers) continue;
+            eligible = i;
+            break;
+          }
+        }
+        const slot = slots[eligible];
+        const objData = location.objects[slot - 0x0d];
+        objData[2] = objData[2] & 0x7f | patSlot;
+        objData[3] = m.id - 0x50;
+
+        // TODO - anything else need splicing?
+
+        slots.splice(eligible, 1);
+        return true;
+      };
+
+
+
       if (flyers) {
         // decide if we're going to add any flyers.
 

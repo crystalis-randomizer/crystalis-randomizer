@@ -44,7 +44,7 @@ class SpriteView extends View {
   }
 
   setSprite(id) {
-    window.history.pushState({}, '', '#sprite=' + id.toString(16));
+    window.history.replaceState({}, '', '#sprite=' + id.toString(16));
     this.id = id;
     let metasprite = this.rom.metasprites[id] || this.rom.metasprites[0];
     let mirrored = false;

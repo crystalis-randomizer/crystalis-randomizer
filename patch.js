@@ -1,6 +1,12 @@
 import {assemble, buildRomPatch} from './6502.js';
 import {Rom} from './view/rom.js';
 
+// TODO - to shuffle the monsters, we need to find the sprite palttes and
+// patterns for each monster.  Each location supports up to two matchups,
+// so can only support monsters that match.  Moreover, different monsters
+// seem to need to be in either slot 0 or 1.
+
+
 // Pull in all the patches we want to apply automatically.
 // TODO - make a debugger window for patches.
 export default ({
@@ -416,7 +422,8 @@ const adjustObjectDifficultyStats = (data, rom) => {
   for (const [id, {ladj, sword, hits, def, atk, exp, gold}] of SCALED_MONSTERS) {
     // indicate that this object needs scaling
     const o = rom.objects[id].objectData;
-    const boss = [0x57, 0x5e, 0x68, 0x7d, 0x88, 0x97, 0x9b, 0x9e].includes(id) ? 1 : 0;
+    const boss =
+        [0x57, 0x5e, 0x68, 0x7d, 0x88, 0x97, 0x9b, 0x9e].includes(id) ? 1 : 0;
     o[2] |= 0x80; // recoil
     o[6] = hits; // HP
     o[7] = atk;  // ATK
@@ -512,7 +519,7 @@ const SCALED_MONSTERS = new Map([
   [0xA2, 'm', 'Tower Sentinel',            0, 8, 3,  0,  0,  8,  0],
   // ID  TYPE  NAME                        ΔL SW HIT DEF ATK EXP GLD
   [0xA3, 'm', 'Air Sentry',                0, 8, 5,  4,  51, 11, 3],
-  [0xA4, 'b', 'Dyna',                      0, 16, 8,  7,  0,  0,  0],
+  [0xA4, 'b', 'Dyna',                      0, 16,8,  7,  0,  0,  0],
   [0xA5, 'b', 'Vampire 2',                 1, 1, 24, 3,  54, 20, 0],
   [0xB4, 'b', 'dyna pod',                  0, 0, 0,  113,51, 0,  0],
   [0xB8, 'p', 'dyna counter',              0, 0, 0,  0,  52, 0,  0],
@@ -565,3 +572,376 @@ const SCALED_MONSTERS = new Map([
   [0xFE, 'p', 'demon wall fire',           0, 0, 0,  0,  38, 0,  0],
 ].map(([id, type, name, ladj, sword, hits, def, atk, exp, gold]) =>
       [id, {id, type, name, ladj, sword, hits, def, atk, exp, gold}]));
+
+// TODO - consider pulling this into the spreadsheet, and/or integrating
+// into the above table
+const SHUFFLABLE_MONSTERS = [
+  0x4B, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x58, 0x59, 0x5A, 0x5B,
+  0x5C, 0x5F, 0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x6A, 0x6B, 0x6C,
+  0x6D, 0x6E, 0x6F, 0x71, 0x72, 0x74, 0x78, 0x79, 0x7B, 0x7C, 0x80, 0x81, 0x82,
+  0x84, 0x85, 0x86, 0x87, 0x89, 0x8A, 0x8C, 0x91, 0x92, 0x94, 0x95, 0x96, 0x98,
+  0x99, 0x9A,
+];
+
+
+
+// A pool of monster spawns, built up from the locations in the rom.
+// Passes through the locations twice, first to build and then to 
+// reassign monsters.
+class MonsterPool {
+  constructor() {
+    // available monsters
+    this.monsters = [];
+    // used monsters - as a backup if no available monsters fit
+    this.used = [];
+    // all locations
+    this.locations = [];
+  }
+
+  populate(/** !Location */ location) {
+    const {maxFlyers, nonFlyers = {}, skip, fixedSlots = {}, ...unexpected} =
+          MONSTER_ADJUSTMENTS[location.id] || {};
+    for (const u in unexpected) {
+      throw new Error(
+          `Unexpected property '${u}' in MONSTER_ADJUSTMENTS[${location.id}]`);
+    }
+    if (skip || !location.spritePatterns || !location.spritePalettes) return;
+    const monsters = [];
+    const slots = [];
+    let slot = 0x0c;
+    for (const o of location.objects || []) {
+      ++slot;
+      if (o[2] & 7) continue;
+      const id = o[3] + 0x50;
+      if (id in UNTOUCHED_MONSTERS) continue;
+      const object = location.rom.objects[id];
+      if (!object) continue;
+      const patBank = o[2] & 0x80 ? 1 : 0;
+      const pat = location.spritePatterns[patBank];
+      const pal = object.palettes(true);
+      const pal2 = pal.includes(2) ? location.spritePalettes[2] : null;
+      const pal3 = pal.includes(3) ? location.spritePalettes[3] : null;
+      monsters.push({id, pat, pal2, pal3});
+      slots.push(slot);
+    }
+    if (!monsters.length) return;
+    this.locations.push({location, slots});
+    this.monsters.push(...monsters);
+  }
+
+  shuffle() {
+    shuffle(this.locations);
+    shuffle(this.monsters);
+    while (this.locations.length) {
+      const {location, slots} = this.locations.pop();
+      const {maxFlyers, nonFlyers = {}} = MONSTER_ADJUSTMENTS[location.id] || {};
+      let pat0 = null;
+      let pat1 = null;
+      let pal2 = null;
+      let pal3 = null;
+      let flyers = maxFlyers; // count down...
+      if (flyers) {
+        // decide if we're going to add any flyers.
+
+        // also consider allowing a single random flyer to be added out of band if
+        // the size of the map exceeds 25?
+
+
+        // probably don't add flyers to used?
+
+
+      }
+
+      // fill up the location with new monsters.
+      while (slots.length) {
+        // iterate over monsters until we find one that's allowed...
+        // NOTE: fill the non-flyer slots first (except if we pick a flyer??)
+        //   - may need to weight flyers slightly higher or fill them differently?
+        //     otherwise we'll likely not get them when we're allowed...?
+        //   - or just do the non-flyer *locations* first?
+        // - or just fill up flyers until we run out... 100% chance of first flyer,
+        //   50% chance of getting a second flyer if allowed...
+        if (flyers) {
+          // Look up to the first 40 to see if we can find a suitable flyer
+          // This makes about a 2/3 chance of getting a flyer.  If we do get one
+          // then we re-shuffle the monsrters.
+
+          // If filling with a non-flyer and non-moth, then we prefer non-flyer
+          // slots when possible.
+
+          for (let i = 0; 
+        }
+      }
+    }
+  }
+}
+
+const shuffle = (array) => {
+  for (let i = array.length; i;) {
+    const j = Math.floor(Math.random() * i--);
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+const FLYERS = new Set([0x59, 0x5c, 0x6e, 0x6f, 0x81, 0x8a, 0xa3, 0xc4]);
+const MOTHS_AND_BATS = new Set([0x55, 0x7c, 0xbc, 0xc1]);
+const SWIMMERS = new Set([0x75, 0x76]);
+const STATIONARY = new Set([0x5d, 0x77, 0x87]);  // swamp plant, kraken, sorceror
+
+const MONSTER_ADJUSTMENTS = {
+  [0x03]: { // Valley of Wind
+    maxFlyers: 2,
+  },
+  [0x07]: { // Sealed Cave 4
+    nonFlyers: {
+      [0x0f]: [0, -3],  // bat
+      [0x10]: [-10, 0], // bat
+      [0x11]: [0, 4],   // bat
+    },
+  },
+  [0x14]: { // Cordel West
+    maxFlyers: 2,
+  },
+  [0x15]: { // Cordel East
+    maxFlyers: 2,
+  },
+  [0x1a]: { // Swamp
+    skip: true,
+    maxFlyers: 2,
+    fixedSlots: {
+      pat1: 0x4f,
+      pal3: 0x23,
+    },
+  }
+  [0x20]: { // Mt Sabre West Lower
+    maxFlyers: 1,
+  },
+  [0x21]: { // Mt Sabre West Upper
+    maxFlyers: 1,
+  },
+  [0x27]: { // Mt Sabre West Cave 7
+    nonFlyers: {
+      [0x0d]: [0, 0x10], // random enemy stuck in wall
+    },
+  },
+  [0x28]: { // Mt Sabre North Main
+    maxFlyers: 1,
+  },
+  [0x29]: { // Mt Sabre North Middle
+    maxFlyers: 1,
+  },
+  [0x2b]: { // Mt Sabre North Cave 2
+    nonFlyers: {
+      [0x14]: [0x20, -8], // bat
+    },
+  },
+  [0x40]: { // Waterfall Valley North
+    maxFlyers: 2,
+    nonFlyers: {
+      [0x13]: [12, -0x10], // medusa head
+    },
+  },
+  [0x41]: { // Waterfall Valley South
+    maxFlyers: 2,
+    nonFlyers: {
+      [0x15]: [0, -6], // medusa head
+    },
+  },
+  [0x42]: { // Lime Tree Valley
+    maxFlyers: 2,
+    nonFlyers: {
+      [0x0d]: [0, 8], // evil bird
+      [0x0e]: [-8, 8], // evil bird
+    },
+  },
+  [0x47]: { // Kirisa Meadow
+    maxFlyers: 1,
+    nonFlyers: {
+      [0x0d]: [-8, -8],
+    },
+  },
+  [0x4a]: { // Fog Lamp Cave 3
+    maxFlyers: 1,
+    nonFlyers: {
+      [0x0e]: [4, 0],  // bat
+      [0x0f]: [0, -3], // bat
+      [0x10]: [0, 4],  // bat
+    },
+  },
+  [0x4c]: { // Fog Lamp Cave 4
+    // maxFlyers: 1,
+  },
+  [0x4d]: { // Fog Lamp Cave 5
+    maxFlyers: 1,
+  },
+  [0x4e]: { // Fog Lamp Cave 6
+    maxFlyers: 1,
+  },
+  [0x4f]: { // Fog Lamp Cave 7
+    // maxFlyers: 1,
+  },
+  [0x60]: { // Angry Sea
+    skip: true, // not sure how to randomize these well
+    maxFlyers: 2,
+    fixedSlots: {
+      pat1: 0x52, // (as opposed to pat0)
+      pal3: 0x08,
+    },
+  },
+  [0x64]: { // Underground Channel
+    skip: true,
+    fixedSlots: {
+      pat1: 0x52, // (as opposed to pat0)
+      pal3: 0x08,
+    },
+  },
+  [0x68]: { // Evil Spirit Island 1
+    skip: true,
+    fixedSlots: {
+      pat1: 0x52, // (as opposed to pat0)
+      pal3: 0x08,
+    },
+  },
+  [0x69]: { // Evil Spirit Island 2
+    maxFlyers: 1,
+    nonFlyers: {
+      [0x17]: [4, 6],  // medusa head
+    },
+  },
+  [0x6a]: { // Evil Spirit Island 3
+    maxFlyers: 1,
+    nonFlyers: {
+      [0x15]: [0, 0x18],  // medusa head
+    },
+  },
+  [0x6c]: { // Sabera Palace 1
+    maxFlyers: 1,
+    nonFlyers: {
+      [0x17]: [0, 0x18], // evil bird
+    },
+  },
+  [0x6d]: { // Sabera Palace 2
+    maxFlyers: 1,
+    nonFlyers: {
+      [0x11]: [0x10, 0], // moth
+      [0x1b]: [0, 0],    // moth - ok already
+      [0x1c]: [6, 0],    // moth
+    },
+  },
+  [0x78]: { // Goa Valley
+    maxFlyers: 1,
+    nonFlyers: {
+      [0x16]: [-8, -8], // evil bird
+    },
+  },
+  [0x7c]: { // Mt Hydra
+    maxFlyers: 1,
+    nonFlyers: {
+      [0x15]: [-0x27, 0x54], // evil bird
+    },
+  },
+  [0x88]: { // Styx 1
+    maxFlyers: 1,
+  },
+  [0x89]: { // Styx 2
+    maxFlyers: 1,
+  },
+  [0x8a]: { // Styx 1
+    maxFlyers: 1,
+    nonFlyers: {
+      [0x0d]: [7, 0], // moth
+      [0x0e]: [0, 0], // moth - ok
+      [0x0f]: [7, 3], // moth
+      [0x10]: [0, 6], // moth
+      [0x11]: [11, -0x10], // moth
+    },
+  },
+  [0x8f]: { // Goa Fortress - Oasis Cave Entrance
+    skip: true,
+  },
+  [0x90]: { // Desert 1
+    maxFlyers: 2,
+    nonFlyers: {
+      [0x14]: [-0xb, -3], // bomber bird
+      [0x15]: [0, 0x10],  // bomber bird
+    },
+  },
+  [0x91]: { // Oasis Cave
+    maxFlyers: 2,
+    nonFlyers: {
+      [0x18]: [0, 14],    // insect
+      [0x19]: [4, -0x10], // insect
+    },
+  },
+  [0x98]: { // Desert 2
+    maxFlyers: 2,
+    nonFlyers: {
+      [0x14]: [-6, 6],    // devil
+      [0x15]: [0, -0x10], // devil
+    },
+  },
+  [0x9e]: { // Pyramid Front - Main
+    maxFlyers: 2,
+  },
+  [0xa2]: { // Pyramid Back - Branch
+    maxFlyers: 1,
+    nonFlyers: {
+      [0x12]: [0, 11], // moth
+      [0x13]: [6, 0],  // moth
+    },
+  },
+  [0xa5]: { // Pyramid Back - Hall 2
+    nonFlyers: {
+      [0x17]: [6, 6],   // moth
+      [0x18]: [-6, 0],  // moth
+      [0x19]: [-1, -7], // moth
+    },
+  },
+  [0xa8]: { // Goa Fortress - Entrance
+    skip: true,
+  },
+  [0xa9]: { // Goa Fortress - Kelbesque
+    maxFlyers: 2,
+    nonFlyers: {
+      [0x16]: [0x1a, -0x10], // devil
+      [0x17]: [0, 0x20],     // devil
+    },
+  },
+  [0xab]: { // Goa Fortress - Sabera
+    maxFlyers: 2,
+    nonFlyers: {
+      [0x0d]: [1, 0],  // insect
+      [0x0e]: [2, -2], // insect
+    },
+  },
+
+  [0xad]: { // Goa Fortress - Mado 1
+    maxFlyers: 2,
+    nonFlyers: {
+      [0x18]: [0, 8],  // devil
+      [0x19]: [0, -8], // devil
+    },
+  },
+  [0xaf]: { // Goa Fortress - Mado 3
+    nonFlyers: {
+      [0x0d]: [0, 0],  // moth - ok
+      [0x0e]: [0, 0],  // broken - but replace?
+      [0x13]: [0x3b, -0x26], // shadow - embedded in wall
+    },
+  },
+  [0xb4]: { // Goa Fortress - Karmine 5
+    maxFlyers: 2,
+    nonFlyers: {
+      [0x11]: [6, 0],  // moth
+      [0x12]: [0, 6],  // moth
+    },
+  },
+};
+
+const UNTOUCHED_MONSTERS = { // not yet +0x50 in these keys
+  [0x7e]: true, // vertical platform
+  [0x7f]: true, // horizontal platform
+  [0x8e]: true, // broken?, but sits on top of iron wall
+  [0x8f]: true, // shooting statue
+  [0x9f]: true, // vertical platform
+};

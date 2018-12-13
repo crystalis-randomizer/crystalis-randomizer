@@ -63,9 +63,9 @@ class MapsView extends View {
     const entrances = loc.entrances;
     const exits = loc.exits;
     const flags = loc.flags;
-    const spritePal = loc.spritePalettes;
-    const spritePat = loc.spritePatterns;
-    const objects = loc.objects;
+    const spritePal = loc.spritePalettes || [0,0];
+    const spritePat = loc.spritePatterns || [0,0];
+    const objects = loc.objects || [];
     const invalid = !this.rom.locations[id];
     if (!wd) wd = mapWd;
     if (!ht) ht = mapHt;
@@ -181,7 +181,14 @@ class MapsView extends View {
         const pat = opts.spritePat[obj[2] & 0x80 ? 1 : 0];
         const objData = this.rom.objects[objId];
         if (!objData) continue;
-        let metasprite = this.rom.metasprites[objData.metasprite];
+        let metaspriteId = objData.metasprite;
+        if (objData.action == 0x29) { // blob
+          metaspriteId = frame & 32 ? 0x6b : 0x68;
+        } else if ([0x2a, 0x5e].includes(objData.action)) {
+          // directional walker (soldier, etc); also tower def mech (5e)
+          metaspriteId = (frame >> 5 & 3) | objData.objectData[31];
+        }
+        let metasprite = this.rom.metasprites[metaspriteId];
         const y = fromTileY(obj[0]) + 0xc;
         const x = ((obj[1] & 0x7f) << 4) + (obj[2] & 0x40 ? 8 : 0) + 8;
         this.drawMetasprite(buf, x, y, metasprite, pal, pat, frame >> 3);

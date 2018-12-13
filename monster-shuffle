@@ -1,0 +1,144 @@
+// SPECIAL HANDLING FOR RANDOMIZER:
+//   03 valley of wind
+//     - allow any flyer
+//   04 sealed cave 1
+//     - slot 2 available
+//   05 sealed cave 2
+//     - slot 2 available
+//   06 sealed cave 3
+//     - slot 2 avail
+//   07 sealed cave 4
+//     - 05 is bat, must be some sort of flyer?
+//       -- 0f: move 3 left (2nd number) for land
+//       -- 10: move 10 up (1st # lower) for land
+//       -- 11: move 4 right for land
+//   08 sc5
+//     - only 1 monster (slot 2) - slot 1 avail
+//   1a swamp
+//     - only use slot 0 - slot 1 must be 4f/23
+//     - existing 5d are stationary...?
+//       [could move them around]
+//     - c4 is summoned flyer, would need to patch ad hoc spawn table
+//       if we want to change it out, need a pattern table w/ appropriate flyer
+//       still not sure what we'd do w/ the plants... move them down 4 or 5
+//       metatiles?  for now just don't randomize swamp
+
+//   27 mt sabre
+//     - slot 0d is in wall, could be made a flyer, or right 1 screen
+
+//   2b mt sabre
+//     - slot 14 is in wall, blue bat -> 8 left, 2 screens down
+
+//   40 waterfall valley
+//     - slot 13 medusa head -> 1 screen left, 12 tiles down
+//   41 wv south
+//     - slot 15 medusa head -> 6 left
+//   42 lime tree valley
+//     - slot 0d bird -> 8 right
+//     - slot 0e bird -> 8 right, 8 up
+
+//   47 kirisa meadow
+//     - slot 0d insect -> 8 up, 8 left
+
+//   4a fog lamp cave 3
+//     - 0e bat -> 4 down
+//     - 0f bat -> 3 left
+//     - 10 bat -> 4 right
+
+//   51 fisherman island
+//   60 angry sea
+//     - swimmers only, stationaries at 0d..0f
+//   64 underground channel
+//   68 evil spirit island 1
+//     - jellyfish swimmers - could be kraken?
+//  ==> all water boards need pat2=$52, pal1=$08 for dolphin
+//      does not leave much wiggle room for other enemies
+//      - specifically, no room for a flyer in pattern table
+//      - we'd have to rearrange a lot, maybe make some non-swimmers
+//        into swimmers in order to fit the flyer in
+//        OR... splice together the dolphin with a flyer in an otherwise
+//              unused pattern table - do we have one?!?
+//          dolphin is too big, but could swap out kraken or jellyfish?
+//          to find space, want coverage of CHR - do a fast debug playback
+//          instrumenting DrawMetasprite and DrawMetatile to record state of
+//          pattern banks when each 8x8 tile drawn - know which metatiles
+//          are drawn under which pattern banks, and possibly also which
+//          object IDs or actions are associated with them?
+
+//   69 esi 2
+//     - 17 medusa head: down 4, right 6
+//   6a esi 3
+//     - 15 medusa head: 1 screen + 8 tiles (24 total) right
+//   6c sabera 1
+//     - 17 evil bird: left 2 screens, up 1.75; e.g. (38,40) => (18,24)
+//   6d sabera 2
+//     - 11 moth: down 1 screen
+//     - 1b moth: ok 
+//     - 1c moth: down 6
+
+//   78 goa valley
+//     - 16 bomber bird: left 8, up 8
+//   7c mt hydra
+//     - 15 bird: (5f,10) => (38,64)
+//   8a styx 3
+//     - 0d moth - down 7
+//     - 0e moth - ok
+//     - 0f moth - down 7, right 3?
+//     - 10 moth - right 6
+//     - 11 moth - left 1 screen, down 1 screen, up 4 tiles (=> 0a,57)
+
+//   90 desert 1
+//     - 14 bomber bird - up b, left 3 (=> 0,0)
+//     - 15 bomber bird - right 1 screen
+//   91 oasis cave
+//     - 18 insect - right 14 tiles (+1 scr - 2 til)
+//     - 19 insect - left 1 screen, down 4 tiles
+//   98 desert 2
+//     - 14 devil - up 6, right 6
+//     - 15 devil - left 1 screen
+
+//   a2 pyramid back - branch
+//     - 12 moth - right 11
+//     - 13 moth - down 6
+//   a5 pyramid back - hall 2
+//     - 17 moth - right 6, down 6
+//     - 18 moth - up 6
+//     - 19 moth - left 7, up 1
+
+//   a8 goa entrance
+//     - 13 ??? (3e) - does it matter?!?
+//   a9 goa kelby
+//     - 16 devil - let 1 scr, down 2 scr, up 6 tiles (47,37)
+//     - 17 devil - right 2 screens
+//   ab goa sab
+//     - 0d insect - down 1
+//     - 0e insect - left 2, down 2
+//   ad goa mado 1
+//     - 18 devil - right 8
+//     - 19 devil - left 8
+//   af goa mado 3
+//     - 0d moth - ok
+//     - 0e broken - could be other??
+//     - 13 shadow - in wall - move to screen (1,10) tile (1,7) e.g. $a7,$91
+//   b4 goa karmine 5
+//     - 11 moth - down 6
+//     - 12 moth - right 6
+
+
+
+// In general, if area >= 20 then we might insert a flyer
+// Moths and bats are always possible
+// 
+
+// used pattern tables:
+//  45 47..53 56..57 5e..72 74..76 78..7b  sprites
+//  00..0e 14..1a 20..2a 30..36  tiles (evens)
+// Questions:
+//  10 11 12 13 1c 1d 1e 1f
+//  2c 2d 2e 2f 38 39 3a 3b
+//  3c 3d 3e 3f 40 41 42 43
+//  44 46 54 55 58 59 5a 5b
+//  5c 5d 73 77 7c 7d 7e 7f
+
+//    CONSIDER instrumenting these and running a full replay to see?
+

@@ -607,6 +607,10 @@ class MonsterPool {
     this.locations = [];
   }
 
+  // TODO - monsters w/ projectiles may have a specific bank they need to appear in,
+  // since the projectile doesn't know where it came from...?
+  //   - for now, just assume if it has a child then it must keep same pattern bank!
+
   populate(/** !Location */ location) {
     const {maxFlyers, nonFlyers = {}, skip, fixedSlots = {}, ...unexpected} =
           MONSTER_ADJUSTMENTS[location.id] || {};
@@ -630,7 +634,7 @@ class MonsterPool {
       const pal = object.palettes(true);
       const pal2 = pal.includes(2) ? location.spritePalettes[0] : null;
       const pal3 = pal.includes(3) ? location.spritePalettes[1] : null;
-      monsters.push({id, pat, pal2, pal3});
+      monsters.push({id, pat, pal2, pal3, patBank});
       slots.push(slot);
     }
     if (!monsters.length) return;
@@ -670,16 +674,34 @@ console.log(`Location ${location.id.toString(16)}`);
           return false;
         }
         let patSlot;
-        if (pat0 == null || pat0 == m.pat) {
-          pat0 = m.pat;
-          patSlot = 0;
+        if (location.rom.objects[m.id].child) {
+          // if there's a child, make sure to keep it in the same pattern slot
+          patSlot = m.patSlot ? 0x80 : 0;
+          const prev = patSlot ? pa1 : pat0;
+          if (prev != null && prev != m.pat) return false;
+          if (patSlot) {
+            pat1 = m.pat;
+          } else {
+            pat0 = m.pat;
+          }
+
+
+// NOTE - seed=3214314284 sealed cave has weird sprites
+
+          // TODO - if [pat0,pat1] were an array this would be a whole lot easier.
+console.log(`  Adding ${m.id.toString(16)}: pat(${patSlot}) <-  ${m.pat.toString(16)}`);
+        } else {
+          if (pat0 == null || pat0 == m.pat) {
+            pat0 = m.pat;
+            patSlot = 0;
 console.log(`  Adding ${m.id.toString(16)}: pat0 <-  ${m.pat.toString(16)}`);
-        } else if (pat1 == null || pat1 == m.pat) {
-          pat1 = m.pat;
-          patSlot = 0x80;
+          } else if (pat1 == null || pat1 == m.pat) {
+            pat1 = m.pat;
+            patSlot = 0x80;
 console.log(`  Adding ${m.id.toString(16)}: pat1 <-  ${m.pat.toString(16)}`);
-        } else {              
-          return false;
+          } else {              
+            return false;
+          }
         }
         if (m.pal2 != null) pal2 = m.pal2;
         if (m.pal3 != null) pal3 = m.pal3;
@@ -706,6 +728,10 @@ console.log(`    pal: ${(m.pal2||0).toString(16)} ${(m.pal3||0).toString(16)}`);
         }
         const slot = slots[eligible];
         const objData = location.objects[slot - 0x0d];
+        if (slot in nonFlyers) {
+          objData[0] += nonFlyers[slot][0];
+          objData[1] += nonFlyers[slot][1];
+        }
         objData[2] = objData[2] & 0x7f | patSlot;
         objData[3] = m.id - 0x50;
 console.log(`    slot ${slot.toString(16)}: objData=${objData}`);
@@ -880,6 +906,15 @@ const MONSTER_ADJUSTMENTS = {
   },
   [0x4f]: { // Fog Lamp Cave 7
     // maxFlyers: 1,
+  },
+  [0x59]: { // Tower Floor 1
+    skip: true,
+  },
+  [0x5a]: { // Tower Floor 2
+    skip: true,
+  },
+  [0x5b]: { // Tower Floor 3
+    skip: true,
   },
   [0x60]: { // Angry Sea
     skip: true, // not sure how to randomize these well

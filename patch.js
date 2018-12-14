@@ -1,6 +1,6 @@
 import {assemble, buildRomPatch} from './6502.js';
 import {Rom} from './view/rom.js';
-import {random} from './random.js';
+import {Random} from './random.js';
 
 // TODO - to shuffle the monsters, we need to find the sprite palttes and
 // patterns for each monster.  Each location supports up to two matchups,
@@ -436,6 +436,14 @@ const adjustObjectDifficultyStats = (data, rom) => {
   }
 
   rom.writeObjectData();
+
+  const pool = new MonsterPool();
+  for (const loc of rom.locations) {
+    if (loc) pool.populate(loc);
+  }
+  pool.shuffle();
+
+  rom.writeNpcData();
 };
 
 
@@ -620,8 +628,8 @@ class MonsterPool {
       const patBank = o[2] & 0x80 ? 1 : 0;
       const pat = location.spritePatterns[patBank];
       const pal = object.palettes(true);
-      const pal2 = pal.includes(2) ? location.spritePalettes[2] : null;
-      const pal3 = pal.includes(3) ? location.spritePalettes[3] : null;
+      const pal2 = pal.includes(2) ? location.spritePalettes[0] : null;
+      const pal3 = pal.includes(3) ? location.spritePalettes[1] : null;
       monsters.push({id, pat, pal2, pal3});
       slots.push(slot);
     }
@@ -636,6 +644,8 @@ class MonsterPool {
     while (this.locations.length) {
       const {location, slots} = this.locations.pop();
       const {maxFlyers, nonFlyers = {}} = MONSTER_ADJUSTMENTS[location.id] || {};
+let console=location.id==3?window.console:{log(){}};
+console.log(`Location ${location.id.toString(16)}`);
       // Keep track of pattern and palette slots we've pinned.
       // It might be nice to have a mode where palette conflicts are allowed,
       // and we just go with one or the other, though this could lead to poisonous
@@ -650,6 +660,8 @@ class MonsterPool {
         const flyer = FLYERS.has(m.id);
         const moth = MOTHS_AND_BATS.has(m.id);
         if (flyer) {
+          // TODO - add a small probability of adding it anyway, maybe
+          // based on the map area?  25 seems a good threshold.
           if (!flyers) return false;
           --flyers;
         }
@@ -661,14 +673,18 @@ class MonsterPool {
         if (pat0 == null || pat0 == m.pat) {
           pat0 = m.pat;
           patSlot = 0;
+console.log(`  Adding ${m.id.toString(16)}: pat0 <-  ${m.pat.toString(16)}`);
         } else if (pat1 == null || pat1 == m.pat) {
           pat1 = m.pat;
           patSlot = 0x80;
+console.log(`  Adding ${m.id.toString(16)}: pat1 <-  ${m.pat.toString(16)}`);
         } else {              
           return false;
         }
         if (m.pal2 != null) pal2 = m.pal2;
         if (m.pal3 != null) pal3 = m.pal3;
+console.log(`    ${Object.keys(m).map(k=>`${k}: ${m[k]}`).join(', ')}`);
+console.log(`    pal: ${(m.pal2||0).toString(16)} ${(m.pal3||0).toString(16)}`);
 
         // Pick the slot only after we know for sure that it will fit.
         let eligible = 0;
@@ -692,6 +708,7 @@ class MonsterPool {
         const objData = location.objects[slot - 0x0d];
         objData[2] = objData[2] & 0x7f | patSlot;
         objData[3] = m.id - 0x50;
+console.log(`    slot ${slot.toString(16)}: objData=${objData}`);
 
         // TODO - anything else need splicing?
 
@@ -702,6 +719,18 @@ class MonsterPool {
 
 
       if (flyers) {
+        // look for an eligible flyer in the first 40.  If it's there, add it first.
+        for (let i = 0; i < Math.min(40, this.monsters.length); i++) {
+          if (FLYERS.has(this.monsters[i].id)) {
+            if (tryAddMonster(this.monsters[i])) {
+              this.monsters.splice(i, 1);
+            }
+          }
+          shuffle(this.monsters);
+        }
+
+        // maybe added a single flyer, to make sure we don't run out.  Now just work normally
+
         // decide if we're going to add any flyers.
 
         // also consider allowing a single random flyer to be added out of band if
@@ -713,33 +742,44 @@ class MonsterPool {
 
       }
 
-      // fill up the location with new monsters.
-      while (slots.length) {
-        // iterate over monsters until we find one that's allowed...
-        // NOTE: fill the non-flyer slots first (except if we pick a flyer??)
-        //   - may need to weight flyers slightly higher or fill them differently?
-        //     otherwise we'll likely not get them when we're allowed...?
-        //   - or just do the non-flyer *locations* first?
-        // - or just fill up flyers until we run out... 100% chance of first flyer,
-        //   50% chance of getting a second flyer if allowed...
-        if (flyers) {
-          // Look up to the first 40 to see if we can find a suitable flyer
-          // This makes about a 2/3 chance of getting a flyer.  If we do get one
-          // then we re-shuffle the monsrters.
-
-          // If filling with a non-flyer and non-moth, then we prefer non-flyer
-          // slots when possible.
-
-          for (let i = 0; 
+      // iterate over monsters until we find one that's allowed...
+      // NOTE: fill the non-flyer slots first (except if we pick a flyer??)
+      //   - may need to weight flyers slightly higher or fill them differently?
+      //     otherwise we'll likely not get them when we're allowed...?
+      //   - or just do the non-flyer *locations* first?
+      // - or just fill up flyers until we run out... 100% chance of first flyer,
+      //   50% chance of getting a second flyer if allowed...
+      for (let i = 0; i < this.monsters.length; i++) {
+        if (!slots.length) break;
+        if (tryAddMonster(this.monsters[i])) {
+          const [used] = this.monsters.splice(i, 1);
+          if (!FLYERS.has(used.id)) this.used.push(used);
+          i--;
         }
       }
+
+      // backup list
+      for (let i = 0; i < this.used.length; i++) {
+        if (!slots.length) break;
+        if (tryAddMonster(this.used[i])) {
+          this.used.push(...this.used.splice(i, 1));
+          i--;
+        }
+      }
+
+      if (pat0 != null) location.spritePatterns[0] = pat0;
+      if (pat1 != null) location.spritePatterns[1] = pat1;
+      if (pal2 != null) location.spritePalettes[0] = pal2;
+      if (pal3 != null) location.spritePalettes[1] = pal3;
+
+      if (slots.length) console.log(`Failed to fill location ${location.id.toString(16)}: ${slots.length} remaining`);
     }
   }
 }
 
 const shuffle = (array) => {
   for (let i = array.length; i;) {
-    const j = Math.floor(Math.random() * i--);
+    const j = Random.nextInt(i--);
     [array[i], array[j]] = [array[j], array[i]];
   }
 }
@@ -773,7 +813,7 @@ const MONSTER_ADJUSTMENTS = {
       pat1: 0x4f,
       pal3: 0x23,
     },
-  }
+  },
   [0x20]: { // Mt Sabre West Lower
     maxFlyers: 1,
   },

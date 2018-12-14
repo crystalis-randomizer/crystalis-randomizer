@@ -923,8 +923,9 @@ export class Rom {
   // In particular, right now we just need to replace some objects and
   // sprite pattern/palette selections.
   writeNpcData() {
-    const rom = this.rom;
+    const rom = this;
     for (const loc of this.locations) {
+      if (!loc) continue;
       let addr = loc.npcDataBase;
       if (loc.spritePalettes) {
         rom.prg.subarray(addr + 1, addr + 3).set(loc.spritePalettes);
@@ -933,7 +934,7 @@ export class Rom {
         rom.prg.subarray(addr + 3, addr + 5).set(loc.spritePatterns);
       }
       addr += 5;
-      for (const obj of loc.objects) {
+      for (const obj of loc.objects || []) {
         rom.prg.subarray(addr, addr + 4).set(obj);
         addr += 4;
       }

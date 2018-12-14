@@ -21,7 +21,7 @@ export class Random {
   }
 
   seed(seed) {
-    this.idum = Math.max(1, seed);
+    this.idum = Math.max(1, Math.floor(seed));
     this.idum2 = this.idum;
     this.iy = 0;
     this.iv = new Array(NTAB).fill(0);
@@ -54,7 +54,22 @@ export class Random {
 }
 
 // Provide a static singleton instance.
-let random = new Random();
+let random = (() => {
+  let seed = 0;
+  if (window && window.location && window.location.hash) {
+    for (const component of window.location.hash.substring(1).split('&')) {
+      const split = component.split('=');
+      if (split[0] === 'seed') {
+        seed = Number(split[1]) || 0;
+      }
+    }
+  }
+  if (!seed) {
+    seed = Math.floor(Math.random() * 0x100000000);
+    console.log(`using seed ${seed}`);
+  }
+  return new Random(seed);
+})();
 Random.nextInt = (n) => random.nextInt(n);
 Random.next = () => random.next();
 Random.seed = (s) => random.seed(s);

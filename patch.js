@@ -1039,6 +1039,14 @@ const MONSTER_ADJUSTMENTS = {
       [0x15]: [-0x27, 0x54], // evil bird
     },
   },
+  [0x84]: { // Mt Hydra Cave 7
+    nonFlyers: {
+      [0x12]: [0, -4],
+      [0x13]: [0, 4],
+      [0x14]: [-6, 0],
+      [0x15]: [10, 0],
+    },
+  },
   [0x88]: { // Styx 1
     maxFlyers: 1,
   },

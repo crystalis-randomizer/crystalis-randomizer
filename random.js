@@ -51,25 +51,31 @@ export class Random {
   nextInt(n) {
     return Math.floor(this.next() * n);
   }
-}
 
-// Provide a static singleton instance.
-let random = (() => {
-  let seed = 0;
-  if (window && window.location && window.location.hash) {
-    for (const component of window.location.hash.substring(1).split('&')) {
-      const split = component.split('=');
-      if (split[0] === 'seed') {
-        seed = Number(split[1]) || 0;
-      }
+  shuffle(array) {
+    for (let i = array.length; i;) {
+      const j = this.nextInt(i--);
+      [array[i], array[j]] = [array[j], array[i]];
     }
   }
-  if (!seed) {
-    seed = Math.floor(Math.random() * 0x100000000);
-    console.log(`using seed ${seed}`);
-  }
-  return new Random(seed);
-})();
-Random.nextInt = (n) => random.nextInt(n);
-Random.next = () => random.next();
-Random.seed = (s) => random.seed(s);
+}
+
+// // Provide a static singleton instance.
+// let random = (() => {
+//   let seed = 0;
+//   if (window && window.location && window.location.hash) {
+//     for (const component of window.location.hash.substring(1).split('&')) {
+//       const split = component.split('=');
+//       if (split[0] === 'seed') {
+//         seed = Number(split[1]) || 0;
+//       }
+//     }
+//   }
+//   if (!seed) {
+//     seed = Math.floor(Math.random() * 0x100000000);
+//   }
+//   return new Random(seed);
+// })();
+// Random.nextInt = (n) => random.nextInt(n);
+// Random.next = () => random.next();
+// Random.seed = (s) => random.seed(s);

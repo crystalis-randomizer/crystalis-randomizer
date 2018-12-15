@@ -11,11 +11,21 @@ import {Random} from './random.js';
 // Pull in all the patches we want to apply automatically.
 // TODO - make a debugger window for patches.
 export default ({
-  apply(rom) {
+  apply(rom, hash) {
+    let seed;
+    if (hash['seed']) {
+      seed = hash['seed'];
+    } else {
+      // TODO - send in a hash object with get/set methods
+      hash['seed'] = seed = Math.floor(Math.random() * 0x100000000);
+      window.location.hash += '&seed=' + seed;
+    }
+    const random = new Random(seed);
     fixShaking.apply(rom);
     scaleDifficultyLib.apply(rom);
     const parsed = new Rom(rom);
-    adjustObjectDifficultyStats(rom, parsed);
+    adjustObjectDifficultyStats(rom, parsed, random);
+    if ('nodie' in hash) neverDie.apply(rom);
     console.log('patch applied');
   },
 });
@@ -133,20 +143,54 @@ loop1:
 //   - this seems weird - what would cause it?
 
 
+// TODO - expose via a hash fragment (pass into patch)
+export const neverDie = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000
+
+.org $3cb89
+  lda $03c0
+  sta $03c1
+  nop
+.org $3cbaf
+  bne label
+.org $3cbc0
+label:
+`));
+
+
 // NOTE: if we insert at $3c406 then we have $11 as scratch space, too!
 // Extra code for difficulty scaling
 export const scaleDifficultyLib = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000 ; fixed bank
 
-define Difficulty $4c0
-define TempLevel $12
-define SwordLevel $13
+define Difficulty $4c1
+define PlayerLevel $421
 define ObjectRecoil $340
 define ObjectHP $3c0
+define PlayerMaxHP $3c0
 define ObjectAtk $3e0
 define ObjectDef $400
 define ObjectGold $500
 define ObjectExp $520
+
+.bank $2e000 $a000:$2000
+; Save/restore difficulty
+.org $2fd38
+  lda Difficulty ; instead of $3c0, which is derivable from level
+.org $2fd7c
+  sta Difficulty
+.org $2fd8e
+  jmp FinishRestoreData
+.org $2fef5 ; initial state of "continue"
+  .byte $00
+
+.org $3d946
+  lda Difficulty
+.org $3d961
+  sta Difficulty
+.org $3d982
+  jmp FinishRestoreMode
+
 
 .org $34bde
 CoinAmounts:
@@ -167,6 +211,24 @@ CheckForFogLamp:
   bne +
    inc Difficulty
 + rts
+
+FinishRestoreData:
+  sta $0620 ; copied from $2fd8e
+  ;; Need to set MaxHP from level
+- lda PlayerLevel
+  clc
+  adc #$02
+  asl
+  asl
+  asl
+  asl
+  bcc +
+   lda #$ff
++ sta PlayerMaxHP
+  rts
+FinishRestoreMode:
+  sta $41 ; copied from $3d982
+  bne -   ; uncond - A is always 1 when we run this
 
 .org $3ffe3
 .bank $34000 $8000:$4000 ; collision code
@@ -215,6 +277,9 @@ DiffPlayerLevel:
   .byte 3,5,7,9,11,12,14,15,16,18
 DiffBaseExperience:
   .byte 3,8,22,85,141,152,178,208,208,208
+
+define TempLevel $12
+define SwordLevel $13
 
 ComputeEnemyStats:
   lda ObjectRecoil,x
@@ -408,7 +473,7 @@ Multiply16Bit:
 
 
 
-const adjustObjectDifficultyStats = (data, rom) => {
+const adjustObjectDifficultyStats = (data, rom, random) => {
 
   // TODO - find anything sharing the same memory and update them as well
   for (const id of SCALED_MONSTERS.keys()) {
@@ -441,7 +506,7 @@ const adjustObjectDifficultyStats = (data, rom) => {
   for (const loc of rom.locations) {
     if (loc) pool.populate(loc);
   }
-  pool.shuffle();
+  pool.shuffle(random);
 
   rom.writeNpcData();
 };
@@ -642,9 +707,9 @@ class MonsterPool {
     this.monsters.push(...monsters);
   }
 
-  shuffle() {
-    shuffle(this.locations);
-    shuffle(this.monsters);
+  shuffle(random) {
+    random.shuffle(this.locations);
+    random.shuffle(this.monsters);
     while (this.locations.length) {
       const {location, slots} = this.locations.pop();
       const {maxFlyers, nonFlyers = {}} = MONSTER_ADJUSTMENTS[location.id] || {};
@@ -687,6 +752,11 @@ console.log(`Location ${location.id.toString(16)}`);
 
 
 // NOTE - seed=3214314284 sealed cave has weird sprites
+
+// NOTE - seed=1759221509 treasure chest screwed up in presence of solider
+//   - seems like there's a fixed set of patterns we can use if a chest is around?
+//   - arrows are messed up, too.
+// NOTE - scaling vampire HP is broken - he teleports way too fast
 
           // TODO - if [pat0,pat1] were an array this would be a whole lot easier.
 console.log(`  Adding ${m.id.toString(16)}: pat(${patSlot}) <-  ${m.pat.toString(16)}`);
@@ -752,7 +822,7 @@ console.log(`    slot ${slot.toString(16)}: objData=${objData}`);
               this.monsters.splice(i, 1);
             }
           }
-          shuffle(this.monsters);
+          random.shuffle(this.monsters);
         }
 
         // maybe added a single flyer, to make sure we don't run out.  Now just work normally
@@ -800,13 +870,6 @@ console.log(`    slot ${slot.toString(16)}: objData=${objData}`);
 
       if (slots.length) console.log(`Failed to fill location ${location.id.toString(16)}: ${slots.length} remaining`);
     }
-  }
-}
-
-const shuffle = (array) => {
-  for (let i = array.length; i;) {
-    const j = Random.nextInt(i--);
-    [array[i], array[j]] = [array[j], array[i]];
   }
 }
 

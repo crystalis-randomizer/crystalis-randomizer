@@ -105,3 +105,33 @@ Metasprites:
 I'm doing this all backwards, though the other direction is
 not particularly feasible...
     - 64 rows of 128 items?
+
+
+metasprite $aa - treasure chest
+ - requires pattern bank 0: 5e..61,64..6a,6c..70,74..77
+windmill - loc $03 needs 0:$64
+tornel - loc $20 and $21 needs 1:$50 (pal 2:$06)
+
+metasprite $a4 - projectile (and other projectiles)
+ - two dots: pat 1:57
+ - dot&star: pat 1:5e..60,64,67..6a,6e..6f,78
+ - axe: 65,66 (which is crappy since 64,65 is orc/troll)
+ - horn: 7b - only used for dyna
+
+metasprite $a1 - curse beam ?
+ - pat 0:5f
+
+axethrowers need pat 1:$66 for sprite $a4 even tho pat 0:$65 for troll
+
+platforms need pat1:62 (metasprite $b6)
+ - locs 6a,6d,8a,a2,a5,ae,af,b4
+
+portoa palace entry $d7 - has stray monster
+
+TODO
+ - styx entrance - $a8 and $88 - both need 0:$61
+ - spider web (70/6c seemed to work), stone gaze (5e/6c works, 6e/68 fine too), ...?
+ - flail
+
+golems heads messed up on throw...?
+ - need pat1:65, but pat0:60 ?

@@ -647,16 +647,52 @@ const SCALED_MONSTERS = new Map([
 ].map(([id, type, name, ladj, sword, hits, def, atk, exp, gold]) =>
       [id, {id, type, name, ladj, sword, hits, def, atk, exp, gold}]));
 
-// TODO - consider pulling this into the spreadsheet, and/or integrating
-// into the above table
-const SHUFFLABLE_MONSTERS = [
-  0x4B, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x58, 0x59, 0x5A, 0x5B,
-  0x5C, 0x5F, 0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x6A, 0x6B, 0x6C,
-  0x6D, 0x6E, 0x6F, 0x71, 0x72, 0x74, 0x78, 0x79, 0x7B, 0x7C, 0x80, 0x81, 0x82,
-  0x84, 0x85, 0x86, 0x87, 0x89, 0x8A, 0x8C, 0x91, 0x92, 0x94, 0x95, 0x96, 0x98,
-  0x99, 0x9A,
-];
+// When dealing with constraints, it's basically ksat
+//  - we have a list of requirements that are ANDed together
+//  - each is a list of predicates that are ORed together
+//  - each predicate has a continuation for when it's picked
+//  - need a way to thin the crowd, efficiently check compat, etc
+// Predicate is a four-element array [pat0,pat1,pal2,pal3]
+// Rather than a continuation we could go through all the slots again
 
+
+// class Constraints {
+//   constructor() {
+//     // Array of pattern table options.  Null indicates that it can be anything.
+//     // 
+//     this.patterns = [[null, null]];
+//     this.palettes = [[null, null]];
+//     this.flyers = 0;
+//   }
+
+//   requireTreasureChest() {
+//     this.requireOrderedSlot(0, TREASURE_CHEST_BANKS);
+//   }
+
+//   requireOrderedSlot(slot, set) {
+    
+//     if (!this.ordered) {
+
+//     }
+// // TODO
+//     this.pat0 = intersect(this.pat0, set);
+
+
+//   }
+
+  
+
+// }
+
+// const intersect = (left, right) => {
+//   if (!right) throw new Error('right must be nontrivial');
+//   if (!left) return right;
+//   const out = new Set();
+//   for (const x of left) {
+//     if (right.has(x)) out.add(x);
+//   }
+//   return out;  
+// }
 
 
 // A pool of monster spawns, built up from the locations in the rom.
@@ -686,6 +722,8 @@ class MonsterPool {
     if (skip || !location.spritePatterns || !location.spritePalettes) return;
     const monsters = [];
     const slots = [];
+    //const constraints = {};
+    let treasureChest = false;
     let slot = 0x0c;
     for (const o of location.objects || []) {
       ++slot;
@@ -712,18 +750,32 @@ class MonsterPool {
     random.shuffle(this.monsters);
     while (this.locations.length) {
       const {location, slots} = this.locations.pop();
-      const {maxFlyers, nonFlyers = {}} = MONSTER_ADJUSTMENTS[location.id] || {};
+      const {maxFlyers, nonFlyers = {}, fixedSlots = {}} =
+            MONSTER_ADJUSTMENTS[location.id] || {};
 let console=location.id==3?window.console:{log(){}};
 console.log(`Location ${location.id.toString(16)}`);
       // Keep track of pattern and palette slots we've pinned.
       // It might be nice to have a mode where palette conflicts are allowed,
       // and we just go with one or the other, though this could lead to poisonous
       // blue slimes and non-poisonous red slimes by accident.
-      let pat0 = null;
-      let pat1 = null;
-      let pal2 = null;
-      let pal3 = null;
+      let pat0 = fixedSlots.pat0 || null;
+      let pat1 = fixedSlots.pat1 || null;
+      let pal2 = fixedSlots.pal2 || null;
+      let pal3 = fixedSlots.pal3 || null;
       let flyers = maxFlyers; // count down...
+
+      // Determine location constraints
+      let treasureChest = false;
+      for (const o of location.objects || []) {
+        if ((o[2] & 7) == 2) treasureChest = true;
+        if (o[2] & 7) continue;
+        const id = o[3] + 0x50;
+        if (id == 0x7e || id == 0x7f || id == 0x9f) {
+          pat1 = 0x62;
+        } else if (id == 0x8f) {
+          pat0 = 0x61;
+        }
+      }
 
       const tryAddMonster = (m) => {
         const flyer = FLYERS.has(m.id);
@@ -738,6 +790,8 @@ console.log(`Location ${location.id.toString(16)}`);
             pal3 != null && m.pal3 != null && pal3 != m.pal3) {
           return false;
         }
+        // whether we can put this one in pat0
+        const pat0ok = !treasureChest || TREASURE_CHEST_BANKS.has(m.pat);
         let patSlot;
         if (location.rom.objects[m.id].child) {
           // if there's a child, make sure to keep it in the same pattern slot
@@ -746,8 +800,10 @@ console.log(`Location ${location.id.toString(16)}`);
           if (prev != null && prev != m.pat) return false;
           if (patSlot) {
             pat1 = m.pat;
-          } else {
+          } else if (pat0ok) {
             pat0 = m.pat;
+          } else {
+            return false;
           }
 
 
@@ -761,7 +817,7 @@ console.log(`Location ${location.id.toString(16)}`);
           // TODO - if [pat0,pat1] were an array this would be a whole lot easier.
 console.log(`  Adding ${m.id.toString(16)}: pat(${patSlot}) <-  ${m.pat.toString(16)}`);
         } else {
-          if (pat0 == null || pat0 == m.pat) {
+          if (pat0 == null && pat0ok || pat0 == m.pat) {
             pat0 = m.pat;
             patSlot = 0;
 console.log(`  Adding ${m.id.toString(16)}: pat0 <-  ${m.pat.toString(16)}`);
@@ -878,9 +934,19 @@ const MOTHS_AND_BATS = new Set([0x55, 0x7c, 0xbc, 0xc1]);
 const SWIMMERS = new Set([0x75, 0x76]);
 const STATIONARY = new Set([0x5d, 0x77, 0x87]);  // swamp plant, kraken, sorceror
 
+// constrains pat0 if map has a treasure chest on it
+const TREASURE_CHEST_BANKS = new Set([
+  0x5e, 0x5f, 0x60, 0x61, 0x64, 0x65, 0x66, 0x67,
+  0x68, 0x69, 0x6a, 0x6c, 0x6d, 0x6e, 0x6f, 0x70,
+  0x74, 0x75, 0x76, 0x77,
+]);
+
 const MONSTER_ADJUSTMENTS = {
   [0x03]: { // Valley of Wind
     maxFlyers: 2,
+    fixedSlots: {
+      pat1: 0x60, // required by windmill
+    },
   },
   [0x07]: { // Sealed Cave 4
     nonFlyers: {
@@ -903,11 +969,19 @@ const MONSTER_ADJUSTMENTS = {
       pal3: 0x23,
     },
   },
+  [0x1b]: { // Amazones
+    // Random blue slime should be ignored
+    skip: true,
+  },
   [0x20]: { // Mt Sabre West Lower
     maxFlyers: 1,
   },
   [0x21]: { // Mt Sabre West Upper
     maxFlyers: 1,
+    fixedSlots: {
+      pat1: 0x50,
+      //pal2: 0x06, // might be fine to change tornel's color...
+    },
   },
   [0x27]: { // Mt Sabre West Cave 7
     nonFlyers: {
@@ -1104,6 +1178,10 @@ const MONSTER_ADJUSTMENTS = {
       [0x19]: [-1, -7], // moth
     },
   },
+  [0xa6]: { // Draygon 2
+    // Has a few blue slimes that aren't real and should be ignored.
+    skip: true,
+  },
   [0xa8]: { // Goa Fortress - Entrance
     skip: true,
   },
@@ -1143,7 +1221,15 @@ const MONSTER_ADJUSTMENTS = {
       [0x12]: [0, 6],  // moth
     },
   },
+  [0xd7]: { // Portoa Palace - Entry
+    // There's a random slime in this room that would cause glitches
+    skip: true,
+  },
 };
+
+
+
+
 
 const UNTOUCHED_MONSTERS = { // not yet +0x50 in these keys
   [0x7e]: true, // vertical platform

@@ -384,11 +384,8 @@ ComputeEnemyStats:
 +    lda $#01
 ++ sta $62
    jsr Multiply16Bit
-   lda $62
-   php
-    lda $61
-   plp
-   beq +
+   lda $61
+   bcc +
     lda #$ff
 +  sta ObjectHP,x
 SkipHP:
@@ -485,6 +482,7 @@ Multiply16Bit:
   ;; Multiplies inputs in $61 and $62, then shifts
   ;; right A times.
   ;; Result goes $61$62 (lo hi), preserves XY
+  ;; Sets carry if result doesn't fit in 8 bits
   txa
   pha
   lda #$00
@@ -498,6 +496,7 @@ Multiply16Bit:
    dex
   bpl -
   sta $62
+  cmp #$01 ; set carry if A != 0
   pla
   tax
   rts

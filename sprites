@@ -132,6 +132,7 @@ TODO
  - styx entrance - $a8 and $88 - both need 0:$61
  - spider web (70/6c seemed to work), stone gaze (5e/6c works, 6e/68 fine too), ...?
  - flail
+ - archers
 
 golems heads messed up on throw...?
  - need pat1:65, but pat0:60 ?

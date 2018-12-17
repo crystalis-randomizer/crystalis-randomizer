@@ -46,6 +46,11 @@ loop1:
 `));
 
 
+// TODO - buff medical herb - change $1c4ea from $20 to e.g. $60,
+//   or else have it scale with difficulty?
+//   - (diff + 1) << 4 ? 
+
+
 // PLAN - coopt the 'level' stat which is no longer used to indicate
 // bosses that increase difficulty when they're killed.
 
@@ -143,6 +148,14 @@ loop1:
 //   - this seems weird - what would cause it?
 
 
+export const disableWildWarp = buildRomPatch(assemble(`
+;;; NOTE: this actually recovers 36 bytes of prime real estate PRG.
+.bank $3c000 $c000:$4000
+.org $3cbc7
+  rts
+`));
+
+
 // TODO - expose via a hash fragment (pass into patch)
 export const neverDie = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000
@@ -163,7 +176,7 @@ label:
 export const scaleDifficultyLib = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000 ; fixed bank
 
-define Difficulty $4c1
+define Difficulty $4c0
 define PlayerLevel $421
 define ObjectRecoil $340
 define ObjectHP $3c0
@@ -172,6 +185,23 @@ define ObjectAtk $3e0
 define ObjectDef $400
 define ObjectGold $500
 define ObjectExp $520
+
+;;; Fix the vampire to allow >60 HP
+.bank $1e000 $a000:$2000
+.org $1e576
+  jsr ComputeVampireAnimationStart
+  nop
+.org $1ff97 ; This looks like it's just junk at the end, but we could
+            ; probably go even earlier and clobber some debug code?
+ComputeVampireAnimationStart:
+   bcs +
+   asl
+   bcs +
+   adc #$10
+   bcc ++
++  lda #$ff
+++ rts
+
 
 .bank $2e000 $a000:$2000
 ; Save/restore difficulty

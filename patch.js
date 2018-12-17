@@ -384,8 +384,10 @@ ComputeEnemyStats:
 +    lda $#01
 ++ sta $62
    jsr Multiply16Bit
-   lda $61
-   bit $62
+   lda $62
+   php
+    lda $61
+   plp
    beq +
     lda #$ff
 +  sta ObjectHP,x
@@ -473,11 +475,11 @@ Shift3_16Bit:
   lsr $62
   ror
   lsr $62
-  ror
-  bit $62
-  beq +
+  beq +     ; did we overflow?
    lda #$ff
-+ rts
+   sec
++ ror
+  rts
 
 Multiply16Bit:
   ;; Multiplies inputs in $61 and $62, then shifts

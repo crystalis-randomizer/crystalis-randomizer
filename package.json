@@ -1,0 +1,25 @@
+{
+  "name": "crystalis-randomizer",
+  "version": "0.0.1",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shicks/crystalis-randomizer.git"
+  },
+  "author": "Stephen Hicks",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/shicks/crystalis-randomizer/issues"
+  },
+  "homepage": "https://github.com/shicks/crystalis-randomizer#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "esm": "^3.0.84",
+    "viz": "0.0.1",
+    "viz.js": "^2.1.2"
+  },
+  "description": ""
+}

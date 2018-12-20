@@ -1,57 +1,4 @@
-// Build up the dependency graph
-// http://webgraphviz.com
-
-class Graph {
-  constructor() {
-    this.nodes = [];
-    this.edges = [];
-  }
-
-  add(description, deps) {
-    const n = this.nodes.length;
-    this.nodes.push(description);
-    
-    for (let dep of deps) {
-      if (typeof dep == 'number') {
-        if (this.nodes[dep].type == 'Route') {
-          this.nodes[dep].text = `${description.text}: ${this.nodes[dep].text}`;
-          this.nodes[n].or = true; // TODO - verify all are routes
-        }
-        this.edges.push([n, () => dep]);
-      } else {
-        this.edges.push([n, dep]);
-      }
-    }
-    return n;
-  }
-
-  toDot() {
-    const parts = [];
-    const colors = {
-      Boss: 'red',
-      Location: 'blue',
-      Item: 'green',
-      Magic: 'green',
-      Talk: 'cyan',
-      Chest: 'cyan',
-    };
-    parts.push('digraph dependencies {');
-    for (let i = 0; i < this.nodes.length; i++) {
-      const n = this.nodes[i];
-      const shape = n.or ? '' : ' shape=box';
-      const color = colors[n.type] ? ` color=${colors[n.type]}` : '';
-      parts.push(`  n${i} [label="${n.text}"${shape}${color}];`);
-    }
-    for (const [e1, e2] of this.edges) {
-      //if (typeof e2 != 'function') console.log(e2);
-      // TODO - e1 is sword? then color; e2 is or? then dotted.
-      parts.push(`  n${e2()} -> n${e1};`);
-    }
-    parts.push('}');
-    return parts.join('\n');
-  }
-};
-
+import {Graph} from './graph.js';
 
 // Randomization plan:
 //   - remove all ->item edges
@@ -59,7 +6,9 @@ class Graph {
 //   - pick a random ->item edge and a random item blocker
 //   - repeat
 
-const g = new Graph();
+export const graph = new Graph();
+const g = graph;
+
 const node = (text, ...deps) => g.add({text}, deps);
 const boss = (text, ...deps) => g.add({text, type: 'Boss'}, deps);
 const item = (text, ...deps) => g.add({text, type: 'Item'}, deps);
@@ -145,7 +94,7 @@ const akahanaBrynmaer = talk('Akahana: Brynmaer', brynmaer, onyxStatue);
 const gasMask = item('Gas Mask', akahanaBrynmaer);
 const swamp = location('Swamp', cordellPlains, gasMask); // TODO - hole?
 const oak = location('Oak', swamp);
-const stomHouse = location('Stom\'s House'. cordellPlains);
+const stomHouse = location('Stom\'s House', cordellPlains);
 const telepathy = magic('Telepathy', oak, stomHouse);
 const oakMother = talk('Oak Mother', telepathy); // TODO - break out oakChild, oakMotherAfter ?
 const insectFlute = item('Insect Flute', oakMother);
@@ -217,4 +166,4 @@ const stormBracelet = item('Storm Bracelet', todo);
 //                           route('fly', () => flight));
 
 
-console.log(g.toDot());
+//console.log(g.toDot());

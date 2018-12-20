@@ -1,0 +1,1511 @@
+<svg width="2211pt" height="4220pt" viewBox="0.00 0.00 2211.00 4220.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph1" class="graph" transform="scale(1 1) rotate(0) translate(4 4216)">
+<title>dependencies</title>
+<polygon fill="white" stroke="white" points="-4,5 -4,-4216 2208,-4216 2208,5 -4,5"></polygon>
+<!-- n0 -->
+<g id="node1" class="node"><title>n0</title>
+<polygon fill="none" stroke="black" points="551.896,-4212 458.104,-4212 458.104,-4176 551.896,-4176 551.896,-4212"></polygon>
+<text text-anchor="middle" x="505" y="-4189.8" font-family="Times,serif" font-size="14.00">Start of Game</text>
+</g>
+<!-- n19 -->
+<g id="node20" class="node"><title>n19</title>
+<polygon fill="none" stroke="blue" points="532,-4140 478,-4140 478,-4104 532,-4104 532,-4140"></polygon>
+<text text-anchor="middle" x="505" y="-4117.8" font-family="Times,serif" font-size="14.00">Leaf</text>
+</g>
+<!-- n0&#45;&gt;n19 -->
+<g id="edge58" class="edge"><title>n0-&gt;n19</title>
+<path fill="none" stroke="black" d="M505,-4175.7C505,-4167.98 505,-4158.71 505,-4150.11"></path>
+<polygon fill="black" stroke="black" points="508.5,-4150.1 505,-4140.1 501.5,-4150.1 508.5,-4150.1"></polygon>
+</g>
+<!-- n1 -->
+<g id="node2" class="node"><title>n1</title>
+<polygon fill="none" stroke="black" points="467.454,-3132 380.546,-3132 380.546,-3096 467.454,-3096 467.454,-3132"></polygon>
+<text text-anchor="middle" x="424" y="-3109.8" font-family="Times,serif" font-size="14.00">Sword: wind</text>
+</g>
+<!-- n5 -->
+<g id="node6" class="node"><title>n5</title>
+<ellipse fill="none" stroke="black" cx="1141" cy="-1098" rx="36.3727" ry="18"></ellipse>
+<text text-anchor="middle" x="1141" y="-1093.8" font-family="Times,serif" font-size="14.00">Sword</text>
+</g>
+<!-- n1&#45;&gt;n5 -->
+<g id="edge10" class="edge"><title>n1-&gt;n5</title>
+<path fill="none" stroke="black" d="M434.982,-3095.84C450.506,-3069.89 477,-3018.63 477,-2971 477,-2971 477,-2971 477,-2681 477,-2581.6 542,-2566.4 542,-2467 542,-2467 542,-2467 542,-1457 542,-1344.95 641.368,-1355.99 736,-1296 767.906,-1275.77 786.135,-1286.56 813,-1260 850.884,-1222.54 822.78,-1184.49 865,-1152 883.128,-1138.05 1022.8,-1116.1 1096.22,-1105.35"></path>
+<polygon fill="black" stroke="black" points="1097.15,-1108.75 1106.55,-1103.85 1096.15,-1101.83 1097.15,-1108.75"></polygon>
+</g>
+<!-- n2 -->
+<g id="node3" class="node"><title>n2</title>
+<polygon fill="none" stroke="black" points="953.524,-1188 874.476,-1188 874.476,-1152 953.524,-1152 953.524,-1188"></polygon>
+<text text-anchor="middle" x="914" y="-1165.8" font-family="Times,serif" font-size="14.00">Sword: fire</text>
+</g>
+<!-- n2&#45;&gt;n5 -->
+<g id="edge12" class="edge"><title>n2-&gt;n5</title>
+<path fill="none" stroke="black" d="M953.497,-1154.83C956.368,-1153.85 959.225,-1152.9 962,-1152 1009.19,-1136.67 1063.96,-1120.72 1100.37,-1110.37"></path>
+<polygon fill="black" stroke="black" points="1101.46,-1113.7 1110.12,-1107.61 1099.55,-1106.97 1101.46,-1113.7"></polygon>
+</g>
+<!-- n3 -->
+<g id="node4" class="node"><title>n3</title>
+<polygon fill="none" stroke="black" points="1437.27,-3636 1346.73,-3636 1346.73,-3600 1437.27,-3600 1437.27,-3636"></polygon>
+<text text-anchor="middle" x="1392" y="-3613.8" font-family="Times,serif" font-size="14.00">Sword: water</text>
+</g>
+<!-- n3&#45;&gt;n5 -->
+<g id="edge14" class="edge"><title>n3-&gt;n5</title>
+<path fill="none" stroke="black" d="M1394.7,-3599.55C1405.97,-3525.72 1449.3,-3231.58 1463,-2988 1463.9,-2972.03 1469.08,-2966.8 1463,-2952 1420.23,-2847.93 1337.3,-2871.62 1285,-2772 1237.8,-2682.09 1200,-2424.55 1200,-2323 1200,-2323 1200,-2323 1200,-1241 1200,-1197.11 1175.66,-1151.02 1158.25,-1123.67"></path>
+<polygon fill="black" stroke="black" points="1161.07,-1121.58 1152.66,-1115.14 1155.21,-1125.42 1161.07,-1121.58"></polygon>
+</g>
+<!-- n4 -->
+<g id="node5" class="node"><title>n4</title>
+<polygon fill="none" stroke="black" points="1732.03,-3204 1629.97,-3204 1629.97,-3168 1732.03,-3168 1732.03,-3204"></polygon>
+<text text-anchor="middle" x="1681" y="-3181.8" font-family="Times,serif" font-size="14.00">Sword: thunder</text>
+</g>
+<!-- n4&#45;&gt;n5 -->
+<g id="edge16" class="edge"><title>n4-&gt;n5</title>
+<path fill="none" stroke="black" d="M1672.7,-3167.97C1660.72,-3141.77 1640,-3089.7 1640,-3043 1640,-3043 1640,-3043 1640,-2825 1640,-2699.13 1564.53,-2684.35 1479,-2592 1392.69,-2498.81 1323.38,-2520.3 1257,-2412 1235.86,-2377.52 1238,-2363.45 1238,-2323 1238,-2323 1238,-2323 1238,-1241 1238,-1200.03 1237.24,-1185.74 1214,-1152 1204.02,-1137.5 1188.73,-1125.52 1174.72,-1116.64"></path>
+<polygon fill="black" stroke="black" points="1176.14,-1113.41 1165.77,-1111.25 1172.53,-1119.41 1176.14,-1113.41"></polygon>
+</g>
+<!-- n51 -->
+<g id="node52" class="node"><title>n51</title>
+<polygon fill="none" stroke="red" points="1061.61,-2844 986.393,-2844 986.393,-2808 1061.61,-2808 1061.61,-2844"></polygon>
+<text text-anchor="middle" x="1024" y="-2821.8" font-family="Times,serif" font-size="14.00">Vampire 1</text>
+</g>
+<!-- n5&#45;&gt;n51 -->
+<g id="edge150" class="edge"><title>n5-&gt;n51</title>
+<path fill="none" stroke="black" d="M1141,-1116.05C1141,-1142.71 1141,-1195.89 1141,-1241 1141,-2323 1141,-2323 1141,-2323 1141,-2520.99 1015.85,-2542.48 974,-2736 970.618,-2751.64 968.093,-2757.13 974,-2772 978.291,-2782.8 985.942,-2792.68 993.988,-2800.9"></path>
+<polygon fill="black" stroke="black" points="991.75,-2803.6 1001.4,-2807.96 996.578,-2798.53 991.75,-2803.6"></polygon>
+</g>
+<!-- n6 -->
+<g id="node7" class="node"><title>n6</title>
+<polygon fill="none" stroke="black" points="1112.18,-1188 971.816,-1188 971.816,-1152 1112.18,-1152 1112.18,-1188"></polygon>
+<text text-anchor="middle" x="1042" y="-1165.8" font-family="Times,serif" font-size="14.00">Sword (not wind): fire</text>
+</g>
+<!-- n9 -->
+<g id="node10" class="node"><title>n9</title>
+<ellipse fill="none" stroke="black" cx="1493" cy="-1098" rx="79.2379" ry="18"></ellipse>
+<text text-anchor="middle" x="1493" y="-1093.8" font-family="Times,serif" font-size="14.00">Sword (not wind)</text>
+</g>
+<!-- n6&#45;&gt;n9 -->
+<g id="edge24" class="edge"><title>n6-&gt;n9</title>
+<path fill="none" stroke="black" d="M1112.47,-1158.06C1196.03,-1145.09 1334.64,-1123.58 1419.5,-1110.41"></path>
+<polygon fill="black" stroke="black" points="1420.23,-1113.84 1429.58,-1108.84 1419.16,-1106.92 1420.23,-1113.84"></polygon>
+</g>
+<!-- n7 -->
+<g id="node8" class="node"><title>n7</title>
+<polygon fill="none" stroke="black" points="1598.43,-3564 1445.57,-3564 1445.57,-3528 1598.43,-3528 1598.43,-3564"></polygon>
+<text text-anchor="middle" x="1522" y="-3541.8" font-family="Times,serif" font-size="14.00">Sword (not wind): water</text>
+</g>
+<!-- n7&#45;&gt;n9 -->
+<g id="edge26" class="edge"><title>n7-&gt;n9</title>
+<path fill="none" stroke="black" d="M1522,-3527.95C1522,-3501.29 1522,-3448.11 1522,-3403 1522,-3403 1522,-3403 1522,-2681 1522,-2521.4 1550,-2482.6 1550,-2323 1550,-2323 1550,-2323 1550,-1241 1550,-1197.8 1527,-1152.19 1510.22,-1124.66"></path>
+<polygon fill="black" stroke="black" points="1513.09,-1122.65 1504.81,-1116.04 1507.17,-1126.37 1513.09,-1122.65"></polygon>
+</g>
+<!-- n8 -->
+<g id="node9" class="node"><title>n8</title>
+<polygon fill="none" stroke="black" points="1858.19,-3420 1693.81,-3420 1693.81,-3384 1858.19,-3384 1858.19,-3420"></polygon>
+<text text-anchor="middle" x="1776" y="-3397.8" font-family="Times,serif" font-size="14.00">Sword (not wind): thunder</text>
+</g>
+<!-- n8&#45;&gt;n9 -->
+<g id="edge28" class="edge"><title>n8-&gt;n9</title>
+<path fill="none" stroke="black" d="M1773.9,-3383.97C1769.03,-3345.38 1756.24,-3248.38 1741,-3168 1735.27,-3137.76 1622.35,-2658.31 1617,-2628 1598.85,-2525.24 1588,-2499.35 1588,-2395 1588,-2395 1588,-2395 1588,-1241 1588,-1200.03 1587.01,-1185.89 1564,-1152 1555.59,-1139.61 1543.3,-1128.98 1531.31,-1120.56"></path>
+<polygon fill="black" stroke="black" points="1532.95,-1117.45 1522.69,-1114.83 1529.08,-1123.28 1532.95,-1117.45"></polygon>
+</g>
+<!-- n72 -->
+<g id="node73" class="node"><title>n72</title>
+<polygon fill="none" stroke="red" points="1511.02,-1044 1426.98,-1044 1426.98,-1008 1511.02,-1008 1511.02,-1044"></polygon>
+<text text-anchor="middle" x="1469" y="-1021.8" font-family="Times,serif" font-size="14.00">Giant Insect</text>
+</g>
+<!-- n9&#45;&gt;n72 -->
+<g id="edge206" class="edge"><title>n9-&gt;n72</title>
+<path fill="none" stroke="black" d="M1487.07,-1079.7C1484.39,-1071.9 1481.17,-1062.51 1478.2,-1053.83"></path>
+<polygon fill="black" stroke="black" points="1481.42,-1052.43 1474.86,-1044.1 1474.8,-1054.7 1481.42,-1052.43"></polygon>
+</g>
+<!-- n10 -->
+<g id="node11" class="node"><title>n10</title>
+<polygon fill="none" stroke="black" points="1470.37,-2628 1365.63,-2628 1365.63,-2592 1470.37,-2592 1470.37,-2628"></polygon>
+<text text-anchor="middle" x="1418" y="-2605.8" font-family="Times,serif" font-size="14.00">Hop or Fly: hop</text>
+</g>
+<!-- n12 -->
+<g id="node13" class="node"><title>n12</title>
+<ellipse fill="none" stroke="black" cx="1671" cy="-2538" rx="53.1259" ry="18"></ellipse>
+<text text-anchor="middle" x="1671" y="-2533.8" font-family="Times,serif" font-size="14.00">Hop or Fly</text>
+</g>
+<!-- n10&#45;&gt;n12 -->
+<g id="edge34" class="edge"><title>n10-&gt;n12</title>
+<path fill="none" stroke="black" d="M1470.42,-2594.5C1514.73,-2582.24 1577.77,-2564.8 1621.29,-2552.75"></path>
+<polygon fill="black" stroke="black" points="1622.39,-2556.08 1631.09,-2550.04 1620.52,-2549.34 1622.39,-2556.08"></polygon>
+</g>
+<!-- n11 -->
+<g id="node12" class="node"><title>n11</title>
+<polygon fill="none" stroke="black" points="1726.29,-2628 1625.71,-2628 1625.71,-2592 1726.29,-2592 1726.29,-2628"></polygon>
+<text text-anchor="middle" x="1676" y="-2605.8" font-family="Times,serif" font-size="14.00">Hop or Fly: fly</text>
+</g>
+<!-- n11&#45;&gt;n12 -->
+<g id="edge36" class="edge"><title>n11-&gt;n12</title>
+<path fill="none" stroke="black" d="M1674.76,-2591.7C1674.21,-2583.98 1673.55,-2574.71 1672.94,-2566.11"></path>
+<polygon fill="black" stroke="black" points="1676.43,-2565.83 1672.22,-2556.1 1669.44,-2566.33 1676.43,-2565.83"></polygon>
+</g>
+<!-- n80 -->
+<g id="node81" class="node"><title>n80</title>
+<polygon fill="none" stroke="blue" points="1726.35,-2484 1615.65,-2484 1615.65,-2448 1726.35,-2448 1726.35,-2484"></polygon>
+<text text-anchor="middle" x="1671" y="-2461.8" font-family="Times,serif" font-size="14.00">Mt Sabre West 3</text>
+</g>
+<!-- n12&#45;&gt;n80 -->
+<g id="edge236" class="edge"><title>n12-&gt;n80</title>
+<path fill="none" stroke="black" d="M1671,-2519.7C1671,-2511.98 1671,-2502.71 1671,-2494.11"></path>
+<polygon fill="black" stroke="black" points="1674.5,-2494.1 1671,-2484.1 1667.5,-2494.1 1674.5,-2494.1"></polygon>
+</g>
+<!-- n13 -->
+<g id="node14" class="node"><title>n13</title>
+<polygon fill="none" stroke="black" points="2146.21,-2628 2037.79,-2628 2037.79,-2592 2146.21,-2592 2146.21,-2628"></polygon>
+<text text-anchor="middle" x="2092" y="-2605.8" font-family="Times,serif" font-size="14.00">Swim or Fly: fly</text>
+</g>
+<!-- n14 -->
+<g id="node15" class="node"><title>n14</title>
+<ellipse fill="none" stroke="black" cx="2094" cy="-2538" rx="58.9872" ry="18"></ellipse>
+<text text-anchor="middle" x="2094" y="-2533.8" font-family="Times,serif" font-size="14.00">Swim or Fly</text>
+</g>
+<!-- n13&#45;&gt;n14 -->
+<g id="edge40" class="edge"><title>n13-&gt;n14</title>
+<path fill="none" stroke="black" d="M2092.49,-2591.7C2092.71,-2583.98 2092.98,-2574.71 2093.23,-2566.11"></path>
+<polygon fill="black" stroke="black" points="2096.72,-2566.2 2093.51,-2556.1 2089.73,-2566 2096.72,-2566.2"></polygon>
+</g>
+<!-- n114 -->
+<g id="node115" class="node"><title>n114</title>
+<polygon fill="none" stroke="black" points="2203.02,-2484 2062.98,-2484 2062.98,-2448 2203.02,-2448 2203.02,-2484"></polygon>
+<text text-anchor="middle" x="2133" y="-2461.8" font-family="Times,serif" font-size="14.00">Portoa: via Angry Sea</text>
+</g>
+<!-- n14&#45;&gt;n114 -->
+<g id="edge336" class="edge"><title>n14-&gt;n114</title>
+<path fill="none" stroke="black" d="M2103.44,-2520.05C2107.92,-2512.01 2113.39,-2502.2 2118.39,-2493.23"></path>
+<polygon fill="black" stroke="black" points="2121.57,-2494.71 2123.38,-2484.28 2115.45,-2491.31 2121.57,-2494.71"></polygon>
+</g>
+<!-- n15 -->
+<g id="node16" class="node"><title>n15</title>
+<polygon fill="none" stroke="black" points="426.02,-2268 323.98,-2268 323.98,-2232 426.02,-2232 426.02,-2268"></polygon>
+<text text-anchor="middle" x="375" y="-2245.8" font-family="Times,serif" font-size="14.00">Tornado Magic</text>
+</g>
+<!-- n104 -->
+<g id="node105" class="node"><title>n104</title>
+<polygon fill="none" stroke="black" points="426.195,-2196 289.805,-2196 289.805,-2160 426.195,-2160 426.195,-2196"></polygon>
+<text text-anchor="middle" x="358" y="-2173.8" font-family="Times,serif" font-size="14.00">Mt Sabre Boss Killed</text>
+</g>
+<!-- n15&#45;&gt;n104 -->
+<g id="edge304" class="edge"><title>n15-&gt;n104</title>
+<path fill="none" stroke="black" d="M370.798,-2231.7C368.904,-2223.9 366.623,-2214.51 364.516,-2205.83"></path>
+<polygon fill="black" stroke="black" points="367.915,-2205 362.154,-2196.1 361.113,-2206.65 367.915,-2205"></polygon>
+</g>
+<!-- n16 -->
+<g id="node17" class="node"><title>n16</title>
+<polygon fill="none" stroke="black" points="322.193,-36 231.807,-36 231.807,0 322.193,0 322.193,-36"></polygon>
+<text text-anchor="middle" x="277" y="-13.8" font-family="Times,serif" font-size="14.00">Flame Magic</text>
+</g>
+<!-- n17 -->
+<g id="node18" class="node"><title>n17</title>
+<polygon fill="none" stroke="black" points="1596.02,-3708 1493.98,-3708 1493.98,-3672 1596.02,-3672 1596.02,-3708"></polygon>
+<text text-anchor="middle" x="1545" y="-3685.8" font-family="Times,serif" font-size="14.00">Blizzard Magic</text>
+</g>
+<!-- n18 -->
+<g id="node19" class="node"><title>n18</title>
+<polygon fill="none" stroke="black" points="1858.62,-3708 1769.38,-3708 1769.38,-3672 1858.62,-3672 1858.62,-3708"></polygon>
+<text text-anchor="middle" x="1814" y="-3685.8" font-family="Times,serif" font-size="14.00">Storm Magic</text>
+</g>
+<!-- n20 -->
+<g id="node21" class="node"><title>n20</title>
+<polygon fill="none" stroke="black" points="582.083,-4068 427.917,-4068 427.917,-4032 582.083,-4032 582.083,-4068"></polygon>
+<text text-anchor="middle" x="505" y="-4045.8" font-family="Times,serif" font-size="14.00">Valley of Wind: forward</text>
+</g>
+<!-- n19&#45;&gt;n20 -->
+<g id="edge60" class="edge"><title>n19-&gt;n20</title>
+<path fill="none" stroke="black" d="M505,-4103.7C505,-4095.98 505,-4086.71 505,-4078.11"></path>
+<polygon fill="black" stroke="black" points="508.5,-4078.1 505,-4068.1 501.5,-4078.1 508.5,-4078.1"></polygon>
+</g>
+<!-- n23 -->
+<g id="node24" class="node"><title>n23</title>
+<polygon fill="none" stroke="green" points="840.031,-3708 755.969,-3708 755.969,-3672 840.031,-3672 840.031,-3708"></polygon>
+<text text-anchor="middle" x="798" y="-3685.8" font-family="Times,serif" font-size="14.00">Alarm Flute</text>
+</g>
+<!-- n19&#45;&gt;n23 -->
+<g id="edge68" class="edge"><title>n19-&gt;n23</title>
+<path fill="none" stroke="black" d="M532.274,-4119.5C601.579,-4114.06 779,-4089.37 779,-3979 779,-3979 779,-3979 779,-3833 779,-3792.86 786.551,-3746.9 792.132,-3718.4"></path>
+<polygon fill="black" stroke="black" points="795.606,-3718.88 794.155,-3708.39 788.745,-3717.5 795.606,-3718.88"></polygon>
+</g>
+<!-- n24 -->
+<g id="node25" class="node"><title>n24</title>
+<polygon fill="none" stroke="cyan" points="376.595,-3996 301.405,-3996 301.405,-3960 376.595,-3960 376.595,-3996"></polygon>
+<text text-anchor="middle" x="339" y="-3973.8" font-family="Times,serif" font-size="14.00">Leaf Elder</text>
+</g>
+<!-- n19&#45;&gt;n24 -->
+<g id="edge72" class="edge"><title>n19-&gt;n24</title>
+<path fill="none" stroke="black" d="M477.707,-4106.84C460.1,-4097.08 437.178,-4083.17 419,-4068 395.934,-4048.75 373.402,-4022.85 358.159,-4003.96"></path>
+<polygon fill="black" stroke="black" points="360.855,-4001.72 351.893,-3996.07 355.375,-4006.08 360.855,-4001.72"></polygon>
+</g>
+<!-- n25 -->
+<g id="node26" class="node"><title>n25</title>
+<polygon fill="none" stroke="cyan" points="731.363,-3924 630.637,-3924 630.637,-3888 731.363,-3888 731.363,-3924"></polygon>
+<text text-anchor="middle" x="681" y="-3901.8" font-family="Times,serif" font-size="14.00">Zebu's Student</text>
+</g>
+<!-- n19&#45;&gt;n25 -->
+<g id="edge74" class="edge"><title>n19-&gt;n25</title>
+<path fill="none" stroke="black" d="M532.298,-4108.74C550.572,-4099.51 574.254,-4085.47 591,-4068 629.516,-4027.81 657.224,-3967.96 671.042,-3933.69"></path>
+<polygon fill="black" stroke="black" points="674.319,-3934.91 674.724,-3924.33 667.806,-3932.35 674.319,-3934.91"></polygon>
+</g>
+<!-- n89 -->
+<g id="node90" class="node"><title>n89</title>
+<polygon fill="none" stroke="cyan" points="82.3568,-540 -0.356787,-540 -0.356787,-504 82.3568,-504 82.3568,-540"></polygon>
+<text text-anchor="middle" x="41" y="-517.8" font-family="Times,serif" font-size="14.00">Leaf Rabbit</text>
+</g>
+<!-- n19&#45;&gt;n89 -->
+<g id="edge256" class="edge"><title>n19-&gt;n89</title>
+<path fill="none" stroke="black" d="M477.817,-4119.22C373.687,-4111.66 6,-4077.97 6,-3979 6,-3979 6,-3979 6,-665 6,-623.843 20.032,-577.876 30.3265,-549.69"></path>
+<polygon fill="black" stroke="black" points="33.6695,-550.744 33.9172,-540.152 27.1183,-548.278 33.6695,-550.744"></polygon>
+</g>
+<!-- n22 -->
+<g id="node23" class="node"><title>n22</title>
+<ellipse fill="none" stroke="blue" cx="505" cy="-3978" rx="71.157" ry="18"></ellipse>
+<text text-anchor="middle" x="505" y="-3973.8" font-family="Times,serif" font-size="14.00">Valley of Wind</text>
+</g>
+<!-- n20&#45;&gt;n22 -->
+<g id="edge64" class="edge"><title>n20-&gt;n22</title>
+<path fill="none" stroke="black" d="M505,-4031.7C505,-4023.98 505,-4014.71 505,-4006.11"></path>
+<polygon fill="black" stroke="black" points="508.5,-4006.1 505,-3996.1 501.5,-4006.1 508.5,-4006.1"></polygon>
+</g>
+<!-- n21 -->
+<g id="node22" class="node"><title>n21</title>
+<polygon fill="none" stroke="black" points="486.385,-3780 327.615,-3780 327.615,-3744 486.385,-3744 486.385,-3780"></polygon>
+<text text-anchor="middle" x="407" y="-3757.8" font-family="Times,serif" font-size="14.00">Valley of Wind: via Zebu</text>
+</g>
+<!-- n21&#45;&gt;n22 -->
+<g id="edge66" class="edge"><title>n21-&gt;n22</title>
+<path fill="none" stroke="black" d="M404.736,-3780.48C401.589,-3811.77 399.084,-3878.34 427,-3924 435.337,-3937.64 448.657,-3948.58 461.948,-3956.9"></path>
+<polygon fill="black" stroke="black" points="460.229,-3959.95 470.625,-3961.99 463.772,-3953.91 460.229,-3959.95"></polygon>
+</g>
+<!-- n26 -->
+<g id="node27" class="node"><title>n26</title>
+<polygon fill="none" stroke="black" points="574.124,-3924 435.876,-3924 435.876,-3888 574.124,-3888 574.124,-3924"></polygon>
+<text text-anchor="middle" x="505" y="-3901.8" font-family="Times,serif" font-size="14.00">Zebu's Cave: forward</text>
+</g>
+<!-- n22&#45;&gt;n26 -->
+<g id="edge76" class="edge"><title>n22-&gt;n26</title>
+<path fill="none" stroke="black" d="M505,-3959.7C505,-3951.98 505,-3942.71 505,-3934.11"></path>
+<polygon fill="black" stroke="black" points="508.5,-3934.1 505,-3924.1 501.5,-3934.1 508.5,-3934.1"></polygon>
+</g>
+<!-- n33 -->
+<g id="node34" class="node"><title>n33</title>
+<polygon fill="none" stroke="black" points="775.253,-3564 706.747,-3564 706.747,-3528 775.253,-3528 775.253,-3564"></polygon>
+<text text-anchor="middle" x="741" y="-3541.8" font-family="Times,serif" font-size="14.00">Windmill</text>
+</g>
+<!-- n22&#45;&gt;n33 -->
+<g id="edge100" class="edge"><title>n22-&gt;n33</title>
+<path fill="none" stroke="black" d="M537.972,-3962.04C553.913,-3953.18 571.943,-3940.44 583,-3924 605.575,-3890.44 602,-3875.45 602,-3835 602,-3835 602,-3835 602,-3689 602,-3633.51 656.866,-3591.7 697.657,-3568.28"></path>
+<polygon fill="black" stroke="black" points="699.602,-3571.2 706.64,-3563.28 696.2,-3565.08 699.602,-3571.2"></polygon>
+</g>
+<!-- n32 -->
+<g id="node33" class="node"><title>n32</title>
+<polygon fill="none" stroke="green" points="789.367,-3636 692.633,-3636 692.633,-3600 789.367,-3600 789.367,-3636"></polygon>
+<text text-anchor="middle" x="741" y="-3613.8" font-family="Times,serif" font-size="14.00">Windmill Key</text>
+</g>
+<!-- n23&#45;&gt;n32 -->
+<g id="edge96" class="edge"><title>n23-&gt;n32</title>
+<path fill="none" stroke="black" d="M783.91,-3671.7C777.077,-3663.3 768.743,-3653.07 761.244,-3643.86"></path>
+<polygon fill="black" stroke="black" points="763.956,-3641.65 754.928,-3636.1 758.528,-3646.07 763.956,-3641.65"></polygon>
+</g>
+<!-- n30 -->
+<g id="node31" class="node"><title>n30</title>
+<polygon fill="none" stroke="green" points="385.237,-3276 282.763,-3276 282.763,-3240 385.237,-3240 385.237,-3276"></polygon>
+<text text-anchor="middle" x="334" y="-3253.8" font-family="Times,serif" font-size="14.00">Sword of Wind</text>
+</g>
+<!-- n24&#45;&gt;n30 -->
+<g id="edge90" class="edge"><title>n24-&gt;n30</title>
+<path fill="none" stroke="black" d="M330.905,-3959.95C319.217,-3933.72 299,-3881.61 299,-3835 299,-3835 299,-3835 299,-3401 299,-3359.84 313.032,-3313.88 323.327,-3285.69"></path>
+<polygon fill="black" stroke="black" points="326.669,-3286.74 326.917,-3276.15 320.118,-3284.28 326.669,-3286.74"></polygon>
+</g>
+<!-- n29 -->
+<g id="node30" class="node"><title>n29</title>
+<polygon fill="none" stroke="cyan" points="708,-3780 654,-3780 654,-3744 708,-3744 708,-3780"></polygon>
+<text text-anchor="middle" x="681" y="-3757.8" font-family="Times,serif" font-size="14.00">Zebu</text>
+</g>
+<!-- n25&#45;&gt;n29 -->
+<g id="edge88" class="edge"><title>n25-&gt;n29</title>
+<path fill="none" stroke="black" d="M681,-3887.87C681,-3863.67 681,-3819.21 681,-3790.39"></path>
+<polygon fill="black" stroke="black" points="684.5,-3790.19 681,-3780.19 677.5,-3790.19 684.5,-3790.19"></polygon>
+</g>
+<!-- n28 -->
+<g id="node29" class="node"><title>n28</title>
+<ellipse fill="none" stroke="blue" cx="514" cy="-3834" rx="60.1596" ry="18"></ellipse>
+<text text-anchor="middle" x="514" y="-3829.8" font-family="Times,serif" font-size="14.00">Zebu's Cave</text>
+</g>
+<!-- n26&#45;&gt;n28 -->
+<g id="edge82" class="edge"><title>n26-&gt;n28</title>
+<path fill="none" stroke="black" d="M507.225,-3887.7C508.217,-3879.98 509.408,-3870.71 510.514,-3862.11"></path>
+<polygon fill="black" stroke="black" points="513.997,-3862.47 511.801,-3852.1 507.054,-3861.58 513.997,-3862.47"></polygon>
+</g>
+<!-- n27 -->
+<g id="node28" class="node"><title>n27</title>
+<polygon fill="none" stroke="black" points="1735.2,-612 1600.8,-612 1600.8,-576 1735.2,-576 1735.2,-612"></polygon>
+<text text-anchor="middle" x="1668" y="-589.8" font-family="Times,serif" font-size="14.00">Zebu's Cave: reverse</text>
+</g>
+<!-- n27&#45;&gt;n28 -->
+<g id="edge84" class="edge"><title>n27-&gt;n28</title>
+<path fill="none" stroke="black" d="M1680.14,-612.091C1703.85,-647.197 1754,-730.721 1754,-809 1754,-2539 1754,-2539 1754,-2539 1754,-2579.45 1750.83,-2590.78 1735,-2628 1693.66,-2725.22 1602,-2719.36 1602,-2825 1602,-3115 1602,-3115 1602,-3115 1602,-3338.39 1627,-3393.61 1627,-3617 1627,-3691 1627,-3691 1627,-3691 1627,-3731.54 1638.03,-3753.91 1607,-3780 1567.8,-3812.96 818.91,-3828 583.918,-3831.92"></path>
+<polygon fill="black" stroke="black" points="583.723,-3828.42 573.782,-3832.09 583.839,-3835.42 583.723,-3828.42"></polygon>
+</g>
+<!-- n28&#45;&gt;n21 -->
+<g id="edge62" class="edge"><title>n28-&gt;n21</title>
+<path fill="none" stroke="black" d="M490.253,-3817.46C476.019,-3808.15 457.666,-3796.15 441.814,-3785.78"></path>
+<polygon fill="black" stroke="black" points="443.592,-3782.76 433.308,-3780.21 439.76,-3788.61 443.592,-3782.76"></polygon>
+</g>
+<!-- n28&#45;&gt;n29 -->
+<g id="edge86" class="edge"><title>n28-&gt;n29</title>
+<path fill="none" stroke="black" d="M547.394,-3819C575.529,-3807.21 615.709,-3790.37 644.648,-3778.24"></path>
+<polygon fill="black" stroke="black" points="646.129,-3781.41 653.998,-3774.32 643.423,-3774.96 646.129,-3781.41"></polygon>
+</g>
+<!-- n77 -->
+<g id="node78" class="node"><title>n77</title>
+<polygon fill="none" stroke="black" points="1552.43,-756 1385.57,-756 1385.57,-720 1552.43,-720 1552.43,-756"></polygon>
+<text text-anchor="middle" x="1469" y="-733.8" font-family="Times,serif" font-size="14.00">Mt Sabre West 1: via Zebu</text>
+</g>
+<!-- n28&#45;&gt;n77 -->
+<g id="edge220" class="edge"><title>n28-&gt;n77</title>
+<path fill="none" stroke="black" d="M514.198,-3815.95C514.489,-3789.29 515,-3736.12 515,-3691 515,-3691 515,-3691 515,-2681 515,-2585.76 504,-2562.24 504,-2467 504,-2467 504,-2467 504,-1457 504,-1313.05 656,-1314.95 656,-1171 656,-1171 656,-1171 656,-953 656,-805.718 1161.29,-757.655 1375.17,-743.908"></path>
+<polygon fill="black" stroke="black" points="1375.68,-747.383 1385.44,-743.26 1375.24,-740.397 1375.68,-747.383"></polygon>
+</g>
+<!-- n31 -->
+<g id="node32" class="node"><title>n31</title>
+<polygon fill="none" stroke="cyan" points="738.112,-3708 629.888,-3708 629.888,-3672 738.112,-3672 738.112,-3708"></polygon>
+<text text-anchor="middle" x="684" y="-3685.8" font-family="Times,serif" font-size="14.00">Windmill Guard</text>
+</g>
+<!-- n29&#45;&gt;n31 -->
+<g id="edge92" class="edge"><title>n29-&gt;n31</title>
+<path fill="none" stroke="black" d="M681.742,-3743.7C682.072,-3735.98 682.469,-3726.71 682.838,-3718.11"></path>
+<polygon fill="black" stroke="black" points="686.335,-3718.25 683.267,-3708.1 679.342,-3717.95 686.335,-3718.25"></polygon>
+</g>
+<!-- n30&#45;&gt;n1 -->
+<g id="edge2" class="edge"><title>n30-&gt;n1</title>
+<path fill="none" stroke="black" d="M344.856,-3239.87C360.465,-3215.24 389.371,-3169.64 407.594,-3140.88"></path>
+<polygon fill="black" stroke="black" points="410.708,-3142.51 413.105,-3132.19 404.796,-3138.76 410.708,-3142.51"></polygon>
+</g>
+<!-- n30&#45;&gt;n15 -->
+<g id="edge42" class="edge"><title>n30-&gt;n15</title>
+<path fill="none" stroke="black" d="M334,-3239.95C334,-3213.29 334,-3160.11 334,-3115 334,-3115 334,-3115 334,-2393 334,-2351.41 350.438,-2305.56 362.497,-2277.51"></path>
+<polygon fill="black" stroke="black" points="365.848,-2278.59 366.703,-2268.03 359.449,-2275.75 365.848,-2278.59"></polygon>
+</g>
+<!-- n42 -->
+<g id="node43" class="node"><title>n42</title>
+<polygon fill="none" stroke="black" points="652.233,-3204 559.767,-3204 559.767,-3168 652.233,-3168 652.233,-3204"></polygon>
+<text text-anchor="middle" x="606" y="-3181.8" font-family="Times,serif" font-size="14.00">Wind Level 2</text>
+</g>
+<!-- n30&#45;&gt;n42 -->
+<g id="edge120" class="edge"><title>n30-&gt;n42</title>
+<path fill="none" stroke="black" d="M385.161,-3243.83C432.096,-3231.75 501.476,-3213.9 549.906,-3201.44"></path>
+<polygon fill="black" stroke="black" points="550.792,-3204.82 559.604,-3198.94 549.047,-3198.04 550.792,-3204.82"></polygon>
+</g>
+<!-- n30&#45;&gt;n104 -->
+<g id="edge302" class="edge"><title>n30-&gt;n104</title>
+<path fill="none" stroke="black" d="M326.31,-3239.91C315.206,-3213.62 296,-3161.45 296,-3115 296,-3115 296,-3115 296,-2321 296,-2280.55 297.554,-2268.49 315,-2232 319.803,-2221.95 326.873,-2212.14 333.9,-2203.75"></path>
+<polygon fill="black" stroke="black" points="336.584,-2205.99 340.547,-2196.17 331.321,-2201.38 336.584,-2205.99"></polygon>
+</g>
+<!-- n31&#45;&gt;n32 -->
+<g id="edge94" class="edge"><title>n31-&gt;n32</title>
+<path fill="none" stroke="black" d="M698.09,-3671.7C704.923,-3663.3 713.257,-3653.07 720.756,-3643.86"></path>
+<polygon fill="black" stroke="black" points="723.472,-3646.07 727.072,-3636.1 718.044,-3641.65 723.472,-3646.07"></polygon>
+</g>
+<!-- n32&#45;&gt;n33 -->
+<g id="edge98" class="edge"><title>n32-&gt;n33</title>
+<path fill="none" stroke="black" d="M741,-3599.7C741,-3591.98 741,-3582.71 741,-3574.11"></path>
+<polygon fill="black" stroke="black" points="744.5,-3574.1 741,-3564.1 737.5,-3574.1 744.5,-3574.1"></polygon>
+</g>
+<!-- n34 -->
+<g id="node35" class="node"><title>n34</title>
+<polygon fill="none" stroke="green" points="897.154,-3492 838.846,-3492 838.846,-3456 897.154,-3456 897.154,-3492"></polygon>
+<text text-anchor="middle" x="868" y="-3469.8" font-family="Times,serif" font-size="14.00">Refresh</text>
+</g>
+<!-- n33&#45;&gt;n34 -->
+<g id="edge102" class="edge"><title>n33-&gt;n34</title>
+<path fill="none" stroke="black" d="M772.068,-3527.88C789.406,-3518.32 811.154,-3506.33 829.558,-3496.19"></path>
+<polygon fill="black" stroke="black" points="831.494,-3499.12 838.562,-3491.23 828.115,-3492.99 831.494,-3499.12"></polygon>
+</g>
+<!-- n35 -->
+<g id="node36" class="node"><title>n35</title>
+<polygon fill="none" stroke="black" points="820.577,-3492 661.423,-3492 661.423,-3456 820.577,-3456 820.577,-3492"></polygon>
+<text text-anchor="middle" x="741" y="-3469.8" font-family="Times,serif" font-size="14.00">Vampire Cave 1: forward</text>
+</g>
+<!-- n33&#45;&gt;n35 -->
+<g id="edge104" class="edge"><title>n33-&gt;n35</title>
+<path fill="none" stroke="black" d="M741,-3527.7C741,-3519.98 741,-3510.71 741,-3502.11"></path>
+<polygon fill="black" stroke="black" points="744.5,-3502.1 741,-3492.1 737.5,-3502.1 744.5,-3502.1"></polygon>
+</g>
+<!-- n37 -->
+<g id="node38" class="node"><title>n37</title>
+<ellipse fill="none" stroke="blue" cx="1025" cy="-3402" rx="73.98" ry="18"></ellipse>
+<text text-anchor="middle" x="1025" y="-3397.8" font-family="Times,serif" font-size="14.00">Vampire Cave 1</text>
+</g>
+<!-- n35&#45;&gt;n37 -->
+<g id="edge108" class="edge"><title>n35-&gt;n37</title>
+<path fill="none" stroke="black" d="M810.111,-3455.97C857.431,-3444.3 919.566,-3428.99 964.845,-3417.83"></path>
+<polygon fill="black" stroke="black" points="965.943,-3421.16 974.815,-3415.37 964.268,-3414.36 965.943,-3421.16"></polygon>
+</g>
+<!-- n36 -->
+<g id="node37" class="node"><title>n36</title>
+<polygon fill="none" stroke="black" points="1454.16,-2988 1299.84,-2988 1299.84,-2952 1454.16,-2952 1454.16,-2988"></polygon>
+<text text-anchor="middle" x="1377" y="-2965.8" font-family="Times,serif" font-size="14.00">Vampire Cave 1: reverse</text>
+</g>
+<!-- n36&#45;&gt;n37 -->
+<g id="edge110" class="edge"><title>n36-&gt;n37</title>
+<path fill="none" stroke="black" d="M1372.35,-2988.34C1365.62,-3014.95 1354,-3067.55 1354,-3113 1354,-3259 1354,-3259 1354,-3259 1354,-3365.65 1206.46,-3393.14 1108.99,-3399.67"></path>
+<polygon fill="black" stroke="black" points="1108.6,-3396.18 1098.83,-3400.28 1109.03,-3403.17 1108.6,-3396.18"></polygon>
+</g>
+<!-- n38 -->
+<g id="node39" class="node"><title>n38</title>
+<polygon fill="none" stroke="cyan" points="1013.41,-3348 790.591,-3348 790.591,-3312 1013.41,-3312 1013.41,-3348"></polygon>
+<text text-anchor="middle" x="902" y="-3325.8" font-family="Times,serif" font-size="14.00">Vampire Cave Chest 1 (Warp Boots)</text>
+</g>
+<!-- n37&#45;&gt;n38 -->
+<g id="edge112" class="edge"><title>n37-&gt;n38</title>
+<path fill="none" stroke="black" d="M997.396,-3385.29C980.718,-3375.8 959.204,-3363.55 940.829,-3353.1"></path>
+<polygon fill="black" stroke="black" points="942.518,-3350.03 932.095,-3348.13 939.055,-3356.12 942.518,-3350.03"></polygon>
+</g>
+<!-- n39 -->
+<g id="node40" class="node"><title>n39</title>
+<polygon fill="none" stroke="cyan" points="1264.48,-3348 1031.52,-3348 1031.52,-3312 1264.48,-3312 1264.48,-3348"></polygon>
+<text text-anchor="middle" x="1148" y="-3325.8" font-family="Times,serif" font-size="14.00">Vampire Cave Chest 2 (Medical Herb)</text>
+</g>
+<!-- n37&#45;&gt;n39 -->
+<g id="edge114" class="edge"><title>n37-&gt;n39</title>
+<path fill="none" stroke="black" d="M1052.6,-3385.29C1069.28,-3375.8 1090.8,-3363.55 1109.17,-3353.1"></path>
+<polygon fill="black" stroke="black" points="1110.94,-3356.12 1117.9,-3348.13 1107.48,-3350.03 1110.94,-3356.12"></polygon>
+</g>
+<!-- n40 -->
+<g id="node41" class="node"><title>n40</title>
+<polygon fill="none" stroke="cyan" points="772.287,-3348 543.713,-3348 543.713,-3312 772.287,-3312 772.287,-3348"></polygon>
+<text text-anchor="middle" x="658" y="-3325.8" font-family="Times,serif" font-size="14.00">Vampire Cave Chest 3 (Ball of Wind)</text>
+</g>
+<!-- n37&#45;&gt;n40 -->
+<g id="edge116" class="edge"><title>n37-&gt;n40</title>
+<path fill="none" stroke="black" d="M968.461,-3390.22C912.309,-3379.51 825.049,-3362.86 757.321,-3349.94"></path>
+<polygon fill="black" stroke="black" points="757.954,-3346.5 747.476,-3348.07 756.643,-3353.38 757.954,-3346.5"></polygon>
+</g>
+<!-- n43 -->
+<g id="node44" class="node"><title>n43</title>
+<polygon fill="none" stroke="black" points="1139.48,-3132 958.52,-3132 958.52,-3096 1139.48,-3096 1139.48,-3132"></polygon>
+<text text-anchor="middle" x="1049" y="-3109.8" font-family="Times,serif" font-size="14.00">Vampire Cave Inner: forward</text>
+</g>
+<!-- n37&#45;&gt;n43 -->
+<g id="edge124" class="edge"><title>n37-&gt;n43</title>
+<path fill="none" stroke="black" d="M1094.74,-3395.72C1160.08,-3389.16 1250.92,-3375.3 1273,-3348 1340.43,-3264.63 1182.39,-3175.9 1097.91,-3136.27"></path>
+<polygon fill="black" stroke="black" points="1099.28,-3133.04 1088.74,-3132.02 1096.34,-3139.39 1099.28,-3133.04"></polygon>
+</g>
+<!-- n41 -->
+<g id="node42" class="node"><title>n41</title>
+<polygon fill="none" stroke="green" points="684.323,-3276 595.677,-3276 595.677,-3240 684.323,-3240 684.323,-3276"></polygon>
+<text text-anchor="middle" x="640" y="-3253.8" font-family="Times,serif" font-size="14.00">Ball of Wind</text>
+</g>
+<!-- n40&#45;&gt;n41 -->
+<g id="edge118" class="edge"><title>n40-&gt;n41</title>
+<path fill="none" stroke="black" d="M653.551,-3311.7C651.545,-3303.9 649.131,-3294.51 646.899,-3285.83"></path>
+<polygon fill="black" stroke="black" points="650.278,-3284.92 644.398,-3276.1 643.499,-3286.66 650.278,-3284.92"></polygon>
+</g>
+<!-- n41&#45;&gt;n42 -->
+<g id="edge122" class="edge"><title>n41-&gt;n42</title>
+<path fill="none" stroke="black" d="M631.596,-3239.7C627.725,-3231.73 623.048,-3222.1 618.757,-3213.26"></path>
+<polygon fill="black" stroke="black" points="621.825,-3211.57 614.308,-3204.1 615.529,-3214.63 621.825,-3211.57"></polygon>
+</g>
+<!-- n42&#45;&gt;n43 -->
+<g id="edge126" class="edge"><title>n42-&gt;n43</title>
+<path fill="none" stroke="black" d="M652.571,-3177.64C722.338,-3166.62 855.672,-3145.55 948.34,-3130.91"></path>
+<polygon fill="black" stroke="black" points="948.972,-3134.35 958.303,-3129.33 947.879,-3127.44 948.972,-3134.35"></polygon>
+</g>
+<!-- n49 -->
+<g id="node50" class="node"><title>n49</title>
+<polygon fill="none" stroke="black" points="1112.33,-1836 937.672,-1836 937.672,-1800 1112.33,-1800 1112.33,-1836"></polygon>
+<text text-anchor="middle" x="1025" y="-1813.8" font-family="Times,serif" font-size="14.00">Vampire Cave Boss: reverse</text>
+</g>
+<!-- n42&#45;&gt;n49 -->
+<g id="edge142" class="edge"><title>n42-&gt;n49</title>
+<path fill="none" stroke="black" d="M596.883,-3167.61C583.995,-3141.36 562,-3089.71 562,-3043 562,-3043 562,-3043 562,-2969 562,-2873.89 563,-2850.11 563,-2755 563,-2755 563,-2755 563,-2681 563,-2278.71 729.068,-2194.91 969,-1872 976.734,-1861.59 986.634,-1851.47 995.953,-1842.91"></path>
+<polygon fill="black" stroke="black" points="998.443,-1845.38 1003.58,-1836.11 993.788,-1840.15 998.443,-1845.38"></polygon>
+</g>
+<!-- n45 -->
+<g id="node46" class="node"><title>n45</title>
+<ellipse fill="none" stroke="blue" cx="1049" cy="-3042" rx="89.2972" ry="18"></ellipse>
+<text text-anchor="middle" x="1049" y="-3037.8" font-family="Times,serif" font-size="14.00">Vampire Cave Inner</text>
+</g>
+<!-- n43&#45;&gt;n45 -->
+<g id="edge130" class="edge"><title>n43-&gt;n45</title>
+<path fill="none" stroke="black" d="M1049,-3095.7C1049,-3087.98 1049,-3078.71 1049,-3070.11"></path>
+<polygon fill="black" stroke="black" points="1052.5,-3070.1 1049,-3060.1 1045.5,-3070.1 1052.5,-3070.1"></polygon>
+</g>
+<!-- n44 -->
+<g id="node45" class="node"><title>n44</title>
+<polygon fill="none" stroke="black" points="1235.06,-2700 1056.94,-2700 1056.94,-2664 1235.06,-2664 1235.06,-2700"></polygon>
+<text text-anchor="middle" x="1146" y="-2677.8" font-family="Times,serif" font-size="14.00">Vampire Cave Inner: reverse</text>
+</g>
+<!-- n44&#45;&gt;n45 -->
+<g id="edge132" class="edge"><title>n44-&gt;n45</title>
+<path fill="none" stroke="black" d="M1152.01,-2700.24C1157.46,-2718.31 1163.8,-2747.42 1158,-2772 1137.45,-2859.05 1097.57,-2867.59 1068,-2952 1060.92,-2972.22 1056,-2996 1052.95,-3013.88"></path>
+<polygon fill="black" stroke="black" points="1049.47,-3013.49 1051.33,-3023.92 1056.38,-3014.61 1049.47,-3013.49"></polygon>
+</g>
+<!-- n45&#45;&gt;n36 -->
+<g id="edge106" class="edge"><title>n45-&gt;n36</title>
+<path fill="none" stroke="black" d="M1108.02,-3028.4C1158.67,-3017.6 1232.37,-3001.87 1289.82,-2989.61"></path>
+<polygon fill="black" stroke="black" points="1290.57,-2993.03 1299.62,-2987.52 1289.11,-2986.18 1290.57,-2993.03"></polygon>
+</g>
+<!-- n46 -->
+<g id="node47" class="node"><title>n46</title>
+<polygon fill="none" stroke="cyan" points="1281.21,-2988 1076.79,-2988 1076.79,-2952 1281.21,-2952 1281.21,-2988"></polygon>
+<text text-anchor="middle" x="1179" y="-2965.8" font-family="Times,serif" font-size="14.00">Vampire Cave Chest 4 (Antidote)</text>
+</g>
+<!-- n45&#45;&gt;n46 -->
+<g id="edge134" class="edge"><title>n45-&gt;n46</title>
+<path fill="none" stroke="black" d="M1078.82,-3024.94C1096.43,-3015.46 1118.95,-3003.33 1138.19,-2992.98"></path>
+<polygon fill="black" stroke="black" points="1139.9,-2996.03 1147.04,-2988.21 1136.58,-2989.87 1139.9,-2996.03"></polygon>
+</g>
+<!-- n47 -->
+<g id="node48" class="node"><title>n47</title>
+<polygon fill="none" stroke="cyan" points="823.477,-2988 590.523,-2988 590.523,-2952 823.477,-2952 823.477,-2988"></polygon>
+<text text-anchor="middle" x="707" y="-2965.8" font-family="Times,serif" font-size="14.00">Vampire Cave Chest 5 (Medical Herb)</text>
+</g>
+<!-- n45&#45;&gt;n47 -->
+<g id="edge136" class="edge"><title>n45-&gt;n47</title>
+<path fill="none" stroke="black" d="M988.645,-3028.65C936.421,-3017.96 860.068,-3002.33 800.031,-2990.04"></path>
+<polygon fill="black" stroke="black" points="800.662,-2986.6 790.163,-2988.02 799.258,-2993.46 800.662,-2986.6"></polygon>
+</g>
+<!-- n48 -->
+<g id="node49" class="node"><title>n48</title>
+<polygon fill="none" stroke="black" points="1020.25,-2988 841.752,-2988 841.752,-2952 1020.25,-2952 1020.25,-2988"></polygon>
+<text text-anchor="middle" x="931" y="-2965.8" font-family="Times,serif" font-size="14.00">Vampire Cave Boss: forward</text>
+</g>
+<!-- n45&#45;&gt;n48 -->
+<g id="edge138" class="edge"><title>n45-&gt;n48</title>
+<path fill="none" stroke="black" d="M1021.63,-3024.76C1005.86,-3015.41 985.812,-3003.52 968.582,-2993.29"></path>
+<polygon fill="black" stroke="black" points="970.252,-2990.22 959.866,-2988.12 966.681,-2996.24 970.252,-2990.22"></polygon>
+</g>
+<!-- n50 -->
+<g id="node51" class="node"><title>n50</title>
+<ellipse fill="none" stroke="blue" cx="931" cy="-2898" rx="87.9072" ry="18"></ellipse>
+<text text-anchor="middle" x="931" y="-2893.8" font-family="Times,serif" font-size="14.00">Vampire Cave Boss</text>
+</g>
+<!-- n48&#45;&gt;n50 -->
+<g id="edge144" class="edge"><title>n48-&gt;n50</title>
+<path fill="none" stroke="black" d="M931,-2951.7C931,-2943.98 931,-2934.71 931,-2926.11"></path>
+<polygon fill="black" stroke="black" points="934.5,-2926.1 931,-2916.1 927.5,-2926.1 934.5,-2926.1"></polygon>
+</g>
+<!-- n49&#45;&gt;n50 -->
+<g id="edge146" class="edge"><title>n49-&gt;n50</title>
+<path fill="none" stroke="black" d="M1013.44,-1836.21C985.581,-1879.4 917,-1996.73 917,-2105 917,-2755 917,-2755 917,-2755 917,-2795.2 922.625,-2841.49 926.744,-2870"></path>
+<polygon fill="black" stroke="black" points="923.299,-2870.63 928.234,-2880 930.223,-2869.6 923.299,-2870.63"></polygon>
+</g>
+<!-- n50&#45;&gt;n51 -->
+<g id="edge148" class="edge"><title>n50-&gt;n51</title>
+<path fill="none" stroke="black" d="M953.04,-2880.41C964.936,-2871.46 979.819,-2860.25 992.879,-2850.42"></path>
+<polygon fill="black" stroke="black" points="995.262,-2853.01 1001.15,-2844.2 991.053,-2847.42 995.262,-2853.01"></polygon>
+</g>
+<!-- n52 -->
+<g id="node53" class="node"><title>n52</title>
+<polygon fill="none" stroke="cyan" points="1494.22,-2772 1293.78,-2772 1293.78,-2736 1494.22,-2736 1494.22,-2772"></polygon>
+<text text-anchor="middle" x="1394" y="-2749.8" font-family="Times,serif" font-size="14.00">Vamp1re 1 Chest (Rabbit Boots)</text>
+</g>
+<!-- n51&#45;&gt;n52 -->
+<g id="edge152" class="edge"><title>n51-&gt;n52</title>
+<path fill="none" stroke="black" d="M1061.51,-2817.9C1115.49,-2807.69 1217.01,-2788.49 1293.73,-2773.97"></path>
+<polygon fill="black" stroke="black" points="1294.73,-2777.34 1303.9,-2772.05 1293.43,-2770.47 1294.73,-2777.34"></polygon>
+</g>
+<!-- n53 -->
+<g id="node54" class="node"><title>n53</title>
+<polygon fill="none" stroke="black" points="1149.35,-2772 982.653,-2772 982.653,-2736 1149.35,-2736 1149.35,-2772"></polygon>
+<text text-anchor="middle" x="1066" y="-2749.8" font-family="Times,serif" font-size="14.00">Vampire Cave Boss Killed</text>
+</g>
+<!-- n51&#45;&gt;n53 -->
+<g id="edge154" class="edge"><title>n51-&gt;n53</title>
+<path fill="none" stroke="black" d="M1034.38,-2807.7C1039.26,-2799.56 1045.19,-2789.69 1050.58,-2780.7"></path>
+<polygon fill="black" stroke="black" points="1053.59,-2782.48 1055.74,-2772.1 1047.59,-2778.88 1053.59,-2782.48"></polygon>
+</g>
+<!-- n54 -->
+<g id="node55" class="node"><title>n54</title>
+<polygon fill="none" stroke="green" points="1450.13,-2700 1361.87,-2700 1361.87,-2664 1450.13,-2664 1450.13,-2700"></polygon>
+<text text-anchor="middle" x="1406" y="-2677.8" font-family="Times,serif" font-size="14.00">Rabbit Boots</text>
+</g>
+<!-- n52&#45;&gt;n54 -->
+<g id="edge156" class="edge"><title>n52-&gt;n54</title>
+<path fill="none" stroke="black" d="M1396.97,-2735.7C1398.29,-2727.98 1399.88,-2718.71 1401.35,-2710.11"></path>
+<polygon fill="black" stroke="black" points="1404.83,-2710.55 1403.07,-2700.1 1397.93,-2709.37 1404.83,-2710.55"></polygon>
+</g>
+<!-- n53&#45;&gt;n44 -->
+<g id="edge128" class="edge"><title>n53-&gt;n44</title>
+<path fill="none" stroke="black" d="M1085.78,-2735.7C1095.75,-2726.97 1108.01,-2716.24 1118.86,-2706.75"></path>
+<polygon fill="black" stroke="black" points="1121.23,-2709.32 1126.45,-2700.1 1116.62,-2704.06 1121.23,-2709.32"></polygon>
+</g>
+<!-- n55 -->
+<g id="node56" class="node"><title>n55</title>
+<polygon fill="none" stroke="black" points="1112.43,-2412 945.567,-2412 945.567,-2376 1112.43,-2376 1112.43,-2412"></polygon>
+<text text-anchor="middle" x="1029" y="-2389.8" font-family="Times,serif" font-size="14.00">Cordell Plain: via Vampire</text>
+</g>
+<!-- n53&#45;&gt;n55 -->
+<g id="edge158" class="edge"><title>n53-&gt;n55</title>
+<path fill="none" stroke="black" d="M1058.51,-2735.89C1047.7,-2709.58 1029,-2657.37 1029,-2611 1029,-2611 1029,-2611 1029,-2537 1029,-2497 1029,-2450.65 1029,-2422.08"></path>
+<polygon fill="black" stroke="black" points="1032.5,-2422.05 1029,-2412.05 1025.5,-2422.05 1032.5,-2422.05"></polygon>
+</g>
+<!-- n54&#45;&gt;n10 -->
+<g id="edge30" class="edge"><title>n54-&gt;n10</title>
+<path fill="none" stroke="black" d="M1408.97,-2663.7C1410.29,-2655.98 1411.88,-2646.71 1413.35,-2638.11"></path>
+<polygon fill="black" stroke="black" points="1416.83,-2638.55 1415.07,-2628.1 1409.93,-2637.37 1416.83,-2638.55"></polygon>
+</g>
+<!-- n58 -->
+<g id="node59" class="node"><title>n58</title>
+<ellipse fill="none" stroke="blue" cx="658" cy="-1890" rx="61.9027" ry="18"></ellipse>
+<text text-anchor="middle" x="658" y="-1885.8" font-family="Times,serif" font-size="14.00">Cordell Plain</text>
+</g>
+<!-- n55&#45;&gt;n58 -->
+<g id="edge170" class="edge"><title>n55-&gt;n58</title>
+<path fill="none" stroke="black" d="M1012.94,-2375.69C991.179,-2350.36 955,-2300.76 955,-2251 955,-2251 955,-2251 955,-2105 955,-1987.96 801.314,-1928.57 715.05,-1904.45"></path>
+<polygon fill="black" stroke="black" points="715.957,-1901.07 705.389,-1901.82 714.117,-1907.82 715.957,-1901.07"></polygon>
+</g>
+<!-- n56 -->
+<g id="node57" class="node"><title>n56</title>
+<polygon fill="none" stroke="black" points="278.099,-1980 71.9005,-1980 71.9005,-1944 278.099,-1944 278.099,-1980"></polygon>
+<text text-anchor="middle" x="175" y="-1957.8" font-family="Times,serif" font-size="14.00">Cordell Plain: via Mt Sabre North</text>
+</g>
+<!-- n56&#45;&gt;n58 -->
+<g id="edge172" class="edge"><title>n56-&gt;n58</title>
+<path fill="none" stroke="black" d="M278.319,-1946.03C373.992,-1932.16 513.269,-1911.98 593.849,-1900.3"></path>
+<polygon fill="black" stroke="black" points="594.463,-1903.74 603.858,-1898.85 593.459,-1896.82 594.463,-1903.74"></polygon>
+</g>
+<!-- n57 -->
+<g id="node58" class="node"><title>n57</title>
+<polygon fill="none" stroke="black" points="1239.18,-612 1036.82,-612 1036.82,-576 1239.18,-576 1239.18,-612"></polygon>
+<text text-anchor="middle" x="1138" y="-589.8" font-family="Times,serif" font-size="14.00">Cordell Plain: via Mt Sabre West</text>
+</g>
+<!-- n57&#45;&gt;n58 -->
+<g id="edge174" class="edge"><title>n57-&gt;n58</title>
+<path fill="none" stroke="black" d="M1110.55,-612.068C1080.87,-630.364 1032.03,-660.015 989,-684 811.097,-783.158 618,-749.329 618,-953 618,-1747 618,-1747 618,-1747 618,-1788.52 634.037,-1834.39 645.802,-1862.46"></path>
+<polygon fill="black" stroke="black" points="642.725,-1864.16 649.905,-1871.95 649.15,-1861.38 642.725,-1864.16"></polygon>
+</g>
+<!-- n58&#45;&gt;n49 -->
+<g id="edge140" class="edge"><title>n58-&gt;n49</title>
+<path fill="none" stroke="black" d="M704.966,-1878.19C714.557,-1876.07 724.592,-1873.91 734,-1872 798.331,-1858.95 870.97,-1845.72 927.582,-1835.74"></path>
+<polygon fill="black" stroke="black" points="928.358,-1839.16 937.6,-1833.98 927.145,-1832.26 928.358,-1839.16"></polygon>
+</g>
+<!-- n59 -->
+<g id="node60" class="node"><title>n59</title>
+<polygon fill="none" stroke="blue" points="935.483,-1764 864.517,-1764 864.517,-1728 935.483,-1728 935.483,-1764"></polygon>
+<text text-anchor="middle" x="900" y="-1741.8" font-family="Times,serif" font-size="14.00">Brynmaer</text>
+</g>
+<!-- n58&#45;&gt;n59 -->
+<g id="edge176" class="edge"><title>n58-&gt;n59</title>
+<path fill="none" stroke="black" d="M705.254,-1878.06C758.578,-1865.4 839.438,-1845.12 851,-1836 871.142,-1820.12 884.212,-1793.56 891.746,-1773.58"></path>
+<polygon fill="black" stroke="black" points="895.064,-1774.69 895.097,-1764.1 888.464,-1772.36 895.064,-1774.69"></polygon>
+</g>
+<!-- n60 -->
+<g id="node61" class="node"><title>n60</title>
+<polygon fill="none" stroke="cyan" points="842.315,-1836 711.685,-1836 711.685,-1800 842.315,-1800 842.315,-1836"></polygon>
+<text text-anchor="middle" x="777" y="-1813.8" font-family="Times,serif" font-size="14.00">Cordell Plains Grass</text>
+</g>
+<!-- n58&#45;&gt;n60 -->
+<g id="edge178" class="edge"><title>n58-&gt;n60</title>
+<path fill="none" stroke="black" d="M684.115,-1873.64C700.195,-1864.18 721.085,-1851.89 738.981,-1841.36"></path>
+<polygon fill="black" stroke="black" points="741.18,-1844.13 748.025,-1836.04 737.631,-1838.1 741.18,-1844.13"></polygon>
+</g>
+<!-- n64 -->
+<g id="node65" class="node"><title>n64</title>
+<polygon fill="none" stroke="blue" points="937.496,-1548 880.504,-1548 880.504,-1512 937.496,-1512 937.496,-1548"></polygon>
+<text text-anchor="middle" x="909" y="-1525.8" font-family="Times,serif" font-size="14.00">Swamp</text>
+</g>
+<!-- n58&#45;&gt;n64 -->
+<g id="edge188" class="edge"><title>n58-&gt;n64</title>
+<path fill="none" stroke="black" d="M705.473,-1878.37C768.139,-1864.22 871.473,-1840.47 879,-1836 916.067,-1813.99 919.304,-1799.34 944,-1764 973.149,-1722.29 991.382,-1706.01 982,-1656 975.669,-1622.25 971.577,-1613.49 954,-1584 948.039,-1574 940.18,-1564.01 932.701,-1555.44"></path>
+<polygon fill="black" stroke="black" points="935.3,-1553.1 926.004,-1548.01 930.102,-1557.78 935.3,-1553.1"></polygon>
+</g>
+<!-- n76 -->
+<g id="node77" class="node"><title>n76</title>
+<polygon fill="none" stroke="black" points="826.346,-1692 645.654,-1692 645.654,-1656 826.346,-1656 826.346,-1692"></polygon>
+<text text-anchor="middle" x="736" y="-1669.8" font-family="Times,serif" font-size="14.00">Mt Sabre West 1: via Cordell</text>
+</g>
+<!-- n58&#45;&gt;n76 -->
+<g id="edge218" class="edge"><title>n58-&gt;n76</title>
+<path fill="none" stroke="black" d="M664.251,-1871.85C677.801,-1834.68 709.962,-1746.44 726.224,-1701.82"></path>
+<polygon fill="black" stroke="black" points="729.583,-1702.83 729.719,-1692.23 723.006,-1700.43 729.583,-1702.83"></polygon>
+</g>
+<!-- n90 -->
+<g id="node91" class="node"><title>n90</title>
+<polygon fill="none" stroke="black" points="181.044,-396 14.9557,-396 14.9557,-360 181.044,-360 181.044,-396"></polygon>
+<text text-anchor="middle" x="98" y="-373.8" font-family="Times,serif" font-size="14.00">Mt Sabre North 1: forward</text>
+</g>
+<!-- n58&#45;&gt;n90 -->
+<g id="edge260" class="edge"><title>n58-&gt;n90</title>
+<path fill="none" stroke="black" d="M641.458,-1872.27C618.562,-1847.26 580,-1797.63 580,-1747 580,-1747 580,-1747 580,-1457 580,-1324.41 485.095,-1316.13 451,-1188 411.81,-1040.72 472.707,-638.482 401,-504 361.045,-429.067 264.71,-399.02 191.303,-386.99"></path>
+<polygon fill="black" stroke="black" points="191.523,-383.483 181.105,-385.409 190.451,-390.4 191.523,-383.483"></polygon>
+</g>
+<!-- n62 -->
+<g id="node63" class="node"><title>n62</title>
+<polygon fill="none" stroke="cyan" points="973.339,-1692 844.661,-1692 844.661,-1656 973.339,-1656 973.339,-1692"></polygon>
+<text text-anchor="middle" x="909" y="-1669.8" font-family="Times,serif" font-size="14.00">Akahana: Brynmaer</text>
+</g>
+<!-- n59&#45;&gt;n62 -->
+<g id="edge182" class="edge"><title>n59-&gt;n62</title>
+<path fill="none" stroke="black" d="M902.225,-1727.7C903.217,-1719.98 904.408,-1710.71 905.514,-1702.11"></path>
+<polygon fill="black" stroke="black" points="908.997,-1702.47 906.801,-1692.1 902.054,-1701.58 908.997,-1702.47"></polygon>
+</g>
+<!-- n61 -->
+<g id="node62" class="node"><title>n61</title>
+<polygon fill="none" stroke="green" points="828.202,-1764 743.798,-1764 743.798,-1728 828.202,-1728 828.202,-1764"></polygon>
+<text text-anchor="middle" x="786" y="-1741.8" font-family="Times,serif" font-size="14.00">Onyx Statue</text>
+</g>
+<!-- n60&#45;&gt;n61 -->
+<g id="edge180" class="edge"><title>n60-&gt;n61</title>
+<path fill="none" stroke="black" d="M779.225,-1799.7C780.217,-1791.98 781.408,-1782.71 782.514,-1774.11"></path>
+<polygon fill="black" stroke="black" points="785.997,-1774.47 783.801,-1764.1 779.054,-1773.58 785.997,-1774.47"></polygon>
+</g>
+<!-- n61&#45;&gt;n62 -->
+<g id="edge184" class="edge"><title>n61-&gt;n62</title>
+<path fill="none" stroke="black" d="M816.089,-1727.88C832.32,-1718.64 852.542,-1707.13 869.971,-1697.21"></path>
+<polygon fill="black" stroke="black" points="871.835,-1700.18 878.795,-1692.19 868.373,-1694.09 871.835,-1700.18"></polygon>
+</g>
+<!-- n63 -->
+<g id="node64" class="node"><title>n63</title>
+<polygon fill="none" stroke="green" points="945.278,-1620 872.722,-1620 872.722,-1584 945.278,-1584 945.278,-1620"></polygon>
+<text text-anchor="middle" x="909" y="-1597.8" font-family="Times,serif" font-size="14.00">Gas Mask</text>
+</g>
+<!-- n62&#45;&gt;n63 -->
+<g id="edge186" class="edge"><title>n62-&gt;n63</title>
+<path fill="none" stroke="black" d="M909,-1655.7C909,-1647.98 909,-1638.71 909,-1630.11"></path>
+<polygon fill="black" stroke="black" points="912.5,-1630.1 909,-1620.1 905.5,-1630.1 912.5,-1630.1"></polygon>
+</g>
+<!-- n63&#45;&gt;n64 -->
+<g id="edge190" class="edge"><title>n63-&gt;n64</title>
+<path fill="none" stroke="black" d="M909,-1583.7C909,-1575.98 909,-1566.71 909,-1558.11"></path>
+<polygon fill="black" stroke="black" points="912.5,-1558.1 909,-1548.1 905.5,-1558.1 912.5,-1558.1"></polygon>
+</g>
+<!-- n65 -->
+<g id="node66" class="node"><title>n65</title>
+<polygon fill="none" stroke="blue" points="935,-1476 881,-1476 881,-1440 935,-1440 935,-1476"></polygon>
+<text text-anchor="middle" x="908" y="-1453.8" font-family="Times,serif" font-size="14.00">Oak</text>
+</g>
+<!-- n64&#45;&gt;n65 -->
+<g id="edge192" class="edge"><title>n64-&gt;n65</title>
+<path fill="none" stroke="black" d="M908.753,-1511.7C908.643,-1503.98 908.51,-1494.71 908.387,-1486.11"></path>
+<polygon fill="black" stroke="black" points="911.887,-1486.05 908.244,-1476.1 904.888,-1486.15 911.887,-1486.05"></polygon>
+</g>
+<!-- n67 -->
+<g id="node68" class="node"><title>n67</title>
+<polygon fill="none" stroke="green" points="943.483,-1404 872.517,-1404 872.517,-1368 943.483,-1368 943.483,-1404"></polygon>
+<text text-anchor="middle" x="908" y="-1381.8" font-family="Times,serif" font-size="14.00">Telepathy</text>
+</g>
+<!-- n65&#45;&gt;n67 -->
+<g id="edge194" class="edge"><title>n65-&gt;n67</title>
+<path fill="none" stroke="black" d="M908,-1439.7C908,-1431.98 908,-1422.71 908,-1414.11"></path>
+<polygon fill="black" stroke="black" points="911.5,-1414.1 908,-1404.1 904.5,-1414.1 911.5,-1414.1"></polygon>
+</g>
+<!-- n66 -->
+<g id="node67" class="node"><title>n66</title>
+<polygon fill="none" stroke="blue" points="1024.49,-1476 953.515,-1476 953.515,-1440 1024.49,-1440 1024.49,-1476"></polygon>
+<text text-anchor="middle" x="989" y="-1453.8" font-family="Times,serif" font-size="14.00">undefined</text>
+</g>
+<!-- n66&#45;&gt;n67 -->
+<g id="edge196" class="edge"><title>n66-&gt;n67</title>
+<path fill="none" stroke="black" d="M968.978,-1439.7C958.874,-1430.97 946.464,-1420.24 935.482,-1410.75"></path>
+<polygon fill="black" stroke="black" points="937.647,-1407.99 927.792,-1404.1 933.07,-1413.29 937.647,-1407.99"></polygon>
+</g>
+<!-- n68 -->
+<g id="node69" class="node"><title>n68</title>
+<polygon fill="none" stroke="cyan" points="829.024,-1332 744.976,-1332 744.976,-1296 829.024,-1296 829.024,-1332"></polygon>
+<text text-anchor="middle" x="787" y="-1309.8" font-family="Times,serif" font-size="14.00">Oak Mother</text>
+</g>
+<!-- n67&#45;&gt;n68 -->
+<g id="edge198" class="edge"><title>n67-&gt;n68</title>
+<path fill="none" stroke="black" d="M878.4,-1367.88C862.433,-1358.64 842.54,-1347.13 825.394,-1337.21"></path>
+<polygon fill="black" stroke="black" points="827.122,-1334.17 816.714,-1332.19 823.617,-1340.23 827.122,-1334.17"></polygon>
+</g>
+<!-- n70 -->
+<g id="node71" class="node"><title>n70</title>
+<polygon fill="none" stroke="cyan" points="944.354,-1332 871.646,-1332 871.646,-1296 944.354,-1296 944.354,-1332"></polygon>
+<text text-anchor="middle" x="908" y="-1309.8" font-family="Times,serif" font-size="14.00">Oak Elder</text>
+</g>
+<!-- n67&#45;&gt;n70 -->
+<g id="edge202" class="edge"><title>n67-&gt;n70</title>
+<path fill="none" stroke="black" d="M908,-1367.7C908,-1359.98 908,-1350.71 908,-1342.11"></path>
+<polygon fill="black" stroke="black" points="911.5,-1342.1 908,-1332.1 904.5,-1342.1 911.5,-1342.1"></polygon>
+</g>
+<!-- n69 -->
+<g id="node70" class="node"><title>n69</title>
+<polygon fill="none" stroke="green" points="804.28,-1260 723.72,-1260 723.72,-1224 804.28,-1224 804.28,-1260"></polygon>
+<text text-anchor="middle" x="764" y="-1237.8" font-family="Times,serif" font-size="14.00">Insect Flute</text>
+</g>
+<!-- n68&#45;&gt;n69 -->
+<g id="edge200" class="edge"><title>n68-&gt;n69</title>
+<path fill="none" stroke="black" d="M781.315,-1295.7C778.752,-1287.9 775.667,-1278.51 772.815,-1269.83"></path>
+<polygon fill="black" stroke="black" points="776.067,-1268.51 769.62,-1260.1 769.416,-1270.7 776.067,-1268.51"></polygon>
+</g>
+<!-- n69&#45;&gt;n72 -->
+<g id="edge208" class="edge"><title>n69-&gt;n72</title>
+<path fill="none" stroke="black" d="M772.581,-1223.86C783.587,-1203.65 804.574,-1170.45 832,-1152 928.367,-1087.15 1282.54,-1045.69 1416.87,-1032"></path>
+<polygon fill="black" stroke="black" points="1417.31,-1035.47 1426.91,-1030.99 1416.61,-1028.51 1417.31,-1035.47"></polygon>
+</g>
+<!-- n71 -->
+<g id="node72" class="node"><title>n71</title>
+<polygon fill="none" stroke="green" points="954.321,-1260 861.679,-1260 861.679,-1224 954.321,-1224 954.321,-1260"></polygon>
+<text text-anchor="middle" x="908" y="-1237.8" font-family="Times,serif" font-size="14.00">Sword of Fire</text>
+</g>
+<!-- n70&#45;&gt;n71 -->
+<g id="edge204" class="edge"><title>n70-&gt;n71</title>
+<path fill="none" stroke="black" d="M908,-1295.7C908,-1287.98 908,-1278.71 908,-1270.11"></path>
+<polygon fill="black" stroke="black" points="911.5,-1270.1 908,-1260.1 904.5,-1270.1 911.5,-1270.1"></polygon>
+</g>
+<!-- n71&#45;&gt;n2 -->
+<g id="edge4" class="edge"><title>n71-&gt;n2</title>
+<path fill="none" stroke="black" d="M909.483,-1223.7C910.144,-1215.98 910.939,-1206.71 911.676,-1198.11"></path>
+<polygon fill="black" stroke="black" points="915.167,-1198.37 912.534,-1188.1 908.193,-1197.77 915.167,-1198.37"></polygon>
+</g>
+<!-- n71&#45;&gt;n6 -->
+<g id="edge18" class="edge"><title>n71-&gt;n6</title>
+<path fill="none" stroke="black" d="M940.78,-1223.88C958.625,-1214.55 980.897,-1202.92 1000,-1192.94"></path>
+<polygon fill="black" stroke="black" points="1001.85,-1195.92 1009.09,-1188.19 998.61,-1189.72 1001.85,-1195.92"></polygon>
+</g>
+<!-- n71&#45;&gt;n16 -->
+<g id="edge46" class="edge"><title>n71-&gt;n16</title>
+<path fill="none" stroke="black" d="M873.307,-1223.87C856.476,-1214.6 836.582,-1202.15 821,-1188 717.353,-1093.89 721.63,-1043.55 632,-936 448.886,-716.279 209,-737.021 209,-451 209,-451 209,-451 209,-161 209,-116.604 236.373,-71.3824 256.384,-44.2539"></path>
+<polygon fill="black" stroke="black" points="259.313,-46.1846 262.579,-36.1057 253.741,-41.9482 259.313,-46.1846"></polygon>
+</g>
+<!-- n75 -->
+<g id="node76" class="node"><title>n75</title>
+<polygon fill="none" stroke="black" points="1511.32,-828 1426.68,-828 1426.68,-792 1511.32,-792 1511.32,-828"></polygon>
+<text text-anchor="middle" x="1469" y="-805.8" font-family="Times,serif" font-size="14.00">Fire Level 2</text>
+</g>
+<!-- n71&#45;&gt;n75 -->
+<g id="edge214" class="edge"><title>n71-&gt;n75</title>
+<path fill="none" stroke="black" d="M884.807,-1223.61C855.266,-1199.28 808,-1152.07 808,-1099 808,-1099 808,-1099 808,-953 808,-828.795 1259.76,-812.903 1416.33,-811.125"></path>
+<polygon fill="black" stroke="black" points="1416.68,-814.622 1426.65,-811.024 1416.61,-807.622 1416.68,-814.622"></polygon>
+</g>
+<!-- n73 -->
+<g id="node74" class="node"><title>n73</title>
+<polygon fill="none" stroke="cyan" points="1528.56,-972 1409.44,-972 1409.44,-936 1528.56,-936 1528.56,-972"></polygon>
+<text text-anchor="middle" x="1469" y="-949.8" font-family="Times,serif" font-size="14.00">Giant Insect Chest</text>
+</g>
+<!-- n72&#45;&gt;n73 -->
+<g id="edge210" class="edge"><title>n72-&gt;n73</title>
+<path fill="none" stroke="black" d="M1469,-1007.7C1469,-999.983 1469,-990.712 1469,-982.112"></path>
+<polygon fill="black" stroke="black" points="1472.5,-982.104 1469,-972.104 1465.5,-982.104 1472.5,-982.104"></polygon>
+</g>
+<!-- n74 -->
+<g id="node75" class="node"><title>n74</title>
+<polygon fill="none" stroke="green" points="1508.91,-900 1429.09,-900 1429.09,-864 1508.91,-864 1508.91,-900"></polygon>
+<text text-anchor="middle" x="1469" y="-877.8" font-family="Times,serif" font-size="14.00">Ball of Fire</text>
+</g>
+<!-- n73&#45;&gt;n74 -->
+<g id="edge212" class="edge"><title>n73-&gt;n74</title>
+<path fill="none" stroke="black" d="M1469,-935.697C1469,-927.983 1469,-918.712 1469,-910.112"></path>
+<polygon fill="black" stroke="black" points="1472.5,-910.104 1469,-900.104 1465.5,-910.104 1472.5,-910.104"></polygon>
+</g>
+<!-- n74&#45;&gt;n75 -->
+<g id="edge216" class="edge"><title>n74-&gt;n75</title>
+<path fill="none" stroke="black" d="M1469,-863.697C1469,-855.983 1469,-846.712 1469,-838.112"></path>
+<polygon fill="black" stroke="black" points="1472.5,-838.104 1469,-828.104 1465.5,-838.104 1472.5,-838.104"></polygon>
+</g>
+<!-- n75&#45;&gt;n27 -->
+<g id="edge80" class="edge"><title>n75-&gt;n27</title>
+<path fill="none" stroke="black" d="M1511.3,-795.117C1532.86,-786.447 1558.39,-773.557 1577,-756 1617.81,-717.498 1645.31,-656.54 1658.65,-621.724"></path>
+<polygon fill="black" stroke="black" points="1661.98,-622.817 1662.19,-612.225 1655.42,-620.375 1661.98,-622.817"></polygon>
+</g>
+<!-- n75&#45;&gt;n57 -->
+<g id="edge168" class="edge"><title>n75-&gt;n57</title>
+<path fill="none" stroke="black" d="M1426.55,-792.672C1408.88,-784.059 1389.4,-771.924 1376,-756 1343.14,-716.957 1374.61,-682.497 1337,-648 1322.61,-634.799 1284.26,-623.214 1245.03,-614.269"></path>
+<polygon fill="black" stroke="black" points="1245.57,-610.803 1235.05,-612.052 1244.05,-617.637 1245.57,-610.803"></polygon>
+</g>
+<!-- n75&#45;&gt;n77 -->
+<g id="edge222" class="edge"><title>n75-&gt;n77</title>
+<path fill="none" stroke="black" d="M1469,-791.697C1469,-783.983 1469,-774.712 1469,-766.112"></path>
+<polygon fill="black" stroke="black" points="1472.5,-766.104 1469,-756.104 1465.5,-766.104 1472.5,-766.104"></polygon>
+</g>
+<!-- n79 -->
+<g id="node80" class="node"><title>n79</title>
+<polygon fill="none" stroke="blue" points="1471.35,-612 1360.65,-612 1360.65,-576 1471.35,-576 1471.35,-612"></polygon>
+<text text-anchor="middle" x="1416" y="-589.8" font-family="Times,serif" font-size="14.00">Mt Sabre West 2</text>
+</g>
+<!-- n75&#45;&gt;n79 -->
+<g id="edge230" class="edge"><title>n75-&gt;n79</title>
+<path fill="none" stroke="black" d="M1511.37,-795.607C1530.06,-787.347 1550.21,-774.672 1561,-756 1574.55,-732.563 1550.41,-653.295 1546,-648 1536.86,-637.027 1508.85,-624.995 1481.16,-615.172"></path>
+<polygon fill="black" stroke="black" points="1482,-611.761 1471.41,-611.795 1479.71,-618.375 1482,-611.761"></polygon>
+</g>
+<!-- n75&#45;&gt;n80 -->
+<g id="edge234" class="edge"><title>n75-&gt;n80</title>
+<path fill="none" stroke="black" d="M1511.31,-821.466C1568.66,-838.48 1664,-878.036 1664,-953 1664,-2323 1664,-2323 1664,-2323 1664,-2363.05 1666.81,-2409.38 1668.87,-2437.94"></path>
+<polygon fill="black" stroke="black" points="1665.39,-2438.25 1669.62,-2447.96 1672.37,-2437.73 1665.39,-2438.25"></polygon>
+</g>
+<!-- n94 -->
+<g id="node95" class="node"><title>n94</title>
+<polygon fill="none" stroke="blue" points="666.274,-756 551.726,-756 551.726,-720 666.274,-720 666.274,-756"></polygon>
+<text text-anchor="middle" x="609" y="-733.8" font-family="Times,serif" font-size="14.00">Mt Sabre North 2</text>
+</g>
+<!-- n75&#45;&gt;n94 -->
+<g id="edge276" class="edge"><title>n75-&gt;n94</title>
+<path fill="none" stroke="black" d="M1426.65,-805.553C1287.83,-794.253 845.785,-758.273 676.159,-744.466"></path>
+<polygon fill="black" stroke="black" points="676.36,-740.971 666.109,-743.648 675.792,-747.948 676.36,-740.971"></polygon>
+</g>
+<!-- n100 -->
+<g id="node101" class="node"><title>n100</title>
+<polygon fill="none" stroke="black" points="1082.18,-396 935.825,-396 935.825,-360 1082.18,-360 1082.18,-396"></polygon>
+<text text-anchor="middle" x="1009" y="-373.8" font-family="Times,serif" font-size="14.00">Mt Sabre Boss: reverse</text>
+</g>
+<!-- n75&#45;&gt;n100 -->
+<g id="edge290" class="edge"><title>n75-&gt;n100</title>
+<path fill="none" stroke="black" d="M1426.81,-804.192C1350.93,-793.772 1189.2,-763.302 1080,-684 991.607,-619.807 998.233,-468.482 1005.17,-406.353"></path>
+<polygon fill="black" stroke="black" points="1008.68,-406.513 1006.41,-396.165 1001.73,-405.672 1008.68,-406.513"></polygon>
+</g>
+<!-- n106 -->
+<g id="node107" class="node"><title>n106</title>
+<polygon fill="none" stroke="black" points="1978.14,-540 1779.86,-540 1779.86,-504 1978.14,-504 1978.14,-540"></polygon>
+<text text-anchor="middle" x="1879" y="-517.8" font-family="Times,serif" font-size="14.00">Mt Sabre Summit Cave: forward</text>
+</g>
+<!-- n75&#45;&gt;n106 -->
+<g id="edge312" class="edge"><title>n75-&gt;n106</title>
+<path fill="none" stroke="black" d="M1511.29,-797.624C1539.52,-788.867 1576.7,-775.026 1606,-756 1701.15,-694.217 1696.86,-644.898 1787,-576 1801.94,-564.584 1819.57,-553.852 1835.39,-545.071"></path>
+<polygon fill="black" stroke="black" points="1837.34,-547.991 1844.45,-540.137 1834,-541.843 1837.34,-547.991"></polygon>
+</g>
+<!-- n78 -->
+<g id="node79" class="node"><title>n78</title>
+<ellipse fill="none" stroke="blue" cx="1461" cy="-666" rx="76.3026" ry="18"></ellipse>
+<text text-anchor="middle" x="1461" y="-661.8" font-family="Times,serif" font-size="14.00">Mt Sabre West 1</text>
+</g>
+<!-- n76&#45;&gt;n78 -->
+<g id="edge224" class="edge"><title>n76-&gt;n78</title>
+<path fill="none" stroke="black" d="M727.501,-1655.99C715.228,-1629.82 694,-1577.79 694,-1531 694,-1531 694,-1531 694,-1097 694,-974.794 743.065,-938.417 840,-864 929.716,-795.126 1258.26,-713.631 1397.72,-681.271"></path>
+<polygon fill="black" stroke="black" points="1398.88,-684.597 1407.83,-678.935 1397.3,-677.777 1398.88,-684.597"></polygon>
+</g>
+<!-- n77&#45;&gt;n78 -->
+<g id="edge226" class="edge"><title>n77-&gt;n78</title>
+<path fill="none" stroke="black" d="M1467.02,-719.697C1466.14,-711.983 1465.08,-702.712 1464.1,-694.112"></path>
+<polygon fill="black" stroke="black" points="1467.57,-693.642 1462.95,-684.104 1460.61,-694.437 1467.57,-693.642"></polygon>
+</g>
+<!-- n78&#45;&gt;n27 -->
+<g id="edge78" class="edge"><title>n78-&gt;n27</title>
+<path fill="none" stroke="black" d="M1502.89,-650.834C1533,-640.654 1574.04,-626.775 1607.67,-615.402"></path>
+<polygon fill="black" stroke="black" points="1609.04,-618.632 1617.4,-612.113 1606.8,-612.001 1609.04,-618.632"></polygon>
+</g>
+<!-- n78&#45;&gt;n57 -->
+<g id="edge166" class="edge"><title>n78-&gt;n57</title>
+<path fill="none" stroke="black" d="M1406.94,-653.284C1357.7,-642.614 1284.09,-626.661 1226.32,-614.141"></path>
+<polygon fill="black" stroke="black" points="1226.98,-610.702 1216.46,-612.004 1225.49,-617.543 1226.98,-610.702"></polygon>
+</g>
+<!-- n78&#45;&gt;n79 -->
+<g id="edge228" class="edge"><title>n78-&gt;n79</title>
+<path fill="none" stroke="black" d="M1450.11,-648.055C1444.88,-639.922 1438.5,-629.998 1432.68,-620.943"></path>
+<polygon fill="black" stroke="black" points="1435.46,-618.794 1427.11,-612.275 1429.57,-622.58 1435.46,-618.794"></polygon>
+</g>
+<!-- n78&#45;&gt;n80 -->
+<g id="edge232" class="edge"><title>n78-&gt;n80</title>
+<path fill="none" stroke="black" d="M1499.7,-681.613C1519.66,-690.52 1543.43,-703.403 1561,-720 1648.99,-803.122 1702,-831.959 1702,-953 1702,-2323 1702,-2323 1702,-2323 1702,-2363.9 1689.57,-2409.94 1680.45,-2438.21"></path>
+<polygon fill="black" stroke="black" points="1677.11,-2437.18 1677.27,-2447.78 1683.75,-2439.39 1677.11,-2437.18"></polygon>
+</g>
+<!-- n88 -->
+<g id="node89" class="node"><title>n88</title>
+<polygon fill="none" stroke="black" points="1343.26,-612 1256.74,-612 1256.74,-576 1343.26,-576 1343.26,-612"></polygon>
+<text text-anchor="middle" x="1300" y="-589.8" font-family="Times,serif" font-size="14.00">Leaf Sorrow</text>
+</g>
+<!-- n78&#45;&gt;n88 -->
+<g id="edge254" class="edge"><title>n78-&gt;n88</title>
+<path fill="none" stroke="black" d="M1426.07,-649.811C1403.35,-639.935 1373.42,-626.92 1348.42,-616.051"></path>
+<polygon fill="black" stroke="black" points="1349.67,-612.779 1339.1,-612.002 1346.88,-619.199 1349.67,-612.779"></polygon>
+</g>
+<!-- n83 -->
+<g id="node84" class="node"><title>n83</title>
+<polygon fill="none" stroke="cyan" points="1506.46,-540 1281.54,-540 1281.54,-504 1506.46,-504 1506.46,-540"></polygon>
+<text text-anchor="middle" x="1394" y="-517.8" font-family="Times,serif" font-size="14.00">Mt Sabre West Chest 2 (Warp Boots)</text>
+</g>
+<!-- n79&#45;&gt;n83 -->
+<g id="edge242" class="edge"><title>n79-&gt;n83</title>
+<path fill="none" stroke="black" d="M1410.56,-575.697C1408.11,-567.898 1405.16,-558.509 1402.43,-549.829"></path>
+<polygon fill="black" stroke="black" points="1405.71,-548.595 1399.38,-540.104 1399.04,-550.694 1405.71,-548.595"></polygon>
+</g>
+<!-- n84 -->
+<g id="node85" class="node"><title>n84</title>
+<polygon fill="none" stroke="cyan" points="1761.02,-540 1524.98,-540 1524.98,-504 1761.02,-504 1761.02,-540"></polygon>
+<text text-anchor="middle" x="1643" y="-517.8" font-family="Times,serif" font-size="14.00">Mt Sabre West Chest 3 (Medical Herb)</text>
+</g>
+<!-- n79&#45;&gt;n84 -->
+<g id="edge244" class="edge"><title>n79-&gt;n84</title>
+<path fill="none" stroke="black" d="M1471.24,-575.966C1503.37,-566.057 1544.05,-553.514 1577.75,-543.121"></path>
+<polygon fill="black" stroke="black" points="1578.99,-546.402 1587.51,-540.111 1576.92,-539.713 1578.99,-546.402"></polygon>
+</g>
+<!-- n85 -->
+<g id="node86" class="node"><title>n85</title>
+<polygon fill="none" stroke="cyan" points="1262.38,-540 1037.62,-540 1037.62,-504 1262.38,-504 1262.38,-540"></polygon>
+<text text-anchor="middle" x="1150" y="-517.8" font-family="Times,serif" font-size="14.00">Mt Sabre West Chest 3 (Magic Ring)</text>
+</g>
+<!-- n79&#45;&gt;n85 -->
+<g id="edge246" class="edge"><title>n79-&gt;n85</title>
+<path fill="none" stroke="black" d="M1360.84,-578.338C1357.85,-577.546 1354.89,-576.763 1352,-576 1310.01,-564.913 1263.08,-552.597 1225.03,-542.629"></path>
+<polygon fill="black" stroke="black" points="1225.62,-539.164 1215.06,-540.016 1223.84,-545.936 1225.62,-539.164"></polygon>
+</g>
+<!-- n86 -->
+<g id="node87" class="node"><title>n86</title>
+<polygon fill="none" stroke="cyan" points="392.386,-540 275.614,-540 275.614,-504 392.386,-504 392.386,-540"></polygon>
+<text text-anchor="middle" x="334" y="-517.8" font-family="Times,serif" font-size="14.00">Tornel (Mt Sabre)</text>
+</g>
+<!-- n79&#45;&gt;n86 -->
+<g id="edge248" class="edge"><title>n79-&gt;n86</title>
+<path fill="none" stroke="black" d="M1360.65,-577.544C1357.73,-576.967 1354.84,-576.446 1352,-576 1168.33,-547.146 600.379,-529.953 402.686,-524.717"></path>
+<polygon fill="black" stroke="black" points="402.523,-521.211 392.435,-524.447 402.339,-528.209 402.523,-521.211"></polygon>
+</g>
+<!-- n81 -->
+<g id="node82" class="node"><title>n81</title>
+<polygon fill="none" stroke="cyan" points="1522.18,-2412 1265.82,-2412 1265.82,-2376 1522.18,-2376 1522.18,-2412"></polygon>
+<text text-anchor="middle" x="1394" y="-2389.8" font-family="Times,serif" font-size="14.00">Mt Sabre West Chest 1 (Tornado Bracelet)</text>
+</g>
+<!-- n80&#45;&gt;n81 -->
+<g id="edge238" class="edge"><title>n80-&gt;n81</title>
+<path fill="none" stroke="black" d="M1615.61,-2451C1574.2,-2440.54 1517.07,-2426.1 1471.19,-2414.51"></path>
+<polygon fill="black" stroke="black" points="1471.83,-2411.06 1461.28,-2412 1470.12,-2417.85 1471.83,-2411.06"></polygon>
+</g>
+<!-- n82 -->
+<g id="node83" class="node"><title>n82</title>
+<polygon fill="none" stroke="green" points="475.176,-2340 362.824,-2340 362.824,-2304 475.176,-2304 475.176,-2340"></polygon>
+<text text-anchor="middle" x="419" y="-2317.8" font-family="Times,serif" font-size="14.00">Tornado Bracelet</text>
+</g>
+<!-- n81&#45;&gt;n82 -->
+<g id="edge240" class="edge"><title>n81-&gt;n82</title>
+<path fill="none" stroke="black" d="M1265.78,-2383.79C1055.76,-2368.72 645.773,-2339.28 485.483,-2327.77"></path>
+<polygon fill="black" stroke="black" points="485.516,-2324.27 475.291,-2327.04 485.015,-2331.25 485.516,-2324.27"></polygon>
+</g>
+<!-- n82&#45;&gt;n15 -->
+<g id="edge44" class="edge"><title>n82-&gt;n15</title>
+<path fill="none" stroke="black" d="M408.124,-2303.7C403.008,-2295.56 396.805,-2285.69 391.155,-2276.7"></path>
+<polygon fill="black" stroke="black" points="394.036,-2274.71 385.751,-2268.1 388.11,-2278.43 394.036,-2274.71"></polygon>
+</g>
+<!-- n82&#45;&gt;n86 -->
+<g id="edge250" class="edge"><title>n82-&gt;n86</title>
+<path fill="none" stroke="black" d="M426.083,-2303.85C436.31,-2277.49 454,-2225.21 454,-2179 454,-2179 454,-2179 454,-2105 454,-1896.04 345,-1379.96 345,-1171 345,-1171 345,-1171 345,-665 345,-624.876 340.58,-578.565 337.344,-550.032"></path>
+<polygon fill="black" stroke="black" points="340.811,-549.542 336.173,-540.016 333.858,-550.355 340.811,-549.542"></polygon>
+</g>
+<!-- n87 -->
+<g id="node88" class="node"><title>n87</title>
+<polygon fill="none" stroke="green" points="300.567,-468 237.433,-468 237.433,-432 300.567,-432 300.567,-468"></polygon>
+<text text-anchor="middle" x="269" y="-445.8" font-family="Times,serif" font-size="14.00">Teleport</text>
+</g>
+<!-- n86&#45;&gt;n87 -->
+<g id="edge252" class="edge"><title>n86-&gt;n87</title>
+<path fill="none" stroke="black" d="M317.933,-503.697C310.061,-495.22 300.445,-484.864 291.827,-475.583"></path>
+<polygon fill="black" stroke="black" points="294.252,-473.051 284.883,-468.104 289.122,-477.814 294.252,-473.051"></polygon>
+</g>
+<!-- n87&#45;&gt;n56 -->
+<g id="edge164" class="edge"><title>n87-&gt;n56</title>
+<path fill="none" stroke="black" d="M264.548,-468.354C258.12,-494.98 247,-547.597 247,-593 247,-1819 247,-1819 247,-1819 247,-1863.65 218.338,-1908.48 197.182,-1935.49"></path>
+<polygon fill="black" stroke="black" points="194.183,-1933.64 190.623,-1943.62 199.629,-1938.04 194.183,-1933.64"></polygon>
+</g>
+<!-- n87&#45;&gt;n90 -->
+<g id="edge264" class="edge"><title>n87-&gt;n90</title>
+<path fill="none" stroke="black" d="M237.636,-436.161C212.948,-426.055 178.029,-411.76 149.287,-399.995"></path>
+<polygon fill="black" stroke="black" points="150.381,-396.661 139.801,-396.111 147.729,-403.139 150.381,-396.661"></polygon>
+</g>
+<!-- n88&#45;&gt;n89 -->
+<g id="edge258" class="edge"><title>n88-&gt;n89</title>
+<path fill="none" stroke="black" d="M1256.82,-577.884C1253.86,-577.157 1250.9,-576.516 1248,-576 1033.02,-537.699 484.026,-552.228 266,-540 206.491,-536.662 138.242,-531.287 92.6616,-527.475"></path>
+<polygon fill="black" stroke="black" points="92.6961,-523.966 82.4377,-526.615 92.1088,-530.941 92.6961,-523.966"></polygon>
+</g>
+<!-- n89&#45;&gt;n56 -->
+<g id="edge162" class="edge"><title>n89-&gt;n56</title>
+<path fill="none" stroke="black" d="M47.2733,-540.224C56.3316,-566.678 72,-619.075 72,-665 72,-1243 72,-1243 72,-1243 72,-1338.21 82,-1361.79 82,-1457 82,-1819 82,-1819 82,-1819 82,-1866.68 119.145,-1910.81 146.485,-1936.83"></path>
+<polygon fill="black" stroke="black" points="144.177,-1939.46 153.897,-1943.68 148.927,-1934.32 144.177,-1939.46"></polygon>
+</g>
+<!-- n89&#45;&gt;n90 -->
+<g id="edge262" class="edge"><title>n89-&gt;n90</title>
+<path fill="none" stroke="black" d="M47.8755,-503.871C57.6757,-479.457 75.7516,-434.426 87.3084,-405.635"></path>
+<polygon fill="black" stroke="black" points="90.6229,-406.773 91.1001,-396.189 84.1268,-404.166 90.6229,-406.773"></polygon>
+</g>
+<!-- n92 -->
+<g id="node93" class="node"><title>n92</title>
+<ellipse fill="none" stroke="blue" cx="306" cy="-2034" rx="78.3315" ry="18"></ellipse>
+<text text-anchor="middle" x="306" y="-2029.8" font-family="Times,serif" font-size="14.00">Mt Sabre North 1</text>
+</g>
+<!-- n90&#45;&gt;n92 -->
+<g id="edge268" class="edge"><title>n90-&gt;n92</title>
+<path fill="none" stroke="black" d="M100.371,-396.01C103.868,-422.617 110,-475.725 110,-521 110,-1243 110,-1243 110,-1243 110,-1342.53 44,-1357.47 44,-1457 44,-1891 44,-1891 44,-1891 44,-1931.45 34.463,-1951.34 63,-1980 85.6177,-2002.72 163.748,-2016.91 225.385,-2024.83"></path>
+<polygon fill="black" stroke="black" points="225.157,-2028.33 235.513,-2026.09 226.024,-2021.38 225.157,-2028.33"></polygon>
+</g>
+<!-- n91 -->
+<g id="node92" class="node"><title>n91</title>
+<polygon fill="none" stroke="black" points="388.124,-2124 225.876,-2124 225.876,-2088 388.124,-2088 388.124,-2124"></polygon>
+<text text-anchor="middle" x="307" y="-2101.8" font-family="Times,serif" font-size="14.00">Mt Sabre North 1: reverse</text>
+</g>
+<!-- n91&#45;&gt;n92 -->
+<g id="edge270" class="edge"><title>n91-&gt;n92</title>
+<path fill="none" stroke="black" d="M306.753,-2087.7C306.643,-2079.98 306.51,-2070.71 306.387,-2062.11"></path>
+<polygon fill="black" stroke="black" points="309.887,-2062.05 306.244,-2052.1 302.888,-2062.15 309.887,-2062.05"></polygon>
+</g>
+<!-- n92&#45;&gt;n56 -->
+<g id="edge160" class="edge"><title>n92-&gt;n56</title>
+<path fill="none" stroke="black" d="M276.601,-2017.29C258.758,-2007.76 235.716,-1995.44 216.087,-1984.96"></path>
+<polygon fill="black" stroke="black" points="217.522,-1981.75 207.053,-1980.13 214.223,-1987.93 217.522,-1981.75"></polygon>
+</g>
+<!-- n93 -->
+<g id="node94" class="node"><title>n93</title>
+<polygon fill="none" stroke="blue" points="399.89,-1980 334.11,-1980 334.11,-1944 399.89,-1944 399.89,-1980"></polygon>
+<text text-anchor="middle" x="367" y="-1957.8" font-family="Times,serif" font-size="14.00">Nadare's</text>
+</g>
+<!-- n92&#45;&gt;n93 -->
+<g id="edge272" class="edge"><title>n92-&gt;n93</title>
+<path fill="none" stroke="black" d="M320.766,-2016.05C328.149,-2007.58 337.225,-1997.17 345.375,-1987.82"></path>
+<polygon fill="black" stroke="black" points="348.015,-1990.11 351.946,-1980.28 342.737,-1985.51 348.015,-1990.11"></polygon>
+</g>
+<!-- n92&#45;&gt;n94 -->
+<g id="edge274" class="edge"><title>n92-&gt;n94</title>
+<path fill="none" stroke="black" d="M306,-2015.95C306,-1989.29 306,-1936.11 306,-1891 306,-1891 306,-1891 306,-1817 306,-1527.86 383,-1460.14 383,-1171 383,-1171 383,-1171 383,-1097 383,-951.038 518.993,-816.104 579.995,-762.92"></path>
+<polygon fill="black" stroke="black" points="582.441,-765.433 587.738,-756.257 577.875,-760.126 582.441,-765.433"></polygon>
+</g>
+<!-- n95 -->
+<g id="node96" class="node"><title>n95</title>
+<polygon fill="none" stroke="cyan" points="698.176,-684 487.824,-684 487.824,-648 698.176,-648 698.176,-684"></polygon>
+<text text-anchor="middle" x="593" y="-661.8" font-family="Times,serif" font-size="14.00">Mt Sabre North Chest 1 (Antidote)</text>
+</g>
+<!-- n94&#45;&gt;n95 -->
+<g id="edge278" class="edge"><title>n94-&gt;n95</title>
+<path fill="none" stroke="black" d="M605.045,-719.697C603.282,-711.983 601.163,-702.712 599.197,-694.112"></path>
+<polygon fill="black" stroke="black" points="602.55,-693.073 596.91,-684.104 595.726,-694.633 602.55,-693.073"></polygon>
+</g>
+<!-- n96 -->
+<g id="node97" class="node"><title>n96</title>
+<polygon fill="none" stroke="cyan" points="956.443,-684 717.557,-684 717.557,-648 956.443,-648 956.443,-684"></polygon>
+<text text-anchor="middle" x="837" y="-661.8" font-family="Times,serif" font-size="14.00">Mt Sabre North Chest 2 (Medical Herb)</text>
+</g>
+<!-- n94&#45;&gt;n96 -->
+<g id="edge280" class="edge"><title>n94-&gt;n96</title>
+<path fill="none" stroke="black" d="M664.484,-719.966C696.756,-710.057 737.612,-697.514 771.463,-687.121"></path>
+<polygon fill="black" stroke="black" points="772.735,-690.392 781.268,-684.111 770.681,-683.7 772.735,-690.392"></polygon>
+</g>
+<!-- n97 -->
+<g id="node98" class="node"><title>n97</title>
+<polygon fill="none" stroke="cyan" points="1328.17,-684 1089.83,-684 1089.83,-648 1328.17,-648 1328.17,-684"></polygon>
+<text text-anchor="middle" x="1209" y="-661.8" font-family="Times,serif" font-size="14.00">Mt Sabre North Chest 3 (Key to Prison)</text>
+</g>
+<!-- n94&#45;&gt;n97 -->
+<g id="edge282" class="edge"><title>n94-&gt;n97</title>
+<path fill="none" stroke="black" d="M666.345,-727.537C682.983,-724.932 701.196,-722.216 718,-720 840.448,-703.852 980.561,-689.095 1079.69,-679.277"></path>
+<polygon fill="black" stroke="black" points="1080.14,-682.749 1089.75,-678.283 1079.46,-675.783 1080.14,-682.749"></polygon>
+</g>
+<!-- n99 -->
+<g id="node100" class="node"><title>n99</title>
+<polygon fill="none" stroke="black" points="981.095,-468 830.905,-468 830.905,-432 981.095,-432 981.095,-468"></polygon>
+<text text-anchor="middle" x="906" y="-445.8" font-family="Times,serif" font-size="14.00">Mt Sabre Boss: forward</text>
+</g>
+<!-- n94&#45;&gt;n99 -->
+<g id="edge286" class="edge"><title>n94-&gt;n99</title>
+<path fill="none" stroke="black" d="M666.237,-722.727C670.881,-721.743 675.511,-720.818 680,-720 742.801,-708.551 922.784,-731.884 965,-684 1017.89,-624.013 958.522,-523.259 925.336,-476.395"></path>
+<polygon fill="black" stroke="black" points="927.981,-474.08 919.282,-468.031 922.31,-478.184 927.981,-474.08"></polygon>
+</g>
+<!-- n98 -->
+<g id="node99" class="node"><title>n98</title>
+<polygon fill="none" stroke="green" points="1582.24,-612 1489.76,-612 1489.76,-576 1582.24,-576 1582.24,-612"></polygon>
+<text text-anchor="middle" x="1536" y="-589.8" font-family="Times,serif" font-size="14.00">Key to Prison</text>
+</g>
+<!-- n97&#45;&gt;n98 -->
+<g id="edge284" class="edge"><title>n97-&gt;n98</title>
+<path fill="none" stroke="black" d="M1308.96,-647.958C1357.74,-639.041 1417.41,-627.251 1479.64,-611.952"></path>
+<polygon fill="black" stroke="black" points="1480.79,-615.273 1489.65,-609.466 1479.1,-608.479 1480.79,-615.273"></polygon>
+</g>
+<!-- n98&#45;&gt;n106 -->
+<g id="edge310" class="edge"><title>n98-&gt;n106</title>
+<path fill="none" stroke="black" d="M1582.34,-578.496C1585.6,-577.611 1588.84,-576.769 1592,-576 1650.28,-561.819 1716.03,-549.42 1769.88,-540.187"></path>
+<polygon fill="black" stroke="black" points="1770.52,-543.629 1779.8,-538.501 1769.35,-536.728 1770.52,-543.629"></polygon>
+</g>
+<!-- n101 -->
+<g id="node102" class="node"><title>n101</title>
+<ellipse fill="none" stroke="blue" cx="906" cy="-306" rx="67.3472" ry="18"></ellipse>
+<text text-anchor="middle" x="906" y="-301.8" font-family="Times,serif" font-size="14.00">Mt Sabre Boss</text>
+</g>
+<!-- n99&#45;&gt;n101 -->
+<g id="edge292" class="edge"><title>n99-&gt;n101</title>
+<path fill="none" stroke="black" d="M906,-431.871C906,-407.67 906,-363.211 906,-334.393"></path>
+<polygon fill="black" stroke="black" points="909.5,-334.189 906,-324.189 902.5,-334.189 909.5,-334.189"></polygon>
+</g>
+<!-- n100&#45;&gt;n101 -->
+<g id="edge294" class="edge"><title>n100-&gt;n101</title>
+<path fill="none" stroke="black" d="M983.803,-359.876C969.963,-350.47 952.658,-338.709 937.885,-328.669"></path>
+<polygon fill="black" stroke="black" points="939.762,-325.714 929.524,-322.987 935.828,-331.503 939.762,-325.714"></polygon>
+</g>
+<!-- n102 -->
+<g id="node103" class="node"><title>n102</title>
+<polygon fill="none" stroke="red" points="501.192,-252 416.808,-252 416.808,-216 501.192,-216 501.192,-252"></polygon>
+<text text-anchor="middle" x="459" y="-229.8" font-family="Times,serif" font-size="14.00">Kelbesque 1</text>
+</g>
+<!-- n101&#45;&gt;n102 -->
+<g id="edge296" class="edge"><title>n101-&gt;n102</title>
+<path fill="none" stroke="black" d="M849.387,-296.134C762.136,-282.471 596.047,-256.461 511.409,-243.207"></path>
+<polygon fill="black" stroke="black" points="511.923,-239.745 501.501,-241.656 510.839,-246.661 511.923,-239.745"></polygon>
+</g>
+<!-- n103 -->
+<g id="node104" class="node"><title>n103</title>
+<polygon fill="none" stroke="cyan" points="512.192,-180 293.808,-180 293.808,-144 512.192,-144 512.192,-180"></polygon>
+<text text-anchor="middle" x="403" y="-157.8" font-family="Times,serif" font-size="14.00">Kelbesque 1 Chest (Flame Bracelet)</text>
+</g>
+<!-- n102&#45;&gt;n103 -->
+<g id="edge298" class="edge"><title>n102-&gt;n103</title>
+<path fill="none" stroke="black" d="M445.157,-215.697C438.511,-207.389 430.422,-197.277 423.113,-188.141"></path>
+<polygon fill="black" stroke="black" points="425.664,-185.727 416.683,-180.104 420.197,-190.099 425.664,-185.727"></polygon>
+</g>
+<!-- n102&#45;&gt;n104 -->
+<g id="edge300" class="edge"><title>n102-&gt;n104</title>
+<path fill="none" stroke="black" d="M459,-252.049C459,-278.708 459,-331.885 459,-377 459,-739 459,-739 459,-739 459,-834.115 461,-857.885 461,-953 461,-1027 461,-1027 461,-1027 461,-1218.12 466,-1265.88 466,-1457 466,-1891 466,-1891 466,-1891 466,-1999 445.058,-2027.28 397,-2124 392.196,-2133.67 385.625,-2143.42 379.245,-2151.88"></path>
+<polygon fill="black" stroke="black" points="376.411,-2149.82 373.002,-2159.85 381.922,-2154.14 376.411,-2149.82"></polygon>
+</g>
+<!-- n105 -->
+<g id="node106" class="node"><title>n105</title>
+<polygon fill="none" stroke="green" points="396.347,-108 295.653,-108 295.653,-72 396.347,-72 396.347,-108"></polygon>
+<text text-anchor="middle" x="346" y="-85.8" font-family="Times,serif" font-size="14.00">Flame Bracelet</text>
+</g>
+<!-- n103&#45;&gt;n105 -->
+<g id="edge306" class="edge"><title>n103-&gt;n105</title>
+<path fill="none" stroke="black" d="M388.91,-143.697C382.077,-135.305 373.743,-125.07 366.244,-115.861"></path>
+<polygon fill="black" stroke="black" points="368.956,-113.649 359.928,-108.104 363.528,-118.069 368.956,-113.649"></polygon>
+</g>
+<!-- n104&#45;&gt;n91 -->
+<g id="edge266" class="edge"><title>n104-&gt;n91</title>
+<path fill="none" stroke="black" d="M345.393,-2159.7C339.403,-2151.47 332.124,-2141.48 325.521,-2132.42"></path>
+<polygon fill="black" stroke="black" points="328.179,-2130.13 319.462,-2124.1 322.522,-2134.25 328.179,-2130.13"></polygon>
+</g>
+<!-- n104&#45;&gt;n106 -->
+<g id="edge308" class="edge"><title>n104-&gt;n106</title>
+<path fill="none" stroke="black" d="M426.623,-2176.59C690.614,-2174.12 1626,-2156.76 1626,-2035 1626,-2035 1626,-2035 1626,-953 1626,-776.131 1786.97,-607.834 1852.12,-546.968"></path>
+<polygon fill="black" stroke="black" points="1854.6,-549.44 1859.57,-540.084 1849.85,-544.298 1854.6,-549.44"></polygon>
+</g>
+<!-- n105&#45;&gt;n16 -->
+<g id="edge48" class="edge"><title>n105-&gt;n16</title>
+<path fill="none" stroke="black" d="M328.944,-71.6966C320.505,-63.135 310.175,-52.6562 300.957,-43.3045"></path>
+<polygon fill="black" stroke="black" points="303.373,-40.7691 293.86,-36.1043 298.387,-45.6831 303.373,-40.7691"></polygon>
+</g>
+<!-- n108 -->
+<g id="node109" class="node"><title>n108</title>
+<ellipse fill="none" stroke="blue" cx="1815" cy="-450" rx="101.444" ry="18"></ellipse>
+<text text-anchor="middle" x="1815" y="-445.8" font-family="Times,serif" font-size="14.00">Mt Sabre Summit Cave</text>
+</g>
+<!-- n106&#45;&gt;n108 -->
+<g id="edge318" class="edge"><title>n106-&gt;n108</title>
+<path fill="none" stroke="black" d="M1863.18,-503.697C1855.43,-495.22 1845.96,-484.864 1837.48,-475.583"></path>
+<polygon fill="black" stroke="black" points="1839.97,-473.123 1830.64,-468.104 1834.8,-477.846 1839.97,-473.123"></polygon>
+</g>
+<!-- n107 -->
+<g id="node108" class="node"><title>n107</title>
+<polygon fill="none" stroke="black" points="2104.22,-252 1909.78,-252 1909.78,-216 2104.22,-216 2104.22,-252"></polygon>
+<text text-anchor="middle" x="2007" y="-229.8" font-family="Times,serif" font-size="14.00">Mt Sabre Summit Cave: reverse</text>
+</g>
+<!-- n107&#45;&gt;n108 -->
+<g id="edge320" class="edge"><title>n107-&gt;n108</title>
+<path fill="none" stroke="black" d="M2001.34,-252.148C1990.06,-284.082 1962,-353.29 1918,-396 1903.75,-409.828 1885.18,-420.872 1867.73,-429.224"></path>
+<polygon fill="black" stroke="black" points="1865.83,-426.245 1858.19,-433.587 1868.74,-432.611 1865.83,-426.245"></polygon>
+</g>
+<!-- n108&#45;&gt;n100 -->
+<g id="edge288" class="edge"><title>n108-&gt;n100</title>
+<path fill="none" stroke="black" d="M1726.05,-441.275C1569.17,-427.65 1245.46,-399.537 1092.52,-386.254"></path>
+<polygon fill="black" stroke="black" points="1092.52,-382.741 1082.26,-385.362 1091.92,-389.714 1092.52,-382.741"></polygon>
+</g>
+<!-- n109 -->
+<g id="node110" class="node"><title>n109</title>
+<polygon fill="none" stroke="green" points="1701.91,-396 1636.09,-396 1636.09,-360 1701.91,-360 1701.91,-396"></polygon>
+<text text-anchor="middle" x="1669" y="-373.8" font-family="Times,serif" font-size="14.00">Paralysis</text>
+</g>
+<!-- n108&#45;&gt;n109 -->
+<g id="edge322" class="edge"><title>n108-&gt;n109</title>
+<path fill="none" stroke="black" d="M1781.5,-432.941C1760.66,-422.945 1733.66,-410.001 1711.34,-399.298"></path>
+<polygon fill="black" stroke="black" points="1712.62,-396.031 1702.09,-394.864 1709.59,-402.343 1712.62,-396.031"></polygon>
+</g>
+<!-- n110 -->
+<g id="node111" class="node"><title>n110</title>
+<polygon fill="none" stroke="black" points="1909.53,-396 1720.47,-396 1720.47,-360 1909.53,-360 1909.53,-396"></polygon>
+<text text-anchor="middle" x="1815" y="-373.8" font-family="Times,serif" font-size="14.00">Waterfall Valley: via Mt Sabre</text>
+</g>
+<!-- n108&#45;&gt;n110 -->
+<g id="edge324" class="edge"><title>n108-&gt;n110</title>
+<path fill="none" stroke="black" d="M1815,-431.697C1815,-423.983 1815,-414.712 1815,-406.112"></path>
+<polygon fill="black" stroke="black" points="1818.5,-406.104 1815,-396.104 1811.5,-406.104 1818.5,-406.104"></polygon>
+</g>
+<!-- n112 -->
+<g id="node113" class="node"><title>n112</title>
+<ellipse fill="none" stroke="blue" cx="1810" cy="-306" rx="75.4705" ry="18"></ellipse>
+<text text-anchor="middle" x="1810" y="-301.8" font-family="Times,serif" font-size="14.00">Waterfall Valley</text>
+</g>
+<!-- n110&#45;&gt;n112 -->
+<g id="edge328" class="edge"><title>n110-&gt;n112</title>
+<path fill="none" stroke="black" d="M1813.76,-359.697C1813.21,-351.983 1812.55,-342.712 1811.94,-334.112"></path>
+<polygon fill="black" stroke="black" points="1815.43,-333.83 1811.22,-324.104 1808.44,-334.328 1815.43,-333.83"></polygon>
+</g>
+<!-- n111 -->
+<g id="node112" class="node"><title>n111</title>
+<polygon fill="none" stroke="black" points="1833.16,-108 1658.84,-108 1658.84,-72 1833.16,-72 1833.16,-108"></polygon>
+<text text-anchor="middle" x="1746" y="-85.8" font-family="Times,serif" font-size="14.00">Waterfall Valley: via Portoa</text>
+</g>
+<!-- n111&#45;&gt;n112 -->
+<g id="edge330" class="edge"><title>n111-&gt;n112</title>
+<path fill="none" stroke="black" d="M1734.08,-108.286C1714.33,-139.266 1679.67,-205.361 1708,-252 1717.96,-268.407 1734.84,-279.966 1752.03,-288.006"></path>
+<polygon fill="black" stroke="black" points="1751,-291.373 1761.57,-292.118 1753.77,-284.945 1751,-291.373"></polygon>
+</g>
+<!-- n112&#45;&gt;n107 -->
+<g id="edge314" class="edge"><title>n112-&gt;n107</title>
+<path fill="none" stroke="black" d="M1850.34,-290.666C1878.91,-280.516 1917.64,-266.754 1949.44,-255.453"></path>
+<polygon fill="black" stroke="black" points="1950.82,-258.678 1959.07,-252.032 1948.47,-252.082 1950.82,-258.678"></polygon>
+</g>
+<!-- n113 -->
+<g id="node114" class="node"><title>n113</title>
+<polygon fill="none" stroke="black" points="1891.16,-252 1716.84,-252 1716.84,-216 1891.16,-216 1891.16,-252"></polygon>
+<text text-anchor="middle" x="1804" y="-229.8" font-family="Times,serif" font-size="14.00">Portoa: via Waterfall Valley</text>
+</g>
+<!-- n112&#45;&gt;n113 -->
+<g id="edge332" class="edge"><title>n112-&gt;n113</title>
+<path fill="none" stroke="black" d="M1808.52,-287.697C1807.86,-279.983 1807.06,-270.712 1806.32,-262.112"></path>
+<polygon fill="black" stroke="black" points="1809.81,-261.769 1805.47,-252.104 1802.83,-262.367 1809.81,-261.769"></polygon>
+</g>
+<!-- n115 -->
+<g id="node116" class="node"><title>n115</title>
+<ellipse fill="none" stroke="blue" cx="1804" cy="-162" rx="36.3712" ry="18"></ellipse>
+<text text-anchor="middle" x="1804" y="-157.8" font-family="Times,serif" font-size="14.00">Portoa</text>
+</g>
+<!-- n113&#45;&gt;n115 -->
+<g id="edge338" class="edge"><title>n113-&gt;n115</title>
+<path fill="none" stroke="black" d="M1804,-215.697C1804,-207.983 1804,-198.712 1804,-190.112"></path>
+<polygon fill="black" stroke="black" points="1807.5,-190.104 1804,-180.104 1800.5,-190.104 1807.5,-190.104"></polygon>
+</g>
+<!-- n114&#45;&gt;n115 -->
+<g id="edge340" class="edge"><title>n114-&gt;n115</title>
+<path fill="none" stroke="black" d="M2133,-2447.95C2133,-2421.29 2133,-2368.11 2133,-2323 2133,-2323 2133,-2323 2133,-305 2133,-264.458 2142.39,-243.925 2113,-216 2075.97,-180.821 1927.17,-168.737 1850.37,-164.793"></path>
+<polygon fill="black" stroke="black" points="1850.19,-161.28 1840.03,-164.289 1849.85,-168.272 1850.19,-161.28"></polygon>
+</g>
+<!-- n115&#45;&gt;n111 -->
+<g id="edge326" class="edge"><title>n115-&gt;n111</title>
+<path fill="none" stroke="black" d="M1790.84,-145.116C1783.74,-136.544 1774.81,-125.766 1766.79,-116.089"></path>
+<polygon fill="black" stroke="black" points="1769.4,-113.759 1760.33,-108.292 1764.01,-118.225 1769.4,-113.759"></polygon>
+</g>
+<!-- n116 -->
+<g id="node117" class="node"><title>n116</title>
+<polygon fill="none" stroke="black" points="1741,-3852 1687,-3852 1687,-3816 1741,-3816 1741,-3852"></polygon>
+<text text-anchor="middle" x="1714" y="-3829.8" font-family="Times,serif" font-size="14.00">To Do</text>
+</g>
+<!-- n117 -->
+<g id="node118" class="node"><title>n117</title>
+<polygon fill="none" stroke="green" points="2014,-2700 1960,-2700 1960,-2664 2014,-2664 2014,-2700"></polygon>
+<text text-anchor="middle" x="1987" y="-2677.8" font-family="Times,serif" font-size="14.00">Flight</text>
+</g>
+<!-- n116&#45;&gt;n117 -->
+<g id="edge342" class="edge"><title>n116-&gt;n117</title>
+<path fill="none" stroke="black" d="M1741.32,-3831.74C1780.48,-3828.62 1853.02,-3817.75 1900,-3780 1935.03,-3751.85 1948,-3735.94 1948,-3691 1948,-3691 1948,-3691 1948,-2825 1948,-2783.56 1963.64,-2737.67 1975.11,-2709.58"></path>
+<polygon fill="black" stroke="black" points="1978.45,-2710.65 1979.11,-2700.07 1972,-2707.93 1978.45,-2710.65"></polygon>
+</g>
+<!-- n118 -->
+<g id="node119" class="node"><title>n118</title>
+<polygon fill="none" stroke="blue" points="2164.61,-3060 2089.39,-3060 2089.39,-3024 2164.61,-3024 2164.61,-3060"></polygon>
+<text text-anchor="middle" x="2127" y="-3037.8" font-family="Times,serif" font-size="14.00">Angry Sea</text>
+</g>
+<!-- n116&#45;&gt;n118 -->
+<g id="edge344" class="edge"><title>n116-&gt;n118</title>
+<path fill="none" stroke="black" d="M1741.23,-3833.02C1817.38,-3831.51 2027,-3816.01 2027,-3691 2027,-3691 2027,-3691 2027,-3185 2027,-3136.49 2066.49,-3092.87 2095.84,-3067.16"></path>
+<polygon fill="black" stroke="black" points="2098.45,-3069.53 2103.81,-3060.39 2093.92,-3064.19 2098.45,-3069.53"></polygon>
+</g>
+<!-- n119 -->
+<g id="node120" class="node"><title>n119</title>
+<polygon fill="none" stroke="blue" points="1098,-3780 1044,-3780 1044,-3744 1098,-3744 1098,-3780"></polygon>
+<text text-anchor="middle" x="1071" y="-3757.8" font-family="Times,serif" font-size="14.00">Joel</text>
+</g>
+<!-- n116&#45;&gt;n119 -->
+<g id="edge346" class="edge"><title>n116-&gt;n119</title>
+<path fill="none" stroke="black" d="M1686.78,-3830.04C1584.91,-3818.95 1225.95,-3779.87 1108.5,-3767.08"></path>
+<polygon fill="black" stroke="black" points="1108.55,-3763.57 1098.23,-3765.96 1107.79,-3770.53 1108.55,-3763.57"></polygon>
+</g>
+<!-- n120 -->
+<g id="node121" class="node"><title>n120</title>
+<polygon fill="none" stroke="green" points="1467.55,-3780 1362.45,-3780 1362.45,-3744 1467.55,-3744 1467.55,-3780"></polygon>
+<text text-anchor="middle" x="1415" y="-3757.8" font-family="Times,serif" font-size="14.00">Sword of Water</text>
+</g>
+<!-- n116&#45;&gt;n120 -->
+<g id="edge348" class="edge"><title>n116-&gt;n120</title>
+<path fill="none" stroke="black" d="M1686.76,-3827.42C1644.16,-3818.59 1558.96,-3800.51 1477.45,-3780.3"></path>
+<polygon fill="black" stroke="black" points="1478.08,-3776.85 1467.53,-3777.83 1476.38,-3783.64 1478.08,-3776.85"></polygon>
+</g>
+<!-- n121 -->
+<g id="node122" class="node"><title>n121</title>
+<polygon fill="none" stroke="green" points="1772.98,-3780 1655.02,-3780 1655.02,-3744 1772.98,-3744 1772.98,-3780"></polygon>
+<text text-anchor="middle" x="1714" y="-3757.8" font-family="Times,serif" font-size="14.00">Sword of Thunder</text>
+</g>
+<!-- n116&#45;&gt;n121 -->
+<g id="edge350" class="edge"><title>n116-&gt;n121</title>
+<path fill="none" stroke="black" d="M1714,-3815.7C1714,-3807.98 1714,-3798.71 1714,-3790.11"></path>
+<polygon fill="black" stroke="black" points="1717.5,-3790.1 1714,-3780.1 1710.5,-3790.1 1717.5,-3790.1"></polygon>
+</g>
+<!-- n122 -->
+<g id="node123" class="node"><title>n122</title>
+<polygon fill="none" stroke="green" points="1598.17,-3780 1485.83,-3780 1485.83,-3744 1598.17,-3744 1598.17,-3780"></polygon>
+<text text-anchor="middle" x="1542" y="-3757.8" font-family="Times,serif" font-size="14.00">Blizzard Bracelet</text>
+</g>
+<!-- n116&#45;&gt;n122 -->
+<g id="edge352" class="edge"><title>n116-&gt;n122</title>
+<path fill="none" stroke="black" d="M1686.75,-3821.91C1661.68,-3811.71 1623.86,-3796.31 1593.16,-3783.82"></path>
+<polygon fill="black" stroke="black" points="1594.47,-3780.57 1583.89,-3780.05 1591.83,-3787.06 1594.47,-3780.57"></polygon>
+</g>
+<!-- n123 -->
+<g id="node124" class="node"><title>n123</title>
+<polygon fill="none" stroke="green" points="1891.27,-3780 1790.73,-3780 1790.73,-3744 1891.27,-3744 1891.27,-3780"></polygon>
+<text text-anchor="middle" x="1841" y="-3757.8" font-family="Times,serif" font-size="14.00">Storm Bracelet</text>
+</g>
+<!-- n116&#45;&gt;n123 -->
+<g id="edge354" class="edge"><title>n116-&gt;n123</title>
+<path fill="none" stroke="black" d="M1741.24,-3817.98C1758.61,-3808.41 1781.42,-3795.84 1800.84,-3785.14"></path>
+<polygon fill="black" stroke="black" points="1802.71,-3788.1 1809.78,-3780.21 1799.33,-3781.97 1802.71,-3788.1"></polygon>
+</g>
+<!-- n117&#45;&gt;n11 -->
+<g id="edge32" class="edge"><title>n117-&gt;n11</title>
+<path fill="none" stroke="black" d="M1959.94,-2674.91C1910.4,-2663.76 1803.97,-2639.8 1736.42,-2624.6"></path>
+<polygon fill="black" stroke="black" points="1736.86,-2621.11 1726.33,-2622.33 1735.32,-2627.94 1736.86,-2621.11"></polygon>
+</g>
+<!-- n117&#45;&gt;n13 -->
+<g id="edge38" class="edge"><title>n117-&gt;n13</title>
+<path fill="none" stroke="black" d="M2012.69,-2663.88C2026.29,-2654.81 2043.17,-2643.55 2057.86,-2633.76"></path>
+<polygon fill="black" stroke="black" points="2059.84,-2636.65 2066.22,-2628.19 2055.95,-2630.82 2059.84,-2636.65"></polygon>
+</g>
+<!-- n117&#45;&gt;n107 -->
+<g id="edge316" class="edge"><title>n117-&gt;n107</title>
+<path fill="none" stroke="black" d="M1991.05,-2663.62C1996.89,-2636.97 2007,-2584.31 2007,-2539 2007,-2539 2007,-2539 2007,-377 2007,-336.996 2007,-290.653 2007,-262.08"></path>
+<polygon fill="black" stroke="black" points="2010.5,-262.049 2007,-252.049 2003.5,-262.049 2010.5,-262.049"></polygon>
+</g>
+<!-- n118&#45;&gt;n114 -->
+<g id="edge334" class="edge"><title>n118-&gt;n114</title>
+<path fill="none" stroke="black" d="M2138.19,-3023.87C2154.01,-2997.96 2181,-2946.74 2181,-2899 2181,-2899 2181,-2899 2181,-2609 2181,-2568.55 2176.08,-2557.92 2162,-2520 2158.6,-2510.86 2153.85,-2501.36 2149.17,-2492.98"></path>
+<polygon fill="black" stroke="black" points="2152.04,-2490.95 2144,-2484.06 2145.99,-2494.47 2152.04,-2490.95"></polygon>
+</g>
+<!-- n119&#45;&gt;n23 -->
+<g id="edge70" class="edge"><title>n119-&gt;n23</title>
+<path fill="none" stroke="black" d="M1043.83,-3754.03C998.787,-3742.48 907.921,-3719.18 850.169,-3704.38"></path>
+<polygon fill="black" stroke="black" points="850.698,-3700.9 840.142,-3701.81 848.959,-3707.68 850.698,-3700.9"></polygon>
+</g>
+<!-- n120&#45;&gt;n3 -->
+<g id="edge6" class="edge"><title>n120-&gt;n3</title>
+<path fill="none" stroke="black" d="M1412.23,-3743.87C1408.31,-3719.67 1401.1,-3675.21 1396.44,-3646.39"></path>
+<polygon fill="black" stroke="black" points="1399.84,-3645.5 1394.78,-3636.19 1392.93,-3646.62 1399.84,-3645.5"></polygon>
+</g>
+<!-- n120&#45;&gt;n7 -->
+<g id="edge20" class="edge"><title>n120-&gt;n7</title>
+<path fill="none" stroke="black" d="M1423.58,-3743.85C1442.24,-3706.52 1486.65,-3617.69 1508.87,-3573.26"></path>
+<polygon fill="black" stroke="black" points="1512.04,-3574.74 1513.38,-3564.23 1505.78,-3571.61 1512.04,-3574.74"></polygon>
+</g>
+<!-- n120&#45;&gt;n17 -->
+<g id="edge50" class="edge"><title>n120-&gt;n17</title>
+<path fill="none" stroke="black" d="M1446.8,-3743.88C1464.11,-3734.55 1485.72,-3722.92 1504.26,-3712.94"></path>
+<polygon fill="black" stroke="black" points="1505.93,-3716.01 1513.08,-3708.19 1502.61,-3709.85 1505.93,-3716.01"></polygon>
+</g>
+<!-- n121&#45;&gt;n4 -->
+<g id="edge8" class="edge"><title>n121-&gt;n4</title>
+<path fill="none" stroke="black" d="M1704.05,-3743.71C1689.99,-3717.58 1666,-3666.1 1666,-3619 1666,-3619 1666,-3619 1666,-3329 1666,-3288.99 1671.96,-3243 1676.37,-3214.46"></path>
+<polygon fill="black" stroke="black" points="1679.85,-3214.85 1677.96,-3204.43 1672.94,-3213.75 1679.85,-3214.85"></polygon>
+</g>
+<!-- n121&#45;&gt;n8 -->
+<g id="edge22" class="edge"><title>n121-&gt;n8</title>
+<path fill="none" stroke="black" d="M1716.57,-3744C1720.36,-3717.4 1727,-3664.3 1727,-3619 1727,-3619 1727,-3619 1727,-3545 1727,-3502.78 1746.6,-3457.16 1761.01,-3429.33"></path>
+<polygon fill="black" stroke="black" points="1764.23,-3430.74 1765.85,-3420.27 1758.05,-3427.44 1764.23,-3430.74"></polygon>
+</g>
+<!-- n121&#45;&gt;n18 -->
+<g id="edge54" class="edge"><title>n121-&gt;n18</title>
+<path fill="none" stroke="black" d="M1738.46,-3743.88C1751.3,-3734.89 1767.2,-3723.76 1781.09,-3714.03"></path>
+<polygon fill="black" stroke="black" points="1783.26,-3716.79 1789.44,-3708.19 1779.24,-3711.06 1783.26,-3716.79"></polygon>
+</g>
+<!-- n122&#45;&gt;n17 -->
+<g id="edge52" class="edge"><title>n122-&gt;n17</title>
+<path fill="none" stroke="black" d="M1542.74,-3743.7C1543.07,-3735.98 1543.47,-3726.71 1543.84,-3718.11"></path>
+<polygon fill="black" stroke="black" points="1547.34,-3718.25 1544.27,-3708.1 1540.34,-3717.95 1547.34,-3718.25"></polygon>
+</g>
+<!-- n123&#45;&gt;n18 -->
+<g id="edge56" class="edge"><title>n123-&gt;n18</title>
+<path fill="none" stroke="black" d="M1834.33,-3743.7C1831.29,-3735.81 1827.62,-3726.3 1824.24,-3717.55"></path>
+<polygon fill="black" stroke="black" points="1827.46,-3716.17 1820.6,-3708.1 1820.93,-3718.69 1827.46,-3716.17"></polygon>
+</g>
+</g>
+</svg>

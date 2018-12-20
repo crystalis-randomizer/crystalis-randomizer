@@ -1,4 +1,5 @@
 // Build up the dependency graph
+// http://webgraphviz.com
 
 class Graph {
   constructor() {
@@ -7,14 +8,13 @@ class Graph {
   }
 
   add(description, deps) {
-    const n = this.nodes.size;
+    const n = this.nodes.length;
     this.nodes.push(description);
     
     for (let dep of deps) {
       if (typeof dep == 'number') {
-        if (this.nodes[dep].type == 'route') {
-          
-          this.nodes[dep].description = `${this.description}: ${description}`;
+        if (this.nodes[dep].type == 'Route') {
+          this.nodes[dep].text = `${description.text}: ${this.nodes[dep].text}`;
           this.nodes[n].or = true; // TODO - verify all are routes
         }
         this.edges.push([n, () => dep]);
@@ -23,6 +23,32 @@ class Graph {
       }
     }
     return n;
+  }
+
+  toDot() {
+    const parts = [];
+    const colors = {
+      Boss: 'red',
+      Location: 'blue',
+      Item: 'green',
+      Magic: 'green',
+      Talk: 'cyan',
+      Chest: 'cyan',
+    };
+    parts.push('digraph dependencies {');
+    for (let i = 0; i < this.nodes.length; i++) {
+      const n = this.nodes[i];
+      const shape = n.or ? '' : ' shape=box';
+      const color = colors[n.type] ? ` color=${colors[n.type]}` : '';
+      parts.push(`  n${i} [label="${n.text}"${shape}${color}];`);
+    }
+    for (const [e1, e2] of this.edges) {
+      //if (typeof e2 != 'function') console.log(e2);
+      // TODO - e1 is sword? then color; e2 is or? then dotted.
+      parts.push(`  n${e2()} -> n${e1};`);
+    }
+    parts.push('}');
+    return parts.join('\n');
   }
 };
 
@@ -57,6 +83,9 @@ const notWind       = trigger('Sword (not wind)',
 const hopOrFly      = trigger('Hop or Fly',
                               route('hop', () => rabbitBoots),
                               route('fly', () => flight));
+const swimOrFly     = trigger('Swim or Fly',
+                              //route('swim', () => dolphin),
+                              route('fly', () => flight));
 // NOTE: the following four edges can be removed for a more challenging experience
 const tornadoMagic  = trigger('Tornado Magic', () => swordOfWind, () => tornadoBracelet);
 const flameMagic    = trigger('Flame Magic', () => swordOfFire, () => flameBracelet);
@@ -84,7 +113,7 @@ const refresh       = magic('Refresh', windmill);
 const vampCave1     = location('Vampire Cave 1',
                                 // This includes everything in front of stone walls
                                route('forward', windmill),
-                               route('reverse', () => vampCave2);
+                               route('reverse', () => vampCave2));
 const vampCaveChest1 = chest('Vampire Cave Chest 1 (Warp Boots)', vampCave1);
 const vampCaveChest2 = chest('Vampire Cave Chest 2 (Medical Herb)', vampCave1);
 const vampCaveChest3 = chest('Vampire Cave Chest 3 (Ball of Wind)', vampCave1);
@@ -98,7 +127,7 @@ const vampCaveChest4 = chest('Vampire Cave Chest 4 (Antidote)', vampCave2);
 const vampCaveChest5 = chest('Vampire Cave Chest 5 (Medical Herb)', vampCave2);
 const vampCaveBoss = location('Vampire Cave Boss',
                               route('forward', vampCave2),
-                              route('reverse', () => cordellPlain, windLevel2));
+                              route('reverse', () => cordellPlains, windLevel2));
 const vampire1 = boss('Vampire 1', vampCaveBoss, sword);
 const vampire1Chest = chest('Vamp1re 1 Chest (Rabbit Boots)', vampire1);
 const vampCaveBossKilled = trigger('Vampire Cave Boss Killed', vampire1);
@@ -107,7 +136,7 @@ const cordellPlains = location('Cordell Plain',
                                route('via Vampire', vampCaveBossKilled),
                                route('via Mt Sabre North',
                                      // TODO - rabbit trigger skippable
-                                     () => mtSabreNorth1, () => leafRabbit, () => teleport)
+                                     () => mtSabreNorth1, () => leafRabbit, () => teleport),
                                route('via Mt Sabre West', () => mtSabreWest1, () => fireLevel2));
 const brynmaer = location('Brynmaer', cordellPlains);
 const cordellGrass = chest('Cordell Plains Grass', cordellPlains);
@@ -143,7 +172,7 @@ const leafRabbit = talk('Leaf Rabbit', leaf, leafSorrow);
 const mtSabreNorth1 = location('Mt Sabre North 1',
                                // TODO - rabbit trigger skippable
                                route('forward', cordellPlains, leafRabbit, teleport),
-                               route('reverse', mtSabreBossKilled),
+                               route('reverse', () => mtSabreBossKilled));
 const nadares = location('Nadare\'s', mtSabreNorth1);
 const mtSabreNorth2 = location('Mt Sabre North 2', mtSabreNorth1, fireLevel2);
 const mtSabreNorthChest1 = chest('Mt Sabre North Chest 1 (Antidote)', mtSabreNorth2);
@@ -152,7 +181,7 @@ const mtSabreNorthChest3 = chest('Mt Sabre North Chest 3 (Key to Prison)', mtSab
 const prisonKey = item('Key to Prison', mtSabreNorthChest3);
 const mtSabreBoss = location('Mt Sabre Boss',
                              route('forward', mtSabreNorth2),
-                             route('reverse', mtSabreSummitCave, fireLevel2));
+                             route('reverse', () => mtSabreSummitCave, fireLevel2));
 const kelbesque1 = boss('Kelbesque 1', mtSabreBoss);
 const kelbesque1Chest = chest('Kelbesque 1 Chest (Flame Bracelet)', kelbesque1);
 const mtSabreBossKilled = trigger('Mt Sabre Boss Killed', kelbesque1, swordOfWind, tornadoMagic);
@@ -168,8 +197,16 @@ const portoa = location('Portoa',
                         route('via Waterfall Valley', waterfallValley),
                         // TODO - confirm can dock at fog lamp house
                         route('via Angry Sea', () => angrySea, swimOrFly));
-                        
 
+
+const todo = node('To Do');
+const flight = magic('Flight', todo);
+const angrySea = location('Angry Sea', todo);
+const joel = location('Joel', todo);
+const swordOfWater = item('Sword of Water', todo);
+const swordOfThunder = item('Sword of Thunder', todo);
+const blizzardBracelet = item('Blizzard Bracelet', todo);
+const stormBracelet = item('Storm Bracelet', todo);
 
 
 // const freezeOrFly = trigger('Freeze or Fly',
@@ -178,3 +215,6 @@ const portoa = location('Portoa',
 // const swimOrFly = trigger('Swim or Fly',
 //                           route('swim', dolphin),
 //                           route('fly', () => flight));
+
+
+console.log(g.toDot());

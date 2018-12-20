@@ -587,3 +587,15 @@ debugging
 
 nes.debug.breakIf = (op, addr) => { if ((addr & 0xffff) == 0xc25d) { console.log(`Spawning ${nes.cpu.ram[0x10].toString(16)} at ${nes.cpu.ram[0x11].toString(16)}`); return false; } return true; };
 nes.debug.breakAt(0x3c25d, 'prg', 'x');
+
+=======
+
+How to prevent killing the game by entering the tower too underleveled?
+ - probably want max buf upon entering tower no matter what
+ - probably also want to turn off gold and EXP drops for monsters there
+ - how to avoid bricking the game if too early?
+ - could enable teleporting away, but this causes Draygon2 to reappear, w/ no BoT left
+ - could re-grant BoT if teleport from tower...
+ - could figure out how to make him stay dead? set a flag upon entering?
+ - also need to allow player control in room leading to teleporter...
+For now, just recommend saving before and not overwriting.

@@ -192,7 +192,7 @@ define ObjectExp $520
   jsr ComputeVampireAnimationStart
   nop
 .org $1ff97 ; This looks like it's just junk at the end, but we could
-            ; probably go even earlier and clobber some debug code?
+            ; probably go to $1ff47 if we don't care about developer mode
 ComputeVampireAnimationStart:
    bcs +
    asl

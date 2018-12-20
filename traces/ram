@@ -1009,6 +1009,16 @@ the maximum width of a map is 8, and is consistent with what we've seen
 elsewhere where yh has special handling for >8 but xh does not.
 
 
+$6428..$642f
+------------
+??
+
+
+$6430..$645f
+------------
+Inventory
+
+
 $648x, $649x
 ------------
 condition flags (dialog: w @ $1c121, r @ $1c11c)

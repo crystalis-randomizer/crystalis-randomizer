@@ -23,6 +23,7 @@ export default ({
     const random = new Random(seed);
     fixShaking.apply(rom);
     preventSwordClobber.apply(rom);
+    upgradeBallsToBracelets.apply(rom);
     scaleDifficultyLib.apply(rom);
     const parsed = new Rom(rom);
     adjustObjectDifficultyStats(rom, parsed, random);
@@ -160,6 +161,7 @@ export const disableWildWarp = buildRomPatch(assemble(`
 export const preventSwordClobber = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000
 .bank $20000 $8000:$4000
+
 .org $20534
   lda #$02
 .org $205a7
@@ -168,6 +170,23 @@ export const preventSwordClobber = buildRomPatch(assemble(`
   .byte $04
 `));
 
+export const upgradeBallsToBracelets = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000
+.bank $1c000 $8000:$2000
+
+.org $1c2de
+  lda $29
+  bcc +
+   inc $6430,x
+   bne ItemGet_Bracelet
+   lsr
+   lda $29
+   sbc #$00
++ sta $6430,x
+  rts
+.org $1c2f4
+ItemGet_Bracelet:
+`));
 
 // TODO - expose via a hash fragment (pass into patch)
 export const neverDie = buildRomPatch(assemble(`

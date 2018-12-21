@@ -22,6 +22,7 @@ export default ({
     }
     const random = new Random(seed);
     fixShaking.apply(rom);
+    preventSwordClobber.apply(rom);
     scaleDifficultyLib.apply(rom);
     const parsed = new Rom(rom);
     adjustObjectDifficultyStats(rom, parsed, random);
@@ -153,6 +154,18 @@ export const disableWildWarp = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000
 .org $3cbc7
   rts
+`));
+
+
+export const preventSwordClobber = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000
+.bank $20000 $8000:$4000
+.org $20534
+  lda #$02
+.org $205a7
+  .byte $0c
+.org $205a9
+  .byte $04
 `));
 
 

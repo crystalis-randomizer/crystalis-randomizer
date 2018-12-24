@@ -443,13 +443,13 @@ ComputeEnemyStats:
   sta ObjectRecoil,x
   ldy Difficulty
 RescaleDefAndHP:
-   ;; HP = 1 + max((8 * PAtk + 8 * SWRD - 8 * DEF) / 8, 1) * HITS
+   ;; HP = max(PAtk + SWRD - DEF, 1) * HITS - 1
    ;; DiffAtk = 8 * PAtk
    ;; DEF = (8 * PAtk) * SDEF / 64   (alt, SDEF = 8 * DEF / PAtk)
    lda ObjectHP,x
     beq RescaleAtk
    ;; Start by computing 8*DEF, but don't write it to DEF yet.
-   lda ObjectDef,x
++  lda ObjectDef,x
    pha
     and #$0f
     sta $62 ; SDEF
@@ -460,69 +460,74 @@ RescaleDefAndHP:
    lda DiffAtk,y
    sta $61 ; 8 * PAtk
    jsr Multiply16Bit  ; $61$62 <- 64*DEF
-   ;; Multiply by 4 and read off the high byte, but don't destroy
-   ;; $61$62 to do it.  Instead, multiply in A:$400,x.
+   ;; Multiply by 4 and read off the high byte.
    lda $62
+   asl $61
+   rol
+   asl $61
+   rol
    sta ObjectDef,x
-   lda $61 ; don't do this in place so as not to ruin the value
-   asl
-   rol ObjectDef,x
-   asl
-   rol ObjectDef,x
    ;; Now compute 8*PAtk + 8*SWRD - 8*DEF
-   ;; We start with 64*DEF in $61$62, so divide by 8.
-   lsr $62
-   ror $61
-   lsr $62
-   ror $61
-   lsr $62
-   ror $61            ; $61$62 <- 8*DEF
-   ;; $61$62 is now 8*DEF, which should max out at less than 32,
-   ;; so that $62 should always be zero.  If this is not true then
-   ;; go with the failover value of 1 (from the max).
-   lda $62
-   php                ; Default $62 to 1, for the "+" jumps below.
-    lda #$1
-    sta $62
-   plp
-   bne ++  ; 8*DEF > 255, so failover to 1.
-   ;; Subtract from 8*PAtk.  If the result is nonpositive then treat as 1.
+   asl
+   bcs +
+    asl
+    bcs +
+     asl
+     bcc ++
++     lda #$ff        ; overflow, so just use $ff.
+++ sta $61            ; $61 <- 8*DEF
+   ;; Subtract from 8*PAtk.  This may go negative, in which case
+   ;; we store the #$ff in $62.  We start with 1 and unconditionally
+   ;; decrement at the end so that we can check its zeroness and sign
+   ;; without destroying the accumulator.
+   lda #$01
+   sta $62
    lda DiffAtk,y
    sec
-   sbc $61            ; A <- 8*PAtk - 8*DEF
-   bcc ++
-   beq ++
-   ;; Add 8*SWRD, if this overflows, just keep 255.
-   clc
-   adc $12            ; A <- 8*PAtk - 8*DEF + 8*SWRD
+   sbc $61
+   bcs +
+    dec $62
+   ;; Now add 8*SWRD, again carrying into $62.
++  clc
+   adc $12
    bcc +
-    lda #$ff
-+  sta $62
-   ;; Multiply by HITS, divide afterwards.
-
-;;; TOO - the rounding seems to be running afoul of something.
-;;; we're getting a fractional expected damage (1.4) that's rounding
-;;; down to 1, rather than up to 2, or something?
-
-
-++ lda ObjectHP,x
-   sta $61
+    inc $62
++  dec $62
+   ;; Check for overflow - if $62 == 1 then set A <- $ff
+   beq ++
+    bpl +
+     lda #$ff
+     bmi ++
++   lda #$00
+++ sta $61
+   ;; Now check if A is zero, in which case we need to increment it.
+   ora #$0
+   bne +
+    inc $61
+   ;; Multiply by hits, then divide by 8
++  lda ObjectHP,x
+   sta $62
    jsr Multiply16Bit
-   lda $62
-   lsr
-   ror $61
-   lsr
-   ror $61
-   lsr
-   ror $61
-   lsr                ; this is the extra (256) bit to roll onto def byte
+   ;; Subtract 1
+   lda $61
+   sec
+   sbc #$01
+   bcs +
+    dec $62
+   ;; Divide by 8
++  lsr $62
+   ror
+   lsr $62
+   ror
+   lsr $62
+   ror                ; A is low byte of HP, $62 is high byte.
+   ;; Check the high part of HP.  One bit will be rotated into the DEF byte.
+   lsr $62
+   ;; If there's anything left in $62 then we've overflowed.
    beq +
-    ;; overflow: use $1ff
     lda #$ff
-    sta $61
     sec
 +  rol ObjectDef,x
-   lda $61
    sta ObjectHP,x
 RescaleAtk:
   ;; DiffDef = 4 * PDef

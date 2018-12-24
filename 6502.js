@@ -418,7 +418,7 @@ class Opcode extends AbstractLine {
     if (this.arg[0] == 'Relative') {
       value -= this.pc + 2;
       if (!(value < 0x80 && value >= -0x80)) {
-        throw new Error(`Too far to branch: ${value}`);
+        throw new Error(`Too far to branch: ${value} at input:${this.origLineNumber}`);
       }
     }
     const bytes = [opcodes[this.mnemonic][this.arg[0]]];

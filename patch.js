@@ -21,12 +21,12 @@ export default ({
       window.location.hash += '&seed=' + seed;
     }
     const random = new Random(seed);
+    const parsed = new Rom(rom);
+    adjustObjectDifficultyStats(rom, parsed, random);
     fixShaking.apply(rom);
     preventSwordClobber.apply(rom);
     upgradeBallsToBracelets.apply(rom);
     scaleDifficultyLib.apply(rom);
-    const parsed = new Rom(rom);
-    adjustObjectDifficultyStats(rom, parsed, random);
     if ('nodie' in hash) neverDie.apply(rom);
     console.log('patch applied');
   },
@@ -45,16 +45,12 @@ loop1:
 .org $3f455
   ldx #$07
   nop
-`));
+`, 'fixShaking'));
 
 
 // TODO - buff medical herb - change $1c4ea from $20 to e.g. $60,
 //   or else have it scale with difficulty?
 //   - (diff + 1) << 4 ? 
-
-
-// PLAN - coopt the 'level' stat which is no longer used to indicate
-// bosses that increase difficulty when they're killed.
 
 
 
@@ -155,7 +151,7 @@ export const disableWildWarp = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000
 .org $3cbc7
   rts
-`));
+`, 'disableWildWarp'));
 
 
 export const preventSwordClobber = buildRomPatch(assemble(`
@@ -168,7 +164,7 @@ export const preventSwordClobber = buildRomPatch(assemble(`
   .byte $0c
 .org $205a9
   .byte $04
-`));
+`, 'preventSwordClobber'));
 
 export const upgradeBallsToBracelets = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000
@@ -182,11 +178,12 @@ export const upgradeBallsToBracelets = buildRomPatch(assemble(`
    lsr
    lda $29
    sbc #$00
+   sta $23
 + sta $6430,x
   rts
 .org $1c2f4
 ItemGet_Bracelet:
-`));
+`, 'upgradeBallsToBracelets'));
 
 // TODO - expose via a hash fragment (pass into patch)
 export const neverDie = buildRomPatch(assemble(`
@@ -200,25 +197,12 @@ export const neverDie = buildRomPatch(assemble(`
   bne label
 .org $3cbc0
 label:
-`));
+`, 'neverDie'));
 
 
-// NOTE: if we insert at $3c406 then we have $11 as scratch space, too!
-// Extra code for difficulty scaling
-export const scaleDifficultyLib = buildRomPatch(assemble(`
-.bank $3c000 $c000:$4000 ; fixed bank
-
-define Difficulty $4c0
-define PlayerLevel $421
-define ObjectRecoil $340
-define ObjectHP $3c0
-define PlayerMaxHP $3c0
-define ObjectAtk $3e0
-define ObjectDef $400
-define ObjectGold $500
-define ObjectExp $520
-
+export const fixVampire = buildRomPatch(assemble(`
 ;;; Fix the vampire to allow >60 HP
+.bank $3c000 $c000:$4000
 .bank $1e000 $a000:$2000
 .org $1e576
   jsr ComputeVampireAnimationStart
@@ -233,23 +217,50 @@ ComputeVampireAnimationStart:
    bcc ++
 +  lda #$ff
 ++ rts
+`, 'fixVampire'));
 
+// NOTE: if we insert at $3c406 then we have $11 as scratch space, too!
+// Extra code for difficulty scaling
+export const scaleDifficultyLib = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000 ; fixed bank
+
+define Difficulty $4c0
+define PlayerLevel $421
+define ObjectRecoil $340
+define ObjectHP $3c0
+define PlayerMaxHP $3c0
+define ObjectAtk $3e0
+define PlayerAtk $3e1
+define ObjectDef $400
+define ObjectActionScript $4a0
+define ObjectGold $500
+define ObjectElementalDefense $500
+define ObjectExp $520
+
+define SFX_MONSTER_HIT       $21
+define SFX_ATTACK_IMMUNE     $3a
 
 .bank $2e000 $a000:$2000
 ; Save/restore difficulty
+
 .org $2fd38
   lda Difficulty ; instead of $3c0, which is derivable from level
+
 .org $2fd7c
   sta Difficulty
 .org $2fd8e
   jmp FinishRestoreData
+
 .org $2fef5 ; initial state of "continue"
   .byte $00
 
+
 .org $3d946
   lda Difficulty
+
 .org $3d961
   sta Difficulty
+
 .org $3d982
   jmp FinishRestoreMode
 
@@ -258,21 +269,33 @@ ComputeVampireAnimationStart:
 CoinAmounts:
   .word 0,1,2,4,8,16,30,50,100,200,300,400,500,600,700,800
 
+
 .bank $1c000 $8000:$4000 ; item use code
-.org $1c494
-  jmp CheckForFogLamp
-.org $1c4db
-ItemUseJump_Invalid:
+
+.org $1c26f
+ItemGet:
+
+.org $1c28e
+ItemGet_rts:
+
+.org $1c299
+  bmi ItemGet_rts
+
+.org $1c29d
+  jmp ItemGet_RaiseDifficulty
 
 .org $3ff44
-CheckForFogLamp:
-  beq +
-   jmp ItemUseJump_Invalid
-+ lda $23
-  cmp #$35
-  bne +
-   inc Difficulty
-+ rts
+ItemGet_RaiseDifficulty:
+   ;; Raise difficulty iff the last element is $FE
+   bmi +
+    jmp ItemGet
++  lsr
+   bcs +
+    lda Difficulty
+    cmp #$2f
+    bcs +
+     inc Difficulty
++  rts
 
 FinishRestoreData:
   sta $0620 ; copied from $2fd8e
@@ -292,223 +315,304 @@ FinishRestoreMode:
   sta $41 ; copied from $3d982
   bne -   ; uncond - A is always 1 when we run this
 
-.org $3ffe3
-.bank $34000 $8000:$4000 ; collision code
-KillObjectPatchImpl:
-  lda $420,y
-  lsr
-  lda #$0
-  adc Difficulty
-  sta Difficulty
-  jmp KillObject
+SubtractEnemyHP:
+  ;; NOTE: we could probably afford to move a few of these back if needed
+  lda ObjectHP,y
+  sec
+  sbc $63
+  sta ObjectHP,y
+  lda $61
+  sbc #$00
+  rts
+.org $3ff80
 
+
+.org $3c010
+;; Adjusted inventory update - use level instead of sword
+   ldy $0719  ; max charge level
+   lda #$01
+-   asl
+    dey
+   bpl -
+   clc
+   ldy $0716  ; equipped passive item
+   adc $0421  ; player level
+   dey
+   cpy #$0d   ; power ring - 1
+   beq -
+   sta $03e1  ; player attack
+   lda $0421  ; player level
+   cpy #$0f   ; iron necklace - 1
+.org $3c02d   ; NOTE - MUST BE EXACT!!!!
+   
+
+.bank $34000 $8000:$4000 ; item use code
+
+
+;; Adjusted stsab damage for populating sword object ($02)
+.org $35c5f
+  lda #$02
+  sta $03e2
+  rts
+
+
+;; ADJUSTED DAMAGE CALCULATIONS
+;; $61 is extra HP bit(s)
+;; $62 is DEF
+;; $63 is damage
 .org $350fa
-  bne SkipLevelCheck
-EnsureNonzeroDamage:
-  ;; TODO - what do we do with immune enemies?
-  ;; we could possibly allow any sword but halve the damage?
-  ;;   - would be nice to get a different SFX for that...?
-  bit $10
-  bne DealDamage
-  inc $10
-  bne DealDamage
-KillObjectPatched:
-  jmp KillObjectPatchImpl
-.org $35108
-SkipLevelCheck:
-.org $35123
-  bcs EnsureNonzeroDamage
-.org $3513b
-DealDamage:
-.org $35144
-  bcc KillObjectPatched
+    lda #$00
+    sta $61
+    sta $63
+    ;; Check elemental immunity
+    lda ObjectElementalDefense,y
+    and ObjectElementalDefense,x
+    and #$0f
+    bne +
+    lda ObjectDef,y
+    lsr     ; Just pull one extra bit for HP, could do one more if needed
+    rol $61
+    sta $62 ; Store actual shifted DEF in $62
+    lda PlayerAtk
+    adc ObjectAtk,x
+    sec
+    sbc $62 ; A <- atk - def
+    bcc +
+     sta $63
++   stx $10
+    sty $11
+    lda $63
+    bne ++
+      sta ObjectActionScript,x
+      lda ObjectActionScript,y
+      bmi +
+       jsr KnockbackObject
++     lda #SFX_ATTACK_IMMUNE
+      inc $63
+      bne +++
+++   jsr KnockbackObject
+     lda #SFX_MONSTER_HIT
++++ jsr StartAudioTrack
+    jsr SubtractEnemyHP
+     bcc KillObject
+    lsr
+    lda $62
+    rol
+    sta ObjectDef,y
+    rts
+;;; NOTE: must finish before 35152
 .org $35152
 KillObject:
+.org $355c0
+KnockbackObject:
+.org $3c125
+StartAudioTrack:
 
 
 .bank $1a000 $a000:$2000 ; object data
 .org $3c409
   jmp ComputeEnemyStats
 
-.org $1be91
-DiffBaseDefense:
-  .byte 4,6,8,10,12,14,16,16,16,18
-DiffPlayerDefense:
-  .byte 5,11,13,18,25,30,38,39,48,48
-DiffPlayerLevel:
-  .byte 3,5,7,9,11,12,14,15,16,18
-DiffBaseExperience:
-  .byte 3,8,22,85,141,152,178,208,208,208
+.org $1bb00  ; This should leave some space after compression
 
-define TempLevel $12
-define SwordLevel $13
+DiffAtk:   ; PAtk*8
+  .byte $28,$2C,$30,$33,$37,$3B,$3F,$42,$46,$4A,$4E,$51,$55,$59,$5D,$60
+  .byte $64,$68,$6C,$6F,$73,$77,$7B,$7E,$82,$86,$8A,$8D,$91,$95,$99,$9C
+  .byte $A0,$A4,$A8,$AB,$AF,$B3,$B7,$BA,$BE,$C2,$C6,$C9,$CD,$D1,$D5,$D8
+DiffDef:   ; PDef * 4
+  .byte $0C,$0F,$12,$15,$18,$1B,$1E,$21,$24,$27,$2A,$2D,$30,$33,$36,$39
+  .byte $3C,$3F,$42,$45,$48,$4B,$4E,$51,$54,$57,$5A,$5D,$60,$63,$66,$69
+  .byte $6C,$6F,$72,$75,$78,$7B,$7E,$81,$84,$87,$8A,$8D,$90,$93,$96,$99
+DiffHP:    ; PHP (0..$26)
+  .byte $30,$36,$3B,$41,$46,$4C,$51,$57,$5C,$62,$67,$6D,$72,$78,$7D,$83
+  .byte $88,$8E,$93,$99,$9E,$A4,$A9,$AF,$B4,$BA,$BF,$C5,$CA,$D0,$D5,$DB
+  .byte $E0,$E6,$EB,$F1,$F6,$FC,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+DiffExp:   ; ExpBase * 4, encoded in standard EXP encoding
+  .byte $05,$06,$08,$0A,$0C,$0E,$12,$16,$1A,$20,$27,$30,$3A,$47,$56,$69
+  .byte $80,$81,$83,$86,$89,$8D,$91,$97,$9E,$A6,$B0,$BC,$CA,$DC,$F2,$FF
+  .byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
 
+;;; $12 and $13 are free RAM at this point
+
+.org $1bbd0  ; Note: this follows immediately from the tables.
 ComputeEnemyStats:
   lda ObjectRecoil,x
   bmi +
    jmp $3c2af ; exit point
 + and #$7f
   sta ObjectRecoil,x
-  ;;tya  ;; inserted where we don't need to preserve y
-  ;;pha
-   ;; Read the difficulty
-   ldy Difficulty
-   ;; Compute the expected player level
-   lda DiffPlayerLevel,y
-   ;; Subtract 1 or 2 based on LAdj in high bits of Exp
-   lsr ObjectExp,x
-   bcc +
-    sbc #$01  ; note: carry already set
-+  lsr ObjectExp,x
-   bcc +
-    sbc #$02  ; note: carry already set
-+  sta TempLevel
-   ;; Compute sword level
-   ;; 0: wind. 1: fire, 2: water, 3: thunder: 7: crystalis
-   lda #$2
-   lsr ObjectDef,x
-   bcc +
-    asl
-+  lsr ObjectDef,x
-   bcc +
-    asl
-    asl
-+  lsr ObjectDef,x
-   bcc +
-    asl
-+  sta SwordLevel
-   ;; Compute defense
-   lda DiffBaseDefense,y
-   sta $61
+  ldy Difficulty
+RescaleDefAndHP:
+   ;; HP = 1 + max((8 * PAtk + 8 * SWRD - 8 * DEF) / 8, 1) * HITS
+   ;; DiffAtk = 8 * PAtk
+   ;; DEF = (8 * PAtk) * SDEF / 64   (alt, SDEF = 8 * DEF / PAtk)
+   lda ObjectHP,x
+    beq RescaleAtk
+   ;; Start by computing 8*DEF, but don't write it to DEF yet.
    lda ObjectDef,x
-   beq +
-    sta $62
-    jsr Multiply16Bit
-    jsr Shift3_16Bit
-+  sta ObjectDef,x
-   ;; Compute HP
-   lda ObjectHP,x
-   beq SkipHP
-   ;; First multiply the difficulty-scaled part
-   lsr
-   lsr
-   lsr
-   lsr
-   sta $61
-   lda Difficulty
-   sta $62
-   jsr Multiply16Bit  ; could use 8-bit here...
-   ;; Then add the non-scaled part
-   lda ObjectHP,x
-   and #$0f
-   clc
-   adc $61
-   sta $61
-   beq +
-    dec $61 ; 0 is still alive, so subtract 1 - this gives minimum HP for #hits
-+  lda TempLevel
-   clc
-   adc SwordLevel ; should never carry - 32 is max sword, 18 max level
-   sec
-   sbc ObjectDef,x
-   beq +
-    bpl ++
-+    lda $#01
-++ sta $62
-   jsr Multiply16Bit
-   lda $61
-   bcc +
-    lda #$ff
-+  sta ObjectHP,x
-SkipHP:
-   ;; compute ATK from max hp
-   lda ObjectAtk,x
-   beq SkipAttack
-   sta $61
-   ;; compute the player's expected max HP
-   lda TempLevel
-   clc
-   adc #$02
-   asl
-   asl
-   asl
-   asl
-   bcc +
-    lda #$ff
-+  sta $62
-   jsr Multiply16Bit
-   lda $62 ; pull out the high bit only
-   clc
-   adc DiffPlayerDefense,y
-   adc TempLevel
-   sec
-   sbc DiffPlayerLevel,y ; we've forgotten LAdj, so recompute on the fly
-   sta ObjectAtk,x
-SkipAttack:
-   ;; compute EXP
-   lda ObjectExp,x
-   beq SkipExperience
-   sta $61
-   lda DiffBaseExperience,y
-   bpl +
-    and #$7f ; big exp
-+  sta $62
-   jsr Multiply16Bit
-   jsr Shift3_16Bit
    pha
-   lda DiffBaseExperience,y
-   bpl +
-    pla
-    eor #$80 ; big exp
-    bmi StoreExp
-     lda #$ff ; overflowed to max
-     bmi StoreExp  ; uncond
-+  pla
-   bpl +
-    ;; overflowed into the big regime
-    lsr
-    lsr
-    lsr
-    lsr
-    ora #$80
-+  bne StoreExp
-    lda #$01 ; minimum of 1
-StoreExp:
-   sta ObjectExp,x
-SkipExperience:
-   ;; compute gold
-   lda ObjectGold,x
+    and #$0f
+    sta $62 ; SDEF
+   pla
    and #$f0
-   beq SkipGold
-   lda Difficulty
+   lsr
+   sta $12 ; 8*SWRD (Note: we could store this on the stack)
+   lda DiffAtk,y
+   sta $61 ; 8 * PAtk
+   jsr Multiply16Bit  ; $61$62 <- 64*DEF
+   ;; Multiply by 4 and read off the high byte, but don't destroy
+   ;; $61$62 to do it.  Instead, multiply in A:$400,x.
+   lda $62
+   sta ObjectDef,x
+   lda $61 ; don't do this in place so as not to ruin the value
    asl
+   rol ObjectDef,x
    asl
-   asl
-   asl ; carry will be clear
-   adc ObjectGold,x
+   rol ObjectDef,x
+   ;; Now compute 8*PAtk + 8*SWRD - 8*DEF
+   ;; We start with 64*DEF in $61$62, so divide by 8.
+   lsr $62
+   ror $61
+   lsr $62
+   ror $61
+   lsr $62
+   ror $61            ; $61$62 <- 8*DEF
+   ;; $61$62 is now 8*DEF, which should max out at less than 32,
+   ;; so that $62 should always be zero.  If this is not true then
+   ;; go with the failover value of 1 (from the max).
+   lda $62
+   php                ; Default $62 to 1, for the "+" jumps below.
+    lda #$1
+    sta $62
+   plp
+   bne ++  ; 8*DEF > 255, so failover to 1.
+   ;; Subtract from 8*PAtk.  If the result is nonpositive then treat as 1.
+   lda DiffAtk,y
+   sec
+   sbc $61            ; A <- 8*PAtk - 8*DEF
+   bcc ++
+   beq ++
+   ;; Add 8*SWRD, if this overflows, just keep 255.
+   clc
+   adc $12            ; A <- 8*PAtk - 8*DEF + 8*SWRD
    bcc +
-    ora #$f0
-+  sta ObjectGold,x
-SkipGold:
-  ;;pla
-  ;;tay
-  ;;rts
-  jmp $3c2af
+    lda #$ff
++  sta $62
+   ;; Multiply by HITS, divide afterwards.
 
-Shift3_16Bit:
-  ;; Shifts the value in $61$62 by 3 bits, returning result in A.
-  ;; If overflows, returns #$ff.
+;;; TOO - the rounding seems to be running afoul of something.
+;;; we're getting a fractional expected damage (1.4) that's rounding
+;;; down to 1, rather than up to 2, or something?
+
+
+++ lda ObjectHP,x
+   sta $61
+   jsr Multiply16Bit
+   lda $62
+   lsr
+   ror $61
+   lsr
+   ror $61
+   lsr
+   ror $61
+   lsr                ; this is the extra (256) bit to roll onto def byte
+   beq +
+    ;; overflow: use $1ff
+    lda #$ff
+    sta $61
+    sec
++  rol ObjectDef,x
+   lda $61
+   sta ObjectHP,x
+RescaleAtk:
+  ;; DiffDef = 4 * PDef
+  ;; DiffHP = PHP
+  ;; ATK = (4 * PDef + PHP * SAtk / 32) / 4
+  lda ObjectAtk,x
+   beq RescaleGold
+  sta $61
+  lda DiffHP,y
+  sta $62
+  jsr Multiply16Bit
   lda $61
   lsr $62
   ror
   lsr $62
   ror
   lsr $62
-  beq +     ; did we overflow?
-   lda #$ff
-   sec
-+ ror
-  rts
+  ror
+  lsr $62
+  ror
+  lsr $62
+  ror
+  clc
+  adc DiffDef
+  lsr $62
+  ror
+  lsr $62
+  ror
+  sta ObjectAtk,x
+RescaleGold:
+  ;; GOLD = min(15, (8 * DGLD + 3 * DIFF) / 16)
+  lda ObjectGold,x
+  and #$f0
+   beq RescaleExp
+  lsr
+  sta $61
+  lda Difficulty
+  asl
+  adc Difficulty
+  adc $61
+  bcc +
+   lda #$f0
++ and #$f0
+  sta $61
+  lda ObjectGold,x
+  and #$0f
+  ora $61
+  sta ObjectGold,x
+RescaleExp:
+  ;; EXP = min(2032, DiffExp * SEXP)
+  ;; NOTE: SEXP is compressed for values > $7f.
+  lda ObjectExp,x
+   beq RescaleDone
+  sta $61
+  lda DiffExp,y
+  php ; keep track of whether we were compressed or not.
+   and #$7f
+   sta $62
+   jsr Multiply16Bit  
+  plp
+  bmi ++
+    ;; No scaling previously.  $61$62 is 128*EXP.
+    ;; If EXP >= 128 then 128*EXP >= #$4000
+    lda $62
+    cmp #$40
+    bcc +
+     ;; $62 >= #$40 - need scaling now.
+     ;; EXP/16 = ($80*EXP)/$800
+     lsr
+     lsr
+     lsr
+     ora #$80
+     bne +++ ; uncond
+    ;; No rescaling needed, rotate left one.
++   asl $61
+    rol
+    ;; Now A is EXP, A<128 guaranteed.  Make sure it's not zero.
+    bne +++
+    lda #$01
+    bne +++ ; uncond
+   ;; Was previously scaled - just re-add and carry.
+++ asl $61
+   rol
+   bcs +
+    adc #$80
+    bcc +++
++    lda #$ff
++++ sta ObjectExp,x
+RescaleDone:
+   jmp $3c2af
 
 Multiply16Bit:
   ;; Multiplies inputs in $61 and $62, then shifts
@@ -532,7 +636,7 @@ Multiply16Bit:
   pla
   tax
   rts
-`));
+`, 'scaleDifficultyLib'));
 
 
 
@@ -548,19 +652,19 @@ const adjustObjectDifficultyStats = (data, rom, random) => {
     }
   }
 
-  for (const [id, {ladj, sword, hits, def, atk, exp, gold}] of SCALED_MONSTERS) {
+  for (const [id, {sdef, swrd, hits, satk, dgld, sexp}] of SCALED_MONSTERS) {
     // indicate that this object needs scaling
     const o = rom.objects[id].objectData;
     const boss =
         [0x57, 0x5e, 0x68, 0x7d, 0x88, 0x97, 0x9b, 0x9e].includes(id) ? 1 : 0;
     o[2] |= 0x80; // recoil
     o[6] = hits; // HP
-    o[7] = atk;  // ATK
+    o[7] = satk;  // ATK
     // Sword: 0..3 (wind - thunder) preserved, 4 (crystalis) => 7
-    o[8] = def << 3 | (sword < 4 ? sword : sword == 4 ? 7 : 0); // DEF
+    o[8] = sdef | swrd << 4; // DEF
     o[9] = o[9] & 0xe0 | boss;
-    o[16] = o[16] & 0x0f | gold << 4; // GLD
-    o[17] = exp << 2 | ladj; // EXP
+    o[16] = o[16] & 0x0f | dgld << 4; // GLD
+    o[17] = sexp; // EXP
   }
 
   rom.writeObjectData();
@@ -576,139 +680,139 @@ const adjustObjectDifficultyStats = (data, rom, random) => {
 
 
 const SCALED_MONSTERS = new Map([
-  // ID  TYPE  NAME                        ΔL SW HIT DEF ATK EXP GLD
-  [0x3F, 'p', 'Sorceror shot',             0, 1, 0,  0,  35, 0,  0],
-  [0x4B, 'm', 'wraith??',                  1, 1, 18, 4,  44, 10, 5],
-  [0x4F, 'm', 'wraith',                    1, 1, 19, 3,  40, 10, 4],
-  [0x50, 'm', 'Blue Slime',                2, 1, 17, 0,  32, 2,  1],
-  [0x51, 'm', 'Weretiger',                 2, 1, 18, 1,  43, 2,  2],
-  [0x52, 'm', 'Green Jelly',               1, 1, 19, 4,  32, 4,  2],
-  [0x53, 'm', 'Red Slime',                 1, 1, 19, 6,  32, 6,  2],
-  [0x54, 'm', 'Rock Golem',                1, 1, 42, 6,  48, 11, 3],
-  [0x55, 'm', 'Blue Bat',                  1, 1, 1,  0,  8,  2,  0],
-  [0x56, 'm', 'Green Wyvern',              1, 1, 20, 4,  48, 8,  3],
-  [0x57, 'b', 'Vampire',                   0, 1, 30, 4,  36, 32, 0],
-  [0x58, 'm', 'Orc',                       2, 1, 19, 3,  46, 6,  2],
-  [0x59, 'm', 'Red Flying Swamp Insect',   1, 2, 17, 4,  43, 8,  2],
-  [0x5A, 'm', 'Blue Mushroom',             2, 2, 16, 3,  55, 8,  2],
-  [0x5B, 'm', 'Swamp Tomato',              1, 1, 35, 4,  70, 8,  2],
-  [0x5C, 'm', 'Flying Meadow Insect',      0, 2, 17, 5,  47, 13, 1],
-  [0x5D, 'm', 'Swamp Plant',               1, 1, 1,  0,  0,  6,  0],
-  [0x5E, 'b', 'Insect',                    1, 2, 39, 0,  16, 40, 0],
-  [0x5F, 'm', 'Large Blue Slime',          1, 1, 39, 7,  40, 6,  2],
-  [0x60, 'm', 'Ice Zombie',                2, 2, 35, 6,  28, 4,  2],
-  [0x61, 'm', 'Green Living Rock',         2, 1, 16, 0,  19, 3,  2],
-  [0x62, 'm', 'Green Spider',              2, 2, 18, 5,  44, 3,  2],
-  [0x63, 'm', 'Red/Purple Wyvern',         2, 1, 19, 3,  60, 4,  2],
-  [0x64, 'm', 'Draygonia Soldier',         1, 1, 25, 6,  72, 8,  2],
-  [0x65, 'm', 'Ice Entity',                1, 2, 17, 4,  48, 6,  2],
-  // ID  TYPE  NAME                        ΔL SW HIT DEF ATK EXP GLD
-  [0x66, 'm', 'Red Living Rock',           1, 1, 16, 0,  26, 6,  2],
-  [0x67, 'm', 'Ice Golem',                 0, 2, 45, 7,  48, 13, 2],
-  [0x68, 'b', 'Kelbesque',                 0, 1, 63, 6,  59, 36, 0],
-  [0x69, 'm', 'Giant Red Slime',           2, 1, 207,7,  96, 1,  1],
-  [0x6A, 'm', 'Troll',                     2, 1, 19, 3,  46, 6,  2],
-  [0x6B, 'm', 'Red Jelly',                 2, 1, 19, 3,  31, 5,  2],
-  [0x6C, 'm', 'Medusa',                    2, 4, 18, 5,  75, 5,  4],
-  [0x6D, 'm', 'Red Crab',                  2, 1, 17, 3,  45, 4,  2],
-  [0x6E, 'm', 'Medusa Head',               2, 2, 16, 0,  61, 4,  2],
-  [0x6F, 'm', 'Evil Bird',                 1, 2, 3,  0,  63, 6,  3],
-  [0x71, 'm', 'Red/Purple Mushroom',       1, 2, 32, 4,  40, 8,  3],
-  [0x72, 'm', 'Violet Earth Entity',       1, 1, 17, 3,  37, 10, 3],
-  [0x73, 'm', 'Mimic',                     1, 2, 17, 0,  55, 12, 9],
-  [0x74, 'm', 'Red Spider',                1, 2, 20, 5,  47, 10, 3],
-  [0x75, 'm', 'Fishman',                   2, 1, 33, 4,  38, 6,  3],
-  [0x76, 'm', 'Jellyfish',                 2, 1, 16, 0,  28, 7,  2],
-  [0x77, 'm', 'Kraken',                    2, 1, 43, 5,  51, 8,  4],
-  [0x78, 'm', 'Dark Green Wyvern',         0, 1, 21, 5,  34, 7,  3],
-  [0x79, 'm', 'Sand Monster',              1, 1, 175,7,  10, 5,  2],
-  [0x7B, 'm', 'Wraith Shadow 1',           1, 0, 0,  0,  19, 0,  0],
-  [0x7C, 'm', 'Killer Moth',               1, 1, 4,  0,  70, 8,  0],
-  [0x7D, 'b', 'Sabera',                    0, 2, 46, 5,  48, 32, 0],
-  [0x80, 'm', 'Draygonia Archer',          1, 1, 18, 2,  41, 7,  3],
-  [0x81, 'm', 'Evil Bomber Bird',          1, 2, 3,  0,  39, 6,  2],
-  [0x82, 'm', 'Lavaman/blob',              1, 1, 21, 5,  48, 7,  3],
-  // ID  TYPE  NAME                        ΔL SW HIT DEF ATK EXP GLD
-  [0x84, 'm', 'Lizardman (w/ flail(',      1, 4, 16, 3,  61, 8,  3],
-  [0x85, 'm', 'Giant Eye',                 1, 2, 33, 5,  66, 7,  2],
-  [0x86, 'm', 'Salamander',                1, 1, 22, 3,  58, 12, 4],
-  [0x87, 'm', 'Sorceror',                  1, 1, 37, 3,  63, 14, 3],
-  [0x88, 'b', 'Mado',                      1, 4, 56, 7,  61, 24, 0],
-  [0x89, 'm', 'Draygonia Knight',          2, 1, 22, 4,  48, 6,  2],
-  [0x8A, 'm', 'Devil',                     2, 1, 4,  0,  36, 7,  2],
-  [0x8B, 'b', 'Kelbesque 2',               1, 1, 25, 4,  55, 28, 0],
-  [0x8C, 'm', 'Wraith Shadow 2',           1, 0, 0,  0,  34, 0,  0],
-  [0x90, 'b', 'Sabera 2',                  1, 2, 79, 7,  55, 28, 0],
-  [0x91, 'm', 'Tarantula',                 1, 2, 19, 5,  42, 12, 3],
-  [0x92, 'm', 'Skeleton',                  1, 8, 5,  0,  61, 13, 3],
-  [0x93, 'b', 'Mado 2',                    0, 4, 44, 8,  51, 28, 0],
-  [0x94, 'm', 'Purple Giant Eye',          1, 1, 40, 5,  47, 7,  4],
-  [0x95, 'm', 'Black Knight (w/ flail)',   1, 4, 22, 5,  53, 9,  4],
-  [0x96, 'm', 'Scorpion',                  1, 8, 16, 5,  59, 10, 2],
-  [0x97, 'b', 'Karmine',                   0, 8, 35, 7,  53, 28, 0],
-  [0x98, 'm', 'Sandman/blob',              1, 8, 5,  5,  73, 9,  4],
-  [0x99, 'm', 'Mummy',                     1, 4, 38, 7,  73, 12, 4],
-  [0x9A, 'm', 'Tomb Guardian',             1, 1, 108,7,  74, 12, 3],
-  [0x9B, 'b', 'Draygon',                   0, 8, 175,14, 82, 16, 0],
-  [0x9E, 'b', 'Draygon 2',                 0, 8, 175,15, 81, 0,  0],
-  [0xA0, 'm', 'Ground Sentry (1)',         0, 8, 20, 7,  53, 9,  2],
-  [0xA1, 'm', 'Tower Defense Mech (2)',    0, 8, 24, 8,  73, 13, 4],
-  [0xA2, 'm', 'Tower Sentinel',            0, 8, 3,  0,  0,  8,  0],
-  // ID  TYPE  NAME                        ΔL SW HIT DEF ATK EXP GLD
-  [0xA3, 'm', 'Air Sentry',                0, 8, 5,  4,  51, 11, 3],
-  [0xA4, 'b', 'Dyna',                      0, 16,8,  7,  0,  0,  0],
-  [0xA5, 'b', 'Vampire 2',                 1, 1, 24, 3,  54, 20, 0],
-  [0xB4, 'b', 'dyna pod',                  0, 0, 0,  113,51, 0,  0],
-  [0xB8, 'p', 'dyna counter',              0, 0, 0,  0,  52, 0,  0],
-  [0xB9, 'p', 'dyna laser',                0, 0, 0,  0,  52, 0,  0],
-  [0xBA, 'p', 'dyna bubble',               0, 0, 0,  0,  72, 0,  0],
-  [0xBC, 'm', 'vamp2 bat',                 0, 1, 0,  0,  29, 0,  0],
-  [0xBF, 'p', 'draygon2 fireball',         0, 0, 0,  0,  53, 0,  0],
-  [0xC1, 'm', 'vamp1 bat',                 0, 1, 0,  0,  32, 0,  0],
-  [0xC3, 'p', 'giant insect spit',         0, 0, 0,  0,  71, 0,  0],
-  [0xC4, 'm', 'summoned insect',           1, 2, 18, 5,  102,0,  0],
-  [0xC5, 'p', 'kelby1 rock',               0, 0, 0,  0,  45, 0,  0],
-  [0xC6, 'p', 'sabera1 balls',             0, 0, 0,  0,  36, 0,  0],
-  [0xC7, 'p', 'kelby2 fireballs',          0, 0, 0,  0,  21, 0,  0],
-  [0xC8, 'p', 'sabera2 fire',              1, 0, 0,  0,  12, 0,  0],
-  [0xC9, 'p', 'sabera2 balls',             0, 0, 0,  0,  31, 0,  0],
-  [0xCA, 'p', 'karmine balls',             0, 0, 0,  0,  51, 0,  0],
-  [0xCB, 'p', 'sun/moon statue fireballs', 0, 0, 0,  0,  53, 0,  0],
-  [0xCC, 'p', 'draygon1 lightning',        0, 0, 0,  0,  82, 32, 0],
-  [0xCD, 'p', 'draygon2 laser',            0, 0, 0,  0,  73, 0,  0],
-  [0xCE, 'p', 'draygon2 breath',           0, 0, 0,  0,  73, 0,  0],
-  [0xE0, 'p', 'evil bomber bird bomb',     0, 0, 0,  0,  3,  0,  0],
-  [0xE2, 'p', 'summoned insect bomb',      0, 0, 0,  0,  94, 0,  0],
-  [0xE3, 'p', 'paralysis beam',            0, 0, 0,  0,  45, 0,  0],
-  // ID  TYPE  NAME                        ΔL SW HIT DEF ATK EXP GLD
-  [0xE4, 'p', 'stone gaze',                0, 0, 0,  0,  50, 0,  0],
-  [0xE5, 'p', 'rock golem rock',           0, 0, 0,  0,  36, 0,  0],
-  [0xE6, 'p', 'curse beam',                0, 0, 0,  0,  19, 0,  0],
-  [0xE7, 'p', 'mp drain web',              0, 0, 0,  0,  21, 0,  0],
-  [0xE8, 'p', 'fishman trident',           0, 0, 0,  0,  22, 0,  0],
-  [0xE9, 'p', 'orc axe',                   0, 0, 0,  0,  35, 0,  0],
-  [0xEA, 'p', 'Swamp Pollen',              0, 0, 0,  0,  62, 0,  0],
-  [0xEB, 'p', 'paralysis powder',          0, 0, 0,  0,  47, 0,  0],
-  [0xEC, 'p', 'draygonia solider sword',   0, 0, 0,  0,  48, 0,  0],
-  [0xED, 'p', 'ice golem rock',            0, 0, 0,  0,  34, 0,  0],
-  [0xEE, 'p', 'troll axe',                 0, 0, 0,  0,  35, 0,  0],
-  [0xEF, 'p', 'kraken ink',                0, 0, 0,  0,  36, 0,  0],
-  [0xF0, 'p', 'draygonia archer arrow',    0, 0, 0,  0,  21, 0,  0],
-  [0xF1, 'p', '??? unused',                0, 0, 0,  0,  21, 0,  0],
-  [0xF2, 'p', 'draygonia knight sword',    0, 0, 0,  0,  22, 0,  0],
-  [0xF3, 'p', 'moth residue',              0, 0, 0,  0,  31, 0,  0],
-  [0xF4, 'p', 'ground sentry laser',       0, 0, 0,  0,  25, 0,  0],
-  [0xF5, 'p', 'tower defense mech laser',  0, 0, 0,  0,  46, 0,  0],
-  [0xF6, 'p', 'tower sentinel laser',      0, 0, 0,  0,  15, 0,  0],
-  [0xF7, 'p', 'skeleton shot',             0, 0, 0,  0,  21, 0,  0],
-  [0xF8, 'p', 'lavaman shot',              0, 0, 0,  0,  21, 0,  0],
-  [0xF9, 'p', 'black knight flail',        0, 0, 0,  0,  35, 0,  0],
-  [0xFA, 'p', 'lizardman flail',           0, 0, 0,  0,  38, 0,  0],
-  [0xFC, 'p', 'mado shuriken',             0, 0, 0,  0,  67, 0,  0],
-  [0xFD, 'p', 'guardian statue missile',   0, 0, 0,  0,  38, 0,  0],
-  [0xFE, 'p', 'demon wall fire',           0, 0, 0,  0,  38, 0,  0],
-].map(([id, type, name, ladj, sword, hits, def, atk, exp, gold]) =>
-      [id, {id, type, name, ladj, sword, hits, def, atk, exp, gold}]));
+  // ID  TYPE  NAME                       SDEF SWRD HITS SATK DGLD SEXP
+  [0x3f, 'p', 'Sorceror shot',              ,   ,   ,    17,  ,    ,],
+  [0x4b, 'm', 'wraith??',                   2,  ,   2,   22,  4,   61],
+  [0x4f, 'm', 'wraith',                     1,  ,   2,   20,  4,   61],
+  [0x50, 'm', 'Blue Slime',                 ,   ,   1,   16,  2,   32],
+  [0x51, 'm', 'Weretiger',                  ,   ,   1,   22,  4,   40],
+  [0x52, 'm', 'Green Jelly',                4,  ,   3,   16,  4,   36],
+  [0x53, 'm', 'Red Slime',                  6,  ,   4,   16,  4,   48],
+  [0x54, 'm', 'Rock Golem',                 6,  ,   11,  24,  6,   85],
+  [0x55, 'm', 'Blue Bat',                   ,   ,   ,    4,   ,    32],
+  [0x56, 'm', 'Green Wyvern',               4,  ,   4,   24,  6,   52],
+  [0x57, 'b', 'Vampire',                    3,  ,   13,  18,  ,    136],
+  [0x58, 'm', 'Orc',                        3,  ,   4,   21,  4,   57],
+  [0x59, 'm', 'Red Flying Swamp Insect',    3,  ,   1,   22,  4,   57],
+  [0x5a, 'm', 'Blue Mushroom',              2,  ,   1,   27,  4,   48],
+  [0x5b, 'm', 'Swamp Tomato',               3,  ,   2,   35,  4,   52],
+  [0x5c, 'm', 'Flying Meadow Insect',       3,  ,   3,   24,  4,   81],
+  [0x5d, 'm', 'Swamp Plant',                ,   ,   ,    ,    ,    36],
+  [0x5e, 'b', 'Insect',                     ,   1,  8,   8,   ,    136],
+  [0x5f, 'm', 'Large Blue Slime',           5,  ,   3,   20,  4,   52],
+  [0x60, 'm', 'Ice Zombie',                 5,  ,   7,   14,  4,   57],
+  [0x61, 'm', 'Green Living Rock',          ,   ,   1,   9,   4,   28],
+  [0x62, 'm', 'Green Spider',               4,  ,   4,   22,  4,   44],
+  [0x63, 'm', 'Red/Purple Wyvern',          3,  ,   4,   30,  4,   65],
+  [0x64, 'm', 'Draygonia Soldier',          6,  ,   11,  36,  4,   89],
+  [0x65, 'm', 'Ice Entity',                 3,  ,   2,   24,  4,   52],
+  [0x66, 'm', 'Red Living Rock',            ,   ,   1,   13,  4,   40],
+  // ID  TYPE  NAME                       SDEF SWRD HITS SATK DGLD SEXP
+  [0x67, 'm', 'Ice Golem',                  7,  2,  11,  24,  4,   81],
+  [0x68, 'b', 'Kelbesque',                  4,  2,  12,  30,  ,    176],
+  [0x69, 'm', 'Giant Red Slime',            7,  ,   40,  48,  4,   102],
+  [0x6a, 'm', 'Troll',                      2,  ,   3,   24,  4,   65],
+  [0x6b, 'm', 'Red Jelly',                  2,  ,   2,   14,  4,   44],
+  [0x6c, 'm', 'Medusa',                     3,  ,   4,   37,  8,   77],
+  [0x6d, 'm', 'Red Crab',                   2,  ,   1,   22,  4,   44],
+  [0x6e, 'm', 'Medusa Head',                ,   ,   1,   30,  4,   36],
+  [0x6f, 'm', 'Evil Bird',                  ,   ,   2,   31,  6,   65],
+  [0x71, 'm', 'Red/Purple Mushroom',        3,  ,   5,   19,  6,   69],
+  [0x72, 'm', 'Violet Earth Entity',        3,  ,   3,   18,  6,   61],
+  [0x73, 'm', 'Mimic',                      ,   ,   3,   27,  15,  73],
+  [0x74, 'm', 'Red Spider',                 3,  ,   4,   23,  6,   48],
+  [0x75, 'm', 'Fishman',                    4,  ,   6,   19,  5,   61],
+  [0x76, 'm', 'Jellyfish',                  ,   ,   3,   14,  3,   48],
+  [0x77, 'm', 'Kraken',                     5,  ,   11,  26,  7,   73],
+  [0x78, 'm', 'Dark Green Wyvern',          4,  ,   5,   17,  5,   57],
+  [0x79, 'm', 'Sand Monster',               4,  ,   4,   5,   4,   44],
+  [0x7b, 'm', 'Wraith Shadow 1',            ,   ,   ,    10,  7,   44],
+  [0x7c, 'm', 'Killer Moth',                ,   ,   2,   35,  ,    77],
+  [0x7d, 'b', 'Sabera',                     3,  4,  13,  24,  ,    152],
+  [0x80, 'm', 'Draygonia Archer',           1,  ,   3,   21,  6,   61],
+  [0x81, 'm', 'Evil Bomber Bird',           ,   ,   1,   19,  4,   65],
+  [0x82, 'm', 'Lavaman/blob',               3,  ,   3,   24,  6,   85],
+  [0x84, 'm', 'Lizardman (w/ flail(',       2,  ,   3,   30,  6,   81],
+  [0x85, 'm', 'Giant Eye',                  3,  ,   5,   33,  4,   81],
+  // ID  TYPE  NAME                       SDEF SWRD HITS SATK DGLD SEXP
+  [0x86, 'm', 'Salamander',                 2,  ,   4,   29,  8,   77],
+  [0x87, 'm', 'Sorceror',                   2,  ,   5,   32,  6,   65],
+  [0x88, 'b', 'Mado',                       4,  6,  10,  30,  ,    160],
+  [0x89, 'm', 'Draygonia Knight',           2,  ,   3,   24,  4,   77],
+  [0x8a, 'm', 'Devil',                      ,   ,   1,   18,  4,   52],
+  [0x8b, 'b', 'Kelbesque 2',                4,  2,  11,  27,  ,    160],
+  [0x8c, 'm', 'Wraith Shadow 2',            ,   ,   ,    17,  4,   48],
+  [0x90, 'b', 'Sabera 2',                   5,  4,  21,  27,  ,    160],
+  [0x91, 'm', 'Tarantula',                  3,  ,   3,   21,  6,   73],
+  [0x92, 'm', 'Skeleton',                   ,   ,   4,   31,  6,   69],
+  [0x93, 'b', 'Mado 2',                     4,  6,  11,  25,  ,    160],
+  [0x94, 'm', 'Purple Giant Eye',           4,  ,   10,  23,  6,   98],
+  [0x95, 'm', 'Black Knight (w/ flail)',    3,  ,   7,   26,  6,   89],
+  [0x96, 'm', 'Scorpion',                   3,  ,   5,   29,  2,   73],
+  [0x97, 'b', 'Karmine',                    4,  ,   14,  26,  ,    160],
+  [0x98, 'm', 'Sandman/blob',               3,  ,   5,   36,  6,   98],
+  [0x99, 'm', 'Mummy',                      5,  ,   19,  36,  6,   110],
+  [0x9a, 'm', 'Tomb Guardian',              7,  ,   60,  37,  6,   106],
+  [0x9b, 'b', 'Draygon',                    5,  6,  16,  41,  ,    160],
+  [0x9e, 'b', 'Draygon 2',                  7,  6,  28,  40,  ,    160],
+  [0xa0, 'm', 'Ground Sentry (1)',          4,  ,   12,  26,  ,    73],
+  [0xa1, 'm', 'Tower Defense Mech (2)',     5,  ,   16,  36,  ,    85],
+  [0xa2, 'm', 'Tower Sentinel',             ,   ,   2,   ,    ,    32],
+  [0xa3, 'm', 'Air Sentry',                 3,  ,   4,   26,  ,    65],
+  [0xa4, 'b', 'Dyna',                       6,  ,   16,  ,    ,    ,],
+  [0xa5, 'b', 'Vampire 2',                  2,  ,   6,   27,  ,    ,],
+  // ID  TYPE  NAME                       SDEF SWRD HITS SATK DGLD SEXP
+  [0xb4, 'b', 'dyna pod',                   15, ,   255, 26,  ,    ,],
+  [0xb8, 'p', 'dyna counter',               ,   ,   ,    26,  ,    ,],
+  [0xb9, 'p', 'dyna laser',                 ,   ,   ,    26,  ,    ,],
+  [0xba, 'p', 'dyna bubble',                ,   ,   ,    36,  ,    ,],
+  [0xbc, 'm', 'vamp2 bat',                  ,   ,   ,    14,  ,    40],
+  [0xbf, 'p', 'draygon2 fireball',          ,   ,   ,    26,  ,    ,],
+  [0xc1, 'm', 'vamp1 bat',                  ,   ,   ,    16,  ,    40],
+  [0xc3, 'p', 'giant insect spit',          ,   ,   ,    36,  ,    ,],
+  [0xc4, 'm', 'summoned insect',            4,  ,   2,   51,  ,    98],
+  [0xc5, 'p', 'kelby1 rock',                ,   ,   ,    22,  ,    ,],
+  [0xc6, 'p', 'sabera1 balls',              ,   ,   ,    19,  ,    ,],
+  [0xc7, 'p', 'kelby2 fireballs',           ,   ,   ,    10,  ,    ,],
+  [0xc8, 'p', 'sabera2 fire',               ,   ,   ,    6,   ,    ,],
+  [0xc9, 'p', 'sabera2 balls',              ,   ,   ,    15,  ,    ,],
+  [0xca, 'p', 'karmine balls',              ,   ,   ,    25,  ,    ,],
+  [0xcb, 'p', 'sun/moon statue fireballs',  ,   ,   ,    26,  ,    ,],
+  [0xcc, 'p', 'draygon1 lightning',         ,   ,   ,    37,  ,    ,],
+  [0xcd, 'p', 'draygon2 laser',             ,   ,   ,    36,  ,    ,],
+  [0xce, 'p', 'draygon2 breath',            ,   ,   ,    36,  ,    ,],
+  [0xe0, 'p', 'evil bomber bird bomb',      ,   ,   ,    1,   ,    ,],
+  [0xe2, 'p', 'summoned insect bomb',       ,   ,   ,    47,  ,    ,],
+  [0xe3, 'p', 'paralysis beam',             ,   ,   ,    23,  ,    ,],
+  [0xe4, 'p', 'stone gaze',                 ,   ,   ,    26,  ,    ,],
+  [0xe5, 'p', 'rock golem rock',            ,   ,   ,    18,  ,    ,],
+  [0xe6, 'p', 'curse beam',                 ,   ,   ,    9,   ,    ,],
+  [0xe7, 'p', 'mp drain web',               ,   ,   ,    10,  ,    ,],
+  // ID  TYPE  NAME                       SDEF SWRD HITS SATK DGLD SEXP
+  [0xe8, 'p', 'fishman trident',            ,   ,   ,    12,  ,    ,],
+  [0xe9, 'p', 'orc axe',                    ,   ,   ,    15,  ,    ,],
+  [0xea, 'p', 'Swamp Pollen',               ,   ,   ,    31,  ,    ,],
+  [0xeb, 'p', 'paralysis powder',           ,   ,   ,    24,  ,    ,],
+  [0xec, 'p', 'draygonia solider sword',    ,   ,   ,    24,  ,    ,],
+  [0xed, 'p', 'ice golem rock',             ,   ,   ,    17,  ,    ,],
+  [0xee, 'p', 'troll axe',                  ,   ,   ,    21,  ,    ,],
+  [0xef, 'p', 'kraken ink',                 ,   ,   ,    19,  ,    ,],
+  [0xf0, 'p', 'draygonia archer arrow',     ,   ,   ,    11,  ,    ,],
+  [0xf1, 'p', '??? unused',                 ,   ,   ,    10,  ,    ,],
+  [0xf2, 'p', 'draygonia knight sword',     ,   ,   ,    7,   ,    ,],
+  [0xf3, 'p', 'moth residue',               ,   ,   ,    17,  ,    ,],
+  [0xf4, 'p', 'ground sentry laser',        ,   ,   ,    13,  ,    ,],
+  [0xf5, 'p', 'tower defense mech laser',   ,   ,   ,    23,  ,    ,],
+  [0xf6, 'p', 'tower sentinel laser',       ,   ,   ,    8,   ,    ,],
+  [0xf7, 'p', 'skeleton shot',              ,   ,   ,    10,  ,    ,],
+  [0xf8, 'p', 'lavaman shot',               ,   ,   ,    10,  ,    ,],
+  [0xf9, 'p', 'black knight flail',         ,   ,   ,    17,  ,    ,],
+  [0xfa, 'p', 'lizardman flail',            ,   ,   ,    19,  ,    ,],
+  [0xfc, 'p', 'mado shuriken',              ,   ,   ,    33,  ,    ,],
+  [0xfd, 'p', 'guardian statue missile',    ,   ,   ,    19,  ,    ,],
+  [0xfe, 'p', 'demon wall fire',            ,   ,   ,    19,  ,    ,],
+].map(([id, type, name, sdef=0, swrd=0, hits=0, satk=0, dgld=0, sexp=0]) =>
+      [id, {id, type, name, sdef, swrd, hits, satk, dgld, sexp}]));
 
 // When dealing with constraints, it's basically ksat
 //  - we have a list of requirements that are ANDed together

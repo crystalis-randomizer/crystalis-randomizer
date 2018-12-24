@@ -455,6 +455,7 @@ GLITCHES:
   - talk glitch - skip fruit of lime for kirisia and change for shyron
   - ghetto flight glitch - skip water cave (sabera fight?)
     - irrelevant with open warp anyway, and takes a lot of skill/practice
+  - sword charge glitch - probably just let it go
 
 
 FLAGS
@@ -495,6 +496,7 @@ MAP HACKS
  - add extra connections between distant towns? - open more randomization possibilities
  - shuffle dungeons - could even add pit rooms instead of straight corridors...?
    - we'd need to be able to totally rewrite the MapData table.
+ - fog lamp cave -> exit into goa area?
 
 
 Dialog

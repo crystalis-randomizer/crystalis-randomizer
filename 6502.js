@@ -1,9 +1,10 @@
 // Useful for patching ROMs.
 class Assembler {
-  constructor() {
+  constructor(filename) {
     this.labels = {};
     this.lines = [];
     this.pc = 0;
+    this.filename = filename;
     this.lineNumber = -1;
     this.lineContents = '';
   }
@@ -68,7 +69,7 @@ class Assembler {
       this.addLine(line);
       this.pc += line.size();
     } else if (/\S/.test(line)) {
-      throw new Error(`Could not parse line ${line}`);
+      throw new Error(`Could not parse line ${line} at ${this.filename}:${this.lineNumber}`);
     }
   }
 
@@ -85,7 +86,11 @@ class Assembler {
         const pos = ` from line ${line.origLineNumber}: \`${line.origContent}\``;
         throw new Error(`${message}${pos}${stack}\n================`);
       }
+      if (line instanceof OrgLine && output[line.pc] != null) {
+        throw new Error(`Collision at $${line.pc.toString(16)}`);
+      }
       for (const b of line.bytes()) {
+        if (output[context.pc] != null) throw new Error(`Collision at $${context.pc.toString(16)}`);
         output[context.pc++] = b;
       }
     }
@@ -316,6 +321,7 @@ class Patch {
     // TODO - consider moving this to the egestion side.
     const arrays = [];
     let length = 8;
+    const seen = new Set();
     for (const chunk of chunks) {
       const arr = new Uint8Array(chunk.length + 5);
       arr[0] = chunk.start >>> 16;
@@ -373,8 +379,8 @@ class Patch {
 
 // Input: an assembly string
 // Output: a patch
-export const assemble = (str) => {
-  const asm = new Assembler();
+export const assemble = (str, filename = 'input') => {
+  const asm = new Assembler(filename);
   let i = 0;
   for (const line of str.split('\n')) {
     i++;

@@ -464,21 +464,25 @@ class Location extends Entity {
 class ObjectData extends Entity {
   constructor(rom, id) {
     super(rom, id);
-
+const pr=id==0xe6?console.log:()=>{};
     this.objectDataPointer = 0x1ac00 + (id << 1);
     this.objectDataBase = addr(rom.prg, this.objectDataPointer, 0x10000);
     this.sfx = rom.prg[this.objectDataBase];
-
     let a = this.objectDataBase + 1;
+console.log(`PRG($${id.toString(16)}) at $${this.objectDataBase.toString(16)}: ${Array.from(this.rom.prg.slice(a, a + 23), x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
     this.objectData = [];
     let m = 0;
     for (let i = 0; i < 32; i++) {
+pr(`  i=${i.toString(16)}: a=${a.toString(16)}`);
       if (!(i & 7)) {
         m = rom.prg[a++];
+pr(`  m=${m.toString(16)}`);
       }
       this.objectData.push(m & 0x80 ? rom.prg[a++] : 0);
       m <<= 1;
+pr(`  push ${this.objectData[this.objectData.length - 1].toString(16)}, m=${m.toString(16)}`);
     }
+console.log(`ObjectData($${id.toString(16)}) at $${this.objectDataBase.toString(16)}: ${Array.from(this.objectData, x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
   }
 
   // Returns a byte array for this entry
@@ -761,6 +765,7 @@ class Messages {
 
 export class Rom {
   constructor(rom) {
+if (!window._rom) {window._rom = true; window._rom=new Rom(rom);}
     this.prg = rom.subarray(0x10, 0x40010);
     this.chr = rom.subarray(0x40010);
 
@@ -950,11 +955,14 @@ export class Rom {
       const ser = object.serialize();
       const data = ser.join(' ');
       if (data in datas) {
+        console.log(`$${object.id.toString(16).padStart(2,0)}: Reusing existing data $${datas[data].toString(16)}`);
         object.objectDataBase = datas[data];
       } else {
         object.objectDataBase = addr;
         datas[data] = addr;
+        console.log(`$${object.id.toString(16).padStart(2,0)}: Data is at $${addr.toString(16)}: ${Array.from(ser, x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
         addr += ser.length;
+// seed 3517811036
       }
       object.write();
     }

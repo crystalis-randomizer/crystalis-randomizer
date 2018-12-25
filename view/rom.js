@@ -393,6 +393,41 @@ class AdHocSpawn extends Entity {
   }
 }
 
+class ItemGet extends Entity {
+  constructor(rom, id) {
+    super(rom, id);
+
+    this.itemPointer = 0x1dd66 + id;
+    this.item = rom.prg[this.itemPointer];
+    // I don't fully understand this table...
+    this.tablePointer = 0x1db00 + 2 * id;
+    this.tableBase = addr(rom.prg, this.tablePointer, 0x14000);
+    const tableContents = [];
+    let a = this.tableBase;
+    tableContents.push(rom.prg[a++]);
+    tableContents.push(rom.prg[a++]);
+    tableContents.push(rom.prg[a++]);
+    tableContents.push(rom.prg[a++]);
+    while (true) {
+      const v = rom.prg[a++];
+      tableContents.push(v);
+      tableContents.push(rom.prg[a++]);
+      if (v & 0x40) break;
+    }
+    tableContents.push(rom.prg[a++]);
+    this.table = Uint8Array.from(tableContents);
+    // NOTE - store the original table length or pointer?
+    // Some way to detect whether it's changed?
+  }
+
+  // NOTE - punt on defragging for now.
+  write(rom = this.rom) {
+    rom.prg[this.itemPointer] = this.item;
+    const data = this.table;
+    rom.prg.subarray(this.tableBase, this.tableBase + data.length).set(data);
+  }
+}
+
 class Location extends Entity {
   constructor(rom, id) {
     // will include both MapData *and* NpcData, since they share a key.
@@ -797,6 +832,7 @@ if (!window._rom) {window._rom = true; window._rom=new Rom(rom);}
     this.adHocSpawns = seq(0x60, i => new AdHocSpawn(this, i));
     this.metasprites = seq(0x100, i => new Metasprite(this, i));
     this.messages = new Messages(this);
+    this.itemGets = seq(0x71, i => new ItemGet(this, i));
   }
 
   // TODO - cross-reference monsters/metasprites/metatiles/screens with patterns/palettes
@@ -1009,6 +1045,76 @@ const pickFile = () => {
     });
   });
 }
+
+
+// class DataTableCache {
+//   constructor() {
+//     this.data = {};
+//   }
+
+//   /** Returns the address if found, or null. */
+//   find(page, data) {
+//     const str = data.join(' ');
+//     if (str in this.data) {
+//       console.log(`$${object.id.toString(16).padStart(2,0)}: Reusing existing data $${datas[data].toString(16)}`);
+//       return this.data[str];
+//     }
+//     return null;
+//   }
+
+//   /** Adds a length of data to the cache. */
+//   add(address, data) {
+//     const str = data.join(' ');
+//     this.data[str] = address;
+//   }
+// }
+
+// class RomWriter {
+//   constructor() {
+//     this.available = new Array(0x40000);
+//     this.ranges = [];
+//     this.writes = [];
+//     this.waiting = [];
+//   }
+
+//   resort() {
+//     this.ranges.sort((x, y) => (x[1] - x[0]) < (y[1] - y[0]));
+//   }
+
+//   // Marks a region as available.
+//   free(start, end) {
+//     const ranges = new Set();
+//     if (this.available[start - 1]) {
+//       const range = this.available[start - 1];
+//       ranges.add(range);
+//       start = range.end;
+//     }
+//     if (this.available[end]) {
+//       const range = this.available[end];
+//       end = 
+//       ranges.add(this.available[end]);
+//     }
+//     for (let i = start; i < end; i++) {
+      
+//     while (this.available[end] < 0) {
+//       end++;
+//     }
+//     for (let i = start; i < end; i++) {
+//       this.available[i] = ~start;
+//     }
+//     resort();
+//   }
+
+//   // Returns a promise with the actual address of the start.
+//   write(page, data) {
+
+//   }
+
+//   commit(prg) {
+
+//   }
+
+// }
 
 
 // building csv for loc-obj cross-reference table

@@ -53,99 +53,6 @@ loop1:
 //   - (diff + 1) << 4 ? 
 
 
-
-// // Extra code for difficulty scaling
-// export const scaleDifficultyLib = buildRomPatch(assemble(`
-// .bank $3c000 $c000:$4000 ; fixed bank
-
-// ;;; TODO - verify these numbers!!!
-// define CurrentDifficulty $361
-// define ObjectHP  $3c0
-// define ObjectAtk $3e0
-// define ObjectDef $400
-
-// .org $3f9ba
-
-// ;;; X = object id
-// AdjustStatsForDifficulty:
-//   ;; Only do anything if $340,x is negative
-//   lda $340,x
-//   bmi ActuallyScale
-//    rts
-// ActuallyScale:
-//   ;; Unset the scaling flag
-//   and #$7f
-//   sta $340,x
-//   ldy CurrentDifficulty
-//   ;; Scale the current difficult level's ATK by monster's ATK scale
-//   lda ObjectAtk,x
-//   beq ScaleDef
-//   sta $12
-//   lda AtkDifficultyTable,y
-//   jsr AdjustLinear
-//   sta ObjectAtk,x
-// ScaleDef:
-//   ;; Scale the current difficult level's DEF by monster's DEF scale
-//   lda ObjectDef,x
-//   beq ScaleHP
-//   sta $12
-//   lda DefDifficultyTable,y
-//   jsr AdjustLinear
-//   sta ObjectDef,x
-// ScaleHP:
-//   ;; Scale the current difficult level's HP by monster's HP scale
-//   lda ObjectHP,x
-//   beq ScaleExp
-//   sta $12
-//   lda HPDifficultyTable,y
-//   jsr AdjustLinear
-//   sta ObjectHP,x
-// ScaleExp:
-//   ;; EXP is more difficult, since it jumps at $80.  Track the sign
-//   ;; of the difficulty level's number and do some extra work if it
-//   ;; changes after the multiplication.
-//   lda ObjectExp,x
-//   beq ScaleGold
-//   sta $12
-//   lda ExpDifficultyTable,y
-//   bpl SmallExp
-//    ;; EXP is large: rescale but don't worry about checking at end.
-//    and #$7f
-//    jsr AdjustLinear
-//    ora #$80
-//    bmi StoreExp    ; Unconditional
-// SmallExp:
-//   jsr AdjustLinear
-//   bpl StoreExp
-//    ;; Multiplication caused it to jump past the disconnect
-//    ;; Shift right four times, and re-set the high bit
-//    lsr
-//    lsr
-//    lsr
-//    sec
-//    ror
-// StoreExp:
-//   sta ObjectExp,x
-// ScaleGold:
-//   ;; Gold is already logarithmic, and the byte that tracks it is
-//   ;; shared with elemental defense, and we need to ensure we keep
-//   ;; it properly clamped.
-//   lda ObjectGold,x
-//   and #$f0
-
-
-// `));
-
-
-
-// TODO - vampire fight gets messed up
-//   - instead of bats coming out, a weird green thing shows up on the player's
-//     face.  we need to make a snapshot right before going into the room so as
-//     to debug this more easily with different patches.
-//   - also, difficulty does not increment after the kill.
-//   - this seems weird - what would cause it?
-
-
 export const disableWildWarp = buildRomPatch(assemble(`
 ;;; NOTE: this actually recovers 36 bytes of prime real estate PRG.
 .bank $3c000 $c000:$4000
@@ -275,14 +182,9 @@ CoinAmounts:
 .org $1c26f
 ItemGet:
 
-.org $1c28e
-ItemGet_rts:
-
 .org $1c299
-  bmi ItemGet_rts
-
-.org $1c29d
   jmp ItemGet_RaiseDifficulty
+.org $1c2a0
 
 .org $3ff44
 ItemGet_RaiseDifficulty:
@@ -681,6 +583,19 @@ const adjustObjectDifficultyStats = (data, rom, random) => {
   pool.shuffle(random);
 
   rom.writeNpcData();
+
+  // Tag key items for difficulty buffs
+  for (const get of rom.itemGets) {
+    const item = ITEMS.get(get.item);
+    if (!item || !item.key) continue;
+    if (!get.table) throw new Error(`No table for ${item.name}`);
+    if (get.table[get.table.length - 1] == 0xff) {
+      get.table[get.table.length - 1] = 0xfe;
+    } else {
+      throw new Error('Expected FF at end of ItemGet table');
+    }
+    get.write(rom);
+  }
 };
 
 
@@ -730,7 +645,7 @@ const SCALED_MONSTERS = new Map([
   [0x76, 'm', 'Jellyfish',                  ,   ,   3,   14,  3,   48],
   [0x77, 'm', 'Kraken',                     5,  ,   11,  26,  7,   73],
   [0x78, 'm', 'Dark Green Wyvern',          4,  ,   5,   17,  5,   57],
-  [0x79, 'm', 'Sand Monster',               4,  ,   4,   5,   4,   44],
+  [0x79, 'm', 'Sand Monster',               4,  ,   8,   5,   4,   44],
   [0x7b, 'm', 'Wraith Shadow 1',            ,   ,   ,    10,  7,   44],
   [0x7c, 'm', 'Killer Moth',                ,   ,   2,   35,  ,    77],
   [0x7d, 'b', 'Sabera',                     3,  4,  13,  24,  ,    152],
@@ -1399,8 +1314,85 @@ const MONSTER_ADJUSTMENTS = {
   },
 };
 
-
-
+const ITEMS = new Map([
+  // id  name                  key
+  [0x00, 'Sword of Wind',      true],
+  [0x01, 'Sword of Fire',      true],
+  [0x02, 'Sword of Water',     true],
+  [0x03, 'Sword of Thunder',   true],
+  [0x04, 'Crystalis',          true],
+  [0x05, 'Ball of Wind',       true],
+  [0x06, 'Tornado Bracelet',   true],
+  [0x07, 'Ball of Fire',       true],
+  [0x08, 'Flame Bracelet',     true],
+  [0x09, 'Ball of Water',      true],
+  [0x0a, 'Blizzard Bracelet',  true],
+  [0x0b, 'Ball of Thunder',    true],
+  [0x0c, 'Storm Bracelet',     true],
+  [0x0d, 'Carapace Shield',    ],
+  [0x0e, 'Bronze Shield',      ],
+  [0x0f, 'Platinum Shield',    ],
+  [0x10, 'Mirrored Shield',    ],
+  [0x11, 'Ceramic Shield',     ],
+  [0x12, 'Sacred Shield',      ],
+  [0x13, 'Battle Shield',      ],
+  // id  name                  key
+  [0x14, 'Psycho Shield',      ],
+  [0x15, 'Tanned Hide',        ],
+  [0x16, 'Leather Armor',      ],
+  [0x17, 'Bronze Armor',       ],
+  [0x18, 'Platinum Armor',     ],
+  [0x19, 'Soldier Suit',       ],
+  [0x1a, 'Ceramic Suit',       ],
+  [0x1b, 'Battle Armor',       ],
+  [0x1c, 'Psycho Armor',       ],
+  [0x1d, 'Medical Herb',       ],
+  [0x1e, 'Antidote',           ],
+  [0x1f, 'Lysis Plant',        ],
+  [0x20, 'Fruit of Lime',      ],
+  [0x21, 'Fruit of Power',     ],
+  [0x22, 'Magic Ring',         ],
+  [0x23, 'Fruit of Repun',     ],
+  [0x24, 'Warp Boots',         ],
+  [0x25, 'Statue of Onyx',     true],
+  [0x26, 'Opel Statue',        true],
+  [0x27, 'Insect Flute',       true],
+  // id  name                  key
+  [0x28, 'Flute of Lime',      true],
+  [0x29, 'Gas Mask',           true],
+  [0x2a, 'Power Ring',         true],
+  [0x2b, 'Warrior Ring',       true],
+  [0x2c, 'Iron Necklace',      true],
+  [0x2d, 'Deo\'s Pendant',     true],
+  [0x2e, 'Rabbit Boots',       true],
+  [0x2f, 'Leather Boots',      true],
+  [0x30, 'Shield Ring',        true],
+  [0x31, 'Alarm Flute',        ],
+  [0x32, 'Windmill Key',       true],
+  [0x33, 'Key to Prison',      true],
+  [0x34, 'Key to Styx',        true],
+  [0x35, 'Fog Lamp',           true],
+  [0x36, 'Shell Flute',        true],
+  [0x37, 'Eye Glasses',        true],
+  [0x38, 'Broken Statue',      true],
+  [0x39, 'Glowing Lamp',       true],
+  [0x3a, 'Statue of Gold',     true],
+  [0x3b, 'Love Pendant',       true],
+  // id  name                  key
+  [0x3c, 'Kirisa Plant',       true],
+  [0x3d, 'Ivory Statue',       true],
+  [0x3e, 'Bow of Moon',        true],
+  [0x3f, 'Bow of Sun',         true],
+  [0x40, 'Bow of Truth',       true],
+  [0x41, 'Refresh',            true],
+  [0x42, 'Paralysis',          true],
+  [0x43, 'Telepathy',          true],
+  [0x44, 'Teleport',           true],
+  [0x45, 'Recover',            true],
+  [0x46, 'Barrier',            true],
+  [0x47, 'Change',             true],
+  [0x48, 'Flight',             true],
+].map(([id, name, key]) => [id, {id, name, key}]));
 
 
 const UNTOUCHED_MONSTERS = { // not yet +0x50 in these keys

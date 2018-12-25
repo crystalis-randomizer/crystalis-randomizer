@@ -238,9 +238,9 @@ SubtractEnemyHP:
    bpl -
    clc
    ldy $0716  ; equipped passive item
-   adc $0421  ; player level
-   dey
-   cpy #$0d   ; power ring - 1
+-   adc $0421  ; player level
+    dey
+    cpy #$0d   ; power ring - 1
    beq -
    sta $03e1  ; player attack
    lda $0421  ; player level

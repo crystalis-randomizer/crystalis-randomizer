@@ -27,6 +27,7 @@ export default ({
     preventSwordClobber.apply(rom);
     upgradeBallsToBracelets.apply(rom);
     scaleDifficultyLib.apply(rom);
+    leatherBootsForSpeed.apply(rom);
     if ('nodie' in hash) neverDie.apply(rom);
     console.log('patch applied');
   },
@@ -125,6 +126,41 @@ ComputeVampireAnimationStart:
 +  lda #$ff
 ++ rts
 `, 'fixVampire'));
+
+
+// TODO - all code for togglable features should go in always,
+// but we conditionally insert code to enable it.
+export const leatherBootsForSpeed = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000 ; fixed bank
+
+.org $3c0f8
+  jsr ApplySpeedBoots
+  jmp RestoreBanksAndReturn
+
+.org $3c446
+ApplySpeedBoots:
+  lda #$06   ; normal speed
+  sta $0341  ; player speed
+  lda $0716  ; equipped passive item
+  cmp #$13   ; leather boots
+  bne +
+   inc $0341 ; speed up by 1
++ rts
+.org $3c456
+
+; .org $3c482 end of empty area
+
+.org $3e756
+RestoreBanksAndReturn:
+
+.bank $28000 $8000:$2000
+.org $29105
+  .byte "Speed Boots",$00
+.org $2134a
+  .byte "Speed Boots",$ff
+
+`, 'leatherBootsForSpeed'));
+
 
 // NOTE: if we insert at $3c406 then we have $11 as scratch space, too!
 // Extra code for difficulty scaling
@@ -236,9 +272,9 @@ SubtractEnemyHP:
 -   asl
     dey
    bpl -
-   clc
    ldy $0716  ; equipped passive item
--   adc $0421  ; player level
+-   clc
+    adc $0421  ; player level
     dey
     cpy #$0d   ; power ring - 1
    beq -
@@ -246,7 +282,7 @@ SubtractEnemyHP:
    lda $0421  ; player level
    cpy #$0f   ; iron necklace - 1
 .org $3c02d   ; NOTE - MUST BE EXACT!!!!
-   
+
 
 .bank $34000 $8000:$4000 ; item use code
 

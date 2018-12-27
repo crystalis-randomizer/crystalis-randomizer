@@ -42,22 +42,40 @@ const freezeOrFly = trigger('Freeze or Fly',
                             route('freeze', () => swordOfWater, () => ballOfWater),
                             route('fly', () => flight));
 // NOTE: the following four edges can be removed for a more challenging experience
-const dialogGlitch  = trigger('Dialog Glitch'); // TODO - connect this to start to enable?
 const tornadoMagic  = trigger('Tornado Magic', () => swordOfWind, () => tornadoBracelet);
 const flameMagic    = trigger('Flame Magic', () => swordOfFire, () => flameBracelet);
 const blizzardMagic = trigger('Blizzard Magic', () => swordOfWater, () => blizzardBracelet);
 const stormMagic    = trigger('Storm Magic', () => swordOfThunder, () => stormBracelet);
+
+const dialogGlitch  = trigger('Dialog Glitch'); // TODO - connect this to start to enable?
 const changeOrGlitch = trigger('Change or Glitch', () => change, () => dialogGlitch);
+const warp = trigger('Warp'); // This can be connected to start for open warp.
+const warpLeaf = trigger('Warp: Leaf', warp);
+const warpBrynmaer = trigger('Warp: Brynmaer', warp);
+const warpOak = trigger('Warp: Oak', warp);
+const warpAmazones = trigger('Warp: Amazones', warp);
+const warpNadare = trigger('Warp: Nadare\\s', warp);
+const warpPortoa = trigger('Warp: Portoa', warp);
+const warpJoel = trigger('Warp: Joel', warp);
+const warpSwan = trigger('Warp: Swan', warp);
+const warpShyron = trigger('Warp: Shyron', warp);
+const warpGoa = trigger('Warp: Goa', warp);
+const warpSahara = trigger('Warp: Sahara', warp);
+const wildWarp = trigger('Wild Warp');
 
 ////////////////////////////////////////////////////////////////
 // Valley of Wind
 ////////////////////////////////////////////////////////////////
-const leaf          = location('Leaf', start);
+const leaf          = location('Leaf',
+                               route('via start', start),
+                               route('via warp', warpLeaf),
+                               route('via wild warp', wildWarp));
 const valleyOfWind  = location('Valley of Wind',
-                               route('forward', leaf),
+                               route('via Leaf', leaf),
                                // TODO - currently glitched
                                // route('via Vampire', () => vampCave1)
-                               route('via Zebu', () => zebuCave));
+                               route('via Zebu', () => zebuCave),
+                               route('via wild warp', wildWarp));
 // TODO - encode more of the shops, e.g. for medical herb (dolphin) and
 // magic ring/fruit of power (flight instead of dolphin).
 const alarmFlute    = trigger('Alarm Flute', leaf, () => joel);
@@ -75,7 +93,8 @@ const refresh       = magic('Refresh', windmill);
 const vampCave1     = location('Vampire Cave 1',
                                 // This includes everything in front of stone walls
                                route('forward', windmill),
-                               route('reverse', () => vampCave2));
+                               route('reverse', () => vampCave2),
+                               route('via wild warp', wildWarp));
 const vampCaveChest1 = chest('Vampire Cave Chest 1 (Warp Boots)', vampCave1);
 const vampCaveChest2 = chest('Vampire Cave Chest 2 (Medical Herb)', vampCave1);
 const vampCaveChest3 = chest('Vampire Cave Chest 3 (Ball of Wind)', vampCave1);
@@ -99,26 +118,37 @@ const rabbitBoots = item('Rabbit Boots', vampire1Chest);
 // Cordel Plains
 ////////////////////////////////////////////////////////////////
 const cordelPlains = location('Cordel Plain',
-                               route('via Vampire', vampCaveBossKilled),
-                               route('via Mt Sabre North',
-                                     // TODO - rabbit trigger skippable ?
-                                     () => mtSabreNorth1, () => leafRabbit, () => teleport),
-                               route('via Mt Sabre West', () => mtSabreWest1, () => fireLevel2),
-                               route('via Amazones', () => cordelPlainsSouth, freezeOrFly));
-const brynmaer = location('Brynmaer', cordelPlains);
+                              route('via Vampire', vampCaveBossKilled),
+                              route('via Mt Sabre North',
+                                    // TODO - rabbit trigger skippable ?
+                                    () => mtSabreNorth1, () => leafRabbit, () => teleport),
+                              route('via Mt Sabre West', () => mtSabreWest1, () => fireLevel2),
+                              route('via Amazones', () => cordelPlainsSouth, freezeOrFly),
+                              route('via wild warp', wildWarp));
+const brynmaer = location('Brynmaer',
+                          route('via Cordel Plain', cordelPlains),
+                          route('via warp', warpBrynmaer));
 const cordelGrass = chest('Cordel Plains Grass', cordelPlains);
 const onyxStatue = item('Onyx Statue', cordelGrass);
 const akahanaBrynmaer = talk('Akahana: Brynmaer', brynmaer, onyxStatue);
 const gasMask = item('Gas Mask', akahanaBrynmaer);
-const swamp = location('Swamp', cordelPlains, gasMask); // TODO - hole?
-const oak = location('Oak', swamp);
+const swamp = location('Swamp',
+                       route('via Cordel Plain', cordelPlains),
+                       route('via wild warp', wildWarp)); // TODO - hole?
+const swampAndMask = trigger('Swamp with mask', swamp, gasMask);
+const oak = location('Oak',
+                     route('via Swamp', swampAndMask),
+                     route('via warp', warpOak));
 const stomHouse = location('Stom\'s House', cordelPlains);
-const telepathy = magic('Telepathy', oak, stomHouse);
-const oakMother = talk('Oak Mother', telepathy); // TODO - break out oakChild, oakMotherAfter ?
-const insectFlute = item('Insect Flute', oakMother);
-const oakElder = talk('Oak Elder', telepathy); // TODO - also deps on oak, if no telepathy trigger?
+const tornelStomHouse = talk('Tornel (Stom\'s House)', oak, stomHouse);
+const telepathy = magic('Telepathy', tornelStomHouse);
+const oakMother1 = talk('Oak Mother 1', telepathy);
+const oakChild = talk('Oak Child', swampAndMask, oakMother1);
+const oakMother2 = talk('Oak Mother 2', oakChild);
+const insectFlute = item('Insect Flute', oakMother1);
+const oakElder = talk('Oak Elder', oakChild);
 const swordOfFire = item('Sword of Fire', oakElder);
-const giantInsect = boss('Giant Insect', notWind, insectFlute);
+const giantInsect = boss('Giant Insect', swampAndMask, notWind, insectFlute);
 const giantInsectChest = chest('Giant Insect Chest', giantInsect);
 const ballOfFire = item('Ball of Fire', giantInsectChest);
 const fireLevel2 = trigger('Fire Level 2', swordOfFire, ballOfFire);
@@ -128,7 +158,8 @@ const fireLevel2 = trigger('Fire Level 2', swordOfFire, ballOfFire);
 ////////////////////////////////////////////////////////////////
 const mtSabreWest1 = location('Mt Sabre West 1',
                               route('via Cordel', cordelPlains),
-                              route('via Zebu', zebuCave, fireLevel2));
+                              route('via Zebu', zebuCave, fireLevel2),
+                              route('via wild warp', wildWarp));
 const mtSabreWest2 = location('Mt Sabre West 2', mtSabreWest1, fireLevel2);
 const mtSabreWest3 = location('Mt Sabre West 3', mtSabreWest1, fireLevel2, hopOrFly);
 const mtSabreWestChest1 = chest('Mt Sabre West Chest 1 (Tornado Bracelet)', mtSabreWest3);
@@ -136,15 +167,17 @@ const tornadoBracelet = item('Tornado Bracelet', mtSabreWestChest1);
 const mtSabreWestChest2 = chest('Mt Sabre West Chest 2 (Warp Boots)', mtSabreWest2);
 const mtSabreWestChest3 = chest('Mt Sabre West Chest 3 (Medical Herb)', mtSabreWest2);
 const mtSabreWestChest4 = chest('Mt Sabre West Chest 3 (Magic Ring)', mtSabreWest2);
-const tornel = talk('Tornel (Mt Sabre)', mtSabreWest2, tornadoBracelet);
-const teleport = magic('Teleport', tornel);
+const tornelMtSabre = talk('Tornel (Mt Sabre)', mtSabreWest2, tornadoBracelet);
+const teleport = magic('Teleport', tornelMtSabre);
 const leafSorrow = trigger('Leaf Sorrow', mtSabreWest1);
 const leafRabbit = talk('Leaf Rabbit', leaf, leafSorrow);
 const mtSabreNorth1 = location('Mt Sabre North 1',
                                // TODO - rabbit trigger skippable
                                route('forward', cordelPlains, leafRabbit, teleport),
                                route('reverse', () => mtSabreBossKilled));
-const nadares = location('Nadare\'s', mtSabreNorth1);
+const nadares = location('Nadare\'s',
+                         route('via Mt Sabre', mtSabreNorth1),
+                         route('via warp', warpNadare));
 const mtSabreNorth2 = location('Mt Sabre North 2', mtSabreNorth1, fireLevel2);
 const mtSabreNorthChest1 = chest('Mt Sabre North Chest 1 (Antidote)', mtSabreNorth2);
 const mtSabreNorthChest2 = chest('Mt Sabre North Chest 2 (Medical Herb)', mtSabreNorth2);
@@ -157,9 +190,12 @@ const kelbesque1 = boss('Kelbesque 1', mtSabreBoss);
 const kelbesque1Chest = chest('Kelbesque 1 Chest (Flame Bracelet)', kelbesque1);
 const mtSabreBossKilled = trigger('Mt Sabre Boss Killed', kelbesque1, swordOfWind, tornadoMagic);
 const flameBracelet = item('Flame Bracelet', kelbesque1Chest);
+// TODO - if we want to randomize cave entrances we'll need to split thit out more meticulously.
+// E.g. this is both the cave itself *and* the outside part on top of the slope.
 const mtSabreSummitCave = location('Mt Sabre Summit Cave',
                                    route('forward', mtSabreBossKilled, prisonKey, fireLevel2),
-                                   route('reverse', () => waterfallValley1, () => flight));
+                                   route('reverse', () => waterfallValley1, () => flight),
+                                   route('via wild warp', wildWarp));
 
 ////////////////////////////////////////////////////////////////
 // Waterfall Valley
@@ -175,7 +211,8 @@ const waterfallValley2 = location('Waterfall Valley 2',
 const portoa = location('Portoa',
                         route('via Waterfall Valley', waterfallValley1),
                         // TODO - confirm can dock at fog lamp house
-                        route('via Angry Sea', () => angrySeaSouth, swimOrFly));
+                        route('via Angry Sea', () => angrySeaSouth, swimOrFly),
+                        route('via warp', warpPortoa));
 const portoaQueen1 = talk('Portoa Queen 1', portoa, paralysis);
 const fluteOfLime1 = item('Flute of Lime 1', portoaQueen1);
 const waterfallCave1 = location('Waterfall Cave 1', waterfallValley1);
@@ -189,7 +226,7 @@ const waterfallCaveChest2 = chest('Waterfall Cave Chest 2 (Sword of Water)', wat
 const waterfallCaveChest3 = chest('Waterfall Cave Chest 3 (Flute of Lime)', waterfallCave3);
 const swordOfWater = item('Sword of Water', waterfallCaveChest2);
 const fluteOfLime2 = item('Flute of Lime 2', waterfallCaveChest3);
-const akahanaCave = talk('Akahana: Cave', waterfallCave3, fluteOfLime2);
+const akahanaCave = talk('Akahana (cave)', waterfallCave3, fluteOfLime2);
 const shieldRing = item('Shield Ring', akahanaCave);
 // Note: lumping lime tree valley into waterfall valley for now
 const rage = talk('Rage', waterfallValley1, swordOfWater);
@@ -219,7 +256,9 @@ const boat = trigger('Boat', portoa, fogLamp, shellFlute);
 ////////////////////////////////////////////////////////////////
 // Angry Sea
 ////////////////////////////////////////////////////////////////
-const cabin = location('Cabin', portoa, boat);
+const cabin = location('Cabin',
+                       route('via Boat', boat),
+                       route('via wild warp', wildWarp));
 const kensuCabin = talk('Kensu (cabin)', cabin);
 const dolphin = trigger('Dolphin', kensuCabin, shellFlute);
 const angrySeaSouth = location('Angry Sea South',
@@ -228,8 +267,11 @@ const angrySeaSouth = location('Angry Sea South',
                                route('via Joel', () => joel, swimOrFly),
                                route('via Angry Sea North', () => angrySeaNorth, swimOrFly));
 const lovePendant = item('Love Pendant', undergroundChannel, swimOrFly);
-const joel = location('Joel', angrySeaSouth, swimOrFly);
+const joel = location('Joel',
+                      route('via Angry Sea', angrySeaSouth, swimOrFly),
+                      route('via warp', warpJoel));
 const joelElder = talk('Joel Elder', joel);
+// NOTE: ESI1 can be wild-warped to, but it's pointless w/o the dolphin.
 const evilSpiritIsland1 = location('Evil Spirit Island 1', angrySeaSouth, swimOrFly, joelElder);
 // NOTE: if there's a back route into zombie town then we need to break this out quite a bit more
 // into about 5-6 more chunks that have different chests and that can be accessed in reverse.
@@ -273,7 +315,10 @@ const barrier = magic('Barrier', angrySeaNorth);  // TODO - make this contingent
 
 // Note: there's currently no reverse entrance via Goa Valley - we could possibly
 // station an extra guard or two on the other side of the gate?
-const swan = location('Swan', angrySeaNorth, swimOrFly);
+const swan = location('Swan',
+                      route('via Angry Sea', angrySeaNorth, swimOrFly),
+                      route('via warp', warpSwan),
+                      route('via wild warp', wildWarp));
 const kensuSwan = talk('Kensu (Swan)', swan, paralysis, lovePendant);
 const change = magic('Change', kensuSwan);
 
@@ -281,17 +326,22 @@ const goaValley = location('Goa Valley',
                            route('via Swan', swan, change),
                            route('via desert1', () => desert1),
                            route('via Goa', () => goa),
-                           route('via Hydra', () => mtHydra1));
+                           route('via Hydra', () => mtHydra1),
+                           route('via wild warp', wildWarp));
 const goa = location('Goa',
                      route('via Goa Valley', goaValley),
-                     route('via Goa Fortress', () => fortress1a));
+                     route('via Goa Fortress', () => fortress1a),
+                     route('via warp', warpGoa));
 const mtHydra1 = location('Mt Hydra 1', // outer area
                           route('forward', goaValley),
-                          route('reverse', () => mtHydra2, freezeOrFly));
+                          route('reverse', () => mtHydra2, freezeOrFly),
+                          route('via wild warp', wildWarp));
 const mtHydra2 = location('Mt Hydra 2', // crossed ice bridge toward shyron
                           route('forward', mtHydra1, freezeOrFly),
                           route('reverse', () => shyron));
-const shyron = location('Shyron', mtHydra2, changeOrGlitch);
+const shyron = location('Shyron',
+                        route('via Mt Hydra', mtHydra2, changeOrGlitch),
+                        route('via warp', warpShyron));
 const zebuShyron = talk('Zebu (Shyron)', shyron);
 const keyToStyx = item('Key to Styx', zebuShyron);
 const mtHydra3 = location('Mt Hydra 3', mtHydra1, freezeOrFly);
@@ -315,7 +365,8 @@ const swordOfThunder = item('Sword of Thunder', styxChest3);
 const psychoShield = item('Psycho Shield', styxChest4);
 const fortress1a = location('Fortress 1a',
                             route('forward', goa),
-                            route('reverse', () => fortress1b, () => thunderLevel2));
+                            route('reverse', () => fortress1b, () => thunderLevel2),
+                            route('via wild warp', wildWarp));
 const madoTrigger = trigger('Mado Trigger', fortress1a, swordOfThunder);
 const shyronBoss = trigger('Shyron Boss', shyron, madoTrigger);
 const mado1 = boss('Mado 1', shyronBoss, blizzardMagic);
@@ -334,7 +385,8 @@ const cordelPlainsSouth = location('Cordel Plains South',
                                    route('via Amazones', () => amazones));
 const amazones = location('amazones',
                           // TODO - route('via ???
-                          route('via Cordel Plain', cordelPlainsSouth))
+                          route('via Cordel Plain', cordelPlainsSouth),
+                          route('via warp', warpAmazones));
 const amazonesQueenHouse = location('Amazones Queen House', amazones, change);
 const amazonesQueen = talk('Amazones Queen', amazonesQueenHouse, change, kirisaPlant);
 const bowOfMoon = item('Bow of Moon', amazonesQueen);
@@ -416,7 +468,8 @@ const flight = magic('Flight', kensuFortress);
 const desert1 = location('Desert 1',
                          route('via Goa Valley', goaValley),
                          route('via Oasis Cave', () => oasisCave1),
-                         route('via Desert 2', () => desertCave1, flight));
+                         route('via Desert 2', () => desertCave1, flight),
+                         route('via wild warp', wildWarp));
 const oasisCave1 = location('Oasis Cave 1',
                             route('via Desert', desert1),
                             route('via Fortress', () => oasisCave2, flight));
@@ -444,13 +497,15 @@ const deo = talk('Deo', saharaMeadow, change);
 const deosPendant = item('Deo\'s Pendant', deo);
 const sahara = location('Sahara',
                         route('via Desert 1', saharaMeadow),
-                        route('via Desert 2', () => desertCave2));
+                        route('via Desert 2', () => desertCave2),
+                        route('via warp', warpSahara));
 const desertCave2 = location('Desert Cave 2',
                              route('via Sahara', sahara),
                              route('via Desert 2', () => desert2));
 const desert2 = location('Desert 2',
                          // TODO - any alternative routes?
-                         route('via Sahara', desertCave2));
+                         route('via Sahara', desertCave2),
+                         route('via wild warp', wildWarp));
 
 ////////////////////////////////////////////////////////////////
 // Endgame

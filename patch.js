@@ -27,6 +27,7 @@ export default ({
     preventSwordClobber.apply(rom);
     upgradeBallsToBracelets.apply(rom);
     scaleDifficultyLib.apply(rom);
+    displayDifficulty.apply(rom);
     leatherBootsForSpeed.apply(rom);
     if ('nodie' in hash) neverDie.apply(rom);
     console.log('patch applied');
@@ -47,6 +48,41 @@ loop1:
   ldx #$07
   nop
 `, 'fixShaking'));
+
+
+// Debug mode to display difficulty in status bar.
+// NOTE: this needs to be patched AFTER difficultyScalingLib
+export const displayDifficulty = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000 ; fixed bank
+
+.bank $1e000 $a000:$2000
+.org $1fd27
+  lda #$0e                      ; refer to moved LV(menu) display
+
+.bank $26000 $a000:$2000
+.org $27aca
+  ldx #$06                      ; also show diff
+
+.bank $34000 $8000:$2000
+.org $34ee9
+  .byte $c0,$04,$3c,$2b,$03,$00 ; display difficulty right of lvl
+.org $34f19
+  .byte $21,$04,$29,$29,$03,$00 ; copied from $34ee9
+
+.bank $1c000 $8000:$2000
+.org $1c299
+  .byte $20    ; change jmp to jsr
+.org $1c29c
+  jmp ItemGet_RedisplayDifficulty
+
+.org $3ffa9
+DisplayNumber:
+
+.org $3ffe3
+ItemGet_RedisplayDifficulty:
+  lda #$06
+  jmp DisplayNumber
+`, 'displayDifficulty'));
 
 
 // TODO - buff medical herb - change $1c4ea from $20 to e.g. $60,

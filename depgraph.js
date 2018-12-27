@@ -66,7 +66,7 @@ const zebuStudent   = talk('Zebu\'s Student', leaf);
 const zebuCave      = location('Zebu\'s Cave',
                                route('forward', valleyOfWind),
                                route('reverse', () => mtSabreWest1, () => fireLevel2));
-const zebu          = talk('Zebu', zebuCave, zebuStudent);
+const zebu          = talk('Zebu', zebuCave, zebuStudent, leafElder);
 const swordOfWind   = item('Sword of Wind', leafElder);
 const windmillGuard = talk('Windmill Guard', zebu);
 const windmillKey   = item('Windmill Key', windmillGuard, alarmFlute);

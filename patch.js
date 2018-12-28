@@ -29,6 +29,7 @@ export default ({
     scaleDifficultyLib.apply(rom);
     displayDifficulty.apply(rom);
     leatherBootsForSpeed.apply(rom);
+    autoEquipBracelet.apply(rom);
     if ('nodie' in hash) neverDie.apply(rom);
     console.log('patch applied');
   },
@@ -164,6 +165,9 @@ ComputeVampireAnimationStart:
 `, 'fixVampire'));
 
 
+// TODO - write me
+export const autoEquipBracelet = buildRomPatch(assemble(''));
+
 // TODO - all code for togglable features should go in always,
 // but we conditionally insert code to enable it.
 export const leatherBootsForSpeed = buildRomPatch(assemble(`
@@ -288,18 +292,23 @@ FinishRestoreData:
 FinishRestoreMode:
   sta $41 ; copied from $3d982
   bne -   ; uncond - A is always 1 when we run this
-
-SubtractEnemyHP:
-  ;; NOTE: we could probably afford to move a few of these back if needed
-  lda ObjectHP,y
-  sec
-  sbc $63
-  sta ObjectHP,y
-  lda $61
-  sbc #$00
-  rts
 .org $3ff80
 
+.org $3fe2e
+SubtractEnemyHP:
+  ;; NOTE: we could probably afford to move a few of these back if needed
+  lda ObjectElementalDefense,y
+  and #$0f
+  cmp #$0f
+  sec
+   beq +   ; don't damage anything that's invincible.
+  lda ObjectHP,y
+  sbc $63
+  sta ObjectHP,y
++ lda $61
+  sbc #$00
+  rts
+.org $3fe78
 
 .org $3c010
 ;; Adjusted inventory update - use level instead of sword
@@ -323,7 +332,7 @@ SubtractEnemyHP:
 .bank $34000 $8000:$4000 ; item use code
 
 
-;; Adjusted stsab damage for populating sword object ($02)
+;; Adjusted stab damage for populating sword object ($02)
 .org $35c5f
   lda #$02
   sta $03e2
@@ -342,16 +351,18 @@ SubtractEnemyHP:
     lda ObjectElementalDefense,y
     and ObjectElementalDefense,x
     and #$0f
+    php
+     lda ObjectDef,y
+     lsr     ; Just pull one extra bit for HP, could do one more if needed
+     rol $61
+     sta $62 ; Store actual shifted DEF in $62
+     lda PlayerAtk
+     adc ObjectAtk,x
+     sec
+     sbc $62 ; A <- atk - def
+     bcc +
+    plp
     bne +
-    lda ObjectDef,y
-    lsr     ; Just pull one extra bit for HP, could do one more if needed
-    rol $61
-    sta $62 ; Store actual shifted DEF in $62
-    lda PlayerAtk
-    adc ObjectAtk,x
-    sec
-    sbc $62 ; A <- atk - def
-    bcc +
      sta $63
 +   stx $10
     sty $11
@@ -403,7 +414,7 @@ DiffHP:    ; PHP (0..$26)
   .byte $E0,$E6,$EB,$F1,$F6,$FC,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
 DiffExp:   ; ExpBase * 4, encoded in standard EXP encoding
   .byte $05,$06,$08,$0A,$0C,$0E,$12,$16,$1A,$20,$27,$30,$3A,$47,$56,$69
-  .byte $80,$81,$83,$86,$89,$8D,$91,$97,$9E,$A6,$B0,$BC,$CA,$DC,$F2,$FF
+  .byte $88,$89,$8B,$8E,$91,$95,$99,$9F,$A6,$AE,$B8,$C4,$D2,$E4,$FA,$FF
   .byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
 
 ;;; $12 and $13 are free RAM at this point
@@ -479,6 +490,7 @@ RescaleDefAndHP:
    bne +
     inc $61
    ;; Multiply by hits, then divide by 8
+   ;; $1bc3c:
 +  lda ObjectHP,x
    sta $62
    jsr Multiply16Bit
@@ -503,7 +515,7 @@ RescaleDefAndHP:
     sec
 +  rol ObjectDef,x
    sta ObjectHP,x
-RescaleAtk:
+RescaleAtk:   ; $1bc63
   ;; DiffDef = 4 * PDef
   ;; DiffHP = PHP
   ;; ATK = (4 * PDef + PHP * SAtk / 32) / 4
@@ -525,13 +537,13 @@ RescaleAtk:
   lsr $62
   ror
   clc
-  adc DiffDef
+  adc DiffDef,y
   lsr $62
   ror
   lsr $62
   ror
   sta ObjectAtk,x
-RescaleGold:
+RescaleGold:   ; $1bc90
   ;; GOLD = min(15, (8 * DGLD + 3 * DIFF) / 16)
   lda ObjectGold,x
   and #$f0
@@ -550,7 +562,7 @@ RescaleGold:
   and #$0f
   ora $61
   sta ObjectGold,x
-RescaleExp:
+RescaleExp:   ; $1bcb5
   ;; EXP = min(2032, DiffExp * SEXP)
   ;; NOTE: SEXP is compressed for values > $7f.
   lda ObjectExp,x
@@ -561,11 +573,11 @@ RescaleExp:
    and #$7f
    sta $62
    jsr Multiply16Bit  
+   lda $62
   plp
   bmi ++
     ;; No scaling previously.  $61$62 is 128*EXP.
     ;; If EXP >= 128 then 128*EXP >= #$4000
-    lda $62
     cmp #$40
     bcc +
      ;; $62 >= #$40 - need scaling now.
@@ -959,7 +971,7 @@ class MonsterPool {
         // whether we can put this one in pat0
         const pat0ok = !treasureChest || TREASURE_CHEST_BANKS.has(m.pat);
         let patSlot;
-        if (location.rom.objects[m.id].child) {
+        if (location.rom.objects[m.id].child || RETAIN_SLOTS.has(m.id)) {
           // if there's a child, make sure to keep it in the same pattern slot
           patSlot = m.patSlot ? 0x80 : 0;
           const prev = patSlot ? pa1 : pat0;
@@ -1466,6 +1478,8 @@ const ITEMS = new Map([
   [0x48, 'Flight',             true],
 ].map(([id, name, key]) => [id, {id, name, key}]));
 
+
+const RETAIN_SLOTS = new Set([0x50, 0x53]);
 
 const UNTOUCHED_MONSTERS = { // not yet +0x50 in these keys
   [0x7e]: true, // vertical platform

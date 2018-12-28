@@ -203,7 +203,7 @@ const LOCATION_NAMES = {
   [0xc1]: 'Leaf - Rabbit Hut',
   [0xc2]: 'Leaf - Inn',
   [0xc3]: 'Leaf - Tool Shop',
-  [0xc4]: 'Leaf - Item Shop',
+  [0xc4]: 'Leaf - Armor Shop',
   [0xc5]: 'Leaf - Student House',
   [0xc6]: 'Brynmaer - Tavern',
   [0xc7]: 'Brynmaer - Pawn Shop',

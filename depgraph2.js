@@ -9,16 +9,6 @@ import {Graph2} from './graph.js';
 export const graph = new Graph2();
 
 
-const node = (text, ...deps) => g.add({text}, deps);
-const boss = (text, ...deps) => g.add({text, type: 'Boss'}, deps);
-const item = (text, ...deps) => g.add({text, type: 'Item'}, deps);
-const talk = (text, ...deps) => g.add({text, type: 'Talk'}, deps);
-const magic = (text, ...deps) => g.add({text, type: 'Magic'}, deps);
-const chest = (text, ...deps) => g.add({text, type: 'Chest'}, deps);
-const route = (text, ...deps) => g.add({text, type: 'Route'}, deps);
-const trigger = (text, ...deps) => g.add({text, type: 'Trigger'}, deps);
-const location = (text, ...deps) => g.add({text, type: 'Location'}, deps);
-
 
 ////////////////////////////////////////////////////////////////
 // Items
@@ -32,6 +22,10 @@ const ballOfWind            = item(0x05, 'Ball of Wind');
 const tornadoBracelet       = item(0x06, 'Tornado Bracelet');
 const ballOfFire            = item(0x07, 'Ball of Fire');
 const flameBracelet         = item(0x08, 'Flame Bracelet');
+const ballOfFire            = item(0x09, 'Ball of Water');
+const flameBracelet         = item(0x0a, 'Blizzard Bracelet');
+const ballOfFire            = item(0x0b, 'Ball of Thunder');
+const flameBracelet         = item(0x0c, 'Storm Bracelet');
 // ... TODO ...
 const medicalHerb           = item(0x1d, 'Medical Herb');
 const antidote              = item(0x1e, 'Antidote');
@@ -92,20 +86,16 @@ const medicalHerb$70        = medicalHerb .at(0x70); // Mimic???
 ////////////////////////////////////////////////////////////////
 // Triggers
 ////////////////////////////////////////////////////////////////
-const talkedToLeafElder     = trigger('Talked to Leaf Elder', at(leafElderHouse),
-                                      get(swordOfWind));
-const talkedToLeafStudent   = trigger('Talked to Leaf Student', at(leafStudentHouse));
-const talkedToZebuInCave    = trigger('Talked to Zebu in cave', at(zebuCave),
-                                      requires(talkedToLeafElder, talkedToLeafStudent));
-const wokeUpWindmillGuard   = trigger('Woke up Windmill Guard', at(windmillCave),
-                                      requires(talkedToZebuInCave, alarmFlute));
-const startedWindmill       = trigger('Started Windmill', at(windmill),
-                                      requires(windmillKey));
-const learnRefreshInValley  = trigger('Learn Refresh in valley', requires(startedWindmill),
-                                      get(refresh));
-const learnRefreshInCave    = trigger('Learn Refresh in cave',
-                                      requires(startedWindmill, talkedToZebuInCave),
-                                      get(refresh));
+
+// TODO - maybe don't build any logic into here, just put them where they need to go?
+
+const talkedToLeafElder     = trigger('Talked to Leaf Elder', get(swordOfWind));
+const talkedToLeafStudent   = trigger('Talked to Leaf Student');
+const talkedToZebuInCave    = trigger('Talked to Zebu in cave');
+const wokeUpWindmillGuard   = trigger('Woke up Windmill Guard');
+const startedWindmill       = trigger('Started Windmill');
+const villagersAbducted     = trigger('Villagers Abducted');
+const talkedToLeafRabbit    = trigger('Talked to Rabbit in Leaf');
 
 ////////////////////////////////////////////////////////////////
 // Conditions
@@ -124,50 +114,102 @@ const crossSea              = condition('Cross sea', or(dolphin, flight));
 
 
 ////////////////////////////////////////////////////////////////
+// Areas
+////////////////////////////////////////////////////////////////
+const LEAF = area('Leaf');
+const VWND = area('Valley of Wind');
+const VAMP = area('Sealed Cave');
+const CORD = area('Cordell Plain');
+const BRYN = area('Brynmaer');
+const AMZN = area('Amazones');
+const SBRW = area('Mt Sabre West');
+const SBRE = area('Mt Sabre East');
+const OAK  = area('Oak');
+const WFLV = area('Waterfall Valley');
+const PORT = area('Portoa');
+const WFLC = area('Waterfall Cave');
+const FOGL = area('Fog Lamp Cave');
+const KIRI = area('Kirisa Plant Cave');
+const ASEA = area('Angry Sea');
+const JOEL = area('Joel');
+const EVIL = area('Evil Spirit Island');
+const SABR = area('Sabera\'s Castle');
+const SWAN = area('Swan');
+const GOAV = area('Goa Valley');
+const HYDR = area('Mt Hydra');
+const SHYR = area('Shyron');
+const STYX = area('Styx');
+const GOA  = area('Goa');
+const DSR1 = area('Desert 1');
+const DRG1 = area('Draygonia Fortress 1');
+const DRG2 = area('Draygonia Fortress 2');
+const DRG3 = area('Draygonia Fortress 3');
+const DRG4 = area('Draygonia Fortress 4');
+const OASC = area('Oasis Cave');
+const SHRA = area('Sahara');
+const DSR2 = area('Desert 2');
+const PYRF = area('Pyramid Front');
+const PYRB = area('Pyramid Back');
+const TOWR = area('Tower');
+
+////////////////////////////////////////////////////////////////
 // Locations
 ////////////////////////////////////////////////////////////////
-const mezameShrine          = location(0x00, 'Mezame Shrine');
-const leafOutsideStart      = location(0x01, 'Leaf - Outside Start',
+
+const mezameShrine          = location(0x00, LEAF, 'Mezame Shrine');
+const outsideStart          = location(0x01, LEAF, 'Outside Start',
                                        connect(mezameShrine));
-const leaf                  = location(0x02, 'Leaf',
+const leaf                  = location(0x02, LEAF, 'Town',
                                        connect(leafOutsideStart));
-const valleyOfWind          = location(0x03, 'Valley of Wind',
-                                       connect(leaf),
-                                       triggers(learnRefresh));
-const valleyOfWind_windmill = location(0x03, 'Valley of Wind - Windmill');
-const sealedCave1           = location(0x04, 'Sealed Cave 1',
-                                       from(valleyOfWind, startedWindmill),
-                                       to(valleyOfWind)); // different requirements!
-const sealedCave2           = location(0x05, 'Sealed Cave 2',
+const valleyOfWind          = location(0x03, VWND, 'Main',
+                                       connect(leaf.town),
+                                       get(refresh, startedWindmill));
+const outsideWindmill       = location(0x03, VWND, 'Outside Windmill');
+const sealedCave1           = location(0x04, VAMP, 'Tunnel 1 (entrance)',
+                                       // to(valleyOfWind), // TODO - unglitch
+                                       from(valleyOfWind, startedWindmill));
+const sealedCave2           = location(0x05, VAMP, 'Tunnel 2 (over bridge)',
                                        connect(sealedCave1));
-const sealedCave3           = location(0x06, 'Sealed Cave 3',
+const sealedCave6           = location(0x06, VAMP, 'Tunnel 6 (herb dead end)',
                                        chest(medicalHerb));
-const sealedCave4a          = location(0x07, 'Sealed Cave 4a',
-                                       chest(medicalHerb$50));
-const sealedCave4b          = location(0x07, 'Sealed Cave 4b',
+const sealedCave4a          = location(0x07, VAMP, 'Tunnel 4a (ball corridor)',
+                                       chest(medicalHerb$50),
+                                       chest(ballOfWind));
+const sealedCave4b          = location(0x07, VAMP, 'Tunnel 4b (antidote dead end)',
                                        connect(sealedCave4a, destroyStone),
                                        chest(antidote));
-const sealedCave5           = location(0x08, 'Sealed Cave 5',
+const sealedCave5           = location(0x08, VAMP, 'Tunnel 5 (warp boots dead end)',
                                        chest(warpBoots));
-const sealedCave6a          = location(0x09, 'Sealed Cave 6a',
+const sealedCave3a          = location(0x09, VAMP, 'Tunnel 3a (branch, front)',
                                        connect(sealedCave2),
                                        connect(sealedCave4a),
                                        connect(sealedCave5));
-const sealedCave6b          = location(0x09, 'Sealed Cave 6b',
-                                       connect(sealedCave6a, destroyStone),
-                                       connect(sealedCave3));
-const sealedCave7           = location(0x0a, 'Sealed Cave 7',
+const sealedCave3b          = location(0x09, VAMP, 'Tunnel 3b (branch, back)',
+                                       connect(sealedCave3a, destroyStone),
+                                       connect(sealedCave6));
+const sealedCave7           = location(0x0a, VAMP, 'Tunnel 7 (boss)',
                                        boss(vampire1),
-                                       connect(sealedCave6b));
-const sealedCave8           = location(0x0c, 'Sealed Cave 8',
+                                       connect(sealedCave3b));
+const sealedCave8           = location(0x0c, VAMP, 'Tunnel 8 (exit)',
                                        connect(sealedCave7));
-const windmillCave          = location(0x0e, 'Windmill Cave',
+const windmillCave          = location(0x0e, VWND, 'Windmill Cave',
                                        connect(valleyOfWind);
-                                       connect(valleyOfWind_windmill));
-const windmill              = location(0x0f, 'Windmill',
                                        connect(valleyOfWind_windmill),
-                                       triggers(atartedWindmill));
-// $10	Zebu Cave
+                                       trigger(wakeWindmillGuard, alarmFlute, talkedToZebuInCave),
+                                       get(windmillKey, wokeUpWindmillGuard));
+const windmill              = location(0x0f, VWND, 'Windmill',
+                                       connect(valleyOfWind_windmill),
+                                       when(windmillKey).trigger(startedWindmill));
+                                       //triggers(startedWindmill));
+const zebuCaveFront         = location(0x10, VWND, 'Zebu\'s Cave Front',
+                                       connect(valleyOfWind),
+                                       trigger(talkedToZebuInCave,
+                                               talkedToLeafElder, talkedToLeafStudent),
+                                       get(refresh, startedWindmill, talkedToZebuInCave));
+const zebuCaveBack          = location(0x10, 'Zebu\'s Cave Back',
+                                       trigger(leafAbduction),
+                                       connect(zebuCaveFront, destroyIce));
+
 // $11	Mt Sabre West - Cave 1
 // $14	Cordel Plains West
 // $15	Cordel Plains East
@@ -313,18 +355,15 @@ const windmill              = location(0x0f, 'Windmill',
 // $bc	Goa - Inn
 // $be	Goa - Tool Shop
 // $bf	Goa - Tavern
-const leafElderHouse        = location(0xc0, 'Leaf - Elder House',
-                                       connect(leaf));
-const leafRabbitHut         = location(0xc1, 'Leaf - Rabbit Hut',
-                                       connect(leaf));
-const leafInn               = location(0xc2, 'Leaf - Inn',
-                                       connect(leaf));
-const leafToolShop          = location(0xc3, 'Leaf - Tool Shop',
-                                       connect(leaf));
-const leafItemShop          = location(0xc4, 'Leaf - Item Shop',
-                                       connect(leaf));
-const leafStudentHouse      = location(0xc5, 'Leaf - Student House',
-                                       connect(leaf));
+const leafElderHouse        = location(0xc0, LEAF, 'Elder House', connect(leaf),
+                                       trigger(talkedToLeafElder));
+const leafRabbitHut         = location(0xc1, LEAF, 'Rabbit Hut', connect(leaf),
+                                       trigger(talkedToLeafRabbit, villagersAbducted));
+const leafInn               = location(0xc2, LEAF, 'Inn', connect(leaf));
+const leafToolShop          = location(0xc3, LEAF, 'Tool Shop', connect(leaf));
+const leafItemShop          = location(0xc4, LEAF, 'Item Shop', connect(leaf));
+const leafStudentHouse      = location(0xc5, LEAF, 'Student House', connect(leaf),
+                                       trigger(talkedToLeafStudent));
 // $c6	Brynmaer - Tavern
 // $c7	Brynmaer - Pawn Shop
 // $c8	Brynmaer - Inn

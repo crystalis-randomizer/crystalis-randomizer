@@ -648,7 +648,8 @@ const adjustObjectDifficultyStats = (data, rom, random) => {
 
   rom.writeObjectData();
 
-  const pool = new MonsterPool();
+  const report = {};
+  const pool = new MonsterPool(report);
   for (const loc of rom.locations) {
     if (loc) pool.populate(loc);
   }
@@ -668,6 +669,8 @@ const adjustObjectDifficultyStats = (data, rom, random) => {
     }
     get.write(rom);
   }
+
+  console.log(report);
 };
 
 
@@ -858,7 +861,8 @@ const SCALED_MONSTERS = new Map([
 // Passes through the locations twice, first to build and then to 
 // reassign monsters.
 class MonsterPool {
-  constructor() {
+  constructor(report) {
+    this.report = report;
     // available monsters
     this.monsters = [];
     // used monsters - as a backup if no available monsters fit
@@ -888,7 +892,8 @@ class MonsterPool {
       ++slot;
       if (o[2] & 7) continue;
       const id = o[3] + 0x50;
-      if (id in UNTOUCHED_MONSTERS) continue;
+      if (id in UNTOUCHED_MONSTERS || !SCALED_MONSTERS.has(id) ||
+          SCALED_MONSTERS.get(id).type != 'm') continue;
       const object = location.rom.objects[id];
       if (!object) continue;
       const patBank = o[2] & 0x80 ? 1 : 0;
@@ -897,6 +902,7 @@ class MonsterPool {
       const pal2 = pal.includes(2) ? location.spritePalettes[0] : null;
       const pal3 = pal.includes(3) ? location.spritePalettes[1] : null;
       monsters.push({id, pat, pal2, pal3, patBank});
+(this.report[`mon-${id.toString(16)}`] = this.report[`mon-${id.toString(16)}`] || []).push('$' + location.id.toString(16));
       slots.push(slot);
     }
     if (!monsters.length) return;
@@ -909,10 +915,9 @@ class MonsterPool {
     random.shuffle(this.monsters);
     while (this.locations.length) {
       const {location, slots} = this.locations.pop();
+      let report = this.report['$' + location.id.toString(16).padStart(2, 0)] = [];
       const {maxFlyers, nonFlyers = {}, fixedSlots = {}} =
             MONSTER_ADJUSTMENTS[location.id] || {};
-let console=location.id==3?window.console:{log(){}};
-console.log(`Location ${location.id.toString(16)}`);
       // Keep track of pattern and palette slots we've pinned.
       // It might be nice to have a mode where palette conflicts are allowed,
       // and we just go with one or the other, though this could lead to poisonous
@@ -935,6 +940,8 @@ console.log(`Location ${location.id.toString(16)}`);
           pat0 = 0x61;
         }
       }
+
+      report.push(`Initial pass: ${[treasureChest, pat0, pat1, pal2, pal3].join(', ')}`);
 
       const tryAddMonster = (m) => {
         const flyer = FLYERS.has(m.id);
@@ -965,33 +972,25 @@ console.log(`Location ${location.id.toString(16)}`);
             return false;
           }
 
-
-// NOTE - seed=3214314284 sealed cave has weird sprites
-
-// NOTE - seed=1759221509 treasure chest screwed up in presence of solider
-//   - seems like there's a fixed set of patterns we can use if a chest is around?
-//   - arrows are messed up, too.
-// NOTE - scaling vampire HP is broken - he teleports way too fast
-
           // TODO - if [pat0,pat1] were an array this would be a whole lot easier.
-console.log(`  Adding ${m.id.toString(16)}: pat(${patSlot}) <-  ${m.pat.toString(16)}`);
+report.push(`  Adding ${m.id.toString(16)}: pat(${patSlot}) <-  ${m.pat.toString(16)}`);
         } else {
           if (pat0 == null && pat0ok || pat0 == m.pat) {
             pat0 = m.pat;
             patSlot = 0;
-console.log(`  Adding ${m.id.toString(16)}: pat0 <-  ${m.pat.toString(16)}`);
+report.push(`  Adding ${m.id.toString(16)}: pat0 <-  ${m.pat.toString(16)}`);
           } else if (pat1 == null || pat1 == m.pat) {
             pat1 = m.pat;
             patSlot = 0x80;
-console.log(`  Adding ${m.id.toString(16)}: pat1 <-  ${m.pat.toString(16)}`);
+report.push(`  Adding ${m.id.toString(16)}: pat1 <-  ${m.pat.toString(16)}`);
           } else {              
             return false;
           }
         }
         if (m.pal2 != null) pal2 = m.pal2;
         if (m.pal3 != null) pal3 = m.pal3;
-console.log(`    ${Object.keys(m).map(k=>`${k}: ${m[k]}`).join(', ')}`);
-console.log(`    pal: ${(m.pal2||0).toString(16)} ${(m.pal3||0).toString(16)}`);
+report.push(`    ${Object.keys(m).map(k=>`${k}: ${m[k]}`).join(', ')}`);
+report.push(`    pal: ${(m.pal2||0).toString(16)} ${(m.pal3||0).toString(16)}`);
 
         // Pick the slot only after we know for sure that it will fit.
         let eligible = 0;
@@ -1019,7 +1018,7 @@ console.log(`    pal: ${(m.pal2||0).toString(16)} ${(m.pal3||0).toString(16)}`);
         }
         objData[2] = objData[2] & 0x7f | patSlot;
         objData[3] = m.id - 0x50;
-console.log(`    slot ${slot.toString(16)}: objData=${objData}`);
+report.push(`    slot ${slot.toString(16)}: objData=${objData}`);
 
         // TODO - anything else need splicing?
 
@@ -1083,7 +1082,7 @@ console.log(`    slot ${slot.toString(16)}: objData=${objData}`);
       if (pal2 != null) location.spritePalettes[0] = pal2;
       if (pal3 != null) location.spritePalettes[1] = pal3;
 
-      if (slots.length) console.log(`Failed to fill location ${location.id.toString(16)}: ${slots.length} remaining`);
+      if (slots.length) report.push(`Failed to fill location ${location.id.toString(16)}: ${slots.length} remaining`);
     }
   }
 }
@@ -1371,6 +1370,7 @@ const MONSTER_ADJUSTMENTS = {
       [0x0d]: [0, 0],  // moth - ok
       [0x0e]: [0, 0],  // broken - but replace?
       [0x13]: [0x3b, -0x26], // shadow - embedded in wall
+      // TODO - 0x0e glitched, don't randomize
     },
   },
   [0xb4]: { // Goa Fortress - Karmine 5
@@ -1409,15 +1409,15 @@ const ITEMS = new Map([
   [0x12, 'Sacred Shield',      ],
   [0x13, 'Battle Shield',      ],
   // id  name                  key
-  [0x14, 'Psycho Shield',      ],
+  [0x14, 'Psycho Shield',      true],
   [0x15, 'Tanned Hide',        ],
   [0x16, 'Leather Armor',      ],
   [0x17, 'Bronze Armor',       ],
   [0x18, 'Platinum Armor',     ],
   [0x19, 'Soldier Suit',       ],
   [0x1a, 'Ceramic Suit',       ],
-  [0x1b, 'Battle Armor',       ],
-  [0x1c, 'Psycho Armor',       ],
+  [0x1b, 'Battle Armor',       true],
+  [0x1c, 'Psycho Armor',       true],
   [0x1d, 'Medical Herb',       ],
   [0x1e, 'Antidote',           ],
   [0x1f, 'Lysis Plant',        ],
@@ -1470,7 +1470,10 @@ const ITEMS = new Map([
 const UNTOUCHED_MONSTERS = { // not yet +0x50 in these keys
   [0x7e]: true, // vertical platform
   [0x7f]: true, // horizontal platform
+  [0x83]: true, // glitch in $7c (hydra)
+  [0x8d]: true, // glitch in location $ab (sabera 2)
   [0x8e]: true, // broken?, but sits on top of iron wall
   [0x8f]: true, // shooting statue
   [0x9f]: true, // vertical platform
+  [0xa6]: true, // glitch in location $af (mado 2)
 };

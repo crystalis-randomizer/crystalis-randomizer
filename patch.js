@@ -29,6 +29,9 @@ export default ({
     scaleDifficultyLib.apply(rom);
     displayDifficulty.apply(rom);
     itemLib.apply(rom);
+    //quickChangeItems.apply(rom);
+
+    // These need to be at the bottom because the modify previous patches.
     leatherBootsForSpeed.apply(rom);
     autoEquipBracelet.apply(rom);
     if ('nodie' in hash) neverDie.apply(rom);
@@ -54,6 +57,9 @@ loop1:
 
 // Debug mode to display difficulty in status bar.
 // NOTE: this needs to be patched AFTER difficultyScalingLib
+// TODO - this currently causes the sword fanfare to NOT play,
+// and the teleport from getting sword of thunder to NOT happen.
+//  -- this may or may not be a good thing.
 export const displayDifficulty = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000 ; fixed bank
 
@@ -100,6 +106,7 @@ export const disableWildWarp = buildRomPatch(assemble(`
 `, 'disableWildWarp'));
 
 
+// Prevents swords and balls/bracelets from sorting, so that they don't clobber each other.
 export const preventSwordClobber = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000
 .bank $20000 $8000:$4000
@@ -112,6 +119,7 @@ export const preventSwordClobber = buildRomPatch(assemble(`
   .byte $04
 `, 'preventSwordClobber'));
 
+// Causes the first power-up to always give the ball, and the second to be the bracelet.
 export const upgradeBallsToBracelets = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000
 .bank $1c000 $8000:$2000
@@ -169,14 +177,13 @@ export const itemLib = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000 ; fixed bank
 
 .org $3c0f8
-  jsr PostInventoryMenu
+  jsr PostUpdateEquipment
   jmp RestoreBanksAndReturn
 
 .org $3c446
-PostInventoryMenu:
+PostUpdateEquipment:
   ;; Change 'lda' (ad) to 'jsr' (20) to enable these
   lda ApplySpeedBoots
-  lda AutoEquipBracelets
   rts
 ApplySpeedBoots:
   lda #$06   ; normal speed
@@ -188,7 +195,20 @@ ApplySpeedBoots:
 + rts
 .org $3c482  ; end of empty area
 
-.org $3f9ba  ; end of empty area
+.org $3c008
+UpdateEquipmentAndStatus:
+
+.org $3d91f
+  jsr PostInventoryMenu
+.org $3d971
+  jsr PostInventoryMenu
+
+;;; Call 3f9ba instead of 3c008 after the inventory menu
+.org $3f9ba
+PostInventoryMenu:
+  ;; Change 'lda' (ad) to 'jsr' (20) to enable these
+  lda AutoEquipBracelets
+  jmp UpdateEquipmentAndStatus
 AutoEquipBracelets:
   lda $6428
   bpl +
@@ -219,13 +239,61 @@ AutoEquipBracelets:
   adc $61
   sta $0718
   rts
-.org $3f9f4
+.org $3f9f8
 
 .org $3e756
 RestoreBanksAndReturn:
 
 `, 'itemLib'));
 
+// TODO - not working yet
+export const quickChangeItems = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000 ; fixed bank
+
+;;.org $3fe75
+;;  jmp
+
+;; REPLACE ALL CALLS to ReadControllersWithDirections
+;; to instead use ReadControllersAndUpdateStart
+
+;;  - will thhis even work?
+
+.org $3fe80
+ReadControllersWithDirections:
+
+
+
+.org $3cb62
+  jsr ReadControllersAndUpdateStart
+.org $3d8ea
+  jsr ReadControllersAndUpdateStart
+
+.org $3f9f8 ; whereever AutoEquipBracelet left off
+ReadControllersAndUpdateStart:
+  lda $43    ; Pressed buttons last frame
+  and #$30   ; Start and Select
+  sta $61
+  jsr ReadControllersWithDirections
+  ;; Cahnge $4b to report start/select only on button-up, and
+  ;; only if no quick select happened.  We store a mask #$30 in
+  ;; $42 on button-down for start and select, and zero it out
+  ;; on quick change, so that ANDing with it before setting
+  ;; $4b is sufficient to meet the requirement.
+  lda #$30
+  bit $4b
+  beq +
+   sta $42
++ lda $43
+  eor #$ff
+  and $61
+  and $42
+  sta $61
+  lda $4b
+  and #$cf  ; ~$30
+  ora $61
+  sta $4b
+  rts
+`, 'quickChangeItems'));
 
 export const leatherBootsForSpeed = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000 ; fixed bank
@@ -243,7 +311,7 @@ export const leatherBootsForSpeed = buildRomPatch(assemble(`
 
 export const autoEquipBracelet = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000 ; fixed bank
-.org $3c449
+.org $3f9ba
   .byte $20
 `, 'autoEquipBracelets'));
 
@@ -354,7 +422,8 @@ SubtractEnemyHP:
 + lda $61
   sbc #$00
   rts
-.org $3fe78
+.org $3fe60 ; 34e45 actually?
+; .org $3fe78 ; last possible
 
 .org $3c010
 ;; Adjusted inventory update - use level instead of sword
@@ -584,12 +653,16 @@ RescaleAtk:   ; $1bc63
   ror
   clc
   adc DiffDef,y
-  lsr $62
-  ror
-  lsr $62
+  sta $61
+  lda $62
+  adc #$00
+  lsr
+  ror $61
+  lsr
+  lda $61
   ror
   sta ObjectAtk,x
-RescaleGold:   ; $1bc90
+RescaleGold:   ; $1bc98
   ;; GOLD = min(15, (8 * DGLD + 3 * DIFF) / 16)
   lda ObjectGold,x
   and #$f0
@@ -608,7 +681,7 @@ RescaleGold:   ; $1bc90
   and #$0f
   ora $61
   sta ObjectGold,x
-RescaleExp:   ; $1bcb5
+RescaleExp:   ; $1bcbd
   ;; EXP = min(2032, DiffExp * SEXP)
   ;; NOTE: SEXP is compressed for values > $7f.
   lda ObjectExp,x
@@ -673,6 +746,7 @@ Multiply16Bit:
   pla
   tax
   rts
+.org $1bff0
 `, 'scaleDifficultyLib'));
 
 
@@ -734,136 +808,137 @@ const adjustObjectDifficultyStats = (data, rom, random) => {
 
 const SCALED_MONSTERS = new Map([
   // ID  TYPE  NAME                       SDEF SWRD HITS SATK DGLD SEXP
-  [0x3f, 'p', 'Sorceror shot',              ,   ,   ,    17,  ,    ,],
+  [0x3f, 'p', 'Sorceror shot',              ,   ,   ,    19,  ,    ,],
   [0x4b, 'm', 'wraith??',                   2,  ,   2,   22,  4,   61],
   [0x4f, 'm', 'wraith',                     1,  ,   2,   20,  4,   61],
   [0x50, 'm', 'Blue Slime',                 ,   ,   1,   16,  2,   32],
-  [0x51, 'm', 'Weretiger',                  ,   ,   1,   22,  4,   40],
+  [0x51, 'm', 'Weretiger',                  ,   ,   1,   21,  4,   40],
   [0x52, 'm', 'Green Jelly',                4,  ,   3,   16,  4,   36],
   [0x53, 'm', 'Red Slime',                  6,  ,   4,   16,  4,   48],
   [0x54, 'm', 'Rock Golem',                 6,  ,   11,  24,  6,   85],
   [0x55, 'm', 'Blue Bat',                   ,   ,   ,    4,   ,    32],
   [0x56, 'm', 'Green Wyvern',               4,  ,   4,   24,  6,   52],
-  [0x57, 'b', 'Vampire',                    3,  ,   13,  18,  ,    136],
+  [0x57, 'b', 'Vampire',                    3,  ,   13,  18,  ,    ,],
   [0x58, 'm', 'Orc',                        3,  ,   4,   21,  4,   57],
-  [0x59, 'm', 'Red Flying Swamp Insect',    3,  ,   1,   22,  4,   57],
-  [0x5a, 'm', 'Blue Mushroom',              2,  ,   1,   27,  4,   48],
+  [0x59, 'm', 'Red Flying Swamp Insect',    3,  ,   1,   21,  4,   57],
+  [0x5a, 'm', 'Blue Mushroom',              2,  ,   1,   21,  4,   44],
   [0x5b, 'm', 'Swamp Tomato',               3,  ,   2,   35,  4,   52],
-  [0x5c, 'm', 'Flying Meadow Insect',       3,  ,   3,   24,  4,   81],
+  [0x5c, 'm', 'Flying Meadow Insect',       3,  ,   3,   23,  4,   81],
   [0x5d, 'm', 'Swamp Plant',                ,   ,   ,    ,    ,    36],
-  [0x5e, 'b', 'Insect',                     ,   1,  8,   8,   ,    136],
+  [0x5e, 'b', 'Insect',                     ,   1,  8,   6,   ,    ,],
   [0x5f, 'm', 'Large Blue Slime',           5,  ,   3,   20,  4,   52],
   [0x60, 'm', 'Ice Zombie',                 5,  ,   7,   14,  4,   57],
   [0x61, 'm', 'Green Living Rock',          ,   ,   1,   9,   4,   28],
   [0x62, 'm', 'Green Spider',               4,  ,   4,   22,  4,   44],
   [0x63, 'm', 'Red/Purple Wyvern',          3,  ,   4,   30,  4,   65],
   [0x64, 'm', 'Draygonia Soldier',          6,  ,   11,  36,  4,   89],
+  // ID  TYPE  NAME                       SDEF SWRD HITS SATK DGLD SEXP
   [0x65, 'm', 'Ice Entity',                 3,  ,   2,   24,  4,   52],
   [0x66, 'm', 'Red Living Rock',            ,   ,   1,   13,  4,   40],
-  // ID  TYPE  NAME                       SDEF SWRD HITS SATK DGLD SEXP
-  [0x67, 'm', 'Ice Golem',                  7,  2,  11,  24,  4,   81],
-  [0x68, 'b', 'Kelbesque',                  4,  2,  12,  30,  ,    176],
-  [0x69, 'm', 'Giant Red Slime',            7,  ,   40,  48,  4,   102],
+  [0x67, 'm', 'Ice Golem',                  7,  2,  11,  28,  4,   81],
+  [0x68, 'b', 'Kelbesque',                  4,  6,  12,  29,  ,    ,],
+  [0x69, 'm', 'Giant Red Slime',            7,  ,   40,  90,  4,   102],
   [0x6a, 'm', 'Troll',                      2,  ,   3,   24,  4,   65],
   [0x6b, 'm', 'Red Jelly',                  2,  ,   2,   14,  4,   44],
-  [0x6c, 'm', 'Medusa',                     3,  ,   4,   37,  8,   77],
-  [0x6d, 'm', 'Red Crab',                   2,  ,   1,   22,  4,   44],
-  [0x6e, 'm', 'Medusa Head',                ,   ,   1,   30,  4,   36],
-  [0x6f, 'm', 'Evil Bird',                  ,   ,   2,   31,  6,   65],
+  [0x6c, 'm', 'Medusa',                     3,  ,   4,   36,  8,   77],
+  [0x6d, 'm', 'Red Crab',                   2,  ,   1,   21,  4,   44],
+  [0x6e, 'm', 'Medusa Head',                ,   ,   1,   29,  4,   36],
+  [0x6f, 'm', 'Evil Bird',                  ,   ,   2,   30,  6,   65],
   [0x71, 'm', 'Red/Purple Mushroom',        3,  ,   5,   19,  6,   69],
   [0x72, 'm', 'Violet Earth Entity',        3,  ,   3,   18,  6,   61],
-  [0x73, 'm', 'Mimic',                      ,   ,   3,   27,  15,  73],
-  [0x74, 'm', 'Red Spider',                 3,  ,   4,   23,  6,   48],
+  [0x73, 'm', 'Mimic',                      ,   ,   3,   26,  15,  73],
+  [0x74, 'm', 'Red Spider',                 3,  ,   4,   22,  6,   48],
   [0x75, 'm', 'Fishman',                    4,  ,   6,   19,  5,   61],
   [0x76, 'm', 'Jellyfish',                  ,   ,   3,   14,  3,   48],
-  [0x77, 'm', 'Kraken',                     5,  ,   11,  26,  7,   73],
-  [0x78, 'm', 'Dark Green Wyvern',          4,  ,   5,   17,  5,   57],
-  [0x79, 'm', 'Sand Monster',               4,  ,   8,   5,   4,   44],
-  [0x7b, 'm', 'Wraith Shadow 1',            ,   ,   ,    10,  7,   44],
+  [0x77, 'm', 'Kraken',                     5,  ,   11,  25,  7,   73],
+  [0x78, 'm', 'Dark Green Wyvern',          4,  ,   5,   21,  5,   61],
+  [0x79, 'm', 'Sand Monster',               5,  ,   8,   6,   4,   57],
+  [0x7b, 'm', 'Wraith Shadow 1',            ,   ,   ,    9,   7,   44],
   [0x7c, 'm', 'Killer Moth',                ,   ,   2,   35,  ,    77],
-  [0x7d, 'b', 'Sabera',                     3,  4,  13,  24,  ,    152],
-  [0x80, 'm', 'Draygonia Archer',           1,  ,   3,   21,  6,   61],
+  [0x7d, 'b', 'Sabera',                     3,  7,  13,  24,  ,    ,],
+  [0x80, 'm', 'Draygonia Archer',           1,  ,   3,   20,  6,   61],
+  // ID  TYPE  NAME                       SDEF SWRD HITS SATK DGLD SEXP
   [0x81, 'm', 'Evil Bomber Bird',           ,   ,   1,   19,  4,   65],
   [0x82, 'm', 'Lavaman/blob',               3,  ,   3,   24,  6,   85],
   [0x84, 'm', 'Lizardman (w/ flail(',       2,  ,   3,   30,  6,   81],
   [0x85, 'm', 'Giant Eye',                  3,  ,   5,   33,  4,   81],
-  // ID  TYPE  NAME                       SDEF SWRD HITS SATK DGLD SEXP
   [0x86, 'm', 'Salamander',                 2,  ,   4,   29,  8,   77],
-  [0x87, 'm', 'Sorceror',                   2,  ,   5,   32,  6,   65],
-  [0x88, 'b', 'Mado',                       4,  6,  10,  30,  ,    160],
+  [0x87, 'm', 'Sorceror',                   2,  ,   5,   31,  6,   65],
+  [0x88, 'b', 'Mado',                       4,  8,  10,  30,  ,    ,],
   [0x89, 'm', 'Draygonia Knight',           2,  ,   3,   24,  4,   77],
   [0x8a, 'm', 'Devil',                      ,   ,   1,   18,  4,   52],
-  [0x8b, 'b', 'Kelbesque 2',                4,  2,  11,  27,  ,    160],
+  [0x8b, 'b', 'Kelbesque 2',                4,  6,  11,  27,  ,    ,],
   [0x8c, 'm', 'Wraith Shadow 2',            ,   ,   ,    17,  4,   48],
-  [0x90, 'b', 'Sabera 2',                   5,  4,  21,  27,  ,    160],
+  [0x90, 'b', 'Sabera 2',                   5,  7,  21,  27,  ,    ,],
   [0x91, 'm', 'Tarantula',                  3,  ,   3,   21,  6,   73],
-  [0x92, 'm', 'Skeleton',                   ,   ,   4,   31,  6,   69],
-  [0x93, 'b', 'Mado 2',                     4,  6,  11,  25,  ,    160],
-  [0x94, 'm', 'Purple Giant Eye',           4,  ,   10,  23,  6,   98],
+  [0x92, 'm', 'Skeleton',                   ,   ,   4,   30,  6,   69],
+  [0x93, 'b', 'Mado 2',                     4,  8,  11,  25,  ,    ,],
+  [0x94, 'm', 'Purple Giant Eye',           4,  ,   10,  23,  6,   102],
   [0x95, 'm', 'Black Knight (w/ flail)',    3,  ,   7,   26,  6,   89],
   [0x96, 'm', 'Scorpion',                   3,  ,   5,   29,  2,   73],
-  [0x97, 'b', 'Karmine',                    4,  ,   14,  26,  ,    160],
+  [0x97, 'b', 'Karmine',                    4,  ,   14,  26,  ,    ,],
   [0x98, 'm', 'Sandman/blob',               3,  ,   5,   36,  6,   98],
   [0x99, 'm', 'Mummy',                      5,  ,   19,  36,  6,   110],
   [0x9a, 'm', 'Tomb Guardian',              7,  ,   60,  37,  6,   106],
-  [0x9b, 'b', 'Draygon',                    5,  6,  16,  41,  ,    160],
-  [0x9e, 'b', 'Draygon 2',                  7,  6,  28,  40,  ,    160],
+  [0x9b, 'b', 'Draygon',                    5,  6,  16,  41,  ,    ,],
+  [0x9e, 'b', 'Draygon 2',                  7,  6,  28,  40,  ,    ,],
+  // ID  TYPE  NAME                       SDEF SWRD HITS SATK DGLD SEXP
   [0xa0, 'm', 'Ground Sentry (1)',          4,  ,   12,  26,  ,    73],
   [0xa1, 'm', 'Tower Defense Mech (2)',     5,  ,   16,  36,  ,    85],
   [0xa2, 'm', 'Tower Sentinel',             ,   ,   2,   ,    ,    32],
   [0xa3, 'm', 'Air Sentry',                 3,  ,   4,   26,  ,    65],
-  [0xa4, 'b', 'Dyna',                       6,  ,   16,  ,    ,    ,],
+  [0xa4, 'b', 'Dyna',                       6,  5,  16,  ,    ,    ,],
   [0xa5, 'b', 'Vampire 2',                  2,  ,   6,   27,  ,    ,],
-  // ID  TYPE  NAME                       SDEF SWRD HITS SATK DGLD SEXP
   [0xb4, 'b', 'dyna pod',                   15, ,   255, 26,  ,    ,],
   [0xb8, 'p', 'dyna counter',               ,   ,   ,    26,  ,    ,],
   [0xb9, 'p', 'dyna laser',                 ,   ,   ,    26,  ,    ,],
   [0xba, 'p', 'dyna bubble',                ,   ,   ,    36,  ,    ,],
-  [0xbc, 'm', 'vamp2 bat',                  ,   ,   ,    14,  ,    40],
+  [0xbc, 'm', 'vamp2 bat',                  ,   ,   ,    16,  ,    40],
   [0xbf, 'p', 'draygon2 fireball',          ,   ,   ,    26,  ,    ,],
   [0xc1, 'm', 'vamp1 bat',                  ,   ,   ,    16,  ,    40],
-  [0xc3, 'p', 'giant insect spit',          ,   ,   ,    36,  ,    ,],
-  [0xc4, 'm', 'summoned insect',            4,  ,   2,   51,  ,    98],
+  [0xc3, 'p', 'giant insect spit',          ,   ,   ,    35,  ,    ,],
+  [0xc4, 'm', 'summoned insect',            4,  ,   2,   42,  ,    98],
   [0xc5, 'p', 'kelby1 rock',                ,   ,   ,    22,  ,    ,],
   [0xc6, 'p', 'sabera1 balls',              ,   ,   ,    19,  ,    ,],
-  [0xc7, 'p', 'kelby2 fireballs',           ,   ,   ,    10,  ,    ,],
-  [0xc8, 'p', 'sabera2 fire',               ,   ,   ,    6,   ,    ,],
-  [0xc9, 'p', 'sabera2 balls',              ,   ,   ,    15,  ,    ,],
+  [0xc7, 'p', 'kelby2 fireballs',           ,   ,   ,    11,  ,    ,],
+  [0xc8, 'p', 'sabera2 fire',               ,   ,   1,   6,   ,    ,],
+  [0xc9, 'p', 'sabera2 balls',              ,   ,   ,    17,  ,    ,],
   [0xca, 'p', 'karmine balls',              ,   ,   ,    25,  ,    ,],
-  [0xcb, 'p', 'sun/moon statue fireballs',  ,   ,   ,    26,  ,    ,],
+  [0xcb, 'p', 'sun/moon statue fireballs',  ,   ,   ,    39,  ,    ,],
   [0xcc, 'p', 'draygon1 lightning',         ,   ,   ,    37,  ,    ,],
   [0xcd, 'p', 'draygon2 laser',             ,   ,   ,    36,  ,    ,],
+  // ID  TYPE  NAME                       SDEF SWRD HITS SATK DGLD SEXP
   [0xce, 'p', 'draygon2 breath',            ,   ,   ,    36,  ,    ,],
-  [0xe0, 'p', 'evil bomber bird bomb',      ,   ,   ,    1,   ,    ,],
+  [0xe0, 'p', 'evil bomber bird bomb',      ,   ,   ,    2,   ,    ,],
   [0xe2, 'p', 'summoned insect bomb',       ,   ,   ,    47,  ,    ,],
   [0xe3, 'p', 'paralysis beam',             ,   ,   ,    23,  ,    ,],
-  [0xe4, 'p', 'stone gaze',                 ,   ,   ,    26,  ,    ,],
-  [0xe5, 'p', 'rock golem rock',            ,   ,   ,    18,  ,    ,],
-  [0xe6, 'p', 'curse beam',                 ,   ,   ,    9,   ,    ,],
-  [0xe7, 'p', 'mp drain web',               ,   ,   ,    10,  ,    ,],
-  // ID  TYPE  NAME                       SDEF SWRD HITS SATK DGLD SEXP
-  [0xe8, 'p', 'fishman trident',            ,   ,   ,    12,  ,    ,],
-  [0xe9, 'p', 'orc axe',                    ,   ,   ,    15,  ,    ,],
-  [0xea, 'p', 'Swamp Pollen',               ,   ,   ,    31,  ,    ,],
-  [0xeb, 'p', 'paralysis powder',           ,   ,   ,    24,  ,    ,],
-  [0xec, 'p', 'draygonia solider sword',    ,   ,   ,    24,  ,    ,],
-  [0xed, 'p', 'ice golem rock',             ,   ,   ,    17,  ,    ,],
-  [0xee, 'p', 'troll axe',                  ,   ,   ,    21,  ,    ,],
-  [0xef, 'p', 'kraken ink',                 ,   ,   ,    19,  ,    ,],
-  [0xf0, 'p', 'draygonia archer arrow',     ,   ,   ,    11,  ,    ,],
-  [0xf1, 'p', '??? unused',                 ,   ,   ,    10,  ,    ,],
-  [0xf2, 'p', 'draygonia knight sword',     ,   ,   ,    7,   ,    ,],
-  [0xf3, 'p', 'moth residue',               ,   ,   ,    17,  ,    ,],
+  [0xe4, 'p', 'stone gaze',                 ,   ,   ,    33,  ,    ,],
+  [0xe5, 'p', 'rock golem rock',            ,   ,   ,    24,  ,    ,],
+  [0xe6, 'p', 'curse beam',                 ,   ,   ,    10,  ,    ,],
+  [0xe7, 'p', 'mp drain web',               ,   ,   ,    11,  ,    ,],
+  [0xe8, 'p', 'fishman trident',            ,   ,   ,    15,  ,    ,],
+  [0xe9, 'p', 'orc axe',                    ,   ,   ,    24,  ,    ,],
+  [0xea, 'p', 'Swamp Pollen',               ,   ,   ,    37,  ,    ,],
+  [0xeb, 'p', 'paralysis powder',           ,   ,   ,    17,  ,    ,],
+  [0xec, 'p', 'draygonia solider sword',    ,   ,   ,    28,  ,    ,],
+  [0xed, 'p', 'ice golem rock',             ,   ,   ,    20,  ,    ,],
+  [0xee, 'p', 'troll axe',                  ,   ,   ,    27,  ,    ,],
+  [0xef, 'p', 'kraken ink',                 ,   ,   ,    24,  ,    ,],
+  [0xf0, 'p', 'draygonia archer arrow',     ,   ,   ,    12,  ,    ,],
+  [0xf1, 'p', '??? unused',                 ,   ,   ,    16,  ,    ,],
+  [0xf2, 'p', 'draygonia knight sword',     ,   ,   ,    9,   ,    ,],
+  [0xf3, 'p', 'moth residue',               ,   ,   ,    19,  ,    ,],
   [0xf4, 'p', 'ground sentry laser',        ,   ,   ,    13,  ,    ,],
   [0xf5, 'p', 'tower defense mech laser',   ,   ,   ,    23,  ,    ,],
   [0xf6, 'p', 'tower sentinel laser',       ,   ,   ,    8,   ,    ,],
-  [0xf7, 'p', 'skeleton shot',              ,   ,   ,    10,  ,    ,],
-  [0xf8, 'p', 'lavaman shot',               ,   ,   ,    10,  ,    ,],
-  [0xf9, 'p', 'black knight flail',         ,   ,   ,    17,  ,    ,],
-  [0xfa, 'p', 'lizardman flail',            ,   ,   ,    19,  ,    ,],
-  [0xfc, 'p', 'mado shuriken',              ,   ,   ,    33,  ,    ,],
-  [0xfd, 'p', 'guardian statue missile',    ,   ,   ,    19,  ,    ,],
-  [0xfe, 'p', 'demon wall fire',            ,   ,   ,    19,  ,    ,],
+  [0xf7, 'p', 'skeleton shot',              ,   ,   ,    11,  ,    ,],
+  // ID  TYPE  NAME                       SDEF SWRD HITS SATK DGLD SEXP
+  [0xf8, 'p', 'lavaman shot',               ,   ,   ,    14,  ,    ,],
+  [0xf9, 'p', 'black knight flail',         ,   ,   ,    18,  ,    ,],
+  [0xfa, 'p', 'lizardman flail',            ,   ,   ,    21,  ,    ,],
+  [0xfc, 'p', 'mado shuriken',              ,   ,   ,    36,  ,    ,],
+  [0xfd, 'p', 'guardian statue missile',    ,   ,   ,    23,  ,    ,],
+  [0xfe, 'p', 'demon wall fire',            ,   ,   ,    23,  ,    ,],
 ].map(([id, type, name, sdef=0, swrd=0, hits=0, satk=0, dgld=0, sexp=0]) =>
       [id, {id, type, name, sdef, swrd, hits, satk, dgld, sexp}]));
 

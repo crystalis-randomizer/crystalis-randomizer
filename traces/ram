@@ -235,6 +235,15 @@ Secondary game mode
 Indexes jump table $3cade in 3c91f_01
 
 
+
+$42
+---
+Appears to be unused - repurpose for quick change?
+ 1 = quick select occurred
+ 10 = start released this frame
+ 20 = select released this frame
+
+
 $43, $44
 --------
 Buttons pressed (mask):

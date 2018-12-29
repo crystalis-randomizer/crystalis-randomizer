@@ -123,7 +123,7 @@ const CORD = area('Cordell Plain');
 const BRYN = area('Brynmaer');
 const AMZN = area('Amazones');
 const SBRW = area('Mt Sabre West');
-const SBRE = area('Mt Sabre East');
+const SBRN = area('Mt Sabre North');
 const OAK  = area('Oak');
 const WFLV = area('Waterfall Valley');
 const PORT = area('Portoa');
@@ -206,11 +206,15 @@ const zebuCaveFront         = location(0x10, VWND, 'Zebu\'s Cave Front',
                                        trigger(talkedToZebuInCave,
                                                talkedToLeafElder, talkedToLeafStudent),
                                        get(refresh, startedWindmill, talkedToZebuInCave));
-const zebuCaveBack          = location(0x10, 'Zebu\'s Cave Back',
+const zebuCaveBack          = location(0x10, VWND, 'Zebu\'s Cave Back',
                                        trigger(leafAbduction),
                                        connect(zebuCaveFront, destroyIce));
-
-// $11	Mt Sabre West - Cave 1
+const mtSabreWestCave1      = location(0x11, SBRW, 'Cave 1 (to Zebu)',
+                                       connect(zebuCaveBak));
+const cordelPlainWest       = location(0x14, CORD, 'West',
+                                       connect(zebuCaveBack)));X
+const cordelPlainSouthh     = location(0x14, CORD, 'South',
+                                       connect(mtSabrePlinWest, crossRivers));
 // $14	Cordel Plains West
 // $15	Cordel Plains East
 // $18	Brynmaer

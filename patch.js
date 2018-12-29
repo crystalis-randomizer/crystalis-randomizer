@@ -28,6 +28,7 @@ export default ({
     upgradeBallsToBracelets.apply(rom);
     scaleDifficultyLib.apply(rom);
     displayDifficulty.apply(rom);
+    itemLib.apply(rom);
     leatherBootsForSpeed.apply(rom);
     autoEquipBracelet.apply(rom);
     if ('nodie' in hash) neverDie.apply(rom);
@@ -164,20 +165,19 @@ ComputeVampireAnimationStart:
 ++ rts
 `, 'fixVampire'));
 
-
-// TODO - write me
-export const autoEquipBracelet = buildRomPatch(assemble(''));
-
-// TODO - all code for togglable features should go in always,
-// but we conditionally insert code to enable it.
-export const leatherBootsForSpeed = buildRomPatch(assemble(`
+export const itemLib = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000 ; fixed bank
 
 .org $3c0f8
-  jsr ApplySpeedBoots
+  jsr PostInventoryMenu
   jmp RestoreBanksAndReturn
 
 .org $3c446
+PostInventoryMenu:
+  ;; Change 'lda' (ad) to 'jsr' (20) to enable these
+  lda ApplySpeedBoots
+  lda AutoEquipBracelets
+  rts
 ApplySpeedBoots:
   lda #$06   ; normal speed
   sta $0341  ; player speed
@@ -186,12 +186,52 @@ ApplySpeedBoots:
   bne +
    inc $0341 ; speed up by 1
 + rts
-.org $3c456
+.org $3c482  ; end of empty area
 
-; .org $3c482 end of empty area
+.org $3f9ba  ; end of empty area
+AutoEquipBracelets:
+  lda $6428
+  bpl +
+   ;; deselect all
+-  lda #$80
+   sta $642b
+   lda #00
+   sta $0718
+   sta $0719
+   rts
++ tay
+  cmp $6430,y ; check for crystalis
+   bne -
+  lda $643c,y ; which power-up do we have?
+   bmi -
+  ;; need to store $718 (0=nothing, 1..4=ball, 5..8=bracelet), $719 (0..2), $642b (0..3)
+  lsr
+  lda #$01
+  bcs +
+   lda #$02
++ sta $719
+  and #$02
+  asl
+  sta $61
+  tya
+  sta $642b
+  sec
+  adc $61
+  sta $0718
+  rts
+.org $3f9f4
 
 .org $3e756
 RestoreBanksAndReturn:
+
+`, 'itemLib'));
+
+
+export const leatherBootsForSpeed = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000 ; fixed bank
+
+.org $3c446
+  .byte $20
 
 .bank $28000 $8000:$2000
 .org $29105
@@ -200,6 +240,12 @@ RestoreBanksAndReturn:
   .byte "Speed Boots",$ff
 
 `, 'leatherBootsForSpeed'));
+
+export const autoEquipBracelet = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000 ; fixed bank
+.org $3c449
+  .byte $20
+`, 'autoEquipBracelets'));
 
 
 // NOTE: if we insert at $3c406 then we have $11 as scratch space, too!

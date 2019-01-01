@@ -833,6 +833,8 @@ this number is changing.  It presumably means something else for somebody else.
  - probably also fires when falling into a pit - starts at $30, decreases down to 0
 for action script $0f, $620,x is the game mode to load.
 
+$623 is slot of object in front of player.
+
 Weretiger Movement:
  - Number of frames remaining for swerving around obstacles
 
@@ -1035,6 +1037,7 @@ condition flags (dialog: w @ $1c121, r @ $1c11c)
                 (scanning reads at $2fcfb ... ?)
                 ($36701: reads $6481 for windmill state - sound effects, animation, etc)
  - 6481:80 = woke windmill keeper
+ - 6481:20 = prisoners returned?
  - 6481:10 = green man in leaf apologized
  - 6481:08 = spoke to leaf elder
  - 6481:04 = windmill running

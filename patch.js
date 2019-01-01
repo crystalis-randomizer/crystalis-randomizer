@@ -29,6 +29,7 @@ export default ({
     scaleDifficultyLib.apply(rom);
     displayDifficulty.apply(rom);
     itemLib.apply(rom);
+    //noTeleportOnThunderSword.apply(rom);
     //quickChangeItems.apply(rom);
 
     // These need to be at the bottom because the modify previous patches.
@@ -38,6 +39,13 @@ export default ({
     console.log('patch applied');
   },
 });
+
+// Prevent the teleport-to-shyron sequence upon getting thunder sword.
+export const noTeleportOnThunderSword = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000 ; fixed bank
+.org $3d565
+  .word ($d78c)
+`, 'noTeleportOnThunderSword'));
 
 // Fix the shaking issues by tweaking the delay times in IRQ callbacks.
 export const fixShaking = buildRomPatch(assemble(`
@@ -57,9 +65,6 @@ loop1:
 
 // Debug mode to display difficulty in status bar.
 // NOTE: this needs to be patched AFTER difficultyScalingLib
-// TODO - this currently causes the sword fanfare to NOT play,
-// and the teleport from getting sword of thunder to NOT happen.
-//  -- this may or may not be a good thing.
 export const displayDifficulty = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000 ; fixed bank
 
@@ -86,10 +91,26 @@ export const displayDifficulty = buildRomPatch(assemble(`
 .org $3ffa9
 DisplayNumber:
 
-.org $3ffe3
+.org $3cb84
+CheckForPlayerDeath:
+
+.org $3cb65  ; inside GameModeJump_08_Normal
+  jsr CheckToRedisplayDifficulty
+
+.org $3ffe3 ; we have 23 bytes to spend here
+CheckToRedisplayDifficulty:
+  lda $0f
+  beq +
+   lda #$00
+   sta $0f
+   lda #$06
+   jsr DisplayNumber
++ jmp CheckForPlayerDeath
 ItemGet_RedisplayDifficulty:
-  lda #$06
-  jmp DisplayNumber
+  lda #$01
+  sta $0f ; use this location!
+  rts
+.org $3fffa
 `, 'displayDifficulty'));
 
 
@@ -172,6 +193,7 @@ ComputeVampireAnimationStart:
 +  lda #$ff
 ++ rts
 `, 'fixVampire'));
+
 
 export const itemLib = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000 ; fixed bank

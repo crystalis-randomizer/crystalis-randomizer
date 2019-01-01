@@ -1,0 +1,72 @@
+Man in leaf from outside cave - sets $6481:10 first time, then changes dialog after
+ - written at $1c11e, called from $1c06d
+ - $1c000 called from $3d10a
+
+$3d0c8 is main game mode for dialog
+ - $623 is slot of object in front of player (written where?) -> y
+ - look at $5a0,y, $540,y, and $560,y.
+ potentially initiate dialog if:
+  - 5a0 is zero
+  - OR, if 540 is 1 and 560 is one of {5e, 5f, 62, 6c, or 6d}.
+In the case of Leaf villagers, 5a0 is 0 and 540 is 1, but 560 is something else.
+
+
+=====
+
+PersonData are already labeled in the rom.
+We should go thru and label the data table at $1c95d and figure out who the different people are
+ - the latter table is indexed off of 560, which is hopefully the same as the index of PersonData?
+ - verify this.
+Still need to figure out what's actually *in* this dialog table.
+
+
+=====
+
+The dialog table is a bunch of flag references, but how they are used seems to vary.
+They seem to go in pairs, where the last 11 bits are the flag reference.  The first
+5 bits are trickier.  The :40 bit is consistently a continuation bit, but its meaning
+seems to change - when setting flags, set means done, clear means continue.  When
+matching flags (searching), it seems to be opposite?
+
+ASSUMPTION: flag 0 is always unset - so a000 is a very common "sign off"
+
+Looking deeper, it appears to be three separate sections:
+  1. quads where the first pair indicates a flag to check (in last 11 bits)
+     first bit indicates it's the last quad
+     second bit is some sort of continuation, making it more than just a quad
+     third bit indicates match on flag clear
+      -> the first group seems to mainly key off of the CHANGE magic.
+  2. pairs keyed by location ID, which point into the third section.
+  3. groups of sets of 5, similar to the quads earlier; grouped by location.
+
+Once we find a match we end up at 1c078, which reads two more bytes from $24,y
+ - first byte is decomposed into high 5 and low 3
+ - high 5 -> $22    => action (index jump table at 3d123)
+ - low 3  -> $21    =>
+ - next byte -> $20
+
+=============
+
+The actual flag-matching tables have two versions: a 4-byte one and a 5-byte one.
+The four-byte version appears to only be used to check flags 28..2b for change status.
+There is then a list of locations that dereference offsets into the 5-byte table.
+The structure is as follows:
+
+  dcsf fff   ffff fbbb   AAAA ABBB   BBBm mmmm   LLLL LLLL   F...
+
+    d - if set, this is the last entry in the list
+    c - continuation: if set, there will be flag pairs (F) at the end
+    s - if set, the flag must be CLEAR to match
+    f - offset of flag from $6480 (together with b, this forms the 11-bit flag number)
+    b - bit number of flag
+    A - post-dialog action
+    B - message bank
+    m - message index within bank
+    L - in the 5-byte version, a new location to set to $6580,x
+    F - byte pairs in the following format:
+
+           sd.f ffff   ffff fbbb
+
+             s - if set, the flag will be cleared rather than set
+             d - if set, then this is the last byte pair
+             f,b - flag to mutate

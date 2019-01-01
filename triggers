@@ -1,0 +1,76 @@
+85 - enter stom's house
+86 - blocks mt sabre north (mt sabre side)
+8c - kidnap leaf villagers
+8d - restore leaf villagers (inside summit cave, also bottom of portoa slope)
+8e - return lost child upon entering oak
+90 - enter amazones
+91 - "i hear someone talking" next to guards on mt sabre north
+94 - inside first mt sabre north tunnel - remove guards
+95 - trigger mesia shrine
+99 - enter leaf
+a1 - bottom of escalator leading up to tower level 2 (story?)
+a2 - bottom of escalator leading up to tower level 3 (story?)
+a3 - top of tower escalator (story?)
+a4 - trigger forge crystalis
+a6 - enter brynmaer
+a5 - mt sabre north guards conversation
+a8 - enter portoa
+aa - enter oak
+ad - trigger to be able to open mt sabre prison door
+b0 - boat on portoa fisherman island
+b2 - learn paralysis in summit cave
+b4 - learn refresh outside cave
+b7 - outside portoa castle (for triggering queen?)
+b8 - outside portoa fortune teller (for triggering queen?)
+ba - blocks mt sabre north (cordel side)
+bc - amazones guards block queen's door if male
+bf - outside both entrances to stoned people tunnel to make them disappear
+
+
+npcdata 04
+2c - prison door on mt sabre
+39 - portoa boat
+40 - nadare innkeeper
+41 - nadare tool salesman
+a4 - dyna core
+b4 - dyna pods
+da - tower levels 2,3,4, in top left corner -> ??
+
+
+
+flags
+000 - unused
+001
+
+00d - leaf villagers (specifically elder) rescued
+      $6484
+
+027 - shyron massacre
+      $6485
+028 - change:woman
+029 - change:akahana
+02a - change:soldier
+02b - change:stom
+02c -
+02d -
+02e -
+02f -
+      $6486
+
+03f - learned teleport
+
+050 - given statue to akahana
+055 - zebu disappeared from draygonia fortress
+056 - tornel disappeared from draygonia fortress
+
+      $6490
+083 - learned paralysis
+084 - leaf villagers currently abducted (set in cave behind zebu, cleared on using prison key)
+085 - leaf elder currently abducted (set in cave behind zebu, cleared in elder's cell)
+
+089 - spoken to dead stom's girlfriend
+08a - spoken to dead stom
+
+097 - red man at top of leaf (0f) toggle (pre-abduction)
+
+0e0 - spoken to dead akahana

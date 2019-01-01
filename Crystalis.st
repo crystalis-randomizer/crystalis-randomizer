@@ -19865,18 +19865,21 @@ NpcSpawnConditionTablePart2
         $1c7cf              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         ;; 15
         $1c7d8              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        ;; 16
+        ;; 16 akahana
         $1c7de              .byte $xx ; Brynmaer
         $1c7df              .byte $xx,$xx ; 050 NOT given statue to akahana
         $1c7e1              .byte $xx ; Waterfall Cave
-        $1c7e2              .byte $xx,$xx
-        $1c7e4              .byte $xx,$xx
-        $1c7e6              .byte $xx,$xx
+        $1c7e2              .byte $xx,$xx ; 051 NOT
+        $1c7e4              .byte $xx,$xx ; 035
+        $1c7e6              .byte $xx,$xx ; 034 NOT
         $1c7e8              .byte $xx ; Shyron
-        $1c7e9              .byte $xx,$xx ; 027 NOT akahana killed
+        $1c7e9              .byte $xx,$xx ; 027 NOT shyron massacre
         $1c7eb              .byte $xx
-        ;; 88
-        $1c7ec              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        ;; 88 stoned akahana
+        $1c7ec              .byte $xx ; Waterfall Cave
+        $1c7ed              .byte $xx,$xx ; 035 NOT
+        $1c7ef              .byte $xx,$xx ; 051 NOT
+        $1c7f1              .byte $xx
         ;; 1b
         $1c7f2              .byte $xx,$xx,$xx,$xx
         ;; 1f
@@ -20228,25 +20231,42 @@ DialogTablePart2
         $1cae1              .word ($1cb39) ; c2 kelbesque???
         $1cae3              .word ($1d8e5) ; c3 rage
 	;; 80, 81
-        $1cae5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cae5              .byte $xx,$xx,$xx,$xx
+        $1cae9              .byte $xx
+        $1caea              .byte $xx,$xx,$xx,$xx,$xx
+        $1caef              .byte $xx,$xx,$xx,$xx,$xx
 	;; 6e
-        $1caf4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1caf4              .byte $xx,$xx,$xx,$xx
+        $1caf8              .byte $xx
+        $1caf9              .byte $xx,$xx,$xx,$xx,$xx
 	;; 7f
-        $1cafe              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cafe              .byte $xx,$xx,$xx,$xx
+        $1cb02              .byte $xx
+        $1cb03              .byte $xx,$xx,$xx,$xx,$xx
 	;; 49
-        $1cb08              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cb08              .byte $xx,$xx,$xx,$xx
+        $1cb0c              .byte $xx
+        $1cb0d              .byte $xx,$xx,$xx,$xx,$xx
 	;; 4b
-        $1cb12              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cb22              .byte $xx,$xx,$xx
+        $1cb12              .byte $xx,$xx,$xx,$xx
+        $1cb16              .byte $xx
+        $1cb17              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cb1e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
 	;; 4c
-        $1cb25              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cb25              .byte $xx,$xx,$xx,$xx
+        $1cb29              .byte $xx
+        $1cb2a              .byte $xx,$xx,$xx,$xx,$xx
 	;; 4d
-        $1cb2f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cb2f              .byte $xx,$xx,$xx,$xx
+        $1cb33              .byte $xx
+        $1cb34              .byte $xx,$xx,$xx,$xx,$xx
 	;; 61, 66, 67, 6a, 73, 82, 89, 8a, 8b, 8c, 8d, 8f, 90, 91, 92, 93
 	;; 94, 95, 96, 97, 98, 99, 9a, 9b, 9c, 9d, 9e, 9f, a0, a1, a2, a3
 	;; a4, a5, a6, a7, a8, a9, aa, ab, ac, ad, ae, af, b0, b1, b2, b3
 	;; b4, b5, b6, b7, b8, b9, ba, bb, bc, bd, be, bf, c0, c1, c2
-        $1cb39              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cb39              .byte $xx,$xx,$xx,$xx
+        $1cb3d              .byte $xx
+        $1cb3e              .byte $xx,$xx,$xx,$xx,$xx
 	;; 0d leaf elder
         $1cb43              .byte $xx,$xx,$xx,$xx ; 6485:01 change:woman   -> 00,12
         $1cb47              .byte $xx,$xx,$xx,$xx ; 6485:04 change:soldier -> 00,13
@@ -20255,15 +20275,29 @@ DialogTablePart2
         $1cb53              .byte $xx,$xx         ; Leaf elder's house -> 0
         $1cb55              .byte $xx,$xx         ; Mt Sabre prison -> 16
         $1cb57              .byte $xx
-        $1cb58              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cb68              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cb78              .byte $xx,$xx
+        $1cb58              .byte $xx,$xx,$xx,$xx,$xx
+        $1cb5d              .byte $xx,$xx,$xx,$xx,$xx
+        $1cb62              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cb69              .byte $xx,$xx,$xx,$xx,$xx
+        $1cb6e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cb75              .byte $xx,$xx,$xx,$xx,$xx
 	;; 65
-        $1cb7a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cb7a              .byte $xx,$xx,$xx,$xx
+        $1cb7e              .byte $xx
+        $1cb7f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
 	;; 0e
-        $1cb86              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cb96              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cba6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cb86              .byte $xx,$xx,$xx,$xx
+        $1cb8a              .byte $xx,$xx,$xx,$xx
+        $1cb8e              .byte $xx,$xx,$xx,$xx
+        $1cb92              .byte $xx,$xx,$xx,$xx
+        $1cb96              .byte $xx,$xx
+        $1cb98              .byte $xx,$xx
+        $1cb9a              .byte $xx
+        $1cb9b              .byte $xx,$xx,$xx,$xx,$xx
+        $1cba0              .byte $xx,$xx,$xx,$xx,$xx
+        $1cba5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cbac              .byte $xx,$xx,$xx,$xx,$xx
+        $1cbb1              .byte $xx,$xx,$xx,$xx,$xx
         $1cbb6              .byte $xx,$xx,$xx,$xx,$xx
 	;; 0f red man at top of leaf
         $1cbbb              .byte $xx,$xx,$xx,$xx ; 028 change:woman   -> msg 1e:00
@@ -20281,14 +20315,31 @@ DialogTablePart2
         $1cbe3              .byte $xx,$xx,$xx,$xx,$xx         ; 0d0 after rescued -> msg 00:02
         $1cbe8              .byte $xx,$xx,$xx,$xx,$xx         ; default           -> msg 07:00
 	;; 10
-        $1cbed              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cbfd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cc0d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cbed              .byte $xx,$xx,$xx,$xx
+        $1cbf1              .byte $xx,$xx,$xx,$xx
+        $1cbf5              .byte $xx,$xx,$xx,$xx
+        $1cbf9              .byte $xx,$xx,$xx,$xx
+        $1cbfd              .byte $xx,$xx
+        $1cbff              .byte $xx,$xx
+        $1cc01              .byte $xx
+        $1cc02              .byte $xx,$xx,$xx,$xx,$xx
+        $1cc07              .byte $xx,$xx,$xx,$xx,$xx
+        $1cc0c              .byte $xx,$xx,$xx,$xx,$xx
+        $1cc11              .byte $xx,$xx,$xx,$xx,$xx
+        $1cc16              .byte $xx,$xx,$xx,$xx,$xx
 	;; 11
-        $1cc1b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cc2b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cc3b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cc4b              .byte $xx,$xx
+        $1cc1b              .byte $xx,$xx,$xx,$xx
+        $1cc1f              .byte $xx,$xx,$xx,$xx
+        $1cc23              .byte $xx,$xx,$xx,$xx
+        $1cc27              .byte $xx,$xx,$xx,$xx
+        $1cc2b              .byte $xx,$xx
+        $1cc2d              .byte $xx,$xx
+        $1cc2f              .byte $xx
+        $1cc30              .byte $xx,$xx,$xx,$xx,$xx
+        $1cc35              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cc3c              .byte $xx,$xx,$xx,$xx,$xx
+        $1cc41              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cc48              .byte $xx,$xx,$xx,$xx,$xx
 	;; 12 red girl in leaf
         $1cc4d              .byte $xx,$xx,$xx,$xx ; 6485:01 -> 00,18
         $1cc51              .byte $xx,$xx,$xx,$xx ; 6485:04 -> 03,cc
@@ -20302,15 +20353,23 @@ DialogTablePart2
         $1cc6c              .byte $xx,$xx,$xx,$xx,$xx ; 0a mt sabre cell
         $1cc71              .byte $xx,$xx,$xx,$xx,$xx
 	;; 13
-        $1cc76              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cc86              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cc76              .byte $xx,$xx,$xx,$xx
+        $1cc7a              .byte $xx,$xx,$xx,$xx
+        $1cc7e              .byte $xx,$xx,$xx,$xx
+        $1cc82              .byte $xx,$xx,$xx,$xx
+        $1cc86              .byte $xx
+        $1cc87              .byte $xx,$xx,$xx,$xx,$xx
+        $1cc8c              .byte $xx,$xx,$xx,$xx,$xx
+        $1cc91              .byte $xx,$xx,$xx,$xx,$xx
         $1cc96              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
 	;; 30
         $1cc9d              .byte $xx,$xx,$xx,$xx
         $1cca1              .byte $xx
         $1cca2              .byte $xx,$xx,$xx,$xx,$xx
 	;; 31
-        $1cca7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cca7              .byte $xx,$xx,$xx,$xx
+        $1ccab              .byte $xx
+        $1ccac              .byte $xx,$xx,$xx,$xx,$xx
 	;; 2e
         $1ccb1              .byte $xx,$xx,$xx,$xx
         $1ccb5              .byte $xx
@@ -20320,84 +20379,190 @@ DialogTablePart2
         $1ccbf              .byte $xx
         $1ccc0              .byte $xx,$xx,$xx,$xx,$xx
 	;; 14
-        $1ccc5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ccd5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cce5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1ccc5              .byte $xx,$xx,$xx,$xx
+        $1ccc9              .byte $xx,$xx,$xx,$xx
+        $1cccd              .byte $xx,$xx,$xx,$xx
+        $1ccd1              .byte $xx,$xx,$xx,$xx
+        $1ccd5              .byte $xx,$xx
+        $1ccd7              .byte $xx,$xx
+        $1ccd9              .byte $xx
+        $1ccda              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cce1              .byte $xx,$xx,$xx,$xx,$xx
+        $1cce6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cced              .byte $xx,$xx,$xx,$xx,$xx
 	;; 15
-        $1ccf2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1ccf2              .byte $xx,$xx,$xx,$xx
+        $1ccf6              .byte $xx
+        $1ccf7              .byte $xx,$xx,$xx,$xx,$xx
 	;; 1b
-        $1ccfc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1ccfc              .byte $xx,$xx,$xx,$xx
+        $1cd00              .byte $xx
+        $1cd01              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
 	;; 1c
-        $1cd08              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cd18              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cd08              .byte $xx,$xx,$xx,$xx
+        $1cd0c              .byte $xx,$xx,$xx,$xx
+        $1cd10              .byte $xx,$xx,$xx,$xx
+        $1cd14              .byte $xx,$xx,$xx,$xx
+        $1cd18              .byte $xx
+        $1cd19              .byte $xx,$xx,$xx,$xx,$xx
+        $1cd1e              .byte $xx,$xx,$xx,$xx,$xx
+        $1cd23              .byte $xx,$xx,$xx,$xx,$xx
 	;; 2c
-        $1cd28              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cd38              .byte $xx
+        $1cd28              .byte $xx,$xx,$xx,$xx
+        $1cd2c              .byte $xx
+        $1cd2d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cd34              .byte $xx,$xx,$xx,$xx,$xx
 	;; 17
-        $1cd39              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cd39              .byte $xx,$xx,$xx,$xx
+        $1cd3d              .byte $xx
+        $1cd3e              .byte $xx,$xx,$xx,$xx,$xx
 	;; 18
-        $1cd43              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cd43              .byte $xx,$xx,$xx,$xx
+        $1cd47              .byte $xx
+        $1cd48              .byte $xx,$xx,$xx,$xx,$xx
 	;; 19
-        $1cd4d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cd4d              .byte $xx,$xx,$xx,$xx
+        $1cd51              .byte $xx
+        $1cd52              .byte $xx,$xx,$xx,$xx,$xx
 	;; 1a
         $1cd57              .byte $xx,$xx,$xx,$xx ; 6485:04 -> 03,c8
         $1cd5b              .byte $xx
         $1cd5c              .byte $xx,$xx,$xx,$xx,$xx
 	;; 01
-        $1cd61              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cd71              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cd81              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cd91              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cd61              .byte $xx,$xx,$xx,$xx
+        $1cd65              .byte $xx,$xx
+        $1cd67              .byte $xx,$xx
+        $1cd69              .byte $xx
+        $1cd6a              .byte $xx,$xx,$xx,$xx,$xx
+        $1cd6f              .byte $xx,$xx,$xx,$xx,$xx
+        $1cd74              .byte $xx,$xx,$xx,$xx,$xx
+        $1cd79              .byte $xx,$xx,$xx,$xx,$xx
+        $1cd7e              .byte $xx,$xx,$xx,$xx,$xx
+        $1cd83              .byte $xx,$xx,$xx,$xx,$xx
+        $1cd88              .byte $xx,$xx,$xx,$xx,$xx
+        $1cd8d              .byte $xx,$xx,$xx,$xx,$xx
+        $1cd92              .byte $xx,$xx,$xx,$xx,$xx
+        $1cd97              .byte $xx,$xx,$xx,$xx,$xx
 	;; 02
-        $1cd9c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cdac              .byte $xx,$xx,$xx
+        $1cd9c              .byte $xx,$xx,$xx,$xx
+        $1cda0              .byte $xx,$xx
+        $1cda2              .byte $xx,$xx
+        $1cda4              .byte $xx
+        $1cda5              .byte $xx,$xx,$xx,$xx,$xx
+        $1cdaa              .byte $xx,$xx,$xx,$xx,$xx
 	;; 1d
-        $1cdaf              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cdbf              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cdcf              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cddf              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cdaf              .byte $xx,$xx,$xx,$xx
+        $1cdb3              .byte $xx,$xx,$xx,$xx
+        $1cdb7              .byte $xx,$xx,$xx,$xx
+        $1cdbb              .byte $xx,$xx,$xx,$xx
+        $1cdbf              .byte $xx,$xx,$xx,$xx
+        $1cdc3              .byte $xx
+        $1cdc4              .byte $xx,$xx,$xx,$xx,$xx
+        $1cdc9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cdd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cdd7              .byte $xx,$xx,$xx,$xx,$xx
+        $1cddc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cde3              .byte $xx,$xx,$xx,$xx,$xx
 	;; 1e
-        $1cde8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cdf8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ce08              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cde8              .byte $xx,$xx,$xx,$xx
+        $1cdec              .byte $xx,$xx,$xx,$xx
+        $1cdf0              .byte $xx,$xx,$xx,$xx
+        $1cdf4              .byte $xx,$xx,$xx,$xx
+        $1cdf8              .byte $xx,$xx,$xx,$xx
+        $1cdfc              .byte $xx
+        $1cdfd              .byte $xx,$xx,$xx,$xx,$xx
+        $1ce02              .byte $xx,$xx,$xx,$xx,$xx
+        $1ce07              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1ce0e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
 	;; 1f
-        $1ce15              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ce25              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ce35              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1ce15              .byte $xx,$xx,$xx,$xx
+        $1ce19              .byte $xx,$xx,$xx,$xx
+        $1ce1d              .byte $xx,$xx,$xx,$xx
+        $1ce21              .byte $xx,$xx,$xx,$xx
+        $1ce25              .byte $xx,$xx,$xx,$xx
+        $1ce29              .byte $xx
+        $1ce2a              .byte $xx,$xx,$xx,$xx,$xx
+        $1ce2f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1ce36              .byte $xx,$xx,$xx,$xx,$xx
 	;; 20, 7c
-        $1ce3b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ce4b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ce5b              .byte $xx,$xx,$xx,$xx
+        $1ce3b              .byte $xx,$xx,$xx,$xx
+        $1ce3f              .byte $xx,$xx,$xx,$xx
+        $1ce43              .byte $xx,$xx,$xx,$xx
+        $1ce47              .byte $xx,$xx,$xx,$xx
+        $1ce4b              .byte $xx,$xx,$xx,$xx
+        $1ce4f              .byte $xx
+        $1ce50              .byte $xx,$xx,$xx,$xx,$xx
+        $1ce55              .byte $xx,$xx,$xx,$xx,$xx
+        $1ce5a              .byte $xx,$xx,$xx,$xx,$xx
 	;; 21, 7d
-        $1ce5f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ce6f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ce7f              .byte $xx,$xx,$xx,$xx
+        $1ce5f              .byte $xx,$xx,$xx,$xx
+        $1ce63              .byte $xx,$xx,$xx,$xx
+        $1ce67              .byte $xx,$xx,$xx,$xx
+        $1ce6b              .byte $xx,$xx,$xx,$xx
+        $1ce6f              .byte $xx,$xx,$xx,$xx
+        $1ce73              .byte $xx
+        $1ce74              .byte $xx,$xx,$xx,$xx,$xx
+        $1ce79              .byte $xx,$xx,$xx,$xx,$xx
+        $1ce7e              .byte $xx,$xx,$xx,$xx,$xx
 	;; 22
-        $1ce83              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ce93              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cea3              .byte $xx,$xx,$xx,$xx
+        $1ce83              .byte $xx,$xx,$xx,$xx
+        $1ce87              .byte $xx,$xx,$xx,$xx
+        $1ce8b              .byte $xx,$xx,$xx,$xx
+        $1ce8f              .byte $xx,$xx,$xx,$xx
+        $1ce93              .byte $xx,$xx,$xx,$xx
+        $1ce97              .byte $xx
+        $1ce98              .byte $xx,$xx,$xx,$xx,$xx
+        $1ce9d              .byte $xx,$xx,$xx,$xx,$xx
+        $1cea2              .byte $xx,$xx,$xx,$xx,$xx
 	;; 23
-        $1cea7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ceb7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cea7              .byte $xx,$xx,$xx,$xx
+        $1ceab              .byte $xx
+        $1ceac              .byte $xx,$xx,$xx,$xx,$xx
+        $1ceb1              .byte $xx,$xx,$xx,$xx,$xx
+        $1ceb6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cebd              .byte $xx,$xx,$xx,$xx,$xx
 	;; 05
-        $1cec2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ced2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cec2              .byte $xx,$xx,$xx,$xx
+        $1cec6              .byte $xx,$xx ; amazones
+        $1cec8              .byte $xx,$xx ; portoa
+        $1ceca              .byte $xx
+        $1cecb              .byte $xx,$xx,$xx,$xx,$xx
+        $1ced0              .byte $xx,$xx,$xx,$xx,$xx
+        $1ced5              .byte $xx,$xx,$xx,$xx,$xx
+        $1ceda              .byte $xx,$xx,$xx,$xx,$xx
 	;; 24
-        $1cedf              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cedf              .byte $xx,$xx,$xx,$xx
+        $1cee3              .byte $xx
+        $1cee4              .byte $xx,$xx,$xx,$xx,$xx
 	;; 26
-        $1cee9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cee9              .byte $xx,$xx,$xx,$xx
+        $1ceed              .byte $xx
+        $1ceee              .byte $xx,$xx,$xx,$xx,$xx
 	;; 27
-        $1cef3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cef3              .byte $xx,$xx,$xx,$xx
+        $1cef7              .byte $xx
+        $1cef8              .byte $xx,$xx,$xx,$xx,$xx
 	;; 25
-        $1cefd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cf0d              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1cefd              .byte $xx,$xx,$xx,$xx
+        $1cf01              .byte $xx
+        $1cf02              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cf09              .byte $xx,$xx,$xx,$xx,$xx
+        $1cf0e              .byte $xx,$xx,$xx,$xx,$xx
 	;; 28
-        $1cf13              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cf13              .byte $xx,$xx,$xx,$xx
+        $1cf17              .byte $xx
+        $1cf18              .byte $xx,$xx,$xx,$xx,$xx
 	;; 08
-        $1cf1d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cf2d              .byte $xx,$xx,$xx
+        $1cf1d              .byte $xx,$xx,$xx,$xx
+        $1cf21              .byte $xx,$xx
+        $1cf23              .byte $xx,$xx
+        $1cf25              .byte $xx
+        $1cf26              .byte $xx,$xx,$xx,$xx,$xx
+        $1cf2b              .byte $xx,$xx,$xx,$xx,$xx
 	;; 2b
-        $1cf30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cf30              .byte $xx,$xx,$xx,$xx
+        $1cf34              .byte $xx
+        $1cf35              .byte $xx,$xx,$xx,$xx,$xx
 	;; 2a
         $1cf3a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1cf4a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx

@@ -571,9 +571,12 @@ const undergroundChannel6   = location(0x64, PORT, 'Underground Channel 6 (water
                                        connect(undergroundChannel5, crossSea),
                                        connect(angrySeaSouth, crossSea),
                                        chest(lovePendant));
+const zombieTown            = location(0x65, EVIL, 'Zombie Town');
+const evilSpiritIsland1     = location(0x68, EVIL, 'Tunnel 1 (entrance)',
+                                       connect(angrySeaWest, talkedToJoelElder, crossSea));
+const evilSpiritIsland2a    = location(0x69, EVIL, 'Tunnel 2a (start)',
+                                       connect(evilSpiritIsland1));
 
-// $65	Zombie Town
-// $68	Evil Spirit Island 1
 // $69	Evil Spirit Island 2
 // $6a	Evil Spirit Island 3
 // $6b	Evil Spirit Island 4
@@ -685,7 +688,7 @@ const portoaPalaceEntrance  = location(0xd7, PORT, 'Palace Entrance', connect(po
 const portoaFortuneTeller1  = location(0xd8, PORT, 'Fortune Teller Front',
                                        connect(portoa),
                                        trigger(talkedToFortuneTeller, talkedToPortoaQueen));
-const portoaFortuneTeller2  = loxation(0xd8, PORT, 'Fortune Teller Back',
+const portoaFortuneTeller2  = location(0xd8, PORT, 'Fortune Teller Back',
                                        connect(undergroundChannel2),
                                        connect(undergroundChannel3));
 const portoaPawnShop        = location(0xd9, PORT, 'Pawn Shop', connect(portoa));

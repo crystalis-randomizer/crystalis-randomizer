@@ -1,0 +1,137 @@
+000 - unused
+001
+
+00a - windmill key used
+00d - leaf villagers rescued (specifically elder)
+00e - learned telepathy (defeated stom)
+00f - woke windmill guard
+013 - sabera defeated
+017 - chest:02:sword of water
+      $6484
+018 - entered underground channel
+01b - mesia recording played
+026 - entered shyron
+027 - shyron massacre
+      $6485
+028 - change:woman
+029 - change:akahana
+02a - change:soldier
+02b - change:stom
+02c
+02d
+02e
+02f
+034 - akahana left waterfall cave
+035 - cured akahana
+037 
+      $6486
+038 - leaf attacked
+039 - learned refresh (windmill started)
+03c - chest:3b:love pendant
+03f - learned teleport
+
+043 - entered oak ?
+
+047 
+04e - chest:06:tornado bracelet
+050 - given statue to akahana
+051 - learned barrier
+055 - zebu rescued
+056 - tornel rescued
+05b - mt sabre guards gone
+
+05f - chest:03:sword of thunder
+067 - defeated mado 1
+068 - forged crystalis
+06a - stoned people cured ?
+078 - chest:0c:storm bracelet
+07a - chest:0a:blizzard bracelet
+07d - chest:3f:bow of sun
+07e - overheard mt sabre guards
+07f - heard mt sabre guards
+
+
+      $6490
+083 - learned paralysis
+084 - leaf villagers currently abducted (set in cave behind zebu, cleared on using prison key)
+085 - leaf elder currently abducted (set in cave behind zebu, cleared in elder's cell)
+
+087 - chest:05:ball of wind
+
+089 - spoken to dead stom's girlfriend
+08a - spoken to dead stom
+08c - swan guards disappeared
+
+090 - stoned people gone
+097 - local (red man at top of leaf (0f) toggle, pre-abduction)
+
+0a9 - talked to leaf rabbit
+0aa - chest:1d:medical herb
+0ab - chest:50:merical herb
+0ad - chest:52:medical herb
+0ae - chest:53:medical herb
+0af - chest:54:magic ring
+0b0 - chest:55:medical herb
+0b1 - chest:56:medical herb
+0b2 - chest:57:medical herb
+0b3 - chest:58:magic ring
+0b5 - chest:5a:fruit of power
+0b6 - chest:1f:lysis plant
+0b7 - chest:5c:lysis plant
+0b8 - chest:5d:lysis plant
+0b9 - chest:1e:antidote
+0ba - chest:5e:antidote
+0bb - chest:5f:antidote
+0bc - chest:60:antidote
+0bd - chest:20:fruit of lime
+0be - chest:21:fruit of power
+0bf - chest:62:fruit of power
+0c0 - chest:63:opel statue
+0c1 - chest:64:fruit of power
+0c2 - chest:22:magic ring
+0c3 - chest:65:magic ring
+0c4 - chest:66:fruit of repun
+0c5 - chest:6b:magic ring
+0c6 - chest:6c:magic ring
+0c7 - chest:23:fruit of repun
+0c8 - chest:24:warp boots
+0c9 - chest:6a:warp boots
+0ca - chest:3d:ivory statue
+0cb - chest:2a:power ring
+0cc - chest:1c:psycho armor
+0cd - chest:14:psycho shield
+0ce - chest:25:statue of onyx
+0cf - chest:33:key to prison
+0d0 - chest:28:flute of lime
+0d1 - chest:35:fog lamp
+0d2 - chest:69:magic ring
+0d3 - chest:26:opel statue
+0d4 - chest:5b:flute of lime
+0db - in sabera's trap
+0dc - chest:6f:magic ring
+0de - chest:2c:iron necklace
+0df - chest:1b:battle armor
+0e0 - spoken to dead akahana
+0e4 - chest:3c:kirisa plant
+0e5 - chest:6e:warp boots
+0e6 - chest:6d:opel statue
+0e7 - chest:2f:leather boots
+0ea - received tower message 1
+0eb - received tower message 2
+0ec - received tower message 3
+
+
+283 - calmed angry sea
+
+
+2f5 - warp:leaf
+2f6 - warp:brynmaer
+2f7 - warp:oak
+2f8 - warp:nadare
+2f9 - warp:portoa
+2fa - warp:amazones
+2fb - warp:joel
+2fc - warp:swan
+2fd - warp:shyron
+2fe - warp:goa
+2ff - warp:sahara

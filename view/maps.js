@@ -121,7 +121,16 @@ class MapsView extends View {
     for (let i = 0; !invalid && i < objects.length; i++) {
       const line = Array.from(objects[i], hex).join(',$');
       const [y, x, e, f] = objects[i];
-      const hitbox = e & 7 ? null : this.rom.hitboxes[this.rom.objects[(f + 0x50) & 0xff].hitbox];
+      let objectId = null;
+      if ((e & 7) == 0) objectId = (f + 0x50) & 0xff;
+      if ((e & 7) == 1) objectId = 0x30;
+      let hitboxId = null;
+      if (objectId != null) {
+        hitboxId = this.rom.objects[objectId].hitbox;
+      } else if ((e & 7) == 2) {
+        hitboxId = 0x0a;
+      }
+      const hitbox = hitboxId != null ? this.rom.hitboxes[hitboxId] : null;
       const xc = Math.max(0, ((x & 0x7f) << 4) + (e & 0x40 ? 8 : 0) + (hitbox ? hitbox.x0 + 8 : 0));
       const yc = Math.max(0, fromTileY(y) + (hitbox ? hitbox.y0 + 12 : -4));
       const w = hitbox ? hitbox.w : 16
@@ -172,22 +181,33 @@ class MapsView extends View {
           }
         }
       }
+      // TODO - draw simea at each entrance?
       // draw monsters
       for (const obj of opts.objs) {
-        if ((obj[2] & 7) != 0) continue;
-        const objId = obj[3] + 0x50;
-        // NOTE: 1 is for wind sword; other swords are 2-4?
-        const pal = [0, 1, ...opts.spritePal].map(p => this.rom.palettes[p + 0xb0 & 0xff]);
-        const pat = opts.spritePat[obj[2] & 0x80 ? 1 : 0];
-        const objData = this.rom.objects[objId];
-        if (!objData) continue;
-        let metaspriteId = objData.metasprite;
-        if (objData.action == 0x29) { // blob
-          metaspriteId = frame & 32 ? 0x6b : 0x68;
-        } else if ([0x2a, 0x5e].includes(objData.action)) {
-          // directional walker (soldier, etc); also tower def mech (5e)
-          metaspriteId = (frame >> 5 & 3) | objData.objectData[31];
+        let pat = opts.spritePat[obj[2] & 0x80 ? 1 : 0];
+        let pal = [0, 1, ...opts.spritePal].map(p => this.rom.palettes[(p + 0xb0) & 0xff]);
+        let metaspriteId;
+        if ((obj[2] & 7) == 0) {
+          const objId = obj[3] + 0x50;
+          // NOTE: 1 is for wind sword; other swords are 2-4?
+          const objData = this.rom.objects[objId];
+          if (!objData) continue;
+          metaspriteId = objData.metasprite;
+          if (objData.action == 0x29) { // blob
+            metaspriteId = frame & 32 ? 0x6b : 0x68;
+          } else if ([0x2a, 0x5e].includes(objData.action)) {
+            // directional walker (soldier, etc); also tower def mech (5e)
+            metaspriteId = (((frame >> 5) + 2) & 3) | objData.objectData[31];
+          }
+        } else if ((obj[2] & 7) == 1) {
+          const npcId = obj[3];
+          const npcData = this.rom.npcs[npcId];
+          if (!npcData || !npcData.data) continue;
+          metaspriteId = (((frame >> 5) + 2) & 3) | npcData.data[3];
+        } else if ((obj[2] & 7) == 2) {
+          if (obj[3] < 0x80) metaspriteId = 0xaa; // treasure chest
         }
+        if (metaspriteId == null) continue;
         let metasprite = this.rom.metasprites[metaspriteId];
         const y = fromTileY(obj[0]) + 0xc;
         const x = ((obj[1] & 0x7f) << 4) + (obj[2] & 0x40 ? 8 : 0) + 8;
@@ -241,6 +261,10 @@ class MapsView extends View {
       dy = signed(dy);
       const pattern = patternPage << 6 | tile & 0x3f;
       // TODO - mirroring!!!
+      if (mirrored) {
+        dx = -8 - dx;
+        attr ^= 0x40;
+      }
       if (x + dx + 8 >= img.w || y + dy + 8 >= img.h) continue;
       this.drawTile(img, x + dx, y + dy, pattern, palettes[attr & 3], attr);
     }

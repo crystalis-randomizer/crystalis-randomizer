@@ -519,6 +519,8 @@ define STATUS_STONE      $02
 define STATUS_POISON     $03
 define STATUS_CURSED     $04
 
+define OBJ_MIMIC   $73
+
 define OP_JMP_ABS  $4c
 
 ;;; Layouts of individual screens below.  Each screen is a 15x16 grid of
@@ -3161,6 +3163,12 @@ Palette_FF
         $07ffc              .byte $xx,$xx,$xx,$xx
 RomBank_04                      ; @@ $8000
 ;;; Banks 4 and 5 include some sort of NPC data in the otherwise-unused last row.
+;;; PersonData is quads keyed off of the NPC's ID.
+;;; Each quad contains:
+;;;   0. goes to $680
+;;;   1. goes to $6a0
+;;;   2. if positive, ...?  if negative, ...? -> 6e0 at least, sometimes 4a0
+;;;   3. metasprite
 MapScreen_80
         $08000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -9682,7 +9690,7 @@ MapData_AngrySea_Exits
         $15a97              .byte $xx,$xx,$xx,$xx
         $15a9b              .byte $xx,$xx,$xx,$xx ; To Swan
         $15a9f              .byte $xx,$xx,$xx,$xx
-        $15aa3              .byte $xx,$xx,$xx,$xx ; Boat House
+        $15aa3              .byte $xx,$xx,$xx,$xx ; Cabin
         $15aa7              .byte $xx
 MapData_AngrySea_Flags
         $15aa8              .byte $xx,$xx ; 64d0:08 -> 62f2:02
@@ -17078,6 +17086,7 @@ ObjectData_Object27                                      ; Object 27
         $1ae3c              .byte $xx
         $1ae3d              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
+;;; Treasure chest.
 ObjectData_Object0D                                      ; Object 0d
         $1ae3f              .byte $xx
         $1ae40              .byte $xx,$xx,$xx,$xx,$xx,$xx
@@ -17092,6 +17101,8 @@ ObjectData_Object0F                                      ; Object 0f
         $1ae53              .byte $xx
         $1ae54              .byte $xx
 ;;; ----------------------------------------------------------------
+;;; Invisible trigger square.  Has hitbox $0a, so width of two metatiles
+;;; and height of one metatile (32x16).
 ObjectData_Object0E                                      ; Object 0e
         $1ae55              .byte $xx
         $1ae56              .byte $xx,$xx,$xx,$xx,$xx,$xx
@@ -18695,7 +18706,7 @@ InitiateDialog
         ;;                    Found matching flags.
         $1c05c  xx xx xx:     xxx $1c078 ; load up $20$21$22 from next two bytes.
         $1c05f  xx xx:        xxx $xx
-        $1c061  xx xx:        xxx ($xx),y ; store the 3rd byte, which may "move" the NPC?
+        $1c061  xx xx:        xxx ($xx),y ; store the 3rd byte -> future non-matching locations?
         $1c063  xx xx xx:     xxx $xxxx,x
         ;; $40 in the first byte indicates we have flag(s) to toggle.  So toggle them.
         $1c066  xx xx:        xxx $xx
@@ -18717,6 +18728,7 @@ InitiateDialog
 ;;;            => $7df where it is the message table part number
 ;;;    $22 <- high 5 bits from first byte, shifted
 ;;;            => DialogFollowupActionJump index
+;;;            => TriggerActionJump index
 ;;;    Y   += 2
 PrepareMessageFrom24y
         ;; This appears to be displaying some dialog, or something.
@@ -18817,31 +18829,33 @@ NpcSpawnCondition_AdvanceToEndOfCondition
         ;;                  ------
         $1c0e2  xx:         xxx
 ;;; --------------------------------
-        $1c0e3  xx xx:      xxx $xx
-        $1c0e5  xx:         xxx
+TriggerSquare
+        $1c0e3  xx xx:      xxx $xx ; ID of trigger
+        $1c0e5  xx:         xxx     ; always >= $80 so high bit irrelevant
         $1c0e6  xx xx:      xxx #$xx
-        $1c0e8  xx xx:      xxx $xx
+        $1c0e8  xx xx:      xxx $xx ; no-op?
         $1c0ea  xx:         xxx
-        $1c0eb  xx xx:      xxx #$xx
+        $1c0eb  xx xx:      xxx #$xx ; condition not yet met
         $1c0ed  xx xx:      xxx $xx
         $1c0ef  xx:         xxx
-        $1c0f0  xx:         xxx
-        $1c0f1  xx xx xx:   xxx $1e17a,x
+        $1c0f0  xx:         xxx ; Y = 0
+        $1c0f1  xx xx xx:   xxx $1e17a,x ; X = trigger ID << 1
         $1c0f4  xx xx:      xxx $xx
         $1c0f6  xx xx xx:   xxx $1e17b,x
         $1c0f9  xx xx:      xxx $xx
-        $1c0fb  xx xx xx:   xxx $1c135
-        $1c0fe  xx xx:      xxx $xx
+-       $1c0fb  xx xx xx:   xxx ReadFlagFromBytePair_24y
+        $1c0fe  xx xx:       xxx $xx ; condition satisfied - do it
         $1c100  xx xx:      xxx #$xx
         $1c102  xx xx:      xxx $xx
         $1c104  xx xx:      xxx $xx
-        $1c106  xx:         xxx
+        $1c106  xx:         xxx ; one (or more) condition failed - do nothing
 ;;; --------------------------------
-        $1c107  xx xx:      xxx $xx
-        $1c109  xx xx:      xxx $xx
+TriggerSquare_ConditionMet
+        $1c107  xx xx:      xxx $xx ; first byte positive -> check another condition
+        $1c109  xx xx:       xxx - ; $1c0fb
         $1c10b  xx xx:      xxx #$xx
-        $1c10d  xx xx:      xxx $xx
-        $1c10f  xx xx xx:   xxx $1c078
+        $1c10d  xx xx:      xxx $xx ; condition met
+        $1c10f  xx xx xx:   xxx PrepareMessageFrom24y
 ;;; Reads the next two bytes from ($24),y and either sets or clears the
 ;;; corresponding flag from $6480..$657f.  The sign of the first byte
 ;;; indicates set (positive) or clear (negative).  The low 3 bits of
@@ -18965,19 +18979,21 @@ PowersOfTwo_1c
         $1c1b3  xx xx:      xxx #$xx
         $1c1b5  xx xx xx:   xxx $1c179
 ;;; --------------------------------
+        ;; NOTE - used by telepathy
         $1c1b8  xx xx:      xxx #$xx
         $1c1ba  xx xx:      xxx $xx
-        $1c1bc  xx xx:      xxx $xx
+        $1c1bc  xx xx:      xxx CurrentLocation
         $1c1be  xx xx xx:   xxx $1d8f4,x
         $1c1c1  xx xx:      xxx $xx
         $1c1c3  xx:         xxx
         $1c1c4  xx xx xx:   xxx $1c213,x
-        $1c1c7  xx xx xx:   xxx $xxxx
-        $1c1ca  xx xx:      xxx $xx
+        $1c1c7  xx xx xx:   xxx PlayerLevel
+        $1c1ca  xx xx:      xxx + ; $1c1d1
+        ;; Player's level is lower than expected
         $1c1cc  xx xx:      xxx #$xx
         $1c1ce  xx xx xx:   xxx $1c179
-;;; --------------------------------
-        $1c1d1  xx xx:      xxx $xx
+        ;; --------------------------------
++       $1c1d1  xx xx:      xxx $xx
         $1c1d3  xx:         xxx
         $1c1d4  xx:         xxx
         $1c1d5  xx xx:      xxx $xx
@@ -19016,7 +19032,9 @@ PowersOfTwo_1c
         $1c20e  xx xx:      xxx #$xx
         $1c210  xx xx xx:   xxx $1c179
 ;;; --------------------------------
-;;; This is a data table of something about items and inventory... 8213
+;;; This is a data table of something about items and inventory... 8213 ???
+;;; It's also indexed based on the result of the TelepathyLocations table
+;;; to compare to the player's current level.
 DataTable_1c213 
         $1c213              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
@@ -19057,7 +19075,7 @@ ItemGet
 +       $1c28f  xx xx:       xxx #$xx
         ;; Read [2] and [3] from $24$25.  [2] is a bitset address -> $21$22.  [3] is zero -> $20
         ;; Essentially just skips y+=2 and loads $20,$21,$22
-        $1c291  xx xx xx:    xxx $1c078
+        $1c291  xx xx xx:    xxx PrepareMessageFrom24y
         ;; 
         $1c294  xx xx xx:    xxx SetOrClearFlagsFromBytePair_24y
         $1c297  xx xx:       xxx ($xx),y ; should always be ff ???
@@ -19208,8 +19226,8 @@ ItemUse
         $1c33d  xx xx:      xxx #$xx
         $1c33f  xx xx:      xxx + ; 
         ;; Item actually did something -> ?
-        $1c341  xx xx xx:    xxx $1c078 ; read next two from ItemData[id] -> $20..$22
-        $1c344  xx xx xx:    xxx $1c112
+        $1c341  xx xx xx:    xxx PrepareMessageFrom24y ; read next two from ItemData[id] -> $20..$22
+        $1c344  xx xx xx:    xxx SetOrClearFlagsFromBytePair_24y
         $1c347  xx xx:       xxx $xx
         $1c349  xx xx:       xxx #$xx
         $1c34b  xx xx:       xxx + ; $1c350
@@ -19829,101 +19847,213 @@ NpcSpawnConditionTablePart2
         $1c77e              .word ($1c781) ; cf
         ;; 00 and many others - the empty condition.
         $1c780              .byte $xx
-        ;; Unknown
-        $1c781              .byte $xx,$xx,$xx,$xx
+        ;; UNUSED
+        $1c781              .byte $xx ; Mezame Shrine
+        $1c782              .byte $xx,$xx ; 000 unused
+        $1c784              .byte $xx
         ;; 80
-        $1c785              .byte $xx,$xx,$xx,$xx
+        $1c785              .byte $xx ; Goa
+        $1c786              .byte $xx,$xx ; 026 NOT entered shyron
+        $1c788              .byte $xx
         ;; 81
-        $1c789              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1c789              .byte $xx ; Goa
+        $1c78a              .byte $xx,$xx ; 026 entered shyron
+        $1c78c              .byte $xx,$xx ; 024 NOT
+        $1c78e              .byte $xx
         ;; 7f
-        $1c78f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1c78f              .byte $xx ; Zombie Town
+        $1c790              .byte $xx,$xx ; 013 NOT sabera defeated
+        $1c792              .byte $xx
+        ;; UNUSED
+        $1c793              .byte $xx ; Amazones
+        $1c794              .byte $xx,$xx ; 099 NOT
+        $1c796              .byte $xx,$xx,$xx,$xx,$xx
         ;; 64
-        $1c79b              .byte $xx,$xx,$xx,$xx
+        $1c79b              .byte $xx ; Portoa - Fisherman House
+        $1c79c              .byte $xx,$xx ; 08b
+        $1c79e              .byte $xx
         ;; 0a, 45, 46
-        $1c79f              .byte $xx,$xx,$xx,$xx
+        $1c79f              .byte $xx ; Zombie Town
+        $1c7a0              .byte $xx,$xx ; 013 sabera defeated
+        $1c7a2              .byte $xx
         ;; 47
-        $1c7a3              .byte $xx,$xx,$xx,$xx
+        $1c7a3              .byte $xx ; Zombie Town - House
+        $1c7a4              .byte $xx,$xx ; 013 sabera defeated
+        $1c7a6              .byte $xx
         ;; 0c
-        $1c7a7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1c7a7              .byte $xx ; Swan - Tavern
+        $1c7a8              .byte $xx,$xx ; 024 NOT
+        $1c7aa              .byte $xx ; Swan
+        $1c7ab              .byte $xx,$xx ; 024 NOT
+        $1c7ad              .byte $xx
         ;; 0b
-        $1c7ae              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1c7ae              .byte $xx ; Goa - Tavern
+        $1c7af              .byte $xx,$xx ; 024 NOT
+        $1c7b1              .byte $xx ; Goa
+        $1c7b2              .byte $xx,$xx ; 024 NOT
+        $1c7b4              .byte $xx
         ;; 4a
-        $1c7b5              .byte $xx,$xx,$xx,$xx
+        $1c7b5              .byte $xx ; Swan - Tavern
+        $1c7b6              .byte $xx,$xx ; 024 NOT
+        $1c7b8              .byte $xx
         ;; 8a
         $1c7b9              .byte $xx
-        ;; 0d
-        $1c7ba              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 11
-        $1c7c1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 0e, 0f, 10, 12
+        ;; 0d leaf elder
+        $1c7ba              .byte $xx ; Leaf - Elder House
+        $1c7bb              .byte $xx,$xx ; 085 NOT leaf elder currently abducted
+        $1c7bd              .byte $xx ; Mt Sabre North - Summit Cave
+        $1c7be              .byte $xx,$xx ; 085 leaf elder currently abducted
+        $1c7c0              .byte $xx
+        ;; 11 leaf elder's daughter
+        $1c7c1              .byte $xx ; Leaf - Elder House
+        $1c7c2              .byte $xx,$xx ; 084 NOT leaf villagers currently abducted
+        $1c7c4              .byte $xx ; Mt Sabre North - Right Cell
+        $1c7c5              .byte $xx,$xx ; 084 leaf villagers currently abducted
+        $1c7c7              .byte $xx
+        ;; 0e, 0f, 10, 12 - leaf townspeople
         $1c7c8              .byte $xx ; Leaf
-        $1c7c9              .byte $xx,$xx ; 084 NOT villagers currently abducted
-        $1c7cb              .byte $xx ; Mt Sabre Right Cell
-        $1c7cc              .byte $xx,$xx ; 084 villagers currently abducted 
+        $1c7c9              .byte $xx,$xx ; 084 NOT leaf villagers currently abducted
+        $1c7cb              .byte $xx ; Mt Sabre North - Right Cell
+        $1c7cc              .byte $xx,$xx ; 084 leaf villagers currently abducted
         $1c7ce              .byte $xx
-        ;; 14
-        $1c7cf              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 15
-        $1c7d8              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        ;; 14 windmill guard
+        $1c7cf              .byte $xx ; Leaf - Student House
+        $1c7d0              .byte $xx,$xx ; 03a NOT
+        $1c7d2              .byte $xx ; Windmill Cave
+        $1c7d3              .byte $xx,$xx ; 00f woke windmill guard
+        $1c7d5              .byte $xx,$xx ; 038 NOT leaf attacked
+        $1c7d7              .byte $xx
+        ;; 15 sleeping windmill guard
+        $1c7d8              .byte $xx ; Windmill Cave
+        $1c7d9              .byte $xx,$xx ; 03a
+        $1c7db              .byte $xx,$xx ; 00f NOT woke windmill guard
+        $1c7dd              .byte $xx
         ;; 16 akahana
         $1c7de              .byte $xx ; Brynmaer
         $1c7df              .byte $xx,$xx ; 050 NOT given statue to akahana
-        $1c7e1              .byte $xx ; Waterfall Cave
-        $1c7e2              .byte $xx,$xx ; 051 NOT
-        $1c7e4              .byte $xx,$xx ; 035
-        $1c7e6              .byte $xx,$xx ; 034 NOT
+        $1c7e1              .byte $xx ; Waterfall Cave 4
+        $1c7e2              .byte $xx,$xx ; 051 NOT learned barrier
+        $1c7e4              .byte $xx,$xx ; 035 cured akahana
+        $1c7e6              .byte $xx,$xx ; 034 NOT akahana left waterfall cave
         $1c7e8              .byte $xx ; Shyron
         $1c7e9              .byte $xx,$xx ; 027 NOT shyron massacre
         $1c7eb              .byte $xx
         ;; 88 stoned akahana
-        $1c7ec              .byte $xx ; Waterfall Cave
-        $1c7ed              .byte $xx,$xx ; 035 NOT
-        $1c7ef              .byte $xx,$xx ; 051 NOT
+        $1c7ec              .byte $xx ; Waterfall Cave 4
+        $1c7ed              .byte $xx,$xx ; 035 NOT cured akahana
+        $1c7ef              .byte $xx,$xx ; 051 NOT learned barrier
         $1c7f1              .byte $xx
         ;; 1b
-        $1c7f2              .byte $xx,$xx,$xx,$xx
+        $1c7f2              .byte $xx ; Brynmaer - Tavern
+        $1c7f3              .byte $xx,$xx ; 048 NOT
+        $1c7f5              .byte $xx
         ;; 1f
-        $1c7f6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1c7f6              .byte $xx ; Oak - Mother House
+        $1c7f7              .byte $xx,$xx ; 045
+        $1c7f9              .byte $xx ; Swamp
+        $1c7fa              .byte $xx,$xx ; 052
+        $1c7fc              .byte $xx,$xx ; 053 NOT
+        $1c7fe              .byte $xx,$xx ; 045 NOT
+        $1c800              .byte $xx
         ;; 2c
-        $1c801              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1c801              .byte $xx ; Mt Sabre North - Main
+        $1c802              .byte $xx,$xx ; 066 NOT
+        $1c804              .byte $xx,$xx ; 048
+        $1c806              .byte $xx,$xx ; 012 NOT
+        $1c808              .byte $xx
         ;; 2d
-        $1c809              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1c809              .byte $xx
+        $1c80a              .byte $xx,$xx
+        $1c80c              .byte $xx
+        $1c80d              .byte $xx,$xx
+        $1c80f              .byte $xx
         ;; 2e
         ;; 2f
         ;; 30
         ;; 31
-        $1c810              .byte $xx,$xx,$xx,$xx
+        $1c810              .byte $xx
+        $1c811              .byte $xx,$xx
+        $1c813              .byte $xx
         ;; 33
-        $1c814              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1c814              .byte $xx
+        $1c815              .byte $xx,$xx
+        $1c817              .byte $xx
+        $1c818              .byte $xx,$xx
+        $1c81a              .byte $xx
         ;; 38
-        $1c81b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1c81b              .byte $xx
+        $1c81c              .byte $xx,$xx
+        $1c81e              .byte $xx,$xx
+        $1c820              .byte $xx
+        $1c821              .byte $xx,$xx
+        $1c823              .byte $xx,$xx
+        $1c825              .byte $xx
         ;; 39
-        $1c826              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1c826              .byte $xx
+        $1c827              .byte $xx,$xx
+        $1c829              .byte $xx,$xx
+        $1c82b              .byte $xx
         ;; 87
-        $1c82c              .byte $xx,$xx,$xx,$xx
+        $1c82c              .byte $xx
+        $1c82d              .byte $xx,$xx
+        $1c82f              .byte $xx
         ;; 3c
-        $1c830              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1c830              .byte $xx
+        $1c831              .byte $xx,$xx
+        $1c833              .byte $xx,$xx
+        $1c835              .byte $xx
         ;; 85
-        $1c836              .byte $xx,$xx,$xx,$xx
+        $1c836              .byte $xx
+        $1c837              .byte $xx,$xx
+        $1c839              .byte $xx
         ;; 3a
-        $1c83a              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1c83a              .byte $xx
+        $1c83b              .byte $xx,$xx
+        $1c83d              .byte $xx,$xx
+        $1c83f              .byte $xx
         ;; 44
-        $1c840              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1c840              .byte $xx
+        $1c841              .byte $xx,$xx
+        $1c843              .byte $xx
+        $1c844              .byte $xx,$xx
+        $1c846              .byte $xx
         ;; 4e
         ;; 4f
         ;; 50
         ;; 51
         ;; 52
         ;; 53
-        $1c847              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; NOTE: are these part of the condition above, or it is unused?
-        ;; they weren't covered in full2.mov
-        $1c854              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $1c85a              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1c847              .byte $xx
+        $1c848              .byte $xx,$xx
+        $1c84a              .byte $xx
+        $1c84b              .byte $xx,$xx
+        $1c84d              .byte $xx
+        $1c84e              .byte $xx,$xx
+        $1c850              .byte $xx
+        $1c851              .byte $xx,$xx
+        $1c853              .byte $xx
+        ;; unused
+        $1c854              .byte $xx
+        $1c855              .byte $xx,$xx
+        $1c857              .byte $xx,$xx
+        $1c859              .byte $xx
+        ;; unused
+        $1c85a              .byte $xx
+        $1c85b              .byte $xx,$xx
+        $1c85d              .byte $xx,$xx
+        $1c85f              .byte $xx
         ;; 76
-        $1c860              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1c860              .byte $xx
+        $1c861              .byte $xx,$xx
+        $1c863              .byte $xx
+        $1c864              .byte $xx,$xx
+        $1c866              .byte $xx,$xx
+        $1c868              .byte $xx
         ;; 5d
-        $1c869              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1c869              .byte $xx
+        $1c86a              .byte $xx,$xx
+        $1c86c              .byte $xx,$xx
+        $1c86e              .byte $xx
         ;; 70 dead akahana
         $1c86f              .byte $xx ; Shyron
         $1c870              .byte $xx,$xx ; 027 shyron massacre
@@ -19952,82 +20082,181 @@ NpcSpawnConditionTablePart2
         $1c88f              .byte $xx,$xx ; 05e
         $1c891              .byte $xx
         ;; 5f
-        $1c892              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1c8a2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 60
-        $1c8ab              .byte $xx,$xx,$xx,$xx,$xx
-        $1c8b0              .byte $xx,$xx,$xx,$xx,$xx
+        $1c892              .byte $xx
+        $1c893              .byte $xx,$xx
+        $1c895              .byte $xx,$xx
+        $1c897              .byte $xx
+        $1c898              .byte $xx,$xx
+        $1c89a              .byte $xx
+        $1c89b              .byte $xx,$xx
+        $1c89d              .byte $xx,$xx
+        $1c89f              .byte $xx
+        $1c8a0              .byte $xx,$xx
+        $1c8a2              .byte $xx,$xx
+        $1c8a4              .byte $xx
+        $1c8a5              .byte $xx,$xx
+        $1c8a7              .byte $xx
+        $1c8a8              .byte $xx,$xx
+        $1c8aa              .byte $xx
+        ;; 60 stom
+        $1c8ab              .byte $xx ; Stom's House
+        $1c8ac              .byte $xx,$xx
+        $1c8ae              .byte $xx ; Swan - Stom's Hut
+        $1c8af              .byte $xx,$xx
+        $1c8b1              .byte $xx ; Shyron
+        $1c8b2              .byte $xx,$xx ; 027 NOT shyron massacre
+        $1c8b4              .byte $xx
         ;; 62
-        $1c8b5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1c8c5              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1c8b5              .byte $xx
+        $1c8b6              .byte $xx,$xx
+        $1c8b8              .byte $xx,$xx
+        $1c8ba              .byte $xx
+        $1c8bb              .byte $xx,$xx
+        $1c8bd              .byte $xx,$xx
+        $1c8bf              .byte $xx
+        $1c8c0              .byte $xx,$xx
+        $1c8c2              .byte $xx,$xx
+        $1c8c4              .byte $xx
+        $1c8c5              .byte $xx,$xx
+        $1c8c7              .byte $xx
+        $1c8c8              .byte $xx,$xx
+        $1c8ca              .byte $xx
         ;; 74
         ;; 7e
-        $1c8cb              .byte $xx,$xx,$xx,$xx,$xx
-        $1c8d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1c8cb              .byte $xx
+        $1c8cc              .byte $xx,$xx
+        $1c8ce              .byte $xx,$xx
+        $1c8d0              .byte $xx
+        $1c8d1              .byte $xx,$xx
+        $1c8d3              .byte $xx,$xx
+        $1c8d5              .byte $xx
+        $1c8d6              .byte $xx,$xx
+        $1c8d8              .byte $xx,$xx
+        $1c8da              .byte $xx
+        $1c8db              .byte $xx,$xx
+        $1c8dd              .byte $xx,$xx
+        $1c8df              .byte $xx
         ;; 63
-        $1c8e0              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        ;; 65
-        $1c8e6              .byte $xx,$xx,$xx,$xx
+        $1c8e0              .byte $xx
+        $1c8e1              .byte $xx,$xx
+        $1c8e3              .byte $xx,$xx
+        $1c8e5              .byte $xx
+        ;; 65 startled green man outside leaf cave
+        $1c8e6              .byte $xx
+        $1c8e7              .byte $xx,$xx
+        $1c8e9              .byte $xx
         ;; 6a
-        $1c8ea              .byte $xx,$xx,$xx,$xx
+        $1c8ea              .byte $xx
+        $1c8eb              .byte $xx,$xx
+        $1c8ed              .byte $xx
         ;; 6e
-        $1c8ee              .byte $xx,$xx
-        $1c8f0              .byte $xx,$xx,$xx,$xx
+        $1c8ee              .byte $xx
+        $1c8ef              .byte $xx,$xx
+        $1c8f1              .byte $xx,$xx
+        $1c8f3              .byte $xx
         ;; 73
-        $1c8f4              .byte $xx,$xx,$xx,$xx
+        $1c8f4              .byte $xx
+        $1c8f5              .byte $xx,$xx
+        $1c8f7              .byte $xx
         ;; 68
-        $1c8f8              .byte $xx,$xx,$xx,$xx
+        $1c8f8              .byte $xx
+        $1c8f9              .byte $xx,$xx
+        $1c8fb              .byte $xx
         ;; 6b
-        $1c8fc              .byte $xx,$xx,$xx,$xx
+        $1c8fc              .byte $xx
+        $1c8fd              .byte $xx,$xx
+        $1c8ff              .byte $xx
         ;; 6d
-        $1c900              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1c900              .byte $xx
+        $1c901              .byte $xx,$xx
+        $1c903              .byte $xx,$xx
+        $1c905              .byte $xx
+        $1c906              .byte $xx,$xx
+        $1c908              .byte $xx
         ;; 6c
-        $1c909              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1c909              .byte $xx
+        $1c90a              .byte $xx,$xx
+        $1c90c              .byte $xx,$xx
+        $1c90e              .byte $xx
         ;; 75
         $1c90f              .byte $xx
-        $1c910              .byte $xx,$xx,$xx
+        $1c910              .byte $xx,$xx
+        $1c912              .byte $xx
         ;; 83
-        $1c913              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1c913              .byte $xx
+        $1c914              .byte $xx,$xx
+        $1c916              .byte $xx,$xx
+        $1c918              .byte $xx
         ;; 84
-        $1c919              .byte $xx,$xx,$xx,$xx
+        $1c919              .byte $xx
+        $1c91a              .byte $xx,$xx
+        $1c91c              .byte $xx
         ;; 8e
-        $1c91d              .byte $xx,$xx,$xx
+        $1c91d              .byte $xx
+        $1c91e              .byte $xx,$xx
         $1c920              .byte $xx
         ;; 20
         ;; 21
-        $1c921              .byte $xx,$xx,$xx,$xx
+        $1c921              .byte $xx
+        $1c922              .byte $xx,$xx
+        $1c924              .byte $xx
         ;; 7c
         ;; 7d
-        $1c925              .byte $xx,$xx,$xx,$xx
-        ;; c0
-        $1c929              .byte $xx,$xx,$xx,$xx
-        ;; c1
-        $1c92d              .byte $xx,$xx,$xx
+        $1c925              .byte $xx
+        $1c926              .byte $xx,$xx
+        $1c928              .byte $xx
+        ;; c0 vampire 1
+        $1c929              .byte $xx
+        $1c92a              .byte $xx,$xx
+        $1c92c              .byte $xx
+        ;; c1 giant insect
+        $1c92d              .byte $xx
+        $1c92e              .byte $xx,$xx
         $1c930              .byte $xx
-        ;; c2
-        $1c931              .byte $xx,$xx,$xx,$xx
-        ;; c3
-        $1c935              .byte $xx,$xx,$xx,$xx
-        ;; c4
-        $1c939              .byte $xx,$xx,$xx,$xx
-        ;; c5
-        $1c93d              .byte $xx,$xx,$xx
+        ;; c2 kelbesque 1
+        $1c931              .byte $xx
+        $1c932              .byte $xx,$xx
+        $1c934              .byte $xx
+        ;; c3 rage
+        $1c935              .byte $xx
+        $1c936              .byte $xx,$xx
+        $1c938              .byte $xx
+        ;; c4 mado 1
+        $1c939              .byte $xx
+        $1c93a              .byte $xx,$xx
+        $1c93c              .byte $xx
+        ;; c5 kelbesque 2
+        $1c93d              .byte $xx
+        $1c93e              .byte $xx,$xx
         $1c940              .byte $xx
-        ;; c6
-        $1c941              .byte $xx,$xx,$xx,$xx
-        ;; c7
-        $1c945              .byte $xx,$xx,$xx,$xx
-        ;; c8
-        $1c949              .byte $xx,$xx,$xx,$xx
-        ;; c9
-        $1c94d              .byte $xx,$xx,$xx
+        ;; c6 sabera 2
+        $1c941              .byte $xx
+        $1c942              .byte $xx,$xx
+        $1c944              .byte $xx
+        ;; c7 mado 2
+        $1c945              .byte $xx
+        $1c946              .byte $xx,$xx
+        $1c948              .byte $xx
+        ;; c8 karmine
+        $1c949              .byte $xx
+        $1c94a              .byte $xx,$xx
+        $1c94c              .byte $xx
+        ;; c9 statue of ?
+        $1c94d              .byte $xx
+        $1c94e              .byte $xx,$xx
         $1c950              .byte $xx
-        ;; ca
-        $1c951              .byte $xx,$xx,$xx,$xx
-        ;; cb
-        $1c955              .byte $xx,$xx,$xx,$xx
-        ;; cc
-        $1c959              .byte $xx,$xx,$xx,$xx
+        ;; ca statue of ?
+        $1c951              .byte $xx
+        $1c952              .byte $xx,$xx
+        $1c954              .byte $xx
+        ;; cb draygon 1
+        $1c955              .byte $xx
+        $1c956              .byte $xx,$xx
+        $1c958              .byte $xx
+        ;; cc vampire 2
+        $1c959              .byte $xx
+        $1c95a              .byte $xx,$xx
+        $1c95c              .byte $xx
 ;;; Character dialog table.  This is indexed by $2f => $560,x, which comes from
 ;;; the last byte of the NpcData entry.  This also corresponds to entries in
 ;;; the PersonData table.
@@ -20040,7 +20269,7 @@ DialogTable
         $1c965              .word ($1d0c1) ; 04 woman in dress at front of amazones
         $1c967              .word ($1cec2) ; 05 headband lady at right of amazones, portoa welcome
         $1c969              .word ($1d14f) ; 06 portoa pink dress lady below castle bridge
-        $1c96b              .word ($1d070) ; 07
+        $1c96b              .word ($1d070) ; 07 portoa barracks guard top
         $1c96d              .word ($1cf1d) ; 08 blue man at front of brynmaer
         $1c96f              .word ($1d33f) ; 09
         $1c971              .word ($1d35a) ; 0a
@@ -20083,15 +20312,15 @@ DialogTable
         $1c9bb              .word ($1ccbb) ; 2f leaf shopkeeper ?
         $1c9bd              .word ($1cc9d) ; 30 leaf shopkeeper ?
         $1c9bf              .word ($1cca7) ; 31
-        $1c9c1              .word ($1d0ab) ; 32
-        $1c9c3              .word ($1d055) ; 33
-        $1c9c5              .word ($1d030) ; 34
-        $1c9c7              .word ($1d0fe) ; 35
+        $1c9c1              .word ($1d0ab) ; 32 portoa barracks guard right
+        $1c9c3              .word ($1d055) ; 33 portoa throne room back door guard
+        $1c9c5              .word ($1d030) ; 34 portoa palace guard (throme room front)
+        $1c9c7              .word ($1d0fe) ; 35 portoa barracks evans
         $1c9c9              .word ($1d119) ; 36
         $1c9cb              .word ($1d134) ; 37
-        $1c9cd              .word ($1cf91) ; 38
-        $1c9cf              .word ($1d004) ; 39
-        $1c9d1              .word ($1d1e5) ; 3a destoned people in waterfall cave
+        $1c9cd              .word ($1cf91) ; 38 portoa queen
+        $1c9cf              .word ($1d004) ; 39 fortune teller
+        $1c9d1              .word ($1d1e5) ; 3a de-stoned people in waterfall cave
         $1c9d3              .word ($1d1fd) ; 3b
         $1c9d5              .word ($1d20c) ; 3c
         $1c9d7              .word ($1d21b) ; 3d
@@ -20230,641 +20459,1327 @@ DialogTablePart2
         $1cadf              .word ($1cb39) ; c1 giant insect???
         $1cae1              .word ($1cb39) ; c2 kelbesque???
         $1cae3              .word ($1d8e5) ; c3 rage
+        ;; ----------------------------------------------------------------
 	;; 80, 81
-        $1cae5              .byte $xx,$xx,$xx,$xx
-        $1cae9              .byte $xx
-        $1caea              .byte $xx,$xx,$xx,$xx,$xx
-        $1caef              .byte $xx,$xx,$xx,$xx,$xx
+        $1cae5              .byte $xx,$xx,$xx,$xx,$xx
+        $1caea              .byte $xx,$xx,$xx,$xx,$xx ; 026 -> 1e:14
+        $1caef              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:13
+        ;; ----------------------------------------------------------------
 	;; 6e
-        $1caf4              .byte $xx,$xx,$xx,$xx
-        $1caf8              .byte $xx
-        $1caf9              .byte $xx,$xx,$xx,$xx,$xx
+        $1caf4              .byte $xx,$xx,$xx,$xx,$xx
+        $1caf9              .byte $xx,$xx,$xx,$xx,$xx ; default -> 16:01
+        ;; ----------------------------------------------------------------
 	;; 7f
-        $1cafe              .byte $xx,$xx,$xx,$xx
-        $1cb02              .byte $xx
-        $1cb03              .byte $xx,$xx,$xx,$xx,$xx
+        $1cafe              .byte $xx,$xx,$xx,$xx,$xx
+        $1cb03              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0d:02
+        ;; ----------------------------------------------------------------
 	;; 49
-        $1cb08              .byte $xx,$xx,$xx,$xx
-        $1cb0c              .byte $xx
-        $1cb0d              .byte $xx,$xx,$xx,$xx,$xx
-	;; 4b
-        $1cb12              .byte $xx,$xx,$xx,$xx
-        $1cb16              .byte $xx
-        $1cb17              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cb08              .byte $xx,$xx,$xx,$xx,$xx
+        $1cb0d              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:0f
+        ;; ----------------------------------------------------------------
+	;; 4b 
+        $1cb12              .byte $xx,$xx,$xx,$xx,$xx
+        $1cb17              .byte $xx,$xx,$xx,$xx,$xx ; 0a7 NOT -> 13:11
+        $1cb1c              .byte $xx,$xx
         $1cb1e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 4c
-        $1cb25              .byte $xx,$xx,$xx,$xx
-        $1cb29              .byte $xx
-        $1cb2a              .byte $xx,$xx,$xx,$xx,$xx
-	;; 4d
-        $1cb2f              .byte $xx,$xx,$xx,$xx
-        $1cb33              .byte $xx
-        $1cb34              .byte $xx,$xx,$xx,$xx,$xx
-	;; 61, 66, 67, 6a, 73, 82, 89, 8a, 8b, 8c, 8d, 8f, 90, 91, 92, 93
+        ;; ----------------------------------------------------------------
+	;; 4c 
+        $1cb25              .byte $xx,$xx,$xx,$xx,$xx
+        $1cb2a              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:12
+        ;; ----------------------------------------------------------------
+	;; 4d 
+        $1cb2f              .byte $xx,$xx,$xx,$xx,$xx
+        $1cb34              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:10
+        ;; ----------------------------------------------------------------
+	;; 61, 66, 67, 6a, 73, 82, 89, 8a, 8b, 8c, 8d, 8f, 90, 91, 92, 93 
 	;; 94, 95, 96, 97, 98, 99, 9a, 9b, 9c, 9d, 9e, 9f, a0, a1, a2, a3
 	;; a4, a5, a6, a7, a8, a9, aa, ab, ac, ad, ae, af, b0, b1, b2, b3
 	;; b4, b5, b6, b7, b8, b9, ba, bb, bc, bd, be, bf, c0, c1, c2
-        $1cb39              .byte $xx,$xx,$xx,$xx
-        $1cb3d              .byte $xx
-        $1cb3e              .byte $xx,$xx,$xx,$xx,$xx
-	;; 0d leaf elder
-        $1cb43              .byte $xx,$xx,$xx,$xx ; 6485:01 change:woman   -> 00,12
-        $1cb47              .byte $xx,$xx,$xx,$xx ; 6485:04 change:soldier -> 00,13
-        $1cb4b              .byte $xx,$xx,$xx,$xx ; 6485:08 change:stom    -> 00,12
-        $1cb4f              .byte $xx,$xx,$xx,$xx ; 6485:02 change:akahana -> 00,12
-        $1cb53              .byte $xx,$xx         ; Leaf elder's house -> 0
-        $1cb55              .byte $xx,$xx         ; Mt Sabre prison -> 16
+        $1cb39              .byte $xx,$xx,$xx,$xx,$xx
+        $1cb3e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:03
+        ;; ----------------------------------------------------------------
+	;; 0d leaf elder 
+        $1cb43              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 00:12
+        $1cb47              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 00:13
+        $1cb4b              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 00:12
+        $1cb4f              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 00:12
+        $1cb53              .byte $xx,$xx
+        $1cb55              .byte $xx,$xx
         $1cb57              .byte $xx
-        $1cb58              .byte $xx,$xx,$xx,$xx,$xx
-        $1cb5d              .byte $xx,$xx,$xx,$xx,$xx
-        $1cb62              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cb69              .byte $xx,$xx,$xx,$xx,$xx
-        $1cb6e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cb75              .byte $xx,$xx,$xx,$xx,$xx
-	;; 65
+        ;;                  00: c0 Leaf - Elder House
+        $1cb58              .byte $xx,$xx,$xx,$xx,$xx ; 047 -> 00:11
+        $1cb5d              .byte $xx,$xx,$xx,$xx,$xx ; 00a windmill key used -> 00:0f
+        $1cb62              .byte $xx,$xx,$xx,$xx,$xx ; 00b NOT -> 00:0e (action 03)
+        $1cb67              .byte         $xx,$xx     ;     Set: 00b
+        $1cb69              .byte $xx,$xx,$xx,$xx,$xx ; default -> 00:0f
+        ;;                  16: 35 Mt Sabre North - Summit Cave
+        $1cb6e              .byte $xx,$xx,$xx,$xx,$xx ; 083 NOT learned paralysis -> 07:09
+        $1cb73              .byte         $xx,$xx     ;     Set: 083 learned paralysis
+        $1cb75              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:0a
+        ;; ----------------------------------------------------------------
+	;; 65 startled green man outside leaf cave
         $1cb7a              .byte $xx,$xx,$xx,$xx
         $1cb7e              .byte $xx
-        $1cb7f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 0e
-        $1cb86              .byte $xx,$xx,$xx,$xx
-        $1cb8a              .byte $xx,$xx,$xx,$xx
-        $1cb8e              .byte $xx,$xx,$xx,$xx
-        $1cb92              .byte $xx,$xx,$xx,$xx
+        $1cb7f              .byte $xx,$xx,$xx,$xx,$xx ; default -> 00:09
+        $1cb84              .byte         $xx,$xx     ;     Set: 073
+        ;; ----------------------------------------------------------------
+	;; 0e startled green man inside leaf (cf. $65)
+        $1cb86              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
+        $1cb8a              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
+        $1cb8e              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
+        $1cb92              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:02
         $1cb96              .byte $xx,$xx
         $1cb98              .byte $xx,$xx
         $1cb9a              .byte $xx
-        $1cb9b              .byte $xx,$xx,$xx,$xx,$xx
-        $1cba0              .byte $xx,$xx,$xx,$xx,$xx
-        $1cba5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cbac              .byte $xx,$xx,$xx,$xx,$xx
-        $1cbb1              .byte $xx,$xx,$xx,$xx,$xx
-        $1cbb6              .byte $xx,$xx,$xx,$xx,$xx
-	;; 0f red man at top of leaf
-        $1cbbb              .byte $xx,$xx,$xx,$xx ; 028 change:woman   -> msg 1e:00
-        $1cbbf              .byte $xx,$xx,$xx,$xx ; 02a change:soldier -> msg 1e:07
-        $1cbc3              .byte $xx,$xx,$xx,$xx ; 02b change:stom    -> msg 1e:00
-        $1cbc7              .byte $xx,$xx,$xx,$xx ; 029 change:akahana -> msg 1e:00
-        $1cbcb              .byte $xx,$xx         ; Leaf -> 00
-        $1cbcd              .byte $xx,$xx         ; Mt Sabre right cell -> 13
+        ;;                  00: 02 Leaf
+        $1cb9b              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:0d
+        $1cba0              .byte $xx,$xx,$xx,$xx,$xx ; 00a windmill key used -> 00:0b
+        $1cba5              .byte $xx,$xx,$xx,$xx,$xx ; 00c NOT -> 00:0a
+        $1cbaa              .byte         $xx,$xx     ;     Set: 00c
+        $1cbac              .byte $xx,$xx,$xx,$xx,$xx ; default -> 00:0b
+        ;;                  16: 32 Mt Sabre North - Right Cell
+        $1cbb1              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:0d
+        $1cbb6              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:01
+        ;; ----------------------------------------------------------------
+	;; 0f red man at top of leaf 
+        $1cbbb              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:00
+        $1cbbf              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
+        $1cbc3              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:00
+        $1cbc7              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:00
+        $1cbcb              .byte $xx,$xx
+        $1cbcd              .byte $xx,$xx
         $1cbcf              .byte $xx
-        ;;                  00: 02 leaf
-        $1cbd0              .byte $xx,$xx,$xx,$xx,$xx         ; 0d0 after rescued -> msg 00:02
-        $1cbd5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx ; 097 dialog toggle -> msg 00:01
-        $1cbdc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx ; default           -> msg 00:00
-        ;;                  13: 32 mt sabre right cell
-        $1cbe3              .byte $xx,$xx,$xx,$xx,$xx         ; 0d0 after rescued -> msg 00:02
-        $1cbe8              .byte $xx,$xx,$xx,$xx,$xx         ; default           -> msg 07:00
-	;; 10
-        $1cbed              .byte $xx,$xx,$xx,$xx
-        $1cbf1              .byte $xx,$xx,$xx,$xx
-        $1cbf5              .byte $xx,$xx,$xx,$xx
-        $1cbf9              .byte $xx,$xx,$xx,$xx
+        ;;                  00: 02 Leaf
+        $1cbd0              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:02
+        $1cbd5              .byte $xx,$xx,$xx,$xx,$xx ; 097 local -> 00:01
+        $1cbda              .byte         $xx,$xx     ;     Clear: 097 local
+        $1cbdc              .byte $xx,$xx,$xx,$xx,$xx ; default -> 00:00
+        $1cbe1              .byte         $xx,$xx     ;     Set: 097 local
+        ;;                  13: 32 Mt Sabre North - Right Cell
+        $1cbe3              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:02
+        $1cbe8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:00
+        ;; ----------------------------------------------------------------
+	;; 10 red woman outside leaf shops
+        $1cbed              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
+        $1cbf1              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
+        $1cbf5              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
+        $1cbf9              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:01
         $1cbfd              .byte $xx,$xx
         $1cbff              .byte $xx,$xx
         $1cc01              .byte $xx
-        $1cc02              .byte $xx,$xx,$xx,$xx,$xx
-        $1cc07              .byte $xx,$xx,$xx,$xx,$xx
-        $1cc0c              .byte $xx,$xx,$xx,$xx,$xx
-        $1cc11              .byte $xx,$xx,$xx,$xx,$xx
-        $1cc16              .byte $xx,$xx,$xx,$xx,$xx
-	;; 11
-        $1cc1b              .byte $xx,$xx,$xx,$xx
-        $1cc1f              .byte $xx,$xx,$xx,$xx
-        $1cc23              .byte $xx,$xx,$xx,$xx
-        $1cc27              .byte $xx,$xx,$xx,$xx
+        ;;                  00: 02 Leaf
+        $1cc02              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:08
+        $1cc07              .byte $xx,$xx,$xx,$xx,$xx ; 00a windmill key used -> 00:07
+        $1cc0c              .byte $xx,$xx,$xx,$xx,$xx ; default -> 00:06
+        ;;                  0f: 32 Mt Sabre North - Right Cell
+        $1cc11              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:08
+        $1cc16              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:02
+        ;; ----------------------------------------------------------------
+	;; 11 leaf elder's daughter
+        $1cc1b              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:04
+        $1cc1f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0b
+        $1cc23              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:04
+        $1cc27              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:04
         $1cc2b              .byte $xx,$xx
         $1cc2d              .byte $xx,$xx
         $1cc2f              .byte $xx
-        $1cc30              .byte $xx,$xx,$xx,$xx,$xx
-        $1cc35              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cc3c              .byte $xx,$xx,$xx,$xx,$xx
-        $1cc41              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cc48              .byte $xx,$xx,$xx,$xx,$xx
-	;; 12 red girl in leaf
-        $1cc4d              .byte $xx,$xx,$xx,$xx ; 6485:01 -> 00,18
-        $1cc51              .byte $xx,$xx,$xx,$xx ; 6485:04 -> 03,cc
-        $1cc55              .byte $xx,$xx,$xx,$xx ; 6485:08 -> 00,18
-        $1cc59              .byte $xx,$xx,$xx,$xx ; 6485:02 -> 00,18
-        $1cc5d              .byte $xx,$xx         ; leaf -> 00
-        $1cc5f              .byte $xx,$xx         ; mt sabre right cell -> 0a
+        ;;                  00: 02 Leaf
+        $1cc30              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:05
+        $1cc35              .byte $xx,$xx,$xx,$xx,$xx ; 096 -> 00:04
+        $1cc3a              .byte         $xx,$xx     ;     Clear: 096
+        $1cc3c              .byte $xx,$xx,$xx,$xx,$xx ; default -> 00:03
+        $1cc41              .byte         $xx,$xx     ;     Set: 096
+        ;;                  13: 32 Mt Sabre North - Right Cell
+        $1cc43              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:05
+        $1cc48              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:03
+        ;; ----------------------------------------------------------------
+	;; 12 red girl in leaf 
+        $1cc4d              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 00:18
+        $1cc51              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0c
+        $1cc55              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 00:18
+        $1cc59              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 00:18
+        $1cc5d              .byte $xx,$xx
+        $1cc5f              .byte $xx,$xx
         $1cc61              .byte $xx
-        $1cc62              .byte $xx,$xx,$xx,$xx,$xx ; 00 leaf
-        $1cc67              .byte $xx,$xx,$xx,$xx,$xx
-        $1cc6c              .byte $xx,$xx,$xx,$xx,$xx ; 0a mt sabre cell
-        $1cc71              .byte $xx,$xx,$xx,$xx,$xx
-	;; 13
-        $1cc76              .byte $xx,$xx,$xx,$xx
-        $1cc7a              .byte $xx,$xx,$xx,$xx
-        $1cc7e              .byte $xx,$xx,$xx,$xx
-        $1cc82              .byte $xx,$xx,$xx,$xx
+        ;;                  00: 02 Leaf
+        $1cc62              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:19
+        $1cc67              .byte $xx,$xx,$xx,$xx,$xx ; default -> 00:18
+        ;;                  0a: 32 Mt Sabre North - Right Cell
+        $1cc6c              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:19
+        $1cc71              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:06
+        ;; ----------------------------------------------------------------
+	;; 13 
+        $1cc76              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 00:14
+        $1cc7a              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 00:14
+        $1cc7e              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 00:14
+        $1cc82              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 00:14
         $1cc86              .byte $xx
-        $1cc87              .byte $xx,$xx,$xx,$xx,$xx
-        $1cc8c              .byte $xx,$xx,$xx,$xx,$xx
-        $1cc91              .byte $xx,$xx,$xx,$xx,$xx
-        $1cc96              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 30
-        $1cc9d              .byte $xx,$xx,$xx,$xx
+        $1cc87              .byte $xx,$xx,$xx,$xx,$xx ; 00e NOT telepathy -> 00:14
+        $1cc8c              .byte $xx,$xx,$xx,$xx,$xx ; 038 NOT leaf attacked -> 00:15
+        $1cc91              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:17
+        $1cc96              .byte $xx,$xx,$xx,$xx,$xx ; default -> 00:16
+        $1cc9b              .byte         $xx,$xx     ;     Set: 0a9
+        ;; ----------------------------------------------------------------
+	;; 30 leaf shopkeeper ?
+        $1cc9d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0f
         $1cca1              .byte $xx
-        $1cca2              .byte $xx,$xx,$xx,$xx,$xx
-	;; 31
-        $1cca7              .byte $xx,$xx,$xx,$xx
+        $1cca2              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:07
+        ;; ----------------------------------------------------------------
+	;; 31 
+        $1cca7              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0f
         $1ccab              .byte $xx
-        $1ccac              .byte $xx,$xx,$xx,$xx,$xx
-	;; 2e
-        $1ccb1              .byte $xx,$xx,$xx,$xx
+        $1ccac              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:08
+        ;; ----------------------------------------------------------------
+	;; 2e leaf shopkeeper ?
+        $1ccb1              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:10
         $1ccb5              .byte $xx
-        $1ccb6              .byte $xx,$xx,$xx,$xx,$xx
-	;; 2f
-        $1ccbb              .byte $xx,$xx,$xx,$xx
+        $1ccb6              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:07
+        ;; ----------------------------------------------------------------
+	;; 2f leaf shopkeeper ?
+        $1ccbb              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0f
         $1ccbf              .byte $xx
-        $1ccc0              .byte $xx,$xx,$xx,$xx,$xx
-	;; 14
-        $1ccc5              .byte $xx,$xx,$xx,$xx
-        $1ccc9              .byte $xx,$xx,$xx,$xx
-        $1cccd              .byte $xx,$xx,$xx,$xx
-        $1ccd1              .byte $xx,$xx,$xx,$xx
+        $1ccc0              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:05
+        ;; ----------------------------------------------------------------
+	;; 14 windmill guard 
+        $1ccc5              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 01:04
+        $1ccc9              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 01:05
+        $1cccd              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 01:04
+        $1ccd1              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 01:04
         $1ccd5              .byte $xx,$xx
         $1ccd7              .byte $xx,$xx
         $1ccd9              .byte $xx
-        $1ccda              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cce1              .byte $xx,$xx,$xx,$xx,$xx
-        $1cce6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cced              .byte $xx,$xx,$xx,$xx,$xx
-	;; 15
+        $1ccda              .byte $xx,$xx,$xx,$xx,$xx ; 088 NOT -> 01:01 (action 03)
+        $1ccdf              .byte         $xx,$xx     ;     Set: 088
+        $1cce1              .byte $xx,$xx,$xx,$xx,$xx ; default -> 01:03
+        ;;                  0c: c5 Leaf - Student House
+        $1cce6              .byte $xx,$xx,$xx,$xx,$xx ; 0a5 NOT -> 00:0c (action 09)
+        $1cceb              .byte         $xx,$xx     ;     Set: 0a5
+        ;;                  13: 0e Windmill Cave
+        $1cced              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:0a -> @ 0c
+        ;; ----------------------------------------------------------------
+	;; 15 sleeping windmill guard 
         $1ccf2              .byte $xx,$xx,$xx,$xx
         $1ccf6              .byte $xx
-        $1ccf7              .byte $xx,$xx,$xx,$xx,$xx
-	;; 1b
+        $1ccf7              .byte $xx,$xx,$xx,$xx,$xx ; default -> 01:00
+        ;; ----------------------------------------------------------------
+	;; 1b 
         $1ccfc              .byte $xx,$xx,$xx,$xx
         $1cd00              .byte $xx
-        $1cd01              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 1c
-        $1cd08              .byte $xx,$xx,$xx,$xx
-        $1cd0c              .byte $xx,$xx,$xx,$xx
-        $1cd10              .byte $xx,$xx,$xx,$xx
-        $1cd14              .byte $xx,$xx,$xx,$xx
+        $1cd01              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:08 (action 0d)
+        $1cd06              .byte         $xx,$xx     ;     Set: 048
+        ;; ----------------------------------------------------------------
+	;; 1c 
+        $1cd08              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:10
+        $1cd0c              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
+        $1cd10              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:10
+        $1cd14              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:10
         $1cd18              .byte $xx
-        $1cd19              .byte $xx,$xx,$xx,$xx,$xx
-        $1cd1e              .byte $xx,$xx,$xx,$xx,$xx
-        $1cd23              .byte $xx,$xx,$xx,$xx,$xx
-	;; 2c
+        $1cd19              .byte $xx,$xx,$xx,$xx,$xx ; 048 NOT -> 02:09
+        $1cd1e              .byte $xx,$xx,$xx,$xx,$xx ; 012 -> 02:0c
+        $1cd23              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:09
+        ;; ----------------------------------------------------------------
+	;; 2c dying man at foot of mt sabre north
         $1cd28              .byte $xx,$xx,$xx,$xx
         $1cd2c              .byte $xx
-        $1cd2d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cd34              .byte $xx,$xx,$xx,$xx,$xx
-	;; 17
-        $1cd39              .byte $xx,$xx,$xx,$xx
+        $1cd2d              .byte $xx,$xx,$xx,$xx,$xx ; 012 NOT -> 05:0e (action 04)
+        $1cd32              .byte         $xx,$xx     ;     Set: 012
+        $1cd34              .byte $xx,$xx,$xx,$xx,$xx ; default -> 20:10
+        ;; ----------------------------------------------------------------
+	;; 17 red bearded man beneath brynmaer inn
+        $1cd39              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1cd3d              .byte $xx
-        $1cd3e              .byte $xx,$xx,$xx,$xx,$xx
-	;; 18
-        $1cd43              .byte $xx,$xx,$xx,$xx
+        $1cd3e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:03
+        ;; ----------------------------------------------------------------
+	;; 18 blue woman beneath brynmaer armor shop
+        $1cd43              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1cd47              .byte $xx
-        $1cd48              .byte $xx,$xx,$xx,$xx,$xx
-	;; 19
-        $1cd4d              .byte $xx,$xx,$xx,$xx
+        $1cd48              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:04
+        ;; ----------------------------------------------------------------
+	;; 19 red cloaked man beneath brynmaer pawn
+        $1cd4d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0a
         $1cd51              .byte $xx
-        $1cd52              .byte $xx,$xx,$xx,$xx,$xx
-	;; 1a
-        $1cd57              .byte $xx,$xx,$xx,$xx ; 6485:04 -> 03,c8
+        $1cd52              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:05
+        ;; ----------------------------------------------------------------
+	;; 1a blue woman at far end of brynmaer
+        $1cd57              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1cd5b              .byte $xx
-        $1cd5c              .byte $xx,$xx,$xx,$xx,$xx
-	;; 01
+        $1cd5c              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:07
+        ;; ----------------------------------------------------------------
+	;; 01 
         $1cd61              .byte $xx,$xx,$xx,$xx
         $1cd65              .byte $xx,$xx
         $1cd67              .byte $xx,$xx
         $1cd69              .byte $xx
-        $1cd6a              .byte $xx,$xx,$xx,$xx,$xx
-        $1cd6f              .byte $xx,$xx,$xx,$xx,$xx
-        $1cd74              .byte $xx,$xx,$xx,$xx,$xx
-        $1cd79              .byte $xx,$xx,$xx,$xx,$xx
-        $1cd7e              .byte $xx,$xx,$xx,$xx,$xx
-        $1cd83              .byte $xx,$xx,$xx,$xx,$xx
-        $1cd88              .byte $xx,$xx,$xx,$xx,$xx
-        $1cd8d              .byte $xx,$xx,$xx,$xx,$xx
-        $1cd92              .byte $xx,$xx,$xx,$xx,$xx
-        $1cd97              .byte $xx,$xx,$xx,$xx,$xx
-	;; 02
-        $1cd9c              .byte $xx,$xx,$xx,$xx
+        ;;                  00: c6 Brynmaer - Tavern
+        $1cd6a              .byte $xx,$xx,$xx,$xx,$xx ; 028 change:woman -> 1e:0f
+        $1cd6f              .byte $xx,$xx,$xx,$xx,$xx ; 02a change:soldier -> 1e:0e
+        $1cd74              .byte $xx,$xx,$xx,$xx,$xx ; 02b change:stom -> 1e:0f
+        $1cd79              .byte $xx,$xx,$xx,$xx,$xx ; 029 change:akahana -> 1e:0f
+        $1cd7e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:0f
+        ;;                  19: 93 Sahara
+        $1cd83              .byte $xx,$xx,$xx,$xx,$xx ; 028 change:woman -> 1a:04
+        $1cd88              .byte $xx,$xx,$xx,$xx,$xx ; 02a change:soldier -> 1e:0a -> @ 19
+        $1cd8d              .byte $xx,$xx,$xx,$xx,$xx ; 02b change:stom -> 1a:0d -> @ 19
+        $1cd92              .byte $xx,$xx,$xx,$xx,$xx ; 029 change:akahana -> 1a:04 -> @ 19
+        $1cd97              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:04 -> @ 19
+        ;; ----------------------------------------------------------------
+	;; 02 portoa light blue lower left walker
+        $1cd9c              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
         $1cda0              .byte $xx,$xx
         $1cda2              .byte $xx,$xx
         $1cda4              .byte $xx
-        $1cda5              .byte $xx,$xx,$xx,$xx,$xx
-        $1cdaa              .byte $xx,$xx,$xx,$xx,$xx
-	;; 1d
-        $1cdaf              .byte $xx,$xx,$xx,$xx
-        $1cdb3              .byte $xx,$xx,$xx,$xx
-        $1cdb7              .byte $xx,$xx,$xx,$xx
-        $1cdbb              .byte $xx,$xx,$xx,$xx
-        $1cdbf              .byte $xx,$xx,$xx,$xx
+        ;;                  00: c6 Brynmaer - Tavern
+        $1cda5              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:06
+        ;;                  05: 50 Portoa
+        $1cdaa              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:11
+        ;; ----------------------------------------------------------------
+	;; 1d 
+        $1cdaf              .byte $xx,$xx,$xx,$xx     ; 00e NOT telepathy -> 04:1a
+        $1cdb3              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:17
+        $1cdb7              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:17
+        $1cdbb              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:17
+        $1cdbf              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:17
         $1cdc3              .byte $xx
-        $1cdc4              .byte $xx,$xx,$xx,$xx,$xx
-        $1cdc9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cdd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cdd7              .byte $xx,$xx,$xx,$xx,$xx
-        $1cddc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cde3              .byte $xx,$xx,$xx,$xx,$xx
-	;; 1e
-        $1cde8              .byte $xx,$xx,$xx,$xx
-        $1cdec              .byte $xx,$xx,$xx,$xx
-        $1cdf0              .byte $xx,$xx,$xx,$xx
-        $1cdf4              .byte $xx,$xx,$xx,$xx
-        $1cdf8              .byte $xx,$xx,$xx,$xx
+        $1cdc4              .byte $xx,$xx,$xx,$xx,$xx ; 043 -> 04:19
+        $1cdc9              .byte $xx,$xx,$xx,$xx,$xx ; 0a6 -> 04:18
+        $1cdce              .byte         $xx,$xx     ;     Set: 0a8
+        $1cdd0              .byte $xx,$xx,$xx,$xx,$xx ; 044 -> 04:17
+        $1cdd5              .byte         $xx,$xx     ;     Set: 0a6
+        $1cdd7              .byte $xx,$xx,$xx,$xx,$xx ; 049 -> 04:16
+        $1cddc              .byte $xx,$xx,$xx,$xx,$xx ; 045 -> 04:15 (action 03)
+        $1cde1              .byte         $xx,$xx     ;     Set: 049
+        $1cde3              .byte $xx,$xx,$xx,$xx,$xx ; default -> 04:14
+        ;; ----------------------------------------------------------------
+	;; 1e 
+        $1cde8              .byte $xx,$xx,$xx,$xx     ; 00e NOT telepathy -> 04:1a
+        $1cdec              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 04:1a
+        $1cdf0              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 04:1a
+        $1cdf4              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 04:1a
+        $1cdf8              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 04:1a
         $1cdfc              .byte $xx
-        $1cdfd              .byte $xx,$xx,$xx,$xx,$xx
-        $1ce02              .byte $xx,$xx,$xx,$xx,$xx
-        $1ce07              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ce0e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 1f
-        $1ce15              .byte $xx,$xx,$xx,$xx
-        $1ce19              .byte $xx,$xx,$xx,$xx
-        $1ce1d              .byte $xx,$xx,$xx,$xx
-        $1ce21              .byte $xx,$xx,$xx,$xx
-        $1ce25              .byte $xx,$xx,$xx,$xx
+        $1cdfd              .byte $xx,$xx,$xx,$xx,$xx ; 041 -> 04:03
+        $1ce02              .byte $xx,$xx,$xx,$xx,$xx ; 0a0 -> 04:02
+        $1ce07              .byte $xx,$xx,$xx,$xx,$xx ; 045 -> 04:01 (action 03)
+        $1ce0c              .byte         $xx,$xx     ;     Set: 0a0
+        $1ce0e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 04:00
+        $1ce13              .byte         $xx,$xx     ;     Set: 052
+        ;; ----------------------------------------------------------------
+	;; 1f dwarf child in swamp
+        $1ce15              .byte $xx,$xx,$xx,$xx     ; 00e NOT telepathy -> 04:1a
+        $1ce19              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 04:1a
+        $1ce1d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 04:1a
+        $1ce21              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 04:1a
+        $1ce25              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 04:1a
         $1ce29              .byte $xx
-        $1ce2a              .byte $xx,$xx,$xx,$xx,$xx
-        $1ce2f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ce36              .byte $xx,$xx,$xx,$xx,$xx
-	;; 20, 7c
-        $1ce3b              .byte $xx,$xx,$xx,$xx
-        $1ce3f              .byte $xx,$xx,$xx,$xx
-        $1ce43              .byte $xx,$xx,$xx,$xx
-        $1ce47              .byte $xx,$xx,$xx,$xx
-        $1ce4b              .byte $xx,$xx,$xx,$xx
+        $1ce2a              .byte $xx,$xx,$xx,$xx,$xx ; 044 -> 04:07
+        $1ce2f              .byte $xx,$xx,$xx,$xx,$xx ; 045 NOT -> 04:05 (action 0c)
+        $1ce34              .byte         $xx,$xx     ;     Set: 053
+        $1ce36              .byte $xx,$xx,$xx,$xx,$xx ; default -> 04:06
+        ;; ----------------------------------------------------------------
+	;; 20, 7c oak inn guard
+        $1ce3b              .byte $xx,$xx,$xx,$xx     ; 00e NOT telepathy -> 04:1a
+        $1ce3f              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 04:1a
+        $1ce43              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 04:1a
+        $1ce47              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 04:1a
+        $1ce4b              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 04:1a
         $1ce4f              .byte $xx
-        $1ce50              .byte $xx,$xx,$xx,$xx,$xx
-        $1ce55              .byte $xx,$xx,$xx,$xx,$xx
-        $1ce5a              .byte $xx,$xx,$xx,$xx,$xx
-	;; 21, 7d
-        $1ce5f              .byte $xx,$xx,$xx,$xx
-        $1ce63              .byte $xx,$xx,$xx,$xx
-        $1ce67              .byte $xx,$xx,$xx,$xx
-        $1ce6b              .byte $xx,$xx,$xx,$xx
-        $1ce6f              .byte $xx,$xx,$xx,$xx
+        $1ce50              .byte $xx,$xx,$xx,$xx,$xx ; 041 -> 04:0b
+        $1ce55              .byte $xx,$xx,$xx,$xx,$xx ; 045 -> 04:0a
+        $1ce5a              .byte $xx,$xx,$xx,$xx,$xx ; default -> 04:09
+        ;; ----------------------------------------------------------------
+	;; 21, 7d oak tool shop guard
+        $1ce5f              .byte $xx,$xx,$xx,$xx     ; 00e NOT telepathy -> 04:1a
+        $1ce63              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 04:1a
+        $1ce67              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 04:1a
+        $1ce6b              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 04:1a
+        $1ce6f              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 04:1a
         $1ce73              .byte $xx
-        $1ce74              .byte $xx,$xx,$xx,$xx,$xx
-        $1ce79              .byte $xx,$xx,$xx,$xx,$xx
-        $1ce7e              .byte $xx,$xx,$xx,$xx,$xx
-	;; 22
-        $1ce83              .byte $xx,$xx,$xx,$xx
-        $1ce87              .byte $xx,$xx,$xx,$xx
-        $1ce8b              .byte $xx,$xx,$xx,$xx
-        $1ce8f              .byte $xx,$xx,$xx,$xx
-        $1ce93              .byte $xx,$xx,$xx,$xx
+        $1ce74              .byte $xx,$xx,$xx,$xx,$xx ; 041 -> 04:0f
+        $1ce79              .byte $xx,$xx,$xx,$xx,$xx ; 045 -> 04:0e
+        $1ce7e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 04:0d
+        ;; ----------------------------------------------------------------
+	;; 22 oak top-right dwarf
+        $1ce83              .byte $xx,$xx,$xx,$xx     ; 00e NOT telepathy -> 04:1a
+        $1ce87              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 04:1a
+        $1ce8b              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 04:1a
+        $1ce8f              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 04:1a
+        $1ce93              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 04:1a
         $1ce97              .byte $xx
-        $1ce98              .byte $xx,$xx,$xx,$xx,$xx
-        $1ce9d              .byte $xx,$xx,$xx,$xx,$xx
-        $1cea2              .byte $xx,$xx,$xx,$xx,$xx
-	;; 23
+        $1ce98              .byte $xx,$xx,$xx,$xx,$xx ; 041 -> 04:12
+        $1ce9d              .byte $xx,$xx,$xx,$xx,$xx ; 045 -> 04:11
+        $1cea2              .byte $xx,$xx,$xx,$xx,$xx ; default -> 04:10
+        ;; ----------------------------------------------------------------
+	;; 23  portoa pink stationary lower left man
         $1cea7              .byte $xx,$xx,$xx,$xx
         $1ceab              .byte $xx
-        $1ceac              .byte $xx,$xx,$xx,$xx,$xx
-        $1ceb1              .byte $xx,$xx,$xx,$xx,$xx
-        $1ceb6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cebd              .byte $xx,$xx,$xx,$xx,$xx
-	;; 05
+        $1ceac              .byte $xx,$xx,$xx,$xx,$xx ; 028 NOT change:woman -> 12:12 (action 15)
+        $1ceb1              .byte $xx,$xx,$xx,$xx,$xx ; 010 -> 12:11
+        $1ceb6              .byte $xx,$xx,$xx,$xx,$xx ; 011 NOT -> 12:0e
+        $1cebb              .byte         $xx,$xx     ;     Set: 011
+        $1cebd              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:0f
+        ;; ----------------------------------------------------------------
+	;; 05 headband lady at right of amazones, portoa welcome
         $1cec2              .byte $xx,$xx,$xx,$xx
-        $1cec6              .byte $xx,$xx ; amazones
-        $1cec8              .byte $xx,$xx ; portoa
+        $1cec6              .byte $xx,$xx
+        $1cec8              .byte $xx,$xx
         $1ceca              .byte $xx
-        $1cecb              .byte $xx,$xx,$xx,$xx,$xx
-        $1ced0              .byte $xx,$xx,$xx,$xx,$xx
-        $1ced5              .byte $xx,$xx,$xx,$xx,$xx
-        $1ceda              .byte $xx,$xx,$xx,$xx,$xx
-	;; 24
-        $1cedf              .byte $xx,$xx,$xx,$xx
+        ;;                  00: 1b Amazones
+        $1cecb              .byte $xx,$xx,$xx,$xx,$xx ; 028 NOT change:woman -> 12:02
+        $1ced0              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:03
+        ;;                  0a: 50 Portoa
+        $1ced5              .byte $xx,$xx,$xx,$xx,$xx ; 02a change:soldier -> 1e:08
+        $1ceda              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:10 -> @ 0a
+        ;; ----------------------------------------------------------------
+	;; 24 long-haired woman at left of amazones
+        $1cedf              .byte $xx,$xx,$xx,$xx     ; 028 NOT change:woman -> 12:04
         $1cee3              .byte $xx
-        $1cee4              .byte $xx,$xx,$xx,$xx,$xx
-	;; 26
-        $1cee9              .byte $xx,$xx,$xx,$xx
+        $1cee4              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:05
+        ;; ----------------------------------------------------------------
+	;; 26 
+        $1cee9              .byte $xx,$xx,$xx,$xx     ; 028 NOT change:woman -> 12:0b
         $1ceed              .byte $xx
-        $1ceee              .byte $xx,$xx,$xx,$xx,$xx
-	;; 27
-        $1cef3              .byte $xx,$xx,$xx,$xx
+        $1ceee              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:09
+        ;; ----------------------------------------------------------------
+	;; 27 
+        $1cef3              .byte $xx,$xx,$xx,$xx     ; 028 NOT change:woman -> 12:0b
         $1cef7              .byte $xx
-        $1cef8              .byte $xx,$xx,$xx,$xx,$xx
-	;; 25
-        $1cefd              .byte $xx,$xx,$xx,$xx
+        $1cef8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:0a
+        ;; ----------------------------------------------------------------
+	;; 25 amazones guard
+        $1cefd              .byte $xx,$xx,$xx,$xx     ; 028 NOT change:woman -> 12:06
         $1cf01              .byte $xx
-        $1cf02              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cf09              .byte $xx,$xx,$xx,$xx,$xx
-        $1cf0e              .byte $xx,$xx,$xx,$xx,$xx
-	;; 28
-        $1cf13              .byte $xx,$xx,$xx,$xx
+        $1cf02              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:07
+        $1cf07              .byte         $xx,$xx     ;     Clear: 000 unused
+        $1cf09              .byte $xx,$xx,$xx,$xx,$xx ; 028 NOT change:woman -> 12:06 -> @ ff
+        $1cf0e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:07
+        ;; ----------------------------------------------------------------
+	;; 28 
+        $1cf13              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 05:01
         $1cf17              .byte $xx
-        $1cf18              .byte $xx,$xx,$xx,$xx,$xx
-	;; 08
-        $1cf1d              .byte $xx,$xx,$xx,$xx
+        $1cf18              .byte $xx,$xx,$xx,$xx,$xx ; default -> 05:00
+        ;; ----------------------------------------------------------------
+	;; 08 blue man at front of brynmaer
+        $1cf1d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
         $1cf21              .byte $xx,$xx
         $1cf23              .byte $xx,$xx
         $1cf25              .byte $xx
-        $1cf26              .byte $xx,$xx,$xx,$xx,$xx
-        $1cf2b              .byte $xx,$xx,$xx,$xx,$xx
-	;; 2b
-        $1cf30              .byte $xx,$xx,$xx,$xx
+        ;;                  00: d5 Nadare
+        $1cf26              .byte $xx,$xx,$xx,$xx,$xx ; default -> 05:08
+        ;;                  05: 18 Brynmaer
+        $1cf2b              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:00
+        ;; ----------------------------------------------------------------
+	;; 2b nadare back room (left)
+        $1cf30              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1cf34              .byte $xx
-        $1cf35              .byte $xx,$xx,$xx,$xx,$xx
-	;; 2a
-        $1cf3a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cf4a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 29
-        $1cf55              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cf65              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cf75              .byte $xx,$xx,$xx,$xx
-	;; 2d
-        $1cf79              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cf89              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 38
-        $1cf91              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cfa1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cfb1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cfc1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cfd1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cfe1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1cff1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d001              .byte $xx,$xx,$xx
-	;; 39
-        $1d004              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d014              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d024              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 34
-        $1d030              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d040              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d050              .byte $xx,$xx,$xx,$xx,$xx
-	;; 33
-        $1d055              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d065              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 07
-        $1d070              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d080              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d090              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d0a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 32
-        $1d0ab              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d0bb              .byte $xx,$xx,$xx,$xx,$xx,$xx
-	;; 04
-        $1d0c1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d0d1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d0e1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d0f1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 35
-        $1d0fe              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d10e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 36
-        $1d119              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d129              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 37
-        $1d134              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d144              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 06
-        $1d14f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d15f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 03
-        $1d167              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d177              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 00
-        $1d186              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d196              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 64
-        $1d1a3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d1b3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d1c3              .byte $xx,$xx
-	;; 7b
-        $1d1c5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d1d5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 3a, 85
-        $1d1e5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d1f5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 3b, 86
-        $1d1fd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 3c, 87
-        $1d20c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 3d
-        $1d21b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d22b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 42
-        $1d23b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d24b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 41
-        $1d25b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d26b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 3e
-        $1d27b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d28b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 3f
-        $1d29b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d2ab              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 40
-        $1d2bb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d2cb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 43
-        $1d2db              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d2eb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 45
-        $1d2fb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d30b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d31b              .byte $xx,$xx
-	;; 46
-        $1d31d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d32d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d33d              .byte $xx,$xx
-	;; 09
-        $1d33f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d34f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 0a
-        $1d35a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d36a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 47
-        $1d375              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d385              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 44
-        $1d390              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d3a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d3b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 77
-        $1d3bd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d3cd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 48
-        $1d3d8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d3e8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 6f
-        $1d3f3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d403              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 79
-        $1d40e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d41e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 0c
-        $1d429              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d439              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d449              .byte $xx,$xx,$xx,$xx
-	;; 4a
-        $1d44d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d45d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d46d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 4e
-        $1d477              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d487              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d497              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d4a7              .byte $xx,$xx,$xx,$xx,$xx,$xx
-	;; 76
-        $1d4ad              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 51
-        $1d4b9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d4c9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 53
-        $1d4d5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d4e5              .byte $xx,$xx,$xx
-	;; 4f
-        $1d4e8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d4f8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 50
-        $1d503              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d513              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 5d
-        $1d51e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 52
-        $1d52a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d53a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 71
-        $1d545              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d555              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 72
-        $1d55d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d56d              .byte $xx
-	;; 56
-        $1d56e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d57e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 57
-        $1d589              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d599              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 58
-        $1d5a4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d5b4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 54
-        $1d5bf              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d5cf              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d5df              .byte $xx,$xx,$xx
-	;; 78
-        $1d5e2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d5f2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 55
-        $1d5fd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d60d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 7a
-        $1d618              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d628              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 0b
-        $1d633              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d643              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 5a
-        $1d64b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d65b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 59
-        $1d669              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d679              .byte $xx,$xx,$xx,$xx,$xx,$xx
-	;; 5b
-        $1d67f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d68f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 5c
-        $1d69c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d6ac              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 63
-        $1d6b9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 69
-        $1d6c3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 16, 88
-        $1d6cd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d6dd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d6ed              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d6fd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 70
-        $1d708              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d718              .byte $xx
-	;; 60
-        $1d719              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d729              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d739              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d749              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 5e
-        $1d755              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d765              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d775              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d785              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d795              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d7a5              .byte $xx
-	;; 5f tornel
-        $1d7a6              .byte $xx,$xx,$xx,$xx
-        $1d7aa              .byte $xx,$xx,$xx,$xx
-        $1d7ae              .byte $xx,$xx,$xx,$xx
-        $1d7b2              .byte $xx,$xx,$xx,$xx
+        $1cf35              .byte $xx,$xx,$xx,$xx,$xx ; default -> 05:09
+        ;; ----------------------------------------------------------------
+	;; 2a 
+        $1cf3a              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 05:07
+        $1cf3e              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
+        $1cf42              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 05:07
+        $1cf46              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 05:07
+        $1cf4a              .byte $xx
+        $1cf4b              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 05:06
+        $1cf50              .byte $xx,$xx,$xx,$xx,$xx ; default -> 05:05
+        ;; ----------------------------------------------------------------
+	;; 29 nadare back room (right)
+        $1cf55              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
+        $1cf59              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
+        $1cf5d              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
+        $1cf61              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:01
+        $1cf65              .byte $xx
+        $1cf66              .byte $xx,$xx,$xx,$xx,$xx ; 098 -> 05:04
+        $1cf6b              .byte $xx,$xx,$xx,$xx,$xx ; 012 -> 1e:19
+        $1cf70              .byte         $xx,$xx     ;     Set: 098
+        $1cf72              .byte $xx,$xx,$xx,$xx,$xx ; default -> 05:02
+        $1cf77              .byte         $xx,$xx     ;     Set: 098
+        ;; ----------------------------------------------------------------
+	;; 2d mt sabre guard soldiers (both)
+        $1cf79              .byte $xx,$xx,$xx,$xx
+        $1cf7d              .byte $xx,$xx
+        $1cf7f              .byte $xx,$xx
+        $1cf81              .byte $xx
+        ;;                  00: 28 Mt Sabre North - Main
+        $1cf82              .byte $xx,$xx,$xx,$xx,$xx ; default -> 05:10 (action 01)
+        ;;                  05: 73 Swan - Gate
+        $1cf87              .byte $xx,$xx,$xx,$xx,$xx ; 02a change:soldier -> 13:15 (action 08)
+        $1cf8c              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:14 (action 01) -> @ 05
+        ;; ----------------------------------------------------------------
+	;; 38 portoa queen
+        $1cf91              .byte $xx,$xx,$xx,$xx
+        $1cf95              .byte $xx
+        $1cf96              .byte $xx,$xx,$xx,$xx,$xx ; 01e -> 0b:02
+        $1cf9b              .byte $xx,$xx,$xx,$xx,$xx ; 01f -> 0b:00 (action 10)
+        $1cfa0              .byte         $xx,$xx     ;     Set: 01e
+        $1cfa2              .byte $xx,$xx,$xx,$xx,$xx ; 016 -> 0a:0e
+        $1cfa7              .byte         $xx,$xx     ;     Set: 09c
+        $1cfa9              .byte $xx,$xx,$xx,$xx,$xx ; 017 -> 0a:0d
+        $1cfae              .byte         $xx,$xx     ;     Set: 016
+        $1cfb0              .byte         $xx,$xx     ;     Set: 09c
+        $1cfb2              .byte $xx,$xx,$xx,$xx,$xx ; 092 -> 0a:0e
+        $1cfb7              .byte $xx,$xx,$xx,$xx,$xx ; 018 entered underground channel -> 0a:0c (action 03)
+        $1cfbc              .byte         $xx,$xx     ;     Set: 092
+        $1cfbe              .byte         $xx,$xx     ;     Set: 0a3
+        $1cfc0              .byte         $xx,$xx     ;     Set: 09c
+        $1cfc2              .byte $xx,$xx,$xx,$xx,$xx ; 019 -> 0a:0a
+        $1cfc7              .byte         $xx,$xx     ;     Set: 09c
+        $1cfc9              .byte $xx,$xx,$xx,$xx,$xx ; 01a NOT -> 0a:04 (action 0e)
+        $1cfce              .byte         $xx,$xx     ;     Set: 09c
+        $1cfd0              .byte         $xx,$xx     ;     Set: 019
+        $1cfd2              .byte         $xx,$xx     ;     Set: 01a
+        $1cfd4              .byte $xx,$xx,$xx,$xx,$xx ; 0d7 -> 0a:09
+        $1cfd9              .byte         $xx,$xx     ;     Clear: 0d7
+        $1cfdb              .byte         $xx,$xx     ;     Clear: 0d6
+        $1cfdd              .byte         $xx,$xx     ;     Clear: 0d5
+        $1cfdf              .byte         $xx,$xx     ;     Set: 09c
+        $1cfe1              .byte         $xx,$xx     ;     Set: 019
+        $1cfe3              .byte $xx,$xx,$xx,$xx,$xx ; 0d6 -> 0a:08
+        $1cfe8              .byte         $xx,$xx     ;     Set: 0d7
+        $1cfea              .byte         $xx,$xx     ;     Set: 09c
+        $1cfec              .byte         $xx,$xx     ;     Set: 019
+        $1cfee              .byte $xx,$xx,$xx,$xx,$xx ; 0d5 -> 0a:07
+        $1cff3              .byte         $xx,$xx     ;     Set: 0d6
+        $1cff5              .byte         $xx,$xx     ;     Set: 09c
+        $1cff7              .byte         $xx,$xx     ;     Set: 019
+        $1cff9              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0a:06
+        $1cffe              .byte         $xx,$xx     ;     Set: 0d5
+        $1d000              .byte         $xx,$xx     ;     Set: 09c
+        $1d002              .byte         $xx,$xx     ;     Set: 019
+        ;; ----------------------------------------------------------------
+	;; 39 fortune teller
+        $1d004              .byte $xx,$xx,$xx,$xx
+        $1d008              .byte $xx
+        $1d009              .byte $xx,$xx,$xx,$xx,$xx ; 01b mesia recording played -> 0a:01
+        $1d00e              .byte         $xx,$xx     ;     Set: 020
+        $1d010              .byte         $xx,$xx     ;     Set: 01f
+        $1d012              .byte $xx,$xx,$xx,$xx,$xx ; 017 -> 0a:03
+        $1d017              .byte         $xx,$xx     ;     Clear: 020
+        $1d019              .byte $xx,$xx,$xx,$xx,$xx ; 0a3 -> 0a:02
+        $1d01e              .byte         $xx,$xx     ;     Clear: 020
+        $1d020              .byte $xx,$xx,$xx,$xx,$xx ; 01d -> 0a:01
+        $1d025              .byte         $xx,$xx     ;     Clear: 020
+        $1d027              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0a:00
+        $1d02c              .byte         $xx,$xx     ;     Clear: 020
+        $1d02e              .byte         $xx,$xx     ;     Set: 01d
+        ;; ----------------------------------------------------------------
+	;; 34 portoa palace guard (throme room front)
+        $1d030              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 08:06
+        $1d034              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0d
+        $1d038              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 08:06
+        $1d03c              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 08:06
+        $1d040              .byte $xx
+        $1d041              .byte $xx,$xx,$xx,$xx,$xx ; 01e -> 08:07
+        $1d046              .byte $xx,$xx,$xx,$xx,$xx ; 01f -> 08:05
+        $1d04b              .byte $xx,$xx,$xx,$xx,$xx ; 020 NOT -> 08:04
+        $1d050              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:06
+        ;; ----------------------------------------------------------------
+	;; 33 portoa throne room back door guard
+        $1d055              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 08:02
+        $1d059              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0d
+        $1d05d              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 08:02
+        $1d061              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 08:02
+        $1d065              .byte $xx
+        $1d066              .byte $xx,$xx,$xx,$xx,$xx ; 020 NOT -> 08:03
+        $1d06b              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:02
+        ;; ----------------------------------------------------------------
+	;; 07 portoa barracks guard top, cabin watchman
+        $1d070              .byte $xx,$xx,$xx,$xx
+        $1d074              .byte $xx,$xx
+        $1d076              .byte $xx,$xx
+        $1d078              .byte $xx
+        ;;                  00: de Portoa - Palace Left
+        $1d079              .byte $xx,$xx,$xx,$xx,$xx ; 028 change:woman -> 08:00
+        $1d07e              .byte $xx,$xx,$xx,$xx,$xx ; 02a change:soldier -> 1e:0d
+        $1d083              .byte $xx,$xx,$xx,$xx,$xx ; 02b change:stom -> 08:00
+        $1d088              .byte $xx,$xx,$xx,$xx,$xx ; 029 change:akahana -> 08:00
+        $1d08d              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:00
+        ;;                  19: 61 Cabin
+        $1d092              .byte $xx,$xx,$xx,$xx,$xx ; 028 change:woman -> 11:00
+        $1d097              .byte $xx,$xx,$xx,$xx,$xx ; 02a change:soldier -> 1e:0d -> @ 19
+        $1d09c              .byte $xx,$xx,$xx,$xx,$xx ; 02b change:stom -> 11:00 -> @ 19
+        $1d0a1              .byte $xx,$xx,$xx,$xx,$xx ; 029 change:akahana -> 11:00 -> @ 19
+        $1d0a6              .byte $xx,$xx,$xx,$xx,$xx ; default -> 11:00 -> @ 19
+        ;; ----------------------------------------------------------------
+	;; 32 portoa barracks guard right
+        $1d0ab              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 08:01
+        $1d0af              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0d
+        $1d0b3              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 08:01
+        $1d0b7              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 08:01
+        $1d0bb              .byte $xx
+        $1d0bc              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:01
+        ;; ----------------------------------------------------------------
+	;; 04 woman in dress at front of amazones
+        $1d0c1              .byte $xx,$xx,$xx,$xx
+        $1d0c5              .byte $xx,$xx
+        $1d0c7              .byte $xx,$xx
+        $1d0c9              .byte $xx,$xx
+        $1d0cb              .byte $xx
+        ;;                  00: e0 Portoa - Palace Right
+        $1d0cc              .byte $xx,$xx,$xx,$xx,$xx ; 028 change:woman -> 08:08
+        $1d0d1              .byte $xx,$xx,$xx,$xx,$xx ; 02a change:soldier -> 1e:08
+        $1d0d6              .byte $xx,$xx,$xx,$xx,$xx ; 02b change:stom -> 08:08
+        $1d0db              .byte $xx,$xx,$xx,$xx,$xx ; 029 change:akahana -> 08:08
+        $1d0e0              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:08
+        ;;                  19: 93 Sahara
+        $1d0e5              .byte $xx,$xx,$xx,$xx,$xx ; 02b change:stom -> 1a:0b
+        $1d0ea              .byte $xx,$xx,$xx,$xx,$xx ; 02a change:soldier -> 1e:08 -> @ 19
+        $1d0ef              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:00 -> @ 19
+        ;;                  28: 1b Amazones
+        $1d0f4              .byte $xx,$xx,$xx,$xx,$xx ; 028 NOT change:woman -> 12:00
+        $1d0f9              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:01 -> @ 28
+        ;; ----------------------------------------------------------------
+	;; 35 portoa barracks evans
+        $1d0fe              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 08:0e
+        $1d102              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
+        $1d106              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 08:0e
+        $1d10a              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 08:0e
+        $1d10e              .byte $xx
+        $1d10f              .byte $xx,$xx,$xx,$xx,$xx ; 01b NOT mesia recording played -> 08:0e
+        $1d114              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:0f
+        ;; ----------------------------------------------------------------
+	;; 36 
+        $1d119              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 08:0a
+        $1d11d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
+        $1d121              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 08:0a
+        $1d125              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 08:0a
+        $1d129              .byte $xx
+        $1d12a              .byte $xx,$xx,$xx,$xx,$xx ; 01e -> 08:0a
+        $1d12f              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:09
+        ;; ----------------------------------------------------------------
+	;; 37 
+        $1d134              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 08:0a
+        $1d138              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
+        $1d13c              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 08:0a
+        $1d140              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 08:0a
+        $1d144              .byte $xx
+        $1d145              .byte $xx,$xx,$xx,$xx,$xx ; 01b mesia recording played -> 08:0c
+        $1d14a              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:0b
+        ;; ----------------------------------------------------------------
+	;; 06 portoa pink dress lady below castle bridge
+        $1d14f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
+        $1d153              .byte $xx,$xx
+        $1d155              .byte $xx,$xx
+        $1d157              .byte $xx
+        ;;                  00: 50 Portoa
+        $1d158              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:12
+        ;;                  05: 93 Sahara
+        $1d15d              .byte $xx,$xx,$xx,$xx,$xx ; 02b change:stom -> 1a:0b
+        $1d162              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:03 -> @ 05
+        ;; ----------------------------------------------------------------
+	;; 03 portoa pink stationary lower left man
+        $1d167              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
+        $1d16b              .byte $xx,$xx
+        $1d16d              .byte $xx,$xx
+        $1d16f              .byte $xx,$xx
+        $1d171              .byte $xx
+        ;;                  00: 50 Portoa
+        $1d172              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:13
+        ;;                  05: ef Swan - Tavern
+        $1d177              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:0f
+        ;;                  0a: 93 Sahara
+        $1d17c              .byte $xx,$xx,$xx,$xx,$xx ; 02b change:stom -> 1a:09
+        $1d181              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:01 -> @ 0a
+        ;; ----------------------------------------------------------------
+        ;; 00 portoa pink man on fortune teller island
+        $1d186              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
+        $1d18a              .byte $xx,$xx
+        $1d18c              .byte $xx,$xx
+        $1d18e              .byte $xx
+        ;;                  00: 50 Portoa
+        $1d18f              .byte $xx,$xx,$xx,$xx,$xx ; 01e -> 08:15
+        $1d194              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:14
+        ;;                  0a: 93 Sahara
+        $1d199              .byte $xx,$xx,$xx,$xx,$xx ; 02b change:stom -> 1a:0c
+        $1d19e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:02 -> @ 0a
+        ;; ----------------------------------------------------------------
+	;; 64 portoa fisherman
+        $1d1a3              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 09:00
+        $1d1a7              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0a
+        $1d1ab              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 09:00
+        $1d1af              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 09:00
+        $1d1b3              .byte $xx
+        $1d1b4              .byte $xx,$xx,$xx,$xx,$xx ; 021 -> 09:02
+        $1d1b9              .byte $xx,$xx,$xx,$xx,$xx ; 04a NOT -> 09:00
+        $1d1be              .byte         $xx,$xx     ;     Set: 04a
+        $1d1c0              .byte $xx,$xx,$xx,$xx,$xx ; default -> 09:03
+        ;; ----------------------------------------------------------------
+	;; 7b portoa fisherman's daughter
+        $1d1c5              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 09:05
+        $1d1c9              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0c
+        $1d1cd              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 09:05
+        $1d1d1              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 09:05
+        $1d1d5              .byte $xx
+        $1d1d6              .byte $xx,$xx,$xx,$xx,$xx ; 08b NOT -> 09:06
+        $1d1db              .byte $xx,$xx,$xx,$xx,$xx ; 021 -> 09:05
+        $1d1e0              .byte $xx,$xx,$xx,$xx,$xx ; default -> 09:04
+        ;; ----------------------------------------------------------------
+	;; 3a, 85 stoned pair in waterfall cave
+        $1d1e5              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
+        $1d1e9              .byte $xx
+        $1d1ea              .byte $xx,$xx,$xx,$xx,$xx ; 06a NOT -> 1e:07
+        $1d1ef              .byte $xx,$xx,$xx,$xx,$xx ; 0d9 -> 0d:00
+        $1d1f4              .byte         $xx,$xx     ;     Clear: 0d9
+        $1d1f6              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0d:03
+        $1d1fb              .byte         $xx,$xx     ;     Set: 0d9
+        ;; ----------------------------------------------------------------
+	;; 3b, 86 
+        $1d1fd              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
+        $1d201              .byte $xx
+        $1d202              .byte $xx,$xx,$xx,$xx,$xx ; 06a -> 0d:02
+        $1d207              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:08
+        ;; ----------------------------------------------------------------
+	;; 3c, 87 
+        $1d20c              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
+        $1d210              .byte $xx
+        $1d211              .byte $xx,$xx,$xx,$xx,$xx ; 06b -> 0d:03
+        $1d216              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:09
+        ;; ----------------------------------------------------------------
+	;; 3d 
+        $1d21b              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 0f:03
+        $1d21f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 0f:04
+        $1d223              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 0f:03
+        $1d227              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 0f:03
+        $1d22b              .byte $xx
+        $1d22c              .byte $xx,$xx,$xx,$xx,$xx ; 013 NOT -> 0f:00
+        $1d231              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 0f:02
+        $1d236              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:01
+        ;; ----------------------------------------------------------------
+	;; 42 
+        $1d23b              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
+        $1d23f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
+        $1d243              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
+        $1d247              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:02
+        $1d24b              .byte $xx
+        $1d24c              .byte $xx,$xx,$xx,$xx,$xx ; 013 NOT -> 0f:0f
+        $1d251              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 0f:11
+        $1d256              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:10
+        ;; ----------------------------------------------------------------
+	;; 41 
+        $1d25b              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
+        $1d25f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
+        $1d263              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
+        $1d267              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:02
+        $1d26b              .byte $xx
+        $1d26c              .byte $xx,$xx,$xx,$xx,$xx ; 013 NOT -> 0f:0c
+        $1d271              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 0f:0e
+        $1d276              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:0d
+        ;; ----------------------------------------------------------------
+	;; 3e 
+        $1d27b              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
+        $1d27f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
+        $1d283              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
+        $1d287              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:01
+        $1d28b              .byte $xx
+        $1d28c              .byte $xx,$xx,$xx,$xx,$xx ; 013 NOT -> 0f:05
+        $1d291              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 0f:07
+        $1d296              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:06
+        ;; ----------------------------------------------------------------
+	;; 3f 
+        $1d29b              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
+        $1d29f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
+        $1d2a3              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
+        $1d2a7              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:01
+        $1d2ab              .byte $xx
+        $1d2ac              .byte $xx,$xx,$xx,$xx,$xx ; 013 NOT -> 0f:08
+        $1d2b1              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 1e:01
+        $1d2b6              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:09
+        ;; ----------------------------------------------------------------
+	;; 40 
+        $1d2bb              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
+        $1d2bf              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
+        $1d2c3              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
+        $1d2c7              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:02
+        $1d2cb              .byte $xx
+        $1d2cc              .byte $xx,$xx,$xx,$xx,$xx ; 013 NOT -> 0f:0a
+        $1d2d1              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 1e:02
+        $1d2d6              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:0b
+        ;; ----------------------------------------------------------------
+	;; 43 
+        $1d2db              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
+        $1d2df              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
+        $1d2e3              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
+        $1d2e7              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:01
+        $1d2eb              .byte $xx
+        $1d2ec              .byte $xx,$xx,$xx,$xx,$xx ; 013 NOT -> 0f:12
+        $1d2f1              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 0f:14
+        $1d2f6              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:13
+        ;; ----------------------------------------------------------------
+	;; 45 
+        $1d2fb              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:03
+        $1d2ff              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0a
+        $1d303              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:03
+        $1d307              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:03
+        $1d30b              .byte $xx
+        $1d30c              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 1e:03
+        $1d311              .byte $xx,$xx,$xx,$xx,$xx ; 030 NOT -> 10:03
+        $1d316              .byte $xx,$xx,$xx,$xx,$xx ; 030 -> 00:00 (action 14)
+        $1d31b              .byte         $xx,$xx     ;     Set: 400
+        ;; ----------------------------------------------------------------
+	;; 46 
+        $1d31d              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
+        $1d321              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
+        $1d325              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
+        $1d329              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:02
+        $1d32d              .byte $xx
+        $1d32e              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 10:07
+        $1d333              .byte $xx,$xx,$xx,$xx,$xx ; 031 NOT -> 10:05
+        $1d338              .byte         $xx,$xx     ;     Set: 031
+        $1d33a              .byte $xx,$xx,$xx,$xx,$xx ; default -> 10:06
+        ;; ----------------------------------------------------------------
+	;; 09 
+        $1d33f              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:00
+        $1d343              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
+        $1d347              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:00
+        $1d34b              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:00
+        $1d34f              .byte $xx
+        $1d350              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 10:09
+        $1d355              .byte $xx,$xx,$xx,$xx,$xx ; default -> 10:08
+        ;; ----------------------------------------------------------------
+	;; 0a 
+        $1d35a              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
+        $1d35e              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
+        $1d362              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
+        $1d366              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:01
+        $1d36a              .byte $xx
+        $1d36b              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 10:0b
+        $1d370              .byte $xx,$xx,$xx,$xx,$xx ; default -> 10:0a
+        ;; ----------------------------------------------------------------
+	;; 47 
+        $1d375              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:04
+        $1d379              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0b
+        $1d37d              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:04
+        $1d381              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:04
+        $1d385              .byte $xx
+        $1d386              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 10:0d
+        $1d38b              .byte $xx,$xx,$xx,$xx,$xx ; default -> 10:0c
+        ;; ----------------------------------------------------------------
+	;; 44 
+        $1d390              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 0f:16
+        $1d394              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 0f:17
+        $1d398              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 0f:16
+        $1d39c              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 0f:16
+        $1d3a0              .byte $xx,$xx
+        $1d3a2              .byte $xx,$xx
+        $1d3a4              .byte $xx
+        ;;                  00: e4 Joel - Shed
+        $1d3a5              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:15
+        ;;                  05: e9 Zombie Town - House Basement
+        $1d3aa              .byte $xx,$xx,$xx,$xx,$xx ; 013 NOT -> 10:00
+        $1d3af              .byte $xx,$xx,$xx,$xx,$xx ; 08d NOT -> 10:01 (action 03) -> @ 05
+        $1d3b4              .byte         $xx,$xx     ;     Set: 08d
+        $1d3b6              .byte         $xx,$xx     ;     Set: 032
+        $1d3b8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 10:02 -> @ 05
+        ;; ----------------------------------------------------------------
+	;; 77 
+        $1d3bd              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:00
+        $1d3c1              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
+        $1d3c5              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:00
+        $1d3c9              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:00
+        $1d3cd              .byte $xx
+        $1d3ce              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 13:08
+        $1d3d3              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:07
+        ;; ----------------------------------------------------------------
+	;; 48 
+        $1d3d8              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
+        $1d3dc              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
+        $1d3e0              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
+        $1d3e4              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:02
+        $1d3e8              .byte $xx
+        $1d3e9              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 13:0a
+        $1d3ee              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:09
+        ;; ----------------------------------------------------------------
+	;; 6f 
+        $1d3f3              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:03
+        $1d3f7              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0a
+        $1d3fb              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:03
+        $1d3ff              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:03
+        $1d403              .byte $xx
+        $1d404              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 13:0c
+        $1d409              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:0b
+        ;; ----------------------------------------------------------------
+	;; 79 
+        $1d40e              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
+        $1d412              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
+        $1d416              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
+        $1d41a              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:01
+        $1d41e              .byte $xx
+        $1d41f              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 13:0e
+        $1d424              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:0d
+        ;; ----------------------------------------------------------------
+	;; 0c 
+        $1d429              .byte $xx,$xx,$xx,$xx
+        $1d42d              .byte $xx,$xx
+        $1d42f              .byte $xx,$xx
+        $1d431              .byte $xx,$xx
+        $1d433              .byte $xx
+        ;;                  00: ef Swan - Tavern
+        $1d434              .byte $xx,$xx,$xx,$xx,$xx ; 02a change:soldier -> 1e:12
+        $1d439              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:14
+        ;;                  0a: 72 Swan
+        $1d43e              .byte $xx,$xx,$xx,$xx,$xx ; 02a change:soldier -> 1e:12
+        $1d443              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:14 -> @ 0a
+        ;;                  14: f1 Swan - Dance Hall
+        $1d448              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:11
+        ;; ----------------------------------------------------------------
+	;; 4a 
+        $1d44d              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:13
+        $1d451              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:12
+        $1d455              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:13
+        $1d459              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:13
+        $1d45d              .byte $xx
+        $1d45e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:13
+        $1d463              .byte $xx,$xx,$xx,$xx,$xx ; 02a change:soldier -> 1e:12 -> @ ff
+        $1d468              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:10
+        $1d46d              .byte $xx,$xx,$xx,$xx,$xx ; 000 unused -> 00:00 -> @ ff
+        $1d472              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:11 (action 0b)
+        ;; ----------------------------------------------------------------
+	;; 4e UNUSED 
+        $1d477              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 14:00
+        $1d47b              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 14:02
+        $1d47f              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 14:01
+        $1d483              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 14:00
+        $1d487              .byte $xx
+        $1d488              .byte $xx,$xx,$xx,$xx,$xx ; 026 entered shyron -> 14:04
+        $1d48d              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:00
+        $1d492              .byte $xx,$xx,$xx,$xx,$xx ; 028 change:woman -> 14:00
+        $1d497              .byte $xx,$xx,$xx,$xx,$xx ; 202 NOT -> 10:00 (action 10) -> @ 2b
+        $1d49c              .byte $xx,$xx,$xx,$xx,$xx ; 281 -> 01:09 (action 10) -> @ 02
+        $1d4a1              .byte $xx,$xx,$xx,$xx,$xx ; 0ff -> 01:06 -> @ 02
+        $1d4a6              .byte $xx,$xx,$xx,$xx,$xx ; 400 -> 00:00 (action 14) -> @ 02
+        $1d4ab              .byte $xx,$xx
+        ;; ----------------------------------------------------------------
+	;; 76 
+        $1d4ad              .byte $xx,$xx,$xx,$xx
+        $1d4b1              .byte $xx
+        $1d4b2              .byte $xx,$xx,$xx,$xx,$xx ; default -> 20:10
+        $1d4b7              .byte         $xx,$xx     ;     Set: 0e9
+        ;; ----------------------------------------------------------------
+	;; 51 
+        $1d4b9              .byte $xx,$xx,$xx,$xx
+        $1d4bd              .byte $xx
+        $1d4be              .byte $xx,$xx,$xx,$xx,$xx ; 04d -> 14:0f
+        $1d4c3              .byte         $xx,$xx     ;     Clear: 04d
+        $1d4c5              .byte         $xx,$xx     ;     Clear: 04c
+        $1d4c7              .byte $xx,$xx,$xx,$xx,$xx ; 04c -> 14:0e
+        $1d4cc              .byte         $xx,$xx     ;     Set: 04d
+        $1d4ce              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:0e
+        $1d4d3              .byte         $xx,$xx     ;     Set: 04c
+        ;; ----------------------------------------------------------------
+	;; 53 
+        $1d4d5              .byte $xx,$xx,$xx,$xx
+        $1d4d9              .byte $xx
+        $1d4da              .byte $xx,$xx,$xx,$xx,$xx ; 04b -> 14:15
+        $1d4df              .byte         $xx,$xx     ;     Clear: 04b
+        $1d4e1              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:16
+        $1d4e6              .byte         $xx,$xx     ;     Set: 04b
+        ;; ----------------------------------------------------------------
+	;; 4f 
+        $1d4e8              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 14:05
+        $1d4ec              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 14:02
+        $1d4f0              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 14:05
+        $1d4f4              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 14:05
+        $1d4f8              .byte $xx
+        $1d4f9              .byte $xx,$xx,$xx,$xx,$xx ; 02d -> 14:04
+        $1d4fe              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:05
+        ;; ----------------------------------------------------------------
+	;; 50 
+        $1d503              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 14:06
+        $1d507              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 14:03
+        $1d50b              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 14:06
+        $1d50f              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 14:06
+        $1d513              .byte $xx
+        $1d514              .byte $xx,$xx,$xx,$xx,$xx ; 02d -> 14:04
+        $1d519              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:06
+        ;; ----------------------------------------------------------------
+	;; 5d 
+        $1d51e              .byte $xx,$xx,$xx,$xx
+        $1d522              .byte $xx
+        $1d523              .byte $xx,$xx,$xx,$xx,$xx ; default -> 20:10
+        $1d528              .byte         $xx,$xx     ;     Set: 0e8
+        ;; ----------------------------------------------------------------
+	;; 52 
+        $1d52a              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 15:09
+        $1d52e              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 15:0a
+        $1d532              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 15:0b
+        $1d536              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 15:09
+        $1d53a              .byte $xx
+        $1d53b              .byte $xx,$xx,$xx,$xx,$xx ; 02d -> 14:14
+        $1d540              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:13
+        ;; ----------------------------------------------------------------
+	;; 71 
+        $1d545              .byte $xx,$xx,$xx,$xx
+        $1d549              .byte $xx
+        $1d54a              .byte $xx,$xx,$xx,$xx,$xx ; 089 spoken to dead stom's gf -> 20:10
+        $1d54f              .byte $xx,$xx,$xx,$xx,$xx ; 02b change:stom -> 19:02
+        $1d554              .byte         $xx,$xx     ;     Set: 089 spoken to dead stom's gf
+        $1d556              .byte $xx,$xx,$xx,$xx,$xx ; default -> 19:01
+        $1d55b              .byte         $xx,$xx     ;     Set: 089 spoken to dead stom's gf
+        ;; ----------------------------------------------------------------
+	;; 72 dead stom
+        $1d55d              .byte $xx,$xx,$xx,$xx
+        $1d561              .byte $xx
+        $1d562              .byte $xx,$xx,$xx,$xx,$xx ; 08a NOT spoken to dead stom -> 19:03
+        $1d567              .byte         $xx,$xx     ;     Set: 08a spoken to dead stom
+        $1d569              .byte $xx,$xx,$xx,$xx,$xx ; default -> 20:10
+        ;; ----------------------------------------------------------------
+	;; 56 
+        $1d56e              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
+        $1d572              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
+        $1d576              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
+        $1d57a              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:01
+        $1d57e              .byte $xx
+        $1d57f              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 17:0d
+        $1d584              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:0c
+        ;; ----------------------------------------------------------------
+	;; 57 
+        $1d589              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:0f
+        $1d58d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0e
+        $1d591              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:0f
+        $1d595              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:0f
+        $1d599              .byte $xx
+        $1d59a              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 17:0b
+        $1d59f              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:0a
+        ;; ----------------------------------------------------------------
+	;; 58 
+        $1d5a4              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
+        $1d5a8              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
+        $1d5ac              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
+        $1d5b0              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:01
+        $1d5b4              .byte $xx
+        $1d5b5              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 17:09
+        $1d5ba              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:08
+        ;; ----------------------------------------------------------------
+	;; 54 
+        $1d5bf              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
+        $1d5c3              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
+        $1d5c7              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
+        $1d5cb              .byte $xx
+        $1d5cc              .byte $xx,$xx,$xx,$xx,$xx ; 024 NOT -> 17:04
+        $1d5d1              .byte $xx,$xx,$xx,$xx,$xx ; 029 NOT change:akahana -> 17:05
+        $1d5d6              .byte $xx,$xx,$xx,$xx,$xx ; 04f NOT -> 17:06 (action 03)
+        $1d5db              .byte         $xx,$xx     ;     Set: 04f
+        $1d5dd              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:07
+        ;; ----------------------------------------------------------------
+	;; 78 
+        $1d5e2              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:00
+        $1d5e6              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
+        $1d5ea              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:00
+        $1d5ee              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:00
+        $1d5f2              .byte $xx
+        $1d5f3              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 17:01
+        $1d5f8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:00
+        ;; ----------------------------------------------------------------
+	;; 55 
+        $1d5fd              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:03
+        $1d601              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0a
+        $1d605              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:03
+        $1d609              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:03
+        $1d60d              .byte $xx
+        $1d60e              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 17:10
+        $1d613              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:0f
+        ;; ----------------------------------------------------------------
+	;; 7a 
+        $1d618              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
+        $1d61c              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
+        $1d620              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
+        $1d624              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:01
+        $1d628              .byte $xx
+        $1d629              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 17:03
+        $1d62e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:02
+        ;; ----------------------------------------------------------------
+	;; 0b 
+        $1d633              .byte $xx,$xx,$xx,$xx
+        $1d637              .byte $xx,$xx
+        $1d639              .byte $xx,$xx
+        $1d63b              .byte $xx
+        ;;                  00: 8e Goa
+        $1d63c              .byte $xx,$xx,$xx,$xx,$xx ; 02a change:soldier -> 1e:12
+        $1d641              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:13
+        ;;                  0a: bf Goa - Tavern
+        $1d646              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:11
+        ;; ----------------------------------------------------------------
+	;; 5a 
+        $1d64b              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1a:13
+        $1d64f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1a:13
+        $1d653              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1a:13
+        $1d657              .byte $xx
+        $1d658              .byte $xx,$xx,$xx,$xx,$xx ; 02e -> 1a:11
+        $1d65d              .byte $xx,$xx,$xx,$xx,$xx ; 02b change:stom -> 1a:10 (action 03)
+        $1d662              .byte         $xx,$xx     ;     Set: 02e
+        $1d664              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:0f
+        ;; ----------------------------------------------------------------
+	;; 59 
+        $1d669              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1a:12
+        $1d66d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1a:12
+        $1d671              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1a:12
+        $1d675              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1a:12
+        $1d679              .byte $xx
+        $1d67a              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:0e
+        ;; ----------------------------------------------------------------
+	;; 5b 
+        $1d67f              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:03
+        $1d683              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0a
+        $1d687              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1a:0d
+        $1d68b              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:03
+        $1d68f              .byte $xx
+        $1d690              .byte $xx,$xx,$xx,$xx,$xx ; 022 NOT -> 1a:05
+        $1d695              .byte         $xx,$xx     ;     Set: 022
+        $1d697              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:06
+        ;; ----------------------------------------------------------------
+	;; 5c 
+        $1d69c              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:05
+        $1d6a0              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0c
+        $1d6a4              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:05
+        $1d6a8              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1e:05
+        $1d6ac              .byte $xx
+        $1d6ad              .byte $xx,$xx,$xx,$xx,$xx ; 023 NOT -> 1a:08
+        $1d6b2              .byte         $xx,$xx     ;     Set: 023
+        $1d6b4              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:07
+        ;; ----------------------------------------------------------------
+	;; 63 
+        $1d6b9              .byte $xx,$xx,$xx,$xx
+        $1d6bd              .byte $xx
+        $1d6be              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0c:00
+        ;; ----------------------------------------------------------------
+	;; 69 
+        $1d6c3              .byte $xx,$xx,$xx,$xx
+        $1d6c7              .byte $xx
+        $1d6c8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0c:02 (action 18)
+        ;; ----------------------------------------------------------------
+	;; 16, 88 stoned akahana
+        $1d6cd              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 15:01
+        $1d6d1              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 15:02
+        $1d6d5              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 15:01
+        $1d6d9              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 15:00
+        $1d6dd              .byte $xx,$xx
+        $1d6df              .byte $xx,$xx
+        $1d6e1              .byte $xx,$xx
+        $1d6e3              .byte $xx
+        ;;                  00: 18 Brynmaer
+        $1d6e4              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:01
+        ;;                  05: 57 Waterfall Cave 4
+        $1d6e9              .byte $xx,$xx,$xx,$xx,$xx ; 035 -> 0d:01 (action 19)
+        $1d6ee              .byte         $xx,$xx     ;     Set: 034
+        $1d6f0              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0d:04 -> @ 05
+        ;;                  11: 8c Shyron
+        $1d6f5              .byte $xx,$xx,$xx,$xx,$xx ; 02d -> 14:09
+        $1d6fa              .byte $xx,$xx,$xx,$xx,$xx ; 036 NOT -> 14:07 -> @ 11
+        $1d6ff              .byte         $xx,$xx     ;     Set: 036
+        $1d701              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:08 -> @ 11
+        $1d706              .byte         $xx,$xx     ;     Set: 036
+        ;; ----------------------------------------------------------------
+	;; 70 dead akahana
+        $1d708              .byte $xx,$xx,$xx,$xx
+        $1d70c              .byte $xx
+        $1d70d              .byte $xx,$xx,$xx,$xx,$xx ; 0e0 NOT spoken to dead akahana -> 19:00
+        $1d712              .byte         $xx,$xx     ;     Set: 0e0 spoken to dead akahana
+        $1d714              .byte $xx,$xx,$xx,$xx,$xx ; default -> 20:10
+        ;; ----------------------------------------------------------------
+	;; 60 stom
+        $1d719              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 15:05
+        $1d71d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 15:05
+        $1d721              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 15:06
+        $1d725              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 15:05
+        $1d729              .byte $xx,$xx
+        $1d72b              .byte $xx,$xx
+        $1d72d              .byte $xx,$xx
+        $1d72f              .byte $xx
+        ;;                  00: 1e Stom House
+        $1d730              .byte $xx,$xx,$xx,$xx,$xx ; 041 -> 03:05
+        $1d735              .byte $xx,$xx,$xx,$xx,$xx ; 2f7 -> 03:06
+        $1d73a              .byte $xx,$xx,$xx,$xx,$xx ; default -> 03:04
+        ;;                  0f: ec Swan - Stom Hut
+        $1d73f              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:0f (action 02)
+        $1d744              .byte         $xx,$xx     ;     Set: 061
+        ;;                  16: 8c Shyron
+        $1d746              .byte $xx,$xx,$xx,$xx,$xx ; 027 shyron massacre -> 19:03 (action 04)
+        $1d74b              .byte $xx,$xx,$xx,$xx,$xx ; 02d -> 14:0d -> @ 16
+        $1d750              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:0c -> @ 16
+        ;; ----------------------------------------------------------------
+	;; 5e zebu
+        $1d755              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 15:0c
+        $1d759              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 15:0c
+        $1d75d              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 15:0c
+        $1d761              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 15:0c
+        $1d765              .byte $xx,$xx
+        $1d767              .byte $xx,$xx
+        $1d769              .byte $xx,$xx
+        $1d76b              .byte $xx
+        ;;                  00: 10 Zebu Cave
+        $1d76c              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:1d
+        $1d771              .byte $xx,$xx,$xx,$xx,$xx ; 038 leaf attacked -> 00:1c
+        $1d776              .byte $xx,$xx,$xx,$xx,$xx ; 039 windmill started -> 00:1d
+        $1d77b              .byte $xx,$xx,$xx,$xx,$xx ; 00a windmill key used -> 00:1b (action 03)
+        $1d780              .byte         $xx,$xx     ;     Set: 039 windmill started
+        $1d782              .byte $xx,$xx,$xx,$xx,$xx ; 03a NOT -> 00:1a
+        $1d787              .byte         $xx,$xx     ;     Set: 03a
+        $1d789              .byte $xx,$xx,$xx,$xx,$xx ; default -> 00:1d
+        ;;                  22: f2 Shyron - Temple
+        $1d78e              .byte $xx,$xx,$xx,$xx,$xx ; 02d -> 16:03
+        $1d793              .byte $xx,$xx,$xx,$xx,$xx ; 03b NOT -> 14:17 (action 11) -> @ 22
+        $1d798              .byte         $xx,$xx     ;     Set: 03b
+        $1d79a              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:18 -> @ 22
+        ;;                  33: aa Goa Fortress - Zebu
+        $1d79f              .byte $xx,$xx,$xx,$xx,$xx ; default -> 18:01 (action 17)
+        $1d7a4              .byte         $xx,$xx     ;     Set: 055 zebu rescued
+        ;; ----------------------------------------------------------------
+	;; 5f tornel 
+        $1d7a6              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 15:03
+        $1d7aa              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 15:04
+        $1d7ae              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 15:03
+        $1d7b2              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 15:03
         $1d7b6              .byte $xx,$xx
         $1d7b8              .byte $xx,$xx
         $1d7ba              .byte $xx,$xx
         $1d7bc              .byte $xx,$xx
         $1d7be              .byte $xx,$xx
         $1d7c0              .byte $xx
-        ;;                  00: 1e stom's house
-        $1d7c1              .byte $xx,$xx,$xx,$xx,$xx
-        ;;                  05: 21 mt sabre west upper
-        $1d7c6              .byte $xx,$xx,$xx,$xx,$xx         ; only learn teleport once
-        $1d7cb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx ; have tornado bracelet, learn tele
-        $1d7d2              .byte $xx,$xx,$xx,$xx,$xx         ; default: no tornado bracelet
-        ;;                  16: f2 shyron temple
-        ;;                  16: f3 shyron training hall
-        $1d7d7              .byte $xx,$xx,$xx,$xx,$xx
-        $1d7dc              .byte $xx,$xx,$xx,$xx,$xx
-        $1d7e1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;;                  27: ac draygonia fortress
-        $1d7e8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx ; action 17: heal and disappear
-	;; 62
-        $1d7ef              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d7ff              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d80f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d81f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d82f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 74, 7e
-        $1d836              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d846              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d856              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 68
-        $1d860              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 6b
-        $1d86c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 6d
-        $1d876              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d886              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d896              .byte $xx
-	;; 6c
-        $1d897              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d8a7              .byte $xx,$xx,$xx,$xx,$xx,$xx
-	;; 75
-        $1d8ad              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 8e
-        $1d8b7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d8c7              .byte $xx
-	;; 84
-        $1d8c8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 83
-        $1d8d2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d8e2              .byte $xx,$xx,$xx
-	;; c3
-        $1d8e5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d8f5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d900              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d910              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d920              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d930              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d940              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d950              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d960              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d970              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d980              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d990              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d9a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d9b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d9c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d9d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d9e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1d9f0              .byte $xx,$xx,$xx,$xx
+        ;;                  00: 1e Stom House
+        $1d7c1              .byte $xx,$xx,$xx,$xx,$xx ; default -> 03:02
+        ;;                  05: 21 Mt Sabre West - Upper
+        $1d7c6              .byte $xx,$xx,$xx,$xx,$xx ; 03f learned teleport -> 05:0d
+        $1d7cb              .byte $xx,$xx,$xx,$xx,$xx ; 04e tornado bracelet -> 05:0b (action 03) -> @ 05
+        $1d7d0              .byte         $xx,$xx     ;     Set: 03f learned teleport
+        $1d7d2              .byte $xx,$xx,$xx,$xx,$xx ; default -> 05:0a -> @ 05
+        ;;                  16: f3 Shyron - Training Hall
+        $1d7d7              .byte $xx,$xx,$xx,$xx,$xx ; 02d -> 16:05
+        ;;                  1b: f2 Shyron - Temple
+        $1d7dc              .byte $xx,$xx,$xx,$xx,$xx ; 040 -> 14:0b -> @ 16
+        $1d7e1              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:0a -> @ 16
+        $1d7e6              .byte         $xx,$xx     ;     Set: 040
+        ;;                  27: ac Goa Fortress - Tornel
+        $1d7e8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 18:03 (action 17)
+        $1d7ed              .byte         $xx,$xx     ;     Set: 056 tornel rescued
+        ;; ----------------------------------------------------------------
+	;; 62 
+        $1d7ef              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 15:07
+        $1d7f3              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 15:08
+        $1d7f7              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 15:07
+        $1d7fb              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 15:07
+        $1d7ff              .byte $xx,$xx
+        $1d801              .byte $xx,$xx
+        $1d803              .byte $xx,$xx
+        $1d805              .byte $xx,$xx
+        $1d807              .byte $xx
+        ;;                  00: e1 Portoa - Asina Room
+        $1d808              .byte $xx,$xx,$xx,$xx,$xx ; 03c -> 0b:03
+        $1d80d              .byte $xx,$xx,$xx,$xx,$xx ; 01e NOT -> 0b:00 (action 10)
+        $1d812              .byte         $xx,$xx     ;     Set: 01e
+        $1d814              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0b:02
+        ;;                  11: f4 Shyron - Hospital
+        $1d819              .byte $xx,$xx,$xx,$xx,$xx ; 02d -> 16:07
+        ;;                  16: f2 Shyron - Temple
+        $1d81e              .byte $xx,$xx,$xx,$xx,$xx ; 03b -> 14:12 -> @ 11
+        $1d823              .byte $xx,$xx,$xx,$xx,$xx ; 03d NOT -> 14:10 -> @ 11
+        $1d828              .byte         $xx,$xx     ;     Set: 03d
+        $1d82a              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:11 -> @ 11
+        ;;                  27: b9 Goa Fortress - Asina
+        $1d82f              .byte $xx,$xx,$xx,$xx,$xx ; default -> 18:05 (action 17)
+        $1d834              .byte         $xx,$xx     ;     Set: 057
+        ;; ----------------------------------------------------------------
+	;; 74, 7e 
+        $1d836              .byte $xx,$xx,$xx,$xx
+        $1d83a              .byte $xx,$xx
+        $1d83c              .byte $xx,$xx
+        $1d83e              .byte $xx,$xx
+        $1d840              .byte $xx,$xx
+        $1d842              .byte $xx
+        ;;                  00: ef Swan - Tavern
+        $1d843              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:06 (action 13)
+        $1d848              .byte         $xx,$xx     ;     Clear: 000 unused
+        $1d84a              .byte         $xx,$xx     ;     Set: 261
+        $1d84c              .byte         $xx,$xx     ;     Set: 540
+        $1d84e              .byte         $xx,$xx     ;     Clear: 451
+        $1d850              .byte         $xx,$xx     ;     Clear: 00a windmill key used
+        ;;                  0f: f1 Swan - Dance Hall
+        $1d852              .byte $xx,$xx,$xx,$xx,$xx ; 075 -> 00:00 (action 14) -> @ 03
+        $1d857              .byte         $xx,$xx     ;     Clear: 00a windmill key used
+        ;;                  16: 62 Joel - Lighthouse
+        $1d859              .byte $xx,$xx,$xx,$xx,$xx ; default -> 18:07 (action 14)
+        $1d85e              .byte         $xx,$xx     ;     Set: 0d8
+        ;; ----------------------------------------------------------------
+	;; 68 
+        $1d860              .byte $xx,$xx,$xx,$xx
+        $1d864              .byte $xx
+        $1d865              .byte $xx,$xx,$xx,$xx,$xx ; default -> 11:01
+        $1d86a              .byte         $xx,$xx     ;     Set: 09b
+        ;; ----------------------------------------------------------------
+	;; 6b 
+        $1d86c              .byte $xx,$xx,$xx,$xx
+        $1d870              .byte $xx
+        $1d871              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1f:00
+        ;; ----------------------------------------------------------------
+	;; 6d 
+        $1d876              .byte $xx,$xx,$xx,$xx
+        $1d87a              .byte $xx,$xx
+        $1d87c              .byte $xx,$xx
+        $1d87e              .byte $xx
+        ;;                  00: ef Swan - Tavern
+        $1d87f              .byte $xx,$xx,$xx,$xx,$xx ; 070 -> 13:06 (action 13)
+        $1d884              .byte         $xx,$xx     ;     Set: 072
+        $1d886              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:05
+        ;;                  0c: 8e Goa
+        $1d88b              .byte $xx,$xx,$xx,$xx,$xx ; 026 NOT entered shyron -> 1e:1a
+        $1d890              .byte         $xx,$xx     ;     Set: 076
+        $1d892              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:0e -> @ 0c
+        ;; ----------------------------------------------------------------
+	;; 6c 
+        $1d897              .byte $xx,$xx,$xx,$xx
+        $1d89b              .byte $xx
+        $1d89c              .byte $xx,$xx,$xx,$xx,$xx ; 03e -> 13:01
+        $1d8a1              .byte $xx,$xx,$xx,$xx,$xx ; 071 -> 13:06 (action 16)
+        $1d8a6              .byte         $xx,$xx     ;     Set: 03e
+        $1d8a8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:03
+        ;; ----------------------------------------------------------------
+	;; 75 
+        $1d8ad              .byte $xx,$xx,$xx,$xx
+        $1d8b1              .byte $xx
+        $1d8b2              .byte $xx,$xx,$xx,$xx,$xx ; default -> 18:06 (action 05)
+        ;; ----------------------------------------------------------------
+	;; 8e mesia in tower
+        $1d8b7              .byte $xx,$xx,$xx,$xx
+        $1d8bb              .byte $xx
+        $1d8bc              .byte $xx,$xx,$xx,$xx,$xx ; 0ed NOT -> 1b:0c
+        $1d8c1              .byte         $xx,$xx     ;     Set: 0ed
+        $1d8c3              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1b:0d
+        ;; ----------------------------------------------------------------
+	;; 84 
+        $1d8c8              .byte $xx,$xx,$xx,$xx
+        $1d8cc              .byte $xx
+        $1d8cd              .byte $xx,$xx,$xx,$xx,$xx ; default -> 10:0f
+        ;; ----------------------------------------------------------------
+	;; 83 
+        $1d8d2              .byte $xx,$xx,$xx,$xx
+        $1d8d6              .byte $xx
+        $1d8d7              .byte $xx,$xx,$xx,$xx,$xx ; 082 NOT -> 1b:01 (action 03)
+        $1d8dc              .byte         $xx,$xx     ;     Set: 079
+        $1d8de              .byte         $xx,$xx     ;     Set: 082
+        $1d8e0              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1b:02
+        ;; ----------------------------------------------------------------
+	;; c3 
+        $1d8e5              .byte $xx,$xx,$xx,$xx
+        $1d8e9              .byte $xx
+        $1d8ea              .byte $xx,$xx,$xx,$xx,$xx ; 017 -> 0e:03 (action 1a)
+        $1d8ef              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0e:00 (action 1b)
+;;; --------------------------------
+;;; Location-indexed table of telepathy state.
+TelepathyLocations
+        $1d8f4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1d904              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1d914              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1d924              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1d934              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1d944              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1d954              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1d964              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1d974              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1d984              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1d994              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1d9a4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1d9b4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1d9c4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1d9d4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1d9e4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 DataTable_1d9f4
         $1d9f4              .word ($1da7c) ; 00
         $1d9f6              .word ($1da4c) ; 01
@@ -21284,182 +22199,457 @@ ItemGetTable                     ;  0   1   2   3   4   5   6   7   8   9   a   
 ;;;        [4]:80 is set (if 0) or clear (if 1)
 ;;;        [4]:40 is repeat if clear
 	;; 6d
-        $1dde6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1dde6              .byte $xx,$xx
+        $1dde8              .byte $xx,$xx
+        $1ddea              .byte $xx,$xx ; Set: 0e6 chest:6d:opel statue
+        $1ddec              .byte $xx
 	;; 6e
-        $1dded              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1dded              .byte $xx,$xx
+        $1ddef              .byte $xx,$xx
+        $1ddf1              .byte $xx,$xx ; Set: 0e5 chest:6e:warp boots
+        $1ddf3              .byte $xx
 	;; 3c
-        $1ddf4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1ddf4              .byte $xx,$xx
+        $1ddf6              .byte $xx,$xx
+        $1ddf8              .byte $xx,$xx ; Set: 0e4 chest:3c:kirisa plant
+        $1ddfa              .byte $xx
 	;; 69
-        $1ddfb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1ddfb              .byte $xx,$xx
+        $1ddfd              .byte $xx,$xx
+        $1ddff              .byte $xx,$xx ; Set: 0d2 chest:69:magic ring
+        $1de01              .byte $xx
 	;; 5b
-        $1de02              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de02              .byte $xx,$xx
+        $1de04              .byte $xx,$xx
+        $1de06              .byte $xx,$xx ; Set: 0d4 chest:5b:flute of lime
+        $1de08              .byte $xx
 	;; 1d
-        $1de09              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de09              .byte $xx,$xx
+        $1de0b              .byte $xx,$xx
+        $1de0d              .byte $xx,$xx ; Set: 0aa chest:1d:medical herb
+        $1de0f              .byte $xx
 	;; 50
-        $1de10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de10              .byte $xx,$xx
+        $1de12              .byte $xx,$xx
+        $1de14              .byte $xx,$xx ; Set: 0ab chest:50:merical herb
+        $1de16              .byte $xx
 	;; 52
-        $1de17              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de17              .byte $xx,$xx
+        $1de19              .byte $xx,$xx
+        $1de1b              .byte $xx,$xx ; Set: 0ad chest:52:medical herb
+        $1de1d              .byte $xx
 	;; 53
-        $1de1e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de1e              .byte $xx,$xx
+        $1de20              .byte $xx,$xx
+        $1de22              .byte $xx,$xx ; Set: 0ae chest:53:medical herb
+        $1de24              .byte $xx
 	;; 54
-        $1de25              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de25              .byte $xx,$xx
+        $1de27              .byte $xx,$xx
+        $1de29              .byte $xx,$xx ; Set: 0af chest:54:magic ring
+        $1de2b              .byte $xx
 	;; 55
-        $1de2c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de2c              .byte $xx,$xx
+        $1de2e              .byte $xx,$xx
+        $1de30              .byte $xx,$xx ; Set: 0b0 chest:55:medical herb
+        $1de32              .byte $xx
 	;; 56
-        $1de33              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de33              .byte $xx,$xx
+        $1de35              .byte $xx,$xx
+        $1de37              .byte $xx,$xx ; Set: 0b1 chest:56:medical herb
+        $1de39              .byte $xx
 	;; 57
-        $1de3a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de3a              .byte $xx,$xx
+        $1de3c              .byte $xx,$xx
+        $1de3e              .byte $xx,$xx ; Set: 0b2 chest:57:medical herb
+        $1de40              .byte $xx
 	;; 58
-        $1de41              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de41              .byte $xx,$xx
+        $1de43              .byte $xx,$xx
+        $1de45              .byte $xx,$xx ; Set: 0b3 chest:58:magic ring
+        $1de47              .byte $xx
 	;; 59
-        $1de48              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de48              .byte $xx,$xx
+        $1de4a              .byte $xx,$xx
+        $1de4c              .byte $xx,$xx ; Set: 0b4
+        $1de4e              .byte $xx
 	;; 5a
-        $1de4f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de4f              .byte $xx,$xx
+        $1de51              .byte $xx,$xx
+        $1de53              .byte $xx,$xx ; Set: 0b5 chest:5a:fruit of power
+        $1de55              .byte $xx
 	;; 1f
-        $1de56              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de56              .byte $xx,$xx
+        $1de58              .byte $xx,$xx
+        $1de5a              .byte $xx,$xx ; Set: 0b6 chest:1f:lysis plant
+        $1de5c              .byte $xx
 	;; 5c
-        $1de5d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de5d              .byte $xx,$xx
+        $1de5f              .byte $xx,$xx
+        $1de61              .byte $xx,$xx ; Set: 0b7 chest:5c:lysis plant
+        $1de63              .byte $xx
 	;; 5d
-        $1de64              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de64              .byte $xx,$xx
+        $1de66              .byte $xx,$xx
+        $1de68              .byte $xx,$xx ; Set: 0b8 chest:5d:lysis plant
+        $1de6a              .byte $xx
 	;; 1e
-        $1de6b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de6b              .byte $xx,$xx
+        $1de6d              .byte $xx,$xx
+        $1de6f              .byte $xx,$xx ; Set: 0b9 chest:1e:antidote
+        $1de71              .byte $xx
 	;; 5e
-        $1de72              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de72              .byte $xx,$xx
+        $1de74              .byte $xx,$xx
+        $1de76              .byte $xx,$xx ; Set: 0ba chest:5e:antidote
+        $1de78              .byte $xx
 	;; 5f
-        $1de79              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de79              .byte $xx,$xx
+        $1de7b              .byte $xx,$xx
+        $1de7d              .byte $xx,$xx ; Set: 0bb chest:5f:antidote
+        $1de7f              .byte $xx
 	;; 60
-        $1de80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de80              .byte $xx,$xx
+        $1de82              .byte $xx,$xx
+        $1de84              .byte $xx,$xx ; Set: 0bc chest:60:antidote
+        $1de86              .byte $xx
 	;; 20
-        $1de87              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de87              .byte $xx,$xx
+        $1de89              .byte $xx,$xx
+        $1de8b              .byte $xx,$xx ; Set: 0bd chest:20:fruit of lime
+        $1de8d              .byte $xx
 	;; 21
-        $1de8e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de8e              .byte $xx,$xx
+        $1de90              .byte $xx,$xx
+        $1de92              .byte $xx,$xx ; Set: 0be chest:21:fruit of power
+        $1de94              .byte $xx
 	;; 61
-        $1de95              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de95              .byte $xx,$xx
+        $1de97              .byte $xx,$xx
+        $1de99              .byte $xx,$xx ; Set: 00c
+        $1de9b              .byte $xx
 	;; 62
-        $1de9c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1de9c              .byte $xx,$xx
+        $1de9e              .byte $xx,$xx
+        $1dea0              .byte $xx,$xx ; Set: 0bf chest:62:fruit of power
+        $1dea2              .byte $xx
 	;; 63
-        $1dea3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1dea3              .byte $xx,$xx
+        $1dea5              .byte $xx,$xx
+        $1dea7              .byte $xx,$xx ; Set: 0c0 chest:63:opel statue
+        $1dea9              .byte $xx
 	;; 64
-        $1deaa              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1deaa              .byte $xx,$xx
+        $1deac              .byte $xx,$xx
+        $1deae              .byte $xx,$xx ; Set: 0c1 chest:64:fruit of power
+        $1deb0              .byte $xx
 	;; 22
-        $1deb1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1deb1              .byte $xx,$xx
+        $1deb3              .byte $xx,$xx
+        $1deb5              .byte $xx,$xx ; Set: 0c2 chest:22:magic ring
+        $1deb7              .byte $xx
 	;; 65
-        $1deb8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1deb8              .byte $xx,$xx
+        $1deba              .byte $xx,$xx
+        $1debc              .byte $xx,$xx ; Set: 0c3 chest:65:magic ring
+        $1debe              .byte $xx
 	;; 66
-        $1debf              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1debf              .byte $xx,$xx
+        $1dec1              .byte $xx,$xx
+        $1dec3              .byte $xx,$xx ; Set: 0c4 chest:66:fruit of repun
+        $1dec5              .byte $xx
 	;; 6b
-        $1dec6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1dec6              .byte $xx,$xx
+        $1dec8              .byte $xx,$xx
+        $1deca              .byte $xx,$xx ; Set: 0c5 chest:6b:magic ring
+        $1decc              .byte $xx
 	;; 6c
-        $1decd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1decd              .byte $xx,$xx
+        $1decf              .byte $xx,$xx
+        $1ded1              .byte $xx,$xx ; Set: 0c6 chest:6c:magic ring
+        $1ded3              .byte $xx
 	;; 23
-        $1ded4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1ded4              .byte $xx,$xx
+        $1ded6              .byte $xx,$xx
+        $1ded8              .byte $xx,$xx ; Set: 106
+        $1deda              .byte $xx,$xx ; Set: 0c7 chest:23:fruit of repun
+        $1dedc              .byte $xx
 	;; 24
-        $1dedd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1dedd              .byte $xx,$xx
+        $1dedf              .byte $xx,$xx
+        $1dee1              .byte $xx,$xx ; Set: 0c8 chest:24:warp boots
+        $1dee3              .byte $xx
 	;; 6a
-        $1dee4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1dee4              .byte $xx,$xx
+        $1dee6              .byte $xx,$xx
+        $1dee8              .byte $xx,$xx ; Set: 0c9 chest:6a:warp boots
+        $1deea              .byte $xx
 	;; 3d
-        $1deeb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1deeb              .byte $xx,$xx
+        $1deed              .byte $xx,$xx
+        $1deef              .byte $xx,$xx ; Set: 108
+        $1def1              .byte $xx,$xx ; Set: 024
+        $1def3              .byte $xx,$xx ; Set: 0ca chest:3d:ivory statue
+        $1def5              .byte $xx
 	;; 2a
-        $1def6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1def6              .byte $xx,$xx
+        $1def8              .byte $xx,$xx
+        $1defa              .byte $xx,$xx ; Set: 0cb chest:2a:power ring
+        $1defc              .byte $xx
 	;; 15, 16, 17, 18, 19, 1a  - shields?
-        $1defd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1defd              .byte $xx,$xx
+        $1deff              .byte $xx,$xx
+        $1df01              .byte $xx,$xx ; Clear: 000
+        $1df03              .byte $xx
 	;; 1c
-        $1df04              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1df04              .byte $xx,$xx
+        $1df06              .byte $xx,$xx
+        $1df08              .byte $xx,$xx ; Set: 10b
+        $1df0a              .byte $xx,$xx ; Set: 0cc chest:1c:psycho armor
+        $1df0c              .byte $xx,$xx ; Set: 06c
+        $1df0e              .byte $xx
 	;; 14
-        $1df0f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1df0f              .byte $xx,$xx
+        $1df11              .byte $xx,$xx
+        $1df13              .byte $xx,$xx ; Set: 0cd chest:14:psycho shield
+        $1df15              .byte $xx
 	;; 1b
-        $1df16              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1df16              .byte $xx,$xx
+        $1df18              .byte $xx,$xx
+        $1df1a              .byte $xx,$xx ; Set: 0df chest:1b:battle armor
+        $1df1c              .byte $xx
 	;; 51
-        $1df1d              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1df1d              .byte $xx,$xx
+        $1df1f              .byte $xx,$xx
+        $1df21              .byte $xx,$xx ; Set: 062
 	;; 33
-        $1df23              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1df23              .byte $xx,$xx
+        $1df25              .byte $xx,$xx
+        $1df27              .byte $xx,$xx ; Set: 0cf chest:33:key to prison
+        $1df29              .byte $xx
 	;; 35
-        $1df2a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1df2a              .byte $xx,$xx
+        $1df2c              .byte $xx,$xx
+        $1df2e              .byte $xx,$xx ; Set: 0d1 chest:35:fog lamp
+        $1df30              .byte $xx
 	;; 26
-        $1df31              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1df31              .byte $xx,$xx
+        $1df33              .byte $xx,$xx
+        $1df35              .byte $xx,$xx ; Set: 105
+        $1df37              .byte $xx,$xx ; Set: 0d3 chest:26:opel statue
+        $1df39              .byte $xx
 	;; 00 (note: also 4a, 4b, 4c, 4d, 4e, 4f, 67, 68)
-        $1df3a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1df3a              .byte $xx,$xx
+        $1df3c              .byte $xx,$xx
+        $1df3e              .byte $xx,$xx ; Set: 00b
+        $1df40              .byte $xx
 	;; 01
-        $1df41              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1df41              .byte $xx,$xx
+        $1df43              .byte $xx,$xx
+        $1df45              .byte $xx,$xx ; Set: 049
+        $1df47              .byte $xx
 	;; 02
-        $1df48              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1df48              .byte $xx,$xx
+        $1df4a              .byte $xx,$xx
+        $1df4c              .byte $xx,$xx ; Set: 017 chest:02:sword of water
+        $1df4e              .byte $xx
 	;; 03
-        $1df4f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1df4f              .byte $xx,$xx
+        $1df51              .byte $xx,$xx
+        $1df53              .byte $xx,$xx ; Set: 05f chest:03:sword of thunder
+        $1df55              .byte $xx
 	;; 04
-        $1df56              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1df56              .byte $xx,$xx
+        $1df58              .byte $xx,$xx
+        $1df5a              .byte $xx,$xx ; Clear: 000
+        $1df5c              .byte $xx
 	;; 05
-        $1df5d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1df5d              .byte $xx,$xx
+        $1df5f              .byte $xx,$xx
+        $1df61              .byte $xx,$xx ; Set: 087 chest:05:ball of wind
+        $1df63              .byte $xx
 	;; 07
-        $1df64              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1df64              .byte $xx,$xx
+        $1df66              .byte $xx,$xx
+        $1df68              .byte $xx,$xx ; Set: 041
+        $1df6a              .byte $xx,$xx ; Set: 044
+        $1df6c              .byte $xx,$xx ; Set: 101
+        $1df6e              .byte $xx
 	;; 09
-        $1df6f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1df6f              .byte $xx,$xx
+        $1df71              .byte $xx,$xx
+        $1df73              .byte $xx,$xx ; Set: 103
+        $1df75              .byte $xx,$xx ; Set: 01f
+        $1df77              .byte $xx,$xx ; Set: 020
+        $1df79              .byte $xx,$xx ; Set: 07b
+        $1df7b              .byte $xx
 	;; 0b
-        $1df7c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1df7c              .byte $xx,$xx
+        $1df7e              .byte $xx,$xx
+        $1df80              .byte $xx,$xx ; Set: 067
+        $1df82              .byte $xx
 	;; 06
-        $1df83              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1df83              .byte $xx,$xx
+        $1df85              .byte $xx,$xx
+        $1df87              .byte $xx,$xx ; Set: 04e chest:06:tornado bracelet
+        $1df89              .byte $xx
 	;; 08
-        $1df8a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1df8a              .byte $xx,$xx
+        $1df8c              .byte $xx,$xx
+        $1df8e              .byte $xx,$xx ; Set: 077
+        $1df90              .byte $xx,$xx ; Set: 102
+        $1df92              .byte $xx
 	;; 0a
-        $1df93              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1df93              .byte $xx,$xx
+        $1df95              .byte $xx,$xx
+        $1df97              .byte $xx,$xx ; Set: 07a chest:0a:blizzard bracelet
+        $1df99              .byte $xx
 	;; 0c
-        $1df9a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1df9a              .byte $xx,$xx
+        $1df9c              .byte $xx,$xx
+        $1df9e              .byte $xx,$xx ; Set: 078 chest:0c:storm bracelet
+        $1dfa0              .byte $xx
 	;; 10
-        $1dfa1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1dfa1              .byte $xx,$xx
+        $1dfa3              .byte $xx,$xx
+        $1dfa5              .byte $xx,$xx ; Set: 01c
+        $1dfa7              .byte $xx
 	;; 25
-        $1dfa8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1dfa8              .byte $xx,$xx
+        $1dfaa              .byte $xx,$xx
+        $1dfac              .byte $xx,$xx ; Set: 0ce chest:25:statue of onyx
+        $1dfae              .byte $xx
 	;; 27
-        $1dfaf              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1dfaf              .byte $xx,$xx
+        $1dfb1              .byte $xx,$xx
+        $1dfb3              .byte $xx,$xx ; Clear: 000 unused
+        $1dfb5              .byte $xx
 	;; 28
-        $1dfb6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1dfb6              .byte $xx,$xx
+        $1dfb8              .byte $xx,$xx
+        $1dfba              .byte $xx,$xx ; Set: 0d0 chest:28:flute of lime
+        $1dfbc              .byte $xx
 	;; 2d
-        $1dfbd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1dfbd              .byte $xx,$xx
+        $1dfbf              .byte $xx,$xx
+        $1dfc1              .byte $xx,$xx ; Set: 02e
+        $1dfc3              .byte $xx
 	;; 2e
-        $1dfc4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1dfc4              .byte $xx,$xx
+        $1dfc6              .byte $xx,$xx
+        $1dfc8              .byte $xx,$xx ; Set: 100
+        $1dfca              .byte $xx
 	;; 3b
-        $1dfcb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1dfcb              .byte $xx,$xx
+        $1dfcd              .byte $xx,$xx
+        $1dfcf              .byte $xx,$xx ; Set: 03c chest:3b:love pendant
+        $1dfd1              .byte $xx
 	;; 40
-        $1dfd2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1dfd2              .byte $xx,$xx
+        $1dfd4              .byte $xx,$xx
+        $1dfd6              .byte $xx,$xx ; Set: 079
+        $1dfd8              .byte $xx
 	;; 2b
-        $1dfd9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1dfd9              .byte $xx,$xx
+        $1dfdb              .byte $xx,$xx
+        $1dfdd              .byte $xx,$xx ; Clear: 000 unused
+        $1dfdf              .byte $xx
 	;; 2f
-        $1dfe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1dfe0              .byte $xx,$xx
+        $1dfe2              .byte $xx,$xx
+        $1dfe4              .byte $xx,$xx ; Set: 0e7 chest:2f:leather boots
+        $1dfe6              .byte $xx
 	;; 3f
-        $1dfe7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1dfe7              .byte $xx,$xx
+        $1dfe9              .byte $xx,$xx
+        $1dfeb              .byte $xx,$xx ; Set: 07d chest:3f:bow of sun
+        $1dfed              .byte $xx
 	;; 38
-        $1dfee              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1dfee              .byte $xx,$xx
+        $1dff0              .byte $xx,$xx
+        $1dff2              .byte $xx,$xx ; Set: 013
+        $1dff4              .byte $xx
 	;; 36
-        $1dff5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1dff5              .byte $xx,$xx
+        $1dff7              .byte $xx,$xx
+        $1dff9              .byte $xx,$xx ; Set: 08b
+        $1dffb              .byte $xx
 	;; 31, 49
-        $1dffc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1dffc              .byte $xx,$xx
+        $1dffe              .byte $xx,$xx
+        $1e000              .byte $xx,$xx ; Clear: 000 unused
+        $1e002              .byte $xx
 RomBank_0f                      ; @@ $a003
 	;; 6f
-        $1e003              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1e003              .byte $xx,$xx
+        $1e005              .byte $xx,$xx
+        $1e007              .byte $xx,$xx ; Set: 0dc chest:6f:magic ring
+        $1e009              .byte $xx
 	;; 70
-        $1e00a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1e00a              .byte $xx,$xx
+        $1e00c              .byte $xx,$xx
+        $1e00e              .byte $xx,$xx ; Set: 0dd
+        $1e010              .byte $xx
 	;; 2c
-        $1e011              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1e011              .byte $xx,$xx
+        $1e013              .byte $xx,$xx
+        $1e015              .byte $xx,$xx ; Set: 0de chest:2c:iron necklace
+        $1e017              .byte $xx
 	;; 29, 30
-        $1e018              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1e018              .byte $xx,$xx
+        $1e01a              .byte $xx,$xx
+        $1e01c              .byte $xx,$xx ; Clear: 000 unused
+        $1e01e              .byte $xx
 	;; 32, 34, 37, 39, 3a, 3e
-        $1e01f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1e01f              .byte $xx,$xx
+        $1e021              .byte $xx,$xx
+        $1e023              .byte $xx,$xx ; Clear: 000 unused
+        $1e025              .byte $xx
 	;; 12
-        $1e026              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1e026              .byte $xx,$xx
+        $1e028              .byte $xx,$xx
+        $1e02a              .byte $xx,$xx ; Set: 107
+        $1e02c              .byte $xx
 	;; 0d, 0e, 0f, 11, 13
-        $1e02d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1e02d              .byte $xx,$xx
+        $1e02f              .byte $xx,$xx
+        $1e031              .byte $xx,$xx ; Clear: 000 unused
+        $1e033              .byte $xx
 	;; 45, 48
-        $1e034              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1e034              .byte $xx,$xx
+        $1e036              .byte $xx,$xx
+        $1e038              .byte $xx,$xx ; Clear: 000 unused
+        $1e03a              .byte $xx
 	;; 41
-        $1e03b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1e03b              .byte $xx,$xx
+        $1e03d              .byte $xx,$xx
+        $1e03f              .byte $xx,$xx ; Set: 039 learned refresh
+        $1e041              .byte $xx
 	;; 42
-        $1e042              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1e042              .byte $xx,$xx
+        $1e044              .byte $xx,$xx
+        $1e046              .byte $xx,$xx ; Set: 037
+        $1e048              .byte $xx
 	;; 43
-        $1e049              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1e049              .byte $xx,$xx
+        $1e04b              .byte $xx,$xx
+        $1e04d              .byte $xx,$xx ; Set: 00e learned telepathy
+        $1e04f              .byte $xx
 	;; 44
-        $1e050              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1e050              .byte $xx,$xx
+        $1e052              .byte $xx,$xx
+        $1e054              .byte $xx,$xx ; Set: 03f learned teleport
+        $1e056              .byte $xx
 	;; 47
-        $1e057              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1e057              .byte $xx,$xx
+        $1e059              .byte $xx,$xx
+        $1e05b              .byte $xx,$xx ; Set: 063
+        $1e05d              .byte $xx
 	;; 46
-        $1e05e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1e05e              .byte $xx,$xx
+        $1e060              .byte $xx,$xx
+        $1e062              .byte $xx,$xx ; Clear: 000 unused
+        $1e064              .byte $xx
 ;;; --------------------------------
 ItemUseData_00_Default
         $1e065              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -21495,7 +22685,10 @@ ItemUseData_36_ShellFlute
 ItemUseData_39_GlowingLamp
         $1e0b9              .byte $xx,$xx,$xx,$xx
 ItemUseData_3a_StatueOfGold
-        $1e0bd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1e0bd              .byte $xx,$xx ; 38:02 (action 15)
+        $1e0bf              .byte $xx,$xx ; Set: 408 ???
+        $1e0c1              .byte $xx,$xx ; Set: 283
+        $1e0c3              .byte $xx,$xx
 ItemUseData_37_EyeGlasses
         $1e0c5              .byte $xx,$xx,$xx,$xx,$xx
 ItemUseData_3b_LovePendant
@@ -21517,16 +22710,19 @@ ItemUseData_40_BowOfTruth
 ;;; The following are the two-byte values associated with the pointers in
 ;;; the $1dc82 data table.  It's sparse and somewhat scrambled, so the
 ;;; comments on the RHS indicate which entry maps to it.  These values
-;;; are consumed by $1c148.  Upon entry through $1c5bf, ($24),y points
-;;; to the ($23)th entry of this table, where $23 is the last element of
-;;; the NpcData quadruplet
-DataTable_1dc82_Values
+;;; are consumed by $1c148 ParseFlagsFromBytePair_24y.  Upon entry through
+;;; $1c5bf, ($24),y points to the ($23)th entry of this table, where $23
+;;; is the last element of the NpcData quadruplet.
+;;;
+;;; It basically says that if the given trigger is set, the treasure chest
+;;; should not spawn.
+TreasureChestSpawnFlags
         $1e106              .byte $xx,$xx ; 2f
         $1e108              .byte $xx,$xx ; 6d
         $1e10a              .byte $xx,$xx ; 6e
         $1e10c              .byte $xx,$xx ; 58
         $1e10e              .byte $xx,$xx ; 54
-        $1e110              .byte $xx,$xx ; DEFAULT (00, ...)
+        $1e110              .byte $xx,$xx ; DEFAULT (00, ...) -> always true
         $1e112              .byte $xx,$xx ; 1d
         $1e114              .byte $xx,$xx ; 50
         $1e116              .byte $xx,$xx ; 52
@@ -21580,214 +22776,374 @@ DataTable_1dc82_Values
         $1e176              .byte $xx,$xx ; 2b
         $1e178              .byte $xx,$xx ; 3c
 ;;; --------------------------------
-;;; Table of pointers read from 1c0e3, which is related to ItemGet and ItemUse
+;;; Trigger data table.
 ;;; STRIP: word=$14000
-DataTable_1e17a
-        $1e17a              .word ($1e200) ; 00
-        $1e17c              .word ($1e208) ; 01
-        $1e17e              .word ($1e210) ; 02
-        $1e180              .word ($1e218) ; 03
-        $1e182              .word ($1e21e) ; 04
-        $1e184              .word ($1e224) ; 05
-        $1e186              .word ($1e22c) ; 06
-        $1e188              .word ($1e232) ; 07
-        $1e18a              .word ($1e238) ; 08
-        $1e18c              .word ($1e23e) ; 09
-        $1e18e              .word ($1e244) ; 0a
-        $1e190              .word ($1e24a) ; 0b
-        $1e192              .word ($1e250) ; 0c
-        $1e194              .word ($1e25a) ; 0d
-        $1e196              .word ($1e264) ; 0e
-        $1e198              .word ($1e26a) ; 0f
-        $1e19a              .word ($1e272) ; 10
-        $1e19c              .word ($1e2f4) ; 11
-        $1e19e              .word ($1e280) ; 12
-        $1e1a0              .word ($1e286) ; 13
-        $1e1a2              .word ($1e28c) ; 14
-        $1e1a4              .word ($1e292) ; 15
-        $1e1a6              .word ($1e298) ; 16
-        $1e1a8              .word ($1e29e) ; 17
-        $1e1aa              .word ($1e2a4) ; 18
-        $1e1ac              .word ($1e2aa) ; 19
-        $1e1ae              .word ($1e2b0) ; 1a
-        $1e1b0              .word ($1e2b8) ; 1b
-        $1e1b2              .word ($1e2be) ; 1c
-        $1e1b4              .word ($1e2c4) ; 1d
-        $1e1b6              .word ($1e2ca) ; 1e
-        $1e1b8              .word ($1e2d0) ; 1f
-        $1e1ba              .word ($1e2d6) ; 20
-        $1e1bc              .word ($1e2dc) ; 21
-        $1e1be              .word ($1e2e2) ; 22
-        $1e1c0              .word ($1e2e8) ; 23
-        $1e1c2              .word ($1e2ee) ; 24
-        $1e1c4              .word ($1e27a) ; 25
-        $1e1c6              .word ($1e2fa) ; 26
-        $1e1c8              .word ($1e300) ; 27
-        $1e1ca              .word ($1e306) ; 28
-        $1e1cc              .word ($1e30c) ; 29
-        $1e1ce              .word ($1e312) ; 2a
-        $1e1d0              .word ($1e31a) ; 2b
-        $1e1d2              .word ($1e320) ; 2c
-        $1e1d4              .word ($1e326) ; 2d
-        $1e1d6              .word ($1e32c) ; 2e
-        $1e1d8              .word ($1e332) ; 2f
-        $1e1da              .word ($1e338) ; 30
-        $1e1dc              .word ($1e33e) ; 31
-        $1e1de              .word ($1e344) ; 32
-        $1e1e0              .word ($1e34c) ; 33
-        $1e1e2              .word ($1e352) ; 34
-        $1e1e4              .word ($1e35a) ; 35
-        $1e1e6              .word ($1e360) ; 36
-        $1e1e8              .word ($1e36a) ; 37
-        $1e1ea              .word ($1e374) ; 38
-        $1e1ec              .word ($1e37a) ; 39
-        $1e1ee              .word ($1e380) ; 3a
-        $1e1f0              .word ($1e386) ; 3b
-        $1e1f2              .word ($1e390) ; 3c
-        $1e1f4              .word ($1e398) ; 3d
-        $1e1f6              .word ($1e3a2) ; 3e
-        $1e1f8              .word ($1e3a8) ; 3f
-        $1e1fa              .word ($1e3ae) ; 40
-        $1e1fc              .word ($1e3b4) ; 41
-        $1e1fe              .word ($1e3ba) ; 42
+TriggerSquareFlags
+        $1e17a              .word ($1e200) ; 80
+        $1e17c              .word ($1e208) ; 81
+        $1e17e              .word ($1e210) ; 82
+        $1e180              .word ($1e218) ; 83
+        $1e182              .word ($1e21e) ; 84
+        $1e184              .word ($1e224) ; 85
+        $1e186              .word ($1e22c) ; 86
+        $1e188              .word ($1e232) ; 87
+        $1e18a              .word ($1e238) ; 88
+        $1e18c              .word ($1e23e) ; 89
+        $1e18e              .word ($1e244) ; 8a
+        $1e190              .word ($1e24a) ; 8b
+        $1e192              .word ($1e250) ; 8c
+        $1e194              .word ($1e25a) ; 8d
+        $1e196              .word ($1e264) ; 8e
+        $1e198              .word ($1e26a) ; 8f
+        $1e19a              .word ($1e272) ; 90
+        $1e19c              .word ($1e2f4) ; 91
+        $1e19e              .word ($1e280) ; 92
+        $1e1a0              .word ($1e286) ; 93
+        $1e1a2              .word ($1e28c) ; 94
+        $1e1a4              .word ($1e292) ; 95
+        $1e1a6              .word ($1e298) ; 96
+        $1e1a8              .word ($1e29e) ; 97
+        $1e1aa              .word ($1e2a4) ; 98
+        $1e1ac              .word ($1e2aa) ; 99
+        $1e1ae              .word ($1e2b0) ; 9a
+        $1e1b0              .word ($1e2b8) ; 9b
+        $1e1b2              .word ($1e2be) ; 9c
+        $1e1b4              .word ($1e2c4) ; 9d
+        $1e1b6              .word ($1e2ca) ; 9e
+        $1e1b8              .word ($1e2d0) ; 9f
+        $1e1ba              .word ($1e2d6) ; a0
+        $1e1bc              .word ($1e2dc) ; a1
+        $1e1be              .word ($1e2e2) ; a2
+        $1e1c0              .word ($1e2e8) ; a3
+        $1e1c2              .word ($1e2ee) ; a4
+        $1e1c4              .word ($1e27a) ; a5
+        $1e1c6              .word ($1e2fa) ; a6
+        $1e1c8              .word ($1e300) ; a7
+        $1e1ca              .word ($1e306) ; a8
+        $1e1cc              .word ($1e30c) ; a9
+        $1e1ce              .word ($1e312) ; aa
+        $1e1d0              .word ($1e31a) ; ab
+        $1e1d2              .word ($1e320) ; ac
+        $1e1d4              .word ($1e326) ; ad
+        $1e1d6              .word ($1e32c) ; ae
+        $1e1d8              .word ($1e332) ; af
+        $1e1da              .word ($1e338) ; b0
+        $1e1dc              .word ($1e33e) ; b1
+        $1e1de              .word ($1e344) ; b2
+        $1e1e0              .word ($1e34c) ; b3
+        $1e1e2              .word ($1e352) ; b4
+        $1e1e4              .word ($1e35a) ; b5
+        $1e1e6              .word ($1e360) ; b6
+        $1e1e8              .word ($1e36a) ; b7
+        $1e1ea              .word ($1e374) ; b8
+        $1e1ec              .word ($1e37a) ; b9
+        $1e1ee              .word ($1e380) ; ba
+        $1e1f0              .word ($1e386) ; bb
+        $1e1f2              .word ($1e390) ; bc
+        $1e1f4              .word ($1e398) ; bd
+        $1e1f6              .word ($1e3a2) ; be
+        $1e1f8              .word ($1e3a8) ; bf
+        $1e1fa              .word ($1e3ae) ; c0
+        $1e1fc              .word ($1e3b4) ; c1
+        $1e1fe              .word ($1e3ba) ; c2
 ;;; --------------------------------
-DataTable_1e17a_00
-        $1e200              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_01
-        $1e208              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_02
-        $1e210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_03
-        $1e218              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_04
-        $1e21e              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_05
-        $1e224              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_06
-        $1e22c              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_07
-        $1e232              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_08
-        $1e238              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_09
-        $1e23e              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_0a
-        $1e244              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_0b
-        $1e24a              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_0c
-        $1e250              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_0d
-        $1e25a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_0e
-        $1e264              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_0f
-        $1e26a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_10
-        $1e272              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_25
-        $1e27a              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_12
-        $1e280              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_13
-        $1e286              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_14
-        $1e28c              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_15
-        $1e292              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_16
-        $1e298              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_17
-        $1e29e              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_18
-        $1e2a4              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_19
-        $1e2aa              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_1a
-        $1e2b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_1b
-        $1e2b8              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_1c
-        $1e2be              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_1d
-        $1e2c4              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_1e
-        $1e2ca              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_1f
-        $1e2d0              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_20
-        $1e2d6              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_21
-        $1e2dc              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_22
-        $1e2e2              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_23
-        $1e2e8              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_24
-        $1e2ee              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_11
-        $1e2f4              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_26
-        $1e2fa              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_27
-        $1e300              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_28
-        $1e306              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_29
-        $1e30c              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_2a
-        $1e312              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_2b
-        $1e31a              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_2c
-        $1e320              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_2d
-        $1e326              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_2e
-        $1e32c              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_2f
-        $1e332              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_30
-        $1e338              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_31
-        $1e33e              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_32
-        $1e344              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_33
-        $1e34c              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_34
-        $1e352              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_35
-        $1e35a              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_36
-        $1e360              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_37
-        $1e36a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_38
-        $1e374              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_39
-        $1e37a              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_3a
-        $1e380              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_3b
-        $1e386              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_3c
-        $1e390              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_3d
-        $1e398              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_3e
-        $1e3a2              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_3f
-        $1e3a8              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_40
-        $1e3ae              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_41
-        $1e3b4              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1e17a_42
-        $1e3ba              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        ;; 80 shyron massacre
+        $1e200              .byte $xx,$xx ; Condition: 027 NOT shyron massacre
+        $1e202              .byte $xx,$xx ; Condition: 05f sword of thunder
+        $1e204              .byte $xx,$xx ; Message: 1d:13
+        $1e206              .byte $xx,$xx ; Set: 027 shyron massacre
+        ;; 81 enter shyron
+        $1e208              .byte $xx,$xx ; Condition: 03b NOT
+        $1e20a              .byte $xx,$xx
+        $1e20c              .byte $xx,$xx ; Set: 026 entered shyron
+        $1e20e              .byte $xx,$xx ; Set: 2fd warp:shyron
+        ;; 82 teleported to shyron
+        $1e210              .byte $xx,$xx ; Condition: 05f thunder sword
+        $1e212              .byte $xx,$xx ; Condition: 02d NOT talked with wise men in shyron
+        $1e214              .byte $xx,$xx ; Action: 17
+        $1e216              .byte $xx,$xx ; Set: 02d talked with wise men in shyron
+        ;; 83 enter draygonia fortress (TODO when is this used?)
+        $1e218              .byte $xx,$xx ; Condition: 064 NOT
+        $1e21a              .byte $xx,$xx
+        $1e21c              .byte $xx,$xx ; Set: 064
+        ;; 84 learn barrier (TODO - add an extra condition here on gold statue)
+        $1e21e              .byte $xx,$xx ; Condition: 051 NOT learned barrier
+        $1e220              .byte $xx,$xx ; Message 1d:12  Action: 0b
+        $1e222              .byte $xx,$xx ; Set: 051 learned barrier
+        ;; 85 enter stom's house -> ????
+        $1e224              .byte $xx,$xx ; Condition: 2f7 warp:oak
+        $1e226              .byte $xx,$xx ; Condition: 00e NOT defeated stom
+        $1e228              .byte $xx,$xx ; Message 03:00  Action: 18
+        $1e22a              .byte $xx,$xx
+        ;; 86 try to climb mt sabre north (mt sabre side)
+        $1e22c              .byte $xx,$xx ; Condition: 0a9 NOT talked to leaf rabbit
+        $1e22e              .byte $xx,$xx ; Message 1c:0f  Action: 19
+        $1e230              .byte $xx,$xx
+        ;; 87 rescue zebu (UNUSED)
+        $1e232              .byte $xx,$xx ; Condition: 055 NOT zebu rescued
+        $1e234              .byte $xx,$xx ; Message 18:01  Action: 1a
+        $1e236              .byte $xx,$xx
+        ;; 88 rescue tornel (UNUSED)
+        $1e238              .byte $xx,$xx ; Condition: 056 NOT tornel rescued
+        $1e23a              .byte $xx,$xx ; Message 18:03  Action: 1a
+        $1e23c              .byte $xx,$xx
+        ;; 89 rescue asina (UNUSED)
+        $1e23e              .byte $xx,$xx ; Condition: 057 NOT asina rescued
+        $1e240              .byte $xx,$xx ; Message 18:05  Action: 1a
+        $1e242              .byte $xx,$xx
+        ;; 8a try to enter evil spirit island (blocked until entered joel)
+        $1e244              .byte $xx,$xx ; Condition: 2fb NOT warp:joel
+        $1e246              .byte $xx,$xx ; Message 1d:10  Action: 19
+        $1e248              .byte $xx,$xx
+        ;; 8b entered joel
+        $1e24a              .byte $xx,$xx
+        $1e24c              .byte $xx,$xx
+        $1e24e              .byte $xx,$xx ; Set: 2fb warp:joel
+        ;; 8c attack leaf
+        $1e250              .byte $xx,$xx ; Condition: 038 NOT leaf attacked
+        $1e252              .byte $xx,$xx
+        $1e254              .byte $xx,$xx ; Set: 085 leaf elder missing
+        $1e256              .byte $xx,$xx ; Set: 038 leaf attacked
+        $1e258              .byte $xx,$xx ; Set: 084 leaf villagers missing
+        ;; 8d restore leaf villagers
+        $1e25a              .byte $xx,$xx ; Condition: 037
+        $1e25c              .byte $xx,$xx ; Condition: 047 NOT
+        $1e25e              .byte $xx,$xx
+        $1e260              .byte $xx,$xx ; Set: 047
+        $1e262              .byte $xx,$xx ; Clear: 085 leaf elder missing
+        ;; 8e enter oak
+        $1e264              .byte $xx,$xx
+        $1e266              .byte $xx,$xx
+        $1e268              .byte $xx,$xx ; Set: 2f7 warp:oak
+        ;; 8f UNUSED
+        $1e26a              .byte $xx,$xx ; Condition: 053
+        $1e26c              .byte $xx,$xx ; Action: 1b
+        $1e26e              .byte $xx,$xx ; Set: 045
+        $1e270              .byte $xx,$xx ; Clear: 053
+        ;; 90 enter amazones
+        $1e272              .byte $xx,$xx
+        $1e274              .byte $xx,$xx
+        $1e276              .byte $xx,$xx ; Clear: 0a1
+        $1e278              .byte $xx,$xx ; Set: 2fa warp:amazones
+        ;; a5 mt sabre guard conversation
+        $1e27a              .byte $xx,$xx ; Condition: 07e NOT guard conversation heard
+        $1e27c              .byte $xx,$xx ; Message 05:0f
+        $1e27e              .byte $xx,$xx ; Set: 07e guard conversation heard
+        ;; 92 enter underground channel
+        $1e280              .byte $xx,$xx
+        $1e282              .byte $xx,$xx
+        $1e284              .byte $xx,$xx ; Set: 018 entered underground channel
+        ;; 93 UNUSED
+        $1e286              .byte $xx,$xx ; Condition: 020 NOT
+        $1e288              .byte $xx,$xx ; Message 0a:0f
+        $1e28a              .byte $xx,$xx
+        ;; 94 enter mt sabre north cave
+        $1e28c              .byte $xx,$xx
+        $1e28e              .byte $xx,$xx
+        $1e290              .byte $xx,$xx ; Set: 05b mt sabre guards gone
+        ;; 95 enter mesia shrine
+        $1e292              .byte $xx,$xx
+        $1e294              .byte $xx,$xx ; Action: 07
+        $1e296              .byte $xx,$xx ; Set: 01b mesia recording played
+        ;; 96 UNUSED
+        $1e298              .byte $xx,$xx ; Condition: 013
+        $1e29a              .byte $xx,$xx
+        $1e29c              .byte $xx,$xx ; Set: 02f
+        ;; 97 enter portoa palace
+        $1e29e              .byte $xx,$xx
+        $1e2a0              .byte $xx,$xx
+        $1e2a2              .byte $xx,$xx ; Clear: 019
+        ;; 98 UNUSED
+        $1e2a4              .byte $xx,$xx ; Condition: 066 NOT
+        $1e2a6              .byte $xx,$xx ; Action: 1d (06:00)
+        $1e2a8              .byte $xx,$xx
+        ;; 99 enter leaf
+        $1e2aa              .byte $xx,$xx
+        $1e2ac              .byte $xx,$xx
+        $1e2ae              .byte $xx,$xx ; Set: 2f5 warp:leaf
+        ;; 9a fight mado
+        $1e2b0              .byte $xx,$xx ; Condition: 027 shyron massacre
+        $1e2b2              .byte $xx,$xx ; Condition: 067 NOT defeated mado 1
+        $1e2b4              .byte $xx,$xx ; Action: 1d (19:04)
+        $1e2b6              .byte $xx,$xx
+        ;; 9b UNUSED
+        $1e2b8              .byte $xx,$xx ; Condition: 05d NOT
+        $1e2ba              .byte $xx,$xx ; Action: 1d (18:00)
+        $1e2bc              .byte $xx,$xx
+        ;; 9c UNUSED
+        $1e2be              .byte $xx,$xx ; Condition: 060 NOT
+        $1e2c0              .byte $xx,$xx ; Message 18:02  Action: 1d
+        $1e2c2              .byte $xx,$xx
+        ;; 9d UNUSED
+        $1e2c4              .byte $xx,$xx ; Condition: 062 NOT
+        $1e2c6              .byte $xx,$xx ; Message 18:04  Action: 1d
+        $1e2c8              .byte $xx,$xx
+        ;; 9e UNUSED
+        $1e2ca              .byte $xx,$xx ; Condition: 05c NOT
+        $1e2cc              .byte $xx,$xx ; Message 18:08  Action: 1d
+        $1e2ce              .byte $xx,$xx
+        ;; 9f UNUSED
+        $1e2d0              .byte $xx,$xx ; Condition: 06c NOT
+        $1e2d2              .byte $xx,$xx ; Message 1b:00  Action: 1d
+        $1e2d4              .byte $xx,$xx
+        ;; a0 UNUSED
+        $1e2d6              .byte $xx,$xx ; Condition: 05e NOT
+        $1e2d8              .byte $xx,$xx ; Message 1b:04  Action: 1d
+        $1e2da              .byte $xx,$xx
+        ;; a1 tower message 1
+        $1e2dc              .byte $xx,$xx ; Condition: 0ea NOT received tower message 1
+        $1e2de              .byte $xx,$xx ; Message 1b:08
+        $1e2e0              .byte $xx,$xx ; Set: 0ea received tower message 1
+        ;; a2 tower message 2
+        $1e2e2              .byte $xx,$xx ; Condition: 0eb NOT received tower message 2
+        $1e2e4              .byte $xx,$xx ; Message 1b:09
+        $1e2e6              .byte $xx,$xx ; Set: 0eb received tower message 2
+        ;; a3 tower message 3
+        $1e2e8              .byte $xx,$xx ; Condition: 0ec NOT received tower message 3
+        $1e2ea              .byte $xx,$xx ; Message 1b:0a
+        $1e2ec              .byte $xx,$xx ; Set: 0ec received tower message 3
+        ;; a4 forge crystalis
+        $1e2ee              .byte $xx,$xx ; Condition: 068 NOT forged crystalis
+        $1e2f0              .byte $xx,$xx ; Message 1b:0b  Action: 1e
+        $1e2f2              .byte $xx,$xx ; Set: 068 forged crystalis
+        ;; 91 hear mt sabre guards talking
+        $1e2f4              .byte $xx,$xx ; Condition: 07f NOT heard mt sabre guards
+        $1e2f6              .byte $xx,$xx ; Message 20:12
+        $1e2f8              .byte $xx,$xx ; Set: 07f heard mt sabre guards
+        ;; a6 enter brynmaer
+        $1e2fa              .byte $xx,$xx
+        $1e2fc              .byte $xx,$xx
+        $1e2fe              .byte $xx,$xx ; Set: 2f6 warp:brynmaer
+        ;; a7 enter nadare
+        $1e300              .byte $xx,$xx
+        $1e302              .byte $xx,$xx
+        $1e304              .byte $xx,$xx ; Set: 2f8 warp:nadare
+        ;; a8 enter portoa
+        $1e306              .byte $xx,$xx
+        $1e308              .byte $xx,$xx
+        $1e30a              .byte $xx,$xx ; Set: 2f9 warp:portoa
+        ;; a9 enter swan
+        $1e30c              .byte $xx,$xx
+        $1e30e              .byte $xx,$xx
+        $1e310              .byte $xx,$xx ; Set: 2fc warp:swan
+        ;; aa enter oak
+        $1e312              .byte $xx,$xx ; Condition: 0a8
+        $1e314              .byte $xx,$xx
+        $1e316              .byte $xx,$xx ; Set: 043 entered oak ?
+        $1e318              .byte $xx,$xx ; Set: 2f7 warp:oak
+        ;; ab enter goa
+        $1e31a              .byte $xx,$xx
+        $1e31c              .byte $xx,$xx
+        $1e31e              .byte $xx,$xx ; Set: 2fe warp:goa
+        ;; ac enter sahara
+        $1e320              .byte $xx,$xx
+        $1e322              .byte $xx,$xx
+        $1e324              .byte $xx,$xx ; Set: 2ff warp:sahara
+        ;; ad allow opening mt sabre prison door ?
+        $1e326              .byte $xx,$xx
+        $1e328              .byte $xx,$xx
+        $1e32a              .byte $xx,$xx ; Set: 093
+        ;; ae allow opening styx door ?
+        $1e32c              .byte $xx,$xx
+        $1e32e              .byte $xx,$xx
+        $1e330              .byte $xx,$xx ; Set: 094
+        ;; af allow repairing broken statue ?
+        $1e332              .byte $xx,$xx
+        $1e334              .byte $xx,$xx
+        $1e336              .byte $xx,$xx ; Set: 095
+        ;; b0 board boat
+        $1e338              .byte $xx,$xx ; Condition: 021 returned fog lamp
+        $1e33a              .byte $xx,$xx ; Action: 1f
+        $1e33c              .byte $xx,$xx
+        ;; b1 start fighting statues
+        $1e33e              .byte $xx,$xx
+        $1e340              .byte $xx,$xx ; Action: 1d
+        $1e342              .byte $xx,$xx
+        ;; b2 learn paralysis in summit cave
+        $1e344              .byte $xx,$xx ; Condition: 037 NOT
+        $1e346              .byte $xx,$xx ; Message 1c:10  Action: 08
+        $1e348              .byte $xx,$xx ; Set: 037
+        $1e34a              .byte $xx,$xx ; Set: 083
+        ;; b3 despawn swan guards
+        $1e34c              .byte $xx,$xx
+        $1e34e              .byte $xx,$xx
+        $1e350              .byte $xx,$xx ; Set: 08c swan guards disappeared
+        ;; b4 learn refresh
+        $1e352              .byte $xx,$xx ; Condition: 00a windmill key used
+        $1e354              .byte $xx,$xx ; Condition: 039 NOT learned refresh
+        $1e356              .byte $xx,$xx ; Action: 0f (1b)
+        $1e358              .byte $xx,$xx ; Set: 039 learned refresh
+        ;; b5 learn teleport (UNUSED)
+        $1e35a              .byte $xx,$xx ; Condition: 03f NOT learned teleport
+        $1e35c              .byte $xx,$xx ; Action: 0f (ab)
+        $1e35e              .byte $xx,$xx ; Set: 03f learned teleport
+        ;; b6 sabera trap
+        $1e360              .byte $xx,$xx ; Condition: 013 NOT sabera defeated
+        $1e362              .byte $xx,$xx ; Condition: 0db NOT in sabera's trap
+        $1e364              .byte $xx,$xx ; Message 10:0e
+        $1e366              .byte $xx,$xx ; Set: 0db in sabera's trap
+        $1e368              .byte $xx,$xx ; Set: 08e
+        ;; b7 outside portoa castle
+        $1e36a              .byte $xx,$xx ; Condition: 09c
+        $1e36c              .byte $xx,$xx
+        $1e36e              .byte $xx,$xx ; Clear: 09c
+        $1e370              .byte $xx,$xx ; Clear: 0a2
+        $1e372              .byte $xx,$xx ; Set: 020
+        ;; b8 outside portoa fortune teller (do nothing!)
+        $1e374              .byte $xx,$xx
+        $1e376              .byte $xx,$xx
+        $1e378              .byte $xx,$xx
+        ;; b9 UNUSED
+        $1e37a              .byte $xx,$xx
+        $1e37c              .byte $xx,$xx
+        $1e37e              .byte $xx,$xx ; Clear: 09f
+        ;; ba try to climb mt sabre north (cordel side)
+        $1e380              .byte $xx,$xx ; Condition: 03f learned teleport
+        $1e382              .byte $xx,$xx ; Message 1c:0f  Action: 19
+        $1e384              .byte $xx,$xx
+        ;; bb portoa palace guard moves
+        $1e386              .byte $xx,$xx ; Condition: 09e NOT
+        $1e388              .byte $xx,$xx ; Condition: 01f NOT
+        $1e38a              .byte $xx,$xx ; Condition: 020
+        $1e38c              .byte $xx,$xx ; Action: 1b
+        $1e38e              .byte $xx,$xx
+        ;; bc amazones guards move
+        $1e390              .byte $xx,$xx ; Condition: 099 NOT
+        $1e392              .byte $xx,$xx ; Condition: 028 NOT change:woman
+        $1e394              .byte $xx,$xx ; Action: 1b
+        $1e396              .byte $xx,$xx
+        ;; bd shyron guards move
+        $1e398              .byte $xx,$xx ; Condition: 02b NOT change:stom
+        $1e39a              .byte $xx,$xx ; Condition: 026 NOT entered shyron
+        $1e39c              .byte $xx,$xx ; Condition: 027 NOT shyron massacre
+        $1e39e              .byte $xx,$xx ; Action: 1b
+        $1e3a0              .byte $xx,$xx
+        ;; be UNUSED
+        $1e3a2              .byte $xx,$xx ; Condition: 07b NOT
+        $1e3a4              .byte $xx,$xx ; Action: 0a
+        $1e3a6              .byte $xx,$xx
+        ;; bf despawn stoned people
+        $1e3a8              .byte $xx,$xx ; Condition: 06a stoned people cured
+        $1e3aa              .byte $xx,$xx
+        $1e3ac              .byte $xx,$xx ; Set: 090 stoned people gone
+        ;; c0 UNUSED
+        $1e3ae              .byte $xx,$xx ; Condition: 06b
+        $1e3b0              .byte $xx,$xx
+        $1e3b2              .byte $xx,$xx ; Set: 091
+        ;; c1 enter swan tavern
+        $1e3b4              .byte $xx,$xx ; Condition: 072
+        $1e3b6              .byte $xx,$xx
+        $1e3b8              .byte $xx,$xx ; Set: 0da
+        ;; c2 reset sabera trap
+        $1e3ba              .byte $xx,$xx
+        $1e3bc              .byte $xx,$xx
+        $1e3be              .byte $xx,$xx ; Clear: 0db in sabera's trap
+;;; --------------------------------
+;;; Unused?????
         $1e3c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1e3d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1e3e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
         $1e3f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 ;;; This seems to be called on every frame of a boss room, before the boss fight
@@ -43710,7 +45066,7 @@ ObjectActionJump_79
         $3690e  xx xx xx:   xxx BankSwitch8k_A000
         $36911  xx xx xx:   xxx $37728
 ;;; --------------------------------
-ObjectActionJump_78
+ObjectActionJump_78_TriggerSquare
         $36914  xx:         xxx
 ;;; --------------------------------
 ;;; Used by slimes, jellies, living rocks, scorpions, crabs, spiders, jellyfish
@@ -54302,7 +55658,7 @@ DialogFollowupActionJump_17_HealPlayerAndDisappear
 DialogFollowupActionJump_14
         $3d18e  xx xx:      xxx #$xx
         $3d190  xx xx xx:   xxx $3d22b
-        $3d193  xx xx xx:   xxx $3d16d
+        $3d193  xx xx xx:   xxx DialogFollowupActionJump_17_HealPlayerAndDisappear
 ;;; --------------------------------
         $3d196  xx xx xx:   xxx $3d88b
         $3d199  xx xx xx:   xxx $3e148
@@ -54593,28 +55949,29 @@ RotateMessagePartAndIndex
         $3d3d6  xx xx xx:   xxx $xxxx
         $3d3d9  xx:         xxx
 ;;; --------------------------------
+SpawnMimic        
         $3d3da  xx xx xx:   xxx $xxxx
         $3d3dd  xx xx:      xxx $xx
-        $3d3df  xx xx:      xxx #$xx
+        $3d3df  xx xx:      xxx #OBJ_MIMIC
         $3d3e1  xx xx:      xxx $xx
         $3d3e3  xx xx xx:   xxx LoadOneObjectDataInternal
         $3d3e6  xx xx:      xxx #GAME_MODE_NORMAL
         $3d3e8  xx xx:      xxx GameMode
         $3d3ea  xx:         xxx
 ;;; --------------------------------
-MainGameModeJump_07_TriggerSquare
+MainGameModeJump_07_TriggerSquareOrTreasureChest
         ;; Note: this includes treasure chests
         $3d3eb  xx xx xx:   xxx $xxxx
         $3d3ee  xx xx xx:   xxx $xxxx,y
         $3d3f1  xx xx xx:   xxx $xxxx
         $3d3f4  xx xx:      xxx #$xx
         $3d3f6  xx xx:      xxx + ; $3d3fb
-        $3d3f8  xx xx xx:    xxx $3d539
+        $3d3f8  xx xx xx:    xxx ActivateTriggerSquare ; $3d539
         ;; --------------------------------
 +       $3d3fb  xx xx:      xxx #$xx
-        $3d3fd  xx xx:      xxx $xx
-        $3d3ff  xx xx:      xxx #$xx
-        $3d401  xx xx xx:   xxx $3d834 ; ultimately calls ItemGet
+        $3d3fd  xx xx:       xxx SpawnMimic
+        $3d3ff  xx xx:      xxx #$xx ; ItemGet
+        $3d401  xx xx xx:   xxx HandleItemOrTrigger ; $3d834 ; ultimately calls ItemGet
         $3d404  xx xx:      xxx $xx
         $3d406  xx xx:      xxx $xx
         $3d408  xx xx xx:   xxx $3d9d8
@@ -54655,7 +56012,10 @@ MainGameModeJump_07_TriggerSquare
 ;;; --------------------------------
         $3d45b  xx:         xxx
 ;;; --------------------------------
-DataTable_3d45c 
+;;; NOTE: This table is accessed as $3d405,y where Y >= $50.
+;;; This looks somewhat redundant with ItemGetTable.  It may
+;;; make it a little more difficult to shuffle lower items.
+DataTable_3d45c
         $3d45c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $3d46c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
@@ -54706,11 +56066,11 @@ MainGameModeJump_06_ItemUseMessage
         $3d4d6  xx xx:      xxx GameMode
         $3d4d8  xx:         xxx
 ;;; --------------------------------
-        $3d4d9  xx xx:      xxx $xx
+        $3d4d9  xx xx:      xxx CurrentLocation
         $3d4db  xx:         xxx
-        $3d4dc  xx xx xx:    xxx $3db28
+        $3d4dc  xx xx xx:    xxx MainGameModeJump_1d
         $3d4df  xx:         xxx
-        $3d4e0  xx xx:      xxx $xx
+        $3d4e0  xx xx:      xxx CurrentLocation
         $3d4e2  xx xx:      xxx $xx
         $3d4e4  xx xx xx:   xxx $3d45b
 ;;; --------------------------------
@@ -54719,30 +56079,32 @@ MainGameModeJump_06_ItemUseMessage
         $3d4ec  xx xx xx:   xxx BankSwitch8k_A000
         $3d4ef  xx xx xx:   xxx $2fc00
 ;;; --------------------------------
+        ;; This is pretty clearly code for using an item.
         $3d4f2  xx xx xx:   xxx $xxxx
-        $3d4f5  xx xx:      xxx #$xx
-        $3d4f7  xx xx:      xxx $xx
-        $3d4f9  xx xx:      xxx #$xx
-        $3d4fb  xx xx:      xxx $xx
-        $3d4fd  xx xx:      xxx #$xx
-        $3d4ff  xx xx:      xxx $xx
-        $3d501  xx xx:      xxx #SFX_FLUTE
-        $3d503  xx xx xx:   xxx StartAudioTrack
-        $3d506  xx xx xx:   xxx $xxxx
+        $3d4f5  xx xx:      xxx #ITEM_INSECT_FLUTE
+        $3d4f7  xx xx:      xxx + ; $3d501
+        $3d4f9  xx xx:      xxx #ITEM_FLUTE_OF_LIME
+        $3d4fb  xx xx:      xxx + ; $3d501
+        $3d4fd  xx xx:      xxx #ITEM_ALARM_FLUTE
+        $3d4ff  xx xx:      xxx ++ ; $3d506
++       $3d501  xx xx:       xxx #SFX_FLUTE
+        $3d503  xx xx xx:    xxx StartAudioTrack
+++      $3d506  xx xx xx:   xxx $xxxx
         $3d509  xx:         xxx
         $3d50a  xx xx:      xxx #$xx
         $3d50c  xx xx xx:   xxx $xxxx
         $3d50f  xx xx:      xxx #$xx
         $3d511  xx xx xx:   xxx $xxxx
-        $3d514  xx xx:      xxx $xx
+        $3d514  xx xx:      xxx GlobalCounter
         $3d516  xx xx:      xxx #GAME_MODE_NORMAL
         $3d518  xx xx:      xxx GameMode
-        $3d51a  xx xx:      xxx #$xx
-        $3d51c  xx xx xx:   xxx $3d834
-        $3d51f  xx xx:      xxx $xx
-        $3d521  xx xx:      xxx $xx
+        $3d51a  xx xx:      xxx #$xx ; ItemUse
+        $3d51c  xx xx xx:   xxx HandleItemOrTrigger ; $3d834
+        $3d51f  xx xx:      xxx $xx                 ; Was the item used successfully?
+        $3d521  xx xx:      xxx ItemUseError ; $3d526
         $3d523  xx xx xx:   xxx $3d552
 ;;; --------------------------------
+ItemUseError
         $3d526  xx xx:      xxx #GAME_MODE_STATUS_MSG
         $3d528  xx xx:      xxx GameMode
         $3d52a  xx xx:      xxx #$xx
@@ -54752,17 +56114,19 @@ MainGameModeJump_06_ItemUseMessage
         $3d534  xx xx:      xxx #SFX_CURSOR_ERROR
         $3d536  xx xx xx:   xxx StartAudioTrack
 ;;; --------------------------------
+ActivateTriggerSquare
         $3d539  xx xx:      xxx GameMode
         $3d53b  xx xx:      xxx GameMode
         $3d53d  xx xx:      xxx GlobalCounter
-        $3d53f  xx xx:      xxx #$xx
-        $3d541  xx xx xx:   xxx $3d834
+        $3d53f  xx xx:      xxx #$xx ; Trigger
+        $3d541  xx xx xx:   xxx HandleItemOrTrigger ; $3d834
         $3d544  xx xx:      xxx $xx
-        $3d546  xx xx:      xxx $xx
-        $3d548  xx xx xx:   xxx $3d552
-        $3d54b  xx xx:      xxx #GAME_MODE_NORMAL
+        $3d546  xx xx:      xxx + ; $3d54b
+        ;;                   condition was met
+        $3d548  xx xx xx:    xxx $3d552
++       $3d54b  xx xx:      xxx #GAME_MODE_NORMAL
         $3d54d  xx xx:      xxx GameMode
-        $3d54f  xx xx xx:   xxx $3cab6
+        $3d54f  xx xx xx:   xxx MainLoop_01_Game
 ;;; --------------------------------
 ;;; Jumps to entry $22 of the $3d563 data table
         $3d552  xx xx:      xxx $xx
@@ -54802,7 +56166,7 @@ JumpTable_3d563                 ; TODO - Label the destinations
         $3d591              .word ($3d791) ; 17
         $3d593              .word ($3d75e) ; 18
         $3d595              .word ($3d7b7) ; 19
-        $3d597              .word ($3d5a3) ; 1a
+        $3d597              .word ($3d5a3) ; 1a rescue wise man
         $3d599              .word ($3d7ce) ; 1b
         $3d59b              .word ($3d7fd) ; 1c
         $3d59d              .word ($3d805) ; 1d
@@ -55002,7 +56366,9 @@ JumpTable_3d563_0f
 JumpTable_3d563_13
         $3d718  xx xx:      xxx #$xx
         $3d71a  xx xx xx:   xxx $xxxx
-        $3d71d  xx xx:      xxx $xx
+        $3d71d  xx xx:      xxx $xx ; uncond
+;;; --------------------------------
+;;; Start fight with Statues?
 JumpTable_3d563_14
         $3d71f  xx xx:      xxx #$xx
         $3d721  xx xx xx:   xxx $xxxx
@@ -55152,6 +56518,7 @@ JumpTable_3d563_1e
 ;;; --------------------------------
 ;;; Called from $3d401 (from dialog) and others - maybe from chest, too?
 ;;; Probably presents the text box for getting the item?
+HandleItemOrTrigger
         $3d834  xx:         xxx
         $3d835  xx xx xx:    xxx $xxxx
         $3d838  xx xx xx:    xxx $xxxx,y
@@ -55159,36 +56526,39 @@ JumpTable_3d563_1e
         $3d83d  xx xx:       xxx #$xx
         $3d83f  xx xx xx:    xxx BankSwitch16k
         $3d842  xx:         xxx
+        ;; NOTE: This is the chest entry point
         $3d843  xx:         xxx
         $3d844  xx:         xxx
         $3d845  xx xx:      xxx #OP_JMP_ABS
         $3d847  xx xx:      xxx $xx
-        $3d849  xx xx xx:   xxx $3d885,y
+        $3d849  xx xx xx:   xxx $3d885,y ; ItemGet, ItemUse, or Trigger
         $3d84c  xx xx:      xxx $xx
         $3d84e  xx xx xx:   xxx $3d886,y
         $3d851  xx xx:      xxx $xx
         $3d853  xx xx xx:   xxx $xxxx
+        ;; Handle the output
         $3d856  xx xx:      xxx $xx
         $3d858  xx xx:      xxx $xx
         $3d85a  xx xx:      xxx $xx
         $3d85c  xx xx:      xxx $xx
-        $3d85e  xx xx:      xxx $xx
-        $3d860  xx xx:      xxx $xx
-        $3d862  xx:         xxx
-        $3d863  xx xx:       xxx $xx
-        $3d865  xx:          xxx
-        $3d866  xx xx xx:     xxx $3cc2e
-        $3d869  xx xx xx:     xxx $3c89e
-        $3d86c  xx xx:        xxx #SFX_DIALOG
-        $3d86e  xx xx xx:     xxx StartAudioTrack
-        $3d871  xx xx xx:     xxx $3d347
-        $3d874  xx xx xx:     xxx $3c008
-        $3d877  xx xx xx:     xxx $3c8a9
-        $3d87a  xx:          xxx
-        $3d87b  xx xx:       xxx $xx
-        $3d87d  xx:         xxx
-        $3d87e  xx xx:      xxx $xx
-        $3d880  xx xx:      xxx #GAME_MODE_NORMAL
+        $3d85e  xx xx:      xxx + ; $3d880
+        ;;                   There's non-empty dialog
+        $3d860  xx xx:       xxx $xx
+        $3d862  xx:          xxx
+        $3d863  xx xx:        xxx $xx
+        $3d865  xx:           xxx
+        $3d866  xx xx xx:      xxx $3cc2e
+        $3d869  xx xx xx:      xxx $3c89e
+        $3d86c  xx xx:         xxx #SFX_DIALOG
+        $3d86e  xx xx xx:      xxx StartAudioTrack
+        $3d871  xx xx xx:      xxx $3d347
+        $3d874  xx xx xx:      xxx $3c008
+        $3d877  xx xx xx:      xxx $3c8a9
+        $3d87a  xx:           xxx
+        $3d87b  xx xx:        xxx $xx
+        $3d87d  xx:          xxx
+        $3d87e  xx xx:       xxx $xx
++       $3d880  xx xx:      xxx #GAME_MODE_NORMAL
         $3d882  xx xx:      xxx GameMode
         $3d884  xx:         xxx
 ;;; --------------------------------
@@ -55198,7 +56568,7 @@ JumpTable_3d563_1e
 JumpTable_3d885
         $3d885              .word ($1c26f) ; ItemGet
         $3d887              .word ($1c31e) ; ItemUse
-        $3d889              .word ($1c0e3)
+        $3d889              .word ($1c0e3) ; TriggerSquare
 ;;; --------------------------------
         $3d88b  xx xx xx:   xxx WaitForOAMDMA
         $3d88e  xx xx xx:   xxx $xxxx
@@ -56606,8 +57976,8 @@ LoadPersonObjectData
         $3e32b  xx xx:       xxx #$xx
         $3e32d  xx xx:       xxx $xx,x
 +       $3e32f  xx xx:      xxx $xx
-        $3e331  xx xx xx:   xxx $xxxx,x
-        $3e334  xx xx xx:   xxx $xxxx,x
+        $3e331  xx xx xx:   xxx ObjectMetasprite,x
+        $3e334  xx xx xx:   xxx ObjectDirMetaspriteBase,x
         $3e337  xx:         xxx
         $3e338  xx xx:      xxx #$xx
         $3e33a  xx:         xxx
@@ -56640,9 +58010,9 @@ LoadBossObjectData              ; not positive only bosses have $ff in their Per
         $3e36f  xx xx xx:   xxx MaybeRecordAlternativePatternBank
         $3e372  xx xx xx:   xxx $3e340
 ;;; --------------------------------
-NpcDataJump_2_TreasureChest         ; Called from $3e215
+NpcDataJump_2_TreasureChestOrTrigger         ; Called from $3e215
         $3e375  xx xx:      xxx $xx ; last data item in quadruplet
-        $3e377  xx xx:      xxx ++ ; $3e3b8
+        $3e377  xx xx:      xxx NpcData_LoadTrigger ; $3e3b8
         $3e379  xx xx:       xxx $xx
         $3e37b  xx xx:       xxx #$xx
         $3e37d  xx xx:       xxx $xx
@@ -56672,7 +58042,8 @@ NpcDataJump_2_TreasureChest         ; Called from $3e215
         $3e3b2  xx xx xx:    xxx $xxxx,x
         $3e3b5  xx xx xx:    xxx NpcDataJump_Finish
         ;;                   ----------------------
-++      $3e3b8  xx xx:      xxx $xx
+NpcData_LoadTrigger
+        $3e3b8  xx xx:      xxx $xx
         $3e3ba  xx xx:      xxx #$xx
         $3e3bc  xx xx:      xxx $xx
         $3e3be  xx xx xx:   xxx LoadOneObjectDataInternal

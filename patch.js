@@ -26,6 +26,8 @@ export default ({
     fixShaking.apply(rom);
     preventSwordClobber.apply(rom);
     upgradeBallsToBracelets.apply(rom);
+    makeShieldRingNotMissable.apply(rom);
+    barrierRequiresCalmSea.apply(rom);
     scaleDifficultyLib.apply(rom);
     displayDifficulty.apply(rom);
     itemLib.apply(rom);
@@ -39,6 +41,32 @@ export default ({
     console.log('patch applied');
   },
 });
+
+// Prevent Akahana from disappearing from waterfall cave after learning barrier
+export const makeShieldRingNotMissable = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000 ; fixed bank
+.bank $1c000 $8000:$2000
+.org $1c7e3
+  .byte $00
+.org $1c7f0
+  .byte $00
+`, 'makeShieldRingNotMissable'));
+
+// Specifically require having calmed the sea to learn barrier
+export const barrierRequiresCalmSea = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000 ; fixed bank
+.bank $1c000 $8000:$4000
+
+.org $1e182
+  .word (BarrierTrigger)
+
+.org $1e232
+BarrierTrigger:
+  .byte $20,$51  ; Condition: 051 NOT learned barrier
+  .byte $82,$83  ; Condition: 283 calmed angy sea
+  .byte $5b,$b2  ; Message: 1d:12  Action: 0b
+  .byte $40,$51  ; Set: 051 learned barrier
+`, 'barrierRequiresCalmSea'));
 
 // Prevent the teleport-to-shyron sequence upon getting thunder sword.
 export const noTeleportOnThunderSword = buildRomPatch(assemble(`
@@ -69,6 +97,7 @@ export const displayDifficulty = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000 ; fixed bank
 
 .bank $1e000 $a000:$2000
+
 .org $1fd27
   lda #$0e                      ; refer to moved LV(menu) display
 

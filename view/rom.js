@@ -428,6 +428,14 @@ class ItemGet extends Entity {
   }
 }
 
+class Npc extends Entity {
+  constructor(rom, id) {
+    super(rom, id);
+    this.base = 0x80f0 | ((id & 0xfc) << 6) | ((id & 3) << 2);
+    this.data = slice(rom.prg, this.base, 4);
+  }
+}
+
 class Location extends Entity {
   constructor(rom, id) {
     // will include both MapData *and* NpcData, since they share a key.
@@ -499,25 +507,25 @@ class Location extends Entity {
 class ObjectData extends Entity {
   constructor(rom, id) {
     super(rom, id);
-const pr=id==0xe6?console.log:()=>{};
+// const pr=id==0xe6?console.log:()=>{};
     this.objectDataPointer = 0x1ac00 + (id << 1);
     this.objectDataBase = addr(rom.prg, this.objectDataPointer, 0x10000);
     this.sfx = rom.prg[this.objectDataBase];
     let a = this.objectDataBase + 1;
-console.log(`PRG($${id.toString(16)}) at $${this.objectDataBase.toString(16)}: ${Array.from(this.rom.prg.slice(a, a + 23), x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
+// console.log(`PRG($${id.toString(16)}) at $${this.objectDataBase.toString(16)}: ${Array.from(this.rom.prg.slice(a, a + 23), x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
     this.objectData = [];
     let m = 0;
     for (let i = 0; i < 32; i++) {
-pr(`  i=${i.toString(16)}: a=${a.toString(16)}`);
+// pr(`  i=${i.toString(16)}: a=${a.toString(16)}`);
       if (!(i & 7)) {
         m = rom.prg[a++];
-pr(`  m=${m.toString(16)}`);
+// pr(`  m=${m.toString(16)}`);
       }
       this.objectData.push(m & 0x80 ? rom.prg[a++] : 0);
       m <<= 1;
-pr(`  push ${this.objectData[this.objectData.length - 1].toString(16)}, m=${m.toString(16)}`);
+// pr(`  push ${this.objectData[this.objectData.length - 1].toString(16)}, m=${m.toString(16)}`);
     }
-console.log(`ObjectData($${id.toString(16)}) at $${this.objectDataBase.toString(16)}: ${Array.from(this.objectData, x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
+// console.log(`ObjectData($${id.toString(16)}) at $${this.objectDataBase.toString(16)}: ${Array.from(this.objectData, x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
   }
 
   // Returns a byte array for this entry
@@ -833,6 +841,7 @@ if (!window._rom) {window._rom = true; window._rom=new Rom(rom);}
     this.metasprites = seq(0x100, i => new Metasprite(this, i));
     this.messages = new Messages(this);
     this.itemGets = seq(0x71, i => new ItemGet(this, i));
+    this.npcs = seq(0xcd, i => new Npc(this, i));
   }
 
   // TODO - cross-reference monsters/metasprites/metatiles/screens with patterns/palettes

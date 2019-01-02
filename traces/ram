@@ -935,6 +935,11 @@ When fall sound happens ($35d34) $7d7 and $7d6 are both set to #$10
 
 When nonzero, background no longer animated???
 
+$7dc
+----
+ID of trigger square/treasure chest currently stepped on (set by main game mode 7)
+
+
 $7de..$7df
 ----------
 Looks related to text - $2853a stores $7df in $6700 and $7de into $6701

@@ -1,0 +1,215 @@
+$00	Mezame Shrine
+$01	Leaf - Outside Start
+$02	Leaf
+$03	Valley of Wind
+$04	Sealed Cave 1
+$05	Sealed Cave 2
+$06	Sealed Cave 3
+$07	Sealed Cave 4
+$08	Sealed Cave 5
+$09	Sealed Cave 6
+$0a	Sealed Cave 7
+$0c	Sealed Cave 8
+$0e	Windmill Cave
+$0f	Windmill
+$10	Zebu Cave
+$11	Mt Sabre West - Cave 1
+$14	Cordel Plains West
+$15	Cordel Plains East
+$18	Brynmaer
+$19	Outside Stom House
+$1a	Swamp
+$1b	Amazones
+$1c	Oak
+$1e	Stom House
+$20	Mt Sabre West - Lower
+$21	Mt Sabre West - Upper
+$22	Mt Sabre West - Cave 2
+$23	Mt Sabre West - Cave 3
+$24	Mt Sabre West - Cave 4
+$25	Mt Sabre West - Cave 5
+$26	Mt Sabre West - Cave 6
+$27	Mt Sabre West - Cave 7
+$28	Mt Sabre North - Main
+$29	Mt Sabre North - Middle
+$2a	Mt Sabre North - Cave 1
+$2b	Mt Sabre North - Cave 2
+$2c	Mt Sabre North - Cave 3
+$2d	Mt Sabre North - Cave 4
+$2e	Mt Sabre North - Cave 5
+$2f	Mt Sabre North - Cave 6
+$30	Mt Sabre North - Left Cell
+$31	Mt Sabre North - Prison Key Hall
+$32	Mt Sabre North - Right Cell
+$33	Mt Sabre North - Cave 7
+$34	Mt Sabre North - Cave 8
+$35	Mt Sabre North - Summit Cave
+$38	Mt Sabre North - Entrance Cave
+$39	Mt Sabre North - Cave 5a
+$3c	Nadare - Inn
+$3d	Nadare - Tool Shop
+$3e	Nadare - Back Room
+$40	Waterfall Valley North
+$41	Waterfall Valley South
+$42	Lime Tree Valley
+$43	Lime Tree Lake
+$44	Kirisa Plant Cave 1
+$45	Kirisa Plant Cave 2
+$46	Kirisa Plant Cave 3
+$47	Kirisa Meadow
+$48	Fog Lamp Cave 1
+$49	Fog Lamp Cave 2
+$4a	Fog Lamp Cave 3
+$4b	Fog Lamp Cave Dead End
+$4c	Fog Lamp Cave 4
+$4d	Fog Lamp Cave 5
+$4e	Fog Lamp Cave 6
+$4f	Fog Lamp Cave 7
+$50	Portoa
+$51	Portoa - Fisherman Island
+$52	Mesia Shrine
+$54	Waterfall Cave 1
+$55	Waterfall Cave 2
+$56	Waterfall Cave 3
+$57	Waterfall Cave 4
+$58	Tower - Entrance
+$59	Tower 1
+$5a	Tower 2
+$5b	Tower 3
+$5c	Tower - Outside Mesia
+$5d	Tower - Outside Dyna
+$5e	Tower - Mesia
+$5f	Tower - Dyna
+$60	Angry Sea
+$61	Cabin
+$62	Joel - Lighthouse
+$64	Underground Channel
+$65	Zombie Town
+$68	Evil Spirit Island 1
+$69	Evil Spirit Island 2
+$6a	Evil Spirit Island 3
+$6b	Evil Spirit Island 4
+$6c	Sabera Palace 1
+$6d	Sabera Palace 2
+$6e	Sabera Palace 3
+$70	Joel - Secret Passage
+$71	Joel
+$72	Swan
+$73	Swan - Gate
+$78	Goa Valley
+$7c	Mt Hydra
+$7d	Mt Hydra - Cave 1
+$7e	Mt Hydra - Outside Shyron
+$7f	Mt Hydra - Cave 2
+$80	Mt Hydra - Cave 3
+$81	Mt Hydra - Cave 4
+$82	Mt Hydra - Cave 5
+$83	Mt Hydra - Cave 6
+$84	Mt Hydra - Cave 7
+$85	Mt Hydra - Cave 8
+$86	Mt Hydra - Cave 9
+$87	Mt Hydra - Cave 10
+$88	Styx 1
+$89	Styx 2
+$8a	Styx 3
+$8c	Shyron
+$8e	Goa
+$8f	Goa Fortress - Oasis Entrance
+$90	Desert 1
+$91	Oasis Cave - Main
+$92	Desert Cave 1
+$93	Sahara
+$94	Sahara - Outside Cave
+$95	Desert Cave 2
+$96	Sahara Meadow
+$98	Desert 2
+$9c	Pyramid Front - Entrance
+$9d	Pyramid Front - Branch
+$9e	Pyramid Front - Main
+$9f	Pyramid Front - Draygon
+$a0	Pyramid Back - Entrance
+$a1	Pyramid Back - Hall 1
+$a2	Pyramid Back - Branch
+$a3	Pyramid Back - Dead End Left
+$a4	Pyramid Back - Dead End Right
+$a5	Pyramid Back - Hall 2
+$a6	Pyramid Back - Draygon Revisited
+$a7	Pyramid Back - Teleporter
+$a8	Goa Fortress - Entrance
+$a9	Goa Fortress - Kelbesque
+$aa	Goa Fortress - Zebu
+$ab	Goa Fortress - Sabera
+$ac	Goa Fortress - Tornel
+$ad	Goa Fortress - Mado 1
+$ae	Goa Fortress - Mado 2
+$af	Goa Fortress - Mado 3
+$b0	Goa Fortress - Karmine 1
+$b1	Goa Fortress - Karmine 2
+$b2	Goa Fortress - Karmine 3
+$b3	Goa Fortress - Karmine 4
+$b4	Goa Fortress - Karmine 5
+$b5	Goa Fortress - Karmine 6
+$b6	Goa Fortress - Karmine 7
+$b7	Goa Fortress - Exit
+$b8	Oasis Cave - Entrance
+$b9	Goa Fortress - Asina
+$ba	Goa Fortress - Kensu
+$bb	Goa - House
+$bc	Goa - Inn
+$be	Goa - Tool Shop
+$bf	Goa - Tavern
+$c0	Leaf - Elder House
+$c1	Leaf - Rabbit Hut
+$c2	Leaf - Inn
+$c3	Leaf - Tool Shop
+$c4	Leaf - Item Shop
+$c5	Leaf - Student House
+$c6	Brynmaer - Tavern
+$c7	Brynmaer - Pawn Shop
+$c8	Brynmaer - Inn
+$c9	Brynmaer - Armor Shop
+$cb	Brynmaer - Item Shop
+$cd	Oak - Elder House
+$ce	Oak - Mother House
+$cf	Oak - Tool Shop
+$d0	Oak - Inn
+$d1	Amazones - Inn
+$d2	Amazones - Item Shop
+$d3	Amazones - Armor Shop
+$d4	Amazones - Elder
+$d5	Nadare
+$d6	Portoa - Fisherman House
+$d7	Portoa - Palace Entrance
+$d8	Portoa - Fortune Teller
+$d9	Portoa - Pawn Shop
+$da	Portoa - Armor Shop
+$dc	Portoa - Inn
+$dd	Portoa - Tool Shop
+$de	Portoa - Palace Left
+$df	Portoa - Palace Throne Room
+$e0	Portoa - Palace Right
+$e1	Portoa - Asina Room
+$e2	Amazones - Elder Downstairs
+$e3	Joel - Elder House
+$e4	Joel - Shed
+$e5	Joel - Tool Shop
+$e7	Joel - Inn
+$e8	Zombie Town - House
+$e9	Zombie Town - House Basement
+$eb	Swan - Tool Shop
+$ec	Swan - Stom Hut
+$ed	Swan - Inn
+$ee	Swan - Armor Shop
+$ef	Swan - Tavern
+$f0	Swan - Pawn Shop
+$f1	Swan - Dance Hall
+$f2	Shyron - Temple
+$f3	Shyron - Training Hall
+$f4	Shyron - Hospital
+$f5	Shyron - Armor Shop
+$f6	Shyron - Tool Shop
+$f7	Shyron - Inn
+$f8	Sahara - Inn
+$f9	Sahara - Tool Shop
+$fa	Sahara - Elder House
+$fb	Sahara - Pawn Shop

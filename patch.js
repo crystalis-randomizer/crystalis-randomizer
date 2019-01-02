@@ -58,7 +58,8 @@ export const barrierRequiresCalmSea = buildRomPatch(assemble(`
 .bank $1c000 $8000:$4000
 
 .org $1e182
-  .word (BarrierTrigger)
+ ; .word ($1e232)
+  .byte $32,$a2
 
 .org $1e232
 BarrierTrigger:

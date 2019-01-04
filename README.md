@@ -109,5 +109,5 @@ not as fun as we hope it to be.
 
 ## The Team
 
-Programmer: SteveHicks (bmmpxf)
-Playtester and Lead Consultant: Mattrick_
+* Programmer: SteveHicks (bmmpxf)
+* Playtester and Lead Consultant: Mattrick_

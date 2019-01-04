@@ -22,11 +22,26 @@ const ballOfWind            = item(0x05, 'Ball of Wind');
 const tornadoBracelet       = item(0x06, 'Tornado Bracelet');
 const ballOfFire            = item(0x07, 'Ball of Fire');
 const flameBracelet         = item(0x08, 'Flame Bracelet');
-const ballOfFire            = item(0x09, 'Ball of Water');
-const flameBracelet         = item(0x0a, 'Blizzard Bracelet');
-const ballOfFire            = item(0x0b, 'Ball of Thunder');
-const flameBracelet         = item(0x0c, 'Storm Bracelet');
-// ... TODO ...
+const ballOfWater           = item(0x09, 'Ball of Water');
+const blizzardBracelet      = item(0x0a, 'Blizzard Bracelet');
+const ballOfThunder         = item(0x0b, 'Ball of Thunder');
+const stormBracelet         = item(0x0c, 'Storm Bracelet');
+const carapaceShield        = item(0x0d, 'Carapace Shield');
+const bronzeShield          = item(0x0e, 'Bronze Shield');
+const platinumShield        = item(0x0f, 'Platinum Shield');
+const mirroredShield        = item(0x10, 'Mirrored Shield');
+const ceramicShield         = item(0x11, 'Ceramic Shield');
+const sacredShield          = item(0x12, 'Sacred Shield');
+const battleShield          = item(0x13, 'Battle Shield');
+const psychoShield          = item(0x14, 'Psycho Shield');
+const tannedHide            = item(0x15, 'Tanned Hide');
+const leatherArmor          = item(0x16, 'Leather Armor');
+const bronzeArmor           = item(0x17, 'Bronze Armor');
+const platinumArmor         = item(0x18, 'Platinmum Armor');
+const soldierSuit           = item(0x19, 'Soldier Suit');
+const ceramicSuit           = item(0x1a, 'Ceramic Suit');
+const battleSuit            = item(0x1b, 'Battle Suit');
+const psychoArmor           = item(0x1c, 'Psycho Armor');
 const medicalHerb           = item(0x1d, 'Medical Herb');
 const antidote              = item(0x1e, 'Antidote');
 const lysisPlant            = item(0x1f, 'Lysis Plant');
@@ -39,7 +54,30 @@ const statueOfOnyx          = item(0x25, 'Statue of Onyx');
 const opelStatue            = item(0x26, 'Opel Statue');
 const insectFlute           = item(0x27, 'Insect Flute');
 const fluteOfLime           = item(0x28, 'Flute of Lime');
-// ... TODO ...
+const gasMask               = item(0x29, 'Gas Mask');
+const powerRing             = item(0x2a, 'Power Ring');
+const warriorRing           = item(0x2b, 'Warrior Ring');
+const ironNecklace          = item(0x2c, 'Iron Necklace');
+const deosPendant           = item(0x2d, 'Deo\'s Pendant');
+const rabbitBoots           = item(0x2e, 'Rabbit Boots');
+const leatherBoots          = item(0x2f, 'Leather Boots');
+const shieldRing            = item(0x30, 'Shield Ring');
+const alarmFlute            = item(0x31, 'Alarm Flute');
+const windmillKey           = item(0x32, 'Windmill Key');
+const keyToPrison           = item(0x33, 'Key to Prison');
+const keyToStyx             = item(0x34, 'Key to Styx');
+const fogLamp               = item(0x35, 'Fog Lamp');
+const shellFlute            = item(0x36, 'Shell Flute');
+const eyeGlasses            = item(0x37, 'Eye Glasses');
+const brokenStatue          = item(0x38, 'Broken Statue');
+const glowingLamp           = item(0x39, 'Glowing Lamp');
+const statueOfGold          = item(0x3a, 'Statue of Gold');
+const lovePendant           = item(0x3b, 'Love Pendant');
+const kirisaPlant           = item(0x3c, 'Kirisa Plant');
+const ivoryStatue           = item(0x3d, 'Ivory Statue');
+const bowOfMoon             = item(0x3e, 'Bow of Moon');
+const bowOfSun              = item(0x3f, 'Bow of Sun');
+const bowOfTruth            = item(0x40, 'Bow of Truth');
 const refresh               = magic(0x41, 'Refresh');
 const paralysis             = magic(0x42, 'Paralysis');
 const telepathy             = magic(0x43, 'Telepathy');
@@ -95,12 +133,14 @@ const talkedToZebuInCave    = trigger('Talked to Zebu in cave');
 const wokeUpWindmillGuard   = trigger('Woke up Windmill Guard', windmillKey);
 const startedWindmill       = trigger('Started Windmill');
 const learnedRefresh        = trigger('Learned Refresh', refresh);
+const gaveStatueToAkahana   = trigger('Gave Statue to Akahana', gasMask);
 const foughtStom            = trigger('Fought Stom', telepathy);
 const visitedOak            = trigger('Visited Oak');
 const talkedToOakMother     = trigger('Talked to Oak Mother');
 const rescuedOakChild       = trigger('Rescued Oak Child');
 const talkedToOakMothher2   = trigger('Talked to Oak Mother Again', insectFlute);
 const talkedToOakElder      = trigger('Talked to Oak Elder', swordOfFire);
+const talkedToTornelOnMtSabre = trigger('Talked to Tornel on Mt Sabre', teleport);
 const villagersAbducted     = trigger('Villagers Abducted');
 const talkedToLeafRabbit    = trigger('Talked to Rabbit in Leaf');
 const learnedParalysis      = trigger('Learned Paralysis', paralysis);
@@ -108,14 +148,23 @@ const talkedToPortoaQueen   = trigger('Talked to Portoa Queen');
 const talkedToFortuneTeller = trigger('Talked to Fortune Teller');
 const visitedUndergroundChannel = trigger('Visited Underground Channel');
 const sentToWaterfallCave   = missableTrigger('Sent to Waterfall Cave', fluteOfLime);
+const curedAkahana          = trigger('Cured Akahana', shieldRing);
 const talkedToAsina         = trigger('Talked to Asina', recover);
 const healedDolphin         = trigger('Healed Dolphin', shellFlute);
 const returnedFogLamp       = trigger('Returned Fog Lamp');
-
+const talkedToKensuInCabin  = trigger('Talked to Kensu in Cabin');
 const talkedToJoelElder     = trigger('Talked to Joel Elder');
 const talkedToKensuInLighthouse = trigger('Talked to Kensu in Lighthouse', glowingLamp);
 
 const calmedSea             = trigger('Calmed the Angry Sea');
+const learnedBarrier        = trigger('Learned Barrier', barrier);
+const foundKensuInSwan      = trigger('Found Kensu in Swan', change);
+const talkedToAmazonesQueen = trigger('Talked to Amazones Queen', bowOfMoon);
+const talkedToZebuInShyron  = trigger('Talked to Zebu in Shyron', keyToStyx);
+const shyronMassacre        = trigger('Shyron Massacre');
+const savedKensu            = trigger('Saved Kensu', flight);
+const talkedToDeo           = trigger('Talked to Deo', deosPendant);
+const talkedToAkahanaFriend = trigger('Talked to Akahana\'s Friend', warriorRing);
 
 const forgedCrystalis       = trigger('Forged Crystalis', crystalis);
 
@@ -169,14 +218,13 @@ const HYDR = area('Mt Hydra');
 const SHYR = area('Shyron');
 const STYX = area('Styx');
 const GOA  = area('Goa');
-const DSR1 = area('Desert 1');
+const DSRT = area('Desert');
 const DRG1 = area('Draygonia Fortress 1');
 const DRG2 = area('Draygonia Fortress 2');
 const DRG3 = area('Draygonia Fortress 3');
 const DRG4 = area('Draygonia Fortress 4');
 const OASC = area('Oasis Cave');
 const SHRA = area('Sahara');
-const DSR2 = area('Desert 2');
 const PYRF = area('Pyramid Front');
 const PYRB = area('Pyramid Back');
 const TOWR = area('Tower');
@@ -511,7 +559,9 @@ const waterfallCave3        = location(0x56, WFCV, 'Tunnel 3 (wide medusa hallwa
                                        to(waterfallCave2, fluteOfLime));
 // NOTE: no reverse path thru these ice walls - will soft lock!
 const waterfallCave4a       = location(0x57, WFCV, 'Tunnel 4a (left entrance)',
-                                       from(waterfallCave3, destroyIce)); // $64da:02
+                                       from(waterfallCave3, destroyIce),
+                                       chest(fluteOfLime$5b),
+                                       trigger(curedAkahana, fluteOfLime)); // $64da:02
 const waterfallCave4b       = location(0x57, WFCV, 'Tunnel 4b (right entrance)',
                                        from(waterfallCave3, destroyIce), // $64da:01
                                        connect(waterfallCave4a, flight));
@@ -546,12 +596,13 @@ const angrySeaAltar         = location(0x60, ASEA, 'Altar',
 const angrySeaNorth         = location(0x60, ASEA, 'North',
                                        to(angrySeaSouth, crossSea),
                                        from(angrySeaSouth, crossSea, crossWhirlpool),
-                                       trigger(learnedBarrier)); // TODO - require calmedSea
+                                       // NOTE: calmedSea is not normally a requirement.
+                                       trigger(learnedBarrier, calmedSea));
 const angrySeaSwanBeach     = location(0x60, ASEA, 'Swan Beach',
                                        connect(angrySeaNorth, crossSea));
 const angrySeaCabin         = location(0x61, ASEA, 'Cabin',
                                        connect(angrySeaCabinBeach),
-                                       // TODO - only hahce kensu appear after heal and/or boat?
+                                       // TODO - only have kensu appear after heal and/or boat?
                                        trigger(talkedToKensuInCabin));
 const lighthouse            = location(0x62, ASEA, 'Lighthouse',
                                        connect(angrySeaLighthouse),
@@ -599,6 +650,9 @@ const evilSpiritIsland3b    = location(0x6a, EVIL, 'Tunnel 3b (left area toward 
                                        connect(evilSpiritIsland3a, destroyStone)); // 2b6
 const evilSpiritIsland4a    = location(0x6b, EVIL, 'Tunnel 4a (right side, mimic)',
                                        // TODO - model pits?
+                                       // If we want to model the full path including backtracks
+                                       // then we'll need to add triggers for backtracking through
+                                       // one-way passages.
                                        connect(evilSpiritIsland3b),
                                        mimic(0x0e));
 const evilSpiritIsland4b    = location(0x6b, EVIL, 'Tunnel 4b (left side, iron necklace)',
@@ -695,6 +749,8 @@ const mtHydraTunnel10b      = location(0x87, HYDR, 'Tunnel 10b (past wall)',
                                        connect(mtHydraTunnel10a, destroyStone), // 2ac
                                        connect(mtHydra7));
 
+// Styx
+
 const styx1                 = location(0x88, STYX, 'Entrance',
                                        from(mtHydra4, keyToStyx)); // TODO - two-way?
 const styx2a                = location(0x89, STYX, 'Left branch',
@@ -717,15 +773,114 @@ const styx3                 = location(0x8a, STYX, 'Upper floor',
                                        connect(styx2c),
                                        chest(swordOfThunder));
 
+// Misc
+
 const shyron                = location(0x8c, SHYR, 'Town',
                                        connect(mtHydraOutsideShyron, changeOrGlitch));
-                                       
+const goa                   = location(0x8e, GOA,  'Town',
+                                       connect(goaValley));
+const fortressBasement1     = location(0x8f, OASC, 'Draygonia Fortress Basement 1 (front)');
+const fortressBasement2     = location(0x8f, OASC, 'Draygonia Fortress Basement 2 (power ring)',
+                                       connect(fortressBasement1, destroyIron), // 290
+                                       chest(powerRing)); // 0f
+const desert1               = location(0x90, DSRT, 'Desert 1',
+                                       connect(goaValley));
 
-// $8c	Shyron
-// $8e	Goa
-// $8f	Goa Fortress - Oasis Entrance
-// $90	Desert 1
-// $91	Oasis Cave - Main
+// Oasis Cave
+
+const oasisCave1            = location(0x91, OASC, 'Area 1 (from entrance)',
+                                       chest(leatherBoots)); // 1a
+const oasisCave2            = location(0x91, OASC, 'Area 2 (across top bridge)',
+                                       connect(oasisCave1, crossRivers)); // 29b
+const oasisCave3            = location(0x91, OASC, 'Area 3 (dead-end across top-right bridge)',
+                                       connect(oasisCave2, crossRivers)); // 293
+const oasisCave4            = location(0x91, OASC, 'Area 4 (left across middle-right bridge)',
+                                       connect(oasisCave2, crossRivers)); // 292
+const oasisCave5            = location(0x91, OASC, 'Area 5 (bottom edge)',
+                                       connect(oasisCave4, crossRivers)); // 291
+const oasisCave6            = location(0x91, OASC, 'Area 6 (bottom island)',
+                                       connect(oasisCave5, crossRivers)); // 295
+const oasisCave7            = location(0x91, OASC, 'Area 7 (bottom inner ring)',
+                                       connect(oasisCave6, crossRivers)); // 296
+const oasisCave8            = location(0x91, OASC, 'Area 8 (left outer ring)',
+                                       connect(oasisCave7, crossRivers), // 298
+                                       connect(oasisCave1, crossRivers), // 29a
+                                       chest(fruitOfPower$64)); // 1b
+const oasisCave9            = location(0x91, OASC, 'Area 9 (top left inner ring)',
+                                       connect(oasisCave8, crossRivers)); // 299
+const oasisCave10           = location(0x91, OASC, 'Area 10 (top right inner ring)',
+                                       connect(oasisCave9, crossRivers)); // 297
+const oasisCave11           = location(0x91, OASC, 'Area 11 (center)',
+                                       connect(oasisCave10, crossRivers), // 294
+                                       connect(fortressBasement1));
+const oasisCave12           = location(0x91, OASC, 'Area 12 (top center islands)',
+                                       connect(oasisCave1, flight),
+                                       chest(battleSuit)); // 1c
+
+// Desert
+
+const desertCave1           = location(0x92, DSRT, 'Cave 1',
+                                       connect(desert1, flight));
+const sahara                = location(0x93, SHRA, 'Town');
+const saharaOutsideCave     = location(0x94, SHRA, 'Outside Cave',
+                                       connect(sahara));
+const desertCave2           = location(0x95, DSRT, 'Cave 2',
+                                       connect(saharaOutsideCave));
+const saharaMeadow          = location(0x96, SHRA, 'Meadow',
+                                       connect(desertCave1),
+                                       connect(sahara),
+                                       trigger(talkedToDeo, change, shyronMassacre));
+const desert2               = location(0x98, DSRT, 'Desert 2',
+                                       connect(desertCave2));
+
+// Pyramid Front
+
+const pyramidFrontEntrance  = location(0x9c, PYRF, 'Entrance',
+                                       connect(desert2, flight));
+const pyramidFrontFork      = location(0x9d, PYRF, 'Fork',
+                                       connect(pyramidFrontEntrance));
+const pyramidFrontMain      = location(0x9e, PYRF, 'Main',
+                                       connect(pyramidFrontFork));
+const pyramidFrontChest     = location(0x9e, PYRF, 'Treasure Chest (magic ring)',
+                                       connect(pyramidFrontMain),
+                                       chest(magicRing$6c));
+const pyramidFrontDraygon   = location(0x9f, PYRF, 'Draygon',
+                                       connect(pyramidFrontMain),
+                                       boss(draygon1));
+
+// Pyramid Back
+
+const pyramidBackEntrance   = location(0xa0, PYRB, 'Entrance',
+                                       connect(desert2, flight));
+const pyramidBackStatues    = location(0xa0, PYRB, 'Statues',
+                                       connect(pyramidBackEntrance),
+                                       boss(statues));
+const pyramidBackHall1      = location(0xa1, PYRB, 'Hall 1',
+                                       connect(pyramidBackStatues));
+const pyramidBackFork       = location(0xa2, PYRB, 'Branch',
+                                       connect(pyramidBackHall1));
+const pyramidBackLeft       = location(0xa3, PYRB, 'Left Dead End',
+                                       connect(pyramidBackFork),
+                                       mimic(0x0d));
+const pyramidBackRight      = location(0xa4, PYRB, 'Right Dead End',
+                                       connect(pyramidBackFork));
+const pyramidBackHall2      = location(0xa5, PYRB, 'Hall 2',
+                                       connect(pyramidBackFork),
+                                       chest(opelStatue$6d));
+const pyramidBackDraygon2   = location(0xa6, PYRB, 'Draygon 2',
+                                       connect(pyramidBackHall2),
+                                       boss(draygon2));
+const pyramidBackTeleporter = location(0xa7, PYRB, 'Teleporter',
+                                       from(pyramidBackDraygon2),
+                                       to(towerEntrance));
+
+// Draygonia Fortress
+
+const fortressEntrance      = location(0xa8, DRG1, 'Entrance',
+                                       connect(goa),
+                                       // TODO - need to add talkedToZebuinShyron
+                                       trigger(shyronMassacre, swordOfThunder));
+
 // $92	Desert Cave 1
 // $93	Sahara
 // $94	Sahara - Outside Cave

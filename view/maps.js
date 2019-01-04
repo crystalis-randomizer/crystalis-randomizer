@@ -317,7 +317,7 @@ class MapsView extends View {
 }
 
 const run = async () => {
-  const rom = await Rom.load();
+  const rom = await Rom.load(document.location.hash);
   window.rom = rom;
 
   const view = new MapsView(rom);

@@ -19987,7 +19987,7 @@ NpcSpawnConditionTablePart2
         $1c81c              .byte $xx,$xx ; 020 NOT
         $1c81e              .byte $xx,$xx ; 01f NOT
         $1c820              .byte $xx ; Portoa - Asina Room
-        $1c821              .byte $xx,$xx ; 01f
+        $1c821              .byte $xx,$xx ; 01f got ball of water
         $1c823              .byte $xx,$xx ; 01e NOT
         $1c825              .byte $xx
         ;; 39 fortune teller
@@ -20072,8 +20072,8 @@ NpcSpawnConditionTablePart2
         $1c880              .byte $xx
         ;; 5e zebu
         $1c881              .byte $xx ; Zebu Cave
-        $1c882              .byte $xx,$xx ; 0a5
-        $1c884              .byte $xx,$xx ; 00b
+        $1c882              .byte $xx,$xx ; 0a5 talked to zebu student
+        $1c884              .byte $xx,$xx ; 00b talked to leaf elder
         $1c886              .byte $xx,$xx ; 051 NOT learned barrier
         $1c888              .byte $xx ; Shyron - Temple
         $1c889              .byte $xx,$xx ; 027 NOT shyron massacre
@@ -20118,7 +20118,7 @@ NpcSpawnConditionTablePart2
         $1c8c0              .byte $xx,$xx ; 05f chest:03:sword of thunder
         $1c8c2              .byte $xx,$xx ; 027 NOT shyron massacre
         $1c8c4              .byte $xx ; Goa Fortress - Asina
-        $1c8c5              .byte $xx,$xx ; 057 NOT
+        $1c8c5              .byte $xx,$xx ; 057 NOT asina rescued
         $1c8c7              .byte $xx ; Pyramid Back - Draygon Revisited
         $1c8c8              .byte $xx,$xx ; 05e
         $1c8ca              .byte $xx
@@ -20285,7 +20285,7 @@ DialogTable
         $1c983              .word ($1cc76) ; 13
         $1c985              .word ($1ccc5) ; 14 windmill guard?
         $1c987              .word ($1ccf2) ; 15 windmill guard?
-        $1c989              .word ($1d6cd) ; 16 akahana in brynmaer
+        $1c989              .word ($1d6cd) ; 16 akahana
         $1c98b              .word ($1cd39) ; 17 red bearded man beneath brynmaer inn
         $1c98d              .word ($1cd43) ; 18 blue woman beneath brynmaer armor shop
         $1c98f              .word ($1cd4d) ; 19 red cloaked man beneath brynmaer pawn
@@ -20655,7 +20655,7 @@ DialogTablePart2
         $1cce1              .byte $xx,$xx,$xx,$xx,$xx ; default -> 01:03
         ;;                  0c: c5 Leaf - Student House
         $1cce6              .byte $xx,$xx,$xx,$xx,$xx ; 0a5 NOT -> 00:0c (action 09)
-        $1cceb              .byte         $xx,$xx     ;     Set: 0a5
+        $1cceb              .byte         $xx,$xx     ;     Set: 0a5 talked to zebu student
         ;;                  13: 0e Windmill Cave
         $1cced              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:0a -> @ 0c
         ;; ----------------------------------------------------------------
@@ -21560,12 +21560,12 @@ DialogTablePart2
         ;;                  05: 57 Waterfall Cave 4
         $1d6e9              .byte $xx,$xx,$xx,$xx,$xx ; 035 -> 0d:01 (action 19)
         $1d6ee              .byte         $xx,$xx     ;     Set: 034
-        $1d6f0              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0d:04 -> @ 05
+        $1d6f0              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0d:04
         ;;                  11: 8c Shyron
         $1d6f5              .byte $xx,$xx,$xx,$xx,$xx ; 02d -> 14:09
-        $1d6fa              .byte $xx,$xx,$xx,$xx,$xx ; 036 NOT -> 14:07 -> @ 11
+        $1d6fa              .byte $xx,$xx,$xx,$xx,$xx ; 036 NOT -> 14:07
         $1d6ff              .byte         $xx,$xx     ;     Set: 036
-        $1d701              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:08 -> @ 11
+        $1d701              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:08
         $1d706              .byte         $xx,$xx     ;     Set: 036
         ;; ----------------------------------------------------------------
 	;; 70 dead akahana
@@ -21610,15 +21610,15 @@ DialogTablePart2
         $1d771              .byte $xx,$xx,$xx,$xx,$xx ; 038 leaf attacked -> 00:1c
         $1d776              .byte $xx,$xx,$xx,$xx,$xx ; 039 windmill started -> 00:1d
         $1d77b              .byte $xx,$xx,$xx,$xx,$xx ; 00a windmill key used -> 00:1b (action 03)
-        $1d780              .byte         $xx,$xx     ;     Set: 039 windmill started
-        $1d782              .byte $xx,$xx,$xx,$xx,$xx ; 03a NOT -> 00:1a
-        $1d787              .byte         $xx,$xx     ;     Set: 03a
+        $1d780              .byte         $xx,$xx     ;     Set: 039 learned refresh
+        $1d782              .byte $xx,$xx,$xx,$xx,$xx ; 03a NOT local -> 00:1a
+        $1d787              .byte         $xx,$xx     ;     Set: 03a local
         $1d789              .byte $xx,$xx,$xx,$xx,$xx ; default -> 00:1d
         ;;                  22: f2 Shyron - Temple
         $1d78e              .byte $xx,$xx,$xx,$xx,$xx ; 02d -> 16:03
-        $1d793              .byte $xx,$xx,$xx,$xx,$xx ; 03b NOT -> 14:17 (action 11) -> @ 22
-        $1d798              .byte         $xx,$xx     ;     Set: 03b
-        $1d79a              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:18 -> @ 22
+        $1d793              .byte $xx,$xx,$xx,$xx,$xx ; 03b NOT -> 14:17 (action 11)
+        $1d798              .byte         $xx,$xx     ;     Set: 03b talked to zebu in shyron
+        $1d79a              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:18
         ;;                  33: aa Goa Fortress - Zebu
         $1d79f              .byte $xx,$xx,$xx,$xx,$xx ; default -> 18:01 (action 17)
         $1d7a4              .byte         $xx,$xx     ;     Set: 055 zebu rescued
@@ -22475,7 +22475,7 @@ ItemGetTable                     ;  0   1   2   3   4   5   6   7   8   9   a   
         $1df6a              .byte $xx,$xx ; Set: 044
         $1df6c              .byte $xx,$xx ; Set: 101
         $1df6e              .byte $xx
-	;; 09
+	;; 09 ball of water
         $1df6f              .byte $xx,$xx
         $1df71              .byte $xx,$xx
         $1df73              .byte $xx,$xx ; Set: 103
@@ -22866,7 +22866,7 @@ TriggerSquareFlags
         $1e218              .byte $xx,$xx ; Condition: 064 NOT
         $1e21a              .byte $xx,$xx
         $1e21c              .byte $xx,$xx ; Set: 064
-        ;; 84 learn barrier (TODO - add an extra condition here on gold statue)
+        ;; 84 learn barrier
         $1e21e              .byte $xx,$xx ; Condition: 051 NOT learned barrier
         $1e220              .byte $xx,$xx ; Message 1d:12  Action: 0b
         $1e222              .byte $xx,$xx ; Set: 051 learned barrier
@@ -55736,7 +55736,7 @@ DialogFollowupActionJump_03
         $3d231  xx:         xxx
         $3d232  xx xx:       xxx #$xx
         $3d234  xx xx xx:    xxx $xxxx
-        $3d237  xx xx xx:    xxx $3d3eb
+        $3d237  xx xx xx:    xxx MainGameModeJump_07_TriggerSquareOrTreasureChest
         $3d23a  xx:         xxx
         $3d23b  xx xx xx:   xxx $xxxx
         $3d23e  xx:         xxx
@@ -55797,8 +55797,8 @@ DialogFollowupActionJump_18
         $3d2ad  xx:         xxx
 ;;; --------------------------------
 DialogFollowupActionJump_19
-        $3d2ae  xx xx:      xxx #$xx
-        $3d2b0  xx xx xx:   xxx $3d22b
+        $3d2ae  xx xx:      xxx #INV_SHIELD_RING
+        $3d2b0  xx xx xx:   xxx $3d22b ; give item, but hard-code rather than $680,x
         $3d2b3  xx xx:      xxx #$xx
         $3d2b5  xx xx xx:   xxx $xxxx
         $3d2b8  xx xx:      xxx #$xx
@@ -56008,7 +56008,7 @@ MainGameModeJump_07_TriggerSquareOrTreasureChest
         $3d450  xx xx xx:   xxx $xxxx
         $3d453  xx xx:      xxx #$xx
         $3d455  xx xx xx:   xxx $xxxx,y
-        $3d458  xx xx xx:   xxx $3d552
+        $3d458  xx xx xx:   xxx ExecuteItemOrTriggerAction
 ;;; --------------------------------
         $3d45b  xx:         xxx
 ;;; --------------------------------
@@ -56102,7 +56102,7 @@ MainGameModeJump_06_ItemUseMessage
         $3d51c  xx xx xx:   xxx HandleItemOrTrigger ; $3d834
         $3d51f  xx xx:      xxx $xx                 ; Was the item used successfully?
         $3d521  xx xx:      xxx ItemUseError ; $3d526
-        $3d523  xx xx xx:   xxx $3d552
+        $3d523  xx xx xx:   xxx ExecuteItemOrTriggerAction
 ;;; --------------------------------
 ItemUseError
         $3d526  xx xx:      xxx #GAME_MODE_STATUS_MSG
@@ -56123,12 +56123,13 @@ ActivateTriggerSquare
         $3d544  xx xx:      xxx $xx
         $3d546  xx xx:      xxx + ; $3d54b
         ;;                   condition was met
-        $3d548  xx xx xx:    xxx $3d552
+        $3d548  xx xx xx:    xxx ExecuteItemOrTriggerAction
 +       $3d54b  xx xx:      xxx #GAME_MODE_NORMAL
         $3d54d  xx xx:      xxx GameMode
         $3d54f  xx xx xx:   xxx MainLoop_01_Game
 ;;; --------------------------------
 ;;; Jumps to entry $22 of the $3d563 data table
+ExecuteItemOrTriggerAction
         $3d552  xx xx:      xxx $xx
         $3d554  xx:         xxx
         $3d555  xx:         xxx
@@ -56139,7 +56140,7 @@ ActivateTriggerSquare
         $3d560  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
 ;;; STRIP: word=$30000
-JumpTable_3d563                 ; TODO - Label the destinations
+ItemOrTriggerActionJump                 ; TODO - Label the destinations
         $3d563              .word ($3d5a3) ; 00
         $3d565              .word ($3d5a4) ; 01 thunder sword get -> teleport
         $3d567              .word ($3d5d6) ; 02
@@ -56157,8 +56158,8 @@ JumpTable_3d563                 ; TODO - Label the destinations
         $3d57f              .word ($3d6ec) ; 0e
         $3d581              .word ($3d70d) ; 0f
         $3d583              .word ($3d63f) ; 10
-        $3d585              .word ($3d6d5) ; 11
-        $3d587              .word ($3d5a3) ; 12
+        $3d585              .word ($3d6d5) ; 11 unused?
+        $3d587              .word ($3d5a3) ; 12 unused?
         $3d589              .word ($3d718) ; 13
         $3d58b              .word ($3d71f) ; 14
         $3d58d              .word ($3d746) ; 15
@@ -56166,7 +56167,7 @@ JumpTable_3d563                 ; TODO - Label the destinations
         $3d591              .word ($3d791) ; 17
         $3d593              .word ($3d75e) ; 18
         $3d595              .word ($3d7b7) ; 19
-        $3d597              .word ($3d5a3) ; 1a rescue wise man
+        $3d597              .word ($3d5a3) ; 1a rescue wise man unused?
         $3d599              .word ($3d7ce) ; 1b
         $3d59b              .word ($3d7fd) ; 1c
         $3d59d              .word ($3d805) ; 1d
@@ -56213,6 +56214,7 @@ JumpTable_3d563_02
         $3d5e3  xx xx xx:   xxx $3d23f
 ;;; --------------------------------
 JumpTable_3d563_07
+        ;; Play message from Mesia in shrine
         $3d5e6  xx xx xx:   xxx $xxxx
         $3d5e9  xx xx:      xxx #$xx
         $3d5eb  xx xx xx:   xxx $xxxx,y
@@ -56234,13 +56236,13 @@ JumpTable_3d563_07
         $3d615  xx xx:      xxx $xx
         $3d617  xx xx:      xxx #$xx
         $3d619  xx xx:      xxx $xx
-        $3d61b  xx xx xx:   xxx $3ff80
+        $3d61b  xx xx xx:   xxx LoadOneObjectData         ; ... and restore
         $3d61e  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
         $3d621  xx xx:      xxx #$xx
         $3d623  xx xx xx:   xxx $xxxx
         $3d626  xx xx:      xxx #$xx
         $3d628  xx xx xx:   xxx $xxxx
-        $3d62b  xx xx xx:   xxx $3d354
+        $3d62b  xx xx xx:   xxx WaitForDialogToBeDismissed
 ;;; --------------------------------
         $3d62e  xx xx xx:   xxx WaitForOAMDMA
         $3d631  xx xx xx:   xxx DrawAllObjectSprites
@@ -56893,25 +56895,25 @@ MainGameModeJump_24_EmptyShop
 MainGameModeJump_14_TeleportMagic
 MainGameModeJump_1d
         $3db28  xx xx xx:   xxx PlayerHP
-        $3db2b  xx xx:      xxx $xx
-        $3db2d  xx xx xx:   xxx $xxxx
-        $3db30  xx xx:      xxx $xx
-        $3db32  xx xx:      xxx CurrentLocation
-        $3db34  xx xx:      xxx #$xx
-        $3db36  xx xx:      xxx #$xx
-        $3db38  xx xx:      xxx $xx
-        $3db3a  xx xx xx:   xxx PlayerStatus
-        $3db3d  xx xx:      xxx #$xx
-        $3db3f  xx xx:      xxx #$xx
-        $3db41  xx xx:      xxx $xx
-        $3db43  xx xx:      xxx $xx
-        $3db45  xx xx:      xxx #SFX_CURSOR_ERROR
-        $3db47  xx xx xx:   xxx StartAudioTrack
-        $3db4a  xx xx:      xxx #GAME_MODE_NORMAL
+        $3db2b  xx xx:      xxx ++ ; $3db4a
+        $3db2d  xx xx xx:    xxx $xxxx
+        $3db30  xx xx:        xxx + ; $3db45
+        $3db32  xx xx:       xxx CurrentLocation
+        $3db34  xx xx:       xxx #$xx
+        $3db36  xx xx:       xxx #$xx
+        $3db38  xx xx:        xxx + ; $3db45
+        $3db3a  xx xx xx:    xxx PlayerStatus
+        $3db3d  xx xx:       xxx #$xx
+        $3db3f  xx xx:       xxx #$xx
+        $3db41  xx xx:        xxx + ; $3db45
+        $3db43  xx xx:       xxx +++ ; $3db4f
++       $3db45  xx xx:         xxx #SFX_CURSOR_ERROR
+        $3db47  xx xx xx:      xxx StartAudioTrack
+++      $3db4a  xx xx:      xxx #GAME_MODE_NORMAL
         $3db4c  xx xx:      xxx GameMode
         $3db4e  xx:         xxx
 ;;; --------------------------------
-        $3db4f  xx xx:      xxx #$xx
++++     $3db4f  xx xx:      xxx #$xx
         $3db51  xx xx xx:   xxx $xxxx
         $3db54  xx xx:      xxx #$xx
         $3db56  xx xx xx:   xxx BankSwitch8k_8000

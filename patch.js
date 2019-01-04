@@ -28,7 +28,8 @@ export default ({
     fixShaking.apply(rom);
     preventSwordClobber.apply(rom);
     upgradeBallsToBracelets.apply(rom);
-    makeShieldRingNotMissable.apply(rom);
+    preventNpcDespawns.apply(rom);
+    allowTeleportOutOfTower.apply(rom);
     buffDeosPendant.apply(rom);
     barrierRequiresCalmSea.apply(rom);
     scaleDifficultyLib.apply(rom);
@@ -40,6 +41,7 @@ export default ({
     // These need to be at the bottom because the modify previous patches.
     leatherBootsForSpeed.apply(rom);
     autoEquipBracelet.apply(rom);
+    //installInGameTimer.apply(rom); - this is a tough one.
     if ('nodie' in hash) neverDie.apply(rom);
     console.log('patch applied');
   },
@@ -58,15 +60,71 @@ export const buffDeosPendant = buildRomPatch(assemble(`
   nop
 `, 'buffDeosPendant'));
 
-// Prevent Akahana from disappearing from waterfall cave after learning barrier
-export const makeShieldRingNotMissable = buildRomPatch(assemble(`
+// Allow teleporting out of the tower.  Also, Draygon 2 must not appear after being defeated.
+export const allowTeleportOutOfTower = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000 ; fixed bank
-.bank $1c000 $8000:$2000
+.bank $1c000 $8000:$4000
+
+;; draygon 2 does not reappear after defeated
+;; Need to move all of draygon's conditions to fit the extra 3 bytes,
+;; and also change the pointer.
+.org $1c776  ; cb
+  .byte $54,$88
+.org $1c854
+  .byte $9f,$a1,$0c
+  ;.byte $a6,$a0,$5e
+  .byte $a6,$a2,$8d
+  .byte $ff
+
+.org $3db39
+  .byte $00   ; don't jump
+
+`, 'allowTeleportOutOfTower'));
+
+// Prevent Akahana from disappearing from waterfall cave after learning barrier,
+// as well as other NPCs that migrate to Shyron but have missable items.
+// Zebu will remain in his cave (to trigger windmill guard) and Asina in her
+// room (for Recover).  For the queen's Flute of Lime, we avoid randomizing it
+// and then have the Mesia recording give it instead.
+export const preventNpcDespawns = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000 ; fixed bank
+.bank $1c000 $8000:$4000
+
+;; akahana does not disappear from waterfall cave after barrier
 .org $1c7e3
   .byte $00
+
+;; stoned akahana does not disappear from waterfall cave after barrier
 .org $1c7f0
   .byte $00
-`, 'makeShieldRingNotMissable'));
+
+;; zebu does not disappear from his cave after barrier
+.org $1c887
+  .byte $00
+
+;; asina does not disappear after defeating sabera
+.org $1c8b9
+  .byte $00
+
+;; shyron massacre requires talking to zebu in shyron
+;; NOTE: this is moved from elsewhere to fit the extra condition
+.org $1e17a
+  .byte $32  ; point to the newly moved trigger.
+.org $1e232
+  .byte $20,$27
+  .byte $80,$5f
+  .byte $80,$3b
+  .byte $03,$b3
+  .byte $40,$27
+
+.org $3fa18
+MesiaGivesFluteOfLime:
+
+;; mesia recording gives flute of lime if not gotten from queen
+.org $3d62b
+  jmp MesiaGivesFluteOfLime
+
+`, 'preventNpcDespawns'));
 
 // Specifically require having calmed the sea to learn barrier
 export const barrierRequiresCalmSea = buildRomPatch(assemble(`
@@ -307,12 +365,67 @@ AutoEquipBracelets:
   adc $61
   sta $0718
   rts
+
 .org $3f9f8
 
+UpdateInGameTimer:
+  ;; patch a call to this in at start of HandleNMI, right after pha
+  ;; TODO - maybe make this faster by using $64$65 to just count frames
+  ;;        and then add it back in normal game mode?
+  lda $2002
+  txa
+  pha
+  ldx #$00
+-  inc $6570,x
+   lda $6570,x
+   cmp #$60
+    bcc +
+   lda #$00
+   sta $6570,x
+   inx
+   cpx #$03
+   bcc -
++ pla
+  tax
+  lda $60
+- rts
+
+.org $3fa18
+  ;; Maybe have Mesia give Flute of Lime if not gotten already...
+  ;; Check flag 0d0 ($649a:01)
+  jsr WaitForDialogToBeDismissed
+  lda $649a
+  lsr
+  bcs -
+  lda #$1f
+  sta $0623
+  lda #$28  ; flute of lime chest
+  sta $07dc
+  sta $057f
+  pla
+  pla ; double-return
+  jmp MainLoopItemGet
+
+.org $3fa33  
+
+.org $3d354
+WaitForDialogToBeDismissed:
+.org $3d3ff
+MainLoopItemGet:
 .org $3e756
 RestoreBanksAndReturn:
 
 `, 'itemLib'));
+
+export const installInGameTimer = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000 ; fixed bank
+.org $3f9f8
+UpdateInGameTimer:
+
+.org $3f3b7
+  nop
+  jsr UpdateInGameTimer
+`, 'installInGameTimer'));
 
 // TODO - not working yet
 export const quickChangeItems = buildRomPatch(assemble(`
@@ -990,10 +1103,10 @@ const SCALED_MONSTERS = new Map([
   [0x9b, 'b', 'Draygon',                    5,  6,  16,  41,  ,    ,],
   [0x9e, 'b', 'Draygon 2',                  7,  6,  28,  40,  ,    ,],
   // ID  TYPE  NAME                       SDEF SWRD HITS SATK DGLD SEXP
-  [0xa0, 'm', 'Ground Sentry (1)',          4,  ,   12,  26,  ,    73],
-  [0xa1, 'm', 'Tower Defense Mech (2)',     5,  ,   16,  36,  ,    85],
-  [0xa2, 'm', 'Tower Sentinel',             ,   ,   2,   ,    ,    32],
-  [0xa3, 'm', 'Air Sentry',                 3,  ,   4,   26,  ,    65],
+  [0xa0, 'm', 'Ground Sentry (1)',          4,  ,   12,  26,  ,    /*73*/],
+  [0xa1, 'm', 'Tower Defense Mech (2)',     5,  ,   16,  36,  ,    /*85*/],
+  [0xa2, 'm', 'Tower Sentinel',             ,   ,   2,   ,    ,    /*32*/],
+  [0xa3, 'm', 'Air Sentry',                 3,  ,   4,   26,  ,    /*65*/],
   [0xa4, 'b', 'Dyna',                       6,  5,  16,  ,    ,    ,],
   [0xa5, 'b', 'Vampire 2',                  2,  ,   6,   27,  ,    ,],
   [0xb4, 'b', 'dyna pod',                   15, ,   255, 26,  ,    ,],

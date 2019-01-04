@@ -2,6 +2,7 @@
 001
 
 00a - windmill key used
+00b - talked to leaf elder
 00d - leaf villagers rescued (specifically elder)
 00e - learned telepathy (defeated stom)
 00f - woke windmill guard
@@ -12,6 +13,7 @@
 018 - entered underground channel
 01b - mesia recording played
 01e - queen revealed as asina
+01f - got ball of water
 022 - heard story from sahara elder
 026 - entered shyron
 027 - shyron massacre
@@ -30,6 +32,8 @@
       $6486
 038 - leaf attacked
 039 - learned refresh (windmill started)
+03a - local (zebu introduction)
+03b - talked to zebu in shyron
 03c - chest:3b:love pendant
 03e - finished chasing kensu
 03f - learned teleport
@@ -43,8 +47,10 @@
 051 - learned barrier
 055 - zebu rescued
 056 - tornel rescued
+057 - asina rescued
 05b - mt sabre guards gone
 
+05e - draygon 2 defeated
 05f - chest:03:sword of thunder
 067 - defeated mado 1
 068 - forged crystalis
@@ -72,7 +78,9 @@
 08f - defeated sabera 1 ???
 090 - stoned people gone
 097 - local (red man at top of leaf (0f) toggle, pre-abduction)
+09c - portoa queen went away
 
+0a5 - talked to zebu student
 0a9 - talked to leaf rabbit
 0aa - chest:1d:medical herb
 0ab - chest:50:merical herb

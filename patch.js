@@ -27,6 +27,7 @@ export default ({
     preventSwordClobber.apply(rom);
     upgradeBallsToBracelets.apply(rom);
     makeShieldRingNotMissable.apply(rom);
+    buffDeosPendant.apply(rom);
     barrierRequiresCalmSea.apply(rom);
     scaleDifficultyLib.apply(rom);
     displayDifficulty.apply(rom);
@@ -41,6 +42,19 @@ export default ({
     console.log('patch applied');
   },
 });
+
+// Skip the check that the player is stationary.  We could also adjust
+// the speed by changing the mask at $3f02b from $3f to $1f to make it
+// faster, or $7f to slow it down.  Possibly we could start it at $7f and
+// lsr if stationary, so that MP recovers quickly when still, but at half
+// speed when moving?  We might want to consider how this plays with
+//refresh and psycho armor...
+export const buffDeosPendant = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000 ; fixed bank
+.org $3f026
+  nop
+  nop
+`, 'buffDeosPendant'));
 
 // Prevent Akahana from disappearing from waterfall cave after learning barrier
 export const makeShieldRingNotMissable = buildRomPatch(assemble(`
@@ -477,23 +491,42 @@ SubtractEnemyHP:
 .org $3fe60 ; 34e45 actually?
 ; .org $3fe78 ; last possible
 
+;;.org $3c010
+;;;; Adjusted inventory update - use level instead of sword
+;;   ldy $0719  ; max charge level
+;;   lda #$01
+;;-   asl
+;;    dey
+;;   bpl -
+;;   ldy $0716  ; equipped passive item
+;;-   clc
+;;    adc $0421  ; player level
+;;    dey
+;;    cpy #$0d   ; power ring - 1
+;;   beq -
+;;   sta $03e1  ; player attack
+;;   lda $0421  ; player level
+;;   cpy #$0f   ; iron necklace - 1
+;;.org $3c02d   ; NOTE - MUST BE EXACT!!!!
+
+
 .org $3c010
 ;; Adjusted inventory update - use level instead of sword
+;; Also nerf power ring to only double the sword value, rather than the level.
    ldy $0719  ; max charge level
    lda #$01
 -   asl
     dey
    bpl -
    ldy $0716  ; equipped passive item
--   clc
-    adc $0421  ; player level
-    dey
-    cpy #$0d   ; power ring - 1
-   beq -
+   cpy #$0e   ; power ring
+   bne +
+    asl
++  clc
+   adc $0421  ; player level
    sta $03e1  ; player attack
    lda $0421  ; player level
-   cpy #$0f   ; iron necklace - 1
-.org $3c02d   ; NOTE - MUST BE EXACT!!!!
+.org $3c02b   ; NOTE - MUST BE EXACT!!!!
 
 
 .bank $34000 $8000:$4000 ; item use code

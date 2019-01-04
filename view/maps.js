@@ -106,10 +106,11 @@ class MapsView extends View {
     lines.push('\nFlags:');
     for (let i = 0; !invalid && i < flags.length; i++) {
       const [flag, tile] = flags[i];
-      const addr = hex(0x64c0 | (flag >> 3)) + ':' + hex(1 << (flag & 7));
+      //const addr = hex(0x64c0 | (flag >> 3)) + ':' + hex(1 << (flag & 7));
+      const addr = hex(0x200 | flag);
       const y = tile >> 4;
       const x = tile & 0xf;
-      lines.push(`  $${addr} => (${x}, ${y}) [flags.${y}.${x}<checkbox>:0]`);
+      lines.push(`  ${addr} => (${x}, ${y}) [flags.${y}.${x}<checkbox>:0]`);
     }
 
     // Look at NpcData, too!

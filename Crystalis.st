@@ -19851,52 +19851,54 @@ NpcSpawnConditionTablePart2
         $1c781              .byte $xx ; Mezame Shrine
         $1c782              .byte $xx,$xx ; 000 unused
         $1c784              .byte $xx
-        ;; 80
+        ;; 80 goa shop guards (stationary)
         $1c785              .byte $xx ; Goa
         $1c786              .byte $xx,$xx ; 026 NOT entered shyron
         $1c788              .byte $xx
-        ;; 81
+        ;; 81 goa shop guards (moving)
         $1c789              .byte $xx ; Goa
         $1c78a              .byte $xx,$xx ; 026 entered shyron
         $1c78c              .byte $xx,$xx ; 024 NOT
         $1c78e              .byte $xx
-        ;; 7f
+        ;; 7f zombie in zombietown
         $1c78f              .byte $xx ; Zombie Town
         $1c790              .byte $xx,$xx ; 013 NOT sabera defeated
         $1c792              .byte $xx
-        ;; UNUSED
+        ;; UNUSED 
         $1c793              .byte $xx ; Amazones
         $1c794              .byte $xx,$xx ; 099 NOT
         $1c796              .byte $xx,$xx,$xx,$xx,$xx
-        ;; 64
+        ;; 64 portoa fisherman
         $1c79b              .byte $xx ; Portoa - Fisherman House
         $1c79c              .byte $xx,$xx ; 08b
         $1c79e              .byte $xx
-        ;; 0a, 45, 46
+        ;; 0a zombietown woman on right
+        ;; 45 zombietown human top
+        ;; 46 zombietown human bottom
         $1c79f              .byte $xx ; Zombie Town
         $1c7a0              .byte $xx,$xx ; 013 sabera defeated
         $1c7a2              .byte $xx
-        ;; 47
+        ;; 47 zombietown child in clark house
         $1c7a3              .byte $xx ; Zombie Town - House
         $1c7a4              .byte $xx,$xx ; 013 sabera defeated
         $1c7a6              .byte $xx
-        ;; 0c
+        ;; 0c swan soldier
         $1c7a7              .byte $xx ; Swan - Tavern
         $1c7a8              .byte $xx,$xx ; 024 NOT
         $1c7aa              .byte $xx ; Swan
         $1c7ab              .byte $xx,$xx ; 024 NOT
         $1c7ad              .byte $xx
-        ;; 0b
+        ;; 0b goa soldier
         $1c7ae              .byte $xx ; Goa - Tavern
         $1c7af              .byte $xx,$xx ; 024 NOT
         $1c7b1              .byte $xx ; Goa
         $1c7b2              .byte $xx,$xx ; 024 NOT
         $1c7b4              .byte $xx
-        ;; 4a
+        ;; 4a swan tavern soldiers
         $1c7b5              .byte $xx ; Swan - Tavern
         $1c7b6              .byte $xx,$xx ; 024 NOT
         $1c7b8              .byte $xx
-        ;; 8a
+        ;; 8a UNUSED
         $1c7b9              .byte $xx
         ;; 0d leaf elder
         $1c7ba              .byte $xx ; Leaf - Elder House
@@ -19904,7 +19906,7 @@ NpcSpawnConditionTablePart2
         $1c7bd              .byte $xx ; Mt Sabre North - Summit Cave
         $1c7be              .byte $xx,$xx ; 085 leaf elder currently abducted
         $1c7c0              .byte $xx
-        ;; 11 leaf elder's daughter
+        ;; 11 leaf elder's daughter 
         $1c7c1              .byte $xx ; Leaf - Elder House
         $1c7c2              .byte $xx,$xx ; 084 NOT leaf villagers currently abducted
         $1c7c4              .byte $xx ; Mt Sabre North - Right Cell
@@ -19943,11 +19945,11 @@ NpcSpawnConditionTablePart2
         $1c7ed              .byte $xx,$xx ; 035 NOT cured akahana
         $1c7ef              .byte $xx,$xx ; 051 NOT learned barrier
         $1c7f1              .byte $xx
-        ;; 1b
+        ;; 1b blue treasure hunter in brynmaer tavern
         $1c7f2              .byte $xx ; Brynmaer - Tavern
         $1c7f3              .byte $xx,$xx ; 048 NOT
         $1c7f5              .byte $xx
-        ;; 1f
+        ;; 1f dwarf child in swamp
         $1c7f6              .byte $xx ; Oak - Mother House
         $1c7f7              .byte $xx,$xx ; 045
         $1c7f9              .byte $xx ; Swamp
@@ -19955,104 +19957,103 @@ NpcSpawnConditionTablePart2
         $1c7fc              .byte $xx,$xx ; 053 NOT
         $1c7fe              .byte $xx,$xx ; 045 NOT
         $1c800              .byte $xx
-        ;; 2c
+        ;; 2c dying man at foot of mt sabre north
         $1c801              .byte $xx ; Mt Sabre North - Main
         $1c802              .byte $xx,$xx ; 066 NOT
         $1c804              .byte $xx,$xx ; 048
         $1c806              .byte $xx,$xx ; 012 NOT
         $1c808              .byte $xx
-        ;; 2d
-        $1c809              .byte $xx
-        $1c80a              .byte $xx,$xx
-        $1c80c              .byte $xx
-        $1c80d              .byte $xx,$xx
+        ;; 2d mt sabre guard soldiers (both)
+        $1c809              .byte $xx ; Mt Sabre North - Main
+        $1c80a              .byte $xx,$xx ; 05b NOT mt sabre guards gone
+        $1c80c              .byte $xx ; Swan - Gate
+        $1c80d              .byte $xx,$xx ; 08c NOT swan guards disappeared
         $1c80f              .byte $xx
-        ;; 2e
-        ;; 2f
-        ;; 30
-        ;; 31
-        $1c810              .byte $xx
-        $1c811              .byte $xx,$xx
+        ;; 2e leaf shopkeeper ?
+        ;; 2f leaf shopkeeper ?
+        ;; 30 leaf shopkeeper ?
+        ;; 31 UNUSED
+        $1c810              .byte $xx ; Mt Sabre North - Left Cell
+        $1c811              .byte $xx,$xx ; 084 leaf villagers currently abducted
         $1c813              .byte $xx
-        ;; 33
-        $1c814              .byte $xx
-        $1c815              .byte $xx,$xx
-        $1c817              .byte $xx
-        $1c818              .byte $xx,$xx
+        ;; 33 portoa throne room back door guard
+        $1c814              .byte $xx ; Portoa - Palace Throne Room
+        $1c815              .byte $xx,$xx ; 020 NOT
+        $1c817              .byte $xx ; Portoa - Palace Left
+        $1c818              .byte $xx,$xx ; 020
         $1c81a              .byte $xx
-        ;; 38
-        $1c81b              .byte $xx
-        $1c81c              .byte $xx,$xx
-        $1c81e              .byte $xx,$xx
-        $1c820              .byte $xx
-        $1c821              .byte $xx,$xx
-        $1c823              .byte $xx,$xx
+        ;; 38 portoa queen
+        $1c81b              .byte $xx ; Portoa - Palace Throne Room
+        $1c81c              .byte $xx,$xx ; 020 NOT
+        $1c81e              .byte $xx,$xx ; 01f NOT
+        $1c820              .byte $xx ; Portoa - Asina Room
+        $1c821              .byte $xx,$xx ; 01f
+        $1c823              .byte $xx,$xx ; 01e NOT
         $1c825              .byte $xx
-        ;; 39
-        $1c826              .byte $xx
-        $1c827              .byte $xx,$xx
-        $1c829              .byte $xx,$xx
+        ;; 39 fortune teller
+        $1c826              .byte $xx ; Portoa - Fortune Teller
+        $1c827              .byte $xx,$xx ; 020
+        $1c829              .byte $xx,$xx ; 01f NOT
         $1c82b              .byte $xx
-        ;; 87
-        $1c82c              .byte $xx
-        $1c82d              .byte $xx,$xx
+        ;; 87 UNUSED
+        $1c82c              .byte $xx ; Waterfall Cave 1
+        $1c82d              .byte $xx,$xx ; 06b NOT
         $1c82f              .byte $xx
-        ;; 3c
-        $1c830              .byte $xx
-        $1c831              .byte $xx,$xx
-        $1c833              .byte $xx,$xx
+        ;; 3c UNUSED
+        $1c830              .byte $xx ; Waterfall Cave 1
+        $1c831              .byte $xx,$xx ; 06b
+        $1c833              .byte $xx,$xx ; 091 NOT
         $1c835              .byte $xx
-        ;; 85
-        $1c836              .byte $xx
-        $1c837              .byte $xx,$xx
+        ;; 85 stoned pair in waterfall cave
+        $1c836              .byte $xx ; Waterfall Cave 2
+        $1c837              .byte $xx,$xx ; 06a NOT stoned people cured ?
         $1c839              .byte $xx
-        ;; 3a
-        $1c83a              .byte $xx
-        $1c83b              .byte $xx,$xx
-        $1c83d              .byte $xx,$xx
+        ;; 3a de-stoned people in waterfall cave
+        $1c83a              .byte $xx ; Waterfall Cave 2
+        $1c83b              .byte $xx,$xx ; 06a stoned people cured ?
+        $1c83d              .byte $xx,$xx ; 090 NOT stoned people gone
         $1c83f              .byte $xx
-        ;; 44
-        $1c840              .byte $xx
-        $1c841              .byte $xx,$xx
-        $1c843              .byte $xx
-        $1c844              .byte $xx,$xx
+        ;; 44 clark
+        $1c840              .byte $xx ; Zombie Town - House Basement
+        $1c841              .byte $xx,$xx ; 08f NOT
+        $1c843              .byte $xx ; Joel - Shed
+        $1c844              .byte $xx,$xx ; 08f
         $1c846              .byte $xx
-        ;; 4e
-        ;; 4f
-        ;; 50
-        ;; 51
-        ;; 52
-        ;; 53
-        $1c847              .byte $xx
-        $1c848              .byte $xx,$xx
-        $1c84a              .byte $xx
-        $1c84b              .byte $xx,$xx
-        $1c84d              .byte $xx
-        $1c84e              .byte $xx,$xx
-        $1c850              .byte $xx
-        $1c851              .byte $xx,$xx
+        ;; 4e shyron guards
+        ;; 4f shyron welcome
+        ;; 50 shyron red man middle
+        ;; 51 shyron training men
+        ;; 52 stom's girlfriend
+        ;; 53 shyron sick men
+        $1c847              .byte $xx ; Shyron
+        $1c848              .byte $xx,$xx ; 027 NOT shyron massacre
+        $1c84a              .byte $xx ; Mt Hydra - Outside Shyron
+        $1c84b              .byte $xx,$xx ; 027 NOT shyron massacre
+        $1c84d              .byte $xx ; Shyron - Training Hall
+        $1c84e              .byte $xx,$xx ; 027 NOT shyron massacre
+        $1c850              .byte $xx ; Shyron - Hospital
+        $1c851              .byte $xx,$xx ; 027 NOT shyron massacre
         $1c853              .byte $xx
-        ;; unused
-        $1c854              .byte $xx
-        $1c855              .byte $xx,$xx
-        $1c857              .byte $xx,$xx
+        ;; UNUSED
+        $1c854              .byte $xx ; Mt Hydra - Outside Shyron
+        $1c855              .byte $xx,$xx ; 09f NOT
+        $1c857              .byte $xx,$xx ; 027 NOT shyron massacre
         $1c859              .byte $xx
-        ;; unused
-        $1c85a              .byte $xx
-        $1c85b              .byte $xx,$xx
-        $1c85d              .byte $xx,$xx
+        $1c85a              .byte $xx ; Mt Hydra - Outside Shyron
+        $1c85b              .byte $xx,$xx ; 09f
+        $1c85d              .byte $xx,$xx ; 027 NOT shyron massacre
         $1c85f              .byte $xx
-        ;; 76
-        $1c860              .byte $xx
-        $1c861              .byte $xx,$xx
-        $1c863              .byte $xx
-        $1c864              .byte $xx,$xx
-        $1c866              .byte $xx,$xx
+        ;; 76 dead shyron guard
+        $1c860              .byte $xx ; Shyron
+        $1c861              .byte $xx,$xx ; 027 shyron massacre
+        $1c863              .byte $xx ; Mt Hydra - Outside Shyron
+        $1c864              .byte $xx,$xx ; 027 shyron massacre
+        $1c866              .byte $xx,$xx ; 0e9 NOT
         $1c868              .byte $xx
-        ;; 5d
-        $1c869              .byte $xx
-        $1c86a              .byte $xx,$xx
-        $1c86c              .byte $xx,$xx
+        ;; 5d shyron generic dead person
+        $1c869              .byte $xx ; Shyron
+        $1c86a              .byte $xx,$xx ; 027 shyron massacre
+        $1c86c              .byte $xx,$xx ; 0e8 NOT
         $1c86e              .byte $xx
         ;; 70 dead akahana
         $1c86f              .byte $xx ; Shyron
@@ -20070,192 +20071,192 @@ NpcSpawnConditionTablePart2
         $1c87e              .byte $xx,$xx ; 08a NOT spoken to dead stom
         $1c880              .byte $xx
         ;; 5e zebu
-        $1c881              .byte $xx ; Zebu's Cave
+        $1c881              .byte $xx ; Zebu Cave
         $1c882              .byte $xx,$xx ; 0a5
         $1c884              .byte $xx,$xx ; 00b
-        $1c886              .byte $xx,$xx ; 051 NOT
-        $1c888              .byte $xx ; Shyron Temple
+        $1c886              .byte $xx,$xx ; 051 NOT learned barrier
+        $1c888              .byte $xx ; Shyron - Temple
         $1c889              .byte $xx,$xx ; 027 NOT shyron massacre
-        $1c88b              .byte $xx ; Draygonia Fortress
-        $1c88c              .byte $xx,$xx ; 055 NOT saved zebu
-        $1c88e              .byte $xx ; Pyramid (post-Draygon 2)
+        $1c88b              .byte $xx ; Goa Fortress - Zebu
+        $1c88c              .byte $xx,$xx ; 055 NOT zebu rescued
+        $1c88e              .byte $xx ; Pyramid Back - Draygon Revisited
         $1c88f              .byte $xx,$xx ; 05e
         $1c891              .byte $xx
-        ;; 5f
-        $1c892              .byte $xx
-        $1c893              .byte $xx,$xx
-        $1c895              .byte $xx,$xx
-        $1c897              .byte $xx
-        $1c898              .byte $xx,$xx
-        $1c89a              .byte $xx
-        $1c89b              .byte $xx,$xx
-        $1c89d              .byte $xx,$xx
-        $1c89f              .byte $xx
-        $1c8a0              .byte $xx,$xx
-        $1c8a2              .byte $xx,$xx
-        $1c8a4              .byte $xx
-        $1c8a5              .byte $xx,$xx
-        $1c8a7              .byte $xx
-        $1c8a8              .byte $xx,$xx
+        ;; 5f tornel
+        $1c892              .byte $xx ; Stom House
+        $1c893              .byte $xx,$xx ; 2f7 warp:oak
+        $1c895              .byte $xx,$xx ; 00e NOT learned telepathy
+        $1c897              .byte $xx ; Mt Sabre West - Upper
+        $1c898              .byte $xx,$xx ; 051 NOT learned barrier
+        $1c89a              .byte $xx ; Shyron - Training Hall
+        $1c89b              .byte $xx,$xx ; 05f NOT chest:03:sword of thunder
+        $1c89d              .byte $xx,$xx ; 027 NOT shyron massacre
+        $1c89f              .byte $xx ; Shyron - Temple
+        $1c8a0              .byte $xx,$xx ; 05f chest:03:sword of thunder
+        $1c8a2              .byte $xx,$xx ; 027 NOT shyron massacre
+        $1c8a4              .byte $xx ; Goa Fortress - Tornel
+        $1c8a5              .byte $xx,$xx ; 056 NOT tornel rescued
+        $1c8a7              .byte $xx ; Pyramid Back - Draygon Revisited
+        $1c8a8              .byte $xx,$xx ; 05e
         $1c8aa              .byte $xx
         ;; 60 stom
-        $1c8ab              .byte $xx ; Stom's House
-        $1c8ac              .byte $xx,$xx
-        $1c8ae              .byte $xx ; Swan - Stom's Hut
-        $1c8af              .byte $xx,$xx
+        $1c8ab              .byte $xx ; Stom House
+        $1c8ac              .byte $xx,$xx ; 051 NOT learned barrier
+        $1c8ae              .byte $xx ; Swan - Stom Hut
+        $1c8af              .byte $xx,$xx ; 061 NOT
         $1c8b1              .byte $xx ; Shyron
         $1c8b2              .byte $xx,$xx ; 027 NOT shyron massacre
         $1c8b4              .byte $xx
-        ;; 62
-        $1c8b5              .byte $xx
-        $1c8b6              .byte $xx,$xx
-        $1c8b8              .byte $xx,$xx
-        $1c8ba              .byte $xx
-        $1c8bb              .byte $xx,$xx
-        $1c8bd              .byte $xx,$xx
-        $1c8bf              .byte $xx
-        $1c8c0              .byte $xx,$xx
-        $1c8c2              .byte $xx,$xx
-        $1c8c4              .byte $xx
-        $1c8c5              .byte $xx,$xx
-        $1c8c7              .byte $xx
-        $1c8c8              .byte $xx,$xx
+        ;; 62 asina
+        $1c8b5              .byte $xx ; Portoa - Asina Room
+        $1c8b6              .byte $xx,$xx ; 01e queen revealed as asina
+        $1c8b8              .byte $xx,$xx ; 08f NOT defeated sabera 1 ???
+        $1c8ba              .byte $xx ; Shyron - Hospital
+        $1c8bb              .byte $xx,$xx ; 05f NOT chest:03:sword of thunder
+        $1c8bd              .byte $xx,$xx ; 027 NOT shyron massacre
+        $1c8bf              .byte $xx ; Shyron - Temple
+        $1c8c0              .byte $xx,$xx ; 05f chest:03:sword of thunder
+        $1c8c2              .byte $xx,$xx ; 027 NOT shyron massacre
+        $1c8c4              .byte $xx ; Goa Fortress - Asina
+        $1c8c5              .byte $xx,$xx ; 057 NOT
+        $1c8c7              .byte $xx ; Pyramid Back - Draygon Revisited
+        $1c8c8              .byte $xx,$xx ; 05e
         $1c8ca              .byte $xx
-        ;; 74
-        ;; 7e
-        $1c8cb              .byte $xx
-        $1c8cc              .byte $xx,$xx
-        $1c8ce              .byte $xx,$xx
-        $1c8d0              .byte $xx
-        $1c8d1              .byte $xx,$xx
-        $1c8d3              .byte $xx,$xx
-        $1c8d5              .byte $xx
-        $1c8d6              .byte $xx,$xx
-        $1c8d8              .byte $xx,$xx
-        $1c8da              .byte $xx
-        $1c8db              .byte $xx,$xx
-        $1c8dd              .byte $xx,$xx
+        ;; 74 kensu ???
+        ;; 7e kensu ??? lighthouse/tavern/dance
+        $1c8cb              .byte $xx ; Joel - Lighthouse
+        $1c8cc              .byte $xx,$xx ; 0a4
+        $1c8ce              .byte $xx,$xx ; 075 NOT
+        $1c8d0              .byte $xx ; Swan - Tavern
+        $1c8d1              .byte $xx,$xx ; 072
+        $1c8d3              .byte $xx,$xx ; 0da NOT
+        $1c8d5              .byte $xx ; Swan - Dance Hall
+        $1c8d6              .byte $xx,$xx ; 03e finished chasing kensu
+        $1c8d8              .byte $xx,$xx ; 063 NOT
+        $1c8da              .byte $xx ; Goa Fortress - Kensu
+        $1c8db              .byte $xx,$xx ; 065
+        $1c8dd              .byte $xx,$xx ; 0d8 NOT
         $1c8df              .byte $xx
-        ;; 63
-        $1c8e0              .byte $xx
-        $1c8e1              .byte $xx,$xx
-        $1c8e3              .byte $xx,$xx
+        ;; 63 hurt dolphin
+        $1c8e0              .byte $xx ; Underground Channel
+        $1c8e1              .byte $xx,$xx ; 025 NOT
+        $1c8e3              .byte $xx,$xx ; 01e
         $1c8e5              .byte $xx
         ;; 65 startled green man outside leaf cave
-        $1c8e6              .byte $xx
-        $1c8e7              .byte $xx,$xx
+        $1c8e6              .byte $xx ; Leaf - Outside Start
+        $1c8e7              .byte $xx,$xx ; 073 NOT
         $1c8e9              .byte $xx
-        ;; 6a
-        $1c8ea              .byte $xx
-        $1c8eb              .byte $xx,$xx
+        ;; 6a UNUSED
+        $1c8ea              .byte $xx ; Sabera Palace 3
+        $1c8eb              .byte $xx,$xx ; 013 NOT sabera defeated
         $1c8ed              .byte $xx
-        ;; 6e
-        $1c8ee              .byte $xx
-        $1c8ef              .byte $xx,$xx
-        $1c8f1              .byte $xx,$xx
+        ;; 6e azteca in shyron temple
+        $1c8ee              .byte $xx ; Shyron - Temple
+        $1c8ef              .byte $xx,$xx ; 05f chest:03:sword of thunder
+        $1c8f1              .byte $xx,$xx ; 02d NOT
         $1c8f3              .byte $xx
-        ;; 73
-        $1c8f4              .byte $xx
-        $1c8f5              .byte $xx,$xx
+        ;; 73 UNUSED
+        $1c8f4              .byte $xx ; Pyramid Back - Draygon Revisited
+        $1c8f5              .byte $xx,$xx ; 05e
         $1c8f7              .byte $xx
-        ;; 68
-        $1c8f8              .byte $xx
-        $1c8f9              .byte $xx,$xx
+        ;; 68 kensu (in cabin)
+        $1c8f8              .byte $xx ; Cabin
+        $1c8f9              .byte $xx,$xx ; 2fb NOT warp:joel
         $1c8fb              .byte $xx
-        ;; 6b
-        $1c8fc              .byte $xx
-        $1c8fd              .byte $xx,$xx
+        ;; 6b kensu (asleep in lighthouse)
+        $1c8fc              .byte $xx ; Joel - Lighthouse
+        $1c8fd              .byte $xx,$xx ; 0a4 NOT
         $1c8ff              .byte $xx
-        ;; 6d
-        $1c900              .byte $xx
-        $1c901              .byte $xx,$xx
-        $1c903              .byte $xx,$xx
-        $1c905              .byte $xx
-        $1c906              .byte $xx,$xx
+        ;; 6d kensu soldier
+        $1c900              .byte $xx ; Swan - Tavern
+        $1c901              .byte $xx,$xx ; 061
+        $1c903              .byte $xx,$xx ; 072 NOT
+        $1c905              .byte $xx ; Goa
+        $1c906              .byte $xx,$xx ; 027 NOT shyron massacre
         $1c908              .byte $xx
-        ;; 6c
-        $1c909              .byte $xx
-        $1c90a              .byte $xx,$xx
-        $1c90c              .byte $xx,$xx
+        ;; 6c kensu in swan dance hall
+        $1c909              .byte $xx ; Swan - Dance Hall
+        $1c90a              .byte $xx,$xx ; 072
+        $1c90c              .byte $xx,$xx ; 03e NOT finished chasing kensu
         $1c90e              .byte $xx
-        ;; 75
-        $1c90f              .byte $xx
-        $1c910              .byte $xx,$xx
+        ;; 75 kensu slime
+        $1c90f              .byte $xx ; Goa Fortress - Kensu
+        $1c910              .byte $xx,$xx ; 065 NOT
         $1c912              .byte $xx
-        ;; 83
-        $1c913              .byte $xx
-        $1c914              .byte $xx,$xx
-        $1c916              .byte $xx,$xx
+        ;; 83 azteca temple front
+        $1c913              .byte $xx ; Pyramid Front - Entrance
+        $1c914              .byte $xx,$xx ; 06c
+        $1c916              .byte $xx,$xx ; 079 NOT
         $1c918              .byte $xx
-        ;; 84
-        $1c919              .byte $xx
-        $1c91a              .byte $xx,$xx
+        ;; 84 sabera posing as mesia
+        $1c919              .byte $xx ; Sabera Palace 3
+        $1c91a              .byte $xx,$xx ; 013 NOT sabera defeated
         $1c91c              .byte $xx
-        ;; 8e
-        $1c91d              .byte $xx
-        $1c91e              .byte $xx,$xx
+        ;; 8e mesia in tower
+        $1c91d              .byte $xx ; Sabera Palace 3
+        $1c91e              .byte $xx,$xx ; 013 NOT sabera defeated
         $1c920              .byte $xx
-        ;; 20
-        ;; 21
-        $1c921              .byte $xx
-        $1c922              .byte $xx,$xx
+        ;; 20 oak inn guard (post-telepathy)
+        ;; 21 oak tool shop guard (post-telepathy)
+        $1c921              .byte $xx ; Oak
+        $1c922              .byte $xx,$xx ; 045
         $1c924              .byte $xx
-        ;; 7c
-        ;; 7d
-        $1c925              .byte $xx
-        $1c926              .byte $xx,$xx
+        ;; 7c oak inn guard (pre-telepathy)
+        ;; 7d oak tool shop guard (pre-telepathy)
+        $1c925              .byte $xx ; Oak
+        $1c926              .byte $xx,$xx ; 045 NOT
         $1c928              .byte $xx
-        ;; c0 vampire 1
-        $1c929              .byte $xx
-        $1c92a              .byte $xx,$xx
+        ;; c0 vampire 1 
+        $1c929              .byte $xx ; Sealed Cave 7
+        $1c92a              .byte $xx,$xx ; 100 NOT defeated vampire 1
         $1c92c              .byte $xx
         ;; c1 giant insect
-        $1c92d              .byte $xx
-        $1c92e              .byte $xx,$xx
+        $1c92d              .byte $xx ; Swamp
+        $1c92e              .byte $xx,$xx ; 101 NOT defeated insect
         $1c930              .byte $xx
         ;; c2 kelbesque 1
-        $1c931              .byte $xx
-        $1c932              .byte $xx,$xx
+        $1c931              .byte $xx ; Mt Sabre North - Main
+        $1c932              .byte $xx,$xx ; 102 NOT defeated kelbesque 1
         $1c934              .byte $xx
         ;; c3 rage
-        $1c935              .byte $xx
-        $1c936              .byte $xx,$xx
+        $1c935              .byte $xx ; Lime Tree Lake
+        $1c936              .byte $xx,$xx ; 103 NOT got item from rage
         $1c938              .byte $xx
         ;; c4 mado 1
-        $1c939              .byte $xx
-        $1c93a              .byte $xx,$xx
+        $1c939              .byte $xx ; Shyron - Temple
+        $1c93a              .byte $xx,$xx ; 104 NOT defeated mado 1
         $1c93c              .byte $xx
         ;; c5 kelbesque 2
-        $1c93d              .byte $xx
-        $1c93e              .byte $xx,$xx
+        $1c93d              .byte $xx ; Goa Fortress - Kelbesque
+        $1c93e              .byte $xx,$xx ; 105 NOT defeated kelbesque 2
         $1c940              .byte $xx
         ;; c6 sabera 2
-        $1c941              .byte $xx
-        $1c942              .byte $xx,$xx
+        $1c941              .byte $xx ; Goa Fortress - Tornel
+        $1c942              .byte $xx,$xx ; 106 NOT defeated sabera 2
         $1c944              .byte $xx
         ;; c7 mado 2
-        $1c945              .byte $xx
-        $1c946              .byte $xx,$xx
+        $1c945              .byte $xx ; Goa Fortress - Asina
+        $1c946              .byte $xx,$xx ; 107 NOT defeated mado 2
         $1c948              .byte $xx
         ;; c8 karmine
-        $1c949              .byte $xx
-        $1c94a              .byte $xx,$xx
+        $1c949              .byte $xx ; Goa Fortress - Karmine 7
+        $1c94a              .byte $xx,$xx ; 108 NOT defeated karmine
         $1c94c              .byte $xx
-        ;; c9 statue of ?
-        $1c94d              .byte $xx
-        $1c94e              .byte $xx,$xx
+        ;; c9 statue of moon
+        $1c94d              .byte $xx ; Pyramid Back - Entrance
+        $1c94e              .byte $xx,$xx ; 109 NOT defeated statue of moon
         $1c950              .byte $xx
-        ;; ca statue of ?
-        $1c951              .byte $xx
-        $1c952              .byte $xx,$xx
+        ;; ca statue of sun
+        $1c951              .byte $xx ; Pyramid Back - Entrance
+        $1c952              .byte $xx,$xx ; 10a NOT defeated statue of sun
         $1c954              .byte $xx
-        ;; cb draygon 1
-        $1c955              .byte $xx
-        $1c956              .byte $xx,$xx
+        ;; cb draygon 1 and 2
+        $1c955              .byte $xx ; Pyramid Front - Draygon
+        $1c956              .byte $xx,$xx ; 10b NOT defeated draygon 1
         $1c958              .byte $xx
         ;; cc vampire 2
-        $1c959              .byte $xx
-        $1c95a              .byte $xx,$xx
+        $1c959              .byte $xx ; Sabera Palace 1
+        $1c95a              .byte $xx,$xx ; 10c NOT defeated vampire 2
         $1c95c              .byte $xx
 ;;; Character dialog table.  This is indexed by $2f => $560,x, which comes from
 ;;; the last byte of the NpcData entry.  This also corresponds to entries in
@@ -20460,12 +20461,12 @@ DialogTablePart2
         $1cae1              .word ($1cb39) ; c2 kelbesque???
         $1cae3              .word ($1d8e5) ; c3 rage
         ;; ----------------------------------------------------------------
-	;; 80, 81
+	;; 80, 81 goa shop guards
         $1cae5              .byte $xx,$xx,$xx,$xx,$xx
         $1caea              .byte $xx,$xx,$xx,$xx,$xx ; 026 -> 1e:14
         $1caef              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:13
         ;; ----------------------------------------------------------------
-	;; 6e
+	;; 6e azteca in shyron temple
         $1caf4              .byte $xx,$xx,$xx,$xx,$xx
         $1caf9              .byte $xx,$xx,$xx,$xx,$xx ; default -> 16:01
         ;; ----------------------------------------------------------------
@@ -20473,21 +20474,21 @@ DialogTablePart2
         $1cafe              .byte $xx,$xx,$xx,$xx,$xx
         $1cb03              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0d:02
         ;; ----------------------------------------------------------------
-	;; 49
+	;; 49 swan barkeep
         $1cb08              .byte $xx,$xx,$xx,$xx,$xx
         $1cb0d              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:0f
         ;; ----------------------------------------------------------------
-	;; 4b 
+	;; 4b swan dancing ladies
         $1cb12              .byte $xx,$xx,$xx,$xx,$xx
         $1cb17              .byte $xx,$xx,$xx,$xx,$xx ; 0a7 NOT -> 13:11
         $1cb1c              .byte $xx,$xx
         $1cb1e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         ;; ----------------------------------------------------------------
-	;; 4c 
+	;; 4c swan dance instructor
         $1cb25              .byte $xx,$xx,$xx,$xx,$xx
         $1cb2a              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:12
         ;; ----------------------------------------------------------------
-	;; 4d 
+	;; 4d swan dancing man
         $1cb2f              .byte $xx,$xx,$xx,$xx,$xx
         $1cb34              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:10
         ;; ----------------------------------------------------------------
@@ -20495,6 +20496,7 @@ DialogTablePart2
 	;; 94, 95, 96, 97, 98, 99, 9a, 9b, 9c, 9d, 9e, 9f, a0, a1, a2, a3
 	;; a4, a5, a6, a7, a8, a9, aa, ab, ac, ad, ae, af, b0, b1, b2, b3
 	;; b4, b5, b6, b7, b8, b9, ba, bb, bc, bd, be, bf, c0, c1, c2
+        ;; "Tell me of your travels someday."
         $1cb39              .byte $xx,$xx,$xx,$xx,$xx
         $1cb3e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:03
         ;; ----------------------------------------------------------------
@@ -20608,7 +20610,7 @@ DialogTablePart2
         $1cc6c              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:19
         $1cc71              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:06
         ;; ----------------------------------------------------------------
-	;; 13 
+	;; 13 leaf rabbit
         $1cc76              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 00:14
         $1cc7a              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 00:14
         $1cc7e              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 00:14
@@ -20618,14 +20620,14 @@ DialogTablePart2
         $1cc8c              .byte $xx,$xx,$xx,$xx,$xx ; 038 NOT leaf attacked -> 00:15
         $1cc91              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:17
         $1cc96              .byte $xx,$xx,$xx,$xx,$xx ; default -> 00:16
-        $1cc9b              .byte         $xx,$xx     ;     Set: 0a9
+        $1cc9b              .byte         $xx,$xx     ;     Set: 0a9 talked to leaf rabbit
         ;; ----------------------------------------------------------------
 	;; 30 leaf shopkeeper ?
         $1cc9d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0f
         $1cca1              .byte $xx
         $1cca2              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:07
         ;; ----------------------------------------------------------------
-	;; 31 
+	;; 31 UNUSED
         $1cca7              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0f
         $1ccab              .byte $xx
         $1ccac              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:08
@@ -20640,7 +20642,7 @@ DialogTablePart2
         $1ccbf              .byte $xx
         $1ccc0              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:05
         ;; ----------------------------------------------------------------
-	;; 14 windmill guard 
+	;; 14 windmill guard, zebu's student
         $1ccc5              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 01:04
         $1ccc9              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 01:05
         $1cccd              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 01:04
@@ -20662,13 +20664,13 @@ DialogTablePart2
         $1ccf6              .byte $xx
         $1ccf7              .byte $xx,$xx,$xx,$xx,$xx ; default -> 01:00
         ;; ----------------------------------------------------------------
-	;; 1b 
+	;; 1b blue treasure hunter in brynmaer tavern
         $1ccfc              .byte $xx,$xx,$xx,$xx
         $1cd00              .byte $xx
         $1cd01              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:08 (action 0d)
         $1cd06              .byte         $xx,$xx     ;     Set: 048
         ;; ----------------------------------------------------------------
-	;; 1c 
+	;; 1c yellow treasure hunter in brynmaer tavern
         $1cd08              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:10
         $1cd0c              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1cd10              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:10
@@ -20705,7 +20707,7 @@ DialogTablePart2
         $1cd5b              .byte $xx
         $1cd5c              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:07
         ;; ----------------------------------------------------------------
-	;; 01 
+	;; 01 sahara grey bearded man by well, brynmaer barkeep
         $1cd61              .byte $xx,$xx,$xx,$xx
         $1cd65              .byte $xx,$xx
         $1cd67              .byte $xx,$xx
@@ -20723,7 +20725,7 @@ DialogTablePart2
         $1cd92              .byte $xx,$xx,$xx,$xx,$xx ; 029 change:akahana -> 1a:04 -> @ 19
         $1cd97              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:04 -> @ 19
         ;; ----------------------------------------------------------------
-	;; 02 portoa light blue lower left walker
+	;; 02 portoa light blue lower left walker, brynmaer tavern top left
         $1cd9c              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
         $1cda0              .byte $xx,$xx
         $1cda2              .byte $xx,$xx
@@ -20733,7 +20735,7 @@ DialogTablePart2
         ;;                  05: 50 Portoa
         $1cdaa              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:11
         ;; ----------------------------------------------------------------
-	;; 1d 
+	;; 1d oak elder
         $1cdaf              .byte $xx,$xx,$xx,$xx     ; 00e NOT telepathy -> 04:1a
         $1cdb3              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:17
         $1cdb7              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:17
@@ -20750,7 +20752,7 @@ DialogTablePart2
         $1cde1              .byte         $xx,$xx     ;     Set: 049
         $1cde3              .byte $xx,$xx,$xx,$xx,$xx ; default -> 04:14
         ;; ----------------------------------------------------------------
-	;; 1e 
+	;; 1e oak mother
         $1cde8              .byte $xx,$xx,$xx,$xx     ; 00e NOT telepathy -> 04:1a
         $1cdec              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 04:1a
         $1cdf0              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 04:1a
@@ -20809,7 +20811,7 @@ DialogTablePart2
         $1ce9d              .byte $xx,$xx,$xx,$xx,$xx ; 045 -> 04:11
         $1cea2              .byte $xx,$xx,$xx,$xx,$xx ; default -> 04:10
         ;; ----------------------------------------------------------------
-	;; 23  portoa pink stationary lower left man
+	;; 23 amazones queen
         $1cea7              .byte $xx,$xx,$xx,$xx
         $1ceab              .byte $xx
         $1ceac              .byte $xx,$xx,$xx,$xx,$xx ; 028 NOT change:woman -> 12:12 (action 15)
@@ -20835,12 +20837,12 @@ DialogTablePart2
         $1cee3              .byte $xx
         $1cee4              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:05
         ;; ----------------------------------------------------------------
-	;; 26 
+	;; 26 amazones queen right attendant
         $1cee9              .byte $xx,$xx,$xx,$xx     ; 028 NOT change:woman -> 12:0b
         $1ceed              .byte $xx
         $1ceee              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:09
         ;; ----------------------------------------------------------------
-	;; 27 
+	;; 27 amazones queen left attendant
         $1cef3              .byte $xx,$xx,$xx,$xx     ; 028 NOT change:woman -> 12:0b
         $1cef7              .byte $xx
         $1cef8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:0a
@@ -20853,12 +20855,12 @@ DialogTablePart2
         $1cf09              .byte $xx,$xx,$xx,$xx,$xx ; 028 NOT change:woman -> 12:06 -> @ ff
         $1cf0e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:07
         ;; ----------------------------------------------------------------
-	;; 28 
+	;; 28 nadare
         $1cf13              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 05:01
         $1cf17              .byte $xx
         $1cf18              .byte $xx,$xx,$xx,$xx,$xx ; default -> 05:00
         ;; ----------------------------------------------------------------
-	;; 08 blue man at front of brynmaer
+	;; 08 blue man at front of brynmaer, red man top of nadare
         $1cf1d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
         $1cf21              .byte $xx,$xx
         $1cf23              .byte $xx,$xx
@@ -20873,7 +20875,7 @@ DialogTablePart2
         $1cf34              .byte $xx
         $1cf35              .byte $xx,$xx,$xx,$xx,$xx ; default -> 05:09
         ;; ----------------------------------------------------------------
-	;; 2a 
+	;; 2a green bearded man bottom-left nadare
         $1cf3a              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 05:07
         $1cf3e              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1cf42              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 05:07
@@ -20917,7 +20919,7 @@ DialogTablePart2
         $1cfae              .byte         $xx,$xx     ;     Set: 016
         $1cfb0              .byte         $xx,$xx     ;     Set: 09c
         $1cfb2              .byte $xx,$xx,$xx,$xx,$xx ; 092 -> 0a:0e
-        $1cfb7              .byte $xx,$xx,$xx,$xx,$xx ; 018 entered underground channel -> 0a:0c (action 03)
+        $1cfb7              .byte $xx,$xx,$xx,$xx,$xx ; 018 entered channel -> 0a:0c (action 03)
         $1cfbc              .byte         $xx,$xx     ;     Set: 092
         $1cfbe              .byte         $xx,$xx     ;     Set: 0a3
         $1cfc0              .byte         $xx,$xx     ;     Set: 09c
@@ -21008,7 +21010,7 @@ DialogTablePart2
         $1d0bb              .byte $xx
         $1d0bc              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:01
         ;; ----------------------------------------------------------------
-	;; 04 woman in dress at front of amazones
+	;; 04 woman in dress at front of amazones, sahara; portoa lady in waiting
         $1d0c1              .byte $xx,$xx,$xx,$xx
         $1d0c5              .byte $xx,$xx
         $1d0c7              .byte $xx,$xx
@@ -21037,7 +21039,7 @@ DialogTablePart2
         $1d10f              .byte $xx,$xx,$xx,$xx,$xx ; 01b NOT mesia recording played -> 08:0e
         $1d114              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:0f
         ;; ----------------------------------------------------------------
-	;; 36 
+	;; 36 portoa pink lady in waiting at table left
         $1d119              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 08:0a
         $1d11d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d121              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 08:0a
@@ -21046,7 +21048,7 @@ DialogTablePart2
         $1d12a              .byte $xx,$xx,$xx,$xx,$xx ; 01e -> 08:0a
         $1d12f              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:09
         ;; ----------------------------------------------------------------
-	;; 37 
+	;; 37 portoa red lady in waiting at table top
         $1d134              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 08:0a
         $1d138              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d13c              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 08:0a
@@ -21055,7 +21057,7 @@ DialogTablePart2
         $1d145              .byte $xx,$xx,$xx,$xx,$xx ; 01b mesia recording played -> 08:0c
         $1d14a              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:0b
         ;; ----------------------------------------------------------------
-	;; 06 portoa pink dress lady below castle bridge
+	;; 06 portoa pink dress lady below castle bridge; sahara grey dress lady right
         $1d14f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d153              .byte $xx,$xx
         $1d155              .byte $xx,$xx
@@ -21066,7 +21068,7 @@ DialogTablePart2
         $1d15d              .byte $xx,$xx,$xx,$xx,$xx ; 02b change:stom -> 1a:0b
         $1d162              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:03 -> @ 05
         ;; ----------------------------------------------------------------
-	;; 03 portoa pink stationary lower left man
+	;; 03 portoa pink stationary lower left man; sahara grey man mid-right
         $1d167              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
         $1d16b              .byte $xx,$xx
         $1d16d              .byte $xx,$xx
@@ -21080,7 +21082,7 @@ DialogTablePart2
         $1d17c              .byte $xx,$xx,$xx,$xx,$xx ; 02b change:stom -> 1a:09
         $1d181              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:01 -> @ 0a
         ;; ----------------------------------------------------------------
-        ;; 00 portoa pink man on fortune teller island
+        ;; 00 portoa pink man on fortune teller island; sahara orange man left
         $1d186              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1d18a              .byte $xx,$xx
         $1d18c              .byte $xx,$xx
@@ -21122,19 +21124,19 @@ DialogTablePart2
         $1d1f6              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0d:03
         $1d1fb              .byte         $xx,$xx     ;     Set: 0d9
         ;; ----------------------------------------------------------------
-	;; 3b, 86 
+	;; 3b, 86 UNUSED
         $1d1fd              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d201              .byte $xx
         $1d202              .byte $xx,$xx,$xx,$xx,$xx ; 06a -> 0d:02
         $1d207              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:08
         ;; ----------------------------------------------------------------
-	;; 3c, 87 
+	;; 3c, 87 UNUSED
         $1d20c              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1d210              .byte $xx
         $1d211              .byte $xx,$xx,$xx,$xx,$xx ; 06b -> 0d:03
         $1d216              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:09
         ;; ----------------------------------------------------------------
-	;; 3d 
+	;; 3d joel elder
         $1d21b              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 0f:03
         $1d21f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 0f:04
         $1d223              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 0f:03
@@ -21144,7 +21146,7 @@ DialogTablePart2
         $1d231              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 0f:02
         $1d236              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:01
         ;; ----------------------------------------------------------------
-	;; 42 
+	;; 42 joel top-left watchman
         $1d23b              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
         $1d23f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1d243              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
@@ -21154,7 +21156,7 @@ DialogTablePart2
         $1d251              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 0f:11
         $1d256              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:10
         ;; ----------------------------------------------------------------
-	;; 41 
+	;; 41 joel top-right bearded green man
         $1d25b              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
         $1d25f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1d263              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
@@ -21164,7 +21166,7 @@ DialogTablePart2
         $1d271              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 0f:0e
         $1d276              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:0d
         ;; ----------------------------------------------------------------
-	;; 3e 
+	;; 3e joel brown lady left of elder
         $1d27b              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
         $1d27f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d283              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
@@ -21174,7 +21176,7 @@ DialogTablePart2
         $1d291              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 0f:07
         $1d296              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:06
         ;; ----------------------------------------------------------------
-	;; 3f 
+	;; 3f joel blue lady right of elder
         $1d29b              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
         $1d29f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d2a3              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
@@ -21184,7 +21186,7 @@ DialogTablePart2
         $1d2b1              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 1e:01
         $1d2b6              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:09
         ;; ----------------------------------------------------------------
-	;; 40 
+	;; 40 joel welcomer
         $1d2bb              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
         $1d2bf              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1d2c3              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
@@ -21194,7 +21196,7 @@ DialogTablePart2
         $1d2d1              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 1e:02
         $1d2d6              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:0b
         ;; ----------------------------------------------------------------
-	;; 43 
+	;; 43 joel bottom-right red woman
         $1d2db              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
         $1d2df              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d2e3              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
@@ -21204,7 +21206,7 @@ DialogTablePart2
         $1d2f1              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 0f:14
         $1d2f6              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:13
         ;; ----------------------------------------------------------------
-	;; 45 
+	;; 45 zombietown human top
         $1d2fb              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:03
         $1d2ff              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0a
         $1d303              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:03
@@ -21215,7 +21217,7 @@ DialogTablePart2
         $1d316              .byte $xx,$xx,$xx,$xx,$xx ; 030 -> 00:00 (action 14)
         $1d31b              .byte         $xx,$xx     ;     Set: 400
         ;; ----------------------------------------------------------------
-	;; 46 
+	;; 46 zombietown human bottom
         $1d31d              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
         $1d321              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1d325              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
@@ -21226,7 +21228,7 @@ DialogTablePart2
         $1d338              .byte         $xx,$xx     ;     Set: 031
         $1d33a              .byte $xx,$xx,$xx,$xx,$xx ; default -> 10:06
         ;; ----------------------------------------------------------------
-	;; 09 
+	;; 09 zombietown man on left
         $1d33f              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:00
         $1d343              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1d347              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:00
@@ -21235,7 +21237,7 @@ DialogTablePart2
         $1d350              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 10:09
         $1d355              .byte $xx,$xx,$xx,$xx,$xx ; default -> 10:08
         ;; ----------------------------------------------------------------
-	;; 0a 
+	;; 0a zombietown woman on right
         $1d35a              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
         $1d35e              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d362              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
@@ -21244,7 +21246,7 @@ DialogTablePart2
         $1d36b              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 10:0b
         $1d370              .byte $xx,$xx,$xx,$xx,$xx ; default -> 10:0a
         ;; ----------------------------------------------------------------
-	;; 47 
+	;; 47 zombietown child in clark house
         $1d375              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:04
         $1d379              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0b
         $1d37d              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:04
@@ -21253,7 +21255,7 @@ DialogTablePart2
         $1d386              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 10:0d
         $1d38b              .byte $xx,$xx,$xx,$xx,$xx ; default -> 10:0c
         ;; ----------------------------------------------------------------
-	;; 44 
+	;; 44 clark
         $1d390              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 0f:16
         $1d394              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 0f:17
         $1d398              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 0f:16
@@ -21270,7 +21272,7 @@ DialogTablePart2
         $1d3b6              .byte         $xx,$xx     ;     Set: 032
         $1d3b8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 10:02 -> @ 05
         ;; ----------------------------------------------------------------
-	;; 77 
+	;; 77 swan yellow man right
         $1d3bd              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:00
         $1d3c1              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
         $1d3c5              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:00
@@ -21279,7 +21281,7 @@ DialogTablePart2
         $1d3ce              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 13:08
         $1d3d3              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:07
         ;; ----------------------------------------------------------------
-	;; 48 
+	;; 48 swan blue bearded man outside armor shop
         $1d3d8              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
         $1d3dc              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1d3e0              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
@@ -21288,7 +21290,7 @@ DialogTablePart2
         $1d3e9              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 13:0a
         $1d3ee              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:09
         ;; ----------------------------------------------------------------
-	;; 6f 
+	;; 6f swan blue cloaked man outside hut
         $1d3f3              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:03
         $1d3f7              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0a
         $1d3fb              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:03
@@ -21297,7 +21299,7 @@ DialogTablePart2
         $1d404              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 13:0c
         $1d409              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:0b
         ;; ----------------------------------------------------------------
-	;; 79 
+	;; 79 swan yellow woman left
         $1d40e              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
         $1d412              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d416              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
@@ -21306,7 +21308,7 @@ DialogTablePart2
         $1d41f              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 13:0e
         $1d424              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:0d
         ;; ----------------------------------------------------------------
-	;; 0c 
+	;; 0c swan soldier
         $1d429              .byte $xx,$xx,$xx,$xx
         $1d42d              .byte $xx,$xx
         $1d42f              .byte $xx,$xx
@@ -21318,10 +21320,10 @@ DialogTablePart2
         ;;                  0a: 72 Swan
         $1d43e              .byte $xx,$xx,$xx,$xx,$xx ; 02a change:soldier -> 1e:12
         $1d443              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:14 -> @ 0a
-        ;;                  14: f1 Swan - Dance Hall
+        ;;                  14: f1 Swan - Dance Hall (UNUSED)
         $1d448              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:11
         ;; ----------------------------------------------------------------
-	;; 4a 
+	;; 4a swan tavern soldiers
         $1d44d              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:13
         $1d451              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:12
         $1d455              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:13
@@ -21333,7 +21335,7 @@ DialogTablePart2
         $1d46d              .byte $xx,$xx,$xx,$xx,$xx ; 000 unused -> 00:00 -> @ ff
         $1d472              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:11 (action 0b)
         ;; ----------------------------------------------------------------
-	;; 4e UNUSED 
+	;; 4e shyron guards
         $1d477              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 14:00
         $1d47b              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 14:02
         $1d47f              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 14:01
@@ -21341,20 +21343,18 @@ DialogTablePart2
         $1d487              .byte $xx
         $1d488              .byte $xx,$xx,$xx,$xx,$xx ; 026 entered shyron -> 14:04
         $1d48d              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:00
-        $1d492              .byte $xx,$xx,$xx,$xx,$xx ; 028 change:woman -> 14:00
-        $1d497              .byte $xx,$xx,$xx,$xx,$xx ; 202 NOT -> 10:00 (action 10) -> @ 2b
-        $1d49c              .byte $xx,$xx,$xx,$xx,$xx ; 281 -> 01:09 (action 10) -> @ 02
-        $1d4a1              .byte $xx,$xx,$xx,$xx,$xx ; 0ff -> 01:06 -> @ 02
-        $1d4a6              .byte $xx,$xx,$xx,$xx,$xx ; 400 -> 00:00 (action 14) -> @ 02
-        $1d4ab              .byte $xx,$xx
         ;; ----------------------------------------------------------------
-	;; 76 
+        ;; UNUSED
+        $1d492              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1d4a2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; ----------------------------------------------------------------
+	;; 76 dead shyron guard
         $1d4ad              .byte $xx,$xx,$xx,$xx
         $1d4b1              .byte $xx
         $1d4b2              .byte $xx,$xx,$xx,$xx,$xx ; default -> 20:10
         $1d4b7              .byte         $xx,$xx     ;     Set: 0e9
         ;; ----------------------------------------------------------------
-	;; 51 
+	;; 51 shyron training men
         $1d4b9              .byte $xx,$xx,$xx,$xx
         $1d4bd              .byte $xx
         $1d4be              .byte $xx,$xx,$xx,$xx,$xx ; 04d -> 14:0f
@@ -21365,7 +21365,7 @@ DialogTablePart2
         $1d4ce              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:0e
         $1d4d3              .byte         $xx,$xx     ;     Set: 04c
         ;; ----------------------------------------------------------------
-	;; 53 
+	;; 53 shyron sick men
         $1d4d5              .byte $xx,$xx,$xx,$xx
         $1d4d9              .byte $xx
         $1d4da              .byte $xx,$xx,$xx,$xx,$xx ; 04b -> 14:15
@@ -21373,7 +21373,7 @@ DialogTablePart2
         $1d4e1              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:16
         $1d4e6              .byte         $xx,$xx     ;     Set: 04b
         ;; ----------------------------------------------------------------
-	;; 4f 
+	;; 4f shyron welcome
         $1d4e8              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 14:05
         $1d4ec              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 14:02
         $1d4f0              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 14:05
@@ -21382,7 +21382,7 @@ DialogTablePart2
         $1d4f9              .byte $xx,$xx,$xx,$xx,$xx ; 02d -> 14:04
         $1d4fe              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:05
         ;; ----------------------------------------------------------------
-	;; 50 
+	;; 50 shyron red man middle
         $1d503              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 14:06
         $1d507              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 14:03
         $1d50b              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 14:06
@@ -21391,13 +21391,13 @@ DialogTablePart2
         $1d514              .byte $xx,$xx,$xx,$xx,$xx ; 02d -> 14:04
         $1d519              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:06
         ;; ----------------------------------------------------------------
-	;; 5d 
+	;; 5d shyron generic dead person
         $1d51e              .byte $xx,$xx,$xx,$xx
         $1d522              .byte $xx
         $1d523              .byte $xx,$xx,$xx,$xx,$xx ; default -> 20:10
         $1d528              .byte         $xx,$xx     ;     Set: 0e8
         ;; ----------------------------------------------------------------
-	;; 52 
+	;; 52 stom's girlfriend
         $1d52a              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 15:09
         $1d52e              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 15:0a
         $1d532              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 15:0b
@@ -21406,7 +21406,7 @@ DialogTablePart2
         $1d53b              .byte $xx,$xx,$xx,$xx,$xx ; 02d -> 14:14
         $1d540              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:13
         ;; ----------------------------------------------------------------
-	;; 71 
+	;; 71 dead stom's girlfriend
         $1d545              .byte $xx,$xx,$xx,$xx
         $1d549              .byte $xx
         $1d54a              .byte $xx,$xx,$xx,$xx,$xx ; 089 spoken to dead stom's gf -> 20:10
@@ -21422,7 +21422,7 @@ DialogTablePart2
         $1d567              .byte         $xx,$xx     ;     Set: 08a spoken to dead stom
         $1d569              .byte $xx,$xx,$xx,$xx,$xx ; default -> 20:10
         ;; ----------------------------------------------------------------
-	;; 56 
+	;; 56 goa pink blouse lady middle
         $1d56e              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
         $1d572              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d576              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
@@ -21431,7 +21431,7 @@ DialogTablePart2
         $1d57f              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 17:0d
         $1d584              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:0c
         ;; ----------------------------------------------------------------
-	;; 57 
+	;; 57 goa tavern lady
         $1d589              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:0f
         $1d58d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0e
         $1d591              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:0f
@@ -21440,7 +21440,7 @@ DialogTablePart2
         $1d59a              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 17:0b
         $1d59f              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:0a
         ;; ----------------------------------------------------------------
-	;; 58 
+	;; 58 goa barkeep
         $1d5a4              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
         $1d5a8              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d5ac              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
@@ -21449,7 +21449,7 @@ DialogTablePart2
         $1d5b5              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 17:09
         $1d5ba              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:08
         ;; ----------------------------------------------------------------
-	;; 54 
+	;; 54 akahana friend
         $1d5bf              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1d5c3              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
         $1d5c7              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
@@ -21460,7 +21460,7 @@ DialogTablePart2
         $1d5db              .byte         $xx,$xx     ;     Set: 04f
         $1d5dd              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:07
         ;; ----------------------------------------------------------------
-	;; 78 
+	;; 78 goa pink welcomer
         $1d5e2              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:00
         $1d5e6              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
         $1d5ea              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:00
@@ -21469,7 +21469,7 @@ DialogTablePart2
         $1d5f3              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 17:01
         $1d5f8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:00
         ;; ----------------------------------------------------------------
-	;; 55 
+	;; 55 goa cloaked man right
         $1d5fd              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:03
         $1d601              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0a
         $1d605              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:03
@@ -21478,7 +21478,7 @@ DialogTablePart2
         $1d60e              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 17:10
         $1d613              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:0f
         ;; ----------------------------------------------------------------
-	;; 7a 
+	;; 7a goa pink dress lady near house
         $1d618              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
         $1d61c              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d620              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
@@ -21487,7 +21487,7 @@ DialogTablePart2
         $1d629              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 17:03
         $1d62e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:02
         ;; ----------------------------------------------------------------
-	;; 0b 
+	;; 0b goa soldier top left
         $1d633              .byte $xx,$xx,$xx,$xx
         $1d637              .byte $xx,$xx
         $1d639              .byte $xx,$xx
@@ -21498,7 +21498,7 @@ DialogTablePart2
         ;;                  0a: bf Goa - Tavern
         $1d646              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:11
         ;; ----------------------------------------------------------------
-	;; 5a 
+	;; 5a deo
         $1d64b              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1a:13
         $1d64f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1a:13
         $1d653              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1a:13
@@ -21508,7 +21508,7 @@ DialogTablePart2
         $1d662              .byte         $xx,$xx     ;     Set: 02e
         $1d664              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:0f
         ;; ----------------------------------------------------------------
-	;; 59 
+	;; 59 sahara generic bunny
         $1d669              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1a:12
         $1d66d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1a:12
         $1d671              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1a:12
@@ -21516,7 +21516,7 @@ DialogTablePart2
         $1d679              .byte $xx
         $1d67a              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:0e
         ;; ----------------------------------------------------------------
-	;; 5b 
+	;; 5b sahara elder
         $1d67f              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:03
         $1d683              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0a
         $1d687              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1a:0d
@@ -21526,7 +21526,7 @@ DialogTablePart2
         $1d695              .byte         $xx,$xx     ;     Set: 022
         $1d697              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:06
         ;; ----------------------------------------------------------------
-	;; 5c 
+	;; 5c sahara elder's daughter
         $1d69c              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:05
         $1d6a0              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0c
         $1d6a4              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:05
@@ -21536,17 +21536,17 @@ DialogTablePart2
         $1d6b2              .byte         $xx,$xx     ;     Set: 023
         $1d6b4              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:07
         ;; ----------------------------------------------------------------
-	;; 63 
+	;; 63 hurt dolphin
         $1d6b9              .byte $xx,$xx,$xx,$xx
         $1d6bd              .byte $xx
         $1d6be              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0c:00
         ;; ----------------------------------------------------------------
-	;; 69 
+	;; 69 dolphin
         $1d6c3              .byte $xx,$xx,$xx,$xx
         $1d6c7              .byte $xx
         $1d6c8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0c:02 (action 18)
         ;; ----------------------------------------------------------------
-	;; 16, 88 stoned akahana
+	;; 16, 88 (stoned) akahana
         $1d6cd              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 15:01
         $1d6d1              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 15:02
         $1d6d5              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 15:01
@@ -21651,7 +21651,7 @@ DialogTablePart2
         $1d7e8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 18:03 (action 17)
         $1d7ed              .byte         $xx,$xx     ;     Set: 056 tornel rescued
         ;; ----------------------------------------------------------------
-	;; 62 
+	;; 62 asina
         $1d7ef              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 15:07
         $1d7f3              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 15:08
         $1d7f7              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 15:07
@@ -21677,7 +21677,7 @@ DialogTablePart2
         $1d82f              .byte $xx,$xx,$xx,$xx,$xx ; default -> 18:05 (action 17)
         $1d834              .byte         $xx,$xx     ;     Set: 057
         ;; ----------------------------------------------------------------
-	;; 74, 7e 
+	;; 74, 7e kensu ???
         $1d836              .byte $xx,$xx,$xx,$xx
         $1d83a              .byte $xx,$xx
         $1d83c              .byte $xx,$xx
@@ -21698,18 +21698,18 @@ DialogTablePart2
         $1d859              .byte $xx,$xx,$xx,$xx,$xx ; default -> 18:07 (action 14)
         $1d85e              .byte         $xx,$xx     ;     Set: 0d8
         ;; ----------------------------------------------------------------
-	;; 68 
+	;; 68 kensu (in cabin)
         $1d860              .byte $xx,$xx,$xx,$xx
         $1d864              .byte $xx
         $1d865              .byte $xx,$xx,$xx,$xx,$xx ; default -> 11:01
         $1d86a              .byte         $xx,$xx     ;     Set: 09b
         ;; ----------------------------------------------------------------
-	;; 6b 
+	;; 6b kensu (asleep in lighthouse)
         $1d86c              .byte $xx,$xx,$xx,$xx
         $1d870              .byte $xx
         $1d871              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1f:00
         ;; ----------------------------------------------------------------
-	;; 6d 
+	;; 6d kensu soldier
         $1d876              .byte $xx,$xx,$xx,$xx
         $1d87a              .byte $xx,$xx
         $1d87c              .byte $xx,$xx
@@ -21721,9 +21721,9 @@ DialogTablePart2
         ;;                  0c: 8e Goa
         $1d88b              .byte $xx,$xx,$xx,$xx,$xx ; 026 NOT entered shyron -> 1e:1a
         $1d890              .byte         $xx,$xx     ;     Set: 076
-        $1d892              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:0e -> @ 0c
+        $1d892              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:0e
         ;; ----------------------------------------------------------------
-	;; 6c 
+	;; 6c kensu dancer
         $1d897              .byte $xx,$xx,$xx,$xx
         $1d89b              .byte $xx
         $1d89c              .byte $xx,$xx,$xx,$xx,$xx ; 03e -> 13:01
@@ -21731,7 +21731,7 @@ DialogTablePart2
         $1d8a6              .byte         $xx,$xx     ;     Set: 03e
         $1d8a8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:03
         ;; ----------------------------------------------------------------
-	;; 75 
+	;; 75 kensu slime
         $1d8ad              .byte $xx,$xx,$xx,$xx
         $1d8b1              .byte $xx
         $1d8b2              .byte $xx,$xx,$xx,$xx,$xx ; default -> 18:06 (action 05)
@@ -21743,12 +21743,12 @@ DialogTablePart2
         $1d8c1              .byte         $xx,$xx     ;     Set: 0ed
         $1d8c3              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1b:0d
         ;; ----------------------------------------------------------------
-	;; 84 
+	;; 84 sabera posing as mesia
         $1d8c8              .byte $xx,$xx,$xx,$xx
         $1d8cc              .byte $xx
         $1d8cd              .byte $xx,$xx,$xx,$xx,$xx ; default -> 10:0f
         ;; ----------------------------------------------------------------
-	;; 83 
+	;; 83 azteca temple front
         $1d8d2              .byte $xx,$xx,$xx,$xx
         $1d8d6              .byte $xx
         $1d8d7              .byte $xx,$xx,$xx,$xx,$xx ; 082 NOT -> 1b:01 (action 03)
@@ -21756,7 +21756,7 @@ DialogTablePart2
         $1d8de              .byte         $xx,$xx     ;     Set: 082
         $1d8e0              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1b:02
         ;; ----------------------------------------------------------------
-	;; c3 
+	;; c3 rage
         $1d8e5              .byte $xx,$xx,$xx,$xx
         $1d8e9              .byte $xx
         $1d8ea              .byte $xx,$xx,$xx,$xx,$xx ; 017 -> 0e:03 (action 1a)

@@ -571,38 +571,156 @@ const undergroundChannel6   = location(0x64, PORT, 'Underground Channel 6 (water
                                        connect(undergroundChannel5, crossSea),
                                        connect(angrySeaSouth, crossSea),
                                        chest(lovePendant));
+
+// Evil Spirit Island
+
 const zombieTown            = location(0x65, EVIL, 'Zombie Town');
 const evilSpiritIsland1     = location(0x68, EVIL, 'Tunnel 1 (entrance)',
                                        connect(angrySeaWest, talkedToJoelElder, crossSea));
 const evilSpiritIsland2a    = location(0x69, EVIL, 'Tunnel 2a (start)',
                                        connect(evilSpiritIsland1));
+const evilSpiritIsland2b    = location(0x69, EVIL, 'Tunnel 2b (dead end to left)',
+                                       connect(evilSpiritIsland2a, crossRivers)); // 2b9
+const evilSpiritIsland2c    = location(0x69, EVIL, 'Tunnel 2c (across first river)',
+                                       connect(evilSpiritIsland2a, crossRivers)); // 2b8
+const evilSpiritIsland2d    = location(0x69, EVIL, 'Tunnel 2d (across second river)',
+                                       connect(evilSpiritIsland2c, crossRivers)); // 2b7
+const evilSpiritIsland2e    = location(0x69, EVIL, 'Tunnel 2e (dead end, magic ring)',
+                                       connect(evilSpiritIsland2d, destroyStone), // 2ba
+                                       chest(magicRing));
+const evilSpiritIsland2e    = location(0x69, EVIL, 'Tunnel 2f (stair down)',
+                                       connect(evilSpiritIsland2d, destroyStone)); // 2bb
+const evilSpiritIsland3a    = location(0x6a, EVIL, 'Tunnel 3a (main area)',
+                                       // unnecessary wall 2b5
+                                       connect(evilSpiritIsland2e),
+                                       connect(zombieTown),
+                                       chest(lysisPlant$5c));
+const evilSpiritIsland3b    = location(0x6a, EVIL, 'Tunnel 3b (left area toward items)',
+                                       connect(evilSpiritIsland3a, destroyStone)); // 2b6
+const evilSpiritIsland4a    = location(0x6b, EVIL, 'Tunnel 4a (right side, mimic)',
+                                       // TODO - model pits?
+                                       connect(evilSpiritIsland3b),
+                                       mimic(0x0e));
+const evilSpiritIsland4b    = location(0x6b, EVIL, 'Tunnel 4b (left side, iron necklace)',
+                                       connect(evilSpiritIsland4a, crossRivers), // 285
+                                       chest(ironNecklace)); // 11: 2c
 
-// $69	Evil Spirit Island 2
-// $6a	Evil Spirit Island 3
-// $6b	Evil Spirit Island 4
-// $6c	Sabera Palace 1
-// $6d	Sabera Palace 2
-// $6e	Sabera Palace 3
-// $70	Joel - Secret Passage
-// $71	Joel
-// $72	Swan
-// $73	Swan - Gate
-// $78	Goa Valley
-// $7c	Mt Hydra
-// $7d	Mt Hydra - Cave 1
-// $7e	Mt Hydra - Outside Shyron
-// $7f	Mt Hydra - Cave 2
-// $80	Mt Hydra - Cave 3
-// $81	Mt Hydra - Cave 4
-// $82	Mt Hydra - Cave 5
-// $83	Mt Hydra - Cave 6
-// $84	Mt Hydra - Cave 7
-// $85	Mt Hydra - Cave 8
-// $86	Mt Hydra - Cave 9
-// $87	Mt Hydra - Cave 10
-// $88	Styx 1
-// $89	Styx 2
-// $8a	Styx 3
+// Sabera's Palace
+
+const saberaPalaceFloor1    = location(0x6c, SABR, 'Floor 1',
+                                       connect(zombieTown));
+const saberaPalaceMiniboss  = location(0x6c, SABR, 'Miniboss',
+                                       boss(vampire2),
+                                       connect(saberaPalaceFloor1));
+const saberaPalaceFloor2a   = location(0x6d, SABR, 'Floor 2a (left stair)',
+                                       connect(saberaPalaceFloor1),
+                                       chest(fruitOfPower));
+const saberaPalaceFloor2b   = location(0x6d, SABR, 'Floor 2b (right stair)',
+                                       connect(saberaPalaceMiniboss),
+                                       chest(medicalHerb$55));
+const saberaPalaceFloor3a   = location(0x6e, SABR, 'Floor 3a (toward boss)',
+                                       connect(saberaPalaceFloor2b));
+const saberaPalaceFloor3b   = location(0x6e, SABR, 'Floor 3b (boss room)',
+                                       connect(saberaPalaceFloor3a));
+const saberaPalaceBoss      = location(0x6e, SABR, 'Boss',
+                                       boss(sabera1),
+                                       connect(saberaPalaceFloor3b));
+const saberaPalaceFloor3c   = location(0x6e, SABR, 'Floor 3c (back room trap)',
+                                       from(saberaPalaceFloor3b),
+                                       to(saberaPalaceFloor1));
+
+// Misc
+
+const joelSecretPassage     = location(0x70, JOEL, 'Secret Passage',
+                                       connect(angrySeaLighthouse));
+const joel                  = location(0x71, JOEL, 'Town',
+                                       connect(angrySeaJoelBeach));
+const swan                  = location(0x72, SWAN, 'Town',
+                                       connect(angrySeaSwanBeach));
+const swanGateRight         = location(0x73, SWAN, 'Inside Gate',
+                                       connect(swan));
+const swanGateLeft          = location(0x73, SWAN, 'Outside Gate',
+                                       // TODO - consider allowing gate to open both sides?
+                                       from(swanGateRight, change));
+const goaValley             = location(0x78, GOAV, 'Valley',
+                                       connect(swanGateLeft));
+
+// Mt Hydra
+
+const mtHydra1              = location(0x7c, HYDR, 'Entrance',
+                                       connect(goaValley));
+const mtHydra2              = location(0x7c, HYDR, 'Over first river toward Shyron',
+                                       connect(mtHydra1, crossRivers)); // 2b2
+const mtHydra3              = location(0x7c, HYDR, 'After first tunnel');
+const mtHydra4              = location(0x7c, HYDR, 'Door to Styx',
+                                       connect(mtHydra3, crossRivers)); // 2b1
+const mtHydra5              = location(0x7c, HYDR, 'Dead end (no item)');
+const mtHydra6              = location(0x7c, HYDR, 'Dead end (fruit of lime)',
+                                       chest(fruitOfLime));
+const mtHydra7              = location(0x7c, HYDR, 'Dead end (magic ring)',
+                                       chest(magicRing$65));
+const mtHydra8              = location(0x7c, HYDR, 'Outside tunnel to bow');
+const mtHydra9              = location(0x7c, HYDR, 'Floating island (bow of sun)',
+                                       chest(bowOfSun));
+const mtHydraTunnel1        = location(0x7d, HYDR, 'Tunnel 1 (to Shyron)',
+                                       connect(mtHydra1));
+const mtHydraOutsideShyron  = location(0x7e, HYDR, 'Outside Shyron',
+                                       connect(mtHydraTunnel1));
+const mtHydraTunnel2        = location(0x7f, HYDR, 'Tunnel 2 (fork)',
+                                       connect(mtHydra1),
+                                       connect(mtHydra6), // right branch
+                                       connect(mtHydra3)); // left branch
+const mtHydraTunnel3        = location(0x80, HYDR, 'Tunnel 3 (caves)',
+                                       connect(mtHydra5)); // all the way right
+const mtHydraTunnel4        = location(0x81, HYDR, 'Tunnel 4 (left branch of cave)',
+                                       connect(mtHydraTunnel3)); // took left branch
+const mtHydraTunnel5        = location(0x82, HYDR, 'Tunnel 5 (dead end, medical herb)',
+                                       connect(mtHydraTunnel4), // took left branch again
+                                       chest(medicalHerb$56));
+const mtHydraTunnel6a       = location(0x83, HYDR, 'Tunnel 6a (left-then-right)',
+                                       connect(mtHydraTunnel4)); // took right branch
+const mtHydraTunnel6a       = location(0x83, HYDR, 'Tunnel 6b (past wall)',
+                                       connect(mtHydraTunnel6a, destroyStone)); // 2af
+const mtHydraTunnel7        = location(0x84, HYDR, 'Tunnel 7 (wide hall)',
+                                       connect(mtHydraTunnel6b));
+const mtHydraTunnel8        = location(0x85, HYDR, 'Tunnel 8 (red slimes)',
+                                       from(mtHydraTunnel7, destroyStone), // 2ae (bad)
+                                       connect(mtHydra8));
+const mtHydraTunnel9        = location(0x86, HYDR, 'Tunnel 9 (right branch, infinite loop)',
+                                       // non-blocking wall: 2ad
+                                       connect(mtHydraTunnel3));
+const mtHydraTunnel10a      = location(0x87, HYDR, 'Tunnel 10a (toward magic ring)',
+                                       connect(mtHydraTunnel9));
+const mtHydraTunnel10b      = location(0x87, HYDR, 'Tunnel 10b (past wall)',
+                                       connect(mtHydraTunnel10a, destroyStone), // 2ac
+                                       connect(mtHydra7));
+
+const styx1                 = location(0x88, STYX, 'Entrance',
+                                       from(mtHydra4, keyToStyx)); // TODO - two-way?
+const styx2a                = location(0x89, STYX, 'Left branch',
+                                       connect(styx1),
+                                       mimic(0x13));
+const styx2b                = location(0x89, STYX, 'Left branch, past one bridge',
+                                       connect(styx2a, crossRivers)); // 2aa
+const styx2c                = location(0x89, STYX, 'Left branch, past two bridges',
+                                       connect(styx2b, crossRivers), // 2a9
+                                       chest(medicalHerb$57));
+const styx2d                = location(0x89, STYX, 'Right branch',
+                                       connect(styx1));
+const styx2e                = location(0x89, STYX, 'Right branch, across water',
+                                       connect(styx2d, flight),
+                                       mimic(0x14),
+                                       mimic(0x15),
+                                       chest(psychoShield));
+const styx3                 = location(0x8a, STYX, 'Upper floor',
+                                       // pit to styx2a
+                                       connect(styx2c),
+                                       chest(swordOfThunder));
+
+const shyron                = location(0x8c, SHYR, 'Town',
+                                       connect(mtHydraOutsideShyron, changeOrGlitch));
+                                       
+
 // $8c	Shyron
 // $8e	Goa
 // $8f	Goa Fortress - Oasis Entrance

@@ -22,7 +22,9 @@ export default ({
     }
     const random = new Random(seed);
     const parsed = new Rom(rom);
-    adjustObjectDifficultyStats(rom, parsed, random);
+    adjustObjectDifficultyStats(rom, parsed);
+    shuffleMonsters(rom, parsed, random);
+    shuffleBonusItems(rom, parsed, random);
     fixShaking.apply(rom);
     preventSwordClobber.apply(rom);
     upgradeBallsToBracelets.apply(rom);
@@ -836,7 +838,7 @@ Multiply16Bit:
 
 
 
-const adjustObjectDifficultyStats = (data, rom, random) => {
+const adjustObjectDifficultyStats = (data, rom) => {
 
   // TODO - find anything sharing the same memory and update them as well
   for (const id of SCALED_MONSTERS.keys()) {
@@ -864,7 +866,9 @@ const adjustObjectDifficultyStats = (data, rom, random) => {
   }
 
   rom.writeObjectData();
+};
 
+const shuffleMonsters = (data, rom, random) => {
   const report = {};
   const pool = new MonsterPool(report);
   for (const loc of rom.locations) {
@@ -888,6 +892,24 @@ const adjustObjectDifficultyStats = (data, rom, random) => {
   }
 
   console.log(report);
+};
+
+const shuffleBonusItems = (data, rom, random) => {
+  const values = [];
+  const locations = [];
+  for (let loc in BONUS_ITEMS) {
+    loc = Number(loc);
+    const val = data[loc + 16];
+    if (val != BONUS_ITEMS[loc]) {
+      throw new Error(`Unexpected value at $${loc.toString(16)}: $${val.toString(16)}`);
+    }
+    locations.push(loc);
+    values.push(val);
+  }
+  random.shuffle(values);
+  for (let i = 0; i < locations.length; i++) {
+    data[locations[i] + 16] = values[i];
+  }
 };
 
 
@@ -1696,4 +1718,15 @@ const UNTOUCHED_MONSTERS = { // not yet +0x50 in these keys
   [0x8f]: true, // shooting statue
   [0x9f]: true, // vertical platform
   [0xa6]: true, // glitch in location $af (mado 2)
+};
+
+// These items are not necessary for any routing and may be shuffled
+// amongst themselves.  This is PRG addresses and the expected value.
+const BONUS_ITEMS = {
+  0x1a497: 0x2a, // power ring
+  0x095f0: 0x2b, // warrior ring
+  0x19def: 0x2c, // iron necklace
+  0x096f8: 0x2d, // deo's pendant
+  0x1a47d: 0x2f, // leather boots
+  0x3d2af: 0x30, // shield ring
 };

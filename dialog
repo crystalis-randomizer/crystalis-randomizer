@@ -70,3 +70,8 @@ The structure is as follows:
              s - if set, the flag will be cleared rather than set
              d - if set, then this is the last byte pair
              f,b - flag to mutate
+
+====
+
+PersonData - $680 is used as item to give in dialog action 3!
+ - this is first byte of persondata.

@@ -105,9 +105,10 @@ not as fun as we hope it to be.
         are often rendered as jumbled piles of melty coins
       * Projectiles are sometimes rendered incorrectly or even completely
         invisible
+* [ ] Monster shuffling fails to populate levels as fully as it should be able to
 * [ ] User interface is still very rough
 
 ## The Team
 
-* Programmer: SteveHicks (bmmpxf)
+* Programmer: Steve Hicks (bmmpxf)
 * Playtester and Lead Consultant: Mattrick_

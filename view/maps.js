@@ -44,7 +44,11 @@ class MapsView extends View {
   }
 
   setLocation(id, wd = undefined, ht = undefined) {
-    window.history.replaceState({}, '', '#loc=' + id.toString(16));
+    let hash = window.location.hash;
+    if (!/\bloc=([0-9a-f]*)\b/.test(hash)) {
+      hash = hash && hash.length > 1 ? `${hash}&loc=00` : '#loc=00';
+    }
+    window.history.replaceState({}, '', hash.replace(/\bloc=[0-9a-f]*/, `loc=${id.toString(16)}`));
     this.location = id;
     const lines = [
       `# Location [loc<0:1:$ff>:$${hex(id)}]`,
@@ -317,7 +321,20 @@ class MapsView extends View {
 }
 
 const run = async () => {
-  const rom = await Rom.load(document.location.hash);
+  const hash = {};
+  if (window.location.hash) {
+    // look for a patch to apply
+    for (const component of window.location.hash.substring(1).split('&')) {
+      const split = component.split('=');
+      hash[split[0]] = decodeURIComponent(split[1]);
+    }
+  }
+  let patch;
+  if (hash['patch']) {
+    const p = await loadModule(hash['patch']);
+    patch = p && p.apply ? (rom) => p.apply(rom, hash) : undefined;
+  }
+  const rom = await Rom.load(patch);
   window.rom = rom;
 
   const view = new MapsView(rom);
@@ -329,5 +346,13 @@ const fromTileY = (y) => (y >> 4) * 240 + (y & 0xf) * 16;
 const hex = (x) => x.toString(16).padStart(2, 0);
 
 const signed = (x) => x < 0x80 ? x : x - 0x100;
+
+const loadModule = (url) => {
+  if (/^\/|\./.test(url)) throw new Error(`bad extension url: ${url}`);
+  if (window.location.href.includes('github.io')) {
+    return import(`/${url}.js`).then(m => m && m.default);
+  }
+  return import(`../${url}.js`).then(m => m && m.default);
+}
 
 run();

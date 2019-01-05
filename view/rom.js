@@ -870,43 +870,6 @@ if (!window._rom) {window._rom = true; window._rom=new Rom(rom);}
     return projectiles;
   }
 
-  // build up a map of monster ID to "default difficulty"
-  get monsterLevels() {
-    const locationDifficulty = [
-      [0x00, 0x0b, 0],
-      [0x0c, 0x13, 2],
-      [0x14, 0x1f, 1],
-      [0x20, 0x3f, 2], // includes both west and north
-      [0x40, 0x57, 3], // waterfall valley
-      [0x58, 0x5f, 9], // tower
-      [0x60, 0x71, 4], // angry sea
-      [0x72, 0x8e, 5], // hydra
-      [0x8f, 0x9f, 7], // desert, pyramid front
-      [0xa0, 0xa6, 8], // pyramid back
-      [0xa7, 0xf1, 6], // fortress, etc
-      [0xf2, 0xff, 5], // mado
-    ];
-    const difficulties = [];
-    for (const [a, b, d] of locationDifficulty) {
-      for (let i = a; i <= b; i++) {
-        difficulties[i] = d;
-      }
-    }
-    let monsters = new Map();
-    for (const l of this.locations) {
-      if (!l || !l.objects) continue;
-      for (const o of l.objects) {
-        if ((o[2] & 7) != 0) continue;
-        const id = (o[3] + 0x50) & 0xff;
-        const diff = monsters.has(id) ? monsters.get(id) : 8;
-        monsters.set(id, Math.min(diff, difficulties[l.id]));
-      }
-    }
-    monsters = [...monsters];
-    monsters.sort((x, y) => (x[0] - y[0]));
-    return monsters;
-  }
-
   get monsterGraphics() {
     const gfx = {};
     for (const l of this.locations) {
@@ -965,8 +928,10 @@ if (!window._rom) {window._rom = true; window._rom=new Rom(rom);}
 
 
   // Use the browser API to load the ROM.  Use #reset to forget and reload.
-  static async load() {
-    return new Rom(await pickFile());
+  static async load(patch = undefined) {
+    const file = await pickFile();
+    if (patch) await patch(file);
+    return new Rom(file);
   }
 
   // Don't defrag yet???

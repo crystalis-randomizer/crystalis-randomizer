@@ -1235,7 +1235,7 @@ class MonsterPool {
       throw new Error(
           `Unexpected property '${u}' in MONSTER_ADJUSTMENTS[${location.id}]`);
     }
-    if (skip || !location.spritePatterns || !location.spritePalettes) return;
+    if (skip === true || !location.spritePatterns || !location.spritePalettes) return;
     const monsters = [];
     const slots = [];
     //const constraints = {};
@@ -1255,17 +1255,21 @@ class MonsterPool {
       const pal2 = pal.includes(2) ? location.spritePalettes[0] : null;
       const pal3 = pal.includes(3) ? location.spritePalettes[1] : null;
       monsters.push({id, pat, pal2, pal3, patBank});
-(this.report[`mon-${id.toString(16)}`] = this.report[`mon-${id.toString(16)}`] || []).push('$' + location.id.toString(16));
+(this.report[`start-${id.toString(16)}`] = this.report[`start-${id.toString(16)}`] || []).push('$' + location.id.toString(16));
       slots.push(slot);
     }
     if (!monsters.length) return;
-    this.locations.push({location, slots});
+    if (!skip) this.locations.push({location, slots});
     this.monsters.push(...monsters);
   }
 
   shuffle(random) {
+this.report['pre-shuffle locations'] = this.locations.map(l=>l.location.id);
+this.report['pre-shuffle monsters'] = this.monsters.map(m=>m.id);
     random.shuffle(this.locations);
     random.shuffle(this.monsters);
+this.report['post-shuffle locations'] = this.locations.map(l=>l.location.id);
+this.report['post-shuffle monsters'] = this.monsters.map(m=>m.id);
     while (this.locations.length) {
       const {location, slots} = this.locations.pop();
       let report = this.report['$' + location.id.toString(16).padStart(2, 0)] = [];
@@ -1293,6 +1297,10 @@ class MonsterPool {
           pat0 = 0x61;
         }
       }
+      // Cordel East and Kirisa Meadow have chests but don't need to actually draw them
+      // (though we may need to make sure it doesn't end up with some nonsense tile that
+      // ends up above the background).
+      if (location.id == 0x15 || location.id == 0x47) treasureChest = false;
 
       report.push(`Initial pass: ${[treasureChest, pat0, pat1, pal2, pal3].join(', ')}`);
 
@@ -1363,6 +1371,7 @@ report.push(`    pal: ${(m.pal2||0).toString(16)} ${(m.pal3||0).toString(16)}`);
             break;
           }
         }
+(this.report[`mon-${m.id.toString(16)}`] = this.report[`mon-${m.id.toString(16)}`] || []).push('$' + location.id.toString(16));
         const slot = slots[eligible];
         const objData = location.objects[slot - 0x0d];
         if (slot in nonFlyers) {
@@ -1435,7 +1444,13 @@ report.push(`    slot ${slot.toString(16)}: objData=${objData}`);
       if (pal2 != null) location.spritePalettes[0] = pal2;
       if (pal3 != null) location.spritePalettes[1] = pal3;
 
-      if (slots.length) report.push(`Failed to fill location ${location.id.toString(16)}: ${slots.length} remaining`);
+      if (slots.length) {
+        report.push(`Failed to fill location ${location.id.toString(16)}: ${slots.length} remaining`);
+        for (const slot of slots) {
+          const objData = location.objects[slot - 0x0d];
+          objData[0] = objData[1] = 0;
+        }
+      }
     }
   }
 }
@@ -1473,7 +1488,7 @@ const MONSTER_ADJUSTMENTS = {
     maxFlyers: 2,
   },
   [0x1a]: { // Swamp
-    skip: true,
+    skip: 'add',
     maxFlyers: 2,
     fixedSlots: {
       pat1: 0x4f,
@@ -1555,6 +1570,11 @@ const MONSTER_ADJUSTMENTS = {
   [0x4f]: { // Fog Lamp Cave 7
     // maxFlyers: 1,
   },
+  [0x57]: { // Waterfall Cave 4
+    fixedSlots: {
+      pat1: 0x4d,
+    },
+  },
   [0x59]: { // Tower Floor 1
     skip: true,
   },
@@ -1629,7 +1649,7 @@ const MONSTER_ADJUSTMENTS = {
       [0x12]: [0, -4],
       [0x13]: [0, 4],
       [0x14]: [-6, 0],
-      [0x15]: [10, 0],
+      [0x15]: [14, 12],
     },
   },
   [0x88]: { // Styx 1

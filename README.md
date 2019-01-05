@@ -13,13 +13,14 @@ original game.
 
 ## Status
 
-This randomizer is currently a pre-release beta version.  There is not currently
-a publicly-visible interface to generate randomized games (this will be
-addressed soon), and there are still many known issues and missing features that
-make the experience significantly less than smooth.  It has been put out here at
-this stage to give people an idea of what we're eventually working toward, with
-the understanding that there are still plenty of rough edges that will make it
-not as fun as we hope it to be.
+This randomizer is currently a pre-release beta version, and there are
+still many known issues and missing features that make the experience
+significantly less than smooth.  It has been put out here at this
+stage to give people an idea of what we're eventually working toward,
+with the understanding that there are still plenty of rough edges that
+will make it not as fun as we hope it to be.
+
+Try it out at https://shicks.github.io/crystalis-randomizer/
 
 ## Features
 

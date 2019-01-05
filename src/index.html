@@ -1,0 +1,26 @@
+<script type="module" src="main.js"></script>
+<div id="notice" style="display:none">
+Note: this tool currently only works in current versions of Google Chrome
+</div>
+<script>
+// Display a message if the main script hasn't already removed it.
+setTimeout(function() {
+  var notice = document.getElementById('notice');
+  if (notice) notice.style.display = 'block';
+}, 1000);
+</script>
+<div id="controls" style="display:none">
+  <!-- Upload dialog -->
+  <div>
+    ROM: <span id="previousfile"></span
+        ><input style="display:none" type="submit" id="clear" value="Clear"
+        ><input type="file" id="upload">
+  </div>
+  <div>
+    Seed: <input type="text" id="seed" value="">
+    <input type="submit" id="generate" value="New Seed">
+  </div>
+  <div>
+    <input type="submit" id="shuffle" value="Shuffle">
+  </div>
+</div>

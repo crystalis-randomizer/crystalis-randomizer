@@ -1,0 +1,261 @@
+# Areas
+
+## Leaf
+
+$00 Mezame Shrine
+Connected:
+ - Outside Start
+
+$01 Outside Start
+Connected:
+ - Town
+
+$02 Town
+Connected:
+ - Elder's House
+ - Rabbit Hut
+ - Inn
+ - Tool Shop
+ - Armor Shop
+
+$c0 Elder's House
+Provides:
+ - Talked to Leaf Elder
+
+$c1 Rabbit Hut
+Provides:
+ - Talked to Leaf Rabbit IF Villagers Abucted
+
+$c2 Inn
+
+$c3 Tool Shop
+Provides:
+ - Alarm Flute
+
+$c4 Armor Shop
+
+$c5 Student House
+Provides:
+ - Talked to Student
+
+
+
+## Valley of Wind
+
+$03 Main
+Connected:
+ - Zebu's Cave
+ - Windmill Cave
+ - TO Sealed Cave: Tunnel 1 IF Windmill Started
+Provides:
+ - Refresh IF Windmill Started
+
+$03 Outside Windmill
+Connected:
+ - Windmill Cave
+ - Windmill
+
+$0e Windmill Cave
+Provides:
+ - Windmill Guard IF Alarm Flute
+
+$0f Windmill
+Provides:
+ - Windmill Started IF Windmill Key
+
+$10 Zebu's Cave
+Connected:
+ - Zebu's Cave Past Wall IF Can Destroy Ice
+Provides:
+ - Talked to Zebu in Cave IF Talked to Leaf Elder AND Talked to Student
+ - Refresh IF Talked to Zebu in Cave AND Windmill Started
+
+$10 Zebu's Cave Past Wall
+Provides:
+ - Villagers Abducted       (TODO - IF Talked to Zebu in Cave)
+
+
+
+## Sealed Cave
+
+$04 Tunnel 1
+Connected:
+ - TO Valley of Wind: Main
+ - Tunnel 2
+
+$05 Tunnel 2
+Connected:
+ - Tunnel 3 Front
+
+$09 Tunnel 3 Front
+Connected:
+ - Tunnel 3 Back IF Can Destroy Stone
+ - Tunnel 4
+ - Tunnel 5 
+
+$09 Tunnel 3 Back
+Connected:
+ - Tunnel 6
+ - Tunnel 7
+
+$07 Tunnel 4
+Connected:
+ - Tunnel 4 Dead End IF Can Destroy Stone
+Chests:
+ - $50 Medical Herb
+ - $05 Ball of Wind
+
+$07 Tunnel 4 Dead End
+Chests:
+ - $1e Antidote
+
+$08 Tunnel 5
+Chests:
+ - $24 Warp Boots
+
+$06 Tunnel 6
+Chests:
+ - $1d Medical Herb
+
+$0a Tunnel 7
+Connected:
+ - Tunnel 8
+Boss:
+ - Vampire 1
+
+$0c Tunnel 8
+Connected:
+ - Tunnel 8 Exit IF Can Destroy Stone
+
+$0c Tunnel 8 Exit
+Connected:
+ - Cordel Plain West
+
+
+
+## Cordel Plain
+
+$14 West
+Connected:
+ - Brynmaer Town
+ - East
+ - Mt Sabre West: Cordel Plain Entrance
+ - Outside Stom's Hut
+ - South IF Can Cross Rivers
+
+$14 South
+Connected:
+ - Amazones Town
+
+$15 East
+Connected:
+ - Swamp IF Gas Mask
+ - Mt Sabre North IF Villagers Abducted AND Talked to Tornel on Mt Sabre
+Chests:
+ - $25 Onyx Statue IN $18
+
+$19 Outside Stom's Hut
+Connected:
+ - Stom's Hut
+
+$1a Swamp
+.......
+
+
+
+## Brynmaer
+
+$18 Town
+Connected:
+ - Tavern
+ - Pawn Shop
+ - Inn
+ - Armor Shop
+ - Tool Shop
+Provides:
+ - Returned Statue to Akahana IF Onyx Statue
+
+$c6 Tavern
+
+$c7 Pawn Shop
+
+$c8 Inn
+
+$c9 Armor Shop
+
+$cb Tool Shop
+
+
+# BOTTOM
+
+Condition Destroy Stone
+  Requirement: Sword of Wind
+  Requirement: Ball of Wind
+
+Condition Cross Rivers
+  Option 1: freeze
+    Requirement: Sword of Water
+    Requirement: Ball of Water
+  Option 2: fly
+    Requirement: FLight
+
+Location $00 Mezame Shrine
+
+Location $03 Valley of Wind
+  Segment 0: main
+    Exit: Leaf
+    Exit: Mezame Shrine
+    Exit: Zebu's Cave
+    Exit: Windmill Cave
+    Exit: Sealed Cave 1
+      Requirement: Windmill Started
+
+  Segment 1: windmill
+    Exit: Windmill Cave
+    Exit: Windmill
+
+Location $04 Sealed Cave 1
+  Exit: Sealed Cave 2
+
+Location $05 Sealed Cave 2
+  Exit: Sealed Cave 6:0
+
+Location $06 Sealed Cave 3
+  Chest: $1d Medical Herb
+
+Location $07 Sealed Cave 4
+  Segment 0:
+    Exit: 
+
+Location $09 Sealed Cave 6
+  Segment 0:
+    Exit: 
+
+
+Location $00 Mezame Shrine
+==========================
+
+Entrances:
+ * 0: starting point
+ * 1: bottom
+
+Exits:
+ * 0,1,2,3: bottom -> $01:0
+
+
+Location $01 Leaf - Outside Start
+=================================
+
+Segment 1
+---------
+
+Entrances:
+ * 0: from right
+ * 1: from top
+ * 2: from inn
+ * 3: from ...
+
+Exits:
+ * 0,1: to right
+ * 1: 
+

@@ -1,0 +1,124 @@
+Scaling swords
+
+* Use upgrades, rather than element, to determine damage
+  - Sword only: 5
+  - Sword + Ball: 7
+  - Sword + Bracelet: 11
+* Fixed damage from stab across all swords: 2
+
+Under this model, the damage the player deals will vary from 8 (at level 1 and no upgrades)
+to 29 (at level 16 with all upgrades).  Round this up to 32, since warrior/power ring will
+be available by then.
+
+Across 47 items, this amounts to a 0.5 increase per each.  This makes the mid-game slightly
+easier since you're likely to have found matching balls and bracelets sooner (though we
+didn't account for matching sword, so it's a little longer).
+
+Monster scaled DEF is a number from 0..7, except for special cases.
+Indicates how many points should be from def, how many fro hp
+At diff 0, <PAtk> = 8, SDEF 4 -> DEF 4 -> 4 dmg per hit
+At diff 16, <PAtk> = 16, SDEF 4 -> DEF 8 -> 8 dmg per hit
+At diff 48, <PAtk> = 32, SDef 4 -> DEF 16 -> 16 dmg per hit
+
+This doesn't scale well to draygon 2.
+How about, DEF = max(0, PAtk - SDEF) * SDEF / 8
+Note: In vanilla, storm bracelet on Draygon 2 w/ power ring does 7*10 damage
+
+At lvl 16, max difficulty, SDef 10, this would be DEF=22*1.25=30 but cf atk 51 -> 20 per hit
+ - may need special handling for bosses where charged shots are more likely?
+
+Power ring could just double the object damage?
+ - so +2 for stab, +8 for storm, etc?
+ - not quite as game-breaking...
+ - or add level for charges only
+
+SDEF stores two numbers: (1) DEF as a fraction of <PAtk> (in 8ths) and (2) expected sword level
+ -> 4 bits for each => if low >7 then need high to be nonzero!
+
+Or maybe just a straight up difference between PAtk and DEF?
+ - will want to allow negatives for bosses
+
+Draygon 2, diff 30 -> patk=21, sdef=3 -> def=24
+                lvl=11 => 11+16=27 -> 3 per hit, 14 with power ring
+
+           OR just a bit to say whether to assume power ring?
+             - in which case just add the level ?
+           OR <<1 so draygon2 would base on 6+16=22 per hit
+
+           sword adj = 12  =>  9 per hit, 20 hits --> 180
+           diff 48 -> patk=29, sdef=3 -> def=32
+                lvl=16 => 32 -> 0 per hit, 16 w/ power 
+                 adj = 12  =>  12 per hit, 20 hits --> 240
+
+How important is the sword adjustment?  In general we can ignore it since
+we're balancing the swords out, but it's still important for super-high DEF
+fights.  This probably only applies to Draygon and Dyna.
+ - given this, just hardcode their behavior?
+ - for the standard case, multiply by PAtk, should not be more than 7/8.
+
+Power ring will be a 16/hit swing, and at high DEF that's a big scale factor
+ - if we make def == max atk then power ring is only 16 hits (rather than 25)
+   yet no power ring is 255.
+ - clearly we need to nerf the power ring - even just adding the level on top
+   again only for projectiles is still over-powered.  We could double the
+   projectile damage?  This emphasizes water too much... also hard to implement
+   because same code path for sword and shot.
+
+
+DEF is what causes power ring to be so OP
+But it's also the main driving force for grinding
+Power ring alternatively means you only need to grind to half
+
+Consider a compromise - DEF stat is split in 2
+  - 2 bits for shift, 6 for subtraction
+  - DMG = (ATK + SWD - DEF) >> DSH
+
+Effectively allows HP up to 2048.
+
+Draygon 2
+ - at diff 20, PAtk=18, SDef=0.75 => DEF=13
+   sword adjust = 6, hits = 30
+   => expected dmg = 11 => HP = 330 (165, 1)
+   lvl 9 => 17 w/, 33 without
+   lvl 12 => 13 w/, 24 without
+
+ - at diff 30, PAtk=23, SDef=0.75 => DEF=17
+   sword adjust = 6, hits = 30
+   => expected dmg = 12 => HP = 360 (180, 1)
+   lvl 10 => 24 hits w/ power ring, 48 without
+   lvl 13, no power ring => 13+8+8 = 29 => 12/hit => 30 hits
+   lvl 13, w/ power ring => 26+8+8 = 42 => 25/hit => 15 hits
+   lvl 16, w/ power ring =>   + 6 =>  48 => 31    => 12 hits
+ - at diff 47, PAtk=31, SDef=0.75, DEF=23
+   sword adj = 6, hits = 30
+   => expected dmg = 31 + 6 = 37 => 14  => HP = 420
+   lvl 16 => 42 w/o, 16 w/  => power ring more important at high difficulty
+   lvl 13 => 105 w/o, 24 w/    makes it possible at all to kill...
+
+possibly we actually want 0.875 or even 1.0 DEF to really force/reward grinding...
+
+Draygon 2
+ - at diff 20, PAtk=18, SDef=0.875 => DEF=15
+   sword adjust = 6, hits = 30
+   => expected dmg = 9 => HP = 270 (135, 1)
+   lvl 6 => 21 w/, 39 without
+   lvl 9 => 19 w/, 27 without
+
+ - at diff 30, PAtk=23, SDef=0.875 => DEF=20
+   sword adjust = 6, hits = 30
+   => expected dmg = 9 => HP = 270 (135, 1)
+   lvl 10 => 17 hits w/ power ring, 45 without
+   lvl 13 => 13 w/, 30 w/o, 17 power stabs
+   lvl 16, w/ power ring =>   + 6 =>  48 => 31    => 12 hits
+ - at diff 47, PAtk=31, SDef=0.875, DEF=27
+   sword adj = 6, hits = 30
+   => expected dmg = 31 + 6 = 37 => 10  => HP = 300
+   lvl 16 => 42 w/o, 16 w/  => power ring more important at high difficulty
+   lvl 13 => 150 w/o, 20 w/    makes it possible at all to kill...
+
+NOTE: -3 w/ power ring is *always* going to be better than at-level w/o if lvl>3...
+
+Draygon 2 => 7/8, +8, 30 hits
+Most others => just use whatever it already was /8, don't adjust sword...
+
+Note: we can still stab draygon in a reasonable number of hits

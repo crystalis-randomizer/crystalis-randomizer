@@ -107,6 +107,11 @@ not as fun as we hope it to be.
         invisible
 * [ ] Monster shuffling fails to populate levels as fully as it should be able to
 * [ ] User interface is still very rough
+* [ ] It's possible to lose items given by NPCs if the inventory is full (unlike
+      chests that just don't open). Find a better story for this (possibly set
+      flags for full inventory rows and then add an extra dialog in front of
+      the give dialog if it would e lost?), as well as a better way to tell the
+      player what they would be getting.
 
 ## The Team
 

@@ -1,0 +1,28 @@
+#!/usr/bin/perl
+
+# Usage: cov <line>
+# Result: <first frame> <last frame>
+# Assumes files cov.f0 and cov.fN exist.
+
+use strict;
+use warnings;
+use File::Basename;
+
+#print "INPUT: [@ARGV]\n";
+
+$_ = $ARGV[0];
+$_ = hex($_) if s/^\$//;
+$_ += 1; # sed is 1-based indexing
+#print STDERR "checking $_\n";
+
+my $dir = dirname $0;
+my $f0 = `sed -n ${_}p $dir/cov.f0`;
+my $fN = `sed -n ${_}p $dir/cov.fN`;
+#print STDERR "lines $f0      $fN";
+
+$f0 =~ /^[0-9a-f]{8}: ([0-9a-f]{8})/ or die "bad line $f0";
+$f0 = hex($1);
+$fN =~ /^[0-9a-f]{8}: ([0-9a-f]{8})/ or die "bad line $fN";
+$fN = hex($1);
+
+print "$f0 .. $fN\n";

@@ -22374,24 +22374,24 @@ ItemGetTable                     ;  0   1   2   3   4   5   6   7   8   9   a   
         $1ded8              .byte $xx,$xx ; Set: 106
         $1deda              .byte $xx,$xx ; Set: 0c7 chest:23:fruit of repun
         $1dedc              .byte $xx
-	;; 24
+	;; 24 Warp Boots (Sealed Cave)
         $1dedd              .byte $xx,$xx
         $1dedf              .byte $xx,$xx
         $1dee1              .byte $xx,$xx ; Set: 0c8 chest:24:warp boots
         $1dee3              .byte $xx
-	;; 6a
+	;; 6a Warp Boots (Mt Sabbre West Dead End)
         $1dee4              .byte $xx,$xx
         $1dee6              .byte $xx,$xx
         $1dee8              .byte $xx,$xx ; Set: 0c9 chest:6a:warp boots
         $1deea              .byte $xx
-	;; 3d
+	;; 3d Ivory Statue
         $1deeb              .byte $xx,$xx
         $1deed              .byte $xx,$xx
         $1deef              .byte $xx,$xx ; Set: 108
         $1def1              .byte $xx,$xx ; Set: 024
         $1def3              .byte $xx,$xx ; Set: 0ca chest:3d:ivory statue
         $1def5              .byte $xx
-	;; 2a
+	;; 2a Power Ring
         $1def6              .byte $xx,$xx
         $1def8              .byte $xx,$xx
         $1defa              .byte $xx,$xx ; Set: 0cb chest:2a:power ring

@@ -9,6 +9,12 @@ import {Graph2} from './graph.js';
 export const graph = new Graph2();
 
 
+const item = (id, name) => {
+  // Items are both nodes and edges.
+  return {};
+
+};
+
 
 ////////////////////////////////////////////////////////////////
 // Items
@@ -129,6 +135,7 @@ const medicalHerb$70        = medicalHerb .at(0x70); // Mimic???
 
 const talkedToLeafElder     = trigger('Talked to Leaf Elder', swordOfWind);
 const talkedToLeafStudent   = trigger('Talked to Leaf Student');
+const buyAlarmFlute         = trigger('Buy alarm flute', alarmFlute);
 const talkedToZebuInCave    = trigger('Talked to Zebu in cave');
 const wokeUpWindmillGuard   = trigger('Woke up Windmill Guard', windmillKey);
 const startedWindmill       = trigger('Started Windmill');
@@ -154,11 +161,14 @@ const healedDolphin         = trigger('Healed Dolphin', shellFlute);
 const returnedFogLamp       = trigger('Returned Fog Lamp');
 const talkedToKensuInCabin  = trigger('Talked to Kensu in Cabin');
 const talkedToJoelElder     = trigger('Talked to Joel Elder');
+const talkedToClark         = trigger('Talked to Clark', eyeGlasses);
 const talkedToKensuInLighthouse = trigger('Talked to Kensu in Lighthouse', glowingLamp);
-
 const calmedSea             = trigger('Calmed the Angry Sea');
 const learnedBarrier        = trigger('Learned Barrier', barrier);
-const foundKensuInSwan      = trigger('Found Kensu in Swan', change);
+const talkedToStomInSwan    = trigger('Talked to Stom in Swan Hut');
+const talkedToKensuInTavern = trigger('Talked to Kensu in Swan tavern');
+const talkedToKensuAtDance  = trigger('Talked to Kensu at Swan dance');
+const returnedLovePendant   = trigger('Returned Kensu\'s love pendant', change);
 const talkedToAmazonesQueen = trigger('Talked to Amazones Queen', bowOfMoon);
 const talkedToZebuInShyron  = trigger('Talked to Zebu in Shyron', keyToStyx);
 const shyronMassacre        = trigger('Shyron Massacre');
@@ -878,57 +888,110 @@ const pyramidBackTeleporter = location(0xa7, PYRB, 'Teleporter',
 
 const fortressEntrance      = location(0xa8, DRG1, 'Entrance',
                                        connect(goa),
-                                       // TODO - need to add talkedToZebuinShyron
+                                       // TODO - need to add talkedToZebuInShyron
                                        trigger(shyronMassacre, swordOfThunder));
+const fortress1a            = location(0xa9, DRG1, 'Main',
+                                       from(fortressEntrance, destroyIron)); // 2a8
+const fortress1Boss         = location(0xa9, DRG1, 'Boss',
+                                       connect(fortress1a),
+                                       boss(kelbesque2));
+const fortressZebu          = location(0xaa, DRG1, 'Zebu', connect(fortress1Boss));
+const fortress2a            = location(0xab, DRG2, 'Entrance', connect(fortressZebu));
+const fortress2b            = location(0xab, DRG2, 'Dead End Behind Iron (fruit of power)',
+                                       connect(fortress2a, destroyIron), // 13, 29f
+                                       chest(fruitOfPower$62)); // 1c
+const fortress2c            = location(0xab, DRG2, 'Dead End Loop Across Closer Bridges',
+                                       connect(fortress2a, crossRivers), // 19, 2a6
+                                       connect(fortress2a, crossRivers)); // 1b, 2a0
+const fortress2d            = location(0xab, DRG2, 'Across First Bridge (fruit of repun)',
+                                       connect(fortress2a, crossRivers), // 1a, 2a5
+                                       chest(fruitOfRepun$66)); // 1e
+const fortress2e            = location(0xab, DRG2, 'Across Second Bridge',
+                                       connect(fortress2d, crossRivers)); // 18, 2a4
+const fortress2f            = location(0xab, DRG2, 'Dead End Across Two Bridges ()',
+                                       connect(fortress2e, crossRivers), // 15, 2a1
+                                       connect(fortress2e, crossRivers), // 17, 2a3
+                                       chest(lysisPlant$5d)); // 1d
+const fortress2g            = location(0xab, DRG2, 'Across Third Bridge',
+                                       connect(fortress2e, crossRivers)); // 16, 2a2
+const fortress2h            = location(0xab, DRG2, 'Exit Behind Iron Door',
+                                       connect(fortress2g, destroyIron)); // 14, 29e
+const fortress2Boss         = location(0xac, DRG2, 'Boss', connect(fortress2h), boss(sabera2));
+const fortressTornel        = location(0xac, DRG2, 'Tornel', connect(fortress2Boss));
+const fortress3Lower        = location(0xad, DRG3, 'Lower',
+                                       connect(fortressTornel),
+                                       chest(opelStatue$63), // 1a
+                                       chest(magicRing$6f)); // 1b
+const fortress3UpperLoop    = location(0xae, DRG3, 'Upper Loop',
+                                       connect(fortress3Lower),
+                                       chest(antidote$60)); // 16
+const fortress3UpperDeadEnd = location(0xae, DRG3, 'Upper Loop Behind Wall (magic ring)',
+                                       connect(fortress3Upper, destroyIron), // 15, 29d
+                                       chest(magicRing$6b)); // 17
+const fortress3UpperPassage = location(0xaf, DRG3, 'Upper Passage (toward Mado)',
+                                       connect(fortress3Lower),
+                                       chest(magicRing$54)); // 1b
+const fortress4a            = location(0xb0, DRG4, 'Initial Fork');
+const fortress4b            = location(0xb1, DRG4, 'Left Branch', connect(fortress4a));
+const fortress4c            = location(0xb2, DRG4, 'Main Area (right branch, over bridges)',
+                                       connect(fortress4a));
+const fortress4d            = location(0xb3, DRG4, 'U-shaped Passage (between floors)',
+                                       connect(fortress4c));
+const fortress4e            = location(0xb4, DRG4, 'Main Area Lower (under bridge)',
+                                       connect(fortress4b),
+                                       connect(fortress4c),
+                                       connect(fortress4d));
+const fortress4f            = location(0xb4, DRG4, 'Behind Iron Wall',
+                                       connect(fortress4e, destroyIron)); // 16, 29c
+const fortress4g            = location(0xb5, DRG4, 'Lower',
+                                       connect(fortress4f),
+                                       mimic(0x0d), mimic(0x0e), mimic(0x0f),
+                                       chest(magicRing$58), // 17
+                                       chest(warpBoots$6e)); // 18
+const fortress4h            = location(0xb6, DRG4, 'Boss Corridor', connect(fortress4g));
+const fortress4Boss         = location(0xb6, DRG4, 'Boss',
+                                       connect(fortress4h),
+                                       boss(karmine));
+const fortress4End          = location(0xb6, DRG4, 'Behind Boss (stormBracelet)',
+                                       connect(fortress4Boss),
+                                       chest(stormBracelet)); // 12
+const fortressExit          = location(0xb7, DRG4, 'Exit Stairs');
+const oasisCaveEntranceBack = location(0xb8, OASC, 'Entrance Back (behind river)',
+                                       connect(fortressExit),
+                                       chest(fruitOfPower$5a)); // 0d
+const oasisCaveEntrance     = location(0xb8, OASC, 'Entrance Front',
+                                       connect(oasisCaveEntranceBack, flight),
+                                       connect(desert1),
+                                       connect(oasisCave1));
+const fortress3Boss         = location(0xb9, DRG3, 'Boss',
+                                       connect(fortress3UpperPassage),
+                                       boss(mado2));
+const fortressAsina         = location(0xb9, DRG3, 'Asina',
+                                       connect(fortress3Boss),
+                                       connect(fortress4a));
+const fortressKensu         = location(0xba, DRG4, 'Kensu',
+                                       connect(fortress4f),
+                                       // TODO - fix the logic to be two-way.
+                                       to(fortressExit),
+                                       trigger(savedKensu, ivoryStatue));
 
-// $92	Desert Cave 1
-// $93	Sahara
-// $94	Sahara - Outside Cave
-// $95	Desert Cave 2
-// $96	Sahara Meadow
-// $98	Desert 2
-// $9c	Pyramid Front - Entrance
-// $9d	Pyramid Front - Branch
-// $9e	Pyramid Front - Main
-// $9f	Pyramid Front - Draygon
-// $a0	Pyramid Back - Entrance
-// $a1	Pyramid Back - Hall 1
-// $a2	Pyramid Back - Branch
-// $a3	Pyramid Back - Dead End Left
-// $a4	Pyramid Back - Dead End Right
-// $a5	Pyramid Back - Hall 2
-// $a6	Pyramid Back - Draygon Revisited
-// $a7	Pyramid Back - Teleporter
-// $a8	Goa Fortress - Entrance
-// $a9	Goa Fortress - Kelbesque
-// $aa	Goa Fortress - Zebu
-// $ab	Goa Fortress - Sabera
-// $ac	Goa Fortress - Tornel
-// $ad	Goa Fortress - Mado 1
-// $ae	Goa Fortress - Mado 2
-// $af	Goa Fortress - Mado 3
-// $b0	Goa Fortress - Karmine 1
-// $b1	Goa Fortress - Karmine 2
-// $b2	Goa Fortress - Karmine 3
-// $b3	Goa Fortress - Karmine 4
-// $b4	Goa Fortress - Karmine 5
-// $b5	Goa Fortress - Karmine 6
-// $b6	Goa Fortress - Karmine 7
-// $b7	Goa Fortress - Exit
-// $b8	Oasis Cave - Entrance
-// $b9	Goa Fortress - Asina
-// $ba	Goa Fortress - Kensu
-// $bb	Goa - House
-// $bc	Goa - Inn
-// $be	Goa - Tool Shop
-// $bf	Goa - Tavern
+// Inside Buildings
+
+const goaHouse              = location(0xbb, GOA,  'House', connect(goa),
+                                       // TODO - consider removing ivory statue requirement?
+                                       trigger(talkedToAkahanaFriend, change, ivoryStatue));
+const goaInn                = location(0xbc, GOA,  'Inn', connect(goa, enteredShyron));
+const goaToolShop           = location(0xbe, GOA,  'Tool Shop', connect(goa, enteredShyron));
+const goaTavern             = location(0xbf, GOA,  'Tavern', connect(goa));
 const leafElderHouse        = location(0xc0, LEAF, 'Elder House', connect(leaf),
                                        trigger(talkedToLeafElder));
 const leafRabbitHut         = location(0xc1, LEAF, 'Rabbit Hut', connect(leaf),
                                        trigger(talkedToLeafRabbit, villagersAbducted, telepathy));
 const leafInn               = location(0xc2, LEAF, 'Inn', connect(leaf));
-const leafToolShop          = location(0xc3, LEAF, 'Tool Shop', connect(leaf));
-const leafItemShop          = location(0xc4, LEAF, 'Item Shop', connect(leaf));
+const leafToolShop          = location(0xc3, LEAF, 'Tool Shop',
+                                       connect(leaf),
+                                       trigger(buyAlarmFlute));
+const leafArmorShop         = location(0xc4, LEAF, 'Armor Shop', connect(leaf));
 const leafStudentHouse      = location(0xc5, LEAF, 'Student House', connect(leaf),
                                        trigger(talkedToLeafStudent));
 const brynmaerTavern        = location(0xc6, BRYN, 'Tavern', connect(brynmaer));
@@ -948,7 +1011,7 @@ const oakInn                = location(0xd0, OAK,  'Inn', from(oak, telepathy));
 const amazonesInn           = location(0xd1, AMZN, 'Inn', connect(amazones));
 const amazonesToolShop      = location(0xd2, AMZN, 'Tool Shop', connect(amazones));
 const amazonesArmorShop     = location(0xd3, AMZN, 'Armor Shop', connect(amazones));
-const amazonesQueenHpouse   = location(0xd4, AMZN, 'Queen\'s House', from(amazones, change));
+const amazonesQueenHouse    = location(0xd4, AMZN, 'Queen\'s House', from(amazones, change));
 const nadare                = location(0xd5, NADR, 'Nadare\'s',
                                        connect(mtSabreNorthEntrance),
                                        connect(nadareInn),
@@ -979,30 +1042,53 @@ const portoaPalaceRight     = location(0xe0, PORT, 'Palace Right', connect(porto
 const portoaAsinaRoom       = location(0xe1, PORT, 'Asina\'s Room',
                                        connect(undergroundChannel4),
                                        trigger(talkedToAsina, ballOfWater)); // TODO - trigger?
-// $e2	Amazones - Elder Downstairs
-// $e3	Joel - Elder House
-// $e4	Joel - Shed
-// $e5	Joel - Tool Shop
-// $e7	Joel - Inn
-// $e8	Zombie Town - House
-// $e9	Zombie Town - House Basement
-// $eb	Swan - Tool Shop
-// $ec	Swan - Stom Hut
-// $ed	Swan - Inn
-// $ee	Swan - Armor Shop
-// $ef	Swan - Tavern
-// $f0	Swan - Pawn Shop
-// $f1	Swan - Dance Hall
-// $f2	Shyron - Temple
-// $f3	Shyron - Training Hall
-// $f4	Shyron - Hospital
-// $f5	Shyron - Armor Shop
-// $f6	Shyron - Tool Shop
-// $f7	Shyron - Inn
-// $f8	Sahara - Inn
-// $f9	Sahara - Tool Shop
-// $fa	Sahara - Elder House
-// $fb	Sahara - Pawn Shop
-
-
-
+const amazonesQueenDownstairs = location(0xe2, AMZN, 'Queen Downstairs',
+                                         connect(amazonesQueenHouse),
+                                         chest(blizzardBracelet)); // 0d
+const joelElderHouse        = location(0xe3, JOEL, 'Elder\'s House',
+                                       connect(joel),
+                                       trigger(talkedToJoelElder));
+const joelShed              = location(0xe4, JOEL, 'Shed',
+                                       connect(joel),
+                                       to(joelSecretPassage, eyeGlasses));
+const joelToolShop          = location(0xe5, JOEL, 'Tool Shop',
+                                       connect(joel),
+                                       trigger(buyAlarmFlute));
+const joelInn               = location(0xe7, JOEL, 'Inn', connect(joel));
+const zombieTownHouse       = location(0xe8, EVIL, 'Zombie Town House', connect(zombieTown));
+const zombieTownBasement    = location(0xe9, EVIL, 'Zombie Town Basement',
+                                       connect(zombieTownHouse),
+                                       // TODO - correct trigger when shuffling bosses?
+                                       trigger(talkedToClark, sabera2));
+const swanToolShop          = location(0xeb, SWAN, 'Tool Shop', connect(swan));
+const swanStomHut           = location(0xec, SWAN, 'Stom\'s Hut',
+                                       connect(swan),
+                                       trigger(talkedToStomInSwan));
+const swanInn               = location(0xed, SWAN, 'Inn', connect(swan));
+const swanArmorShop         = location(0xee, SWAN, 'Armor Shop', connect(swan));
+const swanTavern            = location(0xef, SWAN, 'Tavern',
+                                       connect(swan),
+                                       trigger(talkedToKensuInTavern,
+                                               talkedToStomInSwan, paralysis));
+const swanPawnShop          = location(0xf0, SWAN, 'Pawn Shop', connect(swan));
+const swanDanceHall         = location(0xf1, SWAN, 'Dance Hall',
+                                       connect(swan),
+                                       trigger(talkedToKensuAtDance,
+                                               talkedToKensuInTavern, paralysis),
+                                       trigger(returnedLovePendant,
+                                               talkedToKensuAtDance, lovePendant));
+const shyronTemple1         = location(0xf2, SHYR, 'Temple (pre-massacre)',
+                                       connect(shyron),
+                                       trigger(talkedToZebuInShyron));
+const shyronTemple2         = location(0xf2, SHYR, 'Temple (post-massacre)',
+                                       connect(shyron, shyronMassacre),
+                                       boss(mado1));
+const shyronTrainingHall    = location(0xf3, SHYR, 'Training Hall', connect(shyron));
+const shyronHospital        = location(0xf4, SHYR, 'Hospital', connect(shyron));
+const shyronArmorShop       = location(0xf5, SHYR, 'Armor Shop', connect(shyron));
+const shyronToolShop        = location(0xf6, SHYR, 'Tool Shop', connect(shyron));
+const shyronInn             = location(0xf7, SHYR, 'Inn', connect(shyron));
+const saharaInn             = location(0xf8, SHRA, 'Inn', connect(sahara));
+const saharaToolShop        = location(0xf9, SHRA, 'Tool Shop', connect(sahara));
+const saharaElderHouse      = location(0xfa, SHRA, 'Elder\'s House', connect(sahara));
+const saharaPawnShop        = location(0xfb, SHRA, 'Pawn Shop', connect(sahara));

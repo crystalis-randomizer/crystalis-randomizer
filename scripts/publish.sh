@@ -16,6 +16,8 @@ TMP=$(mktemp -d)
 )
 (
   cp notes/depgraph.svg $TMP/r/
+  cp notes/locations.svg $TMP/r/
+  cp notes/traversal.txt $TMP/r/
   cd src
   cp *.js *.css $TMP/r
   cp view/*.js view/*.css $TMP/r/view/

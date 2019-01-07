@@ -1,0 +1,498 @@
+Leaf: Mezame Shrine
+Leaf: Outside Start
+Leaf: Town
+Leaf: Student House
+Talked to Leaf Student
+Leaf: Armor Shop
+Leaf: Tool Shop
+Buy alarm flute
+Alarm Flute
+Leaf: Inn
+Leaf: Rabbit Hut
+Leaf: Elder House
+Talked to Leaf Elder
+Sword of Wind
+Any sword
+Valley of Wind: Main
+Valley of Wind: Zebu's Cave Front
+Talked to Zebu in cave
+Valley of Wind: Windmill Cave
+Woke up Windmill Guard
+Windmill Key
+Valley of Wind: Outside Windmill
+Valley of Wind: Windmill
+Started Windmill
+Learned Refresh
+Refresh
+Sealed Cave: Tunnel 1 (entrance)
+Sealed Cave: Tunnel 2 (over bridge)
+Sealed Cave: Tunnel 3a (branch, front)
+Sealed Cave: Tunnel 5 (warp boots dead end)
+Warp Boots
+Sealed Cave: Tunnel 4a (ball corridor)
+Ball of Wind
+Destroy stone
+Sealed Cave: Tunnel 3b (branch, back)
+Sealed Cave: Tunnel 7 (boss)
+Vampire 1
+Sealed Cave: Tunnel 8a (exit, above wall)
+Sealed Cave: Tunnel 8b (exit, below wall)
+Cordell Plain: West
+Mt Sabre West: Entrance
+Mt Sabre West: Tunnel 2a (fork at start)
+Mt Sabre West: Tunnel 1 (to Zebu)
+Valley of Wind: Zebu's Cave Back
+Villagers Abducted
+Cordell Plain: Outside Stom's House
+Cordell Plain: Stom's House
+Brynmaer: Town
+Brynmaer: Tool Shop
+Brynmaer: Armor Shop
+Brynmaer: Inn
+Brynmaer: Pawn Shop
+Brynmaer: Tavern
+Cordell Plain: East
+Statue of Onyx
+Gave Statue to Akahana
+Gas Mask
+Cordell Plain: Swamp
+Oak: Town
+Visited Oak
+Fought Stom
+Telepathy
+Talked to Rabbit in Leaf
+Oak: Inn
+Oak: Tool Shop
+Oak: Mother's House
+Talked to Oak Mother
+Rescued Oak Child
+Talked to Oak Mother Again
+Insect Flute
+Oak: Elder House
+Talked to Oak Elder
+Sword of Fire
+Fire/Water/Thunder
+Cordell Plain: Swamp Insect Area
+Insect
+Ball of Fire
+Destroy ice
+Mt Sabre West: Tunnel 2c (right branch to upper)
+Mt Sabre West: Tunnel 3a (tunnel to upper, with herb chest)
+Medical Herb $52
+Medical Herb
+Mt Sabre West: Tunnel 3b (tunnel to upper, branch below ice)
+Mt Sabre West: Tunnel 4a (branch to upper or Tornel)
+Mt Sabre West: Tunnel 5 (tiny connector)
+Mt Sabre West: Tunnel 6a (exit to Tornel, above ice)
+Mt Sabre West: Tunnel 6b (exit to Tornel, below ice)
+Mt Sabre West: Tornel Dead End
+Magic Ring $69
+Magic Ring
+Mt Sabre West: Tunnel 4b (out to upper)
+Mt Sabre West: Upper
+Mt Sabre West: Tunnel 2b (left branch to dead end)
+Mt Sabre West: Dead End (warp boots)
+Warp Boots $6a
+Rabbit Boots
+Climb slopes
+Mt Sabre West: Up Slope
+Mt Sabre West: Tunnel 7a (tornado bracelet, lower)
+Mt Sabre West: Tunnel 7b (tornado bracelet, middle)
+Mt Sabre West: Tunnel 7c (tornado bracelet, upper)
+Tornado Bracelet
+Talked to Tornel on Mt Sabre
+Teleport
+Mt Sabre North: Entrance
+Nadare's: Nadare's
+Nadare's: Back Room
+Nadare's: Tool Shop
+Nadare's: Inn
+Mt Sabre North: Tunnel 1 (leads from main entrance)
+Mt Sabre North: Tunnel 2a (from entrance to connector)
+Mt Sabre North: Tunnel 2b (under bridge, to antidote)
+Antidote $5e
+Antidote
+Mt Sabre North: Connector
+Mt Sabre North: Tunnel 3a (branch after connector)
+Mt Sabre North: Tunnel 3c (upper branch)
+Mt Sabre North: Tunnel 4 (over bridge, to middle)
+Mt Sabre North: Middle Left
+Mt Sabre North: Middle Right
+Mt Sabre North: Tunnel 5a (E-shaped, from right branch)
+Mt Sabre North: Tunne; 6a (S-shaped hall, right)
+Mt Sabre North: Tunne; 6b (S-shaped hall, middle)
+Mt Sabre North: Tunnel 6c (S-shaped hall, left)
+Mt Sabre North: Tunnel 7 (to upper)
+Mt Sabre North: Upper
+Mt Sabre North: Prison (hallway)
+Mt Sabre North: Right Cell (villagers)
+Mt Sabre North: Tunnel 8 (behind right cell, toward summit)
+Mt Sabre North: Tunnel 9 (connector to summit)
+Mt Sabre North: Summit (boss)
+Mt Sabre North: Left Cell (shopkeepers)
+Mt Sabre North: Left Cell 2 (back, with prison key)
+Key to Prison
+Mt Sabre North: Tunnel 5b (dead-end with herb)
+Medical Herb $53
+Mt Sabre North: Tunnel 3b (right branch)
+Wind magic
+Kelbesque 1
+Mt Sabre North: Tunnel 10a (summit cave, front)
+Mt Sabre North: Tunnel 10b (summit cave, behind ice)
+Learned Paralysis
+Paralysis
+Waterfall Valley: Summit
+Waterfall Valley: Northwest
+Waterfall Cave: Tunnel 1a (entrance)
+Waterfall Cave: Tunnel 1c (past ice)
+Waterfall Cave: Tunnel 2 (stoned pair)
+Waterfall Cave: Tunnel 1b (dead end, mimic)
+Portoa: Town
+Portoa: Tool Shop
+Portoa: Inn
+Portoa: Armor Shop
+Portoa: Pawn Shop
+Portoa: Fortune Teller Front
+Portoa: Palace Entrance
+Portoa: Palace Right
+Portoa: Palace Throne Room
+Talked to Portoa Queen
+Talked to Fortune Teller
+Portoa: Underground Channel 1 (from throne room)
+Visited Underground Channel
+Sent to Waterfall Cave
+Flute of Lime
+Flute of lime or glitch
+Waterfall Cave: Tunnel 3 (wide medusa hallways)
+Waterfall Cave: Tunnel 4c (sword of water)
+Sword of Water
+Waterfall Cave: Tunnel 4b (right entrance)
+Waterfall Cave: Tunnel 4a (left entrance)
+Flute of Lime $5b
+Second flute of lime
+Cured Akahana
+Shield Ring
+Portoa: Palace Left
+Portoa: Fishherman Island
+Portoa: Fisherman's House
+Waterfall Valley: Southwest
+Waterfall Valley: Lime Tree Valley
+Waterfall Valley: Lime Tree Lake (Rage)
+Talked to Rage
+Ball of Water
+Cross rivers
+Portoa: Underground Channel 2 (to fortune teller)
+Portoa: Fortune Teller Back
+Portoa: Underground Channel 3 (from fortune teller)
+Portoa: Underground Channel 4 (asina)
+Portoa: Asina's Room
+Talked to Asina
+Recover
+Portoa: Underground Channel 5 (dolphin)
+Healed Dolphin
+Shell Flute
+Waterfall Valley: Mesia Shrine
+Waterfall Valley: Southeast
+Kirisa Plant Cave: Tunnel 1a (entrance)
+Kirisa Plant Cave: Tunnel 1b (behind wall)
+Kirisa Plant Cave: Tunnel 2a (main path, before wall)
+Kirisa Plant Cave: Tunnel 2c (main path, after wall)
+Kirisa Plant Cave: Tunnel 3a (last room, before wall)
+Kirisa Plant Cave: Tunnel 3b (last room, after wall)
+Kirisa Plant Cave: Meadow
+Kirisa Plant
+Kirisa Plant Cave: Tunnel 2b (dead end, antidote)
+Antidote $5f
+Waterfall Valley: Northeast
+Fog Lamp Cave: Tunnel 1a (entrance)
+Fog Lamp Cave: Tunnel 1b (past wall)
+Fog Lamp Cave: Tunnel 2 (tiny connector)
+Fog Lamp Cave: Tunnel 3a (upper branch)
+Fog Lamp Cave: Tunnel 3c (short passage with mimic)
+Fog Lamp Cave: Tunnel 5a (right branch over bridge)
+Fog Lamp Cave: Tunnel 6a (from left branch)
+Fog Lamp Cave: Tunnel 6b (reconvergence)
+Fog Lamp Cave: Tunnel 6c (between walls)
+Fog Lamp Cave: Tunnel 6d (under bridge)
+Fog Lamp Cave: Tunnel 7a (over second bridge)
+Fog Lamp Cave: Tunnel 7b (past wall)
+Fog Lamp Cave: Tunnel 8a (under second bridge)
+Fog Lamp Cave: Tunnel 8b (fog lamp)
+Fog Lamp
+Returned Fog Lamp
+Angry Sea: Cabin Beach
+Angry Sea: Cabin
+Talked to Kensu in Cabin
+Ride dolphin
+Cross sea
+Portoa: Underground Channel 6 (water)
+Love Pendant
+Angry Sea: South
+Angry Sea: Altar
+Angry Sea: Joel Beach
+Joel: Town
+Joel: Inn
+Joel: Tool Shop
+Joel: Shed
+Joel: Elder's House
+Talked to Joel Elder
+Evil Spirit Island: Tunnel 1 (entrance)
+Evil Spirit Island: Tunnel 2a (start)
+Evil Spirit Island: Tunnel 2c (across first river)
+Evil Spirit Island: Tunnel 2d (across second river)
+Evil Spirit Island: Tunnel 2f (stair down)
+Evil Spirit Island: Tunnel 3a (main area)
+Lysis Plant $5c
+Lysis Plant
+Evil Spirit Island: Tunnel 3b (left area toward items)
+Evil Spirit Island: Tunnel 4a (right side, mimic)
+Evil Spirit Island: Tunnel 4b (left side, iron necklace)
+Iron Necklace
+Evil Spirit Island: Zombie Town
+Evil Spirit Island: Zombie Town House
+Evil Spirit Island: Zombie Town Basement
+Sabera's Castle: Floor 1
+Sabera's Castle: Floor 2a (left stair)
+Fruit of Power
+Sabera's Castle: Miniboss
+Vampire 2
+Sabera's Castle: Floor 2b (right stair)
+Medical Herb $55
+Sabera's Castle: Floor 3a (toward boss)
+Sabera's Castle: Floor 3b (boss room)
+Sabera's Castle: Floor 3c (back room trap)
+Sabera's Castle: Boss
+Evil Spirit Island: Tunnel 2e (dead end, magic ring)
+Evil Spirit Island: Tunnel 2b (dead end to left)
+Fog Lamp Cave: Tunnel 5b (past wall over bridge)
+Fog Lamp Cave: Tunnel 3d (lower branch)
+Fog Lamp Cave: Tunnel 4 (dead end loop)
+Fog Lamp Cave: Tunnel 3b (dead end, mimic)
+Fog Lamp Cave: Tunnel 1c (dead end, lysisPlant)
+Cordell Plain: South
+Amazones: Town
+Amazones: Armor Shop
+Amazones: Tool Shop
+Amazones: Inn
+Flame Bracelet
+Fire magic
+Sabera 1
+Broken Statue
+Sealed Cave: Tunnel 6 (herb dead end)
+Sealed Cave: Tunnel 4b (antidote dead end)
+Medical Herb $50
+Require calm for barrier
+Sword magic optional
+Thunder magic
+Water magic
+Assume talk glitch
+Change or glitch
+Amazones: Queen's House
+Amazones: Queen Downstairs
+Blizzard Bracelet
+Assume ghetto flight
+Cross whirlpool
+Angry Sea: North
+Angry Sea: Swan Beach
+Swan: Town
+Swan: Dance Hall
+Swan: Pawn Shop
+Swan: Tavern
+Swan: Armor Shop
+Swan: Inn
+Swan: Stom's Hut
+Talked to Stom in Swan Hut
+Talked to Kensu in Swan tavern
+Talked to Kensu at Swan dance
+Returned Kensu's love pendant
+Change
+Talked to Amazones Queen
+Bow of Moon
+Swan: Tool Shop
+Swan: Inside Gate
+Swan: Outside Gate
+Goa: Valley
+Goa: Desert 1
+Oasis Cave: Entrance Front
+Oasis Cave: Area 1 (from entrance)
+Leather Boots
+Oasis Cave: Area 8 (left outer ring)
+Fruit of Power $64
+Oasis Cave: Area 9 (top left inner ring)
+Oasis Cave: Area 10 (top right inner ring)
+Oasis Cave: Area 11 (center)
+Oasis Cave: Draygonia Fortress Basement 1 (front)
+Oasis Cave: Area 7 (bottom inner ring)
+Oasis Cave: Area 6 (bottom island)
+Oasis Cave: Area 5 (bottom edge)
+Oasis Cave: Area 4 (left across middle-right bridge)
+Oasis Cave: Area 2 (across top bridge)
+Oasis Cave: Area 3 (dead-end across top-right bridge)
+Goa: Town
+Goa: Tavern
+Goa: House
+Draygonia Fortress 1: Entrance
+Mt Hydra: Entrance
+Mt Hydra: Tunnel 2 (fork)
+Mt Hydra: Dead end (fruit of lime)
+Fruit of Lime
+Mt Hydra: After first tunnel
+Mt Hydra: Door to Styx
+Mt Hydra: Tunnel 3 (caves)
+Mt Hydra: Tunnel 9 (right branch, infinite loop)
+Mt Hydra: Tunnel 10a (toward magic ring)
+Mt Hydra: Tunnel 10b (past wall)
+Mt Hydra: Dead end (magic ring)
+Magic Ring $65
+Mt Hydra: Tunnel 4 (left branch of cave)
+Mt Hydra: Tunnel 6a (left-then-right)
+Mt Hydra: Tunnel 6b (past wall)
+Mt Hydra: Tunnel 7 (wide hall)
+Mt Hydra: Tunnel 8 (red slimes)
+Mt Hydra: Outside tunnel to bow
+Mt Hydra: Tunnel 5 (dead end, medical herb)
+Medical Herb $56
+Mt Hydra: Tunnel 1 (to Shyron)
+Mt Hydra: Outside Shyron
+Shyron: Town
+Entered Shyron
+Goa: Tool Shop
+Goa: Inn
+Shyron: Inn
+Shyron: Tool Shop
+Shyron: Armor Shop
+Shyron: Hospital
+Shyron: Training Hall
+Shyron: Temple (pre-massacre)
+Talked to Zebu in Shyron
+Key to Styx
+Styx: Entrance
+Styx: Right branch
+Styx: Left branch
+Styx: Left branch, past one bridge
+Styx: Left branch, past two bridges
+Medical Herb $57
+Styx: Upper floor
+Sword of Thunder
+Shyron Massacre
+Shyron: Temple (post-massacre)
+Mado 1
+Ball of Thunder
+Destroy iron
+Draygonia Fortress 1: Main
+Draygonia Fortress 1: Boss
+Kelbesque 2
+Draygonia Fortress 1: Zebu
+Draygonia Fortress 2: Entrance
+Draygonia Fortress 2: Across First Bridge (fruit of repun)
+Fruit of Repun $66
+Fruit of Repun
+Draygonia Fortress 2: Across Second Bridge
+Draygonia Fortress 2: Across Third Bridge
+Draygonia Fortress 2: Exit Behind Iron Door
+Draygonia Fortress 2: Boss
+Sabera 2
+Talked to Clark
+Eye Glasses
+Joel: Secret Passage
+Joel: Outside Lighthouse
+Joel: Lighthouse
+Talked to Kensu in Lighthouse
+Glowing Lamp
+Draygonia Fortress 2: Tornel
+Draygonia Fortress 3: Lower
+Magic Ring $6f
+Opel Statue $63
+Opel Statue
+Draygonia Fortress 3: Upper Passage (toward Mado)
+Magic Ring $54
+Draygonia Fortress 3: Boss
+Mado 2
+Draygonia Fortress 3: Asina
+Draygonia Fortress 4: Initial Fork
+Draygonia Fortress 4: Main Area (right branch, over bridges)
+Draygonia Fortress 4: Main Area Lower (under bridge)
+Draygonia Fortress 4: Behind Iron Wall
+Draygonia Fortress 4: Kensu
+Draygonia Fortress 4: Exit Stairs
+Oasis Cave: Entrance Back (behind river)
+Fruit of Power $5a
+Draygonia Fortress 4: Lower
+Warp Boots $6e
+Magic Ring $58
+Draygonia Fortress 4: Boss Corridor
+Draygonia Fortress 4: Boss
+Karmine
+Draygonia Fortress 4: Behind Boss (stormBracelet)
+Storm Bracelet
+Ivory Statue
+Talked to Akahana's Friend
+Warrior Ring
+Saved Kensu
+Flight
+Oasis Cave: Area 12 (top center islands)
+Battle Suit
+Sahara: Desert Cave 1
+Sahara: Meadow
+Talked to Deo
+Deo's Pendant
+Sahara: Town
+Sahara: Pawn Shop
+Sahara: Elder's House
+Sahara: Tool Shop
+Sahara: Inn
+Sahara: Outside Cave
+Sahara: Desert Cave 2
+Sahara: Desert 2
+Pyramid Back: Entrance
+Pyramid Back: Statues
+Pyramid Front: Entrance
+Pyramid Front: Fork
+Pyramid Front: Main
+Pyramid Front: Draygon
+Draygon 1
+Psycho Armor
+Pyramid Front: Treasure Chest (magic ring)
+Magic Ring $6c
+Styx: Right branch, across water
+Psycho Shield
+Mt Hydra: Floating island (bow of sun)
+Bow of Sun
+Statues
+Pyramid Back: Hall 1
+Pyramid Back: Branch
+Pyramid Back: Hall 2
+Opel Statue $6d
+Pyramid Back: Draygon 2
+Draygon 2
+Pyramid Back: Teleporter
+Tower: Entrance
+Tower: Level 1
+Tower: Level 2
+Tower: Level 3
+Tower: Outside Mesia Room
+Tower: Mesia
+Forged Crystalis
+Crystalis
+Tower: Outside Dyna Room
+Tower: Dyna
+Dyna
+Win
+Pyramid Back: Right Dead End
+Pyramid Back: Left Dead End
+Draygonia Fortress 4: U-shaped Passage (between floors)
+Draygonia Fortress 4: Left Branch
+Draygonia Fortress 3: Upper Loop
+Antidote $60
+Draygonia Fortress 3: Upper Loop Behind Wall (magic ring)
+Magic Ring $6b
+Draygonia Fortress 2: Dead End Across Two Bridges ()
+Lysis Plant $5d
+Draygonia Fortress 2: Dead End Loop Across Closer Bridges
+Draygonia Fortress 2: Dead End Behind Iron (fruit of power)
+Fruit of Power $62
+Oasis Cave: Draygonia Fortress Basement 2 (power ring)
+Power Ring
+Mt Hydra: Over first river toward Shyron
+Leather Boots grant speed
+Speed boots

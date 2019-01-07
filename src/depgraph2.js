@@ -120,6 +120,94 @@ class Graph {
     // return parts.join('\n');
     // const lines = [];
   }
+
+  toSequenceGraph() {
+    // The idea here is that we integrate out the locations and prerequisites.
+    // If all previous nodes strongly require a dep, then don't even make the edge.
+    // How to represent choices??? multiple antecedents is AND usually...
+
+  }
+
+  locations() {
+    return this.nodes.filter(n => n instanceof Location);
+  }
+
+  gettables() {
+    return this.nodes.filter(n => n instanceof ItemGet || n instanceof Trigger);
+  }
+
+  traverse(start = this.locations()[0]) {
+    // Turn this into a mostly-standard depth-first traversal.
+    // Basically what we do is build up a new graph where each edge has a list
+    // of other nodes that all need to be seen first to take it.
+
+    // Map<Node, Map<string, Array<Node>>>
+    const stack = [];
+    const seen = new Set();
+    const g = new Map();
+    const addEdge = (to, ...deps) => {
+      for (const from of deps) {
+        if (!g.has(from)) {
+          g.set(from, new Map());
+        }
+        const entry = [to, ...deps];
+        g.get(from).set(entry.map(n => n.uid).join(' '), entry);
+      }
+    }
+    for (const n of this.nodes) {
+      if (n instanceof Location) {
+        for (const c of n.connections) {
+          addEdge(c.to, c.from, ...c.deps, ...(c.from.bossNode ? [c.from.bossNode] : []));
+          if (c.bidi) addEdge(c.from, c.to, ...c.deps, ...(c.to.bossNode ? [c.to.bossNode] : []));
+        }
+        for (const {trigger, deps} of n.triggers) {
+          addEdge(trigger, n, ...deps);
+        }
+        for (const c of n.chests) {
+          addEdge(c, n);
+        }
+        if (n.bossNode) {
+          addEdge(n.bossNode, n, ...n.bossNode.deps);
+        }
+      } else if (n instanceof Condition) {
+        for (const o of n.options) {
+          addEdge(n, ...o);
+        }
+      } else if (n instanceof Option) {
+        stack.push(n);
+      } else if (n.item) {
+        addEdge(n.item, n);
+      }
+    }
+
+    stack.push(start);
+
+    // We now have a complete graph that we can do a simple DFS on.
+    const want = new Set(this.gettables());
+    const empty = new Map();
+
+    // loop until we don't make any progress
+    while (want.size && stack.length) {
+      const n = stack.pop();
+      if (seen.has(n)) continue;
+      //console.log(`traverse ${n.name}`);
+      seen.add(n);
+      want.delete(n);
+      for (const [next, ...deps] of (g.get(n) || empty).values()) {
+        //const sat = deps.every(d => seen.has(d));
+        //console.log(`  follow-on: \x1b[1;3${sat+1}m${next.name}\x1b[m${deps.length ? ' if ' : ''}${deps.map(d => `\x1b[1;3${seen.has(d)+1}m${d.name}\x1b[m`).join(', ')}`);
+        if (seen.has(next)) continue;
+        if (deps.every(d => seen.has(d))) stack.push(next);
+      }
+    }
+    return [...seen].map(n => {
+      const parts = [];
+      if (n instanceof Location) parts.push(n.area.name, ': ');
+      parts.push(n.name);
+      if (n instanceof ItemGet && n.index != n.id) parts.push(' $', n.index.toString(16));
+      return parts.join('');
+    });
+  }
 }
 
 const graph = new Graph();
@@ -136,28 +224,25 @@ class Option extends graph.Node {
 const option = (name, value = true) => new Option(name, value);
 
 class ItemGet extends graph.Node {
-  constructor(id, name, index) {
+  constructor(id, name, index, item) {
     super();
     this.id = id;
     this.name = name;
     this.index = index;
+    this.item = item;
   }
 }
 
 class Item extends ItemGet {
-  constructor(id, name) {
-    super(id, name, id);
-  }
-
   at(index) {
-    return new ItemGet(this.id, this.name, index);
+    return new ItemGet(this.id, this.name, index, this);
   }
 }
 
 class Magic extends ItemGet {}
 
-const item = (id, name) => new Item(id, name);
-const magic = (id, name) => new Magic(id, name, id);
+const item = (id, name) => new Item(id, name, id, null);
+const magic = (id, name) => new Magic(id, name, id, null);
 
 class Trigger extends graph.Node {
   constructor(name) {
@@ -503,6 +588,7 @@ const talkedToDeo           = trigger('Talked to Deo').get(deosPendant);
 const talkedToAkahanaFriend = trigger('Talked to Akahana\'s Friend').get(warriorRing);
 const forgedCrystalis       = trigger('Forged Crystalis').get(crystalis);
 const win                   = trigger('Win');
+exports.end = win;
 
 ////////////////////////////////////////////////////////////////
 // Conditions
@@ -599,12 +685,12 @@ const HYDR = area('Mt Hydra');
 const SHYR = area('Shyron');
 const STYX = area('Styx');
 const GOA  = area('Goa');
-const DSRT = area('Desert');
 const DRG1 = area('Draygonia Fortress 1');
 const DRG2 = area('Draygonia Fortress 2');
 const DRG3 = area('Draygonia Fortress 3');
 const DRG4 = area('Draygonia Fortress 4');
 const OASC = area('Oasis Cave');
+const DSRT = area('Desert');
 const SHRA = area('Sahara');
 const PYRF = area('Pyramid Front');
 const PYRB = area('Pyramid Back');
@@ -617,6 +703,7 @@ const TOWR = area('Tower');
 // Leaf, Valley of Wind, Sealed Cave
 
 const mezameShrine          = location(0x00, LEAF, 'Mezame Shrine');
+exports.start = mezameShrine;
 const outsideStart          = location(0x01, LEAF, 'Outside Start')
                                 .connect(mezameShrine);
 const leaf                  = location(0x02, LEAF, 'Town')
@@ -745,9 +832,9 @@ const mtSabreWestTunnel6b   = location(0x26, SBRW, 'Tunnel 6b (exit to Tornel, b
 const mtSabreWestTunnel7a   = location(0x27, SBRW, 'Tunnel 7a (tornado bracelet, lower)')
                                 .connect(mtSabreWestUpSlope);
 const mtSabreWestTunnel7b   = location(0x27, SBRW, 'Tunnel 7b (tornado bracelet, middle)')
-                                .connect(mtSabreWestTunnel6a, destroyIce); // 64dc:10
+                                .connect(mtSabreWestTunnel7a, destroyIce); // 64dc:10
 const mtSabreWestTunnel7c   = location(0x27, SBRW, 'Tunnel 7c (tornado bracelet, upper)')
-                                .connect(mtSabreWestTunnel6b, destroyIce) // 64dc:08
+                                .connect(mtSabreWestTunnel7b, destroyIce) // 64dc:08
                                 .chest(tornadoBracelet);
 
 // Mt Sabre North
@@ -759,7 +846,8 @@ const mtSabreNorthUpper     = location(0x28, SBRN, 'Upper')
                                 .to(mtSabreNorthEntrance);
 const mtSabreNorthSummit    = location(0x28, SBRN, 'Summit (boss)')
                                 .from(mtSabreNorthUpper, flight)
-                                .to(mtSabreNorthUpper);
+                                .to(mtSabreNorthUpper)
+                                .boss(kelbesque1);
 const mtSabreNorthConnector = location(0x29, SBRN, 'Connector');
 const mtSabreNorthMidLeft   = location(0x29, SBRN, 'Middle Left');
 const mtSabreNorthMidRight  = location(0x29, SBRN, 'Middle Right')
@@ -811,7 +899,8 @@ const mtSabreNorthTunnel9   = location(0x34, SBRN, 'Tunnel 9 (connector to summi
                                 .connect(mtSabreNorthTunnel8)
                                 .connectTo(mtSabreNorthSummit);
 const mtSabreNorthTunnel10a = location(0x35, SBRN, 'Tunnel 10a (summit cave, front)')
-                                .connect(mtSabreNorthSummit);
+                                .from(mtSabreNorthSummit, keyToPrison)
+                                .to(mtSabreNorthSummit);
 const mtSabreNorthTunnel10b = location(0x35, SBRN, 'Tunnel 10b (summit cave, behind ice)')
                                 .connect(mtSabreNorthTunnel10a, destroyIce) // 64da:80
                                 .trigger(learnedParalysis);
@@ -909,7 +998,8 @@ const fogLampCave7b         = location(0x4e, FOGL, 'Tunnel 7b (past wall)')
 const fogLampCave8a         = location(0x4f, FOGL, 'Tunnel 8a (under second bridge)')
                                 .connect(fogLampCave7b);
 const fogLampCave8b         = location(0x4f, FOGL, 'Tunnel 8b (fog lamp)')
-                                .connect(fogLampCave8a, destroyStone); // 64d8:04
+                                .connect(fogLampCave8a, destroyStone) // 64d8:04
+                                .chest(fogLamp);
 
 // Portoa, Mesia
 
@@ -945,7 +1035,7 @@ const waterfallCave4b       = location(0x57, WFCV, 'Tunnel 4b (right entrance)')
                                 .connect(waterfallCave4a, flight);
 const waterfallCave4c       = location(0x57, WFCV, 'Tunnel 4c (sword of water)')
                                 .connect(waterfallCave3, destroyIce) // $64d9:80
-                                .chest(swordOfWind);
+                                .chest(swordOfWater);
 
 // Tower
 
@@ -968,7 +1058,7 @@ const angrySeaSouth         = location(0x60, ASEA, 'South')
                                 .connect(angrySeaCabinBeach, crossSea);
 const angrySeaJoelBeach     = location(0x60, ASEA, 'Joel Beach')
                                 .connect(angrySeaSouth, crossSea);
-const angrySeaLighthouse    = location(0x60, ASEA, 'Outside Lighthouse');
+const angrySeaLighthouse    = location(0x60, JOEL, 'Outside Lighthouse');
 const angrySeaAltar         = location(0x60, ASEA, 'Altar')
                                 .connect(angrySeaSouth, crossSea);
 const angrySeaNorth         = location(0x60, ASEA, 'North')
@@ -982,7 +1072,7 @@ const angrySeaCabin         = location(0x61, ASEA, 'Cabin')
                                 .connect(angrySeaCabinBeach)
                                 // TODO - only have kensu appear after heal and/or boat?
                                 .trigger(talkedToKensuInCabin);
-const lighthouse            = location(0x62, ASEA, 'Lighthouse')
+const lighthouse            = location(0x62, JOEL, 'Lighthouse')
                                 .connect(angrySeaLighthouse)
                                 .trigger(talkedToKensuInLighthouse, alarmFlute);
 const undergroundChannel1   = location(0x64, PORT, 'Underground Channel 1 (from throne room)')
@@ -1093,6 +1183,7 @@ const mtHydra7              = location(0x7c, HYDR, 'Dead end (magic ring)')
                                 .chest(magicRing$65);
 const mtHydra8              = location(0x7c, HYDR, 'Outside tunnel to bow');
 const mtHydra9              = location(0x7c, HYDR, 'Floating island (bow of sun)')
+                                .connect(mtHydra8, flight)
                                 .chest(bowOfSun);
 const mtHydraTunnel1        = location(0x7d, HYDR, 'Tunnel 1 (to Shyron)')
                                 .connect(mtHydra1);
@@ -1103,7 +1194,7 @@ const mtHydraTunnel2        = location(0x7f, HYDR, 'Tunnel 2 (fork)')
                                 .connectTo(mtHydra6) // right branch
                                 .connectTo(mtHydra3); // left branch
 const mtHydraTunnel3        = location(0x80, HYDR, 'Tunnel 3 (caves)')
-                                .connect(mtHydra5); // all the way right
+                                .connect(mtHydra4); // all the way right
 const mtHydraTunnel4        = location(0x81, HYDR, 'Tunnel 4 (left branch of cave)')
                                 .connect(mtHydraTunnel3); // took left branch
 const mtHydraTunnel5        = location(0x82, HYDR, 'Tunnel 5 (dead end, medical herb)')
@@ -1162,7 +1253,7 @@ const fortressBasement1     = location(0x8f, OASC, 'Draygonia Fortress Basement 
 const fortressBasement2     = location(0x8f, OASC, 'Draygonia Fortress Basement 2 (power ring)')
                                 .connect(fortressBasement1, destroyIron) // 290
                                 .chest(powerRing); // 0f
-const desert1               = location(0x90, DSRT, 'Desert 1')
+const desert1               = location(0x90, GOA,  'Desert 1')
                                 .connect(goaValley);
 
 // Oasis Cave
@@ -1198,18 +1289,18 @@ const oasisCave12           = location(0x91, OASC, 'Area 12 (top center islands)
 
 // Desert
 
-const desertCave1           = location(0x92, DSRT, 'Cave 1')
+const desertCave1           = location(0x92, SHRA, 'Desert Cave 1')
                                 .connect(desert1, flight);
 const sahara                = location(0x93, SHRA, 'Town');
 const saharaOutsideCave     = location(0x94, SHRA, 'Outside Cave')
                                 .connect(sahara);
-const desertCave2           = location(0x95, DSRT, 'Cave 2')
+const desertCave2           = location(0x95, SHRA, 'Desert Cave 2')
                                 .connect(saharaOutsideCave);
 const saharaMeadow          = location(0x96, SHRA, 'Meadow')
                                 .connect(desertCave1)
                                 .connectTo(sahara)
                                 .trigger(talkedToDeo, change, shyronMassacre);
-const desert2               = location(0x98, DSRT, 'Desert 2')
+const desert2               = location(0x98, SHRA, 'Desert 2')
                                 .connect(desertCave2);
 
 // Pyramid Front
@@ -1330,7 +1421,7 @@ const oasisCaveEntranceBack = location(0xb8, OASC, 'Entrance Back (behind river)
                                 .chest(fruitOfPower$5a); // 0d
 const oasisCaveEntrance     = location(0xb8, OASC, 'Entrance Front')
                                 .connect(oasisCaveEntranceBack, flight)
-                                .connect(desert1)
+                                .connectTo(desert1)
                                 .connectTo(oasisCave1);
 const fortress3Boss         = location(0xb9, DRG3, 'Boss')
                                 .connect(fortress3UpperPassage)
@@ -1340,8 +1431,7 @@ const fortressAsina         = location(0xb9, DRG3, 'Asina')
                                 .connectTo(fortress4a);
 const fortressKensu         = location(0xba, DRG4, 'Kensu')
                                 .connect(fortress4f)
-                                // TODO - fix the logic to be two-way.
-                                .to(fortressExit)
+                                .connectTo(fortressExit)
                                 .trigger(savedKensu, ivoryStatue);
 
 // Inside Buildings
@@ -1384,7 +1474,8 @@ const amazonesInn           = location(0xd1, AMZN, 'Inn').connect(amazones);
 const amazonesToolShop      = location(0xd2, AMZN, 'Tool Shop').connect(amazones);
 const amazonesArmorShop     = location(0xd3, AMZN, 'Armor Shop').connect(amazones);
 const amazonesQueenHouse    = location(0xd4, AMZN, 'Queen\'s House')
-                                .from(amazones, changeOrGlitch);
+                                .from(amazones, changeOrGlitch)
+                                .trigger(talkedToAmazonesQueen, change, kirisaPlant);
 const nadare                = location(0xd5, NADR, 'Nadare\'s')
                                 .connect(mtSabreNorthEntrance)
                                 .connectTo(nadareInn)

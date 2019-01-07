@@ -8,16 +8,124 @@
 
 //export const graph = new Graph2();
 
-const Node = (() => {
-  let uid = 0;
-  return class Node {
-    constructor() {
-      this.uid = uid++;
-    }
-  };
-})();
+class Edge {
+  constructor(left, right, arrow, attrs) {
+    this.left = left;
+    this.right = right;
+    this.arrow = arrow;
+    this.attrs = attrs;
+  }
 
-class Option extends Node {
+  // reverse() {
+  //   return new Edge(this.right, this.left, this.arrow, this.attrs);
+  // }
+
+  toDot() {
+    const attrs = this.attrs.length ? ` [${this.attrs.join(', ')}]` : '';
+    return `  ${this.left.uid} ${this.arrow} ${this.right.uid}${attrs};`;
+  }
+}
+
+class Graph {
+  constructor() {
+    const nodes = [];
+    this.nodes = nodes;
+    this.Node = class Node {
+      constructor() {
+        this.uid = nodes.length;
+        this.key = 'n' + this.uid;
+        nodes.push(this);
+      }
+    };
+  }
+
+  // There's two different kind of dot outputs.
+  // 1. just the locations, with edges annotated
+  // 2. items and triggers, (all directed edges,locations integrated out)
+
+  // Outputs a .dot file.
+  toLocationGraph() {
+    const parts = [];
+    parts.push(
+      'digraph locations {',
+      'node [shape=record, style=filled, color=white];',
+    );
+    const subgraphs = {};
+    const edges = new Set();
+    const areas = [];
+
+    for (const n of this.nodes) {
+      if (n instanceof Location) {
+        let area = subgraphs[n.area.uid];
+        if (!(n.area.uid in subgraphs)) {
+          areas.push(n.area);
+          area = subgraphs[n.area.uid] = [];
+        }
+        area.push(n.toDot());
+        for (const e of n.edges()) {
+          edges.add(e);
+        }
+      }
+    }
+
+    for (const area of areas) {
+      parts.push(
+        `  subgraph cluster_${area.key} {`,
+        `    style=filled;`,
+        `    color="lightgrey";`,
+        `    label="${area.name}";`,
+        ...subgraphs[area.uid],
+        '  }',
+      );
+    }
+
+    for (const edge of edges) {
+      parts.push(edge.toDot());
+    }
+
+    parts.push('}');
+    return parts.join('\n');
+
+    //     for (const exit of n.exits) {
+    //       const fwd = [n.uid, n.location.uid, ...exit.deps].join('|');
+    //       const rev = [n.location.uid, n.uid, ...exit.deps].join('|');
+    //       let arrow = '->';
+    //       if (rev in edges) {
+    //         delete edges[rev];
+    //         arrow = '--';
+    //       }
+    //       const attrs = exit.deps.length ? ` [${exit.deps.map(d => d.name).join(', ')}]` : '';
+    //       const edge = `${n.key} ${arrow} ${n.location.key}${attrs};`;
+
+    //     }
+    //   }
+
+    //   const attrs = [`label="${n.text}"`];
+    //   if (!n.or) attrs.push('shape=box');
+    //   if (colors[n.type]) attrs.push(`color=${colors[n.type]}`);
+    //   parts.push(`  n${n.id} [${attrs.join(' ')}];`);
+    // }
+    // for (let [e1, e2] of this.edges) {
+    //   //if (typeof e2 != 'function') console.log(e2);
+    //   // TODO - e1 is sword? then color; e2 is or? then dotted.
+    //   if (typeof e1 == 'function') e1 = e1();
+    //   if (typeof e2 == 'function') e2 = e2();
+    //   e1 = this.nodes[e1];
+    //   e2 = this.nodes[e2];
+    //   const attrs = [`arrowhead="${e2.or ? 'empty' : 'normal'}"`]; // odiamond?
+    //   if (colors[e1.type]) attrs.push(`color=${colors[e1.type]}`);
+    //   parts.push(`  n${e1.id} -> n${e2.id} [${attrs.join(' ')}];`);
+    // }
+    // parts.push('}');
+    // return parts.join('\n');
+    // const lines = [];
+  }
+}
+
+const graph = new Graph();
+exports.graph = graph;
+
+class Option extends graph.Node {
   constructor(name, value) {
     super();
     this.name = name;
@@ -27,7 +135,7 @@ class Option extends Node {
 
 const option = (name, value = true) => new Option(name, value);
 
-class ItemGet extends Node {
+class ItemGet extends graph.Node {
   constructor(id, name, index) {
     super();
     this.id = id;
@@ -51,7 +159,7 @@ class Magic extends ItemGet {}
 const item = (id, name) => new Item(id, name);
 const magic = (id, name) => new Magic(id, name, id);
 
-class Trigger extends Node {
+class Trigger extends graph.Node {
   constructor(name) {
     super();
     this.name = name;
@@ -66,7 +174,7 @@ class Trigger extends Node {
 
 const trigger = (name) => new Trigger(name);
 
-class Condition extends Node {
+class Condition extends graph.Node {
   constructor(name) {
     super();
     this.name = name;
@@ -90,7 +198,7 @@ class Boss extends Trigger {
 
 const boss = (name, ...deps) => new Boss(name, ...deps);
 
-class Area extends Node {
+class Area extends graph.Node {
   constructor(name) {
     super();
     this.name = name;
@@ -99,36 +207,61 @@ class Area extends Node {
 
 const area = (name) => new Area(name);
 
-class Location extends Node {
+class Connection {
+  constructor(from, to, bidi = false, deps = []) {
+    this.from = from;
+    this.to = to;
+    this.bidi = bidi;
+    this.deps = deps;
+  }
+
+  toDot() {
+    //const arr = this.bidi ? '--' : '->';
+    const attrs = [];
+    if (this.deps.length) {
+      attrs.push(`label="${this.deps.map(d => d.name).join(', ')}"`);
+    }
+    if (this.bidi) {
+      attrs.push(`dir=none`);
+    }
+    const attrsStr = attrs.length ? ` [${attrs.join(', ')}]` : '';
+    return `  ${this.from.key} -> ${this.to.key}${attrsStr};`;
+  }
+}
+
+class Location extends graph.Node {
   constructor(id, area, name) {
     super();
     this.id = id;
     this.area = area;
     this.name = name;
-    this.entrances = [];
-    this.exits = [];
+    this.connections = [];
     this.triggers = [];
     this.chests = [];
     this.mimics = []; // fold into chests
-    this.bossId = null;
+    this.bossNode = null;
+  }
+
+  addConnection(c) {
+    c.from.connections.push(c);
+    c.to.connections.push(c);
+    return this;
   }
 
   from(location, ...deps) {
-    this.entrances.push({location, deps});
-    location.exits.push({location: this, deps});
-    return this;
+    return this.addConnection(new Connection(location, this, false, deps));
   }
 
   to(location, ...deps) {
-    this.exits.push({location, deps});
-    location.entrances.push({location: this, deps});
-    return this;
+    return this.addConnection(new Connection(this, location, false, deps));
   }
 
   connect(location, ...deps) {
-    this.from(location, ...deps);
-    this.to(location, ...deps);
-    return this;
+    return this.addConnection(new Connection(location, this, true, deps));
+  }
+
+  connectTo(location, ...deps) {
+    return this.addConnection(new Connection(this, location, true, deps));
   }
 
   chest(item) {
@@ -147,8 +280,52 @@ class Location extends Node {
   }
 
   boss(boss) {
-    this.bossId = boss;
+    this.bossNode = boss;
     return this;
+  }
+
+  edges() {
+    const out = [...this.connections];
+    const prefix = n => ({key: `${this.key}_${n.key}`});
+    for (const chest of this.chests) {
+      out.push(new Connection(this, prefix(chest), false, []));
+    }
+    for (const {trigger, deps} of this.triggers) {
+      out.push(new Connection(this, prefix(trigger), false, deps));
+      if (trigger.item) {
+        out.push(new Connection(prefix(trigger), prefix(trigger.item), false, []));
+      }
+    }
+    if (this.bossNode && this.bossNode.item) {
+      out.push(new Connection(this, prefix(this.bossNode.item), false, this.bossNode.deps));
+    }
+    return out;
+  }
+
+  // Specifies several edges.
+  toDot() {
+    const fmt = (n, c) => `    ${this.key}_${n.key} [label="${n.name}", color="${c}", shape=oval];`;
+    const nodes = [`    ${this.key} [label="${this.fullName()}"];`];
+    for (const chest of this.chests) {
+      nodes.push(fmt(chest, '#ddffdd'));
+    }
+    for (const {trigger} of this.triggers) {
+      nodes.push(fmt(trigger, '#ddddff'));
+      if (trigger.item) nodes.push(fmt(trigger.item, '#ddffdd'));
+    }
+    if (this.bossNode && this.bossNode.item) {
+      nodes.push(fmt(this.bossNode.item, '#ddffdd'));
+    }
+    return nodes.join('\n');
+  }
+
+  fullName() {
+    //const lines = [`${this.area.name}: ${this.name}`];
+    const lines = [this.name];
+    if (this.bossNode) {
+      lines.push(this.bossNode.name);
+    }
+    return lines.join('\\n');
   }
 }
 
@@ -325,6 +502,7 @@ const savedKensu            = trigger('Saved Kensu').get(flight);
 const talkedToDeo           = trigger('Talked to Deo').get(deosPendant);
 const talkedToAkahanaFriend = trigger('Talked to Akahana\'s Friend').get(warriorRing);
 const forgedCrystalis       = trigger('Forged Crystalis').get(crystalis);
+const win                   = trigger('Win');
 
 ////////////////////////////////////////////////////////////////
 // Conditions
@@ -392,7 +570,7 @@ const karmine               = boss('Karmine', swordOfThunder, thunderMagic).get(
 const draygon1              = boss('Draygon 1', anySword).get(bowOfTruth).get(psychoArmor);
 const statues               = boss('Statues', bowOfSun, bowOfMoon);
 const draygon2              = boss('Draygon 2', anySword);
-const dyna                  = boss('Dyna', crystalis);
+const dyna                  = boss('Dyna', crystalis).get(win);
 
 ////////////////////////////////////////////////////////////////
 // Areas
@@ -417,7 +595,6 @@ const JOEL = area('Joel');
 const EVIL = area('Evil Spirit Island');
 const SABR = area('Sabera\'s Castle');
 const SWAN = area('Swan');
-const GOAV = area('Goa Valley');
 const HYDR = area('Mt Hydra');
 const SHYR = area('Shyron');
 const STYX = area('Styx');
@@ -465,11 +642,11 @@ const sealedCave5           = location(0x08, VAMP, 'Tunnel 5 (warp boots dead en
                                 .chest(warpBoots);
 const sealedCave3a          = location(0x09, VAMP, 'Tunnel 3a (branch, front)')
                                 .connect(sealedCave2)
-                                .connect(sealedCave4a)
-                                .connect(sealedCave5);
+                                .connectTo(sealedCave4a)
+                                .connectTo(sealedCave5);
 const sealedCave3b          = location(0x09, VAMP, 'Tunnel 3b (branch, back)')
                                 .connect(sealedCave3a, destroyStone) // 64dd:08
-                                .connect(sealedCave6);
+                                .connectTo(sealedCave6);
 const sealedCave7           = location(0x0a, VAMP, 'Tunnel 7 (boss)')
                                 .connect(sealedCave3b)
                                 .boss(vampire1);
@@ -479,7 +656,7 @@ const sealedCave8b          = location(0x0c, VAMP, 'Tunnel 8b (exit, below wall)
                                 .connect(sealedCave8a, destroyStone); // 64d0:10
 const windmillCave          = location(0x0e, VWND, 'Windmill Cave')
                                 .connect(valleyOfWind)
-                                .connect(outsideWindmill)
+                                .connectTo(outsideWindmill)
                                 .trigger(wokeUpWindmillGuard, alarmFlute, talkedToZebuInCave);
 const windmill              = location(0x0f, VWND, 'Windmill')
                                 .connect(outsideWindmill)
@@ -497,7 +674,7 @@ const mtSabreWestTunnel1    = location(0x11, SBRW, 'Tunnel 1 (to Zebu)')
 // Cordel Plain, Brynmaer, and environs
 
 const cordelPlainWest       = location(0x14, CORD, 'West')
-                                .connect(zebuCaveBack)
+                                //.connect(zebuCaveBack)
                                 .connect(sealedCave8b);
 const cordelPlainSouth      = location(0x14, CORD, 'South')
                                 .connect(cordelPlainWest, crossRivers); // 64dd:04
@@ -510,8 +687,7 @@ const brynmaer              = location(0x18, BRYN, 'Town')
 const outsideStomsHouse     = location(0x19, CORD, 'Outside Stom\'s House')
                                 .connect(cordelPlainWest);
 const swamp                 = location(0x1a, CORD, 'Swamp')
-                                .from(cordelPlainEast)
-                                .to(cordelPlainEast, gasMask)
+                                .connect(cordelPlainEast, gasMask)
                                 .trigger(rescuedOakChild, talkedToOakMother, gasMask);
 const swampBoss             = location(0x1a, CORD, 'Swamp Insect Area')
                                 .connect(swamp, gasMask)
@@ -519,8 +695,7 @@ const swampBoss             = location(0x1a, CORD, 'Swamp Insect Area')
 const amazones              = location(0x1b, AMZN, 'Town')
                                 .connect(cordelPlainSouth);
 const oak                   = location(0x1c, OAK,  'Town')
-                                .from(swamp, gasMask)
-                                .to(swamp)
+                                .connect(swamp, gasMask)
                                 .trigger(visitedOak);
 const stomsHouse            = location(0x1e, CORD, 'Stom\'s House')
                                 .connect(outsideStomsHouse)
@@ -546,7 +721,7 @@ const mtSabreWestTunnel2a   = location(0x22, SBRW, 'Tunnel 2a (fork at start)')
                                 .connect(mtSabreWestEntrance);
 const mtSabreWestTunnel2b   = location(0x22, SBRW, 'Tunnel 2b (left branch to dead end)')
                                 .connect(mtSabreWestTunnel2a, destroyIce) // 64dd:02
-                                .connect(mtSabreWestDeadEnd);
+                                .connectTo(mtSabreWestDeadEnd);
 const mtSabreWestTunnel2c   = location(0x22, SBRW, 'Tunnel 2c (right branch to upper)')
                                 .connect(mtSabreWestTunnel2a, destroyIce); // 64dd:01
 const mtSabreWestTunnel3a   = location(0x23, SBRW, 'Tunnel 3a (tunnel to upper, with herb chest)')
@@ -554,19 +729,19 @@ const mtSabreWestTunnel3a   = location(0x23, SBRW, 'Tunnel 3a (tunnel to upper, 
                                 .chest(medicalHerb$52);
 const mtSabreWestTunnel3b   = location(0x23, SBRW, 'Tunnel 3b (tunnel to upper, branch below ice)')
                                 .connect(mtSabreWestTunnel3a, destroyIce) // 64dc:80
-                                .connect(mtSabreWestUpper);
+                                .connectTo(mtSabreWestUpper);
 const mtSabreWestTunnel4a   = location(0x24, SBRW, 'Tunnel 4a (branch to upper or Tornel)')
                                 .connect(mtSabreWestTunnel3b);
 const mtSabreWestTunnel4b   = location(0x24, SBRW, 'Tunnel 4b (out to upper)')
                                 .connect(mtSabreWestTunnel4a, destroyIce) // 64dc:40
-                                .connect(mtSabreWestUpper);
+                                .connectTo(mtSabreWestUpper);
 const mtSabreWestTunnel5    = location(0x25, SBRW, 'Tunnel 5 (tiny connector)')
                                 .connect(mtSabreWestTunnel4a);
 const mtSabreWestTunnel6a   = location(0x26, SBRW, 'Tunnel 6a (exit to Tornel, above ice)')
                                 .connect(mtSabreWestTunnel5);
 const mtSabreWestTunnel6b   = location(0x26, SBRW, 'Tunnel 6b (exit to Tornel, below ice)')
                                 .connect(mtSabreWestTunnel6a, destroyIce) // 64dc:20
-                                .connect(mtSabreWestTornel);
+                                .connectTo(mtSabreWestTornel);
 const mtSabreWestTunnel7a   = location(0x27, SBRW, 'Tunnel 7a (tornado bracelet, lower)')
                                 .connect(mtSabreWestUpSlope);
 const mtSabreWestTunnel7b   = location(0x27, SBRW, 'Tunnel 7b (tornado bracelet, middle)')
@@ -591,7 +766,7 @@ const mtSabreNorthMidRight  = location(0x29, SBRN, 'Middle Right')
                                 .from(mtSabreNorthMidLeft, climbSlopes)
                                 .to(mtSabreNorthMidLeft);
 const mtSabreNorthTunnel2a  = location(0x2a, SBRN, 'Tunnel 2a (from entrance to connector)')
-                                .connect(mtSabreNorthConnector);
+                                .connectTo(mtSabreNorthConnector);
 const mtSabreNorthTunnel2b  = location(0x2a, SBRN, 'Tunnel 2b (under bridge, to antidote)')
                                 .connect(mtSabreNorthTunnel2a, destroyIce) // 64dc:04
                                 .chest(antidote$5e);
@@ -603,10 +778,10 @@ const mtSabreNorthTunnel3c  = location(0x2b, SBRN, 'Tunnel 3c (upper branch)')
                                 .connect(mtSabreNorthTunnel3a, destroyIce); // 64dc:01
 const mtSabreNorthTunnel4   = location(0x2c, SBRN, 'Tunnel 4 (over bridge, to middle)')
                                 .connect(mtSabreNorthTunnel3c)
-                                .connect(mtSabreNorthMidLeft);
+                                .connectTo(mtSabreNorthMidLeft);
 const mtSabreNorthTunnel5a  = location(0x2d, SBRN, 'Tunnel 5a (E-shaped, from right branch)')
                                 .connect(mtSabreNorthTunnel3b)
-                                .connect(mtSabreNorthMidRight);
+                                .connectTo(mtSabreNorthMidRight);
 const mtSabreNorthTunnel5b  = location(0x2d, SBRN, 'Tunnel 5b (dead-end with herb)')
                                 .connect(mtSabreNorthTunnel5a, destroyIce) // 64db:80
                                 .chest(medicalHerb$53);
@@ -634,7 +809,7 @@ const mtSabreNorthTunnel8   = location(0x33, SBRN, 'Tunnel 8 (behind right cell,
                                 .from(mtSabreNorthRightCell, destroyIce); // 64db:02
 const mtSabreNorthTunnel9   = location(0x34, SBRN, 'Tunnel 9 (connector to summit)')
                                 .connect(mtSabreNorthTunnel8)
-                                .connect(mtSabreNorthSummit);
+                                .connectTo(mtSabreNorthSummit);
 const mtSabreNorthTunnel10a = location(0x35, SBRN, 'Tunnel 10a (summit cave, front)')
                                 .connect(mtSabreNorthSummit);
 const mtSabreNorthTunnel10b = location(0x35, SBRN, 'Tunnel 10b (summit cave, behind ice)')
@@ -642,10 +817,10 @@ const mtSabreNorthTunnel10b = location(0x35, SBRN, 'Tunnel 10b (summit cave, beh
                                 .trigger(learnedParalysis);
 const mtSabreNorthTunnel1   = location(0x38, SBRN, 'Tunnel 1 (leads from main entrance)')
                                 .connect(mtSabreNorthEntrance)
-                                .connect(mtSabreNorthTunnel2a);
+                                .connectTo(mtSabreNorthTunnel2a);
 const mtSabreNorthTunnel7   = location(0x39, SBRN, 'Tunnel 7 (to upper)')
                                 .connect(mtSabreNorthTunnel6c)
-                                .connect(mtSabreNorthUpper);
+                                .connectTo(mtSabreNorthUpper);
 
 const nadareInn             = location(0x3c, NADR, 'Inn');
 const nadareToolShop        = location(0x3d, NADR, 'Tool Shop');
@@ -823,7 +998,7 @@ const undergroundChannel5   = location(0x64, PORT, 'Underground Channel 5 (dolph
                                 .trigger(healedDolphin, medicalHerb, ballOfWater);
 const undergroundChannel6   = location(0x64, PORT, 'Underground Channel 6 (water)')
                                 .connect(undergroundChannel5, crossSea)
-                                .connect(angrySeaSouth, crossSea)
+                                .connectTo(angrySeaSouth, crossSea)
                                 .chest(lovePendant);
 
 // Evil Spirit Island
@@ -847,7 +1022,7 @@ const evilSpiritIsland2f    = location(0x69, EVIL, 'Tunnel 2f (stair down)')
 const evilSpiritIsland3a    = location(0x6a, EVIL, 'Tunnel 3a (main area)')
                                 // unnecessary wall 2b5
                                 .connect(evilSpiritIsland2f)
-                                .connect(zombieTown)
+                                .connectTo(zombieTown)
                                 .chest(lysisPlant$5c);
 const evilSpiritIsland3b    = location(0x6a, EVIL, 'Tunnel 3b (left area toward items)')
                                 .connect(evilSpiritIsland3a, destroyStone); // 2b6
@@ -889,7 +1064,7 @@ const saberaPalaceFloor3c   = location(0x6e, SABR, 'Floor 3c (back room trap)')
 // Misc
 
 const joelSecretPassage     = location(0x70, JOEL, 'Secret Passage')
-                                .connect(angrySeaLighthouse);
+                                .connectTo(angrySeaLighthouse);
 const joel                  = location(0x71, JOEL, 'Town')
                                 .connect(angrySeaJoelBeach);
 const swan                  = location(0x72, SWAN, 'Town')
@@ -899,7 +1074,7 @@ const swanGateRight         = location(0x73, SWAN, 'Inside Gate')
 const swanGateLeft          = location(0x73, SWAN, 'Outside Gate')
                                 // TODO - consider allowing gate to open both sides?
                                 .from(swanGateRight, change);
-const goaValley             = location(0x78, GOAV, 'Valley')
+const goaValley             = location(0x78, GOA,  'Valley')
                                 .connect(swanGateLeft);
 
 // Mt Hydra
@@ -925,8 +1100,8 @@ const mtHydraOutsideShyron  = location(0x7e, HYDR, 'Outside Shyron')
                                 .connect(mtHydraTunnel1);
 const mtHydraTunnel2        = location(0x7f, HYDR, 'Tunnel 2 (fork)')
                                 .connect(mtHydra1)
-                                .connect(mtHydra6) // right branch
-                                .connect(mtHydra3); // left branch
+                                .connectTo(mtHydra6) // right branch
+                                .connectTo(mtHydra3); // left branch
 const mtHydraTunnel3        = location(0x80, HYDR, 'Tunnel 3 (caves)')
                                 .connect(mtHydra5); // all the way right
 const mtHydraTunnel4        = location(0x81, HYDR, 'Tunnel 4 (left branch of cave)')
@@ -942,7 +1117,7 @@ const mtHydraTunnel7        = location(0x84, HYDR, 'Tunnel 7 (wide hall)')
                                 .connect(mtHydraTunnel6b);
 const mtHydraTunnel8        = location(0x85, HYDR, 'Tunnel 8 (red slimes)')
                                 .from(mtHydraTunnel7, destroyStone) // 2ae (bad)
-                                .connect(mtHydra8);
+                                .connectTo(mtHydra8);
 const mtHydraTunnel9        = location(0x86, HYDR, 'Tunnel 9 (right branch, infinite loop)')
                                 // non-blocking wall: 2ad
                                 .connect(mtHydraTunnel3);
@@ -950,7 +1125,7 @@ const mtHydraTunnel10a      = location(0x87, HYDR, 'Tunnel 10a (toward magic rin
                                 .connect(mtHydraTunnel9);
 const mtHydraTunnel10b      = location(0x87, HYDR, 'Tunnel 10b (past wall)')
                                 .connect(mtHydraTunnel10a, destroyStone) // 2ac
-                                .connect(mtHydra7);
+                                .connectTo(mtHydra7);
 
 // Styx
 
@@ -1016,7 +1191,7 @@ const oasisCave10           = location(0x91, OASC, 'Area 10 (top right inner rin
                                 .connect(oasisCave9, crossRivers); // 297
 const oasisCave11           = location(0x91, OASC, 'Area 11 (center)')
                                 .connect(oasisCave10, crossRivers) // 294
-                                .connect(fortressBasement1);
+                                .connectTo(fortressBasement1);
 const oasisCave12           = location(0x91, OASC, 'Area 12 (top center islands)')
                                 .connect(oasisCave1, flight)
                                 .chest(battleSuit); // 1c
@@ -1032,7 +1207,7 @@ const desertCave2           = location(0x95, DSRT, 'Cave 2')
                                 .connect(saharaOutsideCave);
 const saharaMeadow          = location(0x96, SHRA, 'Meadow')
                                 .connect(desertCave1)
-                                .connect(sahara)
+                                .connectTo(sahara)
                                 .trigger(talkedToDeo, change, shyronMassacre);
 const desert2               = location(0x98, DSRT, 'Desert 2')
                                 .connect(desertCave2);
@@ -1156,13 +1331,13 @@ const oasisCaveEntranceBack = location(0xb8, OASC, 'Entrance Back (behind river)
 const oasisCaveEntrance     = location(0xb8, OASC, 'Entrance Front')
                                 .connect(oasisCaveEntranceBack, flight)
                                 .connect(desert1)
-                                .connect(oasisCave1);
+                                .connectTo(oasisCave1);
 const fortress3Boss         = location(0xb9, DRG3, 'Boss')
                                 .connect(fortress3UpperPassage)
                                 .boss(mado2);
 const fortressAsina         = location(0xb9, DRG3, 'Asina')
                                 .connect(fortress3Boss)
-                                .connect(fortress4a);
+                                .connectTo(fortress4a);
 const fortressKensu         = location(0xba, DRG4, 'Kensu')
                                 .connect(fortress4f)
                                 // TODO - fix the logic to be two-way.
@@ -1212,9 +1387,9 @@ const amazonesQueenHouse    = location(0xd4, AMZN, 'Queen\'s House')
                                 .from(amazones, changeOrGlitch);
 const nadare                = location(0xd5, NADR, 'Nadare\'s')
                                 .connect(mtSabreNorthEntrance)
-                                .connect(nadareInn)
-                                .connect(nadareToolShop)
-                                .connect(nadareBackRoom);
+                                .connectTo(nadareInn)
+                                .connectTo(nadareToolShop)
+                                .connectTo(nadareBackRoom);
 const portoaFishermanHouse  = location(0xd6, PORT, 'Fisherman\'s House')
                                 .connect(portoaFishermanIsland)
                                 .trigger(returnedFogLamp, fogLamp, shellFlute);
@@ -1232,7 +1407,7 @@ const portoaToolShop        = location(0xdd, PORT, 'Tool Shop').connect(portoa);
 const portoaPalaceLeft      = location(0xde, PORT, 'Palace Left').connect(portoaPalaceEntrance);
 const portoaThroneRoom      = location(0xdf, PORT, 'Palace Throne Room')
                                 .connect(portoaPalaceEntrance)
-                                .connect(undergroundChannel1, paralysis)
+                                .connectTo(undergroundChannel1, paralysis)
                                 .trigger(talkedToPortoaQueen)
                                 .trigger(sentToWaterfallCave,
                                          talkedToFortuneTeller, visitedUndergroundChannel);

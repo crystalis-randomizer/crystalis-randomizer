@@ -143,7 +143,7 @@ class Graph {
 
     // Map<Node, Map<string, Array<Node>>>
     const stack = [];
-    const seen = new Set();
+    const seen = new Map();
     const g = new Map();
     const addEdge = (to, ...deps) => {
       for (const from of deps) {
@@ -174,13 +174,13 @@ class Graph {
           addEdge(n, ...o);
         }
       } else if (n instanceof Option) {
-        stack.push(n);
+        stack.push([n, [{name: 'OPTION'}]]);
       } else if (n.item) {
         addEdge(n.item, n);
       }
     }
 
-    stack.push(start);
+    stack.push([start, [{name: 'START'}]]);
 
     // We now have a complete graph that we can do a simple DFS on.
     const want = new Set(this.gettables());
@@ -188,24 +188,30 @@ class Graph {
 
     // loop until we don't make any progress
     while (want.size && stack.length) {
-      const n = stack.pop();
+      const [n, deps] = stack.pop();
       if (seen.has(n)) continue;
       //console.log(`traverse ${n.name}`);
-      seen.add(n);
+      seen.set(n, deps);
       want.delete(n);
       for (const [next, ...deps] of (g.get(n) || empty).values()) {
         //const sat = deps.every(d => seen.has(d));
         //console.log(`  follow-on: \x1b[1;3${sat+1}m${next.name}\x1b[m${deps.length ? ' if ' : ''}${deps.map(d => `\x1b[1;3${seen.has(d)+1}m${d.name}\x1b[m`).join(', ')}`);
         if (seen.has(next)) continue;
-        if (deps.every(d => seen.has(d))) stack.push(next);
+        if (deps.every(d => seen.has(d))) stack.push([next, deps]);
       }
     }
-    return [...seen].map(n => {
-      const parts = [];
-      if (n instanceof Location) parts.push(n.area.name, ': ');
-      parts.push(n.name);
-      if (n instanceof ItemGet && n.index != n.id) parts.push(' $', n.index.toString(16));
-      return parts.join('');
+    return [...seen].map(([n, deps]) => {
+      const str = o => [
+        o instanceof Location ? o.area.name + ': ' : '',
+        o.name,
+        o instanceof ItemGet && o.index != o.id ? ' $' + o.index.toString(16) : '',
+      ];
+      return [
+        ...str(n),
+        ' [',
+        deps.map(d => str(d).join('').replace(/\s+\(.*\)/, '')).join(', '),
+        ']',
+      ].join('');
     });
   }
 }

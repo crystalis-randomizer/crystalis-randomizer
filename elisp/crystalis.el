@@ -343,6 +343,20 @@
       (forward-char)
       (buffer-substring-no-properties (point) (line-end-position)))))
 
+(defun sdh/get-item (id)
+  (with-current-buffer "items"
+    (save-excursion
+      (beginning-of-buffer)
+      (re-search-forward (format "^%02x - " id))
+      (buffer-substring-no-properties (point) (line-end-position)))))
+
+(defun sdh/get-trigger (id)
+  (with-current-buffer "triggers"
+    (save-excursion
+      (beginning-of-buffer)
+      (re-search-forward (format "^%02x - " id))
+      (buffer-substring-no-properties (point) (line-end-position)))))
+
 (defun sdh/get-flag (id)
   (with-current-buffer "flags"
     (save-excursion
@@ -461,5 +475,40 @@
   (save-excursion
     (beginning-of-line)
     (re-search-forward "^\\(?:[-+ \t]\\|[a-z]+:[ \t]\\)*\\$\\([0-9a-f]\\{5\\}\\)")
-    (message (shell-command-to-string (format "echo -n `./cov %d`" (asm/parse-number))))))
+    (message (shell-command-to-string (format "echo -n `./scripts/cov %d`" (asm/parse-number))))))
 (define-key asm-mode-map (kbd "C-c C-f") 'sdh-cov)
+
+
+(defun set-column-width (width)
+  (interactive "nColumns: ")
+  (save-excursion
+    (let* ((start (progn (beginning-of-line) (point)))
+           (total (progn (end-of-line) (- (point) start)))
+           (semi (progn (beginning-of-line) (re-search-forward ";") (point)))
+           (space (progn (backward-char) (re-search-backward "[^ ]") (forward-char)
+                         (- semi (point))))
+           (del (min space (- total width))))
+      (if (> del 0)
+          (delete-char del)
+        (insert (format (format "%% %ds" (- del)) ""))))))
+
+(defun annotate-npcdata ()
+  (interactive)
+  (save-excursion
+    (end-of-line)
+    (if (re-search-backward " *;" (line-beginning-position) t)
+        (progn (backward-char) (kill-line) (end-of-line)))
+    ;; TODO - remove existing comments
+    (let* ((line (line-number-at-pos))
+           (start (save-excursion (re-search-backward "NpcData_") (line-number-at-pos)))
+           (slot (+ #xb (- line start)))
+           (type (save-excursion (backward-char 5) (char-after)))
+           (arg (save-excursion (asm/parse-number))))
+      (insert (format " ; %02x" slot))
+      (cond
+       ((and (= type ?2) (< arg #x80)) (insert " " (sdh/get-item arg)))
+       ((= type ?2) (insert " " (sdh/get-trigger arg)))
+       ((= type ?1) (insert " " (sdh/get-npc arg))))
+      ;; TODO - add more info - want object names...
+)))
+(define-key asm-mode-map (kbd "C-c C-n") 'annotate-npcdata)

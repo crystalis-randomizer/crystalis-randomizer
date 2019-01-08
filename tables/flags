@@ -15,7 +15,8 @@
 01e - queen revealed as asina
 01f - got ball of water
 022 - heard story from sahara elder
-024 - got ivory statue
+024 - generals defeated
+025 - healed dolphin
 026 - entered shyron
 027 - shyron massacre
       $6485
@@ -25,23 +26,24 @@
 02b - change:stom
 02c
 02d
-02e
+02e - chest:2d:deo's pendant / talk to deo
 02f
 034 - akahana left waterfall cave
 035 - cured akahana
-037 
+037 - learned paralysis
       $6486
 038 - leaf attacked
 039 - learned refresh (windmill started)
 03a - local (zebu introduction)
 03b - talked to zebu in shyron
 03c - chest:3b:love pendant
-03e - finished chasing kensu
+03e - found kensu in dance hall
 03f - learned teleport
 
 043 - entered oak ?
 
-047 
+047 - rescued leaf elder 
+049 - got sword of fire from oak elder
 04e - chest:06:tornado bracelet
 04f - received warrior ring
 050 - given statue to akahana
@@ -54,14 +56,19 @@
 05e - draygon 2 defeated
 05f - chest:03:sword of thunder
 061 - talked to stom in swan hut
+062 - chest:51:sacred shield
+063 - learned change
 065 - cured kensu
 067 - defeated mado 1
 068 - forged crystalis
 06a - stoned people cured ?
-070 - kensu in tavern paralyzed
-071 - kensu in dance hall paralyzed
+070 - kensu paralyzed in tavern
+071 - kensu paralyzed in dance hall
+072 - found kensu in tavern
 076 - talked to kensu in goa before shyron
+077 - chest:08:flame bracelet
 078 - chest:0c:storm bracelet
+079 - chest:40:bow of truth
 07a - chest:0a:blizzard bracelet
 07d - chest:3f:bow of sun
 07e - overheard mt sabre guards
@@ -69,6 +76,7 @@
 
 
       $6490
+082 - azteca gave bow of truth
 083 - learned paralysis
 084 - leaf villagers currently abducted (set in cave behind zebu, cleared on using prison key)
 085 - leaf elder currently abducted (set in cave behind zebu, cleared in elder's cell)
@@ -77,8 +85,9 @@
 
 089 - spoken to dead stom's girlfriend
 08a - spoken to dead stom
+08b - got shell flute
 08c - swan guards disappeared
-08f - defeated sabera 1 ???
+08f - used statue of gold
 090 - stoned people gone
 097 - local (red man at top of leaf (0f) toggle, pre-abduction)
 09c - portoa queen went away
@@ -94,6 +103,7 @@
 0b1 - chest:56:medical herb
 0b2 - chest:57:medical herb
 0b3 - chest:58:magic ring
+0b3 - chest:59:medical herb
 0b5 - chest:5a:fruit of power
 0b6 - chest:1f:lysis plant
 0b7 - chest:5c:lysis plant
@@ -126,8 +136,10 @@
 0d2 - chest:69:magic ring
 0d3 - chest:26:opel statue
 0d4 - chest:5b:flute of lime
+0da - kensu gone from tavern
 0db - in sabera's trap
 0dc - chest:6f:magic ring
+0dd - chest:70:mimic - UNUSED
 0de - chest:2c:iron necklace
 0df - chest:1b:battle armor
 0e0 - spoken to dead akahana

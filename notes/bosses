@@ -1,0 +1,69 @@
+Treasure chest contents:
+ - written at 1f860
+reads from a data table, for vamp 1 that's 1f987
+ (root stored in $18, y=4)
+ 1f96b is pointer table
+
+entry point 1f807, from jump table 3cd28
+
+NOTE:
+ - flags to track the boss's defeat are tied to opening the chests!
+ - so if we change their items then we need to move those flags to the new chests...
+   alternatively, keep the same chest but change the contents???
+   - this will cause the wrong message, tho?
+
+
+What about chest spawns - ?
+ - if we move the whole chest, that should be fine.
+ - but then we shouldn't change the trigger...
+ - but dialog gifts are a different story
+   - depends on whether ItemGet or Dialog sets the flag.
+
+flag 101 for defeating insect is in wrong position...
+ ---> probably better off changing the spawn flag
+ - could also just swap them in an earlier patch to ensure they're compatible.
+
+some flags are set in common between dialog and itemget (e.g. sword of fire: 049)
+ --> will be a problem to move...
+ - could change one of them?
+ - but if we moved to an unused chest, then nothing will gate on it?
+ - hard to change dialog one because we may move it, so unclear where it will be...
+
+in general, moving non-chests to chests is tricky, since there's no chest to move...
+ - each item has a unique flag - easy to find.
+need to find chest spawn conditions...?
+
+prerequisite items, e.g. 017 sword of water
+ - tied to item or chest? seems like we want to tie to item
+
+NEEDS (NEW) FLAGS:
+ - insect flute
+ - oak elder
+ - talk to deo
+ - azteca - remove 079 from dialog
+ - 2b warrior ring
+ - broken statue (013 set on chest, but also spawns boss (npc 84) - maybe okay)
+ - shell flute 08b - also triggers fisherman spawn (OK)
+   - but be careful of item from healing dolphin
+   - do we want to make healing the dolphin a requirement for USING the shell flute???
+   - do we want to spawn the hurt dolphin on the swan beach as well???
+ - gas mask and shield ring
+   - currently share memory, need separate chunks with a flag
+ - 32 windmill key, 34 key to styx, 37 eye glasses
+   39 glowing lamp, 3a statue of gold, 3e bow of moon
+   - no chest flags for any of these! will need to add.
+
+ - barrier, flight, recover - no flags of their own
+   - for barrier, the trigger has a flag (051), but not the spell...
+
+ - if a chest item moves to not a chest then we could repurpose that flag...?
+
+
+DIALOG ITEMS:
+
+id | name               | ItemGet flag    | NPC/Dialog condition | Dialog set
+---|--------------------|-----------------|----------------------|------------
+00 | sword of wind      | 
+01 | sword of fire      | 
+
+2f | gas mask

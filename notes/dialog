@@ -75,3 +75,9 @@ The structure is as follows:
 
 PersonData - $680 is used as item to give in dialog action 3!
  - this is first byte of persondata.
+ - $6a0 (2nd byte) is given by action 11 - used for key to styx
+
+=====
+
+HINTS
+ - e.g. stom after insect hints about tornado bracelet (03:05)

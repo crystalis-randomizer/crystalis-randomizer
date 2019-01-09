@@ -4,6 +4,8 @@ const main = () => {
   const rom = {rom: null, name: null};
   document.getElementById('controls').style.display = 'block';
   document.getElementById('notice').remove();
+  document.getElementById('build-info').textContent =
+    `Built ${patch.BUILD_DATE} (${patch.BUILD_HASH})`;
   loadRomFromStorage(rom);
   // check the hash for the seed...
   const hash = {};
@@ -77,7 +79,7 @@ const shuffle = (seed, rom) => {
   }
   const shuffled = rom.rom.slice();
   patch.default.apply(shuffled, {'seed': seed});
-  const name = rom.name.replace(/\.nes|$/, '_' + seed + '.nes');
+  const name = rom.name.replace(/\.nes|$/, `_${patch.BUILD_HASH}_${seed}.nes`);
   download(shuffled, name)
 };
 

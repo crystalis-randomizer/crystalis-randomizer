@@ -6,6 +6,8 @@ shopt -s nullglob
 
 # Start by checking out the repo in a subdirectory
 
+HASH=$(git rev-parse HEAD | head -c 7)
+DATE=$(date)
 TMP=$(mktemp -d)
 (
   cd $TMP
@@ -26,6 +28,8 @@ TMP=$(mktemp -d)
   for a in *.html view/*.html; do
     cat ga.tag $a >| $TMP/r/$a
   done
+  sed -e "/BUILD_HASH/ s/latest/$HASH/" -e "/BUILD_DATE/ s/current/$DATE/" \
+      patch.js >| $TMP/r/patch.js
 )
 (
   cd $TMP/r

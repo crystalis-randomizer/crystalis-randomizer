@@ -1890,3 +1890,6 @@ const BONUS_ITEMS = {
   0x1a47d: 0x2f, // leather boots
   0x3d2af: 0x30, // shield ring
 };
+
+export const BUILD_HASH = 'latest';
+export const BUILD_DATE = 'current';

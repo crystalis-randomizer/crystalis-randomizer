@@ -88,9 +88,11 @@ define ObjectSpriteY          $05e0
 define ObjectBossMode         $0600
 ;;; 620 ?
 define ObjectShooterShooting     $0640
+define ObjectIdentity            $0680 ; ID of persondata
 define ObjectDirMetaspriteBase   $06c0
 define ObjectShootMetaspriteBase $06e0
 
+define LookingAt               $0623 ; slot index currently looking at
 
 define PlayerMetaspriteBase    $0301
 define PlayerMaxHP             $03c0
@@ -191,19 +193,19 @@ define NPCDATA_BANK $6
 
 ;;; ======== INVENTORY ========
 ;;; Swords
-define INV_WIND_SWORD        $00
-define INV_FIRE_SWORD        $01
-define INV_WATER_SWORD       $02
-define INV_THUNDER_SWORD     $03
+define INV_SWORD_OF_WIND     $00
+define INV_SWORD_OF_FIRE     $01
+define INV_SWORD_OF_WATER    $02
+define INV_SWORD_OF_THUNDER  $03
 define INV_CRYSTALIS         $04
 ;;; Balls/Bracelets
-define INV_WIND_BALL         $05
+define INV_BALL_OF_WIND      $05
 define INV_TORNADO_BRACELET  $06
-define INV_FIRE_BALL         $07
+define INV_BALL_OF_FIRE      $07
 define INV_FLAME_BRACELET    $08
-define INV_WATER_BALL        $09
+define INV_BALL_OF_WATER     $09
 define INV_BLIZZARD_BRACELET $0a
-define INV_THUNDER_BALL      $0b
+define INV_BALL_OF_THUNDER   $0b
 define INV_STORM_BRACELET    $0c
 ;;; Shields
 define INV_CARAPACE_SHIELD   $0d
@@ -495,14 +497,16 @@ define LOC_START         $00
 define LOC_OUTSIDE_START $01
 define LOC_LEAF          $02
 ;;; ...
-define LOC_SWAMP         $1a
+define LOC_SWAMP                $1a
 define LOC_MT_SABRE_NORTH_MAIN  $28
-define LOC_MESIA_SHRINE  $52
-define LOC_DYNA          $5f
-define LOC_SWAN_GATE     $73
-define LOC_MT_HYDRA      $7c
-define LOC_JOEL_SHED     $e4
-define LOC_SHYRON_TEMPLE $f2
+define LOC_MESIA_SHRINE         $52
+define LOC_DYNA                 $5f
+define LOC_JOEL_LIGHTHOUSE      $62
+define LOC_SWAN_GATE            $73
+define LOC_MT_HYDRA             $7c
+define LOC_DRAYGON2             $a6
+define LOC_JOEL_SHED            $e4
+define LOC_SHYRON_TEMPLE        $f2
 
 ;;; Bit mask for buttons in $43 and $44, etc.
 define BUTTON_A      $80
@@ -7271,54 +7275,54 @@ MapDataPart2
         $144f4              .word ($xxxx) ; $17a7a: fa =SaharaElderHouse
         $144f6              .word ($xxxx) ; $17a9f: fb =SaharaPawnShop
 ;;; ----------------------------------------------------------------
-MapData_Start                                          ; Location 00
+MapData_00                                           ; Mezame Shrine
         $144f8              .word ($xxxx) ; $14502
         $144fa              .word ($xxxx) ; $14508
         $144fc              .word ($xxxx) ; $1450f
         $144fe              .word ($xxxx) ; $14517
         $14500              .word ($xxxx) ; $1452c
-MapData_Start_Layout
+MapData_00_Layout
         $14502              .byte $xx
         $14503              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $14507              .byte $xx
-MapData_Start_Graphics
+MapData_00_Graphics
         $14508              .byte $xx,$xx,$xx
         $1450b              .byte $xx,$xx
         $1450d              .byte $xx,$xx
-MapData_Start_Entrances
+MapData_00_Entrances
         $1450f              .byte $xx,$xx,$xx,$xx ; Entrance at bottom
         $14513              .byte $xx,$xx,$xx,$xx ; Start door
-MapData_Start_Exits
+MapData_00_Exits
         $14517              .byte $xx,$xx,$xx,$xx ; Exit to OutsideStart, 5 wide
         $1451b              .byte $xx,$xx,$xx,$xx
         $1451f              .byte $xx,$xx,$xx,$xx
         $14523              .byte $xx,$xx,$xx,$xx
         $14527              .byte $xx,$xx,$xx,$xx
         $1452b              .byte $xx
-MapData_Start_Flags
+MapData_00_Flags
         $1452c              .byte $xx,$xx ; $64dd:80 -> $62f0:01
         $1452e              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_OutsideStart                                   ; Location 01
+MapData_01                                    ; Leaf - Outside Start
         $1452f              .word ($xxxx) ; $14539
         $14531              .word ($xxxx) ; $1453f
         $14533              .word ($xxxx) ; $14546
         $14535              .word ($xxxx) ; $1454e
         $14537              .word ($xxxx) ; $1456c
-MapData_OutsideStart_Layout
+MapData_01_Layout
         $14539              .byte $xx
         $1453a              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1453e              .byte $xx
-MapData_OutsideStart_Graphics
+MapData_01_Graphics
         $1453f              .byte $xx,$xx,$xx
         $14542              .byte $xx,$xx
         $14544              .byte $xx,$xx
-MapData_OutsideStart_Entrances
+MapData_01_Entrances
         $14546              .byte $xx,$xx,$xx,$xx ; From Start cave
         $1454a              .byte $xx,$xx,$xx,$xx ; From Leaf
-MapData_OutsideStart_Exits
+MapData_01_Exits
         $1454e              .byte $xx,$xx,$xx,$xx ; Exit to Start, 2x2 (why?)
         $14552              .byte $xx,$xx,$xx,$xx
         $14556              .byte $xx,$xx,$xx,$xx
@@ -7327,27 +7331,27 @@ MapData_OutsideStart_Exits
         $14562              .byte $xx,$xx,$xx,$xx
         $14566              .byte $xx,$xx,$xx,$xx
         $1456a              .byte $xx,$xx         ; Fall through since $ff below will catch
-MapData_OutsideStart_Flags
+MapData_01_Flags
         $1456c              .byte $xx,$xx ; $64dd:80 -> $62f0:01
         $1456e              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Leaf                                           ; Location 02
+MapData_02                                                    ; Leaf
         $1456f              .word ($xxxx) ; $14579
         $14571              .word ($xxxx) ; $14582
         $14573              .word ($xxxx) ; $14589
         $14575              .word ($xxxx) ; $145a9
         $14577              .word ($xxxx) ; $145d6
-MapData_Leaf_Layout
+MapData_02_Layout
         $14579              .byte $xx
         $1457a              .byte $xx,$xx,$xx,$xx
         ;; Map 2x2
         $1457e              .byte $xx,$xx
         $14580              .byte $xx,$xx
-MapData_Leaf_Graphics
+MapData_02_Graphics
         $14582              .byte $xx,$xx,$xx
         $14585              .byte $xx,$xx
         $14587              .byte $xx,$xx
-MapData_Leaf_Entrances
+MapData_02_Entrances
         $14589              .byte $xx,$xx,$xx,$xx ; From cave (or warp)
         $1458d              .byte $xx,$xx,$xx,$xx ; From valley of wind
         $14591              .byte $xx,$xx,$xx,$xx ; From elder's house
@@ -7356,7 +7360,7 @@ MapData_Leaf_Entrances
         $1459d              .byte $xx,$xx,$xx,$xx ; From tool shop
         $145a1              .byte $xx,$xx,$xx,$xx ; From armor shop
         $145a5              .byte $xx,$xx,$xx,$xx ; From inn
-MapData_Leaf_Exits
+MapData_02_Exits
         $145a9              .byte $xx,$xx,$xx,$xx ; Exit to OutsideStart (3 tall)
         $145ad              .byte $xx,$xx,$xx,$xx
         $145b1              .byte $xx,$xx,$xx,$xx
@@ -7369,17 +7373,17 @@ MapData_Leaf_Exits
         $145cd              .byte $xx,$xx,$xx,$xx ; Exit to LeafArmorShop
         $145d1              .byte $xx,$xx,$xx,$xx ; Exit to LeafInn
         $145d5              .byte $xx
-MapData_Leaf_Flags
+MapData_02_Flags
         $145d6              .byte $xx,$xx ; $64d0:04 -> $62f0:01
         $145d8              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_ValleyOfWind                                   ; Location 03
+MapData_03                                          ; Valley of Wind
         $145d9              .word ($xxxx) ; $145e3
         $145db              .word ($xxxx) ; $1460b
         $145dd              .word ($xxxx) ; $14612
         $145df              .word ($xxxx) ; $1462a
         $145e1              .word ($xxxx) ; $14653
-MapData_ValleyOfWind_Layout
+MapData_03_Layout
         $145e3              .byte $xx
         $145e4              .byte $xx,$xx,$xx,$xx
         ;; Map 5x7
@@ -7390,18 +7394,18 @@ MapData_ValleyOfWind_Layout
         $145fc              .byte $xx,$xx,$xx,$xx,$xx
         $14601              .byte $xx,$xx,$xx,$xx,$xx
         $14606              .byte $xx,$xx,$xx,$xx,$xx
-MapData_ValleyOfWind_Graphics
+MapData_03_Graphics
         $1460b              .byte $xx,$xx,$xx
         $1460e              .byte $xx,$xx
         $14610              .byte $xx,$xx
-MapData_ValleyOfWind_Entrances
+MapData_03_Entrances
         $14612              .byte $xx,$xx,$xx,$xx
         $14616              .byte $xx,$xx,$xx,$xx
         $1461a              .byte $xx,$xx,$xx,$xx
         $1461e              .byte $xx,$xx,$xx,$xx
         $14622              .byte $xx,$xx,$xx,$xx
         $14626              .byte $xx,$xx,$xx,$xx
-MapData_ValleyOfWind_Exits
+MapData_03_Exits
         $1462a              .byte $xx,$xx,$xx,$xx ; Exit to Leaf (2 wide)
         $1462e              .byte $xx,$xx,$xx,$xx
         $14632              .byte $xx,$xx,$xx,$xx ; Exit to Sealed Cave 1 (2 wide)
@@ -7413,17 +7417,17 @@ MapData_ValleyOfWind_Exits
         $1464a              .byte $xx,$xx,$xx,$xx ; Exit to Zebu's Cave (2 wide)
         $1464e              .byte $xx,$xx,$xx,$xx
         $14652              .byte $xx
-MapData_ValleyOfWind_Flags
+MapData_03_Flags
         $14653              .byte $xx,$xx ; $64dd:40 -> $62f1:02 windmill started
         $14655              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_WindmillCave                                   ; Location 0e
+MapData_0e                                           ; Windmill Cave
         $14656              .word ($xxxx) ; $14660
         $14658              .word ($xxxx) ; $14671
         $1465a              .word ($xxxx) ; $14678
         $1465c              .word ($xxxx) ; $14680
         $1465e              .word ($xxxx) ; $14691
-MapData_WindmillCave_Layout
+MapData_0e_Layout
         $14660              .byte $xx
         $14661              .byte $xx,$xx,$xx,$xx
         ;; Map 3x4
@@ -7431,52 +7435,52 @@ MapData_WindmillCave_Layout
         $14668              .byte $xx,$xx,$xx
         $1466b              .byte $xx,$xx,$xx
         $1466e              .byte $xx,$xx,$xx
-MapData_WindmillCave_Graphics
+MapData_0e_Graphics
         $14671              .byte $xx,$xx,$xx
         $14674              .byte $xx,$xx
         $14676              .byte $xx,$xx
-MapData_WindmillCave_Entrances
+MapData_0e_Entrances
         $14678              .byte $xx,$xx,$xx,$xx
         $1467c              .byte $xx,$xx,$xx,$xx
-MapData_WindmillCave_Exits
+MapData_0e_Exits
         $14680              .byte $xx,$xx,$xx,$xx
         $14684              .byte $xx,$xx,$xx,$xx
         $14688              .byte $xx,$xx,$xx,$xx
         $1468c              .byte $xx,$xx,$xx,$xx
         $14690              .byte $xx
-MapData_WindmillCave_Flags
+MapData_0e_Flags
         $14691              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Windmill                                       ; Location 0f
+MapData_0f                                                ; Windmill
         $14692              .word ($xxxx) ; $1469c
         $14694              .word ($xxxx) ; $146a2
         $14696              .word ($xxxx) ; $146a9
         $14698              .word ($xxxx) ; $146ad
         $1469a              .word ($xxxx) ; $146b2
-MapData_Windmill_Layout
+MapData_0f_Layout
         $1469c              .byte $xx
         $1469d              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $146a1              .byte $xx
-MapData_Windmill_Graphics
+MapData_0f_Graphics
         $146a2              .byte $xx,$xx,$xx
         $146a5              .byte $xx,$xx
         $146a7              .byte $xx,$xx
-MapData_Windmill_Entrances
+MapData_0f_Entrances
         $146a9              .byte $xx,$xx,$xx,$xx
-MapData_Windmill_Exits
+MapData_0f_Exits
         $146ad              .byte $xx,$xx,$xx,$xx
         $146b1              .byte $xx
-MapData_Windmill_Flags
+MapData_0f_Flags
         $146b2              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_ZebuCave                                       ; Location 10
+MapData_10                                               ; Zebu Cave
         $146b3              .word ($xxxx) ; $146bd
         $146b5              .word ($xxxx) ; $146d2
         $146b7              .word ($xxxx) ; $146d9
         $146b9              .word ($xxxx) ; $146e1
         $146bb              .word ($xxxx) ; $146f2
-MapData_ZebuCave_Layout
+MapData_10_Layout
         $146bd              .byte $xx
         $146be              .byte $xx,$xx,$xx,$xx
         ;; Map 4x4
@@ -7484,30 +7488,30 @@ MapData_ZebuCave_Layout
         $146c6              .byte $xx,$xx,$xx,$xx
         $146ca              .byte $xx,$xx,$xx,$xx
         $146ce              .byte $xx,$xx,$xx,$xx
-MapData_ZebuCave_Graphics
+MapData_10_Graphics
         $146d2              .byte $xx,$xx,$xx
         $146d5              .byte $xx,$xx
         $146d7              .byte $xx,$xx
-MapData_ZebuCave_Entrances
+MapData_10_Entrances
         $146d9              .byte $xx,$xx,$xx,$xx
         $146dd              .byte $xx,$xx,$xx,$xx
-MapData_ZebuCave_Exits
+MapData_10_Exits
         $146e1              .byte $xx,$xx,$xx,$xx
         $146e5              .byte $xx,$xx,$xx,$xx
         $146e9              .byte $xx,$xx,$xx,$xx
         $146ed              .byte $xx,$xx,$xx,$xx
         $146f1              .byte $xx
-MapData_ZebuCave_Flags
+MapData_10_Flags
         $146f2              .byte $xx,$xx ; $64dd:20 -> $62f2:02
         $146f4              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreWestCave1                               ; Location 11
+MapData_11                                  ; Mt Sabre West - Cave 1
         $146f5              .word ($xxxx) ; $146ff
         $146f7              .word ($xxxx) ; $1470c
         $146f9              .word ($xxxx) ; $14713
         $146fb              .word ($xxxx) ; $1471b
         $146fd              .word ($xxxx) ; $1472c
-MapData_MtSabreWestCave1_Layout
+MapData_11_Layout
         $146ff              .byte $xx
         $14700              .byte $xx,$xx,$xx,$xx
         ;; Map 2x4
@@ -7515,111 +7519,111 @@ MapData_MtSabreWestCave1_Layout
         $14706              .byte $xx,$xx
         $14708              .byte $xx,$xx
         $1470a              .byte $xx,$xx
-MapData_MtSabreWestCave1_Graphics
+MapData_11_Graphics
         $1470c              .byte $xx,$xx,$xx
         $1470f              .byte $xx,$xx
         $14711              .byte $xx,$xx
-MapData_MtSabreWestCave1_Entrances
+MapData_11_Entrances
         $14713              .byte $xx,$xx,$xx,$xx
         $14717              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreWestCave1_Exits
+MapData_11_Exits
         $1471b              .byte $xx,$xx,$xx,$xx ; To Zebu's Cave
         $1471f              .byte $xx,$xx,$xx,$xx
         $14723              .byte $xx,$xx,$xx,$xx ; To Mt Sabre West
         $14727              .byte $xx,$xx,$xx,$xx
         $1472b              .byte $xx
-MapData_MtSabreWestCave1_Flags
+MapData_11_Flags
         $1472c              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_SealedCave1                                    ; Location 04
+MapData_04                                           ; Sealed Cave 1
         $1472d              .word ($xxxx) ; $14737
         $1472f              .word ($xxxx) ; $14745
         $14731              .word ($xxxx) ; $1474c
         $14733              .word ($xxxx) ; $14754
         $14735              .word ($xxxx) ; $14765
-MapData_SealedCave1_Layout
+MapData_04_Layout
         $14737              .byte $xx
         $14738              .byte $xx,$xx,$xx,$xx
         ;; Map 3x3
         $1473c              .byte $xx,$xx,$xx
         $1473f              .byte $xx,$xx,$xx
         $14742              .byte $xx,$xx,$xx
-MapData_SealedCave1_Graphics
+MapData_04_Graphics
         $14745              .byte $xx,$xx,$xx
         $14748              .byte $xx,$xx
         $1474a              .byte $xx,$xx
-MapData_SealedCave1_Entrances
+MapData_04_Entrances
         $1474c              .byte $xx,$xx,$xx,$xx
         $14750              .byte $xx,$xx,$xx,$xx
-MapData_SealedCave1_Exits
+MapData_04_Exits
         $14754              .byte $xx,$xx,$xx,$xx
         $14758              .byte $xx,$xx,$xx,$xx
         $1475c              .byte $xx,$xx,$xx,$xx
         $14760              .byte $xx,$xx,$xx,$xx
         $14764              .byte $xx
-MapData_SealedCave1_Flags
+MapData_04_Flags
         $14765              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_SealedCave2                                    ; Location 05
+MapData_05                                           ; Sealed Cave 2
         $14766              .word ($xxxx) ; $14770
         $14768              .word ($xxxx) ; $14781
         $1476a              .word ($xxxx) ; $14788
         $1476c              .word ($xxxx) ; $14790
         $1476e              .word ($xxxx) ; $147a1
-MapData_SealedCave2_Layout
+MapData_05_Layout
         $14770              .byte $xx
         $14771              .byte $xx,$xx,$xx,$xx
         ;; Map 4x3
         $14775              .byte $xx,$xx,$xx,$xx
         $14779              .byte $xx,$xx,$xx,$xx
         $1477d              .byte $xx,$xx,$xx,$xx
-MapData_SealedCave2_Graphics
+MapData_05_Graphics
         $14781              .byte $xx,$xx,$xx
         $14784              .byte $xx,$xx
         $14786              .byte $xx,$xx
-MapData_SealedCave2_Entrances
+MapData_05_Entrances
         $14788              .byte $xx,$xx,$xx,$xx
         $1478c              .byte $xx,$xx,$xx,$xx
-MapData_SealedCave2_Exits
+MapData_05_Exits
         $14790              .byte $xx,$xx,$xx,$xx
         $14794              .byte $xx,$xx,$xx,$xx
         $14798              .byte $xx,$xx,$xx,$xx
         $1479c              .byte $xx,$xx,$xx,$xx
         $147a0              .byte $xx
-MapData_SealedCave2_Flags
+MapData_05_Flags
         $147a1              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_SealedCave3                                    ; Location 06
+MapData_06                                           ; Sealed Cave 3
         $147a2              .word ($xxxx) ; $147ac
         $147a4              .word ($xxxx) ; $147b4
         $147a6              .word ($xxxx) ; $147bb
         $147a8              .word ($xxxx) ; $147bf
         $147aa              .word ($xxxx) ; $147c8
-MapData_SealedCave3_Layout
+MapData_06_Layout
         $147ac              .byte $xx
         $147ad              .byte $xx,$xx,$xx,$xx
         ;; Map 3x1
         $147b1              .byte $xx,$xx,$xx
-MapData_SealedCave3_Graphics
+MapData_06_Graphics
         $147b4              .byte $xx,$xx,$xx
         $147b7              .byte $xx,$xx
         $147b9              .byte $xx,$xx
-MapData_SealedCave3_Entrances
+MapData_06_Entrances
         $147bb              .byte $xx,$xx,$xx,$xx
-MapData_SealedCave3_Exits
+MapData_06_Exits
         $147bf              .byte $xx,$xx,$xx,$xx
         $147c3              .byte $xx,$xx,$xx,$xx
         $147c7              .byte $xx
-MapData_SealedCave3_Flags
+MapData_06_Flags
         $147c8              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_SealedCave4                                    ; Location 07
+MapData_07                                           ; Sealed Cave 4
         $147c9              .word ($xxxx) ; $147d3
         $147cb              .word ($xxxx) ; $147ea
         $147cd              .word ($xxxx) ; $147f1
         $147cf              .word ($xxxx) ; $147f5
         $147d1              .word ($xxxx) ; $147fe
-MapData_SealedCave4_Layout
+MapData_07_Layout
         $147d3              .byte $xx
         $147d4              .byte $xx,$xx,$xx,$xx
         ;; Map 3x6
@@ -7629,70 +7633,70 @@ MapData_SealedCave4_Layout
         $147e1              .byte $xx,$xx,$xx
         $147e4              .byte $xx,$xx,$xx
         $147e7              .byte $xx,$xx,$xx
-MapData_SealedCave4_Graphics
+MapData_07_Graphics
         $147ea              .byte $xx,$xx,$xx
         $147ed              .byte $xx,$xx
         $147ef              .byte $xx,$xx
-MapData_SealedCave4_Entrances
+MapData_07_Entrances
         $147f1              .byte $xx,$xx,$xx,$xx
-MapData_SealedCave4_Exits
+MapData_07_Exits
         $147f5              .byte $xx,$xx,$xx,$xx
         $147f9              .byte $xx,$xx,$xx,$xx
         $147fd              .byte $xx
-MapData_SealedCave4_Flags
+MapData_07_Flags
         $147fe              .byte $xx,$xx ; $64dd:10 -> $62f1:04
         $14800              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_SealedCave5                                    ; Location 08
+MapData_08                                           ; Sealed Cave 5
         $14801              .word ($xxxx) ; $1480b
         $14803              .word ($xxxx) ; $14813
         $14805              .word ($xxxx) ; $1481a
         $14807              .word ($xxxx) ; $1481e
         $14809              .word ($xxxx) ; $14827
-MapData_SealedCave5_Layout
+MapData_08_Layout
         $1480b              .byte $xx
         $1480c              .byte $xx,$xx,$xx,$xx
         ;; Map 1x3
         $14810              .byte $xx
         $14811              .byte $xx
         $14812              .byte $xx
-MapData_SealedCave5_Graphics
+MapData_08_Graphics
         $14813              .byte $xx,$xx,$xx
         $14816              .byte $xx,$xx
         $14818              .byte $xx,$xx
-MapData_SealedCave5_Entrances
+MapData_08_Entrances
         $1481a              .byte $xx,$xx,$xx,$xx
-MapData_SealedCave5_Exits
+MapData_08_Exits
         $1481e              .byte $xx,$xx,$xx,$xx
         $14822              .byte $xx,$xx,$xx,$xx
         $14826              .byte $xx
-MapData_SealedCave5_Flags
+MapData_08_Flags
         $14827              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_SealedCave6                                    ; Location 09
+MapData_09                                           ; Sealed Cave 6
         $14828              .word ($xxxx) ; $14832
         $1482a              .word ($xxxx) ; $14846
         $1482c              .word ($xxxx) ; $1484d
         $1482e              .word ($xxxx) ; $14861
         $14830              .word ($xxxx) ; $1488a
-MapData_SealedCave6_Layout
+MapData_09_Layout
         $14832              .byte $xx
         $14833              .byte $xx,$xx,$xx,$xx
         ;; Map 5x3
         $14837              .byte $xx,$xx,$xx,$xx,$xx
         $1483c              .byte $xx,$xx,$xx,$xx,$xx
         $14841              .byte $xx,$xx,$xx,$xx,$xx
-MapData_SealedCave6_Graphics
+MapData_09_Graphics
         $14846              .byte $xx,$xx,$xx
         $14849              .byte $xx,$xx
         $1484b              .byte $xx,$xx
-MapData_SealedCave6_Entrances
+MapData_09_Entrances
         $1484d              .byte $xx,$xx,$xx,$xx
         $14851              .byte $xx,$xx,$xx,$xx
         $14855              .byte $xx,$xx,$xx,$xx
         $14859              .byte $xx,$xx,$xx,$xx
         $1485d              .byte $xx,$xx,$xx,$xx
-MapData_SealedCave6_Exits
+MapData_09_Exits
         $14861              .byte $xx,$xx,$xx,$xx
         $14865              .byte $xx,$xx,$xx,$xx
         $14869              .byte $xx,$xx,$xx,$xx
@@ -7704,75 +7708,75 @@ MapData_SealedCave6_Exits
         $14881              .byte $xx,$xx,$xx,$xx
         $14885              .byte $xx,$xx,$xx,$xx
         $14889              .byte $xx
-MapData_SealedCave6_Flags
+MapData_09_Flags
         $1488a              .byte $xx,$xx ; $64dd:08 -> $62f1:02
         $1488c              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_SealedCave7                                    ; Location 0a
+MapData_0a                                           ; Sealed Cave 7
         $1488d              .word ($xxxx) ; $14897
         $1488f              .word ($xxxx) ; $148a2
         $14891              .word ($xxxx) ; $148a9
         $14893              .word ($xxxx) ; $148b1
         $14895              .word ($xxxx) ; $148c2
-MapData_SealedCave7_Layout
+MapData_0a_Layout
         $14897              .byte $xx
         $14898              .byte $xx,$xx,$xx,$xx
         ;; Map 3x2
         $1489c              .byte $xx,$xx,$xx
         $1489f              .byte $xx,$xx,$xx
-MapData_SealedCave7_Graphics
+MapData_0a_Graphics
         $148a2              .byte $xx,$xx,$xx
         $148a5              .byte $xx,$xx
         $148a7              .byte $xx,$xx
-MapData_SealedCave7_Entrances
+MapData_0a_Entrances
         $148a9              .byte $xx,$xx,$xx,$xx
         $148ad              .byte $xx,$xx,$xx,$xx
-MapData_SealedCave7_Exits
+MapData_0a_Exits
         $148b1              .byte $xx,$xx,$xx,$xx
         $148b5              .byte $xx,$xx,$xx,$xx
         $148b9              .byte $xx,$xx,$xx,$xx
         $148bd              .byte $xx,$xx,$xx,$xx
         $148c1              .byte $xx
-MapData_SealedCave7_Flags
+MapData_0a_Flags
         $148c2              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_SealedCave8                                    ; Location 0c
+MapData_0c                                           ; Sealed Cave 8
         $148c3              .word ($xxxx) ; $148cd
         $148c5              .word ($xxxx) ; $148d8
         $148c7              .word ($xxxx) ; $148df
         $148c9              .word ($xxxx) ; $148e7
         $148cb              .word ($xxxx) ; $148f8
-MapData_SealedCave8_Layout
+MapData_0c_Layout
         $148cd              .byte $xx
         $148ce              .byte $xx,$xx,$xx,$xx
         ;; Map 2x3
         $148d2              .byte $xx,$xx
         $148d4              .byte $xx,$xx
         $148d6              .byte $xx,$xx
-MapData_SealedCave8_Graphics
+MapData_0c_Graphics
         $148d8              .byte $xx,$xx,$xx
         $148db              .byte $xx,$xx
         $148dd              .byte $xx,$xx
-MapData_SealedCave8_Entrances
+MapData_0c_Entrances
         $148df              .byte $xx,$xx,$xx,$xx
         $148e3              .byte $xx,$xx,$xx,$xx
-MapData_SealedCave8_Exits
+MapData_0c_Exits
         $148e7              .byte $xx,$xx,$xx,$xx
         $148eb              .byte $xx,$xx,$xx,$xx
         $148ef              .byte $xx,$xx,$xx,$xx
         $148f3              .byte $xx,$xx,$xx,$xx
         $148f7              .byte $xx
-MapData_SealedCave8_Flags
+MapData_0c_Flags
         $148f8              .byte $xx,$xx ; $64d0:10 -> $62f1:02
         $148fa              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_CordelPlainsWest                               ; Location 14
+MapData_14                                      ; Cordel Plains West
         $148fb              .word ($xxxx) ; $14905
         $148fd              .word ($xxxx) ; $1494a
         $148ff              .word ($xxxx) ; $14951
         $14901              .word ($xxxx) ; $1496d
         $14903              .word ($xxxx) ; $149b2
-MapData_CordelPlainsWest_Layout
+MapData_14_Layout
         $14905              .byte $xx
         $14906              .byte $xx,$xx,$xx,$xx
         ;; Map 8x8
@@ -7785,11 +7789,11 @@ MapData_CordelPlainsWest_Layout
         $1493a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $14942              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         ;; Pattern data [5] -> $7f0 = tiles 0-$7f, [6] -> $7f1 = tiles $80-$ff
-MapData_CordelPlainsWest_Graphics
+MapData_14_Graphics
         $1494a              .byte $xx,$xx,$xx
         $1494d              .byte $xx,$xx
         $1494f              .byte $xx,$xx
-MapData_CordelPlainsWest_Entrances
+MapData_14_Entrances
         $14951              .byte $xx,$xx,$xx,$xx
         $14955              .byte $xx,$xx,$xx,$xx
         $14959              .byte $xx,$xx,$xx,$xx
@@ -7797,7 +7801,7 @@ MapData_CordelPlainsWest_Entrances
         $14961              .byte $xx,$xx,$xx,$xx
         $14965              .byte $xx,$xx,$xx,$xx
         $14969              .byte $xx,$xx,$xx,$xx
-MapData_CordelPlainsWest_Exits
+MapData_14_Exits
         $1496d              .byte $xx,$xx,$xx,$xx
         $14971              .byte $xx,$xx,$xx,$xx
         $14975              .byte $xx,$xx,$xx,$xx
@@ -7816,18 +7820,18 @@ MapData_CordelPlainsWest_Exits
         $149a9              .byte $xx,$xx,$xx,$xx
         $149ad              .byte $xx,$xx,$xx,$xx
         $149b1              .byte $xx
-MapData_CordelPlainsWest_Flags
+MapData_14_Flags
         $149b2              .byte $xx,$xx ; 64dd:04 -> 62f5:04
         $149b4              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_CordelPlainsEast                               ; Location 15
+MapData_15                                      ; Cordel Plains East
         ;; Area south of the bridge, east toward the swamp
         $149b5              .word ($xxxx) ; $149bf
         $149b7              .word ($xxxx) ; $14a04
         $149b9              .word ($xxxx) ; $14a0b
         $149bb              .word ($xxxx) ; $14a27
         $149bd              .word ($xxxx) ; $14a6c
-MapData_CordelPlainsEast_Layout
+MapData_15_Layout
         $149bf              .byte $xx
         $149c0              .byte $xx,$xx,$xx,$xx
         ;; Map 8x8
@@ -7839,11 +7843,11 @@ MapData_CordelPlainsEast_Layout
         $149ec              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $149f4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $149fc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_CordelPlainsEast_Graphics
+MapData_15_Graphics
         $14a04              .byte $xx,$xx,$xx
         $14a07              .byte $xx,$xx
         $14a09              .byte $xx,$xx
-MapData_CordelPlainsEast_Entrances
+MapData_15_Entrances
         $14a0b              .byte $xx,$xx,$xx,$xx
         $14a0f              .byte $xx,$xx,$xx,$xx
         $14a13              .byte $xx,$xx,$xx,$xx
@@ -7851,7 +7855,7 @@ MapData_CordelPlainsEast_Entrances
         $14a1b              .byte $xx,$xx,$xx,$xx
         $14a1f              .byte $xx,$xx,$xx,$xx
         $14a23              .byte $xx,$xx,$xx,$xx
-MapData_CordelPlainsEast_Exits
+MapData_15_Exits
         $14a27              .byte $xx,$xx,$xx,$xx
         $14a2b              .byte $xx,$xx,$xx,$xx
         $14a2f              .byte $xx,$xx,$xx,$xx
@@ -7870,25 +7874,25 @@ MapData_CordelPlainsEast_Exits
         $14a63              .byte $xx,$xx,$xx,$xx
         $14a67              .byte $xx,$xx,$xx,$xx
         $14a6b              .byte $xx
-MapData_CordelPlainsEast_Flags
+MapData_15_Flags
         $14a6c              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Brynmaer                                       ; Location 18
+MapData_18                                                ; Brynmaer
         $14a6d              .word ($xxxx) ; $14a77
         $14a6f              .word ($xxxx) ; $14a7f
         $14a71              .word ($xxxx) ; $14a86
         $14a73              .word ($xxxx) ; $14aa2
         $14a75              .word ($xxxx) ; $14abf
-MapData_Brynmaer_Layout
+MapData_18_Layout
         $14a77              .byte $xx
         $14a78              .byte $xx,$xx,$xx,$xx
         ;; Map 3x1
         $14a7c              .byte $xx,$xx,$xx
-MapData_Brynmaer_Graphics
+MapData_18_Graphics
         $14a7f              .byte $xx,$xx,$xx
         $14a82              .byte $xx,$xx
         $14a84              .byte $xx,$xx
-MapData_Brynmaer_Entrances
+MapData_18_Entrances
         $14a86              .byte $xx,$xx,$xx,$xx
         $14a8a              .byte $xx,$xx,$xx,$xx
         $14a8e              .byte $xx,$xx,$xx,$xx
@@ -7896,7 +7900,7 @@ MapData_Brynmaer_Entrances
         $14a96              .byte $xx,$xx,$xx,$xx
         $14a9a              .byte $xx,$xx,$xx,$xx
         $14a9e              .byte $xx,$xx,$xx,$xx
-MapData_Brynmaer_Exits
+MapData_18_Exits
         $14aa2              .byte $xx,$xx,$xx,$xx
         $14aa6              .byte $xx,$xx,$xx,$xx
         $14aaa              .byte $xx,$xx,$xx,$xx
@@ -7905,68 +7909,68 @@ MapData_Brynmaer_Exits
         $14ab6              .byte $xx,$xx,$xx,$xx
         $14aba              .byte $xx,$xx,$xx,$xx
         $14abe              .byte $xx
-MapData_Brynmaer_Flags
+MapData_18_Flags
         $14abf              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_OutsideStomHouse                               ; Location 19
+MapData_19                                      ; Outside Stom House
         $14ac0              .word ($xxxx) ; $14aca
         $14ac2              .word ($xxxx) ; $14ad0
         $14ac4              .word ($xxxx) ; $14ad7
         $14ac6              .word ($xxxx) ; $14adf
         $14ac8              .word ($xxxx) ; $14af0
-MapData_OutsideStomHouse_Layout
+MapData_19_Layout
         $14aca              .byte $xx
         $14acb              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $14acf              .byte $xx
-MapData_OutsideStomHouse_Graphics
+MapData_19_Graphics
         $14ad0              .byte $xx,$xx,$xx
         $14ad3              .byte $xx,$xx
         $14ad5              .byte $xx,$xx
-MapData_OutsideStomHouse_Entrances
+MapData_19_Entrances
         $14ad7              .byte $xx,$xx,$xx,$xx
         $14adb              .byte $xx,$xx,$xx,$xx
-MapData_OutsideStomHouse_Exits
+MapData_19_Exits
         $14adf              .byte $xx,$xx,$xx,$xx
         $14ae3              .byte $xx,$xx,$xx,$xx
         $14ae7              .byte $xx,$xx,$xx,$xx
         $14aeb              .byte $xx,$xx,$xx,$xx
         $14aef              .byte $xx
-MapData_OutsideStomHouse_Flags
+MapData_19_Flags
         $14af0              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_StomHouse                                      ; Location 1e
+MapData_1e                                              ; Stom House
         $14af1              .word ($xxxx) ; $14afb
         $14af3              .word ($xxxx) ; $14b01
         $14af5              .word ($xxxx) ; $14b08
         $14af7              .word ($xxxx) ; $14b0c
         $14af9              .word ($xxxx) ; $14b15
-MapData_StomHouse_Layout
+MapData_1e_Layout
         $14afb              .byte $xx
         $14afc              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $14b00              .byte $xx
-MapData_StomHouse_Graphics
+MapData_1e_Graphics
         $14b01              .byte $xx,$xx,$xx
         $14b04              .byte $xx,$xx
         $14b06              .byte $xx,$xx
-MapData_StomHouse_Entrances
+MapData_1e_Entrances
         $14b08              .byte $xx,$xx,$xx,$xx
-MapData_StomHouse_Exits
+MapData_1e_Exits
         $14b0c              .byte $xx,$xx,$xx,$xx
         $14b10              .byte $xx,$xx,$xx,$xx
         $14b14              .byte $xx
-MapData_StomHouse_Flags
+MapData_1e_Flags
         $14b15              .byte $xx,$xx ; 64d0:04 -> 62f0:01
         $14b17              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Swamp                                          ; Location 1a
+MapData_1a                                                   ; Swamp
         $14b18              .word ($xxxx) ; $14b22
         $14b1a              .word ($xxxx) ; $14b40
         $14b1c              .word ($xxxx) ; $14b47
         $14b1e              .word ($xxxx) ; $14b4f
         $14b20              .word ($xxxx) ; $14b6c
-MapData_Swamp_Layout
+MapData_1a_Layout
         $14b22              .byte $xx
         $14b23              .byte $xx,$xx,$xx,$xx
         ;; Map 5x5
@@ -7975,14 +7979,14 @@ MapData_Swamp_Layout
         $14b31              .byte $xx,$xx,$xx,$xx,$xx
         $14b36              .byte $xx,$xx,$xx,$xx,$xx
         $14b3b              .byte $xx,$xx,$xx,$xx,$xx
-MapData_Swamp_Graphics
+MapData_1a_Graphics
         $14b40              .byte $xx,$xx,$xx
         $14b43              .byte $xx,$xx
         $14b45              .byte $xx,$xx
-MapData_Swamp_Entrances
+MapData_1a_Entrances
         $14b47              .byte $xx,$xx,$xx,$xx
         $14b4b              .byte $xx,$xx,$xx,$xx
-MapData_Swamp_Exits
+MapData_1a_Exits
         $14b4f              .byte $xx,$xx,$xx,$xx
         $14b53              .byte $xx,$xx,$xx,$xx
         $14b57              .byte $xx,$xx,$xx,$xx
@@ -7991,31 +7995,31 @@ MapData_Swamp_Exits
         $14b63              .byte $xx,$xx,$xx,$xx
         $14b67              .byte $xx,$xx,$xx,$xx
         $14b6b              .byte $xx
-MapData_Swamp_Flags
+MapData_1a_Flags
         $14b6c              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Amazones                                       ; Location 1b
+MapData_1b                                                ; Amazones
         $14b6d              .word ($xxxx) ; $14b77
         $14b6f              .word ($xxxx) ; $14b7e
         $14b71              .word ($xxxx) ; $14b85
         $14b73              .word ($xxxx) ; $14b99
         $14b75              .word ($xxxx) ; $14bb2
-MapData_Amazones_Layout
+MapData_1b_Layout
         $14b77              .byte $xx
         $14b78              .byte $xx,$xx,$xx,$xx
         ;; Map 2x1
         $14b7c              .byte $xx,$xx
-MapData_Amazones_Graphics
+MapData_1b_Graphics
         $14b7e              .byte $xx,$xx,$xx
         $14b81              .byte $xx,$xx
         $14b83              .byte $xx,$xx
-MapData_Amazones_Entrances
+MapData_1b_Entrances
         $14b85              .byte $xx,$xx,$xx,$xx
         $14b89              .byte $xx,$xx,$xx,$xx
         $14b8d              .byte $xx,$xx,$xx,$xx
         $14b91              .byte $xx,$xx,$xx,$xx
         $14b95              .byte $xx,$xx,$xx,$xx
-MapData_Amazones_Exits
+MapData_1b_Exits
         $14b99              .byte $xx,$xx,$xx,$xx
         $14b9d              .byte $xx,$xx,$xx,$xx
         $14ba1              .byte $xx,$xx,$xx,$xx
@@ -8023,33 +8027,33 @@ MapData_Amazones_Exits
         $14ba9              .byte $xx,$xx,$xx,$xx
         $14bad              .byte $xx,$xx,$xx,$xx
         $14bb1              .byte $xx
-MapData_Amazones_Flags
+MapData_1b_Flags
         $14bb2              .byte $xx,$xx ; 64d0:04 -> 62f0:01
         $14bb4              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Oak                                            ; Location 1c
+MapData_1c                                                     ; Oak
         $14bb5              .word ($xxxx) ; $14bbf
         $14bb7              .word ($xxxx) ; $14bc8
         $14bb9              .word ($xxxx) ; $14bcf
         $14bbb              .word ($xxxx) ; $14be3
         $14bbd              .word ($xxxx) ; $14bfc
-MapData_Oak_Layout
+MapData_1c_Layout
         $14bbf              .byte $xx
         $14bc0              .byte $xx,$xx,$xx,$xx
         ;; Map 2x2
         $14bc4              .byte $xx,$xx
         $14bc6              .byte $xx,$xx
-MapData_Oak_Graphics
+MapData_1c_Graphics
         $14bc8              .byte $xx,$xx,$xx
         $14bcb              .byte $xx,$xx
         $14bcd              .byte $xx,$xx
-MapData_Oak_Entrances
+MapData_1c_Entrances
         $14bcf              .byte $xx,$xx,$xx,$xx
         $14bd3              .byte $xx,$xx,$xx,$xx
         $14bd7              .byte $xx,$xx,$xx,$xx
         $14bdb              .byte $xx,$xx,$xx,$xx
         $14bdf              .byte $xx,$xx,$xx,$xx
-MapData_Oak_Exits
+MapData_1c_Exits
         $14be3              .byte $xx,$xx,$xx,$xx
         $14be7              .byte $xx,$xx,$xx,$xx
         $14beb              .byte $xx,$xx,$xx,$xx
@@ -8057,16 +8061,16 @@ MapData_Oak_Exits
         $14bf3              .byte $xx,$xx,$xx,$xx
         $14bf7              .byte $xx,$xx,$xx,$xx
         $14bfb              .byte $xx
-MapData_Oak_Flags
+MapData_1c_Flags
         $14bfc              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreWestLower                               ; Location 20
+MapData_20                                   ; Mt Sabre West - Lower
         $14bfd              .word ($xxxx) ; $14c07
         $14bff              .word ($xxxx) ; $14c2a
         $14c01              .word ($xxxx) ; $14c31
         $14c03              .word ($xxxx) ; $14c45
         $14c05              .word ($xxxx) ; $14c86
-MapData_MtSabreWestLower_Layout
+MapData_20_Layout
         $14c07              .byte $xx
         $14c08              .byte $xx,$xx,$xx,$xx
         ;; Map 6x5
@@ -8075,17 +8079,17 @@ MapData_MtSabreWestLower_Layout
         $14c18              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $14c1e              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $14c24              .byte $xx,$xx,$xx,$xx,$xx,$xx
-MapData_MtSabreWestLower_Graphics
+MapData_20_Graphics
         $14c2a              .byte $xx,$xx,$xx
         $14c2d              .byte $xx,$xx
         $14c2f              .byte $xx,$xx
-MapData_MtSabreWestLower_Entrances
+MapData_20_Entrances
         $14c31              .byte $xx,$xx,$xx,$xx
         $14c35              .byte $xx,$xx,$xx,$xx
         $14c39              .byte $xx,$xx,$xx,$xx
         $14c3d              .byte $xx,$xx,$xx,$xx
         $14c41              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreWestLower_Exits
+MapData_20_Exits
         ;; See map http://mikesrpgcenter.com/crystalis/maps/mtsabrewest.html
         $14c45              .byte $xx,$xx,$xx,$xx ; Main entrance to Cordel Plain
         $14c49              .byte $xx,$xx,$xx,$xx
@@ -8104,16 +8108,16 @@ MapData_MtSabreWestLower_Exits
         $14c7d              .byte $xx,$xx,$xx,$xx
         $14c81              .byte $xx,$xx,$xx,$xx
         $14c85              .byte $xx
-MapData_MtSabreWestLower_Flags
+MapData_20_Flags
         $14c86              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreWestUpper                               ; Location 21
+MapData_21                                   ; Mt Sabre West - Upper
         $14c87              .word ($xxxx) ; $14c91
         $14c89              .word ($xxxx) ; $14cb4
         $14c8b              .word ($xxxx) ; $14cbb
         $14c8d              .word ($xxxx) ; $14cc7
         $14c8f              .word ($xxxx) ; $14cf0
-MapData_MtSabreWestUpper_Layout
+MapData_21_Layout
         $14c91              .byte $xx
         $14c92              .byte $xx,$xx,$xx,$xx
         ;; Map 6x5
@@ -8122,15 +8126,15 @@ MapData_MtSabreWestUpper_Layout
         $14ca2              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $14ca8              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $14cae              .byte $xx,$xx,$xx,$xx,$xx,$xx
-MapData_MtSabreWestUpper_Graphics
+MapData_21_Graphics
         $14cb4              .byte $xx,$xx,$xx
         $14cb7              .byte $xx,$xx
         $14cb9              .byte $xx,$xx
-MapData_MtSabreWestUpper_Entrances
+MapData_21_Entrances
         $14cbb              .byte $xx,$xx,$xx,$xx
         $14cbf              .byte $xx,$xx,$xx,$xx
         $14cc3              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreWestUpper_Exits
+MapData_21_Exits
         $14cc7              .byte $xx,$xx,$xx,$xx
         $14ccb              .byte $xx,$xx,$xx,$xx
         $14ccf              .byte $xx,$xx,$xx,$xx
@@ -8142,16 +8146,16 @@ MapData_MtSabreWestUpper_Exits
         $14ce7              .byte $xx,$xx,$xx,$xx
         $14ceb              .byte $xx,$xx,$xx,$xx
         $14cef              .byte $xx
-MapData_MtSabreWestUpper_Flags
+MapData_21_Flags
         $14cf0              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreWestCave2                               ; Location 22
+MapData_22                                  ; Mt Sabre West - Cave 2
         $14cf1              .word ($xxxx) ; $14cfb
         $14cf3              .word ($xxxx) ; $14d19
         $14cf5              .word ($xxxx) ; $14d20
         $14cf7              .word ($xxxx) ; $14d2c
         $14cf9              .word ($xxxx) ; $14d45
-MapData_MtSabreWestCave2_Layout
+MapData_22_Layout
         $14cfb              .byte $xx
         $14cfc              .byte $xx,$xx,$xx,$xx
         ;; Map 5x5
@@ -8160,15 +8164,15 @@ MapData_MtSabreWestCave2_Layout
         $14d0a              .byte $xx,$xx,$xx,$xx,$xx
         $14d0f              .byte $xx,$xx,$xx,$xx,$xx
         $14d14              .byte $xx,$xx,$xx,$xx,$xx
-MapData_MtSabreWestCave2_Graphics
+MapData_22_Graphics
         $14d19              .byte $xx,$xx,$xx
         $14d1c              .byte $xx,$xx
         $14d1e              .byte $xx,$xx
-MapData_MtSabreWestCave2_Entrances
+MapData_22_Entrances
         $14d20              .byte $xx,$xx,$xx,$xx
         $14d24              .byte $xx,$xx,$xx,$xx
         $14d28              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreWestCave2_Exits
+MapData_22_Exits
         $14d2c              .byte $xx,$xx,$xx,$xx ; Entrance from Mt Sabre (B)
         $14d30              .byte $xx,$xx,$xx,$xx
         $14d34              .byte $xx,$xx,$xx,$xx ; Connector to Tornel/Upper
@@ -8176,33 +8180,33 @@ MapData_MtSabreWestCave2_Exits
         $14d3c              .byte $xx,$xx,$xx,$xx ; Dead-end exit to Warp Boots (C)
         $14d40              .byte $xx,$xx,$xx,$xx
         $14d44              .byte $xx
-MapData_MtSabreWestCave2_Flags
+MapData_22_Flags
         $14d45              .byte $xx,$xx ; 64dd:01 -> 62f2:08
         $14d47              .byte $xx,$xx ; 64dd:02 -> 62f2:02
         $14d49              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreWestCave3                               ; Location 23
+MapData_23                                  ; Mt Sabre West - Cave 3
         $14d4a              .word ($xxxx) ; $14d54
         $14d4c              .word ($xxxx) ; $14d68
         $14d4e              .word ($xxxx) ; $14d6f
         $14d50              .word ($xxxx) ; $14d7b
         $14d52              .word ($xxxx) ; $14d94
-MapData_MtSabreWestCave3_Layout
+MapData_23_Layout
         $14d54              .byte $xx
         $14d55              .byte $xx,$xx,$xx,$xx
         ;; Map 5x3
         $14d59              .byte $xx,$xx,$xx,$xx,$xx
         $14d5e              .byte $xx,$xx,$xx,$xx,$xx
         $14d63              .byte $xx,$xx,$xx,$xx,$xx
-MapData_MtSabreWestCave3_Graphics
+MapData_23_Graphics
         $14d68              .byte $xx,$xx,$xx
         $14d6b              .byte $xx,$xx
         $14d6d              .byte $xx,$xx
-MapData_MtSabreWestCave3_Entrances
+MapData_23_Entrances
         $14d6f              .byte $xx,$xx,$xx,$xx
         $14d73              .byte $xx,$xx,$xx,$xx
         $14d77              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreWestCave3_Exits
+MapData_23_Exits
         $14d7b              .byte $xx,$xx,$xx,$xx ; Return to Lower
         $14d7f              .byte $xx,$xx,$xx,$xx
         $14d83              .byte $xx,$xx,$xx,$xx ; Exit F connecting to Tornel
@@ -8210,17 +8214,17 @@ MapData_MtSabreWestCave3_Exits
         $14d8b              .byte $xx,$xx,$xx,$xx ; Exit E to Outside upper
         $14d8f              .byte $xx,$xx,$xx,$xx
         $14d93              .byte $xx
-MapData_MtSabreWestCave3_Flags
+MapData_23_Flags
         $14d94              .byte $xx,$xx ; 64dc:80 -> 62f1:08
         $14d96              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreWestCave4                               ; Location 24
+MapData_24                                  ; Mt Sabre West - Cave 4
         $14d97              .word ($xxxx) ; $14da1
         $14d99              .word ($xxxx) ; $14dba
         $14d9b              .word ($xxxx) ; $14dc1
         $14d9d              .word ($xxxx) ; $14dcd
         $14d9f              .word ($xxxx) ; $14de6
-MapData_MtSabreWestCave4_Layout
+MapData_24_Layout
         $14da1              .byte $xx
         $14da2              .byte $xx,$xx,$xx,$xx
         ;; Map 4x5
@@ -8229,15 +8233,15 @@ MapData_MtSabreWestCave4_Layout
         $14dae              .byte $xx,$xx,$xx,$xx
         $14db2              .byte $xx,$xx,$xx,$xx
         $14db6              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreWestCave4_Graphics
+MapData_24_Graphics
         $14dba              .byte $xx,$xx,$xx
         $14dbd              .byte $xx,$xx
         $14dbf              .byte $xx,$xx
-MapData_MtSabreWestCave4_Entrances
+MapData_24_Entrances
         $14dc1              .byte $xx,$xx,$xx,$xx
         $14dc5              .byte $xx,$xx,$xx,$xx
         $14dc9              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreWestCave4_Exits
+MapData_24_Exits
         $14dcd              .byte $xx,$xx,$xx,$xx ; Return to lower (F)
         $14dd1              .byte $xx,$xx,$xx,$xx
         $14dd5              .byte $xx,$xx,$xx,$xx ; Tiny connector towards Tornel
@@ -8245,44 +8249,44 @@ MapData_MtSabreWestCave4_Exits
         $14ddd              .byte $xx,$xx,$xx,$xx ; Exit (G) to outside
         $14de1              .byte $xx,$xx,$xx,$xx
         $14de5              .byte $xx
-MapData_MtSabreWestCave4_Flags
+MapData_24_Flags
         $14de6              .byte $xx,$xx ; 64dc:40 -> 62f3:01
         $14de8              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreWestCave5                               ; Location 25
+MapData_25                                  ; Mt Sabre West - Cave 5
         $14de9              .word ($xxxx) ; $14df3
         $14deb              .word ($xxxx) ; $14dfa
         $14ded              .word ($xxxx) ; $14e01
         $14def              .word ($xxxx) ; $14e09
         $14df1              .word ($xxxx) ; $14e1a
-MapData_MtSabreWestCave5_Layout
+MapData_25_Layout
         $14df3              .byte $xx
         $14df4              .byte $xx,$xx,$xx,$xx
         ;; Map 2x1
         $14df8              .byte $xx,$xx
-MapData_MtSabreWestCave5_Graphics
+MapData_25_Graphics
         $14dfa              .byte $xx,$xx,$xx
         $14dfd              .byte $xx,$xx
         $14dff              .byte $xx,$xx
-MapData_MtSabreWestCave5_Entrances
+MapData_25_Entrances
         $14e01              .byte $xx,$xx,$xx,$xx
         $14e05              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreWestCave5_Exits
+MapData_25_Exits
         $14e09              .byte $xx,$xx,$xx,$xx ; Backwards
         $14e0d              .byte $xx,$xx,$xx,$xx
         $14e11              .byte $xx,$xx,$xx,$xx ; Forward towards Tornel
         $14e15              .byte $xx,$xx,$xx,$xx
         $14e19              .byte $xx
-MapData_MtSabreWestCave5_Flags
+MapData_25_Flags
         $14e1a              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreWestCave6                               ; Location 26
+MapData_26                                  ; Mt Sabre West - Cave 6
         $14e1b              .word ($xxxx) ; $14e25
         $14e1d              .word ($xxxx) ; $14e34
         $14e1f              .word ($xxxx) ; $14e3b
         $14e21              .word ($xxxx) ; $14e43
         $14e23              .word ($xxxx) ; $14e54
-MapData_MtSabreWestCave6_Layout
+MapData_26_Layout
         $14e25              .byte $xx
         $14e26              .byte $xx,$xx,$xx,$xx
         ;; Map 2x5
@@ -8291,30 +8295,30 @@ MapData_MtSabreWestCave6_Layout
         $14e2e              .byte $xx,$xx
         $14e30              .byte $xx,$xx
         $14e32              .byte $xx,$xx
-MapData_MtSabreWestCave6_Graphics
+MapData_26_Graphics
         $14e34              .byte $xx,$xx,$xx
         $14e37              .byte $xx,$xx
         $14e39              .byte $xx,$xx
-MapData_MtSabreWestCave6_Entrances
+MapData_26_Entrances
         $14e3b              .byte $xx,$xx,$xx,$xx
         $14e3f              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreWestCave6_Exits
+MapData_26_Exits
         $14e43              .byte $xx,$xx,$xx,$xx ; Backward to tiny connector
         $14e47              .byte $xx,$xx,$xx,$xx
         $14e4b              .byte $xx,$xx,$xx,$xx ; Tornel
         $14e4f              .byte $xx,$xx,$xx,$xx
         $14e53              .byte $xx
-MapData_MtSabreWestCave6_Flags
+MapData_26_Flags
         $14e54              .byte $xx,$xx ; 64dc:20 -> 62f2:01
         $14e56              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreWestCave7                               ; Location 27
+MapData_27                                  ; Mt Sabre West - Cave 7
         $14e57              .word ($xxxx) ; $14e61
         $14e59              .word ($xxxx) ; $14e75
         $14e5b              .word ($xxxx) ; $14e7c
         $14e5d              .word ($xxxx) ; $14e80
         $14e5f              .word ($xxxx) ; $14e89
-MapData_MtSabreWestCave7_Layout
+MapData_27_Layout
         $14e61              .byte $xx
         $14e62              .byte $xx,$xx,$xx,$xx
         ;; Map 3x5
@@ -8323,22 +8327,22 @@ MapData_MtSabreWestCave7_Layout
         $14e6c              .byte $xx,$xx,$xx
         $14e6f              .byte $xx,$xx,$xx
         $14e72              .byte $xx,$xx,$xx
-MapData_MtSabreWestCave7_Graphics
+MapData_27_Graphics
         $14e75              .byte $xx,$xx,$xx
         $14e78              .byte $xx,$xx
         $14e7a              .byte $xx,$xx
-MapData_MtSabreWestCave7_Entrances
+MapData_27_Entrances
         $14e7c              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreWestCave7_Exits
+MapData_27_Exits
         $14e80              .byte $xx,$xx,$xx,$xx ; Entrance from lower outside
         $14e84              .byte $xx,$xx,$xx,$xx
         $14e88              .byte $xx
-MapData_MtSabreWestCave7_Flags
+MapData_27_Flags
         $14e89              .byte $xx,$xx ; 64dc:10 -> 62f3:02
         $14e8b              .byte $xx,$xx ; 64dc:08 -> 62f1:02
         $14e8d              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreNorthMain                               ; Location 28
+MapData_28                                   ; Mt Sabre North - Main
         ;; See map http://mikesrpgcenter.com/crystalis/maps/mtsabrewest.html
         ;; Seems to also include the summit?!?
         $14e8e              .word ($xxxx) ; $14e98
@@ -8346,7 +8350,7 @@ MapData_MtSabreNorthMain                               ; Location 28
         $14e92              .word ($xxxx) ; $14ee4
         $14e94              .word ($xxxx) ; $14f00
         $14e96              .word ($xxxx) ; $14f41
-MapData_MtSabreNorthMain_Layout
+MapData_28_Layout
         $14e98              .byte $xx
         $14e99              .byte $xx,$xx,$xx,$xx
         ;; Map 8x8
@@ -8358,11 +8362,11 @@ MapData_MtSabreNorthMain_Layout
         $14ec5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $14ecd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $14ed5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_MtSabreNorthMain_Graphics
+MapData_28_Graphics
         $14edd              .byte $xx,$xx,$xx
         $14ee0              .byte $xx,$xx
         $14ee2              .byte $xx,$xx
-MapData_MtSabreNorthMain_Entrances
+MapData_28_Entrances
         $14ee4              .byte $xx,$xx,$xx,$xx
         $14ee8              .byte $xx,$xx,$xx,$xx
         $14eec              .byte $xx,$xx,$xx,$xx
@@ -8370,7 +8374,7 @@ MapData_MtSabreNorthMain_Entrances
         $14ef4              .byte $xx,$xx,$xx,$xx
         $14ef8              .byte $xx,$xx,$xx,$xx
         $14efc              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreNorthMain_Exits
+MapData_28_Exits
         $14f00              .byte $xx,$xx,$xx,$xx ; Back to Cordel Plains East
         $14f04              .byte $xx,$xx,$xx,$xx
         $14f08              .byte $xx,$xx,$xx,$xx
@@ -8388,17 +8392,17 @@ MapData_MtSabreNorthMain_Exits
         $14f38              .byte $xx,$xx,$xx,$xx
         $14f3c              .byte $xx,$xx,$xx,$xx ; Nadare's
         $14f40              .byte $xx
-MapData_MtSabreNorthMain_Flags
+MapData_28_Flags
         $14f41              .byte $xx,$xx ; 64db:01 -> 62f0:10
         $14f43              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreNorthMiddle                             ; Location 29
+MapData_29                                 ; Mt Sabre North - Middle
         $14f44              .word ($xxxx) ; $14f4e
         $14f46              .word ($xxxx) ; $14f93
         $14f48              .word ($xxxx) ; $14f9a
         $14f4a              .word ($xxxx) ; $14fae
         $14f4c              .word ($xxxx) ; $14fd7
-MapData_MtSabreNorthMiddle_Layout
+MapData_29_Layout
         $14f4e              .byte $xx
         $14f4f              .byte $xx,$xx,$xx,$xx
         ;; Map 8x8
@@ -8410,17 +8414,17 @@ MapData_MtSabreNorthMiddle_Layout
         $14f7b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $14f83              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $14f8b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_MtSabreNorthMiddle_Graphics
+MapData_29_Graphics
         $14f93              .byte $xx,$xx,$xx
         $14f96              .byte $xx,$xx
         $14f98              .byte $xx,$xx
-MapData_MtSabreNorthMiddle_Entrances
+MapData_29_Entrances
         $14f9a              .byte $xx,$xx,$xx,$xx
         $14f9e              .byte $xx,$xx,$xx,$xx
         $14fa2              .byte $xx,$xx,$xx,$xx
         $14fa6              .byte $xx,$xx,$xx,$xx
         $14faa              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreNorthMiddle_Exits
+MapData_29_Exits
         ;; First two exits are a small connector between lower and the rest of middle
         $14fae              .byte $xx,$xx,$xx,$xx ; Exit B to cave 1 heading back to lower
         $14fb2              .byte $xx,$xx,$xx,$xx
@@ -8433,16 +8437,16 @@ MapData_MtSabreNorthMiddle_Exits
         $14fce              .byte $xx,$xx,$xx,$xx ; Exit G on far right side to cave 4
         $14fd2              .byte $xx,$xx,$xx,$xx
         $14fd6              .byte $xx
-MapData_MtSabreNorthMiddle_Flags
+MapData_29_Flags
         $14fd7              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreNorthCave1                              ; Location 2a
+MapData_2a                                 ; Mt Sabre North - Cave 1
         $14fd8              .word ($xxxx) ; $14fe2
         $14fda              .word ($xxxx) ; $14ff7
         $14fdc              .word ($xxxx) ; $14ffe
         $14fde              .word ($xxxx) ; $15006
         $14fe0              .word ($xxxx) ; $15017
-MapData_MtSabreNorthCave1_Layout
+MapData_2a_Layout
         $14fe2              .byte $xx
         $14fe3              .byte $xx,$xx,$xx,$xx
         ;; Map 4x4
@@ -8450,31 +8454,31 @@ MapData_MtSabreNorthCave1_Layout
         $14feb              .byte $xx,$xx,$xx,$xx
         $14fef              .byte $xx,$xx,$xx,$xx
         $14ff3              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreNorthCave1_Graphics
+MapData_2a_Graphics
         $14ff7              .byte $xx,$xx,$xx
         $14ffa              .byte $xx,$xx
         $14ffc              .byte $xx,$xx
-MapData_MtSabreNorthCave1_Entrances
+MapData_2a_Entrances
         $14ffe              .byte $xx,$xx,$xx,$xx
         $15002              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreNorthCave1_Exits
+MapData_2a_Exits
         $15006              .byte $xx,$xx,$xx,$xx ; Back to entrance cave
         $1500a              .byte $xx,$xx,$xx,$xx
         $1500e              .byte $xx,$xx,$xx,$xx ; Exit B to middle
         $15012              .byte $xx,$xx,$xx,$xx
         $15016              .byte $xx
-MapData_MtSabreNorthCave1_Flags
+MapData_2a_Flags
         $15017              .byte $xx,$xx ; 64dc:04 -> 62f1:01
         $15019              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreNorthEntranceCave                       ; Location 38
+MapData_38                          ; Mt Sabre North - Entrance Cave
         ;; Main entrance cave, past the guards.
         $1501a              .word ($xxxx) ; $15024
         $1501c              .word ($xxxx) ; $1502d
         $1501e              .word ($xxxx) ; $15034
         $15020              .word ($xxxx) ; $1503c
         $15022              .word ($xxxx) ; $1504d
-MapData_MtSabreNorthEntranceCave_Layout
+MapData_38_Layout
         $15024              .byte $xx
         $15025              .byte $xx,$xx,$xx,$xx
         ;; Map 1x4
@@ -8482,30 +8486,30 @@ MapData_MtSabreNorthEntranceCave_Layout
         $1502a              .byte $xx
         $1502b              .byte $xx
         $1502c              .byte $xx
-MapData_MtSabreNorthEntranceCave_Graphics
+MapData_38_Graphics
         $1502d              .byte $xx,$xx,$xx
         $15030              .byte $xx,$xx
         $15032              .byte $xx,$xx
-MapData_MtSabreNorthEntranceCave_Entrances
+MapData_38_Entrances
         $15034              .byte $xx,$xx,$xx,$xx
         $15038              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreNorthEntranceCave_Exits
+MapData_38_Exits
         $1503c              .byte $xx,$xx,$xx,$xx ; Back outside to the bottom
         $15040              .byte $xx,$xx,$xx,$xx
         $15044              .byte $xx,$xx,$xx,$xx ; Into Cave 1
         $15048              .byte $xx,$xx,$xx,$xx
         $1504c              .byte $xx
-MapData_MtSabreNorthEntranceCave_Flags
+MapData_38_Flags
         $1504d              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreNorthCave2                              ; Location 2b
+MapData_2b                                 ; Mt Sabre North - Cave 2
         ;; C-D-E connector between B-C outside area and the rest of the middle.
         $1504e              .word ($xxxx) ; $15058
         $15050              .word ($xxxx) ; $15075
         $15052              .word ($xxxx) ; $1507c
         $15054              .word ($xxxx) ; $15088
         $15056              .word ($xxxx) ; $150a1
-MapData_MtSabreNorthCave2_Layout
+MapData_2b_Layout
         $15058              .byte $xx
         $15059              .byte $xx,$xx,$xx,$xx
         ;; Map 4x6
@@ -8515,15 +8519,15 @@ MapData_MtSabreNorthCave2_Layout
         $15069              .byte $xx,$xx,$xx,$xx
         $1506d              .byte $xx,$xx,$xx,$xx
         $15071              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreNorthCave2_Graphics
+MapData_2b_Graphics
         $15075              .byte $xx,$xx,$xx
         $15078              .byte $xx,$xx
         $1507a              .byte $xx,$xx
-MapData_MtSabreNorthCave2_Entrances
+MapData_2b_Entrances
         $1507c              .byte $xx,$xx,$xx,$xx
         $15080              .byte $xx,$xx,$xx,$xx
         $15084              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreNorthCave2_Exits
+MapData_2b_Exits
         $15088              .byte $xx,$xx,$xx,$xx ; Exit C
         $1508c              .byte $xx,$xx,$xx,$xx
         $15090              .byte $xx,$xx,$xx,$xx ; Exit E
@@ -8531,19 +8535,19 @@ MapData_MtSabreNorthCave2_Exits
         $15098              .byte $xx,$xx,$xx,$xx ; Exit D
         $1509c              .byte $xx,$xx,$xx,$xx
         $150a0              .byte $xx
-MapData_MtSabreNorthCave2_Flags
+MapData_2b_Flags
         $150a1              .byte $xx,$xx ; 64dc:02 -> 62f4:04
         $150a3              .byte $xx,$xx ; 64dc:01 -> 62f3:02
         $150a5              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreNorthCave3                              ; Location 2c
+MapData_2c                                 ; Mt Sabre North - Cave 3
         ;; Connector cave with bridge between entrances E and F
         $150a6              .word ($xxxx) ; $150b0
         $150a8              .word ($xxxx) ; $150c4
         $150aa              .word ($xxxx) ; $150cb
         $150ac              .word ($xxxx) ; $150d3
         $150ae              .word ($xxxx) ; $150e4
-MapData_MtSabreNorthCave3_Layout
+MapData_2c_Layout
         $150b0              .byte $xx
         $150b1              .byte $xx,$xx,$xx,$xx
         ;; Map 3x5
@@ -8552,46 +8556,46 @@ MapData_MtSabreNorthCave3_Layout
         $150bb              .byte $xx,$xx,$xx
         $150be              .byte $xx,$xx,$xx
         $150c1              .byte $xx,$xx,$xx
-MapData_MtSabreNorthCave3_Graphics
+MapData_2c_Graphics
         $150c4              .byte $xx,$xx,$xx
         $150c7              .byte $xx,$xx
         $150c9              .byte $xx,$xx
-MapData_MtSabreNorthCave3_Entrances
+MapData_2c_Entrances
         $150cb              .byte $xx,$xx,$xx,$xx
         $150cf              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreNorthCave3_Exits
+MapData_2c_Exits
         $150d3              .byte $xx,$xx,$xx,$xx ; Exit E
         $150d7              .byte $xx,$xx,$xx,$xx
         $150db              .byte $xx,$xx,$xx,$xx ; Exit F
         $150df              .byte $xx,$xx,$xx,$xx
         $150e3              .byte $xx
-MapData_MtSabreNorthCave3_Flags
+MapData_2c_Flags
         $150e4              .byte $xx,$xx ; 64d0:04 -> 62f0:01
         $150e6              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreNorthCave4                              ; Location 2d
+MapData_2d                                 ; Mt Sabre North - Cave 4
         ;; Cave at entrance G
         $150e7              .word ($xxxx) ; $150f1
         $150e9              .word ($xxxx) ; $150ff
         $150eb              .word ($xxxx) ; $15106
         $150ed              .word ($xxxx) ; $15112
         $150ef              .word ($xxxx) ; $1512b
-MapData_MtSabreNorthCave4_Layout
+MapData_2d_Layout
         $150f1              .byte $xx
         $150f2              .byte $xx,$xx,$xx,$xx
         ;; Map 3x3
         $150f6              .byte $xx,$xx,$xx
         $150f9              .byte $xx,$xx,$xx
         $150fc              .byte $xx,$xx,$xx
-MapData_MtSabreNorthCave4_Graphics
+MapData_2d_Graphics
         $150ff              .byte $xx,$xx,$xx
         $15102              .byte $xx,$xx
         $15104              .byte $xx,$xx
-MapData_MtSabreNorthCave4_Entrances
+MapData_2d_Entrances
         $15106              .byte $xx,$xx,$xx,$xx
         $1510a              .byte $xx,$xx,$xx,$xx
         $1510e              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreNorthCave4_Exits
+MapData_2d_Exits
         $15112              .byte $xx,$xx,$xx,$xx ; Exit D to hallway with entrance C
         $15116              .byte $xx,$xx,$xx,$xx
         $1511a              .byte $xx,$xx,$xx,$xx ; Unmarked exit up to hallway with entrance H
@@ -8599,18 +8603,18 @@ MapData_MtSabreNorthCave4_Exits
         $15122              .byte $xx,$xx,$xx,$xx ; Exit G to outside
         $15126              .byte $xx,$xx,$xx,$xx
         $1512a              .byte $xx
-MapData_MtSabreNorthCave4_Flags
+MapData_2d_Flags
         $1512b              .byte $xx,$xx ; 64db:80 -> 62f1:02
         $1512d              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreNorthCave5                              ; Location 2e
+MapData_2e                                 ; Mt Sabre North - Cave 5
         ;; Cave at entrance H
         $1512e              .word ($xxxx) ; $15138
         $15130              .word ($xxxx) ; $15155
         $15132              .word ($xxxx) ; $1515c
         $15134              .word ($xxxx) ; $15168
         $15136              .word ($xxxx) ; $15181
-MapData_MtSabreNorthCave5_Layout
+MapData_2e_Layout
         $15138              .byte $xx
         $15139              .byte $xx,$xx,$xx,$xx
         ;; Map 6x4
@@ -8618,15 +8622,15 @@ MapData_MtSabreNorthCave5_Layout
         $15143              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $15149              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $1514f              .byte $xx,$xx,$xx,$xx,$xx,$xx
-MapData_MtSabreNorthCave5_Graphics
+MapData_2e_Graphics
         $15155              .byte $xx,$xx,$xx
         $15158              .byte $xx,$xx
         $1515a              .byte $xx,$xx
-MapData_MtSabreNorthCave5_Entrances
+MapData_2e_Entrances
         $1515c              .byte $xx,$xx,$xx,$xx
         $15160              .byte $xx,$xx,$xx,$xx
         $15164              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreNorthCave5_Exits
+MapData_2e_Exits
         $15168              .byte $xx,$xx,$xx,$xx ; Unmarked exit to hallway with G entrance
         $1516c              .byte $xx,$xx,$xx,$xx
         $15170              .byte $xx,$xx,$xx,$xx ; Exit H to outside
@@ -8634,60 +8638,60 @@ MapData_MtSabreNorthCave5_Exits
         $15178              .byte $xx,$xx,$xx,$xx ; Unmarked exit to hallway with I toward summit
         $1517c              .byte $xx,$xx,$xx,$xx
         $15180              .byte $xx
-MapData_MtSabreNorthCave5_Flags
+MapData_2e_Flags
         $15181              .byte $xx,$xx ; 64db:40 -> 62f3:04
         $15183              .byte $xx,$xx ; 64db:20 -> 62f1:10
         $15185              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreNorthCave5a                             ; Location 39
+MapData_39                                ; Mt Sabre North - Cave 5a
         $15186              .word ($xxxx) ; $15190
         $15188              .word ($xxxx) ; $15199
         $1518a              .word ($xxxx) ; $151a0
         $1518c              .word ($xxxx) ; $151a8
         $1518e              .word ($xxxx) ; $151b9
-MapData_MtSabreNorthCave5a_Layout
+MapData_39_Layout
         $15190              .byte $xx
         $15191              .byte $xx,$xx,$xx,$xx
         ;; Map 2x2
         $15195              .byte $xx,$xx
         $15197              .byte $xx,$xx
-MapData_MtSabreNorthCave5a_Graphics
+MapData_39_Graphics
         $15199              .byte $xx,$xx,$xx
         $1519c              .byte $xx,$xx
         $1519e              .byte $xx,$xx
-MapData_MtSabreNorthCave5a_Entrances
+MapData_39_Entrances
         $151a0              .byte $xx,$xx,$xx,$xx
         $151a4              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreNorthCave5a_Exits
+MapData_39_Exits
         $151a8              .byte $xx,$xx,$xx,$xx ; Back to cave towards middle
         $151ac              .byte $xx,$xx,$xx,$xx
         $151b0              .byte $xx,$xx,$xx,$xx ; Exit I to upper outside
         $151b4              .byte $xx,$xx,$xx,$xx
         $151b8              .byte $xx
-MapData_MtSabreNorthCave5a_Flags
+MapData_39_Flags
         $151b9              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreNorthCave6                              ; Location 2f
+MapData_2f                                 ; Mt Sabre North - Cave 6
         ;; hallway with leaf prisoners
         $151ba              .word ($xxxx) ; $151c4
         $151bc              .word ($xxxx) ; $151ce
         $151be              .word ($xxxx) ; $151d5
         $151c0              .word ($xxxx) ; $151e1
         $151c2              .word ($xxxx) ; $151fa
-MapData_MtSabreNorthCave6_Layout
+MapData_2f_Layout
         $151c4              .byte $xx
         $151c5              .byte $xx,$xx,$xx,$xx
         ;; Map 5x1
         $151c9              .byte $xx,$xx,$xx,$xx,$xx
-MapData_MtSabreNorthCave6_Graphics
+MapData_2f_Graphics
         $151ce              .byte $xx,$xx,$xx
         $151d1              .byte $xx,$xx
         $151d3              .byte $xx,$xx
-MapData_MtSabreNorthCave6_Entrances
+MapData_2f_Entrances
         $151d5              .byte $xx,$xx,$xx,$xx
         $151d9              .byte $xx,$xx,$xx,$xx
         $151dd              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreNorthCave6_Exits
+MapData_2f_Exits
         $151e1              .byte $xx,$xx,$xx,$xx ; Exit J from upper outside area
         $151e5              .byte $xx,$xx,$xx,$xx
         $151e9              .byte $xx,$xx,$xx,$xx ; Throuch ice wall up to right-hand cell
@@ -8695,31 +8699,31 @@ MapData_MtSabreNorthCave6_Exits
         $151f1              .byte $xx,$xx,$xx,$xx ; Through ice wall up to left-hand cell
         $151f5              .byte $xx,$xx,$xx,$xx
         $151f9              .byte $xx
-MapData_MtSabreNorthCave6_Flags
+MapData_2f_Flags
         $151fa              .byte $xx,$xx ; 64db:10 -> 62f0:08
         $151fc              .byte $xx,$xx ; 64db:08 -> 62f0:04
         $151fe              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreNorthLeftCell                           ; Location 30
+MapData_30                              ; Mt Sabre North - Left Cell
         ;; Left-hand cell
         $151ff              .word ($xxxx) ; $15209
         $15201              .word ($xxxx) ; $1520f
         $15203              .word ($xxxx) ; $15216
         $15205              .word ($xxxx) ; $1521e
         $15207              .word ($xxxx) ; $15237
-MapData_MtSabreNorthLeftCell_Layout
+MapData_30_Layout
         $15209              .byte $xx
         $1520a              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1520e              .byte $xx
-MapData_MtSabreNorthLeftCell_Graphics
+MapData_30_Graphics
         $1520f              .byte $xx,$xx,$xx
         $15212              .byte $xx,$xx
         $15214              .byte $xx,$xx
-MapData_MtSabreNorthLeftCell_Entrances
+MapData_30_Entrances
         $15216              .byte $xx,$xx,$xx,$xx
         $1521a              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreNorthLeftCell_Exits
+MapData_30_Exits
         $1521e              .byte $xx,$xx,$xx,$xx ; Back through ice wall to prison hallway
         $15222              .byte $xx,$xx,$xx,$xx
         $15226              .byte $xx,$xx,$xx,$xx
@@ -8727,58 +8731,58 @@ MapData_MtSabreNorthLeftCell_Exits
         $1522e              .byte $xx,$xx,$xx,$xx ; To hallway with prison key
         $15232              .byte $xx,$xx,$xx,$xx
         $15236              .byte $xx
-MapData_MtSabreNorthLeftCell_Flags
+MapData_30_Flags
         $15237              .byte $xx,$xx ; 64db:04 -> 62f0:01
         $15239              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreNorthPrisonKeyHall                      ; Location 31
+MapData_31                        ; Mt Sabre North - Prison Key Hall
         ;; Hallway with prison key
         $1523a              .word ($xxxx) ; $15244
         $1523c              .word ($xxxx) ; $1524b
         $1523e              .word ($xxxx) ; $15252
         $15240              .word ($xxxx) ; $15256
         $15242              .word ($xxxx) ; $15267
-MapData_MtSabreNorthPrisonKeyHall_Layout
+MapData_31_Layout
         $15244              .byte $xx
         $15245              .byte $xx,$xx,$xx,$xx
         ;; Map 1x2
         $15249              .byte $xx
         $1524a              .byte $xx
-MapData_MtSabreNorthPrisonKeyHall_Graphics
+MapData_31_Graphics
         $1524b              .byte $xx,$xx,$xx
         $1524e              .byte $xx,$xx
         $15250              .byte $xx,$xx
-MapData_MtSabreNorthPrisonKeyHall_Entrances
+MapData_31_Entrances
         $15252              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreNorthPrisonKeyHall_Exits
+MapData_31_Exits
         $15256              .byte $xx,$xx,$xx,$xx ; Back to left cell
         $1525a              .byte $xx,$xx,$xx,$xx
         $1525e              .byte $xx,$xx,$xx,$xx
         $15262              .byte $xx,$xx,$xx,$xx
         $15266              .byte $xx
-MapData_MtSabreNorthPrisonKeyHall_Flags
+MapData_31_Flags
         $15267              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreNorthRightCell                          ; Location 32
+MapData_32                             ; Mt Sabre North - Right Cell
         ;; Right-hand cell, with exit toward summit
         $15268              .word ($xxxx) ; $15272
         $1526a              .word ($xxxx) ; $15278
         $1526c              .word ($xxxx) ; $1527f
         $1526e              .word ($xxxx) ; $15287
         $15270              .word ($xxxx) ; $152a0
-MapData_MtSabreNorthRightCell_Layout
+MapData_32_Layout
         $15272              .byte $xx
         $15273              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $15277              .byte $xx
-MapData_MtSabreNorthRightCell_Graphics
+MapData_32_Graphics
         $15278              .byte $xx,$xx,$xx
         $1527b              .byte $xx,$xx
         $1527d              .byte $xx,$xx
-MapData_MtSabreNorthRightCell_Entrances
+MapData_32_Entrances
         $1527f              .byte $xx,$xx,$xx,$xx
         $15283              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreNorthRightCell_Exits
+MapData_32_Exits
         $15287              .byte $xx,$xx,$xx,$xx ; Back through ice wall to prison hallway
         $1528b              .byte $xx,$xx,$xx,$xx
         $1528f              .byte $xx,$xx,$xx,$xx
@@ -8786,31 +8790,31 @@ MapData_MtSabreNorthRightCell_Exits
         $15297              .byte $xx,$xx,$xx,$xx ; To hallway with summit exit
         $1529b              .byte $xx,$xx,$xx,$xx
         $1529f              .byte $xx
-MapData_MtSabreNorthRightCell_Flags
+MapData_32_Flags
         $152a0              .byte $xx,$xx ; 64db:02 -> 62f0:01
         $152a2              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreNorthCave7                              ; Location 33
+MapData_33                                 ; Mt Sabre North - Cave 7
         ;; Hallway north out of right-hand cell, toward summit
         $152a3              .word ($xxxx) ; $152ad
         $152a5              .word ($xxxx) ; $152b4
         $152a7              .word ($xxxx) ; $152bb
         $152a9              .word ($xxxx) ; $152c3
         $152ab              .word ($xxxx) ; $152dc
-MapData_MtSabreNorthCave7_Layout
+MapData_33_Layout
         $152ad              .byte $xx
         $152ae              .byte $xx,$xx,$xx,$xx
         ;; Map 1x2
         $152b2              .byte $xx
         $152b3              .byte $xx
-MapData_MtSabreNorthCave7_Graphics
+MapData_33_Graphics
         $152b4              .byte $xx,$xx,$xx
         $152b7              .byte $xx,$xx
         $152b9              .byte $xx,$xx
-MapData_MtSabreNorthCave7_Entrances
+MapData_33_Entrances
         $152bb              .byte $xx,$xx,$xx,$xx
         $152bf              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreNorthCave7_Exits
+MapData_33_Exits
         $152c3              .byte $xx,$xx,$xx,$xx ; Back to right cell
         $152c7              .byte $xx,$xx,$xx,$xx
         $152cb              .byte $xx,$xx,$xx,$xx
@@ -8818,60 +8822,60 @@ MapData_MtSabreNorthCave7_Exits
         $152d3              .byte $xx,$xx,$xx,$xx ; Around to cave 8, up to summit
         $152d7              .byte $xx,$xx,$xx,$xx
         $152db              .byte $xx
-MapData_MtSabreNorthCave7_Flags
+MapData_33_Flags
         $152dc              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreNorthCave8                              ; Location 34
+MapData_34                                 ; Mt Sabre North - Cave 8
         ;; short straight connector hallway to bendy hallway with exit K to summit
         $152dd              .word ($xxxx) ; $152e7
         $152df              .word ($xxxx) ; $152f2
         $152e1              .word ($xxxx) ; $152f9
         $152e3              .word ($xxxx) ; $15301
         $152e5              .word ($xxxx) ; $15312
-MapData_MtSabreNorthCave8_Layout
+MapData_34_Layout
         $152e7              .byte $xx
         $152e8              .byte $xx,$xx,$xx,$xx
         ;; Map 2x3
         $152ec              .byte $xx,$xx
         $152ee              .byte $xx,$xx
         $152f0              .byte $xx,$xx
-MapData_MtSabreNorthCave8_Graphics
+MapData_34_Graphics
         $152f2              .byte $xx,$xx,$xx
         $152f5              .byte $xx,$xx
         $152f7              .byte $xx,$xx
-MapData_MtSabreNorthCave8_Entrances
+MapData_34_Entrances
         $152f9              .byte $xx,$xx,$xx,$xx
         $152fd              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreNorthCave8_Exits
+MapData_34_Exits
         $15301              .byte $xx,$xx,$xx,$xx ; Back to cave 7
         $15305              .byte $xx,$xx,$xx,$xx
         $15309              .byte $xx,$xx,$xx,$xx ; Out to summit
         $1530d              .byte $xx,$xx,$xx,$xx
         $15311              .byte $xx
-MapData_MtSabreNorthCave8_Flags
+MapData_34_Flags
         $15312              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MtSabreNorthSummitCave                         ; Location 35
+MapData_35                            ; Mt Sabre North - Summit Cave
         $15313              .word ($xxxx) ; $1531d
         $15315              .word ($xxxx) ; $1532b
         $15317              .word ($xxxx) ; $15332
         $15319              .word ($xxxx) ; $1533a
         $1531b              .word ($xxxx) ; $15353
-MapData_MtSabreNorthSummitCave_Layout
+MapData_35_Layout
         $1531d              .byte $xx
         $1531e              .byte $xx,$xx,$xx,$xx
         ;; Map 3x3
         $15322              .byte $xx,$xx,$xx
         $15325              .byte $xx,$xx,$xx
         $15328              .byte $xx,$xx,$xx
-MapData_MtSabreNorthSummitCave_Graphics
+MapData_35_Graphics
         $1532b              .byte $xx,$xx,$xx
         $1532e              .byte $xx,$xx
         $15330              .byte $xx,$xx
-MapData_MtSabreNorthSummitCave_Entrances
+MapData_35_Entrances
         $15332              .byte $xx,$xx,$xx,$xx
         $15336              .byte $xx,$xx,$xx,$xx
-MapData_MtSabreNorthSummitCave_Exits
+MapData_35_Exits
         $1533a              .byte $xx,$xx,$xx,$xx ; Back to summit
         $1533e              .byte $xx,$xx,$xx,$xx
         $15342              .byte $xx,$xx,$xx,$xx
@@ -8879,17 +8883,17 @@ MapData_MtSabreNorthSummitCave_Exits
         $1534a              .byte $xx,$xx,$xx,$xx ; Out to waterfall valley
         $1534e              .byte $xx,$xx,$xx,$xx
         $15352              .byte $xx
-MapData_MtSabreNorthSummitCave_Flags
+MapData_35_Flags
         $15353              .byte $xx,$xx ; 64da:80 -> 62f2:01
         $15355              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_WaterfallValleyNorth                           ; Location 40
+MapData_40                                  ; Waterfall Valley North
         $15356              .word ($xxxx) ; $15360
         $15358              .word ($xxxx) ; $15392
         $1535a              .word ($xxxx) ; $15399
         $1535c              .word ($xxxx) ; $153a9
         $1535e              .word ($xxxx) ; $153da
-MapData_WaterfallValleyNorth_Layout
+MapData_40_Layout
         $15360              .byte $xx
         $15361              .byte $xx,$xx,$xx,$xx
         ;; Map 5x9
@@ -8902,16 +8906,16 @@ MapData_WaterfallValleyNorth_Layout
         $15383              .byte $xx,$xx,$xx,$xx,$xx
         $15388              .byte $xx,$xx,$xx,$xx,$xx
         $1538d              .byte $xx,$xx,$xx,$xx,$xx
-MapData_WaterfallValleyNorth_Graphics
+MapData_40_Graphics
         $15392              .byte $xx,$xx,$xx
         $15395              .byte $xx,$xx
         $15397              .byte $xx,$xx
-MapData_WaterfallValleyNorth_Entrances
+MapData_40_Entrances
         $15399              .byte $xx,$xx,$xx,$xx
         $1539d              .byte $xx,$xx,$xx,$xx
         $153a1              .byte $xx,$xx,$xx,$xx
         $153a5              .byte $xx,$xx,$xx,$xx
-MapData_WaterfallValleyNorth_Exits
+MapData_40_Exits
         $153a9              .byte $xx,$xx,$xx,$xx ; Back to Mt Sabre Summit
         $153ad              .byte $xx,$xx,$xx,$xx
         $153b1              .byte $xx,$xx,$xx,$xx ; To Portoa
@@ -8925,17 +8929,17 @@ MapData_WaterfallValleyNorth_Exits
         $153d1              .byte $xx,$xx,$xx,$xx ; Bridge to south half
         $153d5              .byte $xx,$xx,$xx,$xx
         $153d9              .byte $xx
-MapData_WaterfallValleyNorth_Flags
+MapData_40_Flags
         $153da              .byte $xx,$xx ; 64da:40 -> 62f1:08
         $153dc              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_WaterfallValleySouth                           ; Location 41
+MapData_41                                  ; Waterfall Valley South
         $153dd              .word ($xxxx) ; $153e7
         $153df              .word ($xxxx) ; $15419
         $153e1              .word ($xxxx) ; $15420
         $153e3              .word ($xxxx) ; $15428
         $153e5              .word ($xxxx) ; $15445
-MapData_WaterfallValleySouth_Layout
+MapData_41_Layout
         $153e7              .byte $xx
         $153e8              .byte $xx,$xx,$xx,$xx
         ;; Map 5x9
@@ -8948,14 +8952,14 @@ MapData_WaterfallValleySouth_Layout
         $1540a              .byte $xx,$xx,$xx,$xx,$xx
         $1540f              .byte $xx,$xx,$xx,$xx,$xx
         $15414              .byte $xx,$xx,$xx,$xx,$xx
-MapData_WaterfallValleySouth_Graphics
+MapData_41_Graphics
         $15419              .byte $xx,$xx,$xx
         $1541c              .byte $xx,$xx
         $1541e              .byte $xx,$xx
-MapData_WaterfallValleySouth_Entrances
+MapData_41_Entrances
         $15420              .byte $xx,$xx,$xx,$xx
         $15424              .byte $xx,$xx,$xx,$xx
-MapData_WaterfallValleySouth_Exits
+MapData_41_Exits
         $15428              .byte $xx,$xx,$xx,$xx ; To Lime Tree Valley
         $1542c              .byte $xx,$xx,$xx,$xx
         $15430              .byte $xx,$xx,$xx,$xx
@@ -8964,101 +8968,101 @@ MapData_WaterfallValleySouth_Exits
         $1543c              .byte $xx,$xx,$xx,$xx ; Bridge to north half
         $15440              .byte $xx,$xx,$xx,$xx
         $15444              .byte $xx
-MapData_WaterfallValleySouth_Flags
+MapData_41_Flags
         $15445              .byte $xx,$xx ; 64da:20 -> 62f7:04
         $15447              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LimeTreeValley                                 ; Location 42
+MapData_42                                        ; Lime Tree Valley
         $15448              .word ($xxxx) ; $15452
         $1544a              .word ($xxxx) ; $15460
         $1544c              .word ($xxxx) ; $15467
         $1544e              .word ($xxxx) ; $1546f
         $15450              .word ($xxxx) ; $15480
-MapData_LimeTreeValley_Layout
+MapData_42_Layout
         $15452              .byte $xx
         $15453              .byte $xx,$xx,$xx,$xx
         ;; Map 3x3
         $15457              .byte $xx,$xx,$xx
         $1545a              .byte $xx,$xx,$xx
         $1545d              .byte $xx,$xx,$xx
-MapData_LimeTreeValley_Graphics
+MapData_42_Graphics
         $15460              .byte $xx,$xx,$xx
         $15463              .byte $xx,$xx
         $15465              .byte $xx,$xx
-MapData_LimeTreeValley_Entrances
+MapData_42_Entrances
         $15467              .byte $xx,$xx,$xx,$xx
         $1546b              .byte $xx,$xx,$xx,$xx
-MapData_LimeTreeValley_Exits
+MapData_42_Exits
         $1546f              .byte $xx,$xx,$xx,$xx ; To Waterfall Valley (south)
         $15473              .byte $xx,$xx,$xx,$xx
         $15477              .byte $xx,$xx,$xx,$xx ; To Lime Tree Lake
         $1547b              .byte $xx,$xx,$xx,$xx
         $1547f              .byte $xx
-MapData_LimeTreeValley_Flags
+MapData_42_Flags
         $15480              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LimeTreeLake                                   ; Location 43
+MapData_43                                          ; Lime Tree Lake
         $15481              .word ($xxxx) ; $1548b
         $15483              .word ($xxxx) ; $15491
         $15485              .word ($xxxx) ; $15498
         $15487              .word ($xxxx) ; $154a0
         $15489              .word ($xxxx) ; $154b1
-MapData_LimeTreeLake_Layout
+MapData_43_Layout
         $1548b              .byte $xx
         $1548c              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $15490              .byte $xx
-MapData_LimeTreeLake_Graphics
+MapData_43_Graphics
         $15491              .byte $xx,$xx,$xx
         $15494              .byte $xx,$xx
         $15496              .byte $xx,$xx
-MapData_LimeTreeLake_Entrances
+MapData_43_Entrances
         $15498              .byte $xx,$xx,$xx,$xx
         $1549c              .byte $xx,$xx,$xx,$xx
-MapData_LimeTreeLake_Exits
+MapData_43_Exits
         $154a0              .byte $xx,$xx,$xx,$xx ; Out to Lime Tree Valley
         $154a4              .byte $xx,$xx,$xx,$xx
         $154a8              .byte $xx,$xx,$xx,$xx ; In to Mesia's shrine
         $154ac              .byte $xx,$xx,$xx,$xx
         $154b0              .byte $xx
-MapData_LimeTreeLake_Flags
+MapData_43_Flags
         $154b1              .byte $xx,$xx ; 64d9:40 -> 62f0:01
         $154b3              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_MesiaShrine                                    ; Location 52
+MapData_52                                            ; Mesia Shrine
         $154b4              .word ($xxxx) ; $154be
         $154b6              .word ($xxxx) ; $154c4
         $154b8              .word ($xxxx) ; $154cb
         $154ba              .word ($xxxx) ; $154cf
         $154bc              .word ($xxxx) ; $154e4
-MapData_MesiaShrine_Layout
+MapData_52_Layout
         $154be              .byte $xx
         $154bf              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $154c3              .byte $xx
-MapData_MesiaShrine_Graphics
+MapData_52_Graphics
         $154c4              .byte $xx,$xx,$xx
         $154c7              .byte $xx,$xx
         $154c9              .byte $xx,$xx
-MapData_MesiaShrine_Entrances
+MapData_52_Entrances
         $154cb              .byte $xx,$xx,$xx,$xx
-MapData_MesiaShrine_Exits
+MapData_52_Exits
         $154cf              .byte $xx,$xx,$xx,$xx ; Out to Lime Tree Lake
         $154d3              .byte $xx,$xx,$xx,$xx
         $154d7              .byte $xx,$xx,$xx,$xx
         $154db              .byte $xx,$xx,$xx,$xx
         $154df              .byte $xx,$xx,$xx,$xx
         $154e3              .byte $xx
-MapData_MesiaShrine_Flags
+MapData_52_Flags
         $154e4              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_KirisaPlantCave1                               ; Location 44
+MapData_44                                     ; Kirisa Plant Cave 1
         $154e5              .word ($xxxx) ; $154ef
         $154e7              .word ($xxxx) ; $154fc
         $154e9              .word ($xxxx) ; $15503
         $154eb              .word ($xxxx) ; $1550b
         $154ed              .word ($xxxx) ; $1551c
-MapData_KirisaPlantCave1_Layout
+MapData_44_Layout
         $154ef              .byte $xx
         $154f0              .byte $xx,$xx,$xx,$xx
         ;; Map 2x4
@@ -9066,30 +9070,30 @@ MapData_KirisaPlantCave1_Layout
         $154f6              .byte $xx,$xx
         $154f8              .byte $xx,$xx
         $154fa              .byte $xx,$xx
-MapData_KirisaPlantCave1_Graphics
+MapData_44_Graphics
         $154fc              .byte $xx,$xx,$xx
         $154ff              .byte $xx,$xx
         $15501              .byte $xx,$xx
-MapData_KirisaPlantCave1_Entrances
+MapData_44_Entrances
         $15503              .byte $xx,$xx,$xx,$xx
         $15507              .byte $xx,$xx,$xx,$xx
-MapData_KirisaPlantCave1_Exits
+MapData_44_Exits
         $1550b              .byte $xx,$xx,$xx,$xx ; Out to Waterfall Valley (south)
         $1550f              .byte $xx,$xx,$xx,$xx
         $15513              .byte $xx,$xx,$xx,$xx ; To next room in (very linear cave)
         $15517              .byte $xx,$xx,$xx,$xx
         $1551b              .byte $xx
-MapData_KirisaPlantCave1_Flags
+MapData_44_Flags
         $1551c              .byte $xx,$xx ; 64d8:02 -> 62f1:01
         $1551e              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_KirisaPlantCave2                               ; Location 45
+MapData_45                                     ; Kirisa Plant Cave 2
         $1551f              .word ($xxxx) ; $15529
         $15521              .word ($xxxx) ; $1553e
         $15523              .word ($xxxx) ; $15545
         $15525              .word ($xxxx) ; $1554d
         $15527              .word ($xxxx) ; $1555e
-MapData_KirisaPlantCave2_Layout
+MapData_45_Layout
         $15529              .byte $xx
         $1552a              .byte $xx,$xx,$xx,$xx
         ;; Map 4x4
@@ -9097,31 +9101,31 @@ MapData_KirisaPlantCave2_Layout
         $15532              .byte $xx,$xx,$xx,$xx
         $15536              .byte $xx,$xx,$xx,$xx
         $1553a              .byte $xx,$xx,$xx,$xx
-MapData_KirisaPlantCave2_Graphics
+MapData_45_Graphics
         $1553e              .byte $xx,$xx,$xx
         $15541              .byte $xx,$xx
         $15543              .byte $xx,$xx
-MapData_KirisaPlantCave2_Entrances
+MapData_45_Entrances
         $15545              .byte $xx,$xx,$xx,$xx
         $15549              .byte $xx,$xx,$xx,$xx
-MapData_KirisaPlantCave2_Exits
+MapData_45_Exits
         $1554d              .byte $xx,$xx,$xx,$xx ; Back to room 1
         $15551              .byte $xx,$xx,$xx,$xx
         $15555              .byte $xx,$xx,$xx,$xx ; In to room 3
         $15559              .byte $xx,$xx,$xx,$xx
         $1555d              .byte $xx
-MapData_KirisaPlantCave2_Flags
+MapData_45_Flags
         $1555e              .byte $xx,$xx ; 64d8:01 -> 62f2:08
         $15560              .byte $xx,$xx ; 64d7:80 -> 62f2:02
         $15562              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_KirisaPlantCave3                               ; Location 46
+MapData_46                                     ; Kirisa Plant Cave 3
         $15563              .word ($xxxx) ; $1556d
         $15565              .word ($xxxx) ; $1557e
         $15567              .word ($xxxx) ; $15585
         $15569              .word ($xxxx) ; $1558d
         $1556b              .word ($xxxx) ; $1559e
-MapData_KirisaPlantCave3_Layout
+MapData_46_Layout
         $1556d              .byte $xx
         $1556e              .byte $xx,$xx,$xx,$xx
         ;; Map 3x4
@@ -9129,56 +9133,56 @@ MapData_KirisaPlantCave3_Layout
         $15575              .byte $xx,$xx,$xx
         $15578              .byte $xx,$xx,$xx
         $1557b              .byte $xx,$xx,$xx
-MapData_KirisaPlantCave3_Graphics
+MapData_46_Graphics
         $1557e              .byte $xx,$xx,$xx
         $15581              .byte $xx,$xx
         $15583              .byte $xx,$xx
-MapData_KirisaPlantCave3_Entrances
+MapData_46_Entrances
         $15585              .byte $xx,$xx,$xx,$xx
         $15589              .byte $xx,$xx,$xx,$xx
-MapData_KirisaPlantCave3_Exits
+MapData_46_Exits
         $1558d              .byte $xx,$xx,$xx,$xx ; Back to room 2
         $15591              .byte $xx,$xx,$xx,$xx
         $15595              .byte $xx,$xx,$xx,$xx ; In to Kirisa Meadow
         $15599              .byte $xx,$xx,$xx,$xx
         $1559d              .byte $xx
-MapData_KirisaPlantCave3_Flags
+MapData_46_Flags
         $1559e              .byte $xx,$xx ; 64d0:40 -> 62f2:02
         $155a0              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_KirisaMeadow                                   ; Location 47
+MapData_47                                           ; Kirisa Meadow
         $155a1              .word ($xxxx) ; $155ab
         $155a3              .word ($xxxx) ; $155b6
         $155a5              .word ($xxxx) ; $155bd
         $155a7              .word ($xxxx) ; $155c1
         $155a9              .word ($xxxx) ; $155ca
-MapData_KirisaMeadow_Layout
+MapData_47_Layout
         $155ab              .byte $xx
         $155ac              .byte $xx,$xx,$xx,$xx
         ;; Map 2x3
         $155b0              .byte $xx,$xx
         $155b2              .byte $xx,$xx
         $155b4              .byte $xx,$xx
-MapData_KirisaMeadow_Graphics
+MapData_47_Graphics
         $155b6              .byte $xx,$xx,$xx
         $155b9              .byte $xx,$xx
         $155bb              .byte $xx,$xx
-MapData_KirisaMeadow_Entrances
+MapData_47_Entrances
         $155bd              .byte $xx,$xx,$xx,$xx
-MapData_KirisaMeadow_Exits
+MapData_47_Exits
         $155c1              .byte $xx,$xx,$xx,$xx ; Back to room 3
         $155c5              .byte $xx,$xx,$xx,$xx
         $155c9              .byte $xx
-MapData_KirisaMeadow_Flags
+MapData_47_Flags
         $155ca              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_FogLampCave1                                   ; Location 48
+MapData_48                                         ; Fog Lamp Cave 1
         $155cb              .word ($xxxx) ; $155d5
         $155cd              .word ($xxxx) ; $155e9
         $155cf              .word ($xxxx) ; $155f0
         $155d1              .word ($xxxx) ; $155f8
         $155d3              .word ($xxxx) ; $15609
-MapData_FogLampCave1_Layout
+MapData_48_Layout
         $155d5              .byte $xx
         $155d6              .byte $xx,$xx,$xx,$xx
         ;; Map 3x5
@@ -9187,58 +9191,58 @@ MapData_FogLampCave1_Layout
         $155e0              .byte $xx,$xx,$xx
         $155e3              .byte $xx,$xx,$xx
         $155e6              .byte $xx,$xx,$xx
-MapData_FogLampCave1_Graphics
+MapData_48_Graphics
         $155e9              .byte $xx,$xx,$xx
         $155ec              .byte $xx,$xx
         $155ee              .byte $xx,$xx
-MapData_FogLampCave1_Entrances
+MapData_48_Entrances
         $155f0              .byte $xx,$xx,$xx,$xx
         $155f4              .byte $xx,$xx,$xx,$xx
-MapData_FogLampCave1_Exits
+MapData_48_Exits
         $155f8              .byte $xx,$xx,$xx,$xx ; Out to Waterfall Valley (north)
         $155fc              .byte $xx,$xx,$xx,$xx
         $15600              .byte $xx,$xx,$xx,$xx ; In to next room
         $15604              .byte $xx,$xx,$xx,$xx
         $15608              .byte $xx
-MapData_FogLampCave1_Flags
+MapData_48_Flags
         $15609              .byte $xx,$xx ; 64d9:20 -> 62f0:02
         $1560b              .byte $xx,$xx ; 64d9:10 -> 62f3:02
         $1560d              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_FogLampCave2                                   ; Location 49
+MapData_49                                         ; Fog Lamp Cave 2
         $1560e              .word ($xxxx) ; $15618
         $15610              .word ($xxxx) ; $1561f
         $15612              .word ($xxxx) ; $15626
         $15614              .word ($xxxx) ; $1562e
         $15616              .word ($xxxx) ; $1563f
-MapData_FogLampCave2_Layout
+MapData_49_Layout
         $15618              .byte $xx
         $15619              .byte $xx,$xx,$xx,$xx
         ;; Map 2x1
         $1561d              .byte $xx,$xx
-MapData_FogLampCave2_Graphics
+MapData_49_Graphics
         $1561f              .byte $xx,$xx,$xx
         $15622              .byte $xx,$xx
         $15624              .byte $xx,$xx
-MapData_FogLampCave2_Entrances
+MapData_49_Entrances
         $15626              .byte $xx,$xx,$xx,$xx
         $1562a              .byte $xx,$xx,$xx,$xx
-MapData_FogLampCave2_Exits
+MapData_49_Exits
         $1562e              .byte $xx,$xx,$xx,$xx ; Back to previous room
         $15632              .byte $xx,$xx,$xx,$xx
         $15636              .byte $xx,$xx,$xx,$xx ; In to next room
         $1563a              .byte $xx,$xx,$xx,$xx
         $1563e              .byte $xx
-MapData_FogLampCave2_Flags
+MapData_49_Flags
         $1563f              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_FogLampCave3                                   ; Location 4a
+MapData_4a                                         ; Fog Lamp Cave 3
         $15640              .word ($xxxx) ; $1564a
         $15642              .word ($xxxx) ; $15663
         $15644              .word ($xxxx) ; $1566a
         $15646              .word ($xxxx) ; $15676
         $15648              .word ($xxxx) ; $1568f
-MapData_FogLampCave3_Layout
+MapData_4a_Layout
         $1564a              .byte $xx
         $1564b              .byte $xx,$xx,$xx,$xx
         ;; Map 4x5
@@ -9247,15 +9251,15 @@ MapData_FogLampCave3_Layout
         $15657              .byte $xx,$xx,$xx,$xx
         $1565b              .byte $xx,$xx,$xx,$xx
         $1565f              .byte $xx,$xx,$xx,$xx
-MapData_FogLampCave3_Graphics
+MapData_4a_Graphics
         $15663              .byte $xx,$xx,$xx
         $15666              .byte $xx,$xx
         $15668              .byte $xx,$xx
-MapData_FogLampCave3_Entrances
+MapData_4a_Entrances
         $1566a              .byte $xx,$xx,$xx,$xx
         $1566e              .byte $xx,$xx,$xx,$xx
         $15672              .byte $xx,$xx,$xx,$xx
-MapData_FogLampCave3_Exits
+MapData_4a_Exits
         $15676              .byte $xx,$xx,$xx,$xx ; Back to previous room
         $1567a              .byte $xx,$xx,$xx,$xx
         $1567e              .byte $xx,$xx,$xx,$xx ; To dead end room (on left)
@@ -9263,45 +9267,45 @@ MapData_FogLampCave3_Exits
         $15686              .byte $xx,$xx,$xx,$xx ; In to next room
         $1568a              .byte $xx,$xx,$xx,$xx
         $1568e              .byte $xx
-MapData_FogLampCave3_Flags
+MapData_4a_Flags
         $1568f              .byte $xx,$xx ; 64d9:04 -> 62f4:02
         $15691              .byte $xx,$xx ; 64d9:02 -> 62f3:04
         $15693              .byte $xx,$xx ; 64d9:01 -> 62f1:08
         $15695              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_FogLampCaveDeadEnd                             ; Location 4b
+MapData_4b                                  ; Fog Lamp Cave Dead End
         $15696              .word ($xxxx) ; $156a0
         $15698              .word ($xxxx) ; $156ab
         $1569a              .word ($xxxx) ; $156b2
         $1569c              .word ($xxxx) ; $156b6
         $1569e              .word ($xxxx) ; $156bf
-MapData_FogLampCaveDeadEnd_Layout
+MapData_4b_Layout
         $156a0              .byte $xx
         $156a1              .byte $xx,$xx,$xx,$xx
         ;; Map 3x2
         $156a5              .byte $xx,$xx,$xx
         $156a8              .byte $xx,$xx,$xx
-MapData_FogLampCaveDeadEnd_Graphics
+MapData_4b_Graphics
         $156ab              .byte $xx,$xx,$xx
         $156ae              .byte $xx,$xx
         $156b0              .byte $xx,$xx
-MapData_FogLampCaveDeadEnd_Entrances
+MapData_4b_Entrances
         $156b2              .byte $xx,$xx,$xx,$xx
-MapData_FogLampCaveDeadEnd_Exits
+MapData_4b_Exits
         $156b6              .byte $xx,$xx,$xx,$xx ; Back to previous room
         $156ba              .byte $xx,$xx,$xx,$xx
         $156be              .byte $xx
-MapData_FogLampCaveDeadEnd_Flags
+MapData_4b_Flags
         $156bf              .byte $xx,$xx ; 64d9:08 -> 62f1:02
         $156c1              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_FogLampCave4                                   ; Location 4c
+MapData_4c                                         ; Fog Lamp Cave 4
         $156c2              .word ($xxxx) ; $156cc
         $156c4              .word ($xxxx) ; $156e5
         $156c6              .word ($xxxx) ; $156ec
         $156c8              .word ($xxxx) ; $156f8
         $156ca              .word ($xxxx) ; $15711
-MapData_FogLampCave4_Layout
+MapData_4c_Layout
         $156cc              .byte $xx
         $156cd              .byte $xx,$xx,$xx,$xx
         ;; Map 4x5
@@ -9310,15 +9314,15 @@ MapData_FogLampCave4_Layout
         $156d9              .byte $xx,$xx,$xx,$xx
         $156dd              .byte $xx,$xx,$xx,$xx
         $156e1              .byte $xx,$xx,$xx,$xx
-MapData_FogLampCave4_Graphics
+MapData_4c_Graphics
         $156e5              .byte $xx,$xx,$xx
         $156e8              .byte $xx,$xx
         $156ea              .byte $xx,$xx
-MapData_FogLampCave4_Entrances
+MapData_4c_Entrances
         $156ec              .byte $xx,$xx,$xx,$xx
         $156f0              .byte $xx,$xx,$xx,$xx
         $156f4              .byte $xx,$xx,$xx,$xx
-MapData_FogLampCave4_Exits
+MapData_4c_Exits
         $156f8              .byte $xx,$xx,$xx,$xx ; Back to previous room
         $156fc              .byte $xx,$xx,$xx,$xx
         $15700              .byte $xx,$xx,$xx,$xx ; Left-hand door to next room
@@ -9326,17 +9330,17 @@ MapData_FogLampCave4_Exits
         $15708              .byte $xx,$xx,$xx,$xx ; Right-hand door to next room
         $1570c              .byte $xx,$xx,$xx,$xx
         $15710              .byte $xx
-MapData_FogLampCave4_Flags
+MapData_4c_Flags
         $15711              .byte $xx,$xx ; 64d8:80 -> 62f2:04
         $15713              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_FogLampCave5                                   ; Location 4d
+MapData_4d                                         ; Fog Lamp Cave 5
         $15714              .word ($xxxx) ; $1571e
         $15716              .word ($xxxx) ; $15737
         $15718              .word ($xxxx) ; $1573e
         $1571a              .word ($xxxx) ; $1574a
         $1571c              .word ($xxxx) ; $15763
-MapData_FogLampCave5_Layout
+MapData_4d_Layout
         $1571e              .byte $xx
         $1571f              .byte $xx,$xx,$xx,$xx
         ;; Map 4x5
@@ -9345,15 +9349,15 @@ MapData_FogLampCave5_Layout
         $1572b              .byte $xx,$xx,$xx,$xx
         $1572f              .byte $xx,$xx,$xx,$xx
         $15733              .byte $xx,$xx,$xx,$xx
-MapData_FogLampCave5_Graphics
+MapData_4d_Graphics
         $15737              .byte $xx,$xx,$xx
         $1573a              .byte $xx,$xx
         $1573c              .byte $xx,$xx
-MapData_FogLampCave5_Entrances
+MapData_4d_Entrances
         $1573e              .byte $xx,$xx,$xx,$xx
         $15742              .byte $xx,$xx,$xx,$xx
         $15746              .byte $xx,$xx,$xx,$xx
-MapData_FogLampCave5_Exits
+MapData_4d_Exits
         $1574a              .byte $xx,$xx,$xx,$xx ; Back to previous room (right exit)
         $1574e              .byte $xx,$xx,$xx,$xx
         $15752              .byte $xx,$xx,$xx,$xx ; Back to previous room (left exit)
@@ -9361,19 +9365,19 @@ MapData_FogLampCave5_Exits
         $1575a              .byte $xx,$xx,$xx,$xx ; In to next room
         $1575e              .byte $xx,$xx,$xx,$xx
         $15762              .byte $xx
-MapData_FogLampCave5_Flags
+MapData_4d_Flags
         $15763              .byte $xx,$xx ; 64d8:40 -> 62f2:02
         $15765              .byte $xx,$xx ; 64d8:20 -> 62f1:02
         $15767              .byte $xx,$xx ; 64d8:10 -> 62f1:01
         $15769              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_FogLampCave6                                   ; Location 4e
+MapData_4e                                         ; Fog Lamp Cave 6
         $1576a              .word ($xxxx) ; $15774
         $1576c              .word ($xxxx) ; $1578d
         $1576e              .word ($xxxx) ; $15794
         $15770              .word ($xxxx) ; $1579c
         $15772              .word ($xxxx) ; $157ad
-MapData_FogLampCave6_Layout
+MapData_4e_Layout
         $15774              .byte $xx
         $15775              .byte $xx,$xx,$xx,$xx
         ;; Map 4x5
@@ -9382,30 +9386,30 @@ MapData_FogLampCave6_Layout
         $15781              .byte $xx,$xx,$xx,$xx
         $15785              .byte $xx,$xx,$xx,$xx
         $15789              .byte $xx,$xx,$xx,$xx
-MapData_FogLampCave6_Graphics
+MapData_4e_Graphics
         $1578d              .byte $xx,$xx,$xx
         $15790              .byte $xx,$xx
         $15792              .byte $xx,$xx
-MapData_FogLampCave6_Entrances
+MapData_4e_Entrances
         $15794              .byte $xx,$xx,$xx,$xx
         $15798              .byte $xx,$xx,$xx,$xx
-MapData_FogLampCave6_Exits
+MapData_4e_Exits
         $1579c              .byte $xx,$xx,$xx,$xx ; Back
         $157a0              .byte $xx,$xx,$xx,$xx
         $157a4              .byte $xx,$xx,$xx,$xx ; Onward
         $157a8              .byte $xx,$xx,$xx,$xx
         $157ac              .byte $xx
-MapData_FogLampCave6_Flags
+MapData_4e_Flags
         $157ad              .byte $xx,$xx ; 64d8:08 -> 62f1:04
         $157af              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_FogLampCave7                                   ; Location 4f
+MapData_4f                                         ; Fog Lamp Cave 7
         $157b0              .word ($xxxx) ; $157ba
         $157b2              .word ($xxxx) ; $157d3
         $157b4              .word ($xxxx) ; $157da
         $157b6              .word ($xxxx) ; $157de
         $157b8              .word ($xxxx) ; $157e7
-MapData_FogLampCave7_Layout
+MapData_4f_Layout
         $157ba              .byte $xx
         $157bb              .byte $xx,$xx,$xx,$xx
         ;; Map 4x5
@@ -9414,37 +9418,37 @@ MapData_FogLampCave7_Layout
         $157c7              .byte $xx,$xx,$xx,$xx
         $157cb              .byte $xx,$xx,$xx,$xx
         $157cf              .byte $xx,$xx,$xx,$xx
-MapData_FogLampCave7_Graphics
+MapData_4f_Graphics
         $157d3              .byte $xx,$xx,$xx
         $157d6              .byte $xx,$xx
         $157d8              .byte $xx,$xx
-MapData_FogLampCave7_Entrances
+MapData_4f_Entrances
         $157da              .byte $xx,$xx,$xx,$xx
-MapData_FogLampCave7_Exits
+MapData_4f_Exits
         $157de              .byte $xx,$xx,$xx,$xx ; Back
         $157e2              .byte $xx,$xx,$xx,$xx
         $157e6              .byte $xx
-MapData_FogLampCave7_Flags
+MapData_4f_Flags
         $157e7              .byte $xx,$xx ; 64d8:04 -> 62f1:02
         $157e9              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Portoa                                         ; Location 50
+MapData_50                                                  ; Portoa
         $157ea              .word ($xxxx) ; $157f4
         $157ec              .word ($xxxx) ; $157fd
         $157ee              .word ($xxxx) ; $15804
         $157f0              .word ($xxxx) ; $15828
         $157f2              .word ($xxxx) ; $15859
-MapData_Portoa_Layout
+MapData_50_Layout
         $157f4              .byte $xx
         $157f5              .byte $xx,$xx,$xx,$xx
         ;; Map 2x2
         $157f9              .byte $xx,$xx
         $157fb              .byte $xx,$xx
-MapData_Portoa_Graphics
+MapData_50_Graphics
         $157fd              .byte $xx,$xx,$xx
         $15800              .byte $xx,$xx
         $15802              .byte $xx,$xx
-MapData_Portoa_Entrances
+MapData_50_Entrances
         $15804              .byte $xx,$xx,$xx,$xx
         $15808              .byte $xx,$xx,$xx,$xx
         $1580c              .byte $xx,$xx,$xx,$xx
@@ -9454,7 +9458,7 @@ MapData_Portoa_Entrances
         $1581c              .byte $xx,$xx,$xx,$xx
         $15820              .byte $xx,$xx,$xx,$xx
         $15824              .byte $xx,$xx,$xx,$xx
-MapData_Portoa_Exits
+MapData_50_Exits
         $15828              .byte $xx,$xx,$xx,$xx ; Out to Waterfall Valley
         $1582c              .byte $xx,$xx,$xx,$xx
         $15830              .byte $xx,$xx,$xx,$xx ; Bridge to fisherman's house
@@ -9468,30 +9472,30 @@ MapData_Portoa_Exits
         $15850              .byte $xx,$xx,$xx,$xx ; Inn
         $15854              .byte $xx,$xx,$xx,$xx ; Tool Shop
         $15858              .byte $xx
-MapData_Portoa_Flags
+MapData_50_Flags
         $15859              .byte $xx,$xx ; 64d0:04 -> 62f0:01
         $1585b              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_PortoaFishermanIsland                          ; Location 51
+MapData_51                               ; Portoa - Fisherman Island
         $1585c              .word ($xxxx) ; $15866
         $1585e              .word ($xxxx) ; $1586c
         $15860              .word ($xxxx) ; $15873
         $15862              .word ($xxxx) ; $1587f
         $15864              .word ($xxxx) ; $158a4
-MapData_PortoaFishermanIsland_Layout
+MapData_51_Layout
         $15866              .byte $xx
         $15867              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1586b              .byte $xx
-MapData_PortoaFishermanIsland_Graphics
+MapData_51_Graphics
         $1586c              .byte $xx,$xx,$xx
         $1586f              .byte $xx,$xx
         $15871              .byte $xx,$xx
-MapData_PortoaFishermanIsland_Entrances
+MapData_51_Entrances
         $15873              .byte $xx,$xx,$xx,$xx
         $15877              .byte $xx,$xx,$xx,$xx
         $1587b              .byte $xx,$xx,$xx,$xx
-MapData_PortoaFishermanIsland_Exits
+MapData_51_Exits
         $1587f              .byte $xx,$xx,$xx,$xx ; Bridge to Portoa
         $15883              .byte $xx,$xx,$xx,$xx
         $15887              .byte $xx,$xx,$xx,$xx ; West to Angry Sea
@@ -9502,17 +9506,17 @@ MapData_PortoaFishermanIsland_Exits
         $1589b              .byte $xx,$xx,$xx,$xx
         $1589f              .byte $xx,$xx,$xx,$xx ; In to house
         $158a3              .byte $xx
-MapData_PortoaFishermanIsland_Flags
+MapData_51_Flags
         $158a4              .byte $xx,$xx ; 64d0:04 -> 62f0:01
         $158a6              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_WaterfallCave1                                 ; Location 54
+MapData_54                                        ; Waterfall Cave 1
         $158a7              .word ($xxxx) ; $158b1
         $158a9              .word ($xxxx) ; $158d4
         $158ab              .word ($xxxx) ; $158db
         $158ad              .word ($xxxx) ; $158e3
         $158af              .word ($xxxx) ; $158f4
-MapData_WaterfallCave1_Layout
+MapData_54_Layout
         $158b1              .byte $xx
         $158b2              .byte $xx,$xx,$xx,$xx
         ;; Map 5x6
@@ -9522,42 +9526,42 @@ MapData_WaterfallCave1_Layout
         $158c5              .byte $xx,$xx,$xx,$xx,$xx
         $158ca              .byte $xx,$xx,$xx,$xx,$xx
         $158cf              .byte $xx,$xx,$xx,$xx,$xx
-MapData_WaterfallCave1_Graphics
+MapData_54_Graphics
         $158d4              .byte $xx,$xx,$xx
         $158d7              .byte $xx,$xx
         $158d9              .byte $xx,$xx
-MapData_WaterfallCave1_Entrances
+MapData_54_Entrances
         $158db              .byte $xx,$xx,$xx,$xx
         $158df              .byte $xx,$xx,$xx,$xx
-MapData_WaterfallCave1_Exits
+MapData_54_Exits
         $158e3              .byte $xx,$xx,$xx,$xx ; Out to Waterfall Valley
         $158e7              .byte $xx,$xx,$xx,$xx
         $158eb              .byte $xx,$xx,$xx,$xx ; Next room
         $158ef              .byte $xx,$xx,$xx,$xx
         $158f3              .byte $xx
-MapData_WaterfallCave1_Flags
+MapData_54_Flags
         $158f4              .byte $xx,$xx ; 64da:10 -> 62f2:01
         $158f6              .byte $xx,$xx ; 64da:08 -> 62f1:02
         $158f8              .byte $xx,$xx ; 64da:04 -> 62f1:08
         $158fa              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_WaterfallCave2                                 ; Location 55
+MapData_55                                        ; Waterfall Cave 2
         $158fb              .word ($xxxx) ; $15905
         $158fd              .word ($xxxx) ; $15910
         $158ff              .word ($xxxx) ; $15917
         $15901              .word ($xxxx) ; $1591f
         $15903              .word ($xxxx) ; $15930
-MapData_WaterfallCave2_Layout
+MapData_55_Layout
         $15905              .byte $xx
         $15906              .byte $xx,$xx,$xx,$xx
         ;; Map 3x2
         $1590a              .byte $xx,$xx,$xx
         $1590d              .byte $xx,$xx,$xx
-MapData_WaterfallCave2_Graphics
+MapData_55_Graphics
         $15910              .byte $xx,$xx,$xx
         $15913              .byte $xx,$xx
         $15915              .byte $xx,$xx
-MapData_WaterfallCave2_Entrances
+MapData_55_Entrances
         $15917              .byte $xx,$xx,$xx,$xx
         $1591b              .byte $xx,$xx,$xx,$xx
 MapData_WaterfallCave3_Exits
@@ -9566,16 +9570,16 @@ MapData_WaterfallCave3_Exits
         $15927              .byte $xx,$xx,$xx,$xx ; Next room
         $1592b              .byte $xx,$xx,$xx,$xx
         $1592f              .byte $xx
-MapData_WaterfallCave2_Flags
+MapData_55_Flags
         $15930              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_WaterfallCave3                                 ; Location 56
+MapData_56                                        ; Waterfall Cave 3
         $15931              .word ($xxxx) ; $1593b
         $15933              .word ($xxxx) ; $15959
         $15935              .word ($xxxx) ; $15960
         $15937              .word ($xxxx) ; $1596c
         $15939              .word ($xxxx) ; $15995
-MapData_WaterfallCave3_Layout
+MapData_56_Layout
         $1593b              .byte $xx
         $1593c              .byte $xx,$xx,$xx,$xx
         ;; Map 5x5
@@ -9584,15 +9588,15 @@ MapData_WaterfallCave3_Layout
         $1594a              .byte $xx,$xx,$xx,$xx,$xx
         $1594f              .byte $xx,$xx,$xx,$xx,$xx
         $15954              .byte $xx,$xx,$xx,$xx,$xx
-MapData_WaterfallCave3_Graphics
+MapData_56_Graphics
         $15959              .byte $xx,$xx,$xx
         $1595c              .byte $xx,$xx
         $1595e              .byte $xx,$xx
-MapData_WaterfallCave3_Entrances
+MapData_56_Entrances
         $15960              .byte $xx,$xx,$xx,$xx
         $15964              .byte $xx,$xx,$xx,$xx
         $15968              .byte $xx,$xx,$xx,$xx
-MapData_WaterfallCave3_Exits
+MapData_56_Exits
         $1596c              .byte $xx,$xx,$xx,$xx ; Last room
         $15970              .byte $xx,$xx,$xx,$xx
         $15974              .byte $xx,$xx,$xx,$xx ; Next room (left route)
@@ -9604,18 +9608,18 @@ MapData_WaterfallCave3_Exits
         $1598c              .byte $xx,$xx,$xx,$xx
         $15990              .byte $xx,$xx,$xx,$xx
         $15994              .byte $xx
-MapData_WaterfallCave3_Flags
+MapData_56_Flags
         $15995              .byte $xx,$xx ; 64da:02 -> 62f0:01
         $15997              .byte $xx,$xx ; 64da:01 -> 62f0:10
         $15999              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_WaterfallCave4                                 ; Location 57
+MapData_57                                        ; Waterfall Cave 4
         $1599a              .word ($xxxx) ; $159a4
         $1599c              .word ($xxxx) ; $159c2
         $1599e              .word ($xxxx) ; $159c9
         $159a0              .word ($xxxx) ; $159d1
         $159a2              .word ($xxxx) ; $159e2
-MapData_WaterfallCave4_Layout
+MapData_57_Layout
         $159a4              .byte $xx
         $159a5              .byte $xx,$xx,$xx,$xx
         ;; Map 5x5
@@ -9624,30 +9628,30 @@ MapData_WaterfallCave4_Layout
         $159b3              .byte $xx,$xx,$xx,$xx,$xx
         $159b8              .byte $xx,$xx,$xx,$xx,$xx
         $159bd              .byte $xx,$xx,$xx,$xx,$xx
-MapData_WaterfallCave4_Graphics
+MapData_57_Graphics
         $159c2              .byte $xx,$xx,$xx
         $159c5              .byte $xx,$xx
         $159c7              .byte $xx,$xx
-MapData_WaterfallCave4_Entrances
+MapData_57_Entrances
         $159c9              .byte $xx,$xx,$xx,$xx
         $159cd              .byte $xx,$xx,$xx,$xx
-MapData_WaterfallCave4_Exits
+MapData_57_Exits
         $159d1              .byte $xx,$xx,$xx,$xx ; Last room (left route)
         $159d5              .byte $xx,$xx,$xx,$xx
         $159d9              .byte $xx,$xx,$xx,$xx ; Last room (right route)
         $159dd              .byte $xx,$xx,$xx,$xx
         $159e1              .byte $xx
-MapData_WaterfallCave4_Flags
+MapData_57_Flags
         $159e2              .byte $xx,$xx ; 64d9:80 -> 62f1:08
         $159e4              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_AngrySea                                       ; Location 60
+MapData_60                                               ; Angry Sea
         $159e5              .word ($xxxx) ; $159ef
         $159e7              .word ($xxxx) ; $15a3c
         $159e9              .word ($xxxx) ; $15a43
         $159eb              .word ($xxxx) ; $15a67
         $159ed              .word ($xxxx) ; $15aa8
-MapData_AngrySea_Layout
+MapData_60_Layout
         $159ef              .byte $xx
         $159f0              .byte $xx,$xx,$xx,$xx
         ;; Map 8x9
@@ -9660,11 +9664,11 @@ MapData_AngrySea_Layout
         $15a24              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $15a2c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $15a34              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_AngrySea_Graphics
+MapData_60_Graphics
         $15a3c              .byte $xx,$xx,$xx
         $15a3f              .byte $xx,$xx
         $15a41              .byte $xx,$xx
-MapData_AngrySea_Entrances
+MapData_60_Entrances
         $15a43              .byte $xx,$xx,$xx,$xx
         $15a47              .byte $xx,$xx,$xx,$xx
         $15a4b              .byte $xx,$xx,$xx,$xx
@@ -9674,7 +9678,7 @@ MapData_AngrySea_Entrances
         $15a5b              .byte $xx,$xx,$xx,$xx
         $15a5f              .byte $xx,$xx,$xx,$xx
         $15a63              .byte $xx,$xx,$xx,$xx
-MapData_AngrySea_Exits
+MapData_60_Exits
         $15a67              .byte $xx,$xx,$xx,$xx ; To Portoa
         $15a6b              .byte $xx,$xx,$xx,$xx
         $15a6f              .byte $xx,$xx,$xx,$xx
@@ -9692,58 +9696,58 @@ MapData_AngrySea_Exits
         $15a9f              .byte $xx,$xx,$xx,$xx
         $15aa3              .byte $xx,$xx,$xx,$xx ; Cabin
         $15aa7              .byte $xx
-MapData_AngrySea_Flags
+MapData_60_Flags
         $15aa8              .byte $xx,$xx ; 64d0:08 -> 62f2:02
         $15aaa              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_BoatHouse                                      ; Location 61
+MapData_61                                                   ; Cabin
         $15aab              .word ($xxxx) ; $15ab5
         $15aad              .word ($xxxx) ; $15abb
         $15aaf              .word ($xxxx) ; $15ac2
         $15ab1              .word ($xxxx) ; $15ac6
         $15ab3              .word ($xxxx) ; $15acf
-MapData_BoatHouse_Layout
+MapData_61_Layout
         $15ab5              .byte $xx
         $15ab6              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $15aba              .byte $xx
-MapData_BoatHouse_Graphics
+MapData_61_Graphics
         $15abb              .byte $xx,$xx,$xx
         $15abe              .byte $xx,$xx
         $15ac0              .byte $xx,$xx
-MapData_BoatHouse_Entrances
+MapData_61_Entrances
         $15ac2              .byte $xx,$xx,$xx,$xx
-MapData_BoatHouse_Exits
+MapData_61_Exits
         $15ac6              .byte $xx,$xx,$xx,$xx
         $15aca              .byte $xx,$xx,$xx,$xx
         $15ace              .byte $xx
-MapData_BoatHouse_Flags
+MapData_61_Flags
         $15acf              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_UndergroundChannel                             ; Location 64
+MapData_64                                     ; Underground Channel
         $15ad0              .word ($xxxx) ; $15ada
         $15ad2              .word ($xxxx) ; $15aeb
         $15ad4              .word ($xxxx) ; $15af2
         $15ad6              .word ($xxxx) ; $15b06
         $15ad8              .word ($xxxx) ; $15b2b
-MapData_UndergroundChannel_Layout
+MapData_64_Layout
         $15ada              .byte $xx
         $15adb              .byte $xx,$xx,$xx,$xx
         ;; Map 4x3
         $15adf              .byte $xx,$xx,$xx,$xx
         $15ae3              .byte $xx,$xx,$xx,$xx
         $15ae7              .byte $xx,$xx,$xx,$xx
-MapData_UndergroundChannel_Graphics
+MapData_64_Graphics
         $15aeb              .byte $xx,$xx,$xx
         $15aee              .byte $xx,$xx
         $15af0              .byte $xx,$xx
-MapData_UndergroundChannel_Entrances
+MapData_64_Entrances
         $15af2              .byte $xx,$xx,$xx,$xx
         $15af6              .byte $xx,$xx,$xx,$xx
         $15afa              .byte $xx,$xx,$xx,$xx
         $15afe              .byte $xx,$xx,$xx,$xx
         $15b02              .byte $xx,$xx,$xx,$xx
-MapData_UndergroundChannel_Exits
+MapData_64_Exits
         $15b06              .byte $xx,$xx,$xx,$xx
         $15b0a              .byte $xx,$xx,$xx,$xx
         $15b0e              .byte $xx,$xx,$xx,$xx
@@ -9754,77 +9758,77 @@ MapData_UndergroundChannel_Exits
         $15b22              .byte $xx,$xx,$xx,$xx
         $15b26              .byte $xx,$xx,$xx,$xx
         $15b2a              .byte $xx
-MapData_UndergroundChannel_Flags
+MapData_64_Flags
         $15b2b              .byte $xx,$xx ; 64d7:40 -> 62f2:02
         $15b2d              .byte $xx,$xx ; 64d7:20 -> 62f2:08
         $15b2f              .byte $xx,$xx ; 64d7:10 -> 62f1:04
         $15b31              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location65                                     ; Location 65
+MapData_65                                             ; Zombie Town
         $15b32              .word ($xxxx) ; $15b3c
         $15b34              .word ($xxxx) ; $15b44
         $15b36              .word ($xxxx) ; $15b4b
         $15b38              .word ($xxxx) ; $15b57
         $15b3a              .word ($xxxx) ; $15b6c
-MapData_Location65_Layout
+MapData_65_Layout
         $15b3c              .byte $xx
         $15b3d              .byte $xx,$xx,$xx,$xx
         ;; Map 1x3
         $15b41              .byte $xx
         $15b42              .byte $xx
         $15b43              .byte $xx
-MapData_Location65_Graphics
+MapData_65_Graphics
         $15b44              .byte $xx,$xx,$xx
         $15b47              .byte $xx,$xx
         $15b49              .byte $xx,$xx
-MapData_Location65_Entrances
+MapData_65_Entrances
         $15b4b              .byte $xx,$xx,$xx,$xx
         $15b4f              .byte $xx,$xx,$xx,$xx
         $15b53              .byte $xx,$xx,$xx,$xx
-MapData_Location65_Exits
+MapData_65_Exits
         $15b57              .byte $xx,$xx,$xx,$xx
         $15b5b              .byte $xx,$xx,$xx,$xx
         $15b5f              .byte $xx,$xx,$xx,$xx
         $15b63              .byte $xx,$xx,$xx,$xx
         $15b67              .byte $xx,$xx,$xx,$xx
         $15b6b              .byte $xx
-MapData_Location65_Flags
+MapData_65_Flags
         $15b6c              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_EvilSpiritIslandEntrance                       ; Location 68
+MapData_68                                    ; Evil Spirit Island 1
         $15b6d              .word ($xxxx) ; $15b77
         $15b6f              .word ($xxxx) ; $15b7f
         $15b71              .word ($xxxx) ; $15b86
         $15b73              .word ($xxxx) ; $15b8e
         $15b75              .word ($xxxx) ; $15b9f
-MapData_EvilSpiritIslandEntrance_Layout
+MapData_68_Layout
         $15b77              .byte $xx
         $15b78              .byte $xx,$xx,$xx,$xx
         ;; Map 3x1
         $15b7c              .byte $xx,$xx,$xx
-MapData_EvilSpiritIslandEntrance_Graphics
+MapData_68_Graphics
         $15b7f              .byte $xx,$xx,$xx
         $15b82              .byte $xx,$xx
         $15b84              .byte $xx,$xx
-MapData_EvilSpiritIslandEntrance_Entrances
+MapData_68_Entrances
         $15b86              .byte $xx,$xx,$xx,$xx
         $15b8a              .byte $xx,$xx,$xx,$xx
-MapData_EvilSpiritIslandEntrance_Exits
+MapData_68_Exits
         $15b8e              .byte $xx,$xx,$xx,$xx
         $15b92              .byte $xx,$xx,$xx,$xx
         $15b96              .byte $xx,$xx,$xx,$xx
         $15b9a              .byte $xx,$xx,$xx,$xx
         $15b9e              .byte $xx
-MapData_EvilSpiritIslandEntrance_Flags
+MapData_68_Flags
         $15b9f              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location69                                     ; Location 69
+MapData_69                                    ; Evil Spirit Island 2
         $15ba0              .word ($xxxx) ; $15baa
         $15ba2              .word ($xxxx) ; $15be0
         $15ba4              .word ($xxxx) ; $15be7
         $15ba6              .word ($xxxx) ; $15bef
         $15ba8              .word ($xxxx) ; $15c00
-MapData_Location69_Layout
+MapData_69_Layout
         $15baa              .byte $xx
         $15bab              .byte $xx,$xx,$xx,$xx
         ;; Map 7x7
@@ -9835,20 +9839,20 @@ MapData_Location69_Layout
         $15bcb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $15bd2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $15bd9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_Location69_Graphics
+MapData_69_Graphics
         $15be0              .byte $xx,$xx,$xx
         $15be3              .byte $xx,$xx
         $15be5              .byte $xx,$xx
-MapData_Location69_Entrances
+MapData_69_Entrances
         $15be7              .byte $xx,$xx,$xx,$xx
         $15beb              .byte $xx,$xx,$xx,$xx
-MapData_Location69_Exits
+MapData_69_Exits
         $15bef              .byte $xx,$xx,$xx,$xx
         $15bf3              .byte $xx,$xx,$xx,$xx
         $15bf7              .byte $xx,$xx,$xx,$xx
         $15bfb              .byte $xx,$xx,$xx,$xx
         $15bff              .byte $xx
-MapData_Location69_Flags
+MapData_69_Flags
         $15c00              .byte $xx,$xx ; 64d7:08 -> 62f2:04
         $15c02              .byte $xx,$xx ; 64d7:04 -> 62f1:20
         $15c04              .byte $xx,$xx ; 64d7:02 -> 62f2:01
@@ -9856,26 +9860,26 @@ MapData_Location69_Flags
         $15c08              .byte $xx,$xx ; 64d6:80 -> 62f4:40
         $15c0a              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location6A                                     ; Location 6a
+MapData_6a                                    ; Evil Spirit Island 3
         $15c0b              .word ($xxxx) ; $15c17
         $15c0d              .word ($xxxx) ; $15c3f
         $15c0f              .word ($xxxx) ; $15c46
         $15c11              .word ($xxxx) ; $15c52
         $15c13              .word ($xxxx) ; $15c6b
         $15c15              .word ($xxxx)
-MapData_Location6A_Layout
+MapData_6a_Layout
         $15c17              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $15c20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $15c30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_Location6A_Graphics
+MapData_6a_Graphics
         $15c3f              .byte $xx,$xx,$xx
         $15c42              .byte $xx,$xx
         $15c44              .byte $xx,$xx
-MapData_Location6A_Entrances
+MapData_6a_Entrances
         $15c46              .byte $xx,$xx,$xx,$xx
         $15c4a              .byte $xx,$xx,$xx,$xx
         $15c4e              .byte $xx,$xx,$xx,$xx
-MapData_Location6A_Exits
+MapData_6a_Exits
         $15c52              .byte $xx,$xx,$xx,$xx
         $15c56              .byte $xx,$xx,$xx,$xx
         $15c5a              .byte $xx,$xx,$xx,$xx
@@ -9883,44 +9887,44 @@ MapData_Location6A_Exits
         $15c62              .byte $xx,$xx,$xx,$xx
         $15c66              .byte $xx,$xx,$xx,$xx
         $15c6a              .byte $xx
-MapData_Location6A_Flags
+MapData_6a_Flags
         $15c6b              .byte $xx,$xx ; 64d6:40 -> 62f1:01
         $15c6d              .byte $xx,$xx ; 64d6:20 -> 62f2:08
         $15c6f              .byte $xx
-MapData_Location6A_Pits
+MapData_6a_Pits
         $15c70              .byte $xx,$xx,$xx,$xx
         $15c74              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location6B                                     ; Location 6b
+MapData_6b                                    ; Evil Spirit Island 4
         $15c75              .word ($xxxx) ; $15c7f
         $15c77              .word ($xxxx) ; $15c8a
         $15c79              .word ($xxxx) ; $15c91
         $15c7b              .word ($xxxx) ; $15c95
         $15c7d              .word ($xxxx) ; $15c9e
-MapData_Location6B_Layout
+MapData_6b_Layout
         $15c7f              .byte $xx
         $15c80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_Location6B_Graphics
+MapData_6b_Graphics
         $15c8a              .byte $xx,$xx,$xx
         $15c8d              .byte $xx,$xx
         $15c8f              .byte $xx,$xx
-MapData_Location6B_Entrances
+MapData_6b_Entrances
         $15c91              .byte $xx,$xx,$xx,$xx
-MapData_Location6B_Exits
+MapData_6b_Exits
         $15c95              .byte $xx,$xx,$xx,$xx
         $15c99              .byte $xx,$xx,$xx,$xx
         $15c9d              .byte $xx
-MapData_Location6B_Flags
+MapData_6b_Flags
         $15c9e              .byte $xx,$xx ; 64d0:20 -> 62f2:01
         $15ca0              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location6C                                     ; Location 6c
+MapData_6c                                         ; Sabera Palace 1
         $15ca1              .word ($xxxx) ; $15cab
         $15ca3              .word ($xxxx) ; $15cda
         $15ca5              .word ($xxxx) ; $15ce1
         $15ca7              .word ($xxxx) ; $15ced
         $15ca9              .word ($xxxx) ; $15d06
-MapData_Location6C_Layout
+MapData_6c_Layout
         $15cab              .byte $xx
         $15cac              .byte $xx,$xx,$xx,$xx
         ;; Map 6x7
@@ -9931,15 +9935,15 @@ MapData_Location6C_Layout
         $15cc8              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $15cce              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $15cd4              .byte $xx,$xx,$xx,$xx,$xx,$xx
-MapData_Location6C_Graphics
+MapData_6c_Graphics
         $15cda              .byte $xx,$xx,$xx
         $15cdd              .byte $xx,$xx
         $15cdf              .byte $xx,$xx
-MapData_Location6C_Entrances
+MapData_6c_Entrances
         $15ce1              .byte $xx,$xx,$xx,$xx
         $15ce5              .byte $xx,$xx,$xx,$xx
         $15ce9              .byte $xx,$xx,$xx,$xx
-MapData_Location6C_Exits
+MapData_6c_Exits
         $15ced              .byte $xx,$xx,$xx,$xx
         $15cf1              .byte $xx,$xx,$xx,$xx
         $15cf5              .byte $xx,$xx,$xx,$xx
@@ -9947,17 +9951,17 @@ MapData_Location6C_Exits
         $15cfd              .byte $xx,$xx,$xx,$xx
         $15d01              .byte $xx,$xx,$xx,$xx
         $15d05              .byte $xx
-MapData_Location6C_Flags
+MapData_6c_Flags
         $15d06              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location6D                                     ; Location 6d
+MapData_6d                                         ; Sabera Palace 2
         $15d07              .word ($xxxx) ; $15d13
         $15d09              .word ($xxxx) ; $15d3b
         $15d0b              .word ($xxxx) ; $15d42
         $15d0d              .word ($xxxx) ; $15d4e
         $15d0f              .word ($xxxx) ; $15d67
         $15d11              .word ($xxxx)
-MapData_Location6D_Layout
+MapData_6d_Layout
         $15d13              .byte $xx
         $15d14              .byte $xx,$xx,$xx,$xx
         ;; Map 5x7
@@ -9968,15 +9972,15 @@ MapData_Location6D_Layout
         $15d2c              .byte $xx,$xx,$xx,$xx,$xx
         $15d31              .byte $xx,$xx,$xx,$xx,$xx
         $15d36              .byte $xx,$xx,$xx,$xx,$xx
-MapData_Location6D_Graphics
+MapData_6d_Graphics
         $15d3b              .byte $xx,$xx,$xx
         $15d3e              .byte $xx,$xx
         $15d40              .byte $xx,$xx
-MapData_Location6D_Entrances
+MapData_6d_Entrances
         $15d42              .byte $xx,$xx,$xx,$xx
         $15d46              .byte $xx,$xx,$xx,$xx
         $15d4a              .byte $xx,$xx,$xx,$xx
-MapData_Location6D_Exits
+MapData_6d_Exits
         $15d4e              .byte $xx,$xx,$xx,$xx
         $15d52              .byte $xx,$xx,$xx,$xx
         $15d56              .byte $xx,$xx,$xx,$xx
@@ -9984,146 +9988,146 @@ MapData_Location6D_Exits
         $15d5e              .byte $xx,$xx,$xx,$xx
         $15d62              .byte $xx,$xx,$xx,$xx
         $15d66              .byte $xx
-MapData_Location6D_Flags
+MapData_6d_Flags
         $15d67              .byte $xx
-MapData_Location6D_Pits
+MapData_6d_Pits
         $15d68              .byte $xx,$xx,$xx,$xx
         $15d6c              .byte $xx,$xx,$xx,$xx
         $15d70              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location6E                                     ; Location 6e
+MapData_6e                                         ; Sabera Palace 3
         $15d71              .word ($xxxx) ; $15d7d
         $15d73              .word ($xxxx) ; $15d85
         $15d75              .word ($xxxx) ; $15d8c
         $15d77              .word ($xxxx) ; $15d90
         $15d79              .word ($xxxx) ; $15d99
         $15d7b              .word ($xxxx)
-MapData_Location6E_Layout
+MapData_6e_Layout
         $15d7d              .byte $xx
         $15d7e              .byte $xx,$xx,$xx,$xx
         ;; Map 1x3
         $15d82              .byte $xx
         $15d83              .byte $xx
         $15d84              .byte $xx
-MapData_Location6E_Graphics
+MapData_6e_Graphics
         $15d85              .byte $xx,$xx,$xx
         $15d88              .byte $xx,$xx
         $15d8a              .byte $xx,$xx
-MapData_Location6E_Entrances
+MapData_6e_Entrances
         $15d8c              .byte $xx,$xx,$xx,$xx
-MapData_Location6E_Exits
+MapData_6e_Exits
         $15d90              .byte $xx,$xx,$xx,$xx
         $15d94              .byte $xx,$xx,$xx,$xx
         $15d98              .byte $xx
-MapData_Location6E_Flags
+MapData_6e_Flags
         $15d99              .byte $xx
-MapData_Location6E_Pits
+MapData_6e_Pits
         $15d9a              .byte $xx,$xx,$xx,$xx
         $15d9e              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location6F                                     ; Location 6f
+MapData_6f                                                  ; UNUSED
         $15d9f              .word ($xxxx) ; $15dab
         $15da1              .word ($xxxx) ; $15db3
         $15da3              .word ($xxxx) ; $15dba
         $15da5              .word ($xxxx) ; $15dba
         $15da7              .word ($xxxx) ; $15dc3
         $15da9              .word ($xxxx)
-MapData_Location6F_Layout
+MapData_6f_Layout
         $15dab              .byte $xx
         $15dac              .byte $xx,$xx,$xx,$xx
         ;; Map 1x3
         $15db0              .byte $xx
         $15db1              .byte $xx
         $15db2              .byte $xx
-MapData_Location6F_Graphics
+MapData_6f_Graphics
         $15db3              .byte $xx,$xx,$xx
         $15db6              .byte $xx,$xx
         $15db8              .byte $xx,$xx
-MapData_Location6F_Entrances
-MapData_Location6F_Exits
+MapData_6f_Entrances
+MapData_6f_Exits
         $15dba              .byte $xx,$xx,$xx,$xx
         $15dbe              .byte $xx,$xx,$xx,$xx
         $15dc2              .byte $xx
-MapData_Location6F_Flags
+MapData_6f_Flags
         $15dc3              .byte $xx
-MapData_Location6F_Pits
+MapData_6f_Pits
         $15dc4              .byte $xx,$xx,$xx,$xx
         $15dc8              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_JoelSecretPassage                              ; Location 70
+MapData_70                                   ; Joel - Secret Passage
         $15dc9              .word ($xxxx)
         $15dcb              .word ($xxxx)
         $15dcd              .word ($xxxx)
         $15dcf              .word ($xxxx)
         $15dd1              .word ($xxxx)
-MapData_JoelSecretPassage_Layout
+MapData_70_Layout
         $15dd3              .byte $xx
         $15dd4              .byte $xx,$xx,$xx,$xx
         ;; Map 2x2
         $15dd8              .byte $xx,$xx
         $15dda              .byte $xx,$xx
-MapData_JoelSecretPassage_Graphics
+MapData_70_Graphics
         $15ddc              .byte $xx,$xx,$xx
         $15ddf              .byte $xx,$xx
         $15de1              .byte $xx,$xx
-MapData_JoelSecretPassage_Entrances
+MapData_70_Entrances
         $15de3              .byte $xx,$xx,$xx,$xx
         $15de7              .byte $xx,$xx,$xx,$xx
-MapData_JoelSecretPassage_Exits
+MapData_70_Exits
         $15deb              .byte $xx,$xx,$xx,$xx ; Angry Sea
         $15def              .byte $xx,$xx,$xx,$xx
         $15df3              .byte $xx,$xx,$xx,$xx ; Joel Shed
         $15df7              .byte $xx,$xx,$xx,$xx
         $15dfb              .byte $xx
-MapData_JoelSecretPassage_Flags
+MapData_70_Flags
         $15dfc              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_JoelLighthouse                                 ; Location 62
+MapData_62                                       ; Joel - Lighthouse
         $15dfd              .word ($xxxx) ; $15e07
         $15dff              .word ($xxxx) ; $15e0d
         $15e01              .word ($xxxx) ; $15e14
         $15e03              .word ($xxxx) ; $15e18
         $15e05              .word ($xxxx) ; $15e1d
-MapData_JoelLighthouse_Layout
+MapData_62_Layout
         $15e07              .byte $xx
         $15e08              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $15e0c              .byte $xx
-MapData_JoelLighthouse_Graphics
+MapData_62_Graphics
         $15e0d              .byte $xx,$xx,$xx
         $15e10              .byte $xx,$xx
         $15e12              .byte $xx,$xx
-MapData_JoelLighthouse_Entrances
+MapData_62_Entrances
         $15e14              .byte $xx,$xx,$xx,$xx
-MapData_JoelLighthouse_Exits
+MapData_62_Exits
         $15e18              .byte $xx,$xx,$xx,$xx
         $15e1c              .byte $xx
-MapData_JoelLighthouse_Flags
+MapData_62_Flags
         $15e1d              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Joel                                           ; Location 71
+MapData_71                                                    ; Joel
         $15e1e              .word ($xxxx) ; $15e28
         $15e20              .word ($xxxx) ; $15e31
         $15e22              .word ($xxxx) ; $15e38
         $15e24              .word ($xxxx) ; $15e4c
         $15e26              .word ($xxxx) ; $15e65
-MapData_Joel_Layout
+MapData_71_Layout
         $15e28              .byte $xx
         $15e29              .byte $xx,$xx,$xx,$xx
         ;; Map 2x2
         $15e2d              .byte $xx,$xx
         $15e2f              .byte $xx,$xx
-MapData_Joel_Graphics
+MapData_71_Graphics
         $15e31              .byte $xx,$xx,$xx
         $15e34              .byte $xx,$xx
         $15e36              .byte $xx,$xx
-MapData_Joel_Entrances
+MapData_71_Entrances
         $15e38              .byte $xx,$xx,$xx,$xx
         $15e3c              .byte $xx,$xx,$xx,$xx
         $15e40              .byte $xx,$xx,$xx,$xx
         $15e44              .byte $xx,$xx,$xx,$xx
         $15e48              .byte $xx,$xx,$xx,$xx
-MapData_Joel_Exits
+MapData_71_Exits
         $15e4c              .byte $xx,$xx,$xx,$xx
         $15e50              .byte $xx,$xx,$xx,$xx
         $15e54              .byte $xx,$xx,$xx,$xx
@@ -10131,25 +10135,25 @@ MapData_Joel_Exits
         $15e5c              .byte $xx,$xx,$xx,$xx
         $15e60              .byte $xx,$xx,$xx,$xx
         $15e64              .byte $xx
-MapData_Joel_Flags
+MapData_71_Flags
         $15e65              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Swan                                           ; Location 72
+MapData_72                                                    ; Swan
         $15e66              .word ($xxxx) ; $15e70
         $15e68              .word ($xxxx) ; $15e78
         $15e6a              .word ($xxxx) ; $15e7f
         $15e6c              .word ($xxxx) ; $15ea7
         $15e6e              .word ($xxxx) ; $15ed4
-MapData_Swan_Layout
+MapData_72_Layout
         $15e70              .byte $xx
         $15e71              .byte $xx,$xx,$xx,$xx
         ;; Map 3x1
         $15e75              .byte $xx,$xx,$xx
-MapData_Swan_Graphics
+MapData_72_Graphics
         $15e78              .byte $xx,$xx,$xx
         $15e7b              .byte $xx,$xx
         $15e7d              .byte $xx,$xx
-MapData_Swan_Entrances
+MapData_72_Entrances
         $15e7f              .byte $xx,$xx,$xx,$xx
         $15e83              .byte $xx,$xx,$xx,$xx
         $15e87              .byte $xx,$xx,$xx,$xx
@@ -10160,7 +10164,7 @@ MapData_Swan_Entrances
         $15e9b              .byte $xx,$xx,$xx,$xx
         $15e9f              .byte $xx,$xx,$xx,$xx
         $15ea3              .byte $xx,$xx,$xx,$xx
-MapData_Swan_Exits
+MapData_72_Exits
         $15ea7              .byte $xx,$xx,$xx,$xx
         $15eab              .byte $xx,$xx,$xx,$xx
         $15eaf              .byte $xx,$xx,$xx,$xx
@@ -10173,44 +10177,44 @@ MapData_Swan_Exits
         $15ecb              .byte $xx,$xx,$xx,$xx
         $15ecf              .byte $xx,$xx,$xx,$xx
         $15ed3              .byte $xx
-MapData_Swan_Flags
+MapData_72_Flags
         $15ed4              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location73                                     ; Location 73
+MapData_73                                             ; Swan - Gate
         $15ed5              .word ($xxxx) ; $15edf
         $15ed7              .word ($xxxx) ; $15ee5
         $15ed9              .word ($xxxx) ; $15eec
         $15edb              .word ($xxxx) ; $15ef4
         $15edd              .word ($xxxx) ; $15f05
-MapData_Location73_Layout
+MapData_73_Layout
         $15edf              .byte $xx
         $15ee0              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $15ee4              .byte $xx
-MapData_Location73_Graphics
+MapData_73_Graphics
         $15ee5              .byte $xx,$xx,$xx
         $15ee8              .byte $xx,$xx
         $15eea              .byte $xx,$xx
-MapData_Location73_Entrances
+MapData_73_Entrances
         $15eec              .byte $xx,$xx,$xx,$xx
         $15ef0              .byte $xx,$xx,$xx,$xx
-MapData_Location73_Exits
+MapData_73_Exits
         $15ef4              .byte $xx,$xx,$xx,$xx
         $15ef8              .byte $xx,$xx,$xx,$xx
         $15efc              .byte $xx,$xx,$xx,$xx
         $15f00              .byte $xx,$xx,$xx,$xx
         $15f04              .byte $xx
-MapData_Location73_Flags
+MapData_73_Flags
         $15f05              .byte $xx,$xx ; 64d6:08 -> 62f0:01
         $15f07              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location78                                     ; Location 78
+MapData_78                                              ; Goa Valley
         $15f08              .word ($xxxx) ; $15f12
         $15f0a              .word ($xxxx) ; $15f30
         $15f0c              .word ($xxxx) ; $15f37
         $15f0e              .word ($xxxx) ; $15f4b
         $15f10              .word ($xxxx) ; $15f78
-MapData_Location78_Layout
+MapData_78_Layout
         $15f12              .byte $xx
         $15f13              .byte $xx,$xx,$xx,$xx
         ;; Map 5x5
@@ -10219,17 +10223,17 @@ MapData_Location78_Layout
         $15f21              .byte $xx,$xx,$xx,$xx,$xx
         $15f26              .byte $xx,$xx,$xx,$xx,$xx
         $15f2b              .byte $xx,$xx,$xx,$xx,$xx
-MapData_Location78_Graphics
+MapData_78_Graphics
         $15f30              .byte $xx,$xx,$xx
         $15f33              .byte $xx,$xx
         $15f35              .byte $xx,$xx
-MapData_Location78_Entrances
+MapData_78_Entrances
         $15f37              .byte $xx,$xx,$xx,$xx
         $15f3b              .byte $xx,$xx,$xx,$xx
         $15f3f              .byte $xx,$xx,$xx,$xx
         $15f43              .byte $xx,$xx,$xx,$xx
         $15f47              .byte $xx,$xx,$xx,$xx
-MapData_Location78_Exits
+MapData_78_Exits
         $15f4b              .byte $xx,$xx,$xx,$xx
         $15f4f              .byte $xx,$xx,$xx,$xx
         $15f53              .byte $xx,$xx,$xx,$xx
@@ -10242,16 +10246,16 @@ MapData_Location78_Exits
         $15f6f              .byte $xx,$xx,$xx,$xx
         $15f73              .byte $xx,$xx,$xx,$xx
         $15f77              .byte $xx
-MapData_Location78_Flags
+MapData_78_Flags
         $15f78              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location7C                                     ; Location 7c
+MapData_7c                                                ; Mt Hydra
         $15f79              .word ($xxxx) ; $15f83
         $15f7b              .word ($xxxx) ; $15fb8
         $15f7d              .word ($xxxx) ; $15fbf
         $15f7f              .word ($xxxx) ; $15fe7
         $15f81              .word ($xxxx) ; $16044
-MapData_Location7C_Layout
+MapData_7c_Layout
         $15f83              .byte $xx
         $15f84              .byte $xx,$xx,$xx,$xx
         ;; Map 6x8
@@ -10263,11 +10267,11 @@ MapData_Location7C_Layout
         $15fa6              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $15fac              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $15fb2              .byte $xx,$xx,$xx,$xx,$xx,$xx
-MapData_Location7C_Graphics
+MapData_7c_Graphics
         $15fb8              .byte $xx,$xx,$xx
         $15fbb              .byte $xx,$xx
         $15fbd              .byte $xx,$xx
-MapData_Location7C_Entrances
+MapData_7c_Entrances
         $15fbf              .byte $xx,$xx,$xx,$xx
         $15fc3              .byte $xx,$xx,$xx,$xx
         $15fc7              .byte $xx,$xx,$xx,$xx
@@ -10278,7 +10282,7 @@ MapData_Location7C_Entrances
         $15fdb              .byte $xx,$xx,$xx,$xx
         $15fdf              .byte $xx,$xx,$xx,$xx
         $15fe3              .byte $xx,$xx,$xx,$xx
-MapData_Location7C_Exits
+MapData_7c_Exits
         $15fe7              .byte $xx,$xx,$xx,$xx
         $15feb              .byte $xx,$xx,$xx,$xx
         $15fef              .byte $xx,$xx,$xx,$xx
@@ -10303,88 +10307,88 @@ MapData_Location7C_Exits
         $1603b              .byte $xx,$xx,$xx,$xx
         $1603f              .byte $xx,$xx,$xx,$xx
         $16043              .byte $xx
-MapData_Location7C_Flags
+MapData_7c_Flags
         $16044              .byte $xx,$xx ; 64d6:04 -> 62f6:04
         $16046              .byte $xx,$xx ; 64d6:02 -> 62f3:04
         $16048              .byte $xx,$xx ; 64d6:01 -> 62f1:01
         $1604a              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location7D                                     ; Location 7d
+MapData_7d                                       ; Mt Hydra - Cave 1
         $1604b              .word ($xxxx) ; $16055
         $1604d              .word ($xxxx) ; $1605e
         $1604f              .word ($xxxx) ; $16065
         $16051              .word ($xxxx) ; $1606d
         $16053              .word ($xxxx) ; $1607e
-MapData_Location7D_Layout
+MapData_7d_Layout
         $16055              .byte $xx
         $16056              .byte $xx,$xx,$xx,$xx
         ;; Map 2x2
         $1605a              .byte $xx,$xx
         $1605c              .byte $xx,$xx
-MapData_Location7D_Graphics
+MapData_7d_Graphics
         $1605e              .byte $xx,$xx,$xx
         $16061              .byte $xx,$xx
         $16063              .byte $xx,$xx
-MapData_Location7D_Entrances
+MapData_7d_Entrances
         $16065              .byte $xx,$xx,$xx,$xx
         $16069              .byte $xx,$xx,$xx,$xx
-MapData_Location7D_Exits
+MapData_7d_Exits
         $1606d              .byte $xx,$xx,$xx,$xx
         $16071              .byte $xx,$xx,$xx,$xx
         $16075              .byte $xx,$xx,$xx,$xx
         $16079              .byte $xx,$xx,$xx,$xx
         $1607d              .byte $xx
-MapData_Location7D_Flags
+MapData_7d_Flags
         $1607e              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location7E                                     ; Location 7e
+MapData_7e                               ; Mt Hydra - Outside Shyron
         $1607f              .word ($xxxx) ; $16089
         $16081              .word ($xxxx) ; $16090
         $16083              .word ($xxxx) ; $16097
         $16085              .word ($xxxx) ; $1609f
         $16087              .word ($xxxx) ; $160b0
-MapData_Location7E_Layout
+MapData_7e_Layout
         $16089              .byte $xx
         $1608a              .byte $xx,$xx,$xx,$xx
         ;; Map 2x1
         $1608e              .byte $xx,$xx
-MapData_Location7E_Graphics
+MapData_7e_Graphics
         $16090              .byte $xx,$xx,$xx
         $16093              .byte $xx,$xx
         $16095              .byte $xx,$xx
-MapData_Location7E_Entrances
+MapData_7e_Entrances
         $16097              .byte $xx,$xx,$xx,$xx
         $1609b              .byte $xx,$xx,$xx,$xx
-MapData_Location7E_Exits
+MapData_7e_Exits
         $1609f              .byte $xx,$xx,$xx,$xx
         $160a3              .byte $xx,$xx,$xx,$xx
         $160a7              .byte $xx,$xx,$xx,$xx
         $160ab              .byte $xx,$xx,$xx,$xx
         $160af              .byte $xx
-MapData_Location7E_Flags
+MapData_7e_Flags
         $160b0              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location7F                                     ; Location 7f
+MapData_7f                                       ; Mt Hydra - Cave 2
         $160b1              .word ($xxxx) ; $160bb
         $160b3              .word ($xxxx) ; $160c6
         $160b5              .word ($xxxx) ; $160cd
         $160b7              .word ($xxxx) ; $160d9
         $160b9              .word ($xxxx) ; $160f2
-MapData_Location7F_Layout
+MapData_7f_Layout
         $160bb              .byte $xx
         $160bc              .byte $xx,$xx,$xx,$xx
         ;; Map 3x2
         $160c0              .byte $xx,$xx,$xx
         $160c3              .byte $xx,$xx,$xx
-MapData_Location7F_Graphics
+MapData_7f_Graphics
         $160c6              .byte $xx,$xx,$xx
         $160c9              .byte $xx,$xx
         $160cb              .byte $xx,$xx
-MapData_Location7F_Entrances
+MapData_7f_Entrances
         $160cd              .byte $xx,$xx,$xx,$xx
         $160d1              .byte $xx,$xx,$xx,$xx
         $160d5              .byte $xx,$xx,$xx,$xx
-MapData_Location7F_Exits
+MapData_7f_Exits
         $160d9              .byte $xx,$xx,$xx,$xx
         $160dd              .byte $xx,$xx,$xx,$xx
         $160e1              .byte $xx,$xx,$xx,$xx
@@ -10392,32 +10396,32 @@ MapData_Location7F_Exits
         $160e9              .byte $xx,$xx,$xx,$xx
         $160ed              .byte $xx,$xx,$xx,$xx
         $160f1              .byte $xx
-MapData_Location7F_Flags
+MapData_7f_Flags
         $160f2              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location80                                     ; Location 80
+MapData_80                                       ; Mt Hydra - Cave 3
         $160f3              .word ($xxxx) ; $160fd
         $160f5              .word ($xxxx) ; $16111
         $160f7              .word ($xxxx) ; $16118
         $160f9              .word ($xxxx) ; $16128
         $160fb              .word ($xxxx) ; $16149
-MapData_Location80_Layout
+MapData_80_Layout
         $160fd              .byte $xx
         $160fe              .byte $xx,$xx,$xx,$xx
         ;; Map 5x3
         $16102              .byte $xx,$xx,$xx,$xx,$xx
         $16107              .byte $xx,$xx,$xx,$xx,$xx
         $1610c              .byte $xx,$xx,$xx,$xx,$xx
-MapData_Location80_Graphics
+MapData_80_Graphics
         $16111              .byte $xx,$xx,$xx
         $16114              .byte $xx,$xx
         $16116              .byte $xx,$xx
-MapData_Location80_Entrances
+MapData_80_Entrances
         $16118              .byte $xx,$xx,$xx,$xx
         $1611c              .byte $xx,$xx,$xx,$xx
         $16120              .byte $xx,$xx,$xx,$xx
         $16124              .byte $xx,$xx,$xx,$xx
-MapData_Location80_Exits
+MapData_80_Exits
         $16128              .byte $xx,$xx,$xx,$xx
         $1612c              .byte $xx,$xx,$xx,$xx
         $16130              .byte $xx,$xx,$xx,$xx
@@ -10427,30 +10431,30 @@ MapData_Location80_Exits
         $16140              .byte $xx,$xx,$xx,$xx
         $16144              .byte $xx,$xx,$xx,$xx
         $16148              .byte $xx
-MapData_Location80_Flags
+MapData_80_Flags
         $16149              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location81                                     ; Location 81
+MapData_81                                       ; Mt Hydra - Cave 4
         $1614a              .word ($xxxx) ; $16154
         $1614c              .word ($xxxx) ; $1615f
         $1614e              .word ($xxxx) ; $16166
         $16150              .word ($xxxx) ; $16172
         $16152              .word ($xxxx) ; $1618b
-MapData_Location81_Layout
+MapData_81_Layout
         $16154              .byte $xx
         $16155              .byte $xx,$xx,$xx,$xx
         ;; Map 3x2
         $16159              .byte $xx,$xx,$xx
         $1615c              .byte $xx,$xx,$xx
-MapData_Location81_Graphics
+MapData_81_Graphics
         $1615f              .byte $xx,$xx,$xx
         $16162              .byte $xx,$xx
         $16164              .byte $xx,$xx
-MapData_Location81_Entrances
+MapData_81_Entrances
         $16166              .byte $xx,$xx,$xx,$xx
         $1616a              .byte $xx,$xx,$xx,$xx
         $1616e              .byte $xx,$xx,$xx,$xx
-MapData_Location81_Exits
+MapData_81_Exits
         $16172              .byte $xx,$xx,$xx,$xx
         $16176              .byte $xx,$xx,$xx,$xx
         $1617a              .byte $xx,$xx,$xx,$xx
@@ -10458,85 +10462,85 @@ MapData_Location81_Exits
         $16182              .byte $xx,$xx,$xx,$xx
         $16186              .byte $xx,$xx,$xx,$xx
         $1618a              .byte $xx
-MapData_Location81_Flags
+MapData_81_Flags
         $1618b              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location82                                     ; Location 82
+MapData_82                                       ; Mt Hydra - Cave 5
         $1618c              .word ($xxxx) ; $16196
         $1618e              .word ($xxxx) ; $1619f
         $16190              .word ($xxxx) ; $161a6
         $16192              .word ($xxxx) ; $161aa
         $16194              .word ($xxxx) ; $161b3
-MapData_Location82_Layout
+MapData_82_Layout
         $16196              .byte $xx
         $16197              .byte $xx,$xx,$xx,$xx
         ;; Map 2x2
         $1619b              .byte $xx,$xx
         $1619d              .byte $xx,$xx
-MapData_Location82_Graphics
+MapData_82_Graphics
         $1619f              .byte $xx,$xx,$xx
         $161a2              .byte $xx,$xx
         $161a4              .byte $xx,$xx
-MapData_Location82_Entrances
+MapData_82_Entrances
         $161a6              .byte $xx,$xx,$xx,$xx
-MapData_Location82_Exits
+MapData_82_Exits
         $161aa              .byte $xx,$xx,$xx,$xx
         $161ae              .byte $xx,$xx,$xx,$xx
         $161b2              .byte $xx
-MapData_Location82_Flags
+MapData_82_Flags
         $161b3              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location83                                     ; Location 83
+MapData_83                                       ; Mt Hydra - Cave 6
         $161b4              .word ($xxxx) ; $161be
         $161b6              .word ($xxxx) ; $161c9
         $161b8              .word ($xxxx) ; $161d0
         $161ba              .word ($xxxx) ; $161d8
         $161bc              .word ($xxxx) ; $161e9
-MapData_Location83_Layout
+MapData_83_Layout
         $161be              .byte $xx
         $161bf              .byte $xx,$xx,$xx,$xx
         ;; Map 2x3
         $161c3              .byte $xx,$xx
         $161c5              .byte $xx,$xx
         $161c7              .byte $xx,$xx
-MapData_Location83_Graphics
+MapData_83_Graphics
         $161c9              .byte $xx,$xx,$xx
         $161cc              .byte $xx,$xx
         $161ce              .byte $xx,$xx
-MapData_Location83_Entrances
+MapData_83_Entrances
         $161d0              .byte $xx,$xx,$xx,$xx
         $161d4              .byte $xx,$xx,$xx,$xx
-MapData_Location83_Exits
+MapData_83_Exits
         $161d8              .byte $xx,$xx,$xx,$xx
         $161dc              .byte $xx,$xx,$xx,$xx
         $161e0              .byte $xx,$xx,$xx,$xx
         $161e4              .byte $xx,$xx,$xx,$xx
         $161e8              .byte $xx
-MapData_Location83_Flags
+MapData_83_Flags
         $161e9              .byte $xx,$xx ; 64d5:80 -> 62f1:02
         $161eb              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location84                                     ; Location 84
+MapData_84                                       ; Mt Hydra - Cave 7
         $161ec              .word ($xxxx) ; $161f6
         $161ee              .word ($xxxx) ; $16201
         $161f0              .word ($xxxx) ; $16208
         $161f2              .word ($xxxx) ; $16210
         $161f4              .word ($xxxx) ; $16229
-MapData_Location84_Layout
+MapData_84_Layout
         $161f6              .byte $xx
         $161f7              .byte $xx,$xx,$xx,$xx
         ;; Map 2x3
         $161fb              .byte $xx,$xx
         $161fd              .byte $xx,$xx
         $161ff              .byte $xx,$xx
-MapData_Location84_Graphics
+MapData_84_Graphics
         $16201              .byte $xx,$xx,$xx
         $16204              .byte $xx,$xx
         $16206              .byte $xx,$xx
-MapData_Location84_Entrances
+MapData_84_Entrances
         $16208              .byte $xx,$xx,$xx,$xx
         $1620c              .byte $xx,$xx,$xx,$xx
-MapData_Location84_Exits
+MapData_84_Exits
         $16210              .byte $xx,$xx,$xx,$xx
         $16214              .byte $xx,$xx,$xx,$xx
         $16218              .byte $xx,$xx,$xx,$xx
@@ -10544,61 +10548,61 @@ MapData_Location84_Exits
         $16220              .byte $xx,$xx,$xx,$xx
         $16224              .byte $xx,$xx,$xx,$xx
         $16228              .byte $xx
-MapData_Location84_Flags
+MapData_84_Flags
         $16229              .byte $xx,$xx ; 64d5:40 -> 62f0:02
         $1622b              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location85                                     ; Location 85
+MapData_85                                       ; Mt Hydra - Cave 8
         $1622c              .word ($xxxx) ; $16236
         $1622e              .word ($xxxx) ; $1623f
         $16230              .word ($xxxx) ; $16246
         $16232              .word ($xxxx) ; $1624e
         $16234              .word ($xxxx) ; $1625f
-MapData_Location85_Layout
+MapData_85_Layout
         $16236              .byte $xx
         $16237              .byte $xx,$xx,$xx,$xx
         ;; Map 2x2
         $1623b              .byte $xx,$xx
         $1623d              .byte $xx,$xx
-MapData_Location85_Graphics
+MapData_85_Graphics
         $1623f              .byte $xx,$xx,$xx
         $16242              .byte $xx,$xx
         $16244              .byte $xx,$xx
-MapData_Location85_Entrances
+MapData_85_Entrances
         $16246              .byte $xx,$xx,$xx,$xx
         $1624a              .byte $xx,$xx,$xx,$xx
-MapData_Location85_Exits
+MapData_85_Exits
         $1624e              .byte $xx,$xx,$xx,$xx
         $16252              .byte $xx,$xx,$xx,$xx
         $16256              .byte $xx,$xx,$xx,$xx
         $1625a              .byte $xx,$xx,$xx,$xx
         $1625e              .byte $xx
-MapData_Location85_Flags
+MapData_85_Flags
         $1625f              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location86                                     ; Location 86
+MapData_86                                       ; Mt Hydra - Cave 9
         $16260              .word ($xxxx) ; $1626a
         $16262              .word ($xxxx) ; $1627b
         $16264              .word ($xxxx) ; $16282
         $16266              .word ($xxxx) ; $16292
         $16268              .word ($xxxx) ; $162b3
-MapData_Location86_Layout
+MapData_86_Layout
         $1626a              .byte $xx
         $1626b              .byte $xx,$xx,$xx,$xx
         ;; Map 4x3
         $1626f              .byte $xx,$xx,$xx,$xx
         $16273              .byte $xx,$xx,$xx,$xx
         $16277              .byte $xx,$xx,$xx,$xx
-MapData_Location86_Graphics
+MapData_86_Graphics
         $1627b              .byte $xx,$xx,$xx
         $1627e              .byte $xx,$xx
         $16280              .byte $xx,$xx
-MapData_Location86_Entrances
+MapData_86_Entrances
         $16282              .byte $xx,$xx,$xx,$xx
         $16286              .byte $xx,$xx,$xx,$xx
         $1628a              .byte $xx,$xx,$xx,$xx
         $1628e              .byte $xx,$xx,$xx,$xx
-MapData_Location86_Exits
+MapData_86_Exits
         $16292              .byte $xx,$xx,$xx,$xx
         $16296              .byte $xx,$xx,$xx,$xx
         $1629a              .byte $xx,$xx,$xx,$xx
@@ -10608,47 +10612,47 @@ MapData_Location86_Exits
         $162aa              .byte $xx,$xx,$xx,$xx
         $162ae              .byte $xx,$xx,$xx,$xx
         $162b2              .byte $xx
-MapData_Location86_Flags
+MapData_86_Flags
         $162b3              .byte $xx,$xx ; 64d5:20 -> 62f1:02
         $162b5              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location87                                     ; Location 87
+MapData_87                                      ; Mt Hydra - Cave 10
         $162b6              .word ($xxxx) ; $162c0
         $162b8              .word ($xxxx) ; $162cb
         $162ba              .word ($xxxx) ; $162d2
         $162bc              .word ($xxxx) ; $162da
         $162be              .word ($xxxx) ; $162eb
-MapData_Location87_Layout
+MapData_87_Layout
         $162c0              .byte $xx
         $162c1              .byte $xx,$xx,$xx,$xx
         ;; Map 2x3
         $162c5              .byte $xx,$xx
         $162c7              .byte $xx,$xx
         $162c9              .byte $xx,$xx
-MapData_Location87_Graphics
+MapData_87_Graphics
         $162cb              .byte $xx,$xx,$xx
         $162ce              .byte $xx,$xx
         $162d0              .byte $xx,$xx
-MapData_Location87_Entrances
+MapData_87_Entrances
         $162d2              .byte $xx,$xx,$xx,$xx
         $162d6              .byte $xx,$xx,$xx,$xx
-MapData_Location87_Exits
+MapData_87_Exits
         $162da              .byte $xx,$xx,$xx,$xx
         $162de              .byte $xx,$xx,$xx,$xx
         $162e2              .byte $xx,$xx,$xx,$xx
         $162e6              .byte $xx,$xx,$xx,$xx
         $162ea              .byte $xx
-MapData_Location87_Flags
+MapData_87_Flags
         $162eb              .byte $xx,$xx ; 64d5:10 -> 62f1:02
         $162ed              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location88                                     ; Location 88
+MapData_88                                                  ; Styx 1
         $162ee              .word ($xxxx) ; $162f8
         $162f0              .word ($xxxx) ; $16316
         $162f2              .word ($xxxx) ; $1631d
         $162f4              .word ($xxxx) ; $16329
         $162f6              .word ($xxxx) ; $16342
-MapData_Location88_Layout
+MapData_88_Layout
         $162f8              .byte $xx
         $162f9              .byte $xx,$xx,$xx,$xx
         ;; Map 5x5
@@ -10657,15 +10661,15 @@ MapData_Location88_Layout
         $16307              .byte $xx,$xx,$xx,$xx,$xx
         $1630c              .byte $xx,$xx,$xx,$xx,$xx
         $16311              .byte $xx,$xx,$xx,$xx,$xx
-MapData_Location88_Graphics
+MapData_88_Graphics
         $16316              .byte $xx,$xx,$xx
         $16319              .byte $xx,$xx
         $1631b              .byte $xx,$xx
-MapData_Location88_Entrances
+MapData_88_Entrances
         $1631d              .byte $xx,$xx,$xx,$xx
         $16321              .byte $xx,$xx,$xx,$xx
         $16325              .byte $xx,$xx,$xx,$xx
-MapData_Location88_Exits
+MapData_88_Exits
         $16329              .byte $xx,$xx,$xx,$xx
         $1632d              .byte $xx,$xx,$xx,$xx
         $16331              .byte $xx,$xx,$xx,$xx
@@ -10673,16 +10677,16 @@ MapData_Location88_Exits
         $16339              .byte $xx,$xx,$xx,$xx
         $1633d              .byte $xx,$xx,$xx,$xx
         $16341              .byte $xx
-MapData_Location88_Flags
+MapData_88_Flags
         $16342              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location89                                     ; Location 89
+MapData_89                                                  ; Styx 2
         $16343              .word ($xxxx) ; $1634d
         $16345              .word ($xxxx) ; $16370
         $16347              .word ($xxxx) ; $16377
         $16349              .word ($xxxx) ; $16383
         $1634b              .word ($xxxx) ; $1639c
-MapData_Location89_Layout
+MapData_89_Layout
         $1634d              .byte $xx
         $1634e              .byte $xx,$xx,$xx,$xx
         ;; Map 5x6
@@ -10692,15 +10696,15 @@ MapData_Location89_Layout
         $16361              .byte $xx,$xx,$xx,$xx,$xx
         $16366              .byte $xx,$xx,$xx,$xx,$xx
         $1636b              .byte $xx,$xx,$xx,$xx,$xx
-MapData_Location89_Graphics
+MapData_89_Graphics
         $16370              .byte $xx,$xx,$xx
         $16373              .byte $xx,$xx
         $16375              .byte $xx,$xx
-MapData_Location89_Entrances
+MapData_89_Entrances
         $16377              .byte $xx,$xx,$xx,$xx
         $1637b              .byte $xx,$xx,$xx,$xx
         $1637f              .byte $xx,$xx,$xx,$xx
-MapData_Location89_Exits
+MapData_89_Exits
         $16383              .byte $xx,$xx,$xx,$xx
         $16387              .byte $xx,$xx,$xx,$xx
         $1638b              .byte $xx,$xx,$xx,$xx
@@ -10708,19 +10712,19 @@ MapData_Location89_Exits
         $16393              .byte $xx,$xx,$xx,$xx
         $16397              .byte $xx,$xx,$xx,$xx
         $1639b              .byte $xx
-MapData_Location89_Flags
+MapData_89_Flags
         $1639c              .byte $xx,$xx ; 64d5:04 -> 62f1:04
         $1639e              .byte $xx,$xx ; 64d5:02 -> 62f1:08
         $163a0              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location8A                                     ; Location 8a
+MapData_8a                                                  ; Styx 3
         $163a1              .word ($xxxx) ; $163ad
         $163a3              .word ($xxxx) ; $163ca
         $163a5              .word ($xxxx) ; $163d1
         $163a7              .word ($xxxx) ; $163d5
         $163a9              .word ($xxxx) ; $163de
         $163ab              .word ($xxxx)
-MapData_Location8A_Layout
+MapData_8a_Layout
         $163ad              .byte $xx
         $163ae              .byte $xx,$xx,$xx,$xx
         ;; Map 4x6
@@ -10730,40 +10734,40 @@ MapData_Location8A_Layout
         $163be              .byte $xx,$xx,$xx,$xx
         $163c2              .byte $xx,$xx,$xx,$xx
         $163c6              .byte $xx,$xx,$xx,$xx
-MapData_Location8A_Graphics
+MapData_8a_Graphics
         $163ca              .byte $xx,$xx,$xx
         $163cd              .byte $xx,$xx
         $163cf              .byte $xx,$xx
-MapData_Location8A_Entrances
+MapData_8a_Entrances
         $163d1              .byte $xx,$xx,$xx,$xx
-MapData_Location8A_Exits
+MapData_8a_Exits
         $163d5              .byte $xx,$xx,$xx,$xx
         $163d9              .byte $xx,$xx,$xx,$xx
         $163dd              .byte $xx
-MapData_Location8A_Flags
+MapData_8a_Flags
         $163de              .byte $xx
-MapData_Location8A_Pits
+MapData_8a_Pits
         $163df              .byte $xx,$xx,$xx,$xx
         $163e3              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location8C                                     ; Location 8c
+MapData_8c                                                  ; Shyron
         $163e4              .word ($xxxx) ; $163ee
         $163e6              .word ($xxxx) ; $163f6
         $163e8              .word ($xxxx) ; $163fd
         $163ea              .word ($xxxx) ; $16419
         $163ec              .word ($xxxx) ; $1643e
-MapData_Location8C_Layout
+MapData_8c_Layout
         $163ee              .byte $xx
         $163ef              .byte $xx,$xx,$xx,$xx
         ;; Map 1x3
         $163f3              .byte $xx
         $163f4              .byte $xx
         $163f5              .byte $xx
-MapData_Location8C_Graphics
+MapData_8c_Graphics
         $163f6              .byte $xx,$xx,$xx
         $163f9              .byte $xx,$xx
         $163fb              .byte $xx,$xx
-MapData_Location8C_Entrances
+MapData_8c_Entrances
         $163fd              .byte $xx,$xx,$xx,$xx
         $16401              .byte $xx,$xx,$xx,$xx
         $16405              .byte $xx,$xx,$xx,$xx
@@ -10771,7 +10775,7 @@ MapData_Location8C_Entrances
         $1640d              .byte $xx,$xx,$xx,$xx
         $16411              .byte $xx,$xx,$xx,$xx
         $16415              .byte $xx,$xx,$xx,$xx
-MapData_Location8C_Exits
+MapData_8c_Exits
         $16419              .byte $xx,$xx,$xx,$xx
         $1641d              .byte $xx,$xx,$xx,$xx
         $16421              .byte $xx,$xx,$xx,$xx
@@ -10782,33 +10786,33 @@ MapData_Location8C_Exits
         $16435              .byte $xx,$xx,$xx,$xx
         $16439              .byte $xx,$xx,$xx,$xx
         $1643d              .byte $xx
-MapData_Location8C_Flags
+MapData_8c_Flags
         $1643e              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location8E                                     ; Location 8e
+MapData_8e                                                     ; Goa
         $1643f              .word ($xxxx) ; $16449
         $16441              .word ($xxxx) ; $16452
         $16443              .word ($xxxx) ; $16459
         $16445              .word ($xxxx) ; $16471
         $16447              .word ($xxxx) ; $16492
-MapData_Location8E_Layout
+MapData_8e_Layout
         $16449              .byte $xx
         $1644a              .byte $xx,$xx,$xx,$xx
         ;; Map 2x2
         $1644e              .byte $xx,$xx
         $16450              .byte $xx,$xx
-MapData_Location8E_Graphics
+MapData_8e_Graphics
         $16452              .byte $xx,$xx,$xx
         $16455              .byte $xx,$xx
         $16457              .byte $xx,$xx
-MapData_Location8E_Entrances
+MapData_8e_Entrances
         $16459              .byte $xx,$xx,$xx,$xx
         $1645d              .byte $xx,$xx,$xx,$xx
         $16461              .byte $xx,$xx,$xx,$xx
         $16465              .byte $xx,$xx,$xx,$xx
         $16469              .byte $xx,$xx,$xx,$xx
         $1646d              .byte $xx,$xx,$xx,$xx
-MapData_Location8E_Exits
+MapData_8e_Exits
         $16471              .byte $xx,$xx,$xx,$xx
         $16475              .byte $xx,$xx,$xx,$xx
         $16479              .byte $xx,$xx,$xx,$xx
@@ -10818,16 +10822,16 @@ MapData_Location8E_Exits
         $16489              .byte $xx,$xx,$xx,$xx
         $1648d              .byte $xx,$xx,$xx,$xx
         $16491              .byte $xx
-MapData_Location8E_Flags
+MapData_8e_Flags
         $16492              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location90                                     ; Location 90
+MapData_90                                                ; Desert 1
         $16493              .word ($xxxx) ; $1649d
         $16495              .word ($xxxx) ; $164c6
         $16497              .word ($xxxx) ; $164cd
         $16499              .word ($xxxx) ; $164d9
         $1649b              .word ($xxxx) ; $164f2
-MapData_Location90_Layout
+MapData_90_Layout
         $1649d              .byte $xx
         $1649e              .byte $xx,$xx,$xx,$xx
         ;; Map 6x6
@@ -10837,15 +10841,15 @@ MapData_Location90_Layout
         $164b4              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $164ba              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $164c0              .byte $xx,$xx,$xx,$xx,$xx,$xx
-MapData_Location90_Graphics
+MapData_90_Graphics
         $164c6              .byte $xx,$xx,$xx
         $164c9              .byte $xx,$xx
         $164cb              .byte $xx,$xx
-MapData_Location90_Entrances
+MapData_90_Entrances
         $164cd              .byte $xx,$xx,$xx,$xx
         $164d1              .byte $xx,$xx,$xx,$xx
         $164d5              .byte $xx,$xx,$xx,$xx
-MapData_Location90_Exits
+MapData_90_Exits
         $164d9              .byte $xx,$xx,$xx,$xx
         $164dd              .byte $xx,$xx,$xx,$xx
         $164e1              .byte $xx,$xx,$xx,$xx
@@ -10853,16 +10857,16 @@ MapData_Location90_Exits
         $164e9              .byte $xx,$xx,$xx,$xx
         $164ed              .byte $xx,$xx,$xx,$xx
         $164f1              .byte $xx
-MapData_Location90_Flags
+MapData_90_Flags
         $164f2              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location91                                     ; Location 91
+MapData_91                                       ; Oasis Cave - Main
         $164f3              .word ($xxxx) ; $164fd
         $164f5              .word ($xxxx) ; $1655a
         $164f7              .word ($xxxx) ; $16561
         $164f9              .word ($xxxx) ; $16569
         $164fb              .word ($xxxx) ; $1657a
-MapData_Location91_Layout
+MapData_91_Layout
         $164fd              .byte $xx
         $164fe              .byte $xx,$xx,$xx,$xx
         ;; Map 8x12
@@ -10877,20 +10881,20 @@ MapData_Location91_Layout
         $16542              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1654a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16552              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_Location91_Graphics
+MapData_91_Graphics
         $1655a              .byte $xx,$xx,$xx
         $1655d              .byte $xx,$xx
         $1655f              .byte $xx,$xx
-MapData_Location91_Entrances
+MapData_91_Entrances
         $16561              .byte $xx,$xx,$xx,$xx
         $16565              .byte $xx,$xx,$xx,$xx
-MapData_Location91_Exits
+MapData_91_Exits
         $16569              .byte $xx,$xx,$xx,$xx
         $1656d              .byte $xx,$xx,$xx,$xx
         $16571              .byte $xx,$xx,$xx,$xx
         $16575              .byte $xx,$xx,$xx,$xx
         $16579              .byte $xx
-MapData_Location91_Flags
+MapData_91_Flags
         $1657a              .byte $xx,$xx ; 64d3:08 -> 62f1:04
         $1657c              .byte $xx,$xx ; 64d3:04 -> 62f5:02
         $1657e              .byte $xx,$xx ; 64d3:02 -> 62f4:04
@@ -10904,85 +10908,85 @@ MapData_Location91_Flags
         $1658e              .byte $xx,$xx ; 64d2:02 -> 62f8:80
         $16590              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location8F                                     ; Location 8f
+MapData_8f                           ; Goa Fortress - Oasis Entrance
         $16591              .word ($xxxx) ; $1659b
         $16593              .word ($xxxx) ; $165a3
         $16595              .word ($xxxx) ; $165aa
         $16597              .word ($xxxx) ; $165ae
         $16599              .word ($xxxx) ; $165b7
-MapData_Location8F_Layout
+MapData_8f_Layout
         $1659b              .byte $xx
         $1659c              .byte $xx,$xx,$xx,$xx
         ;; Map 1x3
         $165a0              .byte $xx
         $165a1              .byte $xx
         $165a2              .byte $xx
-MapData_Location8F_Graphics
+MapData_8f_Graphics
         $165a3              .byte $xx,$xx,$xx
         $165a6              .byte $xx,$xx
         $165a8              .byte $xx,$xx
-MapData_Location8F_Entrances
+MapData_8f_Entrances
         $165aa              .byte $xx,$xx,$xx,$xx
-MapData_Location8F_Exits
+MapData_8f_Exits
         $165ae              .byte $xx,$xx,$xx,$xx
         $165b2              .byte $xx,$xx,$xx,$xx
         $165b6              .byte $xx
-MapData_Location8F_Flags
+MapData_8f_Flags
         $165b7              .byte $xx,$xx ; 64d2:01 -> 62f1:01
         $165b9              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location92                                     ; Location 92
+MapData_92                                           ; Desert Cave 1
         $165ba              .word ($xxxx) ; $165c4
         $165bc              .word ($xxxx) ; $165d2
         $165be              .word ($xxxx) ; $165d9
         $165c0              .word ($xxxx) ; $165e1
         $165c2              .word ($xxxx) ; $165f2
-MapData_Location92_Layout
+MapData_92_Layout
         $165c4              .byte $xx
         $165c5              .byte $xx,$xx,$xx,$xx
         ;; Map 3x3
         $165c9              .byte $xx,$xx,$xx
         $165cc              .byte $xx,$xx,$xx
         $165cf              .byte $xx,$xx,$xx
-MapData_Location92_Graphics
+MapData_92_Graphics
         $165d2              .byte $xx,$xx,$xx
         $165d5              .byte $xx,$xx
         $165d7              .byte $xx,$xx
-MapData_Location92_Entrances
+MapData_92_Entrances
         $165d9              .byte $xx,$xx,$xx,$xx
         $165dd              .byte $xx,$xx,$xx,$xx
-MapData_Location92_Exits
+MapData_92_Exits
         $165e1              .byte $xx,$xx,$xx,$xx
         $165e5              .byte $xx,$xx,$xx,$xx
         $165e9              .byte $xx,$xx,$xx,$xx
         $165ed              .byte $xx,$xx,$xx,$xx
         $165f1              .byte $xx
-MapData_Location92_Flags
+MapData_92_Flags
         $165f2              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location93                                     ; Location 93
+MapData_93                                                  ; Sahara
         $165f3              .word ($xxxx) ; $165fd
         $165f5              .word ($xxxx) ; $16604
         $165f7              .word ($xxxx) ; $1660b
         $165f9              .word ($xxxx) ; $16623
         $165fb              .word ($xxxx) ; $16644
-MapData_Location93_Layout
+MapData_93_Layout
         $165fd              .byte $xx
         $165fe              .byte $xx,$xx,$xx,$xx
         ;; Map 2x1
         $16602              .byte $xx,$xx
-MapData_Location93_Graphics
+MapData_93_Graphics
         $16604              .byte $xx,$xx,$xx
         $16607              .byte $xx,$xx
         $16609              .byte $xx,$xx
-MapData_Location93_Entrances
+MapData_93_Entrances
         $1660b              .byte $xx,$xx,$xx,$xx
         $1660f              .byte $xx,$xx,$xx,$xx
         $16613              .byte $xx,$xx,$xx,$xx
         $16617              .byte $xx,$xx,$xx,$xx
         $1661b              .byte $xx,$xx,$xx,$xx
         $1661f              .byte $xx,$xx,$xx,$xx
-MapData_Location93_Exits
+MapData_93_Exits
         $16623              .byte $xx,$xx,$xx,$xx
         $16627              .byte $xx,$xx,$xx,$xx
         $1662b              .byte $xx,$xx,$xx,$xx
@@ -10992,100 +10996,100 @@ MapData_Location93_Exits
         $1663b              .byte $xx,$xx,$xx,$xx
         $1663f              .byte $xx,$xx,$xx,$xx
         $16643              .byte $xx
-MapData_Location93_Flags
+MapData_93_Flags
         $16644              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location94                                     ; Location 94
+MapData_94                                   ; Sahara - Outside Cave
         $16645              .word ($xxxx) ; $1664f
         $16647              .word ($xxxx) ; $16655
         $16649              .word ($xxxx) ; $1665c
         $1664b              .word ($xxxx) ; $16664
         $1664d              .word ($xxxx) ; $16675
-MapData_Location94_Layout
+MapData_94_Layout
         $1664f              .byte $xx
         $16650              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $16654              .byte $xx
-MapData_Location94_Graphics
+MapData_94_Graphics
         $16655              .byte $xx,$xx,$xx
         $16658              .byte $xx,$xx
         $1665a              .byte $xx,$xx
-MapData_Location94_Entrances
+MapData_94_Entrances
         $1665c              .byte $xx,$xx,$xx,$xx
         $16660              .byte $xx,$xx,$xx,$xx
-MapData_Location94_Exits
+MapData_94_Exits
         $16664              .byte $xx,$xx,$xx,$xx
         $16668              .byte $xx,$xx,$xx,$xx
         $1666c              .byte $xx,$xx,$xx,$xx
         $16670              .byte $xx,$xx,$xx,$xx
         $16674              .byte $xx
-MapData_Location94_Flags
+MapData_94_Flags
         $16675              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location95                                     ; Location 95
+MapData_95                                           ; Desert Cave 2
         $16676              .word ($xxxx) ; $16680
         $16678              .word ($xxxx) ; $1668e
         $1667a              .word ($xxxx) ; $16695
         $1667c              .word ($xxxx) ; $1669d
         $1667e              .word ($xxxx) ; $166ae
-MapData_Location95_Layout
+MapData_95_Layout
         $16680              .byte $xx
         $16681              .byte $xx,$xx,$xx,$xx
         ;; Map 3x3
         $16685              .byte $xx,$xx,$xx
         $16688              .byte $xx,$xx,$xx
         $1668b              .byte $xx,$xx,$xx
-MapData_Location95_Graphics
+MapData_95_Graphics
         $1668e              .byte $xx,$xx,$xx
         $16691              .byte $xx,$xx
         $16693              .byte $xx,$xx
-MapData_Location95_Entrances
+MapData_95_Entrances
         $16695              .byte $xx,$xx,$xx,$xx
         $16699              .byte $xx,$xx,$xx,$xx
-MapData_Location95_Exits
+MapData_95_Exits
         $1669d              .byte $xx,$xx,$xx,$xx
         $166a1              .byte $xx,$xx,$xx,$xx
         $166a5              .byte $xx,$xx,$xx,$xx
         $166a9              .byte $xx,$xx,$xx,$xx
         $166ad              .byte $xx
-MapData_Location95_Flags
+MapData_95_Flags
         $166ae              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location96                                     ; Location 96
+MapData_96                                           ; Sahara Meadow
         $166af              .word ($xxxx) ; $166b9
         $166b1              .word ($xxxx) ; $166c4
         $166b3              .word ($xxxx) ; $166cb
         $166b5              .word ($xxxx) ; $166d3
         $166b7              .word ($xxxx) ; $166e4
-MapData_Location96_Layout
+MapData_96_Layout
         $166b9              .byte $xx
         $166ba              .byte $xx,$xx,$xx,$xx
         ;; Map 3x2
         $166be              .byte $xx,$xx,$xx
         $166c1              .byte $xx,$xx,$xx
-MapData_Location96_Graphics
+MapData_96_Graphics
         $166c4              .byte $xx,$xx,$xx
         $166c7              .byte $xx,$xx
         $166c9              .byte $xx,$xx
-MapData_Location96_Entrances
+MapData_96_Entrances
         $166cb              .byte $xx,$xx,$xx,$xx
         $166cf              .byte $xx,$xx,$xx,$xx
-MapData_Location96_Exits
+MapData_96_Exits
         $166d3              .byte $xx,$xx,$xx,$xx
         $166d7              .byte $xx,$xx,$xx,$xx
         $166db              .byte $xx,$xx,$xx,$xx
         $166df              .byte $xx,$xx,$xx,$xx
         $166e3              .byte $xx
-MapData_Location96_Flags
+MapData_96_Flags
         $166e4              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location98                                     ; Location 98
+MapData_98                                                ; Desert 2
         $166e5              .word ($xxxx) ; $166ef
         $166e7              .word ($xxxx) ; $1670c
         $166e9              .word ($xxxx) ; $16713
         $166eb              .word ($xxxx) ; $1671f
         $166ed              .word ($xxxx) ; $16738
-MapData_Location98_Layout
+MapData_98_Layout
         $166ef              .byte $xx
         $166f0              .byte $xx,$xx,$xx,$xx
         ;; Map 4x6
@@ -11095,15 +11099,15 @@ MapData_Location98_Layout
         $16700              .byte $xx,$xx,$xx,$xx
         $16704              .byte $xx,$xx,$xx,$xx
         $16708              .byte $xx,$xx,$xx,$xx
-MapData_Location98_Graphics
+MapData_98_Graphics
         $1670c              .byte $xx,$xx,$xx
         $1670f              .byte $xx,$xx
         $16711              .byte $xx,$xx
-MapData_Location98_Entrances
+MapData_98_Entrances
         $16713              .byte $xx,$xx,$xx,$xx
         $16717              .byte $xx,$xx,$xx,$xx
         $1671b              .byte $xx,$xx,$xx,$xx
-MapData_Location98_Exits
+MapData_98_Exits
         $1671f              .byte $xx,$xx,$xx,$xx
         $16723              .byte $xx,$xx,$xx,$xx
         $16727              .byte $xx,$xx,$xx,$xx
@@ -11111,58 +11115,58 @@ MapData_Location98_Exits
         $1672f              .byte $xx,$xx,$xx,$xx
         $16733              .byte $xx,$xx,$xx,$xx
         $16737              .byte $xx
-MapData_Location98_Flags
+MapData_98_Flags
         $16738              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location9C                                     ; Location 9c
+MapData_9c                                ; Pyramid Front - Entrance
         $16739              .word ($xxxx) ; $16743
         $1673b              .word ($xxxx) ; $1674a
         $1673d              .word ($xxxx) ; $16751
         $1673f              .word ($xxxx) ; $16759
         $16741              .word ($xxxx) ; $1676a
-MapData_Location9C_Layout
+MapData_9c_Layout
         $16743              .byte $xx
         $16744              .byte $xx,$xx,$xx,$xx
         ;; Map 1x2
         $16748              .byte $xx
         $16749              .byte $xx
-MapData_Location9C_Graphics
+MapData_9c_Graphics
         $1674a              .byte $xx,$xx,$xx
         $1674d              .byte $xx,$xx
         $1674f              .byte $xx,$xx
-MapData_Location9C_Entrances
+MapData_9c_Entrances
         $16751              .byte $xx,$xx,$xx,$xx
         $16755              .byte $xx,$xx,$xx,$xx
-MapData_Location9C_Exits
+MapData_9c_Exits
         $16759              .byte $xx,$xx,$xx,$xx
         $1675d              .byte $xx,$xx,$xx,$xx
         $16761              .byte $xx,$xx,$xx,$xx
         $16765              .byte $xx,$xx,$xx,$xx
         $16769              .byte $xx
-MapData_Location9C_Flags
+MapData_9c_Flags
         $1676a              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location9D                                     ; Location 9d
+MapData_9d                                  ; Pyramid Front - Branch
         $1676b              .word ($xxxx) ; $16775
         $1676d              .word ($xxxx) ; $16780
         $1676f              .word ($xxxx) ; $16787
         $16771              .word ($xxxx) ; $16793
         $16773              .word ($xxxx) ; $167ac
-MapData_Location9D_Layout
+MapData_9d_Layout
         $16775              .byte $xx
         $16776              .byte $xx,$xx,$xx,$xx
         ;; Map 3x2
         $1677a              .byte $xx,$xx,$xx
         $1677d              .byte $xx,$xx,$xx
-MapData_Location9D_Graphics
+MapData_9d_Graphics
         $16780              .byte $xx,$xx,$xx
         $16783              .byte $xx,$xx
         $16785              .byte $xx,$xx
-MapData_Location9D_Entrances
+MapData_9d_Entrances
         $16787              .byte $xx,$xx,$xx,$xx
         $1678b              .byte $xx,$xx,$xx,$xx
         $1678f              .byte $xx,$xx,$xx,$xx
-MapData_Location9D_Exits
+MapData_9d_Exits
         $16793              .byte $xx,$xx,$xx,$xx
         $16797              .byte $xx,$xx,$xx,$xx
         $1679b              .byte $xx,$xx,$xx,$xx
@@ -11170,16 +11174,16 @@ MapData_Location9D_Exits
         $167a3              .byte $xx,$xx,$xx,$xx
         $167a7              .byte $xx,$xx,$xx,$xx
         $167ab              .byte $xx
-MapData_Location9D_Flags
+MapData_9d_Flags
         $167ac              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location9E                                     ; Location 9e
+MapData_9e                                    ; Pyramid Front - Main
         $167ad              .word ($xxxx) ; $167b7
         $167af              .word ($xxxx) ; $16809
         $167b1              .word ($xxxx) ; $16810
         $167b3              .word ($xxxx) ; $16854
         $167b5              .word ($xxxx) ; $168dd
-MapData_Location9E_Layout
+MapData_9e_Layout
         $167b7              .byte $xx
         $167b8              .byte $xx,$xx,$xx,$xx
         ;; Map 7x11
@@ -11194,11 +11198,11 @@ MapData_Location9E_Layout
         $167f4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $167fb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16802              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_Location9E_Graphics
+MapData_9e_Graphics
         $16809              .byte $xx,$xx,$xx
         $1680c              .byte $xx,$xx
         $1680e              .byte $xx,$xx
-MapData_Location9E_Entrances
+MapData_9e_Entrances
         $16810              .byte $xx,$xx,$xx,$xx
         $16814              .byte $xx,$xx,$xx,$xx
         $16818              .byte $xx,$xx,$xx,$xx
@@ -11216,7 +11220,7 @@ MapData_Location9E_Entrances
         $16848              .byte $xx,$xx,$xx,$xx
         $1684c              .byte $xx,$xx,$xx,$xx
         $16850              .byte $xx,$xx,$xx,$xx
-MapData_Location9E_Exits
+MapData_9e_Exits
         $16854              .byte $xx,$xx,$xx,$xx
         $16858              .byte $xx,$xx,$xx,$xx
         $1685c              .byte $xx,$xx,$xx,$xx
@@ -11252,43 +11256,43 @@ MapData_Location9E_Exits
         $168d4              .byte $xx,$xx,$xx,$xx
         $168d8              .byte $xx,$xx,$xx,$xx
         $168dc              .byte $xx
-MapData_Location9E_Flags
+MapData_9e_Flags
         $168dd              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location9F                                     ; Location 9f
+MapData_9f                                 ; Pyramid Front - Draygon
         $168de              .word ($xxxx) ; $168ea
         $168e0              .word ($xxxx) ; $168f2
         $168e2              .word ($xxxx) ; $168f9
         $168e4              .word ($xxxx) ; $168fd
         $168e6              .word ($xxxx) ; $16906
         $168e8              .word ($xxxx)
-MapData_Location9F_Layout
+MapData_9f_Layout
         $168ea              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $168f0              .byte $xx,$xx
-MapData_Location9F_Graphics
+MapData_9f_Graphics
         $168f2              .byte $xx,$xx,$xx
         $168f5              .byte $xx,$xx
         $168f7              .byte $xx,$xx
-MapData_Location9F_Entrances
+MapData_9f_Entrances
         $168f9              .byte $xx,$xx,$xx,$xx
-MapData_Location9F_Exits
+MapData_9f_Exits
         $168fd              .byte $xx,$xx,$xx,$xx
         $16901              .byte $xx,$xx,$xx,$xx
         $16905              .byte $xx
-MapData_Location9F_Flags
+MapData_9f_Flags
         $16906              .byte $xx,$xx ; 64d1:80 -> 62f0:01
         $16908              .byte $xx
-MapData_Location9F_Pits
+MapData_9f_Pits
         $16909              .byte $xx,$xx,$xx,$xx
         $1690d              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationA0                                     ; Location a0
+MapData_a0                                 ; Pyramid Back - Entrance
         $1690e              .word ($xxxx) ; $16918
         $16910              .word ($xxxx) ; $1692c
         $16912              .word ($xxxx) ; $16933
         $16914              .word ($xxxx) ; $1693b
         $16916              .word ($xxxx) ; $1694c
-MapData_LocationA0_Layout
+MapData_a0_Layout
         $16918              .byte $xx
         $16919              .byte $xx,$xx,$xx,$xx
         ;; Map 3x5
@@ -11297,30 +11301,30 @@ MapData_LocationA0_Layout
         $16923              .byte $xx,$xx,$xx
         $16926              .byte $xx,$xx,$xx
         $16929              .byte $xx,$xx,$xx
-MapData_LocationA0_Graphics
+MapData_a0_Graphics
         $1692c              .byte $xx,$xx,$xx
         $1692f              .byte $xx,$xx
         $16931              .byte $xx,$xx
-MapData_LocationA0_Entrances
+MapData_a0_Entrances
         $16933              .byte $xx,$xx,$xx,$xx
         $16937              .byte $xx,$xx,$xx,$xx
-MapData_LocationA0_Exits
+MapData_a0_Exits
         $1693b              .byte $xx,$xx,$xx,$xx
         $1693f              .byte $xx,$xx,$xx,$xx
         $16943              .byte $xx,$xx,$xx,$xx
         $16947              .byte $xx,$xx,$xx,$xx
         $1694b              .byte $xx
-MapData_LocationA0_Flags
+MapData_a0_Flags
         $1694c              .byte $xx,$xx ; 64d1:40 -> 62f3:01
         $1694e              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationA1                                     ; Location a1
+MapData_a1                                   ; Pyramid Back - Hall 1
         $1694f              .word ($xxxx) ; $16959
         $16951              .word ($xxxx) ; $16972
         $16953              .word ($xxxx) ; $16979
         $16955              .word ($xxxx) ; $16981
         $16957              .word ($xxxx) ; $1699a
-MapData_LocationA1_Layout
+MapData_a1_Layout
         $16959              .byte $xx
         $1695a              .byte $xx,$xx,$xx,$xx
         ;; Map 4x5
@@ -11329,14 +11333,14 @@ MapData_LocationA1_Layout
         $16966              .byte $xx,$xx,$xx,$xx
         $1696a              .byte $xx,$xx,$xx,$xx
         $1696e              .byte $xx,$xx,$xx,$xx
-MapData_LocationA1_Graphics
+MapData_a1_Graphics
         $16972              .byte $xx,$xx,$xx
         $16975              .byte $xx,$xx
         $16977              .byte $xx,$xx
-MapData_LocationA1_Entrances
+MapData_a1_Entrances
         $16979              .byte $xx,$xx,$xx,$xx
         $1697d              .byte $xx,$xx,$xx,$xx
-MapData_LocationA1_Exits
+MapData_a1_Exits
         $16981              .byte $xx,$xx,$xx,$xx
         $16985              .byte $xx,$xx,$xx,$xx
         $16989              .byte $xx,$xx,$xx,$xx
@@ -11344,17 +11348,17 @@ MapData_LocationA1_Exits
         $16991              .byte $xx,$xx,$xx,$xx
         $16995              .byte $xx,$xx,$xx,$xx
         $16999              .byte $xx
-MapData_LocationA1_Flags
+MapData_a1_Flags
         $1699a              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationA2                                     ; Location a2
+MapData_a2                                   ; Pyramid Back - Branch
         $1699b              .word ($xxxx) ; $169a7
         $1699d              .word ($xxxx) ; $169c5
         $1699f              .word ($xxxx) ; $169cc
         $169a1              .word ($xxxx) ; $169dc
         $169a3              .word ($xxxx) ; $169fd
         $169a5              .word ($xxxx)
-MapData_LocationA2_Layout
+MapData_a2_Layout
         $169a7              .byte $xx
         $169a8              .byte $xx,$xx,$xx,$xx
         ;; Map 5x5
@@ -11363,16 +11367,16 @@ MapData_LocationA2_Layout
         $169b6              .byte $xx,$xx,$xx,$xx,$xx
         $169bb              .byte $xx,$xx,$xx,$xx,$xx
         $169c0              .byte $xx,$xx,$xx,$xx,$xx
-MapData_LocationA2_Graphics
+MapData_a2_Graphics
         $169c5              .byte $xx,$xx,$xx
         $169c8              .byte $xx,$xx
         $169ca              .byte $xx,$xx
-MapData_LocationA2_Entrances
+MapData_a2_Entrances
         $169cc              .byte $xx,$xx,$xx,$xx
         $169d0              .byte $xx,$xx,$xx,$xx
         $169d4              .byte $xx,$xx,$xx,$xx
         $169d8              .byte $xx,$xx,$xx,$xx
-MapData_LocationA2_Exits
+MapData_a2_Exits
         $169dc              .byte $xx,$xx,$xx,$xx
         $169e0              .byte $xx,$xx,$xx,$xx
         $169e4              .byte $xx,$xx,$xx,$xx
@@ -11382,44 +11386,44 @@ MapData_LocationA2_Exits
         $169f4              .byte $xx,$xx,$xx,$xx
         $169f8              .byte $xx,$xx,$xx,$xx
         $169fc              .byte $xx
-MapData_LocationA2_Flags
+MapData_a2_Flags
         $169fd              .byte $xx
-MapData_LocationA2_Pits
+MapData_a2_Pits
         $169fe              .byte $xx,$xx,$xx,$xx
         $16a02              .byte $xx,$xx,$xx,$xx
         $16a06              .byte $xx,$xx,$xx,$xx
         $16a0a              .byte $xx,$xx,$xx,$xx
         $16a0e              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationA3                                     ; Location a3
+MapData_a3                            ; Pyramid Back - Dead End Left
         $16a0f              .word ($xxxx) ; $16a19
         $16a11              .word ($xxxx) ; $16a28
         $16a13              .word ($xxxx) ; $16a2f
         $16a15              .word ($xxxx) ; $16a33
         $16a17              .word ($xxxx) ; $16a3c
-MapData_LocationA3_Layout
+MapData_a3_Layout
         $16a19              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16a20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_LocationA3_Graphics
+MapData_a3_Graphics
         $16a28              .byte $xx,$xx,$xx
         $16a2b              .byte $xx,$xx
         $16a2d              .byte $xx,$xx
-MapData_LocationA3_Entrances
+MapData_a3_Entrances
         $16a2f              .byte $xx,$xx,$xx,$xx
-MapData_LocationA3_Exits
+MapData_a3_Exits
         $16a33              .byte $xx,$xx,$xx,$xx
         $16a37              .byte $xx,$xx,$xx,$xx
         $16a3b              .byte $xx
-MapData_LocationA3_Flags
+MapData_a3_Flags
         $16a3c              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationA4                                     ; Location a4
+MapData_a4                           ; Pyramid Back - Dead End Right
         $16a3d              .word ($xxxx) ; $16a47
         $16a3f              .word ($xxxx) ; $16a56
         $16a41              .word ($xxxx) ; $16a5d
         $16a43              .word ($xxxx) ; $16a61
         $16a45              .word ($xxxx) ; $16a6a
-MapData_LocationA4_Layout
+MapData_a4_Layout
         $16a47              .byte $xx
         $16a48              .byte $xx,$xx,$xx,$xx
         ;; Map 2x5
@@ -11428,27 +11432,27 @@ MapData_LocationA4_Layout
         $16a50              .byte $xx,$xx
         $16a52              .byte $xx,$xx
         $16a54              .byte $xx,$xx
-MapData_LocationA4_Graphics
+MapData_a4_Graphics
         $16a56              .byte $xx,$xx,$xx
         $16a59              .byte $xx,$xx
         $16a5b              .byte $xx,$xx
-MapData_LocationA4_Entrances
+MapData_a4_Entrances
         $16a5d              .byte $xx,$xx,$xx,$xx
-MapData_LocationA4_Exits
+MapData_a4_Exits
         $16a61              .byte $xx,$xx,$xx,$xx
         $16a65              .byte $xx,$xx,$xx,$xx
         $16a69              .byte $xx
-MapData_LocationA4_Flags
+MapData_a4_Flags
         $16a6a              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationA5                                     ; Location a5
+MapData_a5                                   ; Pyramid Back - Hall 2
         $16a6b              .word ($xxxx) ; $16a77
         $16a6d              .word ($xxxx) ; $16a8e
         $16a6f              .word ($xxxx) ; $16a95
         $16a71              .word ($xxxx) ; $16a9d
         $16a73              .word ($xxxx) ; $16aae
         $16a75              .word ($xxxx)
-MapData_LocationA5_Layout
+MapData_a5_Layout
         $16a77              .byte $xx
         ;; Map 3x6
         $16a78              .byte $xx,$xx,$xx,$xx
@@ -11458,46 +11462,46 @@ MapData_LocationA5_Layout
         $16a85              .byte $xx,$xx,$xx
         $16a88              .byte $xx,$xx,$xx
         $16a8b              .byte $xx,$xx,$xx
-MapData_LocationA5_Graphics
+MapData_a5_Graphics
         $16a8e              .byte $xx,$xx,$xx
         $16a91              .byte $xx,$xx
         $16a93              .byte $xx,$xx
-MapData_LocationA5_Entrances
+MapData_a5_Entrances
         $16a95              .byte $xx,$xx,$xx,$xx
         $16a99              .byte $xx,$xx,$xx,$xx
-MapData_LocationA5_Exits
+MapData_a5_Exits
         $16a9d              .byte $xx,$xx,$xx,$xx
         $16aa1              .byte $xx,$xx,$xx,$xx
         $16aa5              .byte $xx,$xx,$xx,$xx
         $16aa9              .byte $xx,$xx,$xx,$xx
         $16aad              .byte $xx
-MapData_LocationA5_Flags
+MapData_a5_Flags
         $16aae              .byte $xx
-MapData_LocationA5_Pits
+MapData_a5_Pits
         $16aaf              .byte $xx,$xx,$xx,$xx
         $16ab3              .byte $xx,$xx,$xx,$xx
         $16ab7              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Draygon2                                       ; Location a6
+MapData_a6                        ; Pyramid Back - Draygon Revisited
         $16ab8              .word ($xxxx) ; $16ac2
         $16aba              .word ($xxxx) ; $16ac9
         $16abc              .word ($xxxx) ; $16ad0
         $16abe              .word ($xxxx) ; $16ad8
         $16ac0              .word ($xxxx) ; $16af1
-MapData_Draygon2_Layout
+MapData_a6_Layout
         $16ac2              .byte $xx
         $16ac3              .byte $xx,$xx,$xx,$xx
         ;; Map 1x2
         $16ac7              .byte $xx
         $16ac8              .byte $xx
-MapData_Draygon2_Graphics
+MapData_a6_Graphics
         $16ac9              .byte $xx,$xx,$xx
         $16acc              .byte $xx,$xx
         $16ace              .byte $xx,$xx
-MapData_Draygon2_Entrances
+MapData_a6_Entrances
         $16ad0              .byte $xx,$xx,$xx,$xx
         $16ad4              .byte $xx,$xx,$xx,$xx
-MapData_Draygon2_Exits
+MapData_a6_Exits
         $16ad8              .byte $xx,$xx,$xx,$xx
         $16adc              .byte $xx,$xx,$xx,$xx
         $16ae0              .byte $xx,$xx,$xx,$xx
@@ -11505,28 +11509,28 @@ MapData_Draygon2_Exits
         $16ae8              .byte $xx,$xx,$xx,$xx
         $16aec              .byte $xx,$xx,$xx,$xx
         $16af0              .byte $xx
-MapData_Draygon2_Flags
+MapData_a6_Flags
         $16af1              .byte $xx,$xx
         $16af3              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationA7                                     ; Location a7
+MapData_a7                               ; Pyramid Back - Teleporter
         $16af4              .word ($xxxx)
         $16af6              .word ($xxxx)
         $16af8              .word ($xxxx)
         $16afa              .word ($xxxx)
         $16afc              .word ($xxxx)
-MapData_LocationA7_Layout
+MapData_a7_Layout
         $16afe              .byte $xx
         $16aff              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $16b03              .byte $xx
-MapData_LocationA7_Graphics
+MapData_a7_Graphics
         $16b04              .byte $xx,$xx,$xx
         $16b07              .byte $xx,$xx
         $16b09              .byte $xx,$xx
-MapData_LocationA7_Entrances
+MapData_a7_Entrances
         $16b0b              .byte $xx,$xx,$xx,$xx
-MapData_LocationA7_Exits
+MapData_a7_Exits
         $16b0f              .byte $xx,$xx,$xx,$xx
         $16b13              .byte $xx,$xx,$xx,$xx
         $16b17              .byte $xx,$xx,$xx,$xx
@@ -11534,30 +11538,30 @@ MapData_LocationA7_Exits
         $16b1f              .byte $xx,$xx,$xx,$xx
         $16b23              .byte $xx,$xx,$xx,$xx
         $16b27              .byte $xx
-MapData_LocationA7_Flags
+MapData_a7_Flags
         $16b28              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationA8                                     ; Location a8
+MapData_a8                                 ; Goa Fortress - Entrance
         $16b29              .word ($xxxx) ; $16b33
         $16b2b              .word ($xxxx) ; $16b3b
         $16b2d              .word ($xxxx) ; $16b42
         $16b2f              .word ($xxxx) ; $16b4a
         $16b31              .word ($xxxx) ; $16b63
-MapData_LocationA8_Layout
+MapData_a8_Layout
         $16b33              .byte $xx
         $16b34              .byte $xx,$xx,$xx,$xx
         ;; Map 1x3
         $16b38              .byte $xx
         $16b39              .byte $xx
         $16b3a              .byte $xx
-MapData_LocationA8_Graphics
+MapData_a8_Graphics
         $16b3b              .byte $xx,$xx,$xx
         $16b3e              .byte $xx,$xx
         $16b40              .byte $xx,$xx
-MapData_LocationA8_Entrances
+MapData_a8_Entrances
         $16b42              .byte $xx,$xx,$xx,$xx
         $16b46              .byte $xx,$xx,$xx,$xx
-MapData_LocationA8_Exits
+MapData_a8_Exits
         $16b4a              .byte $xx,$xx,$xx,$xx
         $16b4e              .byte $xx,$xx,$xx,$xx
         $16b52              .byte $xx,$xx,$xx,$xx
@@ -11565,17 +11569,17 @@ MapData_LocationA8_Exits
         $16b5a              .byte $xx,$xx,$xx,$xx
         $16b5e              .byte $xx,$xx,$xx,$xx
         $16b62              .byte $xx
-MapData_LocationA8_Flags
+MapData_a8_Flags
         $16b63              .byte $xx,$xx ; 64d5:01 -> 62f0:01
         $16b65              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationA9                                     ; Location a9
+MapData_a9                                ; Goa Fortress - Kelbesque
         $16b66              .word ($xxxx) ; $16b70
         $16b68              .word ($xxxx) ; $16bb4
         $16b6a              .word ($xxxx) ; $16bbb
         $16b6c              .word ($xxxx) ; $16bc3
         $16b6e              .word ($xxxx) ; $16bdc
-MapData_LocationA9_Layout
+MapData_a9_Layout
         $16b70              .byte $xx
         $16b71              .byte $xx,$xx,$xx,$xx
         ;; Map 7x9
@@ -11588,14 +11592,14 @@ MapData_LocationA9_Layout
         $16b9f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16ba6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16bad              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_LocationA9_Graphics
+MapData_a9_Graphics
         $16bb4              .byte $xx,$xx,$xx
         $16bb7              .byte $xx,$xx
         $16bb9              .byte $xx,$xx
-MapData_LocationA9_Entrances
+MapData_a9_Entrances
         $16bbb              .byte $xx,$xx,$xx,$xx
         $16bbf              .byte $xx,$xx,$xx,$xx
-MapData_LocationA9_Exits
+MapData_a9_Exits
         $16bc3              .byte $xx,$xx,$xx,$xx
         $16bc7              .byte $xx,$xx,$xx,$xx
         $16bcb              .byte $xx,$xx,$xx,$xx
@@ -11603,30 +11607,30 @@ MapData_LocationA9_Exits
         $16bd3              .byte $xx,$xx,$xx,$xx
         $16bd7              .byte $xx,$xx,$xx,$xx
         $16bdb              .byte $xx
-MapData_LocationA9_Flags
+MapData_a9_Flags
         $16bdc              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationAA                                     ; Location aa
+MapData_aa                                     ; Goa Fortress - Zebu
         $16bdd              .word ($xxxx) ; $16be7
         $16bdf              .word ($xxxx) ; $16bef
         $16be1              .word ($xxxx) ; $16bf6
         $16be3              .word ($xxxx) ; $16bfe
         $16be5              .word ($xxxx) ; $16c17
-MapData_LocationAA_Layout
+MapData_aa_Layout
         $16be7              .byte $xx
         $16be8              .byte $xx,$xx,$xx,$xx
         ;; Map 1x3
         $16bec              .byte $xx
         $16bed              .byte $xx
         $16bee              .byte $xx
-MapData_LocationAA_Graphics
+MapData_aa_Graphics
         $16bef              .byte $xx,$xx,$xx
         $16bf2              .byte $xx,$xx
         $16bf4              .byte $xx,$xx
-MapData_LocationAA_Entrances
+MapData_aa_Entrances
         $16bf6              .byte $xx,$xx,$xx,$xx
         $16bfa              .byte $xx,$xx,$xx,$xx
-MapData_LocationAA_Exits
+MapData_aa_Exits
         $16bfe              .byte $xx,$xx,$xx,$xx
         $16c02              .byte $xx,$xx,$xx,$xx
         $16c06              .byte $xx,$xx,$xx,$xx
@@ -11634,16 +11638,16 @@ MapData_LocationAA_Exits
         $16c0e              .byte $xx,$xx,$xx,$xx
         $16c12              .byte $xx,$xx,$xx,$xx
         $16c16              .byte $xx
-MapData_LocationAA_Flags
+MapData_aa_Flags
         $16c17              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationAB                                     ; Location ab
+MapData_ab                                   ; Goa Fortress - Sabera
         $16c18              .word ($xxxx) ; $16c22
         $16c1a              .word ($xxxx) ; $16c6f
         $16c1c              .word ($xxxx) ; $16c76
         $16c1e              .word ($xxxx) ; $16c7e
         $16c20              .word ($xxxx) ; $16c8f
-MapData_LocationAB_Layout
+MapData_ab_Layout
         $16c22              .byte $xx
         $16c23              .byte $xx,$xx,$xx,$xx
         ;; Map 8x9
@@ -11656,20 +11660,20 @@ MapData_LocationAB_Layout
         $16c57              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16c5f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16c67              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_LocationAB_Graphics
+MapData_ab_Graphics
         $16c6f              .byte $xx,$xx,$xx
         $16c72              .byte $xx,$xx
         $16c74              .byte $xx,$xx
-MapData_LocationAB_Entrances
+MapData_ab_Entrances
         $16c76              .byte $xx,$xx,$xx,$xx
         $16c7a              .byte $xx,$xx,$xx,$xx
-MapData_LocationAB_Exits
+MapData_ab_Exits
         $16c7e              .byte $xx,$xx,$xx,$xx
         $16c82              .byte $xx,$xx,$xx,$xx
         $16c86              .byte $xx,$xx,$xx,$xx
         $16c8a              .byte $xx,$xx,$xx,$xx
         $16c8e              .byte $xx
-MapData_LocationAB_Flags
+MapData_ab_Flags
         $16c8f              .byte $xx,$xx ; 64d4:40 -> 62f5:04
         $16c91              .byte $xx,$xx ; 64d4:20 -> 62f5:20
         $16c93              .byte $xx,$xx ; 64d4:10 -> 62f4:80
@@ -11681,13 +11685,13 @@ MapData_LocationAB_Flags
         $16c9f              .byte $xx,$xx ; 64d3:40 -> 62f1:40
         $16ca1              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationAC                                     ; Location ac
+MapData_ac                                   ; Goa Fortress - Tornel
         $16ca2              .word ($xxxx) ; $16cac
         $16ca4              .word ($xxxx) ; $16cb8
         $16ca6              .word ($xxxx) ; $16cbf
         $16ca8              .word ($xxxx) ; $16cc7
         $16caa              .word ($xxxx) ; $16cd8
-MapData_LocationAC_Layout
+MapData_ac_Layout
         $16cac              .byte $xx
         $16cad              .byte $xx,$xx,$xx,$xx
         ;; Map 1x7
@@ -11698,29 +11702,29 @@ MapData_LocationAC_Layout
         $16cb5              .byte $xx
         $16cb6              .byte $xx
         $16cb7              .byte $xx
-MapData_LocationAC_Graphics
+MapData_ac_Graphics
         $16cb8              .byte $xx,$xx,$xx
         $16cbb              .byte $xx,$xx
         $16cbd              .byte $xx,$xx
-MapData_LocationAC_Entrances
+MapData_ac_Entrances
         $16cbf              .byte $xx,$xx,$xx,$xx
         $16cc3              .byte $xx,$xx,$xx,$xx
-MapData_LocationAC_Exits
+MapData_ac_Exits
         $16cc7              .byte $xx,$xx,$xx,$xx
         $16ccb              .byte $xx,$xx,$xx,$xx
         $16ccf              .byte $xx,$xx,$xx,$xx
         $16cd3              .byte $xx,$xx,$xx,$xx
         $16cd7              .byte $xx
-MapData_LocationAC_Flags
+MapData_ac_Flags
         $16cd8              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationAD                                     ; Location ad
+MapData_ad                                   ; Goa Fortress - Mado 1
         $16cd9              .word ($xxxx) ; $16ce3
         $16cdb              .word ($xxxx) ; $16d10
         $16cdd              .word ($xxxx) ; $16d17
         $16cdf              .word ($xxxx) ; $16d27
         $16ce1              .word ($xxxx) ; $16d48
-MapData_LocationAD_Layout
+MapData_ad_Layout
         $16ce3              .byte $xx
         $16ce4              .byte $xx,$xx,$xx,$xx
         ;; Map 5x8
@@ -11732,16 +11736,16 @@ MapData_LocationAD_Layout
         $16d01              .byte $xx,$xx,$xx,$xx,$xx
         $16d06              .byte $xx,$xx,$xx,$xx,$xx
         $16d0b              .byte $xx,$xx,$xx,$xx,$xx
-MapData_LocationAD_Graphics
+MapData_ad_Graphics
         $16d10              .byte $xx,$xx,$xx
         $16d13              .byte $xx,$xx
         $16d15              .byte $xx,$xx
-MapData_LocationAD_Entrances
+MapData_ad_Entrances
         $16d17              .byte $xx,$xx,$xx,$xx
         $16d1b              .byte $xx,$xx,$xx,$xx
         $16d1f              .byte $xx,$xx,$xx,$xx
         $16d23              .byte $xx,$xx,$xx,$xx
-MapData_LocationAD_Exits
+MapData_ad_Exits
         $16d27              .byte $xx,$xx,$xx,$xx
         $16d2b              .byte $xx,$xx,$xx,$xx
         $16d2f              .byte $xx,$xx,$xx,$xx
@@ -11751,17 +11755,17 @@ MapData_LocationAD_Exits
         $16d3f              .byte $xx,$xx,$xx,$xx
         $16d43              .byte $xx,$xx,$xx,$xx
         $16d47              .byte $xx
-MapData_LocationAD_Flags
+MapData_ad_Flags
         $16d48              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationAE                                     ; Location ae
+MapData_ae                                   ; Goa Fortress - Mado 2
         $16d49              .word ($xxxx) ; $16d55
         $16d4b              .word ($xxxx) ; $16d6f
         $16d4d              .word ($xxxx) ; $16d76
         $16d4f              .word ($xxxx) ; $16d7e
         $16d51              .word ($xxxx) ; $16d8f
         $16d53              .word ($xxxx)
-MapData_LocationAE_Layout
+MapData_ae_Layout
         $16d55              .byte $xx
         $16d56              .byte $xx,$xx,$xx,$xx
         ;; Map 3x7
@@ -11772,36 +11776,36 @@ MapData_LocationAE_Layout
         $16d66              .byte $xx,$xx,$xx
         $16d69              .byte $xx,$xx,$xx
         $16d6c              .byte $xx,$xx,$xx
-MapData_LocationAE_Graphics
+MapData_ae_Graphics
         $16d6f              .byte $xx,$xx,$xx
         $16d72              .byte $xx,$xx
         $16d74              .byte $xx,$xx
-MapData_LocationAE_Entrances
+MapData_ae_Entrances
         $16d76              .byte $xx,$xx,$xx,$xx
         $16d7a              .byte $xx,$xx,$xx,$xx
-MapData_LocationAE_Exits
+MapData_ae_Exits
         $16d7e              .byte $xx,$xx,$xx,$xx
         $16d82              .byte $xx,$xx,$xx,$xx
         $16d86              .byte $xx,$xx,$xx,$xx
         $16d8a              .byte $xx,$xx,$xx,$xx
         $16d8e              .byte $xx
-MapData_LocationAE_Flags
+MapData_ae_Flags
         $16d8f              .byte $xx,$xx ; 64d3:20 -> 62f4:02
         $16d91              .byte $xx
-MapData_LocationAE_Pits
+MapData_ae_Pits
         $16d92              .byte $xx,$xx,$xx,$xx
         $16d96              .byte $xx,$xx,$xx,$xx
         $16d9a              .byte $xx,$xx,$xx,$xx
         $16d9e              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationAF                                     ; Location af
+MapData_af                                   ; Goa Fortress - Mado 3
         $16d9f              .word ($xxxx) ; $16dab
         $16da1              .word ($xxxx) ; $16ddc
         $16da3              .word ($xxxx) ; $16de3
         $16da5              .word ($xxxx) ; $16def
         $16da7              .word ($xxxx) ; $16e08
         $16da9              .word ($xxxx)
-MapData_LocationAF_Layout
+MapData_af_Layout
         $16dab              .byte $xx
         $16dac              .byte $xx,$xx,$xx,$xx
         ;; Map 4x11
@@ -11816,15 +11820,15 @@ MapData_LocationAF_Layout
         $16dd0              .byte $xx,$xx,$xx,$xx
         $16dd4              .byte $xx,$xx,$xx,$xx
         $16dd8              .byte $xx,$xx,$xx,$xx
-MapData_LocationAF_Graphics
+MapData_af_Graphics
         $16ddc              .byte $xx,$xx,$xx
         $16ddf              .byte $xx,$xx
         $16de1              .byte $xx,$xx
-MapData_LocationAF_Entrances
+MapData_af_Entrances
         $16de3              .byte $xx,$xx,$xx,$xx
         $16de7              .byte $xx,$xx,$xx,$xx
         $16deb              .byte $xx,$xx,$xx,$xx
-MapData_LocationAF_Exits
+MapData_af_Exits
         $16def              .byte $xx,$xx,$xx,$xx
         $16df3              .byte $xx,$xx,$xx,$xx
         $16df7              .byte $xx,$xx,$xx,$xx
@@ -11832,22 +11836,22 @@ MapData_LocationAF_Exits
         $16dff              .byte $xx,$xx,$xx,$xx
         $16e03              .byte $xx,$xx,$xx,$xx
         $16e07              .byte $xx
-MapData_LocationAF_Flags
+MapData_af_Flags
         $16e08              .byte $xx
-MapData_LocationAF_Pits
+MapData_af_Pits
         $16e09              .byte $xx,$xx,$xx,$xx
         $16e0d              .byte $xx,$xx,$xx,$xx
         $16e11              .byte $xx,$xx,$xx,$xx
         $16e15              .byte $xx,$xx,$xx,$xx
         $16e19              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationB9                                     ; Location b9
+MapData_b9                                    ; Goa Fortress - Asina
         $16e1a              .word ($xxxx) ; $16e24
         $16e1c              .word ($xxxx) ; $16e55
         $16e1e              .word ($xxxx) ; $16e5c
         $16e20              .word ($xxxx) ; $16e68
         $16e22              .word ($xxxx) ; $16e81
-MapData_LocationB9_Layout
+MapData_b9_Layout
         $16e24              .byte $xx
         $16e25              .byte $xx,$xx,$xx,$xx
         ;; Map 4x11
@@ -11862,15 +11866,15 @@ MapData_LocationB9_Layout
         $16e49              .byte $xx,$xx,$xx,$xx
         $16e4d              .byte $xx,$xx,$xx,$xx
         $16e51              .byte $xx,$xx,$xx,$xx
-MapData_LocationB9_Graphics
+MapData_b9_Graphics
         $16e55              .byte $xx,$xx,$xx
         $16e58              .byte $xx,$xx
         $16e5a              .byte $xx,$xx
-MapData_LocationB9_Entrances
+MapData_b9_Entrances
         $16e5c              .byte $xx,$xx,$xx,$xx
         $16e60              .byte $xx,$xx,$xx,$xx
         $16e64              .byte $xx,$xx,$xx,$xx
-MapData_LocationB9_Exits
+MapData_b9_Exits
         $16e68              .byte $xx,$xx,$xx,$xx
         $16e6c              .byte $xx,$xx,$xx,$xx
         $16e70              .byte $xx,$xx,$xx,$xx
@@ -11878,19 +11882,19 @@ MapData_LocationB9_Exits
         $16e78              .byte $xx,$xx,$xx,$xx
         $16e7c              .byte $xx,$xx,$xx,$xx
         $16e80              .byte $xx
-MapData_LocationB9_Flags
+MapData_b9_Flags
         $16e81              .byte $xx
         ;; Extra data???
         $16e82              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16e92              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationB0                                     ; Location b0
+MapData_b0                                ; Goa Fortress - Karmine 1
         $16e93              .word ($xxxx) ; $16e9d
         $16e95              .word ($xxxx) ; $16eae
         $16e97              .word ($xxxx) ; $16eb5
         $16e99              .word ($xxxx) ; $16ec1
         $16e9b              .word ($xxxx) ; $16eda
-MapData_LocationB0_Layout
+MapData_b0_Layout
         $16e9d              .byte $xx
         $16e9e              .byte $xx,$xx,$xx,$xx
         ;; Map 3x4
@@ -11898,15 +11902,15 @@ MapData_LocationB0_Layout
         $16ea5              .byte $xx,$xx,$xx
         $16ea8              .byte $xx,$xx,$xx
         $16eab              .byte $xx,$xx,$xx
-MapData_LocationB0_Graphics
+MapData_b0_Graphics
         $16eae              .byte $xx,$xx,$xx
         $16eb1              .byte $xx,$xx
         $16eb3              .byte $xx,$xx
-MapData_LocationB0_Entrances
+MapData_b0_Entrances
         $16eb5              .byte $xx,$xx,$xx,$xx
         $16eb9              .byte $xx,$xx,$xx,$xx
         $16ebd              .byte $xx,$xx,$xx,$xx
-MapData_LocationB0_Exits
+MapData_b0_Exits
         $16ec1              .byte $xx,$xx,$xx,$xx
         $16ec5              .byte $xx,$xx,$xx,$xx
         $16ec9              .byte $xx,$xx,$xx,$xx
@@ -11914,16 +11918,16 @@ MapData_LocationB0_Exits
         $16ed1              .byte $xx,$xx,$xx,$xx
         $16ed5              .byte $xx,$xx,$xx,$xx
         $16ed9              .byte $xx
-MapData_LocationB0_Flags
+MapData_b0_Flags
         $16eda              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationB1                                     ; Location b1
+MapData_b1                                ; Goa Fortress - Karmine 2
         $16edb              .word ($xxxx) ; $16ee5
         $16edd              .word ($xxxx) ; $16ef2
         $16edf              .word ($xxxx) ; $16ef9
         $16ee1              .word ($xxxx) ; $16f01
         $16ee3              .word ($xxxx) ; $16f12
-MapData_LocationB1_Layout
+MapData_b1_Layout
         $16ee5              .byte $xx
         $16ee6              .byte $xx,$xx,$xx,$xx
         ;; Map 2x4
@@ -11931,29 +11935,29 @@ MapData_LocationB1_Layout
         $16eec              .byte $xx,$xx
         $16eee              .byte $xx,$xx
         $16ef0              .byte $xx,$xx
-MapData_LocationB1_Graphics
+MapData_b1_Graphics
         $16ef2              .byte $xx,$xx,$xx
         $16ef5              .byte $xx,$xx
         $16ef7              .byte $xx,$xx
-MapData_LocationB1_Entrances
+MapData_b1_Entrances
         $16ef9              .byte $xx,$xx,$xx,$xx
         $16efd              .byte $xx,$xx,$xx,$xx
-MapData_LocationB1_Exits
+MapData_b1_Exits
         $16f01              .byte $xx,$xx,$xx,$xx
         $16f05              .byte $xx,$xx,$xx,$xx
         $16f09              .byte $xx,$xx,$xx,$xx
         $16f0d              .byte $xx,$xx,$xx,$xx
         $16f11              .byte $xx
-MapData_LocationB1_Flags
+MapData_b1_Flags
         $16f12              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationB2                                     ; Location b2
+MapData_b2                                ; Goa Fortress - Karmine 3
         $16f13              .word ($xxxx) ; $16f1d
         $16f15              .word ($xxxx) ; $16f34
         $16f17              .word ($xxxx) ; $16f3b
         $16f19              .word ($xxxx) ; $16f47
         $16f1b              .word ($xxxx) ; $16f60
-MapData_LocationB2_Layout
+MapData_b2_Layout
         $16f1d              .byte $xx
         $16f1e              .byte $xx,$xx,$xx,$xx
         ;; Map 3x6
@@ -11963,15 +11967,15 @@ MapData_LocationB2_Layout
         $16f2b              .byte $xx,$xx,$xx
         $16f2e              .byte $xx,$xx,$xx
         $16f31              .byte $xx,$xx,$xx
-MapData_LocationB2_Graphics
+MapData_b2_Graphics
         $16f34              .byte $xx,$xx,$xx
         $16f37              .byte $xx,$xx
         $16f39              .byte $xx,$xx
-MapData_LocationB2_Entrances
+MapData_b2_Entrances
         $16f3b              .byte $xx,$xx,$xx,$xx
         $16f3f              .byte $xx,$xx,$xx,$xx
         $16f43              .byte $xx,$xx,$xx,$xx
-MapData_LocationB2_Exits
+MapData_b2_Exits
         $16f47              .byte $xx,$xx,$xx,$xx
         $16f4b              .byte $xx,$xx,$xx,$xx
         $16f4f              .byte $xx,$xx,$xx,$xx
@@ -11979,62 +11983,62 @@ MapData_LocationB2_Exits
         $16f57              .byte $xx,$xx,$xx,$xx
         $16f5b              .byte $xx,$xx,$xx,$xx
         $16f5f              .byte $xx
-MapData_LocationB2_Flags
+MapData_b2_Flags
         $16f60              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationB3                                     ; Location b3
+MapData_b3                                ; Goa Fortress - Karmine 4
         $16f61              .word ($xxxx) ; $16f6b
         $16f63              .word ($xxxx) ; $16f74
         $16f65              .word ($xxxx) ; $16f7b
         $16f67              .word ($xxxx) ; $16f83
         $16f69              .word ($xxxx) ; $16f94
-MapData_LocationB3_Layout
+MapData_b3_Layout
         $16f6b              .byte $xx
         $16f6c              .byte $xx,$xx,$xx,$xx
         ;; Map 2x2
         $16f70              .byte $xx,$xx
         $16f72              .byte $xx,$xx
-MapData_LocationB3_Graphics
+MapData_b3_Graphics
         $16f74              .byte $xx,$xx,$xx
         $16f77              .byte $xx,$xx
         $16f79              .byte $xx,$xx
-MapData_LocationB3_Entrances
+MapData_b3_Entrances
         $16f7b              .byte $xx,$xx,$xx,$xx
         $16f7f              .byte $xx,$xx,$xx,$xx
-MapData_LocationB3_Exits
+MapData_b3_Exits
         $16f83              .byte $xx,$xx,$xx,$xx
         $16f87              .byte $xx,$xx,$xx,$xx
         $16f8b              .byte $xx,$xx,$xx,$xx
         $16f8f              .byte $xx,$xx,$xx,$xx
         $16f93              .byte $xx
-MapData_LocationB3_Flags
+MapData_b3_Flags
         $16f94              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationB4                                     ; Location b4
+MapData_b4                                ; Goa Fortress - Karmine 5
         $16f95              .word ($xxxx) ; $16fa1
         $16f97              .word ($xxxx) ; $16fe5
         $16f99              .word ($xxxx) ; $16fec
         $16f9b              .word ($xxxx) ; $17004
         $16f9d              .word ($xxxx) ; $17045
         $16f9f              .word ($xxxx)
-MapData_LocationB4_Layout
+MapData_b4_Layout
         $16fa1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16fb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16fc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16fd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $16fe0              .byte $xx,$xx,$xx,$xx,$xx
-MapData_LocationB4_Graphics
+MapData_b4_Graphics
         $16fe5              .byte $xx,$xx,$xx
         $16fe8              .byte $xx,$xx
         $16fea              .byte $xx,$xx
-MapData_LocationB4_Entrances
+MapData_b4_Entrances
         $16fec              .byte $xx,$xx,$xx,$xx
         $16ff0              .byte $xx,$xx,$xx,$xx
         $16ff4              .byte $xx,$xx,$xx,$xx
         $16ff8              .byte $xx,$xx,$xx,$xx
         $16ffc              .byte $xx,$xx,$xx,$xx
         $17000              .byte $xx,$xx,$xx,$xx
-MapData_LocationB4_Exits
+MapData_b4_Exits
         $17004              .byte $xx,$xx,$xx,$xx
         $17008              .byte $xx,$xx,$xx,$xx
         $1700c              .byte $xx,$xx,$xx,$xx
@@ -12052,22 +12056,22 @@ MapData_LocationB4_Exits
         $1703c              .byte $xx,$xx,$xx,$xx
         $17040              .byte $xx,$xx,$xx,$xx
         $17044              .byte $xx
-MapData_LocationB4_Flags
+MapData_b4_Flags
         $17045              .byte $xx,$xx ; 64d3:10 -> 62f4:20
         $17047              .byte $xx
-MapData_LocationB4_Pits
+MapData_b4_Pits
         $17048              .byte $xx,$xx,$xx,$xx
         $1704c              .byte $xx,$xx,$xx,$xx
         $17050              .byte $xx,$xx,$xx,$xx
         $17054              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationBA                                     ; Location ba
+MapData_ba                                    ; Goa Fortress - Kensu
         $17055              .word ($xxxx) ; $1705f
         $17057              .word ($xxxx) ; $170a3
         $17059              .word ($xxxx) ; $170aa
         $1705b              .word ($xxxx) ; $170c2
         $1705d              .word ($xxxx) ; $17103
-MapData_LocationBA_Layout
+MapData_ba_Layout
         $1705f              .byte $xx
         $17060              .byte $xx,$xx,$xx,$xx
         ;; Map 7x9
@@ -12080,18 +12084,18 @@ MapData_LocationBA_Layout
         $1708e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $17095              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1709c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-MapData_LocationBA_Graphics
+MapData_ba_Graphics
         $170a3              .byte $xx,$xx,$xx
         $170a6              .byte $xx,$xx
         $170a8              .byte $xx,$xx
-MapData_LocationBA_Entrances
+MapData_ba_Entrances
         $170aa              .byte $xx,$xx,$xx,$xx
         $170ae              .byte $xx,$xx,$xx,$xx
         $170b2              .byte $xx,$xx,$xx,$xx
         $170b6              .byte $xx,$xx,$xx,$xx
         $170ba              .byte $xx,$xx,$xx,$xx
         $170be              .byte $xx,$xx,$xx,$xx
-MapData_LocationBA_Exits
+MapData_ba_Exits
         $170c2              .byte $xx,$xx,$xx,$xx
         $170c6              .byte $xx,$xx,$xx,$xx
         $170ca              .byte $xx,$xx,$xx,$xx
@@ -12109,16 +12113,16 @@ MapData_LocationBA_Exits
         $170fa              .byte $xx,$xx,$xx,$xx
         $170fe              .byte $xx,$xx,$xx,$xx
         $17102              .byte $xx
-MapData_LocationBA_Flags
+MapData_ba_Flags
         $17103              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationB5                                     ; Location b5
+MapData_b5                                ; Goa Fortress - Karmine 6
         $17104              .word ($xxxx) ; $1710e
         $17106              .word ($xxxx) ; $17131
         $17108              .word ($xxxx) ; $17138
         $1710a              .word ($xxxx) ; $17144
         $1710c              .word ($xxxx) ; $1715d
-MapData_LocationB5_Layout
+MapData_b5_Layout
         $1710e              .byte $xx
         $1710f              .byte $xx,$xx,$xx,$xx
         ;; Map 6x5
@@ -12127,15 +12131,15 @@ MapData_LocationB5_Layout
         $1711f              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $17125              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $1712b              .byte $xx,$xx,$xx,$xx,$xx,$xx
-MapData_LocationB5_Graphics
+MapData_b5_Graphics
         $17131              .byte $xx,$xx,$xx
         $17134              .byte $xx,$xx
         $17136              .byte $xx,$xx
-MapData_LocationB5_Entrances
+MapData_b5_Entrances
         $17138              .byte $xx,$xx,$xx,$xx
         $1713c              .byte $xx,$xx,$xx,$xx
         $17140              .byte $xx,$xx,$xx,$xx
-MapData_LocationB5_Exits
+MapData_b5_Exits
         $17144              .byte $xx,$xx,$xx,$xx
         $17148              .byte $xx,$xx,$xx,$xx
         $1714c              .byte $xx,$xx,$xx,$xx
@@ -12143,16 +12147,16 @@ MapData_LocationB5_Exits
         $17154              .byte $xx,$xx,$xx,$xx
         $17158              .byte $xx,$xx,$xx,$xx
         $1715c              .byte $xx
-MapData_LocationB5_Flags
+MapData_b5_Flags
         $1715d              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationB6                                     ; Location b6
+MapData_b6                                ; Goa Fortress - Karmine 7
         $1715e              .word ($xxxx) ; $17168
         $17160              .word ($xxxx) ; $17172
         $17162              .word ($xxxx) ; $17179
         $17164              .word ($xxxx) ; $1717d
         $17166              .word ($xxxx) ; $17186
-MapData_LocationB6_Layout
+MapData_b6_Layout
         $17168              .byte $xx
         $17169              .byte $xx,$xx,$xx,$xx
         ;; Map 1x5
@@ -12161,26 +12165,26 @@ MapData_LocationB6_Layout
         $1716f              .byte $xx
         $17170              .byte $xx
         $17171              .byte $xx
-MapData_LocationB6_Graphics
+MapData_b6_Graphics
         $17172              .byte $xx,$xx,$xx
         $17175              .byte $xx,$xx
         $17177              .byte $xx,$xx
-MapData_LocationB6_Entrances
+MapData_b6_Entrances
         $17179              .byte $xx,$xx,$xx,$xx
-MapData_LocationB6_Exits
+MapData_b6_Exits
         $1717d              .byte $xx,$xx,$xx,$xx
         $17181              .byte $xx,$xx,$xx,$xx
         $17185              .byte $xx
-MapData_LocationB6_Flags
+MapData_b6_Flags
         $17186              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationB7                                     ; Location b7
+MapData_b7                                     ; Goa Fortress - Exit
         $17187              .word ($xxxx) ; $17191
         $17189              .word ($xxxx) ; $1719e
         $1718b              .word ($xxxx) ; $171a5
         $1718d              .word ($xxxx) ; $171c5
         $1718f              .word ($xxxx) ; $17206
-MapData_LocationB7_Layout
+MapData_b7_Layout
         $17191              .byte $xx
         $17192              .byte $xx,$xx,$xx,$xx
         ;; Map 2x4
@@ -12188,11 +12192,11 @@ MapData_LocationB7_Layout
         $17198              .byte $xx,$xx
         $1719a              .byte $xx,$xx
         $1719c              .byte $xx,$xx
-MapData_LocationB7_Graphics
+MapData_b7_Graphics
         $1719e              .byte $xx,$xx,$xx
         $171a1              .byte $xx,$xx
         $171a3              .byte $xx,$xx
-MapData_LocationB7_Entrances
+MapData_b7_Entrances
         $171a5              .byte $xx,$xx,$xx,$xx
         $171a9              .byte $xx,$xx,$xx,$xx
         $171ad              .byte $xx,$xx,$xx,$xx
@@ -12201,7 +12205,7 @@ MapData_LocationB7_Entrances
         $171b9              .byte $xx,$xx,$xx,$xx
         $171bd              .byte $xx,$xx,$xx,$xx
         $171c1              .byte $xx,$xx,$xx,$xx
-MapData_LocationB7_Exits
+MapData_b7_Exits
         $171c5              .byte $xx,$xx,$xx,$xx
         $171c9              .byte $xx,$xx,$xx,$xx
         $171cd              .byte $xx,$xx,$xx,$xx
@@ -12219,16 +12223,16 @@ MapData_LocationB7_Exits
         $171fd              .byte $xx,$xx,$xx,$xx
         $17201              .byte $xx,$xx,$xx,$xx
         $17205              .byte $xx
-MapData_LocationB7_Flags
+MapData_b7_Flags
         $17206              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationB8                                     ; Location b8
+MapData_b8                                   ; Oasis Cave - Entrance
         $17207              .word ($xxxx) ; $17211
         $17209              .word ($xxxx) ; $1723e
         $1720b              .word ($xxxx) ; $17245
         $1720d              .word ($xxxx) ; $17251
         $1720f              .word ($xxxx) ; $1726a
-MapData_LocationB8_Layout
+MapData_b8_Layout
         $17211              .byte $xx
         $17212              .byte $xx,$xx,$xx,$xx
         ;; Map 4x10
@@ -12242,15 +12246,15 @@ MapData_LocationB8_Layout
         $17232              .byte $xx,$xx,$xx,$xx
         $17236              .byte $xx,$xx,$xx,$xx
         $1723a              .byte $xx,$xx,$xx,$xx
-MapData_LocationB8_Graphics
+MapData_b8_Graphics
         $1723e              .byte $xx,$xx,$xx
         $17241              .byte $xx,$xx
         $17243              .byte $xx,$xx
-MapData_LocationB8_Entrances
+MapData_b8_Entrances
         $17245              .byte $xx,$xx,$xx,$xx
         $17249              .byte $xx,$xx,$xx,$xx
         $1724d              .byte $xx,$xx,$xx,$xx
-MapData_LocationB8_Exits
+MapData_b8_Exits
         $17251              .byte $xx,$xx,$xx,$xx
         $17255              .byte $xx,$xx,$xx,$xx
         $17259              .byte $xx,$xx,$xx,$xx
@@ -12258,597 +12262,597 @@ MapData_LocationB8_Exits
         $17261              .byte $xx,$xx,$xx,$xx
         $17265              .byte $xx,$xx,$xx,$xx
         $17269              .byte $xx
-MapData_LocationB8_Flags
+MapData_b8_Flags
         $1726a              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationC0                                     ; Location c0
+MapData_c0                                      ; Leaf - Elder House
         $1726b              .word ($xxxx) ; $17275
         $1726d              .word ($xxxx) ; $1727b
         $1726f              .word ($xxxx) ; $17282
         $17271              .word ($xxxx) ; $17286
         $17273              .word ($xxxx) ; $1728f
-MapData_LocationC0_Layout
+MapData_c0_Layout
         $17275              .byte $xx
         $17276              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1727a              .byte $xx
-MapData_LocationC0_Graphics
+MapData_c0_Graphics
         $1727b              .byte $xx,$xx,$xx
         $1727e              .byte $xx,$xx
         $17280              .byte $xx,$xx
-MapData_LocationC0_Entrances
+MapData_c0_Entrances
         $17282              .byte $xx,$xx,$xx,$xx
-MapData_LocationC0_Exits
+MapData_c0_Exits
         $17286              .byte $xx,$xx,$xx,$xx
         $1728a              .byte $xx,$xx,$xx,$xx
         $1728e              .byte $xx
-MapData_LocationC0_Flags
+MapData_c0_Flags
         $1728f              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationC1                                     ; Location c1
+MapData_c1                                       ; Leaf - Rabbit Hut
         $17290              .word ($xxxx) ; $1729a
         $17292              .word ($xxxx) ; $172a0
         $17294              .word ($xxxx) ; $172a7
         $17296              .word ($xxxx) ; $172ab
         $17298              .word ($xxxx) ; $172b4
-MapData_LocationC1_Layout
+MapData_c1_Layout
         $1729a              .byte $xx
         $1729b              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1729f              .byte $xx
-MapData_LocationC1_Graphics
+MapData_c1_Graphics
         $172a0              .byte $xx,$xx,$xx
         $172a3              .byte $xx,$xx
         $172a5              .byte $xx,$xx
-MapData_LocationC1_Entrances
+MapData_c1_Entrances
         $172a7              .byte $xx,$xx,$xx,$xx
-MapData_LocationC1_Exits
+MapData_c1_Exits
         $172ab              .byte $xx,$xx,$xx,$xx
         $172af              .byte $xx,$xx,$xx,$xx
         $172b3              .byte $xx
-MapData_LocationC1_Flags
+MapData_c1_Flags
         $172b4              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationC2                                     ; Location c2
+MapData_c2                                              ; Leaf - Inn
         $172b5              .word ($xxxx) ; $172bf
         $172b7              .word ($xxxx) ; $172c5
         $172b9              .word ($xxxx) ; $172cc
         $172bb              .word ($xxxx) ; $172d0
         $172bd              .word ($xxxx) ; $172d5
-MapData_LocationC2_Layout
+MapData_c2_Layout
         $172bf              .byte $xx
         $172c0              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $172c4              .byte $xx
-MapData_LocationC2_Graphics
+MapData_c2_Graphics
         $172c5              .byte $xx,$xx,$xx
         $172c8              .byte $xx,$xx
         $172ca              .byte $xx,$xx
-MapData_LocationC2_Entrances
+MapData_c2_Entrances
         $172cc              .byte $xx,$xx,$xx,$xx
-MapData_LocationC2_Exits
+MapData_c2_Exits
         $172d0              .byte $xx,$xx,$xx,$xx
         $172d4              .byte $xx
-MapData_LocationC2_Flags
+MapData_c2_Flags
         $172d5              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationC3                                     ; Location c3
+MapData_c3                                        ; Leaf - Tool Shop
         $172d6              .word ($xxxx) ; $172e0
         $172d8              .word ($xxxx) ; $172e6
         $172da              .word ($xxxx) ; $172ed
         $172dc              .word ($xxxx) ; $172f1
         $172de              .word ($xxxx) ; $172f6
-MapData_LocationC3_Layout
+MapData_c3_Layout
         $172e0              .byte $xx
         $172e1              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $172e5              .byte $xx
-MapData_LocationC3_Graphics
+MapData_c3_Graphics
         $172e6              .byte $xx,$xx,$xx
         $172e9              .byte $xx,$xx
         $172eb              .byte $xx,$xx
-MapData_LocationC3_Entrances
+MapData_c3_Entrances
         $172ed              .byte $xx,$xx,$xx,$xx
-MapData_LocationC3_Exits
+MapData_c3_Exits
         $172f1              .byte $xx,$xx,$xx,$xx
         $172f5              .byte $xx
-MapData_LocationC3_Flags
+MapData_c3_Flags
         $172f6              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationC4                                     ; Location c4
+MapData_c4                                        ; Leaf - Item Shop
         $172f7              .word ($xxxx) ; $17301
         $172f9              .word ($xxxx) ; $17307
         $172fb              .word ($xxxx) ; $1730e
         $172fd              .word ($xxxx) ; $17312
         $172ff              .word ($xxxx) ; $17317
-MapData_LocationC4_Layout
+MapData_c4_Layout
         $17301              .byte $xx
         $17302              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17306              .byte $xx
-MapData_LocationC4_Graphics
+MapData_c4_Graphics
         $17307              .byte $xx,$xx,$xx
         $1730a              .byte $xx,$xx
         $1730c              .byte $xx,$xx
-MapData_LocationC4_Entrances
+MapData_c4_Entrances
         $1730e              .byte $xx,$xx,$xx,$xx
-MapData_LocationC4_Exits
+MapData_c4_Exits
         $17312              .byte $xx,$xx,$xx,$xx
         $17316              .byte $xx
-MapData_LocationC4_Flags
+MapData_c4_Flags
         $17317              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationC5                                     ; Location c5
+MapData_c5                                    ; Leaf - Student House
         $17318              .word ($xxxx) ; $17322
         $1731a              .word ($xxxx) ; $17328
         $1731c              .word ($xxxx) ; $1732f
         $1731e              .word ($xxxx) ; $17333
         $17320              .word ($xxxx) ; $1733c
-MapData_LocationC5_Layout
+MapData_c5_Layout
         $17322              .byte $xx
         $17323              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17327              .byte $xx
-MapData_LocationC5_Graphics
+MapData_c5_Graphics
         $17328              .byte $xx,$xx,$xx
         $1732b              .byte $xx,$xx
         $1732d              .byte $xx,$xx
-MapData_LocationC5_Entrances
+MapData_c5_Entrances
         $1732f              .byte $xx,$xx,$xx,$xx
-MapData_LocationC5_Exits
+MapData_c5_Exits
         $17333              .byte $xx,$xx,$xx,$xx
         $17337              .byte $xx,$xx,$xx,$xx
         $1733b              .byte $xx
-MapData_LocationC5_Flags
+MapData_c5_Flags
         $1733c              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_BrynmaerTavern                                 ; Location c6
+MapData_c6                                       ; Brynmaer - Tavern
         $1733d              .word ($xxxx) ; $17347
         $1733f              .word ($xxxx) ; $1734d
         $17341              .word ($xxxx) ; $17354
         $17343              .word ($xxxx) ; $17358
         $17345              .word ($xxxx) ; $17361
-MapData_BrynmaerTavern_Layout
+MapData_c6_Layout
         $17347              .byte $xx
         $17348              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1734c              .byte $xx
-MapData_BrynmaerTavern_Graphics
+MapData_c6_Graphics
         $1734d              .byte $xx,$xx,$xx
         $17350              .byte $xx,$xx
         $17352              .byte $xx,$xx
-MapData_BrynmaerTavern_Entrances
+MapData_c6_Entrances
         $17354              .byte $xx,$xx,$xx,$xx
-MapData_BrynmaerTavern_Exits
+MapData_c6_Exits
         $17358              .byte $xx,$xx,$xx,$xx
         $1735c              .byte $xx,$xx,$xx,$xx
         $17360              .byte $xx
-MapData_BrynmaerTavern_Flags
+MapData_c6_Flags
         $17361              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_BrynmaerPawnShop                               ; Location c7
+MapData_c7                                    ; Brynmaer - Pawn Shop
         $17362              .word ($xxxx) ; $1736c
         $17364              .word ($xxxx) ; $17372
         $17366              .word ($xxxx) ; $17379
         $17368              .word ($xxxx) ; $1737d
         $1736a              .word ($xxxx) ; $17382
-MapData_BrynmaerPawnShop_Layout
+MapData_c7_Layout
         $1736c              .byte $xx
         $1736d              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17371              .byte $xx
-MapData_BrynmaerPawnShop_Graphics
+MapData_c7_Graphics
         $17372              .byte $xx,$xx,$xx
         $17375              .byte $xx,$xx
         $17377              .byte $xx,$xx
-MapData_BrynmaerPawnShop_Entrances
+MapData_c7_Entrances
         $17379              .byte $xx,$xx,$xx,$xx
-MapData_BrynmaerPawnShop_Exits
+MapData_c7_Exits
         $1737d              .byte $xx,$xx,$xx,$xx
         $17381              .byte $xx
-MapData_BrynmaerPawnShop_Flags
+MapData_c7_Flags
         $17382              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_BrynmaerInn                                    ; Location c8
+MapData_c8                                          ; Brynmaer - Inn
         $17383              .word ($xxxx) ; $1738d
         $17385              .word ($xxxx) ; $17393
         $17387              .word ($xxxx) ; $1739a
         $17389              .word ($xxxx) ; $1739e
         $1738b              .word ($xxxx) ; $173a3
-MapData_BrynmaerInn_Layout
+MapData_c8_Layout
         $1738d              .byte $xx
         $1738e              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17392              .byte $xx
-MapData_BrynmaerInn_Graphics
+MapData_c8_Graphics
         $17393              .byte $xx,$xx,$xx
         $17396              .byte $xx,$xx
         $17398              .byte $xx,$xx
-MapData_BrynmaerInn_Entrances
+MapData_c8_Entrances
         $1739a              .byte $xx,$xx,$xx,$xx
-MapData_BrynmaerInn_Exits
+MapData_c8_Exits
         $1739e              .byte $xx,$xx,$xx,$xx
         $173a2              .byte $xx
-MapData_BrynmaerInn_Flags
+MapData_c8_Flags
         $173a3              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_BrynmaerArmorShop                              ; Location c9
+MapData_c9                                   ; Brynmaer - Armor Shop
         $173a4              .word ($xxxx) ; $173ae
         $173a6              .word ($xxxx) ; $173b4
         $173a8              .word ($xxxx) ; $173bb
         $173aa              .word ($xxxx) ; $173bf
         $173ac              .word ($xxxx) ; $173c4
-MapData_BrynmaerArmorShop_Layout
+MapData_c9_Layout
         $173ae              .byte $xx
         $173af              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $173b3              .byte $xx
-MapData_BrynmaerArmorShop_Graphics
+MapData_c9_Graphics
         $173b4              .byte $xx,$xx,$xx
         $173b7              .byte $xx,$xx
         $173b9              .byte $xx,$xx
-MapData_BrynmaerArmorShop_Entrances
+MapData_c9_Entrances
         $173bb              .byte $xx,$xx,$xx,$xx
-MapData_BrynmaerArmorShop_Exits
+MapData_c9_Exits
         $173bf              .byte $xx,$xx,$xx,$xx
         $173c3              .byte $xx
-MapData_BrynmaerArmorShop_Flags
+MapData_c9_Flags
         $173c4              .byte $xx
         $173c5              .byte $xx ; Extra?
 ;;; ----------------------------------------------------------------
-MapData_BrynmaerItemShop                               ; Location cb
+MapData_cb                                    ; Brynmaer - Item Shop
         $173c6              .word ($xxxx) ; $173d0
         $173c8              .word ($xxxx) ; $173d6
         $173ca              .word ($xxxx) ; $173dd
         $173cc              .word ($xxxx) ; $173e1
         $173ce              .word ($xxxx) ; $173e6
-MapData_BrynmaerItemShop_Layout
+MapData_cb_Layout
         $173d0              .byte $xx
         $173d1              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $173d5              .byte $xx
-MapData_BrynmaerItemShop_Graphics
+MapData_cb_Graphics
         $173d6              .byte $xx,$xx,$xx
         $173d9              .byte $xx,$xx
         $173db              .byte $xx,$xx
-MapData_BrynmaerItemShop_Entrances
+MapData_cb_Entrances
         $173dd              .byte $xx,$xx,$xx,$xx
-MapData_BrynmaerItemShop_Exits
+MapData_cb_Exits
         $173e1              .byte $xx,$xx,$xx,$xx
         $173e5              .byte $xx
-MapData_BrynmaerItemShop_Flags
+MapData_cb_Flags
         $173e6              .byte $xx
         $173e7              .byte $xx ; Extra?
 ;;; ----------------------------------------------------------------
-MapData_OakElderHouse                                  ; Location cd
+MapData_cd                                       ; Oak - Elder House
         $173e8              .word ($xxxx) ; $173f2
         $173ea              .word ($xxxx) ; $173f8
         $173ec              .word ($xxxx) ; $173ff
         $173ee              .word ($xxxx) ; $17403
         $173f0              .word ($xxxx) ; $1740c
-MapData_OakElderHouse_Layout
+MapData_cd_Layout
         $173f2              .byte $xx
         $173f3              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $173f7              .byte $xx
-MapData_OakElderHouse_Graphics
+MapData_cd_Graphics
         $173f8              .byte $xx,$xx,$xx
         $173fb              .byte $xx,$xx
         $173fd              .byte $xx,$xx
-MapData_OakElderHouse_Entrances
+MapData_cd_Entrances
         $173ff              .byte $xx,$xx,$xx,$xx
-MapData_OakElderHouse_Exits
+MapData_cd_Exits
         $17403              .byte $xx,$xx,$xx,$xx
         $17407              .byte $xx,$xx,$xx,$xx
         $1740b              .byte $xx
-MapData_OakElderHouse_Flags
+MapData_cd_Flags
         $1740c              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_OakMotherHouse                                 ; Location ce
+MapData_ce                                      ; Oak - Mother House
         $1740d              .word ($xxxx) ; $17417
         $1740f              .word ($xxxx) ; $1741d
         $17411              .word ($xxxx) ; $17424
         $17413              .word ($xxxx) ; $17428
         $17415              .word ($xxxx) ; $17431
-MapData_OakMotherHouse_Layout
+MapData_ce_Layout
         $17417              .byte $xx
         $17418              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1741c              .byte $xx
-MapData_OakMotherHouse_Graphics
+MapData_ce_Graphics
         $1741d              .byte $xx,$xx,$xx
         $17420              .byte $xx,$xx
         $17422              .byte $xx,$xx
-MapData_OakMotherHouse_Entrances
+MapData_ce_Entrances
         $17424              .byte $xx,$xx,$xx,$xx
-MapData_OakMotherHouse_Exits
+MapData_ce_Exits
         $17428              .byte $xx,$xx,$xx,$xx
         $1742c              .byte $xx,$xx,$xx,$xx
         $17430              .byte $xx
-MapData_OakMotherHouse_Flags
+MapData_ce_Flags
         $17431              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_OakInn                                         ; Location d0
+MapData_d0                                               ; Oak - Inn
         $17432              .word ($xxxx) ; $1743c
         $17434              .word ($xxxx) ; $17442
         $17436              .word ($xxxx) ; $17449
         $17438              .word ($xxxx) ; $1744d
         $1743a              .word ($xxxx) ; $17452
-MapData_OakInn_Layout
+MapData_d0_Layout
         $1743c              .byte $xx
         $1743d              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17441              .byte $xx
-MapData_OakInn_Graphics
+MapData_d0_Graphics
         $17442              .byte $xx,$xx,$xx
         $17445              .byte $xx,$xx
         $17447              .byte $xx,$xx
-MapData_OakInn_Entrances
+MapData_d0_Entrances
         $17449              .byte $xx,$xx,$xx,$xx
-MapData_OakInn_Exits
+MapData_d0_Exits
         $1744d              .byte $xx,$xx,$xx,$xx
         $17451              .byte $xx
-MapData_OakInn_Flags
+MapData_d0_Flags
         $17452              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_OakToolShop                                    ; Location cf
+MapData_cf                                         ; Oak - Tool Shop
         $17453              .word ($xxxx) ; $1745d
         $17455              .word ($xxxx) ; $17463
         $17457              .word ($xxxx) ; $1746a
         $17459              .word ($xxxx) ; $1746e
         $1745b              .word ($xxxx) ; $17473
-MapData_OakToolShop_Layout
+MapData_cf_Layout
         $1745d              .byte $xx
         $1745e              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17462              .byte $xx
-MapData_OakToolShop_Graphics
+MapData_cf_Graphics
         $17463              .byte $xx,$xx,$xx
         $17466              .byte $xx,$xx
         $17468              .byte $xx,$xx
-MapData_OakToolShop_Entrances
+MapData_cf_Entrances
         $1746a              .byte $xx,$xx,$xx,$xx
-MapData_OakToolShop_Exits
+MapData_cf_Exits
         $1746e              .byte $xx,$xx,$xx,$xx
         $17472              .byte $xx
-MapData_OakToolShop_Flags
+MapData_cf_Flags
         $17473              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_AmazonesInn                                    ; Location d1
+MapData_d1                                          ; Amazones - Inn
         $17474              .word ($xxxx) ; $1747e
         $17476              .word ($xxxx) ; $17484
         $17478              .word ($xxxx) ; $1748b
         $1747a              .word ($xxxx) ; $1748f
         $1747c              .word ($xxxx) ; $17494
-MapData_AmazonesInn_Layout
+MapData_d1_Layout
         $1747e              .byte $xx
         $1747f              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17483              .byte $xx
-MapData_AmazonesInn_Graphics
+MapData_d1_Graphics
         $17484              .byte $xx,$xx,$xx
         $17487              .byte $xx,$xx
         $17489              .byte $xx,$xx
-MapData_AmazonesInn_Entrances
+MapData_d1_Entrances
         $1748b              .byte $xx,$xx,$xx,$xx
-MapData_AmazonesInn_Exits
+MapData_d1_Exits
         $1748f              .byte $xx,$xx,$xx,$xx
         $17493              .byte $xx
-MapData_AmazonesInn_Flags
+MapData_d1_Flags
         $17494              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_AmazonesItemShop                               ; Location d2
+MapData_d2                                    ; Amazones - Item Shop
         $17495              .word ($xxxx) ; $1749f
         $17497              .word ($xxxx) ; $174a5
         $17499              .word ($xxxx) ; $174ac
         $1749b              .word ($xxxx) ; $174b0
         $1749d              .word ($xxxx) ; $174b5
-MapData_AmazonesItemShop_Layout
+MapData_d2_Layout
         $1749f              .byte $xx
         $174a0              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $174a4              .byte $xx
-MapData_AmazonesItemShop_Graphics
+MapData_d2_Graphics
         $174a5              .byte $xx,$xx,$xx
         $174a8              .byte $xx,$xx
         $174aa              .byte $xx,$xx
-MapData_AmazonesItemShop_Entrances
+MapData_d2_Entrances
         $174ac              .byte $xx,$xx,$xx,$xx
-MapData_AmazonesItemShop_Exits
+MapData_d2_Exits
         $174b0              .byte $xx,$xx,$xx,$xx
         $174b4              .byte $xx
-MapData_AmazonesItemShop_Flags
+MapData_d2_Flags
         $174b5              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_AmazonesArmorShop                              ; Location d3
+MapData_d3                                   ; Amazones - Armor Shop
         $174b6              .word ($xxxx) ; $174c0
         $174b8              .word ($xxxx) ; $174c6
         $174ba              .word ($xxxx) ; $174cd
         $174bc              .word ($xxxx) ; $174d1
         $174be              .word ($xxxx) ; $174d6
-MapData_AmazonesArmorShop_Layout
+MapData_d3_Layout
         $174c0              .byte $xx
         $174c1              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $174c5              .byte $xx
-MapData_AmazonesArmorShop_Graphics
+MapData_d3_Graphics
         $174c6              .byte $xx,$xx,$xx
         $174c9              .byte $xx,$xx
         $174cb              .byte $xx,$xx
-MapData_AmazonesArmorShop_Entrances
+MapData_d3_Entrances
         $174cd              .byte $xx,$xx,$xx,$xx
-MapData_AmazonesArmorShop_Exits
+MapData_d3_Exits
         $174d1              .byte $xx,$xx,$xx,$xx
         $174d5              .byte $xx
-MapData_AmazonesArmorShop_Flags
+MapData_d3_Flags
         $174d6              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_AmazonesElder                                  ; Location d4
+MapData_d4                                        ; Amazones - Elder
         $174d7              .word ($xxxx) ; $174e1
         $174d9              .word ($xxxx) ; $174e7
         $174db              .word ($xxxx) ; $174ee
         $174dd              .word ($xxxx) ; $174f6
         $174df              .word ($xxxx) ; $17507
-MapData_AmazonesElder_Layout
+MapData_d4_Layout
         $174e1              .byte $xx
         $174e2              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $174e6              .byte $xx
-MapData_AmazonesElder_Graphics
+MapData_d4_Graphics
         $174e7              .byte $xx,$xx,$xx
         $174ea              .byte $xx,$xx
         $174ec              .byte $xx,$xx
-MapData_AmazonesElder_Entrances
+MapData_d4_Entrances
         $174ee              .byte $xx,$xx,$xx,$xx
         $174f2              .byte $xx,$xx,$xx,$xx
-MapData_AmazonesElder_Exits
+MapData_d4_Exits
         $174f6              .byte $xx,$xx,$xx,$xx
         $174fa              .byte $xx,$xx,$xx,$xx
         $174fe              .byte $xx,$xx,$xx,$xx
         $17502              .byte $xx,$xx,$xx,$xx
         $17506              .byte $xx
-MapData_AmazonesElder_Flags
+MapData_d4_Flags
         $17507              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_AmazonesElderDownstairs                        ; Location e2
+MapData_e2                             ; Amazones - Elder Downstairs
         $17508              .word ($xxxx) ; $17512
         $1750a              .word ($xxxx) ; $17518
         $1750c              .word ($xxxx) ; $1751f
         $1750e              .word ($xxxx) ; $17523
         $17510              .word ($xxxx) ; $17528
-MapData_AmazonesElderDownstairs_Layout
+MapData_e2_Layout
         $17512              .byte $xx
         $17513              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17517              .byte $xx
-MapData_AmazonesElderDownstairs_Graphics
+MapData_e2_Graphics
         $17518              .byte $xx,$xx,$xx
         $1751b              .byte $xx,$xx
         $1751d              .byte $xx,$xx
-MapData_AmazonesElderDownstairs_Entrances
+MapData_e2_Entrances
         $1751f              .byte $xx,$xx,$xx,$xx
-MapData_AmazonesElderDownstairs_Exits
+MapData_e2_Exits
         $17523              .byte $xx,$xx,$xx,$xx
         $17527              .byte $xx
-MapData_AmazonesElderDownstairs_Flags
+MapData_e2_Flags
         $17528              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationD5                                     ; Location d5
+MapData_d5                                                  ; Nadare
         $17529              .word ($xxxx) ; $17533
         $1752b              .word ($xxxx) ; $17539
         $1752d              .word ($xxxx) ; $17540
         $1752f              .word ($xxxx) ; $17550
         $17531              .word ($xxxx) ; $17565
-MapData_LocationD5_Layout
+MapData_d5_Layout
         $17533              .byte $xx
         $17534              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17538              .byte $xx
-MapData_LocationD5_Graphics
+MapData_d5_Graphics
         $17539              .byte $xx,$xx,$xx
         $1753c              .byte $xx,$xx
         $1753e              .byte $xx,$xx
-MapData_LocationD5_Entrances
+MapData_d5_Entrances
         $17540              .byte $xx,$xx,$xx,$xx
         $17544              .byte $xx,$xx,$xx,$xx
         $17548              .byte $xx,$xx,$xx,$xx
         $1754c              .byte $xx,$xx,$xx,$xx
-MapData_LocationD5_Exits
+MapData_d5_Exits
         $17550              .byte $xx,$xx,$xx,$xx
         $17554              .byte $xx,$xx,$xx,$xx
         $17558              .byte $xx,$xx,$xx,$xx
         $1755c              .byte $xx,$xx,$xx,$xx
         $17560              .byte $xx,$xx,$xx,$xx
         $17564              .byte $xx
-MapData_LocationD5_Flags
+MapData_d5_Flags
         $17565              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location3C                                     ; Location 3c
+MapData_3c                                            ; Nadare - Inn
         $17566              .word ($xxxx) ; $17570
         $17568              .word ($xxxx) ; $17576
         $1756a              .word ($xxxx) ; $1757d
         $1756c              .word ($xxxx) ; $17581
         $1756e              .word ($xxxx) ; $17586
-MapData_Location3C_Layout
+MapData_3c_Layout
         $17570              .byte $xx
         $17571              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17575              .byte $xx
-MapData_Location3C_Graphics
+MapData_3c_Graphics
         $17576              .byte $xx,$xx,$xx
         $17579              .byte $xx,$xx
         $1757b              .byte $xx,$xx
-MapData_Location3C_Entrances
+MapData_3c_Entrances
         $1757d              .byte $xx,$xx,$xx,$xx
-MapData_Location3C_Exits
+MapData_3c_Exits
         $17581              .byte $xx,$xx,$xx,$xx
         $17585              .byte $xx
-MapData_Location3C_Flags
+MapData_3c_Flags
         $17586              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location3D                                     ; Location 3d
+MapData_3d                                      ; Nadare - Tool Shop
         $17587              .word ($xxxx) ; $17591
         $17589              .word ($xxxx) ; $17597
         $1758b              .word ($xxxx) ; $1759e
         $1758d              .word ($xxxx) ; $175a2
         $1758f              .word ($xxxx) ; $175a7
-MapData_Location3D_Layout
+MapData_3d_Layout
         $17591              .byte $xx
         $17592              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17596              .byte $xx
-MapData_Location3D_Graphics
+MapData_3d_Graphics
         $17597              .byte $xx,$xx,$xx
         $1759a              .byte $xx,$xx
         $1759c              .byte $xx,$xx
-MapData_Location3D_Entrances
+MapData_3d_Entrances
         $1759e              .byte $xx,$xx,$xx,$xx
-MapData_Location3D_Exits
+MapData_3d_Exits
         $175a2              .byte $xx,$xx,$xx,$xx
         $175a6              .byte $xx
-MapData_Location3D_Flags
+MapData_3d_Flags
         $175a7              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location3E                                     ; Location 3e
+MapData_3e                                      ; Nadare - Back Room
         $175a8              .word ($xxxx) ; $175b2
         $175aa              .word ($xxxx) ; $175b8
         $175ac              .word ($xxxx) ; $175bf
         $175ae              .word ($xxxx) ; $175c3
         $175b0              .word ($xxxx) ; $175cc
-MapData_Location3E_Layout
+MapData_3e_Layout
         $175b2              .byte $xx
         $175b3              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $175b7              .byte $xx
-MapData_Location3E_Graphics
+MapData_3e_Graphics
         $175b8              .byte $xx,$xx,$xx
         $175bb              .byte $xx,$xx
         $175bd              .byte $xx,$xx
-MapData_Location3E_Entrances
+MapData_3e_Entrances
         $175bf              .byte $xx,$xx,$xx,$xx
-MapData_Location3E_Exits
+MapData_3e_Exits
         $175c3              .byte $xx,$xx,$xx,$xx
         $175c7              .byte $xx,$xx,$xx,$xx
         $175cb              .byte $xx
-MapData_Location3E_Flags
+MapData_3e_Flags
         $175cc              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_PortoaFishermanHouse                           ; Location d6
+MapData_d6                                ; Portoa - Fisherman House
         $175cd              .word ($xxxx) ; $175d7
         $175cf              .word ($xxxx) ; $175dd
         $175d1              .word ($xxxx) ; $175e4
         $175d3              .word ($xxxx) ; $175e8
         $175d5              .word ($xxxx) ; $175f1
-MapData_PortoaFishermanHouse_Layout
+MapData_d6_Layout
         $175d7              .byte $xx
         $175d8              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $175dc              .byte $xx
-MapData_PortoaFishermanHouse_Graphics
+MapData_d6_Graphics
         $175dd              .byte $xx,$xx,$xx
         $175e0              .byte $xx,$xx
         $175e2              .byte $xx,$xx
-MapData_PortoaFishermanHouse_Entrances
+MapData_d6_Entrances
         $175e4              .byte $xx,$xx,$xx,$xx
         $175e8              .byte $xx,$xx,$xx,$xx
         $175ec              .byte $xx,$xx,$xx,$xx
@@ -12882,72 +12886,72 @@ MapData_LocationDE_Exits
 MapData_LocationDE_Flags
         $17653              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationDF                                     ; Location df
+MapData_df                             ; Portoa - Palace Throne Room
         $17654              .word ($xxxx) ; $1765e
         $17656              .word ($xxxx) ; $17664
         $17658              .word ($xxxx) ; $1766b
         $1765a              .word ($xxxx) ; $17673
         $1765c              .word ($xxxx) ; $17680
-MapData_LocationDF_Layout
+MapData_df_Layout
         $1765e              .byte $xx
         $1765f              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17663              .byte $xx
-MapData_LocationDF_Graphics
+MapData_df_Graphics
         $17664              .byte $xx,$xx,$xx
         $17667              .byte $xx,$xx
         $17669              .byte $xx,$xx
-MapData_LocationDF_Entrances
+MapData_df_Entrances
         $1766b              .byte $xx,$xx,$xx,$xx
         $1766f              .byte $xx,$xx,$xx,$xx
-MapData_LocationDF_Exits
+MapData_df_Exits
         $17673              .byte $xx,$xx,$xx,$xx
         $17677              .byte $xx,$xx,$xx,$xx
         $1767b              .byte $xx,$xx,$xx,$xx
         $1767f              .byte $xx
-MapData_LocationDF_Flags
+MapData_df_Flags
         $17680              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationE0                                     ; Location e0
+MapData_e0                                   ; Portoa - Palace Right
         $17681              .word ($xxxx) ; $1768b
         $17683              .word ($xxxx) ; $17691
         $17685              .word ($xxxx) ; $17698
         $17687              .word ($xxxx) ; $1769c
         $17689              .word ($xxxx) ; $176a5
-MapData_LocationE0_Layout
+MapData_e0_Layout
         $1768b              .byte $xx
         $1768c              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17690              .byte $xx
-MapData_LocationE0_Graphics
+MapData_e0_Graphics
         $17691              .byte $xx,$xx,$xx
         $17694              .byte $xx,$xx
         $17696              .byte $xx,$xx
-MapData_LocationE0_Entrances
+MapData_e0_Entrances
         $17698              .byte $xx,$xx,$xx,$xx
-MapData_LocationE0_Exits
+MapData_e0_Exits
         $1769c              .byte $xx,$xx,$xx,$xx
         $176a0              .byte $xx,$xx,$xx,$xx
         $176a4              .byte $xx
-MapData_LocationE0_Flags
+MapData_e0_Flags
         $176a5              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_PortoaFortuneTeller                            ; Location d8
+MapData_d8                                 ; Portoa - Fortune Teller
         $176a6              .word ($xxxx) ; $176b0
         $176a8              .word ($xxxx) ; $176b6
         $176aa              .word ($xxxx) ; $176bd
         $176ac              .word ($xxxx) ; $176c9
         $176ae              .word ($xxxx) ; $176da
-MapData_PortoaFortuneTeller_Layout
+MapData_d8_Layout
         $176b0              .byte $xx
         $176b1              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $176b5              .byte $xx
-MapData_PortoaFortuneTeller_Graphics
+MapData_d8_Graphics
         $176b6              .byte $xx,$xx,$xx
         $176b9              .byte $xx,$xx
         $176bb              .byte $xx,$xx
-MapData_PortoaFortuneTeller_Entrances
+MapData_d8_Entrances
         $176bd              .byte $xx,$xx,$xx,$xx
         $176c1              .byte $xx,$xx,$xx,$xx
         $176c5              .byte $xx,$xx,$xx,$xx
@@ -13003,22 +13007,22 @@ MapData_LocationE1_Exits
 MapData_LocationE1_Flags
         $17784              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_JoelElderHouse                                 ; Location e3
+MapData_e3                                      ; Joel - Elder House
         $17785              .word ($xxxx) ; $1778f
         $17787              .word ($xxxx) ; $17795
         $17789              .word ($xxxx) ; $1779c
         $1778b              .word ($xxxx) ; $177a0
         $1778d              .word ($xxxx) ; $177a9
-MapData_JoelElderHouse_Layout
+MapData_e3_Layout
         $1778f              .byte $xx
         $17790              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17794              .byte $xx
-MapData_JoelElderHouse_Graphics
+MapData_e3_Graphics
         $17795              .byte $xx,$xx,$xx
         $17798              .byte $xx,$xx
         $1779a              .byte $xx,$xx
-MapData_JoelElderHouse_Entrances
+MapData_e3_Entrances
         $1779c              .byte $xx,$xx,$xx,$xx
         $177a0              .byte $xx,$xx,$xx,$xx
         $177a4              .byte $xx,$xx,$xx,$xx
@@ -13068,556 +13072,556 @@ MapData_LocationE8_Exits
 MapData_LocationE8_Flags
         $1784c              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationE9                                     ; Location e9
+MapData_e9                            ; Zombie Town - House Basement
         $1784d              .word ($xxxx) ; $17857
         $1784f              .word ($xxxx) ; $1785d
         $17851              .word ($xxxx) ; $17864
         $17853              .word ($xxxx) ; $17868
         $17855              .word ($xxxx) ; $1786d
-MapData_LocationE9_Layout
+MapData_e9_Layout
         $17857              .byte $xx
         $17858              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1785c              .byte $xx
-MapData_LocationE9_Graphics
+MapData_e9_Graphics
         $1785d              .byte $xx,$xx,$xx
         $17860              .byte $xx,$xx
         $17862              .byte $xx,$xx
-MapData_LocationE9_Entrances
+MapData_e9_Entrances
         $17864              .byte $xx,$xx,$xx,$xx
-MapData_LocationE9_Exits
+MapData_e9_Exits
         $17868              .byte $xx,$xx,$xx,$xx
         $1786c              .byte $xx
-MapData_LocationE9_Flags
+MapData_e9_Flags
         $1786d              .byte $xx
         $1786e              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationEB                                     ; Location eb
+MapData_eb                                        ; Swan - Tool Shop
         $1786f              .word ($xxxx) ; $17879
         $17871              .word ($xxxx) ; $1787f
         $17873              .word ($xxxx) ; $17886
         $17875              .word ($xxxx) ; $1788a
         $17877              .word ($xxxx) ; $1788f
-MapData_LocationEB_Layout
+MapData_eb_Layout
         $17879              .byte $xx
         $1787a              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1787e              .byte $xx
-MapData_LocationEB_Graphics
+MapData_eb_Graphics
         $1787f              .byte $xx,$xx,$xx
         $17882              .byte $xx,$xx
         $17884              .byte $xx,$xx
-MapData_LocationEB_Entrances
+MapData_eb_Entrances
         $17886              .byte $xx,$xx,$xx,$xx
-MapData_LocationEB_Exits
+MapData_eb_Exits
         $1788a              .byte $xx,$xx,$xx,$xx
         $1788e              .byte $xx
-MapData_LocationEB_Flags
+MapData_eb_Flags
         $1788f              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationEC                                     ; Location ec
+MapData_ec                                         ; Swan - Stom Hut
         $17890              .word ($xxxx) ; $1789a
         $17892              .word ($xxxx) ; $178a0
         $17894              .word ($xxxx) ; $178a7
         $17896              .word ($xxxx) ; $178ab
         $17898              .word ($xxxx) ; $178b4
-MapData_LocationEC_Layout
+MapData_ec_Layout
         $1789a              .byte $xx
         $1789b              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1789f              .byte $xx
-MapData_LocationEC_Graphics
+MapData_ec_Graphics
         $178a0              .byte $xx,$xx,$xx
         $178a3              .byte $xx,$xx
         $178a5              .byte $xx,$xx
-MapData_LocationEC_Entrances
+MapData_ec_Entrances
         $178a7              .byte $xx,$xx,$xx,$xx
-MapData_LocationEC_Exits
+MapData_ec_Exits
         $178ab              .byte $xx,$xx,$xx,$xx
         $178af              .byte $xx,$xx,$xx,$xx
         $178b3              .byte $xx
-MapData_LocationEC_Flags
+MapData_ec_Flags
         $178b4              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationED                                     ; Location ed
+MapData_ed                                              ; Swan - Inn
         $178b5              .word ($xxxx) ; $178bf
         $178b7              .word ($xxxx) ; $178c5
         $178b9              .word ($xxxx) ; $178cc
         $178bb              .word ($xxxx) ; $178d0
         $178bd              .word ($xxxx) ; $178d5
-MapData_LocationED_Layout
+MapData_ed_Layout
         $178bf              .byte $xx
         $178c0              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $178c4              .byte $xx
-MapData_LocationED_Graphics
+MapData_ed_Graphics
         $178c5              .byte $xx,$xx,$xx
         $178c8              .byte $xx,$xx
         $178ca              .byte $xx,$xx
-MapData_LocationED_Entrances
+MapData_ed_Entrances
         $178cc              .byte $xx,$xx,$xx,$xx
-MapData_LocationED_Exits
+MapData_ed_Exits
         $178d0              .byte $xx,$xx,$xx,$xx
         $178d4              .byte $xx
-MapData_LocationED_Flags
+MapData_ed_Flags
         $178d5              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationEE                                     ; Location ee
+MapData_ee                                       ; Swan - Armor Shop
         $178d6              .word ($xxxx) ; $178e0
         $178d8              .word ($xxxx) ; $178e6
         $178da              .word ($xxxx) ; $178ed
         $178dc              .word ($xxxx) ; $178f1
         $178de              .word ($xxxx) ; $178f6
-MapData_LocationEE_Layout
+MapData_ee_Layout
         $178e0              .byte $xx
         $178e1              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $178e5              .byte $xx
-MapData_LocationEE_Graphics
+MapData_ee_Graphics
         $178e6              .byte $xx,$xx,$xx
         $178e9              .byte $xx,$xx
         $178eb              .byte $xx,$xx
-MapData_LocationEE_Entrances
+MapData_ee_Entrances
         $178ed              .byte $xx,$xx,$xx,$xx
-MapData_LocationEE_Exits
+MapData_ee_Exits
         $178f1              .byte $xx,$xx,$xx,$xx
         $178f5              .byte $xx
-MapData_LocationEE_Flags
+MapData_ee_Flags
         $178f6              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationEF                                     ; Location ef
+MapData_ef                                           ; Swan - Tavern
         $178f7              .word ($xxxx) ; $17901
         $178f9              .word ($xxxx) ; $17907
         $178fb              .word ($xxxx) ; $1790e
         $178fd              .word ($xxxx) ; $17912
         $178ff              .word ($xxxx) ; $1791b
-MapData_LocationEF_Layout
+MapData_ef_Layout
         $17901              .byte $xx
         $17902              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17906              .byte $xx
-MapData_LocationEF_Graphics
+MapData_ef_Graphics
         $17907              .byte $xx,$xx,$xx
         $1790a              .byte $xx,$xx
         $1790c              .byte $xx,$xx
-MapData_LocationEF_Entrances
+MapData_ef_Entrances
         $1790e              .byte $xx,$xx,$xx,$xx
-MapData_LocationEF_Exits
+MapData_ef_Exits
         $17912              .byte $xx,$xx,$xx,$xx
         $17916              .byte $xx,$xx,$xx,$xx
         $1791a              .byte $xx
-MapData_LocationEF_Flags
+MapData_ef_Flags
         $1791b              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationF0                                     ; Location f0
+MapData_f0                                        ; Swan - Pawn Shop
         $1791c              .word ($xxxx) ; $17926
         $1791e              .word ($xxxx) ; $1792c
         $17920              .word ($xxxx) ; $17933
         $17922              .word ($xxxx) ; $17937
         $17924              .word ($xxxx) ; $1793c
-MapData_LocationF0_Layout
+MapData_f0_Layout
         $17926              .byte $xx
         $17927              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1792b              .byte $xx
-MapData_LocationF0_Graphics
+MapData_f0_Graphics
         $1792c              .byte $xx,$xx,$xx
         $1792f              .byte $xx,$xx
         $17931              .byte $xx,$xx
-MapData_LocationF0_Entrances
+MapData_f0_Entrances
         $17933              .byte $xx,$xx,$xx,$xx
-MapData_LocationF0_Exits
+MapData_f0_Exits
         $17937              .byte $xx,$xx,$xx,$xx
         $1793b              .byte $xx
-MapData_LocationF0_Flags
+MapData_f0_Flags
         $1793c              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationF1                                     ; Location f1
+MapData_f1                                       ; Swan - Dance Hall
         $1793d              .word ($xxxx) ; $17947
         $1793f              .word ($xxxx) ; $1794d
         $17941              .word ($xxxx) ; $17954
         $17943              .word ($xxxx) ; $17958
         $17945              .word ($xxxx) ; $17961
-MapData_LocationF1_Layout
+MapData_f1_Layout
         $17947              .byte $xx
         $17948              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1794c              .byte $xx
-MapData_LocationF1_Graphics
+MapData_f1_Graphics
         $1794d              .byte $xx,$xx,$xx
         $17950              .byte $xx,$xx
         $17952              .byte $xx,$xx
-MapData_LocationF1_Entrances
+MapData_f1_Entrances
         $17954              .byte $xx,$xx,$xx,$xx
-MapData_LocationF1_Exits
+MapData_f1_Exits
         $17958              .byte $xx,$xx,$xx,$xx
         $1795c              .byte $xx,$xx,$xx,$xx
         $17960              .byte $xx
-MapData_LocationF1_Flags
+MapData_f1_Flags
         $17961              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationF2                                     ; Location f2
+MapData_f2                                         ; Shyron - Temple
         $17962              .word ($xxxx) ; $1796c
         $17964              .word ($xxxx) ; $17972
         $17966              .word ($xxxx) ; $17979
         $17968              .word ($xxxx) ; $17981
         $1796a              .word ($xxxx) ; $1798a
-MapData_LocationF2_Layout
+MapData_f2_Layout
         $1796c              .byte $xx
         $1796d              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17971              .byte $xx
-MapData_LocationF2_Graphics
+MapData_f2_Graphics
         $17972              .byte $xx,$xx,$xx
         $17975              .byte $xx,$xx
         $17977              .byte $xx,$xx
-MapData_LocationF2_Entrances
+MapData_f2_Entrances
         $17979              .byte $xx,$xx,$xx,$xx
         $1797d              .byte $xx,$xx,$xx,$xx
-MapData_LocationF2_Exits
+MapData_f2_Exits
         $17981              .byte $xx,$xx,$xx,$xx
         $17985              .byte $xx,$xx,$xx,$xx
         $17989              .byte $xx
-MapData_LocationF2_Flags
+MapData_f2_Flags
         $1798a              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationF3                                     ; Location f3
+MapData_f3                                  ; Shyron - Training Hall
         $1798b              .word ($xxxx) ; $17995
         $1798d              .word ($xxxx) ; $1799b
         $1798f              .word ($xxxx) ; $179a2
         $17991              .word ($xxxx) ; $179a6
         $17993              .word ($xxxx) ; $179af
-MapData_LocationF3_Layout
+MapData_f3_Layout
         $17995              .byte $xx
         $17996              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $1799a              .byte $xx
-MapData_LocationF3_Graphics
+MapData_f3_Graphics
         $1799b              .byte $xx,$xx,$xx
         $1799e              .byte $xx,$xx
         $179a0              .byte $xx,$xx
-MapData_LocationF3_Entrances
+MapData_f3_Entrances
         $179a2              .byte $xx,$xx,$xx,$xx
-MapData_LocationF3_Exits
+MapData_f3_Exits
         $179a6              .byte $xx,$xx,$xx,$xx
         $179aa              .byte $xx,$xx,$xx,$xx
         $179ae              .byte $xx
-MapData_LocationF3_Flags
+MapData_f3_Flags
         $179af              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationF4                                     ; Location f4
+MapData_f4                                       ; Shyron - Hospital
         $179b0              .word ($xxxx) ; $179ba
         $179b2              .word ($xxxx) ; $179c0
         $179b4              .word ($xxxx) ; $179c7
         $179b6              .word ($xxxx) ; $179cb
         $179b8              .word ($xxxx) ; $179d4
-MapData_LocationF4_Layout
+MapData_f4_Layout
         $179ba              .byte $xx
         $179bb              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $179bf              .byte $xx
-MapData_LocationF4_Graphics
+MapData_f4_Graphics
         $179c0              .byte $xx,$xx,$xx
         $179c3              .byte $xx,$xx
         $179c5              .byte $xx,$xx
-MapData_LocationF4_Entrances
+MapData_f4_Entrances
         $179c7              .byte $xx,$xx,$xx,$xx
-MapData_LocationF4_Exits
+MapData_f4_Exits
         $179cb              .byte $xx,$xx,$xx,$xx
         $179cf              .byte $xx,$xx,$xx,$xx
         $179d3              .byte $xx
-MapData_LocationF4_Flags
+MapData_f4_Flags
         $179d4              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationF5                                     ; Location f5
+MapData_f5                                     ; Shyron - Armor Shop
         $179d5              .word ($xxxx) ; $179df
         $179d7              .word ($xxxx) ; $179e5
         $179d9              .word ($xxxx) ; $179ec
         $179db              .word ($xxxx) ; $179f0
         $179dd              .word ($xxxx) ; $179f5
-MapData_LocationF5_Layout
+MapData_f5_Layout
         $179df              .byte $xx
         $179e0              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $179e4              .byte $xx
-MapData_LocationF5_Graphics
+MapData_f5_Graphics
         $179e5              .byte $xx,$xx,$xx
         $179e8              .byte $xx,$xx
         $179ea              .byte $xx,$xx
-MapData_LocationF5_Entrances
+MapData_f5_Entrances
         $179ec              .byte $xx,$xx,$xx,$xx
-MapData_LocationF5_Exits
+MapData_f5_Exits
         $179f0              .byte $xx,$xx,$xx,$xx
         $179f4              .byte $xx
-MapData_LocationF5_Flags
+MapData_f5_Flags
         $179f5              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationF6                                     ; Location f6
+MapData_f6                                      ; Shyron - Tool Shop
         $179f6              .word ($xxxx) ; $17a00
         $179f8              .word ($xxxx) ; $17a06
         $179fa              .word ($xxxx) ; $17a0d
         $179fc              .word ($xxxx) ; $17a11
         $179fe              .word ($xxxx) ; $17a16
-MapData_LocationF6_Layout
+MapData_f6_Layout
         $17a00              .byte $xx
         $17a01              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17a05              .byte $xx
-MapData_LocationF6_Graphics
+MapData_f6_Graphics
         $17a06              .byte $xx,$xx,$xx
         $17a09              .byte $xx,$xx
         $17a0b              .byte $xx,$xx
-MapData_LocationF6_Entrances
+MapData_f6_Entrances
         $17a0d              .byte $xx,$xx,$xx,$xx
-MapData_LocationF6_Exits
+MapData_f6_Exits
         $17a11              .byte $xx,$xx,$xx,$xx
         $17a15              .byte $xx
-MapData_LocationF6_Flags
+MapData_f6_Flags
         $17a16              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationF7                                     ; Location f7
+MapData_f7                                            ; Shyron - Inn
         $17a17              .word ($xxxx) ; $17a21
         $17a19              .word ($xxxx) ; $17a27
         $17a1b              .word ($xxxx) ; $17a2e
         $17a1d              .word ($xxxx) ; $17a32
         $17a1f              .word ($xxxx) ; $17a37
-MapData_LocationF7_Layout
+MapData_f7_Layout
         $17a21              .byte $xx
         $17a22              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17a26              .byte $xx
-MapData_LocationF7_Graphics
+MapData_f7_Graphics
         $17a27              .byte $xx,$xx,$xx
         $17a2a              .byte $xx,$xx
         $17a2c              .byte $xx,$xx
-MapData_LocationF7_Entrances
+MapData_f7_Entrances
         $17a2e              .byte $xx,$xx,$xx,$xx
-MapData_LocationF7_Exits
+MapData_f7_Exits
         $17a32              .byte $xx,$xx,$xx,$xx
         $17a36              .byte $xx
-MapData_LocationF7_Flags
+MapData_f7_Flags
         $17a37              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationF8                                     ; Location f8
+MapData_f8                                            ; Sahara - Inn
         $17a38              .word ($xxxx) ; $17a42
         $17a3a              .word ($xxxx) ; $17a48
         $17a3c              .word ($xxxx) ; $17a4f
         $17a3e              .word ($xxxx) ; $17a53
         $17a40              .word ($xxxx) ; $17a58
-MapData_LocationF8_Layout
+MapData_f8_Layout
         $17a42              .byte $xx
         $17a43              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17a47              .byte $xx
-MapData_LocationF8_Graphics
+MapData_f8_Graphics
         $17a48              .byte $xx,$xx,$xx
         $17a4b              .byte $xx,$xx
         $17a4d              .byte $xx,$xx
-MapData_LocationF8_Entrances
+MapData_f8_Entrances
         $17a4f              .byte $xx,$xx,$xx,$xx
-MapData_LocationF8_Exits
+MapData_f8_Exits
         $17a53              .byte $xx,$xx,$xx,$xx
         $17a57              .byte $xx
-MapData_LocationF8_Flags
+MapData_f8_Flags
         $17a58              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationF9                                     ; Location f9
+MapData_f9                                      ; Sahara - Tool Shop
         $17a59              .word ($xxxx) ; $17a63
         $17a5b              .word ($xxxx) ; $17a69
         $17a5d              .word ($xxxx) ; $17a70
         $17a5f              .word ($xxxx) ; $17a74
         $17a61              .word ($xxxx) ; $17a79
-MapData_LocationF9_Layout
+MapData_f9_Layout
         $17a63              .byte $xx
         $17a64              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17a68              .byte $xx
-MapData_LocationF9_Graphics
+MapData_f9_Graphics
         $17a69              .byte $xx,$xx,$xx
         $17a6c              .byte $xx,$xx
         $17a6e              .byte $xx,$xx
-MapData_LocationF9_Entrances
+MapData_f9_Entrances
         $17a70              .byte $xx,$xx,$xx,$xx
-MapData_LocationF9_Exits
+MapData_f9_Exits
         $17a74              .byte $xx,$xx,$xx,$xx
         $17a78              .byte $xx
-MapData_LocationF9_Flags
+MapData_f9_Flags
         $17a79              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationFA                                     ; Location fa
+MapData_fa                                    ; Sahara - Elder House
         $17a7a              .word ($xxxx) ; $17a84
         $17a7c              .word ($xxxx) ; $17a8a
         $17a7e              .word ($xxxx) ; $17a91
         $17a80              .word ($xxxx) ; $17a95
         $17a82              .word ($xxxx) ; $17a9e
-MapData_LocationFA_Layout
+MapData_fa_Layout
         $17a84              .byte $xx
         $17a85              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17a89              .byte $xx
-MapData_LocationFA_Graphics
+MapData_fa_Graphics
         $17a8a              .byte $xx,$xx,$xx
         $17a8d              .byte $xx,$xx
         $17a8f              .byte $xx,$xx
-MapData_LocationFA_Entrances
+MapData_fa_Entrances
         $17a91              .byte $xx,$xx,$xx,$xx
-MapData_LocationFA_Exits
+MapData_fa_Exits
         $17a95              .byte $xx,$xx,$xx,$xx
         $17a99              .byte $xx,$xx,$xx,$xx
         $17a9d              .byte $xx
-MapData_LocationFA_Flags
+MapData_fa_Flags
         $17a9e              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationFB                                     ; Location fb
+MapData_fb                                      ; Sahara - Pawn Shop
         $17a9f              .word ($xxxx) ; $17aa9
         $17aa1              .word ($xxxx) ; $17aaf
         $17aa3              .word ($xxxx) ; $17ab6
         $17aa5              .word ($xxxx) ; $17aba
         $17aa7              .word ($xxxx) ; $17abf
-MapData_LocationFB_Layout
+MapData_fb_Layout
         $17aa9              .byte $xx
         $17aaa              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17aae              .byte $xx
-MapData_LocationFB_Graphics
+MapData_fb_Graphics
         $17aaf              .byte $xx,$xx,$xx
         $17ab2              .byte $xx,$xx
         $17ab4              .byte $xx,$xx
-MapData_LocationFB_Entrances
+MapData_fb_Entrances
         $17ab6              .byte $xx,$xx,$xx,$xx
-MapData_LocationFB_Exits
+MapData_fb_Exits
         $17aba              .byte $xx,$xx,$xx,$xx
         $17abe              .byte $xx
-MapData_LocationFB_Flags
+MapData_fb_Flags
         $17abf              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationBB                                     ; Location bb
+MapData_bb                                             ; Goa - House
         $17ac0              .word ($xxxx) ; $17aca
         $17ac2              .word ($xxxx) ; $17ad0
         $17ac4              .word ($xxxx) ; $17ad7
         $17ac6              .word ($xxxx) ; $17adb
         $17ac8              .word ($xxxx) ; $17ae4
-MapData_LocationBB_Layout
+MapData_bb_Layout
         $17aca              .byte $xx
         $17acb              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17acf              .byte $xx
-MapData_LocationBB_Graphics
+MapData_bb_Graphics
         $17ad0              .byte $xx,$xx,$xx
         $17ad3              .byte $xx,$xx
         $17ad5              .byte $xx,$xx
-MapData_LocationBB_Entrances
+MapData_bb_Entrances
         $17ad7              .byte $xx,$xx,$xx,$xx
-MapData_LocationBB_Exits
+MapData_bb_Exits
         $17adb              .byte $xx,$xx,$xx,$xx
         $17adf              .byte $xx,$xx,$xx,$xx
         $17ae3              .byte $xx
-MapData_LocationBB_Flags
+MapData_bb_Flags
         $17ae4              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationBC                                     ; Location bc
+MapData_bc                                               ; Goa - Inn
         $17ae5              .word ($xxxx) ; $17aef
         $17ae7              .word ($xxxx) ; $17af5
         $17ae9              .word ($xxxx) ; $17afc
         $17aeb              .word ($xxxx) ; $17b00
         $17aed              .word ($xxxx) ; $17b05
-MapData_LocationBC_Layout
+MapData_bc_Layout
         $17aef              .byte $xx
         $17af0              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17af4              .byte $xx
-MapData_LocationBC_Graphics
+MapData_bc_Graphics
         $17af5              .byte $xx,$xx,$xx
         $17af8              .byte $xx,$xx
         $17afa              .byte $xx,$xx
-MapData_LocationBC_Entrances
+MapData_bc_Entrances
         $17afc              .byte $xx,$xx,$xx,$xx
-MapData_LocationBC_Exits
+MapData_bc_Exits
         $17b00              .byte $xx,$xx,$xx,$xx
         $17b04              .byte $xx
-MapData_LocationBC_Flags
+MapData_bc_Flags
         $17b05              .byte $xx
         $17b06              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationBE                                     ; Location be
+MapData_be                                         ; Goa - Tool Shop
         $17b07              .word ($xxxx) ; $17b11
         $17b09              .word ($xxxx) ; $17b17
         $17b0b              .word ($xxxx) ; $17b1e
         $17b0d              .word ($xxxx) ; $17b22
         $17b0f              .word ($xxxx) ; $17b27
-MapData_LocationBE_Layout
+MapData_be_Layout
         $17b11              .byte $xx
         $17b12              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17b16              .byte $xx
-MapData_LocationBE_Graphics
+MapData_be_Graphics
         $17b17              .byte $xx,$xx,$xx
         $17b1a              .byte $xx,$xx
         $17b1c              .byte $xx,$xx
-MapData_LocationBE_Entrances
+MapData_be_Entrances
         $17b1e              .byte $xx,$xx,$xx,$xx
-MapData_LocationBE_Exits
+MapData_be_Exits
         $17b22              .byte $xx,$xx,$xx,$xx
         $17b26              .byte $xx
-MapData_LocationBE_Flags
+MapData_be_Flags
         $17b27              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_LocationBF                                     ; Location bf
+MapData_bf                                            ; Goa - Tavern
         $17b28              .word ($xxxx) ; $17b32
         $17b2a              .word ($xxxx) ; $17b38
         $17b2c              .word ($xxxx) ; $17b3f
         $17b2e              .word ($xxxx) ; $17b43
         $17b30              .word ($xxxx) ; $17b4c
-MapData_LocationBF_Layout
+MapData_bf_Layout
         $17b32              .byte $xx
         $17b33              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17b37              .byte $xx
-MapData_LocationBF_Graphics
+MapData_bf_Graphics
         $17b38              .byte $xx,$xx,$xx
         $17b3b              .byte $xx,$xx
         $17b3d              .byte $xx,$xx
-MapData_LocationBF_Entrances
+MapData_bf_Entrances
         $17b3f              .byte $xx,$xx,$xx,$xx
-MapData_LocationBF_Exits
+MapData_bf_Exits
         $17b43              .byte $xx,$xx,$xx,$xx
         $17b47              .byte $xx,$xx,$xx,$xx
         $17b4b              .byte $xx
-MapData_LocationBF_Flags
+MapData_bf_Flags
         $17b4c              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location58                                     ; Location 58
+MapData_58                                        ; Tower - Entrance
         $17b4d              .word ($xxxx) ; $17b57
         $17b4f              .word ($xxxx) ; $17b5d
         $17b51              .word ($xxxx) ; $17b64
         $17b53              .word ($xxxx) ; $17b6c
         $17b55              .word ($xxxx) ; $17b75
-MapData_Location58_Layout
+MapData_58_Layout
         $17b57              .byte $xx
         $17b58              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17b5c              .byte $xx
-MapData_Location58_Graphics
+MapData_58_Graphics
         $17b5d              .byte $xx,$xx,$xx
         $17b60              .byte $xx,$xx
         $17b62              .byte $xx,$xx
-MapData_Location58_Entrances
+MapData_58_Entrances
         $17b64              .byte $xx,$xx,$xx,$xx
         $17b68              .byte $xx,$xx,$xx,$xx
-MapData_Location58_Exits
+MapData_58_Exits
         $17b6c              .byte $xx,$xx,$xx,$xx
         $17b70              .byte $xx,$xx,$xx,$xx
         $17b74              .byte $xx
-MapData_Location58_Flags
+MapData_58_Flags
         $17b75              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location59                                     ; Location 59
+MapData_59                                                 ; Tower 1
         $17b76              .word ($xxxx) ; $17b80
         $17b78              .word ($xxxx) ; $17b9d
         $17b7a              .word ($xxxx) ; $17ba4
         $17b7c              .word ($xxxx) ; $17ba8
         $17b7e              .word ($xxxx) ; $17bb9
-MapData_Location59_Layout
+MapData_59_Layout
         $17b80              .byte $xx
         $17b81              .byte $xx,$xx,$xx,$xx
         ;; Map 6x4
@@ -13625,28 +13629,28 @@ MapData_Location59_Layout
         $17b8b              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $17b91              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $17b97              .byte $xx,$xx,$xx,$xx,$xx,$xx
-MapData_Location59_Graphics
+MapData_59_Graphics
         $17b9d              .byte $xx,$xx,$xx
         $17ba0              .byte $xx,$xx
         $17ba2              .byte $xx,$xx
-MapData_Location59_Entrances
+MapData_59_Entrances
         $17ba4              .byte $xx,$xx,$xx,$xx
-MapData_Location59_Exits
+MapData_59_Exits
         $17ba8              .byte $xx,$xx,$xx,$xx
         $17bac              .byte $xx,$xx,$xx,$xx
         $17bb0              .byte $xx,$xx,$xx,$xx
         $17bb4              .byte $xx,$xx,$xx,$xx
         $17bb8              .byte $xx
-MapData_Location59_Flags
+MapData_59_Flags
         $17bb9              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location5A                                     ; Location 5a
+MapData_5a                                                 ; Tower 2
         $17bba              .word ($xxxx) ; $17bc4
         $17bbc              .word ($xxxx) ; $17be1
         $17bbe              .word ($xxxx) ; $17be8
         $17bc0              .word ($xxxx) ; $17be8
         $17bc2              .word ($xxxx) ; $17bf9
-MapData_Location5A_Layout
+MapData_5a_Layout
         $17bc4              .byte $xx
         $17bc5              .byte $xx,$xx,$xx,$xx
         ;; Map 6x4
@@ -13654,11 +13658,11 @@ MapData_Location5A_Layout
         $17bcf              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $17bd5              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $17bdb              .byte $xx,$xx,$xx,$xx,$xx,$xx
-MapData_Location5A_Graphics
+MapData_5a_Graphics
         $17be1              .byte $xx,$xx,$xx
         $17be4              .byte $xx,$xx
         $17be6              .byte $xx,$xx
-MapData_Location5A_Entrances
+MapData_5a_Entrances
         $17be8              .byte $xx,$xx,$xx,$xx
         $17bec              .byte $xx,$xx,$xx,$xx
         $17bf0              .byte $xx,$xx,$xx,$xx
@@ -13707,76 +13711,76 @@ MapData_Location5C_Exits
 MapData_Location5C_Flags
         $17c8d              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location5D                                     ; Location 5d
+MapData_5d                                    ; Tower - Outside Dyna
         $17c8e              .word ($xxxx) ; $17c98
         $17c90              .word ($xxxx) ; $17c9f
         $17c92              .word ($xxxx) ; $17ca6
         $17c94              .word ($xxxx) ; $17cae
         $17c96              .word ($xxxx) ; $17cb7
-MapData_Location5D_Layout
+MapData_5d_Layout
         $17c98              .byte $xx
         $17c99              .byte $xx,$xx,$xx,$xx
         ;; Map 1x2
         $17c9d              .byte $xx
         $17c9e              .byte $xx
-MapData_Location5D_Graphics
+MapData_5d_Graphics
         $17c9f              .byte $xx,$xx,$xx
         $17ca2              .byte $xx,$xx
         $17ca4              .byte $xx,$xx
-MapData_Location5D_Entrances
+MapData_5d_Entrances
         $17ca6              .byte $xx,$xx,$xx,$xx
         $17caa              .byte $xx,$xx,$xx,$xx
-MapData_Location5D_Exits
+MapData_5d_Exits
         $17cae              .byte $xx,$xx,$xx,$xx
         $17cb2              .byte $xx,$xx,$xx,$xx
         $17cb6              .byte $xx
-MapData_Location5D_Flags
+MapData_5d_Flags
         $17cb7              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Location5E                                     ; Location 5e
+MapData_5e                                           ; Tower - Mesia
         $17cb8              .word ($xxxx) ; $17cc2
         $17cba              .word ($xxxx) ; $17cc8
         $17cbc              .word ($xxxx) ; $17ccf
         $17cbe              .word ($xxxx) ; $17cd3
         $17cc0              .word ($xxxx) ; $17cdc
-MapData_Location5E_Layout
+MapData_5e_Layout
         $17cc2              .byte $xx
         $17cc3              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17cc7              .byte $xx
-MapData_Location5E_Graphics
+MapData_5e_Graphics
         $17cc8              .byte $xx,$xx,$xx
         $17ccb              .byte $xx,$xx
         $17ccd              .byte $xx,$xx
-MapData_Location5E_Entrances
+MapData_5e_Entrances
         $17ccf              .byte $xx,$xx,$xx,$xx
-MapData_Location5E_Exits
+MapData_5e_Exits
         $17cd3              .byte $xx,$xx,$xx,$xx
         $17cd7              .byte $xx,$xx,$xx,$xx
         $17cdb              .byte $xx
-MapData_Location5E_Flags
+MapData_5e_Flags
         $17cdc              .byte $xx
 ;;; ----------------------------------------------------------------
-MapData_Dyna                                           ; Location 5f
+MapData_5f                                            ; Tower - Dyna
         $17cdd              .word ($xxxx) ; $17ce7
         $17cdf              .word ($xxxx) ; $17ced
         $17ce1              .word ($xxxx) ; $17cf4
         $17ce3              .word ($xxxx) ; $17cf8
         $17ce5              .word ($xxxx) ; $17cf9
-MapData_Dyna_Layout
+MapData_5f_Layout
         $17ce7              .byte $xx
         $17ce8              .byte $xx,$xx,$xx,$xx
         ;; Map 1x1
         $17cec              .byte $xx
-MapData_Dyna_Graphics
+MapData_5f_Graphics
         $17ced              .byte $xx,$xx,$xx
         $17cf0              .byte $xx,$xx
         $17cf2              .byte $xx,$xx
-MapData_Dyna_Entrances
+MapData_5f_Entrances
         $17cf4              .byte $xx,$xx,$xx,$xx
-MapData_Dyna_Exits
+MapData_5f_Exits
         $17cf8              .byte $xx
-MapData_Dyna_Flags
+MapData_5f_Flags
         $17cf9              .byte $xx
 ;;; ----------------------------------------------------------------
         $17cfa              .byte $xx,$xx,$xx,$xx,$xx,$xx
@@ -14742,104 +14746,104 @@ NpcDataPart2
         $193f5              .word ($1ab95) ; fa
         $193f7              .word ($19417) ; fb
 ;;; ----------------------------------------------------------------
-NpcData_BrynmaerInn                                    ; Location c8
+NpcData_c8                                          ; Brynmaer - Inn
 ;;; ----------------------------------------------------------------
-NpcData_Location3C                                     ; Location 3c
+NpcData_3c                                            ; Nadare - Inn
 ;;; ----------------------------------------------------------------
-NpcData_LocationBC                                     ; Location bc
+NpcData_bc                                               ; Goa - Inn
 ;;; ----------------------------------------------------------------
-NpcData_LocationC2                                     ; Location c2
+NpcData_c2                                              ; Leaf - Inn
 ;;; ----------------------------------------------------------------
-NpcData_PortoaInn                                      ; Location dc
+NpcData_dc                                            ; Portoa - Inn
 ;;; ----------------------------------------------------------------
-NpcData_JoelInn                                        ; Location e7
+NpcData_e7                                              ; Joel - Inn
 ;;; ----------------------------------------------------------------
-NpcData_LocationED                                     ; Location ed
+NpcData_ed                                              ; Swan - Inn
 ;;; ----------------------------------------------------------------
-NpcData_LocationF7                                     ; Location f7
+NpcData_f7                                            ; Shyron - Inn
 ;;; ----------------------------------------------------------------
-NpcData_LocationF8                                     ; Location f8
+NpcData_f8                                            ; Sahara - Inn
         $193f9              .byte $xx,$xx,$xx,$xx,$xx
         $193fe              .byte $xx,$xx,$xx,$xx
         $19402              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_BrynmaerItemShop                               ; Location cb
+NpcData_cb                                    ; Brynmaer - Item Shop
 ;;; ----------------------------------------------------------------
-NpcData_Location3D                                     ; Location 3d
+NpcData_3d                                      ; Nadare - Tool Shop
 ;;; ----------------------------------------------------------------
-NpcData_LocationBE                                     ; Location be
+NpcData_be                                         ; Goa - Tool Shop
 ;;; ----------------------------------------------------------------
-NpcData_LocationC3                                     ; Location c3
+NpcData_c3                                        ; Leaf - Tool Shop
 ;;; ----------------------------------------------------------------
-NpcData_PortoaToolShop                                 ; Location dd
+NpcData_dd                                      ; Portoa - Tool Shop
 ;;; ----------------------------------------------------------------
-NpcData_JoelToolShop                                   ; Location e5
+NpcData_e5                                        ; Joel - Tool Shop
 ;;; ----------------------------------------------------------------
-NpcData_LocationEB                                     ; Location eb
+NpcData_eb                                        ; Swan - Tool Shop
 ;;; ----------------------------------------------------------------
-NpcData_LocationF6                                     ; Location f6
+NpcData_f6                                      ; Shyron - Tool Shop
 ;;; ----------------------------------------------------------------
-NpcData_LocationF9                                     ; Location f9
+NpcData_f9                                      ; Sahara - Tool Shop
         $19403              .byte $xx,$xx,$xx,$xx,$xx
         $19408              .byte $xx,$xx,$xx,$xx
         $1940c              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_BrynmaerArmorShop                              ; Location c9
+NpcData_c9                                   ; Brynmaer - Armor Shop
 ;;; ----------------------------------------------------------------
-NpcData_LocationC4                                     ; Location c4
+NpcData_c4                                        ; Leaf - Item Shop
 ;;; ----------------------------------------------------------------
-NpcData_PortoaArmorShop                                ; Location da
+NpcData_da                                     ; Portoa - Armor Shop
 ;;; ----------------------------------------------------------------
-NpcData_LocationEE                                     ; Location ee
+NpcData_ee                                       ; Swan - Armor Shop
 ;;; ----------------------------------------------------------------
-NpcData_LocationF5                                     ; Location f5
+NpcData_f5                                     ; Shyron - Armor Shop
         $1940d              .byte $xx,$xx,$xx,$xx,$xx
         $19412              .byte $xx,$xx,$xx,$xx
         $19416              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_BrynmaerPawnShop                               ; Location c7
+NpcData_c7                                    ; Brynmaer - Pawn Shop
 ;;; ----------------------------------------------------------------
-NpcData_PortoaPawnShop                                 ; Location d9
+NpcData_d9                                      ; Portoa - Pawn Shop
 ;;; ----------------------------------------------------------------
-NpcData_LocationF0                                     ; Location f0
+NpcData_f0                                        ; Swan - Pawn Shop
 ;;; ----------------------------------------------------------------
-NpcData_LocationFB                                     ; Location fb
+NpcData_fb                                      ; Sahara - Pawn Shop
         $19417              .byte $xx,$xx,$xx,$xx,$xx
         $1941c              .byte $xx,$xx,$xx,$xx
         $19420              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_OakToolShop                                    ; Location cf
+NpcData_cf                                         ; Oak - Tool Shop
         $19421              .byte $xx,$xx,$xx,$xx,$xx
         $19426              .byte $xx,$xx,$xx,$xx
         $1942a              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_OakInn                                         ; Location d0
+NpcData_d0                                               ; Oak - Inn
         $1942b              .byte $xx,$xx,$xx,$xx,$xx
         $19430              .byte $xx,$xx,$xx,$xx
         $19434              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_AmazonesInn                                    ; Location d1
+NpcData_d1                                          ; Amazones - Inn
         $19435              .byte $xx,$xx,$xx,$xx,$xx
         $1943a              .byte $xx,$xx,$xx,$xx
         $1943e              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_AmazonesItemShop                               ; Location d2
+NpcData_d2                                    ; Amazones - Item Shop
         $1943f              .byte $xx,$xx,$xx,$xx,$xx
         $19444              .byte $xx,$xx,$xx,$xx
         $19448              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_AmazonesArmorShop                              ; Location d3
+NpcData_d3                                   ; Amazones - Armor Shop
         $19449              .byte $xx,$xx,$xx,$xx,$xx
         $1944e              .byte $xx,$xx,$xx,$xx
         $19452              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_OutsideStart                                   ; Location 01
+NpcData_01                                    ; Leaf - Outside Start
         $19453              .byte $xx,$xx,$xx,$xx,$xx
         $19458              .byte $xx,$xx,$xx,$xx
         $1945c              .byte $xx,$xx,$xx,$xx
         $19460              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_ValleyOfWind                                   ; Location 03
+NpcData_03                                          ; Valley of Wind
         $19461              .byte $xx,$xx,$xx,$xx,$xx
         $19466              .byte $xx,$xx,$xx,$xx ; 0d: 
         $1946a              .byte $xx,$xx,$xx,$xx ; 0e:
@@ -14859,14 +14863,14 @@ NpcData_ValleyOfWind                                   ; Location 03
         $194a2              .byte $xx,$xx,$xx,$xx ; 1c:
         $194a6              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_SealedCave1                                    ; Location 04
+NpcData_04                                           ; Sealed Cave 1
         $194a7              .byte $xx,$xx,$xx,$xx,$xx
         $194ac              .byte $xx,$xx,$xx,$xx
         $194b0              .byte $xx,$xx,$xx,$xx
         $194b4              .byte $xx,$xx,$xx,$xx
         $194b8              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_SealedCave2                                    ; Location 05
+NpcData_05                                           ; Sealed Cave 2
         $194b9              .byte $xx,$xx,$xx,$xx,$xx
         $194be              .byte $xx,$xx,$xx,$xx
         $194c2              .byte $xx,$xx,$xx,$xx
@@ -14877,14 +14881,14 @@ NpcData_SealedCave2                                    ; Location 05
         $194d6              .byte $xx,$xx,$xx,$xx
         $194da              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_SealedCave3                                    ; Location 06
+NpcData_06                                           ; Sealed Cave 3
         $194db              .byte $xx,$xx,$xx,$xx,$xx
-        $194e0              .byte $xx,$xx,$xx,$xx
-        $194e4              .byte $xx,$xx,$xx,$xx
-        $194e8              .byte $xx,$xx,$xx,$xx
+        $194e0              .byte $xx,$xx,$xx,$xx ; 0d
+        $194e4              .byte $xx,$xx,$xx,$xx ; 0e
+        $194e8              .byte $xx,$xx,$xx,$xx ; 0f
         $194ec              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_SealedCave4                                    ; Location 07
+NpcData_07                                           ; Sealed Cave 4
         $194ed              .byte $xx,$xx,$xx,$xx,$xx
         $194f2              .byte $xx,$xx,$xx,$xx
         $194f6              .byte $xx,$xx,$xx,$xx
@@ -14892,18 +14896,18 @@ NpcData_SealedCave4                                    ; Location 07
         $194fe              .byte $xx,$xx,$xx,$xx
         $19502              .byte $xx,$xx,$xx,$xx
         $19506              .byte $xx,$xx,$xx,$xx
-        $1950a              .byte $xx,$xx,$xx,$xx
-        $1950e              .byte $xx,$xx,$xx,$xx
-        $19512              .byte $xx,$xx,$xx,$xx
+        $1950a              .byte $xx,$xx,$xx,$xx ; 13
+        $1950e              .byte $xx,$xx,$xx,$xx ; 14
+        $19512              .byte $xx,$xx,$xx,$xx ; 15
         $19516              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_SealedCave5                                    ; Location 08
+NpcData_08                                           ; Sealed Cave 5
         $19517              .byte $xx,$xx,$xx,$xx,$xx
         $1951c              .byte $xx,$xx,$xx,$xx
-        $19520              .byte $xx,$xx,$xx,$xx
+        $19520              .byte $xx,$xx,$xx,$xx ; 0e
         $19524              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_SealedCave6                                    ; Location 09
+NpcData_09                                           ; Sealed Cave 6
         $19525              .byte $xx,$xx,$xx,$xx,$xx
         $1952a              .byte $xx,$xx,$xx,$xx
         $1952e              .byte $xx,$xx,$xx,$xx
@@ -14917,36 +14921,36 @@ NpcData_SealedCave6                                    ; Location 09
         $1954e              .byte $xx,$xx,$xx,$xx
         $19552              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_SealedCave7                                    ; Location 0a
+NpcData_0a                                           ; Sealed Cave 7
         $19553              .byte $xx,$xx,$xx,$xx,$xx
         $19558              .byte $xx,$xx,$xx,$xx
         $1955c              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_SealedCave8                                    ; Location 0c
+NpcData_0c                                           ; Sealed Cave 8
         $1955d              .byte $xx,$xx,$xx,$xx,$xx
         $19562              .byte $xx,$xx,$xx,$xx
         $19566              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_ZebuCave                                       ; Location 10
+NpcData_10                                               ; Zebu Cave
         $19567              .byte $xx,$xx,$xx,$xx,$xx
         $1956c              .byte $xx,$xx,$xx,$xx ; zebu:2 ????
         $19570              .byte $xx,$xx,$xx,$xx ; zebu:1
         $19574              .byte $xx,$xx,$xx,$xx ; ???
         $19578              .byte $xx ; done
 ;;; ----------------------------------------------------------------
-NpcData_WindmillCave                                   ; Location 0e
+NpcData_0e                                           ; Windmill Cave
         $19579              .byte $xx,$xx,$xx,$xx,$xx
         $1957e              .byte $xx,$xx,$xx,$xx
         $19582              .byte $xx,$xx,$xx,$xx
         $19586              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Windmill                                       ; Location 0f
+NpcData_0f                                                ; Windmill
         $19587              .byte $xx,$xx,$xx,$xx,$xx
         $1958c              .byte $xx,$xx,$xx,$xx
         $19590              .byte $xx,$xx,$xx,$xx
         $19594              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_CordelPlainsWest                               ; Location 14
+NpcData_14                                      ; Cordel Plains West
         $19595              .byte $xx,$xx,$xx,$xx,$xx
         $1959a              .byte $xx,$xx,$xx,$xx
         $1959e              .byte $xx,$xx,$xx,$xx
@@ -14962,7 +14966,7 @@ NpcData_CordelPlainsWest                               ; Location 14
         $195c6              .byte $xx,$xx,$xx,$xx
         $195ca              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_CordelPlainsEast                               ; Location 15
+NpcData_15                                      ; Cordel Plains East
         $195cb              .byte $xx,$xx,$xx,$xx,$xx
         $195d0              .byte $xx,$xx,$xx,$xx
         $195d4              .byte $xx,$xx,$xx,$xx
@@ -14975,15 +14979,15 @@ NpcData_CordelPlainsEast                               ; Location 15
         $195f0              .byte $xx,$xx,$xx,$xx
         $195f4              .byte $xx,$xx,$xx,$xx
         $195f8              .byte $xx,$xx,$xx,$xx
-        $195fc              .byte $xx,$xx,$xx,$xx
+        $195fc              .byte $xx,$xx,$xx,$xx ; 18
         $19600              .byte $xx,$xx,$xx,$xx
         $19604              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_OutsideStomHouse                               ; Location 19
+NpcData_19                                      ; Outside Stom House
         $19605              .byte $xx,$xx,$xx,$xx,$xx
         $1960a              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Swamp                                          ; Location 1a
+NpcData_1a                                                   ; Swamp
         $1960b              .byte $xx,$xx,$xx,$xx,$xx
         $19610              .byte $xx,$xx,$xx,$xx
         $19614              .byte $xx,$xx,$xx,$xx
@@ -15000,7 +15004,7 @@ NpcData_Swamp                                          ; Location 1a
         $19640              .byte $xx,$xx,$xx,$xx
         $19644              .byte $xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreWestLower                               ; Location 20
+NpcData_20                                   ; Mt Sabre West - Lower
         $19649              .byte $xx,$xx,$xx,$xx,$xx
         $1964e              .byte $xx,$xx,$xx,$xx
         $19652              .byte $xx,$xx,$xx,$xx
@@ -15013,10 +15017,10 @@ NpcData_MtSabreWestLower                               ; Location 20
         $1966e              .byte $xx,$xx,$xx,$xx
         $19672              .byte $xx,$xx,$xx,$xx
         $19676              .byte $xx,$xx,$xx,$xx
-        $1967a              .byte $xx,$xx,$xx,$xx
+        $1967a              .byte $xx,$xx,$xx,$xx ; 18
         $1967e              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreWestUpper                               ; Location 21
+NpcData_21                                   ; Mt Sabre West - Upper
         $1967f              .byte $xx,$xx,$xx,$xx,$xx
         $19684              .byte $xx,$xx,$xx,$xx
         $19688              .byte $xx,$xx,$xx,$xx
@@ -15028,10 +15032,10 @@ NpcData_MtSabreWestUpper                               ; Location 21
         $196a0              .byte $xx,$xx,$xx,$xx
         $196a4              .byte $xx,$xx,$xx,$xx
         $196a8              .byte $xx,$xx,$xx,$xx
-        $196ac              .byte $xx,$xx,$xx,$xx
+        $196ac              .byte $xx,$xx,$xx,$xx ; 17
         $196b0              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreWestCave1                               ; Location 11
+NpcData_11                                  ; Mt Sabre West - Cave 1
         $196b1              .byte $xx,$xx,$xx,$xx,$xx
         $196b6              .byte $xx,$xx,$xx,$xx
         $196ba              .byte $xx,$xx,$xx,$xx
@@ -15043,7 +15047,7 @@ NpcData_MtSabreWestCave1                               ; Location 11
         $196d2              .byte $xx,$xx,$xx,$xx
         $196d6              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreWestCave2                               ; Location 22
+NpcData_22                                  ; Mt Sabre West - Cave 2
         $196d7              .byte $xx,$xx,$xx,$xx,$xx
         $196dc              .byte $xx,$xx,$xx,$xx
         $196e0              .byte $xx,$xx,$xx,$xx
@@ -15061,7 +15065,7 @@ NpcData_MtSabreWestCave2                               ; Location 22
         $19710              .byte $xx,$xx,$xx,$xx
         $19714              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreWestCave3                               ; Location 23
+NpcData_23                                  ; Mt Sabre West - Cave 3
         $19715              .byte $xx,$xx,$xx,$xx,$xx
         $1971a              .byte $xx,$xx,$xx,$xx
         $1971e              .byte $xx,$xx,$xx,$xx
@@ -15073,10 +15077,10 @@ NpcData_MtSabreWestCave3                               ; Location 23
         $19736              .byte $xx,$xx,$xx,$xx
         $1973a              .byte $xx,$xx,$xx,$xx
         $1973e              .byte $xx,$xx,$xx,$xx
-        $19742              .byte $xx,$xx,$xx,$xx
+        $19742              .byte $xx,$xx,$xx,$xx ; 17
         $19746              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreWestCave4                               ; Location 24
+NpcData_24                                  ; Mt Sabre West - Cave 4
         $19747              .byte $xx,$xx,$xx,$xx,$xx
         $1974c              .byte $xx,$xx,$xx,$xx
         $19750              .byte $xx,$xx,$xx,$xx
@@ -15092,13 +15096,13 @@ NpcData_MtSabreWestCave4                               ; Location 24
         $19778              .byte $xx,$xx,$xx,$xx
         $1977c              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreWestCave5                               ; Location 25
+NpcData_25                                  ; Mt Sabre West - Cave 5
         $1977d              .byte $xx,$xx,$xx,$xx,$xx
         $19782              .byte $xx,$xx,$xx,$xx
         $19786              .byte $xx,$xx,$xx,$xx
         $1978a              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreWestCave6                               ; Location 26
+NpcData_26                                  ; Mt Sabre West - Cave 6
         $1978b              .byte $xx,$xx,$xx,$xx,$xx
         $19790              .byte $xx,$xx,$xx,$xx
         $19794              .byte $xx,$xx,$xx,$xx
@@ -15110,7 +15114,7 @@ NpcData_MtSabreWestCave6                               ; Location 26
         $197ac              .byte $xx,$xx,$xx,$xx
         $197b0              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreWestCave7                               ; Location 27
+NpcData_27                                  ; Mt Sabre West - Cave 7
         $197b1              .byte $xx,$xx,$xx,$xx,$xx
         $197b6              .byte $xx,$xx,$xx,$xx
         $197ba              .byte $xx,$xx,$xx,$xx
@@ -15124,10 +15128,10 @@ NpcData_MtSabreWestCave7                               ; Location 27
         $197da              .byte $xx,$xx,$xx,$xx
         $197de              .byte $xx,$xx,$xx,$xx
         $197e2              .byte $xx,$xx,$xx,$xx
-        $197e6              .byte $xx,$xx,$xx,$xx
+        $197e6              .byte $xx,$xx,$xx,$xx ; 19
         $197ea              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreNorthMain                               ; Location 28
+NpcData_28                                   ; Mt Sabre North - Main
         $197eb              .byte $xx,$xx,$xx,$xx,$xx
         $197f0              .byte $xx,$xx,$xx,$xx
         $197f4              .byte $xx,$xx,$xx,$xx
@@ -15147,7 +15151,7 @@ NpcData_MtSabreNorthMain                               ; Location 28
         $1982c              .byte $xx,$xx,$xx,$xx
         $19830              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreNortMiddle                              ; Location 29
+NpcData_29                                 ; Mt Sabre North - Middle
         $19831              .byte $xx,$xx,$xx,$xx,$xx
         $19836              .byte $xx,$xx,$xx,$xx
         $1983a              .byte $xx,$xx,$xx,$xx
@@ -15162,12 +15166,12 @@ NpcData_MtSabreNortMiddle                              ; Location 29
         $1985e              .byte $xx,$xx,$xx,$xx
         $19862              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreNorthEntranceCave                       ; Location 38
+NpcData_38                          ; Mt Sabre North - Entrance Cave
         $19863              .byte $xx,$xx,$xx,$xx,$xx
         $19868              .byte $xx,$xx,$xx,$xx
         $1986c              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreNorthCave1                              ; Location 2a
+NpcData_2a                                 ; Mt Sabre North - Cave 1
         $1986d              .byte $xx,$xx,$xx,$xx,$xx
         $19872              .byte $xx,$xx,$xx,$xx
         $19876              .byte $xx,$xx,$xx,$xx
@@ -15179,10 +15183,10 @@ NpcData_MtSabreNorthCave1                              ; Location 2a
         $1988e              .byte $xx,$xx,$xx,$xx
         $19892              .byte $xx,$xx,$xx,$xx
         $19896              .byte $xx,$xx,$xx,$xx
-        $1989a              .byte $xx,$xx,$xx,$xx
+        $1989a              .byte $xx,$xx,$xx,$xx ; 17
         $1989e              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreNorthCave2                              ; Location 2b
+NpcData_2b                                 ; Mt Sabre North - Cave 2
         $1989f              .byte $xx,$xx,$xx,$xx,$xx
         $198a4              .byte $xx,$xx,$xx,$xx
         $198a8              .byte $xx,$xx,$xx,$xx
@@ -15196,7 +15200,7 @@ NpcData_MtSabreNorthCave2                              ; Location 2b
         $198c8              .byte $xx,$xx,$xx,$xx
         $198cc              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreNorthCave3                              ; Location 2c
+NpcData_2c                                 ; Mt Sabre North - Cave 3
         $198cd              .byte $xx,$xx,$xx,$xx,$xx
         $198d2              .byte $xx,$xx,$xx,$xx
         $198d6              .byte $xx,$xx,$xx,$xx
@@ -15207,7 +15211,7 @@ NpcData_MtSabreNorthCave3                              ; Location 2c
         $198ea              .byte $xx,$xx,$xx,$xx
         $198ee              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreNorthCave4                              ; Location 2d
+NpcData_2d                                 ; Mt Sabre North - Cave 4
         $198ef              .byte $xx,$xx,$xx,$xx,$xx
         $198f4              .byte $xx,$xx,$xx,$xx
         $198f8              .byte $xx,$xx,$xx,$xx
@@ -15218,10 +15222,10 @@ NpcData_MtSabreNorthCave4                              ; Location 2d
         $1990c              .byte $xx,$xx,$xx,$xx
         $19910              .byte $xx,$xx,$xx,$xx
         $19914              .byte $xx,$xx,$xx,$xx
-        $19918              .byte $xx,$xx,$xx,$xx
+        $19918              .byte $xx,$xx,$xx,$xx ; 16
         $1991c              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreNorthCave5                              ; Location 2e
+NpcData_2e                                 ; Mt Sabre North - Cave 5
         $1991d              .byte $xx,$xx,$xx,$xx,$xx
         $19922              .byte $xx,$xx,$xx,$xx
         $19926              .byte $xx,$xx,$xx,$xx
@@ -15233,14 +15237,14 @@ NpcData_MtSabreNorthCave5                              ; Location 2e
         $1993e              .byte $xx,$xx,$xx,$xx
         $19942              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreNorthCave5a                             ; Location 39
+NpcData_39                                ; Mt Sabre North - Cave 5a
         $19943              .byte $xx,$xx,$xx,$xx,$xx
         $19948              .byte $xx,$xx,$xx,$xx
         $1994c              .byte $xx,$xx,$xx,$xx
         $19950              .byte $xx,$xx,$xx,$xx
         $19954              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreNorthCave6                              ; Location 2f
+NpcData_2f                                 ; Mt Sabre North - Cave 6
         $19955              .byte $xx,$xx,$xx,$xx,$xx
         $1995a              .byte $xx,$xx,$xx,$xx
         $1995e              .byte $xx,$xx,$xx,$xx
@@ -15250,7 +15254,7 @@ NpcData_MtSabreNorthCave6                              ; Location 2f
         $1996e              .byte $xx,$xx,$xx,$xx
         $19972              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreNorthLeftCell                           ; Location 30
+NpcData_30                              ; Mt Sabre North - Left Cell
         $19973              .byte $xx,$xx,$xx,$xx,$xx
         $19978              .byte $xx,$xx,$xx,$xx
         $1997c              .byte $xx,$xx,$xx,$xx
@@ -15258,12 +15262,12 @@ NpcData_MtSabreNorthLeftCell                           ; Location 30
         $19984              .byte $xx,$xx,$xx,$xx
         $19988              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreNorthPrisonKeyHall                      ; Location 31
+NpcData_31                        ; Mt Sabre North - Prison Key Hall
         $19989              .byte $xx,$xx,$xx,$xx,$xx
-        $1998e              .byte $xx,$xx,$xx,$xx
+        $1998e              .byte $xx,$xx,$xx,$xx ; 0d
         $19992              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreNorthRightCell                          ; Location 32
+NpcData_32                             ; Mt Sabre North - Right Cell
         $19993              .byte $xx,$xx,$xx,$xx,$xx
         $19998              .byte $xx,$xx,$xx,$xx
         $1999c              .byte $xx,$xx,$xx,$xx
@@ -15273,11 +15277,11 @@ NpcData_MtSabreNorthRightCell                          ; Location 32
         $199ac              .byte $xx,$xx,$xx,$xx
         $199b0              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreNorthCave7                              ; Location 33
+NpcData_33                                 ; Mt Sabre North - Cave 7
         $199b1              .byte $xx,$xx,$xx,$xx,$xx
         $199b6              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreNorthCave8                              ; Location 34
+NpcData_34                                 ; Mt Sabre North - Cave 8
         $199b7              .byte $xx,$xx,$xx,$xx,$xx
         $199bc              .byte $xx,$xx,$xx,$xx
         $199c0              .byte $xx,$xx,$xx,$xx
@@ -15285,7 +15289,7 @@ NpcData_MtSabreNorthCave8                              ; Location 34
         $199c8              .byte $xx,$xx,$xx,$xx
         $199cc              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MtSabreNorthSummitCave                         ; Location 35
+NpcData_35                            ; Mt Sabre North - Summit Cave
         $199cd              .byte $xx,$xx,$xx,$xx,$xx
         $199d2              .byte $xx,$xx,$xx,$xx
         $199d6              .byte $xx,$xx,$xx,$xx
@@ -15295,7 +15299,7 @@ NpcData_MtSabreNorthSummitCave                         ; Location 35
         $199e6              .byte $xx,$xx,$xx,$xx
         $199ea              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_WaterfallValleyNorth                           ; Location 40
+NpcData_40                                  ; Waterfall Valley North
         $199eb              .byte $xx,$xx,$xx,$xx,$xx
         $199f0              .byte $xx,$xx,$xx,$xx
         $199f4              .byte $xx,$xx,$xx,$xx
@@ -15312,7 +15316,7 @@ NpcData_WaterfallValleyNorth                           ; Location 40
         $19a20              .byte $xx,$xx,$xx,$xx
         $19a24              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_WaterfallValleySouth                           ; Location 41
+NpcData_41                                  ; Waterfall Valley South
         $19a25              .byte $xx,$xx,$xx,$xx,$xx
         $19a2a              .byte $xx,$xx,$xx,$xx
         $19a2e              .byte $xx,$xx,$xx,$xx
@@ -15327,7 +15331,7 @@ NpcData_WaterfallValleySouth                           ; Location 41
         $19a52              .byte $xx,$xx,$xx,$xx
         $19a56              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_WaterfallCave1                                 ; Location 54
+NpcData_54                                        ; Waterfall Cave 1
         $19a57              .byte $xx,$xx,$xx,$xx,$xx
         $19a5c              .byte $xx,$xx,$xx,$xx
         $19a60              .byte $xx,$xx,$xx,$xx
@@ -15342,7 +15346,7 @@ NpcData_WaterfallCave1                                 ; Location 54
         $19a84              .byte $xx,$xx,$xx,$xx
         $19a88              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_WaterfallCave2                                 ; Location 55
+NpcData_55                                        ; Waterfall Cave 2
         $19a89              .byte $xx,$xx,$xx,$xx,$xx
         $19a8e              .byte $xx,$xx,$xx,$xx
         $19a92              .byte $xx,$xx,$xx,$xx
@@ -15350,7 +15354,7 @@ NpcData_WaterfallCave2                                 ; Location 55
         $19a9a              .byte $xx,$xx,$xx,$xx
         $19a9e              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_WaterfallCave3                                 ; Location 56
+NpcData_56                                        ; Waterfall Cave 3
         $19a9f              .byte $xx,$xx,$xx,$xx,$xx
         $19aa4              .byte $xx,$xx,$xx,$xx
         $19aa8              .byte $xx,$xx,$xx,$xx
@@ -15368,10 +15372,10 @@ NpcData_WaterfallCave3                                 ; Location 56
         $19ad8              .byte $xx,$xx,$xx,$xx
         $19adc              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_WaterfallCave4                                 ; Location 57
+NpcData_57                                        ; Waterfall Cave 4
         $19add              .byte $xx,$xx,$xx,$xx,$xx
-        $19ae2              .byte $xx,$xx,$xx,$xx
-        $19ae6              .byte $xx,$xx,$xx,$xx
+        $19ae2              .byte $xx,$xx,$xx,$xx ; 0d stoned akahana
+        $19ae6              .byte $xx,$xx,$xx,$xx ; 0e akahana
         $19aea              .byte $xx,$xx,$xx,$xx
         $19aee              .byte $xx,$xx,$xx,$xx
         $19af2              .byte $xx,$xx,$xx,$xx
@@ -15381,30 +15385,30 @@ NpcData_WaterfallCave4                                 ; Location 57
         $19b02              .byte $xx,$xx,$xx,$xx
         $19b06              .byte $xx,$xx,$xx,$xx
         $19b0a              .byte $xx,$xx,$xx,$xx
-        $19b0e              .byte $xx,$xx,$xx,$xx
-        $19b12              .byte $xx,$xx,$xx,$xx
+        $19b0e              .byte $xx,$xx,$xx,$xx ; 18 sword of water
+        $19b12              .byte $xx,$xx,$xx,$xx ; 19 fluteOfLime
         $19b16              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LimeTreeValley                                 ; Location 42
+NpcData_42                                        ; Lime Tree Valley
         $19b17              .byte $xx,$xx,$xx,$xx,$xx
         $19b1c              .byte $xx,$xx,$xx,$xx
         $19b20              .byte $xx,$xx,$xx,$xx
         $19b24              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LimeTreeLake                                   ; Location 43
+NpcData_43                                          ; Lime Tree Lake
         $19b25              .byte $xx,$xx,$xx,$xx,$xx
         $19b2a              .byte $xx,$xx,$xx,$xx
         $19b2e              .byte $xx,$xx,$xx,$xx
         $19b32              .byte $xx,$xx,$xx,$xx
         $19b36              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_MesiaShrine                                    ; Location 52
+NpcData_52                                            ; Mesia Shrine
         $19b37              .byte $xx,$xx,$xx,$xx,$xx
         $19b3c              .byte $xx,$xx,$xx,$xx
         $19b40              .byte $xx,$xx,$xx,$xx
         $19b44              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_FogLampCave1                                   ; Location 48
+NpcData_48                                         ; Fog Lamp Cave 1
         $19b45              .byte $xx,$xx,$xx,$xx,$xx
         $19b4a              .byte $xx,$xx,$xx,$xx
         $19b4e              .byte $xx,$xx,$xx,$xx
@@ -15417,16 +15421,16 @@ NpcData_FogLampCave1                                   ; Location 48
         $19b6a              .byte $xx,$xx,$xx,$xx
         $19b6e              .byte $xx,$xx,$xx,$xx
         $19b72              .byte $xx,$xx,$xx,$xx
-        $19b76              .byte $xx,$xx,$xx,$xx
+        $19b76              .byte $xx,$xx,$xx,$xx ; 18 lysis plant
         $19b7a              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_FogLampCave2                                   ; Location 49
+NpcData_49                                         ; Fog Lamp Cave 2
         $19b7b              .byte $xx,$xx,$xx,$xx,$xx
         $19b80              .byte $xx,$xx,$xx,$xx
         $19b84              .byte $xx,$xx,$xx,$xx
         $19b88              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_FogLampCave3                                   ; Location 4a
+NpcData_4a                                         ; Fog Lamp Cave 3
         $19b89              .byte $xx,$xx,$xx,$xx,$xx
         $19b8e              .byte $xx,$xx,$xx,$xx
         $19b92              .byte $xx,$xx,$xx,$xx
@@ -15443,7 +15447,7 @@ NpcData_FogLampCave3                                   ; Location 4a
         $19bbe              .byte $xx,$xx,$xx,$xx
         $19bc2              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_FogLampCaveDeadEnd                             ; Location 4b
+NpcData_4b                                  ; Fog Lamp Cave Dead End
         $19bc3              .byte $xx,$xx,$xx,$xx,$xx
         $19bc8              .byte $xx,$xx,$xx,$xx
         $19bcc              .byte $xx,$xx,$xx,$xx
@@ -15453,7 +15457,7 @@ NpcData_FogLampCaveDeadEnd                             ; Location 4b
         $19bdc              .byte $xx,$xx,$xx,$xx
         $19be0              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_FogLampCave4                                   ; Location 4c
+NpcData_4c                                         ; Fog Lamp Cave 4
         $19be1              .byte $xx,$xx,$xx,$xx,$xx
         $19be6              .byte $xx,$xx,$xx,$xx
         $19bea              .byte $xx,$xx,$xx,$xx
@@ -15465,7 +15469,7 @@ NpcData_FogLampCave4                                   ; Location 4c
         $19c02              .byte $xx,$xx,$xx,$xx
         $19c06              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_FogLampCave5                                   ; Location 4d
+NpcData_4d                                         ; Fog Lamp Cave 5
         $19c07              .byte $xx,$xx,$xx,$xx,$xx
         $19c0c              .byte $xx,$xx,$xx,$xx
         $19c10              .byte $xx,$xx,$xx,$xx
@@ -15479,7 +15483,7 @@ NpcData_FogLampCave5                                   ; Location 4d
         $19c30              .byte $xx,$xx,$xx,$xx
         $19c34              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_FogLampCave6                                   ; Location 4e
+NpcData_4e                                         ; Fog Lamp Cave 6
         $19c35              .byte $xx,$xx,$xx,$xx,$xx
         $19c3a              .byte $xx,$xx,$xx,$xx
         $19c3e              .byte $xx,$xx,$xx,$xx
@@ -15491,7 +15495,7 @@ NpcData_FogLampCave6                                   ; Location 4e
         $19c56              .byte $xx,$xx,$xx,$xx
         $19c5a              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_FogLampCave7                                   ; Location 4f
+NpcData_4f                                         ; Fog Lamp Cave 7
         $19c5b              .byte $xx,$xx,$xx,$xx,$xx
         $19c60              .byte $xx,$xx,$xx,$xx
         $19c64              .byte $xx,$xx,$xx,$xx
@@ -15499,10 +15503,10 @@ NpcData_FogLampCave7                                   ; Location 4f
         $19c6c              .byte $xx,$xx,$xx,$xx
         $19c70              .byte $xx,$xx,$xx,$xx
         $19c74              .byte $xx,$xx,$xx,$xx
-        $19c78              .byte $xx,$xx,$xx,$xx
+        $19c78              .byte $xx,$xx,$xx,$xx ; 13 fog lamp
         $19c7c              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_KirisaPlantCave1                               ; Location 44
+NpcData_44                                     ; Kirisa Plant Cave 1
         $19c7d              .byte $xx,$xx,$xx,$xx,$xx
         $19c82              .byte $xx,$xx,$xx,$xx
         $19c86              .byte $xx,$xx,$xx,$xx
@@ -15514,7 +15518,7 @@ NpcData_KirisaPlantCave1                               ; Location 44
         $19c9e              .byte $xx,$xx,$xx,$xx
         $19ca2              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_KirisaPlantCave2                               ; Location 45
+NpcData_45                                     ; Kirisa Plant Cave 2
         $19ca3              .byte $xx,$xx,$xx,$xx,$xx
         $19ca8              .byte $xx,$xx,$xx,$xx
         $19cac              .byte $xx,$xx,$xx,$xx
@@ -15528,10 +15532,10 @@ NpcData_KirisaPlantCave2                               ; Location 45
         $19ccc              .byte $xx,$xx,$xx,$xx
         $19cd0              .byte $xx,$xx,$xx,$xx
         $19cd4              .byte $xx,$xx,$xx,$xx
-        $19cd8              .byte $xx,$xx,$xx,$xx
+        $19cd8              .byte $xx,$xx,$xx,$xx ; 19
         $19cdc              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_KirisaPlantCave3                               ; Location 46
+NpcData_46                                     ; Kirisa Plant Cave 3
         $19cdd              .byte $xx,$xx,$xx,$xx,$xx
         $19ce2              .byte $xx,$xx,$xx,$xx
         $19ce6              .byte $xx,$xx,$xx,$xx
@@ -15543,23 +15547,23 @@ NpcData_KirisaPlantCave3                               ; Location 46
         $19cfe              .byte $xx,$xx,$xx,$xx
         $19d02              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_KirisaMeadow                                   ; Location 47
+NpcData_47                                           ; Kirisa Meadow
         $19d03              .byte $xx,$xx,$xx,$xx,$xx
         $19d08              .byte $xx,$xx,$xx,$xx
-        $19d0c              .byte $xx,$xx,$xx,$xx
+        $19d0c              .byte $xx,$xx,$xx,$xx ; 0e
         $19d10              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_UndergroundChannel                             ; Location 64
+NpcData_64                                     ; Underground Channel
         $19d11              .byte $xx,$xx,$xx,$xx,$xx
-        $19d16              .byte $xx,$xx,$xx,$xx
+        $19d16              .byte $xx,$xx,$xx,$xx ; 0d hurt dolphin
         $19d1a              .byte $xx,$xx,$xx,$xx
         $19d1e              .byte $xx,$xx,$xx,$xx
         $19d22              .byte $xx,$xx,$xx,$xx
-        $19d26              .byte $xx,$xx,$xx,$xx
-        $19d2a              .byte $xx,$xx,$xx,$xx
+        $19d26              .byte $xx,$xx,$xx,$xx ; 11 love pendant
+        $19d2a              .byte $xx,$xx,$xx,$xx ; 12 enter underground channel
         $19d2e              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_AngrySea                                       ; Location 60
+NpcData_60                                               ; Angry Sea
         $19d2f              .byte $xx,$xx,$xx,$xx,$xx
         $19d34              .byte $xx,$xx,$xx,$xx
         $19d38              .byte $xx,$xx,$xx,$xx
@@ -15578,11 +15582,11 @@ NpcData_AngrySea                                       ; Location 60
         $19d6c              .byte $xx,$xx,$xx,$xx
         $19d70              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_JoelSecretPassage                              ; Location 70
+NpcData_70                                   ; Joel - Secret Passage
         $19d71              .byte $xx,$xx,$xx,$xx,$xx
         $19d76              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_EvilSpiritIslandEntrance                       ; Location 68
+NpcData_68                                    ; Evil Spirit Island 1
         $19d77              .byte $xx,$xx,$xx,$xx,$xx
         $19d7c              .byte $xx,$xx,$xx,$xx
         $19d80              .byte $xx,$xx,$xx,$xx
@@ -15592,7 +15596,7 @@ NpcData_EvilSpiritIslandEntrance                       ; Location 68
         $19d90              .byte $xx,$xx,$xx,$xx
         $19d94              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location69                                     ; Location 69
+NpcData_69                                    ; Evil Spirit Island 2
         $19d95              .byte $xx,$xx,$xx,$xx,$xx
         $19d9a              .byte $xx,$xx,$xx,$xx
         $19d9e              .byte $xx,$xx,$xx,$xx
@@ -15610,18 +15614,18 @@ NpcData_Location69                                     ; Location 69
         $19dce              .byte $xx,$xx,$xx,$xx
         $19dd2              .byte $xx,$xx,$xx,$xx
         $19dd6              .byte $xx,$xx,$xx,$xx
-        $19dda              .byte $xx,$xx,$xx,$xx
+        $19dda              .byte $xx,$xx,$xx,$xx ; 1d magic ring
         $19dde              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location6B                                     ; Location 6b
+NpcData_6b                                    ; Evil Spirit Island 4
         $19ddf              .byte $xx,$xx,$xx,$xx,$xx
         $19de4              .byte $xx,$xx,$xx,$xx
         $19de8              .byte $xx,$xx,$xx,$xx
-        $19dec              .byte $xx,$xx,$xx,$xx
+        $19dec              .byte $xx,$xx,$xx,$xx ; 0f iron necklace
         $19df0              .byte $xx,$xx,$xx,$xx
         $19df4              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location6A                                     ; Location 6a
+NpcData_6a                                    ; Evil Spirit Island 3
         $19df5              .byte $xx,$xx,$xx,$xx,$xx
         $19dfa              .byte $xx,$xx,$xx,$xx
         $19dfe              .byte $xx,$xx,$xx,$xx
@@ -15635,12 +15639,12 @@ NpcData_Location6A                                     ; Location 6a
         $19e1e              .byte $xx,$xx,$xx,$xx
         $19e22              .byte $xx,$xx,$xx,$xx
         $19e26              .byte $xx,$xx,$xx,$xx
-        $19e2a              .byte $xx,$xx,$xx,$xx
+        $19e2a              .byte $xx,$xx,$xx,$xx ; 19 lysis plant
         $19e2e              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location6C                                     ; Location 6c
+NpcData_6c                                         ; Sabera Palace 1
         $19e2f              .byte $xx,$xx,$xx,$xx,$xx
-        $19e34              .byte $xx,$xx,$xx,$xx
+        $19e34              .byte $xx,$xx,$xx,$xx ; 0d vampire 2
         $19e38              .byte $xx,$xx,$xx,$xx
         $19e3c              .byte $xx,$xx,$xx,$xx
         $19e40              .byte $xx,$xx,$xx,$xx
@@ -15653,7 +15657,7 @@ NpcData_Location6C                                     ; Location 6c
         $19e5c              .byte $xx,$xx,$xx,$xx
         $19e60              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location6D                                     ; Location 6d
+NpcData_6d                                         ; Sabera Palace 2
         $19e61              .byte $xx,$xx,$xx,$xx,$xx
         $19e66              .byte $xx,$xx,$xx,$xx
         $19e6a              .byte $xx,$xx,$xx,$xx
@@ -15661,7 +15665,7 @@ NpcData_Location6D                                     ; Location 6d
         $19e72              .byte $xx,$xx,$xx,$xx
         $19e76              .byte $xx,$xx,$xx,$xx
         $19e7a              .byte $xx,$xx,$xx,$xx
-        $19e7e              .byte $xx,$xx,$xx,$xx
+        $19e7e              .byte $xx,$xx,$xx,$xx ; 13 fruit of power
         $19e82              .byte $xx,$xx,$xx,$xx
         $19e86              .byte $xx,$xx,$xx,$xx
         $19e8a              .byte $xx,$xx,$xx,$xx
@@ -15672,20 +15676,20 @@ NpcData_Location6D                                     ; Location 6d
         $19e9e              .byte $xx,$xx,$xx,$xx
         $19ea2              .byte $xx,$xx,$xx,$xx
         $19ea6              .byte $xx,$xx,$xx,$xx
-        $19eaa              .byte $xx,$xx,$xx,$xx
+        $19eaa              .byte $xx,$xx,$xx,$xx ; 1e medical herb
         $19eae              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location6E                                     ; Location 6e
+NpcData_6e                                         ; Sabera Palace 3
         $19eaf              .byte $xx,$xx,$xx,$xx,$xx
         $19eb4              .byte $xx,$xx,$xx,$xx
         $19eb8              .byte $xx,$xx,$xx,$xx
         $19ebc              .byte $xx,$xx,$xx,$xx
         $19ec0              .byte $xx,$xx,$xx,$xx
-        $19ec4              .byte $xx,$xx,$xx,$xx
-        $19ec8              .byte $xx,$xx,$xx,$xx
+        $19ec4              .byte $xx,$xx,$xx,$xx ; 11 sabera trap
+        $19ec8              .byte $xx,$xx,$xx,$xx ; 12 reset sabera trap
         $19ecc              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location78                                     ; Location 78
+NpcData_78                                              ; Goa Valley
         $19ecd              .byte $xx,$xx,$xx,$xx,$xx
         $19ed2              .byte $xx,$xx,$xx,$xx
         $19ed6              .byte $xx,$xx,$xx,$xx
@@ -15699,7 +15703,7 @@ NpcData_Location78                                     ; Location 78
         $19ef6              .byte $xx,$xx,$xx,$xx
         $19efa              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location7C                                     ; Location 7c
+NpcData_7c                                                ; Mt Hydra
         $19efb              .byte $xx,$xx,$xx,$xx,$xx
         $19f00              .byte $xx,$xx,$xx,$xx
         $19f04              .byte $xx,$xx,$xx,$xx
@@ -15712,17 +15716,17 @@ NpcData_Location7C                                     ; Location 7c
         $19f20              .byte $xx,$xx,$xx,$xx
         $19f24              .byte $xx,$xx,$xx,$xx
         $19f28              .byte $xx,$xx,$xx,$xx
-        $19f2c              .byte $xx,$xx,$xx,$xx
-        $19f30              .byte $xx,$xx,$xx,$xx
-        $19f34              .byte $xx,$xx,$xx,$xx
-        $19f38              .byte $xx,$xx,$xx,$xx
+        $19f2c              .byte $xx,$xx,$xx,$xx ; 18 bow of sun
+        $19f30              .byte $xx,$xx,$xx,$xx ; 19 magic ring
+        $19f34              .byte $xx,$xx,$xx,$xx ; 1a fruit of lime
+        $19f38              .byte $xx,$xx,$xx,$xx ; 1b trigger to be able to open styx
         $19f3c              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location7D                                     ; Location 7d
+NpcData_7d                                       ; Mt Hydra - Cave 1
         $19f3d              .byte $xx,$xx,$xx,$xx,$xx
         $19f42              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location7E                                     ; Location 7e
+NpcData_7e                               ; Mt Hydra - Outside Shyron
         $19f43              .byte $xx,$xx,$xx,$xx,$xx
         $19f48              .byte $xx,$xx,$xx,$xx
         $19f4c              .byte $xx,$xx,$xx,$xx
@@ -15732,7 +15736,7 @@ NpcData_Location7E                                     ; Location 7e
         $19f5c              .byte $xx,$xx,$xx,$xx
         $19f60              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location7F                                     ; Location 7f
+NpcData_7f                                       ; Mt Hydra - Cave 2
         $19f61              .byte $xx,$xx,$xx,$xx,$xx
         $19f66              .byte $xx,$xx,$xx,$xx
         $19f6a              .byte $xx,$xx,$xx,$xx
@@ -15740,7 +15744,7 @@ NpcData_Location7F                                     ; Location 7f
         $19f72              .byte $xx,$xx,$xx,$xx
         $19f76              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location80                                     ; Location 80
+NpcData_80                                       ; Mt Hydra - Cave 3
         $19f77              .byte $xx,$xx,$xx,$xx,$xx
         $19f7c              .byte $xx,$xx,$xx,$xx
         $19f80              .byte $xx,$xx,$xx,$xx
@@ -15754,7 +15758,7 @@ NpcData_Location80                                     ; Location 80
         $19fa0              .byte $xx,$xx,$xx,$xx
         $19fa4              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location81                                     ; Location 81
+NpcData_81                                       ; Mt Hydra - Cave 4
         $19fa5              .byte $xx,$xx,$xx,$xx,$xx
         $19faa              .byte $xx,$xx,$xx,$xx
         $19fae              .byte $xx,$xx,$xx,$xx
@@ -15762,14 +15766,14 @@ NpcData_Location81                                     ; Location 81
         $19fb6              .byte $xx,$xx,$xx,$xx
         $19fba              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location82                                     ; Location 82
+NpcData_82                                       ; Mt Hydra - Cave 5
         $19fbb              .byte $xx,$xx,$xx,$xx,$xx
         $19fc0              .byte $xx,$xx,$xx,$xx
         $19fc4              .byte $xx,$xx,$xx,$xx
-        $19fc8              .byte $xx,$xx,$xx,$xx
+        $19fc8              .byte $xx,$xx,$xx,$xx ; 0f medical herb
         $19fcc              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location83                                     ; Location 83
+NpcData_83                                       ; Mt Hydra - Cave 6
         $19fcd              .byte $xx,$xx,$xx,$xx,$xx
         $19fd2              .byte $xx,$xx,$xx,$xx
         $19fd6              .byte $xx,$xx,$xx,$xx
@@ -15778,7 +15782,7 @@ NpcData_Location83                                     ; Location 83
         $19fe2              .byte $xx,$xx,$xx,$xx
         $19fe6              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location84                                     ; Location 84
+NpcData_84                                       ; Mt Hydra - Cave 7
         $19fe7              .byte $xx,$xx,$xx,$xx,$xx
         $19fec              .byte $xx,$xx,$xx,$xx
         $19ff0              .byte $xx,$xx,$xx,$xx
@@ -15792,7 +15796,7 @@ NpcData_Location84                                     ; Location 84
         $1a010              .byte $xx,$xx,$xx,$xx
         $1a014              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location85                                     ; Location 85
+NpcData_85                                       ; Mt Hydra - Cave 8
         $1a015              .byte $xx,$xx,$xx,$xx,$xx
         $1a01a              .byte $xx,$xx,$xx,$xx
         $1a01e              .byte $xx,$xx,$xx,$xx
@@ -15807,7 +15811,7 @@ NpcData_Location85                                     ; Location 85
         $1a042              .byte $xx,$xx,$xx,$xx
         $1a046              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location86                                     ; Location 86
+NpcData_86                                       ; Mt Hydra - Cave 9
         $1a047              .byte $xx,$xx,$xx,$xx,$xx
         $1a04c              .byte $xx,$xx,$xx,$xx
         $1a050              .byte $xx,$xx,$xx,$xx
@@ -15822,7 +15826,7 @@ NpcData_Location86                                     ; Location 86
         $1a074              .byte $xx,$xx,$xx,$xx
         $1a078              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location87                                     ; Location 87
+NpcData_87                                      ; Mt Hydra - Cave 10
         $1a079              .byte $xx,$xx,$xx,$xx,$xx
         $1a07e              .byte $xx,$xx,$xx,$xx
         $1a082              .byte $xx,$xx,$xx,$xx
@@ -15832,7 +15836,7 @@ NpcData_Location87                                     ; Location 87
         $1a092              .byte $xx,$xx,$xx,$xx
         $1a096              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location88                                     ; Location 88
+NpcData_88                                                  ; Styx 1
         $1a097              .byte $xx,$xx,$xx,$xx,$xx
         $1a09c              .byte $xx,$xx,$xx,$xx
         $1a0a0              .byte $xx,$xx,$xx,$xx
@@ -15845,7 +15849,7 @@ NpcData_Location88                                     ; Location 88
         $1a0bc              .byte $xx,$xx,$xx,$xx
         $1a0c0              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location89                                     ; Location 89
+NpcData_89                                                  ; Styx 2
         $1a0c1              .byte $xx,$xx,$xx,$xx,$xx
         $1a0c6              .byte $xx,$xx,$xx,$xx
         $1a0ca              .byte $xx,$xx,$xx,$xx
@@ -15853,20 +15857,20 @@ NpcData_Location89                                     ; Location 89
         $1a0d2              .byte $xx,$xx,$xx,$xx
         $1a0d6              .byte $xx,$xx,$xx,$xx
         $1a0da              .byte $xx,$xx,$xx,$xx
-        $1a0de              .byte $xx,$xx,$xx,$xx
-        $1a0e2              .byte $xx,$xx,$xx,$xx
-        $1a0e6              .byte $xx,$xx,$xx,$xx
+        $1a0de              .byte $xx,$xx,$xx,$xx ; 13 mimic
+        $1a0e2              .byte $xx,$xx,$xx,$xx ; 14 mimic
+        $1a0e6              .byte $xx,$xx,$xx,$xx ; 15 mimic
         $1a0ea              .byte $xx,$xx,$xx,$xx
         $1a0ee              .byte $xx,$xx,$xx,$xx
         $1a0f2              .byte $xx,$xx,$xx,$xx
         $1a0f6              .byte $xx,$xx,$xx,$xx
         $1a0fa              .byte $xx,$xx,$xx,$xx
         $1a0fe              .byte $xx,$xx,$xx,$xx
-        $1a102              .byte $xx,$xx,$xx,$xx
-        $1a106              .byte $xx,$xx,$xx,$xx
+        $1a102              .byte $xx,$xx,$xx,$xx ; 1c psycho shield
+        $1a106              .byte $xx,$xx,$xx,$xx ; 1d medical herb
         $1a10a              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location8A                                     ; Location 8a
+NpcData_8a                                                  ; Styx 3
         $1a10b              .byte $xx,$xx,$xx,$xx,$xx
         $1a110              .byte $xx,$xx,$xx,$xx
         $1a114              .byte $xx,$xx,$xx,$xx
@@ -15882,10 +15886,10 @@ NpcData_Location8A                                     ; Location 8a
         $1a13c              .byte $xx,$xx,$xx,$xx
         $1a140              .byte $xx,$xx,$xx,$xx
         $1a144              .byte $xx,$xx,$xx,$xx
-        $1a148              .byte $xx,$xx,$xx,$xx
+        $1a148              .byte $xx,$xx,$xx,$xx ; 1b sword of thunder
         $1a14c              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationA8                                     ; Location a8
+NpcData_a8                                 ; Goa Fortress - Entrance
         $1a14d              .byte $xx,$xx,$xx,$xx,$xx
         $1a152              .byte $xx,$xx,$xx,$xx
         $1a156              .byte $xx,$xx,$xx,$xx
@@ -15894,12 +15898,12 @@ NpcData_LocationA8                                     ; Location a8
         $1a162              .byte $xx,$xx,$xx,$xx
         $1a166              .byte $xx,$xx,$xx,$xx
         $1a16a              .byte $xx,$xx,$xx,$xx
-        $1a16e              .byte $xx,$xx,$xx,$xx
-        $1a172              .byte $xx,$xx,$xx,$xx
-        $1a176              .byte $xx,$xx,$xx,$xx
+        $1a16e              .byte $xx,$xx,$xx,$xx ; 14
+        $1a172              .byte $xx,$xx,$xx,$xx ; 15
+        $1a176              .byte $xx,$xx,$xx,$xx ; 16
         $1a17a              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationA9                                     ; Location a9
+NpcData_a9                                ; Goa Fortress - Kelbesque
         $1a17b              .byte $xx,$xx,$xx,$xx,$xx
         $1a180              .byte $xx,$xx,$xx,$xx
         $1a184              .byte $xx,$xx,$xx,$xx
@@ -15919,13 +15923,13 @@ NpcData_LocationA9                                     ; Location a9
         $1a1b2              .byte $xx,$xx,$xx,$xx
         $1a1b6              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationAA                                     ; Location aa
+NpcData_aa                                     ; Goa Fortress - Zebu
         $1a1b7              .byte $xx,$xx,$xx,$xx,$xx
         $1a1bc              .byte $xx,$xx,$xx,$xx
         $1a1c0              .byte $xx,$xx,$xx,$xx
         $1a1c4              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationAB                                     ; Location ab
+NpcData_ab                                   ; Goa Fortress - Sabera
         $1a1c5              .byte $xx,$xx,$xx,$xx,$xx
         $1a1ca              .byte $xx,$xx,$xx,$xx
         $1a1ce              .byte $xx,$xx,$xx,$xx
@@ -15942,19 +15946,19 @@ NpcData_LocationAB                                     ; Location ab
         $1a1fa              .byte $xx,$xx,$xx,$xx
         $1a1fe              .byte $xx,$xx,$xx,$xx
         $1a202              .byte $xx,$xx,$xx,$xx
-        $1a206              .byte $xx,$xx,$xx,$xx
-        $1a20a              .byte $xx,$xx,$xx,$xx
-        $1a20e              .byte $xx,$xx,$xx,$xx
+        $1a206              .byte $xx,$xx,$xx,$xx ; 1c fruit of power
+        $1a20a              .byte $xx,$xx,$xx,$xx ; 1d lysis plant
+        $1a20e              .byte $xx,$xx,$xx,$xx ; 1e fruit of repun
         $1a212              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationAC                                     ; Location ac
+NpcData_ac                                   ; Goa Fortress - Tornel
         $1a213              .byte $xx,$xx,$xx,$xx,$xx
         $1a218              .byte $xx,$xx,$xx,$xx
-        $1a21c              .byte $xx,$xx,$xx,$xx
+        $1a21c              .byte $xx,$xx,$xx,$xx ; 0e tornel
         $1a220              .byte $xx,$xx,$xx,$xx
         $1a224              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationAD                                     ; Location ad
+NpcData_ad                                   ; Goa Fortress - Mado 1
         $1a225              .byte $xx,$xx,$xx,$xx,$xx
         $1a22a              .byte $xx,$xx,$xx,$xx
         $1a22e              .byte $xx,$xx,$xx,$xx
@@ -15969,11 +15973,11 @@ NpcData_LocationAD                                     ; Location ad
         $1a252              .byte $xx,$xx,$xx,$xx
         $1a256              .byte $xx,$xx,$xx,$xx
         $1a25a              .byte $xx,$xx,$xx,$xx
-        $1a25e              .byte $xx,$xx,$xx,$xx
-        $1a262              .byte $xx,$xx,$xx,$xx
+        $1a25e              .byte $xx,$xx,$xx,$xx ; 1a opel statue
+        $1a262              .byte $xx,$xx,$xx,$xx ; 1b magic ring
         $1a266              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationAE                                     ; Location ae
+NpcData_ae                                   ; Goa Fortress - Mado 2
         $1a267              .byte $xx,$xx,$xx,$xx,$xx
         $1a26c              .byte $xx,$xx,$xx,$xx
         $1a270              .byte $xx,$xx,$xx,$xx
@@ -15984,11 +15988,11 @@ NpcData_LocationAE                                     ; Location ae
         $1a284              .byte $xx,$xx,$xx,$xx
         $1a288              .byte $xx,$xx,$xx,$xx
         $1a28c              .byte $xx,$xx,$xx,$xx
-        $1a290              .byte $xx,$xx,$xx,$xx
-        $1a294              .byte $xx,$xx,$xx,$xx
+        $1a290              .byte $xx,$xx,$xx,$xx ; 16 antidote
+        $1a294              .byte $xx,$xx,$xx,$xx ; 17 magic ring
         $1a298              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationAF                                     ; Location af
+NpcData_af                                   ; Goa Fortress - Mado 3
         $1a299              .byte $xx,$xx,$xx,$xx,$xx
         $1a29e              .byte $xx,$xx,$xx,$xx
         $1a2a2              .byte $xx,$xx,$xx,$xx
@@ -16004,17 +16008,17 @@ NpcData_LocationAF                                     ; Location af
         $1a2ca              .byte $xx,$xx,$xx,$xx
         $1a2ce              .byte $xx,$xx,$xx,$xx
         $1a2d2              .byte $xx,$xx,$xx,$xx
-        $1a2d6              .byte $xx,$xx,$xx,$xx
+        $1a2d6              .byte $xx,$xx,$xx,$xx ; 1b magic ring
         $1a2da              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationB9                                     ; Location b9
+NpcData_b9                                    ; Goa Fortress - Asina
         $1a2db              .byte $xx,$xx,$xx,$xx,$xx
         $1a2e0              .byte $xx,$xx,$xx,$xx
         $1a2e4              .byte $xx,$xx,$xx,$xx
         $1a2e8              .byte $xx,$xx,$xx,$xx
         $1a2ec              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationB0                                     ; Location b0
+NpcData_b0                                ; Goa Fortress - Karmine 1
         $1a2ed              .byte $xx,$xx,$xx,$xx,$xx
         $1a2f2              .byte $xx,$xx,$xx,$xx
         $1a2f6              .byte $xx,$xx,$xx,$xx
@@ -16025,7 +16029,7 @@ NpcData_LocationB0                                     ; Location b0
         $1a30a              .byte $xx,$xx,$xx,$xx
         $1a30e              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationB1                                     ; Location b1
+NpcData_b1                                ; Goa Fortress - Karmine 2
         $1a30f              .byte $xx,$xx,$xx,$xx,$xx
         $1a314              .byte $xx,$xx,$xx,$xx
         $1a318              .byte $xx,$xx,$xx,$xx
@@ -16037,7 +16041,7 @@ NpcData_LocationB1                                     ; Location b1
         $1a330              .byte $xx,$xx,$xx,$xx
         $1a334              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationB2                                     ; Location b2
+NpcData_b2                                ; Goa Fortress - Karmine 3
         $1a335              .byte $xx,$xx,$xx,$xx,$xx
         $1a33a              .byte $xx,$xx,$xx,$xx
         $1a33e              .byte $xx,$xx,$xx,$xx
@@ -16050,7 +16054,7 @@ NpcData_LocationB2                                     ; Location b2
         $1a35a              .byte $xx,$xx,$xx,$xx
         $1a35e              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationB3                                     ; Location b3
+NpcData_b3                                ; Goa Fortress - Karmine 4
         $1a35f              .byte $xx,$xx,$xx,$xx,$xx
         $1a364              .byte $xx,$xx,$xx,$xx
         $1a368              .byte $xx,$xx,$xx,$xx
@@ -16058,7 +16062,7 @@ NpcData_LocationB3                                     ; Location b3
         $1a370              .byte $xx,$xx,$xx,$xx
         $1a374              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationB4                                     ; Location b4
+NpcData_b4                                ; Goa Fortress - Karmine 5
         $1a375              .byte $xx,$xx,$xx,$xx,$xx
         $1a37a              .byte $xx,$xx,$xx,$xx
         $1a37e              .byte $xx,$xx,$xx,$xx
@@ -16072,7 +16076,7 @@ NpcData_LocationB4                                     ; Location b4
         $1a39e              .byte $xx,$xx,$xx,$xx
         $1a3a2              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationBA                                     ; Location ba
+NpcData_ba                                    ; Goa Fortress - Kensu
         $1a3a3              .byte $xx,$xx,$xx,$xx,$xx
         $1a3a8              .byte $xx,$xx,$xx,$xx
         $1a3ac              .byte $xx,$xx,$xx,$xx
@@ -16080,11 +16084,11 @@ NpcData_LocationBA                                     ; Location ba
         $1a3b4              .byte $xx,$xx,$xx,$xx
         $1a3b8              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationB5                                     ; Location b5
+NpcData_b5                                ; Goa Fortress - Karmine 6
         $1a3b9              .byte $xx,$xx,$xx,$xx,$xx
-        $1a3be              .byte $xx,$xx,$xx,$xx
-        $1a3c2              .byte $xx,$xx,$xx,$xx
-        $1a3c6              .byte $xx,$xx,$xx,$xx
+        $1a3be              .byte $xx,$xx,$xx,$xx ; 0d mimic
+        $1a3c2              .byte $xx,$xx,$xx,$xx ; 0e mimic
+        $1a3c6              .byte $xx,$xx,$xx,$xx ; 0f mimic
         $1a3ca              .byte $xx,$xx,$xx,$xx
         $1a3ce              .byte $xx,$xx,$xx,$xx
         $1a3d2              .byte $xx,$xx,$xx,$xx
@@ -16092,26 +16096,26 @@ NpcData_LocationB5                                     ; Location b5
         $1a3da              .byte $xx,$xx,$xx,$xx
         $1a3de              .byte $xx,$xx,$xx,$xx
         $1a3e2              .byte $xx,$xx,$xx,$xx
-        $1a3e6              .byte $xx,$xx,$xx,$xx
-        $1a3ea              .byte $xx,$xx,$xx,$xx
+        $1a3e6              .byte $xx,$xx,$xx,$xx ; 17 magic ring
+        $1a3ea              .byte $xx,$xx,$xx,$xx ; 18 warp boots
         $1a3ee              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationB6                                     ; Location b6
+NpcData_b6                                ; Goa Fortress - Karmine 7
         $1a3ef              .byte $xx,$xx,$xx,$xx,$xx
-        $1a3f4              .byte $xx,$xx,$xx,$xx
+        $1a3f4              .byte $xx,$xx,$xx,$xx ; 0d karmine
         $1a3f8              .byte $xx,$xx,$xx,$xx
         $1a3fc              .byte $xx,$xx,$xx,$xx
         $1a400              .byte $xx,$xx,$xx,$xx
         $1a404              .byte $xx,$xx,$xx,$xx
-        $1a408              .byte $xx,$xx,$xx,$xx
+        $1a408              .byte $xx,$xx,$xx,$xx ; 12 storm bracelet
         $1a40c              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationB8                                     ; Location b8
+NpcData_b8                                   ; Oasis Cave - Entrance
         $1a40d              .byte $xx,$xx,$xx,$xx,$xx
-        $1a412              .byte $xx,$xx,$xx,$xx
+        $1a412              .byte $xx,$xx,$xx,$xx ; 0d fruit of power
         $1a416              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location90                                     ; Location 90
+NpcData_90                                                ; Desert 1
         $1a417              .byte $xx,$xx,$xx,$xx,$xx
         $1a41c              .byte $xx,$xx,$xx,$xx
         $1a420              .byte $xx,$xx,$xx,$xx
@@ -16124,7 +16128,7 @@ NpcData_Location90                                     ; Location 90
         $1a43c              .byte $xx,$xx,$xx,$xx
         $1a440              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location91                                     ; Location 91
+NpcData_91                                       ; Oasis Cave - Main
         $1a441              .byte $xx,$xx,$xx,$xx,$xx
         $1a446              .byte $xx,$xx,$xx,$xx
         $1a44a              .byte $xx,$xx,$xx,$xx
@@ -16139,23 +16143,23 @@ NpcData_Location91                                     ; Location 91
         $1a46e              .byte $xx,$xx,$xx,$xx
         $1a472              .byte $xx,$xx,$xx,$xx
         $1a476              .byte $xx,$xx,$xx,$xx
-        $1a47a              .byte $xx,$xx,$xx,$xx
-        $1a47e              .byte $xx,$xx,$xx,$xx
-        $1a482              .byte $xx,$xx,$xx,$xx
+        $1a47a              .byte $xx,$xx,$xx,$xx ; 1a leather boots
+        $1a47e              .byte $xx,$xx,$xx,$xx ; 1b fruit of power
+        $1a482              .byte $xx,$xx,$xx,$xx ; 1c battle armor
         $1a486              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location8F                                     ; Location 8f
+NpcData_8f                           ; Goa Fortress - Oasis Entrance
         $1a487              .byte $xx,$xx,$xx,$xx,$xx
         $1a48c              .byte $xx,$xx,$xx,$xx
         $1a490              .byte $xx,$xx,$xx,$xx
-        $1a494              .byte $xx,$xx,$xx,$xx
+        $1a494              .byte $xx,$xx,$xx,$xx ; 0f power ring
         $1a498              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location94                                     ; Location 94
+NpcData_94                                   ; Sahara - Outside Cave
         $1a499              .byte $xx,$xx,$xx,$xx,$xx
         $1a49e              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location96                                     ; Location 96
+NpcData_96                                           ; Sahara Meadow
         $1a49f              .byte $xx,$xx,$xx,$xx,$xx
         $1a4a4              .byte $xx,$xx,$xx,$xx
         $1a4a8              .byte $xx,$xx,$xx,$xx
@@ -16164,7 +16168,7 @@ NpcData_Location96                                     ; Location 96
         $1a4b4              .byte $xx,$xx,$xx,$xx
         $1a4b8              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location98                                     ; Location 98
+NpcData_98                                                ; Desert 2
         $1a4b9              .byte $xx,$xx,$xx,$xx,$xx
         $1a4be              .byte $xx,$xx,$xx,$xx
         $1a4c2              .byte $xx,$xx,$xx,$xx
@@ -16177,12 +16181,12 @@ NpcData_Location98                                     ; Location 98
         $1a4de              .byte $xx,$xx,$xx,$xx
         $1a4e2              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location9C                                     ; Location 9c
+NpcData_9c                                ; Pyramid Front - Entrance
         $1a4e3              .byte $xx,$xx,$xx,$xx,$xx
         $1a4e8              .byte $xx,$xx,$xx,$xx
         $1a4ec              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location9D                                     ; Location 9d
+NpcData_9d                                  ; Pyramid Front - Branch
         $1a4ed              .byte $xx,$xx,$xx,$xx,$xx
         $1a4f2              .byte $xx,$xx,$xx,$xx
         $1a4f6              .byte $xx,$xx,$xx,$xx
@@ -16191,7 +16195,7 @@ NpcData_Location9D                                     ; Location 9d
         $1a502              .byte $xx,$xx,$xx,$xx
         $1a506              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location9E                                     ; Location 9e
+NpcData_9e                                    ; Pyramid Front - Main
         $1a507              .byte $xx,$xx,$xx,$xx,$xx
         $1a50c              .byte $xx,$xx,$xx,$xx
         $1a510              .byte $xx,$xx,$xx,$xx
@@ -16207,22 +16211,22 @@ NpcData_Location9E                                     ; Location 9e
         $1a538              .byte $xx,$xx,$xx,$xx
         $1a53c              .byte $xx,$xx,$xx,$xx
         $1a540              .byte $xx,$xx,$xx,$xx
-        $1a544              .byte $xx,$xx,$xx,$xx
+        $1a544              .byte $xx,$xx,$xx,$xx ; 1b magic ring
         $1a548              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location9F                                     ; Location 9f
+NpcData_9f                                 ; Pyramid Front - Draygon
         $1a549              .byte $xx,$xx,$xx,$xx,$xx
-        $1a54e              .byte $xx,$xx,$xx,$xx
+        $1a54e              .byte $xx,$xx,$xx,$xx ; 0d draygon 1 and 2
         $1a552              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location92                                     ; Location 92
+NpcData_92                                           ; Desert Cave 1
         $1a553              .byte $xx,$xx,$xx,$xx,$xx
         $1a558              .byte $xx,$xx,$xx,$xx
         $1a55c              .byte $xx,$xx,$xx,$xx
         $1a560              .byte $xx,$xx,$xx,$xx
         $1a564              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location95                                     ; Location 95
+NpcData_95                                           ; Desert Cave 2
         $1a565              .byte $xx,$xx,$xx,$xx,$xx
         $1a56a              .byte $xx,$xx,$xx,$xx
         $1a56e              .byte $xx,$xx,$xx,$xx
@@ -16232,16 +16236,16 @@ NpcData_Location95                                     ; Location 95
         $1a57e              .byte $xx,$xx,$xx,$xx
         $1a582              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationA0                                     ; Location a0
+NpcData_a0                                 ; Pyramid Back - Entrance
         $1a583              .byte $xx,$xx,$xx,$xx,$xx
         $1a588              .byte $xx,$xx,$xx,$xx
         $1a58c              .byte $xx,$xx,$xx,$xx
         $1a590              .byte $xx,$xx,$xx,$xx
-        $1a594              .byte $xx,$xx,$xx,$xx
-        $1a598              .byte $xx,$xx,$xx,$xx
+        $1a594              .byte $xx,$xx,$xx,$xx ; 10 start fighting statues
+        $1a598              .byte $xx,$xx,$xx,$xx ; 11 start fighting statues
         $1a59c              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationA1                                     ; Location a1
+NpcData_a1                                   ; Pyramid Back - Hall 1
         $1a59d              .byte $xx,$xx,$xx,$xx,$xx
         $1a5a2              .byte $xx,$xx,$xx,$xx
         $1a5a6              .byte $xx,$xx,$xx,$xx
@@ -16255,7 +16259,7 @@ NpcData_LocationA1                                     ; Location a1
         $1a5c6              .byte $xx,$xx,$xx,$xx
         $1a5ca              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationA2                                     ; Location a2
+NpcData_a2                                   ; Pyramid Back - Branch
         $1a5cb              .byte $xx,$xx,$xx,$xx,$xx
         $1a5d0              .byte $xx,$xx,$xx,$xx
         $1a5d4              .byte $xx,$xx,$xx,$xx
@@ -16270,16 +16274,16 @@ NpcData_LocationA2                                     ; Location a2
         $1a5f8              .byte $xx,$xx,$xx,$xx
         $1a5fc              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationA3                                     ; Location a3
+NpcData_a3                            ; Pyramid Back - Dead End Left
         $1a5fd              .byte $xx,$xx,$xx,$xx,$xx
-        $1a602              .byte $xx,$xx,$xx,$xx
+        $1a602              .byte $xx,$xx,$xx,$xx ; 0d mimic
         $1a606              .byte $xx,$xx,$xx,$xx
         $1a60a              .byte $xx,$xx,$xx,$xx
         $1a60e              .byte $xx,$xx,$xx,$xx
         $1a612              .byte $xx,$xx,$xx,$xx
         $1a616              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationA4                                     ; Location a4
+NpcData_a4                           ; Pyramid Back - Dead End Right
         $1a617              .byte $xx,$xx,$xx,$xx,$xx
         $1a61c              .byte $xx,$xx,$xx,$xx
         $1a620              .byte $xx,$xx,$xx,$xx
@@ -16287,7 +16291,7 @@ NpcData_LocationA4                                     ; Location a4
         $1a628              .byte $xx,$xx,$xx,$xx
         $1a62c              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationA5                                     ; Location a5
+NpcData_a5                                   ; Pyramid Back - Hall 2
         $1a62d              .byte $xx,$xx,$xx,$xx,$xx
         $1a632              .byte $xx,$xx,$xx,$xx
         $1a636              .byte $xx,$xx,$xx,$xx
@@ -16302,12 +16306,12 @@ NpcData_LocationA5                                     ; Location a5
         $1a65a              .byte $xx,$xx,$xx,$xx
         $1a65e              .byte $xx,$xx,$xx,$xx
         $1a662              .byte $xx,$xx,$xx,$xx
-        $1a666              .byte $xx,$xx,$xx,$xx
+        $1a666              .byte $xx,$xx,$xx,$xx ; 1a opel statue
         $1a66a              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Draygon2                                       ; Location a6
+NpcData_a6                        ; Pyramid Back - Draygon Revisited
         $1a66b              .byte $xx,$xx,$xx,$xx,$xx
-        $1a670              .byte $xx,$xx,$xx,$xx
+        $1a670              .byte $xx,$xx,$xx,$xx ; 0d draygon 1 and 2
         $1a674              .byte $xx,$xx,$xx,$xx
         $1a678              .byte $xx,$xx,$xx,$xx
         $1a67c              .byte $xx,$xx,$xx,$xx
@@ -16326,11 +16330,11 @@ NpcData_Draygon2                                       ; Location a6
         $1a6a6              .byte $xx,$xx,$xx,$xx
         $1a6aa              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location58                                     ; Location 58
+NpcData_58                                        ; Tower - Entrance
         $1a6ab              .byte $xx,$xx,$xx,$xx,$xx
         $1a6b0              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location59                                     ; Location 59
+NpcData_59                                                 ; Tower 1
         $1a6b1              .byte $xx,$xx,$xx,$xx,$xx
         $1a6b6              .byte $xx,$xx,$xx,$xx
         $1a6ba              .byte $xx,$xx,$xx,$xx
@@ -16346,7 +16350,7 @@ NpcData_Location59                                     ; Location 59
         $1a6e2              .byte $xx,$xx,$xx,$xx
         $1a6e6              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location5A                                     ; Location 5a
+NpcData_5a                                                 ; Tower 2
         $1a6e7              .byte $xx,$xx,$xx,$xx,$xx
         $1a6ec              .byte $xx,$xx,$xx,$xx
         $1a6f0              .byte $xx,$xx,$xx,$xx
@@ -16363,7 +16367,7 @@ NpcData_Location5A                                     ; Location 5a
         $1a71c              .byte $xx,$xx,$xx,$xx
         $1a720              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location5B                                     ; Location 5b
+NpcData_5b                                                 ; Tower 3
         $1a721              .byte $xx,$xx,$xx,$xx,$xx
         $1a726              .byte $xx,$xx,$xx,$xx
         $1a72a              .byte $xx,$xx,$xx,$xx
@@ -16380,30 +16384,30 @@ NpcData_Location5B                                     ; Location 5b
         $1a756              .byte $xx,$xx,$xx,$xx
         $1a75a              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location5C                                     ; Location 5c
+NpcData_5c                                   ; Tower - Outside Mesia
         $1a75b              .byte $xx,$xx,$xx,$xx,$xx
         $1a760              .byte $xx,$xx,$xx,$xx
         $1a764              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location5D                                     ; Location 5d
+NpcData_5d                                    ; Tower - Outside Dyna
         $1a765              .byte $xx,$xx,$xx,$xx,$xx
         $1a76a              .byte $xx,$xx,$xx,$xx
         $1a76e              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location5E                                     ; Location 5e
+NpcData_5e                                           ; Tower - Mesia
         $1a76f              .byte $xx,$xx,$xx,$xx,$xx
         $1a774              .byte $xx,$xx,$xx,$xx
         $1a778              .byte $xx,$xx,$xx,$xx
         $1a77c              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Dyna                                           ; Location 5f
+NpcData_5f                                            ; Tower - Dyna
         $1a77d              .byte $xx,$xx,$xx,$xx,$xx
         $1a782              .byte $xx,$xx,$xx,$xx
         $1a786              .byte $xx,$xx,$xx,$xx
         $1a78a              .byte $xx,$xx,$xx,$xx
         $1a78e              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Leaf                                           ; Location 02
+NpcData_02                                                    ; Leaf
         $1a78f              .byte $xx,$xx,$xx,$xx,$xx
         $1a794              .byte $xx,$xx,$xx,$xx
         $1a798              .byte $xx,$xx,$xx,$xx
@@ -16413,23 +16417,23 @@ NpcData_Leaf                                           ; Location 02
         $1a7a8              .byte $xx,$xx,$xx,$xx
         $1a7ac              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationC0                                     ; Location c0
+NpcData_c0                                      ; Leaf - Elder House
         $1a7ad              .byte $xx,$xx,$xx,$xx,$xx
         $1a7b2              .byte $xx,$xx,$xx,$xx
         $1a7b6              .byte $xx,$xx,$xx,$xx
         $1a7ba              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationC1                                     ; Location c1
+NpcData_c1                                       ; Leaf - Rabbit Hut
         $1a7bb              .byte $xx,$xx,$xx,$xx,$xx
         $1a7c0              .byte $xx,$xx,$xx,$xx
         $1a7c4              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationC5                                     ; Location c5
+NpcData_c5                                    ; Leaf - Student House
         $1a7c5              .byte $xx,$xx,$xx,$xx,$xx
         $1a7ca              .byte $xx,$xx,$xx,$xx
         $1a7ce              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Brynmaer                                       ; Location 18
+NpcData_18                                                ; Brynmaer
         $1a7cf              .byte $xx,$xx,$xx,$xx,$xx
         $1a7d4              .byte $xx,$xx,$xx,$xx
         $1a7d8              .byte $xx,$xx,$xx,$xx
@@ -16440,7 +16444,7 @@ NpcData_Brynmaer                                       ; Location 18
         $1a7ec              .byte $xx,$xx,$xx,$xx
         $1a7f0              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_BrynmaerTavern                                 ; Location c6
+NpcData_c6                                       ; Brynmaer - Tavern
         $1a7f1              .byte $xx,$xx,$xx,$xx,$xx
         $1a7f6              .byte $xx,$xx,$xx,$xx
         $1a7fa              .byte $xx,$xx,$xx,$xx
@@ -16448,7 +16452,7 @@ NpcData_BrynmaerTavern                                 ; Location c6
         $1a802              .byte $xx,$xx,$xx,$xx
         $1a806              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_StomHouse                                      ; Location 1e
+NpcData_1e                                              ; Stom House
         $1a807              .byte $xx,$xx,$xx,$xx,$xx
         $1a80c              .byte $xx,$xx,$xx,$xx
         $1a810              .byte $xx,$xx,$xx,$xx
@@ -16463,7 +16467,7 @@ NpcData_StomHouse                                      ; Location 1e
         $1a82a              .byte $xx,$xx,$xx,$xx
         $1a82e              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Oak                                            ; Location 1c
+NpcData_1c                                                     ; Oak
         $1a82f              .byte $xx,$xx,$xx,$xx,$xx
         $1a834              .byte $xx,$xx,$xx,$xx
         $1a838              .byte $xx,$xx,$xx,$xx
@@ -16474,18 +16478,18 @@ NpcData_Oak                                            ; Location 1c
         $1a84c              .byte $xx,$xx,$xx,$xx
         $1a850              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_OakElderHouse                                  ; Location cd
+NpcData_cd                                       ; Oak - Elder House
         $1a851              .byte $xx,$xx,$xx,$xx,$xx
         $1a856              .byte $xx,$xx,$xx,$xx
         $1a85a              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_OakMotherHouse                                 ; Location ce
+NpcData_ce                                      ; Oak - Mother House
         $1a85b              .byte $xx,$xx,$xx,$xx,$xx
         $1a860              .byte $xx,$xx,$xx,$xx
         $1a864              .byte $xx,$xx,$xx,$xx
         $1a868              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Amazones                                       ; Location 1b
+NpcData_1b                                                ; Amazones
         $1a869              .byte $xx,$xx,$xx,$xx,$xx
         $1a86e              .byte $xx,$xx,$xx,$xx
         $1a872              .byte $xx,$xx,$xx,$xx
@@ -16498,19 +16502,19 @@ NpcData_Amazones                                       ; Location 1b
         $1a88e              .byte $xx,$xx,$xx,$xx
         $1a892              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_AmazonesElder                                  ; Location d4
+NpcData_d4                                        ; Amazones - Elder
         $1a893              .byte $xx,$xx,$xx,$xx,$xx
         $1a898              .byte $xx,$xx,$xx,$xx
         $1a89c              .byte $xx,$xx,$xx,$xx
         $1a8a0              .byte $xx,$xx,$xx,$xx
         $1a8a4              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_AmazonesElderDownstairs                        ; Location e2
+NpcData_e2                             ; Amazones - Elder Downstairs
         $1a8a5              .byte $xx,$xx,$xx,$xx,$xx
-        $1a8aa              .byte $xx,$xx,$xx,$xx
+        $1a8aa              .byte $xx,$xx,$xx,$xx ; 0d blizzard bracelet
         $1a8ae              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationD5                                     ; Location d5
+NpcData_d5                                                  ; Nadare
         $1a8af              .byte $xx,$xx,$xx,$xx,$xx
         $1a8b4              .byte $xx,$xx,$xx,$xx
         $1a8b8              .byte $xx,$xx,$xx,$xx
@@ -16518,13 +16522,13 @@ NpcData_LocationD5                                     ; Location d5
         $1a8c0              .byte $xx,$xx,$xx,$xx
         $1a8c4              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location3E                                     ; Location 3e
+NpcData_3e                                      ; Nadare - Back Room
         $1a8c5              .byte $xx,$xx,$xx,$xx,$xx
         $1a8ca              .byte $xx,$xx,$xx,$xx
         $1a8ce              .byte $xx,$xx,$xx,$xx
         $1a8d2              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Portoa                                         ; Location 50
+NpcData_50                                                  ; Portoa
         $1a8d3              .byte $xx,$xx,$xx,$xx,$xx
         $1a8d8              .byte $xx,$xx,$xx,$xx
         $1a8dc              .byte $xx,$xx,$xx,$xx
@@ -16536,13 +16540,13 @@ NpcData_Portoa                                         ; Location 50
         $1a8f4              .byte $xx,$xx,$xx,$xx
         $1a8f8              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_PortoaFishermanIsland                          ; Location 51
+NpcData_51                               ; Portoa - Fisherman Island
         $1a8f9              .byte $xx,$xx,$xx,$xx,$xx
         $1a8fe              .byte $xx,$xx,$xx,$xx
         $1a902              .byte $xx,$xx,$xx,$xx
         $1a906              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationDE                                     ; Location de
+NpcData_de                                    ; Portoa - Palace Left
         $1a907              .byte $xx,$xx,$xx,$xx,$xx
         $1a90c              .byte $xx,$xx,$xx,$xx
         $1a910              .byte $xx,$xx,$xx,$xx
@@ -16550,37 +16554,37 @@ NpcData_LocationDE                                     ; Location de
         $1a918              .byte $xx,$xx,$xx,$xx
         $1a91c              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationE0                                     ; Location e0
+NpcData_e0                                   ; Portoa - Palace Right
         $1a91d              .byte $xx,$xx,$xx,$xx,$xx
         $1a922              .byte $xx,$xx,$xx,$xx
         $1a926              .byte $xx,$xx,$xx,$xx
         $1a92a              .byte $xx,$xx,$xx,$xx
         $1a92e              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationDF                                     ; Location df
+NpcData_df                             ; Portoa - Palace Throne Room
         $1a92f              .byte $xx,$xx,$xx,$xx,$xx
         $1a934              .byte $xx,$xx,$xx,$xx
         $1a938              .byte $xx,$xx,$xx,$xx
         $1a93c              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_PortoaFortuneTeller                            ; Location d8
+NpcData_d8                                 ; Portoa - Fortune Teller
         $1a93d              .byte $xx,$xx,$xx,$xx,$xx
         $1a942              .byte $xx,$xx,$xx,$xx
         $1a946              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_PortoaFishermanHouse                           ; Location d6
+NpcData_d6                                ; Portoa - Fisherman House
         $1a947              .byte $xx,$xx,$xx,$xx,$xx
         $1a94c              .byte $xx,$xx,$xx,$xx
         $1a950              .byte $xx,$xx,$xx,$xx
         $1a954              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationE1                                     ; Location e1
+NpcData_e1                                     ; Portoa - Asina Room
         $1a955              .byte $xx,$xx,$xx,$xx,$xx
         $1a95a              .byte $xx,$xx,$xx,$xx
         $1a95e              .byte $xx,$xx,$xx,$xx
         $1a962              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_PortoaPalaceEntrance                           ; Location d7
+NpcData_d7                                ; Portoa - Palace Entrance
         $1a963              .byte $xx,$xx,$xx,$xx,$xx
         $1a968              .byte $xx,$xx,$xx,$xx
         $1a96c              .byte $xx,$xx,$xx,$xx
@@ -16589,13 +16593,13 @@ NpcData_PortoaPalaceEntrance                           ; Location d7
         $1a978              .byte $xx,$xx,$xx,$xx
         $1a97c              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_BoatHouse                                      ; Location 61
+NpcData_61                                                   ; Cabin
         $1a97d              .byte $xx,$xx,$xx,$xx,$xx
         $1a982              .byte $xx,$xx,$xx,$xx
         $1a986              .byte $xx,$xx,$xx,$xx
         $1a98a              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Joel                                           ; Location 71
+NpcData_71                                                    ; Joel
         $1a98b              .byte $xx,$xx,$xx,$xx,$xx
         $1a990              .byte $xx,$xx,$xx,$xx
         $1a994              .byte $xx,$xx,$xx,$xx
@@ -16605,31 +16609,31 @@ NpcData_Joel                                           ; Location 71
         $1a9a4              .byte $xx,$xx,$xx,$xx
         $1a9a8              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_JoelElderHouse                                 ; Location e3
+NpcData_e3                                      ; Joel - Elder House
         $1a9a9              .byte $xx,$xx,$xx,$xx,$xx
         $1a9ae              .byte $xx,$xx,$xx,$xx
         $1a9b2              .byte $xx,$xx,$xx,$xx
         $1a9b6              .byte $xx,$xx,$xx,$xx
         $1a9ba              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_JoelShed                                       ; Location e4
+NpcData_e4                                             ; Joel - Shed
         $1a9bb              .byte $xx,$xx,$xx,$xx,$xx
         $1a9c0              .byte $xx,$xx,$xx,$xx
         $1a9c4              .byte $xx,$xx,$xx,$xx
         $1a9c8              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_JoelLighthouse                                 ; Location 62
+NpcData_62                                       ; Joel - Lighthouse
         $1a9c9              .byte $xx,$xx,$xx,$xx,$xx
         $1a9ce              .byte $xx,$xx,$xx,$xx
         $1a9d2              .byte $xx,$xx,$xx,$xx
         $1a9d6              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationE9                                     ; Location e9
+NpcData_e9                            ; Zombie Town - House Basement
         $1a9d7              .byte $xx,$xx,$xx,$xx,$xx
         $1a9dc              .byte $xx,$xx,$xx,$xx
         $1a9e0              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location65                                     ; Location 65
+NpcData_65                                             ; Zombie Town
         $1a9e1              .byte $xx,$xx,$xx,$xx,$xx
         $1a9e6              .byte $xx,$xx,$xx,$xx
         $1a9ea              .byte $xx,$xx,$xx,$xx
@@ -16643,12 +16647,12 @@ NpcData_Location65                                     ; Location 65
         $1aa0a              .byte $xx,$xx,$xx,$xx
         $1aa0e              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationE8                                     ; Location e8
+NpcData_e8                                     ; Zombie Town - House
         $1aa0f              .byte $xx,$xx,$xx,$xx,$xx
         $1aa14              .byte $xx,$xx,$xx,$xx
         $1aa18              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Swan                                           ; Location 72
+NpcData_72                                                    ; Swan
         $1aa19              .byte $xx,$xx,$xx,$xx,$xx
         $1aa1e              .byte $xx,$xx,$xx,$xx
         $1aa22              .byte $xx,$xx,$xx,$xx
@@ -16658,12 +16662,12 @@ NpcData_Swan                                           ; Location 72
         $1aa32              .byte $xx,$xx,$xx,$xx
         $1aa36              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationEC                                     ; Location ec
+NpcData_ec                                         ; Swan - Stom Hut
         $1aa37              .byte $xx,$xx,$xx,$xx,$xx
         $1aa3c              .byte $xx,$xx,$xx,$xx
         $1aa40              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationF1                                     ; Location f1
+NpcData_f1                                       ; Swan - Dance Hall
         $1aa41              .byte $xx,$xx,$xx,$xx,$xx
         $1aa46              .byte $xx,$xx,$xx,$xx
         $1aa4a              .byte $xx,$xx,$xx,$xx
@@ -16673,7 +16677,7 @@ NpcData_LocationF1                                     ; Location f1
         $1aa5a              .byte $xx,$xx,$xx,$xx
         $1aa5e              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationEF                                     ; Location ef
+NpcData_ef                                           ; Swan - Tavern
         $1aa5f              .byte $xx,$xx,$xx,$xx,$xx
         $1aa64              .byte $xx,$xx,$xx,$xx
         $1aa68              .byte $xx,$xx,$xx,$xx
@@ -16684,7 +16688,7 @@ NpcData_LocationEF                                     ; Location ef
         $1aa7c              .byte $xx,$xx,$xx,$xx
         $1aa80              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location73                                     ; Location 73
+NpcData_73                                             ; Swan - Gate
         $1aa81              .byte $xx,$xx,$xx,$xx,$xx
         $1aa86              .byte $xx,$xx,$xx,$xx
         $1aa8a              .byte $xx,$xx,$xx,$xx
@@ -16692,7 +16696,7 @@ NpcData_Location73                                     ; Location 73
         $1aa92              .byte $xx,$xx,$xx,$xx
         $1aa96              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location8C                                     ; Location 8c
+NpcData_8c                                                  ; Shyron
         $1aa97              .byte $xx,$xx,$xx,$xx,$xx
         $1aa9c              .byte $xx,$xx,$xx,$xx
         $1aaa0              .byte $xx,$xx,$xx,$xx
@@ -16708,7 +16712,7 @@ NpcData_Location8C                                     ; Location 8c
         $1aac8              .byte $xx,$xx,$xx,$xx
         $1aacc              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationF3                                     ; Location f3
+NpcData_f3                                  ; Shyron - Training Hall
         $1aacd              .byte $xx,$xx,$xx,$xx,$xx
         $1aad2              .byte $xx,$xx,$xx,$xx
         $1aad6              .byte $xx,$xx,$xx,$xx
@@ -16716,14 +16720,14 @@ NpcData_LocationF3                                     ; Location f3
         $1aade              .byte $xx,$xx,$xx,$xx
         $1aae2              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationF4                                     ; Location f4
+NpcData_f4                                       ; Shyron - Hospital
         $1aae3              .byte $xx,$xx,$xx,$xx,$xx
         $1aae8              .byte $xx,$xx,$xx,$xx
         $1aaec              .byte $xx,$xx,$xx,$xx
         $1aaf0              .byte $xx,$xx,$xx,$xx
         $1aaf4              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationF2                                     ; Location f2
+NpcData_f2                                         ; Shyron - Temple
         $1aaf5              .byte $xx,$xx,$xx,$xx,$xx
         $1aafa              .byte $xx,$xx,$xx,$xx
         $1aafe              .byte $xx,$xx,$xx,$xx
@@ -16736,7 +16740,7 @@ NpcData_LocationF2                                     ; Location f2
         $1ab13              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1ab1c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
-NpcData_Location8E                                     ; Location 8e
+NpcData_8e                                                     ; Goa
         $1ab25              .byte $xx,$xx,$xx,$xx,$xx
         $1ab2a              .byte $xx,$xx,$xx,$xx
         $1ab2e              .byte $xx,$xx,$xx,$xx
@@ -16752,19 +16756,19 @@ NpcData_Location8E                                     ; Location 8e
         $1ab56              .byte $xx,$xx,$xx,$xx
         $1ab5a              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationBF                                     ; Location bf
+NpcData_bf                                            ; Goa - Tavern
         $1ab5b              .byte $xx,$xx,$xx,$xx,$xx
         $1ab60              .byte $xx,$xx,$xx,$xx
         $1ab64              .byte $xx,$xx,$xx,$xx
         $1ab68              .byte $xx,$xx,$xx,$xx
         $1ab6c              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationBB                                     ; Location bb
+NpcData_bb                                             ; Goa - House
         $1ab6d              .byte $xx,$xx,$xx,$xx,$xx
         $1ab72              .byte $xx,$xx,$xx,$xx
         $1ab76              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_Location93                                     ; Location 93
+NpcData_93                                                  ; Sahara
         $1ab77              .byte $xx,$xx,$xx,$xx,$xx
         $1ab7c              .byte $xx,$xx,$xx,$xx
         $1ab80              .byte $xx,$xx,$xx,$xx
@@ -16774,7 +16778,7 @@ NpcData_Location93                                     ; Location 93
         $1ab90              .byte $xx,$xx,$xx,$xx
         $1ab94              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_LocationFA                                     ; Location fa
+NpcData_fa                                    ; Sahara - Elder House
         $1ab95              .byte $xx,$xx,$xx,$xx,$xx
         $1ab9a              .byte $xx,$xx,$xx,$xx
         $1ab9e              .byte $xx,$xx,$xx,$xx
@@ -18634,7 +18638,7 @@ ObjectData_DemonWall_Fire                                ; Object fe
         $1bfd1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1bfe1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
-NpcData_Start                                          ; Location 00
+NpcData_00                                           ; Mezame Shrine
         $1bff0              .byte $xx,$xx,$xx,$xx,$xx
         $1bff5              .byte $xx
         $1bff6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -18647,14 +18651,14 @@ InitiateDialog
         $1c002  xx:         xxx
         $1c003  xx:         xxx
         $1c004  xx xx:      xxx +
-        $1c006  xx xx xx:     xxx DialogTable,x ; $1c95d
+        $1c006  xx xx xx:     xxx NpcDialogTable,x ; $1c95d
         $1c009  xx xx:        xxx $xx
-        $1c00b  xx xx xx:     xxx DialogTable+1,x ; $1c95e
+        $1c00b  xx xx xx:     xxx NpcDialogTable+1,x ; $1c95e
         $1c00e  xx xx xx:     xxx ++
         ;;                    ------
-+       $1c011  xx xx xx:    xxx DialogTablePart2,x ; $1ca5d
++       $1c011  xx xx xx:    xxx NpcDialogTablePart2,x ; $1ca5d
         $1c014  xx xx:       xxx $xx
-        $1c016  xx xx xx:    xxx DialogTablePart2+1,x ; $1ca5e
+        $1c016  xx xx xx:    xxx NpcDialogTablePart2+1,x ; $1ca5e
 ++      $1c019  xx xx:      xxx $xx
         ;; At this point, $24$25 now points to this character's dialog script
         $1c01b  xx xx:      xxx #$xx
@@ -18833,7 +18837,7 @@ TriggerSquare
         $1c0e3  xx xx:      xxx $xx ; ID of trigger
         $1c0e5  xx:         xxx     ; always >= $80 so high bit irrelevant
         $1c0e6  xx xx:      xxx #$xx
-        $1c0e8  xx xx:      xxx $xx ; no-op?
+        $1c0e8  xx xx:      xxx $xx ; no-op (just jumps to next instruction)
         $1c0ea  xx:         xxx
         $1c0eb  xx xx:      xxx #$xx ; condition not yet met
         $1c0ed  xx xx:      xxx $xx
@@ -18844,7 +18848,7 @@ TriggerSquare
         $1c0f6  xx xx xx:   xxx $1e17b,x
         $1c0f9  xx xx:      xxx $xx
 -       $1c0fb  xx xx xx:   xxx ReadFlagFromBytePair_24y
-        $1c0fe  xx xx:       xxx $xx ; condition satisfied - do it
+        $1c0fe  xx xx:       xxx TriggerSquare_ConditionMet ; do the action
         $1c100  xx xx:      xxx #$xx
         $1c102  xx xx:      xxx $xx
         $1c104  xx xx:      xxx $xx
@@ -19203,17 +19207,20 @@ ItemGet_FindOpenSlot
 ;;; Not clear how this gets called.
 ;;; Input:
 ;;;    $23 - ID of the item to use
+;;; Output:
+;;;    $6430,x should point to item if it is to be used up
+;;;    $23 is $ff use failed
 ;;; Banks:
 ;;;    8000 -> 1c000  ;  a000 -> 1e000
 ItemUse
         $1c31e  xx xx:      xxx $xx
         $1c320  xx:         xxx
         $1c321  xx:         xxx
-        $1c322  xx xx xx:   xxx $1dbe2,x
+        $1c322  xx xx xx:   xxx $1dbe2,x ; ItemUseData
         $1c325  xx xx:      xxx $xx
         $1c327  xx xx xx:   xxx $1dbe3,x
         $1c32a  xx xx:      xxx $xx
-        $1c32c  xx xx xx:   xxx $1c399,x
+        $1c32c  xx xx xx:   xxx $1c399,x ; ItemUseJump
         $1c32f  xx xx:      xxx $xx
         $1c331  xx xx xx:   xxx $1c39a,x
         $1c334  xx xx:      xxx $xx
@@ -19224,20 +19231,20 @@ ItemUse
         ;; be used - bail out (TODO - who displays the dialog?).
         $1c33b  xx xx:      xxx $xx
         $1c33d  xx xx:      xxx #$xx
-        $1c33f  xx xx:      xxx + ; 
+        $1c33f  xx xx:      xxx >rts ; 
         ;; Item actually did something -> ?
-        $1c341  xx xx xx:    xxx PrepareMessageFrom24y ; read next two from ItemData[id] -> $20..$22
-        $1c344  xx xx xx:    xxx SetOrClearFlagsFromBytePair_24y
-        $1c347  xx xx:       xxx $xx
-        $1c349  xx xx:       xxx #$xx
-        $1c34b  xx xx:       xxx + ; $1c350
-        $1c34d  xx xx xx:     xxx ItemUse_ShellFlute2 ; shell flute has special handling
+        $1c341  xx xx xx:   xxx PrepareMessageFrom24y ; read next two from ItemData[id] -> $20..$22
+        $1c344  xx xx xx:   xxx SetOrClearFlagsFromBytePair_24y
+        $1c347  xx xx:      xxx $xx
+        $1c349  xx xx:      xxx #$xx
+        $1c34b  xx xx:      xxx >rts ; $1c350
+        $1c34d  xx xx xx:   xxx ItemUse_NonShellFlute ; don't discard shell flute
 +       $1c350  xx:         xxx
         ;; --------------------------------
         $1c351  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
-ItemUse_ShellFlute2
-        ;; This happens afterwards when using shell flute
+ItemUse_NonShellFlute
+        ;; This happens afterwards when using anything other than shell flute
         $1c354  xx xx:      xxx $xx
         $1c356  xx:         xxx
         $1c357  xx:         xxx
@@ -19250,32 +19257,39 @@ ItemUse_ShellFlute2
         $1c366  xx:         xxx
         $1c367  xx:         xxx
         $1c368  xx xx:      xxx ($xx),y
+        ;; Look for the item in the inventory
 -       $1c36a  xx:          xxx
         $1c36b  xx xx xx:    xxx $xxxx,x
         $1c36e  xx xx:       xxx $xx
-        $1c370  xx xx:       xxx + ; $1c376 - ret
+        $1c370  xx xx:        xxx DeleteUsedItem
         $1c372  xx:          xxx
         $1c373  xx:          xxx
         $1c374  xx xx:      xxx - ; $1c36a
-+ -     $1c376  xx:         xxx
+        $1c376  xx:         xxx
         ;; --------------------------------
-        $1c377  xx xx:      xxx #$xx
-        $1c379  xx xx:      xxx + ; $1c383
+DeleteUsedItem
+        $1c377  xx xx:       xxx #$xx
+        $1c379  xx xx:       xxx + ; $1c383
+        ;; was not the last item in the column
+        ;; in that case, move the one to the right into its place
+        ;; NOTE - this looks broken, it's missing the 'inx' to
+        ;; actually work correctly.  But it's irrelevant since it
+        ;; ultimately just writes #$ff into the spot anyway.
         $1c37b  xx xx xx:    xxx $xxxx,x
         $1c37e  xx xx xx:    xxx $xxxx,x
         $1c381  xx:          xxx
-+       $1c382  xx xx:      xxx - ; $1c376 - ret
++       $1c382  xx xx:      xxx DeleteUsedItem
         $1c384  xx xx:      xxx #$xx
         $1c386  xx xx xx:   xxx $xxxx,x
-        $1c389  xx:         xxx
+        $1c389  xx:         xxx ; which row was it in?
         $1c38a  xx:         xxx
         $1c38b  xx:         xxx
         $1c38c  xx:         xxx
         $1c38d  xx:         xxx
         $1c38e  xx xx:      xxx #$xx
-        $1c390  xx xx xx:   xxx $xxxx,x
+        $1c390  xx xx xx:   xxx $xxxx,x ; unselect that row
         $1c393  xx xx:      xxx #$xx
-        $1c395  xx xx xx:   xxx $xxxx
+        $1c395  xx xx xx:   xxx EquippedConsumableItem
         $1c398  xx:         xxx
 ;;; --------------------------------
 ;;; Note: 1c000 is physically mapped to 8000
@@ -19363,26 +19377,29 @@ ItemUseJumpTable
         $1c435              .word ($1c4db)
         $1c437              .word ($1c4db)
 ;;; --------------------------------
-        $1c439  xx xx:      xxx $xx
-        $1c43b  xx xx:      xxx #$xx
-        $1c43d  xx xx:      xxx $xx
+        ;; itemuse - love pendant
+        ;; Don't give kensu the love pendant when he wants the alarm flute.
+        $1c439  xx xx:      xxx CurrentLocation
+        $1c43b  xx xx:      xxx #LOC_JOEL_LIGHTHOUSE
+        $1c43d  xx xx:      xxx + ; $1c45c
         $1c43f  xx xx xx:   xxx $1c491
 ;;; --------------------------------
+        ;; itemuse - bow of truth
         $1c442  xx xx xx:   xxx $1c451
         $1c445  xx xx xx:   xxx $xxxx
-        $1c448  xx xx:      xxx $xx
-        $1c44a  xx xx:      xxx $xx
-        $1c44c  xx xx:      xxx #$xx
-        $1c44e  xx xx:      xxx $xx
+        $1c448  xx xx:      xxx + ; $1c45c
+        $1c44a  xx xx:      xxx CurrentLocation
+        $1c44c  xx xx:      xxx #LOC_DRAYGON2
+        $1c44e  xx xx:      xxx + ; $1c45c
         $1c450  xx:         xxx
 ;;; --------------------------------
         $1c451  xx xx xx:   xxx $1c469
         $1c454  xx xx xx:   xxx $xxxx
-        $1c457  xx xx:      xxx $xx
-        $1c459  xx xx:      xxx $xx
+        $1c457  xx xx:      xxx + ; $1c45c
+        $1c459  xx xx:      xxx + ; $1c45c
         $1c45b  xx:         xxx
 ;;; --------------------------------
-        $1c45c  xx xx xx:   xxx $1c4db
++       $1c45c  xx xx xx:   xxx ItemUseJump_Invalid
 ;;; --------------------------------
         $1c45f  xx xx:      xxx ($xx),y
         $1c461  xx xx:      xxx $xx
@@ -19422,8 +19439,8 @@ ItemUseJump_GiveItem
 ItemUse_CheckRequiredNPC
         ;; Compares the 560 byte of the currently-facing NPC against the first
         ;; byte of the ItemUseData table.  If they're equal, check $540,x
-        ;; against the second.  It seems like not-equal is required to actually
-        ;; do anything, which is rather surprising.
+        ;; against the second, returning the result in the Z flag (Z = match)
+        ;;  -- the second byte might be the type???
         $1c497  xx xx xx:   xxx $xxxx
         $1c49a  xx xx:      xxx ($xx),y
         $1c49c  xx:         xxx
@@ -19456,10 +19473,11 @@ ItemUseJump_AlarmFlute
         $1c4cc  xx xx xx:   xxx $xxxx
         $1c4cf  xx:         xxx
 ;;; --------------------------------
-        $1c4d0  xx xx xx:   xxx $1c497
+ItemUseJump_StatueOfGold
+        $1c4d0  xx xx xx:   xxx ItemUse_CheckRequiredNPC
         $1c4d3  xx xx:      xxx ItemUseJump_Invalid
         $1c4d5  xx xx:      xxx #$xx
-        $1c4d7  xx xx xx:   xxx $xxxx
+        $1c4d7  xx xx xx:   xxx $xxxx ; Clear the already loaded flag, too.
         $1c4da  xx:         xxx
 ;;; --------------------------------
 ;;; Looks like what happens when an item can't be used?
@@ -19579,26 +19597,27 @@ ItemUseJump_ShellFlute
         $1c599  xx xx:      xxx #SFX_FIX_GOLD_STATUE
         $1c59b  xx xx xx:   xxx StartAudioTrack
 ;;; --------------------------------
-        $1c59e  xx xx xx:   xxx $1c497
-        $1c5a1  xx xx:      xxx $xx
-        $1c5a3  xx:         xxx
-;;; --------------------------------
-        $1c5a4  xx xx:      xxx #$xx
-        $1c5a6  xx xx xx:   xxx $1c497
-        $1c5a9  xx xx:      xxx $xx
-        $1c5ab  xx:         xxx
-;;; --------------------------------
-        $1c5ac  xx xx:      xxx #$xx
-        $1c5ae  xx xx xx:   xxx $1c497
-        $1c5b1  xx xx:      xxx $xx
-        $1c5b3  xx:         xxx
-;;; --------------------------------
-        $1c5b4  xx xx:      xxx #$xx
-        $1c5b6  xx xx xx:   xxx $1c497
-        $1c5b9  xx xx:      xxx $xx
-        $1c5bb  xx:         xxx
-;;; --------------------------------
-        $1c5bc  xx xx xx:   xxx $1c4db
+ItemUseJump_FluteOfLime
+        $1c59e  xx xx xx:   xxx ItemUse_CheckRequiredNPC
+        $1c5a1  xx xx:      xxx + ; $1c5a4
+        $1c5a3  xx:          xxx
+        ;; --------------------------------
++       $1c5a4  xx xx:      xxx #$xx
+        $1c5a6  xx xx xx:   xxx ItemUse_CheckRequiredNPC
+        $1c5a9  xx xx:      xxx + ; $1c5ac
+        $1c5ab  xx:          xxx
+        ;; --------------------------------
++       $1c5ac  xx xx:      xxx #$xx
+        $1c5ae  xx xx xx:   xxx ItemUse_CheckRequiredNPC
+        $1c5b1  xx xx:      xxx + ; $1c5b4
+        $1c5b3  xx:          xxx
+        ;; --------------------------------
++       $1c5b4  xx xx:      xxx #$xx
+        $1c5b6  xx xx xx:   xxx ItemUse_CheckRequiredNPC
+        $1c5b9  xx xx:      xxx + ; $1c5bc
+        $1c5bb  xx:          xxx
+        ;; --------------------------------
++       $1c5bc  xx xx xx:   xxx ItemUseJump_Invalid
 ;;; --------------------------------
         ;; may have been called by $3e38d
         $1c5bf  xx xx:      xxx #$xx
@@ -19636,231 +19655,300 @@ ItemUseJump_ShellFlute
 ;;; seems backwards, so it's probably wrong.
 ;;; STRIP: word=$14000
 NpcSpawnConditionTable
-        $1c5e0              .word ($1c780) ; 00
-        $1c5e2              .word ($1c780) ; 01
-        $1c5e4              .word ($1c780) ; 02
-        $1c5e6              .word ($1c780) ; 03
-        $1c5e8              .word ($1c780) ; 04
-        $1c5ea              .word ($1c780) ; 05
-        $1c5ec              .word ($1c780) ; 06
-        $1c5ee              .word ($1c780) ; 07
-        $1c5f0              .word ($1c780) ; 08
-        $1c5f2              .word ($1c79f) ; 09
-        $1c5f4              .word ($1c79f) ; 0a
-        $1c5f6              .word ($1c7ae) ; 0b
-        $1c5f8              .word ($1c7a7) ; 0c
-        $1c5fa              .word ($1c7ba) ; 0d
-        $1c5fc              .word ($1c7c8) ; 0e
-        $1c5fe              .word ($1c7c8) ; 0f
-        $1c600              .word ($1c7c8) ; 10
-        $1c602              .word ($1c7c1) ; 11
-        $1c604              .word ($1c7c8) ; 12
-        $1c606              .word ($1c780) ; 13
-        $1c608              .word ($1c7cf) ; 14
-        $1c60a              .word ($1c7d8) ; 15
-        $1c60c              .word ($1c7de) ; 16
-        $1c60e              .word ($1c780) ; 17
-        $1c610              .word ($1c780) ; 18
-        $1c612              .word ($1c780) ; 19
-        $1c614              .word ($1c780) ; 1a
-        $1c616              .word ($1c7f2) ; 1b
-        $1c618              .word ($1c780) ; 1c
-        $1c61a              .word ($1c780) ; 1d
-        $1c61c              .word ($1c780) ; 1e
-        $1c61e              .word ($1c7f6) ; 1f
-        $1c620              .word ($1c921) ; 20
-        $1c622              .word ($1c921) ; 21
-        $1c624              .word ($1c780) ; 22
-        $1c626              .word ($1c780) ; 23
-        $1c628              .word ($1c780) ; 24
-        $1c62a              .word ($1c780) ; 25
-        $1c62c              .word ($1c780) ; 26
-        $1c62e              .word ($1c780) ; 27
-        $1c630              .word ($1c780) ; 28
-        $1c632              .word ($1c780) ; 29
-        $1c634              .word ($1c780) ; 2a
-        $1c636              .word ($1c780) ; 2b
-        $1c638              .word ($1c801) ; 2c
-        $1c63a              .word ($1c809) ; 2d
-        $1c63c              .word ($1c810) ; 2e
-        $1c63e              .word ($1c810) ; 2f
-        $1c640              .word ($1c810) ; 30
-        $1c642              .word ($1c810) ; 31
-        $1c644              .word ($1c780) ; 32
-        $1c646              .word ($1c814) ; 33
-        $1c648              .word ($1c780) ; 34
-        $1c64a              .word ($1c780) ; 35
-        $1c64c              .word ($1c780) ; 36
-        $1c64e              .word ($1c780) ; 37
-        $1c650              .word ($1c81b) ; 38
-        $1c652              .word ($1c826) ; 39
-        $1c654              .word ($1c83a) ; 3a
-        $1c656              .word ($1c781) ; 3b
-        $1c658              .word ($1c830) ; 3c
-        $1c65a              .word ($1c780) ; 3d
-        $1c65c              .word ($1c780) ; 3e
-        $1c65e              .word ($1c780) ; 3f
-        $1c660              .word ($1c780) ; 40
-        $1c662              .word ($1c780) ; 41
-        $1c664              .word ($1c780) ; 42
-        $1c666              .word ($1c780) ; 43
-        $1c668              .word ($1c840) ; 44
-        $1c66a              .word ($1c79f) ; 45
-        $1c66c              .word ($1c79f) ; 46
-        $1c66e              .word ($1c7a3) ; 47
-        $1c670              .word ($1c780) ; 48
-        $1c672              .word ($1c780) ; 49
-        $1c674              .word ($1c7b5) ; 4a
-        $1c676              .word ($1c780) ; 4b
-        $1c678              .word ($1c780) ; 4c
-        $1c67a              .word ($1c780) ; 4d
-        $1c67c              .word ($1c847) ; 4e
-        $1c67e              .word ($1c847) ; 4f
-        $1c680              .word ($1c847) ; 50
-        $1c682              .word ($1c847) ; 51
-        $1c684              .word ($1c847) ; 52
-        $1c686              .word ($1c847) ; 53
-        $1c688              .word ($1c780) ; 54
-        $1c68a              .word ($1c780) ; 55
-        $1c68c              .word ($1c780) ; 56
-        $1c68e              .word ($1c780) ; 57
-        $1c690              .word ($1c780) ; 58
-        $1c692              .word ($1c780) ; 59
-        $1c694              .word ($1c780) ; 5a
-        $1c696              .word ($1c780) ; 5b
-        $1c698              .word ($1c780) ; 5c
-        $1c69a              .word ($1c869) ; 5d
+        $1c5e0              .word ($1c780) ; 00 portoa pink man on fortune teller island; sahara orange man left
+        $1c5e2              .word ($1c780) ; 01 sahara grey bearded man by well, brynmaer barkeep
+        $1c5e4              .word ($1c780) ; 02 portoa light blue lower left walker, brynmaer tavern top left
+        $1c5e6              .word ($1c780) ; 03 portoa pink stationary lower left man; sahara grey man mid-right
+        $1c5e8              .word ($1c780) ; 04 woman in dress at front of amazones, sahara; portoa lady in waiting right
+        $1c5ea              .word ($1c780) ; 05 headband lady at right of amazones, portoa welcome
+        $1c5ec              .word ($1c780) ; 06 portoa pink dress lady below castle bridge; sahara grey dress lady right
+        $1c5ee              .word ($1c780) ; 07 portoa barracks guard top
+        $1c5f0              .word ($1c780) ; 08 blue man at front of brynmaer, red man top of nadare
+        $1c5f2              .word ($1c79f) ; 09 zombietown man on left
+        $1c5f4              .word ($1c79f) ; 0a zombietown woman on right
+        $1c5f6              .word ($1c7ae) ; 0b goa soldier
+        $1c5f8              .word ($1c7a7) ; 0c swan soldier
+        $1c5fa              .word ($1c7ba) ; 0d leaf elder
+        $1c5fc              .word ($1c7c8) ; 0e startled green man inside leaf (cf. $65)
+        $1c5fe              .word ($1c7c8) ; 0f red man at top of leaf
+        $1c600              .word ($1c7c8) ; 10 red woman outside leaf shops
+        $1c602              .word ($1c7c1) ; 11 leaf elder's daughter
+        $1c604              .word ($1c7c8) ; 12 red girl in leaf
+        $1c606              .word ($1c780) ; 13 leaf rabbit
+        $1c608              .word ($1c7cf) ; 14 windmill guard, zebu's student
+        $1c60a              .word ($1c7d8) ; 15 sleeping windmill guard
+        $1c60c              .word ($1c7de) ; 16 akahana
+        $1c60e              .word ($1c780) ; 17 red bearded man beneath brynmaer inn
+        $1c610              .word ($1c780) ; 18 blue woman beneath brynmaer armor shop
+        $1c612              .word ($1c780) ; 19 red cloaked man beneath brynmaer pawn
+        $1c614              .word ($1c780) ; 1a blue woman at far end of brynmaer
+        $1c616              .word ($1c7f2) ; 1b blue treasure hunter in brynmaer tavern
+        $1c618              .word ($1c780) ; 1c yellow treasure hunter in brynmaer tavern
+        $1c61a              .word ($1c780) ; 1d oak elder
+        $1c61c              .word ($1c780) ; 1e oak mother
+        $1c61e              .word ($1c7f6) ; 1f dwarf child in swamp
+        $1c620              .word ($1c921) ; 20 oak inn guard (post-telepathy)
+        $1c622              .word ($1c921) ; 21 oak tool shop guard (post-telepathy)
+        $1c624              .word ($1c780) ; 22 oak top-right dwarf
+        $1c626              .word ($1c780) ; 23 amazones queen
+        $1c628              .word ($1c780) ; 24 long-haired woman at left of amazones
+        $1c62a              .word ($1c780) ; 25 amazones guard
+        $1c62c              .word ($1c780) ; 26 amazones queen right attendant
+        $1c62e              .word ($1c780) ; 27 amazones queen left attendant
+        $1c630              .word ($1c780) ; 28 nadare
+        $1c632              .word ($1c780) ; 29 nadare back room red woman (right)
+        $1c634              .word ($1c780) ; 2a green bearded man bottom-left nadare
+        $1c636              .word ($1c780) ; 2b nadare back room gray man (left)
+        $1c638              .word ($1c801) ; 2c dying man at foot of mt sabre north
+        $1c63a              .word ($1c809) ; 2d mt sabre guard soldiers (both)
+        $1c63c              .word ($1c810) ; 2e leaf shopkeeper ?
+        $1c63e              .word ($1c810) ; 2f leaf shopkeeper ?
+        $1c640              .word ($1c810) ; 30 leaf shopkeeper ?
+        $1c642              .word ($1c810) ; 31 UNUSED
+        $1c644              .word ($1c780) ; 32 portoa barracks guard right
+        $1c646              .word ($1c814) ; 33 portoa throne room back door guard
+        $1c648              .word ($1c780) ; 34 portoa palace guard (throme room front)
+        $1c64a              .word ($1c780) ; 35 portoa barracks evans
+        $1c64c              .word ($1c780) ; 36 portoa pink lady in waiting at table left
+        $1c64e              .word ($1c780) ; 37 portoa red lady in waiting at table top
+        $1c650              .word ($1c81b) ; 38 portoa queen
+        $1c652              .word ($1c826) ; 39 fortune teller
+        $1c654              .word ($1c83a) ; 3a de-stoned people in waterfall cave
+        $1c656              .word ($1c781) ; 3b UNUSED
+        $1c658              .word ($1c830) ; 3c UNUSED
+        $1c65a              .word ($1c780) ; 3d joel elder
+        $1c65c              .word ($1c780) ; 3e joel brown lady left of elder
+        $1c65e              .word ($1c780) ; 3f joel blue lady right of elder
+        $1c660              .word ($1c780) ; 40 joel welcome
+        $1c662              .word ($1c780) ; 41 joel top-right bearded green man
+        $1c664              .word ($1c780) ; 42 joel top-left watchman
+        $1c666              .word ($1c780) ; 43 joel bottom-right red woman
+        $1c668              .word ($1c840) ; 44 clark
+        $1c66a              .word ($1c79f) ; 45 zombietown human top
+        $1c66c              .word ($1c79f) ; 46 zombietown human bottom
+        $1c66e              .word ($1c7a3) ; 47 zombietown child in clark house
+        $1c670              .word ($1c780) ; 48 swan blue bearded man outside armor shop
+        $1c672              .word ($1c780) ; 49 swan barkeep
+        $1c674              .word ($1c7b5) ; 4a swan tavern soldiers
+        $1c676              .word ($1c780) ; 4b swan dancing ladies
+        $1c678              .word ($1c780) ; 4c swan dance instructor
+        $1c67a              .word ($1c780) ; 4d swan dancing man
+        $1c67c              .word ($1c847) ; 4e shyron guards
+        $1c67e              .word ($1c847) ; 4f shyron welcome
+        $1c680              .word ($1c847) ; 50 shyron red man middle
+        $1c682              .word ($1c847) ; 51 shyron training men
+        $1c684              .word ($1c847) ; 52 stom's girlfriend
+        $1c686              .word ($1c847) ; 53 shyron sick men
+        $1c688              .word ($1c780) ; 54 akahana friend
+        $1c68a              .word ($1c780) ; 55 goa cloaked man right
+        $1c68c              .word ($1c780) ; 56 goa pink blouse lady middle
+        $1c68e              .word ($1c780) ; 57 goa tavern lady
+        $1c690              .word ($1c780) ; 58 goa barkeep
+        $1c692              .word ($1c780) ; 59 sahara generic bunny
+        $1c694              .word ($1c780) ; 5a deo
+        $1c696              .word ($1c780) ; 5b sahara elder
+        $1c698              .word ($1c780) ; 5c sahara elder's daughter
+        $1c69a              .word ($1c869) ; 5d shyron generic dead person
         $1c69c              .word ($1c881) ; 5e zebu
-        $1c69e              .word ($1c892) ; 5f
-        $1c6a0              .word ($1c8ab) ; 60
-        $1c6a2              .word ($1c780) ; 61
-        $1c6a4              .word ($1c8b5) ; 62
-        $1c6a6              .word ($1c8e0) ; 63
-        $1c6a8              .word ($1c79b) ; 64
-        $1c6aa              .word ($1c8e6) ; 65
-        $1c6ac              .word ($1c780) ; 66
-        $1c6ae              .word ($1c780) ; 67
-        $1c6b0              .word ($1c8f8) ; 68
-        $1c6b2              .word ($1c780) ; 69
-        $1c6b4              .word ($1c8ea) ; 6a
-        $1c6b6              .word ($1c8fc) ; 6b
-        $1c6b8              .word ($1c909) ; 6c
-        $1c6ba              .word ($1c900) ; 6d
-        $1c6bc              .word ($1c8ee) ; 6e
-        $1c6be              .word ($1c780) ; 6f
-        $1c6c0              .word ($1c86f) ; 70
-        $1c6c2              .word ($1c875) ; 71
-        $1c6c4              .word ($1c87b) ; 72
-        $1c6c6              .word ($1c8f4) ; 73
-        $1c6c8              .word ($1c8cb) ; 74
-        $1c6ca              .word ($1c90f) ; 75
-        $1c6cc              .word ($1c860) ; 76
-        $1c6ce              .word ($1c780) ; 77
-        $1c6d0              .word ($1c780) ; 78
-        $1c6d2              .word ($1c780) ; 79
-        $1c6d4              .word ($1c780) ; 7a
-        $1c6d6              .word ($1c780) ; 7b
-        $1c6d8              .word ($1c925) ; 7c
-        $1c6da              .word ($1c925) ; 7d
-        $1c6dc              .word ($1c8cb) ; 7e
-        $1c6de              .word ($1c78f) ; 7f
+        $1c69e              .word ($1c892) ; 5f tornel
+        $1c6a0              .word ($1c8ab) ; 60 stom
+        $1c6a2              .word ($1c780) ; 61 mesia in shrine
+        $1c6a4              .word ($1c8b5) ; 62 asina
+        $1c6a6              .word ($1c8e0) ; 63 hurt dolphin
+        $1c6a8              .word ($1c79b) ; 64 portoa fisherman
+        $1c6aa              .word ($1c8e6) ; 65 startled green man outside leaf cave
+        $1c6ac              .word ($1c780) ; 66 UNUSED
+        $1c6ae              .word ($1c780) ; 67 UNUSED
+        $1c6b0              .word ($1c8f8) ; 68 kensu (in cabin)
+        $1c6b2              .word ($1c780) ; 69 dolphin
+        $1c6b4              .word ($1c8ea) ; 6a UNUSED
+        $1c6b6              .word ($1c8fc) ; 6b kensu (asleep in lighthouse)
+        $1c6b8              .word ($1c909) ; 6c kensu in swan dance hall
+        $1c6ba              .word ($1c900) ; 6d kensu soldier
+        $1c6bc              .word ($1c8ee) ; 6e azteca in shyron temple
+        $1c6be              .word ($1c780) ; 6f swan blue cloaked man outside hut
+        $1c6c0              .word ($1c86f) ; 70 dead akahana
+        $1c6c2              .word ($1c875) ; 71 dead stom's girlfriend
+        $1c6c4              .word ($1c87b) ; 72 dead stom
+        $1c6c6              .word ($1c8f4) ; 73 UNUSED
+        $1c6c8              .word ($1c8cb) ; 74 kensu ???
+        $1c6ca              .word ($1c90f) ; 75 kensu slime
+        $1c6cc              .word ($1c860) ; 76 dead shyron guard
+        $1c6ce              .word ($1c780) ; 77 swan yellow man right
+        $1c6d0              .word ($1c780) ; 78 goa pink welcomer
+        $1c6d2              .word ($1c780) ; 79 swan yellow woman left
+        $1c6d4              .word ($1c780) ; 7a goa pink dress lady near house
+        $1c6d6              .word ($1c780) ; 7b portoa fisherman's daughter
+        $1c6d8              .word ($1c925) ; 7c oak inn guard (pre-telepathy)
+        $1c6da              .word ($1c925) ; 7d oak tool shop guard (pre-telepathy)
+        $1c6dc              .word ($1c8cb) ; 7e kensu ??? lighthouse/tavern/dance
+        $1c6de              .word ($1c78f) ; 7f zombie in zombietown
 NpcSpawnConditionTablePart2
-        $1c6e0              .word ($1c785) ; 80
-        $1c6e2              .word ($1c789) ; 81
-        $1c6e4              .word ($1c780) ; 82
-        $1c6e6              .word ($1c913) ; 83
-        $1c6e8              .word ($1c919) ; 84
-        $1c6ea              .word ($1c836) ; 85
-        $1c6ec              .word ($1c781) ; 86
-        $1c6ee              .word ($1c82c) ; 87
-        $1c6f0              .word ($1c7ec) ; 88
-        $1c6f2              .word ($1c780) ; 89
-        $1c6f4              .word ($1c7b9) ; 8a
-        $1c6f6              .word ($1c780) ; 8b
-        $1c6f8              .word ($1c781) ; 8c
-        $1c6fa              .word ($1c781) ; 8d
-        $1c6fc              .word ($1c91d) ; 8e
-        $1c6fe              .word ($1c781) ; 8f
-        $1c700              .word ($1c781) ; 90
-        $1c702              .word ($1c781) ; 91
-        $1c704              .word ($1c781) ; 92
-        $1c706              .word ($1c781) ; 93
-        $1c708              .word ($1c781) ; 94
-        $1c70a              .word ($1c781) ; 95
-        $1c70c              .word ($1c781) ; 96
-        $1c70e              .word ($1c781) ; 97
-        $1c710              .word ($1c781) ; 98
-        $1c712              .word ($1c781) ; 99
-        $1c714              .word ($1c781) ; 9a
-        $1c716              .word ($1c781) ; 9b
-        $1c718              .word ($1c781) ; 9c
-        $1c71a              .word ($1c781) ; 9d
-        $1c71c              .word ($1c781) ; 9e
-        $1c71e              .word ($1c781) ; 9f
-        $1c720              .word ($1c781) ; a0
-        $1c722              .word ($1c781) ; a1
-        $1c724              .word ($1c781) ; a2
-        $1c726              .word ($1c781) ; a3
-        $1c728              .word ($1c781) ; a4
-        $1c72a              .word ($1c781) ; a5
-        $1c72c              .word ($1c781) ; a6
-        $1c72e              .word ($1c781) ; a7
-        $1c730              .word ($1c781) ; a8
-        $1c732              .word ($1c781) ; a9
-        $1c734              .word ($1c781) ; aa
-        $1c736              .word ($1c781) ; ab
-        $1c738              .word ($1c781) ; ac
-        $1c73a              .word ($1c781) ; ad
-        $1c73c              .word ($1c781) ; ae
-        $1c73e              .word ($1c781) ; af
-        $1c740              .word ($1c781) ; b0
-        $1c742              .word ($1c781) ; b1
-        $1c744              .word ($1c781) ; b2
-        $1c746              .word ($1c781) ; b3
-        $1c748              .word ($1c781) ; b4
-        $1c74a              .word ($1c781) ; b5
-        $1c74c              .word ($1c781) ; b6
-        $1c74e              .word ($1c781) ; b7
-        $1c750              .word ($1c781) ; b8
-        $1c752              .word ($1c781) ; b9
-        $1c754              .word ($1c781) ; ba
-        $1c756              .word ($1c781) ; bb
-        $1c758              .word ($1c781) ; bc
-        $1c75a              .word ($1c781) ; bd
-        $1c75c              .word ($1c781) ; be
+        $1c6e0              .word ($1c785) ; 80 goa shop guards (stationary)
+        $1c6e2              .word ($1c789) ; 81 goa shop guards (moving)
+        $1c6e4              .word ($1c780) ; 82 UNUSED
+        $1c6e6              .word ($1c913) ; 83 azteca temple front
+        $1c6e8              .word ($1c919) ; 84 sabera posing as mesia
+        $1c6ea              .word ($1c836) ; 85 stoned pair in waterfall cave
+        $1c6ec              .word ($1c781) ; 86 UNUSED
+        $1c6ee              .word ($1c82c) ; 87 UNUSED
+        $1c6f0              .word ($1c7ec) ; 88 stoned akahana
+        $1c6f2              .word ($1c780) ; 89 UNUSED
+        $1c6f4              .word ($1c7b9) ; 8a UNUSED
+        $1c6f6              .word ($1c780) ; 8b UNUSED
+        $1c6f8              .word ($1c781) ; 8c UNUSED
+        $1c6fa              .word ($1c781) ; 8d UNUSED
+        $1c6fc              .word ($1c91d) ; 8e mesia
+        $1c6fe              .word ($1c781) ; 8f 
+        $1c700              .word ($1c781) ; 90 
+        $1c702              .word ($1c781) ; 91 
+        $1c704              .word ($1c781) ; 92 
+        $1c706              .word ($1c781) ; 93 
+        $1c708              .word ($1c781) ; 94 
+        $1c70a              .word ($1c781) ; 95 
+        $1c70c              .word ($1c781) ; 96 
+        $1c70e              .word ($1c781) ; 97 
+        $1c710              .word ($1c781) ; 98 
+        $1c712              .word ($1c781) ; 99 
+        $1c714              .word ($1c781) ; 9a 
+        $1c716              .word ($1c781) ; 9b 
+        $1c718              .word ($1c781) ; 9c 
+        $1c71a              .word ($1c781) ; 9d 
+        $1c71c              .word ($1c781) ; 9e 
+        $1c71e              .word ($1c781) ; 9f 
+        $1c720              .word ($1c781) ; a0 
+        $1c722              .word ($1c781) ; a1 
+        $1c724              .word ($1c781) ; a2 
+        $1c726              .word ($1c781) ; a3 
+        $1c728              .word ($1c781) ; a4 
+        $1c72a              .word ($1c781) ; a5 
+        $1c72c              .word ($1c781) ; a6 
+        $1c72e              .word ($1c781) ; a7 
+        $1c730              .word ($1c781) ; a8 
+        $1c732              .word ($1c781) ; a9 
+        $1c734              .word ($1c781) ; aa 
+        $1c736              .word ($1c781) ; ab 
+        $1c738              .word ($1c781) ; ac 
+        $1c73a              .word ($1c781) ; ad 
+        $1c73c              .word ($1c781) ; ae 
+        $1c73e              .word ($1c781) ; af 
+        $1c740              .word ($1c781) ; b0 
+        $1c742              .word ($1c781) ; b1 
+        $1c744              .word ($1c781) ; b2 
+        $1c746              .word ($1c781) ; b3 
+        $1c748              .word ($1c781) ; b4 
+        $1c74a              .word ($1c781) ; b5 
+        $1c74c              .word ($1c781) ; b6 
+        $1c74e              .word ($1c781) ; b7 
+        $1c750              .word ($1c781) ; b8 
+        $1c752              .word ($1c781) ; b9 
+        $1c754              .word ($1c781) ; ba 
+        $1c756              .word ($1c781) ; bb 
+        $1c758              .word ($1c781) ; bc 
+        $1c75a              .word ($1c781) ; bd 
+        $1c75c              .word ($1c781) ; be 
         $1c75e              .word ($1c781) ; bf
         $1c760              .word ($1c929) ; c0 vampire 1
         $1c762              .word ($1c92d) ; c1 insect
         $1c764              .word ($1c931) ; c2 kelbesque 1
         $1c766              .word ($1c935) ; c3 rage
-        $1c768              .word ($1c939) ; c4 vampire 2
+        $1c768              .word ($1c939) ; c4 mado 1
         $1c76a              .word ($1c93d) ; c5 sabera 1
-        $1c76c              .word ($1c941) ; c6 mado 1
-        $1c76e              .word ($1c945) ; c7 kelbesque 2 ?
-        $1c770              .word ($1c949) ; c8 sabera 2    ?
-        $1c772              .word ($1c94d) ; c9 mado 2      ?
-        $1c774              .word ($1c951) ; ca karmine     ?
-        $1c776              .word ($1c955) ; cb statues     ?
-        $1c778              .word ($1c959) ; cc draygon 1   ?
-        $1c77a              .word ($1c781) ; cd -- note no flag for draygon 2
-        $1c77c              .word ($1c781) ; ce
+        $1c76c              .word ($1c941) ; c6 sabera 2
+        $1c76e              .word ($1c945) ; c7 mado 2
+        $1c770              .word ($1c949) ; c8 karmine
+        $1c772              .word ($1c94d) ; c9 statue of moon
+        $1c774              .word ($1c951) ; ca statue of sun
+        $1c776              .word ($1c955) ; cb draygon 1 and 2
+        $1c778              .word ($1c959) ; cc vampire 2
+        $1c77a              .word ($1c781) ; cd  -- note no flag for draygon 2
+        $1c77c              .word ($1c781) ; ce 
         $1c77e              .word ($1c781) ; cf
-        ;; 00 and many others - the empty condition.
+;;; --------------------------------
+NpcSpawnCondition_00 ; portoa pink man on fortune teller island; sahara orange man left
+NpcSpawnCondition_01 ; sahara grey bearded man by well, brynmaer barkeep
+NpcSpawnCondition_02 ; portoa light blue lower left walker, brynmaer tavern top left
+NpcSpawnCondition_03 ; portoa pink stationary lower left man; sahara grey man mid-right
+NpcSpawnCondition_04 ; woman in dress at front of amazones, sahara; portoa lady in waiting right
+NpcSpawnCondition_05 ; headband lady at right of amazones, portoa welcome
+NpcSpawnCondition_06 ; portoa pink dress lady below castle bridge; sahara grey dress lady right
+NpcSpawnCondition_07 ; portoa barracks guard top
+NpcSpawnCondition_08 ; blue man at front of brynmaer, red man top of nadare
+NpcSpawnCondition_13 ; leaf rabbit
+NpcSpawnCondition_17 ; red bearded man beneath brynmaer inn
+NpcSpawnCondition_18 ; blue woman beneath brynmaer armor shop
+NpcSpawnCondition_19 ; red cloaked man beneath brynmaer pawn
+NpcSpawnCondition_1a ; blue woman at far end of brynmaer
+NpcSpawnCondition_1c ; yellow treasure hunter in brynmaer tavern
+NpcSpawnCondition_1d ; oak elder
+NpcSpawnCondition_1e ; oak mother
+NpcSpawnCondition_22 ; oak top-right dwarf
+NpcSpawnCondition_23 ; amazones queen
+NpcSpawnCondition_24 ; long-haired woman at left of amazones
+NpcSpawnCondition_25 ; amazones guard
+NpcSpawnCondition_26 ; amazones queen right attendant
+NpcSpawnCondition_27 ; amazones queen left attendant
+NpcSpawnCondition_28 ; nadare
+NpcSpawnCondition_29 ; nadare back room red woman (right)
+NpcSpawnCondition_2a ; green bearded man bottom-left nadare
+NpcSpawnCondition_2b ; nadare back room gray man (left)
+NpcSpawnCondition_32 ; portoa barracks guard right
+NpcSpawnCondition_34 ; portoa palace guard (throme room front)
+NpcSpawnCondition_35 ; portoa barracks evans
+NpcSpawnCondition_36 ; portoa pink lady in waiting at table left
+NpcSpawnCondition_37 ; portoa red lady in waiting at table top
+NpcSpawnCondition_3d ; joel elder
+NpcSpawnCondition_3e ; joel brown lady left of elder
+NpcSpawnCondition_3f ; joel blue lady right of elder
+NpcSpawnCondition_40 ; joel welcome
+NpcSpawnCondition_41 ; joel top-right bearded green man
+NpcSpawnCondition_42 ; joel top-left watchman
+NpcSpawnCondition_43 ; joel bottom-right red woman
+NpcSpawnCondition_48 ; swan blue bearded man outside armor shop
+NpcSpawnCondition_49 ; swan barkeep
+NpcSpawnCondition_4b ; swan dancing ladies
+NpcSpawnCondition_4c ; swan dance instructor
+NpcSpawnCondition_4d ; swan dancing man
+NpcSpawnCondition_54 ; akahana friend
+NpcSpawnCondition_55 ; goa cloaked man right
+NpcSpawnCondition_56 ; goa pink blouse lady middle
+NpcSpawnCondition_57 ; goa tavern lady
+NpcSpawnCondition_58 ; goa barkeep
+NpcSpawnCondition_59 ; sahara generic bunny
+NpcSpawnCondition_5a ; deo
+NpcSpawnCondition_5b ; sahara elder
+NpcSpawnCondition_5c ; sahara elder's daughter
+NpcSpawnCondition_61 ; mesia in shrine
+NpcSpawnCondition_66 ; UNUSED
+NpcSpawnCondition_67 ; UNUSED
+NpcSpawnCondition_69 ; dolphin
+NpcSpawnCondition_6f ; swan blue cloaked man outside hut
+NpcSpawnCondition_77 ; swan yellow man right
+NpcSpawnCondition_78 ; goa pink welcomer
+NpcSpawnCondition_79 ; swan yellow woman left
+NpcSpawnCondition_7a ; goa pink dress lady near house
+NpcSpawnCondition_7b ; portoa fisherman's daughter
+NpcSpawnCondition_82 ; UNUSED
+NpcSpawnCondition_89 ; UNUSED
+NpcSpawnCondition_8b ; UNUSED
         $1c780              .byte $xx
-        ;; UNUSED
+NpcSpawnCondition_3b ; UNUSED
+NpcSpawnCondition_86 ; UNUSED
+NpcSpawnCondition_8c ; UNUSED
+NpcSpawnCondition_8d ; UNUSED
         $1c781              .byte $xx ; Mezame Shrine
         $1c782              .byte $xx,$xx ; 000 unused
         $1c784              .byte $xx
-        ;; 80 goa shop guards (stationary)
+NpcSpawnCondition_80 ; goa shop guards (stationary)
         $1c785              .byte $xx ; Goa
         $1c786              .byte $xx,$xx ; 026 NOT entered shyron
         $1c788              .byte $xx
-        ;; 81 goa shop guards (moving)
+NpcSpawnCondition_81 ; goa shop guards (moving)
         $1c789              .byte $xx ; Goa
         $1c78a              .byte $xx,$xx ; 026 entered shyron
         $1c78c              .byte $xx,$xx ; 024 NOT
         $1c78e              .byte $xx
-        ;; 7f zombie in zombietown
+NpcSpawnCondition_7f ; zombie in zombietown
         $1c78f              .byte $xx ; Zombie Town
         $1c790              .byte $xx,$xx ; 013 NOT sabera defeated
         $1c792              .byte $xx
@@ -19868,69 +19956,73 @@ NpcSpawnConditionTablePart2
         $1c793              .byte $xx ; Amazones
         $1c794              .byte $xx,$xx ; 099 NOT
         $1c796              .byte $xx,$xx,$xx,$xx,$xx
-        ;; 64 portoa fisherman
+NpcSpawnCondition_64 ; portoa fisherman
         $1c79b              .byte $xx ; Portoa - Fisherman House
-        $1c79c              .byte $xx,$xx ; 08b
+        $1c79c              .byte $xx,$xx ; 08b got shell flute
         $1c79e              .byte $xx
-        ;; 0a zombietown woman on right
-        ;; 45 zombietown human top
-        ;; 46 zombietown human bottom
+NpcSpawnCondition_09 ; zombietown man on left
+NpcSpawnCondition_0a ; zombietown woman on right
+NpcSpawnCondition_45 ; zombietown human top
+NpcSpawnCondition_46 ; zombietown human bottom
         $1c79f              .byte $xx ; Zombie Town
         $1c7a0              .byte $xx,$xx ; 013 sabera defeated
         $1c7a2              .byte $xx
-        ;; 47 zombietown child in clark house
+NpcSpawnCondition_47 ; zombietown child in clark house
         $1c7a3              .byte $xx ; Zombie Town - House
         $1c7a4              .byte $xx,$xx ; 013 sabera defeated
         $1c7a6              .byte $xx
-        ;; 0c swan soldier
+NpcSpawnCondition_0c ; swan soldier
         $1c7a7              .byte $xx ; Swan - Tavern
         $1c7a8              .byte $xx,$xx ; 024 NOT
         $1c7aa              .byte $xx ; Swan
         $1c7ab              .byte $xx,$xx ; 024 NOT
         $1c7ad              .byte $xx
-        ;; 0b goa soldier
+NpcSpawnCondition_0b ; goa soldier
         $1c7ae              .byte $xx ; Goa - Tavern
         $1c7af              .byte $xx,$xx ; 024 NOT
         $1c7b1              .byte $xx ; Goa
         $1c7b2              .byte $xx,$xx ; 024 NOT
         $1c7b4              .byte $xx
-        ;; 4a swan tavern soldiers
+NpcSpawnCondition_4a ; swan tavern soldiers
         $1c7b5              .byte $xx ; Swan - Tavern
         $1c7b6              .byte $xx,$xx ; 024 NOT
         $1c7b8              .byte $xx
-        ;; 8a UNUSED
+NpcSpawnCondition_8a ; UNUSED
         $1c7b9              .byte $xx
-        ;; 0d leaf elder
+NpcSpawnCondition_0d ; leaf elder
         $1c7ba              .byte $xx ; Leaf - Elder House
         $1c7bb              .byte $xx,$xx ; 085 NOT leaf elder currently abducted
         $1c7bd              .byte $xx ; Mt Sabre North - Summit Cave
         $1c7be              .byte $xx,$xx ; 085 leaf elder currently abducted
         $1c7c0              .byte $xx
-        ;; 11 leaf elder's daughter 
+NpcSpawnCondition_11 ; leaf elder's daughter
         $1c7c1              .byte $xx ; Leaf - Elder House
         $1c7c2              .byte $xx,$xx ; 084 NOT leaf villagers currently abducted
         $1c7c4              .byte $xx ; Mt Sabre North - Right Cell
         $1c7c5              .byte $xx,$xx ; 084 leaf villagers currently abducted
         $1c7c7              .byte $xx
-        ;; 0e, 0f, 10, 12 - leaf townspeople
+NpcSpawnCondition_0e ; startled green man inside leaf (cf. $65)
+NpcSpawnCondition_0f ; red man at top of leaf
+NpcSpawnCondition_10 ; red woman outside leaf shops
+NpcSpawnCondition_12 ; red girl in leaf
         $1c7c8              .byte $xx ; Leaf
         $1c7c9              .byte $xx,$xx ; 084 NOT leaf villagers currently abducted
         $1c7cb              .byte $xx ; Mt Sabre North - Right Cell
         $1c7cc              .byte $xx,$xx ; 084 leaf villagers currently abducted
         $1c7ce              .byte $xx
-        ;; 14 windmill guard
+NpcSpawnCondition_14 ; windmill guard, zebu's student
         $1c7cf              .byte $xx ; Leaf - Student House
         $1c7d0              .byte $xx,$xx ; 03a NOT
         $1c7d2              .byte $xx ; Windmill Cave
         $1c7d3              .byte $xx,$xx ; 00f woke windmill guard
         $1c7d5              .byte $xx,$xx ; 038 NOT leaf attacked
         $1c7d7              .byte $xx
-        ;; 15 sleeping windmill guard
+NpcSpawnCondition_15 ; sleeping windmill guard
         $1c7d8              .byte $xx ; Windmill Cave
         $1c7d9              .byte $xx,$xx ; 03a
         $1c7db              .byte $xx,$xx ; 00f NOT woke windmill guard
         $1c7dd              .byte $xx
-        ;; 16 akahana
+NpcSpawnCondition_16 ; akahana
         $1c7de              .byte $xx ; Brynmaer
         $1c7df              .byte $xx,$xx ; 050 NOT given statue to akahana
         $1c7e1              .byte $xx ; Waterfall Cave 4
@@ -19940,16 +20032,16 @@ NpcSpawnConditionTablePart2
         $1c7e8              .byte $xx ; Shyron
         $1c7e9              .byte $xx,$xx ; 027 NOT shyron massacre
         $1c7eb              .byte $xx
-        ;; 88 stoned akahana
+NpcSpawnCondition_88 ; stoned akahana
         $1c7ec              .byte $xx ; Waterfall Cave 4
         $1c7ed              .byte $xx,$xx ; 035 NOT cured akahana
         $1c7ef              .byte $xx,$xx ; 051 NOT learned barrier
         $1c7f1              .byte $xx
-        ;; 1b blue treasure hunter in brynmaer tavern
+NpcSpawnCondition_1b ; blue treasure hunter in brynmaer tavern
         $1c7f2              .byte $xx ; Brynmaer - Tavern
         $1c7f3              .byte $xx,$xx ; 048 NOT
         $1c7f5              .byte $xx
-        ;; 1f dwarf child in swamp
+NpcSpawnCondition_1f ; dwarf child in swamp
         $1c7f6              .byte $xx ; Oak - Mother House
         $1c7f7              .byte $xx,$xx ; 045
         $1c7f9              .byte $xx ; Swamp
@@ -19957,32 +20049,32 @@ NpcSpawnConditionTablePart2
         $1c7fc              .byte $xx,$xx ; 053 NOT
         $1c7fe              .byte $xx,$xx ; 045 NOT
         $1c800              .byte $xx
-        ;; 2c dying man at foot of mt sabre north
+NpcSpawnCondition_2c ; dying man at foot of mt sabre north
         $1c801              .byte $xx ; Mt Sabre North - Main
         $1c802              .byte $xx,$xx ; 066 NOT
         $1c804              .byte $xx,$xx ; 048
         $1c806              .byte $xx,$xx ; 012 NOT
         $1c808              .byte $xx
-        ;; 2d mt sabre guard soldiers (both)
+NpcSpawnCondition_2d ; mt sabre guard soldiers (both)
         $1c809              .byte $xx ; Mt Sabre North - Main
         $1c80a              .byte $xx,$xx ; 05b NOT mt sabre guards gone
         $1c80c              .byte $xx ; Swan - Gate
         $1c80d              .byte $xx,$xx ; 08c NOT swan guards disappeared
         $1c80f              .byte $xx
-        ;; 2e leaf shopkeeper ?
-        ;; 2f leaf shopkeeper ?
-        ;; 30 leaf shopkeeper ?
-        ;; 31 UNUSED
+NpcSpawnCondition_2e ; leaf shopkeeper ?
+NpcSpawnCondition_2f ; leaf shopkeeper ?
+NpcSpawnCondition_30 ; leaf shopkeeper ?
+NpcSpawnCondition_31 ; UNUSED
         $1c810              .byte $xx ; Mt Sabre North - Left Cell
         $1c811              .byte $xx,$xx ; 084 leaf villagers currently abducted
         $1c813              .byte $xx
-        ;; 33 portoa throne room back door guard
+NpcSpawnCondition_33 ; portoa throne room back door guard
         $1c814              .byte $xx ; Portoa - Palace Throne Room
         $1c815              .byte $xx,$xx ; 020 NOT
         $1c817              .byte $xx ; Portoa - Palace Left
         $1c818              .byte $xx,$xx ; 020
         $1c81a              .byte $xx
-        ;; 38 portoa queen
+NpcSpawnCondition_38 ; portoa queen
         $1c81b              .byte $xx ; Portoa - Palace Throne Room
         $1c81c              .byte $xx,$xx ; 020 NOT
         $1c81e              .byte $xx,$xx ; 01f NOT
@@ -19990,41 +20082,41 @@ NpcSpawnConditionTablePart2
         $1c821              .byte $xx,$xx ; 01f got ball of water
         $1c823              .byte $xx,$xx ; 01e NOT
         $1c825              .byte $xx
-        ;; 39 fortune teller
+NpcSpawnCondition_39 ; fortune teller
         $1c826              .byte $xx ; Portoa - Fortune Teller
         $1c827              .byte $xx,$xx ; 020
         $1c829              .byte $xx,$xx ; 01f NOT
         $1c82b              .byte $xx
-        ;; 87 UNUSED
+NpcSpawnCondition_87 ; UNUSED
         $1c82c              .byte $xx ; Waterfall Cave 1
         $1c82d              .byte $xx,$xx ; 06b NOT
         $1c82f              .byte $xx
-        ;; 3c UNUSED
+NpcSpawnCondition_3c ; UNUSED
         $1c830              .byte $xx ; Waterfall Cave 1
         $1c831              .byte $xx,$xx ; 06b
         $1c833              .byte $xx,$xx ; 091 NOT
         $1c835              .byte $xx
-        ;; 85 stoned pair in waterfall cave
+NpcSpawnCondition_85 ; stoned pair in waterfall cave
         $1c836              .byte $xx ; Waterfall Cave 2
         $1c837              .byte $xx,$xx ; 06a NOT stoned people cured ?
         $1c839              .byte $xx
-        ;; 3a de-stoned people in waterfall cave
+NpcSpawnCondition_3a ; de-stoned people in waterfall cave
         $1c83a              .byte $xx ; Waterfall Cave 2
         $1c83b              .byte $xx,$xx ; 06a stoned people cured ?
         $1c83d              .byte $xx,$xx ; 090 NOT stoned people gone
         $1c83f              .byte $xx
-        ;; 44 clark
+NpcSpawnCondition_44 ; clark
         $1c840              .byte $xx ; Zombie Town - House Basement
         $1c841              .byte $xx,$xx ; 08f NOT
         $1c843              .byte $xx ; Joel - Shed
         $1c844              .byte $xx,$xx ; 08f
         $1c846              .byte $xx
-        ;; 4e shyron guards
-        ;; 4f shyron welcome
-        ;; 50 shyron red man middle
-        ;; 51 shyron training men
-        ;; 52 stom's girlfriend
-        ;; 53 shyron sick men
+NpcSpawnCondition_4e ; shyron guards
+NpcSpawnCondition_4f ; shyron welcome
+NpcSpawnCondition_50 ; shyron red man middle
+NpcSpawnCondition_51 ; shyron training men
+NpcSpawnCondition_52 ; stom's girlfriend
+NpcSpawnCondition_53 ; shyron sick men
         $1c847              .byte $xx ; Shyron
         $1c848              .byte $xx,$xx ; 027 NOT shyron massacre
         $1c84a              .byte $xx ; Mt Hydra - Outside Shyron
@@ -20043,34 +20135,34 @@ NpcSpawnConditionTablePart2
         $1c85b              .byte $xx,$xx ; 09f
         $1c85d              .byte $xx,$xx ; 027 NOT shyron massacre
         $1c85f              .byte $xx
-        ;; 76 dead shyron guard
+NpcSpawnCondition_76 ; dead shyron guard
         $1c860              .byte $xx ; Shyron
         $1c861              .byte $xx,$xx ; 027 shyron massacre
         $1c863              .byte $xx ; Mt Hydra - Outside Shyron
         $1c864              .byte $xx,$xx ; 027 shyron massacre
         $1c866              .byte $xx,$xx ; 0e9 NOT
         $1c868              .byte $xx
-        ;; 5d shyron generic dead person
+NpcSpawnCondition_5d ; shyron generic dead person
         $1c869              .byte $xx ; Shyron
         $1c86a              .byte $xx,$xx ; 027 shyron massacre
         $1c86c              .byte $xx,$xx ; 0e8 NOT
         $1c86e              .byte $xx
-        ;; 70 dead akahana
+NpcSpawnCondition_70 ; dead akahana
         $1c86f              .byte $xx ; Shyron
         $1c870              .byte $xx,$xx ; 027 shyron massacre
         $1c872              .byte $xx,$xx ; 0e0 NOT spoken to dead akahana
         $1c874              .byte $xx
-        ;; 71 dead stom's girlfriend
+NpcSpawnCondition_71 ; dead stom's girlfriend
         $1c875              .byte $xx ; Shyron
         $1c876              .byte $xx,$xx ; 027 shyron massacre
         $1c878              .byte $xx,$xx ; 089 NOT spoken to dead stom's girlfriend
         $1c87a              .byte $xx
-        ;; 72 dead stom
+NpcSpawnCondition_72 ; dead stom
         $1c87b              .byte $xx ; Shyron
         $1c87c              .byte $xx,$xx ; 027 shyron massacre
         $1c87e              .byte $xx,$xx ; 08a NOT spoken to dead stom
         $1c880              .byte $xx
-        ;; 5e zebu
+NpcSpawnCondition_5e ; zebu
         $1c881              .byte $xx ; Zebu Cave
         $1c882              .byte $xx,$xx ; 0a5 talked to zebu student
         $1c884              .byte $xx,$xx ; 00b talked to leaf elder
@@ -20082,7 +20174,7 @@ NpcSpawnConditionTablePart2
         $1c88e              .byte $xx ; Pyramid Back - Draygon Revisited
         $1c88f              .byte $xx,$xx ; 05e
         $1c891              .byte $xx
-        ;; 5f tornel
+NpcSpawnCondition_5f ; tornel
         $1c892              .byte $xx ; Stom House
         $1c893              .byte $xx,$xx ; 2f7 warp:oak
         $1c895              .byte $xx,$xx ; 00e NOT learned telepathy
@@ -20099,7 +20191,7 @@ NpcSpawnConditionTablePart2
         $1c8a7              .byte $xx ; Pyramid Back - Draygon Revisited
         $1c8a8              .byte $xx,$xx ; 05e
         $1c8aa              .byte $xx
-        ;; 60 stom
+NpcSpawnCondition_60 ; stom
         $1c8ab              .byte $xx ; Stom House
         $1c8ac              .byte $xx,$xx ; 051 NOT learned barrier
         $1c8ae              .byte $xx ; Swan - Stom Hut
@@ -20107,7 +20199,7 @@ NpcSpawnConditionTablePart2
         $1c8b1              .byte $xx ; Shyron
         $1c8b2              .byte $xx,$xx ; 027 NOT shyron massacre
         $1c8b4              .byte $xx
-        ;; 62 asina
+NpcSpawnCondition_62 ; asina
         $1c8b5              .byte $xx ; Portoa - Asina Room
         $1c8b6              .byte $xx,$xx ; 01e queen revealed as asina
         $1c8b8              .byte $xx,$xx ; 08f NOT defeated sabera 1 ???
@@ -20122,8 +20214,8 @@ NpcSpawnConditionTablePart2
         $1c8c7              .byte $xx ; Pyramid Back - Draygon Revisited
         $1c8c8              .byte $xx,$xx ; 05e
         $1c8ca              .byte $xx
-        ;; 74 kensu ???
-        ;; 7e kensu ??? lighthouse/tavern/dance
+NpcSpawnCondition_74 ; kensu ???
+NpcSpawnCondition_7e ; kensu ??? lighthouse/tavern/dance
         $1c8cb              .byte $xx ; Joel - Lighthouse
         $1c8cc              .byte $xx,$xx ; 0a4
         $1c8ce              .byte $xx,$xx ; 075 NOT
@@ -20134,127 +20226,127 @@ NpcSpawnConditionTablePart2
         $1c8d6              .byte $xx,$xx ; 03e finished chasing kensu
         $1c8d8              .byte $xx,$xx ; 063 NOT
         $1c8da              .byte $xx ; Goa Fortress - Kensu
-        $1c8db              .byte $xx,$xx ; 065
+        $1c8db              .byte $xx,$xx ; 065 cured kensu
         $1c8dd              .byte $xx,$xx ; 0d8 NOT
         $1c8df              .byte $xx
-        ;; 63 hurt dolphin
+NpcSpawnCondition_63 ; hurt dolphin
         $1c8e0              .byte $xx ; Underground Channel
-        $1c8e1              .byte $xx,$xx ; 025 NOT
-        $1c8e3              .byte $xx,$xx ; 01e
+        $1c8e1              .byte $xx,$xx ; 025 NOT healed dolphin
+        $1c8e3              .byte $xx,$xx ; 01e queen revealed as asina
         $1c8e5              .byte $xx
-        ;; 65 startled green man outside leaf cave
+NpcSpawnCondition_65 ; startled green man outside leaf cave
         $1c8e6              .byte $xx ; Leaf - Outside Start
         $1c8e7              .byte $xx,$xx ; 073 NOT
         $1c8e9              .byte $xx
-        ;; 6a UNUSED
+NpcSpawnCondition_6a ; UNUSED
         $1c8ea              .byte $xx ; Sabera Palace 3
         $1c8eb              .byte $xx,$xx ; 013 NOT sabera defeated
         $1c8ed              .byte $xx
-        ;; 6e azteca in shyron temple
+NpcSpawnCondition_6e ; azteca in shyron temple
         $1c8ee              .byte $xx ; Shyron - Temple
         $1c8ef              .byte $xx,$xx ; 05f chest:03:sword of thunder
         $1c8f1              .byte $xx,$xx ; 02d NOT
         $1c8f3              .byte $xx
-        ;; 73 UNUSED
+NpcSpawnCondition_73 ; UNUSED
         $1c8f4              .byte $xx ; Pyramid Back - Draygon Revisited
         $1c8f5              .byte $xx,$xx ; 05e
         $1c8f7              .byte $xx
-        ;; 68 kensu (in cabin)
+NpcSpawnCondition_68 ; kensu (in cabin)
         $1c8f8              .byte $xx ; Cabin
         $1c8f9              .byte $xx,$xx ; 2fb NOT warp:joel
         $1c8fb              .byte $xx
-        ;; 6b kensu (asleep in lighthouse)
+NpcSpawnCondition_6b ; kensu (asleep in lighthouse)
         $1c8fc              .byte $xx ; Joel - Lighthouse
         $1c8fd              .byte $xx,$xx ; 0a4 NOT
         $1c8ff              .byte $xx
-        ;; 6d kensu soldier
+NpcSpawnCondition_6d ; kensu soldier
         $1c900              .byte $xx ; Swan - Tavern
         $1c901              .byte $xx,$xx ; 061
         $1c903              .byte $xx,$xx ; 072 NOT
         $1c905              .byte $xx ; Goa
         $1c906              .byte $xx,$xx ; 027 NOT shyron massacre
         $1c908              .byte $xx
-        ;; 6c kensu in swan dance hall
+NpcSpawnCondition_6c ; kensu in swan dance hall
         $1c909              .byte $xx ; Swan - Dance Hall
         $1c90a              .byte $xx,$xx ; 072
         $1c90c              .byte $xx,$xx ; 03e NOT finished chasing kensu
         $1c90e              .byte $xx
-        ;; 75 kensu slime
+NpcSpawnCondition_75 ; kensu slime
         $1c90f              .byte $xx ; Goa Fortress - Kensu
-        $1c910              .byte $xx,$xx ; 065 NOT
+        $1c910              .byte $xx,$xx ; 065 NOT cured kensu
         $1c912              .byte $xx
-        ;; 83 azteca temple front
+NpcSpawnCondition_83 ; azteca temple front
         $1c913              .byte $xx ; Pyramid Front - Entrance
         $1c914              .byte $xx,$xx ; 06c
         $1c916              .byte $xx,$xx ; 079 NOT
         $1c918              .byte $xx
-        ;; 84 sabera posing as mesia
+NpcSpawnCondition_84 ; sabera posing as mesia
         $1c919              .byte $xx ; Sabera Palace 3
         $1c91a              .byte $xx,$xx ; 013 NOT sabera defeated
         $1c91c              .byte $xx
-        ;; 8e mesia in tower
+NpcSpawnCondition_8e ; mesia
         $1c91d              .byte $xx ; Sabera Palace 3
         $1c91e              .byte $xx,$xx ; 013 NOT sabera defeated
-        $1c920              .byte $xx
-        ;; 20 oak inn guard (post-telepathy)
-        ;; 21 oak tool shop guard (post-telepathy)
+        $1c920              .byte $xx ; fall-through: always spawn in tower
+NpcSpawnCondition_20 ; oak inn guard (post-telepathy)
+NpcSpawnCondition_21 ; oak tool shop guard (post-telepathy)
         $1c921              .byte $xx ; Oak
         $1c922              .byte $xx,$xx ; 045
         $1c924              .byte $xx
-        ;; 7c oak inn guard (pre-telepathy)
-        ;; 7d oak tool shop guard (pre-telepathy)
+NpcSpawnCondition_7c ; oak inn guard (pre-telepathy)
+NpcSpawnCondition_7d ; oak tool shop guard (pre-telepathy)
         $1c925              .byte $xx ; Oak
         $1c926              .byte $xx,$xx ; 045 NOT
         $1c928              .byte $xx
-        ;; c0 vampire 1 
+NpcSpawnCondition_c0 ; vampire 1
         $1c929              .byte $xx ; Sealed Cave 7
         $1c92a              .byte $xx,$xx ; 100 NOT defeated vampire 1
         $1c92c              .byte $xx
-        ;; c1 giant insect
+NpcSpawnCondition_c1 ; insect
         $1c92d              .byte $xx ; Swamp
         $1c92e              .byte $xx,$xx ; 101 NOT defeated insect
         $1c930              .byte $xx
-        ;; c2 kelbesque 1
+NpcSpawnCondition_c2 ; kelbesque 1
         $1c931              .byte $xx ; Mt Sabre North - Main
         $1c932              .byte $xx,$xx ; 102 NOT defeated kelbesque 1
         $1c934              .byte $xx
-        ;; c3 rage
+NpcSpawnCondition_c3 ; rage
         $1c935              .byte $xx ; Lime Tree Lake
         $1c936              .byte $xx,$xx ; 103 NOT got item from rage
         $1c938              .byte $xx
-        ;; c4 mado 1
+NpcSpawnCondition_c4 ; mado 1
         $1c939              .byte $xx ; Shyron - Temple
         $1c93a              .byte $xx,$xx ; 104 NOT defeated mado 1
         $1c93c              .byte $xx
-        ;; c5 kelbesque 2
+NpcSpawnCondition_c5 ; sabera 1
         $1c93d              .byte $xx ; Goa Fortress - Kelbesque
         $1c93e              .byte $xx,$xx ; 105 NOT defeated kelbesque 2
         $1c940              .byte $xx
-        ;; c6 sabera 2
+NpcSpawnCondition_c6 ; sabera 2
         $1c941              .byte $xx ; Goa Fortress - Tornel
         $1c942              .byte $xx,$xx ; 106 NOT defeated sabera 2
         $1c944              .byte $xx
-        ;; c7 mado 2
+NpcSpawnCondition_c7 ; mado 2
         $1c945              .byte $xx ; Goa Fortress - Asina
         $1c946              .byte $xx,$xx ; 107 NOT defeated mado 2
         $1c948              .byte $xx
-        ;; c8 karmine
+NpcSpawnCondition_c8 ; karmine
         $1c949              .byte $xx ; Goa Fortress - Karmine 7
         $1c94a              .byte $xx,$xx ; 108 NOT defeated karmine
         $1c94c              .byte $xx
-        ;; c9 statue of moon
+NpcSpawnCondition_c9 ; statue of moon
         $1c94d              .byte $xx ; Pyramid Back - Entrance
         $1c94e              .byte $xx,$xx ; 109 NOT defeated statue of moon
         $1c950              .byte $xx
-        ;; ca statue of sun
+NpcSpawnCondition_ca ; statue of sun
         $1c951              .byte $xx ; Pyramid Back - Entrance
         $1c952              .byte $xx,$xx ; 10a NOT defeated statue of sun
         $1c954              .byte $xx
-        ;; cb draygon 1 and 2
+NpcSpawnCondition_cb ; draygon 1 and 2
         $1c955              .byte $xx ; Pyramid Front - Draygon
         $1c956              .byte $xx,$xx ; 10b NOT defeated draygon 1
         $1c958              .byte $xx
-        ;; cc vampire 2
+NpcSpawnCondition_cc ; vampire 2
         $1c959              .byte $xx ; Sabera Palace 1
         $1c95a              .byte $xx,$xx ; 10c NOT defeated vampire 2
         $1c95c              .byte $xx
@@ -20262,161 +20354,161 @@ NpcSpawnConditionTablePart2
 ;;; the last byte of the NpcData entry.  This also corresponds to entries in
 ;;; the PersonData table.
 ;;; STRIP: word=$14000
-DialogTable
-        $1c95d              .word ($1d186) ; 00 portoa pink man on fortune teller island
-        $1c95f              .word ($1cd61) ; 01
-        $1c961              .word ($1cd9c) ; 02 portoa light blue lower left walker
-        $1c963              .word ($1d167) ; 03 portoa pink stationary lower left man
-        $1c965              .word ($1d0c1) ; 04 woman in dress at front of amazones
+NpcDialogTable
+        $1c95d              .word ($1d186) ; 00 portoa pink man on fortune teller island; sahara orange man left
+        $1c95f              .word ($1cd61) ; 01 sahara grey bearded man by well, brynmaer barkeep
+        $1c961              .word ($1cd9c) ; 02 portoa light blue lower left walker, brynmaer tavern top left
+        $1c963              .word ($1d167) ; 03 portoa pink stationary lower left man; sahara grey man mid-right
+        $1c965              .word ($1d0c1) ; 04 woman in dress at front of amazones, sahara; portoa lady in waiting right
         $1c967              .word ($1cec2) ; 05 headband lady at right of amazones, portoa welcome
-        $1c969              .word ($1d14f) ; 06 portoa pink dress lady below castle bridge
+        $1c969              .word ($1d14f) ; 06 portoa pink dress lady below castle bridge; sahara grey dress lady right
         $1c96b              .word ($1d070) ; 07 portoa barracks guard top
-        $1c96d              .word ($1cf1d) ; 08 blue man at front of brynmaer
-        $1c96f              .word ($1d33f) ; 09
-        $1c971              .word ($1d35a) ; 0a
-        $1c973              .word ($1d633) ; 0b
-        $1c975              .word ($1d429) ; 0c
+        $1c96d              .word ($1cf1d) ; 08 blue man at front of brynmaer, red man top of nadare
+        $1c96f              .word ($1d33f) ; 09 zombietown man on left
+        $1c971              .word ($1d35a) ; 0a zombietown woman on right
+        $1c973              .word ($1d633) ; 0b goa soldier
+        $1c975              .word ($1d429) ; 0c swan soldier
         $1c977              .word ($1cb43) ; 0d leaf elder
         $1c979              .word ($1cb86) ; 0e startled green man inside leaf (cf. $65)
         $1c97b              .word ($1cbbb) ; 0f red man at top of leaf
         $1c97d              .word ($1cbed) ; 10 red woman outside leaf shops
         $1c97f              .word ($1cc1b) ; 11 leaf elder's daughter
         $1c981              .word ($1cc4d) ; 12 red girl in leaf
-        $1c983              .word ($1cc76) ; 13
-        $1c985              .word ($1ccc5) ; 14 windmill guard?
-        $1c987              .word ($1ccf2) ; 15 windmill guard?
+        $1c983              .word ($1cc76) ; 13 leaf rabbit
+        $1c985              .word ($1ccc5) ; 14 windmill guard, zebu's student
+        $1c987              .word ($1ccf2) ; 15 sleeping windmill guard
         $1c989              .word ($1d6cd) ; 16 akahana
         $1c98b              .word ($1cd39) ; 17 red bearded man beneath brynmaer inn
         $1c98d              .word ($1cd43) ; 18 blue woman beneath brynmaer armor shop
         $1c98f              .word ($1cd4d) ; 19 red cloaked man beneath brynmaer pawn
         $1c991              .word ($1cd57) ; 1a blue woman at far end of brynmaer
-        $1c993              .word ($1ccfc) ; 1b
-        $1c995              .word ($1cd08) ; 1c
-        $1c997              .word ($1cdaf) ; 1d
-        $1c999              .word ($1cde8) ; 1e
+        $1c993              .word ($1ccfc) ; 1b blue treasure hunter in brynmaer tavern
+        $1c995              .word ($1cd08) ; 1c yellow treasure hunter in brynmaer tavern
+        $1c997              .word ($1cdaf) ; 1d oak elder
+        $1c999              .word ($1cde8) ; 1e oak mother
         $1c99b              .word ($1ce15) ; 1f dwarf child in swamp
         $1c99d              .word ($1ce3b) ; 20 oak inn guard (post-telepathy)
         $1c99f              .word ($1ce5f) ; 21 oak tool shop guard (post-telepathy)
         $1c9a1              .word ($1ce83) ; 22 oak top-right dwarf
-        $1c9a3              .word ($1cea7) ; 23
+        $1c9a3              .word ($1cea7) ; 23 amazones queen
         $1c9a5              .word ($1cedf) ; 24 long-haired woman at left of amazones
         $1c9a7              .word ($1cefd) ; 25 amazones guard
-        $1c9a9              .word ($1cee9) ; 26
-        $1c9ab              .word ($1cef3) ; 27
-        $1c9ad              .word ($1cf13) ; 28
-        $1c9af              .word ($1cf55) ; 29 nadare back room (right)
-        $1c9b1              .word ($1cf3a) ; 2a
-        $1c9b3              .word ($1cf30) ; 2b nadare back room (left)
+        $1c9a9              .word ($1cee9) ; 26 amazones queen right attendant
+        $1c9ab              .word ($1cef3) ; 27 amazones queen left attendant
+        $1c9ad              .word ($1cf13) ; 28 nadare
+        $1c9af              .word ($1cf55) ; 29 nadare back room red woman (right)
+        $1c9b1              .word ($1cf3a) ; 2a green bearded man bottom-left nadare
+        $1c9b3              .word ($1cf30) ; 2b nadare back room gray man (left)
         $1c9b5              .word ($1cd28) ; 2c dying man at foot of mt sabre north
         $1c9b7              .word ($1cf79) ; 2d mt sabre guard soldiers (both)
         $1c9b9              .word ($1ccb1) ; 2e leaf shopkeeper ?
         $1c9bb              .word ($1ccbb) ; 2f leaf shopkeeper ?
         $1c9bd              .word ($1cc9d) ; 30 leaf shopkeeper ?
-        $1c9bf              .word ($1cca7) ; 31
+        $1c9bf              .word ($1cca7) ; 31 UNUSED
         $1c9c1              .word ($1d0ab) ; 32 portoa barracks guard right
         $1c9c3              .word ($1d055) ; 33 portoa throne room back door guard
         $1c9c5              .word ($1d030) ; 34 portoa palace guard (throme room front)
         $1c9c7              .word ($1d0fe) ; 35 portoa barracks evans
-        $1c9c9              .word ($1d119) ; 36
-        $1c9cb              .word ($1d134) ; 37
+        $1c9c9              .word ($1d119) ; 36 portoa pink lady in waiting at table left
+        $1c9cb              .word ($1d134) ; 37 portoa red lady in waiting at table top
         $1c9cd              .word ($1cf91) ; 38 portoa queen
         $1c9cf              .word ($1d004) ; 39 fortune teller
         $1c9d1              .word ($1d1e5) ; 3a de-stoned people in waterfall cave
-        $1c9d3              .word ($1d1fd) ; 3b
-        $1c9d5              .word ($1d20c) ; 3c
-        $1c9d7              .word ($1d21b) ; 3d
-        $1c9d9              .word ($1d27b) ; 3e
-        $1c9db              .word ($1d29b) ; 3f
-        $1c9dd              .word ($1d2bb) ; 40
-        $1c9df              .word ($1d25b) ; 41
-        $1c9e1              .word ($1d23b) ; 42
-        $1c9e3              .word ($1d2db) ; 43
-        $1c9e5              .word ($1d390) ; 44
-        $1c9e7              .word ($1d2fb) ; 45
-        $1c9e9              .word ($1d31d) ; 46
-        $1c9eb              .word ($1d375) ; 47
-        $1c9ed              .word ($1d3d8) ; 48
-        $1c9ef              .word ($1cb08) ; 49
-        $1c9f1              .word ($1d44d) ; 4a
-        $1c9f3              .word ($1cb12) ; 4b
-        $1c9f5              .word ($1cb25) ; 4c
-        $1c9f7              .word ($1cb2f) ; 4d
-        $1c9f9              .word ($1d477) ; 4e
-        $1c9fb              .word ($1d4e8) ; 4f
-        $1c9fd              .word ($1d503) ; 50
-        $1c9ff              .word ($1d4b9) ; 51
-        $1ca01              .word ($1d52a) ; 52
-        $1ca03              .word ($1d4d5) ; 53
-        $1ca05              .word ($1d5bf) ; 54
-        $1ca07              .word ($1d5fd) ; 55
-        $1ca09              .word ($1d56e) ; 56
-        $1ca0b              .word ($1d589) ; 57
-        $1ca0d              .word ($1d5a4) ; 58
-        $1ca0f              .word ($1d669) ; 59
-        $1ca11              .word ($1d64b) ; 5a
-        $1ca13              .word ($1d67f) ; 5b
-        $1ca15              .word ($1d69c) ; 5c
-        $1ca17              .word ($1d51e) ; 5d
+        $1c9d3              .word ($1d1fd) ; 3b UNUSED
+        $1c9d5              .word ($1d20c) ; 3c UNUSED
+        $1c9d7              .word ($1d21b) ; 3d joel elder
+        $1c9d9              .word ($1d27b) ; 3e joel brown lady left of elder
+        $1c9db              .word ($1d29b) ; 3f joel blue lady right of elder
+        $1c9dd              .word ($1d2bb) ; 40 joel welcome
+        $1c9df              .word ($1d25b) ; 41 joel top-right bearded green man
+        $1c9e1              .word ($1d23b) ; 42 joel top-left watchman
+        $1c9e3              .word ($1d2db) ; 43 joel bottom-right red woman
+        $1c9e5              .word ($1d390) ; 44 clark
+        $1c9e7              .word ($1d2fb) ; 45 zombietown human top
+        $1c9e9              .word ($1d31d) ; 46 zombietown human bottom
+        $1c9eb              .word ($1d375) ; 47 zombietown child in clark house
+        $1c9ed              .word ($1d3d8) ; 48 swan blue bearded man outside armor shop
+        $1c9ef              .word ($1cb08) ; 49 swan barkeep
+        $1c9f1              .word ($1d44d) ; 4a swan tavern soldiers
+        $1c9f3              .word ($1cb12) ; 4b swan dancing ladies
+        $1c9f5              .word ($1cb25) ; 4c swan dance instructor
+        $1c9f7              .word ($1cb2f) ; 4d swan dancing man
+        $1c9f9              .word ($1d477) ; 4e shyron guards
+        $1c9fb              .word ($1d4e8) ; 4f shyron welcome
+        $1c9fd              .word ($1d503) ; 50 shyron red man middle
+        $1c9ff              .word ($1d4b9) ; 51 shyron training men
+        $1ca01              .word ($1d52a) ; 52 stom's girlfriend
+        $1ca03              .word ($1d4d5) ; 53 shyron sick men
+        $1ca05              .word ($1d5bf) ; 54 akahana friend
+        $1ca07              .word ($1d5fd) ; 55 goa cloaked man right
+        $1ca09              .word ($1d56e) ; 56 goa pink blouse lady middle
+        $1ca0b              .word ($1d589) ; 57 goa tavern lady
+        $1ca0d              .word ($1d5a4) ; 58 goa barkeep
+        $1ca0f              .word ($1d669) ; 59 sahara generic bunny
+        $1ca11              .word ($1d64b) ; 5a deo
+        $1ca13              .word ($1d67f) ; 5b sahara elder
+        $1ca15              .word ($1d69c) ; 5c sahara elder's daughter
+        $1ca17              .word ($1d51e) ; 5d shyron generic dead person
         $1ca19              .word ($1d755) ; 5e zebu
         $1ca1b              .word ($1d7a6) ; 5f tornel
         $1ca1d              .word ($1d719) ; 60 stom
         $1ca1f              .word ($1cb39) ; 61 mesia in shrine
-        $1ca21              .word ($1d7ef) ; 62
-        $1ca23              .word ($1d6b9) ; 63
+        $1ca21              .word ($1d7ef) ; 62 asina
+        $1ca23              .word ($1d6b9) ; 63 hurt dolphin
         $1ca25              .word ($1d1a3) ; 64 portoa fisherman
         $1ca27              .word ($1cb7a) ; 65 startled green man outside leaf cave
-        $1ca29              .word ($1cb39) ; 66
-        $1ca2b              .word ($1cb39) ; 67
-        $1ca2d              .word ($1d860) ; 68
-        $1ca2f              .word ($1d6c3) ; 69
-        $1ca31              .word ($1cb39) ; 6a
-        $1ca33              .word ($1d86c) ; 6b
-        $1ca35              .word ($1d897) ; 6c
-        $1ca37              .word ($1d876) ; 6d
-        $1ca39              .word ($1caf4) ; 6e
-        $1ca3b              .word ($1d3f3) ; 6f
+        $1ca29              .word ($1cb39) ; 66 UNUSED
+        $1ca2b              .word ($1cb39) ; 67 UNUSED
+        $1ca2d              .word ($1d860) ; 68 kensu (in cabin)
+        $1ca2f              .word ($1d6c3) ; 69 dolphin
+        $1ca31              .word ($1cb39) ; 6a UNUSED
+        $1ca33              .word ($1d86c) ; 6b kensu (asleep in lighthouse)
+        $1ca35              .word ($1d897) ; 6c kensu in swan dance hall
+        $1ca37              .word ($1d876) ; 6d kensu soldier
+        $1ca39              .word ($1caf4) ; 6e azteca in shyron temple
+        $1ca3b              .word ($1d3f3) ; 6f swan blue cloaked man outside hut
         $1ca3d              .word ($1d708) ; 70 dead akahana
-        $1ca3f              .word ($1d545) ; 71
+        $1ca3f              .word ($1d545) ; 71 dead stom's girlfriend
         $1ca41              .word ($1d55d) ; 72 dead stom
-        $1ca43              .word ($1cb39) ; 73
-        $1ca45              .word ($1d836) ; 74
-        $1ca47              .word ($1d8ad) ; 75
-        $1ca49              .word ($1d4ad) ; 76
-        $1ca4b              .word ($1d3bd) ; 77
-        $1ca4d              .word ($1d5e2) ; 78
-        $1ca4f              .word ($1d40e) ; 79
-        $1ca51              .word ($1d618) ; 7a
+        $1ca43              .word ($1cb39) ; 73 UNUSED
+        $1ca45              .word ($1d836) ; 74 kensu ???
+        $1ca47              .word ($1d8ad) ; 75 kensu slime
+        $1ca49              .word ($1d4ad) ; 76 dead shyron guard
+        $1ca4b              .word ($1d3bd) ; 77 swan yellow man right
+        $1ca4d              .word ($1d5e2) ; 78 goa pink welcomer
+        $1ca4f              .word ($1d40e) ; 79 swan yellow woman left
+        $1ca51              .word ($1d618) ; 7a goa pink dress lady near house
         $1ca53              .word ($1d1c5) ; 7b portoa fisherman's daughter
         $1ca55              .word ($1ce3b) ; 7c oak inn guard (pre-telepathy)
-        $1ca57              .word ($1ce5f) ; 7d oak tool shop guard (post-telepathy)
-        $1ca59              .word ($1d836) ; 7e
-        $1ca5b              .word ($1cafe) ; 7f
-DialogTablePart2
-        $1ca5d              .word ($1cae5) ; 80
-        $1ca5f              .word ($1cae5) ; 81
-        $1ca61              .word ($1cb39) ; 82
-        $1ca63              .word ($1d8d2) ; 83
-        $1ca65              .word ($1d8c8) ; 84
+        $1ca57              .word ($1ce5f) ; 7d oak tool shop guard (pre-telepathy)
+        $1ca59              .word ($1d836) ; 7e kensu ??? lighthouse/tavern/dance
+        $1ca5b              .word ($1cafe) ; 7f zombie in zombietown
+NpcDialogTablePart2
+        $1ca5d              .word ($1cae5) ; 80 goa shop guards (stationary)
+        $1ca5f              .word ($1cae5) ; 81 goa shop guards (moving)
+        $1ca61              .word ($1cb39) ; 82 UNUSED
+        $1ca63              .word ($1d8d2) ; 83 azteca temple front
+        $1ca65              .word ($1d8c8) ; 84 sabera posing as mesia
         $1ca67              .word ($1d1e5) ; 85 stoned pair in waterfall cave
-        $1ca69              .word ($1d1fd) ; 86
-        $1ca6b              .word ($1d20c) ; 87
+        $1ca69              .word ($1d1fd) ; 86 UNUSED
+        $1ca6b              .word ($1d20c) ; 87 UNUSED
         $1ca6d              .word ($1d6cd) ; 88 stoned akahana
-        $1ca6f              .word ($1cb39) ; 89
-        $1ca71              .word ($1cb39) ; 8a
-        $1ca73              .word ($1cb39) ; 8b
-        $1ca75              .word ($1cb39) ; 8c
-        $1ca77              .word ($1cb39) ; 8d
-        $1ca79              .word ($1d8b7) ; 8e mesia in tower
-        $1ca7b              .word ($1cb39) ; 8f
-        $1ca7d              .word ($1cb39) ; 90
-        $1ca7f              .word ($1cb39) ; 91
-        $1ca81              .word ($1cb39) ; 92
-        $1ca83              .word ($1cb39) ; 93
-        $1ca85              .word ($1cb39) ; 94
-        $1ca87              .word ($1cb39) ; 95
-        $1ca89              .word ($1cb39) ; 96
-        $1ca8b              .word ($1cb39) ; 97
-        $1ca8d              .word ($1cb39) ; 98
+        $1ca6f              .word ($1cb39) ; 89 UNUSED
+        $1ca71              .word ($1cb39) ; 8a UNUSED
+        $1ca73              .word ($1cb39) ; 8b UNUSED
+        $1ca75              .word ($1cb39) ; 8c UNUSED
+        $1ca77              .word ($1cb39) ; 8d UNUSED
+        $1ca79              .word ($1d8b7) ; 8e mesia
+        $1ca7b              .word ($1cb39) ; 8f 
+        $1ca7d              .word ($1cb39) ; 90 
+        $1ca7f              .word ($1cb39) ; 91 
+        $1ca81              .word ($1cb39) ; 92 
+        $1ca83              .word ($1cb39) ; 93 
+        $1ca85              .word ($1cb39) ; 94 
+        $1ca87              .word ($1cb39) ; 95 
+        $1ca89              .word ($1cb39) ; 96 
+        $1ca8b              .word ($1cb39) ; 97 
+        $1ca8d              .word ($1cb39) ; 98 
         $1ca8f              .word ($1cb39) ; 99
         $1ca91              .word ($1cb39) ; 9a
         $1ca93              .word ($1cb39) ; 9b
@@ -20460,47 +20552,49 @@ DialogTablePart2
         $1cadf              .word ($1cb39) ; c1 giant insect???
         $1cae1              .word ($1cb39) ; c2 kelbesque???
         $1cae3              .word ($1d8e5) ; c3 rage
-        ;; ----------------------------------------------------------------
-	;; 80, 81 goa shop guards
+;;; ----------------------------------------------------------------
+NpcDialog_80 ; goa shop guards (stationary)
+NpcDialog_81 ; goa shop guards (moving)
         $1cae5              .byte $xx,$xx,$xx,$xx,$xx
         $1caea              .byte $xx,$xx,$xx,$xx,$xx ; 026 -> 1e:14
         $1caef              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:13
-        ;; ----------------------------------------------------------------
-	;; 6e azteca in shyron temple
+;;; ----------------------------------------------------------------
+NpcDialog_6e ; azteca in shyron temple
         $1caf4              .byte $xx,$xx,$xx,$xx,$xx
         $1caf9              .byte $xx,$xx,$xx,$xx,$xx ; default -> 16:01
-        ;; ----------------------------------------------------------------
-	;; 7f
+;;; ----------------------------------------------------------------
+NpcDialog_7f ; zombie in zombietown
         $1cafe              .byte $xx,$xx,$xx,$xx,$xx
         $1cb03              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0d:02
-        ;; ----------------------------------------------------------------
-	;; 49 swan barkeep
+;;; ----------------------------------------------------------------
+NpcDialog_49 ; swan barkeep
         $1cb08              .byte $xx,$xx,$xx,$xx,$xx
         $1cb0d              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:0f
-        ;; ----------------------------------------------------------------
-	;; 4b swan dancing ladies
+;;; ----------------------------------------------------------------
+NpcDialog_4b ; swan dancing ladies
         $1cb12              .byte $xx,$xx,$xx,$xx,$xx
         $1cb17              .byte $xx,$xx,$xx,$xx,$xx ; 0a7 NOT -> 13:11
         $1cb1c              .byte $xx,$xx
         $1cb1e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; ----------------------------------------------------------------
-	;; 4c swan dance instructor
+;;; ----------------------------------------------------------------
+NpcDialog_4c ; swan dance instructor
         $1cb25              .byte $xx,$xx,$xx,$xx,$xx
         $1cb2a              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:12
-        ;; ----------------------------------------------------------------
-	;; 4d swan dancing man
+;;; ----------------------------------------------------------------
+NpcDialog_4d ; swan dancing man
         $1cb2f              .byte $xx,$xx,$xx,$xx,$xx
         $1cb34              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:10
-        ;; ----------------------------------------------------------------
-	;; 61, 66, 67, 6a, 73, 82, 89, 8a, 8b, 8c, 8d, 8f, 90, 91, 92, 93 
-	;; 94, 95, 96, 97, 98, 99, 9a, 9b, 9c, 9d, 9e, 9f, a0, a1, a2, a3
-	;; a4, a5, a6, a7, a8, a9, aa, ab, ac, ad, ae, af, b0, b1, b2, b3
-	;; b4, b5, b6, b7, b8, b9, ba, bb, bc, bd, be, bf, c0, c1, c2
+;;; ----------------------------------------------------------------
+NpcDialog_61 ; mesia in shrine
+NpcDialog_66 ; UNUSED
+NpcDialog_67 ; UNUSED
+NpcDialog_6a ; UNUSED
+NpcDialog_73 ; UNUSED
+NpcDialog_82 ; UNUSED
         ;; "Tell me of your travels someday."
         $1cb39              .byte $xx,$xx,$xx,$xx,$xx
         $1cb3e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:03
-        ;; ----------------------------------------------------------------
-	;; 0d leaf elder 
+NpcDialog_0d ; leaf elder
         $1cb43              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 00:12
         $1cb47              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 00:13
         $1cb4b              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 00:12
@@ -20518,14 +20612,14 @@ DialogTablePart2
         $1cb6e              .byte $xx,$xx,$xx,$xx,$xx ; 083 NOT learned paralysis -> 07:09
         $1cb73              .byte         $xx,$xx     ;     Set: 083 learned paralysis
         $1cb75              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:0a
-        ;; ----------------------------------------------------------------
-	;; 65 startled green man outside leaf cave
+;;; ----------------------------------------------------------------
+NpcDialog_65 ; startled green man outside leaf cave
         $1cb7a              .byte $xx,$xx,$xx,$xx
         $1cb7e              .byte $xx
         $1cb7f              .byte $xx,$xx,$xx,$xx,$xx ; default -> 00:09
         $1cb84              .byte         $xx,$xx     ;     Set: 073
-        ;; ----------------------------------------------------------------
-	;; 0e startled green man inside leaf (cf. $65)
+;;; ----------------------------------------------------------------
+NpcDialog_0e ; startled green man inside leaf (cf. $65)
         $1cb86              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
         $1cb8a              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1cb8e              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
@@ -20542,8 +20636,8 @@ DialogTablePart2
         ;;                  16: 32 Mt Sabre North - Right Cell
         $1cbb1              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:0d
         $1cbb6              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:01
-        ;; ----------------------------------------------------------------
-	;; 0f red man at top of leaf 
+;;; ----------------------------------------------------------------
+NpcDialog_0f ; red man at top of leaf
         $1cbbb              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:00
         $1cbbf              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
         $1cbc3              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:00
@@ -20560,8 +20654,8 @@ DialogTablePart2
         ;;                  13: 32 Mt Sabre North - Right Cell
         $1cbe3              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:02
         $1cbe8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:00
-        ;; ----------------------------------------------------------------
-	;; 10 red woman outside leaf shops
+;;; ----------------------------------------------------------------
+NpcDialog_10 ; red woman outside leaf shops
         $1cbed              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
         $1cbf1              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1cbf5              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
@@ -20576,8 +20670,8 @@ DialogTablePart2
         ;;                  0f: 32 Mt Sabre North - Right Cell
         $1cc11              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:08
         $1cc16              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:02
-        ;; ----------------------------------------------------------------
-	;; 11 leaf elder's daughter
+;;; ----------------------------------------------------------------
+NpcDialog_11 ; leaf elder's daughter
         $1cc1b              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:04
         $1cc1f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0b
         $1cc23              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:04
@@ -20594,8 +20688,8 @@ DialogTablePart2
         ;;                  13: 32 Mt Sabre North - Right Cell
         $1cc43              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:05
         $1cc48              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:03
-        ;; ----------------------------------------------------------------
-	;; 12 red girl in leaf 
+;;; ----------------------------------------------------------------
+NpcDialog_12 ; red girl in leaf
         $1cc4d              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 00:18
         $1cc51              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0c
         $1cc55              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 00:18
@@ -20609,8 +20703,8 @@ DialogTablePart2
         ;;                  0a: 32 Mt Sabre North - Right Cell
         $1cc6c              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:19
         $1cc71              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:06
-        ;; ----------------------------------------------------------------
-	;; 13 leaf rabbit
+;;; ----------------------------------------------------------------
+NpcDialog_13 ; leaf rabbit
         $1cc76              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 00:14
         $1cc7a              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 00:14
         $1cc7e              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 00:14
@@ -20621,28 +20715,28 @@ DialogTablePart2
         $1cc91              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:17
         $1cc96              .byte $xx,$xx,$xx,$xx,$xx ; default -> 00:16
         $1cc9b              .byte         $xx,$xx     ;     Set: 0a9 talked to leaf rabbit
-        ;; ----------------------------------------------------------------
-	;; 30 leaf shopkeeper ?
+;;; ----------------------------------------------------------------
+NpcDialog_30 ; leaf shopkeeper ?
         $1cc9d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0f
         $1cca1              .byte $xx
         $1cca2              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:07
-        ;; ----------------------------------------------------------------
-	;; 31 UNUSED
+;;; ----------------------------------------------------------------
+NpcDialog_31 ; UNUSED
         $1cca7              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0f
         $1ccab              .byte $xx
         $1ccac              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:08
-        ;; ----------------------------------------------------------------
-	;; 2e leaf shopkeeper ?
+;;; ----------------------------------------------------------------
+NpcDialog_2e ; leaf shopkeeper ?
         $1ccb1              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:10
         $1ccb5              .byte $xx
         $1ccb6              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:07
-        ;; ----------------------------------------------------------------
-	;; 2f leaf shopkeeper ?
+;;; ----------------------------------------------------------------
+NpcDialog_2f ; leaf shopkeeper ?
         $1ccbb              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0f
         $1ccbf              .byte $xx
         $1ccc0              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:05
-        ;; ----------------------------------------------------------------
-	;; 14 windmill guard, zebu's student
+;;; ----------------------------------------------------------------
+NpcDialog_14 ; windmill guard, zebu's student
         $1ccc5              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 01:04
         $1ccc9              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 01:05
         $1cccd              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 01:04
@@ -20658,19 +20752,19 @@ DialogTablePart2
         $1cceb              .byte         $xx,$xx     ;     Set: 0a5 talked to zebu student
         ;;                  13: 0e Windmill Cave
         $1cced              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:0a -> @ 0c
-        ;; ----------------------------------------------------------------
-	;; 15 sleeping windmill guard 
+;;; ----------------------------------------------------------------
+NpcDialog_15 ; sleeping windmill guard
         $1ccf2              .byte $xx,$xx,$xx,$xx
         $1ccf6              .byte $xx
         $1ccf7              .byte $xx,$xx,$xx,$xx,$xx ; default -> 01:00
-        ;; ----------------------------------------------------------------
-	;; 1b blue treasure hunter in brynmaer tavern
+;;; ----------------------------------------------------------------
+NpcDialog_1b ; blue treasure hunter in brynmaer tavern
         $1ccfc              .byte $xx,$xx,$xx,$xx
         $1cd00              .byte $xx
         $1cd01              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:08 (action 0d)
         $1cd06              .byte         $xx,$xx     ;     Set: 048
-        ;; ----------------------------------------------------------------
-	;; 1c yellow treasure hunter in brynmaer tavern
+;;; ----------------------------------------------------------------
+NpcDialog_1c ; yellow treasure hunter in brynmaer tavern
         $1cd08              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:10
         $1cd0c              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1cd10              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:10
@@ -20679,35 +20773,35 @@ DialogTablePart2
         $1cd19              .byte $xx,$xx,$xx,$xx,$xx ; 048 NOT -> 02:09
         $1cd1e              .byte $xx,$xx,$xx,$xx,$xx ; 012 -> 02:0c
         $1cd23              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:09
-        ;; ----------------------------------------------------------------
-	;; 2c dying man at foot of mt sabre north
+;;; ----------------------------------------------------------------
+NpcDialog_2c ; dying man at foot of mt sabre north
         $1cd28              .byte $xx,$xx,$xx,$xx
         $1cd2c              .byte $xx
         $1cd2d              .byte $xx,$xx,$xx,$xx,$xx ; 012 NOT -> 05:0e (action 04)
         $1cd32              .byte         $xx,$xx     ;     Set: 012
         $1cd34              .byte $xx,$xx,$xx,$xx,$xx ; default -> 20:10
-        ;; ----------------------------------------------------------------
-	;; 17 red bearded man beneath brynmaer inn
+;;; ----------------------------------------------------------------
+NpcDialog_17 ; red bearded man beneath brynmaer inn
         $1cd39              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1cd3d              .byte $xx
         $1cd3e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:03
-        ;; ----------------------------------------------------------------
-	;; 18 blue woman beneath brynmaer armor shop
+;;; ----------------------------------------------------------------
+NpcDialog_18 ; blue woman beneath brynmaer armor shop
         $1cd43              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1cd47              .byte $xx
         $1cd48              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:04
-        ;; ----------------------------------------------------------------
-	;; 19 red cloaked man beneath brynmaer pawn
+;;; ----------------------------------------------------------------
+NpcDialog_19 ; red cloaked man beneath brynmaer pawn
         $1cd4d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0a
         $1cd51              .byte $xx
         $1cd52              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:05
-        ;; ----------------------------------------------------------------
-	;; 1a blue woman at far end of brynmaer
+;;; ----------------------------------------------------------------
+NpcDialog_1a ; blue woman at far end of brynmaer
         $1cd57              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1cd5b              .byte $xx
         $1cd5c              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:07
-        ;; ----------------------------------------------------------------
-	;; 01 sahara grey bearded man by well, brynmaer barkeep
+;;; ----------------------------------------------------------------
+NpcDialog_01 ; sahara grey bearded man by well, brynmaer barkeep
         $1cd61              .byte $xx,$xx,$xx,$xx
         $1cd65              .byte $xx,$xx
         $1cd67              .byte $xx,$xx
@@ -20724,8 +20818,8 @@ DialogTablePart2
         $1cd8d              .byte $xx,$xx,$xx,$xx,$xx ; 02b change:stom -> 1a:0d -> @ 19
         $1cd92              .byte $xx,$xx,$xx,$xx,$xx ; 029 change:akahana -> 1a:04 -> @ 19
         $1cd97              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:04 -> @ 19
-        ;; ----------------------------------------------------------------
-	;; 02 portoa light blue lower left walker, brynmaer tavern top left
+;;; ----------------------------------------------------------------
+NpcDialog_02 ; portoa light blue lower left walker, brynmaer tavern top left
         $1cd9c              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
         $1cda0              .byte $xx,$xx
         $1cda2              .byte $xx,$xx
@@ -20734,8 +20828,8 @@ DialogTablePart2
         $1cda5              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:06
         ;;                  05: 50 Portoa
         $1cdaa              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:11
-        ;; ----------------------------------------------------------------
-	;; 1d oak elder
+;;; ----------------------------------------------------------------
+NpcDialog_1d ; oak elder
         $1cdaf              .byte $xx,$xx,$xx,$xx     ; 00e NOT telepathy -> 04:1a
         $1cdb3              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:17
         $1cdb7              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:17
@@ -20751,8 +20845,8 @@ DialogTablePart2
         $1cddc              .byte $xx,$xx,$xx,$xx,$xx ; 045 -> 04:15 (action 03)
         $1cde1              .byte         $xx,$xx     ;     Set: 049
         $1cde3              .byte $xx,$xx,$xx,$xx,$xx ; default -> 04:14
-        ;; ----------------------------------------------------------------
-	;; 1e oak mother
+;;; ----------------------------------------------------------------
+NpcDialog_1e ; oak mother
         $1cde8              .byte $xx,$xx,$xx,$xx     ; 00e NOT telepathy -> 04:1a
         $1cdec              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 04:1a
         $1cdf0              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 04:1a
@@ -20765,8 +20859,8 @@ DialogTablePart2
         $1ce0c              .byte         $xx,$xx     ;     Set: 0a0
         $1ce0e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 04:00
         $1ce13              .byte         $xx,$xx     ;     Set: 052
-        ;; ----------------------------------------------------------------
-	;; 1f dwarf child in swamp
+;;; ----------------------------------------------------------------
+NpcDialog_1f ; dwarf child in swamp
         $1ce15              .byte $xx,$xx,$xx,$xx     ; 00e NOT telepathy -> 04:1a
         $1ce19              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 04:1a
         $1ce1d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 04:1a
@@ -20777,8 +20871,9 @@ DialogTablePart2
         $1ce2f              .byte $xx,$xx,$xx,$xx,$xx ; 045 NOT -> 04:05 (action 0c)
         $1ce34              .byte         $xx,$xx     ;     Set: 053
         $1ce36              .byte $xx,$xx,$xx,$xx,$xx ; default -> 04:06
-        ;; ----------------------------------------------------------------
-	;; 20, 7c oak inn guard
+;;; ----------------------------------------------------------------
+NpcDialog_20 ; oak inn guard (post-telepathy)
+NpcDialog_7c ; oak inn guard (pre-telepathy)
         $1ce3b              .byte $xx,$xx,$xx,$xx     ; 00e NOT telepathy -> 04:1a
         $1ce3f              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 04:1a
         $1ce43              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 04:1a
@@ -20788,8 +20883,9 @@ DialogTablePart2
         $1ce50              .byte $xx,$xx,$xx,$xx,$xx ; 041 -> 04:0b
         $1ce55              .byte $xx,$xx,$xx,$xx,$xx ; 045 -> 04:0a
         $1ce5a              .byte $xx,$xx,$xx,$xx,$xx ; default -> 04:09
-        ;; ----------------------------------------------------------------
-	;; 21, 7d oak tool shop guard
+;;; ----------------------------------------------------------------
+NpcDialog_21 ; oak tool shop guard (post-telepathy)
+NpcDialog_7d ; oak tool shop guard (pre-telepathy)
         $1ce5f              .byte $xx,$xx,$xx,$xx     ; 00e NOT telepathy -> 04:1a
         $1ce63              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 04:1a
         $1ce67              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 04:1a
@@ -20799,8 +20895,8 @@ DialogTablePart2
         $1ce74              .byte $xx,$xx,$xx,$xx,$xx ; 041 -> 04:0f
         $1ce79              .byte $xx,$xx,$xx,$xx,$xx ; 045 -> 04:0e
         $1ce7e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 04:0d
-        ;; ----------------------------------------------------------------
-	;; 22 oak top-right dwarf
+;;; ----------------------------------------------------------------
+NpcDialog_22 ; oak top-right dwarf
         $1ce83              .byte $xx,$xx,$xx,$xx     ; 00e NOT telepathy -> 04:1a
         $1ce87              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 04:1a
         $1ce8b              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 04:1a
@@ -20810,8 +20906,8 @@ DialogTablePart2
         $1ce98              .byte $xx,$xx,$xx,$xx,$xx ; 041 -> 04:12
         $1ce9d              .byte $xx,$xx,$xx,$xx,$xx ; 045 -> 04:11
         $1cea2              .byte $xx,$xx,$xx,$xx,$xx ; default -> 04:10
-        ;; ----------------------------------------------------------------
-	;; 23 amazones queen
+;;; ----------------------------------------------------------------
+NpcDialog_23 ; amazones queen
         $1cea7              .byte $xx,$xx,$xx,$xx
         $1ceab              .byte $xx
         $1ceac              .byte $xx,$xx,$xx,$xx,$xx ; 028 NOT change:woman -> 12:12 (action 15)
@@ -20819,8 +20915,8 @@ DialogTablePart2
         $1ceb6              .byte $xx,$xx,$xx,$xx,$xx ; 011 NOT -> 12:0e
         $1cebb              .byte         $xx,$xx     ;     Set: 011
         $1cebd              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:0f
-        ;; ----------------------------------------------------------------
-	;; 05 headband lady at right of amazones, portoa welcome
+;;; ----------------------------------------------------------------
+NpcDialog_05 ; headband lady at right of amazones, portoa welcome
         $1cec2              .byte $xx,$xx,$xx,$xx
         $1cec6              .byte $xx,$xx
         $1cec8              .byte $xx,$xx
@@ -20831,36 +20927,36 @@ DialogTablePart2
         ;;                  0a: 50 Portoa
         $1ced5              .byte $xx,$xx,$xx,$xx,$xx ; 02a change:soldier -> 1e:08
         $1ceda              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:10 -> @ 0a
-        ;; ----------------------------------------------------------------
-	;; 24 long-haired woman at left of amazones
+;;; ----------------------------------------------------------------
+NpcDialog_24 ; long-haired woman at left of amazones
         $1cedf              .byte $xx,$xx,$xx,$xx     ; 028 NOT change:woman -> 12:04
         $1cee3              .byte $xx
         $1cee4              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:05
-        ;; ----------------------------------------------------------------
-	;; 26 amazones queen right attendant
+;;; ----------------------------------------------------------------
+NpcDialog_26 ; amazones queen right attendant
         $1cee9              .byte $xx,$xx,$xx,$xx     ; 028 NOT change:woman -> 12:0b
         $1ceed              .byte $xx
         $1ceee              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:09
-        ;; ----------------------------------------------------------------
-	;; 27 amazones queen left attendant
+;;; ----------------------------------------------------------------
+NpcDialog_27 ; amazones queen left attendant
         $1cef3              .byte $xx,$xx,$xx,$xx     ; 028 NOT change:woman -> 12:0b
         $1cef7              .byte $xx
         $1cef8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:0a
-        ;; ----------------------------------------------------------------
-	;; 25 amazones guard
+;;; ----------------------------------------------------------------
+NpcDialog_25 ; amazones guard
         $1cefd              .byte $xx,$xx,$xx,$xx     ; 028 NOT change:woman -> 12:06
         $1cf01              .byte $xx
         $1cf02              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:07
         $1cf07              .byte         $xx,$xx     ;     Clear: 000 unused
         $1cf09              .byte $xx,$xx,$xx,$xx,$xx ; 028 NOT change:woman -> 12:06 -> @ ff
         $1cf0e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:07
-        ;; ----------------------------------------------------------------
-	;; 28 nadare
+;;; ----------------------------------------------------------------
+NpcDialog_28 ; nadare
         $1cf13              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 05:01
         $1cf17              .byte $xx
         $1cf18              .byte $xx,$xx,$xx,$xx,$xx ; default -> 05:00
-        ;; ----------------------------------------------------------------
-	;; 08 blue man at front of brynmaer, red man top of nadare
+;;; ----------------------------------------------------------------
+NpcDialog_08 ; blue man at front of brynmaer, red man top of nadare
         $1cf1d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
         $1cf21              .byte $xx,$xx
         $1cf23              .byte $xx,$xx
@@ -20869,13 +20965,13 @@ DialogTablePart2
         $1cf26              .byte $xx,$xx,$xx,$xx,$xx ; default -> 05:08
         ;;                  05: 18 Brynmaer
         $1cf2b              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:00
-        ;; ----------------------------------------------------------------
-	;; 2b nadare back room (left)
+;;; ----------------------------------------------------------------
+NpcDialog_2b ; nadare back room gray man (left)
         $1cf30              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1cf34              .byte $xx
         $1cf35              .byte $xx,$xx,$xx,$xx,$xx ; default -> 05:09
-        ;; ----------------------------------------------------------------
-	;; 2a green bearded man bottom-left nadare
+;;; ----------------------------------------------------------------
+NpcDialog_2a ; green bearded man bottom-left nadare
         $1cf3a              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 05:07
         $1cf3e              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1cf42              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 05:07
@@ -20883,8 +20979,8 @@ DialogTablePart2
         $1cf4a              .byte $xx
         $1cf4b              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 05:06
         $1cf50              .byte $xx,$xx,$xx,$xx,$xx ; default -> 05:05
-        ;; ----------------------------------------------------------------
-	;; 29 nadare back room (right)
+;;; ----------------------------------------------------------------
+NpcDialog_29 ; nadare back room red woman (right)
         $1cf55              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
         $1cf59              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1cf5d              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
@@ -20895,8 +20991,8 @@ DialogTablePart2
         $1cf70              .byte         $xx,$xx     ;     Set: 098
         $1cf72              .byte $xx,$xx,$xx,$xx,$xx ; default -> 05:02
         $1cf77              .byte         $xx,$xx     ;     Set: 098
-        ;; ----------------------------------------------------------------
-	;; 2d mt sabre guard soldiers (both)
+;;; ----------------------------------------------------------------
+NpcDialog_2d ; mt sabre guard soldiers (both)
         $1cf79              .byte $xx,$xx,$xx,$xx
         $1cf7d              .byte $xx,$xx
         $1cf7f              .byte $xx,$xx
@@ -20906,8 +21002,8 @@ DialogTablePart2
         ;;                  05: 73 Swan - Gate
         $1cf87              .byte $xx,$xx,$xx,$xx,$xx ; 02a change:soldier -> 13:15 (action 08)
         $1cf8c              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:14 (action 01) -> @ 05
-        ;; ----------------------------------------------------------------
-	;; 38 portoa queen
+;;; ----------------------------------------------------------------
+NpcDialog_38 ; portoa queen
         $1cf91              .byte $xx,$xx,$xx,$xx
         $1cf95              .byte $xx
         $1cf96              .byte $xx,$xx,$xx,$xx,$xx ; 01e -> 0b:02
@@ -20947,8 +21043,8 @@ DialogTablePart2
         $1cffe              .byte         $xx,$xx     ;     Set: 0d5
         $1d000              .byte         $xx,$xx     ;     Set: 09c
         $1d002              .byte         $xx,$xx     ;     Set: 019
-        ;; ----------------------------------------------------------------
-	;; 39 fortune teller
+;;; ----------------------------------------------------------------
+NpcDialog_39 ; fortune teller
         $1d004              .byte $xx,$xx,$xx,$xx
         $1d008              .byte $xx
         $1d009              .byte $xx,$xx,$xx,$xx,$xx ; 01b mesia recording played -> 0a:01
@@ -20963,8 +21059,8 @@ DialogTablePart2
         $1d027              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0a:00
         $1d02c              .byte         $xx,$xx     ;     Clear: 020
         $1d02e              .byte         $xx,$xx     ;     Set: 01d
-        ;; ----------------------------------------------------------------
-	;; 34 portoa palace guard (throme room front)
+;;; ----------------------------------------------------------------
+NpcDialog_34 ; portoa palace guard (throme room front)
         $1d030              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 08:06
         $1d034              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0d
         $1d038              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 08:06
@@ -20974,8 +21070,8 @@ DialogTablePart2
         $1d046              .byte $xx,$xx,$xx,$xx,$xx ; 01f -> 08:05
         $1d04b              .byte $xx,$xx,$xx,$xx,$xx ; 020 NOT -> 08:04
         $1d050              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:06
-        ;; ----------------------------------------------------------------
-	;; 33 portoa throne room back door guard
+;;; ----------------------------------------------------------------
+NpcDialog_33 ; portoa throne room back door guard
         $1d055              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 08:02
         $1d059              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0d
         $1d05d              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 08:02
@@ -20983,8 +21079,8 @@ DialogTablePart2
         $1d065              .byte $xx
         $1d066              .byte $xx,$xx,$xx,$xx,$xx ; 020 NOT -> 08:03
         $1d06b              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:02
-        ;; ----------------------------------------------------------------
-	;; 07 portoa barracks guard top, cabin watchman
+;;; ----------------------------------------------------------------
+NpcDialog_07 ; portoa barracks guard top
         $1d070              .byte $xx,$xx,$xx,$xx
         $1d074              .byte $xx,$xx
         $1d076              .byte $xx,$xx
@@ -21001,16 +21097,16 @@ DialogTablePart2
         $1d09c              .byte $xx,$xx,$xx,$xx,$xx ; 02b change:stom -> 11:00 -> @ 19
         $1d0a1              .byte $xx,$xx,$xx,$xx,$xx ; 029 change:akahana -> 11:00 -> @ 19
         $1d0a6              .byte $xx,$xx,$xx,$xx,$xx ; default -> 11:00 -> @ 19
-        ;; ----------------------------------------------------------------
-	;; 32 portoa barracks guard right
+;;; ----------------------------------------------------------------
+NpcDialog_32 ; portoa barracks guard right
         $1d0ab              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 08:01
         $1d0af              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0d
         $1d0b3              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 08:01
         $1d0b7              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 08:01
         $1d0bb              .byte $xx
         $1d0bc              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:01
-        ;; ----------------------------------------------------------------
-	;; 04 woman in dress at front of amazones, sahara; portoa lady in waiting
+;;; ----------------------------------------------------------------
+NpcDialog_04 ; woman in dress at front of amazones, sahara; portoa lady in waiting right
         $1d0c1              .byte $xx,$xx,$xx,$xx
         $1d0c5              .byte $xx,$xx
         $1d0c7              .byte $xx,$xx
@@ -21029,8 +21125,8 @@ DialogTablePart2
         ;;                  28: 1b Amazones
         $1d0f4              .byte $xx,$xx,$xx,$xx,$xx ; 028 NOT change:woman -> 12:00
         $1d0f9              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:01 -> @ 28
-        ;; ----------------------------------------------------------------
-	;; 35 portoa barracks evans
+;;; ----------------------------------------------------------------
+NpcDialog_35 ; portoa barracks evans
         $1d0fe              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 08:0e
         $1d102              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
         $1d106              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 08:0e
@@ -21038,8 +21134,8 @@ DialogTablePart2
         $1d10e              .byte $xx
         $1d10f              .byte $xx,$xx,$xx,$xx,$xx ; 01b NOT mesia recording played -> 08:0e
         $1d114              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:0f
-        ;; ----------------------------------------------------------------
-	;; 36 portoa pink lady in waiting at table left
+;;; ----------------------------------------------------------------
+NpcDialog_36 ; portoa pink lady in waiting at table left
         $1d119              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 08:0a
         $1d11d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d121              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 08:0a
@@ -21047,8 +21143,8 @@ DialogTablePart2
         $1d129              .byte $xx
         $1d12a              .byte $xx,$xx,$xx,$xx,$xx ; 01e -> 08:0a
         $1d12f              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:09
-        ;; ----------------------------------------------------------------
-	;; 37 portoa red lady in waiting at table top
+;;; ----------------------------------------------------------------
+NpcDialog_37 ; portoa red lady in waiting at table top
         $1d134              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 08:0a
         $1d138              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d13c              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 08:0a
@@ -21056,8 +21152,8 @@ DialogTablePart2
         $1d144              .byte $xx
         $1d145              .byte $xx,$xx,$xx,$xx,$xx ; 01b mesia recording played -> 08:0c
         $1d14a              .byte $xx,$xx,$xx,$xx,$xx ; default -> 08:0b
-        ;; ----------------------------------------------------------------
-	;; 06 portoa pink dress lady below castle bridge; sahara grey dress lady right
+;;; ----------------------------------------------------------------
+NpcDialog_06 ; portoa pink dress lady below castle bridge; sahara grey dress lady right
         $1d14f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d153              .byte $xx,$xx
         $1d155              .byte $xx,$xx
@@ -21067,8 +21163,8 @@ DialogTablePart2
         ;;                  05: 93 Sahara
         $1d15d              .byte $xx,$xx,$xx,$xx,$xx ; 02b change:stom -> 1a:0b
         $1d162              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:03 -> @ 05
-        ;; ----------------------------------------------------------------
-	;; 03 portoa pink stationary lower left man; sahara grey man mid-right
+;;; ----------------------------------------------------------------
+NpcDialog_03 ; portoa pink stationary lower left man; sahara grey man mid-right
         $1d167              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
         $1d16b              .byte $xx,$xx
         $1d16d              .byte $xx,$xx
@@ -21081,8 +21177,8 @@ DialogTablePart2
         ;;                  0a: 93 Sahara
         $1d17c              .byte $xx,$xx,$xx,$xx,$xx ; 02b change:stom -> 1a:09
         $1d181              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:01 -> @ 0a
-        ;; ----------------------------------------------------------------
-        ;; 00 portoa pink man on fortune teller island; sahara orange man left
+;;; ----------------------------------------------------------------
+NpcDialog_00 ; portoa pink man on fortune teller island; sahara orange man left
         $1d186              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1d18a              .byte $xx,$xx
         $1d18c              .byte $xx,$xx
@@ -21093,8 +21189,8 @@ DialogTablePart2
         ;;                  0a: 93 Sahara
         $1d199              .byte $xx,$xx,$xx,$xx,$xx ; 02b change:stom -> 1a:0c
         $1d19e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:02 -> @ 0a
-        ;; ----------------------------------------------------------------
-	;; 64 portoa fisherman
+;;; ----------------------------------------------------------------
+NpcDialog_64 ; portoa fisherman
         $1d1a3              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 09:00
         $1d1a7              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0a
         $1d1ab              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 09:00
@@ -21104,18 +21200,19 @@ DialogTablePart2
         $1d1b9              .byte $xx,$xx,$xx,$xx,$xx ; 04a NOT -> 09:00
         $1d1be              .byte         $xx,$xx     ;     Set: 04a
         $1d1c0              .byte $xx,$xx,$xx,$xx,$xx ; default -> 09:03
-        ;; ----------------------------------------------------------------
-	;; 7b portoa fisherman's daughter
+;;; ----------------------------------------------------------------
+NpcDialog_7b ; portoa fisherman's daughter
         $1d1c5              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 09:05
         $1d1c9              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0c
         $1d1cd              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 09:05
         $1d1d1              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 09:05
         $1d1d5              .byte $xx
-        $1d1d6              .byte $xx,$xx,$xx,$xx,$xx ; 08b NOT -> 09:06
+        $1d1d6              .byte $xx,$xx,$xx,$xx,$xx ; 08b NOT got shell flute -> 09:06
         $1d1db              .byte $xx,$xx,$xx,$xx,$xx ; 021 -> 09:05
         $1d1e0              .byte $xx,$xx,$xx,$xx,$xx ; default -> 09:04
-        ;; ----------------------------------------------------------------
-	;; 3a, 85 stoned pair in waterfall cave
+;;; ----------------------------------------------------------------
+NpcDialog_3a ; de-stoned people in waterfall cave
+NpcDialog_85 ; stoned pair in waterfall cave
         $1d1e5              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
         $1d1e9              .byte $xx
         $1d1ea              .byte $xx,$xx,$xx,$xx,$xx ; 06a NOT -> 1e:07
@@ -21123,20 +21220,22 @@ DialogTablePart2
         $1d1f4              .byte         $xx,$xx     ;     Clear: 0d9
         $1d1f6              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0d:03
         $1d1fb              .byte         $xx,$xx     ;     Set: 0d9
-        ;; ----------------------------------------------------------------
-	;; 3b, 86 UNUSED
+;;; ----------------------------------------------------------------
+NpcDialog_3b ; UNUSED
+NpcDialog_86 ; UNUSED
         $1d1fd              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d201              .byte $xx
         $1d202              .byte $xx,$xx,$xx,$xx,$xx ; 06a -> 0d:02
         $1d207              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:08
-        ;; ----------------------------------------------------------------
-	;; 3c, 87 UNUSED
+;;; ----------------------------------------------------------------
+NpcDialog_3c ; UNUSED
+NpcDialog_87 ; UNUSED
         $1d20c              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1d210              .byte $xx
         $1d211              .byte $xx,$xx,$xx,$xx,$xx ; 06b -> 0d:03
         $1d216              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:09
-        ;; ----------------------------------------------------------------
-	;; 3d joel elder
+;;; ----------------------------------------------------------------
+NpcDialog_3d ; joel elder
         $1d21b              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 0f:03
         $1d21f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 0f:04
         $1d223              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 0f:03
@@ -21145,8 +21244,8 @@ DialogTablePart2
         $1d22c              .byte $xx,$xx,$xx,$xx,$xx ; 013 NOT -> 0f:00
         $1d231              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 0f:02
         $1d236              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:01
-        ;; ----------------------------------------------------------------
-	;; 42 joel top-left watchman
+;;; ----------------------------------------------------------------
+NpcDialog_42 ; joel top-left watchman
         $1d23b              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
         $1d23f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1d243              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
@@ -21155,8 +21254,8 @@ DialogTablePart2
         $1d24c              .byte $xx,$xx,$xx,$xx,$xx ; 013 NOT -> 0f:0f
         $1d251              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 0f:11
         $1d256              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:10
-        ;; ----------------------------------------------------------------
-	;; 41 joel top-right bearded green man
+;;; ----------------------------------------------------------------
+NpcDialog_41 ; joel top-right bearded green man
         $1d25b              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
         $1d25f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1d263              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
@@ -21165,8 +21264,8 @@ DialogTablePart2
         $1d26c              .byte $xx,$xx,$xx,$xx,$xx ; 013 NOT -> 0f:0c
         $1d271              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 0f:0e
         $1d276              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:0d
-        ;; ----------------------------------------------------------------
-	;; 3e joel brown lady left of elder
+;;; ----------------------------------------------------------------
+NpcDialog_3e ; joel brown lady left of elder
         $1d27b              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
         $1d27f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d283              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
@@ -21175,8 +21274,8 @@ DialogTablePart2
         $1d28c              .byte $xx,$xx,$xx,$xx,$xx ; 013 NOT -> 0f:05
         $1d291              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 0f:07
         $1d296              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:06
-        ;; ----------------------------------------------------------------
-	;; 3f joel blue lady right of elder
+;;; ----------------------------------------------------------------
+NpcDialog_3f ; joel blue lady right of elder
         $1d29b              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
         $1d29f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d2a3              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
@@ -21185,8 +21284,8 @@ DialogTablePart2
         $1d2ac              .byte $xx,$xx,$xx,$xx,$xx ; 013 NOT -> 0f:08
         $1d2b1              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 1e:01
         $1d2b6              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:09
-        ;; ----------------------------------------------------------------
-	;; 40 joel welcomer
+;;; ----------------------------------------------------------------
+NpcDialog_40 ; joel welcome
         $1d2bb              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
         $1d2bf              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1d2c3              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
@@ -21195,8 +21294,8 @@ DialogTablePart2
         $1d2cc              .byte $xx,$xx,$xx,$xx,$xx ; 013 NOT -> 0f:0a
         $1d2d1              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 1e:02
         $1d2d6              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:0b
-        ;; ----------------------------------------------------------------
-	;; 43 joel bottom-right red woman
+;;; ----------------------------------------------------------------
+NpcDialog_43 ; joel bottom-right red woman
         $1d2db              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
         $1d2df              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d2e3              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
@@ -21205,8 +21304,8 @@ DialogTablePart2
         $1d2ec              .byte $xx,$xx,$xx,$xx,$xx ; 013 NOT -> 0f:12
         $1d2f1              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 0f:14
         $1d2f6              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:13
-        ;; ----------------------------------------------------------------
-	;; 45 zombietown human top
+;;; ----------------------------------------------------------------
+NpcDialog_45 ; zombietown human top
         $1d2fb              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:03
         $1d2ff              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0a
         $1d303              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:03
@@ -21216,8 +21315,8 @@ DialogTablePart2
         $1d311              .byte $xx,$xx,$xx,$xx,$xx ; 030 NOT -> 10:03
         $1d316              .byte $xx,$xx,$xx,$xx,$xx ; 030 -> 00:00 (action 14)
         $1d31b              .byte         $xx,$xx     ;     Set: 400
-        ;; ----------------------------------------------------------------
-	;; 46 zombietown human bottom
+;;; ----------------------------------------------------------------
+NpcDialog_46 ; zombietown human bottom
         $1d31d              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
         $1d321              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1d325              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
@@ -21227,8 +21326,8 @@ DialogTablePart2
         $1d333              .byte $xx,$xx,$xx,$xx,$xx ; 031 NOT -> 10:05
         $1d338              .byte         $xx,$xx     ;     Set: 031
         $1d33a              .byte $xx,$xx,$xx,$xx,$xx ; default -> 10:06
-        ;; ----------------------------------------------------------------
-	;; 09 zombietown man on left
+;;; ----------------------------------------------------------------
+NpcDialog_09 ; zombietown man on left
         $1d33f              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:00
         $1d343              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1d347              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:00
@@ -21236,8 +21335,8 @@ DialogTablePart2
         $1d34f              .byte $xx
         $1d350              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 10:09
         $1d355              .byte $xx,$xx,$xx,$xx,$xx ; default -> 10:08
-        ;; ----------------------------------------------------------------
-	;; 0a zombietown woman on right
+;;; ----------------------------------------------------------------
+NpcDialog_0a ; zombietown woman on right
         $1d35a              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
         $1d35e              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d362              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
@@ -21245,8 +21344,8 @@ DialogTablePart2
         $1d36a              .byte $xx
         $1d36b              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 10:0b
         $1d370              .byte $xx,$xx,$xx,$xx,$xx ; default -> 10:0a
-        ;; ----------------------------------------------------------------
-	;; 47 zombietown child in clark house
+;;; ----------------------------------------------------------------
+NpcDialog_47 ; zombietown child in clark house
         $1d375              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:04
         $1d379              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0b
         $1d37d              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:04
@@ -21254,8 +21353,8 @@ DialogTablePart2
         $1d385              .byte $xx
         $1d386              .byte $xx,$xx,$xx,$xx,$xx ; 08f -> 10:0d
         $1d38b              .byte $xx,$xx,$xx,$xx,$xx ; default -> 10:0c
-        ;; ----------------------------------------------------------------
-	;; 44 clark
+;;; ----------------------------------------------------------------
+NpcDialog_44 ; clark
         $1d390              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 0f:16
         $1d394              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 0f:17
         $1d398              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 0f:16
@@ -21271,8 +21370,8 @@ DialogTablePart2
         $1d3b4              .byte         $xx,$xx     ;     Set: 08d
         $1d3b6              .byte         $xx,$xx     ;     Set: 032
         $1d3b8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 10:02 -> @ 05
-        ;; ----------------------------------------------------------------
-	;; 77 swan yellow man right
+;;; ----------------------------------------------------------------
+NpcDialog_77 ; swan yellow man right
         $1d3bd              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:00
         $1d3c1              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
         $1d3c5              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:00
@@ -21280,8 +21379,8 @@ DialogTablePart2
         $1d3cd              .byte $xx
         $1d3ce              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 13:08
         $1d3d3              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:07
-        ;; ----------------------------------------------------------------
-	;; 48 swan blue bearded man outside armor shop
+;;; ----------------------------------------------------------------
+NpcDialog_48 ; swan blue bearded man outside armor shop
         $1d3d8              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
         $1d3dc              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1d3e0              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
@@ -21289,8 +21388,8 @@ DialogTablePart2
         $1d3e8              .byte $xx
         $1d3e9              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 13:0a
         $1d3ee              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:09
-        ;; ----------------------------------------------------------------
-	;; 6f swan blue cloaked man outside hut
+;;; ----------------------------------------------------------------
+NpcDialog_6f ; swan blue cloaked man outside hut
         $1d3f3              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:03
         $1d3f7              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0a
         $1d3fb              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:03
@@ -21298,8 +21397,8 @@ DialogTablePart2
         $1d403              .byte $xx
         $1d404              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 13:0c
         $1d409              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:0b
-        ;; ----------------------------------------------------------------
-	;; 79 swan yellow woman left
+;;; ----------------------------------------------------------------
+NpcDialog_79 ; swan yellow woman left
         $1d40e              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
         $1d412              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d416              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
@@ -21307,8 +21406,8 @@ DialogTablePart2
         $1d41e              .byte $xx
         $1d41f              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 13:0e
         $1d424              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:0d
-        ;; ----------------------------------------------------------------
-	;; 0c swan soldier
+;;; ----------------------------------------------------------------
+NpcDialog_0c ; swan soldier
         $1d429              .byte $xx,$xx,$xx,$xx
         $1d42d              .byte $xx,$xx
         $1d42f              .byte $xx,$xx
@@ -21322,8 +21421,8 @@ DialogTablePart2
         $1d443              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:14 -> @ 0a
         ;;                  14: f1 Swan - Dance Hall (UNUSED)
         $1d448              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:11
-        ;; ----------------------------------------------------------------
-	;; 4a swan tavern soldiers
+;;; ----------------------------------------------------------------
+NpcDialog_4a ; swan tavern soldiers
         $1d44d              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:13
         $1d451              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:12
         $1d455              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:13
@@ -21334,8 +21433,8 @@ DialogTablePart2
         $1d468              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:10
         $1d46d              .byte $xx,$xx,$xx,$xx,$xx ; 000 unused -> 00:00 -> @ ff
         $1d472              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:11 (action 0b)
-        ;; ----------------------------------------------------------------
-	;; 4e shyron guards
+;;; ----------------------------------------------------------------
+NpcDialog_4e ; shyron guards
         $1d477              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 14:00
         $1d47b              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 14:02
         $1d47f              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 14:01
@@ -21347,14 +21446,14 @@ DialogTablePart2
         ;; UNUSED
         $1d492              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1d4a2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; ----------------------------------------------------------------
-	;; 76 dead shyron guard
+;;; ----------------------------------------------------------------
+NpcDialog_76 ; dead shyron guard
         $1d4ad              .byte $xx,$xx,$xx,$xx
         $1d4b1              .byte $xx
         $1d4b2              .byte $xx,$xx,$xx,$xx,$xx ; default -> 20:10
         $1d4b7              .byte         $xx,$xx     ;     Set: 0e9
-        ;; ----------------------------------------------------------------
-	;; 51 shyron training men
+;;; ----------------------------------------------------------------
+NpcDialog_51 ; shyron training men
         $1d4b9              .byte $xx,$xx,$xx,$xx
         $1d4bd              .byte $xx
         $1d4be              .byte $xx,$xx,$xx,$xx,$xx ; 04d -> 14:0f
@@ -21364,16 +21463,16 @@ DialogTablePart2
         $1d4cc              .byte         $xx,$xx     ;     Set: 04d
         $1d4ce              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:0e
         $1d4d3              .byte         $xx,$xx     ;     Set: 04c
-        ;; ----------------------------------------------------------------
-	;; 53 shyron sick men
+;;; ----------------------------------------------------------------
+NpcDialog_53 ; shyron sick men
         $1d4d5              .byte $xx,$xx,$xx,$xx
         $1d4d9              .byte $xx
         $1d4da              .byte $xx,$xx,$xx,$xx,$xx ; 04b -> 14:15
         $1d4df              .byte         $xx,$xx     ;     Clear: 04b
         $1d4e1              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:16
         $1d4e6              .byte         $xx,$xx     ;     Set: 04b
-        ;; ----------------------------------------------------------------
-	;; 4f shyron welcome
+;;; ----------------------------------------------------------------
+NpcDialog_4f ; shyron welcome
         $1d4e8              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 14:05
         $1d4ec              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 14:02
         $1d4f0              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 14:05
@@ -21381,8 +21480,8 @@ DialogTablePart2
         $1d4f8              .byte $xx
         $1d4f9              .byte $xx,$xx,$xx,$xx,$xx ; 02d -> 14:04
         $1d4fe              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:05
-        ;; ----------------------------------------------------------------
-	;; 50 shyron red man middle
+;;; ----------------------------------------------------------------
+NpcDialog_50 ; shyron red man middle
         $1d503              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 14:06
         $1d507              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 14:03
         $1d50b              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 14:06
@@ -21390,14 +21489,14 @@ DialogTablePart2
         $1d513              .byte $xx
         $1d514              .byte $xx,$xx,$xx,$xx,$xx ; 02d -> 14:04
         $1d519              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:06
-        ;; ----------------------------------------------------------------
-	;; 5d shyron generic dead person
+;;; ----------------------------------------------------------------
+NpcDialog_5d ; shyron generic dead person
         $1d51e              .byte $xx,$xx,$xx,$xx
         $1d522              .byte $xx
         $1d523              .byte $xx,$xx,$xx,$xx,$xx ; default -> 20:10
         $1d528              .byte         $xx,$xx     ;     Set: 0e8
-        ;; ----------------------------------------------------------------
-	;; 52 stom's girlfriend
+;;; ----------------------------------------------------------------
+NpcDialog_52 ; stom's girlfriend
         $1d52a              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 15:09
         $1d52e              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 15:0a
         $1d532              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 15:0b
@@ -21405,8 +21504,8 @@ DialogTablePart2
         $1d53a              .byte $xx
         $1d53b              .byte $xx,$xx,$xx,$xx,$xx ; 02d -> 14:14
         $1d540              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:13
-        ;; ----------------------------------------------------------------
-	;; 71 dead stom's girlfriend
+;;; ----------------------------------------------------------------
+NpcDialog_71 ; dead stom's girlfriend
         $1d545              .byte $xx,$xx,$xx,$xx
         $1d549              .byte $xx
         $1d54a              .byte $xx,$xx,$xx,$xx,$xx ; 089 spoken to dead stom's gf -> 20:10
@@ -21414,15 +21513,15 @@ DialogTablePart2
         $1d554              .byte         $xx,$xx     ;     Set: 089 spoken to dead stom's gf
         $1d556              .byte $xx,$xx,$xx,$xx,$xx ; default -> 19:01
         $1d55b              .byte         $xx,$xx     ;     Set: 089 spoken to dead stom's gf
-        ;; ----------------------------------------------------------------
-	;; 72 dead stom
+;;; ----------------------------------------------------------------
+NpcDialog_72 ; dead stom
         $1d55d              .byte $xx,$xx,$xx,$xx
         $1d561              .byte $xx
         $1d562              .byte $xx,$xx,$xx,$xx,$xx ; 08a NOT spoken to dead stom -> 19:03
         $1d567              .byte         $xx,$xx     ;     Set: 08a spoken to dead stom
         $1d569              .byte $xx,$xx,$xx,$xx,$xx ; default -> 20:10
-        ;; ----------------------------------------------------------------
-	;; 56 goa pink blouse lady middle
+;;; ----------------------------------------------------------------
+NpcDialog_56 ; goa pink blouse lady middle
         $1d56e              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
         $1d572              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d576              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
@@ -21430,8 +21529,8 @@ DialogTablePart2
         $1d57e              .byte $xx
         $1d57f              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 17:0d
         $1d584              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:0c
-        ;; ----------------------------------------------------------------
-	;; 57 goa tavern lady
+;;; ----------------------------------------------------------------
+NpcDialog_57 ; goa tavern lady
         $1d589              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:0f
         $1d58d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0e
         $1d591              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:0f
@@ -21439,8 +21538,8 @@ DialogTablePart2
         $1d599              .byte $xx
         $1d59a              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 17:0b
         $1d59f              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:0a
-        ;; ----------------------------------------------------------------
-	;; 58 goa barkeep
+;;; ----------------------------------------------------------------
+NpcDialog_58 ; goa barkeep
         $1d5a4              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
         $1d5a8              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d5ac              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
@@ -21448,8 +21547,8 @@ DialogTablePart2
         $1d5b4              .byte $xx
         $1d5b5              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 17:09
         $1d5ba              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:08
-        ;; ----------------------------------------------------------------
-	;; 54 akahana friend
+;;; ----------------------------------------------------------------
+NpcDialog_54 ; akahana friend
         $1d5bf              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:09
         $1d5c3              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
         $1d5c7              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
@@ -21459,8 +21558,8 @@ DialogTablePart2
         $1d5d6              .byte $xx,$xx,$xx,$xx,$xx ; 04f NOT -> 17:06 (action 03)
         $1d5db              .byte         $xx,$xx     ;     Set: 04f
         $1d5dd              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:07
-        ;; ----------------------------------------------------------------
-	;; 78 goa pink welcomer
+;;; ----------------------------------------------------------------
+NpcDialog_78 ; goa pink welcomer
         $1d5e2              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:00
         $1d5e6              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:07
         $1d5ea              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:00
@@ -21468,8 +21567,8 @@ DialogTablePart2
         $1d5f2              .byte $xx
         $1d5f3              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 17:01
         $1d5f8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:00
-        ;; ----------------------------------------------------------------
-	;; 55 goa cloaked man right
+;;; ----------------------------------------------------------------
+NpcDialog_55 ; goa cloaked man right
         $1d5fd              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:03
         $1d601              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0a
         $1d605              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:03
@@ -21477,8 +21576,8 @@ DialogTablePart2
         $1d60d              .byte $xx
         $1d60e              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 17:10
         $1d613              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:0f
-        ;; ----------------------------------------------------------------
-	;; 7a goa pink dress lady near house
+;;; ----------------------------------------------------------------
+NpcDialog_7a ; goa pink dress lady near house
         $1d618              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:01
         $1d61c              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:08
         $1d620              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:01
@@ -21486,8 +21585,8 @@ DialogTablePart2
         $1d628              .byte $xx
         $1d629              .byte $xx,$xx,$xx,$xx,$xx ; 024 -> 17:03
         $1d62e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:02
-        ;; ----------------------------------------------------------------
-	;; 0b goa soldier top left
+;;; ----------------------------------------------------------------
+NpcDialog_0b ; goa soldier
         $1d633              .byte $xx,$xx,$xx,$xx
         $1d637              .byte $xx,$xx
         $1d639              .byte $xx,$xx
@@ -21497,8 +21596,8 @@ DialogTablePart2
         $1d641              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:13
         ;;                  0a: bf Goa - Tavern
         $1d646              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1e:11
-        ;; ----------------------------------------------------------------
-	;; 5a deo
+;;; ----------------------------------------------------------------
+NpcDialog_5a ; deo
         $1d64b              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1a:13
         $1d64f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1a:13
         $1d653              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1a:13
@@ -21507,16 +21606,16 @@ DialogTablePart2
         $1d65d              .byte $xx,$xx,$xx,$xx,$xx ; 02b change:stom -> 1a:10 (action 03)
         $1d662              .byte         $xx,$xx     ;     Set: 02e
         $1d664              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:0f
-        ;; ----------------------------------------------------------------
-	;; 59 sahara generic bunny
+;;; ----------------------------------------------------------------
+NpcDialog_59 ; sahara generic bunny
         $1d669              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1a:12
         $1d66d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1a:12
         $1d671              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1a:12
         $1d675              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1a:12
         $1d679              .byte $xx
         $1d67a              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:0e
-        ;; ----------------------------------------------------------------
-	;; 5b sahara elder
+;;; ----------------------------------------------------------------
+NpcDialog_5b ; sahara elder
         $1d67f              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:03
         $1d683              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0a
         $1d687              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1a:0d
@@ -21525,8 +21624,8 @@ DialogTablePart2
         $1d690              .byte $xx,$xx,$xx,$xx,$xx ; 022 NOT -> 1a:05
         $1d695              .byte         $xx,$xx     ;     Set: 022
         $1d697              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:06
-        ;; ----------------------------------------------------------------
-	;; 5c sahara elder's daughter
+;;; ----------------------------------------------------------------
+NpcDialog_5c ; sahara elder's daughter
         $1d69c              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:05
         $1d6a0              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1e:0c
         $1d6a4              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:05
@@ -21535,18 +21634,19 @@ DialogTablePart2
         $1d6ad              .byte $xx,$xx,$xx,$xx,$xx ; 023 NOT -> 1a:08
         $1d6b2              .byte         $xx,$xx     ;     Set: 023
         $1d6b4              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:07
-        ;; ----------------------------------------------------------------
-	;; 63 hurt dolphin
+;;; ----------------------------------------------------------------
+NpcDialog_63 ; hurt dolphin
         $1d6b9              .byte $xx,$xx,$xx,$xx
         $1d6bd              .byte $xx
         $1d6be              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0c:00
-        ;; ----------------------------------------------------------------
-	;; 69 dolphin
+;;; ----------------------------------------------------------------
+NpcDialog_69 ; dolphin
         $1d6c3              .byte $xx,$xx,$xx,$xx
         $1d6c7              .byte $xx
         $1d6c8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0c:02 (action 18)
-        ;; ----------------------------------------------------------------
-	;; 16, 88 (stoned) akahana
+;;; ----------------------------------------------------------------
+NpcDialog_16 ; akahana
+NpcDialog_88 ; stoned akahana
         $1d6cd              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 15:01
         $1d6d1              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 15:02
         $1d6d5              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 15:01
@@ -21567,15 +21667,15 @@ DialogTablePart2
         $1d6ff              .byte         $xx,$xx     ;     Set: 036
         $1d701              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:08
         $1d706              .byte         $xx,$xx     ;     Set: 036
-        ;; ----------------------------------------------------------------
-	;; 70 dead akahana
+;;; ----------------------------------------------------------------
+NpcDialog_70 ; dead akahana
         $1d708              .byte $xx,$xx,$xx,$xx
         $1d70c              .byte $xx
         $1d70d              .byte $xx,$xx,$xx,$xx,$xx ; 0e0 NOT spoken to dead akahana -> 19:00
         $1d712              .byte         $xx,$xx     ;     Set: 0e0 spoken to dead akahana
         $1d714              .byte $xx,$xx,$xx,$xx,$xx ; default -> 20:10
-        ;; ----------------------------------------------------------------
-	;; 60 stom
+;;; ----------------------------------------------------------------
+NpcDialog_60 ; stom
         $1d719              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 15:05
         $1d71d              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 15:05
         $1d721              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 15:06
@@ -21595,8 +21695,8 @@ DialogTablePart2
         $1d746              .byte $xx,$xx,$xx,$xx,$xx ; 027 shyron massacre -> 19:03 (action 04)
         $1d74b              .byte $xx,$xx,$xx,$xx,$xx ; 02d -> 14:0d -> @ 16
         $1d750              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:0c -> @ 16
-        ;; ----------------------------------------------------------------
-	;; 5e zebu
+;;; ----------------------------------------------------------------
+NpcDialog_5e ; zebu
         $1d755              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 15:0c
         $1d759              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 15:0c
         $1d75d              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 15:0c
@@ -21608,7 +21708,7 @@ DialogTablePart2
         ;;                  00: 10 Zebu Cave
         $1d76c              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:1d
         $1d771              .byte $xx,$xx,$xx,$xx,$xx ; 038 leaf attacked -> 00:1c
-        $1d776              .byte $xx,$xx,$xx,$xx,$xx ; 039 windmill started -> 00:1d
+        $1d776              .byte $xx,$xx,$xx,$xx,$xx ; 039 learned refresh -> 00:1d
         $1d77b              .byte $xx,$xx,$xx,$xx,$xx ; 00a windmill key used -> 00:1b (action 03)
         $1d780              .byte         $xx,$xx     ;     Set: 039 learned refresh
         $1d782              .byte $xx,$xx,$xx,$xx,$xx ; 03a NOT local -> 00:1a
@@ -21622,8 +21722,8 @@ DialogTablePart2
         ;;                  33: aa Goa Fortress - Zebu
         $1d79f              .byte $xx,$xx,$xx,$xx,$xx ; default -> 18:01 (action 17)
         $1d7a4              .byte         $xx,$xx     ;     Set: 055 zebu rescued
-        ;; ----------------------------------------------------------------
-	;; 5f tornel 
+;;; ----------------------------------------------------------------
+NpcDialog_5f ; tornel
         $1d7a6              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 15:03
         $1d7aa              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 15:04
         $1d7ae              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 15:03
@@ -21650,8 +21750,8 @@ DialogTablePart2
         ;;                  27: ac Goa Fortress - Tornel
         $1d7e8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 18:03 (action 17)
         $1d7ed              .byte         $xx,$xx     ;     Set: 056 tornel rescued
-        ;; ----------------------------------------------------------------
-	;; 62 asina
+;;; ----------------------------------------------------------------
+NpcDialog_62 ; asina
         $1d7ef              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 15:07
         $1d7f3              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 15:08
         $1d7f7              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 15:07
@@ -21676,8 +21776,9 @@ DialogTablePart2
         ;;                  27: b9 Goa Fortress - Asina
         $1d82f              .byte $xx,$xx,$xx,$xx,$xx ; default -> 18:05 (action 17)
         $1d834              .byte         $xx,$xx     ;     Set: 057
-        ;; ----------------------------------------------------------------
-	;; 74, 7e kensu ???
+;;; ----------------------------------------------------------------
+NpcDialog_74 ; kensu ???
+NpcDialog_7e ; kensu ??? lighthouse/tavern/dance
         $1d836              .byte $xx,$xx,$xx,$xx
         $1d83a              .byte $xx,$xx
         $1d83c              .byte $xx,$xx
@@ -21690,73 +21791,73 @@ DialogTablePart2
         $1d84a              .byte         $xx,$xx     ;     Set: 261
         $1d84c              .byte         $xx,$xx     ;     Set: 540
         $1d84e              .byte         $xx,$xx     ;     Clear: 451
-        $1d850              .byte         $xx,$xx     ;     Clear: 00a windmill key used
+        $1d850              .byte         $xx,$xx     ;     Clear: 00a
         ;;                  0f: f1 Swan - Dance Hall
         $1d852              .byte $xx,$xx,$xx,$xx,$xx ; 075 -> 00:00 (action 14) -> @ 03
         $1d857              .byte         $xx,$xx     ;     Clear: 00a windmill key used
         ;;                  16: 62 Joel - Lighthouse
         $1d859              .byte $xx,$xx,$xx,$xx,$xx ; default -> 18:07 (action 14)
         $1d85e              .byte         $xx,$xx     ;     Set: 0d8
-        ;; ----------------------------------------------------------------
-	;; 68 kensu (in cabin)
+;;; ----------------------------------------------------------------
+NpcDialog_68 ; kensu (in cabin)
         $1d860              .byte $xx,$xx,$xx,$xx
         $1d864              .byte $xx
         $1d865              .byte $xx,$xx,$xx,$xx,$xx ; default -> 11:01
         $1d86a              .byte         $xx,$xx     ;     Set: 09b
-        ;; ----------------------------------------------------------------
-	;; 6b kensu (asleep in lighthouse)
+;;; ----------------------------------------------------------------
+NpcDialog_6b ; kensu (asleep in lighthouse)
         $1d86c              .byte $xx,$xx,$xx,$xx
         $1d870              .byte $xx
         $1d871              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1f:00
-        ;; ----------------------------------------------------------------
-	;; 6d kensu soldier
+;;; ----------------------------------------------------------------
+NpcDialog_6d ; kensu soldier
         $1d876              .byte $xx,$xx,$xx,$xx
         $1d87a              .byte $xx,$xx
         $1d87c              .byte $xx,$xx
         $1d87e              .byte $xx
         ;;                  00: ef Swan - Tavern
-        $1d87f              .byte $xx,$xx,$xx,$xx,$xx ; 070 -> 13:06 (action 13)
-        $1d884              .byte         $xx,$xx     ;     Set: 072
+        $1d87f              .byte $xx,$xx,$xx,$xx,$xx ; 070 kensu paralyzed in tavern -> 13:06 (action 13)
+        $1d884              .byte         $xx,$xx     ;     Set: 072 found kensu in tavern
         $1d886              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:05
         ;;                  0c: 8e Goa
         $1d88b              .byte $xx,$xx,$xx,$xx,$xx ; 026 NOT entered shyron -> 1e:1a
         $1d890              .byte         $xx,$xx     ;     Set: 076
         $1d892              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:0e
-        ;; ----------------------------------------------------------------
-	;; 6c kensu dancer
+;;; ----------------------------------------------------------------
+NpcDialog_6c ; kensu in swan dance hall
         $1d897              .byte $xx,$xx,$xx,$xx
         $1d89b              .byte $xx
-        $1d89c              .byte $xx,$xx,$xx,$xx,$xx ; 03e -> 13:01
-        $1d8a1              .byte $xx,$xx,$xx,$xx,$xx ; 071 -> 13:06 (action 16)
-        $1d8a6              .byte         $xx,$xx     ;     Set: 03e
+        $1d89c              .byte $xx,$xx,$xx,$xx,$xx ; 03e found kensu in dance hall -> 13:01
+        $1d8a1              .byte $xx,$xx,$xx,$xx,$xx ; 071 kensu paralyzed in dance hall -> 13:06 (action 16)
+        $1d8a6              .byte         $xx,$xx     ;     Set: 03e found kensu in dance hall
         $1d8a8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:03
-        ;; ----------------------------------------------------------------
-	;; 75 kensu slime
+;;; ----------------------------------------------------------------
+NpcDialog_75 ; kensu slime
         $1d8ad              .byte $xx,$xx,$xx,$xx
         $1d8b1              .byte $xx
         $1d8b2              .byte $xx,$xx,$xx,$xx,$xx ; default -> 18:06 (action 05)
-        ;; ----------------------------------------------------------------
-	;; 8e mesia in tower
+;;; ----------------------------------------------------------------
+NpcDialog_8e ; mesia
         $1d8b7              .byte $xx,$xx,$xx,$xx
         $1d8bb              .byte $xx
         $1d8bc              .byte $xx,$xx,$xx,$xx,$xx ; 0ed NOT -> 1b:0c
         $1d8c1              .byte         $xx,$xx     ;     Set: 0ed
         $1d8c3              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1b:0d
-        ;; ----------------------------------------------------------------
-	;; 84 sabera posing as mesia
+;;; ----------------------------------------------------------------
+NpcDialog_84 ; sabera posing as mesia
         $1d8c8              .byte $xx,$xx,$xx,$xx
         $1d8cc              .byte $xx
         $1d8cd              .byte $xx,$xx,$xx,$xx,$xx ; default -> 10:0f
-        ;; ----------------------------------------------------------------
-	;; 83 azteca temple front
+;;; ----------------------------------------------------------------
+NpcDialog_83 ; azteca temple front
         $1d8d2              .byte $xx,$xx,$xx,$xx
         $1d8d6              .byte $xx
         $1d8d7              .byte $xx,$xx,$xx,$xx,$xx ; 082 NOT -> 1b:01 (action 03)
         $1d8dc              .byte         $xx,$xx     ;     Set: 079
         $1d8de              .byte         $xx,$xx     ;     Set: 082
         $1d8e0              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1b:02
-        ;; ----------------------------------------------------------------
-	;; c3 rage
+;;; ----------------------------------------------------------------
+NpcDialog_c3 ; rage
         $1d8e5              .byte $xx,$xx,$xx,$xx
         $1d8e9              .byte $xx
         $1d8ea              .byte $xx,$xx,$xx,$xx,$xx ; 017 -> 0e:03 (action 1a)
@@ -21855,82 +21956,83 @@ DataTable_1d9f4
         $1daf8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 ;;; This data table seems to be used by ItemGet, as well as ItemUse_ShellFlute2.
+;;; Possibly it handles deleting the item?
 ;;; STRIP: word=$14000
-DataTable_1db00
+ItemGetDataTable
         ;; Another data table
-        $1db00              .word ($1df3a) ; 00
-        $1db02              .word ($1df41) ; 01
-        $1db04              .word ($1df48) ; 02
-        $1db06              .word ($1df4f) ; 03
-        $1db08              .word ($1df56) ; 04
-        $1db0a              .word ($1df5d) ; 05
-        $1db0c              .word ($1df83) ; 06
-        $1db0e              .word ($1df64) ; 07
-        $1db10              .word ($1df8a) ; 08
-        $1db12              .word ($1df6f) ; 09
-        $1db14              .word ($1df93) ; 0a
-        $1db16              .word ($1df7c) ; 0b
-        $1db18              .word ($1df9a) ; 0c
-        $1db1a              .word ($1e02d) ; 0d
-        $1db1c              .word ($1e02d) ; 0e
-        $1db1e              .word ($1e02d) ; 0f
-        $1db20              .word ($1dfa1) ; 10
-        $1db22              .word ($1e02d) ; 11
-        $1db24              .word ($1e026) ; 12
-        $1db26              .word ($1e02d) ; 13
-        $1db28              .word ($1df0f) ; 14
-        $1db2a              .word ($1defd) ; 15
-        $1db2c              .word ($1defd) ; 16
-        $1db2e              .word ($1defd) ; 17
-        $1db30              .word ($1defd) ; 18
-        $1db32              .word ($1defd) ; 19
-        $1db34              .word ($1defd) ; 1a
-        $1db36              .word ($1df16) ; 1b
-        $1db38              .word ($1df04) ; 1c
-        $1db3a              .word ($1de09) ; 1d
-        $1db3c              .word ($1de6b) ; 1e
-        $1db3e              .word ($1de56) ; 1f
-        $1db40              .word ($1de87) ; 20
-        $1db42              .word ($1de8e) ; 21
-        $1db44              .word ($1deb1) ; 22
-        $1db46              .word ($1ded4) ; 23
-        $1db48              .word ($1dedd) ; 24
-        $1db4a              .word ($1dfa8) ; 25
-        $1db4c              .word ($1df31) ; 26
-        $1db4e              .word ($1dfaf) ; 27
-        $1db50              .word ($1dfb6) ; 28
-        $1db52              .word ($1e018) ; 29
-        $1db54              .word ($1def6) ; 2a
-        $1db56              .word ($1dfd9) ; 2b
-        $1db58              .word ($1e011) ; 2c
-        $1db5a              .word ($1dfbd) ; 2d
-        $1db5c              .word ($1dfc4) ; 2e
-        $1db5e              .word ($1dfe0) ; 2f
-        $1db60              .word ($1e018) ; 30
-        $1db62              .word ($1dffc) ; 31
-        $1db64              .word ($1e01f) ; 32
-        $1db66              .word ($1df23) ; 33
-        $1db68              .word ($1e01f) ; 34
-        $1db6a              .word ($1df2a) ; 35
-        $1db6c              .word ($1dff5) ; 36
-        $1db6e              .word ($1e01f) ; 37
-        $1db70              .word ($1dfee) ; 38
-        $1db72              .word ($1e01f) ; 39
-        $1db74              .word ($1e01f) ; 3a
-        $1db76              .word ($1dfcb) ; 3b
-        $1db78              .word ($1ddf4) ; 3c
-        $1db7a              .word ($1deeb) ; 3d
-        $1db7c              .word ($1e01f) ; 3e
-        $1db7e              .word ($1dfe7) ; 3f
-        $1db80              .word ($1dfd2) ; 40
-        $1db82              .word ($1e03b) ; 41
-        $1db84              .word ($1e042) ; 42
-        $1db86              .word ($1e049) ; 43
-        $1db88              .word ($1e050) ; 44
-        $1db8a              .word ($1e034) ; 45
-        $1db8c              .word ($1e05e) ; 46
-        $1db8e              .word ($1e057) ; 47
-        $1db90              .word ($1e034) ; 48
+        $1db00              .word ($1df3a) ; 00 sword of wind
+        $1db02              .word ($1df41) ; 01 sword of fire
+        $1db04              .word ($1df48) ; 02 sword of water
+        $1db06              .word ($1df4f) ; 03 sword of thunder
+        $1db08              .word ($1df56) ; 04 crystalis
+        $1db0a              .word ($1df5d) ; 05 ball of wind
+        $1db0c              .word ($1df83) ; 06 tornado bracelet
+        $1db0e              .word ($1df64) ; 07 ball of fire
+        $1db10              .word ($1df8a) ; 08 flame bracelet
+        $1db12              .word ($1df6f) ; 09 ball of water
+        $1db14              .word ($1df93) ; 0a blizzard bracelet
+        $1db16              .word ($1df7c) ; 0b ball of thunder
+        $1db18              .word ($1df9a) ; 0c storm bracelet
+        $1db1a              .word ($1e02d) ; 0d carapace shield
+        $1db1c              .word ($1e02d) ; 0e bronze shield
+        $1db1e              .word ($1e02d) ; 0f platinum shield
+        $1db20              .word ($1dfa1) ; 10 mirrored shield
+        $1db22              .word ($1e02d) ; 11 ceramic shield
+        $1db24              .word ($1e026) ; 12 sacred shield
+        $1db26              .word ($1e02d) ; 13 battle shield
+        $1db28              .word ($1df0f) ; 14 psycho shield
+        $1db2a              .word ($1defd) ; 15 tanned hide
+        $1db2c              .word ($1defd) ; 16 leather armor
+        $1db2e              .word ($1defd) ; 17 bronze armor
+        $1db30              .word ($1defd) ; 18 platinum armor
+        $1db32              .word ($1defd) ; 19 soldier suit
+        $1db34              .word ($1defd) ; 1a ceramic suit
+        $1db36              .word ($1df16) ; 1b battle armor
+        $1db38              .word ($1df04) ; 1c psycho armor
+        $1db3a              .word ($1de09) ; 1d medical herb
+        $1db3c              .word ($1de6b) ; 1e antidote
+        $1db3e              .word ($1de56) ; 1f lysis plant
+        $1db40              .word ($1de87) ; 20 fruit of lime
+        $1db42              .word ($1de8e) ; 21 fruit of power
+        $1db44              .word ($1deb1) ; 22 magic ring
+        $1db46              .word ($1ded4) ; 23 fruit of repun
+        $1db48              .word ($1dedd) ; 24 warp boots
+        $1db4a              .word ($1dfa8) ; 25 statue of onyx
+        $1db4c              .word ($1df31) ; 26 opel statue
+        $1db4e              .word ($1dfaf) ; 27 insect flute
+        $1db50              .word ($1dfb6) ; 28 flute of lime
+        $1db52              .word ($1e018) ; 29 gas mask
+        $1db54              .word ($1def6) ; 2a power ring
+        $1db56              .word ($1dfd9) ; 2b warrior ring
+        $1db58              .word ($1e011) ; 2c iron necklace
+        $1db5a              .word ($1dfbd) ; 2d deos pendant
+        $1db5c              .word ($1dfc4) ; 2e rabbit boots
+        $1db5e              .word ($1dfe0) ; 2f leather boots
+        $1db60              .word ($1e018) ; 30 shield ring
+        $1db62              .word ($1dffc) ; 31 alarm flute
+        $1db64              .word ($1e01f) ; 32 windmill key
+        $1db66              .word ($1df23) ; 33 key to prison
+        $1db68              .word ($1e01f) ; 34 key to styx
+        $1db6a              .word ($1df2a) ; 35 fog lamp
+        $1db6c              .word ($1dff5) ; 36 shell flute
+        $1db6e              .word ($1e01f) ; 37 eye glasses
+        $1db70              .word ($1dfee) ; 38 broken statue
+        $1db72              .word ($1e01f) ; 39 glowing lamp
+        $1db74              .word ($1e01f) ; 3a statue of gold
+        $1db76              .word ($1dfcb) ; 3b love pendant
+        $1db78              .word ($1ddf4) ; 3c kirisa plant
+        $1db7a              .word ($1deeb) ; 3d ivory statue
+        $1db7c              .word ($1e01f) ; 3e bow of moon
+        $1db7e              .word ($1dfe7) ; 3f bow of sun
+        $1db80              .word ($1dfd2) ; 40 bow of truth
+        $1db82              .word ($1e03b) ; 41 refresh
+        $1db84              .word ($1e042) ; 42 paralysis
+        $1db86              .word ($1e049) ; 43 telepathy
+        $1db88              .word ($1e050) ; 44 teleport
+        $1db8a              .word ($1e034) ; 45 recover
+        $1db8c              .word ($1e05e) ; 46 barrier
+        $1db8e              .word ($1e057) ; 47 change
+        $1db90              .word ($1e034) ; 48 flight
         $1db92              .word ($1dffc) ; 49
         $1db94              .word ($1df3a) ; 4a
         $1db96              .word ($1df3a) ; 4b
@@ -21938,39 +22040,39 @@ DataTable_1db00
         $1db9a              .word ($1df3a) ; 4d
         $1db9c              .word ($1df3a) ; 4e
         $1db9e              .word ($1df3a) ; 4f
-        $1dba0              .word ($1de10) ; 50
-        $1dba2              .word ($1df1d) ; 51
-        $1dba4              .word ($1de17) ; 52
-        $1dba6              .word ($1de1e) ; 53
-        $1dba8              .word ($1de25) ; 54
-        $1dbaa              .word ($1de2c) ; 55
-        $1dbac              .word ($1de33) ; 56
-        $1dbae              .word ($1de3a) ; 57
-        $1dbb0              .word ($1de41) ; 58
-        $1dbb2              .word ($1de48) ; 59
-        $1dbb4              .word ($1de4f) ; 5a
-        $1dbb6              .word ($1de02) ; 5b
-        $1dbb8              .word ($1de5d) ; 5c
-        $1dbba              .word ($1de64) ; 5d
-        $1dbbc              .word ($1de72) ; 5e
-        $1dbbe              .word ($1de79) ; 5f
-        $1dbc0              .word ($1de80) ; 60
-        $1dbc2              .word ($1de95) ; 61
-        $1dbc4              .word ($1de9c) ; 62
-        $1dbc6              .word ($1dea3) ; 63
-        $1dbc8              .word ($1deaa) ; 64
-        $1dbca              .word ($1deb8) ; 65
-        $1dbcc              .word ($1debf) ; 66
-        $1dbce              .word ($1df3a) ; 67
-        $1dbd0              .word ($1df3a) ; 68
-        $1dbd2              .word ($1ddfb) ; 69
-        $1dbd4              .word ($1dee4) ; 6a
-        $1dbd6              .word ($1dec6) ; 6b
-        $1dbd8              .word ($1decd) ; 6c
-        $1dbda              .word ($1dde6) ; 6d
-        $1dbdc              .word ($1dded) ; 6e
-        $1dbde              .word ($1e003) ; 6f
-        $1dbe0              .word ($1e00a) ; 70
+        $1dba0              .word ($1de10) ; 50 medical herb
+        $1dba2              .word ($1df1d) ; 51 sacred shield
+        $1dba4              .word ($1de17) ; 52 medical herb
+        $1dba6              .word ($1de1e) ; 53 medical herb
+        $1dba8              .word ($1de25) ; 54 magic ring
+        $1dbaa              .word ($1de2c) ; 55 medical herb
+        $1dbac              .word ($1de33) ; 56 medical herb
+        $1dbae              .word ($1de3a) ; 57 medical herb
+        $1dbb0              .word ($1de41) ; 58 magic ring
+        $1dbb2              .word ($1de48) ; 59 medical herb
+        $1dbb4              .word ($1de4f) ; 5a fruit of power
+        $1dbb6              .word ($1de02) ; 5b flute of lime
+        $1dbb8              .word ($1de5d) ; 5c lysis plant
+        $1dbba              .word ($1de64) ; 5d lysis plant
+        $1dbbc              .word ($1de72) ; 5e antidote
+        $1dbbe              .word ($1de79) ; 5f antidote
+        $1dbc0              .word ($1de80) ; 60 antidote
+        $1dbc2              .word ($1de95) ; 61 fruit of power
+        $1dbc4              .word ($1de9c) ; 62 fruit of power
+        $1dbc6              .word ($1dea3) ; 63 opel statue
+        $1dbc8              .word ($1deaa) ; 64 fruit of power
+        $1dbca              .word ($1deb8) ; 65 magic ring
+        $1dbcc              .word ($1debf) ; 66 fruit of repun
+        $1dbce              .word ($1df3a) ; 67 magic ring
+        $1dbd0              .word ($1df3a) ; 68 magic ring
+        $1dbd2              .word ($1ddfb) ; 69 magic ring
+        $1dbd4              .word ($1dee4) ; 6a warp boots
+        $1dbd6              .word ($1dec6) ; 6b magic ring
+        $1dbd8              .word ($1decd) ; 6c magic ring
+        $1dbda              .word ($1dde6) ; 6d opel statue
+        $1dbdc              .word ($1dded) ; 6e warp boots
+        $1dbde              .word ($1e003) ; 6f magic ring
+        $1dbe0              .word ($1e00a) ; 70 mimic
 ;;; --------------------------------
 ;;; Loaded into ($24) prior to calling into the $1c399 table via ($26).
 ;;; This is an auxilliary data table specific to the item, which allows
@@ -22198,513 +22300,541 @@ ItemGetTable                     ;  0   1   2   3   4   5   6   7   8   9   a   
 ;;;   [4][5]...: sequence of flags in $6480 to set/clear
 ;;;        [4]:80 is set (if 0) or clear (if 1)
 ;;;        [4]:40 is repeat if clear
-	;; 6d
+ItemGetData_6d ; opel statue
         $1dde6              .byte $xx,$xx
         $1dde8              .byte $xx,$xx
         $1ddea              .byte $xx,$xx ; Set: 0e6 chest:6d:opel statue
         $1ddec              .byte $xx
-	;; 6e
+ItemGetData_6e ; warp boots
         $1dded              .byte $xx,$xx
         $1ddef              .byte $xx,$xx
         $1ddf1              .byte $xx,$xx ; Set: 0e5 chest:6e:warp boots
         $1ddf3              .byte $xx
-	;; 3c
+ItemGetData_3c ; kirisa plant
         $1ddf4              .byte $xx,$xx
         $1ddf6              .byte $xx,$xx
         $1ddf8              .byte $xx,$xx ; Set: 0e4 chest:3c:kirisa plant
         $1ddfa              .byte $xx
-	;; 69
+ItemGetData_69 ; magic ring
         $1ddfb              .byte $xx,$xx
         $1ddfd              .byte $xx,$xx
         $1ddff              .byte $xx,$xx ; Set: 0d2 chest:69:magic ring
         $1de01              .byte $xx
-	;; 5b
+ItemGetData_5b ; flute of lime
         $1de02              .byte $xx,$xx
         $1de04              .byte $xx,$xx
         $1de06              .byte $xx,$xx ; Set: 0d4 chest:5b:flute of lime
         $1de08              .byte $xx
-	;; 1d
+ItemGetData_1d ; medical herb
         $1de09              .byte $xx,$xx
         $1de0b              .byte $xx,$xx
         $1de0d              .byte $xx,$xx ; Set: 0aa chest:1d:medical herb
         $1de0f              .byte $xx
-	;; 50
+ItemGetData_50 ; medical herb
         $1de10              .byte $xx,$xx
         $1de12              .byte $xx,$xx
         $1de14              .byte $xx,$xx ; Set: 0ab chest:50:merical herb
         $1de16              .byte $xx
-	;; 52
+ItemGetData_52 ; medical herb
         $1de17              .byte $xx,$xx
         $1de19              .byte $xx,$xx
         $1de1b              .byte $xx,$xx ; Set: 0ad chest:52:medical herb
         $1de1d              .byte $xx
-	;; 53
+ItemGetData_53 ; medical herb
         $1de1e              .byte $xx,$xx
         $1de20              .byte $xx,$xx
         $1de22              .byte $xx,$xx ; Set: 0ae chest:53:medical herb
         $1de24              .byte $xx
-	;; 54
+ItemGetData_54 ; magic ring
         $1de25              .byte $xx,$xx
         $1de27              .byte $xx,$xx
         $1de29              .byte $xx,$xx ; Set: 0af chest:54:magic ring
         $1de2b              .byte $xx
-	;; 55
+ItemGetData_55 ; medical herb
         $1de2c              .byte $xx,$xx
         $1de2e              .byte $xx,$xx
         $1de30              .byte $xx,$xx ; Set: 0b0 chest:55:medical herb
         $1de32              .byte $xx
-	;; 56
+ItemGetData_56 ; medical herb
         $1de33              .byte $xx,$xx
         $1de35              .byte $xx,$xx
         $1de37              .byte $xx,$xx ; Set: 0b1 chest:56:medical herb
         $1de39              .byte $xx
-	;; 57
+ItemGetData_57 ; medical herb
         $1de3a              .byte $xx,$xx
         $1de3c              .byte $xx,$xx
         $1de3e              .byte $xx,$xx ; Set: 0b2 chest:57:medical herb
         $1de40              .byte $xx
-	;; 58
+ItemGetData_58 ; magic ring
         $1de41              .byte $xx,$xx
         $1de43              .byte $xx,$xx
         $1de45              .byte $xx,$xx ; Set: 0b3 chest:58:magic ring
         $1de47              .byte $xx
-	;; 59
+ItemGetData_59 ; medical herb
         $1de48              .byte $xx,$xx
         $1de4a              .byte $xx,$xx
-        $1de4c              .byte $xx,$xx ; Set: 0b4
+        $1de4c              .byte $xx,$xx ; Set: 0b4 chest:59:medical herb
         $1de4e              .byte $xx
-	;; 5a
+ItemGetData_5a ; fruit of power
         $1de4f              .byte $xx,$xx
         $1de51              .byte $xx,$xx
         $1de53              .byte $xx,$xx ; Set: 0b5 chest:5a:fruit of power
         $1de55              .byte $xx
-	;; 1f
+ItemGetData_1f ; lysis plant
         $1de56              .byte $xx,$xx
         $1de58              .byte $xx,$xx
         $1de5a              .byte $xx,$xx ; Set: 0b6 chest:1f:lysis plant
         $1de5c              .byte $xx
-	;; 5c
+ItemGetData_5c ; lysis plant
         $1de5d              .byte $xx,$xx
         $1de5f              .byte $xx,$xx
         $1de61              .byte $xx,$xx ; Set: 0b7 chest:5c:lysis plant
         $1de63              .byte $xx
-	;; 5d
+ItemGetData_5d ; lysis plant
         $1de64              .byte $xx,$xx
         $1de66              .byte $xx,$xx
         $1de68              .byte $xx,$xx ; Set: 0b8 chest:5d:lysis plant
         $1de6a              .byte $xx
-	;; 1e
+ItemGetData_1e ; antidote
         $1de6b              .byte $xx,$xx
         $1de6d              .byte $xx,$xx
         $1de6f              .byte $xx,$xx ; Set: 0b9 chest:1e:antidote
         $1de71              .byte $xx
-	;; 5e
+ItemGetData_5e ; ; antidote
         $1de72              .byte $xx,$xx
         $1de74              .byte $xx,$xx
         $1de76              .byte $xx,$xx ; Set: 0ba chest:5e:antidote
         $1de78              .byte $xx
-	;; 5f
+ItemGetData_5f ; ; antidote
         $1de79              .byte $xx,$xx
         $1de7b              .byte $xx,$xx
         $1de7d              .byte $xx,$xx ; Set: 0bb chest:5f:antidote
         $1de7f              .byte $xx
-	;; 60
+ItemGetData_60 ; ; antidote
         $1de80              .byte $xx,$xx
         $1de82              .byte $xx,$xx
         $1de84              .byte $xx,$xx ; Set: 0bc chest:60:antidote
         $1de86              .byte $xx
-	;; 20
+ItemGetData_20 ; fruit of lime
         $1de87              .byte $xx,$xx
         $1de89              .byte $xx,$xx
         $1de8b              .byte $xx,$xx ; Set: 0bd chest:20:fruit of lime
         $1de8d              .byte $xx
-	;; 21
+ItemGetData_21 ; fruit of power
         $1de8e              .byte $xx,$xx
         $1de90              .byte $xx,$xx
         $1de92              .byte $xx,$xx ; Set: 0be chest:21:fruit of power
         $1de94              .byte $xx
-	;; 61
+ItemGetData_61 ; fruit of power
         $1de95              .byte $xx,$xx
         $1de97              .byte $xx,$xx
-        $1de99              .byte $xx,$xx ; Set: 00c
+        $1de99              .byte $xx,$xx ; Set: 10c defeated vampire 2
         $1de9b              .byte $xx
-	;; 62
+ItemGetData_62 ; fruit of power
         $1de9c              .byte $xx,$xx
         $1de9e              .byte $xx,$xx
         $1dea0              .byte $xx,$xx ; Set: 0bf chest:62:fruit of power
         $1dea2              .byte $xx
-	;; 63
+ItemGetData_63 ; opel statue
         $1dea3              .byte $xx,$xx
         $1dea5              .byte $xx,$xx
         $1dea7              .byte $xx,$xx ; Set: 0c0 chest:63:opel statue
         $1dea9              .byte $xx
-	;; 64
+ItemGetData_64 ; fruit of power
         $1deaa              .byte $xx,$xx
         $1deac              .byte $xx,$xx
         $1deae              .byte $xx,$xx ; Set: 0c1 chest:64:fruit of power
         $1deb0              .byte $xx
-	;; 22
+ItemGetData_22 ; magic ring
         $1deb1              .byte $xx,$xx
         $1deb3              .byte $xx,$xx
         $1deb5              .byte $xx,$xx ; Set: 0c2 chest:22:magic ring
         $1deb7              .byte $xx
-	;; 65
+ItemGetData_65 ; magic ring
         $1deb8              .byte $xx,$xx
         $1deba              .byte $xx,$xx
         $1debc              .byte $xx,$xx ; Set: 0c3 chest:65:magic ring
         $1debe              .byte $xx
-	;; 66
+ItemGetData_66 ; fruit of repun
         $1debf              .byte $xx,$xx
         $1dec1              .byte $xx,$xx
         $1dec3              .byte $xx,$xx ; Set: 0c4 chest:66:fruit of repun
         $1dec5              .byte $xx
-	;; 6b
+ItemGetData_6b ; magic ring
         $1dec6              .byte $xx,$xx
         $1dec8              .byte $xx,$xx
         $1deca              .byte $xx,$xx ; Set: 0c5 chest:6b:magic ring
         $1decc              .byte $xx
-	;; 6c
+ItemGetData_6c ; magic ring
         $1decd              .byte $xx,$xx
         $1decf              .byte $xx,$xx
         $1ded1              .byte $xx,$xx ; Set: 0c6 chest:6c:magic ring
         $1ded3              .byte $xx
-	;; 23
+ItemGetData_23 ; fruit of repun (Sabera 2)
         $1ded4              .byte $xx,$xx
         $1ded6              .byte $xx,$xx
-        $1ded8              .byte $xx,$xx ; Set: 106
+        $1ded8              .byte $xx,$xx ; Set: 106 defeated sabera 2
         $1deda              .byte $xx,$xx ; Set: 0c7 chest:23:fruit of repun
         $1dedc              .byte $xx
-	;; 24 Warp Boots (Sealed Cave)
+ItemGetData_24 ; warp boots (Sealed Cave)
         $1dedd              .byte $xx,$xx
         $1dedf              .byte $xx,$xx
         $1dee1              .byte $xx,$xx ; Set: 0c8 chest:24:warp boots
         $1dee3              .byte $xx
-	;; 6a Warp Boots (Mt Sabbre West Dead End)
+ItemGetData_6a ; warp boots (Mt Sabbre West Dead End)
         $1dee4              .byte $xx,$xx
         $1dee6              .byte $xx,$xx
         $1dee8              .byte $xx,$xx ; Set: 0c9 chest:6a:warp boots
         $1deea              .byte $xx
-	;; 3d Ivory Statue
+ItemGetData_3d ; ivory statue
         $1deeb              .byte $xx,$xx
         $1deed              .byte $xx,$xx
-        $1deef              .byte $xx,$xx ; Set: 108
-        $1def1              .byte $xx,$xx ; Set: 024
+        $1deef              .byte $xx,$xx ; Set: 108 defeated karmine
+        $1def1              .byte $xx,$xx ; Set: 024 generals defeated
         $1def3              .byte $xx,$xx ; Set: 0ca chest:3d:ivory statue
         $1def5              .byte $xx
-	;; 2a Power Ring
+ItemGetData_2a ; power ring
         $1def6              .byte $xx,$xx
         $1def8              .byte $xx,$xx
         $1defa              .byte $xx,$xx ; Set: 0cb chest:2a:power ring
         $1defc              .byte $xx
-	;; 15, 16, 17, 18, 19, 1a  - shields?
+ItemGetData_15 ; tanned hide    -- UNUSED
+ItemGetData_16 ; leather armor
+ItemGetData_17 ; bronze armor
+ItemGetData_18 ; platinum armor
+ItemGetData_19 ; soldier suit
+ItemGetData_1a ; ceramic suit
         $1defd              .byte $xx,$xx
         $1deff              .byte $xx,$xx
         $1df01              .byte $xx,$xx ; Clear: 000
         $1df03              .byte $xx
-	;; 1c
+ItemGetData_1c ; psycho armor
         $1df04              .byte $xx,$xx
         $1df06              .byte $xx,$xx
-        $1df08              .byte $xx,$xx ; Set: 10b
+        $1df08              .byte $xx,$xx ; Set: 10b defeated draygon 1
         $1df0a              .byte $xx,$xx ; Set: 0cc chest:1c:psycho armor
         $1df0c              .byte $xx,$xx ; Set: 06c
         $1df0e              .byte $xx
-	;; 14
+ItemGetData_14 ; psycho shield
         $1df0f              .byte $xx,$xx
         $1df11              .byte $xx,$xx
         $1df13              .byte $xx,$xx ; Set: 0cd chest:14:psycho shield
         $1df15              .byte $xx
-	;; 1b
+ItemGetData_1b ; battle armor
         $1df16              .byte $xx,$xx
         $1df18              .byte $xx,$xx
         $1df1a              .byte $xx,$xx ; Set: 0df chest:1b:battle armor
         $1df1c              .byte $xx
-	;; 51
+ItemGetData_51 ; sacred shield --- UNUSED
         $1df1d              .byte $xx,$xx
         $1df1f              .byte $xx,$xx
-        $1df21              .byte $xx,$xx ; Set: 062
-	;; 33
+        $1df21              .byte $xx,$xx ; Set: 062 chest:51:sacred shield
+ItemGetData_33 ; key to prison
         $1df23              .byte $xx,$xx
         $1df25              .byte $xx,$xx
         $1df27              .byte $xx,$xx ; Set: 0cf chest:33:key to prison
         $1df29              .byte $xx
-	;; 35
+ItemGetData_35 ; ; fog lamp
         $1df2a              .byte $xx,$xx
         $1df2c              .byte $xx,$xx
         $1df2e              .byte $xx,$xx ; Set: 0d1 chest:35:fog lamp
         $1df30              .byte $xx
-	;; 26
+ItemGetData_26 ; opel statue
         $1df31              .byte $xx,$xx
         $1df33              .byte $xx,$xx
-        $1df35              .byte $xx,$xx ; Set: 105
+        $1df35              .byte $xx,$xx ; Set: 105 defeated kelbesque 2
         $1df37              .byte $xx,$xx ; Set: 0d3 chest:26:opel statue
         $1df39              .byte $xx
-	;; 00 (note: also 4a, 4b, 4c, 4d, 4e, 4f, 67, 68)
+ItemGetData_00 ; sword of wind (note: also 4a, 4b, 4c, 4d, 4e, 4f, 67, 68)
         $1df3a              .byte $xx,$xx
         $1df3c              .byte $xx,$xx
-        $1df3e              .byte $xx,$xx ; Set: 00b
+        $1df3e              .byte $xx,$xx ; Set: 00b talked to leaf elder
         $1df40              .byte $xx
-	;; 01
+ItemGetData_01 ; sword of fire
         $1df41              .byte $xx,$xx
         $1df43              .byte $xx,$xx
-        $1df45              .byte $xx,$xx ; Set: 049
+        $1df45              .byte $xx,$xx ; Set: 049 fire sword from oak elder
         $1df47              .byte $xx
-	;; 02
+ItemGetData_02 ; sword of water
         $1df48              .byte $xx,$xx
         $1df4a              .byte $xx,$xx
         $1df4c              .byte $xx,$xx ; Set: 017 chest:02:sword of water
         $1df4e              .byte $xx
-	;; 03
+ItemGetData_03 ; sword of thunder
         $1df4f              .byte $xx,$xx
         $1df51              .byte $xx,$xx
         $1df53              .byte $xx,$xx ; Set: 05f chest:03:sword of thunder
         $1df55              .byte $xx
-	;; 04
+ItemGetData_04; ; crystalis
         $1df56              .byte $xx,$xx
         $1df58              .byte $xx,$xx
         $1df5a              .byte $xx,$xx ; Clear: 000
         $1df5c              .byte $xx
-	;; 05
+ItemGetData_05 ; ball of wind
         $1df5d              .byte $xx,$xx
         $1df5f              .byte $xx,$xx
         $1df61              .byte $xx,$xx ; Set: 087 chest:05:ball of wind
         $1df63              .byte $xx
-	;; 07
+ItemGetData_07 ; ball of fire
         $1df64              .byte $xx,$xx
         $1df66              .byte $xx,$xx
         $1df68              .byte $xx,$xx ; Set: 041
         $1df6a              .byte $xx,$xx ; Set: 044
-        $1df6c              .byte $xx,$xx ; Set: 101
+        $1df6c              .byte $xx,$xx ; Set: 101 defeated insect
         $1df6e              .byte $xx
-	;; 09 ball of water
+ItemGetData_09 ; ball of water
         $1df6f              .byte $xx,$xx
         $1df71              .byte $xx,$xx
-        $1df73              .byte $xx,$xx ; Set: 103
-        $1df75              .byte $xx,$xx ; Set: 01f
+        $1df73              .byte $xx,$xx ; Set: 103 got item from rage
+        $1df75              .byte $xx,$xx ; Set: 01f got ball of water
         $1df77              .byte $xx,$xx ; Set: 020
         $1df79              .byte $xx,$xx ; Set: 07b
         $1df7b              .byte $xx
-	;; 0b
+ItemGetData_0b ; ball of thunder
         $1df7c              .byte $xx,$xx
         $1df7e              .byte $xx,$xx
-        $1df80              .byte $xx,$xx ; Set: 067
+        $1df80              .byte $xx,$xx ; Set: 067 defeated mado 1
         $1df82              .byte $xx
-	;; 06
+ItemGetData_06 ; tornado bracelet
         $1df83              .byte $xx,$xx
         $1df85              .byte $xx,$xx
         $1df87              .byte $xx,$xx ; Set: 04e chest:06:tornado bracelet
         $1df89              .byte $xx
-	;; 08
+ItemGetData_08 ; flame bracelet
         $1df8a              .byte $xx,$xx
         $1df8c              .byte $xx,$xx
-        $1df8e              .byte $xx,$xx ; Set: 077
-        $1df90              .byte $xx,$xx ; Set: 102
+        $1df8e              .byte $xx,$xx ; Set: 077 chest:08:flame bracelet
+        $1df90              .byte $xx,$xx ; Set: 102 defeated kelbesque 1
         $1df92              .byte $xx
-	;; 0a
+ItemGetData_0a ; blizzard bracelet
         $1df93              .byte $xx,$xx
         $1df95              .byte $xx,$xx
         $1df97              .byte $xx,$xx ; Set: 07a chest:0a:blizzard bracelet
         $1df99              .byte $xx
-	;; 0c
+ItemGetData_0c ; storm bracelet
         $1df9a              .byte $xx,$xx
         $1df9c              .byte $xx,$xx
         $1df9e              .byte $xx,$xx ; Set: 078 chest:0c:storm bracelet
         $1dfa0              .byte $xx
-	;; 10
+ItemGetData_10 ; mirrored shield
         $1dfa1              .byte $xx,$xx
         $1dfa3              .byte $xx,$xx
         $1dfa5              .byte $xx,$xx ; Set: 01c
         $1dfa7              .byte $xx
-	;; 25
+ItemGetData_25 ; statue of onyx
         $1dfa8              .byte $xx,$xx
         $1dfaa              .byte $xx,$xx
         $1dfac              .byte $xx,$xx ; Set: 0ce chest:25:statue of onyx
         $1dfae              .byte $xx
-	;; 27
+ItemGetData_27 ; insect flute
         $1dfaf              .byte $xx,$xx
         $1dfb1              .byte $xx,$xx
         $1dfb3              .byte $xx,$xx ; Clear: 000 unused
         $1dfb5              .byte $xx
-	;; 28
+ItemGetData_28 ; flute of lime
         $1dfb6              .byte $xx,$xx
         $1dfb8              .byte $xx,$xx
         $1dfba              .byte $xx,$xx ; Set: 0d0 chest:28:flute of lime
         $1dfbc              .byte $xx
-	;; 2d
+ItemGetData_2d ; deos pendant
         $1dfbd              .byte $xx,$xx
         $1dfbf              .byte $xx,$xx
-        $1dfc1              .byte $xx,$xx ; Set: 02e
+        $1dfc1              .byte $xx,$xx ; Set: 02e chest:2d:deo's pendant / talk to deo
         $1dfc3              .byte $xx
-	;; 2e
+ItemGetData_2e ; rabbit boots
         $1dfc4              .byte $xx,$xx
         $1dfc6              .byte $xx,$xx
-        $1dfc8              .byte $xx,$xx ; Set: 100
+        $1dfc8              .byte $xx,$xx ; Set: 100 vampire 1 defeated
         $1dfca              .byte $xx
-	;; 3b
+ItemGetData_3b ; love pendant
         $1dfcb              .byte $xx,$xx
         $1dfcd              .byte $xx,$xx
         $1dfcf              .byte $xx,$xx ; Set: 03c chest:3b:love pendant
         $1dfd1              .byte $xx
-	;; 40
+ItemGetData_40 ; bow of truth
         $1dfd2              .byte $xx,$xx
         $1dfd4              .byte $xx,$xx
         $1dfd6              .byte $xx,$xx ; Set: 079
         $1dfd8              .byte $xx
-	;; 2b
+ItemGetData_2b ; warrior ring
         $1dfd9              .byte $xx,$xx
         $1dfdb              .byte $xx,$xx
         $1dfdd              .byte $xx,$xx ; Clear: 000 unused
         $1dfdf              .byte $xx
-	;; 2f
+ItemGetData_2f ; leather boots
         $1dfe0              .byte $xx,$xx
         $1dfe2              .byte $xx,$xx
         $1dfe4              .byte $xx,$xx ; Set: 0e7 chest:2f:leather boots
         $1dfe6              .byte $xx
-	;; 3f
+ItemGetData_3f ; bow of sun
         $1dfe7              .byte $xx,$xx
         $1dfe9              .byte $xx,$xx
         $1dfeb              .byte $xx,$xx ; Set: 07d chest:3f:bow of sun
         $1dfed              .byte $xx
-	;; 38
+ItemGetData_38 ; broken statue
         $1dfee              .byte $xx,$xx
         $1dff0              .byte $xx,$xx
-        $1dff2              .byte $xx,$xx ; Set: 013
+        $1dff2              .byte $xx,$xx ; Set: 013 sabera defeated
         $1dff4              .byte $xx
-	;; 36
+ItemGetData_36 ; shell flute
         $1dff5              .byte $xx,$xx
         $1dff7              .byte $xx,$xx
-        $1dff9              .byte $xx,$xx ; Set: 08b
+        $1dff9              .byte $xx,$xx ; Set: 08b got shell flute
         $1dffb              .byte $xx
-	;; 31, 49
+ItemGetData_31 ; alarm flute (also 49, unused)
         $1dffc              .byte $xx,$xx
         $1dffe              .byte $xx,$xx
         $1e000              .byte $xx,$xx ; Clear: 000 unused
         $1e002              .byte $xx
 RomBank_0f                      ; @@ $a003
-	;; 6f
+ItemGetData_6f ; magic ring
         $1e003              .byte $xx,$xx
         $1e005              .byte $xx,$xx
         $1e007              .byte $xx,$xx ; Set: 0dc chest:6f:magic ring
         $1e009              .byte $xx
-	;; 70
+ItemGetData_70 ; mimic -- UNUSED
         $1e00a              .byte $xx,$xx
         $1e00c              .byte $xx,$xx
-        $1e00e              .byte $xx,$xx ; Set: 0dd
+        $1e00e              .byte $xx,$xx ; Set: 0dd UNUSED
         $1e010              .byte $xx
-	;; 2c
+ItemGetData_2c ; iron necklace
         $1e011              .byte $xx,$xx
         $1e013              .byte $xx,$xx
         $1e015              .byte $xx,$xx ; Set: 0de chest:2c:iron necklace
         $1e017              .byte $xx
-	;; 29, 30
+ItemGetData_29 ; gas mask
+ItemGetData_30 ; shield ring
         $1e018              .byte $xx,$xx
         $1e01a              .byte $xx,$xx
         $1e01c              .byte $xx,$xx ; Clear: 000 unused
         $1e01e              .byte $xx
-	;; 32, 34, 37, 39, 3a, 3e
+ItemGetData_32 ; windmill key
+ItemGetData_34 ; key to styx
+ItemGetData_37 ; eye glasses
+ItemGetData_39 ; glowing lamp
+ItemGetData_3a ; statue of gold
+ItemGetData_3e ; bow of moon
         $1e01f              .byte $xx,$xx
         $1e021              .byte $xx,$xx
         $1e023              .byte $xx,$xx ; Clear: 000 unused
         $1e025              .byte $xx
-	;; 12
+ItemGetData_12 ; sacred shield
         $1e026              .byte $xx,$xx
         $1e028              .byte $xx,$xx
-        $1e02a              .byte $xx,$xx ; Set: 107
+        $1e02a              .byte $xx,$xx ; Set: 107 defeated mado 2
         $1e02c              .byte $xx
-	;; 0d, 0e, 0f, 11, 13
+ItemGetData_0d ; carapace shield
+ItemGetData_0e ; bronze shield
+ItemGetData_0f ; platinum shield
+ItemGetData_11 ; ceramic shield
+ItemGetData_13 ; battle shield
         $1e02d              .byte $xx,$xx
         $1e02f              .byte $xx,$xx
         $1e031              .byte $xx,$xx ; Clear: 000 unused
         $1e033              .byte $xx
-	;; 45, 48
+ItemGetData_45 ; recover
+ItemGetData_48 ; flight
         $1e034              .byte $xx,$xx
         $1e036              .byte $xx,$xx
         $1e038              .byte $xx,$xx ; Clear: 000 unused
         $1e03a              .byte $xx
-	;; 41
+ItemGetData_41 ; refresh
         $1e03b              .byte $xx,$xx
         $1e03d              .byte $xx,$xx
         $1e03f              .byte $xx,$xx ; Set: 039 learned refresh
         $1e041              .byte $xx
-	;; 42
+ItemGetData_42 ; paralysis
         $1e042              .byte $xx,$xx
         $1e044              .byte $xx,$xx
-        $1e046              .byte $xx,$xx ; Set: 037
+        $1e046              .byte $xx,$xx ; Set: 037 learned paralysis
         $1e048              .byte $xx
-	;; 43
+ItemGetData_43 ; telepathy
         $1e049              .byte $xx,$xx
         $1e04b              .byte $xx,$xx
         $1e04d              .byte $xx,$xx ; Set: 00e learned telepathy
         $1e04f              .byte $xx
-	;; 44
+ItemGetData_44 ; teleport
         $1e050              .byte $xx,$xx
         $1e052              .byte $xx,$xx
         $1e054              .byte $xx,$xx ; Set: 03f learned teleport
         $1e056              .byte $xx
-	;; 47
+ItemGetData_47 ; change
         $1e057              .byte $xx,$xx
         $1e059              .byte $xx,$xx
-        $1e05b              .byte $xx,$xx ; Set: 063
+        $1e05b              .byte $xx,$xx ; Set: 063 learned change
         $1e05d              .byte $xx
-	;; 46
+ItemGetData_46 ; barrier
         $1e05e              .byte $xx,$xx
         $1e060              .byte $xx,$xx
         $1e062              .byte $xx,$xx ; Clear: 000 unused
         $1e064              .byte $xx
 ;;; --------------------------------
-ItemUseData_00_Default
+ItemUseData_00 ; Default
         $1e065              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-ItemUseData_21_FruitOfPower
-ItemUseData_22_MagicRing
+ItemUseData_21 ; FruitOfPower
+ItemUseData_22 ; MagicRing
         $1e06f              .byte $xx,$xx,$xx,$xx
-ItemUseData_20_FruitOfLime
-ItemUseData_23_FruitOfRepun
+ItemUseData_20 ; FruitOfLime
+ItemUseData_23 ; FruitOfRepun
         $1e073              .byte $xx,$xx,$xx,$xx
-ItemUseData_1e_Antidote
-ItemUseData_1f_LysisPlant
+ItemUseData_1e ; Antidote
+ItemUseData_1f ; LysisPlant
         $1e077              .byte $xx,$xx,$xx,$xx
-ItemUseData_26_OpelStatue
+ItemUseData_26 ; OpelStatue
         $1e07b              .byte $xx,$xx,$xx,$xx
-ItemUseData_27_InsectFlute
+ItemUseData_27 ; InsectFlute
         $1e07f              .byte $xx,$xx,$xx,$xx,$xx
-ItemUseData_24_WarpBoots
+ItemUseData_24 ; WarpBoots
         $1e084              .byte $xx,$xx,$xx,$xx
-ItemUseData_25_StatueOfOnyx
+ItemUseData_25 ; StatueOfOnyx
         $1e088              .byte $xx,$xx,$xx,$xx,$xx,$xx
-ItemUseData_31_AlarmFlute
+ItemUseData_31 ; AlarmFlute
         $1e08e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-ItemUseData_32_WindmillKey
+ItemUseData_32 ; WindmillKey
         $1e09a              .byte $xx,$xx,$xx,$xx,$xx
-ItemUseData_33_KeyToPrison
+ItemUseData_33 ; KeyToPrison
         $1e09f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-ItemUseData_34_KeyToStyx
+ItemUseData_34 ; KeyToStyx
         $1e0a7              .byte $xx,$xx,$xx,$xx,$xx,$xx
-ItemUseData_35_FogLamp
+ItemUseData_35 ; FogLamp
         $1e0ad              .byte $xx,$xx,$xx,$xx,$xx,$xx
-ItemUseData_36_ShellFlute
+ItemUseData_36 ; ShellFlute
         $1e0b3              .byte $xx,$xx,$xx,$xx,$xx,$xx
-ItemUseData_39_GlowingLamp
+ItemUseData_39 ; GlowingLamp
         $1e0b9              .byte $xx,$xx,$xx,$xx
-ItemUseData_3a_StatueOfGold
-        $1e0bd              .byte $xx,$xx ; 38:02 (action 15)
-        $1e0bf              .byte $xx,$xx ; Set: 408 ???
-        $1e0c1              .byte $xx,$xx ; Set: 283
-        $1e0c3              .byte $xx,$xx
-ItemUseData_37_EyeGlasses
+ItemUseData_3a ; StatueOfGold
+        $1e0bd              .byte $xx,$xx ; Expect trigger square $af (on altar)
+        $1e0bf              .byte $xx,$xx ; 20:08 (action 0a)
+        $1e0c1              .byte $xx,$xx ; Set: 283 calmed sea
+        $1e0c3              .byte $xx,$xx ; Set: 08f used statue of gold
+ItemUseData_37 ; EyeGlasses
         $1e0c5              .byte $xx,$xx,$xx,$xx,$xx
-ItemUseData_3b_LovePendant
-        $1e0ca              .byte $xx,$xx,$xx,$xx,$xx,$xx
-ItemUseData_3c_KirisaPlant
+ItemUseData_3b ; LovePendant
+        $1e0ca              .byte $xx,$xx ; kensu
+        $1e0cc              .byte $xx,$xx ; 13:02 (action 0c)
+        $1e0ce              .byte $xx,$xx
+ItemUseData_3c ; KirisaPlant
         $1e0d0              .byte $xx,$xx,$xx,$xx,$xx,$xx
-ItemUseData_3d_IvoryStatue
+ItemUseData_3d ; IvoryStatue
         $1e0d6              .byte $xx,$xx,$xx,$xx,$xx,$xx
-ItemUseData_28_FluteOfLime
-        $1e0dc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1e0ec              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-ItemUseData_3e_BowOfMoon
+ItemUseData_28 ; FluteOfLime
+        $1e0dc              .byte $xx,$xx ; Expect NPC 87 unused?
+        $1e0de              .byte $xx,$xx
+        $1e0e0              .byte $xx,$xx
+        $1e0e2              .byte $xx,$xx ; Expect NPC 86 unused?
+        $1e0e4              .byte $xx,$xx
+        $1e0e6              .byte $xx,$xx
+        $1e0e8              .byte $xx,$xx ; Expect NPC 85 stoned pair
+        $1e0ea              .byte $xx,$xx ; 20:05 (action 06) reload npcs
+        $1e0ec              .byte $xx,$xx ; Set: 06a stoned people cured
+        $1e0ee              .byte $xx,$xx ; Expect NPC 88 stoned akahana
+        $1e0f0              .byte $xx,$xx ; 20:05 (action 06) reload npcs
+        $1e0f2              .byte $xx,$xx ; Set: 035 cured akahana
+ItemUseData_3e ; BowOfMoon
         $1e0f4              .byte $xx,$xx,$xx,$xx,$xx,$xx
-ItemUseData_3f_BowOfSun
+ItemUseData_3f ; BowOfSun
         $1e0fa              .byte $xx,$xx,$xx,$xx,$xx,$xx
-ItemUseData_40_BowOfTruth
+ItemUseData_40 ; BowOfTruth
         $1e100              .byte $xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 ;;; The following are the two-byte values associated with the pointers in
@@ -22778,7 +22908,7 @@ TreasureChestSpawnFlags
 ;;; --------------------------------
 ;;; Trigger data table.
 ;;; STRIP: word=$14000
-TriggerSquareFlags
+TriggerTable
         $1e17a              .word ($1e200) ; 80
         $1e17c              .word ($1e208) ; 81
         $1e17e              .word ($1e210) ; 82
@@ -22847,293 +22977,360 @@ TriggerSquareFlags
         $1e1fc              .word ($1e3b4) ; c1
         $1e1fe              .word ($1e3ba) ; c2
 ;;; --------------------------------
+Trigger_80
         ;; 80 shyron massacre
         $1e200              .byte $xx,$xx ; Condition: 027 NOT shyron massacre
         $1e202              .byte $xx,$xx ; Condition: 05f sword of thunder
         $1e204              .byte $xx,$xx ; Message: 1d:13
         $1e206              .byte $xx,$xx ; Set: 027 shyron massacre
+Trigger_81
         ;; 81 enter shyron
         $1e208              .byte $xx,$xx ; Condition: 03b NOT
         $1e20a              .byte $xx,$xx
         $1e20c              .byte $xx,$xx ; Set: 026 entered shyron
         $1e20e              .byte $xx,$xx ; Set: 2fd warp:shyron
+Trigger_82
         ;; 82 teleported to shyron
         $1e210              .byte $xx,$xx ; Condition: 05f thunder sword
         $1e212              .byte $xx,$xx ; Condition: 02d NOT talked with wise men in shyron
         $1e214              .byte $xx,$xx ; Action: 17
         $1e216              .byte $xx,$xx ; Set: 02d talked with wise men in shyron
+Trigger_83
         ;; 83 enter draygonia fortress (TODO when is this used?)
         $1e218              .byte $xx,$xx ; Condition: 064 NOT
         $1e21a              .byte $xx,$xx
         $1e21c              .byte $xx,$xx ; Set: 064
+Trigger_84
         ;; 84 learn barrier
         $1e21e              .byte $xx,$xx ; Condition: 051 NOT learned barrier
-        $1e220              .byte $xx,$xx ; Message 1d:12  Action: 0b
+        $1e220              .byte $xx,$xx ; Message 19:12  Action: 0b
         $1e222              .byte $xx,$xx ; Set: 051 learned barrier
+Trigger_85
         ;; 85 enter stom's house -> ????
         $1e224              .byte $xx,$xx ; Condition: 2f7 warp:oak
         $1e226              .byte $xx,$xx ; Condition: 00e NOT defeated stom
         $1e228              .byte $xx,$xx ; Message 03:00  Action: 18
         $1e22a              .byte $xx,$xx
+Trigger_86
         ;; 86 try to climb mt sabre north (mt sabre side)
         $1e22c              .byte $xx,$xx ; Condition: 0a9 NOT talked to leaf rabbit
         $1e22e              .byte $xx,$xx ; Message 1c:0f  Action: 19
         $1e230              .byte $xx,$xx
+Trigger_87
         ;; 87 rescue zebu (UNUSED)
         $1e232              .byte $xx,$xx ; Condition: 055 NOT zebu rescued
         $1e234              .byte $xx,$xx ; Message 18:01  Action: 1a
         $1e236              .byte $xx,$xx
+Trigger_88
         ;; 88 rescue tornel (UNUSED)
         $1e238              .byte $xx,$xx ; Condition: 056 NOT tornel rescued
         $1e23a              .byte $xx,$xx ; Message 18:03  Action: 1a
         $1e23c              .byte $xx,$xx
+Trigger_89
         ;; 89 rescue asina (UNUSED)
         $1e23e              .byte $xx,$xx ; Condition: 057 NOT asina rescued
         $1e240              .byte $xx,$xx ; Message 18:05  Action: 1a
         $1e242              .byte $xx,$xx
+Trigger_8a
         ;; 8a try to enter evil spirit island (blocked until entered joel)
         $1e244              .byte $xx,$xx ; Condition: 2fb NOT warp:joel
         $1e246              .byte $xx,$xx ; Message 1d:10  Action: 19
         $1e248              .byte $xx,$xx
+Trigger_8b
         ;; 8b entered joel
         $1e24a              .byte $xx,$xx
         $1e24c              .byte $xx,$xx
         $1e24e              .byte $xx,$xx ; Set: 2fb warp:joel
+Trigger_8c
         ;; 8c attack leaf
         $1e250              .byte $xx,$xx ; Condition: 038 NOT leaf attacked
         $1e252              .byte $xx,$xx
         $1e254              .byte $xx,$xx ; Set: 085 leaf elder missing
         $1e256              .byte $xx,$xx ; Set: 038 leaf attacked
         $1e258              .byte $xx,$xx ; Set: 084 leaf villagers missing
-        ;; 8d restore leaf villagers
-        $1e25a              .byte $xx,$xx ; Condition: 037
+Trigger_8d
+        ;; 8d restore leaf elder
+        $1e25a              .byte $xx,$xx ; Condition: 037 learned paralysis
         $1e25c              .byte $xx,$xx ; Condition: 047 NOT
         $1e25e              .byte $xx,$xx
         $1e260              .byte $xx,$xx ; Set: 047
         $1e262              .byte $xx,$xx ; Clear: 085 leaf elder missing
+Trigger_8e
         ;; 8e enter oak
         $1e264              .byte $xx,$xx
         $1e266              .byte $xx,$xx
         $1e268              .byte $xx,$xx ; Set: 2f7 warp:oak
+Trigger_8f
         ;; 8f UNUSED
         $1e26a              .byte $xx,$xx ; Condition: 053
         $1e26c              .byte $xx,$xx ; Action: 1b
         $1e26e              .byte $xx,$xx ; Set: 045
         $1e270              .byte $xx,$xx ; Clear: 053
+Trigger_90
         ;; 90 enter amazones
         $1e272              .byte $xx,$xx
         $1e274              .byte $xx,$xx
         $1e276              .byte $xx,$xx ; Clear: 0a1
         $1e278              .byte $xx,$xx ; Set: 2fa warp:amazones
+Trigger_a5
         ;; a5 mt sabre guard conversation
         $1e27a              .byte $xx,$xx ; Condition: 07e NOT guard conversation heard
         $1e27c              .byte $xx,$xx ; Message 05:0f
         $1e27e              .byte $xx,$xx ; Set: 07e guard conversation heard
+Trigger_92
         ;; 92 enter underground channel
         $1e280              .byte $xx,$xx
         $1e282              .byte $xx,$xx
         $1e284              .byte $xx,$xx ; Set: 018 entered underground channel
+Trigger_93
         ;; 93 UNUSED
         $1e286              .byte $xx,$xx ; Condition: 020 NOT
         $1e288              .byte $xx,$xx ; Message 0a:0f
         $1e28a              .byte $xx,$xx
+Trigger_94
         ;; 94 enter mt sabre north cave
         $1e28c              .byte $xx,$xx
         $1e28e              .byte $xx,$xx
         $1e290              .byte $xx,$xx ; Set: 05b mt sabre guards gone
+Trigger_95
         ;; 95 enter mesia shrine
         $1e292              .byte $xx,$xx
         $1e294              .byte $xx,$xx ; Action: 07
         $1e296              .byte $xx,$xx ; Set: 01b mesia recording played
+Trigger_96
         ;; 96 UNUSED
         $1e298              .byte $xx,$xx ; Condition: 013
         $1e29a              .byte $xx,$xx
         $1e29c              .byte $xx,$xx ; Set: 02f
+Trigger_97
         ;; 97 enter portoa palace
         $1e29e              .byte $xx,$xx
         $1e2a0              .byte $xx,$xx
         $1e2a2              .byte $xx,$xx ; Clear: 019
+Trigger_98
         ;; 98 UNUSED
         $1e2a4              .byte $xx,$xx ; Condition: 066 NOT
         $1e2a6              .byte $xx,$xx ; Action: 1d (06:00)
         $1e2a8              .byte $xx,$xx
+Trigger_99
         ;; 99 enter leaf
         $1e2aa              .byte $xx,$xx
         $1e2ac              .byte $xx,$xx
         $1e2ae              .byte $xx,$xx ; Set: 2f5 warp:leaf
+Trigger_9a
         ;; 9a fight mado
         $1e2b0              .byte $xx,$xx ; Condition: 027 shyron massacre
         $1e2b2              .byte $xx,$xx ; Condition: 067 NOT defeated mado 1
         $1e2b4              .byte $xx,$xx ; Action: 1d (19:04)
         $1e2b6              .byte $xx,$xx
+Trigger_9b
         ;; 9b UNUSED
         $1e2b8              .byte $xx,$xx ; Condition: 05d NOT
         $1e2ba              .byte $xx,$xx ; Action: 1d (18:00)
         $1e2bc              .byte $xx,$xx
+Trigger_9c
         ;; 9c UNUSED
         $1e2be              .byte $xx,$xx ; Condition: 060 NOT
         $1e2c0              .byte $xx,$xx ; Message 18:02  Action: 1d
         $1e2c2              .byte $xx,$xx
+Trigger_9d
         ;; 9d UNUSED
         $1e2c4              .byte $xx,$xx ; Condition: 062 NOT
         $1e2c6              .byte $xx,$xx ; Message 18:04  Action: 1d
         $1e2c8              .byte $xx,$xx
+Trigger_9e
         ;; 9e UNUSED
         $1e2ca              .byte $xx,$xx ; Condition: 05c NOT
         $1e2cc              .byte $xx,$xx ; Message 18:08  Action: 1d
         $1e2ce              .byte $xx,$xx
+Trigger_9f
         ;; 9f UNUSED
         $1e2d0              .byte $xx,$xx ; Condition: 06c NOT
         $1e2d2              .byte $xx,$xx ; Message 1b:00  Action: 1d
         $1e2d4              .byte $xx,$xx
+Trigger_a0
         ;; a0 UNUSED
         $1e2d6              .byte $xx,$xx ; Condition: 05e NOT
         $1e2d8              .byte $xx,$xx ; Message 1b:04  Action: 1d
         $1e2da              .byte $xx,$xx
+Trigger_a1
         ;; a1 tower message 1
         $1e2dc              .byte $xx,$xx ; Condition: 0ea NOT received tower message 1
         $1e2de              .byte $xx,$xx ; Message 1b:08
         $1e2e0              .byte $xx,$xx ; Set: 0ea received tower message 1
+Trigger_a2
         ;; a2 tower message 2
         $1e2e2              .byte $xx,$xx ; Condition: 0eb NOT received tower message 2
         $1e2e4              .byte $xx,$xx ; Message 1b:09
         $1e2e6              .byte $xx,$xx ; Set: 0eb received tower message 2
+Trigger_a3
         ;; a3 tower message 3
         $1e2e8              .byte $xx,$xx ; Condition: 0ec NOT received tower message 3
         $1e2ea              .byte $xx,$xx ; Message 1b:0a
         $1e2ec              .byte $xx,$xx ; Set: 0ec received tower message 3
+Trigger_a4
         ;; a4 forge crystalis
         $1e2ee              .byte $xx,$xx ; Condition: 068 NOT forged crystalis
         $1e2f0              .byte $xx,$xx ; Message 1b:0b  Action: 1e
         $1e2f2              .byte $xx,$xx ; Set: 068 forged crystalis
+Trigger_91
         ;; 91 hear mt sabre guards talking
         $1e2f4              .byte $xx,$xx ; Condition: 07f NOT heard mt sabre guards
         $1e2f6              .byte $xx,$xx ; Message 20:12
         $1e2f8              .byte $xx,$xx ; Set: 07f heard mt sabre guards
+Trigger_a6
         ;; a6 enter brynmaer
         $1e2fa              .byte $xx,$xx
         $1e2fc              .byte $xx,$xx
         $1e2fe              .byte $xx,$xx ; Set: 2f6 warp:brynmaer
+Trigger_a7
         ;; a7 enter nadare
         $1e300              .byte $xx,$xx
         $1e302              .byte $xx,$xx
         $1e304              .byte $xx,$xx ; Set: 2f8 warp:nadare
+Trigger_a8
         ;; a8 enter portoa
         $1e306              .byte $xx,$xx
         $1e308              .byte $xx,$xx
         $1e30a              .byte $xx,$xx ; Set: 2f9 warp:portoa
+Trigger_a9
         ;; a9 enter swan
         $1e30c              .byte $xx,$xx
         $1e30e              .byte $xx,$xx
         $1e310              .byte $xx,$xx ; Set: 2fc warp:swan
+Trigger_aa
         ;; aa enter oak
         $1e312              .byte $xx,$xx ; Condition: 0a8
         $1e314              .byte $xx,$xx
         $1e316              .byte $xx,$xx ; Set: 043 entered oak ?
         $1e318              .byte $xx,$xx ; Set: 2f7 warp:oak
+Trigger_ab
         ;; ab enter goa
         $1e31a              .byte $xx,$xx
         $1e31c              .byte $xx,$xx
         $1e31e              .byte $xx,$xx ; Set: 2fe warp:goa
+Trigger_ac
         ;; ac enter sahara
         $1e320              .byte $xx,$xx
         $1e322              .byte $xx,$xx
         $1e324              .byte $xx,$xx ; Set: 2ff warp:sahara
+Trigger_ad
         ;; ad allow opening mt sabre prison door ?
         $1e326              .byte $xx,$xx
         $1e328              .byte $xx,$xx
         $1e32a              .byte $xx,$xx ; Set: 093
+Trigger_ae
         ;; ae allow opening styx door ?
         $1e32c              .byte $xx,$xx
         $1e32e              .byte $xx,$xx
         $1e330              .byte $xx,$xx ; Set: 094
+Trigger_af
         ;; af allow repairing broken statue ?
         $1e332              .byte $xx,$xx
         $1e334              .byte $xx,$xx
         $1e336              .byte $xx,$xx ; Set: 095
+Trigger_b0
         ;; b0 board boat
         $1e338              .byte $xx,$xx ; Condition: 021 returned fog lamp
         $1e33a              .byte $xx,$xx ; Action: 1f
         $1e33c              .byte $xx,$xx
+Trigger_b1
         ;; b1 start fighting statues
         $1e33e              .byte $xx,$xx
         $1e340              .byte $xx,$xx ; Action: 1d
         $1e342              .byte $xx,$xx
+Trigger_b2
         ;; b2 learn paralysis in summit cave
         $1e344              .byte $xx,$xx ; Condition: 037 NOT
         $1e346              .byte $xx,$xx ; Message 1c:10  Action: 08
         $1e348              .byte $xx,$xx ; Set: 037
         $1e34a              .byte $xx,$xx ; Set: 083
+Trigger_b3
         ;; b3 despawn swan guards
         $1e34c              .byte $xx,$xx
         $1e34e              .byte $xx,$xx
         $1e350              .byte $xx,$xx ; Set: 08c swan guards disappeared
+Trigger_b4
         ;; b4 learn refresh
         $1e352              .byte $xx,$xx ; Condition: 00a windmill key used
         $1e354              .byte $xx,$xx ; Condition: 039 NOT learned refresh
-        $1e356              .byte $xx,$xx ; Action: 0f (1b)
+        $1e356              .byte $xx,$xx ; Action: 0f learn refresh $3d70d (1b)
         $1e358              .byte $xx,$xx ; Set: 039 learned refresh
+Trigger_b5
         ;; b5 learn teleport (UNUSED)
         $1e35a              .byte $xx,$xx ; Condition: 03f NOT learned teleport
         $1e35c              .byte $xx,$xx ; Action: 0f (ab)
         $1e35e              .byte $xx,$xx ; Set: 03f learned teleport
+Trigger_b6
         ;; b6 sabera trap
         $1e360              .byte $xx,$xx ; Condition: 013 NOT sabera defeated
         $1e362              .byte $xx,$xx ; Condition: 0db NOT in sabera's trap
         $1e364              .byte $xx,$xx ; Message 10:0e
         $1e366              .byte $xx,$xx ; Set: 0db in sabera's trap
         $1e368              .byte $xx,$xx ; Set: 08e
+Trigger_b7
         ;; b7 outside portoa castle
         $1e36a              .byte $xx,$xx ; Condition: 09c
         $1e36c              .byte $xx,$xx
         $1e36e              .byte $xx,$xx ; Clear: 09c
         $1e370              .byte $xx,$xx ; Clear: 0a2
         $1e372              .byte $xx,$xx ; Set: 020
+Trigger_b8
         ;; b8 outside portoa fortune teller (do nothing!)
         $1e374              .byte $xx,$xx
         $1e376              .byte $xx,$xx
         $1e378              .byte $xx,$xx
+Trigger_b9
         ;; b9 UNUSED
         $1e37a              .byte $xx,$xx
         $1e37c              .byte $xx,$xx
         $1e37e              .byte $xx,$xx ; Clear: 09f
+Trigger_ba
         ;; ba try to climb mt sabre north (cordel side)
         $1e380              .byte $xx,$xx ; Condition: 03f learned teleport
         $1e382              .byte $xx,$xx ; Message 1c:0f  Action: 19
         $1e384              .byte $xx,$xx
+Trigger_bb
         ;; bb portoa palace guard moves
         $1e386              .byte $xx,$xx ; Condition: 09e NOT
         $1e388              .byte $xx,$xx ; Condition: 01f NOT
         $1e38a              .byte $xx,$xx ; Condition: 020
         $1e38c              .byte $xx,$xx ; Action: 1b
         $1e38e              .byte $xx,$xx
+Trigger_bc
         ;; bc amazones guards move
         $1e390              .byte $xx,$xx ; Condition: 099 NOT
         $1e392              .byte $xx,$xx ; Condition: 028 NOT change:woman
         $1e394              .byte $xx,$xx ; Action: 1b
         $1e396              .byte $xx,$xx
+Trigger_bd
         ;; bd shyron guards move
         $1e398              .byte $xx,$xx ; Condition: 02b NOT change:stom
         $1e39a              .byte $xx,$xx ; Condition: 026 NOT entered shyron
         $1e39c              .byte $xx,$xx ; Condition: 027 NOT shyron massacre
         $1e39e              .byte $xx,$xx ; Action: 1b
         $1e3a0              .byte $xx,$xx
+Trigger_be
         ;; be UNUSED
         $1e3a2              .byte $xx,$xx ; Condition: 07b NOT
         $1e3a4              .byte $xx,$xx ; Action: 0a
         $1e3a6              .byte $xx,$xx
+Trigger_bf
         ;; bf despawn stoned people
         $1e3a8              .byte $xx,$xx ; Condition: 06a stoned people cured
         $1e3aa              .byte $xx,$xx
         $1e3ac              .byte $xx,$xx ; Set: 090 stoned people gone
+Trigger_c0
         ;; c0 UNUSED
         $1e3ae              .byte $xx,$xx ; Condition: 06b
         $1e3b0              .byte $xx,$xx
         $1e3b2              .byte $xx,$xx ; Set: 091
+Trigger_c1
         ;; c1 enter swan tavern
-        $1e3b4              .byte $xx,$xx ; Condition: 072
+        $1e3b4              .byte $xx,$xx ; Condition: 072 
         $1e3b6              .byte $xx,$xx
-        $1e3b8              .byte $xx,$xx ; Set: 0da
+        $1e3b8              .byte $xx,$xx ; Set: 0da kensu gone from tavern
+Trigger_c2
         ;; c2 reset sabera trap
         $1e3ba              .byte $xx,$xx
         $1e3bc              .byte $xx,$xx
@@ -25556,9 +25753,9 @@ ObjectActionJump_6f
         $1f843  xx xx:         xxx ($xx),y
         $1f845  xx xx:         xxx $xx
         $1f847  xx xx:         xxx $xx
-        $1f849  xx xx:         xxx $xx
-        $1f84b  xx xx xx:      xxx $xxxx
-        $1f84e  xx:           xxx
+        $1f849  xx xx:         xxx + ; $1f84e
+        $1f84b  xx xx xx:       xxx $xxxx
++       $1f84e  xx:           xxx
         $1f84f  xx:           xxx
         $1f850  xx:          xxx
         $1f851  xx xx:       xxx $xx
@@ -25595,21 +25792,21 @@ ObjectActionJump_6f
         $1f88e  xx xx:      xxx #$xx
         $1f890  xx xx xx:   xxx $xxxx,y
         $1f893  xx xx:      xxx #$xx
-        $1f895  xx xx:      xxx $xx
+        $1f895  xx xx:      xxx + ; $1f8c7
         $1f897  xx xx:      xxx #$xx
-        $1f899  xx xx:      xxx $xx
+        $1f899  xx xx:      xxx + ; $1f8c7
         $1f89b  xx xx:      xxx #$xx
-        $1f89d  xx xx:      xxx $xx
+        $1f89d  xx xx:      xxx + ; $1f8c7
         $1f89f  xx xx:      xxx #$xx
-        $1f8a1  xx xx:      xxx $xx
+        $1f8a1  xx xx:      xxx + ; $1f8c7
         $1f8a3  xx xx:      xxx #$xx
-        $1f8a5  xx xx:      xxx $xx
+        $1f8a5  xx xx:      xxx + ; $1f8c7
         $1f8a7  xx xx:      xxx #$xx
-        $1f8a9  xx xx:      xxx $xx
+        $1f8a9  xx xx:      xxx + ; $1f8c7
         $1f8ab  xx xx:      xxx $xx
         $1f8ad  xx xx:      xxx #$xx
         $1f8af  xx xx:      xxx $xx
-        $1f8b1  xx xx xx:   xxx $3ff80
+        $1f8b1  xx xx xx:   xxx LoadOneObjectData
         $1f8b4  xx xx:      xxx #$xx
         $1f8b6  xx xx xx:   xxx $xxxx,y
         $1f8b9  xx xx:      xxx #$xx
@@ -25620,27 +25817,29 @@ ObjectActionJump_6f
         $1f8c2  xx:         xxx
         $1f8c3  xx:         xxx
         $1f8c4  xx xx xx:   xxx $xxxx,y
-        $1f8c7  xx:         xxx
++       $1f8c7  xx:         xxx
         $1f8c8  xx xx:      xxx #$xx
         $1f8ca  xx xx:      xxx $xx
         $1f8cc  xx xx xx:   xxx $34c0e
 ;;; --------------------------------
-        $1f8cf  xx xx xx:   xxx $3c676
+        ;; Runs when insect defeated
+        $1f8cf  xx xx xx:   xxx FlushNametableDataWrite
         $1f8d2  xx xx:      xxx #$xx
-        $1f8d4  xx xx:      xxx #$xx
-        $1f8d6  xx xx xx:   xxx $xxxx,y
-        $1f8d9  xx:         xxx
-        $1f8da  xx xx:      xxx $xx
+-       $1f8d4  xx xx:       xxx #$xx
+        $1f8d6  xx xx xx:    xxx $xxxx,y
+        $1f8d9  xx:          xxx
+        $1f8da  xx xx:      xxx - ; $1f8d4
         $1f8dc  xx xx:      xxx #$xx
         $1f8de  xx xx xx:   xxx StageNametableWrite
         $1f8e1  xx xx:      xxx #$xx
         $1f8e3  xx xx:      xxx #$xx
-        $1f8e5  xx xx xx:   xxx $xxxx,y
-        $1f8e8  xx:         xxx
-        $1f8e9  xx xx:      xxx #$xx
-        $1f8eb  xx xx:      xxx $xx
+-       $1f8e5  xx xx xx:    xxx $xxxx,y
+        $1f8e8  xx:          xxx
+        $1f8e9  xx xx:       xxx #$xx
+        $1f8eb  xx xx:      xxx - ; $1f8e5
         $1f8ed  xx:         xxx
 ;;; --------------------------------
+        ;; Runs when Draygon 1 defeated
         $1f8ee  xx xx:      xxx #$xx
         $1f8f0  xx xx:      xxx $xx,x
         $1f8f2  xx xx:      xxx #$xx
@@ -25649,6 +25848,7 @@ ObjectActionJump_6f
         $1f8f8  xx xx:      xxx $xx
         $1f8fa  xx xx xx:   xxx $3ff80
 ;;; --------------------------------
+        ;; Runs when Draygon 2 defeated
         $1f8fd  xx xx:      xxx #SCREEN_MODE_NORMAL
         $1f8ff  xx xx:      xxx ScreenMode
         $1f901  xx xx:      xxx #$xx
@@ -25684,6 +25884,7 @@ ObjectActionJump_6f
         $1f944  xx xx:      xxx $xx
         $1f946  xx:         xxx
 ;;; --------------------------------
+        ;; Runs when dyna defeated
         $1f947  xx xx:      xxx #$xx
         $1f949  xx xx xx:   xxx $xxxx
         $1f94c  xx xx xx:   xxx $xxxx
@@ -25692,47 +25893,126 @@ ObjectActionJump_6f
         $1f954  xx xx:      xxx $xx
         $1f956  xx xx:      xxx #$xx
         $1f958  xx xx:      xxx $xx
-        $1f95a  xx xx xx:   xxx $3ff80
+        $1f95a  xx xx xx:   xxx LoadOneObjectData
 ;;; --------------------------------
 DataTable_1f95d 
-        $1f95d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1f96d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1f97d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1f98d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1f99d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1f9ad              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1f9bd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1f9cd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1f9dd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1f9ed              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1f9fd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1fa0d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1fa1d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1fa2d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1fa3d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1fa4d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1fa5d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1fa6d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1fa7d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1fa8d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1f95d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+;;; Data table with some sort of boss info.  Seems to only be read when
+;;; the boss is killed.  Contains the item drop at y=4.
+;;; STRIP: word=$14000
+DataTable_1f96b 
+        $1f96b              .word ($1f987) ; 00 vampire 1
+        $1f96d              .word ($1f99c) ; 01 insect
+        $1f96f              .word ($1f9b1) ; 02 kelbesque
+        $1f971              .word ($xxxx)  ; 03 rage
+        $1f973              .word ($1f9c6) ; 04 sabera 1
+        $1f975              .word ($1f9db) ; 05 mado 1
+        $1f977              .word ($1f9f0) ; 06 kelbesque 2
+        $1f979              .word ($1fa05) ; 07 sabera 2
+        $1f97b              .word ($1fa1a) ; 08 mado 2
+        $1f97d              .word ($1fa2f) ; 09 karmine
+        $1f97f              .word ($1fa44) ; 0a draygon 1
+        $1f981              .word ($1fa59) ; 0b draygon 2
+        $1f983              .word ($1fa6e) ; 0c vampire 2
+        $1f985              .word ($1fa83) ; 0d dyna
+;;; --------------------------------
+;;; 00 vampire 1
+        $1f987              .word ($xxxx) ; subroutine to run
+        $1f989              .byte $xx,$xx,$xx
+        $1f98c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1f997              .byte $xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+;;; 01 insect	
+        $1f99c              .word ($xxxx)
+        $1f99e              .byte $xx,$xx,$xx
+        $1f9a1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1f9ac              .byte $xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+;;; 02 kelbesque	
+        $1f9b1              .word ($xxxx)
+        $1f9b3              .byte $xx,$xx,$xx
+        $1f9b6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1f9c1              .byte $xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+;;; 04 sabera 1	
+        $1f9c6              .word ($xxxx)
+        $1f9c8              .byte $xx,$xx,$xx
+        $1f9cb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1f9d6              .byte $xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+;;; 05 mado 1	
+        $1f9db              .word ($xxxx)
+        $1f9dd              .byte $xx,$xx,$xx
+        $1f9e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1f9eb              .byte $xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+;;; 06 kelbesque 2	
+        $1f9f0              .word ($xxxx)
+        $1f9f2              .byte $xx,$xx,$xx
+        $1f9f5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1fa00              .byte $xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+;;; 07 sabera 2	
+        $1fa05              .word ($xxxx)
+        $1fa07              .byte $xx,$xx,$xx
+        $1fa0a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1fa15              .byte $xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+;;; 08 mado 2	
+        $1fa1a              .word ($xxxx)
+        $1fa1c              .byte $xx,$xx,$xx
+        $1fa1f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1fa2a              .byte $xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+;;; 09 karmine	
+        $1fa2f              .word ($xxxx)
+        $1fa31              .byte $xx,$xx,$xx
+        $1fa34              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1fa3f              .byte $xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+;;; 0a draygon 1
+        $1fa44              .word ($xxxx)
+        $1fa46              .byte $xx,$xx,$xx
+        $1fa49              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1fa54              .byte $xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+;;; 0b draygon 2
+        $1fa59              .word ($xxxx)
+        $1fa5b              .byte $xx,$xx,$xx
+        $1fa5e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1fa69              .byte $xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+;;; 0c vampire 2
+        $1fa6e              .word ($xxxx)
+        $1fa70              .byte $xx,$xx,$xx
+        $1fa73              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1fa7e              .byte $xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+;;; 0d dyna
+        $1fa83              .word ($xxxx)
+        $1fa85              .byte $xx,$xx,$xx
+        $1fa88              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1fa93              .byte $xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+        ;; Runs when generals defeated for first time.
         $1fa98  xx xx:      xxx #$xx
-        $1fa9a  xx xx xx:   xxx $3c176
+        $1fa9a  xx xx xx:   xxx WaitForMultipleOAMDMA
         $1fa9d  xx xx:      xxx #$xx
-        $1fa9f  xx xx xx:   xxx $xxxx
+        $1fa9f  xx xx xx:   xxx PlayerStatus
         $1faa2  xx xx xx:   xxx $xxxx
         $1faa5  xx xx xx:   xxx $xxxx
         $1faa8  xx xx xx:   xxx $xxxx
-        $1faab  xx xx xx:   xxx $3c008
+        $1faab  xx xx xx:   xxx UpdateEquipmentAndStatus
         $1faae  xx xx:      xxx #$xx
-        $1fab0  xx xx xx:   xxx $3c125
+        $1fab0  xx xx xx:   xxx StartAudioTrack
         $1fab3  xx xx:      xxx $xx
-        $1fab5  xx xx xx:   xxx ReadObjectCoordinatesInto_34_37
+        $1fab5  xx xx xx:   xxx  ReadObjectCoordinatesInto_34_37
         $1fab8  xx xx:      xxx #$xx
         $1faba  xx xx:      xxx $xx
         $1fabc  xx xx:      xxx #$xx
         $1fabe  xx xx:      xxx $xx
-        $1fac0  xx xx xx:   xxx $3ff80
+        $1fac0  xx xx xx:   xxx LoadOneObjectData
         $1fac3  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
         $1fac6  xx xx:      xxx $xx
         $1fac8  xx xx xx:   xxx $xxxx,x
@@ -25756,7 +26036,7 @@ DataTable_1f95d
         $1faed  xx xx xx:   xxx $xxxx
         $1faf0  xx xx xx:   xxx $1fb29
         $1faf3  xx xx:      xxx #$xx
-        $1faf5  xx xx xx:   xxx $3c125
+        $1faf5  xx xx xx:   xxx StartAudioTrack
         $1faf8  xx xx xx:   xxx $3ffcf
         $1fafb  xx xx xx:   xxx $1fb5b
 ;;; --------------------------------
@@ -44217,37 +44497,37 @@ ObjectActionJump_0b             ; Stom fight (in $4a0)
         $36263  xx xx:      xxx $xx
         $36265  xx xx xx:   xxx $xxxx,x
         $36268  xx xx:      xxx #$xx
-        $3626a  xx xx:      xxx $xx
+        $3626a  xx xx:      xxx + ; $36270
         $3626c  xx xx:      xxx #$xx
-        $3626e  xx xx:      xxx $xx
-        $36270  xx xx:      xxx #$xx
+        $3626e  xx xx:      xxx ++ ; $36275
++       $36270  xx xx:      xxx #$xx
         $36272  xx xx xx:   xxx $xxxx,x
-        $36275  xx xx:      xxx #$xx
+++      $36275  xx xx:      xxx #$xx
         $36277  xx xx xx:   xxx $xxxx
         $3627a  xx xx xx:   xxx $xxxx,x
-        $3627d  xx xx:      xxx $xx
-        $3627f  xx xx xx:   xxx $xxxx
-        $36282  xx xx:      xxx #$xx
-        $36284  xx xx xx:   xxx $xxxx
-        $36287  xx xx xx:   xxx $xxxx,x
-        $3628a  xx:         xxx
-;;; --------------------------------
-        $3628b  xx xx:      xxx $xx
-        $3628d  xx xx:      xxx $xx
+        $3627d  xx xx:      xxx + ; $3628b
+        $3627f  xx xx xx:    xxx $xxxx
+        $36282  xx xx:       xxx #$xx
+        $36284  xx xx xx:    xxx $xxxx
+        $36287  xx xx xx:    xxx $xxxx,x
+        $3628a  xx:          xxx
+        ;; --------------------------------
++       $3628b  xx xx:      xxx $xx
+        $3628d  xx xx:      xxx >rts ; $362ab
         $3628f  xx xx xx:   xxx $362ac,y
         $36292  xx:         xxx
         $36293  xx xx:      xxx $xx,x
         $36295  xx xx:      xxx $xx,x
         $36297  xx xx:      xxx $xx,x
         $36299  xx xx:      xxx #$xx
-        $3629b  xx xx:      xxx $xx
+        $3629b  xx xx:      xxx + ; $3629f
         $3629d  xx:         xxx
         $3629e  xx:         xxx
-        $3629f  xx xx:      xxx #$xx
-        $362a1  xx xx:      xxx $xx
++       $3629f  xx xx:      xxx #$xx
+        $362a1  xx xx:      xxx + ; $362a5
         $362a3  xx:         xxx
         $362a4  xx:         xxx
-        $362a5  xx:         xxx
++       $362a5  xx:         xxx
         $362a6  xx xx:      xxx $xx,x
         $362a8  xx xx xx:   xxx $xxxx
         $362ab  xx:         xxx
@@ -44259,14 +44539,16 @@ DataTable_362ac
         $362b6  xx xx:      xxx #$xx
         $362b8  xx xx:      xxx $xx
         $362ba  xx xx:      xxx #$xx
-        $362bc  xx xx:      xxx $xx
-        $362be  xx:         xxx
-;;; --------------------------------
-        $362bf  xx xx xx:   xxx $xxxx
+        $362bc  xx xx:      xxx + ; $362bf
+        $362be  xx:          xxx
+        ;; --------------------------------
++       $362bf  xx xx xx:   xxx $xxxx
         $362c2  xx xx:      xxx #$xx
         $362c4  xx xx xx:   xxx $xxxx
         $362c7  xx xx:      xxx #$xx
         $362c9  xx xx xx:   xxx $xxxx
+        ;; This looks like it hard-codes a reference to 03:01 which
+        ;; is the message for defeating stom and learning telepathy.
         $362cc  xx xx:      xxx #$xx
         $362ce  xx xx xx:   xxx $xxxx
         $362d1  xx xx:      xxx #$xx
@@ -44295,9 +44577,8 @@ DataTable_362ac
         $36308  xx xx xx:   xxx $xxxx
         $3630b  xx xx:      xxx #$xx
         $3630d  xx xx xx:   xxx $xxxx
-        $36310  xx xx xx:   xxx $3ff8c
-DataTable_36313 
-        $36313              .byte $xx
+        $36310  xx xx xx:   xxx DrawAllObjectSprites
+        $36313  xx:         xxx
 ;;; --------------------------------
 ;;; This is called by $3cd28 using $4a0,x:7f as the index.
 ;;; Note that entries $60..$6f are on a different page.
@@ -44936,7 +45217,7 @@ ObjectActionJump_53
         $367ec  xx xx:      xxx #$xx
         $367ee  xx xx:      xxx - ; $367e9
         $367f0  xx xx xx:   xxx $xxxx,x
-        $367f3  xx xx:      xxx #$xx
+        $367f3  xx xx:      xxx #INV_MAGIC_TELEPATHY
         $367f5  xx xx xx:   xxx $xxxx
         $367f8  xx xx:      xxx #$xx
         $367fa  xx xx xx:   xxx $xxxx
@@ -55513,7 +55794,7 @@ DataTable_3cf47
 ;;; --------------------------------
 MainGameModeJump_10_StatusMessage
         $3d085  xx xx xx:   xxx $3c89e
-        $3d088  xx xx:      xxx $xx
+        $3d088  xx xx:      xxx ScreenMode
         $3d08a  xx:         xxx
         $3d08b  xx xx:       xxx #$xx
         $3d08d  xx xx xx:    xxx WaitForMultipleOAMDMA
@@ -55592,7 +55873,7 @@ DialogFollowupActionJump
         $3d123              .word ($3d163) ; 00
         $3d125              .word ($3d19c) ; 01
         $3d127              .word ($3d31c) ; 02 disappear
-        $3d129              .word ($3d225) ; 03
+        $3d129              .word ($3d225) ; 03 learn refresh
         $3d12b              .word ($3d163) ; 04
         $3d12d              .word ($3d164) ; 05
         $3d12f              .word ($3d23f) ; 06
@@ -55615,8 +55896,8 @@ DialogFollowupActionJump
         $3d151              .word ($3d16d) ; 17 healed by wise men in fortress?
         $3d153              .word ($3d280) ; 18
         $3d155              .word ($3d2ae) ; 19
-        $3d157              .word ($3d336) ; 1a
-        $3d159              .word ($3d341) ; 1b
+        $3d157              .word ($3d336) ; 1a get ball of water
+        $3d159              .word ($3d341) ; 1b ejected from lime tree ??
         $3d15b              .word ($3d163) ; 1c
         $3d15d              .word ($3d163) ; 1d
         $3d15f              .word ($3d163) ; 1e
@@ -55656,8 +55937,8 @@ DialogFollowupActionJump_17_HealPlayerAndDisappear
         $3d18b  xx xx xx:   xxx DialogFollowupActionJump_02_Disappear
 ;;; --------------------------------
 DialogFollowupActionJump_14
-        $3d18e  xx xx:      xxx #$xx
-        $3d190  xx xx xx:   xxx $3d22b
+        $3d18e  xx xx:      xxx #INV_MAGIC_FLIGHT
+        $3d190  xx xx xx:   xxx GrantItemInRegisterA
         $3d193  xx xx xx:   xxx DialogFollowupActionJump_17_HealPlayerAndDisappear
 ;;; --------------------------------
         $3d196  xx xx xx:   xxx $3d88b
@@ -55707,9 +55988,9 @@ DialogFollowupActionJump_10
         $3d1ed  xx xx xx:   xxx $xxxx
         $3d1f0  xx xx:      xxx #$xx
         $3d1f2  xx xx xx:   xxx $xxxx
-        $3d1f5  xx xx xx:   xxx $3d354
-        $3d1f8  xx xx:      xxx #$xx
-        $3d1fa  xx xx xx:   xxx $3d22b
+        $3d1f5  xx xx xx:   xxx WaitForDialogToBeDismissed
+        $3d1f8  xx xx:      xxx #INV_MAGIC_RECOVER
+        $3d1fa  xx xx xx:   xxx GrantItemInRegisterA
         $3d1fd  xx xx:      xxx #$xx
         $3d1ff  xx xx:      xxx #$xx
         $3d201  xx xx xx:   xxx BankSwitch8k_8000
@@ -55725,20 +56006,23 @@ DialogFollowupActionJump_10
         $3d21a  xx xx xx:   xxx $3e148
 ;;; --------------------------------
 DialogFollowupActionJump_11
-        $3d21d  xx xx xx:   xxx $xxxx
+        ;; Give an item (from $6a0,y)
+        $3d21d  xx xx xx:   xxx LookingAt
         $3d220  xx xx xx:   xxx $xxxx,y
-        $3d223  xx xx:      xxx $xx
+        $3d223  xx xx:      xxx GrantItemInRegisterA
 DialogFollowupActionJump_03
-        $3d225  xx xx xx:   xxx $xxxx
-        $3d228  xx xx xx:   xxx $xxxx,y
+        ;; Give an item (from $680,y)
+        $3d225  xx xx xx:    xxx LookingAt
+        $3d228  xx xx xx:    xxx $xxxx,y
+GrantItemInRegisterA
         $3d22b  xx xx xx:   xxx $xxxx
-        $3d22e  xx xx xx:   xxx $xxxx
+        $3d22e  xx xx xx:   xxx LookingAt
         $3d231  xx:         xxx
         $3d232  xx xx:       xxx #$xx
-        $3d234  xx xx xx:    xxx $xxxx
+        $3d234  xx xx xx:    xxx LookingAt
         $3d237  xx xx xx:    xxx MainGameModeJump_07_TriggerSquareOrTreasureChest
         $3d23a  xx:         xxx
-        $3d23b  xx xx xx:   xxx $xxxx
+        $3d23b  xx xx xx:   xxx LookingAt
         $3d23e  xx:         xxx
 ;;; --------------------------------
 DialogFollowupActionJump_06
@@ -55797,8 +56081,9 @@ DialogFollowupActionJump_18
         $3d2ad  xx:         xxx
 ;;; --------------------------------
 DialogFollowupActionJump_19
+        ;; Give shield ring then walk out
         $3d2ae  xx xx:      xxx #INV_SHIELD_RING
-        $3d2b0  xx xx xx:   xxx $3d22b ; give item, but hard-code rather than $680,x
+        $3d2b0  xx xx xx:   xxx GrantItemInRegisterA ; hard-code rather than $680,x
         $3d2b3  xx xx:      xxx #$xx
         $3d2b5  xx xx xx:   xxx $xxxx
         $3d2b8  xx xx:      xxx #$xx
@@ -55859,8 +56144,8 @@ DialogFollowupActionJump_02_Disappear
         $3d333  xx xx xx:   xxx StartAudioTrack
 ;;; --------------------------------
 DialogFollowupActionJump_1a
-        $3d336  xx xx:      xxx #$xx
-        $3d338  xx xx xx:   xxx $3d22b
+        $3d336  xx xx:      xxx #INV_BALL_OF_WATER
+        $3d338  xx xx xx:   xxx GrantItemInRegisterA
         $3d33b  xx xx:      xxx #$xx
         $3d33d  xx xx xx:   xxx $xxxx
         $3d340  xx:         xxx
@@ -56153,10 +56438,10 @@ ItemOrTriggerActionJump                 ; TODO - Label the destinations
         $3d575              .word ($3d659) ; 09
         $3d577              .word ($3d63a) ; 0a
         $3d579              .word ($3d6d8) ; 0b
-        $3d57b              .word ($3d6dd) ; 0c
+        $3d57b              .word ($3d6dd) ; 0c love pendant given to kensu - learn change
         $3d57d              .word ($3d6e7) ; 0d
         $3d57f              .word ($3d6ec) ; 0e
-        $3d581              .word ($3d70d) ; 0f
+        $3d581              .word ($3d70d) ; 0f learn refresh
         $3d583              .word ($3d63f) ; 10
         $3d585              .word ($3d6d5) ; 11 unused?
         $3d587              .word ($3d5a3) ; 12 unused?
@@ -56271,8 +56556,8 @@ JumpTable_3d563_04
         $3d653  xx:         xxx
 ;;; --------------------------------
 JumpTable_3d563_08
-        $3d654  xx xx:      xxx #$xx
-        $3d656  xx xx xx:   xxx $3d22b
+        $3d654  xx xx:      xxx #INV_MAGIC_PARALYSIS
+        $3d656  xx xx xx:   xxx GrantItemInRegisterA
 ;;; --------------------------------
 JumpTable_3d563_09
         $3d659  xx xx xx:   xxx PlayerStatus
@@ -56327,24 +56612,25 @@ DataTable_3d6a8                 ; grouped in fives
 ;;; --------------------------------
 JumpTable_3d563_06
 JumpTable_3d563_11
+        ;; reload NpcData for location
         $3d6d5  xx xx xx:   xxx $3e148
 ;;; --------------------------------
 JumpTable_3d563_0b
-        $3d6d8  xx xx:      xxx #$xx
-        $3d6da  xx xx xx:   xxx $3d22b
+        $3d6d8  xx xx:      xxx #INV_MAGIC_BARRIER
+        $3d6da  xx xx xx:   xxx GrantItemInRegisterA
 ;;; --------------------------------
 JumpTable_3d563_0c
-        $3d6dd  xx xx:      xxx #$xx
-        $3d6df  xx xx xx:   xxx $3d22b
+        $3d6dd  xx xx:      xxx #INV_MAGIC_CHANGE
+        $3d6df  xx xx xx:   xxx GrantItemInRegisterA
         $3d6e2  xx xx:      xxx #$xx
         $3d6e4  xx xx xx:   xxx $3d31f
 ;;; --------------------------------
 JumpTable_3d563_0d
-        $3d6e7  xx xx:      xxx #$xx
-        $3d6e9  xx xx xx:   xxx $3d22b
+        $3d6e7  xx xx:      xxx #INV_BOW_OF_MOON
+        $3d6e9  xx xx xx:   xxx GrantItemInRegisterA
 ;;; --------------------------------
 JumpTable_3d563_0e
-        $3d6ec  xx xx xx:   xxx $3e144
+        $3d6ec  xx xx xx:   xxx loadNpcDataForCurrentLocation
         $3d6ef  xx xx:      xxx #$xx
         $3d6f1  xx xx:      xxx #$xx
         $3d6f3  xx xx xx:   xxx BankSwitch8k_8000
@@ -56360,12 +56646,13 @@ JumpTable_3d563_0e
         $3d70c  xx:         xxx
 ;;; --------------------------------
 JumpTable_3d563_0f
+        ;;  Learn refresh
         $3d70d  xx xx xx:   xxx $xxxx
-        $3d710  xx xx:      xxx #$xx
+        $3d710  xx xx:      xxx #INV_MAGIC_REFRESH
         $3d712  xx xx xx:   xxx $xxxx,y
-        $3d715  xx xx xx:   xxx $3d3eb
+        $3d715  xx xx xx:   xxx MainGameModeJump_07_TriggerSquareOrTreasureChest
 ;;; --------------------------------
-JumpTable_3d563_13
+JumpTable_3d563_13p
         $3d718  xx xx:      xxx #$xx
         $3d71a  xx xx xx:   xxx $xxxx
         $3d71d  xx xx:      xxx $xx ; uncond
@@ -56391,6 +56678,7 @@ JumpTable_3d563_14
         $3d745  xx:         xxx
 ;;; --------------------------------
 JumpTable_3d563_15
+        ;; Begin fight with Draygon 2 (post Bow of Truth)
         $3d746  xx xx:      xxx #$xx ; SFX_6B - unknown
         $3d748  xx xx xx:   xxx StartAudioTrack
         $3d74b  xx xx:      xxx #$xx ; nothing?
@@ -56484,8 +56772,8 @@ JumpTable_3d563_1b
         $3d7fc  xx:         xxx
 ;;; --------------------------------
 JumpTable_3d563_1c
-        $3d7fd  xx xx:      xxx #$xx
-        $3d7ff  xx xx xx:   xxx $3d22b
+        $3d7fd  xx xx:      xxx #INV_GAS_MASK
+        $3d7ff  xx xx xx:   xxx GrantItemInRegisterA
         $3d802  xx xx xx:   xxx $3d23f
 ;;; --------------------------------
 JumpTable_3d563_1d
@@ -56533,7 +56821,7 @@ HandleItemOrTrigger
         $3d844  xx:         xxx
         $3d845  xx xx:      xxx #OP_JMP_ABS
         $3d847  xx xx:      xxx $xx
-        $3d849  xx xx xx:   xxx $3d885,y ; ItemGet, ItemUse, or Trigger
+        $3d849  xx xx xx:   xxx $3d885,y ; ItemGet, ItemUse, or TriggerSquare
         $3d84c  xx xx:      xxx $xx
         $3d84e  xx xx xx:   xxx $3d886,y
         $3d851  xx xx:      xxx $xx
@@ -57656,12 +57944,13 @@ ClcIfObjectIsOnScreen
 ;;; --------------------------------
 loadNpcDataForCurrentLocation
         $3e144  xx xx:      xxx #$xx
-        $3e146  xx xx:      xxx + ; $3e14a
-        $3e148  xx xx:      xxx #$xx
+        $3e146  xx xx:      xxx + ; $3e14a - unconditional
+        ;; This is an alternate entry point, from some trigger/item actions
+        $3e148  xx xx:       xxx #$xx
 +       $3e14a  xx xx:      xxx $xx
         ;; Load the NpcData table for the current location
         $3e14c  xx xx xx:   xxx BankSwitch16k_Bank6 ; $3e3d4
-        $3e14f  xx xx:      xxx $xx
+        $3e14f  xx xx:      xxx CurrentLocation
         $3e151  xx:         xxx
         $3e152  xx:         xxx
         $3e153  xx xx xx:   xxx NpcData,y

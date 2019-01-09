@@ -12,6 +12,10 @@ import {Random} from './random.js';
 // TODO - make a debugger window for patches.
 export default ({
   apply(rom, hash) {
+    // Rearrange things first before anything else happens!
+    rearrangeTriggersAndNpcs.apply(rom);
+
+    // Pick a seed.
     let seed;
     if (hash['seed']) {
       seed = hash['seed'];
@@ -21,6 +25,8 @@ export default ({
       window.location.hash += '&seed=' + seed;
     }
     const random = new Random(seed);
+
+    // Parse the rom and apply other patches.
     const parsed = new Rom(rom);
     adjustObjectDifficultyStats(rom, parsed);
     shuffleMonsters(rom, parsed, random);
@@ -47,6 +53,48 @@ export default ({
   },
 });
 
+// Move several triggers unconditionally to make a little
+// bit more space for them.  This gives a consistent view
+// regardless of whether they are actually patched or not.
+export const rearrangeTriggersAndNpcs = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000
+.bank $1c000 $8000:$4000
+
+;; Move Draygon's spawn condition up about $100 bytes to make 3 bytes
+;; extra space for a spawn flag check for Draygon 2.
+.org $1c776         ; cb draygon 1 and 2
+  .byte $54,$88     ; ($1c854)
+.org $1c854
+  .byte $9f,$a1,$0b ; pyramid front: 10b NOT defeated draygon 1
+  .byte $ff,$ff,$ff
+  .byte $ff
+
+;; Move 'Learn Barrier' trigger into 'Shyron Massacre' to get 2 extra
+;; bytes for the 'Calmed Sea' condition.
+.org $1e182      ; 84 learn barrier
+  .byte $00,$a2  ; ($1e200)
+
+.org $1e200
+  .byte $20,$51  ; Condition: 051 NOT learned barrier
+  .byte $a0,$00  ; Condition: 000 NOT false
+  .byte $5b,$b2  ; Message: 1d:12  Action: 0b
+  .byte $40,$51  ; Set: 051 learned barrier
+.org $1e208
+
+;; Move 'Shyron Massacre' trigger to the unused space in triggers
+;; 87 and 88 to get 2 extra bytes (leaves 8 more bytes in that spot).
+.org $1e17a      ; 80 shyron massacre
+  .byte $32,$a2  ; ($1e232)
+.org $1e232
+  .byte $20,$27  ; Condition: 027 NOT shyron massacre
+  .byte $00,$5f  ; Condition: 05f sword of thunder
+  .byte $a0,$00  ; Condition: 000 NOT false
+  .byte $03,$b3  ; Message: 1d:13
+  .byte $40,$27  ; Set: 027 shyron massacre
+.org $1e244
+
+`, 'rearrangeTriggers'));
+
 // Skip the check that the player is stationary.  We could also adjust
 // the speed by changing the mask at $3f02b from $3f to $1f to make it
 // faster, or $7f to slow it down.  Possibly we could start it at $7f and
@@ -66,18 +114,12 @@ export const allowTeleportOutOfTower = buildRomPatch(assemble(`
 .bank $1c000 $8000:$4000
 
 ;; draygon 2 does not reappear after defeated
-;; Need to move all of draygon's conditions to fit the extra 3 bytes,
-;; and also change the pointer.
-.org $1c776  ; cb
-  .byte $54,$88
-.org $1c854
-  .byte $9f,$a1,$0c
-  ;.byte $a6,$a0,$5e
+;; (points to moved memory location).
+.org $1c857
   .byte $a6,$a2,$8d
-  .byte $ff
 
 .org $3db39
-  .byte $00   ; don't jump
+  .byte $00   ; don't jump away to prevent warp, just goto next line
 
 `, 'allowTeleportOutOfTower'));
 
@@ -107,15 +149,8 @@ export const preventNpcDespawns = buildRomPatch(assemble(`
   .byte $00
 
 ;; shyron massacre requires talking to zebu in shyron
-;; NOTE: this is moved from elsewhere to fit the extra condition
-.org $1e17a
-  .byte $32  ; point to the newly moved trigger.
-.org $1e232
-  .byte $20,$27
-  .byte $80,$5f
-  .byte $80,$3b
-  .byte $03,$b3
-  .byte $40,$27
+.org $1e236     ; 80 shyron massacre (+4)
+  .byte $80,$3b ; Condition: 03b talked to zebu in shyron
 
 .org $3fa18
 MesiaGivesFluteOfLime:
@@ -131,16 +166,8 @@ export const barrierRequiresCalmSea = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000 ; fixed bank
 .bank $1c000 $8000:$4000
 
-.org $1e182
- ; .word ($1e232)
-  .byte $32,$a2
-
-.org $1e232
-BarrierTrigger:
-  .byte $20,$51  ; Condition: 051 NOT learned barrier
+.org $1e202
   .byte $82,$83  ; Condition: 283 calmed angy sea
-  .byte $5b,$b2  ; Message: 1d:12  Action: 0b
-  .byte $40,$51  ; Set: 051 learned barrier
 `, 'barrierRequiresCalmSea'));
 
 // Prevent the teleport-to-shyron sequence upon getting thunder sword.

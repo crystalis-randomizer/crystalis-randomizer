@@ -512,3 +512,27 @@
       ;; TODO - add more info - want object names...
 )))
 (define-key asm-mode-map (kbd "C-c C-n") 'annotate-npcdata)
+
+(defun link-data-table-entry ()
+  (interactive)
+  (save-excursion
+    (beginning-of-line)
+    (re-search-forward "\\.word (\\$\\([0-9a-f]+\\)) ; \\([0-9a-f]+\\) *\\(.*\\)")
+    (let* ((addr (match-string 1))
+           (num (match-string 2))
+           (label (match-string 3))
+           (table (save-excursion
+                    (re-search-backward "^\\([A-Z][A-Za-z0-9_]+\\)")
+                    (replace-regexp-in-string "Table$" "" (match-string 1)))))
+      (asm-goto-position addr)
+      (asm-split)
+      (beginning-of-line)
+      (insert table "_" num)
+      (if (string= label "") t
+        (insert ";")
+        (insert " ; ")
+        (insert label)
+        (set-column-width 68))
+      (insert "\n")
+      (previous-line)))
+  (next-line))

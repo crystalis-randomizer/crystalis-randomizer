@@ -49,9 +49,35 @@ export default ({
     autoEquipBracelet.apply(rom);
     //installInGameTimer.apply(rom); - this is a tough one.
     if ('nodie' in hash) neverDie.apply(rom);
+    stampVersionSeedAndHash(rom, seed);
+    // do any "vanity" patches here...
     console.log('patch applied');
   },
 });
+
+// Stamp the ROM
+export const stampVersionSeedAndHash = (rom, seed) => {
+  // Use up to 26 bytes starting at PRG $25ea8
+  // Would be nice to store (1) commit, (2) flags, (3) seed, (4) hash
+  // We can use base64 encoding to help some...
+  // For now just stick in the commit and seed in simple hex
+  const hash = BUILD_HASH.substring(0, 7);
+  seed = Number(seed).toString(16).padStart(8, 0);
+  const embed = (addr, text) => {
+    for (let i = 0; i < text.length; i++) {
+      rom[addr + 0x10 + i] = text.charCodeAt(i);
+    }
+  };
+  embed(0x25ea8, `v.${hash}   ${seed}`);
+  embed(0x25716, 'RANDOMIZER');
+  embed(0x2573c, 'BETA');
+  // NOTE: it would be possible to add the hash/seed/etc to the title
+  // page as well, but we'd need to replace the unused letters in bank
+  // $1d with the missing numbers (J, Q, W, X), as well as the two
+  // weird squares at $5b and $5c that don't appear to be used.  Together
+  // with using the letter 'O' as 0, that's sufficient to cram in all the
+  // numbers and display arbitrary hex digits.
+};
 
 // Move several triggers unconditionally to make a little
 // bit more space for them.  This gives a consistent view

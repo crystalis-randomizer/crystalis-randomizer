@@ -501,6 +501,9 @@ define LOC_SWAMP                $1a
 define LOC_MT_SABRE_NORTH_MAIN  $28
 define LOC_MESIA_SHRINE         $52
 define LOC_DYNA                 $5f
+define LOC_ANGRY_SEA            $60
+define LOC_UNDERGROUND_CHANNEL  $64
+define LOC_EVIL_SPIRIT_ISLAND_1 $68
 define LOC_JOEL_LIGHTHOUSE      $62
 define LOC_SWAN_GATE            $73
 define LOC_MT_HYDRA             $7c
@@ -3189,14 +3192,16 @@ MapScreen_80
         $080c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $080d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $080e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_00
+;;; --------------------------------
+PersonData_00 ; portoa pink man on fortune teller island; sahara orange man left
         $080f0              .byte $xx,$xx,$xx,$xx
-PersonData_01
+PersonData_01 ; sahara grey bearded man by well, brynmaer barkeep
         $080f4              .byte $xx,$xx,$xx,$xx
-PersonData_02
+PersonData_02 ; portoa light blue lower left walker, brynmaer tavern top left
         $080f8              .byte $xx,$xx,$xx,$xx
-PersonData_03
+PersonData_03 ; portoa pink stationary lower left man; sahara grey man mid-right
         $080fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_81
         $08100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08110              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3213,14 +3218,16 @@ MapScreen_81
         $081c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $081d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $081e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_04
+;;; --------------------------------
+PersonData_04 ; woman in dress at front of amazones, sahara; portoa lady in waiting right
         $081f0              .byte $xx,$xx,$xx,$xx
-PersonData_05
+PersonData_05 ; headband lady at right of amazones, portoa welcome
         $081f4              .byte $xx,$xx,$xx,$xx
-PersonData_06
+PersonData_06 ; portoa pink dress lady below castle bridge; sahara grey dress lady right
         $081f8              .byte $xx,$xx,$xx,$xx
-PersonData_07
+PersonData_07 ; portoa barracks guard top
         $081fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_82
         $08200              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3237,14 +3244,16 @@ MapScreen_82
         $082c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $082d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $082e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_08
+;;; --------------------------------
+PersonData_08 ; blue man at front of brynmaer, red man top of nadare
         $082f0              .byte $xx,$xx,$xx,$xx
-PersonData_09
+PersonData_09 ; zombietown man on left
         $082f4              .byte $xx,$xx,$xx,$xx
-PersonData_0A
+PersonData_0a ; zombietown woman on right
         $082f8              .byte $xx,$xx,$xx,$xx
-PersonData_0B
+PersonData_0b ; goa soldier
         $082fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_83
         $08300              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08310              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3261,14 +3270,16 @@ MapScreen_83
         $083c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $083d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $083e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_0C
+;;; --------------------------------
+PersonData_0c ; swan soldier
         $083f0              .byte $xx,$xx,$xx,$xx
-PersonData_0D
+PersonData_0d ; leaf elder
         $083f4              .byte $xx,$xx,$xx,$xx
-PersonData_0E
+PersonData_0e ; startled green man inside leaf (cf. $65)
         $083f8              .byte $xx,$xx,$xx,$xx
-PersonData_0F
+PersonData_0f ; red man at top of leaf
         $083fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_84
         $08400              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08410              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3285,14 +3296,16 @@ MapScreen_84
         $084c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $084d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $084e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_10
+;;; --------------------------------
+PersonData_10 ; red woman outside leaf shops
         $084f0              .byte $xx,$xx,$xx,$xx
-PersonData_11
+PersonData_11 ; leaf elder's daughter
         $084f4              .byte $xx,$xx,$xx,$xx
-PersonData_12
+PersonData_12 ; red girl in leaf
         $084f8              .byte $xx,$xx,$xx,$xx
-PersonData_13
+PersonData_13 ; leaf rabbit
         $084fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_85
         $08500              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08510              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3309,14 +3322,16 @@ MapScreen_85
         $085c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $085d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $085e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_14
+;;; --------------------------------
+PersonData_14 ; windmill guard, zebu's student
         $085f0              .byte $xx,$xx,$xx,$xx
-PersonData_15
+PersonData_15 ; sleeping windmill guard
         $085f4              .byte $xx,$xx,$xx,$xx
-PersonData_16
+PersonData_16 ; akahana
         $085f8              .byte $xx,$xx,$xx,$xx
-PersonData_17
+PersonData_17 ; red bearded man beneath brynmaer inn
         $085fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_86
         $08600              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08610              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3333,14 +3348,16 @@ MapScreen_86
         $086c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $086d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $086e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_18
+;;; --------------------------------
+PersonData_18 ; blue woman beneath brynmaer armor shop
         $086f0              .byte $xx,$xx,$xx,$xx
-PersonData_19
+PersonData_19 ; red cloaked man beneath brynmaer pawn
         $086f4              .byte $xx,$xx,$xx,$xx
-PersonData_1A
+PersonData_1a ; blue woman at far end of brynmaer
         $086f8              .byte $xx,$xx,$xx,$xx
-PersonData_1B
+PersonData_1b ; blue treasure hunter in brynmaer tavern
         $086fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_87
         $08700              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08710              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3357,14 +3374,16 @@ MapScreen_87
         $087c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $087d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $087e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_1C
+;;; --------------------------------
+PersonData_1c ; yellow treasure hunter in brynmaer tavern
         $087f0              .byte $xx,$xx,$xx,$xx
-PersonData_1D
+PersonData_1d ; oak elder
         $087f4              .byte $xx,$xx,$xx,$xx
-PersonData_1E
+PersonData_1e ; oak mother
         $087f8              .byte $xx,$xx,$xx,$xx
-PersonData_1F
+PersonData_1f ; dwarf child in swamp
         $087fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_88
         $08800              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08810              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3381,14 +3400,16 @@ MapScreen_88
         $088c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $088d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $088e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_20
+;;; --------------------------------
+PersonData_20 ; oak inn guard (post-telepathy)
         $088f0              .byte $xx,$xx,$xx,$xx
-PersonData_21
+PersonData_21 ; oak tool shop guard (post-telepathy)
         $088f4              .byte $xx,$xx,$xx,$xx
-PersonData_22
+PersonData_22 ; oak top-right dwarf
         $088f8              .byte $xx,$xx,$xx,$xx
-PersonData_23
+PersonData_23 ; aryllis
         $088fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_89
         $08900              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08910              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3405,14 +3426,16 @@ MapScreen_89
         $089c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $089d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $089e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_24
+;;; --------------------------------
+PersonData_24 ; long-haired woman at left of amazones
         $089f0              .byte $xx,$xx,$xx,$xx
-PersonData_25
+PersonData_25 ; amazones guard
         $089f4              .byte $xx,$xx,$xx,$xx
-PersonData_26
+PersonData_26 ; aryllis right attendant
         $089f8              .byte $xx,$xx,$xx,$xx
-PersonData_27
+PersonData_27 ; aryllis left attendant
         $089fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_8A
         $08a00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08a10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3429,14 +3452,16 @@ MapScreen_8A
         $08ac0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08ad0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08ae0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_28
+;;; --------------------------------
+PersonData_28 ; nadare
         $08af0              .byte $xx,$xx,$xx,$xx
-PersonData_29
+PersonData_29 ; nadare back room red woman (right)
         $08af4              .byte $xx,$xx,$xx,$xx
-PersonData_2A
+PersonData_2a ; green bearded man bottom-left nadare
         $08af8              .byte $xx,$xx,$xx,$xx
-PersonData_2B
+PersonData_2b ; nadare back room gray man (left)
         $08afc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_8B
         $08b00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08b10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3453,14 +3478,16 @@ MapScreen_8B
         $08bc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08bd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08be0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_2C
+;;; --------------------------------
+PersonData_2c ; dying man at foot of mt sabre north
         $08bf0              .byte $xx,$xx,$xx,$xx
-PersonData_2D
+PersonData_2d ; mt sabre guard soldiers (both)
         $08bf4              .byte $xx,$xx,$xx,$xx
-PersonData_2E
+PersonData_2e ; leaf shopkeeper ?
         $08bf8              .byte $xx,$xx,$xx,$xx
-PersonData_2F
+PersonData_2f ; leaf shopkeeper ?
         $08bfc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_8C
         $08c00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08c10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3477,14 +3504,16 @@ MapScreen_8C
         $08cc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08cd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08ce0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_30
+;;; --------------------------------
+PersonData_30 ; leaf shopkeeper ?
         $08cf0              .byte $xx,$xx,$xx,$xx
-PersonData_31
+PersonData_31 ; UNUSED
         $08cf4              .byte $xx,$xx,$xx,$xx
-PersonData_32
+PersonData_32 ; portoa barracks guard right
         $08cf8              .byte $xx,$xx,$xx,$xx
-PersonData_33
+PersonData_33 ; portoa throne room back door guard
         $08cfc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_8D
         $08d00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08d10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3501,14 +3530,16 @@ MapScreen_8D
         $08dc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08dd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08de0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_34
+;;; --------------------------------
+PersonData_34 ; portoa palace guard (throme room front)
         $08df0              .byte $xx,$xx,$xx,$xx
-PersonData_35
+PersonData_35 ; portoa barracks evans
         $08df4              .byte $xx,$xx,$xx,$xx
-PersonData_36
+PersonData_36 ; portoa pink lady in waiting at table left
         $08df8              .byte $xx,$xx,$xx,$xx
-PersonData_37
+PersonData_37 ; portoa red lady in waiting at table top
         $08dfc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_8E
         $08e00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08e10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3525,14 +3556,16 @@ MapScreen_8E
         $08ec0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08ed0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08ee0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_38
+;;; --------------------------------
+PersonData_38 ; portoa queen
         $08ef0              .byte $xx,$xx,$xx,$xx
-PersonData_39
+PersonData_39 ; fortune teller
         $08ef4              .byte $xx,$xx,$xx,$xx
-PersonData_3A
+PersonData_3a ; de-stoned people in waterfall cave
         $08ef8              .byte $xx,$xx,$xx,$xx
-PersonData_3B
+PersonData_3b ; UNUSED
         $08efc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_8F
         $08f00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08f10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3549,14 +3582,16 @@ MapScreen_8F
         $08fc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08fd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08fe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_3C
+;;; --------------------------------
+PersonData_3c ; UNUSED
         $08ff0              .byte $xx,$xx,$xx,$xx
-PersonData_3D
+PersonData_3d ; joel elder
         $08ff4              .byte $xx,$xx,$xx,$xx
-PersonData_3E
+PersonData_3e ; joel brown lady left of elder
         $08ff8              .byte $xx,$xx,$xx,$xx
-PersonData_3F
+PersonData_3f ; joel blue lady right of elder
         $08ffc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_90
         $09000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3573,14 +3608,16 @@ MapScreen_90
         $090c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $090d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $090e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_40
+;;; --------------------------------
+PersonData_40 ; joel welcome
         $090f0              .byte $xx,$xx,$xx,$xx
-PersonData_41
+PersonData_41 ; joel top-right bearded green man
         $090f4              .byte $xx,$xx,$xx,$xx
-PersonData_42
+PersonData_42 ; joel top-left watchman
         $090f8              .byte $xx,$xx,$xx,$xx
-PersonData_43
+PersonData_43 ; joel bottom-right red woman
         $090fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_91
         $09100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09110              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3597,14 +3634,16 @@ MapScreen_91
         $091c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $091d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $091e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_44
+;;; --------------------------------
+PersonData_44 ; clark
         $091f0              .byte $xx,$xx,$xx,$xx
-PersonData_45
+PersonData_45 ; zombietown human top
         $091f4              .byte $xx,$xx,$xx,$xx
-PersonData_46
+PersonData_46 ; zombietown human bottom
         $091f8              .byte $xx,$xx,$xx,$xx
-PersonData_47
+PersonData_47 ; zombietown child in clark house
         $091fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_92
         $09200              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3621,14 +3660,16 @@ MapScreen_92
         $092c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $092d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $092e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_48
+;;; --------------------------------
+PersonData_48 ; swan blue bearded man outside armor shop
         $092f0              .byte $xx,$xx,$xx,$xx
-PersonData_49
+PersonData_49 ; swan barkeep
         $092f4              .byte $xx,$xx,$xx,$xx
-PersonData_4A
+PersonData_4a ; swan tavern soldiers
         $092f8              .byte $xx,$xx,$xx,$xx
-PersonData_4B
+PersonData_4b ; swan dancing ladies
         $092fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_93
         $09300              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09310              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3645,14 +3686,16 @@ MapScreen_93
         $093c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $093d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $093e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_4C
+;;; --------------------------------
+PersonData_4c ; swan dance instructor
         $093f0              .byte $xx,$xx,$xx,$xx
-PersonData_4D
+PersonData_4d ; swan dancing man
         $093f4              .byte $xx,$xx,$xx,$xx
-PersonData_4E
+PersonData_4e ; shyron guards
         $093f8              .byte $xx,$xx,$xx,$xx
-PersonData_4F
+PersonData_4f ; shyron welcome
         $093fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_94
         $09400              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09410              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3669,14 +3712,16 @@ MapScreen_94
         $094c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $094d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $094e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_50
+;;; --------------------------------
+PersonData_50 ; shyron red man middle
         $094f0              .byte $xx,$xx,$xx,$xx
-PersonData_51
+PersonData_51 ; shyron training men
         $094f4              .byte $xx,$xx,$xx,$xx
-PersonData_52
+PersonData_52 ; stom's girlfriend
         $094f8              .byte $xx,$xx,$xx,$xx
-PersonData_53
+PersonData_53 ; shyron sick men
         $094fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_95
         $09500              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09510              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3693,14 +3738,16 @@ MapScreen_95
         $095c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $095d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $095e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_54
+;;; --------------------------------
+PersonData_54 ; akahana friend
         $095f0              .byte $xx,$xx,$xx,$xx
-PersonData_55
+PersonData_55 ; goa cloaked man right
         $095f4              .byte $xx,$xx,$xx,$xx
-PersonData_56
+PersonData_56 ; goa pink blouse lady middle
         $095f8              .byte $xx,$xx,$xx,$xx
-PersonData_57
+PersonData_57 ; goa tavern lady
         $095fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_96
         $09600              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09610              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3717,14 +3764,16 @@ MapScreen_96
         $096c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $096d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $096e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_58
+;;; --------------------------------
+PersonData_58 ; goa barkeep
         $096f0              .byte $xx,$xx,$xx,$xx
-PersonData_59
+PersonData_59 ; sahara generic bunny
         $096f4              .byte $xx,$xx,$xx,$xx
-PersonData_5A
+PersonData_5a ; deo
         $096f8              .byte $xx,$xx,$xx,$xx
-PersonData_5B
+PersonData_5b ; sahara elder
         $096fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_97
         $09700              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09710              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3741,14 +3790,16 @@ MapScreen_97
         $097c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $097d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $097e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_5C
+;;; --------------------------------
+PersonData_5c ; sahara elder's daughter
         $097f0              .byte $xx,$xx,$xx,$xx
-PersonData_5D
+PersonData_5d ; shyron generic dead person
         $097f4              .byte $xx,$xx,$xx,$xx
-PersonData_5E
+PersonData_5e ; zebu
         $097f8              .byte $xx,$xx,$xx,$xx
-PersonData_5F
+PersonData_5f ; tornel
         $097fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_98
         $09800              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09810              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3765,14 +3816,16 @@ MapScreen_98
         $098c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $098d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $098e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_60
+;;; --------------------------------
+PersonData_60 ; stom
         $098f0              .byte $xx,$xx,$xx,$xx
-PersonData_61
+PersonData_61 ; mesia in shrine
         $098f4              .byte $xx,$xx,$xx,$xx
-PersonData_62
+PersonData_62 ; asina
         $098f8              .byte $xx,$xx,$xx,$xx
-PersonData_63
+PersonData_63 ; hurt dolphin
         $098fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_99
         $09900              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09910              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3789,14 +3842,16 @@ MapScreen_99
         $099c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $099d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $099e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_64
+;;; --------------------------------
+PersonData_64 ; portoa fisherman
         $099f0              .byte $xx,$xx,$xx,$xx
-PersonData_65
+PersonData_65 ; startled green man outside leaf cave
         $099f4              .byte $xx,$xx,$xx,$xx
-PersonData_66
+PersonData_66 ; UNUSED
         $099f8              .byte $xx,$xx,$xx,$xx
-PersonData_67
+PersonData_67 ; UNUSED
         $099fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_9A
         $09a00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09a10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3813,14 +3868,16 @@ MapScreen_9A
         $09ac0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09ad0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09ae0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_68
+;;; --------------------------------
+PersonData_68 ; kensu (in cabin)
         $09af0              .byte $xx,$xx,$xx,$xx
-PersonData_69
+PersonData_69 ; dolphin
         $09af4              .byte $xx,$xx,$xx,$xx
-PersonData_6A
+PersonData_6a ; UNUSED
         $09af8              .byte $xx,$xx,$xx,$xx
-PersonData_6B
+PersonData_6b ; kensu (asleep in lighthouse)
         $09afc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_9B
         $09b00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09b10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3837,14 +3894,16 @@ MapScreen_9B
         $09bc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09bd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09be0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_6C
+;;; --------------------------------
+PersonData_6c ; kensu in swan dance hall
         $09bf0              .byte $xx,$xx,$xx,$xx
-PersonData_6D
+PersonData_6d ; kensu soldier
         $09bf4              .byte $xx,$xx,$xx,$xx
-PersonData_6E
+PersonData_6e ; azteca in shyron temple
         $09bf8              .byte $xx,$xx,$xx,$xx
-PersonData_6F
+PersonData_6f ; swan blue cloaked man outside hut
         $09bfc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_9C
         $09c00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09c10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3861,14 +3920,16 @@ MapScreen_9C
         $09cc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09cd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09ce0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_70
+;;; --------------------------------
+PersonData_70 ; dead akahana
         $09cf0              .byte $xx,$xx,$xx,$xx
-PersonData_71
+PersonData_71 ; dead stom's girlfriend
         $09cf4              .byte $xx,$xx,$xx,$xx
-PersonData_72
+PersonData_72 ; dead stom
         $09cf8              .byte $xx,$xx,$xx,$xx
-PersonData_73
+PersonData_73 ; UNUSED
         $09cfc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_9D
         $09d00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09d10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3885,14 +3946,16 @@ MapScreen_9D
         $09dc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09dd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09de0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_74
+;;; --------------------------------
+PersonData_74 ; kensu ??? (unused?)
         $09df0              .byte $xx,$xx,$xx,$xx
-PersonData_75
+PersonData_75 ; kensu slime
         $09df4              .byte $xx,$xx,$xx,$xx
-PersonData_76
+PersonData_76 ; dead shyron guard
         $09df8              .byte $xx,$xx,$xx,$xx
-PersonData_77
+PersonData_77 ; swan yellow man right
         $09dfc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_9E
         $09e00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09e10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3909,14 +3972,16 @@ MapScreen_9E
         $09ec0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09ed0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09ee0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_78
+;;; --------------------------------
+PersonData_78 ; goa pink welcomer
         $09ef0              .byte $xx,$xx,$xx,$xx
-PersonData_79
+PersonData_79 ; swan yellow woman left
         $09ef4              .byte $xx,$xx,$xx,$xx
-PersonData_7A
+PersonData_7a ; goa pink dress lady near house
         $09ef8              .byte $xx,$xx,$xx,$xx
-PersonData_7B
+PersonData_7b ; portoa fisherman's daughter
         $09efc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_9F
         $09f00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09f10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3933,14 +3998,16 @@ MapScreen_9F
         $09fc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09fd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09fe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_7C
+;;; --------------------------------
+PersonData_7c ; oak inn guard (pre-telepathy)
         $09ff0              .byte $xx,$xx,$xx,$xx
-PersonData_7D
+PersonData_7d ; oak tool shop guard (pre-telepathy)
         $09ff4              .byte $xx,$xx,$xx,$xx
-PersonData_7E
+PersonData_7e ; kensu ??? lighthouse/tavern/dance
         $09ff8              .byte $xx,$xx,$xx,$xx
-PersonData_7F
+PersonData_7f ; zombie in zombietown
         $09ffc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 RomBank_05                      ; @@ $a000
 MapScreen_A0
         $0a000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3958,14 +4025,16 @@ MapScreen_A0
         $0a0c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a0d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a0e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_80
+;;; --------------------------------
+PersonData_80 ; goa shop guards (stationary)
         $0a0f0              .byte $xx,$xx,$xx,$xx
-PersonData_81
+PersonData_81 ; goa shop guards (moving)
         $0a0f4              .byte $xx,$xx,$xx,$xx
-PersonData_82
+PersonData_82 ; UNUSED
         $0a0f8              .byte $xx,$xx,$xx,$xx
-PersonData_83
+PersonData_83 ; azteca temple front
         $0a0fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_A1
         $0a100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a110              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3982,14 +4051,16 @@ MapScreen_A1
         $0a1c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a1d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a1e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_84
+;;; --------------------------------
+PersonData_84 ; sabera posing as mesia
         $0a1f0              .byte $xx,$xx,$xx,$xx
-PersonData_85
+PersonData_85 ; stoned pair in waterfall cave
         $0a1f4              .byte $xx,$xx,$xx,$xx
-PersonData_86
+PersonData_86 ; UNUSED
         $0a1f8              .byte $xx,$xx,$xx,$xx
-PersonData_87
+PersonData_87 ; UNUSED
         $0a1fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_A2
         $0a200              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4006,14 +4077,16 @@ MapScreen_A2
         $0a2c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a2d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a2e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_88
+;;; --------------------------------
+PersonData_88 ; stoned akahana
         $0a2f0              .byte $xx,$xx,$xx,$xx
-PersonData_89
+PersonData_89 ; UNUSED
         $0a2f4              .byte $xx,$xx,$xx,$xx
-PersonData_8A
+PersonData_8a ; UNUSED
         $0a2f8              .byte $xx,$xx,$xx,$xx
-PersonData_8B
+PersonData_8b ; UNUSED
         $0a2fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_A3
         $0a300              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a310              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4030,14 +4103,16 @@ MapScreen_A3
         $0a3c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a3d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a3e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_8C
+;;; --------------------------------
+PersonData_8c ; UNUSED
         $0a3f0              .byte $xx,$xx,$xx,$xx
-PersonData_8D
+PersonData_8d ; UNUSED
         $0a3f4              .byte $xx,$xx,$xx,$xx
-PersonData_8E
+PersonData_8e ; mesia
         $0a3f8              .byte $xx,$xx,$xx,$xx
-PersonData_8F
+PersonData_8f
         $0a3fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_A4
         $0a400              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a410              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4054,6 +4129,7 @@ MapScreen_A4
         $0a4c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a4d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a4e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
 PersonData_90
         $0a4f0              .byte $xx,$xx,$xx,$xx
 PersonData_91
@@ -4062,6 +4138,7 @@ PersonData_92
         $0a4f8              .byte $xx,$xx,$xx,$xx
 PersonData_93
         $0a4fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_A5
         $0a500              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a510              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4078,6 +4155,7 @@ MapScreen_A5
         $0a5c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a5d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a5e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
 PersonData_94
         $0a5f0              .byte $xx,$xx,$xx,$xx
 PersonData_95
@@ -4086,6 +4164,7 @@ PersonData_96
         $0a5f8              .byte $xx,$xx,$xx,$xx
 PersonData_97
         $0a5fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_A6
         $0a600              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a610              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4102,14 +4181,16 @@ MapScreen_A6
         $0a6c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a6d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a6e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
 PersonData_98
         $0a6f0              .byte $xx,$xx,$xx,$xx
 PersonData_99
         $0a6f4              .byte $xx,$xx,$xx,$xx
-PersonData_9A
+PersonData_9a
         $0a6f8              .byte $xx,$xx,$xx,$xx
-PersonData_9B
+PersonData_9b
         $0a6fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_A7
         $0a700              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a710              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4126,14 +4207,16 @@ MapScreen_A7
         $0a7c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a7d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a7e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_9C
+;;; --------------------------------
+PersonData_9c
         $0a7f0              .byte $xx,$xx,$xx,$xx
-PersonData_9D
+PersonData_9d
         $0a7f4              .byte $xx,$xx,$xx,$xx
-PersonData_9E
+PersonData_9e
         $0a7f8              .byte $xx,$xx,$xx,$xx
-PersonData_9F
+PersonData_9f
         $0a7fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_A8
         $0a800              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a810              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4150,14 +4233,16 @@ MapScreen_A8
         $0a8c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a8d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a8e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_A0
+;;; --------------------------------
+PersonData_a0
         $0a8f0              .byte $xx,$xx,$xx,$xx
-PersonData_A1
+PersonData_a1
         $0a8f4              .byte $xx,$xx,$xx,$xx
-PersonData_A2
+PersonData_a2
         $0a8f8              .byte $xx,$xx,$xx,$xx
-PersonData_A3
+PersonData_a3
         $0a8fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_A9
         $0a900              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a910              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4174,14 +4259,16 @@ MapScreen_A9
         $0a9c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a9d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0a9e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_A4
+;;; --------------------------------
+PersonData_a4
         $0a9f0              .byte $xx,$xx,$xx,$xx
-PersonData_A5
+PersonData_a5
         $0a9f4              .byte $xx,$xx,$xx,$xx
-PersonData_A6
+PersonData_a6
         $0a9f8              .byte $xx,$xx,$xx,$xx
-PersonData_A7
+PersonData_a7
         $0a9fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_AA
         $0aa00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0aa10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4198,14 +4285,16 @@ MapScreen_AA
         $0aac0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0aad0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0aae0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_A8
+;;; --------------------------------
+PersonData_a8
         $0aaf0              .byte $xx,$xx,$xx,$xx
-PersonData_A9
+PersonData_a9
         $0aaf4              .byte $xx,$xx,$xx,$xx
-PersonData_AA
+PersonData_aa
         $0aaf8              .byte $xx,$xx,$xx,$xx
-PersonData_AB
+PersonData_ab
         $0aafc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_AB
         $0ab00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0ab10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4222,14 +4311,16 @@ MapScreen_AB
         $0abc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0abd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0abe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_AC
+;;; --------------------------------
+PersonData_ac
         $0abf0              .byte $xx,$xx,$xx,$xx
-PersonData_AD
+PersonData_ad
         $0abf4              .byte $xx,$xx,$xx,$xx
-PersonData_AE
+PersonData_ae
         $0abf8              .byte $xx,$xx,$xx,$xx
-PersonData_AF
+PersonData_af
         $0abfc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_AC
         $0ac00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0ac10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4246,14 +4337,16 @@ MapScreen_AC
         $0acc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0acd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0ace0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_B0
+;;; --------------------------------
+PersonData_b0
         $0acf0              .byte $xx,$xx,$xx,$xx
-PersonData_B1
+PersonData_b1
         $0acf4              .byte $xx,$xx,$xx,$xx
-PersonData_B2
+PersonData_b2
         $0acf8              .byte $xx,$xx,$xx,$xx
-PersonData_B3
+PersonData_b3
         $0acfc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_AD
         $0ad00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0ad10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4270,14 +4363,16 @@ MapScreen_AD
         $0adc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0add0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0ade0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_B4
+;;; --------------------------------
+PersonData_b4
         $0adf0              .byte $xx,$xx,$xx,$xx
-PersonData_B5
+PersonData_b5
         $0adf4              .byte $xx,$xx,$xx,$xx
-PersonData_B6
+PersonData_b6
         $0adf8              .byte $xx,$xx,$xx,$xx
-PersonData_B7
+PersonData_b7
         $0adfc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_AE
         $0ae00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0ae10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4294,14 +4389,16 @@ MapScreen_AE
         $0aec0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0aed0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0aee0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_B8
+;;; --------------------------------
+PersonData_b8
         $0aef0              .byte $xx,$xx,$xx,$xx
-PersonData_B9
+PersonData_b9
         $0aef4              .byte $xx,$xx,$xx,$xx
-PersonData_BA
+PersonData_ba
         $0aef8              .byte $xx,$xx,$xx,$xx
-PersonData_BB
+PersonData_bb
         $0aefc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_AF
         $0af00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0af10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4318,14 +4415,16 @@ MapScreen_AF
         $0afc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0afd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0afe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_BC
+;;; --------------------------------
+PersonData_bc
         $0aff0              .byte $xx,$xx,$xx,$xx
-PersonData_BD
+PersonData_bd
         $0aff4              .byte $xx,$xx,$xx,$xx
-PersonData_BE
+PersonData_be
         $0aff8              .byte $xx,$xx,$xx,$xx
-PersonData_BF
+PersonData_bf
         $0affc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_B0
         $0b000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4342,14 +4441,16 @@ MapScreen_B0
         $0b0c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b0d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b0e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_C0
+;;; --------------------------------
+PersonData_c0 ; vampire 1
         $0b0f0              .byte $xx,$xx,$xx,$xx
-PersonData_C1
+PersonData_c1 ; insect
         $0b0f4              .byte $xx,$xx,$xx,$xx
-PersonData_C2
+PersonData_c2 ; kelbesque 1
         $0b0f8              .byte $xx,$xx,$xx,$xx
-PersonData_C3
+PersonData_c3 ; rage
         $0b0fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_B1
         $0b100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b110              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4366,14 +4467,16 @@ MapScreen_B1
         $0b1c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b1d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b1e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_C4
+;;; --------------------------------
+PersonData_c4 ; mado
         $0b1f0              .byte $xx,$xx,$xx,$xx
-PersonData_C5
+PersonData_c5 ; kelbesque 2
         $0b1f4              .byte $xx,$xx,$xx,$xx
-PersonData_C6
+PersonData_c6 ; sabera 2
         $0b1f8              .byte $xx,$xx,$xx,$xx
-PersonData_C7
+PersonData_c7 ; mado 2
         $0b1fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_B2
         $0b200              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4390,14 +4493,16 @@ MapScreen_B2
         $0b2c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b2d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b2e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_C8
+;;; --------------------------------
+PersonData_c8 ; karmine
         $0b2f0              .byte $xx,$xx,$xx,$xx
-PersonData_C9
+PersonData_c9 ; statue of moon
         $0b2f4              .byte $xx,$xx,$xx,$xx
-PersonData_CA
+PersonData_ca ; statue of sun
         $0b2f8              .byte $xx,$xx,$xx,$xx
-PersonData_CB
+PersonData_cb ; draygon 1 and 2
         $0b2fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_B3
         $0b300              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b310              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4414,14 +4519,16 @@ MapScreen_B3
         $0b3c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b3d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b3e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_CC
+;;; --------------------------------
+PersonData_cc ; vampire 2
         $0b3f0              .byte $xx,$xx,$xx,$xx
-PersonData_CD
+PersonData_cd
         $0b3f4              .byte $xx,$xx,$xx,$xx
-PersonData_CE
+PersonData_ce
         $0b3f8              .byte $xx,$xx,$xx,$xx
-PersonData_CF
+PersonData_cf
         $0b3fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_B4
         $0b400              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b410              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4438,14 +4545,16 @@ MapScreen_B4
         $0b4c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b4d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b4e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_D0
+;;; --------------------------------
+PersonData_d0
         $0b4f0              .byte $xx,$xx,$xx,$xx
-PersonData_D1
+PersonData_d1
         $0b4f4              .byte $xx,$xx,$xx,$xx
-PersonData_D2
+PersonData_d2
         $0b4f8              .byte $xx,$xx,$xx,$xx
-PersonData_D3
+PersonData_d3
         $0b4fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_B5
         $0b500              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b510              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4462,14 +4571,16 @@ MapScreen_B5
         $0b5c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b5d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b5e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_D4
+;;; --------------------------------
+PersonData_d4
         $0b5f0              .byte $xx,$xx,$xx,$xx
-PersonData_D5
+PersonData_d5
         $0b5f4              .byte $xx,$xx,$xx,$xx
-PersonData_D6
+PersonData_d6
         $0b5f8              .byte $xx,$xx,$xx,$xx
-PersonData_D7
+PersonData_d7
         $0b5fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_B6
         $0b600              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b610              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4486,14 +4597,16 @@ MapScreen_B6
         $0b6c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b6d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b6e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_D8
+;;; --------------------------------
+PersonData_d8
         $0b6f0              .byte $xx,$xx,$xx,$xx
-PersonData_D9
+PersonData_d9
         $0b6f4              .byte $xx,$xx,$xx,$xx
-PersonData_DA
+PersonData_da
         $0b6f8              .byte $xx,$xx,$xx,$xx
-PersonData_DB
+PersonData_db
         $0b6fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_B7
         $0b700              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b710              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4510,14 +4623,16 @@ MapScreen_B7
         $0b7c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b7d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b7e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_DC
+;;; --------------------------------
+PersonData_dc
         $0b7f0              .byte $xx,$xx,$xx,$xx
-PersonData_DD
+PersonData_dd
         $0b7f4              .byte $xx,$xx,$xx,$xx
-PersonData_DE
+PersonData_de
         $0b7f8              .byte $xx,$xx,$xx,$xx
-PersonData_DF
+PersonData_df
         $0b7fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_B8
         $0b800              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b810              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4534,14 +4649,16 @@ MapScreen_B8
         $0b8c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b8d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b8e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_E0
+;;; --------------------------------
+PersonData_e0
         $0b8f0              .byte $xx,$xx,$xx,$xx
-PersonData_E1
+PersonData_e1
         $0b8f4              .byte $xx,$xx,$xx,$xx
-PersonData_E2
+PersonData_e2
         $0b8f8              .byte $xx,$xx,$xx,$xx
-PersonData_E3
+PersonData_e3
         $0b8fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_B9
         $0b900              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b910              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4558,14 +4675,16 @@ MapScreen_B9
         $0b9c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b9d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b9e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_E4
+;;; --------------------------------
+PersonData_e4
         $0b9f0              .byte $xx,$xx,$xx,$xx
-PersonData_E5
+PersonData_e5
         $0b9f4              .byte $xx,$xx,$xx,$xx
-PersonData_E6
+PersonData_e6
         $0b9f8              .byte $xx,$xx,$xx,$xx
-PersonData_E7
+PersonData_e7
         $0b9fc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_BA
         $0ba00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0ba10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4582,14 +4701,16 @@ MapScreen_BA
         $0bac0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0bad0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0bae0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_E8
+;;; --------------------------------
+PersonData_e8
         $0baf0              .byte $xx,$xx,$xx,$xx
-PersonData_E9
+PersonData_e9
         $0baf4              .byte $xx,$xx,$xx,$xx
-PersonData_EA
+PersonData_ea
         $0baf8              .byte $xx,$xx,$xx,$xx
-PersonData_EB
+PersonData_eb
         $0bafc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_BB
         $0bb00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0bb10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4606,14 +4727,16 @@ MapScreen_BB
         $0bbc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0bbd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0bbe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_EC
+;;; --------------------------------
+PersonData_ec
         $0bbf0              .byte $xx,$xx,$xx,$xx
-PersonData_ED
+PersonData_ed
         $0bbf4              .byte $xx,$xx,$xx,$xx
-PersonData_EE
+PersonData_ee
         $0bbf8              .byte $xx,$xx,$xx,$xx
-PersonData_EF
+PersonData_ef
         $0bbfc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_BC
         $0bc00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0bc10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4630,14 +4753,16 @@ MapScreen_BC
         $0bcc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0bcd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0bce0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_F0
+;;; --------------------------------
+PersonData_f0
         $0bcf0              .byte $xx,$xx,$xx,$xx
-PersonData_F1
+PersonData_f1
         $0bcf4              .byte $xx,$xx,$xx,$xx
-PersonData_F2
+PersonData_f2
         $0bcf8              .byte $xx,$xx,$xx,$xx
-PersonData_F3
+PersonData_f3
         $0bcfc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_BD
         $0bd00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0bd10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4654,14 +4779,16 @@ MapScreen_BD
         $0bdc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0bdd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0bde0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_F4
+;;; --------------------------------
+PersonData_f4
         $0bdf0              .byte $xx,$xx,$xx,$xx
-PersonData_F5
+PersonData_f5
         $0bdf4              .byte $xx,$xx,$xx,$xx
-PersonData_F6
+PersonData_f6
         $0bdf8              .byte $xx,$xx,$xx,$xx
-PersonData_F7
+PersonData_f7
         $0bdfc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_BE
         $0be00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0be10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4678,14 +4805,16 @@ MapScreen_BE
         $0bec0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0bed0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0bee0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_F8
+;;; --------------------------------
+PersonData_f8
         $0bef0              .byte $xx,$xx,$xx,$xx
-PersonData_F9
+PersonData_f9
         $0bef4              .byte $xx,$xx,$xx,$xx
-PersonData_FA
+PersonData_fa
         $0bef8              .byte $xx,$xx,$xx,$xx
-PersonData_FB
+PersonData_fb
         $0befc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 MapScreen_BF
         $0bf00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0bf10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4702,14 +4831,16 @@ MapScreen_BF
         $0bfc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0bfd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0bfe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-PersonData_FC
+;;; --------------------------------
+PersonData_fc
         $0bff0              .byte $xx,$xx,$xx,$xx
-PersonData_FD
+PersonData_fd
         $0bff4              .byte $xx,$xx,$xx,$xx
-PersonData_FE
+PersonData_fe
         $0bff8              .byte $xx,$xx,$xx,$xx
-PersonData_FF
+PersonData_ff
         $0bffc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
 RomBank_06                      ; @@ $8000
 MapScreen_C0
         $0c000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -19063,9 +19194,9 @@ ItemGet
         $1c274  xx xx:       xxx $xx
         $1c276  xx:          xxx
         $1c277  xx:          xxx
-        $1c278  xx xx xx:    xxx $1db00,x
+        $1c278  xx xx xx:    xxx ItemGetDataTable,x ; $1db00
         $1c27b  xx xx:       xxx $xx
-        $1c27d  xx xx xx:    xxx $1db01,x
+        $1c27d  xx xx xx:    xxx ItemGetDataTable+1,x ; $1db01
         $1c280  xx xx:       xxx $xx
         $1c282  xx xx xx:    xxx ItemGetTable,y
         $1c285  xx xx:       xxx $xx ; $29 <- the actual item ID
@@ -19220,9 +19351,9 @@ ItemUse
         $1c325  xx xx:      xxx $xx
         $1c327  xx xx xx:   xxx $1dbe3,x
         $1c32a  xx xx:      xxx $xx
-        $1c32c  xx xx xx:   xxx $1c399,x ; ItemUseJump
+        $1c32c  xx xx xx:   xxx ItemUseJumpTable,x ; $1c399
         $1c32f  xx xx:      xxx $xx
-        $1c331  xx xx xx:   xxx $1c39a,x
+        $1c331  xx xx xx:   xxx ItemUseJumpTable+1,x ; $1c39a
         $1c334  xx xx:      xxx $xx
         $1c336  xx xx:      xxx #$xx
         ;; Call the jump table routine
@@ -19570,20 +19701,21 @@ ItemUseJump_StatueOfOnyx
         $1c56a  xx:         xxx
 ;;; --------------------------------
 ItemUseJump_ShellFlute
-        $1c56b  xx xx:      xxx $xx
-        $1c56d  xx xx:      xxx #$xx
-        $1c56f  xx xx:      xxx $xx
-        $1c571  xx xx:      xxx #$xx
-        $1c573  xx xx:      xxx $xx
-        $1c575  xx xx:      xxx #$xx
-        $1c577  xx xx:      xxx $xx
+        $1c56b  xx xx:      xxx CurrentLocation
+        $1c56d  xx xx:      xxx #LOC_ANGRY_SEA
+        $1c56f  xx xx:       xxx ++ ; $1c57c
+        $1c571  xx xx:      xxx #LOC_UNDERGROUND_CHANNEL
+        $1c573  xx xx:       xxx ++ ; $1c57c
+        $1c575  xx xx:      xxx #LOC_EVIL_SPIRIT_ISLAND_1
+        $1c577  xx xx:       xxx ++ ; $1c57c
 +       $1c579  xx xx xx:   xxx ItemUseJump_Invalid
 ;;; --------------------------------
-        $1c57c  xx xx xx:   xxx $1c135
+++      $1c57c  xx xx xx:   xxx ReadFlagFromBytePair_24y
         $1c57f  xx xx:      xxx + ; $1c584
         $1c581  xx xx xx:    xxx ItemUseJump_Invalid
 +       $1c584  xx:         xxx
 ;;; --------------------------------
+ItemUseJump_39                  ; Glowing Lamp
         $1c585  xx xx:      xxx #$xx
 -       $1c587  xx xx xx:   xxx $xxxx,x
         $1c58a  xx xx:      xxx #INV_BROKEN_STATUE
@@ -19620,7 +19752,9 @@ ItemUseJump_FluteOfLime
 +       $1c5bc  xx xx xx:   xxx ItemUseJump_Invalid
 ;;; --------------------------------
         ;; may have been called by $3e38d
-        $1c5bf  xx xx:      xxx #$xx
+        ;; Check whether the given chest should load.
+        ;; Returns zero in $20 if it should not load.
+        $1c5bf  xx xx:      xxx #$xx ; assume no spawn until proven otherwise
         $1c5c1  xx xx:      xxx $xx
         $1c5c3  xx:         xxx
         $1c5c4  xx xx:      xxx $xx
@@ -19631,13 +19765,13 @@ ItemUseJump_FluteOfLime
         $1c5cb  xx xx:      xxx $xx
         $1c5cd  xx xx xx:   xxx $1dc83,x
         $1c5d0  xx xx:      xxx $xx
-        $1c5d2  xx xx xx:   xxx $1c135
-        $1c5d5  xx xx:      xxx $xx
-        $1c5d7  xx xx:      xxx $xx
-        $1c5d9  xx:         xxx
-;;; --------------------------------
-        $1c5da  xx xx:      xxx $xx
-        $1c5dc  xx xx:      xxx $xx
+-       $1c5d2  xx xx xx:    xxx ReadFlagFromBytePair_24y
+        $1c5d5  xx xx:       xxx + ; $1c5da
+        $1c5d7  xx xx:        xxx $xx ; yes spawn
+        $1c5d9  xx:           xxx
+        ;; --------------------------------
++       $1c5da  xx xx:       xxx $xx
+        $1c5dc  xx xx:      xxx - ; $1c5d2 try the next condition (never fires)
         $1c5de  xx:         xxx
 ;;; --------------------------------
         $1c5df              .byte $xx
@@ -19690,11 +19824,11 @@ NpcSpawnConditionTable
         $1c620              .word ($1c921) ; 20 oak inn guard (post-telepathy)
         $1c622              .word ($1c921) ; 21 oak tool shop guard (post-telepathy)
         $1c624              .word ($1c780) ; 22 oak top-right dwarf
-        $1c626              .word ($1c780) ; 23 amazones queen
+        $1c626              .word ($1c780) ; 23 aryllis (amazones queen)
         $1c628              .word ($1c780) ; 24 long-haired woman at left of amazones
         $1c62a              .word ($1c780) ; 25 amazones guard
-        $1c62c              .word ($1c780) ; 26 amazones queen right attendant
-        $1c62e              .word ($1c780) ; 27 amazones queen left attendant
+        $1c62c              .word ($1c780) ; 26 aryllis right attendant
+        $1c62e              .word ($1c780) ; 27 aryllis left attendant
         $1c630              .word ($1c780) ; 28 nadare
         $1c632              .word ($1c780) ; 29 nadare back room red woman (right)
         $1c634              .word ($1c780) ; 2a green bearded man bottom-left nadare
@@ -19883,11 +20017,11 @@ NpcSpawnCondition_1c ; yellow treasure hunter in brynmaer tavern
 NpcSpawnCondition_1d ; oak elder
 NpcSpawnCondition_1e ; oak mother
 NpcSpawnCondition_22 ; oak top-right dwarf
-NpcSpawnCondition_23 ; amazones queen
+NpcSpawnCondition_23 ; aryllis
 NpcSpawnCondition_24 ; long-haired woman at left of amazones
 NpcSpawnCondition_25 ; amazones guard
-NpcSpawnCondition_26 ; amazones queen right attendant
-NpcSpawnCondition_27 ; amazones queen left attendant
+NpcSpawnCondition_26 ; aryllis right attendant
+NpcSpawnCondition_27 ; aryllis left attendant
 NpcSpawnCondition_28 ; nadare
 NpcSpawnCondition_29 ; nadare back room red woman (right)
 NpcSpawnCondition_2a ; green bearded man bottom-left nadare
@@ -20012,14 +20146,14 @@ NpcSpawnCondition_12 ; red girl in leaf
         $1c7ce              .byte $xx
 NpcSpawnCondition_14 ; windmill guard, zebu's student
         $1c7cf              .byte $xx ; Leaf - Student House
-        $1c7d0              .byte $xx,$xx ; 03a NOT
+        $1c7d0              .byte $xx,$xx ; 03a NOT talked to zebu in cave
         $1c7d2              .byte $xx ; Windmill Cave
         $1c7d3              .byte $xx,$xx ; 00f woke windmill guard
         $1c7d5              .byte $xx,$xx ; 038 NOT leaf attacked
         $1c7d7              .byte $xx
 NpcSpawnCondition_15 ; sleeping windmill guard
         $1c7d8              .byte $xx ; Windmill Cave
-        $1c7d9              .byte $xx,$xx ; 03a
+        $1c7d9              .byte $xx,$xx ; 03a talked to zebu in cave
         $1c7db              .byte $xx,$xx ; 00f NOT woke windmill guard
         $1c7dd              .byte $xx
 NpcSpawnCondition_16 ; akahana
@@ -20107,9 +20241,9 @@ NpcSpawnCondition_3a ; de-stoned people in waterfall cave
         $1c83f              .byte $xx
 NpcSpawnCondition_44 ; clark
         $1c840              .byte $xx ; Zombie Town - House Basement
-        $1c841              .byte $xx,$xx ; 08f NOT
+        $1c841              .byte $xx,$xx ; 08f NOT used statue of gold
         $1c843              .byte $xx ; Joel - Shed
-        $1c844              .byte $xx,$xx ; 08f
+        $1c844              .byte $xx,$xx ; 08f use statue of gold
         $1c846              .byte $xx
 NpcSpawnCondition_4e ; shyron guards
 NpcSpawnCondition_4f ; shyron welcome
@@ -20217,17 +20351,17 @@ NpcSpawnCondition_62 ; asina
 NpcSpawnCondition_74 ; kensu ???
 NpcSpawnCondition_7e ; kensu ??? lighthouse/tavern/dance
         $1c8cb              .byte $xx ; Joel - Lighthouse
-        $1c8cc              .byte $xx,$xx ; 0a4
-        $1c8ce              .byte $xx,$xx ; 075 NOT
+        $1c8cc              .byte $xx,$xx ; 0a4 woke kensu
+        $1c8ce              .byte $xx,$xx ; 075 NOT talked to kensu in lighthouse
         $1c8d0              .byte $xx ; Swan - Tavern
-        $1c8d1              .byte $xx,$xx ; 072
-        $1c8d3              .byte $xx,$xx ; 0da NOT
+        $1c8d1              .byte $xx,$xx ; 072 found kensu in tavern
+        $1c8d3              .byte $xx,$xx ; 0da NOT kensu gone from tavern
         $1c8d5              .byte $xx ; Swan - Dance Hall
         $1c8d6              .byte $xx,$xx ; 03e finished chasing kensu
-        $1c8d8              .byte $xx,$xx ; 063 NOT
+        $1c8d8              .byte $xx,$xx ; 063 NOT learned change
         $1c8da              .byte $xx ; Goa Fortress - Kensu
         $1c8db              .byte $xx,$xx ; 065 cured kensu
-        $1c8dd              .byte $xx,$xx ; 0d8 NOT
+        $1c8dd              .byte $xx,$xx ; 0d8 NOT kensu rescued
         $1c8df              .byte $xx
 NpcSpawnCondition_63 ; hurt dolphin
         $1c8e0              .byte $xx ; Underground Channel
@@ -20257,18 +20391,18 @@ NpcSpawnCondition_68 ; kensu (in cabin)
         $1c8fb              .byte $xx
 NpcSpawnCondition_6b ; kensu (asleep in lighthouse)
         $1c8fc              .byte $xx ; Joel - Lighthouse
-        $1c8fd              .byte $xx,$xx ; 0a4 NOT
+        $1c8fd              .byte $xx,$xx ; 0a4 NOT woke kensu
         $1c8ff              .byte $xx
 NpcSpawnCondition_6d ; kensu soldier
         $1c900              .byte $xx ; Swan - Tavern
-        $1c901              .byte $xx,$xx ; 061
-        $1c903              .byte $xx,$xx ; 072 NOT
+        $1c901              .byte $xx,$xx ; 061 talked to stom in swan hut
+        $1c903              .byte $xx,$xx ; 072 NOT found kensu in tavern
         $1c905              .byte $xx ; Goa
         $1c906              .byte $xx,$xx ; 027 NOT shyron massacre
         $1c908              .byte $xx
-NpcSpawnCondition_6c ; kensu in swan dance hall
+NpcSpawnCondition_6c ; kensu dancer
         $1c909              .byte $xx ; Swan - Dance Hall
-        $1c90a              .byte $xx,$xx ; 072
+        $1c90a              .byte $xx,$xx ; 072 found kensu in tavern
         $1c90c              .byte $xx,$xx ; 03e NOT finished chasing kensu
         $1c90e              .byte $xx
 NpcSpawnCondition_75 ; kensu slime
@@ -20278,7 +20412,7 @@ NpcSpawnCondition_75 ; kensu slime
 NpcSpawnCondition_83 ; azteca temple front
         $1c913              .byte $xx ; Pyramid Front - Entrance
         $1c914              .byte $xx,$xx ; 06c
-        $1c916              .byte $xx,$xx ; 079 NOT
+        $1c916              .byte $xx,$xx ; 079 NOT chest:40:bow of truth
         $1c918              .byte $xx
 NpcSpawnCondition_84 ; sabera posing as mesia
         $1c919              .byte $xx ; Sabera Palace 3
@@ -20315,8 +20449,10 @@ NpcSpawnCondition_c3 ; rage
         $1c936              .byte $xx,$xx ; 103 NOT got item from rage
         $1c938              .byte $xx
 NpcSpawnCondition_c4 ; mado 1
+        ;; Note: 104 is always false so mado always spawns, it's just that
+        ;; the trigger to turn him on doesn't fire if 067 is set.
         $1c939              .byte $xx ; Shyron - Temple
-        $1c93a              .byte $xx,$xx ; 104 NOT defeated mado 1
+        $1c93a              .byte $xx,$xx ; 104 NOT defeated mado 1 -- UNUSED
         $1c93c              .byte $xx
 NpcSpawnCondition_c5 ; sabera 1
         $1c93d              .byte $xx ; Goa Fortress - Kelbesque
@@ -20390,11 +20526,11 @@ NpcDialogTable
         $1c99d              .word ($1ce3b) ; 20 oak inn guard (post-telepathy)
         $1c99f              .word ($1ce5f) ; 21 oak tool shop guard (post-telepathy)
         $1c9a1              .word ($1ce83) ; 22 oak top-right dwarf
-        $1c9a3              .word ($1cea7) ; 23 amazones queen
+        $1c9a3              .word ($1cea7) ; 23 aryllis
         $1c9a5              .word ($1cedf) ; 24 long-haired woman at left of amazones
         $1c9a7              .word ($1cefd) ; 25 amazones guard
-        $1c9a9              .word ($1cee9) ; 26 amazones queen right attendant
-        $1c9ab              .word ($1cef3) ; 27 amazones queen left attendant
+        $1c9a9              .word ($1cee9) ; 26 aryllis right attendant
+        $1c9ab              .word ($1cef3) ; 27 aryllis left attendant
         $1c9ad              .word ($1cf13) ; 28 nadare
         $1c9af              .word ($1cf55) ; 29 nadare back room red woman (right)
         $1c9b1              .word ($1cf3a) ; 2a green bearded man bottom-left nadare
@@ -20744,8 +20880,8 @@ NpcDialog_14 ; windmill guard, zebu's student
         $1ccd5              .byte $xx,$xx
         $1ccd7              .byte $xx,$xx
         $1ccd9              .byte $xx
-        $1ccda              .byte $xx,$xx,$xx,$xx,$xx ; 088 NOT -> 01:01 (action 03)
-        $1ccdf              .byte         $xx,$xx     ;     Set: 088
+        $1ccda              .byte $xx,$xx,$xx,$xx,$xx ; 088 got windmill key NOT -> 01:01 (action 03)
+        $1ccdf              .byte         $xx,$xx     ;     Set: 088 got windmill key
         $1cce1              .byte $xx,$xx,$xx,$xx,$xx ; default -> 01:03
         ;;                  0c: c5 Leaf - Student House
         $1cce6              .byte $xx,$xx,$xx,$xx,$xx ; 0a5 NOT -> 00:0c (action 09)
@@ -20907,13 +21043,13 @@ NpcDialog_22 ; oak top-right dwarf
         $1ce9d              .byte $xx,$xx,$xx,$xx,$xx ; 045 -> 04:11
         $1cea2              .byte $xx,$xx,$xx,$xx,$xx ; default -> 04:10
 ;;; ----------------------------------------------------------------
-NpcDialog_23 ; amazones queen
+NpcDialog_23 ; aryllis
         $1cea7              .byte $xx,$xx,$xx,$xx
         $1ceab              .byte $xx
         $1ceac              .byte $xx,$xx,$xx,$xx,$xx ; 028 NOT change:woman -> 12:12 (action 15)
-        $1ceb1              .byte $xx,$xx,$xx,$xx,$xx ; 010 -> 12:11
-        $1ceb6              .byte $xx,$xx,$xx,$xx,$xx ; 011 NOT -> 12:0e
-        $1cebb              .byte         $xx,$xx     ;     Set: 011
+        $1ceb1              .byte $xx,$xx,$xx,$xx,$xx ; 010 gave kirisa to aryllis -> 12:11
+        $1ceb6              .byte $xx,$xx,$xx,$xx,$xx ; 011 NOT welcomed to amazones -> 12:0e
+        $1cebb              .byte         $xx,$xx     ;     Set: 011 welcomed to amazones
         $1cebd              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:0f
 ;;; ----------------------------------------------------------------
 NpcDialog_05 ; headband lady at right of amazones, portoa welcome
@@ -20933,12 +21069,12 @@ NpcDialog_24 ; long-haired woman at left of amazones
         $1cee3              .byte $xx
         $1cee4              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:05
 ;;; ----------------------------------------------------------------
-NpcDialog_26 ; amazones queen right attendant
+NpcDialog_26 ; aryllis right attendant
         $1cee9              .byte $xx,$xx,$xx,$xx     ; 028 NOT change:woman -> 12:0b
         $1ceed              .byte $xx
         $1ceee              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:09
 ;;; ----------------------------------------------------------------
-NpcDialog_27 ; amazones queen left attendant
+NpcDialog_27 ; aryllis left attendant
         $1cef3              .byte $xx,$xx,$xx,$xx     ; 028 NOT change:woman -> 12:0b
         $1cef7              .byte $xx
         $1cef8              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:0a
@@ -21365,7 +21501,7 @@ NpcDialog_44 ; clark
         ;;                  00: e4 Joel - Shed
         $1d3a5              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0f:15
         ;;                  05: e9 Zombie Town - House Basement
-        $1d3aa              .byte $xx,$xx,$xx,$xx,$xx ; 013 NOT -> 10:00
+        $1d3aa              .byte $xx,$xx,$xx,$xx,$xx ; 013 NOT defeated sabera -> 10:00
         $1d3af              .byte $xx,$xx,$xx,$xx,$xx ; 08d NOT -> 10:01 (action 03) -> @ 05
         $1d3b4              .byte         $xx,$xx     ;     Set: 08d
         $1d3b6              .byte         $xx,$xx     ;     Set: 032
@@ -21553,10 +21689,10 @@ NpcDialog_54 ; akahana friend
         $1d5c3              .byte $xx,$xx,$xx,$xx     ; 028 change:woman -> 1e:02
         $1d5c7              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 1e:02
         $1d5cb              .byte $xx
-        $1d5cc              .byte $xx,$xx,$xx,$xx,$xx ; 024 NOT -> 17:04
+        $1d5cc              .byte $xx,$xx,$xx,$xx,$xx ; 024 NOT generals defeated -> 17:04
         $1d5d1              .byte $xx,$xx,$xx,$xx,$xx ; 029 NOT change:akahana -> 17:05
-        $1d5d6              .byte $xx,$xx,$xx,$xx,$xx ; 04f NOT -> 17:06 (action 03)
-        $1d5db              .byte         $xx,$xx     ;     Set: 04f
+        $1d5d6              .byte $xx,$xx,$xx,$xx,$xx ; 04f NOT received warrior ring -> 17:06 (action 03)
+        $1d5db              .byte         $xx,$xx     ;     Set: 04f received warrior ring
         $1d5dd              .byte $xx,$xx,$xx,$xx,$xx ; default -> 17:07
 ;;; ----------------------------------------------------------------
 NpcDialog_78 ; goa pink welcomer
@@ -21602,9 +21738,9 @@ NpcDialog_5a ; deo
         $1d64f              .byte $xx,$xx,$xx,$xx     ; 02a change:soldier -> 1a:13
         $1d653              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 1a:13
         $1d657              .byte $xx
-        $1d658              .byte $xx,$xx,$xx,$xx,$xx ; 02e -> 1a:11
+        $1d658              .byte $xx,$xx,$xx,$xx,$xx ; 02e chest:2d:deo's pendant -> 1a:11
         $1d65d              .byte $xx,$xx,$xx,$xx,$xx ; 02b change:stom -> 1a:10 (action 03)
-        $1d662              .byte         $xx,$xx     ;     Set: 02e
+        $1d662              .byte         $xx,$xx     ;     Set: 02e chest:2d:deo's pendant
         $1d664              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1a:0f
 ;;; ----------------------------------------------------------------
 NpcDialog_59 ; sahara generic bunny
@@ -21711,8 +21847,8 @@ NpcDialog_5e ; zebu
         $1d776              .byte $xx,$xx,$xx,$xx,$xx ; 039 learned refresh -> 00:1d
         $1d77b              .byte $xx,$xx,$xx,$xx,$xx ; 00a windmill key used -> 00:1b (action 03)
         $1d780              .byte         $xx,$xx     ;     Set: 039 learned refresh
-        $1d782              .byte $xx,$xx,$xx,$xx,$xx ; 03a NOT local -> 00:1a
-        $1d787              .byte         $xx,$xx     ;     Set: 03a local
+        $1d782              .byte $xx,$xx,$xx,$xx,$xx ; 03a NOT talked to zebu in cave -> 00:1a
+        $1d787              .byte         $xx,$xx     ;     Set: 03a talked to zebu in cave
         $1d789              .byte $xx,$xx,$xx,$xx,$xx ; default -> 00:1d
         ;;                  22: f2 Shyron - Temple
         $1d78e              .byte $xx,$xx,$xx,$xx,$xx ; 02d -> 16:03
@@ -21777,27 +21913,29 @@ NpcDialog_62 ; asina
         $1d82f              .byte $xx,$xx,$xx,$xx,$xx ; default -> 18:05 (action 17)
         $1d834              .byte         $xx,$xx     ;     Set: 057
 ;;; ----------------------------------------------------------------
-NpcDialog_74 ; kensu ???
+NpcDialog_74 ; kensu ??? (unused?)
 NpcDialog_7e ; kensu ??? lighthouse/tavern/dance
+        ;; NOTE: these are glitched - the location table points to different
+        ;; locations than are actually disjoint - the tavern one bleeds into
+        ;; the dance hall once, setting random flags.  But it doesn't look like
+        ;; it's actually use there.
         $1d836              .byte $xx,$xx,$xx,$xx
         $1d83a              .byte $xx,$xx
         $1d83c              .byte $xx,$xx
         $1d83e              .byte $xx,$xx
         $1d840              .byte $xx,$xx
         $1d842              .byte $xx
-        ;;                  00: ef Swan - Tavern
+        ;;                  00: ef Swan - Tavern --- UNUSED
         $1d843              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:06 (action 13)
-        $1d848              .byte         $xx,$xx     ;     Clear: 000 unused
-        $1d84a              .byte         $xx,$xx     ;     Set: 261
-        $1d84c              .byte         $xx,$xx     ;     Set: 540
-        $1d84e              .byte         $xx,$xx     ;     Clear: 451
-        $1d850              .byte         $xx,$xx     ;     Clear: 00a
-        ;;                  0f: f1 Swan - Dance Hall
-        $1d852              .byte $xx,$xx,$xx,$xx,$xx ; 075 -> 00:00 (action 14) -> @ 03
-        $1d857              .byte         $xx,$xx     ;     Clear: 00a windmill key used
-        ;;                  16: 62 Joel - Lighthouse
+        ;;                  05: f1 Swan - Dance Hall
+        $1d848              .byte $xx,$xx,$xx,$xx,$xx ; default -> 13:01
+        ;;                  0a: 62 Joel - Lighthouse
+        $1d84d              .byte $xx,$xx,$xx,$xx,$xx ; 0a4 woke kensu -> 0f:18 (action 0a)
+        $1d852              .byte         $xx,$xx     ;     Set: 075 talked to kensu in lighthouse
+        $1d854              .byte $xx,$xx,$xx,$xx,$xx ; default -> 1f:00
+        ;;                  16: ba Goa Fortress - Kensu
         $1d859              .byte $xx,$xx,$xx,$xx,$xx ; default -> 18:07 (action 14)
-        $1d85e              .byte         $xx,$xx     ;     Set: 0d8
+        $1d85e              .byte         $xx,$xx     ;     Set: 0d8 kensu rescued
 ;;; ----------------------------------------------------------------
 NpcDialog_68 ; kensu (in cabin)
         $1d860              .byte $xx,$xx,$xx,$xx
@@ -22160,7 +22298,7 @@ ItemUseDataTable
         $1dc7e              .word ($1e065)
         $1dc80              .word ($1e065) ; 4f
 ;;; STRIP: word=$14000
-DataTable_1dc82
+TreasureChestSpawnTable
         $1dc82              .word ($1e110)
         $1dc84              .word ($1e110)
         $1dc86              .word ($1e16c) ; 02
@@ -22400,17 +22538,17 @@ ItemGetData_1e ; antidote
         $1de6d              .byte $xx,$xx
         $1de6f              .byte $xx,$xx ; Set: 0b9 chest:1e:antidote
         $1de71              .byte $xx
-ItemGetData_5e ; ; antidote
+ItemGetData_5e ; antidote
         $1de72              .byte $xx,$xx
         $1de74              .byte $xx,$xx
         $1de76              .byte $xx,$xx ; Set: 0ba chest:5e:antidote
         $1de78              .byte $xx
-ItemGetData_5f ; ; antidote
+ItemGetData_5f ; antidote
         $1de79              .byte $xx,$xx
         $1de7b              .byte $xx,$xx
         $1de7d              .byte $xx,$xx ; Set: 0bb chest:5f:antidote
         $1de7f              .byte $xx
-ItemGetData_60 ; ; antidote
+ItemGetData_60 ; antidote
         $1de80              .byte $xx,$xx
         $1de82              .byte $xx,$xx
         $1de84              .byte $xx,$xx ; Set: 0bc chest:60:antidote
@@ -22534,7 +22672,7 @@ ItemGetData_33 ; key to prison
         $1df25              .byte $xx,$xx
         $1df27              .byte $xx,$xx ; Set: 0cf chest:33:key to prison
         $1df29              .byte $xx
-ItemGetData_35 ; ; fog lamp
+ItemGetData_35 ; fog lamp
         $1df2a              .byte $xx,$xx
         $1df2c              .byte $xx,$xx
         $1df2e              .byte $xx,$xx ; Set: 0d1 chest:35:fog lamp
@@ -22769,8 +22907,11 @@ ItemGetData_46 ; barrier
         $1e062              .byte $xx,$xx ; Clear: 000 unused
         $1e064              .byte $xx
 ;;; --------------------------------
-ItemUseData_00 ; Default
-        $1e065              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+ItemUseData_00 ; Medical Herb
+        $1e065              .byte $xx,$xx ; Expect: NPC 63 hurt dolphin
+        $1e067              .byte $xx,$xx ; Message: 0c:01 (action 02 -> dialog 11 and 0d)
+        $1e069              .byte $xx,$xx ; Set: 025 healed dolphin
+        $1e06b              .byte $xx,$xx,$xx,$xx
 ItemUseData_21 ; FruitOfPower
 ItemUseData_22 ; MagicRing
         $1e06f              .byte $xx,$xx,$xx,$xx
@@ -22787,7 +22928,9 @@ ItemUseData_27 ; InsectFlute
 ItemUseData_24 ; WarpBoots
         $1e084              .byte $xx,$xx,$xx,$xx
 ItemUseData_25 ; StatueOfOnyx
-        $1e088              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1e088              .byte $xx,$xx ; Expect: NPC 16 akahana
+        $1e08a              .byte $xx,$xx
+        $1e08c              .byte $xx,$xx
 ItemUseData_31 ; AlarmFlute
         $1e08e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ItemUseData_32 ; WindmillKey
@@ -22799,7 +22942,9 @@ ItemUseData_34 ; KeyToStyx
 ItemUseData_35 ; FogLamp
         $1e0ad              .byte $xx,$xx,$xx,$xx,$xx,$xx
 ItemUseData_36 ; ShellFlute
-        $1e0b3              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1e0b3              .byte $xx,$xx ; Expect: Flag 09b can ride dolphin
+        $1e0b5              .byte $xx,$xx ; 00:00 (action 09)
+        $1e0b7              .byte $xx,$xx ; Set: 054
 ItemUseData_39 ; GlowingLamp
         $1e0b9              .byte $xx,$xx,$xx,$xx
 ItemUseData_3a ; StatueOfGold
@@ -22812,11 +22957,15 @@ ItemUseData_37 ; EyeGlasses
 ItemUseData_3b ; LovePendant
         $1e0ca              .byte $xx,$xx ; kensu
         $1e0cc              .byte $xx,$xx ; 13:02 (action 0c)
-        $1e0ce              .byte $xx,$xx
+        $1e0ce              .byte $xx,$xx ; Set: 03c chest:3b:love pendant
 ItemUseData_3c ; KirisaPlant
-        $1e0d0              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1e0d0              .byte $xx,$xx ; Expect NPC 23 aryllis
+        $1e0d2              .byte $xx,$xx ; 12:10 (action 0d)
+        $1e0d4              .byte $xx,$xx ; Set: 010 gave kirisa plant to aryllis
 ItemUseData_3d ; IvoryStatue
-        $1e0d6              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1e0d6              .byte $xx,$xx ; Expect NPC 75 kensu slime
+        $1e0d8              .byte $xx,$xx ; 00:00 (action 0e)
+        $1e0da              .byte $xx,$xx ; Set: 065 cured kensu
 ItemUseData_28 ; FluteOfLime
         $1e0dc              .byte $xx,$xx ; Expect NPC 87 unused?
         $1e0de              .byte $xx,$xx
@@ -25901,7 +26050,8 @@ DataTable_1f95d
 ;;; Data table with some sort of boss info.  Seems to only be read when
 ;;; the boss is killed.  Contains the item drop at y=4.
 ;;; STRIP: word=$14000
-DataTable_1f96b 
+DataTable_1f96b
+        ;; boss death
         $1f96b              .word ($1f987) ; 00 vampire 1
         $1f96d              .word ($1f99c) ; 01 insect
         $1f96f              .word ($1f9b1) ; 02 kelbesque
@@ -31323,6 +31473,7 @@ RomBank_12                      ; @@ $8000
         $24387  xx xx xx:   xxx $xxxx
         $2438a  xx:         xxx
 ;;; --------------------------------
+;;; This looks like it contains graphics for the title screen and maybe movies.
 DataTable_2438b 
         $2438b              .byte $xx,$xx,$xx,$xx,$xx
         $24390              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -31646,22 +31797,19 @@ DataTable_2438b
         $25770              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $25780              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $25790              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $257a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $257b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $257c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $257d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $257e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $257f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $25800              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $25810              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $25820              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $25830              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $25840              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $25850              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $25860              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $25870              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $25880              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $25890              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $257a0              .byte $xx,$xx
+        $257a2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,"xxxxx",$xx,$xx
+        $257b2              .byte $xx,"xxxxxxxx",$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $257c2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $257d2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $257e2              .byte $xx,$xx,$xx,$xx,"xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        $25802              .byte $xx,$xx,$xx,"xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        $25822              .byte $xx,$xx,$xx,"xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        $25842              .byte $xx,$xx,$xx,"xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        $25862              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $25872              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $25882              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $25892              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $258a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $258b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $258c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -31758,7 +31906,7 @@ DataTable_2438b
         $25e70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $25e80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $25e90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $25ea0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $25ea0              .byte $xx,$xx,$xx,$xx,$xx,"xxx",$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $25eb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $25ec0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $25ed0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -56006,7 +56154,7 @@ DialogFollowupActionJump_10
         $3d21a  xx xx xx:   xxx $3e148
 ;;; --------------------------------
 DialogFollowupActionJump_11
-        ;; Give an item (from $6a0,y)
+        ;; Give an item (from $6a0,y), which is the 2nd byte
         $3d21d  xx xx xx:   xxx LookingAt
         $3d220  xx xx xx:   xxx $xxxx,y
         $3d223  xx xx:      xxx GrantItemInRegisterA
@@ -56124,8 +56272,8 @@ DialogFollowupActionJump_0a
         $3d303  xx xx:      xxx #$xx
         $3d305  xx xx:      xxx $xx
         $3d307  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
-        $3d30a  xx xx xx:   xxx $3ff80
-        $3d30d  xx xx:      xxx #$xx
+        $3d30a  xx xx xx:   xxx LoadOneObjectData
+        $3d30d  xx xx:      xxx #INV_GLOWING_LAMP
         $3d30f  xx xx xx:   xxx $xxxx
         $3d312  xx xx:      xxx #$xx
         $3d314  xx xx xx:   xxx $xxxx
@@ -56459,13 +56607,13 @@ ItemOrTriggerActionJump                 ; TODO - Label the destinations
         $3d59f              .word ($3d827) ; 1e
         $3d5a1              .word ($3d82e) ; 1f
 ;;; --------------------------------
-JumpTable_3d563_00
-JumpTable_3d563_03
-JumpTable_3d563_05
-JumpTable_3d563_12
-JumpTable_3d563_1a
+ItemOrTriggerActionJump_00
+ItemOrTriggerActionJump_03
+ItemOrTriggerActionJump_05
+ItemOrTriggerActionJump_12
+ItemOrTriggerActionJump_1a
         $3d5a3  xx:         xxx
-JumpTable_3d563_01
+ItemOrTriggerActionJump_01
         ;; This runs whhen getting the Sword of Thunder and
         ;; triggers a teleport back to Shyron Temple.
         $3d5a4  xx xx:      xxx #$xx
@@ -56490,15 +56638,15 @@ JumpTable_3d563_01
         $3d5d3  xx xx:      xxx GameMode
         $3d5d5  xx:         xxx
 ;;; --------------------------------
-JumpTable_3d563_02
+ItemOrTriggerActionJump_02
         $3d5d6  xx xx:      xxx #$xx
         $3d5d8  xx xx xx:   xxx $xxxx
-        $3d5db  xx xx xx:   xxx $3d21d
+        $3d5db  xx xx xx:   xxx DialogFollowupActionJump_11
         $3d5de  xx xx:      xxx #$xx
         $3d5e0  xx xx xx:   xxx $xxxx
-        $3d5e3  xx xx xx:   xxx $3d23f
+        $3d5e3  xx xx xx:   xxx DialogFollowupActionJump_0d
 ;;; --------------------------------
-JumpTable_3d563_07
+ItemOrTriggerActionJump_07
         ;; Play message from Mesia in shrine
         $3d5e6  xx xx xx:   xxx $xxxx
         $3d5e9  xx xx:      xxx #$xx
@@ -56506,7 +56654,7 @@ JumpTable_3d563_07
         $3d5ee  xx xx xx:   xxx $xxxx
         $3d5f1  xx xx:      xxx #$xx
         $3d5f3  xx xx xx:   xxx $xxxx
-        $3d5f6  xx xx:      xxx #$xx
+       $3d5f6  xx xx:      xxx #$xx
         $3d5f8  xx xx xx:   xxx $xxxx
         $3d5fb  xx xx xx:   xxx $3d62e
         $3d5fe  xx xx:      xxx #$xx
@@ -56535,11 +56683,11 @@ JumpTable_3d563_07
         $3d637  xx xx:      xxx $xx
         $3d639  xx:         xxx
 ;;; --------------------------------
-JumpTable_3d563_0a
+ItemOrTriggerActionJump_0a
         $3d63a  xx xx:      xxx #SFX_CALM_SEAS
         $3d63c  xx xx xx:   xxx StartAudioTrack
 ;;; --------------------------------
-JumpTable_3d563_10
+ItemOrTriggerActionJump_10
 DialogFollowupActionJump_08
         $3d63f  xx xx xx:   xxx $xxxx
         $3d642  xx xx:      xxx #$xx
@@ -56552,32 +56700,32 @@ DialogFollowupActionJump_08
 ;;; --------------------------------
         $3d652  xx:         xxx
 ;;; --------------------------------
-JumpTable_3d563_04
+ItemOrTriggerActionJump_04
         $3d653  xx:         xxx
 ;;; --------------------------------
-JumpTable_3d563_08
+ItemOrTriggerActionJump_08
         $3d654  xx xx:      xxx #INV_MAGIC_PARALYSIS
         $3d656  xx xx xx:   xxx GrantItemInRegisterA
 ;;; --------------------------------
-JumpTable_3d563_09
+ItemOrTriggerActionJump_09  ; Spawn Dolphin
         $3d659  xx xx xx:   xxx PlayerStatus
         $3d65c  xx xx:      xxx $xx
         $3d65e  xx xx xx:   xxx $xxxx
         $3d661  xx xx:      xxx $xx
         $3d663  xx xx:      xxx #$xx
         $3d665  xx xx:      xxx CurrentLocation
-        $3d667  xx xx:      xxx #$xx
-        $3d669  xx xx:      xxx $xx
+        $3d667  xx xx:      xxx #LOC_UNDERGROUND_CHANNEL
+        $3d669  xx xx:      xxx + ; $3d679
         $3d66b  xx xx:      xxx #$xx
-        $3d66d  xx xx:      xxx #$xx
-        $3d66f  xx xx:      xxx $xx
+        $3d66d  xx xx:      xxx #LOC_EVIL_SPIRIT_ISLAND_1
+        $3d66f  xx xx:      xxx + ; $3d679
         $3d671  xx xx:      xxx $xx
         $3d673  xx:         xxx
         $3d674  xx:         xxx
         $3d675  xx:         xxx
         $3d676  xx xx:      xxx $xx
         $3d678  xx:         xxx
-        $3d679  xx xx xx:   xxx $3d6a8,y
++       $3d679  xx xx xx:   xxx $3d6a8,y
         $3d67c  xx xx:      xxx #$xx
         $3d67e  xx xx:      xxx $xx
         $3d680  xx xx:      xxx $xx
@@ -56599,37 +56747,38 @@ JumpTable_3d563_09
 ;;; --------------------------------
         $3d6a7  xx:         xxx
 ;;; --------------------------------
-DataTable_3d6a8                 ; grouped in fives
-        $3d6a8              .byte $xx,$xx,$xx,$xx,$xx
-        $3d6ad              .byte $xx,$xx,$xx,$xx,$xx
-        $3d6b2              .byte $xx,$xx,$xx,$xx,$xx
+DataTable_3d6a8                 ; grouped in fives, related to dolphin
+        ;; The middle three are spawn coordinates, the index is $6d, apparently
+        $3d6a8              .byte $xx,$xx,$xx,$xx,$xx ; 00 on boat
+        $3d6ad              .byte $xx,$xx,$xx,$xx,$xx ; 01 underground channel
+        $3d6b2              .byte $xx,$xx,$xx,$xx,$xx ; 02 evil spirit island
         $3d6b7              .byte $xx,$xx,$xx,$xx,$xx
-        $3d6bc              .byte $xx,$xx,$xx,$xx,$xx
+        $3d6bc              .byte $xx,$xx,$xx,$xx,$xx ; 04 joel beach
         $3d6c1              .byte $xx,$xx,$xx,$xx,$xx
         $3d6c6              .byte $xx,$xx,$xx,$xx,$xx
-        $3d6cb              .byte $xx,$xx,$xx,$xx,$xx
-        $3d6d0              .byte $xx,$xx,$xx,$xx,$xx
+        $3d6cb              .byte $xx,$xx,$xx,$xx,$xx ; 07 swan beach
+        $3d6d0              .byte $xx,$xx,$xx,$xx,$xx ; 08 cabin
 ;;; --------------------------------
-JumpTable_3d563_06
-JumpTable_3d563_11
+ItemOrTriggerActionJump_06
+ItemOrTriggerActionJump_11
         ;; reload NpcData for location
         $3d6d5  xx xx xx:   xxx $3e148
 ;;; --------------------------------
-JumpTable_3d563_0b
+ItemOrTriggerActionJump_0b
         $3d6d8  xx xx:      xxx #INV_MAGIC_BARRIER
         $3d6da  xx xx xx:   xxx GrantItemInRegisterA
 ;;; --------------------------------
-JumpTable_3d563_0c
+ItemOrTriggerActionJump_0c
         $3d6dd  xx xx:      xxx #INV_MAGIC_CHANGE
         $3d6df  xx xx xx:   xxx GrantItemInRegisterA
         $3d6e2  xx xx:      xxx #$xx
         $3d6e4  xx xx xx:   xxx $3d31f
 ;;; --------------------------------
-JumpTable_3d563_0d
+ItemOrTriggerActionJump_0d
         $3d6e7  xx xx:      xxx #INV_BOW_OF_MOON
         $3d6e9  xx xx xx:   xxx GrantItemInRegisterA
 ;;; --------------------------------
-JumpTable_3d563_0e
+ItemOrTriggerActionJump_0e
         $3d6ec  xx xx xx:   xxx loadNpcDataForCurrentLocation
         $3d6ef  xx xx:      xxx #$xx
         $3d6f1  xx xx:      xxx #$xx
@@ -56645,20 +56794,20 @@ JumpTable_3d563_0e
         $3d709  xx xx xx:   xxx $xxxx
         $3d70c  xx:         xxx
 ;;; --------------------------------
-JumpTable_3d563_0f
+ItemOrTriggerActionJump_0f
         ;;  Learn refresh
         $3d70d  xx xx xx:   xxx $xxxx
         $3d710  xx xx:      xxx #INV_MAGIC_REFRESH
         $3d712  xx xx xx:   xxx $xxxx,y
         $3d715  xx xx xx:   xxx MainGameModeJump_07_TriggerSquareOrTreasureChest
 ;;; --------------------------------
-JumpTable_3d563_13p
+ItemOrTriggerActionJump_13
         $3d718  xx xx:      xxx #$xx
         $3d71a  xx xx xx:   xxx $xxxx
         $3d71d  xx xx:      xxx $xx ; uncond
 ;;; --------------------------------
 ;;; Start fight with Statues?
-JumpTable_3d563_14
+ItemOrTriggerActionJump_14
         $3d71f  xx xx:      xxx #$xx
         $3d721  xx xx xx:   xxx $xxxx
         $3d724  xx xx:      xxx #$xx
@@ -56677,7 +56826,7 @@ JumpTable_3d563_14
 ;;; --------------------------------
         $3d745  xx:         xxx
 ;;; --------------------------------
-JumpTable_3d563_15
+ItemOrTriggerActionJump_15
         ;; Begin fight with Draygon 2 (post Bow of Truth)
         $3d746  xx xx:      xxx #$xx ; SFX_6B - unknown
         $3d748  xx xx xx:   xxx StartAudioTrack
@@ -56690,7 +56839,7 @@ JumpTable_3d563_15
         $3d759  xx xx:      xxx $xx
         $3d75b  xx xx xx:   xxx LoadOneObjectDataInternal
 ;;; --------------------------------
-JumpTable_3d563_18
+ItemOrTriggerActionJump_18
         $3d75e  xx xx:      xxx #$xx
         $3d760  xx xx xx:   xxx $xxxx
         $3d763  xx:         xxx
@@ -56710,12 +56859,12 @@ JumpTable_3d563_18
         $3d788  xx xx xx:   xxx $xxxx
         $3d78b  xx:         xxx
 ;;; --------------------------------
-JumpTable_3d563_16
+ItemOrTriggerActionJump_16
         $3d78c  xx xx:      xxx #GAME_MODE_SWORD_GET
         $3d78e  xx xx:      xxx GameMode
         $3d790  xx:         xxx
 ;;; --------------------------------
-JumpTable_3d563_17
+ItemOrTriggerActionJump_17
         $3d791  xx xx xx:   xxx $3ff8c
         $3d794  xx xx xx:   xxx $xxxx
         $3d797  xx xx:      xxx #$xx
@@ -56732,7 +56881,7 @@ JumpTable_3d563_17
         $3d7b4  xx xx:      xxx $xx
         $3d7b6  xx:         xxx
 ;;; --------------------------------
-JumpTable_3d563_19
+ItemOrTriggerActionJump_19
         $3d7b7  xx xx:      xxx $xx
         $3d7b9  xx:         xxx
         $3d7ba  xx xx:      xxx #$xx
@@ -56747,7 +56896,7 @@ JumpTable_3d563_19
         $3d7cb  xx xx:      xxx $xx
         $3d7cd  xx:         xxx
 ;;; --------------------------------
-JumpTable_3d563_1b
+ItemOrTriggerActionJump_1b
         $3d7ce  xx xx xx:   xxx $xxxx
         $3d7d1  xx xx:      xxx #$xx
         $3d7d3  xx xx xx:   xxx $xxxx,y
@@ -56771,12 +56920,12 @@ JumpTable_3d563_1b
         $3d7fa  xx xx:      xxx $xx
         $3d7fc  xx:         xxx
 ;;; --------------------------------
-JumpTable_3d563_1c
+ItemOrTriggerActionJump_1c
         $3d7fd  xx xx:      xxx #INV_GAS_MASK
         $3d7ff  xx xx xx:   xxx GrantItemInRegisterA
         $3d802  xx xx xx:   xxx $3d23f
 ;;; --------------------------------
-JumpTable_3d563_1d
+ItemOrTriggerActionJump_1d
         $3d805  xx xx xx:   xxx $xxxx
         $3d808  xx xx:      xxx #$xx
         $3d80a  xx xx xx:   xxx $xxxx,y
@@ -56795,7 +56944,7 @@ JumpTable_3d563_1d
 ;;; --------------------------------
         $3d826  xx:         xxx
 ;;; --------------------------------
-JumpTable_3d563_1e
+ItemOrTriggerActionJump_1e
         $3d827  xx xx:      xxx #GAME_MODE_FORGE_CRYSTALIS
         $3d829  xx xx:      xxx GameMode
         $3d82b  xx:         xxx
@@ -58117,10 +58266,10 @@ TryNpcSpawn
 ;;;   * y has been stored temporarily to $14 and should also be restored.
 ;;; STRIP: word=$30000
 NpcDataJump
-        $3e218              .word ($3e27f)
-        $3e21a              .word ($3e2b5)
-        $3e21c              .word ($3e375)
-        $3e21e              .word ($3e2a3)
+        $3e218              .word ($3e27f) ; monster
+        $3e21a              .word ($3e2b5) ; person or boss
+        $3e21c              .word ($3e375) ; chest or trigger
+        $3e21e              .word ($3e2a3) ; wall
         $3e220              .word ($3e222)
 ;;; --------------------------------
 NpcDataJump_4                   ; Called from $3e215
@@ -58314,18 +58463,18 @@ NpcDataJump_2_TreasureChestOrTrigger         ; Called from $3e215
         $3e389  xx xx:       xxx $xx
         $3e38b  xx xx:       xxx $xx
         $3e38d  xx xx xx:    xxx $1c5bf
-        $3e390  xx xx xx:    xxx $3e3d4
+        $3e390  xx xx xx:    xxx BankSwitch16k_Bank6 ; 1c000:4000
         $3e393  xx xx:       xxx $xx
         $3e395  xx xx:       xxx $xx
         $3e397  xx xx:       xxx + ; $3e39c
-        $3e399  xx xx xx:     xxx $xxxx,x
+        $3e399  xx xx xx:     xxx $xxxx,x ; don't spawn ($4a0,x <- 0) if zero
 +       $3e39c  xx xx xx:    xxx MaybeRecordAlternativePatternBank
         $3e39f  xx xx:       xxx $xx
-        $3e3a1  xx xx:       xxx #$xx
+        $3e3a1  xx xx:       xxx #INV_STATUE_OF_ONYX
         $3e3a3  xx xx:       xxx + ; $3e3b0
-        $3e3a5  xx xx:        xxx #$xx
+        $3e3a5  xx xx:        xxx #INV_KIRISA_PLANT
         $3e3a7  xx xx:        xxx + ; $3e3b0
-        $3e3a9  xx xx:         xxx #$xx
+        $3e3a9  xx xx:         xxx #INV_LOVE_PENDANT
         $3e3ab  xx xx:         xxx + ; $3e3b0
         $3e3ad  xx xx xx:       xxx NpcDataJump_Finish
         ;;                      ----------------------

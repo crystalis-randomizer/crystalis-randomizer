@@ -935,6 +935,8 @@ When fall sound happens ($35d34) $7d7 and $7d6 are both set to #$10
 
 When nonzero, background no longer animated???
 
+also prevents teleporting ($3db2d), used by boss treasure chests $0f via action $6e
+
 $7dc
 ----
 ID of trigger square/treasure chest currently stepped on (set by main game mode 7)

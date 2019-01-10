@@ -30,7 +30,7 @@ export default ({
     const parsed = new Rom(rom);
     adjustObjectDifficultyStats(rom, parsed);
     shuffleMonsters(rom, parsed, random);
-    shuffleBonusItems(rom, parsed, random);
+    //shuffleBonusItems(rom, parsed, random);
     fixShaking.apply(rom);
     preventSwordClobber.apply(rom);
     upgradeBallsToBracelets.apply(rom);
@@ -119,6 +119,15 @@ export const rearrangeTriggersAndNpcs = buildRomPatch(assemble(`
   .byte $40,$27  ; Set: 027 shyron massacre
 .org $1e244
 
+;; Give key to styx regardless of whether sword of thunder found
+.org $1d78e ; zebu dialog f2 shyron temple
+  .byte $60,$3b,$8a,$97,$22,$40,$3b  ; 03b NOT -> 14:17 (action 11), set 03b
+  .byte $00,$2d,$02,$c3,$22          ; 02d -> 16:03
+
+;; Don't check unwritten 104 flag for mado spawn
+.org $1c93a
+  .byte $a0,$00
+
 `, 'rearrangeTriggers'));
 
 // Skip the check that the player is stationary.  We could also adjust
@@ -154,6 +163,8 @@ export const allowTeleportOutOfTower = buildRomPatch(assemble(`
 // Zebu will remain in his cave (to trigger windmill guard) and Asina in her
 // room (for Recover).  For the queen's Flute of Lime, we avoid randomizing it
 // and then have the Mesia recording give it instead.
+// TODO - rethink Leaf a bit - windmill guard should maybe despawn, so the
+// relevant slots to require are windmill guard and elder.
 export const preventNpcDespawns = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000 ; fixed bank
 .bank $1c000 $8000:$4000
@@ -185,6 +196,24 @@ MesiaGivesFluteOfLime:
 .org $3d62b
   jmp MesiaGivesFluteOfLime
 
+;; clark moves back to joel after giving item, not after calming sea
+;; TODO - this is slightly awkward in that you can go up the stairs
+;; and back down and he's disappeared.  An alternative would be to
+;; put a trigger somewhere far away that checks 08d and sets some
+;; other (fresh/unused) flag to key off of.  (disappearing would be
+;; weird for clark, tho)
+.org $1c842
+  .byte $8d
+.org $1c845
+  .byte $8d
+
+;; kensu in the cabin needs to be available even after visiting joel.
+;; just have him disappear after setting the flag.
+.org $1c8f9
+  .byte $a0,$9b  ; change condition to $9b instead of $2fb
+.org $1d867
+  .byte $12,$21 ; message 11:01 (action 02 disappear)
+
 `, 'preventNpcDespawns'));
 
 // Specifically require having calmed the sea to learn barrier
@@ -193,7 +222,7 @@ export const barrierRequiresCalmSea = buildRomPatch(assemble(`
 .bank $1c000 $8000:$4000
 
 .org $1e202
-  .byte $82,$83  ; Condition: 283 calmed angy sea
+  .byte $80,$8f  ; Condition: 283 calmed angy sea (also 283)
 `, 'barrierRequiresCalmSea'));
 
 // Prevent the teleport-to-shyron sequence upon getting thunder sword.
@@ -1915,6 +1944,16 @@ const BONUS_ITEMS = {
   0x096f8: 0x2d, // deo's pendant
   0x1a47d: 0x2f, // leather boots
   0x3d2af: 0x30, // shield ring
+};
+
+const BONUS_ITEMS_2 = [
+  // power ring
+  {item: [0x1a497, ], slot: [ ]},
+  {0x095f0: 0x2b}, // warrior ring
+  {0x19def: 0x2c}, // iron necklace
+  {0x096f8: 0x2d}, // deo's pendant
+  {0x1a47d: 0x2f}, // leather boots
+  {0x3d2af: 0x30}, // shield ring
 };
 
 export const BUILD_HASH = 'latest';

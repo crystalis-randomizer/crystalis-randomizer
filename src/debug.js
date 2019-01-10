@@ -68,4 +68,32 @@ export default (nes) => {
     nes.cpu.ram[0x6d] = entrance;
     nes.cpu.ram[0x41] = 1;
   };
+
+  class Flag {
+    constructor(id, addr, mask) {
+      this.id = id;
+      this.addr = (id >> 3) + 0x6480;
+      this.mask = 1 << (id & 7);
+    }
+
+    get() {
+      return !!(nes.cpu.load(this.addr) & this.mask);
+    }
+
+    set() {
+      nes.cpu.write(this.addr, nes.cpu.load(this.addr) | this.mask);
+    }
+
+    clear() {
+      nes.cpu.write(this.addr, nes.cpu.load(this.addr) & ~this.mask);
+    }
+
+    toString() {
+      return `Flag ${this.id.toString(16).padStart(3,0)} (${this.addr.toString(16)}:${this.mask.toString(16).padStart(2,0)}): ${this.get()}`;
+    }
+  }
+
+  window.flag = (id) => {
+    return new Flag(id);
+  };
 };

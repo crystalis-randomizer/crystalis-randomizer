@@ -1,0 +1,318 @@
+All references to the flags in ItemGetData:
+
+We have a number of slots (e.g. Chest XX, Boss XX, ...) and a number of items
+(e.g. ItemGet XX).  Each flag is marked as going along with either the chest
+or the item.  For example, normally:
+  Sword of Wind 00
+    Dialog 0d (elder) -> PSLOT
+    NpcSpawn 5e (zebu - cave) -> SLOT
+    ItemGet 00 -> ITEM
+  Sword of Water 02
+    Chest 02 -> PSLOT
+    Dialog 38 (queen) -> ITEM
+    Dialog 39 (fortune teller) -> ITEM
+    Dialog c3 (rage) -> ITEM
+    ItemGet 02 -> ITEM
+Every item will have at least one "-> ITEM" (the ItemGet) and one "-> SLOT"
+(the Chest or Dialog or ItemUse that provides it, marked PSLOT).  When
+exchanging items, we need to change all SLOT flags and leave ITEM flags
+untouched.  So to exchange these swords, we change Dialog 0d -> 182,
+NpcSpawn 5e -> 182, and Chest 02 -> 180.
+
+The ItemGet we can disregard, since we'll basically just ignore the original
+flags set by ItemGetDataTable, and we can set the new flag programmatically.
+
+
+6d opel statue
+  0e6 Chest 6d -> PSLOT
+
+6e warp boots
+  0e5 Chest 6e -> PSLOT
+
+3c kirisa plant
+  0e4 Chest 3c -> PSLOT
+  InvisibleChest -> SLOT
+
+69 magic ring
+  0d2 Chest 69 -> PSLOT
+
+5b flute of lime
+  0d4 Chest 5b -> PSLOT
+
+1d medical herb
+  0aa Chest 1d -> PSLOT
+
+50 medical herb
+  0ab Chest 50 -> PSLOT
+
+52 medical herb
+  0ad Chest 52 -> PSLOT
+
+53 medical herb
+  0ae chest
+
+54 magic ring
+  0af chest
+
+55 medical herb
+  0b0 chest
+
+56 medical herb
+  0b1 chest
+
+57 medical herb
+  0b2 chest
+
+58 magic ring
+  0b3 chest
+
+59 medical herb
+  0b4 chest
+
+5a fruit of power
+  0b5 chest
+
+1f lysis plant
+  0b6 chest
+
+5c lysis plant
+  0b7 chest
+
+5d lysis plant
+  0b8 chest
+
+1e antidote
+  0b9 chest
+
+5e antidote
+  0ba chest
+
+5f antidote
+  0bb chest
+
+60 antidote
+  0bc chest
+
+20 fruit of lime
+  0bd chest
+
+21 fruit of power
+  0be chest
+
+61 fruit of power
+  10c ItemGet 1de99
+      NpcSpawn cc 1c95a -> SLOT 1e1
+
+62 fruit of power
+  0bf chest
+
+63 opel statue
+  0c0 chest
+
+64 fruit of power
+  0c1 chest
+
+22 magic ring
+  0c2 chest
+
+65 magic ring
+  0c3 chest
+
+66 fruit of repun
+  0c4 chest
+
+6b magic ring
+  0c5 chest
+
+6c magic ring
+  0c6 chest
+
+23 fruit of repun (Sabera 2)
+  106 NpcSpawn c6 1c942 -> SLOT 1a3
+  0c7 ItemGet 1deda
+
+24 warp boots (Sealed Cave)
+  0c8 chest
+
+6a warp boots (Mt Sabbre West Dead End)
+  0c9 chest
+
+3d ivory statue
+  108 NpcSpawn c8 1c94a -> SLOT
+  024 NpcDialog 1d3ce 1d3e9 1d404 1d41f 1d57f 1d59a 1d5b5 1d5cc(*) 1d5f3 1d60e 1d629
+      NpcSpawn 1c78c 1c7a8 1c7ab 1c7af 1c7b2 1c7b6 -> SLOT
+      --> remove, add a common jump to "boss death" that checks four boss triggers
+          and sets 024 if they're all satisfied... should be able to just jump into
+          the trigger code to do this (or use $64a2 as a counter)
+  0ca ItemGet 1def3
+      --> basically unused
+Consider finding a new trigger/flag for "all generals killed" ?
+
+2a power ring
+  0cb chest
+
+1c psycho armor
+  10b NpcSpawn cb 1c956 (MOVED!) -> SLOT
+  0cc ItemGet 1df0a -> ITEM
+  06c Trigger 9f (unused) 1e2d0 -> SLOT
+      NpcSpawn 83 (azteca - pyramid) 1c914 -> SLOT 19c
+
+14 psycho shield
+  0cd chest
+
+1b battle armor
+  0df chest
+
+51 sacred shield --- UNUSED
+  062 Trigger 9d (unused) 1e2c4
+
+33 key to prison
+  0cf chest
+
+35 fog lamp
+  0d1 chest
+
+26 opel statue
+  105 NpcSpawn c5 1c93e -> SLOT
+  0d3 ItemGet 1df37 -> ITEM
+
+00 sword of wind
+  00b NpcSpawn 5e (zebu - cave) 1c884 -> SLOT 180
+      Dialog 0d (elder) 1cb62 -> 1cb67 ==> SLOT -> remove
+      ItemGet 1df3e -> ITEM
+
+01 sword of fire
+  049 Dialog 1d (elder) 1cdd7 -> 1cde1 ==> SLOT -> remove
+      ItemGet 1df45 -> ITEM
+
+02 sword of water
+  017 Dialog 38 (queen) 1cfa9 -> ITEM
+      Dialog 39 (fortune teller) 1d012 -> ITEM
+      Dialog c3 (rage) 1d8ea -> ITEM
+      ItemGet 1df4c
+
+03 sword of thunder
+  05f Trigger 80 (massacre) 1e202 (MOVED!) -> ITEM
+      NpcSpawn 5f (tornel shyron) 1c89b -> 1c8a0 ==> ITEM both
+      NpcSpawn 62 (asina shyron) 1c8bb -> 1c8c0 ==> ITEM
+      NpcSpawn 6e (azteca shyron) 1c8ef ==> ITEM
+      ItemGet 1df53 -> ITEM
+
+04 ball of wind
+  087 chest
+
+07 ball of fire
+  041 Dialog 1e (oak mother) 1cdfd -> SLOT
+      Dialog 20/7c (guards) 1ce50 -> SLOT
+      Dialog 21/7d (guards) 1ce74 -> SLOT
+      Dialog 22 (dwarf) 1ce98 -> SLOT
+      Dialog 60 (stom at house) 1d730 (new hint) -> SLOT
+      ItemGet 1df68
+  044 Dialog 1d (elder) 1cdd0
+      Dialog 1f (child) 1ce2a
+      ItemGet 1df6a
+  101 NpcSpawn c1 1c92e
+      ItemGet 1df6c
+
+09 ball of water
+  103
+  01f
+  020
+  07b
+
+0b ball of thunder
+  067
+
+06 tornado bracelet
+  04e
+
+08 flame bracelet
+  077
+  102
+
+0a blizzard bracelet
+  07a
+
+0c storm bracelet
+  078
+
+10 mirrored shield
+  01c
+
+25 statue of onyx
+  0ce
+
+27 insect flute
+  0d0
+
+2d deos pendant
+  02e
+
+2e rabbit boots
+  100
+
+3b love pendant
+  03c
+
+40 bow of truth
+  079
+
+2b warrior ring
+
+2f leather boots
+  0e7
+
+3f bow of sun
+  07d
+
+38 broken statue
+  013
+
+36 shell flute
+  08b
+
+6f magic ring
+  0dc
+
+70 mimic -- UNUSED
+  0dd
+
+2c iron necklace
+  0de
+
+29 gas mask
+30 shield ring
+32 windmill key
+34 key to styx
+37 eye glasses
+39 glowing lamp
+3a statue of gold
+3e bow of moon
+
+12 sacred shield
+  107
+
+45 recover
+48 flight
+
+41 refresh
+  039
+
+42 paralysis
+  037
+
+43 telepathy
+  00e
+
+44 teleport
+  03f
+
+47 change
+  063
+
+46 barrier
+
+
+
+
+

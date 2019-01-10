@@ -164,7 +164,7 @@
    (repeat 0 2 "(")
    "$"
    (any "8-9a-f") (= 3 (any "0-9a-f")))
-   word-end)))
+   word-end)
 
 (defconst sdh-banked-pages
   (mapcar (lambda (x)

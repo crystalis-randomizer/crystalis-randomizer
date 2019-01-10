@@ -6,6 +6,7 @@
 00d - leaf villagers rescued (specifically elder)
 00e - learned telepathy (defeated stom)
 00f - woke windmill guard
+010 - gave kirisa plant to aryllis
 011 - welcomed to amazones
 013 - sabera defeated
 017 - chest:02:sword of water
@@ -34,7 +35,7 @@
       $6486
 038 - leaf attacked
 039 - learned refresh (windmill started)
-03a - local (zebu introduction)
+03a - talked to zebu in cave
 03b - talked to zebu in shyron
 03c - chest:3b:love pendant
 03e - found kensu in dance hall
@@ -48,6 +49,7 @@
 04f - received warrior ring
 050 - given statue to akahana
 051 - learned barrier
+054 - set when calling the dolphin
 055 - zebu rescued
 056 - tornel rescued
 057 - asina rescued
@@ -65,6 +67,7 @@
 070 - kensu paralyzed in tavern
 071 - kensu paralyzed in dance hall
 072 - found kensu in tavern
+075 - talked to kensu in lighthouse
 076 - talked to kensu in goa before shyron
 077 - chest:08:flame bracelet
 078 - chest:0c:storm bracelet
@@ -82,7 +85,7 @@
 085 - leaf elder currently abducted (set in cave behind zebu, cleared in elder's cell)
 
 087 - chest:05:ball of wind
-
+088 - got windmill key
 089 - spoken to dead stom's girlfriend
 08a - spoken to dead stom
 08b - got shell flute
@@ -90,8 +93,9 @@
 08f - used statue of gold
 090 - stoned people gone
 097 - local (red man at top of leaf (0f) toggle, pre-abduction)
+09b - able to ride dolphin
 09c - portoa queen went away
-
+0a4 - woke kensu
 0a5 - talked to zebu student
 0a9 - talked to leaf rabbit
 0aa - chest:1d:medical herb
@@ -136,6 +140,7 @@
 0d2 - chest:69:magic ring
 0d3 - chest:26:opel statue
 0d4 - chest:5b:flute of lime
+0d8 - kensu rescued
 0da - kensu gone from tavern
 0db - in sabera's trap
 0dc - chest:6f:magic ring
@@ -155,7 +160,7 @@
 101 - defeated insect
 102 - defeated kelbesque 1
 103 - got item from rage
-104 - defeated mado 1
+104 - defeated mado 1 -- UNUSED
 105 - defeated kelbesque 2
 106 - defeated sabera 2
 107 - defeated mado 2

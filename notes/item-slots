@@ -1,0 +1,137 @@
+SLOTS
+Leaf Elder - 00b -> needed for zebu in cave
+Oak Elder - 049 -> may not be needed elsewhere
+Rage - 103 -> may not be needed elsewhere? but must prevent respawn
+Sabera - 013 -> needed for zombies and eye glasses
+
+
+111 or so spare bytes in ItemGetData if we remove the FF bytes
+and consolidate the unused blocks; need 84 to give a unique flag to every item.  Also need 14 unused flags.
+
+It's possible that there's a huge swath available starting at 180
+ -> these flags are all saved, might as well just use them
+    this would actually mean we don't even need to redo the
+    item get data, since we can just set the flag manually!
+also simplifies the chests, since we no longer need a table...
+
+For the slots, we may need to add a few if we care about
+telling the difference.
+
+ITEMS
+$00 - Sword of Wind - 00b !
+$01 - Sword of Fire - 049 !
+$02 - Sword of Water - 017
+$03 - Sword of Thunder - 05f
+$04 - Crystalis
+$05 - Ball of Wind - 087
+$06 - Tornado Bracelet - 04e
+$07 - Ball of Fire - 101, 041 *, 044 *
+$08 - Flame Bracelet - 077 *, 102
+$09 - Ball of Water - 103, 01f, 07b *
+$0a - Blizzard Bracelet - 07a
+$0b - Ball of Thunder - 067 
+$0c - Storm Bracelet - 078
+$0d - Carapace Shield
+$0e - Bronze Shield
+$0f - Platinum Shield
+$10 - Mirrored Shield - 01c never read ?
+$11 - Ceramic Shield
+$12 - Sacred Shield - 107
+$13 - Battle Shield
+$14 - Psycho Shield - 0cd
+$15 - Tanned Hide
+$16 - Leather Armor
+$17 - Bronze Armor
+$18 - Platinum Armor
+$19 - Soldier Suit
+$1a - Ceramic Suit
+$1b - Battle Armor - 0df
+$1c - Psycho Armor - 10b, 0cc *, 06c *
+$1d - Medical Herb - 0aa
+$1e - Antidote - 0b9
+$1f - Lysis Plant - 0b6
+$20 - Fruit of Lime - 0bd
+$21 - Fruit of Power - 0be
+$22 - Magic Ring - 0c2
+$23 - Fruit of Repun - 106, 0c7 *
+$24 - Warp Boots - 0c8
+$25 - Statue of Onyx - 0ce
+$26 - Opel Statue - 105, 0d3 *
+$27 - Insect Flute
+$28 - Flute of Lime
+$29 - Gas Mask
+$2a - Power Ring
+$2b - Warrior Ring
+$2c - Iron Necklace
+$2d - Deo's Pendant
+$2e - Rabbit Boots
+$2f - Leather Boots
+$30 - Shield Ring
+$31 - Alarm Flute
+$32 - Windmill Key
+$33 - Key to Prison
+$34 - Key to Styx
+$35 - Fog Lamp
+$36 - Shell Flute
+$37 - Eye Glasses
+$38 - Broken Statue
+$39 - Glowing Lamp
+$3a - Statue of Gold
+$3b - Love Pendant
+$3c - Kirisa Plant
+$3d - Ivory Statue
+$3e - Bow of Moon
+$3f - Bow of Sun
+$40 - Bow of Truth
+$41 - Refresh
+$42 - Paralysis
+$43 - Telepathy
+$44 - Teleport
+$45 - Recover
+$46 - Barrier
+$47 - Change
+$48 - Flight
+$50 - medical herb
+$51 - sacred shield
+$52 - medical herb
+$53 - medical herb
+$54 - magic ring
+$55 - medical herb
+$56 - medical herb
+$57 - medical herb
+$58 - magic ring
+$59 - medical herb
+$5a - fruit of power
+$5b - flute of lime
+$5c - lysis plant
+$5d - lysis plant
+$5e - antidote
+$5f - antidote
+$60 - antidote
+$61 - fruit of power
+$62 - fruit of power
+$63 - opel statue
+$64 - fruit of power
+$65 - magic ring
+$66 - fruit of repun
+$67 - magic ring
+$68 - magic ring
+$69 - magic ring
+$6a - warp boots
+$6b - magic ring
+$6c - magic ring
+$6d - opel statue
+$6e - warp boots
+$6f - magic ring
+$70 - mimic
+
+EXTRA FLAGS
+041 -> 101
+044 -> 101
+077 -> 102 (unused?)
+07b -> 103 or 01f (unused?)
+104 -> unwritten
+0cc -> 10b unused
+06c -> 10b (1 usage)
+0d3 -> 105
+0c7 -> 106

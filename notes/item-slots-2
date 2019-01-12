@@ -4,8 +4,8 @@ We have a number of slots (e.g. Chest XX, Boss XX, ...) and a number of items
 (e.g. ItemGet XX).  Each flag is marked as going along with either the chest
 or the item.  For example, normally:
   Sword of Wind 00
-    Dialog 0d (elder) -> PSLOT
-    NpcSpawn 5e (zebu - cave) -> SLOT
+    Dialog 0d @c0+2 (elder) -> PSLOT
+    NpcSpawn 5e @1o+1 (zebu - cave) -> SLOT
     ItemGet 00 -> ITEM
   Sword of Water 02
     Chest 02 -> PSLOT
@@ -22,16 +22,19 @@ NpcSpawn 5e -> 182, and Chest 02 -> 180.
 The ItemGet we can disregard, since we'll basically just ignore the original
 flags set by ItemGetDataTable, and we can set the new flag programmatically.
 
+Once we do the initial rearrange, then all we should need to do is build up a
+list of slots: each slot has a list of addresses with a function to replace the
+item in that address (i.e. to set the flag or item id or whatever as appropriate;
+also could dynamically look it up rather than using a fixed address)
+
+In general, we should leave as much as possible to ITEM - it's easier and
+it leads to more shuffling.
 
 6d opel statue
   0e6 Chest 6d -> PSLOT
 
 6e warp boots
   0e5 Chest 6e -> PSLOT
-
-3c kirisa plant
-  0e4 Chest 3c -> PSLOT
-  InvisibleChest -> SLOT
 
 69 magic ring
   0d2 Chest 69 -> PSLOT
@@ -49,270 +52,431 @@ flags set by ItemGetDataTable, and we can set the new flag programmatically.
   0ad Chest 52 -> PSLOT
 
 53 medical herb
-  0ae chest
+  0ae Chest 53 -> PSLOT
 
 54 magic ring
-  0af chest
+  0af Chest 54 -> PSLOT
 
 55 medical herb
-  0b0 chest
+  0b0 Chest 55 -> PSLOT
 
 56 medical herb
-  0b1 chest
+  0b1 Chest 56 -> PSLOT
 
 57 medical herb
-  0b2 chest
+  0b2 Chest 57 -> PSLOT
 
 58 magic ring
-  0b3 chest
+  0b3 Chest 58 -> PSLOT
 
 59 medical herb
-  0b4 chest
+  0b4 Chest 59 -> PSLOT
 
 5a fruit of power
-  0b5 chest
+  0b5 Chest 5a -> PSLOT
 
 1f lysis plant
-  0b6 chest
+  0b6 Chest 1f -> PSLOT
 
 5c lysis plant
-  0b7 chest
+  0b7 Chest 5c -> PSLOT
 
 5d lysis plant
-  0b8 chest
+  0b8 Chest 5d -> PSLOT
 
 1e antidote
-  0b9 chest
+  0b9 Chest 1e -> PSLOT
 
 5e antidote
-  0ba chest
+  0ba Chest 5e -> PSLOT
 
 5f antidote
-  0bb chest
+  0bb Chest 5f -> PSLOT
 
 60 antidote
-  0bc chest
+  0bc Chest 60 -> PSLOT
 
 20 fruit of lime
-  0bd chest
+  0bd Chest 20 -> PSLOT
 
 21 fruit of power
-  0be chest
-
-61 fruit of power
-  10c ItemGet 1de99
-      NpcSpawn cc 1c95a -> SLOT 1e1
+  0be Chest 21 -> PSLOT
 
 62 fruit of power
-  0bf chest
+  0bf Chest 62 -> PSLOT
 
 63 opel statue
-  0c0 chest
+  0c0 Chest 63 -> PSLOT
 
 64 fruit of power
-  0c1 chest
+  0c1 Chest 64 -> PSLOT
 
 22 magic ring
-  0c2 chest
+  0c2 Chest 22 -> PSLOT
 
 65 magic ring
-  0c3 chest
+  0c3 Chest 65 -> PSLOT
 
 66 fruit of repun
-  0c4 chest
-
-6b magic ring
-  0c5 chest
+  0c4 Chest 66 -> PSLOT
 
 6c magic ring
-  0c6 chest
-
-23 fruit of repun (Sabera 2)
-  106 NpcSpawn c6 1c942 -> SLOT 1a3
-  0c7 ItemGet 1deda
+  0c6 Chest 6c -> PSLOT
 
 24 warp boots (Sealed Cave)
-  0c8 chest
+  0c8 Chest 24 -> PSLOT
 
 6a warp boots (Mt Sabbre West Dead End)
-  0c9 chest
-
-3d ivory statue
-  108 NpcSpawn c8 1c94a -> SLOT
-  024 NpcDialog 1d3ce 1d3e9 1d404 1d41f 1d57f 1d59a 1d5b5 1d5cc(*) 1d5f3 1d60e 1d629
-      NpcSpawn 1c78c 1c7a8 1c7ab 1c7af 1c7b2 1c7b6 -> SLOT
-      --> remove, add a common jump to "boss death" that checks four boss triggers
-          and sets 024 if they're all satisfied... should be able to just jump into
-          the trigger code to do this (or use $64a2 as a counter)
-  0ca ItemGet 1def3
-      --> basically unused
-Consider finding a new trigger/flag for "all generals killed" ?
+  0c9 Chest 6a -> PSLOT
 
 2a power ring
-  0cb chest
-
-1c psycho armor
-  10b NpcSpawn cb 1c956 (MOVED!) -> SLOT
-  0cc ItemGet 1df0a -> ITEM
-  06c Trigger 9f (unused) 1e2d0 -> SLOT
-      NpcSpawn 83 (azteca - pyramid) 1c914 -> SLOT 19c
+  0cb Chest 2a -> PSLOT
 
 14 psycho shield
-  0cd chest
+  0cd Chest 14 -> PSLOT
 
 1b battle armor
-  0df chest
+  0df Chest 1b -> PSLOT
 
 51 sacred shield --- UNUSED
   062 Trigger 9d (unused) 1e2c4
 
 33 key to prison
-  0cf chest
+  0cf Chest 33 -> PSLOT
 
 35 fog lamp
-  0d1 chest
+  0d1 Chest 35 -> PSLOT
+
+6b magic ring
+  0c5 Chest 6b -> PSLOT
+
+04 ball of wind
+  087 Chest 04 -> PSLOT
+
+0a blizzard bracelet
+  07a Chest 0a -> PSLOT
+
+0c storm bracelet
+  078 Chest 0c -> PSLOT
+
+10 mirrored shield
+  01c Chest 10 -> PSLOT
+
+2f leather boots
+  0e7 Chest 2f -> PSLOT
+
+3f bow of sun
+  07d Chest 3f -> PSLOT
+
+6f magic ring
+  0dc Chest 6f -> PSLOT
+
+2c iron necklace
+  0de Chest 2c -> PSLOT
+
+70 mimic -- UNUSED
+  0dd UNUSED
+
+================================
+
+25 statue of onyx
+  0ce Chest 25 -> PSLOT
+  $25 InvisibleChest 3e3a2 -> $SLOT
+
+3b love pendant
+  03c Chest 3b -> PSLOT
+  $3b InvisibleChest 3e3aa -> $SLOT
+
+3c kirisa plant
+  0e4 Chest 3c -> PSLOT
+  $3c InvisibleChest 3e3a6 -> $SLOT
+
+================================
+
+2e rabbit boots
+  $2e BossLoot 00 1f98b -> $PSLOT
+  100 NpcSpawn c0 1c92a -> SLOT
+      ItemGet 2e 1dfc8
+
+07 ball of fire
+  $07 BossLoot 01 1f9a0 -> PSLOT
+  041 Dialog 1e (oak mother) +0 1cdfd -> SLOT
+      Dialog 20/7c (guards) +0 1ce50 -> SLOT
+      Dialog 21/7d (guards) +0 1ce74 -> SLOT
+      Dialog 22 (dwarf) +0 1ce98 -> SLOT
+      Dialog 60 (stom at house) @1e+0 1d730 (new hint) -> SLOT
+      ItemGet 1df68
+  044 Dialog 1d (elder) +2 1cdd0 -> SLOT
+      Dialog 1f (child) +0 1ce2a -> SLOT
+      ItemGet 1df6a
+  101 NpcSpawn c1 1c92e -> SLOT
+      ItemGet 1df6c
+
+08 flame bracelet
+  $08 BossLoot 02 1f9b5 -> $PSLOT
+  077 ItemGet 1df8e
+  102 NpcSpawn c2 1c932 -> SLOT
+
+61 fruit of power
+  $61 BossLoot 0c 1fa62 -> $PSLOT
+  10c ItemGet 1de99
+      NpcSpawn cc (1c95a) -> SLOT 1e1
+
+38 broken statue
+  $38 BossLoot 04 1f9c7 -> $PSLOT
+  013 NpcSpawn 7f @65+0 NOT 1c790 -> SLOT
+      NpcSpawn 46 1c7a0 -> SLOT
+      NpcSpawn 47 1c7a4 -> SLOT
+      NpcSpawn 6a 1c8eb -> SLOT
+      NpcSpawn 84 NOT 1c91a -> SLOT
+      NpcSpawn 8e NOT 1c91e -> SLOT
+      Dialog 3d NOT +0 1d22c -> SLOT
+      Dialog 42 NOT +0 1d24c -> SLOT
+      Dialog 41 NOT +0 1d26c -> SLOT
+      Dialog 3e NOT +0 1d28c -> SLOT
+      Dialog 3f NOT +0 1d2ac -> SLOT
+      Dialog 40 NOT +0 1d2cc -> SLOT
+      Dialog 43 NOT +0 1d2ec -> SLOT
+      Dialog 44 @e9+0 NOT 1d3aa -> SLOT
+      ItemGet 38 1dff2 -> ITEM
+      Trigger 96 UNUSED
+      Trigger b6 +0 NOT 1e360 -> SLOT
+
+0b ball of thunder
+  $0b BossLoot 05 1f9df -> $PSLOT
+  067 Trigger 9a +1 NOT 1eb2b -> SLOT
+      ItemGet 0b -> ITEM
 
 26 opel statue
+  $26 BossLoot 06 1f954 -> $PSLOT
   105 NpcSpawn c5 1c93e -> SLOT
   0d3 ItemGet 1df37 -> ITEM
 
+23 fruit of repun (Sabera 2)
+  $23 BossLoot 07 1fa09 -> $PSLOT
+  106 NpcSpawn c6 1c942 -> SLOT 1a3
+  0c7 ItemGet 1deda
+
+12 sacred shield
+  $12 BossLoot 08 1fa1e -> $PSLOT
+  107 NpcSpawn c7 NOT 1c946 -> SLOT
+      ItemGet 12 1e02a -> ITEM
+
+3d ivory statue
+  $3d BossLoot 09 1fa33 -> $PSLOT
+  108 NpcSpawn c8 1c94a -> SLOT
+  024 NpcDialog 1d3ce 1d3e9 1d404 1d41f 1d57f 1d59a 1d5b5 1d5cc(*) 1d5f3 1d60e 1d629
+      NpcSpawn 1c78c 1c7a8 1c7ab 1c7af 1c7b2 1c7b6 -> ALTERNATE SLOT
+      --> remove, add a common jump to "boss death" that checks four boss triggers
+          and sets 024 if they're all satisfied... should be able to just jump into
+          the trigger code to do this (or use $64a2 as a counter)
+      ItemGet 3d +1 -> DELETE  (just repurpose 024 for this!)
+  0ca ItemGet 1def3 (unused)
+Consider finding a new trigger/flag for "all generals killed" ?
+
+1c psycho armor
+  $1c BossLoot 0a 1fa48 -> $PSLOT
+  10b NpcSpawn cb (1c956, but we move it) -> SLOT
+  06c Trigger 9f (unused) 1e2d0 -> SLOT
+      NpcSpawn 83 (azteca - pyramid) 1c914 -> SLOT
+  0cc ItemGet 1df0a -> ITEM
+
+================================
+
 00 sword of wind
+  $00 PersonData 0d 083f4 -> $PSLOT
   00b NpcSpawn 5e (zebu - cave) 1c884 -> SLOT 180
-      Dialog 0d (elder) 1cb62 -> 1cb67 ==> SLOT -> remove
+      Dialog 0d (elder) @c0+2 NOT 1cb62  -> SLOT
+                        @c0+2,0 1cb67 -> DELETE
       ItemGet 1df3e -> ITEM
+  TODO - MISSABLE?
+       - Need to block abduction trigger on this slot and windmill key
 
 01 sword of fire
-  049 Dialog 1d (elder) 1cdd7 -> 1cde1 ==> SLOT -> remove
+  $01 PersonData 1d 087f4 -> $PSLOT
+  049 Dialog 1d (elder) +3 1cdd7 -> SLOT
+                        +4,0 1cde1 -> DELETE
       ItemGet 1df45 -> ITEM
 
 02 sword of water
-  017 Dialog 38 (queen) 1cfa9 -> ITEM
+  017 Chest 02 -> PSLOT
+      Dialog 38 (queen) 1cfa9 -> ITEM
       Dialog 39 (fortune teller) 1d012 -> ITEM
       Dialog c3 (rage) 1d8ea -> ITEM
       ItemGet 1df4c
 
 03 sword of thunder
-  05f Trigger 80 (massacre) 1e202 (MOVED!) -> ITEM
+  05f Chest 03 -> PSLOT
+      Trigger 80 (massacre) 1e202 (MOVED!) -> ITEM
       NpcSpawn 5f (tornel shyron) 1c89b -> 1c8a0 ==> ITEM both
       NpcSpawn 62 (asina shyron) 1c8bb -> 1c8c0 ==> ITEM
       NpcSpawn 6e (azteca shyron) 1c8ef ==> ITEM
       ItemGet 1df53 -> ITEM
 
-04 ball of wind
-  087 chest
-
-07 ball of fire
-  041 Dialog 1e (oak mother) 1cdfd -> SLOT
-      Dialog 20/7c (guards) 1ce50 -> SLOT
-      Dialog 21/7d (guards) 1ce74 -> SLOT
-      Dialog 22 (dwarf) 1ce98 -> SLOT
-      Dialog 60 (stom at house) 1d730 (new hint) -> SLOT
-      ItemGet 1df68
-  044 Dialog 1d (elder) 1cdd0
-      Dialog 1f (child) 1ce2a
-      ItemGet 1df6a
-  101 NpcSpawn c1 1c92e
-      ItemGet 1df6c
-
 09 ball of water
-  103
-  01f
-  020
-  07b
-
-0b ball of thunder
-  067
+  Direct 3d337 -> $PSLOT
+  103 NpcSpawn c3 -> SLOT
+      ItemGet
+  01f NpcSpawn 38 @df+1 NOT 1c81e -> ITEM  (queen)
+                  @e1+0  1c821 -> ITEM
+      NpcSpawn 39 +1 NOT 1c829 -> ITEM  (fortune teller)
+      Dialog 38 +1   -> ITEM
+      Dialog 39 +0,1 -> ITEM
+      Dialog 34 +1   -> ITEM
+      ItemGet 1df75
+      Trigger bb +1 NOT 1e388 -> ITEM
+  020 ... NpcSpawn 33 df ... -> ITEM (leave as is)
+  07b Trigger be - unused -> leave as is
 
 06 tornado bracelet
-  04e
-
-08 flame bracelet
-  077
-  102
-
-0a blizzard bracelet
-  07a
-
-0c storm bracelet
-  078
-
-10 mirrored shield
-  01c
-
-25 statue of onyx
-  0ce
+  04e Dialog 5f @21+1 -> ITEM
+      ItemGet
 
 27 insect flute
-  0d0
+  $27 PersonData 1e 087f8 -> $PSLOT
+  0a0 Dialog 1e +1 1ce02 -> SLOT
+                +2,0 1ce0c -> DELETE
 
 2d deos pendant
-  02e
-
-2e rabbit boots
-  100
-
-3b love pendant
-  03c
+  $2d PersonData 5a 096f8 -> $PSLOT
+  02e Dialog 5a +0 1d658 -> SLOT
+                +2,0 1d662 -> SLOT
+      ItemGet 1dfc1
 
 40 bow of truth
-  079
+  $40 PersonData 83 0a0fc -> $PSLOT
+  079 NpcSpawn 83 @9c+1 NOT 1c916 -> SLOT
+      Dialog 83 +0,0 -> DELETE
+      ItemGet 40 1dfd6
+  082 Dialog 83 +0 NOT 1d8d7 -> SLOT
+      Dialog 83 +0,1 -> DELETE
 
 2b warrior ring
-
-2f leather boots
-  0e7
-
-3f bow of sun
-  07d
-
-38 broken statue
-  013
+  $2b PersonData 54 095f0 -> $PSLOT
+  04f Dialog 54 +2 NOT 1d5d1 -> SLOT
+                +2,0 1d5db -> DELETE
 
 36 shell flute
-  08b
-
-6f magic ring
-  0dc
-
-70 mimic -- UNUSED
-  0dd
-
-2c iron necklace
-  0de
+  $36 PersonData 63 +1 098fd -> $PSLOT
+  08b NpcSpawn 64 1c79c -> ITEM and SLOT (add extra conditions)
+      Dialog 7b +0 NOT 1d1d6 -> ITEM and SLOT
+      ItemGet 36 1dff9 -> ITEM
+  025 NpcSpawn 63 +0 NOT 1c8e1 -> SLOT
+      ItemUse 1d SET (+4 bytes) 1e069 -> DELETE
+  09b ItemUse 36 1e0b3 -> SAME (set by kensu trigger)
+      Dialog 68 (kensu) +0,0 1d86a -> SAME
+  NOTE: We may want to rearrange things a bit.
+    - fisherman and daugher should key on both the flute AND healing dolphin.
+    - alternately, if one of these is missing, kensu could just teleport the
+      player back to portoa and *not* grant the flag...
+        $6d <- #$40, $6c <- #$50, $41 <- #$01
+        or maybe 51, 42 to warp to door?
+    - take this all together with the other changes we've made
 
 29 gas mask
-30 shield ring
-32 windmill key
-34 key to styx
-37 eye glasses
-39 glowing lamp
-3a statue of gold
-3e bow of moon
+  $29 Direct 3d7fe -> $PSLOT
+  050 NpcSpawn 16 @18 NOT 1c7df -> SLOT
+      ItemUse 25 SET (+4) 1e08c -> KEEP
+  TODO - MISSABLE?
+       - add a spawn or dialog option if item failed to give
+         so that akahana will still be there, and then talking
+         to him will re-give the item.  will need a separate
+         flag for returned statue and got item
+       - only have him walk away if ItemGet succeeded?
+         -> persondata 1 085f9 action 11 ?? as second $pslot?
+       - alternatively just re-give statue and clear flag?
+         -> not likely to matter since item disappears before adding
 
-12 sacred shield
-  107
+30 shield ring
+  $30 Direct 3d2af -> $PSLOT
+  034 NpcSpawn 16 @57+2 NOT 1c7e6 -> SLOT
+      Dialog 16 @57+0,0 1d6ee -> DELETE
+
+32 windmill key
+  $32 PersonData 14 085f0 -> $PSLOT
+  088 Dialog 14 @0e+0 NOT 1ccda -> SLOT
+                @0e+0,0 SET 1ccdf -> DELETE
+
+34 key to styx
+  $34 PersonData 5e+1 097f9 -> $PSLOT
+  03b Dialog 5e @f2+1 NOT 1d793 -> SLOT
+                   +1,0 SET 1d798 -> DELETE (c0 00)
+      Dialog 62 @f2 1d81e -> SLOT
+      Trigger 81 NOT 1e208 -> DELETE (a0 00)
+
+37 eye glasses
+  $37 PersonData 44 091f0 -> $PSLOT  
+  08d Dialog 44 @e9+1 NOT 1d3aa -> SLOT
+                @e9+1,0 1d3b4 -> DELETE
+  032 Dialog 44 @e9+1,1 1d3b6 -> ?????
+
+39 glowing lamp
+  $39 Direct 3d30e -> $PSLOT
+  075 NpcSpawn 7e @62+1 NOT 1c8ce -> SLOT
+      Dialog 7e @62+0,0 SET 1d852 -> DELETE
+  NOTE: For any missable exchanges, we could fall back on this
+        approach, though without being able to drop things, it
+        might not be super useful.
+
+3a statue of gold
+  $3a Direct 1c594 -> $PSLOT -> KEEP
+
+3e bow of moon
+  $3e PersonData 23 088fc -> $PSLOT
+  010 Dialog 23 +1 1ceb1 -> SLOT
+      ItemUse 3c SET (+4) 1e0d4 -> SLOT      
 
 45 recover
+  $45 Direct 3d1f9 -> $PSLOT
+  01e Dialog 62 @e1+1 NOT -> KEEP as extra slot
+                @e1+1,0 SET 1d812 -> KEEP (magic will always fit)
+      various dialog...  
+
 48 flight
+  $48 Direct 3d18f -> $PSLOT
+  0d8 NpcSpawn 7e @ba+1 NOT 1c8dd -> KEEP
+      Dialog 7e @ba+0,0 SET 1d85e -> KEEP
 
 41 refresh
-  039
+  $41 PersonData 5e 097f8 -> $PSLOT
+      Direct 3d711 -> $PSLOT (alt)
+  039 Dialog 5e @10+2 1d776 -> SLOT
+                @10+3,0 SET -> DELETE
+      ItemGet 41 1e03f
+      Trigger b4 +1 NOT -> SLOT
+                    SET -> DELETE
 
 42 paralysis
-  037
+  $42 Direct 3d655 -> $PSLOT
+  037 ItemGet 42 1e046
+      Trigger 8d 1e25a -> SLOT (rescue villagers)
+      Trigger b2 037 NOT 1e344 -> SLOT
+                +4 (SET) 1e348 -> SLOT
 
 43 telepathy
-  00e
+  $43 Direct 367f4 -> $PSLOT
+  00e ItemGet 1e04d -> ITEM (allows us to not touch most dialogs)
+      NpcSpawn 5f @1e+1 1c895 -> SLOT
+      Dialog {13,1d,1e,1f,20,21,22} -> KEEP
+      Trigger 85 +1 NOT -> SLOT
 
 44 teleport
-  03f
+  $44 PersonData 5f 097fc -> $PSLOT
+  03f Dialog 5f @21+0 -> SLOT
+                @21+1,0 -> SLOT
+      Trigger b5 cond & set -> unused
+      Trigger ba +0 -> ITEM
 
 47 change
-  063
+  $47 Direct 3d6de -> $PSLOT
+  063 NpcSpawn 74 @f1+1 NOT -> SLOT
 
 46 barrier
-
-
-
-
-
+  $46 Direct 3d6d9 -> $PSLOT
+  051 NpcSpawn 16 @57+0 -> DELETE
+      NpcSpawn 88 @57+1 -> DELETE
+      NpcSpawn 5e @10+2 -> DELETE
+      NpcSpawn 5f @21+0 -> DELETE
+      NpcSpawn 60 @1e+0 NOT -> DELETE (could just change to SLOT but useful for hints)
+      Trigger 84 +0 (byte 0) -> SLOT
+                 +0,0 (byte 4, but 6 after patch) -> SLOT

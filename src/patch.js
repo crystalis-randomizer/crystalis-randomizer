@@ -82,9 +82,13 @@ export const stampVersionSeedAndHash = (rom, seed) => {
 // Move several triggers unconditionally to make a little
 // bit more space for them.  This gives a consistent view
 // regardless of whether they are actually patched or not.
+// These changes should not be user-visible at all.
 export const rearrangeTriggersAndNpcs = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000
 .bank $1c000 $8000:$4000
+
+define Difficulty $64a2
+define ShouldRedisplayDifficulty $64a3
 
 ;; Move Draygon's spawn condition up about $100 bytes to make 3 bytes
 ;; extra space for a spawn flag check for Draygon 2.
@@ -127,6 +131,100 @@ export const rearrangeTriggersAndNpcs = buildRomPatch(assemble(`
 ;; Don't check unwritten 104 flag for mado spawn
 .org $1c93a
   .byte $a0,$00
+
+;; Remove redundant dialog itemget flag sets
+.org $1cb67 ; sword of wind
+  .byte $c0,$00
+.org $1cde1 ; sword of fire
+  .byte $c0,$00
+
+
+;; Treasure chest spawns don't need to be so complicated.
+;; Instead, just use the new dedicated ItemGet flags 200..27f
+.org $1c5c3
+  ;; Read the flag 200+chest, where chest is in $23
+  lda #$a2
+  sta $61
+  lda $23
+  sta $62
+  lda #$61
+  sta $24
+  lda #$00
+  sta $25
+  tay
+  jsr ReadFlagFromBytePair_24y
+  beq +
+   inc $20
++ rts
+.org $1c5de
+
+;; Patches to ItemGet to update the dedicated flag and
+;; leave room for calling the difficulty methods
+.org $1c287
+  jsr ItemGet_PickSlotAndAdd
+.org $1c299
+  jmp ItemGetFollowup
+.org $1c29c
+ItemGet_PickSlotAndAdd:
+  sty $62
+  nop
+  nop
+.org $1c2a0
+
+.org $1c26f
+ItemGet:
+.org $1c135
+ReadFlagFromBytePair_24y:
+.org $1c112
+SetOrClearFlagsFromBytePair_24y:
+
+;; Freed from the chest spawn pointer table
+.org $1dc82
+.org $1dd64
+
+;; Freed from the chest spawn data
+.org $1e106
+ItemGetRedisplayDifficulty:
+  rts  ; change to nop to enable this code
+  lda #$01
+  sta ShouldRedisplayDifficulty
+  rts
+.org $1e110
+ItemGetFollowup:
+  ;; We have room to exactly copy this behavior, but it does appear
+  ;; to be dead.
+  lda ($24),y
+  pha  ; later -> pla and if pl then repeat ItemGet with A -> $23
+   ;; Maybe increase difficulty (if last element is FE)
+   bpl +
+   lsr
+   bcs +
+    lda Difficulty
+    cmp #$2f
+    bcs +
+     inc Difficulty
+     jsr ItemGetRedisplayDifficulty
+   ;; Always set the dedicated 200+chest flag.
++  lda #$42
+   sta $61
+   ;; $62 is already the item number, saved from earlier
+   lda #$61
+   sta $24
+   lda #$00
+   sta $25
+   tay
+   jsr SetOrClearFlagsFromBytePair_24y
+  ;; Now finish by maybe chaining to another item if positive
+  pla
+  bmi +
+   sta $23
+   jmp ItemGet
++ rts
+
+;; TODO - still plenty of space here
+
+.org $1e179 ; 1e17a is above...
+
 
 `, 'rearrangeTriggers'));
 
@@ -252,8 +350,9 @@ loop1:
 // NOTE: this needs to be patched AFTER difficultyScalingLib
 export const displayDifficulty = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000 ; fixed bank
-
 .bank $1e000 $a000:$2000
+
+define ShouldRedisplayDifficulty $64a3
 
 .org $1fd27
   lda #$0e                      ; refer to moved LV(menu) display
@@ -263,16 +362,14 @@ export const displayDifficulty = buildRomPatch(assemble(`
   ldx #$06                      ; also show diff
 
 .bank $34000 $8000:$2000
-.org $34ee9
-  .byte $c0,$04,$3c,$2b,$03,$00 ; display difficulty right of lvl
+.org $34ee9  ; NOTE - Difficulty goes here!
+  .byte $a2,$64,$3c,$2b,$03,$00 ; display difficulty right of lvl
 .org $34f19
   .byte $21,$04,$29,$29,$03,$00 ; copied from $34ee9
 
 .bank $1c000 $8000:$2000
-.org $1c299
-  .byte $20    ; change jmp to jsr
-.org $1c29c
-  jmp ItemGet_RedisplayDifficulty
+.org $1e106
+  .byte $ea    ; change rts to nop
 
 .org $3ffa9
 DisplayNumber:
@@ -285,17 +382,13 @@ CheckForPlayerDeath:
 
 .org $3ffe3 ; we have 23 bytes to spend here
 CheckToRedisplayDifficulty:
-  lda $0f
+  lda ShouldRedisplayDifficulty
   beq +
    lda #$00
-   sta $0f
+   sta ShouldRedisplayDifficulty
    lda #$06
    jsr DisplayNumber
 + jmp CheckForPlayerDeath
-ItemGet_RedisplayDifficulty:
-  lda #$01
-  sta $0f ; use this location!
-  rts
 .org $3fffa
 `, 'displayDifficulty'));
 
@@ -584,7 +677,7 @@ export const autoEquipBracelet = buildRomPatch(assemble(`
 export const scaleDifficultyLib = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000 ; fixed bank
 
-define Difficulty $4c0
+define Difficulty $64a2
 define PlayerLevel $421
 define ObjectRecoil $340
 define ObjectHP $3c0
@@ -600,75 +693,14 @@ define ObjectExp $520
 define SFX_MONSTER_HIT       $21
 define SFX_ATTACK_IMMUNE     $3a
 
-.bank $2e000 $a000:$2000
-; Save/restore difficulty
-
-.org $2fd38
-  lda Difficulty ; instead of $3c0, which is derivable from level
-
-.org $2fd7c
-  sta Difficulty
-.org $2fd8e
-  jmp FinishRestoreData
-
-.org $2fef5 ; initial state of "continue"
-  .byte $00
-
-
-.org $3d946
-  lda Difficulty
-
-.org $3d961
-  sta Difficulty
-
-.org $3d982
-  jmp FinishRestoreMode
-
-
 .org $34bde
 CoinAmounts:
   .word 0,1,2,4,8,16,30,50,100,200,300,400,500,600,700,800
 
-
 .bank $1c000 $8000:$4000 ; item use code
 
-.org $1c26f
-ItemGet:
-
-.org $1c299
-  jmp ItemGet_RaiseDifficulty
-.org $1c2a0
-
 .org $3ff44
-ItemGet_RaiseDifficulty:
-   ;; Raise difficulty iff the last element is $FE
-   bmi +
-    jmp ItemGet
-+  lsr
-   bcs +
-    lda Difficulty
-    cmp #$2f
-    bcs +
-     inc Difficulty
-+  rts
-
-FinishRestoreData:
-  sta $0620 ; copied from $2fd8e
-  ;; Need to set MaxHP from level
-- lda PlayerLevel
-  clc
-  adc #$02
-  asl
-  asl
-  asl
-  asl
-  bcc +
-   lda #$ff
-+ sta PlayerMaxHP
-  rts
-FinishRestoreMode:
-  sta $41 ; copied from $3d982
-  bne -   ; uncond - A is always 1 when we run this
+; TODO - 60 bytes we could use here
 .org $3ff80
 
 .org $3fe2e
@@ -1954,7 +1986,7 @@ const BONUS_ITEMS_2 = [
   {0x096f8: 0x2d}, // deo's pendant
   {0x1a47d: 0x2f}, // leather boots
   {0x3d2af: 0x30}, // shield ring
-};
+];
 
 export const BUILD_HASH = 'latest';
 export const BUILD_DATE = 'current';

@@ -28,3 +28,17 @@ Prototype
  - code up damage scalaing, then randomize just enemies - try to play, see how it goes?
    - will need to pay attention to vulnerabilities...
  - next can try randomizing items.
+
+
+====
+
+shuffle a list of map changes, as manual functions
+ - would need to operate on both the depgraph and the rom
+ - e.g. sealed cave dumps out on portoa, close up other exit entirely
+        extra swamp exit
+        extra amazones exit, etc
+        go right from start to get to desert 1?
+   possibly shuffle these into normal swaps, too?
+manually swap swords of wind and fire - could maybe do this before depgraph?
+ - no rabbit boots -> no tornado bracelet ?
+add bracelets to shuffle (may need to change teleport trigger tho, or just remove)

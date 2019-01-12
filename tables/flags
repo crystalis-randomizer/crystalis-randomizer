@@ -15,6 +15,7 @@
 01b - mesia recording played
 01e - queen revealed as asina
 01f - got ball of water
+020 - queen not in throne room
 022 - heard story from sahara elder
 024 - generals defeated
 025 - healed dolphin
@@ -41,8 +42,10 @@
 03e - found kensu in dance hall
 03f - learned teleport
 
-043 - entered oak ?
-
+041 - got ball of fire
+043 - entered oak after defeating insect ???
+044 - got ball of fire
+045 - rescued child
 047 - rescued leaf elder 
 049 - got sword of fire from oak elder
 04e - chest:06:tornado bracelet
@@ -95,6 +98,7 @@
 097 - local (red man at top of leaf (0f) toggle, pre-abduction)
 09b - able to ride dolphin
 09c - portoa queen went away
+0a0 - got insect flute
 0a4 - woke kensu
 0a5 - talked to zebu student
 0a9 - talked to leaf rabbit

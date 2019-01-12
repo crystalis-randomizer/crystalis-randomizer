@@ -192,18 +192,18 @@ class HasItem extends graph.Node {
   constructor() {
     super();
     this.item = null;
-    this.setter = null;
   }
 }
 
 class ItemGet extends graph.Node {
-  constructor(id, name, index, item) {
+  constructor(id, name, index, item, slots) {
     super();
     this.id = id;
     this.name = name;
     this.index = index;
     this.item = item;
     this.address = null;
+    this.slots = slots;
   }
 
   // Needs to be a simple single-byte address for the ItemGet.
@@ -214,23 +214,23 @@ class ItemGet extends graph.Node {
 }
 
 class Item extends ItemGet {
-  at(index) {
-    return new ItemGet(this.id, this.name, index, this);
+  at(index, slots) {
+    return new ItemGet(this.id, this.name, index, this, slots);
   }
 }
 
 class Magic extends ItemGet {}
 
-const item = (id, name) => new Item(id, name, id, null);
-const magic = (id, name) => new Magic(id, name, id, null);
+const item = (id, name, ...slots) => new Item(id, name, id, null, slots);
+const magic = (id, name, ...slots) => new Magic(id, name, id, null, slots);
 
 class Chest extends HasItem {
   constructor(location, slot, item) {
     super();
     this.item = item;
-    this.setter = (rom, index) => {
-      rom.locations[location].objects[slot - 0xd][3] = index;
-    };
+    // this.setter = (rom, index) => {
+    //   rom.locations[location].objects[slot - 0xd][3] = index;
+    // };
   }
 }
 
@@ -240,25 +240,31 @@ class Trigger extends HasItem {
     this.name = name;
   }
 
-  get(item, ...setters) {
+  get(item) {
     this.item = item;
-    this.setter = (rom, index) => {
-      for (const setter of setters) {
-        setter(rom, index);
-      }
-    };
+    // this.setter = (rom, index) => {
+    //   for (const setter of setters) {
+    //     setter(rom, index);
+    //   }
+    // };
     return this;
   }
 }
 
 const trigger = (name) => new Trigger(name);
 
+// TODO - move these to just do direct byte manipulation maybe?
+//      - add PersonData, Dialog, NpcSpawn, etc...
 const fromNpc = (id, offset = 0) => (rom, index) => {
   rom.prg[rom.npcs[id].base + offset] = index;
 };
 const directPrg = (address) => (rom, index) => {
   rom.prg[address] = index;
 };
+const chest = (chest) => (rom, index) => {
+  rom.locations[location].objects[slot - 0xd][3] = index;
+};
+
 
 class Condition extends graph.Node {
   constructor(name) {
@@ -433,11 +439,20 @@ const requireCalmForBarrier = option('Require calm for barrier');
 ////////////////////////////////////////////////////////////////
 // Items
 ////////////////////////////////////////////////////////////////
-const mimic                 = item(0x70, 'Mimic');
-const swordOfWind           = item(0x00, 'Sword of Wind');
-const swordOfFire           = item(0x01, 'Sword of Fire');
-const swordOfWater          = item(0x02, 'Sword of Water');
-const swordOfThunder        = item(0x03, 'Sword of Thunder');
+const mimic                 = item(0x70, 'Mimic'); // special handling to dup
+const swordOfWind           = item(0x00, 'Sword of Wind',
+                                   personData(0x0d),
+                                   npcSpawn(0x5e),
+                                   dialog(0x0d, 0xc0, 2));
+const swordOfFire           = item(0x01, 'Sword of Fire',
+                                   personData(0x1d),
+                                   dialog(0x1d, null, 3));
+const swordOfWater          = item(0x02, 'Sword of Water',
+                                   chest(0x57, 0x18));
+const swordOfThunder        = item(0x03, 'Sword of Thunder',
+                                   chest(0x8a, 0x1b),
+                                   // TODO - npcspawn 5f needs new trigger!
+                                  );
 const crystalis             = item(0x04, 'Crystalis');
 const ballOfWind            = item(0x05, 'Ball of Wind');
 const tornadoBracelet       = item(0x06, 'Tornado Bracelet');
@@ -615,6 +630,9 @@ const fireOrWaterOrThunder  = condition('Fire/Water/Thunder')
 const speedBoots            = condition('Speed boots').option(leatherBoots, leatherBootsGiveSpeed);
 const climbSlopes           = condition('Climb slopes')
                                 .option(rabbitBoots).option(flight).option(speedBoots);
+// Required for access to underground channel.
+const paralysisOrBallOfWater = condition('Paralysis or Ball of Water')
+                                .option(paralysis).option(ballOfWater);
 // TODO - consider adding healedDolphin and/or returnedFogLamp here?  otherwise, flight alone
 // is basically enough (though with flight the dolphin is basically just a convenience).
 const rideDolphin           = condition('Ride dolphin').option(shellFlute, talkedToKensuInCabin);
@@ -1513,7 +1531,8 @@ const portoaToolShop        = location(0xdd, PORT, 'Tool Shop').connect(portoa);
 const portoaPalaceLeft      = location(0xde, PORT, 'Palace Left').connect(portoaPalaceEntrance);
 const portoaThroneRoom      = location(0xdf, PORT, 'Palace Throne Room')
                                 .connect(portoaPalaceEntrance)
-                                .connectTo(undergroundChannel1, paralysis)
+                                .to(undergroundChannel1, paralysisOrBallOfWater)
+                                .from(undergroundChannel1)
                                 .trigger(talkedToPortoaQueen)
                                 .trigger(sentToWaterfallCave,
                                          talkedToFortuneTeller, visitedUndergroundChannel);

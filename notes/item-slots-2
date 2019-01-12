@@ -452,6 +452,7 @@ Consider finding a new trigger/flag for "all generals killed" ?
       Trigger 8d 1e25a -> SLOT (rescue villagers)
       Trigger b2 037 NOT 1e344 -> SLOT
                 +4 (SET) 1e348 -> SLOT
+  TODO - require saved villagers and/or defeated kelby for this...?
 
 43 telepathy
   $43 Direct 367f4 -> $PSLOT

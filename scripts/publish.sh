@@ -37,7 +37,7 @@ DIR="$TMP/r/$HASH"
   sed -e "/BUILD_HASH/ s/latest/$HASH/" -e "/BUILD_DATE/ s/current/$DATE/" \
       patch.js >| "$DIR/patch.js"
   echo "<a href=\"$HASH/\">$HASH: $DATE</a><br>" >> "$TMP/r/versions.html"
-  sed "s,main.js,$HASH/main.js,g" index.html >| "$TMP/r/versions.html"
+  sed "s,main.js,$HASH/main.js,g" index.html >| "$TMP/r/index.html"
 )
 (
   cd $TMP/r

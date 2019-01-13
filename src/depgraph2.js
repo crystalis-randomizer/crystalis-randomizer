@@ -1348,8 +1348,12 @@ export const shuffle = (rom, random) => {
     swordOfFire.swap(swordOfWind);
     ballOfFire.swap(ballOfWind);
   }
+  if (!random.nextInt(3)) {
+    // help out the shuffle to change up the early game a bit more.
+    statueOfOnyx.swap(gasMask);
+  }
   const counts = [1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 5, 5, 8, 13];
-  const keys = buckets['key'];
+  const keys = [...buckets['key'], ...buckets['bonus']]; //, ...buckets['item']];
   const magics = buckets['magic'];
   const both = [keys, magics];
   const which = [...keys.map(() => 0), ...magics.map(() => 1)];

@@ -82,6 +82,21 @@ export const stampVersionSeedAndHash = (rom, seed) => {
   // numbers and display arbitrary hex digits.
 };
 
+export const connectWindToGoa = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000
+.bank $14000 $8000:$4000
+
+.org $14605
+  .byte $10
+.org $145dd
+  ; find/make a free block for some new exit/entrance tables
+`, 'connectWindToGoa'));
+// is this the right connection to make?  maybe waterfall valley is better?
+//  - a full-on any-road would also be reasonable - just add an outside
+//    four-way cross...
+// TODO - reclaim some space
+
+
 // Move several triggers unconditionally to make a little
 // bit more space for them.  This gives a consistent view
 // regardless of whether they are actually patched or not.

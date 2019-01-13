@@ -16,6 +16,7 @@
 01e - queen revealed as asina
 01f - got ball of water
 020 - queen not in throne room
+021 - returned fog lamp
 022 - heard story from sahara elder
 024 - generals defeated
 025 - healed dolphin
@@ -83,7 +84,7 @@
 
       $6490
 082 - azteca gave bow of truth
-083 - learned paralysis
+083 - rescued leaf elder ??
 084 - leaf villagers currently abducted (set in cave behind zebu, cleared on using prison key)
 085 - leaf elder currently abducted (set in cave behind zebu, cleared in elder's cell)
 

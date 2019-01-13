@@ -19001,15 +19001,19 @@ SetOrClearFlagsFromBytePair_24y
 -       $1c112  xx xx xx:    xxx ParseFlagFromBytePair_24y
         $1c115  xx xx:       xxx $xx
         $1c117  xx xx:       xxx + ; $1c124
+        ;; SET
         $1c119  xx xx xx:      xxx $xxxx,x
         $1c11c  xx xx:         xxx $xx
         $1c11e  xx xx xx:      xxx $xxxx,x
         $1c121  xx xx xx:      xxx ++ ; $1c12e
         ;; --------------------------------
+        ;; CLEAR
 +       $1c124  xx xx:        xxx $xx
         $1c126  xx xx:        xxx #$xx
         $1c128  xx xx xx:     xxx $xxxx,x
         $1c12b  xx xx xx:     xxx $xxxx,x
+        ;; --------------------------------
+        ;; Maybe loop
 ++      $1c12e  xx xx:       xxx $xx
         $1c130  xx xx:       xxx #$xx
         $1c132  xx xx:      xxx - ; $1c112
@@ -20204,22 +20208,22 @@ NpcSpawnCondition_31 ; UNUSED
         $1c813              .byte $xx
 NpcSpawnCondition_33 ; portoa throne room back door guard
         $1c814              .byte $xx ; Portoa - Palace Throne Room
-        $1c815              .byte $xx,$xx ; 020 NOT
+        $1c815              .byte $xx,$xx ; 020 NOT queen not in throne room
         $1c817              .byte $xx ; Portoa - Palace Left
-        $1c818              .byte $xx,$xx ; 020
+        $1c818              .byte $xx,$xx ; 020 queen not in throne room
         $1c81a              .byte $xx
 NpcSpawnCondition_38 ; portoa queen
         $1c81b              .byte $xx ; Portoa - Palace Throne Room
-        $1c81c              .byte $xx,$xx ; 020 NOT
-        $1c81e              .byte $xx,$xx ; 01f NOT
+        $1c81c              .byte $xx,$xx ; 020 NOT queen not in throne room
+        $1c81e              .byte $xx,$xx ; 01f NOT got ball of water
         $1c820              .byte $xx ; Portoa - Asina Room
         $1c821              .byte $xx,$xx ; 01f got ball of water
         $1c823              .byte $xx,$xx ; 01e NOT
         $1c825              .byte $xx
 NpcSpawnCondition_39 ; fortune teller
         $1c826              .byte $xx ; Portoa - Fortune Teller
-        $1c827              .byte $xx,$xx ; 020
-        $1c829              .byte $xx,$xx ; 01f NOT
+        $1c827              .byte $xx,$xx ; 020 queen not in throne room
+        $1c829              .byte $xx,$xx ; 01f NOT got ball of water
         $1c82b              .byte $xx
 NpcSpawnCondition_87 ; UNUSED
         $1c82c              .byte $xx ; Waterfall Cave 1
@@ -20454,7 +20458,7 @@ NpcSpawnCondition_c4 ; mado 1
         $1c939              .byte $xx ; Shyron - Temple
         $1c93a              .byte $xx,$xx ; 104 NOT defeated mado 1 -- UNUSED
         $1c93c              .byte $xx
-NpcSpawnCondition_c5 ; sabera 1
+NpcSpawnCondition_c5 ; kelbesque 2
         $1c93d              .byte $xx ; Goa Fortress - Kelbesque
         $1c93e              .byte $xx,$xx ; 105 NOT defeated kelbesque 2
         $1c940              .byte $xx
@@ -20745,8 +20749,8 @@ NpcDialog_0d ; leaf elder
         $1cb67              .byte         $xx,$xx     ;     Set: 00b
         $1cb69              .byte $xx,$xx,$xx,$xx,$xx ; default -> 00:0f
         ;;                  16: 35 Mt Sabre North - Summit Cave
-        $1cb6e              .byte $xx,$xx,$xx,$xx,$xx ; 083 NOT learned paralysis -> 07:09
-        $1cb73              .byte         $xx,$xx     ;     Set: 083 learned paralysis
+        $1cb6e              .byte $xx,$xx,$xx,$xx,$xx ; 083 NOT rescued leaf elder ?? -> 07:09
+        $1cb73              .byte         $xx,$xx     ;     Set: 083 rescued leaf elder ??
         $1cb75              .byte $xx,$xx,$xx,$xx,$xx ; default -> 07:0a
 ;;; ----------------------------------------------------------------
 NpcDialog_65 ; startled green man outside leaf cave
@@ -20975,7 +20979,7 @@ NpcDialog_1d ; oak elder
         $1cdc4              .byte $xx,$xx,$xx,$xx,$xx ; 043 -> 04:19
         $1cdc9              .byte $xx,$xx,$xx,$xx,$xx ; 0a6 -> 04:18
         $1cdce              .byte         $xx,$xx     ;     Set: 0a8
-        $1cdd0              .byte $xx,$xx,$xx,$xx,$xx ; 044 -> 04:17
+        $1cdd0              .byte $xx,$xx,$xx,$xx,$xx ; 044 -> 04:17 got ball of fire
         $1cdd5              .byte         $xx,$xx     ;     Set: 0a6
         $1cdd7              .byte $xx,$xx,$xx,$xx,$xx ; 049 -> 04:16
         $1cddc              .byte $xx,$xx,$xx,$xx,$xx ; 045 -> 04:15 (action 03)
@@ -20989,10 +20993,10 @@ NpcDialog_1e ; oak mother
         $1cdf4              .byte $xx,$xx,$xx,$xx     ; 02b change:stom -> 04:1a
         $1cdf8              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 04:1a
         $1cdfc              .byte $xx
-        $1cdfd              .byte $xx,$xx,$xx,$xx,$xx ; 041 -> 04:03
-        $1ce02              .byte $xx,$xx,$xx,$xx,$xx ; 0a0 -> 04:02
-        $1ce07              .byte $xx,$xx,$xx,$xx,$xx ; 045 -> 04:01 (action 03)
-        $1ce0c              .byte         $xx,$xx     ;     Set: 0a0
+        $1cdfd              .byte $xx,$xx,$xx,$xx,$xx ; 041 -> 04:03 got ball of fire
+        $1ce02              .byte $xx,$xx,$xx,$xx,$xx ; 0a0 -> 04:02 got insect flute
+        $1ce07              .byte $xx,$xx,$xx,$xx,$xx ; 045 -> 04:01 (action 03) rescued child
+        $1ce0c              .byte         $xx,$xx     ;     Set: 0a0 got insect flute
         $1ce0e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 04:00
         $1ce13              .byte         $xx,$xx     ;     Set: 052
 ;;; ----------------------------------------------------------------
@@ -21802,7 +21806,7 @@ NpcDialog_88 ; stoned akahana
         $1d6fa              .byte $xx,$xx,$xx,$xx,$xx ; 036 NOT -> 14:07
         $1d6ff              .byte         $xx,$xx     ;     Set: 036
         $1d701              .byte $xx,$xx,$xx,$xx,$xx ; default -> 14:08
-        $1d706              .byte         $xx,$xx     ;     Set: 036
+        $1d706              .byte         $xx,$xx     ;     Set: 036 (UNUSED)
 ;;; ----------------------------------------------------------------
 NpcDialog_70 ; dead akahana
         $1d708              .byte $xx,$xx,$xx,$xx
@@ -22217,7 +22221,7 @@ ItemGetDataTable
 ;;; some items to share code, I think.
 ;;; STRIP: word=$14000
 ItemUseDataTable
-        $1dbe2              .word ($1e065) ; 00
+        $1dbe2              .word ($1e065)
         $1dbe4              .word ($1e065)
         $1dbe6              .word ($1e065)
         $1dbe8              .word ($1e065)
@@ -22246,7 +22250,7 @@ ItemUseDataTable
         $1dc16              .word ($1e065)
         $1dc18              .word ($1e065)
         $1dc1a              .word ($1e065)
-        $1dc1c              .word ($1e065)
+        $1dc1c              .word ($1e065) ; 1d medical herb
         $1dc1e              .word ($1e077) ; 1e antidote
         $1dc20              .word ($1e077) ; 1f lysis plant
         $1dc22              .word ($1e073) ; 20 fruit of lime
@@ -22907,7 +22911,7 @@ ItemGetData_46 ; barrier
         $1e062              .byte $xx,$xx ; Clear: 000 unused
         $1e064              .byte $xx
 ;;; --------------------------------
-ItemUseData_00 ; Medical Herb
+ItemUseData_1d ; Medical Herb
         $1e065              .byte $xx,$xx ; Expect: NPC 63 hurt dolphin
         $1e067              .byte $xx,$xx ; Message: 0c:01 (action 02 -> dialog 11 and 0d)
         $1e069              .byte $xx,$xx ; Set: 025 healed dolphin
@@ -22930,7 +22934,7 @@ ItemUseData_24 ; WarpBoots
 ItemUseData_25 ; StatueOfOnyx
         $1e088              .byte $xx,$xx ; Expect: NPC 16 akahana
         $1e08a              .byte $xx,$xx
-        $1e08c              .byte $xx,$xx
+        $1e08c              .byte $xx,$xx ; Set: 050 given statue to akahana
 ItemUseData_31 ; AlarmFlute
         $1e08e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ItemUseData_32 ; WindmillKey
@@ -22940,7 +22944,9 @@ ItemUseData_33 ; KeyToPrison
 ItemUseData_34 ; KeyToStyx
         $1e0a7              .byte $xx,$xx,$xx,$xx,$xx,$xx
 ItemUseData_35 ; FogLamp
-        $1e0ad              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1e0ad              .byte $xx,$xx ; Expect: NPC 64 fisherman
+        $1e0af              .byte $xx,$xx
+        $1e0b1              .byte $xx,$xx ; Set: 021 returned fog lamp
 ItemUseData_36 ; ShellFlute
         $1e0b3              .byte $xx,$xx ; Expect: Flag 09b can ride dolphin
         $1e0b5              .byte $xx,$xx ; 00:00 (action 09)
@@ -23390,10 +23396,10 @@ Trigger_b1
         $1e342              .byte $xx,$xx
 Trigger_b2
         ;; b2 learn paralysis in summit cave
-        $1e344              .byte $xx,$xx ; Condition: 037 NOT
+        $1e344              .byte $xx,$xx ; Condition: 037 NOT learned paralysis
         $1e346              .byte $xx,$xx ; Message 1c:10  Action: 08
-        $1e348              .byte $xx,$xx ; Set: 037
-        $1e34a              .byte $xx,$xx ; Set: 083
+        $1e348              .byte $xx,$xx ; Set: 037 learned paralysis
+        $1e34a              .byte $xx,$xx ; Set: 083 rescued leaf elder ??
 Trigger_b3
         ;; b3 despawn swan guards
         $1e34c              .byte $xx,$xx
@@ -23442,8 +23448,8 @@ Trigger_ba
 Trigger_bb
         ;; bb portoa palace guard moves
         $1e386              .byte $xx,$xx ; Condition: 09e NOT
-        $1e388              .byte $xx,$xx ; Condition: 01f NOT
-        $1e38a              .byte $xx,$xx ; Condition: 020
+        $1e388              .byte $xx,$xx ; Condition: 01f NOT got ball of water
+        $1e38a              .byte $xx,$xx ; Condition: 020 queen not in throne room
         $1e38c              .byte $xx,$xx ; Action: 1b
         $1e38e              .byte $xx,$xx
 Trigger_bc
@@ -26051,7 +26057,7 @@ DataTable_1f95d
 ;;; the boss is killed.  Contains the item drop at y=4.
 ;;; STRIP: word=$14000
 DataTable_1f96b
-        ;; boss death
+        ;; boss death, BossDrop
         $1f96b              .word ($1f987) ; 00 vampire 1
         $1f96d              .word ($1f99c) ; 01 insect
         $1f96f              .word ($1f9b1) ; 02 kelbesque
@@ -45096,11 +45102,11 @@ ObjectActionJump_0f             ; used by objects $40..$48
 ObjectActionJump_0c
         $365cb  xx xx xx:   xxx $xxxx
         $365ce  xx xx xx:   xxx $xxxx
-        $365d1  xx xx:      xxx $xx
-        $365d3  xx xx xx:   xxx $xxxx,x
-        $365d6  xx:         xxx
-;;; --------------------------------
-        $365d7  xx xx:      xxx #$xx
+        $365d1  xx xx:      xxx + ; $365d7
+        $365d3  xx xx xx:    xxx $xxxx,x
+        $365d6  xx:          xxx
+        ;; --------------------------------
++       $365d7  xx xx:      xxx #$xx
         $365d9  xx xx xx:   xxx $xxxx,x
         $365dc  xx xx:      xxx #$xx
         $365de  xx xx xx:   xxx $xxxx,x
@@ -56923,7 +56929,7 @@ ItemOrTriggerActionJump_1b
 ItemOrTriggerActionJump_1c
         $3d7fd  xx xx:      xxx #INV_GAS_MASK
         $3d7ff  xx xx xx:   xxx GrantItemInRegisterA
-        $3d802  xx xx xx:   xxx $3d23f
+        $3d802  xx xx xx:   xxx DialogFollowupActionJump_0d
 ;;; --------------------------------
 ItemOrTriggerActionJump_1d
         $3d805  xx xx xx:   xxx $xxxx
@@ -58469,6 +58475,7 @@ NpcDataJump_2_TreasureChestOrTrigger         ; Called from $3e215
         $3e397  xx xx:       xxx + ; $3e39c
         $3e399  xx xx xx:     xxx $xxxx,x ; don't spawn ($4a0,x <- 0) if zero
 +       $3e39c  xx xx xx:    xxx MaybeRecordAlternativePatternBank
+        ;; Check for the three invisible chests
         $3e39f  xx xx:       xxx $xx
         $3e3a1  xx xx:       xxx #INV_STATUE_OF_ONYX
         $3e3a3  xx xx:       xxx + ; $3e3b0

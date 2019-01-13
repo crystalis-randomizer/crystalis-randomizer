@@ -536,3 +536,18 @@
       (insert "\n")
       (previous-line)))
   (next-line))
+
+(defvar sdh-indent-column 28 "current indentation for C-<TAB>")
+(defun sdh-set-indent-column ()
+  (interactive)
+  (setq sdh-indent-column (current-column)))
+(defun sdh-indent-to-column ()
+  (interactive)
+  (save-excursion
+    (end-of-line)
+    (back-to-indentation)
+    (indent-to-column sdh-indent-column))
+  (if (< (current-column) sdh-indent-column)
+      (forward-char (- sdh-indent-column (current-column)))))
+(global-set-key (kbd "<C-tab>") 'sdh-indent-to-column)
+(global-set-key (kbd "<M-C-tab>") 'sdh-set-indent-column)

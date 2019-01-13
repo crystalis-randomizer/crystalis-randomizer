@@ -1,3 +1,10 @@
+import { area, boss, condition, graph, location, item, magic, option, trigger } from './graph2.js';
+
+// TODO - this is effectively a giant mutable global variable, which is
+// horrible.  Consider a way to make it at least local.  Copy constructors
+// and whatnot would be helpful here...
+
+
 //import {Graph2} from './graph.js';
 
 // Randomization plan:
@@ -8,424 +15,6 @@
 
 //export const graph = new Graph2();
 
-class Edge {
-  constructor(left, right, arrow, attrs) {
-    this.left = left;
-    this.right = right;
-    this.arrow = arrow;
-    this.attrs = attrs;
-  }
-
-  // reverse() {
-  //   return new Edge(this.right, this.left, this.arrow, this.attrs);
-  // }
-
-  toDot() {
-    const attrs = this.attrs.length ? ` [${this.attrs.join(', ')}]` : '';
-    return `  ${this.left.uid} ${this.arrow} ${this.right.uid}${attrs};`;
-  }
-}
-
-class Graph {
-  constructor() {
-    const nodes = [];
-    this.nodes = nodes;
-    this.Node = class Node {
-      constructor() {
-        this.uid = nodes.length;
-        this.key = 'n' + this.uid;
-        nodes.push(this);
-      }
-    };
-  }
-
-  // There's two different kind of dot outputs.
-  // 1. just the locations, with edges annotated
-  // 2. items and triggers, (all directed edges,locations integrated out)
-
-  // Outputs a .dot file.
-  toLocationGraph() {
-    const parts = [];
-    parts.push(
-      'digraph locations {',
-      'node [shape=record, style=filled, color=white];',
-    );
-    const subgraphs = {};
-    const edges = new Set();
-    const areas = [];
-
-    for (const n of this.nodes) {
-      if (n instanceof Location) {
-        let area = subgraphs[n.area.uid];
-        if (!(n.area.uid in subgraphs)) {
-          areas.push(n.area);
-          area = subgraphs[n.area.uid] = [];
-        }
-        area.push(n.toDot());
-        for (const e of n.edges()) {
-          edges.add(e);
-        }
-      }
-    }
-
-    for (const area of areas) {
-      parts.push(
-        `  subgraph cluster_${area.key} {`,
-        `    style=filled;`,
-        `    color="lightgrey";`,
-        `    label="${area.name}";`,
-        ...subgraphs[area.uid],
-        '  }',
-      );
-    }
-
-    for (const edge of edges) {
-      parts.push(edge.toDot());
-    }
-
-    parts.push('}');
-    return parts.join('\n');
-  }
-
-  locations() {
-    return this.nodes.filter(n => n instanceof Location);
-  }
-
-  gettables() {
-    return this.nodes.filter(n => n instanceof ItemGet || n instanceof Trigger);
-  }
-
-  traverse(start = this.locations()[0]) {
-    // Turn this into a mostly-standard depth-first traversal.
-    // Basically what we do is build up a new graph where each edge has a list
-    // of other nodes that all need to be seen first to take it.
-
-    // Map<Node, Map<string, Array<Node>>>
-    const stack = [];
-    const seen = new Map();
-    const g = new Map();
-    const addEdge = (to, ...deps) => {
-      for (const from of deps) {
-        if (!g.has(from)) {
-          g.set(from, new Map());
-        }
-        const entry = [to, ...deps];
-        g.get(from).set(entry.map(n => n.uid).join(' '), entry);
-      }
-    }
-    for (const n of this.nodes) {
-      if (n instanceof Location) {
-        for (const c of n.connections) {
-          addEdge(c.to, c.from, ...c.deps, ...(c.from.bossNode ? [c.from.bossNode] : []));
-          if (c.bidi) addEdge(c.from, c.to, ...c.deps, ...(c.to.bossNode ? [c.to.bossNode] : []));
-        }
-        for (const {trigger, deps} of n.triggers) {
-          addEdge(trigger, n, ...deps);
-        }
-        for (const c of n.chests) {
-          addEdge(c, n);
-        }
-        if (n.bossNode) {
-          addEdge(n.bossNode, n, ...n.bossNode.deps);
-        }
-      } else if (n instanceof Condition) {
-        for (const o of n.options) {
-          addEdge(n, ...o);
-        }
-      } else if (n instanceof Option) {
-        stack.push([n, [{name: 'OPTION'}]]);
-      } else if (n.item) {
-        addEdge(n.item, n);
-      }
-    }
-
-    stack.push([start, [{name: 'START'}]]);
-
-    // We now have a complete graph that we can do a simple DFS on.
-    const want = new Set(this.gettables());
-    const empty = new Map();
-
-    // loop until we don't make any progress
-    while (want.size && stack.length) {
-      const [n, deps] = stack.pop();
-      if (seen.has(n)) continue;
-      //console.log(`traverse ${n.name}`);
-      seen.set(n, deps);
-      want.delete(n);
-      for (const [next, ...deps] of (g.get(n) || empty).values()) {
-        //const sat = deps.every(d => seen.has(d));
-        //console.log(`  follow-on: \x1b[1;3${sat+1}m${next.name}\x1b[m${deps.length ? ' if ' : ''}${deps.map(d => `\x1b[1;3${seen.has(d)+1}m${d.name}\x1b[m`).join(', ')}`);
-        if (seen.has(next)) continue;
-        if (deps.every(d => seen.has(d))) stack.push([next, deps]);
-      }
-    }
-    return [...seen].map(([n, deps]) => {
-      const str = o => [
-        o instanceof Location ? o.area.name + ': ' : '',
-        o.name,
-        o instanceof ItemGet && o.index != o.id ? ' $' + o.index.toString(16) : '',
-      ];
-      return [
-        ...str(n),
-        ' [',
-        deps.map(d => str(d).join('').replace(/\s+\(.*\)/, '')).join(', '),
-        ']',
-      ].join('');
-    });
-  }
-}
-
-const graph = new Graph();
-exports.graph = graph;
-
-class Option extends graph.Node {
-  constructor(name, value) {
-    super();
-    this.name = name;
-    this.value = value;
-  }
-}
-
-const option = (name, value = true) => new Option(name, value);
-
-class HasItem extends graph.Node {
-  constructor() {
-    super();
-    this.item = null;
-  }
-}
-
-class ItemGet extends graph.Node {
-  constructor(id, name, index, item, slots) {
-    super();
-    this.id = id;
-    this.name = name;
-    this.index = index;
-    this.item = item;
-    this.address = null;
-    this.slots = slots;
-  }
-
-  // Needs to be a simple single-byte address for the ItemGet.
-  addr(a) {
-    this.addr = a;
-    return this;
-  }
-}
-
-class Item extends ItemGet {
-  at(index, slots) {
-    return new ItemGet(this.id, this.name, index, this, slots);
-  }
-}
-
-class Magic extends ItemGet {}
-
-const item = (id, name, ...slots) => new Item(id, name, id, null, slots);
-const magic = (id, name, ...slots) => new Magic(id, name, id, null, slots);
-
-class Chest extends HasItem {
-  constructor(location, slot, item) {
-    super();
-    this.item = item;
-    // this.setter = (rom, index) => {
-    //   rom.locations[location].objects[slot - 0xd][3] = index;
-    // };
-  }
-}
-
-class Trigger extends HasItem {
-  constructor(name) {
-    super();
-    this.name = name;
-  }
-
-  get(item) {
-    this.item = item;
-    // this.setter = (rom, index) => {
-    //   for (const setter of setters) {
-    //     setter(rom, index);
-    //   }
-    // };
-    return this;
-  }
-}
-
-const trigger = (name) => new Trigger(name);
-
-// TODO - move these to just do direct byte manipulation maybe?
-//      - add PersonData, Dialog, NpcSpawn, etc...
-const fromNpc = (id, offset = 0) => (rom, index) => {
-  rom.prg[rom.npcs[id].base + offset] = index;
-};
-const directPrg = (address) => (rom, index) => {
-  rom.prg[address] = index;
-};
-const chest = (chest) => (rom, index) => {
-  rom.locations[location].objects[slot - 0xd][3] = index;
-};
-
-
-class Condition extends graph.Node {
-  constructor(name) {
-    super();
-    this.name = name;
-    this.options = [];
-  }
-
-  option(...deps) {
-    this.options.push(deps);
-    return this;
-  }
-}
-
-const condition = (name) => new Condition(name);
-
-class Boss extends Trigger {
-  constructor(index, name, ...deps) {
-    super(name);
-    this.index = index;
-    this.deps = deps;
-  }
-
-  get(item) {
-    return super.get(item, (rom, index) => {
-      const base = 0x1f96b + 2 * this.index;
-      const root = (rom.prg[base] | rom.prg[base + 1] << 8) + 0x14000;
-      rom.prg[root + 4] = index;
-    });
-  }
-}
-
-const boss = (index, name, ...deps) => new Boss(index, name, ...deps);
-
-class Area extends graph.Node {
-  constructor(name) {
-    super();
-    this.name = name;
-  }
-}
-
-const area = (name) => new Area(name);
-
-class Connection {
-  constructor(from, to, bidi = false, deps = []) {
-    this.from = from;
-    this.to = to;
-    this.bidi = bidi;
-    this.deps = deps;
-  }
-
-  toDot() {
-    //const arr = this.bidi ? '--' : '->';
-    const attrs = [];
-    if (this.deps.length) {
-      attrs.push(`label="${this.deps.map(d => d.name).join(', ')}"`);
-    }
-    if (this.bidi) {
-      attrs.push(`dir=none`);
-    }
-    const attrsStr = attrs.length ? ` [${attrs.join(', ')}]` : '';
-    return `  ${this.from.key} -> ${this.to.key}${attrsStr};`;
-  }
-}
-
-class Location extends graph.Node {
-  constructor(id, area, name) {
-    super();
-    this.id = id;
-    this.area = area;
-    this.name = name;
-    this.connections = [];
-    this.triggers = [];
-    this.chests = [];
-    this.mimics = []; // fold into chests
-    this.bossNode = null;
-  }
-
-  addConnection(c) {
-    c.from.connections.push(c);
-    c.to.connections.push(c);
-    return this;
-  }
-
-  from(location, ...deps) {
-    return this.addConnection(new Connection(location, this, false, deps));
-  }
-
-  to(location, ...deps) {
-    return this.addConnection(new Connection(this, location, false, deps));
-  }
-
-  connect(location, ...deps) {
-    return this.addConnection(new Connection(location, this, true, deps));
-  }
-
-  connectTo(location, ...deps) {
-    return this.addConnection(new Connection(this, location, true, deps));
-  }
-
-  chest(slot, item) {
-    this.chests.push(new Chest(this.id, slot, item));
-    return this;
-  }
-
-  trigger(trigger, ...deps) {
-    this.triggers.push({trigger, deps});
-    return this;
-  }
-
-  boss(boss) {
-    this.bossNode = boss;
-    return this;
-  }
-
-  edges() {
-    const out = [...this.connections];
-    const prefix = n => ({key: `${this.key}_${n.key}`});
-    for (const chest of this.chests) {
-      out.push(new Connection(this, prefix(chest), false, []));
-    }
-    for (const {trigger, deps} of this.triggers) {
-      out.push(new Connection(this, prefix(trigger), false, deps));
-      if (trigger.item) {
-        out.push(new Connection(prefix(trigger), prefix(trigger.item), false, []));
-      }
-    }
-    if (this.bossNode && this.bossNode.item) {
-      out.push(new Connection(this, prefix(this.bossNode.item), false, this.bossNode.deps));
-    }
-    return out;
-  }
-
-  // Specifies several edges.
-  toDot() {
-    const fmt = (n, c) => `    ${this.key}_${n.key} [label="${n.name}", color="${c}", shape=oval];`;
-    const nodes = [`    ${this.key} [label="${this.fullName()}"];`];
-    for (const chest of this.chests) {
-      nodes.push(fmt(chest, '#ddffdd'));
-    }
-    for (const {trigger} of this.triggers) {
-      nodes.push(fmt(trigger, '#ddddff'));
-      if (trigger.item) nodes.push(fmt(trigger.item, '#ddffdd'));
-    }
-    if (this.bossNode && this.bossNode.item) {
-      nodes.push(fmt(this.bossNode.item, '#ddffdd'));
-    }
-    return nodes.join('\n');
-  }
-
-  fullName() {
-    //const lines = [`${this.area.name}: ${this.name}`];
-    const lines = [this.name];
-    if (this.bossNode) {
-      lines.push(this.bossNode.name);
-    }
-    return lines.join('\\n');
-  }
-}
-
-const location = (id, area, name) => new Location(id, area, name);
 
 ////////////////////////////////////////////////////////////////
 // Options
@@ -439,35 +28,54 @@ const requireCalmForBarrier = option('Require calm for barrier');
 ////////////////////////////////////////////////////////////////
 // Items
 ////////////////////////////////////////////////////////////////
-const mimic                 = item(0x70, 'Mimic'); // special handling to dup
-const swordOfWind           = item(0x00, 'Sword of Wind',
-                                   personData(0x0d),
-                                   npcSpawn(0x5e),
-                                   dialog(0x0d, 0xc0, 2));
-const swordOfFire           = item(0x01, 'Sword of Fire',
-                                   personData(0x1d),
-                                   dialog(0x1d, null, 3));
-const swordOfWater          = item(0x02, 'Sword of Water',
-                                   chest(0x57, 0x18));
-const swordOfThunder        = item(0x03, 'Sword of Thunder',
-                                   chest(0x8a, 0x1b),
-                                   // TODO - npcspawn 5f needs new trigger!
-                                  );
-const crystalis             = item(0x04, 'Crystalis');
-const ballOfWind            = item(0x05, 'Ball of Wind');
-const tornadoBracelet       = item(0x06, 'Tornado Bracelet');
-const ballOfFire            = item(0x07, 'Ball of Fire');
-const flameBracelet         = item(0x08, 'Flame Bracelet');
-const ballOfWater           = item(0x09, 'Ball of Water');
-const blizzardBracelet      = item(0x0a, 'Blizzard Bracelet');
-const ballOfThunder         = item(0x0b, 'Ball of Thunder');
-const stormBracelet         = item(0x0c, 'Storm Bracelet');
+const swordOfWind           = item(0x00, 'Sword of Wind')
+                                .fromPerson(0x0d)
+                                .npcSpawn(0x5e, 0x10, 1)
+                                .dialog(0x0d, 0xc0, 2)
+                                .key();
+const swordOfFire           = item(0x01, 'Sword of Fire')
+                                .fromPerson(0x1d)
+                                .dialog(0x1d, null, 3)
+                                .key();
+const swordOfWater          = item(0x02, 'Sword of Water').chest().key();
+const swordOfThunder        = item(0x03, 'Sword of Thunder').chest().key();
+const crystalis             = item(0x04, 'Crystalis').fixed();
+const ballOfWind            = item(0x05, 'Ball of Wind').chest().key();
+const tornadoBracelet       = item(0x06, 'Tornado Bracelet').chest().key();
+const ballOfFire            = item(0x07, 'Ball of Fire')
+                                .bossDrop(0x01)
+                                .dialog(0x1e, null, 0)
+                                .dialog(0x20, null, 0)
+                                .dialog(0x21, null, 0)
+                                .dialog(0x22, null, 0)
+                                .dialog(0x60, 0x1e, 0)
+                                .dialog(0x1d, null, 2)
+                                .dialog(0x1f, null, 0)
+                                .npcSpawn(0xc1)
+                                .key();
+const flameBracelet         = item(0x08, 'Flame Bracelet')
+                                .bossDrop(0x02)
+                                .npcSpawn(0xc2)
+                                .key();
+const ballOfWater           = item(0x09, 'Ball of Water')
+                                .direct(0x3d337)
+                                .npcSpawn(0xc3)
+                                .key();
+const blizzardBracelet      = item(0x0a, 'Blizzard Bracelet').chest().key();
+const ballOfThunder         = item(0x0b, 'Ball of Thunder')
+                                .bossDrop(0x05)
+                                .trigger(0x9a, 1)
+                                .key();
+const stormBracelet         = item(0x0c, 'Storm Bracelet').chest().key();
 const carapaceShield        = item(0x0d, 'Carapace Shield');
 const bronzeShield          = item(0x0e, 'Bronze Shield');
 const platinumShield        = item(0x0f, 'Platinum Shield');
 const mirroredShield        = item(0x10, 'Mirrored Shield');
 const ceramicShield         = item(0x11, 'Ceramic Shield');
-const sacredShield          = item(0x12, 'Sacred Shield');
+const sacredShield          = item(0x12, 'Sacred Shield')
+                                .bossDrop(0x08)
+                                .npcSpawn(0xc7)
+                                .bonus();
 const battleShield          = item(0x13, 'Battle Shield');
 const psychoShield          = item(0x14, 'Psycho Shield');
 const tannedHide            = item(0x15, 'Tanned Hide');
@@ -477,83 +85,203 @@ const platinumArmor         = item(0x18, 'Platinmum Armor');
 const soldierSuit           = item(0x19, 'Soldier Suit');
 const ceramicSuit           = item(0x1a, 'Ceramic Suit');
 const battleSuit            = item(0x1b, 'Battle Suit');
-const psychoArmor           = item(0x1c, 'Psycho Armor');
+const psychoArmor           = item(0x1c, 'Psycho Armor')
+                                .bossDrop(0x0a)
+                                .npcSpawn(0xcb) // boss spawn
+                                .trigger(0x9f) // unused?
+                                .npcSpawn(0x83) // azteca
+                                .key();
 const medicalHerb           = item(0x1d, 'Medical Herb');
 const antidote              = item(0x1e, 'Antidote');
 const lysisPlant            = item(0x1f, 'Lysis Plant');
 const fruitOfLime           = item(0x20, 'Fruit of Lime');
 const fruitOfPower          = item(0x21, 'Fruit of Power');
 const magicRing             = item(0x22, 'Magic Ring');
-const fruitOfRepun          = item(0x23, 'Fruit of Repun');
+const fruitOfRepun          = item(0x23, 'Fruit of Repun')
+                                .bossDrop(0x07)
+                                .npcSpawn(0xc6)
+                                .key();
 const warpBoots             = item(0x24, 'Warp Boots');
-const statueOfOnyx          = item(0x25, 'Statue of Onyx');
-const opelStatue            = item(0x26, 'Opel Statue');
-const insectFlute           = item(0x27, 'Insect Flute');
-const fluteOfLime           = item(0x28, 'Flute of Lime');
-const gasMask               = item(0x29, 'Gas Mask');
-const powerRing             = item(0x2a, 'Power Ring');
-const warriorRing           = item(0x2b, 'Warrior Ring');
-const ironNecklace          = item(0x2c, 'Iron Necklace');
-const deosPendant           = item(0x2d, 'Deo\'s Pendant');
-const rabbitBoots           = item(0x2e, 'Rabbit Boots');
-const leatherBoots          = item(0x2f, 'Leather Boots');
-const shieldRing            = item(0x30, 'Shield Ring');
-const alarmFlute            = item(0x31, 'Alarm Flute');
-const windmillKey           = item(0x32, 'Windmill Key');
-const keyToPrison           = item(0x33, 'Key to Prison');
-const keyToStyx             = item(0x34, 'Key to Styx');
-const fogLamp               = item(0x35, 'Fog Lamp');
-const shellFlute            = item(0x36, 'Shell Flute');
-const eyeGlasses            = item(0x37, 'Eye Glasses');
-const brokenStatue          = item(0x38, 'Broken Statue');
-const glowingLamp           = item(0x39, 'Glowing Lamp');
-const statueOfGold          = item(0x3a, 'Statue of Gold');
-const lovePendant           = item(0x3b, 'Love Pendant');
-const kirisaPlant           = item(0x3c, 'Kirisa Plant');
-const ivoryStatue           = item(0x3d, 'Ivory Statue');
-const bowOfMoon             = item(0x3e, 'Bow of Moon');
-const bowOfSun              = item(0x3f, 'Bow of Sun');
-const bowOfTruth            = item(0x40, 'Bow of Truth');
-const refresh               = magic(0x41, 'Refresh');
-const paralysis             = magic(0x42, 'Paralysis');
-const telepathy             = magic(0x43, 'Telepathy');
-const teleport              = magic(0x44, 'Teleport');
-const recover               = magic(0x45, 'Recover');
-const barrier               = magic(0x46, 'Barrier');
-const change                = magic(0x47, 'Change');
-const flight                = magic(0x48, 'Flight');
-const medicalHerb$50        = medicalHerb .at(0x50);
-const sacredShield$51       = sacredShield.at(0x51); // unused
-const medicalHerb$52        = medicalHerb .at(0x52);
-const medicalHerb$53        = medicalHerb .at(0x53);
-const magicRing$54          = magicRing   .at(0x54);
-const medicalHerb$55        = medicalHerb .at(0x55);
-const medicalHerb$56        = medicalHerb .at(0x56);
-const medicalHerb$57        = medicalHerb .at(0x57);
-const magicRing$58          = magicRing   .at(0x58);
-const medicalHerb$59        = medicalHerb .at(0x59); // unused
-const fruitOfPower$5a       = fruitOfPower.at(0x5a);
-const fluteOfLime$5b        = fluteOfLime .at(0x5b);
-const lysisPlant$5c         = lysisPlant  .at(0x5c);
-const lysisPlant$5d         = lysisPlant  .at(0x5d);
-const antidote$5e           = antidote    .at(0x5e);
-const antidote$5f           = antidote    .at(0x5f);
-const antidote$60           = antidote    .at(0x60);
-const fruitOfPower$61       = fruitOfPower.at(0x61);
-const fruitOfPower$62       = fruitOfPower.at(0x62);
-const opelStatue$63         = opelStatue  .at(0x63);
-const fruitOfPower$64       = fruitOfPower.at(0x64);
-const magicRing$65          = magicRing   .at(0x65);
-const fruitOfRepun$66       = fruitOfRepun.at(0x66);
-const magicRing$67          = magicRing   .at(0x67); // unused
-const magicRing$68          = magicRing   .at(0x68); // unused
-const magicRing$69          = magicRing   .at(0x69);
-const warpBoots$6a          = warpBoots   .at(0x6a);
-const magicRing$6b          = magicRing   .at(0x6b);
-const magicRing$6c          = magicRing   .at(0x6c);
-const opelStatue$6d         = opelStatue  .at(0x6d);
-const warpBoots$6e          = warpBoots   .at(0x6e);
-const magicRing$6f          = magicRing   .at(0x6f);
+const statueOfOnyx          = item(0x25, 'Statue of Onyx')
+                                .chest()
+                                .invisible(0x3e3a2)
+                                .key();
+const opelStatue            = item(0x26, 'Opel Statue')
+                                .bossDrop(0x06)
+                                .npcSpawn(0xc5)
+                                .key();
+const insectFlute           = item(0x27, 'Insect Flute')
+                                .fromPerson(0x1e)
+                                .dialog(0x1e, null, 1)
+                                .key();
+const fluteOfLimeQueen      = item(0x28, 'Flute of Lime')
+                                .fromPerson(0x38)
+                                .dialog(0x38, null, 4)
+                                .dialog(0x38, null, 5, 0)
+                                .key();
+const gasMask               = item(0x29, 'Gas Mask')
+                                .direct(0x3d7fe)
+                                .npcSpawn(0x16, 0x18)
+                                .key();
+const powerRing             = item(0x2a, 'Power Ring').chest().bonus();
+const warriorRing           = item(0x2b, 'Warrior Ring')
+                                .fromPerson(0x54)
+                                .dialog(0x54, null, 2)
+                                .bonus();
+const ironNecklace          = item(0x2c, 'Iron Necklace').chest().bonus();
+const deosPendant           = item(0x2d, 'Deo\'s Pendant')
+                                .fromPerson(0x5a)
+                                .dialog(0x5a, null, 0)
+                                .bonus();
+const rabbitBoots           = item(0x2e, 'Rabbit Boots')
+                                .bossDrop(0x00)
+                                .npcSpawn(0xc0)
+                                .key();
+const leatherBoots          = item(0x2f, 'Leather Boots').chest().bonus();
+const shieldRing            = item(0x30, 'Shield Ring')
+                                .direct(0x3d2af)
+                                .npcSpawn(0x16, 0x57, 2)
+                                .bonus();
+const alarmFlute            = item(0x31, 'Alarm Flute').fixed();
+const windmillKey           = item(0x32, 'Windmill Key')
+                                .fromPerson(0x14)
+                                .dialog(0x14, 0x0e, 0)
+                                .key();
+const keyToPrison           = item(0x33, 'Key to Prison').chest().key();
+const keyToStyx             = item(0x34, 'Key to Styx')
+                                .fromPerson(0x5e, 1)
+                                .dialog(0x5e, 0xf2, 0)
+                                .dialog(0x62, 0xf2, 0)
+                                .key();
+const fogLamp               = item(0x35, 'Fog Lamp').chest().key();
+const shellFlute            = item(0x36, 'Shell Flute')
+                                .fromPerson(0x63, 1)
+                                .npcSpawn(0x63)
+                                //.npcSpawn(0x64)
+                                //.dialog(0x7b, null, 0)
+                                .key();
+                                // TODO --- need to add some code,
+                                // still need to delete itemuse trigger?
+                                // just use the hard-coded ones...?
+const eyeGlasses            = item(0x37, 'Eye Glasses')
+                                .fromPerson(0x44)
+                                .dialog(0x44, 0xe9, 1)
+                                .key();
+const brokenStatue          = item(0x38, 'Broken Statue')
+                                .bossDrop(0x04)
+                                .npcSpawn(0x7f, 0x65) // sabera
+                                .npcSpawn(0x46)
+                                .npcSpawn(0x47)
+                                .npcSpawn(0x6a)
+                                .npcSpawn(0x84)
+                                .npcSpawn(0x8e)
+                                .dialog(0x3d)
+                                .dialog(0x3e)
+                                .dialog(0x3f)
+                                .dialog(0x40)
+                                .dialog(0x41)
+                                .dialog(0x42)
+                                .dialog(0x43)
+                                .dialog(0x44, 0xe9)
+                                .trigger(0xb6)
+                                .key();
+const glowingLamp           = item(0x39, 'Glowing Lamp')
+                                .direct(0x3d30e)
+                                .npcSpawn(0x7e, 0x62, 1)
+                                .key();
+const statueOfGold          = item(0x3a, 'Statue of Gold')
+                                // direct(0x1c594) // shuffle is a little odd
+                                .fixed();
+const lovePendant           = item(0x3b, 'Love Pendant')
+                                .chest()
+                                .invisible(0x3e3aa)
+                                .key();
+const kirisaPlant           = item(0x3c, 'Kirisa Plant')
+                                .chest()
+                                .invisible(0x3e3a6)
+                                .key();
+const ivoryStatue           = item(0x3d, 'Ivory Statue')
+                                .bossDrop(0x09)
+                                .npcSpawn(0xc8)
+                                .key();
+const bowOfMoon             = item(0x3e, 'Bow of Moon')
+                                .fromPerson(0x23)
+                                .dialog(0x23, null, 1)
+                                .key();
+const bowOfSun              = item(0x3f, 'Bow of Sun')
+                                .chest()
+                                .key();
+const bowOfTruth            = item(0x40, 'Bow of Truth')
+                                .fromPerson(0x83)
+                                .npcSpawn(0x83, 0x9c, 1)
+                                .dialog(0x83, null, 0)
+                                .key();
+const refresh               = magic(0x41, 'Refresh')
+                                .fromPerson(0x5e)
+                                .direct(0x3d711)
+                                .dialog(0x5e, 0x10, 2)
+                                .trigger(0xb4, 1);
+const paralysis             = magic(0x42, 'Paralysis')
+                                .direct(0x3d655)
+                                // TODO - require defeating kelbesque?
+                                .trigger(0x8d)
+                                .trigger(0xb2);
+const telepathy             = magic(0x43, 'Telepathy')
+                                .direct(0x367f4)
+                                .npcSpawn(0x5f, 0x1e, 1)
+                                .trigger(0x85, 1);
+const teleport              = magic(0x44, 'Teleport')
+                                .fromPerson(0x5f)
+                                .dialog(0x5f, 0x21, 0);
+const recover               = magic(0x45, 'Recover')
+                                .direct(0x3d1f9);
+                                // NOTE: no need for second slot because
+                                // recover does not have an ItemGet normally.
+const barrier               = magic(0x46, 'Barrier')
+                                .direct(0x3d6d9)
+                                .trigger(0x84, 0);
+const change                = magic(0x47, 'Change')
+                                .direct(0x3d6de)
+                                .npcSpawn(0x74, 0xf1, 1);
+const flight                = magic(0x48, 'Flight')
+                                .direct(0x3d18f);
+                                // See recover - no need for second slot.
+const fluteOfLimeChest      = item(0x28, "Flute of Lime").chest(0x5b).key();
+
+
+// const medicalHerb$50        = medicalHerb .at(0x50);
+// const sacredShield$51       = sacredShield.at(0x51); // unused
+// const medicalHerb$52        = medicalHerb .at(0x52);
+// const medicalHerb$53        = medicalHerb .at(0x53);
+// const magicRing$54          = magicRing   .at(0x54);
+// const medicalHerb$55        = medicalHerb .at(0x55);
+// const medicalHerb$56        = medicalHerb .at(0x56);
+// const medicalHerb$57        = medicalHerb .at(0x57);
+// const magicRing$58          = magicRing   .at(0x58);
+// const medicalHerb$59        = medicalHerb .at(0x59); // unused
+// const fruitOfPower$5a       = fruitOfPower.at(0x5a);
+// const fluteOfLime$5b        = fluteOfLime .at(0x5b);
+// const lysisPlant$5c         = lysisPlant  .at(0x5c);
+// const lysisPlant$5d         = lysisPlant  .at(0x5d);
+// const antidote$5e           = antidote    .at(0x5e);
+// const antidote$5f           = antidote    .at(0x5f);
+// const antidote$60           = antidote    .at(0x60);
+// const fruitOfPower$61       = fruitOfPower.at(0x61);
+// const fruitOfPower$62       = fruitOfPower.at(0x62);
+// const opelStatue$63         = opelStatue  .at(0x63);
+// const fruitOfPower$64       = fruitOfPower.at(0x64);
+// const magicRing$65          = magicRing   .at(0x65);
+// const fruitOfRepun$66       = fruitOfRepun.at(0x66);
+// const magicRing$67          = magicRing   .at(0x67); // unused
+// const magicRing$68          = magicRing   .at(0x68); // unused
+// const magicRing$69          = magicRing   .at(0x69);
+// const warpBoots$6a          = warpBoots   .at(0x6a);
+// const magicRing$6b          = magicRing   .at(0x6b);
+// const magicRing$6c          = magicRing   .at(0x6c);
+// const opelStatue$6d         = opelStatue  .at(0x6d);
+// const warpBoots$6e          = warpBoots   .at(0x6e);
+// const magicRing$6f          = magicRing   .at(0x6f);
+const mimic                 = item(0x70, 'Mimic'); // special handling to dup
 
 
 ////////////////////////////////////////////////////////////////
@@ -562,31 +290,31 @@ const magicRing$6f          = magicRing   .at(0x6f);
 
 // TODO - maybe don't build any logic into here, just put them where they need to go?
 
-const talkedToLeafElder     = trigger('Talked to Leaf Elder').get(swordOfWind, fromNpc(0x0d));
+const talkedToLeafElder     = trigger('Talked to Leaf Elder').get(swordOfWind);
 const talkedToLeafStudent   = trigger('Talked to Leaf Student');
 const buyAlarmFlute         = trigger('Buy alarm flute').get(alarmFlute);
 const talkedToZebuInCave    = trigger('Talked to Zebu in cave');
-const wokeUpWindmillGuard   = trigger('Woke up Windmill Guard').get(windmillKey, fromNpc(0x14));
+const wokeUpWindmillGuard   = trigger('Woke up Windmill Guard').get(windmillKey);
 const startedWindmill       = trigger('Started Windmill');
-const learnedRefresh        = trigger('Learned Refresh')
-                                .get(refresh, fromNpc(0x5e), directPrg(0x3d711));
-const gaveStatueToAkahana   = trigger('Gave Statue to Akahana').get(gasMask, directPrg(0x3d7fe));
-const foughtStom            = trigger('Fought Stom').get(telepathy, directPrg(0x367f4));
+const learnedRefresh        = trigger('Learned Refresh').get(refresh);
+const gaveStatueToAkahana   = trigger('Gave Statue to Akahana').get(gasMask);
+const foughtStom            = trigger('Fought Stom').get(telepathy);
 const visitedOak            = trigger('Visited Oak');
 const talkedToOakMother     = trigger('Talked to Oak Mother');
 const rescuedOakChild       = trigger('Rescued Oak Child');
-const talkedToOakMothher2   = trigger('Talked to Oak Mother Again').get(insectFlute, fromNpc(0x1e));
-const talkedToOakElder      = trigger('Talked to Oak Elder').get(swordOfFire, fromNpc(0x1d));
-const talkedToTornelOnMtSabre = trigger('Talked to Tornel on Mt Sabre').get(teleport, fromNpc(0x5f));
+const talkedToOakMothher2   = trigger('Talked to Oak Mother Again').get(insectFlute);
+const talkedToOakElder      = trigger('Talked to Oak Elder').get(swordOfFire);
+const talkedToTornelOnMtSabre = trigger('Talked to Tornel on Mt Sabre').get(teleport);
 const villagersAbducted     = trigger('Villagers Abducted');
 const talkedToLeafRabbit    = trigger('Talked to Rabbit in Leaf');
-const learnedParalysis      = trigger('Learned Paralysis').get(paralysis, directPrg(0x3d655));
+const learnedParalysis      = trigger('Learned Paralysis').get(paralysis);
 const talkedToPortoaQueen   = trigger('Talked to Portoa Queen');
 const talkedToFortuneTeller = trigger('Talked to Fortune Teller');
 const visitedUndergroundChannel = trigger('Visited Underground Channel');
-const sentToWaterfallCave   = trigger('Sent to Waterfall Cave').get(fluteOfLime); // no rando? or do both...
-const curedAkahana          = trigger('Cured Akahana').get(shieldRing, directPrg(0x3d2af));
-const talkedToRage          = trigger('Talked to Rage').get(ballOfWater, directPrg(0x3d337));
+const sentToWaterfallCave   = trigger('Sent to Waterfall Cave').get(fluteOfLimeQueen); // no rando? or do both...
+const curedAkahana          = trigger('Cured Akahana').get(shieldRing);
+const talkedToRage          = trigger('Talked to Rage').get(ballOfWater);
+const mesiaRecording        = trigger('Mesia recording played');
 const talkedToAsina         = trigger('Talked to Asina').get(recover);
 const healedDolphin         = trigger('Healed Dolphin').get(shellFlute);
 const returnedFogLamp       = trigger('Returned Fog Lamp');
@@ -608,10 +336,10 @@ const shyronMassacre        = trigger('Shyron Massacre');
 const savedKensu            = trigger('Saved Kensu').get(flight);
 const talkedToDeo           = trigger('Talked to Deo').get(deosPendant);
 const talkedToAkahanaFriend = trigger('Talked to Akahana\'s Friend').get(warriorRing);
-const getBowOfTruth         = trigger('Get Bow of Truth').get(bowOfTruth, fromNpc(0x83));
+const getBowOfTruth         = trigger('Get Bow of Truth').get(bowOfTruth);
 const forgedCrystalis       = trigger('Forged Crystalis').get(crystalis);
 const win                   = trigger('Win');
-exports.end = win;
+//exports.end = win;
 
 ////////////////////////////////////////////////////////////////
 // Conditions
@@ -631,8 +359,11 @@ const speedBoots            = condition('Speed boots').option(leatherBoots, leat
 const climbSlopes           = condition('Climb slopes')
                                 .option(rabbitBoots).option(flight).option(speedBoots);
 // Required for access to underground channel.
-const paralysisOrBallOfWater = condition('Paralysis or Ball of Water')
-                                .option(paralysis).option(ballOfWater);
+const asinaTrigger          = condition('Asina in her room')
+                                // NOTE: this is just ballOfWater in vanilla.
+                                .option(mesiaRecording);
+const paralysisOrAsina      = condition('Paralysis or Ball of Water')
+                                .option(paralysis).option(asinaTrigger);
 // TODO - consider adding healedDolphin and/or returnedFogLamp here?  otherwise, flight alone
 // is basically enough (though with flight the dolphin is basically just a convenience).
 const rideDolphin           = condition('Ride dolphin').option(shellFlute, talkedToKensuInCabin);
@@ -652,10 +383,8 @@ const thunderMagic          = condition('Thunder magic')
                                 .option(swordMagicOptional)
                                 .option(ballOfThunder, stormBracelet);
 const fluteOfLimeOrGlitch   = condition('Flute of lime or glitch')
-                                .option(fluteOfLime)
+                                .option(fluteOfLimeQueen)
                                 .option(assumeTalkGlitch);
-const secondFluteOfLime     = condition('Second flute of lime')
-                                .option(fluteOfLime$5b);
 const changeOrGlitch        = condition('Change or glitch')
                                 .option(change)
                                 .option(assumeTalkGlitch);
@@ -672,7 +401,7 @@ const changeOrGlitch        = condition('Change or glitch')
 const vampire1    = boss(0x00, 'Vampire 1', anySword).get(rabbitBoots);
 const giantInsect = boss(0x01, 'Insect', fireOrWaterOrThunder).get(ballOfFire);
 const kelbesque1  = boss(0x02, 'Kelbesque 1', swordOfWind, windMagic).get(flameBracelet);
-const vampire2    = boss(0x0c, 'Vampire 2', anySword).get(fruitOfPower$61);
+const vampire2    = boss(0x0c, 'Vampire 2', anySword).get(fruitOfPower.chest(0x61));
 const sabera1     = boss(0x04, 'Sabera 1', swordOfFire, fireMagic).get(brokenStatue);
 const mado1       = boss(0x05, 'Mado 1', swordOfWater, waterMagic).get(ballOfThunder);
 const kelbesque2  = boss(0x06, 'Kelbesque 2', swordOfWind, windMagic).get(opelStatue);
@@ -682,7 +411,7 @@ const karmine     = boss(0x09, 'Karmine', swordOfThunder, thunderMagic).get(ivor
 const draygon1    = boss(0x0a, 'Draygon 1', anySword).get(psychoArmor);
 const statues     = boss(null, 'Statues', bowOfSun, bowOfMoon);
 const draygon2    = boss(0x0b, 'Draygon 2', anySword);
-const dyna        = boss(0x0d, 'Dyna', crystalis).get(win);
+const dyna        = boss(0x0d, 'Dyna', crystalis);
 
 ////////////////////////////////////////////////////////////////
 // Areas
@@ -690,7 +419,7 @@ const dyna        = boss(0x0d, 'Dyna', crystalis).get(win);
 const LEAF = area('Leaf');
 const VWND = area('Valley of Wind');
 const VAMP = area('Sealed Cave');
-const CORD = area('Cordell Plain');
+const CORD = area('Cordel Plain');
 const BRYN = area('Brynmaer');
 const AMZN = area('Amazones');
 const SBRW = area('Mt Sabre West');
@@ -729,7 +458,6 @@ const TOWR = area('Tower');
 // Leaf, Valley of Wind, Sealed Cave
 
 const mezameShrine          = location(0x00, LEAF, 'Mezame Shrine');
-exports.start = mezameShrine;
 const outsideStart          = location(0x01, LEAF, 'Outside Start')
                                 .connect(mezameShrine);
 const leaf                  = location(0x02, LEAF, 'Town')
@@ -746,7 +474,7 @@ const sealedCave2           = location(0x05, VAMP, 'Tunnel 2 (over bridge)')
 const sealedCave6           = location(0x06, VAMP, 'Tunnel 6 (herb dead end)')
                                 .chest(medicalHerb, 0x0f);
 const sealedCave4a          = location(0x07, VAMP, 'Tunnel 4a (ball corridor)')
-                                .chest(medicalHerb$50, 0x14)
+                                .chest(medicalHerb, 0x14, 0x50)
                                 .chest(ballOfWind, 0x15);
 const sealedCave4b          = location(0x07, VAMP, 'Tunnel 4b (antidote dead end)')
                                 .connect(sealedCave4a, destroyStone) // 64dd:10
@@ -823,13 +551,13 @@ const mtSabreWestUpSlope    = location(0x20, SBRW, 'Up Slope')
                                 .from(mtSabreWestEntrance, climbSlopes)
                                 .to(mtSabreWestEntrance);
 const mtSabreWestDeadEnd    = location(0x20, SBRW, 'Dead End (warp boots)')
-                                .chest(warpBoots$6a, 0x18);
+                                .chest(warpBoots, 0x18, 0x6a);
 const mtSabreWestUpper      = location(0x21, SBRW, 'Upper')
                                 .from(mtSabreWestEntrance, flight)
                                 .to(mtSabreWestEntrance);
 const mtSabreWestTornel     = location(0x21, SBRW, 'Tornel Dead End')
                                 .trigger(talkedToTornelOnMtSabre, tornadoBracelet)
-                                .chest(magicRing$69, 0x17);
+                                .chest(magicRing, 0x17, 0x69);
 const mtSabreWestTunnel2a   = location(0x22, SBRW, 'Tunnel 2a (fork at start)')
                                 .connect(mtSabreWestEntrance);
 const mtSabreWestTunnel2b   = location(0x22, SBRW, 'Tunnel 2b (left branch to dead end)')
@@ -839,7 +567,7 @@ const mtSabreWestTunnel2c   = location(0x22, SBRW, 'Tunnel 2c (right branch to u
                                 .connect(mtSabreWestTunnel2a, destroyIce); // 64dd:01
 const mtSabreWestTunnel3a   = location(0x23, SBRW, 'Tunnel 3a (tunnel to upper, with herb chest)')
                                 .connect(mtSabreWestTunnel2c)
-                                .chest(medicalHerb$52, 0x17);
+                                .chest(medicalHerb, 0x17, 0x52);
 const mtSabreWestTunnel3b   = location(0x23, SBRW, 'Tunnel 3b (tunnel to upper, branch below ice)')
                                 .connect(mtSabreWestTunnel3a, destroyIce) // 64dc:80
                                 .connectTo(mtSabreWestUpper);
@@ -883,7 +611,7 @@ const mtSabreNorthTunnel2a  = location(0x2a, SBRN, 'Tunnel 2a (from entrance to 
                                 .connectTo(mtSabreNorthConnector);
 const mtSabreNorthTunnel2b  = location(0x2a, SBRN, 'Tunnel 2b (under bridge, to antidote)')
                                 .connect(mtSabreNorthTunnel2a, destroyIce) // 64dc:04
-                                .chest(antidote$5e, 0x17);
+                                .chest(antidote, 0x17, 0x5e);
 const mtSabreNorthTunnel3a  = location(0x2b, SBRN, 'Tunnel 3a (branch after connector)')
                                 .connect(mtSabreNorthConnector);
 const mtSabreNorthTunnel3b  = location(0x2b, SBRN, 'Tunnel 3b (right branch)')
@@ -898,7 +626,7 @@ const mtSabreNorthTunnel5a  = location(0x2d, SBRN, 'Tunnel 5a (E-shaped, from ri
                                 .connectTo(mtSabreNorthMidRight);
 const mtSabreNorthTunnel5b  = location(0x2d, SBRN, 'Tunnel 5b (dead-end with herb)')
                                 .connect(mtSabreNorthTunnel5a, destroyIce) // 64db:80
-                                .chest(medicalHerb$53, 0x16);
+                                .chest(medicalHerb, 0x16, 0x53);
 const mtSabreNorthTunnel6a  = location(0x2e, SBRN, 'Tunne; 6a (S-shaped hall, right)')
                                 .connect(mtSabreNorthTunnel5a);
 const mtSabreNorthTunnel6b  = location(0x2e, SBRN, 'Tunne; 6b (S-shaped hall, middle)')
@@ -970,7 +698,7 @@ const kirisaCave2a          = location(0x45, KIRI, 'Tunnel 2a (main path, before
                                 .connect(kirisaCave1b);
 const kirisaCave2b          = location(0x45, KIRI, 'Tunnel 2b (dead end, antidote)')
                                 .connect(kirisaCave2a, destroyStone) // 64d8:01
-                                .chest(antidote$5f, 0x19);
+                                .chest(antidote, 0x19, 0x5f);
 const kirisaCave2c          = location(0x45, KIRI, 'Tunnel 2c (main path, after wall)')
                                 .connect(kirisaCave2a, destroyStone); // 64d7:80
 const kirisaCave3a          = location(0x46, KIRI, 'Tunnel 3a (last room, before wall)')
@@ -1035,6 +763,7 @@ const portoaFishermanIsland = location(0x51, PORT, 'Fishherman Island')
                                 .connect(portoa);
 const mesiaShrine           = location(0x52, WFVL, 'Mesia Shrine')
                                 // TODO - consider adding an item here?
+                                .trigger(mesiaRecording)
                                 .connect(limeTreeLake, crossRivers, talkedToRage); // 64d9:40
 
 // Waterfall Cave
@@ -1050,12 +779,12 @@ const waterfallCave2        = location(0x55, WFCV, 'Tunnel 2 (stoned pair)')
                                 .connect(waterfallCave1c);
 const waterfallCave3        = location(0x56, WFCV, 'Tunnel 3 (wide medusa hallways)')
                                 .from(waterfallCave2, fluteOfLimeOrGlitch)
-                                .to(waterfallCave2, fluteOfLime);
+                                .to(waterfallCave2, fluteOfLimeQueen);
 // NOTE: no reverse path thru these ice walls - will soft lock!
 const waterfallCave4a       = location(0x57, WFCV, 'Tunnel 4a (left entrance)')
                                 .from(waterfallCave3, destroyIce)
-                                .chest(fluteOfLime$5b, 0x19)
-                                .trigger(curedAkahana, secondFluteOfLime); // $64da:02
+                                .chest(fluteOfLimeChest, 0x19)
+                                .trigger(curedAkahana, fluteOfLimeChest); // $64da:02
 const waterfallCave4b       = location(0x57, WFCV, 'Tunnel 4b (right entrance)')
                                 .from(waterfallCave3, destroyIce) // $64da:01
                                 .connect(waterfallCave4a, flight);
@@ -1074,7 +803,10 @@ const tower5                = location(0x5d, TOWR, 'Outside Dyna Room').from(tow
 const towerMesia            = location(0x5e, TOWR, 'Mesia')
                                 .connect(tower4)
                                 .trigger(forgedCrystalis);
-const towerDyna             = location(0x5f, TOWR, 'Dyna').from(tower5).boss(dyna);
+const towerDyna             = location(0x5f, TOWR, 'Dyna')
+                                .from(tower5)
+                                .boss(dyna)
+                                .trigger(win);
 
 // Angry Sea
 
@@ -1141,7 +873,7 @@ const evilSpiritIsland3a    = location(0x6a, EVIL, 'Tunnel 3a (main area)')
                                 // unnecessary wall 2b5
                                 .connect(evilSpiritIsland2f)
                                 .connectTo(zombieTown)
-                                .chest(lysisPlant$5c, 0x19);
+                                .chest(lysisPlant, 0x19, 0x5c);
 const evilSpiritIsland3b    = location(0x6a, EVIL, 'Tunnel 3b (left area toward items)')
                                 .connect(evilSpiritIsland3a, destroyStone); // 2b6
 const evilSpiritIsland4a    = location(0x6b, EVIL, 'Tunnel 4a (right side, mimic)')
@@ -1167,7 +899,7 @@ const saberaPalaceFloor2a   = location(0x6d, SABR, 'Floor 2a (left stair)')
                                 .chest(fruitOfPower, 0x13);
 const saberaPalaceFloor2b   = location(0x6d, SABR, 'Floor 2b (right stair)')
                                 .connect(saberaPalaceMiniboss)
-                                .chest(medicalHerb$55, 0x1e);
+                                .chest(medicalHerb, 0x1e, 0x55);
 const saberaPalaceFloor3a   = location(0x6e, SABR, 'Floor 3a (toward boss)')
                                 .connect(saberaPalaceFloor2b);
 const saberaPalaceFloor3b   = location(0x6e, SABR, 'Floor 3b (boss room)')
@@ -1208,7 +940,7 @@ const mtHydra5              = location(0x7c, HYDR, 'Dead end (no item)');
 const mtHydra6              = location(0x7c, HYDR, 'Dead end (fruit of lime)')
                                 .chest(fruitOfLime, 0x1a);
 const mtHydra7              = location(0x7c, HYDR, 'Dead end (magic ring)')
-                                .chest(magicRing$65, 0x19);
+                                .chest(magicRing, 0x19, 0x65);
 const mtHydra8              = location(0x7c, HYDR, 'Outside tunnel to bow');
 const mtHydra9              = location(0x7c, HYDR, 'Floating island (bow of sun)')
                                 .connect(mtHydra8, flight)
@@ -1227,7 +959,7 @@ const mtHydraTunnel4        = location(0x81, HYDR, 'Tunnel 4 (left branch of cav
                                 .connect(mtHydraTunnel3); // took left branch
 const mtHydraTunnel5        = location(0x82, HYDR, 'Tunnel 5 (dead end, medical herb)')
                                 .connect(mtHydraTunnel4) // took left branch again
-                                .chest(medicalHerb$56, 0x0f);
+                                .chest(medicalHerb, 0x0f, 0x56);
 const mtHydraTunnel6a       = location(0x83, HYDR, 'Tunnel 6a (left-then-right)')
                                 .connect(mtHydraTunnel4); // took right branch
 const mtHydraTunnel6b       = location(0x83, HYDR, 'Tunnel 6b (past wall)')
@@ -1257,7 +989,7 @@ const styx2b                = location(0x89, STYX, 'Left branch, past one bridge
                                 .connect(styx2a, crossRivers); // 2aa
 const styx2c                = location(0x89, STYX, 'Left branch, past two bridges')
                                 .connect(styx2b, crossRivers) // 2a9
-                                .chest(medicalHerb$57, 0x1d);
+                                .chest(medicalHerb, 0x1d, 0x57);
 const styx2d                = location(0x89, STYX, 'Right branch')
                                 .connect(styx1);
 const styx2e                = location(0x89, STYX, 'Right branch, across water')
@@ -1303,7 +1035,7 @@ const oasisCave7            = location(0x91, OASC, 'Area 7 (bottom inner ring)')
 const oasisCave8            = location(0x91, OASC, 'Area 8 (left outer ring)')
                                 .connect(oasisCave7, crossRivers) // 298
                                 .connect(oasisCave1, crossRivers) // 29a
-                                .chest(fruitOfPower$64, 0x1b);
+                                .chest(fruitOfPower, 0x1b, 0x64);
 const oasisCave9            = location(0x91, OASC, 'Area 9 (top left inner ring)')
                                 .connect(oasisCave8, crossRivers); // 299
 const oasisCave10           = location(0x91, OASC, 'Area 10 (top right inner ring)')
@@ -1343,7 +1075,7 @@ const pyramidFrontMain      = location(0x9e, PYRF, 'Main')
                                 .connect(pyramidFrontFork);
 const pyramidFrontChest     = location(0x9e, PYRF, 'Treasure Chest (magic ring)')
                                 .connect(pyramidFrontMain)
-                                .chest(magicRing$6c, 0x1b);
+                                .chest(magicRing, 0x1b, 0x6c);
 const pyramidFrontDraygon   = location(0x9f, PYRF, 'Draygon')
                                 .connect(pyramidFrontMain)
                                 .to(pyramidFrontAzteca)
@@ -1367,7 +1099,7 @@ const pyramidBackRight      = location(0xa4, PYRB, 'Right Dead End')
                                 .connect(pyramidBackFork);
 const pyramidBackHall2      = location(0xa5, PYRB, 'Hall 2')
                                 .connect(pyramidBackFork)
-                                .chest(opelStatue$6d, 0x1a);
+                                .chest(opelStatue, 0x1a, 0x6d);
 const pyramidBackDraygon2   = location(0xa6, PYRB, 'Draygon 2')
                                 .connect(pyramidBackHall2)
                                 .boss(draygon2);
@@ -1390,19 +1122,19 @@ const fortressZebu          = location(0xaa, DRG1, 'Zebu').connect(fortress1Boss
 const fortress2a            = location(0xab, DRG2, 'Entrance').connect(fortressZebu);
 const fortress2b            = location(0xab, DRG2, 'Dead End Behind Iron (fruit of power)')
                                 .connect(fortress2a, destroyIron) // 13, 29f
-                                .chest(fruitOfPower$62, 0x1c);
+                                .chest(fruitOfPower, 0x1c, 0x62);
 const fortress2c            = location(0xab, DRG2, 'Dead End Loop Across Closer Bridges')
                                 .connect(fortress2a, crossRivers) // 19, 2a6
                                 .connect(fortress2a, crossRivers); // 1b, 2a0
 const fortress2d            = location(0xab, DRG2, 'Across First Bridge (fruit of repun)')
                                 .connect(fortress2a, crossRivers) // 1a, 2a5
-                                .chest(fruitOfRepun$66, 0x1e);
+                                .chest(fruitOfRepun, 0x1e, 0x66);
 const fortress2e            = location(0xab, DRG2, 'Across Second Bridge')
                                 .connect(fortress2d, crossRivers); // 18, 2a4
 const fortress2f            = location(0xab, DRG2, 'Dead End Across Two Bridges ()')
                                 .connect(fortress2e, crossRivers) // 15, 2a1
                                 .connect(fortress2e, crossRivers) // 17, 2a3
-                                .chest(lysisPlant$5d, 0x1d);
+                                .chest(lysisPlant, 0x1d, 0x5d);
 const fortress2g            = location(0xab, DRG2, 'Across Third Bridge')
                                 .connect(fortress2e, crossRivers); // 16, 2a2
 const fortress2h            = location(0xab, DRG2, 'Exit Behind Iron Door')
@@ -1411,17 +1143,17 @@ const fortress2Boss         = location(0xac, DRG2, 'Boss').connect(fortress2h).b
 const fortressTornel        = location(0xac, DRG2, 'Tornel').connect(fortress2Boss);
 const fortress3Lower        = location(0xad, DRG3, 'Lower')
                                 .connect(fortressTornel)
-                                .chest(opelStatue$63, 0x1a)
-                                .chest(magicRing$6f, 0x1b);
+                                .chest(opelStatue, 0x1a, 0x63)
+                                .chest(magicRing, 0x1b, 0x6f);
 const fortress3UpperLoop    = location(0xae, DRG3, 'Upper Loop')
                                 .connect(fortress3Lower)
-                                .chest(antidote$60, 0x16);
+                                .chest(antidote, 0x16, 0x60);
 const fortress3UpperDeadEnd = location(0xae, DRG3, 'Upper Loop Behind Wall (magic ring)')
                                 .connect(fortress3UpperLoop, destroyIron) // 15, 29d
-                                .chest(magicRing$6b, 0x17);
+                                .chest(magicRing, 0x17, 0x6b);
 const fortress3UpperPassage = location(0xaf, DRG3, 'Upper Passage (toward Mado)')
                                 .connect(fortress3Lower)
-                                .chest(magicRing$54, 0x1b);
+                                .chest(magicRing, 0x1b, 0x54);
 const fortress4a            = location(0xb0, DRG4, 'Initial Fork');
 const fortress4b            = location(0xb1, DRG4, 'Left Branch').connect(fortress4a);
 const fortress4c            = location(0xb2, DRG4, 'Main Area (right branch, over bridges)')
@@ -1439,8 +1171,8 @@ const fortress4g            = location(0xb5, DRG4, 'Lower')
                                 .chest(mimic, 0x0d)
                                 .chest(mimic, 0x0e)
                                 .chest(mimic, 0x0f)
-                                .chest(magicRing$58, 0x17)
-                                .chest(warpBoots$6e, 0x18);
+                                .chest(magicRing, 0x17, 0x58)
+                                .chest(warpBoots, 0x18, 0x6e);
 const fortress4h            = location(0xb6, DRG4, 'Boss Corridor').connect(fortress4g);
 const fortress4Boss         = location(0xb6, DRG4, 'Boss')
                                 .connect(fortress4h)
@@ -1451,7 +1183,7 @@ const fortress4End          = location(0xb6, DRG4, 'Behind Boss (stormBracelet)'
 const fortressExit          = location(0xb7, DRG4, 'Exit Stairs');
 const oasisCaveEntranceBack = location(0xb8, OASC, 'Entrance Back (behind river)')
                                 .connect(fortressExit)
-                                .chest(fruitOfPower$5a, 0x0d);
+                                .chest(fruitOfPower, 0x0d, 0x5a);
 const oasisCaveEntrance     = location(0xb8, OASC, 'Entrance Front')
                                 .connect(oasisCaveEntranceBack, flight)
                                 .connectTo(desert1)
@@ -1506,7 +1238,7 @@ const oakInn                = location(0xd0, OAK,  'Inn')
 const amazonesInn           = location(0xd1, AMZN, 'Inn').connect(amazones);
 const amazonesToolShop      = location(0xd2, AMZN, 'Tool Shop').connect(amazones);
 const amazonesArmorShop     = location(0xd3, AMZN, 'Armor Shop').connect(amazones);
-const amazonesQueenHouse    = location(0xd4, AMZN, 'Queen\'s House')
+const aryllisHouse          = location(0xd4, AMZN, 'Queen\'s House')
                                 .from(amazones, changeOrGlitch)
                                 .trigger(talkedToAmazonesQueen, change, kirisaPlant);
 const nadare                = location(0xd5, NADR, 'Nadare\'s')
@@ -1531,7 +1263,7 @@ const portoaToolShop        = location(0xdd, PORT, 'Tool Shop').connect(portoa);
 const portoaPalaceLeft      = location(0xde, PORT, 'Palace Left').connect(portoaPalaceEntrance);
 const portoaThroneRoom      = location(0xdf, PORT, 'Palace Throne Room')
                                 .connect(portoaPalaceEntrance)
-                                .to(undergroundChannel1, paralysisOrBallOfWater)
+                                .to(undergroundChannel1, paralysisOrAsina)
                                 .from(undergroundChannel1)
                                 .trigger(talkedToPortoaQueen)
                                 .trigger(sentToWaterfallCave,
@@ -1539,9 +1271,9 @@ const portoaThroneRoom      = location(0xdf, PORT, 'Palace Throne Room')
 const portoaPalaceRight     = location(0xe0, PORT, 'Palace Right').connect(portoaPalaceEntrance);
 const portoaAsinaRoom       = location(0xe1, PORT, 'Asina\'s Room')
                                 .connect(undergroundChannel4)
-                                .trigger(talkedToAsina, ballOfWater); // TODO - trigger?
-const amazonesQueenDownstairs = location(0xe2, AMZN, 'Queen Downstairs')
-                                .connect(amazonesQueenHouse)
+                                .trigger(talkedToAsina, asinaTrigger); // TODO - trigger?
+const aryllisDownstairs     = location(0xe2, AMZN, 'Queen Downstairs')
+                                .connect(aryllisHouse)
                                 .chest(blizzardBracelet, 0x0d);
 const joelElderHouse        = location(0xe3, JOEL, 'Elder\'s House')
                                 .connect(joel)
@@ -1587,3 +1319,71 @@ const saharaInn             = location(0xf8, SHRA, 'Inn').connect(sahara);
 const saharaToolShop        = location(0xf9, SHRA, 'Tool Shop').connect(sahara);
 const saharaElderHouse      = location(0xfa, SHRA, 'Elder\'s House').connect(sahara);
 const saharaPawnShop        = location(0xfb, SHRA, 'Pawn Shop').connect(sahara);
+
+export {graph, dyna, mezameShrine as start, win as end};
+
+export const shuffle = (rom, random) => {
+  const allSlots = graph.slots();
+  const buckets = {}
+  for (const slot of graph.slots()) {
+    if (!slot.slots) continue; // fixed, no shuffle
+    const type = slot.type || 'item';
+    (buckets[type] = buckets[type] || []).push(slot);
+  }
+  // For bonus and non-key items, just do a total shuffle.
+  for (const bucket of ['item', 'bonus']) {
+    const slots = buckets[bucket];
+    const items = slots.map(slot => [slot.item, slot.index]);
+    random.shuffle(items);
+    for (let i = 0; i < slots.length; i++) {
+      slots[i].set(...items[i]);
+    }
+  }
+
+  // Initial attempt - start with vanilla and do 1-10 swaps at a time,
+  // see if it still works.  Randomly swap wind/fire for initial diff (50/50).
+  // Later would be nice to start fully shuffled and anneal, or do something
+  // more targeted.
+  if (random.nextInt(2)) {
+    swordOfFire.swap(swordOfWind);
+    ballOfFire.swap(ballOfWind);
+  }
+  const counts = [1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 5, 5, 8, 13];
+  const keys = buckets['key'];
+  const magics = buckets['magic'];
+  const both = [keys, magics];
+  const which = [...keys.map(() => 0), ...magics.map(() => 1)];
+  for (let i = 0; i < 1000; i++) {
+    random.shuffle(keys);
+    random.shuffle(magics);
+    random.shuffle(which);
+    const count = counts[random.nextInt(counts.length)];
+    const pos = [0, 0];
+    for (let i = 0; i < count; i++) {
+      const w = which[i];
+      pos[w] += 2;
+      if (pos[w] > both[w].length) continue;
+      both[w][pos[w] - 2].swap(both[w][pos[w] - 1]);
+    }
+    // test
+    const {win} = graph.traverse();
+    if (win) {
+      console.log(`successful shuffle of ${count} items`);
+      continue;
+    } else {
+      console.log(`shuffled ${count} items: fail`);
+    }
+    // unswap
+    for (let i = count - 1; i >= 0; i--) {
+      const w = which[i];
+      pos[w] -= 2;
+      if (pos[w] + 1 >= both[w].length) continue;
+      both[w][pos[w]].swap(both[w][pos[w] + 1]);
+    }
+  }
+
+  // Commit everything
+  for (const slot of graph.slots()) {
+    slot.write(rom);
+  }
+};

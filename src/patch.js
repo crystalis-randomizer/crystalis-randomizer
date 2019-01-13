@@ -1,6 +1,7 @@
 import {assemble, buildRomPatch} from './6502.js';
 import {Rom} from './view/rom.js';
 import {Random} from './random.js';
+import {shuffle as shuffleDepgraph} from './depgraph2.js';
 
 // TODO - to shuffle the monsters, we need to find the sprite palttes and
 // patterns for each monster.  Each location supports up to two matchups,
@@ -25,6 +26,7 @@ export default ({
       window.location.hash += '&seed=' + seed;
     }
     const random = new Random(seed);
+    shuffleDepgraph(rom, random);
 
     // Parse the rom and apply other patches.
     const parsed = new Rom(rom);
@@ -39,6 +41,7 @@ export default ({
     buffDeosPendant.apply(rom);
     barrierRequiresCalmSea.apply(rom);
     scaleDifficultyLib.apply(rom);
+    fixVampire.apply(rom);
     displayDifficulty.apply(rom);
     itemLib.apply(rom);
     //noTeleportOnThunderSword.apply(rom);
@@ -124,8 +127,9 @@ define ShouldRedisplayDifficulty $64a3
 .org $1e244
 
 ;; Give key to styx regardless of whether sword of thunder found
+;; Also don't duplicate-set 03b, it's already handled by ItemGet.
 .org $1d78e ; zebu dialog f2 shyron temple
-  .byte $60,$3b,$8a,$97,$22,$40,$3b  ; 03b NOT -> 14:17 (action 11), set 03b
+  .byte $60,$3b,$8a,$97,$22,$c0,$00  ; 03b NOT -> 14:17 (action 11)
   .byte $00,$2d,$02,$c3,$22          ; 02d -> 16:03
 
 ;; Don't check unwritten 104 flag for mado spawn
@@ -137,6 +141,99 @@ define ShouldRedisplayDifficulty $64a3
   .byte $c0,$00
 .org $1cde1 ; sword of fire
   .byte $c0,$00
+.org $1ce0c ; insect flute
+  .byte $c0,$00
+.org $1d5db ; warrior ring
+  .byte $c0,$00
+.org $1d662 ; deo
+  .byte $c0,$00
+.org $1d6ee ; shield ring
+  .byte $c0,$00
+.org $1ccdf ; windmill key
+  .byte $c0,$00
+;.org $1d798 ; key to styx (zebu)
+;  .byte $c0,$00
+.org $1e208 ; key to styx (trigger)
+  .byte $a0,$00
+.org $1d3b4 ; eye glasses (clark)
+  .byte $a0,$00
+.org $1d852 ; kensu lighthouse
+  .byte $c0,$00
+
+;; asina reveal depends on mesia recording (01b), not ball of water (01f)
+.org $1c81f
+  .byte $1b
+.org $1c822
+  .byte $1b
+.org $1c82a
+  .byte $1b
+.org $1cf9c
+  .byte $1b
+.org $1d047
+  .byte $1b
+.org $1e389
+  .byte $1b
+
+;; bow of truth extra triggers
+.org $1d8dc
+  .byte $80,$00,$40,$00
+
+;; refresh triggers
+.org $1d780
+  .byte $c0,$00
+.org $1e358
+  .byte $c0,$00
+
+;; paralysis triggers
+.org $1e34a
+  .byte $c0,$00
+
+;; teleport triggers
+.org $1d7d0
+  .byte $c0,$00
+
+;; barrier triggers
+.org $1c7e2
+  .byte $20,$00 ; akahana cave
+.org $1c7ef
+  .byte $a0,$00 ; akahana stoned
+.org $1c886
+  .byte $a0,$00 ; zebu
+.org $1c898
+  .byte $a0,$00 ; tornel
+.org $1c8ac
+  .byte $a0,$00 ; stom
+.org $1e222
+  .byte $c0,$00 ; trigger set flag
+
+;; move portoa fisherman up 1 word, make him only
+;; appear if both shell flute AND healed dolphin
+;; NOTE: 8b is the traditional itemget and 25
+;; is tied to the slot (healing dolphin)
+;; We could delete the slot one, but it's actually
+;; convenient to have both...
+.org $1c6a8
+  .byte $99,$87
+.org $1c799
+  .byte $d6,$00,$25,$80,$8b,$ff
+;; daughter's dialog should trigger on both, too
+.org $1d1c5
+  .byte $80,$2a,$03,$cc,$ff
+  .byte $20,$25,$01,$26,$00
+  .byte $20,$8b,$01,$26,$00
+  .byte $00,$21,$01,$25,$00
+  .byte $a0,$00,$01,$24,$00
+
+;; kensu in the cabin needs to be available even after visiting joel.
+;; just have him disappear after setting the flag. but also require
+;; having returned the fog lamp before he shows up - this requires
+;; moving him up a word.
+.org $1c6b0
+  .byte $f6,$88 ; pointer tp kensu 68
+.org $1c8f6
+  .byte $61,$20,$9b,$80,$21,$ff
+.org $1d867
+  .byte $12,$21 ; message 11:01 (action 02 disappear)
 
 
 ;; Treasure chest spawns don't need to be so complicated.
@@ -304,13 +401,6 @@ MesiaGivesFluteOfLime:
   .byte $8d
 .org $1c845
   .byte $8d
-
-;; kensu in the cabin needs to be available even after visiting joel.
-;; just have him disappear after setting the flag.
-.org $1c8f9
-  .byte $a0,$9b  ; change condition to $9b instead of $2fb
-.org $1d867
-  .byte $12,$21 ; message 11:01 (action 02 disappear)
 
 `, 'preventNpcDespawns'));
 
@@ -570,8 +660,8 @@ UpdateInGameTimer:
   ;; Check flag 0d0 ($649a:01)
   jsr WaitForDialogToBeDismissed
   lda $649a
-  lsr
-  bcs -
+  and #$01
+  bne -
   lda #$1f
   sta $0623
   lda #$28  ; flute of lime chest
@@ -581,7 +671,7 @@ UpdateInGameTimer:
   pla ; double-return
   jmp MainLoopItemGet
 
-.org $3fa33  
+.org $3fa34
 
 .org $3d354
 WaitForDialogToBeDismissed:

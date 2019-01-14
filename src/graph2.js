@@ -16,16 +16,22 @@ class Edge {
   }
 }
 
+class Node {
+  constructor(graph) {
+    this.graph = graph;
+    this.uid = 'n' + graph.nodes.length;
+    graph.nodes.push(this);
+  }
+}
+
 export class Graph {
   constructor() {
     const nodes = [];
     this.nodes = nodes;
-    this.Node = class Node {
-      constructor() {
-        this.uid = 'n' + nodes.length;
-        nodes.push(this);
-      }
-    };
+  }
+
+  findSlot(name) {
+    return this.nodes.find(n => n instanceof Slot && n.name == name);
   }
 
   // There's two different kind of dot outputs.
@@ -173,21 +179,17 @@ export class Graph {
   }
 }
 
-const graph = new Graph();
-
-class Option extends graph.Node {
-  constructor(name, value) {
-    super();
+export class Option extends Node {
+  constructor(graph, name, value) {
+    super(graph);
     this.name = name;
     this.value = value;
   }
 }
 
-const option = (name, value = true) => new Option(name, value);
-
-class Slot extends graph.Node {
-  constructor(item, index, slots = []) {
-    super();
+export class Slot extends Node {
+  constructor(graph, item, index, slots = []) {
+    super(graph);
     this.item = item;
     this.index = index;
     this.slots = slots;
@@ -336,7 +338,7 @@ console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(
   }
 }
 
-class Chest extends Slot {
+export class Chest extends Slot {
   objectSlot(loc, slot) {
     this.slots.push((rom, item) => {
       const base = addr(rom, 0x19201, 0x10000, loc);
@@ -356,15 +358,15 @@ const addr =
     (rom, base, offset, index) =>
         (/*console.log(`pointer = ${(base + 2 * index).toString(16)}`),*/ rom[base + 2 * index] | rom[base + 2 * index + 1] << 8) + offset;
 
-class ItemGet extends graph.Node {
-  constructor(id, name, index, item) {
-    super();
+export class ItemGet extends Node {
+  constructor(graph, id, name, index, item) {
+    super(graph);
     this.id = id;
     this.name = name;
   }
 
   chest(index = this.id) {
-    return new Chest(this, index);
+    return new Chest(this.graph, this, index);
   }
 
   fromPerson(id, index = 0) {
@@ -372,7 +374,7 @@ class ItemGet extends graph.Node {
   }
 
   bossDrop(id) {
-    return new Slot(this, this.id, [(rom, item) => {
+    return new Slot(this.graph, this, this.id, [(rom, item) => {
       const a = addr(rom, 0x1f96b, 0x14000, id) + 4;
       rom[a] = item.index;
 console.log(`${this.name == item.name ? this.name : `${item.name} (${this.name})`}: ${a.toString(16)} <- ${item.index.toString(16).padStart(2,0)}`);
@@ -380,27 +382,24 @@ console.log(`${this.name == item.name ? this.name : `${item.name} (${this.name})
   }
 
   direct(a) {
-    return new Slot(this, this.id, [(rom, item) => {
+    return new Slot(this.graph, this, this.id, [(rom, item) => {
       rom[a] = item.index;
 console.log(`${this.name == item.name ? this.name : `${item.name} (${this.name})`}: ${a.toString(16)} <- ${item.index.toString(16).padStart(2,0)}`);
     }]);
   }
 
   fixed() {
-    return new Slot(this, this.id, null);
+    return new Slot(this.graph, this, this.id, null);
   }
 }
 
-class Item extends ItemGet {}
+export class Item extends ItemGet {}
 
-class Magic extends ItemGet {}
+export class Magic extends ItemGet {}
 
-const item = (id, name) => new Item(id, name, id, null);
-const magic = (id, name) => new Magic(id, name, id, null);
-
-class Trigger extends graph.Node {
-  constructor(name) {
-    super();
+export class Trigger extends Node {
+  constructor(graph, name) {
+    super(graph);
     this.name = name;
     this.slot = null;
   }
@@ -411,8 +410,6 @@ class Trigger extends graph.Node {
     return this;
   }
 }
-
-const trigger = (name) => new Trigger(name);
 
 // // TODO - move these to just do direct byte manipulation maybe?
 // //      - add PersonData, Dialog, NpcSpawn, etc...
@@ -427,9 +424,9 @@ const trigger = (name) => new Trigger(name);
 // };
 
 
-class Condition extends graph.Node {
-  constructor(name) {
-    super();
+export class Condition extends Node {
+  constructor(graph, name) {
+    super(graph);
     this.name = name;
     this.options = [];
   }
@@ -440,26 +437,20 @@ class Condition extends graph.Node {
   }
 }
 
-const condition = (name) => new Condition(name);
-
-class Boss extends Trigger {
-  constructor(index, name, ...deps) {
-    super(name);
+export class Boss extends Trigger {
+  constructor(graph, index, name, ...deps) {
+    super(graph, name);
     this.index = index;
     this.deps = deps.map(x => x instanceof Slot ? x.item : x);
   }
 }
 
-const boss = (index, name, ...deps) => new Boss(index, name, ...deps);
-
-class Area extends graph.Node {
-  constructor(name) {
-    super();
+export class Area extends Node {
+  constructor(graph, name) {
+    super(graph);
     this.name = name;
   }
 }
-
-const area = (name) => new Area(name);
 
 class Connection {
   constructor(from, to, bidi = false, deps = []) {
@@ -483,9 +474,9 @@ class Connection {
   }
 }
 
-class Location extends graph.Node {
-  constructor(id, area, name) {
-    super();
+export class Location extends Node {
+  constructor(graph, id, area, name) {
+    super(graph);
     this.id = id;
     this.area = area;
     this.name = name;
@@ -593,17 +584,3 @@ class Location extends graph.Node {
     return lines.join('\\n');
   }
 }
-
-const location = (id, area, name) => new Location(id, area, name);
-
-export {
-  area,
-  boss,
-  condition,
-  graph,
-  location,
-  item,
-  magic,
-  option,
-  trigger,
-};

@@ -18,11 +18,13 @@ const main = () => {
   }
   const seedInput = document.getElementById('seed');
   const setSeed = (seed) => {
-    seed = Number(seed)
+    seed = typeof seed == 'number' ? seed : Number.parseInt(seed, 16)
     let str = window.location.hash;
-    window.history.replaceState({}, '', `#seed=${seed}`);
-    hash['seed'] = seed;
-    if (seedInput.value != seed) seedInput.value = seed;
+    window.history.replaceState({}, '', `#seed=${seed.toString(16)}`);
+    hash['seed'] = seed.toString(16);
+    if (seedInput.value != seed.toString(16)) {
+      seedInput.value = seed.toString(16);
+    }
   };
   setSeed('seed' in hash ? hash['seed'] : Math.floor(Math.random() * 0x100000000));
   document.getElementById('generate').addEventListener('click', () => {
@@ -73,13 +75,14 @@ const loadRomFromStorage = (rom) => {
 };
 
 const shuffle = (seed, rom) => {
+  seed = typeof seed == 'number' ? seed : Number.parseInt(seed, 16);
   if (!rom.rom) {
     alert('Must select a ROM first!');
     return;
   }
   const shuffled = rom.rom.slice();
   patch.default.apply(shuffled, {'seed': seed});
-  const name = rom.name.replace(/\.nes|$/, `_${patch.BUILD_HASH}_${seed}.nes`);
+  const name = rom.name.replace(/\.nes|$/, `_${patch.BUILD_HASH}_${seed.toString(16)}.nes`);
   download(shuffled, name)
 };
 

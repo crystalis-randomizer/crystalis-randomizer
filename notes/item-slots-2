@@ -51,6 +51,10 @@ it leads to more shuffling.
   017 Chest 02 -> PSLOT
       Dialog 38 (queen) 1cfa9 -> ITEM
       Dialog 39 (fortune teller) 1d012 -> ITEM
+         ===> TODO - move this trigger !!!
+              currently between sword of water and rage there's
+              a slight problem - if rage doesn't give ball then
+              we're out of luck if blocked.
       Dialog c3 (rage) 1d8ea -> ITEM
       ItemGet 1df4c
 

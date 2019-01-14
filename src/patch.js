@@ -177,7 +177,70 @@ define ShouldRedisplayDifficulty $64a3
 .org $1d852 ; kensu lighthouse
   .byte $c0,$00
 
+;; queen will try to give flute of lime even if got sword first
+.org $1cfab ; queen "you found sword of water" message action
+  .byte $19 ; add action 03
+
+.org $3ff44
+; TODO - 60 bytes we could use here (now 36)
+PatchGrantItemInRegisterA:
+  ;; Version of GrantItemInRegisterA that bails out if the
+  ;; item is already owned.
+  sta $057f
+  lsr
+  lsr
+  lsr
+  tax
+  lda $057f
+  and #$07
+  tay
+  lda $64c0,x
+  and $3c000,y ; powers of two
+  beq +
+   pla
+   pla
++ rts
+
+;InitializeOverflowChests:
+;  ldx #$07
+;  lda #$ff
+;-  sta $64b8,x
+;   dex
+;  bpl -
+;  sta $64cf ; set flags 78..7f
+;  jmp $3c008
+
+PatchLocationChange:
+  ;; repopulate overflow chest flags (could skip if $6c != 0)
+  ldx #$07
+  lda #$01
+-  cmp $64b8,x
+   ror $64cf
+   dex
+  bpl -
+  jmp $3e3e9
+
+.org $3ff80
+
+.org $3ca2e
+  jsr PatchLocationChange
+
+.org $3d22b
+GrantItemInRegisterA:
+  jsr PatchGrantItemInRegisterA
+
+;; If LookingAt is $1f and the item goes into the $20 row then we can't
+;; just reject - instead, add the item to an overflow chest.
+;; We use the bytes at 64b0..64b8 to store the overflow.
+;; The first is a bitmask for the next 8, inverted (1 means empty)
+
+;;; Initialize overflow chests to ff
+;;.org $3cab2
+;.org $3c9d6
+;  jmp InitializeOverflowChests
+
 ;; asina reveal depends on mesia recording (01b), not ball of water (01f)
+;; - this ensures you have both sword and ball to get to her --> ???
 .org $1c81f
   .byte $1b
 .org $1c822
@@ -190,6 +253,15 @@ define ShouldRedisplayDifficulty $64a3
   .byte $1b
 .org $1e389
   .byte $1b
+
+;; asina will also give flute of lime if queen never did (after recover)
+.org $098f9
+  .byte $28 ; asina persondata[1] -> flute of lime
+.org $1d80a
+  .byte $89 ; asina love pendant dialog -> give second item
+.org $1d816
+  .byte $89 ; asina default dialog -> give second item
+
 
 ;; bow of truth extra triggers
 .org $1d8dc
@@ -335,10 +407,103 @@ ItemGetFollowup:
    jmp ItemGet
 + rts
 
+ItemGet_FindOpenSlotWithOverflow:
+  tay ; copied from 1c2a8
+  bmi +
+   pla ; make the call into this actually a jump...
+   pla
+   stx $61  ; save this for now
+   jsr ItemGet_FindOpenSlot
+   ;; if 23 nonzero then we failed to find a slot
+   ;; if 61 is 20 then we really need to put it somewhere
+   ;; in that case, add it to the overflow.  when we
+   ;; delete a key item, it will fall in
+   lda $23
+    beq +
+   cpx #$20
+    beq +
+   ;; need to find a place
+   ldx #$07
+-   lda $64b8,x
+    beq ++
+    dex
+    bpl -
++ rts
+++  lda $29
+    sta $64b8,x
+    lda #$00
+    sta $23
+    rts
+
 ;; TODO - still plenty of space here
 
 .org $1e179 ; 1e17a is above...
 
+
+.org $1c308
+ItemGet_FindOpenSlot:
+.org $1c2a8
+  jsr ItemGet_FindOpenSlotWithOverflow
+
+
+;; Replace "drop item" code for key items to use an overflow buffer
+
+.bank $20000 $8000:$2000
+
+.org $20372
+  jsr CheckDroppable
+  cmp #$60
+  bne DroppableMaybe
+.org $20392
+DroppableMaybe:
+
+.org $20434
+  jsr MaybeDrop
+  nop
+  nop
+
+.org $20ff0
+InvItemData:
+
+.org $21471 ; unused space, 130 or so bytes
+CheckDroppable:
+  ;; if there's no overflow then add the #$20 bit for free
+  lda #$20
+  sta $61
+  lda $64bf
+  beq +
+   ;; there's overflow, so allow deleting :40 only
+   lda #$00
+   sta $61
++ lda InvItemData,x
+  and #$60
+  ora $61
+  rts
+MaybeDrop:
+  txa
+  and #$f0
+  cmp #$20
+  beq +
+   lda #$ff
+   sta $6430,x
+   rts
+  ;; This is a key item and we have overflow.
+  ;; Substitute the overflow and cycle...
++ lda $6430,x
+  pha
+   lda $64bf
+   sta $6430,x
+   ldx #$07
+-   lda $64b7,x
+    beq +
+    sta $64b8,x
+    dex
+    bne -
++ pla
+  sta $64b8,x
+  rts
+
+.org $21500
 
 `, 'rearrangeTriggers'));
 
@@ -401,12 +566,12 @@ export const preventNpcDespawns = buildRomPatch(assemble(`
 .org $1e236     ; 80 shyron massacre (+4)
   .byte $80,$3b ; Condition: 03b talked to zebu in shyron
 
-.org $3fa18
-MesiaGivesFluteOfLime:
+;.org $3fa18
+;MesiaGivesFluteOfLime:
 
-;; mesia recording gives flute of lime if not gotten from queen
-.org $3d62b
-  jmp MesiaGivesFluteOfLime
+;;; mesia recording gives flute of lime if not gotten from queen
+;.org $3d62b
+;  jmp MesiaGivesFluteOfLime
 
 ;; clark moves back to joel after giving item, not after calming sea
 ;; TODO - this is slightly awkward in that you can go up the stairs
@@ -674,7 +839,8 @@ UpdateInGameTimer:
 
 .org $3fa18
   ;; Maybe have Mesia give Flute of Lime if not gotten already...
-  ;; Check flag 0d0 ($649a:01)
+  ;; Check flag 0d0 ($649a:01) ==> currently disabled because
+  ;; trigger is hard to shuffle...
   jsr WaitForDialogToBeDismissed
   lda $649a
   and #$01
@@ -805,10 +971,6 @@ CoinAmounts:
   .word 0,1,2,4,8,16,30,50,100,200,300,400,500,600,700,800
 
 .bank $1c000 $8000:$4000 ; item use code
-
-.org $3ff44
-; TODO - 60 bytes we could use here
-.org $3ff80
 
 .org $3fe2e
 SubtractEnemyHP:

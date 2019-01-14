@@ -1,19 +1,17 @@
-import { area, boss, condition, graph, location, item, magic, option, trigger } from './graph2.js';
+import { Graph, Area, Boss, Condition, Item, Location, Magic, Option, Trigger } from './graph2.js';
 
-// TODO - this is effectively a giant mutable global variable, which is
-// horrible.  Consider a way to make it at least local.  Copy constructors
-// and whatnot would be helpful here...
+// Make a fresh/clean graph. We could pass options directly into this function.
+export const generate = () => {
 
-
-//import {Graph2} from './graph.js';
-
-// Randomization plan:
-//   - remove all ->item edges
-//   - follow edges, annotating item blockers
-//   - pick a random ->item edge and a random item blocker
-//   - repeat
-
-//export const graph = new Graph2();
+const graph = new Graph();
+const option = (name, value = true) => new Option(graph, name, value);
+const item = (id, name) => new Item(graph, id, name, id, null);
+const magic = (id, name) => new Magic(graph, id, name, id, null);
+const trigger = (name) => new Trigger(graph, name);
+const condition = (name) => new Condition(graph, name);
+const boss = (index, name, ...deps) => new Boss(graph, index, name, ...deps);
+const area = (name) => new Area(graph, name);
+const location = (id, area, name) => new Location(graph, id, area, name);
 
 
 ////////////////////////////////////////////////////////////////
@@ -116,7 +114,8 @@ const insectFlute           = item(0x27, 'Insect Flute')
                                 .key();
 const fluteOfLimeQueen      = item(0x28, 'Flute of Lime')
                                 .fromPerson(0x38)
-                                .direct(0x3fa28) // mesia version
+                                .direct(0x98f9) // persondata 62 +1
+                                // .direct(0x3fa28) // mesia version
                                 .dialog(0x38, null, 4)
                                 .dialog(0x38, null, 5, 0)
                                 .key();
@@ -389,7 +388,7 @@ const fluteOfLimeOrGlitch   = condition('Flute of lime or glitch')
 const changeOrGlitch        = condition('Change or glitch')
                                 .option(change)
                                 .option(assumeTalkGlitch);
-                                        
+
 // TODO - warp triggers, wild warp, etc...
 // ghetto flight?  talk glitch?  triggers (calmed sea or ghetto flight)?  require magic for boss?
 
@@ -1321,9 +1320,11 @@ const saharaToolShop        = location(0xf9, SHRA, 'Tool Shop').connect(sahara);
 const saharaElderHouse      = location(0xfa, SHRA, 'Elder\'s House').connect(sahara);
 const saharaPawnShop        = location(0xfb, SHRA, 'Pawn Shop').connect(sahara);
 
-export {graph, dyna, mezameShrine as start, win as end};
+return graph;
+};
 
 export const shuffle = (rom, random) => {
+  const graph = generate();
   const allSlots = graph.slots();
   const buckets = {}
   for (const slot of graph.slots()) {
@@ -1345,6 +1346,12 @@ export const shuffle = (rom, random) => {
   // see if it still works.  Randomly swap wind/fire for initial diff (50/50).
   // Later would be nice to start fully shuffled and anneal, or do something
   // more targeted.
+  const swordOfWind = graph.findSlot('Sword of Wind');
+  const swordOfFire = graph.findSlot('Sword of Fire');
+  const ballOfWind = graph.findSlot('Ball of Wind');
+  const ballOfFire = graph.findSlot('Ball of Fire');
+  const statueOfOnyx = graph.findSlot('Statue of Onyx');
+  const gasMask = graph.findSlot('Gas Mask');
   if (random.nextInt(2)) {
     swordOfFire.swap(swordOfWind);
     ballOfFire.swap(ballOfWind);

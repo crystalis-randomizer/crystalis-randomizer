@@ -116,6 +116,7 @@ const insectFlute           = item(0x27, 'Insect Flute')
                                 .key();
 const fluteOfLimeQueen      = item(0x28, 'Flute of Lime')
                                 .fromPerson(0x38)
+                                .direct(0x3fa28) // mesia version
                                 .dialog(0x38, null, 4)
                                 .dialog(0x38, null, 5, 0)
                                 .key();
@@ -1372,10 +1373,10 @@ export const shuffle = (rom, random) => {
     // test
     const {win} = graph.traverse();
     if (win) {
-      console.log(`successful shuffle of ${count} items`);
+      //console.log(`successful shuffle of ${count} items`);
       continue;
     } else {
-      console.log(`shuffled ${count} items: fail`);
+      //console.log(`shuffled ${count} items: fail`);
     }
     // unswap
     for (let i = count - 1; i >= 0; i--) {

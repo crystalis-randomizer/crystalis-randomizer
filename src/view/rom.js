@@ -965,18 +965,18 @@ if (!window._rom) {window._rom = true; window._rom=new Rom(rom);}
       const ser = object.serialize();
       const data = ser.join(' ');
       if (data in datas) {
-        console.log(`$${object.id.toString(16).padStart(2,0)}: Reusing existing data $${datas[data].toString(16)}`);
+//console.log(`$${object.id.toString(16).padStart(2,0)}: Reusing existing data $${datas[data].toString(16)}`);
         object.objectDataBase = datas[data];
       } else {
         object.objectDataBase = addr;
         datas[data] = addr;
-        console.log(`$${object.id.toString(16).padStart(2,0)}: Data is at $${addr.toString(16)}: ${Array.from(ser, x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
+//console.log(`$${object.id.toString(16).padStart(2,0)}: Data is at $${addr.toString(16)}: ${Array.from(ser, x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
         addr += ser.length;
 // seed 3517811036
       }
       object.write();
     }
-    console.log(`Wrote object data from $1ac00 to $${addr.toString(16).padStart(5, 0)}, saving ${0x1be91 - addr} bytes.`);
+//console.log(`Wrote object data from $1ac00 to $${addr.toString(16).padStart(5, 0)}, saving ${0x1be91 - addr} bytes.`);
     return addr;
   }
 }

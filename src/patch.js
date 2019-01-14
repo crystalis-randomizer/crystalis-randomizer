@@ -30,6 +30,7 @@ export default ({
 
     // Parse the rom and apply other patches.
     const parsed = new Rom(rom);
+console.log(parsed.prg[0x195ff].toString(16));
     adjustObjectDifficultyStats(rom, parsed);
     shuffleMonsters(rom, parsed, random);
     //shuffleBonusItems(rom, parsed, random);
@@ -54,6 +55,7 @@ export default ({
     if ('nodie' in hash) neverDie.apply(rom);
     stampVersionSeedAndHash(rom, seed);
     // do any "vanity" patches here...
+console.log(parsed.prg[0x195ff].toString(16));
     console.log('patch applied');
   },
 });
@@ -679,7 +681,7 @@ UpdateInGameTimer:
   bne -
   lda #$1f
   sta $0623
-  lda #$28  ; flute of lime chest
+  lda #$28  ; flute of lime chest --> 3fa28
   sta $07dc
   sta $057f
   pla

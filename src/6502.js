@@ -332,7 +332,7 @@ class Patch {
       arr.set(chunk, 5);
       arrays.push(arr);
       length += arr.length;
-      console.log(`Patch from $${chunk.start.toString(16)}..$${(chunk.start+chunk.length).toString(16)}`);
+//console.log(`Patch from $${chunk.start.toString(16)}..$${(chunk.start+chunk.length).toString(16)}`);
     }
     const data = new Uint8Array(length);
     let i = 5;

@@ -1,0 +1,245 @@
+#main {
+  display: flex;
+  flex-direction: column-reverse;
+  height: 100%;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+#menu {
+  flex: 0 0 1.4em;
+  display: flex;
+  height: 1.4em;
+}
+#menu > div {
+  margin: 0 1em;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+  background: white;
+  width: 4em;
+}
+#menu > div > div:first-child {
+  padding-bottom: 0.2em;
+}
+#menu > div > div+div {
+  display: none;
+  width: 10em;
+  padding: 0.1em 0.4em;
+  border-left: 1px solid black;
+  border-right: 1px solid black;
+  z-index: 100;
+  background: white;
+}
+#menu > div > div:last-child {
+  padding-bottom: 0.4em;
+  border-bottom: 1px solid black;
+}
+#menu > div > div:first-child+div {
+  padding-top: 0.4em;
+  border-top: 1px solid black;
+}
+#menu > div:hover > div+div {
+  display: block;
+}
+
+#grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
+}
+
+#screen {
+  /* image-rendering: pixelated; /* webkit */
+  image-rendering: optimizespeed; /* firefox */
+}
+
+.component {
+  border: 1px solid black;
+  display: flex;
+  flex-direction: column;
+  margin: 3px;
+ /* padding: 1em;*/
+}
+
+.corner {
+/*
+  position: fixed;
+  top: 2px;
+  right: 0px;
+  left: 0px;
+  height: 10px;
+  z-index: 100;
+*/
+  font-family: monospace;
+  font-size: 83%;
+  display: flex;
+  flex-direction: row-reverse;
+  border-bottom: 1px solid black;
+  margin: 0;
+  padding: 0;
+}
+
+.corner div {
+  cursor: pointer;
+  margin: 0 0.5em;
+}
+
+.component > .content {
+  padding: 1em;
+}
+
+.corner+div {
+  position: relative;
+}
+
+.component .trace {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* .component .disable { */
+/*   position: absolute; */
+/*   left: 0; */
+/*   right: 0; */
+/*   top: 0; */
+/*   bottom: 0; */
+/*   display: none; */
+/*   background: white; */
+/*   opacity: 0.6; */
+/* } */
+
+/* .component.disabled .disable { */
+/*   display: block; */
+/* } */
+
+.watch {
+  font-size: 83%;
+  white-space: pre;
+  font-family: monospace;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
+}
+.watch .group+.group {
+  margin-left: 2em;
+}
+.watch .value {
+  font-weight: bold;
+}
+
+.watchpage,
+.movie,
+.controller {
+  font-size: 83%;
+  white-space: pre;
+  font-family: monospace;
+}
+
+.watchpage+.watchpage {
+  margin-left: 2em;
+}
+
+.watch .highlight,
+.watchpage .highlight {
+  font-weight: bold;
+  background-color: #ccc;
+}
+
+.nametable-text {
+  font-size: 50%;
+  white-space: pre;
+  font-family: monospace;
+  /* width: 576px; */
+  /* height: 360px; */
+}
+
+.nametable-text > div > div { border: 1px solid white; }
+
+.nametable-text .table-bottom { border-bottom: 1px solid #aaa; }
+.nametable-text .table-right { border-right: 1px solid #aaa; }
+
+.nametable-text .top { border-top: 1px solid black; }
+.nametable-text .bottom { border-bottom: 1px solid black; }
+.nametable-text .left { border-left: 1px solid black; }
+.nametable-text .right { border-right: 1px solid black; }
+.nametable-text .scan { background-color: #ffc; }
+
+.trace {
+  font-size: 83%;
+  white-space: pre;
+  font-family: monospace;
+  /* TODO(sdh): dragger in bottom-right corner to resize? could be useful for vertical flow */
+  width: 400px;
+  height: 320px;
+  overflow: auto;
+}
+
+.trace :first-child {
+  flex: 0px 1 1;
+  border-bottom: 1px solid #aaa;
+}
+
+.trace :last-child {
+  flex: 1.2em 0 0;
+  height: 1em;
+  color: #888;
+}
+
+.nametable { /* was this supposed to be pattern-table? */
+  width: 288px;
+  height: 180px; /* 143 */
+}
+
+.file-picker {
+  font-size: 83%;
+  white-space: pre;
+  font-family: monospace;
+  width: 400px;
+  height: 320px;
+  overflow: auto;
+}
+
+.file-picker > .title {
+  font-size: 112%;
+}
+
+.file-picker > .file {
+  border-top: 1px solid #aaa;
+}
+
+.file-picker > .file > .delete {
+  position: absolute;
+  right: 1em;
+}
+
+.controller > div {
+  margin: 3px 0;
+}
+
+.controller .button {
+  margin: 2px;
+  padding: 2px
+}
+
+.controller .button.pressed {
+  margin: 1px;
+  border: 1px solid #555;
+}
+
+.controller {
+  user-select: none;
+}
+
+.controller a,
+.movie a {
+  text-decoration: none;
+}
+
+.controller a:visited,
+.movie a:visited {
+  color: blue;
+}

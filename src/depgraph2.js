@@ -1323,7 +1323,7 @@ const saharaPawnShop        = location(0xfb, SHRA, 'Pawn Shop').connect(sahara);
 return graph;
 };
 
-export const shuffle = (rom, random) => {
+export const shuffle = async (rom, random, log = []) => {
   const graph = generate();
   const allSlots = graph.slots();
   const buckets = {}
@@ -1366,13 +1366,14 @@ export const shuffle = (rom, random) => {
   const both = [keys, magics];
   const which = [...keys.map(() => 0), ...magics.map(() => 1)];
   for (let i = 0; i < 1000; i++) {
+    if (i % 100 == 0) await new Promise(requestAnimationFrame);
     random.shuffle(keys);
     random.shuffle(magics);
     random.shuffle(which);
     const count = counts[random.nextInt(counts.length)];
     const pos = [0, 0];
-    for (let i = 0; i < count; i++) {
-      const w = which[i];
+    for (let j = 0; j < count; j++) {
+      const w = which[j];
       pos[w] += 2;
       if (pos[w] > both[w].length) continue;
       both[w][pos[w] - 2].swap(both[w][pos[w] - 1]);
@@ -1395,7 +1396,11 @@ export const shuffle = (rom, random) => {
   }
 
   // Commit everything
+  const logdata = [];
   for (const slot of graph.slots()) {
+    logdata.push(`${slot.item.name} is where ${slot.orig} used to be`);
     slot.write(rom);
   }
+  logdata.sort();
+  log.push(...logdata);
 };

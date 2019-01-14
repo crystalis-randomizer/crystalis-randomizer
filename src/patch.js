@@ -12,7 +12,7 @@ import {shuffle as shuffleDepgraph} from './depgraph2.js';
 // Pull in all the patches we want to apply automatically.
 // TODO - make a debugger window for patches.
 export default ({
-  apply(rom, hash) {
+  async apply(rom, hash) {
     // Rearrange things first before anything else happens!
     rearrangeTriggersAndNpcs.apply(rom);
 
@@ -26,7 +26,8 @@ export default ({
       window.location.hash += '&seed=' + seed;
     }
     const random = new Random(seed);
-    shuffleDepgraph(rom, random);
+    const log = [];
+    await shuffleDepgraph(rom, random, log);
 
     // Parse the rom and apply other patches.
     const parsed = new Rom(rom);
@@ -57,6 +58,7 @@ console.log(parsed.prg[0x195ff].toString(16));
     // do any "vanity" patches here...
 console.log(parsed.prg[0x195ff].toString(16));
     console.log('patch applied');
+    return log.join('\n');
   },
 });
 

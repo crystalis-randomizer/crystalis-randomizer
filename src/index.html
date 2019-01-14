@@ -1,6 +1,7 @@
 <script type="module" src="main.js"></script>
 <div id="notice" style="display:none">
 Note: this tool currently only works in current versions of Google Chrome
+(or there was an error in the script).
 </div>
 <script>
 // Display a message if the main script hasn't already removed it.
@@ -22,8 +23,12 @@ setTimeout(function() {
     <input type="submit" id="generate" value="New Seed">
   </div>
   <div>
-    <input type="submit" id="shuffle" value="Shuffle">
+    <input type="submit" id="shuffle" value="Shuffle" disabled>
+    <input type="submit" id="download" value="Download" disabled>
+    <span id="dots"></span>
   </div>
 </div>
 <a href="https://shicks.github.io/crystalis-randomizer/versions.html">all versions</a><br>
-<a href="https://shicks.github.io/crystalis-randomizer/">latest</a>
+<a href="https://shicks.github.io/crystalis-randomizer/">latest</a><br>
+<label><input type="checkbox" id="see-log"> Show Log</label>
+<div id="log" style="display:none;white-space:pre;"></div>

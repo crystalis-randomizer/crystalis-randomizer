@@ -250,40 +250,6 @@ const fluteOfLimeChest      = item(0x28, "Flute of Lime").chest(0x5b).key();
 const fruitOfPowerVampire2  = fruitOfPower
                                 .bossDrop(0x0c, 0x61)
                                 .npcSpawn(0xcc);
-      // TODO - boss drop, npc spawn
-
-// const medicalHerb$50        = medicalHerb .at(0x50);
-// const sacredShield$51       = sacredShield.at(0x51); // unused
-// const medicalHerb$52        = medicalHerb .at(0x52);
-// const medicalHerb$53        = medicalHerb .at(0x53);
-// const magicRing$54          = magicRing   .at(0x54);
-// const medicalHerb$55        = medicalHerb .at(0x55);
-// const medicalHerb$56        = medicalHerb .at(0x56);
-// const medicalHerb$57        = medicalHerb .at(0x57);
-// const magicRing$58          = magicRing   .at(0x58);
-// const medicalHerb$59        = medicalHerb .at(0x59); // unused
-// const fruitOfPower$5a       = fruitOfPower.at(0x5a);
-// const fluteOfLime$5b        = fluteOfLime .at(0x5b);
-// const lysisPlant$5c         = lysisPlant  .at(0x5c);
-// const lysisPlant$5d         = lysisPlant  .at(0x5d);
-// const antidote$5e           = antidote    .at(0x5e);
-// const antidote$5f           = antidote    .at(0x5f);
-// const antidote$60           = antidote    .at(0x60);
-// const fruitOfPower$61       = fruitOfPower.at(0x61);
-// const fruitOfPower$62       = fruitOfPower.at(0x62);
-// const opelStatue$63         = opelStatue  .at(0x63);
-// const fruitOfPower$64       = fruitOfPower.at(0x64);
-// const magicRing$65          = magicRing   .at(0x65);
-// const fruitOfRepun$66       = fruitOfRepun.at(0x66);
-// const magicRing$67          = magicRing   .at(0x67); // unused
-// const magicRing$68          = magicRing   .at(0x68); // unused
-// const magicRing$69          = magicRing   .at(0x69);
-// const warpBoots$6a          = warpBoots   .at(0x6a);
-// const magicRing$6b          = magicRing   .at(0x6b);
-// const magicRing$6c          = magicRing   .at(0x6c);
-// const opelStatue$6d         = opelStatue  .at(0x6d);
-// const warpBoots$6e          = warpBoots   .at(0x6e);
-// const magicRing$6f          = magicRing   .at(0x6f);
 const mimic                 = item(0x70, 'Mimic'); // special handling to dup
 
 

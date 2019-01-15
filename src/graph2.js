@@ -340,10 +340,10 @@ console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(
 }
 
 export class Chest extends Slot {
-  objectSlot(loc, slot) {
+  objectSlot(loc, spawnSlot) {
     this.slots.push((rom, slot) => {
       const base = addr(rom, 0x19201, 0x10000, loc);
-      const a = base + 4 * (slot - 0x0b);
+      const a = base + 4 * (spawnSlot - 0x0b);
       rom[a] = slot.index;
 console.log(`${this.name2}: ${a.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
     });

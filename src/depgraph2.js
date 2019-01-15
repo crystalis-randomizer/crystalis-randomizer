@@ -247,7 +247,10 @@ const flight                = magic(0x48, 'Flight')
                                 .direct(0x3d18f);
                                 // See recover - no need for second slot.
 const fluteOfLimeChest      = item(0x28, "Flute of Lime").chest(0x5b).key();
-
+const fruitOfPowerVampire2  = fruitOfPower
+                                .bossDrop(0x0c, 0x61)
+                                .npcSpawn(0xcc);
+      // TODO - boss drop, npc spawn
 
 // const medicalHerb$50        = medicalHerb .at(0x50);
 // const sacredShield$51       = sacredShield.at(0x51); // unused
@@ -401,7 +404,7 @@ const changeOrGlitch        = condition('Change or glitch')
 const vampire1    = boss(0x00, 'Vampire 1', anySword).get(rabbitBoots);
 const giantInsect = boss(0x01, 'Insect', fireOrWaterOrThunder).get(ballOfFire);
 const kelbesque1  = boss(0x02, 'Kelbesque 1', swordOfWind, windMagic).get(flameBracelet);
-const vampire2    = boss(0x0c, 'Vampire 2', anySword).get(fruitOfPower.chest(0x61));
+const vampire2    = boss(0x0c, 'Vampire 2', anySword).get(fruitOfPowerVampire2);
 const sabera1     = boss(0x04, 'Sabera 1', swordOfFire, fireMagic).get(brokenStatue);
 const mado1       = boss(0x05, 'Mado 1', swordOfWater, waterMagic).get(ballOfThunder);
 const kelbesque2  = boss(0x06, 'Kelbesque 2', swordOfWind, windMagic).get(opelStatue);

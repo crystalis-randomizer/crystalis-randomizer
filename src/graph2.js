@@ -236,15 +236,16 @@ export class Slot extends Node {
   }
 
   direct(addr) {
-    this.slots.push((rom, item) => {
-      rom[addr] = item.index;
-console.log(`${this.name2}: ${addr.toString(16)} <- ${item.index.toString(16).padStart(2,0)}`);
+    // slot is usually 'this' for the Slot object that owns this.
+    this.slots.push((rom, slot) => {
+      rom[addr] = slot.index;
+console.log(`${this.name2}: ${addr.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
     });
     return this;
   }
 
   npcSpawn(id, location = null, offset = 0) {
-    this.slots.push((rom, item) => {
+    this.slots.push((rom, slot) => {
       let a = addr(rom, 0x1c5e0, 0x14000, id);
 //console.log(`looking for npc spawn ${id.toString(16)} loc ${(location||-1).toString(16)} => a=${a.toString(16)}`);
       // Find the location
@@ -259,14 +260,14 @@ console.log(`${this.name2}: ${addr.toString(16)} <- ${item.index.toString(16).pa
       a += 2 * offset + 1;
       rom[a] &= ~1;
       rom[a] |= 2;
-      rom[a + 1] = item.index;
+      rom[a + 1] = slot.index;
 console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(2,0)} ${rom[a+1].toString(16).padStart(2,0)}`);
     });
     return this;
   }
 
   dialog(id, location = null, offset = 0, result = null) {
-    this.slots.push((rom, item) => {
+    this.slots.push((rom, slot) => {
       let a = addr(rom, 0x1c95d, 0x14000, id);
 console.log(`${this.name2}: ${id.toString(16)} dialog start ${a.toString(16)}`);
       // Skip the pre-location parts
@@ -307,14 +308,14 @@ console.log(`next=${next}`);
       // update condition
       rom[a] &= ~1;
       rom[a] |= 2;
-      rom[a + 1] = item.index;
+      rom[a + 1] = slot.index;
 console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(2,0)} ${rom[a+1].toString(16).padStart(2,0)}`);
     });
     return this;
   }
 
   trigger(id, offset = 0, result = null) {
-    this.slots.push((rom, item) => {
+    this.slots.push((rom, slot) => {
       let a = addr(rom, 0x1e17a, 0x14000, id & 0x7f);
 
       if (result == null) {
@@ -331,7 +332,7 @@ console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(
       // update condition
       rom[a] &= ~1;
       rom[a] |= 2;
-      rom[a + 1] = item.index;
+      rom[a + 1] = slot.index;
 console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(2,0)} ${rom[a+1].toString(16).padStart(2,0)}`);
     });
     return this;
@@ -340,11 +341,11 @@ console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(
 
 export class Chest extends Slot {
   objectSlot(loc, slot) {
-    this.slots.push((rom, item) => {
+    this.slots.push((rom, slot) => {
       const base = addr(rom, 0x19201, 0x10000, loc);
       const a = base + 4 * (slot - 0x0b);
-      rom[a] = item.index;
-console.log(`${this.name2}: ${a.toString(16)} <- ${item.index.toString(16).padStart(2,0)}`);
+      rom[a] = slot.index;
+console.log(`${this.name2}: ${a.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
     });
     return this;
   }
@@ -369,22 +370,22 @@ export class ItemGet extends Node {
     return new Chest(this.graph, this, index);
   }
 
-  fromPerson(id, index = 0) {
-    return this.direct(0x80f0 | (id & ~3) << 6 | (id & 3) << 2 | index);
+  fromPerson(personId, offset = 0) {
+    return this.direct(0x80f0 | (personId & ~3) << 6 | (personId & 3) << 2 | offset);
   }
 
-  bossDrop(id) {
-    return new Slot(this.graph, this, this.id, [(rom, item) => {
-      const a = addr(rom, 0x1f96b, 0x14000, id) + 4;
-      rom[a] = item.index;
-console.log(`${this.name == item.name ? this.name : `${item.name} (${this.name})`}: ${a.toString(16)} <- ${item.index.toString(16).padStart(2,0)}`);
+  bossDrop(bossId, itemGetIndex = this.id) {
+    return new Slot(this.graph, this, itemGetIndex, [(rom, slot) => {
+      const a = addr(rom, 0x1f96b, 0x14000, bossId) + 4;
+      rom[a] = slot.index;
+console.log(`${this.name == slot.name ? this.name : `${slot.name} (${this.name})`}: ${a.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
     }]);
   }
 
   direct(a) {
-    return new Slot(this.graph, this, this.id, [(rom, item) => {
-      rom[a] = item.index;
-console.log(`${this.name == item.name ? this.name : `${item.name} (${this.name})`}: ${a.toString(16)} <- ${item.index.toString(16).padStart(2,0)}`);
+    return new Slot(this.graph, this, this.id, [(rom, slot) => {
+      rom[a] = slot.index;
+console.log(`${this.name == slot.name ? this.name : `${slot.name} (${this.name})`}: ${a.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
     }]);
   }
 

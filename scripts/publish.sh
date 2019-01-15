@@ -41,6 +41,8 @@ DIR="$TMP/r/$HASH"
 )
 (
   cd $TMP/r
+  rm latest
+  ln -s $HASH latest
   git add .
   git commit -am "Publish: $(date)"
   git push origin gh-pages

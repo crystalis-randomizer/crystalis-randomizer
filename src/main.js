@@ -29,6 +29,7 @@ const main = () => {
       seedInput.value = seed.toString(16);
     }
     if (rom.orig) document.getElementById('shuffle').disabled = false;
+    document.getElementById('play').href=`https://shicks.github.io/jsnesx/#patch=crystalis-randomizer/${patch.BUILD_HASH}/patch&init=crystalis-randomizer/${patch.BUILD_HASH}/debug&seed=${seed.toString(16)}`;
   };
   setSeed('seed' in hash ? hash['seed'] : Math.floor(Math.random() * 0x100000000));
   document.getElementById('generate').addEventListener('click', () => {

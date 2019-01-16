@@ -20,10 +20,11 @@ export default ({
     let seed;
     if (hash['seed']) {
       seed = hash['seed'];
+      if (typeof seed == 'string') seed = Number.parseInt(hash['seed'], 16);
     } else {
       // TODO - send in a hash object with get/set methods
-      hash['seed'] = seed = Math.floor(Math.random() * 0x100000000);
-      window.location.hash += '&seed=' + seed;
+      hash['seed'] = (seed = Math.floor(Math.random() * 0x100000000)).toString(16);
+      window.location.hash += '&seed=' + seed.toString(16);
     }
     const random = new Random(seed);
     const log = [];
@@ -69,7 +70,7 @@ export const stampVersionSeedAndHash = (rom, seed) => {
   // We can use base64 encoding to help some...
   // For now just stick in the commit and seed in simple hex
   const hash = BUILD_HASH.substring(0, 7);
-  seed = Number(seed).toString(16).padStart(8, 0);
+  seed = seed.toString(16).padStart(8, 0);
   const embed = (addr, text) => {
     for (let i = 0; i < text.length; i++) {
       rom[addr + 0x10 + i] = text.charCodeAt(i);
@@ -140,7 +141,7 @@ define ShouldRedisplayDifficulty $64a3
 .org $1e232
   .byte $20,$27  ; Condition: 027 NOT shyron massacre
   .byte $00,$5f  ; Condition: 05f sword of thunder
-  .byte $a0,$00  ; Condition: 000 NOT false
+  .byte $80,$3b  ; Condition: 03b talked to zebu in shyron -> SLOT(key to styx)
   .byte $03,$b3  ; Message: 1d:13
   .byte $40,$27  ; Set: 027 shyron massacre
 .org $1e244
@@ -563,17 +564,6 @@ export const preventNpcDespawns = buildRomPatch(assemble(`
 ;; asina does not disappear after defeating sabera
 .org $1c8b9
   .byte $00
-
-;; shyron massacre requires talking to zebu in shyron
-.org $1e236     ; 80 shyron massacre (+4)
-  .byte $80,$3b ; Condition: 03b talked to zebu in shyron
-
-;.org $3fa18
-;MesiaGivesFluteOfLime:
-
-;;; mesia recording gives flute of lime if not gotten from queen
-;.org $3d62b
-;  jmp MesiaGivesFluteOfLime
 
 ;; clark moves back to joel after giving item, not after calming sea
 ;; TODO - this is slightly awkward in that you can go up the stairs

@@ -150,6 +150,10 @@ const windmillKey           = item(0x32, 'Windmill Key')
 const keyToPrison           = item(0x33, 'Key to Prison').chest().key();
 const keyToStyx             = item(0x34, 'Key to Styx')
                                 .fromPerson(0x5e, 1)
+                                // Require getting both sword of thunder
+                                // AND the key to styx SLOT to trigger
+                                // shyron massacre.
+                                .trigger(0x80, 2) // newly added
                                 .dialog(0x5e, 0xf2, 0)
                                 .dialog(0x62, 0xf2, 0)
                                 .key();
@@ -205,7 +209,8 @@ const ivoryStatue           = item(0x3d, 'Ivory Statue')
                                 .npcSpawn(0xc8)
                                 .key();
 const bowOfMoon             = item(0x3e, 'Bow of Moon')
-                                .fromPerson(0x23)
+                                .fromPerson(0x23) // not actually used???
+                                .direct(0x3d6e8)
                                 .dialog(0x23, null, 1)
                                 .key();
 const bowOfSun              = item(0x3f, 'Bow of Sun')

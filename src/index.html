@@ -10,9 +10,30 @@ setTimeout(function() {
   if (notice) notice.style.display = 'block';
 }, 1000);
 </script>
+<h1>Crystalis Randomizer</h1>
 <div id="build-info"></div>
+<p><b>NOTE:</b> this is a <b>development snapshot pre-release beta</b> version.
+The developers make no guarantee that shuffled roms are actually winnable
+(they should be, but there are doubtless plenty of bugs still lurking that
+could ruin a run by making the game unable to finish).  There's still a lot
+to do before an official release will be ready.  <b>If you're not okay with the
+possibility of playing a completely broken game, please wait a little longer
+for the official release.</b>
+
+<p>Please file any issues on <a href="https://github.com/shicks/crystalis-randomizer/issues">GitHub</a> if possible, otherwise on the Discord once it's open.
+
+<h2>Usage</h2>
+<ol>
+<li>Select the Crystalis rom from your machine (you should only need to do this once: it will be saved across sessions).
+<li>Choose an 8-digit hexadecimal number for the seed, or click "New Seed" to have a random seed generated.
+<li>Click "Shuffle"
+<li>Click "Download" to save the shuffled rom to disk.
+<li>In case of problems, click "Show Log" to see the developer spoiler of where each item ended up.
+</ol>
+
 <div id="controls" style="display:none">
   <!-- Upload dialog -->
+  <h2>Randomizer</h2>
   <div>
     ROM: <span id="previousfile"></span
         ><input style="display:none" type="submit" id="clear" value="Clear"

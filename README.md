@@ -29,7 +29,7 @@ Try it out at https://shicks.github.io/crystalis-randomizer/
 * [x] Shuffle monster locations
 * [x] Shuffle locations of 6 non-essential items (shield ring, iron necklace,
       leather boots, power ring, warrior ring, deo's pendant)
-* [ ] TODO - Shuffle all item locations (this requires a complete internal representation
+* [x] Shuffle all item locations (this requires a complete internal representation
       of the game's dependency graph to ensure all shuffled games are winnable)
 * [ ] TODO - Randomize the location of some item-giving NPCs (particularly Akahana)
 
@@ -108,13 +108,14 @@ Try it out at https://shicks.github.io/crystalis-randomizer/
         invisible
 * [ ] Monster shuffling fails to populate levels as fully as it should be able to
 * [ ] User interface is still very rough
-* [ ] It's possible to lose items given by NPCs if the inventory is full (unlike
+* [x] It's possible to lose items given by NPCs if the inventory is full (unlike
       chests that just don't open). Find a better story for this (possibly set
       flags for full inventory rows and then add an extra dialog in front of
       the give dialog if it would e lost?), as well as a better way to tell the
       player what they would be getting.
+* [ ] Consumable items sometimes flow into neighboring row.
 
 ## The Team
 
-* Programmer: Steve Hicks (bmmpxf)
+* Programmer: Steve_Hacks (formerly bmmpxf)
 * Playtester and Lead Consultant: Mattrick_

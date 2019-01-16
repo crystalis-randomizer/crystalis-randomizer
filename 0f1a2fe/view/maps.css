@@ -1,0 +1,12 @@
+#main {
+    display: flex;
+}
+
+#left {
+    flex-grow: 1;
+    overflow: auto;
+}
+
+#right {
+    resize: horizontal;
+}

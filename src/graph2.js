@@ -132,7 +132,9 @@ export class Graph {
           addEdge(n, ...o);
         }
       } else if (n instanceof Option) {
-        stack.push([n, [{name: 'OPTION'}]]);
+        if (n.value) {
+          stack.push([n, [{name: 'OPTION'}]]);
+        }
       } else if (n instanceof Slot) {
         addEdge(n.item, n);
       } else if (n instanceof Trigger && n.slot) {
@@ -194,6 +196,7 @@ export class Slot extends Node {
     this.index = index;
     this.slots = slots;
     this.type = item instanceof Magic ? 'magic' : null;
+    this.origIndex = index;
     this.orig = item.name;
   }
 

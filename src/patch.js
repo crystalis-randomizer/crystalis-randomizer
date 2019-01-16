@@ -15,6 +15,7 @@ export default ({
   async apply(rom, hash) {
     // Rearrange things first before anything else happens!
     rearrangeTriggersAndNpcs.apply(rom);
+    connectLeafToLimeTree.apply(rom);
 
     // Pick a seed.
     let seed;
@@ -87,15 +88,55 @@ export const stampVersionSeedAndHash = (rom, seed) => {
   // numbers and display arbitrary hex digits.
 };
 
-export const connectWindToGoa = buildRomPatch(assemble(`
+export const connectLeafToLimeTree = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000
 .bank $14000 $8000:$4000
 
+;; Valley of Wind
+.org $145dd
+  .byte $e7,$93 ; new valley of wind entrance table
+  .byte $22,$86 ; move exit table up a little
 .org $14605
   .byte $10
-.org $145dd
+.org $153e7
+  .byte $80,$03,$df,$06
+  .byte $40,$01,$60,$01
+  .byte $80,$02,$70,$00
+  .byte $c8,$01,$98,$01
+  .byte $98,$01,$98,$01
+  .byte $a8,$00,$90,$03
+  .byte $ef,$04,$78,$05 ; new entrance from lime tree
+.org $14622
+  .byte $4f,$56,$42,$02 ; new exit to lime tree valley
+  .byte $4f,$57,$42,$02
+
+;; Lime Tree Valley
+.org $1544c
+  .byte $12,$86 ; new entrance table (inside v.wind area)
+  .byte $67,$94 ; move exit table up a little
+.org $14612 ; lime tree entrances
+  .byte $ef,$02,$78,$01
+  .byte $80,$01,$30,$00
+  .byte $10,$00,$c0,$01 ; new entrance from valley of wind
+.org $1545a
+  .byte $1a ; left-middle screen
+.org $1545d
+  .byte $0c ; bottom-left (just nicer matched mountains)
+.org $15467
+  .byte $00,$1b,$03,$06 ; new exits to valley of wind
+  .byte $00,$1c,$03,$06
+
+;; Waterfall Valley South
+.org $153dd
+  .byte $60,$93 ; share layout and graphics tables w/ north half
+  .byte $92,$93
+;;.org $153e7  ;; Newly-freed space
+;;.org $1541e
+
+
+
   ; find/make a free block for some new exit/entrance tables
-`, 'connectWindToGoa'));
+`, 'connectLeafToLimeTree'));
 // is this the right connection to make?  maybe waterfall valley is better?
 //  - a full-on any-road would also be reasonable - just add an outside
 //    four-way cross...
@@ -179,6 +220,29 @@ define ShouldRedisplayDifficulty $64a3
   .byte $a0,$00
 .org $1d852 ; kensu lighthouse
   .byte $c0,$00
+
+; Move NpcDialog_2d to the unused space at 1d1fd..1f21b
+.org $1c9b7
+  .byte $fd,$91
+.org $1d1fd
+  .byte $80,$00,$00,$00
+  .byte $28,$00
+  .byte $73,$05
+  .byte $ff
+  ;; 00: 28 Mt Sabre North - Main
+  .byte $a0,$00,$08,$b0,$00 ; default -> 05:10 (action 01)
+  ;; 05: 73 Swan - Gate
+  .byte $40,$2a,$42,$75,$05 ; 02a change:soldier -> 13:15 (action 08)
+  .byte         $41,$0d     ;     Set: 10d
+  .byte $a0,$00,$0a,$74,$05 ; default -> 13:14 (action 01) -> @ 05
+.org $1d21b
+
+.org $1e34c ; trigger b3: despawn swan guards
+  .byte $81,$0d ; 10d talked to guards from other side -> despawn
+
+.org $1cf79 ; space freed by moving Dialog_2d
+.org $1cf91
+
 
 ;; queen will try to give flute of lime even if got sword first
 .org $1cfab ; queen "you found sword of water" message action
@@ -575,6 +639,14 @@ export const preventNpcDespawns = buildRomPatch(assemble(`
   .byte $8d
 .org $1c845
   .byte $8d
+
+;; TODO - despawning swan guards closes the door forever
+;; instead, pick an unused flag, then set it as a prereq for
+;; trigger_b3 (1e34c) and set it as result of dialog_2d @73 +0 (1cf87)
+;;   => need 2 extra bytes to do this...
+;;   ... or add a jump to DialogFollowupActionJump_08 () to
+;;       set the flag manually if $6c==#$73
+
 
 `, 'preventNpcDespawns'));
 

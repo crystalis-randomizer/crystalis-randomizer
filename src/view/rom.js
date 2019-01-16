@@ -13,7 +13,7 @@ const varSlice = (arr, start, width, sentinel, end = Infinity) => {
 
 const addr = (arr, i, offset = 0) => (arr[i] | arr[i + 1] << 8) + offset;
 const group = (width, arr) =>
-      seq(arr.length / width, i => slice(arr, i * width, width));
+      seq(Math.max(0, Math.floor(arr.length / width)), i => slice(arr, i * width, width));
 const reverseBits = (x) => 
       ((x * 0x0802 & 0x22110) | (x * 0x8020 & 0x88440)) * 0x10101 >>> 16 & 0xff;
 const countBits = (x) => {

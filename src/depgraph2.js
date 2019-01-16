@@ -20,8 +20,12 @@ const location = (id, area, name) => new Location(graph, id, area, name);
 const leatherBootsGiveSpeed = option('Leather Boots grant speed');
 const assumeGhettoFlight    = option('Assume ghetto flight');
 const assumeTalkGlitch      = option('Assume talk glitch');
-const swordMagicOptional    = option('Sword magic optional');
+const swordMagicOptional    = option('Sword magic optional', false);
 const requireCalmForBarrier = option('Require calm for barrier');
+const teleportToShyron      = option('Sword of Thunder teleports to Shyron');
+const barrierOptional       = option('Barrier magic optional');
+const earlyFlight           = option('Early flight', false);
+const limeTreeConnectsToLeaf = option('Lime Tree connects to Leaf', true);
 
 ////////////////////////////////////////////////////////////////
 // Items
@@ -322,7 +326,7 @@ const destroyStone          = condition('Destroy stone').option(swordOfWind, bal
 const destroyIce            = condition('Destroy ice').option(swordOfFire, ballOfFire);
 const crossRivers           = condition('Cross rivers')
                                 .option(swordOfWater, ballOfWater)
-                                .option(flight);
+                                .option(flight, earlyFlight);
 const destroyIron           = condition('Destroy iron').option(swordOfThunder, ballOfThunder);
 const anySword              = condition('Any sword')
                                 .option(swordOfWind).option(swordOfFire)
@@ -331,7 +335,9 @@ const fireOrWaterOrThunder  = condition('Fire/Water/Thunder')
                                 .option(swordOfFire).option(swordOfWater).option(swordOfThunder);
 const speedBoots            = condition('Speed boots').option(leatherBoots, leatherBootsGiveSpeed);
 const climbSlopes           = condition('Climb slopes')
-                                .option(rabbitBoots).option(flight).option(speedBoots);
+                                .option(rabbitBoots)
+                                .option(flight, earlyFlight)
+                                .option(speedBoots);
 // Required for access to underground channel.
 const asinaTrigger          = condition('Asina in her room')
                                 // NOTE: this is just ballOfWater in vanilla.
@@ -341,9 +347,13 @@ const paralysisOrAsina      = condition('Paralysis or Ball of Water')
 // TODO - consider adding healedDolphin and/or returnedFogLamp here?  otherwise, flight alone
 // is basically enough (though with flight the dolphin is basically just a convenience).
 const rideDolphin           = condition('Ride dolphin').option(shellFlute, talkedToKensuInCabin);
-const crossSea              = condition('Cross sea').option(rideDolphin).option(flight);
+const crossSea              = condition('Cross sea')
+                                .option(rideDolphin)
+                                .option(flight, earlyFlight);
 const crossWhirlpool        = condition('Cross whirlpool')
-                                .option(calmedSea).option(flight).option(assumeGhettoFlight);
+                                .option(calmedSea)
+                                .option(flight, earlyFlight)
+                                .option(assumeGhettoFlight);
 const windMagic             = condition('Wind magic')
                                 .option(swordMagicOptional)
                                 .option(ballOfWind, tornadoBracelet);
@@ -362,6 +372,9 @@ const fluteOfLimeOrGlitch   = condition('Flute of lime or glitch')
 const changeOrGlitch        = condition('Change or glitch')
                                 .option(change)
                                 .option(assumeTalkGlitch);
+const passShootingStatues   = condition('Pass shooting statues')
+                                .option(barrier)
+                                .option(barrierOptional);
 
 // TODO - warp triggers, wild warp, etc...
 // ghetto flight?  talk glitch?  triggers (calmed sea or ghetto flight)?  require magic for boss?
@@ -657,7 +670,8 @@ const waterfallValleySW     = location(0x41, WFVL, 'Southwest')
 const waterfallValleySE     = location(0x41, WFVL, 'Southeast')
                                 .connect(waterfallValleySW, crossRivers);
 const limeTreeValley        = location(0x42, WFVL, 'Lime Tree Valley')
-                                .connect(waterfallValleySW);
+                                .connect(waterfallValleySW)
+                                .connect(valleyOfWind, limeTreeConnectsToLeaf);
 const limeTreeLake          = location(0x43, WFVL, 'Lime Tree Lake (Rage)')
                                 .connect(limeTreeValley)
                                 .trigger(talkedToRage, swordOfWater);
@@ -1280,6 +1294,7 @@ const swanDanceHall         = location(0xf1, SWAN, 'Dance Hall')
                                 .trigger(returnedLovePendant, talkedToKensuAtDance, lovePendant);
 const shyronTemple1         = location(0xf2, SHYR, 'Temple (pre-massacre)')
                                 .connect(shyron)
+                                .from(mezameShrine, swordOfThunder, teleportToShyron)
                                 .trigger(talkedToZebuInShyron);
 const shyronTemple2         = location(0xf2, SHYR, 'Temple (post-massacre)')
                                 .connect(shyron, shyronMassacre)
@@ -1326,6 +1341,8 @@ export const shuffle = async (rom, random, log = []) => {
   const ballOfFire = graph.findSlot('Ball of Fire');
   const statueOfOnyx = graph.findSlot('Statue of Onyx');
   const gasMask = graph.findSlot('Gas Mask');
+  const refresh = graph.findSlot('Refresh').item;
+  const recover = graph.findSlot('Recover').item;
   if (random.nextInt(2)) {
     swordOfFire.swap(swordOfWind);
     ballOfFire.swap(ballOfWind);
@@ -1337,20 +1354,54 @@ export const shuffle = async (rom, random, log = []) => {
   const counts = [1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 5, 5, 8, 13];
   const keys = [...buckets['key'], ...buckets['bonus']]; //, ...buckets['item']];
   const magics = buckets['magic'];
+  const magicIndices = [0, 1, 2, 3, 4, 5, 6, 7];
   const both = [keys, magics];
-  const which = [...keys.map(() => 0), ...magics.map(() => 1)];
+  //const both = [keys, magicIndices];
+  const which = [...keys.map(() => 0), ...magicIndices.map(() => 1)];
   for (let i = 0; i < 1000; i++) {
     if (i % 100 == 0) await new Promise(requestAnimationFrame);
     random.shuffle(keys);
     random.shuffle(magics);
+    //random.shuffle(magicIndices);
     random.shuffle(which);
-    const count = counts[random.nextInt(counts.length)];
+    let count = counts[random.nextInt(counts.length)];
     const pos = [0, 0];
+
+    let swap = (w, k) => both[w][pos[w] - 1 + k].swap(both[w][pos[w] + k]);
+    // if (i == 250) {
+    //   swap = (w, k) => {
+    //     let a = both[w][pos[w] - 1 + k];
+    //     let b = both[w][pos[w] + k];
+    //     if (b.item == refresh || b.item == recover) [a, b] = [b, a];
+    //     if (a.item == refresh || a.item == recover) {
+    //       if (a.origIndex < b.origIndex) return;
+    //       a.swap(b);
+    //     }
+    //   }
+    // }
+
+    // POSSIBLE FIXES - generate a true random distribution of magic
+    // and then don't swap them any more after that - needs a full
+    // MC approach, which we haven't proven yet.
+
+    // const swap = (w, k) => {
+    //   let a = both[w][pos[w] - 1 + k];
+    //   let b = both[w][pos[w] + k];
+    //   if (w) {
+    //     if (Math.abs(a - b) < 4) {
+    //       magics[a].swap(magics[b]);
+    //       [magics[a], magics[b]] = [magics[b], magics[a]];
+    //     }
+    //   } else {
+    //     a.swap(b);
+    //   }
+    // }    
+
     for (let j = 0; j < count; j++) {
       const w = which[j];
       pos[w] += 2;
       if (pos[w] > both[w].length) continue;
-      both[w][pos[w] - 2].swap(both[w][pos[w] - 1]);
+      swap(w, -1);
     }
     // test
     const {win} = graph.traverse();
@@ -1365,16 +1416,22 @@ export const shuffle = async (rom, random, log = []) => {
       const w = which[i];
       pos[w] -= 2;
       if (pos[w] + 1 >= both[w].length) continue;
-      both[w][pos[w]].swap(both[w][pos[w] + 1]);
+      swap(w, +1);
     }
   }
 
   // Commit everything
   const logdata = [];
   for (const slot of graph.slots()) {
-    logdata.push(`${slot.item.name} is where ${slot.orig} used to be`);
+    logdata.push(`Slot $${slot.origIndex.toString(16).padStart(2,0)} (${slot.orig}): ${slot.item.name}`);
     slot.write(rom);
   }
   logdata.sort();
+
+// logdata.splice(0,logdata.length);
+// const m=graph.slots().filter(s=>s.item instanceof Magic);
+// const xs=[0,3,1,2,4,5,6,7];
+// logdata.push(...m.sort((x,y)=>xs[x.origIndex-65]-xs[y.origIndex-65]).map(x=>x.name2));
+
   log.push(...logdata);
 };

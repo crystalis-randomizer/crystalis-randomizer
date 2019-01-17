@@ -396,7 +396,7 @@ const passShootingStatues   = condition('Pass shooting statues')
 // TODO - .trigger(...) but also allow bossLocation.trigger(...) to only affect after
 // the boss is killed...? useful for e.g. eyeGlasses require sabera1 or else palace boss?
 const vampire1    = boss(0x00, 'Vampire 1', anySword).get(rabbitBoots);
-const giantInsect = boss(0x01, 'Insect', fireOrWaterOrThunder).get(ballOfFire);
+const giantInsect = boss(0x01, 'Insect', insectFlute, fireOrWaterOrThunder).get(ballOfFire);
 const kelbesque1  = boss(0x02, 'Kelbesque 1', swordOfWind, windMagic).get(flameBracelet);
 const vampire2    = boss(0x0c, 'Vampire 2', anySword).get(fruitOfPowerVampire2);
 const sabera1     = boss(0x04, 'Sabera 1', swordOfFire, fireMagic).get(brokenStatue);
@@ -1473,5 +1473,5 @@ export const shuffle = async (rom, random, log = []) => {
 // const xs=[0,3,1,2,4,5,6,7];
 // logdata.push(...m.sort((x,y)=>xs[x.origIndex-65]-xs[y.origIndex-65]).map(x=>x.name2));
 
-  log.push(...logdata);
+  log.push(...logdata, '', 'Route:', ...route);
 };

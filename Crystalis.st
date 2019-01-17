@@ -98,6 +98,8 @@ define PlayerMetaspriteBase    $0301
 define PlayerMaxHP             $03c0
 define PlayerHP                $03c1
 define PlayerAttack            $03e1
+define PlayerArmorDef          $0401
+define PlayerShieldDef         $0400
 define PlayerLevel             $0421
 define PlayerJumpDisplacement  $0620
 define PlayerMoney             $0702 ; 2 bytes
@@ -19263,36 +19265,6 @@ ItemGet_Crystalis
         $1c2dd  xx:         xxx
 ;;; --------------------------------
 ItemGet_WeaponBallOrBracelet_NotCrystalis
-        ;; TODO - prevent clobbering the bracelet with a ball.
-        ;; Assuming weapon and bracelet slots are never sorted,
-        ;; we can do something like this:
-        ;;   lda $29       ; a5 29
-        ;;   cmp $6430,x   ; dd 30 64
-        ;;   bpl +         ; 10 01   -- may need to be bcc to handle empty $ff
-        ;;    rts          ; 60
-        ;; + sta $6430,x   ; 9d 30 64
-        ;;   sec           ; 38
-        ;;   sbc #$06      ; e9 06
-        ;;   and #$f9      ; 29 f9
-        ;;   beq +         ; d0 01
-        ;;    rts          ; 60
-        ;; + lda $29       ; a5 29
-        ;; This is one byte shorter and should fix the ball-clobbers-bracelet
-        ;; issue, though it does destroy A in all cases, which is probably
-        ;; fine, since bracelets already destroyed it.
-        ;; We could save yet another byte by switching (beq +1; rts) to just
-        ;; bne +22, which reuses the rts at the end of ItemGet_Bracelet.
-        ;;
-        ;; "Upgrade" approach
-        ;;   inc $6430,x
-        ;;   bne ItemGet_Bracelet
-        ;;   ; Got ball
-        ;;   lda #$1
-        ;;   bit $29
-        ;;   beq +
-        ;;    dec $29  ; demote bracelet to ball
-        ;; + rts
-        ;;
         $1c2de  xx xx:      xxx $xx
         $1c2e0  xx xx xx:   xxx $xxxx,x
         $1c2e3  xx xx:      xxx #$xx
@@ -19339,7 +19311,6 @@ ItemGet_FindOpenSlot
         $1c31b  xx xx:      xxx $xx
         $1c31d  xx:         xxx
 ;;; --------------------------------
-;;; Not clear how this gets called.
 ;;; Input:
 ;;;    $23 - ID of the item to use
 ;;; Output:
@@ -26771,9 +26742,9 @@ RomBank_10                      ; @@ $8000
         $2014d  xx xx:      xxx + ; $2015c
         $2014f  xx xx xx:   xxx $xxxx
         $20152  xx xx:      xxx + ; $2015c
-        $20154  xx xx:      xxx #$xx
-        $20156  xx xx xx:   xxx $2021f
-        $20159  xx xx xx:   xxx $21aee
+        $20154  xx xx:       xxx #$xx
+        $20156  xx xx xx:    xxx $2021f
+        $20159  xx xx xx:    xxx $21aee
         ;;                  ----------
 +       $2015c  xx xx:      xxx Ctrl1NewlyPressed
         $2015e  xx xx:      xxx #$xx
@@ -26782,7 +26753,7 @@ RomBank_10                      ; @@ $8000
 +       $20165  xx xx:      xxx Ctrl1NewlyPressed
         $20167  xx xx:      xxx #$xx
         $20169  xx xx:      xxx + ; $2016e
-        $2016b  xx xx xx:    xxx $20342
+        $2016b  xx xx xx:    xxx Inventory_DropItem
 +       $2016e  xx xx xx:   xxx $200d1
         ;;                  ----------
         ;; $20a9f appears to do something with audio, maybe?
@@ -27022,44 +26993,48 @@ InventoryMenu_LoadSelectedPage2
 DataTable_2033a 
         $2033a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+Inventory_DropItem
         $20342  xx xx xx:   xxx $xxxx
-        $20345  xx xx:      xxx $xx
-        $20347  xx xx:      xxx #$xx
-        $20349  xx xx xx:   xxx $20a9f
-        $2034c  xx xx:      xxx #$xx
-        $2034e  xx xx xx:   xxx $20933
-        $20351  xx xx:      xxx #$xx
-        $20353  xx xx xx:   xxx $20933
-        $20356  xx xx:      xxx #$xx
-        $20358  xx xx xx:   xxx $20933
-        $2035b  xx xx xx:   xxx $2047b
-;;; --------------------------------
-        $2035e  xx xx xx:   xxx $205e6
+        $20345  xx xx:      xxx + ; $2035e
+        ;; When does this happen?  Uncovered.
+        ;; It's set to nonzero in $2154d right before sorting,
+        ;; and then back to zero in $216cb.
+        $20347  xx xx:       xxx #SFX_CURSOR_SELECT
+        $20349  xx xx xx:    xxx $20a9f
+        $2034c  xx xx:       xxx #$xx
+        $2034e  xx xx xx:    xxx $20933
+        $20351  xx xx:       xxx #$xx
+        $20353  xx xx xx:    xxx $20933
+        $20356  xx xx:       xxx #$xx
+        $20358  xx xx xx:    xxx $20933
+        $2035b  xx xx xx:    xxx $2047b
+        ;; --------------------------------
++       $2035e  xx xx xx:   xxx Inventory_ReadCurrentHoveredItem
         $20361  xx xx:      xxx #$xx
-        $20363  xx xx:      xxx $xx
-        $20365  xx xx:      xxx #$xx
-        $20367  xx xx xx:   xxx $20a9f
-;;; --------------------------------
-        $2036a  xx xx:      xxx $xx
+        $20363  xx xx:      xxx + ; $2036a
+        $20365  xx xx:       xxx #SFX_CURSOR_ERROR ; nothing to drop
+        $20367  xx xx xx:    xxx $20a9f
+        ;; --------------------------------
++       $2036a  xx xx:      xxx $xx
         $2036c  xx xx:      xxx $xx
         $2036e  xx xx xx:   xxx $xxxx
         $20371  xx:         xxx
         $20372  xx xx xx:   xxx $20ff0,x
         $20375  xx xx:      xxx #$xx
-        $20377  xx xx:      xxx $xx
-        $20379  xx xx:      xxx #$xx
-        $2037b  xx xx xx:   xxx $20a9f
-        $2037e  xx xx:      xxx #$xx
-        $20380  xx xx xx:   xxx $20933
-        $20383  xx xx xx:   xxx $xxxx
-        $20386  xx xx:      xxx $xx
-        $20388  xx xx:      xxx #$xx
-        $2038a  xx xx xx:   xxx $20933
+        $20377  xx xx:      xxx ++ ; $20392
+        $20379  xx xx:       xxx #SFX_CURSOR_ERROR
+        $2037b  xx xx xx:    xxx $20a9f
+        $2037e  xx xx:       xxx #$xx
+        $20380  xx xx xx:    xxx $20933
+        $20383  xx xx xx:    xxx $xxxx
+        $20386  xx xx:       xxx + ; $2038d
+        $20388  xx xx:        xxx #$xx
+        $2038a  xx xx xx:     xxx $20933
 ;;; --------------------------------
-        $2038d  xx xx:      xxx #$xx
++       $2038d  xx xx:      xxx #$xx
         $2038f  xx xx xx:   xxx $20933
 ;;; --------------------------------
-        $20392  xx xx:      xxx #$xx
+++      $20392  xx xx:      xxx #SFX_CURSOR_SELECT
         $20394  xx xx xx:   xxx $20a9f
         $20397  xx xx:      xxx #$xx
         $20399  xx xx xx:   xxx $20933
@@ -27078,12 +27053,12 @@ DataTable_2033a
         $203b8  xx xx:      xxx #$xx
         $203ba  xx xx xx:   xxx $204da
         $203bd  xx xx:      xxx $xx
-        $203bf  xx xx:      xxx #$xx
+        $203bf  xx xx:      xxx #SFX_CURSOR_MOVE
         $203c1  xx xx xx:   xxx $20a9f
         $203c4  xx xx:      xxx #$xx
         $203c6  xx xx xx:   xxx $20933
 ;;; --------------------------------
-        $203c9  xx xx:      xxx #$xx
+        $203c9  xx xx:      xxx #SFX_CURSOR_SELECT
         $203cb  xx xx xx:   xxx $20a9f
         $203ce  xx xx xx:   xxx $xxxx
         $203d1  xx xx:      xxx $xx
@@ -27117,7 +27092,7 @@ DataTable_2033a
         $2040b  xx:         xxx
         $2040c  xx xx:      xxx #$xx
         $2040e  xx xx xx:   xxx $xxxx,x
-        $20411  xx xx xx:   xxx $3c169
+        $20411  xx xx xx:   xxx WaitForOAMDMA
         $20414  xx xx xx:   xxx $xxxx
         $20417  xx xx xx:   xxx $xxxx
         $2041a  xx xx xx:   xxx $20a5a
@@ -27138,7 +27113,7 @@ DataTable_2033a
         $2043f  xx xx:      xxx $xx
         $20441  xx xx xx:   xxx $xxxx
         $20444  xx:         xxx
-        $20445  xx xx xx:    xxx $20534
+        $20445  xx xx xx:    xxx Inventory_SortRows
         $20448  xx xx xx:    xxx $205ae
         $2044b  xx xx:       xxx $xx
         $2044d  xx xx:       xxx #$xx
@@ -27348,11 +27323,12 @@ Inventory_RowStarts
 +       $205e2  xx xx xx:   xxx $xxxx,x
         $205e5  xx:         xxx
 ;;; --------------------------------
-        $205e6  xx xx xx:   xxx $xxxx
+Inventory_ReadCurrentHoveredItem
+        $205e6  xx xx xx:   xxx InventoryMenu_CurrentPage
         $205e9  xx xx:      xxx + ; $205ed
-        $205eb  xx xx:       xxx #$xx
+        $205eb  xx xx:       xxx #$xx ; 1 -> 10, 0 -> 0
 +       $205ed  xx:         xxx
-        $205ee  xx xx xx:   xxx $xxxx
+        $205ee  xx xx xx:   xxx InventoryMenu_CurrentItem
         $205f1  xx:         xxx
         $205f2  xx xx xx:   xxx $xxxx,x
         $205f5  xx:         xxx
@@ -27974,6 +27950,7 @@ DataTable_209e0
         $20a9c  xx xx:      xxx $xx
         $20a9e  xx:         xxx
 ;;; --------------------------------
+        ;; play sound effect?
         $20a9f  xx xx xx:   xxx $xxxx
         $20aa2  xx xx:      xxx #$xx
         $20aa4  xx xx xx:   xxx $xxxx
@@ -28101,88 +28078,261 @@ DataTable_20c1b
         $20fbd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $20fcd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $20fdd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20fed              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20ffd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2100d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2101d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2102d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2103d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2104d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2105d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2106d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2107d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2108d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2109d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $210ad              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $210bd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $210cd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $210dd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $210ed              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $210fd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2110d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2111d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2112d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2113d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2114d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2115d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2116d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2117d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2118d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2119d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $211ad              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $211bd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $211cd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $211dd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $211ed              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $211fd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2120d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2121d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2122d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2123d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2124d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2125d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2126d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2127d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2128d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2129d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $212ad              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $212bd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $212cd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $212dd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $212ed              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $212fd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2130d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2131d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2132d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2133d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2134d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2135d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2136d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2137d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2138d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2139d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $213ad              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $213bd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $213cd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $213dd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $213ed              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $213fd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2140d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2141d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2142d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2143d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2144d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2145d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2146d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2147d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2148d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2149d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $214ad              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $214bd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $214cd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $214dd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $214ed              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $214fd              .byte $xx,$xx,$xx
+        $20fed              .byte $xx,$xx,$xx
+;;; --------------------------------
+Inventory_ItemData
+        ;; The :40 bit indicates that it's not allowed to be dropped
+        ;; Other bits probably have something to do with gfx.
+        ;;   :03 looks like a palette select
+        ;;   :80 seems to only indicate swords and magic
+        ;;   :20 seems to apply to everything but consumables and quest items
+        $20ff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $21000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $21010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $21020              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $21030              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+        $2103b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $2104b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $2105b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $2106b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $2107b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+;;; STRIP: word=$18000
+        $21086              .word ($2111a) ; 00
+        $21088              .word ($21124) ; 01
+        $2108a              .word ($2112e) ; 02
+        $2108c              .word ($21139) ; 03
+        $2108e              .word ($21146) ; 04
+        $21090              .word ($21150) ; 05
+        $21092              .word ($21180) ; 06
+        $21094              .word ($2115b) ; 07
+        $21096              .word ($2118d) ; 08
+        $21098              .word ($21166) ; 09
+        $2109a              .word ($21198) ; 0a
+        $2109c              .word ($21172) ; 0b
+        $2109e              .word ($211a6) ; 0c
+        $210a0              .word ($211b1) ; 0d
+        $210a2              .word ($211be) ; 0e
+        $210a4              .word ($211c9) ; 0f
+        $210a6              .word ($211d6) ; 10
+        $210a8              .word ($211e3) ; 11
+        $210aa              .word ($211ef) ; 12
+        $210ac              .word ($211fa) ; 13
+        $210ae              .word ($21205) ; 14
+        $210b0              .word ($21210) ; 15
+        $210b2              .word ($2121c) ; 16
+        $210b4              .word ($21228) ; 17
+        $210b6              .word ($21233) ; 18
+        $210b8              .word ($21240) ; 19
+        $210ba              .word ($2124d) ; 1a
+        $210bc              .word ($2125a) ; 1b
+        $210be              .word ($21265) ; 1c
+        $210c0              .word ($21270) ; 1d
+        $210c2              .word ($2127d) ; 1e
+        $210c4              .word ($21286) ; 1f
+        $210c6              .word ($21292) ; 20
+        $210c8              .word ($2129e) ; 21
+        $210ca              .word ($212ab) ; 22
+        $210cc              .word ($212b6) ; 23
+        $210ce              .word ($212c3) ; 24
+        $210d0              .word ($212ce) ; 25
+        $210d2              .word ($212db) ; 26
+        $210d4              .word ($212e7) ; 27
+        $210d6              .word ($212f4) ; 28
+        $210d8              .word ($21300) ; 29
+        $210da              .word ($21309) ; 2a
+        $210dc              .word ($21314) ; 2b
+        $210de              .word ($21321) ; 2c
+        $210e0              .word ($2132f) ; 2d
+        $210e2              .word ($2133d) ; 2e
+        $210e4              .word ($2134a) ; 2f
+        $210e6              .word ($21358) ; 30
+        $210e8              .word ($21364) ; 31
+        $210ea              .word ($21370) ; 32
+        $210ec              .word ($2137d) ; 33
+        $210ee              .word ($2138b) ; 34
+        $210f0              .word ($21397) ; 35
+        $210f2              .word ($213a0) ; 36
+        $210f4              .word ($213ac) ; 37
+        $210f6              .word ($213b8) ; 38
+        $210f8              .word ($213c6) ; 39
+        $210fa              .word ($213d3) ; 3a
+        $210fc              .word ($213e0) ; 3b
+        $210fe              .word ($213ed) ; 3c
+        $21100              .word ($213fa) ; 3d
+        $21102              .word ($21407) ; 3e
+        $21104              .word ($21411) ; 3f
+        $21106              .word ($2141a) ; 40
+        $21108              .word ($21425) ; 41
+        $2110a              .word ($2142d) ; 42
+        $2110c              .word ($21437) ; 43
+        $2110e              .word ($21441) ; 44
+        $21110              .word ($2144a) ; 45
+        $21112              .word ($21452) ; 46
+        $21114              .word ($2145a) ; 47
+        $21116              .word ($21461) ; 48
+        $21118              .word ($21468) ; 49
+;;; --------------------------------
+        ;; 00
+        $2111a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 01
+        $21124              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 02
+        $2112e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 03
+        $21139              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 04
+        $21146              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 05
+        $21150              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 07
+        $2115b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 09
+        $21166              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 0b
+        $21172              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 06
+        $21180              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 08
+        $2118d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 0a
+        $21198              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 0c
+        $211a6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 0d
+        $211b1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 0e
+        $211be              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 0f
+        $211c9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 10
+        $211d6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 11
+        $211e3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 12
+        $211ef              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 13
+        $211fa              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 14
+        $21205              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 15
+        $21210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 16
+        $2121c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 17
+        $21228              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 18
+        $21233              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 19
+        $21240              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 1a
+        $2124d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 1b
+        $2125a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 1c
+        $21265              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 1d
+        $21270              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 1e
+        $2127d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 1f
+        $21286              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 20
+        $21292              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 21
+        $2129e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 22
+        $212ab              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 23
+        $212b6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 24
+        $212c3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 25
+        $212ce              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 26
+        $212db              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 27
+        $212e7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 28
+        $212f4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 29
+        $21300              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 2a
+        $21309              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 2b
+        $21314              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 2c
+        $21321              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 2d
+        $2132f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 2e
+        $2133d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 2f
+        $2134a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 30
+        $21358              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 31
+        $21364              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 32
+        $21370              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 33
+        $2137d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 34
+        $2138b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 35
+        $21397              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 36
+        $213a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 37
+        $213ac              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 38
+        $213b8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 39
+        $213c6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 3a
+        $213d3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 3b
+        $213e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 3c
+        $213ed              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 3d
+        $213fa              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 3e
+        $21407              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 3f
+        $21411              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 40
+        $2141a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 41
+        $21425              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 42
+        $2142d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 43
+        $21437              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 44
+        $21441              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 45
+        $2144a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 46
+        $21452              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 47
+        $2145a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 48
+        $21461              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 49
+        $21468              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+        ;; The following bytes were all uncovered in a full run.
+        $21471              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $21481              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $21491              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $214a1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $214b1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $214c1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $214d1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $214e1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $214f1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
         $21500  xx xx xx:   xxx $21558
 ;;; --------------------------------
@@ -28209,7 +28359,7 @@ DataTable_20c1b
         $21529  xx xx:      xxx #$xx
         $2152b  xx xx:      xxx $xx
         $2152d  xx xx xx:   xxx $21912
-        $21530  xx xx xx:   xxx $3c169
+        $21530  xx xx xx:   xxx WaitForOAMDMA
         $21533  xx xx:      xxx #SCREEN_MODE_TEXT
         $21535  xx xx:      xxx ScreenMode
         $21537  xx xx:      xxx #$xx
@@ -53858,7 +54008,7 @@ UpdateEquipmentAndStatus
 +       $3c030  xx xx xx:    xxx EquippedArmor
         $3c033  xx:          xxx
         $3c034  xx xx xx:    xxx ArmorDefense,y
-        $3c037  xx xx xx:    xxx $xxxx
+        $3c037  xx xx xx:    xxx PlayerArmorDef
         $3c03a  xx xx xx:    xxx PlayerLevel
         $3c03d  xx xx xx:    xxx EquippedPassiveItem
         $3c040  xx xx:       xxx #ITEM_SHIELD_RING
@@ -53867,7 +54017,7 @@ UpdateEquipmentAndStatus
 +       $3c045  xx xx xx:    xxx EquippedShield
         $3c048  xx:          xxx
         $3c049  xx xx xx:    xxx ShieldDefense,y
-        $3c04c  xx xx xx:    xxx ObjectDefense
+        $3c04c  xx xx xx:    xxx PlayerShieldDef
         $3c04f  xx:         xxx
         $3c050  xx xx xx:   xxx BankSwitch8k_8000
         $3c053  xx xx:      xxx #$xx
@@ -53877,7 +54027,7 @@ UpdateEquipmentAndStatus
         $3c05c  xx xx:      xxx + ; $3c060
         $3c05e  xx xx:       xxx #$xx
 +       $3c060  xx xx xx:   xxx $xxxx
-        $3c063  xx xx xx:   xxx $xxxx
+        $3c063  xx xx xx:   xxx $xxxx ; "change" flags
         $3c066  xx xx:      xxx #$xx
         $3c068  xx xx:      xxx $xx
         $3c06a  xx xx xx:   xxx PlayerStatus
@@ -56314,6 +56464,7 @@ DialogFollowupActionJump_1b
         ;;   - this same memory ($7de) is also written elsewhere,
         ;;     e.g. $3decb for change menu, $3d0b6 for
         ;;     "not enough mp" and "nothing happens" messages
+        ;; Destroys the banks
 LoadAndShowDialog
         $3d347  xx xx:      xxx $xx
         $3d349  xx xx xx:   xxx $xxxx
@@ -56697,14 +56848,14 @@ ItemOrTriggerActionJump_10
 DialogFollowupActionJump_08
         $3d63f  xx xx xx:   xxx $xxxx
         $3d642  xx xx:      xxx #$xx
-        $3d644  xx xx:      xxx $xx
-        $3d646  xx xx:      xxx #$xx
-        $3d648  xx xx:      xxx $xx
-        $3d64a  xx xx xx:   xxx $xxxx
-        $3d64d  xx xx:      xxx $xx
-        $3d64f  xx xx xx:   xxx LoadOneObjectDataInternal
-;;; --------------------------------
-        $3d652  xx:         xxx
+        $3d644  xx xx:      xxx + ; $3d652
+        $3d646  xx xx:       xxx #$xx
+        $3d648  xx xx:       xxx $xx
+        $3d64a  xx xx xx:    xxx $xxxx
+        $3d64d  xx xx:       xxx $xx
+        $3d64f  xx xx xx:    xxx LoadOneObjectDataInternal
+        ;; --------------------------------
++       $3d652  xx:         xxx
 ;;; --------------------------------
 ItemOrTriggerActionJump_04
         $3d653  xx:         xxx

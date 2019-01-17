@@ -24,8 +24,13 @@ const swordMagicOptional    = option('Sword magic optional', false);
 const requireCalmForBarrier = option('Require calm for barrier');
 const teleportToShyron      = option('Sword of Thunder teleports to Shyron');
 const barrierOptional       = option('Barrier magic optional');
+const refreshOptional       = option('Refresh magic optional');
 const earlyFlight           = option('Early flight', false);
 const limeTreeConnectsToLeaf = option('Lime Tree connects to Leaf', true);
+const assumeWildWarp        = option('Assume wild warp', false);
+
+// TODO - for wild warp consider adding a list of locations,
+// then we can hack those into the rom if it changes?
 
 ////////////////////////////////////////////////////////////////
 // Items
@@ -374,7 +379,12 @@ const changeOrGlitch        = condition('Change or glitch')
                                 .option(assumeTalkGlitch);
 const passShootingStatues   = condition('Pass shooting statues')
                                 .option(barrier)
+                                .option(refresh)
                                 .option(barrierOptional);
+// TODO - what to block this on?
+// const maybeRefresh          = condition('Refresh if needed')
+//                                 .option(refreshOptional)
+//                                 .option(refresh);
 
 // TODO - warp triggers, wild warp, etc...
 // ghetto flight?  talk glitch?  triggers (calmed sea or ghetto flight)?  require magic for boss?
@@ -444,7 +454,9 @@ const TOWR = area('Tower');
 
 // Leaf, Valley of Wind, Sealed Cave
 
-const mezameShrine          = location(0x00, LEAF, 'Mezame Shrine');
+const start                 = location(0x00, LEAF, 'Start');
+const mezameShrine          = location(0x00, LEAF, 'Mezame Shrine')
+                                .connect(start);
 const outsideStart          = location(0x01, LEAF, 'Outside Start')
                                 .connect(mezameShrine);
 const leaf                  = location(0x02, LEAF, 'Town')
@@ -969,7 +981,7 @@ const mtHydraTunnel10b      = location(0x87, HYDR, 'Tunnel 10b (past wall)')
 // Styx
 
 const styx1                 = location(0x88, STYX, 'Entrance')
-                                .from(mtHydra4, keyToStyx); // TODO - two-way?
+                                .from(mtHydra4, keyToStyx, passShootingStatues); // TODO - two-way?
 const styx2a                = location(0x89, STYX, 'Left branch')
                                 .connect(styx1)
                                 .chest(mimic, 0x13);
@@ -1098,7 +1110,7 @@ const pyramidBackTeleporter = location(0xa7, PYRB, 'Teleporter')
 // Draygonia Fortress
 
 const fortressEntrance      = location(0xa8, DRG1, 'Entrance')
-                                .connect(goa)
+                                .connect(goa, passShootingStatues)
                                 // TODO - need to add talkedToZebuInShyron
                                 .trigger(shyronMassacre, swordOfThunder);
 const fortress1a            = location(0xa9, DRG1, 'Main')
@@ -1163,7 +1175,7 @@ const fortress4g            = location(0xb5, DRG4, 'Lower')
                                 .chest(warpBoots, 0x18, 0x6e);
 const fortress4h            = location(0xb6, DRG4, 'Boss Corridor').connect(fortress4g);
 const fortress4Boss         = location(0xb6, DRG4, 'Boss')
-                                .connect(fortress4h)
+                                .connect(fortress4h, passShootingStatues)
                                 .boss(karmine);
 const fortress4End          = location(0xb6, DRG4, 'Behind Boss (stormBracelet)')
                                 .connect(fortress4Boss)
@@ -1294,7 +1306,7 @@ const swanDanceHall         = location(0xf1, SWAN, 'Dance Hall')
                                 .trigger(returnedLovePendant, talkedToKensuAtDance, lovePendant);
 const shyronTemple1         = location(0xf2, SHYR, 'Temple (pre-massacre)')
                                 .connect(shyron)
-                                .from(mezameShrine, swordOfThunder, teleportToShyron)
+                                .from(start, swordOfThunder, teleportToShyron)
                                 .trigger(talkedToZebuInShyron);
 const shyronTemple2         = location(0xf2, SHYR, 'Temple (post-massacre)')
                                 .connect(shyron, shyronMassacre)
@@ -1308,6 +1320,31 @@ const saharaInn             = location(0xf8, SHRA, 'Inn').connect(sahara);
 const saharaToolShop        = location(0xf9, SHRA, 'Tool Shop').connect(sahara);
 const saharaElderHouse      = location(0xfa, SHRA, 'Elder\'s House').connect(sahara);
 const saharaPawnShop        = location(0xfb, SHRA, 'Pawn Shop').connect(sahara);
+
+const wildWarpLocations = [
+  leaf,
+  valleyOfWind,
+  sealedCave1,
+  cordelPlainWest,
+  swamp,
+  mtSabreWestEntrance,
+  waterfallValleySummit,
+  limeTreeValley,
+  angrySeaCabinBeach,
+  // undergroundChannel6, // not useful
+  swan,
+  goaValley,
+  mtHydra1,
+  desert1,
+  fortressEntrance,
+  desert2,
+];
+
+if (assumeWildWarp.value) {
+  for (const l of wildWarpLocations) {
+    l.from(start);
+  }
+}
 
 return graph;
 };
@@ -1358,6 +1395,7 @@ export const shuffle = async (rom, random, log = []) => {
   const both = [keys, magics];
   //const both = [keys, magicIndices];
   const which = [...keys.map(() => 0), ...magicIndices.map(() => 1)];
+  let route = null;
   for (let i = 0; i < 1000; i++) {
     if (i % 100 == 0) await new Promise(requestAnimationFrame);
     random.shuffle(keys);
@@ -1404,9 +1442,10 @@ export const shuffle = async (rom, random, log = []) => {
       swap(w, -1);
     }
     // test
-    const {win} = graph.traverse();
+    const {win, path} = graph.traverse();
     if (win) {
       //console.log(`successful shuffle of ${count} items`);
+      route = path;
       continue;
     } else {
       //console.log(`shuffled ${count} items: fail`);
@@ -1427,6 +1466,7 @@ export const shuffle = async (rom, random, log = []) => {
     slot.write(rom);
   }
   logdata.sort();
+  logdata.push('', 'Route:', ...route);
 
 // logdata.splice(0,logdata.length);
 // const m=graph.slots().filter(s=>s.item instanceof Magic);

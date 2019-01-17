@@ -48,6 +48,7 @@ console.log(parsed.prg[0x195ff].toString(16));
     fixVampire.apply(rom);
     displayDifficulty.apply(rom);
     itemLib.apply(rom);
+    buffMedicalHerb.apply(rom);
     //noTeleportOnThunderSword.apply(rom);
     //quickChangeItems.apply(rom);
 
@@ -744,6 +745,11 @@ CheckToRedisplayDifficulty:
 `, 'displayDifficulty'));
 
 
+export const buffMedicalHerb = buildRomPatch(assemble(`
+.bank $1c000 $8000:$4000
+.org $1c4ea
+  .byte $60
+`, 'buffMedicalHerb'));
 // TODO - buff medical herb - change $1c4ea from $20 to e.g. $60,
 //   or else have it scale with difficulty?
 //   - (diff + 1) << 4 ? 
@@ -751,6 +757,7 @@ CheckToRedisplayDifficulty:
 
 export const disableWildWarp = buildRomPatch(assemble(`
 ;;; NOTE: this actually recovers 36 bytes of prime real estate PRG.
+;;; Alternatively, restrict it to only go to leaf?
 .bank $3c000 $c000:$4000
 .org $3cbc7
   rts

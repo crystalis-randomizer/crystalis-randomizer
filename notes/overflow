@@ -1,0 +1,8 @@
+Overflow items
+
+Story items ($6450..$6457) need to overflow if the row is full.
+We store them in $64b8..$64bf.
+
+$20436 clears out the ram
+
+$20342 is the start of the drop item code

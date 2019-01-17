@@ -1,0 +1,7 @@
+TODO - add a plugin module to store data when things happen, e.g. object loads into an array
+that we can access at any time, also event handlers to fire and optionally log?
+
+
+// log damage dealt
+
+nes.debug.breakAt(0x3513b, 'prg', 'x', ()=>console.log(`Dealing ${nes.cpu.ram[0x10]} damage of ${nes.cpu.ram[nes.cpu.REG_Y + 0x3c0]}.`));

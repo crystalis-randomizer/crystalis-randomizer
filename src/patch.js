@@ -362,6 +362,21 @@ GrantItemInRegisterA:
 .org $1e222
   .byte $c0,$00 ; trigger set flag
 
+;; insect/dwarf items
+;; Change all the post-insect messages to action 03
+.org $1cdc6
+  .byte $18
+.org $1cdcb
+  .byte $18
+.org $1cdd2
+  .byte $18
+.org $1cdd9
+  .byte $18
+.org $1cdff
+  .byte $18
+.org $1ce04
+  .byte $18
+
 ;; move portoa fisherman up 1 word, make him only
 ;; appear if both shell flute AND healed dolphin
 ;; NOTE: 8b is the traditional itemget and 25

@@ -1395,7 +1395,7 @@ export const shuffle = async (rom, random, log = []) => {
   const both = [keys, magics];
   //const both = [keys, magicIndices];
   const which = [...keys.map(() => 0), ...magicIndices.map(() => 1)];
-  let route = null;
+  let route = [];
   for (let i = 0; i < 1000; i++) {
     if (i % 100 == 0) await new Promise(requestAnimationFrame);
     random.shuffle(keys);
@@ -1466,7 +1466,6 @@ export const shuffle = async (rom, random, log = []) => {
     slot.write(rom);
   }
   logdata.sort();
-  logdata.push('', 'Route:', ...route);
 
 // logdata.splice(0,logdata.length);
 // const m=graph.slots().filter(s=>s.item instanceof Magic);

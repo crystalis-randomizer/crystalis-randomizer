@@ -45,6 +45,7 @@ console.log(parsed.prg[0x195ff].toString(16));
     buffDeosPendant.apply(rom);
     barrierRequiresCalmSea.apply(rom);
     scaleDifficultyLib.apply(rom);
+    nerfArmors.apply(rom);
     fixVampire.apply(rom);
     displayDifficulty.apply(rom);
     itemLib.apply(rom);
@@ -268,30 +269,12 @@ PatchGrantItemInRegisterA:
    pla
    pla
 + rts
+.org $3ff5c
 
-;InitializeOverflowChests:
-;  ldx #$07
-;  lda #$ff
-;-  sta $64b8,x
-;   dex
-;  bpl -
-;  sta $64cf ; set flags 78..7f
-;  jmp $3c008
-
-PatchLocationChange:
-  ;; repopulate overflow chest flags (could skip if $6c != 0)
-  ldx #$07
-  lda #$01
--  cmp $64b8,x
-   ror $64cf
-   dex
-  bpl -
-  jmp $3e3e9
-
-.org $3ff80
-
-.org $3ca2e
-  jsr PatchLocationChange
+.org $3ff62
+; this space is used by nerfArmors
+;.org $3ff77
+;.org $3ff80
 
 .org $3d22b
 GrantItemInRegisterA:
@@ -1418,6 +1401,67 @@ Multiply16Bit:
 .org $1bff0
 `, 'scaleDifficultyLib'));
 
+const nerfArmors = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000
+.bank $1a000 $a000:$2000
+.org $1bb30
+DiffDef:   ; PDef' * 4
+  .byte $08,$0A,$0C,$0E,$10,$12,$14,$16,$18,$1A,$1C,$1E,$20,$22,$24,$26
+  .byte $28,$2A,$2C,$2E,$30,$32,$34,$36,$38,$3A,$3C,$3E,$40,$42,$44,$46
+  .byte $48,$4A,$4C,$4E,$50,$52,$54,$56,$58,$5A,$5C,$5E,$60,$62,$64,$66
+
+.bank $34000 $8000:$2000
+.org $34bc0
+ArmorDefense:
+  .byte $00,$01,$03,$05,$07,$09,$0c,$0a,$10
+ShieldDefense:
+  .byte $00,$01,$03,$04,$06,$09,$08,$0c,$10
+
+;; Max out armor and shield def at 2*level
+.org $3c02b
+  sta $61
+  asl $61
+  ldy $0713
+  lda ArmorDefense,y
+  cmp $61
+  bcc +
+   lda $61
++ clc
+  adc $0421
+  ldy $0716
+  cpy #$10
+  bne +
+   asl
++ sta $0401
+.org $3c04a
+  jsr PatchUpdateShieldDefense
+  nop
+  nop
+.org $3c04f ; NOTE: must be exact!
+  ; STA PLAYER_DEF
+
+.org $3ff62
+PatchUpdateShieldDefense:
+  ldy $0714
+  lda ShieldDefense,y
+  cmp $61
+  bcc +
+   lda $61
++ clc
+  adc $0421
+  ldy $0716
+  cpy #$14
+  bne +
+   asl
++ sta $0400
+  rts
+.org $3ff80
+
+;; We could try to be cleverer about not reloading the equipped item.
+;; If we just ASL the whole defense then we can do them simultaneously,
+;; and then go into power ring.
+
+`, 'nerfArmors'));
 
 
 const adjustObjectDifficultyStats = (data, rom) => {

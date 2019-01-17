@@ -1289,7 +1289,7 @@ const zombieTownHouse       = location(0xe8, EVIL, 'Zombie Town House').connect(
 const zombieTownBasement    = location(0xe9, EVIL, 'Zombie Town Basement')
                                 .connect(zombieTownHouse)
                                 // TODO - correct trigger when shuffling bosses?
-                                .trigger(talkedToClark, sabera2);
+                                .trigger(talkedToClark, sabera1);
 const swanToolShop          = location(0xeb, SWAN, 'Tool Shop').connect(swan);
 const swanStomHut           = location(0xec, SWAN, 'Stom\'s Hut')
                                 .connect(swan)

@@ -380,6 +380,7 @@ const changeOrGlitch        = condition('Change or glitch')
 const passShootingStatues   = condition('Pass shooting statues')
                                 .option(barrier)
                                 .option(refresh)
+                                .option(shieldRing)
                                 .option(barrierOptional);
 // TODO - what to block this on?
 // const maybeRefresh          = condition('Refresh if needed')
@@ -946,7 +947,7 @@ const mtHydra9              = location(0x7c, HYDR, 'Floating island (bow of sun)
                                 .connect(mtHydra8, flight)
                                 .chest(bowOfSun, 0x18);
 const mtHydraTunnel1        = location(0x7d, HYDR, 'Tunnel 1 (to Shyron)')
-                                .connect(mtHydra1);
+                                .connect(mtHydra2);
 const mtHydraOutsideShyron  = location(0x7e, HYDR, 'Outside Shyron')
                                 .connect(mtHydraTunnel1);
 const mtHydraTunnel2        = location(0x7f, HYDR, 'Tunnel 2 (fork)')
@@ -1140,7 +1141,7 @@ const fortress2g            = location(0xab, DRG2, 'Across Third Bridge')
 const fortress2h            = location(0xab, DRG2, 'Exit Behind Iron Door')
                                 .connect(fortress2g, destroyIron); // 14, 29e
 const fortress2Boss         = location(0xac, DRG2, 'Boss').connect(fortress2h).boss(sabera2);
-const fortressTornel        = location(0xac, DRG2, 'Tornel').connect(fortress2Boss);
+const fortressTornel        = location(0xac, DRG2, 'Tornel').from(fortress2Boss);
 const fortress3Lower        = location(0xad, DRG3, 'Lower')
                                 .connect(fortressTornel)
                                 .chest(opelStatue, 0x1a, 0x63)
@@ -1192,7 +1193,7 @@ const fortress3Boss         = location(0xb9, DRG3, 'Boss')
                                 .connect(fortress3UpperPassage)
                                 .boss(mado2);
 const fortressAsina         = location(0xb9, DRG3, 'Asina')
-                                .connect(fortress3Boss)
+                                .from(fortress3Boss)
                                 .connectTo(fortress4a);
 const fortressKensu         = location(0xba, DRG4, 'Kensu')
                                 .connect(fortress4f)

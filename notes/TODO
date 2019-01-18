@@ -42,3 +42,103 @@ shuffle a list of map changes, as manual functions
 manually swap swords of wind and fire - could maybe do this before depgraph?
  - no rabbit boots -> no tornado bracelet ?
 add bracelets to shuffle (may need to change teleport trigger tho, or just remove)
+
+
+====
+
+Use a graph traversal approach to populate the rom, locations, screens, etc
+ - figure out which locations are reachable
+ - figure out which entrances are used for each location
+ - figure out which screens use pits, etc
+ - flood-fill screens to see what connects to what
+
+class Screen(id, terrainSet) {
+  - populated lazily, when found on a reachable location
+  - segments
+  - exits and entrances, borders (incl exitable borders)
+}
+
+====
+
+Option: add key items to extra locations
+  - specifically, (1) stoned pair, ??
+Option: remove alarm flute from shops
+  - works nicely with previous, though we'd need to also move it to other row to prevent dropping
+  - i.e. new key item, new slots for them.
+  - would want more of an "any road" to avoid needing the windmill right off?
+  - could add an item from student and start with zero cash
+NOTE: one important routing difficulty is that we need to ensure that
+      these options *don't* render the game in an unwinnable state
+       - e.g. need to traverse all combinations of flute usage
+              and ensure in all combinations that either both flutes can
+              be used or no flute can be.
+      we don't want to fix this by requiring both flutes, since this would
+      ruin the vanilla route
+  - could we add a simple "blocks" check?
+    if USING the first flute is a BLOCKER on the second flute then we're good
+    but we currently don't have a concept of "require to be blocked on"
+
+====
+
+Speed up the whole thing:
+ - The only thing we're changing is the mapping from slot to item.
+ - Each slot has a bunch of antecedants, which can be expressed in ksat
+   terms: (a and b and c) or (a and d and e) or (b and f)
+ - precompute the full antecedants for each slot in terms of only items.
+   now we can easily evaluate many more questions and faster
+   - multiple flute questions -> will picking the wrong target break me?
+
+Only a problem
+     IF Flute 2's shuffled slot is blocked on Statue 1's item
+     AND Statue 2's blockers (aside from Flute 2) are NOT.
+
+Example (When printing graph with ORs, just connect the one that was satisfied)
+
+  Slot(Sword of Wind) <- ()
+  Slot(Windmill Key) <- ()
+  Slot(Refresh) <- (Windmill Key)
+  Slot(Ball of Wind) <- (Windmill Key)
+  Slot(Rabbit Boots) <- (Sword of Wind AND Ball of Wind) # elide transitive dep
+  Slot(Statue of Onyx) <- (Sword of Wind AND Ball of Wind)
+  Slot(Gas Mask) <- (Statue of Onyx)
+
+When integrating, build up entire traversal from start
+ - each node gets a full set -> persistent sets would help here?
+ - when we see
+ 
+     Slot(c) <- (a AND b)
+     Slot(d) <- (a AND b AND c)
+
+   rewrite it as
+
+     Slot(d) <- (c)
+
+   For each element, if any of its full-deps are present, remove them.
+   Use immutablejs for this to get efficient persistent sets?
+
+Other identities:
+
+  (a AND b) OR (a AND b AND c) -> (a AND b)
+  If any depset is a subset of any other, remove the larger one.
+
+But wait - this won't work if the slots change!  E.g. if Statue of Onyx moved
+to Valley of Wind then we'd still need Sword and Ball of Wind to even get to
+Akahana to cash in on it.  So we need to keep all the requirements, no
+substituting.  For any given graph we can SIMPLIFY it like that, but then it's
+no longer suitable for shuffling.
+
+
+
+=====
+
+ - thunder needs to set shyron warp
+ - mado softlock (and undo routing workaround)
+
+ - still need to save oak kid
+
+ - mimic pattern table?
+   weird insect in 66cd894/#seed=c900e24b - fog lamp cave
+ - sabera thunder vulnerability
+ - crc
+ - debuff shield ring just a little
+ - hell mode

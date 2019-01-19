@@ -639,6 +639,42 @@ export const preventNpcDespawns = buildRomPatch(assemble(`
 .org $1c845
   .byte $8d
 
+;; Prevent soft-lock when encountering sabera and mado from reverse
+;; Double-returns if the boss's sprite is not in the top quarter of
+;; the screen. This is unused space at the end of the triggers.
+.org $1e3c0
+CheckBelowBoss:
+   lda $0380,x
+    bmi ++
+   ; skip the check for sabera 1 and mado 1
+   lda $04a0.x
+   and #$fe
+   cmp #$e6  ; sabera and mado
+   bne +
+    lda #$d8
+    sbc $04c0,x  ; first version has #$cf, second has #$dc
+    bpl ++
++  sec
+   lda $d0
+   sbc $d0,x
+    bmi ++
+   lda $b0
+   sbc $b0,x
+    bmi ++
+   sbc #$40
+++ rts
+.org $1e3e5
+.org $1e3f0
+
+.org $1e48b  ; vampire pattern 0
+  jsr CheckBelowBoss
+.org $1e971  ; kelbesque pattern 0
+  jsr CheckBelowBoss
+.org $1ec8f  ; sabera pattern 0
+  jsr CheckBelowBoss
+.org $1ede8  ; mado pattern 0
+  jsr CheckBelowBoss
+
 ;; TODO - despawning swan guards closes the door forever
 ;; instead, pick an unused flag, then set it as a prereq for
 ;; trigger_b3 (1e34c) and set it as result of dialog_2d @73 +0 (1cf87)
@@ -646,6 +682,11 @@ export const preventNpcDespawns = buildRomPatch(assemble(`
 ;;   ... or add a jump to DialogFollowupActionJump_08 () to
 ;;       set the flag manually if $6c==#$73
 
+
+;; While we're at it, fix sabera's elemental defense
+.bank $1a000 $a000:$2000
+.org $1b6df
+  .byte $0d
 
 `, 'preventNpcDespawns'));
 

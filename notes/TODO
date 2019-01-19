@@ -127,18 +127,11 @@ Akahana to cash in on it.  So we need to keep all the requirements, no
 substituting.  For any given graph we can SIMPLIFY it like that, but then it's
 no longer suitable for shuffling.
 
-
-
 =====
 
- - thunder needs to set shyron warp
- - mado softlock (and undo routing workaround)
-
- - still need to save oak kid
+ - still need to save oak kid?
 
  - mimic pattern table?
    weird insect in 66cd894/#seed=c900e24b - fog lamp cave
- - sabera thunder vulnerability
  - crc
- - debuff shield ring just a little
  - hell mode

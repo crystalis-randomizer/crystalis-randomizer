@@ -2,6 +2,7 @@ import {assemble, buildRomPatch} from './6502.js';
 import {Rom} from './view/rom.js';
 import {Random} from './random.js';
 import {shuffle as shuffleDepgraph} from './depgraph2.js';
+import {crc32} from './crc32.js';
 
 // TODO - to shuffle the monsters, we need to find the sprite palttes and
 // patterns for each monster.  Each location supports up to two matchups,
@@ -16,6 +17,7 @@ export default ({
     // Rearrange things first before anything else happens!
     rearrangeTriggersAndNpcs.apply(rom);
     connectLeafToLimeTree.apply(rom);
+    openSwanFromEitherSide.apply(rom);
 
     // Pick a seed.
     let seed;
@@ -33,7 +35,6 @@ export default ({
 
     // Parse the rom and apply other patches.
     const parsed = new Rom(rom);
-console.log(parsed.prg[0x195ff].toString(16));
     adjustObjectDifficultyStats(rom, parsed);
     shuffleMonsters(rom, parsed, random);
     //shuffleBonusItems(rom, parsed, random);
@@ -55,12 +56,14 @@ console.log(parsed.prg[0x195ff].toString(16));
 
     // These need to be at the bottom because the modify previous patches.
     leatherBootsForSpeed.apply(rom);
-    autoEquipBracelet.apply(rom);
     //installInGameTimer.apply(rom); - this is a tough one.
     if ('nodie' in hash) neverDie.apply(rom);
     stampVersionSeedAndHash(rom, seed);
+
+    // BELOW HERE FOR OPTIONAL FLAGS:
+
+    autoEquipBracelet.apply(rom);
     // do any "vanity" patches here...
-console.log(parsed.prg[0x195ff].toString(16));
     console.log('patch applied');
     return log.join('\n');
   },
@@ -72,6 +75,7 @@ export const stampVersionSeedAndHash = (rom, seed) => {
   // Would be nice to store (1) commit, (2) flags, (3) seed, (4) hash
   // We can use base64 encoding to help some...
   // For now just stick in the commit and seed in simple hex
+  const crc = crc32(rom); // TODO - put this somewhere...
   const hash = BUILD_HASH.substring(0, 7);
   seed = seed.toString(16).padStart(8, 0);
   const embed = (addr, text) => {
@@ -89,6 +93,25 @@ export const stampVersionSeedAndHash = (rom, seed) => {
   // with using the letter 'O' as 0, that's sufficient to cram in all the
   // numbers and display arbitrary hex digits.
 };
+
+export const openSwanFromEitherSide = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000
+.bank $18000 $8000:$4000
+
+.org $192e7
+  .byte $a3,$ab  ; 73 swan gate
+.org $1aba3 ; empty space at end of npcdata
+  .byte $00,$ff,$09,$6b,$ff
+  .byte $04,$01,$02,$b3
+  .byte $04,$0a,$04,$2c
+  .byte $07,$06,$01,$2d
+  .byte $07,$09,$01,$2d
+  .byte $0a,$0f,$02,$b3 ; new trigger to erase guards
+  .byte $02,$0b,$01,$2d ; new soldier
+  .byte $ff
+.org $1ac00
+`, 'openSwanFromEitherSide'));
+
 
 export const connectLeafToLimeTree = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000

@@ -1,7 +1,47 @@
 import { Graph, Area, Boss, Condition, Item, Location, Magic, Option, Trigger } from './graph2.js';
 
 // Make a fresh/clean graph. We could pass options directly into this function.
-export const generate = () => {
+// Options:{
+//   connectLeafToLimeTree: boolean
+//   earlyFlight: boolean
+//   rescaleEnemies: boolean
+//   items: 0 - no shuffle
+//          1 - everything shuffled separately
+//          2 - key items and bonus items shuffled together
+//          3 - key items, bonus items, and magic shuffled together
+//          4 - key items, bonus items, and consumables shuffled together
+//          5 - total shuffle
+//   monsters: 0 - no shuffle
+//             1 - shuffle with reasonable limits
+//             2 - totally random
+//   refresh: 0 - guaranteed for all bosses
+//            1 - guaranteed for all generals
+//            2 - guaranteed for mado and karmine
+//            3 - never guaranteed
+//   barrier: 0 - guaranteed for statue gauntlets
+//            1 - guaranteed for stxy
+//            2 - never garanteed
+//   bracelets: 0 - guaranteed for generals
+//              1 - never guaranteed
+//   gasMask: 0 - guaranteed for oak and insect
+//            1 - guaranteed for insect
+//            2 - never guaranteed
+//   wildWarp: 0 - enabled but not required
+//             1 - disabled
+//             2 - may be required
+//   glitches: 1 - may require ghetto flight
+//             2 - may require talk glitch
+//   leatherBoots: 0 - normal
+//                 1 - speed
+//   balance: 0 - no rebalancing
+//            1 - rebalance swords
+//            2 - rebalance items (incl. medical herb)
+//            3 - rebalance both
+// NOT CHECKSUMMED:
+//   equip: 0 - no change
+//          1 - auto-equip power
+
+export const generate = (opts) => {
 
 const graph = new Graph();
 const option = (name, value = true) => new Option(graph, name, value);

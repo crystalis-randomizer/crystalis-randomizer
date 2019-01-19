@@ -1,4 +1,6 @@
 import * as patch from './patch.js';
+import {crc32} from './crc32.js';
+import {EXPECTED_CRC32} from './view/rom.js';
 
 const main = () => {
   const rom = {orig: null, name: null};
@@ -46,6 +48,7 @@ const loadRomFromStorage = (rom) => {
   const upload = document.getElementById('upload');
   const clear = document.getElementById('clear');
   const shuffle = document.getElementById('shuffle');
+  const badcrc = document.getElementById('badcrc');
   if (name && data) {
     nameSpan.textContent = name + ' ';
     rom.name = name;
@@ -53,6 +56,7 @@ const loadRomFromStorage = (rom) => {
         new Array(data.length / 2).fill(0).map(
           (_, i) => Number.parseInt(
             data[2 * i] + data[2 * i + 1], 16)));
+    badcrc.style.display = crc32(rom.orig) == EXPECTED_CRC32 ? 'none' : 'inline';
     upload.style.display = 'none';
     clear.style.display = 'inline';
     shuffle.disabled = false;
@@ -66,17 +70,21 @@ const loadRomFromStorage = (rom) => {
       localStorage.setItem('rom', str);
       localStorage.setItem('name', file.name);
       rom.orig = arr;
+      badcrc.style.display = crc32(arr) == EXPECTED_CRC32 ? 'none' : 'inline';
       nameSpan.textContent = file.name + ' ';
       rom.name = file.name;
       upload.style.display = 'none';
       clear.style.display = 'inline';
+      shuffle.disabled = false;
     });
     reader.readAsArrayBuffer(file);
   });
   clear.addEventListener('click', () => {
     nameSpan.textContent = '';
     upload.style.display = 'inline';
+    upload.value = null;
     clear.style.display = 'none';
+    badcrc.style.display = 'none';
     rom.orig = rom.name = null;
     shuffle.disabled = true;
   });

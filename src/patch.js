@@ -106,8 +106,9 @@ export const openSwanFromEitherSide = buildRomPatch(assemble(`
   .byte $04,$0a,$04,$2c
   .byte $07,$06,$01,$2d
   .byte $07,$09,$01,$2d
-  .byte $0a,$0f,$02,$b3 ; new trigger to erase guards
+  .byte $04,$02,$01,$2d ; new soldier (they need to come in pairs)
   .byte $02,$0b,$01,$2d ; new soldier
+  .byte $0a,$0e,$02,$b3 ; new trigger to erase guards
   .byte $ff
 .org $1ac00
 `, 'openSwanFromEitherSide'));

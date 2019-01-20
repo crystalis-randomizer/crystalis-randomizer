@@ -273,6 +273,16 @@ define ShouldRedisplayDifficulty $64a3
 ;; queen will try to give flute of lime even if got sword first
 .org $1cfab ; queen "you found sword of water" message action
   .byte $19 ; add action 03
+;.org $3d1f5 ; call to WaitForDialogToBeDismissed
+;  jsr PatchAsinaReveal
+
+;; asina will also give flute of lime if queen never did (after recover)
+.org $098f9
+  .byte $28 ; asina persondata[1] -> flute of lime
+.org $1d80a
+  .byte $89 ; asina love pendant dialog -> give second item
+.org $1d816
+  .byte $89 ; asina default dialog -> give second item
 
 .org $3ff44
 ; TODO - 60 bytes we could use here (now 36)
@@ -294,11 +304,19 @@ PatchGrantItemInRegisterA:
    pla
 + rts
 .org $3ff5c
-
+;;PatchAsinaReveal:
+;;  jsr WaitForDialogToBeDismissed
+;;  jmp DialogFollowupActionJump_03
 .org $3ff62
 ; this space is used by nerfArmors
 ;.org $3ff77
 ;.org $3ff80
+
+;.org $3d225
+;DialogFollowupActionJump_03:
+;.org $3d354
+;WaitForDialogToBeDismissed:
+
 
 .org $3d22b
 GrantItemInRegisterA:
@@ -328,14 +346,6 @@ GrantItemInRegisterA:
   .byte $1b
 .org $1e389
   .byte $1b
-
-;; asina will also give flute of lime if queen never did (after recover)
-.org $098f9
-  .byte $28 ; asina persondata[1] -> flute of lime
-.org $1d80a
-  .byte $89 ; asina love pendant dialog -> give second item
-.org $1d816
-  .byte $89 ; asina default dialog -> give second item
 
 
 ;; bow of truth extra triggers
@@ -408,7 +418,7 @@ GrantItemInRegisterA:
 ;; having returned the fog lamp before he shows up - this requires
 ;; moving him up a word.
 .org $1c6b0
-  .byte $f6,$88 ; pointer tp kensu 68
+  .byte $f6,$88 ; pointer to kensu 68
 .org $1c8f6
   .byte $61,$20,$9b,$80,$21,$ff
 .org $1d867

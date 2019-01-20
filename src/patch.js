@@ -266,7 +266,20 @@ define ShouldRedisplayDifficulty $64a3
 .org $1e34c ; trigger b3: despawn swan guards
   .byte $81,$0d ; 10d talked to guards from other side -> despawn
 
+;; NOTE: we could use 2 less bytes if necessary by moving a smaller
+;; entry here that's otherwise adjacent to some free space.  Or
+;; just defrag that table.
+.org $1db06
+  .byte $79,$8f ; ItemGetData_03 pointer
 .org $1cf79 ; space freed by moving Dialog_2d
+ItemGetData_03: ; sword of thunder
+  .byte $03,$80 ; slot
+  .byte $08,$00 ; action 01 -> teleport to shyron
+  .byte $02,$fd ; Set: 2fd warp:shyron
+  .byte $40,$5f ; Set: 05f chest:03:sword of thunder
+  .byte $ff
+.org $1cf82
+  ; 15 bytes still available
 .org $1cf91
 
 
@@ -1501,13 +1514,13 @@ ShieldDefense:
   cmp $61
   bcc +
    lda $61
-+ clc
-  adc $0421
-  ldy $0716
-  cpy #$10
++ ldy $0716 ; equipped passive item
+  cpy #$10  ; iron necklace
   bne +
    asl
-+ sta $0401
++ clc
+  adc $0421 ; armor defense
+  sta $0401
 .org $3c04a
   jsr PatchUpdateShieldDefense
   nop
@@ -1522,13 +1535,13 @@ PatchUpdateShieldDefense:
   cmp $61
   bcc +
    lda $61
-+ clc
-  adc $0421
-  ldy $0716
-  cpy #$14
++ ldy $0716 ; equipped passive item
+  cpy #$14  ; shield ring
   bne +
    asl
-+ sta $0400
++ clc
+  adc $0421 ; shield defense
+  sta $0400
   rts
 .org $3ff80
 

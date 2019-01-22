@@ -17,8 +17,9 @@
   "homepage": "https://github.com/shicks/crystalis-randomizer#readme",
   "dependencies": {},
   "devDependencies": {
+    "chai": "^4.2.0",
     "esm": "^3.0.84",
-    "viz": "0.0.1",
+    "mocha": "^5.2.0",
     "viz.js": "^2.1.2"
   },
   "description": ""

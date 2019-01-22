@@ -1,3 +1,6 @@
+import {Requirements, Items} from './sat.js';
+import {PMap} from './pmap.js';
+
 class Edge {
   constructor(left, right, arrow, attrs) {
     this.left = left;
@@ -19,8 +22,19 @@ class Edge {
 class Node {
   constructor(graph) {
     this.graph = graph;
+    this.hashCode_ = graph.nodes.length;
     this.uid = 'n' + graph.nodes.length;
     graph.nodes.push(this);
+  }
+
+  equals(that) {
+    return this.uid === that.uid;
+  }
+  hashCode() {
+    return this.hashCode_;
+  }
+  toString() {
+    return this.uid;
   }
 }
 
@@ -164,6 +178,7 @@ export class Graph {
     }
     return {
       win: !want.size,
+      seen,
       path: [...seen].map(([n, deps]) => {
         const str = o => [
           o instanceof Location ? o.area.name + ': ' : '',
@@ -179,13 +194,265 @@ export class Graph {
       }),
     };
   }
+
+  // Returns a list of items and all prerequisites.
+  integrate(start = this.locations()[0]) {
+    // Build up a mapping of Slot <--> index
+    const slots = new Map();
+    const revSlots = [];
+    for (const slot of this.nodes.filter(n => n instanceof Slot)) {
+      slots.set(slot, BigInt(revSlots.length));
+      revSlots.push(slot);
+    }
+    // Now start traversing the graph. Save results in map<node, req>.
+    const all = new Map();
+    for (const n of this.traverse(start).seen) {
+      
+    }
+  }
+
+  // Here's the thing, slots reqire items.
+  // We don't want to transitively require dependent slots' requirements,
+  // but we *do* need to transitively require location requirements.
+
+  // I think we need to do this whole thing all at once, but can we just
+  // compute location requirements somehow?  And trigger requirements?
+  //  - only care about direct requirements, nothing transitive.
+  // Build up a map of nodes to requirements...
+
+  // We have a dichotomy:
+  //  - items can BE reqirements
+  //  - everything else can HAVE requirements, including slots
+  //  - no link between slot and item
+
+  // The node graph contains the location graph, which has cycles
+  // Recursive method
+
 }
+
+// Need ALL PATHS from a given location to start.
+// For each path, what are all the requirements?
+// May include Conditions, in which case we need to
+// decompose and then recompose them correctly.
+// For now, let's just traverse the graph and treat
+// all other types of nodes as opaque?
+
+// Can we start with a big graph of everything and then
+// systematically eliminate nodes of the wrong type by substituting
+// them in everywhere else?
+//  - e.g.
+//    start <- {T}
+//    leaf <- {start|valleyofwind}
+//    Slot$0 <- {leaf}
+//    valleyofwind <- {leaf|windmillcave}
+//    Slot$23 <- {windmillcave&zebu&alarm}
+//  then sub in start<-T everywhere
+//    leaf <- {T|valleyofwind}
+//  when we hit a cycle,
+//    valleyofwind <- {valleyofwind&X | T}
+//  then remove that conjunction entirely... it is irrelevant.
+// Just use arrays of arrays here?
+
+// type PSet>T> = PMap<T, true>
+
+export const integrate = (graph) => {
+  const empty = PMap.EMPTY;
+  // PMap<Node, PSet<PSet<Node>>>
+  let result = empty;
+  // Set<Connection>
+  const connections = new Set();
+  // Object<string, Node>
+  const nodes = {};
+
+  const add = (n, ...deps) => {
+    result = result.plus(n, (result.get(n) || empty).plus(PMap.setFrom(deps)));
+  };
+
+  // Substitute all instances of the given node with the alternates.
+  const subs = (toDelete, deletedRequirements, toKeep, keepRequirements) => {
+    
+    // requirements and target are both PSet<PSet<Node>>
+    let found = false;
+    for (const t of keepRequirements.keys()) {
+//if(!t.has)console.dir(t);
+      if (t.has(toDelete)) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) return; // nothing to do
+    // We found a reference, so do the substitution
+    let out = empty;
+    for (const t of keepRequirements.keys()) {
+      if (t.has(toDelete)) {
+        for (const r of deletedRequirements.keys()) {
+          let s = t.minus(toDelete);
+          for (const d of r.keys()) { // TODO - plusAll?
+            s = s.plus(d);
+          }
+          // remove any option that's left with a cycle
+          if (!s.has(toKeep)) out = out.plus(s);
+        }
+      } else {
+        out = out.plus(t);
+      }
+
+    let terms = [...out.keys()];
+    for (let i = 0; i < terms.length; i++) {
+      let reset = false;
+      for (let j = 0; j < terms.length && !reset; j++) {
+        if (i == j) continue;
+        if (terms[i].includes(terms[j])) {
+          terms.splice(j, 1);
+          reset = true;
+        }
+      }
+      if (reset) i = -1;
+    }
+    out = PMap.setFrom(terms);
+
+    }
+    // return a PSet<PSet<Node>>
+    result = result.plus(toKeep, out);
+  };
+
+  // Start by populating with only shallow edges.
+  for (const n of graph.nodes) {
+    if (n instanceof Location) {
+      nodes[n.uid] = n;
+      for (const c of n.connections) {
+        connections.add(c);
+      }
+      for (const {trigger, deps} of n.triggers) {
+        add(trigger, n, ...deps);
+        nodes[trigger.uid] = trigger;
+      }
+      for (const c of n.chests) {
+        add(c, n);
+        nodes[c.uid] = c;
+      }
+      for (const b of n.bossNode ? [n.bossNode] : []) {
+        add(b, n, ...n.bossNode.deps);
+        nodes[b.uid] = b;
+      }
+    } else if (n instanceof Trigger && n.slot) {
+      add(n.slot, n);
+      nodes[n.slot.uid] = n.slot;
+    } else if (n instanceof Condition) {
+      for (const option of n.options) {
+        add(n, ...option);
+      }
+      nodes[n.uid] = n;
+    }
+  }
+  // All locations/triggers/slots/bosses included in LHS, a
+  for (const c of [...connections]) {
+    // add reverse connections
+    if (c.bidi) connections.add(c.reverse());
+  }
+  for (const c of connections) {
+    const bossDep = c.from.bossNode ? [c.from.bossNode] : [];
+    add(c.to, c.from, ...c.deps, ...bossDep);
+  }
+
+console.log(`Built up graph: ${result.size} nodes`);
+  // At this point we have three levels of ORs
+  // Start doing substitutions...
+  for (const toDelete of result.keys()) {
+    //if (toDelete.name === 'Start') continue; // leave "Start" in the RHS.
+    const deleteRequirements = result.get(toDelete);
+// console.log(`Deleting: ${toDelete.name} with reqs ${[...deleteRequirements].map(o=>[...o].map(r=>r.name).join(',')).join('|')}`);
+//console.dir(deleteRequirements);
+// console.log(`Deleting: ${toDelete.name}: ${deleteRequirements}`);
+    // Leave all the slots
+    if (!(toDelete instanceof Slot)) result = result.minus(toDelete);
+    for (const [toKeep, keepRequirements] of result) {
+      subs(toDelete, deleteRequirements, toKeep, keepRequirements);
+    }
+  }
+
+  // At this point, we should have only slots left in the keys and only
+  // items (and Start?) left in the values.
+
+  for (const [node, [...terms]] of result) {
+    // need to simplify everything now
+    // for any node n, if p and q are in n's requirements and if
+    //  p contains a subset of terms of q, we can delete q.
+    // if this happens, we should start over?
+    for (let i = 0; i < terms.length; i++) {
+      let reset = false;
+      for (let j = 0; j < terms.length && !reset; j++) {
+        if (i == j) continue;
+        if (terms[i].includes(terms[j])) {
+          terms.splice(j, 1);
+          reset = true;
+        }
+      }
+      if (reset) i = -1;
+    }
+    console.log(`Slot ${node.name}:
+  ${terms.map(([...t]) => t.map(i => i.name).join(', ')).join('\n  ')}`);
+  }
+
+  // let progress = true;
+  // while (progress) {
+  //   progress = false;
+  //   for (const key of result.keys()) {
+  //     // if it's not an item, substitute it everywhere.
+  //     // it's never an item...
+  //     for (const k in result) {
+  //       const r = result[k];
+  //       // find all instances, substitute
+  //       // NOTE: we have a quadratic expansion here
+  //     }
+
+  //   }
+         
+
+  // }
+
+
+};
+
+
+
+// class LocationGraph {
+//   // For each location, a list of options, where each option is a list of reqs
+//   // Reqs include all other node types other than locations.
+//   constructor(g, start = g.locations()[0]) {
+//     this.graph = g;
+    
+
+//     for (const l of g.locations()) {
+      
+//     }
+
+//   }
+// }
+
+// class IntegratedGraph {
+//   constructor(g) {
+//     this.graph = g;
+//     this.reqs = new Map(); // Node -> [[Item]]
+//   }
+
+//   requirements(n) {
+//     // what to do about cycles? if 
+//     if (this.reqs
+       
+//   }
+
+// }
+
 
 export class Option extends Node {
   constructor(graph, name, value) {
     super(graph);
     this.name = name;
     this.value = value;
+  }
+  toString() {
+    return `Option ${this.name}`;
   }
 }
 
@@ -200,6 +467,9 @@ export class Slot extends Node {
     this.orig = item.name;
   }
 
+  toString() {
+    return `Slot ${this.orig}`;
+  }
   get name() {
     return this.item.name;
   }
@@ -369,6 +639,10 @@ export class ItemGet extends Node {
     this.name = name;
   }
 
+  toString() {
+    return `ItemGet ${this.name}`;
+  }
+
   chest(index = this.id) {
     return new Chest(this.graph, this, index);
   }
@@ -407,6 +681,9 @@ export class Trigger extends Node {
     this.name = name;
     this.slot = null;
   }
+  toString() {
+    return `Trigger ${this.name}`;
+  }
 
   get(slot) {
     if (this.slot) throw new Error('already have a slot');
@@ -434,6 +711,9 @@ export class Condition extends Node {
     this.name = name;
     this.options = [];
   }
+  toString() {
+    return `Condition ${this.name}`;
+  }
 
   option(...deps) {
     this.options.push(deps.map(x => x instanceof Slot ? x.item : x));
@@ -446,6 +726,9 @@ export class Boss extends Trigger {
     super(graph, name);
     this.index = index;
     this.deps = deps.map(x => x instanceof Slot ? x.item : x);
+  }
+  toString() {
+    return `Boss ${this.name}`;
   }
 }
 
@@ -462,6 +745,10 @@ class Connection {
     this.to = to;
     this.bidi = bidi;
     this.deps = deps.map(x => x instanceof Slot ? x.item : x);
+  }
+
+  reverse() {
+    return new Connection(this.to, this.from, this.bidi, this.deps);
   }
 
   toDot() {
@@ -492,6 +779,9 @@ export class Location extends Node {
     this.type = null;
   }
 
+  toString() {
+    return `Location ${this.id.toString(16).padStart(2,0)} ${this.name}`;
+  }
   addConnection(c) {
     c.from.connections.push(c);
     c.to.connections.push(c);

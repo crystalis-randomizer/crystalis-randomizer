@@ -510,7 +510,7 @@ const MISC = 'misc';
 
 const start                 = location(0x00, LEAF, 'Start').overworld();
 const mezameShrine          = location(0x00, LEAF, 'Mezame Shrine').overworld()
-                                .connect(start);
+                                .from(start);
 const outsideStart          = location(0x01, LEAF, 'Outside Start').overworld()
                                 .connect(mezameShrine);
 const leaf                  = location(0x02, LEAF, 'Town').town()

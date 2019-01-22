@@ -45,7 +45,7 @@ throw new Error('MISSING CHILDREN: expected '+bits+' from '+mask.toString(2));
   toString() {
     const terms = [];
     for (const [k, v] of this) {
-      terms.push(`${k}: ${v}`);
+      terms.push(v === SET_ELEMENT ? k : `${k}: ${v}`);
     }
     return `{${terms.join(', ')}}`;
   }
@@ -103,8 +103,9 @@ throw 'x';
     return this.get(key) !== undefined;
   }
 
-  plus(key, value = true) {
-if(CNT++>=/*4*/54438)PR=true;
+  plus(key, value = SET_ELEMENT) {
+PR=!!PMap.PR;
+//if(CNT++>=/*4*/54438)PR=true;
 if(PR)console.log(`\x1b[1;33mPLUS(${key}, ${value})\x1b[m`);
     const h = hash(key);
     return this.key_ !== null ?
@@ -273,7 +274,7 @@ if(PR)console.log(`  newChild: ${newChild}`);
 
 export const entryHash = (keyHash, value) => keyHash * 31 + hash(value) >>> 0;
 export const bucket = (hash) => hash >>> BITS_SHIFT;
-export const shift = (hash) => hash << BITS;
+export const shift = (hash) => (hash << BITS) >>> 0;
 export const unshift = (hash, bucket) => hash >>> BITS | bucket << BITS_SHIFT;
 
 export const equal = (a, b) => {
@@ -341,3 +342,8 @@ const bitCount = (n) => {
 };
 
 PMap.EMPTY = new PMap(null, 0, null, 0, [], 0, 0);
+
+const SET_ELEMENT = {
+  equals(that) { return that === SET_ELEMENT; },
+  hashCode() { return 0x236df341; },
+};

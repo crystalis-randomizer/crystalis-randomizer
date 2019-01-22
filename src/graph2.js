@@ -1,5 +1,5 @@
 import {Requirements, Items} from './sat.js';
-import {PMap} from './pmap.js';
+import {PMap,equal} from './pmap.js';
 
 class Edge {
   constructor(left, right, arrow, attrs) {
@@ -255,7 +255,7 @@ export class Graph {
 
 // type PSet>T> = PMap<T, true>
 
-export const integrate = (graph) => {
+export const integrate = (graph, start = graph.locations()[0]) => {
   const empty = PMap.EMPTY;
   // PMap<Node, PSet<PSet<Node>>>
   let result = empty;
@@ -281,42 +281,56 @@ export const integrate = (graph) => {
       }
     }
     if (!found) return; // nothing to do
+console.log(`  Found dependent: ${toKeep}: ${keepRequirements}`);
     // We found a reference, so do the substitution
     let out = empty;
     for (const t of keepRequirements.keys()) {
+console.log(`    t: ${t}`);
       if (t.has(toDelete)) {
+console.log(`    has: ${deletedRequirements}`);
         for (const r of deletedRequirements.keys()) {
+console.log(`      r: ${r}`);
           let s = t.minus(toDelete);
+console.log(`      s: ${s}`);
           for (const d of r.keys()) { // TODO - plusAll?
             s = s.plus(d);
           }
+console.log(`      s: ${s}`);
           // remove any option that's left with a cycle
           if (!s.has(toKeep)) out = out.plus(s);
+console.log(`      out: ${out}`);
         }
       } else {
         out = out.plus(t);
+console.log(`    out: ${out}`);
       }
+    }
 
+//console.log(`  =1=> ${out}`);
     let terms = [...out.keys()];
     for (let i = 0; i < terms.length; i++) {
       let reset = false;
       for (let j = 0; j < terms.length && !reset; j++) {
         if (i == j) continue;
         if (terms[i].includes(terms[j])) {
-          terms.splice(j, 1);
+          terms.splice(i, 1);
           reset = true;
         }
       }
       if (reset) i = -1;
     }
     out = PMap.setFrom(terms);
+console.log(`    sorted: ${toKeep} <- ${out}`);
 
-    }
     // return a PSet<PSet<Node>>
+//console.log(`  =2=> ${out}`);
+PMap.PR=toKeep.hashCode()==281;
     result = result.plus(toKeep, out);
+console.log(`    after: ${result.get(toKeep)}`);
   };
 
   // Start by populating with only shallow edges.
+  add(start);
   for (const n of graph.nodes) {
     if (n instanceof Location) {
       nodes[n.uid] = n;
@@ -343,6 +357,9 @@ export const integrate = (graph) => {
         add(n, ...option);
       }
       nodes[n.uid] = n;
+    } else if (n instanceof Option && n.value) {
+      add(n);
+      nodes[n.uid] = n;
     }
   }
   // All locations/triggers/slots/bosses included in LHS, a
@@ -358,9 +375,14 @@ export const integrate = (graph) => {
 console.log(`Built up graph: ${result.size} nodes`);
   // At this point we have three levels of ORs
   // Start doing substitutions...
-  for (const toDelete of result.keys()) {
+  const ordered = new Set(graph.traverse().seen.keys());
+  for (const n of graph.nodes) {
+    if (!ordered.has(n) && !(n instanceof Area)) ordered.add(n);
+  }
+  for (const toDelete of ordered/*result.keys()*/) {
+console.log(`Node: ${toDelete}: ${result.get(toDelete)}`);
     //if (toDelete.name === 'Start') continue; // leave "Start" in the RHS.
-    const deleteRequirements = result.get(toDelete);
+    const deleteRequirements = result.get(toDelete) || empty;
 // console.log(`Deleting: ${toDelete.name} with reqs ${[...deleteRequirements].map(o=>[...o].map(r=>r.name).join(',')).join('|')}`);
 //console.dir(deleteRequirements);
 // console.log(`Deleting: ${toDelete.name}: ${deleteRequirements}`);
@@ -369,10 +391,27 @@ console.log(`Built up graph: ${result.size} nodes`);
     for (const [toKeep, keepRequirements] of result) {
       subs(toDelete, deleteRequirements, toKeep, keepRequirements);
     }
+if (!(toDelete instanceof Slot)) {
+  for (const [n, deps] of result) {
+    for (const r of deps.keys()) {
+      for (const s of r.keys()) {
+        if (s === toDelete) {
+for(const[n1,deps]of result)if(equal(n1,n))console.log(`ENTRY: ${n1} ${n1.hashCode()} <- ${deps}`);
+          console.log(`\x1b[1;31mFailed to delete\x1b[m ${toDelete} in ${n}: ${deps}`);
+          //console.log(String([...result.keys()]));
+        }
+      }
+    }
+  }
+}
+
+
   }
 
   // At this point, we should have only slots left in the keys and only
   // items (and Start?) left in the values.
+
+//console.log(String(result));
 
   for (const [node, [...terms]] of result) {
     // need to simplify everything now
@@ -391,7 +430,9 @@ console.log(`Built up graph: ${result.size} nodes`);
       if (reset) i = -1;
     }
     console.log(`Slot ${node.name}:
-  ${terms.map(([...t]) => t.map(i => i.name).join(', ')).join('\n  ')}`);
+  ${terms.map(([[...t]]) => t.map(([i]) => String(i)).join(', ')).join('\n  ')}`);
+//  ${terms.map(([[...t]]) => t.map(i => i.name).join(', ')).join('\n  ')}`);
+//  ${terms.map(([...t]) => t.map(i => i.name).join(', ')).join('\n  ')}`);
   }
 
   // let progress = true;

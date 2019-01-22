@@ -1,3 +1,10 @@
+// TODO - this data structure is just broken
+//   - Adding the same key can sometimes create duplicates
+//   - Also a problem is that it uses the MSB of the hash first,
+//     but many hashes are optimized for LSB being different, so
+//     we end up with 4 layers of collisions at the top.
+//   - This leads to terrible performance.
+
 const BITS = 4;
 const BITS_SHIFT = 32 - BITS;
 
@@ -290,7 +297,11 @@ const ia = new Uint32Array(fa.buffer);
 const hashes = new WeakMap();
 let hashesCount = 0;
 const symbolHash = new Map(); // leaky
-export const hash = (obj) => {
+const reverseBits = (x) => {
+  return ((x * 0x0802 & 0x22110) | (x * 0x8020 & 0x88440)) * 0x10101 >>> 16 & 0xff;
+};
+export const hash = (obj) => reverseBits(hash1(obj));
+const hash1 = (obj) => {
   const t = typeof obj;
   if (t === 'number') {
     if (obj === (obj >>> 0)) return obj;

@@ -255,7 +255,220 @@ export class Graph {
 
 // type PSet>T> = PMap<T, true>
 
-export const integrate = (graph, start = graph.locations()[0]) => {
+
+// This isn't working - scaling is too bad.
+// We need to simplify the location graph first.
+// Break it up into domains with all the same requirements.
+// For each location, find all *shortest* paths to start.
+//  -> identify direction and dead ends, at the very least
+//     what paths can go in reverse at all???
+//  -> reduce number of locations to ~50
+// Then drop the graph and just represent as alternative requirements,
+// with lots and triggers.
+
+export const integrateLocations = (graph, start = graph.locations()[0]) => {
+  class Loc {
+    constructor(/** !Location */ location) {
+      this.location = location;
+      this.routes = {};
+      this.connections = [];
+    }
+
+    addRoute(/** !Route */ route) {
+      if (this != route.destination) throw new Error('Bad route for this destination');
+      if (route.label in this.routes) return false;
+      for (let label in this.routes) {
+        const r = this.routes[label];
+        if (route.containsAll(r)) return false;
+        if (r.containsAll(route)) delete this.routes[label];
+      }
+      this.routes[route.label] = route;
+      return true;
+    }
+
+    * allRoutes() {
+      for (let r in this.routes) {
+        yield this.routes[r];
+      }
+    }
+
+    static of(/** !Location */ loc) {
+      if (!Loc.map) Loc.map = {};
+      if (!(loc.uid in Loc.map)) Loc.map[loc.uid] = new Loc(loc);
+      return Loc.map[loc.uid];
+    }
+
+    static * all() {
+      if (!Loc.map) Loc.map = {};
+      for (let id in Loc.map) {
+        yield Loc.map[id];
+      }
+    }
+  }
+
+  class Route {
+    constructor(/** !Loc */ destination, /** !Set<string> */ deps) {
+      if (!destination) throw new Error('no destination');
+      this.destination = destination;
+      this.deps = deps;
+      // TODO - require sorted...
+      this.label = destination.location.uid + ':' + [...deps].join(' ');
+    }
+
+    containsAll(/** !Route */ that) /** boolean */ {
+      if (this.destination != that.destination) throw new Error('bad comparison');
+      if (this.deps.size < that.deps.size) return false;
+      for (const d of that.deps) {
+        if (!this.deps.has(d)) return false;
+      }
+      return true;
+    }
+
+    follow(/** !Connection */ connection) /** !Route */ {
+      if (connection.from != this.destination.location) {
+        throw new Error('bad link');
+      }
+      return new Route(
+          Loc.of(connection.to),
+          new Set([...this.deps, ...connection.deps.map(x => x.uid)].sort()));
+    }
+  }
+
+  // Index the locations and connections.
+  const /** !Array<!Loc> */ locations = [];
+  const /** !Object<string, !Node> */ nodes = {};
+  const /** !Object<string, !Loc> */ locationIndex = {};
+  const /** !Set<Connection> */ connections = new Set();
+  for (const n of graph.nodes) {
+    nodes[n.uid] = n;
+    if (!(n instanceof Location)) continue;
+    const l = Loc.of(n);
+    locationIndex[n.uid] = l;
+    locations.push(l);
+    for (const c of n.connections) {
+      if (connections.has(c)) continue;
+      connections.add(c);
+      if (c.bidi) connections.add(c.reverse());
+    }
+  }
+  for (const c of connections) {
+    locationIndex[c.from.uid].connections.push(c);
+  }
+
+  //console.log(locationIndex);
+  
+  // Start the traversal.
+  const startRoute = new Route(Loc.of(start), new Set());
+  const queue = new Map([[startRoute.label, startRoute]]);
+  const iter = queue[Symbol.iterator]();
+  let next;
+  while (!(next = iter.next()).done) {
+    const route = next.value[1];
+    for (const c of route.destination.connections) {
+      const r = route.follow(c);
+      if (!queue.has(r.label) && r.destination.addRoute(r)) {
+        queue.set(r.label, r);
+      }
+    }
+  }
+
+  for (const loc of Loc.all()) {
+    console.log(`${loc.location.area.name}: ${loc.location.name}
+  ${[...loc.allRoutes()].map(r => [...r.deps].map(d => nodes[d].name)).join('\n  ')}`);
+  }
+}
+//   while (queue.length) {
+//     const route = queue.shift();
+//     if (
+
+//   }
+
+//   // 1. Simplify the location graph.
+//   const nodes = {};
+//   const nodeToLocationNumber = {};
+//   const locations = [];
+//   const connections = [];
+//   const seen = new Set();
+//   const queue = [];
+//   for (const n of graph.nodes) {
+//     nodes[n.uid] = n;
+//     if (!(n instanceof Location)) continue;
+//     nodeToLocationNumber[n.uid] = locations.length;
+//     locations.push(n);
+//     for (const c of n.connections) {
+//       connections[c.from] = c;
+//       if (c.bidi) connections[c.to] = c.reverse();
+//     }
+//   }
+//   // LocationDeps is a map from location number to a set of alternatives.
+//   // Alternatives are represented as a list of sorted requirement lists.
+//   const locationDeps = new Array(locations.length).fill(0).map(() => []);
+//   // No requirements to get to start.
+//   const startNum = nodeToLocationNumber[start.uid];
+//   locationDeps[startNum].push([]);
+//   seen.add(startNum);
+//   queue.push(startNum);
+
+//   while (queue.length) {
+//     const from = queue.shift();
+//     const deps = locationDeps[from];
+//     for (const c of connections[from]) {
+//       const to = c.to;
+//       // TODO - simple "seen" approach does not work.
+//       // only want to stop actual cycles, but will need to
+//       // revisit nodes to do work IF they got a new path...
+//       // Could use "loc:deps" as seen...
+//     }
+//   }
+
+
+  
+//   function addAlternative(alternatives, newAlt) {
+//     // TODO - consider bigint, but would need polyfill
+//     for (let i = 0; i < alternatives.length; i++) {
+//       const alt = alternatives[i];
+//       const common = findCommon(alt, newAlt);
+//       if (common != null) {
+//         newAlt = common;
+//         alternatives.splice(i, 1);
+//         i = -1;
+//       }
+//     }
+//     alternatives.push(newAlt);
+//   }
+  
+//   function findCommon(left, right) {
+//     // both should be sorted.
+//     // Find if one is a subset of the other.
+//     if (left.length < right.length) return findCommon(right, left);
+//     let i = 0;
+//     let j = 0;
+//     while (i < left.length && j < right.length) {
+//       i++;
+//       if (left[i] === right[j]) j++;
+//       if (right[j] < left[i]) return null;
+//     }
+//     return j == right.length ? right : null;
+//   }
+
+//   function merge(left, right) {
+//     let i = 0;
+//     let j = 0;
+//     const out = [];
+//     while (i < left.length && j < right.length) {
+//       if (left[i] < right[j]) out.push(left[i++]);
+//       else if (right[j] < left[i]) out.push(right[j++]);
+//       else out.push(left[i++]), j++;
+//     }
+//     while (i < left.length) out.push(left[i++]);
+//     while (j < right.length) out.push(right[j++]);
+//     return out;
+//   }
+// };
+
+
+
+export const integrate2 = (graph, start = graph.locations()[0]) => {
   const empty = PMap.EMPTY;
   // PMap<Node, PSet<PSet<Node>>>
   let result = empty;
@@ -264,7 +477,7 @@ export const integrate = (graph, start = graph.locations()[0]) => {
   // Object<string, Node>
   const nodes = {};
 
-  const add = (n, ...deps) => {
+  const add = (n, ...deps) => { 
     result = result.plus(n, (result.get(n) || empty).plus(PMap.setFrom(deps)));
   };
 
@@ -281,28 +494,28 @@ export const integrate = (graph, start = graph.locations()[0]) => {
       }
     }
     if (!found) return; // nothing to do
-console.log(`  Found dependent: ${toKeep}: ${keepRequirements}`);
+//console.log(`  Found dependent: ${toKeep}: ${keepRequirements}`);
     // We found a reference, so do the substitution
     let out = empty;
     for (const t of keepRequirements.keys()) {
-console.log(`    t: ${t}`);
+//console.log(`    t: ${t}`);
       if (t.has(toDelete)) {
-console.log(`    has: ${deletedRequirements}`);
+//console.log(`    has: ${deletedRequirements}`);
         for (const r of deletedRequirements.keys()) {
-console.log(`      r: ${r}`);
+//console.log(`      r: ${r}`);
           let s = t.minus(toDelete);
-console.log(`      s: ${s}`);
+//console.log(`      s: ${s}`);
           for (const d of r.keys()) { // TODO - plusAll?
             s = s.plus(d);
           }
-console.log(`      s: ${s}`);
+//console.log(`      s: ${s}`);
           // remove any option that's left with a cycle
           if (!s.has(toKeep)) out = out.plus(s);
-console.log(`      out: ${out}`);
+//console.log(`      out: ${out}`);
         }
       } else {
         out = out.plus(t);
-console.log(`    out: ${out}`);
+//console.log(`    out: ${out}`);
       }
     }
 
@@ -320,13 +533,13 @@ console.log(`    out: ${out}`);
       if (reset) i = -1;
     }
     out = PMap.setFrom(terms);
-console.log(`    sorted: ${toKeep} <- ${out}`);
+//console.log(`    sorted: ${toKeep} <- ${out}`);
 
     // return a PSet<PSet<Node>>
 //console.log(`  =2=> ${out}`);
-PMap.PR=toKeep.hashCode()==281;
+//PMap.PR=toKeep.hashCode()==281;
     result = result.plus(toKeep, out);
-console.log(`    after: ${result.get(toKeep)}`);
+//console.log(`    after: ${result.get(toKeep)}`);
   };
 
   // Start by populating with only shallow edges.
@@ -378,8 +591,13 @@ console.log(`Built up graph: ${result.size} nodes`);
   const ordered = new Set(graph.traverse().seen.keys());
   for (const n of graph.nodes) {
     if (!ordered.has(n) && !(n instanceof Area)) ordered.add(n);
+    if (n instanceof Condition) {
+      ordered.delete(n);
+      ordered.add(n);
+    }
   }
   for (const toDelete of ordered/*result.keys()*/) {
+    if (toDelete instanceof ItemGet) continue;
 console.log(`Node: ${toDelete}: ${result.get(toDelete)}`);
     //if (toDelete.name === 'Start') continue; // leave "Start" in the RHS.
     const deleteRequirements = result.get(toDelete) || empty;
@@ -396,8 +614,8 @@ if (!(toDelete instanceof Slot)) {
     for (const r of deps.keys()) {
       for (const s of r.keys()) {
         if (s === toDelete) {
-for(const[n1,deps]of result)if(equal(n1,n))console.log(`ENTRY: ${n1} ${n1.hashCode()} <- ${deps}`);
-          console.log(`\x1b[1;31mFailed to delete\x1b[m ${toDelete} in ${n}: ${deps}`);
+//for(const[n1,deps]of result)if(equal(n1,n))console.log(`ENTRY: ${n1} ${n1.hashCode()} <- ${deps}`);
+//          console.log(`\x1b[1;31mFailed to delete\x1b[m ${toDelete} in ${n}: ${deps}`);
           //console.log(String([...result.keys()]));
         }
       }

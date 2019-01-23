@@ -518,7 +518,7 @@ const sealedCave4a          = location(0x07, VAMP, 'Tunnel 4a (ball corridor)')
                                 .chest(ballOfWind, 0x15);
 const sealedCave4b          = location(0x07, VAMP, 'Tunnel 4b (antidote dead end)')
                                 .connect(sealedCave4a, destroyStone) // 64dd:10
-                                .chest(antidote, 0x1e);
+                                .chest(antidote, 0x13);
 const sealedCave5           = location(0x08, VAMP, 'Tunnel 5 (warp boots dead end)')
                                 .chest(warpBoots, 0x0e);
 const sealedCave3a          = location(0x09, VAMP, 'Tunnel 3a (branch, front)')

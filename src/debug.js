@@ -58,10 +58,15 @@ export default (nes) => {
   window.hex = (x) => '$' + x.toString(16).padStart(2, 0);
   window.seq = (n, f) => new Array(n).fill(0).map((x, i) => f(i));
 
-  // window.onspawned = (id,slot)=>console.log(`spawned ${hex(id)} at ${hex(slot)
-  //     }: ${seq(32,i=>hex(nes.cpu.ram[0x300+32*i+slot]))}`);
-  // nes.debug.breakAt(0x35357, 'prg', 'x', () => console.log(`hit by ${
-  //     hex(nes.cpu.REG_Y)}: ${hex(slots[nes.cpu.REG_Y])}`));
+  window.watchSpawns = () => {
+    window.onspawned = (id,slot)=>console.log(`spawned ${hex(id)} at ${hex(slot)
+         }: ${seq(32,i=>hex(nes.cpu.ram[0x300+32*i+slot]))}`);
+  };
+
+  window.watchDamage = () => {
+    nes.debug.breakAt(0x35357, 'prg', 'x', () => console.log(`hit by ${
+         hex(nes.cpu.REG_Y)}: ${hex(slots[nes.cpu.REG_Y])}`));
+  };
 
   window.warp = (loc, entrance = 0) => {
     nes.cpu.ram[0x6c] = loc;

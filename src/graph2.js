@@ -328,9 +328,15 @@ export const integrateLocations = (graph, start = graph.locations()[0]) => {
       if (connection.from != this.destination.location) {
         throw new Error('bad link');
       }
+      // TODO - if from.bossNode - add
+      // TODO - realize options?
+      const deps = [
+        ...connection.deps,
+        ...(connection.from.bossNode ? [connection.from.bossNode] : []),
+      ];
       return new Route(
           Loc.of(connection.to),
-          new Set([...this.deps, ...connection.deps.map(x => x.uid)].sort()));
+          new Set([...this.deps, ...deps.map(x => x.uid)].sort()));
     }
   }
 
@@ -376,6 +382,9 @@ export const integrateLocations = (graph, start = graph.locations()[0]) => {
     console.log(`${loc.location.area.name}: ${loc.location.name}
   ${[...loc.allRoutes()].map(r => [...r.deps].map(d => nodes[d].name)).join('\n  ')}`);
   }
+
+  // TODO - what to return?
+  // TODO - instantiate options
 }
 //   while (queue.length) {
 //     const route = queue.shift();

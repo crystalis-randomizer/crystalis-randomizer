@@ -31,6 +31,7 @@ import { Graph, Area, Boss, Condition, Item, Location, Magic, Option, Trigger } 
 //             2 - may be required
 //   glitches: 1 - may require ghetto flight
 //             2 - may require talk glitch
+//             4 - may require sword charge glitch ??? - or fix them...
 //   leatherBoots: 0 - normal
 //                 1 - speed
 //   balance: 0 - no rebalancing
@@ -68,6 +69,10 @@ const refreshOptional       = option('Refresh magic optional');
 const earlyFlight           = option('Early flight', false);
 const limeTreeConnectsToLeaf = option('Lime Tree connects to Leaf', true);
 const assumeWildWarp        = option('Assume wild warp', false);
+
+// TODO - assumeSwordChargeGlitch - would be super annoying...
+//   - would need to make a condition anyLevel2Sword to put with the needed
+//     sword.  Together with wildWarp, most things are open very early.
 
 // TODO - for wild warp consider adding a list of locations,
 // then we can hack those into the rom if it changes?
@@ -390,7 +395,7 @@ const asinaTrigger          = condition('Asina in her room')
                                 // NOTE: this is just ballOfWater in vanilla.
                                 .option(mesiaRecording);
 const paralysisOrAsina      = condition('Paralysis or Ball of Water')
-                                .option(paralysis).option(asinaTrigger);
+                                .option(paralysis).option(asinaTrigger).option(assumeTalkGlitch);
 // TODO - consider adding healedDolphin and/or returnedFogLamp here?  otherwise, flight alone
 // is basically enough (though with flight the dolphin is basically just a convenience).
 const rideDolphin           = condition('Ride dolphin').option(shellFlute, talkedToKensuInCabin);

@@ -340,11 +340,6 @@ GrantItemInRegisterA:
 ;; We use the bytes at 64b0..64b8 to store the overflow.
 ;; The first is a bitmask for the next 8, inverted (1 means empty)
 
-;;; Initialize overflow chests to ff
-;;.org $3cab2
-;.org $3c9d6
-;  jmp InitializeOverflowChests
-
 ;; asina reveal depends on mesia recording (01b), not ball of water (01f)
 ;; - this ensures you have both sword and ball to get to her --> ???
 .org $1c81f
@@ -533,8 +528,9 @@ ItemGet_FindOpenSlotWithOverflow:
    ;; delete a key item, it will fall in
    lda $23
     beq +
-   cpx #$20
-    beq +
+   lda $61
+   cmp #$20
+    bne +
    ;; need to find a place
    ldx #$07
 -   lda $64b8,x
@@ -565,10 +561,6 @@ ItemGet_FindOpenSlot:
 
 .org $20372
   jsr CheckDroppable
-  cmp #$60
-  bne DroppableMaybe
-.org $20392
-DroppableMaybe:
 
 .org $20434
   jsr MaybeDrop
@@ -580,17 +572,18 @@ InvItemData:
 
 .org $21471 ; unused space, 130 or so bytes
 CheckDroppable:
-  ;; if there's no overflow then add the #$20 bit for free
-  lda #$20
-  sta $61
+  ;; Loads A with something that has the :40 bit set if the item
+  ;; is not droppable.
   lda $64bf
   beq +
-   ;; there's overflow, so allow deleting :40 only
-   lda #$00
-   sta $61
+   ;; there's overflow, so allow deleting if selecting from 3rd row
+   lda $6427
+   and #$38
+   cmp #$10
+   bne +
+    lda #$00
+    rts
 + lda InvItemData,x
-  and #$60
-  ora $61
   rts
 MaybeDrop:
   txa

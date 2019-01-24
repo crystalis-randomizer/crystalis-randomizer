@@ -213,6 +213,19 @@ define ShouldRedisplayDifficulty $64a3
   .byte $40,$27  ; Set: 027 shyron massacre
 .org $1e244
 
+;; Reorder Zebu cave dialog to spawn windmill guard first
+;; Alternatively: consider just having him always spawned?
+;; NOTE: this reordering requires adjusting the offset for
+;; the refresh give condition.
+.org $1d76c ; zebu dialog 10 cave
+  .byte $60,$3a,$00,$1a,$00 ; 03a NOT talked to zebu in cave -> 00:1a
+  .byte         $40,$3a     ;     Set: 03a talked to zebu in cave
+  .byte $00,$0d,$00,$1d,$00 ; 00d leaf villagers rescued -> 00:1d
+  .byte $00,$38,$00,$1c,$00 ; 038 leaf attacked -> 00:1c
+  .byte $00,$39,$00,$1d,$00 ; 039 learned refresh -> 00:1d
+  .byte $40,$0a,$18,$1b,$00 ; 00a windmill key used -> 00:1b (action 03)
+  .byte         $40,$39     ;     Set: 039 learned refresh
+
 ;; Give key to styx regardless of whether sword of thunder found
 ;; Also don't duplicate-set 03b, it's already handled by ItemGet.
 .org $1d78e ; zebu dialog f2 shyron temple

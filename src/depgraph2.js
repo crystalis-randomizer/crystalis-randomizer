@@ -273,7 +273,9 @@ const bowOfTruth            = item(0x40, 'Bow of Truth')
 const refresh               = magic(0x41, 'Refresh')
                                 .fromPerson(0x5e)
                                 .direct(0x3d711)
-                                .dialog(0x5e, 0x10, 2)
+                                // NOTE: moved from offset 2 because we rearranged
+                                // zebu to always spawn windmill guard
+                                .dialog(0x5e, 0x10, 3)
                                 .trigger(0xb4, 1);
 const paralysis             = magic(0x42, 'Paralysis')
                                 .direct(0x3d655)

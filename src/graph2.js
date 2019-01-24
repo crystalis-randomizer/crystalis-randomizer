@@ -378,14 +378,75 @@ export const integrateLocations = (graph, start = graph.locations()[0]) => {
     }
   }
 
-  for (const loc of Loc.all()) {
-    console.log(`${loc.location.area.name}: ${loc.location.name}
-  ${[...loc.allRoutes()].map(r => [...r.deps].map(d => nodes[d].name)).join('\n  ')}`);
-  }
+  // for (const loc of Loc.all()) {
+  //   console.log(`${loc.location.area.name}: ${loc.location.name}
+  // ${[...loc.allRoutes()].map(r => [...r.deps].map(d => nodes[d].name)).join('\n  ')}`);
+  // }
+
+  return new Map([...Loc.all()].map(loc =>
+      [loc.location, [...loc.allRoutes()].map(r =>
+          DepSet.of([...r.deps].map(d => nodes[d])))]));
+  // returns a Map<Location, Array<DepSet>>
 
   // TODO - what to return?
   // TODO - instantiate options
 }
+
+export const integrateItems = (graph, start = graph.locations()[0]) => {
+  const locs = integrateLocations(graph, start);
+  // integrate out the options.
+};
+
+class DepSet {
+  constructor(/** !Map<string, !Node> */ deps) {
+    // NOTE: deps MUST be sorted.
+    this.deps = deps;
+    this.label = [...this.deps.keys()].join('&');
+  }
+
+  static of(/** ...!Node */ nodes) {
+    nodes.sort((a, b) => a.uid < b.uid ? -1 : a.uid > b.uid ? 1 : 0);
+    return new DepSet(new Map(nodes.map(n => [n.uid, n])));
+  }
+
+  [Symbol.iterator]() {
+    return this.deps.values();
+  }
+
+  containsAll(that) {
+    if (this.deps.size < that.deps.size) return false;
+    for (const d of that.deps) {
+      if (!this.deps.has(d)) return false;
+    }
+    return true;
+  }
+
+  union(that) {
+    return DepSet.of(...this.deps.value(), ...that.deps.values());
+  }
+}
+
+class DepAlternatives {
+  constructor(alternatives) {
+    this.alternatives = alternatives;
+  }
+
+  addAlternative(deps) {
+    // Add the given depset as an 
+  }
+
+  concat(deps) {
+    // Concatenates to all
+  }
+
+  flatMap(func) {
+    // func takes a single node and returns either a node, a list, a depset, or a depalternatives
+    // We do the right thing with it from there, mapping it as appropriate.
+    // For conditions, this will be straightforward but very useful
+    // Returns a new DepAlternatives
+  }
+}
+
 //   while (queue.length) {
 //     const route = queue.shift();
 //     if (

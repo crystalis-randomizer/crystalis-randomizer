@@ -224,7 +224,8 @@ define ShouldRedisplayDifficulty $64a3
   .byte $00,$38,$00,$1c,$00 ; 038 leaf attacked -> 00:1c
   .byte $00,$39,$00,$1d,$00 ; 039 learned refresh -> 00:1d
   .byte $40,$0a,$18,$1b,$00 ; 00a windmill key used -> 00:1b (action 03)
-  .byte         $40,$39     ;     Set: 039 learned refresh
+  .byte         $c0,$00     ;     Clear: 000 (set on item get instead)
+;;.byte         $40,$39     ;     Set: 039 learned refresh
 
 ;; Give key to styx regardless of whether sword of thunder found
 ;; Also don't duplicate-set 03b, it's already handled by ItemGet.
@@ -374,8 +375,8 @@ GrantItemInRegisterA:
   .byte $80,$00,$40,$00
 
 ;; refresh triggers
-.org $1d780
-  .byte $c0,$00
+;.org $1d780
+;  .byte $c0,$00
 .org $1e358
   .byte $c0,$00
 
@@ -1207,7 +1208,7 @@ SubtractEnemyHP:
 .org $350fa
     lda #$00
     sta $61
-    sta $63
+    sta $63 ; damage we're actually going to do
     ;; Check elemental immunity
     lda ObjectElementalDefense,y
     and ObjectElementalDefense,x
@@ -1223,9 +1224,11 @@ SubtractEnemyHP:
      sbc $62 ; A <- atk - def
      bcc +
     plp
-    bne +
-     sta $63
-+   stx $10
+    bne ++
+     sta $63 ; will do damage
+     pha ; to prevent pla from screwing up
++   pla  ; to compensate for skipping the plp above
+++  stx $10
     sty $11
     lda $63
     bne ++

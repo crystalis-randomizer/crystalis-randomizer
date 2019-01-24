@@ -1,0 +1,26 @@
+Rearranged triggers
+ - Queen to asina requires actually seeing mesia recording
+ - If queen never gave "flute of lime", she will give it AFTER changing to
+   asina, just talk to her a second time
+ - Zebu will give "key to stxy" even after all wise men gathered
+ - Shyron massacre now requires both "Key to Stxy" AND sword of thunder
+ - "Warrior Ring" requires having gotten Ivory Statue (TODO: eventually
+   will require defeating all 4 generals in castle)
+ - Portoa fisherman won't show up until botjh dolphin is healed AND shell
+   flute is owned
+ - Dolphin doesn't appear until after asina revealed (per normal)
+ - Zebu, Akahana, and others don't disappear from old spots
+ - Can now warp out of tower
+ - Guards on both sides of swan gate
+ - Kensu won't show up in beach cabin unless returned fog lamp
+ - "Barrier" requires calming the sea, ghetto flight alone is not enough
+
+
+Item overflow
+ - There's an extra 8 slots for key items that don't fit in the inventory.
+ - To access it, just select to drop a key item (only applies to the 3rd row).
+ - The dropped item will go to the end of the queue and the front of the
+   queue will be added back to the main inventory
+
+Misc
+ - shaking fixed

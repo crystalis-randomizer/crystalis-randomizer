@@ -1,0 +1,248 @@
+Ideally we could use the integrated depgraph, but I'm having a hard time
+generating it. Instead here's a manual depgraph for ordinary settings.
+
+SLOT                 REQUIRES
+Sword of Wind        n/a
+Sword of Fire        [Brynmaer] + Gas Mask + Telepathy
+Sword of Water       [Portoa] + [Fire 2] + {Flute of Lime}
+Sword of Thunder     [Goa] + [Water 2] + Key to Stxy
+Crystalis            n/a
+Ball of Wind         Windmill Key
+Tornado Bracelet     [Brynmaer] + [Climb Slopes] + [Fire 2]
+Teleport             [Brynmaer] + Tornado Bracelet + [Fire 2]
+
+
+
+[Portoa]             n/a
+[Brynmaer]           [Portoa] + Flight + Sword of Wind + {Wind 3}
+[Amazones]           [Brynmaer] + [Water 2]
+
+
+                                .fromPerson(0x0d)
+                                .npcSpawn(0x5e, 0x10, 1)
+                                .dialog(0x0d, 0xc0, 2)
+                                .key();
+const swordOfFire           = item(0x01, 'Sword of Fire')
+                                .fromPerson(0x1d)
+                                .dialog(0x1d, null, 3)
+                                .key();
+const swordOfWater          = item(0x02, 'Sword of Water').chest().key();
+const swordOfThunder        = item(0x03, 'Sword of Thunder').chest().key();
+const crystalis             = item(0x04, 'Crystalis').fixed();
+const ballOfWind            = item(0x05, 'Ball of Wind').chest().key();
+const tornadoBracelet       = item(0x06, 'Tornado Bracelet').chest().key();
+const ballOfFire            = item(0x07, 'Ball of Fire')
+                                .bossDrop(0x01)
+                                .dialog(0x1e, null, 0)
+                                .dialog(0x20, null, 0)
+                                .dialog(0x21, null, 0)
+                                .dialog(0x22, null, 0)
+                                .dialog(0x60, 0x1e, 0)
+                                .dialog(0x1d, null, 2)
+                                .dialog(0x1f, null, 0)
+                                .npcSpawn(0xc1)
+                                .key();
+const flameBracelet         = item(0x08, 'Flame Bracelet')
+                                .bossDrop(0x02)
+                                .npcSpawn(0xc2)
+                                .key();
+const ballOfWater           = item(0x09, 'Ball of Water')
+                                .direct(0x3d337)
+                                .npcSpawn(0xc3)
+                                .key();
+const blizzardBracelet      = item(0x0a, 'Blizzard Bracelet').chest().key();
+const ballOfThunder         = item(0x0b, 'Ball of Thunder')
+                                .bossDrop(0x05)
+                                .trigger(0x9a, 1)
+                                .key();
+const stormBracelet         = item(0x0c, 'Storm Bracelet').chest().key();
+const carapaceShield        = item(0x0d, 'Carapace Shield');
+const bronzeShield          = item(0x0e, 'Bronze Shield');
+const platinumShield        = item(0x0f, 'Platinum Shield');
+const mirroredShield        = item(0x10, 'Mirrored Shield');
+const ceramicShield         = item(0x11, 'Ceramic Shield');
+const sacredShield          = item(0x12, 'Sacred Shield')
+                                .bossDrop(0x08)
+                                .npcSpawn(0xc7)
+                                .bonus();
+const battleShield          = item(0x13, 'Battle Shield');
+const psychoShield          = item(0x14, 'Psycho Shield');
+const tannedHide            = item(0x15, 'Tanned Hide');
+const leatherArmor          = item(0x16, 'Leather Armor');
+const bronzeArmor           = item(0x17, 'Bronze Armor');
+const platinumArmor         = item(0x18, 'Platinmum Armor');
+const soldierSuit           = item(0x19, 'Soldier Suit');
+const ceramicSuit           = item(0x1a, 'Ceramic Suit');
+const battleSuit            = item(0x1b, 'Battle Suit');
+const psychoArmor           = item(0x1c, 'Psycho Armor')
+                                .bossDrop(0x0a)
+                                .npcSpawn(0xcb) // boss spawn
+                                .trigger(0x9f) // unused?
+                                .npcSpawn(0x83) // azteca
+                                .key();
+const medicalHerb           = item(0x1d, 'Medical Herb');
+const antidote              = item(0x1e, 'Antidote');
+const lysisPlant            = item(0x1f, 'Lysis Plant');
+const fruitOfLime           = item(0x20, 'Fruit of Lime');
+const fruitOfPower          = item(0x21, 'Fruit of Power');
+const magicRing             = item(0x22, 'Magic Ring');
+const fruitOfRepun          = item(0x23, 'Fruit of Repun')
+                                .bossDrop(0x07)
+                                .npcSpawn(0xc6)
+                                .key();
+const warpBoots             = item(0x24, 'Warp Boots');
+const statueOfOnyx          = item(0x25, 'Statue of Onyx')
+                                .chest()
+                                .invisible(0x3e3a2)
+                                .key();
+const opelStatue            = item(0x26, 'Opel Statue')
+                                .bossDrop(0x06)
+                                .npcSpawn(0xc5)
+                                .key();
+const insectFlute           = item(0x27, 'Insect Flute')
+                                .fromPerson(0x1e)
+                                .dialog(0x1e, null, 1)
+                                .key();
+const fluteOfLimeQueen      = item(0x28, 'Flute of Lime')
+                                .fromPerson(0x38)
+                                .direct(0x98f9) // persondata 62 +1
+                                // .direct(0x3fa28) // mesia version
+                                .dialog(0x38, null, 4)
+                                .dialog(0x38, null, 5, 0)
+                                .key();
+const gasMask               = item(0x29, 'Gas Mask')
+                                .direct(0x3d7fe)
+                                .npcSpawn(0x16, 0x18)
+                                .key();
+const powerRing             = item(0x2a, 'Power Ring').chest().bonus();
+const warriorRing           = item(0x2b, 'Warrior Ring')
+                                .fromPerson(0x54)
+                                .dialog(0x54, null, 2)
+                                .bonus();
+const ironNecklace          = item(0x2c, 'Iron Necklace').chest().bonus();
+const deosPendant           = item(0x2d, 'Deo\'s Pendant')
+                                .fromPerson(0x5a)
+                                .dialog(0x5a, null, 0)
+                                .bonus();
+const rabbitBoots           = item(0x2e, 'Rabbit Boots')
+                                .bossDrop(0x00)
+                                .npcSpawn(0xc0)
+                                .key();
+const leatherBoots          = item(0x2f, 'Leather Boots').chest().bonus();
+const shieldRing            = item(0x30, 'Shield Ring')
+                                .direct(0x3d2af)
+                                .npcSpawn(0x16, 0x57, 2)
+                                .bonus();
+const alarmFlute            = item(0x31, 'Alarm Flute').fixed();
+const windmillKey           = item(0x32, 'Windmill Key')
+                                .fromPerson(0x14)
+                                .dialog(0x14, 0x0e, 0)
+                                .key();
+const keyToPrison           = item(0x33, 'Key to Prison').chest().key();
+const keyToStyx             = item(0x34, 'Key to Styx')
+                                .fromPerson(0x5e, 1)
+                                // Require getting both sword of thunder
+                                // AND the key to styx SLOT to trigger
+                                // shyron massacre.
+                                .trigger(0x80, 2) // newly added
+                                .dialog(0x5e, 0xf2, 0)
+                                .dialog(0x62, 0xf2, 0)
+                                .key();
+const fogLamp               = item(0x35, 'Fog Lamp').chest().key();
+const shellFlute            = item(0x36, 'Shell Flute')
+                                .fromPerson(0x63, 1)
+                                .npcSpawn(0x63)
+                                //.npcSpawn(0x64)
+                                //.dialog(0x7b, null, 0)
+                                .key();
+                                // TODO --- need to add some code,
+                                // still need to delete itemuse trigger?
+                                // just use the hard-coded ones...?
+const eyeGlasses            = item(0x37, 'Eye Glasses')
+                                .fromPerson(0x44)
+                                .dialog(0x44, 0xe9, 1)
+                                .key();
+const brokenStatue          = item(0x38, 'Broken Statue')
+                                .bossDrop(0x04)
+                                .npcSpawn(0x7f, 0x65) // sabera
+                                .npcSpawn(0x46)
+                                .npcSpawn(0x47)
+                                .npcSpawn(0x6a)
+                                .npcSpawn(0x84)
+                                .npcSpawn(0x8e)
+                                .dialog(0x3d)
+                                .dialog(0x3e)
+                                .dialog(0x3f)
+                                .dialog(0x40)
+                                .dialog(0x41)
+                                .dialog(0x42)
+                                .dialog(0x43)
+                                .dialog(0x44, 0xe9)
+                                .trigger(0xb6)
+                                .key();
+const glowingLamp           = item(0x39, 'Glowing Lamp')
+                                .direct(0x3d30e)
+                                .npcSpawn(0x7e, 0x62, 1)
+                                .key();
+const statueOfGold          = item(0x3a, 'Statue of Gold')
+                                // direct(0x1c594) // shuffle is a little odd
+                                .fixed();
+const lovePendant           = item(0x3b, 'Love Pendant')
+                                .chest()
+                                .invisible(0x3e3aa)
+                                .key();
+const kirisaPlant           = item(0x3c, 'Kirisa Plant')
+                                .chest()
+                                .invisible(0x3e3a6)
+                                .key();
+const ivoryStatue           = item(0x3d, 'Ivory Statue')
+                                .bossDrop(0x09)
+                                .npcSpawn(0xc8)
+                                .key();
+const bowOfMoon             = item(0x3e, 'Bow of Moon')
+                                .fromPerson(0x23) // not actually used???
+                                .direct(0x3d6e8)
+                                .dialog(0x23, null, 1)
+                                .key();
+const bowOfSun              = item(0x3f, 'Bow of Sun')
+                                .chest()
+                                .key();
+const bowOfTruth            = item(0x40, 'Bow of Truth')
+                                .fromPerson(0x83)
+                                .npcSpawn(0x83, 0x9c, 1)
+                                .dialog(0x83, null, 0)
+                                .key();
+const refresh               = magic(0x41, 'Refresh')
+                                .fromPerson(0x5e)
+                                .direct(0x3d711)
+                                .dialog(0x5e, 0x10, 2)
+                                .trigger(0xb4, 1);
+const paralysis             = magic(0x42, 'Paralysis')
+                                .direct(0x3d655)
+                                // TODO - require defeating kelbesque?
+                                .trigger(0x8d)
+                                .trigger(0xb2);
+const telepathy             = magic(0x43, 'Telepathy')
+                                .direct(0x367f4)
+                                .npcSpawn(0x5f, 0x1e, 1)
+                                .trigger(0x85, 1);
+const teleport              = magic(0x44, 'Teleport')
+                                .fromPerson(0x5f)
+                                .dialog(0x5f, 0x21, 0);
+const recover               = magic(0x45, 'Recover')
+                                .direct(0x3d1f9);
+                                // NOTE: no need for second slot because
+                                // recover does not have an ItemGet normally.
+const barrier               = magic(0x46, 'Barrier')
+                                .direct(0x3d6d9)
+                                .trigger(0x84, 0);
+const change                = magic(0x47, 'Change')
+                                .direct(0x3d6de)
+                                .npcSpawn(0x74, 0xf1, 1);
+const flight                = magic(0x48, 'Flight')
+                                .direct(0x3d18f);
+                                // See recover - no need for second slot.
+const fluteOfLimeChest      = item(0x28, "Flute of Lime").chest(0x5b).key();
+const fruitOfPowerVampire2  = fruitOfPower
+                                .bossDrop(0x0c, 0x61)
+                                .npcSpawn(0xcc);

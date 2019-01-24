@@ -701,13 +701,13 @@ CheckBelowBoss:
    lda $0380,x
     bmi ++
    ; skip the check for sabera 1 and mado 1
-   lda $04a0.x
+   lda $04a0,x
    and #$fe
    cmp #$e6  ; sabera and mado
    bne +
-    lda #$d8
-    sbc $04c0,x  ; first version has #$cf, second has #$dc
-    bpl ++
+    lda #$dc
+    cmp $04c0,x  ; first version has #$cf, second has #$dc
+    bne ++
 +  sec
    lda $d0
    sbc $d0,x
@@ -741,6 +741,17 @@ CheckBelowBoss:
 .bank $1a000 $a000:$2000
 .org $1b6df
   .byte $0d
+
+;; Also fix softlock issue with zebu in reverse fortress.
+;; Remove the $c4,$29 spawn that locks the screen.
+.org $1a1c0  ; npcdata_aa slot 0e
+  .byte $ff  ; just delete the spawn entirely
+.org $1a220  ; npcdata_ac slot 0f
+  .byte $ff  ; same for tornel
+.org $1a2e8  ; npcdata_b9 slot 0f
+  .byte $ff  ; same for asina
+.org $1a3ac  ; npcdata_ba slot 0e
+  .byte $00,$00,$02,$80 ; more npcs follow so instead change to off-screen trigger
 
 `, 'preventNpcDespawns'));
 

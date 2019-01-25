@@ -96,6 +96,12 @@ class MapsView extends View {
       `  Palettes: [pal<0:1:$ff>:$${Array.from(pal, hex).join(',$')},]`,
       `  Tileset:  [ts<$80:4:$fc>:$${Array.from(ts, hex).join(',$')},]`,
       `  Patterns: [pat<0:1:$ff>:$${Array.from(pat, hex).join(',$')},]`);
+    lines.push(`\nEntrances:`);
+    for (let i = 0; !invalid && i < entrances.length; i++) {
+      const [xl, xh, yl, yh] = entrances[i];
+      lines.push(`  [@${xl|xh<<8}x${yl+yh*240}+16x16][entrances.${i}<0:$ff>:$${
+                    Array.from(entrances[i], hex).join(',$')},]`);
+    }
     lines.push(`\nExits:`);
     for (let i = 0; !invalid && i < exits.length; i++) {
       const [x, y, s, e] = exits[i];
@@ -218,6 +224,11 @@ class MapsView extends View {
         const x = ((obj[1] & 0x7f) << 4) + (obj[2] & 0x40 ? 8 : 0) + 8;
         this.drawMetasprite(buf, x, y, metasprite, pal, pat, frame >> 3);
       }
+      // Indicate entrances (todo - toggle?)
+      for (let i = 0; i < opts.entrances.length; i++) {
+        const [xl, xh, yl, yh] = opts.entrances[i];
+        this.drawText(buf, xh*256+xl-8, yh*240+yl-8, i.toString(16).padStart(2, 0), 0x30);
+      }      
       // done
       draw(buf);
     };
@@ -286,6 +297,14 @@ class MapsView extends View {
         if (z) img.draw(x + c, y + r, colors[palette.colors[z]]);
       }
     }
+  }
+
+  drawText(img, x, y, text, color) {
+    for (let i = 0; i < text.length; i++) {
+      this.drawTile(
+          img, x + 8 * i, y, text.charCodeAt(i) | 0xf00,
+          {colors: [0x3f, color, 0x3f, 0x3f]});
+    }            
   }
 
   mousemove(x, y) {

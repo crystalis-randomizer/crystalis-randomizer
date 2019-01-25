@@ -489,6 +489,7 @@ export class Location extends Node {
     this.chests = [];
     this.mimics = []; // fold into chests
     this.bossNode = null;
+    this.type = null;
   }
 
   addConnection(c) {
@@ -532,6 +533,51 @@ export class Location extends Node {
 
   boss(boss) {
     this.bossNode = boss;
+    return this;
+  }
+
+  // Location types - basic idea would be to leave misc alone, but otherwise
+  // shuffle among areas of the same type.  We could mix caves and fortresses
+  // if relevant, as well as sea and overworld.  We should mark each connection
+  // with a value indicating the threshold for shuffling it - 1 = always shuffle,
+  // 2 = medium, 3 = crazy (e.g. shuffle all exits).
+  overworld() {
+    this.type = 'overworld';
+    return this;
+  }
+
+  town() {
+    this.type = 'town';
+    return this;
+  }
+
+  cave() {
+    this.type = 'cave';
+    return this;
+  }
+
+  sea() {
+    this.type = 'sea';
+    return this;
+  }
+
+  fortress() {
+    this.type = 'fortress';
+    return this;
+  }
+
+  house() {
+    this.type = 'house';
+    return this;
+  }
+
+  shop() {
+    this.type = 'house';
+    return this;
+  }
+
+  misc() {
+    this.type = 'misc';
     return this;
   }
 

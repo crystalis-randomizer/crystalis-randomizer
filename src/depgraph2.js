@@ -492,880 +492,954 @@ const PYRB = area('Pyramid Back');
 const TOWR = area('Tower');
 
 ////////////////////////////////////////////////////////////////
+// Location Types
+////////////////////////////////////////////////////////////////
+
+const OVERWORLD = 'overworld';
+const TOWN = 'town';
+const CAVE = 'cave';
+const SEA = 'sea';
+const HOUSE = 'house';
+const MISC = 'misc';
+
+////////////////////////////////////////////////////////////////
 // Locations
 ////////////////////////////////////////////////////////////////
 
 // Leaf, Valley of Wind, Sealed Cave
 
-const start                 = location(0x00, LEAF, 'Start');
-const mezameShrine          = location(0x00, LEAF, 'Mezame Shrine')
+const start                 = location(0x00, LEAF, 'Start').overworld();
+const mezameShrine          = location(0x00, LEAF, 'Mezame Shrine').overworld()
                                 .connect(start);
-const outsideStart          = location(0x01, LEAF, 'Outside Start')
+const outsideStart          = location(0x01, LEAF, 'Outside Start').overworld()
                                 .connect(mezameShrine);
-const leaf                  = location(0x02, LEAF, 'Town')
+const leaf                  = location(0x02, LEAF, 'Town').town()
                                 .connect(outsideStart);
-const valleyOfWind          = location(0x03, VWND, 'Main')
+const valleyOfWind          = location(0x03, VWND, 'Main').overworld()
                                 .connect(leaf)
                                 .trigger(learnedRefresh, startedWindmill);
-const outsideWindmill       = location(0x03, VWND, 'Outside Windmill');
-const sealedCave1           = location(0x04, VAMP, 'Tunnel 1 (entrance)')
+const outsideWindmill       = location(0x03, VWND, 'Outside Windmill').overworld();
+const sealedCave1           = location(0x04, VAMP, 'Tunnel 1 (entrance)').cave()
                                 // to(valleyOfWind), // TODO - unglitch
                                 .from(valleyOfWind, startedWindmill);
-const sealedCave2           = location(0x05, VAMP, 'Tunnel 2 (over bridge)')
+const sealedCave2           = location(0x05, VAMP, 'Tunnel 2 (over bridge)').cave()
                                 .connect(sealedCave1);
-const sealedCave6           = location(0x06, VAMP, 'Tunnel 6 (herb dead end)')
+const sealedCave6           = location(0x06, VAMP, 'Tunnel 6 (herb dead end)').cave()
                                 .chest(medicalHerb, 0x0f);
-const sealedCave4a          = location(0x07, VAMP, 'Tunnel 4a (ball corridor)')
+const sealedCave4a          = location(0x07, VAMP, 'Tunnel 4a (ball corridor)').cave()
                                 .chest(medicalHerb, 0x14, 0x50)
                                 .chest(ballOfWind, 0x15);
-const sealedCave4b          = location(0x07, VAMP, 'Tunnel 4b (antidote dead end)')
+const sealedCave4b          = location(0x07, VAMP, 'Tunnel 4b (antidote dead end)').cave()
                                 .connect(sealedCave4a, destroyStone) // 64dd:10
                                 .chest(antidote, 0x13);
-const sealedCave5           = location(0x08, VAMP, 'Tunnel 5 (warp boots dead end)')
+const sealedCave5           = location(0x08, VAMP, 'Tunnel 5 (warp boots dead end)').cave()
                                 .chest(warpBoots, 0x0e);
-const sealedCave3a          = location(0x09, VAMP, 'Tunnel 3a (branch, front)')
+const sealedCave3a          = location(0x09, VAMP, 'Tunnel 3a (branch, front)').cave()
                                 .connect(sealedCave2)
                                 .connectTo(sealedCave4a)
                                 .connectTo(sealedCave5);
-const sealedCave3b          = location(0x09, VAMP, 'Tunnel 3b (branch, back)')
+const sealedCave3b          = location(0x09, VAMP, 'Tunnel 3b (branch, back)').cave()
                                 .connect(sealedCave3a, destroyStone) // 64dd:08
                                 .connectTo(sealedCave6);
-const sealedCave7           = location(0x0a, VAMP, 'Tunnel 7 (boss)')
+const sealedCave7           = location(0x0a, VAMP, 'Tunnel 7 (boss)').cave()
                                 .connect(sealedCave3b)
                                 .boss(vampire1);
-const sealedCave8a          = location(0x0c, VAMP, 'Tunnel 8a (exit, above wall)')
+const sealedCave8a          = location(0x0c, VAMP, 'Tunnel 8a (exit, above wall)').cave()
                                 .connect(sealedCave7);
-const sealedCave8b          = location(0x0c, VAMP, 'Tunnel 8b (exit, below wall)')
+const sealedCave8b          = location(0x0c, VAMP, 'Tunnel 8b (exit, below wall').cave()
                                 .connect(sealedCave8a, destroyStone); // 64d0:10
-const windmillCave          = location(0x0e, VWND, 'Windmill Cave')
+const windmillCave          = location(0x0e, VWND, 'Windmill Cave').cave()
                                 .connect(valleyOfWind)
                                 .connectTo(outsideWindmill)
                                 .trigger(wokeUpWindmillGuard, alarmFlute, talkedToZebuInCave);
-const windmill              = location(0x0f, VWND, 'Windmill')
+const windmill              = location(0x0f, VWND, 'Windmill').misc()
                                 .connect(outsideWindmill)
                                 .trigger(startedWindmill, windmillKey);
-const zebuCaveFront         = location(0x10, VWND, 'Zebu\'s Cave Front')
+const zebuCaveFront         = location(0x10, VWND, 'Zebu\'s Cave Front').cave()
                                 .connect(valleyOfWind)
                                 .trigger(talkedToZebuInCave, talkedToLeafElder, talkedToLeafStudent)
                                 .trigger(learnedRefresh, startedWindmill, talkedToZebuInCave);
-const zebuCaveBack          = location(0x10, VWND, 'Zebu\'s Cave Back')
+const zebuCaveBack          = location(0x10, VWND, 'Zebu\'s Cave Back').cave()
                                 .trigger(villagersAbducted)
                                 .connect(zebuCaveFront, destroyIce);
-const mtSabreWestTunnel1    = location(0x11, SBRW, 'Tunnel 1 (to Zebu)')
+const mtSabreWestTunnel1    = location(0x11, SBRW, 'Tunnel 1 (to Zebu)').cave()
                                 .connect(zebuCaveBack);
 
 // Cordel Plain, Brynmaer, and environs
 
-const cordelPlainWest       = location(0x14, CORD, 'West')
+const cordelPlainWest       = location(0x14, CORD, 'West').overworld()
                                 //.connect(zebuCaveBack)
                                 .connect(sealedCave8b);
-const cordelPlainSouth      = location(0x14, CORD, 'South')
+const cordelPlainSouth      = location(0x14, CORD, 'South').overworld()
                                 .connect(cordelPlainWest, crossRivers); // 64dd:04
-const cordelPlainEast       = location(0x15, CORD, 'East')
+const cordelPlainEast       = location(0x15, CORD, 'East').overworld()
                                 .connect(cordelPlainWest)
                                 .chest(statueOfOnyx, 0x18);
-const brynmaer              = location(0x18, BRYN, 'Town')
+const brynmaer              = location(0x18, BRYN, 'Town').town()
                                 .connect(cordelPlainWest)
                                 .trigger(gaveStatueToAkahana, statueOfOnyx);
-const outsideStomsHouse     = location(0x19, CORD, 'Outside Stom\'s House')
+const outsideStomsHouse     = location(0x19, CORD, 'Outside Stom\'s House').town()
                                 .connect(cordelPlainWest);
-const swamp                 = location(0x1a, CORD, 'Swamp')
+const swamp                 = location(0x1a, CORD, 'Swamp').overworld()
                                 .connect(cordelPlainEast, gasMask)
                                 .trigger(rescuedOakChild, talkedToOakMother, gasMask);
-const swampBoss             = location(0x1a, CORD, 'Swamp Insect Area')
+const swampBoss             = location(0x1a, CORD, 'Swamp Insect Area').overworld()
                                 .connect(swamp, gasMask)
                                 .boss(giantInsect);
-const amazones              = location(0x1b, AMZN, 'Town')
+const amazones              = location(0x1b, AMZN, 'Town').town()
                                 .connect(cordelPlainSouth);
-const oak                   = location(0x1c, OAK,  'Town')
+const oak                   = location(0x1c, OAK,  'Town').town()
                                 .connect(swamp, gasMask)
                                 .trigger(visitedOak);
-const stomsHouse            = location(0x1e, CORD, 'Stom\'s House')
+const stomsHouse            = location(0x1e, CORD, 'Stom\'s House').house()
                                 .connect(outsideStomsHouse)
                                 .trigger(foughtStom, visitedOak);
 
 // Mt Sabre West
 
-const mtSabreWestEntrance   = location(0x20, SBRW, 'Entrance')
+const mtSabreWestEntrance   = location(0x20, SBRW, 'Entrance').overworld()
                                 .connect(cordelPlainWest)
                                 .connect(mtSabreWestTunnel1);
-const mtSabreWestUpSlope    = location(0x20, SBRW, 'Up Slope')
+const mtSabreWestUpSlope    = location(0x20, SBRW, 'Up Slope').overworld()
                                 .from(mtSabreWestEntrance, climbSlopes)
                                 .to(mtSabreWestEntrance);
-const mtSabreWestDeadEnd    = location(0x20, SBRW, 'Dead End (warp boots)')
+const mtSabreWestDeadEnd    = location(0x20, SBRW, 'Dead End (warp boots)').overworld()
                                 .chest(warpBoots, 0x18, 0x6a);
-const mtSabreWestUpper      = location(0x21, SBRW, 'Upper')
+const mtSabreWestUpper      = location(0x21, SBRW, 'Upper').overworld()
                                 .from(mtSabreWestEntrance, flight)
                                 .to(mtSabreWestEntrance);
-const mtSabreWestTornel     = location(0x21, SBRW, 'Tornel Dead End')
+const mtSabreWestTornel     = location(0x21, SBRW, 'Tornel Dead End').overworld()
                                 .trigger(talkedToTornelOnMtSabre, tornadoBracelet)
                                 .chest(magicRing, 0x17, 0x69);
-const mtSabreWestTunnel2a   = location(0x22, SBRW, 'Tunnel 2a (fork at start)')
+const mtSabreWestTunnel2a   = location(0x22, SBRW, 'Tunnel 2a (fork at start)').cave()
                                 .connect(mtSabreWestEntrance);
 const mtSabreWestTunnel2b   = location(0x22, SBRW, 'Tunnel 2b (left branch to dead end)')
+                                .cave()
                                 .connect(mtSabreWestTunnel2a, destroyIce) // 64dd:02
                                 .connectTo(mtSabreWestDeadEnd);
 const mtSabreWestTunnel2c   = location(0x22, SBRW, 'Tunnel 2c (right branch to upper)')
+                                .cave()
                                 .connect(mtSabreWestTunnel2a, destroyIce); // 64dd:01
 const mtSabreWestTunnel3a   = location(0x23, SBRW, 'Tunnel 3a (tunnel to upper, with herb chest)')
+                                .cave()
                                 .connect(mtSabreWestTunnel2c)
                                 .chest(medicalHerb, 0x17, 0x52);
 const mtSabreWestTunnel3b   = location(0x23, SBRW, 'Tunnel 3b (tunnel to upper, branch below ice)')
+                                .cave()
                                 .connect(mtSabreWestTunnel3a, destroyIce) // 64dc:80
                                 .connectTo(mtSabreWestUpper);
 const mtSabreWestTunnel4a   = location(0x24, SBRW, 'Tunnel 4a (branch to upper or Tornel)')
+                                .cave()
                                 .connect(mtSabreWestTunnel3b);
-const mtSabreWestTunnel4b   = location(0x24, SBRW, 'Tunnel 4b (out to upper)')
+const mtSabreWestTunnel4b   = location(0x24, SBRW, 'Tunnel 4b (out to upper)').cave()
                                 .connect(mtSabreWestTunnel4a, destroyIce) // 64dc:40
                                 .connectTo(mtSabreWestUpper);
-const mtSabreWestTunnel5    = location(0x25, SBRW, 'Tunnel 5 (tiny connector)')
+const mtSabreWestTunnel5    = location(0x25, SBRW, 'Tunnel 5 (tiny connector)').cave()
                                 .connect(mtSabreWestTunnel4a);
 const mtSabreWestTunnel6a   = location(0x26, SBRW, 'Tunnel 6a (exit to Tornel, above ice)')
+                                .cave()
                                 .connect(mtSabreWestTunnel5);
 const mtSabreWestTunnel6b   = location(0x26, SBRW, 'Tunnel 6b (exit to Tornel, below ice)')
+                                .cave()
                                 .connect(mtSabreWestTunnel6a, destroyIce) // 64dc:20
                                 .connectTo(mtSabreWestTornel);
 const mtSabreWestTunnel7a   = location(0x27, SBRW, 'Tunnel 7a (tornado bracelet, lower)')
+                                .cave()
                                 .connect(mtSabreWestUpSlope);
 const mtSabreWestTunnel7b   = location(0x27, SBRW, 'Tunnel 7b (tornado bracelet, middle)')
+                                .cave()
                                 .connect(mtSabreWestTunnel7a, destroyIce); // 64dc:10
 const mtSabreWestTunnel7c   = location(0x27, SBRW, 'Tunnel 7c (tornado bracelet, upper)')
+                                .cave()
                                 .connect(mtSabreWestTunnel7b, destroyIce) // 64dc:08
                                 .chest(tornadoBracelet, 0x19);
 
 // Mt Sabre North
 
-const mtSabreNorthEntrance  = location(0x28, SBRN, 'Entrance')
+const mtSabreNorthEntrance  = location(0x28, SBRN, 'Entrance').overworld()
                                 .connect(cordelPlainEast, teleport, talkedToLeafRabbit);
-const mtSabreNorthUpper     = location(0x28, SBRN, 'Upper')
+const mtSabreNorthUpper     = location(0x28, SBRN, 'Upper').overworld()
                                 .from(mtSabreNorthEntrance, flight)
                                 .to(mtSabreNorthEntrance);
-const mtSabreNorthSummit    = location(0x28, SBRN, 'Summit (boss)')
+const mtSabreNorthSummit    = location(0x28, SBRN, 'Summit (boss)').overworld()
                                 .from(mtSabreNorthUpper, flight)
                                 .to(mtSabreNorthUpper)
                                 .boss(kelbesque1);
-const mtSabreNorthConnector = location(0x29, SBRN, 'Connector');
-const mtSabreNorthMidLeft   = location(0x29, SBRN, 'Middle Left');
-const mtSabreNorthMidRight  = location(0x29, SBRN, 'Middle Right')
+const mtSabreNorthConnector = location(0x29, SBRN, 'Connector').overworld();
+const mtSabreNorthMidLeft   = location(0x29, SBRN, 'Middle Left').overworld();
+const mtSabreNorthMidRight  = location(0x29, SBRN, 'Middle Right').overworld()
                                 .from(mtSabreNorthMidLeft, climbSlopes)
                                 .to(mtSabreNorthMidLeft);
 const mtSabreNorthTunnel2a  = location(0x2a, SBRN, 'Tunnel 2a (from entrance to connector)')
+                                .cave()
                                 .connectTo(mtSabreNorthConnector);
 const mtSabreNorthTunnel2b  = location(0x2a, SBRN, 'Tunnel 2b (under bridge, to antidote)')
+                                .cave()
                                 .connect(mtSabreNorthTunnel2a, destroyIce) // 64dc:04
                                 .chest(antidote, 0x17, 0x5e);
 const mtSabreNorthTunnel3a  = location(0x2b, SBRN, 'Tunnel 3a (branch after connector)')
+                                .cave()
                                 .connect(mtSabreNorthConnector);
-const mtSabreNorthTunnel3b  = location(0x2b, SBRN, 'Tunnel 3b (right branch)')
+const mtSabreNorthTunnel3b  = location(0x2b, SBRN, 'Tunnel 3b (right branch)').cave()
                                 .connect(mtSabreNorthTunnel3a, destroyIce); // 64dc:02
-const mtSabreNorthTunnel3c  = location(0x2b, SBRN, 'Tunnel 3c (upper branch)')
+const mtSabreNorthTunnel3c  = location(0x2b, SBRN, 'Tunnel 3c (upper branch)').cave()
                                 .connect(mtSabreNorthTunnel3a, destroyIce); // 64dc:01
 const mtSabreNorthTunnel4   = location(0x2c, SBRN, 'Tunnel 4 (over bridge, to middle)')
+                                .cave()
                                 .connect(mtSabreNorthTunnel3c)
                                 .connectTo(mtSabreNorthMidLeft);
 const mtSabreNorthTunnel5a  = location(0x2d, SBRN, 'Tunnel 5a (E-shaped, from right branch)')
+                                .cave()
                                 .connect(mtSabreNorthTunnel3b)
                                 .connectTo(mtSabreNorthMidRight);
 const mtSabreNorthTunnel5b  = location(0x2d, SBRN, 'Tunnel 5b (dead-end with herb)')
+                                .cave()
                                 .connect(mtSabreNorthTunnel5a, destroyIce) // 64db:80
                                 .chest(medicalHerb, 0x16, 0x53);
 const mtSabreNorthTunnel6a  = location(0x2e, SBRN, 'Tunne; 6a (S-shaped hall, right)')
+                                .cave()
                                 .connect(mtSabreNorthTunnel5a);
 const mtSabreNorthTunnel6b  = location(0x2e, SBRN, 'Tunne; 6b (S-shaped hall, middle)')
+                                .cave()
                                 .connect(mtSabreNorthTunnel6a, destroyIce); // 64db:20
 const mtSabreNorthTunnel6c  = location(0x2e, SBRN, 'Tunnel 6c (S-shaped hall, left)')
+                                .cave()
                                 .connect(mtSabreNorthTunnel6b, destroyIce); // 64db:40
 // NOTE: the following four ice walls are problematic for bacsktracking.
 // We may want to put in place something to destroy them if coming in at that entrance,
 // or to enter lower if the wall is intact.  We could even iterate over the objects and
 // detect the wall at the current coordinates?  Or reject the transition?  These are not
 // important reverse paths, so we just remove them from the graph for now.
-const mtSabreNorthPrison    = location(0x2f, SBRN, 'Prison (hallway)')
+const mtSabreNorthPrison    = location(0x2f, SBRN, 'Prison (hallway)').cave()
                                 .connect(mtSabreNorthUpper);
-const mtSabreNorthLeftCell  = location(0x30, SBRN, 'Left Cell (shopkeepers)')
+const mtSabreNorthLeftCell  = location(0x30, SBRN, 'Left Cell (shopkeepers)').cave()
                                 .from(mtSabreNorthPrison, destroyIce); // 64db:08
 const mtSabreNorthLeftCell2 = location(0x31, SBRN, 'Left Cell 2 (back, with prison key)')
+                                .cave()
                                 .from(mtSabreNorthLeftCell, destroyIce) // 64db:04
                                 .chest(keyToPrison, 0x0d);
-const mtSabreNorthRightCell = location(0x32, SBRN, 'Right Cell (villagers)')
+const mtSabreNorthRightCell = location(0x32, SBRN, 'Right Cell (villagers)').cave()
                                 .from(mtSabreNorthPrison, destroyIce); // 64db:10
 const mtSabreNorthTunnel8   = location(0x33, SBRN, 'Tunnel 8 (behind right cell, toward summit)')
+                                .cave()
                                 .from(mtSabreNorthRightCell, destroyIce); // 64db:02
 const mtSabreNorthTunnel9   = location(0x34, SBRN, 'Tunnel 9 (connector to summit)')
+                                .cave()
                                 .connect(mtSabreNorthTunnel8)
                                 .connectTo(mtSabreNorthSummit);
 const mtSabreNorthTunnel10a = location(0x35, SBRN, 'Tunnel 10a (summit cave, front)')
+                                .cave()
                                 .from(mtSabreNorthSummit, keyToPrison)
                                 .to(mtSabreNorthSummit);
 const mtSabreNorthTunnel10b = location(0x35, SBRN, 'Tunnel 10b (summit cave, behind ice)')
+                                .cave()
                                 .connect(mtSabreNorthTunnel10a, destroyIce) // 64da:80
                                 .trigger(learnedParalysis);
 const mtSabreNorthTunnel1   = location(0x38, SBRN, 'Tunnel 1 (leads from main entrance)')
+                                .cave()
                                 .connect(mtSabreNorthEntrance)
                                 .connectTo(mtSabreNorthTunnel2a);
-const mtSabreNorthTunnel7   = location(0x39, SBRN, 'Tunnel 7 (to upper)')
+const mtSabreNorthTunnel7   = location(0x39, SBRN, 'Tunnel 7 (to upper)').cave()
                                 .connect(mtSabreNorthTunnel6c)
                                 .connectTo(mtSabreNorthUpper);
 
-const nadareInn             = location(0x3c, NADR, 'Inn');
-const nadareToolShop        = location(0x3d, NADR, 'Tool Shop');
-const nadareBackRoom        = location(0x3e, NADR, 'Back Room');
+const nadareInn             = location(0x3c, NADR, 'Inn').town();
+const nadareToolShop        = location(0x3d, NADR, 'Tool Shop').house();
+const nadareBackRoom        = location(0x3e, NADR, 'Back Room').house();
 
 // Waterfall Valley
 
-const waterfallValleySummit = location(0x40, WFVL, 'Summit')
+const waterfallValleySummit = location(0x40, WFVL, 'Summit').overworld()
                                 .connect(mtSabreNorthTunnel10b);
-const waterfallValleyNW     = location(0x40, WFVL, 'Northwest')
+const waterfallValleyNW     = location(0x40, WFVL, 'Northwest').overworld()
                                 .from(waterfallValleySummit)
                                 .to(waterfallValleySummit, flight);
-const waterfallValleyNE     = location(0x40, WFVL, 'Northeast')
+const waterfallValleyNE     = location(0x40, WFVL, 'Northeast').overworld()
                                 .connect(waterfallValleyNW, crossRivers);
-const waterfallValleySW     = location(0x41, WFVL, 'Southwest')
+const waterfallValleySW     = location(0x41, WFVL, 'Southwest').overworld()
                                 .connect(waterfallValleyNW);
-const waterfallValleySE     = location(0x41, WFVL, 'Southeast')
+const waterfallValleySE     = location(0x41, WFVL, 'Southeast').overworld()
                                 .connect(waterfallValleySW, crossRivers);
-const limeTreeValley        = location(0x42, WFVL, 'Lime Tree Valley')
+const limeTreeValley        = location(0x42, WFVL, 'Lime Tree Valley').overworld()
                                 .connect(waterfallValleySW)
                                 .connect(valleyOfWind, limeTreeConnectsToLeaf);
-const limeTreeLake          = location(0x43, WFVL, 'Lime Tree Lake (Rage)')
+const limeTreeLake          = location(0x43, WFVL, 'Lime Tree Lake (Rage)').cave()
                                 .connect(limeTreeValley)
                                 .trigger(talkedToRage, swordOfWater);
 
 // Kirisa Plant Cave
 
-const kirisaCave1a          = location(0x44, KIRI, 'Tunnel 1a (entrance)')
+const kirisaCave1a          = location(0x44, KIRI, 'Tunnel 1a (entrance)').cave()
                                 .connect(waterfallValleySE);
-const kirisaCave1b          = location(0x44, KIRI, 'Tunnel 1b (behind wall)')
+const kirisaCave1b          = location(0x44, KIRI, 'Tunnel 1b (behind wall)').cave()
                                 .connect(kirisaCave1a, destroyStone); // 64d8:02
 const kirisaCave2a          = location(0x45, KIRI, 'Tunnel 2a (main path, before wall)')
+                                .cave()
                                 .connect(kirisaCave1b);
 const kirisaCave2b          = location(0x45, KIRI, 'Tunnel 2b (dead end, antidote)')
+                                .cave()
                                 .connect(kirisaCave2a, destroyStone) // 64d8:01
                                 .chest(antidote, 0x19, 0x5f);
 const kirisaCave2c          = location(0x45, KIRI, 'Tunnel 2c (main path, after wall)')
+                                .cave()
                                 .connect(kirisaCave2a, destroyStone); // 64d7:80
 const kirisaCave3a          = location(0x46, KIRI, 'Tunnel 3a (last room, before wall)')
+                                .cave()
                                 .connect(kirisaCave2c);
 const kirisaCave3b          = location(0x46, KIRI, 'Tunnel 3b (last room, after wall)')
+                                .cave()
                                 .connect(kirisaCave3a, destroyStone); // 64d0:40
-const kirisaMeadow          = location(0x47, KIRI, 'Meadow')
+const kirisaMeadow          = location(0x47, KIRI, 'Meadow').overworld()
                                 .connect(kirisaCave3b)
                                 .chest(kirisaPlant, 0x0e);
 
 // Fog Lamp Cave
 
-const fogLampCave1a         = location(0x48, FOGL, 'Tunnel 1a (entrance)')
+const fogLampCave1a         = location(0x48, FOGL, 'Tunnel 1a (entrance)').cave()
                                 .connect(waterfallValleyNE);
-const fogLampCave1b         = location(0x48, FOGL, 'Tunnel 1b (past wall)')
+const fogLampCave1b         = location(0x48, FOGL, 'Tunnel 1b (past wall)').cave()
                                 .connect(fogLampCave1a, destroyStone); // 64d9:10
 const fogLampCave1c         = location(0x48, FOGL, 'Tunnel 1c (dead end, lysisPlant)')
+                                .cave()
                                 .connect(fogLampCave1b, destroyStone) // 64d9:20
                                 .chest(lysisPlant, 0x18);
-const fogLampCave2          = location(0x49, FOGL, 'Tunnel 2 (tiny connector)')
+const fogLampCave2          = location(0x49, FOGL, 'Tunnel 2 (tiny connector)').cave()
                                 .connect(fogLampCave1b);
-const fogLampCave3a         = location(0x4a, FOGL, 'Tunnel 3a (upper branch)')
+const fogLampCave3a         = location(0x4a, FOGL, 'Tunnel 3a (upper branch)').cave()
                                 .connect(fogLampCave2);
-const fogLampCave3b         = location(0x4a, FOGL, 'Tunnel 3b (dead end, mimic)')
+const fogLampCave3b         = location(0x4a, FOGL, 'Tunnel 3b (dead end, mimic)').cave()
                                 .connect(fogLampCave3a, destroyStone) // 64d9:01
                                 .chest(mimic, 0x15);
 const fogLampCave3c         = location(0x4a, FOGL, 'Tunnel 3c (short passage with mimic)')
+                                .cave()
                                 .connect(fogLampCave3a, destroyStone) // 64d9:02
                                 .chest(mimic, 0x16);
-const fogLampCave3d         = location(0x4a, FOGL, 'Tunnel 3d (lower branch)')
+const fogLampCave3d         = location(0x4a, FOGL, 'Tunnel 3d (lower branch)').cave()
                                 .connect(fogLampCave3c, destroyStone); // 64d9:04
-const fogLampCave4          = location(0x4b, FOGL, 'Tunnel 4 (dead end loop)') // pointless 64d9:08
-                                .connect(fogLampCave3d);
+const fogLampCave4          = location(0x4b, FOGL, 'Tunnel 4 (dead end loop)').cave()
+                                .connect(fogLampCave3d); // pointless 64d9:08
 const fogLampCave5a         = location(0x4c, FOGL, 'Tunnel 5a (right branch over bridge)')
+                                .cave()
                                 .connect(fogLampCave3c);
 const fogLampCave5b         = location(0x4c, FOGL, 'Tunnel 5b (past wall over bridge)')
+                                .cave()
                                 .connect(fogLampCave5a, destroyStone); // 64d8:80
-const fogLampCave6a         = location(0x4d, FOGL, 'Tunnel 6a (from left branch)')
+const fogLampCave6a         = location(0x4d, FOGL, 'Tunnel 6a (from left branch)').cave()
                                 .connect(fogLampCave5a);
-const fogLampCave6b         = location(0x4d, FOGL, 'Tunnel 6b (reconvergence)')
+const fogLampCave6b         = location(0x4d, FOGL, 'Tunnel 6b (reconvergence)').cave()
                                 .connect(fogLampCave6a, destroyStone) // 64d8:10
                                 .connect(fogLampCave5b);
-const fogLampCave6c         = location(0x4d, FOGL, 'Tunnel 6c (between walls)')
+const fogLampCave6c         = location(0x4d, FOGL, 'Tunnel 6c (between walls)').cave()
                                 .connect(fogLampCave6b, destroyStone); // 64d8:20
-const fogLampCave6d         = location(0x4d, FOGL, 'Tunnel 6d (under bridge)')
+const fogLampCave6d         = location(0x4d, FOGL, 'Tunnel 6d (under bridge)').cave()
                                 .connect(fogLampCave6c, destroyStone); // 64d8:40
 const fogLampCave7a         = location(0x4e, FOGL, 'Tunnel 7a (over second bridge)')
+                                .cave()
                                 .connect(fogLampCave6d);
-const fogLampCave7b         = location(0x4e, FOGL, 'Tunnel 7b (past wall)')
+const fogLampCave7b         = location(0x4e, FOGL, 'Tunnel 7b (past wall)').cave()
                                 .connect(fogLampCave7a, destroyStone); // 64d8:08
 const fogLampCave8a         = location(0x4f, FOGL, 'Tunnel 8a (under second bridge)')
+                                .cave()
                                 .connect(fogLampCave7b);
-const fogLampCave8b         = location(0x4f, FOGL, 'Tunnel 8b (fog lamp)')
+const fogLampCave8b         = location(0x4f, FOGL, 'Tunnel 8b (fog lamp)').cave()
                                 .connect(fogLampCave8a, destroyStone) // 64d8:04
                                 .chest(fogLamp, 0x13);
 
 // Portoa, Mesia
 
-const portoa                = location(0x50, PORT, 'Town')
+const portoa                = location(0x50, PORT, 'Town').town()
                                 .connect(waterfallValleyNW);
-const portoaFishermanIsland = location(0x51, PORT, 'Fishherman Island')
+const portoaFishermanIsland = location(0x51, PORT, 'Fishherman Island').town()
                                 .connect(portoa);
-const mesiaShrine           = location(0x52, WFVL, 'Mesia Shrine')
+const mesiaShrine           = location(0x52, WFVL, 'Mesia Shrine').cave()
                                 // TODO - consider adding an item here?
                                 .trigger(mesiaRecording)
                                 .connect(limeTreeLake, crossRivers, talkedToRage); // 64d9:40
 
 // Waterfall Cave
 
-const waterfallCave1a       = location(0x54, WFCV, 'Tunnel 1a (entrance)')
+const waterfallCave1a       = location(0x54, WFCV, 'Tunnel 1a (entrance)').cave()
                                 .connect(waterfallValleyNW);
-const waterfallCave1b       = location(0x54, WFCV, 'Tunnel 1b (dead end, mimic)')
+const waterfallCave1b       = location(0x54, WFCV, 'Tunnel 1b (dead end, mimic)').cave()
                                 .connect(waterfallCave1a, destroyIce) // 64da:10 or :08
                                 .chest(mimic, 0x13);
-const waterfallCave1c       = location(0x54, WFCV, 'Tunnel 1c (past ice)')
+const waterfallCave1c       = location(0x54, WFCV, 'Tunnel 1c (past ice)').cave()
                                 .connect(waterfallCave1a, destroyIce); // 64da:04
-const waterfallCave2        = location(0x55, WFCV, 'Tunnel 2 (stoned pair)')
+const waterfallCave2        = location(0x55, WFCV, 'Tunnel 2 (stoned pair)').cave()
                                 .connect(waterfallCave1c);
-const waterfallCave3        = location(0x56, WFCV, 'Tunnel 3 (wide medusa hallways)')
+const waterfallCave3        = location(0x56, WFCV, 'Tunnel 3 (wide medusa hallways)').cave()
                                 .from(waterfallCave2, fluteOfLimeOrGlitch)
                                 .to(waterfallCave2, fluteOfLimeQueen);
 // NOTE: no reverse path thru these ice walls - will soft lock!
-const waterfallCave4a       = location(0x57, WFCV, 'Tunnel 4a (left entrance)')
+const waterfallCave4a       = location(0x57, WFCV, 'Tunnel 4a (left entrance)').cave()
                                 .from(waterfallCave3, destroyIce)
                                 .chest(fluteOfLimeChest, 0x19)
                                 .trigger(curedAkahana, fluteOfLimeChest); // $64da:02
-const waterfallCave4b       = location(0x57, WFCV, 'Tunnel 4b (right entrance)')
+const waterfallCave4b       = location(0x57, WFCV, 'Tunnel 4b (right entrance)').cave()
                                 .from(waterfallCave3, destroyIce) // $64da:01
                                 .connect(waterfallCave4a, flight);
-const waterfallCave4c       = location(0x57, WFCV, 'Tunnel 4c (sword of water)')
+const waterfallCave4c       = location(0x57, WFCV, 'Tunnel 4c (sword of water)').cave()
                                 .connect(waterfallCave3, destroyIce) // $64d9:80
                                 .chest(swordOfWater, 0x18);
 
 // Tower
 
-const towerEntrance         = location(0x58, TOWR, 'Entrance');
-const tower1                = location(0x59, TOWR, 'Level 1').from(towerEntrance);
-const tower2                = location(0x5a, TOWR, 'Level 2').from(tower1);
-const tower3                = location(0x5b, TOWR, 'Level 3').from(tower2);
-const tower4                = location(0x5c, TOWR, 'Outside Mesia Room').from(tower3);
-const tower5                = location(0x5d, TOWR, 'Outside Dyna Room').from(tower4, crystalis);
-const towerMesia            = location(0x5e, TOWR, 'Mesia')
+const towerEntrance         = location(0x58, TOWR, 'Entrance').misc();
+const tower1                = location(0x59, TOWR, 'Level 1').misc()
+                                .from(towerEntrance);
+const tower2                = location(0x5a, TOWR, 'Level 2').misc()
+                                .from(tower1);
+const tower3                = location(0x5b, TOWR, 'Level 3').misc()
+                                .from(tower2);
+const tower4                = location(0x5c, TOWR, 'Outside Mesia Room').misc()
+                                .from(tower3);
+const tower5                = location(0x5d, TOWR, 'Outside Dyna Room').misc()
+                                .from(tower4, crystalis);
+const towerMesia            = location(0x5e, TOWR, 'Mesia').misc()
                                 .connect(tower4)
                                 .trigger(forgedCrystalis);
-const towerDyna             = location(0x5f, TOWR, 'Dyna')
+const towerDyna             = location(0x5f, TOWR, 'Dyna').misc()
                                 .from(tower5)
                                 .boss(dyna)
                                 .trigger(win);
 
 // Angry Sea
 
-const angrySeaCabinBeach    = location(0x60, ASEA, 'Cabin Beach')
+const angrySeaCabinBeach    = location(0x60, ASEA, 'Cabin Beach').sea()
                                 .from(portoaFishermanIsland, returnedFogLamp);
-const angrySeaSouth         = location(0x60, ASEA, 'South')
+const angrySeaSouth         = location(0x60, ASEA, 'South').sea()
                                 .connect(angrySeaCabinBeach, crossSea);
-const angrySeaJoelBeach     = location(0x60, ASEA, 'Joel Beach')
+const angrySeaJoelBeach     = location(0x60, ASEA, 'Joel Beach').sea()
                                 .connect(angrySeaSouth, crossSea);
-const angrySeaLighthouse    = location(0x60, JOEL, 'Outside Lighthouse');
-const angrySeaAltar         = location(0x60, ASEA, 'Altar')
+const angrySeaLighthouse    = location(0x60, JOEL, 'Outside Lighthouse').sea();
+const angrySeaAltar         = location(0x60, ASEA, 'Altar').sea()
                                 .connect(angrySeaSouth, crossSea)
                                 .trigger(repairBrokenStatue, glowingLamp, brokenStatue)
                                 .trigger(calmedSea, statueOfGold);
-const angrySeaNorth         = location(0x60, ASEA, 'North')
+const angrySeaNorth         = location(0x60, ASEA, 'North').sea()
                                 .to(angrySeaSouth, crossSea)
                                 .from(angrySeaSouth, crossSea, crossWhirlpool)
                                 // NOTE: calmedSea is not normally a requirement.
                                 .trigger(learnedBarrier, calmedSea);
-const angrySeaSwanBeach     = location(0x60, ASEA, 'Swan Beach')
+const angrySeaSwanBeach     = location(0x60, ASEA, 'Swan Beach').sea()
                                 .connect(angrySeaNorth, crossSea);
-const angrySeaCabin         = location(0x61, ASEA, 'Cabin')
+const angrySeaCabin         = location(0x61, ASEA, 'Cabin').misc()
                                 .connect(angrySeaCabinBeach)
                                 // TODO - only have kensu appear after heal and/or boat?
                                 .trigger(talkedToKensuInCabin);
-const lighthouse            = location(0x62, JOEL, 'Lighthouse')
+const lighthouse            = location(0x62, JOEL, 'Lighthouse').misc()
                                 .connect(angrySeaLighthouse)
                                 .trigger(talkedToKensuInLighthouse, alarmFlute);
 const undergroundChannel1   = location(0x64, PORT, 'Underground Channel 1 (from throne room)')
+                                .sea()
                                 .trigger(visitedUndergroundChannel);
 const undergroundChannel2   = location(0x64, PORT, 'Underground Channel 2 (to fortune teller)')
+                                .sea()
                                 .connect(undergroundChannel1, crossRivers); // 64d7:40
 const undergroundChannel3   = location(0x64, PORT, 'Underground Channel 3 (from fortune teller)')
+                                .sea()
                                 .connect(undergroundChannel1, flight);
-const undergroundChannel4   = location(0x64, PORT, 'Underground Channel 4 (asina)')
+const undergroundChannel4   = location(0x64, PORT, 'Underground Channel 4 (asina)').sea()
                                 .connect(undergroundChannel3, crossRivers); // 64d7:20
-const undergroundChannel5   = location(0x64, PORT, 'Underground Channel 5 (dolphin)')
+const undergroundChannel5   = location(0x64, PORT, 'Underground Channel 5 (dolphin)').sea()
                                 .connect(undergroundChannel4, crossRivers) // 64d7:10
                                 .trigger(healedDolphin, medicalHerb, ballOfWater);
-const undergroundChannel6   = location(0x64, PORT, 'Underground Channel 6 (water)')
+const undergroundChannel6   = location(0x64, PORT, 'Underground Channel 6 (water)').sea()
                                 .connect(undergroundChannel5, crossSea)
                                 .connectTo(angrySeaSouth, crossSea)
                                 .chest(lovePendant, 0x11);
 
 // Evil Spirit Island
 
-const zombieTown            = location(0x65, EVIL, 'Zombie Town');
-const evilSpiritIsland1     = location(0x68, EVIL, 'Tunnel 1 (entrance)')
+const zombieTown            = location(0x65, EVIL, 'Zombie Town').town();
+const evilSpiritIsland1     = location(0x68, EVIL, 'Tunnel 1 (entrance)').sea()
                                 .connect(angrySeaSouth, talkedToJoelElder, crossSea);
-const evilSpiritIsland2a    = location(0x69, EVIL, 'Tunnel 2a (start)')
+const evilSpiritIsland2a    = location(0x69, EVIL, 'Tunnel 2a (start)').cave()
                                 .connect(evilSpiritIsland1);
-const evilSpiritIsland2b    = location(0x69, EVIL, 'Tunnel 2b (dead end to left)')
+const evilSpiritIsland2b    = location(0x69, EVIL, 'Tunnel 2b (dead end to left)').cave()
                                 .connect(evilSpiritIsland2a, crossRivers); // 2b9
-const evilSpiritIsland2c    = location(0x69, EVIL, 'Tunnel 2c (across first river)')
+const evilSpiritIsland2c    = location(0x69, EVIL, 'Tunnel 2c (across first river)').cave()
                                 .connect(evilSpiritIsland2a, crossRivers); // 2b8
-const evilSpiritIsland2d    = location(0x69, EVIL, 'Tunnel 2d (across second river)')
+const evilSpiritIsland2d    = location(0x69, EVIL, 'Tunnel 2d (across second river)').cave()
                                 .connect(evilSpiritIsland2c, crossRivers); // 2b7
-const evilSpiritIsland2e    = location(0x69, EVIL, 'Tunnel 2e (dead end, magic ring)')
+const evilSpiritIsland2e    = location(0x69, EVIL, 'Tunnel 2e (dead end, magic ring)').cave()
                                 .connect(evilSpiritIsland2d, destroyStone) // 2ba
                                 .chest(magicRing, 0x1d);
-const evilSpiritIsland2f    = location(0x69, EVIL, 'Tunnel 2f (stair down)')
+const evilSpiritIsland2f    = location(0x69, EVIL, 'Tunnel 2f (stair down)').cave()
                                 .connect(evilSpiritIsland2d, destroyStone); // 2bb
-const evilSpiritIsland3a    = location(0x6a, EVIL, 'Tunnel 3a (main area)')
+const evilSpiritIsland3a    = location(0x6a, EVIL, 'Tunnel 3a (main area)').cave()
                                 // unnecessary wall 2b5
                                 .connect(evilSpiritIsland2f)
                                 .connectTo(zombieTown)
                                 .chest(lysisPlant, 0x19, 0x5c);
-const evilSpiritIsland3b    = location(0x6a, EVIL, 'Tunnel 3b (left area toward items)')
+const evilSpiritIsland3b    = location(0x6a, EVIL, 'Tunnel 3b (left area toward items)').cave()
                                 .connect(evilSpiritIsland3a, destroyStone); // 2b6
-const evilSpiritIsland4a    = location(0x6b, EVIL, 'Tunnel 4a (right side, mimic)')
+const evilSpiritIsland4a    = location(0x6b, EVIL, 'Tunnel 4a (right side, mimic)').cave()
                                 // TODO - model pits?
                                 // If we want to model the full path including backtracks
                                 // then we'll need to add triggers for backtracking through
                                 // one-way passages.
                                 .connect(evilSpiritIsland3b)
                                 .chest(mimic, 0x0e);
-const evilSpiritIsland4b    = location(0x6b, EVIL, 'Tunnel 4b (left side, iron necklace)')
+const evilSpiritIsland4b    = location(0x6b, EVIL, 'Tunnel 4b (left side, iron necklace)').cave()
                                 .connect(evilSpiritIsland4a, crossRivers) // 285
                                 .chest(ironNecklace, 0x0f); // 0f: 2c
 
 // Sabera's Palace
 
-const saberaPalaceFloor1    = location(0x6c, SABR, 'Floor 1')
+const saberaPalaceFloor1    = location(0x6c, SABR, 'Floor 1').fortress()
                                 .connect(zombieTown);
-const saberaPalaceMiniboss  = location(0x6c, SABR, 'Miniboss')
+const saberaPalaceMiniboss  = location(0x6c, SABR, 'Miniboss').fortress()
                                 .boss(vampire2)
                                 .connect(saberaPalaceFloor1);
-const saberaPalaceFloor2a   = location(0x6d, SABR, 'Floor 2a (left stair)')
+const saberaPalaceFloor2a   = location(0x6d, SABR, 'Floor 2a (left stair)').fortress()
                                 .connect(saberaPalaceFloor1)
                                 .chest(fruitOfPower, 0x13);
-const saberaPalaceFloor2b   = location(0x6d, SABR, 'Floor 2b (right stair)')
+const saberaPalaceFloor2b   = location(0x6d, SABR, 'Floor 2b (right stair)').fortress()
                                 .connect(saberaPalaceMiniboss)
                                 .chest(medicalHerb, 0x1e, 0x55);
-const saberaPalaceFloor3a   = location(0x6e, SABR, 'Floor 3a (toward boss)')
+const saberaPalaceFloor3a   = location(0x6e, SABR, 'Floor 3a (toward boss)').fortress()
                                 .connect(saberaPalaceFloor2b);
-const saberaPalaceFloor3b   = location(0x6e, SABR, 'Floor 3b (boss room)')
+const saberaPalaceFloor3b   = location(0x6e, SABR, 'Floor 3b (boss room)').fortress()
                                 .connect(saberaPalaceFloor3a);
-const saberaPalaceBoss      = location(0x6e, SABR, 'Boss')
+const saberaPalaceBoss      = location(0x6e, SABR, 'Boss').fortress()
                                 .boss(sabera1)
                                 .connect(saberaPalaceFloor3b);
-const saberaPalaceFloor3c   = location(0x6e, SABR, 'Floor 3c (back room trap)')
+const saberaPalaceFloor3c   = location(0x6e, SABR, 'Floor 3c (back room trap)').fortress()
                                 .from(saberaPalaceFloor3b)
                                 .to(saberaPalaceFloor1);
 
 // Misc
 
-const joelSecretPassage     = location(0x70, JOEL, 'Secret Passage')
+const joelSecretPassage     = location(0x70, JOEL, 'Secret Passage').cave()
                                 .connectTo(angrySeaLighthouse);
-const joel                  = location(0x71, JOEL, 'Town')
+const joel                  = location(0x71, JOEL, 'Town').town()
                                 .connect(angrySeaJoelBeach);
-const swan                  = location(0x72, SWAN, 'Town')
+const swan                  = location(0x72, SWAN, 'Town').town()
                                 .connect(angrySeaSwanBeach);
-const swanGateRight         = location(0x73, SWAN, 'Inside Gate')
+const swanGateRight         = location(0x73, SWAN, 'Inside Gate').overworld()
                                 .connect(swan);
-const swanGateLeft          = location(0x73, SWAN, 'Outside Gate')
+const swanGateLeft          = location(0x73, SWAN, 'Outside Gate').overworld()
                                 // TODO - consider allowing gate to open both sides?
                                 .from(swanGateRight, change);
-const goaValley             = location(0x78, GOA,  'Valley')
+const goaValley             = location(0x78, GOA,  'Valley').overworld()
                                 .connect(swanGateLeft);
 
 // Mt Hydra
 
-const mtHydra1              = location(0x7c, HYDR, 'Entrance')
+const mtHydra1              = location(0x7c, HYDR, 'Entrance').overworld()
                                 .connect(goaValley);
-const mtHydra2              = location(0x7c, HYDR, 'Over first river toward Shyron')
+const mtHydra2              = location(0x7c, HYDR, 'Over first river toward Shyron').overworld()
                                 .connect(mtHydra1, crossRivers); // 2b2
-const mtHydra3              = location(0x7c, HYDR, 'After first tunnel');
-const mtHydra4              = location(0x7c, HYDR, 'Door to Styx')
+const mtHydra3              = location(0x7c, HYDR, 'After first tunnel').overworld();
+const mtHydra4              = location(0x7c, HYDR, 'Door to Styx').overworld()
                                 .connect(mtHydra3, crossRivers); // 2b1
-const mtHydra5              = location(0x7c, HYDR, 'Dead end (no item)');
-const mtHydra6              = location(0x7c, HYDR, 'Dead end (fruit of lime)')
+const mtHydra5              = location(0x7c, HYDR, 'Dead end (no item)').overworld();
+const mtHydra6              = location(0x7c, HYDR, 'Dead end (fruit of lime)').overworld()
                                 .chest(fruitOfLime, 0x1a);
-const mtHydra7              = location(0x7c, HYDR, 'Dead end (magic ring)')
+const mtHydra7              = location(0x7c, HYDR, 'Dead end (magic ring)').overworld()
                                 .chest(magicRing, 0x19, 0x65);
-const mtHydra8              = location(0x7c, HYDR, 'Outside tunnel to bow');
-const mtHydra9              = location(0x7c, HYDR, 'Floating island (bow of sun)')
+const mtHydra8              = location(0x7c, HYDR, 'Outside tunnel to bow').overworld();
+const mtHydra9              = location(0x7c, HYDR, 'Floating island (bow of sun)').overworld()
                                 .connect(mtHydra8, flight)
                                 .chest(bowOfSun, 0x18);
-const mtHydraTunnel1        = location(0x7d, HYDR, 'Tunnel 1 (to Shyron)')
+const mtHydraTunnel1        = location(0x7d, HYDR, 'Tunnel 1 (to Shyron)').cave()
                                 .connect(mtHydra2);
-const mtHydraOutsideShyron  = location(0x7e, HYDR, 'Outside Shyron')
+const mtHydraOutsideShyron  = location(0x7e, HYDR, 'Outside Shyron').overworld()
                                 .connect(mtHydraTunnel1);
-const mtHydraTunnel2        = location(0x7f, HYDR, 'Tunnel 2 (fork)')
+const mtHydraTunnel2        = location(0x7f, HYDR, 'Tunnel 2 (fork)').cave()
                                 .connect(mtHydra1)
                                 .connectTo(mtHydra6) // right branch
                                 .connectTo(mtHydra3); // left branch
-const mtHydraTunnel3        = location(0x80, HYDR, 'Tunnel 3 (caves)')
+const mtHydraTunnel3        = location(0x80, HYDR, 'Tunnel 3 (caves)').cave()
                                 .connect(mtHydra4); // all the way right
-const mtHydraTunnel4        = location(0x81, HYDR, 'Tunnel 4 (left branch of cave)')
+const mtHydraTunnel4        = location(0x81, HYDR, 'Tunnel 4 (left branch of cave)').cave()
                                 .connect(mtHydraTunnel3); // took left branch
-const mtHydraTunnel5        = location(0x82, HYDR, 'Tunnel 5 (dead end, medical herb)')
+const mtHydraTunnel5        = location(0x82, HYDR, 'Tunnel 5 (dead end, medical herb)').cave()
                                 .connect(mtHydraTunnel4) // took left branch again
                                 .chest(medicalHerb, 0x0f, 0x56);
-const mtHydraTunnel6a       = location(0x83, HYDR, 'Tunnel 6a (left-then-right)')
+const mtHydraTunnel6a       = location(0x83, HYDR, 'Tunnel 6a (left-then-right)').cave()
                                 .connect(mtHydraTunnel4); // took right branch
-const mtHydraTunnel6b       = location(0x83, HYDR, 'Tunnel 6b (past wall)')
+const mtHydraTunnel6b       = location(0x83, HYDR, 'Tunnel 6b (past wall)').cave()
                                 .connect(mtHydraTunnel6a, destroyStone); // 2af
-const mtHydraTunnel7        = location(0x84, HYDR, 'Tunnel 7 (wide hall)')
+const mtHydraTunnel7        = location(0x84, HYDR, 'Tunnel 7 (wide hall)').cave()
                                 .connect(mtHydraTunnel6b);
-const mtHydraTunnel8        = location(0x85, HYDR, 'Tunnel 8 (red slimes)')
+const mtHydraTunnel8        = location(0x85, HYDR, 'Tunnel 8 (red slimes)').cave()
                                 .from(mtHydraTunnel7, destroyStone) // 2ae (bad)
                                 .connectTo(mtHydra8);
-const mtHydraTunnel9        = location(0x86, HYDR, 'Tunnel 9 (right branch, infinite loop)')
+const mtHydraTunnel9        = location(0x86, HYDR, 'Tunnel 9 (right branch, infinite loop)').cave()
                                 // non-blocking wall: 2ad
                                 .connect(mtHydraTunnel3);
-const mtHydraTunnel10a      = location(0x87, HYDR, 'Tunnel 10a (toward magic ring)')
+const mtHydraTunnel10a      = location(0x87, HYDR, 'Tunnel 10a (toward magic ring)').cave()
                                 .connect(mtHydraTunnel9);
-const mtHydraTunnel10b      = location(0x87, HYDR, 'Tunnel 10b (past wall)')
+const mtHydraTunnel10b      = location(0x87, HYDR, 'Tunnel 10b (past wall)').cave()
                                 .connect(mtHydraTunnel10a, destroyStone) // 2ac
                                 .connectTo(mtHydra7);
 
 // Styx
 
-const styx1                 = location(0x88, STYX, 'Entrance')
+const styx1                 = location(0x88, STYX, 'Entrance').fortress()
                                 .from(mtHydra4, keyToStyx, passShootingStatues); // TODO - two-way?
-const styx2a                = location(0x89, STYX, 'Left branch')
+const styx2a                = location(0x89, STYX, 'Left branch').fortress()
                                 .connect(styx1)
                                 .chest(mimic, 0x13);
-const styx2b                = location(0x89, STYX, 'Left branch, past one bridge')
+const styx2b                = location(0x89, STYX, 'Left branch, past one bridge').fortress()
                                 .connect(styx2a, crossRivers); // 2aa
-const styx2c                = location(0x89, STYX, 'Left branch, past two bridges')
+const styx2c                = location(0x89, STYX, 'Left branch, past two bridges').fortress()
                                 .connect(styx2b, crossRivers) // 2a9
                                 .chest(medicalHerb, 0x1d, 0x57);
-const styx2d                = location(0x89, STYX, 'Right branch')
+const styx2d                = location(0x89, STYX, 'Right branch').fortress()
                                 .connect(styx1);
-const styx2e                = location(0x89, STYX, 'Right branch, across water')
+const styx2e                = location(0x89, STYX, 'Right branch, across water').fortress()
                                 .connect(styx2d, flight)
                                 .chest(mimic, 0x14)
                                 .chest(mimic, 0x15)
                                 .chest(psychoShield, 0x1e);
-const styx3                 = location(0x8a, STYX, 'Upper floor')
+const styx3                 = location(0x8a, STYX, 'Upper floor').fortress()
                                 // pit to styx2a
                                 .connect(styx2c)
                                 .chest(swordOfThunder, 0x1b);
 
 // Misc
 
-const shyron                = location(0x8c, SHYR, 'Town')
+const shyron                = location(0x8c, SHYR, 'Town').town()
                                 .connect(mtHydraOutsideShyron, changeOrGlitch)
                                 .trigger(enteredShyron);
-const goa                   = location(0x8e, GOA,  'Town')
+const goa                   = location(0x8e, GOA,  'Town').town()
                                 .connect(goaValley);
-const fortressBasement1     = location(0x8f, OASC, 'Draygonia Fortress Basement 1 (front)');
+const fortressBasement1     = location(0x8f, OASC, 'Draygonia Fortress Basement 1 (front)')
+                                .fortress();
 const fortressBasement2     = location(0x8f, OASC, 'Draygonia Fortress Basement 2 (power ring)')
+                                .fortress()
                                 .connect(fortressBasement1, destroyIron) // 290
                                 .chest(powerRing, 0x0f);
-const desert1               = location(0x90, GOA,  'Desert 1')
+const desert1               = location(0x90, GOA,  'Desert 1').overworld()
                                 .connect(goaValley);
 
 // Oasis Cave
 
-const oasisCave1            = location(0x91, OASC, 'Area 1 (from entrance)')
+const oasisCave1            = location(0x91, OASC, 'Area 1 (from entrance)').cave()
                                 .chest(leatherBoots, 0x1a);
-const oasisCave2            = location(0x91, OASC, 'Area 2 (across top bridge)')
+const oasisCave2            = location(0x91, OASC, 'Area 2 (across top bridge)').cave()
                                 .connect(oasisCave1, crossRivers); // 29b
-const oasisCave3            = location(0x91, OASC, 'Area 3 (dead-end across top-right bridge)')
+const oasisCave3            = location(0x91, OASC, 'Area 3 (dead-end across top-right bridge)').cave()
                                 .connect(oasisCave2, crossRivers); // 293
-const oasisCave4            = location(0x91, OASC, 'Area 4 (left across middle-right bridge)')
+const oasisCave4            = location(0x91, OASC, 'Area 4 (left across middle-right bridge)').cave()
                                 .connect(oasisCave2, crossRivers); // 292
-const oasisCave5            = location(0x91, OASC, 'Area 5 (bottom edge)')
+const oasisCave5            = location(0x91, OASC, 'Area 5 (bottom edge)').cave()
                                 .connect(oasisCave4, crossRivers); // 291
-const oasisCave6            = location(0x91, OASC, 'Area 6 (bottom island)')
+const oasisCave6            = location(0x91, OASC, 'Area 6 (bottom island)').cave()
                                 .connect(oasisCave5, crossRivers); // 295
-const oasisCave7            = location(0x91, OASC, 'Area 7 (bottom inner ring)')
+const oasisCave7            = location(0x91, OASC, 'Area 7 (bottom inner ring)').cave()
                                 .connect(oasisCave6, crossRivers); // 296
-const oasisCave8            = location(0x91, OASC, 'Area 8 (left outer ring)')
+const oasisCave8            = location(0x91, OASC, 'Area 8 (left outer ring)').cave()
                                 .connect(oasisCave7, crossRivers) // 298
                                 .connect(oasisCave1, crossRivers) // 29a
                                 .chest(fruitOfPower, 0x1b, 0x64);
-const oasisCave9            = location(0x91, OASC, 'Area 9 (top left inner ring)')
+const oasisCave9            = location(0x91, OASC, 'Area 9 (top left inner ring)').cave()
                                 .connect(oasisCave8, crossRivers); // 299
-const oasisCave10           = location(0x91, OASC, 'Area 10 (top right inner ring)')
+const oasisCave10           = location(0x91, OASC, 'Area 10 (top right inner ring)').cave()
                                 .connect(oasisCave9, crossRivers); // 297
-const oasisCave11           = location(0x91, OASC, 'Area 11 (center)')
+const oasisCave11           = location(0x91, OASC, 'Area 11 (center)').cave()
                                 .connect(oasisCave10, crossRivers) // 294
                                 .connectTo(fortressBasement1);
-const oasisCave12           = location(0x91, OASC, 'Area 12 (top center islands)')
+const oasisCave12           = location(0x91, OASC, 'Area 12 (top center islands)').cave()
                                 .connect(oasisCave1, flight)
                                 .chest(battleSuit, 0x1c);
 
 // Desert
 
-const desertCave1           = location(0x92, SHRA, 'Desert Cave 1')
+const desertCave1           = location(0x92, SHRA, 'Desert Cave 1').cave()
                                 .connect(desert1, flight);
-const sahara                = location(0x93, SHRA, 'Town');
-const saharaOutsideCave     = location(0x94, SHRA, 'Outside Cave')
+const sahara                = location(0x93, SHRA, 'Town').town();
+const saharaOutsideCave     = location(0x94, SHRA, 'Outside Cave').overworld()
                                 .connect(sahara);
-const desertCave2           = location(0x95, SHRA, 'Desert Cave 2')
+const desertCave2           = location(0x95, SHRA, 'Desert Cave 2').cave()
                                 .connect(saharaOutsideCave);
-const saharaMeadow          = location(0x96, SHRA, 'Meadow')
+const saharaMeadow          = location(0x96, SHRA, 'Meadow').overworld()
                                 .connect(desertCave1)
                                 .connectTo(sahara)
                                 .trigger(talkedToDeo, change, shyronMassacre);
-const desert2               = location(0x98, SHRA, 'Desert 2')
+const desert2               = location(0x98, SHRA, 'Desert 2').overworld()
                                 .connect(desertCave2);
 
 // Pyramid Front
 
-const pyramidFrontEntrance  = location(0x9c, PYRF, 'Entrance')
+const pyramidFrontEntrance  = location(0x9c, PYRF, 'Entrance').fortress()
                                 .connect(desert2, flight);
-const pyramidFrontAzteca    = location(0x9c, PYRF, 'Azteca')
+const pyramidFrontAzteca    = location(0x9c, PYRF, 'Azteca').fortress()
                                 .trigger(getBowOfTruth);
-const pyramidFrontFork      = location(0x9d, PYRF, 'Fork')
+const pyramidFrontFork      = location(0x9d, PYRF, 'Fork').fortress()
                                 .connect(pyramidFrontEntrance);
-const pyramidFrontMain      = location(0x9e, PYRF, 'Main')
+const pyramidFrontMain      = location(0x9e, PYRF, 'Main').fortress()
                                 .connect(pyramidFrontFork);
-const pyramidFrontChest     = location(0x9e, PYRF, 'Treasure Chest (magic ring)')
+const pyramidFrontChest     = location(0x9e, PYRF, 'Treasure Chest (magic ring)').fortress()
                                 .connect(pyramidFrontMain)
                                 .chest(magicRing, 0x1b, 0x6c);
-const pyramidFrontDraygon   = location(0x9f, PYRF, 'Draygon')
+const pyramidFrontDraygon   = location(0x9f, PYRF, 'Draygon').fortress()
                                 .connect(pyramidFrontMain)
                                 .to(pyramidFrontAzteca)
                                 .boss(draygon1);
 
 // Pyramid Back
 
-const pyramidBackEntrance   = location(0xa0, PYRB, 'Entrance')
+                              // NOTE: treating as fortress is questionable, since there
+                              // is no other overworld-down-to-fortress connection.
+                              // There aren't really any down-to-cave connections, either
+                              // so this is just a tough entrance to randomize.
+const pyramidBackEntrance   = location(0xa0, PYRB, 'Entrance').fortress()
                                 .connect(desert2, flight);
-const pyramidBackStatues    = location(0xa0, PYRB, 'Statues')
+const pyramidBackStatues    = location(0xa0, PYRB, 'Statues').fortress()
                                 .connect(pyramidBackEntrance)
                                 .boss(statues);
-const pyramidBackHall1      = location(0xa1, PYRB, 'Hall 1')
+const pyramidBackHall1      = location(0xa1, PYRB, 'Hall 1').fortress()
                                 .connect(pyramidBackStatues);
-const pyramidBackFork       = location(0xa2, PYRB, 'Branch')
+const pyramidBackFork       = location(0xa2, PYRB, 'Branch').fortress()
                                 .connect(pyramidBackHall1);
-const pyramidBackLeft       = location(0xa3, PYRB, 'Left Dead End')
+const pyramidBackLeft       = location(0xa3, PYRB, 'Left Dead End').fortress()
                                 .connect(pyramidBackFork)
                                 .chest(mimic, 0x0d);
-const pyramidBackRight      = location(0xa4, PYRB, 'Right Dead End')
+const pyramidBackRight      = location(0xa4, PYRB, 'Right Dead End').fortress()
                                 .connect(pyramidBackFork);
-const pyramidBackHall2      = location(0xa5, PYRB, 'Hall 2')
+const pyramidBackHall2      = location(0xa5, PYRB, 'Hall 2').fortress()
                                 .connect(pyramidBackFork)
                                 .chest(opelStatue, 0x1a, 0x6d);
-const pyramidBackDraygon2   = location(0xa6, PYRB, 'Draygon 2')
+const pyramidBackDraygon2   = location(0xa6, PYRB, 'Draygon 2').fortress()
                                 .connect(pyramidBackHall2)
                                 .boss(draygon2);
-const pyramidBackTeleporter = location(0xa7, PYRB, 'Teleporter')
+const pyramidBackTeleporter = location(0xa7, PYRB, 'Teleporter').fortress()
                                 .from(pyramidBackDraygon2)
                                 .to(towerEntrance);
 
 // Draygonia Fortress
 
-const fortressEntrance      = location(0xa8, DRG1, 'Entrance')
+const fortressEntrance      = location(0xa8, DRG1, 'Entrance').fortress()
                                 .connect(goa, passShootingStatues)
                                 // TODO - need to add talkedToZebuInShyron
                                 .trigger(shyronMassacre, swordOfThunder);
-const fortress1a            = location(0xa9, DRG1, 'Main')
+const fortress1a            = location(0xa9, DRG1, 'Main').fortress()
                                 .from(fortressEntrance, destroyIron); // 2a8
-const fortress1Boss         = location(0xa9, DRG1, 'Boss')
+const fortress1Boss         = location(0xa9, DRG1, 'Boss').fortress()
                                 .connect(fortress1a)
                                 .boss(kelbesque2);
-const fortressZebu          = location(0xaa, DRG1, 'Zebu').connect(fortress1Boss);
-const fortress2a            = location(0xab, DRG2, 'Entrance').connect(fortressZebu);
+const fortressZebu          = location(0xaa, DRG1, 'Zebu').fortress()
+                                .connect(fortress1Boss);
+const fortress2a            = location(0xab, DRG2, 'Entrance').fortress()
+                                .connect(fortressZebu);
 const fortress2b            = location(0xab, DRG2, 'Dead End Behind Iron (fruit of power)')
+                                .fortress()
                                 .connect(fortress2a, destroyIron) // 13, 29f
                                 .chest(fruitOfPower, 0x1c, 0x62);
 const fortress2c            = location(0xab, DRG2, 'Dead End Loop Across Closer Bridges')
+                                .fortress()
                                 .connect(fortress2a, crossRivers) // 19, 2a6
                                 .connect(fortress2a, crossRivers); // 1b, 2a0
 const fortress2d            = location(0xab, DRG2, 'Across First Bridge (fruit of repun)')
+                                .fortress()
                                 .connect(fortress2a, crossRivers) // 1a, 2a5
                                 .chest(fruitOfRepun, 0x1e, 0x66);
-const fortress2e            = location(0xab, DRG2, 'Across Second Bridge')
+const fortress2e            = location(0xab, DRG2, 'Across Second Bridge').fortress()
                                 .connect(fortress2d, crossRivers); // 18, 2a4
-const fortress2f            = location(0xab, DRG2, 'Dead End Across Two Bridges ()')
+const fortress2f            = location(0xab, DRG2, 'Dead End Across Two Bridges ()').fortress()
                                 .connect(fortress2e, crossRivers) // 15, 2a1
                                 .connect(fortress2e, crossRivers) // 17, 2a3
                                 .chest(lysisPlant, 0x1d, 0x5d);
-const fortress2g            = location(0xab, DRG2, 'Across Third Bridge')
+const fortress2g            = location(0xab, DRG2, 'Across Third Bridge').fortress()
                                 .connect(fortress2e, crossRivers); // 16, 2a2
-const fortress2h            = location(0xab, DRG2, 'Exit Behind Iron Door')
+const fortress2h            = location(0xab, DRG2, 'Exit Behind Iron Door').fortress()
                                 .connect(fortress2g, destroyIron); // 14, 29e
-const fortress2Boss         = location(0xac, DRG2, 'Boss')
+const fortress2Boss         = location(0xac, DRG2, 'Boss').fortress()
                                 .connect(fortress2h)
                                 .boss(sabera2);
-const fortressTornel        = location(0xac, DRG2, 'Tornel')
+const fortressTornel        = location(0xac, DRG2, 'Tornel').fortress()
                                 .connect(fortress2Boss);
-const fortress3Lower        = location(0xad, DRG3, 'Lower')
+const fortress3Lower        = location(0xad, DRG3, 'Lower').fortress()
                                 .connect(fortressTornel)
                                 .chest(opelStatue, 0x1a, 0x63)
                                 .chest(magicRing, 0x1b, 0x6f);
-const fortress3UpperLoop    = location(0xae, DRG3, 'Upper Loop')
+const fortress3UpperLoop    = location(0xae, DRG3, 'Upper Loop').fortress()
                                 .connect(fortress3Lower)
                                 .chest(antidote, 0x16, 0x60);
-const fortress3UpperDeadEnd = location(0xae, DRG3, 'Upper Loop Behind Wall (magic ring)')
+const fortress3UpperDeadEnd = location(0xae, DRG3, 'Upper Loop Behind Wall (magic ring)').fortress()
                                 .connect(fortress3UpperLoop, destroyIron) // 15, 29d
                                 .chest(magicRing, 0x17, 0x6b);
-const fortress3UpperPassage = location(0xaf, DRG3, 'Upper Passage (toward Mado)')
+const fortress3UpperPassage = location(0xaf, DRG3, 'Upper Passage (toward Mado)').fortress()
                                 .connect(fortress3Lower)
                                 .chest(magicRing, 0x1b, 0x54);
-const fortress4a            = location(0xb0, DRG4, 'Initial Fork');
-const fortress4b            = location(0xb1, DRG4, 'Left Branch').connect(fortress4a);
-const fortress4c            = location(0xb2, DRG4, 'Main Area (right branch, over bridges)')
+const fortress4a            = location(0xb0, DRG4, 'Initial Fork').fortress();
+const fortress4b            = location(0xb1, DRG4, 'Left Branch').fortress().connect(fortress4a);
+const fortress4c            = location(0xb2, DRG4, 'Main Area (right branch, over bridges)').fortress()
                                 .connect(fortress4a);
-const fortress4d            = location(0xb3, DRG4, 'U-shaped Passage (between floors)')
+const fortress4d            = location(0xb3, DRG4, 'U-shaped Passage (between floors)').fortress()
                                 .connect(fortress4c);
-const fortress4e            = location(0xb4, DRG4, 'Main Area Lower (under bridge)')
+const fortress4e            = location(0xb4, DRG4, 'Main Area Lower (under bridge)').fortress()
                                 .connect(fortress4b)
                                 .connect(fortress4c)
                                 .connect(fortress4d);
-const fortress4f            = location(0xb4, DRG4, 'Behind Iron Wall')
+const fortress4f            = location(0xb4, DRG4, 'Behind Iron Wall').fortress()
                                 .connect(fortress4e, destroyIron); // 16, 29c
-const fortress4g            = location(0xb5, DRG4, 'Lower')
+const fortress4g            = location(0xb5, DRG4, 'Lower').fortress()
                                 .connect(fortress4f)
                                 .chest(mimic, 0x0d)
                                 .chest(mimic, 0x0e)
                                 .chest(mimic, 0x0f)
                                 .chest(magicRing, 0x17, 0x58)
                                 .chest(warpBoots, 0x18, 0x6e);
-const fortress4h            = location(0xb6, DRG4, 'Boss Corridor').connect(fortress4g);
-const fortress4Boss         = location(0xb6, DRG4, 'Boss')
+const fortress4h            = location(0xb6, DRG4, 'Boss Corridor').fortress().connect(fortress4g);
+const fortress4Boss         = location(0xb6, DRG4, 'Boss').fortress()
                                 .connect(fortress4h, passShootingStatues)
                                 .boss(karmine);
-const fortress4End          = location(0xb6, DRG4, 'Behind Boss (stormBracelet)')
+const fortress4End          = location(0xb6, DRG4, 'Behind Boss (stormBracelet)').fortress()
                                 .connect(fortress4Boss)
                                 .chest(stormBracelet, 0x12);
-const fortressExit          = location(0xb7, DRG4, 'Exit Stairs');
-const oasisCaveEntranceBack = location(0xb8, OASC, 'Entrance Back (behind river)')
+const fortressExit          = location(0xb7, DRG4, 'Exit Stairs').fortress();
+const oasisCaveEntranceBack = location(0xb8, OASC, 'Entrance Back (behind river)').cave()
                                 .connect(fortressExit)
                                 .chest(fruitOfPower, 0x0d, 0x5a);
-const oasisCaveEntrance     = location(0xb8, OASC, 'Entrance Front')
+const oasisCaveEntrance     = location(0xb8, OASC, 'Entrance Front').cave()
                                 .connect(oasisCaveEntranceBack, flight)
                                 .connectTo(desert1)
                                 .connectTo(oasisCave1);
-const fortress3Boss         = location(0xb9, DRG3, 'Boss')
+const fortress3Boss         = location(0xb9, DRG3, 'Boss').fortress()
                                 .connect(fortress3UpperPassage)
                                 .boss(mado2);
-const fortressAsina         = location(0xb9, DRG3, 'Asina')
+const fortressAsina         = location(0xb9, DRG3, 'Asina').fortress()
                                 .connect(fortress3Boss)
                                 .connectTo(fortress4a);
-const fortressKensu         = location(0xba, DRG4, 'Kensu')
+const fortressKensu         = location(0xba, DRG4, 'Kensu').fortress()
                                 .connect(fortress4f)
                                 .connectTo(fortressExit)
                                 .trigger(savedKensu, ivoryStatue);
 
 // Inside Buildings
 
-const goaHouse              = location(0xbb, GOA,  'House').connect(goa)
+const goaHouse              = location(0xbb, GOA,  'House').house().connect(goa)
                                 // TODO - consider removing ivory statue requirement?
                                 .trigger(talkedToAkahanaFriend, change, ivoryStatue);
-const goaInn                = location(0xbc, GOA,  'Inn').connect(goa, enteredShyron);
-const goaToolShop           = location(0xbe, GOA,  'Tool Shop').connect(goa, enteredShyron);
-const goaTavern             = location(0xbf, GOA,  'Tavern').connect(goa);
-const leafElderHouse        = location(0xc0, LEAF, 'Elder House')
+const goaInn                = location(0xbc, GOA,  'Inn').shop().connect(goa, enteredShyron);
+const goaToolShop           = location(0xbe, GOA,  'Tool Shop').shop().connect(goa, enteredShyron);
+const goaTavern             = location(0xbf, GOA,  'Tavern').shop().connect(goa);
+const leafElderHouse        = location(0xc0, LEAF, 'Elder House').house()
                                 .connect(leaf)
                                 .trigger(talkedToLeafElder);
-const leafRabbitHut         = location(0xc1, LEAF, 'Rabbit Hut').connect(leaf)
+const leafRabbitHut         = location(0xc1, LEAF, 'Rabbit Hut').house().connect(leaf)
                                 .trigger(talkedToLeafRabbit, villagersAbducted, telepathy);
-const leafInn               = location(0xc2, LEAF, 'Inn').connect(leaf);
-const leafToolShop          = location(0xc3, LEAF, 'Tool Shop')
+const leafInn               = location(0xc2, LEAF, 'Inn').shop().connect(leaf);
+const leafToolShop          = location(0xc3, LEAF, 'Tool Shop').shop()
                                 .connect(leaf)
                                 .trigger(buyAlarmFlute);
-const leafArmorShop         = location(0xc4, LEAF, 'Armor Shop').connect(leaf);
-const leafStudentHouse      = location(0xc5, LEAF, 'Student House').connect(leaf)
+const leafArmorShop         = location(0xc4, LEAF, 'Armor Shop').shop().connect(leaf);
+const leafStudentHouse      = location(0xc5, LEAF, 'Student House').house().connect(leaf)
                                 .trigger(talkedToLeafStudent);
-const brynmaerTavern        = location(0xc6, BRYN, 'Tavern').connect(brynmaer);
-const brynmaerPawnShop      = location(0xc7, BRYN, 'Pawn Shop').connect(brynmaer);
-const brynmaerInn           = location(0xc8, BRYN, 'Inn').connect(brynmaer);
-const brynmaerArmorShop     = location(0xc9, BRYN, 'Armor Shop').connect(brynmaer);
-const brynmaerToolShop      = location(0xcb, BRYN, 'Tool Shop').connect(brynmaer);
-const oakElderHouse         = location(0xcd, OAK,  'Elder House')
+const brynmaerTavern        = location(0xc6, BRYN, 'Tavern').house().connect(brynmaer);
+const brynmaerPawnShop      = location(0xc7, BRYN, 'Pawn Shop').shop().connect(brynmaer);
+const brynmaerInn           = location(0xc8, BRYN, 'Inn').shop().connect(brynmaer);
+const brynmaerArmorShop     = location(0xc9, BRYN, 'Armor Shop').shop().connect(brynmaer);
+const brynmaerToolShop      = location(0xcb, BRYN, 'Tool Shop').shop().connect(brynmaer);
+const oakElderHouse         = location(0xcd, OAK,  'Elder House').house()
                                 .from(oak, telepathy)
                                 .trigger(talkedToOakElder, rescuedOakChild);
-const oakMotherHouse        = location(0xce, OAK,  'Mother\'s House')
+const oakMotherHouse        = location(0xce, OAK,  'Mother\'s House').house()
                                 .from(oak, telepathy)
                                 .trigger(talkedToOakMother, telepathy)
                                 .trigger(talkedToOakMothher2, rescuedOakChild);
-const oakToolShop           = location(0xcf, OAK,  'Tool Shop')
+const oakToolShop           = location(0xcf, OAK,  'Tool Shop').shop()
                                 .from(oak, telepathy);
-const oakInn                = location(0xd0, OAK,  'Inn')
+const oakInn                = location(0xd0, OAK,  'Inn').shop()
                                 .from(oak, telepathy);
-const amazonesInn           = location(0xd1, AMZN, 'Inn').connect(amazones);
-const amazonesToolShop      = location(0xd2, AMZN, 'Tool Shop').connect(amazones);
-const amazonesArmorShop     = location(0xd3, AMZN, 'Armor Shop').connect(amazones);
-const aryllisHouse          = location(0xd4, AMZN, 'Queen\'s House')
+const amazonesInn           = location(0xd1, AMZN, 'Inn').shop().connect(amazones);
+const amazonesToolShop      = location(0xd2, AMZN, 'Tool Shop').shop().connect(amazones);
+const amazonesArmorShop     = location(0xd3, AMZN, 'Armor Shop').shop().connect(amazones);
+const aryllisHouse          = location(0xd4, AMZN, 'Queen\'s House').house()
                                 .from(amazones, changeOrGlitch)
                                 .trigger(talkedToAmazonesQueen, change, kirisaPlant);
-const nadare                = location(0xd5, NADR, 'Nadare\'s')
+const nadare                = location(0xd5, NADR, 'Nadare\'s').house()
                                 .connect(mtSabreNorthEntrance)
                                 .connectTo(nadareInn)
                                 .connectTo(nadareToolShop)
                                 .connectTo(nadareBackRoom);
-const portoaFishermanHouse  = location(0xd6, PORT, 'Fisherman\'s House')
+const portoaFishermanHouse  = location(0xd6, PORT, 'Fisherman\'s House').house()
                                 .connect(portoaFishermanIsland)
                                 .trigger(returnedFogLamp, fogLamp, shellFlute);
-const portoaPalaceEntrance  = location(0xd7, PORT, 'Palace Entrance').connect(portoa);
-const portoaFortuneTeller1  = location(0xd8, PORT, 'Fortune Teller Front')
+                                // TODO - palace might want to be fortress...
+                                // but we probably don't want to randomize this away
+const portoaPalaceEntrance  = location(0xd7, PORT, 'Palace Entrance').house().connect(portoa);
+const portoaFortuneTeller1  = location(0xd8, PORT, 'Fortune Teller Front').house()
                                 .connect(portoa)
                                 .trigger(talkedToFortuneTeller, talkedToPortoaQueen);
-const portoaFortuneTeller2  = location(0xd8, PORT, 'Fortune Teller Back')
+const portoaFortuneTeller2  = location(0xd8, PORT, 'Fortune Teller Back').house()
                                 .connect(undergroundChannel2)
                                 .connect(undergroundChannel3);
-const portoaPawnShop        = location(0xd9, PORT, 'Pawn Shop').connect(portoa);
-const portoaArmorShop       = location(0xda, PORT, 'Armor Shop').connect(portoa);
-const portoaInn             = location(0xdc, PORT, 'Inn').connect(portoa);
-const portoaToolShop        = location(0xdd, PORT, 'Tool Shop').connect(portoa);
-const portoaPalaceLeft      = location(0xde, PORT, 'Palace Left').connect(portoaPalaceEntrance);
+const portoaPawnShop        = location(0xd9, PORT, 'Pawn Shop').shop().connect(portoa);
+const portoaArmorShop       = location(0xda, PORT, 'Armor Shop').shop().connect(portoa);
+const portoaInn             = location(0xdc, PORT, 'Inn').shop().connect(portoa);
+const portoaToolShop        = location(0xdd, PORT, 'Tool Shop').shop().connect(portoa);
+const portoaPalaceLeft      = location(0xde, PORT, 'Palace Left')
+                                .house()
+                                .connect(portoaPalaceEntrance);
 const portoaThroneRoom      = location(0xdf, PORT, 'Palace Throne Room')
+                                .house()
                                 .connect(portoaPalaceEntrance)
                                 .to(undergroundChannel1, paralysisOrAsina)
                                 .from(undergroundChannel1)
                                 .trigger(talkedToPortoaQueen)
                                 .trigger(sentToWaterfallCave,
                                          talkedToFortuneTeller, visitedUndergroundChannel);
-const portoaPalaceRight     = location(0xe0, PORT, 'Palace Right').connect(portoaPalaceEntrance);
+const portoaPalaceRight     = location(0xe0, PORT, 'Palace Right')
+                                .house()
+                                .connect(portoaPalaceEntrance);
 const portoaAsinaRoom       = location(0xe1, PORT, 'Asina\'s Room')
+                                .house()
                                 .connect(undergroundChannel4)
                                 .trigger(talkedToAsina, asinaTrigger); // TODO - trigger?
-const aryllisDownstairs     = location(0xe2, AMZN, 'Queen Downstairs')
+const aryllisDownstairs     = location(0xe2, AMZN, 'Queen Downstairs').house()
                                 .connect(aryllisHouse)
                                 .chest(blizzardBracelet, 0x0d);
-const joelElderHouse        = location(0xe3, JOEL, 'Elder\'s House')
+const joelElderHouse        = location(0xe3, JOEL, 'Elder\'s House').house()
                                 .connect(joel)
                                 .trigger(talkedToJoelElder);
-const joelShed              = location(0xe4, JOEL, 'Shed')
+const joelShed              = location(0xe4, JOEL, 'Shed').house()
                                 .connect(joel)
                                 .to(joelSecretPassage, eyeGlasses);
-const joelToolShop          = location(0xe5, JOEL, 'Tool Shop')
+const joelToolShop          = location(0xe5, JOEL, 'Tool Shop').shop()
                                 .connect(joel)
                                 .trigger(buyAlarmFlute);
-const joelInn               = location(0xe7, JOEL, 'Inn').connect(joel);
-const zombieTownHouse       = location(0xe8, EVIL, 'Zombie Town House').connect(zombieTown);
-const zombieTownBasement    = location(0xe9, EVIL, 'Zombie Town Basement')
+const joelInn               = location(0xe7, JOEL, 'Inn').shop().connect(joel);
+const zombieTownHouse       = location(0xe8, EVIL, 'Zombie Town House').house().connect(zombieTown);
+const zombieTownBasement    = location(0xe9, EVIL, 'Zombie Town Basement').house()
                                 .connect(zombieTownHouse)
                                 // TODO - correct trigger when shuffling bosses?
                                 .trigger(talkedToClark, sabera1);
-const swanToolShop          = location(0xeb, SWAN, 'Tool Shop').connect(swan);
-const swanStomHut           = location(0xec, SWAN, 'Stom\'s Hut')
+const swanToolShop          = location(0xeb, SWAN, 'Tool Shop').shop();
+const swanStomHut           = location(0xec, SWAN, 'Stom\'s Hut').house()
                                 .connect(swan)
                                 .trigger(talkedToStomInSwan);
-const swanInn               = location(0xed, SWAN, 'Inn').connect(swan);
-const swanArmorShop         = location(0xee, SWAN, 'Armor Shop').connect(swan);
-const swanTavern            = location(0xef, SWAN, 'Tavern')
+const swanInn               = location(0xed, SWAN, 'Inn').shop().connect(swan);
+const swanArmorShop         = location(0xee, SWAN, 'Armor Shop').shop().connect(swan);
+const swanTavern            = location(0xef, SWAN, 'Tavern').house()
                                 .connect(swan)
                                 .trigger(talkedToKensuInTavern, talkedToStomInSwan, paralysis);
-const swanPawnShop          = location(0xf0, SWAN, 'Pawn Shop').connect(swan);
-const swanDanceHall         = location(0xf1, SWAN, 'Dance Hall')
+const swanPawnShop          = location(0xf0, SWAN, 'Pawn Shop').shop().connect(swan);
+const swanDanceHall         = location(0xf1, SWAN, 'Dance Hall').house()
                                 .connect(swan)
                                 .trigger(talkedToKensuAtDance, talkedToKensuInTavern, paralysis)
                                 .trigger(returnedLovePendant, talkedToKensuAtDance, lovePendant);
-const shyronTemple1         = location(0xf2, SHYR, 'Temple (pre-massacre)')
+const shyronTemple1         = location(0xf2, SHYR, 'Temple (pre-massacre)').fortress()
                                 .connect(shyron)
                                 .from(start, swordOfThunder, teleportToShyron)
                                 .trigger(talkedToZebuInShyron);
-const shyronTemple2         = location(0xf2, SHYR, 'Temple (post-massacre)')
+const shyronTemple2         = location(0xf2, SHYR, 'Temple (post-massacre)').fortress()
                                 .connect(shyron, shyronMassacre)
                                 .boss(mado1);
-const shyronTrainingHall    = location(0xf3, SHYR, 'Training Hall').connect(shyron);
-const shyronHospital        = location(0xf4, SHYR, 'Hospital').connect(shyron);
-const shyronArmorShop       = location(0xf5, SHYR, 'Armor Shop').connect(shyron);
-const shyronToolShop        = location(0xf6, SHYR, 'Tool Shop').connect(shyron);
-const shyronInn             = location(0xf7, SHYR, 'Inn').connect(shyron);
-const saharaInn             = location(0xf8, SHRA, 'Inn').connect(sahara);
-const saharaToolShop        = location(0xf9, SHRA, 'Tool Shop').connect(sahara);
-const saharaElderHouse      = location(0xfa, SHRA, 'Elder\'s House').connect(sahara);
-const saharaPawnShop        = location(0xfb, SHRA, 'Pawn Shop').connect(sahara);
+const shyronTrainingHall    = location(0xf3, SHYR, 'Training Hall').house().connect(shyron);
+const shyronHospital        = location(0xf4, SHYR, 'Hospital').house().connect(shyron);
+const shyronArmorShop       = location(0xf5, SHYR, 'Armor Shop').shop().connect(shyron);
+const shyronToolShop        = location(0xf6, SHYR, 'Tool Shop').shop().connect(shyron);
+const shyronInn             = location(0xf7, SHYR, 'Inn').shop().connect(shyron);
+const saharaInn             = location(0xf8, SHRA, 'Inn').shop().connect(sahara);
+const saharaToolShop        = location(0xf9, SHRA, 'Tool Shop').shop().connect(sahara);
+const saharaElderHouse      = location(0xfa, SHRA, 'Elder\'s House').house().connect(sahara);
+const saharaPawnShop        = location(0xfb, SHRA, 'Pawn Shop').house().connect(sahara);
 
 const wildWarpLocations = [
   leaf,

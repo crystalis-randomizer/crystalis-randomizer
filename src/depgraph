@@ -55,11 +55,16 @@ flame-bracelet:
 # OPTIONS
 ################################################################
 
+# NOTE: these should be settable via their keys in the resulting graph
+# We might also want defaults here.
+
 leather-boots-give-speed:
   option Leather Boots grant speed
+  default true
 
 assume-ghetto-flight:
   option Assume ghetto flight
+  default false
 
 
 

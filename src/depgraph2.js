@@ -67,7 +67,7 @@ const teleportToShyron      = option('Sword of Thunder teleports to Shyron');
 const barrierOptional       = option('Barrier magic optional');
 const refreshOptional       = option('Refresh magic optional');
 const earlyFlight           = option('Early flight', false);
-const limeTreeConnectsToLeaf = option('Lime Tree connects to Leaf', true);
+const limeTreeConnectsToLeaf = option('Lime Tree connects to Leaf', false);
 const assumeWildWarp        = option('Assume wild warp', false);
 
 // TODO - assumeSwordChargeGlitch - would be super annoying...
@@ -455,7 +455,7 @@ const mado2       = boss(0x08, 'Mado 2', swordOfWater, waterMagic).get(sacredShi
 const karmine     = boss(0x09, 'Karmine', swordOfThunder, thunderMagic).get(ivoryStatue);
 const draygon1    = boss(0x0a, 'Draygon 1', anySword).get(psychoArmor);
 const statues     = boss(null, 'Statues', bowOfSun, bowOfMoon);
-const draygon2    = boss(0x0b, 'Draygon 2', anySword);
+const draygon2    = boss(0x0b, 'Draygon 2', anySword, bowOfTruth);
 const dyna        = boss(0x0d, 'Dyna', crystalis);
 
 ////////////////////////////////////////////////////////////////
@@ -1057,7 +1057,8 @@ const mtHydraTunnel2        = location(0x7f, HYDR, 'Tunnel 2 (fork)').cave()
                                 .connectTo(mtHydra6) // right branch
                                 .connectTo(mtHydra3); // left branch
 const mtHydraTunnel3        = location(0x80, HYDR, 'Tunnel 3 (caves)').cave()
-                                .connect(mtHydra4); // all the way right
+                                .connect(mtHydra4)  // entrance
+                                .connect(mtHydra5); // all the way right
 const mtHydraTunnel4        = location(0x81, HYDR, 'Tunnel 4 (left branch of cave)').cave()
                                 .connect(mtHydraTunnel3); // took left branch
 const mtHydraTunnel5        = location(0x82, HYDR, 'Tunnel 5 (dead end, medical herb)').cave()
@@ -1415,7 +1416,8 @@ const zombieTownBasement    = location(0xe9, EVIL, 'Zombie Town Basement').house
                                 .connect(zombieTownHouse)
                                 // TODO - correct trigger when shuffling bosses?
                                 .trigger(talkedToClark, sabera1);
-const swanToolShop          = location(0xeb, SWAN, 'Tool Shop').shop();
+const swanToolShop          = location(0xeb, SWAN, 'Tool Shop').shop()
+                                .connect(swan);
 const swanStomHut           = location(0xec, SWAN, 'Stom\'s Hut').house()
                                 .connect(swan)
                                 .trigger(talkedToStomInSwan);
@@ -1434,7 +1436,7 @@ const shyronTemple1         = location(0xf2, SHYR, 'Temple (pre-massacre)').fort
                                 .from(start, swordOfThunder, teleportToShyron)
                                 .trigger(talkedToZebuInShyron);
 const shyronTemple2         = location(0xf2, SHYR, 'Temple (post-massacre)').fortress()
-                                .connect(shyron, shyronMassacre)
+                                .from(shyronTemple1, shyronMassacre)
                                 .boss(mado1);
 const shyronTrainingHall    = location(0xf3, SHYR, 'Training Hall').house().connect(shyron);
 const shyronHospital        = location(0xf4, SHYR, 'Hospital').house().connect(shyron);

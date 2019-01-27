@@ -266,79 +266,324 @@ export class Graph {
 // Then drop the graph and just represent as alternative requirements,
 // with lots and triggers.
 
-export const integrateLocations = (graph, start = graph.locations()[0]) => {
-  class Loc {
-    constructor(/** !Location */ location) {
-      this.location = location;
-      this.routes = {};
-      this.connections = [];
-    }
 
-    addRoute(/** !Route */ route) {
-      if (this != route.destination) throw new Error('Bad route for this destination');
-      if (route.label in this.routes) return false;
-      for (let label in this.routes) {
-        const r = this.routes[label];
-        if (route.containsAll(r)) return false;
-        if (r.containsAll(route)) delete this.routes[label];
+// TODO - these are kind of redundant and messy!!
+// Consider cleaning up and rewriting a bunch of this in typescript
+
+class Depgraph {
+  constructor() {
+    /** @const {!Map<string, !Map<string, !Set<string>>>} */
+    this.graph = new Map();
+    /** @const {!Map<string, !Map<string, !Set<string>>>} */
+    this.removed = new Map();
+  }
+
+addRoute(...args){
+const GOOD=this.graph.get('n628')&&this.graph.get('n628').size;
+const r=this.addRoute2(...args);
+if (GOOD && !this.graph.get('n628').size) {console.log(`LOST ROUTE TO n628`);console.dir(args);}
+return r;
+}
+
+  // Before adding a route, any target is unreachable
+  // To make a target always reachable, add an empty route
+  addRoute2(/** string */ target, /** !Iterable<string> */ deps, graph = this.graph) /** !Array<!Depgraph.Route> */ {
+if(PR)console.log(`  addRoute(${graph==this.graph?'graph':'removed'}, ${target}, [${[...deps].join(', ')}])`);
+if(PR)console.log(`  routes=[${[...graph.get(target).keys()].join(', ')}]`);
+    if (!graph.has(target)) graph.set(target, new Map());
+    // NOTE: if any deps are already integrated out, replace them right away
+    let s = new Set(deps);
+    while (true) {
+      let changed = false;
+      for (const d of s) {
+if(PR)console.log(`  target=${target}, d=${d}`);
+        if (d === target) return [];
+        if (this.removed.has(d)) {
+          // need to replace before admitting.  may need to be recursive.
+          const /** !Map<string, !Set<string>> */ replacement = this.removed.get(d);
+if(PR)console.log(`  replacement=${[...replacement.values()].map(s=>[...s].join(' & ')).join(' | ')}`);
+          if (!replacement.size) return [];
+          s.delete(d);
+          // if there's a single option then just inline it directly
+          if (replacement.size == 1) {
+            for (const dd of replacement.values().next().value) {
+              s.add(dd);
+            }
+            changed = true;
+            break;
+          }
+          // otherwise we need to be recursive
+          const routes = new Map();
+if(PR)console.log(`  recursing`);
+          for (const r of replacement.values()) {
+            for (const r2 of this.addRoute(target, [...s, ...r])) {
+              routes.set(r2.label, r2);
+            }
+          }
+          return [...routes.values()];          
+        }
       }
-      this.routes[route.label] = route;
-      return true;
+      if (!changed) break;
     }
+    const sorted = [...s].sort();
+    s = new Set(sorted);
+    const label = sorted.join(' ');
+    const current = graph.get(target);
+if(PR)console.log(`  current [${[...current.keys()].join(', ')}] label ${label}`);
+    if (current.has(label)) return [];
+    for (const [l, d] of current) {
+if(PR&&containsAll(s, d))console.log(`  nothing to do: already has ${[...s].join('&')}, ${[...d].join('&')}`);
+if(PR&&containsAll(d, s))console.log(`  delete existing: ${[...s].join('&')}, ${[...d].join('&')}`);
+      if (containsAll(s, d)) return [];
+      if (containsAll(d, s)) current.delete(l);
+    }
+    current.set(label, s);
+if(PR)console.log(`  CURRENT => [${[...current.keys()].join(', ')}]`);
+    return [new Depgraph.Route(target, s, `${target}:${label}`)];
+  }
 
-    * allRoutes() {
-      for (let r in this.routes) {
-        yield this.routes[r];
+  integrateOut(/** string */ node) {
+    // pull the key, remove it from *all* other nodes
+    const alternatives = this.graph.get(node) || new Map();
+    this.removed.set(node, alternatives);
+    this.graph.delete(node);
+    for (const [target, /** !Map<string, !Set<string>> */ routes] of concatIterables(this.graph, this.removed)) {
+PR=(node=='n411'&&target=='n628');
+if(PR)console.log(`removing ${node} from ${target} routes=[${[...routes.keys()].join(', ')}]`);
+      for (const [label, route] of routes) {
+if(PR)console.log(`  route [${[...route].join(', ')}] `);
+        // substitute... (reusing the code in addRoute)
+        if (route.has(node)) {
+if(PR)console.log(`  label=${label}`);
+if(PR&&this.graph.get('n628')&&!this.graph.get('n628').size)console.log(`WTF: ${node}`);
+          routes.delete(label);
+          this.addRoute(target, route, this.removed.has(target) ? this.removed : this.graph);
+if(PR&&this.graph.get('n628')&&!this.graph.get('n628').size)console.log(`WTF2: ${node}`);
+        }
       }
     }
+//if(this.removed.get('n628')&&!this.removed.get('n628').size)console.log(`WTF: ${node}`);
+if(this.graph.get('n628')&&!this.graph.get('n628').size)console.log(`WTF: ${node}`);
+PR=false;
+  }
+}
+let PR=false;
+Depgraph.Route = class {
+  constructor(/** string */ target, /** !Set<string> */ deps, /** string */ label) {
+    this.target = target;
+    this.deps = deps;
+    this.label = label;
+  }  
+};
 
-    static of(/** !Location */ loc) {
-      if (!Loc.map) Loc.map = {};
-      if (!(loc.uid in Loc.map)) Loc.map[loc.uid] = new Loc(loc);
-      return Loc.map[loc.uid];
+function* concatIterables(...iters) {
+  for (const iter of iters) {
+    yield* iter;
+  }
+}
+
+
+// TODO - it's really obnoxious that I can't break this line without screwing
+// up indentation for the entire body of the function!
+export const integrateLocations2 = (graph, {start = graph.locations()[0], removeConditions = true, removeTriggers = true, removeOptions = true} = {}) => {
+
+  const /** !Object<string, !Array<!Connection>> */ locs = {};
+  const /** !Object<string, !Node> */ nodes = {};
+  const /** !Set<!Connection> */ connections = new Set();
+  const depgraph = new Depgraph();
+
+  // First index all the nodes and connections.
+  for (const n of graph.nodes) {
+    nodes[n.uid] = n;
+    if (removeOptions && n instanceof Option) {
+      console.log(`Removing option ${n.name}: ${n.value}`);
+      if (n.value) depgraph.addRoute(n.uid, []);
+      depgraph.integrateOut(n.uid);
     }
-
-    static * all() {
-      if (!Loc.map) Loc.map = {};
-      for (let id in Loc.map) {
-        yield Loc.map[id];
+    if (!(n instanceof Location)) continue;
+    locs[n.uid] = [];
+    for (const c of n.connections) {
+      if (connections.has(c)) continue;
+      // add connection and maybe everse to the set
+      connections.add(c);
+      if (c.bidi) connections.add(c.reverse());
+    }
+    if (removeTriggers) {
+      for (const {trigger, deps} of n.triggers) {
+        depgraph.addRoute(trigger.uid, [n.uid, ...deps.map(d => d.uid)]);
+      }
+    }
+    for (const c of n.chests) {
+      depgraph.addRoute(c.uid, [n.uid]);
+    }
+  }
+  // Group connections by "from" location.
+  for (const c of connections) {
+    locs[c.from.uid].push(c);
+  }
+  if (removeTriggers) {
+    for (const n of graph.nodes) {
+      if (n instanceof Trigger) {
+        if (n instanceof Boss) depgraph.addRoute(n.uid, n.deps.map(d => d.uid));
+        if (n.slot) depgraph.addRoute(n.slot.uid, [n.uid]);
+        depgraph.integrateOut(n.uid);
       }
     }
   }
 
-  class Route {
-    constructor(/** !Loc */ destination, /** !Set<string> */ deps) {
-      if (!destination) throw new Error('no destination');
-      this.destination = destination;
-      this.deps = deps;
-      // TODO - require sorted...
-      this.label = destination.location.uid + ':' + [...deps].join(' ');
-    }
-
-    containsAll(/** !Route */ that) /** boolean */ {
-      if (this.destination != that.destination) throw new Error('bad comparison');
-      if (this.deps.size < that.deps.size) return false;
-      for (const d of that.deps) {
-        if (!this.deps.has(d)) return false;
+  // Start the traversal.
+  const startRoute = depgraph.addRoute(start.uid, [])[0];
+  // queue is a queue of routes - each successfully-added route gets added
+  const queue = new Map([[startRoute.label, startRoute]]);
+  const iter = queue.values();
+  let next;
+  while (!(next = iter.next()).done) {
+    const route = next.value;
+if (!locs[route.target])console.error(`route: ${route} route.target: ${route.target} locs: ${locs[route.target]}`);
+    for (const c of locs[route.target]) {
+      const deps = [...route.deps, ...c.deps.map(d => d.uid)];
+      if (c.from.bossNode) deps.push(c.from.bossNode.uid);
+      for (const r of depgraph.addRoute(c.to.uid, deps)) {
+        if (!queue.has(r.label)) queue.set(r.label, r);
       }
-      return true;
-    }
-
-    follow(/** !Connection */ connection) /** !Route */ {
-      if (connection.from != this.destination.location) {
-        throw new Error('bad link');
-      }
-      // TODO - if from.bossNode - add
-      // TODO - realize options?
-      const deps = [
-        ...connection.deps,
-        ...(connection.from.bossNode ? [connection.from.bossNode] : []),
-      ];
-      return new Route(
-          Loc.of(connection.to),
-          new Set([...this.deps, ...deps.map(x => x.uid)].sort()));
     }
   }
+
+  if (removeConditions) {
+    for (const n of graph.nodes) {
+      if (!(n instanceof Condition)) continue;
+      for (const o of n.options) {
+        depgraph.addRoute(n.uid, o.map(x => x.uid));
+      }
+      depgraph.integrateOut(n.uid);
+    }
+  }
+
+  // Integrate out all the locations - maybe just always integrate everything out?
+  for (const n of depgraph.graph.keys()) {
+    depgraph.integrateOut(n);
+  }
+
+  for (const loc in locs) {
+   console.log(`${nodes[loc].uid} ${nodes[loc].area.name} ${nodes[loc].name}: ${[...(depgraph.removed.get(loc)||new Map()).values()].map(([...s]) => '(' + s.map(n => nodes[n].uid + ' ' + nodes[n].name).join(' & ') + ')').join(' | ')}`);
+//    console.log(`${nodes[loc].area.name} ${nodes[loc].name}: ${[...(depgraph.removed.get(loc)||new Map()).values()].map(([...s]) => '(' + s.map(n => nodes[n].name).join(' & ') + ')').join(' | ')}`);
+  }
+  console.log('================');
+  for (const s of graph.nodes) {
+    if (s instanceof Slot) {
+      console.log(`${s.orig}: ${[...(depgraph.graph.get(s.uid)||new Map()).values()].map(([...s]) => '(' + s.map(n => nodes[n].name).join(' & ') + ')').join(' | ')}`);
+    }
+  }
+
+  // // Now depgraph has a map from all locations to routes with no locations in them
+  // // But we still have options, triggers, conditions, bosses.
+  // if (removeOptions) {
+  //   for (const loc of Loc.all()) {
+  //     loc.removeOptions();
+  //   }
+  // }
+
+  // // for (const loc of Loc.all()) {
+  // //   console.log(`${loc.location.area.name}: ${loc.location.name}
+  // // ${[...loc.allRoutes()].map(r => [...r.deps].map(d => nodes[d].name)).join('\n  ')}`);
+  // // }
+
+  // return new Map([...Loc.all()].map(loc =>
+  //     [loc.location, [...loc.allRoutes()].map(r =>
+  //         DepSet.of([...r.deps].map(d => nodes[d])))]));
+  // returns a Map<Location, Array<DepSet>>
+
+  // TODO - what to return?
+  // TODO - instantiate options
+  return depgraph;
+};
+
+class Loc {
+  constructor(/** !Location */ location) {
+    this.location = location;
+    this.routes = {};
+    this.connections = [];
+  }
+
+  addRoute(/** !Route */ route) {
+    if (this != route.destination) throw new Error('Bad route for this destination');
+    if (route.label in this.routes) return false;
+    for (let label in this.routes) {
+      const r = this.routes[label];
+      if (route.containsAll(r)) return false;
+      if (r.containsAll(route)) delete this.routes[label];
+    }
+    this.routes[route.label] = route;
+    return true;
+  }
+
+  replace(/** Map<string, !Array<!Array<string>> */) {
+    for (const r in this.routes) {
+      r.removeOptions();
+    }
+  }
+
+  * allRoutes() {
+    for (const r in this.routes) {
+      yield this.routes[r];
+    }
+  }
+
+  static of(/** !Location */ loc) {
+    if (!Loc.map) Loc.map = {};
+    if (!(loc.uid in Loc.map)) Loc.map[loc.uid] = new Loc(loc);
+    return Loc.map[loc.uid];
+  }
+
+  static * all() {
+    if (!Loc.map) Loc.map = {};
+    for (let id in Loc.map) {
+      yield Loc.map[id];
+    }
+  }
+}
+
+const containsAll = (/** !Set */ left, /** !Set */ right) => /** boolean */ {
+  if (left.size < right.size) return false;
+    for (const d of right) {
+      if (!left.has(d)) return false;
+    }
+  return true;
+};
+
+class Route {
+  constructor(/** !Loc */ destination, /** !Set<string> */ deps) {
+    if (!destination) throw new Error('no destination');
+    this.destination = destination;
+    this.deps = deps;
+    // TODO - require sorted...
+    this.label = destination.location.uid + ':' + [...deps].join(' ');
+  }
+
+  containsAll(/** !Route */ that) /** boolean */ {
+    if (this.destination != that.destination) throw new Error('bad comparison');
+    return containsAll(this.deps, that.deps);
+  }
+
+  follow(/** !Connection */ connection) /** !Route */ {
+    if (connection.from != this.destination.location) {
+      throw new Error('bad link');
+    }
+    // TODO - realize options?
+    
+    const deps = [
+      ...connection.deps,
+      ...(connection.from.bossNode ? [connection.from.bossNode] : []),
+    ];//.filter(
+    return new Route(
+        Loc.of(connection.to),
+        new Set([...this.deps, ...deps.map(x => x.uid)].sort()));
+  }
+}
+
+// TODO - it's really obnoxious that I can't break this line without screwing
+// up indentation for the entire body of the function!
+export const integrateLocations = (graph, {start = graph.locations()[0], removeConditions = true, removeTriggers = true, removeOptions = true} = {}) => {
 
   // Index the locations and connections.
   const /** !Array<!Loc> */ locations = [];
@@ -353,16 +598,19 @@ export const integrateLocations = (graph, start = graph.locations()[0]) => {
     locations.push(l);
     for (const c of n.connections) {
       if (connections.has(c)) continue;
+      // add connection and maybe everse to the set
       connections.add(c);
       if (c.bidi) connections.add(c.reverse());
     }
   }
+  // group connections by "from" location
   for (const c of connections) {
     locationIndex[c.from.uid].connections.push(c);
   }
 
   //console.log(locationIndex);
   
+
   // Start the traversal.
   const startRoute = new Route(Loc.of(start), new Set());
   const queue = new Map([[startRoute.label, startRoute]]);
@@ -378,6 +626,12 @@ export const integrateLocations = (graph, start = graph.locations()[0]) => {
     }
   }
 
+  if (removeOptions) {
+    for (const loc of Loc.all()) {
+      loc.removeOptions();
+    }
+  }
+
   // for (const loc of Loc.all()) {
   //   console.log(`${loc.location.area.name}: ${loc.location.name}
   // ${[...loc.allRoutes()].map(r => [...r.deps].map(d => nodes[d].name)).join('\n  ')}`);
@@ -390,7 +644,7 @@ export const integrateLocations = (graph, start = graph.locations()[0]) => {
 
   // TODO - what to return?
   // TODO - instantiate options
-}
+};
 
 export const integrateItems = (graph, start = graph.locations()[0]) => {
   const locs = integrateLocations(graph, start);

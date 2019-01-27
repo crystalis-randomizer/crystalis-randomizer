@@ -66,8 +66,8 @@ const requireCalmForBarrier = option('Require calm for barrier');
 const teleportToShyron      = option('Sword of Thunder teleports to Shyron');
 const barrierOptional       = option('Barrier magic optional');
 const refreshOptional       = option('Refresh magic optional');
-const earlyFlight           = option('Early flight', false);
-const limeTreeConnectsToLeaf = option('Lime Tree connects to Leaf', false);
+const earlyFlight           = option('Early flight', true);
+const limeTreeConnectsToLeaf = option('Lime Tree connects to Leaf', true);
 const assumeWildWarp        = option('Assume wild warp', false);
 
 // TODO - assumeSwordChargeGlitch - would be super annoying...

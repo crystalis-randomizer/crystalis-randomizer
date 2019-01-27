@@ -274,23 +274,27 @@ class Depgraph {
   constructor() {
     /** @const {!Map<string, !Map<string, !Set<string>>>} */
     this.graph = new Map();
-    /** @const {!Map<string, !Map<string, !Set<string>>>} */
-    this.removed = new Map();
+    /** @const {!Set<string>} */
+    this.removed = new Set();
   }
 
 addRoute(...args){
-const GOOD=this.graph.get('n628')&&this.graph.get('n628').size;
+const check =()=>{for(const a of (this.graph.get('n13')||new Map).values())for(const d of a)if('n13'==d)return false;return true;};
+const GOOD=check();//this.graph.get('n628')&&this.graph.get('n628').size;
 const r=this.addRoute2(...args);
-if (GOOD && !this.graph.get('n628').size) {console.log(`LOST ROUTE TO n628`);console.dir(args);}
+if (GOOD && !check()){console.log(`WTF?`);console.dir(args);}
+//this.graph.get('n628').size) {console.log(`LOST ROUTE TO n628`);console.dir(args);}
 return r;
 }
 
   // Before adding a route, any target is unreachable
   // To make a target always reachable, add an empty route
-  addRoute2(/** string */ target, /** !Iterable<string> */ deps, graph = this.graph) /** !Array<!Depgraph.Route> */ {
-if(PR)console.log(`  addRoute(${graph==this.graph?'graph':'removed'}, ${target}, [${[...deps].join(', ')}])`);
-if(PR)console.log(`  routes=[${[...graph.get(target).keys()].join(', ')}]`);
-    if (!graph.has(target)) graph.set(target, new Map());
+  addRoute2(/** string */ target, /** !Iterable<string> */ deps) /** !Array<!Depgraph.Route> */ {
+//PR=target=='n13';
+if(PR)console.log(`  addRoute(${target}, [${[...deps].join(', ')}])`);
+if(PR)console.log(`  routes=[${[...this.graph.get(target).keys()].join(', ')}]`);
+if(this.removed.has(target))throw new Error('CANNOT ADD ONCE FINALIZED');
+    if (!this.graph.has(target)) this.graph.set(target, new Map());
     // NOTE: if any deps are already integrated out, replace them right away
     let s = new Set(deps);
     while (true) {
@@ -300,7 +304,7 @@ if(PR)console.log(`  target=${target}, d=${d}`);
         if (d === target) return [];
         if (this.removed.has(d)) {
           // need to replace before admitting.  may need to be recursive.
-          const /** !Map<string, !Set<string>> */ replacement = this.removed.get(d);
+          const /** !Map<string, !Set<string>> */ replacement = this.graph.get(d)||new Map();
 if(PR)console.log(`  replacement=${[...replacement.values()].map(s=>[...s].join(' & ')).join(' | ')}`);
           if (!replacement.size) return [];
           s.delete(d);
@@ -328,7 +332,7 @@ if(PR)console.log(`  recursing`);
     const sorted = [...s].sort();
     s = new Set(sorted);
     const label = sorted.join(' ');
-    const current = graph.get(target);
+    const current = this.graph.get(target);
 if(PR)console.log(`  current [${[...current.keys()].join(', ')}] label ${label}`);
     if (current.has(label)) return [];
     for (const [l, d] of current) {
@@ -345,10 +349,9 @@ if(PR)console.log(`  CURRENT => [${[...current.keys()].join(', ')}]`);
   integrateOut(/** string */ node) {
     // pull the key, remove it from *all* other nodes
     const alternatives = this.graph.get(node) || new Map();
-    this.removed.set(node, alternatives);
-    this.graph.delete(node);
-    for (const [target, /** !Map<string, !Set<string>> */ routes] of concatIterables(this.graph, this.removed)) {
-PR=(node=='n411'&&target=='n628');
+    this.removed.add(node);
+    for (const [target, /** !Map<string, !Set<string>> */ routes] of this.graph) {
+//PR=(node=='n411'&&target=='n628');
 if(PR)console.log(`removing ${node} from ${target} routes=[${[...routes.keys()].join(', ')}]`);
       for (const [label, route] of routes) {
 if(PR)console.log(`  route [${[...route].join(', ')}] `);
@@ -356,8 +359,11 @@ if(PR)console.log(`  route [${[...route].join(', ')}] `);
         if (route.has(node)) {
 if(PR)console.log(`  label=${label}`);
 if(PR&&this.graph.get('n628')&&!this.graph.get('n628').size)console.log(`WTF: ${node}`);
+const removed = this.removed.has(target);
+this.removed.delete(target);
           routes.delete(label);
-          this.addRoute(target, route, this.removed.has(target) ? this.removed : this.graph);
+          this.addRoute(target, route);
+if(removed)this.removed.add(target);
 if(PR&&this.graph.get('n628')&&!this.graph.get('n628').size)console.log(`WTF2: ${node}`);
         }
       }
@@ -464,14 +470,18 @@ if (!locs[route.target])console.error(`route: ${route} route.target: ${route.tar
     depgraph.integrateOut(n);
   }
 
-  for (const loc in locs) {
-   console.log(`${nodes[loc].uid} ${nodes[loc].area.name} ${nodes[loc].name}: ${[...(depgraph.removed.get(loc)||new Map()).values()].map(([...s]) => '(' + s.map(n => nodes[n].uid + ' ' + nodes[n].name).join(' & ') + ')').join(' | ')}`);
-//    console.log(`${nodes[loc].area.name} ${nodes[loc].name}: ${[...(depgraph.removed.get(loc)||new Map()).values()].map(([...s]) => '(' + s.map(n => nodes[n].name).join(' & ') + ')').join(' | ')}`);
-  }
-  console.log('================');
+console.dir(depgraph.graph.get('n13'));
+const check =()=>{for(const a of (depgraph.graph.get('n13')||new Map).values())for(const d of a)if('n13'==d)return false;return true;};
+if(!check())console.log(`WTF!!!`);
+
+//   for (const loc in locs) {
+// //   console.log(`${nodes[loc].uid} ${nodes[loc].area.name} ${nodes[loc].name}: ${[...(depgraph.graph.get(loc)||new Map()).values()].map(([...s]) => '(' + s.map(n => nodes[n].uid + ' ' + nodes[n].name).join(' & ') + ')').join(' | ')}`);
+//     console.log(`${nodes[loc].area.name} ${nodes[loc].name}: ${[...(depgraph.graph.get(loc)||new Map()).values()].map(([...s]) => '(' + s.map(n => nodes[n].name).join(' & ') + ')').join(' | ')}`);
+//   }
+  // console.log('================');
   for (const s of graph.nodes) {
     if (s instanceof Slot) {
-      console.log(`${s.orig}: ${[...(depgraph.graph.get(s.uid)||new Map()).values()].map(([...s]) => '(' + s.map(n => nodes[n].name).join(' & ') + ')').join(' | ')}`);
+      console.log(`${s.orig} ($${s.origIndex.toString(16).padStart(2,0)}): ${[...(depgraph.graph.get(s.uid)||new Map()).values()].map(([...s]) => '(' + s.map(n => nodes[n].name).join(' & ') + ')').join(' | ')}`);
     }
   }
 

@@ -54,21 +54,33 @@ const boss = (index, name, ...deps) => new Boss(graph, index, name, ...deps);
 const area = (name) => new Area(graph, name);
 const location = (id, area, name) => new Location(graph, id, area, name);
 
+const opt = (name, def) => name in opts ? opts[name] : def;
 
 ////////////////////////////////////////////////////////////////
 // Options
 ////////////////////////////////////////////////////////////////
-const leatherBootsGiveSpeed = option('Leather Boots grant speed');
-const assumeGhettoFlight    = option('Assume ghetto flight');
-const assumeTalkGlitch      = option('Assume talk glitch');
-const swordMagicOptional    = option('Sword magic optional', false);
-const requireCalmForBarrier = option('Require calm for barrier');
-const teleportToShyron      = option('Sword of Thunder teleports to Shyron');
-const barrierOptional       = option('Barrier magic optional');
-const refreshOptional       = option('Refresh magic optional');
-const earlyFlight           = option('Early flight', false);
-const limeTreeConnectsToLeaf = option('Lime Tree connects to Leaf', true);
-const assumeWildWarp        = option('Assume wild warp', false);
+const leatherBootsGiveSpeed = option('Leather Boots grant speed',
+                                     opt('speed-boots', true));
+const assumeGhettoFlight    = option('Assume ghetto flight',
+                                     opt('glitch-ghetto-flight', true));
+const assumeTalkGlitch      = option('Assume talk glitch',
+                                     opt('glitch-talk', true));
+const swordMagicOptional    = option('Sword magic optional',
+                                     opt('hell-sword-magic', false));
+const requireCalmForBarrier = option('Require calm for barrier',
+                                     opt('route-no-free-barrier', true));
+const teleportToShyron      = option('Sword of Thunder teleports to Shyron',
+                                     opt('route-shyron-teleport', true));
+const barrierOptional       = option('Barrier magic optional',
+                                     opt('hell-barrier', true));
+const refreshOptional       = option('Refresh magic optional',
+                                     opt('hell-refresh', true));
+const earlyFlight           = option('Early flight',
+                                     opt('route-early-flight', false));
+const limeTreeConnectsToLeaf = option('Lime Tree connects to Leaf',
+                                      opt('route-lime-tree-to-leaf', true));
+const assumeWildWarp        = option('Assume wild warp',
+                                     opt('glitch-wild-warp', false));
 
 // TODO - assumeSwordChargeGlitch - would be super annoying...
 //   - would need to make a condition anyLevel2Sword to put with the needed
@@ -1476,8 +1488,8 @@ if (assumeWildWarp.value) {
 return graph;
 };
 
-export const shuffle = async (rom, random, log = []) => {
-  const graph = generate();
+export const shuffle = async (rom, random, log = [], opts = {}) => {
+  const graph = generate(opts);
   const allSlots = graph.slots();
   const buckets = {}
   for (const slot of graph.slots()) {

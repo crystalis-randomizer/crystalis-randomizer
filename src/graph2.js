@@ -1,5 +1,4 @@
 import {Requirements, Items} from './sat.js';
-import {PMap,equal} from './pmap.js';
 
 class Edge {
   constructor(left, right, arrow, attrs) {

@@ -29,9 +29,12 @@ export default ({
       hash['seed'] = (seed = Math.floor(Math.random() * 0x100000000)).toString(16);
       window.location.hash += '&seed=' + seed.toString(16);
     }
+    for (const key in hash) {
+      if (hash[key] === 'false') hash[key] = false;
+    }
     const random = new Random(seed);
     const log = [];
-    await shuffleDepgraph(rom, random, log);
+    await shuffleDepgraph(rom, random, log, hash);
 
     // Parse the rom and apply other patches.
     const parsed = new Rom(rom);

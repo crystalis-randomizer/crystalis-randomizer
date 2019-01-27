@@ -25,8 +25,9 @@ const main = () => {
   const setSeed = (seed) => {
     seed = typeof seed == 'number' ? seed : Number.parseInt(seed, 16)
     let str = window.location.hash;
-    window.history.replaceState({}, '', `#seed=${seed.toString(16)}`);
     hash['seed'] = seed.toString(16);
+    window.history.replaceState(
+        {}, '', '#' + Object.keys(hash).map(k => `${k}=${encodeURIComponent(hash[k])}`).join('&'));
     if (seedInput.value != seed.toString(16)) {
       seedInput.value = seed.toString(16);
     }
@@ -38,7 +39,7 @@ const main = () => {
     setSeed(Math.floor(Math.random() * 0x100000000));
   });
   seedInput.addEventListener('change', () => setSeed(seedInput.value));
-  document.getElementById('shuffle').addEventListener('click', () => shuffle(hash['seed'], rom));
+  document.getElementById('shuffle').addEventListener('click', () => shuffle(hash, rom));
 };
 
 const loadRomFromStorage = (rom) => {
@@ -93,8 +94,10 @@ const loadRomFromStorage = (rom) => {
   });
 };
 
-const shuffle = async (seed, rom) => {
+const shuffle = async (hash, rom) => {
+  let seed = hash['seed'];
   seed = typeof seed == 'number' ? seed : Number.parseInt(seed, 16);
+  hash['seed'] = seed;
   if (!rom.orig) {
     alert('Must select a ROM first!');
     return;
@@ -114,7 +117,7 @@ const shuffle = async (seed, rom) => {
 
   const shuffled = rom.orig.slice();
   rom.shuffled = shuffled;
-  const log = await patch.default.apply(shuffled, {'seed': seed});
+  const log = await patch.default.apply(shuffled, hash);
   dots.textContent = '';
   done.push(true);
   dl.disabled = false;

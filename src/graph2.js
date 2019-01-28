@@ -335,6 +335,9 @@ const integrateLocations = (graph, {start = graph.locations()[0], removeConditio
       for (const {trigger, deps} of n.triggers) {
         depgraph.addRoute(trigger.uid, [n.uid, ...deps.map(d => d.uid)]);
       }
+      if (n.bossNode) {
+        depgraph.addRoute(n.bossNode.uid, [n.uid, ...n.bossNode.deps.map(d => d.uid)]);
+      }
     }
     for (const c of n.chests) {
       depgraph.addRoute(c.uid, [n.uid]);
@@ -347,7 +350,6 @@ const integrateLocations = (graph, {start = graph.locations()[0], removeConditio
   if (removeTriggers) {
     for (const n of graph.nodes) {
       if (n instanceof Trigger) {
-        if (n instanceof Boss) depgraph.addRoute(n.uid, n.deps.map(d => d.uid));
         if (n.slot) depgraph.addRoute(n.slot.uid, [n.uid]);
         depgraph.integrateOut(n.uid);
       }

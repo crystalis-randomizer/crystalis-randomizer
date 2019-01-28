@@ -34,6 +34,8 @@ export class View {
     this.floater = null;
     this.advanceAnimation = null;
 
+    this.annotations = true;
+
     document.body.addEventListener('keyup', e => keyup(this, e));
     this.element.addEventListener('click', e => click(this, e));
     // handler for hovering over the canvas?  clicking on it?
@@ -352,7 +354,13 @@ const keyup = (v, e) => {
     if (shouldUpdate) v.update({[e.target.dataset.name]: true});
   } else {
     if (e.key == 's') {
-      v.scale = (v.scale + 1) % 5;
+      if (v.scale == 4) {
+        v.scale = 30;
+      } else if (v.scale == 30) {
+        v.scale = 0;
+      } else {
+        v.scale = (v.scale + 1) % 5;
+      }
       v.update();
     } else if (e.key == 'l') {
       if (v.advanceAnimation) {

@@ -21,6 +21,7 @@ DIR="$TMP/r/$HASH"
   git clone --depth=1 git@github.com:shicks/crystalis-randomizer r -b gh-pages
   cd r
   mkdir -p "$HASH/view"
+  mkdir -p "$HASH/track"
 )
 (
   cp -f notes/depgraph.svg "$TMP/r/"
@@ -31,7 +32,7 @@ DIR="$TMP/r/$HASH"
   cp view/*.js view/*.css "$DIR/view/"
   # TODO - add a datestamp or commit stamp into the HTML somehow
   #      - maybe use sed to replace a placeholder?
-  for a in *.html view/*.html; do
+  for a in *.html view/*.html track/*.html; do
     cat ga.tag $a >| "$DIR/$a"
   done
   sed -e "/BUILD_HASH/ s/latest/$HASH/" -e "/BUILD_DATE/ s/current/$DATE/" \
@@ -43,6 +44,9 @@ DIR="$TMP/r/$HASH"
   cd $TMP/r
   rm latest
   ln -s $HASH latest
+  rm track
+  ln -s latest/track track
+  
   git add .
   git commit -am "Publish: $(date)"
   git push origin gh-pages

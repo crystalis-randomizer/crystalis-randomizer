@@ -2,6 +2,7 @@
   margin-top: 12px;
   width: 524px;
   height: 250px;
+  user-select: none;
 }
 .grid > div {
   width: 48px;
@@ -286,7 +287,7 @@
   background-position: -48px -480px;
 }
 .slot.telepathy.got > div {
-  background-position: -92px -480px;
+  background-position: -96px -480px;
 }
 .slot.teleport.got > div {
   background-position: -144px -480px;

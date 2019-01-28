@@ -35,7 +35,19 @@ class MapsView extends View {
     this.readHash();
     window.addEventListener('hashchange', () => this.readHash());
     this.handle('j', () => this.setLocation((this.location + 1) & 0xff));
-    this.handle('k', () => this.setLocation((this.location + 0xff ) & 0xff));
+    this.handle('k', () => this.setLocation((this.location + 0xff) & 0xff));
+    this.handle('a', () => {
+      this.annotations = !this.annotations;
+      this.setLocation(this.location);
+    });
+    this.handle('d', () => {
+      const canvas = document.getElementsByTagName('canvas')[0];
+      const image = canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream');
+      const link = document.createElement('a');
+      link.download = `map-${this.location.toString(16).padStart(2, 0)}.png`;
+      link.href = image;
+      link.click();
+    });
   }
 
   readHash() {
@@ -193,42 +205,44 @@ class MapsView extends View {
         }
       }
       // TODO - draw simea at each entrance?
-      // draw monsters
-      for (const obj of opts.objs) {
-        let pat = opts.spritePat[obj[2] & 0x80 ? 1 : 0];
-        let pal = [0, 1, ...opts.spritePal].map(p => this.rom.palettes[(p + 0xb0) & 0xff]);
-        let metaspriteId;
-        if ((obj[2] & 7) == 0) {
-          const objId = obj[3] + 0x50;
-          // NOTE: 1 is for wind sword; other swords are 2-4?
-          const objData = this.rom.objects[objId];
-          if (!objData) continue;
-          metaspriteId = objData.metasprite;
-          if (objData.action == 0x29) { // blob
-            metaspriteId = frame & 32 ? 0x6b : 0x68;
-          } else if ([0x2a, 0x5e].includes(objData.action)) {
-            // directional walker (soldier, etc); also tower def mech (5e)
-            metaspriteId = (((frame >> 5) + 2) & 3) | objData.objectData[31];
+      if (this.annotations) {
+        // draw monsters
+        for (const obj of opts.objs) {
+          let pat = opts.spritePat[obj[2] & 0x80 ? 1 : 0];
+          let pal = [0, 1, ...opts.spritePal].map(p => this.rom.palettes[(p + 0xb0) & 0xff]);
+          let metaspriteId;
+          if ((obj[2] & 7) == 0) {
+            const objId = obj[3] + 0x50;
+            // NOTE: 1 is for wind sword; other swords are 2-4?
+            const objData = this.rom.objects[objId];
+            if (!objData) continue;
+            metaspriteId = objData.metasprite;
+            if (objData.action == 0x29) { // blob
+              metaspriteId = frame & 32 ? 0x6b : 0x68;
+            } else if ([0x2a, 0x5e].includes(objData.action)) {
+              // directional walker (soldier, etc); also tower def mech (5e)
+              metaspriteId = (((frame >> 5) + 2) & 3) | objData.objectData[31];
+            }
+          } else if ((obj[2] & 7) == 1) {
+            const npcId = obj[3];
+            const npcData = this.rom.npcs[npcId];
+            if (!npcData || !npcData.data) continue;
+            metaspriteId = (((frame >> 5) + 2) & 3) | npcData.data[3];
+          } else if ((obj[2] & 7) == 2) {
+            if (obj[3] < 0x80) metaspriteId = 0xaa; // treasure chest
           }
-        } else if ((obj[2] & 7) == 1) {
-          const npcId = obj[3];
-          const npcData = this.rom.npcs[npcId];
-          if (!npcData || !npcData.data) continue;
-          metaspriteId = (((frame >> 5) + 2) & 3) | npcData.data[3];
-        } else if ((obj[2] & 7) == 2) {
-          if (obj[3] < 0x80) metaspriteId = 0xaa; // treasure chest
+          if (metaspriteId == null) continue;
+          let metasprite = this.rom.metasprites[metaspriteId];
+          const y = fromTileY(obj[0]) + 0xc;
+          const x = ((obj[1] & 0x7f) << 4) + (obj[2] & 0x40 ? 8 : 0) + 8;
+          this.drawMetasprite(buf, x, y, metasprite, pal, pat, frame >> 3);
         }
-        if (metaspriteId == null) continue;
-        let metasprite = this.rom.metasprites[metaspriteId];
-        const y = fromTileY(obj[0]) + 0xc;
-        const x = ((obj[1] & 0x7f) << 4) + (obj[2] & 0x40 ? 8 : 0) + 8;
-        this.drawMetasprite(buf, x, y, metasprite, pal, pat, frame >> 3);
+        // Indicate entrances (todo - toggle?)
+        for (let i = 0; i < opts.entrances.length; i++) {
+          const [xl, xh, yl, yh] = opts.entrances[i];
+          this.drawText(buf, xh*256+xl-8, yh*240+yl-8, i.toString(16).padStart(2, 0), 0x30);
+        }
       }
-      // Indicate entrances (todo - toggle?)
-      for (let i = 0; i < opts.entrances.length; i++) {
-        const [xl, xh, yl, yh] = opts.entrances[i];
-        this.drawText(buf, xh*256+xl-8, yh*240+yl-8, i.toString(16).padStart(2, 0), 0x30);
-      }      
       // done
       draw(buf);
     };

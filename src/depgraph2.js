@@ -42,7 +42,7 @@ import { Graph, Area, Boss, Condition, Item, Location, Magic, Option, Trigger } 
 //   equip: 0 - no change
 //          1 - auto-equip power
 
-export const generate = (opts) => {
+export const generate = (opts = {}) => {
 
 const graph = new Graph();
 const option = (name, value = true) => new Option(graph, name, value);

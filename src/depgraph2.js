@@ -259,9 +259,9 @@ const glowingLamp           = item(0x39, 'Glowing Lamp')
                                 .direct(0x3d30e)
                                 .npcSpawn(0x7e, 0x62, 1)
                                 .key();
-const statueOfGold          = item(0x3a, 'Statue of Gold')
+//const statueOfGold          = item(0x3a, 'Statue of Gold')
                                 // direct(0x1c594) // shuffle is a little odd
-                                .fixed();
+//                                .fixed();
 const lovePendant           = item(0x3b, 'Love Pendant')
                                 .chest()
                                 .invisible(0x3e3aa)
@@ -364,7 +364,7 @@ const talkedToKensuInCabin  = trigger('Talked to Kensu in Cabin');
 const talkedToJoelElder     = trigger('Talked to Joel Elder');
 const talkedToClark         = trigger('Talked to Clark').get(eyeGlasses);
 const talkedToKensuInLighthouse = trigger('Talked to Kensu in Lighthouse').get(glowingLamp);
-const repairBrokenStatue    = trigger('Repair Broken Statue').get(statueOfGold); // no rando?
+//const repairBrokenStatue    = trigger('Repair Broken Statue').get(statueOfGold); // no rando?
 const calmedSea             = trigger('Calmed the Angry Sea');
 const learnedBarrier        = trigger('Learned Barrier').get(barrier);
 const talkedToStomInSwan    = trigger('Talked to Stom in Swan Hut');
@@ -931,8 +931,11 @@ const angrySeaJoelBeach     = location(0x60, ASEA, 'Joel Beach').sea()
 const angrySeaLighthouse    = location(0x60, JOEL, 'Outside Lighthouse').sea();
 const angrySeaAltar         = location(0x60, ASEA, 'Altar').sea()
                                 .connect(angrySeaSouth, crossSea)
-                                .trigger(repairBrokenStatue, glowingLamp, brokenStatue)
-                                .trigger(calmedSea, statueOfGold);
+                                // .trigger(repairBrokenStatue, glowingLamp, brokenStatue)
+                                // NOTE: this *should* be statue of gold,
+                                // but since we don't shuffle that we leave
+                                // it as the components.
+                                .trigger(calmedSea, glowingLamp, brokenStatue);
 const angrySeaNorth         = location(0x60, ASEA, 'North').sea()
                                 .to(angrySeaSouth, crossSea)
                                 .from(angrySeaSouth, crossSea, crossWhirlpool)

@@ -16,10 +16,21 @@ HASH=$(git rev-parse HEAD | head -c 7)
 DATE=$(date)
 TMP=$(mktemp -d)
 DIR="$TMP/r/$HASH"
+DEPTH=1
+REPLACE=false
+FORCE=
+if [ "$1" = "--replace" ]; then
+  REPLACE=true
+  DEPTH=2
+  FORCE=-f
+fi
 (
   cd "$TMP"
-  git clone --depth=1 git@github.com:shicks/crystalis-randomizer r -b gh-pages
+  git clone --depth=$DEPTH git@github.com:shicks/crystalis-randomizer r -b gh-pages
   cd r
+  if $REPLACE; then
+    git reset --hard HEAD^
+  fi
   mkdir -p "$HASH/view"
   mkdir -p "$HASH/track"
 )
@@ -44,12 +55,10 @@ DIR="$TMP/r/$HASH"
   cd $TMP/r
   rm latest
   ln -s $HASH latest
-  rm track
-  ln -s latest/track track
   
   git add .
   git commit -am "Publish: $(date)"
-  git push origin gh-pages
+  git push $FORCE origin gh-pages
   cd ../..
   rm -rf $TMP
 )

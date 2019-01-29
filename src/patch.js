@@ -54,7 +54,10 @@ export default ({
     displayDifficulty.apply(rom);
     itemLib.apply(rom);
     buffMedicalHerb.apply(rom);
+
     //noTeleportOnThunderSword.apply(rom);
+    asinaTeleportsToMezameShrine.apply(rom);
+
     //quickChangeItems.apply(rom);
 
     // These need to be at the bottom because the modify previous patches.
@@ -334,6 +337,7 @@ PatchGrantItemInRegisterA:
    pla
 + rts
 .org $3ff5c
+
 ;;PatchAsinaReveal:
 ;;  jsr WaitForDialogToBeDismissed
 ;;  jmp DialogFollowupActionJump_03
@@ -753,8 +757,9 @@ CheckBelowBoss:
   .byte $ff  ; same for tornel
 .org $1a2e8  ; npcdata_b9 slot 0f
   .byte $ff  ; same for asina
-.org $1a3ac  ; npcdata_ba slot 0e
-  .byte $00,$00,$02,$80 ; more npcs follow so instead change to off-screen trigger
+;; NOTE - changing this for kensu seems broken and is unnecessary...
+;;.org $1a3ac  ; npcdata_ba slot 0e
+;;  .byte $00,$00,$02,$80 ; more npcs follow so instead change to off-screen trigger
 
 `, 'preventNpcDespawns'));
 
@@ -773,6 +778,49 @@ export const noTeleportOnThunderSword = buildRomPatch(assemble(`
 .org $3d565
   .word ($d78c)
 `, 'noTeleportOnThunderSword'));
+
+// This is the alternative to noTeleportOnThunderSword - if we teleport then
+// we need a way back to leaf just in case!
+export const asinaTeleportsToMezameShrine = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000 ; fixed bank
+.bank $1c000 $8000:$2000
+
+;; Add an extra dialog followup for asina to conditionally use to
+;; warp back to leaf from shyron
+
+.org $1d820
+  .byte $fa ; 03b -> action 1f
+.org $1d82c
+  .byte $fa ; default -> action 1f
+
+.org $3d161
+  .byte $45,$fe ; DialogFollowupActionJump 1f
+
+.org $3fe45
+  lda #$00
+  sta $6c
+  sta $6d
+  lda #$01
+  sta $41
+  rts
+.org $3fe50
+.org $3fe78 ; end of unused space
+
+`, 'asinaTeleportsToLeaf'));
+
+export const saharaBunniesRequireTelepathy = buildRomPatch(assemble(`
+.bank $1c000 $8000:$2000
+.org $1d653 ; dialog 5a deo
+  ;; replace akahana's dialog - would be nice to add an extra stanza instead,
+  ;; but there's not immediately space - if we ever defrag then we should do it
+  ;; or else remove all the changed forms (except maybe soldier)
+  .byte $c2,$43   ; 243 NOT telepathy -> 1a:13
+.org $1d671 ; dialog 59 generic sahara bunnies
+  ;; replace stom - he can talk to bunnies just fine
+  .byte $c2,$43   ; 243 NOT telepathy -> 1a:12
+
+`, 'saharaBunniesRequireTelepathy'));
+
 
 // Fix the shaking issues by tweaking the delay times in IRQ callbacks.
 export const fixShaking = buildRomPatch(assemble(`
@@ -1164,8 +1212,9 @@ SubtractEnemyHP:
 + lda $61
   sbc #$00
   rts
-.org $3fe60 ; 34e45 actually?
-; .org $3fe78 ; last possible
+.org $3fe45
+; NOTE - this space used by TeleportToMezameShrine
+.org $3fe78 ; end of unused space
 
 ;;.org $3c010
 ;;;; Adjusted inventory update - use level instead of sword

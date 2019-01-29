@@ -156,6 +156,7 @@ const OPTS = {
   'route-no-free-barrier': true,
   'route-shyron-teleport': true,
   'route-early-flight': true,
+  'tracker': true,
 };
 
 const graph = new Graph(generate(OPTS));

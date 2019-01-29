@@ -81,6 +81,7 @@ const limeTreeConnectsToLeaf = option('Lime Tree connects to Leaf',
                                       opt('route-lime-tree-to-leaf', true));
 const assumeWildWarp        = option('Assume wild warp',
                                      opt('glitch-wild-warp', false));
+const tracker               = option('Tracker only', opt('tracker', false));
 
 // TODO - assumeSwordChargeGlitch - would be super annoying...
 //   - would need to make a condition anyLevel2Sword to put with the needed
@@ -386,12 +387,19 @@ const win                   = trigger('Win');
 ////////////////////////////////////////////////////////////////
 // Conditions
 ////////////////////////////////////////////////////////////////
-const destroyStone          = condition('Destroy stone').option(swordOfWind, ballOfWind);
-const destroyIce            = condition('Destroy ice').option(swordOfFire, ballOfFire);
+const destroyStone          = condition('Destroy stone')
+                                .option(swordOfWind, ballOfWind)
+                                .option(tracker, swordOfWind, tornadoBracelet);
+const destroyIce            = condition('Destroy ice')
+                                .option(swordOfFire, ballOfFire)
+                                .option(tracker, swordOfFire, flameBracelet);
 const crossRivers           = condition('Cross rivers')
                                 .option(swordOfWater, ballOfWater)
+                                .option(tracker, swordOfWater, blizzardBracelet)
                                 .option(flight, earlyFlight);
-const destroyIron           = condition('Destroy iron').option(swordOfThunder, ballOfThunder);
+const destroyIron           = condition('Destroy iron')
+                                .option(swordOfThunder, ballOfThunder)
+                                .option(tracker, swordOfThunder, stormBracelet);
 const anySword              = condition('Any sword')
                                 .option(swordOfWind).option(swordOfFire)
                                 .option(swordOfWater).option(swordOfThunder);
@@ -432,7 +440,12 @@ const thunderMagic          = condition('Thunder magic')
                                 .option(ballOfThunder, stormBracelet);
 const fluteOfLimeOrGlitch   = condition('Flute of lime or glitch')
                                 .option(fluteOfLimeQueen)
-                                .option(assumeTalkGlitch);
+                                .option(assumeTalkGlitch)
+                                .option(tracker, fluteOfLimeChest);
+// this is only really here for tracker
+const secondFluteOfLime     = condition('Second flute of lime')
+                                .option(fluteOfLimeChest)
+                                .option(tracker, fluteOfLimeQueen);
 const changeOrGlitch        = condition('Change or glitch')
                                 .option(change)
                                 .option(assumeTalkGlitch);
@@ -891,7 +904,7 @@ const waterfallCave3        = location(0x56, WFCV, 'Tunnel 3 (wide medusa hallwa
 const waterfallCave4a       = location(0x57, WFCV, 'Tunnel 4a (left entrance)').cave()
                                 .from(waterfallCave3, destroyIce)
                                 .chest(fluteOfLimeChest, 0x19)
-                                .trigger(curedAkahana, fluteOfLimeChest); // $64da:02
+                                .trigger(curedAkahana, secondFluteOfLime); // $64da:02
 const waterfallCave4b       = location(0x57, WFCV, 'Tunnel 4b (right entrance)').cave()
                                 .from(waterfallCave3, destroyIce) // $64da:01
                                 .connect(waterfallCave4a, flight);
@@ -1180,7 +1193,7 @@ const desertCave2           = location(0x95, SHRA, 'Desert Cave 2').cave()
 const saharaMeadow          = location(0x96, SHRA, 'Meadow').overworld()
                                 .connect(desertCave1)
                                 .connectTo(sahara)
-                                .trigger(talkedToDeo, change, shyronMassacre);
+                                .trigger(talkedToDeo, change, telepathy);
 const desert2               = location(0x98, SHRA, 'Desert 2').overworld()
                                 .connect(desertCave2);
 

@@ -437,7 +437,9 @@ const waterMagic            = condition('Water magic')
                                 .option(ballOfWater, blizzardBracelet);
 const thunderMagic          = condition('Thunder magic')
                                 .option(swordMagicOptional)
-                                .option(ballOfThunder, stormBracelet);
+                                // For Karmine, only guarantee level 2.
+                                .option(ballOfThunder)
+                                .option(stormBracelet);
 const fluteOfLimeOrGlitch   = condition('Flute of lime or glitch')
                                 .option(fluteOfLimeQueen)
                                 .option(assumeTalkGlitch)

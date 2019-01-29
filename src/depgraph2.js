@@ -1100,7 +1100,8 @@ const mtHydraTunnel7        = location(0x84, HYDR, 'Tunnel 7 (wide hall)').cave(
                                 .connect(mtHydraTunnel6b);
 const mtHydraTunnel8        = location(0x85, HYDR, 'Tunnel 8 (red slimes)').cave()
                                 .from(mtHydraTunnel7, destroyStone) // 2ae (bad)
-                                .connectTo(mtHydra8);
+                                .connectTo(mtHydra8)
+                                .chest(mimic, 0x17);
 const mtHydraTunnel9        = location(0x86, HYDR, 'Tunnel 9 (right branch, infinite loop)').cave()
                                 // non-blocking wall: 2ad
                                 .connect(mtHydraTunnel3);

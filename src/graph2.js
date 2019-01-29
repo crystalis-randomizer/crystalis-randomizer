@@ -574,7 +574,13 @@ console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(
 }
 
 export class Chest extends Slot {
+  constructor(...args) {
+    super(...args);
+    this.spawnSlot = null;
+  }
+
   objectSlot(loc, spawnSlot) {
+    this.spawnSlot = spawnSlot;
     this.slots.push((rom, slot) => {
       const base = addr(rom, 0x19201, 0x10000, loc);
       const a = base + 4 * (spawnSlot - 0x0b);
@@ -735,7 +741,6 @@ export class Location extends Node {
     this.connections = [];
     this.triggers = [];
     this.chests = [];
-    this.mimics = []; // fold into chests
     this.bossNode = null;
     this.type = null;
   }

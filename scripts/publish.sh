@@ -38,6 +38,7 @@ fi
   cp -f notes/depgraph.svg "$TMP/r/"
   cp -f notes/locations.svg "$TMP/r/"
   cp -f notes/traversal.txt "$TMP/r/"
+  cp -f src/favicon.ico "$TMP/r/"
   cd src
   cp *.js *.css "$DIR"
   cp view/*.js view/*.css "$DIR/view/"

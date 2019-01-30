@@ -112,7 +112,7 @@ export const openSwanFromEitherSide = buildRomPatch(assemble(`
   .byte $04,$0a,$04,$2c
   .byte $07,$06,$01,$2d
   .byte $07,$09,$01,$2d
-  .byte $04,$02,$01,$2d ; new soldier (they need to come in pairs)
+  .byte $02,$0a,$01,$2d ; new soldier (they need to come in pairs)
   .byte $02,$0b,$01,$2d ; new soldier
   .byte $0a,$0e,$02,$b3 ; new trigger to erase guards
   .byte $ff
@@ -671,6 +671,11 @@ export const allowTeleportOutOfTower = buildRomPatch(assemble(`
 // relevant slots to require are windmill guard and elder.
 export const preventNpcDespawns = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000 ; fixed bank
+.bank $1a000 $8000:$2000
+
+.org $1a181 ;; npcdata a9 slot 0d second byte
+  .byte $67 ;; move kelbesque 2 one tile left
+
 .bank $1c000 $8000:$4000
 
 ;; akahana does not disappear from waterfall cave after barrier

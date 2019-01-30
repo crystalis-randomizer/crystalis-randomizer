@@ -65,6 +65,8 @@ const assumeGhettoFlight    = option('Assume ghetto flight',
                                      opt('glitch-ghetto-flight', true));
 const assumeTalkGlitch      = option('Assume talk glitch',
                                      opt('glitch-talk', true));
+const assumeRabbitSkip      = option('Assume rabbit skip',
+                                     opt('glitch-rabbit-skip', false));
 const swordMagicOptional    = option('Sword magic optional',
                                      opt('hell-sword-magic', false));
 const requireCalmForBarrier = option('Require calm for barrier',
@@ -81,6 +83,8 @@ const limeTreeConnectsToLeaf = option('Lime Tree connects to Leaf',
                                       opt('route-lime-tree-to-leaf', true));
 const assumeWildWarp        = option('Assume wild warp',
                                      opt('glitch-wild-warp', false));
+const assumeSwordChargeGlitch = option('Assume sword charge glitch',
+                                       opt('glitch-sword-charge', false));
 const tracker               = option('Tracker only', opt('tracker', false));
 
 // TODO - assumeSwordChargeGlitch - would be super annoying...
@@ -387,19 +391,33 @@ const win                   = trigger('Win');
 ////////////////////////////////////////////////////////////////
 // Conditions
 ////////////////////////////////////////////////////////////////
+const anyLevel2             = condition('Any level 2 sword')
+                                .option(swordOfWind, ballOfWind)
+                                .option(swordOfWind, tornadoBracelet)
+                                .option(swordOfFire, ballOfFire)
+                                .option(swordOfFire, flameBracelet)
+                                .option(swordOfWater, ballOfWater)
+                                .option(swordOfWater, blizzardBracelet)
+                                .option(swordOfThunder, ballOfThunder)
+                                .option(swordOfThunder, stormBracelet);
 const destroyStone          = condition('Destroy stone')
                                 .option(swordOfWind, ballOfWind)
-                                .option(tracker, swordOfWind, tornadoBracelet);
+                                .option(swordOfWind, tornadoBracelet)
+                                .option(assumeSwordChargeGlitch, swordOfWind, anyLevel2);
 const destroyIce            = condition('Destroy ice')
                                 .option(swordOfFire, ballOfFire)
-                                .option(tracker, swordOfFire, flameBracelet);
+                                .option(swordOfFire, flameBracelet)
+                                .option(assumeSwordChargeGlitch, swordOfFire, anyLevel2);
 const crossRivers           = condition('Cross rivers')
                                 .option(swordOfWater, ballOfWater)
-                                .option(tracker, swordOfWater, blizzardBracelet)
-                                .option(flight, earlyFlight);
+                                .option(swordOfWater, blizzardBracelet)
+                                .option(flight, earlyFlight)
+                                .option(assumeSwordChargeGlitch, swordOfWater, anyLevel2);
+
 const destroyIron           = condition('Destroy iron')
                                 .option(swordOfThunder, ballOfThunder)
-                                .option(tracker, swordOfThunder, stormBracelet);
+                                .option(swordOfThunder, stormBracelet)
+                                .option(assumeSwordChargeGlitch, swordOfThunder, anyLevel2);
 const anySword              = condition('Any sword')
                                 .option(swordOfWind).option(swordOfFire)
                                 .option(swordOfWater).option(swordOfThunder);
@@ -410,6 +428,9 @@ const climbSlopes           = condition('Climb slopes')
                                 .option(rabbitBoots)
                                 .option(flight, earlyFlight)
                                 .option(speedBoots);
+const enterMtSabreNorth     = condition('Enter Mt Sabre North')
+                                .option(talkedToLeafRabbit)
+                                .option(assumeRabbitSkip);
 // Required for access to underground channel.
 const asinaTrigger          = condition('Asina in her room')
                                 // NOTE: this is just ballOfWater in vanilla.
@@ -688,8 +709,11 @@ const mtSabreWestTunnel7c   = location(0x27, SBRW, 'Tunnel 7c (tornado bracelet,
 
 // Mt Sabre North
 
+// TODO - teleport trigger is on cordel side - when we start randomizing exits
+// we need to get that right, might want to add two extra locations for after
+// the trigger.
 const mtSabreNorthEntrance  = location(0x28, SBRN, 'Entrance').overworld()
-                                .connect(cordelPlainEast, teleport, talkedToLeafRabbit);
+                                .connect(cordelPlainEast, teleport, enterMtSabreNorth);
 const mtSabreNorthUpper     = location(0x28, SBRN, 'Upper').overworld()
                                 .from(mtSabreNorthEntrance, flight)
                                 .to(mtSabreNorthEntrance);
@@ -766,6 +790,9 @@ const mtSabreNorthTunnel10a = location(0x35, SBRN, 'Tunnel 10a (summit cave, fro
 const mtSabreNorthTunnel10b = location(0x35, SBRN, 'Tunnel 10b (summit cave, behind ice)')
                                 .cave()
                                 .connect(mtSabreNorthTunnel10a, destroyIce) // 64da:80
+                                // TODO - adjust the triggers so that learning
+                                // paralysis requires opening the prison door
+                                // (and killing kelbesque 1 unless wild warp)
                                 .trigger(learnedParalysis);
 const mtSabreNorthTunnel1   = location(0x38, SBRN, 'Tunnel 1 (leads from main entrance)')
                                 .cave()

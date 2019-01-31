@@ -16917,6 +16917,7 @@ NpcData_fa                                    ; Sahara - Elder House
         $1ab9e              .byte $xx,$xx,$xx,$xx
         $1aba2              .byte $xx
 ;;; ----------------------------------------------------------------
+;;; UNUSED
         $1aba3              .byte $xx,$xx
         $1aba5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1abb5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -24093,17 +24094,17 @@ BossPatternJump_09              ; Insect 1
 ;;; --------------------------------
 ObjectActionJump_63_GeneralKelbesque
         $1e95d  xx xx xx:   xxx $xxxx,x
-        $1e960  xx xx:      xxx $xx
-        $1e962  xx xx:      xxx #$xx
-        $1e964  xx xx xx:   xxx $xxxx
-        $1e967  xx xx:      xxx #$xx
+        $1e960  xx xx:      xxx + ; $1e967
+        $1e962  xx xx:       xxx #$xx
+        $1e964  xx xx xx:    xxx $xxxx
++       $1e967  xx xx:      xxx #$xx
         $1e969  xx xx xx:   xxx $35b07
         $1e96c  xx xx:      xxx #$xx
         $1e96e  xx xx xx:   xxx $1e400
 ;;; --------------------------------
 BossPatternJump_0a              ; Kelbesque 0
         $1e971  xx xx xx:   xxx $xxxx,x
-        $1e974  xx xx:      xxx $xx
+        $1e974  xx xx:       xxx >rts ; $1e9c5
         $1e976  xx xx:      xxx #$xx
         $1e978  xx xx xx:   xxx $xxxx
         $1e97b  xx xx:      xxx #$xx
@@ -24115,7 +24116,7 @@ BossPatternJump_0a              ; Kelbesque 0
         $1e98a  xx xx xx:   xxx $34c0e
         $1e98d  xx xx xx:   xxx $1fb29
         $1e990  xx xx xx:   xxx $xxxx
-        $1e993  xx xx:      xxx $xx
+        $1e993  xx xx:       xxx >rts ; $1e9c5
         $1e995  xx xx:      xxx #$xx
         $1e997  xx xx xx:   xxx $xxxx
         $1e99a  xx xx:      xxx #BGM_BOSS
@@ -24491,17 +24492,18 @@ BossPatternJump_16              ; Rage 7
 ;;; --------------------------------
 ObjectActionJump_66_Sabera
         $1ec7b  xx xx xx:   xxx $xxxx,x
-        $1ec7e  xx xx:      xxx $xx
-        $1ec80  xx xx:      xxx #$xx
-        $1ec82  xx xx xx:   xxx $xxxx
-        $1ec85  xx xx:      xxx #$xx
+        $1ec7e  xx xx:      xxx + ; $1ec85
+        $1ec80  xx xx:       xxx #$xx
+        $1ec82  xx xx xx:    xxx $xxxx
++       $1ec85  xx xx:      xxx #$xx
         $1ec87  xx xx xx:   xxx $35b07
         $1ec8a  xx xx:      xxx #$xx
         $1ec8c  xx xx xx:   xxx $1e400
 ;;; --------------------------------
 BossPatternJump_17              ; Sabera 0
         $1ec8f  xx xx xx:   xxx $xxxx,x
-        $1ec92  xx xx:      xxx $xx
+        ;; If the boss is not on screen, bail out
+        $1ec92  xx xx:       xxx >rts ; $1ecf4
         $1ec94  xx xx:      xxx #$xx
         $1ec96  xx xx xx:   xxx $xxxx
         $1ec99  xx xx:      xxx #$xx
@@ -24510,7 +24512,7 @@ BossPatternJump_17              ; Sabera 0
         $1eca1  xx xx:      xxx #$xx
         $1eca3  xx xx xx:   xxx $xxxx
         $1eca6  xx xx xx:   xxx $xxxx
-        $1eca9  xx xx:      xxx $xx
+        $1eca9  xx xx:       xxx >rts ; $1ecf4
         $1ecab  xx xx:      xxx #$xx
         $1ecad  xx xx xx:   xxx $xxxx
         $1ecb0  xx xx:      xxx #BGM_BOSS
@@ -24520,7 +24522,7 @@ BossPatternJump_17              ; Sabera 0
         $1ecba  xx xx xx:   xxx $xxxx
         $1ecbd  xx xx xx:   xxx $xxxx,x
         $1ecc0  xx xx:      xxx #$xx
-        $1ecc2  xx xx:      xxx $xx
+        $1ecc2  xx xx:       xxx >rts ; $1ecf4
         $1ecc4  xx xx xx:   xxx $xxxx,x
         $1ecc7  xx xx:      xxx #$xx
         $1ecc9  xx xx xx:   xxx $xxxx,x
@@ -24534,7 +24536,7 @@ BossPatternJump_17              ; Sabera 0
         $1ecdd  xx xx xx:   xxx $xxxx,x
         $1ece0  xx xx:      xxx $xx
         $1ece2  xx xx:      xxx #$xx
-        $1ece4  xx xx:      xxx $xx
+        $1ece4  xx xx:       xxx >rts ; $1ecf4
         $1ece6  xx xx:      xxx #$xx
         $1ece8  xx xx xx:   xxx $xxxx
         $1eceb  xx xx:      xxx #$xx
@@ -24649,17 +24651,17 @@ DataTable_1ed82
 ;;; --------------------------------
 ObjectActionJump_67_Mado
         $1edd4  xx xx xx:   xxx $xxxx,x
-        $1edd7  xx xx:      xxx $xx
-        $1edd9  xx xx:      xxx #$xx
-        $1eddb  xx xx xx:   xxx $xxxx
-        $1edde  xx xx:      xxx #$xx
+        $1edd7  xx xx:      xxx + ; $1edde
+        $1edd9  xx xx:       xxx #$xx
+        $1eddb  xx xx xx:    xxx $xxxx
++       $1edde  xx xx:      xxx #$xx
         $1ede0  xx xx xx:   xxx $35b07
         $1ede3  xx xx:      xxx #$xx
-        $1ede5  xx xx xx:   xxx $1e400
+        $1ede5  xx xx xx:   xxx ExecuteBossPattern
 ;;; --------------------------------
 BossPatternJump_1b              ; Mado 0
         $1ede8  xx xx xx:   xxx $xxxx,x
-        $1edeb  xx xx:      xxx $xx
+        $1edeb  xx xx:       xxx >rts ; $1ee34
         $1eded  xx xx xx:   xxx $1fb29
         $1edf0  xx xx:      xxx #$xx
         $1edf2  xx xx xx:   xxx $xxxx
@@ -24670,7 +24672,7 @@ BossPatternJump_1b              ; Mado 0
         $1edff  xx xx:      xxx #$xx
         $1ee01  xx xx xx:   xxx $xxxx
         $1ee04  xx xx xx:   xxx $xxxx
-        $1ee07  xx xx:      xxx $xx
+        $1ee07  xx xx:       xxx >rts ; $1ee34
         $1ee09  xx xx:      xxx #$xx
         $1ee0b  xx xx xx:   xxx $xxxx
         $1ee0e  xx xx:      xxx #BGM_BOSS
@@ -24682,7 +24684,7 @@ BossPatternJump_1b              ; Mado 0
         $1ee1d  xx xx xx:   xxx $xxxx,x
         $1ee20  xx xx:      xxx $xx
         $1ee22  xx xx:      xxx #$xx
-        $1ee24  xx xx:      xxx $xx
+        $1ee24  xx xx:       xxx >rts ; $1ee34
         $1ee26  xx xx:      xxx #$xx
         $1ee28  xx xx xx:   xxx $xxxx
         $1ee2b  xx xx:      xxx #$xx
@@ -24818,10 +24820,10 @@ DataTable_1ef28
 ;;; --------------------------------
 ObjectActionJump_68_Karmine
         $1ef48  xx xx xx:   xxx $xxxx,x
-        $1ef4b  xx xx:      xxx $xx
-        $1ef4d  xx xx:      xxx #$xx
-        $1ef4f  xx xx xx:   xxx $xxxx
-        $1ef52  xx xx:      xxx #$xx
+        $1ef4b  xx xx:      xxx + ; $1ef52
+        $1ef4d  xx xx:       xxx #$xx
+        $1ef4f  xx xx xx:    xxx $xxxx
++       $1ef52  xx xx:      xxx #$xx
         $1ef54  xx xx xx:   xxx $35b07
         $1ef57  xx xx:      xxx #$xx
         $1ef59  xx xx xx:   xxx $1e400
@@ -31369,6 +31371,7 @@ RomBank_12                      ; @@ $8000
 ;;; --------------------------------
 ;;; called by $2665f when continuing (starting?) a new game;
 ;;; appears to blank out a bunch of nametables (maybe only the second table?)
+;;; also blanks between screens in title movie
         $241b0  xx xx:      xxx #$xx
         $241b2  xx xx xx:   xxx PPUADDR ; $2006
         $241b5  xx xx:      xxx #$xx
@@ -32511,6 +32514,23 @@ DataTable_26349
         $26353  xx xx:      xxx $xx
         $26355  xx:         xxx
 ;;; --------------------------------
+        ;; This writes a message in the green computer at the start.
+        ;; In that case. $90 points to something in the vicinity of $277cf.
+        ;; The spaces interleaving each letter are written to $6002, which
+        ;; is read around $3c6be.  The letters end up in the $20a* and $20b*
+        ;; PPU addresses (nametable row 05) while the spaces end up in the
+        ;; $208* and $209* addresses (row 04).  Apparently it's set for
+        ;; vertical mirroring.  Given that, we could potentially cram two
+        ;; full rows of text here if we wanted to.
+        ;;   VERSION     SEED
+        ;;   0f3cb78     6bc3078d
+        ;; =====
+        ;;   FLAGS Ibk Ict Im M Hmx ...
+        ;;         Gw ...
+        ;; If we leave space for "FLAGS " that leaves 36 chars for the options,
+        ;; though we could expand to 72 if we didn't mind going into the next
+        ;; spot.
+        ;; We should also provide a tool to extract the data from a ROM.
         $26356  xx xx xx:   xxx $xxxx
         $26359  xx xx:      xxx $xx
         $2635b  xx xx:      xxx $xx
@@ -34236,20 +34256,14 @@ DataTable_27162
         $27790              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $277a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $277b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $277c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $277d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $277e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $277f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $27800              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $27810              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $27820              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $27830              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $27840              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $27850              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $27860              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $27870              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $27880              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $27890              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $277c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; This is a data table containing text for the green computer
+        $277cf              .byte "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        $277ff              .byte "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        $2782f              .byte "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        $2785f              .byte "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        $2788f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $2789f              .byte $xx
         $278a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $278b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $278c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42400,7 +42414,7 @@ CollisionJump_00_SwordHitsEnemy
         $350aa  xx xx:      xxx CurrentLocation
         $350ac  xx xx:      xxx #LOC_DYNA
         $350ae  xx xx:      xxx + ; $350bb
-        ;; Dyna-only handling
+        ;;                   Dyna-only handling
         $350b0  xx xx:       xxx #$xx
         $350b2  xx xx xx:    xxx $xxxx
         $350b5  xx xx xx:    xxx $xxxx
@@ -43885,10 +43899,10 @@ SpendMPOrDoubleReturn
 ;;; --------------------------------
         $35b07  xx xx:      xxx $xx
         $35b09  xx xx xx:   xxx $xxxx,x
-        $35b0c  xx xx:      xxx $xx
-        $35b0e  xx xx xx:   xxx $34c0e
-;;; --------------------------------
-        $35b11  xx xx:      xxx $xx
+        $35b0c  xx xx:      xxx + ; $35b11
+        $35b0e  xx xx xx:    xxx LoadPalettesForLocation
+        ;; --------------------------------
++       $35b11  xx xx:      xxx $xx
         $35b13  xx:         xxx
         $35b14  xx xx:      xxx $xx
         $35b16  xx xx:      xxx #$xx
@@ -45156,13 +45170,18 @@ ObjectActionJump_77
         $36518  xx:         xxx
 ;;; --------------------------------
 ObjectActionJump_39
+        ;; This appears in the hallway above zebu in the fortress.
+        ;; It MUST spawn in the slot immediately following zebu
+        ;; (cf. $049f,x is actually $04a0,(x-1)) and locks the screen
+        ;; as long as zebu's slot is still occupied.  we should just
+        ;; delete this object.
         $36519  xx xx xx:   xxx $xxxx,x
-        $3651c  xx xx:      xxx $xx
-        $3651e  xx xx xx:   xxx $xxxx,x
-        $36521  xx xx xx:   xxx $xxxx
-        $36524  xx:         xxx
-;;; --------------------------------
-        $36525  xx xx xx:   xxx $xxxx,x
+        $3651c  xx xx:      xxx + ; $36525
+        $3651e  xx xx xx:    xxx $xxxx,x
+        $36521  xx xx xx:    xxx $xxxx
+        $36524  xx:          xxx
+        ;; --------------------------------
++       $36525  xx xx xx:   xxx $xxxx,x
         $36528  xx xx:      xxx ++ ; $3653f
         $3652a  xx xx xx:   xxx $xxxx,x
         $3652d  xx xx:      xxx + ; $3653e
@@ -46936,7 +46955,7 @@ ObjectActionJump_34
         $37330  xx xx:      xxx #$xx
         $37332  xx:         xxx
         $37333  xx xx xx:   xxx $xxxx,x
-        $37336  xx xx xx:   xxx $3572d
+        $37336  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
 ObjectActionJump_41
         $37339  xx xx xx:   xxx $xxxx,x
@@ -56162,7 +56181,7 @@ MainGameModeJump_11_Dialog
         $3d10d  xx xx:      xxx $xx ; 0..31 from high 3 bits of first byte of dialog
         $3d10f  xx:         xxx
         $3d110  xx xx xx:    xxx LoadAndShowDialog
-        $3d113  xx:         xxx
+        $3d113  xx:         xxx ; low: $15: $2a000, high: $16: $2c000 or $18: $30000
         $3d114  xx:         xxx
         $3d115  xx:         xxx
         $3d116  xx xx xx:   xxx DialogFollowupActionJump,y ; $3d123

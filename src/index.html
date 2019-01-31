@@ -180,11 +180,13 @@ setTimeout(function() {
     </div>
     <div class="checkbox">Ts: Leather boots are speed boots</div>
     <div class="flag-body">
-      Wearing leather boots increases player walking speed.
+      Wearing leather boots increases player walking speed.  Note that this also
+      includes a slight change to routing logic, since speed boots will allow
+      climbing the slope in Mt. Sabre West to reach the Tornado Bracelet chest.
     </div>
     <div class="checkbox">Td: Deo's pendant works while moving</div>
     <div class="checkbox">Tw: Disable wild warp</div>
-
+    <!-- TODO - options for EXP and teleport out of tower? -->
 
     <h1>Routing</h1>
     <div class="checkbox">Rf: Early flight</div>
@@ -222,14 +224,45 @@ setTimeout(function() {
 
 
     <h1>Glitches</h1>
+    The routing logic can be made aware of the following glitches.  If selected,
+    it will assume that the glitch can be performed when verifying that a game
+    is winnable.  Enabling these glitches tends to increase the randomness of the
+    shuffle, since there are more valid options.
     <div class="checkbox">Gf: Ghetto flight may be required</div>
-    <div class="checkbox">Gt: Talk glitch may be required</div>
+    <div class="flag-body">
+      Progression may require using Rabbit Boots and the dolphin to reach Swan
+      before the Angry Sea can be calmed and before Flight is available.
+    </div>
     <div class="checkbox">Gr: Rabbit skip may be required</div>
+    <div class="flag-body">
+      Progression may require entering Mt. Sabre North from Cordel Plain with
+      only the Teleport spell, without having triggered the Leaf villagers'
+      abduction and talking to the rabbit (with Telepathy).
+    </div>
+    <div class="checkbox">Gt: Talk glitch may be required</div>
+    <div class="flag-body">
+      Progression may require glitching past guards without Change or Paralysis,
+      or people turned to stone without a Flute of Lime.  The logic <i>hopefully</i>
+      ensures that using the Flute of Lime on the two statues will not break the
+      game, but we're less confident that this is always the case, so for safety
+      we recommend always glitching past the statues if this option is set, even if
+      the first Flute of Lime has been found.
+    </div>
     <div class="checkbox hard">Gs: Sword charge glitch may be required</div>
+    <div class="flag-body">
+      Progression may require using the sword charge glitch to destroy walls or
+      form bridges without actually possessing the correct orb.
+    </div>
     <div class="checkbox hard">Gw: Wild warp may be required</div>
+    <div class="flag-body">
+      Progression may require using "wild warp" (holding A and B on controller 2
+      and tapping A on controller 1) to travel to parts of the game that would
+      otherwise be unreachable.
+    </div>
 
 
     <h1>Easy Mode</h1>
+    The following options make parts of the game easier.
     <div class="checkbox">Er: Guarantee refresh</div>
     <div class="flag-body">
       Guarantees the Refresh spell will be available before fighting Tetrarchs.
@@ -245,6 +278,14 @@ setTimeout(function() {
       Less grinding will be required to "keep up" with the game difficulty.
     </div>
     
+
+    <h1>Debug Mode</h1>
+    These options are helpful for exploring or debugging.  Note that, while they
+    do not directly affect any randomization, they <i>do</i> factor into the seed
+    to prevent cheating.
+    <div class="checkbox">Ds: Generate a spoiler log</div>
+    <div class="Checkbox">Di: Player never dies</div>
+    <!-- TODO - quick itemget/teleport options? -->
 
 
     <!-- DONE -->

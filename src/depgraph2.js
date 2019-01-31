@@ -38,6 +38,14 @@ import { Graph, Area, Boss, Condition, Item, Location, Magic, Option, Trigger } 
 //            1 - rebalance swords
 //            2 - rebalance items (incl. medical herb)
 //            3 - rebalance both
+
+// hell mode
+//   - gas mask not guaranteed
+//   - matching sword not guaranteed
+//   - medical herb not buffed
+//   - scaling to 47 in tower
+//   - slower EXP scaling
+
 // NOT CHECKSUMMED:
 //   equip: 0 - no change
 //          1 - auto-equip power
@@ -327,7 +335,8 @@ const flight                = magic(0x48, 'Flight')
 const fluteOfLimeChest      = item(0x28, "Flute of Lime").chest(0x5b).key();
 const fruitOfPowerVampire2  = fruitOfPower
                                 .bossDrop(0x0c, 0x61)
-                                .npcSpawn(0xcc);
+                                .npcSpawn(0xcc)
+                                .key();
 const mimic                 = item(0x70, 'Mimic'); // special handling to dup
 
 
@@ -1627,6 +1636,7 @@ export const shuffle = async (rom, random, log = [], opts = {}) => {
       swap(w, -1);
     }
     // test
+    let badMimic = 
     const {win, path} = graph.traverse();
     if (win) {
       //console.log(`successful shuffle of ${count} items`);

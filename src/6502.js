@@ -1,3 +1,25 @@
+// export function adc(arg) {}
+// export function asl(arg = null) {}
+// export function bcc(dest) {}
+// export function bcs(dest) {}
+// export function label(name) {}
+// export function org(address) {}
+// export function bank(base, mapped, length) {}
+
+// function patchFoo({adc, asl, bcc, bcs, lda, sta, pha, pla, label}) {
+//   pha();
+//   lda(0x32);
+//   sta(difficulty)
+//   const x = label();
+//   lda(zp(0x12).x);
+//   sta(zp(0x34).y)
+//   dex();
+//   bmi(x);
+//   pla();
+//   rts();
+// }
+
+
 // Useful for patching ROMs.
 class Assembler {
   constructor(filename) {

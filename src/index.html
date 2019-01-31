@@ -1,8 +1,18 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="main.css">
+
+<nav>
+  <ul>
+    <li class="option"><a href="/">Play</a>
+    <li class="option"><a href="/stable/track">Track</a>
+    <li class="option"><a href="/stable/help">Help</a>
+    <!-- TODO: better process for stable version numbers. -->
+    <li id="version">
+  </ul>
+</nav>
+
 <script type="module" src="main.js"></script>
-<div id="notice" style="display:none">
-Note: this tool currently only works in current versions of Google Chrome
-(or there was an error in the script).
-</div>
 <script>
 // Display a message if the main script hasn't already removed it.
 setTimeout(function() {
@@ -10,6 +20,291 @@ setTimeout(function() {
   if (notice) notice.style.display = 'block';
 }, 1000);
 </script>
+
+<div class="box">
+  <div class="bar">Introduction</div>
+  <div class="content">
+    Welcome to Crystalis Randomizer.
+  </div>
+</div>
+
+<div id="notice" class="box" style="display: none;">
+  <div class="bar">Warning</div>
+  <div class="content">
+    You are attempting to use this randomizer with an unsupported browser.
+    Currently only recent versions of <a href="https://google.com/chrome">Google
+    Chrome</a> have been verified to work correctly.  Stay tuned for updates
+    that may work in other browsers.
+  </div>
+</div>
+
+<div id="getting-started" class="box">
+  <div class="bar">Getting Started</div>
+  <div class="content">
+    <label class="file-picker">
+      Select Crystalis ROM File
+      <input type="file" accept=".nes" id="pick-file" style="display: none;">
+    </label>
+  </div>
+</div>
+
+<div id="select-options" class="box hidden">
+  <div class="bar">Select Options</div>
+  <div class="content">
+    <!-- TODO - two columns? -->
+    <h1>Items</h1>
+    Items are broken into five pools: <i>key items</i> includes all
+    swords, orbs, bracelets, and progression items (rabbit boots,
+    gas mask, and all items in the third row: windmill key through
+    bow of truth), as well as anything dropped by a boss (one each
+    of fruit of power, opel statue, fruit of repun, sacred shield,
+    and psycho armor); <i>bonus items</i> includes items that are
+    never required but are nice to have, specifically the remaining
+    six passive effect items in the second inventory row; <i>consumable
+    items</i> includes everything else found in chests: primarily first
+    row one-use items, but also includes psycho shield and battle armor;
+    <i>magic</i> is the eight spells; and <i>mimics</i> are the 12 trap
+    chests found in various places. These pools can be shuffled together,
+    kept separate, or left unshuffled.
+    <div class="checkbox">Ik: Shuffle key items</div>
+    <div class="checkbox">Im: Shuffle magics</div>
+    <div class="checkbox">Ib: Shuffle bonus items</div>
+    <div class="checkbox">Ic: Shuffle consumables</div>
+    <div class="checkbox hard">Ibc: Shuffle bonus items with consumables</div>
+    <div class="checkbox">Ibk: Shuffle key items with bonus items</div>
+    <div class="checkbox">Ibt: Shuffle bonus items with traps</div>
+    <div class="checkbox">Ict: Shuffle consumables with traps</div>
+    <div class="checkbox hard">Ibct: Shuffle bonus, consumables with traps</div>
+    <div class="checkbox">Ikt: Shuffle key items with traps</div>
+    <div class="checkbox">Ikm: Shuffle key items with magic</div>
+    <div class="checkbox">Ikmt: Shuffle key items and magic with traps</div>
+    <div class="checkbox">Ibkt: Shuffle bonus and key items with traps</div>
+    <div class="checkbox hard">Ibckt: Shuffle bonus, key, and consumable items with traps</div>
+    <div class="checkbox">Ibkmt: Shuffle bonus and key items and magic with traps</div>
+    <div class="checkbox hard">Ibckmt: Shuffle all items and traps together</div>
+    <!-- TODO - Is: Shuffle shops -->
+
+    <h1>Hard mode</h1>
+    <div class="checkbox hard">Hw: Battle magic not guaranteed</div>
+    <div class="flag-body">
+      Normally, the logic will guarantee that level 3 sword charges are
+      available before fighting the tetrarchs (with the exception of Karmine,
+      who only requires level 2).  This disables that check.
+    </div>
+
+    <div class="checkbox hard">Hb: Barrier not guaranteed</div>
+    <div class="flag-body">
+      Normally, the logic will guarantee Barrier before entering Stxy or
+      fighting Karmine.  This disables that check.      
+    </div>
+
+    <div class="checkbox hard">Hm: Don't buff medical herb</div>
+    <div class="flag-body">
+      Medical herb is not buffed to heal 64 damage, which is helpful to make
+      up for cases where Refresh is unavailable early.
+    </div>
+
+    <div class="checkbox hard">Hg: Gas mask not guaranteed</div>
+    <div class="flag-body">
+      The logic will not guarantee gas mask before needing to enter the swamp.
+    </div>
+
+    <div class="checkbox hard">Hs: Matching sword not guaranteed</div>
+    <div class="flag-body">
+      Player may be required to fight bosses with the wrong sword.
+    </div>
+
+    <div class="checkbox hard">Ht: Max out scaling level in tower</div>
+    <div class="flag-body">
+      Scaling level immediately maxes out upon stepping into tower.
+    </div>
+
+    <div class="checkbox hard"Hx: Experience scales slower</div>
+    <div class="flag-body">
+      Morw griding will be reuired for comparable level
+    </div>
+
+
+    <h1>Monsters</h1>
+    <div class="checkbox">M: Randomize monsters</div>
+    <div class="flag-body">
+      Monster locations are shuffled, with the exception of sea creatures and
+      tower robots.
+      <!-- <div class="checkbox hard">Mr: No safety checks</div> -->
+      <!-- <div class="flag-body"> -->
+      <!--   Normally there are some reasonability limits on the monsters -->
+      <!--   that can be shuffled (flyers only in larger areas, and at most -->
+      <!--   one or two; (future: large monsters and flail swingers don't -->
+      <!--   crowd out small hallways, etc), but these checks can be disabled -->
+      <!--   for extra craziness and challenge. -->
+      <!-- </div> -->
+    </div>
+    <!-- <div class="checkbox bad">Ms: Don't scale monster difficulty</div> -->
+    <!-- <div class="flag-body"> -->
+    <!--   Monster difficulty normally scales with game progression rather -->
+    <!--   than being hard-coded based on location to ensure that monsters -->
+    <!--   stay relevant throughout the game.  The current difficulty level -->
+    <!--   can be seen next to the player's experience level on the right -->
+    <!--   side of the HUD.  This scaling can be turned off, but it is not -->
+    <!--   recommended. -->
+    <!-- </div> -->
+
+    <!-- <h1>Weapons, armor, and item balance</h1> -->
+    <!-- <div class="checkbox">W: Normalize weapons and armor</div> -->
+    <!-- <div class="flag-body"> -->
+    <!--   Sword attack values no longer depend on element, but instead on the -->
+    <!--   number of orb/bracelet upgrades: just the sword is 2; sword plus one -->
+    <!--   upgrade is 4; sword plus both upgrades is 8.  Stab damage is always -->
+    <!--   fixed at 2, rather than effectively doubling the sword's base damage. -->
+    <!--   Enemies no longer have minimum player level requirements.  All sword -->
+    <!--   hits will now do at least one damage (when a hit "pings", exactly one -->
+    <!--   damage is dealt), so no enemy is unkillable. -->
+
+    <!--   <p>Base armor/shield defense is halved, and capped at twice the player -->
+    <!--   level, so that (a) player level has more impact, and (b) really good -->
+    <!--   armors aren't overpowered in early game. -->
+    <!-- </div> -->
+
+    <!-- <div class="checkbox">Wp: Nerf power ring</div> -->
+    <!-- <div class="flag-body"> -->
+    <!--   TODO - don't necessarily want to require clicking through to get -->
+    <!--   full list of changes, but also want to document in various places -->
+    <!--   and want reasonable defaults. -->
+    <!-- </div> -->
+
+    <h1>Tweaks</h1>
+    <div class="checkbox">Ta: Automatically equip orbs and bracelets</div>
+    <div class="flag-body">
+      Adds a quality-of-life improvement to automatically equip the
+      corresponding orb/bracelet whenever changing swords.
+    </div>
+    <div class="checkbox">Ts: Leather boots are speed boots</div>
+    <div class="flag-body">
+      Wearing leather boots increases player walking speed.
+    </div>
+    <div class="checkbox">Td: Deo's pendant works while moving</div>
+    <div class="checkbox">Tw: Disable wild warp</div>
+
+
+    <h1>Routing</h1>
+    <div class="checkbox">Rf: Early flight</div>
+    <div class="flag-body">
+      Does not directly change where flight will be, but causes the logic
+      to understand all the things flight unlocks, which tends to have the
+      effect of making show up very early and obsoleting a large number
+      of other items before they're even found.  By turning this off, the
+      logic will only take into account spots where flight is absolutely
+      required, leveling the playing field a bit compared with other magic.
+    </div>
+
+    <div class="checkbox">Rt: No teleport to Shyron</div>
+    <div class="flag-body">
+      Normally when acquiring the thunder sword, the player is instantly
+      teleported to Shyron (and immediately activates the warp point; talking
+      to Asina will teleport back to the start, in case no other means of
+      return is available). This flag disables that teleport and the
+      subsequent routing logic that would take advantage of it.
+    </div>
+
+    <div class="checkbox">Rp: Wind-waterfall passage</div>
+    <div class="flag-body">
+      Opens a passage between Valley of Wind (lower right side) and
+      Lime Tree Valley.
+    </div>
+
+    <div class="checkbox">Rl: No "free lunch" magic</div>
+    <div class="flag-body">
+      Disables "free lunch" magics that only require stepping on a square to
+      learn (specifally Barrier, TODO: Paralysis).  Instead, Barrier requires
+      the seas to be calmed, and Paralysis will (once implemented) require the
+      prison door to have been opened.
+    </div>
+
+
+    <h1>Glitches</h1>
+    <div class="checkbox">Gf: Ghetto flight may be required</div>
+    <div class="checkbox">Gt: Talk glitch may be required</div>
+    <div class="checkbox">Gr: Rabbit skip may be required</div>
+    <div class="checkbox hard">Gs: Sword charge glitch may be required</div>
+    <div class="checkbox hard">Gw: Wild warp may be required</div>
+
+
+    <h1>Easy Mode</h1>
+    <div class="checkbox">Er: Guarantee refresh</div>
+    <div class="flag-body">
+      Guarantees the Refresh spell will be available before fighting Tetrarchs.
+    </div>
+
+    <div class="checkbox">Em: Extra buff medical herb</div>
+    <div class="flag-body">
+      Buff medical herb to heal 96 instead of 64.
+    </div>
+
+    <div class="checkbox">Ex: Experience scales faster</div>
+    <div class="flag-body">
+      Less grinding will be required to "keep up" with the game difficulty.
+    </div>
+    
+
+
+    <!-- DONE -->
+
+
+
+    <h1>Items</h1>
+    <input type="checkbox" id="flag-I" checked>
+    <label class="flag-checkbox" for="flag-I">
+      <div class="boxed">I</div>
+      <div class="title">Randomize items</div>
+    </label>
+    <div class="flag-body auto-hide">
+      <input type="checkbox" id="flag-Ik">
+      <label class="flag-checkbox" for="flag-Ik">
+        <div class="boxed">Ik</div>
+        <div class="title">Shuffle key items</div>
+      </label>
+      <div class="flag-body audo-hide">
+        Key items will be shuffled amongst themselves.
+        Key items are all items normally required for progression, including all
+        swords, orbs, bracelets, rabbit boots, gas mask, and all items in the
+        "quest item" row (statue of onyx, ..., bow of truth).
+      </div>
+
+      <input type="checkbox" id="flag-Im">
+      <label class="flag-checkbox" for="flag-Im">
+        <div class="boxed">Im</div>
+        <div class="title">Shuffle magic</div>
+      </label>
+      <div class="flag-body audo-hide">
+        The eight magic spells will be shuffled amongst themselves.
+      </div>
+
+      <input type="checkbox" id="flag-Ib">
+      <label class="flag-checkbox" for="flag-I1">
+        <div class="boxed">Ib</div>
+        <div class="title">Bonus items</div>
+      </label>
+      <div class="flag-body audo-hide">
+        Bonus items will be shuffled amonst themselves.
+        Bonus items include the six non-key passive items; shield ring,
+        iron necklace, leather boots, power ring, warrior ring, and deo's pendant.
+      </div>
+
+      <input type="checkbox" id="flag-Ic">
+      <label class="flag-checkbox" for="flag-Ic">
+        <div class="boxed">Ic</div>
+        <div class="title">Ordinary items</div>
+      </label>
+      <div class="flag-body audo-hide">
+        Ordinary itemss
+      </div>
+    </div>
+    
+
+
+  </div>
+</div>
+
 <h1>Crystalis Randomizer</h1>
 <div id="build-info"></div>
 <p><b>NOTE:</b> this is a <b>development snapshot pre-release beta</b> version.

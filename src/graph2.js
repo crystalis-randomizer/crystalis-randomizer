@@ -778,7 +778,9 @@ export class Location extends Node {
     if (item instanceof ItemGet) {
       item = item.chest(chest);
     }
-    this.chests.push(item.objectSlot(this.id, spawn));
+    const slot = item.objectSlot(this.id, spawn);
+    this.chests.push(slot);
+    if (slot.index == 0x70) slot.type = 'trap';
     return this;
   }
 

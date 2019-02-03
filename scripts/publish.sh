@@ -52,7 +52,7 @@ fi
   sed -e "/BUILD_HASH/ s/latest/$HASH/" -e "/BUILD_DATE/ s/current/$DATE/" \
       patch.js >| "$DIR/patch.js"
   echo "<a href=\"$HASH/\">$HASH: $DATE</a><br>" >> "$TMP/r/versions.html"
-  sed 's,<!--base-->,<base href="stable">,g' index.html >| "$TMP/r/index.html"
+  sed 's,<!--base-->,<base href="/stable/">,g' index.html >| "$TMP/r/index.html"
 )
 (
   cd $TMP/r

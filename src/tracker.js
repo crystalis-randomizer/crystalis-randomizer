@@ -2,6 +2,7 @@
 // Uses flagset to figure out actual dependencies.
 
 import {generate} from './depgraph2.js';
+import {FlagSet} from './flagset.js';
 
 const BOXES = `
 sword-of-wind $00 WIND
@@ -296,17 +297,18 @@ class Graph {
   }
 }
 
-const OPTS = {
-  'speed-boots': true,
-  'glitch-ghetto-flight': true,
-  'glitch-talk': true,
-  'route-no-free-barrier': true,
-  'route-shyron-teleport': true,
-  'route-early-flight': true,
-  'tracker': true,
-};
+let flags = location.hash.substring(1);
+if (!flags) flags = 'Rflpt Ts';
+//   'speed-boots': true,
+//   'glitch-ghetto-flight': true,
+//   'glitch-talk': true,
+//   'route-no-free-barrier': true,
+//   'route-shyron-teleport': true,
+//   'route-early-flight': true,
+//   'tracker': true,
+// };
 
-const graph = new Graph(generate(OPTS));
+const graph = new Graph(generate(new FlagSet(flags + ' Dt Gfts')));
 for (let box of BOXES.split('\n')) {
   box = box.trim();
   if (!box) continue;

@@ -2147,7 +2147,7 @@ report.push(`    pal: ${(m.pal2||0).toString(16)} ${(m.pal3||0).toString(16)}`);
 (this.report[`mon-${m.id.toString(16)}`] = this.report[`mon-${m.id.toString(16)}`] || []).push('$' + location.id.toString(16));
         const slot = slots[eligible];
         const objData = location.objects[slot - 0x0d];
-        if (slot in nonFlyers) {
+        if (slot in nonFlyers && m.id != 0x5d) { // swamp puffs ok in walls
           objData[0] += nonFlyers[slot][0];
           objData[1] += nonFlyers[slot][1];
         }
@@ -2261,11 +2261,19 @@ const MONSTER_ADJUSTMENTS = {
     maxFlyers: 2,
   },
   [0x1a]: { // Swamp
-    skip: 'add',
+    //skip: 'add',
     maxFlyers: 2,
     fixedSlots: {
       pat1: 0x4f,
       pal3: 0x23,
+    },
+    nonFlyers: { // TODO - might be nice to keep puffs working?
+      [0x10]: [4, 0],
+      [0x11]: [5, 0],
+      [0x12]: [4, 0],
+      [0x13]: [5, 0],
+      [0x14]: [4, 0],
+      [0x15]: [4, 0],
     },
   },
   [0x1b]: { // Amazones

@@ -47,8 +47,12 @@ const main = () => {
 
 const addSeedListeners = () => {
   const input = document.getElementById('seed');
-  input.addEventListener('keyup', () => { seed = input.value; });
-  input.addEventListener('change', () => { seed = input.value; });
+  const update = () => {
+    seed = input.value;
+    updateDom();
+  };
+  input.addEventListener('keyup', update);
+  input.addEventListener('change', update);
 };
 
 const initializeStateFromHash = () => {

@@ -2147,7 +2147,7 @@ report.push(`    pal: ${(m.pal2||0).toString(16)} ${(m.pal3||0).toString(16)}`);
 (this.report[`mon-${m.id.toString(16)}`] = this.report[`mon-${m.id.toString(16)}`] || []).push('$' + location.id.toString(16));
         const slot = slots[eligible];
         const objData = location.objects[slot - 0x0d];
-        if (slot in nonFlyers && m.id != 0x5d) { // swamp puffs ok in walls
+        if (slot in nonFlyers) {
           objData[0] += nonFlyers[slot][0];
           objData[1] += nonFlyers[slot][1];
         }
@@ -2229,9 +2229,9 @@ report.push(`    slot ${slot.toString(16)}: objData=${objData}`);
 }
 
 const FLYERS = new Set([0x59, 0x5c, 0x6e, 0x6f, 0x81, 0x8a, 0xa3, 0xc4]);
-const MOTHS_AND_BATS = new Set([0x55, 0x7c, 0xbc, 0xc1]);
+const MOTHS_AND_BATS = new Set([0x55, /* swamp plant */ 0x5d, 0x7c, 0xbc, 0xc1]);
 const SWIMMERS = new Set([0x75, 0x76]);
-const STATIONARY = new Set([0x5d, 0x77, 0x87]);  // swamp plant, kraken, sorceror
+const STATIONARY = new Set([0x77, 0x87]);  // kraken, sorceror
 
 // constrains pat0 if map has a treasure chest on it
 const TREASURE_CHEST_BANKS = new Set([

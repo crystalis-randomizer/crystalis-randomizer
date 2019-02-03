@@ -3,93 +3,162 @@ import {Rom} from './view/rom.js';
 import {Random} from './random.js';
 import {shuffle as shuffleDepgraph} from './depgraph2.js';
 import {crc32} from './crc32.js';
+import {FlagSet} from './flagset.js';
 
 // TODO - to shuffle the monsters, we need to find the sprite palttes and
 // patterns for each monster.  Each location supports up to two matchups,
 // so can only support monsters that match.  Moreover, different monsters
 // seem to need to be in either slot 0 or 1.
 
-
 // Pull in all the patches we want to apply automatically.
 // TODO - make a debugger window for patches.
 export default ({
   async apply(rom, hash) {
-    // Rearrange things first before anything else happens!
-    rearrangeTriggersAndNpcs.apply(rom);
-    connectLeafToLimeTree.apply(rom);
-    openSwanFromEitherSide.apply(rom);
-
-    // Pick a seed.
-    let seed;
-    if (hash['seed']) {
-      seed = hash['seed'];
-      if (typeof seed == 'string') seed = Number.parseInt(hash['seed'], 16);
-    } else {
+    // Look for flag string and hash
+    let flags;
+    if (!hash['seed']) {
       // TODO - send in a hash object with get/set methods
-      hash['seed'] = (seed = Math.floor(Math.random() * 0x100000000)).toString(16);
-      window.location.hash += '&seed=' + seed.toString(16);
+      hash['seed'] = parseSeed('').toString(16);
+      window.location.hash += '&seed=' + hash['seed'];
+    }
+    if (hash['flags']) {
+      flags = new FlagSet(hash['flags']);
+    } else {
+      flags = new FlagSet('Em Gt Mr Rlpt Sbk Sct Sm Tasd');
     }
     for (const key in hash) {
       if (hash[key] === 'false') hash[key] = false;
     }
-    const random = new Random(seed);
-    const log = [];
-    await shuffleDepgraph(rom, random, log, hash);
-
-    // Parse the rom and apply other patches.
-    const parsed = new Rom(rom);
-    adjustObjectDifficultyStats(rom, parsed);
-    shuffleMonsters(rom, parsed, random);
-    //shuffleBonusItems(rom, parsed, random);
-    fixShaking.apply(rom);
-    preventSwordClobber.apply(rom);
-    upgradeBallsToBracelets.apply(rom);
-    preventNpcDespawns.apply(rom);
-    allowTeleportOutOfTower.apply(rom);
-    buffDeosPendant.apply(rom);
-    barrierRequiresCalmSea.apply(rom);
-    scaleDifficultyLib.apply(rom);
-    nerfArmors.apply(rom);
-    fixVampire.apply(rom);
-    displayDifficulty.apply(rom);
-    itemLib.apply(rom);
-    buffMedicalHerb.apply(rom);
-
-    //noTeleportOnThunderSword.apply(rom);
-    asinaTeleportsToMezameShrine.apply(rom);
-
-    //quickChangeItems.apply(rom);
-
-    // These need to be at the bottom because the modify previous patches.
-    leatherBootsForSpeed.apply(rom);
-    //installInGameTimer.apply(rom); - this is a tough one.
-    if ('nodie' in hash) neverDie.apply(rom);
-    stampVersionSeedAndHash(rom, seed);
-
-    // BELOW HERE FOR OPTIONAL FLAGS:
-
-    autoEquipBracelet.apply(rom);
-    // do any "vanity" patches here...
-    console.log('patch applied');
-    return log.join('\n');
-  },
+    await shuffle(rom, parseSeed(hash['seed']), flags);
+  }
 });
 
+export const parseSeed = (/** string */ seed) => /** number */ {
+  if (!seed) return Math.floor(Math.random() * 0x100000000);
+  if (/^[0-9a-f]{1,8}$/.test(seed)) return Number.parseInt(seed, 16);
+  return crc32(seed);
+}
+
+export const shuffle = async (rom, seed, flags, log = undefined, progress = undefined) => {
+  // First turn the seed into something useful.
+  if (typeof seed !== 'number') throw new Error('Bad seed');
+  seed = (seed ^ crc32(String(flags))) >>> 0;
+
+  // Rearrange things first before anything else happens!
+  watchForFlag0.apply(rom);
+  rearrangeTriggersAndNpcs.apply(rom);
+  if (flags.check('Rd')) requireHealedDolphinToRide.apply(rom);
+  if (flags.check('Rp')) connectLeafToLimeTree.apply(rom);
+  openSwanFromEitherSide.apply(rom);
+
+  const random = new Random(seed);
+  await shuffleDepgraph(rom, random, log, flags, progress);
+
+  // Parse the rom and apply other patches.
+  const parsed = new Rom(rom);
+  rescaleMonsters(rom, parsed);
+  if (flags.check('Mr')) shuffleMonsters(rom, parsed, random);
+  identifyKeyItemsForDifficultyBuffs(parsed);
+
+  fixShaking.apply(rom);
+  preventSwordClobber.apply(rom);
+  upgradeBallsToBracelets.apply(rom);
+  preventNpcDespawns.apply(rom);
+  allowTeleportOutOfTower.apply(rom);
+  if (flags.check('Td')) buffDeosPendant.apply(rom);
+  if (flags.check('Rl')) {
+    // TODO - paralysis requires prison key
+    barrierRequiresCalmSea.apply(rom);
+  }
+  scaleDifficultyLib.apply(rom);
+  nerfArmors.apply(rom);
+  fixVampire.apply(rom);
+  displayDifficulty.apply(rom);
+  itemLib.apply(rom);
+
+  if (flags.check('Em')) {
+    buffMedicalHerb3x.apply(rom);
+  } else if (!flags.check('Hm')) {
+    buffMedicalHerb2x.apply(rom);
+  }
+
+  if (flags.check('Rt')) {
+    asinaTeleportsToMezameShrine.apply(rom);
+  } else {
+    noTeleportOnThunderSword.apply(rom);
+  }
+
+  //quickChangeItems.apply(rom);
+
+  // These need to be at the bottom because the modify previous patches.
+  if (flags.check('Ts')) leatherBootsForSpeed.apply(rom);
+  //installInGameTimer.apply(rom); - this is a tough one.
+  if (flags.check('Di')) neverDie.apply(rom);
+  if (flags.check('Ta')) autoEquipBracelet.apply(rom);
+
+  stampVersionSeedAndHash(rom, seed, flags);
+
+  // BELOW HERE FOR OPTIONAL FLAGS:
+
+  // do any "vanity" patches here...
+  // console.log('patch applied');
+  // return log.join('\n');
+};
+
 // Stamp the ROM
-export const stampVersionSeedAndHash = (rom, seed) => {
+export const stampVersionSeedAndHash = (rom, seed, flags) => {
   // Use up to 26 bytes starting at PRG $25ea8
   // Would be nice to store (1) commit, (2) flags, (3) seed, (4) hash
   // We can use base64 encoding to help some...
   // For now just stick in the commit and seed in simple hex
-  const crc = crc32(rom); // TODO - put this somewhere...
-  const hash = BUILD_HASH.substring(0, 7);
+  const crc = crc32(rom).toString(16).padStart(8, 0);
+  const hash = BUILD_HASH.substring(0, 7).padStart(7, 0);
   seed = seed.toString(16).padStart(8, 0);
   const embed = (addr, text) => {
     for (let i = 0; i < text.length; i++) {
       rom[addr + 0x10 + i] = text.charCodeAt(i);
     }
   };
-  embed(0x25ea8, `v.${hash}   ${seed}`);
+  const intercalate = (s1, s2) => {
+    const out = [];
+    for (let i = 0; i < s1.length || i < s2.length; i++) {
+      out.push(s1[i] || ' ');
+      out.push(s2[i] || ' ');
+    }
+    return out.join('');
+  };
+
+  embed(0x277cf, intercalate('  VERSION     SEED      ',
+                             `  ${hash}     ${seed}`));
+  let flagString = String(flags);
+
+  // if (flagString.length > 36) flagString = flagString.replace(/ /g, '');
+  let extraFlags;
+  if (flagString.length > 46) {
+    if (flagString.length > 92) throw new Error('Flag string way too long!');
+    extraFlags = flagString.substring(46, 92).padEnd(46, ' ');
+    flagString = flagString.substring(0, 46);
+  }
+  // if (flagString.length <= 36) {
+  //   // attempt to break it more favorably
+    
+  // }
+  //   flagString = ['FLAGS ',
+  //                 flagString.substring(0, 18).padEnd(18, ' '),
+  //                 '      ',
+                  
+  // }
+
+  flagString = flagString.padEnd(46, ' ');
+
+  embed(0x277ff, intercalate(flagString.substring(0, 23), flagString.substring(23)));
+  if (extraFlags) {
+    embed(0x2782f, intercalate(extraFlags.substring(0, 23), extraFlags.substring(23)));
+  }
+
+  embed(0x27885, crc);
+
+  // embed(0x25ea8, `v.${hash}   ${seed}`);
   embed(0x25716, 'RANDOMIZER');
   embed(0x2573c, 'BETA');
   // NOTE: it would be possible to add the hash/seed/etc to the title
@@ -99,6 +168,38 @@ export const stampVersionSeedAndHash = (rom, seed) => {
   // with using the letter 'O' as 0, that's sufficient to cram in all the
   // numbers and display arbitrary hex digits.
 };
+
+export const watchForFlag0 = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000
+
+;;;; TODO - REMOVE THIS ONCE IT'S SOLVED
+.org $3cb62 ; main game mode jump 08
+  jsr CheckFlag0
+.org $3fe80
+ReadControllersWithDirections:
+.org $3d347
+InitiateDialog:
+
+.org $3fdd0 ; !!! - note itemLib (I think) uses this space, too
+CheckFlag0:
+  lda $6480
+  lsr
+  bcc +
+   asl
+   sta $6480
+   lda #$00
+   sta $20
+   sta $21
+   ldx #$0c
+-   lda $6140,x
+    eor #$ff
+    sta $6140,x
+    dex
+   bpl -
+   jsr InitiateDialog
++ jmp ReadControllersWithDirections
+
+`, 'watchForFlag0'));
 
 export const openSwanFromEitherSide = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000
@@ -424,24 +525,6 @@ GrantItemInRegisterA:
 .org $1ce04
   .byte $18
 
-;; move portoa fisherman up 1 word, make him only
-;; appear if both shell flute AND healed dolphin
-;; NOTE: 8b is the traditional itemget and 25
-;; is tied to the slot (healing dolphin)
-;; We could delete the slot one, but it's actually
-;; convenient to have both...
-.org $1c6a8
-  .byte $99,$87
-.org $1c799
-  .byte $d6,$00,$25,$80,$8b,$ff
-;; daughter's dialog should trigger on both, too
-.org $1d1c5
-  .byte $80,$2a,$03,$cc,$ff
-  .byte $20,$25,$01,$26,$00
-  .byte $20,$8b,$01,$26,$00
-  .byte $00,$21,$01,$25,$00
-  .byte $a0,$00,$01,$24,$00
-
 ;; kensu in the cabin needs to be available even after visiting joel.
 ;; just have him disappear after setting the flag. but also require
 ;; having returned the fog lamp before he shows up - this requires
@@ -634,6 +717,26 @@ MaybeDrop:
 
 `, 'rearrangeTriggers'));
 
+export const requireHealedDolphinToRide = buildRomPatch(assemble(`
+;; move portoa fisherman up 1 word, make him only
+;; appear if both shell flute AND healed dolphin
+;; NOTE: 8b is the traditional itemget and 25
+;; is tied to the slot (healing dolphin)
+;; We could delete the slot one, but it's actually
+;; convenient to have both...
+.org $1c6a8
+  .byte $99,$87
+.org $1c799
+  .byte $d6,$00,$25,$80,$8b,$ff
+;; daughter's dialog should trigger on both, too
+.org $1d1c5
+  .byte $80,$2a,$03,$cc,$ff
+  .byte $20,$25,$01,$26,$00
+  .byte $20,$8b,$01,$26,$00
+  .byte $00,$21,$01,$25,$00
+  .byte $a0,$00,$01,$24,$00
+`, 'requireHealedDolphinToRide'));
+
 // Skip the check that the player is stationary.  We could also adjust
 // the speed by changing the mask at $3f02b from $3f to $1f to make it
 // faster, or $7f to slow it down.  Possibly we could start it at $7f and
@@ -748,14 +851,9 @@ CheckBelowBoss:
 ;;   ... or add a jump to DialogFollowupActionJump_08 () to
 ;;       set the flag manually if $6c==#$73
 
-
-;; While we're at it, fix sabera's elemental defense
-.bank $1a000 $a000:$2000
-.org $1b6df
-  .byte $0d
-
 ;; Also fix softlock issue with zebu in reverse fortress.
 ;; Remove the $c4,$29 spawn that locks the screen.
+.bank $1a000 $a000:$2000
 .org $1a1c0  ; npcdata_aa slot 0e
   .byte $ff  ; just delete the spawn entirely
 .org $1a220  ; npcdata_ac slot 0f
@@ -763,6 +861,7 @@ CheckBelowBoss:
 .org $1a2e8  ; npcdata_b9 slot 0f
   .byte $ff  ; same for asina
 ;; NOTE - changing this for kensu seems broken and is unnecessary...
+;; except that it seems to be broken.
 ;;.org $1a3ac  ; npcdata_ba slot 0e
 ;;  .byte $00,$00,$02,$80 ; more npcs follow so instead change to off-screen trigger
 
@@ -793,6 +892,8 @@ export const asinaTeleportsToMezameShrine = buildRomPatch(assemble(`
 ;; Add an extra dialog followup for asina to conditionally use to
 ;; warp back to leaf from shyron
 
+.org $1d81b
+  .byte $fa ; 03b -> action 1f
 .org $1d820
   .byte $fa ; 03b -> action 1f
 .org $1d82c
@@ -811,7 +912,7 @@ export const asinaTeleportsToMezameShrine = buildRomPatch(assemble(`
 .org $3fe50
 .org $3fe78 ; end of unused space
 
-`, 'asinaTeleportsToLeaf'));
+`, 'asinaTeleportsToMezameShrine'));
 
 export const saharaBunniesRequireTelepathy = buildRomPatch(assemble(`
 .bank $1c000 $8000:$2000
@@ -890,11 +991,19 @@ CheckToRedisplayDifficulty:
 `, 'displayDifficulty'));
 
 
-export const buffMedicalHerb = buildRomPatch(assemble(`
+// TODO - use a pure JS function for this
+export const buffMedicalHerb3x = buildRomPatch(assemble(`
 .bank $1c000 $8000:$4000
 .org $1c4ea
   .byte $60
-`, 'buffMedicalHerb'));
+`, 'buffMedicalHerb3x'));
+
+export const buffMedicalHerb2x = buildRomPatch(assemble(`
+.bank $1c000 $8000:$4000
+.org $1c4ea
+  .byte $40
+`, 'buffMedicalHerb2x'));
+
 // TODO - buff medical herb - change $1c4ea from $20 to e.g. $60,
 //   or else have it scale with difficulty?
 //   - (diff + 1) << 4 ? 
@@ -1084,8 +1193,8 @@ UpdateInGameTimer:
   pla
   pla ; double-return
   jmp MainLoopItemGet
-
 .org $3fa34
+.org $3fdf0
 
 .org $3d354
 WaitForDialogToBeDismissed:
@@ -1629,7 +1738,7 @@ PatchUpdateShieldDefense:
 `, 'nerfArmors'));
 
 
-const adjustObjectDifficultyStats = (data, rom) => {
+const rescaleMonsters = (data, rom) => {
 
   // TODO - find anything sharing the same memory and update them as well
   for (const id of SCALED_MONSTERS.keys()) {
@@ -1656,19 +1765,24 @@ const adjustObjectDifficultyStats = (data, rom) => {
     o[17] = sexp; // EXP
   }
 
+  // Fix Sabera 1's elemental defense to no longer allow thunder
+  rom.objects[0x7d].objectData[0x10] |= 0x08;
+
   rom.writeObjectData();
 };
 
-const shuffleMonsters = (data, rom, random) => {
-  const report = {};
-  const pool = new MonsterPool(report);
+const shuffleMonsters = (data, rom, random, log) => {
+  // TODO: once we have location names, compile a spoiler of shuffled monsters
+  const pool = new MonsterPool({});
   for (const loc of rom.locations) {
     if (loc) pool.populate(loc);
   }
   pool.shuffle(random);
 
   rom.writeNpcData();
+};
 
+const identifyKeyItemsForDifficultyBuffs = (rom) => {
   // Tag key items for difficulty buffs
   for (const get of rom.itemGets) {
     const item = ITEMS.get(get.item);
@@ -1681,26 +1795,7 @@ const shuffleMonsters = (data, rom, random) => {
     }
     get.write(rom);
   }
-
-  console.log(report);
-};
-
-const shuffleBonusItems = (data, rom, random) => {
-  const values = [];
-  const locations = [];
-  for (let loc in BONUS_ITEMS) {
-    loc = Number(loc);
-    const val = data[loc + 16];
-    if (val != BONUS_ITEMS[loc]) {
-      throw new Error(`Unexpected value at $${loc.toString(16)}: $${val.toString(16)}`);
-    }
-    locations.push(loc);
-    values.push(val);
-  }
-  random.shuffle(values);
-  for (let i = 0; i < locations.length; i++) {
-    data[locations[i] + 16] = values[i];
-  }
+  // console.log(report);
 };
 
 
@@ -2530,27 +2625,6 @@ const UNTOUCHED_MONSTERS = { // not yet +0x50 in these keys
   [0x9f]: true, // vertical platform
   [0xa6]: true, // glitch in location $af (mado 2)
 };
-
-// These items are not necessary for any routing and may be shuffled
-// amongst themselves.  This is PRG addresses and the expected value.
-const BONUS_ITEMS = {
-  0x1a497: 0x2a, // power ring
-  0x095f0: 0x2b, // warrior ring
-  0x19def: 0x2c, // iron necklace
-  0x096f8: 0x2d, // deo's pendant
-  0x1a47d: 0x2f, // leather boots
-  0x3d2af: 0x30, // shield ring
-};
-
-const BONUS_ITEMS_2 = [
-  // power ring
-  {item: [0x1a497, ], slot: [ ]},
-  {0x095f0: 0x2b}, // warrior ring
-  {0x19def: 0x2c}, // iron necklace
-  {0x096f8: 0x2d}, // deo's pendant
-  {0x1a47d: 0x2f}, // leather boots
-  {0x3d2af: 0x30}, // shield ring
-];
 
 export const BUILD_HASH = 'latest';
 export const BUILD_DATE = 'current';

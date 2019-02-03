@@ -32,6 +32,7 @@ fi
     git reset --hard HEAD^
   fi
   mkdir -p "$HASH/view"
+  mkdir -p "$HASH/images"
   mkdir -p "$HASH/track"
 )
 (
@@ -42,6 +43,7 @@ fi
   cd src
   cp *.js *.css "$DIR"
   cp view/*.js view/*.css "$DIR/view/"
+  cp images/* "$DIR/images/"
   # TODO - add a datestamp or commit stamp into the HTML somehow
   #      - maybe use sed to replace a placeholder?
   for a in *.html view/*.html track/*.html; do
@@ -50,12 +52,13 @@ fi
   sed -e "/BUILD_HASH/ s/latest/$HASH/" -e "/BUILD_DATE/ s/current/$DATE/" \
       patch.js >| "$DIR/patch.js"
   echo "<a href=\"$HASH/\">$HASH: $DATE</a><br>" >> "$TMP/r/versions.html"
-  sed "s,main.js,$HASH/main.js,g" index.html >| "$TMP/r/index.html"
+  sed 's,<!--base-->,<base href="stable">,g' index.html >| "$TMP/r/index.html"
 )
 (
   cd $TMP/r
   rm latest
   ln -s $HASH latest
+  ln -s $HASH stable # TODO - don't mark everything stable!!! - use branch!
   
   git add .
   git commit -am "Publish: $(date)"

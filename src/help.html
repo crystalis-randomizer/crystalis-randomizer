@@ -1,0 +1,118 @@
+<title>Crystalis Randomizer</title>
+<link rel="stylesheet" href="main.css">
+<script type="module" src="main.js"></script>
+<script>
+// Display a message if the main script hasn't already removed it.
+setTimeout(function() {
+  if (!document.body.classList.contains('js-works')) {
+    document.body.classList.add('js-broken');
+  }
+}, 1000);
+</script>
+
+<nav>
+  <img src="images/crystalis-sword.png">
+  <a href="/">Play</a>
+  <a href="/latest/track">Track</a>
+  <a href="/latest/help">Help</a>
+  <!-- TODO: better process for stable version numbers. -->
+  <span id="version"></span>
+</nav>
+<div></div>
+
+<main>
+  <section>
+    <h1>Introduction</h1>
+    <div>
+      <p>Welcome to Crystalis Randomizer.  This project seeks to
+        provide fresh gameplay experiences through the class NES game
+        Crystalis.
+    </div>
+  </section>
+
+  <section>
+    <h1>Gameplay Changes</h1>
+    <div>
+      <p>A number of gameplay changes have been made to support randomization.
+      <ul>
+      <li>Items are shuffled throughout the game.  Items are split into five
+        categories (key items (anything required for progression, like swords,
+        orbs, bows, and fetch quest items), bonus items (unique items not
+        required for progression, like the passive equipped items), consumables
+        (non-unique items), magics, and traps (mimics).  Flags are provided to
+        control exactly whether and how these categories are shuffled.
+      <li>Adds a "difficulty level", which can be seen in the
+        bottom-right corner next to the player's level.  Each key or
+        bonus item that is picked up increases the difficulty level by 1, to a
+        maximum of 47.
+      <li>Enemies are shuffled throughout the game.
+      <li>Enemy stats (attack, defense, HP, experience and gold
+        rewards) are normalized based on the difficulty level.
+      <li>A passage is (optionally) opened between Valley of Wind and Lime Tree.
+      <li>A number of triggers have been slightly changed (see below).
+      <li>A number of characters spawn in multiple locations independent of
+        game events (e.g. Zebu remains in the cave the entire game, rather
+        than "moving" to Shyron after calming the sea).
+      <li>Some minor bug fixes: screen shaking is fixed, and vampire 2 no longer
+        speeds up at the start of the fight.
+      <li>Swan gate now has a pair of guards on the opposite side, to allow going
+        through either direction (with Change).
+      <li>It is now possible to teleport out of the tower, and to get
+        back in via the pyramid back entrance.
+      <li>Sword of Thunder always teleports to Shyron, no matter where it's found
+        (though this can be disabled).  The warp checkpoint is immediately set,
+        and in case there's no way back, Asina will teleport the player back to
+        Mezame Shrine.
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h1>Items</h1>
+    <div>
+      <ul>
+      <li>Inventory sorting is disabled for swords and orbs/bracelets to prevent
+        items from clobbering each other.
+      <li>Orbs and bracelets are progressive upgrades: the first item you get,
+        even if it says "bracelet" will give you the orb, and the second will
+        give the bracelet.  The distinction is important only because Tornel is
+        keyed off finding the chest that gives the tornado bracelet, rather than
+        by finding both upgrades.
+      <li>Orbs and bracelets may now (optionally) be automatically equipped.
+        Just change swords and the powerup will change, too.
+      <li>Sword damage has been renormalized.  Rather than depending on the
+        element (normally, wind=1, fire=2, water=4, thunder=8), the sword power
+        depends on the number of upgrades (no upgrades=2, ball only=4, bracelet=8).
+      <li>Stab damage no longer doubles the sword base power, but is
+        now always just 2.
+      <li>The Power Ring is nerfed to double the sword base damage, rather than
+        the level.
+      <li>Armors and shields are nerfed to only provide half the defense value.
+        Monster attack values are rescaled to match.
+      <li>Powerful armors will only provide up to a maximum of LVL*2 defense.
+      <li>Pendant of Deo is buffed to provide MP while moving.
+      <li>Iron Necklace and Shield Ring are buffed to double the armor/shield
+        value, rather than the level.
+      <li>Medical Herb can be buffed to 2x or 3x the effectiveness.
+      <li>Leather Boots are (optionally) replaced with Speed Boots.
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h1>Triggers</h1>
+    <div>
+      <p>In the following, items in brackets refer to whatever item
+        is shuffled into a slot, while unparenthesized items refer to the
+        actual item.
+      <ul>
+      <li>Tornel teaching [Teleport] is blocked on finding exactly the
+        Tornado Bracelet, regardless of whether the Ball of Wind has been
+        found.
+      <li>[Barrier] now (optionally) requires calming the sea, rather
+        than just ghetto flight.
+      <li>TODO - mesia, wise men, queen, etc...
+      </ul>
+    </div>
+  </section>
+</main>

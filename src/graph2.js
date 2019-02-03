@@ -184,12 +184,12 @@ export class Graph {
           o.name,
           o instanceof Slot && o.index != o.id ? ' $' + o.index.toString(16) : '',
         ];
-        return [
+        return [n, [
           ...str(n),
           ' [',
           deps.map(d => str(d).join('').replace(/\s+\(.*\)/, '')).join(', '),
           ']',
-        ].join('');
+        ].join('')];
       }),
     };
   }
@@ -418,8 +418,9 @@ export class Option extends Node {
 }
 
 export class Slot extends Node {
-  constructor(graph, item, index, slots = []) {
+  constructor(graph, name, item, index, slots = []) {
     super(graph);
+    this.slotName = name;
     this.item = item;
     this.index = index;
     this.slots = slots;
@@ -473,7 +474,7 @@ export class Slot extends Node {
     // slot is usually 'this' for the Slot object that owns this.
     this.slots.push((rom, slot) => {
       rom[addr] = slot.index;
-console.log(`${this.name2}: ${addr.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
+//console.log(`${this.name2}: ${addr.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
     });
     return this;
   }
@@ -495,7 +496,7 @@ console.log(`${this.name2}: ${addr.toString(16)} <- ${slot.index.toString(16).pa
       rom[a] &= ~1;
       rom[a] |= 2;
       rom[a + 1] = slot.index;
-console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(2,0)} ${rom[a+1].toString(16).padStart(2,0)}`);
+//console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(2,0)} ${rom[a+1].toString(16).padStart(2,0)}`);
     });
     return this;
   }
@@ -503,7 +504,7 @@ console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(
   dialog(id, location = null, offset = 0, result = null) {
     this.slots.push((rom, slot) => {
       let a = addr(rom, 0x1c95d, 0x14000, id);
-console.log(`${this.name2}: ${id.toString(16)} dialog start ${a.toString(16)}`);
+//console.log(`${this.name2}: ${id.toString(16)} dialog start ${a.toString(16)}`);
       // Skip the pre-location parts
       while (rom[a] & 0x80) {
         a += 4;
@@ -516,7 +517,7 @@ console.log(`${this.name2}: ${id.toString(16)} dialog start ${a.toString(16)}`);
         a += 2;
       }
       a += next + 1; // skip the ff
-console.log(`next=${next}`);
+//console.log(`next=${next}`);
       // Jump to the location
       while (offset) {
         if (rom[a] & 0x40) {
@@ -543,7 +544,7 @@ console.log(`next=${next}`);
       rom[a] &= ~1;
       rom[a] |= 2;
       rom[a + 1] = slot.index;
-console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(2,0)} ${rom[a+1].toString(16).padStart(2,0)}`);
+//console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(2,0)} ${rom[a+1].toString(16).padStart(2,0)}`);
     });
     return this;
   }
@@ -567,7 +568,7 @@ console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(
       rom[a] &= ~1;
       rom[a] |= 2;
       rom[a + 1] = slot.index;
-console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(2,0)} ${rom[a+1].toString(16).padStart(2,0)}`);
+//console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(2,0)} ${rom[a+1].toString(16).padStart(2,0)}`);
     });
     return this;
   }
@@ -585,7 +586,7 @@ export class Chest extends Slot {
       const base = addr(rom, 0x19201, 0x10000, loc);
       const a = base + 4 * (spawnSlot - 0x0b);
       rom[a] = slot.index;
-console.log(`${this.name2}: ${a.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
+//console.log(`${this.name2}: ${a.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
     });
     return this;
   }
@@ -610,31 +611,31 @@ export class ItemGet extends Node {
     return `ItemGet ${this.name}`;
   }
 
-  chest(index = this.id) {
-    return new Chest(this.graph, this, index);
+  chest(name = this.name + ' chest', index = this.id) {
+    return new Chest(this.graph, name, this, index);
   }
 
-  fromPerson(personId, offset = 0) {
-    return this.direct(0x80f0 | (personId & ~3) << 6 | (personId & 3) << 2 | offset);
+  fromPerson(name, personId, offset = 0) {
+    return this.direct(name, 0x80f0 | (personId & ~3) << 6 | (personId & 3) << 2 | offset);
   }
 
-  bossDrop(bossId, itemGetIndex = this.id) {
-    return new Slot(this.graph, this, itemGetIndex, [(rom, slot) => {
+  bossDrop(name, bossId, itemGetIndex = this.id) {
+    return new Slot(this.graph, name, this, itemGetIndex, [(rom, slot) => {
       const a = addr(rom, 0x1f96b, 0x14000, bossId) + 4;
       rom[a] = slot.index;
-console.log(`${this.name == slot.name ? this.name : `${slot.name} (${this.name})`}: ${a.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
+//console.log(`${this.name == slot.name ? this.name : `${slot.name} (${this.name})`}: ${a.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
     }]);
   }
 
-  direct(a) {
-    return new Slot(this.graph, this, this.id, [(rom, slot) => {
+  direct(name, a) {
+    return new Slot(this.graph, name, this, this.id, [(rom, slot) => {
       rom[a] = slot.index;
-console.log(`${this.name == slot.name ? this.name : `${slot.name} (${this.name})`}: ${a.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
+//console.log(`${this.name == slot.name ? this.name : `${slot.name} (${this.name})`}: ${a.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
     }]);
   }
 
   fixed() {
-    return new Slot(this.graph, this, this.id, null);
+    return new Slot(this.graph, null, this, this.id, null);
   }
 }
 
@@ -776,11 +777,14 @@ export class Location extends Node {
       item = item.item;
     }
     if (item instanceof ItemGet) {
-      item = item.chest(chest);
+      item = item.chest(undefined, chest);
     }
     const slot = item.objectSlot(this.id, spawn);
     this.chests.push(slot);
     if (slot.index == 0x70) slot.type = 'trap';
+    if (!slot.slotName || slot.slotName.endsWith(' chest')) {
+      slot.slotName = item.name + ' chest in ' + this.area.name;
+    }
     return this;
   }
 

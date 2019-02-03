@@ -1,4 +1,5 @@
-import { Graph, Area, Boss, Condition, Item, Location, Magic, Option, Trigger } from './graph2.js';
+import {Graph, Area, Boss, Condition, Item, Location, Magic, Option, Trigger} from './graph2.js';
+import {FlagSet} from './flagset.js';
 
 // Make a fresh/clean graph. We could pass options directly into this function.
 // Options:{
@@ -50,7 +51,7 @@ import { Graph, Area, Boss, Condition, Item, Location, Magic, Option, Trigger } 
 //   equip: 0 - no change
 //          1 - auto-equip power
 
-export const generate = (opts = {}) => {
+export const generate = (flags = undefined) => {
 
 const graph = new Graph();
 const option = (name, value = true) => new Option(graph, name, value);
@@ -62,38 +63,45 @@ const boss = (index, name, ...deps) => new Boss(graph, index, name, ...deps);
 const area = (name) => new Area(graph, name);
 const location = (id, area, name) => new Location(graph, id, area, name);
 
-const opt = (name, def) => name in opts ? opts[name] : def;
+const opt = (name, def) => {
+  if (!flags) return def;
+  const invert = name.startsWith('!');
+  if (invert) name = name.substring(1);
+  return flags.check(name) ^ invert;
+}
 
 ////////////////////////////////////////////////////////////////
 // Options
 ////////////////////////////////////////////////////////////////
 const leatherBootsGiveSpeed = option('Leather Boots grant speed',
-                                     opt('speed-boots', true));
+                                     opt('Ts', true));
 const assumeGhettoFlight    = option('Assume ghetto flight',
-                                     opt('glitch-ghetto-flight', true));
+                                     opt('Gf', true));
 const assumeTalkGlitch      = option('Assume talk glitch',
-                                     opt('glitch-talk', true));
+                                     opt('Gt', true));
 const assumeRabbitSkip      = option('Assume rabbit skip',
-                                     opt('glitch-rabbit-skip', false));
+                                     opt('Gr', false));
 const swordMagicOptional    = option('Sword magic optional',
-                                     opt('hell-sword-magic', false));
+                                     opt('Hw', false));
+const healedDolphinOptional = option('Healed dolphin optional',
+                                     opt('Rd', true));
 const requireCalmForBarrier = option('Require calm for barrier',
-                                     opt('route-no-free-barrier', true));
+                                     opt('Rl', true));
 const teleportToShyron      = option('Sword of Thunder teleports to Shyron',
-                                     opt('route-shyron-teleport', true));
+                                     opt('Rt', true));
 const barrierOptional       = option('Barrier magic optional',
-                                     opt('hell-barrier', true));
+                                     opt('Hb', true));
 const refreshOptional       = option('Refresh magic optional',
-                                     opt('hell-refresh', true));
+                                     opt('!Er', true));
 const earlyFlight           = option('Early flight',
-                                     opt('route-early-flight', false));
+                                     opt('Rf', false));
 const limeTreeConnectsToLeaf = option('Lime Tree connects to Leaf',
-                                      opt('route-lime-tree-to-leaf', true));
+                                      opt('Rp', true));
 const assumeWildWarp        = option('Assume wild warp',
-                                     opt('glitch-wild-warp', false));
+                                     opt('Gw', false));
 const assumeSwordChargeGlitch = option('Assume sword charge glitch',
-                                       opt('glitch-sword-charge', false));
-const tracker               = option('Tracker only', opt('tracker', false));
+                                       opt('Gs', false));
+const tracker               = option('Tracker only', opt('Dt', false));
 
 // TODO - assumeSwordChargeGlitch - would be super annoying...
 //   - would need to make a condition anyLevel2Sword to put with the needed
@@ -106,12 +114,12 @@ const tracker               = option('Tracker only', opt('tracker', false));
 // Items
 ////////////////////////////////////////////////////////////////
 const swordOfWind           = item(0x00, 'Sword of Wind')
-                                .fromPerson(0x0d)
+                                .fromPerson('Leaf elder', 0x0d)
                                 .npcSpawn(0x5e, 0x10, 1)
                                 .dialog(0x0d, 0xc0, 2)
                                 .key();
 const swordOfFire           = item(0x01, 'Sword of Fire')
-                                .fromPerson(0x1d)
+                                .fromPerson('Oak elder', 0x1d)
                                 .dialog(0x1d, null, 3)
                                 .key();
 const swordOfWater          = item(0x02, 'Sword of Water').chest().key();
@@ -120,7 +128,7 @@ const crystalis             = item(0x04, 'Crystalis').fixed();
 const ballOfWind            = item(0x05, 'Ball of Wind').chest().key();
 const tornadoBracelet       = item(0x06, 'Tornado Bracelet').chest().key();
 const ballOfFire            = item(0x07, 'Ball of Fire')
-                                .bossDrop(0x01)
+                                .bossDrop('Insect', 0x01)
                                 .dialog(0x1e, null, 0)
                                 .dialog(0x20, null, 0)
                                 .dialog(0x21, null, 0)
@@ -131,16 +139,16 @@ const ballOfFire            = item(0x07, 'Ball of Fire')
                                 .npcSpawn(0xc1)
                                 .key();
 const flameBracelet         = item(0x08, 'Flame Bracelet')
-                                .bossDrop(0x02)
+                                .bossDrop('Kelbesque 1', 0x02)
                                 .npcSpawn(0xc2)
                                 .key();
 const ballOfWater           = item(0x09, 'Ball of Water')
-                                .direct(0x3d337)
+                                .direct('Rage', 0x3d337)
                                 .npcSpawn(0xc3)
                                 .key();
 const blizzardBracelet      = item(0x0a, 'Blizzard Bracelet').chest().key();
 const ballOfThunder         = item(0x0b, 'Ball of Thunder')
-                                .bossDrop(0x05)
+                                .bossDrop('Mado 1', 0x05)
                                 .trigger(0x9a, 1)
                                 .key();
 const stormBracelet         = item(0x0c, 'Storm Bracelet').chest().key();
@@ -150,7 +158,7 @@ const platinumShield        = item(0x0f, 'Platinum Shield');
 const mirroredShield        = item(0x10, 'Mirrored Shield');
 const ceramicShield         = item(0x11, 'Ceramic Shield');
 const sacredShield          = item(0x12, 'Sacred Shield')
-                                .bossDrop(0x08)
+                                .bossDrop('Mado 2', 0x08)
                                 .npcSpawn(0xc7)
                                 .bonus();
 const battleShield          = item(0x13, 'Battle Shield');
@@ -163,7 +171,7 @@ const soldierSuit           = item(0x19, 'Soldier Suit');
 const ceramicSuit           = item(0x1a, 'Ceramic Suit');
 const battleSuit            = item(0x1b, 'Battle Suit');
 const psychoArmor           = item(0x1c, 'Psycho Armor')
-                                .bossDrop(0x0a)
+                                .bossDrop('Draygon 1', 0x0a)
                                 .npcSpawn(0xcb) // boss spawn
                                 .trigger(0x9f) // unused?
                                 .npcSpawn(0x83) // azteca
@@ -175,60 +183,63 @@ const fruitOfLime           = item(0x20, 'Fruit of Lime');
 const fruitOfPower          = item(0x21, 'Fruit of Power');
 const magicRing             = item(0x22, 'Magic Ring');
 const fruitOfRepun          = item(0x23, 'Fruit of Repun')
-                                .bossDrop(0x07)
+                                .bossDrop('Sabera 2', 0x07)
                                 .npcSpawn(0xc6)
                                 .key();
 const warpBoots             = item(0x24, 'Warp Boots');
 const statueOfOnyx          = item(0x25, 'Statue of Onyx')
-                                .chest()
+                                .chest('Cordel grass')
                                 .invisible(0x3e3a2)
                                 .key();
 const opelStatue            = item(0x26, 'Opel Statue')
-                                .bossDrop(0x06)
+                                .bossDrop('Kelbesque 2', 0x06)
                                 .npcSpawn(0xc5)
                                 .key();
 const insectFlute           = item(0x27, 'Insect Flute')
-                                .fromPerson(0x1e)
+                                .fromPerson('Oak mother', 0x1e)
                                 .dialog(0x1e, null, 1)
                                 .key();
 const fluteOfLimeQueen      = item(0x28, 'Flute of Lime')
-                                .fromPerson(0x38)
+                                .fromPerson('Portoa queen', 0x38)
                                 .direct(0x98f9) // persondata 62 +1
                                 // .direct(0x3fa28) // mesia version
                                 .dialog(0x38, null, 4)
                                 .dialog(0x38, null, 5, 0)
                                 .key();
 const gasMask               = item(0x29, 'Gas Mask')
-                                .direct(0x3d7fe)
+                                .direct('Akahana in Brynmaer', 0x3d7fe)
                                 .npcSpawn(0x16, 0x18)
                                 .key();
 const powerRing             = item(0x2a, 'Power Ring').chest().bonus();
 const warriorRing           = item(0x2b, 'Warrior Ring')
-                                .fromPerson(0x54)
+                                .fromPerson('Akahana\'s friend', 0x54)
                                 .dialog(0x54, null, 2)
                                 .bonus();
 const ironNecklace          = item(0x2c, 'Iron Necklace').chest().bonus();
 const deosPendant           = item(0x2d, 'Deo\'s Pendant')
-                                .fromPerson(0x5a)
+                                .fromPerson('Deo', 0x5a)
                                 .dialog(0x5a, null, 0)
                                 .bonus();
 const rabbitBoots           = item(0x2e, 'Rabbit Boots')
-                                .bossDrop(0x00)
+                                .bossDrop('Vampire 1', 0x00)
                                 .npcSpawn(0xc0)
                                 .key();
-const leatherBoots          = item(0x2f, 'Leather Boots').chest().bonus();
+const leatherBoots          = item(0x2f,
+                                   opt('Ts', true) ?
+                                       'Speed Boots' :
+                                       'Leather Boots').chest().bonus();
 const shieldRing            = item(0x30, 'Shield Ring')
-                                .direct(0x3d2af)
+                                .direct('Akahana in waterfall cave', 0x3d2af)
                                 .npcSpawn(0x16, 0x57, 2)
                                 .bonus();
 const alarmFlute            = item(0x31, 'Alarm Flute').fixed();
 const windmillKey           = item(0x32, 'Windmill Key')
-                                .fromPerson(0x14)
+                                .fromPerson('Windmill guard', 0x14)
                                 .dialog(0x14, 0x0e, 0)
                                 .key();
 const keyToPrison           = item(0x33, 'Key to Prison').chest().key();
 const keyToStyx             = item(0x34, 'Key to Styx')
-                                .fromPerson(0x5e, 1)
+                                .fromPerson('Zebu in Shyron', 0x5e, 1)
                                 // Require getting both sword of thunder
                                 // AND the key to styx SLOT to trigger
                                 // shyron massacre.
@@ -238,7 +249,7 @@ const keyToStyx             = item(0x34, 'Key to Styx')
                                 .key();
 const fogLamp               = item(0x35, 'Fog Lamp').chest().key();
 const shellFlute            = item(0x36, 'Shell Flute')
-                                .fromPerson(0x63, 1)
+                                .fromPerson('Dolphin', 0x63, 1)
                                 .npcSpawn(0x63)
                                 //.npcSpawn(0x64)
                                 //.dialog(0x7b, null, 0)
@@ -247,11 +258,11 @@ const shellFlute            = item(0x36, 'Shell Flute')
                                 // still need to delete itemuse trigger?
                                 // just use the hard-coded ones...?
 const eyeGlasses            = item(0x37, 'Eye Glasses')
-                                .fromPerson(0x44)
+                                .fromPerson('Clark', 0x44)
                                 .dialog(0x44, 0xe9, 1)
                                 .key();
 const brokenStatue          = item(0x38, 'Broken Statue')
-                                .bossDrop(0x04)
+                                .bossDrop('Sabera 1', 0x04)
                                 .npcSpawn(0x7f, 0x65) // sabera
                                 .npcSpawn(0x46)
                                 .npcSpawn(0x47)
@@ -269,26 +280,26 @@ const brokenStatue          = item(0x38, 'Broken Statue')
                                 .trigger(0xb6)
                                 .key();
 const glowingLamp           = item(0x39, 'Glowing Lamp')
-                                .direct(0x3d30e)
+                                .direct('Kensu in lighthouse', 0x3d30e)
                                 .npcSpawn(0x7e, 0x62, 1)
                                 .key();
 //const statueOfGold          = item(0x3a, 'Statue of Gold')
                                 // direct(0x1c594) // shuffle is a little odd
 //                                .fixed();
 const lovePendant           = item(0x3b, 'Love Pendant')
-                                .chest()
+                                .chest('Underground channel')
                                 .invisible(0x3e3aa)
                                 .key();
 const kirisaPlant           = item(0x3c, 'Kirisa Plant')
-                                .chest()
+                                .chest('Kirisa meadow')
                                 .invisible(0x3e3a6)
                                 .key();
 const ivoryStatue           = item(0x3d, 'Ivory Statue')
-                                .bossDrop(0x09)
+                                .bossDrop('Karmine', 0x09)
                                 .npcSpawn(0xc8)
                                 .key();
 const bowOfMoon             = item(0x3e, 'Bow of Moon')
-                                .fromPerson(0x23) // not actually used???
+                                .fromPerson('Aryllis', 0x23) // not actually used???
                                 .direct(0x3d6e8)
                                 .dialog(0x23, null, 1)
                                 .key();
@@ -296,45 +307,45 @@ const bowOfSun              = item(0x3f, 'Bow of Sun')
                                 .chest()
                                 .key();
 const bowOfTruth            = item(0x40, 'Bow of Truth')
-                                .fromPerson(0x83)
+                                .fromPerson('Azteca', 0x83)
                                 .npcSpawn(0x83, 0x9c, 1)
                                 .dialog(0x83, null, 0)
                                 .key();
 const refresh               = magic(0x41, 'Refresh')
-                                .fromPerson(0x5e)
+                                .fromPerson('Zebu at windmill', 0x5e)
                                 .direct(0x3d711)
                                 // NOTE: moved from offset 2 because we rearranged
                                 // zebu to always spawn windmill guard
                                 .dialog(0x5e, 0x10, 3)
                                 .trigger(0xb4, 1);
 const paralysis             = magic(0x42, 'Paralysis')
-                                .direct(0x3d655)
+                                .direct('Zebu at Mt. Sabre summit', 0x3d655)
                                 // TODO - require defeating kelbesque?
                                 .trigger(0x8d)
                                 .trigger(0xb2);
 const telepathy             = magic(0x43, 'Telepathy')
-                                .direct(0x367f4)
+                                .direct('Tornel at Stom\'s house', 0x367f4)
                                 .npcSpawn(0x5f, 0x1e, 1)
                                 .trigger(0x85, 1);
 const teleport              = magic(0x44, 'Teleport')
-                                .fromPerson(0x5f)
+                                .fromPerson('Tornel on Mt. Sabre', 0x5f)
                                 .dialog(0x5f, 0x21, 0);
 const recover               = magic(0x45, 'Recover')
-                                .direct(0x3d1f9);
+                                .direct('Asina in Portoa', 0x3d1f9);
                                 // NOTE: no need for second slot because
                                 // recover does not have an ItemGet normally.
 const barrier               = magic(0x46, 'Barrier')
-                                .direct(0x3d6d9)
+                                .direct('Asina on Angry sea', 0x3d6d9)
                                 .trigger(0x84, 0);
 const change                = magic(0x47, 'Change')
-                                .direct(0x3d6de)
+                                .direct('Kensu in Swan', 0x3d6de)
                                 .npcSpawn(0x74, 0xf1, 1);
 const flight                = magic(0x48, 'Flight')
-                                .direct(0x3d18f);
+                                .direct('Kensu in Draygonia Fortress', 0x3d18f);
                                 // See recover - no need for second slot.
-const fluteOfLimeChest      = item(0x28, "Flute of Lime").chest(0x5b).key();
+const fluteOfLimeChest      = item(0x28, "Flute of Lime").chest(undefined, 0x5b).key();
 const fruitOfPowerVampire2  = fruitOfPower
-                                .bossDrop(0x0c, 0x61)
+                                .bossDrop('Vampire 2', 0x0c, 0x61)
                                 .npcSpawn(0xcc)
                                 .key();
 const mimic                 = item(0x70, 'Mimic'); // special handling to dup
@@ -456,20 +467,23 @@ const crossWhirlpool        = condition('Cross whirlpool')
                                 .option(calmedSea)
                                 .option(flight, earlyFlight)
                                 .option(assumeGhettoFlight);
+const maybeRefresh          = condition('Refresh if needed')
+                                .option(refreshOptional)
+                                .option(refresh);
 const windMagic             = condition('Wind magic')
-                                .option(swordMagicOptional)
-                                .option(ballOfWind, tornadoBracelet);
+                                .option(swordMagicOptional, maybeRefresh)
+                                .option(ballOfWind, tornadoBracelet, maybeRefresh);
 const fireMagic             = condition('Fire magic')
-                                .option(swordMagicOptional)
-                                .option(ballOfFire, flameBracelet);
+                                .option(swordMagicOptional, maybeRefresh)
+                                .option(ballOfFire, flameBracelet, maybeRefresh);
 const waterMagic            = condition('Water magic')
-                                .option(swordMagicOptional)
-                                .option(ballOfWater, blizzardBracelet);
+                                .option(swordMagicOptional, maybeRefresh)
+                                .option(ballOfWater, blizzardBracelet, maybeRefresh);
 const thunderMagic          = condition('Thunder magic')
-                                .option(swordMagicOptional)
+                                .option(swordMagicOptional, maybeRefresh)
                                 // For Karmine, only guarantee level 2.
-                                .option(ballOfThunder)
-                                .option(stormBracelet);
+                                .option(ballOfThunder, maybeRefresh)
+                                .option(stormBracelet, maybeRefresh);
 const fluteOfLimeOrGlitch   = condition('Flute of lime or glitch')
                                 .option(fluteOfLimeQueen)
                                 .option(assumeTalkGlitch)
@@ -483,13 +497,12 @@ const changeOrGlitch        = condition('Change or glitch')
                                 .option(assumeTalkGlitch);
 const passShootingStatues   = condition('Pass shooting statues')
                                 .option(barrier)
-                                .option(refresh)
-                                .option(shieldRing)
+                                // Even in non-hell-mode, refresh and shield ring ok
+                                .option(refresh, shieldRing)
                                 .option(barrierOptional);
-// TODO - what to block this on?
-// const maybeRefresh          = condition('Refresh if needed')
-//                                 .option(refreshOptional)
-//                                 .option(refresh);
+const maybeHealedDolphin    = condition('Healed dolphin if required')
+                                .option(healedDolphin)
+                                .option(healedDolphinOptional);
 
 // TODO - warp triggers, wild warp, etc...
 // ghetto flight?  talk glitch?  triggers (calmed sea or ghetto flight)?  require magic for boss?
@@ -1433,7 +1446,9 @@ const nadare                = location(0xd5, NADR, 'Nadare\'s').house()
                                 .connectTo(nadareBackRoom);
 const portoaFishermanHouse  = location(0xd6, PORT, 'Fisherman\'s House').house()
                                 .connect(portoaFishermanIsland)
-                                .trigger(returnedFogLamp, fogLamp, shellFlute);
+                                // TODO - consider removing requirement of healed dolphin
+                                .trigger(returnedFogLamp,
+                                         fogLamp, shellFlute, maybeHealedDolphin);
                                 // TODO - palace might want to be fortress...
                                 // but we probably don't want to randomize this away
 const portoaPalaceEntrance  = location(0xd7, PORT, 'Palace Entrance').house().connect(portoa);
@@ -1543,17 +1558,47 @@ if (assumeWildWarp.value) {
 return graph;
 };
 
-export const shuffle = async (rom, random, log = [], opts = {}) => {
-  const graph = generate(opts);
+export const shuffle = async (rom, random, log = undefined, flags = undefined, progress = undefined) => {
+  const graph = generate(flags);
   const allSlots = graph.slots();
+
+  // Default shuffling
+  if (!flags) flags = new FlagSet('Sbk Sct Sm');
+
   const buckets = {}
   for (const slot of graph.slots()) {
     if (!slot.slots) continue; // fixed, no shuffle
-    const type = slot.type || 'item';
+    const type = slot.type ? slot.type[0] : 'c';
     (buckets[type] = buckets[type] || []).push(slot);
   }
-  // For bonus and non-key items, just do a total shuffle.
-  for (const bucket of ['item', 'bonus']) {
+
+  // Now we need to figure out what to do with the buckets...
+  // We have 5 buckets: key, bonus, consumable, magic, and trap
+  // key and magic need to be shuffled intelligently
+  // other three can be shuffled however we want
+
+  // Build up a table of shuffle pools:
+  const pools = [];
+  const all = [];
+  const shuffled = {};
+  // let magicPool = null;
+  // let keyPool = null;
+  for (const pool of flags.flags['S']) {
+    const p = [];
+    for (const type of pool) {
+      shuffled[type] = true;
+      for (const slot of buckets[type]) {
+        p.push(slot);
+        all.push([slot, pools.length]);
+      }
+    }
+    pools.push(p);
+  }
+
+  // For bonus and consumables, just do a total shuffle, since it will never
+  // break the logic.
+  for (const bucket of 'bc') {
+    if (!shuffled[bucket]) continue;
     const slots = buckets[bucket];
     const items = slots.map(slot => [slot.item, slot.index]);
     random.shuffle(items);
@@ -1572,71 +1617,55 @@ export const shuffle = async (rom, random, log = [], opts = {}) => {
   const ballOfFire = graph.findSlot('Ball of Fire');
   const statueOfOnyx = graph.findSlot('Statue of Onyx');
   const gasMask = graph.findSlot('Gas Mask');
-  const refresh = graph.findSlot('Refresh').item;
-  const recover = graph.findSlot('Recover').item;
-  if (random.nextInt(2)) {
+  if (shuffled['k'] && random.nextInt(2)) {
     swordOfFire.swap(swordOfWind);
     ballOfFire.swap(ballOfWind);
   }
-  if (!random.nextInt(3)) {
+  if (shuffled['k'] && !random.nextInt(3)) {
     // help out the shuffle to change up the early game a bit more.
     statueOfOnyx.swap(gasMask);
   }
   const counts = [1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 5, 5, 8, 13];
-  const keys = [...buckets['key'], ...buckets['bonus']]; //, ...buckets['item']];
-  const magics = buckets['magic'];
-  const magicIndices = [0, 1, 2, 3, 4, 5, 6, 7];
-  const both = [keys, magics];
+
+  // Now do a whole bunch of shuffle attempts.
+  // const keys = [...buckets['k'], ...buckets['b']]; //, ...buckets['item']];
+  // const magics = buckets['m'];
+  // const magicIndices = [0, 1, 2, 3, 4, 5, 6, 7];
+  // const both = [keys, magics];
   //const both = [keys, magicIndices];
-  const which = [...keys.map(() => 0), ...magicIndices.map(() => 1)];
+
+  //let swap = (w, k) => both[w][pos[w] - 1 + k].swap(both[w][pos[w] + k]);
+
+  const swap = (s1, s2) => {
+    // don't try to swap the same thing
+    if (s1 === s2) return;
+    // mimics can only be swapped into chests
+    if (!s1.spawnSlot && s2.index === 0x70) return;
+    if (!s2.spawnSlot && s1.index === 0x70) return;
+    // make the swap
+    s1.swap(s2);
+  };
+
   let route = [];
+  if (progress) progress.addTasks(10);
   for (let i = 0; i < 1000; i++) {
-    if (i % 100 == 0) await new Promise(requestAnimationFrame);
-    random.shuffle(keys);
-    random.shuffle(magics);
-    //random.shuffle(magicIndices);
-    random.shuffle(which);
-    let count = counts[random.nextInt(counts.length)];
-    const pos = [0, 0];
-
-    let swap = (w, k) => both[w][pos[w] - 1 + k].swap(both[w][pos[w] + k]);
-    // if (i == 250) {
-    //   swap = (w, k) => {
-    //     let a = both[w][pos[w] - 1 + k];
-    //     let b = both[w][pos[w] + k];
-    //     if (b.item == refresh || b.item == recover) [a, b] = [b, a];
-    //     if (a.item == refresh || a.item == recover) {
-    //       if (a.origIndex < b.origIndex) return;
-    //       a.swap(b);
-    //     }
-    //   }
-    // }
-
-    // POSSIBLE FIXES - generate a true random distribution of magic
-    // and then don't swap them any more after that - needs a full
-    // MC approach, which we haven't proven yet.
-
-    // const swap = (w, k) => {
-    //   let a = both[w][pos[w] - 1 + k];
-    //   let b = both[w][pos[w] + k];
-    //   if (w) {
-    //     if (Math.abs(a - b) < 4) {
-    //       magics[a].swap(magics[b]);
-    //       [magics[a], magics[b]] = [magics[b], magics[a]];
-    //     }
-    //   } else {
-    //     a.swap(b);
-    //   }
-    // }    
+    // Ensure UI can update.
+    if (i % 100 == 0) {
+      await new Promise(requestAnimationFrame);
+      if (progress) progress.addCompleted(1);
+    }
+    random.shuffle(all);
+    for (const pool of pools) random.shuffle(pool);
+    const pos = pools.map(() => -1);
+    const count = counts[random.nextInt(counts.length)];
 
     for (let j = 0; j < count; j++) {
-      const w = which[j];
-      pos[w] += 2;
-      if (pos[w] > both[w].length) continue;
-      swap(w, -1);
+      const [slot, poolIndex] = all[j];
+      const other = pools[poolIndex][++pos[poolIndex]];
+      swap(slot, other);
     }
     // test
-    let badMimic = 
+
     const {win, path} = graph.traverse();
     if (win) {
       //console.log(`successful shuffle of ${count} items`);
@@ -1647,25 +1676,43 @@ export const shuffle = async (rom, random, log = [], opts = {}) => {
     }
     // unswap
     for (let i = count - 1; i >= 0; i--) {
-      const w = which[i];
-      pos[w] -= 2;
-      if (pos[w] + 1 >= both[w].length) continue;
-      swap(w, +1);
+      const [slot, poolIndex] = all[i];
+      const other = pools[poolIndex][pos[poolIndex]--];
+      swap(slot, other);
     }
   }
+  if (!log) log = {};
 
   // Commit everything
-  const logdata = [];
-  for (const slot of graph.slots()) {
-    logdata.push(`Slot $${slot.origIndex.toString(16).padStart(2,0)} (${slot.orig}): ${slot.item.name}`);
+  //const logdata = [];
+  log.items = [];
+  log.route = [];
+  for (const [slot, routeText] of route) {
+    log.route.push(routeText);
+    if (slot.slotName == null) continue;
+    // `Slot $${slot.origIndex.toString(16).padStart(2,0)} (${slot.orig}):
+    //  ${slot.item.name}`
+    let slotName = slot.slotName;
+    if (slotName.indexOf(slot.orig) < 0) slotName += ` (normally ${slot.orig})`;
+    log.items.push({slotIndex: slot.origIndex,
+                  itemIndex: slot.item.index,
+                  origName: slot.orig,
+                  slotName: slot.slotName,
+                  itemName: slot.item.name,
+                  text: `${slot.item.name}: ${slotName}`,
+                 });
     slot.write(rom);
   }
-  logdata.sort();
+  
+  //logdata.sort((a, b) => a.itemIndex - b.itemIndex);
+  //log.items = logdata;
 
 // logdata.splice(0,logdata.length);
 // const m=graph.slots().filter(s=>s.item instanceof Magic);
 // const xs=[0,3,1,2,4,5,6,7];
 // logdata.push(...m.sort((x,y)=>xs[x.origIndex-65]-xs[y.origIndex-65]).map(x=>x.name2));
 
-  log.push(...logdata, '', 'Route:', ...route);
+  //log.route = route;
+
+  // log.push(...logdata, '', 'Route:', ...route);
 };

@@ -14,13 +14,12 @@ original game.
 ## Status
 
 This randomizer is currently a pre-release beta version, and there are
-still many known issues and missing features that make the experience
-significantly less than smooth.  It has been put out here at this
-stage to give people an idea of what we're eventually working toward,
-with the understanding that there are still plenty of rough edges that
+still a few known issues and missing features.  It has been put out here
+at this stage to give people an idea of what we're eventually working
+toward, with the understanding that there are still a few rough edges that
 will make it not as fun as we hope it to be.
 
-Try it out at https://shicks.github.io/crystalis-randomizer/
+Try it out at https://crystalisrandomizer.com
 
 ## Features
 
@@ -64,12 +63,12 @@ Try it out at https://shicks.github.io/crystalis-randomizer/
 
 ### Armor Adjustments
 
-* [ ] TODO - Armors need to be rebalanced to be less game-breaking if a powerful armor is
+* [x] Armors are rebalanced to be less game-breaking if a powerful armor is
       found early in the game
 
 ### Enhancements
 
-* [x] Balls and bracelets are automatically equipped when switching swords,
+* [x] Orbs and bracelets are automatically equipped when switching swords,
       significantly reducing the need for menuing (note that this makes it
       impossible to intentionally select a lower level)
 * [x] Balls and bracelets are true upgrades, rather than individual items: the
@@ -101,21 +100,14 @@ Try it out at https://shicks.github.io/crystalis-randomizer/
 
 ## Known Issues
 
-* [ ] Widespread graphical glitches:
-      * Sorcerors (Bert/Burt) and some NPCs (notably Akahana in Waterfall Cave)
-        are often rendered as jumbled piles of melty coins
-      * Projectiles are sometimes rendered incorrectly or even completely
-        invisible
+* [ ] Projectiles are sometimes rendered incorrectly.
 * [ ] Monster shuffling fails to populate levels as fully as it should be able to
-* [ ] User interface is still very rough
-* [x] It's possible to lose items given by NPCs if the inventory is full (unlike
-      chests that just don't open). Find a better story for this (possibly set
-      flags for full inventory rows and then add an extra dialog in front of
-      the give dialog if it would e lost?), as well as a better way to tell the
-      player what they would be getting.
-* [ ] Consumable items sometimes flow into neighboring row.
+* [ ] Overflowed key items require dropping an item to get them to come back.
+      This shouldn't cause problems, but it's ugly.
 
 ## The Team
 
-* Programmer: Steve_Hacks (formerly bmmpxf)
-* Playtester and Lead Consultant: Mattrick_
+* Stave_Hacks: designer, programmer
+* Mattrick_: developer, playtester
+* Dragondarch: playtester
+* crossproduct: playtester

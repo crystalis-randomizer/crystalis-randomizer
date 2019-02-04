@@ -1681,7 +1681,13 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
       swap(slot, other);
     }
   }
-  if (!log) log = {};
+
+  for (const slot of graph.slots()) {
+    slot.write(rom);
+  }
+
+  if (!log) return;
+  //log = {};
 
   // Commit everything
   //const logdata = [];
@@ -1701,7 +1707,6 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
                   itemName: slot.item.name,
                   text: `${slot.item.name}: ${slotName}`,
                  });
-    slot.write(rom);
   }
   
   //logdata.sort((a, b) => a.itemIndex - b.itemIndex);

@@ -479,8 +479,8 @@ GrantItemInRegisterA:
 
 
 ;; bow of truth extra triggers
-.org $1d8dc
-  .byte $80,$00,$40,$00
+.org $1d8dc ;; Azteca dialog
+  .byte $80,$00,$c0,$00
 
 ;; refresh triggers
 ;.org $1d780

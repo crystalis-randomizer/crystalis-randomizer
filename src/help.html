@@ -39,7 +39,8 @@
       <li>Enemies are shuffled throughout the game.
       <li>Enemy stats (attack, defense, HP, experience and gold
         rewards) are normalized based on the difficulty level.
-      <li>A passage is (optionally) opened between Valley of Wind and Lime Tree.
+      <li>A passage is (optionally) opened between <span class="location">Valley
+        of Wind</span> and <span class="location">Lime Tree</span>.
       <li>A number of triggers have been slightly changed (see below).
       <li>A number of characters spawn in multiple locations independent of
         game events (e.g. Zebu remains in the cave the entire game, rather
@@ -47,16 +48,13 @@
       <li>Some minor bug fixes: screen shaking is fixed, and vampire 2 no longer
         speeds up at the start of the fight.
       <li>Swan gate now has a pair of guards on the opposite side, to allow going
-        through either direction (with Change).
+        through either direction (with Change).  The 
       <li>It is now possible to teleport out of the tower, and to get
         back in via the pyramid back entrance.
       <li>Sword of Thunder always teleports to Shyron, no matter where it's found
         (though this can be disabled).  The warp checkpoint is immediately set,
         and in case there's no way back, Asina will teleport the player back to
         Mezame Shrine.
-      <li>Key items can overflow into an invisible buffer; if you have items in
-        this buffer, you can "drop" a key item to recover the overflowed items.
-        The "dropped" item will take its place in the buffer.
       </ul>
     </div>
   </section>
@@ -67,6 +65,9 @@
       <ul>
       <li>Inventory sorting is disabled for swords and orbs/bracelets to prevent
         items from clobbering each other.
+      <li>Key items can overflow into an invisible buffer; if you have items in
+        this buffer, you can "drop" a key item to recover the overflowed items.
+        The "dropped" item will take its place in the buffer.
       <li>Orbs and bracelets are progressive upgrades: the first item you get,
         even if it says "bracelet" will give you the orb, and the second will
         give the bracelet.  The distinction is important only because Tornel is
@@ -100,11 +101,31 @@
         is shuffled into a slot, while unparenthesized items refer to the
         actual item.
       <ul>
+      <li>Zebu, Tornel, Stom, Akahana, Asina, and Kensu are always available
+        in the different locations as long as they need to be, regardless of
+        any other story events that occur.
+      <li>Zebu will spawn the sleeping Windmill Guard even after starting the
+        windmill.
       <li>Tornel teaching [Teleport] is blocked on finding exactly the
         Tornado Bracelet, regardless of whether the Ball of Wind has been
         found.
       <li>[Barrier] now (optionally) requires calming the sea, rather
         than just ghetto flight.
+      <li>The Queen of Portoa will not "go on vacation" and reveal herself as
+        Asina until after the Mesia recording has been viewed (this ensures
+        both Sword and Orb of Water are acquired, guaranteeing that the back
+        room is reachable).
+      <li>If Queen of Portoa doesn't give [Flute of Lime] before turning into
+        Asina, just talk to her again after getting [Recover].
+      <li>Fog Lamp cannot be returned unless Shell Flute is
+        acquired. Optionally (with the 'Rd' flag), it's also required
+        to have healed the dolphin (note that this means that without
+        the flag it's possible to heal the dolphin while riding the
+        dolphin.  Don't worry, it's his sister).
+      <li>Kensu will not appear in the beach cabin until Fog Lamp has been
+        returned.
+      <li>The Shyron massacre requires both the actual Sword of Thunder and
+        getting the [Key to Stxy] from Zebu in Shyron.
       <li>TODO - mesia, wise men, queen, etc...
       </ul>
     </div>

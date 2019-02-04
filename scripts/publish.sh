@@ -56,7 +56,8 @@ fi
 )
 (
   cd $TMP/r
-  rm latest
+  rm -f latest
+  rm -f stable
   ln -s $HASH latest
   ln -s $HASH stable # TODO - don't mark everything stable!!! - use branch!
   

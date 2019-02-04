@@ -59,7 +59,8 @@ body {
   justify-content: flex-start;
 }
 
-a {
+nav a,
+a.button {
   text-decoration: none;
 }
 

@@ -297,8 +297,13 @@ class Graph {
   }
 }
 
-let flags = location.hash.substring(1);
-if (!flags) flags = 'Rflpt Ts';
+let flags = 'Rflpt Ts';
+for (const arg of location.hash.substring(1).split('&')) {
+  const [key, value] = arg.split('=');
+  if (key === 'flags') {
+    flags = decodeURIComponent(value);
+  }
+}
 //   'speed-boots': true,
 //   'glitch-ghetto-flight': true,
 //   'glitch-talk': true,

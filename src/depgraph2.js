@@ -1,6 +1,7 @@
 import {
   Area,
   Boss,
+  BossDrop,
   Chest,
   Condition,
   Graph,
@@ -1667,7 +1668,7 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
     const isMimic = (s) => s.index === 0x70;
     const needsChest = (i) =>
         // NOTE: if alarm flute goes in 3rd row, 0x31 should go away.
-        i >= 0x0d && i < 0x24 || i === 0x26 || i === 0x28 || i === 0x31);
+        i >= 0x0d && i < 0x24 || i === 0x26 || i === 0x28 || i === 0x31;
     const canSwap = (s1, s2) => {
       if (s1.index === s2.index) return false;
       if (isMimic(s1)) return canHoldMimic(s2);
@@ -1682,7 +1683,7 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
       const other = pools[poolIndex][++pos[poolIndex]];
       // don't try to swap the same thing
       if (!canSwap(slot, other)) continue;
-      s1.swap(s2);
+      slot.swap(other);
       swaps.push([slot, other]);
     }
     if (!swaps.length) continue; // nothing to do

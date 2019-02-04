@@ -58,10 +58,12 @@ const addSeedListeners = () => {
 const initializeStateFromHash = () => {
   // Read flags and seed from the hash.
   for (const term of location.hash.substring(1).split('&')) {
-    const [key, value] = term.split('=');
+    let [key, value] = term.split('=');
+    value = decodeURIComponent(value);
     if (key === 'flags') {
       flags = new FlagSet(value);
-      // TODO - deselect preset
+      document.getElementById('preset').value = '--';
+      document.getElementById('flagstring').value = value;
     }
     if (key === 'seed') seed = decodeURIComponent(value);
   }
@@ -203,6 +205,8 @@ const updateDom = () => {
   history.replaceState({flags: flags.flags, seed}, '', hash.join(''));
   document.body.classList.toggle('spoiled', flags.check('Ds'));
   document.getElementById('flagstring-out').textContent = String(flags);
+  document.getElementById('track-url').href =
+      `track#flags=${String(flags).replace(/ /g, '')}`;
 };
 
 const loadRomFromStorage = () => {

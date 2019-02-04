@@ -1180,7 +1180,7 @@ const styx2e                = location(0x89, STYX, 'Right branch, across water')
                                 .connect(styx2d, flight)
                                 .chest(mimic, 0x14)
                                 .chest(mimic, 0x15)
-                                .chest(psychoShield, 0x1e);
+                                .chest(psychoShield, 0x1c);
 const styx3                 = location(0x8a, STYX, 'Upper floor').fortress()
                                 // pit to styx2a
                                 .connect(styx2c)

@@ -574,10 +574,13 @@ export class Slot extends Node {
   }
 }
 
+export class BossDrop extends Slot {}
+
 export class Chest extends Slot {
   constructor(...args) {
     super(...args);
     this.spawnSlot = null;
+    this.isInvisible = false;
   }
 
   objectSlot(loc, spawnSlot) {
@@ -592,6 +595,7 @@ export class Chest extends Slot {
   }
 
   invisible(addr) {
+    this.isInvisible = true;
     return this.direct(addr);
   }
 }
@@ -620,7 +624,7 @@ export class ItemGet extends Node {
   }
 
   bossDrop(name, bossId, itemGetIndex = this.id) {
-    return new Slot(this.graph, name, this, itemGetIndex, [(rom, slot) => {
+    return new BossDrop(this.graph, name, this, itemGetIndex, [(rom, slot) => {
       const a = addr(rom, 0x1f96b, 0x14000, bossId) + 4;
       rom[a] = slot.index;
 //console.log(`${this.name == slot.name ? this.name : `${slot.name} (${this.name})`}: ${a.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);

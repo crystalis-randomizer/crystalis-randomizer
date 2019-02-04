@@ -1,4 +1,15 @@
-import {Graph, Area, Boss, Condition, Item, Location, Magic, Option, Trigger} from './graph2.js';
+import {
+  Area,
+  Boss,
+  Chest,
+  Condition,
+  Graph,
+  Item,
+  Location,
+  Magic,
+  Option,
+  Trigger,
+} from './graph2.js';
 import {FlagSet} from './flagset.js';
 
 // Make a fresh/clean graph. We could pass options directly into this function.
@@ -1636,16 +1647,6 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
 
   //let swap = (w, k) => both[w][pos[w] - 1 + k].swap(both[w][pos[w] + k]);
 
-  const swap = (s1, s2) => {
-    // don't try to swap the same thing
-    if (s1 === s2) return;
-    // mimics can only be swapped into chests
-    if (!s1.spawnSlot && s2.index === 0x70) return;
-    if (!s2.spawnSlot && s1.index === 0x70) return;
-    // make the swap
-    s1.swap(s2);
-  };
-
   let route = [];
   if (progress) progress.addTasks(10);
   for (let i = 0; i < 1000; i++) {
@@ -1658,12 +1659,33 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
     for (const pool of pools) random.shuffle(pool);
     const pos = pools.map(() => -1);
     const count = counts[random.nextInt(counts.length)];
+    const swaps = [];
+
+    const isChest = (s) =>
+        (s instanceof Chest || s instanceof BossDrop) && s.origIndex !== 0x09;
+    const canHoldMimic = (s) => isChest(s) && !s.isInvisible;
+    const isMimic = (s) => s.index === 0x70;
+    const needsChest = (i) =>
+        // NOTE: if alarm flute goes in 3rd row, 0x31 should go away.
+        i >= 0x0d && i < 0x24 || i === 0x26 || i === 0x28 || i === 0x31);
+    const canSwap = (s1, s2) => {
+      if (s1.index === s2.index) return false;
+      if (isMimic(s1)) return canHoldMimic(s2);
+      if (isMimic(s2)) return canHoldMimic(s1);
+      if (needsChest(s1.index)) return isChest(s2);
+      if (needsChest(s2.index)) return isChest(s1);
+      return true;
+    };
 
     for (let j = 0; j < count; j++) {
       const [slot, poolIndex] = all[j];
       const other = pools[poolIndex][++pos[poolIndex]];
-      swap(slot, other);
+      // don't try to swap the same thing
+      if (!canSwap(slot, other)) continue;
+      s1.swap(s2);
+      swaps.push([slot, other]);
     }
+    if (!swaps.length) continue; // nothing to do
     // test
 
     const {win, path} = graph.traverse();
@@ -1675,10 +1697,9 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
       //console.log(`shuffled ${count} items: fail`);
     }
     // unswap
-    for (let i = count - 1; i >= 0; i--) {
-      const [slot, poolIndex] = all[i];
-      const other = pools[poolIndex][pos[poolIndex]--];
-      swap(slot, other);
+    while (swaps.length) {
+      const [a, b] = swaps.pop();
+      a.swap(b);
     }
   }
 

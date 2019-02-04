@@ -1,0 +1,25 @@
+<title>Crystalis Randomizer</title>
+<!--base-->
+<link rel="stylesheet" href="main.css">
+<script type="module" src="check.js"></script>
+</script>
+
+<main>
+  <section>
+    <h1>Check ROM</h1>
+    <div>
+      <p><label class="file-picker button">
+        Select Shuffled Crystalis ROM File
+        <input type="file" accept=".nes" id="pick-file" style="display: none;">
+      </label>
+      <h2>Information</h2>
+      <ul>
+        <li>Filename: <span id="filename"></span>
+        <li>Version: <span id="hash"></span>
+        <li>Seed: <span id="seed"></span>
+        <li>Flags: <span id="flags"></span>
+        <li>Checksum: <span id="checksum"></span>
+      </ul>
+    </div>
+  </section>
+</main>

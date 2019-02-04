@@ -42,7 +42,7 @@ export const parseSeed = (/** string */ seed) => /** number */ {
 export const shuffle = async (rom, seed, flags, log = undefined, progress = undefined) => {
   // First turn the seed into something useful.
   if (typeof seed !== 'number') throw new Error('Bad seed');
-  seed = (seed ^ crc32(String(flags))) >>> 0;
+  const newSeed = crc32(seed.toString(16).padStart(8, 0) + String(flags)) >>> 0;
 
   // Rearrange things first before anything else happens!
   watchForFlag0.apply(rom);
@@ -51,7 +51,7 @@ export const shuffle = async (rom, seed, flags, log = undefined, progress = unde
   if (flags.check('Rp')) connectLeafToLimeTree.apply(rom);
   openSwanFromEitherSide.apply(rom);
 
-  const random = new Random(seed);
+  const random = new Random(newSeed);
   await shuffleDepgraph(rom, random, log, flags, progress);
 
   // Parse the rom and apply other patches.
@@ -111,9 +111,9 @@ export const stampVersionSeedAndHash = (rom, seed, flags) => {
   // Would be nice to store (1) commit, (2) flags, (3) seed, (4) hash
   // We can use base64 encoding to help some...
   // For now just stick in the commit and seed in simple hex
-  const crc = crc32(rom).toString(16).padStart(8, 0);
-  const hash = BUILD_HASH.substring(0, 7).padStart(7, 0);
-  seed = seed.toString(16).padStart(8, 0);
+  const crc = crc32(rom).toString(16).padStart(8, 0).toUpperCase();
+  const hash = BUILD_HASH.substring(0, 7).padStart(7, 0).toUpperCase();
+  seed = seed.toString(16).padStart(8, 0).toUpperCase();
   const embed = (addr, text) => {
     for (let i = 0; i < text.length; i++) {
       rom[addr + 0x10 + i] = text.charCodeAt(i);
@@ -156,7 +156,7 @@ export const stampVersionSeedAndHash = (rom, seed, flags) => {
     embed(0x2782f, intercalate(extraFlags.substring(0, 23), extraFlags.substring(23)));
   }
 
-  embed(0x27885, crc);
+  embed(0x27885, intercalate(crc.substring(0, 4), crc.substring(4)));
 
   // embed(0x25ea8, `v.${hash}   ${seed}`);
   embed(0x25716, 'RANDOMIZER');

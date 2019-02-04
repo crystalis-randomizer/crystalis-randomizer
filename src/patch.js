@@ -453,6 +453,9 @@ PatchGrantItemInRegisterA:
 ;WaitForDialogToBeDismissed:
 
 
+.org $3d223 ; part of DialogFollowupActionJump_11 (give 2nd item)
+  bpl GrantItemInRegisterA ; change from bne to handle sword of wind
+
 .org $3d22b
 GrantItemInRegisterA:
   jsr PatchGrantItemInRegisterA

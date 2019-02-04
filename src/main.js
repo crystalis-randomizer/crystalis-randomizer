@@ -59,7 +59,10 @@ const initializeStateFromHash = () => {
   // Read flags and seed from the hash.
   for (const term of location.hash.substring(1).split('&')) {
     const [key, value] = term.split('=');
-    if (key === 'flags') flags = new FlagSet(value);
+    if (key === 'flags') {
+      flags = new FlagSet(value);
+      // TODO - deselect preset
+    }
     if (key === 'seed') seed = decodeURIComponent(value);
   }
 };
@@ -94,6 +97,14 @@ const click = async (e) => {
   }
 };
 
+const read = (arr, index, len) => {
+  const chars = [];
+  for (let i = 0; i < len; i++) {
+    chars.push(String.fromCharCode(arr[index + 2 * i]));
+  }
+  return chars.join('');
+};
+
 const shuffleRom = async (seed) => {
   const progressEl = document.getElementById('progress');
   const progressTracker = new ProgressTracker();
@@ -115,6 +126,9 @@ const shuffleRom = async (seed) => {
     replaceSpoiler('spoiler-items', log.items.map(x => x.text));
     replaceSpoiler('spoiler-route', log.route);
   }
+  document.getElementById('checksum').textContent =
+      // shifted by header
+      read(shuffled, 0x27895, 4) + read(shuffled, 0x27896, 4);
   return shuffled;
 };
 

@@ -61,7 +61,7 @@ export const shuffle = async (rom, seed, flags, log = undefined, progress = unde
   identifyKeyItemsForDifficultyBuffs(parsed);
 
   fixShaking.apply(rom);
-  preventSwordClobber.apply(rom);
+  //preventSwordClobber.apply(rom);
   upgradeBallsToBracelets.apply(rom);
   preventNpcDespawns.apply(rom);
   allowTeleportOutOfTower.apply(rom);
@@ -691,7 +691,7 @@ CheckDroppable:
     rts
 + lda InvItemData,x
   rts
-MaybeDrop:
+MaybeDrop:  ; 21486
   txa
   and #$f0
   cmp #$20
@@ -714,7 +714,7 @@ MaybeDrop:
 + pla
   sta $64b8,x
   rts
-FillQuestItemsFromBuffer:
+FillQuestItemsFromBuffer: ; 214af
   ;; If there's anything in the buffer and any space in the inventory,
   ;; fill them in.  Just take the most recently added ones, not worrying
   ;; about cycling the queue (that's only needed for dropping).
@@ -724,7 +724,8 @@ FillQuestItemsFromBuffer:
    lda $64b8,y
   bne -        ; occupied, decrement and look at the next
   ;; If y == #$08 then buffer is empty - return.
-+ cpy #$07
++ iny
+  cpy #$08
   beq +
   ;; Look for open spots in the quest item row
   ldx #$08
@@ -740,16 +741,28 @@ FillQuestItemsFromBuffer:
    iny
    cpy #$08
   bne -
-
-  ;; TODO - call this from 20534, fill in those 2 opcodes here
-  ;; and add a nop
-  ;; we'll collide with preventSwordClobber, but we should be able
-  ;; to move these into the same block and do it consistently.
-  ;; -- be sure to comment why the numbers change
-
-+ rts
+  ;; The following is copied from $20534, patched to not sort
+  ;; the swords or powerups (so it loads 2 instead of 0)
++ lda #$02
+  sta $2e
+  rts
 
 .org $21500
+
+;; MUST BE EXACTLY 4 BYTES
+.org $20534
+  nop
+  jsr FillQuestItemsFromBuffer
+
+;; NOTE: This is copied from preventSwordClobber, which is no longer
+;; used on its own since we need to do slightly different initialization
+;; to refill from the buffer.
+;.org $20534
+;  lda #$02
+.org $205a7
+  .byte $0c
+.org $205a9
+  .byte $04
 
 `, 'rearrangeTriggers'));
 

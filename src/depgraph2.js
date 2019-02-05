@@ -1662,9 +1662,11 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
     const count = counts[random.nextInt(counts.length)];
     const swaps = [];
 
+    // Only chests can hold consumables (unless we override with a flag).
     const isChest = (s) =>
         (s instanceof Chest || s instanceof BossDrop) && s.origIndex !== 0x09;
-    const canHoldMimic = (s) => isChest(s) && !s.isInvisible;
+    // NOTE: boss drops cannot hold mimics because they cause boss respawn.
+    const canHoldMimic = (s) => (s instanceof Chest) && !s.isInvisible;
     const isMimic = (s) => s.index === 0x70;
     const needsChest = (i) =>
         // NOTE: if alarm flute goes in 3rd row, 0x31 should go away.

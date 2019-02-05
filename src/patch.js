@@ -462,8 +462,7 @@ GrantItemInRegisterA:
 
 ;; If LookingAt is $1f and the item goes into the $20 row then we can't
 ;; just reject - instead, add the item to an overflow chest.
-;; We use the bytes at 64b0..64b8 to store the overflow.
-;; The first is a bitmask for the next 8, inverted (1 means empty)
+;; We use the bytes at 64b8..64bf to store the overflow.
 
 ;; asina reveal depends on mesia recording (01b), not ball of water (01f)
 ;; - this ensures you have both sword and ball to get to her --> ???
@@ -715,6 +714,40 @@ MaybeDrop:
 + pla
   sta $64b8,x
   rts
+FillQuestItemsFromBuffer:
+  ;; If there's anything in the buffer and any space in the inventory,
+  ;; fill them in.  Just take the most recently added ones, not worrying
+  ;; about cycling the queue (that's only needed for dropping).
+  ldy #$08     ; predecrement, so start at $64c0
+-  dey
+   bmi +       ; buffer is full
+   lda $64b8,y
+  bne -        ; occupied, decrement and look at the next
+  ;; If y == #$08 then buffer is empty - return.
++ cpy #$07
+  beq +
+  ;; Look for open spots in the quest item row
+  ldx #$08
+-   dex
+    bmi +
+    lda $6450,x
+   bpl -
+   ;; We're looking at an open slot in x and an available item in y
+   lda $64b8,y
+   sta $6450,x
+   lda #$00
+   sta $64b8,y
+   iny
+   cpy #$08
+  bne -
+
+  ;; TODO - call this from 20534, fill in those 2 opcodes here
+  ;; and add a nop
+  ;; we'll collide with preventSwordClobber, but we should be able
+  ;; to move these into the same block and do it consistently.
+  ;; -- be sure to comment why the numbers change
+
++ rts
 
 .org $21500
 

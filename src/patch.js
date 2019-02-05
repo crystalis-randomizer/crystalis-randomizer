@@ -35,7 +35,7 @@ export default ({
 
 export const parseSeed = (/** string */ seed) => /** number */ {
   if (!seed) return Math.floor(Math.random() * 0x100000000);
-  if (/^[0-9a-f]{1,8}$/.test(seed)) return Number.parseInt(seed, 16);
+  if (/^[0-9a-f]{1,8}$/i.test(seed)) return Number.parseInt(seed, 16);
   return crc32(seed);
 }
 

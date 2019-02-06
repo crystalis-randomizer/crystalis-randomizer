@@ -107,7 +107,7 @@ Try it out at https://crystalisrandomizer.com
 
 ## The Team
 
-* Stave_Hacks: designer, programmer
-* Mattrick_: developer, playtester
-* Dragondarch: playtester
-* crossproduct: playtester
+* Stave_Hacks: programming, design
+* Mattrick_: development, playtesting
+* Dragondarch: playtesting
+* crossproduct: playtesting, tracker graphics

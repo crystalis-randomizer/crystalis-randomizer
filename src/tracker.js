@@ -14,7 +14,7 @@ statue-of-onyx $25 ONYX
 insect-flute $27 INSECT
 key-to-prison $33 PRISON
 flute-of-lime $28 LIME
-flute-of-lime $5b LIME
+# flute-of-lime $5b LIME
 
 ball-of-wind $05 
 ball-of-fire $07
@@ -86,7 +86,7 @@ const SLOTS = [
   [0x70, 346,153, 0x4a, 0x15], // fog lamp mimic 1
   [0x70, 346,159, 0x4a, 0x16], // fog lamp mimic 2
   [0x20, 126, 52], // fruit of lime mt hydra
-  [0x21, 228, 95], // fruit of power sabera palace
+  [0x21, 227, 97], // fruit of power sabera palace
   [0x22, 256, 73], // magic ring evil spirit island
   [0x23,  58,115], // fruit of repun sabera 2
   [0x24,  82,113], // warp boots sealed cave
@@ -132,7 +132,7 @@ const SLOTS = [
   [0x52, 134,219], // medical herb mt sabre w
   [0x53,  59,219], // medical herb mt sabre n
   [0x54,  52, 55], // magic ring fortress 3 upper
-  [0x55, 240, 95], // medical herb sabera palace
+  [0x55, 241, 97], // medical herb sabera palace
   [0x56, 123, 23], // medical herb mt hydra
   [0x70, 115,  3, 0x85, 0x17], // mt hydra mimic
   [0x57,  70,  9], // medical herb styx
@@ -149,7 +149,7 @@ const SLOTS = [
   [0x5e,  14,229], // antidote mt sabre n
   [0x5f, 345,225], // antidote kirisa cave
   [0x60,  18, 94], // antidote fortess 3
-  [0x61, 234, 95], // fruit of power vampire 2
+  [0x61, 234, 96], // fruit of power vampire 2
   [0x62,  18,118], // fruit of power sabera level
   [0x63,  36, 54], // opel statue fortress 3
   [0x64, 174, 97], // fruit of power oasis cave
@@ -176,6 +176,7 @@ class Graph {
     this.slotElts = new Map(); // map from slot uid to element
     this.itemElts = new Map(); // map from item uid to element
     this.has = new Set();      // set of item uid
+    this.always = new Set();   // only used for clearing
     this.checked = new Set();  // set of slot uid
     this.grid = document.getElementsByClassName('grid')[0];
     this.map = document.getElementsByClassName('map')[0];
@@ -193,6 +194,7 @@ class Graph {
       }
       // not shown, just assume have it
       if (slot.name == 'Alarm Flute' || slot.name == 'Medical Herb') {
+        this.always.add(slot.item.uid);
         this.has.add(slot.item.uid);
       }
     }
@@ -257,20 +259,12 @@ class Graph {
     this.map.appendChild(div);
   }
 
-  addBox(cls, id, gloss = '') {
+  addBox(cls, id) {
     // parse the hex, removing $ prefix
     id = Number.parseInt(id.substring(1), 16);
-    const outer = document.createElement('div');
-    outer.classList.add('slot');
+    const outer = document.getElementsByClassName(cls)[0];
     const inner = document.createElement('div');
-    outer.classList.add(cls);
-    if (gloss) {
-      const glossDiv = document.createElement('div');
-      glossDiv.textContent = gloss;
-      inner.appendChild(glossDiv);
-    }
     outer.appendChild(inner);
-    this.grid.appendChild(outer);
     const slot = this.nodeFromSlot.get(id);
     outer.dataset['slot'] = slot.uid;
     outer.dataset['item'] = slot.item.uid;
@@ -339,7 +333,7 @@ for (const arg of location.hash.substring(1).split('&')) {
 
 const graph = new Graph(generate(new FlagSet(flags + ' Dt')));
 for (let box of BOXES.split('\n')) {
-  box = box.trim();
+  box = box.replace(/#.*/, '').trim();
   if (!box) continue;
   graph.addBox(...box.split(/ +/g));
 }
@@ -347,3 +341,15 @@ for (const slot of SLOTS) {
   graph.addSlot(...slot);
 }
 graph.update();
+
+document.getElementById('toggle-map').addEventListener('click', () => {
+  document.getElementsByClassName('map')[0].classList.toggle('hidden');
+});
+document.getElementById('clear-all').addEventListener('click', () => {
+  graph.has = new Set(graph.always);
+  graph.checked.clear();
+  graph.update();
+  for (const element of document.querySelectorAll('.slot.got')) {
+    element.classList.remove('got');
+  }
+});

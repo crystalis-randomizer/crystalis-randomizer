@@ -182,10 +182,15 @@ class Graph {
     this.map = document.getElementsByClassName('map')[0];
     this.nodeFromSlot = new Map();  // map from slot id to node
     this.mimicSlots = new Map();    // location and spawn to node
+    this.nodes = new Map();
 
     this.offRoute = (graph.nodes.find(n => n.name == 'Off-route') || {}).uid;
     this.glitch = (graph.nodes.find(n => n.name == 'Glitch') || {}).uid;
     this.hard = (graph.nodes.find(n => n.name == 'Hard') || {}).uid;
+
+    for (const n of graph.nodes) {
+      this.nodes.set(n.uid, n.name);
+    }
 
     for (const slot of graph.slots()) {
       // used by addBox
@@ -218,6 +223,10 @@ class Graph {
       }
       if (!t) return;
       const uid = t.dataset[key];
+      if (slot && e.shiftKey) {
+        showReqs(uid);
+        return;
+      }
       if (set.has(uid)) {
         set.delete(uid);
       } else {
@@ -230,9 +239,31 @@ class Graph {
       e.preventDefault();
     };
 
+    const reqs = document.getElementById('reqs');
+    const clearReqs = () => {
+      reqs.dataset['showing'] = '';
+      while (reqs.children.length) reqs.children[0].remove();
+    };
+
     this.grid.addEventListener('click', e => toggle(e, false));
     this.grid.addEventListener('contextmenu', toggle);
     this.map.addEventListener('click', e => toggle(e, true));
+
+    const showReqs = (uid) => {
+      if (reqs.dataset['showing'] == uid) return;
+      clearReqs();
+      reqs.dataset['showing'] = uid;
+      const top = document.createElement('span');
+      top.textContent = `${this.nodes.get(uid)} requires`;
+      reqs.appendChild(top);
+      const ul = document.createElement('ul');
+      reqs.appendChild(ul);
+      for (const alt of this.depgraph.graph.get(uid).values()) {
+        const li = document.createElement('li');
+        li.textContent = [...alt].map(n => this.nodes.get(n)).join(' AND ');
+        ul.appendChild(li);
+      }
+    };
   }
 
   addSlot(index, x, y, loc, spawn) {
@@ -343,7 +374,7 @@ for (const slot of SLOTS) {
 graph.update();
 
 document.getElementById('toggle-map').addEventListener('click', () => {
-  document.getElementsByClassName('map')[0].classList.toggle('hidden');
+  graph.map.classList.toggle('hidden');
 });
 document.getElementById('clear-all').addEventListener('click', () => {
   graph.has = new Set(graph.always);

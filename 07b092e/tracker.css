@@ -284,3 +284,20 @@
 .hidden {
   display: none;
 }
+
+
+li.blocked {
+  color: #b00;
+}
+li.available {
+  color: #4d4;
+}
+li.glitched {
+  color: #cb3;
+}
+li.off-route {
+  color: #8c5;
+}
+li.hard {
+  color: #fa5;
+}

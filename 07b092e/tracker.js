@@ -184,9 +184,11 @@ class Graph {
     this.mimicSlots = new Map();    // location and spawn to node
     this.nodes = new Map();
 
-    this.offRoute = (graph.nodes.find(n => n.name == 'Off-route') || {}).uid;
-    this.glitch = (graph.nodes.find(n => n.name == 'Glitch') || {}).uid;
-    this.hard = (graph.nodes.find(n => n.name == 'Hard') || {}).uid;
+    /** @const {!Map<!Node, number>} */
+    this.route = new Map([
+      [(graph.nodes.find(n => n.name == 'Off-route') || {}).uid, 1],
+      [(graph.nodes.find(n => n.name == 'Glitch') || {}).uid, 2],
+      [(graph.nodes.find(n => n.name == 'Hard') || {}).uid, 3]]);
 
     for (const n of graph.nodes) {
       this.nodes.set(n.uid, n.name);
@@ -258,11 +260,25 @@ class Graph {
       reqs.appendChild(top);
       const ul = document.createElement('ul');
       reqs.appendChild(ul);
+      const alts = [];
       for (const alt of this.depgraph.graph.get(uid).values()) {
+        let level = 0;
         const li = document.createElement('li');
-        li.textContent = [...alt].map(n => this.nodes.get(n)).join(' AND ');
-        ul.appendChild(li);
+        const parts = [];
+        for (const dep of alt) {
+          if (this.route.has(dep)) {
+            level = Math.max(level, this.route.get(dep));
+          } else if (!this.has.has(dep)) {
+            level = 4;
+          }
+          parts.push(this.nodes.get(dep));
+        }
+        li.textContent = parts.join(' AND ');
+        li.classList.add(['available', 'off-route', 'glitched', 'hard', 'blocked'][level]);
+        alts.push([li, level]);
       }
+      alts.sort((a, b) => (a[1] - b[1]) || (a[0].textContent.length - b[0].textContent.length));
+      for (const alt of alts) ul.appendChild(alt[0]);
     };
   }
 
@@ -321,12 +337,9 @@ class Graph {
         for (const alternative of this.depgraph.graph.get(uid).values()) {
           let level = 0;
           for (const dep of alternative) {
-            if (dep === this.offRoute) {
-              level = Math.max(level, 1);
-            } else if (dep === this.glitch) {
-              level = Math.max(level, 2);
-            } else if (dep === this.hard) {
-              level = Math.max(level, 3);
+            const depLevel = this.route.get(dep);
+            if (depLevel) {
+              level = Math.max(level, depLevel);
             } else if (!this.has.has(dep)) {
               level = 4;
               break;

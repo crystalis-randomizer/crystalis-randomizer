@@ -18,7 +18,7 @@ class Edge {
   }
 }
 
-class Node {
+export class Node {
   constructor(graph) {
     this.graph = graph;
     this.hashCode_ = graph.nodes.length;

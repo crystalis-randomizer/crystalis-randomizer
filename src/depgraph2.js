@@ -8,6 +8,7 @@ import {
   Item,
   Location,
   Magic,
+  Node,
   Option,
   Trigger,
 } from './graph2.js';
@@ -95,6 +96,10 @@ const assumeRabbitSkip      = option('Assume rabbit skip',
                                      opt('Gr', false));
 const swordMagicOptional    = option('Sword magic optional',
                                      opt('Hw', false));
+const matchingSwordOptional = option('Matching sword optional',
+                                     opt('Hs', false));
+const gasMaskOptional       = option('Gas mask optional',
+                                     opt('Hg', false));
 const healedDolphinOptional = option('Healed dolphin optional',
                                      opt('Rd', true));
 const requireCalmForBarrier = option('Require calm for barrier',
@@ -105,15 +110,23 @@ const barrierOptional       = option('Barrier magic optional',
                                      opt('Hb', true));
 const refreshOptional       = option('Refresh magic optional',
                                      opt('!Er', true));
-const earlyFlight           = option('Early flight',
+const routeEarlyFlight      = option('Early flight route',
                                      opt('Rf', false));
 const limeTreeConnectsToLeaf = option('Lime Tree connects to Leaf',
                                       opt('Rp', true));
 const assumeWildWarp        = option('Assume wild warp',
                                      opt('Gw', false));
+const allowWildWarp         = option('Allow wild warp',
+                                     opt('!Tw', false));
 const assumeSwordChargeGlitch = option('Assume sword charge glitch',
                                        opt('Gs', false));
 const tracker               = option('Tracker only', opt('Dt', false));
+
+// These are various indications of off-route availability.
+const offRoute              = new Node(graph); offRoute.name = 'Off-route';
+const glitch                = new Node(graph); glitch.name = 'Glitch';
+const hard                  = new Node(graph); hard.name = 'Hard';
+// TODO - consider making 'name' a ctor parameter (note: Slot overrides getter)
 
 // TODO - assumeSwordChargeGlitch - would be super annoying...
 //   - would need to make a condition anyLevel2Sword to put with the needed
@@ -368,7 +381,6 @@ const mimic                 = item(0x70, 'Mimic'); // special handling to dup
 ////////////////////////////////////////////////////////////////
 
 // TODO - maybe don't build any logic into here, just put them where they need to go?
-
 const talkedToLeafElder     = trigger('Talked to Leaf Elder').get(swordOfWind);
 const talkedToLeafStudent   = trigger('Talked to Leaf Student');
 const buyAlarmFlute         = trigger('Buy alarm flute').get(alarmFlute);
@@ -423,6 +435,24 @@ const win                   = trigger('Win');
 ////////////////////////////////////////////////////////////////
 // Conditions
 ////////////////////////////////////////////////////////////////
+const earlyFlight           = condition('Early flight')
+                                .option(routeEarlyFlight)
+                                .option(offRoute);
+const swordChargeGlitch     = condition('Sword charge glitch')
+                                .option(assumeSwordChargeGlitch)
+                                .option(glitch);
+const rabbitSkip            = condition('Rabbit skip')
+                                .option(assumeRabbitSkip)
+                                .option(glitch);
+const talkGlitch            = condition('Talk glitch')
+                                .option(assumeTalkGlitch)
+                                .option(glitch);
+const ghettoFlight          = condition('Ghetto flight')
+                                .option(assumeGhettoFlight)
+                                .option(glitch);
+const wildWarp              = condition('Wild warp')
+                                .option(assumeWildWarp)
+                                .option(glitch, allowWildWarp);
 const anyLevel2             = condition('Any level 2 sword')
                                 .option(swordOfWind, ballOfWind)
                                 .option(swordOfWind, tornadoBracelet)
@@ -435,26 +465,30 @@ const anyLevel2             = condition('Any level 2 sword')
 const destroyStone          = condition('Destroy stone')
                                 .option(swordOfWind, ballOfWind)
                                 .option(swordOfWind, tornadoBracelet)
-                                .option(assumeSwordChargeGlitch, swordOfWind, anyLevel2);
+                                .option(swordChargeGlitch, swordOfWind, anyLevel2);
 const destroyIce            = condition('Destroy ice')
                                 .option(swordOfFire, ballOfFire)
                                 .option(swordOfFire, flameBracelet)
-                                .option(assumeSwordChargeGlitch, swordOfFire, anyLevel2);
+                                .option(swordChargeGlitch, swordOfFire, anyLevel2);
 const crossRivers           = condition('Cross rivers')
                                 .option(swordOfWater, ballOfWater)
                                 .option(swordOfWater, blizzardBracelet)
                                 .option(flight, earlyFlight)
-                                .option(assumeSwordChargeGlitch, swordOfWater, anyLevel2);
+                                .option(swordChargeGlitch, swordOfWater, anyLevel2);
 
 const destroyIron           = condition('Destroy iron')
                                 .option(swordOfThunder, ballOfThunder)
                                 .option(swordOfThunder, stormBracelet)
-                                .option(assumeSwordChargeGlitch, swordOfThunder, anyLevel2);
+                                .option(swordChargeGlitch, swordOfThunder, anyLevel2);
 const anySword              = condition('Any sword')
                                 .option(swordOfWind).option(swordOfFire)
                                 .option(swordOfWater).option(swordOfThunder);
-const fireOrWaterOrThunder  = condition('Fire/Water/Thunder')
-                                .option(swordOfFire).option(swordOfWater).option(swordOfThunder);
+const matchInsectSword      = condition('Match insect sword (fire/water/thunder)')
+                                .option(swordOfFire)
+                                .option(swordOfWater)
+                                .option(swordOfThunder)
+                                .option(gasMask, matchingSwordOptional, swordOfWind)
+                                .option(gasMask, hard, swordOfWind);
 const speedBoots            = condition('Speed boots').option(leatherBoots, leatherBootsGiveSpeed);
 const climbSlopes           = condition('Climb slopes')
                                 .option(rabbitBoots)
@@ -462,13 +496,13 @@ const climbSlopes           = condition('Climb slopes')
                                 .option(speedBoots);
 const enterMtSabreNorth     = condition('Enter Mt Sabre North')
                                 .option(talkedToLeafRabbit)
-                                .option(assumeRabbitSkip);
+                                .option(rabbitSkip);
 // Required for access to underground channel.
 const asinaTrigger          = condition('Asina in her room')
                                 // NOTE: this is just ballOfWater in vanilla.
                                 .option(mesiaRecording);
 const paralysisOrAsina      = condition('Paralysis or Ball of Water')
-                                .option(paralysis).option(asinaTrigger).option(assumeTalkGlitch);
+                                .option(paralysis).option(asinaTrigger).option(talkGlitch);
 // TODO - consider adding healedDolphin and/or returnedFogLamp here?  otherwise, flight alone
 // is basically enough (though with flight the dolphin is basically just a convenience).
 const rideDolphin           = condition('Ride dolphin').option(shellFlute, talkedToKensuInCabin);
@@ -478,35 +512,40 @@ const crossSea              = condition('Cross sea')
 const crossWhirlpool        = condition('Cross whirlpool')
                                 .option(calmedSea)
                                 .option(flight, earlyFlight)
-                                .option(assumeGhettoFlight);
+                                .option(ghettoFlight);
 const maybeRefresh          = condition('Refresh if needed')
+                                .option(hard)
                                 .option(refreshOptional)
                                 .option(refresh);
 const windMagic             = condition('Wind magic')
+                                .option(hard)
                                 .option(swordMagicOptional, maybeRefresh)
                                 .option(ballOfWind, tornadoBracelet, maybeRefresh);
 const fireMagic             = condition('Fire magic')
+                                .option(hard)
                                 .option(swordMagicOptional, maybeRefresh)
                                 .option(ballOfFire, flameBracelet, maybeRefresh);
 const waterMagic            = condition('Water magic')
+                                .option(hard)
                                 .option(swordMagicOptional, maybeRefresh)
                                 .option(ballOfWater, blizzardBracelet, maybeRefresh);
 const thunderMagic          = condition('Thunder magic')
+                                .option(hard)
                                 .option(swordMagicOptional, maybeRefresh)
                                 // For Karmine, only guarantee level 2.
                                 .option(ballOfThunder, maybeRefresh)
                                 .option(stormBracelet, maybeRefresh);
 const fluteOfLimeOrGlitch   = condition('Flute of lime or glitch')
                                 .option(fluteOfLimeQueen)
-                                .option(assumeTalkGlitch)
-                                .option(tracker, fluteOfLimeChest);
+                                .option(talkGlitch)
+                                .option(offRoute, fluteOfLimeChest);
 // this is only really here for tracker
 const secondFluteOfLime     = condition('Second flute of lime')
                                 .option(fluteOfLimeChest)
-                                .option(tracker, fluteOfLimeQueen);
+                                .option(offRoute, fluteOfLimeQueen);
 const changeOrGlitch        = condition('Change or glitch')
                                 .option(change)
-                                .option(assumeTalkGlitch);
+                                .option(talkGlitch);
 const passShootingStatues   = condition('Pass shooting statues')
                                 .option(barrier)
                                 // Even in non-hell-mode, refresh and shield ring ok
@@ -515,6 +554,26 @@ const passShootingStatues   = condition('Pass shooting statues')
 const maybeHealedDolphin    = condition('Healed dolphin if required')
                                 .option(healedDolphin)
                                 .option(healedDolphinOptional);
+const matchSwordOfWind      = condition('Match sword of wind')
+                                .option(swordOfWind)
+                                .option(hard, anySword)
+                                .option(matchingSwordOptional, anySword);
+const matchSwordOfFire      = condition('Match sword of fire')
+                                .option(swordOfFire)
+                                .option(hard, anySword)
+                                .option(matchingSwordOptional, anySword);
+const matchSwordOfWater     = condition('Match sword of water')
+                                .option(swordOfWater)
+                                .option(hard, anySword)
+                                .option(matchingSwordOptional, anySword);
+const matchSwordOfThunder   = condition('Match sword of thunder')
+                                .option(swordOfThunder)
+                                .option(hard, anySword)
+                                .option(matchingSwordOptional, anySword);
+const travelSwamp           = condition('Travel swamp')
+                                .option(gasMask)
+                                .option(gasMaskOptional)
+                                .option(hard);
 
 // TODO - warp triggers, wild warp, etc...
 // ghetto flight?  talk glitch?  triggers (calmed sea or ghetto flight)?  require magic for boss?
@@ -526,15 +585,15 @@ const maybeHealedDolphin    = condition('Healed dolphin if required')
 // TODO - .trigger(...) but also allow bossLocation.trigger(...) to only affect after
 // the boss is killed...? useful for e.g. eyeGlasses require sabera1 or else palace boss?
 const vampire1    = boss(0x00, 'Vampire 1', anySword).get(rabbitBoots);
-const giantInsect = boss(0x01, 'Insect', insectFlute, fireOrWaterOrThunder).get(ballOfFire);
-const kelbesque1  = boss(0x02, 'Kelbesque 1', swordOfWind, windMagic).get(flameBracelet);
+const giantInsect = boss(0x01, 'Insect', insectFlute, matchInsectSword).get(ballOfFire);
+const kelbesque1  = boss(0x02, 'Kelbesque 1', matchSwordOfWind, windMagic).get(flameBracelet);
 const vampire2    = boss(0x0c, 'Vampire 2', anySword).get(fruitOfPowerVampire2);
-const sabera1     = boss(0x04, 'Sabera 1', swordOfFire, fireMagic).get(brokenStatue);
-const mado1       = boss(0x05, 'Mado 1', swordOfWater, waterMagic).get(ballOfThunder);
-const kelbesque2  = boss(0x06, 'Kelbesque 2', swordOfWind, windMagic).get(opelStatue);
-const sabera2     = boss(0x07, 'Sabera 2', swordOfFire, fireMagic).get(fruitOfRepun);
-const mado2       = boss(0x08, 'Mado 2', swordOfWater, waterMagic).get(sacredShield);
-const karmine     = boss(0x09, 'Karmine', swordOfThunder, thunderMagic).get(ivoryStatue);
+const sabera1     = boss(0x04, 'Sabera 1', matchSwordOfFire, fireMagic).get(brokenStatue);
+const mado1       = boss(0x05, 'Mado 1', matchSwordOfWater, waterMagic).get(ballOfThunder);
+const kelbesque2  = boss(0x06, 'Kelbesque 2', matchSwordOfWind, windMagic).get(opelStatue);
+const sabera2     = boss(0x07, 'Sabera 2', matchSwordOfFire, fireMagic).get(fruitOfRepun);
+const mado2       = boss(0x08, 'Mado 2', matchSwordOfWater, waterMagic).get(sacredShield);
+const karmine     = boss(0x09, 'Karmine', matchSwordOfThunder, thunderMagic).get(ivoryStatue);
 const draygon1    = boss(0x0a, 'Draygon 1', anySword).get(psychoArmor);
 const statues     = boss(null, 'Statues', bowOfSun, bowOfMoon);
 const draygon2    = boss(0x0b, 'Draygon 2', anySword, bowOfTruth);
@@ -668,15 +727,15 @@ const brynmaer              = location(0x18, BRYN, 'Town').town()
 const outsideStomsHouse     = location(0x19, CORD, 'Outside Stom\'s House').town()
                                 .connect(cordelPlainWest);
 const swamp                 = location(0x1a, CORD, 'Swamp').overworld()
-                                .connect(cordelPlainEast, gasMask)
-                                .trigger(rescuedOakChild, talkedToOakMother, gasMask);
+                                .connect(cordelPlainEast, travelSwamp)
+                                .trigger(rescuedOakChild, talkedToOakMother, travelSwamp);
 const swampBoss             = location(0x1a, CORD, 'Swamp Insect Area').overworld()
-                                .connect(swamp, gasMask)
+                                .connect(swamp, travelSwamp)
                                 .boss(giantInsect);
 const amazones              = location(0x1b, AMZN, 'Town').town()
                                 .connect(cordelPlainSouth);
 const oak                   = location(0x1c, OAK,  'Town').town()
-                                .connect(swamp, gasMask)
+                                .connect(swamp, travelSwamp)
                                 .trigger(visitedOak);
 const stomsHouse            = location(0x1e, CORD, 'Stom\'s House').house()
                                 .connect(outsideStomsHouse)
@@ -1561,10 +1620,8 @@ const wildWarpLocations = [
   desert2,
 ];
 
-if (assumeWildWarp.value) {
-  for (const l of wildWarpLocations) {
-    l.from(start);
-  }
+for (const l of wildWarpLocations) {
+  l.from(start, wildWarp);
 }
 
 return graph;

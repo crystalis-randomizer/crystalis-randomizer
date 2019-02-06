@@ -1,11 +1,15 @@
 require = require('esm')(module);
 
 const {generate} = require('./depgraph2.js');
+const {FlagSet} = require('./flagset.js');
 
-const g = generate({'route-early-flight': true});
+const g = generate(new FlagSet('Rf Dt Tw Gstrf'));
 // TODO - set options?
 
+const start = new Date().getTime();
 const dg = g.integrate();
+const end = new Date().getTime();
+console.log(`time: ${end - start} ms`); // seems to take ~900 ms, so 20 traversals
 
 for (const loc of g.locations()) {
   console.log(`${loc.area.name} ${loc.name}: ${[...(dg.graph.get(loc.uid)||new Map()).values()].map(([...s]) => '(' + s.map(n => g.node(n).name).join(' & ') + ')').join(' | ')}`);

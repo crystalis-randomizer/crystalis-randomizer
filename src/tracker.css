@@ -323,6 +323,9 @@
 .slot.available {
   background: #bfb;
 }
+.slot.glitched {
+  background: #ffb;
+}
 .slot.checked {
   background: #bbf;
 }
@@ -358,6 +361,15 @@
 }
 .map > div.available {
   background: #5f5;
+}
+.map > div.glitched {
+  background: #cb3;
+}
+.map > div.off-route {
+  background: #8c5;
+}
+.map > div.hard {
+  background: #f83;
 }
 .map > div.checked {
   background: #888;

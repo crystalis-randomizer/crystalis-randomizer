@@ -182,6 +182,10 @@ class Graph {
     this.nodeFromSlot = new Map();  // map from slot id to node
     this.mimicSlots = new Map();    // location and spawn to node
 
+    this.offRoute = (graph.nodes.find(n => n.name == 'Off-route') || {}).uid;
+    this.glitch = (graph.nodes.find(n => n.name == 'Glitch') || {}).uid;
+    this.hard = (graph.nodes.find(n => n.name == 'Hard') || {}).uid;
+
     for (const slot of graph.slots()) {
       // used by addBox
       if (slot.index != 0x70) {
@@ -275,29 +279,49 @@ class Graph {
   }
 
   update() {
+    main:
     for (const [uid, elt] of this.slotElts) {
       elt.classList.remove('checked');
       elt.classList.remove('blocked');
       elt.classList.remove('available');
+      elt.classList.remove('glitched');
+      elt.classList.remove('off-route');
+      elt.classList.remove('hard');
       if (this.checked.has(uid)) {
         // no work, it's already checked
         elt.classList.add('checked');
       } else {
         // figure out whether it's available or not
-        let available = false;
+        let minLevel = 4;
         for (const alternative of this.depgraph.graph.get(uid).values()) {
-          if ([...alternative].every(dep => this.has.has(dep))) {
-            available = true;
-            break;
+          let level = 0;
+          for (const dep of alternative) {
+            if (dep === this.offRoute) {
+              level = Math.max(level, 1);
+            } else if (dep === this.glitch) {
+              level = Math.max(level, 2);
+            } else if (dep === this.hard) {
+              level = Math.max(level, 3);
+            } else if (!this.has.has(dep)) {
+              level = 4;
+              break;
+            }
           }
+          minLevel = Math.min(minLevel, level);
+          if (!minLevel) break;
         }
-        elt.classList.add(available ? 'available' : 'blocked');
+        elt.classList.add(
+            ['available', 'off-route', 'glitched', 'hard', 'blocked'][minLevel]);
       }
     }
   }
 }
 
-let flags = 'Rflpt Ts';
+// TODO - all G flags get the glitch for free
+//      - all others (minus wild warp if disabled) tracked as glitches
+//      - consider dark yellow and dark green as well as dark blue ??
+
+let flags = 'Rlpt Ts';
 for (const arg of location.hash.substring(1).split('&')) {
   const [key, value] = arg.split('=');
   if (key === 'flags') {
@@ -313,7 +337,7 @@ for (const arg of location.hash.substring(1).split('&')) {
 //   'tracker': true,
 // };
 
-const graph = new Graph(generate(new FlagSet(flags + ' Dt Gfts')));
+const graph = new Graph(generate(new FlagSet(flags + ' Dt')));
 for (let box of BOXES.split('\n')) {
   box = box.trim();
   if (!box) continue;

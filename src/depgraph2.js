@@ -101,7 +101,7 @@ const matchingSwordOptional = option('Matching sword optional',
 const gasMaskOptional       = option('Gas mask optional',
                                      opt('Hg', false));
 const healedDolphinOptional = option('Healed dolphin optional',
-                                     opt('Rd', true));
+                                     opt('!Rd', true));
 const requireCalmForBarrier = option('Require calm for barrier',
                                      opt('Rl', true));
 const teleportToShyron      = option('Sword of Thunder teleports to Shyron',
@@ -1081,7 +1081,7 @@ const angrySeaSwanBeach     = location(0x60, ASEA, 'Swan Beach').sea()
 const angrySeaCabin         = location(0x61, ASEA, 'Cabin').misc()
                                 .connect(angrySeaCabinBeach)
                                 // TODO - only have kensu appear after heal and/or boat?
-                                .trigger(talkedToKensuInCabin);
+                                .trigger(talkedToKensuInCabin, returnedFogLamp);
 const lighthouse            = location(0x62, JOEL, 'Lighthouse').misc()
                                 .connect(angrySeaLighthouse)
                                 .trigger(talkedToKensuInLighthouse, alarmFlute);

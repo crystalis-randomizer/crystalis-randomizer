@@ -145,6 +145,19 @@ section {
 }
 */
 
+section.dark > h1 {
+  color: var(--light);
+  background: var(--dark);
+  border-radius: 0px;
+}
+section.dark > div {
+  background-color: var(--light);
+}
+section.dark {
+  border-color: var(--dark);
+  border-width: 8px;
+}
+
 section > h1 {
   margin: 0;
   background: var(--light);

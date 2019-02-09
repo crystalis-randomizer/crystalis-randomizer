@@ -1203,46 +1203,14 @@ AutoEquipBracelets:
   rts
 
 .org $3f9f8
+FinishTriggerSquare:
+  beq +
+   lda #$08  ; game mode normal
+   sta $41
++ jmp MainLoop_01_Game
+  
+.org $3fa10
 
-UpdateInGameTimer:
-  ;; patch a call to this in at start of HandleNMI, right after pha
-  ;; TODO - maybe make this faster by using $64$65 to just count frames
-  ;;        and then add it back in normal game mode?
-  lda $2002
-  txa
-  pha
-  ldx #$00
--  inc $6570,x
-   lda $6570,x
-   cmp #$60
-    bcc +
-   lda #$00
-   sta $6570,x
-   inx
-   cpx #$03
-   bcc -
-+ pla
-  tax
-  lda $60
-- rts
-
-.org $3fa18
-  ;; Maybe have Mesia give Flute of Lime if not gotten already...
-  ;; Check flag 0d0 ($649a:01) ==> currently disabled because
-  ;; trigger is hard to shuffle...
-  jsr WaitForDialogToBeDismissed
-  lda $649a
-  and #$01
-  bne -
-  lda #$1f
-  sta $0623
-  lda #$28  ; flute of lime chest --> 3fa28
-  sta $07dc
-  sta $057f
-  pla
-  pla ; double-return
-  jmp MainLoopItemGet
-.org $3fa34
 .org $3fdf0
 
 .org $3d354
@@ -1252,17 +1220,32 @@ MainLoopItemGet:
 .org $3e756
 RestoreBanksAndReturn:
 
+
+.org $3cab6
+MainLoop_01_Game:
+
+;; End of ActivateTriggerSquare restores game mode to normal,
+;; but if sword of thunder comes from trigger square, this will
+;; clobber the LOCATION_CHANGE mode.  Patch it to call out to
+;; FinishTriggerSquare to check for mode 02 and if it is, don't
+;; change it back.
+.org $3d54b ; change this to call FinishTriggerSquare
+  lda $41
+  cmp #$01  ; game mode: location change
+  jmp FinishTriggerSquare
+.org $3d552
+
 `, 'itemLib'));
 
-export const installInGameTimer = buildRomPatch(assemble(`
-.bank $3c000 $c000:$4000 ; fixed bank
-.org $3f9f8
-UpdateInGameTimer:
+// export const installInGameTimer = buildRomPatch(assemble(`
+// .bank $3c000 $c000:$4000 ; fixed bank
+// .org $3f9f8
+// UpdateInGameTimer:
 
-.org $3f3b7
-  nop
-  jsr UpdateInGameTimer
-`, 'installInGameTimer'));
+// .org $3f3b7
+//   nop
+//   jsr UpdateInGameTimer
+// `, 'installInGameTimer'));
 
 // TODO - not working yet
 export const quickChangeItems = buildRomPatch(assemble(`
@@ -1286,7 +1269,7 @@ ReadControllersWithDirections:
 .org $3d8ea
   jsr ReadControllersAndUpdateStart
 
-.org $3f9f8 ; whereever AutoEquipBracelet left off
+.org $3f9f8 ; whereever AutoEquipBracelet left off -- TODO - seat's taken
 ReadControllersAndUpdateStart:
   lda $43    ; Pressed buttons last frame
   and #$30   ; Start and Select

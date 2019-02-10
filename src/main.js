@@ -84,13 +84,14 @@ const click = async (e) => {
       updateDom();
     } else if (t.id === 'generate') {
       const seedHex = patch.parseSeed(seed);
-      const shuffled = await shuffleRom(seedHex);
+      const [shuffled, crc] = await shuffleRom(seedHex);
       // TODO - should we build the flagset into the filename?
       // Make it an option?
       const filename =
           romName.replace(
               /\.nes|$/,
-              `_${patch.BUILD_HASH}_${seedHex.toString(16).padStart(8, 0)}.nes`);
+              ['_', seedHex.toString(16).padStart(8, 0),
+               '_', seedHex.toString(16).padStart(8, 0), '.nes'].join(''));
       download(shuffled, filename);
     } else if (t.id === 'spoiler') {
       shuffleRom(patch.parseSeed(seed));
@@ -121,7 +122,7 @@ const shuffleRom = async (seed) => {
     setTimeout(showWork, 120);
   }
   showWork();
-  await patch.shuffle(shuffled, seed, flagsClone, log, progressTracker);
+  const crc = await patch.shuffle(shuffled, seed, flagsClone, log, progressTracker);
   done = true;
   document.body.classList.remove('shuffling');
   if (log) {
@@ -131,7 +132,7 @@ const shuffleRom = async (seed) => {
   document.getElementById('checksum').textContent =
       // shifted by header
       read(shuffled, 0x27895, 4) + read(shuffled, 0x27896, 4);
-  return shuffled;
+  return [shuffled, crc];
 };
 
 const replaceSpoiler = (name, log) => {

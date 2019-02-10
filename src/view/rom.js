@@ -700,7 +700,6 @@ class Metasprite extends Entity {
     }
     return [...pals];
   }
-
 }
 
 // Only used for Messages for now

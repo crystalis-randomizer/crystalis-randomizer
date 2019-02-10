@@ -1,9 +1,9 @@
 :root {
   --icon-width: 40px;
   --icon-height: 40px;
-  --enabled: url(images/tracker-enabled.png);
-  --disabled: url(images/tracker-disabled.png);
-  --map: url(images/overworld.png);
+  --enabled: url(../images/tracker-enabled.png);
+  --disabled: url(../images/tracker-disabled.png);
+  --map: url(../images/overworld.png);
 }
 .rest {
   flow 0px 1 0;

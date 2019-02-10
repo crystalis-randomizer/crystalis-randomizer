@@ -1,5 +1,7 @@
 const REPEATABLE_FLAGS = new Set(['S']);
 
+// TODO - flag validation!!!
+
 const exclusiveFlags = (flag) => {
   if (flag.startsWith('S')) {
     return new RegExp(`S.*[${flag.substring(1)}]`);

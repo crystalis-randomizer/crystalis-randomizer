@@ -96,7 +96,7 @@ export const shuffle = async (rom, seed, flags, log = undefined, progress = unde
   if (flags.check('Di')) neverDie.apply(rom);
   if (flags.check('Ta')) autoEquipBracelet.apply(rom);
 
-  stampVersionSeedAndHash(rom, seed, flags);
+  return stampVersionSeedAndHash(rom, seed, flags);
 
   // BELOW HERE FOR OPTIONAL FLAGS:
 
@@ -167,6 +167,8 @@ export const stampVersionSeedAndHash = (rom, seed, flags) => {
   // weird squares at $5b and $5c that don't appear to be used.  Together
   // with using the letter 'O' as 0, that's sufficient to cram in all the
   // numbers and display arbitrary hex digits.
+
+  return crc;
 };
 
 export const watchForFlag0 = buildRomPatch(assemble(`
@@ -1823,7 +1825,7 @@ const identifyKeyItemsForDifficultyBuffs = (rom) => {
     if (get.table[get.table.length - 1] == 0xff) {
       get.table[get.table.length - 1] = 0xfe;
     } else {
-      throw new Error('Expected FF at end of ItemGet table');
+      throw new Error(`Expected FF at end of ItemGet table: ${get.id.toString(16)}: ${Array.from(get.table).map(x => x.toString(16).padStart(2, 0)).join(' ')}`);
     }
     get.write(rom);
   }
@@ -2128,7 +2130,7 @@ this.report['post-shuffle monsters'] = this.monsters.map(m=>m.id);
         if (location.rom.objects[m.id].child || RETAIN_SLOTS.has(m.id)) {
           // if there's a child, make sure to keep it in the same pattern slot
           patSlot = m.patSlot ? 0x80 : 0;
-          const prev = patSlot ? pa1 : pat0;
+          const prev = patSlot ? pat1 : pat0;
           if (prev != null && prev != m.pat) return false;
           if (patSlot) {
             pat1 = m.pat;

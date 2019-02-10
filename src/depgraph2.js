@@ -1709,9 +1709,9 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
   if (progress) progress.addTasks(10);
   for (let i = 0; i < 1000; i++) {
     // Ensure UI can update.
-    if (i % 100 == 0) {
+    if (progress && (i % 100 == 0)) {
       await new Promise(requestAnimationFrame);
-      if (progress) progress.addCompleted(1);
+      progress.addCompleted(1);
     }
     random.shuffle(all);
     for (const pool of pools) random.shuffle(pool);

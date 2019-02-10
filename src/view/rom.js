@@ -609,12 +609,12 @@ class ObjectData extends Entity {
   parents() {
     // If this is a projectile that is the parent of some monster,
     // return an array of parents that spawned it.
-    return rom.monsters.filter(m => m.child && rom.adHocSpawns[m.child].object == this.id);
+    return this.rom.monsters.filter(m => m.child && this.rom.adHocSpawns[m.child].object == this.id);
   }
 
   locations() {
     // TODO - handle non-monster NPCs.
-    return rom.locations.filter(l =>
+    return this.rom.locations.filter(l =>
         l && l.objects && l.objects.some(o =>
             (o[2] & 7) == 0 && ((o[3] + 0x50) & 0xff) == this.id));
   }
@@ -657,7 +657,7 @@ class Metasprite extends Entity {
           break;
         }
       }
-      if (this.mirrored == null) throw new Error('could not find mirrored sprite');
+      if (this.mirrored == null) throw new Error('could not find mirrored sprite for ' + id.toString(16));
       this.size = 0;
       this.frameMask = 0;
       this.frames = 0;
@@ -703,6 +703,7 @@ class Metasprite extends Entity {
 
 }
 
+// Only used for Messages for now
 class DataTable extends Array {
   constructor(rom, base, count, width, func = width > 1 ? (...i) => i : i => i) {
     super(count);
@@ -716,6 +717,7 @@ class DataTable extends Array {
   }
 }
 
+// Only used for Messages for now
 class AddressTable extends Array {
   constructor(rom, base, count, offset, func = i => i) {
     super(count);
@@ -816,7 +818,6 @@ class Messages {
 
 export class Rom {
   constructor(rom) {
-if (!window._rom) {window._rom = true; window._rom=new Rom(rom);}
     this.prg = rom.subarray(0x10, 0x40010);
     this.chr = rom.subarray(0x40010);
 
@@ -870,7 +871,7 @@ if (!window._rom) {window._rom = true; window._rom=new Rom(rom);}
     let projectiles = new Set();
     for (const m of this.monsters) {
       if (m.child) {
-        projectiles.add(rom.objects[rom.adHocSpawns[m.child].object]);
+        projectiles.add(this.objects[this.adHocSpawns[m.child].object]);
       }
     }
     projectiles = [...projectiles];
@@ -1001,7 +1002,7 @@ const readString = (arr, addr) => {
 const pickFile = () => {
   return new Promise((resolve, reject) => {
     if (window.location.hash != '#reset') {
-      const data = localStorage.getItem('rom');
+      const data = window['localStorage'].getItem('rom');
       if (data) {
         return resolve(
             Uint8Array.from(
@@ -1019,7 +1020,7 @@ const pickFile = () => {
       reader.addEventListener('loadend', () => {
         const arr = new Uint8Array(reader.result);
         const str = Array.from(arr, x => x.toString(16).padStart(2, 0)).join('');
-        localStorage.setItem('rom', str);
+        window['localStorage'].setItem('rom', str);
         upload.remove();
         resolve(arr);
       });

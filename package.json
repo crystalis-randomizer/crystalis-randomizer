@@ -19,6 +19,8 @@
   "devDependencies": {
     "chai": "^4.2.0",
     "esm": "^3.0.84",
+    "google-closure-compiler": "^20190121.0.0",
+    "gulp": "^4.0.0",
     "mocha": "^5.2.0",
     "viz.js": "^2.1.2"
   },

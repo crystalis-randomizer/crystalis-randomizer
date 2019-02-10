@@ -48,7 +48,8 @@
       <li>Some minor bug fixes: screen shaking is fixed, and vampire 2 no longer
         speeds up at the start of the fight.
       <li>Swan gate now has a pair of guards on the opposite side, to allow going
-        through either direction (with Change).  The 
+        through either direction (with Change).  The guards will only despawn after
+        the gate is open.
       <li>It is now possible to teleport out of the tower, and to get
         back in via the pyramid back entrance.
       <li>Sword of Thunder always teleports to Shyron, no matter where it's found
@@ -70,16 +71,16 @@
         The "dropped" item will take its place in the buffer.
       <li>Orbs and bracelets are progressive upgrades: the first item you get,
         even if it says "bracelet" will give you the orb, and the second will
-        give the bracelet.  The distinction is important only because Tornel is
-        keyed off finding the chest that gives the tornado bracelet, rather than
-        by finding both upgrades.
+        give the bracelet.  The distinction is important only because Tornel on
+        Mt Sabre is keyed off finding the chest that gives the tornado bracelet,
+        rather than by finding both upgrades.
       <li>Orbs and bracelets may now (optionally) be automatically equipped.
         Just change swords and the powerup will change, too.
       <li>Sword damage has been renormalized.  Rather than depending on the
         element (normally, wind=1, fire=2, water=4, thunder=8), the sword power
         depends on the number of upgrades (no upgrades=2, ball only=4, bracelet=8).
       <li>Stab damage no longer doubles the sword base power, but is
-        now always just 2.
+        now always just 2, on top of the base power of the sword.
       <li>The Power Ring is nerfed to double the sword base damage, rather than
         the level.
       <li>Armors and shields are nerfed to only provide half the defense value.
@@ -90,7 +91,7 @@
         value, rather than the level.
       <li>Medical Herb can be buffed to 2x or 3x the effectiveness.
       <li>Leather Boots are (optionally) replaced with Speed Boots.
-      <li>Mimics will only ever shuffle into visible chests (this includes
+      <li>Mimics will only ever shuffle into visible chests (this does not include
         boss drops).
       <li>Consumables and armor/shields can only shuffle into chests, so that
         a full inventory does not cause the item to disappear.

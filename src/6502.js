@@ -413,7 +413,7 @@ export const assemble = (str, filename = 'input') => {
 };
 
 
-export const buildRomPatch = (prg, chr, prgSize) => {
+export const buildRomPatch = (prg, chr = undefined, prgSize = undefined) => {
   prg = [...prg].map(c => c.shift(0x10));
   chr = [...(chr || [])].map(c => c.shift(0x10 + prgSize));
   return Patch.from([...prg, ...chr]);

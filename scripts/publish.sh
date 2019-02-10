@@ -41,7 +41,7 @@ fi
   cp -f notes/traversal.txt "$TMP/r/"
   cp -f src/favicon.ico "$TMP/r/"
   cd src
-  cp *.js *.css "$DIR"
+  cp *.js *.css ../dist/*.min.js "$DIR"
   cp view/*.js view/*.css "$DIR/view/"
   cp images/* "$DIR/images/"
   # TODO - add a datestamp or commit stamp into the HTML somehow
@@ -49,10 +49,12 @@ fi
   for a in *.html view/*.html track/*.html; do
     cat ga.tag $a >| "$DIR/$a"
   done
+  sed -i -e 's/ type="module"//' -e 's/.js/.min.js/' "$DIR/index.html"
   sed -e "/BUILD_HASH/ s/latest/$HASH/" -e "/BUILD_DATE/ s/current/$DATE/" \
       patch.js >| "$DIR/patch.js"
   echo "<a href=\"$HASH/\">$HASH: $DATE</a><br>" >> "$TMP/r/versions.html"
-  sed 's,<!--base-->,<base href="/stable/">,g' index.html >| "$TMP/r/index.html"
+  sed -e 's,<!--base-->,<base href="/stable/">,g' \
+      -e 's/ type="module"//' -e 's/.js/.min.js/' index.html >| "$TMP/r/index.html"
 )
 (
   cd $TMP/r

@@ -149,6 +149,7 @@ section.dark > h1 {
   color: var(--light);
   background: var(--dark);
   border-radius: 0px;
+  padding-bottom: 10px;
 }
 section.dark > div {
   background-color: var(--light);

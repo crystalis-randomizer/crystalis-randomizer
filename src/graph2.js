@@ -1,5 +1,3 @@
-import {Requirements, Items} from './sat.js';
-
 class Edge {
   constructor(left, right, arrow, attrs) {
     this.left = left;
@@ -488,9 +486,10 @@ export class Slot extends Node {
         a++;
         while (!(rom[a] & 0x80)) {
           a += 2;
-          if (a > rom.length) throw new Error(`never found end: ${this.name2}`);
+          checkBounds(a, rom, this.name2, location);
         }
         a += 2;
+        checkBounds(a, rom, this.name2, location);
       }
       a += 2 * offset + 1;
       rom[a] &= ~1;
@@ -508,13 +507,14 @@ export class Slot extends Node {
       // Skip the pre-location parts
       while (rom[a] & 0x80) {
         a += 4;
-        if (a > rom.length) throw new Error(`never found end: ${this.name2}`);
+        checkBounds(a, rom, this.name2);
       }
       // Now find the location
       let next = 0;
       while (rom[a] != 0xff) {
         if (location != null && rom[a] == location) next = rom[a + 1];
         a += 2;
+        checkBounds(a, rom, location);
       }
       a += next + 1; // skip the ff
 //console.log(`next=${next}`);
@@ -524,7 +524,7 @@ export class Slot extends Node {
           a += 5;
           while (!(rom[a] & 0x40)) {
             a += 2;
-            if (a > rom.length) throw new Error(`never found end: ${this.name2}`);
+            checkBounds(a, rom, this.name2);
           }
           a += 2;
         } else {
@@ -559,7 +559,7 @@ export class Slot extends Node {
       } else {
         while (!(rom[a] & 0x80)) {
           a += 2;
-          if (a > rom.length) throw new Error(`never found end: ${this.name2}`);
+          checkBounds(a, rom, this.name2);
         }
         a += 4; // skip the message, too
         a += 2 * result;
@@ -905,5 +905,12 @@ export class Location extends Node {
       lines.push(this.bossNode.name);
     }
     return lines.join('\\n');
+  }
+}
+
+const checkBounds = (a, rom, ...data) => {
+  if (a > rom.length) {
+    throw new Error(
+        'never found: ' + data.map(x => typeof x == 'number' ? x.toString(16) : x).join(' '));
   }
 }

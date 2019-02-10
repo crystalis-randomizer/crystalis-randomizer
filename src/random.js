@@ -17,6 +17,11 @@ const RNMX = 1 - EPS;
 export class Random {
 
   constructor(seed = Math.floor(Math.random() * 0x100000000)) {
+    /** @type {number} */ this.idum;
+    /** @type {number} */ this.idum2;
+    /** @type {number} */ this.iy;
+    /** @type {!Array<number>} */ this.iv;
+    /** @type {number} */ this.iy;
     this.seed(seed);
   }
 

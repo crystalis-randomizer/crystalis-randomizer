@@ -210,8 +210,8 @@ const updateDom = () => {
 };
 
 const loadRomFromStorage = () => {
-  const name = localStorage.getItem('name');
-  const data = localStorage.getItem('rom');
+  const name = window['localStorage'].getItem('name');
+  const data = window['localStorage'].getItem('rom');
   const upload = document.getElementById('pick-file');
   const checkCrc = () => {
     document.body.classList.add('rom-uploaded');
@@ -233,8 +233,8 @@ const loadRomFromStorage = () => {
     reader.addEventListener('loadend', () => {
       const arr = new Uint8Array(reader.result);
       const str = Array.from(arr, x => x.toString(16).padStart(2, 0)).join('');
-      localStorage.setItem('rom', str);
-      localStorage.setItem('name', file.name);
+      window['localStorage'].setItem('rom', str);
+      window['localStorage'].setItem('name', file.name);
       rom = arr;
       checkCrc();
       romName = file.name;

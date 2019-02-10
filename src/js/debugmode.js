@@ -1,5 +1,5 @@
 import {assemble, buildRomPatch} from './6502.js';
-import {Rom} from './view/rom.js';
+import {Rom} from './rom.js';
 import {Random} from './random.js';
 
 // TODO - to shuffle the monsters, we need to find the sprite palttes and

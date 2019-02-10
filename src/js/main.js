@@ -1,6 +1,6 @@
 import * as patch from './patch.js';
 import {crc32} from './crc32.js';
-import {EXPECTED_CRC32} from './view/rom.js';
+import {EXPECTED_CRC32} from './rom.js';
 import {FlagSet} from './flagset.js';
 import {ProgressTracker} from './progress.js';
 

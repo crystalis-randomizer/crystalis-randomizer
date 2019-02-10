@@ -33,6 +33,8 @@ fi
   if $REPLACE; then
     git reset --hard HEAD^
   fi
+  mkdir -p "$HASH/js/view"
+  mkdir -p "$HASH/css/view"
   mkdir -p "$HASH/view"
   mkdir -p "$HASH/images"
   mkdir -p "$HASH/track"
@@ -43,7 +45,8 @@ fi
   cp -f notes/traversal.txt "$TMP/r/"
   cp -f src/favicon.ico "$TMP/r/"
   gulp
-  cp src/*.js src/*.css "$DIR"
+  cp src/js/*.js "$DIR/js"
+  cp src/css/*.css "$DIR/css"
   (
     # clobber some of src
     cd dist
@@ -52,29 +55,30 @@ fi
     done
   )
   cd src
-  cp view/*.js view/*.css "$DIR/view/"
+  cp js/view/*.js "$DIR/js/view/"
+  cp css/view/*.css "$DIR/css/view/"
   cp images/* "$DIR/images/"
   # TODO - add a datestamp or commit stamp into the HTML somehow
   #      - maybe use sed to replace a placeholder?
   for a in *.html view/*.html track/*.html; do
     cat ga.tag $a >| "$DIR/$a"
   done
-  ln -s . "$DIR/stable"
 
   sed -e "/BUILD_HASH/ s/latest/$HASH/" -e "/BUILD_DATE/ s/current/$DATE/" \
-      patch.js >| "$DIR/patch.js"
+      js/patch.js >| "$DIR/js/patch.js"
   echo "<a href=\"$HASH/\">$HASH: $DATE</a><br>" >> "$TMP/r/versions.html"
   rm -f "$TMP"/r/{index,track,check,help}.html
-  ln -s stable/{index,track,check,help}.html "$TMP/r/"
-  ln -s index.html play.html
+  ln -s $HASH/{index,track,check,help}.html "$TMP/r/"
 )
 (
   cd $TMP/r
-  rm -f latest
-  rm -f stable
+  rm -f latest stable js css images
   ln -s $HASH latest
   ln -s $HASH stable # TODO - don't mark everything stable!!! - use branch!
-  
+  ln -s $HASH/js js
+  ln -s $HASH/css css
+  ln -s $HASH/images images
+
   git add .
   git commit -am "Publish: $(date)"
   git push $FORCE origin gh-pages

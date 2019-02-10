@@ -8,14 +8,14 @@ const COMMON = [
   'random.js',
   'crc32.js',
   'flagset.js',
-  'view/rom.js',
+  'rom.js',
   'patch.js',
 ];
 
-const srcs = (...srcs) => srcs.map(s => './src/' + s);
+const srcs = (...srcs) => srcs.map(s => './src/js/' + s);
 
 gulp.task('main', function() {
-  return gulp.src(srcs(...COMMON, 'progress.js', 'main.js'), {base: './src/'})
+  return gulp.src(srcs(...COMMON, 'progress.js', 'main.js'), {base: './src/js/'})
       .pipe(closure({
         compilation_level: 'SIMPLE',
         warning_level: 'VERBOSE',

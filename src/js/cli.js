@@ -2,7 +2,7 @@
 
 require = require('esm')(module);
 
-const {EXPECTED_CRC32} = require('./view/rom.js');
+const {EXPECTED_CRC32} = require('./rom.js');
 const {FlagSet} = require('./flagset.js');
 const {crc32} = require('./crc32.js');
 const fs = require('fs');

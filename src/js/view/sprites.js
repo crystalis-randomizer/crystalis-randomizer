@@ -4,7 +4,7 @@
 // input for locations, array of checkboxes for flags, canvas for display
 
 import {View} from './view.js';
-import {Rom} from './rom.js';
+import {Rom} from '../rom.js';
 import {ImageBuffer} from './imagebuffer.js';
 
 

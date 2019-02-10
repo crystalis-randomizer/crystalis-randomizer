@@ -1,0 +1,303 @@
+:root {
+  --icon-width: 40px;
+  --icon-height: 40px;
+  --enabled: url(images/tracker-enabled.png);
+  --disabled: url(images/tracker-disabled.png);
+  --map: url(images/overworld.png);
+}
+.rest {
+  flow 0px 1 0;
+}
+.grid {
+  xpadding-top: 6px;
+  xcolor: white;
+  xmargin-top: 12px;
+  xbackground: #55f;
+
+  user-select: none;
+  display: flex;
+}
+.grid.h {
+  flex-flow: row nowrap;
+  width: 
+}
+.grid.v {
+  flex-flow: column nowrap;
+}
+.grid.v > .grid + .grid {
+  margin-top: 10px;
+}
+.grid.h > .grid + .grid {
+  padding-right: 10px;
+}
+.grid.h > .grid {
+  padding-left: 10px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  background-color: #004;
+}
+.grid.g3 {
+  display: grid;
+  grid-template-columns: repeat(3, var(--icon-width));
+}
+.grid.g4 {
+  display: grid;
+  grid-template-columns: repeat(4, var(--icon-width));
+}
+
+.slot {
+  background-color: #44a;
+}
+.slot.available {
+  background-color: #4a4;
+}
+.slot.got {
+  background-color: #77c;
+}
+.slot.sword-of-wind > div {
+  background-position: 0px 0px;
+}
+.slot.sword-of-fire > div {
+  background-position: -40px 0px;
+}
+.slot.sword-of-water > div {
+  background-position: -80px 0px;
+}
+.slot.sword-of-thunder > div {
+  background-position: -120px 0px;
+}
+.slot.ball-of-wind > div {
+  background-position: 0px -40px;
+}
+.slot.ball-of-fire > div {
+  background-position: -40px -40px;
+}
+.slot.ball-of-water > div {
+  background-position: -80px -40px;
+}
+.slot.ball-of-thunder > div {
+  background-position: -120px -40px;
+}
+.slot.tornado-bracelet > div {
+  background-position: 0px -80px;
+}
+.slot.flame-bracelet > div {
+  background-position: -40px -80px;
+}
+.slot.blizzard-bracelet > div {
+  background-position: -80px -80px;
+}
+.slot.storm-bracelet > div {
+  background-position: -120px -80px;
+}
+.slot.psycho-armor > div {
+  background-position: -240px -200px;
+}
+.slot.sacred-shield > div {
+  background-position: -240px -240px;
+}
+.slot.kirisa-plant > div {
+  background-position: -160px -200px;
+}
+.slot.fruit-of-repun > div {
+  background-position: -200px -240px;
+}
+.slot.shield-ring > div {
+  background-position: -120px -160px;
+}
+.slot.power-ring > div {
+  background-position: -40px -120px;
+}
+.slot.warrior-ring > div {
+  background-position: -80px -120px;
+}
+.slot.insect-flute > div {
+  background-position: -160px -80px;
+}
+.slot.flute-of-lime > div {
+  background-position: -200px -80px;
+}
+.slot.shell-flute > div {
+  background-position: -240px -80px;
+}
+.slot.rabbit-boots > div {
+  background-position: -40px -160px;
+}
+.slot.leather-boots > div {
+  background-position: -80px -160px;
+}
+.slot.opel-statue > div {
+  background-position: -160px -240px;
+}
+.slot.statue-of-onyx > div {
+  background-position: -160px -120px;
+}
+.slot.broken-statue > div {
+  background-position: -200px -120px;
+}
+.slot.ivory-statue > div {
+  background-position: -240px -120px;
+}
+.slot.windmill-key > div {
+  background-position: -160px -40px;
+}
+.slot.key-to-prison > div {
+  background-position: -200px -40px;
+}
+.slot.key-to-styx > div {
+  background-position: -240px -40px;
+}
+.slot.gas-mask > div {
+  background-position: 0px -120px;
+}
+.slot.eye-glasses > div {
+  background-position: -240px -160px;
+}
+.slot.fog-lamp > div {
+  background-position: -160px -160px;
+}
+.slot.glowing-lamp > div {
+  background-position: -200px -160px;
+}
+.slot.iron-necklace > div {
+  background-position: -120px -120px;
+}
+.slot.deos-pendant > div {
+  background-position: 0px -160px;
+}
+.slot.love-pendant > div {
+  background-position: -200px -200px;
+}
+.slot.bow-of-moon > div {
+  background-position: -160px 0px;
+}
+.slot.bow-of-sun > div {
+  background-position: -200px 0px;
+}
+.slot.bow-of-truth > div {
+  background-position: -240px 0px;
+}
+.slot.refresh > div {
+  background-position: 0px -200px;
+}
+.slot.paralysis > div {
+  background-position: -40px -200px;
+}
+.slot.telepathy > div {
+  background-position: -80px -200px;
+}
+.slot.teleport > div {
+  background-position: -120px -200px;
+}
+.slot.recover > div {
+  background-position: 0px -240px;
+}
+.slot.barrier > div {
+  background-position: -40px -240px;
+}
+.slot.change > div {
+  background-position: -80px -240px;
+}
+.slot.flight > div {
+  background-position: -120px -240px;
+}
+
+
+.slot {
+  width: var(--icon-width);
+  height: var(--icon-height);
+}
+
+.slot.blocked {
+  background: #fbb;
+}
+.slot.available {
+  background: #bfb;
+}
+.slot.glitched {
+  background: #ffb;
+}
+.slot.checked {
+  background: #bbf;
+}
+
+.slot > div {
+  background-image: var(--disabled);
+  background-repeat: no-repeat;
+  xbackground-size: 1000%;  /* ??? */
+  width: var(--icon-width);
+  height: var(--icon-height);
+}
+.slot.got > div {
+  background-image: var(--enabled);
+}
+
+.map {
+  user-select: none;
+  background-image: var(--map);
+  position: relative;
+  width: 351px;
+  height: 254px;
+}
+
+.map > div {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  /*overflow: hidden;*/
+}
+.map > div.key {
+  width: 7px;
+  height: 7px;
+}
+.map > div.blocked {
+  background: red;
+}
+.map > div.available {
+  background: #5f5;
+}
+.map > div.glitched {
+  background: #cb3;
+}
+.map > div.off-route {
+  background: #8c5;
+}
+.map > div.hard {
+  background: #f83;
+}
+.map > div.checked {
+  background: #888;
+}
+.map > div > div {
+  display: none;
+}
+.map > div:hover > div {
+  display: block;
+  position: absolute;
+  left: 20px;
+  top: 8px;
+  background: white;
+  border: 1px solid black;
+  z-index: 1;
+  pointer-events: none;
+}
+.hidden {
+  display: none;
+}
+
+
+li.blocked {
+  color: #b00;
+}
+li.available {
+  color: #4d4;
+}
+li.glitched {
+  color: #cb3;
+}
+li.off-route {
+  color: #8c5;
+}
+li.hard {
+  color: #fa5;
+}

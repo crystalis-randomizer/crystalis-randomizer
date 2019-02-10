@@ -1,6 +1,6 @@
 {
   "name": "crystalis-randomizer",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "main": "src/patch.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -18,10 +18,11 @@
     "url": "https://github.com/shicks/crystalis-randomizer/issues"
   },
   "homepage": "https://github.com/shicks/crystalis-randomizer#readme",
-  "dependencies": {},
+  "dependencies": {
+    "esm": "^3.2.4"
+  },
   "devDependencies": {
     "chai": "^4.2.0",
-    "esm": "^3.0.84",
     "google-closure-compiler": "^20190121.0.0",
     "gulp": "^4.0.0",
     "mocha": "^5.2.0",

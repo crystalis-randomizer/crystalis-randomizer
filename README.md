@@ -102,8 +102,6 @@ Try it out at https://crystalisrandomizer.com
 
 * [ ] Projectiles are sometimes rendered incorrectly.
 * [ ] Monster shuffling fails to populate levels as fully as it should be able to
-* [ ] Overflowed key items require dropping an item to get them to come back.
-      This shouldn't cause problems, but it's ugly.
 
 ## The Team
 

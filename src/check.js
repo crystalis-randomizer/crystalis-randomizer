@@ -1,6 +1,3 @@
-import * as patch from './patch.js';
-import {crc32} from './crc32.js';
-
 const upload = document.getElementById('pick-file');
 upload.addEventListener('change', () => {
   const file = upload.files[0];

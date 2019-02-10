@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 shopt -s nullglob
 
 # Publish to github-pages
@@ -40,8 +42,10 @@ fi
   cp -f notes/locations.svg "$TMP/r/"
   cp -f notes/traversal.txt "$TMP/r/"
   cp -f src/favicon.ico "$TMP/r/"
+  gulp
+  cp src/*.js src/*.css "$DIR"
+  cp dist/*.js "$DIR"  # clobber some of src
   cd src
-  cp *.js *.css ../dist/*.min.js "$DIR"
   cp view/*.js view/*.css "$DIR/view/"
   cp images/* "$DIR/images/"
   # TODO - add a datestamp or commit stamp into the HTML somehow
@@ -49,12 +53,13 @@ fi
   for a in *.html view/*.html track/*.html; do
     cat ga.tag $a >| "$DIR/$a"
   done
-  sed -i -e 's/ type="module"//' -e 's/.js/.min.js/' "$DIR/index.html"
+
   sed -e "/BUILD_HASH/ s/latest/$HASH/" -e "/BUILD_DATE/ s/current/$DATE/" \
       patch.js >| "$DIR/patch.js"
   echo "<a href=\"$HASH/\">$HASH: $DATE</a><br>" >> "$TMP/r/versions.html"
-  sed -e 's,<!--base-->,<base href="/stable/">,g' \
-      -e 's/ type="module"//' -e 's/.js/.min.js/' index.html >| "$TMP/r/index.html"
+  sed -e 's,<!--base-->,<base href="/stable/">,g' "$DIR/index.html" >| "$TMP/r/index.html"
+  sed -e 's,<!--base-->,<base href="/stable/">,g' "$DIR/track.html" >| "$TMP/r/track.html"
+  sed -e 's,<!--base-->,<base href="/stable/">,g' "$DIR/check.html" >| "$TMP/r/check.html"
 )
 (
   cd $TMP/r

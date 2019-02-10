@@ -1,9 +1,10 @@
 const upload = document.getElementById('pick-file');
+
 upload.addEventListener('change', () => {
   const file = upload.files[0];
   const reader = new FileReader();
   reader.addEventListener('loadend', () => {
-    const rom = new Uint8Array(reader.result).slice(16);
+    const rom = new Uint8Array(/** @type {!ArrayBuffer} */ (reader.result)).slice(16);
     document.getElementById('filename').textContent = file.name;
     document.getElementById('hash').textContent = read(rom, 0x277d4, 7);
     document.getElementById('seed').textContent = read(rom, 0x277ec, 8);
@@ -30,7 +31,7 @@ const read = (arr, index, len) => {
 const download = (data, name) => {
   const a = document.createElement("a");
   document.body.appendChild(a);
-  a.style = "display: none";
+  a.style.display = "none";
   const blob = new Blob([data], {type: "octet/stream"}),
         url = window.URL.createObjectURL(blob);
   a.href = url;

@@ -1,5 +1,5 @@
-const closure = require('google-closure-compiler').gulp();
 const gulp = require('gulp');
+const closure = require('google-closure-compiler').gulp();
 
 const COMMON = [
   '6502.js',

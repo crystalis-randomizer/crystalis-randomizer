@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 require = require('esm')(module);
 
 const {EXPECTED_CRC32} = require('./view/rom.js');
@@ -6,7 +8,46 @@ const {crc32} = require('./crc32.js');
 const fs = require('fs');
 const patch = require('./patch');
 
-// Usage: node cli.js [--flags=<FLAGS>] [--seed=<SEED>] rom.nes > out.nes
+// Usage: node cli.js [--flags=<FLAGS>] [--seed=<SEED>] rom.nes
+
+const usage = (code) => {
+  console.log(`Usage: cryr [OPTIONS...] rom.nes
+
+Options
+  --flags=FLAGSET    Specify the flagset.
+  --seed=SEED        Specify the seed.
+  --output=PATTERN   Specify the output filename pattern.
+                     May include placeholders:
+                       %n: input base filename
+                       %v: cryr version hash
+                       %s: seed
+                       %f: flagset
+                       %c: checksum
+                     The default pattern is "%n_%c".
+  --count=NUMBER     Number of shuffled roms to generate.
+                     This flag is not compatible with specifying
+                     a seed manually, nor with output patterns
+                     that don't include %s or %c.
+  --force            Don't fail due to wrong input file checksum.
+
+Flags
+  The randomizer supports a number of options, documented in detail
+  at https://crystalisrandomizer.com.  Some suggested flag sets are
+  as follows (spaces are ignored):
+
+    Casual: "Emr Mr Rf Sbk Sc Sm Tasd"
+    Basic flags for a relatively easy playthrough.
+
+    Intermediate: "Em Gt Mr Rlpt Sbk Sct Sm Tasd"
+    Slightly more challenge than Casual but still approachable.
+
+    Advanced: "Gfrt Hbw Mr Rlpt Sbckt Sm Tasd"
+    A balanced randomization with quite a bit more difficulty.
+
+    Ludicrous: "Gfrstw Hbgmsw Mr Rflpt Sbckmt Tas"
+    Pulls out all the stops, and may require horrible hell runs.`);
+  process.exit(code);
+};
 
 const main = (...args) => {
   let flags = 'Em Gt Mr Rlpt Sbk Sct Sm Tasd';
@@ -14,7 +55,7 @@ const main = (...args) => {
   let seed = '';
   let output = '%n_%c';
   let force = false;
-  while (args[0].startsWith('--')) {
+  while (args[0] && args[0].startsWith('--')) {
     let arg = args.shift().substring(2);
     let value = undefined;
     const eq = arg.indexOf('=');
@@ -35,13 +76,16 @@ const main = (...args) => {
     } else if (arg == 'force') {
       force = true;
       if (value != null) args.unshift(value);
+    } else if (arg == 'help') {
+      usage(0);
     } else {
-      fail(`Bad argument: ${arg}`);
+      console.error(`Bad argument: ${arg}`);
+      usage(1);
     }
     // TODO - preset options
   }
 
-  if (args.length != 1) fail(`Bad remaining arguments: ${args}`);
+  if (args.length != 1) usage(1);
   if (count > 1) {
     if (seed) fail('Cannot specify both --count and --seed');
     if (!/%[sc]/.test(output)) {

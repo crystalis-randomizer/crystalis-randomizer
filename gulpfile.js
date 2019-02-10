@@ -21,8 +21,8 @@ gulp.task('main', function() {
         warning_level: 'VERBOSE',
         language_in: 'ECMASCRIPT_2018',
         language_out: 'ECMASCRIPT6_STRICT',
-        output_wrapper: '(function(){\n%output%\n}).call(this)',
-        js_output_file: 'main.js',
+        output_wrapper: '(function(){\nconst global=window;%output%\n}).call(this)',
+        js_output_file: 'main.min.js',
         module_resolution: 'WEBPACK',
       }, {
         platform: ['native', 'java', 'javascript'],
@@ -37,8 +37,8 @@ gulp.task('check', function() {
         warning_level: 'VERBOSE',
         language_in: 'ECMASCRIPT_2018',
         language_out: 'ECMASCRIPT6_STRICT',
-        output_wrapper: '(function(){\n%output%\n}).call(this)',
-        js_output_file: 'check.js',
+        output_wrapper: '(function(){\nconst global=window;%output%\n}).call(this)',
+        js_output_file: 'check.min.js',
         module_resolution: 'WEBPACK',
       }, {
         platform: ['native', 'java', 'javascript'],
@@ -53,8 +53,8 @@ gulp.task('tracker', function() {
         warning_level: 'VERBOSE',
         language_in: 'ECMASCRIPT_2018',
         language_out: 'ECMASCRIPT6_STRICT',
-        output_wrapper: '(function(){\n%output%\n}).call(this)',
-        js_output_file: 'tracker.js',
+        output_wrapper: '(function(){\nconst global=window;%output%\n}).call(this)',
+        js_output_file: 'tracker.min.js',
         module_resolution: 'WEBPACK',
       }, {
         platform: ['native', 'java', 'javascript'],

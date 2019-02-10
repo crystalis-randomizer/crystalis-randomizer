@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -e
+set -ex
 
 shopt -s nullglob
 
@@ -44,7 +44,13 @@ fi
   cp -f src/favicon.ico "$TMP/r/"
   gulp
   cp src/*.js src/*.css "$DIR"
-  cp dist/*.js "$DIR"  # clobber some of src
+  (
+    # clobber some of src
+    cd dist
+    for a in *.js; do
+      cp "$a" "$DIR/${a/.min/}"
+    done
+  )
   cd src
   cp view/*.js view/*.css "$DIR/view/"
   cp images/* "$DIR/images/"

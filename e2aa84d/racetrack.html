@@ -137,4 +137,21 @@ document.body.addEventListener('click', (e) => {
     t.classList.add('l1');
   }
 });
+document.body.addEventListener('contextmenu', (e) => {
+  let t = e.target;
+  while (t && !t.classList.contains('slot')) t = t.parentElement;
+  if (!t) return;
+  if (t.classList.contains('l3')) {
+    t.classList.remove('l3');
+    t.classList.add('l2');
+  } else if (t.classList.contains('l2')) {
+    t.classList.remove('l2');
+    t.classList.add('l1');
+  } else if (t.classList.contains('l1')) {
+    t.classList.remove('l1');
+  } else {
+    t.classList.add('l3');
+  }
+  e.preventDefault();
+});
 </script>

@@ -202,7 +202,7 @@ const updateDom = () => {
   document.getElementById('seed').value = seed || '';
   const hash = ['#flags=', String(flags).replace(/ /g, '')];
   if (seed) hash.push('&seed=', encodeURIComponent(seed));
-  history.replaceState({flags: flags.flags, seed}, '', hash.join(''));
+  history.replaceState({flags: flags.flags, seed}, '', String(window.location).replace(/#.*/, '') + hash.join(''));
   document.body.classList.toggle('spoiled', flags.check('Ds'));
   document.getElementById('flagstring-out').textContent = String(flags);
   document.getElementById('track-url').href =

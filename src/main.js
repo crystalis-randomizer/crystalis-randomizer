@@ -91,7 +91,7 @@ const click = async (e) => {
           romName.replace(
               /\.nes|$/,
               ['_', seedHex.toString(16).padStart(8, 0),
-               '_', seedHex.toString(16).padStart(8, 0), '.nes'].join(''));
+               '_', crc.toString(16).padStart(8, 0), '.nes'].join(''));
       download(shuffled, filename);
     } else if (t.id === 'spoiler') {
       shuffleRom(patch.parseSeed(seed));

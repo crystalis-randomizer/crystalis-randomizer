@@ -1,7 +1,6 @@
 <title>Crystalis Randomizer</title>
-<!--base-->
-<link rel="stylesheet" href="main.css">
-<script type="module" src="main.js"></script>
+<link rel="stylesheet" href="stable/main.css">
+<script type="module" src="stable/main.js"></script>
 <script>
 // Display a message if the main script hasn't already removed it.
 setTimeout(function() {
@@ -12,8 +11,8 @@ setTimeout(function() {
 </script>
 
 <nav>
-  <img src="images/crystalis-sword.png">
-  <a href="index">Play</a>
+  <img src="stable/images/crystalis-sword.png">
+  <a href="play">Play</a>
   <a id="track-url" href="track">Track</a>
   <a href="help">Help</a>
   <!-- TODO: better process for stable version numbers. -->
@@ -68,7 +67,8 @@ setTimeout(function() {
         Select Crystalis ROM File
         <input type="file" accept=".nes" id="pick-file" style="display: none;">
       </label>
-      <p>You can also run the randomizer locally by installing our npm package:
+      <p>You can also run the randomizer locally by installing the
+        <a href="https://nodejs.org">node</a> package:
         <code style="display: block; margin-top: 0.5em; padding-left: 2em;">
           npm install -g crystalis-randomizer
           <br>cryr --flags="Gt Mr Rlpt Sbkm Sct Tasd" Crystalis.nes</code>

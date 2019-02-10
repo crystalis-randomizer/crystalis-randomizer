@@ -59,13 +59,14 @@ fi
   for a in *.html view/*.html track/*.html; do
     cat ga.tag $a >| "$DIR/$a"
   done
+  ln -s . "$DIR/stable"
 
   sed -e "/BUILD_HASH/ s/latest/$HASH/" -e "/BUILD_DATE/ s/current/$DATE/" \
       patch.js >| "$DIR/patch.js"
   echo "<a href=\"$HASH/\">$HASH: $DATE</a><br>" >> "$TMP/r/versions.html"
-  sed -e 's,<!--base-->,<base href="/stable/">,g' "$DIR/index.html" >| "$TMP/r/index.html"
-  sed -e 's,<!--base-->,<base href="/stable/">,g' "$DIR/track.html" >| "$TMP/r/track.html"
-  sed -e 's,<!--base-->,<base href="/stable/">,g' "$DIR/check.html" >| "$TMP/r/check.html"
+  rm -f "$TMP"/r/{index,track,check,help}.html
+  ln -s stable/{index,track,check,help}.html "$TMP/r/"
+  ln -s index.html play.html
 )
 (
   cd $TMP/r

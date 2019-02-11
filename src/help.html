@@ -22,6 +22,58 @@
   </section>
 
   <section>
+    <h1>Getting Started</h1>
+    <div>
+      <ul>
+      <li>A good way to get started is to turn on some casual flags and to use
+        a tracker (such as the one provided here, or else the emotracker pack).
+        Clicking on "Track" in the top menu will automatically
+        use the currently selected flag set to determine availability of each
+        item on the mini map.  Availability is indicated by colors, from red
+        (completely blocked) to orange and yellow (available via hard mode
+        strat or glitch, respectively) to greenish yellow (available but not
+        considered by the current flag's logic) to green (available and probably
+        expected).  Locations may be marked as "checked" by clicking on them,
+        or by right-clicking on the major item that's usually there.
+      <li>Learn the <a href="http://mikesrpgcenter.com/crystalis/index.html#maps">dungeon
+        maps</a> to the main key item locations.
+      <li>Do not shuffle minor items in with the major ones, and then do not
+        worry about the minor item chests.
+      <li>Expect to spend 2-4 hours the first time.  With some practice it's
+        not too difficult to get down to the 1-2 hour range.
+      <li>Grinding is not as time-consuming in the randomizer as in vanilla,
+        but levels are a huge help to scale down the difficulty.  Pay attention
+        to the EXP from different enemies and grind out a level or two if things
+        get too difficult.
+      <li><span class="item">Medical herbs</span> (especially buffed) are often
+        more valuable than <span class="item">magic rings</span>.
+        <span class="item">Warp boots</span> are also very helpful, both for fast
+        travel and for getting out of a pinch.  Always keep one or two in inventory.
+        They can be stolen from <span class="location">Brynmaer</span>.
+      <li>Learn to exploit the most important glitches:
+        <ul>
+        <li>Shop glitch: get an item for cheap (or free) by selecting a
+          neighboring item (or blank space), then press the direction toward
+          the item you want and very quickly afterwards (next frame or two)
+          tap A to buy it for the previously-selected price.  Take advantage
+          of this at the start of the game by walking through the new passage
+          to <span class="location">Portoa</span> and stealing some better armor.
+        <li>Talk (door) glitch: pass a number of spots that are supposed to
+          be blocked by statues or guards by approaching them from the right,
+          then holding left and down while continually dismissing the dialog.
+          You will be pushed up a little each time and eventually will pass
+          them.  To do the reverse, hold down and right to be pushed left.
+        <li>Stom fight glitch: warp to <span clas="location">Leaf</span>
+          immediately after Stom takes the first stab to win the fight right
+          away.  Don't warp anywhere else as it can softlock the game.
+        </ul>
+      <li>The early game is the hardest, when you don't have many sword options.
+        Once it starts to open up a bit, things usually get quite a bit easier.
+      </ul>
+    </div>
+  </section>
+
+  <section>
     <h1>Gameplay Changes</h1>
     <div>
       <p>A number of gameplay changes have been made to support randomization.
@@ -43,19 +95,21 @@
         of Wind</span> and <span class="location">Lime Tree</span>.
       <li>A number of triggers have been slightly changed (see below).
       <li>A number of characters spawn in multiple locations independent of
-        game events (e.g. Zebu remains in the cave the entire game, rather
-        than "moving" to Shyron after calming the sea).
-      <li>Some minor bug fixes: screen shaking is fixed, and vampire 2 no longer
-        speeds up at the start of the fight.
-      <li>Swan gate now has a pair of guards on the opposite side, to allow going
-        through either direction (with Change).  The guards will only despawn after
-        the gate is open.
+        game events (e.g. <span class="npc">Zebu</span> remains in <span class="location">Zebu's
+        Cave</span> the entire game, rather than "moving" to <span class="location">Shyron</span>
+        after calming the sea).
+      <li>Some minor bug fixes: screen shaking is fixed, and <span class="boss">Vampire 2</span>
+        no longer speeds up near the start of the fight.
+      <li><span class="location">Swan gate</span> now has a pair of guards on the opposite side,
+        to allow going through either direction (with <span class="magic">Change</span>).
+        The guards will only despawn after the gate is open.
       <li>It is now possible to teleport out of the tower, and to get
-        back in via the pyramid back entrance.
-      <li>Sword of Thunder always teleports to Shyron, no matter where it's found
+        back in via the <span class="location">crypt</span>.
+      <li><span class="item">Sword of Thunder</span> always teleports to
+        <span class="location">Shyron</span>, no matter where it's found
         (though this can be disabled).  The warp checkpoint is immediately set,
-        and in case there's no way back, Asina will teleport the player back to
-        Mezame Shrine.
+        and in case there's no way back, <span class="npc">Asina</span> will
+        teleport the player back to <span class="location">Mezame Shrine</span>.
       </ul>
     </div>
   </section>
@@ -71,9 +125,10 @@
         The "dropped" item will take its place in the buffer.
       <li>Orbs and bracelets are progressive upgrades: the first item you get,
         even if it says "bracelet" will give you the orb, and the second will
-        give the bracelet.  The distinction is important only because Tornel on
-        Mt Sabre is keyed off finding the chest that gives the tornado bracelet,
-        rather than by finding both upgrades.
+        give the bracelet.  The distinction is important only because
+        <span class="npc">Tornel</span> on <span class="location">Mt Sabre</span>
+        is keyed off finding the <emph>chest<emph> that gives the <span class="item">Tornado
+        Bracelet</span>, rather than by finding both upgrades.
       <li>Orbs and bracelets may now (optionally) be automatically equipped.
         Just change swords and the powerup will change, too.
       <li>Sword damage has been renormalized.  Rather than depending on the
@@ -81,16 +136,17 @@
         depends on the number of upgrades (no upgrades=2, ball only=4, bracelet=8).
       <li>Stab damage no longer doubles the sword base power, but is
         now always just 2, on top of the base power of the sword.
-      <li>The Power Ring is nerfed to double the sword base damage, rather than
-        the level.
+      <li>The <span class="item">Power Ring</span> is nerfed to double the
+        sword base damage, rather than the level.
       <li>Armors and shields are nerfed to only provide half the defense value.
         Monster attack values are rescaled to match.
       <li>Powerful armors will only provide up to a maximum of LVL*2 defense.
-      <li>Pendant of Deo is buffed to provide MP while moving.
-      <li>Iron Necklace and Shield Ring are buffed to double the armor/shield
+      <li><span class="item">Pendant of Deo</span> is buffed to provide MP while moving.
+      <li><span class="item">Iron Necklace</span> and Shield Ring are buffed to double the armor/shield
         value, rather than the level.
-      <li>Medical Herb can be buffed to 2x or 3x the effectiveness.
-      <li>Leather Boots are (optionally) replaced with Speed Boots.
+      <li><span class="item">Medical Herb</span> can be buffed to 2x or 3x the effectiveness.
+      <li><span class="item">Leather Boots</span> are (optionally) replaced with
+        <span class="item">Speed Boots</span>.
       <li>Mimics will only ever shuffle into visible chests (this does not include
         boss drops).
       <li>Consumables and armor/shields can only shuffle into chests, so that
@@ -131,7 +187,6 @@
         returned.
       <li>The Shyron massacre requires both the actual Sword of Thunder and
         getting the [Key to Stxy] from Zebu in Shyron.
-      <li>TODO - mesia, wise men, queen, etc...
       </ul>
     </div>
   </section>

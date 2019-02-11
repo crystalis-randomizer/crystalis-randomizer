@@ -1,12 +1,12 @@
 {
   "name": "crystalis-randomizer",
   "version": "0.0.3",
-  "main": "src/patch.js",
+  "main": "src/js/patch.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
-    "cryr": "src/cli.js"
+    "cryr": "src/js/cli.js"
   },
   "repository": {
     "type": "git",

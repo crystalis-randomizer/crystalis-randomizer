@@ -13,7 +13,7 @@ set -ex
 } | head -c 393232 > scripts/test.nes
 
 # Now run the CLI on it.
-node src/cli.js --output=scripts/test_out --force scripts/test.nes
+node src/js/cli.js --output=scripts/test_out --force scripts/test.nes
 
 # Make sure the output has the right size.
 wc -c scripts/test_out.nes | grep -q 393232

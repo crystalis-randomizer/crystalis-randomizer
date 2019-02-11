@@ -31,6 +31,8 @@ Try it out at https://crystalisrandomizer.com
 * [x] Shuffle all item locations (this requires a complete internal representation
       of the game's dependency graph to ensure all shuffled games are winnable)
 * [ ] TODO - Randomize the location of some item-giving NPCs (particularly Akahana)
+* [ ] TODO - Shuffle shop items
+* [ ] TODO - Shuffle Alarm Flute into key item pool
 
 ### Monster Adjustments
 

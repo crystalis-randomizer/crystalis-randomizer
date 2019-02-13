@@ -1,5 +1,7 @@
 # Crystalis Randomizer
 
+[![Build Status](https://travis-ci.org/shicks/crystalis-randomizer.svg?branch=master)](https://travis-ci.org/shicks/crystalis-randomizer)
+
 [Crystalis] (or "God Slayer" in Japan) is a classic post-apocalyptic action
 RPG/adventure game for the NES released by SNK in 1990.  It is widely praised as
 an underrated gem of a video game.

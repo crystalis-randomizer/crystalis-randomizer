@@ -142,7 +142,7 @@ const replaceSpoiler = (name, log) => {
     const li = document.createElement('li');
     li.textContent = line;
     el.appendChild(li);
-  }
+                            }
 };
 
 const setPresets = () => {
@@ -236,7 +236,7 @@ const loadRomFromStorage = () => {
       const str = Array.from(arr, x => x.toString(16).padStart(2, 0)).join('');
       window['localStorage'].setItem('rom', str);
       window['localStorage'].setItem('name', file.name);
-      rom = arr;
+      rom = arr.slice(0, 0x60010);
       checkCrc();
       romName = file.name;
     });
@@ -246,10 +246,10 @@ const loadRomFromStorage = () => {
 
 
 const download = (data, name) => {
-  const a = document.createElement("a");
+  const a = document.createElement('a');
   document.body.appendChild(a);
-  a.style = "display: none";
-  const blob = new Blob([data], {type: "octet/stream"}),
+  a.style = 'display: none';
+  const blob = new Blob([data], {type: 'octet/stream'}),
         url = window.URL.createObjectURL(blob);
   a.href = url;
   a.download = name;

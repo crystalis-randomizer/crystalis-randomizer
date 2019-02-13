@@ -1728,13 +1728,13 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
     const isMimic = (s) => s.index === 0x70;
     const needsChest = (i) =>
         // NOTE: if alarm flute goes in 3rd row, 0x31 should go away.
-        i >= 0x0d && i < 0x24 || i === 0x26 || i === 0x28 || i === 0x31;
+        i >= 0x0d && i <= 0x24 || i === 0x26 || i === 0x28 || i === 0x31 || i > 0x48;
     const canSwap = (s1, s2) => {
       if (s1.index === s2.index) return false;
-      if (isMimic(s1)) return canHoldMimic(s2);
-      if (isMimic(s2)) return canHoldMimic(s1);
-      if (needsChest(s1.index)) return isChest(s2);
-      if (needsChest(s2.index)) return isChest(s1);
+      if (isMimic(s1) && !canHoldMimic(s2)) return false;
+      if (isMimic(s2) && !canHoldMimic(s1)) return false;
+      if (needsChest(s1.index) && !isChest(s2)) return false;
+      if (needsChest(s2.index) && !isChest(s1)) return false;
       return true;
     };
 

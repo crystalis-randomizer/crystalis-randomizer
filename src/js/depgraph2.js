@@ -261,6 +261,7 @@ const alarmFlute            = item(0x31, 'Alarm Flute').fixed();
 const windmillKey           = item(0x32, 'Windmill Key')
                                 .fromPerson('Windmill guard', 0x14)
                                 .dialog(0x14, 0x0e, 0)
+                                .npcSpawn(0x14, 0x0e, 1)
                                 .key();
 const keyToPrison           = item(0x33, 'Key to Prison').chest().key();
 const keyToStyx             = item(0x34, 'Key to Styx')

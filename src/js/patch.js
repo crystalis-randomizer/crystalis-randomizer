@@ -342,6 +342,10 @@ define ShouldRedisplayDifficulty $64a3
   .byte $60,$3b,$8a,$97,$22,$c0,$00  ; 03b NOT -> 14:17 (action 11)
   .byte $00,$2d,$02,$c3,$22          ; 02d -> 16:03
 
+;; Windmill guard shouldn't despawn on massacre
+.org $1c7d6
+  .byte $00 ; no despawn at all
+
 ;; Don't check unwritten 104 flag for mado spawn
 .org $1c93a
   .byte $a0,$00

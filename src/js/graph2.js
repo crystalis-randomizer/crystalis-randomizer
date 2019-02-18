@@ -755,6 +755,7 @@ export class Location extends Node {
     this.chests = [];
     this.bossNode = null;
     this.type = null;
+    this.isStart = false;
   }
 
   toString() {
@@ -851,6 +852,11 @@ export class Location extends Node {
 
   misc() {
     this.type = 'misc';
+    return this;
+  }
+
+  start() {
+    this.isStart = true;
     return this;
   }
 

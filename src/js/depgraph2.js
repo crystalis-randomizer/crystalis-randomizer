@@ -102,8 +102,8 @@ const gasMaskOptional       = option('Gas mask optional',
                                      opt('Hg', false));
 const healedDolphinOptional = option('Healed dolphin optional',
                                      opt('!Rd', true));
-const requireCalmForBarrier = option('Require calm for barrier',
-                                     opt('Rl', true));
+const calmedSeaOptional     = option('Calmed sea not required',
+                                     opt('!Rl', false));
 const teleportToShyron      = option('Sword of Thunder teleports to Shyron',
                                      opt('Rt', true));
 const barrierOptional       = option('Barrier magic optional',
@@ -576,6 +576,9 @@ const travelSwamp           = condition('Travel swamp')
                                 .option(gasMask)
                                 .option(gasMaskOptional)
                                 .option(hard);
+const calmedSeaIfRequired   = condition('Calmed sea if required')
+                                .option(calmedSea)
+                                .option(calmedSeaOptional)
 
 // TODO - warp triggers, wild warp, etc...
 // ghetto flight?  talk glitch?  triggers (calmed sea or ghetto flight)?  require magic for boss?
@@ -656,7 +659,7 @@ const MISC = 'misc';
 
 // Leaf, Valley of Wind, Sealed Cave
 
-const start                 = location(0x00, LEAF, 'Start').overworld();
+const start                 = location(0x00, LEAF, 'Start').overworld().start();
 const mezameShrine          = location(0x00, LEAF, 'Mezame Shrine').overworld()
                                 .from(start);
 const outsideStart          = location(0x01, LEAF, 'Outside Start').overworld()
@@ -1077,7 +1080,7 @@ const angrySeaNorth         = location(0x60, ASEA, 'North').sea()
                                 .to(angrySeaSouth, crossSea)
                                 .from(angrySeaSouth, crossSea, crossWhirlpool)
                                 // NOTE: calmedSea is not normally a requirement.
-                                .trigger(learnedBarrier, calmedSea);
+                                .trigger(learnedBarrier, calmedSeaIfRequired);
 const angrySeaSwanBeach     = location(0x60, ASEA, 'Swan Beach').sea()
                                 .connect(angrySeaNorth, crossSea);
 const angrySeaCabin         = location(0x61, ASEA, 'Cabin').misc()

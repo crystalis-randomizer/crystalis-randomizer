@@ -1,35 +1,10 @@
-class Edge {
-  constructor(left, right, arrow, attrs) {
-    this.left = left;
-    this.right = right;
-    this.arrow = arrow;
-    this.attrs = attrs;
-  }
-
-  // reverse() {
-  //   return new Edge(this.right, this.left, this.arrow, this.attrs);
-  // }
-
-  toDot() {
-    const attrs = this.attrs.length ? ` [${this.attrs.join(', ')}]` : '';
-    return `  ${this.left.uid} ${this.arrow} ${this.right.uid}${attrs};`;
-  }
-}
-
 export class Node {
   constructor(graph) {
     this.graph = graph;
-    this.hashCode_ = graph.nodes.length;
-    this.uid = 'n' + graph.nodes.length;
+    this.uid = graph.nodes.length;
     graph.nodes.push(this);
   }
 
-  equals(that) {
-    return this.uid === that.uid;
-  }
-  hashCode() {
-    return this.hashCode_;
-  }
   toString() {
     return this.uid;
   }
@@ -41,58 +16,8 @@ export class Graph {
     this.nodes = nodes;
   }
 
-  node(uid) {
-    return this.nodes[uid.substring(1)];
-  }
-
   findSlot(name) {
     return this.nodes.find(n => n instanceof Slot && n.name == name);
-  }
-
-  // There's two different kind of dot outputs.
-  // 1. just the locations, with edges annotated
-  // 2. items and triggers, (all directed edges,locations integrated out)
-
-  // Outputs a .dot file.
-  toLocationGraph() {
-    const parts = [];
-    parts.push(
-      'digraph locations {',
-      'node [shape=record, style=filled, color=white];');
-    const subgraphs = {};
-    const edges = new Set();
-    const areas = [];
-
-    for (const n of this.nodes) {
-      if (n instanceof Location) {
-        let area = subgraphs[n.area.uid];
-        if (!(n.area.uid in subgraphs)) {
-          areas.push(n.area);
-          area = subgraphs[n.area.uid] = [];
-        }
-        area.push(n.toDot());
-        for (const e of n.edges()) {
-          edges.add(e);
-        }
-      }
-    }
-
-    for (const area of areas) {
-      parts.push(
-        `  subgraph cluster_${area.uid} {`,
-        `    style=filled;`,
-        `    color="lightgrey";`,
-        `    label="${area.name}";`,
-        ...subgraphs[area.uid],
-        '  }');
-    }
-
-    for (const edge of edges) {
-      parts.push(edge.toDot());
-    }
-
-    parts.push('}');
-    return parts.join('\n');
   }
 
   locations() {
@@ -107,7 +32,7 @@ export class Graph {
     return this.nodes.filter(n => n instanceof Slot);
   }
 
-  traverse(start = this.locations()[0]) {
+  traverse(start) {
     // Turn this into a mostly-standard depth-first traversal.
     // Basically what we do is build up a new graph where each edge has a list
     // of other nodes that all need to be seen first to take it.
@@ -140,6 +65,9 @@ export class Graph {
         if (n.bossNode) {
           addEdge(n.bossNode, n, ...n.bossNode.deps);
         }
+        if (n.isStart) {
+          stack.push([n, [{name: 'START'}]]);
+        }
       } else if (n instanceof Condition) {
         for (const o of n.options) {
           addEdge(n, ...o);
@@ -154,8 +82,6 @@ export class Graph {
         addEdge(n.slot, n);
       }
     }
-
-    stack.push([start, [{name: 'START'}]]);
 
     // We now have a complete graph that we can do a simple DFS on.
     const want = new Set(this.gettables());
@@ -196,7 +122,7 @@ export class Graph {
     return integrateLocations(this, opts);
   }
 
-  // Here's the thing, slots reqire items.
+  // Here's the thing, slots require items.
   // We don't want to transitively require dependent slots' requirements,
   // but we *do* need to transitively require location requirements.
 
@@ -718,7 +644,7 @@ export class Area extends Node {
   }
 }
 
-class Connection {
+export class Connection {
   constructor(from, to, bidi = false, deps = []) {
     this.from = from;
     this.to = to;
@@ -728,19 +654,6 @@ class Connection {
 
   reverse() {
     return new Connection(this.to, this.from, this.bidi, this.deps);
-  }
-
-  toDot() {
-    //const arr = this.bidi ? '--' : '->';
-    const attrs = [];
-    if (this.deps.length) {
-      attrs.push(`label="${this.deps.map(d => d.name).join(', ')}"`);
-    }
-    if (this.bidi) {
-      attrs.push(`dir=none`);
-    }
-    const attrsStr = attrs.length ? ` [${attrs.join(', ')}]` : '';
-    return `  ${this.from.uid} -> ${this.to.uid}${attrsStr};`;
   }
 }
 
@@ -858,50 +771,6 @@ export class Location extends Node {
   start() {
     this.isStart = true;
     return this;
-  }
-
-  edges() {
-    const out = [...this.connections];
-    const prefix = n => ({uid: `${this.uid}_${n.uid}`});
-    for (const chest of this.chests) {
-      out.push(new Connection(this, prefix(chest), false, []));
-    }
-    for (const {trigger, deps} of this.triggers) {
-      out.push(new Connection(this, prefix(trigger), false, deps));
-      if (trigger.slot) {
-        out.push(new Connection(prefix(trigger), prefix(trigger.slot), false, []));
-      }
-    }
-    if (this.bossNode && this.bossNode.slot) {
-      out.push(new Connection(this, prefix(this.bossNode.slot), false, this.bossNode.deps));
-    }
-    return out;
-  }
-
-  // Specifies several edges.
-  toDot() {
-    const fmt = (n, c) => `    ${this.uid}_${n.uid} [label="${n.name}", color="${c}", shape=oval];`;
-    const color = this.bossNode ? ' color="#ffbbbb"' : '';
-    const nodes = [`    ${this.uid} [label="${this.fullName()}"${color}];`];
-    for (const chest of this.chests) {
-      nodes.push(fmt(chest, '#ddffdd'));
-    }
-    for (const {trigger} of this.triggers) {
-      nodes.push(fmt(trigger, '#ddddff'));
-      if (trigger.slot) {
-        if (!trigger.slot) {
-          throw new Error(`missing item: ${trigger.slot.name}`);
-        }
-        nodes.push(fmt(trigger.slot, '#ddffdd'));
-      }
-    }
-    if (this.bossNode && this.bossNode.slot) {
-      if (!this.bossNode.slot) {
-        throw new Error(`missing item: ${this.bossNode.slot.name}`);
-      }
-      nodes.push(fmt(this.bossNode.slot, '#ddffdd'));
-    }
-    return nodes.join('\n');
   }
 
   fullName() {

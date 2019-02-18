@@ -128,12 +128,10 @@ const glitch                = new Node(graph); glitch.name = 'Glitch';
 const hard                  = new Node(graph); hard.name = 'Hard';
 // TODO - consider making 'name' a ctor parameter (note: Slot overrides getter)
 
-// TODO - assumeSwordChargeGlitch - would be super annoying...
-//   - would need to make a condition anyLevel2Sword to put with the needed
-//     sword.  Together with wildWarp, most things are open very early.
-
 // TODO - for wild warp consider adding a list of locations,
 // then we can hack those into the rom if it changes?
+//   - .wildWarp(true)   - standard mode wild warp
+//   - .wildWarp(false)  - wild warp eligible
 
 ////////////////////////////////////////////////////////////////
 // Items
@@ -581,7 +579,6 @@ const calmedSeaIfRequired   = condition('Calmed sea if required')
                                 .option(calmedSeaOptional)
 
 // TODO - warp triggers, wild warp, etc...
-// ghetto flight?  talk glitch?  triggers (calmed sea or ghetto flight)?  require magic for boss?
 
 ////////////////////////////////////////////////////////////////
 // Bosses
@@ -652,6 +649,11 @@ const CAVE = 'cave';
 const SEA = 'sea';
 const HOUSE = 'house';
 const MISC = 'misc';
+
+// TODO - consider "domains" where intra-domain entrances are
+// not shuffled.  Does not always line up with type changes,
+// though we may still want to *preserve* the types.
+
 
 ////////////////////////////////////////////////////////////////
 // Locations

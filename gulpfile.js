@@ -4,9 +4,10 @@ const closure = require('google-closure-compiler').gulp();
 const COMMON = [
   '6502.js',
   'crc32.js',
-  'depgraph2.js',
+  'depgraph.js',
   'flagset.js',
-  'graph2.js',
+  'graph.js',
+  'node.js',
   'patch.js',
   'random.js',
   'rom.js',

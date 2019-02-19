@@ -1,7 +1,7 @@
 // Item tracker for web.
 // Uses flagset to figure out actual dependencies.
 
-import {generate} from './depgraph2.js';
+import {generate} from './depgraph.js';
 import {FlagSet} from './flagset.js';
 
 const BOXES = `

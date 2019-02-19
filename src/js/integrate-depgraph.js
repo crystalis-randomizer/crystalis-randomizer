@@ -1,6 +1,6 @@
 require = require('esm')(module);
 
-const {generate} = require('./depgraph2.js');
+const {generate} = require('./depgraph.js');
 const {FlagSet} = require('./flagset.js');
 
 const g = generate(new FlagSet('Rf Dt Tw Gstrf'));

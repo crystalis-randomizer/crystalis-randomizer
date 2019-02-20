@@ -749,10 +749,10 @@ export class LocationList {
     // Now add route
     (this.routes[target] || (this.routes[target] = [])).push(...deps);
     const edge = [target, ...deps];
-    for (let i = route.length - 1; i >= 1; i--) {
-      const from = this.itemToUid[route[i]];
-      (this.unlocks[from] || (this.unlocks[from] = [])).push(edge);
-    }
+    // for (let i = route.length - 1; i >= 1; i--) {
+    //   const from = this.uidToItem[route[i]];
+    //   (this.unlocks[from] || (this.unlocks[from] = []))[target].push(...deps);
+    // }
   }
 
   // NOTE: does not take this.slots into account!
@@ -777,6 +777,49 @@ export class LocationList {
    */
   traverse(has, slots) {
     has = [...has]; // make a clone
+
+for(const bit of bits(has))
+console.log(`HAS ${bit}: ${this.worldGraph.nodes[this.itemToUid[bit]]}`);
+
+    // compute routes...
+    const reachable = new Array(((this.locationToUid.length - 1) >>> 5) + 1).fill(0);
+    const /** !Array<Set<number>> */ routes = this.itemToUid.map(() => new Set());
+    for (let i = 0; i < this.worldGraph.nodes.length; i++) {
+      const route = this.worldGraph.nodes[i];
+      for (let j = 0; j < route.length; j += 2) {
+        for (const bit of bits(route, j, 2)) {
+          routes[bit].add(i); // routes[bit][i].push(...route.slice(j, j + 2));
+        }
+      }
+    }
+    // now we have all the follow-ups...
+
+    let queue = new Set();
+    for (let i = 0; i < this.locationToUid.length; i++) {
+      queue.add(i);
+    }
+    const iter = queue[Symbol.iterator]();
+    let next;
+    while (!(next = iter.next()).done) {
+      const n = next.value;
+      queue.delete(n);
+//console.log(`loc ${n}`);
+      if (reachable[n >>> 5] & (1 << n)) continue;
+      // can we reach it?
+      const needed = this.routes[n];
+      for (let i = 0; i < needed.length; i += 2) {
+        if ((needed[i] & ~has[0]) || (needed[i + 1] & ~has[1])) continue;
+console.log(`REACHABLE ${n}: ${this.worldGraph.nodes[this.locationToUid[n]]}`);
+        reachable[n >>> 5] |= 1 << n;
+        if (slots[n]) {
+console.log(`HAS ${slots[n]}: ${this.worldGraph.nodes[this.itemToUid[slots[n]]]}`);
+          has[slots[n] >>> 5] |= 1 << slots[n];
+          for (let j of routes[slots[n]]) queue.add(j);
+        }
+        break;
+      }
+    }
+    return reachable;
     ////// .... ???
 
   }
@@ -789,16 +832,8 @@ export class LocationList {
       const terms = [];
       for (let j = 0; j < route.length; j += 2) {
         const term = [];
-        for (let k = 0; k < 2; k++) {
-          let x = route[j + k];
-          let y = 32;
-          while (x) {
-            const z = Math.clz32(x) + 1;
-            y -= z;
-            x <<= z;
-            if (z == 32) x = 0;
-            term.push(this.worldGraph.nodes[this.itemToUid[(k << 5) | (y + 1)]]);
-          }
+        for (const bit of bits(route, j, 2)) {
+          term.push(this.worldGraph.nodes[this.itemToUid[bit]]);
         }
         terms.push('(' + term.join(' & ') + ')');
       }
@@ -820,3 +855,35 @@ export class LocationList {
 
 
 }
+
+// const bits = (arr, start = 0, count = arr.length) => {
+//   const out = [];
+//   for (let i = 0; i < 2; i++) {
+//     let x = arr[start + i];
+//     let n = 0;
+//     while (x) {
+//       if (x&1) out.push(n + (i<<5));
+//       x>>>=1;
+//       n++;
+//     }
+//   }
+// if(out.length){console.log(out); process.exit(0);}
+//   return out;
+// };
+
+export const bits = (arr, start = 0, count = arr.length) => {
+  const out = [];
+  for (let i = 0; i < 2; i++) {
+    let x = arr[start + i];
+    let y = 32;
+    while (x) {
+      const z = Math.clz32(x) + 1;
+      y -= z;
+      x <<= z;
+      if (z == 32) x = 0;
+      out.push((i << 5) | y);
+    }
+  }
+//if(out.length){console.log(out); process.exit(0);}
+  return out;
+};

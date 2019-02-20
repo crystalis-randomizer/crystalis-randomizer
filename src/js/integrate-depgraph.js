@@ -2,15 +2,29 @@ require = require('esm')(module);
 
 const {generate} = require('./depgraph.js');
 const {FlagSet} = require('./flagset.js');
+const {bits} = require('./nodes.js');
 
-const g = generate(new FlagSet('Rf Dt Tw Gstrf'));
+const g = generate(new FlagSet('Rpf Dt Tw Gstrf'));
 // TODO - set options?
 
 const start = new Date().getTime();
 const dg = g.integrate();
 const end = new Date().getTime();
-console.log(String(dg));
+//console.log(String(dg));
 console.log(`time: ${end - start} ms`); // seems to take ~900 ms, so 20 traversals
+
+for (let i = 0; i < dg.itemToUid.length; i++) {
+  console.log(`ITEM ${i}: ${g.nodes[dg.itemToUid[i]]}`);
+}
+for (let i = 0; i < dg.locationToUid.length; i++) {
+  console.log(`SLOT ${i}: ${g.nodes[dg.locationToUid[i]]}`);
+}
+
+for (const bit of bits(dg.traverse([0x0000000f, 0x00000000], [4, 5, 6]))) {
+  console.log(String(g.nodes[dg.locationToUid[bit]]));
+}
+// console.log(dg.traverse([0x00000000, 0xffffffff], []).map(x=>x.toString(16)).join(' '));
+
 
 // for (const loc of g.locations()) {
 //   console.log(`${loc.area.name} ${loc.name}: ${[...(dg.graph.get(loc.uid)||new Map()).values()].map(([...s]) => '(' + s.map(n => g.node(n).name).join(' & ') + ')').join(' | ')}`);

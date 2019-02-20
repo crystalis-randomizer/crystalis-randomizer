@@ -1,6 +1,7 @@
 // TODO - rename to nodes.js ?
 
 import {Node, Edge, Graph, SparseDependencyGraph} from './graph.js';
+import {Bits} from './bits.js';
 
 export class TrackerNode extends Node {
   constructor(graph, name) {
@@ -715,10 +716,10 @@ export class LocationList {
     /** @const {!Array<number>} */
     this.itemToUid = [];
 
-    /** @const {!Array<!Array<number>>} */
+    /** @const {!Array<!Array<!Bits>>} */
     this.routes = [];
 
-    /** @const {!Array<!Array<!Edge>>} */
+    /** @const {!Array<!Set<number>>} */
     this.unlocks = [];
 
     // TODO - custom width?  for now we hardcode width=2
@@ -727,8 +728,9 @@ export class LocationList {
   // NOTE: 'route' is in terms of worldgraph uids
   addRoute(/** !Edge */ route) {
     // Make sure all nodes are mapped.
-    const deps = [0, 0];
+    let /** !Bits */ deps = Bits.of();
     let target;
+    const unlocks = [];
     for (let i = route.length - 1; i >= 0; i--) {
       const fwd = i ? this.uidToItem : this.uidToLocation;
       const bwd = i ? this.itemToUid : this.locationToUid;
@@ -741,59 +743,41 @@ export class LocationList {
         fwd[n] = index;
       }
       if (i) {
-        deps[index >> 5] |= (1 << (index & 31));
+        deps = Bits.with(deps, index);
+        unlocks.push(this.unlocks[index] || (this.unlocks[index] = new Set()));
       } else {
         target = index;
       }
     }
-    // Now add route
-    (this.routes[target] || (this.routes[target] = [])).push(...deps);
-    const edge = [target, ...deps];
-    // for (let i = route.length - 1; i >= 1; i--) {
-    //   const from = this.uidToItem[route[i]];
-    //   (this.unlocks[from] || (this.unlocks[from] = []))[target].push(...deps);
-    // }
+    // Now add route and the unlocks.
+    (this.routes[target] || (this.routes[target] = [])).push(deps);
+    for (const unlock of unlocks) {
+      unlock.add(target);
+    }
   }
 
   // NOTE: does not take this.slots into account!
-  canReach(want, has) {
+  canReach(/** !Node */ want, /** !Bits */ has) {
     const target = this.uidToLocation(want.uid);
-    const alternatives = this.routes[target];
-   OUTER:
-    for (let i = 0; i < alternatives.length; i += 2) {
-      for (let j = 0; j < 2; j++) {
-        if (alternatives[i + j] & ~has[j]) continue OUTER;
-      }
-      return true;
+    const need = this.routes[target];
+    for (let i = 0; i < need.length; i++) {
+      if (Bits.containsAll(has, need[i])) return true;
     }
     return false;
   }
 
   /**
    * Returns a bitmask of reachable locations.
-   * @param {!Array<number>} has Bitmask of gotten items
+   * @param {!Bits} has Bitmask of gotten items
    * @param {!Array<number>} slots Location-to-item
-   * @return {!Array<number>} Reachable locations
+   * @return {!Bits} Reachable locations (TODO - Set<number>?)
    */
   traverse(has, slots) {
-    has = [...has]; // make a clone
+    has = Bits.clone(has);
 
-for(const bit of bits(has))
+for(const bit of Bits.bits(has))
 console.log(`HAS ${bit}: ${this.worldGraph.nodes[this.itemToUid[bit]]}`);
-
-    // compute routes...
-    const reachable = new Array(((this.locationToUid.length - 1) >>> 5) + 1).fill(0);
-    const /** !Array<Set<number>> */ routes = this.itemToUid.map(() => new Set());
-    for (let i = 0; i < this.worldGraph.nodes.length; i++) {
-      const route = this.worldGraph.nodes[i];
-      for (let j = 0; j < route.length; j += 2) {
-        for (const bit of bits(route, j, 2)) {
-          routes[bit].add(i); // routes[bit][i].push(...route.slice(j, j + 2));
-        }
-      }
-    }
-    // now we have all the follow-ups...
-
+    let reachable = Bits.of();
     let queue = new Set();
     for (let i = 0; i < this.locationToUid.length; i++) {
       queue.add(i);
@@ -804,24 +788,22 @@ console.log(`HAS ${bit}: ${this.worldGraph.nodes[this.itemToUid[bit]]}`);
       const n = next.value;
       queue.delete(n);
 //console.log(`loc ${n}`);
-      if (reachable[n >>> 5] & (1 << n)) continue;
+      if (Bits.has(reachable, n)) continue;
       // can we reach it?
       const needed = this.routes[n];
-      for (let i = 0; i < needed.length; i += 2) {
-        if ((needed[i] & ~has[0]) || (needed[i + 1] & ~has[1])) continue;
+      for (let i = 0; i < needed.length; i++) {
+        if (!Bits.containsAll(has, needed[i])) continue;
 console.log(`REACHABLE ${n}: ${this.worldGraph.nodes[this.locationToUid[n]]}`);
-        reachable[n >>> 5] |= 1 << n;
+        reachable = Bits.with(reachable, n);
         if (slots[n]) {
 console.log(`HAS ${slots[n]}: ${this.worldGraph.nodes[this.itemToUid[slots[n]]]}`);
-          has[slots[n] >>> 5] |= 1 << slots[n];
-          for (let j of routes[slots[n]]) queue.add(j);
+          has = Bits.with(has, n);
+          for (let j of this.unlocks[slots[n]]) queue.add(j);
         }
         break;
       }
     }
     return reachable;
-    ////// .... ???
-
   }
 
   toString() {

@@ -2,7 +2,7 @@ require = require('esm')(module);
 
 const {generate} = require('./depgraph.js');
 const {FlagSet} = require('./flagset.js');
-const {bits} = require('./nodes.js');
+const {Bits} = require('./bits.js');
 
 const g = generate(new FlagSet('Rpf Dt Tw Gstrf'));
 // TODO - set options?
@@ -20,7 +20,7 @@ for (let i = 0; i < dg.locationToUid.length; i++) {
   console.log(`SLOT ${i}: ${g.nodes[dg.locationToUid[i]]}`);
 }
 
-for (const bit of bits(dg.traverse([0x0000000f, 0x00000000], [4, 5, 6]))) {
+for (const bit of Bits.bits(dg.traverse(Bits.of(0,1,2,3), [4, 5, 6]))) {
   console.log(String(g.nodes[dg.locationToUid[bit]]));
 }
 // console.log(dg.traverse([0x00000000, 0xffffffff], []).map(x=>x.toString(16)).join(' '));

@@ -1,4 +1,3 @@
-import {Graph} from './graph.js';
 import {
   Area,
   Boss,
@@ -11,6 +10,7 @@ import {
   Option,
   TrackerNode,
   Trigger,
+  WorldGraph,
 } from './nodes.js';
 import {FlagSet} from './flagset.js';
 
@@ -66,7 +66,7 @@ import {FlagSet} from './flagset.js';
 
 export const generate = (flags = undefined) => {
 
-const graph = new Graph();
+const graph = new WorldGraph();
 const option = (name, value = true) => new Option(graph, name, value);
 const item = (id, name) => new Item(graph, id, name, id, null);
 const magic = (id, name) => new Magic(graph, id, name, id, null);

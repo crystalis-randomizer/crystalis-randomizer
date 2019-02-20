@@ -1,6 +1,6 @@
 // TODO - rename to nodes.js ?
 
-import {Node, Edge, Graph} from './graph.js';
+import {Node, Edge, Graph, SparseDependencyGraph} from './graph.js';
 
 export class TrackerNode extends Node {
   constructor(graph, name) {
@@ -299,6 +299,8 @@ export class Trigger extends Node {
   constructor(graph, name) {
     super(graph, name);
     this.slot = null;
+    /** !Array<!Edge> */
+    this.reqs = [];
   }
 
   get nodeType() {
@@ -306,7 +308,9 @@ export class Trigger extends Node {
   }
 
   edges() {
-    return this.slot ? [Edge.of(this.slot, this)] : [];
+    const out = [...this.reqs];
+    if (this.slot) out.push(Edge.of(this.slot, this));
+    return out;
   }
 
   get(slot) {
@@ -392,7 +396,6 @@ export class Location extends Node {
     this.id = id;
     this.area = area;
     this.connections = [];
-    this.triggers = [];
     this.chests = [];
     this.bossNode = null;
     this.type = null;
@@ -413,14 +416,8 @@ export class Location extends Node {
       out.push(Edge.of(c.to, c.from, ...c.deps, ...(c.from.bossNode ? [c.from.bossNode] : [])));
       if (c.bidi) out.push(Edge.of(c.from, c.to, ...c.deps, ...(c.to.bossNode ? [c.to.bossNode] : [])));
     }
-    for (const {trigger, deps} of this.triggers) {
-      out.push(Edge.of(trigger, this, ...deps));
-    }
     for (const c of this.chests) {
       out.push(Edge.of(c, this));
-    }
-    if (this.bossNode) {
-      out.push(Edge.of(this.bossNode, this, ...this.bossNode.deps));
     }
     if (this.isStart) {
       out.push(Edge.of(this));
@@ -468,12 +465,14 @@ export class Location extends Node {
   }
 
   trigger(trigger, ...deps) {
-    this.triggers.push({trigger, deps: deps.map(x => x instanceof Slot ? x.item : x)});
+    deps = deps.map(n => n instanceof Slot ? n.item : n);
+    trigger.reqs.push(Edge.of(trigger, this, ...deps));
     return this;
   }
 
   boss(boss) {
     this.bossNode = boss;
+    boss.reqs.push(Edge.of(boss, this, ...boss.deps));
     return this;
   }
 
@@ -547,11 +546,144 @@ const checkBounds = (a, rom, ...data) => {
 export class WorldGraph extends Graph {
 
   /** @return {!LocationList} */
-  integrate() {}
+  integrate(opts = {}) {
+// for(let i=0;i<this.nodes.length;i++)
+// console.log(`${i} ${this.nodes[i]}`);
+
+    const {
+      removeConditions = true,
+      removeTriggers = true,
+      removeOptions = true,
+      removeTrackers = true,
+    } = opts;
+    const depgraph = new SparseDependencyGraph(this.nodes.length);
+    const /** !Array<!Array<!Connection>> */ connectionsByLocation = [];
+    const /** !Set<!Connection> */ connections = new Set();
+    const /** !Map<string, !Edge> */ queue = new Map();
+
+    const options = [];
+    const trackers = [];
+    const conditions = [];
+    const triggers = [];
+    const items = [];
+    const slots = new Set();
+
+    // First index all the nodes and connections.
+    for (const n of this.nodes) {
+      if (n instanceof Location) {
+        if (n.isStart) {
+          const [route] = depgraph.addRoute([n.uid]);
+          queue.set(route.label, route);
+        }
+        connectionsByLocation[n.uid] = [];
+        for (const c of n.connections) {
+          if (connections.has(c)) continue;
+          // add connection and maybe everse to the set
+          connections.add(c);
+          if (c.bidi) connections.add(c.reverse());
+        }
+        for (const c of n.chests) {
+          depgraph.addRoute([c.uid, n.uid]);
+        }
+        continue;
+      }
+
+      if (n instanceof Option) options.push(n);
+      else if (n instanceof TrackerNode) trackers.push(n);
+      else if (n instanceof Condition) conditions.push(n);
+      else if (n instanceof Trigger) triggers.push(n);
+      else if (n instanceof ItemGet) items.push(n);
+      else if (n instanceof Slot) slots.add(n);
+      else if (n instanceof Area) {}
+      else throw new Error(`Unknown node type: ${n.nodeType}`);
+    }
+
+    for (const c of connections) {
+      connectionsByLocation[c.from.uid].push(c);
+    }
+
+    const integrate = (nodes) => {
+      for (const n of nodes) {
+        for (const edge of n.edges()) {
+          depgraph.addRoute(edge);
+        }
+        depgraph.finalize(n.uid);
+      }
+    };
+
+    // Do options and triggers first
+    if (removeOptions) integrate(options);
+    if (removeTrackers) integrate(trackers);
+    if (removeTriggers) integrate(triggers);
+
+    // Next do locations, leaving conditions intact
+    const iter = queue.values();
+    let next;
+    while (!(next = iter.next()).done) {
+      const route = next.value; // (SparseRoute)
+      const target = route.target;
+//console.log(`loc: ${target} ${this.nodes[target]}: ${[...route.deps]}`);
+      for (const c of connectionsByLocation[target]) {
+//console.log(`c: ${c}`); // TODO - no connections???
+        const newRoute = [c.to.uid, ...route.deps];
+        for (let i = c.deps.length - 1; i >= 0; i--) {
+          newRoute.push(c.deps[i].uid);
+        }
+        if (c.from.bossNode) newRoute.push(c.from.bossNode.uid);
+//console.log(`newRoute: ${newRoute}`);
+        for (const r of depgraph.addRoute(newRoute)) {
+          if (!queue.has(r.label)) queue.set(r.label, r);
+        }
+      }
+    }
+
+    if (removeConditions) integrate(conditions);
+    for (let i = 0; i < this.nodes.length; i++) {
+      if (this.nodes[i] instanceof ItemGet) continue;
+      depgraph.finalize(i);
+    }
+
+    // Now we have a dependency graph, where all slots should
+    // have only item dependencies (unless we left some in).
+
+    // // It's time to renumber everything.
+    // const mapped = new Map();
+    // for (const slot of slots) {
+    //   for (const alternative of depgraph.nodes[slot.uid].values()) {
+    //     for (const dep of alternative) {
+    //       if (!mapped.has(dep)) mapped.set(dep, mapped.size);
+    //     }
+    //   }
+    // }
+    // for (const slot of slots) {
+    //   if (!mapped.has(slot.uid)) mapped.set(slot.uid, mapped.size);
+    // }
+    // // `mapped` now has a full dense mapping for slots and items
+    // const out = new LocationList();
+    // for (const [from, to] of mapped) {
+    //   const origNode = this.nodes[from];
+    //   const newNode = Object.create(origNode, {graph: out, uid: to});
+    //   out.nodes[to] = newNode;
+    // }
+
+// for (let i = 0; i < depgraph.nodes.length; i++) {
+//   console.log(`${i} ${this.nodes[i]}: ${[...depgraph.nodes[i].values()].map(s => '(' + [...s].join('&') + ')').join(' | ')}`);
+
+// }
+
+    const out = new LocationList(this);
+    for (const slot of slots) {
+//console.log(`slot ${slot.uid}: ${[...depgraph.nodes[slot.uid]]}`);
+      for (const alt of depgraph.nodes[slot.uid].values()) {
+        out.addRoute([slot.uid, ...alt]);
+      }
+    }
+    return out;
+  }
 
 }
 
-export class LocationList extends Graph {
+export class LocationList {
 
   // renumbered nodes -> mapping between them?
   //  - full integrated requirements
@@ -566,5 +698,125 @@ export class LocationList extends Graph {
   // they had a weakmap from graphs to ids in the graph,
   // then the id is assigned when they're added to the
   // graph, tho that would muck up a lot of stuff...
+
+  constructor(/** !WorldGraph */ graph) {
+    // Bimap between nodes and indices.
+
+    /** @const */
+    this.worldGraph = graph;
+
+    /** @const {!Array<number>} */
+    this.uidToLocation = [];
+    /** @const {!Array<number>} */
+    this.locationToUid = [];
+
+    /** @const {!Array<number>} */
+    this.uidToItem = [];
+    /** @const {!Array<number>} */
+    this.itemToUid = [];
+
+    /** @const {!Array<!Array<number>>} */
+    this.routes = [];
+
+    /** @const {!Array<!Array<!Edge>>} */
+    this.unlocks = [];
+
+    // TODO - custom width?  for now we hardcode width=2
+  }
+
+  // NOTE: 'route' is in terms of worldgraph uids
+  addRoute(/** !Edge */ route) {
+    // Make sure all nodes are mapped.
+    const deps = [0, 0];
+    let target;
+    for (let i = route.length - 1; i >= 0; i--) {
+      const fwd = i ? this.uidToItem : this.uidToLocation;
+      const bwd = i ? this.itemToUid : this.locationToUid;
+      const n = route[i];
+      let index = fwd[n];
+      if (index == null) {
+        index = bwd.length;
+//console.log(`${i}: ${n} => ${index}`);
+        bwd.push(n);
+        fwd[n] = index;
+      }
+      if (i) {
+        deps[index >> 5] |= (1 << (index & 31));
+      } else {
+        target = index;
+      }
+    }
+    // Now add route
+    (this.routes[target] || (this.routes[target] = [])).push(...deps);
+    const edge = [target, ...deps];
+    for (let i = route.length - 1; i >= 1; i--) {
+      const from = this.itemToUid[route[i]];
+      (this.unlocks[from] || (this.unlocks[from] = [])).push(edge);
+    }
+  }
+
+  // NOTE: does not take this.slots into account!
+  canReach(want, has) {
+    const target = this.uidToLocation(want.uid);
+    const alternatives = this.routes[target];
+   OUTER:
+    for (let i = 0; i < alternatives.length; i += 2) {
+      for (let j = 0; j < 2; j++) {
+        if (alternatives[i + j] & ~has[j]) continue OUTER;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Returns a bitmask of reachable locations.
+   * @param {!Array<number>} has Bitmask of gotten items
+   * @param {!Array<number>} slots Location-to-item
+   * @return {!Array<number>} Reachable locations
+   */
+  traverse(has, slots) {
+    has = [...has]; // make a clone
+    ////// .... ???
+
+  }
+
+  toString() {
+    const lines = [];
+    for (let i = 0; i < this.routes.length; i++) {
+      const loc = this.worldGraph.nodes[this.locationToUid[i]];
+      const route = this.routes[i];
+      const terms = [];
+      for (let j = 0; j < route.length; j += 2) {
+        const term = [];
+        for (let k = 0; k < 2; k++) {
+          let x = route[j + k];
+          let y = 32;
+          while (x) {
+            const z = Math.clz32(x) + 1;
+            y -= z;
+            x <<= z;
+            if (z == 32) x = 0;
+            term.push(this.worldGraph.nodes[this.itemToUid[(k << 5) | (y + 1)]]);
+          }
+        }
+        terms.push('(' + term.join(' & ') + ')');
+      }
+      lines.push(`${loc}: ${terms.join(' | ')}`);
+    }
+    return lines.join('\n');
+  }
+
+  // TODO - we need a clean way to translate indices...?
+  //  - instance methods for dealing with 'has' arrays
+  //    and 'slots' arrays - i.e.
+  //        addItem(has, itemNode)
+  //        fillSlot(slots, slotNode, itemNode)
+  //        ... read location bitmask?
+  // Location bitmasks will be wider than items?
+  //  - 128 bits OK...?
+  //  - once all *key* items are assigned, rest can be
+  //    filled in totally randomly.
+
 
 }

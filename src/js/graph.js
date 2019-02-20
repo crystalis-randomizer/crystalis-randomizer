@@ -137,38 +137,48 @@ export class Graph {
 
 }
 
-
+class WatchedMap extends Map {
+// set(k,v) { console.log(`${k} <= ${[...v]}`);
+// const ret=super.set(k,v);
+// console.log(`  ${[...this.keys()].map(x=>`(${x})`)}`); return ret;}
+// delete(k) { console.log(`DELETE ${k}`); return super.delete(k); }
+// clear() { console.log(`CLEAR`); return super.clear(); }
+}
 // Consider cleaning up and rewriting a bunch of this in typescript
 
-class Depgraph {
-  constructor() {
-    /** @const {!Map<string, !Map<string, !Set<string>>>} */
-    this.graph = new Map();
-    /** @const {!Set<string>} */
-    this.removed = new Set();
+export class SparseDependencyGraph {
+  constructor(size) {
+    /** @const {!Array<!Map<string, !Set<number>>>} */
+    this.nodes = new Array(size).fill(0).map((_,i) => i==101?new WatchedMap:new Map());
+    /** @const {!Array<boolean>} */
+    this.finalized = new Array(size).fill(false);
   }
 
   // Before adding a route, any target is unreachable
   // To make a target always reachable, add an empty route
-  addRoute(/** string */ target, /** !Iterable<string> */ deps) /** !Array<!Depgraph.Route> */ {
-    if(this.removed.has(target)) {
+
+  /** @return {!Array<!SparseRoute>} */
+  addRoute(/** !Array<number> */ edge) {
+//console.log(`addRoute: ${edge}`);
+    const target = edge[0];
+    if(this.finalized[target]) {
       throw new Error(`Attempted to add a route for finalized node ${target}`);
     }
-    if (!this.graph.has(target)) this.graph.set(target, new Map());
     // NOTE: if any deps are already integrated out, replace them right away
-    let s = new Set(deps);
+    let s = new Set();
+    for (let i = edge.length - 1; i >= 1; i--) s.add(edge[i]);
     while (true) {
       let changed = false;
       for (const d of s) {
         if (d === target) return [];
-        if (this.removed.has(d)) {
+        if (this.finalized[d]) {
           // need to replace before admitting.  may need to be recursive.
-          const /** !Map<string, !Set<string>> */ replacement = this.graph.get(d)||new Map();
-          if (!replacement.size) return [];
+          const /** !Map<string, !Set<number>> */ repl = this.nodes[d];
+          if (!repl.size) return [];
           s.delete(d);
           // if there's a single option then just inline it directly
-          if (replacement.size == 1) {
-            for (const dd of replacement.values().next().value) {
+          if (repl.size == 1) {
+            for (const dd of repl.values().next().value) {
               s.add(dd);
             }
             changed = true;
@@ -176,8 +186,8 @@ class Depgraph {
           }
           // otherwise we need to be recursive
           const routes = new Map();
-          for (const r of replacement.values()) {
-            for (const r2 of this.addRoute(target, [...s, ...r])) {
+          for (const r of repl.values()) {
+            for (const r2 of this.addRoute([target, ...s, ...r])) {
               routes.set(r2.label, r2);
             }
           }
@@ -189,42 +199,51 @@ class Depgraph {
     const sorted = [...s].sort();
     s = new Set(sorted);
     const label = sorted.join(' ');
-    const current = this.graph.get(target);
+    const current = this.nodes[target];
+//console.log(`${target}: ${sorted}`);
     if (current.has(label)) return [];
     for (const [l, d] of current) {
       if (containsAll(s, d)) return [];
       if (containsAll(d, s)) current.delete(l);
     }
+//console.log(`  => set`);
     current.set(label, s);
-    return [new Depgraph.Route(target, s, `${target}:${label}`)];
+//console.log(`  => ${target}: ${[...current.keys()].map(x=>`(${x})`)}`);
+    return [new SparseRoute(target, s, `${target}:${label}`)];
   }
 
-  integrateOut(/** string */ node) {
+  finalize(/** number */ node) {
+const PR=node==301;
+//console.log(`finalize ${node}`);
+    if (this.finalized[node]) return;
     // pull the key, remove it from *all* other nodes
-    const alternatives = this.graph.get(node) || new Map();
-    this.removed.add(node);
-    for (const [target, /** !Map<string, !Set<string>> */ routes] of this.graph) {
+    const alternatives = this.nodes[node];
+    this.finalized[node] = true;
+    for (let target = 0; target < this.nodes.length; target++) {
+      const /** !Map<string, !Set<number>> */ routes = this.nodes[target];
+//if(PR)console.log(`finalizing ${node}: target=${target} ${[...routes.keys()].map(x=>`(${x})`)}`);
+      if (!routes.size) continue;
       for (const [label, route] of routes) {
         // substitute... (reusing the code in addRoute)
         if (route.has(node)) {
-          const removed = this.removed.has(target);
-          if (removed) this.removed.delete(target);
+          const removed = this.finalized[target];
+          this.finalized[target] = false;
           routes.delete(label);
-          this.addRoute(target, route);
-          if(removed) this.removed.add(target);
+          this.addRoute([target, ...route.values()]);
+          this.finalized[target] = removed;
         }
       }
     }
   }
 }
 
-Depgraph.Route = class {
-  constructor(/** string */ target, /** !Set<string> */ deps, /** string */ label) {
+class SparseRoute {
+  constructor(/** number */ target, /** !Set<number> */ deps, /** string */ label) {
     this.target = target;
     this.deps = deps;
     this.label = label;
   }  
-};
+}
 
 // TODO - it's really obnoxious that I can't break this line without screwing
 // up indentation for the entire body of the function!

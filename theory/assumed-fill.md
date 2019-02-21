@@ -74,10 +74,58 @@ reachable, too.
 
 The preceding logic becomes slightly more difficult if multiple
 identical copies of the same item are available.  In particular,
-suppose $k_1 = k_2$ are placed at $l_1$ and $l_2$, and $k_3$ and
+suppose $k_1 = k_2$ are placed at $l_1$ and $l_2$, while $k_3$ and
 $k_4$ are placed at $l_3$ and $l_4$, respectively, with
 requirements $R(l_1) = \emptyset$, $R(l_2) = k_3$, and
 $R(l_3) = R(l_4) = k_1$.  If the player uses the $k_1$ from location
 $l_1$ to open $l_4$ then item $k_3$ is now permanently locked.
 
-TODO: figure out the exact criteria we need to check for!
+To explore this further, we make a distinction between two types
+of blocks.  A location $l$ is *hard-blocked* by an item $k$ if
+there is no possible way to open $l$ without $k$, regardless of
+glitches.  A location $l$ is *logic-blocked* by an item $k$ if
+there is no way to open $l$ without $k$ when restricted to the
+randomizer's logic.  Because players will use "off-logic" glitches,
+it is important to make this distinction and ensure that even
+such off-logic glitches cannot possibly cause a soft-lock.
+
+Suppose again that we have two identical items $k_1 = k_2$,
+placed at locations $l_1$ and $l_2$.  We make an artificial
+distinction between $k_1$ and $k_2$ in the requirement lists
+to differentiate between the effect of each usage, though
+they can be interchanged freely.  Thus, suppose $l_3$ is blocked
+on $k_1$ and $l_4$ is blocked on $k_2$ (Note: there could be more
+than one location blocked, as well as partial/conditional blocks
+where alternative items would suffice.  These make it much more
+difficult to reason about.  If a confuguration is solvable,
+we can further determine if it is impossible to soft-lock as
+follows:
+
+1. Exchange the items so that $l_1$ holds $k_2$ and $l_2$
+   holds $k_1$.
+2. Traverse the graph "in-logic".
+3. If the exchanged graph is solvable, then the configuration
+   is provably safe from soft locks.
+4. Otherwise, traverse the graph with all glitches enabled.
+5. If the traversal completes, then it won't be a soft lock,
+   though it might be very difficult to win.  This is an
+   acceptable condition.
+6. Otherwise, we need to prove that it's impossible to use
+   the items in the wrong order.  Consider the set of locations
+   $L*$ whose requirements include $k_1$ or $k_2$.  The seed is
+   still safe as long as *all* elements of $L*$ remain locked
+   after a full traversal.
+
+Note that this approach handles most cases, but it does mean that
+if a player uses an off-logic glitch to unlock the location where
+the first copy of the item is needed, then they may be required
+to use another different glitch to acquire the second item.
+
+Note also that the full-glitch traversal is important, since
+otherwise the last step only proves that a fully on-logic game
+will not soft-lock.  Once the player departs from logic, they
+lose that guarantee.
+
+If there are multiple different items with multiple copies, then
+this blows up exponentially: we need to test each combination of
+every such item.

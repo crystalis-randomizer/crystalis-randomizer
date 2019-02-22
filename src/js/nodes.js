@@ -909,7 +909,7 @@ export class LocationList {
    * Attempts to do an assumed fill.  Returns null if the
    * attempt failed.
    * @param {!Random} random
-   * @return {{filling: !Array<number>, left: !Array<number>}}
+   * @return {?Array<number>}
    */
   assumedFill(random) {
 
@@ -920,8 +920,16 @@ const S=n=>this.worldGraph.nodes[this.locationToUid[n]].slotName;
     const hasArr = [];
     const front = [];
     for (let i = this.itemToUid.length - 1; i >= 0; i--) {
-      if ((I(i).startsWith('Sword') || I(i) == 'Flight'))
-        front.push(i); else
+      if ((I(i).startsWith('Sword') || I(i) == 'Flight')) {
+        hasArr.push(i);
+        hasArr.push(i);
+        if (I(i) == 'Sword of Thunder' || I(i) == 'Flight') {
+          hasArr.push(i);
+          hasArr.push(i);
+        }
+      }
+
+        //front.push(i);
       hasArr.push(i);
     }
     random.shuffle(hasArr);
@@ -933,6 +941,7 @@ const S=n=>this.worldGraph.nodes[this.locationToUid[n]].slotName;
 //console.log(`hasArr: ${hasArr.join(' ')}`);
     while (hasArr.length) {
       const bit = hasArr.pop();
+      if (!Bits.has(has, bit)) continue;
       has = Bits.without(has, bit);
 
 
@@ -959,7 +968,7 @@ const S=n=>this.worldGraph.nodes[this.locationToUid[n]].slotName;
           break;
         }
       }
-      if (!found) return {filling, left: hasArr, fail: bit};
+      if (!found) return null; // {filling, left: hasArr, fail: bit};
 
 
 
@@ -982,7 +991,7 @@ const S=n=>this.worldGraph.nodes[this.locationToUid[n]].slotName;
 //       }
 //       if (!found) return {filling, left: hasArr};
     }
-    return {filling, left: []};
+    return filling;
   }
 
   // TODO - we need a clean way to translate indices...?

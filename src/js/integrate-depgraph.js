@@ -3,8 +3,9 @@ require = require('esm')(module);
 const {generate} = require('./depgraph.js');
 const {FlagSet} = require('./flagset.js');
 const {Bits} = require('./bits.js');
+const {Random} = require('./random.js');
 
-const g = generate(new FlagSet('Rpf Dt Tw Gstrf'));
+const g = generate(new FlagSet('Rflpt Dt Tw Gt')); // Gstrf'));
 // TODO - set options?
 
 const start = new Date().getTime();
@@ -23,6 +24,30 @@ for (let i = 0; i < dg.locationToUid.length; i++) {
 for (const bit of Bits.bits(dg.traverse(Bits.of(0,1,2,3), [4, 5, 6]))) {
   console.log(String(g.nodes[dg.locationToUid[bit]]));
 }
+
+const r = new Random();
+for (let i = 0; i < 100; i++) {
+  const {filling: fill, left, fail} = dg.assumedFill(r);
+  console.log('=============================================');
+  if (left.length) {
+    console.log(`BAD FILL: ${g.nodes[dg.itemToUid[fail]]}\n  ${left.map(n => g.nodes[dg.itemToUid[n]].name)}`);
+    continue;
+  }
+  const arr = [];
+  //console.log(fill.join(', '));
+  for (let i = 0; i < fill.length; i++) {
+    let slot = g.nodes[dg.locationToUid[i]];
+    slot = `${slot.slotName} (${slot.item.name})`;
+    if (fill[i] == null) { /*arr.push(`   : ${slot}`);*/ continue; }
+//console.log(`${i}: ${fill[i]} => ${dg.itemToUid[fill[i]]}, ${dg.locationToUid[i]}`);
+    const item = g.nodes[dg.itemToUid[fill[i]]];
+    arr.push(`${item.name}: ${slot}`);
+  }
+  arr.sort();
+  console.log(arr.join('\n'));
+}
+
+
 // console.log(dg.traverse([0x00000000, 0xffffffff], []).map(x=>x.toString(16)).join(' '));
 
 

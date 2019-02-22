@@ -89,3 +89,9 @@ Bits.bits = (bits) => {
  * @return {!Bits}
  */
 Bits.clone = (x) => [...x];
+
+/**
+ * @param {!Bits} bits
+ * @return {boolean}
+ */
+Bits.empty = (x) => x.every(b => !b);

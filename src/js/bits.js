@@ -15,7 +15,7 @@ Bits.of = /** @type {?} */ (b.of);
  * @param {!Iterable<number>} nums
  * @return {!Bits}
  */
-Bits.from = /** @type {?} */ (b.fromf);
+Bits.from = /** @type {?} */ (b.from);
 
 /**
  * @param {!Bits} superset
@@ -56,3 +56,9 @@ Bits.bits = /** @type {?} */ (b.bits);
  * @return {!Bits}
  */
 Bits.clone = /** @type {?} */ (b.clone);
+
+/**
+ * @param {!Bits} bits
+ * @return {boolean}
+ */
+Bits.empty = /** @type {?} */ (b.empty);

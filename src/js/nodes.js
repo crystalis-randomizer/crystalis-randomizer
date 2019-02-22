@@ -589,6 +589,21 @@ export class WorldGraph extends Graph {
         continue;
       }
 
+      // TEMPORARY HACK - remove the alarm flute
+      if (n instanceof Slot && n.item.name === 'Alarm Flute') {
+        depgraph.addRoute([n.item.uid]);
+        depgraph.finalize(n.item.uid);
+        continue;
+      }
+      if (n instanceof Slot && n.slotName == null) {
+        continue;
+      }
+      if (n instanceof ItemGet && n.name === 'Medical Herb') {
+        depgraph.addRoute([n.uid]);
+        depgraph.finalize(n.uid);
+      }
+      // END TEMPORARY HACK
+
       if (n instanceof Option) options.push(n);
       else if (n instanceof TrackerNode) trackers.push(n);
       else if (n instanceof Condition) conditions.push(n);
@@ -691,9 +706,6 @@ export class LocationList {
   //  - how to optimize for assumed fill??
   //  - will want a separate traverse method
 
-  // use 2x uint32 for a compressed bitset as Route
-  //  - easy to check, will need to do a lot of checks
-
 
   // could reuse node objects if instead of a single id
   // they had a weakmap from graphs to ids in the graph,
@@ -775,8 +787,8 @@ export class LocationList {
   traverse(has, slots) {
     has = Bits.clone(has);
 
-for(const bit of Bits.bits(has))
-console.log(`HAS ${bit}: ${this.worldGraph.nodes[this.itemToUid[bit]]}`);
+//for(const bit of Bits.bits(has))
+//console.log(`HAS ${bit}: ${this.worldGraph.nodes[this.itemToUid[bit]]}`);
     let reachable = Bits.of();
     let queue = new Set();
     for (let i = 0; i < this.locationToUid.length; i++) {
@@ -793,11 +805,11 @@ console.log(`HAS ${bit}: ${this.worldGraph.nodes[this.itemToUid[bit]]}`);
       const needed = this.routes[n];
       for (let i = 0; i < needed.length; i++) {
         if (!Bits.containsAll(has, needed[i])) continue;
-console.log(`REACHABLE ${n}: ${this.worldGraph.nodes[this.locationToUid[n]]}`);
+//console.log(`REACHABLE ${n}: ${this.worldGraph.nodes[this.locationToUid[n]]}`);
         reachable = Bits.with(reachable, n);
         if (slots[n]) {
-console.log(`HAS ${slots[n]}: ${this.worldGraph.nodes[this.itemToUid[slots[n]]]}`);
-          has = Bits.with(has, n);
+//console.log(`HAS ${slots[n]}: ${this.worldGraph.nodes[this.itemToUid[slots[n]]]}`);
+          has = Bits.with(has, slots[n]);
           for (let j of this.unlocks[slots[n]]) queue.add(j);
         }
         break;
@@ -806,15 +818,84 @@ console.log(`HAS ${slots[n]}: ${this.worldGraph.nodes[this.itemToUid[slots[n]]]}
     return reachable;
   }
 
+  /**
+   * Returns a bitmask of reachable locations.
+   * @param {!Bits} has Bitmask of gotten items
+   * @param {!Array<number>} slots Location-to-item
+   * @return {!Set<number>} Reachable locations
+   */
+  traverseOrdered(has, slots) {
+    has = Bits.clone(has);
+
+//for(const bit of Bits.bits(has))
+//console.log(`HAS ${bit}: ${this.worldGraph.nodes[this.itemToUid[bit]]}`);
+    const reachable = new Set();
+    let queue = new Set();
+    for (let i = 0; i < this.locationToUid.length; i++) {
+      queue.add(i);
+    }
+    const iter = queue[Symbol.iterator]();
+    let next;
+    while (!(next = iter.next()).done) {
+      const n = next.value;
+      queue.delete(n);
+//console.log(`loc ${n}`);
+      if (reachable.has(n)) continue;
+      // can we reach it?
+      const needed = this.routes[n];
+      for (let i = 0; i < needed.length; i++) {
+        if (!Bits.containsAll(has, needed[i])) continue;
+//console.log(`REACHABLE ${n}: ${this.worldGraph.nodes[this.locationToUid[n]]}`);
+        reachable.add(n);
+        if (slots[n]) {
+//console.log(`HAS ${slots[n]}: ${this.worldGraph.nodes[this.itemToUid[slots[n]]]}`);
+          has = Bits.with(has, slots[n]);
+          for (let j of this.unlocks[slots[n]]) queue.add(j);
+        }
+        break;
+      }
+    }
+    return reachable;
+  }
+
+  /**
+   * Returns a bitmask of reachable locations.
+   * @param {!Bits} has Bitmask of gotten items
+   * @param {!Array<number>} slots Location-to-item
+   * @return {!Bits} Reachable locations (TODO - Set<number>?)
+   */
+  traverseFirst(has, slots) {
+    has = Bits.clone(has);
+    let queue = new Set();
+    for (let i = 0; i < this.locationToUid.length; i++) {
+      queue.add(i);
+    }
+    const iter = queue[Symbol.iterator]();
+    let next;
+    while (!(next = iter.next()).done) {
+      const n = next.value;
+      queue.delete(n);
+      const needed = this.routes[n];
+      for (let i = 0; i < needed.length; i++) {
+        if (!Bits.containsAll(has, needed[i])) continue;
+        if (!slots[n]) return n;
+        has = Bits.with(has, slots[n]);
+        for (let j of this.unlocks[slots[n]]) queue.add(j);
+        break;
+      }
+    }
+    return null;
+  }
+
   toString() {
     const lines = [];
     for (let i = 0; i < this.routes.length; i++) {
       const loc = this.worldGraph.nodes[this.locationToUid[i]];
       const route = this.routes[i];
       const terms = [];
-      for (let j = 0; j < route.length; j += 2) {
+      for (let j = 0; j < route.length; j++) {
         const term = [];
-        for (const bit of bits(route, j, 2)) {
+        for (const bit of Bits.bits(route[j])) {
           term.push(this.worldGraph.nodes[this.itemToUid[bit]]);
         }
         terms.push('(' + term.join(' & ') + ')');
@@ -822,6 +903,86 @@ console.log(`HAS ${slots[n]}: ${this.worldGraph.nodes[this.itemToUid[slots[n]]]}
       lines.push(`${loc}: ${terms.join(' | ')}`);
     }
     return lines.join('\n');
+  }
+
+  /**
+   * Attempts to do an assumed fill.  Returns null if the
+   * attempt failed.
+   * @param {!Random} random
+   * @return {{filling: !Array<number>, left: !Array<number>}}
+   */
+  assumedFill(random) {
+
+const I=n=>this.worldGraph.nodes[this.itemToUid[n]].name;
+const S=n=>this.worldGraph.nodes[this.locationToUid[n]].slotName;
+
+    // Start with all items.
+    const hasArr = [];
+    const front = [];
+    for (let i = this.itemToUid.length - 1; i >= 0; i--) {
+      if ((I(i).startsWith('Sword') || I(i) == 'Flight'))
+        front.push(i); else
+      hasArr.push(i);
+    }
+    random.shuffle(hasArr);
+    random.shuffle(front);
+    hasArr.push(...front); 
+    let has = Bits.from(hasArr);
+    const filling = new Array(this.locationToUid.length).fill(null);
+    // Start something...
+//console.log(`hasArr: ${hasArr.join(' ')}`);
+    while (hasArr.length) {
+      const bit = hasArr.pop();
+      has = Bits.without(has, bit);
+
+
+      // const next = this.traverseFirst(has, filling);
+      // if (next == null) return {filling, left: hasArr, fail: bit};
+      // filling[next] = bit;
+
+
+      const reachable = [...this.traverseOrdered(has, filling)].filter(n=>filling[n]==null);
+
+//console.log(`  ${hasArr.length} ${I(bit)}: ${reachable.length ? S(reachable[reachable.length - 1]) : ''} // ${reachable.map(S).join(' | ')}`);
+      // NOTE: shuffle the whole thing b/c some items can't
+      // go into some slots, so try the next one.
+//if (!(I(bit).startsWith('Sword') || I(bit) == 'Flight'))
+      random.shuffle(reachable);
+      // For now, we don't have any way to know...
+      let found = false;
+      for (let j = reachable.length - 1; j >= 0; j--) {
+        const slot = reachable[j];
+        if (filling[slot] == null) {
+//          console.log(`  fill ${slot} <- ${bit}`);
+          filling[slot] = bit;
+          found = true;
+          break;
+        }
+      }
+      if (!found) return {filling, left: hasArr, fail: bit};
+
+
+
+//       const reachable = Bits.bits(this.traverse(has, filling));
+// //console.log(`  ${hasArr.length} bit: ${bit}; reachable: ${reachable.join(' ')}`);
+//       if (!reachable.length) return hasArr.length;
+//       // NOTE: shuffle the whole thing b/c some items can't
+//       // go into some slots, so try the next one.
+//       random.shuffle(reachable);
+//       // For now, we don't have any way to know...
+//       let found = false;
+//       for (let j = 0; j < reachable.length; j++) {
+//         const slot = reachable[j];
+//         if (filling[slot] == null) {
+// //          console.log(`  fill ${slot} <- ${bit}`);
+//           filling[slot] = bit;
+//           found = true;
+//           break;
+//         }
+//       }
+//       if (!found) return {filling, left: hasArr};
+    }
+    return {filling, left: []};
   }
 
   // TODO - we need a clean way to translate indices...?
@@ -834,38 +995,4 @@ console.log(`HAS ${slots[n]}: ${this.worldGraph.nodes[this.itemToUid[slots[n]]]}
   //  - 128 bits OK...?
   //  - once all *key* items are assigned, rest can be
   //    filled in totally randomly.
-
-
 }
-
-// const bits = (arr, start = 0, count = arr.length) => {
-//   const out = [];
-//   for (let i = 0; i < 2; i++) {
-//     let x = arr[start + i];
-//     let n = 0;
-//     while (x) {
-//       if (x&1) out.push(n + (i<<5));
-//       x>>>=1;
-//       n++;
-//     }
-//   }
-// if(out.length){console.log(out); process.exit(0);}
-//   return out;
-// };
-
-export const bits = (arr, start = 0, count = arr.length) => {
-  const out = [];
-  for (let i = 0; i < 2; i++) {
-    let x = arr[start + i];
-    let y = 32;
-    while (x) {
-      const z = Math.clz32(x) + 1;
-      y -= z;
-      x <<= z;
-      if (z == 32) x = 0;
-      out.push((i << 5) | y);
-    }
-  }
-//if(out.length){console.log(out); process.exit(0);}
-  return out;
-};

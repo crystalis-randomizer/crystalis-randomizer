@@ -83,6 +83,12 @@ Bits.bits = (bits) => {
  */
 Bits.clone = (x) => x;
 
+/**
+ * @param {!Bits} bits
+ * @return {boolean}
+ */
+Bits.empty = (x) => !x;
+
 /** @const */
 Bits.BIGINT_OK = typeof BigInt === 'function' && typeof BigInt(0) === 'bigint';
 const ZERO = Bits.BIGINT_OK && BigInt(0);

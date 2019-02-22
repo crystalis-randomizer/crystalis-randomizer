@@ -35,21 +35,16 @@ for (let i = 0; i < 100; i++) {
   }
   const arr = [];
   //console.log(fill.join(', '));
-const missing=new Set();
-for (let i = dg.itemToUid.length - 1; i >= 0; i--) missing.add(i);
 
   for (let i = 0; i < fill.length; i++) {
     let slot = g.nodes[dg.locationToUid[i]];
     slot = `${slot.slotName} (${slot.item.name})`;
-    if (fill[i] == null) { /*arr.push(`   : ${slot}`);*/ continue; }
-//console.log(`${i}: ${fill[i]} => ${dg.itemToUid[fill[i]]}, ${dg.locationToUid[i]}`);
+    if (fill[i] == null) continue;
     const item = g.nodes[dg.itemToUid[fill[i]]];
     arr.push(`${item.name}: ${slot}`);
-missing.delete(fill[i]);
   }
   arr.sort();
   console.log(arr.join('\n'));
-for(const m of missing)console.log(`MISSING: ${g.nodes[dg.itemToUid[m]]}`);;
   if (arr.length != 38) throw new Error(`seed ${i} LENGTH: ${arr.length}`);
 }
 

@@ -250,6 +250,7 @@ export class ItemGet extends Node {
   constructor(graph, id, name, index, item) {
     super(graph, name);
     this.id = id;
+    this.weight = 1;
   }
 
   get nodeType() {
@@ -281,6 +282,11 @@ export class ItemGet extends Node {
 
   fixed() {
     return new Slot(this.graph, null, this, this.id);
+  }
+
+  weight(w) {
+    this.weight = w;
+    return this;
   }
 }
 
@@ -661,32 +667,6 @@ export class WorldGraph extends Graph {
 
     // Now we have a dependency graph, where all slots should
     // have only item dependencies (unless we left some in).
-
-    // // It's time to renumber everything.
-    // const mapped = new Map();
-    // for (const slot of slots) {
-    //   for (const alternative of depgraph.nodes[slot.uid].values()) {
-    //     for (const dep of alternative) {
-    //       if (!mapped.has(dep)) mapped.set(dep, mapped.size);
-    //     }
-    //   }
-    // }
-    // for (const slot of slots) {
-    //   if (!mapped.has(slot.uid)) mapped.set(slot.uid, mapped.size);
-    // }
-    // // `mapped` now has a full dense mapping for slots and items
-    // const out = new LocationList();
-    // for (const [from, to] of mapped) {
-    //   const origNode = this.nodes[from];
-    //   const newNode = Object.create(origNode, {graph: out, uid: to});
-    //   out.nodes[to] = newNode;
-    // }
-
-// for (let i = 0; i < depgraph.nodes.length; i++) {
-//   console.log(`${i} ${this.nodes[i]}: ${[...depgraph.nodes[i].values()].map(s => '(' + [...s].join('&') + ')').join(' | ')}`);
-
-// }
-
     const out = new LocationList(this);
     for (const slot of slots) {
 //console.log(`slot ${slot.uid}: ${[...depgraph.nodes[slot.uid]]}`);
@@ -782,53 +762,11 @@ export class LocationList {
    * Returns a bitmask of reachable locations.
    * @param {!Bits} has Bitmask of gotten items
    * @param {!Array<number>} slots Location-to-item
-   * @return {!Bits} Reachable locations (TODO - Set<number>?)
+   * @return {!Set<number>} Reachable locations
    */
   traverse(has, slots) {
     has = Bits.clone(has);
 
-//for(const bit of Bits.bits(has))
-//console.log(`HAS ${bit}: ${this.worldGraph.nodes[this.itemToUid[bit]]}`);
-    let reachable = Bits.of();
-    let queue = new Set();
-    for (let i = 0; i < this.locationToUid.length; i++) {
-      queue.add(i);
-    }
-    const iter = queue[Symbol.iterator]();
-    let next;
-    while (!(next = iter.next()).done) {
-      const n = next.value;
-      queue.delete(n);
-//console.log(`loc ${n}`);
-      if (Bits.has(reachable, n)) continue;
-      // can we reach it?
-      const needed = this.routes[n];
-      for (let i = 0; i < needed.length; i++) {
-        if (!Bits.containsAll(has, needed[i])) continue;
-//console.log(`REACHABLE ${n}: ${this.worldGraph.nodes[this.locationToUid[n]]}`);
-        reachable = Bits.with(reachable, n);
-        if (slots[n]) {
-//console.log(`HAS ${slots[n]}: ${this.worldGraph.nodes[this.itemToUid[slots[n]]]}`);
-          has = Bits.with(has, slots[n]);
-          for (let j of this.unlocks[slots[n]]) queue.add(j);
-        }
-        break;
-      }
-    }
-    return reachable;
-  }
-
-  /**
-   * Returns a bitmask of reachable locations.
-   * @param {!Bits} has Bitmask of gotten items
-   * @param {!Array<number>} slots Location-to-item
-   * @return {!Set<number>} Reachable locations
-   */
-  traverseOrdered(has, slots) {
-    has = Bits.clone(has);
-
-//for(const bit of Bits.bits(has))
-//console.log(`HAS ${bit}: ${this.worldGraph.nodes[this.itemToUid[bit]]}`);
     const reachable = new Set();
     let queue = new Set();
     for (let i = 0; i < this.locationToUid.length; i++) {
@@ -839,16 +777,13 @@ export class LocationList {
     while (!(next = iter.next()).done) {
       const n = next.value;
       queue.delete(n);
-//console.log(`loc ${n}`);
       if (reachable.has(n)) continue;
       // can we reach it?
       const needed = this.routes[n];
       for (let i = 0; i < needed.length; i++) {
         if (!Bits.containsAll(has, needed[i])) continue;
-//console.log(`REACHABLE ${n}: ${this.worldGraph.nodes[this.locationToUid[n]]}`);
         reachable.add(n);
         if (slots[n]) {
-//console.log(`HAS ${slots[n]}: ${this.worldGraph.nodes[this.itemToUid[slots[n]]]}`);
           has = Bits.with(has, slots[n]);
           for (let j of this.unlocks[slots[n]]) queue.add(j);
         }
@@ -856,35 +791,6 @@ export class LocationList {
       }
     }
     return reachable;
-  }
-
-  /**
-   * Returns a bitmask of reachable locations.
-   * @param {!Bits} has Bitmask of gotten items
-   * @param {!Array<number>} slots Location-to-item
-   * @return {!Bits} Reachable locations (TODO - Set<number>?)
-   */
-  traverseFirst(has, slots) {
-    has = Bits.clone(has);
-    let queue = new Set();
-    for (let i = 0; i < this.locationToUid.length; i++) {
-      queue.add(i);
-    }
-    const iter = queue[Symbol.iterator]();
-    let next;
-    while (!(next = iter.next()).done) {
-      const n = next.value;
-      queue.delete(n);
-      const needed = this.routes[n];
-      for (let i = 0; i < needed.length; i++) {
-        if (!Bits.containsAll(has, needed[i])) continue;
-        if (!slots[n]) return n;
-        has = Bits.with(has, slots[n]);
-        for (let j of this.unlocks[slots[n]]) queue.add(j);
-        break;
-      }
-    }
-    return null;
   }
 
   toString() {
@@ -912,84 +818,37 @@ export class LocationList {
    * @return {?Array<number>}
    */
   assumedFill(random) {
-
-const I=n=>this.worldGraph.nodes[this.itemToUid[n]].name;
-const S=n=>this.worldGraph.nodes[this.locationToUid[n]].slotName;
-
     // Start with all items.
     const hasArr = [];
-    const front = [];
     for (let i = this.itemToUid.length - 1; i >= 0; i--) {
-      if ((I(i).startsWith('Sword') || I(i) == 'Flight')) {
-        hasArr.push(i);
-        hasArr.push(i);
-        if (I(i) == 'Sword of Thunder' || I(i) == 'Flight') {
-          hasArr.push(i);
-          hasArr.push(i);
-        }
-      }
-
-        //front.push(i);
-      hasArr.push(i);
+      const {weight = 1} = this.worldGraph.nodes[this.itemToUid[i]];
+      for (let j = 0; j < weight; j++) hasArr.push(i);
     }
     random.shuffle(hasArr);
-    random.shuffle(front);
-    hasArr.push(...front); 
     let has = Bits.from(hasArr);
     const filling = new Array(this.locationToUid.length).fill(null);
     // Start something...
-//console.log(`hasArr: ${hasArr.join(' ')}`);
     while (hasArr.length) {
       const bit = hasArr.pop();
       if (!Bits.has(has, bit)) continue;
       has = Bits.without(has, bit);
+      const reachable = 
+          [...this.traverse(has, filling)].filter(n=>filling[n]==null);
 
-
-      // const next = this.traverseFirst(has, filling);
-      // if (next == null) return {filling, left: hasArr, fail: bit};
-      // filling[next] = bit;
-
-
-      const reachable = [...this.traverseOrdered(has, filling)].filter(n=>filling[n]==null);
-
-//console.log(`  ${hasArr.length} ${I(bit)}: ${reachable.length ? S(reachable[reachable.length - 1]) : ''} // ${reachable.map(S).join(' | ')}`);
       // NOTE: shuffle the whole thing b/c some items can't
       // go into some slots, so try the next one.
-//if (!(I(bit).startsWith('Sword') || I(bit) == 'Flight'))
       random.shuffle(reachable);
       // For now, we don't have any way to know...
       let found = false;
       for (let j = reachable.length - 1; j >= 0; j--) {
         const slot = reachable[j];
         if (filling[slot] == null) {
-//          console.log(`  fill ${slot} <- ${bit}`);
           filling[slot] = bit;
           found = true;
           break;
         }
       }
-      if (!found) return null; // {filling, left: hasArr, fail: bit};
-
-
-
-//       const reachable = Bits.bits(this.traverse(has, filling));
-// //console.log(`  ${hasArr.length} bit: ${bit}; reachable: ${reachable.join(' ')}`);
-//       if (!reachable.length) return hasArr.length;
-//       // NOTE: shuffle the whole thing b/c some items can't
-//       // go into some slots, so try the next one.
-//       random.shuffle(reachable);
-//       // For now, we don't have any way to know...
-//       let found = false;
-//       for (let j = 0; j < reachable.length; j++) {
-//         const slot = reachable[j];
-//         if (filling[slot] == null) {
-// //          console.log(`  fill ${slot} <- ${bit}`);
-//           filling[slot] = bit;
-//           found = true;
-//           break;
-//         }
-//       }
-//       if (!found) return {filling, left: hasArr};
+      if (!found) return null;
     }
     return filling;
   }

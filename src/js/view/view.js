@@ -34,7 +34,7 @@ export class View {
     this.floater = null;
     this.advanceAnimation = null;
 
-    this.annotations = true;
+    this.annotations = 0xffffffff;
 
     document.body.addEventListener('keyup', e => keyup(this, e));
     this.element.addEventListener('click', e => click(this, e));

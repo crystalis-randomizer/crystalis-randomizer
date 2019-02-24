@@ -37,7 +37,7 @@ class MapsView extends View {
     this.handle('j', () => this.setLocation((this.location + 1) & 0xff));
     this.handle('k', () => this.setLocation((this.location + 0xff) & 0xff));
     this.handle('a', () => {
-      this.annotations = !this.annotations;
+      this.annotations++;
       this.setLocation(this.location);
     });
     this.handle('d', () => {
@@ -211,7 +211,7 @@ class MapsView extends View {
           let pat = opts.spritePat[obj[2] & 0x80 ? 1 : 0];
           let pal = [0, 1, ...opts.spritePal].map(p => this.rom.palettes[(p + 0xb0) & 0xff]);
           let metaspriteId;
-          if ((obj[2] & 7) == 0) {
+          if ((obj[2] & 7) == 0 && (this.annotations & 1)) {
             const objId = obj[3] + 0x50;
             // NOTE: 1 is for wind sword; other swords are 2-4?
             const objData = this.rom.objects[objId];
@@ -223,12 +223,12 @@ class MapsView extends View {
               // directional walker (soldier, etc); also tower def mech (5e)
               metaspriteId = (((frame >> 5) + 2) & 3) | objData.objectData[31];
             }
-          } else if ((obj[2] & 7) == 1) {
+          } else if ((obj[2] & 7) == 1 && (this.annotations & 2)) {
             const npcId = obj[3];
             const npcData = this.rom.npcs[npcId];
             if (!npcData || !npcData.data) continue;
             metaspriteId = (((frame >> 5) + 2) & 3) | npcData.data[3];
-          } else if ((obj[2] & 7) == 2) {
+          } else if ((obj[2] & 7) == 2 && (this.annotations & 2)) {
             if (obj[3] < 0x80) metaspriteId = 0xaa; // treasure chest
           }
           if (metaspriteId == null) continue;
@@ -238,9 +238,11 @@ class MapsView extends View {
           this.drawMetasprite(buf, x, y, metasprite, pal, pat, frame >> 3);
         }
         // Indicate entrances (todo - toggle?)
-        for (let i = 0; i < opts.entrances.length; i++) {
-          const [xl, xh, yl, yh] = opts.entrances[i];
-          this.drawText(buf, xh*256+xl-8, yh*240+yl-8, i.toString(16).padStart(2, 0), 0x30);
+        if (this.annotations & 4) {
+          for (let i = 0; i < opts.entrances.length; i++) {
+            const [xl, xh, yl, yh] = opts.entrances[i];
+            this.drawText(buf, xh*256+xl-8, yh*240+yl-8, i.toString(16).padStart(2, 0), 0x30);
+          }
         }
       }
       // done

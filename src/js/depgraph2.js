@@ -551,7 +551,8 @@ const passShootingStatues   = condition('Pass shooting statues')
                                 .option(barrier)
                                 // Even in non-hell-mode, refresh and shield ring ok
                                 .option(refresh, shieldRing)
-                                .option(barrierOptional);
+                                .option(barrierOptional)
+                                .option(hard);
 const maybeHealedDolphin    = condition('Healed dolphin if required')
                                 .option(healedDolphin)
                                 .option(healedDolphinOptional);

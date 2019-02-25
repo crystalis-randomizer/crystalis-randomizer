@@ -21,7 +21,7 @@ setTimeout(function() {
 </script>
 
 <nav>
-  <img src="images/crystalis-sword.png">
+  <a class="img" href="/"><img src="images/crystalis-sword.png"></a>
   <a href="index">Play</a>
   <a id="track-url" href="track">Track</a>
   <a href="help">Help</a>
@@ -96,7 +96,7 @@ setTimeout(function() {
     </div>
   </section>
 
-  <section id="flags" class="if-rom-uploaded if-not-race">
+  <section id="flags" class="if-rom-uploaded">
     <h1>Presets</h1>
     <div>
       <p>For a quick start, consider using one of the following presets, or else
@@ -107,15 +107,15 @@ setTimeout(function() {
         <select id="preset">
           <option data-flags="" data-text="">--</option>
           <!-- TODO: Ex -->
-          <option data-flags="Emr Mr Rf Sbk Sc Sm Tasd"
+          <option data-flags="Emr Mr Rf Sbk Sc Sm Tasdw"
                   data-text="Basic flags for a relatively easy playthrough.">
             Casual
           </option>
-          <option data-flags="Em Gt Mr Rlpt Sbkm Sct Tasd"
+          <option data-flags="Em Gt Mr Rlpt Sbkm Sct Tasdw"
                   data-text="Slightly more challenge than Casual but still approachable." selected>
             Intermediate
           </option> <!-- TODO: Ht -->
-          <option data-flags="Gfrt Hbw Mr Rlpt Sbckt Sm Tasd"
+          <option data-flags="Gfrt Hbw Mr Rlpt Sbckt Sm Tasdw"
                   data-text="A balanced randomization with quite a bit more difficulty.">
             Advanced
           </option> <!-- TODO: Htx -->
@@ -136,7 +136,7 @@ setTimeout(function() {
     </div>
   </section>
 
-  <section id="select-options" class="if-rom-uploaded if-not-race expandable">
+  <section id="select-options" class="if-rom-uploaded expandable">
     <h1>Flags</h1>
     <div>
       Please review and adjust your flag selections below. Flags in
@@ -304,7 +304,12 @@ setTimeout(function() {
           </div>
         </div>
         <div class="checkbox">Td: Deo's pendant works while moving</div>
-        <div class="checkbox">Tw: Disable wild warp</div>
+        <div class="checkbox">Tw: Disable wild warp
+          <div class="flag-body">
+            Wild warp will only teleport back to Mezame shrine (to prevent
+            game-breaking soft-locks).
+          </div>
+        </div>
         <!-- TODO - options for EXP and teleport out of tower? -->
       </div>
 
@@ -435,7 +440,8 @@ setTimeout(function() {
       <h2>Debug Mode</h2>
       <p>These options are helpful for exploring or debugging.  Note
       that, while they do not directly affect any randomization,
-      they <i>do</i> factor into the seed to prevent cheating.
+      they <i>do</i> factor into the seed to prevent cheating, and
+      they will remove the option to generate a seed for racing.
       <div class="flag-list">
         <div class="checkbox">Ds: Generate a spoiler log</div>
         <div class="checkbox">Di: Player never dies</div>
@@ -448,21 +454,21 @@ setTimeout(function() {
   <section class="if-rom-uploaded">
     <h1>Generate</h1>
     <div>
-      <h2 class="if-not-race">Seed</h2>
-      <p class="if-not-race">
+      <h2>Seed</h2>
+      <p>
         You may specify a seed for the random number generator, if
         desired.  If it is left blank, a new seed will be chosen at
         random each time.  Use the 'new' button to generate a
         shareable seed, which will be automatically added to the URL.
-      <div class="flex-row if-not-race">
+      <div class="flex-row">
         <input id="seed" type="text">
         <a id="new-seed" class="button">New</a>
       </div>
-      <h2 class="if-not-race"></h2>
+      <h2></h2>
       <div class="flex-row">
         <a id="generate" class="button">Generate</a>
         <a id="spoiler" class="button if-spoiled">Spoiler</a>
-        <a id="race" class="button if-not-race">Race</a>
+        <a id="race" class="button if-versioned">Race</a>
         <progress class="if-shuffling" id="progress" max="1"></progress>
         <!-- a id="share" class="button">Share</a -->
       </div>

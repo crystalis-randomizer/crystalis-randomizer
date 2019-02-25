@@ -69,7 +69,8 @@ const initVersion = () => {
   document.body.classList.remove('js-broken');
   if (version.STATUS == 'rc') {
     document.body.classList.add('release-candidate');
-  } else if (version.STATUS != 'unstable') {
+    document.body.classList.add('versioned');
+  } else if (version.STATUS == 'stable') {
     document.body.classList.add('versioned');
   }
 };
@@ -237,7 +238,7 @@ const updateDom = () => {
   const hash = ['#flags=', flagString];
   if (seed) hash.push('&seed=', encodeURIComponent(seed));
   history.replaceState({flags: flags.flags, seed}, '', String(window.location).replace(/#.*/, '') + hash.join(''));
-  if (version.STATUS != 'unstable') {
+  if (version.STATUS == 'stable' || version.STATUS == 'rc') {
     const s = seed || Math.floor(Math.random() * 0x100000000).toString(16);
     const v = version.VERSION;
     const f = flagString;

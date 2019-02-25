@@ -4,6 +4,7 @@ import {Random} from './random.js';
 import {shuffle as shuffleDepgraph} from './depgraph2.js';
 import {crc32} from './crc32.js';
 import {FlagSet} from './flagset.js';
+import * as version from './version.js';
 
 // TODO - to shuffle the monsters, we need to find the sprite palttes and
 // patterns for each monster.  Each location supports up to two matchups,
@@ -112,7 +113,9 @@ export const stampVersionSeedAndHash = (rom, seed, flags) => {
   // We can use base64 encoding to help some...
   // For now just stick in the commit and seed in simple hex
   const crc = crc32(rom).toString(16).padStart(8, 0).toUpperCase();
-  const hash = BUILD_HASH.substring(0, 7).padStart(7, 0).toUpperCase();
+  const hash = version.STATUS == 'unstable' ?
+      version.HASH.substring(0, 7).padStart(7, 0).toUpperCase() :
+      version.VERSION;
   seed = seed.toString(16).padStart(8, 0).toUpperCase();
   const embed = (addr, text) => {
     for (let i = 0; i < text.length; i++) {
@@ -2671,6 +2674,3 @@ const UNTOUCHED_MONSTERS = { // not yet +0x50 in these keys
   [0x9f]: true, // vertical platform
   [0xa6]: true, // glitch in location $af (mado 2)
 };
-
-export const BUILD_HASH = 'latest';
-export const BUILD_DATE = 'current';

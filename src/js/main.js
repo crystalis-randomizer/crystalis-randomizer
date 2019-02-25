@@ -1,4 +1,5 @@
 import * as patch from './patch.js';
+import * as version from './version.js';
 import {crc32} from './crc32.js';
 import {EXPECTED_CRC32} from './rom.js';
 import {FlagSet} from './flagset.js';
@@ -37,12 +38,15 @@ const main = () => {
   });
 
   // Confirm that JS works.
-  if (patch.BUILD_HASH !== 'latest' || patch.BUILD_DATE !== 'current') {
+  if (version.HASH !== 'latest') {
     document.getElementById('version').textContent =
-        `Current version: ${patch.BUILD_HASH} (${patch.BUILD_DATE})`;
+        `Current version: ${version.VERSION} (${version.DATE.toDateString()})`;
   }
   document.body.classList.add('js-works');
   document.body.classList.remove('js-broken');
+  if (version.STATUS == 'rc') {
+    document.body.classList.add('release-candidate');
+  }
 };
 
 const addSeedListeners = () => {

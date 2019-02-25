@@ -3,13 +3,14 @@ const closure = require('google-closure-compiler').gulp();
 
 const COMMON = [
   '6502.js',
-  'depgraph2.js',
-  'graph2.js',
-  'random.js',
   'crc32.js',
+  'depgraph2.js',
   'flagset.js',
-  'rom.js',
+  'graph2.js',
   'patch.js',
+  'random.js',
+  'rom.js',
+  'version.js',
 ];
 
 const srcs = (...srcs) => srcs.map(s => './src/js/' + s);

@@ -17,6 +17,7 @@
 }
 
 /* Basic flow control */
+.if-release-candidate,
 .if-rom-uploaded,
 .if-rom-broken,
 .if-js-broken,
@@ -26,6 +27,7 @@
   display: none;
 }
 
+body.release-candidate .if-release-candidate,
 body.rom-uploaded .if-rom-uploaded,
 body.rom-broken .if-rom-broken,
 body.js-broken .if-js-broken,

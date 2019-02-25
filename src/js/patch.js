@@ -96,6 +96,7 @@ export const shuffle = async (rom, seed, flags, log = undefined, progress = unde
   //installInGameTimer.apply(rom); - this is a tough one.
   if (flags.check('Di')) neverDie.apply(rom);
   if (flags.check('Ta')) autoEquipBracelet.apply(rom);
+  if (flags.check('Tw')) nerfWildWarp.apply(rom);
 
   return stampVersionSeedAndHash(rom, seed, flags);
 
@@ -1067,13 +1068,21 @@ export const buffMedicalHerb2x = buildRomPatch(assemble(`
 //   - (diff + 1) << 4 ? 
 
 
-export const disableWildWarp = buildRomPatch(assemble(`
+export const removeWildWarp = buildRomPatch(assemble(`
 ;;; NOTE: this actually recovers 36 bytes of prime real estate PRG.
 ;;; Alternatively, restrict it to only go to leaf?
 .bank $3c000 $c000:$4000
 .org $3cbc7
   rts
-`, 'disableWildWarp'));
+`, 'removeWildWarp'));
+
+
+export const nerfWildWarp = buildRomPatch(assemble(`
+;;; Wild warp only goes to start.
+.bank $3c000 $c000:$4000
+.org $3cbec
+  .byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+`, 'nerfWildWarp'));
 
 
 // Prevents swords and balls/bracelets from sorting, so that they don't clobber each other.

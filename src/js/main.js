@@ -10,11 +10,30 @@ let flags;
 let seed;
 let rom;
 let romName;
+let race = false;
+
+const initRace = () => {
+  race = true;
+  loadRomFromStorage();
+  initializeStateFromHash(false);
+  updateRaceDom();
+  // Handle URL edits directly
+  window.addEventListener('popstate', (e) => {
+    initializeStateFromHash(false);
+  });
+  document.body.addEventListener('click', click);
+  initVersion();
+};
 
 const main = () => {
+  if (document.getElementById('race') == null) { // no button
+    initRace();
+    return;
+  }
+
   // Check for a stored ROM.
   loadRomFromStorage();
-  initializeStateFromHash();
+  initializeStateFromHash(true);
 
   // Wire up the presets menu.
   document.getElementById('preset').addEventListener('change', setPresets);
@@ -33,19 +52,26 @@ const main = () => {
       flags.flags = e.state.flags;
       seed = e.state.seed;
     } else {
-      initializeStateFromHash();
+      initializeStateFromHash(true);
     }
   });
 
   // Confirm that JS works.
+  initVersion();
+};
+
+const initVersion = () => {
   if (version.HASH !== 'latest') {
     document.getElementById('version').textContent =
-        `Current version: ${version.VERSION} (${version.DATE.toDateString()})`;
+        `Current version: ${version.LABEL} (${version.DATE.toDateString()})`;
   }
   document.body.classList.add('js-works');
   document.body.classList.remove('js-broken');
   if (version.STATUS == 'rc') {
     document.body.classList.add('release-candidate');
+    document.body.classList.add('versioned');
+  } else if (version.STATUS == 'stable') {
+    document.body.classList.add('versioned');
   }
 };
 
@@ -59,17 +85,20 @@ const addSeedListeners = () => {
   input.addEventListener('change', update);
 };
 
-const initializeStateFromHash = () => {
+const initializeStateFromHash = (initPresets) => {
   // Read flags and seed from the hash.
   for (const term of location.hash.substring(1).split('&')) {
     let [key, value] = term.split('=');
     value = decodeURIComponent(value);
     if (key === 'flags') {
       flags = new FlagSet(value);
-      document.getElementById('preset').value = '--';
-      document.getElementById('flagstring').value = value;
+      if (initPresets) {
+        document.getElementById('preset').value = '--';
+        document.getElementById('flagstring').value = value;
+      }
     }
     if (key === 'seed') seed = decodeURIComponent(value);
+    if (key === 'race') document.body.classList.add('race');
   }
 };
 
@@ -204,15 +233,28 @@ const updateDom = () => {
     const flag = cb.dataset['flag'];
     cb.checked = flags.check(flag);
   }
+  const flagString = String(flags).replace(/ /g, '');
   document.getElementById('seed').value = seed || '';
-  const hash = ['#flags=', String(flags).replace(/ /g, '')];
+  const hash = ['#flags=', flagString];
   if (seed) hash.push('&seed=', encodeURIComponent(seed));
   history.replaceState({flags: flags.flags, seed}, '', String(window.location).replace(/#.*/, '') + hash.join(''));
-  document.body.classList.toggle('spoiled', flags.check('Ds'));
-  document.getElementById('flagstring-out').textContent = String(flags);
-  document.getElementById('track-url').href =
-      `track#flags=${String(flags).replace(/ /g, '')}`;
+  if (version.STATUS == 'stable' || version.STATUS == 'rc') {
+    const s = seed || Math.floor(Math.random() * 0x100000000).toString(16);
+    const v = version.VERSION;
+    const f = flagString;
+    document.getElementById('race').href = `/${v}/race#flags=${f}&seed=${s}`;
+  }
+  updateRaceDom();
 };
+
+const updateRaceDom = () => {
+  const flagString = String(flags)
+  document.body.classList.toggle('spoiled', flags.check('Ds'));
+  document.body.classList.toggle('debug-mode', /D/.test(flagString));
+  document.getElementById('flagstring-out').textContent = flagString;
+  document.getElementById('track-url').href =
+      `track#flags=${flagString.replace(/ /g, '')}`;
+}
 
 const loadRomFromStorage = () => {
   const name = window['localStorage'].getItem('name');

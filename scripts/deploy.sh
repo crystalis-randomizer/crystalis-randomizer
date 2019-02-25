@@ -11,8 +11,7 @@ subdirs="js css images"
 # Clone the existing gh-pages repo
 git clone --depth=1 -b gh-pages "git@github.com:$TRAVIS_REPO_SLUG" deploy
 
-# At this point we have $dir, $status, $version, and $label.
-# Start copying to the dir.
+# At this point we have $dir, $status, and $label.  Start copying to the dir.
 
 # Just pull favicon straight from master...?
 if [ "$TRAVIS_BRANCH" = master ]; then

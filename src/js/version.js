@@ -1,5 +1,5 @@
 export const STATUS = 'unstable';
-export const VERSION = 'latest';
-export const LABEL = 'latest';
-export const HASH = 'latest';
+export const VERSION = 'HEAD';
+export const LABEL = 'HEAD';
+export const HASH = 'HEAD';
 export const DATE = new Date();

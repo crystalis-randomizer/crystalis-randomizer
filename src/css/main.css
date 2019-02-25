@@ -17,6 +17,7 @@
 }
 
 /* Basic flow control */
+.if-versioned,
 .if-release-candidate,
 .if-rom-uploaded,
 .if-rom-broken,
@@ -27,6 +28,7 @@
   display: none;
 }
 
+body.versioned .if-versioned,
 body.release-candidate .if-release-candidate,
 body.rom-uploaded .if-rom-uploaded,
 body.rom-broken .if-rom-broken,
@@ -37,6 +39,15 @@ body.shuffling .if-shuffling {
   /* Note: display: inherit has an interesting effect on the section
      headings that I kind of like. */
   display: block;
+}
+
+/* if-not-race is the only conditional that's allowed to stack. */
+body.debug-mode #race,
+body.race .if-not-race {
+  /* TODO - this is starting to not scale very well.
+     consider a JS-based solution where we querySelector
+     to get elements that match the given class. */     
+  display: none !important;
 }
 
 .warning {
@@ -87,12 +98,12 @@ nav > * {
   padding: 2px 12px;
   vertical-align: top;
 }
-nav > img {
+nav .img {
   margin: 0;
   padding: 0;
   position: absolute;
 }
-nav > img + * {
+nav .img + * {
   /* make space for logo, which is out of the flow. */
   margin-left: 24px;
 }
@@ -267,7 +278,7 @@ p + .flag-list {
 }
 
 .flag-list > label {
-  padding: .2em;
+  padding: .1em .2em .3em;
   border: 1px solid var(--dark);
   font-size: 133%;
   font-weight: bold;
@@ -324,7 +335,7 @@ p + .flag-list {
   font-size: 118%;
 }
 
-#generate, #share, #spoiler {
+#generate, #share, #spoiler, #race {
   margin-top: .5em;
   margin-right: .5em;
 }

@@ -16,13 +16,11 @@ case "$TRAVIS_TAG" in
     dir=${TRAVIS_TAG#v}
     status=rc
     label=$dir
-    version=$dir
     ;;
   (v*)
     dir=${TRAVIS_TAG#v}
     status=stable
     label=$dir
-    version=$dir
     ;;
   ('')
     case "$TRAVIS_BRANCH" in
@@ -30,8 +28,7 @@ case "$TRAVIS_TAG" in
       (*)      dir=$TRAVIS_BRANCH ;;
     esac
     status=unstable
-    version=$TRAVIS_COMIT
-    label="$dir ($version)"
+    label="$dir $(echo $TRAVIS_COMMIT | cut -c1-7)"
     ;;
   (*)
     echo "Bad travis tag: $TRAVIS_TAG" >&2
@@ -52,4 +49,3 @@ esac
 echo "export dir='$dir';"
 echo "export status='$status';"
 echo "export label='$label';"
-echo "export version=$version;"

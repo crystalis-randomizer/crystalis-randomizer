@@ -96,7 +96,7 @@ setTimeout(function() {
     </div>
   </section>
 
-  <section id="flags" class="if-rom-uploaded">
+  <section id="flags" class="if-rom-uploaded if-not-race">
     <h1>Presets</h1>
     <div>
       <p>For a quick start, consider using one of the following presets, or else
@@ -136,7 +136,7 @@ setTimeout(function() {
     </div>
   </section>
 
-  <section id="select-options" class="if-rom-uploaded expandable">
+  <section id="select-options" class="if-rom-uploaded if-not-race expandable">
     <h1>Flags</h1>
     <div>
       Please review and adjust your flag selections below. Flags in
@@ -448,19 +448,21 @@ setTimeout(function() {
   <section class="if-rom-uploaded">
     <h1>Generate</h1>
     <div>
-      <h2>Seed</h2>
-      <p>You may specify a seed for the random number generator, if
+      <h2 class="if-not-race">Seed</h2>
+      <p class="if-not-race">
+        You may specify a seed for the random number generator, if
         desired.  If it is left blank, a new seed will be chosen at
         random each time.  Use the 'new' button to generate a
         shareable seed, which will be automatically added to the URL.
-      <div class="flex-row">
+      <div class="flex-row if-not-race">
         <input id="seed" type="text">
         <a id="new-seed" class="button">New</a>
       </div>
-      <h2></h2>
+      <h2 class="if-not-race"></h2>
       <div class="flex-row">
         <a id="generate" class="button">Generate</a>
         <a id="spoiler" class="button if-spoiled">Spoiler</a>
+        <a id="race" class="button if-not-race">Race</a>
         <progress class="if-shuffling" id="progress" max="1"></progress>
         <!-- a id="share" class="button">Share</a -->
       </div>

@@ -41,7 +41,7 @@ for (let i = 0; i < 100; i++) {
     slot = `${slot.slotName} (${slot.item.name})`;
     if (fill[i] == null) continue;
     const item = g.nodes[dg.itemToUid[fill[i]]];
-    arr.push(`${item.name}: ${slot}`);
+    arr.push(`${String(arr.length + 1).padStart(2)} ${item.name}: ${slot}`);
   }
   arr.sort();
   console.log(arr.join('\n'));

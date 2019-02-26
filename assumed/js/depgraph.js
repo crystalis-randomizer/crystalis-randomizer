@@ -138,22 +138,22 @@ const hard                  = new TrackerNode(graph, 'Hard');
 // Items
 ////////////////////////////////////////////////////////////////
 const swordOfWind           = item(0x00, 'Sword of Wind')
-                                .weight(3)
+                                .weight(5)
                                 .fromPerson('Leaf elder', 0x0d)
                                 .npcSpawn(0x5e, 0x10, 1)
                                 .dialog(0x0d, 0xc0, 2)
                                 .key()
 const swordOfFire           = item(0x01, 'Sword of Fire')
-                                .weight(3)
+                                .weight(5)
                                 .fromPerson('Oak elder', 0x1d)
                                 .dialog(0x1d, null, 3)
                                 .key();
 const swordOfWater          = item(0x02, 'Sword of Water')
-                                .weight(3)
+                                .weight(10)
                                 .chest()
                                 .key();
 const swordOfThunder        = item(0x03, 'Sword of Thunder')
-                                .weight(5)
+                                .weight(15)
                                 .chest()
                                 .key();
 const crystalis             = item(0x04, 'Crystalis').fixed();
@@ -175,10 +175,14 @@ const flameBracelet         = item(0x08, 'Flame Bracelet')
                                 .npcSpawn(0xc2)
                                 .key();
 const ballOfWater           = item(0x09, 'Ball of Water')
+                                .weight(5)
                                 .direct('Rage', 0x3d337)
                                 .npcSpawn(0xc3)
                                 .key();
-const blizzardBracelet      = item(0x0a, 'Blizzard Bracelet').chest().key();
+const blizzardBracelet      = item(0x0a, 'Blizzard Bracelet')
+                                .weight(5)
+                                .chest()
+                                .key();
 const ballOfThunder         = item(0x0b, 'Ball of Thunder')
                                 .bossDrop('Mado 1', 0x05)
                                 .trigger(0x9a, 1)
@@ -374,7 +378,7 @@ const change                = magic(0x47, 'Change')
                                 .direct('Kensu in Swan', 0x3d6de)
                                 .npcSpawn(0x74, 0xf1, 1);
 const flight                = magic(0x48, 'Flight')
-                                .weight(5)
+                                .weight(15)
                                 .direct('Kensu in Draygonia Fortress', 0x3d18f);
                                 // See recover - no need for second slot.
 const fluteOfLimeChest      = item(0x28, "Flute of Lime").chest(undefined, 0x5b).key();

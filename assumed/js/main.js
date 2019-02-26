@@ -175,7 +175,7 @@ const replaceSpoiler = (name, log) => {
     const li = document.createElement('li');
     li.textContent = line;
     el.appendChild(li);
-                            }
+  }
 };
 
 const setPresets = () => {

@@ -21,7 +21,7 @@ for (let i = 0; i < dg.locationToUid.length; i++) {
   console.log(`SLOT ${i}: ${g.nodes[dg.locationToUid[i]]}`);
 }
 
-for (const bit of Bits.bits(dg.traverse(Bits.of(0,1,2,3), [4, 5, 6]))) {
+for (const bit of dg.traverse(Bits.of(0,1,2,3), [4, 5, 6])) {
   console.log(String(g.nodes[dg.locationToUid[bit]]));
 }
 

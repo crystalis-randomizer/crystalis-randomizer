@@ -9,9 +9,9 @@ before_script:
   - eval $(scripts/build_info.sh)
 
 script:
-  - scripts/test_cli.sh || touch failed
-  - gulp                || touch failed
-  - test -e failed || scripts/deploy.sh
+  - scripts/test_cli.sh || ( touch failed; false )
+  - gulp                || ( touch failed; false )
+  - test ! -e failed && scripts/deploy.sh
 
 before_install:
   - openssl aes-256-cbc -K $encrypted_2860195f5d4f_key -iv $encrypted_2860195f5d4f_iv -in deploy_key.enc -out deploy_key -d

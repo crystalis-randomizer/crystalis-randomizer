@@ -5,9 +5,11 @@ import {
   Chest,
   Condition,
   Item,
+  ItemGet,
   Location,
   Magic,
   Option,
+  Slot,
   TrackerNode,
   Trigger,
   WorldGraph,
@@ -1647,7 +1649,7 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
   const allSlots = graph.nodes.filter(s => s instanceof Slot);
 
   // Default shuffling
-  if (!flags) flags = new FlagSet('Sbk Sct Sm');
+  if (!flags) flags = new FlagSet('Sbkm Sct');
 
   const buckets = {}
   for (const slot of graph.nodes) {
@@ -1796,6 +1798,140 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
     if (slot.slotName == null) continue;
     let slotName = slot.slotName;
     if (slotName.indexOf(slot.orig) < 0) slotName += ` (normally ${slot.orig})`;
+    log.items.push({slotIndex: slot.slotIndex,
+                    itemIndex: slot.itemIndex,
+                    origName: slot.vanillaItemName,
+                    slotName: slot.slotName,
+                    itemName: slot.item.name,
+                    text: `${slot.item.name}: ${slotName}`,
+                   });
+  }
+};
+
+export const shuffle2 = async (rom, random, log = undefined, flags = undefined, progress = undefined) => {
+  if (progress) progress.addTasks(100);
+  for (let i = 0; i < 100; i++) {
+    try {
+      await shuffle3(rom, random, log, flags, progress);
+    } catch (e) {
+      if (progress) {
+        progress.addCompleted(1);
+        if (i % 5 === 0) await new Promise(requestAnimationFrame);
+      }
+      continue;
+    }
+    console.log(`success after ${i} attempts`);
+    return;
+  }
+  throw new Error('failed');
+};
+
+export const shuffle3 = async (rom, random, log = undefined, flags = undefined, progress = undefined) => {
+  const graph = generate(flags);
+  const locationList = graph.integrate();
+  const slots = graph.nodes.filter(s => s instanceof Slot && s.slots && s.slotName);
+  const allItems = new Map(random.shuffle(slots.map(s => [s, [s.item, s.itemIndex]])));
+  const allSlots = new Set(random.shuffle(slots));
+  const itemToSlot = new Map();
+  const slotType = (slot) => slot.slotType ? slot.slotType[0] : 'c';
+  const buckets = {};
+
+  // Default shuffling - only S flags matter.
+  if (!flags) flags = new FlagSet('Sbkm Sct');
+  flags.flags['S'].forEach((pool, index) => {
+    for (const type of pool) {
+      buckets[type] = index;
+    }
+  });
+
+  for (const slot of allSlots) {
+    itemToSlot.set(slot.item, slot);
+  }
+
+  const isChest = (s) =>
+      (s instanceof Chest || s instanceof BossDrop) && s.origIndex !== 0x09;
+  // NOTE: boss drops cannot hold mimics because they cause boss respawn.
+  const canHoldMimic = (s) => (s instanceof Chest) && !s.isInvisible;
+  const isMimic = (s) => s.itemIndex === 0x70;
+  const needsChest = (i) =>
+      // NOTE: if alarm flute goes in 3rd row, 0x31 should go away.
+      i >= 0x0d && i <= 0x24 || i === 0x26 || i === 0x28 || i === 0x31 || i > 0x48 && i != 0x5b;
+  const fits = (slot, item) => {
+    if (buckets[slotType(slot)] != buckets[slotType(item)]) return false;
+    if (isMimic(item) && !canHoldMimic(slot)) return false;
+    if (needsChest(item.itemIndex) && !isChest(slot)) return false;
+    return true;
+  };
+
+  const filling =
+      locationList.assumedFill(
+          random, (slot, item) => fits(slot, itemToSlot.get(item)));
+
+  // TODO - once we're doing other shufflings, re-roll the
+  // location list after 5 or so failed attempts?
+  if (filling == null) throw new Error('Could not fill!');
+
+  const fillMap = new Map();
+  for (let slot = 0; slot < filling.length; slot++) {
+    const item = filling[slot];
+    if (item == null) continue;
+    const itemSlot = itemToSlot.get(locationList.item(item));
+    const args = allItems.get(itemSlot);
+    allItems.delete(itemSlot);
+    const location = locationList.location(slot);
+    fillMap.set(location, args);
+    allSlots.delete(location);
+  }
+
+  // Now do the remaining (non-progression) items
+  const findSlot = (item, args) => {
+    for (const slot of allSlots) {
+      if (!fits(slot, item)) continue;
+      fillMap.set(slot, args);
+      allSlots.delete(slot);
+      return;
+    }
+    throw new Error('Could not fill extra items');
+  };
+  for (const [item, args] of allItems) {
+    if (isMimic(item)) {
+      findSlot(item, args);
+      allItems.delete(item);
+    }
+  }
+  for (const [item, args] of allItems) {
+    if (needsChest(item.itemIndex)) {
+      findSlot(item, args);
+      allItems.delete(item);
+    }
+  }
+  for (const [item, args] of allItems) {
+    findSlot(item, args);
+  }
+
+  for (const [slot, args] of fillMap) {
+    slot.set(...args);
+  }
+
+  const {win, path: route} = graph.traverse({wanted: slots, dfs: false});
+  if (!win) throw new Error('FAIL');
+
+  // Commit changes
+  for (const slot of graph.nodes) {
+    if (slot instanceof Slot) slot.write(rom);
+  }
+
+  if (!log) return;
+
+  // Generate spoiler log.
+  log.items = [];
+  log.route = [];
+  for (const [slotIndex, routeText] of route) {
+    log.route.push(routeText);
+    const slot = graph.nodes[slotIndex];
+    if (slot.slotName == null) continue;
+    let slotName = slot.slotName;
+    if (slotName.indexOf(slot.orig) < 0) slotName += ` (normally ${slot.vanillaItemName})`;
     log.items.push({slotIndex: slot.slotIndex,
                     itemIndex: slot.itemIndex,
                     origName: slot.vanillaItemName,

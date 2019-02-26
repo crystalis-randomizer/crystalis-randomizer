@@ -250,7 +250,7 @@ export class ItemGet extends Node {
   constructor(graph, id, name, index, item) {
     super(graph, name);
     this.id = id;
-    this.weight = 1;
+    this.shufflePriority = 1;
   }
 
   get nodeType() {
@@ -285,7 +285,7 @@ export class ItemGet extends Node {
   }
 
   weight(w) {
-    this.weight = w;
+    this.shufflePriority = w;
     return this;
   }
 }
@@ -466,7 +466,7 @@ export class Location extends Node {
     this.chests.push(slot);
     if (slot.itemIndex == 0x70) slot.slotType = 'trap';
     if (!slot.slotName || slot.slotName.endsWith(' chest')) {
-      slot.slotName = item.name + ' chest in ' + this.area.name;
+      slot.slotName = item.name + ' in ' + this.area.name;
     }
     return this;
   }
@@ -717,6 +717,16 @@ export class LocationList {
     // TODO - custom width?  for now we hardcode width=2
   }
 
+  /** @return {!Node} */
+  item(/** number */ index) {
+    return this.worldGraph.nodes[this.itemToUid[index]];
+  }
+
+  /** @return {!Node} */
+  location(/** number */ index) {
+    return this.worldGraph.nodes[this.locationToUid[index]];
+  }
+
   // NOTE: 'route' is in terms of worldgraph uids
   addRoute(/** !Edge */ route) {
     // Make sure all nodes are mapped.
@@ -815,14 +825,15 @@ export class LocationList {
    * Attempts to do an assumed fill.  Returns null if the
    * attempt failed.
    * @param {!Random} random
+   * @param {function(!Slot, !ItemGet): booleab} fits
    * @return {?Array<number>}
    */
-  assumedFill(random) {
+  assumedFill(random, fits = (slot, item) => true) {
     // Start with all items.
     const hasArr = [];
     for (let i = this.itemToUid.length - 1; i >= 0; i--) {
-      const {weight = 1} = this.worldGraph.nodes[this.itemToUid[i]];
-      for (let j = 0; j < weight; j++) hasArr.push(i);
+      const {shufflePriority = 1} = this.worldGraph.nodes[this.itemToUid[i]];
+      for (let j = 0; j < shufflePriority; j++) hasArr.push(i);
     }
     random.shuffle(hasArr);
     let has = Bits.from(hasArr);
@@ -842,7 +853,9 @@ export class LocationList {
       let found = false;
       for (let j = reachable.length - 1; j >= 0; j--) {
         const slot = reachable[j];
-        if (filling[slot] == null) {
+        if (filling[slot] == null &&
+            fits(this.worldGraph.nodes[this.locationToUid[slot]],
+                 this.worldGraph.nodes[this.itemToUid[bit]])) {
           filling[slot] = bit;
           found = true;
           break;

@@ -1,7 +1,7 @@
 import {assemble, buildRomPatch} from './6502.js';
 import {Rom} from './rom.js';
 import {Random} from './random.js';
-import {shuffle as shuffleDepgraph} from './depgraph.js';
+import {shuffle2 as shuffleDepgraph} from './depgraph.js';
 import {crc32} from './crc32.js';
 import {FlagSet} from './flagset.js';
 import * as version from './version.js';

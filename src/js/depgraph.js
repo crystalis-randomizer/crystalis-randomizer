@@ -1865,14 +1865,18 @@ export const shuffle2 = async (rom, random, log = undefined, flags = undefined, 
   const locationList = graph.integrate();
   if (progress) progress.addTasks(1000);
   for (let i = 0; i < 1000; i++) {
-    const success = await shuffle3(graph, locationList, rom, random, log, flags, progress);
-    if (success) {
-      console.log(`success after ${i} attempts`);
-      return;
-    }
-    if (progress) {
-      progress.addCompleted(1);
-      if (i % 50 === 0) await new Promise(requestAnimationFrame);
+    try {
+      const success = await shuffle3(graph, locationList, rom, random, log, flags, progress);
+      if (success) {
+        console.log(`success after ${i} attempts`);
+        return;
+      }
+    } catch (e) {
+      if (progress) {
+        progress.addCompleted(1);
+        if (i % 50 === 0) await new Promise(requestAnimationFrame);
+      }
+      continue;
     }
   }
   // fall back on forward-fill ?

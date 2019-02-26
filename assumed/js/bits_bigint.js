@@ -1,5 +1,6 @@
 /** @typedef {bigint} */
 export const Bits = {};
+export const BitsBigInt = Bits;
 
 /**
  * @param {...number} nums

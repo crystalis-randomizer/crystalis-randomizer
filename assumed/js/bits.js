@@ -1,7 +1,7 @@
-import {Bits as BitsBigint, BIGINT_OK} from './bits_bigint.js';
-import {Bits as BitsArray} from './bits_array.js';
+import {BitsBigInt, BIGINT_OK} from './bits_bigint.js';
+import {BitsArray} from './bits_array.js';
 
-const b = BIGINT_OK ? BitsBigint : BitsArray;
+const b = BIGINT_OK ? BitsBigInt : BitsArray;
 
 export class Bits {};
 

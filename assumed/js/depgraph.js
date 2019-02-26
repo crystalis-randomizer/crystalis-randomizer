@@ -1813,10 +1813,12 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
 };
 
 export const shuffle2 = async (rom, random, log = undefined, flags = undefined, progress = undefined) => {
+  const graph = generate(flags);
+  const locationList = graph.integrate();
   if (progress) progress.addTasks(100);
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 1000; i++) {
     try {
-      await shuffle3(rom, random, log, flags, progress);
+      await shuffle3(graph, locationList, rom, random, log, flags, progress);
     } catch (e) {
       if (progress) {
         progress.addCompleted(1);
@@ -1830,9 +1832,7 @@ export const shuffle2 = async (rom, random, log = undefined, flags = undefined, 
   throw new Error('failed');
 };
 
-export const shuffle3 = async (rom, random, log = undefined, flags = undefined, progress = undefined) => {
-  const graph = generate(flags);
-  const locationList = graph.integrate();
+export const shuffle3 = async (graph, locationList, rom, random, log = undefined, flags = undefined, progress = undefined) => {
   const slots = graph.nodes.filter(s => s instanceof Slot && s.slots && s.slotName);
   const allItems = new Map(random.shuffle(slots.map(s => [s, [s.item, s.itemIndex]])));
   const allSlots = new Set(random.shuffle(slots));

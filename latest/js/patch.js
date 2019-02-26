@@ -115,8 +115,8 @@ export const stampVersionSeedAndHash = (rom, seed, flags) => {
   // For now just stick in the commit and seed in simple hex
   const crc = crc32(rom).toString(16).padStart(8, 0).toUpperCase();
   const hash = version.STATUS == 'unstable' ?
-      version.HASH.substring(0, 7).padStart(7, 0).toUpperCase() :
-      version.VERSION;
+      version.HASH.substring(0, 7).padStart(7, 0).toUpperCase() + '     ' :
+      version.VERSION.substring(0, 12).padEnd(12, ' ');
   seed = seed.toString(16).padStart(8, 0).toUpperCase();
   const embed = (addr, text) => {
     for (let i = 0; i < text.length; i++) {
@@ -133,7 +133,7 @@ export const stampVersionSeedAndHash = (rom, seed, flags) => {
   };
 
   embed(0x277cf, intercalate('  VERSION     SEED      ',
-                             `  ${hash}     ${seed}`));
+                             `  ${hash}${seed}`));
   let flagString = String(flags);
 
   // if (flagString.length > 36) flagString = flagString.replace(/ /g, '');

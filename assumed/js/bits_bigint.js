@@ -90,8 +90,9 @@ Bits.clone = (x) => x;
 Bits.empty = (x) => !x;
 
 /** @const */
-Bits.BIGINT_OK = typeof BigInt === 'function' && typeof BigInt(0) === 'bigint';
-const ZERO = Bits.BIGINT_OK && BigInt(0);
-const ONE = Bits.BIGINT_OK && BigInt(1);
-const MAX_UINT32 = Bits.BIGINT_OK && BigInt(0xffffffff);
-const THIRTY_TWO = Bits.BIGINT_OK && BigInt(32);
+export const BIGINT_OK =
+    typeof BigInt === 'function' && typeof BigInt(0) === 'bigint';
+const ZERO = BIGINT_OK && BigInt(0);
+const ONE = BIGINT_OK && BigInt(1);
+const MAX_UINT32 = BIGINT_OK && BigInt(0xffffffff);
+const THIRTY_TWO = BIGINT_OK && BigInt(32);

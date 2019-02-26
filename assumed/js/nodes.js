@@ -1,6 +1,6 @@
 // TODO - rename to nodes.js ?
 
-import {Node, Edge, Graph, SparseDependencyGraph} from './graph.js';
+import {Node, Edge, EdgeT, Graph, SparseDependencyGraph} from './graph.js';
 import {Bits} from './bits.js';
 
 export class TrackerNode extends Node {
@@ -306,7 +306,7 @@ export class Trigger extends Node {
   constructor(graph, name) {
     super(graph, name);
     this.slot = null;
-    /** !Array<!Edge> */
+    /** !Array<!EdgeT> */
     this.reqs = [];
   }
 
@@ -566,7 +566,7 @@ export class WorldGraph extends Graph {
     const depgraph = new SparseDependencyGraph(this.nodes.length);
     const /** !Array<!Array<!Connection>> */ connectionsByLocation = [];
     const /** !Set<!Connection> */ connections = new Set();
-    const /** !Map<string, !Edge> */ queue = new Map();
+    const /** !Map<string, !EdgeT> */ queue = new Map();
 
     const options = [];
     const trackers = [];
@@ -728,7 +728,7 @@ export class LocationList {
   }
 
   // NOTE: 'route' is in terms of worldgraph uids
-  addRoute(/** !Edge */ route) {
+  addRoute(/** !EdgeT */ route) {
     // Make sure all nodes are mapped.
     let /** !Bits */ deps = Bits.of();
     let target;

@@ -1,12 +1,14 @@
 import {Deque} from './util.js';
 
+export const Edge = {};
+
 /**
  * First element is destination, rest are requirements.
  * @typedef {!Array<number>}
  */
-export const Edge = {};
+export const EdgeT = {};
 
-/** @return {!Edge} */
+/** @return {!EdgeT} */
 Edge.of = (/** ...!Node */ ...nodes) => nodes.map(n => n.uid);
 
 export class Node {
@@ -25,7 +27,7 @@ export class Node {
     return `${this.nodeType} ${this.name}`;
   }
 
-  /** @return {!Array<!Edge>} */
+  /** @return {!Array<!EdgeT>} */
   edges() {
     return [];
   }

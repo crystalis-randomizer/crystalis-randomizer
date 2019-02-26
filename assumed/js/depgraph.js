@@ -1815,14 +1815,14 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
 export const shuffle2 = async (rom, random, log = undefined, flags = undefined, progress = undefined) => {
   const graph = generate(flags);
   const locationList = graph.integrate();
-  if (progress) progress.addTasks(100);
+  if (progress) progress.addTasks(1000);
   for (let i = 0; i < 1000; i++) {
     try {
       await shuffle3(graph, locationList, rom, random, log, flags, progress);
     } catch (e) {
       if (progress) {
         progress.addCompleted(1);
-        if (i % 5 === 0) await new Promise(requestAnimationFrame);
+        if (i % 50 === 0) await new Promise(requestAnimationFrame);
       }
       continue;
     }

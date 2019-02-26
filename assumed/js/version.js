@@ -1,5 +1,5 @@
 export const STATUS = 'unstable';
 export const VERSION = 'assumed';
-export const LABEL = 'assumed cf33553';
-export const HASH = 'cf33553af95d0f33fe3dce7fc824f2dc2e465776';
-export const DATE = new Date(1551217183000);
+export const LABEL = 'assumed 956f677';
+export const HASH = '956f677e0672325716f60bd5e8c257b611fe9edd';
+export const DATE = new Date(1551217271000);

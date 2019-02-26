@@ -1,5 +1,6 @@
 /** @typedef {!Array<number>} */
 export const Bits = {};
+export const BitsArray = Bits;
 
 /**
  * @param {...number} nums

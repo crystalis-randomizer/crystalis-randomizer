@@ -109,15 +109,6 @@ export class Graph {
     };
   }
 
-  integrate(opts = {}) {
-    // TODO - set of nodetypes to integrate and/or retain!
-    //   - {itemget, tracker} are both useful here to retain...
-
-    // Given required domain knowledge, should probably be in nodes.js
-
-    return integrateLocations(this, opts);
-  }
-
   // Here's the thing, slots require items.
   // We don't want to transitively require dependent slots' requirements,
   // but we *do* need to transitively require location requirements.
@@ -137,19 +128,10 @@ export class Graph {
 
 }
 
-class WatchedMap extends Map {
-// set(k,v) { console.log(`${k} <= ${[...v]}`);
-// const ret=super.set(k,v);
-// console.log(`  ${[...this.keys()].map(x=>`(${x})`)}`); return ret;}
-// delete(k) { console.log(`DELETE ${k}`); return super.delete(k); }
-// clear() { console.log(`CLEAR`); return super.clear(); }
-}
-// Consider cleaning up and rewriting a bunch of this in typescript
-
 export class SparseDependencyGraph {
   constructor(size) {
     /** @const {!Array<!Map<string, !Set<number>>>} */
-    this.nodes = new Array(size).fill(0).map((_,i) => i==101?new WatchedMap:new Map());
+    this.nodes = new Array(size).fill(0).map(() => new Map());
     /** @const {!Array<boolean>} */
     this.finalized = new Array(size).fill(false);
   }
@@ -244,97 +226,6 @@ class SparseRoute {
     this.label = label;
   }  
 }
-
-// TODO - it's really obnoxious that I can't break this line without screwing
-// up indentation for the entire body of the function!
-const integrateLocations = (graph, {start = graph.locations()[0], removeConditions = true, removeTriggers = true, removeOptions = true} = {}) => {
-
-  const /** !Object<string, !Array<!Connection>> */ locs = {};
-  const /** !Object<string, !Node> */ nodes = {};
-  const /** !Set<!Connection> */ connections = new Set();
-  const depgraph = new Depgraph();
-
-  // First index all the nodes and connections.
-  for (const n of graph.nodes) {
-    nodes[n.uid] = n;
-    if (removeOptions && n instanceof Option) {
-      //console.log(`Option ${n.name}: ${n.value}`);
-      if (n.value) depgraph.addRoute(n.uid, []);
-      depgraph.integrateOut(n.uid);
-    }
-    if (!(n instanceof Location)) continue;
-    locs[n.uid] = [];
-    for (const c of n.connections) {
-      if (connections.has(c)) continue;
-      // add connection and maybe everse to the set
-      connections.add(c);
-      if (c.bidi) connections.add(c.reverse());
-    }
-    if (removeTriggers) {
-      for (const {trigger, deps} of n.triggers) {
-        depgraph.addRoute(trigger.uid, [n.uid, ...deps.map(d => d.uid)]);
-      }
-      if (n.bossNode) {
-        depgraph.addRoute(n.bossNode.uid, [n.uid, ...n.bossNode.deps.map(d => d.uid)]);
-      }
-    }
-    for (const c of n.chests) {
-      depgraph.addRoute(c.uid, [n.uid]);
-    }
-  }
-  // Group connections by "from" location.
-  for (const c of connections) {
-    locs[c.from.uid].push(c);
-  }
-  if (removeTriggers) {
-    for (const n of graph.nodes) {
-      if (n instanceof Trigger) {
-        if (n.slot) depgraph.addRoute(n.slot.uid, [n.uid]);
-        depgraph.integrateOut(n.uid);
-      }
-    }
-  }
-
-  // Start the traversal.
-  const startRoute = depgraph.addRoute(start.uid, [])[0];
-  // queue is a queue of routes - each successfully-added route gets added
-  const queue = new Map([[startRoute.label, startRoute]]);
-  const iter = queue.values();
-  let next;
-  while (!(next = iter.next()).done) {
-    const route = next.value;
-    for (const c of locs[route.target]) {
-      const deps = [...route.deps, ...c.deps.map(d => d.uid)];
-      if (c.from.bossNode) deps.push(c.from.bossNode.uid);
-      for (const r of depgraph.addRoute(c.to.uid, deps)) {
-        if (!queue.has(r.label)) queue.set(r.label, r);
-      }
-    }
-  }
-
-  if (removeConditions) {
-    for (const n of graph.nodes) {
-      if (!(n instanceof Condition)) continue;
-      for (const o of n.options) {
-        depgraph.addRoute(n.uid, o.map(x => x.uid));
-      }
-      depgraph.integrateOut(n.uid);
-    }
-  }
-
-  // Integrate out all the locations - maybe just always integrate everything out?
-  for (const n of depgraph.graph.keys()) {
-    depgraph.integrateOut(n);
-  }
-
-  // for (const s of graph.nodes) {
-  //   if (s instanceof Slot) {
-  //     console.log(`${s.orig} ($${s.origIndex.toString(16).padStart(2,0)}): ${[...(depgraph.graph.get(s.uid)||new Map()).values()].map(([...s]) => '(' + s.map(n => nodes[n].name).join(' & ') + ')').join(' | ')}`);
-  //   }
-  // }
-
-  return depgraph;
-};
 
 const containsAll = (/** !Set */ left, /** !Set */ right) => /** boolean */ {
   if (left.size < right.size) return false;

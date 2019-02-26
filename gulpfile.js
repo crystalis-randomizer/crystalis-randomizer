@@ -8,6 +8,7 @@ const COMMON = [
   'bits_bigint.js',
   'crc32.js',
   'depgraph.js',
+  'externs.js',
   'flagset.js',
   'graph.js',
   'nodes.js',

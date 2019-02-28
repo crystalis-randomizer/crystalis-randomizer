@@ -11,7 +11,10 @@ produce a fresh, new experience and challenge.  Note, in particular, that these
 tools are unusable without bringing your own legally-obtained ROM dump of the
 original game.
 
+Please visit our [discord] for more information and discussion.
+
 [Crystalis]: https://en.wikipedia.org/wiki/Crystalis
+[discord]: https://discord.gg/ktyz5E6
 
 ## Status
 

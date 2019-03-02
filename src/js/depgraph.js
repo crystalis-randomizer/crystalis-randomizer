@@ -1865,18 +1865,14 @@ export const shuffle2 = async (rom, random, log = undefined, flags = undefined, 
   const locationList = graph.integrate();
   if (progress) progress.addTasks(1000);
   for (let i = 0; i < 1000; i++) {
-    try {
-      const success = await shuffle3(graph, locationList, rom, random, log, flags, progress);
-      if (success) {
-        console.log(`success after ${i} attempts`);
-        return;
-      }
-    } catch (e) {
-      if (progress) {
-        progress.addCompleted(1);
-        if (i % 50 === 0) await new Promise(requestAnimationFrame);
-      }
-      continue;
+    const success = await shuffle3(graph, locationList, rom, random, log, flags, progress);
+    if (success) {
+      console.log(`success after ${i} attempts`);
+      return;
+    }
+    if (progress) {
+      progress.addCompleted(1);
+      if (i % 50 === 0) await new Promise(requestAnimationFrame);
     }
   }
   // fall back on forward-fill ?
@@ -1886,13 +1882,17 @@ export const shuffle2 = async (rom, random, log = undefined, flags = undefined, 
 // TODO - build in some sort of auto-reroll functionality,
 // where we feed in some stats about the fill and maybe
 // reroll if it doesn't meet some criteria?
+// TODO - accept log.stats and update it!!!
 export const shuffle3 = async (graph, locationList, rom, random, log = undefined, flags = undefined, progress = undefined) => {
+  const stats = log && log.stats;
   const slots = graph.nodes.filter(s => s instanceof Slot && s.slots && s.slotName);
   const allItems = new Map(random.shuffle(slots.map(s => [s, [s.item, s.itemIndex]])));
   const allSlots = new Set(random.shuffle(slots));
   const itemToSlot = new Map();
   const slotType = (slot) => slot.slotType ? slot.slotType[0] : 'c';
   const buckets = {};
+
+  if (stats) stats.seeds++;
 
   // Default shuffling - only S flags matter.
   if (!flags) flags = new FlagSet('Sbkm Sct');
@@ -1927,7 +1927,9 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
   // TODO - once we're doing other shufflings, re-roll the
   // location list after 5 or so failed attempts?
   if (filling == null) {
+    if (stats) stats.endState.key++;
     return false;
+    throw new Error('Could not fill!');
   }
 
   const fillMap = new Map();
@@ -1943,7 +1945,7 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
   }
 
   // Now do the remaining (non-progression) items
-  const findSlot = (item, args) => {
+  const findSlot = (item, args, type = '') => {
     for (const slot of allSlots) {
       if (!fits(slot, item)) continue;
       fillMap.set(slot, args);
@@ -1951,13 +1953,19 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
       allItems.delete(item);
       return true;
     }
+    if (stats) {
+//console.log(`fail: ${item} in ${[...allSlots]}`);
+      if (type == 'traps') stats.endState.traps++;
+      else if (type == 'chest') stats.endState.chest++;
+      else stats.endState.misc++;
+    }
     return false;
   };
   for (const [item, args] of allItems) {
-    if (item.isMimic() && !findSlot(item, args)) return false;
+    if (item.isMimic() && !findSlot(item, args, 'traps')) return false;
   }
   for (const [item, args] of allItems) {
-    if (item.needsChest() && !findSlot(item, args)) return false;
+    if (item.needsChest() && !findSlot(item, args, 'chest')) return false;
   }
   for (const [item, args] of allItems) {
     if (!findSlot(item, args)) return false;
@@ -1970,6 +1978,7 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
   // Do a final sanity check to make sure the game is actually winnable.
   const {win, path: route} = graph.traverse({wanted: slots, dfs: false});
   if (!win) {
+    if (stats) stats.endState.no_win++;
     return false;
   }
 
@@ -1977,6 +1986,10 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
   if (rom) graph.write(rom);
 
   if (!log) return true;
+  if (stats) {
+    stats.endState.success++;
+    stats.analyze(graph, locationList, filling);
+  }
 
   // Generate spoiler log.
   log.items = [];

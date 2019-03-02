@@ -295,7 +295,6 @@ export class Chest extends Slot {
         rom[a - 1] &= 0x7f;
       }
       write(rom, a, Math.min(0x70, slot.itemIndex));
-//console.log(`${this.name2}: ${a.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
     });
     return this;
   }
@@ -973,6 +972,11 @@ export class LocationList {
   traverse(has = Bits.of(), slots = []) {
     let hasOut = Array.isArray(has) ? has : null;
     if (hasOut) has = has[0];
+// ||||||| parent of 1e55fa1... work on statistics
+//   traverse(has, slots) {
+// =======
+//   traverse(has = Bits.of(), slots) {
+// >>>>>>> 1e55fa1... work on statistics
     has = Bits.clone(has);
 
     const reachable = new Set();
@@ -989,6 +993,7 @@ export class LocationList {
       // can we reach it?
       const needed = this.routes[n];
       for (let i = 0; i < needed.length; i++) {
+//if(n==4)console.log(`can reach 4? ${Bits.bits(needed[i])} has ${Bits.bits(has)} => ${Bits.containsAll(has, needed[i])}`);
         if (!Bits.containsAll(has, needed[i])) continue;
         reachable.add(n);
         if (slots[n]) {
@@ -1000,6 +1005,47 @@ export class LocationList {
     }
     if (hasOut) hasOut[0] = has;
     return reachable;
+  }
+
+  /**
+   * Returns a bitmask of reachable locations.
+   * @param {!Array<number>} slots Location-to-item
+   * @return {!Array<number>} Depth of each slot
+   */
+  traverseDepths(slots) {
+    let has = Bits.of();
+    let depth = 0;
+    const depths = [];
+    const BOUNDARY = {};
+    let queue = new Set();
+    for (let i = 0; i < this.locationToUid.length; i++) {
+      queue.add(i);
+    }
+    queue.add(BOUNDARY);
+    const iter = queue[Symbol.iterator]();
+    let next;
+    while (!(next = iter.next()).done) {
+      const n = next.value;
+      queue.delete(n);
+      if (n === BOUNDARY) {
+        if (queue.size) queue.add(BOUNDARY);
+        depth++;
+        continue;
+      }
+      if (depths[n] != null) continue;
+      // can we reach it?
+      const needed = this.routes[n];
+      for (let i = 0; i < needed.length; i++) {
+        if (!Bits.containsAll(has, needed[i])) continue;
+        depths[n] = depth;
+        if (slots[n]) {
+          has = Bits.with(has, slots[n]);
+          for (let j of this.unlocks[slots[n]]) queue.add(j);
+        }
+        break;
+      }
+    }
+    return depths;
   }
 
   toString() {
@@ -1052,6 +1098,7 @@ export class LocationList {
         if (filling[slot] == null &&
             slot != this.win &&
             fits(this.worldGraph.nodes[this.locationToUid[slot]], item)) {
+if(slot>100)throw new Error('WTF');
           filling[slot] = bit;
           found = true;
           break;
@@ -1181,4 +1228,75 @@ export class FillStrategy {
 // Funnel all the writes into a single place to find errant writes.
 const write = (rom, addr, value) => {
   rom[addr] = value;
+}
+
+// statistics we can do
+//  - distribution of locations for each item
+//  - was item necessary? (remove and traverse)
+//    - gas mask, shell flute, rabbit boots,
+//      change, telepathy
+//  - was slot necessary?
+//    - broken statue/eyeglasses, stxy, bow of sun, ...
+//  - how many necessary items are there?
+//    (obviously this is separately-necessary...
+//     there will be some alternatives where neither
+//     single item is necessary but one or the other is)
+//  - correlations between item locations in the same seed?
+//  - how deep was item --- how to compute?  would like
+//    e.g. minimum path to get it, but that seems hard.
+//  - what blocks what - remove shell flute, can still get flight?
+//  - index in dfs
+// success rate, where are seeds failing?
+
+//  - usefulness of each item
+//    - given each slot, what are requirements?
+//    - need to remove impossible paths?
+//    - then for N paths, 1/N for each path item is in
+//    -> how many slots does item unlock.
+//       - could do this cumulatively?
+
+// A : B | C & D
+// B : A & C | A & D
+// C : D
+// D :
+// Then A : B is useless because all B : A.
+// But could be transitive
+// A : B | D
+// B : C
+// C : A & D
+// D : E
+// E :
+// If we sub
+//   A -> (C) | (E)
+//     -> (A & D) | ()
+// Eventually everything should either cycle or
+// empty out... we want the paths that don't cycle
+// but we don't have a good way to sub and keep track
+// of where everything came from...
+
+// DEPTH -> how many unlocks do you need...
+
+
+export class Filling {
+  constructor() {
+    this.data = [];
+  }
+
+
+  has(slot) {}
+
+  get(slot) {}
+
+  set(slot, item) {}
+
+  /** for override */
+  fits(slot, item) {
+    // todo - in subclass, keep track of number of
+    // non-chest slots that need to be filled...
+
+    // alternatively, just have set() return a boolean
+    // for whether it succeeded...
+    return true;
+  }
+
 }

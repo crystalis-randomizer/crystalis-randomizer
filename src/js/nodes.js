@@ -35,12 +35,13 @@ export class Slot extends Node {
     // Information about the slot itself
     this.slotName = name;
     this.slotIndex = index;
-    this.slotType = item instanceof Magic ? 'magic' : null;
+    this.slotType = item instanceof Magic ? 'magic' : 'consumable';
     this.vanillaItemName = item.name;
     this.slots = slots;
     // Information about the current item (if any)
     this.item = item;
     this.itemIndex = index;
+    this.requiresUnique = false;
   }
 
   get nodeType() {
@@ -55,6 +56,37 @@ export class Slot extends Node {
   edges() {
     return this.item != null && this.itemIndex != null ?
         [Edge.of(this.item, this)] : [];
+  }
+
+  isMimic() {
+    return this.itemIndex >= 0x70;
+  }
+
+  requireUnique() {
+    this.requiresUnique = true;
+    return this;
+  }
+
+  canHoldMimic() {
+    // NOTE: boss drops cannot hold mimics because they cause boss respawn.
+    return this instanceof Chest && !this.isInvisible;
+  }
+
+  needsChest() {
+    const i = this.itemIndex;
+    // NOTE: if alarm flute goes in 3rd row, 0x31 should go away.
+    return i >= 0x0d && i <= 0x24 ||
+        i === 0x26 ||
+        i === 0x28 ||
+        i === 0x31 ||
+        i > 0x48;
+  }
+
+  isChest() {
+    // Only chests can hold consumables (unless we override with a flag).
+    // Rage is not a chest.
+    return (this instanceof Chest || this instanceof BossDrop) &&
+        this.origIndex !== 0x09;
   }
 
   get name2() {
@@ -223,14 +255,14 @@ export class Chest extends Slot {
     this.slots.push((rom, slot) => {
       const base = addr(rom, 0x19201, 0x10000, loc);
       const a = base + 4 * (spawnSlot - 0x0b);
-      if (slot.itemIndex === 0x70) {
+      if (slot.itemIndex >= 0x70) {
         // mimics respawn on a timer
         rom[a - 1] |= 0x80;
       } else {
         // non-mimics should spawn once on load
         rom[a - 1] &= 0x7f;
       }
-      rom[a] = slot.itemIndex;
+      rom[a] = Math.min(0x70, slot.itemIndex);
 //console.log(`${this.name2}: ${a.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
     });
     return this;
@@ -251,6 +283,7 @@ export class ItemGet extends Node {
     super(graph, name);
     this.id = id;
     this.shufflePriority = 1;
+    this.inventoryRow = 'unique';
   }
 
   get nodeType() {
@@ -286,6 +319,16 @@ export class ItemGet extends Node {
 
   weight(w) {
     this.shufflePriority = w;
+    return this;
+  }
+
+  consumable() {
+    this.inventoryRow = 'consumable';
+    return this;
+  }
+
+  armor() {
+    this.inventoryRow = 'armor';
     return this;
   }
 }
@@ -343,6 +386,7 @@ export class Trigger extends Node {
 export class Condition extends Node {
   constructor(graph, name) {
     super(graph, name);
+    /** @type {!Array<!Array<!Node>>} */
     this.options = [];
   }
 
@@ -407,6 +451,7 @@ export class Location extends Node {
     this.bossNode = null;
     this.type = null;
     this.isStart = false;
+    this.isEnd = false;
   }
 
   get nodeType() {
@@ -464,7 +509,7 @@ export class Location extends Node {
     }
     const slot = item.objectSlot(this.id, spawn);
     this.chests.push(slot);
-    if (slot.itemIndex == 0x70) slot.slotType = 'trap';
+    if (slot.itemIndex >= 0x70) slot.slotType = 'trap';
     if (!slot.slotName || slot.slotName.endsWith(' chest')) {
       slot.slotName = item.name + ' in ' + this.area.name;
     }
@@ -530,6 +575,11 @@ export class Location extends Node {
 
   start() {
     this.isStart = true;
+    return this;
+  }
+
+  end() {
+    this.isEnd = true;
     return this;
   }
 
@@ -601,9 +651,10 @@ export class WorldGraph extends Graph {
         depgraph.finalize(n.item.uid);
         continue;
       }
-      if (n instanceof Slot && n.slotName == null) {
-        continue;
-      }
+      //// Use Crystalis as a proxy for winning
+      // if (n instanceof Slot && n.slotName == null) {
+      //   continue;
+      // }
       if (n instanceof ItemGet && n.name === 'Medical Herb') {
         depgraph.addRoute([n.uid]);
         depgraph.finalize(n.uid);
@@ -676,7 +727,6 @@ export class WorldGraph extends Graph {
     }
     return out;
   }
-
 }
 
 export class LocationList {
@@ -714,6 +764,9 @@ export class LocationList {
     /** @const {!Array<!Set<number>>} */
     this.unlocks = [];
 
+    /** @type {?number} Slot for "win" */
+    this.win = null;
+
     // TODO - custom width?  for now we hardcode width=2
   }
 
@@ -743,6 +796,10 @@ export class LocationList {
 //console.log(`${i}: ${n} => ${index}`);
         bwd.push(n);
         fwd[n] = index;
+        // identify the win location
+        if (!i && this.worldGraph.nodes[n].slotName == null) {
+          this.win = index;
+        }
       }
       if (i) {
         deps = Bits.with(deps, index);
@@ -770,11 +827,11 @@ export class LocationList {
 
   /**
    * Returns a bitmask of reachable locations.
-   * @param {!Bits} has Bitmask of gotten items
-   * @param {!Array<number>} slots Location-to-item
+   * @param {!Bits=} has Bitmask of gotten items
+   * @param {!Array<number>=} slots Location-to-item
    * @return {!Set<number>} Reachable locations
    */
-  traverse(has, slots) {
+  traverse(has = Bits.of(), slots = []) {
     has = Bits.clone(has);
 
     const reachable = new Set();
@@ -826,36 +883,33 @@ export class LocationList {
    * attempt failed.
    * @param {!Random} random
    * @param {function(!Slot, !ItemGet): booleab} fits
+   * @param {function(!ItemGet, !Array<number>, !Random)} fillStrategy
    * @return {?Array<number>}
    */
-  assumedFill(random, fits = (slot, item) => true) {
+  assumedFill(random, fits = (slot, item) => true, strategy = FillStrategy) {
     // Start with all items.
-    const hasArr = [];
-    for (let i = this.itemToUid.length - 1; i >= 0; i--) {
-      const {shufflePriority = 1} = this.worldGraph.nodes[this.itemToUid[i]];
-      for (let j = 0; j < shufflePriority; j++) hasArr.push(i);
-    }
-    random.shuffle(hasArr);
+    const hasArr = strategy.shuffleItems(
+        this.itemToUid.map(uid => this.worldGraph.nodes[uid]), random);
     let has = Bits.from(hasArr);
     const filling = new Array(this.locationToUid.length).fill(null);
     // Start something...
     while (hasArr.length) {
       const bit = hasArr.pop();
       if (!Bits.has(has, bit)) continue;
+      const item = this.worldGraph.nodes[this.itemToUid[bit]];
       has = Bits.without(has, bit);
       const reachable = 
           [...this.traverse(has, filling)].filter(n=>filling[n]==null);
 
       // NOTE: shuffle the whole thing b/c some items can't
       // go into some slots, so try the next one.
-      random.shuffle(reachable);
+      strategy.shuffleSlots(item, reachable, random);
       // For now, we don't have any way to know...
       let found = false;
-      for (let j = reachable.length - 1; j >= 0; j--) {
-        const slot = reachable[j];
+      for (const slot of reachable) {
         if (filling[slot] == null &&
-            fits(this.worldGraph.nodes[this.locationToUid[slot]],
-                 this.worldGraph.nodes[this.itemToUid[bit]])) {
+            slot != this.win &&
+            fits(this.worldGraph.nodes[this.locationToUid[slot]], item)) {
           filling[slot] = bit;
           found = true;
           break;
@@ -876,4 +930,36 @@ export class LocationList {
   //  - 128 bits OK...?
   //  - once all *key* items are assigned, rest can be
   //    filled in totally randomly.
+}
+
+
+/** @record */
+export class FillStrategy {
+  /**
+   * @param {!ItemGet} item
+   * @param {!Array<number>} reachable Shuffles in-place
+   * @param {!Random} random
+   */
+  shuffleSlots(item, reachable, random) {}
+
+  static shuffleSlots(item, reachable, random) {
+    random.shuffle(reachable);
+  }
+
+  /**
+   * @param {!Array<!ItemGet>} items
+   * @param {!Random}
+   * @return {!Array<number>}
+   */
+  shuffleItems(items, random) {}
+
+  static shuffleItems(items, random) {
+    const shuffled = [];
+    for (let i = 0; i < items.length; i++) {
+      const {shufflePriority = 1} = items[i];
+      for (let j = 0; j < shufflePriority; j++) shuffled.push(i);
+    }
+    random.shuffle(shuffled);
+    return shuffled;
+  }
 }

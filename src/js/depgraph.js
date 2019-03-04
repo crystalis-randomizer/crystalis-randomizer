@@ -188,46 +188,50 @@ const ballOfThunder         = item(0x0b, 'Ball of Thunder')
                                 .trigger(0x9a, 1)
                                 .key();
 const stormBracelet         = item(0x0c, 'Storm Bracelet').chest().key();
-const carapaceShield        = item(0x0d, 'Carapace Shield');
-const bronzeShield          = item(0x0e, 'Bronze Shield');
-const platinumShield        = item(0x0f, 'Platinum Shield');
-const mirroredShield        = item(0x10, 'Mirrored Shield');
-const ceramicShield         = item(0x11, 'Ceramic Shield');
+const carapaceShield        = item(0x0d, 'Carapace Shield').armor();
+const bronzeShield          = item(0x0e, 'Bronze Shield').armor();
+const platinumShield        = item(0x0f, 'Platinum Shield').armor();
+const mirroredShield        = item(0x10, 'Mirrored Shield').armor();
+const ceramicShield         = item(0x11, 'Ceramic Shield').armor();
 const sacredShield          = item(0x12, 'Sacred Shield')
+                                .armor()
                                 .bossDrop('Mado 2', 0x08)
                                 .npcSpawn(0xc7)
                                 .bonus();
-const battleShield          = item(0x13, 'Battle Shield');
-const psychoShield          = item(0x14, 'Psycho Shield');
-const tannedHide            = item(0x15, 'Tanned Hide');
-const leatherArmor          = item(0x16, 'Leather Armor');
-const bronzeArmor           = item(0x17, 'Bronze Armor');
-const platinumArmor         = item(0x18, 'Platinmum Armor');
-const soldierSuit           = item(0x19, 'Soldier Suit');
-const ceramicSuit           = item(0x1a, 'Ceramic Suit');
-const battleSuit            = item(0x1b, 'Battle Suit');
+const battleShield          = item(0x13, 'Battle Shield').armor();
+const psychoShield          = item(0x14, 'Psycho Shield').armor();
+const tannedHide            = item(0x15, 'Tanned Hide').armor();
+const leatherArmor          = item(0x16, 'Leather Armor').armor();
+const bronzeArmor           = item(0x17, 'Bronze Armor').armor();
+const platinumArmor         = item(0x18, 'Platinmum Armor').armor();
+const soldierSuit           = item(0x19, 'Soldier Suit').armor();
+const ceramicSuit           = item(0x1a, 'Ceramic Suit').armor();
+const battleSuit            = item(0x1b, 'Battle Suit').armor();
 const psychoArmor           = item(0x1c, 'Psycho Armor')
+                                .armor()
                                 .bossDrop('Draygon 1', 0x0a)
                                 .npcSpawn(0xcb) // boss spawn
                                 .trigger(0x9f) // unused?
                                 .npcSpawn(0x83) // azteca
                                 .key();
-const medicalHerb           = item(0x1d, 'Medical Herb');
-const antidote              = item(0x1e, 'Antidote');
-const lysisPlant            = item(0x1f, 'Lysis Plant');
-const fruitOfLime           = item(0x20, 'Fruit of Lime');
-const fruitOfPower          = item(0x21, 'Fruit of Power');
-const magicRing             = item(0x22, 'Magic Ring');
+const medicalHerb           = item(0x1d, 'Medical Herb').consumable();
+const antidote              = item(0x1e, 'Antidote').consumable();
+const lysisPlant            = item(0x1f, 'Lysis Plant').consumable();
+const fruitOfLime           = item(0x20, 'Fruit of Lime').consumable();
+const fruitOfPower          = item(0x21, 'Fruit of Power').consumable();
+const magicRing             = item(0x22, 'Magic Ring').consumable();
 const fruitOfRepun          = item(0x23, 'Fruit of Repun')
+                                .consumable()
                                 .bossDrop('Sabera 2', 0x07)
                                 .npcSpawn(0xc6)
                                 .key();
-const warpBoots             = item(0x24, 'Warp Boots');
+const warpBoots             = item(0x24, 'Warp Boots').consumable();
 const statueOfOnyx          = item(0x25, 'Statue of Onyx')
                                 .chest('Cordel grass')
                                 .invisible(0x3e3a2)
                                 .key();
 const opelStatue            = item(0x26, 'Opel Statue')
+                                .consumable()
                                 .bossDrop('Kelbesque 2', 0x06)
                                 .npcSpawn(0xc5)
                                 .key();
@@ -268,7 +272,9 @@ const shieldRing            = item(0x30, 'Shield Ring')
                                 .direct('Akahana in waterfall cave', 0x3d2af)
                                 .npcSpawn(0x16, 0x57, 2)
                                 .bonus();
-const alarmFlute            = item(0x31, 'Alarm Flute').fixed();
+const alarmFlute            = item(0x31, 'Alarm Flute')
+                                .consumable()
+                                .fixed();
 const windmillKey           = item(0x32, 'Windmill Key')
                                 .fromPerson('Windmill guard', 0x14)
                                 .dialog(0x14, 0x0e, 0)
@@ -357,6 +363,7 @@ const refresh               = magic(0x41, 'Refresh')
                                 .trigger(0xb4, 1);
 const paralysis             = magic(0x42, 'Paralysis')
                                 .direct('Zebu at Mt. Sabre summit', 0x3d655)
+                                .requireUnique()
                                 // TODO - require defeating kelbesque?
                                 .trigger(0x8d)
                                 .trigger(0xb2);
@@ -373,6 +380,7 @@ const recover               = magic(0x45, 'Recover')
                                 // recover does not have an ItemGet normally.
 const barrier               = magic(0x46, 'Barrier')
                                 .direct('Asina on Angry sea', 0x3d6d9)
+                                .requireUnique()
                                 .trigger(0x84, 0);
 const change                = magic(0x47, 'Change')
                                 .direct('Kensu in Swan', 0x3d6de)
@@ -442,7 +450,6 @@ const talkedToDeo           = trigger('Talked to Deo').get(deosPendant);
 const talkedToAkahanaFriend = trigger('Talked to Akahana\'s Friend').get(warriorRing);
 const getBowOfTruth         = trigger('Get Bow of Truth').get(bowOfTruth);
 const forgedCrystalis       = trigger('Forged Crystalis').get(crystalis);
-const win                   = trigger('Win');
 //exports.end = win;
 
 ////////////////////////////////////////////////////////////////
@@ -982,11 +989,11 @@ const fogLampCave3a         = location(0x4a, FOGL, 'Tunnel 3a (upper branch)').c
                                 .connect(fogLampCave2);
 const fogLampCave3b         = location(0x4a, FOGL, 'Tunnel 3b (dead end, mimic)').cave()
                                 .connect(fogLampCave3a, destroyStone) // 64d9:01
-                                .chest(mimic, 0x15);
+                                .chest(mimic, 0x15, 0x70);
 const fogLampCave3c         = location(0x4a, FOGL, 'Tunnel 3c (short passage with mimic)')
                                 .cave()
                                 .connect(fogLampCave3a, destroyStone) // 64d9:02
-                                .chest(mimic, 0x16);
+                                .chest(mimic, 0x16, 0x71);
 const fogLampCave3d         = location(0x4a, FOGL, 'Tunnel 3d (lower branch)').cave()
                                 .connect(fogLampCave3c, destroyStone); // 64d9:04
 const fogLampCave4          = location(0x4b, FOGL, 'Tunnel 4 (dead end loop)').cave()
@@ -1035,7 +1042,7 @@ const waterfallCave1a       = location(0x54, WFCV, 'Tunnel 1a (entrance)').cave(
                                 .connect(waterfallValleyNW);
 const waterfallCave1b       = location(0x54, WFCV, 'Tunnel 1b (dead end, mimic)').cave()
                                 .connect(waterfallCave1a, destroyIce) // 64da:10 or :08
-                                .chest(mimic, 0x13);
+                                .chest(mimic, 0x13, 0x72);
 const waterfallCave1c       = location(0x54, WFCV, 'Tunnel 1c (past ice)').cave()
                                 .connect(waterfallCave1a, destroyIce); // 64da:04
 const waterfallCave2        = location(0x55, WFCV, 'Tunnel 2 (stoned pair)').cave()
@@ -1073,8 +1080,10 @@ const towerMesia            = location(0x5e, TOWR, 'Mesia').misc()
                                 .trigger(forgedCrystalis);
 const towerDyna             = location(0x5f, TOWR, 'Dyna').misc()
                                 .from(tower5)
-                                .boss(dyna)
-                                .trigger(win);
+                                .boss(dyna);
+const win                   = location(0x5f, TOWR, 'Win').misc()
+                                .from(towerDyna)
+                                .end();
 
 // Angry Sea
 
@@ -1156,7 +1165,7 @@ const evilSpiritIsland4a    = location(0x6b, EVIL, 'Tunnel 4a (right side, mimic
                                 // then we'll need to add triggers for backtracking through
                                 // one-way passages.
                                 .connect(evilSpiritIsland3b)
-                                .chest(mimic, 0x0e);
+                                .chest(mimic, 0x0e, 0x73);
 const evilSpiritIsland4b    = location(0x6b, EVIL, 'Tunnel 4b (left side, iron necklace)').cave()
                                 .connect(evilSpiritIsland4a, crossRivers) // 285
                                 .chest(ironNecklace, 0x0f); // 0f: 2c
@@ -1244,7 +1253,7 @@ const mtHydraTunnel7        = location(0x84, HYDR, 'Tunnel 7 (wide hall)').cave(
 const mtHydraTunnel8        = location(0x85, HYDR, 'Tunnel 8 (red slimes)').cave()
                                 .from(mtHydraTunnel7, destroyStone) // 2ae (bad)
                                 .connectTo(mtHydra8)
-                                .chest(mimic, 0x17);
+                                .chest(mimic, 0x17, 0x74);
 const mtHydraTunnel9        = location(0x86, HYDR, 'Tunnel 9 (right branch, infinite loop)').cave()
                                 // non-blocking wall: 2ad
                                 .connect(mtHydraTunnel3);
@@ -1260,7 +1269,7 @@ const styx1                 = location(0x88, STYX, 'Entrance').fortress()
                                 .from(mtHydra4, keyToStyx, passShootingStatues); // TODO - two-way?
 const styx2a                = location(0x89, STYX, 'Left branch').fortress()
                                 .connect(styx1)
-                                .chest(mimic, 0x13);
+                                .chest(mimic, 0x13, 0x75);
 const styx2b                = location(0x89, STYX, 'Left branch, past one bridge').fortress()
                                 .connect(styx2a, crossRivers); // 2aa
 const styx2c                = location(0x89, STYX, 'Left branch, past two bridges').fortress()
@@ -1270,8 +1279,8 @@ const styx2d                = location(0x89, STYX, 'Right branch').fortress()
                                 .connect(styx1);
 const styx2e                = location(0x89, STYX, 'Right branch, across water').fortress()
                                 .connect(styx2d, flight)
-                                .chest(mimic, 0x14)
-                                .chest(mimic, 0x15)
+                                .chest(mimic, 0x14, 0x76)
+                                .chest(mimic, 0x15, 0x77)
                                 .chest(psychoShield, 0x1c);
 const styx3                 = location(0x8a, STYX, 'Upper floor').fortress()
                                 // pit to styx2a
@@ -1376,7 +1385,7 @@ const pyramidBackFork       = location(0xa2, PYRB, 'Branch').fortress()
                                 .connect(pyramidBackHall1);
 const pyramidBackLeft       = location(0xa3, PYRB, 'Left Dead End').fortress()
                                 .connect(pyramidBackFork)
-                                .chest(mimic, 0x0d);
+                                .chest(mimic, 0x0d, 0x78);
 const pyramidBackRight      = location(0xa4, PYRB, 'Right Dead End').fortress()
                                 .connect(pyramidBackFork);
 const pyramidBackHall2      = location(0xa5, PYRB, 'Hall 2').fortress()
@@ -1458,9 +1467,9 @@ const fortress4f            = location(0xb4, DRG4, 'Behind Iron Wall').fortress(
                                 .connect(fortress4e, destroyIron); // 16, 29c
 const fortress4g            = location(0xb5, DRG4, 'Lower').fortress()
                                 .connect(fortress4f)
-                                .chest(mimic, 0x0d)
-                                .chest(mimic, 0x0e)
-                                .chest(mimic, 0x0f)
+                                .chest(mimic, 0x0d, 0x79)
+                                .chest(mimic, 0x0e, 0x7a)
+                                .chest(mimic, 0x0f, 0x7b)
                                 .chest(magicRing, 0x17, 0x58)
                                 .chest(warpBoots, 0x18, 0x6e);
 const fortress4h            = location(0xb6, DRG4, 'Boss Corridor').fortress().connect(fortress4g);
@@ -1658,7 +1667,7 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
   const buckets = {}
   for (const slot of graph.nodes) {
     if (!(slot instanceof Slot) || !slot.slots) continue; // fixed, no shuffle
-    const type = slot.slotType ? slot.slotType[0] : 'c';
+    const type = slot.slotType[0];
     (buckets[type] = buckets[type] || []).push(slot);
   }
 
@@ -1743,21 +1752,12 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
     const count = counts[random.nextInt(counts.length)];
     const swaps = [];
 
-    // Only chests can hold consumables (unless we override with a flag).
-    const isChest = (s) =>
-        (s instanceof Chest || s instanceof BossDrop) && s.origIndex !== 0x09;
-    // NOTE: boss drops cannot hold mimics because they cause boss respawn.
-    const canHoldMimic = (s) => (s instanceof Chest) && !s.isInvisible;
-    const isMimic = (s) => s.itemIndex === 0x70;
-    const needsChest = (i) =>
-        // NOTE: if alarm flute goes in 3rd row, 0x31 should go away.
-        i >= 0x0d && i <= 0x24 || i === 0x26 || i === 0x28 || i === 0x31 || i > 0x48;
     const canSwap = (s1, s2) => {
       if (s1.itemIndex === s2.itemIndex) return false;
-      if (isMimic(s1) && !canHoldMimic(s2)) return false;
-      if (isMimic(s2) && !canHoldMimic(s1)) return false;
-      if (needsChest(s1.itemIndex) && !isChest(s2)) return false;
-      if (needsChest(s2.itemIndex) && !isChest(s1)) return false;
+      if (s1.isMimic() && !s2.canHoldMimic()) return false;
+      if (s2.isMimic() && !s1.canHoldMimic()) return false;
+      if (s1.needsChest() && !s2.isChest()) return false;
+      if (s2.needsChest() && !s1.isChest()) return false;
       return true;
     };
 
@@ -1817,21 +1817,22 @@ export const shuffle2 = async (rom, random, log = undefined, flags = undefined, 
   const locationList = graph.integrate();
   if (progress) progress.addTasks(1000);
   for (let i = 0; i < 1000; i++) {
-    try {
-      await shuffle3(graph, locationList, rom, random, log, flags, progress);
-    } catch (e) {
-      if (progress) {
-        progress.addCompleted(1);
-        if (i % 50 === 0) await new Promise(requestAnimationFrame);
-      }
-      continue;
+    const success = await shuffle3(graph, locationList, rom, random, log, flags, progress);
+    if (success) {
+      console.log(`success after ${i} attempts`);
+      return;
     }
-    console.log(`success after ${i} attempts`);
-    return;
+    if (progress) {
+      progress.addCompleted(1);
+      if (i % 50 === 0) await new Promise(requestAnimationFrame);
+    }
   }
   throw new Error('failed');
 };
 
+// TODO - build in some sort of auto-reroll functionality,
+// where we feed in some stats about the fill and maybe
+// reroll if it doesn't meet some criteria?
 export const shuffle3 = async (graph, locationList, rom, random, log = undefined, flags = undefined, progress = undefined) => {
   const slots = graph.nodes.filter(s => s instanceof Slot && s.slots && s.slotName);
   const allItems = new Map(random.shuffle(slots.map(s => [s, [s.item, s.itemIndex]])));
@@ -1852,28 +1853,29 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
     itemToSlot.set(slot.item, slot);
   }
 
-  const isChest = (s) =>
-      (s instanceof Chest || s instanceof BossDrop) && s.origIndex !== 0x09;
-  // NOTE: boss drops cannot hold mimics because they cause boss respawn.
-  const canHoldMimic = (s) => (s instanceof Chest) && !s.isInvisible;
-  const isMimic = (s) => s.itemIndex === 0x70;
-  const needsChest = (i) =>
-      // NOTE: if alarm flute goes in 3rd row, 0x31 should go away.
-      i >= 0x0d && i <= 0x24 || i === 0x26 || i === 0x28 || i === 0x31 || i > 0x48 && i != 0x5b;
   const fits = (slot, item) => {
-    if (buckets[slotType(slot)] != buckets[slotType(item)]) return false;
-    if (isMimic(item) && !canHoldMimic(slot)) return false;
-    if (needsChest(item.itemIndex) && !isChest(slot)) return false;
-    return true;
-  };
+    // If the slot type is not shuffled, it must not have been moved.
+    if (buckets[slotType(slot)] == null) return slot == item;
+    // Ensure mimics only end up places that can hold them (non-boss chests).
+    if (item.isMimic() && !slot.canHoldMimic()) return false;
+    // Ensure non-unique items are not placed in trigger squares.
+    if (item.item.inventoryRow != 'unique' && slot.requiresUnique) return false;
+    // Ensure armor is only in chests (including bosses).
+    if (item.item.inventoryRow == 'armor' && !slot.isChest()) return false;
+    // Ensure the items types are allowed to be shuffled together.
+    return buckets[slotType(slot)] == buckets[slotType(item)];
+  }
 
   const filling =
       locationList.assumedFill(
-          random, (slot, item) => fits(slot, itemToSlot.get(item)));
+          random,
+          (slot, item) => fits(slot, itemToSlot.get(item)));
 
   // TODO - once we're doing other shufflings, re-roll the
   // location list after 5 or so failed attempts?
-  if (filling == null) throw new Error('Could not fill!');
+  if (filling == null) {
+    return false;
+  }
 
   const fillMap = new Map();
   for (let slot = 0; slot < filling.length; slot++) {
@@ -1895,16 +1897,16 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
       allSlots.delete(slot);
       return;
     }
-    throw new Error('Could not fill extra items');
+    return false;
   };
   for (const [item, args] of allItems) {
-    if (isMimic(item)) {
+    if (item.isMimic()) {
       findSlot(item, args);
       allItems.delete(item);
     }
   }
   for (const [item, args] of allItems) {
-    if (needsChest(item.itemIndex)) {
+    if (item.needsChest()) {
       findSlot(item, args);
       allItems.delete(item);
     }
@@ -1917,15 +1919,20 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
     slot.set(...args);
   }
 
+  // Do a final sanity check to make sure the game is actually winnable.
   const {win, path: route} = graph.traverse({wanted: slots, dfs: false});
-  if (!win) throw new Error('FAIL');
-
-  // Commit changes
-  for (const slot of graph.nodes) {
-    if (slot instanceof Slot) slot.write(rom);
+  if (!win) {
+    return false;
   }
 
-  if (!log) return;
+  // Commit changes
+  if (rom) {
+    for (const slot of graph.nodes) {
+      if (slot instanceof Slot) slot.write(rom);
+    }
+  }
+
+  if (!log) return true;
 
   // Generate spoiler log.
   log.items = [];
@@ -1944,4 +1951,5 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
                     text: `${slot.item.name}: ${slotName}`,
                    });
   }
+  return true;
 };

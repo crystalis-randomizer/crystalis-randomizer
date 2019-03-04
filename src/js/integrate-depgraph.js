@@ -5,9 +5,9 @@ const {FlagSet} = require('./flagset.js');
 const {Bits} = require('./bits.js');
 const {Random} = require('./random.js');
 
-const g = generate(new FlagSet('Rflpt Dt Tw Gt')); // Gstrf'));
-// TODO - set options?
+const flags = new FlagSet(process.argv.slice(2).join(' ') || 'Rflpt Dt Tw Gt'); // Gstrf
 
+const g = generate(flags);
 const start = new Date().getTime();
 const dg = g.integrate();
 const end = new Date().getTime();
@@ -25,7 +25,7 @@ for (const bit of dg.traverse(Bits.of(0,1,2,3), [4, 5, 6])) {
   console.log(String(g.nodes[dg.locationToUid[bit]]));
 }
 
-for (let i = 0; i < 100; i++) {
+for (let i = 0; i < 1000; i++) {
   const r = new Random(i);
   const fill = dg.assumedFill(r);
   console.log('=============================================');
@@ -45,7 +45,7 @@ for (let i = 0; i < 100; i++) {
   }
   arr.sort();
   console.log(arr.join('\n'));
-  if (arr.length != 38) throw new Error(`seed ${i} LENGTH: ${arr.length}`);
+  if (arr.length != 39) throw new Error(`seed ${i} LENGTH: ${arr.length}`);
 }
 
 

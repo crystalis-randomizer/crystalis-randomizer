@@ -8,8 +8,11 @@ export const Edge = {};
  */
 export const EdgeT = {};
 
-/** @return {!EdgeT} */
-Edge.of = (/** ...!Node */ ...nodes) => nodes.map(n => n.uid);
+/**
+ * @param {...!Node} nodes
+ * @return {!EdgeT}
+ */
+Edge.of = (...nodes) => nodes.map(n => n.uid);
 
 export class Node {
   constructor(graph, name) {
@@ -121,7 +124,7 @@ export class Graph {
   // Build up a map of nodes to requirements...
 
   // We have a dichotomy:
-  //  - items can BE reqirements
+  //  - items can BE requirements
   //  - everything else can HAVE requirements, including slots
   //  - no link between slot and item
 

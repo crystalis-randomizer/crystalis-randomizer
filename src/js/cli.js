@@ -50,7 +50,7 @@ Flags
 };
 
 const main = (...args) => {
-  let flags = 'Em Gt Mr Rlpt Sbk Sct Sm Tasd';
+  let flags = 'Em Gt Mr Rlpt Sbkm Sct Tasd';
   let count = 1;
   let seed = '';
   let output = '%n_%c';

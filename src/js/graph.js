@@ -30,8 +30,11 @@ export class Node {
     return `${this.nodeType} ${this.name}`;
   }
 
-  /** @return {!Array<!EdgeT>} */
-  edges() {
+  /**
+   * @param {!Object=} opts
+   * @return {!Array<!EdgeT>}
+   */
+  edges(opts = undefined) {
     return [];
   }
 }

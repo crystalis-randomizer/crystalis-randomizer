@@ -3,15 +3,40 @@
 import {Node, Edge, EdgeT, Graph, SparseDependencyGraph} from './graph.js';
 import {Bits} from './bits.js';
 
+// TODO - move the options into these nodes...?
+//  - then the Dt flag will determine whether to connect or not?
+//  --- or ditch the distinct node types?
+//      they do behave slightly differently, tho...
+// We basically have a tri-state:
+//   1. in tracker or troll mode, traverse but don't integrate out - keep track
+//   2. in normal mode with glitch/hard flag on, traverse and integrate out
+//   3. in normal mode with glitch/hard flag off, don't traverse
+// The edges() method needs to behave differently depending on this.
+// Given that, we probably need to accept 'flags'.
 export class TrackerNode extends Node {
-  constructor(graph, name) {
+  constructor(graph, type, name, option, missing, weight) {
     super(graph, name);
+    this.type = type;
+    this.option = option;
+    this.missing = missing;
+    this.weight = weight;
   }
 
   get nodeType() {
     return 'Tracker';
   }
+
+  edges({tracker = false} = {}) {
+    if (!tracker && !this.option.value) return [];
+    // TODO - does this handle the tracking correctly for tracker + enabled?
+    //      - i.e. if it's "on route"?
+    return [Edge.of(this)];
+  }
 }
+
+TrackerNode.OFF_ROUTE = 1;
+TrackerNode.GLITCH = 2;
+TrackerNode.HARD = 3;
 
 export class Option extends Node {
   constructor(graph, name, value) {
@@ -602,7 +627,10 @@ const checkBounds = (a, rom, ...data) => {
 
 export class WorldGraph extends Graph {
 
-  /** @return {!LocationList} */
+  /**
+   * @param {!Object} opts
+   * @return {!LocationList}
+   */
   integrate(opts = {}) {
 // for(let i=0;i<this.nodes.length;i++)
 // console.log(`${i} ${this.nodes[i]}`);
@@ -624,6 +652,23 @@ export class WorldGraph extends Graph {
     const triggers = [];
     const items = [];
     const slots = new Set();
+
+
+    // TODO - how to handle tracker nodes?
+    //   - if we leave them in, then we should ensure
+    //     the HAS field inits to include them usually?
+    // For filling, only maintain the tracker node if the option
+    // is present; then whenever a tracker item disappears,
+    // remove the tracker alternative as well and see what locations
+    // disappear - those are the best candidates for maximal difficulty.
+
+    // Could also add a TrackerNode type for LEAP_OF_FAITH or something?
+    //  - option is always true, so always routed and ignored for tracker,
+    //    but we could keep track of e.g. most people won't enter the
+    //    temple without BoT, or various caves without certain items;
+    //    by simply adding LEAP_OF_FAITH deps to these, we'll increase
+    //    the chance that items end up in trollish places?
+
 
     // First index all the nodes and connections.
     for (const n of this.nodes) {

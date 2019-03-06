@@ -107,7 +107,7 @@ setTimeout(function() {
         <select id="preset">
           <option data-flags="" data-text="">--</option>
           <!-- TODO: Ex -->
-          <option data-flags="Emr Mr Rf Sbk Sc Sm Tasdw"
+          <option data-flags="Emr Mr Sbk Sc Sm Tasdw"
                   data-text="Basic flags for a relatively easy playthrough.">
             Casual
           </option>
@@ -115,11 +115,11 @@ setTimeout(function() {
                   data-text="Slightly more challenge than Casual but still approachable." selected>
             Intermediate
           </option> <!-- TODO: Ht -->
-          <option data-flags="Gfrt Hbw Mr Rlpt Sbckt Sm Tasdw"
+          <option data-flags="Gfprt Hbw Mr Rlpt Sbckt Sm Tasdw"
                   data-text="A balanced randomization with quite a bit more difficulty.">
             Advanced
           </option> <!-- TODO: Htx -->
-          <option data-flags="Gfrstw Hbgmsw Mr Rflpt Sbckmt Tas"
+          <option data-flags="Gfprstw Hbgmsw Mr Rlpt Sbckmt Tas"
                   data-text="Pulls out all the stops, and may require horrible hell runs.">
             Ludicrous
           </option>
@@ -315,17 +315,6 @@ setTimeout(function() {
 
       <h2>Routing</h2>
       <div class="flag-list">
-        <div class="checkbox">Rf: Early flight
-          <div class="flag-body">
-            Does not directly change where flight will be, but causes the logic
-            to understand all the things flight unlocks, which tends to have the
-            effect of making it show up very early and obsoleting a large number
-            of other items before they're even found.  By turning this off, the
-            logic will only take into account spots where flight is absolutely
-            required, leveling the playing field a bit compared with other magic.
-          </div>
-        </div>
-
         <div class="checkbox">Rt: Sword of Thunder teleports to Shyron
           <div class="flag-body">
             Normally when acquiring the thunder sword, the player is instantly
@@ -380,15 +369,22 @@ setTimeout(function() {
           </div>
         </div>
 
-        <div class="checkbox">Gr: Rabbit skip may be required
+        <div class="checkbox">Gp: Teleport skip may be required
           <div class="flag-body">
-            Progression may require entering Mt. Sabre North from Cordel Plain with
-            only the Teleport spell, without having triggered the Leaf villagers'
-            abduction and talking to the rabbit (with Telepathy).
+            Progression may require entering Mt. Sabre North from Cordel Plain
+            without the Teleport spell (flying over the river to avoid the
+            trigger).
           </div>
         </div>
 
-        <div class="checkbox">Gt: Talk glitch may be required
+        <div class="checkbox">Gr: Rabbit skip may be required
+          <div class="flag-body">
+            Progression may require entering Mt. Sabre North from Cordel Plain
+            without talking to the rabbit in Leaf after the abduction.
+          </div>
+        </div>
+
+        <div class="checkbox">Gt: Statue glitch may be required
           <div class="flag-body">
             Progression may require glitching past guards without Change or Paralysis,
             or people turned to stone without a Flute of Lime.  The logic <i>hopefully</i>

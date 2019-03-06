@@ -28,7 +28,8 @@ export class TrackerNode extends Node {
 
   edges({tracker = false} = {}) {
     // return []; // this.option.value ? [Edge.of(this)] : [];
-    return tracker ? [] : [Edge.of(this)];
+    // return tracker ? [] : [Edge.of(this)];
+    return [];
   }
 }
 

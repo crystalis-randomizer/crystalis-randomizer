@@ -26,6 +26,12 @@ export class TrackerNode extends Node {
     return 'Tracker';
   }
 
+  // NOTE: Tracker nodes are only ever created when a particular route
+  // is off-logic.  So integrating them should make them disappear
+  // entirely as impossible.  The tracker does *not* 'integrate them,
+  // but retains them for tracking purposes.  Evil mode will want to
+  // retain them as well, but we'll have a bunch more nodes in that
+  // case to track missing items.
   edges({tracker = false} = {}) {
     // return []; // this.option.value ? [Edge.of(this)] : [];
     // return tracker ? [] : [Edge.of(this)];

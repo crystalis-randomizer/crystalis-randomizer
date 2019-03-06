@@ -15,7 +15,7 @@ import {Bits} from './bits.js';
 // Given that, we probably need to accept 'flags'.
 export class TrackerNode extends Node {
   constructor(graph, type, name, option, missing, weight) {
-    super(graph, name);
+    super(graph, name + ': ' + option);
     this.type = type;
     this.option = option;
     this.missing = missing;
@@ -27,10 +27,7 @@ export class TrackerNode extends Node {
   }
 
   edges({tracker = false} = {}) {
-    if (!tracker && !this.option.value) return [];
-    // TODO - does this handle the tracking correctly for tracker + enabled?
-    //      - i.e. if it's "on route"?
-    return [Edge.of(this)];
+    return this.option.value ? [Edge.of(this)] : [];
   }
 }
 
@@ -636,13 +633,17 @@ export class WorldGraph extends Graph {
 // console.log(`${i} ${this.nodes[i]}`);
 
     const {
-      removeConditions = true,
-      removeTriggers = true,
-      removeOptions = true,
-      removeTrackers = true,
+      tracker = false,
     } = opts;
+
+    const removeConditions = true;
+    const removeTriggers = true;
+    const removeOptions = true;
+    const removeTrackers = !tracker;
+
     const depgraph = new SparseDependencyGraph(this.nodes.length);
-    const /** !Array<!Array<!Connection>> */ connectionsByLocation = [];
+    const /** !Array<!Array<!Connection>> */ connectionsByFrom = [];
+    const /** !Array<!Array<!Connection>> */ connectionsByTo = [];
     const /** !Set<!Connection> */ connections = new Set();
     const /** !Map<string, !EdgeT> */ queue = new Map();
 
@@ -677,7 +678,8 @@ export class WorldGraph extends Graph {
           const [route] = depgraph.addRoute([n.uid]);
           queue.set(route.label, route);
         }
-        connectionsByLocation[n.uid] = [];
+        connectionsByFrom[n.uid] = [];
+        connectionsByTo[n.uid] = [];
         for (const c of n.connections) {
           if (connections.has(c)) continue;
           // add connection and maybe everse to the set
@@ -717,7 +719,8 @@ export class WorldGraph extends Graph {
     }
 
     for (const c of connections) {
-      connectionsByLocation[c.from.uid].push(c);
+      connectionsByFrom[c.from.uid].push(c);
+      connectionsByTo[c.to.uid].push(c);
     }
 
     const integrate = (nodes) => {
@@ -732,6 +735,25 @@ export class WorldGraph extends Graph {
     // Do options and triggers first
     if (removeOptions) integrate(options);
     if (removeTrackers) integrate(trackers);
+
+    if (tracker) {
+      const trackerMap = new Map();
+      // retain a single off-route tracker node for each type.
+      for (const t of trackers) {
+console.error(`Looking at tracker ${t} (${t.option}): value=${t.option.value}`);
+        if (t.option.value) {
+console.error('  INTEGRATION');
+          depgraph.addRoute([t.uid]);
+          depgraph.finalize(t.uid);
+        } else if (trackerMap.has(t)) {
+          depgraph.addRoute([t.uid, trackerMap.get(t.type).uid]);
+          depgraph.finalize(t.uid);
+        } else {
+          trackerMap.set(t.type, t);
+        }
+      }
+    }
+
     if (removeTriggers) integrate(triggers);
 
     // Next do locations, leaving conditions intact
@@ -740,9 +762,9 @@ export class WorldGraph extends Graph {
     while (!(next = iter.next()).done) {
       const route = next.value; // (SparseRoute)
       const target = route.target;
-//console.log(`loc: ${target} ${this.nodes[target]}: ${[...route.deps]}`);
-      for (const c of connectionsByLocation[target]) {
-//console.log(`c: ${c}`); // TODO - no connections???
+console.error(`loc: ${target} ${this.nodes[target]}: ${[...route.deps]}`);
+      for (const c of connectionsByFrom[target]) {
+console.error(`c: ${c.from.uid} -> ${c.to.uid} if ${c.deps.map(x=>x.uid)}`); // TODO - no connections???
         const newRoute = [c.to.uid, ...route.deps];
         for (let i = c.deps.length - 1; i >= 0; i--) {
           newRoute.push(c.deps[i].uid);
@@ -757,15 +779,19 @@ export class WorldGraph extends Graph {
 
     if (removeConditions) integrate(conditions);
     for (let i = 0; i < this.nodes.length; i++) {
-      if (this.nodes[i] instanceof ItemGet) continue;
+      if (this.nodes[i] instanceof ItemGet
+          || this.nodes[i] instanceof TrackerNode
+         ) continue;
+console.error(`finalizing ${this.nodes[i]}`);
       depgraph.finalize(i);
     }
+console.error(`done w/ nodes`);
 
     // Now we have a dependency graph, where all slots should
     // have only item dependencies (unless we left some in).
     const out = new LocationList(this);
     for (const slot of slots) {
-//console.log(`slot ${slot.uid}: ${[...depgraph.nodes[slot.uid]]}`);
+console.error(`slot ${slot.uid}: ${[...depgraph.nodes[slot.uid]]}`);
       for (const alt of depgraph.nodes[slot.uid].values()) {
         out.addRoute([slot.uid, ...alt]);
       }
@@ -838,7 +864,7 @@ export class LocationList {
       let index = fwd[n];
       if (index == null) {
         index = bwd.length;
-//console.log(`${i}: ${n} => ${index}`);
+console.error(`${i}: ${this.worldGraph.nodes[n]} => ${index}`);
         bwd.push(n);
         fwd[n] = index;
         // identify the win location

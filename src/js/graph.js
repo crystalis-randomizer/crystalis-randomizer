@@ -149,7 +149,7 @@ export class SparseDependencyGraph {
 
   /** @return {!Array<!SparseRoute>} */
   addRoute(/** !Array<number> */ edge) {
-//console.log(`addRoute: ${edge}`);
+console.error(`addRoute: ${edge}`);
     const target = edge[0];
     if(this.finalized[target]) {
       throw new Error(`Attempted to add a route for finalized node ${target}`);
@@ -190,21 +190,20 @@ export class SparseDependencyGraph {
     s = new Set(sorted);
     const label = sorted.join(' ');
     const current = this.nodes[target];
-//console.log(`${target}: ${sorted}`);
+console.error(`${target}: ${sorted}`);
     if (current.has(label)) return [];
     for (const [l, d] of current) {
       if (containsAll(s, d)) return [];
       if (containsAll(d, s)) current.delete(l);
     }
-//console.log(`  => set`);
+console.error(`  => set`);
     current.set(label, s);
-//console.log(`  => ${target}: ${[...current.keys()].map(x=>`(${x})`)}`);
+console.error(`  => ${target}: ${[...current.keys()].map(x=>`(${x})`)}`);
     return [new SparseRoute(target, s, `${target}:${label}`)];
   }
 
   finalize(/** number */ node) {
 const PR=node==301;
-//console.log(`finalize ${node}`);
     if (this.finalized[node]) return;
     // pull the key, remove it from *all* other nodes
     const alternatives = this.nodes[node];
@@ -224,6 +223,7 @@ const PR=node==301;
         }
       }
     }
+console.error(`finalized ${node}: ${[...this.nodes[node].values()].map(a => [...a].join('&')).join(' | ')}`);
   }
 }
 

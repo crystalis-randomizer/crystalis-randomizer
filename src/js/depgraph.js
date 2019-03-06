@@ -85,12 +85,27 @@ const opt = (name, def) => {
   return flags.check(name) ^ invert;
 }
 
-const offRoute = (option) => new TrackerNode(
-    graph, TrackerNode.OFF_ROUTE, 'Off-route', option, [], 1);
-const glitch = (option) => new TrackerNode(
-    graph, TrackerNode.GLITCH, 'Glitch', option, [], 1);
-const hard = (option, missing = [], weight = 1) => new TrackerNode(
-    graph, TrackerNode.HARD, 'Hard', option, missing, weight);
+const ID= /**/ ()=> /**/  x=>x;
+const offRoute = ID((option) => new TrackerNode(
+    graph, TrackerNode.OFF_ROUTE, 'Off-route', option, [], 1));
+const glitch = ID((option) => new TrackerNode(
+    graph, TrackerNode.GLITCH, 'Glitch', option, [], 1));
+const hard = ID((option, missing = [], weight = 1) => new TrackerNode(
+    graph, TrackerNode.HARD, 'Hard', option, missing, weight));
+
+
+// TODO - TrackerNodes are causing problems,
+//  - mucking up the system so we can't integrate
+//    instead, get them out in the open
+//  - get mapping from index to uid
+//  - figure out which items are being added to - find edge of tracker items
+
+// hypothesis: having a ton of different hard mode options that aren't
+// integrated out is causing there to be too many different combinations
+// during the location integration.
+
+const hard2 = (option, missing = [], weight = 1) => H; /* new TrackerNode(
+    graph, TrackerNode.HARD, 'Hard', option, missing, weight); /**/
 
 ////////////////////////////////////////////////////////////////
 // Options
@@ -130,6 +145,7 @@ const allowWildWarp         = glitch(option('Allow wild warp',
 const assumeSwordChargeGlitch = glitch(option('Assume sword charge glitch',
                                        opt('Gs', false)));
 
+const H = new TrackerNode(graph, TrackerNode.HARD, 'Hard', matchingSwordOptional, [], 1);
 
 // TODO - for wild warp consider adding a list of locations,
 // then we can hack those into the rom if it changes?
@@ -504,7 +520,7 @@ const matchInsectSword      = condition('Match insect sword (fire/water/thunder)
                                 .option(swordOfFire)
                                 .option(swordOfWater)
                                 .option(swordOfThunder)
-                                .option(gasMask, hard(matchingSwordOptional), swordOfWind);
+                                .option(gasMask, hard2(matchingSwordOptional), swordOfWind);
 const speedBoots            = condition('Speed boots').option(leatherBoots, leatherBootsGiveSpeed);
 const climbSlopes           = condition('Climb slopes')
                                 .option(rabbitBoots)
@@ -530,26 +546,26 @@ const crossWhirlpool        = condition('Cross whirlpool')
                                 .option(flight, earlyFlight)
                                 .option(ghettoFlight);
 const maybeRefresh          = condition('Refresh if needed')
-                                .option(hard(refreshOptional, [refresh]))
+                                .option(hard2(refreshOptional, [refresh]))
                                 .option(refresh);
 const windMagic             = condition('Wind magic')
-                                .option(hard(swordMagicOptional,
+                                .option(hard2(swordMagicOptional,
                                              [ballOfWind, tornadoBracelet]),
                                         maybeRefresh)
                                 .option(ballOfWind, tornadoBracelet, maybeRefresh);
 const fireMagic             = condition('Fire magic')
-                                .option(hard(swordMagicOptional,
+                                .option(hard2(swordMagicOptional,
                                              [ballOfFire, flameBracelet]),
                                         maybeRefresh)
                                 .option(ballOfFire, flameBracelet, maybeRefresh);
 const waterMagic            = condition('Water magic')
-                                .option(hard(swordMagicOptional,
+                                .option(hard2(swordMagicOptional,
                                              [ballOfWater, blizzardBracelet]),
                                         maybeRefresh)
                                 .option(swordMagicOptional, maybeRefresh)
                                 .option(ballOfWater, blizzardBracelet, maybeRefresh);
 const thunderMagic          = condition('Thunder magic')
-                                .option(hard(swordMagicOptional,
+                                .option(hard2(swordMagicOptional,
                                              [ballOfThunder, stormBracelet]),
                                         maybeRefresh)
                                 .option(swordMagicOptional, maybeRefresh)
@@ -570,7 +586,7 @@ const changeOrGlitch        = condition('Change or glitch')
 const passShootingStatues   = condition('Pass shooting statues')
                                 .option(barrier)
                                 // Even in non-hell-mode, refresh and shield ring ok
-                                .option(hard(barrierOptional, [barrier]))
+                                .option(hard2(barrierOptional, [barrier]))
                                 .option(refresh, shieldRing);
 const maybeHealedDolphin    = condition('Healed dolphin if required')
                                 .option(healedDolphin)

@@ -174,7 +174,7 @@ class Graph {
   constructor(graph) {
     // TODO - compute two depgraphs: one with glitches and one without
     //  - then we can show green vs yellow for glitchable locations
-    this.depgraph = graph.integrate({removeTrackers: true});
+    this.depgraph = graph.integrate({tracker: false});
     this.slotElts = new Map(); // map from slot uid to element
     this.itemElts = new Map(); // map from item uid to element
     this.always = new Set();   // only used for clearing

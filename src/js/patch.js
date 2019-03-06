@@ -164,7 +164,7 @@ export const stampVersionSeedAndHash = (rom, seed, flags) => {
 
   // embed(0x25ea8, `v.${hash}   ${seed}`);
   embed(0x25716, 'RANDOMIZER');
-  embed(0x2573c, 'BETA');
+  if (version.STATUS == 'unstable') embed(0x2573c, 'BETA');
   // NOTE: it would be possible to add the hash/seed/etc to the title
   // page as well, but we'd need to replace the unused letters in bank
   // $1d with the missing numbers (J, Q, W, X), as well as the two

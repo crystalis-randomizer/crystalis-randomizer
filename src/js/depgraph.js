@@ -46,7 +46,7 @@ import {FlagSet} from './flagset.js';
 //             1 - disabled
 //             2 - may be required
 //   glitches: 1 - may require ghetto flight
-//             2 - may require talk glitch
+//             2 - may require statue glitch
 //             4 - may require sword charge glitch ??? - or fix them...
 //   leatherBoots: 0 - normal
 //                 1 - speed
@@ -85,27 +85,23 @@ const opt = (name, def) => {
   return flags.check(name) ^ invert;
 }
 
-const ID= /**/ ()=> /**/  x=>x;
-const offRoute = ID((option) => new TrackerNode(
-    graph, TrackerNode.OFF_ROUTE, 'Off-route', option, [], 1));
-const glitch = ID((option) => new TrackerNode(
-    graph, TrackerNode.GLITCH, 'Glitch', option, [], 1));
-const hard = ID((option, missing = [], weight = 1) => new TrackerNode(
-    graph, TrackerNode.HARD, 'Hard', option, missing, weight));
+// TODO - these signatures are for a future "evil mode", if we can work
+// out how to integrate the graph efficiently with the extra data along.
+// const offRoute = (option) => new TrackerNode(
+//     graph, TrackerNode.OFF_ROUTE, 'Off-route', option, [], 1);
+// const glitch = (option) => new TrackerNode(
+//     graph, TrackerNode.GLITCH, 'Glitch', option, [], 1);
+// const hard = (option, missing = [], weight = 1) => new TrackerNode(
+//     graph, TrackerNode.HARD, 'Hard', option, missing, weight);
 
+const OFF_ROUTE = new TrackerNode(graph, TrackerNode.OFF_ROUTE, 'Off-route');
+const GLITCH = new TrackerNode(graph, TrackerNode.GLITCH, 'Glitch');
+const HARD = new TrackerNode(graph, TrackerNode.HARD, 'Hard');
 
-// TODO - TrackerNodes are causing problems,
-//  - mucking up the system so we can't integrate
-//    instead, get them out in the open
-//  - get mapping from index to uid
-//  - figure out which items are being added to - find edge of tracker items
+const offRoute = (option) => option.value ? option : OFF_ROUTE;
+const glitch = (option) => option.value ? option : GLITCH;
+const hard = (option) => option.value ? option : HARD;
 
-// hypothesis: having a ton of different hard mode options that aren't
-// integrated out is causing there to be too many different combinations
-// during the location integration.
-
-const hard2 = (option, missing = [], weight = 1) => H; /* new TrackerNode(
-    graph, TrackerNode.HARD, 'Hard', option, missing, weight); /**/
 
 ////////////////////////////////////////////////////////////////
 // Options
@@ -114,8 +110,10 @@ const leatherBootsGiveSpeed = option('Leather Boots grant speed',
                                      opt('Ts', true));
 const assumeGhettoFlight    = glitch(option('Assume ghetto flight',
                                      opt('Gf', true)));
-const assumeTalkGlitch      = glitch(option('Assume talk glitch',
+const assumeStatueGlitch    = glitch(option('Assume statue glitch',
                                      opt('Gt', true)));
+const assumeTeleportSkip    = glitch(option('Assume teleport skip',
+                                     opt('Gp', false)));
 const assumeRabbitSkip      = glitch(option('Assume rabbit skip',
                                      opt('Gr', false)));
 const swordMagicOptional    = option('Sword magic optional',
@@ -134,18 +132,14 @@ const barrierOptional       = option('Barrier magic optional',
                                      opt('Hb', true));
 const refreshOptional       = option('Refresh magic optional',
                                      opt('!Er', true));
-const routeEarlyFlight      = offRoute(option('Early flight route',
-                                     opt('Rf', false)));
 const limeTreeConnectsToLeaf = option('Lime Tree connects to Leaf',
                                       opt('Rp', true));
-const assumeWildWarp        = option('Assume wild warp',
-                                     opt('Gw', false));
-const allowWildWarp         = glitch(option('Allow wild warp',
-                                     opt('!Tw', false)));
+const assumeWildWarp        = glitch(option('Assume wild warp',
+                                     opt('Gw', false)));
+const allowWildWarp         = option('Allow wild warp',
+                                     opt('!Tw', false));
 const assumeSwordChargeGlitch = glitch(option('Assume sword charge glitch',
                                        opt('Gs', false)));
-
-const H = new TrackerNode(graph, TrackerNode.HARD, 'Hard', matchingSwordOptional, [], 1);
 
 // TODO - for wild warp consider adding a list of locations,
 // then we can hack those into the rom if it changes?
@@ -473,19 +467,18 @@ const forgedCrystalis       = trigger('Forged Crystalis').get(crystalis);
 ////////////////////////////////////////////////////////////////
 // Conditions
 ////////////////////////////////////////////////////////////////
-const earlyFlight           = condition('Early flight')
-                                .option(routeEarlyFlight);
 const swordChargeGlitch     = condition('Sword charge glitch')
                                 .option(assumeSwordChargeGlitch);
 const rabbitSkip            = condition('Rabbit skip')
                                 .option(assumeRabbitSkip);
-const talkGlitch            = condition('Talk glitch')
-                                .option(assumeTalkGlitch);
+const teleportSkip          = condition('Teleport skip')
+                                .option(assumeTeleportSkip);
+const statueGlitch          = condition('Statue glitch')
+                                .option(assumeStatueGlitch);
 const ghettoFlight          = condition('Ghetto flight')
                                 .option(assumeGhettoFlight);
 const wildWarp              = condition('Wild warp')
-                                .option(assumeWildWarp)
-                                .option(allowWildWarp);
+                                .option(assumeWildWarp, allowWildWarp);
 const anyLevel2             = condition('Any level 2 sword')
                                 .option(swordOfWind, ballOfWind)
                                 .option(swordOfWind, tornadoBracelet)
@@ -506,7 +499,7 @@ const destroyIce            = condition('Destroy ice')
 const crossRivers           = condition('Cross rivers')
                                 .option(swordOfWater, ballOfWater)
                                 .option(swordOfWater, blizzardBracelet)
-                                .option(flight, earlyFlight)
+                                .option(flight)
                                 .option(swordChargeGlitch, swordOfWater, anyLevel2);
 
 const destroyIron           = condition('Destroy iron')
@@ -520,52 +513,55 @@ const matchInsectSword      = condition('Match insect sword (fire/water/thunder)
                                 .option(swordOfFire)
                                 .option(swordOfWater)
                                 .option(swordOfThunder)
-                                .option(gasMask, hard2(matchingSwordOptional), swordOfWind);
+                                .option(gasMask, hard(matchingSwordOptional), swordOfWind);
 const speedBoots            = condition('Speed boots').option(leatherBoots, leatherBootsGiveSpeed);
 const climbSlopes           = condition('Climb slopes')
                                 .option(rabbitBoots)
-                                .option(flight, earlyFlight)
+                                .option(flight)
                                 .option(speedBoots);
-const enterMtSabreNorth     = condition('Enter Mt Sabre North')
+const enterMtSabreNorthRabbit = condition('Enter Mt Sabre North (rabbit)')
                                 .option(talkedToLeafRabbit)
                                 .option(rabbitSkip);
+const enterMtSabreNorthTeleport = condition('Enter Mt Sabre North (Teleport)')
+                                .option(teleport)
+                                .option(teleportSkip, flight);
 // Required for access to underground channel.
 const asinaTrigger          = condition('Asina in her room')
                                 // NOTE: this is just ballOfWater in vanilla.
                                 .option(mesiaRecording);
 const paralysisOrAsina      = condition('Paralysis or Ball of Water')
-                                .option(paralysis).option(asinaTrigger).option(talkGlitch);
+                                .option(paralysis).option(asinaTrigger).option(statueGlitch);
 // TODO - consider adding healedDolphin and/or returnedFogLamp here?  otherwise, flight alone
 // is basically enough (though with flight the dolphin is basically just a convenience).
 const rideDolphin           = condition('Ride dolphin').option(shellFlute, talkedToKensuInCabin);
 const crossSea              = condition('Cross sea')
                                 .option(rideDolphin)
-                                .option(flight, earlyFlight);
+                                .option(flight);
 const crossWhirlpool        = condition('Cross whirlpool')
                                 .option(calmedSea)
-                                .option(flight, earlyFlight)
+                                .option(flight)
                                 .option(ghettoFlight);
 const maybeRefresh          = condition('Refresh if needed')
-                                .option(hard2(refreshOptional, [refresh]))
+                                .option(hard(refreshOptional, [refresh]))
                                 .option(refresh);
 const windMagic             = condition('Wind magic')
-                                .option(hard2(swordMagicOptional,
+                                .option(hard(swordMagicOptional,
                                              [ballOfWind, tornadoBracelet]),
                                         maybeRefresh)
                                 .option(ballOfWind, tornadoBracelet, maybeRefresh);
 const fireMagic             = condition('Fire magic')
-                                .option(hard2(swordMagicOptional,
+                                .option(hard(swordMagicOptional,
                                              [ballOfFire, flameBracelet]),
                                         maybeRefresh)
                                 .option(ballOfFire, flameBracelet, maybeRefresh);
 const waterMagic            = condition('Water magic')
-                                .option(hard2(swordMagicOptional,
+                                .option(hard(swordMagicOptional,
                                              [ballOfWater, blizzardBracelet]),
                                         maybeRefresh)
                                 .option(swordMagicOptional, maybeRefresh)
                                 .option(ballOfWater, blizzardBracelet, maybeRefresh);
 const thunderMagic          = condition('Thunder magic')
-                                .option(hard2(swordMagicOptional,
+                                .option(hard(swordMagicOptional,
                                              [ballOfThunder, stormBracelet]),
                                         maybeRefresh)
                                 .option(swordMagicOptional, maybeRefresh)
@@ -574,7 +570,7 @@ const thunderMagic          = condition('Thunder magic')
                                 .option(stormBracelet, maybeRefresh);
 const fluteOfLimeOrGlitch   = condition('Flute of lime or glitch')
                                 .option(fluteOfLimeQueen)
-                                .option(talkGlitch)
+                                .option(statueGlitch)
                                 .option(offRoute(fluteOfLimeChest));
 // this is only really here for tracker
 const secondFluteOfLime     = condition('Second flute of lime')
@@ -582,11 +578,11 @@ const secondFluteOfLime     = condition('Second flute of lime')
                                 .option(offRoute(fluteOfLimeQueen));
 const changeOrGlitch        = condition('Change or glitch')
                                 .option(change)
-                                .option(talkGlitch);
+                                .option(statueGlitch);
 const passShootingStatues   = condition('Pass shooting statues')
                                 .option(barrier)
                                 // Even in non-hell-mode, refresh and shield ring ok
-                                .option(hard2(barrierOptional, [barrier]))
+                                .option(hard(barrierOptional, [barrier]))
                                 .option(refresh, shieldRing);
 const maybeHealedDolphin    = condition('Healed dolphin if required')
                                 .option(healedDolphin)
@@ -853,7 +849,7 @@ const mtSabreWestTunnel7c   = location(0x27, SBRW, 'Tunnel 7c (tornado bracelet,
 // we need to get that right, might want to add two extra locations for after
 // the trigger.
 const mtSabreNorthEntrance  = location(0x28, SBRN, 'Entrance').overworld()
-                                .connect(cordelPlainEast, teleport, enterMtSabreNorth);
+                                .connect(cordelPlainEast, enterMtSabreNorthTeleport, enterMtSabreNorthRabbit);
 const mtSabreNorthUpper     = location(0x28, SBRN, 'Upper').overworld()
                                 .from(mtSabreNorthEntrance, flight)
                                 .to(mtSabreNorthEntrance);

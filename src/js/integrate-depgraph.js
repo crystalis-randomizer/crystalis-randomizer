@@ -9,7 +9,7 @@ const flags = new FlagSet(process.argv.slice(2).join(' ') || 'Rflpt Dt Tw Gft');
 
 const g = generate(flags);
 const start = new Date().getTime();
-const dg = g.integrate({tracker: true});
+const dg = g.integrate();
 const end = new Date().getTime();
 //console.log(String(dg));
 console.log(`time: ${end - start} ms`); // seems to take ~900 ms, so 20 traversals

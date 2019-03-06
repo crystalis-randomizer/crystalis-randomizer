@@ -174,7 +174,7 @@ class Graph {
   constructor(graph) {
     // TODO - compute two depgraphs: one with glitches and one without
     //  - then we can show green vs yellow for glitchable locations
-    this.depgraph = graph.integrate({tracker: false});
+    this.depgraph = graph.integrate({tracker: true});
     this.slotElts = new Map(); // map from slot uid to element
     this.itemElts = new Map(); // map from item uid to element
     this.always = new Set();   // only used for clearing
@@ -218,7 +218,7 @@ class Graph {
         if (n.type === TrackerNode.OFF_ROUTE) color = 1;
         if (n.type === TrackerNode.GLITCH) color = 2;
         if (n.type === TrackerNode.HARD) color = 3;
-        this.route[index] = color;
+        this.route[n.uid] = color;
       }
     }
 
@@ -297,7 +297,9 @@ class Graph {
             this.mimicSlots.get(loc << 8 | spawn);
     if (!slot) debugger;
     const div = document.createElement('div');
-    if (slot.type == 'key' || slot.type == 'magic' || slot.type == 'bonus') {
+    if (slot.slotType == 'key' ||
+        slot.slotType == 'magic' ||
+        slot.slotType == 'bonus') {
       div.classList.add('key');
       x--; y--;
     }

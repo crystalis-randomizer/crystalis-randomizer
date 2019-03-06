@@ -14,12 +14,12 @@ import {Bits} from './bits.js';
 // The edges() method needs to behave differently depending on this.
 // Given that, we probably need to accept 'flags'.
 export class TrackerNode extends Node {
-  constructor(graph, type, name, option, missing, weight) {
-    super(graph, name + ': ' + option);
+  constructor(graph, type, name /*, option, missing, weight */) {
+    super(graph, name); // + ': ' + option);
     this.type = type;
-    this.option = option;
-    this.missing = missing;
-    this.weight = weight;
+    // this.option = option;
+    // this.missing = missing;
+    // this.weight = weight;
   }
 
   get nodeType() {
@@ -27,7 +27,8 @@ export class TrackerNode extends Node {
   }
 
   edges({tracker = false} = {}) {
-    return this.option.value ? [Edge.of(this)] : [];
+    // return []; // this.option.value ? [Edge.of(this)] : [];
+    return tracker ? [] : [Edge.of(this)];
   }
 }
 
@@ -725,7 +726,7 @@ export class WorldGraph extends Graph {
 
     const integrate = (nodes) => {
       for (const n of nodes) {
-        for (const edge of n.edges()) {
+        for (const edge of n.edges({tracker})) {
           depgraph.addRoute(edge);
         }
         depgraph.finalize(n.uid);
@@ -736,23 +737,23 @@ export class WorldGraph extends Graph {
     if (removeOptions) integrate(options);
     if (removeTrackers) integrate(trackers);
 
-    if (tracker) {
-      const trackerMap = new Map();
-      // retain a single off-route tracker node for each type.
-      for (const t of trackers) {
-console.error(`Looking at tracker ${t} (${t.option}): value=${t.option.value}`);
-        if (t.option.value) {
-console.error('  INTEGRATION');
-          depgraph.addRoute([t.uid]);
-          depgraph.finalize(t.uid);
-        } else if (trackerMap.has(t)) {
-          depgraph.addRoute([t.uid, trackerMap.get(t.type).uid]);
-          depgraph.finalize(t.uid);
-        } else {
-          trackerMap.set(t.type, t);
-        }
-      }
-    }
+//     if (tracker) {
+//       const trackerMap = new Map();
+//       // retain a single off-route tracker node for each type.
+//       for (const t of trackers) {
+// console.error(`Looking at tracker ${t} (${t.option}): value=${t.option.value}`);
+//         if (t.option.value) {
+// console.error('  INTEGRATION');
+//           depgraph.addRoute([t.uid]);
+//           depgraph.finalize(t.uid);
+//         } else if (trackerMap.has(t)) {
+//           depgraph.addRoute([t.uid, trackerMap.get(t.type).uid]);
+//           depgraph.finalize(t.uid);
+//         } else {
+//           trackerMap.set(t.type, t);
+//         }
+//       }
+//     }
 
     if (removeTriggers) integrate(triggers);
 
@@ -762,15 +763,15 @@ console.error('  INTEGRATION');
     while (!(next = iter.next()).done) {
       const route = next.value; // (SparseRoute)
       const target = route.target;
-console.error(`loc: ${target} ${this.nodes[target]}: ${[...route.deps]}`);
+//console.error(`loc: ${target} ${this.nodes[target]}: ${[...route.deps]}`);
       for (const c of connectionsByFrom[target]) {
-console.error(`c: ${c.from.uid} -> ${c.to.uid} if ${c.deps.map(x=>x.uid)}`); // TODO - no connections???
+//console.error(`c: ${c.from.uid} -> ${c.to.uid} if ${c.deps.map(x=>x.uid)}`); // TODO - no connections???
         const newRoute = [c.to.uid, ...route.deps];
         for (let i = c.deps.length - 1; i >= 0; i--) {
           newRoute.push(c.deps[i].uid);
         }
         if (c.from.bossNode) newRoute.push(c.from.bossNode.uid);
-//console.log(`newRoute: ${newRoute}`);
+//console.error(`newRoute: ${newRoute}`);
         for (const r of depgraph.addRoute(newRoute)) {
           if (!queue.has(r.label)) queue.set(r.label, r);
         }
@@ -782,16 +783,16 @@ console.error(`c: ${c.from.uid} -> ${c.to.uid} if ${c.deps.map(x=>x.uid)}`); // 
       if (this.nodes[i] instanceof ItemGet
           || this.nodes[i] instanceof TrackerNode
          ) continue;
-console.error(`finalizing ${this.nodes[i]}`);
+//console.error(`finalizing ${this.nodes[i]}`);
       depgraph.finalize(i);
     }
-console.error(`done w/ nodes`);
+//console.error(`done w/ nodes`);
 
     // Now we have a dependency graph, where all slots should
     // have only item dependencies (unless we left some in).
     const out = new LocationList(this);
     for (const slot of slots) {
-console.error(`slot ${slot.uid}: ${[...depgraph.nodes[slot.uid]]}`);
+//console.error(`slot ${slot.uid}: ${[...depgraph.nodes[slot.uid]]}`);
       for (const alt of depgraph.nodes[slot.uid].values()) {
         out.addRoute([slot.uid, ...alt]);
       }
@@ -864,7 +865,7 @@ export class LocationList {
       let index = fwd[n];
       if (index == null) {
         index = bwd.length;
-console.error(`${i}: ${this.worldGraph.nodes[n]} => ${index}`);
+//console.error(`${i}: ${this.worldGraph.nodes[n]} => ${index}`);
         bwd.push(n);
         fwd[n] = index;
         // identify the win location

@@ -62,6 +62,7 @@ export class Random {
       const j = this.nextInt(i--);
       [array[i], array[j]] = [array[j], array[i]];
     }
+    return array;
   }
 }
 

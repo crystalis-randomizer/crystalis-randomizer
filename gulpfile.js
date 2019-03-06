@@ -3,13 +3,19 @@ const closure = require('google-closure-compiler').gulp();
 
 const COMMON = [
   '6502.js',
+  'bits.js',
+  'bits_array.js',
+  'bits_bigint.js',
   'crc32.js',
-  'depgraph2.js',
+  'depgraph.js',
+  'externs.js',
   'flagset.js',
-  'graph2.js',
+  'graph.js',
+  'nodes.js',
   'patch.js',
   'random.js',
   'rom.js',
+  'util.js',
   'version.js',
 ];
 

@@ -175,13 +175,15 @@ const replaceSpoiler = (name, log) => {
     const li = document.createElement('li');
     li.textContent = line;
     el.appendChild(li);
-                            }
+  }
 };
 
 const setPresets = () => {
   const preset = document.querySelector('#preset :checked');
   document.getElementById('preset-explanation').textContent = preset.dataset['text'];
-  document.getElementById('flagstring').value = preset.dataset['flags'];
+  let flags = preset.dataset['flags'];
+  if (version.VERSION == 'unstable') flags += ' Ds';
+  document.getElementById('flagstring').value = flags;
   //console.log(preset);
 };
 

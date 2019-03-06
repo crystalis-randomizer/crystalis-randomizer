@@ -1,8 +1,10 @@
 // Item tracker for web.
 // Uses flagset to figure out actual dependencies.
 
-import {generate} from './depgraph2.js';
+import {generate} from './depgraph.js';
+import {Bits} from './bits.js';
 import {FlagSet} from './flagset.js';
+import {Location, Slot, TrackerNode} from './nodes.js';
 
 const BOXES = `
 sword-of-wind $00 WIND
@@ -172,10 +174,9 @@ class Graph {
   constructor(graph) {
     // TODO - compute two depgraphs: one with glitches and one without
     //  - then we can show green vs yellow for glitchable locations
-    this.depgraph = graph.integrate();
+    this.depgraph = graph.integrate({tracker: true});
     this.slotElts = new Map(); // map from slot uid to element
     this.itemElts = new Map(); // map from item uid to element
-    this.has = new Set();      // set of item uid
     this.always = new Set();   // only used for clearing
     this.checked = new Set();  // set of slot uid
     this.grid = document.getElementsByClassName('grid')[0];
@@ -184,34 +185,40 @@ class Graph {
     this.mimicSlots = new Map();    // location and spawn to node
     this.nodes = new Map();
 
-    /** @const {!Map<!Node, number>} */
-    this.route = new Map([
-      [(graph.nodes.find(n => n.name == 'Off-route') || {}).uid, 1],
-      [(graph.nodes.find(n => n.name == 'Glitch') || {}).uid, 2],
-      [(graph.nodes.find(n => n.name == 'Hard') || {}).uid, 3]]);
+    /**
+     * Maps uid to status: 0 = has, 1-3 = off-route, 4 = blocked
+     * @const {!Array<number>}
+     */
+    this.route = [];
 
     for (const n of graph.nodes) {
       this.nodes.set(n.uid, n.name);
-    }
-
-    for (const slot of graph.slots()) {
-      // used by addBox
-      if (slot.index != 0x70) {
-        this.nodeFromSlot.set(slot.index, slot);
-      }
-      // not shown, just assume have it
-      if (slot.name == 'Alarm Flute' || slot.name == 'Medical Herb') {
-        this.always.add(slot.item.uid);
-        this.has.add(slot.item.uid);
-      }
-    }
-
-    // find the mimics, they need special handling
-    for (const loc of graph.locations()) {
-      for (const chest of loc.chests) {
-        if (chest.index == 0x70) {
-          this.mimicSlots.set(loc.id << 8 | chest.spawnSlot, chest);
+      this.route[n.uid] = 4;
+      if (n instanceof Slot) {
+        // used by addBox
+        if (!n.isMimic()) {
+          this.nodeFromSlot.set(n.slotIndex, n);
         }
+        // not shown, just assume have it
+        if (n.name == 'Alarm Flute' || n.name == 'Medical Herb') {
+          this.always.add(n.item.uid);
+          this.route[n.item.uid] = 0;
+        }
+      } else if (n instanceof Location) {
+        // find the mimics, they need special handling
+        for (const chest of n.chests) {
+          if (chest.isMimic()) {
+            this.mimicSlots.set(n.id << 8 | chest.spawnSlot, chest);
+          }
+        }
+      } else if (n instanceof TrackerNode) {
+        const index = this.depgraph.uidToItem[n.uid];
+        if (index == null) continue;
+        let color = 4;
+        if (n.type === TrackerNode.OFF_ROUTE) color = 1;
+        if (n.type === TrackerNode.GLITCH) color = 2;
+        if (n.type === TrackerNode.HARD) color = 3;
+        this.route[n.uid] = color;
       }
     }
 
@@ -219,23 +226,26 @@ class Graph {
       slot = slot || !!e.button;
       let t = e.target;
       const key = slot ? 'slot' : 'item';
-      const set = slot ? this.checked : this.has;
       while (t && !t.dataset[key]) {
         t = t.parentElement;
       }
       if (!t) return;
-      const uid = t.dataset[key];
+      const uid = Number(t.dataset[key]);
       if (slot && e.shiftKey) {
         showReqs(uid);
         return;
       }
-      if (set.has(uid)) {
-        set.delete(uid);
+      if (slot) {
+        if (this.checked.has(uid)) {
+          this.checked.delete(uid);
+        } else {
+          this.checked.add(uid);
+        }
       } else {
-        set.add(uid);
+        this.route[uid] = 4 - this.route[uid];
       }
       if (!slot) {
-        t.classList.toggle('got', set.has(uid));
+        t.classList.toggle('got', !this.route[uid]);
       }
       this.update();
       e.preventDefault();
@@ -252,7 +262,7 @@ class Graph {
     this.map.addEventListener('click', e => toggle(e, true));
 
     const showReqs = (uid) => {
-      if (reqs.dataset['showing'] == uid) return;
+      if (Number(reqs.dataset['showing']) == uid) return;
       clearReqs();
       reqs.dataset['showing'] = uid;
       const top = document.createElement('span');
@@ -261,16 +271,13 @@ class Graph {
       const ul = document.createElement('ul');
       reqs.appendChild(ul);
       const alts = [];
-      for (const alt of this.depgraph.graph.get(uid).values()) {
+      for (const alt of this.depgraph.routes[this.depgraph.uidToLocation[uid]]) {
         let level = 0;
         const li = document.createElement('li');
         const parts = [];
-        for (const dep of alt) {
-          if (this.route.has(dep)) {
-            level = Math.max(level, this.route.get(dep));
-          } else if (!this.has.has(dep)) {
-            level = 4;
-          }
+        for (const bit of Bits.bits(alt)) {
+          const dep = this.depgraph.itemToUid[bit];
+          level = Math.max(level, this.route[dep]);
           parts.push(this.nodes.get(dep));
         }
         li.textContent = parts.join(' AND ');
@@ -290,7 +297,9 @@ class Graph {
             this.mimicSlots.get(loc << 8 | spawn);
     if (!slot) debugger;
     const div = document.createElement('div');
-    if (slot.type == 'key' || slot.type == 'magic' || slot.type == 'bonus') {
+    if (slot.slotType == 'key' ||
+        slot.slotType == 'magic' ||
+        slot.slotType == 'bonus') {
       div.classList.add('key');
       x--; y--;
     }
@@ -334,16 +343,11 @@ class Graph {
       } else {
         // figure out whether it's available or not
         let minLevel = 4;
-        for (const alternative of this.depgraph.graph.get(uid).values()) {
+        for (const alternative of this.depgraph.routes[this.depgraph.uidToLocation[uid]]) {
           let level = 0;
-          for (const dep of alternative) {
-            const depLevel = this.route.get(dep);
-            if (depLevel) {
-              level = Math.max(level, depLevel);
-            } else if (!this.has.has(dep)) {
-              level = 4;
-              break;
-            }
+          for (const dep of Bits.bits(alternative)) {
+            level = Math.max(level, this.route[this.depgraph.itemToUid[dep]]);
+            if (!(level < 4)) break;
           }
           minLevel = Math.min(minLevel, level);
           if (!minLevel) break;
@@ -390,7 +394,9 @@ document.getElementById('toggle-map').addEventListener('click', () => {
   graph.map.classList.toggle('hidden');
 });
 document.getElementById('clear-all').addEventListener('click', () => {
-  graph.has = new Set(graph.always);
+  for (let i = 0; i < graph.route.length; i++) {
+    if (graph.route[i] == 0) graph.route[i] = graph.always.has(i) ? 0 : 4;
+  }
   graph.checked.clear();
   graph.update();
   for (const element of document.querySelectorAll('.slot.got')) {

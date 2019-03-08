@@ -475,8 +475,6 @@ const teleportSkip          = condition('Teleport skip')
                                 .option(assumeTeleportSkip);
 const statueGlitch          = condition('Statue glitch')
                                 .option(assumeStatueGlitch);
-const ghettoFlight          = condition('Ghetto flight')
-                                .option(assumeGhettoFlight);
 const wildWarp              = condition('Wild warp')
                                 .option(assumeWildWarp, allowWildWarp);
 const anyLevel2             = condition('Any level 2 sword')
@@ -533,7 +531,10 @@ const paralysisOrAsina      = condition('Paralysis or Ball of Water')
                                 .option(paralysis).option(asinaTrigger).option(statueGlitch);
 // TODO - consider adding healedDolphin and/or returnedFogLamp here?  otherwise, flight alone
 // is basically enough (though with flight the dolphin is basically just a convenience).
-const rideDolphin           = condition('Ride dolphin').option(shellFlute, talkedToKensuInCabin);
+const rideDolphin           = condition('Ride dolphin')
+                                .option(shellFlute, talkedToKensuInCabin);
+const ghettoFlight          = condition('Ghetto flight')
+                                .option(assumeGhettoFlight, rideDolphin, rabbitBoots);
 const crossSea              = condition('Cross sea')
                                 .option(rideDolphin)
                                 .option(flight);

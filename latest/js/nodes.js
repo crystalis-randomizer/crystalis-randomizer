@@ -26,6 +26,12 @@ export class TrackerNode extends Node {
     return 'Tracker';
   }
 
+  // NOTE: Tracker nodes are only ever created when a particular route
+  // is off-logic.  So integrating them should make them disappear
+  // entirely as impossible.  The tracker does *not* 'integrate them,
+  // but retains them for tracking purposes.  Evil mode will want to
+  // retain them as well, but we'll have a bunch more nodes in that
+  // case to track missing items.
   edges({tracker = false} = {}) {
     // return []; // this.option.value ? [Edge.of(this)] : [];
     // return tracker ? [] : [Edge.of(this)];
@@ -154,7 +160,7 @@ export class Slot extends Node {
   direct(addr) {
     // slot is usually 'this' for the Slot object that owns this.
     this.slots.push((rom, slot) => {
-      rom[addr] = slot.itemIndex;
+      write(rom, addr, slot.itemIndex);
 //console.log(`${this.name2}: ${addr.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
     });
     return this;
@@ -177,7 +183,7 @@ export class Slot extends Node {
       a += 2 * offset + 1;
       rom[a] &= ~1;
       rom[a] |= 2;
-      rom[a + 1] = slot.itemIndex;
+      write(rom, a + 1, slot.itemIndex);
 //console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(2,0)} ${rom[a+1].toString(16).padStart(2,0)}`);
     });
     return this;
@@ -188,10 +194,11 @@ export class Slot extends Node {
       let a = addr(rom, 0x1c95d, 0x14000, id);
 //console.log(`${this.name2}: ${id.toString(16)} dialog start ${a.toString(16)}`);
       // Skip the pre-location parts
-      while (rom[a] & 0x80) {
+      while (!(rom[a] & 0x80)) {
         a += 4;
         checkBounds(a, rom, this.name2);
       }
+      a += 4;
       // Now find the location
       let next = 0;
       while (rom[a] != 0xff) {
@@ -226,8 +233,8 @@ export class Slot extends Node {
       // update condition
       rom[a] &= ~1;
       rom[a] |= 2;
-      rom[a + 1] = slot.itemIndex;
 //console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(2,0)} ${rom[a+1].toString(16).padStart(2,0)}`);
+      write(rom, a + 1, slot.itemIndex);
     });
     return this;
   }
@@ -250,7 +257,7 @@ export class Slot extends Node {
       // update condition
       rom[a] &= ~1;
       rom[a] |= 2;
-      rom[a + 1] = slot.itemIndex;
+      write(rom, a + 1, slot.itemIndex);
 //console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(2,0)} ${rom[a+1].toString(16).padStart(2,0)}`);
     });
     return this;
@@ -286,7 +293,7 @@ export class Chest extends Slot {
         // non-mimics should spawn once on load
         rom[a - 1] &= 0x7f;
       }
-      rom[a] = Math.min(0x70, slot.itemIndex);
+      write(rom, a, Math.min(0x70, slot.itemIndex));
 //console.log(`${this.name2}: ${a.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
     });
     return this;
@@ -325,14 +332,14 @@ export class ItemGet extends Node {
   bossDrop(name, bossId, itemGetIndex = this.id) {
     return new BossDrop(this.graph, name, this, itemGetIndex, [(rom, slot) => {
       const a = addr(rom, 0x1f96b, 0x14000, bossId) + 4;
-      rom[a] = slot.itemIndex;
+      write(rom, a, slot.itemIndex);
 //console.log(`${this.name == slot.name ? this.name : `${slot.name} (${this.name})`}: ${a.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
     }]);
   }
 
   direct(name, a) {
     return new Slot(this.graph, name, this, this.id, [(rom, slot) => {
-      rom[a] = slot.itemIndex;
+      write(rom, a, slot.itemIndex);
 //console.log(`${this.name == slot.name ? this.name : `${slot.name} (${this.name})`}: ${a.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
     }]);
   }
@@ -1035,4 +1042,9 @@ export class FillStrategy {
     random.shuffle(shuffled);
     return shuffled;
   }
+}
+
+// Funnel all the writes into a single place to find errant writes.
+const write = (rom, addr, value) => {
+  rom[addr] = value;
 }

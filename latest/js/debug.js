@@ -172,10 +172,10 @@ export default (nes) => {
 const getItem = (nes, item) => {
   // look up the position in the chart...
   const addr = (nes.rom.rom[0x1db00 + 2 * item] |
-                nes.rom.rom[0x1db01 + 2 * item]) + 0x14000;
+                nes.rom.rom[0x1db01 + 2 * item] << 8) + 0x14000;
   const offset = 0x6430 + nes.rom.rom[addr];
   for (let i = 0; i < nes.rom.rom[addr + 1]; i++) {
-    if (nes.cpu.read(offset + i) != 0xff) continue;
+    if (nes.cpu.load(offset + i) != 0xff) continue;
     nes.cpu.write(offset + i, item);
     // TODO - actually set the flags?  also the extended one?
     break;

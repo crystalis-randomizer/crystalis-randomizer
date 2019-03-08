@@ -786,19 +786,22 @@ define EquippedConsumableItem  $0715
 
 ;; First thing to do is read which item is selected.
 .org $2788d ; START OF FREE SPACE ???
-.org $278f4
+.org $278e9
 CheckOpelStatue:
+  lda $6440,x
   cmp #$26
-  bne PlayerDeath
-  lda #$0a ; last-minute set it to the current item so it goes away
+  beq +
+  dex
+  bpl CheckOpelStatue
+  bmi PlayerDeath
++ stx SelectedItemIndex
+  lda #$0a
   sta EquippedConsumableItem
   jmp ActivateOpelStatue
 .org $27900 ; END OF FREE SPACE
 
 .org $27912
-  ldx SelectedItemIndex
-  bmi CheckOpelStatue
-  lda $6440,x
+  ldx #$07
   bne CheckOpelStatue
 .org $2791c
 PlayerDeath:

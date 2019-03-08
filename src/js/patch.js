@@ -575,7 +575,7 @@ GrantItemInRegisterA:
 .org $1c299
   jmp ItemGetFollowup
 .org $1c29c
-ItemGet_PickSlotAndAdd:
+ItemGet_PickSlotAndAdd:  ; move this up 4 bytes
   sty $62
   nop
   nop

@@ -62,6 +62,7 @@ export const shuffle = async (rom, seed, flags, log = undefined, progress = unde
   identifyKeyItemsForDifficultyBuffs(parsed);
 
   fixShaking.apply(rom);
+  fixOpelStatue.apply(rom);
   //preventSwordClobber.apply(rom);
   upgradeBallsToBracelets.apply(rom);
   preventNpcDespawns.apply(rom);
@@ -775,6 +776,62 @@ FillQuestItemsFromBuffer: ; 214af
   .byte $04
 
 `, 'rearrangeTriggers'));
+
+export const fixOpelStatue = buildRomPatch(assemble(`
+.bank $26000 $a000:$2000
+.bank $3c000 $c000:$4000
+
+define SelectedItemIndex       $642c
+define EquippedConsumableItem  $0715
+
+;; First thing to do is read which item is selected.
+.org $2788d ; START OF FREE SPACE ???
+.org $278f4
+CheckOpelStatue:
+  cmp #$26
+  bne PlayerDeath
+  lda #$0a ; last-minute set it to the current item so it goes away
+  sta EquippedConsumableItem
+  jmp ActivateOpelStatue
+.org $27900 ; END OF FREE SPACE
+
+.org $27912
+  ldx SelectedItemIndex
+  bmi CheckOpelStatue
+  lda $6440,x
+  bne CheckOpelStatue
+.org $2791c
+PlayerDeath:
+.org $279b0
+ActivateOpelStatue:
+
+; Don't select opel statue at all...
+.org $21061
+  .byte $00
+
+.org $3db0d
+Return:
+.org $3db0e
+    ;; Figure out what's equipped
+    ldy $642c
+    bmi +
+    lda $6440,y
+    cmp #$26
+    bne ++
++   ldy $642e
+    bmi Return
+    lda $6450,y
+++  sec
+    jmp FinishEquippingConsumable
+
+.org $3fe72
+FinishEquippingConsumable:
+    sbc #$1c
+    sta EquippedConsumableItem
+    rts
+.org $3fe78
+
+`, 'fixOpelStatue'));
 
 export const requireHealedDolphinToRide = buildRomPatch(assemble(`
 ;; move portoa fisherman up 1 word, make him only

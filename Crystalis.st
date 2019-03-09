@@ -15066,7 +15066,7 @@ NpcData_0c                                           ; Sealed Cave 8
 ;;; ----------------------------------------------------------------
 NpcData_10                                               ; Zebu Cave
         $19567              .byte $xx,$xx,$xx,$xx,$xx
-        $1956c              .byte $xx,$xx,$xx,$xx ; zebu:2 ????
+        $1956c              .byte $xx,$xx,$xx,$xx ; ice wall
         $19570              .byte $xx,$xx,$xx,$xx ; zebu:1
         $19574              .byte $xx,$xx,$xx,$xx ; ???
         $19578              .byte $xx ; done
@@ -21879,8 +21879,8 @@ NpcDialog_62 ; asina
         $1d812              .byte         $xx,$xx     ;     Set: 01e
         $1d814              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0b:02
         ;;                  11: f4 Shyron - Hospital
+        ;;                  11: f2 Shyron - Temple
         $1d819              .byte $xx,$xx,$xx,$xx,$xx ; 02d -> 16:07
-        ;;                  16: f2 Shyron - Temple
         $1d81e              .byte $xx,$xx,$xx,$xx,$xx ; 03b -> 14:12 -> @ 11
         $1d823              .byte $xx,$xx,$xx,$xx,$xx ; 03d NOT -> 14:10 -> @ 11
         $1d828              .byte         $xx,$xx     ;     Set: 03d
@@ -28094,6 +28094,8 @@ Inventory_ItemData
         $21020              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $21030              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+	;; This table stores the value that's stored in $711..$715 for various
+        ;; types of equipment
         $2103b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2104b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2105b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -32700,6 +32702,7 @@ DataTable_26349
 DataTable_264b1
         $264b1              .byte $xx,$xx
 ;;; --------------------------------
+;;; UNUSED??? (12 bytes)
         $264b3  xx xx:      xxx #$xx
         $264b5  xx xx xx:   xxx $xxxx
         $264b8  xx xx:      xxx $xx
@@ -34261,44 +34264,47 @@ DataTable_27162
         $277cf              .byte "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         $277ff              .byte "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         $2782f              .byte "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-        $2785f              .byte "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-        $2788f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2789f              .byte $xx
-        $278a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $278b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $278c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $278d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $278e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $278f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $2785f              .byte "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+;;; --------------------------------
+;;; USUSED???
+        $2788d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $2789d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $278ad              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $278bd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $278cd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $278dd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $278ed              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $278fd              .byte $xx,$xx,$xx
 ;;; --------------------------------
 MainGameModeJump_03_DeathAnimation
         $27900  xx xx xx:   xxx $xxxx
         $27903  xx xx:      xxx #$xx
         $27905  xx xx xx:   xxx $xxxx
-        $27908  xx xx xx:   xxx $3c008
+        $27908  xx xx xx:   xxx UpdateEquipmentAndStatus
         $2790b  xx xx:      xxx #$xx
         $2790d  xx xx xx:   xxx $xxxx,x
         $27910  xx xx:      xxx ScreenMode
-        $27912  xx xx xx:   xxx $xxxx
-        $27915  xx xx:      xxx #$xx
-        $27917  xx xx:      xxx $xx
-        $27919  xx xx xx:   xxx $279b0
+        $27912  xx xx xx:   xxx EquippedConsumableItem
+        $27915  xx xx:      xxx #ITEM_OPEL_STATUE
+        $27917  xx xx:      xxx + ; $2791c
+        $27919  xx xx xx:    xxx ActivateOpelStatue
 ;;; --------------------------------
-        $2791c  xx xx:      xxx #$xx
-        $2791e  xx xx xx:   xxx $3c125
+PlayerDeath
++       $2791c  xx xx:      xxx #$xx
+        $2791e  xx xx xx:   xxx StartAudioTrack
         $27921  xx xx:      xxx #$xx
         $27923  xx xx xx:   xxx $xxxx
         $27926  xx xx:      xxx #$xx
         $27928  xx xx xx:   xxx $xxxx
         $2792b  xx xx:      xxx #$xx
-        $2792d  xx xx xx:   xxx $3c418
+        $2792d  xx xx xx:   xxx BankSwitch8k_8000
         $27930  xx xx:      xxx #$xx
         $27932  xx xx xx:   xxx $34c3d
-        $27935  xx xx:      xxx #$xx
-        $27937  xx xx xx:   xxx $3c125
+        $27935  xx xx:      xxx #SFX_GAME_OVER
+        $27937  xx xx xx:   xxx StartAudioTrack
         $2793a  xx xx:      xxx #$xx
         $2793c  xx xx:      xxx #$xx
-        $2793e  xx xx xx:   xxx $xxxx,y
+        $2793e  xx xx xx:   xxx ObjectActionScript,y
         $27941  xx:         xxx
         $27942  xx xx:      xxx #$xx
         $27944  xx xx:      xxx $xx
@@ -34344,25 +34350,26 @@ MainGameModeJump_03_DeathAnimation
         $279ad  xx xx:      xxx MainLoopMode
         $279af  xx:         xxx
 ;;; --------------------------------
+ActivateOpelStatue
         $279b0  xx xx:      xxx #$xx
         $279b2  xx xx xx:   xxx $xxxx
-        $279b5  xx xx xx:   xxx $3c176
-        $279b8  xx xx:      xxx #$xx
-        $279ba  xx xx xx:   xxx $3c125
-        $279bd  xx xx xx:   xxx $3c169
-        $279c0  xx xx xx:   xxx $3ff8c
-        $279c3  xx xx:      xxx #$xx
-        $279c5  xx xx:      xxx $xx
-        $279c7  xx xx xx:   xxx $xxxx
-        $279ca  xx xx xx:   xxx $xxxx
-        $279cd  xx xx xx:   xxx $xxxx
-        $279d0  xx xx:      xxx $xx
-        $279d2  xx xx:      xxx $xx
-        $279d4  xx xx:      xxx $xx
-        $279d6  xx xx xx:   xxx $279fb
-        $279d9  xx xx xx:   xxx $279bd
-;;; --------------------------------
-        $279dc  xx xx xx:   xxx $279fb
+        $279b5  xx xx xx:   xxx WaitForMultipleOAMDMA
+        $279b8  xx xx:      xxx #SFX_FIX_GOLD_STATUE
+        $279ba  xx xx xx:   xxx StartAudioTrack
+--      $279bd  xx xx xx:    xxx WaitForOAMDMA
+        $279c0  xx xx xx:    xxx DrawAllObjectSprites
+        $279c3  xx xx:       xxx #$xx
+        $279c5  xx xx:       xxx $xx
+-       $279c7  xx xx xx:     xxx PlayerHP
+        $279ca  xx xx xx:     xxx PlayerHP
+        $279cd  xx xx xx:     xxx PlayerMaxHP
+        $279d0  xx xx:         xxx + ; $279dc
+        $279d2  xx xx:        xxx $xx
+        $279d4  xx xx:       xxx - ; $279c7
+        $279d6  xx xx xx:    xxx UpdateHPDisplayForOpelStatue
+        $279d9  xx xx xx:   xxx -- ; $279bd
+        ;; --------------------------------
++       $279dc  xx xx xx:   xxx ++ ; $279fb
         $279df  xx xx:      xxx #$xx ; MP
         $279e1  xx xx xx:   xxx DisplayNumberInternal
         $279e4  xx xx xx:   xxx $xxxx
@@ -34376,8 +34383,9 @@ MainGameModeJump_03_DeathAnimation
         $279f8  xx xx:      xxx GameMode
         $279fa  xx:         xxx
 ;;; --------------------------------
+UpdateHPDisplayForOpelStatue
         $279fb  xx xx:      xxx #$xx
-        $279fd  xx xx xx:   xxx $3c418
+        $279fd  xx xx xx:   xxx BankSwitch8k_8000
         $27a00  xx xx xx:   xxx UpdateHPDisplayInternal
 ;;; --------------------------------
         $27a03  xx xx xx:   xxx $3c169
@@ -55429,16 +55437,16 @@ MainLoop_01_Game
         $3cac5  xx xx:      xxx $xx
         $3cac7  xx:         xxx
         $3cac8  xx:         xxx
-        $3cac9  xx xx xx:   xxx MainGameModeJump,x
+        $3cac9  xx xx xx:   xxx MainGameModeJumpTable,x
         $3cacc  xx xx:      xxx $xx
-        $3cace  xx xx xx:   xxx MainGameModeJump+1,x
+        $3cace  xx xx xx:   xxx MainGameModeJumpTable+1,x
         $3cad1  xx xx:      xxx $xx
         $3cad3  xx xx:      xxx $xx
         $3cad5  xx xx xx:   xxx MainGameModeJumpBank,x
         $3cad8  xx xx xx:   xxx BankSwitch16k
         $3cadb  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
-MainGameModeJump 
+MainGameModeJumpTable 
         ;; The bank for these addresses is given by the same offset in $3cb2e
         ;; Most are in the fixed bank, so it loads 0, but some are in banks
         ;; 9 and 7.
@@ -55567,10 +55575,7 @@ CheckForController2Buttons
         $3cbeb  xx:         xxx
 ;;; --------------------------------
 WildWarpLocations
-        $3cbec              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-;;; --------------------------------
-        $3cbf9  xx xx:      xxx $xx
-        $3cbfb  xx:         xxx
+        $3cbec              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 MainGameModeJump_04
         ;; Looks like pause from ctrl2-B.
         $3cbfc  xx xx xx:   xxx WaitForOAMDMA
@@ -56240,6 +56245,7 @@ DialogFollowupActionJump_1f
         $3d163  xx:         xxx
 ;;; --------------------------------
 DialogFollowupActionJump_05
+        ;; kensu slime
         $3d164  xx xx:      xxx #$xx
         $3d166  xx xx xx:   xxx $xxxx
         $3d169  xx xx xx:   xxx $xxxx
@@ -56642,7 +56648,7 @@ DataTable_3d45c
 ;;; --------------------------------
 MainGameModeJump_06_ItemUseMessage
         ;; Includes status recovery, health, and warp boot town selection
-        $3d497  xx xx xx:   xxx $xxxx
+        $3d497  xx xx xx:   xxx EquippedConsumableItem
         $3d49a  xx xx:      xxx #$xx
         $3d49c  xx xx:      xxx $xx
         $3d49e  xx xx xx:   xxx $xxxx
@@ -56654,7 +56660,7 @@ MainGameModeJump_06_ItemUseMessage
 ;;; --------------------------------
         $3d4ac  xx xx:      xxx #$xx
         $3d4ae  xx xx xx:   xxx $xxxx
-        $3d4b1  xx xx xx:   xxx $xxxx
+        $3d4b1  xx xx xx:   xxx EquippedConsumableItem
         $3d4b4  xx xx:      xxx #$xx
         $3d4b6  xx xx:      xxx $xx
         $3d4b8  xx xx xx:   xxx $xxxx
@@ -56666,7 +56672,7 @@ MainGameModeJump_06_ItemUseMessage
         $3d4c5  xx xx:      xxx GameMode
         $3d4c7  xx:         xxx
 ;;; --------------------------------
-        $3d4c8  xx xx xx:   xxx $xxxx
+        $3d4c8  xx xx xx:   xxx EquippedConsumableItem
         $3d4cb  xx xx:      xxx #$xx
         $3d4cd  xx xx:      xxx $xx
         $3d4cf  xx xx xx:   xxx $xxxx
@@ -56689,7 +56695,7 @@ MainGameModeJump_06_ItemUseMessage
         $3d4ef  xx xx xx:   xxx $2fc00
 ;;; --------------------------------
         ;; This is pretty clearly code for using an item.
-        $3d4f2  xx xx xx:   xxx $xxxx
+        $3d4f2  xx xx xx:   xxx EquippedConsumableItem
         $3d4f5  xx xx:      xxx #ITEM_INSECT_FLUTE
         $3d4f7  xx xx:      xxx + ; $3d501
         $3d4f9  xx xx:      xxx #ITEM_FLUTE_OF_LIME
@@ -56698,7 +56704,7 @@ MainGameModeJump_06_ItemUseMessage
         $3d4ff  xx xx:      xxx ++ ; $3d506
 +       $3d501  xx xx:       xxx #SFX_FLUTE
         $3d503  xx xx xx:    xxx StartAudioTrack
-++      $3d506  xx xx xx:   xxx $xxxx
+++      $3d506  xx xx xx:   xxx EquippedConsumableItem
         $3d509  xx:         xxx
         $3d50a  xx xx:      xxx #$xx
         $3d50c  xx xx xx:   xxx $xxxx
@@ -56790,7 +56796,7 @@ ItemOrTriggerActionJump_12
 ItemOrTriggerActionJump_1a
         $3d5a3  xx:         xxx
 ItemOrTriggerActionJump_01
-        ;; This runs whhen getting the Sword of Thunder and
+        ;; This runs when getting the Sword of Thunder and
         ;; triggers a teleport back to Shyron Temple.
         $3d5a4  xx xx:      xxx #$xx
         $3d5a6  xx xx xx:   xxx $xxxx
@@ -57495,14 +57501,14 @@ MainGameModeJump_24_EmptyShop
         $3db0e  xx xx xx:   xxx $xxxx
         $3db11  xx xx:      xxx + ; $3db19
         $3db13  xx xx xx:    xxx $xxxx,y
-        $3db16  xx xx xx:    xxx $3db21
+        $3db16  xx xx xx:    xxx ++ ; $3db21
         ;; --------------------------------
 +       $3db19  xx xx xx:   xxx $xxxx
-        $3db1c  xx xx:      xxx $xx
+        $3db1c  xx xx:       xxx >rts ; $3db27
         $3db1e  xx xx xx:   xxx $xxxx,y
-        $3db21  xx:         xxx
+++      $3db21  xx:         xxx
         $3db22  xx xx:      xxx #$xx
-        $3db24  xx xx xx:   xxx $xxxx
+        $3db24  xx xx xx:   xxx EquippedConsumableItem
         $3db27  xx:         xxx
 ;;; --------------------------------
 MainGameModeJump_14_TeleportMagic

@@ -6,7 +6,7 @@ upload.addEventListener('change', () => {
   reader.addEventListener('loadend', () => {
     const rom = new Uint8Array(/** @type {!ArrayBuffer} */ (reader.result)).slice(16);
     document.getElementById('filename').textContent = file.name;
-    document.getElementById('hash').textContent = read(rom, 0x277d4, 7);
+    document.getElementById('hash').textContent = read(rom, 0x277d4, 12);
     document.getElementById('seed').textContent = read(rom, 0x277ec, 8);
     document.getElementById('flags').textContent =
         read(rom, 0x277ff, 23) + read(rom, 0x27800, 23);

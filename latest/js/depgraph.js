@@ -256,7 +256,7 @@ const fluteOfLimeQueen      = item(0x28, 'Flute of Lime')
                                 .direct(0x98f9) // persondata 62 +1
                                 // .direct(0x3fa28) // mesia version
                                 .dialog(0x38, null, 4)
-                                .dialog(0x38, null, 5, 0)
+                                // .dialog(0x38, null, 5, 0) // eats item
                                 .key();
 const gasMask               = item(0x29, 'Gas Mask')
                                 .direct('Akahana in Brynmaer', 0x3d7fe)

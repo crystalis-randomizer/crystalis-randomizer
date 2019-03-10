@@ -368,6 +368,7 @@ const bowOfTruth            = item(0x40, 'Bow of Truth')
                                 .key();
 const refresh               = magic(0x41, 'Refresh')
                                 .fromPerson('Zebu at windmill', 0x5e)
+                                .requireUnique()
                                 .direct(0x3d711)
                                 // NOTE: moved from offset 2 because we rearranged
                                 // zebu to always spawn windmill guard

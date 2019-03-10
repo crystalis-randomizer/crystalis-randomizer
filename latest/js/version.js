@@ -1,5 +1,5 @@
 export const STATUS = 'unstable';
 export const VERSION = 'latest';
-export const LABEL = 'latest de60453';
-export const HASH = 'de60453b86f4a1d6d2a4d3db9a21a3e877c268b4';
-export const DATE = new Date(1552185053000);
+export const LABEL = 'latest a7ff259';
+export const HASH = 'a7ff25908fb4a7d4e0055c8eaabf868630028655';
+export const DATE = new Date(1552198725000);

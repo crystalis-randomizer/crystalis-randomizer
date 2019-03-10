@@ -140,6 +140,8 @@ const allowWildWarp         = option('Allow wild warp',
                                      opt('!Tw', false));
 const assumeSwordChargeGlitch = glitch(option('Assume sword charge glitch',
                                        opt('Gs', false)));
+const buffedMedicalHerb     = option('Buffed medical herb',
+                                     opt('!Hm', true));
 
 // TODO - for wild warp consider adding a list of locations,
 // then we can hack those into the rom if it changes?
@@ -609,9 +611,18 @@ const matchSwordOfThunder   = condition('Match sword of thunder')
                                 .option(hard(matchingSwordOptional,
                                              [swordOfThunder], 10),
                                         anySword);
+const swampRunPossible      = condition('Swamp run possible')
+                                .option(anySword)
+                                .option(speedBoots)
+                                .option(buffedMedicalHerb)
+                                .option(refresh);
+const insectPossible        = condition('Insect possible to kill')
+                                .option(gasMask)
+                                .option(refresh);
 const travelSwamp           = condition('Travel swamp')
                                 .option(gasMask)
-                                .option(hard(gasMaskOptional, [gasMask], 4));
+                                .option(hard(gasMaskOptional, [gasMask], 4),
+                                        swampRunPossible);
 const calmedSeaIfRequired   = condition('Calmed sea if required')
                                 .option(calmedSea)
                                 .option(calmedSeaOptional)

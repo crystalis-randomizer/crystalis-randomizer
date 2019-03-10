@@ -1144,7 +1144,7 @@ const undergroundChannel4   = location(0x64, PORT, 'Underground Channel 4 (asina
                                 .connect(undergroundChannel3, crossRivers); // 64d7:20
 const undergroundChannel5   = location(0x64, PORT, 'Underground Channel 5 (dolphin)').sea()
                                 .connect(undergroundChannel4, crossRivers) // 64d7:10
-                                .trigger(healedDolphin, medicalHerb, ballOfWater);
+                                .trigger(healedDolphin, medicalHerb, talkedToAsina);
 const undergroundChannel6   = location(0x64, PORT, 'Underground Channel 6 (water)').sea()
                                 .connect(undergroundChannel5, crossSea)
                                 .connectTo(angrySeaSouth, crossSea)

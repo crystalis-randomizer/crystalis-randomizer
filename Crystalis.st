@@ -39038,6 +39038,7 @@ RomBank_17                      ; @@ $a000
         $2fbc7              .byte     $xx,$xx,$xx,$xx,"xx",$xx,$xx,"x",$xx,$xx,$xx
         $2fbd3              .byte $xx,$xx
 ;;; --------------------------------
+;;; NOTE: This whole block appears to be unused???
 RevertChangeMagic
         ;; Remove the status bits used by change magic
         $2fbd5  xx xx xx:   xxx $xxxx
@@ -39058,8 +39059,10 @@ RevertChangeMagic
         $2fbf7  xx xx xx:   xxx $xxxx
         $2fbfa  xx xx xx:   xxx DrawAllObjectSprites
         $2fbfd  xx xx:      xxx #$xx
-        $2fbff  xx xx:      xxx $xx
-        $2fc01  xx xx:      xxx #$xx
+        $2fbff              .byte $xx
+;;; --------------------------------
+        $2fc00  xx xx xx:   xxx $2fc09
+;;; --------------------------------
         $2fc03  xx xx xx:   xxx $2fc8e
 ;;; --------------------------------
         $2fc06  xx xx xx:   xxx $2fcda

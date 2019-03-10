@@ -72,6 +72,7 @@ export const shuffle = async (rom, seed, flags, log = undefined, progress = unde
     // TODO - paralysis requires prison key
     barrierRequiresCalmSea.apply(rom);
   }
+  preventSoftlockFromZeroHpOrMp.apply(rom);
   scaleDifficultyLib.apply(rom);
   nerfArmors.apply(rom);
   fixVampire.apply(rom);
@@ -207,6 +208,28 @@ CheckFlag0:
 + jmp ReadControllersWithDirections
 
 `, 'watchForFlag0'));
+
+export const preventSoftlockFromZeroHpOrMp = buildRomPatch(assemble(`
+.bank $3c000 $c000:$4000 ; fixed bank
+.bank $2e000 $a000:$2000
+.org $2fbd5 ; start of unused block
+CheckForLowHpMp:
+  cmp #$05
+  bcs +
+   lda #$05
++ sta $03c1
+  lda $0708
+  bne +
+   lda #$01
+   sta $0708
++ rts
+.org $2fbe9 ; tight bound, in case we need space on this page later
+.org $2fc00 ; end of unused block
+
+.org $2fd82 ; normally "sta $03c1"
+  jsr CheckForLowHpMp
+
+`, 'preventSoftlockFromZeroHpOrMp'));
 
 export const openSwanFromEitherSide = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000

@@ -17,6 +17,8 @@
     * Portoa Queen's item (vanilla Flute of Lime) was being eaten but
       the previous bug masked it.
     * Ghetto flight logic forgot to guarantee Rabbit Boots.
+    * Dolphin spawn requires talking to Asina but previously the graph
+      expected it after getting Ball of Water.
 
 ## 1.0.0
 * Initial release

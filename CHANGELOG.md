@@ -1,5 +1,8 @@
 # Changes
 
+## Latest
+* Prevent humanly-impossible swamp run in hard-mode logic.
+
 ## 1.0.1
 * Item shuffle is now done using "assumed fill".
 * `Rf` (early flight) option has been removed since we can now bias

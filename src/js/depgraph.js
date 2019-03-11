@@ -617,8 +617,8 @@ const swampRunPossible      = condition('Swamp run possible')
                                 .option(buffedMedicalHerb)
                                 .option(refresh);
 const insectPossible        = condition('Insect possible to kill')
-                                .option(gasMask)
-                                .option(refresh);
+                                //.option(refresh)
+                                .option(gasMask);
 const travelSwamp           = condition('Travel swamp')
                                 .option(gasMask)
                                 .option(hard(gasMaskOptional, [gasMask], 4),

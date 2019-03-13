@@ -636,7 +636,7 @@ const calmedSeaIfRequired   = condition('Calmed sea if required')
 // TODO - .trigger(...) but also allow bossLocation.trigger(...) to only affect after
 // the boss is killed...? useful for e.g. eyeGlasses require sabera1 or else palace boss?
 const vampire1    = boss(0x00, 'Vampire 1', anySword).get(rabbitBoots);
-const giantInsect = boss(0x01, 'Insect', insectFlute, matchInsectSword).get(ballOfFire);
+const giantInsect = boss(0x01, 'Insect', insectFlute, matchInsectSword, insectPossible).get(ballOfFire);
 const kelbesque1  = boss(0x02, 'Kelbesque 1', matchSwordOfWind, windMagic).get(flameBracelet);
 const vampire2    = boss(0x0c, 'Vampire 2', anySword).get(fruitOfPowerVampire2);
 const sabera1     = boss(0x04, 'Sabera 1', matchSwordOfFire, fireMagic).get(brokenStatue);
@@ -1374,7 +1374,7 @@ const desertCave2           = location(0x95, SHRA, 'Desert Cave 2').cave()
 const saharaMeadow          = location(0x96, SHRA, 'Meadow').overworld()
                                 .connect(desertCave1)
                                 .connectTo(sahara)
-                                .trigger(talkedToDeo, change, telepathy);
+                                .trigger(talkedToDeo, change /* , telepathy */);
 const desert2               = location(0x98, SHRA, 'Desert 2').overworld()
                                 .connect(desertCave2);
 

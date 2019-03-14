@@ -26762,12 +26762,10 @@ RomBank_10                      ; @@ $8000
         $2016b  xx xx xx:    xxx Inventory_DropItem
 +       $2016e  xx xx xx:   xxx $200d1
         ;;                  ----------
-        ;; $20a9f appears to do something with audio, maybe?
-        ;; It stores the newly-pressed key in $103 and initializes $100 and $101
         $20171  xx xx xx:   xxx $205e6
         $20174  xx xx xx:   xxx $xxxx
         $20177  xx xx:      xxx #Ctrl1NewlyPressed
-        $20179  xx xx xx:   xxx $20a9f
+        $20179  xx xx xx:   xxx PlayAudioBlip
         $2017c  xx xx xx:   xxx InventoryMenu_CurrentPage
         $2017f  xx xx:      xxx + ; $2018b
         $20181  xx xx:       xxx $xx
@@ -26785,7 +26783,7 @@ RomBank_10                      ; @@ $8000
         $20191  xx xx:      xxx $xx
 ++      $20193  xx xx xx:   xxx $xxxx
         $20196  xx xx xx:   xxx $20699
-        $20199  xx xx xx:   xxx $205e6
+        $20199  xx xx xx:   xxx Inventory_ReadCurrentHoveredItem
         $2019c  xx xx:      xxx #$xx
         $2019e  xx xx:      xxx ++ ; $201e4
         $201a0  xx xx:      xxx $xx
@@ -26891,7 +26889,7 @@ InventoryMenu_RowSizes
 ;;; --------------------------------
 ;;; Runs when displaying the first page of inventory
 InventoryMenu_LoadSelectedPage1
-        $2026c  xx xx xx:   xxx $20605
+        $2026c  xx xx xx:   xxx ClearSpriteMemory
         $2026f  xx xx:      xxx #$xx
         $20271  xx xx:      xxx $xx
         $20273  xx xx xx:   xxx $xxxx
@@ -27057,7 +27055,7 @@ Inventory_DropItem
         $203b3  xx xx:      xxx #$xx ; "YES NO"
         $203b5  xx xx xx:   xxx ShowMenuMessage
         $203b8  xx xx:      xxx #$xx
-        $203ba  xx xx xx:   xxx Menu_AskYesNo
+        $203ba  xx xx xx:   xxx Menu_ReadYesNo_CarrySetIfNo
         $203bd  xx xx:      xxx $xx
         $203bf  xx xx:      xxx #SFX_CURSOR_MOVE
         $203c1  xx xx xx:   xxx $20a9f
@@ -27144,7 +27142,7 @@ Inventory_DropItem
         $20476  xx xx:      xxx #$xx ; "YES NO"
         $20478  xx xx xx:   xxx ShowMenuMessage
         $2047b  xx xx:      xxx #$xx
-        $2047d  xx xx xx:   xxx Menu_AskYesNo
+        $2047d  xx xx xx:   xxx Menu_ReadYesNo_CarrySetIfNo
         $20480  xx xx:      xxx $xx
         $20482  xx xx:      xxx #$xx
         $20484  xx xx xx:   xxx $20a9f
@@ -27189,8 +27187,8 @@ Inventory_DropItem
         $204d7  xx xx xx:   xxx DisplayNumberInShop
 ;;; --------------------------------
 ;;; Returns Carry Set if "No", Carry Clear if "Yes"
-Menu_AskYesNo
-        $204da  xx xx:      xxx #$xx ; Probably position of menu??
+Menu_ReadYesNo_CarrySetIfNo
+        $204da  xx xx:      xxx #$xx ; Probably y-position of menu??
         $204dc  xx xx:      xxx + ; $204e0
         $204de  xx xx:       xxx #$xx ; $41 -> $49
 +       $204e0  xx xx:      xxx $xx
@@ -27198,7 +27196,7 @@ Menu_AskYesNo
         $204e4  xx xx:      xxx $xx ; Result of yes/no
         ;; Main loop
 -       $204e6  xx xx xx:    xxx WaitForOAMDMA
-        $204e9  xx xx xx:    xxx $2050d
+        $204e9  xx xx xx:    xxx Menu_UpdateYesNoCursorSprite
         $204ec  xx xx xx:    xxx ReadControllersWithRepeat
         $204ef  xx xx:       xxx Ctrl1NewlyPressed
         $204f1  xx xx:       xxx #$xx ; Direction key: change result
@@ -27217,12 +27215,13 @@ Menu_AskYesNo
         $2050a  xx xx:      xxx $xx ; if it was 1 (no) then CS else CC
         $2050c  xx:         xxx
 ;;; --------------------------------
+Menu_UpdateYesNoCursorSprite
         $2050d  xx xx:      xxx $xx
         $2050f  xx xx:      xxx #$xx
         $20511  xx:         xxx
-        $20512  xx xx xx:   xxx $20532,x
+        $20512  xx xx xx:   xxx Menu_YesNoXPositions,x
         $20515  xx xx xx:   xxx $xxxx
-        $20518  xx xx:      xxx $xx
+        $20518  xx xx:      xxx $xx ; y position for this menu
         $2051a  xx xx xx:   xxx $xxxx
         $2051d  xx xx:      xxx #$xx
         $2051f  xx xx xx:   xxx $xxxx
@@ -27232,9 +27231,10 @@ Menu_AskYesNo
         $20529  xx xx:      xxx $xx
         $2052b  xx xx:      xxx #$xx
         $2052d  xx xx:      xxx $xx
-        $2052f  xx xx xx:   xxx $206d3
+        $2052f  xx xx xx:   xxx Menu_UpdateSprite ; 1 triangular cursor
 ;;; --------------------------------
-DataTable_20532 
+Menu_YesNoXPositions
+        ;; X position of cursor sprite position for "yes" and "no" respectively
         $20532              .byte $xx,$xx
 ;;; --------------------------------
 Inventory_SortRows
@@ -27401,12 +27401,13 @@ DisplayNumberInShop
         $2065c  xx xx xx:   xxx $xxxx
         $2065f  xx:         xxx
 ;;; --------------------------------
+        ;; Highlight an item in inventory? maybe only conditionally
         $20660  xx xx xx:   xxx $205e6
         $20663  xx xx:      xxx #$xx
-        $20665  xx xx:      xxx $xx
-        $20667  xx:         xxx
-;;; --------------------------------
-        $20668  xx:         xxx
+        $20665  xx xx:      xxx + ; $20668
+        $20667  xx:          xxx
+        ;; --------------------------------
++       $20668  xx:         xxx
         $20669  xx xx xx:   xxx $20fa5,x
         $2066c  xx xx xx:   xxx $xxxx
         $2066f  xx xx:      xxx $xx
@@ -27421,16 +27422,16 @@ DisplayNumberInShop
         $2067e  xx xx xx:   xxx $xxxx
         $20681  xx:         xxx
         $20682  xx:         xxx
-        $20683  xx xx:      xxx $xx
-        $20685  xx xx:      xxx #$xx
-        $20687  xx xx:      xxx $xx
-        $20689  xx xx xx:   xxx $206af
-        $2068c  xx xx xx:   xxx $206d3
-;;; --------------------------------
-        $2068f  xx xx:      xxx #$xx
+        $20683  xx xx:      xxx + ; $2068f
+        $20685  xx xx:       xxx #$xx
+        $20687  xx xx:       xxx $xx
+        $20689  xx xx xx:    xxx $206af
+        $2068c  xx xx xx:    xxx Menu_UpdateSprite ; 3
+        ;; --------------------------------
++       $2068f  xx xx:      xxx #$xx
         $20691  xx xx:      xxx $xx
         $20693  xx xx xx:   xxx $206af
-        $20696  xx xx xx:   xxx $206d3
+        $20696  xx xx xx:   xxx Menu_UpdateSprite ; 2
 ;;; --------------------------------
         $20699  xx xx:      xxx #$xx
         $2069b  xx xx:      xxx $xx
@@ -27440,7 +27441,7 @@ DisplayNumberInShop
         $206a5  xx xx:      xxx #$xx
         $206a7  xx xx:      xxx $xx
         $206a9  xx xx xx:   xxx $206af
-        $206ac  xx xx xx:   xxx $206d3
+        $206ac  xx xx xx:   xxx Menu_UpdateSprite ; 0 four corners cursor
 ;;; --------------------------------
         $206af  xx xx xx:   xxx $xxxx
         $206b2  xx xx:      xxx $xx
@@ -27461,6 +27462,10 @@ DisplayNumberInShop
         $206d1  xx:         xxx
         $206d2  xx:         xxx
 ;;; --------------------------------
+Menu_UpdateSprite
+	;; This is a common exit point for a number of routines
+        ;; Input: $12: 0..3 routine to run
+        ;;        $2e: sprite index to start at
         $206d3  xx xx:      xxx $xx
         $206d5  xx:         xxx
         $206d6  xx:         xxx
@@ -27477,31 +27482,31 @@ DisplayNumberInShop
         $206eb  xx:         xxx
         $206ec  xx xx:      xxx #$xx
         $206ee  xx:         xxx
-        $206ef  xx:         xxx
-        $206f0  xx xx:      xxx ($xx),y
-        $206f2  xx xx xx:   xxx $xxxx
-        $206f5  xx xx xx:   xxx $xxxx,x
-        $206f8  xx:         xxx
-        $206f9  xx:         xxx
-        $206fa  xx:         xxx
-        $206fb  xx xx:      xxx ($xx),y
-        $206fd  xx xx xx:   xxx $xxxx
-        $20700  xx xx xx:   xxx $xxxx,x
-        $20703  xx:         xxx
-        $20704  xx:         xxx
-        $20705  xx xx:      xxx ($xx),y
-        $20707  xx xx xx:   xxx $xxxx
-        $2070a  xx xx xx:   xxx $xxxx,x
-        $2070d  xx:         xxx
-        $2070e  xx:         xxx
-        $2070f  xx:         xxx
-        $20710  xx xx:      xxx ($xx),y
-        $20712  xx xx xx:   xxx $xxxx
-        $20715  xx xx xx:   xxx $xxxx,x
-        $20718  xx:         xxx
-        $20719  xx:         xxx
-        $2071a  xx xx:      xxx $xx
-        $2071c  xx xx:      xxx $xx
+-       $206ef  xx:          xxx
+        $206f0  xx xx:       xxx ($xx),y
+        $206f2  xx xx xx:    xxx $xxxx
+        $206f5  xx xx xx:    xxx $xxxx,x ; sprite OAM ram
+        $206f8  xx:          xxx
+        $206f9  xx:          xxx
+        $206fa  xx:          xxx
+        $206fb  xx xx:       xxx ($xx),y
+        $206fd  xx xx xx:    xxx $xxxx
+        $20700  xx xx xx:    xxx $xxxx,x
+        $20703  xx:          xxx
+        $20704  xx:          xxx
+        $20705  xx xx:       xxx ($xx),y
+        $20707  xx xx xx:    xxx $xxxx
+        $2070a  xx xx xx:    xxx $xxxx,x
+        $2070d  xx:          xxx
+        $2070e  xx:          xxx
+        $2070f  xx:          xxx
+        $20710  xx xx:       xxx ($xx),y
+        $20712  xx xx xx:    xxx $xxxx
+        $20715  xx xx xx:    xxx $xxxx,x
+        $20718  xx:          xxx
+        $20719  xx:          xxx
+        $2071a  xx xx:       xxx $xx
+        $2071c  xx xx:      xxx - ; $206ef
         $2071e  xx:         xxx
 ;;; --------------------------------
         $2071f  xx xx xx:   xxx $3c676
@@ -28015,20 +28020,57 @@ DataTable_20aed
         $20aed              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $20afd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $20b0d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20b1d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20b2d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20b3d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20b4d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20b5d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20b6d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20b7d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20b8d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20b9d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20bad              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20bbd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20bcd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20bdd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20bed              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $20b1d              .byte $xx,$xx
+;;; --------------------------------
+;;; Contains four different sprite datas.  Each block has some number of buytes that
+;;; are copied into OAM, modified by $60f8..b (the third byte is ORed, others added).
+;;; 
+;;; STRIP: word=$18000
+DataTable_20b1f                 ; read by $206d3, comes in pairs
+        $20b1f              .word ($20b27)
+        $20b21              .word ($20b38)
+        $20b23              .word ($20b3d)
+        $20b25              .word ($20b4e)
+;;; --------------------------------
+        ;; 00: Four corners cursor for inventory
+        $20b27              .byte $xx
+        $20b28              .byte $xx,$xx,$xx,$xx
+        $20b2c              .byte $xx,$xx,$xx,$xx
+        $20b30              .byte $xx,$xx,$xx,$xx
+        $20b34              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
+        ;; 01: Triangular cursor
+        $20b38              .byte $xx
+        $20b39              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
+        ;; 02: Lit-up ordinary item in inventory or shop menu
+        $20b3d              .byte $xx
+        $20b3e              .byte $xx,$xx,$xx,$xx
+        $20b42              .byte $xx,$xx,$xx,$xx
+        $20b46              .byte $xx,$xx,$xx,$xx
+        $20b4a              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
+        ;; 03: Lit-up (sword/magic/save/load) in inventory menu
+        $20b4e              .byte $xx
+        $20b4f              .byte $xx,$xx,$xx,$xx
+        $20b53              .byte $xx,$xx,$xx,$xx
+        $20b57              .byte $xx,$xx,$xx,$xx
+        $20b5b              .byte $xx,$xx,$xx,$xx
+        $20b5f              .byte $xx,$xx,$xx,$xx
+        $20b63              .byte $xx,$xx,$xx,$xx
+        $20b67              .byte $xx,$xx,$xx,$xx
+        $20b6b              .byte $xx,$xx,$xx,$xx
+        $20b6f              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
+        $20b73              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $20b83              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $20b93              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $20ba3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $20bb3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $20bc3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $20bd3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $20be3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $20bf3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 DataTable_20bfb
         ;; These 16 bytes are copied into $6150,x in $2021f for the first page of inventory
         $20bfb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -28654,8 +28696,8 @@ Inventory_ItemData
         $21569  xx xx xx:   xxx ShowMenuMessage
         $2156c  xx xx:      xxx #$xx ; "YES NO"
         $2156e  xx xx xx:   xxx ShowMenuMessage
-        $21571  xx xx xx:   xxx $2188a
-        $21574  xx xx xx:   xxx $216cf
+        $21571  xx xx xx:   xxx InitializeArmorShop
+        $21574  xx xx xx:   xxx Shop_Main
         $21577  xx xx xx:   xxx $216c6
 ;;; --------------------------------
         $2157a  xx xx xx:   xxx $2150c
@@ -28668,8 +28710,8 @@ Inventory_ItemData
         $2158b  xx xx xx:   xxx ShowMenuMessage
         $2158e  xx xx:      xxx #$xx ; "YES NO"
         $21590  xx xx xx:   xxx ShowMenuMessage
-        $21593  xx xx xx:   xxx $218e3
-        $21596  xx xx xx:   xxx $216cf
+        $21593  xx xx xx:   xxx InitializeToolShop
+        $21596  xx xx xx:   xxx Shop_Main
         $21599  xx xx xx:   xxx $216c6
 ;;; --------------------------------
         $2159c  xx xx xx:   xxx $21a62
@@ -28700,7 +28742,7 @@ Inventory_ItemData
         $215dc  xx xx:      xxx #$xx
         $215de  xx xx xx:   xxx DisplayNumberInShop
         $215e1  xx xx:      xxx #$xx
-        $215e3  xx xx xx:   xxx Menu_AskYesNo
+        $215e3  xx xx xx:   xxx Menu_ReadYesNo_CarrySetIfNo
         $215e6  xx xx:      xxx $xx
         $215e8  xx xx:      xxx #$xx
         $215ea  xx xx xx:   xxx $20a9f
@@ -28776,7 +28818,7 @@ Inventory_ItemData
         $21698  xx xx:      xxx #$xx ; "YES NO"
         $2169a  xx xx xx:   xxx ShowMenuMessage
         $2169d  xx xx:      xxx #$xx
-        $2169f  xx xx xx:   xxx Menu_AskYesNo
+        $2169f  xx xx xx:   xxx Menu_ReadYesNo_CarrySetIfNo
         $216a2  xx xx:      xxx + ; $216be
         $216a4  xx xx:       xxx #$xx
         $216a6  xx xx xx:    xxx PlayAudioBlip
@@ -28790,23 +28832,24 @@ Inventory_ItemData
         $216bb  xx xx xx:    xxx $216c6
 ;;; --------------------------------
 +       $216be  xx xx:      xxx #$xx
-        $216c0  xx xx xx:   xxx $20a9f
+        $216c0  xx xx xx:   xxx PlayAudioBlip
         $216c3  xx xx xx:   xxx $20000
-        $216c6  xx xx xx:   xxx $20605
+        $216c6  xx xx xx:   xxx ClearSpriteMemory
         $216c9  xx xx:      xxx #$xx
         $216cb  xx xx xx:   xxx $xxxx
         $216ce  xx:         xxx
 ;;; --------------------------------
-        ;; Enter shop ?????
+Shop_Main
+        ;; Just entered a shop
         $216cf  xx xx:      xxx #$xx
-        $216d1  xx xx xx:   xxx Menu_AskYesNo ; "Do you wish to buy?"
+        $216d1  xx xx xx:   xxx Menu_ReadYesNo_CarrySetIfNo ; "Do you wish to buy?"
         $216d4  xx xx:      xxx + ; $216d9
-        $216d6  xx xx xx:    xxx $217dd ; no buy -> exit
+        $216d6  xx xx xx:    xxx Shop_Exit ; no buy -> exit
         ;; --------------------------------
         ;; "Wish to buy?" -> Yes
 +       $216d9  xx xx:      xxx #$xx
-        $216db  xx xx xx:   xxx $20a9f
-        $216de  xx xx xx:   xxx $21815
+        $216db  xx xx xx:   xxx PlayAudioBlip
+        $216de  xx xx xx:   xxx Shop_UpdateSelectionSprite
         $216e1  xx xx xx:   xxx $21837
         $216e4  xx xx:      xxx #$xx ; (spaces)
         $216e6  xx xx xx:   xxx ShowMenuMessage
@@ -28816,6 +28859,7 @@ Inventory_ItemData
         $216f0  xx xx xx:   xxx ShowMenuMessage
         $216f3  xx xx:      xxx #$xx ; "$"
         $216f5  xx xx xx:   xxx ShowMenuMessage
+Shop_Main_Loop
         $216f8  xx xx xx:   xxx $21884
         $216fb  xx xx xx:   xxx $xxxx   ; Currently selected index
         $216fe  xx:         xxx
@@ -28829,7 +28873,7 @@ Inventory_ItemData
         $2170e  xx xx xx:    xxx $xxxx
         $21711  xx xx:       xxx #$xx
         $21713  xx xx xx:    xxx $xxxx
-        $21716  xx xx xx:    xxx $217ef
+        $21716  xx xx xx:    xxx Shop_UpdatePrice
         ;; --------------------------------
 +       $21719  xx xx:      xxx Ctrl1NewlyPressed
         $2171b  xx xx:      xxx #BUTTON_RIGHT
@@ -28839,7 +28883,7 @@ Inventory_ItemData
         $21722  xx xx xx:    xxx $xxxx
         $21725  xx xx:       xxx #$xx
         $21727  xx xx xx:    xxx $xxxx
-        $2172a  xx xx xx:    xxx $217ef
+        $2172a  xx xx xx:    xxx Shop_UpdatePrice
         ;; --------------------------------
         ;; Hitting select in a shop makes you leave immediately
 +       $2172d  xx xx:      xxx Ctrl1NewlyPressed
@@ -28852,30 +28896,31 @@ Inventory_ItemData
         $21736  xx xx:      xxx #BUTTON_B
         $21738  xx xx:      xxx + ; $2174c
         ;; On B, give "anything else?" prompt
+Shop_AskAnythingElse
         $2173a  xx xx:       xxx #$xx ; (spaces)
         $2173c  xx xx xx:    xxx ShowMenuMessage
         $2173f  xx xx:       xxx #$xx ; "Anything else?"
         $21741  xx xx xx:    xxx ShowMenuMessage
         $21744  xx xx:       xxx #$xx ; "YES NO"
         $21746  xx xx xx:    xxx ShowMenuMessage
-        $21749  xx xx xx:    xxx Shop_AskAnythingElse
+        $21749  xx xx xx:    xxx Shop_AskedAnythingElse
         ;; --------------------------------
 +       $2174c  xx xx:      xxx Ctrl1NewlyPressed
         $2174e  xx xx:      xxx #BUTTON_A
         $21750  xx xx:      xxx + ; $21755
-        ;; On A, try to buy the item
-        $21752  xx xx xx:    xxx Shop_BuyItem
+        $21752  xx xx xx:    xxx Shop_NothingPressed
         ;; --------------------------------
+        ;; On A, try to buy the item
 +       $21755  xx xx:      xxx #$xx
         $21757  xx xx xx:   xxx $20a9f
         $2175a  xx xx xx:   xxx ComputeMoneyAfterBuyingSelectedItem
         $2175d  xx:         xxx
         $2175e  xx xx xx:   xxx $xxxx
         $21761  xx xx xx:   xxx $xxxx
-        $21764  xx xx:      xxx $xx
-        $21766  xx xx xx:   xxx $2173a
-;;; --------------------------------
-        $21769  xx:         xxx
+        $21764  xx xx:      xxx + ; $21769
+        $21766  xx xx xx:    xxx Shop_AskAnythingElse
+        ;; --------------------------------
++       $21769  xx:         xxx
         $2176a  xx xx:      xxx #$xx
         $2176c  xx xx:      xxx $xx
         $2176e  xx xx:      xxx #$xx ; (spaces)
@@ -28883,35 +28928,36 @@ Inventory_ItemData
         $21773  xx xx:      xxx #$xx ; "You haven't enough money"
         $21775  xx xx xx:   xxx ShowMenuMessage
         $21778  xx xx xx:   xxx $21878
-        $2177b  xx xx xx:   xxx $217a4
-;;; --------------------------------
+        $2177b  xx xx xx:   xxx Shop_AskAnythingElse2
+        ;; --------------------------------
         $2177e  xx xx:      xxx #$xx
-        $21780  xx xx:      xxx $xx
-        $21782  xx xx:      xxx #$xx ; (spaces)
-        $21784  xx xx xx:   xxx ShowMenuMessage
-        $21787  xx xx:      xxx #$xx ; "You have too many already"
-        $21789  xx xx xx:   xxx ShowMenuMessage
-        $2178c  xx xx xx:   xxx $21878
-        $2178f  xx xx xx:   xxx $217a4
-;;; --------------------------------
-        $21792  xx xx:      xxx #$xx ; (spaces)
+        $21780  xx xx:      xxx + ; $21792
+        $21782  xx xx:       xxx #$xx ; (spaces)
+        $21784  xx xx xx:    xxx ShowMenuMessage
+        $21787  xx xx:       xxx #$xx ; "You have too many already"
+        $21789  xx xx xx:    xxx ShowMenuMessage
+        $2178c  xx xx xx:    xxx $21878
+        $2178f  xx xx xx:    xxx Shop_AskAnythingElse2
+        ;; --------------------------------
++       $21792  xx xx:      xxx #$xx ; (spaces)
         $21794  xx xx xx:   xxx ShowMenuMessage
         $21797  xx xx:      xxx #$xx ; "You purchased"
         $21799  xx xx xx:   xxx ShowMenuMessage
         $2179c  xx xx:      xxx #$xx
         $2179e  xx xx xx:   xxx DisplayNumberInShop
         $217a1  xx xx xx:   xxx $21878
+Shop_AskAnythingElse2
         $217a4  xx xx:      xxx #$xx ; (spaces)
         $217a6  xx xx xx:   xxx ShowMenuMessage
         $217a9  xx xx:      xxx #$xx ; "Anything else?"
         $217ab  xx xx xx:   xxx ShowMenuMessage
         $217ae  xx xx:      xxx #$xx ; "YES NO"
         $217b0  xx xx xx:   xxx ShowMenuMessage
-Shop_AskAnythingElse
+Shop_AskedAnythingElse
         ;; Same as enter shop, but "Anything else"
         $217b3  xx xx:      xxx #$xx
-        $217b5  xx xx xx:   xxx Menu_AskYesNo
-        $217b8  xx xx:      xxx $xx
+        $217b5  xx xx xx:   xxx Menu_ReadYesNo_CarrySetIfNo
+        $217b8  xx xx:      xxx Shop_Exit
         $217ba  xx xx:      xxx #$xx
         $217bc  xx xx xx:   xxx $20a9f
         $217bf  xx xx:      xxx #$xx ; (spaces)
@@ -28920,14 +28966,15 @@ Shop_AskAnythingElse
         $217c6  xx xx xx:   xxx ShowMenuMessage
         $217c9  xx xx:      xxx #$xx
         $217cb  xx xx:      xxx $xx
-Shop_BuyItem
+Shop_NothingPressed
         $217cd  xx xx xx:   xxx Shop_ReadCurrentItemPrice
         $217d0  xx xx:      xxx #$xx ; Cost to buy current item
         $217d2  xx xx xx:   xxx DisplayNumberInShop
         $217d5  xx xx:      xxx #$xx ; "$"
         $217d7  xx xx xx:   xxx ShowMenuMessage
-        $217da  xx xx xx:   xxx $216f8
+        $217da  xx xx xx:   xxx Shop_Main_Loop
 ;;; --------------------------------
+Shop_Exit
         ;; "Please come again", then exit
         $217dd  xx xx:      xxx #$xx
         $217df  xx xx xx:   xxx $20a9f
@@ -28937,10 +28984,11 @@ Shop_BuyItem
         $217e9  xx xx xx:   xxx ShowMenuMessage
         $217ec  xx xx xx:   xxx $21878
 ;;; --------------------------------
+Shop_UpdatePrice
         ;; Update the item name, price, etc
         $217ef  xx xx:      xxx #$xx
         $217f1  xx xx xx:   xxx $20a9f
-        $217f4  xx xx xx:   xxx $21815
+        $217f4  xx xx xx:   xxx Shop_UpdateSelectionSprite
         $217f7  xx xx xx:   xxx $21837
         $217fa  xx xx:      xxx #$xx ; (spaces)
         $217fc  xx xx xx:   xxx ShowMenuMessage
@@ -28952,8 +29000,9 @@ Shop_BuyItem
         $2180a  xx xx xx:   xxx ShowMenuMessage
         $2180d  xx xx:      xxx #$xx ; "$"
         $2180f  xx xx xx:   xxx ShowMenuMessage
-        $21812  xx xx xx:   xxx $216f8
+        $21812  xx xx xx:   xxx Shop_Main_Loop
 ;;; --------------------------------
+Shop_UpdateSelectionSprite
         $21815  xx xx xx:   xxx $xxxx
         $21818  xx:         xxx
         $21819  xx xx xx:   xxx $21874,x
@@ -28967,16 +29016,16 @@ Shop_BuyItem
         $2182d  xx xx xx:   xxx $xxxx
         $21830  xx xx:      xxx #$xx
         $21832  xx xx:      xxx $xx
-        $21834  xx xx xx:   xxx $206d3
+        $21834  xx xx xx:   xxx Menu_UpdateSprite ; 0 four corners cursor
 ;;; --------------------------------
         $21837  xx xx xx:   xxx $xxxx
         $2183a  xx:         xxx
         $2183b  xx xx xx:   xxx $xxxx,x
         $2183e  xx xx:      xxx #$xx
-        $21840  xx xx:      xxx $xx
-        $21842  xx:         xxx
-;;; --------------------------------
-        $21843  xx:         xxx
+        $21840  xx xx:      xxx + ; $21843
+        $21842  xx:          xxx
+        ;; --------------------------------
++       $21843  xx:         xxx
         $21844  xx:          xxx
         $21845  xx xx xx:    xxx $20fa5,x
         $21848  xx xx xx:    xxx $xxxx
@@ -28992,7 +29041,7 @@ Shop_BuyItem
         $21861  xx xx:       xxx $xx
         $21863  xx xx:       xxx #$xx
         $21865  xx xx:       xxx $xx
-        $21867  xx xx xx:    xxx $206d3
+        $21867  xx xx xx:    xxx Menu_UpdateSprite ; 2
         $2186a  xx:         xxx
         $2186b  xx:         xxx
         $2186c  xx xx xx:   xxx $20ff0,x
@@ -29011,6 +29060,7 @@ DataTable_21874
         $21884  xx xx xx:   xxx $3c169
         $21887  xx xx xx:   xxx ReadControllersWithRepeat
 ;;; --------------------------------
+InitializeArmorShop
         ;; Initialize $6470..f for armor shops
         $2188a  xx xx xx:   xxx $21953
         $2188d  xx xx xx:   xxx $xxxx
@@ -29059,6 +29109,7 @@ DataTable_21874
         $218e0  xx xx:      xxx $xx
         $218e2  xx:         xxx
 ;;; --------------------------------
+InitializeToolShop
         ;; Initialize $6470..f when entering an item shop
         $218e3  xx xx xx:   xxx $21953
         $218e6  xx xx xx:   xxx $xxxx
@@ -29346,7 +29397,7 @@ DataTable_21ade
         $21af6  xx xx xx:   xxx $xxxx
         $21af9  xx xx xx:   xxx $21d52
         $21afc  xx xx:      xxx #$xx
-        $21afe  xx xx xx:   xxx $21c85
+        $21afe  xx xx xx:   xxx $21c85 ; display Save/Load sprite???
         $21b01  xx xx:      xxx #$xx
         $21b03  xx xx xx:   xxx $21cae
         $21b06  xx xx:      xxx #$xx ; "GAME ______ LVL ##"
@@ -29425,7 +29476,7 @@ DataTable_21ade
         $21ba6  xx xx:      xxx #$xx ; "YES or NO?"
         $21ba8  xx xx xx:   xxx ShowMenuMessage
         $21bab  xx xx:      xxx #$xx
-        $21bad  xx xx xx:   xxx Menu_AskYesNo
+        $21bad  xx xx xx:   xxx Menu_ReadYesNo_CarrySetIfNo
         $21bb0  xx xx:      xxx $xx
         $21bb2  xx xx:      xxx #$xx ; (spaces)
         $21bb4  xx xx xx:   xxx ShowMenuMessage
@@ -29487,7 +29538,7 @@ DataTable_21ade
         $21c30  xx xx:      xxx #$xx ; "YES NO"
         $21c32  xx xx xx:   xxx ShowMenuMessage
         $21c35  xx xx:      xxx #$xx
-        $21c37  xx xx xx:   xxx Menu_AskYesNo
+        $21c37  xx xx xx:   xxx Menu_ReadYesNo_CarrySetIfNo
         $21c3a  xx xx:      xxx $xx
         $21c3c  xx xx:      xxx #$xx ; (spaces)
         $21c3e  xx xx xx:   xxx ShowMenuMessage
@@ -29532,7 +29583,7 @@ DataTable_21ade
         $21c9f  xx xx xx:   xxx $xxxx
         $21ca2  xx xx:      xxx #$xx
         $21ca4  xx xx:      xxx $xx
-        $21ca6  xx xx xx:   xxx $206d3
+        $21ca6  xx xx xx:   xxx Menu_UpdateSprite ; 3
         $21ca9  xx xx:      xxx #$xx
         $21cab  xx xx xx:   xxx $20a9f
 ;;; --------------------------------

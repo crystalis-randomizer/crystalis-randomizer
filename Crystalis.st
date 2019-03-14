@@ -147,7 +147,11 @@ define Inventory_Magics                 $6458
 
 define CurrentLocationFlags $62f0 ; 16 bytes
 
-
+define ShopMenu_CurrentItemIndex        $6427
+define ShopMenu_CurrentItemId           $646c
+define ShopMenu_AllItemIds              $6470
+define ShopMenu_CurrentItemPrice        $6474
+define ShopMenu_AllPrices               $6478
 
 define VromPalettes         $3f00
 define PPUCTRL   $2000
@@ -26785,18 +26789,18 @@ RomBank_10                      ; @@ $8000
         $2019c  xx xx:      xxx #$xx
         $2019e  xx xx:      xxx ++ ; $201e4
         $201a0  xx xx:      xxx $xx
-        $201a2  xx xx:      xxx #$xx
-        $201a4  xx xx xx:   xxx $20933
+        $201a2  xx xx:      xxx #$xx ; (spaces)
+        $201a4  xx xx xx:   xxx ShowMenuMessage
         $201a7  xx xx xx:   xxx $xxxx
         $201aa  xx xx:      xxx + ; $201b4
-        $201ac  xx xx:       xxx #$xx
-        $201ae  xx xx xx:    xxx $20933
+        $201ac  xx xx:       xxx #$xx ; (item name)
+        $201ae  xx xx xx:    xxx ShowMenuMessage
         $201b1  xx xx xx:    xxx $2015c
         ;;                   ----------
-+       $201b4  xx xx:      xxx #$xx
-        $201b6  xx xx xx:   xxx $20933
-        $201b9  xx xx:      xxx #$xx
-        $201bb  xx xx xx:   xxx $20933
++       $201b4  xx xx:      xxx #$xx ; (spaces)
+        $201b6  xx xx xx:   xxx ShowMenuMessage
+        $201b9  xx xx:      xxx #$xx ; (item name)
+        $201bb  xx xx xx:   xxx ShowMenuMessage
         $201be  xx xx xx:   xxx $205e6
         $201c1  xx:         xxx
         $201c2  xx:         xxx
@@ -26809,19 +26813,19 @@ RomBank_10                      ; @@ $8000
         $201d4  xx xx:      xxx + ; $201d8
         $201d6  xx xx:       xxx #$xx
 +       $201d8  xx:         xxx
-        $201d9  xx xx xx:   xxx $20933
+        $201d9  xx xx xx:   xxx ShowMenuMessage ; "$" in two diff spots
         $201dc  xx xx:      xxx #$xx
         $201de  xx xx xx:   xxx DisplayNumberInShop
         $201e1  xx xx xx:   xxx $2015c
         ;;                  ----------
-++      $201e4  xx xx:      xxx #$xx
-        $201e6  xx xx xx:   xxx $20933
+++      $201e4  xx xx:      xxx #$xx ; (spaces)
+        $201e6  xx xx xx:   xxx ShowMenuMessage
         $201e9  xx xx xx:   xxx $200d1
 ;;; --------------------------------
         $201ec  xx:         xxx
 ;;; --------------------------------
-        $201ed  xx xx:      xxx #$xx
-        $201ef  xx xx xx:   xxx $20933
+        $201ed  xx xx:      xxx #$xx ; (spaces)
+        $201ef  xx xx xx:   xxx ShowMenuMessage
         $201f2  xx xx xx:   xxx InventoryMenu_CurrentPage
         $201f5  xx xx:      xxx + ; $201fa
         $201f7  xx xx xx:    xxx $2007a
@@ -26863,27 +26867,27 @@ DataTable_20236                 ; offset of top-left corner?
 InventoryMenu_RowSizes
         $20238              .byte $xx,$xx
 ;;; --------------------------------
-        $2023a  xx xx:      xxx #$xx
-        $2023c  xx xx xx:   xxx $20933
+        $2023a  xx xx:      xxx #$xx ; "@"
+        $2023c  xx xx xx:   xxx ShowMenuMessage
         $2023f  xx xx xx:   xxx $xxxx
         $20242  xx xx:      xxx $xx
-        $20244  xx xx:      xxx #$xx
-        $20246  xx xx xx:   xxx $20933
-        $20249  xx xx:      xxx #$xx
-        $2024b  xx xx xx:   xxx $20933
-        $2024e  xx xx:      xxx #$xx
-        $20250  xx xx xx:   xxx $20933
+        $20244  xx xx:      xxx #$xx ; "`"
+        $20246  xx xx xx:   xxx ShowMenuMessage
+        $20249  xx xx:      xxx #$xx ; ???
+        $2024b  xx xx xx:   xxx ShowMenuMessage
+        $2024e  xx xx:      xxx #$xx ; ???
+        $20250  xx xx xx:   xxx ShowMenuMessage
 ;;; --------------------------------
-        $20253  xx xx:      xxx #$xx
-        $20255  xx xx xx:   xxx $20933
-        $20258  xx xx:      xxx #$xx
-        $2025a  xx xx xx:   xxx $20933
-        $2025d  xx xx:      xxx #$xx
-        $2025f  xx xx xx:   xxx $20933
-        $20262  xx xx:      xxx #$xx
-        $20264  xx xx xx:   xxx $20933
-        $20267  xx xx:      xxx #$xx
-        $20269  xx xx xx:   xxx $20933
+        $20253  xx xx:      xxx #$xx ; ???
+        $20255  xx xx xx:   xxx ShowMenuMessage
+        $20258  xx xx:      xxx #$xx ; ???
+        $2025a  xx xx xx:   xxx ShowMenuMessage
+        $2025d  xx xx:      xxx #$xx ; ???
+        $2025f  xx xx xx:   xxx ShowMenuMessage
+        $20262  xx xx:      xxx #$xx ; ???
+        $20264  xx xx xx:   xxx ShowMenuMessage
+        $20267  xx xx:      xxx #$xx ; ???
+        $20269  xx xx xx:   xxx ShowMenuMessage
 ;;; --------------------------------
 ;;; Runs when displaying the first page of inventory
 InventoryMenu_LoadSelectedPage1
@@ -26938,8 +26942,8 @@ InventoryMenu_LoadSelectedPage2
         $202c4  xx xx:      xxx $xx
         $202c6  xx xx:      xxx #$xx
         $202c8  xx xx xx:   xxx $20a9f
-        $202cb  xx xx:      xxx #$xx
-        $202cd  xx xx xx:   xxx $20933
+        $202cb  xx xx:      xxx #$xx ; (spaces)
+        $202cd  xx xx xx:   xxx ShowMenuMessage
 ;;; --------------------------------
 ;;; Runs when selecting an item in inventory menu?
         $202d0  xx xx xx:   xxx $xxxx
@@ -26964,8 +26968,8 @@ InventoryMenu_LoadSelectedPage2
         $202f9  xx:         xxx
         $202fa  xx xx:      xxx #$xx
         $202fc  xx xx xx:   xxx $xxxx,x
-        $202ff  xx xx:      xxx #$xx
-        $20301  xx xx xx:   xxx $20933
+        $202ff  xx xx:      xxx #$xx ; (spaces)
+        $20301  xx xx xx:   xxx ShowMenuMessage
 ;;; --------------------------------
         $20304  xx xx:      xxx $xx
         $20306  xx xx xx:   xxx $xxxx,x
@@ -26978,12 +26982,12 @@ InventoryMenu_LoadSelectedPage2
         $20317  xx xx xx:   xxx $20ff0,x
         $2031a  xx xx:      xxx #$xx
         $2031c  xx xx:      xxx $xx
-        $2031e  xx xx:      xxx #$xx
-        $20320  xx xx xx:   xxx $20933
+        $2031e  xx xx:      xxx #$xx ; "now using (item)"
+        $20320  xx xx xx:   xxx ShowMenuMessage
         $20323  xx xx xx:   xxx $2032b
 ;;; --------------------------------
-        $20326  xx xx:      xxx #$xx
-        $20328  xx xx xx:   xxx $20933
+        $20326  xx xx:      xxx #$xx ; "now using (item)"
+        $20328  xx xx xx:   xxx ShowMenuMessage
         $2032b  xx xx xx:   xxx $205f6
         $2032e  xx:         xxx
         $2032f  xx xx xx:   xxx $205e6
@@ -27003,12 +27007,12 @@ Inventory_DropItem
         ;; and then back to zero in $216cb.
         $20347  xx xx:       xxx #SFX_CURSOR_SELECT
         $20349  xx xx xx:    xxx $20a9f
-        $2034c  xx xx:       xxx #$xx
-        $2034e  xx xx xx:    xxx $20933
-        $20351  xx xx:       xxx #$xx
-        $20353  xx xx xx:    xxx $20933
-        $20356  xx xx:       xxx #$xx
-        $20358  xx xx xx:    xxx $20933
+        $2034c  xx xx:       xxx #$xx ; (spaces)
+        $2034e  xx xx xx:    xxx ShowMenuMessage
+        $20351  xx xx:       xxx #$xx ; "anything else?"
+        $20353  xx xx xx:    xxx ShowMenuMessage
+        $20356  xx xx:       xxx #$xx ; "YES NO"
+        $20358  xx xx xx:    xxx ShowMenuMessage
         $2035b  xx xx xx:    xxx $2047b
         ;; --------------------------------
 +       $2035e  xx xx xx:   xxx Inventory_ReadCurrentHoveredItem
@@ -27026,39 +27030,39 @@ Inventory_DropItem
         $20377  xx xx:      xxx ++ ; $20392
         $20379  xx xx:       xxx #SFX_CURSOR_ERROR
         $2037b  xx xx xx:    xxx $20a9f
-        $2037e  xx xx:       xxx #$xx
-        $20380  xx xx xx:    xxx $20933
+        $2037e  xx xx:       xxx #$xx ; (spaces)
+        $20380  xx xx xx:    xxx ShowMenuMessage
         $20383  xx xx xx:    xxx $xxxx
         $20386  xx xx:       xxx + ; $2038d
-        $20388  xx xx:        xxx #$xx
-        $2038a  xx xx xx:     xxx $20933
+        $20388  xx xx:        xxx #$xx ; "you cannot drop!"
+        $2038a  xx xx xx:     xxx ShowMenuMessage
 ;;; --------------------------------
-+       $2038d  xx xx:      xxx #$xx
-        $2038f  xx xx xx:   xxx $20933
++       $2038d  xx xx:      xxx #$xx ; "I won't buy that"
+        $2038f  xx xx xx:   xxx ShowMenuMessage
 ;;; --------------------------------
 ++      $20392  xx xx:      xxx #SFX_CURSOR_SELECT
         $20394  xx xx xx:   xxx $20a9f
-        $20397  xx xx:      xxx #$xx
-        $20399  xx xx xx:   xxx $20933
+        $20397  xx xx:      xxx #$xx ; (spaces)
+        $20399  xx xx xx:   xxx ShowMenuMessage
         $2039c  xx xx xx:   xxx $xxxx
         $2039f  xx xx:      xxx $xx
-        $203a1  xx xx:      xxx #$xx
-        $203a3  xx xx xx:   xxx $20933
-        $203a6  xx xx:      xxx #$xx
-        $203a8  xx xx xx:   xxx $20933
+        $203a1  xx xx:      xxx #$xx ; "do you wish to drop?"
+        $203a3  xx xx xx:   xxx ShowMenuMessage
+        $203a6  xx xx:      xxx #$xx ; "YES NO"
+        $203a8  xx xx xx:   xxx ShowMenuMessage
         $203ab  xx xx xx:   xxx $203b8
 ;;; --------------------------------
-        $203ae  xx xx:      xxx #$xx
-        $203b0  xx xx xx:   xxx $20933
-        $203b3  xx xx:      xxx #$xx
-        $203b5  xx xx xx:   xxx $20933
+        $203ae  xx xx:      xxx #$xx ; "Sell (item)?"
+        $203b0  xx xx xx:   xxx ShowMenuMessage
+        $203b3  xx xx:      xxx #$xx ; "YES NO"
+        $203b5  xx xx xx:   xxx ShowMenuMessage
         $203b8  xx xx:      xxx #$xx
-        $203ba  xx xx xx:   xxx $204da
+        $203ba  xx xx xx:   xxx Menu_AskYesNo
         $203bd  xx xx:      xxx $xx
         $203bf  xx xx:      xxx #SFX_CURSOR_MOVE
         $203c1  xx xx xx:   xxx $20a9f
-        $203c4  xx xx:      xxx #$xx
-        $203c6  xx xx xx:   xxx $20933
+        $203c4  xx xx:      xxx #$xx ; (spaces)
+        $203c6  xx xx xx:   xxx ShowMenuMessage
 ;;; --------------------------------
         $203c9  xx xx:      xxx #SFX_CURSOR_SELECT
         $203cb  xx xx xx:   xxx $20a9f
@@ -27100,12 +27104,12 @@ Inventory_DropItem
         $2041a  xx xx xx:   xxx $20a5a
         $2041d  xx xx xx:   xxx $xxxx
         $20420  xx xx xx:   xxx $xxxx
-        $20423  xx xx:      xxx #$xx
-        $20425  xx xx xx:   xxx $20933
+        $20423  xx xx:      xxx #$xx ; (spaces)
+        $20425  xx xx xx:   xxx ShowMenuMessage
         $20428  xx xx xx:   xxx $xxxx
         $2042b  xx xx:      xxx $xx
-        $2042d  xx xx:      xxx #$xx
-        $2042f  xx xx xx:   xxx $20933
+        $2042d  xx xx:      xxx #$xx ; "$"
+        $2042f  xx xx xx:   xxx ShowMenuMessage
         $20432  xx xx:      xxx $xx
         $20434  xx xx:      xxx #$xx
         $20436  xx xx xx:   xxx $xxxx,x
@@ -27133,21 +27137,21 @@ Inventory_DropItem
         $20469  xx xx:      xxx $xx
         $2046b  xx:         xxx
 ;;; --------------------------------
-        $2046c  xx xx:      xxx #$xx
-        $2046e  xx xx xx:   xxx $20933
-        $20471  xx xx:      xxx #$xx
-        $20473  xx xx xx:   xxx $20933
-        $20476  xx xx:      xxx #$xx
-        $20478  xx xx xx:   xxx $20933
+        $2046c  xx xx:      xxx #$xx ; (spaces)
+        $2046e  xx xx xx:   xxx ShowMenuMessage
+        $20471  xx xx:      xxx #$xx ; "Anything else?"
+        $20473  xx xx xx:   xxx ShowMenuMessage
+        $20476  xx xx:      xxx #$xx ; "YES NO"
+        $20478  xx xx xx:   xxx ShowMenuMessage
         $2047b  xx xx:      xxx #$xx
-        $2047d  xx xx xx:   xxx $204da
+        $2047d  xx xx xx:   xxx Menu_AskYesNo
         $20480  xx xx:      xxx $xx
         $20482  xx xx:      xxx #$xx
         $20484  xx xx xx:   xxx $20a9f
-        $20487  xx xx:      xxx #$xx
-        $20489  xx xx xx:   xxx $20933
-        $2048c  xx xx:      xxx #$xx
-        $2048e  xx xx xx:   xxx $20933
+        $20487  xx xx:      xxx #$xx ; (spaces)
+        $20489  xx xx xx:   xxx ShowMenuMessage
+        $2048c  xx xx:      xxx #$xx ; "Please come again"
+        $2048e  xx xx xx:   xxx ShowMenuMessage
         $20491  xx xx xx:   xxx $3c169
         $20494  xx xx xx:   xxx ReadControllersWithRepeat
         $20497  xx xx:      xxx $xx
@@ -27158,22 +27162,22 @@ Inventory_DropItem
 ;;; --------------------------------
         $2049e  xx xx:      xxx #$xx
         $204a0  xx xx xx:   xxx $20a9f
-        $204a3  xx xx:      xxx #$xx
-        $204a5  xx xx xx:   xxx $20933
+        $204a3  xx xx:      xxx #$xx ; (spaces)
+        $204a5  xx xx xx:   xxx ShowMenuMessage
         $204a8  xx xx xx:   xxx $205e6
         $204ab  xx xx:      xxx #$xx
         $204ad  xx xx:      xxx $xx
         $204af  xx:         xxx
 ;;; --------------------------------
         $204b0  xx xx:      xxx $xx
-        $204b2  xx xx:      xxx #$xx
-        $204b4  xx xx xx:   xxx $20933
+        $204b2  xx xx:      xxx #$xx ; (item name)
+        $204b4  xx xx xx:   xxx ShowMenuMessage
         $204b7  xx xx:      xxx #$xx
         $204b9  xx xx xx:   xxx $xxxx
         $204bc  xx xx:      xxx $xx
         $204be  xx xx:      xxx #$xx
         $204c0  xx:         xxx
-        $204c1  xx xx xx:   xxx $20933
+        $204c1  xx xx xx:   xxx ShowMenuMessage ; "$" in diff spots
         $204c4  xx xx xx:   xxx $205e6
         $204c7  xx:         xxx
         $204c8  xx:         xxx
@@ -27184,28 +27188,33 @@ Inventory_DropItem
         $204d5  xx xx:      xxx #$xx
         $204d7  xx xx xx:   xxx DisplayNumberInShop
 ;;; --------------------------------
-        $204da  xx xx:      xxx #$xx
-        $204dc  xx xx:      xxx $xx
-        $204de  xx xx:      xxx #$xx
-        $204e0  xx xx:      xxx $xx
-        $204e2  xx xx:      xxx #$xx
-        $204e4  xx xx:      xxx $xx
-        $204e6  xx xx xx:   xxx $3c169
-        $204e9  xx xx xx:   xxx $2050d
-        $204ec  xx xx xx:   xxx ReadControllersWithRepeat
-        $204ef  xx xx:      xxx $xx
-        $204f1  xx xx:      xxx #$xx
-        $204f3  xx xx:      xxx $xx
-        $204f5  xx xx:      xxx $xx
-        $204f7  xx xx:      xxx #$xx
-        $204f9  xx xx xx:   xxx $20a9f
-        $204fc  xx xx:      xxx $xx
-        $204fe  xx xx:      xxx #$xx
-        $20500  xx xx:      xxx $xx
-        $20502  xx xx xx:   xxx $3c169
+;;; Returns Carry Set if "No", Carry Clear if "Yes"
+Menu_AskYesNo
+        $204da  xx xx:      xxx #$xx ; Probably position of menu??
+        $204dc  xx xx:      xxx + ; $204e0
+        $204de  xx xx:       xxx #$xx ; $41 -> $49
++       $204e0  xx xx:      xxx $xx
+        $204e2  xx xx:      xxx #$xx ; 1=No
+        $204e4  xx xx:      xxx $xx ; Result of yes/no
+        ;; Main loop
+-       $204e6  xx xx xx:    xxx WaitForOAMDMA
+        $204e9  xx xx xx:    xxx $2050d
+        $204ec  xx xx xx:    xxx ReadControllersWithRepeat
+        $204ef  xx xx:       xxx Ctrl1NewlyPressed
+        $204f1  xx xx:       xxx #$xx ; Direction key: change result
+        $204f3  xx xx:       xxx + ; $204fc
+        ;; If it's a direction
+        $204f5  xx xx:        xxx $xx
+        $204f7  xx xx:        xxx #$xx
+        $204f9  xx xx xx:     xxx PlayAudioBlip
++       $204fc  xx xx:       xxx Ctrl1NewlyPressed
+        $204fe  xx xx:       xxx #$xx ; A or B
+        $20500  xx xx:      xxx - ; $204e6
+        ;; A or B was pressed
+        $20502  xx xx xx:   xxx WaitForOAMDMA
         $20505  xx xx:      xxx #$xx
         $20507  xx xx xx:   xxx $xxxx
-        $2050a  xx xx:      xxx $xx
+        $2050a  xx xx:      xxx $xx ; if it was 1 (no) then CS else CC
         $2050c  xx:         xxx
 ;;; --------------------------------
         $2050d  xx xx:      xxx $xx
@@ -27769,14 +27778,15 @@ DisplayNumberInShop
 DataTable_2092a 
         $2092a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-        $20933  xx xx:      xxx $xx
-        $20935  xx xx xx:   xxx $3c676
-        $20938  xx xx:      xxx #$xx
-        $2093a  xx xx:      xxx $xx
-        $2093c  xx xx:      xxx $xx
-        $2093e  xx xx:      xxx $xx
-        $20940  xx xx:      xxx $xx
-        $20942  xx xx:      xxx $xx
+ShowMenuMessage
+        $20933  xx xx:      xxx $xx ; Save A for later
+        $20935  xx xx xx:    xxx FlushNametableDataWrite
+        $20938  xx xx:       xxx #$xx
+        $2093a  xx xx:       xxx $xx
+        $2093c  xx xx:       xxx $xx
+        $2093e  xx xx:       xxx $xx
+        $20940  xx xx:       xxx $xx
+        $20942  xx xx:       xxx $xx
         $20944  xx xx:      xxx $xx
         $20946  xx:         xxx
         $20947  xx:         xxx
@@ -27790,33 +27800,35 @@ DataTable_2092a
         $20958  xx xx xx:   xxx $20c1e,x
         $2095b  xx xx:      xxx $xx
         $2095d  xx xx:      xxx #$xx
-        $2095f  xx xx:      xxx ($xx),y
-        $20961  xx xx:      xxx $xx
-        $20963  xx xx:      xxx #$xx
-        $20965  xx xx:      xxx $xx
-        $20967  xx xx xx:   xxx $2098e
+-       $2095f  xx xx:       xxx ($xx),y
+        $20961  xx xx:       xxx $xx
+        $20963  xx xx:       xxx #$xx
+        $20965  xx xx:       xxx + ; $2096a
+        $20967  xx xx xx:     xxx $2098e ; done with row?
+        ;; --------------------------------
++       $2096a  xx xx:       xxx #$xx
+        $2096c  xx xx:       xxx + ; $20974
+        $2096e  xx xx xx:     xxx $20994
+        $20971  xx xx xx:   xxx - ; $2095f
 ;;; --------------------------------
-        $2096a  xx xx:      xxx #$xx
-        $2096c  xx xx:      xxx $xx
-        $2096e  xx xx xx:   xxx $20994
-        $20971  xx xx xx:   xxx $2095f
++       $20974  xx xx:       xxx #$xx
+        $20976  xx xx:       xxx + ; $2097e
+        $20978  xx xx xx:     xxx $209b8
+        $2097b  xx xx xx:   xxx - ; $2095f
 ;;; --------------------------------
-        $20974  xx xx:      xxx #$xx
-        $20976  xx xx:      xxx $xx
-        $20978  xx xx xx:   xxx $209b8
-        $2097b  xx xx xx:   xxx $2095f
++       $2097e  xx xx:       xxx #$xx
+        $20980  xx xx:       xxx + ; $20988
+        $20982  xx xx xx:     xxx MenuMessage_ItemName
+        $20985  xx xx xx:   xxx - ; $2095f
 ;;; --------------------------------
-        $2097e  xx xx:      xxx #$xx
-        $20980  xx xx:      xxx $xx
-        $20982  xx xx xx:   xxx $20a0d
-        $20985  xx xx xx:   xxx $2095f
++       $20988  xx xx xx:    xxx $20a02
+        $2098b  xx xx xx:   xxx - ; $2095f
 ;;; --------------------------------
-        $20988  xx xx xx:   xxx $20a02
-        $2098b  xx xx xx:   xxx $2095f
-;;; --------------------------------
-        $2098e  xx xx xx:   xxx $3c676
+        ;; Done with row - read $ff
+        $2098e  xx xx xx:   xxx FlushNametableDataWrite
         $20991  xx xx xx:   xxx $20ab0
 ;;; --------------------------------
+MenuMessage_SaveGameName
         $20994  xx:         xxx
         $20995  xx xx xx:   xxx $xxxx
         $20998  xx xx:      xxx ($xx),y
@@ -27838,15 +27850,16 @@ DataTable_2092a
 DataTable_209b6 
         $209b6              .byte $xx,$xx
 ;;; --------------------------------
+MenuMessage_SaveGameLevel
         $209b8  xx:         xxx
         $209b9  xx xx xx:   xxx $xxxx
         $209bc  xx xx:      xxx ($xx),y
-        $209be  xx xx:      xxx $xx
-        $209c0  xx xx xx:   xxx $xxxx
-        $209c3  xx xx xx:   xxx $209c9
+        $209be  xx xx:      xxx + ; $209c6
+        $209c0  xx xx xx:     xxx $xxxx
+        $209c3  xx xx xx:     xxx ++ ; $209c9
 ;;; --------------------------------
-        $209c6  xx xx xx:   xxx $xxxx
-        $209c9  xx:         xxx
++       $209c6  xx xx xx:    xxx $xxxx
+++      $209c9  xx:         xxx
         $209ca  xx:         xxx
         $209cb  xx xx xx:   xxx $209e0,y
         $209ce  xx xx:      xxx $xx
@@ -27870,6 +27883,8 @@ DataTable_209e0
         $20a0a  xx xx:      xxx $xx
         $20a0c  xx:         xxx
 ;;; --------------------------------
+;;; Print item name from $19
+MenuMessage_ItemName
         $20a0d  xx:         xxx
         $20a0e  xx:         xxx
         $20a0f  xx:         xxx
@@ -27952,7 +27967,10 @@ DataTable_209e0
         $20a9c  xx xx:      xxx $xx
         $20a9e  xx:         xxx
 ;;; --------------------------------
-        ;; play sound effect?
+PlayAudioBlip
+        ;; Write A to $103, then 1 to $100 and $101, then immediately zero $101
+        ;; That's a weird thing to do - why write and then zero?
+        ;; I think this just plays a "blip"
         $20a9f  xx xx xx:   xxx $xxxx
         $20aa2  xx xx:      xxx #$xx
         $20aa4  xx xx xx:   xxx $xxxx
@@ -28017,60 +28035,307 @@ DataTable_20bfb
 DataTable_20c0b 
         ;; These 16 bytes are copied into $6150,x in $2021f for the second page of inventory
         $20c0b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_20c1b 
+;;; --------------------------------
+;;; This table is used for printing messages in the
+;;; shop menu.  The first two bytes are positions,
+;;; the second word of each row is address (8d -> 20d)
+;;; of message. (cf. $20961)
+;;; STRIP: word=$18000
+MenuMessageTable
+        ;; 00
         $20c1b              .byte $xx,$xx
-        $20c1d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20c2d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20c3d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20c4d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20c5d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20c6d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20c7d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20c8d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20c9d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20cad              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20cbd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20ccd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20cdd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20ced              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20cfd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20d0d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20d1d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20d2d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20d3d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20d4d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20d5d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20d6d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20d7d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20d8d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20d9d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20dad              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20dbd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20dcd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20ddd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20ded              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20dfd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20e0d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20e1d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20e2d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20e3d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20e4d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20e5d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20e6d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20e7d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20e8d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20e9d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20ead              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20ebd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20ecd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20edd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20eed              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20efd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20f0d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20f1d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20f2d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20f3d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20f4d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $20c1d              .word ($20d07)
+        ;; 01
+        $20c1f              .byte $xx,$xx
+        $20c21              .word ($20d0b)
+        ;; 02
+        $20c23              .byte $xx,$xx
+        $20c25              .word ($20d0f)
+        ;; 03
+        $20c27              .byte $xx,$xx
+        $20c29              .word ($20d13)
+        ;; 04
+        $20c2b              .byte $xx,$xx
+        $20c2d              .word ($20d17)
+        ;; 05
+        $20c2f              .byte $xx,$xx
+        $20c31              .word ($20d1b)
+        ;; 06
+        $20c33              .byte $xx,$xx
+        $20c35              .word ($20d1f)
+        ;; 07
+        $20c37              .byte $xx,$xx
+        $20c39              .word ($20d21)
+        ;; 08
+        $20c3b              .byte $xx,$xx
+        $20c3d              .word ($20d36)
+        ;; 09
+        $20c3f              .byte $xx,$xx
+        $20c41              .word ($20d47)
+        ;; 0a
+        $20c43              .byte $xx,$xx
+        $20c45              .word ($20d47)
+        ;; 0b
+        $20c47              .byte $xx,$xx
+        $20c49              .word ($20d54)
+        ;; 0c
+        $20c4b              .byte $xx,$xx
+        $20c4d              .word ($20d5c)
+        ;; 0d
+        $20c4f              .byte $xx,$xx
+        $20c51              .word ($20d6b)
+        ;; 0e
+        $20c53              .byte $xx,$xx
+        $20c55              .word ($20eba)
+        ;; 0f
+        $20c57              .byte $xx,$xx
+        $20c59              .word ($20ec1)
+        ;; 10
+        $20c5b              .byte $xx,$xx
+        $20c5d              .word ($20d7d)
+        ;; 11
+        $20c5f              .byte $xx,$xx
+        $20c61              .word ($20d7f)
+        ;; 12
+        $20c63              .byte $xx,$xx
+        $20c65              .word ($20dfd)
+        ;; 13
+        $20c67              .byte $xx,$xx
+        $20c69              .word ($20d9f)
+        ;; 14
+        $20c6b              .byte $xx,$xx
+        $20c6d              .word ($20d81)
+        ;; 15
+        $20c6f              .byte $xx,$xx
+        $20c71              .word ($20d8f)
+        ;; 16
+        $20c73              .byte $xx,$xx
+        $20c75              .word ($20f20)
+        ;; 17
+        $20c77              .byte $xx,$xx
+        $20c79              .word ($20d9f)
+        ;; 18
+        $20c7b              .byte $xx,$xx
+        $20c7d              .word ($20dab)
+        ;; 19
+        $20c7f              .byte $xx,$xx
+        $20c81              .word ($20db6)
+        ;; 1a
+        $20c83              .byte $xx,$xx
+        $20c85              .word ($20dc0)
+        ;; 1b
+        $20c87              .byte $xx,$xx
+        $20c89              .word ($20dc4)
+        ;; 1c
+        $20c8b              .byte $xx,$xx
+        $20c8d              .word ($20dce)
+        ;; 1d
+        $20c8f              .byte $xx,$xx
+        $20c91              .word ($20d1f)
+        ;; 1e
+        $20c93              .byte $xx,$xx
+        $20c95              .word ($20dee)
+        ;; 1f
+        $20c97              .byte $xx,$xx
+        $20c99              .word ($20d5c)
+        ;; 20
+        $20c9b              .byte $xx,$xx
+        $20c9d              .word ($20dff)
+        ;; 21
+        $20c9f              .byte $xx,$xx
+        $20ca1              .word ($20e12)
+        ;; 22
+        $20ca3              .byte $xx,$xx
+        $20ca5              .word ($20e2d)
+        ;; 23
+        $20ca7              .byte $xx,$xx
+        $20ca9              .word ($20e47)
+        ;; 24
+        $20cab              .byte $xx,$xx
+        $20cad              .word ($20e62)
+        ;; 25
+        $20caf              .byte $xx,$xx
+        $20cb1              .word ($20e75)
+        ;; 26
+        $20cb3              .byte $xx,$xx
+        $20cb5              .word ($20dff)
+        ;; 27
+        $20cb7              .byte $xx,$xx
+        $20cb9              .word ($20e8a)
+        ;; 28
+        $20cbb              .byte $xx,$xx
+        $20cbd              .word ($20ec1)
+        ;; 29
+        $20cbf              .byte $xx,$xx
+        $20cc1              .word ($20eba)
+        ;; 2a
+        $20cc3              .byte $xx,$xx
+        $20cc5              .word ($20ec1)
+        ;; 2b
+        $20cc7              .byte $xx,$xx
+        $20cc9              .word ($20ec1)
+        ;; 2c
+        $20ccb              .byte $xx,$xx
+        $20ccd              .word ($20dff)
+        ;; 2d
+        $20ccf              .byte $xx,$xx
+        $20cd1              .word ($20d1f)
+        ;; 2e
+        $20cd3              .byte $xx,$xx
+        $20cd5              .word ($20f49)
+        ;; 2f
+        $20cd7              .byte $xx,$xx
+        $20cd9              .word ($20e2d)
+        ;; 30
+        $20cdb              .byte $xx,$xx
+        $20cdd              .word ($20d5c)
+        ;; 31
+        $20cdf              .byte $xx,$xx
+        $20ce1              .word ($20d5c)
+        ;; 32
+        $20ce3              .byte $xx,$xx
+        $20ce5              .word ($20dfd)
+        ;; 33
+        $20ce7              .byte $xx,$xx
+        $20ce9              .word ($20dfd)
+        ;; 34
+        $20ceb              .byte $xx,$xx
+        $20ced              .word ($20e88)
+        ;; 35
+        $20cef              .byte $xx,$xx
+        $20cf1              .word ($20d9d)
+        ;; 36
+        $20cf3              .byte $xx,$xx
+        $20cf5              .word ($20f00)
+        ;; 37
+        $20cf7              .byte $xx,$xx
+        $20cf9              .word ($20f10)
+        ;; 38
+        $20cfb              .byte $xx,$xx
+        $20cfd              .word ($20d81)
+        ;; 39
+        $20cff              .byte $xx,$xx
+        $20d01              .word ($20f2d)
+        ;; 3a
+        $20d03              .byte $xx,$xx
+        $20d05              .word ($20f3b)
+;;; --------------------------------
+;;; This table is indexed by the 3rd and 4th byte
+;;; of the previous table.
+        ;; 00
+        $20d07              .byte $xx,$xx,$xx,$xx
+        ;; 01
+        $20d0b              .byte $xx,$xx,$xx,$xx
+        ;; 02
+        $20d0f              .byte $xx,$xx,$xx,$xx
+        ;; 03
+        $20d13              .byte $xx,$xx,$xx,$xx
+        ;; 04
+        $20d17              .byte $xx,$xx,$xx,$xx
+        ;; 05
+        $20d1b              .byte $xx,$xx,$xx,$xx
+        ;; 06
+        ;; 1d
+        ;; 2d
+        $20d1f              .byte $xx,$xx
+        ;; 07
+        $20d21              .byte "xxxxxxxxxxxxxxxxxxxx",$xx
+        ;; 08
+        $20d36              .byte "xxxxxxxxxxxxxxxx",$xx
+        ;; 09
+        ;; 0a
+        $20d47              .byte "xxxxxxxxxx",$xx,"x",$xx
+        ;; 0b
+        $20d54              .byte "xxxxx",$xx,"x",$xx
+        ;; 0c
+        ;; 1f
+        ;; 30
+        ;; 31
+        $20d5c              .byte "xxxxxxxxxxxxxx",$xx
+        ;; 0d
+        $20d6b              .byte "xxxxxxxxxxxxxxxxx",$xx
+        ;; 10
+        $20d7d              .byte "x",$xx
+        ;; 11
+        $20d7f              .byte "x",$xx
+        ;; 14
+        ;; 38
+        $20d81              .byte "xxxxx",$xx,$xx,"xxxx",$xx,$xx,$xx
+        ;; 15
+        $20d8f              .byte "xxxxx",$xx,$xx,"xxxx",$xx,$xx,$xx
+        ;; 35
+        $20d9d              .byte "x",$xx
+        ;; 13
+        ;; 17
+        $20d9f              .byte "xxxxxxxxxxx",$xx
+        ;; 18
+        $20dab              .byte "xxxxxxxxxx",$xx
+        ;; 19
+        $20db6              .byte "xxxxxxxxx",$xx
+        ;; 1a
+        $20dc0              .byte "xxx",$xx
+        ;; 1b
+        $20dc4              .byte "xxxxxxxxx",$xx
+        ;; 1c
+        $20dce              .byte "xxxxxxxxxxxxxxxxxxx",$xx
+        ;; UNUSED
+        $20de2              .byte "xxxxxxxxxx",$xx,$xx
+        ;; 1e - UNUSED
+        $20dee              .byte "xxxxxxxxxxxx",$xx,"x",$xx
+        ;; 12
+        ;; 32
+        ;; 33
+        $20dfd              .byte "x",$xx
+        ;; 20
+        ;; 26
+        ;; 2c
+        $20dff              .byte "xxxxxxxxxxxxxxxxxx",$xx
+        ;; 21
+        $20e12              .byte "xxxxxxxxxxxxxxxxxxxxxxxxxx",$xx
+        ;; 22
+        ;; 2f
+        $20e2d              .byte "xxxxxxxxxxxxxxxxxxxxxxxxx",$xx
+        ;; 23
+        $20e47              .byte "xxxxxxxxxxxxxxxxxxxxxxxxxx",$xx
+        ;; 24
+        $20e62              .byte "xxxxxxxxxxxxxxxxxx",$xx
+        ;; 25
+        $20e75              .byte "xxxxxxxxxxxxxxxxxx",$xx
+        ;; 34
+        $20e88              .byte "x",$xx
+        ;; 27
+        $20e8a              .byte "xxxxxxxxxxxxxxxxxxxxxxxxxx"
+        $20ea4              .byte     $xx,$xx,$xx,"xxxxxxxxxxxxxxxx",$xx
+        ;; UNUSED
+        $20eb8              .byte "x",$xx
+        ;; 0e
+        ;; 29
+        $20eba              .byte "xxxxxx",$xx
+        ;; 0f
+        ;; 28
+        ;; 2a
+        ;; 2b
+        $20ec1              .byte "xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        $20edd              .byte $xx,$xx,$xx
+        $20ee0              .byte "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        $20efd              .byte $xx
+        ;; UNUSED
+        $20efe              .byte "x",$xx
+        ;; 36
+        $20f00              .byte "xxxxxxxxxxxxxxx",$xx
+        ;; 37
+        $20f10              .byte "xxxxxxxxxxxxxxx",$xx
+        ;; 16
+        $20f20              .byte "xxxxxxxxxxxx",$xx
+        ;; 39
+        $20f2d              .byte "xxxxx",$xx,$xx,"xxxx",$xx,$xx,$xx
+        ;; 3a
+        $20f3b              .byte "xxxxx",$xx,$xx,"xxxx",$xx,$xx,$xx
+        ;; 2e
+        $20f49              .byte "xxxxxxxxxxxxxx",$xx,"x",$xx
+;;; --------------------------------
+DataTable_20f5a 
+        $20f5a              .byte $xx,$xx,$xx
         $20f5d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $20f6d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $20f7d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -28383,12 +28648,12 @@ Inventory_ItemData
         $2155b  xx xx xx:   xxx $3c169
         $2155e  xx xx:      xxx #$xx
         $21560  xx xx:      xxx $xx
-        $21562  xx xx:      xxx #$xx
-        $21564  xx xx xx:   xxx $20933
-        $21567  xx xx:      xxx #$xx
-        $21569  xx xx xx:   xxx $20933
-        $2156c  xx xx:      xxx #$xx
-        $2156e  xx xx xx:   xxx $20933
+        $21562  xx xx:      xxx #$xx ; "ARMOR SHOP"
+        $21564  xx xx xx:   xxx ShowMenuMessage
+        $21567  xx xx:      xxx #$xx ; "Do you wish to buy?"
+        $21569  xx xx xx:   xxx ShowMenuMessage
+        $2156c  xx xx:      xxx #$xx ; "YES NO"
+        $2156e  xx xx xx:   xxx ShowMenuMessage
         $21571  xx xx xx:   xxx $2188a
         $21574  xx xx xx:   xxx $216cf
         $21577  xx xx xx:   xxx $216c6
@@ -28397,12 +28662,12 @@ Inventory_ItemData
         $2157d  xx xx xx:   xxx $3c169
         $21580  xx xx:      xxx #$xx
         $21582  xx xx:      xxx $xx
-        $21584  xx xx:      xxx #$xx
-        $21586  xx xx xx:   xxx $20933
-        $21589  xx xx:      xxx #$xx
-        $2158b  xx xx xx:   xxx $20933
-        $2158e  xx xx:      xxx #$xx
-        $21590  xx xx xx:   xxx $20933
+        $21584  xx xx:      xxx #$xx ; "TOOL SHOP"
+        $21586  xx xx xx:   xxx ShowMenuMessage
+        $21589  xx xx:      xxx #$xx ; "Do you wish to buy?"
+        $2158b  xx xx xx:   xxx ShowMenuMessage
+        $2158e  xx xx:      xxx #$xx ; "YES NO"
+        $21590  xx xx xx:   xxx ShowMenuMessage
         $21593  xx xx xx:   xxx $218e3
         $21596  xx xx xx:   xxx $216cf
         $21599  xx xx xx:   xxx $216c6
@@ -28417,14 +28682,14 @@ Inventory_ItemData
         $215b0  xx xx xx:   xxx $xxxx
         $215b3  xx xx:      xxx #$xx
         $215b5  xx xx:      xxx $xx
-        $215b7  xx xx:      xxx #$xx
-        $215b9  xx xx xx:   xxx $20933
-        $215bc  xx xx:      xxx #$xx
-        $215be  xx xx xx:   xxx $20933
-        $215c1  xx xx:      xxx #$xx
-        $215c3  xx xx xx:   xxx $20933
-        $215c6  xx xx:      xxx #$xx
-        $215c8  xx xx xx:   xxx $20933
+        $215b7  xx xx:      xxx #$xx ; "INN"
+        $215b9  xx xx xx:   xxx ShowMenuMessage
+        $215bc  xx xx:      xxx #$xx ; "Need to rest? Please stay"
+        $215be  xx xx xx:   xxx ShowMenuMessage
+        $215c1  xx xx:      xxx #$xx ; "It will cost you $"
+        $215c3  xx xx xx:   xxx ShowMenuMessage
+        $215c6  xx xx:      xxx #$xx ; "YES NO"
+        $215c8  xx xx xx:   xxx ShowMenuMessage
         $215cb  xx xx xx:   xxx $xxxx
         $215ce  xx:         xxx
         $215cf  xx:         xxx
@@ -28435,7 +28700,7 @@ Inventory_ItemData
         $215dc  xx xx:      xxx #$xx
         $215de  xx xx xx:   xxx DisplayNumberInShop
         $215e1  xx xx:      xxx #$xx
-        $215e3  xx xx xx:   xxx $204da
+        $215e3  xx xx xx:   xxx Menu_AskYesNo
         $215e6  xx xx:      xxx $xx
         $215e8  xx xx:      xxx #$xx
         $215ea  xx xx xx:   xxx $20a9f
@@ -28455,14 +28720,14 @@ Inventory_ItemData
         $2160a  xx xx:      xxx #$xx
         $2160c  xx xx xx:   xxx $20a9f
         $2160f  xx xx xx:   xxx $3c7d6
-        $21612  xx xx:      xxx #$xx
-        $21614  xx xx xx:   xxx $20933
-        $21617  xx xx:      xxx #$xx
-        $21619  xx xx xx:   xxx $20933
-        $2161c  xx xx:      xxx #$xx
-        $2161e  xx xx xx:   xxx $20933
-        $21621  xx xx:      xxx #$xx
-        $21623  xx xx xx:   xxx $20933
+        $21612  xx xx:      xxx #$xx ; (spaces)
+        $21614  xx xx xx:   xxx ShowMenuMessage
+        $21617  xx xx:      xxx #$xx ; (spaces)
+        $21619  xx xx xx:   xxx ShowMenuMessage
+        $2161c  xx xx:      xxx #$xx ; "How do you feel today?"
+        $2161e  xx xx xx:   xxx ShowMenuMessage
+        $21621  xx xx:      xxx #$xx ; "Please come agian"
+        $21623  xx xx xx:   xxx ShowMenuMessage
         $21626  xx xx xx:   xxx $xxxx
         $21629  xx xx xx:   xxx $xxxx
         $2162c  xx xx xx:   xxx $xxxx
@@ -28478,22 +28743,22 @@ Inventory_ItemData
         $21648  xx xx xx:   xxx DisplayNumberInShop
         $2164b  xx xx xx:   xxx $21674
 ;;; --------------------------------
-        $2164e  xx xx:      xxx #$xx
-        $21650  xx xx xx:   xxx $20933
-        $21653  xx xx:      xxx #$xx
-        $21655  xx xx xx:   xxx $20933
-        $21658  xx xx:      xxx #$xx
-        $2165a  xx xx xx:   xxx $20933
+        $2164e  xx xx:      xxx #$xx ; (spaces)
+        $21650  xx xx xx:   xxx ShowMenuMessage
+        $21653  xx xx:      xxx #$xx ; (spaces)
+        $21655  xx xx xx:   xxx ShowMenuMessage
+        $21658  xx xx:      xxx #$xx ; "You haven't enough money"
+        $2165a  xx xx xx:   xxx ShowMenuMessage
         $2165d  xx xx:      xxx #$xx
         $2165f  xx xx xx:   xxx DisplayNumberInShop
         $21662  xx xx xx:   xxx $21674
 ;;; --------------------------------
-        $21665  xx xx:      xxx #$xx
-        $21667  xx xx xx:   xxx $20933
-        $2166a  xx xx:      xxx #$xx
-        $2166c  xx xx xx:   xxx $20933
-        $2166f  xx xx:      xxx #$xx
-        $21671  xx xx xx:   xxx $20933
+        $21665  xx xx:      xxx #$xx ; (spaces)
+        $21667  xx xx xx:   xxx ShowMenuMessage
+        $2166a  xx xx:      xxx #$xx ; (spaces)
+        $2166c  xx xx xx:   xxx ShowMenuMessage
+        $2166f  xx xx:      xxx #$xx ; "Please come again"
+        $21671  xx xx xx:   xxx ShowMenuMessage
         $21674  xx xx xx:   xxx $21878
         $21677  xx xx xx:   xxx $216c6
 ;;; --------------------------------
@@ -28502,29 +28767,29 @@ Inventory_ItemData
         $21680  xx xx xx:   xxx $21a91
         $21683  xx xx xx:   xxx $2150c
         $21686  xx xx xx:   xxx $21953
-        $21689  xx xx:      xxx #$xx
-        $2168b  xx xx xx:   xxx $20933
-        $2168e  xx xx:      xxx #$xx
-        $21690  xx xx xx:   xxx $20933
-        $21693  xx xx:      xxx #$xx
-        $21695  xx xx xx:   xxx $20933
-        $21698  xx xx:      xxx #$xx
-        $2169a  xx xx xx:   xxx $20933
+        $21689  xx xx:      xxx #$xx ; "PAWN SHOP"
+        $2168b  xx xx xx:   xxx ShowMenuMessage
+        $2168e  xx xx:      xxx #$xx ; "Is there anything you wish to sell?"
+        $21690  xx xx xx:   xxx ShowMenuMessage
+        $21693  xx xx:      xxx #$xx ; (spaces)
+        $21695  xx xx xx:   xxx ShowMenuMessage
+        $21698  xx xx:      xxx #$xx ; "YES NO"
+        $2169a  xx xx xx:   xxx ShowMenuMessage
         $2169d  xx xx:      xxx #$xx
-        $2169f  xx xx xx:   xxx $204da
-        $216a2  xx xx:      xxx $xx
-        $216a4  xx xx:      xxx #$xx
-        $216a6  xx xx xx:   xxx $20a9f
-        $216a9  xx xx:      xxx #$xx
-        $216ab  xx xx xx:   xxx $20933
-        $216ae  xx xx:      xxx #$xx
-        $216b0  xx xx xx:   xxx $20933
-        $216b3  xx xx:      xxx #$xx
-        $216b5  xx xx xx:   xxx $20933
-        $216b8  xx xx xx:   xxx $21878
-        $216bb  xx xx xx:   xxx $216c6
+        $2169f  xx xx xx:   xxx Menu_AskYesNo
+        $216a2  xx xx:      xxx + ; $216be
+        $216a4  xx xx:       xxx #$xx
+        $216a6  xx xx xx:    xxx PlayAudioBlip
+        $216a9  xx xx:       xxx #$xx ; (spaces)
+        $216ab  xx xx xx:    xxx ShowMenuMessage
+        $216ae  xx xx:       xxx #$xx ; (spaces)
+        $216b0  xx xx xx:    xxx ShowMenuMessage
+        $216b3  xx xx:       xxx #$xx ; "Please come again"
+        $216b5  xx xx xx:    xxx ShowMenuMessage
+        $216b8  xx xx xx:    xxx $21878
+        $216bb  xx xx xx:    xxx $216c6
 ;;; --------------------------------
-        $216be  xx xx:      xxx #$xx
++       $216be  xx xx:      xxx #$xx
         $216c0  xx xx xx:   xxx $20a9f
         $216c3  xx xx xx:   xxx $20000
         $216c6  xx xx xx:   xxx $20605
@@ -28532,70 +28797,78 @@ Inventory_ItemData
         $216cb  xx xx xx:   xxx $xxxx
         $216ce  xx:         xxx
 ;;; --------------------------------
+        ;; Enter shop ?????
         $216cf  xx xx:      xxx #$xx
-        $216d1  xx xx xx:   xxx $204da
-        $216d4  xx xx:      xxx $xx
-        $216d6  xx xx xx:   xxx $217dd
-;;; --------------------------------
-        $216d9  xx xx:      xxx #$xx
+        $216d1  xx xx xx:   xxx Menu_AskYesNo ; "Do you wish to buy?"
+        $216d4  xx xx:      xxx + ; $216d9
+        $216d6  xx xx xx:    xxx $217dd ; no buy -> exit
+        ;; --------------------------------
+        ;; "Wish to buy?" -> Yes
++       $216d9  xx xx:      xxx #$xx
         $216db  xx xx xx:   xxx $20a9f
         $216de  xx xx xx:   xxx $21815
         $216e1  xx xx xx:   xxx $21837
-        $216e4  xx xx:      xxx #$xx
-        $216e6  xx xx xx:   xxx $20933
-        $216e9  xx xx xx:   xxx $xxxx
+        $216e4  xx xx:      xxx #$xx ; (spaces)
+        $216e6  xx xx xx:   xxx ShowMenuMessage
+        $216e9  xx xx xx:   xxx $xxxx   ; Beginning of shop inventory
         $216ec  xx xx:      xxx $xx
-        $216ee  xx xx:      xxx #$xx
-        $216f0  xx xx xx:   xxx $20933
-        $216f3  xx xx:      xxx #$xx
-        $216f5  xx xx xx:   xxx $20933
+        $216ee  xx xx:      xxx #$xx ; (item name)
+        $216f0  xx xx xx:   xxx ShowMenuMessage
+        $216f3  xx xx:      xxx #$xx ; "$"
+        $216f5  xx xx xx:   xxx ShowMenuMessage
         $216f8  xx xx xx:   xxx $21884
-        $216fb  xx xx xx:   xxx $xxxx
+        $216fb  xx xx xx:   xxx $xxxx   ; Currently selected index
         $216fe  xx:         xxx
-        $216ff  xx xx xx:   xxx $xxxx,x
+        $216ff  xx xx xx:   xxx $xxxx,x ; Currently selected item id
         $21702  xx xx xx:   xxx $xxxx
-        $21705  xx xx:      xxx $xx
-        $21707  xx xx:      xxx #$xx
-        $21709  xx xx:      xxx $xx
-        $2170b  xx xx xx:   xxx $xxxx
-        $2170e  xx xx xx:   xxx $xxxx
-        $21711  xx xx:      xxx #$xx
-        $21713  xx xx xx:   xxx $xxxx
-        $21716  xx xx xx:   xxx $217ef
-;;; --------------------------------
-        $21719  xx xx:      xxx $xx
-        $2171b  xx xx:      xxx #$xx
-        $2171d  xx xx:      xxx $xx
-        $2171f  xx xx xx:   xxx $xxxx
-        $21722  xx xx xx:   xxx $xxxx
-        $21725  xx xx:      xxx #$xx
-        $21727  xx xx xx:   xxx $xxxx
-        $2172a  xx xx xx:   xxx $217ef
-;;; --------------------------------
-        $2172d  xx xx:      xxx $xx
-        $2172f  xx xx:      xxx #$xx
-        $21731  xx xx:      xxx $xx
-        $21733  xx:         xxx
-;;; --------------------------------
-        $21734  xx xx:      xxx $xx
-        $21736  xx xx:      xxx #$xx
-        $21738  xx xx:      xxx $xx
-        $2173a  xx xx:      xxx #$xx
-        $2173c  xx xx xx:   xxx $20933
-        $2173f  xx xx:      xxx #$xx
-        $21741  xx xx xx:   xxx $20933
-        $21744  xx xx:      xxx #$xx
-        $21746  xx xx xx:   xxx $20933
-        $21749  xx xx xx:   xxx $217b3
-;;; --------------------------------
-        $2174c  xx xx:      xxx $xx
-        $2174e  xx xx:      xxx #$xx
-        $21750  xx xx:      xxx $xx
-        $21752  xx xx xx:   xxx $217cd
-;;; --------------------------------
-        $21755  xx xx:      xxx #$xx
+        $21705  xx xx:      xxx Ctrl1NewlyPressed
+        $21707  xx xx:      xxx #BUTTON_LEFT
+        $21709  xx xx:      xxx + ; $21719
+        ;; On left: decrement index
+        $2170b  xx xx xx:    xxx $xxxx
+        $2170e  xx xx xx:    xxx $xxxx
+        $21711  xx xx:       xxx #$xx
+        $21713  xx xx xx:    xxx $xxxx
+        $21716  xx xx xx:    xxx $217ef
+        ;; --------------------------------
++       $21719  xx xx:      xxx Ctrl1NewlyPressed
+        $2171b  xx xx:      xxx #BUTTON_RIGHT
+        $2171d  xx xx:      xxx + ; $2172d
+        ;; On right: increment index
+        $2171f  xx xx xx:    xxx $xxxx
+        $21722  xx xx xx:    xxx $xxxx
+        $21725  xx xx:       xxx #$xx
+        $21727  xx xx xx:    xxx $xxxx
+        $2172a  xx xx xx:    xxx $217ef
+        ;; --------------------------------
+        ;; Hitting select in a shop makes you leave immediately
++       $2172d  xx xx:      xxx Ctrl1NewlyPressed
+        $2172f  xx xx:      xxx #BUTTON_SELECT
+        $21731  xx xx:      xxx + ; $21734
+        ;; On select: exit
+        $21733  xx:          xxx
+        ;; --------------------------------
++       $21734  xx xx:      xxx Ctrl1NewlyPressed
+        $21736  xx xx:      xxx #BUTTON_B
+        $21738  xx xx:      xxx + ; $2174c
+        ;; On B, give "anything else?" prompt
+        $2173a  xx xx:       xxx #$xx ; (spaces)
+        $2173c  xx xx xx:    xxx ShowMenuMessage
+        $2173f  xx xx:       xxx #$xx ; "Anything else?"
+        $21741  xx xx xx:    xxx ShowMenuMessage
+        $21744  xx xx:       xxx #$xx ; "YES NO"
+        $21746  xx xx xx:    xxx ShowMenuMessage
+        $21749  xx xx xx:    xxx Shop_AskAnythingElse
+        ;; --------------------------------
++       $2174c  xx xx:      xxx Ctrl1NewlyPressed
+        $2174e  xx xx:      xxx #BUTTON_A
+        $21750  xx xx:      xxx + ; $21755
+        ;; On A, try to buy the item
+        $21752  xx xx xx:    xxx Shop_BuyItem
+        ;; --------------------------------
++       $21755  xx xx:      xxx #$xx
         $21757  xx xx xx:   xxx $20a9f
-        $2175a  xx xx xx:   xxx $21970
+        $2175a  xx xx xx:   xxx ComputeMoneyAfterBuyingSelectedItem
         $2175d  xx:         xxx
         $2175e  xx xx xx:   xxx $xxxx
         $21761  xx xx xx:   xxx $xxxx
@@ -28605,75 +28878,80 @@ Inventory_ItemData
         $21769  xx:         xxx
         $2176a  xx xx:      xxx #$xx
         $2176c  xx xx:      xxx $xx
-        $2176e  xx xx:      xxx #$xx
-        $21770  xx xx xx:   xxx $20933
-        $21773  xx xx:      xxx #$xx
-        $21775  xx xx xx:   xxx $20933
+        $2176e  xx xx:      xxx #$xx ; (spaces)
+        $21770  xx xx xx:   xxx ShowMenuMessage
+        $21773  xx xx:      xxx #$xx ; "You haven't enough money"
+        $21775  xx xx xx:   xxx ShowMenuMessage
         $21778  xx xx xx:   xxx $21878
         $2177b  xx xx xx:   xxx $217a4
 ;;; --------------------------------
         $2177e  xx xx:      xxx #$xx
         $21780  xx xx:      xxx $xx
-        $21782  xx xx:      xxx #$xx
-        $21784  xx xx xx:   xxx $20933
-        $21787  xx xx:      xxx #$xx
-        $21789  xx xx xx:   xxx $20933
+        $21782  xx xx:      xxx #$xx ; (spaces)
+        $21784  xx xx xx:   xxx ShowMenuMessage
+        $21787  xx xx:      xxx #$xx ; "You have too many already"
+        $21789  xx xx xx:   xxx ShowMenuMessage
         $2178c  xx xx xx:   xxx $21878
         $2178f  xx xx xx:   xxx $217a4
 ;;; --------------------------------
-        $21792  xx xx:      xxx #$xx
-        $21794  xx xx xx:   xxx $20933
-        $21797  xx xx:      xxx #$xx
-        $21799  xx xx xx:   xxx $20933
+        $21792  xx xx:      xxx #$xx ; (spaces)
+        $21794  xx xx xx:   xxx ShowMenuMessage
+        $21797  xx xx:      xxx #$xx ; "You purchased"
+        $21799  xx xx xx:   xxx ShowMenuMessage
         $2179c  xx xx:      xxx #$xx
         $2179e  xx xx xx:   xxx DisplayNumberInShop
         $217a1  xx xx xx:   xxx $21878
-        $217a4  xx xx:      xxx #$xx
-        $217a6  xx xx xx:   xxx $20933
-        $217a9  xx xx:      xxx #$xx
-        $217ab  xx xx xx:   xxx $20933
-        $217ae  xx xx:      xxx #$xx
-        $217b0  xx xx xx:   xxx $20933
+        $217a4  xx xx:      xxx #$xx ; (spaces)
+        $217a6  xx xx xx:   xxx ShowMenuMessage
+        $217a9  xx xx:      xxx #$xx ; "Anything else?"
+        $217ab  xx xx xx:   xxx ShowMenuMessage
+        $217ae  xx xx:      xxx #$xx ; "YES NO"
+        $217b0  xx xx xx:   xxx ShowMenuMessage
+Shop_AskAnythingElse
+        ;; Same as enter shop, but "Anything else"
         $217b3  xx xx:      xxx #$xx
-        $217b5  xx xx xx:   xxx $204da
+        $217b5  xx xx xx:   xxx Menu_AskYesNo
         $217b8  xx xx:      xxx $xx
         $217ba  xx xx:      xxx #$xx
         $217bc  xx xx xx:   xxx $20a9f
-        $217bf  xx xx:      xxx #$xx
-        $217c1  xx xx xx:   xxx $20933
-        $217c4  xx xx:      xxx #$xx
-        $217c6  xx xx xx:   xxx $20933
+        $217bf  xx xx:      xxx #$xx ; (spaces)
+        $217c1  xx xx xx:   xxx ShowMenuMessage
+        $217c4  xx xx:      xxx #$xx ; (item name)
+        $217c6  xx xx xx:   xxx ShowMenuMessage
         $217c9  xx xx:      xxx #$xx
         $217cb  xx xx:      xxx $xx
-        $217cd  xx xx xx:   xxx $21a37
-        $217d0  xx xx:      xxx #$xx
+Shop_BuyItem
+        $217cd  xx xx xx:   xxx Shop_ReadCurrentItemPrice
+        $217d0  xx xx:      xxx #$xx ; Cost to buy current item
         $217d2  xx xx xx:   xxx DisplayNumberInShop
-        $217d5  xx xx:      xxx #$xx
-        $217d7  xx xx xx:   xxx $20933
+        $217d5  xx xx:      xxx #$xx ; "$"
+        $217d7  xx xx xx:   xxx ShowMenuMessage
         $217da  xx xx xx:   xxx $216f8
 ;;; --------------------------------
+        ;; "Please come again", then exit
         $217dd  xx xx:      xxx #$xx
         $217df  xx xx xx:   xxx $20a9f
-        $217e2  xx xx:      xxx #$xx
-        $217e4  xx xx xx:   xxx $20933
-        $217e7  xx xx:      xxx #$xx
-        $217e9  xx xx xx:   xxx $20933
+        $217e2  xx xx:      xxx #$xx ; (spaces)
+        $217e4  xx xx xx:   xxx ShowMenuMessage
+        $217e7  xx xx:      xxx #$xx ; "Please come again"
+        $217e9  xx xx xx:   xxx ShowMenuMessage
         $217ec  xx xx xx:   xxx $21878
 ;;; --------------------------------
+        ;; Update the item name, price, etc
         $217ef  xx xx:      xxx #$xx
         $217f1  xx xx xx:   xxx $20a9f
         $217f4  xx xx xx:   xxx $21815
         $217f7  xx xx xx:   xxx $21837
-        $217fa  xx xx:      xxx #$xx
-        $217fc  xx xx xx:   xxx $20933
+        $217fa  xx xx:      xxx #$xx ; (spaces)
+        $217fc  xx xx xx:   xxx ShowMenuMessage
         $217ff  xx xx xx:   xxx $xxxx
         $21802  xx:         xxx
         $21803  xx xx xx:   xxx $xxxx,x
         $21806  xx xx:      xxx $xx
-        $21808  xx xx:      xxx #$xx
-        $2180a  xx xx xx:   xxx $20933
-        $2180d  xx xx:      xxx #$xx
-        $2180f  xx xx xx:   xxx $20933
+        $21808  xx xx:      xxx #$xx ; (item name)
+        $2180a  xx xx xx:   xxx ShowMenuMessage
+        $2180d  xx xx:      xxx #$xx ; "$"
+        $2180f  xx xx xx:   xxx ShowMenuMessage
         $21812  xx xx xx:   xxx $216f8
 ;;; --------------------------------
         $21815  xx xx xx:   xxx $xxxx
@@ -28733,30 +29011,31 @@ DataTable_21874
         $21884  xx xx xx:   xxx $3c169
         $21887  xx xx xx:   xxx ReadControllersWithRepeat
 ;;; --------------------------------
+        ;; Initialize $6470..f for armor shops
         $2188a  xx xx xx:   xxx $21953
         $2188d  xx xx xx:   xxx $xxxx
         $21890  xx:         xxx
         $21891  xx:         xxx
         $21892  xx:         xxx
         $21893  xx xx:      xxx #$xx
-        $21895  xx xx xx:   xxx $21da4,x
-        $21898  xx xx xx:   xxx $xxxx,y
-        $2189b  xx:         xxx
-        $2189c  xx:         xxx
-        $2189d  xx xx:      xxx #$xx
-        $2189f  xx xx:      xxx $xx
+-       $21895  xx xx xx:    xxx $21da4,x ; ArmorIdTable
+        $21898  xx xx xx:    xxx $xxxx,y
+        $2189b  xx:          xxx
+        $2189c  xx:          xxx
+        $2189d  xx xx:       xxx #$xx
+        $2189f  xx xx:      xxx - ; $21895
         $218a1  xx xx xx:   xxx $xxxx
         $218a4  xx:         xxx
         $218a5  xx:         xxx
         $218a6  xx:         xxx
         $218a7  xx:         xxx
         $218a8  xx xx:      xxx #$xx
-        $218aa  xx xx xx:   xxx $21dd0,x
-        $218ad  xx xx xx:   xxx $xxxx,y
-        $218b0  xx:         xxx
-        $218b1  xx:         xxx
-        $218b2  xx xx:      xxx #$xx
-        $218b4  xx xx:      xxx $xx
+-       $218aa  xx xx xx:    xxx $21dd0,x ; ArmorPriceTable
+        $218ad  xx xx xx:    xxx $xxxx,y
+        $218b0  xx:          xxx
+        $218b1  xx:          xxx
+        $218b2  xx xx:       xxx #$xx
+        $218b4  xx xx:      xxx - ; $218aa
         $218b6  xx xx:      xxx #$xx
         $218b8  xx xx:      xxx $xx
         $218ba  xx xx:      xxx $xx
@@ -28780,30 +29059,31 @@ DataTable_21874
         $218e0  xx xx:      xxx $xx
         $218e2  xx:         xxx
 ;;; --------------------------------
+        ;; Initialize $6470..f when entering an item shop
         $218e3  xx xx xx:   xxx $21953
         $218e6  xx xx xx:   xxx $xxxx
         $218e9  xx:         xxx
         $218ea  xx:         xxx
         $218eb  xx:         xxx
         $218ec  xx xx:      xxx #$xx
-        $218ee  xx xx xx:   xxx $21e28,x
-        $218f1  xx xx xx:   xxx $xxxx,y
-        $218f4  xx:         xxx
-        $218f5  xx:         xxx
-        $218f6  xx xx:      xxx #$xx
-        $218f8  xx xx:      xxx $xx
+-       $218ee  xx xx xx:    xxx $21e28,x ; ItemShopItemTable
+        $218f1  xx xx xx:    xxx $xxxx,y  ; y = 0..3
+        $218f4  xx:          xxx
+        $218f5  xx:          xxx
+        $218f6  xx xx:       xxx #$xx
+        $218f8  xx xx:      xxx - ; $218ee
         $218fa  xx xx xx:   xxx $xxxx
         $218fd  xx:         xxx
         $218fe  xx:         xxx
         $218ff  xx:         xxx
         $21900  xx:         xxx
         $21901  xx xx:      xxx #$xx
-        $21903  xx xx xx:   xxx $21e54,x
-        $21906  xx xx xx:   xxx $xxxx,y
-        $21909  xx:         xxx
-        $2190a  xx:         xxx
-        $2190b  xx xx:      xxx #$xx
-        $2190d  xx xx:      xxx $xx
+-       $21903  xx xx xx:    xxx $21e54,x ; ItemShopPriceTable
+        $21906  xx xx xx:    xxx $xxxx,y  ; y = 0..7
+        $21909  xx:          xxx
+        $2190a  xx:          xxx
+        $2190b  xx xx:       xxx #$xx
+        $2190d  xx xx:      xxx - ; $21903
         $2190f  xx xx xx:   xxx $218b6
 ;;; --------------------------------
         $21912  xx xx:      xxx #$xx
@@ -28853,6 +29133,10 @@ DataTable_21874
         $2196c  xx xx xx:   xxx $xxxx
         $2196f  xx:         xxx
 ;;; --------------------------------
+ComputeMoneyAfterBuyingSelectedItem
+        ;; Subtracts the price of the currently selected item
+        ;; from the player's cash, stores in $6476[7].  If it's
+        ;; negative then
         $21970  xx:         xxx
         $21971  xx xx xx:   xxx $xxxx
         $21974  xx xx xx:   xxx $xxxx
@@ -28860,11 +29144,12 @@ DataTable_21874
         $2197a  xx xx xx:   xxx $xxxx
         $2197d  xx xx xx:   xxx $xxxx
         $21980  xx xx xx:   xxx $xxxx
-        $21983  xx xx:      xxx $xx
-        $21985  xx xx:      xxx #$xx
-        $21987  xx:         xxx
-;;; --------------------------------
-        $21988  xx xx:      xxx $xx
+        $21983  xx xx:      xxx + ; $21988
+        ;; Player didn't have enough cash
+        $21985  xx xx:       xxx #$xx
+        $21987  xx:          xxx
+        ;; --------------------------------
++       $21988  xx xx:      xxx $xx
         $2198a  xx xx:      xxx #$xx
         $2198c  xx xx:      xxx $xx
         $2198e  xx xx xx:   xxx $xxxx
@@ -28960,21 +29245,24 @@ DataTable_21874
         $21a34  xx xx:      xxx $xx
         $21a36  xx:         xxx
 ;;; --------------------------------
-        $21a37  xx xx xx:   xxx $xxxx
+Shop_ReadCurrentItemPrice
+        ;; Read current item's price, store in $6474
+        $21a37  xx xx xx:   xxx $xxxx    ; Currently selected index
         $21a3a  xx:         xxx
         $21a3b  xx xx xx:   xxx $xxxx,x
-        $21a3e  xx xx:      xxx #$xx
-        $21a40  xx xx:      xxx $xx
-        $21a42  xx xx xx:   xxx $xxxx
-        $21a45  xx:         xxx
-        $21a46  xx:         xxx
-        $21a47  xx xx xx:   xxx $xxxx,x
-        $21a4a  xx xx xx:   xxx $xxxx
-        $21a4d  xx xx xx:   xxx $xxxx,x
-        $21a50  xx xx xx:   xxx $xxxx
-        $21a53  xx:         xxx
-;;; --------------------------------
-        $21a54  xx xx xx:   xxx $xxxx
+        $21a3e  xx xx:      xxx #$xx     ; Is current slot empty?
+        $21a40  xx xx:      xxx + ; $21a54
+        $21a42  xx xx xx:    xxx $xxxx   ; Currently selected index
+        $21a45  xx:          xxx
+        $21a46  xx:          xxx
+        $21a47  xx xx xx:    xxx $xxxx,x ; Reads a current shop price
+        $21a4a  xx xx xx:    xxx $xxxx
+        $21a4d  xx xx xx:    xxx $xxxx,x
+        $21a50  xx xx xx:    xxx $xxxx
+        $21a53  xx:          xxx
+        ;; --------------------------------
+        ;; Slot is empty: zero out $6474
++       $21a54  xx xx xx:   xxx $xxxx
         $21a57  xx:         xxx
         $21a58  xx:         xxx
         $21a59  xx xx:      xxx #$xx
@@ -29061,10 +29349,10 @@ DataTable_21ade
         $21afe  xx xx xx:   xxx $21c85
         $21b01  xx xx:      xxx #$xx
         $21b03  xx xx xx:   xxx $21cae
-        $21b06  xx xx:      xxx #$xx
-        $21b08  xx xx xx:   xxx $20933
-        $21b0b  xx xx:      xxx #$xx
-        $21b0d  xx xx xx:   xxx $20933
+        $21b06  xx xx:      xxx #$xx ; "GAME ______ LVL ##"
+        $21b08  xx xx xx:   xxx ShowMenuMessage
+        $21b0b  xx xx:      xxx #$xx ; (fewer spaces)
+        $21b0d  xx xx xx:   xxx ShowMenuMessage
         $21b10  xx xx:      xxx #$xx
         $21b12  xx xx:      xxx $xx
         $21b14  xx xx:      xxx $xx
@@ -29079,10 +29367,10 @@ DataTable_21ade
         $21b2a  xx xx:      xxx $xx
         $21b2c  xx xx:      xxx #$xx
         $21b2e  xx xx:      xxx $xx
-        $21b30  xx xx:      xxx #$xx
-        $21b32  xx xx xx:   xxx $20933
-        $21b35  xx xx:      xxx #$xx
-        $21b37  xx xx xx:   xxx $20933
+        $21b30  xx xx:      xxx #$xx ; "1: ______ LV: ##"
+        $21b32  xx xx xx:   xxx ShowMenuMessage
+        $21b35  xx xx:      xxx #$xx ; "2: ______ LV: ##"
+        $21b37  xx xx xx:   xxx ShowMenuMessage
         $21b3a  xx xx:      xxx #$xx
         $21b3c  xx xx xx:   xxx $xxxx
         $21b3f  xx xx xx:   xxx $3c169
@@ -29109,9 +29397,9 @@ DataTable_21ade
         $21b6b  xx xx xx:   xxx $xxxx
         $21b6e  xx:         xxx
         $21b6f  xx xx:      xxx $xx
-        $21b71  xx xx:      xxx #$xx
+        $21b71  xx xx:      xxx #$xx ; "GAME: ______ LV: ##"
         $21b73  xx:         xxx
-        $21b74  xx xx xx:   xxx $20933
+        $21b74  xx xx xx:   xxx ShowMenuMessage
         $21b77  xx xx xx:   xxx $xxxx
         $21b7a  xx xx xx:   xxx $xxxx
         $21b7d  xx xx:      xxx #$xx
@@ -29132,15 +29420,15 @@ DataTable_21ade
         $21b9a  xx xx xx:   xxx $xxxx
         $21b9d  xx xx:      xxx #$xx
         $21b9f  xx xx:      xxx $xx
-        $21ba1  xx xx:      xxx #$xx
-        $21ba3  xx xx xx:   xxx $20933
-        $21ba6  xx xx:      xxx #$xx
-        $21ba8  xx xx xx:   xxx $20933
+        $21ba1  xx xx:      xxx #$xx ; "Load this game?"
+        $21ba3  xx xx xx:   xxx ShowMenuMessage
+        $21ba6  xx xx:      xxx #$xx ; "YES or NO?"
+        $21ba8  xx xx xx:   xxx ShowMenuMessage
         $21bab  xx xx:      xxx #$xx
-        $21bad  xx xx xx:   xxx $204da
+        $21bad  xx xx xx:   xxx Menu_AskYesNo
         $21bb0  xx xx:      xxx $xx
-        $21bb2  xx xx:      xxx #$xx
-        $21bb4  xx xx xx:   xxx $20933
+        $21bb2  xx xx:      xxx #$xx ; (spaces)
+        $21bb4  xx xx xx:   xxx ShowMenuMessage
         $21bb7  xx xx xx:   xxx $21b3a
 ;;; --------------------------------
         $21bba  xx xx xx:   xxx $xxxx
@@ -29168,10 +29456,10 @@ DataTable_21ade
         $21bec  xx xx:      xxx + ; $21c12
         $21bee  xx xx:       xxx #$xx
         $21bf0  xx xx xx:    xxx $20a9f
-        $21bf3  xx xx:       xxx #$xx
-        $21bf5  xx xx xx:    xxx $20933
-        $21bf8  xx xx:       xxx #$xx
-        $21bfa  xx xx xx:    xxx $20933
+        $21bf3  xx xx:       xxx #$xx ; (spaces)
+        $21bf5  xx xx xx:    xxx ShowMenuMessage
+        $21bf8  xx xx:       xxx #$xx ; "Cannot save"
+        $21bfa  xx xx xx:    xxx ShowMenuMessage
         $21bfd  xx xx:       xxx #$xx
 -       $21bff  xx xx:         xxx $xx ; Maybe wait for OAM DMA?
         $21c01  xx xx:        xxx - ; $21bff
@@ -29188,21 +29476,21 @@ DataTable_21ade
         $21c17  xx xx:      xxx $xx
         $21c19  xx xx:      xxx #$xx
         $21c1b  xx xx xx:   xxx $20a9f
-        $21c1e  xx xx:      xxx #$xx
-        $21c20  xx xx xx:   xxx $20933
-        $21c23  xx xx:      xxx #$xx
-        $21c25  xx xx xx:   xxx $20933
+        $21c1e  xx xx:      xxx #$xx ; (spaces)
+        $21c20  xx xx xx:   xxx ShowMenuMessage
+        $21c23  xx xx:      xxx #$xx ; "1: ______ LV: ##"
+        $21c25  xx xx xx:   xxx ShowMenuMessage
         $21c28  xx xx xx:   xxx $21bfd
 ;;; --------------------------------
-        $21c2b  xx xx:      xxx #$xx
-        $21c2d  xx xx xx:   xxx $20933
-        $21c30  xx xx:      xxx #$xx
-        $21c32  xx xx xx:   xxx $20933
+        $21c2b  xx xx:      xxx #$xx ; "Save this game?"
+        $21c2d  xx xx xx:   xxx ShowMenuMessage
+        $21c30  xx xx:      xxx #$xx ; "YES NO"
+        $21c32  xx xx xx:   xxx ShowMenuMessage
         $21c35  xx xx:      xxx #$xx
-        $21c37  xx xx xx:   xxx $204da
+        $21c37  xx xx xx:   xxx Menu_AskYesNo
         $21c3a  xx xx:      xxx $xx
-        $21c3c  xx xx:      xxx #$xx
-        $21c3e  xx xx xx:   xxx $20933
+        $21c3c  xx xx:      xxx #$xx ; (spaces)
+        $21c3e  xx xx xx:   xxx ShowMenuMessage
         $21c41  xx xx xx:   xxx $21b3a
 ;;; --------------------------------
         $21c44  xx xx xx:   xxx $xxxx
@@ -29321,12 +29609,12 @@ DataTable_21d32
         $21d42              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
         $21d52  xx xx xx:   xxx $20605
-        $21d55  xx xx:      xxx #$xx
-        $21d57  xx xx xx:   xxx $20933
-        $21d5a  xx xx:      xxx #$xx
-        $21d5c  xx xx xx:   xxx $20933
-        $21d5f  xx xx:      xxx #$xx
-        $21d61  xx xx xx:   xxx $20933
+        $21d55  xx xx:      xxx #$xx ; (spaces)
+        $21d57  xx xx xx:   xxx ShowMenuMessage
+        $21d5a  xx xx:      xxx #$xx ; (spaces 2)
+        $21d5c  xx xx xx:   xxx ShowMenuMessage
+        $21d5f  xx xx:      xxx #$xx ; (space)
+        $21d61  xx xx xx:   xxx ShowMenuMessage
         $21d64  xx xx xx:   xxx $3c169
         $21d67  xx xx:      xxx #$xx
         $21d69  xx xx:      xxx $xx
@@ -29362,40 +29650,158 @@ DataTable_21da0
         $21da0              .byte $xx,$xx
 DataTable_21da2
         $21da2              .byte $xx,$xx
-DataTable_21da4
-        $21da4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21db4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21dc4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_21dd0
-        $21dd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21de0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21df0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21e00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21e10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21e20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_21e28
-        $21e28              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21e38              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21e48              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_21e54
-        $21e54              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21e60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21e70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21e80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21e90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21ea0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_21eac
-        $21eac              .word ($xxxx)
-        $21eae              .word ($xxxx)
-        $21eb0              .word ($xxxx)
-        $21eb2              .word ($xxxx)
-        $21eb4              .word ($xxxx)
-        $21eb6              .word ($xxxx)
-        $21eb8              .word ($xxxx)
-        $21eba              .word ($xxxx)
-        $21ebc              .word ($xxxx)
-        $21ebe              .word ($xxxx)
-        $21ec0              .word ($xxxx)
+;;; --------------------------------
+ArmorShopIdTable
+        $21da4              .byte $xx,$xx,$xx,$xx
+        $21da8              .byte $xx,$xx,$xx,$xx
+        $21dac              .byte $xx,$xx,$xx,$xx
+        $21db0              .byte $xx,$xx,$xx,$xx
+        $21db4              .byte $xx,$xx,$xx,$xx
+        $21db8              .byte $xx,$xx,$xx,$xx
+        $21dbc              .byte $xx,$xx,$xx,$xx
+        $21dc0              .byte $xx,$xx,$xx,$xx
+        $21dc4              .byte $xx,$xx,$xx,$xx
+        $21dc8              .byte $xx,$xx,$xx,$xx
+        $21dcc              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
+ArmorShopPriceTable
+        ;; 0 Leaf
+        $21dd0              .word ($xxxx) ; 100  Tanned Hide
+        $21dd2              .word ($xxxx) ; 80   Carapace Shield
+        $21dd4              .word ($xxxx) ; 0
+        $21dd6              .word ($xxxx) ; 0
+        ;; 1 Brynmaer
+        $21dd8              .word ($xxxx) ; 140  Leather Armor
+        $21dda              .word ($xxxx) ; 70   Carapace Shield
+        $21ddc              .word ($xxxx) ; 220  Bronze Shield
+        $21dde              .word ($xxxx) ; 0
+        ;;
+        $21de0              .word ($xxxx) ; 0
+        $21de2              .word ($xxxx) ; 0
+        $21de4              .word ($xxxx) ; 0
+        $21de6              .word ($xxxx) ; 0
+        ;; 3 Amazones
+        $21de8              .word ($xxxx) ; 1800 Platinum Armor
+        $21dea              .word ($xxxx) ; 1300 Platinum Shield
+        $21dec              .word ($xxxx) ; 2000 Mirror Shield
+        $21dee              .word ($xxxx) ; 9000 Sacred Shield
+        ;;
+        $21df0              .word ($xxxx) ; 0
+        $21df2              .word ($xxxx) ; 0
+        $21df4              .word ($xxxx) ; 0
+        $21df6              .word ($xxxx) ; 0
+        ;; 5 Portoa
+        $21df8              .word ($xxxx) ; 600  Bronze
+        $21dfa              .word ($xxxx) ; 2000 Platinum Armor
+        $21dfc              .word ($xxxx) ; 1500 Platinum Shield
+        $21dfe              .word ($xxxx) ; 0
+        ;;
+        $21e00              .word ($xxxx) ; 0
+        $21e02              .word ($xxxx) ; 0
+        $21e04              .word ($xxxx) ; 0
+        $21e06              .word ($xxxx) ; 0
+        ;; 7 Swan
+        $21e08              .word ($xxxx) ; 3000 Soldier Suit
+        $21e0a              .word ($xxxx) ; 6500 Ceramic Suit
+        $21e0c              .word ($xxxx) ; 2500 Ceramic Shield
+        $21e0e              .word ($xxxx) ; 6000 Battle Shield
+        ;;
+        $21e10              .word ($xxxx) ; 0
+        $21e12              .word ($xxxx) ; 0
+        $21e14              .word ($xxxx) ; 0
+        $21e16              .word ($xxxx) ; 0
+        ;; 9 Shyron
+        $21e18              .word ($xxxx) ; 5500 Ceramic Suit
+        $21e1a              .word ($xxxx) ; 6000 Sacred Shield
+        $21e1c              .word ($xxxx) ; 5000 Battle Shield
+        $21e1e              .word ($xxxx) ; 0
+        ;;
+        $21e20              .word ($xxxx) ; 0
+        $21e22              .word ($xxxx) ; 0
+        $21e24              .word ($xxxx) ; 0
+        $21e26              .word ($xxxx) ; 0
+;;; --------------------------------
+ItemShopIdTable
+        $21e28              .byte $xx,$xx,$xx,$xx ; Leaf: Herb, Antidote, Warp boots, Alarm flute
+        $21e2c              .byte $xx,$xx,$xx,$xx ; Brynmaer: ...
+        $21e30              .byte $xx,$xx,$xx,$xx
+        $21e34              .byte $xx,$xx,$xx,$xx
+        $21e38              .byte $xx,$xx,$xx,$xx
+        $21e3c              .byte $xx,$xx,$xx,$xx
+        $21e40              .byte $xx,$xx,$xx,$xx
+        $21e44              .byte $xx,$xx,$xx,$xx
+        $21e48              .byte $xx,$xx,$xx,$xx
+        $21e4c              .byte $xx,$xx,$xx,$xx
+        $21e50              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
+ItemShopPriceTable
+        ;; Leaf
+        $21e54              .word ($xxxx) ; 30
+        $21e56              .word ($xxxx) ; 40
+        $21e58              .word ($xxxx) ; 60
+        $21e5a              .word ($xxxx) ; 50
+        ;; Brynmaer
+        $21e5c              .word ($xxxx) ; 35
+        $21e5e              .word ($xxxx) ; 45
+        $21e60              .word ($xxxx) ; 65
+        $21e62              .word ($xxxx) ; 0
+        ;; Oak
+        $21e64              .word ($xxxx) ; 50
+        $21e66              .word ($xxxx) ; 60
+        $21e68              .word ($xxxx) ; 80
+        $21e6a              .word ($xxxx) ; 0
+        ;; Amazones
+        $21e6c              .word ($xxxx) ; 100
+        $21e6e              .word ($xxxx) ; 150
+        $21e70              .word ($xxxx) ; 150
+        $21e72              .word ($xxxx) ; 0
+        ;; Nadare
+        $21e74              .word ($xxxx) ; 60
+        $21e76              .word ($xxxx) ; 70
+        $21e78              .word ($xxxx) ; 100
+        $21e7a              .word ($xxxx) ; 80
+        ;; Portoa
+        $21e7c              .word ($xxxx) ; 90
+        $21e7e              .word ($xxxx) ; 120
+        $21e80              .word ($xxxx) ; 200
+        $21e82              .word ($xxxx) ; 180
+        ;; Joel
+        $21e84              .word ($xxxx) ; 120
+        $21e86              .word ($xxxx) ; 150
+        $21e88              .word ($xxxx) ; 180
+        $21e8a              .word ($xxxx) ; 300
+        ;; Swan
+        $21e8c              .word ($xxxx) ; 180
+        $21e8e              .word ($xxxx) ; 200
+        $21e90              .word ($xxxx) ; 300
+        $21e92              .word ($xxxx) ; 350
+        ;; Goa
+        $21e94              .word ($xxxx) ; 500
+        $21e96              .word ($xxxx) ; 600
+        $21e98              .word ($xxxx) ; 700
+        $21e9a              .word ($xxxx) ; 800
+        ;; Shyron
+        $21e9c              .word ($xxxx) ; 180
+        $21e9e              .word ($xxxx) ; 200
+        $21ea0              .word ($xxxx) ; 300
+        $21ea2              .word ($xxxx) ; 800
+        ;; Sahara
+        $21ea4              .word ($xxxx) ; 1000
+        $21ea6              .word ($xxxx) ; 4000
+        $21ea8              .word ($xxxx) ; 3000
+        $21eaa              .word ($xxxx) ; 1500
+InnPrices
+        $21eac              .word ($xxxx) ; 16  Leaf
+        $21eae              .word ($xxxx) ; 20  Brynmaer
+        $21eb0              .word ($xxxx) ; 40  Oak
+        $21eb2              .word ($xxxx) ; 80  Amazones
+        $21eb4              .word ($xxxx) ; 50  Nadare
+        $21eb6              .word ($xxxx) ; 100 Portoa
+        $21eb8              .word ($xxxx) ; 120 Joel
+        $21eba              .word ($xxxx) ; 150 Shyron
+        $21ebc              .word ($xxxx) ; 300 Goa
+        $21ebe              .word ($xxxx) ; 150 Swan
+        $21ec0              .word ($xxxx) ; 500 Sahara
 DataTable_21ec2
         $21ec2              .word ($xxxx)
         $21ec4              .word ($xxxx)

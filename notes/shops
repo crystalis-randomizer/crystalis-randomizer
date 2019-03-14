@@ -1,3 +1,22 @@
+When entering a shop, we store the current shop inventory in $6470..f
+Items in 0..3, 4 and 5 stores currently-selected item's price, and 8..f is all prices
+ - copied by 218e3 for item shops
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 diffs (in ROM space - +$10 from actual memory address):
 $1afff: $2 -> $5  [[ wind lv 1 ]]
 $1b018: $3 -> $7  [[ wind lv 2 ]]

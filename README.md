@@ -13,18 +13,10 @@ original game.
 
 Please visit our [discord] for more information and discussion.
 
+Try it out at https://crystalisrandomizer.com
+
 [Crystalis]: https://en.wikipedia.org/wiki/Crystalis
 [discord]: https://discord.gg/ktyz5E6
-
-## Status
-
-This randomizer is currently a pre-release beta version, and there are
-still a few known issues and missing features.  It has been put out here
-at this stage to give people an idea of what we're eventually working
-toward, with the understanding that there are still a few rough edges that
-will make it not as fun as we hope it to be.
-
-Try it out at https://crystalisrandomizer.com
 
 ## Features
 

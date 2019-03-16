@@ -115,7 +115,8 @@ export const stampVersionSeedAndHash = (rom, seed, flags) => {
   // Would be nice to store (1) commit, (2) flags, (3) seed, (4) hash
   // We can use base64 encoding to help some...
   // For now just stick in the commit and seed in simple hex
-  const crc = crc32(rom).toString(16).padStart(8, 0).toUpperCase();
+  const crc = crc32(rom);
+  const crcString = crc.toString(16).padStart(8, 0).toUpperCase();
   const hash = version.STATUS == 'unstable' ?
       version.HASH.substring(0, 7).padStart(7, 0).toUpperCase() + '     ' :
       version.VERSION.substring(0, 12).padEnd(12, ' ');
@@ -162,7 +163,7 @@ export const stampVersionSeedAndHash = (rom, seed, flags) => {
     embed(0x2782f, intercalate(extraFlags.substring(0, 23), extraFlags.substring(23)));
   }
 
-  embed(0x27885, intercalate(crc.substring(0, 4), crc.substring(4)));
+  embed(0x27885, intercalate(crcString.substring(0, 4), crcString.substring(4)));
 
   // embed(0x25ea8, `v.${hash}   ${seed}`);
   embed(0x25716, 'RANDOMIZER');

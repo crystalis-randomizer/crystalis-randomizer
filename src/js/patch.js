@@ -849,6 +849,11 @@ CheckOpelStatue:
 .org $27900 ; END OF FREE SPACE
 
 .org $27912
+  ;; Clear status effects immediately - if there's an opel statue then we'll
+  ;; need to clear it anyway; if not we're dead so it doesn't matter.
+  lda #$00
+  sta $0710
+  ;; Now check opel statue
   ldx #$07
   bne CheckOpelStatue
 .org $2791c

@@ -4,6 +4,8 @@
 * Prevent humanly-impossible swamp run in hard-mode logic.
 * Prevent soft-lock when saving or checkpointing in really awkward situations
   by ensuring loaded games have a minimum HP of 5 and MP of 1.
+* Add `Fs` flag to disable the shop glitch, and change `Gs` to `Gc` for
+  sword charge glitch.
 
 ## 1.0.1
 * Item shuffle is now done using "assumed fill".

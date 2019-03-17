@@ -139,7 +139,7 @@ const assumeWildWarp        = glitch(option('Assume wild warp',
 const allowWildWarp         = option('Allow wild warp',
                                      opt('!Tw', false));
 const assumeSwordChargeGlitch = glitch(option('Assume sword charge glitch',
-                                       opt('Gs', false)));
+                                       opt('Gc', false)));
 const buffedMedicalHerb     = option('Buffed medical herb',
                                      opt('!Hm', true));
 

@@ -72,6 +72,11 @@ export const shuffle = async (rom, seed, flags, log = undefined, progress = unde
     // TODO - paralysis requires prison key
     barrierRequiresCalmSea.apply(rom);
   }
+  // Fix glitches:
+  if (flags.check('Fs')) {
+    fixShopGlitch.apply(rom);
+  }
+  ////////////////
   preventSoftlockFromZeroHpOrMp.apply(rom);
   scaleDifficultyLib.apply(rom);
   nerfArmors.apply(rom);
@@ -209,6 +214,16 @@ CheckFlag0:
 + jmp ReadControllersWithDirections
 
 `, 'watchForFlag0'));
+
+export const fixShopGlitch = buildRomPatch(assemble(`
+.bank $20000 $8000:$2000
+
+.org $217cd
+Shop_NothingPressed:
+
+.org $21812
+  jmp Shop_NothingPressed
+`, 'fixShopGlitch'));
 
 export const preventSoftlockFromZeroHpOrMp = buildRomPatch(assemble(`
 .bank $3c000 $c000:$4000 ; fixed bank

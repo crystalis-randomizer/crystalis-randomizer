@@ -28873,7 +28873,7 @@ Shop_Main_Loop
         $2170e  xx xx xx:    xxx $xxxx
         $21711  xx xx:       xxx #$xx
         $21713  xx xx xx:    xxx $xxxx
-        $21716  xx xx xx:    xxx Shop_UpdatePrice
+        $21716  xx xx xx:    xxx Shop_UpdateSelection
         ;; --------------------------------
 +       $21719  xx xx:      xxx Ctrl1NewlyPressed
         $2171b  xx xx:      xxx #BUTTON_RIGHT
@@ -28883,7 +28883,7 @@ Shop_Main_Loop
         $21722  xx xx xx:    xxx $xxxx
         $21725  xx xx:       xxx #$xx
         $21727  xx xx xx:    xxx $xxxx
-        $2172a  xx xx xx:    xxx Shop_UpdatePrice
+        $2172a  xx xx xx:    xxx Shop_UpdateSelection
         ;; --------------------------------
         ;; Hitting select in a shop makes you leave immediately
 +       $2172d  xx xx:      xxx Ctrl1NewlyPressed
@@ -28984,7 +28984,7 @@ Shop_Exit
         $217e9  xx xx xx:   xxx ShowMenuMessage
         $217ec  xx xx xx:   xxx $21878
 ;;; --------------------------------
-Shop_UpdatePrice
+Shop_UpdateSelection
         ;; Update the item name, price, etc
         $217ef  xx xx:      xxx #$xx
         $217f1  xx xx xx:   xxx $20a9f

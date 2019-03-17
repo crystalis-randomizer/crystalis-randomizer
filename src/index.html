@@ -109,7 +109,7 @@ setTimeout(function() {
                   data-text="A balanced randomization with quite a bit more difficulty.">
             Advanced
           </option> <!-- TODO: Htx -->
-          <option data-flags="Gfprstw Hbgmsw Mr Rlpt Sbckmt Tas"
+          <option data-flags="Fm Gfprstw Hbgmsw Mr Rlpt Sbckmt Tas"
                   data-text="Pulls out all the stops, and may require horrible hell runs.">
             Ludicrous
           </option>
@@ -344,7 +344,6 @@ setTimeout(function() {
         </div>
       </div>
 
-
       <h2>Glitches</h2>
       <p>The routing logic can be made aware of the following
       glitches.  If selected, it will assume that the glitch can be
@@ -352,6 +351,13 @@ setTimeout(function() {
       these glitches tends to increase the randomness of the shuffle,
       since there are more valid options.
       <div class="flag-list">
+        <div class="checkbox hard">Gc: Sword charge glitch may be required
+          <div class="flag-body">
+            Progression may require using the sword charge glitch to destroy walls or
+            form bridges without actually possessing the correct orb.
+          </div>
+        </div>
+
         <div class="checkbox">Gf: Ghetto flight may be required
           <div class="flag-body">
             Progression may require using Rabbit Boots and the dolphin to reach Swan
@@ -385,18 +391,23 @@ setTimeout(function() {
           </div>
         </div>
 
-        <div class="checkbox hard">Gs: Sword charge glitch may be required
-          <div class="flag-body">
-            Progression may require using the sword charge glitch to destroy walls or
-            form bridges without actually possessing the correct orb.
-          </div>
-        </div>
-
         <div class="checkbox hard">Gw: Wild warp may be required
           <div class="flag-body">
             Progression may require using "wild warp" (holding A and B on controller 1
             and tapping A on controller 2) to travel to parts of the game that would
             otherwise be unreachable.
+          </div>
+        </div>
+      </div>
+
+      <h2>Glitch Fixes</h2>
+      <p>Alternatively, glitches may be patched out of the game and made unusable.
+        These flags are exclusive with the flags that require the glitch.
+      <div class="flag-list">
+        <div class="checkbox">Fs: Fix shop glitch
+          <div class="flag-body">
+            Items may no longer be purchased for neighboring prices.  This makes money
+            actually mean something.
           </div>
         </div>
       </div>

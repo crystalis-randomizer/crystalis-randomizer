@@ -234,12 +234,21 @@ CheckForLowHpMp:
   bcs +
    lda #$05
 + sta $03c1
-  lda $0708
-  bne +
-   lda #$01
+  ;; Check if we've ever found any swords
+  lda $64c0
+  and #$0f
+  ;; If this is zero then we have no swords and should give 20 MP.
+  ;; If it's nonzero, set it to -19 and then we'll add 20 unconditionally.
+  beq +
+   lda #$ed
++ clc
+  adc #$14
+  ;; Now compare with MP - if it's less, set the minimum.
+  cmp $0708
+  bcc +
    sta $0708
 + rts
-.org $2fbe9 ; tight bound, in case we need space on this page later
+.org $2fbf3 ; tight bound, in case we need space on this page later
 .org $2fc00 ; end of unused block
 
 .org $2fd82 ; normally "sta $03c1"
@@ -840,6 +849,11 @@ CheckOpelStatue:
 .org $27900 ; END OF FREE SPACE
 
 .org $27912
+  ;; Clear status effects immediately - if there's an opel statue then we'll
+  ;; need to clear it anyway; if not we're dead so it doesn't matter.
+  lda #$00
+  sta $0710
+  ;; Now check opel statue
   ldx #$07
   bne CheckOpelStatue
 .org $2791c

@@ -29,6 +29,9 @@ class Assembler {
     this.filename = filename;
     this.lineNumber = -1;
     this.lineContents = '';
+    // for conditional assembly
+    this.conditions = [];
+    this.assembling = true;
   }
 
   addLine(line) {
@@ -37,8 +40,7 @@ class Assembler {
 
   addLabel(label, address) {
     if (typeof address !== 'number') throw new Error('Expected a number');
-    const arr = this.labels[label] || [];
-    this.labels[label] = arr;
+    const arr = this.labels[label] || (this.labels[label] = []);
     const index = find(arr, address);
     if (index < 0) arr.splice(~index, 0, address);
   }
@@ -57,8 +59,27 @@ class Assembler {
     // Solution - zeropage refs must be defined.
     let match;
 
-    if ((match = /^\s*\.org\s+(\S+)/i.exec(line))) {
+    if ((match = /^\s*\.if(n?)def\s+(\S+)/i.exec(line))) {
+      const def = match[2] in this.labels;
+      this.conditions.push(match[1] ? !def : def);
+      this.assembling = this.conditions.every(x => x);
+      return;
+    } else if ((match = /^\s*\.else/i.exec(line))) {
+      this.conditions.push(!this.conditions.pop());
+      this.assembling = this.conditions.every(x => x);
+      return;
+    } else if ((match = /^\s*\.endif/i.exec(line))) {
+      this.conditions.pop();
+      this.assembling = this.conditions.every(x => x);
+      return;
+    } else if (!this.assembling) {
+      // nothing else to do at this point.
+      return;
+    } else if ((match = /^\s*\.org\s+(\S+)/i.exec(line))) {
       this.addLine(new OrgLine((this.pc = parseNumber(match[1]))));
+      return;
+    } else if ((match = /^\s*\.assert\s+(\S+)/i.exec(line))) {
+      this.addLine(new AssertLine((this.pc = parseNumber(match[1]))));
       return;
     } else if ((match = /^\s*\.bank\s+(\S+)\s+(\S+)\s*:\s*(\S+)/i.exec(line))) {
       const [_, prg, cpu, length] = match;
@@ -129,6 +150,9 @@ class Assembler {
         data.push(output[i]);
       }
       chunks.push(new Chunk(start, data));
+    }
+    if (this.conditions.length) {
+      throw new Error('Unterminated .if');
     }
     return chunks;
   }
@@ -226,7 +250,26 @@ class OrgLine extends AbstractLine {
   size() { return 0; }
 
   expand(context) {
+    // TODO - can we allow this.pc to be a label?
     context.pc = this.pc;
+  }
+}
+
+class AssertLine extends AbstractLine {
+  constructor(pc) {
+    super();
+    this.pc = pc;
+  }
+
+  bytes() { return []; }
+
+  size() { return 0; }
+
+  expand(context) {
+    // TODO - can we allow this.pc to be a label?
+    if (context.pc != this.pc) {
+      throw new Error(`Misalignment: expected $${this.pc.toString(16)
+                           } but was $${context.pc.toString(16)}`);
   }
 }
 
@@ -401,6 +444,7 @@ class Patch {
 
 // Input: an assembly string
 // Output: a patch
+// TODO - consider also outputting the dictionary of labels???
 export const assemble = (str, filename = 'input') => {
   const asm = new Assembler(filename);
   let i = 0;

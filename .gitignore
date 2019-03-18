@@ -1,4 +1,4 @@
 .DS_Store
-*.s
+Crystalis.s
 *.nes
 cov.*

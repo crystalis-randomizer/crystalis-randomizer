@@ -40,6 +40,19 @@ export const parseSeed = (/** string */ seed) => /** number */ {
   return crc32(seed);
 }
 
+/**
+ * Abstract out File I/O.  Node and browser will have completely
+ * different implementations.
+ * @record
+ */
+export class Reader {
+  /**
+   * @param {string} filename
+   * @return {!Promise<string>} contents
+   */
+  read(filename) {}
+}
+
 export const shuffle = async (rom, seed, flags, log = undefined, progress = undefined) => {
   // First turn the seed into something useful.
   if (typeof seed !== 'number') throw new Error('Bad seed');

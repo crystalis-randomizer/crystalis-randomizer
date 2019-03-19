@@ -31,17 +31,45 @@ const main = (args) => {
     regen = true;
     args.shift();
   }
-  let rom = args.shift();
-  let golden = args.shift();
+  let romFile = args.shift();
+  let goldenFile = args.shift();
   if (!rom || !golden) {
     usage(1);
   }
 
   // Read the files
-  // Build a data structure for golden data
-  // Call a test function w/ flags and golden file??
+  const rom = new Uint8Array(fs.readFileSync(romFile));
+  const golden = fs.readFileSync(goldenFile).toString('utf-8');
+  const goldenData = [];
+  for (let line of golden.split('\n')) {
+    line = line.trim();
+    if (!line) continue;
+    const [flags, seed, crc] = line.split(/ +/g);
+    goldenData.push({flag, seed, crc});
+  }
 
+  // Shuffle the rom for each test case
+  const output = [];
+  let tested = 0;
+  for (const g of golden) {
+    if (!g.seed && !regen) throw new Error('Seed required for test');
+    const seed = patch.parseSeed(g.seed);
+    g.seed = seed.toString(16);
+    const shuffled = rom.slice();
+    await patch.shuffle(shuffled, seed, new FlagSet(String(g.flags)));
+    const crc = crc32(shuffled)
+    if (regen) g.crc = crc;
+    if (g.crc != crc) throw new Error(`Mismatch for flagset ${g.flags}`);
+    output.push(`${g.flags} ${g.seed} ${g.crc}\n`);
+    tested++;
+  }
 
+  // Write out the new golden file if needed
+  if (regen) {
+    fs.writeFile(golden, output.join(''));
+  } else {
+    console.log(`Tested ${tested} files`);
+  }
 };
 
 main(process.argv.slice(2)).then(() => process.exit(0));

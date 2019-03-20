@@ -8,15 +8,15 @@ set -ex
 {
   # Pad the test data on either side, then chop down to the right size
   head -c 81919 /dev/urandom
-  cat scripts/testdata
+  cat test/testdata
   head -c 300000 /dev/urandom
-} | head -c 393232 > scripts/test.nes
+} | head -c 393232 > test/test.nes
 
 # Now run the CLI on it.
-node src/js/cli.js --output=scripts/test_out --force scripts/test.nes
+node src/js/cli.js --output=test/test_out --force test/test.nes
 
 # Make sure the output has the right size.
-wc -c scripts/test_out.nes | grep -q 393232
+wc -c test/test_out.nes | grep -q 393232
 
 # Clean up.
-rm -f scripts/test{,_out}.nes
+rm -f test/test{,_out}.nes

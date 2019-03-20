@@ -25,7 +25,7 @@ const usage = (code) => {
   process.exit(code);
 };
 
-const main = (args) => {
+const main = async (args) => {
   let regen = false;
   if (args[0] == '-r') {
     regen = true;
@@ -33,7 +33,7 @@ const main = (args) => {
   }
   let romFile = args.shift();
   let goldenFile = args.shift();
-  if (!rom || !golden) {
+  if (!romFile || !goldenFile) {
     usage(1);
   }
 
@@ -45,31 +45,43 @@ const main = (args) => {
     line = line.trim();
     if (!line) continue;
     const [flags, seed, crc] = line.split(/ +/g);
-    goldenData.push({flag, seed, crc});
+    goldenData.push({flags, seed, crc});
   }
 
   // Shuffle the rom for each test case
   const output = [];
   let tested = 0;
-  for (const g of golden) {
+  for (const g of goldenData) {
     if (!g.seed && !regen) throw new Error('Seed required for test');
     const seed = patch.parseSeed(g.seed);
     g.seed = seed.toString(16);
-    const shuffled = rom.slice();
-    await patch.shuffle(shuffled, seed, new FlagSet(String(g.flags)));
-    const crc = crc32(shuffled)
+    let shuffled;
+    try {
+      shuffled = rom.slice();
+      await patch.shuffle(shuffled, seed, new FlagSet(String(g.flags)));
+    } catch (err) {
+      shuffled = Uint8Array.of(0); // indicate that shuffle failed...?
+    }
+    const crc = crc32(shuffled).toString(16);
     if (regen) g.crc = crc;
-    if (g.crc != crc) throw new Error(`Mismatch for flagset ${g.flags}`);
+    if (g.crc != crc) {
+      throw new Error(`Mismatch for ${g.flags}: got ${crc} want ${g.crc}`);
+    }
     output.push(`${g.flags} ${g.seed} ${g.crc}\n`);
     tested++;
   }
 
   // Write out the new golden file if needed
   if (regen) {
-    fs.writeFile(golden, output.join(''));
+    fs.writeFileSync(goldenFile, output.join(''));
+    console.log(`Wrote ${goldenFile}`);
   } else {
     console.log(`Tested ${tested} files`);
   }
 };
 
+process.on('unhandledRejection', error => {
+  console.error(error.stack);
+  process.exit(1);
+});
 main(process.argv.slice(2)).then(() => process.exit(0));

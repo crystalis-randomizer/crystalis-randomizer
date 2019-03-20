@@ -270,6 +270,7 @@ class AssertLine extends AbstractLine {
     if (context.pc != this.pc) {
       throw new Error(`Misalignment: expected $${this.pc.toString(16)
                            } but was $${context.pc.toString(16)}`);
+    }
   }
 }
 

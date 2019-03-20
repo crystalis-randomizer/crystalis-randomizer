@@ -9,7 +9,7 @@ before_script:
   - eval $(scripts/build_info.sh)
 
 script:
-  - scripts/test_cli.sh || ( touch failed; false )
+  - test/test_cli.sh || ( touch failed; false )
   - gulp                || ( touch failed; false )
   - test ! -e failed && scripts/deploy.sh
 

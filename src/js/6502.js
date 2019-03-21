@@ -242,7 +242,7 @@ class WordLine extends AbstractLine {
     for (let part of line.split(',')) {
       part = part.trim();
       part = part.replace(/[()]/g, ''); // handle these differently? complement?
-      words.push(parseNumber(part));
+      words.push(parseNumber(part, true));
     }
     return new WordLine(words);
   }

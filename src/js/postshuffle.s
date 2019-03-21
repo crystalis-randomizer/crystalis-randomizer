@@ -217,27 +217,4 @@ RescaleExp:   ; $1bcbd
 RescaleDone:
    jmp $3c2af
 
-Multiply16Bit:
-  ;; Multiplies inputs in $61 and $62, then shifts
-  ;; right A times.
-  ;; Result goes $61$62 (lo hi), preserves XY
-  ;; Sets carry if result doesn't fit in 8 bits
-  txa
-  pha
-  lda #$00
-  ldx #$08
-  clc
--  bcc +
-    clc
-    adc $62
-+  ror
-   ror $61
-   dex
-  bpl -
-  sta $62
-  cmp #$01 ; set carry if A != 0
-  pla
-  tax
-  rts
-
 .assert < $1bff0

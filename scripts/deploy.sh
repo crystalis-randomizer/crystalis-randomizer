@@ -31,6 +31,7 @@ mkdir -p "deploy/$dir/images"
 
 cp src/js/view/*.js "deploy/$dir/js/view/"
 cp src/js/*.js "deploy/$dir/js/"
+cp src/js/*.s "deploy/$dir/js/"
 cp src/css/*.css "deploy/$dir/css/"
 cp src/css/view/*.css "deploy/$dir/css/view/"
 cp src/images/* "deploy/$dir/images/"

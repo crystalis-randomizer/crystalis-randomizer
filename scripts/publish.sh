@@ -45,7 +45,7 @@ fi
   cp -f notes/traversal.txt "$TMP/r/"
   cp -f src/favicon.ico "$TMP/r/"
   gulp
-  cp src/js/*.js "$DIR/js"
+  cp src/js/*.js src/js/*.s "$DIR/js"
   cp src/css/*.css "$DIR/css"
   (
     # clobber some of src

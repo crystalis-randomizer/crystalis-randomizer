@@ -1146,7 +1146,7 @@ ApplySpeedBoots:
 
 .ifdef _TELEPORT_ON_THUNDER_SWORD
 .org $3d161
-  .word ($fe45) ; DialogFollowupActionJump 1f -> 3de45
+  .word (DialogFollowupAction_1f)
 .endif
 
 
@@ -1237,7 +1237,7 @@ SetEquippedConsumableItem:
 
 
 ;;; Call 3f9ba instead of 3c008 after the inventory menu
-.org $3f9ba
+.org $3f9ba  ; free space from here to $3fdf0
 PostInventoryMenu:
   ;; Change 'lda' (ad) to 'jsr' (20) to enable these
 .ifdef _AUTO_EQUIP_BRACELET
@@ -1277,20 +1277,38 @@ AutoEquipBracelets:
   sta $0718
   rts
 
-.org $3f9f8
 FinishTriggerSquare:
   beq +
    lda #$08  ; game mode normal
    sta $41
 + jmp MainLoop_01_Game
   
-.org $3fa10
-;;;  TONS OF PRIME SPACE HERE!!!!!
-;;; TODO - move Multiply16bit here
+Multiply16Bit:
+  ;; Multiplies inputs in $61 and $62, then shifts
+  ;; right A times.
+  ;; Result goes $61$62 (lo hi), preserves XY
+  ;; Sets carry if result doesn't fit in 8 bits
+  txa
+  pha
+  lda #$00
+  ldx #$08
+  clc
+-  bcc +
+    clc
+    adc $62
++  ror
+   ror $61
+   dex
+  bpl -
+  sta $62
+  cmp #$01 ; set carry if A != 0
+  pla
+  tax
+  rts
 
 
 .ifdef _CHECK_FLAG0
-.org $3fdd0
+;.org $3fdd0
 CheckFlag0:
     lda $6480
     lsr
@@ -1309,9 +1327,15 @@ CheckFlag0:
      jsr LoadAndShowDialog
 +   jmp ReadControllersWithDirections
 .endif ; _CHECK_FLAG0
+
 .assert < $3fe00 ; end of free space started at 3f9ba
 
-.org $3fe2e ; smaller chunk of free space to 3fe78 (or 3fe80?)
+.org $3fe01
+  ;; free space?
+.assert < $3fe16
+
+;; NOTE: 3fe2e might be safer than 3fe18
+.org $3fe18 ; smaller chunk of free space to 3fe78 (or 3fe80?)
 SubtractEnemyHP:
   ;; NOTE: we could probably afford to move a few of these back if needed
   lda ObjectElementalDefense,y
@@ -1326,24 +1350,25 @@ SubtractEnemyHP:
   sbc #$00
   rts
 
-;;; Patched DialogFollowupAction 1f
-.org $3fe45
-;;; TODO - use a label here!!! teach assembler how
+DialogFollowupAction_1f:
+  ;; Patched DialogFollowupAction 1f - used for asina in shyron
+  ;; Teleport the player back to the start
   lda #$00
   sta $6c
   sta $6d
   lda #$01
   sta $41
   rts
-.org $3fe50
-;;; unused space
-.org $3fe72
+
 ;;; Note: This is moved from $3db22, where we ran out of space.
 FinishEquippingConsumable:
     sbc #$1c
     sta EquippedConsumableItem
     rts
-.org $3fe78
+
+;; free space
+
+.assert < $3fe78
 
 
 
@@ -1367,7 +1392,6 @@ PatchGrantItemInRegisterA:
    pla
 + rts
 
-.org $3ff62                     ; REMOVE!
 PatchUpdateShieldDefense:
   ldy $0714
   lda ShieldDefense,y

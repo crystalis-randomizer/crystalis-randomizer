@@ -108,10 +108,8 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
 
   if (flags.check('Em')) {
     rom[0x1c4ea + 0x10] *= 3;
-    //buffMedicalHerb3x.apply(rom);
   } else if (!flags.check('Hm')) {
     rom[0x1c4ea + 0x10] *= 2;
-    //buffMedicalHerb2x.apply(rom);
   }
 
   await assemble('postshuffle.s');

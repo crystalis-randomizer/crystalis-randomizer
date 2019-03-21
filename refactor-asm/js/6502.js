@@ -19,11 +19,46 @@
 //   rts();
 // }
 
+const LOG = false;
 
-// Useful for patching ROMs.
-class Assembler {
-  constructor(filename) {
+
+export class Assembler {
+  constructor() {
     this.labels = {};
+    this.allChunks = [];
+  }
+
+  // Input: an assembly string
+  // Output: a patch
+  // TODO - consider also outputting the dictionary of labels???
+  assemble(str, filename = 'input') {
+    const f = new File(this.labels, filename);
+    for (const line of str.split('\n')) {
+      f.ingest(line);
+    }
+    const chunks = f.assemble();
+    this.allChunks.push(...chunks);
+  }
+
+  chunks() {
+    return [...this.allChunks];
+  }
+
+  patch() {
+    return Patch.from(this.allChunks);
+  }
+
+  patchRom(rom) {
+    buildRomPatch(this.patch()).apply(rom);
+    this.allChunks = [];
+  }
+}
+
+
+// A single chunk of assembly
+class File {
+  constructor(labels, filename) {
+    this.labels = labels;
     this.lines = [];
     this.pc = 0;
     this.filename = filename;
@@ -78,8 +113,8 @@ class Assembler {
     } else if ((match = /^\s*\.org\s+(\S+)/i.exec(line))) {
       this.addLine(new OrgLine((this.pc = parseNumber(match[1]))));
       return;
-    } else if ((match = /^\s*\.assert\s+(\S+)/i.exec(line))) {
-      this.addLine(new AssertLine((this.pc = parseNumber(match[1]))));
+    } else if ((match = /^\s*\.assert\s+(<\s*)?(\S+)/i.exec(line))) {
+      this.addLine(new AssertLine((this.pc = parseNumber(match[2])), !match[1]));
       return;
     } else if ((match = /^\s*\.bank\s+(\S+)\s+(\S+)\s*:\s*(\S+)/i.exec(line))) {
       const [_, prg, cpu, length] = match;
@@ -126,7 +161,7 @@ class Assembler {
       } catch (e) {
         const stack = e.stack.replace(`Error: ${e.message}`, '');
         const message = e.message;
-        const pos = ` from line ${line.origLineNumber}: \`${line.origContent}\``;
+        const pos = ` from line ${line.origLineNumber + 1}: \`${line.origContent}\``;
         throw new Error(`${message}${pos}${stack}\n================`);
       }
       if (line instanceof OrgLine && output[line.pc] != null) {
@@ -256,9 +291,10 @@ class OrgLine extends AbstractLine {
 }
 
 class AssertLine extends AbstractLine {
-  constructor(pc) {
+  constructor(pc, exact) {
     super();
     this.pc = pc;
+    this.exact = exact;
   }
 
   bytes() { return []; }
@@ -267,9 +303,14 @@ class AssertLine extends AbstractLine {
 
   expand(context) {
     // TODO - can we allow this.pc to be a label?
-    if (context.pc != this.pc) {
-      throw new Error(`Misalignment: expected $${this.pc.toString(16)
-                           } but was $${context.pc.toString(16)}`);
+    if (this.exact ? context.pc != this.pc : context.pc > this.pc) {
+      throw new Error(`Misalignment: expected ${this.exact ? '<' : ''}$${
+                           this.pc.toString(16)} but was $${
+                           context.pc.toString(16)}`);
+    }
+    if (!this.exact && LOG) {
+      console.log(`Free: ${this.pc - context.pc} bytes between $${
+                       context.pc.toString(16)} and $${this.pc.toString(16)}`);
     }
   }
 }
@@ -447,7 +488,7 @@ class Patch {
 // Output: a patch
 // TODO - consider also outputting the dictionary of labels???
 export const assemble = (str, filename = 'input') => {
-  const asm = new Assembler(filename);
+  const asm = new File({}, filename);
   let i = 0;
   for (const line of str.split('\n')) {
     i++;

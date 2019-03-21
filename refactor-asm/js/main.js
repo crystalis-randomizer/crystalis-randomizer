@@ -4,6 +4,7 @@ import {crc32} from './crc32.js';
 import {EXPECTED_CRC32} from './rom.js';
 import {FlagSet} from './flagset.js';
 import {ProgressTracker} from './progress.js';
+import {FetchReader} from './fetchreader.js';
 
 // global state
 let flags;
@@ -155,7 +156,9 @@ const shuffleRom = async (seed) => {
     setTimeout(showWork, 120);
   }
   showWork();
-  const crc = await patch.shuffle(shuffled, seed, flagsClone, log, progressTracker);
+  const crc =
+      await patch.shuffle(
+          shuffled, seed, flagsClone, new FetchReader(), log, progressTracker);
   done = true;
   document.body.classList.remove('shuffling');
   if (log) {

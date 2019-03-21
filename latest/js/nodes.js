@@ -1028,7 +1028,7 @@ export class FillStrategy {
 
   /**
    * @param {!Array<!ItemGet>} items
-   * @param {!Random}
+   * @param {!Random} random
    * @return {!Array<number>}
    */
   shuffleItems(items, random) {}

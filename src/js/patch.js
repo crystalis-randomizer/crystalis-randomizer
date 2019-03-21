@@ -113,8 +113,8 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   }
 
   await assemble('postshuffle.s');
-  updateDifficultyScalingTables(rom);
-  updateCoinDrops(rom);
+  updateDifficultyScalingTables(rom, flags);
+  updateCoinDrops(rom, flags);
 
   return stampVersionSeedAndHash(rom, seed, flags);
 
@@ -210,15 +210,23 @@ const patchWords = (rom, address, words) => {
 };
 
 // goes with enemy stat recomputations in postshuffle.s
-const updateCoinDrops = (rom) => {
-  patchWords(rom, 0x34bde, [
-      0,   1,   2,   4,   8,  16,  30,  50,
-    100, 200, 300, 400, 500, 600, 700, 800,
-  ]);
+const updateCoinDrops = (rom, flags) => {
+  if (flags.check('Fs')) {
+    // bigger gold drops if no shop glitch
+    patchWords(rom, 0x34bde, [
+        0,   5,  10,  16,  32,  50, 100, 150,
+      250, 450, 600, 700, 800, 900,1000,1100,
+    ]);
+  } else {
+    patchWords(rom, 0x34bde, [
+        0,   1,   2,   4,   8,  16,  30,  50,
+      100, 200, 300, 400, 500, 600, 700, 800,
+    ]);
+  }
 };
 
 // goes with enemy stat recomputations in postshuffle.s
-const updateDifficultyScalingTables = (rom) => {
+const updateDifficultyScalingTables = (rom, flags) => {
   // Currently this is three $30-byte tables, which we start at the beginning
   // of the postshuffle ComputeEnemyStats.
   const start = 0x1bb00; // TODO - take labels from assembler
@@ -242,8 +250,10 @@ const updateDifficultyScalingTables = (rom) => {
 
   // DiffExp table is ExpB = compress(floor(4 * (2 ** ((16 + 9 * Diff) / 32))))
   // where compress maps values > 127 to $80|(x>>4)
+
+  const expFactor = flags.check('Hx') ? 0.25 : flags.check('Ex') ? 2.5 : 1;
   patchBytes(rom, start + 0x90, diff.map(d => {
-    const exp = Math.floor(4 * (2 ** ((16 + 9 * d) / 32)));
+    const exp = Math.floor(4 * (2 ** ((16 + 9 * d) / 32)) * expFactor);
     return exp < 0x80 ? exp : Math.min(0xff, 0x80 + (exp >> 4));
   }));
 

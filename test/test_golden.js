@@ -17,6 +17,7 @@ require = require('esm')(module);
 
 const {FlagSet} = require('../src/js/flagset.js');
 const {crc32} = require('../src/js/crc32.js');
+const {NodeReader} = require('../src/js/nodereader.js');
 const fs = require('fs');
 const patch = require('../src/js/patch');
 
@@ -58,7 +59,8 @@ const main = async (args) => {
     let shuffled;
     try {
       shuffled = rom.slice();
-      await patch.shuffle(shuffled, seed, new FlagSet(String(g.flags)));
+      await patch.shuffle(
+          shuffled, seed, new FlagSet(String(g.flags)), new NodeReader());
     } catch (err) {
       shuffled = Uint8Array.of(0); // indicate that shuffle failed...?
     }

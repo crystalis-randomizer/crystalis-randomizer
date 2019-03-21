@@ -22,7 +22,11 @@ const COMMON = [
 const srcs = (...srcs) => srcs.map(s => './src/js/' + s);
 
 gulp.task('main', function() {
-  return gulp.src(srcs(...COMMON, 'progress.js', 'main.js'), {base: './src/js/'})
+  return gulp.src(srcs(...COMMON,
+                       'fetchreader.js',
+                       'progress.js',
+                       'main.js'),
+                  {base: './src/js/'})
       .pipe(closure({
         compilation_level: 'SIMPLE',
         warning_level: 'VERBOSE',

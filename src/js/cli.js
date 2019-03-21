@@ -6,7 +6,8 @@ const {EXPECTED_CRC32} = require('./rom.js');
 const {FlagSet} = require('./flagset.js');
 const {crc32} = require('./crc32.js');
 const fs = require('fs');
-const patch = require('./patch');
+const patch = require('./patch.js');
+const {NodeReader} = require('./nodereader.js');
 
 // Usage: node cli.js [--flags=<FLAGS>] [--seed=<SEED>] rom.nes
 
@@ -104,7 +105,7 @@ const main = (...args) => {
   return Promise.all(new Array(count).fill(0).map(async () => {
     const s = patch.parseSeed(seed);
     const shuffled = rom.slice();
-    const c = await patch.shuffle(shuffled, s, flagset);
+    const c = await patch.shuffle(shuffled, s, flagset, new NodeReader());
     const n = args[0].replace('.nes', '');
     const f = String(flagset).replace(/ /g, '');
     const v = patch.BUILD_HASH;

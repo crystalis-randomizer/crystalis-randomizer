@@ -1350,3 +1350,5 @@ of a non-divisible line, then the entire line will be deleted."
 (define-key asm-mode-map (kbd "C-c l") 'asm-convert-address-to-label)
 (define-key asm-mode-map (kbd "C-c i -") 'asm-insert-break)
 (define-key asm-mode-map (kbd "C-'") 'asm-cycle-define)
+(define-key asm-mode-map (kbd "C-j") 'electric-newline-and-maybe-indent)
+(define-key asm-mode-map (kbd "C-m") 'newline)

@@ -2,11 +2,17 @@
 
 ## Latest
 * Prevent humanly-impossible swamp run in hard-mode logic.
-* Prevent soft-lock when saving or checkpointing in really awkward situations
-  by ensuring loaded games have a minimum of 5 HP and 1 MP (20 MP if swordless).
-* Add `Fs` flag to disable the shop glitch, and change `Gs` to `Gc` for
-  sword charge glitch.
+* Prevent soft-lock when saving or checkpointing in really awkward
+  situations by ensuring loaded games have a minimum of 5 HP and 1 MP
+  (20 MP if swordless).
+* Add `Fs` flag to disable the shop glitch, and change `Gs` to `Gc`
+  for sword charge glitch.
 * Opel statue now clears status effects.
+* Buffed fruit of power to 40 in non-hard mode (`Hm`) and 64 in easy
+  mode (`Em`), providing slightly better balance.
+* Temporarily add a blocker to avoid alarm flutes being required to
+  get the first sword (since this could cause a soft lock with shop
+  shuffling and price scaling).
 
 ## 1.0.1
 * Item shuffle is now done using "assumed fill".

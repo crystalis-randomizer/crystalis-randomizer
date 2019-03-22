@@ -731,6 +731,29 @@ ComputeVampireAnimationStart:
 .org $20ff0
 InvItemData:
 
+
+;; MUST BE EXACTLY 4 BYTES
+.org $20534
+  nop
+  jsr FillQuestItemsFromBuffer
+.assert $20538
+
+;; NOTE: This prevents swords and orbs from sorting to avoid out-of-order
+;; swords from clobbering one another.  We swap the second and fourth
+;; items from the table of row starts so that when we start at two instead
+;; of zero, we end up skipping exactly the first and fourth rows.
+.org $205a7
+  .byte $0c
+.org $205a9
+  .byte $04
+
+.org $20a37
+.assert < $20a5a
+
+.org $20de2
+.assert < $20dfd
+
+
 .org $21471 ; unused space, 130 or so bytes
 CheckDroppable:
   ;; Loads A with something that has the :40 bit set if the item
@@ -802,31 +825,6 @@ FillQuestItemsFromBuffer: ; 214af
   sta $2e
   rts
 
-.org $21500
-
-;; MUST BE EXACTLY 4 BYTES
-.org $20534
-  nop
-  jsr FillQuestItemsFromBuffer
-.assert $20538
-
-;; NOTE: This prevents swords and orbs from sorting to avoid out-of-order
-;; swords from clobbering one another.  We swap the second and fourth
-;; items from the table of row starts so that when we start at two instead
-;; of zero, we end up skipping exactly the first and fourth rows.
-.org $205a7
-  .byte $0c
-.org $205a9
-  .byte $04
-
-.org $20a37
-.assert < $20a5a
-
-.org $20de2
-.assert < $20dfd
-
-
-.org $21472 ; Free space
 .assert < $21500
 
 

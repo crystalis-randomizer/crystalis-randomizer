@@ -212,12 +212,14 @@ const patchWords = (rom, address, words) => {
 // goes with enemy stat recomputations in postshuffle.s
 const updateCoinDrops = (rom, flags) => {
   if (flags.check('Fs')) {
-    // bigger gold drops if no shop glitch
+    // bigger gold drops if no shop glitch, particularly at the start
+    // - starts out fibonacci, then goes linear at 600
     patchWords(rom, 0x34bde, [
-        0,   5,  10,  16,  32,  50, 100, 150,
-      250, 450, 600, 700, 800, 900,1000,1100,
+        0,   5,  10,  15,  25,  40,  65, 105,
+      170, 275, 445, 600, 700, 800, 900,1000,
     ]);
   } else {
+    // this table is basically meaningless b/c shop glitch
     patchWords(rom, 0x34bde, [
         0,   1,   2,   4,   8,  16,  30,  50,
       100, 200, 300, 400, 500, 600, 700, 800,

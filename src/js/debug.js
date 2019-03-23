@@ -16,9 +16,9 @@ export default (nes) => {
   nes.debug.breakAt(0x3c263, 'prg', 'x', () => {
     return window.onspawned(window.spawningId, window.spawningSlot);
   });
-  nes.debug.breakAt(0x3c2b3, 'prg', 'x', () => {
-    return window.onspawned(window.spawningId, window.spawningSlot);
-  });
+  // nes.debug.breakAt(0x3c2b3, 'prg', 'x', () => {
+  //   return window.onspawned(window.spawningId, window.spawningSlot);
+  // });
   nes.debug.breakAt(0x3c40d, 'prg', 'x', () => {
     return window.onspawned(window.spawningId, window.spawningSlot);
   });

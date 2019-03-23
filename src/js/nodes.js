@@ -137,7 +137,7 @@ export class Slot extends Node {
     if (!this.slots) return;
     for (const slot of this.slots) {
       // TODO - not clear where to write this.
-      slot(rom.subarray(0x10), this);
+      slot(rom, this);
     }
   }
 
@@ -624,6 +624,25 @@ export class Location extends Node {
     }
     return lines.join('\\n');
   }
+
+  write(rom) {
+    if (!this.sells.length) return;
+    const isArmor = this.sells[0].inventoryRow == 'armor';
+    // look up shop index in table
+    const LOCS = 0x21f54;
+    const INDS = 0x21f75;
+    let index = 0;
+    for (let i = LOCS; i < INDS; i++) {
+      if (rom[i] == this.id) {
+        index = rom[i + INDS - LOCS];
+        break;
+      }
+    }
+    const addr = (isArmor ? 0x21da4 : 0x21e28) + (index << 2);
+    for (let i = 0; i < 4; i++) {
+      rom[addr + i] = this.sells[i] ? this.sells[i].id : 0xff;
+    }
+  }
 }
 
 const checkBounds = (a, rom, ...data) => {
@@ -635,6 +654,39 @@ const checkBounds = (a, rom, ...data) => {
 
 
 export class WorldGraph extends Graph {
+
+  write(rom) {
+    rom = rom.subarray(0x10);
+    for (const n of this.nodes) {
+      n.write(rom);
+    }
+  }
+
+  shuffleShops(random) {
+    // for now we just dump everything into a pool and shuffle them up.
+    const armor = {shops: [], items: []};
+    const tools = {shops: [], items: []};
+    for (const n of this.nodes) {
+      if (!n.sells || !n.sells.length) continue;
+      const s = n.sells[0].inventoryRow == 'armor' ? armor : tools
+      s.shops.push(n);
+      for (let i = 0; i < 4; i++) {
+        s.items.push(n.sells[i] || null);
+      }
+    }
+    random.shuffle(armor.items);
+    random.shuffle(tools.items);
+
+    for (const s of [armor, tools]) {
+      for (const shop of s.shops) {
+        const sells = shop.sells = [];
+        for (let i = 0; i < 4; i++) {
+          const item = s.items.pop();
+          if (item) sells.push(item);
+        }
+      }
+    }
+  }
 
   /**
    * @param {!Object} opts

@@ -1548,8 +1548,8 @@ const leafRabbitHut         = location(0xc1, LEAF, 'Rabbit Hut').house().connect
 const leafInn               = location(0xc2, LEAF, 'Inn').shop().connect(leaf);
 const leafToolShop          = location(0xc3, LEAF, 'Tool Shop')
                                 .shop(medicalHerb, antidote, warpBoots, alarmFlute)
-                                .connect(leaf);
-                                //.trigger(buyAlarmFlute, anySword);
+                                .connect(leaf)
+                                .trigger(buyAlarmFlute, anySword);
 const leafArmorShop         = location(0xc4, LEAF, 'Armor Shop')
                                 .shop(tannedHide, carapaceShield)
                                 .connect(leaf);
@@ -1643,8 +1643,8 @@ const joelShed              = location(0xe4, JOEL, 'Shed').house()
                                 .to(joelSecretPassage, eyeGlasses);
 const joelToolShop          = location(0xe5, JOEL, 'Tool Shop')
                                 .shop(medicalHerb, antidote, fruitOfPower, alarmFlute)
-                                .connect(joel);
-                                //.trigger(buyAlarmFlute, anySword);
+                                .connect(joel)
+                                .trigger(buyAlarmFlute, anySword);
 const joelInn               = location(0xe7, JOEL, 'Inn').shop().connect(joel);
 const zombieTownHouse       = location(0xe8, EVIL, 'Zombie Town House').house().connect(zombieTown);
 const zombieTownBasement    = location(0xe9, EVIL, 'Zombie Town Basement').house()
@@ -1715,6 +1715,20 @@ for (const l of wildWarpLocations) {
   l.from(start, wildWarp);
 }
 
+graph.shuffleShops = (() => {
+  const s = graph.shuffleShops;
+  return (...args) => {
+    s.apply(graph, args);
+    // need to fix up the alarm flute trigger after shuffling shops!
+    buyAlarmFlute.reqs = [];
+    for (const n of graph.nodes) {
+      if (n.sells && n.sells.length && n.sells.indexOf(alarmFlute) >= 0) {
+        n.trigger(buyAlarmFlute, anySword);
+      }
+    }
+  };
+})();
+
 return graph;
 };
 
@@ -1772,7 +1786,7 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
   // Later would be nice to start fully shuffled and anneal, or do something
   // more targeted.
   const findSlot =
-      (name) => graph.nodes.find(n => n instanceof Slot && n.name === name);
+      (name) => graph.nodes.find(n => n instanceof Slot && n.vanillaItemName === name);
 
   const swordOfWind = findSlot('Sword of Wind');
   const swordOfFire = findSlot('Sword of Fire');
@@ -1849,9 +1863,7 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
   }
 
   // Commit changes
-  for (const slot of graph.nodes) {
-    slot.write(rom);
-  }
+  graph.write(rom);
 
   if (!log) return;
 
@@ -1875,6 +1887,7 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
 
 export const shuffle2 = async (rom, random, log = undefined, flags = undefined, progress = undefined) => {
   const graph = generate(flags);
+  if (flags.check('Br')) graph.shuffleShops(random);
   const locationList = graph.integrate();
   if (progress) progress.addTasks(1000);
   for (let i = 0; i < 1000; i++) {

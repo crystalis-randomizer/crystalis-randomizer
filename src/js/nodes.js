@@ -598,7 +598,7 @@ export class Location extends Node {
 
   shop(...items) {
     this.type = 'house';
-    this.sells = items;
+    this.sells = items.map(x => x instanceof Slot ? x.item : x);
     return this;
   }
 
@@ -641,6 +641,7 @@ export class Location extends Node {
     const addr = (isArmor ? 0x21da4 : 0x21e28) + (index << 2);
     for (let i = 0; i < 4; i++) {
       rom[addr + i] = this.sells[i] ? this.sells[i].id : 0xff;
+      if (!rom[addr + i]) console.error(`uh oh: ${this.sells[i].id} => ${this.sells[i]}`);
     }
   }
 }
@@ -673,19 +674,27 @@ export class WorldGraph extends Graph {
       for (let i = 0; i < 4; i++) {
         s.items.push(n.sells[i] || null);
       }
+      n.sells = [];
     }
     random.shuffle(armor.items);
     random.shuffle(tools.items);
 
-    for (const s of [armor, tools]) {
-      for (const shop of s.shops) {
-        const sells = shop.sells = [];
-        for (let i = 0; i < 4; i++) {
-          const item = s.items.pop();
-          if (item) sells.push(item);
+    for (const {shops, items} of [armor, tools]) {
+      let s = 0;
+      while (items.length && s < 100000) {
+        const item = items.pop();
+        let shop = shops[s++ % shops.length];
+        if (!item) continue;
+        if (shop.sells.indexOf(item) >= 0 || shop.sells.length >= 4) {
+          items.push(item);
+          continue;
         }
+        shop.sells.push(item);
       }
     }
+
+    // TODO - dedupe, watch out for stray sword of wind in one armor shop???
+
   }
 
   /**

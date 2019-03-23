@@ -1734,6 +1734,7 @@ return graph;
 
 export const shuffle = async (rom, random, log = undefined, flags = undefined, progress = undefined) => {
   const graph = generate(flags);
+  if (flags.check('Br')) graph.shuffleShops(random);
   const allSlots = graph.nodes.filter(s => s instanceof Slot);
 
   // Default shuffling
@@ -1863,7 +1864,7 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
   }
 
   // Commit changes
-  graph.write(rom);
+  if (rom) graph.write(rom);
 
   if (!log) return;
 
@@ -1996,11 +1997,7 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
   }
 
   // Commit changes
-  if (rom) {
-    for (const slot of graph.nodes) {
-      slot.write(rom);
-    }
-  }
+  if (rom) graph.write(rom);
 
   if (!log) return true;
 

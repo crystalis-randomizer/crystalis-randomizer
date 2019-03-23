@@ -16,9 +16,9 @@ export default (nes) => {
   nes.debug.breakAt(0x3c263, 'prg', 'x', () => {
     return window.onspawned(window.spawningId, window.spawningSlot);
   });
-  // nes.debug.breakAt(0x3c2b3, 'prg', 'x', () => {
-  //   return window.onspawned(window.spawningId, window.spawningSlot);
-  // });
+  nes.debug.breakAt(0x3c2b3, 'prg', 'x', () => {
+    return window.onspawned(window.spawningId, window.spawningSlot);
+  });
   nes.debug.breakAt(0x3c40d, 'prg', 'x', () => {
     return window.onspawned(window.spawningId, window.spawningSlot);
   });
@@ -67,6 +67,8 @@ export default (nes) => {
     nes.debug.breakAt(0x35357, 'prg', 'x', () => console.log(`hit by ${
          hex(nes.cpu.REG_Y)}: ${hex(slots[nes.cpu.REG_Y])}`));
   };
+
+  nes.debug.breakpoints = null; // something is broken here...
 
   window.warp = (loc, entrance = 0) => {
     nes.cpu.ram[0x6c] = loc;

@@ -85,6 +85,8 @@ ActivateOpelStatue:
 ArmorDefense:
 .org $34bc9
 ShieldDefense:
+.org $34e46
+DisplayNumberInternal:
 .org $35152
 KillObject:
 .org $355c0
@@ -99,6 +101,8 @@ StartAudioTrack:
 MainLoop_01_Game:
 .org $3cb84
 CheckForPlayerDeath:
+.org $3d21d
+DialogAction_11:
 .org $3d347
 LoadAndShowDialog:
 .org $3d354
@@ -113,6 +117,9 @@ ReadControllersWithDirections:
 DisplayNumber:
 
 
+;;; Zebu student (person 14) secondary item -> alarm flute
+.org $085f1
+  .byte $31
 
 
 .bank $14000 $8000:$4000
@@ -161,8 +168,22 @@ DisplayNumber:
 .endif
 
 
+.org $17cfa
+;; just over 256 bytes free in map space
+.assert < $17e00
+
+
+.org $17f00
+;; another 256 free in map space
+.assert < $18000
+
 
 .bank $18000 $8000:$4000
+
+
+.org $183fc
+;; ~80 bytes free here in npc data space
+.assert < $1844d
 
 
 .ifdef _REVERSIBLE_SWAN_GATE
@@ -1176,6 +1197,19 @@ GrantItemInRegisterA:
   jsr PatchGrantItemInRegisterA
 
 
+
+;;; Fix bug in dialog action 9 where carrying from the low byte of money
+;;; would just increment the low byte again instead of the high byte.
+.org $3d273
+  inc $0703
+
+
+
+.org $3d27d
+  jmp PatchZebuStudentFollowUp
+
+
+
 ;; End of ActivateTriggerSquare restores game mode to normal,
 ;; but if sword of thunder comes from trigger square, this will
 ;; clobber the LOCATION_CHANGE mode.  Patch it to call out to
@@ -1428,6 +1462,11 @@ PatchUpdateShieldDefense:
 ;; We could try to be cleverer about not reloading the equipped item.
 ;; If we just ASL the whole defense then we can do them simultaneously,
 ;; and then go into power ring.
+
+PatchZebuStudentFollowUp:
+.bank $34000 $8000:$2000
+  jsr DisplayNumberInternal
+  jmp DialogAction_11
 
 .assert < $3ff80 ; end of free space from 3ff44
 

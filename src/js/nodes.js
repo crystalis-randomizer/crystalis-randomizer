@@ -132,6 +132,7 @@ export class Slot extends Node {
     this.itemIndex = index;
   }
 
+  /** @override */
   write(rom) {
     if (!this.slots) return;
     for (const slot of this.slots) {
@@ -483,6 +484,7 @@ export class Location extends Node {
     this.type = null;
     this.isStart = false;
     this.isEnd = false;
+    this.sells = [];
   }
 
   get nodeType() {
@@ -594,8 +596,9 @@ export class Location extends Node {
     return this;
   }
 
-  shop() {
+  shop(...items) {
     this.type = 'house';
+    this.sells = items;
     return this;
   }
 
@@ -907,11 +910,14 @@ export class LocationList {
 
   /**
    * Returns a bitmask of reachable locations.
-   * @param {!Bits=} has Bitmask of gotten items
+   * @param {!Bits|!Array<!Bits>=} has Bitmask of gotten items.  If an array,
+   *     then a modified version will be returned in its place.
    * @param {!Array<number>=} slots Location-to-item
    * @return {!Set<number>} Reachable locations
    */
   traverse(has = Bits.of(), slots = []) {
+    let hasOut = Array.isArray(has) ? has : null;
+    if (hasOut) has = has[0];
     has = Bits.clone(has);
 
     const reachable = new Set();
@@ -937,6 +943,7 @@ export class LocationList {
         break;
       }
     }
+    if (hasOut) hasOut[0] = has;
     return reachable;
   }
 
@@ -962,8 +969,8 @@ export class LocationList {
    * Attempts to do an assumed fill.  Returns null if the
    * attempt failed.
    * @param {!Random} random
-   * @param {function(!Slot, !ItemGet): booleab} fits
-   * @param {function(!ItemGet, !Array<number>, !Random)} fillStrategy
+   * @param {function(!Slot, !ItemGet): boolean} fits
+   * @param {function(!ItemGet, !Array<number>, !Random)} strategy
    * @return {?Array<number>}
    */
   assumedFill(random, fits = (slot, item) => true, strategy = FillStrategy) {
@@ -999,6 +1006,78 @@ export class LocationList {
     }
     return filling;
   }
+
+  // TODO - we need a clean way to translate indices...?
+  //  - instance methods for dealing with 'has' arrays
+  //    and 'slots' arrays - i.e.
+  //        addItem(has, itemNode)
+  //        fillSlot(slots, slotNode, itemNode)
+  //        ... read location bitmask?
+  // Location bitmasks will be wider than items?
+  //  - 128 bits OK...?
+  //  - once all *key* items are assigned, rest can be
+  //    filled in totally randomly.
+
+
+  // /**
+  //  * Attempts to do an assumed fill.  Returns null if the
+  //  * attempt failed.
+  //  * @param {!Random} random
+  //  * @param {function(!Slot, !ItemGet): boolean} fits
+  //  * @return {?Array<number>}
+  //  */
+  // forwardFill(random, fits = (slot, item) => true) {
+  //   // This is a simpler algorithm, but hopefully it's a little more reliable
+  //   // in hairy situations?  Basic plan: find a route with few requirements
+  //   // and drop one requirement from it into a reachable location.
+  //   const need = new Set(this.itemToUid.map((_, i) => i));
+  //   let has = Bits.of();
+  //   const filling = new Array(this.locationToUid.length).fill(null);
+  //   // Start something...
+  //   while (need.size) {
+  //     const obtainable = [has];
+  //     const reachable =
+  //         new Set(
+  //             random.shuffle(
+  //                 [...this.traverse(obtainable, filling)]
+  //                     .filter(n => filling[n] == null)));
+  //     // Iterate over the routes, subtracting ontainable[0]
+  //     const routes = [];
+  //     for (let i = 0; i < this.routes.length; i++) {
+  //       if (filling[i] || reachable.has(i)) continue;
+  //       for (const /** !Bits */ route of this.routes[i]) {
+  //         const r = Bits.bits(Bits.difference(route, has));
+          
+  //       }
+  //   /** @const {!Array<!Array<!Bits>>} */
+  //   this.routes = [];
+
+  //     const bit = hasArr.pop();
+  //     if (!Bits.has(has, bit)) continue;
+  //     const item = this.worldGraph.nodes[this.itemToUid[bit]];
+  //     has = Bits.without(has, bit);
+      
+  //     const reachable = 
+  //         [...this.traverse(has, filling)].filter(n=>filling[n]==null);
+
+  //     // NOTE: shuffle the whole thing b/c some items can't
+  //     // go into some slots, so try the next one.
+  //     strategy.shuffleSlots(item, reachable, random);
+  //     // For now, we don't have any way to know...
+  //     let found = false;
+  //     for (const slot of reachable) {
+  //       if (filling[slot] == null &&
+  //           slot != this.win &&
+  //           fits(this.worldGraph.nodes[this.locationToUid[slot]], item)) {
+  //         filling[slot] = bit;
+  //         found = true;
+  //         break;
+  //       }
+  //     }
+  //     if (!found) return null;
+  //   }
+  //   return filling;
+  // }
 
   // TODO - we need a clean way to translate indices...?
   //  - instance methods for dealing with 'has' arrays

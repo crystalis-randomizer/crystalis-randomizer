@@ -90,6 +90,13 @@ Bits.clone = (x) => x;
  */
 Bits.empty = (x) => !x;
 
+/**
+ * @param {!Bits} left
+ * @param {!Bits} right
+ * @return {!Bits}
+ */
+Bits.difference = (left, right) => left & ~right;
+
 /** @const */
 export const BIGINT_OK =
     typeof BigInt === 'function' && typeof BigInt(0) === 'bigint';

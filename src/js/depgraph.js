@@ -951,8 +951,9 @@ const mtSabreNorthTunnel7   = location(0x39, SBRN, 'Tunnel 7 (to upper)').cave()
                                 .connect(mtSabreNorthTunnel6c)
                                 .connectTo(mtSabreNorthUpper);
 
-const nadareInn             = location(0x3c, NADR, 'Inn').town();
-const nadareToolShop        = location(0x3d, NADR, 'Tool Shop').house();
+const nadareInn             = location(0x3c, NADR, 'Inn').shop();
+const nadareToolShop        = location(0x3d, NADR, 'Tool Shop')
+                                .shop(medicalHerb, antidote, fruitOfPower, warpBoots);
 const nadareBackRoom        = location(0x3e, NADR, 'Back Room').house();
 
 // Waterfall Valley
@@ -1535,7 +1536,9 @@ const goaHouse              = location(0xbb, GOA,  'House').house().connect(goa)
                                 // TODO - consider removing ivory statue requirement?
                                 .trigger(talkedToAkahanaFriend, change, ivoryStatue);
 const goaInn                = location(0xbc, GOA,  'Inn').shop().connect(goa, enteredShyron);
-const goaToolShop           = location(0xbe, GOA,  'Tool Shop').shop().connect(goa, enteredShyron);
+const goaToolShop           = location(0xbe, GOA,  'Tool Shop')
+                                .shop(medicalHerb, antidote, warpBoots, lysisPlant)
+                                .connect(goa, enteredShyron);
 const goaTavern             = location(0xbf, GOA,  'Tavern').shop().connect(goa);
 const leafElderHouse        = location(0xc0, LEAF, 'Elder House').house()
                                 .connect(leaf)
@@ -1543,17 +1546,24 @@ const leafElderHouse        = location(0xc0, LEAF, 'Elder House').house()
 const leafRabbitHut         = location(0xc1, LEAF, 'Rabbit Hut').house().connect(leaf)
                                 .trigger(talkedToLeafRabbit, villagersAbducted, telepathy);
 const leafInn               = location(0xc2, LEAF, 'Inn').shop().connect(leaf);
-const leafToolShop          = location(0xc3, LEAF, 'Tool Shop').shop()
-                                .connect(leaf)
-                                .trigger(buyAlarmFlute, anySword);
-const leafArmorShop         = location(0xc4, LEAF, 'Armor Shop').shop().connect(leaf);
+const leafToolShop          = location(0xc3, LEAF, 'Tool Shop')
+                                .shop(medicalHerb, antidote, warpBoots, alarmFlute)
+                                .connect(leaf);
+                                //.trigger(buyAlarmFlute, anySword);
+const leafArmorShop         = location(0xc4, LEAF, 'Armor Shop')
+                                .shop(tannedHide, carapaceShield)
+                                .connect(leaf);
 const leafStudentHouse      = location(0xc5, LEAF, 'Student House').house().connect(leaf)
                                 .trigger(talkedToLeafStudent);
 const brynmaerTavern        = location(0xc6, BRYN, 'Tavern').house().connect(brynmaer);
 const brynmaerPawnShop      = location(0xc7, BRYN, 'Pawn Shop').shop().connect(brynmaer);
 const brynmaerInn           = location(0xc8, BRYN, 'Inn').shop().connect(brynmaer);
-const brynmaerArmorShop     = location(0xc9, BRYN, 'Armor Shop').shop().connect(brynmaer);
-const brynmaerToolShop      = location(0xcb, BRYN, 'Tool Shop').shop().connect(brynmaer);
+const brynmaerArmorShop     = location(0xc9, BRYN, 'Armor Shop')
+                                .shop(leatherArmor, carapaceShield, bronzeShield)
+                                .connect(brynmaer);
+const brynmaerToolShop      = location(0xcb, BRYN, 'Tool Shop')
+                                .shop(medicalHerb, antidote, warpBoots)
+                                .connect(brynmaer);
 const oakElderHouse         = location(0xcd, OAK,  'Elder House').house()
                                 .from(oak, telepathy)
                                 .trigger(talkedToOakElder, rescuedOakChild);
@@ -1561,13 +1571,19 @@ const oakMotherHouse        = location(0xce, OAK,  'Mother\'s House').house()
                                 .from(oak, telepathy)
                                 .trigger(talkedToOakMother, telepathy)
                                 .trigger(talkedToOakMothher2, rescuedOakChild);
-const oakToolShop           = location(0xcf, OAK,  'Tool Shop').shop()
+const oakToolShop           = location(0xcf, OAK,  'Tool Shop')
+                                .shop(medicalHerb, antidote, fruitOfPower)
                                 .from(oak, telepathy);
 const oakInn                = location(0xd0, OAK,  'Inn').shop()
                                 .from(oak, telepathy);
 const amazonesInn           = location(0xd1, AMZN, 'Inn').shop().connect(amazones);
-const amazonesToolShop      = location(0xd2, AMZN, 'Tool Shop').shop().connect(amazones);
-const amazonesArmorShop     = location(0xd3, AMZN, 'Armor Shop').shop().connect(amazones);
+const amazonesToolShop      = location(0xd2, AMZN, 'Tool Shop')
+                                .shop(warpBoots, fruitOfPower, lysisPlant)
+                                .connect(amazones);
+const amazonesArmorShop     = location(0xd3, AMZN, 'Armor Shop')
+                                .shop(platinumArmor, platinumShield,
+                                      mirroredShield, sacredShield)
+                                .connect(amazones);
 const aryllisHouse          = location(0xd4, AMZN, 'Queen\'s House').house()
                                 .from(amazones, changeOrGlitch)
                                 .trigger(talkedToAmazonesQueen, change, kirisaPlant);
@@ -1591,9 +1607,13 @@ const portoaFortuneTeller2  = location(0xd8, PORT, 'Fortune Teller Back').house(
                                 .connect(undergroundChannel2)
                                 .connect(undergroundChannel3);
 const portoaPawnShop        = location(0xd9, PORT, 'Pawn Shop').shop().connect(portoa);
-const portoaArmorShop       = location(0xda, PORT, 'Armor Shop').shop().connect(portoa);
+const portoaArmorShop       = location(0xda, PORT, 'Armor Shop')
+                                .shop(bronzeArmor, platinumArmor, platinumShield)
+                                .connect(portoa);
 const portoaInn             = location(0xdc, PORT, 'Inn').shop().connect(portoa);
-const portoaToolShop        = location(0xdd, PORT, 'Tool Shop').shop().connect(portoa);
+const portoaToolShop        = location(0xdd, PORT, 'Tool Shop')
+                                .shop(medicalHerb, lysisPlant, fruitOfLime, warpBoots)
+                                .connect(portoa);
 const portoaPalaceLeft      = location(0xde, PORT, 'Palace Left')
                                 .house()
                                 .connect(portoaPalaceEntrance);
@@ -1621,22 +1641,26 @@ const joelElderHouse        = location(0xe3, JOEL, 'Elder\'s House').house()
 const joelShed              = location(0xe4, JOEL, 'Shed').house()
                                 .connect(joel)
                                 .to(joelSecretPassage, eyeGlasses);
-const joelToolShop          = location(0xe5, JOEL, 'Tool Shop').shop()
-                                .connect(joel)
-                                .trigger(buyAlarmFlute, anySword);
+const joelToolShop          = location(0xe5, JOEL, 'Tool Shop')
+                                .shop(medicalHerb, antidote, fruitOfPower, alarmFlute)
+                                .connect(joel);
+                                //.trigger(buyAlarmFlute, anySword);
 const joelInn               = location(0xe7, JOEL, 'Inn').shop().connect(joel);
 const zombieTownHouse       = location(0xe8, EVIL, 'Zombie Town House').house().connect(zombieTown);
 const zombieTownBasement    = location(0xe9, EVIL, 'Zombie Town Basement').house()
                                 .connect(zombieTownHouse)
                                 // TODO - correct trigger when shuffling bosses?
                                 .trigger(talkedToClark, sabera1);
-const swanToolShop          = location(0xeb, SWAN, 'Tool Shop').shop()
+const swanToolShop          = location(0xeb, SWAN, 'Tool Shop')
+                                .shop(medicalHerb, antidote, fruitOfPower, warpBoots)
                                 .connect(swan);
 const swanStomHut           = location(0xec, SWAN, 'Stom\'s Hut').house()
                                 .connect(swan)
                                 .trigger(talkedToStomInSwan);
 const swanInn               = location(0xed, SWAN, 'Inn').shop().connect(swan);
-const swanArmorShop         = location(0xee, SWAN, 'Armor Shop').shop().connect(swan);
+const swanArmorShop         = location(0xee, SWAN, 'Armor Shop')
+                                .shop(soldierSuit, ceramicSuit, ceramicShield, battleShield)
+                                .connect(swan);
 const swanTavern            = location(0xef, SWAN, 'Tavern').house()
                                 .connect(swan)
                                 .trigger(talkedToKensuInTavern, talkedToStomInSwan, paralysis);
@@ -1654,11 +1678,17 @@ const shyronTemple2         = location(0xf2, SHYR, 'Temple (post-massacre)').for
                                 .boss(mado1);
 const shyronTrainingHall    = location(0xf3, SHYR, 'Training Hall').house().connect(shyron);
 const shyronHospital        = location(0xf4, SHYR, 'Hospital').house().connect(shyron);
-const shyronArmorShop       = location(0xf5, SHYR, 'Armor Shop').shop().connect(shyron);
-const shyronToolShop        = location(0xf6, SHYR, 'Tool Shop').shop().connect(shyron);
+const shyronArmorShop       = location(0xf5, SHYR, 'Armor Shop')
+                                .shop(ceramicSuit, sacredShield, battleShield)
+                                .connect(shyron);
+const shyronToolShop        = location(0xf6, SHYR, 'Tool Shop')
+                                .shop(medicalHerb, antidote, fruitOfLime, magicRing)
+                                .connect(shyron);
 const shyronInn             = location(0xf7, SHYR, 'Inn').shop().connect(shyron);
 const saharaInn             = location(0xf8, SHRA, 'Inn').shop().connect(sahara);
-const saharaToolShop        = location(0xf9, SHRA, 'Tool Shop').shop().connect(sahara);
+const saharaToolShop        = location(0xf9, SHRA, 'Tool Shop')
+                                .shop(antidote, warpBoots, fruitOfRepun, magicRing)
+                                .connect(sahara);
 const saharaElderHouse      = location(0xfa, SHRA, 'Elder\'s House').house().connect(sahara);
 const saharaPawnShop        = location(0xfb, SHRA, 'Pawn Shop').house().connect(sahara);
 
@@ -1820,7 +1850,7 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
 
   // Commit changes
   for (const slot of graph.nodes) {
-    if (slot instanceof Slot) slot.write(rom);
+    slot.write(rom);
   }
 
   if (!log) return;
@@ -1955,7 +1985,7 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
   // Commit changes
   if (rom) {
     for (const slot of graph.nodes) {
-      if (slot instanceof Slot) slot.write(rom);
+      slot.write(rom);
     }
   }
 

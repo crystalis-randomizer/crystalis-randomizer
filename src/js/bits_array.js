@@ -39,6 +39,19 @@ Bits.containsAll = (superset, subset) => {
 };
 
 /**
+ * @param {!Bits} left
+ * @param {!Bits} right
+ * @return {!Bits}
+ */
+Bits.difference = (left, right) => {
+  const out = new Array(Math.max(left.length, right.length));
+  for (let i = Math.max(left.length, right.length) - 1; i >= 0; i--) {
+    out[i] = (left[i] || 0) & ~(right[i] || 0);
+  }
+  return out;
+};
+
+/**
  * @param {!Bits} bits
  * @param {number} num
  * @return {!Bits}

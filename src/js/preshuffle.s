@@ -75,6 +75,8 @@ ItemGet:
 ItemGet_Bracelet:
 .org $1c308
 ItemGet_FindOpenSlot:
+.org $1c354
+ItemUse_TradeIn:
 .org $217cd
 Shop_NothingPressed:
 .org $2791c
@@ -120,6 +122,14 @@ DisplayNumber:
 ;;; Zebu student (person 14) secondary item -> alarm flute
 .org $085f1
   .byte $31
+
+;;; Alarm flute -> third row
+.org $1dffc
+  .byte $20
+
+;;; Alarm flute cannot be dropped
+.org $21021
+  .byte $43
 
 
 .bank $14000 $8000:$4000
@@ -240,6 +250,36 @@ DisplayNumber:
 
 .bank $1c000 $8000:$4000
 
+;;; Patch the end of ItemUse to check for a few more items.
+.org $1c34d
+  jmp PatchTradeInItem
+
+
+.org $1c6f2 ; 10 free bytes in middle of spawn condition table
+;; 
+PatchTradeInItem:
+  cmp #$31
+  beq +
+  cmp #$28  ; flute o lime
+  beq +
+  bne ++
+.assert < $1c6fc
+
+.org $1c6fe ; free space in middle of spawn condition table
+   ;; TODO - count uses - if it's the SECOND use then trade it in!
++  rts
+++ jmp ItemUse_TradeIn
+.assert < $1c760
+
+.org $1ca6f ; 10 free bytes in middle of dialog table
+.assert < $1ca79
+
+.org $1ca7b ; free space in middle of dialog table
+.assert < $1cae3
+
+
+
+
 ;; clark moves back to joel after giving item, not after calming sea
 ;; TODO - this is slightly awkward in that you can go up the stairs
 ;; and back down and he's disappeared.  An alternative would be to
@@ -250,6 +290,23 @@ DisplayNumber:
   .byte $8d
 .org $1c845
   .byte $8d
+
+
+;;; change second flute of lime into herb, but then we don't use it anyway
+.org $1ddc1
+  .byte $1d
+
+;;; npcdata table for second flute of lime chest in waterfall cave
+.org $19b15
+  .byte $10 ; mirrored shield instead
+
+;;; tool shop item table for leaf - alarm flute
+.org $21e2b
+  .byte $21 ; fruit of power instead
+
+;;; tool shop item table for joel - alarm flute
+.org $21e43
+  .byte $1f ; lysis plant instead
 
 ;; Prevent soft-lock when encountering sabera and mado from reverse
 ;; Double-returns if the boss's sprite is not in the top quarter of
@@ -350,8 +407,22 @@ CheckBelowBoss:
 .endif
   .byte $5b,$b2  ; Message: 1d:12  Action: 0b
   .byte $40,$51  ; Set: 051 learned barrier
-.org $1e208
+.assert $1e208
 
+
+.org $1e192 ; 8c Leaf abduction
+  .word (Trigger_8c)
+.org $1e2b8 ; Unused trigger space
+;;; Add an extra check to ensure that we don't trigger the Leaf abduction until
+;;; after talking to Zebu in the cave (ensures everything in Leaf is gotten).
+Trigger_8c:
+  .byte $20,$38 ; Condition: 038 NOT leaf attacked
+  .byte $80,$3a ; Condition: 037 talked to zebu in cave (NEW)
+  .byte $00,$00
+  .byte $00,$85 ; Set: 085 leaf elder missing
+  .byte $00,$38 ; Set: 038 leaf attacked
+  .byte $40,$84 ; Set: 084 leaf villagers missing
+.assert < $1e2dc
 
 ;; Windmill guard shouldn't despawn on massacre
 .org $1c7d6

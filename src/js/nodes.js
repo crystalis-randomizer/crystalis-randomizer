@@ -107,8 +107,8 @@ export class Slot extends Node {
     // NOTE: if alarm flute goes in 3rd row, 0x31 should go away.
     return i >= 0x0d && i <= 0x24 ||
         i === 0x26 ||
-        i === 0x28 ||
-        i === 0x31 ||
+        //i === 0x28 ||
+        //i === 0x31 ||
         i > 0x48;
   }
 
@@ -765,12 +765,6 @@ export class WorldGraph extends Graph {
         continue;
       }
 
-      // TEMPORARY HACK - remove the alarm flute
-      if (n instanceof Slot && n.item.name === 'Alarm Flute') {
-        depgraph.addRoute([n.item.uid]);
-        depgraph.finalize(n.item.uid);
-        continue;
-      }
       //// Use Crystalis as a proxy for winning
       // if (n instanceof Slot && n.slotName == null) {
       //   continue;

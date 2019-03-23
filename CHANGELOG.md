@@ -7,12 +7,16 @@
   (20 MP if swordless).
 * Add `Fs` flag to disable the shop glitch, and change `Gs` to `Gc`
   for sword charge glitch.
-* Opel statue now clears status effects.
-* Buffed fruit of power to 40 in non-hard mode (`Hm`) and 64 in easy
+* Opel Statue now clears status effects.
+* Buffed Fruit of Power to 40 in non-hard mode (`Hm`) and 64 in easy
   mode (`Em`), providing slightly better balance.
-* Temporarily add a blocker to avoid alarm flutes being required to
-  get the first sword (since this could cause a soft lock with shop
-  shuffling and price scaling).
+* Made Alarm Flute a key item, given by the student.  Alarm Flute and
+  Flute of Lime are now reusable.  The Flute of Lime chest has been
+  replaced with a Mirrored Shield.  Leaf's tool shop sells a Fruit of
+  Power instead of Alarm Flute, and Joel's tool shop sells a Lysis
+  Plant.
+* Added `Br` flag to randomize shops.  Prices are not handled at all
+  yet.
 
 ## 1.0.1
 * Item shuffle is now done using "assumed fill".

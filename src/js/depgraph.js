@@ -253,7 +253,7 @@ const insectFlute           = item(0x27, 'Insect Flute')
                                 .fromPerson('Oak mother', 0x1e)
                                 .dialog(0x1e, null, 1)
                                 .key();
-const fluteOfLimeQueen      = item(0x28, 'Flute of Lime')
+const fluteOfLime           = item(0x28, 'Flute of Lime')
                                 .fromPerson('Portoa queen', 0x38)
                                 .direct(0x98f9) // persondata 62 +1
                                 // .direct(0x3fa28) // mesia version
@@ -287,8 +287,8 @@ const shieldRing            = item(0x30, 'Shield Ring')
                                 .npcSpawn(0x16, 0x57, 2)
                                 .bonus();
 const alarmFlute            = item(0x31, 'Alarm Flute')
-                                .consumable()
-                                .fixed();
+                                .fromPerson('Zebu\'s student', 0x14, 1)
+                                .key();
 const windmillKey           = item(0x32, 'Windmill Key')
                                 .fromPerson('Windmill guard', 0x14)
                                 .dialog(0x14, 0x0e, 0)
@@ -404,7 +404,6 @@ const flight                = magic(0x48, 'Flight')
                                 .weight(15)
                                 .direct('Kensu in Draygonia Fortress', 0x3d18f);
                                 // See recover - no need for second slot.
-const fluteOfLimeChest      = item(0x28, "Flute of Lime").chest(undefined, 0x5b).key();
 const fruitOfPowerVampire2  = fruitOfPower
                                 .bossDrop('Vampire 2', 0x0c, 0x61)
                                 .npcSpawn(0xcc)
@@ -419,7 +418,6 @@ const mimic                 = item(0x70, 'Mimic'); // special handling to dup
 // TODO - maybe don't build any logic into here, just put them where they need to go?
 const talkedToLeafElder     = trigger('Talked to Leaf Elder').get(swordOfWind);
 const talkedToLeafStudent   = trigger('Talked to Leaf Student');
-const buyAlarmFlute         = trigger('Buy alarm flute').get(alarmFlute);
 const talkedToZebuInCave    = trigger('Talked to Zebu in cave');
 const wokeUpWindmillGuard   = trigger('Woke up Windmill Guard').get(windmillKey);
 const startedWindmill       = trigger('Started Windmill');
@@ -438,7 +436,7 @@ const learnedParalysis      = trigger('Learned Paralysis').get(paralysis);
 const talkedToPortoaQueen   = trigger('Talked to Portoa Queen');
 const talkedToFortuneTeller = trigger('Talked to Fortune Teller');
 const visitedUndergroundChannel = trigger('Visited Underground Channel');
-const sentToWaterfallCave   = trigger('Sent to Waterfall Cave').get(fluteOfLimeQueen); // no rando? or do both...
+const sentToWaterfallCave   = trigger('Sent to Waterfall Cave').get(fluteOfLime);
 const curedAkahana          = trigger('Cured Akahana').get(shieldRing);
 const talkedToRage          = trigger('Talked to Rage').get(ballOfWater);
 const mesiaRecording        = trigger('Mesia recording played');
@@ -573,13 +571,8 @@ const thunderMagic          = condition('Thunder magic')
                                 .option(ballOfThunder, maybeRefresh)
                                 .option(stormBracelet, maybeRefresh);
 const fluteOfLimeOrGlitch   = condition('Flute of lime or glitch')
-                                .option(fluteOfLimeQueen)
-                                .option(statueGlitch)
-                                .option(offRoute(fluteOfLimeChest));
-// this is only really here for tracker
-const secondFluteOfLime     = condition('Second flute of lime')
-                                .option(fluteOfLimeChest)
-                                .option(offRoute(fluteOfLimeQueen));
+                                .option(fluteOfLime)
+                                .option(statueGlitch);
 const changeOrGlitch        = condition('Change or glitch')
                                 .option(change)
                                 .option(statueGlitch);
@@ -1077,13 +1070,12 @@ const waterfallCave1c       = location(0x54, WFCV, 'Tunnel 1c (past ice)').cave(
 const waterfallCave2        = location(0x55, WFCV, 'Tunnel 2 (stoned pair)').cave()
                                 .connect(waterfallCave1c);
 const waterfallCave3        = location(0x56, WFCV, 'Tunnel 3 (wide medusa hallways)').cave()
-                                .from(waterfallCave2, fluteOfLimeOrGlitch)
-                                .to(waterfallCave2, fluteOfLimeQueen);
+                                .connect(waterfallCave2, fluteOfLimeOrGlitch);
 // NOTE: no reverse path thru these ice walls - will soft lock!
 const waterfallCave4a       = location(0x57, WFCV, 'Tunnel 4a (left entrance)').cave()
                                 .from(waterfallCave3, destroyIce)
-                                .chest(fluteOfLimeChest, 0x19)
-                                .trigger(curedAkahana, secondFluteOfLime); // $64da:02
+                                .chest(mirroredShield, 0x19)
+                                .trigger(curedAkahana, fluteOfLime); // $64da:02
 const waterfallCave4b       = location(0x57, WFCV, 'Tunnel 4b (right entrance)').cave()
                                 .from(waterfallCave3, destroyIce) // $64da:01
                                 .connect(waterfallCave4a, flight);
@@ -1143,9 +1135,6 @@ const angrySeaCabin         = location(0x61, ASEA, 'Cabin').misc()
                                 .trigger(talkedToKensuInCabin, returnedFogLamp);
 const lighthouse            = location(0x62, JOEL, 'Lighthouse').misc()
                                 .connect(angrySeaLighthouse)
-                                // TODO - the "anySword" requirement is only needed to
-                                // prevent softlocks from not being able to afford the
-                                // second alarm flute by the time it's found.
                                 .trigger(talkedToKensuInLighthouse, alarmFlute);
 const undergroundChannel1   = location(0x64, PORT, 'Underground Channel 1 (from throne room)')
                                 .sea()
@@ -1547,9 +1536,8 @@ const leafRabbitHut         = location(0xc1, LEAF, 'Rabbit Hut').house().connect
                                 .trigger(talkedToLeafRabbit, villagersAbducted, telepathy);
 const leafInn               = location(0xc2, LEAF, 'Inn').shop().connect(leaf);
 const leafToolShop          = location(0xc3, LEAF, 'Tool Shop')
-                                .shop(medicalHerb, antidote, warpBoots, alarmFlute)
-                                .connect(leaf)
-                                .trigger(buyAlarmFlute, anySword);
+                                .shop(medicalHerb, antidote, warpBoots, fruitOfPower)
+                                .connect(leaf);
 const leafArmorShop         = location(0xc4, LEAF, 'Armor Shop')
                                 .shop(tannedHide, carapaceShield)
                                 .connect(leaf);
@@ -1642,9 +1630,8 @@ const joelShed              = location(0xe4, JOEL, 'Shed').house()
                                 .connect(joel)
                                 .to(joelSecretPassage, eyeGlasses);
 const joelToolShop          = location(0xe5, JOEL, 'Tool Shop')
-                                .shop(medicalHerb, antidote, fruitOfPower, alarmFlute)
-                                .connect(joel)
-                                .trigger(buyAlarmFlute, anySword);
+                                .shop(medicalHerb, antidote, fruitOfPower, lysisPlant)
+                                .connect(joel);
 const joelInn               = location(0xe7, JOEL, 'Inn').shop().connect(joel);
 const zombieTownHouse       = location(0xe8, EVIL, 'Zombie Town House').house().connect(zombieTown);
 const zombieTownBasement    = location(0xe9, EVIL, 'Zombie Town Basement').house()
@@ -1714,20 +1701,6 @@ const wildWarpLocations = [
 for (const l of wildWarpLocations) {
   l.from(start, wildWarp);
 }
-
-graph.shuffleShops = (() => {
-  const s = graph.shuffleShops;
-  return (...args) => {
-    s.apply(graph, args);
-    // need to fix up the alarm flute trigger after shuffling shops!
-    buyAlarmFlute.reqs = [];
-    for (const n of graph.nodes) {
-      if (n.sells && n.sells.length && n.sells.indexOf(alarmFlute) >= 0) {
-        n.trigger(buyAlarmFlute, anySword);
-      }
-    }
-  };
-})();
 
 return graph;
 };

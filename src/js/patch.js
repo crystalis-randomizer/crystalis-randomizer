@@ -14,27 +14,27 @@ import * as version from './version.js';
 // Pull in all the patches we want to apply automatically.
 // TODO - make a debugger window for patches.
 // TODO - this needs to be a separate non-compiled file.
-// export default ({
-//   async apply(rom, hash) {
-//     // Look for flag string and hash
-//     let flags;
-//     if (!hash['seed']) {
-//       // TODO - send in a hash object with get/set methods
-//       hash['seed'] = parseSeed('').toString(16);
-//       window.location.hash += '&seed=' + hash['seed'];
-//     }
-//     if (hash['flags']) {
-//       flags = new FlagSet(hash['flags']);
-//     } else {
-//       flags = new FlagSet('Em Gt Mr Rlpt Sbk Sct Sm Tasd');
-//     }
-//     for (const key in hash) {
-//       if (hash[key] === 'false') hash[key] = false;
-//     }
-//     // TODO - does this break closure?
-//     await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader);
-//   }
-// });
+export default ({
+  async apply(rom, hash) {
+    // Look for flag string and hash
+    let flags;
+    if (!hash['seed']) {
+      // TODO - send in a hash object with get/set methods
+      hash['seed'] = parseSeed('').toString(16);
+      window.location.hash += '&seed=' + hash['seed'];
+    }
+    if (hash['flags']) {
+      flags = new FlagSet(hash['flags']);
+    } else {
+      flags = new FlagSet('Em Gt Mr Rlpt Sbk Sct Sm Tasd');
+    }
+    for (const key in hash) {
+      if (hash[key] === 'false') hash[key] = false;
+    }
+    // TODO - does this break closure?
+    await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader());
+  }
+});
 
 export const parseSeed = (/** string */ seed) => /** number */ {
   if (!seed) return Math.floor(Math.random() * 0x100000000);

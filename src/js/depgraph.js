@@ -1708,13 +1708,13 @@ return graph;
 export const shuffle = async (rom, random, log = undefined, flags = undefined, progress = undefined) => {
   const graph = generate(flags);
   if (flags.check('Br')) graph.shuffleShops(random);
-  const allSlots = graph.nodes.filter(s => s instanceof Slot);
+  const allSlots = graph.nodes.filter(s => s instanceof Slot && s.slots && s.slotName);
 
   // Default shuffling
   if (!flags) flags = new FlagSet('Sbkm Sct');
 
   const buckets = {}
-  for (const slot of graph.nodes) {
+  for (const slot of allSlots) {
     if (!(slot instanceof Slot) || !slot.slots) continue; // fixed, no shuffle
     const type = slot.slotType[0];
     (buckets[type] = buckets[type] || []).push(slot);
@@ -1731,7 +1731,7 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
   const shuffled = {};
   // let magicPool = null;
   // let keyPool = null;
-  for (const pool of flags.flags['S']) {
+  for (const pool of flags.flags['S'] || []) {
     const p = [];
     for (const type of pool) {
       shuffled[type] = true;
@@ -1760,7 +1760,7 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
   // Later would be nice to start fully shuffled and anneal, or do something
   // more targeted.
   const findSlot =
-      (name) => graph.nodes.find(n => n instanceof Slot && n.vanillaItemName === name);
+      (name) => allSlots.find(n => n.vanillaItemName === name);
 
   const swordOfWind = findSlot('Sword of Wind');
   const swordOfFire = findSlot('Sword of Fire');
@@ -1821,7 +1821,7 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
     if (!swaps.length) continue; // nothing to do
     // test
 
-    const {win, path} = graph.traverse();
+    const {win, path} = graph.traverse({wanted: allSlots, dfs: false});
     if (win) {
       //console.log(`successful shuffle of ${count} items`);
       route = path;
@@ -1844,11 +1844,12 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
   // Generate spoiler log.
   log.items = [];
   log.route = [];
-  for (const [slot, routeText] of route) {
+  for (const [slotIndex, routeText] of route) {
     log.route.push(routeText);
+    const slot = graph.nodes[slotIndex];
     if (slot.slotName == null) continue;
     let slotName = slot.slotName;
-    if (slotName.indexOf(slot.orig) < 0) slotName += ` (normally ${slot.orig})`;
+    if (slotName.indexOf(slot.orig) < 0) slotName += ` (normally ${slot.vanillaItemName})`;
     log.items.push({slotIndex: slot.slotIndex,
                     itemIndex: slot.itemIndex,
                     origName: slot.vanillaItemName,
@@ -1857,6 +1858,19 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
                     text: `${slot.item.name}: ${slotName}`,
                    });
   }
+  // for (const [slot, routeText] of route) {
+  //   log.route.push(routeText);
+  //   if (slot.slotName == null) continue;
+  //   let slotName = slot.slotName;
+  //   if (slotName.indexOf(slot.orig) < 0) slotName += ` (normally ${slot.orig})`;
+  //   log.items.push({slotIndex: slot.slotIndex,
+  //                   itemIndex: slot.itemIndex,
+  //                   origName: slot.vanillaItemName,
+  //                   slotName: slot.slotName,
+  //                   itemName: slot.item.name,
+  //                   text: `${slot.item.name}: ${slotName}`,
+  //                  });
+  // }
 };
 
 export const shuffle2 = async (rom, random, log = undefined, flags = undefined, progress = undefined) => {
@@ -1876,7 +1890,7 @@ export const shuffle2 = async (rom, random, log = undefined, flags = undefined, 
     }
   }
   // fall back on forward-fill ?
-  throw new Error('could not fill');
+  // throw new Error('could not fill');
   return shuffle(rom, random, log, flags, progress);
 };
 
@@ -1897,7 +1911,7 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
 
   // Default shuffling - only S flags matter.
   if (!flags) flags = new FlagSet('Sbkm Sct');
-  flags.flags['S'].forEach((pool, index) => {
+  (flags.flags['S'] || []).forEach((pool, index) => {
     for (const type of pool) {
       buckets[type] = index;
     }

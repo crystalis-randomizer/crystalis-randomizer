@@ -29,7 +29,7 @@ for (let i = 0; i < dg.locationToUid.length; i++) {
 //   console.log(String(g.nodes[dg.locationToUid[bit]]));
 // }
 
-for (let i = 0; i < 1000; i++) {
+for (let i = 0; i < 100; i++) {
   const r = new Random(i);
   const fill = dg.assumedFill(r);
   console.log('=============================================');
@@ -49,7 +49,7 @@ for (let i = 0; i < 1000; i++) {
   }
   arr.sort();
   console.log(arr.join('\n'));
-  if (arr.length != 39) throw new Error(`seed ${i} LENGTH: ${arr.length}`);
+  //if (arr.length != 41) throw new Error(`seed ${i} LENGTH: ${arr.length}`);
 }
 
 

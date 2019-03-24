@@ -417,7 +417,7 @@ const mimic                 = item(0x70, 'Mimic'); // special handling to dup
 
 // TODO - maybe don't build any logic into here, just put them where they need to go?
 const talkedToLeafElder     = trigger('Talked to Leaf Elder').get(swordOfWind);
-const talkedToLeafStudent   = trigger('Talked to Leaf Student');
+const talkedToLeafStudent   = trigger('Talked to Leaf Student').get(alarmFlute);
 const talkedToZebuInCave    = trigger('Talked to Zebu in cave');
 const wokeUpWindmillGuard   = trigger('Woke up Windmill Guard').get(windmillKey);
 const startedWindmill       = trigger('Started Windmill');
@@ -1876,6 +1876,7 @@ export const shuffle2 = async (rom, random, log = undefined, flags = undefined, 
     }
   }
   // fall back on forward-fill ?
+  throw new Error('could not fill');
   return shuffle(rom, random, log, flags, progress);
 };
 

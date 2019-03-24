@@ -114,7 +114,7 @@ class ShuffleStats {
 }
 
 const run = async () => {
-  const flags = new FlagSet(process.argv.slice(2).join(' ') || 'Sbckm Rflpt Dt Tw Gt'); // Gstrf
+  const flags = new FlagSet(process.argv.slice(2).join(' ') || 'Br Sbckm Rflpt Dt Tw Gt'); // Gstrf
 
   const g = generate(flags);
   const dg = g.integrate();
@@ -130,7 +130,7 @@ const run = async () => {
 
   const s = new ShuffleStats();
 
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 100; i++) {
     try {
       await shuffle3(g, dg, null, new Random(i), {stats: s}, flags);
     } catch (err) {
@@ -139,7 +139,7 @@ const run = async () => {
   }
 
   //console.log(s.toJson());
-  //console.log(JSON.stringify(s.endState));
+  console.log(JSON.stringify(s.endState));
 
 
 /// TODO - we indexed it all off the internal game index... oops

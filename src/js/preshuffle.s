@@ -131,6 +131,10 @@ DisplayNumber:
 .org $21021
   .byte $43
 
+;;; Alarm flute cannot be sold - set price to zero
+.org $21f24
+  .byte 0,0
+
 
 .bank $14000 $8000:$4000
 
@@ -839,12 +843,6 @@ InvItemData:
 .org $205a9
   .byte $04
 
-.org $20a37
-.assert < $20a5a
-
-.org $20de2
-.assert < $20dfd
-
 
 .org $21471 ; unused space, 130 or so bytes
 CheckDroppable:
@@ -917,7 +915,186 @@ FillQuestItemsFromBuffer: ; 214af
   sta $2e
   rts
 
+MultiplyShopPrice:
+  ;; A is scaling factor, X is offset into price table
+  ;; Y is item index, goes from 4..12 in normal shops,
+  ;; but is zero for inn since inn goes straight to current item
+  sta $61
+  lda ShopPriceTable,x
+  sta $62
+  jsr Multiply16Bit
+  ;; $61$62 is product * 8, so rotate 3 bits
+  lda $61
+  lsr $62
+  ror
+  lsr $62
+  ror
+  lsr $62
+  ror
+  sta $6474,y
+  inx
+  iny
+  lda $62
+  rts
+
 .assert < $21500
+
+.org $20a37
+;;; Input: x = offset from $21dd0
+;;;        a = scaling factor * 8
+CopyShopPrices:
+  ;ldy #$00 ; note: could move this to callers
+-  pha
+    jsr MultiplyShopPrice
+    sta $63
+   pla
+   pha
+    jsr MultiplyShopPrice
+    ;; add the previous high byte, pay attn to carry
+    php
+     lda $63
+    plp
+    bne +
+    clc
+    adc $6473,y ; $63
+    bcc ++
++    lda #$ff
+    ;; finally store the price
+++  sta $6473,y
+   pla
+   cpy #$0c
+  bne -
+  rts
+.assert < $20a5a
+
+
+.ifdef _NORMALIZE_SHOP_PRICES
+;;; Initialize tool shop
+.org $218fa
+.org $21900
+  clc
+  adc #$84 ; = $21e54 - $21dd0
+  tax
+  ldy Difficulty
+  lda ToolShopScaling,y
+  ldy #$04
+  jsr CopyShopPrices
+  jmp PostInitializeShop
+.assert < $21912
+
+;;; Initialize armor shop
+.org $218a8
+  ldy Difficulty
+  lda ArmorShopScaling,y
+  ldy #$04
+  jsr CopyShopPrices
+  nop
+  nop
+  nop
+.assert $218b6
+PostInitializeShop:
+
+;;; Initialize inn price
+.org $215ab
+  ;; No need to zero out the current price before starting.
+  ;; Instead pull the scaling factor and store it.
+  ldx Difficulty
+  lda ToolShopScaling,x
+  pha
+  nop
+.assert $215b3
+
+.org $215cf
+  ;; Point from armor price table to inn price table
+  ;; Carry will always be clear from previous ASL.
+  adc #$dc
+  tax
+  ldy #$00
+  pla
+  jsr MultiplyShopPrice
+  sta $6475
+  nop
+.assert $215dc ; next display the price
+
+
+;;;  TODO - still need to scale INN and PAWN prices...!
+
+
+.endif
+
+
+;; CopyShopPrices:
+;;   ldy #$00
+;; -  pha
+;;     ;; first multiply the low byte
+;;     sta $61
+;;     lda $21dd0,x  ; armor price table
+;;     sta $62
+;;     jsr Multiply16Bit
+;;     ;; result is 8x what we want, so rotate 3 bits
+;;     lda $62
+;;     lsr
+;;     ror $61
+;;     lsr
+;;     ror $61
+;;     lsr
+;;     sta $63 ; store high byte on zeropage
+;;     lda $61
+;;     ror
+;;     sta $6478,y
+;;     ;; next multiply the high byte
+;;    pla
+;;    pha
+;;     sta $61
+;;     lda $21dd1,x
+;;     sta $62
+;;     jsr Multiply16Bit
+;;     ;; only care about low byte here, but still * 8
+;;     ;; in this case, we can just rotate left 1 and read
+;;     ;; the high byte instead.
+;;     lda $62
+;;     asl $61
+;;     rol
+;;     bcc +
+;;      lda #$ff
+;;     ;; add the previous high byte, pay attn to carry
+;; +   adc $63
+;;     bcc +
+;;      lda #$ff
+;;     ;; finally store the price
+;; +   sta $6479,y
+;;     inx
+;;     inx
+;;     iny
+;;     iny
+;;     pla
+;;    cpy #$08
+;;   bne -
+;;   rts
+
+.org $20de2
+.assert < $20dfd
+
+
+
+;;; Compute inn price ?
+        ;;  => add $21eac - $21dd0 => #$dc
+
+.org $21dd0
+ShopPriceTable:
+
+
+.org $21f9a ; Free space
+ToolShopScaling:
+  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+ArmorShopScaling:
+  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+.assert < $22000
+
 
 
 
@@ -949,16 +1126,6 @@ FillQuestItemsFromBuffer: ; 214af
 .endif
 
 
-.org $21f9a ; Free space
-ToolShopScaling:
-  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-ArmorShopScaling:
-  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-.assert < $22000
 
 
 .bank $26000 $a000:$2000

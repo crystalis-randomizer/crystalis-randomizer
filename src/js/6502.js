@@ -52,6 +52,14 @@ export class Assembler {
     buildRomPatch(this.patch()).apply(rom);
     this.allChunks = [];
   }
+
+  // Ensures that label is unique
+  expand(label) {
+    const [addr, ...rest] = this.labels[label] || [];
+    if (addr == null) throw new Error(`Missing label: ${label}`);
+    if (rest.length) throw new Error(`Non-unique label: ${label}`);
+    return addr < 0 ? ~addr : addr;
+  }
 }
 
 

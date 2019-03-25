@@ -77,6 +77,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     _LEATHER_BOOTS_GIVE_SPEED: flags.check('Ts'),
     _NERF_WILD_WARP: flags.check('Tw'),
     _NEVER_DIE: flags.check('Di'),
+    _NORMALIZE_SHOP_PRICES: flags.check('Br'), // TODO - different flag!
     _PITY_HP_AND_MP: true,
     _PROGRESSIVE_BRACELET: true,
     _REVERSIBLE_SWAN_GATE: true,
@@ -100,6 +101,11 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   const random = new Random(newSeed);
   await shuffleDepgraph(rom, random, log, flags, progress);
 
+  if (flags.check('Br')) {
+    // TODO - separate flag for randomizing base prices
+    rescaleShops(rom, asm, random);
+  }
+
   // Parse the rom and apply other patches.
   const parsed = new Rom(rom);
   rescaleMonsters(rom, parsed);
@@ -116,7 +122,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   }
 
   await assemble('postshuffle.s');
-  updateDifficultyScalingTables(rom, flags);
+  updateDifficultyScalingTables(rom, flags, asm);
   updateCoinDrops(rom, flags);
 
   return stampVersionSeedAndHash(rom, seed, flags);
@@ -231,15 +237,15 @@ const updateCoinDrops = (rom, flags) => {
 };
 
 // goes with enemy stat recomputations in postshuffle.s
-const updateDifficultyScalingTables = (rom, flags) => {
+const updateDifficultyScalingTables = (rom, flags, asm) => {
   // Currently this is three $30-byte tables, which we start at the beginning
   // of the postshuffle ComputeEnemyStats.
-  const start = 0x1bb00; // TODO - take labels from assembler
   const diff = new Array(48).fill(0).map((x, i) => i);
 
   // PAtk = 5 + Diff * 15/32
   // DiffAtk table is 8 * PAtk = round(40 + (Diff * 15 / 4))
-  patchBytes(rom, start, diff.map(d => Math.round(40 + d * 15 / 4)));
+  patchBytes(rom, asm.expand('DiffAtk'),
+             diff.map(d => Math.round(40 + d * 15 / 4)));
 
   // NOTE: Old DiffDef table (4 * PDef) was 12 + Diff * 3, but we no longer
   // use this table since nerfing armors.
@@ -247,17 +253,18 @@ const updateDifficultyScalingTables = (rom, flags) => {
 
   // PDef = 2 + Diff / 2
   // DiffDef table is 4 * PDef = 8 + Diff * 2
-  patchBytes(rom, start + 0x30, diff.map(d => 8 + d * 2));
+  patchBytes(rom, asm.expand('DiffDef'),
+             diff.map(d => 8 + d * 2));
 
   // DiffHP table is PHP = min(255, 48 + round(Diff * 11 / 2))
-  patchBytes(rom, start + 0x60,
+  patchBytes(rom, asm.expand('DiffHP'),
              diff.map(d => Math.min(255, 48 + Math.round(d * 11 / 2))));
 
   // DiffExp table is ExpB = compress(floor(4 * (2 ** ((16 + 9 * Diff) / 32))))
   // where compress maps values > 127 to $80|(x>>4)
 
   const expFactor = flags.check('Hx') ? 0.25 : flags.check('Ex') ? 2.5 : 1;
-  patchBytes(rom, start + 0x90, diff.map(d => {
+  patchBytes(rom, asm.expand('DiffExp'), diff.map(d => {
     const exp = Math.floor(4 * (2 ** ((16 + 9 * d) / 32)) * expFactor);
     return exp < 0x80 ? exp : Math.min(0xff, 0x80 + (exp >> 4));
   }));
@@ -272,7 +279,7 @@ const updateDifficultyScalingTables = (rom, flags) => {
 };
 
 
-const rescaleShops = (rom, random = undefined) => {
+const rescaleShops = (rom, asm, random = undefined) => {
   // Populate rescaled prices into the various rom locations.
   // Specifically, we read the available item IDs out of the
   // shop tables and then compute new prices from there.
@@ -282,53 +289,83 @@ const rescaleShops = (rom, random = undefined) => {
   // always 50% of the base price.
 
   const SHOP_COUNT = 11; // 11 of all types of shop for some reason.
-  const PAWN_SHOP_PRICES = 0x21ec2;
-  const PAWN_SHOP_ITEMS = 0x49;
+  const PAWN_PRICES = 0x21ec2;
   const INN_PRICES = 0x21eac;
-  const TOOL_SHOP_PRICES = 0x21e54;
-  const TOOL_SHOP_ITEMS = 0x21e28;
-  const ARMOR_SHOP_PRICES = 0x21dd0;
-  const ARMOR_SHOP_ITEMS = 0x21da4;
+  const TOOLS = {prices: 0x21e54, items: 0x21e28};
+  const ARMOR = {prices: 0x21dd0, items: 0x21da4};
 
   const BASE_INN_PRICE = 20;
 
-  // TODO - Iterate over all the shops' items and fill in the base
-  // price.  If it's negative, just set the 80 bit of the high byte
-  // to indicate reverse scaling.
+  // First fill the scaling tables.
+  const diff = new Array(48).fill(0).map((x, i) => i);
+  // Tool shops scale as 2 ** (Diff / 10), store in 8ths
+  patchBytes(rom, asm.expand('ToolShopScaling'),
+             diff.map(d => Math.round(8 * (2 ** (d / 10)))));
+  // Armor shops scale as 2 ** ((47 - Diff) / 12), store in 8ths
+  patchBytes(rom, asm.expand('ArmorShopScaling'),
+             diff.map(d => Math.round(8 * (2 ** ((47 - d) / 12)))));
+
+  // Set the correct prices for each item in shops.
+  for (const {prices, items} of [TOOLS, ARMOR]) {
+    for (let i = 0; i < 4 * SHOP_COUNT; i++) {
+      let price = BASE_PRICES[rom[items + i + 0x10]];
+      if (!price) continue;
+      if (random) price = Math.round(price * (random.next() + 0.5));
+      rom[prices + 2 * i + 0x10] = price & 0xff;
+      rom[prices + 2 * i + 0x11] = price >>> 8;
+    }
+  }
+
+  // Set the pawn shop base prices.
+  for (const id in BASE_PRICES) {
+    let price = BASE_PRICES[id] >>> 1;
+    if (id < 0x1d) price |= 0x8000;
+
+    rom[PAWN_PRICES + 2 * id + 0x10] = price & 0xff;
+    rom[PAWN_PRICES + 2 * id + 0x11] = price >>> 8;
+  }
+
+  // Set the inn prices.
+  if (random) {
+    for (let i = 0; i < SHOP_COUNT; i++) {
+      const price = Math.round(BASE_INN_PRICE * (random.next() + 0.5));
+      rom[INN_PRICES + 2 * i + 0x10] = price & 0xff;
+      rom[INN_PRICES + 2 * i + 0x11] = price >>> 8;
+    }
+  }
 
   // TODO - write the ASM code to read the new tables...
 
-  // TODO - separate flags for (a) rescaling shops, and (b) shuffling items
   // TODO - separate flag for rescaling monsters???
-
-  // TODO - read alarm flute flag separately if it's a key item...
 };
 
-// Map of base prices.  Tools are positive, armors are ones-complement.
+// Map of base prices.  (Tools are positive, armors are ones-complement.)
 const BASE_PRICES = {
-  0x0d: ~6,    // carapace shield
-  0x0e: ~22,   // bronze shield
-  0x0f: ~325,  // platinum shield
-  0x10: ~475,  // mirrored shield
-  0x11: ~1150, // ceramic shield
-  0x12: ~2750, // sacred shield
-  0x13: ~2750, // battle shield
-  0x15: ~8,    // tanned hide
-  0x16: ~14,   // leather armor
-  0x17: ~125,  // bronze armor
-  0x18: ~425,  // platinum armor
-  0x19: ~1400, // soldier suit
-  0x1a: ~2900, // ceramic suit
-  0x1d: 25, // medical herb
-  0x1e: 30, // antidote
-  0x1f: 45, // lysis plant
-  0x20: 40, // fruit of lime
-  0x21: 36, // fruit of power
-  0x22: 200, // magic ring
-  0x23: 150, // fruit of repun
-  0x24: 80, // warp boots
-  0x26: 300, // opel statue
-  0x31: 50, // alarm flute
+  // Armors
+  0x0d: 6,    // carapace shield
+  0x0e: 22,   // bronze shield
+  0x0f: 325,  // platinum shield
+  0x10: 475,  // mirrored shield
+  0x11: 1150, // ceramic shield
+  0x12: 2750, // sacred shield
+  0x13: 2750, // battle shield
+  0x15: 8,    // tanned hide
+  0x16: 14,   // leather armor
+  0x17: 125,  // bronze armor
+  0x18: 425,  // platinum armor
+  0x19: 1400, // soldier suit
+  0x1a: 2900, // ceramic suit
+  // Tools
+  0x1d: 25,   // medical herb
+  0x1e: 30,   // antidote
+  0x1f: 45,   // lysis plant
+  0x20: 40,   // fruit of lime
+  0x21: 36,   // fruit of power
+  0x22: 200,  // magic ring
+  0x23: 150,  // fruit of repun
+  0x24: 80,   // warp boots
+  0x26: 300,  // opel statue
+  //0x31: 50, // alarm flute
 };
 
 
@@ -1191,7 +1228,7 @@ const ITEMS = new Map([
   [0x2e, 'Rabbit Boots',       true],
   [0x2f, 'Leather Boots',      true],
   [0x30, 'Shield Ring',        true],
-  [0x31, 'Alarm Flute',        ],
+  [0x31, 'Alarm Flute',        true],
   [0x32, 'Windmill Key',       true],
   [0x33, 'Key to Prison',      true],
   [0x34, 'Key to Styx',        true],

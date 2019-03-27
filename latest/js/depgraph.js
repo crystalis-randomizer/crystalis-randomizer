@@ -1142,6 +1142,9 @@ const angrySeaCabin         = location(0x61, ASEA, 'Cabin').misc()
                                 .trigger(talkedToKensuInCabin, returnedFogLamp);
 const lighthouse            = location(0x62, JOEL, 'Lighthouse').misc()
                                 .connect(angrySeaLighthouse)
+                                // TODO - the "anySword" requirement is only needed to
+                                // prevent softlocks from not being able to afford the
+                                // second alarm flute by the time it's found.
                                 .trigger(talkedToKensuInLighthouse, alarmFlute);
 const undergroundChannel1   = location(0x64, PORT, 'Underground Channel 1 (from throne room)')
                                 .sea()
@@ -1542,7 +1545,7 @@ const leafRabbitHut         = location(0xc1, LEAF, 'Rabbit Hut').house().connect
 const leafInn               = location(0xc2, LEAF, 'Inn').shop().connect(leaf);
 const leafToolShop          = location(0xc3, LEAF, 'Tool Shop').shop()
                                 .connect(leaf)
-                                .trigger(buyAlarmFlute);
+                                .trigger(buyAlarmFlute, anySword);
 const leafArmorShop         = location(0xc4, LEAF, 'Armor Shop').shop().connect(leaf);
 const leafStudentHouse      = location(0xc5, LEAF, 'Student House').house().connect(leaf)
                                 .trigger(talkedToLeafStudent);
@@ -1620,7 +1623,7 @@ const joelShed              = location(0xe4, JOEL, 'Shed').house()
                                 .to(joelSecretPassage, eyeGlasses);
 const joelToolShop          = location(0xe5, JOEL, 'Tool Shop').shop()
                                 .connect(joel)
-                                .trigger(buyAlarmFlute);
+                                .trigger(buyAlarmFlute, anySword);
 const joelInn               = location(0xe7, JOEL, 'Inn').shop().connect(joel);
 const zombieTownHouse       = location(0xe8, EVIL, 'Zombie Town House').house().connect(zombieTown);
 const zombieTownBasement    = location(0xe9, EVIL, 'Zombie Town Basement').house()
@@ -1855,7 +1858,8 @@ export const shuffle2 = async (rom, random, log = undefined, flags = undefined, 
       if (i % 50 === 0) await new Promise(requestAnimationFrame);
     }
   }
-  throw new Error('failed');
+  // fall back on forward-fill ?
+  return shuffle(rom, random, log, flags, progress);
 };
 
 // TODO - build in some sort of auto-reroll functionality,
@@ -1923,24 +1927,19 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
       if (!fits(slot, item)) continue;
       fillMap.set(slot, args);
       allSlots.delete(slot);
-      return;
+      allItems.delete(item);
+      return true;
     }
     return false;
   };
   for (const [item, args] of allItems) {
-    if (item.isMimic()) {
-      findSlot(item, args);
-      allItems.delete(item);
-    }
+    if (item.isMimic() && !findSlot(item, args)) return false;
   }
   for (const [item, args] of allItems) {
-    if (item.needsChest()) {
-      findSlot(item, args);
-      allItems.delete(item);
-    }
+    if (item.needsChest() && !findSlot(item, args)) return false;
   }
   for (const [item, args] of allItems) {
-    findSlot(item, args);
+    if (!findSlot(item, args)) return false;
   }
 
   for (const [slot, args] of fillMap) {

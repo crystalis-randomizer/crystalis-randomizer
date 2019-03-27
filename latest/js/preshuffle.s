@@ -731,6 +731,29 @@ ComputeVampireAnimationStart:
 .org $20ff0
 InvItemData:
 
+
+;; MUST BE EXACTLY 4 BYTES
+.org $20534
+  nop
+  jsr FillQuestItemsFromBuffer
+.assert $20538
+
+;; NOTE: This prevents swords and orbs from sorting to avoid out-of-order
+;; swords from clobbering one another.  We swap the second and fourth
+;; items from the table of row starts so that when we start at two instead
+;; of zero, we end up skipping exactly the first and fourth rows.
+.org $205a7
+  .byte $0c
+.org $205a9
+  .byte $04
+
+.org $20a37
+.assert < $20a5a
+
+.org $20de2
+.assert < $20dfd
+
+
 .org $21471 ; unused space, 130 or so bytes
 CheckDroppable:
   ;; Loads A with something that has the :40 bit set if the item
@@ -802,23 +825,7 @@ FillQuestItemsFromBuffer: ; 214af
   sta $2e
   rts
 
-.org $21500
-
-;; MUST BE EXACTLY 4 BYTES
-.org $20534
-  nop
-  jsr FillQuestItemsFromBuffer
-.assert $20538
-
-;; NOTE: This prevents swords and orbs from sorting to avoid out-of-order
-;; swords from clobbering one another.  We swap the second and fourth
-;; items from the table of row starts so that when we start at two instead
-;; of zero, we end up skipping exactly the first and fourth rows.
-.org $205a7
-  .byte $0c
-.org $205a9
-  .byte $04
-
+.assert < $21500
 
 
 
@@ -850,6 +857,18 @@ FillQuestItemsFromBuffer: ; 214af
 .endif
 
 
+.org $21f9a ; Free space
+ToolShopScaling:
+  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+ArmorShopScaling:
+  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+.assert < $22000
+
+
 .bank $26000 $a000:$2000
 
 .ifdef _DISPLAY_DIFFICULTY
@@ -860,30 +879,29 @@ FillQuestItemsFromBuffer: ; 214af
 
 
 .ifdef _FIX_OPEL_STATUE
-;; First thing to do is read which item is selected.
-.org $2788d ; START OF FREE SPACE ???
-.org $278e9
+;; Search inventory for a statue
+.org $2788d ; START OF FREE SPACE
 CheckOpelStatue:
   lda $6440,x
   cmp #$26
   beq +
-  dex
-  bpl CheckOpelStatue
-  bmi PlayerDeath
+   dex
+   bpl CheckOpelStatue
+    jmp PlayerDeath
 + stx SelectedConsumableIndex
   lda #$0a
   sta EquippedConsumableItem
   jmp ActivateOpelStatue
 .assert < $27900 ; END OF FREE SPACE from $2788d or $278e9
 
-.org $27912
-  ;; Clear status effects immediately - if there's an opel statue then we'll
-  ;; need to clear it anyway; if not we're dead so it doesn't matter.
-  lda #$00
-  sta $0710
+.org $27903
+  and #$f0
   ;; Now check opel statue
+.org $27912
   ldx #$07
-  bne CheckOpelStatue
+  jmp CheckOpelStatue
+        ;; 5 free bytes
+.assert < $2791c
 .endif
 
 

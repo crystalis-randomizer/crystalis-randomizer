@@ -106,10 +106,13 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   if (flags.check('Mr')) shuffleMonsters(rom, parsed, random);
   identifyKeyItemsForDifficultyBuffs(parsed);
 
+  // Buff medical herb and fruit of power
   if (flags.check('Em')) {
-    rom[0x1c4ea + 0x10] *= 3;
+    rom[0x1c50c + 0x10] *= 2;  // fruit of power
+    rom[0x1c4ea + 0x10] *= 3;  // medical herb
   } else if (!flags.check('Hm')) {
-    rom[0x1c4ea + 0x10] *= 2;
+    rom[0x1c50c + 0x10] += 8;  // fruit of power
+    rom[0x1c4ea + 0x10] *= 2;  // medical herb
   }
 
   await assemble('postshuffle.s');
@@ -212,12 +215,14 @@ const patchWords = (rom, address, words) => {
 // goes with enemy stat recomputations in postshuffle.s
 const updateCoinDrops = (rom, flags) => {
   if (flags.check('Fs')) {
-    // bigger gold drops if no shop glitch
+    // bigger gold drops if no shop glitch, particularly at the start
+    // - starts out fibonacci, then goes linear at 600
     patchWords(rom, 0x34bde, [
-        0,   5,  10,  16,  32,  50, 100, 150,
-      250, 450, 600, 700, 800, 900,1000,1100,
+        0,   5,  10,  15,  25,  40,  65, 105,
+      170, 275, 445, 600, 700, 800, 900,1000,
     ]);
   } else {
+    // this table is basically meaningless b/c shop glitch
     patchWords(rom, 0x34bde, [
         0,   1,   2,   4,   8,  16,  30,  50,
       100, 200, 300, 400, 500, 600, 700, 800,
@@ -265,6 +270,70 @@ const updateDifficultyScalingTables = (rom, flags) => {
     0, 1, 3, 4, 6, 9, 8, 12, 16,
   ]);
 };
+
+
+const rescaleShops = (rom, random = undefined) => {
+  // Populate rescaled prices into the various rom locations.
+  // Specifically, we read the available item IDs out of the
+  // shop tables and then compute new prices from there.
+  // If `random` is passed then the base price to buy each
+  // item at any given shop will be adjusted to anywhere from
+  // 50% to 150% of the base price.  The pawn shop price is
+  // always 50% of the base price.
+
+  const SHOP_COUNT = 11; // 11 of all types of shop for some reason.
+  const PAWN_SHOP_PRICES = 0x21ec2;
+  const PAWN_SHOP_ITEMS = 0x49;
+  const INN_PRICES = 0x21eac;
+  const TOOL_SHOP_PRICES = 0x21e54;
+  const TOOL_SHOP_ITEMS = 0x21e28;
+  const ARMOR_SHOP_PRICES = 0x21dd0;
+  const ARMOR_SHOP_ITEMS = 0x21da4;
+
+  const BASE_INN_PRICE = 20;
+
+  // TODO - Iterate over all the shops' items and fill in the base
+  // price.  If it's negative, just set the 80 bit of the high byte
+  // to indicate reverse scaling.
+
+  // TODO - write the ASM code to read the new tables...
+
+  // TODO - separate flags for (a) rescaling shops, and (b) shuffling items
+  // TODO - separate flag for rescaling monsters???
+
+  // TODO - read alarm flute flag separately if it's a key item...
+};
+
+// Map of base prices.  Tools are positive, armors are ones-complement.
+const BASE_PRICES = {
+  0x0d: ~6,    // carapace shield
+  0x0e: ~22,   // bronze shield
+  0x0f: ~325,  // platinum shield
+  0x10: ~475,  // mirrored shield
+  0x11: ~1150, // ceramic shield
+  0x12: ~2750, // sacred shield
+  0x13: ~2750, // battle shield
+  0x15: ~8,    // tanned hide
+  0x16: ~14,   // leather armor
+  0x17: ~125,  // bronze armor
+  0x18: ~425,  // platinum armor
+  0x19: ~1400, // soldier suit
+  0x1a: ~2900, // ceramic suit
+  0x1d: 25, // medical herb
+  0x1e: 30, // antidote
+  0x1f: 45, // lysis plant
+  0x20: 40, // fruit of lime
+  0x21: 36, // fruit of power
+  0x22: 200, // magic ring
+  0x23: 150, // fruit of repun
+  0x24: 80, // warp boots
+  0x26: 300, // opel statue
+  0x31: 50, // alarm flute
+};
+
+
+
+
 
 
 const rescaleMonsters = (data, rom) => {

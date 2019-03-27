@@ -19,7 +19,7 @@
 //   rts();
 // }
 
-const LOG = false;
+const LOG = true;
 
 
 export class Assembler {

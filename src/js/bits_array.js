@@ -7,7 +7,7 @@ export const BitsArray = Bits;
  * @return {!Bits}
  */
 Bits.of = (...nums) => {
-  let bits = [];
+  const bits = [];
   for (const num of nums) {
     bits[num >>> 5] = (bits[num >>> 5] || 0) | (1 << num);
   }
@@ -19,7 +19,7 @@ Bits.of = (...nums) => {
  * @return {!Bits}
  */
 Bits.from = (nums) => {
-  let bits = [];
+  const bits = [];
   for (const num of nums) {
     bits[num >>> 5] = (bits[num >>> 5] || 0) | (1 << num);
   }
@@ -57,6 +57,7 @@ Bits.difference = (left, right) => {
  * @return {!Bits}
  */
 Bits.with = (bits, num) => {
+  bits = [...bits];
   bits[num >>> 5] = (bits[num >>> 5] || 0) | (1 << num);
   return bits;
 };
@@ -67,6 +68,7 @@ Bits.with = (bits, num) => {
  * @return {!Bits}
  */
 Bits.without = (bits, num) => {
+  bits = [...bits];
   bits[num >>> 5] = (bits[num >>> 5] || 0) & ~(1 << num);
   return bits;
 };

@@ -964,19 +964,14 @@ export class LocationList {
 
   /**
    * Returns a bitmask of reachable locations.
-   * @param {!Bits|!Array<!Bits>=} has Bitmask of gotten items.  If an array,
-   *     then a modified version will be returned in its place.
+   * @param {!Bits=} has Bitmask of gotten items.
    * @param {!Array<number>=} slots Location-to-item
    * @return {!Set<number>} Reachable locations
    */
   traverse(has = Bits.of(), slots = []) {
-    let hasOut = Array.isArray(has) ? has : null;
-    if (hasOut) has = has[0];
-// ||||||| parent of 1e55fa1... work on statistics
-//   traverse(has, slots) {
-// =======
-//   traverse(has = Bits.of(), slots) {
-// >>>>>>> 1e55fa1... work on statistics
+    // NOTE: we can't use isArray because the non-bigint polyfill IS an array
+    // let hasOut = Array.isArray(has) ? has : null;
+    // if (hasOut) has = has[0];
     has = Bits.clone(has);
 
     const reachable = new Set();
@@ -1003,7 +998,7 @@ export class LocationList {
         break;
       }
     }
-    if (hasOut) hasOut[0] = has;
+    //if (hasOut) hasOut[0] = has;
     return reachable;
   }
 

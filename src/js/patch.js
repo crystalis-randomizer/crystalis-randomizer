@@ -77,7 +77,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     _LEATHER_BOOTS_GIVE_SPEED: flags.check('Ts'),
     _NERF_WILD_WARP: flags.check('Tw'),
     _NEVER_DIE: flags.check('Di'),
-    _NORMALIZE_SHOP_PRICES: flags.check('Br'), // TODO - different flag!
+    _NORMALIZE_SHOP_PRICES: true, // flags.check('Br'), // TODO - different flag!
     _PITY_HP_AND_MP: true,
     _PROGRESSIVE_BRACELET: true,
     _REVERSIBLE_SWAN_GATE: true,
@@ -289,8 +289,18 @@ const rescaleShops = (rom, asm, random = undefined) => {
   // always 50% of the base price.
 
   const SHOP_COUNT = 11; // 11 of all types of shop for some reason.
-  const PAWN_PRICES = 0x21ec2;
-  const INN_PRICES = 0x21eac;
+  const BASE_PRICE_TABLE = asm.expand('BasePrices');
+  const INN_PRICES = asm.expand('InnPrices');
+
+  // TODO - rearrange the tables to defrag the free space a bit.
+  // Will need to change the code that reads them, obviously
+  // Move the base price table up a byte into the inn prices (which
+  // gets us 10 more free bytes as well).  We could defrag the whole
+  // thing into $21f9a (though we;d also need to move the location
+  // finding refs and the ref to $21f96 in PostInitializeShop
+  // This gives a much nicer block that we could maybe use more
+  // efficiently
+
   const TOOLS = {prices: 0x21e54, items: 0x21e28};
   const ARMOR = {prices: 0x21dd0, items: 0x21da4};
 
@@ -305,37 +315,28 @@ const rescaleShops = (rom, asm, random = undefined) => {
   patchBytes(rom, asm.expand('ArmorShopScaling'),
              diff.map(d => Math.round(8 * (2 ** ((47 - d) / 12)))));
 
-  // Set the correct prices for each item in shops.
+  // Set the price multipliers for each item in shops.
   for (const {prices, items} of [TOOLS, ARMOR]) {
     for (let i = 0; i < 4 * SHOP_COUNT; i++) {
-      let price = BASE_PRICES[rom[items + i + 0x10]];
-      if (!price) continue;
-      if (random) price = Math.round(price * (random.next() + 0.5));
-      rom[prices + 2 * i + 0x10] = price & 0xff;
-      rom[prices + 2 * i + 0x11] = price >>> 8;
+      const invalid = !BASE_PRICES[rom[items + i + 0x10]];
+      rom[prices + i + 0x10] = invalid ? 0 : random ? random.nextInt(32) + 17 : 32;
     }
+  }
+
+  // Set the inn prices, with a slightly wider variance [.375, 1.625)
+  for (let i = 0; i < SHOP_COUNT; i++) {
+    rom[INN_PRICES + i + 0x10] = random ? random.nextInt(40) + 13 : 32;
   }
 
   // Set the pawn shop base prices.
-  for (const id in BASE_PRICES) {
-    let price = BASE_PRICES[id] >>> 1;
-    if (id < 0x1d) price |= 0x8000;
-
-    rom[PAWN_PRICES + 2 * id + 0x10] = price & 0xff;
-    rom[PAWN_PRICES + 2 * id + 0x11] = price >>> 8;
+  const setBasePrice = (id, price) => {
+    rom[BASE_PRICE_TABLE + 2 * (id - 0x0d) + 0x10] = price & 0xff;
+    rom[BASE_PRICE_TABLE + 2 * (id - 0x0d) + 0x11] = price >>> 8;
   }
-
-  // Set the inn prices.
-  if (random) {
-    for (let i = 0; i < SHOP_COUNT; i++) {
-      const price = Math.round(BASE_INN_PRICE * (random.next() + 0.5));
-      rom[INN_PRICES + 2 * i + 0x10] = price & 0xff;
-      rom[INN_PRICES + 2 * i + 0x11] = price >>> 8;
-    }
+  for (let i = 0x0d; i < 0x27; i++) {
+    setBasePrice(i, BASE_PRICES[i]);
   }
-
-  // TODO - write the ASM code to read the new tables...
-
+  setBasePrice(0x27, BASE_INN_PRICE);
   // TODO - separate flag for rescaling monsters???
 };
 

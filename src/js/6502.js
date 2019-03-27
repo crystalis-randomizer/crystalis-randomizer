@@ -78,7 +78,7 @@ class File {
   }
 
   addLine(line) {
-    this.lines.push(line.orig(this.lineNumber, this.lineContents));
+    this.lines.push(line.orig(this.filename, this.lineNumber, this.lineContents));
   }
 
   addLabel(label, address) {
@@ -133,6 +133,11 @@ class File {
       this.addLine(line);
       this.pc += line.size();
       return;
+    } else if ((match = /^\s*\.res\s+([^,]+)(?:,\s*(.+))?/i.exec(line))) {
+      const line = ByteLine.parseRes(parseNumber(match[1]), parseNumber(match[2] || 0));
+      this.addLine(line);
+      this.pc += line.size();
+      return;
     } else if ((match = /^define\s+(\S+)\s+(.*)/.exec(line))) {
       const label = match[1];
       this.addLabel(label, parseNumber(match[2])); // not twos complement, but will still be abs
@@ -163,6 +168,12 @@ class File {
   assemble() {
     const context = new Context(this.labels);
     const output = [];
+    const outputLines = [];
+    const collision = (line, pc) => {
+      throw new Error(`Collision at $${pc.toString(16)
+                       }:\n  written at ${outputLines[pc].source()
+                        }\n  written at ${line.source()}`);
+    };
     for (const line of this.lines) {
       try {
         line.expand(context);
@@ -172,11 +183,10 @@ class File {
         const pos = ` from line ${line.origLineNumber + 1}: \`${line.origContent}\``;
         throw new Error(`${message}${pos}${stack}\n================`);
       }
-      if (line instanceof OrgLine && output[line.pc] != null) {
-        throw new Error(`Collision at $${line.pc.toString(16)}`);
-      }
+      if (line instanceof OrgLine && output[line.pc] != null) collision(line, line.pc);
       for (const b of line.bytes()) {
-        if (output[context.pc] != null) throw new Error(`Collision at $${context.pc.toString(16)}`);
+        if (output[context.pc] != null) collision(line, context.pc);
+        outputLines[context.pc] = line;
         output[context.pc++] = b;
       }
     }
@@ -203,7 +213,8 @@ class File {
 
 // Base class so that we can track where errors come from
 class AbstractLine {
-  orig(number, content) {
+  orig(file, number, content) {
+    this.origFile = file;
     this.origLineNumber = number;
     this.origContent = content;
     return this;
@@ -211,6 +222,9 @@ class AbstractLine {
 
   expand() { throw new Error(`abstract: ${this.constructor}`); }
   bytes() { throw new Error(`abstract: ${this.constructor}`); }
+  source() {
+    return `${this.origFile}:${this.origLineNumber + 1}  ${this.origContent}`;
+  }
 }
 
 class ByteLine extends AbstractLine {
@@ -226,6 +240,11 @@ class ByteLine extends AbstractLine {
       }
     }
     return new ByteLine(bytes);
+  }
+
+  static parseRes(count, defaultValue) {
+console.log(`res ${count}, ${defaultValue}`);
+    return new ByteLine(new Array(count).fill(defaultValue));
   }
 
   constructor(bytes) {
@@ -312,7 +331,7 @@ class AssertLine extends AbstractLine {
   expand(context) {
     // TODO - can we allow this.pc to be a label?
     if (this.exact ? context.pc != this.pc : context.pc > this.pc) {
-      throw new Error(`Misalignment: expected ${this.exact ? '<' : ''}$${
+      throw new Error(`Misalignment: expected ${this.exact ? '' : '< '}$${
                            this.pc.toString(16)} but was $${
                            context.pc.toString(16)}`);
     }

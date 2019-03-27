@@ -132,8 +132,10 @@ DisplayNumber:
   .byte $43
 
 ;;; Alarm flute cannot be sold - set price to zero
+.ifndef _NORMALIZE_SHOP_PRICES
 .org $21f24
   .byte 0,0
+.endif
 
 
 .bank $14000 $8000:$4000
@@ -914,174 +916,269 @@ FillQuestItemsFromBuffer: ; 214af
 + lda #$02
   sta $2e
   rts
-
-MultiplyShopPrice:
-  ;; A is scaling factor, X is offset into price table
-  ;; Y is item index, goes from 4..12 in normal shops,
-  ;; but is zero for inn since inn goes straight to current item
-  sta $61
-  lda ShopPriceTable,x
-  sta $62
-  jsr Multiply16Bit
-  ;; $61$62 is product * 8, so rotate 3 bits
-  lda $61
-  lsr $62
-  ror
-  lsr $62
-  ror
-  lsr $62
-  ror
-  sta $6474,y
-  inx
-  iny
-  lda $62
-  rts
-
+        ;; FREE: 35 bytes
 .assert < $21500
 
+
 .org $20a37
-;;; Input: x = offset from $21dd0
-;;;        a = scaling factor * 8
-CopyShopPrices:
-  ;ldy #$00 ; note: could move this to callers
--  pha
-    jsr MultiplyShopPrice
-    sta $63
-   pla
-   pha
-    jsr MultiplyShopPrice
-    ;; add the previous high byte, pay attn to carry
-    php
-     lda $63
-    plp
-    bne +
-    clc
-    adc $6473,y ; $63
-    bcc ++
-+    lda #$ff
-    ;; finally store the price
-++  sta $6473,y
-   pla
-   cpy #$0c
-  bne -
-  rts
+        ;; FREE: 35 bytes
 .assert < $20a5a
 
 
 .ifdef _NORMALIZE_SHOP_PRICES
+
 ;;; Initialize tool shop
-.org $218fa
-.org $21900
+.org $218ff
   clc
   adc #$84 ; = $21e54 - $21dd0
   tax
-  ldy Difficulty
-  lda ToolShopScaling,y
-  ldy #$04
   jsr CopyShopPrices
   jmp PostInitializeShop
 .assert < $21912
 
 ;;; Initialize armor shop
-.org $218a8
-  ldy Difficulty
-  lda ArmorShopScaling,y
-  ldy #$04
+.org $218a6
+  tax
   jsr CopyShopPrices
-  nop
-  nop
-  nop
-.assert $218b6
+  jmp PostInitializeShop
+.assert < $218b6
 PostInitializeShop:
 
 ;;; Initialize inn price
-.org $215ab
-  ;; No need to zero out the current price before starting.
-  ;; Instead pull the scaling factor and store it.
-  ldx Difficulty
-  lda ToolShopScaling,x
-  pha
-  nop
-.assert $215b3
-
-.org $215cf
-  ;; Point from armor price table to inn price table
-  ;; Carry will always be clear from previous ASL.
-  adc #$dc
-  tax
-  ldy #$00
-  pla
-  jsr MultiplyShopPrice
-  sta $6475
-  nop
+.org $215cb
+  ldx $646d
+  lda InnPrices,x
+  sta $62
+  lda #$ff
+  sta $61
+  ldy #$04
+  jsr ComputeShopPrice
 .assert $215dc ; next display the price
 
+;;; Fix pawn shop sell price
+.org $201c1
+  sta $61
+  lda #$10
+  sta $62
+  ldy #$04
+  jsr ComputeShopPrice
+  nop
+  nop
+  nop
+.assert $201cf
+;;; Second version of the same thing (this one happens only
+;;; once, when you say "yes" to "sell another?").
+.org $204c7
+  sta $61
+  lda #$10
+  sta $62
+  ldy #$04
+  jsr ComputeShopPrice
+  nop
+  nop
+  nop
+.assert $204d5
+;;; Third read of price is immediately when selling.
+.org $20634
+  sta $61
+  lda #$10
+  sta $62
+  ldy #$04
+  jsr ComputeShopPrice
+  clc
+  lda $11
+  adc $0702
+  sta $0702
+  lda $12
+  adc $0703
+  sta $0703
+  bcc +
+   lda #$ff
+   sta $0702
+   sta $0703
++ nop
+  nop
+  nop
+  nop
+  nop
+.assert $2065f
 
-;;;  TODO - still need to scale INN and PAWN prices...!
+
+;;; Second half of the ArmorShopPrices table, recovered
+;;; by storing scaling factors there instead of prices
+.org $21dfc
+;;; Inputs: $61$62 and $63$64
+;;; Output: $10$11$12$13
+Multiply32Bit:
+  ;; Don't need to worry about saving X because the only call doesn't need it
+  ;txa
+  ;pha
+   lda #$00
+   sta $12  ; clear upper bits of product
+   sta $13
+   ldx #$10 ; set binary count to 16
+-  lsr $62  ; divide multiplier by 2
+   ror $61
+   bcc +
+   lda $12  ; get upper half of product and add multiplicand
+   clc
+   adc $63
+   sta $12
+   lda $13
+   adc $64
++  ror      ; rotate partial product
+   sta $13
+   ror $12
+   ror $11
+   ror $10
+   dex
+   bne -
+  ;pla
+  ;tax
+  rts
+.assert < $21e28
+
+.org $21da4
+ArmorShopIdTable:
+.org $21dd0
+ArmorShopPriceTable:
+
+;;; Second half of ToolShopPrices table: compress the inn prices and
+;;; the relevant slice of base prices directly after it, then we still
+;;; have room for ~150 bytes of code.
+.org $21e80
+InnPrices:
+  .res 11, 0
+BasePrices:
+  .byte 0
+BasePricesPlus1:
+  .res 53, 0                    ; 0 = $0d, 50 = $26, 51 = $27 (inn)
+
+
+;;; Inputs:
+;;;   Difficulty - scaling level
+;;;   $61 - item ID to load (destroyed). $FF for inn
+;;;   $62 - shop variation factor
+;;;   Y - index to store output in: $6470,y
+;;; Output:
+;;;   $6470,y - shop price (2 bytes)
+;;;  Destroys:
+;;;   A, $61..64 and $10..13
+ComputeShopPrice:               ; ~71 bytes
+    txa
+    pha
+     ;; First find the item index in the base price table.
+     ;; If the item is out of the bounds of the table [$0d,$27)
+     ;; then return zero (pre-initialize the zero return).
+     ldx #$00
+     stx $11
+     stx $12
+     ;; Get index of item in BasePrices table, using item ID from $61.
+     lda $61
+     ;; Subtract the  $0d BasePrices offset.  If it carries then the ID
+     ;; was under $0d so return zero.
+     sec
+     sbc #$0d
+     bcc ++
+     ;; Double the ID because the table is two-wide.  If the item ID is
+     ;; negative then it's an inn, so read the price out of the spot
+     ;; where $27 would have been.
+     ldx #$34 ; 2 * ($27 - $0d)
+     asl
+     bcs +
+      ;; Check for out of bounds: $26 is the last sellable item.  If it's
+      ;; greater then return zero.
+      cmp #$34 ; ($27 - $0d)
+      bcs ++
+       tax
++    lda BasePrices,x
+     sta $63
+     lda BasePricesPlus1,x         ; TODO - BasePrices+1 syntax!
+     sta $64
+     ;; Read the current scaling factor out of the correct table.
+     ;; Tools and armor use separate tables: if the ID (still in $61)
+     ;; is less than $1d then use the armor table, which is $30 bytes
+     ;; after the tools table.
+     lda Difficulty
+     ldx $61
+     cpx #$1d
+     bcs +
+      adc #$30
++    tax
+     ;; Write the scaling factor (8*s) into $61.  The shop multiplier (32*m)
+     ;; is still in $62 from the original input.  Now multiply everything
+     ;; together to get 256*s*m*b.
+     lda ToolShopScaling,x
+     sta $61
+     jsr Multiply16Bit
+     jsr Multiply32Bit
+     ;; Make sure nothing carried: if $13 is nonzero then we need to push
+     ;; $ff into $11 and $12.
+     lda $13
+     beq ++
+      lda #$ff
+      sta $11
+      sta $12
+++  lda $11
+    sta $6470,y
+    lda $12
+    sta $6471,y
+    pla
+    tax
+    rts
+
+;;; NOTE: we could move this to a smaller chunk if needed, but it's nice to
+;;; store all the shop normalization code in the space it recovered.
+CopyShopPrices:
+  ;; Input:
+  ;;   x: first item in the shop
+  ;;      $21da4,x points to ID of first item
+  ;;      $21dd0,x points to price multiplier
+  ;;      For tool shops, add $84.
+  ldy #$08
+-  lda ArmorShopIdTable,x
+   sta $61
+   lda ArmorShopPriceTable,x
+   sta $62
+   jsr ComputeShopPrice
+   inx
+   iny
+   iny
+   cpy #$10
+  bcc -
+  rts
+
+.assert < $21f54
 
 
 .endif
 
 
-;; CopyShopPrices:
-;;   ldy #$00
-;; -  pha
-;;     ;; first multiply the low byte
-;;     sta $61
-;;     lda $21dd0,x  ; armor price table
-;;     sta $62
-;;     jsr Multiply16Bit
-;;     ;; result is 8x what we want, so rotate 3 bits
-;;     lda $62
-;;     lsr
-;;     ror $61
-;;     lsr
-;;     ror $61
-;;     lsr
-;;     sta $63 ; store high byte on zeropage
-;;     lda $61
-;;     ror
-;;     sta $6478,y
-;;     ;; next multiply the high byte
-;;    pla
-;;    pha
-;;     sta $61
-;;     lda $21dd1,x
-;;     sta $62
-;;     jsr Multiply16Bit
-;;     ;; only care about low byte here, but still * 8
-;;     ;; in this case, we can just rotate left 1 and read
-;;     ;; the high byte instead.
-;;     lda $62
-;;     asl $61
-;;     rol
-;;     bcc +
-;;      lda #$ff
-;;     ;; add the previous high byte, pay attn to carry
-;; +   adc $63
-;;     bcc +
-;;      lda #$ff
-;;     ;; finally store the price
-;; +   sta $6479,y
-;;     inx
-;;     inx
-;;     iny
-;;     iny
-;;     pla
-;;    cpy #$08
-;;   bne -
-;;   rts
+;;;  TODO - still need to scale INN and PAWN prices...!
 
-.org $20de2
-.assert < $20dfd
+
+
+
+
 
 
 
 ;;; Compute inn price ?
         ;;  => add $21eac - $21dd0 => #$dc
 
-.org $21dd0
-ShopPriceTable:
+;.org $21dd0
+;ShopPriceTable:
+
+
+
+;;;  TODO - can we save some space here?
+;;;  what about consolidating the tables
+;;;  and storing the reverse?
+;;;    - or store one row and then shift
+;;;      for >10 or >12 ?
+;;;  -> this is taking 100 bytes of valuable code space...!
+;;; Could get 48 or 72 bytes back by densifying it?
+;;;   -> only scale every 2 or 4 levels...
 
 
 .org $21f9a ; Free space
@@ -1580,21 +1677,27 @@ Multiply16Bit:
   ;; Sets carry if result doesn't fit in 8 bits
   txa
   pha
-  lda #$00
-  ldx #$08
-  clc
--  bcc +
-    clc
-    adc $62
-+  ror
-   ror $61
-   dex
-  bpl -
-  sta $62
-  cmp #$01 ; set carry if A != 0
+   lda #$00
+   ldx #$08
+   clc
+-   bcc +
+     clc
+     adc $62
++   ror
+    ror $61
+    dex
+   bpl -
+   sta $62
+   cmp #$01 ; set carry if A != 0
   pla
   tax
   rts
+
+
+;;; a <- 0, x <- 8
+;;; ror a -> ror $61
+;;; if the bit we just rotated off $61 is set then add $62
+;;; carry goes into upper of A
 
 
 .ifdef _CHECK_FLAG0

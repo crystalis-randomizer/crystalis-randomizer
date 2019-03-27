@@ -1927,24 +1927,19 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
       if (!fits(slot, item)) continue;
       fillMap.set(slot, args);
       allSlots.delete(slot);
-      return;
+      allItems.delete(item);
+      return true;
     }
     return false;
   };
   for (const [item, args] of allItems) {
-    if (item.isMimic()) {
-      findSlot(item, args);
-      allItems.delete(item);
-    }
+    if (item.isMimic() && !findSlot(item, args)) return false;
   }
   for (const [item, args] of allItems) {
-    if (item.needsChest()) {
-      findSlot(item, args);
-      allItems.delete(item);
-    }
+    if (item.needsChest() && !findSlot(item, args)) return false;
   }
   for (const [item, args] of allItems) {
-    findSlot(item, args);
+    if (!findSlot(item, args)) return false;
   }
 
   for (const [slot, args] of fillMap) {

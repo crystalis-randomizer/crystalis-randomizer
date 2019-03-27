@@ -103,7 +103,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   const random = new Random(newSeed);
   await shuffleDepgraph(rom, random, log, flags, progress);
 
-  if (flags.check('Br')) {
+  if (true) { // flags.check('Br')) {
     // TODO - separate flag for randomizing base prices
     rescaleShops(rom, asm, random);
   }

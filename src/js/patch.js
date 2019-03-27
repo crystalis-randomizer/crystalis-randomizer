@@ -31,8 +31,10 @@ export default ({
     for (const key in hash) {
       if (hash[key] === 'false') hash[key] = false;
     }
-    // TODO - does this break closure?
-    await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader());
+    // NOTE: THIS BREAKS CLOSURE!
+    // We need it commented to work in closure, but uncommented to work uncompiled in browser
+    // Currently no good way to do both without editing source :-(
+    //await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader());
   }
 });
 

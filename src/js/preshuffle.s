@@ -261,20 +261,36 @@ DisplayNumber:
   jmp PatchTradeInItem
 
 
+;; Count uses of Flute of Lime and Alarm Flute - discard after two.
 .org $1c6f2 ; 10 free bytes in middle of spawn condition table
-;; 
 PatchTradeInItem:
   cmp #$31
   beq +
-  cmp #$28  ; flute o lime
-  beq +
-  bne ++
+  cmp #$28  ; flute of lime
+  beq ++
+  bne ++++
 .assert < $1c6fc
 
 .org $1c6fe ; free space in middle of spawn condition table
-   ;; TODO - count uses - if it's the SECOND use then trade it in!
-+  rts
-++ jmp ItemUse_TradeIn
++    lda #$40
+     sta $61
+     bne +++
+++   lda #$80
+     sta $61
++++  lda $64a1
+     and $61
+     bne ++++
+     lda $64a1
+     ora $61
+     sta $64a1
+     ;; Deselect current item
+     lda #$00
+     sta $0715
+     lda #$80
+     sta $642e
+     rts
+++++ jmp ItemUse_TradeIn
+
 .assert < $1c760
 
 .org $1ca6f ; 10 free bytes in middle of dialog table

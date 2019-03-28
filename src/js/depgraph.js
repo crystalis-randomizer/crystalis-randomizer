@@ -138,6 +138,8 @@ const assumeWildWarp        = glitch(option('Assume wild warp',
                                      opt('Gw', false)));
 const allowWildWarp         = option('Allow wild warp',
                                      opt('!Tw', false));
+const allowStatueGlitch     = option('Allow statue glitch',
+                                     opt('!Ft', false));
 const assumeSwordChargeGlitch = glitch(option('Assume sword charge glitch',
                                        opt('Gc', false)));
 const buffedMedicalHerb     = option('Buffed medical herb',
@@ -475,7 +477,7 @@ const rabbitSkip            = condition('Rabbit skip')
 const teleportSkip          = condition('Teleport skip')
                                 .option(assumeTeleportSkip);
 const statueGlitch          = condition('Statue glitch')
-                                .option(assumeStatueGlitch);
+                                .option(assumeStatueGlitch, allowStatueGlitch);
 const wildWarp              = condition('Wild warp')
                                 .option(assumeWildWarp, allowWildWarp);
 const anyLevel2             = condition('Any level 2 sword')
@@ -1526,7 +1528,7 @@ const goaHouse              = location(0xbb, GOA,  'House').house().connect(goa)
                                 .trigger(talkedToAkahanaFriend, change, ivoryStatue);
 const goaInn                = location(0xbc, GOA,  'Inn').shop().connect(goa, enteredShyron);
 const goaToolShop           = location(0xbe, GOA,  'Tool Shop')
-                                .shop(medicalHerb, antidote, warpBoots, lysisPlant)
+                                .shop(medicalHerb, antidote, warpBoots, fruitOfPower)
                                 .connect(goa, enteredShyron);
 const goaTavern             = location(0xbf, GOA,  'Tavern').shop().connect(goa);
 const leafElderHouse        = location(0xc0, LEAF, 'Elder House').house()
@@ -1707,7 +1709,7 @@ return graph;
 
 export const shuffle = async (rom, random, log = undefined, flags = undefined, progress = undefined) => {
   const graph = generate(flags);
-  if (flags.check('Br')) graph.shuffleShops(random);
+  if (flags.check('Ps')) graph.shuffleShops(random);
   const allSlots = graph.nodes.filter(s => s instanceof Slot && s.slots && s.slotName);
 
   // Default shuffling
@@ -1875,7 +1877,7 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
 
 export const shuffle2 = async (rom, random, log = undefined, flags = undefined, progress = undefined) => {
   const graph = generate(flags);
-  if (flags.check('Br')) graph.shuffleShops(random);
+  if (flags.check('Ps')) graph.shuffleShops(random);
   const locationList = graph.integrate();
   if (progress) progress.addTasks(1000);
   for (let i = 0; i < 1000; i++) {

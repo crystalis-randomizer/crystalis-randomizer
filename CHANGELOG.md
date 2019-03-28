@@ -5,18 +5,23 @@
 * Prevent soft-lock when saving or checkpointing in really awkward
   situations by ensuring loaded games have a minimum of 5 HP and 1 MP
   (20 MP if swordless).
-* Add `Fs` flag to disable the shop glitch, and change `Gs` to `Gc`
-  for sword charge glitch.
-* Opel Statue now clears status effects.
-* Buffed Fruit of Power to 40 in non-hard mode (`Hm`) and 64 in easy
+* Disable some glitches:
+    * `Fs` flag disables the shop glitch
+    * `Ft` flag disables glitching through statues
+    * `Gs` changed to `Gc` for sword charge glitch
+* Opel Statue now clears status effects (and fixes a base-game bug
+  where it would soft-lock while riding the dolphin).
+* Buffed Fruit of Power to 48 in non-hard mode (`Hm`) and 64 in easy
   mode (`Em`), providing slightly better balance.
 * Made Alarm Flute a key item, given by the student.  Alarm Flute and
   Flute of Lime are now reusable.  The Flute of Lime chest has been
   replaced with a Mirrored Shield.  Leaf's tool shop sells a Fruit of
   Power instead of Alarm Flute, and Joel's tool shop sells a Lysis
-  Plant.
-* Added `Br` flag to randomize shops.  Prices are not handled at all
-  yet.
+  Plant, and Goa's tool shop sells a Fruit of Power instead of its
+  Lysis Plant.
+* Added some shop flags: `Pn` to normalize shop prices, `Ps` to
+  shuffle shop contents, and `Pb` to enable "bargain hunting" by
+  randomly adjusting base prices by ±50% for each item in each shop.
 
 ## 1.0.1
 * Item shuffle is now done using "assumed fill".

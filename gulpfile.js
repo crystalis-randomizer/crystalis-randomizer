@@ -25,6 +25,7 @@ gulp.task('main', function() {
   return gulp.src(srcs(...COMMON,
                        'fetchreader.js',
                        'progress.js',
+                       'render.js',
                        'main.js'),
                   {base: './src/js/'})
       .pipe(closure({

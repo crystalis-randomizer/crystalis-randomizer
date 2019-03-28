@@ -1379,8 +1379,14 @@ CheckForLowHpMp:
     sta ObjectDef,y
     rts
 ;;; NOTE: must finish before 35152
-.org $35152
+.assert < $35152
 
+
+.ifdef _DISABLE_STATUE_GLITCH
+.org $3559a
+  ;; Just always push down.
+  lda #$04
+.endif
 
 
 ;; Adjusted stab damage for populating sword object ($02)

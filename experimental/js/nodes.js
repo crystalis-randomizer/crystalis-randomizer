@@ -691,9 +691,12 @@ export class WorldGraph extends Graph {
         shop.sells.push(item);
       }
     }
-
-    // TODO - dedupe, watch out for stray sword of wind in one armor shop???
-
+    // sort items
+    for (const {shops} of [armor, tools]) {
+      for (const shop of shops) {
+        shop.sells.sort((a, b) => a.id - b.id);
+      }
+    }
   }
 
   /**

@@ -62,6 +62,8 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   if (typeof seed !== 'number') throw new Error('Bad seed');
   const newSeed = crc32(seed.toString(16).padStart(8, 0) + String(flags)) >>> 0;
 
+  const touchShops = flags.check('Pn') || flags.check('Pb') || flags.check('Ps');
+
   const defines = {
     _ALLOW_TELEPORT_OUT_OF_TOWER: true,
     _AUTO_EQUIP_BRACELET: flags.check('Ta'),
@@ -70,6 +72,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     _CONNECT_LEAF_TO_LIME_TREE: flags.check('Rp'),
     _CHECK_FLAG0: true,
     _DISABLE_SHOP_GLITCH: flags.check('Fs'),
+    _DISABLE_STATUE_GLITCH: flags.check('Ft'),
     _DISABLE_WILD_WARP: false,
     _DISPLAY_DIFFICULTY: true,
     _EXTRA_PITY_MP: true,  // TODO: allow disabling this
@@ -79,7 +82,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     _LEATHER_BOOTS_GIVE_SPEED: flags.check('Ts'),
     _NERF_WILD_WARP: flags.check('Tw'),
     _NEVER_DIE: flags.check('Di'),
-    _NORMALIZE_SHOP_PRICES: true, // flags.check('Br'), // TODO - different flag!
+    _NORMALIZE_SHOP_PRICES: touchShops,
     _PITY_HP_AND_MP: true,
     _PROGRESSIVE_BRACELET: true,
     _REVERSIBLE_SWAN_GATE: true,
@@ -103,9 +106,10 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   const random = new Random(newSeed);
   await shuffleDepgraph(rom, random, log, flags, progress);
 
-  if (flags.check('Br')) {
-    // TODO - separate flag for randomizing base prices
-    rescaleShops(rom, asm, random);
+  if (touchShops) {
+    // TODO - separate logic for handling shops w/o Pn specified (i.e. vanilla
+    // shops that may have been randomized)
+    rescaleShops(rom, asm, flags.check('Pb') ? random : null);
   }
 
   // Parse the rom and apply other patches.
@@ -119,13 +123,15 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     rom[0x1c50c + 0x10] *= 2;  // fruit of power
     rom[0x1c4ea + 0x10] *= 3;  // medical herb
   } else if (!flags.check('Hm')) {
-    rom[0x1c50c + 0x10] += 8;  // fruit of power
+    rom[0x1c50c + 0x10] += 16; // fruit of power
     rom[0x1c4ea + 0x10] *= 2;  // medical herb
   }
 
   await assemble('postshuffle.s');
   updateDifficultyScalingTables(rom, flags, asm);
   updateCoinDrops(rom, flags);
+
+  shuffleRandomNumbers(rom, random);
 
   return stampVersionSeedAndHash(rom, seed, flags);
 
@@ -1270,4 +1276,9 @@ const UNTOUCHED_MONSTERS = { // not yet +0x50 in these keys
   [0x8f]: true, // shooting statue
   [0x9f]: true, // vertical platform
   [0xa6]: true, // glitch in location $af (mado 2)
+};
+
+const shuffleRandomNumbers = (rom, random) => {
+  const table = rom.subarray(0x357e4 + 0x10, 0x35824 + 0x10);
+  random.shuffle(table);
 };

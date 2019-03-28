@@ -62,3 +62,10 @@ Bits.clone = /** @type {?} */ (b.clone);
  * @return {boolean}
  */
 Bits.empty = /** @type {?} */ (b.empty);
+
+/**
+ * @param {!Bits} left
+ * @param {!Bits} right
+ * @return {!Bits}
+ */
+Bits.difference = /** @type {?} */ (b.difference);

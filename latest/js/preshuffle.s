@@ -75,6 +75,8 @@ ItemGet:
 ItemGet_Bracelet:
 .org $1c308
 ItemGet_FindOpenSlot:
+.org $1c354
+ItemUse_TradeIn:
 .org $217cd
 Shop_NothingPressed:
 .org $2791c
@@ -85,6 +87,8 @@ ActivateOpelStatue:
 ArmorDefense:
 .org $34bc9
 ShieldDefense:
+.org $34e46
+DisplayNumberInternal:
 .org $35152
 KillObject:
 .org $355c0
@@ -99,6 +103,8 @@ StartAudioTrack:
 MainLoop_01_Game:
 .org $3cb84
 CheckForPlayerDeath:
+.org $3d21d
+DialogAction_11:
 .org $3d347
 LoadAndShowDialog:
 .org $3d354
@@ -113,6 +119,23 @@ ReadControllersWithDirections:
 DisplayNumber:
 
 
+;;; Zebu student (person 14) secondary item -> alarm flute
+.org $085f1
+  .byte $31
+
+;;; Alarm flute -> third row
+.org $1dffc
+  .byte $20
+
+;;; Alarm flute cannot be dropped
+.org $21021
+  .byte $43
+
+;;; Alarm flute cannot be sold - set price to zero
+.ifndef _NORMALIZE_SHOP_PRICES
+.org $21f24
+  .byte 0,0
+.endif
 
 
 .bank $14000 $8000:$4000
@@ -161,8 +184,22 @@ DisplayNumber:
 .endif
 
 
+.org $17cfa
+;; just over 256 bytes free in map space
+.assert < $17e00
+
+
+.org $17f00
+;; another 256 free in map space
+.assert < $18000
+
 
 .bank $18000 $8000:$4000
+
+
+.org $183fc
+;; ~80 bytes free here in npc data space
+.assert < $1844d
 
 
 .ifdef _REVERSIBLE_SWAN_GATE
@@ -219,6 +256,52 @@ DisplayNumber:
 
 .bank $1c000 $8000:$4000
 
+;;; Patch the end of ItemUse to check for a few more items.
+.org $1c34d
+  jmp PatchTradeInItem
+
+
+;; Count uses of Flute of Lime and Alarm Flute - discard after two.
+.org $1c6f2 ; 10 free bytes in middle of spawn condition table
+PatchTradeInItem:
+  cmp #$31
+  beq +
+  cmp #$28  ; flute of lime
+  beq ++
+  bne ++++
+.assert < $1c6fc
+
+.org $1c6fe ; free space in middle of spawn condition table
++    lda #$40
+     sta $61
+     bne +++
+++   lda #$80
+     sta $61
++++  lda $64a1
+     and $61
+     bne ++++
+     lda $64a1
+     ora $61
+     sta $64a1
+     ;; Deselect current item
+     lda #$00
+     sta $0715
+     lda #$80
+     sta $642e
+     rts
+++++ jmp ItemUse_TradeIn
+
+.assert < $1c760
+
+.org $1ca6f ; 10 free bytes in middle of dialog table
+.assert < $1ca79
+
+.org $1ca7b ; free space in middle of dialog table
+.assert < $1cae3
+
+
+
+
 ;; clark moves back to joel after giving item, not after calming sea
 ;; TODO - this is slightly awkward in that you can go up the stairs
 ;; and back down and he's disappeared.  An alternative would be to
@@ -229,6 +312,23 @@ DisplayNumber:
   .byte $8d
 .org $1c845
   .byte $8d
+
+
+;;; change second flute of lime into herb, but then we don't use it anyway
+.org $1ddc1
+  .byte $1d
+
+;;; npcdata table for second flute of lime chest in waterfall cave
+.org $19b15
+  .byte $10 ; mirrored shield instead
+
+;;; tool shop item table for leaf - alarm flute
+.org $21e2b
+  .byte $21 ; fruit of power instead
+
+;;; tool shop item table for joel - alarm flute
+.org $21e43
+  .byte $1f ; lysis plant instead
 
 ;; Prevent soft-lock when encountering sabera and mado from reverse
 ;; Double-returns if the boss's sprite is not in the top quarter of
@@ -329,8 +429,22 @@ CheckBelowBoss:
 .endif
   .byte $5b,$b2  ; Message: 1d:12  Action: 0b
   .byte $40,$51  ; Set: 051 learned barrier
-.org $1e208
+.assert $1e208
 
+
+.org $1e192 ; 8c Leaf abduction
+  .word (Trigger_8c)
+.org $1e2b8 ; Unused trigger space
+;;; Add an extra check to ensure that we don't trigger the Leaf abduction until
+;;; after talking to Zebu in the cave (ensures everything in Leaf is gotten).
+Trigger_8c:
+  .byte $20,$38 ; Condition: 038 NOT leaf attacked
+  .byte $80,$3a ; Condition: 037 talked to zebu in cave (NEW)
+  .byte $00,$00
+  .byte $00,$85 ; Set: 085 leaf elder missing
+  .byte $00,$38 ; Set: 038 leaf attacked
+  .byte $40,$84 ; Set: 084 leaf villagers missing
+.assert < $1e2dc
 
 ;; Windmill guard shouldn't despawn on massacre
 .org $1c7d6
@@ -747,12 +861,6 @@ InvItemData:
 .org $205a9
   .byte $04
 
-.org $20a37
-.assert < $20a5a
-
-.org $20de2
-.assert < $20dfd
-
 
 .org $21471 ; unused space, 130 or so bytes
 CheckDroppable:
@@ -824,8 +932,282 @@ FillQuestItemsFromBuffer: ; 214af
 + lda #$02
   sta $2e
   rts
-
+        ;; FREE: 35 bytes
 .assert < $21500
+
+
+.org $20a37
+        ;; FREE: 35 bytes
+.assert < $20a5a
+
+
+.ifdef _NORMALIZE_SHOP_PRICES
+
+;;; Initialize tool shop
+.org $218ff
+  clc
+  adc #$84 ; = $21e54 - $21dd0
+  tax
+  jsr CopyShopPrices
+  jmp PostInitializeShop
+.assert < $21912
+
+;;; Initialize armor shop
+.org $218a6
+  tax
+  jsr CopyShopPrices
+  jmp PostInitializeShop
+.assert < $218b6
+PostInitializeShop:
+
+;;; Initialize inn price
+.org $215cb
+  ldx $646d
+  lda InnPrices,x
+  sta $62
+  lda #$ff
+  sta $61
+  ldy #$04
+  jsr ComputeShopPrice
+.assert $215dc ; next display the price
+
+;;; Fix pawn shop sell price
+.org $201c1
+  sta $61
+  lda #$10
+  sta $62
+  ldy #$04
+  jsr ComputeShopPrice
+  nop
+  nop
+  nop
+.assert $201cf
+;;; Second version of the same thing (this one happens only
+;;; once, when you say "yes" to "sell another?").
+.org $204c7
+  sta $61
+  lda #$10
+  sta $62
+  ldy #$04
+  jsr ComputeShopPrice
+  nop
+  nop
+  nop
+.assert $204d5
+;;; Third read of price is immediately when selling.
+.org $20634
+  sta $61
+  lda #$10
+  sta $62
+  ldy #$04
+  jsr ComputeShopPrice
+  clc
+  lda $11
+  adc $0702
+  sta $0702
+  lda $12
+  adc $0703
+  sta $0703
+  bcc +
+   lda #$ff
+   sta $0702
+   sta $0703
++ nop
+  nop
+  nop
+  nop
+  nop
+.assert $2065f
+
+
+;;; Second half of the ArmorShopPrices table, recovered
+;;; by storing scaling factors there instead of prices
+.org $21dfc
+;;; Inputs: $61$62 and $63$64
+;;; Output: $10$11$12$13
+Multiply32Bit:
+  ;; Don't need to worry about saving X because the only call doesn't need it
+  ;txa
+  ;pha
+   lda #$00
+   sta $12  ; clear upper bits of product
+   sta $13
+   ldx #$10 ; set binary count to 16
+-  lsr $62  ; divide multiplier by 2
+   ror $61
+   bcc +
+   lda $12  ; get upper half of product and add multiplicand
+   clc
+   adc $63
+   sta $12
+   lda $13
+   adc $64
++  ror      ; rotate partial product
+   sta $13
+   ror $12
+   ror $11
+   ror $10
+   dex
+   bne -
+  ;pla
+  ;tax
+  rts
+.assert < $21e28
+
+.org $21da4
+ArmorShopIdTable:
+.org $21dd0
+ArmorShopPriceTable:
+
+;;; Second half of ToolShopPrices table: compress the inn prices and
+;;; the relevant slice of base prices directly after it, then we still
+;;; have room for ~150 bytes of code.
+.org $21e80
+InnPrices:
+  .res 11, 0
+BasePrices:
+  .byte 0
+BasePricesPlus1:
+  .res 53, 0                    ; 0 = $0d, 50 = $26, 51 = $27 (inn)
+
+
+;;; Inputs:
+;;;   Difficulty - scaling level
+;;;   $61 - item ID to load (destroyed). $FF for inn
+;;;   $62 - shop variation factor
+;;;   Y - index to store output in: $6470,y
+;;; Output:
+;;;   $6470,y - shop price (2 bytes)
+;;;  Destroys:
+;;;   A, $61..64 and $10..13
+ComputeShopPrice:               ; ~71 bytes
+    txa
+    pha
+     ;; First find the item index in the base price table.
+     ;; If the item is out of the bounds of the table [$0d,$27)
+     ;; then return zero (pre-initialize the zero return).
+     ldx #$00
+     stx $11
+     stx $12
+     ;; Get index of item in BasePrices table, using item ID from $61.
+     lda $61
+     ;; Subtract the  $0d BasePrices offset.  If it carries then the ID
+     ;; was under $0d so return zero.
+     sec
+     sbc #$0d
+     bcc ++
+     ;; Double the ID because the table is two-wide.  If the item ID is
+     ;; negative then it's an inn, so read the price out of the spot
+     ;; where $27 would have been.
+     ldx #$34 ; 2 * ($27 - $0d)
+     asl
+     bcs +
+      ;; Check for out of bounds: $26 is the last sellable item.  If it's
+      ;; greater then return zero.
+      cmp #$34 ; ($27 - $0d)
+      bcs ++
+       tax
++    lda BasePrices,x
+     sta $63
+     lda BasePricesPlus1,x         ; TODO - BasePrices+1 syntax!
+     sta $64
+     ;; Read the current scaling factor out of the correct table.
+     ;; Tools and armor use separate tables: if the ID (still in $61)
+     ;; is less than $1d then use the armor table, which is $30 bytes
+     ;; after the tools table.
+     lda Difficulty
+     ldx $61
+     cpx #$1d
+     bcs +
+      adc #$30
++    tax
+     ;; Write the scaling factor (8*s) into $61.  The shop multiplier (32*m)
+     ;; is still in $62 from the original input.  Now multiply everything
+     ;; together to get 256*s*m*b.
+     lda ToolShopScaling,x
+     sta $61
+     jsr Multiply16Bit
+     jsr Multiply32Bit
+     ;; Make sure nothing carried: if $13 is nonzero then we need to push
+     ;; $ff into $11 and $12.
+     lda $13
+     beq ++
+      lda #$ff
+      sta $11
+      sta $12
+++  lda $11
+    sta $6470,y
+    lda $12
+    sta $6471,y
+    pla
+    tax
+    rts
+
+;;; NOTE: we could move this to a smaller chunk if needed, but it's nice to
+;;; store all the shop normalization code in the space it recovered.
+CopyShopPrices:
+  ;; Input:
+  ;;   x: first item in the shop
+  ;;      $21da4,x points to ID of first item
+  ;;      $21dd0,x points to price multiplier
+  ;;      For tool shops, add $84.
+  ldy #$08
+-  lda ArmorShopIdTable,x
+   sta $61
+   lda ArmorShopPriceTable,x
+   sta $62
+   jsr ComputeShopPrice
+   inx
+   iny
+   iny
+   cpy #$10
+  bcc -
+  rts
+
+.assert < $21f54
+
+
+.endif
+
+
+;;;  TODO - still need to scale INN and PAWN prices...!
+
+
+
+
+
+
+
+
+;;; Compute inn price ?
+        ;;  => add $21eac - $21dd0 => #$dc
+
+;.org $21dd0
+;ShopPriceTable:
+
+
+
+;;;  TODO - can we save some space here?
+;;;  what about consolidating the tables
+;;;  and storing the reverse?
+;;;    - or store one row and then shift
+;;;      for >10 or >12 ?
+;;;  -> this is taking 100 bytes of valuable code space...!
+;;; Could get 48 or 72 bytes back by densifying it?
+;;;   -> only scale every 2 or 4 levels...
+
+
+.org $21f9a ; Free space
+ToolShopScaling:
+  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+ArmorShopScaling:
+  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+.assert < $22000
+
 
 
 
@@ -857,16 +1239,6 @@ FillQuestItemsFromBuffer: ; 214af
 .endif
 
 
-.org $21f9a ; Free space
-ToolShopScaling:
-  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-ArmorShopScaling:
-  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-.assert < $22000
 
 
 .bank $26000 $a000:$2000
@@ -1023,8 +1395,14 @@ CheckForLowHpMp:
     sta ObjectDef,y
     rts
 ;;; NOTE: must finish before 35152
-.org $35152
+.assert < $35152
 
+
+.ifdef _DISABLE_STATUE_GLITCH
+.org $3559a
+  ;; Just always push down.
+  lda #$04
+.endif
 
 
 ;; Adjusted stab damage for populating sword object ($02)
@@ -1176,6 +1554,19 @@ GrantItemInRegisterA:
   jsr PatchGrantItemInRegisterA
 
 
+
+;;; Fix bug in dialog action 9 where carrying from the low byte of money
+;;; would just increment the low byte again instead of the high byte.
+.org $3d273
+  inc $0703
+
+
+
+.org $3d27d
+  jmp PatchZebuStudentFollowUp
+
+
+
 ;; End of ActivateTriggerSquare restores game mode to normal,
 ;; but if sword of thunder comes from trigger square, this will
 ;; clobber the LOCATION_CHANGE mode.  Patch it to call out to
@@ -1308,21 +1699,27 @@ Multiply16Bit:
   ;; Sets carry if result doesn't fit in 8 bits
   txa
   pha
-  lda #$00
-  ldx #$08
-  clc
--  bcc +
-    clc
-    adc $62
-+  ror
-   ror $61
-   dex
-  bpl -
-  sta $62
-  cmp #$01 ; set carry if A != 0
+   lda #$00
+   ldx #$08
+   clc
+-   bcc +
+     clc
+     adc $62
++   ror
+    ror $61
+    dex
+   bpl -
+   sta $62
+   cmp #$01 ; set carry if A != 0
   pla
   tax
   rts
+
+
+;;; a <- 0, x <- 8
+;;; ror a -> ror $61
+;;; if the bit we just rotated off $61 is set then add $62
+;;; carry goes into upper of A
 
 
 .ifdef _CHECK_FLAG0
@@ -1428,6 +1825,11 @@ PatchUpdateShieldDefense:
 ;; We could try to be cleverer about not reloading the equipped item.
 ;; If we just ASL the whole defense then we can do them simultaneously,
 ;; and then go into power ring.
+
+PatchZebuStudentFollowUp:
+.bank $34000 $8000:$2000
+  jsr DisplayNumberInternal
+  jmp DialogAction_11
 
 .assert < $3ff80 ; end of free space from 3ff44
 

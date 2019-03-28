@@ -68,6 +68,8 @@ export default (nes) => {
          hex(nes.cpu.REG_Y)}: ${hex(slots[nes.cpu.REG_Y])}`));
   };
 
+  nes.debug.breakpoints = null; // something is broken here...
+
   window.warp = (loc, entrance = 0) => {
     nes.cpu.ram[0x6c] = loc;
     nes.cpu.ram[0x6d] = entrance;

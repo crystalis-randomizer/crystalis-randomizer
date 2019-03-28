@@ -1,4 +1,5 @@
 import * as patch from './patch.js';
+import * as render from './render.js';
 import * as version from './version.js';
 import {crc32} from './crc32.js';
 import {EXPECTED_CRC32} from './rom.js';
@@ -29,17 +30,26 @@ const initRace = () => {
 const main = () => {
   if (document.getElementById('race') == null) { // no button
     initRace();
+    render.renderRaceFlags(document.getElementById('flags'), flags);
+    for (const el of [...document.getElementsByClassName('checkbox')]) {
+      makeCheckbox(el);
+    }
+    for (const cb of document.querySelectorAll('.flag-list > input[type="checkbox"]')) {
+      cb.checked = true;
+      cb.disabled = true;
+    }
     return;
   }
+
+  render.renderPresets(document.getElementById('presets'));
+  render.renderOptions(document.getElementById('select-options'));
 
   // Check for a stored ROM.
   loadRomFromStorage();
   initializeStateFromHash(true);
 
   // Wire up the presets menu.
-  document.getElementById('preset').addEventListener('change', setPresets);
-  setPresets();
-  if (!flags) flags = new FlagSet(document.getElementById('flagstring').value);
+  if (!flags) document.querySelector('[data-default-preset]').click();
   for (const el of [...document.getElementsByClassName('checkbox')]) {
     makeCheckbox(el);
   }
@@ -91,15 +101,16 @@ const initializeStateFromHash = (initPresets) => {
   for (const term of location.hash.substring(1).split('&')) {
     let [key, value] = term.split('=');
     value = decodeURIComponent(value);
-    if (key === 'flags') {
-      flags = new FlagSet(value);
-      if (initPresets) {
-        document.getElementById('preset').value = '--';
-        document.getElementById('flagstring').value = value;
-      }
-    }
+    if (key === 'flags') flags = new FlagSet(value);
     if (key === 'seed') seed = decodeURIComponent(value);
     if (key === 'race') document.body.classList.add('race');
+    for (const preset of document.querySelectorAll('[data-flags]')) {
+      preset.addEventListener('click', () => {
+        flags = new FlagSet(preset.dataset['flags']);
+        if (version.VERSION == 'unstable') flags.set('Ds', true);
+        updateDom();
+      });
+    }
   }
 };
 
@@ -148,6 +159,7 @@ const shuffleRom = async (seed) => {
   const shuffled = rom.slice();
   let done = false;
   const flagsClone = new FlagSet(String(flags)); // prevent modifying
+  flagsClone.set('Br', true); // experiment - always on
   document.body.classList.add('shuffling');
   const log = flags.check('Ds') ? {} : undefined;
   const showWork = () => {
@@ -179,15 +191,6 @@ const replaceSpoiler = (name, log) => {
     li.textContent = line;
     el.appendChild(li);
   }
-};
-
-const setPresets = () => {
-  const preset = document.querySelector('#preset :checked');
-  document.getElementById('preset-explanation').textContent = preset.dataset['text'];
-  let flags = preset.dataset['flags'];
-  if (version.VERSION == 'unstable') flags += ' Ds';
-  document.getElementById('flagstring').value = flags;
-  //console.log(preset);
 };
 
 // TODO - need to store the checkbox somewhere keyed by the flag?

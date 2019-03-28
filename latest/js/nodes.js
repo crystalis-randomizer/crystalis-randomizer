@@ -107,8 +107,8 @@ export class Slot extends Node {
     // NOTE: if alarm flute goes in 3rd row, 0x31 should go away.
     return i >= 0x0d && i <= 0x24 ||
         i === 0x26 ||
-        i === 0x28 ||
-        i === 0x31 ||
+        //i === 0x28 ||
+        //i === 0x31 ||
         i > 0x48;
   }
 
@@ -132,11 +132,12 @@ export class Slot extends Node {
     this.itemIndex = index;
   }
 
+  /** @override */
   write(rom) {
     if (!this.slots) return;
     for (const slot of this.slots) {
       // TODO - not clear where to write this.
-      slot(rom.subarray(0x10), this);
+      slot(rom, this);
     }
   }
 
@@ -294,7 +295,6 @@ export class Chest extends Slot {
         rom[a - 1] &= 0x7f;
       }
       write(rom, a, Math.min(0x70, slot.itemIndex));
-//console.log(`${this.name2}: ${a.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
     });
     return this;
   }
@@ -483,6 +483,7 @@ export class Location extends Node {
     this.type = null;
     this.isStart = false;
     this.isEnd = false;
+    this.sells = [];
   }
 
   get nodeType() {
@@ -594,8 +595,9 @@ export class Location extends Node {
     return this;
   }
 
-  shop() {
+  shop(...items) {
     this.type = 'house';
+    this.sells = items.map(x => x instanceof Slot ? x.item : x);
     return this;
   }
 
@@ -621,6 +623,26 @@ export class Location extends Node {
     }
     return lines.join('\\n');
   }
+
+  write(rom) {
+    if (!this.sells.length) return;
+    const isArmor = this.sells[0].inventoryRow == 'armor';
+    // look up shop index in table
+    const LOCS = 0x21f54;
+    const INDS = 0x21f75;
+    let index = 0;
+    for (let i = LOCS; i < INDS; i++) {
+      if (rom[i] == this.id) {
+        index = rom[i + INDS - LOCS];
+        break;
+      }
+    }
+    const addr = (isArmor ? 0x21da4 : 0x21e28) + (index << 2);
+    for (let i = 0; i < 4; i++) {
+      rom[addr + i] = this.sells[i] ? this.sells[i].id : 0xff;
+      if (!rom[addr + i]) console.error(`uh oh: ${this.sells[i].id} => ${this.sells[i]}`);
+    }
+  }
 }
 
 const checkBounds = (a, rom, ...data) => {
@@ -632,6 +654,50 @@ const checkBounds = (a, rom, ...data) => {
 
 
 export class WorldGraph extends Graph {
+
+  write(rom) {
+    rom = rom.subarray(0x10);
+    for (const n of this.nodes) {
+      n.write(rom);
+    }
+  }
+
+  shuffleShops(random) {
+    // for now we just dump everything into a pool and shuffle them up.
+    const armor = {shops: [], items: []};
+    const tools = {shops: [], items: []};
+    for (const n of this.nodes) {
+      if (!n.sells || !n.sells.length) continue;
+      const s = n.sells[0].inventoryRow == 'armor' ? armor : tools
+      s.shops.push(n);
+      for (let i = 0; i < 4; i++) {
+        s.items.push(n.sells[i] || null);
+      }
+      n.sells = [];
+    }
+    random.shuffle(armor.items);
+    random.shuffle(tools.items);
+
+    for (const {shops, items} of [armor, tools]) {
+      let s = 0;
+      while (items.length && s < 100000) {
+        const item = items.pop();
+        let shop = shops[s++ % shops.length];
+        if (!item) continue;
+        if (shop.sells.indexOf(item) >= 0 || shop.sells.length >= 4) {
+          items.push(item);
+          continue;
+        }
+        shop.sells.push(item);
+      }
+    }
+    // sort items
+    for (const {shops} of [armor, tools]) {
+      for (const shop of shops) {
+        shop.sells.sort((a, b) => a.id - b.id);
+      }
+    }
+  }
 
   /**
    * @param {!Object} opts
@@ -701,12 +767,6 @@ export class WorldGraph extends Graph {
         continue;
       }
 
-      // TEMPORARY HACK - remove the alarm flute
-      if (n instanceof Slot && n.item.name === 'Alarm Flute') {
-        depgraph.addRoute([n.item.uid]);
-        depgraph.finalize(n.item.uid);
-        continue;
-      }
       //// Use Crystalis as a proxy for winning
       // if (n instanceof Slot && n.slotName == null) {
       //   continue;
@@ -907,11 +967,14 @@ export class LocationList {
 
   /**
    * Returns a bitmask of reachable locations.
-   * @param {!Bits=} has Bitmask of gotten items
+   * @param {!Bits=} has Bitmask of gotten items.
    * @param {!Array<number>=} slots Location-to-item
    * @return {!Set<number>} Reachable locations
    */
   traverse(has = Bits.of(), slots = []) {
+    // NOTE: we can't use isArray because the non-bigint polyfill IS an array
+    // let hasOut = Array.isArray(has) ? has : null;
+    // if (hasOut) has = has[0];
     has = Bits.clone(has);
 
     const reachable = new Set();
@@ -928,6 +991,7 @@ export class LocationList {
       // can we reach it?
       const needed = this.routes[n];
       for (let i = 0; i < needed.length; i++) {
+//if(n==4)console.log(`can reach 4? ${Bits.bits(needed[i])} has ${Bits.bits(has)} => ${Bits.containsAll(has, needed[i])}`);
         if (!Bits.containsAll(has, needed[i])) continue;
         reachable.add(n);
         if (slots[n]) {
@@ -937,7 +1001,49 @@ export class LocationList {
         break;
       }
     }
+    //if (hasOut) hasOut[0] = has;
     return reachable;
+  }
+
+  /**
+   * Returns a bitmask of reachable locations.
+   * @param {!Array<number>} slots Location-to-item
+   * @return {!Array<number>} Depth of each slot
+   */
+  traverseDepths(slots) {
+    let has = Bits.of();
+    let depth = 0;
+    const depths = [];
+    const BOUNDARY = {};
+    let queue = new Set();
+    for (let i = 0; i < this.locationToUid.length; i++) {
+      queue.add(i);
+    }
+    queue.add(BOUNDARY);
+    const iter = queue[Symbol.iterator]();
+    let next;
+    while (!(next = iter.next()).done) {
+      const n = next.value;
+      queue.delete(n);
+      if (n === BOUNDARY) {
+        if (queue.size) queue.add(BOUNDARY);
+        depth++;
+        continue;
+      }
+      if (depths[n] != null) continue;
+      // can we reach it?
+      const needed = this.routes[n];
+      for (let i = 0; i < needed.length; i++) {
+        if (!Bits.containsAll(has, needed[i])) continue;
+        depths[n] = depth;
+        if (slots[n]) {
+          has = Bits.with(has, slots[n]);
+          for (let j of this.unlocks[slots[n]]) queue.add(j);
+        }
+        break;
+      }
+    }
+    return depths;
   }
 
   toString() {
@@ -962,8 +1068,8 @@ export class LocationList {
    * Attempts to do an assumed fill.  Returns null if the
    * attempt failed.
    * @param {!Random} random
-   * @param {function(!Slot, !ItemGet): booleab} fits
-   * @param {function(!ItemGet, !Array<number>, !Random)} fillStrategy
+   * @param {function(!Slot, !ItemGet): boolean} fits
+   * @param {function(!ItemGet, !Array<number>, !Random)} strategy
    * @return {?Array<number>}
    */
   assumedFill(random, fits = (slot, item) => true, strategy = FillStrategy) {
@@ -990,6 +1096,7 @@ export class LocationList {
         if (filling[slot] == null &&
             slot != this.win &&
             fits(this.worldGraph.nodes[this.locationToUid[slot]], item)) {
+if(slot>100)throw new Error('WTF');
           filling[slot] = bit;
           found = true;
           break;
@@ -999,6 +1106,78 @@ export class LocationList {
     }
     return filling;
   }
+
+  // TODO - we need a clean way to translate indices...?
+  //  - instance methods for dealing with 'has' arrays
+  //    and 'slots' arrays - i.e.
+  //        addItem(has, itemNode)
+  //        fillSlot(slots, slotNode, itemNode)
+  //        ... read location bitmask?
+  // Location bitmasks will be wider than items?
+  //  - 128 bits OK...?
+  //  - once all *key* items are assigned, rest can be
+  //    filled in totally randomly.
+
+
+  // /**
+  //  * Attempts to do an assumed fill.  Returns null if the
+  //  * attempt failed.
+  //  * @param {!Random} random
+  //  * @param {function(!Slot, !ItemGet): boolean} fits
+  //  * @return {?Array<number>}
+  //  */
+  // forwardFill(random, fits = (slot, item) => true) {
+  //   // This is a simpler algorithm, but hopefully it's a little more reliable
+  //   // in hairy situations?  Basic plan: find a route with few requirements
+  //   // and drop one requirement from it into a reachable location.
+  //   const need = new Set(this.itemToUid.map((_, i) => i));
+  //   let has = Bits.of();
+  //   const filling = new Array(this.locationToUid.length).fill(null);
+  //   // Start something...
+  //   while (need.size) {
+  //     const obtainable = [has];
+  //     const reachable =
+  //         new Set(
+  //             random.shuffle(
+  //                 [...this.traverse(obtainable, filling)]
+  //                     .filter(n => filling[n] == null)));
+  //     // Iterate over the routes, subtracting ontainable[0]
+  //     const routes = [];
+  //     for (let i = 0; i < this.routes.length; i++) {
+  //       if (filling[i] || reachable.has(i)) continue;
+  //       for (const /** !Bits */ route of this.routes[i]) {
+  //         const r = Bits.bits(Bits.difference(route, has));
+          
+  //       }
+  //   /** @const {!Array<!Array<!Bits>>} */
+  //   this.routes = [];
+
+  //     const bit = hasArr.pop();
+  //     if (!Bits.has(has, bit)) continue;
+  //     const item = this.worldGraph.nodes[this.itemToUid[bit]];
+  //     has = Bits.without(has, bit);
+      
+  //     const reachable = 
+  //         [...this.traverse(has, filling)].filter(n=>filling[n]==null);
+
+  //     // NOTE: shuffle the whole thing b/c some items can't
+  //     // go into some slots, so try the next one.
+  //     strategy.shuffleSlots(item, reachable, random);
+  //     // For now, we don't have any way to know...
+  //     let found = false;
+  //     for (const slot of reachable) {
+  //       if (filling[slot] == null &&
+  //           slot != this.win &&
+  //           fits(this.worldGraph.nodes[this.locationToUid[slot]], item)) {
+  //         filling[slot] = bit;
+  //         found = true;
+  //         break;
+  //       }
+  //     }
+  //     if (!found) return null;
+  //   }
+  //   return filling;
+  // }
 
   // TODO - we need a clean way to translate indices...?
   //  - instance methods for dealing with 'has' arrays
@@ -1047,4 +1226,75 @@ export class FillStrategy {
 // Funnel all the writes into a single place to find errant writes.
 const write = (rom, addr, value) => {
   rom[addr] = value;
+}
+
+// statistics we can do
+//  - distribution of locations for each item
+//  - was item necessary? (remove and traverse)
+//    - gas mask, shell flute, rabbit boots,
+//      change, telepathy
+//  - was slot necessary?
+//    - broken statue/eyeglasses, stxy, bow of sun, ...
+//  - how many necessary items are there?
+//    (obviously this is separately-necessary...
+//     there will be some alternatives where neither
+//     single item is necessary but one or the other is)
+//  - correlations between item locations in the same seed?
+//  - how deep was item --- how to compute?  would like
+//    e.g. minimum path to get it, but that seems hard.
+//  - what blocks what - remove shell flute, can still get flight?
+//  - index in dfs
+// success rate, where are seeds failing?
+
+//  - usefulness of each item
+//    - given each slot, what are requirements?
+//    - need to remove impossible paths?
+//    - then for N paths, 1/N for each path item is in
+//    -> how many slots does item unlock.
+//       - could do this cumulatively?
+
+// A : B | C & D
+// B : A & C | A & D
+// C : D
+// D :
+// Then A : B is useless because all B : A.
+// But could be transitive
+// A : B | D
+// B : C
+// C : A & D
+// D : E
+// E :
+// If we sub
+//   A -> (C) | (E)
+//     -> (A & D) | ()
+// Eventually everything should either cycle or
+// empty out... we want the paths that don't cycle
+// but we don't have a good way to sub and keep track
+// of where everything came from...
+
+// DEPTH -> how many unlocks do you need...
+
+
+export class Filling {
+  constructor() {
+    this.data = [];
+  }
+
+
+  has(slot) {}
+
+  get(slot) {}
+
+  set(slot, item) {}
+
+  /** for override */
+  fits(slot, item) {
+    // todo - in subclass, keep track of number of
+    // non-chest slots that need to be filled...
+
+    // alternatively, just have set() return a boolean
+    // for whether it succeeded...
+    return true;
+  }
+
 }

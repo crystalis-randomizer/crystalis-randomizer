@@ -138,6 +138,8 @@ const assumeWildWarp        = glitch(option('Assume wild warp',
                                      opt('Gw', false)));
 const allowWildWarp         = option('Allow wild warp',
                                      opt('!Tw', false));
+const allowStatueGlitch     = option('Allow statue glitch',
+                                     opt('!Ft', false));
 const assumeSwordChargeGlitch = glitch(option('Assume sword charge glitch',
                                        opt('Gc', false)));
 const buffedMedicalHerb     = option('Buffed medical herb',
@@ -253,7 +255,7 @@ const insectFlute           = item(0x27, 'Insect Flute')
                                 .fromPerson('Oak mother', 0x1e)
                                 .dialog(0x1e, null, 1)
                                 .key();
-const fluteOfLimeQueen      = item(0x28, 'Flute of Lime')
+const fluteOfLime           = item(0x28, 'Flute of Lime')
                                 .fromPerson('Portoa queen', 0x38)
                                 .direct(0x98f9) // persondata 62 +1
                                 // .direct(0x3fa28) // mesia version
@@ -287,8 +289,8 @@ const shieldRing            = item(0x30, 'Shield Ring')
                                 .npcSpawn(0x16, 0x57, 2)
                                 .bonus();
 const alarmFlute            = item(0x31, 'Alarm Flute')
-                                .consumable()
-                                .fixed();
+                                .fromPerson('Zebu\'s student', 0x14, 1)
+                                .key();
 const windmillKey           = item(0x32, 'Windmill Key')
                                 .fromPerson('Windmill guard', 0x14)
                                 .dialog(0x14, 0x0e, 0)
@@ -404,7 +406,6 @@ const flight                = magic(0x48, 'Flight')
                                 .weight(15)
                                 .direct('Kensu in Draygonia Fortress', 0x3d18f);
                                 // See recover - no need for second slot.
-const fluteOfLimeChest      = item(0x28, "Flute of Lime").chest(undefined, 0x5b).key();
 const fruitOfPowerVampire2  = fruitOfPower
                                 .bossDrop('Vampire 2', 0x0c, 0x61)
                                 .npcSpawn(0xcc)
@@ -418,8 +419,7 @@ const mimic                 = item(0x70, 'Mimic'); // special handling to dup
 
 // TODO - maybe don't build any logic into here, just put them where they need to go?
 const talkedToLeafElder     = trigger('Talked to Leaf Elder').get(swordOfWind);
-const talkedToLeafStudent   = trigger('Talked to Leaf Student');
-const buyAlarmFlute         = trigger('Buy alarm flute').get(alarmFlute);
+const talkedToLeafStudent   = trigger('Talked to Leaf Student').get(alarmFlute);
 const talkedToZebuInCave    = trigger('Talked to Zebu in cave');
 const wokeUpWindmillGuard   = trigger('Woke up Windmill Guard').get(windmillKey);
 const startedWindmill       = trigger('Started Windmill');
@@ -438,7 +438,7 @@ const learnedParalysis      = trigger('Learned Paralysis').get(paralysis);
 const talkedToPortoaQueen   = trigger('Talked to Portoa Queen');
 const talkedToFortuneTeller = trigger('Talked to Fortune Teller');
 const visitedUndergroundChannel = trigger('Visited Underground Channel');
-const sentToWaterfallCave   = trigger('Sent to Waterfall Cave').get(fluteOfLimeQueen); // no rando? or do both...
+const sentToWaterfallCave   = trigger('Sent to Waterfall Cave').get(fluteOfLime);
 const curedAkahana          = trigger('Cured Akahana').get(shieldRing);
 const talkedToRage          = trigger('Talked to Rage').get(ballOfWater);
 const mesiaRecording        = trigger('Mesia recording played');
@@ -477,7 +477,7 @@ const rabbitSkip            = condition('Rabbit skip')
 const teleportSkip          = condition('Teleport skip')
                                 .option(assumeTeleportSkip);
 const statueGlitch          = condition('Statue glitch')
-                                .option(assumeStatueGlitch);
+                                .option(assumeStatueGlitch, allowStatueGlitch);
 const wildWarp              = condition('Wild warp')
                                 .option(assumeWildWarp, allowWildWarp);
 const anyLevel2             = condition('Any level 2 sword')
@@ -573,13 +573,8 @@ const thunderMagic          = condition('Thunder magic')
                                 .option(ballOfThunder, maybeRefresh)
                                 .option(stormBracelet, maybeRefresh);
 const fluteOfLimeOrGlitch   = condition('Flute of lime or glitch')
-                                .option(fluteOfLimeQueen)
-                                .option(statueGlitch)
-                                .option(offRoute(fluteOfLimeChest));
-// this is only really here for tracker
-const secondFluteOfLime     = condition('Second flute of lime')
-                                .option(fluteOfLimeChest)
-                                .option(offRoute(fluteOfLimeQueen));
+                                .option(fluteOfLime)
+                                .option(statueGlitch);
 const changeOrGlitch        = condition('Change or glitch')
                                 .option(change)
                                 .option(statueGlitch);
@@ -951,8 +946,9 @@ const mtSabreNorthTunnel7   = location(0x39, SBRN, 'Tunnel 7 (to upper)').cave()
                                 .connect(mtSabreNorthTunnel6c)
                                 .connectTo(mtSabreNorthUpper);
 
-const nadareInn             = location(0x3c, NADR, 'Inn').town();
-const nadareToolShop        = location(0x3d, NADR, 'Tool Shop').house();
+const nadareInn             = location(0x3c, NADR, 'Inn').shop();
+const nadareToolShop        = location(0x3d, NADR, 'Tool Shop')
+                                .shop(medicalHerb, antidote, fruitOfPower, warpBoots);
 const nadareBackRoom        = location(0x3e, NADR, 'Back Room').house();
 
 // Waterfall Valley
@@ -1076,13 +1072,12 @@ const waterfallCave1c       = location(0x54, WFCV, 'Tunnel 1c (past ice)').cave(
 const waterfallCave2        = location(0x55, WFCV, 'Tunnel 2 (stoned pair)').cave()
                                 .connect(waterfallCave1c);
 const waterfallCave3        = location(0x56, WFCV, 'Tunnel 3 (wide medusa hallways)').cave()
-                                .from(waterfallCave2, fluteOfLimeOrGlitch)
-                                .to(waterfallCave2, fluteOfLimeQueen);
+                                .connect(waterfallCave2, fluteOfLimeOrGlitch);
 // NOTE: no reverse path thru these ice walls - will soft lock!
 const waterfallCave4a       = location(0x57, WFCV, 'Tunnel 4a (left entrance)').cave()
                                 .from(waterfallCave3, destroyIce)
-                                .chest(fluteOfLimeChest, 0x19)
-                                .trigger(curedAkahana, secondFluteOfLime); // $64da:02
+                                .chest(mirroredShield, 0x19)
+                                .trigger(curedAkahana, fluteOfLime); // $64da:02
 const waterfallCave4b       = location(0x57, WFCV, 'Tunnel 4b (right entrance)').cave()
                                 .from(waterfallCave3, destroyIce) // $64da:01
                                 .connect(waterfallCave4a, flight);
@@ -1142,9 +1137,6 @@ const angrySeaCabin         = location(0x61, ASEA, 'Cabin').misc()
                                 .trigger(talkedToKensuInCabin, returnedFogLamp);
 const lighthouse            = location(0x62, JOEL, 'Lighthouse').misc()
                                 .connect(angrySeaLighthouse)
-                                // TODO - the "anySword" requirement is only needed to
-                                // prevent softlocks from not being able to afford the
-                                // second alarm flute by the time it's found.
                                 .trigger(talkedToKensuInLighthouse, alarmFlute);
 const undergroundChannel1   = location(0x64, PORT, 'Underground Channel 1 (from throne room)')
                                 .sea()
@@ -1535,7 +1527,9 @@ const goaHouse              = location(0xbb, GOA,  'House').house().connect(goa)
                                 // TODO - consider removing ivory statue requirement?
                                 .trigger(talkedToAkahanaFriend, change, ivoryStatue);
 const goaInn                = location(0xbc, GOA,  'Inn').shop().connect(goa, enteredShyron);
-const goaToolShop           = location(0xbe, GOA,  'Tool Shop').shop().connect(goa, enteredShyron);
+const goaToolShop           = location(0xbe, GOA,  'Tool Shop')
+                                .shop(medicalHerb, antidote, warpBoots, fruitOfPower)
+                                .connect(goa, enteredShyron);
 const goaTavern             = location(0xbf, GOA,  'Tavern').shop().connect(goa);
 const leafElderHouse        = location(0xc0, LEAF, 'Elder House').house()
                                 .connect(leaf)
@@ -1543,17 +1537,23 @@ const leafElderHouse        = location(0xc0, LEAF, 'Elder House').house()
 const leafRabbitHut         = location(0xc1, LEAF, 'Rabbit Hut').house().connect(leaf)
                                 .trigger(talkedToLeafRabbit, villagersAbducted, telepathy);
 const leafInn               = location(0xc2, LEAF, 'Inn').shop().connect(leaf);
-const leafToolShop          = location(0xc3, LEAF, 'Tool Shop').shop()
-                                .connect(leaf)
-                                .trigger(buyAlarmFlute, anySword);
-const leafArmorShop         = location(0xc4, LEAF, 'Armor Shop').shop().connect(leaf);
+const leafToolShop          = location(0xc3, LEAF, 'Tool Shop')
+                                .shop(medicalHerb, antidote, warpBoots, fruitOfPower)
+                                .connect(leaf);
+const leafArmorShop         = location(0xc4, LEAF, 'Armor Shop')
+                                .shop(tannedHide, carapaceShield)
+                                .connect(leaf);
 const leafStudentHouse      = location(0xc5, LEAF, 'Student House').house().connect(leaf)
                                 .trigger(talkedToLeafStudent);
 const brynmaerTavern        = location(0xc6, BRYN, 'Tavern').house().connect(brynmaer);
 const brynmaerPawnShop      = location(0xc7, BRYN, 'Pawn Shop').shop().connect(brynmaer);
 const brynmaerInn           = location(0xc8, BRYN, 'Inn').shop().connect(brynmaer);
-const brynmaerArmorShop     = location(0xc9, BRYN, 'Armor Shop').shop().connect(brynmaer);
-const brynmaerToolShop      = location(0xcb, BRYN, 'Tool Shop').shop().connect(brynmaer);
+const brynmaerArmorShop     = location(0xc9, BRYN, 'Armor Shop')
+                                .shop(leatherArmor, carapaceShield, bronzeShield)
+                                .connect(brynmaer);
+const brynmaerToolShop      = location(0xcb, BRYN, 'Tool Shop')
+                                .shop(medicalHerb, antidote, warpBoots)
+                                .connect(brynmaer);
 const oakElderHouse         = location(0xcd, OAK,  'Elder House').house()
                                 .from(oak, telepathy)
                                 .trigger(talkedToOakElder, rescuedOakChild);
@@ -1561,13 +1561,19 @@ const oakMotherHouse        = location(0xce, OAK,  'Mother\'s House').house()
                                 .from(oak, telepathy)
                                 .trigger(talkedToOakMother, telepathy)
                                 .trigger(talkedToOakMothher2, rescuedOakChild);
-const oakToolShop           = location(0xcf, OAK,  'Tool Shop').shop()
+const oakToolShop           = location(0xcf, OAK,  'Tool Shop')
+                                .shop(medicalHerb, antidote, fruitOfPower)
                                 .from(oak, telepathy);
 const oakInn                = location(0xd0, OAK,  'Inn').shop()
                                 .from(oak, telepathy);
 const amazonesInn           = location(0xd1, AMZN, 'Inn').shop().connect(amazones);
-const amazonesToolShop      = location(0xd2, AMZN, 'Tool Shop').shop().connect(amazones);
-const amazonesArmorShop     = location(0xd3, AMZN, 'Armor Shop').shop().connect(amazones);
+const amazonesToolShop      = location(0xd2, AMZN, 'Tool Shop')
+                                .shop(warpBoots, fruitOfPower, lysisPlant)
+                                .connect(amazones);
+const amazonesArmorShop     = location(0xd3, AMZN, 'Armor Shop')
+                                .shop(platinumArmor, platinumShield,
+                                      mirroredShield, sacredShield)
+                                .connect(amazones);
 const aryllisHouse          = location(0xd4, AMZN, 'Queen\'s House').house()
                                 .from(amazones, changeOrGlitch)
                                 .trigger(talkedToAmazonesQueen, change, kirisaPlant);
@@ -1591,9 +1597,13 @@ const portoaFortuneTeller2  = location(0xd8, PORT, 'Fortune Teller Back').house(
                                 .connect(undergroundChannel2)
                                 .connect(undergroundChannel3);
 const portoaPawnShop        = location(0xd9, PORT, 'Pawn Shop').shop().connect(portoa);
-const portoaArmorShop       = location(0xda, PORT, 'Armor Shop').shop().connect(portoa);
+const portoaArmorShop       = location(0xda, PORT, 'Armor Shop')
+                                .shop(bronzeArmor, platinumArmor, platinumShield)
+                                .connect(portoa);
 const portoaInn             = location(0xdc, PORT, 'Inn').shop().connect(portoa);
-const portoaToolShop        = location(0xdd, PORT, 'Tool Shop').shop().connect(portoa);
+const portoaToolShop        = location(0xdd, PORT, 'Tool Shop')
+                                .shop(medicalHerb, lysisPlant, fruitOfLime, warpBoots)
+                                .connect(portoa);
 const portoaPalaceLeft      = location(0xde, PORT, 'Palace Left')
                                 .house()
                                 .connect(portoaPalaceEntrance);
@@ -1621,22 +1631,25 @@ const joelElderHouse        = location(0xe3, JOEL, 'Elder\'s House').house()
 const joelShed              = location(0xe4, JOEL, 'Shed').house()
                                 .connect(joel)
                                 .to(joelSecretPassage, eyeGlasses);
-const joelToolShop          = location(0xe5, JOEL, 'Tool Shop').shop()
-                                .connect(joel)
-                                .trigger(buyAlarmFlute, anySword);
+const joelToolShop          = location(0xe5, JOEL, 'Tool Shop')
+                                .shop(medicalHerb, antidote, fruitOfPower, lysisPlant)
+                                .connect(joel);
 const joelInn               = location(0xe7, JOEL, 'Inn').shop().connect(joel);
 const zombieTownHouse       = location(0xe8, EVIL, 'Zombie Town House').house().connect(zombieTown);
 const zombieTownBasement    = location(0xe9, EVIL, 'Zombie Town Basement').house()
                                 .connect(zombieTownHouse)
                                 // TODO - correct trigger when shuffling bosses?
                                 .trigger(talkedToClark, sabera1);
-const swanToolShop          = location(0xeb, SWAN, 'Tool Shop').shop()
+const swanToolShop          = location(0xeb, SWAN, 'Tool Shop')
+                                .shop(medicalHerb, antidote, fruitOfPower, warpBoots)
                                 .connect(swan);
 const swanStomHut           = location(0xec, SWAN, 'Stom\'s Hut').house()
                                 .connect(swan)
                                 .trigger(talkedToStomInSwan);
 const swanInn               = location(0xed, SWAN, 'Inn').shop().connect(swan);
-const swanArmorShop         = location(0xee, SWAN, 'Armor Shop').shop().connect(swan);
+const swanArmorShop         = location(0xee, SWAN, 'Armor Shop')
+                                .shop(soldierSuit, ceramicSuit, ceramicShield, battleShield)
+                                .connect(swan);
 const swanTavern            = location(0xef, SWAN, 'Tavern').house()
                                 .connect(swan)
                                 .trigger(talkedToKensuInTavern, talkedToStomInSwan, paralysis);
@@ -1654,11 +1667,17 @@ const shyronTemple2         = location(0xf2, SHYR, 'Temple (post-massacre)').for
                                 .boss(mado1);
 const shyronTrainingHall    = location(0xf3, SHYR, 'Training Hall').house().connect(shyron);
 const shyronHospital        = location(0xf4, SHYR, 'Hospital').house().connect(shyron);
-const shyronArmorShop       = location(0xf5, SHYR, 'Armor Shop').shop().connect(shyron);
-const shyronToolShop        = location(0xf6, SHYR, 'Tool Shop').shop().connect(shyron);
+const shyronArmorShop       = location(0xf5, SHYR, 'Armor Shop')
+                                .shop(ceramicSuit, sacredShield, battleShield)
+                                .connect(shyron);
+const shyronToolShop        = location(0xf6, SHYR, 'Tool Shop')
+                                .shop(medicalHerb, antidote, fruitOfLime, magicRing)
+                                .connect(shyron);
 const shyronInn             = location(0xf7, SHYR, 'Inn').shop().connect(shyron);
 const saharaInn             = location(0xf8, SHRA, 'Inn').shop().connect(sahara);
-const saharaToolShop        = location(0xf9, SHRA, 'Tool Shop').shop().connect(sahara);
+const saharaToolShop        = location(0xf9, SHRA, 'Tool Shop')
+                                .shop(antidote, warpBoots, fruitOfRepun, magicRing)
+                                .connect(sahara);
 const saharaElderHouse      = location(0xfa, SHRA, 'Elder\'s House').house().connect(sahara);
 const saharaPawnShop        = location(0xfb, SHRA, 'Pawn Shop').house().connect(sahara);
 
@@ -1690,13 +1709,14 @@ return graph;
 
 export const shuffle = async (rom, random, log = undefined, flags = undefined, progress = undefined) => {
   const graph = generate(flags);
-  const allSlots = graph.nodes.filter(s => s instanceof Slot);
+  if (flags.check('Ps')) graph.shuffleShops(random);
+  const allSlots = graph.nodes.filter(s => s instanceof Slot && s.slots && s.slotName);
 
   // Default shuffling
   if (!flags) flags = new FlagSet('Sbkm Sct');
 
   const buckets = {}
-  for (const slot of graph.nodes) {
+  for (const slot of allSlots) {
     if (!(slot instanceof Slot) || !slot.slots) continue; // fixed, no shuffle
     const type = slot.slotType[0];
     (buckets[type] = buckets[type] || []).push(slot);
@@ -1713,7 +1733,7 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
   const shuffled = {};
   // let magicPool = null;
   // let keyPool = null;
-  for (const pool of flags.flags['S']) {
+  for (const pool of flags.flags['S'] || []) {
     const p = [];
     for (const type of pool) {
       shuffled[type] = true;
@@ -1742,7 +1762,7 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
   // Later would be nice to start fully shuffled and anneal, or do something
   // more targeted.
   const findSlot =
-      (name) => graph.nodes.find(n => n instanceof Slot && n.name === name);
+      (name) => allSlots.find(n => n.vanillaItemName === name);
 
   const swordOfWind = findSlot('Sword of Wind');
   const swordOfFire = findSlot('Sword of Fire');
@@ -1803,7 +1823,7 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
     if (!swaps.length) continue; // nothing to do
     // test
 
-    const {win, path} = graph.traverse();
+    const {win, path} = graph.traverse({wanted: allSlots, dfs: false});
     if (win) {
       //console.log(`successful shuffle of ${count} items`);
       route = path;
@@ -1819,20 +1839,19 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
   }
 
   // Commit changes
-  for (const slot of graph.nodes) {
-    if (slot instanceof Slot) slot.write(rom);
-  }
+  if (rom) graph.write(rom);
 
   if (!log) return;
 
   // Generate spoiler log.
   log.items = [];
   log.route = [];
-  for (const [slot, routeText] of route) {
+  for (const [slotIndex, routeText] of route) {
     log.route.push(routeText);
+    const slot = graph.nodes[slotIndex];
     if (slot.slotName == null) continue;
     let slotName = slot.slotName;
-    if (slotName.indexOf(slot.orig) < 0) slotName += ` (normally ${slot.orig})`;
+    if (slotName.indexOf(slot.orig) < 0) slotName += ` (normally ${slot.vanillaItemName})`;
     log.items.push({slotIndex: slot.slotIndex,
                     itemIndex: slot.itemIndex,
                     origName: slot.vanillaItemName,
@@ -1841,10 +1860,24 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
                     text: `${slot.item.name}: ${slotName}`,
                    });
   }
+  // for (const [slot, routeText] of route) {
+  //   log.route.push(routeText);
+  //   if (slot.slotName == null) continue;
+  //   let slotName = slot.slotName;
+  //   if (slotName.indexOf(slot.orig) < 0) slotName += ` (normally ${slot.orig})`;
+  //   log.items.push({slotIndex: slot.slotIndex,
+  //                   itemIndex: slot.itemIndex,
+  //                   origName: slot.vanillaItemName,
+  //                   slotName: slot.slotName,
+  //                   itemName: slot.item.name,
+  //                   text: `${slot.item.name}: ${slotName}`,
+  //                  });
+  // }
 };
 
 export const shuffle2 = async (rom, random, log = undefined, flags = undefined, progress = undefined) => {
   const graph = generate(flags);
+  if (flags.check('Ps')) graph.shuffleShops(random);
   const locationList = graph.integrate();
   if (progress) progress.addTasks(1000);
   for (let i = 0; i < 1000; i++) {
@@ -1859,13 +1892,16 @@ export const shuffle2 = async (rom, random, log = undefined, flags = undefined, 
     }
   }
   // fall back on forward-fill ?
+  // throw new Error('could not fill');
   return shuffle(rom, random, log, flags, progress);
 };
 
 // TODO - build in some sort of auto-reroll functionality,
 // where we feed in some stats about the fill and maybe
 // reroll if it doesn't meet some criteria?
+// TODO - accept log.stats and update it!!!
 export const shuffle3 = async (graph, locationList, rom, random, log = undefined, flags = undefined, progress = undefined) => {
+  const stats = log && log.stats;
   const slots = graph.nodes.filter(s => s instanceof Slot && s.slots && s.slotName);
   const allItems = new Map(random.shuffle(slots.map(s => [s, [s.item, s.itemIndex]])));
   const allSlots = new Set(random.shuffle(slots));
@@ -1873,9 +1909,11 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
   const slotType = (slot) => slot.slotType ? slot.slotType[0] : 'c';
   const buckets = {};
 
+  if (stats) stats.seeds++;
+
   // Default shuffling - only S flags matter.
   if (!flags) flags = new FlagSet('Sbkm Sct');
-  flags.flags['S'].forEach((pool, index) => {
+  (flags.flags['S'] || []).forEach((pool, index) => {
     for (const type of pool) {
       buckets[type] = index;
     }
@@ -1906,7 +1944,9 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
   // TODO - once we're doing other shufflings, re-roll the
   // location list after 5 or so failed attempts?
   if (filling == null) {
+    if (stats) stats.endState.key++;
     return false;
+    throw new Error('Could not fill!');
   }
 
   const fillMap = new Map();
@@ -1922,7 +1962,7 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
   }
 
   // Now do the remaining (non-progression) items
-  const findSlot = (item, args) => {
+  const findSlot = (item, args, type = '') => {
     for (const slot of allSlots) {
       if (!fits(slot, item)) continue;
       fillMap.set(slot, args);
@@ -1930,13 +1970,19 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
       allItems.delete(item);
       return true;
     }
+    if (stats) {
+//console.log(`fail: ${item} in ${[...allSlots]}`);
+      if (type == 'traps') stats.endState.traps++;
+      else if (type == 'chest') stats.endState.chest++;
+      else stats.endState.misc++;
+    }
     return false;
   };
   for (const [item, args] of allItems) {
-    if (item.isMimic() && !findSlot(item, args)) return false;
+    if (item.isMimic() && !findSlot(item, args, 'traps')) return false;
   }
   for (const [item, args] of allItems) {
-    if (item.needsChest() && !findSlot(item, args)) return false;
+    if (item.needsChest() && !findSlot(item, args, 'chest')) return false;
   }
   for (const [item, args] of allItems) {
     if (!findSlot(item, args)) return false;
@@ -1949,17 +1995,18 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
   // Do a final sanity check to make sure the game is actually winnable.
   const {win, path: route} = graph.traverse({wanted: slots, dfs: false});
   if (!win) {
+    if (stats) stats.endState.no_win++;
     return false;
   }
 
   // Commit changes
-  if (rom) {
-    for (const slot of graph.nodes) {
-      if (slot instanceof Slot) slot.write(rom);
-    }
-  }
+  if (rom) graph.write(rom);
 
   if (!log) return true;
+  if (stats) {
+    stats.endState.success++;
+    stats.analyze(graph, locationList, filling);
+  }
 
   // Generate spoiler log.
   log.items = [];

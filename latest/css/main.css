@@ -303,25 +303,28 @@ p + .flag-list {
 .flag-list > input[type="checkbox"] + label + div > .flag-body {
   display: none;
 }
+.race-summary .flag-list > input[type="checkbox"] + label,
 .flag-list > input[type="checkbox"]:checked + label {
   background-color: var(--light);
   color: var(--dark);
 }
+.race-summary .flag-list > input[type="checkbox"] + label.hard,
 .flag-list > input[type="checkbox"]:checked + label.hard {
   background-color: var(--hard-light);
   border-color: var(--hard-dark);
   color: var(--hard-dark);
 }
-.flag-list > input[type="checkbox"]:checked + label + div > label.hard {
-  xcolor: var(--hard-dark);
-  xborder-color: var(--hard-dark);
-}
+.race-summary .flag-list > input[type="checkbox"] + label + div > label,
 .flag-list > input[type="checkbox"]:checked + label + div > label {
   color: var(--dark);
 }
+.race-summary .flag-list > input[type="checkbox"] + label + div > .flag-body,
 .flag-list > input[type="checkbox"]:checked + label + div > .flag-body {
   display: block;
   color: #555;
+}
+.race-summary label {
+  cursor: auto;
 }
 /* TODO - removing flags is disruptive, but we have a ton */
 .flag-list > .conflicted + label,
@@ -349,4 +352,15 @@ p + .flag-list {
 progress {
   flex-grow: 1;
   margin-top: 10px;
+}
+
+.preset-flags {
+  font-family: monospace;
+  flex-grow: 1;
+  margin-right: 2em;
+  padding: 1ex;
+  border: 1px solid var(--dark);
+  border-radius: var(--radius);
+  color: var(--dark);
+  text-align: center;
 }

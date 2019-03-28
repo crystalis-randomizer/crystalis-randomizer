@@ -14,27 +14,29 @@ import * as version from './version.js';
 // Pull in all the patches we want to apply automatically.
 // TODO - make a debugger window for patches.
 // TODO - this needs to be a separate non-compiled file.
-// export default ({
-//   async apply(rom, hash) {
-//     // Look for flag string and hash
-//     let flags;
-//     if (!hash['seed']) {
-//       // TODO - send in a hash object with get/set methods
-//       hash['seed'] = parseSeed('').toString(16);
-//       window.location.hash += '&seed=' + hash['seed'];
-//     }
-//     if (hash['flags']) {
-//       flags = new FlagSet(hash['flags']);
-//     } else {
-//       flags = new FlagSet('Em Gt Mr Rlpt Sbk Sct Sm Tasd');
-//     }
-//     for (const key in hash) {
-//       if (hash[key] === 'false') hash[key] = false;
-//     }
-//     // TODO - does this break closure?
-//     await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader);
-//   }
-// });
+export default ({
+  async apply(rom, hash) {
+    // Look for flag string and hash
+    let flags;
+    if (!hash['seed']) {
+      // TODO - send in a hash object with get/set methods
+      hash['seed'] = parseSeed('').toString(16);
+      window.location.hash += '&seed=' + hash['seed'];
+    }
+    if (hash['flags']) {
+      flags = new FlagSet(hash['flags']);
+    } else {
+      flags = new FlagSet('Em Gt Mr Rlpt Sbk Sct Sm Tasd');
+    }
+    for (const key in hash) {
+      if (hash[key] === 'false') hash[key] = false;
+    }
+    // NOTE: THIS BREAKS CLOSURE!
+    // We need it commented to work in closure, but uncommented to work uncompiled in browser
+    // Currently no good way to do both without editing source :-(
+    //await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader());
+  }
+});
 
 export const parseSeed = (/** string */ seed) => /** number */ {
   if (!seed) return Math.floor(Math.random() * 0x100000000);
@@ -60,6 +62,8 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   if (typeof seed !== 'number') throw new Error('Bad seed');
   const newSeed = crc32(seed.toString(16).padStart(8, 0) + String(flags)) >>> 0;
 
+  const touchShops = flags.check('Pn') || flags.check('Pb') || flags.check('Ps');
+
   const defines = {
     _ALLOW_TELEPORT_OUT_OF_TOWER: true,
     _AUTO_EQUIP_BRACELET: flags.check('Ta'),
@@ -68,6 +72,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     _CONNECT_LEAF_TO_LIME_TREE: flags.check('Rp'),
     _CHECK_FLAG0: true,
     _DISABLE_SHOP_GLITCH: flags.check('Fs'),
+    _DISABLE_STATUE_GLITCH: flags.check('Ft'),
     _DISABLE_WILD_WARP: false,
     _DISPLAY_DIFFICULTY: true,
     _EXTRA_PITY_MP: true,  // TODO: allow disabling this
@@ -77,6 +82,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     _LEATHER_BOOTS_GIVE_SPEED: flags.check('Ts'),
     _NERF_WILD_WARP: flags.check('Tw'),
     _NEVER_DIE: flags.check('Di'),
+    _NORMALIZE_SHOP_PRICES: touchShops,
     _PITY_HP_AND_MP: true,
     _PROGRESSIVE_BRACELET: true,
     _REVERSIBLE_SWAN_GATE: true,
@@ -100,6 +106,12 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   const random = new Random(newSeed);
   await shuffleDepgraph(rom, random, log, flags, progress);
 
+  if (touchShops) {
+    // TODO - separate logic for handling shops w/o Pn specified (i.e. vanilla
+    // shops that may have been randomized)
+    rescaleShops(rom, asm, flags.check('Pb') ? random : null);
+  }
+
   // Parse the rom and apply other patches.
   const parsed = new Rom(rom);
   rescaleMonsters(rom, parsed);
@@ -111,13 +123,15 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     rom[0x1c50c + 0x10] *= 2;  // fruit of power
     rom[0x1c4ea + 0x10] *= 3;  // medical herb
   } else if (!flags.check('Hm')) {
-    rom[0x1c50c + 0x10] += 8;  // fruit of power
+    rom[0x1c50c + 0x10] += 16; // fruit of power
     rom[0x1c4ea + 0x10] *= 2;  // medical herb
   }
 
   await assemble('postshuffle.s');
-  updateDifficultyScalingTables(rom, flags);
+  updateDifficultyScalingTables(rom, flags, asm);
   updateCoinDrops(rom, flags);
+
+  shuffleRandomNumbers(rom, random);
 
   return stampVersionSeedAndHash(rom, seed, flags);
 
@@ -231,15 +245,15 @@ const updateCoinDrops = (rom, flags) => {
 };
 
 // goes with enemy stat recomputations in postshuffle.s
-const updateDifficultyScalingTables = (rom, flags) => {
+const updateDifficultyScalingTables = (rom, flags, asm) => {
   // Currently this is three $30-byte tables, which we start at the beginning
   // of the postshuffle ComputeEnemyStats.
-  const start = 0x1bb00; // TODO - take labels from assembler
   const diff = new Array(48).fill(0).map((x, i) => i);
 
   // PAtk = 5 + Diff * 15/32
   // DiffAtk table is 8 * PAtk = round(40 + (Diff * 15 / 4))
-  patchBytes(rom, start, diff.map(d => Math.round(40 + d * 15 / 4)));
+  patchBytes(rom, asm.expand('DiffAtk'),
+             diff.map(d => Math.round(40 + d * 15 / 4)));
 
   // NOTE: Old DiffDef table (4 * PDef) was 12 + Diff * 3, but we no longer
   // use this table since nerfing armors.
@@ -247,17 +261,18 @@ const updateDifficultyScalingTables = (rom, flags) => {
 
   // PDef = 2 + Diff / 2
   // DiffDef table is 4 * PDef = 8 + Diff * 2
-  patchBytes(rom, start + 0x30, diff.map(d => 8 + d * 2));
+  patchBytes(rom, asm.expand('DiffDef'),
+             diff.map(d => 8 + d * 2));
 
   // DiffHP table is PHP = min(255, 48 + round(Diff * 11 / 2))
-  patchBytes(rom, start + 0x60,
+  patchBytes(rom, asm.expand('DiffHP'),
              diff.map(d => Math.min(255, 48 + Math.round(d * 11 / 2))));
 
   // DiffExp table is ExpB = compress(floor(4 * (2 ** ((16 + 9 * Diff) / 32))))
   // where compress maps values > 127 to $80|(x>>4)
 
   const expFactor = flags.check('Hx') ? 0.25 : flags.check('Ex') ? 2.5 : 1;
-  patchBytes(rom, start + 0x90, diff.map(d => {
+  patchBytes(rom, asm.expand('DiffExp'), diff.map(d => {
     const exp = Math.floor(4 * (2 ** ((16 + 9 * d) / 32)) * expFactor);
     return exp < 0x80 ? exp : Math.min(0xff, 0x80 + (exp >> 4));
   }));
@@ -272,7 +287,7 @@ const updateDifficultyScalingTables = (rom, flags) => {
 };
 
 
-const rescaleShops = (rom, random = undefined) => {
+const rescaleShops = (rom, asm, random = undefined) => {
   // Populate rescaled prices into the various rom locations.
   // Specifically, we read the available item IDs out of the
   // shop tables and then compute new prices from there.
@@ -282,53 +297,84 @@ const rescaleShops = (rom, random = undefined) => {
   // always 50% of the base price.
 
   const SHOP_COUNT = 11; // 11 of all types of shop for some reason.
-  const PAWN_SHOP_PRICES = 0x21ec2;
-  const PAWN_SHOP_ITEMS = 0x49;
-  const INN_PRICES = 0x21eac;
-  const TOOL_SHOP_PRICES = 0x21e54;
-  const TOOL_SHOP_ITEMS = 0x21e28;
-  const ARMOR_SHOP_PRICES = 0x21dd0;
-  const ARMOR_SHOP_ITEMS = 0x21da4;
+  const BASE_PRICE_TABLE = asm.expand('BasePrices');
+  const INN_PRICES = asm.expand('InnPrices');
+
+  // TODO - rearrange the tables to defrag the free space a bit.
+  // Will need to change the code that reads them, obviously
+  // Move the base price table up a byte into the inn prices (which
+  // gets us 10 more free bytes as well).  We could defrag the whole
+  // thing into $21f9a (though we;d also need to move the location
+  // finding refs and the ref to $21f96 in PostInitializeShop
+  // This gives a much nicer block that we could maybe use more
+  // efficiently
+
+  const TOOLS = {prices: 0x21e54, items: 0x21e28};
+  const ARMOR = {prices: 0x21dd0, items: 0x21da4};
 
   const BASE_INN_PRICE = 20;
 
-  // TODO - Iterate over all the shops' items and fill in the base
-  // price.  If it's negative, just set the 80 bit of the high byte
-  // to indicate reverse scaling.
+  // First fill the scaling tables.
+  const diff = new Array(48).fill(0).map((x, i) => i);
+  // Tool shops scale as 2 ** (Diff / 10), store in 8ths
+  patchBytes(rom, asm.expand('ToolShopScaling'),
+             diff.map(d => Math.round(8 * (2 ** (d / 10)))));
+  // Armor shops scale as 2 ** ((47 - Diff) / 12), store in 8ths
+  patchBytes(rom, asm.expand('ArmorShopScaling'),
+             diff.map(d => Math.round(8 * (2 ** ((47 - d) / 12)))));
 
-  // TODO - write the ASM code to read the new tables...
+  // Set the price multipliers for each item in shops.
+  for (const {prices, items} of [TOOLS, ARMOR]) {
+    for (let i = 0; i < 4 * SHOP_COUNT; i++) {
+      const invalid = !BASE_PRICES[rom[items + i + 0x10]];
+      rom[prices + i + 0x10] = invalid ? 0 : random ? random.nextInt(32) + 17 : 32;
+    }
+  }
 
-  // TODO - separate flags for (a) rescaling shops, and (b) shuffling items
+  // Set the inn prices, with a slightly wider variance [.375, 1.625)
+  for (let i = 0; i < SHOP_COUNT; i++) {
+    rom[INN_PRICES + i + 0x10] = random ? random.nextInt(40) + 13 : 32;
+  }
+
+  // Set the pawn shop base prices.
+  const setBasePrice = (id, price) => {
+    rom[BASE_PRICE_TABLE + 2 * (id - 0x0d) + 0x10] = price & 0xff;
+    rom[BASE_PRICE_TABLE + 2 * (id - 0x0d) + 0x11] = price >>> 8;
+  }
+  for (let i = 0x0d; i < 0x27; i++) {
+    setBasePrice(i, BASE_PRICES[i]);
+  }
+  setBasePrice(0x27, BASE_INN_PRICE);
   // TODO - separate flag for rescaling monsters???
-
-  // TODO - read alarm flute flag separately if it's a key item...
 };
 
-// Map of base prices.  Tools are positive, armors are ones-complement.
+// Map of base prices.  (Tools are positive, armors are ones-complement.)
 const BASE_PRICES = {
-  0x0d: ~6,    // carapace shield
-  0x0e: ~22,   // bronze shield
-  0x0f: ~325,  // platinum shield
-  0x10: ~475,  // mirrored shield
-  0x11: ~1150, // ceramic shield
-  0x12: ~2750, // sacred shield
-  0x13: ~2750, // battle shield
-  0x15: ~8,    // tanned hide
-  0x16: ~14,   // leather armor
-  0x17: ~125,  // bronze armor
-  0x18: ~425,  // platinum armor
-  0x19: ~1400, // soldier suit
-  0x1a: ~2900, // ceramic suit
-  0x1d: 25, // medical herb
-  0x1e: 30, // antidote
-  0x1f: 45, // lysis plant
-  0x20: 40, // fruit of lime
-  0x21: 36, // fruit of power
-  0x22: 200, // magic ring
-  0x23: 150, // fruit of repun
-  0x24: 80, // warp boots
-  0x26: 300, // opel statue
-  0x31: 50, // alarm flute
+  // Armors
+  0x0d: 6,    // carapace shield
+  0x0e: 22,   // bronze shield
+  0x0f: 325,  // platinum shield
+  0x10: 475,  // mirrored shield
+  0x11: 1150, // ceramic shield
+  0x12: 2750, // sacred shield
+  0x13: 2750, // battle shield
+  0x15: 8,    // tanned hide
+  0x16: 14,   // leather armor
+  0x17: 125,  // bronze armor
+  0x18: 425,  // platinum armor
+  0x19: 1400, // soldier suit
+  0x1a: 2900, // ceramic suit
+  // Tools
+  0x1d: 25,   // medical herb
+  0x1e: 30,   // antidote
+  0x1f: 45,   // lysis plant
+  0x20: 40,   // fruit of lime
+  0x21: 36,   // fruit of power
+  0x22: 200,  // magic ring
+  0x23: 150,  // fruit of repun
+  0x24: 80,   // warp boots
+  0x26: 300,  // opel statue
+  //0x31: 50, // alarm flute
 };
 
 
@@ -1191,7 +1237,7 @@ const ITEMS = new Map([
   [0x2e, 'Rabbit Boots',       true],
   [0x2f, 'Leather Boots',      true],
   [0x30, 'Shield Ring',        true],
-  [0x31, 'Alarm Flute',        ],
+  [0x31, 'Alarm Flute',        true],
   [0x32, 'Windmill Key',       true],
   [0x33, 'Key to Prison',      true],
   [0x34, 'Key to Styx',        true],
@@ -1230,4 +1276,9 @@ const UNTOUCHED_MONSTERS = { // not yet +0x50 in these keys
   [0x8f]: true, // shooting statue
   [0x9f]: true, // vertical platform
   [0xa6]: true, // glitch in location $af (mado 2)
+};
+
+const shuffleRandomNumbers = (rom, random) => {
+  const table = rom.subarray(0x357e4 + 0x10, 0x35824 + 0x10);
+  random.shuffle(table);
 };

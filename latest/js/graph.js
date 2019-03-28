@@ -37,6 +37,9 @@ export class Node {
   edges(opts = undefined) {
     return [];
   }
+
+  /** @param {!Uint8Array} rom The PRG rom image. */
+  write(rom) {}
 }
 
 export class Graph {

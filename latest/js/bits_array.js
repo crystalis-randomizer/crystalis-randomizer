@@ -7,7 +7,7 @@ export const BitsArray = Bits;
  * @return {!Bits}
  */
 Bits.of = (...nums) => {
-  let bits = [];
+  const bits = [];
   for (const num of nums) {
     bits[num >>> 5] = (bits[num >>> 5] || 0) | (1 << num);
   }
@@ -19,7 +19,7 @@ Bits.of = (...nums) => {
  * @return {!Bits}
  */
 Bits.from = (nums) => {
-  let bits = [];
+  const bits = [];
   for (const num of nums) {
     bits[num >>> 5] = (bits[num >>> 5] || 0) | (1 << num);
   }
@@ -39,11 +39,25 @@ Bits.containsAll = (superset, subset) => {
 };
 
 /**
+ * @param {!Bits} left
+ * @param {!Bits} right
+ * @return {!Bits}
+ */
+Bits.difference = (left, right) => {
+  const out = new Array(Math.max(left.length, right.length));
+  for (let i = Math.max(left.length, right.length) - 1; i >= 0; i--) {
+    out[i] = (left[i] || 0) & ~(right[i] || 0);
+  }
+  return out;
+};
+
+/**
  * @param {!Bits} bits
  * @param {number} num
  * @return {!Bits}
  */
 Bits.with = (bits, num) => {
+  bits = [...bits];
   bits[num >>> 5] = (bits[num >>> 5] || 0) | (1 << num);
   return bits;
 };
@@ -54,6 +68,7 @@ Bits.with = (bits, num) => {
  * @return {!Bits}
  */
 Bits.without = (bits, num) => {
+  bits = [...bits];
   bits[num >>> 5] = (bits[num >>> 5] || 0) & ~(1 << num);
   return bits;
 };

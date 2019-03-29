@@ -257,12 +257,15 @@ const updateDifficultyScalingTables = (rom, flags, asm) => {
 
   // NOTE: Old DiffDef table (4 * PDef) was 12 + Diff * 3, but we no longer
   // use this table since nerfing armors.
-  // (Old PDef = 3 + Diff * 3/4)
+  // (PDef = 3 + Diff * 3/4)
+  patchBytes(rom, asm.expand('DiffDef'),
+             diff.map(d => 12 + d * 3));
 
+  // NOTE: This is the armor-nerfed DiffDef table.
   // PDef = 2 + Diff / 2
   // DiffDef table is 4 * PDef = 8 + Diff * 2
-  patchBytes(rom, asm.expand('DiffDef'),
-             diff.map(d => 8 + d * 2));
+  // patchBytes(rom, asm.expand('DiffDef'),
+  //            diff.map(d => 8 + d * 2));
 
   // DiffHP table is PHP = min(255, 48 + round(Diff * 11 / 2))
   patchBytes(rom, asm.expand('DiffHP'),
@@ -277,13 +280,13 @@ const updateDifficultyScalingTables = (rom, flags, asm) => {
     return exp < 0x80 ? exp : Math.min(0xff, 0x80 + (exp >> 4));
   }));
 
-  // Halve shield and armor defense values
-  patchBytes(rom, 0x34bc0, [
-    // Armor defense
-    0, 1, 3, 5, 7, 9, 12, 10, 16,
-    // Shield defense
-    0, 1, 3, 4, 6, 9, 8, 12, 16,
-  ]);
+  // // Halve shield and armor defense values
+  // patchBytes(rom, 0x34bc0, [
+  //   // Armor defense
+  //   0, 1, 3, 5, 7, 9, 12, 10, 16,
+  //   // Shield defense
+  //   0, 1, 3, 4, 6, 9, 8, 12, 16,
+  // ]);
 };
 
 

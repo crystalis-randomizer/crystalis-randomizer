@@ -22,6 +22,16 @@
 * Added some shop flags: `Pn` to normalize shop prices, `Ps` to
   shuffle shop contents, and `Pb` to enable "bargain hunting" by
   randomly adjusting base prices by ±50% for each item in each shop.
+* Restore armors back to original defense values, but rearrange a bit:
+    * Sacred Shield now prevents curse instead of paralysis.
+    * Ceramic Shield now prevents paralysis.
+    * Psycho Armor and Psycho Shield now only provide 20 DEF instead of 32.
+    * Battle Armor provides 24 DEF instead of 20.
+    * Ceramic Armor and Battle Shield provide 32 DEF instead of (respectively)
+      20 and 24.
+    * Armor and shield base prices are adjusted so that they scale
+      proportionally.
+    * Increased Platinum and Mirrored Shield defenses by 2 each.
 
 ## 1.0.1
 * Item shuffle is now done using "assumed fill".

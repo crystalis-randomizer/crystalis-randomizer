@@ -293,7 +293,7 @@ const updateDifficultyScalingTables = (rom, flags, asm) => {
     // Armor defense
     0, 2, 6, 10, 14, 18, 32, 24, 20,
     // Shield defense
-    0, 2, 6, 8, 12, 18, 16, 32, 20,
+    0, 2, 6, 10, 14, 18, 16, 32, 20,
   ]);
 };
 
@@ -362,19 +362,19 @@ const rescaleShops = (rom, asm, random = undefined) => {
 // Map of base prices.  (Tools are positive, armors are ones-complement.)
 const BASE_PRICES = {
   // Armors
-  0x0d: 6,    // carapace shield
-  0x0e: 22,   // bronze shield
-  0x0f: 325,  // platinum shield
-  0x10: 475,  // mirrored shield
-  0x11: 1150, // ceramic shield
-  0x12: 2750, // sacred shield
-  0x13: 2750, // battle shield
-  0x15: 8,    // tanned hide
-  0x16: 14,   // leather armor
-  0x17: 125,  // bronze armor
-  0x18: 425,  // platinum armor
-  0x19: 1400, // soldier suit
-  0x1a: 2900, // ceramic suit
+  0x0d: 4,    // carapace shield
+  0x0e: 16,   // bronze shield
+  0x0f: 50,  // platinum shield
+  0x10: 325,  // mirrored shield
+  0x11: 1000, // ceramic shield
+  0x12: 2000, // sacred shield
+  0x13: 3200, // battle shield
+  0x15: 6,    // tanned hide
+  0x16: 20,   // leather armor
+  0x17: 75,   // bronze armor
+  0x18: 250,  // platinum armor
+  0x19: 850,  // soldier suit
+  0x1a: 3600, // ceramic suit
   // Tools
   0x1d: 25,   // medical herb
   0x1e: 30,   // antidote

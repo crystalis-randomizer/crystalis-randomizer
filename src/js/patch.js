@@ -287,6 +287,14 @@ const updateDifficultyScalingTables = (rom, flags, asm) => {
   //   // Shield defense
   //   0, 1, 3, 4, 6, 9, 8, 12, 16,
   // ]);
+
+  // Adjust shield and armor defense values
+  patchBytes(rom, 0x34bc0, [
+    // Armor defense
+    0, 2, 6, 10, 14, 18, 32, 24, 20,
+    // Shield defense
+    0, 2, 6, 8, 12, 18, 16, 32, 20,
+  ]);
 };
 
 

@@ -290,7 +290,7 @@ class Graph {
   }
 
   addSlot(index, x, y, loc, spawn) {
-    const mimic = index === 0x70;
+    const mimic = index >= 0x70;
     const slot =
         !mimic ?
             this.nodeFromSlot.get(index) :

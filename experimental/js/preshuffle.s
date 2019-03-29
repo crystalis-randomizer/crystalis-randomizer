@@ -1398,6 +1398,13 @@ CheckForLowHpMp:
 .assert < $35152
 
 
+;;; Change sacred shield to block curse instead of paralysis
+.org $352ce
+  cmp #$08 ; just check psycho shield twice
+.org $3534c
+  jsr CheckSacredShieldForCurse
+
+
 .ifdef _DISABLE_STATUE_GLITCH
 .org $3559a
   ;; Just always push down.
@@ -1493,6 +1500,7 @@ PostUpdateEquipment:
   nop
 .endif
   rts
+
 ApplySpeedBoots:
   lda #$06   ; normal speed
   sta $0341  ; player speed
@@ -1501,6 +1509,15 @@ ApplySpeedBoots:
   bne +
    inc $0341 ; speed up by 1
 + rts
+
+CheckSacredShieldForCurse:
+  lda $0714 ; equipped shield
+  cmp #$06  ; sacred shield
+  bne +
+   pla
+   pla
++ rts
+
 .assert < $3c482  ; end of empty area from $3c446
 
 

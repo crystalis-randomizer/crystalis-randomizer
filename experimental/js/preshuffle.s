@@ -1400,7 +1400,7 @@ CheckForLowHpMp:
 
 ;;; Change sacred shield to block curse instead of paralysis
 .org $352ce
-  cmp #$08 ; just check psycho shield twice
+  cmp #$05 ; ceramic shield blocks paralysis
 .org $3534c
   jsr CheckSacredShieldForCurse
 

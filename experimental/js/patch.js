@@ -258,14 +258,18 @@ const updateDifficultyScalingTables = (rom, flags, asm) => {
   // NOTE: Old DiffDef table (4 * PDef) was 12 + Diff * 3, but we no longer
   // use this table since nerfing armors.
   // (PDef = 3 + Diff * 3/4)
-  patchBytes(rom, asm.expand('DiffDef'),
-             diff.map(d => 12 + d * 3));
+  // patchBytes(rom, asm.expand('DiffDef'),
+  //            diff.map(d => 12 + d * 3));
 
   // NOTE: This is the armor-nerfed DiffDef table.
   // PDef = 2 + Diff / 2
   // DiffDef table is 4 * PDef = 8 + Diff * 2
   // patchBytes(rom, asm.expand('DiffDef'),
   //            diff.map(d => 8 + d * 2));
+
+  // NOTE: For armor cap at 3 * Lvl, set PDef = Diff
+  patchBytes(rom, asm.expand('DiffDef'),
+             diff.map(d => d * 4));
 
   // DiffHP table is PHP = min(255, 48 + round(Diff * 11 / 2))
   patchBytes(rom, asm.expand('DiffHP'),
@@ -364,17 +368,17 @@ const BASE_PRICES = {
   // Armors
   0x0d: 4,    // carapace shield
   0x0e: 16,   // bronze shield
-  0x0f: 50,  // platinum shield
+  0x0f: 50,   // platinum shield
   0x10: 325,  // mirrored shield
   0x11: 1000, // ceramic shield
   0x12: 2000, // sacred shield
-  0x13: 3200, // battle shield
+  0x13: 4000, // battle shield
   0x15: 6,    // tanned hide
   0x16: 20,   // leather armor
   0x17: 75,   // bronze armor
   0x18: 250,  // platinum armor
-  0x19: 850,  // soldier suit
-  0x1a: 3600, // ceramic suit
+  0x19: 1000, // soldier suit
+  0x1a: 4800, // ceramic suit
   // Tools
   0x1d: 25,   // medical herb
   0x1e: 30,   // antidote

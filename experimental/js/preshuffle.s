@@ -34,6 +34,7 @@ define ObjectElementalDefense $500
 define ObjectExp $520
 define PlayerMP $708
 define EquippedConsumableItem  $715
+define EquippedPassiveItem     $716
 
 
 define InvSwords $6430
@@ -60,7 +61,9 @@ define ONE_MINUS_PITY_MP  0
 
 define PITY_HP_AMOUNT     5
 
-define ITEM_OPEL_STATUE  $26
+;;; Constants
+define ITEM_RABBIT_BOOTS     $12
+define ITEM_OPEL_STATUE      $26
 define SFX_MONSTER_HIT       $21
 define SFX_ATTACK_IMMUNE     $3a
 
@@ -79,6 +82,8 @@ ItemGet_FindOpenSlot:
 ItemUse_TradeIn:
 .org $217cd
 Shop_NothingPressed:
+.org $21c7a
+AfterLoadGame:
 .org $2791c
 PlayerDeath:
 .org $279b0
@@ -932,7 +937,13 @@ FillQuestItemsFromBuffer: ; 214af
 + lda #$02
   sta $2e
   rts
-        ;; FREE: 35 bytes
+
+;;; Support for fixing sword charge glitch
+ReloadInventoryAfterLoad:
+  jsr PostInventoryMenu
+  jmp AfterLoadGame
+
+        ;; FREE: 29 bytes
 .assert < $21500
 
 
@@ -1240,6 +1251,13 @@ ArmorShopScaling:
 
 
 
+.ifdef _FIX_SWORD_CHARGE_GLITCH
+.org $21bce
+  jmp ReloadInventoryAfterLoad
+.org $21bde
+  jmp ReloadInventoryAfterLoad
+.endif
+
 
 .bank $26000 $a000:$2000
 
@@ -1322,9 +1340,8 @@ CheckForLowHpMp:
     bcc +
      sta PlayerMP
 +   rts
+
 .assert < $2fc00 ; end of unused block from $2fbd5
-
-
 
 
 
@@ -1418,6 +1435,22 @@ CheckForLowHpMp:
   sta $03e2
   rts
 
+
+.ifdef _EASY_MODE_CHARGE_WHILE_WALKING
+;;; Remove the jump away when charging is not yet ready.
+.org $35e00
+  nop
+  nop
+  nop
+.assert $35e03
+.endif
+
+.ifdef _RABBIT_BOOTS_CHARGE_FASTER
+.org $35e0d
+  jsr CheckChargeStep
+  nop
+.assert $35e11
+.endif
 
 ;;.org $3c010
 ;;;; Adjusted inventory update - use level instead of sword
@@ -1515,8 +1548,21 @@ CheckSacredShieldForCurse:
    pla
 + rts
 
+;;; For fixing sword charge glitch
+ReloadInventoryAfterContinue:
+  sta $07e8
+  jsr PostInventoryMenu
+  rts
+
+        ;; 23 bytes free
+
 .assert < $3c482  ; end of empty area from $3c446
 
+
+.ifdef _FIX_SWORD_CHARGE_GLITCH
+.org $3c9fb
+  jsr ReloadInventoryAfterContinue
+.endif
 
 .ifdef _CHECK_FLAG0
 ;;; Note: this is a debugging aid added to determine if anything
@@ -1760,7 +1806,15 @@ CheckFlag0:
 .assert < $3fe00 ; end of free space started at 3f9ba
 
 .org $3fe01
-  ;; free space?
+CheckChargeStep:
+  lda $08
+  and #$03
+  ldy EquippedPassiveItem
+  cpy #ITEM_RABBIT_BOOTS
+  bne +
+   and #$01
++ ora #$00
+  rts
 .assert < $3fe16
 
 ;; NOTE: 3fe2e might be safer than 3fe18
@@ -1798,7 +1852,6 @@ FinishEquippingConsumable:
 ;; free space
 
 .assert < $3fe78
-
 
 
 .org $3ff44 ; free space to 3ff80

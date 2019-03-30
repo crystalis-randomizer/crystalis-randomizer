@@ -142,6 +142,8 @@ const allowStatueGlitch     = option('Allow statue glitch',
                                      opt('!Ft', false));
 const assumeSwordChargeGlitch = glitch(option('Assume sword charge glitch',
                                        opt('Gc', false)));
+const allowSwordChargeGlitch = option('Allow sword charge glitch',
+                                     opt('!Fc', false));
 const buffedMedicalHerb     = option('Buffed medical herb',
                                      opt('!Hm', true));
 
@@ -471,7 +473,7 @@ const forgedCrystalis       = trigger('Forged Crystalis').get(crystalis);
 // Conditions
 ////////////////////////////////////////////////////////////////
 const swordChargeGlitch     = condition('Sword charge glitch')
-                                .option(assumeSwordChargeGlitch);
+                                .option(assumeSwordChargeGlitch, allowSwordChargeGlitch);
 const rabbitSkip            = condition('Rabbit skip')
                                 .option(assumeRabbitSkip);
 const teleportSkip          = condition('Teleport skip')

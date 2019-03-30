@@ -248,6 +248,9 @@ export const FLAGS = [{
     flag: 'Td',
     name: 'Deo\'s pendant works while moving',
   }, {
+    flag: 'Tr',
+    name: 'Rabbit boots charge sword faster',
+  }, {
     flag: 'Tw',
     name: 'Disable wild warp',
     text: `Wild warp will only teleport back to Mezame shrine (to prevent
@@ -343,6 +346,11 @@ export const FLAGS = [{
            money actually mean something.  To compensate, gold drops money
            will be scaled up somewhat.`,
   }, {
+    flag: 'Fc',
+    name: 'Disable sword charge glitch',
+    text: `Sword charge glitch will no longer work.  It will be impossible to
+           achieve charge levels without having correct inventory.`,
+  }, {
     flag: 'Ft',
     name: 'Disable statue glitch',
     text: `Statues will instead always push downwards, making it impossible to
@@ -364,6 +372,10 @@ export const FLAGS = [{
     flag: 'Ex',
     name: 'Experience scales faster',
     text: `Less grinding will be required to "keep up" with the game difficulty.`,
+  }, {
+    flag: 'Ec',
+    name: 'Charge while walking',
+    text: `Charge level will increase even while moving.`,
   }],
 }, {
   section: 'Debug Mode',
@@ -398,6 +410,8 @@ const FLAG_CONFLICTS = {
   Gw: /Tw/,
   Ft: /Gt/,
   Gt: /Ft/,
+  Fc: /Gc/,
+  Gc: /Fc/,
 };
 
 export class FlagSet {

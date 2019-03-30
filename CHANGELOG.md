@@ -32,6 +32,7 @@
     * Armor and shield base prices are adjusted so that they scale
       proportionally.
     * Increased Platinum and Mirrored Shield defenses by 2 each.
+    * Armor defense capped at 3 * Level
 
 ## 1.0.1
 * Item shuffle is now done using "assumed fill".

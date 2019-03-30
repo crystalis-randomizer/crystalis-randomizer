@@ -1454,28 +1454,25 @@ CheckForLowHpMp:
    adc $0421  ; player level
    sta $03e1  ; player attack
    lda $0421  ; player level
-.assert $3c02b   ; NOTE - MUST BE EXACT!!!!
-
+   sta $62
 ;; Max out armor and shield def at 2*level
-.org $3c02b
-  sta $61
-  asl $61
-  ldy $0713
-  lda ArmorDefense,y
-  cmp $61
-  bcc +
-   lda $61
-+ ldy $0716 ; equipped passive item
-  cpy #$10  ; iron necklace
-  bne +
+   sta $61
    asl
-+ clc
-  adc $0421 ; armor defense
-  sta $0401
-.org $3c04a
-  jsr PatchUpdateShieldDefense
-  nop
-  nop
+   adc $62
+   sta $61
+   ldy $0713
+   lda ArmorDefense,y
+   cmp $61
+   bcc +
+    lda $61
++  ldy $0716 ; equipped passive item
+   cpy #$10  ; iron necklace
+   bne +
+    asl
++  clc
+   adc $62   ; armor defense
+   jsr PatchUpdateShieldDefense
+   nop
 .assert $3c04f ; NOTE: must be exact!
   ; STA PLAYER_DEF
 
@@ -1825,6 +1822,7 @@ PatchGrantItemInRegisterA:
 + rts
 
 PatchUpdateShieldDefense:
+  sta $0401
   ldy $0714
   lda ShieldDefense,y
   cmp $61
@@ -1835,7 +1833,7 @@ PatchUpdateShieldDefense:
   bne +
    asl
 + clc
-  adc $0421 ; shield defense
+  adc $62 ; shield defense
   sta $0400
   rts
 

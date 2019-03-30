@@ -34,7 +34,7 @@ export default ({
     // NOTE: THIS BREAKS CLOSURE!
     // We need it commented to work in closure, but uncommented to work uncompiled in browser
     // Currently no good way to do both without editing source :-(
-    //await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader());
+    await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader());
   }
 });
 
@@ -75,6 +75,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     _DISABLE_STATUE_GLITCH: flags.check('Ft'),
     _DISABLE_WILD_WARP: false,
     _DISPLAY_DIFFICULTY: true,
+    _EASY_MODE_CHARGE_WHILE_WALKING: flags.check('Ec'),
     _EXTRA_PITY_MP: true,  // TODO: allow disabling this
     _FIX_OPEL_STATUE: true,
     _FIX_SHAKING: true,
@@ -85,6 +86,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     _NORMALIZE_SHOP_PRICES: touchShops,
     _PITY_HP_AND_MP: true,
     _PROGRESSIVE_BRACELET: true,
+    _RABBIT_BOOTS_CHARGE_FASTER: flags.check('Tr'),
     _REVERSIBLE_SWAN_GATE: true,
     _REQUIRE_HEALED_DOLPHIN_TO_RIDE: flags.check('Rd'),
     _SAHARA_RABBITS_REQUIRE_TELEPATHY: false,

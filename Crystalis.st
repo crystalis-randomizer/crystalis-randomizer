@@ -102,6 +102,7 @@ define PlayerArmorDef          $0401
 define PlayerShieldDef         $0400
 define PlayerLevel             $0421
 define PlayerJumpDisplacement  $0620
+define PlayerSwordChargeAmount $06c0
 define PlayerMoney             $0702 ; 2 bytes
 define PlayerExp               $0704 ; 2 bytes
 define PlayerExpToNextLevel    $0706 ; 2 bytes
@@ -117,6 +118,7 @@ define EquippedConsumableItem  $0715 ; includes quest items
 define EquippedPassiveItem     $0716
 define EquippedBracelet        $0718
 
+define CurrentlyInPawnShop     $07dd ; ff if in pawn shop, 00 otherwise
 
 define Inventory_ScratchSortRow         $60e0
 
@@ -149,6 +151,7 @@ define CurrentLocationFlags $62f0 ; 16 bytes
 
 define ShopMenu_CurrentItemIndex        $6427
 define ShopMenu_CurrentItemId           $646c
+define ShopMenu_CurrentShopIndex        $646d
 define ShopMenu_AllItemIds              $6470
 define ShopMenu_CurrentItemPrice        $6474
 define ShopMenu_AllPrices               $6478
@@ -3181,6 +3184,7 @@ RomBank_04                      ; @@ $8000
 ;;;   0. goes to $680
 ;;;   1. goes to $6a0
 ;;;   2. if positive, ...?  if negative, ...? -> 6e0 at least, sometimes 4a0
+;;;      $06e0,x & #$04 != 0 indicates a statue
 ;;;   3. metasprite
 MapScreen_80
         $08000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -7362,14 +7366,14 @@ MapDataPart2
         $14490              .word ($xxxx) ; $17383: c8 BrynmaerInn
         $14492              .word ($xxxx) ; $173a4: c9 BrynmaerArmorShop
         $14494              .word ($xxxx) ; $173c5: ca   --- BROKEN
-        $14496              .word ($xxxx) ; $173c6: cb BrynmaerItemShop
+        $14496              .word ($xxxx) ; $173c6: cb BrynmaerToolShop
         $14498              .word ($xxxx) ; $173e7: cc   --- BROKEN
         $1449a              .word ($xxxx) ; $173e8: cd OakElderHouse
         $1449c              .word ($xxxx) ; $1740d: ce OakMotherHouse
         $1449e              .word ($xxxx) ; $17453: cf OakToolShop
         $144a0              .word ($xxxx) ; $17432: d0 OakInn
         $144a2              .word ($xxxx) ; $17474: d1 AmazonesInn
-        $144a4              .word ($xxxx) ; $17495: d2 AmazonesItemShop
+        $144a4              .word ($xxxx) ; $17495: d2 AmazonesToolShop
         $144a6              .word ($xxxx) ; $174b6: d3 AmazonesArmorShop
         $144a8              .word ($xxxx) ; $174d7: d4 AmazonesElder
         $144aa              .word ($xxxx) ; $17529: d5 =Nadares
@@ -12159,11 +12163,18 @@ MapData_b4                                ; Goa Fortress - Karmine 5
         $16f9d              .word ($xxxx) ; $17045
         $16f9f              .word ($xxxx)
 MapData_b4_Layout
-        $16fa1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16fb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16fc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16fd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $16fe0              .byte $xx,$xx,$xx,$xx,$xx
+        $16fa1              .byte $xx
+        $16fa2              .byte $xx,$xx,$xx,$xx
+        ;; Map 7x9
+        $16fa6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $16fad              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $16fb4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $16fbb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $16fc2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $16fc9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $16fd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $16fd7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $16fde              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
 MapData_b4_Graphics
         $16fe5              .byte $xx,$xx,$xx
         $16fe8              .byte $xx,$xx
@@ -12991,36 +13002,65 @@ MapData_d6_Graphics
         $175e2              .byte $xx,$xx
 MapData_d6_Entrances
         $175e4              .byte $xx,$xx,$xx,$xx
+MapData_d6_Exits
         $175e8              .byte $xx,$xx,$xx,$xx
         $175ec              .byte $xx,$xx,$xx,$xx
-        $175f0              .byte $xx,$xx,$xx,$xx
-        $175f4              .byte $xx,$xx,$xx,$xx
-        $175f8              .byte $xx,$xx,$xx,$xx
-        $175fc              .byte $xx,$xx,$xx,$xx
-        $17600              .byte $xx,$xx,$xx,$xx
-        $17604              .byte $xx,$xx,$xx,$xx
-        $17608              .byte $xx,$xx,$xx,$xx
-        $1760c              .byte $xx,$xx,$xx,$xx
-        $17610              .byte $xx,$xx,$xx,$xx
-        $17614              .byte $xx,$xx,$xx,$xx
-        $17618              .byte $xx,$xx,$xx,$xx
-        $1761c              .byte $xx,$xx,$xx,$xx
-        $17620              .byte $xx,$xx,$xx,$xx
-        $17624              .byte $xx,$xx,$xx,$xx
-        $17628              .byte $xx,$xx,$xx,$xx
-        $1762c              .byte $xx,$xx,$xx,$xx
-        $17630              .byte $xx,$xx,$xx,$xx
-        $17634              .byte $xx,$xx,$xx,$xx
-        $17638              .byte $xx,$xx,$xx,$xx
-        $1763c              .byte $xx,$xx,$xx,$xx
-        $17640              .byte $xx,$xx,$xx,$xx
-        $17644              .byte $xx,$xx,$xx,$xx
-        $17648              .byte $xx,$xx
-MapData_LocationDE_Exits
+        $175f0              .byte $xx
+MapData_d6_Flags
+        $175f1              .byte $xx
+;;; ----------------------------------------------------------------
+MapData_d7                                ; Portoa - Palace Entrance
+        $175f2              .word ($xxxx)
+        $175f4              .word ($xxxx)
+        $175f6              .word ($xxxx)
+        $175f8              .word ($xxxx)
+        $175fa              .word ($xxxx)
+MapData_d7_Layout
+        $175fc              .byte $xx
+        $175fd              .byte $xx,$xx,$xx,$xx
+        ;; Map 1x1
+        $17601              .byte $xx
+MapData_d7_Graphics
+        $17602              .byte $xx,$xx,$xx
+        $17605              .byte $xx,$xx
+        $17607              .byte $xx,$xx
+MapData_d7_Entrances
+        $17609              .byte $xx,$xx,$xx,$xx
+        $1760d              .byte $xx,$xx,$xx,$xx
+        $17611              .byte $xx,$xx,$xx,$xx
+        $17615              .byte $xx,$xx,$xx,$xx
+MapData_d7_Exits
+        $17619              .byte $xx,$xx,$xx,$xx
+        $1761d              .byte $xx,$xx,$xx,$xx
+        $17621              .byte $xx,$xx,$xx,$xx
+        $17625              .byte $xx,$xx,$xx,$xx
+        $17629              .byte $xx,$xx,$xx,$xx
+        $1762d              .byte $xx
+MapData_d7_Flags
+        $1762e              .byte $xx
+;;; ----------------------------------------------------------------
+MapData_de                               ; Portoa - Palace Left Wing
+        $1762f              .word ($xxxx)
+        $17631              .word ($xxxx)
+        $17633              .word ($xxxx)
+        $17635              .word ($xxxx)
+        $17637              .word ($xxxx)
+MapData_de_Layout
+        $17639              .byte $xx
+        $1763a              .byte $xx,$xx,$xx,$xx
+        ;; Map 1x1
+        $1763e              .byte $xx
+MapData_de_Graphics
+        $1763f              .byte $xx,$xx,$xx
+        $17642              .byte $xx,$xx
+        $17644              .byte $xx,$xx
+MapData_de_Entrances
+        $17646              .byte $xx,$xx,$xx,$xx
+MapData_de_Exits
         $1764a              .byte $xx,$xx,$xx,$xx
         $1764e              .byte $xx,$xx,$xx,$xx
         $17652              .byte $xx
-MapData_LocationDE_Flags
+MapData_de_Flags
         $17653              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_df                             ; Portoa - Palace Throne Room
@@ -13092,56 +13132,130 @@ MapData_d8_Entrances
         $176bd              .byte $xx,$xx,$xx,$xx
         $176c1              .byte $xx,$xx,$xx,$xx
         $176c5              .byte $xx,$xx,$xx,$xx
+MapData_d8_Entrances
         $176c9              .byte $xx,$xx,$xx,$xx
         $176cd              .byte $xx,$xx,$xx,$xx
         $176d1              .byte $xx,$xx,$xx,$xx
         $176d5              .byte $xx,$xx,$xx,$xx
-        $176d9              .byte $xx,$xx,$xx,$xx
-        $176dd              .byte $xx,$xx,$xx,$xx
-        $176e1              .byte $xx,$xx,$xx,$xx
-        $176e5              .byte $xx,$xx,$xx,$xx
-        $176e9              .byte $xx,$xx,$xx,$xx
-        $176ed              .byte $xx,$xx,$xx,$xx
-        $176f1              .byte $xx,$xx,$xx,$xx
-        $176f5              .byte $xx,$xx,$xx,$xx
-        $176f9              .byte $xx,$xx,$xx,$xx
-        $176fd              .byte $xx,$xx,$xx,$xx
-        $17701              .byte $xx,$xx,$xx,$xx
-        $17705              .byte $xx,$xx,$xx,$xx
-        $17709              .byte $xx,$xx,$xx,$xx
-        $1770d              .byte $xx,$xx,$xx,$xx
-        $17711              .byte $xx,$xx,$xx,$xx
-        $17715              .byte $xx,$xx,$xx,$xx
-        $17719              .byte $xx,$xx,$xx,$xx
-        $1771d              .byte $xx,$xx,$xx,$xx
-        $17721              .byte $xx,$xx,$xx,$xx
-        $17725              .byte $xx,$xx,$xx,$xx
+        $176d9              .byte $xx
+MapData_d8_Flags
+        $176da              .byte $xx
+;;; ----------------------------------------------------------------
+MapData_d9                                      ; Portoa - Pawn Shop
+        $176db              .word ($xxxx)
+        $176dd              .word ($xxxx)
+        $176df              .word ($xxxx)
+        $176e1              .word ($xxxx)
+        $176e3              .word ($xxxx)
+MapData_d9_Layout
+        $176e5              .byte $xx
+        $176e6              .byte $xx,$xx,$xx,$xx
+        ;; Map 1x1
+        $176ea              .byte $xx
+MapData_d9_Graphics
+        $176eb              .byte $xx,$xx,$xx
+        $176ee              .byte $xx,$xx
+        $176f0              .byte $xx,$xx
+MapData_d9_Entrances
+        $176f2              .byte $xx,$xx,$xx,$xx
+MapData_d9_Exits
+        $176f6              .byte $xx,$xx,$xx,$xx
+        $176fa              .byte $xx
+MapData_d9_Flags
+        $176fb              .byte $xx
+;;; ----------------------------------------------------------------
+MapData_da                                     ; Portoa - Armor Shop
+        $176fc              .word ($xxxx)
+        $176fe              .word ($xxxx)
+        $17700              .word ($xxxx)
+        $17702              .word ($xxxx)
+        $17704              .word ($xxxx)
+MapData_da_Layout
+        $17706              .byte $xx
+        $17707              .byte $xx,$xx,$xx,$xx
+        ;; Map 1x1
+        $1770b              .byte $xx
+MapData_da_Graphics
+        $1770c              .byte $xx,$xx,$xx
+        $1770f              .byte $xx,$xx
+        $17711              .byte $xx,$xx
+MapData_da_Entrances
+        $17713              .byte $xx,$xx,$xx,$xx
+MapData_da_Exits
+        $17717              .byte $xx,$xx,$xx,$xx
+        $1771b              .byte $xx
+MapData_da_Flags
+        $1771c              .byte $xx
+        $1771d              .byte $xx
+;;; ----------------------------------------------------------------
+MapData_dc                                            ; Portoa - Inn
+        $1771e              .word ($xxxx)
+        $17720              .word ($xxxx)
+        $17722              .word ($xxxx)
+        $17724              .word ($xxxx)
+        $17726              .word ($xxxx)
+MapData_dc_Layout
+        $17728              .byte $xx
         $17729              .byte $xx,$xx,$xx,$xx
-        $1772d              .byte $xx,$xx,$xx,$xx
-        $17731              .byte $xx,$xx,$xx,$xx
+        ;; Map 1x1
+        $1772d              .byte $xx
+MapData_dc_Graphics
+        $1772e              .byte $xx,$xx,$xx
+        $17731              .byte $xx,$xx
+        $17733              .byte $xx,$xx
+MapData_dc_Entrances
         $17735              .byte $xx,$xx,$xx,$xx
+MapData_dc_Exits
         $17739              .byte $xx,$xx,$xx,$xx
-        $1773d              .byte $xx,$xx,$xx,$xx
-        $17741              .byte $xx,$xx,$xx,$xx
-        $17745              .byte $xx,$xx,$xx,$xx
-        $17749              .byte $xx,$xx,$xx,$xx
-        $1774d              .byte $xx,$xx,$xx,$xx
-        $17751              .byte $xx,$xx,$xx,$xx
-        $17755              .byte $xx,$xx,$xx,$xx
-        $17759              .byte $xx,$xx,$xx,$xx
-        $1775d              .byte $xx,$xx,$xx,$xx
-        $17761              .byte $xx,$xx,$xx,$xx
-        $17765              .byte $xx,$xx,$xx,$xx
-        $17769              .byte $xx,$xx,$xx,$xx
-        $1776d              .byte $xx,$xx,$xx,$xx
-        $17771              .byte $xx,$xx,$xx,$xx
-        $17775              .byte $xx,$xx,$xx,$xx
-        $17779              .byte $xx,$xx
-MapData_LocationE1_Exits
+        $1773d              .byte $xx
+MapData_dc_Flags
+        $1773e              .byte $xx
+;;; ----------------------------------------------------------------
+MapData_dd                                            ; Portoa - Inn
+        $1773f              .word ($xxxx)
+        $17741              .word ($xxxx)
+        $17743              .word ($xxxx)
+        $17745              .word ($xxxx)
+        $17747              .word ($xxxx)
+MapData_dd_Layout
+        $17749              .byte $xx
+        $1774a              .byte $xx,$xx,$xx,$xx
+        ;; Map 1x1
+        $1774e              .byte $xx
+MapData_dd_Graphics
+        $1774f              .byte $xx,$xx,$xx
+        $17752              .byte $xx,$xx
+        $17754              .byte $xx,$xx
+MapData_dd_Entrances
+        $17756              .byte $xx,$xx,$xx,$xx
+MapData_dd_Exits
+        $1775a              .byte $xx,$xx,$xx,$xx
+        $1775e              .byte $xx
+MapData_dd_Flags
+        $1775f              .byte $xx
+;;; ----------------------------------------------------------------
+MapData_e1                                     ; Portoa - Asina Room
+        $17760              .word ($xxxx)
+        $17762              .word ($xxxx)
+        $17764              .word ($xxxx)
+        $17766              .word ($xxxx)
+        $17768              .word ($xxxx)
+MapData_e1_Layout
+        $1776a              .byte $xx
+        $1776b              .byte $xx,$xx,$xx,$xx
+        ;; Map 1x1
+        $1776f              .byte $xx
+MapData_e1_Graphics
+        $17770              .byte $xx,$xx,$xx
+        $17773              .byte $xx,$xx
+        $17775              .byte $xx,$xx
+MapData_e1_Entrances
+        $17777              .byte $xx,$xx,$xx,$xx
+MapData_e1_Exits
         $1777b              .byte $xx,$xx,$xx,$xx
         $1777f              .byte $xx,$xx,$xx,$xx
         $17783              .byte $xx
-MapData_LocationE1_Flags
+MapData_e1_Flags
         $17784              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_e3                                      ; Joel - Elder House
@@ -13161,52 +13275,112 @@ MapData_e3_Graphics
         $1779a              .byte $xx,$xx
 MapData_e3_Entrances
         $1779c              .byte $xx,$xx,$xx,$xx
+MapData_e3_Exits
         $177a0              .byte $xx,$xx,$xx,$xx
         $177a4              .byte $xx,$xx,$xx,$xx
-        $177a8              .byte $xx,$xx,$xx,$xx
-        $177ac              .byte $xx,$xx,$xx,$xx
-        $177b0              .byte $xx,$xx,$xx,$xx
-        $177b4              .byte $xx,$xx,$xx,$xx
-        $177b8              .byte $xx,$xx,$xx,$xx
-        $177bc              .byte $xx,$xx,$xx,$xx
-        $177c0              .byte $xx,$xx,$xx,$xx
-        $177c4              .byte $xx,$xx,$xx,$xx
-        $177c8              .byte $xx,$xx,$xx,$xx
-        $177cc              .byte $xx,$xx,$xx,$xx
-        $177d0              .byte $xx,$xx,$xx,$xx
-        $177d4              .byte $xx,$xx,$xx,$xx
-        $177d8              .byte $xx,$xx,$xx,$xx
-        $177dc              .byte $xx,$xx,$xx,$xx
-        $177e0              .byte $xx,$xx,$xx,$xx
-        $177e4              .byte $xx,$xx,$xx,$xx
+        $177a8              .byte $xx
+MapData_e3_Flags
+        $177a9              .byte $xx
+;;; ----------------------------------------------------------------
+MapData_e4                                             ; Joel - Shed
+        $177aa              .word ($xxxx)
+        $177ac              .word ($xxxx)
+        $177ae              .word ($xxxx)
+        $177b0              .word ($xxxx)
+        $177b2              .word ($xxxx)
+MapData_e4_Layout
+        $177b4              .byte $xx
+        $177b5              .byte $xx,$xx,$xx,$xx
+        ;; Map 1x1
+        $177b9              .byte $xx
+MapData_e4_Graphics
+        $177ba              .byte $xx,$xx,$xx
+        $177bd              .byte $xx,$xx
+        $177bf              .byte $xx,$xx
+MapData_e4_Entrances
+        $177c1              .byte $xx,$xx,$xx,$xx
+        $177c5              .byte $xx,$xx,$xx,$xx
+MapData_e4_Exits
+        $177c9              .byte $xx,$xx,$xx,$xx
+        $177cd              .byte $xx,$xx,$xx,$xx
+        $177d1              .byte $xx,$xx,$xx,$xx
+        $177d5              .byte $xx,$xx,$xx,$xx
+        $177d9              .byte $xx
+MapData_e4_Flags
+        $177da              .byte $xx,$xx
+        $177dc              .byte $xx
+;;; ----------------------------------------------------------------
+MapData_e5                                        ; Joel - Tool Shop
+        $177dd              .word ($xxxx)
+        $177df              .word ($xxxx)
+        $177e1              .word ($xxxx)
+        $177e3              .word ($xxxx)
+        $177e5              .word ($xxxx)
+MapData_e5_Layout
+        $177e7              .byte $xx
         $177e8              .byte $xx,$xx,$xx,$xx
-        $177ec              .byte $xx,$xx,$xx,$xx
-        $177f0              .byte $xx,$xx,$xx,$xx
+        ;; Map 1x1
+        $177ec              .byte $xx
+MapData_e5_Graphics
+        $177ed              .byte $xx,$xx,$xx
+        $177f0              .byte $xx,$xx
+        $177f2              .byte $xx,$xx
+MapData_e5_Entrances
         $177f4              .byte $xx,$xx,$xx,$xx
+MapData_e5_Exits
         $177f8              .byte $xx,$xx,$xx,$xx
-        $177fc              .byte $xx,$xx,$xx,$xx
-        $17800              .byte $xx,$xx,$xx,$xx
-        $17804              .byte $xx,$xx,$xx,$xx
-        $17808              .byte $xx,$xx,$xx,$xx
-        $1780c              .byte $xx,$xx,$xx,$xx
-        $17810              .byte $xx,$xx,$xx,$xx
-        $17814              .byte $xx,$xx,$xx,$xx
-        $17818              .byte $xx,$xx,$xx,$xx
-        $1781c              .byte $xx,$xx,$xx,$xx
-        $17820              .byte $xx,$xx,$xx,$xx
-        $17824              .byte $xx,$xx,$xx,$xx
-        $17828              .byte $xx,$xx,$xx,$xx
-        $1782c              .byte $xx,$xx,$xx,$xx
-        $17830              .byte $xx,$xx,$xx,$xx
-        $17834              .byte $xx,$xx,$xx,$xx
-        $17838              .byte $xx,$xx,$xx,$xx
-        $1783c              .byte $xx,$xx,$xx
-MapData_LocationE8_Exits
+        $177fc              .byte $xx
+MapData_e5_Flags
+        $177fd              .byte $xx
+        $177fe              .byte $xx
+;;; ----------------------------------------------------------------
+MapData_e7                                              ; Joel - Inn
+        $177ff              .word ($xxxx)
+        $17801              .word ($xxxx)
+        $17803              .word ($xxxx)
+        $17805              .word ($xxxx)
+        $17807              .word ($xxxx)
+MapData_e7_Layout
+        $17809              .byte $xx
+        $1780a              .byte $xx,$xx,$xx,$xx
+        ;; Map 1x1
+        $1780e              .byte $xx
+MapData_e7_Graphics
+        $1780f              .byte $xx,$xx,$xx
+        $17812              .byte $xx,$xx
+        $17814              .byte $xx,$xx
+MapData_e7_Entrances
+        $17816              .byte $xx,$xx,$xx,$xx
+MapData_e7_Exits
+        $1781a              .byte $xx,$xx,$xx,$xx
+        $1781e              .byte $xx
+MapData_e7_Flags
+        $1781f              .byte $xx
+;;; ----------------------------------------------------------------
+MapData_e8                                     ; Zombie Town - House
+        $17820              .word ($xxxx)
+        $17822              .word ($xxxx)
+        $17824              .word ($xxxx)
+        $17826              .word ($xxxx)
+        $17828              .word ($xxxx)
+MapData_e8_Layout
+        $1782a              .byte $xx
+        $1782b              .byte $xx,$xx,$xx,$xx
+        ;; Map 1x1
+        $1782f              .byte $xx
+MapData_e8_Graphics
+        $17830              .byte $xx,$xx,$xx
+        $17833              .byte $xx,$xx
+        $17835              .byte $xx,$xx
+MapData_e8_Entrances
+        $17837              .byte $xx,$xx,$xx,$xx
+        $1783b              .byte $xx,$xx,$xx,$xx
+MapData_e8_Exits
         $1783f              .byte $xx,$xx,$xx,$xx
         $17843              .byte $xx,$xx,$xx,$xx
         $17847              .byte $xx,$xx,$xx,$xx
         $1784b              .byte $xx
-MapData_LocationE8_Flags
+MapData_e8_Flags
         $1784c              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_e9                            ; Zombie Town - House Basement
@@ -13800,44 +13974,64 @@ MapData_5a_Graphics
         $17be4              .byte $xx,$xx
         $17be6              .byte $xx,$xx
 MapData_5a_Entrances
+MapData_5a_Exits
         $17be8              .byte $xx,$xx,$xx,$xx
         $17bec              .byte $xx,$xx,$xx,$xx
         $17bf0              .byte $xx,$xx,$xx,$xx
         $17bf4              .byte $xx,$xx,$xx,$xx
-        $17bf8              .byte $xx,$xx,$xx,$xx
-        $17bfc              .byte $xx,$xx,$xx,$xx
-        $17c00              .byte $xx,$xx,$xx,$xx
-        $17c04              .byte $xx,$xx,$xx,$xx
-        $17c08              .byte $xx,$xx,$xx,$xx
-        $17c0c              .byte $xx,$xx,$xx,$xx
-        $17c10              .byte $xx,$xx,$xx,$xx
-        $17c14              .byte $xx,$xx,$xx,$xx
-        $17c18              .byte $xx,$xx,$xx,$xx
-        $17c1c              .byte $xx,$xx,$xx,$xx
-        $17c20              .byte $xx,$xx,$xx,$xx
-        $17c24              .byte $xx,$xx,$xx,$xx
-MapData_Location5B_Exits
-MapData_Location5B_Entrances
+        $17bf8              .byte $xx
+        $17bf9              .byte $xx
+;;; ----------------------------------------------------------------
+MapData_5b                                                 ; Tower 3
+        $17bfa              .word ($xxxx)
+        $17bfc              .word ($xxxx)
+        $17bfe              .word ($xxxx)
+        $17c00              .word ($xxxx)
+        $17c02              .word ($xxxx)
+MapData_5b_Layout
+        $17c04              .byte $xx
+        $17c05              .byte $xx,$xx,$xx,$xx
+        ;; Map 6x4
+        $17c09              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $17c0f              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $17c15              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $17c1b              .byte $xx,$xx,$xx,$xx,$xx,$xx
+MapData_5b_Graphics
+        $17c21              .byte $xx,$xx,$xx
+        $17c24              .byte $xx,$xx
+        $17c26              .byte $xx,$xx
+MapData_5b_Entrances
+MapData_5b_Exits
         $17c28              .byte $xx,$xx,$xx,$xx
         $17c2c              .byte $xx,$xx,$xx,$xx
         $17c30              .byte $xx,$xx,$xx,$xx
         $17c34              .byte $xx,$xx,$xx,$xx
-        $17c38              .byte $xx,$xx,$xx,$xx
-        $17c3c              .byte $xx,$xx,$xx,$xx
-        $17c40              .byte $xx,$xx,$xx,$xx
-        $17c44              .byte $xx,$xx,$xx,$xx
-        $17c48              .byte $xx,$xx,$xx,$xx
-        $17c4c              .byte $xx,$xx,$xx,$xx
-        $17c50              .byte $xx,$xx,$xx,$xx
-        $17c54              .byte $xx,$xx,$xx,$xx
-        $17c58              .byte $xx,$xx,$xx,$xx
-        $17c5c              .byte $xx,$xx,$xx,$xx
-        $17c60              .byte $xx,$xx,$xx,$xx
-        $17c64              .byte $xx,$xx,$xx,$xx
+        $17c38              .byte $xx
+        $17c39              .byte $xx
+;;; ----------------------------------------------------------------
+MapData_5c                                   ; Tower - Outside Mesia
+        $17c3a              .word ($xxxx)
+        $17c3c              .word ($xxxx)
+        $17c3e              .word ($xxxx)
+        $17c40              .word ($xxxx)
+        $17c42              .word ($xxxx)
+MapData_5c_Layout
+        $17c44              .byte $xx
+        $17c45              .byte $xx,$xx,$xx,$xx
+        ;; Map 6x4
+        $17c49              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $17c4f              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $17c55              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $17c5b              .byte $xx,$xx,$xx,$xx,$xx,$xx
+MapData_5c_Graphics
+        $17c61              .byte $xx,$xx,$xx
+        $17c64              .byte $xx,$xx
+        $17c66              .byte $xx,$xx
+MapData_5c_Entrances
         $17c68              .byte $xx,$xx,$xx,$xx
         $17c6c              .byte $xx,$xx,$xx,$xx
         $17c70              .byte $xx,$xx,$xx,$xx
-MapData_Location5C_Exits
+MapData_5c_Exits
         $17c74              .byte $xx,$xx,$xx,$xx
         $17c78              .byte $xx,$xx,$xx,$xx
         $17c7c              .byte $xx,$xx,$xx,$xx
@@ -13845,7 +14039,7 @@ MapData_Location5C_Exits
         $17c84              .byte $xx,$xx,$xx,$xx
         $17c88              .byte $xx,$xx,$xx,$xx
         $17c8c              .byte $xx
-MapData_Location5C_Flags
+MapData_5c_Flags
         $17c8d              .byte $xx
 ;;; ----------------------------------------------------------------
 MapData_5d                                    ; Tower - Outside Dyna
@@ -13920,6 +14114,7 @@ MapData_5f_Exits
 MapData_5f_Flags
         $17cf9              .byte $xx
 ;;; ----------------------------------------------------------------
+        ;; UNUSED????
         $17cfa              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $17d00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $17d10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -13937,6 +14132,10 @@ MapData_5f_Flags
         $17dd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $17de0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $17df0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+        ;; This is read from $3cca4 when starting the Dyna fight - it appears to be initializing
+        ;; RAM at $6000, possibly for graphics, seeing as how the actual background is not stored
+        ;; in a normal way.
         $17e00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $17e10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $17e20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -13953,6 +14152,8 @@ MapData_5f_Flags
         $17ed0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $17ee0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $17ef0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+        ;; UNUSED????
         $17f00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $17f10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $17f20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -14069,6 +14270,7 @@ SoundEffectData                ; @@ $a000  -- Audio data runs in upper bank.
         $180ae              .word ($xxxx)
 ;;; ----------------------------------------------------------------
 SoundEffectData_Track20                                   ; Track 20
+        ;; unused?
         $180b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $180c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
@@ -14103,6 +14305,7 @@ SoundEffectData_Track26                                   ; Track 26
         $181b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 SoundEffectData_Track27                                   ; Track 27
+        ;; unused?
         $181bd              .byte $xx,$xx,$xx
         $181c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $181d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -14110,6 +14313,7 @@ SoundEffectData_Track27                                   ; Track 27
         $181f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 SoundEffectData_Track28                                   ; Track 28
+        ;; unused?
         $181fc              .byte $xx,$xx,$xx,$xx
         $18200              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $18210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -14120,11 +14324,13 @@ SoundEffectData_Track29                                   ; Track 29
         $18230              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 SoundEffectData_Track2a                                   ; Track 2a
+        ;; unused?
         $18239              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $18240              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $18250              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 SoundEffectData_Track2b                                   ; Track 2b
+        ;; unused?
         $1825e              .byte $xx,$xx
         $18260              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $18270              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -14176,7 +14382,10 @@ SoundEffectData_Track36                                   ; Track 36
 SoundEffectData_Track37                                   ; Track 37
         $183dc              .byte $xx,$xx,$xx,$xx
         $183e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $183f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $183f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+        ;; unused???
+        $183fc              .byte $xx,$xx,$xx,$xx
         $18400              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $18410              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $18420              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -14424,10 +14633,10 @@ SoundEffectData_Track61                                   ; Track 61
         $18cb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $18cc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $18cd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $18ce0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $18ce0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 SoundEffectData_Track62                                   ; Track 62
-        $18cea              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $18ce9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $18cf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $18d00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $18d10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -14441,7 +14650,7 @@ SoundEffectData_Track63                                   ; Track 63
         $18d60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $18d70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
-SoundEffectData_Track64                                   ; Track 64
+SoundEffectData_Track64                                   ; Track 64 - uncovered!
         $18d79              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $18d80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $18d90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -14833,14 +15042,14 @@ NpcDataPart2
         $19391              .word ($193f9) ; c8 BrynmaerInn
         $19393              .word ($1940d) ; c9 BrynmaerArmorShop
         $19395              .word ($xxxx)
-        $19397              .word ($19403) ; cb BrynmaerItemShop
+        $19397              .word ($19403) ; cb BrynmaerToolShop
         $19399              .word ($xxxx)
         $1939b              .word ($1a851) ; cd OakElderHouse
         $1939d              .word ($1a85b) ; ce OakMotherHouse
         $1939f              .word ($19421) ; cf OakToolShop
         $193a1              .word ($1942b) ; d0 OakInn
         $193a3              .word ($19435) ; d1 AmazonesInn
-        $193a5              .word ($1943f) ; d2 AmazonesItemShop
+        $193a5              .word ($1943f) ; d2 AmazonesToolShop
         $193a7              .word ($19449) ; d3 AmazonesArmorShop
         $193a9              .word ($1a893) ; d4 AmazonesElder
         $193ab              .word ($1a8af) ; d5
@@ -19349,12 +19558,12 @@ ItemUse
         $1c347  xx xx:      xxx $xx
         $1c349  xx xx:      xxx #$xx
         $1c34b  xx xx:      xxx >rts ; $1c350
-        $1c34d  xx xx xx:   xxx ItemUse_NonShellFlute ; don't discard shell flute
-+       $1c350  xx:         xxx
+        $1c34d  xx xx xx:   xxx ItemUse_TradeIn ; don't discard shell flute
+        $1c350  xx:         xxx
         ;; --------------------------------
         $1c351  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
-ItemUse_NonShellFlute
+ItemUse_TradeIn
         ;; This happens afterwards when using anything other than shell flute
         $1c354  xx xx:      xxx $xx
         $1c356  xx:         xxx
@@ -22397,6 +22606,8 @@ TreasureChestSpawnTable
 ;;; This is how treasure chests are mapped to their contents, though it also
 ;;; seems to include non-treasure chest mappings (like the various swords
 ;;; and magics).  Probably 71..7f are unused slots at the end.
+;;; See also $3d45c which seems to have somewhat of a copy of rows 5-6 that
+;;; appears to be used for messages.
 ItemGetTable                     ;  0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f
         $1dd66              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; 0
         $1dd76              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; 1
@@ -26746,7 +26957,7 @@ RomBank_10                      ; @@ $8000
 +       $20149  xx xx:      xxx Ctrl1NewlyPressed
         $2014b  xx xx:      xxx #$xx
         $2014d  xx xx:      xxx + ; $2015c
-        $2014f  xx xx xx:   xxx $xxxx
+        $2014f  xx xx xx:   xxx CurrentlyInPawnShop
         $20152  xx xx:      xxx + ; $2015c
         $20154  xx xx:       xxx #$xx
         $20156  xx xx xx:    xxx $2021f
@@ -26762,7 +26973,7 @@ RomBank_10                      ; @@ $8000
         $2016b  xx xx xx:    xxx Inventory_DropItem
 +       $2016e  xx xx xx:   xxx $200d1
         ;;                  ----------
-        $20171  xx xx xx:   xxx $205e6
+        $20171  xx xx xx:   xxx Inventory_ReadCurrentHoveredItem
         $20174  xx xx xx:   xxx $xxxx
         $20177  xx xx:      xxx #Ctrl1NewlyPressed
         $20179  xx xx xx:   xxx PlayAudioBlip
@@ -26789,23 +27000,24 @@ RomBank_10                      ; @@ $8000
         $201a0  xx xx:      xxx $xx
         $201a2  xx xx:      xxx #$xx ; (spaces)
         $201a4  xx xx xx:   xxx ShowMenuMessage
-        $201a7  xx xx xx:   xxx $xxxx
+        $201a7  xx xx xx:   xxx CurrentlyInPawnShop
         $201aa  xx xx:      xxx + ; $201b4
         $201ac  xx xx:       xxx #$xx ; (item name)
         $201ae  xx xx xx:    xxx ShowMenuMessage
         $201b1  xx xx xx:    xxx $2015c
         ;;                   ----------
+	;; Compute the pawn shop sell price
 +       $201b4  xx xx:      xxx #$xx ; (spaces)
         $201b6  xx xx xx:   xxx ShowMenuMessage
         $201b9  xx xx:      xxx #$xx ; (item name)
         $201bb  xx xx xx:   xxx ShowMenuMessage
-        $201be  xx xx xx:   xxx $205e6
+        $201be  xx xx xx:   xxx Inventory_ReadCurrentHoveredItem
         $201c1  xx:         xxx
         $201c2  xx:         xxx
-        $201c3  xx xx xx:   xxx $21ec2,x
-        $201c6  xx xx xx:   xxx $xxxx
-        $201c9  xx xx xx:   xxx $21ec3,x
-        $201cc  xx xx xx:   xxx $xxxx
+        $201c3  xx xx xx:   xxx PawnShopPrices,x
+        $201c6  xx xx xx:   xxx ShopMenu_CurrentItemPrice
+        $201c9  xx xx xx:   xxx PawnShopPrices+1,x
+        $201cc  xx xx xx:   xxx ShopMenu_CurrentItemPrice+1
         $201cf  xx xx:      xxx #$xx
         $201d1  xx xx xx:   xxx InventoryMenu_CurrentPage
         $201d4  xx xx:      xxx + ; $201d8
@@ -26931,11 +27143,11 @@ InventoryMenu_LoadSelectedPage2
         $202b4  xx xx:      xxx - ; $20296
         $202b6  xx:         xxx
 ;;; --------------------------------
-        $202b7  xx xx xx:   xxx $xxxx
+        $202b7  xx xx xx:   xxx CurrentlyInPawnShop
         $202ba  xx xx:      xxx $xx
         $202bc  xx xx xx:   xxx $2035e
 ;;; --------------------------------
-        $202bf  xx xx xx:   xxx $205e6
+        $202bf  xx xx xx:   xxx Inventory_ReadCurrentHoveredItem
         $202c2  xx xx:      xxx #$xx
         $202c4  xx xx:      xxx $xx
         $202c6  xx xx:      xxx #$xx
@@ -26974,7 +27186,7 @@ InventoryMenu_LoadSelectedPage2
         $20309  xx xx xx:   xxx $20660
         $2030c  xx xx:      xxx #$xx
         $2030e  xx xx xx:   xxx $20a9f
-        $20311  xx xx xx:   xxx $205e6
+        $20311  xx xx xx:   xxx Inventory_ReadCurrentHoveredItem
         $20314  xx xx:      xxx $xx
         $20316  xx:         xxx
         $20317  xx xx xx:   xxx $20ff0,x
@@ -26988,7 +27200,7 @@ InventoryMenu_LoadSelectedPage2
         $20328  xx xx xx:   xxx ShowMenuMessage
         $2032b  xx xx xx:   xxx $205f6
         $2032e  xx:         xxx
-        $2032f  xx xx xx:   xxx $205e6
+        $2032f  xx xx xx:   xxx Inventory_ReadCurrentHoveredItem
         $20332  xx:         xxx
         $20333  xx xx xx:   xxx $2103b,x
         $20336  xx xx xx:   xxx $xxxx,y
@@ -26998,7 +27210,7 @@ DataTable_2033a
         $2033a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 Inventory_DropItem
-        $20342  xx xx xx:   xxx $xxxx
+        $20342  xx xx xx:   xxx CurrentlyInPawnShop
         $20345  xx xx:      xxx + ; $2035e
         ;; When does this happen?  Uncovered.
         ;; It's set to nonzero in $2154d right before sorting,
@@ -27030,7 +27242,7 @@ Inventory_DropItem
         $2037b  xx xx xx:    xxx $20a9f
         $2037e  xx xx:       xxx #$xx ; (spaces)
         $20380  xx xx xx:    xxx ShowMenuMessage
-        $20383  xx xx xx:    xxx $xxxx
+        $20383  xx xx xx:    xxx CurrentlyInPawnShop
         $20386  xx xx:       xxx + ; $2038d
         $20388  xx xx:        xxx #$xx ; "you cannot drop!"
         $2038a  xx xx xx:     xxx ShowMenuMessage
@@ -27042,7 +27254,7 @@ Inventory_DropItem
         $20394  xx xx xx:   xxx $20a9f
         $20397  xx xx:      xxx #$xx ; (spaces)
         $20399  xx xx xx:   xxx ShowMenuMessage
-        $2039c  xx xx xx:   xxx $xxxx
+        $2039c  xx xx xx:   xxx CurrentlyInPawnShop
         $2039f  xx xx:      xxx $xx
         $203a1  xx xx:      xxx #$xx ; "do you wish to drop?"
         $203a3  xx xx xx:   xxx ShowMenuMessage
@@ -27062,9 +27274,10 @@ Inventory_DropItem
         $203c4  xx xx:      xxx #$xx ; (spaces)
         $203c6  xx xx xx:   xxx ShowMenuMessage
 ;;; --------------------------------
+SellCurrentItem
         $203c9  xx xx:      xxx #SFX_CURSOR_SELECT
         $203cb  xx xx xx:   xxx $20a9f
-        $203ce  xx xx xx:   xxx $xxxx
+        $203ce  xx xx xx:   xxx CurrentlyInPawnShop
         $203d1  xx xx:      xxx $xx
         $203d3  xx xx xx:   xxx $20631
         $203d6  xx xx:      xxx #$xx
@@ -27104,7 +27317,7 @@ Inventory_DropItem
         $20420  xx xx xx:   xxx $xxxx
         $20423  xx xx:      xxx #$xx ; (spaces)
         $20425  xx xx xx:   xxx ShowMenuMessage
-        $20428  xx xx xx:   xxx $xxxx
+        $20428  xx xx xx:   xxx CurrentlyInPawnShop
         $2042b  xx xx:      xxx $xx
         $2042d  xx xx:      xxx #$xx ; "$"
         $2042f  xx xx xx:   xxx ShowMenuMessage
@@ -27131,11 +27344,11 @@ Inventory_DropItem
         $2045f  xx xx:      xxx $xx
         $20461  xx xx:      xxx $xx
         $20463  xx xx xx:   xxx $2023a
-        $20466  xx xx xx:   xxx $xxxx
-        $20469  xx xx:      xxx $xx
-        $2046b  xx:         xxx
+        $20466  xx xx xx:   xxx CurrentlyInPawnShop
+        $20469  xx xx:      xxx + ; $2046c
+        $2046b  xx:          xxx
 ;;; --------------------------------
-        $2046c  xx xx:      xxx #$xx ; (spaces)
++       $2046c  xx xx:      xxx #$xx ; (spaces)
         $2046e  xx xx xx:   xxx ShowMenuMessage
         $20471  xx xx:      xxx #$xx ; "Anything else?"
         $20473  xx xx xx:   xxx ShowMenuMessage
@@ -27143,46 +27356,46 @@ Inventory_DropItem
         $20478  xx xx xx:   xxx ShowMenuMessage
         $2047b  xx xx:      xxx #$xx
         $2047d  xx xx xx:   xxx Menu_ReadYesNo_CarrySetIfNo
-        $20480  xx xx:      xxx $xx
+        $20480  xx xx:      xxx + ; $2049e
         $20482  xx xx:      xxx #$xx
         $20484  xx xx xx:   xxx $20a9f
         $20487  xx xx:      xxx #$xx ; (spaces)
         $20489  xx xx xx:   xxx ShowMenuMessage
         $2048c  xx xx:      xxx #$xx ; "Please come again"
         $2048e  xx xx xx:   xxx ShowMenuMessage
-        $20491  xx xx xx:   xxx $3c169
-        $20494  xx xx xx:   xxx ReadControllersWithRepeat
-        $20497  xx xx:      xxx $xx
-        $20499  xx xx:      xxx $xx
+-       $20491  xx xx xx:    xxx $3c169
+        $20494  xx xx xx:    xxx ReadControllersWithRepeat
+        $20497  xx xx:       xxx $xx
+        $20499  xx xx:      xxx - ; $20491
         $2049b  xx:         xxx
         $2049c  xx:         xxx
         $2049d  xx:         xxx
-;;; --------------------------------
-        $2049e  xx xx:      xxx #$xx
+        ;; --------------------------------
++       $2049e  xx xx:      xxx #$xx
         $204a0  xx xx xx:   xxx $20a9f
         $204a3  xx xx:      xxx #$xx ; (spaces)
         $204a5  xx xx xx:   xxx ShowMenuMessage
-        $204a8  xx xx xx:   xxx $205e6
+        $204a8  xx xx xx:   xxx Inventory_ReadCurrentHoveredItem
         $204ab  xx xx:      xxx #$xx
-        $204ad  xx xx:      xxx $xx
-        $204af  xx:         xxx
-;;; --------------------------------
-        $204b0  xx xx:      xxx $xx
+        $204ad  xx xx:      xxx + ; $204b0
+        $204af  xx:          xxx
+        ;; --------------------------------
++       $204b0  xx xx:      xxx $xx
         $204b2  xx xx:      xxx #$xx ; (item name)
         $204b4  xx xx xx:   xxx ShowMenuMessage
         $204b7  xx xx:      xxx #$xx
-        $204b9  xx xx xx:   xxx $xxxx
-        $204bc  xx xx:      xxx $xx
-        $204be  xx xx:      xxx #$xx
-        $204c0  xx:         xxx
+        $204b9  xx xx xx:   xxx InventoryMenu_CurrentPage
+        $204bc  xx xx:      xxx + ; $204c0
+        $204be  xx xx:       xxx #$xx
++       $204c0  xx:         xxx
         $204c1  xx xx xx:   xxx ShowMenuMessage ; "$" in diff spots
-        $204c4  xx xx xx:   xxx $205e6
+        $204c4  xx xx xx:   xxx Inventory_ReadCurrentHoveredItem
         $204c7  xx:         xxx
         $204c8  xx:         xxx
-        $204c9  xx xx xx:   xxx $21ec2,x
-        $204cc  xx xx xx:   xxx $xxxx
-        $204cf  xx xx xx:   xxx $21ec3,x
-        $204d2  xx xx xx:   xxx $xxxx
+        $204c9  xx xx xx:   xxx PawnShopPrices,x
+        $204cc  xx xx xx:   xxx ShopMenu_CurrentItemPrice
+        $204cf  xx xx xx:   xxx PawnShopPrices+1,x
+        $204d2  xx xx xx:   xxx ShopMenu_CurrentItemPrice+1
         $204d5  xx xx:      xxx #$xx
         $204d7  xx xx xx:   xxx DisplayNumberInShop
 ;;; --------------------------------
@@ -27381,28 +27594,28 @@ DisplayNumberInShop
         $2062e  xx xx:      xxx - ; $20626
         $20630  xx:         xxx
 ;;; --------------------------------
-        $20631  xx xx xx:   xxx $205e6
+        $20631  xx xx xx:   xxx Inventory_ReadCurrentHoveredItem
         $20634  xx:         xxx
         $20635  xx:         xxx
         $20636  xx:         xxx
-        $20637  xx xx xx:   xxx $21ec2,x
+        $20637  xx xx xx:   xxx PawnShopPrices,x
         $2063a  xx xx xx:   xxx $xxxx
-        $2063d  xx xx xx:   xxx $xxxx
-        $20640  xx xx xx:   xxx $21ec3,x
+        $2063d  xx xx xx:   xxx ShopMenu_CurrentItemPrice
+        $20640  xx xx xx:   xxx PawnShopPrices+1,x
         $20643  xx xx xx:   xxx $xxxx
-        $20646  xx xx xx:   xxx $xxxx
-        $20649  xx xx:      xxx $xx
-        $2064b  xx xx:      xxx #$xx
-        $2064d  xx xx xx:   xxx $xxxx
-        $20650  xx xx xx:   xxx $xxxx
-        $20653  xx xx xx:   xxx $xxxx
+        $20646  xx xx xx:   xxx ShopMenu_CurrentItemPrice+1
+        $20649  xx xx:      xxx + ; $20653
+        $2064b  xx xx:       xxx #$xx
+        $2064d  xx xx xx:    xxx ShopMenu_CurrentItemPrice
+        $20650  xx xx xx:    xxx ShopMenu_CurrentItemPrice+1
++       $20653  xx xx xx:   xxx ShopMenu_CurrentItemPrice
         $20656  xx xx xx:   xxx $xxxx
-        $20659  xx xx xx:   xxx $xxxx
+        $20659  xx xx xx:   xxx ShopMenu_CurrentItemPrice+1
         $2065c  xx xx xx:   xxx $xxxx
         $2065f  xx:         xxx
 ;;; --------------------------------
         ;; Highlight an item in inventory? maybe only conditionally
-        $20660  xx xx xx:   xxx $205e6
+        $20660  xx xx xx:   xxx Inventory_ReadCurrentHoveredItem
         $20663  xx xx:      xxx #$xx
         $20665  xx xx:      xxx + ; $20668
         $20667  xx:          xxx
@@ -27915,6 +28128,7 @@ MenuMessage_ItemName
         $20a35  xx:         xxx
         $20a36  xx:         xxx
 ;;; --------------------------------
+        ;; UNUSED
         $20a37  xx xx:      xxx $xx
         $20a39  xx:         xxx
         $20a3a  xx:         xxx
@@ -27925,7 +28139,7 @@ MenuMessage_ItemName
         $20a42  xx:         xxx
         $20a43  xx:         xxx
         $20a44  xx xx xx:   xxx $xxxx
-        $20a47  xx xx xx:   xxx $205e6
+        $20a47  xx xx xx:   xxx Inventory_ReadCurrentHoveredItem
         $20a4a  xx:         xxx
         $20a4b  xx xx xx:   xxx $20fa5,x
         $20a4e  xx xx xx:   xxx $xxxx
@@ -28681,7 +28895,7 @@ Inventory_ItemData
         $21545  xx xx xx:   xxx $xxxx
         $21548  xx xx xx:   xxx $xxxx
         $2154b  xx xx:      xxx #$xx
-        $2154d  xx xx xx:   xxx $xxxx
+        $2154d  xx xx xx:   xxx CurrentlyInPawnShop
         $21550  xx xx:      xxx #$xx
         $21552  xx xx xx:   xxx $21a12
         $21555  xx xx xx:   xxx $20534
@@ -28718,10 +28932,10 @@ Inventory_ItemData
         $2159f  xx xx xx:   xxx $20534
         $215a2  xx xx xx:   xxx $21a91
         $215a5  xx xx xx:   xxx $2150c
-        $215a8  xx xx xx:   xxx $21953
+        $215a8  xx xx xx:   xxx FindCurrentShopIndex
         $215ab  xx xx:      xxx #$xx
-        $215ad  xx xx xx:   xxx $xxxx
-        $215b0  xx xx xx:   xxx $xxxx
+        $215ad  xx xx xx:   xxx ShopMenu_CurrentItemPrice
+        $215b0  xx xx xx:   xxx ShopMenu_CurrentItemPrice+1
         $215b3  xx xx:      xxx #$xx
         $215b5  xx xx:      xxx $xx
         $215b7  xx xx:      xxx #$xx ; "INN"
@@ -28736,9 +28950,9 @@ Inventory_ItemData
         $215ce  xx:         xxx
         $215cf  xx:         xxx
         $215d0  xx xx xx:   xxx $21eac,x
-        $215d3  xx xx xx:   xxx $xxxx
+        $215d3  xx xx xx:   xxx ShopMenu_CurrentItemPrice
         $215d6  xx xx xx:   xxx $21ead,x
-        $215d9  xx xx xx:   xxx $xxxx
+        $215d9  xx xx xx:   xxx ShopMenu_CurrentItemPrice+1
         $215dc  xx xx:      xxx #$xx
         $215de  xx xx xx:   xxx DisplayNumberInShop
         $215e1  xx xx:      xxx #$xx
@@ -28753,11 +28967,11 @@ Inventory_ItemData
         $215f4  xx:         xxx
         $215f5  xx:         xxx
         $215f6  xx xx xx:   xxx $xxxx
-        $215f9  xx xx xx:   xxx $xxxx
-        $215fc  xx xx xx:   xxx $xxxx
+        $215f9  xx xx xx:   xxx ShopMenu_CurrentItemPrice
+        $215fc  xx xx xx:   xxx ShopMenu_CurrentItemPrice
         $215ff  xx xx xx:   xxx $xxxx
-        $21602  xx xx xx:   xxx $xxxx
-        $21605  xx xx xx:   xxx $xxxx
+        $21602  xx xx xx:   xxx ShopMenu_CurrentItemPrice+1
+        $21605  xx xx xx:   xxx ShopMenu_CurrentItemPrice+1
         $21608  xx xx:      xxx $xx
         $2160a  xx xx:      xxx #$xx
         $2160c  xx xx xx:   xxx $20a9f
@@ -28777,9 +28991,9 @@ Inventory_ItemData
         $21632  xx xx xx:   xxx $xxxx
         $21635  xx xx:      xxx #$xx
         $21637  xx xx xx:   xxx $xxxx
-        $2163a  xx xx xx:   xxx $xxxx
+        $2163a  xx xx xx:   xxx ShopMenu_CurrentItemPrice
         $2163d  xx xx xx:   xxx $xxxx
-        $21640  xx xx xx:   xxx $xxxx
+        $21640  xx xx xx:   xxx ShopMenu_CurrentItemPrice+1
         $21643  xx xx xx:   xxx $xxxx
         $21646  xx xx:      xxx #$xx
         $21648  xx xx xx:   xxx DisplayNumberInShop
@@ -28808,7 +29022,7 @@ Inventory_ItemData
         $2167d  xx xx xx:   xxx $20534
         $21680  xx xx xx:   xxx $21a91
         $21683  xx xx xx:   xxx $2150c
-        $21686  xx xx xx:   xxx $21953
+        $21686  xx xx xx:   xxx FindCurrentShopIndex
         $21689  xx xx:      xxx #$xx ; "PAWN SHOP"
         $2168b  xx xx xx:   xxx ShowMenuMessage
         $2168e  xx xx:      xxx #$xx ; "Is there anything you wish to sell?"
@@ -28830,13 +29044,13 @@ Inventory_ItemData
         $216b5  xx xx xx:    xxx ShowMenuMessage
         $216b8  xx xx xx:    xxx $21878
         $216bb  xx xx xx:    xxx $216c6
-;;; --------------------------------
+        ;; --------------------------------
 +       $216be  xx xx:      xxx #$xx
         $216c0  xx xx xx:   xxx PlayAudioBlip
         $216c3  xx xx xx:   xxx $20000
         $216c6  xx xx xx:   xxx ClearSpriteMemory
         $216c9  xx xx:      xxx #$xx
-        $216cb  xx xx xx:   xxx $xxxx
+        $216cb  xx xx xx:   xxx CurrentlyInPawnShop
         $216ce  xx:         xxx
 ;;; --------------------------------
 Shop_Main
@@ -28873,7 +29087,7 @@ Shop_Main_Loop
         $2170e  xx xx xx:    xxx $xxxx
         $21711  xx xx:       xxx #$xx
         $21713  xx xx xx:    xxx $xxxx
-        $21716  xx xx xx:    xxx Shop_UpdateSelection
+        $21716  xx xx xx:    xxx Shop_UpdatePrice
         ;; --------------------------------
 +       $21719  xx xx:      xxx Ctrl1NewlyPressed
         $2171b  xx xx:      xxx #BUTTON_RIGHT
@@ -28883,7 +29097,7 @@ Shop_Main_Loop
         $21722  xx xx xx:    xxx $xxxx
         $21725  xx xx:       xxx #$xx
         $21727  xx xx xx:    xxx $xxxx
-        $2172a  xx xx xx:    xxx Shop_UpdateSelection
+        $2172a  xx xx xx:    xxx Shop_UpdatePrice
         ;; --------------------------------
         ;; Hitting select in a shop makes you leave immediately
 +       $2172d  xx xx:      xxx Ctrl1NewlyPressed
@@ -28915,8 +29129,8 @@ Shop_AskAnythingElse
         $21757  xx xx xx:   xxx $20a9f
         $2175a  xx xx xx:   xxx ComputeMoneyAfterBuyingSelectedItem
         $2175d  xx:         xxx
-        $2175e  xx xx xx:   xxx $xxxx
-        $21761  xx xx xx:   xxx $xxxx
+        $2175e  xx xx xx:   xxx ShopMenu_CurrentItemPrice
+        $21761  xx xx xx:   xxx ShopMenu_CurrentItemPrice+1
         $21764  xx xx:      xxx + ; $21769
         $21766  xx xx xx:    xxx Shop_AskAnythingElse
         ;; --------------------------------
@@ -28984,7 +29198,7 @@ Shop_Exit
         $217e9  xx xx xx:   xxx ShowMenuMessage
         $217ec  xx xx xx:   xxx $21878
 ;;; --------------------------------
-Shop_UpdateSelection
+Shop_UpdatePrice
         ;; Update the item name, price, etc
         $217ef  xx xx:      xxx #$xx
         $217f1  xx xx xx:   xxx $20a9f
@@ -29062,7 +29276,7 @@ DataTable_21874
 ;;; --------------------------------
 InitializeArmorShop
         ;; Initialize $6470..f for armor shops
-        $2188a  xx xx xx:   xxx $21953
+        $2188a  xx xx xx:   xxx FindCurrentShopIndex
         $2188d  xx xx xx:   xxx $xxxx
         $21890  xx:         xxx
         $21891  xx:         xxx
@@ -29086,38 +29300,39 @@ InitializeArmorShop
         $218b1  xx:          xxx
         $218b2  xx xx:       xxx #$xx
         $218b4  xx xx:      xxx - ; $218aa
+PostInitializeShop
         $218b6  xx xx:      xxx #$xx
         $218b8  xx xx:      xxx $xx
-        $218ba  xx xx:      xxx $xx
-        $218bc  xx xx xx:   xxx $21f96,x
-        $218bf  xx xx:      xxx $xx
-        $218c1  xx xx:      xxx #$xx
-        $218c3  xx xx:      xxx $xx
-        $218c5  xx xx xx:   xxx $xxxx,x
-        $218c8  xx xx:      xxx #$xx
-        $218ca  xx xx:      xxx $xx
-        $218cc  xx xx:      xxx $xx
-        $218ce  xx xx xx:   xxx $218d7
-;;; --------------------------------
-        $218d1  xx:         xxx
-        $218d2  xx xx xx:   xxx $20f5a,x
-        $218d5  xx xx:      xxx $xx
-        $218d7  xx xx xx:   xxx $208a8
-        $218da  xx xx:      xxx $xx
-        $218dc  xx xx:      xxx $xx
-        $218de  xx xx:      xxx #$xx
-        $218e0  xx xx:      xxx $xx
+-       $218ba  xx xx:       xxx $xx
+        $218bc  xx xx xx:    xxx $21f96,x
+        $218bf  xx xx:       xxx $xx
+        $218c1  xx xx:       xxx #$xx
+        $218c3  xx xx:       xxx $xx
+        $218c5  xx xx xx:    xxx $xxxx,x
+        $218c8  xx xx:       xxx #$xx
+        $218ca  xx xx:       xxx + ; $218d1
+        $218cc  xx xx:         xxx $xx
+        $218ce  xx xx xx:      xxx ++ ; $218d7
+        ;; --------------------------------
++       $218d1  xx:           xxx
+        $218d2  xx xx xx:     xxx $20f5a,x
+        $218d5  xx xx:        xxx $xx
+++      $218d7  xx xx xx:    xxx $208a8
+        $218da  xx xx:       xxx $xx
+        $218dc  xx xx:       xxx $xx
+        $218de  xx xx:       xxx #$xx
+        $218e0  xx xx:      xxx - ; $218ba
         $218e2  xx:         xxx
 ;;; --------------------------------
 InitializeToolShop
         ;; Initialize $6470..f when entering an item shop
-        $218e3  xx xx xx:   xxx $21953
+        $218e3  xx xx xx:   xxx FindCurrentShopIndex
         $218e6  xx xx xx:   xxx $xxxx
         $218e9  xx:         xxx
         $218ea  xx:         xxx
         $218eb  xx:         xxx
         $218ec  xx xx:      xxx #$xx
--       $218ee  xx xx xx:    xxx $21e28,x ; ItemShopItemTable
+-       $218ee  xx xx xx:    xxx $21e28,x ; ToolShopItemTable
         $218f1  xx xx xx:    xxx $xxxx,y  ; y = 0..3
         $218f4  xx:          xxx
         $218f5  xx:          xxx
@@ -29129,7 +29344,7 @@ InitializeToolShop
         $218ff  xx:         xxx
         $21900  xx:         xxx
         $21901  xx xx:      xxx #$xx
--       $21903  xx xx xx:    xxx $21e54,x ; ItemShopPriceTable
+-       $21903  xx xx xx:    xxx $21e54,x ; ToolShopPriceTable
         $21906  xx xx xx:    xxx $xxxx,y  ; y = 0..7
         $21909  xx:          xxx
         $2190a  xx:          xxx
@@ -29168,20 +29383,21 @@ InitializeToolShop
         $2194e  xx xx:      xxx $xx
         $21950  xx xx xx:   xxx $20ab0
 ;;; --------------------------------
+FindCurrentShopIndex
         $21953  xx xx:      xxx #$xx
         $21955  xx xx xx:   xxx $xxxx
-        $21958  xx xx xx:   xxx $21f54,x
-        $2195b  xx xx:      xxx $xx
-        $2195d  xx:         xxx
-        $2195e  xx xx:      xxx #$xx
-        $21960  xx xx:      xxx $xx
-        $21962  xx xx xx:   xxx $2196c
-;;; --------------------------------
-        $21965  xx xx xx:   xxx $21f75,x
-        $21968  xx xx xx:   xxx $xxxx
+-       $21958  xx xx xx:    xxx ShopLocations,x
+        $2195b  xx xx:       xxx + ; $21965
+        $2195d  xx:          xxx
+        $2195e  xx xx:       xxx #$xx
+        $21960  xx xx:       xxx - ; $21958
+        $21962  xx xx xx:    xxx ++ ; $2196c
+        ;; --------------------------------
++       $21965  xx xx xx:   xxx ShopIndices,x
+        $21968  xx xx xx:   xxx ShopMenu_CurrentShopIndex
         $2196b  xx:         xxx
-;;; --------------------------------
-        $2196c  xx xx xx:   xxx $xxxx
+        ;; --------------------------------
+++      $2196c  xx xx xx:   xxx ShopMenu_CurrentShopIndex
         $2196f  xx:         xxx
 ;;; --------------------------------
 ComputeMoneyAfterBuyingSelectedItem
@@ -29190,10 +29406,10 @@ ComputeMoneyAfterBuyingSelectedItem
         ;; negative then
         $21970  xx:         xxx
         $21971  xx xx xx:   xxx $xxxx
-        $21974  xx xx xx:   xxx $xxxx
+        $21974  xx xx xx:   xxx ShopMenu_CurrentItemPrice
         $21977  xx xx xx:   xxx $xxxx
         $2197a  xx xx xx:   xxx $xxxx
-        $2197d  xx xx xx:   xxx $xxxx
+        $2197d  xx xx xx:   xxx ShopMenu_CurrentItemPrice+1
         $21980  xx xx xx:   xxx $xxxx
         $21983  xx xx:      xxx + ; $21988
         ;; Player didn't have enough cash
@@ -29307,9 +29523,9 @@ Shop_ReadCurrentItemPrice
         $21a45  xx:          xxx
         $21a46  xx:          xxx
         $21a47  xx xx xx:    xxx $xxxx,x ; Reads a current shop price
-        $21a4a  xx xx xx:    xxx $xxxx
+        $21a4a  xx xx xx:    xxx ShopMenu_CurrentItemPrice
         $21a4d  xx xx xx:    xxx $xxxx,x
-        $21a50  xx xx xx:    xxx $xxxx
+        $21a50  xx xx xx:    xxx ShopMenu_CurrentItemPrice+1
         $21a53  xx:          xxx
         ;; --------------------------------
         ;; Slot is empty: zero out $6474
@@ -29317,8 +29533,8 @@ Shop_ReadCurrentItemPrice
         $21a57  xx:         xxx
         $21a58  xx:         xxx
         $21a59  xx xx:      xxx #$xx
-        $21a5b  xx xx xx:   xxx $xxxx
-        $21a5e  xx xx xx:   xxx $xxxx
+        $21a5b  xx xx xx:   xxx ShopMenu_CurrentItemPrice
+        $21a5e  xx xx xx:   xxx ShopMenu_CurrentItemPrice+1
         $21a61  xx:         xxx
 ;;; --------------------------------
 Inventory_Organize
@@ -29482,6 +29698,7 @@ DataTable_21ade
         $21bb4  xx xx xx:   xxx ShowMenuMessage
         $21bb7  xx xx xx:   xxx $21b3a
 ;;; --------------------------------
+LoadGame
         $21bba  xx xx xx:   xxx $xxxx
         $21bbd  xx xx:      xxx #$xx
         $21bbf  xx xx:      xxx $xx
@@ -29544,6 +29761,7 @@ DataTable_21ade
         $21c3e  xx xx xx:   xxx ShowMenuMessage
         $21c41  xx xx xx:   xxx $21b3a
 ;;; --------------------------------
+SaveGame
         $21c44  xx xx xx:   xxx $xxxx
         $21c47  xx xx:      xxx #$xx
         $21c49  xx xx:      xxx $xx
@@ -29772,7 +29990,7 @@ ArmorShopPriceTable
         $21e24              .word ($xxxx) ; 0
         $21e26              .word ($xxxx) ; 0
 ;;; --------------------------------
-ItemShopIdTable
+ToolShopIdTable
         $21e28              .byte $xx,$xx,$xx,$xx ; Leaf: Herb, Antidote, Warp boots, Alarm flute
         $21e2c              .byte $xx,$xx,$xx,$xx ; Brynmaer: ...
         $21e30              .byte $xx,$xx,$xx,$xx
@@ -29785,58 +30003,58 @@ ItemShopIdTable
         $21e4c              .byte $xx,$xx,$xx,$xx
         $21e50              .byte $xx,$xx,$xx,$xx
 ;;; --------------------------------
-ItemShopPriceTable
-        ;; Leaf
+ToolShopPriceTable
+        ;; 00 Leaf
         $21e54              .word ($xxxx) ; 30
         $21e56              .word ($xxxx) ; 40
         $21e58              .word ($xxxx) ; 60
         $21e5a              .word ($xxxx) ; 50
-        ;; Brynmaer
+        ;; 01 Brynmaer
         $21e5c              .word ($xxxx) ; 35
         $21e5e              .word ($xxxx) ; 45
         $21e60              .word ($xxxx) ; 65
         $21e62              .word ($xxxx) ; 0
-        ;; Oak
+        ;; 02 Oak
         $21e64              .word ($xxxx) ; 50
         $21e66              .word ($xxxx) ; 60
         $21e68              .word ($xxxx) ; 80
         $21e6a              .word ($xxxx) ; 0
-        ;; Amazones
+        ;; 03 Amazones
         $21e6c              .word ($xxxx) ; 100
         $21e6e              .word ($xxxx) ; 150
         $21e70              .word ($xxxx) ; 150
         $21e72              .word ($xxxx) ; 0
-        ;; Nadare
+        ;; 04 Nadare
         $21e74              .word ($xxxx) ; 60
         $21e76              .word ($xxxx) ; 70
         $21e78              .word ($xxxx) ; 100
         $21e7a              .word ($xxxx) ; 80
-        ;; Portoa
+        ;; 05 Portoa
         $21e7c              .word ($xxxx) ; 90
         $21e7e              .word ($xxxx) ; 120
         $21e80              .word ($xxxx) ; 200
         $21e82              .word ($xxxx) ; 180
-        ;; Joel
+        ;; 06 Joel
         $21e84              .word ($xxxx) ; 120
         $21e86              .word ($xxxx) ; 150
         $21e88              .word ($xxxx) ; 180
         $21e8a              .word ($xxxx) ; 300
-        ;; Swan
+        ;; 07 Swan
         $21e8c              .word ($xxxx) ; 180
         $21e8e              .word ($xxxx) ; 200
         $21e90              .word ($xxxx) ; 300
         $21e92              .word ($xxxx) ; 350
-        ;; Goa
+        ;; 08 Goa
         $21e94              .word ($xxxx) ; 500
         $21e96              .word ($xxxx) ; 600
         $21e98              .word ($xxxx) ; 700
         $21e9a              .word ($xxxx) ; 800
-        ;; Shyron
+        ;; 09 Shyron
         $21e9c              .word ($xxxx) ; 180
         $21e9e              .word ($xxxx) ; 200
         $21ea0              .word ($xxxx) ; 300
         $21ea2              .word ($xxxx) ; 800
-        ;; Sahara
+        ;; 0a Sahara
         $21ea4              .word ($xxxx) ; 1000
         $21ea6              .word ($xxxx) ; 4000
         $21ea8              .word ($xxxx) ; 3000
@@ -29853,96 +30071,103 @@ InnPrices
         $21ebc              .word ($xxxx) ; 300 Goa
         $21ebe              .word ($xxxx) ; 150 Swan
         $21ec0              .word ($xxxx) ; 500 Sahara
-DataTable_21ec2
-        $21ec2              .word ($xxxx)
-        $21ec4              .word ($xxxx)
-        $21ec6              .word ($xxxx)
-        $21ec8              .word ($xxxx)
-        $21eca              .word ($xxxx)
-        $21ecc              .word ($xxxx)
-        $21ece              .word ($xxxx)
-        $21ed0              .word ($xxxx)
-        $21ed2              .word ($xxxx)
-        $21ed4              .word ($xxxx)
-        $21ed6              .word ($xxxx)
-        $21ed8              .word ($xxxx)
-        $21eda              .word ($xxxx)
-        $21edc              .word ($xxxx)
-        $21ede              .word ($xxxx)
-        $21ee0              .word ($xxxx)
-        $21ee2              .word ($xxxx)
-        $21ee4              .word ($xxxx)
-        $21ee6              .word ($xxxx)
-        $21ee8              .word ($xxxx)
-        $21eea              .word ($xxxx)
-        $21eec              .word ($xxxx)
-        $21eee              .word ($xxxx)
-        $21ef0              .word ($xxxx)
-        $21ef2              .word ($xxxx)
-        $21ef4              .word ($xxxx)
-        $21ef6              .word ($xxxx)
-        $21ef8              .word ($xxxx)
-        $21efa              .word ($xxxx)
-        $21efc              .word ($xxxx)
-        $21efe              .word ($xxxx)
-        $21f00              .word ($xxxx)
-        $21f02              .word ($xxxx)
-        $21f04              .word ($xxxx)
-        $21f06              .word ($xxxx)
-        $21f08              .word ($xxxx)
-        $21f0a              .word ($xxxx)
-        $21f0c              .word ($xxxx)
-        $21f0e              .word ($xxxx)
-        $21f10              .word ($xxxx)
-        $21f12              .word ($xxxx)
-        $21f14              .word ($xxxx)
-        $21f16              .word ($xxxx)
-        $21f18              .word ($xxxx)
-        $21f1a              .word ($xxxx)
-        $21f1c              .word ($xxxx)
-        $21f1e              .word ($xxxx)
-        $21f20              .word ($xxxx)
-        $21f22              .word ($xxxx)
-        $21f24              .word ($xxxx)
-        $21f26              .word ($xxxx)
-        $21f28              .word ($xxxx)
-        $21f2a              .word ($xxxx)
-        $21f2c              .word ($xxxx)
-        $21f2e              .word ($xxxx)
-        $21f30              .word ($xxxx)
-        $21f32              .word ($xxxx)
-        $21f34              .word ($xxxx)
-        $21f36              .word ($xxxx)
-        $21f38              .word ($xxxx)
-        $21f3a              .word ($xxxx)
-        $21f3c              .word ($xxxx)
-        $21f3e              .word ($xxxx)
-        $21f40              .word ($xxxx)
-        $21f42              .word ($xxxx)
-        $21f44              .word ($xxxx)
-        $21f46              .word ($xxxx)
-        $21f48              .word ($xxxx)
-        $21f4a              .word ($xxxx)
-        $21f4c              .word ($xxxx)
-        $21f4e              .word ($xxxx)
-        $21f50              .word ($xxxx)
-        $21f52              .word ($xxxx)
-DataTable_21f54
+PawnShopPrices
+        $21ec2              .word ($xxxx) ; 00 sword of wind
+        $21ec4              .word ($xxxx) ; 01 sword of fire
+        $21ec6              .word ($xxxx) ; 02 sword of water
+        $21ec8              .word ($xxxx) ; 03 sword of thunder
+        $21eca              .word ($xxxx) ; 04 crystalis
+        $21ecc              .word ($xxxx) ; 05 ball of wind
+        $21ece              .word ($xxxx) ; 06 tornado bracelet
+        $21ed0              .word ($xxxx) ; 07 ball of fire
+        $21ed2              .word ($xxxx) ; 08 flame bracelet
+        $21ed4              .word ($xxxx) ; 09 ball of water
+        $21ed6              .word ($xxxx) ; 0a blizzard bracelet
+        $21ed8              .word ($xxxx) ; 0b ball of thunder
+        $21eda              .word ($xxxx) ; 0c storm bracelet
+        $21edc              .word ($xxxx) ; 0d carapace shield
+        $21ede              .word ($xxxx) ; 0e bronze shield
+        $21ee0              .word ($xxxx) ; 0f platinum shield
+        $21ee2              .word ($xxxx) ; 10 mirrored shield
+        $21ee4              .word ($xxxx) ; 11 ceramic shield
+        $21ee6              .word ($xxxx) ; 12 sacred shield
+        $21ee8              .word ($xxxx) ; 13 battle shield
+        $21eea              .word ($xxxx) ; 14 psycho shield
+        $21eec              .word ($xxxx) ; 15 tanned hide
+        $21eee              .word ($xxxx) ; 16 leather armor
+        $21ef0              .word ($xxxx) ; 17 bronze armor
+        $21ef2              .word ($xxxx) ; 18 platinum armor
+        $21ef4              .word ($xxxx) ; 19 soldier suit
+        $21ef6              .word ($xxxx) ; 1a ceramic suit
+        $21ef8              .word ($xxxx) ; 1b battle armor
+        $21efa              .word ($xxxx) ; 1c psycho armor
+        $21efc              .word ($xxxx) ; 1d medical herb     10
+        $21efe              .word ($xxxx) ; 1e antidote         20
+        $21f00              .word ($xxxx) ; 1f lysis plant      95
+        $21f02              .word ($xxxx) ; 20 fruit of lime    90
+        $21f04              .word ($xxxx) ; 21 fruit of power   65
+        $21f06              .word ($xxxx) ; 22 magic ring      500
+        $21f08              .word ($xxxx) ; 23 fruit of repun 1000
+        $21f0a              .word ($xxxx) ; 24 warp boots       30
+        $21f0c              .word ($xxxx) ; 25 statue of onyx
+        $21f0e              .word ($xxxx) ; 26 opel statue     300
+        $21f10              .word ($xxxx) ; 27 insect flute
+        $21f12              .word ($xxxx) ; 28 flute of lime
+        $21f14              .word ($xxxx) ; 29 gas mask
+        $21f16              .word ($xxxx) ; 2a power ring
+        $21f18              .word ($xxxx) ; 2b warrior ring
+        $21f1a              .word ($xxxx) ; 2c iron necklace
+        $21f1c              .word ($xxxx) ; 2d deos pendant
+        $21f1e              .word ($xxxx) ; 2e rabbit boots
+        $21f20              .word ($xxxx) ; 2f leather boots
+        $21f22              .word ($xxxx) ; 30 shield ring
+        $21f24              .word ($xxxx) ; 31 alarm flute      25
+        $21f26              .word ($xxxx) ; 32 windmill key
+        $21f28              .word ($xxxx) ; 33 key to prison
+        $21f2a              .word ($xxxx) ; 34 key to styx
+        $21f2c              .word ($xxxx) ; 35 fog lamp
+        $21f2e              .word ($xxxx) ; 36 shell flute
+        $21f30              .word ($xxxx) ; 37 eye glasses
+        $21f32              .word ($xxxx) ; 38 broken statue
+        $21f34              .word ($xxxx) ; 39 glowing lamp
+        $21f36              .word ($xxxx) ; 3a statue of gold
+        $21f38              .word ($xxxx) ; 3b love pendant
+        $21f3a              .word ($xxxx) ; 3c kirisa plant
+        $21f3c              .word ($xxxx) ; 3d ivory statue
+        $21f3e              .word ($xxxx) ; 3e bow of moon
+        $21f40              .word ($xxxx) ; 3f bow of sun
+        $21f42              .word ($xxxx) ; 40 bow of truth
+        $21f44              .word ($xxxx) ; 41 refresh
+        $21f46              .word ($xxxx) ; 42 paralysis
+        $21f48              .word ($xxxx) ; 43 telepathy
+        $21f4a              .word ($xxxx) ; 44 teleport
+        $21f4c              .word ($xxxx) ; 45 recover
+        $21f4e              .word ($xxxx) ; 46 barrier
+        $21f50              .word ($xxxx) ; 47 change
+        $21f52              .word ($xxxx) ; 48 flight
+;;; --------------------------------
+;;; These tables are read in parallel - if the location matches then the
+;;; corresponding index is stored to $646d.
+ShopLocations
         $21f54              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $21f64              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $21f74              .byte $xx
-DataTable_21f75
+ShopIndices
         $21f75              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $21f85              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $21f95              .byte $xx
+;;; --------------------------------
 DataTable_21f96
-        $21f96              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21fa6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21fb6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21fc6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21fd6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21fe6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21ff6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $21f96              .byte $xx,$xx,$xx,$xx
+;;; --------------------------------
+        ;; UNUSED?
+        $21f9a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $21faa              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $21fba              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $21fca              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $21fda              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $21fea              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $21ffa              .byte $xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 RomBank_11                      ; @@ $a000
 MainLoop_PrepareEndingSequence
@@ -43452,19 +43677,20 @@ CollisionJump_02_PlayerInFrontOfNpcOrTrigger
         $354cb  xx xx xx:   xxx $354a2
 ;;; --------------------------------
         $354ce  xx xx:      xxx $xx
-        $354d0  xx xx:      xxx $xx
+        $354d0  xx xx:      xxx >rts ; $35534
         $354d2  xx xx xx:   xxx $xxxx,x
         $354d5  xx xx:      xxx #$xx
-        $354d7  xx xx:      xxx $xx
-        $354d9  xx xx xx:   xxx $35535
-        $354dc  xx xx xx:   xxx $35508
+        $354d7  xx xx:      xxx + ; $354df
+        ;; Statue
+        $354d9  xx xx xx:    xxx $35535
+        $354dc  xx xx xx:    xxx $35508
 ;;; --------------------------------
-        $354df  xx xx xx:   xxx $xxxx
-        $354e2  xx xx:      xxx $xx
++       $354df  xx xx xx:   xxx $xxxx
+        $354e2  xx xx:      xxx >rts ; $35534
         $354e4  xx xx xx:   xxx $xxxx
         $354e7  xx xx:      xxx $xx
         $354e9  xx xx xx:   xxx $xxxx
-        $354ec  xx xx:      xxx $xx
+        $354ec  xx xx:      xxx >rts ; $35534
         $354ee  xx xx xx:   xxx $xxxx,x
         $354f1  xx:         xxx
         $354f2  xx xx:       xxx #$xx
@@ -43476,17 +43702,17 @@ CollisionJump_02_PlayerInFrontOfNpcOrTrigger
         $354ff  xx xx xx:    xxx CheckHitbox
         $35502  xx:         xxx
         $35503  xx xx xx:   xxx $xxxx,x
-        $35506  xx xx:      xxx $xx
+        $35506  xx xx:      xxx >rts ; $35534
         $35508  xx xx:      xxx #$xx
         $3550a  xx xx xx:   xxx $xxxx
         $3550d  xx xx xx:   xxx $xxxx
         $35510  xx xx:      xxx #GAME_MODE_DIALOG
         $35512  xx xx:      xxx GameMode
         $35514  xx xx xx:   xxx $xxxx,x
-        $35517  xx xx:      xxx $xx
+        $35517  xx xx:      xxx >rts ; $35534
         $35519  xx xx xx:   xxx $xxxx,x
         $3551c  xx xx:      xxx #$xx
-        $3551e  xx xx:      xxx $xx
+        $3551e  xx xx:      xxx >rts ; $35534
         $35520  xx xx xx:   xxx $xxxx
         $35523  xx:         xxx
         $35524  xx xx:      xxx #$xx
@@ -43541,9 +43767,9 @@ CollisionJump_02_PlayerInFrontOfNpcOrTrigger
         $35585  xx:         xxx
         $35586  xx:         xxx
         $35587  xx xx:       xxx #$xx
-        $35589  xx xx xx:    xxx $xxxx,x
+        $35589  xx xx xx:    xxx ObjectKnockback,x
         $3558c  xx:          xxx
-        $3558d  xx xx xx:     xxx $xxxx,x
+        $3558d  xx xx xx:     xxx ObjectDirection,x
         $35590  xx:           xxx
         $35591  xx xx xx:      xxx $xxxx
         $35594  xx xx:         xxx #$xx
@@ -43551,12 +43777,12 @@ CollisionJump_02_PlayerInFrontOfNpcOrTrigger
         $35597  xx:            xxx
         $35598  xx xx:         xxx #$xx
         $3559a  xx xx:         xxx #$xx
-        $3559c  xx xx xx:      xxx $xxxx,x
+        $3559c  xx xx xx:      xxx ObjectDirection,x
         $3559f  xx xx xx:      xxx MoveObjectWithSpeedAndDirection
         $355a2  xx:           xxx
-        $355a3  xx xx xx:     xxx $xxxx,x
+        $355a3  xx xx xx:     xxx ObjectDirection,x
         $355a6  xx:          xxx
-        $355a7  xx xx xx:    xxx $xxxx,x
+        $355a7  xx xx xx:    xxx ObjectKnockback,x
         $355aa  xx:          xxx
         $355ab  xx xx:       xxx $xx
         $355ad  xx xx xx:    xxx $3ff8c
@@ -44734,6 +44960,7 @@ ObjectActionJump_03
         $35def  xx xx:      xxx $xx
         $35df1  xx xx:      xxx #$xx
         $35df3  xx xx:      xxx ++ ; $35e39
+        ;; holding down B
         $35df5  xx xx xx:   xxx $xxxx,x
         $35df8  xx xx:      xxx #$xx
         $35dfa  xx xx:      xxx + ; $35e03
@@ -44748,8 +44975,8 @@ ObjectActionJump_03
         $35e0d  xx xx:      xxx $xx
         $35e0f  xx xx:      xxx #$xx
         $35e11  xx xx:      xxx ++ ; $35e39
-        $35e13  xx xx xx:    xxx $xxxx
-        $35e16  xx xx xx:    xxx $xxxx
+        $35e13  xx xx xx:    xxx PlayerSwordChargeAmount
+        $35e16  xx xx xx:    xxx PlayerSwordChargeAmount
         $35e19  xx xx:       xxx #$xx
         $35e1b  xx xx:       xxx + ; $35e22
         $35e1d  xx xx:        xxx #$xx
@@ -44760,9 +44987,9 @@ ObjectActionJump_03
         $35e28  xx xx xx:     xxx StartAudioTrack
 +       $35e2b  xx xx xx:    xxx MaxChargeLevel
         $35e2e  xx xx xx:    xxx $35d7e,y
-        $35e31  xx xx xx:    xxx $xxxx
+        $35e31  xx xx xx:    xxx ObjectDirMetaspriteBase
         $35e34  xx xx:       xxx ++ ; $35e39
-        $35e36  xx xx xx:     xxx $xxxx
+        $35e36  xx xx xx:     xxx ObjectDirMetaspriteBase
 ++      $35e39  xx xx xx:   xxx $xxxx,x
         $35e3c  xx xx:      xxx +++ ; $35e6f
         $35e3e  xx xx:      xxx #$xx
@@ -44973,16 +45200,17 @@ DataTable_36017
 ;;; --------------------------------
         $3601f  xx xx xx:   xxx $361bb
 ;;; --------------------------------
-        $36022  xx xx xx:   xxx $xxxx
-        $36025  xx xx:      xxx $xx
-        $36027  xx xx xx:   xxx $xxxx
-        $3602a  xx xx:      xxx #$xx
-        $3602c  xx xx:      xxx $xx
-        $3602e  xx xx:      xxx #$xx
-        $36030  xx xx:      xxx $xx
-        $36032  xx xx xx:   xxx $36092,y
+        ;; This is about jumping
+        $36022  xx xx xx:   xxx EquippedMagic
+        $36025  xx xx:      xxx + ; $36030
+        $36027  xx xx xx:   xxx EquippedPassiveItem
+        $3602a  xx xx:      xxx #ITEM_RABBIT_BOOTS
+        $3602c  xx xx:      xxx + ; $36030
+        $3602e  xx xx:       xxx #$xx ; rabbit boots "magic"
++       $36030  xx xx:      xxx $xx
+        $36032  xx xx xx:   xxx $36092,y ; 0 or 8
         $36035  xx:         xxx
-        $36036  xx xx xx:   xxx $xxxx,y
+        $36036  xx xx xx:   xxx $xxxx,y ; $43 or $4b
         $36039  xx xx:      xxx $xx
         $3603b  xx:         xxx
 ;;; --------------------------------
@@ -45025,7 +45253,7 @@ UseMagicJump
         $3607e              .word ($360f4) ; 06 barrier
         $36080              .word ($36161) ; 07 change
         $36082              .word ($36112) ; 08 flight
-        $36084              .word ($36143) ; 09 ??
+        $36084              .word ($36143) ; 09 rabbit boots?
         $36086              .word ($360a2)
         $36088              .word ($360a2)
         $3608a              .word ($360a2)
@@ -56835,15 +57063,16 @@ DialogFollowupActionJump_0c
         $3d262  xx:         xxx
 ;;; --------------------------------
 DialogFollowupActionJump_09
+        ;; Talk to Zebu student
         $3d263  xx xx:      xxx #SFX_TREASURE
         $3d265  xx xx xx:   xxx StartAudioTrack
-        $3d268  xx xx:      xxx #$xx
+        $3d268  xx xx:      xxx #$xx ; give 100 gold
         $3d26a  xx:         xxx
         $3d26b  xx xx xx:   xxx $xxxx
         $3d26e  xx xx xx:   xxx $xxxx
-        $3d271  xx xx:      xxx $xx
-        $3d273  xx xx xx:   xxx $xxxx
-        $3d276  xx xx:      xxx #$xx ; 8000 -> 34000
+        $3d271  xx xx:      xxx + ; $3d276
+        $3d273  xx xx xx:    xxx $xxxx
++       $3d276  xx xx:      xxx #$xx ; 8000 -> 34000
         $3d278  xx xx xx:   xxx BankSwitch8k_8000
         $3d27b  xx xx:      xxx #$xx ; Money
         $3d27d  xx xx xx:   xxx DisplayNumberInternal
@@ -57842,11 +58071,12 @@ MainGameModeJump_24_EmptyShop
         $3da09  xx xx:      xxx #$xx
         $3da0b  xx:         xxx
 ;;; --------------------------------
+	;; Walk into shop?
         $3da0c  xx xx xx:   xxx $3fe00
         $3da0f  xx xx xx:   xxx $3dafc
         $3da12  xx xx:      xxx #$xx
         $3da14  xx xx xx:   xxx BankSwitch8k_8000
-        $3da17  xx xx xx:   xxx $34c0e
+        $3da17  xx xx xx:   xxx LoadPalettesForLocation
         $3da1a  xx xx:      xxx #$xx
         $3da1c  xx xx xx:   xxx $xxxx
         $3da1f  xx xx:      xxx #$xx
@@ -57863,24 +58093,24 @@ MainGameModeJump_24_EmptyShop
         $3da3c  xx xx:      xxx #$xx
         $3da3e  xx xx xx:   xxx BankSwitch16k
         $3da41  xx xx:      xxx #$xx
-        $3da43  xx xx xx:   xxx $35b45
-        $3da46  xx xx:      xxx #$xx
-        $3da48  xx xx xx:   xxx $xxxx
-        $3da4b  xx xx xx:   xxx $xxxx
-        $3da4e  xx xx xx:   xxx $3dabf
-        $3da51  xx xx:      xxx $xx
-        $3da53  xx xx:      xxx $xx
-        $3da55  xx xx:      xxx $xx
-        $3da57  xx xx:      xxx #$xx
-        $3da59  xx xx:      xxx $xx
+        $3da43  xx xx xx:   xxx ObjectActionJump_01
+-       $3da46  xx xx:       xxx #$xx
+        $3da48  xx xx xx:    xxx $xxxx
+        $3da4b  xx xx xx:    xxx $xxxx
+        $3da4e  xx xx xx:    xxx $3dabf
+        $3da51  xx xx:       xxx $xx
+        $3da53  xx xx:       xxx $xx
+        $3da55  xx xx:       xxx $xx
+        $3da57  xx xx:       xxx #$xx
+        $3da59  xx xx:      xxx - ; $3da46
         $3da5b  xx xx:      xxx #$xx
         $3da5d  xx xx xx:   xxx $xxxx
-        $3da60  xx xx xx:   xxx $3dabf
-        $3da63  xx xx:      xxx $xx
-        $3da65  xx xx:      xxx $xx
-        $3da67  xx xx:      xxx $xx
-        $3da69  xx xx:      xxx #$xx
-        $3da6b  xx xx:      xxx $xx
+-       $3da60  xx xx xx:    xxx $3dabf
+        $3da63  xx xx:       xxx $xx
+        $3da65  xx xx:       xxx $xx
+        $3da67  xx xx:       xxx $xx
+        $3da69  xx xx:       xxx #$xx
+        $3da6b  xx xx:      xxx - ; $3da60
         $3da6d  xx xx:      xxx #$xx
         $3da6f  xx xx xx:   xxx BankSwitch16k
 ;;; --------------------------------
@@ -57924,12 +58154,12 @@ MainGameModeJump_24_EmptyShop
         $3dac2  xx xx:      xxx #$xx
         $3dac4  xx xx xx:   xxx BankSwitch16k
         $3dac7  xx xx:      xxx #$xx
-        $3dac9  xx xx xx:   xxx $35b45
+        $3dac9  xx xx xx:   xxx ObjectActionJump_01
         $3dacc  xx xx xx:   xxx $xxxx
         $3dacf  xx xx xx:   xxx $xxxx,x
         $3dad2  xx xx:      xxx #$xx
         $3dad4  xx xx xx:   xxx $xxxx,x
-        $3dad7  xx xx xx:   xxx $3ff8c
+        $3dad7  xx xx xx:   xxx DrawAllObjectSprites
 ;;; --------------------------------
         $3dada  xx xx:      xxx #$xx
 -       $3dadc  xx xx xx:    xxx $xxxx,y

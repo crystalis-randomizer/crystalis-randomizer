@@ -248,6 +248,9 @@ export const FLAGS = [{
     flag: 'Td',
     name: 'Deo\'s pendant works while moving',
   }, {
+    flag: 'Tr',
+    name: 'Rabbit boots charge sword faster',
+  }, {
     flag: 'Tw',
     name: 'Disable wild warp',
     text: `Wild warp will only teleport back to Mezame shrine (to prevent
@@ -364,6 +367,10 @@ export const FLAGS = [{
     flag: 'Ex',
     name: 'Experience scales faster',
     text: `Less grinding will be required to "keep up" with the game difficulty.`,
+  }, {
+    flag: 'Ec',
+    name: 'Charge while walking',
+    text: `Charge level will increase even while moving.`,
   }],
 }, {
   section: 'Debug Mode',

@@ -34,6 +34,7 @@ define ObjectElementalDefense $500
 define ObjectExp $520
 define PlayerMP $708
 define EquippedConsumableItem  $715
+define EquippedPassiveItem     $716
 
 
 define InvSwords $6430
@@ -60,7 +61,9 @@ define ONE_MINUS_PITY_MP  0
 
 define PITY_HP_AMOUNT     5
 
-define ITEM_OPEL_STATUE  $26
+;;; Constants
+define ITEM_RABBIT_BOOTS     $12
+define ITEM_OPEL_STATUE      $26
 define SFX_MONSTER_HIT       $21
 define SFX_ATTACK_IMMUNE     $3a
 
@@ -1419,6 +1422,22 @@ CheckForLowHpMp:
   rts
 
 
+.ifdef _EASY_MODE_CHARGE_WHILE_WALKING
+;;; Remove the jump away when charging is not yet ready.
+.org $35e00
+  nop
+  nop
+  nop
+.assert $35e03
+.endif
+
+.ifdef _RABBIT_BOOTS_CHARGE_FASTER
+.org $35e0d
+  jsr CheckChargeStep
+  nop
+.assert $35e11
+.endif
+
 ;;.org $3c010
 ;;;; Adjusted inventory update - use level instead of sword
 ;;   ldy $0719  ; max charge level
@@ -1760,7 +1779,15 @@ CheckFlag0:
 .assert < $3fe00 ; end of free space started at 3f9ba
 
 .org $3fe01
-  ;; free space?
+CheckChargeStep:
+  lda $08
+  and #$03
+  ldy EquippedPassiveItem
+  cpy #ITEM_RABBIT_BOOTS
+  bne +
+   and #$01
++ ora #$00
+  rts
 .assert < $3fe16
 
 ;; NOTE: 3fe2e might be safer than 3fe18

@@ -34,7 +34,7 @@ export default ({
     // NOTE: THIS BREAKS CLOSURE!
     // We need it commented to work in closure, but uncommented to work uncompiled in browser
     // Currently no good way to do both without editing source :-(
-    await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader());
+    //await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader());
   }
 });
 
@@ -79,6 +79,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     _EXTRA_PITY_MP: true,  // TODO: allow disabling this
     _FIX_OPEL_STATUE: true,
     _FIX_SHAKING: true,
+    _FIX_SWORD_CHARGE_GLITCH: flags.check('Fc'),
     _FIX_VAMPIRE: true,
     _LEATHER_BOOTS_GIVE_SPEED: flags.check('Ts'),
     _NERF_WILD_WARP: flags.check('Tw'),

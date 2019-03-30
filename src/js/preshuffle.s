@@ -82,6 +82,8 @@ ItemGet_FindOpenSlot:
 ItemUse_TradeIn:
 .org $217cd
 Shop_NothingPressed:
+.org $21c7a
+AfterLoadGame:
 .org $2791c
 PlayerDeath:
 .org $279b0
@@ -935,7 +937,13 @@ FillQuestItemsFromBuffer: ; 214af
 + lda #$02
   sta $2e
   rts
-        ;; FREE: 35 bytes
+
+;;; Support for fixing sword charge glitch
+ReloadInventoryAfterLoad:
+  jsr PostInventoryMenu
+  jmp AfterLoadGame
+
+        ;; FREE: 29 bytes
 .assert < $21500
 
 
@@ -1243,6 +1251,13 @@ ArmorShopScaling:
 
 
 
+.ifdef _FIX_SWORD_CHARGE_GLITCH
+.org $21bce
+  jmp ReloadInventoryAfterLoad
+.org $21bde
+  jmp ReloadInventoryAfterLoad
+.endif
+
 
 .bank $26000 $a000:$2000
 
@@ -1325,9 +1340,8 @@ CheckForLowHpMp:
     bcc +
      sta PlayerMP
 +   rts
+
 .assert < $2fc00 ; end of unused block from $2fbd5
-
-
 
 
 
@@ -1534,8 +1548,21 @@ CheckSacredShieldForCurse:
    pla
 + rts
 
+;;; For fixing sword charge glitch
+ReloadInventoryAfterContinue:
+  sta $07e8
+  jsr PostInventoryMenu
+  rts
+
+        ;; 23 bytes free
+
 .assert < $3c482  ; end of empty area from $3c446
 
+
+.ifdef _FIX_SWORD_CHARGE_GLITCH
+.org $3c9fb
+  jsr ReloadInventoryAfterContinue
+.endif
 
 .ifdef _CHECK_FLAG0
 ;;; Note: this is a debugging aid added to determine if anything
@@ -1825,7 +1852,6 @@ FinishEquippingConsumable:
 ;; free space
 
 .assert < $3fe78
-
 
 
 .org $3ff44 ; free space to 3ff80

@@ -346,6 +346,11 @@ export const FLAGS = [{
            money actually mean something.  To compensate, gold drops money
            will be scaled up somewhat.`,
   }, {
+    flag: 'Fc',
+    name: 'Disable sword charge glitch',
+    text: `Sword charge glitch will no longer work.  It will be impossible to
+           achieve charge levels without having correct inventory.`,
+  }, {
     flag: 'Ft',
     name: 'Disable statue glitch',
     text: `Statues will instead always push downwards, making it impossible to
@@ -405,6 +410,8 @@ const FLAG_CONFLICTS = {
   Gw: /Tw/,
   Ft: /Gt/,
   Gt: /Ft/,
+  Fc: /Gc/,
+  Gc: /Fc/,
 };
 
 export class FlagSet {

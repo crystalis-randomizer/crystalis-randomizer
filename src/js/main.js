@@ -159,7 +159,6 @@ const shuffleRom = async (seed) => {
   const shuffled = rom.slice();
   let done = false;
   const flagsClone = new FlagSet(String(flags)); // prevent modifying
-  flagsClone.set('Br', true); // experiment - always on
   document.body.classList.add('shuffling');
   const log = flags.check('Ds') ? {} : undefined;
   const showWork = () => {

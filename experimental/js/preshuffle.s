@@ -542,6 +542,10 @@ ItemGetData_03: ; sword of thunder
 
 ;; asina reveal depends on mesia recording (01b), not ball of water (01f)
 ;; - this ensures you have both sword and ball to get to her --> ???
+.org $1c815 ; throne room back door guard spawn condition
+  .byte $20,$20,$a0,$1b,$ff ; leave two bytes unused
+.assert < $1c81b
+
 .org $1c81f
   .byte $1b
 .org $1c822
@@ -1251,7 +1255,7 @@ ArmorShopScaling:
 
 
 
-.ifdef _FIX_SWORD_CHARGE_GLITCH
+.ifdef _DISABLE_SWORD_CHARGE_GLITCH
 .org $21bce
   jmp ReloadInventoryAfterLoad
 .org $21bde
@@ -1559,7 +1563,7 @@ ReloadInventoryAfterContinue:
 .assert < $3c482  ; end of empty area from $3c446
 
 
-.ifdef _FIX_SWORD_CHARGE_GLITCH
+.ifdef _DISABLE_SWORD_CHARGE_GLITCH
 .org $3c9fb
   jsr ReloadInventoryAfterContinue
 .endif

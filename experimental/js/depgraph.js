@@ -532,7 +532,7 @@ const enterMtSabreNorthTeleport = condition('Enter Mt Sabre North (Teleport)')
 const asinaTrigger          = condition('Asina in her room')
                                 // NOTE: this is just ballOfWater in vanilla.
                                 .option(mesiaRecording);
-const paralysisOrAsina      = condition('Paralysis or Ball of Water')
+const paralysisOrAsina      = condition('Paralysis or Asina revealed')
                                 .option(paralysis).option(asinaTrigger).option(statueGlitch);
 // TODO - consider adding healedDolphin and/or returnedFogLamp here?  otherwise, flight alone
 // is basically enough (though with flight the dolphin is basically just a convenience).

@@ -1440,20 +1440,9 @@ CheckForLowHpMp:
   rts
 
 
-.ifdef _EASY_MODE_CHARGE_WHILE_WALKING
-;;; Remove the jump away when charging is not yet ready.
+.ifdef _RABBIT_BOOTS_CHARGE_WHILE_WALKING
 .org $35e00
-  nop
-  nop
-  nop
-.assert $35e03
-.endif
-
-.ifdef _RABBIT_BOOTS_CHARGE_FASTER
-.org $35e0d
-  jsr CheckChargeStep
-  nop
-.assert $35e11
+  jsr CheckRabbitBoots
 .endif
 
 ;;.org $3c010
@@ -1810,15 +1799,18 @@ CheckFlag0:
 .assert < $3fe00 ; end of free space started at 3f9ba
 
 .org $3fe01
-CheckChargeStep:
-  lda $08
-  and #$03
-  ldy EquippedPassiveItem
-  cpy #ITEM_RABBIT_BOOTS
+CheckRabbitBoots:
+  lda EquippedPassiveItem
+  cmp #ITEM_RABBIT_BOOTS ; require rabbit boots
   bne +
-   and #$01
-+ ora #$00
+  lda $06c0
+  cmp #$10 ; don't charge past level 2
+  bcs +
   rts
+  ;; return instead to after the charge is increased
++ pla
+  pla
+  jmp $9e39
 .assert < $3fe16
 
 ;; NOTE: 3fe2e might be safer than 3fe18

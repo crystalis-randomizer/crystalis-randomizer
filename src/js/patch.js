@@ -76,7 +76,6 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     _DISABLE_SWORD_CHARGE_GLITCH: flags.check('Fc'),
     _DISABLE_WILD_WARP: false,
     _DISPLAY_DIFFICULTY: true,
-    _EASY_MODE_CHARGE_WHILE_WALKING: flags.check('Ec'),
     _EXTRA_PITY_MP: true,  // TODO: allow disabling this
     _FIX_OPEL_STATUE: true,
     _FIX_SHAKING: true,
@@ -87,7 +86,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     _NORMALIZE_SHOP_PRICES: touchShops,
     _PITY_HP_AND_MP: true,
     _PROGRESSIVE_BRACELET: true,
-    _RABBIT_BOOTS_CHARGE_FASTER: flags.check('Tr'),
+    _RABBIT_BOOTS_CHARGE_WHILE_WALKING: flags.check('Tr'),
     _REVERSIBLE_SWAN_GATE: true,
     _REQUIRE_HEALED_DOLPHIN_TO_RIDE: flags.check('Rd'),
     _SAHARA_RABBITS_REQUIRE_TELEPATHY: false,

@@ -249,7 +249,9 @@ export const FLAGS = [{
     name: 'Deo\'s pendant works while moving',
   }, {
     flag: 'Tr',
-    name: 'Rabbit boots charge sword faster',
+    name: 'Rabbit boots enable charge while walking',
+    text: `Sword can be charged to level 2 while walking (prevents charging to
+           level 3 to preserve MP).`,
   }, {
     flag: 'Tw',
     name: 'Disable wild warp',
@@ -372,10 +374,6 @@ export const FLAGS = [{
     flag: 'Ex',
     name: 'Experience scales faster',
     text: `Less grinding will be required to "keep up" with the game difficulty.`,
-  }, {
-    flag: 'Ec',
-    name: 'Charge while walking',
-    text: `Charge level will increase even while moving.`,
   }],
 }, {
   section: 'Debug Mode',

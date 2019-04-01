@@ -25,6 +25,10 @@
     <h1>Getting Started</h1>
     <div>
       <ul>
+      <li><b>Start with a casual flagset</b>, even if you're super-familiar
+        with the original game!  Many of the flags, especially the "hard-mode"
+        flags, are simply not suited to beginning players, and will most likely
+        lead to frustraton.
       <li>A good way to get started is to turn on some casual flags and to use
         a tracker (such as the one provided here, or else the emotracker pack).
         Clicking on "Track" in the top menu will automatically
@@ -81,6 +85,8 @@
           <a href="https://www.youtube.com/watch?v=bsHdN4_5q4M&list=PLyA9BtOXggkiOGWAj-tjnqLang97E8G7C&index=1">Teleport skip</a>,
           <a href="https://www.youtube.com/watch?v=P2Ou1TI8yTk&index=4&list=PLyA9BtOXggkiOGWAj-tjnqLang97E8G7C">Rabbit skip</a>,
           <a href="https://www.youtube.com/watch?v=X0SFVii-U-U&index=6&list=PLyA9BtOXggkiOGWAj-tjnqLang97E8G7C">Ghetto flight</a>
+        <li>Many of these glitches may be disabled completely.  If the shop
+          glitch is disabled, then larger gold drops will be provided.
         </ul>
       <li>The early game is the hardest, when you don't have many sword options.
         Once it starts to open up a bit, things usually get quite a bit easier.
@@ -125,6 +131,11 @@
         (though this can be disabled).  The warp checkpoint is immediately set,
         and in case there's no way back, <span class="npc">Asina</span> will
         teleport the player back to <span class="location">Mezame Shrine</span>.
+      <li>When continuing, a minimum amount of "pity" HP and MP are given.
+        Normally this is 5 HP and 1 MP (to prevent immediate death from
+        terrain and ensure <span class="magic">Flight</span> is possible), but
+        when swordless it is 20 MP (to ensure <span class="magic">Change</span>
+        or <span class="magic">Teleport</span> is possible as well).
       </ul>
     </div>
   </section>
@@ -138,6 +149,14 @@
       <li>Key items can overflow into an invisible buffer; if you have items in
         this buffer, you can "drop" a key item to recover the overflowed items.
         The "dropped" item will take its place in the buffer.
+      <li><span class="item">Alarm Flute</span> is now a key item, given by
+        Zebu's student (along with the starting cash) in Leaf.
+      <li><span class="item">Alarm Flute</span> and <span class="item">Flute of
+        Lime</span> are now multi-use items. Each will disappear after the
+        second successful use.
+      <li>The second <span class="item">Flute of Lime</span> chest now contains
+        a <span class="item">Mirrored Shield</span> and is counted as a bonus
+        item for shuffling purposes.
       <li>Orbs and bracelets are progressive upgrades: the first item you get,
         even if it says "bracelet" will give you the orb, and the second will
         give the bracelet.  The distinction is important only because
@@ -153,19 +172,39 @@
         now always just 2, on top of the base power of the sword.
       <li>The <span class="item">Power Ring</span> is nerfed to double the
         sword base damage, rather than the level.
-      <li>Armors and shields are nerfed to only provide half the defense value.
-        Monster attack values are rescaled to match.
-      <li>Powerful armors will only provide up to a maximum of LVL*2 defense.
-      <li><span class="item">Pendant of Deo</span> is buffed to provide MP while moving.
-      <li><span class="item">Iron Necklace</span> and Shield Ring are buffed to double the armor/shield
-        value, rather than the level.
-      <li><span class="item">Medical Herb</span> can be buffed to 2x or 3x the effectiveness.
+      <li><span class="item">Pendant of Deo</span> is buffed to provide MP while
+        moving (under <span class="flag">Td</span>).
+      <li><span class="item">Iron Necklace</span> and <span class="item">Shield
+        Ring</span> are buffed to double the armor/shield value, rather than the
+        level.
+      <li><span class="item">Rabbit Boots</span> now also allows charging swords
+        to level 2 while moving (under <span class="flag">Tr</span>).
       <li><span class="item">Leather Boots</span> are (optionally) replaced with
         <span class="item">Speed Boots</span>.
+      <li><span class="item">Medical Herb</span> and <span class="item">Fruit of
+        Power</span> can be optionally buffed to three different levels: in
+        hard mode (<span class="flag">Hm</span>) there is no buff (32 HP, 32 MP),
+        in default mode (no flag) they are buffed to 64 HP and 48 MP.  In easy
+        mode (<span class="flag">Em</span>) they are buffed to 96 HP and 64 MP.
       <li>Mimics will only ever shuffle into visible chests (this does not include
         boss drops).
       <li>Consumables and armor/shields can only shuffle into chests, so that
         a full inventory does not cause the item to disappear.
+      <li><span class="item">Opel Statue</span> now works automatically and
+        cannot be selected.  It also correctly clears status effects.
+      <li><span class="item">Psycho Shield</span> and <span class="item">Psycho
+        Armor</span> are nerfed to only provide 20 DEF each.
+        <span class="item">Battle Shield</span> and <span class="item">Ceramic
+        Armor</span> are now the armors with highest (32) DEF.
+      <li><span class="item">Sacred Shield</span> now prevents curse instead of
+        paralysis.  <span class="item">Ceramic Shield</span> blocks paralysis.
+      <li><span class="item">Platinum Shield</span> and <span class="item">Mirrored
+        Shield</span> each have 2 DEF extra.
+      <li>Powerful armors will only provide up to a maximum of LVL*3 defense.
+      <li>Shops are now randomized (under <span class="flag">Ps</span>).
+        The prices of tools and inns increases over time (doubling every 10
+        scaling levels), while the prices of armors decreases over time (halving
+        every 12 scaling levels).
       </ul>
     </div>
   </section>

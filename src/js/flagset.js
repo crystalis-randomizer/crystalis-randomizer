@@ -2,21 +2,21 @@ const REPEATABLE_FLAGS = new Set(['S']);
 
 export const PRESETS = [{
   title: 'Casual',
-  flags: 'Ds Emrx Mr Rp Sbk Sc Sm Tasdw',
+  flags: 'Ds Emrsx Mr Rp Sbk Sc Sm Tadrsw',
   descr: `Basic flags for a relatively easy playthrough.`
 }, {
   title: 'Intermediate',
-  flags: 'Ds Em Fs Gt Mr Pbns Rlpt Sbkm Sct Tasdw',
+  flags: 'Ds Ems Fs Gt Mr Pbns Rlpt Sbkm Sct Tadrsw',
   descr: `Slightly more challenge than Casual but still approachable.`,
   default: true,
 }, {
   title: 'Full Shuffle',
-  flags: 'Em Fs Gt Mr Pbns Rlpt Sbckmt Tasdw',
+  flags: 'Em Fs Gt Mr Pbns Rlpt Sbckmt Tadrsw',
   descr: `Intermediate flags with full shuffle and no spoiler log.`,
 }, {
   // TODO: add 'Ht' for maxing out tower scaling
   title: 'Advanced',
-  flags: 'Fs Gfprt Hbw Mr Pbns Rlpt Sbckt Sm Tasdw',
+  flags: 'Fs Gfprt Hbw Mr Pbns Rlpt Sbckt Sm Tadrsw',
   descr: `A balanced randomization with quite a bit more difficulty.`,
 }, {
   // TODO: add 'Ht'
@@ -198,7 +198,8 @@ export const FLAGS = [{
     flag: 'Hs',
     hard: true,
     name: 'Matching sword not guaranteed',
-    text: `Player may be required to fight bosses with the wrong sword.`,
+    text: `Player may be required to fight bosses with the wrong sword, which
+           may require using "tink strats" dealing 1 damage per hit.`,
   // }, {
   //   flag: 'Ht',
   //   hard: true,

@@ -23,13 +23,9 @@ Try it out at https://crystalisrandomizer.com
 ### Randomization
 
 * [x] Shuffle monster locations
-* [x] Shuffle locations of 6 non-essential items (shield ring, iron necklace,
-      leather boots, power ring, warrior ring, deo's pendant)
-* [x] Shuffle all item locations (this requires a complete internal representation
-      of the game's dependency graph to ensure all shuffled games are winnable)
+* [x] Shuffle all item locations, including Alarm Flute which is now a key item
+* [x] Shuffle shop items and prices, with normalization
 * [ ] TODO - Randomize the location of some item-giving NPCs (particularly Akahana)
-* [ ] TODO - Shuffle shop items
-* [ ] TODO - Shuffle Alarm Flute into key item pool
 
 ### Monster Adjustments
 
@@ -59,6 +55,7 @@ Try it out at https://crystalisrandomizer.com
       game with constant movement
 * [x] Leather Boots are now Speed Boots: movement speed is noticeably faster, in
       addition to the normal effect of preventing terrain damage
+* [x] Rabbit Boots allow sword charging while moving
 
 ### Armor Adjustments
 

@@ -362,6 +362,11 @@ export const FLAGS = [{
   section: 'Easy Mode',
   text: `The following options make parts of the game easier.`,
   flags: [{
+    flag: 'Es',
+    name: 'Guarantee starting sword',
+    text: `The Leaf elder is guaranteed to give a sword.  It will not beb
+           required to deal with any enemies before finding the first sword.`,
+  }, {
     flag: 'Er',
     name: 'Guarantee refresh',
     text: `Guarantees the Refresh spell will be available before fighting Tetrarchs.`,

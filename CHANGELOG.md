@@ -33,6 +33,8 @@
       proportionally.
     * Increased Platinum and Mirrored Shield defenses by 2 each.
     * Armor defense capped at 3 * Level
+* Flag `Tr` to have rabbit boots charge to level 2 while walking.
+* Flag `Es` to guarantee a starting sword for easier play.
 
 ## 1.0.1
 * Item shuffle is now done using "assumed fill".

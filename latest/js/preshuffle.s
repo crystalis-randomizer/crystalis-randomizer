@@ -34,6 +34,7 @@ define ObjectElementalDefense $500
 define ObjectExp $520
 define PlayerMP $708
 define EquippedConsumableItem  $715
+define EquippedPassiveItem     $716
 
 
 define InvSwords $6430
@@ -60,7 +61,9 @@ define ONE_MINUS_PITY_MP  0
 
 define PITY_HP_AMOUNT     5
 
-define ITEM_OPEL_STATUE  $26
+;;; Constants
+define ITEM_RABBIT_BOOTS     $12
+define ITEM_OPEL_STATUE      $26
 define SFX_MONSTER_HIT       $21
 define SFX_ATTACK_IMMUNE     $3a
 
@@ -79,6 +82,8 @@ ItemGet_FindOpenSlot:
 ItemUse_TradeIn:
 .org $217cd
 Shop_NothingPressed:
+.org $21c7a
+AfterLoadGame:
 .org $2791c
 PlayerDeath:
 .org $279b0
@@ -537,6 +542,10 @@ ItemGetData_03: ; sword of thunder
 
 ;; asina reveal depends on mesia recording (01b), not ball of water (01f)
 ;; - this ensures you have both sword and ball to get to her --> ???
+.org $1c815 ; throne room back door guard spawn condition
+  .byte $20,$20,$a0,$1b,$ff ; leave two bytes unused
+.assert < $1c81b
+
 .org $1c81f
   .byte $1b
 .org $1c822
@@ -932,7 +941,13 @@ FillQuestItemsFromBuffer: ; 214af
 + lda #$02
   sta $2e
   rts
-        ;; FREE: 35 bytes
+
+;;; Support for fixing sword charge glitch
+ReloadInventoryAfterLoad:
+  jsr PostInventoryMenu
+  jmp AfterLoadGame
+
+        ;; FREE: 29 bytes
 .assert < $21500
 
 
@@ -1240,6 +1255,13 @@ ArmorShopScaling:
 
 
 
+.ifdef _DISABLE_SWORD_CHARGE_GLITCH
+.org $21bce
+  jmp ReloadInventoryAfterLoad
+.org $21bde
+  jmp ReloadInventoryAfterLoad
+.endif
+
 
 .bank $26000 $a000:$2000
 
@@ -1322,9 +1344,8 @@ CheckForLowHpMp:
     bcc +
      sta PlayerMP
 +   rts
+
 .assert < $2fc00 ; end of unused block from $2fbd5
-
-
 
 
 
@@ -1398,6 +1419,13 @@ CheckForLowHpMp:
 .assert < $35152
 
 
+;;; Change sacred shield to block curse instead of paralysis
+.org $352ce
+  cmp #$05 ; ceramic shield blocks paralysis
+.org $3534c
+  jsr CheckSacredShieldForCurse
+
+
 .ifdef _DISABLE_STATUE_GLITCH
 .org $3559a
   ;; Just always push down.
@@ -1411,6 +1439,11 @@ CheckForLowHpMp:
   sta $03e2
   rts
 
+
+.ifdef _RABBIT_BOOTS_CHARGE_WHILE_WALKING
+.org $35e00
+  jsr CheckRabbitBoots
+.endif
 
 ;;.org $3c010
 ;;;; Adjusted inventory update - use level instead of sword
@@ -1447,28 +1480,25 @@ CheckForLowHpMp:
    adc $0421  ; player level
    sta $03e1  ; player attack
    lda $0421  ; player level
-.assert $3c02b   ; NOTE - MUST BE EXACT!!!!
-
+   sta $62
 ;; Max out armor and shield def at 2*level
-.org $3c02b
-  sta $61
-  asl $61
-  ldy $0713
-  lda ArmorDefense,y
-  cmp $61
-  bcc +
-   lda $61
-+ ldy $0716 ; equipped passive item
-  cpy #$10  ; iron necklace
-  bne +
+   sta $61
    asl
-+ clc
-  adc $0421 ; armor defense
-  sta $0401
-.org $3c04a
-  jsr PatchUpdateShieldDefense
-  nop
-  nop
+   adc $62
+   sta $61
+   ldy $0713
+   lda ArmorDefense,y
+   cmp $61
+   bcc +
+    lda $61
++  ldy $0716 ; equipped passive item
+   cpy #$10  ; iron necklace
+   bne +
+    asl
++  clc
+   adc $62   ; armor defense
+   jsr PatchUpdateShieldDefense
+   nop
 .assert $3c04f ; NOTE: must be exact!
   ; STA PLAYER_DEF
 
@@ -1493,6 +1523,7 @@ PostUpdateEquipment:
   nop
 .endif
   rts
+
 ApplySpeedBoots:
   lda #$06   ; normal speed
   sta $0341  ; player speed
@@ -1501,8 +1532,30 @@ ApplySpeedBoots:
   bne +
    inc $0341 ; speed up by 1
 + rts
+
+CheckSacredShieldForCurse:
+  lda $0714 ; equipped shield
+  cmp #$06  ; sacred shield
+  bne +
+   pla
+   pla
++ rts
+
+;;; For fixing sword charge glitch
+ReloadInventoryAfterContinue:
+  sta $07e8
+  jsr PostInventoryMenu
+  rts
+
+        ;; 23 bytes free
+
 .assert < $3c482  ; end of empty area from $3c446
 
+
+.ifdef _DISABLE_SWORD_CHARGE_GLITCH
+.org $3c9fb
+  jsr ReloadInventoryAfterContinue
+.endif
 
 .ifdef _CHECK_FLAG0
 ;;; Note: this is a debugging aid added to determine if anything
@@ -1746,7 +1799,18 @@ CheckFlag0:
 .assert < $3fe00 ; end of free space started at 3f9ba
 
 .org $3fe01
-  ;; free space?
+CheckRabbitBoots:
+  lda EquippedPassiveItem
+  cmp #ITEM_RABBIT_BOOTS ; require rabbit boots
+  bne +
+  lda $06c0
+  cmp #$10 ; don't charge past level 2
+  bcs +
+  rts
+  ;; return instead to after the charge is increased
++ pla
+  pla
+  jmp $9e39
 .assert < $3fe16
 
 ;; NOTE: 3fe2e might be safer than 3fe18
@@ -1786,7 +1850,6 @@ FinishEquippingConsumable:
 .assert < $3fe78
 
 
-
 .org $3ff44 ; free space to 3ff80
 
 PatchGrantItemInRegisterA:
@@ -1808,6 +1871,7 @@ PatchGrantItemInRegisterA:
 + rts
 
 PatchUpdateShieldDefense:
+  sta $0401
   ldy $0714
   lda ShieldDefense,y
   cmp $61
@@ -1818,7 +1882,7 @@ PatchUpdateShieldDefense:
   bne +
    asl
 + clc
-  adc $0421 ; shield defense
+  adc $62 ; shield defense
   sta $0400
   rts
 

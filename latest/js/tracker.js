@@ -7,49 +7,48 @@ import {FlagSet} from './flagset.js';
 import {Location, Slot, TrackerNode} from './nodes.js';
 
 const BOXES = `
-sword-of-wind $00 WIND
-sword-of-fire $01 FIRE
-sword-of-water $02 WATER
-sword-of-thunder $03 THUN
-windmill-key $32 MILL
-statue-of-onyx $25 ONYX
-insect-flute $27 INSECT
-key-to-prison $33 PRISON
-flute-of-lime $28 LIME
-# flute-of-lime $5b LIME
+sword-of-wind $00
+sword-of-fire $01
+sword-of-water $02
+sword-of-thunder $03
+windmill-key $32
+statue-of-onyx $25
+insect-flute $27
+key-to-prison $33
+flute-of-lime $28
 
 ball-of-wind $05 
 ball-of-fire $07
 ball-of-water $09
 ball-of-thunder $0b
-kirisa-plant $3c KIRISA
-fog-lamp $35 FOG
-shell-flute $36 SHELL
-broken-statue $38 BRKN
-eye-glasses $37 EYE
-glowing-lamp $39 GLOW
+kirisa-plant $3c
+alarm-flute $31
+fog-lamp $35
+shell-flute $36
+broken-statue $38
+eye-glasses $37
+glowing-lamp $39
 
 tornado-bracelet $06
 flame-bracelet $08
 blizzard-bracelet $0a
 storm-bracelet $0c
-love-pendant $3b LOVE
-key-to-styx $34 STXY
-opel-statue $26 OPEL
-fruit-of-repun $23 REPUN
-sacred-shield $12 SCRD
-ivory-statue $3d IVORY
+love-pendant $3b
+key-to-styx $34
+opel-statue $26
+sacred-shield $12
+ivory-statue $3d
 
-rabbit-boots $2e RABBIT
-gas-mask $29 GAS
-shield-ring $30 SHIELD
-iron-necklace $2c IRON
-leather-boots $2f LTHR
-power-ring $2a POWER
-warrior-ring $2b WARR
-deos-pendant $2d DEO
-bow-of-moon $3e MOON
-bow-of-sun $3f SUN
+rabbit-boots $2e
+gas-mask $29
+shield-ring $30
+iron-necklace $2c
+leather-boots $2f
+power-ring $2a
+warrior-ring $2b
+deos-pendant $2d
+bow-of-moon $3e
+bow-of-sun $3f
 
 refresh $41
 paralysis $42
@@ -59,8 +58,8 @@ recover $45
 barrier $46
 change $47
 flight $48
-psycho-armor $1c PSYCH
-bow-of-truth $40 TRUTH
+psycho-armor $1c
+bow-of-truth $40
 `;
 
 const SLOTS = [
@@ -145,7 +144,7 @@ const SLOTS = [
   [0x70,  40, 38, 0xb5, 0x0f], // karmine mimic 3
   // 59 medical herb
   [0x5a, 162, 97], // fruit of power oasis cave (over water)
-  [0x5b, 327,123], // flute of lime chest
+  [0x10, 327,123], // flute of lime chest (NOTE: changed 5b-> 10)
   [0x5c, 256, 79], // lysis plant evil spirit island
   [0x5d,  36,139], // lysis plant sabera level
   [0x5e,  14,229], // antidote mt sabre n
@@ -290,7 +289,7 @@ class Graph {
   }
 
   addSlot(index, x, y, loc, spawn) {
-    const mimic = index === 0x70;
+    const mimic = index >= 0x70;
     const slot =
         !mimic ?
             this.nodeFromSlot.get(index) :

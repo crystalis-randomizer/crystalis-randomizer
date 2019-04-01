@@ -2,21 +2,21 @@ const REPEATABLE_FLAGS = new Set(['S']);
 
 export const PRESETS = [{
   title: 'Casual',
-  flags: 'Ds Emrx Mr Rp Sbk Sc Sm Tasdw',
+  flags: 'Ds Emrsx Mr Rp Sbk Sc Sm Tadrsw',
   descr: `Basic flags for a relatively easy playthrough.`
 }, {
   title: 'Intermediate',
-  flags: 'Ds Em Fs Gt Mr Pbns Rlpt Sbkm Sct Tasdw',
+  flags: 'Ds Ems Fs Gt Mr Pbns Rlpt Sbkm Sct Tadrsw',
   descr: `Slightly more challenge than Casual but still approachable.`,
   default: true,
 }, {
   title: 'Full Shuffle',
-  flags: 'Em Fs Gt Mr Pbns Rlpt Sbckmt Tasdw',
+  flags: 'Em Fs Gt Mr Pbns Rlpt Sbckmt Tadrsw',
   descr: `Intermediate flags with full shuffle and no spoiler log.`,
 }, {
   // TODO: add 'Ht' for maxing out tower scaling
   title: 'Advanced',
-  flags: 'Fs Gfprt Hbw Mr Pbns Rlpt Sbckt Sm Tasdw',
+  flags: 'Fs Gfprt Hbw Mr Pbns Rlpt Sbckt Sm Tadrsw',
   descr: `A balanced randomization with quite a bit more difficulty.`,
 }, {
   // TODO: add 'Ht'
@@ -198,7 +198,8 @@ export const FLAGS = [{
     flag: 'Hs',
     hard: true,
     name: 'Matching sword not guaranteed',
-    text: `Player may be required to fight bosses with the wrong sword.`,
+    text: `Player may be required to fight bosses with the wrong sword, which
+           may require using "tink strats" dealing 1 damage per hit.`,
   // }, {
   //   flag: 'Ht',
   //   hard: true,
@@ -247,6 +248,11 @@ export const FLAGS = [{
   }, {
     flag: 'Td',
     name: 'Deo\'s pendant works while moving',
+  }, {
+    flag: 'Tr',
+    name: 'Rabbit boots enable charge while walking',
+    text: `Sword can be charged to level 2 while walking (prevents charging to
+           level 3 to preserve MP).`,
   }, {
     flag: 'Tw',
     name: 'Disable wild warp',
@@ -343,6 +349,11 @@ export const FLAGS = [{
            money actually mean something.  To compensate, gold drops money
            will be scaled up somewhat.`,
   }, {
+    flag: 'Fc',
+    name: 'Disable sword charge glitch',
+    text: `Sword charge glitch will no longer work.  It will be impossible to
+           achieve charge levels without having correct inventory.`,
+  }, {
     flag: 'Ft',
     name: 'Disable statue glitch',
     text: `Statues will instead always push downwards, making it impossible to
@@ -352,6 +363,11 @@ export const FLAGS = [{
   section: 'Easy Mode',
   text: `The following options make parts of the game easier.`,
   flags: [{
+    flag: 'Es',
+    name: 'Guarantee starting sword',
+    text: `The Leaf elder is guaranteed to give a sword.  It will not beb
+           required to deal with any enemies before finding the first sword.`,
+  }, {
     flag: 'Er',
     name: 'Guarantee refresh',
     text: `Guarantees the Refresh spell will be available before fighting Tetrarchs.`,
@@ -398,6 +414,8 @@ const FLAG_CONFLICTS = {
   Gw: /Tw/,
   Ft: /Gt/,
   Gt: /Ft/,
+  Fc: /Gc/,
+  Gc: /Fc/,
 };
 
 export class FlagSet {

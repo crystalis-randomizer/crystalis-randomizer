@@ -142,6 +142,8 @@ const allowStatueGlitch     = option('Allow statue glitch',
                                      opt('!Ft', false));
 const assumeSwordChargeGlitch = glitch(option('Assume sword charge glitch',
                                        opt('Gc', false)));
+const allowSwordChargeGlitch = option('Allow sword charge glitch',
+                                     opt('!Fc', false));
 const buffedMedicalHerb     = option('Buffed medical herb',
                                      opt('!Hm', true));
 
@@ -154,13 +156,13 @@ const buffedMedicalHerb     = option('Buffed medical herb',
 // Items
 ////////////////////////////////////////////////////////////////
 const swordOfWind           = item(0x00, 'Sword of Wind')
-                                .weight(5)
+                                .weight(flags.check('Es') ? 10 : 5)
                                 .fromPerson('Leaf elder', 0x0d)
                                 .npcSpawn(0x5e, 0x10, 1)
                                 .dialog(0x0d, 0xc0, 2)
                                 .key()
 const swordOfFire           = item(0x01, 'Sword of Fire')
-                                .weight(5)
+                                .weight(flags.check('Es') ? 10 : 5)
                                 .fromPerson('Oak elder', 0x1d)
                                 .dialog(0x1d, null, 3)
                                 .key();
@@ -471,7 +473,7 @@ const forgedCrystalis       = trigger('Forged Crystalis').get(crystalis);
 // Conditions
 ////////////////////////////////////////////////////////////////
 const swordChargeGlitch     = condition('Sword charge glitch')
-                                .option(assumeSwordChargeGlitch);
+                                .option(assumeSwordChargeGlitch, allowSwordChargeGlitch);
 const rabbitSkip            = condition('Rabbit skip')
                                 .option(assumeRabbitSkip);
 const teleportSkip          = condition('Teleport skip')
@@ -530,7 +532,7 @@ const enterMtSabreNorthTeleport = condition('Enter Mt Sabre North (Teleport)')
 const asinaTrigger          = condition('Asina in her room')
                                 // NOTE: this is just ballOfWater in vanilla.
                                 .option(mesiaRecording);
-const paralysisOrAsina      = condition('Paralysis or Ball of Water')
+const paralysisOrAsina      = condition('Paralysis or Asina revealed')
                                 .option(paralysis).option(asinaTrigger).option(statueGlitch);
 // TODO - consider adding healedDolphin and/or returnedFogLamp here?  otherwise, flight alone
 // is basically enough (though with flight the dolphin is basically just a convenience).
@@ -1076,7 +1078,7 @@ const waterfallCave3        = location(0x56, WFCV, 'Tunnel 3 (wide medusa hallwa
 // NOTE: no reverse path thru these ice walls - will soft lock!
 const waterfallCave4a       = location(0x57, WFCV, 'Tunnel 4a (left entrance)').cave()
                                 .from(waterfallCave3, destroyIce)
-                                .chest(mirroredShield, 0x19)
+                                .chest(mirroredShield.chest().bonus(), 0x19)
                                 .trigger(curedAkahana, fluteOfLime); // $64da:02
 const waterfallCave4b       = location(0x57, WFCV, 'Tunnel 4b (right entrance)').cave()
                                 .from(waterfallCave3, destroyIce) // $64da:01
@@ -1923,6 +1925,8 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
     itemToSlot.set(slot.item, slot);
   }
 
+  const isSword = (item) => item.item.id < 4;
+  let swords = new Set();
   const fits = (slot, item) => {
     // If the slot type is not shuffled, it must not have been moved.
     if (buckets[slotType(slot)] == null) return slot == item;
@@ -1932,6 +1936,14 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
     if (item.item.inventoryRow != 'unique' && slot.requiresUnique) return false;
     // Ensure armor is only in chests (including bosses).
     if (item.item.inventoryRow == 'armor' && !slot.isChest()) return false;
+    // If sword guaranteed, fourth sword needs to go in the elder's slot.
+    if (flags.check('Es')) {
+      if (slot.slotIndex === 0) return isSword(item);
+      if (isSword(item)) {
+        swords.add(item);
+        if (swords.size === 4) return slot.slotIndex === 0;
+      }
+    }
     // Ensure the items types are allowed to be shuffled together.
     return buckets[slotType(slot)] == buckets[slotType(item)];
   }

@@ -73,6 +73,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     _CHECK_FLAG0: true,
     _DISABLE_SHOP_GLITCH: flags.check('Fs'),
     _DISABLE_STATUE_GLITCH: flags.check('Ft'),
+    _DISABLE_SWORD_CHARGE_GLITCH: flags.check('Fc'),
     _DISABLE_WILD_WARP: false,
     _DISPLAY_DIFFICULTY: true,
     _EXTRA_PITY_MP: true,  // TODO: allow disabling this
@@ -85,6 +86,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     _NORMALIZE_SHOP_PRICES: touchShops,
     _PITY_HP_AND_MP: true,
     _PROGRESSIVE_BRACELET: true,
+    _RABBIT_BOOTS_CHARGE_WHILE_WALKING: flags.check('Tr'),
     _REVERSIBLE_SWAN_GATE: true,
     _REQUIRE_HEALED_DOLPHIN_TO_RIDE: flags.check('Rd'),
     _SAHARA_RABBITS_REQUIRE_TELEPATHY: false,
@@ -257,12 +259,19 @@ const updateDifficultyScalingTables = (rom, flags, asm) => {
 
   // NOTE: Old DiffDef table (4 * PDef) was 12 + Diff * 3, but we no longer
   // use this table since nerfing armors.
-  // (Old PDef = 3 + Diff * 3/4)
+  // (PDef = 3 + Diff * 3/4)
+  // patchBytes(rom, asm.expand('DiffDef'),
+  //            diff.map(d => 12 + d * 3));
 
+  // NOTE: This is the armor-nerfed DiffDef table.
   // PDef = 2 + Diff / 2
   // DiffDef table is 4 * PDef = 8 + Diff * 2
+  // patchBytes(rom, asm.expand('DiffDef'),
+  //            diff.map(d => 8 + d * 2));
+
+  // NOTE: For armor cap at 3 * Lvl, set PDef = Diff
   patchBytes(rom, asm.expand('DiffDef'),
-             diff.map(d => 8 + d * 2));
+             diff.map(d => d * 4));
 
   // DiffHP table is PHP = min(255, 48 + round(Diff * 11 / 2))
   patchBytes(rom, asm.expand('DiffHP'),
@@ -277,12 +286,20 @@ const updateDifficultyScalingTables = (rom, flags, asm) => {
     return exp < 0x80 ? exp : Math.min(0xff, 0x80 + (exp >> 4));
   }));
 
-  // Halve shield and armor defense values
+  // // Halve shield and armor defense values
+  // patchBytes(rom, 0x34bc0, [
+  //   // Armor defense
+  //   0, 1, 3, 5, 7, 9, 12, 10, 16,
+  //   // Shield defense
+  //   0, 1, 3, 4, 6, 9, 8, 12, 16,
+  // ]);
+
+  // Adjust shield and armor defense values
   patchBytes(rom, 0x34bc0, [
     // Armor defense
-    0, 1, 3, 5, 7, 9, 12, 10, 16,
+    0, 2, 6, 10, 14, 18, 32, 24, 20,
     // Shield defense
-    0, 1, 3, 4, 6, 9, 8, 12, 16,
+    0, 2, 6, 10, 14, 18, 16, 32, 20,
   ]);
 };
 
@@ -351,19 +368,19 @@ const rescaleShops = (rom, asm, random = undefined) => {
 // Map of base prices.  (Tools are positive, armors are ones-complement.)
 const BASE_PRICES = {
   // Armors
-  0x0d: 6,    // carapace shield
-  0x0e: 22,   // bronze shield
-  0x0f: 325,  // platinum shield
-  0x10: 475,  // mirrored shield
-  0x11: 1150, // ceramic shield
-  0x12: 2750, // sacred shield
-  0x13: 2750, // battle shield
-  0x15: 8,    // tanned hide
-  0x16: 14,   // leather armor
-  0x17: 125,  // bronze armor
-  0x18: 425,  // platinum armor
-  0x19: 1400, // soldier suit
-  0x1a: 2900, // ceramic suit
+  0x0d: 4,    // carapace shield
+  0x0e: 16,   // bronze shield
+  0x0f: 50,   // platinum shield
+  0x10: 325,  // mirrored shield
+  0x11: 1000, // ceramic shield
+  0x12: 2000, // sacred shield
+  0x13: 4000, // battle shield
+  0x15: 6,    // tanned hide
+  0x16: 20,   // leather armor
+  0x17: 75,   // bronze armor
+  0x18: 250,  // platinum armor
+  0x19: 1000, // soldier suit
+  0x1a: 4800, // ceramic suit
   // Tools
   0x1d: 25,   // medical herb
   0x1e: 30,   // antidote

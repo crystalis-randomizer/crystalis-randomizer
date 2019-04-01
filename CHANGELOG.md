@@ -1,6 +1,6 @@
 # Changes
 
-## Latest
+## 1.1.0-rc1
 * Prevent humanly-impossible swamp run in hard-mode logic.
 * Prevent soft-lock when saving or checkpointing in really awkward
   situations by ensuring loaded games have a minimum of 5 HP and 1 MP

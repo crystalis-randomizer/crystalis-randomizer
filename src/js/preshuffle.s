@@ -1251,7 +1251,7 @@ ArmorShopScaling:
 
 
 
-.ifdef _FIX_SWORD_CHARGE_GLITCH
+.ifdef _DISABLE_SWORD_CHARGE_GLITCH
 .org $21bce
   jmp ReloadInventoryAfterLoad
 .org $21bde
@@ -1559,7 +1559,7 @@ ReloadInventoryAfterContinue:
 .assert < $3c482  ; end of empty area from $3c446
 
 
-.ifdef _FIX_SWORD_CHARGE_GLITCH
+.ifdef _DISABLE_SWORD_CHARGE_GLITCH
 .org $3c9fb
   jsr ReloadInventoryAfterContinue
 .endif

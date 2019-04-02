@@ -34,7 +34,7 @@ export default ({
     // NOTE: THIS BREAKS CLOSURE!
     // We need it commented to work in closure, but uncommented to work uncompiled in browser
     // Currently no good way to do both without editing source :-(
-    //await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader());
+    await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader());
   }
 });
 
@@ -69,7 +69,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     _AUTO_EQUIP_BRACELET: flags.check('Ta'),
     _BARRIER_REQUIRES_CALM_SEA: flags.check('Rl'),
     _BUFF_DEOS_PENDANT: flags.check('Td'),
-    _CONNECT_LEAF_TO_LIME_TREE: flags.check('Rp'),
+    //_CONNECT_LEAF_TO_LIME_TREE: flags.check('Rp'),
     _CHECK_FLAG0: true,
     _DISABLE_SHOP_GLITCH: flags.check('Fs'),
     _DISABLE_STATUE_GLITCH: flags.check('Ft'),
@@ -129,11 +129,17 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     rom[0x1c4ea + 0x10] *= 2;  // medical herb
   }
 
+  if (flags.check('Rp')) {
+    connectLimeTreeToLeaf(parsed);
+  }
+
   await assemble('postshuffle.s');
   updateDifficultyScalingTables(rom, flags, asm);
   updateCoinDrops(rom, flags);
 
   shuffleRandomNumbers(rom, random);
+
+  await parsed.writeLocationData();
 
   return stampVersionSeedAndHash(rom, seed, flags);
 
@@ -142,6 +148,27 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   // do any "vanity" patches here...
   // console.log('patch applied');
   // return log.join('\n');
+};
+
+
+// Programmatically add a hole between valley of wind and lime tree valley
+const connectLimeTreeToLeaf = (rom) => {
+  const valleyOfWind = rom.locations[0x03];
+  const limeTree = rom.locations[0x42];
+
+  valleyOfWind.screens[5][4] = 0x10; // new exit
+  limeTree.screens[1][0] = 0x1a; // new exit
+  limeTree.screens[2][0] = 0x0c; // nicer mountains
+
+  const windEntrance = valleyOfWind.entrances.push([0xef, 0x04, 0x78, 0x05]) - 1;
+  const limeEntrance = limeTree.entrances.push([0x10, 0x00, 0xc0, 0x01]) - 1;
+
+  valleyOfWind.exits.push(
+      [0x4f, 0x56, 0x42, limeEntrance],
+      [0x4f, 0x57, 0x42, limeEntrance]);
+  limeTree.exits.push(
+      [0x00, 0x1b, 0x03, windEntrance],
+      [0x00, 0x1c, 0x03, windEntrance]);
 };
 
 
@@ -439,8 +466,6 @@ const shuffleMonsters = (data, rom, random, log) => {
     if (loc) pool.populate(loc);
   }
   pool.shuffle(random);
-
-  rom.writeNpcData();
 };
 
 const identifyKeyItemsForDifficultyBuffs = (rom) => {

@@ -510,6 +510,50 @@ class Location extends Entity {
            this.spritePalettes[this.rom.objects[id + 0x50].palettes()[0] - 2],
           ]]);
   }
+
+  async writeNpcData(npcDataWriter) {
+    if (!this.spritePalettes) return;
+    const data = [0, ...this.spritePalettes, ...this.spritePatterns,
+                  ...[].concat(...this.objects.map(o => [...o.map(x => Number(x))])),
+                  0xff];
+    const address = await npcDataWriter.write(data);
+    npcDataWriter.rom[this.npcDataPointer] = address & 0xff;
+    npcDataWriter.rom[this.npcDataPointer + 1] = address >> 8;  // - 0x100
+  }
+
+  async writeMapData(mapDataWriter) {
+    const layout = [
+      this.bgm, this.layoutWidth, this.layoutHeight, this.animation, this.extended,
+      ...[].concat(...this.screens.map(s => [...s.map(x => Number(x))]))];
+    const graphics =
+        [...this.tilePalettes,
+         this.tileset, this.tileEffects,
+         ...this.tilePatterns];
+    const entrances = [].concat(...this.entrances.map(e => [...e]));
+    const exits = [...[].concat(...this.exits.map(e => [...e])), 0xff];
+    const flags = [...[].concat(...this.flags.map(f => [...f])), 0xff];
+    const pits = [].concat(...this.pits.map(p => [...p]));
+    const [layoutAddr, graphicsAddr, entrancesAddr, exitsAddr, flagsAddr, pitsAddr] =
+        await Promise.all([
+          mapDataWriter.write(layout),
+          mapDataWriter.write(graphics),
+          mapDataWriter.write(entrances),
+          mapDataWriter.write(exits),
+          mapDataWriter.write(flags),
+          pits.length ? mapDataWriter.write(pits) : null,
+        ]);
+    const addresses = [
+      layoutAddr & 0xff, (layoutAddr >>> 8) - 0xc0,
+      graphicsAddr & 0xff, (graphicsAddr >>> 8) - 0xc0,
+      entrancesAddr & 0xff, (entrancesAddr >>> 8) - 0xc0,
+      exitsAddr & 0xff, (exitsAddr >>> 8) - 0xc0,
+      flagsAddr & 0xff, (flagsAddr >>> 8) - 0xc0,
+      ...(pitsAddr ? [pitsAddr & 0xff, (pitsAddr >> 8) - 0xc0] : []),
+    ];
+    const base = await mapDataWriter.write(addresses);
+    mapDataWriter.rom[this.mapDataPointer] = base & 0xff;
+    mapDataWriter.rom[this.mapDataPointer + 1] = (base >>> 8) - 0xc0;
+  }
 }
 
 class ObjectData extends Entity {
@@ -520,7 +564,7 @@ class ObjectData extends Entity {
     this.objectDataBase = addr(rom.prg, this.objectDataPointer, 0x10000);
     this.sfx = rom.prg[this.objectDataBase];
     let a = this.objectDataBase + 1;
-// console.log(`PRG($${id.toString(16)}) at $${this.objectDataBase.toString(16)}: ${Array.from(this.rom.prg.slice(a, a + 23), x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
+// console.log(`PRG($${id.toString(16)}) at $${this.objectDataBase.toString(16)}: ${Array.from(this.prg.slice(a, a + 23), x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
     this.objectData = [];
     let m = 0;
     for (let i = 0; i < 32; i++) {
@@ -942,28 +986,6 @@ export class Rom {
     return new Rom(file);
   }
 
-  // Don't defrag yet???
-  // In particular, right now we just need to replace some objects and
-  // sprite pattern/palette selections.
-  writeNpcData() {
-    const rom = this;
-    for (const loc of this.locations) {
-      if (!loc) continue;
-      let addr = loc.npcDataBase;
-      if (loc.spritePalettes) {
-        rom.prg.subarray(addr + 1, addr + 3).set(loc.spritePalettes);
-      }
-      if (loc.spritePatterns) {
-        rom.prg.subarray(addr + 3, addr + 5).set(loc.spritePatterns);
-      }
-      addr += 5;
-      for (const obj of loc.objects || []) {
-        rom.prg.subarray(addr, addr + 4).set(obj);
-        addr += 4;
-      }
-    }
-  }
-
   // Don't worry about other datas yet
   writeObjectData() {
     // build up a map from actual data to indexes that point to it
@@ -986,6 +1008,20 @@ export class Rom {
     }
 //console.log(`Wrote object data from $1ac00 to $${addr.toString(16).padStart(5, 0)}, saving ${0x1be91 - addr} bytes.`);
     return addr;
+  }
+
+  writeLocationData() {
+    const mapData = new Writer(this.prg, 0x144f8, 0x17e00);
+    const npcData = new Writer(this.prg, 0x193f7, 0x1abf5);
+    const promises = [];
+    for (const l of this.locations) {
+      if (!l) continue;
+      promises.push(l.writeMapData(mapData));
+      promises.push(l.writeNpcData(npcData));
+    }
+    mapData.commit();
+    npcData.commit();
+    return Promise.all(promises).then(() => undefined);
   }
 }
 
@@ -1026,6 +1062,63 @@ const pickFile = () => {
       reader.readAsArrayBuffer(file);
     });
   });
+}
+
+class Writer {
+  constructor(rom, start, end) {
+    this.rom = rom;
+    this.start = start;
+    this.pos = start;
+    this.end = end;
+    this.chunks = [];
+    this.promises = [];
+  }
+
+  write(data) {
+    const p = new Promise((resolve, reject) => {
+      this.chunks.push({data, resolve});
+    });
+    this.promises.push(p);
+    return p;
+  }
+
+  find(data) {
+    for (let i = this.start; i < this.pos - data.length; i++) {
+      let found = true;
+      for (let j = 0; j < data.length; j++) {
+        if (this.rom[i + j] !== data[j]) {
+          found = false;
+          break;
+        }
+      }
+      if (found) return i;
+    }
+    return -1;
+  }
+
+  async commit() {
+    while (this.chunks.length) {
+      const chunks = this.chunks.sort(({data: a}, {data: b}) => b.length - a.length);
+      const promises = this.promises;
+      this.chunks = [];
+      this.promises = [];
+      for (const {data, resolve} of chunks) {
+        const addr = this.find(data);
+        if (addr >= 0) {
+          resolve(addr);
+        } else {
+          // write
+          if (this.pos + data.length >= this.end) throw new Error('Does not fit');
+          this.rom.subarray(this.pos, this.pos + data.length).set(data);
+          resolve(this.pos);
+          this.pos += data.length;
+        }
+      }
+      await Promise.all(promises);
+    }
+    console.log(`Finished writing $${this.start.toString(16)}..$${this.pos.toString(16)
+                 }.  ${this.end - this.pos} bytes free`);
+  }
 }
 
 

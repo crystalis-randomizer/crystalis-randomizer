@@ -145,53 +145,12 @@ DisplayNumber:
 
 .bank $14000 $8000:$4000
 
-.ifdef _CONNECT_LEAF_TO_LIME_TREE
-;;; Valley of Wind
-.org $145dd
-  .byte $e7,$93 ; new valley of wind entrance table
-  .byte $22,$86 ; move exit table up a little
-.org $14605
-  .byte $10
-.org $153e7
-  .byte $80,$03,$df,$06
-  .byte $40,$01,$60,$01
-  .byte $80,$02,$70,$00
-  .byte $c8,$01,$98,$01
-  .byte $98,$01,$98,$01
-  .byte $a8,$00,$90,$03
-  .byte $ef,$04,$78,$05 ; new entrance from lime tree
-.org $14622
-  .byte $4f,$56,$42,$02 ; new exit to lime tree valley
-  .byte $4f,$57,$42,$02
-
-;; Lime Tree Valley
-.org $1544c
-  .byte $12,$86 ; new entrance table (inside v.wind area)
-  .byte $67,$94 ; move exit table up a little
-.org $14612 ; lime tree entrances
-  .byte $ef,$02,$78,$01
-  .byte $80,$01,$30,$00
-  .byte $10,$00,$c0,$01 ; new entrance from valley of wind
-.org $1545a
-  .byte $1a ; left-middle screen
-.org $1545d
-  .byte $0c ; bottom-left (just nicer matched mountains)
-.org $15467
-  .byte $00,$1b,$03,$06 ; new exits to valley of wind
-  .byte $00,$1c,$03,$06
-
-;; Waterfall Valley South - recover some extra space from the map area.
-.org $153dd
-  .byte $60,$93 ; share layout and graphics tables w/ north half
-  .byte $92,$93
-;;.org $153e7  ;; Newly-freed space
-;;.org $1541e
-.endif
-
-
-.org $17cfa
-;; just over 256 bytes free in map space
-.assert < $17e00
+;;; NOTE: there's space here, but we glob it into the space
+;;; recovered from defragging MapData... if we want it back
+;;; we'll need to change the "end" address there.
+;.org $17cfa
+;;; just over 256 bytes free in map space
+;.assert < $17e00
 
 
 .org $17f00

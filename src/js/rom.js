@@ -596,12 +596,11 @@ class ObjectData extends Entity {
     return Uint8Array.from(out);
   }
 
-  write(rom = this.rom) {
+  async write(writer, base = 0x1ac00) {
     // Note: shift of 0x10000 is irrelevant
-    rom.prg[this.objectDataPointer] = this.objectDataBase & 0xff;
-    rom.prg[this.objectDataPointer + 1] = (this.objectDataBase >>> 8) & 0xff;
-    const data = this.serialize();
-    rom.prg.subarray(this.objectDataBase, this.objectDataBase + data.length).set(data);
+    const address = await writer.write(this.serialize());
+    writer.rom[base + 2 * this.id] = address & 0xff;
+    writer.rom[base + 2 * this.id + 1] = address >>> 8;
   }
 
   get(addr) {
@@ -1010,14 +1009,21 @@ export class Rom {
     return addr;
   }
 
-  writeLocationData() {
+  writeData() {
+    // Move object data table all the way to the end.
+    this.prg[0x3c273] = this.prg[0x3c278] = 0xbe;
+    this.prg[0x3c27f] = this.prg[0x3c284] = 0xbf;
+    // Make writers for MapData and NpcData+ObjectData
     const mapData = new Writer(this.prg, 0x144f8, 0x17e00);
-    const npcData = new Writer(this.prg, 0x193f7, 0x1abf5);
+    const npcData = new Writer(this.prg, 0x193f7, 0x1bb00); // 0x1abf5);
     const promises = [];
     for (const l of this.locations) {
       if (!l) continue;
       promises.push(l.writeMapData(mapData));
       promises.push(l.writeNpcData(npcData));
+    }
+    for (const o of this.objects) {
+      o.write(npcData, 0x1be00);
     }
     mapData.commit();
     npcData.commit();

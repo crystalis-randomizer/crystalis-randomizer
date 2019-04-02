@@ -217,4 +217,5 @@ RescaleExp:   ; $1bcbd
 RescaleDone:
    jmp $3c2af
 
-.assert < $1bff0
+.assert < $1be00
+;.assert < $1bff0

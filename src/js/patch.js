@@ -34,7 +34,7 @@ export default ({
     // NOTE: THIS BREAKS CLOSURE!
     // We need it commented to work in closure, but uncommented to work uncompiled in browser
     // Currently no good way to do both without editing source :-(
-    await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader());
+    //await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader());
   }
 });
 
@@ -139,7 +139,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
 
   shuffleRandomNumbers(rom, random);
 
-  await parsed.writeLocationData();
+  await parsed.writeData();
 
   return stampVersionSeedAndHash(rom, seed, flags);
 
@@ -456,7 +456,7 @@ const rescaleMonsters = (data, rom) => {
   // Fix Sabera 1's elemental defense to no longer allow thunder
   rom.objects[0x7d].objectData[0x10] |= 0x08;
 
-  rom.writeObjectData();
+  //rom.writeObjectData();
 };
 
 const shuffleMonsters = (data, rom, random, log) => {

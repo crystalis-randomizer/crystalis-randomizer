@@ -19297,11 +19297,11 @@ PowersOfTwo_1c
         $1c167              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
         $1c16f  xx:         xxx
-        $1c170  xx xx xx:   xxx $xxxx
+        $1c170  xx xx xx:   xxx PlayerMP
         $1c173  xx xx:      xxx #$xx
-        $1c175  xx xx:      xxx $xx
+        $1c175  xx xx:      xxx + ; $1c18b
         $1c177  xx xx:      xxx #$xx
-        $1c179  xx:         xxx
+-       $1c179  xx:         xxx
         $1c17a  xx:         xxx
         $1c17b  xx:         xxx
         $1c17c  xx xx:      xxx $xx
@@ -19312,30 +19312,31 @@ PowersOfTwo_1c
         $1c185  xx xx xx:   xxx $1da2d,x
         $1c188  xx xx:      xxx $xx
         $1c18a  xx:         xxx
-;;; --------------------------------
-        $1c18b  xx xx xx:   xxx $xxxx
+        ;; --------------------------------
+        ;; Telepathy: free MP?
++       $1c18b  xx xx xx:   xxx PlayerMP
         $1c18e  xx xx xx:   xxx $1c222
         $1c191  xx:         xxx
         $1c192  xx xx xx:   xxx $1c21a,x
-        $1c195  xx xx:      xxx $xx
+        $1c195  xx xx:      xxx +++ ; $1c1af
         $1c197  xx:         xxx
         $1c198  xx xx:      xxx #$xx
-        $1c19a  xx xx xx:   xxx $xxxx
-        $1c19d  xx xx:      xxx $xx
-        $1c19f  xx xx xx:   xxx $xxxx
-        $1c1a2  xx xx:      xxx $xx
-        $1c1a4  xx xx xx:   xxx $xxxx
-        $1c1a7  xx xx xx:   xxx $xxxx
+        $1c19a  xx xx xx:   xxx PlayerMP
+        $1c19d  xx xx:      xxx + ; $1c1a4
+        $1c19f  xx xx xx:   xxx PlayerMaxMP
+        $1c1a2  xx xx:      xxx ++ ; $1c1a7
++       $1c1a4  xx xx xx:   xxx PlayerMaxMP
+++      $1c1a7  xx xx xx:   xxx PlayerMP
         $1c1aa  xx xx:      xxx #$xx
-        $1c1ac  xx xx xx:   xxx $1c179
-;;; --------------------------------
-        $1c1af  xx xx:      xxx #$xx
-        $1c1b1  xx xx:      xxx $xx
+        $1c1ac  xx xx xx:   xxx - ; $1c179
+        ;; --------------------------------
++++     $1c1af  xx xx:      xxx #$xx
+        $1c1b1  xx xx:      xxx + ; $1c1b8
         $1c1b3  xx xx:      xxx #$xx
-        $1c1b5  xx xx xx:   xxx $1c179
-;;; --------------------------------
+        $1c1b5  xx xx xx:   xxx - ; $1c179
+        ;; --------------------------------
         ;; NOTE - used by telepathy
-        $1c1b8  xx xx:      xxx #$xx
++       $1c1b8  xx xx:      xxx #$xx
         $1c1ba  xx xx:      xxx $xx
         $1c1bc  xx xx:      xxx CurrentLocation
         $1c1be  xx xx xx:   xxx $1d8f4,x
@@ -19391,7 +19392,8 @@ PowersOfTwo_1c
 ;;; It's also indexed based on the result of the TelepathyLocations table
 ;;; to compare to the player's current level.
 DataTable_1c213 
-        $1c213              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1c213              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1c21a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
         $1c222  xx xx xx:   xxx $xxxx
         $1c225  xx xx:      xxx #$xx
@@ -19400,7 +19402,12 @@ DataTable_1c213
         $1c22b  xx xx xx:   xxx $1c22f,y
         $1c22e  xx:         xxx
 ;;; --------------------------------
-;;; Another data table of some sort
+;;; Another data table of some sort, seems to have to do with telepathy outcomes.
+;;; It's indexed by $7c0.  Points into the table at 1c21a.  When it's zero, the
+;;; player gets 32 bonus MP.  At 1, something else happens.  The other numbrers
+;;; point to 2 or 3 in the other table (so clearly this is used for something
+;;; else, too - except it's not!).  This gives a 9/64 chance of getting 32 MP,
+;;; at a cost of 8 MP per attempt, so really not a good deal.
 DataTable_1c22f 
         $1c22f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1c23f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -20403,7 +20410,7 @@ NpcSpawnCondition_38 ; portoa queen
         $1c81e              .byte $xx,$xx ; 01f NOT got ball of water
         $1c820              .byte $xx ; Portoa - Asina Room
         $1c821              .byte $xx,$xx ; 01f got ball of water
-        $1c823              .byte $xx,$xx ; 01e NOT
+        $1c823              .byte $xx,$xx ; 01e NOT queen revealed as asina
         $1c825              .byte $xx
 NpcSpawnCondition_39 ; fortune teller
         $1c826              .byte $xx ; Portoa - Fortune Teller
@@ -29701,7 +29708,7 @@ DataTable_21ade
 LoadGame
         $21bba  xx xx xx:   xxx $xxxx
         $21bbd  xx xx:      xxx #$xx
-        $21bbf  xx xx:      xxx $xx
+        $21bbf  xx xx:      xxx + ; $21bd1
         $21bc1  xx xx:      xxx #$xx
         $21bc3  xx xx xx:   xxx $21ce0
         $21bc6  xx xx xx:   xxx $2fc03
@@ -29709,7 +29716,7 @@ LoadGame
         $21bcb  xx xx xx:   xxx $xxxx
         $21bce  xx xx xx:   xxx $21c7a
 ;;; --------------------------------
-        $21bd1  xx xx:      xxx #$xx
++       $21bd1  xx xx:      xxx #$xx
         $21bd3  xx xx xx:   xxx $21ce0
         $21bd6  xx xx xx:   xxx $2fc03
         $21bd9  xx xx:      xxx #$xx
@@ -56022,7 +56029,7 @@ MainLoopJump_08_ContinueGame
         $3c9e8  xx xx xx:   xxx $3c008
         $3c9eb  xx xx:      xxx #$xx ; 8000 -> 24000
         $3c9ed  xx xx xx:   xxx BankSwitch16k
-        $3c9f0  xx xx xx:   xxx $3fa65
+        $3c9f0  xx xx xx:   xxx $2fa65
         $3c9f3  xx xx:      xxx #MAIN_LOOP_GAME ; Also GAME_MODE_CHANGE_LOCATION
         $3c9f5  xx xx:      xxx MainLoopMode
         $3c9f7  xx xx:      xxx GameMode

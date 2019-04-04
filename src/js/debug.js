@@ -179,6 +179,22 @@ export default (nes) => {
     change: () => getItem(nes, 0x47),
     flight: () => getItem(nes, 0x48),
   };
+
+  window.show = (addr, lineCount = 8) => {
+    const lines = ['        -0 -1 -2 -3 -4 -5 -6 -7 -8 -9 -a -b -c -d -e -f'];
+    let line = null;
+    for (let i = addr; lines.length < lineCount + 1; i++) {
+      if (!line) {
+        line = `$${(i >>> 4).toString(16).padStart(4, 0)}x ${'   '.repeat(i & 0xf)}`;
+      }
+      line = `${line} ${nes.rom.rom[i].toString(16).padStart(2, 0)}`;
+      if ((i & 0xf) === 0xf) {
+        lines.push(line);
+        line = null;
+      }
+    }
+    console.log(lines.join('\n'));
+  };
 };
 
 

@@ -447,8 +447,8 @@ console.log(`Trigger $${this.id.toString(16)}: bytes: $${this.bytes().map(x=>x.t
 
   async write(writer, base = 0x1e17a) {
     const address = await writer.write(this.bytes());
-    writer.rom[base + 2 * this.id] = address & 0xff;
-    writer.rom[base + 2 * this.id + 1] = (address >>> 8) - 0x40;
+    writer.rom[base + 2 * (this.id & 0x7f)] = address & 0xff;
+    writer.rom[base + 2 * (this.id & 0x7f) + 1] = (address >>> 8) - 0x40;
   }
 }
 
@@ -460,7 +460,7 @@ class MessageId {
   }
 
   static from(arr, i) {
-    const word = arr[i] | arr[i + 1] << 8;
+    const word = arr[i] << 8 | arr[i + 1];
     const action = (word >>> 11) & 0x1f;
     const part = (word >>> 5) & 0x3f;
     const index = word & 0x1f;
@@ -470,7 +470,7 @@ class MessageId {
   bytes() {
     const word =
         (this.action & 0x1f) << 11 | (this.part & 0x3f) << 5 | (this.index & 0x1f);
-    return [word & 0xff, word >>> 8];
+    return [word >>> 8, word & 0xff];
   }
 }
 

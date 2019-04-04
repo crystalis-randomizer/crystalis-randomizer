@@ -34,7 +34,7 @@ export default ({
     // NOTE: THIS BREAKS CLOSURE!
     // We need it commented to work in closure, but uncommented to work uncompiled in browser
     // Currently no good way to do both without editing source :-(
-    //await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader());
+    await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader());
   }
 });
 
@@ -114,7 +114,8 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     rescaleShops(rom, asm, flags.check('Pb') ? random : null);
   }
 
-  // Parse the rom and apply other patches.
+  // Parse the rom and apply other patches - note: must have shuffled
+  // the depgraph FIRST!
   const parsed = new Rom(rom);
   rescaleMonsters(rom, parsed);
   if (flags.check('Mr')) shuffleMonsters(rom, parsed, random);
@@ -133,6 +134,11 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     connectLimeTreeToLeaf(parsed);
   }
 
+  addCordelWestTriggers(parsed, flags);
+  if (flags.check('Fr')) fixRabbitSkip(parsed);
+
+  misc(parsed);
+
   await assemble('postshuffle.s');
   updateDifficultyScalingTables(rom, flags, asm);
   updateCoinDrops(rom, flags);
@@ -149,6 +155,56 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   // console.log('patch applied');
   // return log.join('\n');
 };
+
+
+const misc = (rom) => {
+
+  // TODO - this ended up with message 00:03 and an action that gave bow of moon!
+
+  // rom.triggers[0x19].message.part = 0x1b;
+  // rom.triggers[0x19].message.index = 0x08;
+  // rom.triggers[0x19].flags.push(0x2f6, 0x2f7, 0x2f8);
+};
+
+const eastCave = (rom) => {
+  // NOTE: 0x9c can become 0x99 in top left or 0x97 in top right or bottom middle for a cave exit
+  const screens1 = [[0x9c, 0x84, 0x80, 0x83, 0x9c],
+                    [0x80, 0x81, 0x83, 0x86, 0x80],
+                    [0x83, 0x88, 0x89, 0x80, 0x80],
+                    [0x81, 0x8c, 0x85, 0x82, 0x84],
+                    [0x9a, 0x85, 0x9c, 0x98, 0x86]];
+  const screens2 = [[0x9c, 0x84, 0x9b, 0x80, 0x9b],
+                    [0x80, 0x81, 0x81, 0x80, 0x81],
+                    [0x80, 0x87, 0x8b, 0x8a, 0x86],
+                    [0x80, 0x8c, 0x80, 0x85, 0x84],
+                    [0x9c, 0x86, 0x80, 0x80, 0x9a]];
+  // TODO fill up graphics, etc --> $1a, $1b, $05 / $88, $b5 / $14, $02
+  // Think aobut exits and entrances...?
+
+};
+
+// Add the statue of onyx and possibly the teleport block trigger to Cordel West
+const addCordelWestTriggers = (rom, flags) => {
+  for (const o of rom.locations[0x15].objects) {
+    if (o[2] === 2) {
+      // Copy if (1) it's the chest, or (2) we're disabling teleport skip
+      const copy = o[3] < 0x80 || flags.check('Fp');
+        // statue of onyx - always move
+      if (copy) rom.locations[0x14].objects.push([...o]);
+    }
+  }
+};
+
+const fixRabbitSkip = (rom) => {
+  for (const o of rom.locations[0x28].objects) {
+    if (o[2] === 2 && o[3] === 0x86) {
+      if (o[1] === 0x74) {
+        o[1]++;
+      }
+      o[0]++;
+    }
+  }
+}
 
 
 // Programmatically add a hole between valley of wind and lime tree valley

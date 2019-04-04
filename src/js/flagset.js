@@ -354,10 +354,20 @@ export const FLAGS = [{
     text: `Sword charge glitch will no longer work.  It will be impossible to
            achieve charge levels without having correct inventory.`,
   }, {
+    flag: 'Fp',
+    name: 'Disable teleport skip',
+    text: `Mt Sabre North cannot be entered from Cordel Plans without the
+           Teleport spell, even via glitch.`,
+  }, {
+    flag: 'Fr',
+    name: 'Disable rabbit skip',
+    text: `Mt Sabre North cannot be entered from Cordel Plans without talking to
+           the rabbit in leaf.`,
+  }, {
     flag: 'Ft',
     name: 'Disable statue glitch',
     text: `Statues will instead always push downwards, making it impossible to
-           glitch through statues.`,
+           glitch through statues for progression.`,
   }],
 }, {
   section: 'Easy Mode',
@@ -416,6 +426,10 @@ const FLAG_CONFLICTS = {
   Gt: /Ft/,
   Fc: /Gc/,
   Gc: /Fc/,
+  Fp: /Gp/,
+  Gp: /Fp/,
+  Fr: /Gr/,
+  Gr: /Fr/,
 };
 
 export class FlagSet {

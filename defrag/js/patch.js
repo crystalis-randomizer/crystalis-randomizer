@@ -114,7 +114,8 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     rescaleShops(rom, asm, flags.check('Pb') ? random : null);
   }
 
-  // Parse the rom and apply other patches.
+  // Parse the rom and apply other patches - note: must have shuffled
+  // the depgraph FIRST!
   const parsed = new Rom(rom);
   rescaleMonsters(rom, parsed);
   if (flags.check('Mr')) shuffleMonsters(rom, parsed, random);
@@ -133,6 +134,12 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     connectLimeTreeToLeaf(parsed);
   }
 
+  addCordelWestTriggers(parsed, flags);
+  if (flags.check('Fr')) fixRabbitSkip(parsed);
+  if (flags.check('Rs')) storyMode(parsed);
+
+  misc(parsed);
+
   await assemble('postshuffle.s');
   updateDifficultyScalingTables(rom, flags, asm);
   updateCoinDrops(rom, flags);
@@ -148,6 +155,77 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   // do any "vanity" patches here...
   // console.log('patch applied');
   // return log.join('\n');
+};
+
+
+const misc = (rom) => {
+
+  // TODO - this ended up with message 00:03 and an action that gave bow of moon!
+
+  // rom.triggers[0x19].message.part = 0x1b;
+  // rom.triggers[0x19].message.index = 0x08;
+  // rom.triggers[0x19].flags.push(0x2f6, 0x2f7, 0x2f8);
+};
+
+const eastCave = (rom) => {
+  // NOTE: 0x9c can become 0x99 in top left or 0x97 in top right or bottom middle for a cave exit
+  const screens1 = [[0x9c, 0x84, 0x80, 0x83, 0x9c],
+                    [0x80, 0x81, 0x83, 0x86, 0x80],
+                    [0x83, 0x88, 0x89, 0x80, 0x80],
+                    [0x81, 0x8c, 0x85, 0x82, 0x84],
+                    [0x9a, 0x85, 0x9c, 0x98, 0x86]];
+  const screens2 = [[0x9c, 0x84, 0x9b, 0x80, 0x9b],
+                    [0x80, 0x81, 0x81, 0x80, 0x81],
+                    [0x80, 0x87, 0x8b, 0x8a, 0x86],
+                    [0x80, 0x8c, 0x80, 0x85, 0x84],
+                    [0x9c, 0x86, 0x80, 0x80, 0x9a]];
+  // TODO fill up graphics, etc --> $1a, $1b, $05 / $88, $b5 / $14, $02
+  // Think aobut exits and entrances...?
+
+};
+
+// Add the statue of onyx and possibly the teleport block trigger to Cordel West
+const addCordelWestTriggers = (rom, flags) => {
+  for (const o of rom.locations[0x15].objects) {
+    if (o[2] === 2) {
+      // Copy if (1) it's the chest, or (2) we're disabling teleport skip
+      const copy = o[3] < 0x80 || flags.check('Fp');
+        // statue of onyx - always move
+      if (copy) rom.locations[0x14].objects.push([...o]);
+    }
+  }
+};
+
+const fixRabbitSkip = (rom) => {
+  for (const o of rom.locations[0x28].objects) {
+    if (o[2] === 2 && o[3] === 0x86) {
+      if (o[1] === 0x74) {
+        o[1]++;
+      }
+      o[0]++;
+    }
+  }
+};
+
+const storyMode = (rom) => {
+  // shuffle has already happened, need to use shuffled flags from
+  // NPC spawn conditions...
+  const requirements = rom.npcSpawns[0xcb].conditions[0xa6];
+  // Note: if bosses are shuffled we'll need to detect this...
+  requirements.push(~rom.npcSpawns[0xc2].conditions[0x28][0]); // Kelbesque 1
+  requirements.push(~rom.npcSpawns[0x84].conditions[0x6e][0]); // Sabera 1
+  requirements.push(~rom.npcSpawns[0xc4].conditions[0xf2][0]); // Mado 1
+  requirements.push(~rom.npcSpawns[0xc5].conditions[0xa9][0]); // Kelbesque 2
+  requirements.push(~rom.npcSpawns[0xc6].conditions[0xac][0]); // Sabera 2
+  requirements.push(~rom.npcSpawns[0xc7].conditions[0xb9][0]); // Mado 2
+  requirements.push(~rom.npcSpawns[0xc8].conditions[0xb6][0]); // Karmine
+  requirements.push(~rom.npcSpawns[0xcb].conditions[0x9f][0]); // Draygon 1
+  requirements.push(0x200); // Sword of Wind
+  requirements.push(0x201); // Sword of Fire
+  requirements.push(0x202); // Sword of Water
+  requirements.push(0x203); // Sword of Thunder
+  // TODO - statues of moon and sun may be relevant if entrance shuffle?
+  // TODO - vampires and insect?
 };
 
 

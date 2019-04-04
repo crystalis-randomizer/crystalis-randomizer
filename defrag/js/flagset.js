@@ -262,6 +262,11 @@ export const FLAGS = [{
 }, {
   section: 'Routing',
   flags: [{
+    flag: 'Rs',
+    name: 'Story Mode',
+    text: `Draygon 2 won't spawn unless you have all four swords and have
+           defeated all major bosses of the tetrarchy.`,
+  }, {
     flag: 'Rt',
     name: 'Sword of Thunder teleports to Shyron',
     text: `Normally when acquiring the thunder sword, the player is instantly
@@ -354,10 +359,20 @@ export const FLAGS = [{
     text: `Sword charge glitch will no longer work.  It will be impossible to
            achieve charge levels without having correct inventory.`,
   }, {
+    flag: 'Fp',
+    name: 'Disable teleport skip',
+    text: `Mt Sabre North cannot be entered from Cordel Plans without the
+           Teleport spell, even via glitch.`,
+  }, {
+    flag: 'Fr',
+    name: 'Disable rabbit skip',
+    text: `Mt Sabre North cannot be entered from Cordel Plans without talking to
+           the rabbit in leaf.`,
+  }, {
     flag: 'Ft',
     name: 'Disable statue glitch',
     text: `Statues will instead always push downwards, making it impossible to
-           glitch through statues.`,
+           glitch through statues for progression.`,
   }],
 }, {
   section: 'Easy Mode',
@@ -416,6 +431,10 @@ const FLAG_CONFLICTS = {
   Gt: /Ft/,
   Fc: /Gc/,
   Gc: /Fc/,
+  Fp: /Gp/,
+  Gp: /Fp/,
+  Fr: /Gr/,
+  Gr: /Fr/,
 };
 
 export class FlagSet {

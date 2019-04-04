@@ -262,6 +262,11 @@ export const FLAGS = [{
 }, {
   section: 'Routing',
   flags: [{
+    flag: 'Rs',
+    name: 'Story Mode',
+    text: `Draygon 2 won't spawn unless you have all four swords and have
+           defeated all major bosses of the tetrarchy.`,
+  }, {
     flag: 'Rt',
     name: 'Sword of Thunder teleports to Shyron',
     text: `Normally when acquiring the thunder sword, the player is instantly

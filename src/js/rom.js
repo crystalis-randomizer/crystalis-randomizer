@@ -394,7 +394,6 @@ const UNUSED_TRIGGERS = new Set([
   0xa0, 0xb5, 0xb9, 0xbe, 0xc0, // c2 is last one
 ]);
 
-// TODO - test this, edit and add triggers!
 class Trigger extends Entity {
   constructor(rom, id) {
     // TODO - consider pulling this out into static fromBytes() method?
@@ -402,7 +401,7 @@ class Trigger extends Entity {
     this.used = !UNUSED_TRIGGERS.has(id); // need to set manually
     this.pointer = 0x1e17a + ((id & 0x7f) << 1);
     this.base = addr(rom.prg, this.pointer, 0x14000);
-    // List of flags to check: positive means "must bbe set"
+    // List of flags to check: positive means "must be set"
     this.conditions = [];
     // MessageId object
     this.message = null;
@@ -424,7 +423,7 @@ class Trigger extends Entity {
       const flag = word & 0x0fff;
       this.flags.push(word & 0x8000 ? ~flag : flag);
     } while (!(word & 0x4000));
-console.log(`Trigger $${this.id.toString(16)}: bytes: $${this.bytes().map(x=>x.toString(16).padStart(2,0)).join(' ')}`);
+//console.log(`Trigger $${this.id.toString(16)}: bytes: $${this.bytes().map(x=>x.toString(16).padStart(2,0)).join(' ')}`);
   }
 
   bytes() {
@@ -471,6 +470,55 @@ class MessageId {
     const word =
         (this.action & 0x1f) << 11 | (this.part & 0x3f) << 5 | (this.index & 0x1f);
     return [word >>> 8, word & 0xff];
+  }
+}
+
+const UNUSED_NPCS = new Set([0x3c, 0x6a, 0x73, 0x82, 0x86, 0x87, 0x89, 0x8a, 0x8b, 0x8c, 0x8d]);
+class NpcSpawn extends Entity {
+  constructor(rom, id) {
+    super(rom, id);
+    this.pointer = 0x1c5e0 + (id << 1);
+//console.log(`NPC Spawn $${this.id.toString(16)}: ${rom.prg[this.pointer].toString(16)} ${rom.prg[this.pointer + 1].toString(16)}`);
+    this.base = addr(rom.prg, this.pointer, 0x14000);
+    this.used = !UNUSED_NPCS.has(id) /*&& this.base <= 0x1c781*/ && (id < 0x8f || id >= 0xc0);
+    // Flags to check per location: positive means "must be set"
+    this.conditions = {};
+    let i = this.base;
+    let loc;
+    while (this.used && (loc = rom.prg[i++]) != 0xff) {
+      this.conditions[loc] = [];
+      let word;
+      do {
+        // NOTE: this byte order is inverse from normal.
+        word = rom.prg[i] << 8 | rom.prg[i + 1];
+        const flag = word & 0x0fff;
+        this.conditions[loc].push(word & 0x2000 ? ~flag : flag);
+        i += 2;
+      } while (!(word & 0x8000));
+    }
+//console.log(`NPC Spawn $${this.id.toString(16)} from ${this.base.toString(16)}: bytes: $${this.bytes().map(x=>x.toString(16).padStart(2,0)).join(' ')}`);
+  }
+
+  bytes() {
+    const bytes = [];
+    for (let loc in this.conditions) {
+      loc = Number(loc);
+      bytes.push(loc);
+      for (let i = 0; i < this.conditions[loc].length; i++) {
+        let word = this.conditions[loc][i];
+        if (word < 0) word = ~word | 0x2000;
+        if (i === this.conditions[loc].length - 1) word = word | 0x8000;
+        bytes.push(word >>> 8, word & 0xff);
+      }
+    }
+    bytes.push(0xff);
+    return bytes;
+  }
+
+  async write(writer, base = 0x1c5e0) {
+    const address = await writer.write(this.bytes());
+    writer.rom[base + 2 * this.id] = address & 0xff;
+    writer.rom[base + 2 * this.id + 1] = (address >>> 8) - 0x40;
   }
 }
 
@@ -973,6 +1021,7 @@ export class Rom {
         0x100, i => !LOCATION_NAMES[i] ? null : new Location(this, i));
     this.tileAnimations = seq(4, i => new TileAnimation(this, i));
     this.hitboxes = seq(24, i => new Hitbox(this, i));
+    this.npcSpawns = seq(0xcd, i => new NpcSpawn(this, i));
     this.objects = seq(0x100, i => new ObjectData(this, i));
     this.adHocSpawns = seq(0x60, i => new AdHocSpawn(this, i));
     this.metasprites = seq(0x100, i => new Metasprite(this, i));
@@ -1095,12 +1144,13 @@ export class Rom {
     return addr;
   }
 
-  writeData() {
+  async writeData() {
     // Move object data table all the way to the end.
     this.prg[0x3c273] = this.prg[0x3c278] = 0xbe;
     this.prg[0x3c27f] = this.prg[0x3c284] = 0xbf;
     // Make writers for MapData and NpcData+ObjectData
     const mapData = new Writer(this.prg, 0x144f8, 0x17e00);
+    // TODO - defrag npcspawn and npcdialog in a single writer
     const npcData = new Writer(this.prg, 0x193f7, 0x1bb00); // 0x1abf5);
     const promises = [];
     for (const l of this.locations) {
@@ -1111,14 +1161,20 @@ export class Rom {
     for (const o of this.objects) {
       o.write(npcData, 0x1be00);
     }
-    mapData.commit();
-    npcData.commit();
+    await mapData.commit();
+    await npcData.commit();
     const triggerData = new Writer(this.prg, 0x1e200, 0x1e3f0);
     for (const t of this.triggers) {
       if (!t.used) continue;
       promises.push(t.write(triggerData));
     }
-    triggerData.commit();
+    await triggerData.commit();
+    const npcSpawnData = new Writer(this.prg, 0x1c77a, 0x1c95d);
+    for (const s of this.npcSpawns) {
+      if (!s.used) continue;
+      promises.push(s.write(npcSpawnData));
+    }
+    await npcSpawnData.commit();
     return Promise.all(promises).then(() => undefined);
   }
 }
@@ -1181,7 +1237,7 @@ class Writer {
   }
 
   find(data) {
-    for (let i = this.start; i < this.pos - data.length; i++) {
+    for (let i = this.start; i <= this.pos - data.length; i++) {
       let found = true;
       for (let j = 0; j < data.length; j++) {
         if (this.rom[i + j] !== data[j]) {
@@ -1191,6 +1247,7 @@ class Writer {
       }
       if (found) return i;
     }
+//console.log(`could not find ${data.map(x=>x.toString(16))}`);
     return -1;
   }
 

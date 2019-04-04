@@ -34,7 +34,7 @@ export default ({
     // NOTE: THIS BREAKS CLOSURE!
     // We need it commented to work in closure, but uncommented to work uncompiled in browser
     // Currently no good way to do both without editing source :-(
-    await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader());
+    //await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader());
   }
 });
 
@@ -136,6 +136,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
 
   addCordelWestTriggers(parsed, flags);
   if (flags.check('Fr')) fixRabbitSkip(parsed);
+  if (flags.check('Rs')) storyMode(parsed);
 
   misc(parsed);
 
@@ -204,7 +205,28 @@ const fixRabbitSkip = (rom) => {
       o[0]++;
     }
   }
-}
+};
+
+const storyMode = (rom) => {
+  // shuffle has already happened, need to use shuffled flags from
+  // NPC spawn conditions...
+  const requirements = rom.npcSpawns[0xcb].conditions[0xa6];
+  // Note: if bosses are shuffled we'll need to detect this...
+  requirements.push(~rom.npcSpawns[0xc2].conditions[0x28][0]); // Kelbesque 1
+  requirements.push(~rom.npcSpawns[0x84].conditions[0x6e][0]); // Sabera 1
+  requirements.push(~rom.npcSpawns[0xc4].conditions[0xf2][0]); // Mado 1
+  requirements.push(~rom.npcSpawns[0xc5].conditions[0xa9][0]); // Kelbesque 2
+  requirements.push(~rom.npcSpawns[0xc6].conditions[0xac][0]); // Sabera 2
+  requirements.push(~rom.npcSpawns[0xc7].conditions[0xb9][0]); // Mado 2
+  requirements.push(~rom.npcSpawns[0xc8].conditions[0xb6][0]); // Karmine
+  requirements.push(~rom.npcSpawns[0xcb].conditions[0x9f][0]); // Draygon 1
+  requirements.push(0x200); // Sword of Wind
+  requirements.push(0x201); // Sword of Fire
+  requirements.push(0x202); // Sword of Water
+  requirements.push(0x203); // Sword of Thunder
+  // TODO - statues of moon and sun may be relevant if entrance shuffle?
+  // TODO - vampires and insect?
+};
 
 
 // Programmatically add a hole between valley of wind and lime tree valley

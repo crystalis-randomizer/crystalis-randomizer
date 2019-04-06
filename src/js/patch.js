@@ -212,7 +212,7 @@ const storyMode = (rom) => {
   // Note: if bosses are shuffled we'll need to detect this...
   requirements.push(~rom.npcSpawns[0xc2].conditions[0x28][0]); // Kelbesque 1
   requirements.push(~rom.npcSpawns[0x84].conditions[0x6e][0]); // Sabera 1
-  requirements.push(~rom.npcSpawns[0xc4].conditions[0xf2][0]); // Mado 1
+  requirements.push(~rom.triggers[0x9a & 0x7f].conditions[1]); // Mado 1
   requirements.push(~rom.npcSpawns[0xc5].conditions[0xa9][0]); // Kelbesque 2
   requirements.push(~rom.npcSpawns[0xc6].conditions[0xac][0]); // Sabera 2
   requirements.push(~rom.npcSpawns[0xc7].conditions[0xb9][0]); // Mado 2

@@ -4,6 +4,7 @@ import {Random} from './random.js';
 import {shuffle2 as shuffleDepgraph} from './depgraph.js';
 import {crc32} from './crc32.js';
 import {FlagSet} from './flagset.js';
+import {FetchReader} from './fetchreader.js';
 import * as version from './version.js';
 
 // TODO - to shuffle the monsters, we need to find the sprite palttes and
@@ -15,7 +16,7 @@ import * as version from './version.js';
 // TODO - make a debugger window for patches.
 // TODO - this needs to be a separate non-compiled file.
 export default ({
-  async apply(rom, hash) {
+  async apply(rom, hash, path) {
     // Look for flag string and hash
     let flags;
     if (!hash['seed']) {
@@ -31,10 +32,7 @@ export default ({
     for (const key in hash) {
       if (hash[key] === 'false') hash[key] = false;
     }
-    // NOTE: THIS BREAKS CLOSURE!
-    // We need it commented to work in closure, but uncommented to work uncompiled in browser
-    // Currently no good way to do both without editing source :-(
-    //await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader());
+    await shuffle(rom, parseSeed(hash['seed']), flags, new FetchReader(path));
   }
 });
 

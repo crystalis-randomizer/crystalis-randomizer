@@ -9,6 +9,7 @@ const COMMON = [
   'crc32.js',
   'depgraph.js',
   'externs.js',
+  'fetchreader.js',
   'flagset.js',
   'graph.js',
   'nodes.js',
@@ -23,7 +24,7 @@ const srcs = (...srcs) => srcs.map(s => './src/js/' + s);
 
 gulp.task('main', function() {
   return gulp.src(srcs(...COMMON,
-                       'fetchreader.js',
+                       //'fetchreader.js',
                        'progress.js',
                        'render.js',
                        'main.js'),

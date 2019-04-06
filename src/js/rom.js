@@ -1150,8 +1150,10 @@ export class Rom {
     this.prg[0x3c27f] = this.prg[0x3c284] = 0xbf;
     // Make writers for MapData and NpcData+ObjectData
     const mapData = new Writer(this.prg, 0x144f8, 0x17e00);
-    // TODO - defrag npcspawn and npcdialog in a single writer
-    const npcData = new Writer(this.prg, 0x193f7, 0x1bb00); // 0x1abf5);
+    // NOTE: 193f9 is assuming $fb is the last location ID.  If we add more locations at
+    // the end then we'll need to push this back a few more bytes.  We could possibly
+    // detect the bad write and throw an error, and/or compute the max location ID.
+    const npcData = new Writer(this.prg, 0x193f9, 0x1bb00); // 0x1abf5);
     const promises = [];
     for (const l of this.locations) {
       if (!l) continue;
@@ -1159,7 +1161,7 @@ export class Rom {
       promises.push(l.writeNpcData(npcData));
     }
     for (const o of this.objects) {
-      o.write(npcData, 0x1be00);
+      o.write(npcData, 0x1be00); // NOTE: we moved the ObjectData table to 1be00
     }
     await mapData.commit();
     await npcData.commit();

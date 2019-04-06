@@ -472,7 +472,7 @@ const SCALED_MONSTERS = new Map([
   [0x54, 'm', 'Rock Golem',                 6,  ,   11,  24,  6,   85],
   [0x55, 'm', 'Blue Bat',                   ,   ,   ,    4,   ,    32],
   [0x56, 'm', 'Green Wyvern',               4,  ,   4,   24,  6,   52],
-  [0x57, 'b', 'Vampire',                    3,  ,   13,  18,  ,    ,],
+  [0x57, 'b', 'Vampire',                    3,  ,   12,  18,  ,    ,],
   [0x58, 'm', 'Orc',                        3,  ,   4,   21,  4,   57],
   [0x59, 'm', 'Red Flying Swamp Insect',    3,  ,   1,   21,  4,   57],
   [0x5a, 'm', 'Blue Mushroom',              2,  ,   1,   21,  4,   44],
@@ -542,14 +542,14 @@ const SCALED_MONSTERS = new Map([
   [0xa2, 'm', 'Tower Sentinel',             ,   ,   2,   ,    ,    /*32*/],
   [0xa3, 'm', 'Air Sentry',                 3,  ,   4,   26,  ,    /*65*/],
   [0xa4, 'b', 'Dyna',                       6,  5,  16,  ,    ,    ,],
-  [0xa5, 'b', 'Vampire 2',                  2,  ,   6,   27,  ,    ,],
+  [0xa5, 'b', 'Vampire 2',                  3,  ,   12,  27,  ,    ,],
   [0xb4, 'b', 'dyna pod',                   15, ,   255, 26,  ,    ,],
   [0xb8, 'p', 'dyna counter',               ,   ,   ,    26,  ,    ,],
   [0xb9, 'p', 'dyna laser',                 ,   ,   ,    26,  ,    ,],
   [0xba, 'p', 'dyna bubble',                ,   ,   ,    36,  ,    ,],
-  [0xbc, 'm', 'vamp2 bat',                  ,   ,   ,    16,  ,    40],
+  [0xbc, 'm', 'vamp2 bat',                  ,   ,   ,    16,  ,    15],
   [0xbf, 'p', 'draygon2 fireball',          ,   ,   ,    26,  ,    ,],
-  [0xc1, 'm', 'vamp1 bat',                  ,   ,   ,    16,  ,    40],
+  [0xc1, 'm', 'vamp1 bat',                  ,   ,   ,    16,  ,    15],
   [0xc3, 'p', 'giant insect spit',          ,   ,   ,    35,  ,    ,],
   [0xc4, 'm', 'summoned insect',            4,  ,   2,   42,  ,    98],
   [0xc5, 'p', 'kelby1 rock',                ,   ,   ,    22,  ,    ,],
@@ -872,7 +872,6 @@ report.push(`    slot ${slot.toString(16)}: objData=${objData}`);
           i--;
         }
       }
-
       if (pat0 != null) location.spritePatterns[0] = pat0;
       if (pat1 != null) location.spritePatterns[1] = pat1;
       if (pal2 != null) location.spritePalettes[0] = pal2;

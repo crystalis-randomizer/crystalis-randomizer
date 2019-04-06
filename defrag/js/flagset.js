@@ -380,7 +380,7 @@ export const FLAGS = [{
   flags: [{
     flag: 'Es',
     name: 'Guarantee starting sword',
-    text: `The Leaf elder is guaranteed to give a sword.  It will not beb
+    text: `The Leaf elder is guaranteed to give a sword.  It will not be
            required to deal with any enemies before finding the first sword.`,
   }, {
     flag: 'Er',

@@ -112,10 +112,24 @@ const assumeGhettoFlight    = glitch(option('Assume ghetto flight',
                                      opt('Gf', true)));
 const assumeStatueGlitch    = glitch(option('Assume statue glitch',
                                      opt('Gt', true)));
+const allowStatueGlitch     = option('Allow statue glitch',
+                                     opt('!Ft', true));
 const assumeTeleportSkip    = glitch(option('Assume teleport skip',
                                      opt('Gp', false)));
+const allowTeleportSkip     = option('Allow teleport skip',
+                                     opt('!Fp', false));
 const assumeRabbitSkip      = glitch(option('Assume rabbit skip',
                                      opt('Gr', false)));
+const allowRabbitSkip       = glitch(option('Allow rabbit skip',
+                                     opt('!Fr', false)));
+const assumeSwordChargeGlitch = glitch(option('Assume sword charge glitch',
+                                       opt('Gc', false)));
+const allowSwordChargeGlitch = option('Allow sword charge glitch',
+                                     opt('!Fc', false));
+const assumeWildWarp        = glitch(option('Assume wild warp',
+                                     opt('Gw', false)));
+const allowWildWarp         = option('Allow wild warp',
+                                     opt('!Tw', false));
 const swordMagicOptional    = option('Sword magic optional',
                                      opt('Hw', false));
 const matchingSwordOptional = option('Matching sword optional',
@@ -134,16 +148,6 @@ const refreshOptional       = option('Refresh magic optional',
                                      opt('!Er', true));
 const limeTreeConnectsToLeaf = option('Lime Tree connects to Leaf',
                                       opt('Rp', true));
-const assumeWildWarp        = glitch(option('Assume wild warp',
-                                     opt('Gw', false)));
-const allowWildWarp         = option('Allow wild warp',
-                                     opt('!Tw', false));
-const allowStatueGlitch     = option('Allow statue glitch',
-                                     opt('!Ft', false));
-const assumeSwordChargeGlitch = glitch(option('Assume sword charge glitch',
-                                       opt('Gc', false)));
-const allowSwordChargeGlitch = option('Allow sword charge glitch',
-                                     opt('!Fc', false));
 const buffedMedicalHerb     = option('Buffed medical herb',
                                      opt('!Hm', true));
 
@@ -475,9 +479,9 @@ const forgedCrystalis       = trigger('Forged Crystalis').get(crystalis);
 const swordChargeGlitch     = condition('Sword charge glitch')
                                 .option(assumeSwordChargeGlitch, allowSwordChargeGlitch);
 const rabbitSkip            = condition('Rabbit skip')
-                                .option(assumeRabbitSkip);
+                                .option(assumeRabbitSkip, allowRabbitSkip);
 const teleportSkip          = condition('Teleport skip')
-                                .option(assumeTeleportSkip);
+                                .option(assumeTeleportSkip, allowTeleportSkip);
 const statueGlitch          = condition('Statue glitch')
                                 .option(assumeStatueGlitch, allowStatueGlitch);
 const wildWarp              = condition('Wild warp')

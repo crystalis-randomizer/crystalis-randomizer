@@ -4,6 +4,7 @@ import {Random} from './random.js';
 import {shuffle2 as shuffleDepgraph} from './depgraph.js';
 import {crc32} from './crc32.js';
 import {FlagSet} from './flagset.js';
+import {FetchReader} from './fetchreader.js';
 import * as version from './version.js';
 
 // TODO - to shuffle the monsters, we need to find the sprite palttes and
@@ -15,7 +16,7 @@ import * as version from './version.js';
 // TODO - make a debugger window for patches.
 // TODO - this needs to be a separate non-compiled file.
 export default ({
-  async apply(rom, hash) {
+  async apply(rom, hash, path) {
     // Look for flag string and hash
     let flags;
     if (!hash['seed']) {
@@ -31,10 +32,7 @@ export default ({
     for (const key in hash) {
       if (hash[key] === 'false') hash[key] = false;
     }
-    // NOTE: THIS BREAKS CLOSURE!
-    // We need it commented to work in closure, but uncommented to work uncompiled in browser
-    // Currently no good way to do both without editing source :-(
-    //await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader());
+    await shuffle(rom, parseSeed(hash['seed']), flags, new FetchReader(path));
   }
 });
 
@@ -214,7 +212,7 @@ const storyMode = (rom) => {
   // Note: if bosses are shuffled we'll need to detect this...
   requirements.push(~rom.npcSpawns[0xc2].conditions[0x28][0]); // Kelbesque 1
   requirements.push(~rom.npcSpawns[0x84].conditions[0x6e][0]); // Sabera 1
-  requirements.push(~rom.npcSpawns[0xc4].conditions[0xf2][0]); // Mado 1
+  requirements.push(~rom.triggers[0x9a & 0x7f].conditions[1]); // Mado 1
   requirements.push(~rom.npcSpawns[0xc5].conditions[0xa9][0]); // Kelbesque 2
   requirements.push(~rom.npcSpawns[0xc6].conditions[0xac][0]); // Sabera 2
   requirements.push(~rom.npcSpawns[0xc7].conditions[0xb9][0]); // Mado 2
@@ -575,7 +573,7 @@ const SCALED_MONSTERS = new Map([
   [0x54, 'm', 'Rock Golem',                 6,  ,   11,  24,  6,   85],
   [0x55, 'm', 'Blue Bat',                   ,   ,   ,    4,   ,    32],
   [0x56, 'm', 'Green Wyvern',               4,  ,   4,   24,  6,   52],
-  [0x57, 'b', 'Vampire',                    3,  ,   13,  18,  ,    ,],
+  [0x57, 'b', 'Vampire',                    3,  ,   12,  18,  ,    ,],
   [0x58, 'm', 'Orc',                        3,  ,   4,   21,  4,   57],
   [0x59, 'm', 'Red Flying Swamp Insect',    3,  ,   1,   21,  4,   57],
   [0x5a, 'm', 'Blue Mushroom',              2,  ,   1,   21,  4,   44],
@@ -645,14 +643,14 @@ const SCALED_MONSTERS = new Map([
   [0xa2, 'm', 'Tower Sentinel',             ,   ,   2,   ,    ,    /*32*/],
   [0xa3, 'm', 'Air Sentry',                 3,  ,   4,   26,  ,    /*65*/],
   [0xa4, 'b', 'Dyna',                       6,  5,  16,  ,    ,    ,],
-  [0xa5, 'b', 'Vampire 2',                  2,  ,   6,   27,  ,    ,],
+  [0xa5, 'b', 'Vampire 2',                  3,  ,   12,  27,  ,    ,],
   [0xb4, 'b', 'dyna pod',                   15, ,   255, 26,  ,    ,],
   [0xb8, 'p', 'dyna counter',               ,   ,   ,    26,  ,    ,],
   [0xb9, 'p', 'dyna laser',                 ,   ,   ,    26,  ,    ,],
   [0xba, 'p', 'dyna bubble',                ,   ,   ,    36,  ,    ,],
-  [0xbc, 'm', 'vamp2 bat',                  ,   ,   ,    16,  ,    40],
+  [0xbc, 'm', 'vamp2 bat',                  ,   ,   ,    16,  ,    15],
   [0xbf, 'p', 'draygon2 fireball',          ,   ,   ,    26,  ,    ,],
-  [0xc1, 'm', 'vamp1 bat',                  ,   ,   ,    16,  ,    40],
+  [0xc1, 'm', 'vamp1 bat',                  ,   ,   ,    16,  ,    15],
   [0xc3, 'p', 'giant insect spit',          ,   ,   ,    35,  ,    ,],
   [0xc4, 'm', 'summoned insect',            4,  ,   2,   42,  ,    98],
   [0xc5, 'p', 'kelby1 rock',                ,   ,   ,    22,  ,    ,],
@@ -975,7 +973,6 @@ report.push(`    slot ${slot.toString(16)}: objData=${objData}`);
           i--;
         }
       }
-
       if (pat0 != null) location.spritePatterns[0] = pat0;
       if (pat1 != null) location.spritePatterns[1] = pat1;
       if (pal2 != null) location.spritePalettes[0] = pal2;

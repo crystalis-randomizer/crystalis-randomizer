@@ -656,7 +656,7 @@ const dyna        = boss(0x0d, 'Dyna', crystalis);
 
 const openedPrisonIfRequired = condition('Opened prison if required')
                                 // TODO - (wild warp + summit + key) works too
-                                .option(kelbesque1, keyToPrison)
+                                .option(/*kelbesque1, */ keyToPrison)
                                 .option(freeLunch);
 
 ////////////////////////////////////////////////////////////////

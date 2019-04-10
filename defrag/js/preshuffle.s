@@ -332,8 +332,6 @@ CheckBelowBoss:
 
 
 
-
-
 ;;; Dialogs and Spawn Conditions
 
 
@@ -1403,6 +1401,35 @@ CheckForLowHpMp:
 .org $35e00
   jsr CheckRabbitBoots
 .endif
+
+
+;.bank $36000 $a000:$2000
+;
+;.org $36086
+;
+;        ;; Free space at end of UseMagicJump
+;        
+;.assert < $36092 
+;
+;;;; Make gate opening independent of locations
+;.org $37879
+;  lda $23
+;  and #$f8
+;  cmp #$30
+;  beq GateCheckPassed
+;  lda $6c
+;  cmp #$73
+;  beq GateCheckPassed
+;  bne GateCheckFailed
+;.assert < $3788f
+;.org $3788f
+;GateCheckFailed:
+;.org $37896
+;GateCheckPassed:
+  
+
+
+
 
 ;;.org $3c010
 ;;;; Adjusted inventory update - use level instead of sword

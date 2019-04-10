@@ -230,6 +230,8 @@ const closeCaveEntrances = (rom, flags) => {
     replaceFlag(0x15, 0x30, windmillFlag);
 
     replaceFlag(0x40, 0x00, 0xd8); // key to prison flag
+    rom.locations[0x40].objects.splice(1, 0, [0x06, 0x06, 0x04, 0x2c]);
+    rom.locations[0x40].objects.push([0x07, 0x07, 0x02, 0xad]);
   }
 
   //rom.locations[0x14].tileEffects = 0xb3;

@@ -138,7 +138,7 @@ const gasMaskOptional       = option('Gas mask optional',
                                      opt('Hg', false));
 const healedDolphinOptional = option('Healed dolphin optional',
                                      opt('!Rd', true));
-const calmedSeaOptional     = option('Calmed sea not required',
+const freeLunch             = option('Free lunch', // calmed sea optional, etc
                                      opt('!Rl', false));
 const teleportToShyron      = option('Sword of Thunder teleports to Shyron',
                                      opt('Rt', true));
@@ -626,7 +626,10 @@ const travelSwamp           = condition('Travel swamp')
                                         swampRunPossible);
 const calmedSeaIfRequired   = condition('Calmed sea if required')
                                 .option(calmedSea)
-                                .option(calmedSeaOptional)
+                                .option(freeLunch);
+const startedWindmillIfRequired = condition('Started windmill if required')
+                                .option(startedWindmill)
+                                .option(freeLunch);
 
 // TODO - warp triggers, wild warp, etc...
 
@@ -650,6 +653,11 @@ const draygon1    = boss(0x0a, 'Draygon 1', anySword).get(psychoArmor);
 const statues     = boss(null, 'Statues', bowOfSun, bowOfMoon);
 const draygon2    = boss(0x0b, 'Draygon 2', anySword, bowOfTruth);
 const dyna        = boss(0x0d, 'Dyna', crystalis);
+
+const openedPrisonIfRequired = condition('Opened prison if required')
+                                // TODO - (wild warp + summit + key) works too
+                                .option(kelbesque1, keyToPrison)
+                                .option(freeLunch);
 
 ////////////////////////////////////////////////////////////////
 // Areas
@@ -772,7 +780,7 @@ const mtSabreWestTunnel1    = location(0x11, SBRW, 'Tunnel 1 (to Zebu)').cave()
 
 const cordelPlainWest       = location(0x14, CORD, 'West').overworld()
                                 //.connect(zebuCaveBack)
-                                .connect(sealedCave8b);
+                                .connect(sealedCave8b, startedWindmillIfRequired);
 const cordelPlainSouth      = location(0x14, CORD, 'South').overworld()
                                 .connect(cordelPlainWest, crossRivers); // 64dd:04
 const cordelPlainEast       = location(0x15, CORD, 'East').overworld()
@@ -960,7 +968,7 @@ const nadareBackRoom        = location(0x3e, NADR, 'Back Room').house();
 // Waterfall Valley
 
 const waterfallValleySummit = location(0x40, WFVL, 'Summit').overworld()
-                                .connect(mtSabreNorthTunnel10b);
+                                .connect(mtSabreNorthTunnel10b, openedPrisonIfRequired);
 const waterfallValleyNW     = location(0x40, WFVL, 'Northwest').overworld()
                                 .from(waterfallValleySummit)
                                 .to(waterfallValleySummit, flight);

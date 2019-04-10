@@ -136,7 +136,9 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   if (flags.check('Fr')) fixRabbitSkip(parsed);
   if (flags.check('Rs')) storyMode(parsed);
 
-  misc(parsed);
+  closeCaveEntrances(parsed, flags);
+
+  misc(parsed, flags);
 
   await assemble('postshuffle.s');
   updateDifficultyScalingTables(rom, flags, asm);
@@ -156,7 +158,83 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
 };
 
 
-const misc = (rom) => {
+const misc = (rom, flags) => {
+
+};
+
+const closeCaveEntrances = (rom, flags) => {
+
+  // Clear tiles 1,2,3,4 for blockable caves in tilesets 90, 94, and 9c
+  rom.swapMetatiles([0x90],
+                    [0x07, [0x01, 0x00], ~0xc1],
+                    [0x0e, [0x02, 0x00], ~0xc1],
+                    [0x20, [0x03, 0x0a], ~0xd7],
+                    [0x21, [0x04, 0x0a], ~0xd7]);
+  rom.swapMetatiles([0x94, 0x9c],
+                    [0x68, [0x01, 0x00], ~0xc1],
+                    [0x83, [0x02, 0x00], ~0xc1],
+                    [0x88, [0x03, 0x0a], ~0xd7],
+                    [0x89, [0x04, 0x0a], ~0xd7]);
+
+  // Now replace the tiles with the blockable ones
+  rom.screens[0x0a].tiles[0x3][0x8] = 0x01;
+  rom.screens[0x0a].tiles[0x3][0x9] = 0x02;
+  rom.screens[0x0a].tiles[0x4][0x8] = 0x03;
+  rom.screens[0x0a].tiles[0x4][0x9] = 0x04;
+
+  rom.screens[0x15].tiles[0x7][0x9] = 0x01;
+  rom.screens[0x15].tiles[0x7][0xa] = 0x02;
+  rom.screens[0x15].tiles[0x8][0x9] = 0x03;
+  rom.screens[0x15].tiles[0x8][0xa] = 0x04;
+
+  rom.screens[0x19].tiles[0x4][0x8] = 0x01;
+  rom.screens[0x19].tiles[0x4][0x9] = 0x02;
+  rom.screens[0x19].tiles[0x5][0x8] = 0x03;
+  rom.screens[0x19].tiles[0x5][0x9] = 0x04;
+
+  rom.screens[0x3e].tiles[0x5][0x6] = 0x01;
+  rom.screens[0x3e].tiles[0x5][0x7] = 0x02;
+  rom.screens[0x3e].tiles[0x6][0x6] = 0x03;
+  rom.screens[0x3e].tiles[0x6][0x7] = 0x04;
+
+  // NOTE: flag 2ef is ALWAYS set - use it as a baseline.
+  const flagsToClear = [
+    [0x03, 0x30], // valley of wind, zebu's cave
+    [0x14, 0x30], // cordel west, vampire cave
+    [0x15, 0x30], // cordel east, vampire cave
+    [0x40, 0x00], // waterfall north, prison cave
+    [0x40, 0x14], // waterfall north, fog lamp
+    [0x41, 0x74], // waterfall south, kirisa
+    [0x47, 0x10], // kirisa meadow
+    [0x98, 0x41],
+  ];
+  for (const [loc, pos] of flagsToClear) {
+    rom.locations[loc].flags.push([0xef, pos]);
+  }
+
+  const replaceFlag = (loc, pos, flag) => {
+    for (const arr of rom.locations[loc].flags) {
+      if (arr[1] == pos) {
+        arr[0] = flag;
+        return;
+      }
+    }
+    throw new Error(`Could not find flag to replace at ${loc}:${pos}`);
+  };
+
+  if (flags.check('Rl')) { // no free lunch - close off reverse entrances
+    // NOTE: we could also close it off until boss killed...?
+    //  - const vampireFlag = ~rom.npcSpawns[0xc0].conditions[0x0a][0];
+    const windmillFlag = 0xee;
+    replaceFlag(0x14, 0x30, windmillFlag);
+    replaceFlag(0x15, 0x30, windmillFlag);
+
+    replaceFlag(0x40, 0x00, 0xd8); // key to prison flag
+  }
+
+  //rom.locations[0x14].tileEffects = 0xb3;
+
+  // d7 for 3?
 
   // TODO - this ended up with message 00:03 and an action that gave bow of moon!
 

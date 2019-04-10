@@ -7,7 +7,8 @@ set -ex
 # address tables, terminations, etc.)
 {
   # Pad the test data on either side, then chop down to the right size
-  head -c 81919 /dev/urandom
+  #head -c 81919 /dev/urandom
+  head -c 77823 /dev/urandom
   cat test/testdata
   head -c 300000 /dev/urandom
 } | head -c 393232 > test/test.nes

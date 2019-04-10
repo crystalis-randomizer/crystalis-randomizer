@@ -1,3 +1,5 @@
+import {UnionFind} from './unionfind.js';
+
 const seq = (x, f = (i) => i) =>  new Array(x).fill(0).map((_, i) => f(i));
 const slice = (arr, start, len) => arr.slice(start, start + len);
 const signed = (x) => x < 0x80 ? x : x - 0x100;
@@ -264,6 +266,16 @@ const LOCATION_NAMES = {
   [0xfb]: 'Sahara - Pawn Shop',
 };
 
+const BAD_SCREENS = {
+  // mt sabre west cave 4
+  0x24: [[3, 4, 0x80]],
+  // lime tree
+  0x42: [[0, 2, 0x00]],
+  // oasis cave
+  0x91: [[0, 11, 0x80], [1, 11, 0x80], [2, 11, 0x80], [3, 11, 0x80],
+         [4, 11, 0x80], [5, 11, 0x80], [6, 11, 0x80], [7, 11, 0x80]],
+};
+
 class Entity {
   constructor(rom, id) {
     this.rom = rom;
@@ -291,6 +303,26 @@ class Screen extends Entity {
     return this.rom.metatiles[this.tiles[y][x]];
   }
 
+  /** @return {!Set<number>} */
+  allTilesSet() {
+    const tiles = new Set();
+    for (const row of this.tiles) {
+      for (const tile of row) {
+        tiles.add(tile);
+      }
+    }
+    return tiles;
+  }
+
+  write(rom = this.rom) {
+    let i = this.base;
+    for (const row of this.tiles) {
+      for (const tile of row) {
+        rom[i++] = tile;
+      }
+    }
+  }
+
   // TODO - accessors for which palettes, tilesets, and patters are used/allowed
 }
 
@@ -316,6 +348,43 @@ class Tileset extends Entity {
     this.attrs = seq(256, i => rom.prg[this.attrBase | i >> 2] >> ((i & 3) << 1) & 3);
     this.alternates = slice(rom.prg, this.alternatesBase, 32);
   }
+
+  write(rom = this.rom) {
+    for (let i = 0; i < 0x100; i++) {
+      if (i < 0x20) {
+        rom[this.alternatesBase + i] = this.alternates[i];
+      }
+      for (let j = 0; j < 4; j++) {
+        rom[this.tileBase + (j << 8) + i] = this.tiles[j][i];
+      }
+    }
+    for (let i = 0; i < 0x40; i++) {
+      const j = i << 2;
+      rom[this.attrBase + i] =
+          (this.attrs[j] & 3) | (this.attrs[j + 1] & 3) << 2 |
+          (this.attrs[j + 2] & 3) << 4 | (this.attrs[j + 3] & 3) << 6;
+    }
+    // Done?!?
+  }
+
+  // Rearranges tiles in the tileset, including the corresponding TileEffects.
+  // For the most part the tilesets and tileeffects are 1:1, the only exception
+  // is 88/b5 and a8/b5 share the same effects and are basically the same
+  // tileset, except for very minor details about the walls.
+  makeFlagTiles(mapping) {
+    // Goal: find unused higher spots and unflagged lower spots
+    // Move all instances around
+    // Return the *new* indices of the mapped tiles
+
+    // Usage: const [caveTL, caveTR, caveBL, caveBR] = tileset.makeFlagTiles({0x1a: 0x00, ...});
+    //        screen[y][x] = caveTL ...
+
+    // TODO - find all locations that have any given screen (incl which tileset, etc)
+    //      --> will need to add flags to them, sometimes?
+
+    // Multimap: tile-id => screen
+    //           screen  => location/tileset
+  }
 }
 
 class TileEffects extends Entity {
@@ -324,6 +393,12 @@ class TileEffects extends Entity {
     super(rom, id);
     this.base = (id << 8) & 0x1fff | 0x12000;
     this.effects = slice(rom.prg, this.base, 256);
+  }
+
+  write(rom = this.rom) {
+    for (let i = 0; i < 0x100; i++) {
+      rom[this.base + i] = this.effects[i];
+    }
   }
 }
 
@@ -603,7 +678,10 @@ class Location extends Entity {
     this.screens = seq(
         this.height,
         y => slice(rom.prg, this.layoutBase + 5 + y * this.width, this.width));
-
+    // TODO - make bad screen replacement conditional?
+    for (let [x, y, replacement] of BAD_SCREENS[id] || []) {
+      this.screens[y][x] = replacement;
+    }
     this.tilePalettes = slice(rom.prg, this.graphicsBase, 3);
     this.tileset = rom.prg[this.graphicsBase + 3];
     this.tileEffects = rom.prg[this.graphicsBase + 4];
@@ -686,6 +764,29 @@ class Location extends Entity {
     const base = await mapDataWriter.write(addresses);
     mapDataWriter.rom[this.mapDataPointer] = base & 0xff;
     mapDataWriter.rom[this.mapDataPointer + 1] = (base >>> 8) - 0xc0;
+  }
+
+  /** @return {!Set<!Screen>} */
+  allScreens() {
+    const screens = new Set();
+    const ext = this.extended ? 0x100 : 0;
+    for (const row of this.screens) {
+      for (const screen of row) {
+        screens.add(this.rom.screens[screen + ext]);
+      }
+    }
+    return screens
+  }
+
+  /** @return {!Set<number>} */
+  allTiles() {
+    const tiles = new Set();
+    for (const screen of this.screens) {
+      for (const tile of screen.allTiles()) {
+        tiles.add(tile);
+      }
+    }
+    return tiles;
   }
 }
 
@@ -1177,9 +1278,230 @@ export class Rom {
       promises.push(s.write(npcSpawnData));
     }
     await npcSpawnData.commit();
+    for (const tileset of this.tilesets) {
+      tileset.write(this.prg);
+    }
+    for (const tileEffects of this.tileEffects) {
+      tileEffects.write(this.prg);
+    }
+    for (const screen of this.screens) {
+      screen.write(this.prg);
+    }
     return Promise.all(promises).then(() => undefined);
   }
+
+
+  analyzeTiles() {
+    // For any given tile index, what screens does it appear on.
+    // For those screens, which tilesets does *it* appear on.
+    // That tile ID is linked across all those tilesets.
+    // Forms a partitioning for each tile ID => union-find.
+    // Given this partitioning, if I want to move a tile on a given
+    // tileset, all I need to do is find another tile ID with the
+    // same partition and swap them?
+
+    // More generally, we can just partition the tilesets.
+
+
+    // For each screen, find all tilesets T for that screen
+    // Then for each tile on the screen, union T for that tile.
+
+
+    // Given a tileset and a metatile ID, find all the screens that (1) are rendered
+    // with that tileset, and (b) that contain that metatile; then find all *other*
+    // tilesets that those screens are ever rendered with.
+
+    // Given a screen, find all available metatile IDs that could be added to it
+    // without causing problems with other screens that share any tilesets.
+    //  -> unused (or used but shared exclusively) across all tilesets the screen may use
+
+
+    // What I want for swapping is the following:
+    //  1. find all screens I want to work on => tilesets
+    //  2. find unused flaggabble tiles in the hardest one,
+    //     which are also ISOLATED in the others.
+    //  3. want these tiles to be unused in ALL relevant tilesets
+    //  4. to make this so, find *other* unused flaggable tiles in other tilesets
+    //  5. swap the unused with the isolated tiles in the other tilesets
+
+    // Caves:
+    //  0a:      90 / 9c
+    //  15: 80 / 90 / 9c
+    //  19:      90      (will add to 80?)
+    //  3e:      90
+    //
+    // Ideally we could reuse 80's 1/2/3/4 for this
+    //  01: 90 | 94 9c
+    //  02: 90 | 94 9c
+    //  03:      94 9c
+    //  04: 90 | 94 9c
+    //
+    // Need 4 other flaggable tile indices we can swap to?
+    //   90: => (1,2 need flaggable; 3 unused; 4 any) => 07, 0e, 10, 12, 13, ..., 20, 21, 22, ...
+    //   94 9c: => don't need any flaggable => 05, 3c, 68, 83, 88, 89, 8a, 90, ...
+  }
+
+
+  disjointTilesets() {
+    const tilesetByScreen = [];
+    for (const loc of this.locations) {
+      if (!loc) continue;
+      const tileset = loc.tileset;
+      const ext = loc.extended ? 0x100 : 0;
+      for (const row of loc.screens) {
+        for (const s of row) {
+          (tilesetByScreen[s + ext] || (tilesetByScreen[s + ext] = new Set())).add(tileset);
+        }
+      }
+    }
+    const tiles = new Array(256).fill(0).map(() => new UnionFind());
+    for (let s = 0; s < tilesetByScreen.length; s++) {
+      if (!tilesetByScreen[s]) continue;
+      const ts = new Set();
+      for (const row of this.screens[s].tiles) {
+        for (const t of row) {
+          ts.add(t);
+        }
+      }
+      for (const t of ts) {
+        tiles[t].union([...tilesetByScreen[s]]);
+      }
+    }
+    // output
+    for (let t = 0; t < tiles.length; t++) {
+      const p = tiles[t].sets().map(s => [...s].map(x => x.toString(16)).join(' ')).join(' | ');
+      console.log(`Tile ${t.toString(16).padStart(2, 0)}: ${p}`);
+    }
+    //   if (!tilesetByScreen[i]) {
+    //     console.log(`No tileset for screen ${i.toString(16)}`);
+    //     continue;
+    //   }
+    //   union.union([...tilesetByScreen[i]]);
+    // }
+    // return union.sets();
+  }
+
+  // Cycles are not actually cyclic - an explicit loop at the end is required to swap.
+  // Variance: [1, 2, null] will cause instances of 1 to become 2 and will
+  //           cause properties of 1 to be copied into slot 2
+  // Common usage is to swap things out of the way and then copy into the
+  // newly-freed slot.  Say we wanted to free up slots [1, 2, 3, 4] and
+  // had available/free slots [5, 6, 7, 8] and want to copy from [9, a, b, c].
+  // Then cycles will be [1, 5, 9] ??? no
+  //  - probably want to do screens separately from tilesets...?
+  // NOTE - we don't actually want to change tiles for the last copy...!
+  //   in this case, ts[5] <- ts[1], ts[1] <- ts[9], screen.map(1 -> 5)
+  //   replace([0x90], [5, 1, ~9])
+  //     => 1s replaced with 5s in screens but 9s NOT replaced with 1s.
+  // Just build the partition once lazily? then can reuse...
+  //   - ensure both sides of replacement have correct partitioning?E
+  //     or just do it offline - it's simpler
+  // TODO - Sanity check?  Want to make sure nobody is using clobbered tiles?
+  swapMetatiles(/** !Array<number> */ tilesets, /** ...!Array<number|!Array<number>> */ ...cycles) {
+    // Process the cycles
+    const rev = new Map();
+    const revArr = seq(0x100);
+    const alt = new Map();
+    const cpl = x => Array.isArray(x) ? x[0] : x < 0 ? ~x : x;
+    for (const cycle of cycles) {
+      for (let i = 0; i < cycle.length - 1; i++) {
+        if (Array.isArray(cycle[i])) {
+          alt.set(cycle[i][0], cycle[i][1]);
+          cycle[i] = cycle[i][0];
+        }
+      }
+      for (let i = 0; i < cycle.length - 1; i++) {
+        let j = cycle[i];
+        let k = cycle[i + 1];
+        if (j < 0 || k < 0) continue;
+        rev.set(k, j);
+        revArr[k] = j;
+      }
+    }
+    //const replacementSet = new Set(replacements.keys());
+    // Find instances in (1) screens, (2) tilesets and alternates, (3) tileEffects
+    const screens = new Set();
+    const tileEffects = new Set();
+    tilesets = new Set(tilesets);
+    for (const l of this.locations) {
+      if (!l) continue;
+      if (!tilesets.has(l.tileset)) continue;
+      tileEffects.add(l.tileEffects);
+      for (const screen of l.allScreens()) {
+        screens.add(screen);
+      }
+    }
+    // Do replacements.
+    // 1. screens: [5, 1, ~9] => change 1s into 5s
+    for (const screen of screens) {
+      for (const row of screen.tiles) {
+        for (let i = 0; i < row.length; i++) {
+          row[i] = revArr[row[i]];
+        }
+      }
+    }
+    // 2. tilesets: [5, 1 ~9] => copy 5 <= 1 and 1 <= 9
+    for (const tsid of tilesets) {
+      const tileset = this.tilesets[(tsid & 0x7f) >>> 2];
+      for (const cycle of cycles) {
+        for (let i = 0; i < cycle.length - 1; i++) {
+          const a = cpl(cycle[i]);
+          const b = cpl(cycle[i + 1]);
+          for (let j = 0; j < 4; j++) {
+            tileset.tiles[j][a] = tileset.tiles[j][b];
+          }
+          tileset.attrs[a] = tileset.attrs[b];
+          if (b < 0x20 && tileset.alternates[b] != b) {
+            if (a >= 0x20) throw new Error(`Cannot unflag: ${tsid} ${a} ${b} ${tileset.alternates[b]}`);
+            tileset.alternates[a] = tileset.alternates[b];
+          }
+        }
+      }
+      for (const [a, b] of alt) {
+        tileset.alternates[a] = b;
+      }
+    }
+    // 3. tileEffects
+    for (const teid of tileEffects) {
+      const tileEffect = this.tileEffects[teid - 0xb3];
+      for (const cycle of cycles) {
+        for (let i = 0; i < cycle.length - 1; i++) {
+          const a = cpl(cycle[i]);
+          const b = cpl(cycle[i + 1]);
+          tileEffect.effects[a] = tileEffect.effects[b];
+        }
+      }
+      for (const a of alt.keys()) {
+        tileEffect.effects[a] |= 0x08;
+      }
+    }
+    // Done?!?
+  }
 }
+
+
+// const intersects = (left, right) => {
+//   if (left.size > right.size) return intersects(right, left);
+//   for (let i of left) {
+//     if (right.has(i)) return true;
+//   }
+//   return false;
+// }
+
+const TILE_EFFECTS_BY_TILESET = {
+  0x80: 0xb3,
+  0x84: 0xb4,
+  0x88: 0xb5,
+  0x8c: 0xb6,
+  0x90: 0xb7,
+  0x94: 0xb8,
+  0x98: 0xb9,
+  0x9c: 0xba,
+  0xa0: 0xbb,
+  0xa4: 0xbc,
+  0xa8: 0xb5,
+  0xac: 0xbd,
+};
 
 const readString = (arr, addr) => {
   const bytes = [];
@@ -1380,5 +1702,6 @@ class Writer {
 // building the CSV for the location table.
 //const h=(x)=>x==null?'null':'$'+x.toString(16).padStart(2,0);
 //'id,name,bgm,width,height,animation,extended,tilepat0,tilepat1,tilepal0,tilepal1,tileset,tile effects,exits,sprpat0,sprpat1,sprpal0,sprpal1,obj0d,obj0e,obj0f,obj10,obj11,obj12,obj13,obj14,obj15,obj16,obj17,obj18,obj19,obj1a,obj1b,obj1c,obj1d,obj1e,obj1f\n'+rom.locations.map(l=>!l||!l.valid?'':[h(l.id),l.name,h(l.bgm),l.layoutWidth,l.layoutHeight,l.animation,l.extended,h((l.tilePatterns||[])[0]),h((l.tilePatterns||[])[1]),h((l.tilePalettes||[])[0]),h((l.tilePalettes||[])[1]),h(l.tileset),h(l.tileEffects),[...new Set(l.exits.map(x=>h(x[2])))].join(':'),h((l.spritePatterns||[])[0]),h((l.spritePatterns||[])[1]),h((l.spritePalettes||[])[0]),h((l.spritePalettes||[])[1]),...new Array(19).fill(0).map((v,i)=>((l.objects||[])[i]||[]).slice(2).map(x=>x.toString(16)).join(':'))]).filter(x=>x).join('\n')
+
 
 export const EXPECTED_CRC32 = 0x1bd39032;

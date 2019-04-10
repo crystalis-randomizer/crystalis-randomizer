@@ -468,12 +468,13 @@ Trigger_8c:
 ItemGetData_03: ; sword of thunder
   .byte $03,$80 ; slot
   .byte $08,$00 ; action 01 -> teleport to shyron
+.ifdef _TELEPORT_ON_THUNDER_SWORD
   .byte $02,$fd ; Set: 2fd warp:shyron
+.endif
   .byte $40,$5f ; Set: 05f chest:03:sword of thunder
   .byte $ff
-.org $1cf82
   ; 15 bytes still available
-.org $1cf91
+.assert < $1cf91
 
 
 ;; queen will try to give flute of lime even if got sword first

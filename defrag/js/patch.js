@@ -225,6 +225,7 @@ const closeCaveEntrances = (rom, flags) => {
   if (flags.check('Rl')) { // no free lunch - close off reverse entrances
     // NOTE: we could also close it off until boss killed...?
     //  - const vampireFlag = ~rom.npcSpawns[0xc0].conditions[0x0a][0];
+    //  -> kelbesque for the other one.
     const windmillFlag = 0xee;
     replaceFlag(0x14, 0x30, windmillFlag);
     replaceFlag(0x15, 0x30, windmillFlag);

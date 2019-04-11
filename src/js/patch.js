@@ -206,6 +206,7 @@ const closeCaveEntrances = (rom, flags) => {
     [0x40, 0x14], // waterfall north, fog lamp
     [0x41, 0x74], // waterfall south, kirisa
     [0x47, 0x10], // kirisa meadow
+    [0x94, 0x00], // cave to desert
     [0x98, 0x41],
   ];
   for (const [loc, pos] of flagsToClear) {

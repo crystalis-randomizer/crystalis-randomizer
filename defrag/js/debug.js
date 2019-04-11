@@ -195,6 +195,34 @@ export default (nes) => {
     }
     console.log(lines.join('\n'));
   };
+
+  window.watchFlags = () => {
+    const current = new Array(0x300);
+    for (let i = 0; i < 0x300; i++) {
+      current[i] = window.flag(i).get();
+    }
+
+    const m = nes.debug.logMem;
+    nes.debug.logMem = (...args) => {
+      if ((args[1] & 0xfff80) == 0x6480) {
+        const start = (args[1] & 0x7f) << 3;
+        if (start < 0x300) {
+          for (let i = 0; i < 8; i++) {
+            const f = start + i;
+            const v = window.flag(start + i).get();
+            if (v != current[f]) {
+              current[f] = v;
+              console.log(`Flag ${f.toString(16).padStart(3, 0)} <- ${v}`);
+            }
+          }
+        }
+      }
+      m.apply(nes.debug, args);
+    };
+
+
+  };
+
 };
 
 

@@ -4,6 +4,7 @@ import {Random} from './random.js';
 import {shuffle2 as shuffleDepgraph} from './depgraph.js';
 import {crc32} from './crc32.js';
 import {FlagSet} from './flagset.js';
+import {FetchReader} from './fetchreader.js';
 import * as version from './version.js';
 
 // TODO - to shuffle the monsters, we need to find the sprite palttes and
@@ -15,7 +16,7 @@ import * as version from './version.js';
 // TODO - make a debugger window for patches.
 // TODO - this needs to be a separate non-compiled file.
 export default ({
-  async apply(rom, hash) {
+  async apply(rom, hash, path) {
     // Look for flag string and hash
     let flags;
     if (!hash['seed']) {
@@ -31,10 +32,7 @@ export default ({
     for (const key in hash) {
       if (hash[key] === 'false') hash[key] = false;
     }
-    // NOTE: THIS BREAKS CLOSURE!
-    // We need it commented to work in closure, but uncommented to work uncompiled in browser
-    // Currently no good way to do both without editing source :-(
-    //await shuffle(rom, parseSeed(hash['seed']), flags, (await import('./metareader.js')).reader());
+    await shuffle(rom, parseSeed(hash['seed']), flags, new FetchReader(path));
   }
 });
 
@@ -62,35 +60,35 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   if (typeof seed !== 'number') throw new Error('Bad seed');
   const newSeed = crc32(seed.toString(16).padStart(8, 0) + String(flags)) >>> 0;
 
-  const touchShops = flags.check('Pn') || flags.check('Pb') || flags.check('Ps');
+  const touchShops = true;
 
   const defines = {
     _ALLOW_TELEPORT_OUT_OF_TOWER: true,
-    _AUTO_EQUIP_BRACELET: flags.check('Ta'),
-    _BARRIER_REQUIRES_CALM_SEA: flags.check('Rl'),
-    _BUFF_DEOS_PENDANT: flags.check('Td'),
-    _CONNECT_LEAF_TO_LIME_TREE: flags.check('Rp'),
+    _AUTO_EQUIP_BRACELET: flags.autoEquipBracelet(),
+    _BARRIER_REQUIRES_CALM_SEA: flags.barrierRequiresCalmSea(),
+    _BUFF_DEOS_PENDANT: flags.buffDeosPendant(),
     _CHECK_FLAG0: true,
-    _DISABLE_SHOP_GLITCH: flags.check('Fs'),
-    _DISABLE_STATUE_GLITCH: flags.check('Ft'),
-    _DISABLE_SWORD_CHARGE_GLITCH: flags.check('Fc'),
+    _DISABLE_SHOP_GLITCH: flags.disableShopGlitch(),
+    _DISABLE_STATUE_GLITCH: flags.disableStatueGlitch(),
+    _DISABLE_SWORD_CHARGE_GLITCH: flags.disableSwordChargeGlitch(),
     _DISABLE_WILD_WARP: false,
     _DISPLAY_DIFFICULTY: true,
     _EXTRA_PITY_MP: true,  // TODO: allow disabling this
     _FIX_OPEL_STATUE: true,
     _FIX_SHAKING: true,
     _FIX_VAMPIRE: true,
-    _LEATHER_BOOTS_GIVE_SPEED: flags.check('Ts'),
-    _NERF_WILD_WARP: flags.check('Tw'),
-    _NEVER_DIE: flags.check('Di'),
+    _LEATHER_BOOTS_GIVE_SPEED: flags.leatherBootsGiveSpeed(),
+    _NERF_WILD_WARP: flags.nerfWildWarp(),
+    _NERF_FLIGHT: true,
+    _NEVER_DIE: flags.neverDie(),
     _NORMALIZE_SHOP_PRICES: touchShops,
     _PITY_HP_AND_MP: true,
     _PROGRESSIVE_BRACELET: true,
-    _RABBIT_BOOTS_CHARGE_WHILE_WALKING: flags.check('Tr'),
+    _RABBIT_BOOTS_CHARGE_WHILE_WALKING: flags.rabbitBootsChargeWhileWalking(),
     _REVERSIBLE_SWAN_GATE: true,
-    _REQUIRE_HEALED_DOLPHIN_TO_RIDE: flags.check('Rd'),
-    _SAHARA_RABBITS_REQUIRE_TELEPATHY: false,
-    _TELEPORT_ON_THUNDER_SWORD: flags.check('Rt'),
+    _REQUIRE_HEALED_DOLPHIN_TO_RIDE: flags.requireHealedDolphinToRide(),
+    _SAHARA_RABBITS_REQUIRE_TELEPATHY: flags.saharaRabbitsRequireTelepathy(),
+    _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
   };
 
   const asm = new Assembler();
@@ -111,29 +109,44 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   if (touchShops) {
     // TODO - separate logic for handling shops w/o Pn specified (i.e. vanilla
     // shops that may have been randomized)
-    rescaleShops(rom, asm, flags.check('Pb') ? random : null);
+    rescaleShops(rom, asm, flags.bargainHunting() ? random : null);
   }
 
-  // Parse the rom and apply other patches.
+  // Parse the rom and apply other patches - note: must have shuffled
+  // the depgraph FIRST!
   const parsed = new Rom(rom);
   rescaleMonsters(rom, parsed);
-  if (flags.check('Mr')) shuffleMonsters(rom, parsed, random);
+  if (flags.shuffleMonsters()) shuffleMonsters(rom, parsed, random);
   identifyKeyItemsForDifficultyBuffs(parsed);
 
   // Buff medical herb and fruit of power
-  if (flags.check('Em')) {
+  if (flags.doubleBuffMedicalHerb) {
     rom[0x1c50c + 0x10] *= 2;  // fruit of power
     rom[0x1c4ea + 0x10] *= 3;  // medical herb
-  } else if (!flags.check('Hm')) {
+  } else if (flags.singleBuffMedicalHerb()) {
     rom[0x1c50c + 0x10] += 16; // fruit of power
     rom[0x1c4ea + 0x10] *= 2;  // medical herb
   }
+
+  if (flags.connectLimeTreeToLeaf()) {
+    connectLimeTreeToLeaf(parsed);
+  }
+
+  addCordelWestTriggers(parsed, flags);
+  if (flags.disableRabbitSkip()) fixRabbitSkip(parsed);
+  if (flags.storyMode()) storyMode(parsed);
+
+  closeCaveEntrances(parsed, flags);
+
+  misc(parsed, flags);
 
   await assemble('postshuffle.s');
   updateDifficultyScalingTables(rom, flags, asm);
   updateCoinDrops(rom, flags);
 
   shuffleRandomNumbers(rom, random);
+
+  await parsed.writeData();
 
   return stampVersionSeedAndHash(rom, seed, flags);
 
@@ -142,6 +155,178 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   // do any "vanity" patches here...
   // console.log('patch applied');
   // return log.join('\n');
+};
+
+
+const misc = (rom, flags) => {
+
+};
+
+const closeCaveEntrances = (rom, flags) => {
+
+  // Clear tiles 1,2,3,4 for blockable caves in tilesets 90, 94, and 9c
+  rom.swapMetatiles([0x90],
+                    [0x07, [0x01, 0x00], ~0xc1],
+                    [0x0e, [0x02, 0x00], ~0xc1],
+                    [0x20, [0x03, 0x0a], ~0xd7],
+                    [0x21, [0x04, 0x0a], ~0xd7]);
+  rom.swapMetatiles([0x94, 0x9c],
+                    [0x68, [0x01, 0x00], ~0xc1],
+                    [0x83, [0x02, 0x00], ~0xc1],
+                    [0x88, [0x03, 0x0a], ~0xd7],
+                    [0x89, [0x04, 0x0a], ~0xd7]);
+
+  // Now replace the tiles with the blockable ones
+  rom.screens[0x0a].tiles[0x3][0x8] = 0x01;
+  rom.screens[0x0a].tiles[0x3][0x9] = 0x02;
+  rom.screens[0x0a].tiles[0x4][0x8] = 0x03;
+  rom.screens[0x0a].tiles[0x4][0x9] = 0x04;
+
+  rom.screens[0x15].tiles[0x7][0x9] = 0x01;
+  rom.screens[0x15].tiles[0x7][0xa] = 0x02;
+  rom.screens[0x15].tiles[0x8][0x9] = 0x03;
+  rom.screens[0x15].tiles[0x8][0xa] = 0x04;
+
+  rom.screens[0x19].tiles[0x4][0x8] = 0x01;
+  rom.screens[0x19].tiles[0x4][0x9] = 0x02;
+  rom.screens[0x19].tiles[0x5][0x8] = 0x03;
+  rom.screens[0x19].tiles[0x5][0x9] = 0x04;
+
+  rom.screens[0x3e].tiles[0x5][0x6] = 0x01;
+  rom.screens[0x3e].tiles[0x5][0x7] = 0x02;
+  rom.screens[0x3e].tiles[0x6][0x6] = 0x03;
+  rom.screens[0x3e].tiles[0x6][0x7] = 0x04;
+
+  // NOTE: flag 2ef is ALWAYS set - use it as a baseline.
+  const flagsToClear = [
+    [0x03, 0x30], // valley of wind, zebu's cave
+    [0x14, 0x30], // cordel west, vampire cave
+    [0x15, 0x30], // cordel east, vampire cave
+    [0x40, 0x00], // waterfall north, prison cave
+    [0x40, 0x14], // waterfall north, fog lamp
+    [0x41, 0x74], // waterfall south, kirisa
+    [0x47, 0x10], // kirisa meadow
+    [0x94, 0x00], // cave to desert
+    [0x98, 0x41],
+  ];
+  for (const [loc, pos] of flagsToClear) {
+    rom.locations[loc].flags.push([0xef, pos]);
+  }
+
+  const replaceFlag = (loc, pos, flag) => {
+    for (const arr of rom.locations[loc].flags) {
+      if (arr[1] == pos) {
+        arr[0] = flag;
+        return;
+      }
+    }
+    throw new Error(`Could not find flag to replace at ${loc}:${pos}`);
+  };
+
+  if (flags.paralysisRequiresPrisonKey()) { // close off reverse entrances
+    // NOTE: we could also close it off until boss killed...?
+    //  - const vampireFlag = ~rom.npcSpawns[0xc0].conditions[0x0a][0];
+    //  -> kelbesque for the other one.
+    const windmillFlag = 0xee;
+    replaceFlag(0x14, 0x30, windmillFlag);
+    replaceFlag(0x15, 0x30, windmillFlag);
+
+    replaceFlag(0x40, 0x00, 0xd8); // key to prison flag
+    rom.locations[0x40].objects.splice(1, 0, [0x06, 0x06, 0x04, 0x2c]);
+    rom.locations[0x40].objects.push([0x07, 0x07, 0x02, 0xad]);
+  }
+
+  //rom.locations[0x14].tileEffects = 0xb3;
+
+  // d7 for 3?
+
+  // TODO - this ended up with message 00:03 and an action that gave bow of moon!
+
+  // rom.triggers[0x19].message.part = 0x1b;
+  // rom.triggers[0x19].message.index = 0x08;
+  // rom.triggers[0x19].flags.push(0x2f6, 0x2f7, 0x2f8);
+};
+
+const eastCave = (rom) => {
+  // NOTE: 0x9c can become 0x99 in top left or 0x97 in top right or bottom middle for a cave exit
+  const screens1 = [[0x9c, 0x84, 0x80, 0x83, 0x9c],
+                    [0x80, 0x81, 0x83, 0x86, 0x80],
+                    [0x83, 0x88, 0x89, 0x80, 0x80],
+                    [0x81, 0x8c, 0x85, 0x82, 0x84],
+                    [0x9a, 0x85, 0x9c, 0x98, 0x86]];
+  const screens2 = [[0x9c, 0x84, 0x9b, 0x80, 0x9b],
+                    [0x80, 0x81, 0x81, 0x80, 0x81],
+                    [0x80, 0x87, 0x8b, 0x8a, 0x86],
+                    [0x80, 0x8c, 0x80, 0x85, 0x84],
+                    [0x9c, 0x86, 0x80, 0x80, 0x9a]];
+  // TODO fill up graphics, etc --> $1a, $1b, $05 / $88, $b5 / $14, $02
+  // Think aobut exits and entrances...?
+
+};
+
+// Add the statue of onyx and possibly the teleport block trigger to Cordel West
+const addCordelWestTriggers = (rom, flags) => {
+  for (const o of rom.locations[0x15].objects) {
+    if (o[2] === 2) {
+      // Copy if (1) it's the chest, or (2) we're disabling teleport skip
+      const copy = o[3] < 0x80 || flags.disableTeleportSkip();
+        // statue of onyx - always move
+      if (copy) rom.locations[0x14].objects.push([...o]);
+    }
+  }
+};
+
+const fixRabbitSkip = (rom) => {
+  for (const o of rom.locations[0x28].objects) {
+    if (o[2] === 2 && o[3] === 0x86) {
+      if (o[1] === 0x74) {
+        o[1]++;
+      }
+      o[0]++;
+    }
+  }
+};
+
+const storyMode = (rom) => {
+  // shuffle has already happened, need to use shuffled flags from
+  // NPC spawn conditions...
+  const requirements = rom.npcSpawns[0xcb].conditions[0xa6];
+  // Note: if bosses are shuffled we'll need to detect this...
+  requirements.push(~rom.npcSpawns[0xc2].conditions[0x28][0]); // Kelbesque 1
+  requirements.push(~rom.npcSpawns[0x84].conditions[0x6e][0]); // Sabera 1
+  requirements.push(~rom.triggers[0x9a & 0x7f].conditions[1]); // Mado 1
+  requirements.push(~rom.npcSpawns[0xc5].conditions[0xa9][0]); // Kelbesque 2
+  requirements.push(~rom.npcSpawns[0xc6].conditions[0xac][0]); // Sabera 2
+  requirements.push(~rom.npcSpawns[0xc7].conditions[0xb9][0]); // Mado 2
+  requirements.push(~rom.npcSpawns[0xc8].conditions[0xb6][0]); // Karmine
+  requirements.push(~rom.npcSpawns[0xcb].conditions[0x9f][0]); // Draygon 1
+  requirements.push(0x200); // Sword of Wind
+  requirements.push(0x201); // Sword of Fire
+  requirements.push(0x202); // Sword of Water
+  requirements.push(0x203); // Sword of Thunder
+  // TODO - statues of moon and sun may be relevant if entrance shuffle?
+  // TODO - vampires and insect?
+};
+
+
+// Programmatically add a hole between valley of wind and lime tree valley
+const connectLimeTreeToLeaf = (rom) => {
+  const valleyOfWind = rom.locations[0x03];
+  const limeTree = rom.locations[0x42];
+
+  valleyOfWind.screens[5][4] = 0x10; // new exit
+  limeTree.screens[1][0] = 0x1a; // new exit
+  limeTree.screens[2][0] = 0x0c; // nicer mountains
+
+  const windEntrance = valleyOfWind.entrances.push([0xef, 0x04, 0x78, 0x05]) - 1;
+  const limeEntrance = limeTree.entrances.push([0x10, 0x00, 0xc0, 0x01]) - 1;
+
+  valleyOfWind.exits.push(
+      [0x4f, 0x56, 0x42, limeEntrance],
+      [0x4f, 0x57, 0x42, limeEntrance]);
+  limeTree.exits.push(
+      [0x00, 0x1b, 0x03, windEntrance],
+      [0x00, 0x1c, 0x03, windEntrance]);
 };
 
 
@@ -230,7 +415,7 @@ const patchWords = (rom, address, words) => {
 
 // goes with enemy stat recomputations in postshuffle.s
 const updateCoinDrops = (rom, flags) => {
-  if (flags.check('Fs')) {
+  if (flags.disableShopGlitch()) {
     // bigger gold drops if no shop glitch, particularly at the start
     // - starts out fibonacci, then goes linear at 600
     patchWords(rom, 0x34bde, [
@@ -274,13 +459,15 @@ const updateDifficultyScalingTables = (rom, flags, asm) => {
              diff.map(d => d * 4));
 
   // DiffHP table is PHP = min(255, 48 + round(Diff * 11 / 2))
+  const phpStart = flags.decreaseEnemyDamage() ? 16 : 48;
+  const phpIncr = flags.decreaseEnemyDamage() ? 6 : 5.5;
   patchBytes(rom, asm.expand('DiffHP'),
-             diff.map(d => Math.min(255, 48 + Math.round(d * 11 / 2))));
+             diff.map(d => Math.min(255, phpStart + Math.round(d * phpIncr))));
 
   // DiffExp table is ExpB = compress(floor(4 * (2 ** ((16 + 9 * Diff) / 32))))
   // where compress maps values > 127 to $80|(x>>4)
 
-  const expFactor = flags.check('Hx') ? 0.25 : flags.check('Ex') ? 2.5 : 1;
+  const expFactor = flags.expScalingFactor();
   patchBytes(rom, asm.expand('DiffExp'), diff.map(d => {
     const exp = Math.floor(4 * (2 ** ((16 + 9 * d) / 32)) * expFactor);
     return exp < 0x80 ? exp : Math.min(0xff, 0x80 + (exp >> 4));
@@ -429,7 +616,7 @@ const rescaleMonsters = (data, rom) => {
   // Fix Sabera 1's elemental defense to no longer allow thunder
   rom.objects[0x7d].objectData[0x10] |= 0x08;
 
-  rom.writeObjectData();
+  //rom.writeObjectData();
 };
 
 const shuffleMonsters = (data, rom, random, log) => {
@@ -439,8 +626,6 @@ const shuffleMonsters = (data, rom, random, log) => {
     if (loc) pool.populate(loc);
   }
   pool.shuffle(random);
-
-  rom.writeNpcData();
 };
 
 const identifyKeyItemsForDifficultyBuffs = (rom) => {

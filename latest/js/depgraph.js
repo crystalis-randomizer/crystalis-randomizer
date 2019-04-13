@@ -112,10 +112,24 @@ const assumeGhettoFlight    = glitch(option('Assume ghetto flight',
                                      opt('Gf', true)));
 const assumeStatueGlitch    = glitch(option('Assume statue glitch',
                                      opt('Gt', true)));
+const allowStatueGlitch     = option('Allow statue glitch',
+                                     opt('!Ft', true));
 const assumeTeleportSkip    = glitch(option('Assume teleport skip',
                                      opt('Gp', false)));
+const allowTeleportSkip     = option('Allow teleport skip',
+                                     opt('!Fp', false));
 const assumeRabbitSkip      = glitch(option('Assume rabbit skip',
                                      opt('Gr', false)));
+const allowRabbitSkip       = glitch(option('Allow rabbit skip',
+                                     opt('!Fr', false)));
+const assumeSwordChargeGlitch = glitch(option('Assume sword charge glitch',
+                                       opt('Gc', false)));
+const allowSwordChargeGlitch = option('Allow sword charge glitch',
+                                     opt('!Fc', false));
+const assumeWildWarp        = glitch(option('Assume wild warp',
+                                     opt('Gw', false)));
+const allowWildWarp         = option('Allow wild warp',
+                                     opt('!Tw', false));
 const swordMagicOptional    = option('Sword magic optional',
                                      opt('Hw', false));
 const matchingSwordOptional = option('Matching sword optional',
@@ -124,7 +138,7 @@ const gasMaskOptional       = option('Gas mask optional',
                                      opt('Hg', false));
 const healedDolphinOptional = option('Healed dolphin optional',
                                      opt('!Rd', true));
-const calmedSeaOptional     = option('Calmed sea not required',
+const freeLunch             = option('Free lunch', // calmed sea optional, etc
                                      opt('!Rl', false));
 const teleportToShyron      = option('Sword of Thunder teleports to Shyron',
                                      opt('Rt', true));
@@ -134,16 +148,6 @@ const refreshOptional       = option('Refresh magic optional',
                                      opt('!Er', true));
 const limeTreeConnectsToLeaf = option('Lime Tree connects to Leaf',
                                       opt('Rp', true));
-const assumeWildWarp        = glitch(option('Assume wild warp',
-                                     opt('Gw', false)));
-const allowWildWarp         = option('Allow wild warp',
-                                     opt('!Tw', false));
-const allowStatueGlitch     = option('Allow statue glitch',
-                                     opt('!Ft', false));
-const assumeSwordChargeGlitch = glitch(option('Assume sword charge glitch',
-                                       opt('Gc', false)));
-const allowSwordChargeGlitch = option('Allow sword charge glitch',
-                                     opt('!Fc', false));
 const buffedMedicalHerb     = option('Buffed medical herb',
                                      opt('!Hm', true));
 
@@ -475,9 +479,9 @@ const forgedCrystalis       = trigger('Forged Crystalis').get(crystalis);
 const swordChargeGlitch     = condition('Sword charge glitch')
                                 .option(assumeSwordChargeGlitch, allowSwordChargeGlitch);
 const rabbitSkip            = condition('Rabbit skip')
-                                .option(assumeRabbitSkip);
+                                .option(assumeRabbitSkip, allowRabbitSkip);
 const teleportSkip          = condition('Teleport skip')
-                                .option(assumeTeleportSkip);
+                                .option(assumeTeleportSkip, allowTeleportSkip);
 const statueGlitch          = condition('Statue glitch')
                                 .option(assumeStatueGlitch, allowStatueGlitch);
 const wildWarp              = condition('Wild warp')
@@ -512,11 +516,18 @@ const destroyIron           = condition('Destroy iron')
 const anySword              = condition('Any sword')
                                 .option(swordOfWind).option(swordOfFire)
                                 .option(swordOfWater).option(swordOfThunder);
+// TODO - actually condition this on anySword + a shop that sells it!
+const buyMedicalHerb        = anySword;
 const matchInsectSword      = condition('Match insect sword (fire/water/thunder)')
                                 .option(swordOfFire)
                                 .option(swordOfWater)
                                 .option(swordOfThunder)
                                 .option(gasMask, hard(matchingSwordOptional), swordOfWind);
+const matchVampire2Sword    = condition('Match vampire 2 sword (wind/water/thunder)')
+                                .option(swordOfWind)
+                                .option(swordOfWater)
+                                .option(swordOfThunder)
+                                .option(hard(matchingSwordOptional), swordOfFire);
 const speedBoots            = condition('Speed boots').option(leatherBoots, leatherBootsGiveSpeed);
 const climbSlopes           = condition('Climb slopes')
                                 .option(rabbitBoots)
@@ -580,10 +591,14 @@ const fluteOfLimeOrGlitch   = condition('Flute of lime or glitch')
 const changeOrGlitch        = condition('Change or glitch')
                                 .option(change)
                                 .option(statueGlitch);
+const changeOrParalysis     = condition('Change or glitch or paralysis')
+                                .option(change)
+                                .option(statueGlitch)
+                                .option(paralysis);
 const passShootingStatues   = condition('Pass shooting statues')
                                 .option(barrier)
                                 // Even in non-hell-mode, refresh and shield ring ok
-                                .option(hard(barrierOptional, [barrier]))
+                                .option(buyMedicalHerb, hard(barrierOptional, [barrier]))
                                 .option(refresh, shieldRing);
 const maybeHealedDolphin    = condition('Healed dolphin if required')
                                 .option(healedDolphin)
@@ -609,7 +624,7 @@ const matchSwordOfThunder   = condition('Match sword of thunder')
                                              [swordOfThunder], 10),
                                         anySword);
 const swampRunPossible      = condition('Swamp run possible')
-                                .option(anySword)
+                                .option(buyMedicalHerb)
                                 .option(speedBoots)
                                 .option(buffedMedicalHerb)
                                 .option(refresh);
@@ -622,7 +637,10 @@ const travelSwamp           = condition('Travel swamp')
                                         swampRunPossible);
 const calmedSeaIfRequired   = condition('Calmed sea if required')
                                 .option(calmedSea)
-                                .option(calmedSeaOptional)
+                                .option(freeLunch);
+const startedWindmillIfRequired = condition('Started windmill if required')
+                                .option(startedWindmill)
+                                .option(freeLunch);
 
 // TODO - warp triggers, wild warp, etc...
 
@@ -635,7 +653,7 @@ const calmedSeaIfRequired   = condition('Calmed sea if required')
 const vampire1    = boss(0x00, 'Vampire 1', anySword).get(rabbitBoots);
 const giantInsect = boss(0x01, 'Insect', insectFlute, matchInsectSword, insectPossible).get(ballOfFire);
 const kelbesque1  = boss(0x02, 'Kelbesque 1', matchSwordOfWind, windMagic).get(flameBracelet);
-const vampire2    = boss(0x0c, 'Vampire 2', anySword).get(fruitOfPowerVampire2);
+const vampire2    = boss(0x0c, 'Vampire 2', matchVampire2Sword).get(fruitOfPowerVampire2);
 const sabera1     = boss(0x04, 'Sabera 1', matchSwordOfFire, fireMagic).get(brokenStatue);
 const mado1       = boss(0x05, 'Mado 1', matchSwordOfWater, waterMagic).get(ballOfThunder);
 const kelbesque2  = boss(0x06, 'Kelbesque 2', matchSwordOfWind, windMagic).get(opelStatue);
@@ -646,6 +664,11 @@ const draygon1    = boss(0x0a, 'Draygon 1', anySword).get(psychoArmor);
 const statues     = boss(null, 'Statues', bowOfSun, bowOfMoon);
 const draygon2    = boss(0x0b, 'Draygon 2', anySword, bowOfTruth);
 const dyna        = boss(0x0d, 'Dyna', crystalis);
+
+const openedPrisonIfRequired = condition('Opened prison if required')
+                                // TODO - (wild warp + summit + key) works too
+                                .option(/*kelbesque1, */ keyToPrison)
+                                .option(freeLunch);
 
 ////////////////////////////////////////////////////////////////
 // Areas
@@ -768,7 +791,7 @@ const mtSabreWestTunnel1    = location(0x11, SBRW, 'Tunnel 1 (to Zebu)').cave()
 
 const cordelPlainWest       = location(0x14, CORD, 'West').overworld()
                                 //.connect(zebuCaveBack)
-                                .connect(sealedCave8b);
+                                .connect(sealedCave8b, startedWindmillIfRequired);
 const cordelPlainSouth      = location(0x14, CORD, 'South').overworld()
                                 .connect(cordelPlainWest, crossRivers); // 64dd:04
 const cordelPlainEast       = location(0x15, CORD, 'East').overworld()
@@ -956,7 +979,7 @@ const nadareBackRoom        = location(0x3e, NADR, 'Back Room').house();
 // Waterfall Valley
 
 const waterfallValleySummit = location(0x40, WFVL, 'Summit').overworld()
-                                .connect(mtSabreNorthTunnel10b);
+                                .connect(mtSabreNorthTunnel10b, openedPrisonIfRequired);
 const waterfallValleyNW     = location(0x40, WFVL, 'Northwest').overworld()
                                 .from(waterfallValleySummit)
                                 .to(waterfallValleySummit, flight);
@@ -1577,7 +1600,7 @@ const amazonesArmorShop     = location(0xd3, AMZN, 'Armor Shop')
                                       mirroredShield, sacredShield)
                                 .connect(amazones);
 const aryllisHouse          = location(0xd4, AMZN, 'Queen\'s House').house()
-                                .from(amazones, changeOrGlitch)
+                                .from(amazones, changeOrParalysis)
                                 .trigger(talkedToAmazonesQueen, change, kirisaPlant);
 const nadare                = location(0xd5, NADR, 'Nadare\'s').house()
                                 .connect(mtSabreNorthEntrance)

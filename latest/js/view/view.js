@@ -331,7 +331,7 @@ const keyup = (v, e) => {
       obj[prop] = Math.min(obj[prop] + step, max);
     } else if (e.key == 'ArrowDown') {
       obj[prop] = Math.max(obj[prop] - step, min);
-    } else if (e.key == 'Enter') {
+    } else if (e.key == 'Enter' || e.key == 'Tab') {
       obj[prop] = Math.max(min, Math.min(parseNum(e.target.value), max));
     } else if (e.key == 'Escape') {
       shouldUpdate = false;

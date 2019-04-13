@@ -2,26 +2,30 @@ const REPEATABLE_FLAGS = new Set(['S']);
 
 export const PRESETS = [{
   title: 'Casual',
-  flags: 'Ds Emrsx Mr Rp Sbk Sc Sm Tadrsw',
+  flags: 'Ds Edmrsx Fw Mr Rp Sbk Sc Sm Tab',
   descr: `Basic flags for a relatively easy playthrough.`
 }, {
   title: 'Intermediate',
-  flags: 'Ds Ems Fs Gt Mr Pbns Rlpt Sbkm Sct Tadrsw',
+  flags: 'Ds Edms Fsw Gt Mr Pbns Rlpt Sbkm Sct Tab',
   descr: `Slightly more challenge than Casual but still approachable.`,
   default: true,
 }, {
   title: 'Full Shuffle',
-  flags: 'Em Fs Gt Mr Pbns Rlpt Sbckmt Tadrsw',
-  descr: `Intermediate flags with full shuffle and no spoiler log.`,
+  flags: 'Em Fsw Gt Mr Pbns Rlprt Sbckmt Tab',
+  descr: `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
+}, {
+  title: 'Glitchless',
+  flags: 'Em Fcstw Mr Pbns Rlprt Sbckmt Tab',
+  descr: `Full shuffle but with no glitches.`,
 }, {
   // TODO: add 'Ht' for maxing out tower scaling
   title: 'Advanced',
-  flags: 'Fs Gfprt Hbw Mr Pbns Rlpt Sbckt Sm Tadrsw',
+  flags: 'Fsw Gfprt Hbw Mr Pbns Rlprt Sbckt Sm Tab',
   descr: `A balanced randomization with quite a bit more difficulty.`,
 }, {
   // TODO: add 'Ht'
   title: 'Ludicrous',
-  flags: 'Fs Gfprstw Hbgmswx Mr Pbns Rlpt Sbckmt Tas',
+  flags: 'Fs Gfprstw Hbgmswx Mr Pbns Rlprt Sbckmt Tab',
   descr: `Pulls out all the stops, may require superhuman feats.`,
 }];
 
@@ -122,6 +126,7 @@ export const FLAGS = [{
   }], // TODO: Ss to shuffle shops?
 }, {
   section: 'Monsters',
+  text: `Monster stats are always normalized by scaling level.`,
   flags: [{
     flag: 'Mr',
     name: 'Randomize monsters',
@@ -148,22 +153,15 @@ export const FLAGS = [{
   }],
 }, {
   section: 'Shops',
-  text: `Disabling shop glitch (Fs) is highly recommended when using these flags.
-         Currently selecting any shop flag will enable normalization (Pn).`,
+  text: `Prices are always normalized by scaling level: prices at tool shops
+         and inns double every 10 scaling levels, while prices at armor shops
+         halve every 12 scaling levels `,
   flags: [{
     flag: 'Ps',
     name: 'Shuffle shop contents',
-  }, {
-    flag: 'Pn',
-    name: 'Normalize shop prices',
-    text: `Shop prices are normalized via the scaling level.  Prices at tool
-           shops and inns double every 10 scaling levels, while prices at
-           armor shops halve every 12 scaling levels.`,
-  }, {
-    flag: 'Pb',
-    name: 'Enable "bargain hunting"',
-    text: `Base prices may vary ±50% for the same item at different; inn prices
-           may vary ±62.5%.`,
+    text: `This includes normalizing prices via the scaling level, as well as a
+           random variance for each shop: base prices may vary ±50% for the same
+           item at different; inn prices may vary ±62.5%.`,
   }],
 }, {
   section: 'Hard mode',
@@ -240,19 +238,14 @@ export const FLAGS = [{
     text: `Adds a quality-of-life improvement to automatically equip the
            corresponding orb/bracelet whenever changing swords.`,
   }, {
-    flag: 'Ts',
-    name: 'Leather boots are speed boots',
-    text: `Wearing leather boots increases player walking speed.  Note that this also
-           includes a slight change to routing logic, since speed boots will allow
-           climbing the slope in Mt. Sabre West to reach the Tornado Bracelet chest.`,
-  }, {
-    flag: 'Td',
-    name: 'Deo\'s pendant works while moving',
-  }, {
-    flag: 'Tr',
-    name: 'Rabbit boots enable charge while walking',
-    text: `Sword can be charged to level 2 while walking (prevents charging to
-           level 3 to preserve MP).`,
+    flag: 'Tb',
+    name: 'Buff bonus items',
+    text: `Leather Boots are changed to Speed Boots, which increase player walking
+           speed (this allows climbing up the slope to access the Tornado Bracelet
+           chest, which is taken into consideration by the logic).  Deo's pendant
+           restores MP while moving.  Rabbit boots enable sword charging up to
+           level 2 while walking (level 3 still requires being stationary, so as
+           to prevent wasting tons of magic).`,
   }, {
     flag: 'Tw',
     name: 'Disable wild warp',
@@ -262,6 +255,11 @@ export const FLAGS = [{
 }, {
   section: 'Routing',
   flags: [{
+    flag: 'Rs',
+    name: 'Story Mode',
+    text: `Draygon 2 won't spawn unless you have all four swords and have
+           defeated all major bosses of the tetrarchy.`,
+  }, {
     flag: 'Rt',
     name: 'Sword of Thunder teleports to Shyron',
     text: `Normally when acquiring the thunder sword, the player is instantly
@@ -285,12 +283,18 @@ export const FLAGS = [{
     text: `Opens a passage between Valley of Wind (lower right side) and
            Lime Tree Valley.`,
   }, {
+    flag: 'Rr',
+    name: 'Deo requires telepathy',
+    text: `Deo's item is additionally blocked on telepathy.`,
+  }, {
     flag: 'Rl',
     name: 'No "free lunch" magic',
     text: `Disables "free lunch" magics that only require stepping on a square to
-           learn (specifally Barrier, TODO: Paralysis).  Instead, Barrier requires
-           the seas to be calmed, and Paralysis will (once implemented) require the
-           prison door to have been opened.`,
+           learn (specifally Barrier and Paralysis).  Instead, Barrier requires
+           the seas to be calmed, and Paralysis requires the prison key (which
+           can be used at the top of the slope in Waterfall Valley to open the
+           path in reverse).  Reverse vampire also requires the windmill to have
+           been started.`,
   }],
 }, {
   section: 'Glitches',
@@ -354,15 +358,31 @@ export const FLAGS = [{
     text: `Sword charge glitch will no longer work.  It will be impossible to
            achieve charge levels without having correct inventory.`,
   }, {
+    flag: 'Fp',
+    name: 'Disable teleport skip',
+    text: `Mt Sabre North cannot be entered from Cordel Plans without the
+           Teleport spell, even via glitch.`,
+  }, {
+    flag: 'Fr',
+    name: 'Disable rabbit skip',
+    text: `Mt Sabre North cannot be entered from Cordel Plans without talking to
+           the rabbit in leaf.`,
+  }, {
     flag: 'Ft',
     name: 'Disable statue glitch',
     text: `Statues will instead always push downwards, making it impossible to
-           glitch through statues.`,
+           glitch through statues for progression.`,
   }],
 }, {
   section: 'Easy Mode',
   text: `The following options make parts of the game easier.`,
   flags: [{
+    flag: 'Ed',
+    name: 'Decrease enemy damage',
+    text: `Enemy attack power will be significantly decreased in the early game
+           (by a factor of 3).  The gap will narrow in the mid-game and eventually
+           phase out at scaling level 40.`,
+  }, {
     flag: 'Es',
     name: 'Guarantee starting sword',
     text: `The Leaf elder is guaranteed to give a sword.  It will not be
@@ -416,6 +436,10 @@ const FLAG_CONFLICTS = {
   Gt: /Ft/,
   Fc: /Gc/,
   Gc: /Fc/,
+  Fp: /Gp/,
+  Gp: /Fp/,
+  Fr: /Gr/,
+  Gr: /Fr/,
 };
 
 export class FlagSet {
@@ -461,6 +485,36 @@ export class FlagSet {
   check(flag) {
     const terms = this.flags[flag[0]];
     return !!(terms && (terms.indexOf(flag.substring(1)) >= 0));
+  }
+
+  autoEquipBracelet() { return this.check('Ta'); }
+  barrierRequiresCalmSea() { return this.check('Rl'); }
+  paralysisRequiresPrisonKey() { return this.check('Rl'); }
+  sealedCaveRequiresWindmill() { return this.check('Rl'); }
+  buffDeosPendant() { return this.check('Tb'); }
+  connectLimeTreeToLeaf() { return this.check('Rp'); }
+  decreaseEnemyDamage() { return this.check('Ed'); }
+  disableShopGlitch() { return this.check('Fs'); }
+  disableStatueGlitch() { return this.check('Ft'); }
+  disableRabbitSkip() { return this.check('Fr'); }
+  disableTeleportSkip() { return this.check('Fp'); }
+  disableSwordChargeGlitch() { return this.check('Fg'); }
+  leatherBootsGiveSpeed() { return this.check('Tb'); }
+  nerfWildWarp() { return this.check('Fw'); }
+  neverDie() { return this.check('Di'); }
+  storyMode() { return this.check('Rs'); }
+  rabbitBootsChargeWhileWalking() { return this.check('Tb'); }
+  requireHealedDolphinToRide() { return this.check('Rd'); }
+  saharaRabbitsRequireTelepathy() { return this.check('Rr'); }
+  teleportOnThunderSword() { return this.check('Rt'); }
+  shuffleShops() { return this.check('Ps'); }
+  bargainHunting() { return this.shuffleShops(); }
+  shuffleMonsters() { return this.check('Mr'); }
+  doubleBBuffMedicalHerb() { return this.check('Em'); }
+  singleBuffMedicalHerb() { return !this.check('Hm'); }
+
+  expScalingFactor() {
+    return this.check('Hx') ? 0.25 : this.check('Ex') ? 2.5 : 1;
   }
 
   // The following didn't end up getting used.

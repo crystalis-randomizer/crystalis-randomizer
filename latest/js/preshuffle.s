@@ -145,53 +145,12 @@ DisplayNumber:
 
 .bank $14000 $8000:$4000
 
-.ifdef _CONNECT_LEAF_TO_LIME_TREE
-;;; Valley of Wind
-.org $145dd
-  .byte $e7,$93 ; new valley of wind entrance table
-  .byte $22,$86 ; move exit table up a little
-.org $14605
-  .byte $10
-.org $153e7
-  .byte $80,$03,$df,$06
-  .byte $40,$01,$60,$01
-  .byte $80,$02,$70,$00
-  .byte $c8,$01,$98,$01
-  .byte $98,$01,$98,$01
-  .byte $a8,$00,$90,$03
-  .byte $ef,$04,$78,$05 ; new entrance from lime tree
-.org $14622
-  .byte $4f,$56,$42,$02 ; new exit to lime tree valley
-  .byte $4f,$57,$42,$02
-
-;; Lime Tree Valley
-.org $1544c
-  .byte $12,$86 ; new entrance table (inside v.wind area)
-  .byte $67,$94 ; move exit table up a little
-.org $14612 ; lime tree entrances
-  .byte $ef,$02,$78,$01
-  .byte $80,$01,$30,$00
-  .byte $10,$00,$c0,$01 ; new entrance from valley of wind
-.org $1545a
-  .byte $1a ; left-middle screen
-.org $1545d
-  .byte $0c ; bottom-left (just nicer matched mountains)
-.org $15467
-  .byte $00,$1b,$03,$06 ; new exits to valley of wind
-  .byte $00,$1c,$03,$06
-
-;; Waterfall Valley South - recover some extra space from the map area.
-.org $153dd
-  .byte $60,$93 ; share layout and graphics tables w/ north half
-  .byte $92,$93
-;;.org $153e7  ;; Newly-freed space
-;;.org $1541e
-.endif
-
-
-.org $17cfa
-;; just over 256 bytes free in map space
-.assert < $17e00
+;;; NOTE: there's space here, but we glob it into the space
+;;; recovered from defragging MapData... if we want it back
+;;; we'll need to change the "end" address there.
+;.org $17cfa
+;;; just over 256 bytes free in map space
+;.assert < $17e00
 
 
 .org $17f00
@@ -373,8 +332,6 @@ CheckBelowBoss:
 
 
 
-
-
 ;;; Dialogs and Spawn Conditions
 
 
@@ -511,12 +468,13 @@ Trigger_8c:
 ItemGetData_03: ; sword of thunder
   .byte $03,$80 ; slot
   .byte $08,$00 ; action 01 -> teleport to shyron
+.ifdef _TELEPORT_ON_THUNDER_SWORD
   .byte $02,$fd ; Set: 2fd warp:shyron
+.endif
   .byte $40,$5f ; Set: 05f chest:03:sword of thunder
   .byte $ff
-.org $1cf82
   ; 15 bytes still available
-.org $1cf91
+.assert < $1cf91
 
 
 ;; queen will try to give flute of lime even if got sword first
@@ -524,6 +482,11 @@ ItemGetData_03: ; sword of thunder
   .byte $19 ; add action 03
 ;.org $3d1f5 ; call to WaitForDialogToBeDismissed
 ;  jsr PatchAsinaReveal
+
+;; remove the 092 case for queen dialog, since it fails to set 09c
+;; TODO - once we defrag dialog, re-add this, with a 09c flag set.
+.org $1cfb3
+  .byte $00
 
 ;; asina will also give flute of lime if queen never did (after recover)
 .org $098f9
@@ -1440,10 +1403,45 @@ CheckForLowHpMp:
   rts
 
 
+.ifdef _NERF_FLIGHT
+.org $356c2
+  jsr CheckSwordCollisionPlane
+.endif
+
+
 .ifdef _RABBIT_BOOTS_CHARGE_WHILE_WALKING
 .org $35e00
   jsr CheckRabbitBoots
 .endif
+
+
+;.bank $36000 $a000:$2000
+;
+;.org $36086
+;
+;        ;; Free space at end of UseMagicJump
+;        
+;.assert < $36092 
+;
+;;;; Make gate opening independent of locations
+;.org $37879
+;  lda $23
+;  and #$f8
+;  cmp #$30
+;  beq GateCheckPassed
+;  lda $6c
+;  cmp #$73
+;  beq GateCheckPassed
+;  bne GateCheckFailed
+;.assert < $3788f
+;.org $3788f
+;GateCheckFailed:
+;.org $37896
+;GateCheckPassed:
+  
+
+
+
 
 ;;.org $3c010
 ;;;; Adjusted inventory update - use level instead of sword
@@ -1547,7 +1545,17 @@ ReloadInventoryAfterContinue:
   jsr PostInventoryMenu
   rts
 
-        ;; 23 bytes free
+CheckSwordCollisionPlane:
+  sta $03e2 ; copied from $35c62
+  lda $03a1
+  and #$20
+  lsr
+  eor #$ff
+  and $03a2
+  sta $03a2
+  rts
+
+        ;; 8 bytes free
 
 .assert < $3c482  ; end of empty area from $3c446
 

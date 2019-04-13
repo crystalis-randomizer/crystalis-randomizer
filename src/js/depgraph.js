@@ -516,11 +516,18 @@ const destroyIron           = condition('Destroy iron')
 const anySword              = condition('Any sword')
                                 .option(swordOfWind).option(swordOfFire)
                                 .option(swordOfWater).option(swordOfThunder);
+// TODO - actually condition this on anySword + a shop that sells it!
+const buyMedicalHerb        = anySword;
 const matchInsectSword      = condition('Match insect sword (fire/water/thunder)')
                                 .option(swordOfFire)
                                 .option(swordOfWater)
                                 .option(swordOfThunder)
                                 .option(gasMask, hard(matchingSwordOptional), swordOfWind);
+const matchVampire2Sword    = condition('Match vampire 2 sword (wind/water/thunder)')
+                                .option(swordOfWind)
+                                .option(swordOfWater)
+                                .option(swordOfThunder)
+                                .option(hard(matchingSwordOptional), swordOfFire);
 const speedBoots            = condition('Speed boots').option(leatherBoots, leatherBootsGiveSpeed);
 const climbSlopes           = condition('Climb slopes')
                                 .option(rabbitBoots)
@@ -591,7 +598,7 @@ const changeOrParalysis     = condition('Change or glitch or paralysis')
 const passShootingStatues   = condition('Pass shooting statues')
                                 .option(barrier)
                                 // Even in non-hell-mode, refresh and shield ring ok
-                                .option(hard(barrierOptional, [barrier]))
+                                .option(buyMedicalHerb, hard(barrierOptional, [barrier]))
                                 .option(refresh, shieldRing);
 const maybeHealedDolphin    = condition('Healed dolphin if required')
                                 .option(healedDolphin)
@@ -617,7 +624,7 @@ const matchSwordOfThunder   = condition('Match sword of thunder')
                                              [swordOfThunder], 10),
                                         anySword);
 const swampRunPossible      = condition('Swamp run possible')
-                                .option(anySword)
+                                .option(buyMedicalHerb)
                                 .option(speedBoots)
                                 .option(buffedMedicalHerb)
                                 .option(refresh);
@@ -646,7 +653,7 @@ const startedWindmillIfRequired = condition('Started windmill if required')
 const vampire1    = boss(0x00, 'Vampire 1', anySword).get(rabbitBoots);
 const giantInsect = boss(0x01, 'Insect', insectFlute, matchInsectSword, insectPossible).get(ballOfFire);
 const kelbesque1  = boss(0x02, 'Kelbesque 1', matchSwordOfWind, windMagic).get(flameBracelet);
-const vampire2    = boss(0x0c, 'Vampire 2', anySword).get(fruitOfPowerVampire2);
+const vampire2    = boss(0x0c, 'Vampire 2', matchVampire2Sword).get(fruitOfPowerVampire2);
 const sabera1     = boss(0x04, 'Sabera 1', matchSwordOfFire, fireMagic).get(brokenStatue);
 const mado1       = boss(0x05, 'Mado 1', matchSwordOfWater, waterMagic).get(ballOfThunder);
 const kelbesque2  = boss(0x06, 'Kelbesque 2', matchSwordOfWind, windMagic).get(opelStatue);

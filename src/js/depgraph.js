@@ -584,6 +584,10 @@ const fluteOfLimeOrGlitch   = condition('Flute of lime or glitch')
 const changeOrGlitch        = condition('Change or glitch')
                                 .option(change)
                                 .option(statueGlitch);
+const changeOrParalysis     = condition('Change or glitch or paralysis')
+                                .option(change)
+                                .option(statueGlitch)
+                                .option(paralysis);
 const passShootingStatues   = condition('Pass shooting statues')
                                 .option(barrier)
                                 // Even in non-hell-mode, refresh and shield ring ok
@@ -1589,7 +1593,7 @@ const amazonesArmorShop     = location(0xd3, AMZN, 'Armor Shop')
                                       mirroredShield, sacredShield)
                                 .connect(amazones);
 const aryllisHouse          = location(0xd4, AMZN, 'Queen\'s House').house()
-                                .from(amazones, changeOrGlitch)
+                                .from(amazones, changeOrParalysis)
                                 .trigger(talkedToAmazonesQueen, change, kirisaPlant);
 const nadare                = location(0xd5, NADR, 'Nadare\'s').house()
                                 .connect(mtSabreNorthEntrance)

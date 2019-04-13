@@ -1398,6 +1398,12 @@ CheckForLowHpMp:
   rts
 
 
+.ifdef _NERF_FLIGHT
+.org $356c2
+  jsr CheckSwordCollisionPlane
+.endif
+
+
 .ifdef _RABBIT_BOOTS_CHARGE_WHILE_WALKING
 .org $35e00
   jsr CheckRabbitBoots
@@ -1534,7 +1540,17 @@ ReloadInventoryAfterContinue:
   jsr PostInventoryMenu
   rts
 
-        ;; 23 bytes free
+CheckSwordCollisionPlane:
+  sta $03e2 ; copied from $35c62
+  lda $03a1
+  and #$20
+  lsr
+  eor #$ff
+  and $03a2
+  sta $03a2
+  rts
+
+        ;; 8 bytes free
 
 .assert < $3c482  ; end of empty area from $3c446
 

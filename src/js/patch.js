@@ -60,35 +60,35 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   if (typeof seed !== 'number') throw new Error('Bad seed');
   const newSeed = crc32(seed.toString(16).padStart(8, 0) + String(flags)) >>> 0;
 
-  const touchShops = flags.check('Pn') || flags.check('Pb') || flags.check('Ps');
+  const touchShops = true;
 
   const defines = {
     _ALLOW_TELEPORT_OUT_OF_TOWER: true,
-    _AUTO_EQUIP_BRACELET: flags.check('Ta'),
-    _BARRIER_REQUIRES_CALM_SEA: flags.check('Rl'),
-    _BUFF_DEOS_PENDANT: flags.check('Td'),
-    //_CONNECT_LEAF_TO_LIME_TREE: flags.check('Rp'),
+    _AUTO_EQUIP_BRACELET: flags.autoEquipBracelet(),
+    _BARRIER_REQUIRES_CALM_SEA: flags.barrierRequiresCalmSea(),
+    _BUFF_DEOS_PENDANT: flags.buffDeosPendant(),
     _CHECK_FLAG0: true,
-    _DISABLE_SHOP_GLITCH: flags.check('Fs'),
-    _DISABLE_STATUE_GLITCH: flags.check('Ft'),
-    _DISABLE_SWORD_CHARGE_GLITCH: flags.check('Fc'),
+    _DISABLE_SHOP_GLITCH: flags.disableShopGlitch(),
+    _DISABLE_STATUE_GLITCH: flags.disableStatueGlitch(),
+    _DISABLE_SWORD_CHARGE_GLITCH: flags.disableSwordChargeGlitch(),
     _DISABLE_WILD_WARP: false,
     _DISPLAY_DIFFICULTY: true,
     _EXTRA_PITY_MP: true,  // TODO: allow disabling this
     _FIX_OPEL_STATUE: true,
     _FIX_SHAKING: true,
     _FIX_VAMPIRE: true,
-    _LEATHER_BOOTS_GIVE_SPEED: flags.check('Ts'),
-    _NERF_WILD_WARP: flags.check('Tw'),
-    _NEVER_DIE: flags.check('Di'),
+    _LEATHER_BOOTS_GIVE_SPEED: flags.leatherBootsGiveSpeed(),
+    _NERF_WILD_WARP: flags.nerfWildWarp(),
+    _NERF_FLIGHT: true,
+    _NEVER_DIE: flags.neverDie(),
     _NORMALIZE_SHOP_PRICES: touchShops,
     _PITY_HP_AND_MP: true,
     _PROGRESSIVE_BRACELET: true,
-    _RABBIT_BOOTS_CHARGE_WHILE_WALKING: flags.check('Tr'),
+    _RABBIT_BOOTS_CHARGE_WHILE_WALKING: flags.rabbitBootsChargeWhileWalking(),
     _REVERSIBLE_SWAN_GATE: true,
-    _REQUIRE_HEALED_DOLPHIN_TO_RIDE: flags.check('Rd'),
-    _SAHARA_RABBITS_REQUIRE_TELEPATHY: false,
-    _TELEPORT_ON_THUNDER_SWORD: flags.check('Rt'),
+    _REQUIRE_HEALED_DOLPHIN_TO_RIDE: flags.requireHealedDolphinToRide(),
+    _SAHARA_RABBITS_REQUIRE_TELEPATHY: flags.saharaRabbitsRequireTelepathy(),
+    _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
   };
 
   const asm = new Assembler();
@@ -109,32 +109,32 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   if (touchShops) {
     // TODO - separate logic for handling shops w/o Pn specified (i.e. vanilla
     // shops that may have been randomized)
-    rescaleShops(rom, asm, flags.check('Pb') ? random : null);
+    rescaleShops(rom, asm, flags.bargainHunting() ? random : null);
   }
 
   // Parse the rom and apply other patches - note: must have shuffled
   // the depgraph FIRST!
   const parsed = new Rom(rom);
   rescaleMonsters(rom, parsed);
-  if (flags.check('Mr')) shuffleMonsters(rom, parsed, random);
+  if (flags.shuffleMonsters()) shuffleMonsters(rom, parsed, random);
   identifyKeyItemsForDifficultyBuffs(parsed);
 
   // Buff medical herb and fruit of power
-  if (flags.check('Em')) {
+  if (flags.doubleBuffMedicalHerb) {
     rom[0x1c50c + 0x10] *= 2;  // fruit of power
     rom[0x1c4ea + 0x10] *= 3;  // medical herb
-  } else if (!flags.check('Hm')) {
+  } else if (flags.singleBuffMedicalHerb()) {
     rom[0x1c50c + 0x10] += 16; // fruit of power
     rom[0x1c4ea + 0x10] *= 2;  // medical herb
   }
 
-  if (flags.check('Rp')) {
+  if (flags.connectLimeTreeToLeaf()) {
     connectLimeTreeToLeaf(parsed);
   }
 
   addCordelWestTriggers(parsed, flags);
-  if (flags.check('Fr')) fixRabbitSkip(parsed);
-  if (flags.check('Rs')) storyMode(parsed);
+  if (flags.disableRabbitSkip()) fixRabbitSkip(parsed);
+  if (flags.storyMode()) storyMode(parsed);
 
   closeCaveEntrances(parsed, flags);
 
@@ -223,7 +223,7 @@ const closeCaveEntrances = (rom, flags) => {
     throw new Error(`Could not find flag to replace at ${loc}:${pos}`);
   };
 
-  if (flags.check('Rl')) { // no free lunch - close off reverse entrances
+  if (flags.paralysisRequiresPrisonKey()) { // close off reverse entrances
     // NOTE: we could also close it off until boss killed...?
     //  - const vampireFlag = ~rom.npcSpawns[0xc0].conditions[0x0a][0];
     //  -> kelbesque for the other one.
@@ -269,7 +269,7 @@ const addCordelWestTriggers = (rom, flags) => {
   for (const o of rom.locations[0x15].objects) {
     if (o[2] === 2) {
       // Copy if (1) it's the chest, or (2) we're disabling teleport skip
-      const copy = o[3] < 0x80 || flags.check('Fp');
+      const copy = o[3] < 0x80 || flags.disableTeleportSkip();
         // statue of onyx - always move
       if (copy) rom.locations[0x14].objects.push([...o]);
     }
@@ -415,7 +415,7 @@ const patchWords = (rom, address, words) => {
 
 // goes with enemy stat recomputations in postshuffle.s
 const updateCoinDrops = (rom, flags) => {
-  if (flags.check('Fs')) {
+  if (flags.disableShopGlitch()) {
     // bigger gold drops if no shop glitch, particularly at the start
     // - starts out fibonacci, then goes linear at 600
     patchWords(rom, 0x34bde, [
@@ -459,13 +459,15 @@ const updateDifficultyScalingTables = (rom, flags, asm) => {
              diff.map(d => d * 4));
 
   // DiffHP table is PHP = min(255, 48 + round(Diff * 11 / 2))
+  const phpStart = flags.decreaseEnemyDamage() ? 16 : 48;
+  const phpIncr = flags.decreaseEnemyDamage() ? 6 : 5.5;
   patchBytes(rom, asm.expand('DiffHP'),
-             diff.map(d => Math.min(255, 48 + Math.round(d * 11 / 2))));
+             diff.map(d => Math.min(255, phpStart + Math.round(d * phpIncr))));
 
   // DiffExp table is ExpB = compress(floor(4 * (2 ** ((16 + 9 * Diff) / 32))))
   // where compress maps values > 127 to $80|(x>>4)
 
-  const expFactor = flags.check('Hx') ? 0.25 : flags.check('Ex') ? 2.5 : 1;
+  const expFactor = flags.expScalingFactor();
   patchBytes(rom, asm.expand('DiffExp'), diff.map(d => {
     const exp = Math.floor(4 * (2 ** ((16 + 9 * d) / 32)) * expFactor);
     return exp < 0x80 ? exp : Math.min(0xff, 0x80 + (exp >> 4));

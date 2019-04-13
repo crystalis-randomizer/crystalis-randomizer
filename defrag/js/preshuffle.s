@@ -483,6 +483,11 @@ ItemGetData_03: ; sword of thunder
 ;.org $3d1f5 ; call to WaitForDialogToBeDismissed
 ;  jsr PatchAsinaReveal
 
+;; remove the 092 case for queen dialog, since it fails to set 09c
+;; TODO - once we defrag dialog, re-add this, with a 09c flag set.
+.org $1cfb3
+  .byte $00
+
 ;; asina will also give flute of lime if queen never did (after recover)
 .org $098f9
   .byte $28 ; asina persondata[1] -> flute of lime
@@ -1398,6 +1403,12 @@ CheckForLowHpMp:
   rts
 
 
+.ifdef _NERF_FLIGHT
+.org $356c2
+  jsr CheckSwordCollisionPlane
+.endif
+
+
 .ifdef _RABBIT_BOOTS_CHARGE_WHILE_WALKING
 .org $35e00
   jsr CheckRabbitBoots
@@ -1534,7 +1545,17 @@ ReloadInventoryAfterContinue:
   jsr PostInventoryMenu
   rts
 
-        ;; 23 bytes free
+CheckSwordCollisionPlane:
+  sta $03e2 ; copied from $35c62
+  lda $03a1
+  and #$20
+  lsr
+  eor #$ff
+  and $03a2
+  sta $03a2
+  rts
+
+        ;; 8 bytes free
 
 .assert < $3c482  ; end of empty area from $3c446
 

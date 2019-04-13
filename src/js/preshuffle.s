@@ -483,6 +483,11 @@ ItemGetData_03: ; sword of thunder
 ;.org $3d1f5 ; call to WaitForDialogToBeDismissed
 ;  jsr PatchAsinaReveal
 
+;; remove the 092 case for queen dialog, since it fails to set 09c
+;; TODO - once we defrag dialog, re-add this, with a 09c flag set.
+.org $1cfb3
+  .byte $00
+
 ;; asina will also give flute of lime if queen never did (after recover)
 .org $098f9
   .byte $28 ; asina persondata[1] -> flute of lime

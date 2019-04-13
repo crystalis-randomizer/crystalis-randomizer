@@ -355,7 +355,7 @@ define BGM_08            $08    ; one of the later dungeons
 define BGM_START_MOVIE   $09    ; music that plays after hitting 'start'
 define BGM_INTRO         $0a    ; music that plays in intro movie
 define BGM_TITLE         $0b    ; music just for title screen
-define BGM_0C            $0c    ; another later dungeon
+define BGM_DRAYGON2      $0c    ; music for draygon 2 fight
 define BGM_SHYRON        $0d
 define BGM_0E            $0e    ; similar to asina's theme, but a little diff
 define BGM_ASINA         $0f    ; asina's theme
@@ -5413,6 +5413,7 @@ MapScreen_E0
         $0e0c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0e0d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0e0e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; Data for Draygon 2 fight
         $0e0f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 MapScreen_E1
         $0e100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5464,6 +5465,7 @@ MapScreen_E3
         $0e3c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0e3d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0e3e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; Data for Draygon 2 fight
         $0e3f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 MapScreen_E4
         $0e400              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -6766,62 +6768,62 @@ BackgroundTilePatterns_0B_BR
         $12ff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         ;; Map tile data here somehow?!?
         ;; Groups of $40 indexed by ($10) set in ...?
-MetatileAttributesMap_00
+MetatileAttributesMap_00        ; tileset $80
         $13000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13020              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13030              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAttributesMap_01
+MetatileAttributesMap_01        ; tileset $84
         $13040              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13050              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13060              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13070              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAttributesMap_02
+MetatileAttributesMap_02        ; tileset $88
         $13080              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13090              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $130a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $130b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAttributesMap_03
+MetatileAttributesMap_03        ; tileset $8c
         $130c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $130d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $130e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $130f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAttributesMap_04
+MetatileAttributesMap_04        ; tileset $90
         $13100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13110              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13120              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13130              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAttributesMap_05
+MetatileAttributesMap_05        ; tileset $94
         $13140              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13150              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13160              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13170              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAttributesMap_06
+MetatileAttributesMap_06        ; tileset $98
         $13180              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13190              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $131a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $131b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAttributesMap_07
+MetatileAttributesMap_07        ; tileset $9c
         $131c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $131d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $131e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $131f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAttributesMap_08
+MetatileAttributesMap_08        ; tileset $a0
         $13200              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13220              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13230              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAttributesMap_09
+MetatileAttributesMap_09        ; tileset $a4
         $13240              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13250              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13260              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13270              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAttributesMap_0A
+MetatileAttributesMap_0A        ; tileset $a8
         $13280              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13290              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $132a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $132b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAttributesMap_0B
+MetatileAttributesMap_0B        ; tileset $ac
         $132c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $132d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $132e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -7015,40 +7017,40 @@ MetatileEffectsMap_BD
         $13dd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13de0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13df0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAlternativesMap_00
+MetatileAlternativesMap_00      ; tileset $80 - breakable cave entrance
         $13e00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13e10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAlternativesMap_01
+MetatileAlternativesMap_01      ; tileset $84
         $13e20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13e30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAlternativesMap_02
+MetatileAlternativesMap_02      ; tileset $88
         $13e40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13e50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAlternativesMap_03
+MetatileAlternativesMap_03      ; tileset $8c
         $13e60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13e70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAlternativesMap_04
+MetatileAlternativesMap_04      ; tileset $90 - ice bridge for $01 and $02
         $13e80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13e90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAlternativesMap_05
+MetatileAlternativesMap_05      ; tileset $94
         $13ea0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13eb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAlternativesMap_06
+MetatileAlternativesMap_06      ; tileset $98
         $13ec0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13ed0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAlternativesMap_07
+MetatileAlternativesMap_07      ; tileset $9c
         $13ee0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13ef0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAlternativesMap_08
+MetatileAlternativesMap_08      ; tileset $a0
         $13f00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13f10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAlternativesMap_09
+MetatileAlternativesMap_09      ; tileset $a4
         $13f20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13f30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAlternativesMap_0A
+MetatileAlternativesMap_0A      ; tileset $a8
         $13f40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13f50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-MetatileAlternativesMap_0B
+MetatileAlternativesMap_0B      ; tileset $ac
         $13f60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13f70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
@@ -17139,6 +17141,7 @@ NpcData_fa                                    ; Sahara - Elder House
         $1abe5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1abf5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
+;;; NOTE: This table has been moved to $1be00 by the randomizer patch.
 ObjectData
         $1ac00              .word ($xxxx) ; $1ae00: 00
         $1ac02              .word ($xxxx)
@@ -20191,6 +20194,7 @@ NpcSpawnConditionTablePart2
         $1c774              .word ($1c951) ; ca statue of sun
         $1c776              .word ($1c955) ; cb draygon 1 and 2
         $1c778              .word ($1c959) ; cc vampire 2
+        ;; NOTE: The last three entries have been REMOVED in the rando
         $1c77a              .word ($1c781) ; cd  -- note no flag for draygon 2
         $1c77c              .word ($1c781) ; ce 
         $1c77e              .word ($1c781) ; cf
@@ -23829,7 +23833,7 @@ BossPatternJump_03              ; Vampire 3
         $1e4db  xx xx xx:   xxx ObjectAnimationCounter,x
         $1e4de  xx xx:      xxx #$xx
         $1e4e0  xx xx:       xxx <<rts
-        ;; After 16 frames, zero out theh collision plane and disappear.
+        ;; After 16 frames, zero out the collision plane and disappear.
         ;; Then go to mode 4.
         $1e4e2  xx xx xx:   xxx ObjectAnimationCounter,x
         $1e4e5  xx xx xx:   xxx ObjectHitbox,x
@@ -24196,10 +24200,10 @@ DataTable_1e77c
         $1e85f  xx xx:      xxx $xx
         $1e861  xx xx:      xxx #$xx
         $1e863  xx xx:      xxx #$xx
-        $1e865  xx xx xx:   xxx $3572d
+        $1e865  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
         $1e868  xx xx:      xxx #$xx
-        $1e86a  xx xx xx:   xxx $3572d
+        $1e86a  xx xx xx:   xxx AdHocSpawnObject
         $1e86d  xx xx:      xxx $xx
         $1e86f  xx xx:      xxx $xx
         $1e871  xx xx:      xxx $xx
@@ -24488,7 +24492,7 @@ BossPatternJump_0d              ; Kelbesque 3
         $1eadb  xx xx xx:   xxx StartAudioTrack
         $1eade  xx xx:      xxx #$xx
         $1eae0  xx xx:      xxx #$xx
-        $1eae2  xx xx xx:   xxx $3572d
+        $1eae2  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
         $1eae5  xx:         xxx
 ;;; --------------------------------
@@ -24519,7 +24523,7 @@ BossPatternJump_0e              ; Kelbesque 4
         $1eb19  xx xx xx:   xxx $1eb25
         $1eb1c  xx xx xx:   xxx $xxxx,x
         $1eb1f  xx xx:      xxx #$xx
-        $1eb21  xx xx xx:   xxx $3572d
+        $1eb21  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
         $1eb24  xx:         xxx
 ;;; --------------------------------
@@ -24688,7 +24692,7 @@ BossPatternJump_15              ;Rage 6
         $1ec48  xx xx xx:   xxx $xxxx,x
         $1ec4b  xx xx:      xxx #$xx
         $1ec4d  xx xx:      xxx #$xx
-        $1ec4f  xx xx xx:   xxx $3572d
+        $1ec4f  xx xx xx:   xxx AdHocSpawnObject
         $1ec52  xx xx:      xxx #$xx
         $1ec54  xx xx xx:   xxx $xxxx,x
         $1ec57  xx xx xx:   xxx $xxxx,x
@@ -24776,7 +24780,7 @@ BossPatternJump_18              ; Sabera 1
         $1ecff  xx xx:      xxx $xx
         $1ed01  xx xx:      xxx #$xx
         $1ed03  xx xx:      xxx #$xx
-        $1ed05  xx xx xx:   xxx $3572d
+        $1ed05  xx xx xx:   xxx AdHocSpawnObject
         $1ed08  xx xx xx:   xxx $xxxx,x
         $1ed0b  xx xx:      xxx $xx
         $1ed0d  xx xx xx:   xxx $1ed96
@@ -24869,7 +24873,7 @@ DataTable_1ed82
         $1edcb  xx xx:      xxx #$xx
         $1edcd  xx:         xxx
         $1edce  xx xx xx:   xxx $xxxx,x
-        $1edd1  xx xx xx:   xxx $3572d
+        $1edd1  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
 ObjectActionJump_67_Mado
         $1edd4  xx xx xx:   xxx $xxxx,x
@@ -25025,7 +25029,7 @@ BossPatternJump_20              ; Mado 5
         $1ef11  xx:         xxx
         $1ef12  xx:         xxx
         $1ef13  xx xx:      xxx #$xx
-        $1ef15  xx xx xx:   xxx $3572d
+        $1ef15  xx xx xx:   xxx AdHocSpawnObject
         $1ef18  xx xx:      xxx $xx
         $1ef1a  xx xx:      xxx $xx
         $1ef1c  xx xx:      xxx $xx
@@ -25172,8 +25176,8 @@ BossPatternJump_23              ; Karmine 2
         $1f06d  xx xx:      xxx #$xx
         $1f06f  xx xx:      xxx #$xx
         $1f071  xx:         xxx
-        $1f072  xx xx:      xxx #$xx
-        $1f074  xx xx xx:   xxx $3572d
+        $1f072  xx xx:      xxx #$xx ; karmine fireball
+        $1f074  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
         $1f077  xx xx xx:   xxx $xxxx,x
         $1f07a  xx xx:      xxx #$xx
@@ -25193,8 +25197,8 @@ BossPatternJump_23              ; Karmine 2
         $1f099  xx xx:      xxx #$xx
         $1f09b  xx xx xx:   xxx VectorBetweenObjectsXY
         $1f09e  xx xx:      xxx $xx
-        $1f0a0  xx xx:      xxx #$xx
-        $1f0a2  xx xx xx:   xxx $3572d
+        $1f0a0  xx xx:      xxx #$xx ; curse beam
+        $1f0a2  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
         $1f0a5  xx xx:      xxx #$xx
         $1f0a7  xx xx xx:   xxx $xxxx,x
@@ -25262,7 +25266,7 @@ BossPatternJump_26              ; Statues 2
         $1f123  xx xx:      xxx $xx
         $1f125  xx:         xxx
         $1f126  xx xx xx:   xxx $xxxx,x
-        $1f129  xx xx xx:   xxx $3572d
+        $1f129  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
 DataTable_1f12c
         $1f12c              .byte $xx,$xx,$xx,$xx
@@ -25456,7 +25460,7 @@ BossPatternJump_2a              ; Draygon 3
         $1f2b6  xx xx xx:   xxx $1f2d2,y
         $1f2b9  xx:         xxx
         $1f2ba  xx xx xx:   xxx $xxxx,x
-        $1f2bd  xx xx xx:   xxx $3572d
+        $1f2bd  xx xx xx:   xxx AdHocSpawnObject
         $1f2c0  xx xx:      xxx $xx
         $1f2c2  xx xx:      xxx $xx
         $1f2c4  xx xx xx:   xxx $xxxx,y
@@ -25470,6 +25474,15 @@ BossPatternJump_2a              ; Draygon 3
 DataTable_1f2d2 
         $1f2d2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+;;; Draygon2 (x=$0d) boss modes ($600,x):
+;;;  01 - walking left/right on top of screen, also shooting balls
+;;;  02 - moving down to bottom of screen to shoot nuper beam
+;;;  03 - moving back up to shoot lasers
+;;;  04 - shooting nuper beam
+;;;  05 - shooting lasers
+;;;  06 - red fire
+;;; 
+;;; $620,x is a timer for when the mode will finish
 ObjectActionJump_6b_Draygon2
         $1f2da  xx xx:      xxx #$xx
         $1f2dc  xx xx xx:   xxx $35b07
@@ -25491,6 +25504,7 @@ ObjectActionJump_6b_Draygon2
         $1f2fe  xx xx:      xxx $xx
         $1f300  xx:         xxx
 ;;; --------------------------------
+;;; Initial setup for boss
 BossPatternJump_2b              ; Draygon2 0
         $1f301  xx xx:      xxx $xx
         $1f303  xx xx xx:   xxx $3ff8c
@@ -25498,8 +25512,8 @@ BossPatternJump_2b              ; Draygon2 0
         $1f308  xx xx xx:   xxx $xxxx
         $1f30b  xx xx:      xxx #$xx
         $1f30d  xx xx xx:   xxx $34c3d
-        $1f310  xx xx:      xxx #$xx
-        $1f312  xx xx xx:   xxx $3c125
+        $1f310  xx xx:      xxx #BGM_DRAYGON2
+        $1f312  xx xx xx:   xxx StartAudioTrack
         $1f315  xx xx:      xxx #$xx
         $1f317  xx xx xx:   xxx $xxxx
         $1f31a  xx xx xx:   xxx $xxxx
@@ -25572,36 +25586,39 @@ BossPatternJump_2b              ; Draygon2 0
         $1f3b8  xx xx xx:   xxx $xxxx
         $1f3bb  xx:         xxx
 ;;; --------------------------------
+;;; Walking left/right, throwing balls
 BossPatternJump_2c              ; Draygon2 1
         $1f3bc  xx xx:      xxx #$xx
-        $1f3be  xx xx xx:   xxx $xxxx,x
+        $1f3be  xx xx xx:   xxx ObjectKnockback,x
         $1f3c1  xx xx xx:   xxx $xxxx,x
         $1f3c4  xx xx xx:   xxx $xxxx,x
-        $1f3c7  xx xx:      xxx $xx
+        $1f3c7  xx xx:       xxx $xx ; some long routine at end?
         $1f3c9  xx xx xx:   xxx $xxxx,x
         $1f3cc  xx xx xx:   xxx $xxxx,x
         $1f3cf  xx xx:      xxx #$xx
-        $1f3d1  xx xx:      xxx $xx
+        $1f3d1  xx xx:       xxx ++ ; $1f3f7
         $1f3d3  xx xx xx:   xxx GenerateRandomNumber
         $1f3d6  xx:         xxx
-        $1f3d7  xx xx:      xxx $xx
+        $1f3d7  xx xx:       xxx ++ ; $1f3f7
+        ;; Random number was odd: start a timer at 192
         $1f3d9  xx xx:      xxx #$xx
         $1f3db  xx xx xx:   xxx $xxxx,x
         $1f3de  xx xx:      xxx $xx
-        $1f3e0  xx xx:      xxx $xx
+        $1f3e0  xx xx:       xxx ++ ; $1f3f7
+        ;; Global counter < $80
         $1f3e2  xx xx:      xxx $xx
         $1f3e4  xx xx:      xxx $xx
         $1f3e6  xx:         xxx
-        $1f3e7  xx xx:      xxx $xx
-        $1f3e9  xx xx xx:   xxx $1f541
-;;; --------------------------------
-        $1f3ec  xx xx:      xxx #$xx
+        $1f3e7  xx xx:      xxx + ; $1f3ec
+        $1f3e9  xx xx xx:    xxx Draygon2_InitiateLasers
+        ;; --------------------------------
++       $1f3ec  xx xx:      xxx #$xx
         $1f3ee  xx xx xx:   xxx $xxxx,x
         $1f3f1  xx xx:      xxx #$xx
         $1f3f3  xx xx xx:   xxx $xxxx,x
         $1f3f6  xx:         xxx
-;;; --------------------------------
-        $1f3f7  xx xx:      xxx #$xx
+        ;; --------------------------------
+++      $1f3f7  xx xx:      xxx #$xx
         $1f3f9  xx xx xx:   xxx $xxxx
         $1f3fc  xx xx xx:   xxx $1f71d
         $1f3ff  xx xx xx:   xxx $xxxx,x
@@ -25617,7 +25634,7 @@ BossPatternJump_2c              ; Draygon2 1
         $1f416  xx xx xx:   xxx $xxxx
         $1f419  xx xx xx:   xxx $1e8ff
         $1f41c  xx xx xx:   xxx $xxxx,x
-        $1f41f  xx xx:      xxx $xx
+        $1f41f  xx xx:      xxx >rts ; $1f424
         $1f421  xx xx xx:   xxx $1f4c8
 ;;; --------------------------------
         $1f424  xx:         xxx
@@ -25648,8 +25665,8 @@ BossPatternJump_2c              ; Draygon2 1
         $1f45a  xx xx:      xxx #$xx
         $1f45c  xx xx:      xxx #$xx
         $1f45e  xx:         xxx
-        $1f45f  xx xx:      xxx #$xx
-        $1f461  xx xx xx:   xxx $3572d
+        $1f45f  xx xx:      xxx #$xx ; fireballs
+        $1f461  xx xx xx:   xxx AdHocSpawnObject
         $1f464  xx xx:      xxx $xx
         $1f466  xx xx:      xxx $xx
         $1f468  xx xx xx:   xxx $xxxx,y
@@ -25695,30 +25712,31 @@ DataTable_1f48b
 DataTable_1f4bb 
         $1f4bb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+        ;; Runs if Draygon2 has $80 or more HP
         $1f4c8  xx xx xx:   xxx $xxxx,x
         $1f4cb  xx xx xx:   xxx $1f6c1
         $1f4ce  xx xx xx:   xxx $xxxx,x
         $1f4d1  xx:         xxx
         $1f4d2  xx xx:      xxx #$xx
-        $1f4d4  xx xx:      xxx $xx
-        $1f4d6  xx xx:      xxx #$xx
-        $1f4d8  xx:         xxx
+        $1f4d4  xx xx:      xxx + ; $1f4d8
+        $1f4d6  xx xx:       xxx #$xx
++       $1f4d8  xx:         xxx
         $1f4d9  xx xx xx:   xxx $xxxx,x
         $1f4dc  xx:         xxx
 ;;; --------------------------------
 BossPatternJump_2d              ; Draygon2 2
         $1f4dd  xx xx xx:   xxx $xxxx
         $1f4e0  xx xx xx:   xxx $xxxx,x
-        $1f4e3  xx xx xx:   xxx $xxxx,x
-        $1f4e6  xx xx:      xxx $xx
-        $1f4e8  xx xx xx:   xxx $1f4c8
-        $1f4eb  xx xx xx:   xxx $1f6a3
+        $1f4e3  xx xx xx:   xxx ObjectHP,x
+        $1f4e6  xx xx:      xxx + ; $1f4eb
+        $1f4e8  xx xx xx:    xxx $1f4c8
++       $1f4eb  xx xx xx:   xxx $1f6a3
         $1f4ee  xx xx:      xxx $xx,x
         $1f4f0  xx xx:      xxx #$xx
-        $1f4f2  xx xx:      xxx $xx
-        $1f4f4  xx xx xx:   xxx $1e8ff
-;;; --------------------------------
-        $1f4f7  xx xx:      xxx #$xx
+        $1f4f2  xx xx:      xxx + ; $1f4f7
+        $1f4f4  xx xx xx:    xxx $1e8ff ; update nametable and return?
+        ;; --------------------------------
++       $1f4f7  xx xx:      xxx #$xx
         $1f4f9  xx xx xx:   xxx $xxxx,x
         $1f4fc  xx xx xx:   xxx GenerateRandomNumber
         $1f4ff  xx:         xxx
@@ -25745,6 +25763,7 @@ BossPatternJump_2e              ; Draygon2 3
         $1f53b  xx xx xx:   xxx $1e8ff
 ;;; --------------------------------
         $1f53e  xx xx xx:   xxx $xxxx,x
+Draygon2_InitiateLasers
         $1f541  xx xx:      xxx #$xx
         $1f543  xx xx xx:   xxx $xxxx,x
         $1f546  xx xx:      xxx #$xx
@@ -25766,8 +25785,8 @@ BossPatternJump_2f              ; Draygon2 4
         $1f566  xx xx:      xxx #$xx
         $1f568  xx xx xx:   xxx VectorBetweenObjectsXY
         $1f56b  xx xx:      xxx $xx
-        $1f56d  xx xx:      xxx #$xx
-        $1f56f  xx xx xx:   xxx $3572d
+        $1f56d  xx xx:      xxx #$xx ; curse beam
+        $1f56f  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
         $1f572  xx xx:      xxx #$xx
         $1f574  xx xx xx:   xxx $xxxx
@@ -25779,26 +25798,27 @@ BossPatternJump_2f              ; Draygon2 4
         $1f583  xx xx xx:   xxx $xxxx,x
         $1f586  xx:         xxx
 ;;; --------------------------------
-BossPatternJump_30              ; Draygon2 5
+BossPatternJump_30              ; Draygon2 5 - shoot laser
         $1f587  xx xx:      xxx #$xx
         $1f589  xx xx xx:   xxx $1f618
         $1f58c  xx xx xx:   xxx $xxxx,x
-        $1f58f  xx xx:      xxx $xx
-        $1f591  xx xx xx:   xxx $1f4c8
-        $1f594  xx xx xx:   xxx $xxxx,x
-        $1f597  xx xx:      xxx $xx
-        $1f599  xx xx xx:   xxx GenerateRandomNumber
-        $1f59c  xx:         xxx
-        $1f59d  xx xx:      xxx #$xx
-        $1f59f  xx xx:      xxx $xx
-        $1f5a1  xx xx:      xxx #$xx
-        $1f5a3  xx xx xx:   xxx $xxxx,x
-        $1f5a6  xx xx:      xxx #$xx
-        $1f5a8  xx xx xx:   xxx $xxxx,x
-        $1f5ab  xx xx:      xxx #$xx
-        $1f5ad  xx xx xx:   xxx $1f618
-;;; --------------------------------
-        $1f5b0  xx xx:      xxx #$xx
+        $1f58f  xx xx:      xxx + ; $1f594
+        $1f591  xx xx xx:    xxx $1f4c8
++       $1f594  xx xx xx:   xxx $xxxx,x
+        $1f597  xx xx:      xxx ++ ; $1f5b0
+        $1f599  xx xx xx:    xxx GenerateRandomNumber
+        $1f59c  xx:          xxx
+        $1f59d  xx xx:       xxx #$xx
+        $1f59f  xx xx:       xxx + ; $1f5a3
+        $1f5a1  xx xx:        xxx #$xx
++       $1f5a3  xx xx xx:    xxx $xxxx,x
+        $1f5a6  xx xx:       xxx #$xx
+        $1f5a8  xx xx xx:    xxx $xxxx,x
+        $1f5ab  xx xx:       xxx #$xx
+        $1f5ad  xx xx xx:    xxx $1f618
+        ;; --------------------------------
+        ;; This happens if $620,x is nonzero
+++      $1f5b0  xx xx:      xxx #$xx ; laser, will be spawned later
         $1f5b2  xx xx:      xxx $xx
         $1f5b4  xx xx:      xxx #$xx
         $1f5b6  xx xx:      xxx $xx
@@ -25838,11 +25858,12 @@ DataTable_1f5f9
         $1f5f9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1f609              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+        ;; Fill elemental defense with #$0f ?
         $1f618  xx xx:      xxx #$xx
-        $1f61a  xx xx xx:   xxx $xxxx,y
-        $1f61d  xx:         xxx
-        $1f61e  xx xx:      xxx #$xx
-        $1f620  xx xx:      xxx $xx
+-       $1f61a  xx xx xx:    xxx ObjectElementalDefense,y
+        $1f61d  xx:          xxx
+        $1f61e  xx xx:       xxx #$xx
+        $1f620  xx xx:      xxx - ; $1f61a
         $1f622  xx:         xxx
 ;;; --------------------------------
         $1f623  xx xx:      xxx $xx
@@ -25874,7 +25895,7 @@ DataTable_1f5f9
         $1f64c  xx xx:      xxx #$xx
         $1f64e  xx:         xxx
         $1f64f  xx xx:      xxx $xx
-        $1f651  xx xx xx:   xxx $3572d
+        $1f651  xx xx xx:   xxx AdHocSpawnObject
         $1f654  xx xx:      xxx $xx
         $1f656  xx xx:      xxx $xx
         $1f658  xx xx xx:   xxx $xxxx,y
@@ -25904,9 +25925,9 @@ BossPatternJump_31              ; Draygon2 6
         $1f687  xx xx xx:   xxx $xxxx,x
         $1f68a  xx xx:      xxx #$xx
         $1f68c  xx xx:      xxx $xx
-        $1f68e  xx xx:      xxx #$xx
+        $1f68e  xx xx:      xxx #$xx ; fire breath
         $1f690  xx xx:      xxx #$xx
-        $1f692  xx xx xx:   xxx $3572d
+        $1f692  xx xx xx:   xxx AdHocSpawnObject
         $1f695  xx xx:      xxx $xx
         $1f697  xx xx:      xxx $xx
         $1f699  xx xx xx:   xxx $xxxx,y
@@ -25931,8 +25952,9 @@ BossPatternJump_31              ; Draygon2 6
         $1f6bd  xx xx xx:   xxx $xxxx,x
         $1f6c0  xx:         xxx
 ;;; --------------------------------
+        ;; Probably just updating graphics?
         $1f6c1  xx xx:      xxx $xx
-        $1f6c3  xx xx xx:   xxx $3c676
+        $1f6c3  xx xx xx:   xxx FlushNametableDataWrite
         $1f6c6  xx xx:      xxx $xx
         $1f6c8  xx xx:      xxx $xx
         $1f6ca  xx:         xxx
@@ -25943,8 +25965,8 @@ BossPatternJump_31              ; Draygon2 6
         $1f6d4  xx xx:      xxx $xx
         $1f6d6  xx xx:      xxx #$xx
         $1f6d8  xx xx:      xxx $xx
-        $1f6da  xx xx:      xxx #$xx
-        $1f6dc  xx xx xx:   xxx $3c418
+        $1f6da  xx xx:      xxx #$xx ; 8000 -> e000
+        $1f6dc  xx xx xx:   xxx BankSwitch8k_8000
         $1f6df  xx xx:      xxx #$xx
         $1f6e1  xx xx:      xxx #$xx
         $1f6e3  xx xx:      xxx ($xx),y
@@ -25968,9 +25990,19 @@ BossPatternJump_31              ; Draygon2 6
         $1f706  xx xx:      xxx $xx
         $1f708  xx:         xxx
 ;;; --------------------------------
-DataTable_1f709 
-        $1f709              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1f719              .byte $xx,$xx,$xx,$xx
+;;; Points to a striped data tabble every third block of the 0e000 page.
+;;; STRIP: word=$6000
+DataTable_1f709
+        $1f709              .word ($0e0f0)
+        $1f70b              .word ($0e3f0)
+        $1f70d              .word ($0e6f0)
+        $1f70f              .word ($0e9f0)
+        $1f711              .word ($0ecf0)
+        $1f713              .word ($0f0f0)
+        $1f715              .word ($0f3f0)
+        $1f717              .word ($0f6f0)
+        $1f719              .word ($0f9f0)
+        $1f71b              .word ($0fcf0)
 ;;; --------------------------------
         $1f71d  xx xx:      xxx #$xx
         $1f71f  xx xx xx:   xxx $xxxx
@@ -27806,6 +27838,8 @@ Menu_UpdateSprite
         $207b5  xx xx:      xxx $xx
         $207b7  xx:         xxx
 ;;; --------------------------------
+;;; Loads the nine nametable tiles for an inventory square
+LoadInventoryTiles
         $207b8  xx xx:      xxx $xx
         $207ba  xx xx xx:   xxx $20bf3,y
         $207bd  xx:         xxx
@@ -28597,18 +28631,30 @@ MenuMessageTable
         ;; 2e
         $20f49              .byte "xxxxxxxxxxxxxx",$xx,"x",$xx
 ;;; --------------------------------
-DataTable_20f5a 
-        $20f5a              .byte $xx,$xx,$xx
-        $20f5d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20f6d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20f7d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20f8d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20f9d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20fad              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20fbd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20fcd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20fdd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $20fed              .byte $xx,$xx,$xx
+;;; Address of the start of the 9-tile block for each item in the pattern table.
+DataTable_20f5a
+        ;; Swords
+        $20f5a              .byte $xx,$xx,$xx,$xx,$xx
+        ;; Balls and bracelets
+        $20f5f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; Shields
+        $20f67              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; Armors
+        $20f6f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; Consumables, etc
+        $20f77              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $20f87              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $20f97              .byte $xx,$xx,$xx,$xx
+        ;; Magic
+        $20f9b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+DataTable_20fa5 
+        $20fa5              .byte $xx,$xx
+        $20fa7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $20fb7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $20fc7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $20fd7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $20fe7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 Inventory_ItemData
         ;; The :40 bit indicates that it's not allowed to be dropped
@@ -37931,12 +37977,12 @@ AdHocSpawns
         $29cac              .byte $xx,$xx,$xx,$xx ; 2b
         $29cb0              .byte $xx,$xx,$xx,$xx ; 2c
         $29cb4              .byte $xx,$xx,$xx,$xx ; 2d
-        $29cb8              .byte $xx,$xx,$xx,$xx ; 2e
-        $29cbc              .byte $xx,$xx,$xx,$xx ; 2f
-        $29cc0              .byte $xx,$xx,$xx,$xx ; 30
-        $29cc4              .byte $xx,$xx,$xx,$xx ; 31
-        $29cc8              .byte $xx,$xx,$xx,$xx ; 32
-        $29ccc              .byte $xx,$xx,$xx,$xx ; 33
+        $29cb8              .byte $xx,$xx,$xx,$xx ; 2e Draygon2 Fireballs
+        $29cbc              .byte $xx,$xx,$xx,$xx ; 2f Draygon2 Fire breath
+        $29cc0              .byte $xx,$xx,$xx,$xx ; 30 Draygon2 Laser
+        $29cc4              .byte $xx,$xx,$xx,$xx ; 31 Draygon1 Lightning
+        $29cc8              .byte $xx,$xx,$xx,$xx ; 32 Statue Fireball
+        $29ccc              .byte $xx,$xx,$xx,$xx ; 33 Karmine Fireball
         $29cd0              .byte $xx,$xx,$xx,$xx ; 34
         $29cd4              .byte $xx,$xx,$xx,$xx ; 35
         $29cd8              .byte $xx,$xx,$xx,$xx ; 36
@@ -37956,7 +38002,7 @@ AdHocSpawnsPart2
         $29d0c              .byte $xx,$xx,$xx,$xx ; 43
         $29d10              .byte $xx,$xx,$xx,$xx ; 44
         $29d14              .byte $xx,$xx,$xx,$xx ; 45
-        $29d18              .byte $xx,$xx,$xx,$xx ; 46
+        $29d18              .byte $xx,$xx,$xx,$xx ; 46 Curse beam
         $29d1c              .byte $xx,$xx,$xx,$xx ; 47
         $29d20              .byte $xx,$xx,$xx,$xx ; 48
         $29d24              .byte $xx,$xx,$xx,$xx ; 49
@@ -38675,6 +38721,7 @@ RomBank_15                      ; @@ $a000
         $2bf1c              .byte $xx,"xxxxxx",$xx
         $2bf24              .byte $xx,$xx,"xxx",$xx,"x",$xx
         $2bf2c              .byte $xx,"xxx",$xx
+        ;; UNUSED
         $2bf31              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2bf40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2bf50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -39231,6 +39278,7 @@ RomBank_16                      ; @@ $8000
         $2df71              .byte     "xxxxx",$xx,"xxx",$xx,$xx,"xxxxx",$xx
         $2df82              .byte     $xx,$xx,$xx,$xx,$xx,"xxx",$xx,$xx
         $2df8c              .byte     $xx,$xx,"x",$xx
+        ;; UNUSED
         $2df90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2dfa0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2dfb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -39727,7 +39775,7 @@ RomBank_17                      ; @@ $a000
         $2fbc7              .byte     $xx,$xx,$xx,$xx,"xx",$xx,$xx,"x",$xx,$xx,$xx
         $2fbd3              .byte $xx,$xx
 ;;; --------------------------------
-;;; NOTE: This whole block appears to be unused???
+;;; NOTE: This whole block appears to be unused (down to $2fc00)
 RevertChangeMagic
         ;; Remove the status bits used by change magic
         $2fbd5  xx xx xx:   xxx $xxxx
@@ -42055,6 +42103,7 @@ DisplacementToDirectionTable
         $340c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $340d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $340e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
         $340f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $34100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $34110              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -44780,8 +44829,8 @@ SetPlayer340Lower
         $35c4a  xx xx:        xxx >rts ; $35c65
 +       $35c4c  xx xx:       xxx #$xx  ; zero out the action - remove sword?
         $35c4e  xx xx xx:    xxx $xxxx
-        $35c51  xx xx:       xxx #$xx
-        $35c53  xx xx xx:    xxx $3572d
+        $35c51  xx xx:       xxx #$xx ; sword stab
+        $35c53  xx xx xx:    xxx AdHocSpawnObject
         $35c56  xx xx xx:    xxx EquippedSword
         $35c59  xx xx xx:    xxx $35c66,y
         $35c5c  xx xx xx:    xxx $xxxx ; Sword's Element
@@ -44832,7 +44881,7 @@ DataTable_35c66
         $35cb7  xx:          xxx
         $35cb8  xx:          xxx
         $35cb9  xx:         xxx
-        $35cba  xx xx xx:   xxx $3572d
+        $35cba  xx xx xx:   xxx AdHocSpawnObject
         $35cbd  xx xx:      xxx $xx
         $35cbf  xx xx xx:   xxx $xxxx
         $35cc2  xx xx:      xxx #$xx
@@ -44856,7 +44905,7 @@ SwordSwingCrystalis
         $35ce5  xx:         xxx
         $35ce6  xx:         xxx
         $35ce7  xx xx:      xxx #$xx
-        $35ce9  xx xx xx:   xxx $3572d
+        $35ce9  xx xx xx:   xxx AdHocSpawnObject
         $35cec  xx xx xx:   xxx $35cd1
 ;;; --------------------------------
         $35cef  xx xx xx:   xxx $xxxx ; current jump/fall position
@@ -45313,7 +45362,7 @@ UseMagicJump_02_Paralysis
         $360ed  xx:         xxx
         $360ee  xx:         xxx
         $360ef  xx xx:      xxx $xx
-        $360f1  xx xx xx:   xxx $3572d
+        $360f1  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
 UseMagicJump_06_Barrier
         $360f4  xx xx xx:   xxx $xxxx
@@ -46177,7 +46226,7 @@ ObjectActionJump_52
         $3676b  xx xx:      xxx $xx
         $3676d  xx xx:      xxx #$xx
         $3676f  xx xx:      xxx #$xx
-        $36771  xx xx xx:   xxx $3572d
+        $36771  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
         $36774  xx xx:      xxx #$xx
         $36776  xx xx xx:   xxx $xxxx,x
@@ -46314,7 +46363,7 @@ ObjectActionJump_07
         $36886  xx xx:       xxx ++ ; $368b0
         $36888  xx xx xx:     xxx $xxxx,x
         $3688b  xx xx:        xxx #$xx
-        $3688d  xx xx xx:     xxx $3572d
+        $3688d  xx xx xx:     xxx AdHocSpawnObject
         $36890  xx xx:        xxx ++ ; $368b0
         $36892  xx xx xx:      xxx GenerateRandomNumber
         $36895  xx xx:         xxx #$xx
@@ -46908,7 +46957,7 @@ ObjectActionJump_2c
 -       $36cc4  xx xx xx:   xxx GenerateRandomNumber
         $36cc7  xx:         xxx
         $36cc8  xx xx xx:   xxx $xxxx,x
-        $36ccb  xx xx xx:   xxx $3572d
+        $36ccb  xx xx xx:   xxx AdHocSpawnObject
         $36cce  xx xx:      xxx $xx
         $36cd0  xx xx:      xxx - ; $36cc4
         $36cd2  xx xx:      xxx #$xx
@@ -47320,7 +47369,7 @@ ObjectActionJump_1d
         $3703d  xx xx xx:   xxx $xxxx,x
         $37040  xx:         xxx
         $37041  xx xx xx:   xxx $xxxx,x
-        $37044  xx xx xx:   xxx $3572d
+        $37044  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
         $37047  xx:         xxx
 ;;; --------------------------------
@@ -47351,7 +47400,7 @@ ObjectActionJump_36
         $3707a  xx xx xx:   xxx $xxxx,x
         $3707d  xx xx:      xxx #$xx
         $3707f  xx xx:      xxx #$xx
-        $37081  xx xx xx:   xxx $3572d
+        $37081  xx xx xx:   xxx AdHocSpawnObject
         $37084  xx xx:      xxx $xx
         $37086  xx xx:      xxx $xx
         $37088  xx xx xx:   xxx $xxxx,y
@@ -47570,7 +47619,7 @@ ObjectActionJump_15
         $37287  xx xx:      xxx $xx
         $37289  xx xx xx:   xxx $xxxx,x
         $3728c  xx xx xx:   xxx $xxxx,x
-        $3728f  xx xx xx:   xxx $3572d
+        $3728f  xx xx xx:   xxx AdHocSpawnObject
         $37292  xx xx xx:   xxx $xxxx,x
         $37295  xx xx xx:   xxx ReadObjectCoordinatesInto_34_37
         $37298  xx xx xx:   xxx $xxxx,x
@@ -47593,7 +47642,7 @@ ObjectActionJump_1c
         $372ba  xx xx xx:   xxx $xxxx,x
         $372bd  xx xx xx:   xxx $xxxx,x
         $372c0  xx xx:      xxx #$xx
-        $372c2  xx xx xx:   xxx $3572d
+        $372c2  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
 ObjectActionJump_14
         $372c5  xx xx xx:   xxx $xxxx,x
@@ -47924,7 +47973,7 @@ ObjectActionJump_48
         $3757b  xx xx xx:   xxx $xxxx,x
         $3757e  xx xx:      xxx $xx
         $37580  xx xx xx:   xxx $xxxx,x
-        $37583  xx xx xx:   xxx $3572d
+        $37583  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
         $37586  xx xx xx:   xxx $37714
         $37589  xx xx xx:   xxx $374ba
@@ -47964,7 +48013,7 @@ ObjectActionJump_4d
         $375c6  xx xx:      xxx #$xx
         $375c8  xx:         xxx
         $375c9  xx xx xx:   xxx $xxxx,x
-        $375cc  xx xx xx:   xxx $3572d
+        $375cc  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
 DataTable_375d0 
         $375cf              .byte $xx,$xx,$xx,$xx
@@ -47983,7 +48032,7 @@ ObjectActionJump_4e
         $375ea  xx:         xxx
         $375eb  xx:         xxx
         $375ec  xx xx xx:   xxx $xxxx,x
-        $375ef  xx xx xx:   xxx $3572d
+        $375ef  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
         $375f2  xx:         xxx
 ;;; --------------------------------
@@ -48061,7 +48110,7 @@ ObjectActionJump_5c
         $37684  xx xx xx:   xxx VectorBetweenObjectsXY
         $37687  xx xx:      xxx $xx
         $37689  xx xx xx:   xxx $xxxx,x
-        $3768c  xx xx xx:   xxx $3572d
+        $3768c  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
         $3768f  xx:         xxx
 ;;; --------------------------------
@@ -48113,7 +48162,7 @@ ObjectActionJump_58
         $376e8  xx xx xx:   xxx VectorBetweenObjectsXY
         $376eb  xx xx:      xxx $xx
         $376ed  xx xx xx:   xxx $xxxx,x
-        $376f0  xx xx xx:   xxx $3572d
+        $376f0  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
         $376f3  xx:         xxx
 ;;; --------------------------------
@@ -48308,6 +48357,7 @@ ObjectActionJump_74
         $37871  xx xx:      xxx #$xx
         $37873  xx xx xx:   xxx $xxxx
         $37876  xx xx xx:   xxx LoadPalettesForLocation
+        ;; Check whether we need an explosion or not.
         $37879  xx xx:      xxx CurrentLocation
         $3787b  xx xx:      xxx #LOC_JOEL_SHED
         $3787d  xx xx:      xxx $xx
@@ -48320,8 +48370,9 @@ ObjectActionJump_74
         $3788b  xx xx:      xxx #$xx
         $3788d  xx xx:      xxx $xx
         $3788f  xx xx:      xxx #$xx
-        $37891  xx xx xx:   xxx $3572d
+        $37891  xx xx xx:   xxx AdHocSpawnObject
         $37894  xx xx:      xxx $xx
+        ;; Open gate non-explosively.
         $37896  xx xx xx:   xxx $xxxx,x
         $37899  xx xx xx:   xxx $xxxx,x
         $3789c  xx:         xxx
@@ -48382,7 +48433,7 @@ ObjectActionJump_06
 ;;; --------------------------------
         $37955  xx xx xx:   xxx $xxxx,x
         $37958  xx xx:      xxx #$xx
-        $3795a  xx xx xx:   xxx $3572d
+        $3795a  xx xx xx:   xxx AdHocSpawnObject
         $3795d  xx xx:      xxx $xx
         $3795f  xx xx xx:   xxx $xxxx,x
         $37962  xx xx:      xxx #$xx
@@ -48458,7 +48509,7 @@ ObjectActionJump_7d
 ;;; --------------------------------
         $379f5  xx xx:      xxx #$xx
         $379f7  xx xx:      xxx #$xx
-        $379f9  xx xx xx:   xxx $3572d
+        $379f9  xx xx xx:   xxx AdHocSpawnObject
         $379fc  xx xx:      xxx $xx
         $379fe  xx xx:      xxx #$xx
         $37a00  xx xx xx:   xxx $xxxx,x
@@ -48466,7 +48517,7 @@ ObjectActionJump_7d
         $37a06  xx:         xxx
         $37a07  xx xx:       xxx #$xx
         $37a09  xx xx:       xxx #$xx
-        $37a0b  xx xx xx:    xxx $3572d
+        $37a0b  xx xx xx:    xxx AdHocSpawnObject
         $37a0e  xx:         xxx
         $37a0f  xx xx xx:   xxx $xxxx,x
         $37a12  xx xx:      xxx $xx
@@ -48782,7 +48833,7 @@ DataTable_37c61
         $37ca2  xx xx:      xxx $xx
         $37ca4  xx xx:      xxx #$xx
         $37ca6  xx xx:      xxx #$xx
-        $37ca8  xx xx xx:   xxx $3572d
+        $37ca8  xx xx xx:   xxx AdHocSpawnObject
         $37cab  xx xx:      xxx $xx
         $37cad  xx xx:      xxx $xx
         $37caf  xx xx xx:   xxx $xxxx,y
@@ -48869,7 +48920,7 @@ DataTable_37c61
         $37d50  xx xx:      xxx $xx
         $37d52  xx:         xxx
         $37d53  xx xx:      xxx #$xx
-        $37d55  xx xx xx:   xxx $3572d
+        $37d55  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
 DataTable_37d58 
         $37d58              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -48894,7 +48945,7 @@ DataTable_37d58
         $37d80  xx xx xx:   xxx $37d89,y
         $37d83  xx:         xxx
         $37d84  xx xx:      xxx #$xx
-        $37d86  xx xx xx:   xxx $3572d
+        $37d86  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
 DataTable_37d89 
         $37d89              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -56510,7 +56561,7 @@ MainGameModeJump_1f_DynaAppears
         $3cdd7  xx xx xx:   xxx BankSwitch8k_8000
         $3cdda  xx xx:      xxx #$xx
         $3cddc  xx xx:      xxx #$xx
-        $3cdde  xx xx xx:   xxx $3572d
+        $3cdde  xx xx xx:   xxx AdHocSpawnObject
         $3cde1  xx xx:      xxx $xx
         $3cde3  xx xx:      xxx $xx
         $3cde5  xx xx xx:   xxx $xxxx,x
@@ -57532,7 +57583,7 @@ ItemOrTriggerActionJump_07
         $3d5ee  xx xx xx:   xxx $xxxx
         $3d5f1  xx xx:      xxx #$xx
         $3d5f3  xx xx xx:   xxx $xxxx
-       $3d5f6  xx xx:      xxx #$xx
+        $3d5f6  xx xx:      xxx #$xx
         $3d5f8  xx xx xx:   xxx $xxxx
         $3d5fb  xx xx xx:   xxx $3d62e
         $3d5fe  xx xx:      xxx #$xx
@@ -61090,18 +61141,19 @@ TilesetBaseAddresses
         ;; which is stored in $10 for use by the routines here.  Note that this is just
         ;; the high parts of an address - the next lowest part is stored in y in the next
         ;; table, so that ($10),y points to one of 12*8 blocks of 8 bytes.
-        $3eeef              .word ($xxxx) ; $67 = #$80
-        $3eef1              .word ($xxxx) ; $67 = #$84
-        $3eef3              .word ($xxxx) ; ...
-        $3eef5              .word ($xxxx)
-        $3eef7              .word ($xxxx)
-        $3eef9              .word ($xxxx)
-        $3eefb              .word ($xxxx)
-        $3eefd              .word ($xxxx)
-        $3eeff              .word ($xxxx)
-        $3ef01              .word ($xxxx)
-        $3ef03              .word ($xxxx)
-        $3ef05              .word ($xxxx)
+        ;; STRIP: word=$8000
+        $3eeef              .word ($13000) ; $67 = #$80
+        $3eef1              .word ($13040) ; $67 = #$84
+        $3eef3              .word ($13080) ;       #$88
+        $3eef5              .word ($130c0) ;       #$8c
+        $3eef7              .word ($13100) ;       #$90
+        $3eef9              .word ($13140) ;       #$94
+        $3eefb              .word ($13180) ;       #$98
+        $3eefd              .word ($131c0) ;       #$9c
+        $3eeff              .word ($13200) ;       #$a0
+        $3ef01              .word ($13240) ;       #$a4
+        $3ef03              .word ($13280) ;       #$a8
+        $3ef05              .word ($132c0) ;       #$ac
 DataTable_3ef07
         ;; indexed by $36 >> 4 and stored in y. note that the 1-bit is unused;
         ;; it is used to index into 1b and 1d, stored in $12 and $13 (and the

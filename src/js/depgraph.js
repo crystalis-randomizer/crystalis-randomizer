@@ -143,6 +143,8 @@ const barrierOptional       = option('Barrier magic optional',
                                      !flags.guaranteeBarrier());
 const refreshOptional       = option('Refresh magic optional',
                                      !flags.guaranteeRefresh());
+const deoTelepathyOptional  = option('Telepathy optional for Deo',
+                                     !flags.saharaRabbitsRequireTelepathy());
 const limeTreeConnectsToLeaf = option('Lime Tree connects to Leaf',
                                       flags.connectLimeTreeToLeaf());
 const buffedMedicalHerb     = option('Buffed medical herb',
@@ -638,6 +640,10 @@ const calmedSeaIfRequired   = condition('Calmed sea if required')
 const startedWindmillIfRequired = condition('Started windmill if required')
                                 .option(startedWindmill)
                                 .option(windmillOptional);
+// TODO - consider using the same flag for dolphin telepathy?
+const deoTelepathyIfRequired = condition('Telepathy if required for Deo')
+                                .option(telepathy)
+                                .option(deoTelepathyOptional);
 
 // TODO - warp triggers, wild warp, etc...
 
@@ -1391,7 +1397,7 @@ const desertCave2           = location(0x95, SHRA, 'Desert Cave 2').cave()
 const saharaMeadow          = location(0x96, SHRA, 'Meadow').overworld()
                                 .connect(desertCave1)
                                 .connectTo(sahara)
-                                .trigger(talkedToDeo, change /* , telepathy */);
+                                .trigger(talkedToDeo, change, deoTelepathyIfRequired);
 const desert2               = location(0x98, SHRA, 'Desert 2').overworld()
                                 .connect(desertCave2);
 

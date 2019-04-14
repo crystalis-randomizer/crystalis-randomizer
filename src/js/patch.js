@@ -136,6 +136,8 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   if (flags.disableRabbitSkip()) fixRabbitSkip(parsed);
   if (flags.storyMode()) storyMode(parsed);
 
+  if (flags.chargeShotsOnly()) disableStabs(parsed);
+
   closeCaveEntrances(parsed, flags);
 
   misc(parsed, flags);
@@ -307,6 +309,14 @@ const storyMode = (rom) => {
   // TODO - statues of moon and sun may be relevant if entrance shuffle?
   // TODO - vampires and insect?
 };
+
+
+// Hard mode flag: Hc - zero out the sword's collision plane
+const disableStabs = (rom) => {
+  for (const o of [0x08, 0x09, 0x27]) {
+    rom.objects[o].collisionPlane = 0;
+  }
+}
 
 
 // Programmatically add a hole between valley of wind and lime tree valley

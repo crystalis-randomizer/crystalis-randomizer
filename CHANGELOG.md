@@ -1,6 +1,6 @@
 # Changes
 
-## 1.1.0-rc2
+## 1.1.0 (rc)
 * `Rl` flag ("no free lunch") now closes the back entrance to Mt Sabre North,
   requiring the Prison Key to open it (from either side), as well as the back
   entrance to the sealed cave (which can only be opened by starting the
@@ -33,6 +33,7 @@
   or insect) and having all four swords before Draygon 2 will spawn.
 * New flag `Rr` requires telepathy to get item from Deo.
 * Stabbing while flying no longer damages ground enemies.
+    * Also added new hard mode flag `Hc` that disables stabs entirely.
 * Restore armors back to original defense values, but rearrange a bit:
     * Sacred Shield now prevents curse instead of paralysis.
     * Ceramic Shield now prevents paralysis.

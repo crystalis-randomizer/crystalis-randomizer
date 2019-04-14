@@ -1542,6 +1542,7 @@ ReloadInventoryAfterContinue:
   jsr PostInventoryMenu
   rts
 
+;;; Remove the '10' bit if the player is flying ('20')
 CheckSwordCollisionPlane:
   sta $03e2 ; copied from $35c62
   lda $03a1

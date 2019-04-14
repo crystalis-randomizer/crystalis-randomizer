@@ -6,26 +6,26 @@ export const PRESETS = [{
   descr: `Basic flags for a relatively easy playthrough.`
 }, {
   title: 'Intermediate',
-  flags: 'Ds Edms Fsw Gt Mr Pbns Rlpt Sbkm Sct Tab',
+  flags: 'Ds Edms Fsw Gt Mr Ps Rlpt Sbkm Sct Tab',
   descr: `Slightly more challenge than Casual but still approachable.`,
   default: true,
 }, {
   title: 'Full Shuffle',
-  flags: 'Em Fsw Gt Mr Pbns Rlprt Sbckmt Tab',
+  flags: 'Em Fsw Gt Mr Ps Rlprt Sbckmt Tab',
   descr: `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
 }, {
   title: 'Glitchless',
-  flags: 'Em Fcstw Mr Pbns Rlprt Sbckmt Tab',
+  flags: 'Em Fcpstw Mr Ps Rlprt Sbckmt Tab',
   descr: `Full shuffle but with no glitches.`,
 }, {
   // TODO: add 'Ht' for maxing out tower scaling
   title: 'Advanced',
-  flags: 'Fsw Gfprt Hbw Mr Pbns Rlprt Sbckt Sm Tab',
+  flags: 'Fsw Gfprt Hbw Mr Ps Rlprt Sbckt Sm Tab',
   descr: `A balanced randomization with quite a bit more difficulty.`,
 }, {
   // TODO: add 'Ht'
   title: 'Ludicrous',
-  flags: 'Fs Gfprstw Hbgmswx Mr Pbns Rlprt Sbckmt Tab',
+  flags: 'Fs Gfprstw Hbgmswx Mr Ps Rlprt Sbckmt Tab',
   descr: `Pulls out all the stops, may require superhuman feats.`,
 }];
 
@@ -208,6 +208,11 @@ export const FLAGS = [{
     hard: true,
     name: 'Experience scales slower',
     text: `More grinding will be required to "keep up" with the difficulty.`,
+  }, {
+    flag: 'Hc',
+    hard: true,
+    name: 'Charge shots only',
+    text: `Stabbing is completely ineffective.  Only charged shots work.`,
   }],
 // }, {
 //   section: 'Weapons, armor, and item balance',
@@ -500,6 +505,7 @@ export class FlagSet {
   buffMedicalHerb() { return !this.check('Hm'); }
   decreaseEnemyDamage() { return this.check('Ed'); }
   neverDie() { return this.check('Di'); }
+  chargeShotsOnly() { return this.check('Hc'); }
 
   barrierRequiresCalmSea() { return this.check('Rl'); }
   paralysisRequiresPrisonKey() { return this.check('Rl'); }

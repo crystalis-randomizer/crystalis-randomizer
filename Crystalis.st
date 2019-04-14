@@ -43996,7 +43996,7 @@ Hitboxes
         $356b5              .byte $xx,$xx,$xx,$xx ; 09
         $356b9              .byte $xx,$xx,$xx,$xx ; 0a
         $356bd              .byte $xx,$xx,$xx,$xx ; 0b
-        $356c1              .byte $xx,$xx,$xx,$xx ; 0c
+        $356c1              .byte $xx,$xx,$xx,$xx ; 0c sword
         $356c5              .byte $xx,$xx,$xx,$xx ; 0d
         $356c9              .byte $xx,$xx,$xx,$xx ; 0e
         $356cd              .byte $xx,$xx,$xx,$xx ; 0f

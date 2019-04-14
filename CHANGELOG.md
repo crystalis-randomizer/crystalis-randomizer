@@ -28,6 +28,7 @@
 * New Easy Mode flags:
     * Flag `Es` guarantees a starting sword from Leaf elder
     * Flag `Ed` decreases enemy attack power, particularly in early game
+    * Flag `Ex` increases experience drops (and `Hx` decreases them)
 * New "Story mode" flag `Rs` requires killing all bosses (not counting vampire
   or insect) and having all four swords before Draygon 2 will spawn.
 * New flag `Rr` requires telepathy to get item from Deo.

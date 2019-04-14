@@ -1399,15 +1399,12 @@ CheckForLowHpMp:
 ;; Adjusted stab damage for populating sword object ($02)
 .org $35c5f
   lda #$02
-  sta $03e2
-  rts
-
-
 .ifdef _NERF_FLIGHT
-.org $356c2
-  jsr CheckSwordCollisionPlane
+  jmp CheckSwordCollisionPlane
+.else
+  sta $03e2
 .endif
-
+  rts
 
 .ifdef _RABBIT_BOOTS_CHARGE_WHILE_WALKING
 .org $35e00

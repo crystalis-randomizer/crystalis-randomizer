@@ -280,9 +280,9 @@ const fixRabbitSkip = (rom) => {
   for (const o of rom.locations[0x28].objects) {
     if (o[2] === 2 && o[3] === 0x86) {
       if (o[1] === 0x74) {
+        o[0]++; // previously we did both?
         o[1]++;
       }
-      o[0]++;
     }
   }
 };

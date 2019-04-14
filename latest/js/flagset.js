@@ -443,7 +443,7 @@ const FLAG_CONFLICTS = {
 };
 
 export class FlagSet {
-  constructor(str) {
+  constructor(str = 'RtGftTab') {
     this.flags = {};
     // parse the string
     str = str.replace(/[^A-Za-z0-9!]/g, '');
@@ -488,30 +488,50 @@ export class FlagSet {
   }
 
   autoEquipBracelet() { return this.check('Ta'); }
+  buffDeosPendant() { return this.check('Tb'); }
+  leatherBootsGiveSpeed() { return this.check('Tb'); }
+  rabbitBootsChargeWhileWalking() { return this.check('Tb'); }
+
+  shuffleMonsters() { return this.check('Mr'); }
+  shuffleShops() { return this.check('Ps'); }
+  bargainHunting() { return this.shuffleShops(); }
+
+  doubleBuffMedicalHerb() { return this.check('Em'); }
+  buffMedicalHerb() { return !this.check('Hm'); }
+  decreaseEnemyDamage() { return this.check('Ed'); }
+  neverDie() { return this.check('Di'); }
+
   barrierRequiresCalmSea() { return this.check('Rl'); }
   paralysisRequiresPrisonKey() { return this.check('Rl'); }
   sealedCaveRequiresWindmill() { return this.check('Rl'); }
-  buffDeosPendant() { return this.check('Tb'); }
   connectLimeTreeToLeaf() { return this.check('Rp'); }
-  decreaseEnemyDamage() { return this.check('Ed'); }
+  storyMode() { return this.check('Rs'); }
+  requireHealedDolphinToRide() { return this.check('Rd'); }
+  saharaRabbitsRequireTelepathy() { return this.check('Rr'); }
+  teleportOnThunderSword() { return this.check('Rt'); }
+
+  guaranteeSword() { return this.check('Es'); }
+  guaranteeSwordMagic() { return !this.check('Hw'); }
+  guaranteeMatchingSword() { return !this.check('Hs'); }
+  guaranteeGasMask() { return !this.check('Hg'); }
+  guaranteeBarrier() { return !this.check('Hb'); }
+  guaranteeRefresh() { return this.check('Er'); }
+
   disableShopGlitch() { return this.check('Fs'); }
   disableStatueGlitch() { return this.check('Ft'); }
   disableRabbitSkip() { return this.check('Fr'); }
   disableTeleportSkip() { return this.check('Fp'); }
   disableSwordChargeGlitch() { return this.check('Fg'); }
-  leatherBootsGiveSpeed() { return this.check('Tb'); }
+
+  assumeGhettoFlight() { return this.check('Gf'); }
+  assumeStatueGlitch() { return this.check('Gt'); }
+  assumeTeleportSkip() { return this.check('Gp'); }
+  assumeRabbitSkip() { return this.check('Gr'); }
+  assumeSwordChargeGlitch() { return this.check('Gc'); }
+  assumeWildWarp() { return this.check('Gw'); }
+
   nerfWildWarp() { return this.check('Fw'); }
-  neverDie() { return this.check('Di'); }
-  storyMode() { return this.check('Rs'); }
-  rabbitBootsChargeWhileWalking() { return this.check('Tb'); }
-  requireHealedDolphinToRide() { return this.check('Rd'); }
-  saharaRabbitsRequireTelepathy() { return this.check('Rr'); }
-  teleportOnThunderSword() { return this.check('Rt'); }
-  shuffleShops() { return this.check('Ps'); }
-  bargainHunting() { return this.shuffleShops(); }
-  shuffleMonsters() { return this.check('Mr'); }
-  doubleBBuffMedicalHerb() { return this.check('Em'); }
-  singleBuffMedicalHerb() { return !this.check('Hm'); }
+  allowWildWarp() { return !this.nerfWildWarp(); }
 
   expScalingFactor() {
     return this.check('Hx') ? 0.25 : this.check('Ex') ? 2.5 : 1;

@@ -149,6 +149,8 @@ const limeTreeConnectsToLeaf = option('Lime Tree connects to Leaf',
                                       flags.connectLimeTreeToLeaf());
 const buffedMedicalHerb     = option('Buffed medical herb',
                                      flags.buffMedicalHerb());
+const orbsOptional          = option('Orbs optional',
+                                     flags.orbsOptional());
 
 // TODO - for wild warp consider adding a list of locations,
 // then we can hack those into the rom if it changes?
@@ -495,20 +497,24 @@ const anyLevel2             = condition('Any level 2 sword')
                                 .option(swordOfThunder, ballOfThunder)
                                 .option(swordOfThunder, stormBracelet);
 const destroyStone          = condition('Destroy stone')
+                                .option(swordOfWind, orbsOptional)
                                 .option(swordOfWind, ballOfWind)
                                 .option(swordOfWind, tornadoBracelet)
                                 .option(swordChargeGlitch, swordOfWind, anyLevel2);
 const destroyIce            = condition('Destroy ice')
+                                .option(swordOfFire, orbsOptional)
                                 .option(swordOfFire, ballOfFire)
                                 .option(swordOfFire, flameBracelet)
                                 .option(swordChargeGlitch, swordOfFire, anyLevel2);
 const crossRivers           = condition('Cross rivers')
+                                .option(swordOfWater, orbsOptional)
                                 .option(swordOfWater, ballOfWater)
                                 .option(swordOfWater, blizzardBracelet)
                                 .option(flight)
                                 .option(swordChargeGlitch, swordOfWater, anyLevel2);
 
 const destroyIron           = condition('Destroy iron')
+                                .option(swordOfThunder, orbsOptional)
                                 .option(swordOfThunder, ballOfThunder)
                                 .option(swordOfThunder, stormBracelet)
                                 .option(swordChargeGlitch, swordOfThunder, anyLevel2);

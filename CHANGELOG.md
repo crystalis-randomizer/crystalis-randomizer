@@ -32,6 +32,8 @@
 * New "Story mode" flag `Rs` requires killing all bosses (not counting vampire
   or insect) and having all four swords before Draygon 2 will spawn.
 * New flag `Rr` requires telepathy to get item from Deo.
+* New flag `Ro` makes orbs and bracelets optional for destroying walls and
+  forming bridges.
 * Stabbing while flying no longer damages ground enemies.
     * Also added new hard mode flag `Hc` that disables stabs entirely.
 * Restore armors back to original defense values, but rearrange a bit:

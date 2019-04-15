@@ -300,6 +300,12 @@ export const FLAGS = [{
            can be used at the top of the slope in Waterfall Valley to open the
            path in reverse).  Reverse vampire also requires the windmill to have
            been started.`,
+  }, {
+    flag: 'Ro',
+    name: 'Orbs not required to break walls',
+    text: `Walls can be broken and bridges formed with level 1 shots.  Orbs and
+           bracelets are no longer considered progression items (except for
+           Tornado bracelet for Tornel on Mt Sabre).`,
   }],
 }, {
   section: 'Glitches',
@@ -515,6 +521,7 @@ export class FlagSet {
   requireHealedDolphinToRide() { return this.check('Rd'); }
   saharaRabbitsRequireTelepathy() { return this.check('Rr'); }
   teleportOnThunderSword() { return this.check('Rt'); }
+  orbsOptional() { return this.check('Ro'); }
 
   guaranteeSword() { return this.check('Es'); }
   guaranteeSwordMagic() { return !this.check('Hw'); }

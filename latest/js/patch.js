@@ -138,6 +138,8 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
 
   if (flags.chargeShotsOnly()) disableStabs(parsed);
 
+  if (flags.orbsOptional()) orbsOptional(parsed);
+
   closeCaveEntrances(parsed, flags);
 
   misc(parsed, flags);
@@ -316,8 +318,16 @@ const disableStabs = (rom) => {
   for (const o of [0x08, 0x09, 0x27]) {
     rom.objects[o].collisionPlane = 0;
   }
-}
+};
 
+const orbsOptional = (rom) => {
+  for (const obj of [0x10, 0x14, 0x18, 0x1d]) {
+    // 1. Loosen terrain susceptibility of level 1 shots
+    rom.objects[obj].terrainSusceptibility &= ~0x04;
+    // 2. Increase the level to 2
+    rom.objects[obj].level = 2;
+  }
+};
 
 // Programmatically add a hole between valley of wind and lime tree valley
 const connectLimeTreeToLeaf = (rom) => {

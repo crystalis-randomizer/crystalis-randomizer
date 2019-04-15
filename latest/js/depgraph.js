@@ -143,10 +143,14 @@ const barrierOptional       = option('Barrier magic optional',
                                      !flags.guaranteeBarrier());
 const refreshOptional       = option('Refresh magic optional',
                                      !flags.guaranteeRefresh());
+const deoTelepathyOptional  = option('Telepathy optional for Deo',
+                                     !flags.saharaRabbitsRequireTelepathy());
 const limeTreeConnectsToLeaf = option('Lime Tree connects to Leaf',
                                       flags.connectLimeTreeToLeaf());
 const buffedMedicalHerb     = option('Buffed medical herb',
                                      flags.buffMedicalHerb());
+const orbsOptional          = option('Orbs optional',
+                                     flags.orbsOptional());
 
 // TODO - for wild warp consider adding a list of locations,
 // then we can hack those into the rom if it changes?
@@ -493,20 +497,24 @@ const anyLevel2             = condition('Any level 2 sword')
                                 .option(swordOfThunder, ballOfThunder)
                                 .option(swordOfThunder, stormBracelet);
 const destroyStone          = condition('Destroy stone')
+                                .option(swordOfWind, orbsOptional)
                                 .option(swordOfWind, ballOfWind)
                                 .option(swordOfWind, tornadoBracelet)
                                 .option(swordChargeGlitch, swordOfWind, anyLevel2);
 const destroyIce            = condition('Destroy ice')
+                                .option(swordOfFire, orbsOptional)
                                 .option(swordOfFire, ballOfFire)
                                 .option(swordOfFire, flameBracelet)
                                 .option(swordChargeGlitch, swordOfFire, anyLevel2);
 const crossRivers           = condition('Cross rivers')
+                                .option(swordOfWater, orbsOptional)
                                 .option(swordOfWater, ballOfWater)
                                 .option(swordOfWater, blizzardBracelet)
                                 .option(flight)
                                 .option(swordChargeGlitch, swordOfWater, anyLevel2);
 
 const destroyIron           = condition('Destroy iron')
+                                .option(swordOfThunder, orbsOptional)
                                 .option(swordOfThunder, ballOfThunder)
                                 .option(swordOfThunder, stormBracelet)
                                 .option(swordChargeGlitch, swordOfThunder, anyLevel2);
@@ -638,6 +646,10 @@ const calmedSeaIfRequired   = condition('Calmed sea if required')
 const startedWindmillIfRequired = condition('Started windmill if required')
                                 .option(startedWindmill)
                                 .option(windmillOptional);
+// TODO - consider using the same flag for dolphin telepathy?
+const deoTelepathyIfRequired = condition('Telepathy if required for Deo')
+                                .option(telepathy)
+                                .option(deoTelepathyOptional);
 
 // TODO - warp triggers, wild warp, etc...
 
@@ -1391,7 +1403,7 @@ const desertCave2           = location(0x95, SHRA, 'Desert Cave 2').cave()
 const saharaMeadow          = location(0x96, SHRA, 'Meadow').overworld()
                                 .connect(desertCave1)
                                 .connectTo(sahara)
-                                .trigger(talkedToDeo, change /* , telepathy */);
+                                .trigger(talkedToDeo, change, deoTelepathyIfRequired);
 const desert2               = location(0x98, SHRA, 'Desert 2').overworld()
                                 .connect(desertCave2);
 

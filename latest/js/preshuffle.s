@@ -629,10 +629,10 @@ ItemGetData_03: ; sword of thunder
   ;; replace akahana's dialog - would be nice to add an extra stanza instead,
   ;; but there's not immediately space - if we ever defrag then we should do it
   ;; or else remove all the changed forms (except maybe soldier)
-  .byte $c2,$43   ; 243 NOT telepathy -> 1a:13
+  .byte $a2,$43   ; 243 NOT telepathy -> 1a:13
 .org $1d671 ; dialog 59 generic sahara bunnies
   ;; replace stom - he can talk to bunnies just fine
-  .byte $c2,$43   ; 243 NOT telepathy -> 1a:12
+  .byte $a2,$43   ; 243 NOT telepathy -> 1a:12
 .endif
 
 

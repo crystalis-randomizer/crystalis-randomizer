@@ -1221,29 +1221,29 @@ export class Rom {
     return new Rom(file);
   }
 
-  // Don't worry about other datas yet
-  writeObjectData() {
-    // build up a map from actual data to indexes that point to it
-    let addr = 0x1ae00;
-    const datas = {};
-    for (const object of this.objects) {
-      const ser = object.serialize();
-      const data = ser.join(' ');
-      if (data in datas) {
-//console.log(`$${object.id.toString(16).padStart(2,0)}: Reusing existing data $${datas[data].toString(16)}`);
-        object.objectDataBase = datas[data];
-      } else {
-        object.objectDataBase = addr;
-        datas[data] = addr;
-//console.log(`$${object.id.toString(16).padStart(2,0)}: Data is at $${addr.toString(16)}: ${Array.from(ser, x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
-        addr += ser.length;
-// seed 3517811036
-      }
-      object.write();
-    }
-//console.log(`Wrote object data from $1ac00 to $${addr.toString(16).padStart(5, 0)}, saving ${0x1be91 - addr} bytes.`);
-    return addr;
-  }
+//   // Don't worry about other datas yet
+//   writeObjectData() {
+//     // build up a map from actual data to indexes that point to it
+//     let addr = 0x1ae00;
+//     const datas = {};
+//     for (const object of this.objects) {
+//       const ser = object.serialize();
+//       const data = ser.join(' ');
+//       if (data in datas) {
+// //console.log(`$${object.id.toString(16).padStart(2,0)}: Reusing existing data $${datas[data].toString(16)}`);
+//         object.objectDataBase = datas[data];
+//       } else {
+//         object.objectDataBase = addr;
+//         datas[data] = addr;
+// //console.log(`$${object.id.toString(16).padStart(2,0)}: Data is at $${addr.toString(16)}: ${Array.from(ser, x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
+//         addr += ser.length;
+// // seed 3517811036
+//       }
+//       object.write();
+//     }
+// //console.log(`Wrote object data from $1ac00 to $${addr.toString(16).padStart(5, 0)}, saving ${0x1be91 - addr} bytes.`);
+//     return addr;
+//   }
 
   async writeData() {
     // Move object data table all the way to the end.
@@ -1261,11 +1261,19 @@ export class Rom {
       promises.push(l.writeMapData(mapData));
       promises.push(l.writeNpcData(npcData));
     }
-    for (const o of this.objects) {
-      o.write(npcData, 0x1be00); // NOTE: we moved the ObjectData table to 1be00
-    }
     await mapData.commit();
-    await npcData.commit();
+    const npcDataEnd = await npcData.commit();
+    // NOTE: NpcData can span the entire $18000..$1bfff double-page, but
+    // ObjectData (which starts shortly after the end of NpcData) must only
+    // live in $1a000..$1bfff.  So we make a new writer that starts at the
+    // exact position that NpcData ends (provided it's on the right page).
+    // This should afford us the same amount of freed space (usable by either
+    // table), but guarantees no objects end up on the wrong page.
+    const objData = new Writer(this.prg, Math.max(0x1a000, npcDataEnd), 0x1bb00);
+    for (const o of this.objects) {
+      o.write(objData, 0x1be00); // NOTE: we moved the ObjectData table to 1be00
+    }
+    await objData.commit();
     const triggerData = new Writer(this.prg, 0x1e200, 0x1e3f0);
     for (const t of this.triggers) {
       if (!t.used) continue;
@@ -1600,6 +1608,7 @@ class Writer {
     }
     console.log(`Finished writing $${this.start.toString(16)}..$${this.pos.toString(16)
                  }.  ${this.end - this.pos} bytes free`);
+    return this.pos;
   }
 }
 

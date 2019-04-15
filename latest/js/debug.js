@@ -223,6 +223,15 @@ export default (nes) => {
 
   };
 
+  window.watchCallsTo = (addr, func = () => {}) => {
+    nes.debug.breakAt(addr, 'prg', 'x', () => (console.log(`call $${
+        addr.toString(16)} from $${(nes.mmap.prgRomAddress(null,
+        nes.cpu.ram[nes.cpu.REG_SP+1]|nes.cpu.ram[nes.cpu.REG_SP+2]<<8))
+        .toString(16).padStart(4,0)} A=$${
+        nes.cpu.REG_ACC.toString(16)}, X=$${nes.cpu.REG_X.toString(16)
+        }, Y=$${nes.cpu.REG_Y.toString(16)}`), func()));
+  };
+
 };
 
 

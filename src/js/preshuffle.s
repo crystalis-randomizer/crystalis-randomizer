@@ -747,7 +747,7 @@ CheckForLowHpMp:
 .endif
 
 
-;.bank $36000 $a000:$2000
+.bank $36000 $a000:$2000
 ;
 ;.org $36086
 ;
@@ -772,8 +772,26 @@ CheckForLowHpMp:
 ;GateCheckPassed:
   
 
+;;; Beef up dyna
 
-
+.ifdef _BUFF_DYNA
+.org $37c9c
+  ;; Don't check pod's status before shooting eye laser
+  nop
+  nop
+.org $37d37
+  ;; Don't shift the "bubble turns" by 2, so that one or the
+  ;; other is always shooting
+  nop
+  nop
+.org $37d3c
+  and #$01 ; each cannon shoots 1 in 2 rather than 1 in 8
+.org $37d55
+  ;; Change shots to start from a random location
+  jmp DynaShoot
+.org $37d86
+  jmp DynaShoot
+.endif
 
 ;;.org $3c010
 ;;;; Adjusted inventory update - use level instead of sword
@@ -1192,8 +1210,32 @@ FinishEquippingConsumable:
     sta EquippedConsumableItem
     rts
 
-;; free space
+DynaShoot:
+  sta $61        ; Store the spawn ID for later
+  lda $70,x      ; Save pod's position on stack
+  pha            ;
+   tya           ; Store the shot's direction on stack
+   pha           ;
+    lda $70      ; Seed the random number by player's position
+    adc $08      ; Also seed it with the global counter
+    and #$3f     ; Don't overflow
+    tay          ;
+    lda $97e4,y  ; Read from Random number table
+    asl          ; Multiply by 8: range is 0..$3f
+    asl          ;
+    asl          ;
+    adc #$e0     ; Subtract $20
+    adc $70,x    ; Add to pod's position
+    sta $70,x    ; And store it back (temporarily)
+   pla           ; Pull off the direction
+   tay           ;   ...and save it back in Y
+   lda $61       ; Pull off the spawn ID
+   jsr $972d     ; AdHocSpawnObject
+  pla            ; Pull off the pod's position
+  sta $70,x      ;   ...and restore it
+  rts
 
+;; free space
 .assert < $3fe78
 
 

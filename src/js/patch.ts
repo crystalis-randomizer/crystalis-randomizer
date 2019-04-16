@@ -78,6 +78,7 @@ export const shuffle = async (rom: Uint8Array,
     _AUTO_EQUIP_BRACELET: flags.autoEquipBracelet(),
     _BARRIER_REQUIRES_CALM_SEA: flags.barrierRequiresCalmSea(),
     _BUFF_DEOS_PENDANT: flags.buffDeosPendant(),
+    _BUFF_DYNA: true,
     _CHECK_FLAG0: true,
     _DISABLE_SHOP_GLITCH: flags.disableShopGlitch(),
     _DISABLE_STATUE_GLITCH: flags.disableStatueGlitch(),
@@ -201,6 +202,8 @@ const postParsedShuffle = async (rom: Uint8Array,
                                  flags: FlagSet,
                                  asm: Assembler,
                                  assemble: (path: string) => Promise<void>) => {
+  buffDyna(parsed, flags); // TODO - conditional
+
   await assemble('postshuffle.s');
   updateDifficultyScalingTables(rom, flags, asm);
   updateCoinDrops(rom, flags);
@@ -261,7 +264,6 @@ function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
     0x1f311, // draygon 2
     0x37c30, // dyna
   ];
-
   const partitions =
       rom.locations.partition((loc: Location) => loc.id !== 0x5f ? loc.bgm : 0)
           .filter((l: Partition) => l[1]); // filter out start and dyna
@@ -307,6 +309,11 @@ function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
   // shuffle(bosses);
 
   shuffle([...peaceful, ...hostile, ...bosses]);
+}
+
+function buffDyna(rom: Rom, flags: FlagSet): void {
+  rom.objects[0xb8].collisionPlane = 3;
+  rom.objects[0xb8].immobile = 1;
 }
 
 function makeBraceletsProgressive(rom: Rom): void {
@@ -1291,12 +1298,18 @@ const SCALED_MONSTERS: Map<number, MonsterData> = new Map([
   [0xa1, 'm', 'Tower Defense Mech (2)',     5,  ,   8,   36,  ,    85],
   [0xa2, 'm', 'Tower Sentinel',             ,   ,   1,   ,    ,    32],
   [0xa3, 'm', 'Air Sentry',                 3,  ,   2,   26,  ,    65],
-  [0xa4, 'b', 'Dyna',                       6,  5,  8,   ,    ,    ,],
+  // [0xa4, 'b', 'Dyna',                       6,  5,  16,  ,    ,    ,],
   [0xa5, 'b', 'Vampire 2',                  3,  ,   12,  27,  ,    ,],
-  [0xb4, 'b', 'dyna pod',                   15, ,   255, 26,  ,    ,],
-  [0xb8, 'p', 'dyna counter',               ,   ,   ,    26,  ,    ,],
-  [0xb9, 'p', 'dyna laser',                 ,   ,   ,    26,  ,    ,],
+  // [0xb4, 'b', 'dyna pod',                   15, ,   255, 26,  ,    ,],
+  // [0xb8, 'p', 'dyna counter',               ,   ,   ,    26,  ,    ,],
+  // [0xb9, 'p', 'dyna laser',                 ,   ,   ,    26,  ,    ,],
+  // [0xba, 'p', 'dyna bubble',                ,   ,   ,    36,  ,    ,],
+  [0xa4, 'b', 'Dyna',                       6,  5,  32,  ,    ,    ,],
+  [0xb4, 'b', 'dyna pod',                   6,  5,  48,  26,  ,    ,],
+  [0xb8, 'p', 'dyna counter',              15,  ,   ,    42,  ,    ,],
+  [0xb9, 'p', 'dyna laser',                 ,   ,   ,    42,  ,    ,],
   [0xba, 'p', 'dyna bubble',                ,   ,   ,    36,  ,    ,],
+  //
   [0xbc, 'm', 'vamp2 bat',                  ,   ,   ,    16,  ,    15],
   [0xbf, 'p', 'draygon2 fireball',          ,   ,   ,    26,  ,    ,],
   [0xc1, 'm', 'vamp1 bat',                  ,   ,   ,    16,  ,    15],

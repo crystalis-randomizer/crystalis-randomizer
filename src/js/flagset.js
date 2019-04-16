@@ -251,11 +251,6 @@ export const FLAGS = [{
            restores MP while moving.  Rabbit boots enable sword charging up to
            level 2 while walking (level 3 still requires being stationary, so as
            to prevent wasting tons of magic).`,
-  }, {
-    flag: 'Tw',
-    name: 'Disable wild warp',
-    text: `Wild warp will only teleport back to Mezame shrine (to prevent
-           game-breaking soft-locks).`,
   }],
 }, {
   section: 'Routing',
@@ -383,6 +378,11 @@ export const FLAGS = [{
     name: 'Disable statue glitch',
     text: `Statues will instead always push downwards, making it impossible to
            glitch through statues for progression.`,
+  }, {
+    flag: 'Fw',
+    name: 'Disable wild warp',
+    text: `Wild warp will only teleport back to Mezame shrine (to prevent
+           game-breaking soft-locks).`,
   }],
 }, {
   section: 'Easy Mode',
@@ -441,8 +441,8 @@ const FLAG_CONFLICTS = {
   Hx: /Ex/,
   Em: /Hm/,
   Ex: /Hx/,
-  Tw: /Gw/,
-  Gw: /Tw/,
+  Fw: /Gw/,
+  Gw: /Fw/,
   Ft: /Gt/,
   Gt: /Ft/,
   Fc: /Gc/,
@@ -530,17 +530,17 @@ export class FlagSet {
   guaranteeBarrier() { return !this.check('Hb'); }
   guaranteeRefresh() { return this.check('Er'); }
 
+  disableSwordChargeGlitch() { return this.check('Fc'); }
+  disableTeleportSkip() { return this.check('Fp'); }
+  disableRabbitSkip() { return this.check('Fr'); }
   disableShopGlitch() { return this.check('Fs'); }
   disableStatueGlitch() { return this.check('Ft'); }
-  disableRabbitSkip() { return this.check('Fr'); }
-  disableTeleportSkip() { return this.check('Fp'); }
-  disableSwordChargeGlitch() { return this.check('Fg'); }
 
+  assumeSwordChargeGlitch() { return this.check('Gc'); }
   assumeGhettoFlight() { return this.check('Gf'); }
-  assumeStatueGlitch() { return this.check('Gt'); }
   assumeTeleportSkip() { return this.check('Gp'); }
   assumeRabbitSkip() { return this.check('Gr'); }
-  assumeSwordChargeGlitch() { return this.check('Gc'); }
+  assumeStatueGlitch() { return this.check('Gt'); }
   assumeWildWarp() { return this.check('Gw'); }
 
   nerfWildWarp() { return this.check('Fw'); }

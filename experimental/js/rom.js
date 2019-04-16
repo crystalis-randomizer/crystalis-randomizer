@@ -1,3 +1,5 @@
+import {UnionFind} from './unionfind.js';
+
 const seq = (x, f = (i) => i) =>  new Array(x).fill(0).map((_, i) => f(i));
 const slice = (arr, start, len) => arr.slice(start, start + len);
 const signed = (x) => x < 0x80 ? x : x - 0x100;
@@ -264,6 +266,16 @@ const LOCATION_NAMES = {
   [0xfb]: 'Sahara - Pawn Shop',
 };
 
+const BAD_SCREENS = {
+  // mt sabre west cave 4
+  0x24: [[3, 4, 0x80]],
+  // lime tree
+  0x42: [[0, 2, 0x00]],
+  // oasis cave
+  0x91: [[0, 11, 0x80], [1, 11, 0x80], [2, 11, 0x80], [3, 11, 0x80],
+         [4, 11, 0x80], [5, 11, 0x80], [6, 11, 0x80], [7, 11, 0x80]],
+};
+
 class Entity {
   constructor(rom, id) {
     this.rom = rom;
@@ -291,6 +303,26 @@ class Screen extends Entity {
     return this.rom.metatiles[this.tiles[y][x]];
   }
 
+  /** @return {!Set<number>} */
+  allTilesSet() {
+    const tiles = new Set();
+    for (const row of this.tiles) {
+      for (const tile of row) {
+        tiles.add(tile);
+      }
+    }
+    return tiles;
+  }
+
+  write(rom = this.rom) {
+    let i = this.base;
+    for (const row of this.tiles) {
+      for (const tile of row) {
+        rom[i++] = tile;
+      }
+    }
+  }
+
   // TODO - accessors for which palettes, tilesets, and patters are used/allowed
 }
 
@@ -316,6 +348,43 @@ class Tileset extends Entity {
     this.attrs = seq(256, i => rom.prg[this.attrBase | i >> 2] >> ((i & 3) << 1) & 3);
     this.alternates = slice(rom.prg, this.alternatesBase, 32);
   }
+
+  write(rom = this.rom) {
+    for (let i = 0; i < 0x100; i++) {
+      if (i < 0x20) {
+        rom[this.alternatesBase + i] = this.alternates[i];
+      }
+      for (let j = 0; j < 4; j++) {
+        rom[this.tileBase + (j << 8) + i] = this.tiles[j][i];
+      }
+    }
+    for (let i = 0; i < 0x40; i++) {
+      const j = i << 2;
+      rom[this.attrBase + i] =
+          (this.attrs[j] & 3) | (this.attrs[j + 1] & 3) << 2 |
+          (this.attrs[j + 2] & 3) << 4 | (this.attrs[j + 3] & 3) << 6;
+    }
+    // Done?!?
+  }
+
+  // Rearranges tiles in the tileset, including the corresponding TileEffects.
+  // For the most part the tilesets and tileeffects are 1:1, the only exception
+  // is 88/b5 and a8/b5 share the same effects and are basically the same
+  // tileset, except for very minor details about the walls.
+  makeFlagTiles(mapping) {
+    // Goal: find unused higher spots and unflagged lower spots
+    // Move all instances around
+    // Return the *new* indices of the mapped tiles
+
+    // Usage: const [caveTL, caveTR, caveBL, caveBR] = tileset.makeFlagTiles({0x1a: 0x00, ...});
+    //        screen[y][x] = caveTL ...
+
+    // TODO - find all locations that have any given screen (incl which tileset, etc)
+    //      --> will need to add flags to them, sometimes?
+
+    // Multimap: tile-id => screen
+    //           screen  => location/tileset
+  }
 }
 
 class TileEffects extends Entity {
@@ -324,6 +393,12 @@ class TileEffects extends Entity {
     super(rom, id);
     this.base = (id << 8) & 0x1fff | 0x12000;
     this.effects = slice(rom.prg, this.base, 256);
+  }
+
+  write(rom = this.rom) {
+    for (let i = 0; i < 0x100; i++) {
+      rom[this.base + i] = this.effects[i];
+    }
   }
 }
 
@@ -387,6 +462,139 @@ class Hitbox extends Entity {
   get h() { return this.coordinates[3]; }
   get y0() { return signed(this.coordinates[2]); }
   get y1() { return this.y0 + this.h; }
+}
+
+const UNUSED_TRIGGERS = new Set([
+  0x87, 0x88, 0x89, 0x8f, 0x93, 0x96, 0x98, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f,
+  0xa0, 0xb5, 0xb9, 0xbe, 0xc0, // c2 is last one
+]);
+
+class Trigger extends Entity {
+  constructor(rom, id) {
+    // TODO - consider pulling this out into static fromBytes() method?
+    super(rom, id);
+    this.used = !UNUSED_TRIGGERS.has(id); // need to set manually
+    this.pointer = 0x1e17a + ((id & 0x7f) << 1);
+    this.base = addr(rom.prg, this.pointer, 0x14000);
+    // List of flags to check: positive means "must be set"
+    this.conditions = [];
+    // MessageId object
+    this.message = null;
+    // List of flags to set/clear: positive means set
+    this.flags = [];
+    let word;
+    let i = this.base;
+    do {
+      // NOTE: this byte order is inverse from normal.
+      word = rom.prg[i] << 8 | rom.prg[i + 1];
+      const flag = word & 0x0fff;
+      this.conditions.push(word & 0x2000 ? ~flag : flag);
+      i += 2;
+    } while (!(word & 0x8000));
+    this.message = MessageId.from(rom.prg, i);
+    do {
+      i += 2;
+      word = rom.prg[i] << 8 | rom.prg[i + 1];
+      const flag = word & 0x0fff;
+      this.flags.push(word & 0x8000 ? ~flag : flag);
+    } while (!(word & 0x4000));
+//console.log(`Trigger $${this.id.toString(16)}: bytes: $${this.bytes().map(x=>x.toString(16).padStart(2,0)).join(' ')}`);
+  }
+
+  bytes() {
+    const bytes = [];
+    for (let i = 0; i < this.conditions.length; i++) {
+      let word = this.conditions[i];
+      if (word < 0) word = ~word | 0x2000;
+      if (i === this.conditions.length - 1) word = word | 0x8000;
+      bytes.push(word >>> 8, word & 0xff);
+    }
+    bytes.push(...this.message.bytes());
+    for (let i = 0; i < this.flags.length; i++) {
+      let word = this.flags[i];
+      if (word < 0) word = ~word | 0x8000;
+      if (i === this.flags.length - 1) word = word | 0x4000;
+      bytes.push( word >>> 8, word & 0xff);
+    }
+    return bytes;
+  }
+
+  async write(writer, base = 0x1e17a) {
+    const address = await writer.write(this.bytes());
+    writer.rom[base + 2 * (this.id & 0x7f)] = address & 0xff;
+    writer.rom[base + 2 * (this.id & 0x7f) + 1] = (address >>> 8) - 0x40;
+  }
+}
+
+class MessageId {
+  constructor(action, part, index) {
+    this.action = action;
+    this.part = part;
+    this.index = index;
+  }
+
+  static from(arr, i) {
+    const word = arr[i] << 8 | arr[i + 1];
+    const action = (word >>> 11) & 0x1f;
+    const part = (word >>> 5) & 0x3f;
+    const index = word & 0x1f;
+    return new MessageId(action, part, index);
+  }
+
+  bytes() {
+    const word =
+        (this.action & 0x1f) << 11 | (this.part & 0x3f) << 5 | (this.index & 0x1f);
+    return [word >>> 8, word & 0xff];
+  }
+}
+
+const UNUSED_NPCS = new Set([0x3c, 0x6a, 0x73, 0x82, 0x86, 0x87, 0x89, 0x8a, 0x8b, 0x8c, 0x8d]);
+class NpcSpawn extends Entity {
+  constructor(rom, id) {
+    super(rom, id);
+    this.pointer = 0x1c5e0 + (id << 1);
+//console.log(`NPC Spawn $${this.id.toString(16)}: ${rom.prg[this.pointer].toString(16)} ${rom.prg[this.pointer + 1].toString(16)}`);
+    this.base = addr(rom.prg, this.pointer, 0x14000);
+    this.used = !UNUSED_NPCS.has(id) /*&& this.base <= 0x1c781*/ && (id < 0x8f || id >= 0xc0);
+    // Flags to check per location: positive means "must be set"
+    this.conditions = {};
+    let i = this.base;
+    let loc;
+    while (this.used && (loc = rom.prg[i++]) != 0xff) {
+      this.conditions[loc] = [];
+      let word;
+      do {
+        // NOTE: this byte order is inverse from normal.
+        word = rom.prg[i] << 8 | rom.prg[i + 1];
+        const flag = word & 0x0fff;
+        this.conditions[loc].push(word & 0x2000 ? ~flag : flag);
+        i += 2;
+      } while (!(word & 0x8000));
+    }
+//console.log(`NPC Spawn $${this.id.toString(16)} from ${this.base.toString(16)}: bytes: $${this.bytes().map(x=>x.toString(16).padStart(2,0)).join(' ')}`);
+  }
+
+  bytes() {
+    const bytes = [];
+    for (let loc in this.conditions) {
+      loc = Number(loc);
+      bytes.push(loc);
+      for (let i = 0; i < this.conditions[loc].length; i++) {
+        let word = this.conditions[loc][i];
+        if (word < 0) word = ~word | 0x2000;
+        if (i === this.conditions[loc].length - 1) word = word | 0x8000;
+        bytes.push(word >>> 8, word & 0xff);
+      }
+    }
+    bytes.push(0xff);
+    return bytes;
+  }
+
+  async write(writer, base = 0x1c5e0) {
+    const address = await writer.write(this.bytes());
+    writer.rom[base + 2 * this.id] = address & 0xff;
+    writer.rom[base + 2 * this.id + 1] = (address >>> 8) - 0x40;
+  }
 }
 
 class AdHocSpawn extends Entity {
@@ -470,7 +678,10 @@ class Location extends Entity {
     this.screens = seq(
         this.height,
         y => slice(rom.prg, this.layoutBase + 5 + y * this.width, this.width));
-
+    // TODO - make bad screen replacement conditional?
+    for (let [x, y, replacement] of BAD_SCREENS[id] || []) {
+      this.screens[y][x] = replacement;
+    }
     this.tilePalettes = slice(rom.prg, this.graphicsBase, 3);
     this.tileset = rom.prg[this.graphicsBase + 3];
     this.tileEffects = rom.prg[this.graphicsBase + 4];
@@ -510,6 +721,73 @@ class Location extends Entity {
            this.spritePalettes[this.rom.objects[id + 0x50].palettes()[0] - 2],
           ]]);
   }
+
+  async writeNpcData(npcDataWriter) {
+    if (!this.spritePalettes) return;
+    const data = [0, ...this.spritePalettes, ...this.spritePatterns,
+                  ...[].concat(...this.objects.map(o => [...o.map(x => Number(x))])),
+                  0xff];
+    const address = await npcDataWriter.write(data);
+    npcDataWriter.rom[this.npcDataPointer] = address & 0xff;
+    npcDataWriter.rom[this.npcDataPointer + 1] = address >> 8;  // - 0x100
+  }
+
+  async writeMapData(mapDataWriter) {
+    const layout = [
+      this.bgm, this.layoutWidth, this.layoutHeight, this.animation, this.extended,
+      ...[].concat(...this.screens.map(s => [...s.map(x => Number(x))]))];
+    const graphics =
+        [...this.tilePalettes,
+         this.tileset, this.tileEffects,
+         ...this.tilePatterns];
+    const entrances = [].concat(...this.entrances.map(e => [...e]));
+    const exits = [...[].concat(...this.exits.map(e => [...e])), 0xff];
+    const flags = [...[].concat(...this.flags.map(f => [...f])), 0xff];
+    const pits = [].concat(...this.pits.map(p => [...p]));
+    const [layoutAddr, graphicsAddr, entrancesAddr, exitsAddr, flagsAddr, pitsAddr] =
+        await Promise.all([
+          mapDataWriter.write(layout),
+          mapDataWriter.write(graphics),
+          mapDataWriter.write(entrances),
+          mapDataWriter.write(exits),
+          mapDataWriter.write(flags),
+          pits.length ? mapDataWriter.write(pits) : null,
+        ]);
+    const addresses = [
+      layoutAddr & 0xff, (layoutAddr >>> 8) - 0xc0,
+      graphicsAddr & 0xff, (graphicsAddr >>> 8) - 0xc0,
+      entrancesAddr & 0xff, (entrancesAddr >>> 8) - 0xc0,
+      exitsAddr & 0xff, (exitsAddr >>> 8) - 0xc0,
+      flagsAddr & 0xff, (flagsAddr >>> 8) - 0xc0,
+      ...(pitsAddr ? [pitsAddr & 0xff, (pitsAddr >> 8) - 0xc0] : []),
+    ];
+    const base = await mapDataWriter.write(addresses);
+    mapDataWriter.rom[this.mapDataPointer] = base & 0xff;
+    mapDataWriter.rom[this.mapDataPointer + 1] = (base >>> 8) - 0xc0;
+  }
+
+  /** @return {!Set<!Screen>} */
+  allScreens() {
+    const screens = new Set();
+    const ext = this.extended ? 0x100 : 0;
+    for (const row of this.screens) {
+      for (const screen of row) {
+        screens.add(this.rom.screens[screen + ext]);
+      }
+    }
+    return screens
+  }
+
+  /** @return {!Set<number>} */
+  allTiles() {
+    const tiles = new Set();
+    for (const screen of this.screens) {
+      for (const tile of screen.allTiles()) {
+        tiles.add(tile);
+      }
+    }
+    return tiles;
+  }
 }
 
 class ObjectData extends Entity {
@@ -520,7 +798,7 @@ class ObjectData extends Entity {
     this.objectDataBase = addr(rom.prg, this.objectDataPointer, 0x10000);
     this.sfx = rom.prg[this.objectDataBase];
     let a = this.objectDataBase + 1;
-// console.log(`PRG($${id.toString(16)}) at $${this.objectDataBase.toString(16)}: ${Array.from(this.rom.prg.slice(a, a + 23), x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
+// console.log(`PRG($${id.toString(16)}) at $${this.objectDataBase.toString(16)}: ${Array.from(this.prg.slice(a, a + 23), x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
     this.objectData = [];
     let m = 0;
     for (let i = 0; i < 32; i++) {
@@ -552,12 +830,11 @@ class ObjectData extends Entity {
     return Uint8Array.from(out);
   }
 
-  write(rom = this.rom) {
+  async write(writer, base = 0x1ac00) {
     // Note: shift of 0x10000 is irrelevant
-    rom.prg[this.objectDataPointer] = this.objectDataBase & 0xff;
-    rom.prg[this.objectDataPointer + 1] = (this.objectDataBase >>> 8) & 0xff;
-    const data = this.serialize();
-    rom.prg.subarray(this.objectDataBase, this.objectDataBase + data.length).set(data);
+    const address = await writer.write(this.serialize());
+    writer.rom[base + 2 * this.id] = address & 0xff;
+    writer.rom[base + 2 * this.id + 1] = address >>> 8;
   }
 
   get(addr) {
@@ -838,12 +1115,14 @@ export class Rom {
     this.screens = seq(0x103, i => new Screen(this, i));
     this.tilesets = seq(12, i => new Tileset(this, i << 2 | 0x80));
     this.tileEffects = seq(11, i => new TileEffects(this, i + 0xb3));
+    this.triggers = seq(0x43, i => new Trigger(this, 0x80 | i));
     this.patterns = seq(this.chr.length >> 4, i => new Pattern(this, i));
     this.palettes = seq(0x100, i => new Palette(this, i));
     this.locations = seq(
         0x100, i => !LOCATION_NAMES[i] ? null : new Location(this, i));
     this.tileAnimations = seq(4, i => new TileAnimation(this, i));
     this.hitboxes = seq(24, i => new Hitbox(this, i));
+    this.npcSpawns = seq(0xcd, i => new NpcSpawn(this, i));
     this.objects = seq(0x100, i => new ObjectData(this, i));
     this.adHocSpawns = seq(0x60, i => new AdHocSpawn(this, i));
     this.metasprites = seq(0x100, i => new Metasprite(this, i));
@@ -942,52 +1221,298 @@ export class Rom {
     return new Rom(file);
   }
 
-  // Don't defrag yet???
-  // In particular, right now we just need to replace some objects and
-  // sprite pattern/palette selections.
-  writeNpcData() {
-    const rom = this;
-    for (const loc of this.locations) {
-      if (!loc) continue;
-      let addr = loc.npcDataBase;
-      if (loc.spritePalettes) {
-        rom.prg.subarray(addr + 1, addr + 3).set(loc.spritePalettes);
-      }
-      if (loc.spritePatterns) {
-        rom.prg.subarray(addr + 3, addr + 5).set(loc.spritePatterns);
-      }
-      addr += 5;
-      for (const obj of loc.objects || []) {
-        rom.prg.subarray(addr, addr + 4).set(obj);
-        addr += 4;
-      }
+//   // Don't worry about other datas yet
+//   writeObjectData() {
+//     // build up a map from actual data to indexes that point to it
+//     let addr = 0x1ae00;
+//     const datas = {};
+//     for (const object of this.objects) {
+//       const ser = object.serialize();
+//       const data = ser.join(' ');
+//       if (data in datas) {
+// //console.log(`$${object.id.toString(16).padStart(2,0)}: Reusing existing data $${datas[data].toString(16)}`);
+//         object.objectDataBase = datas[data];
+//       } else {
+//         object.objectDataBase = addr;
+//         datas[data] = addr;
+// //console.log(`$${object.id.toString(16).padStart(2,0)}: Data is at $${addr.toString(16)}: ${Array.from(ser, x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
+//         addr += ser.length;
+// // seed 3517811036
+//       }
+//       object.write();
+//     }
+// //console.log(`Wrote object data from $1ac00 to $${addr.toString(16).padStart(5, 0)}, saving ${0x1be91 - addr} bytes.`);
+//     return addr;
+//   }
+
+  async writeData() {
+    // Move object data table all the way to the end.
+    this.prg[0x3c273] = this.prg[0x3c278] = 0xbe;
+    this.prg[0x3c27f] = this.prg[0x3c284] = 0xbf;
+    // Make writers for MapData and NpcData+ObjectData
+    const mapData = new Writer(this.prg, 0x144f8, 0x17e00);
+    // NOTE: 193f9 is assuming $fb is the last location ID.  If we add more locations at
+    // the end then we'll need to push this back a few more bytes.  We could possibly
+    // detect the bad write and throw an error, and/or compute the max location ID.
+    const npcData = new Writer(this.prg, 0x193f9, 0x1bb00); // 0x1abf5);
+    const promises = [];
+    for (const l of this.locations) {
+      if (!l) continue;
+      promises.push(l.writeMapData(mapData));
+      promises.push(l.writeNpcData(npcData));
     }
+    await mapData.commit();
+    const npcDataEnd = await npcData.commit();
+    // NOTE: NpcData can span the entire $18000..$1bfff double-page, but
+    // ObjectData (which starts shortly after the end of NpcData) must only
+    // live in $1a000..$1bfff.  So we make a new writer that starts at the
+    // exact position that NpcData ends (provided it's on the right page).
+    // This should afford us the same amount of freed space (usable by either
+    // table), but guarantees no objects end up on the wrong page.
+    const objData = new Writer(this.prg, Math.max(0x1a000, npcDataEnd), 0x1bb00);
+    for (const o of this.objects) {
+      o.write(objData, 0x1be00); // NOTE: we moved the ObjectData table to 1be00
+    }
+    await objData.commit();
+    const triggerData = new Writer(this.prg, 0x1e200, 0x1e3f0);
+    for (const t of this.triggers) {
+      if (!t.used) continue;
+      promises.push(t.write(triggerData));
+    }
+    await triggerData.commit();
+    const npcSpawnData = new Writer(this.prg, 0x1c77a, 0x1c95d);
+    for (const s of this.npcSpawns) {
+      if (!s.used) continue;
+      promises.push(s.write(npcSpawnData));
+    }
+    await npcSpawnData.commit();
+    for (const tileset of this.tilesets) {
+      tileset.write(this.prg);
+    }
+    for (const tileEffects of this.tileEffects) {
+      tileEffects.write(this.prg);
+    }
+    for (const screen of this.screens) {
+      screen.write(this.prg);
+    }
+    return Promise.all(promises).then(() => undefined);
   }
 
-  // Don't worry about other datas yet
-  writeObjectData() {
-    // build up a map from actual data to indexes that point to it
-    let addr = 0x1ae00;
-    const datas = {};
-    for (const object of this.objects) {
-      const ser = object.serialize();
-      const data = ser.join(' ');
-      if (data in datas) {
-//console.log(`$${object.id.toString(16).padStart(2,0)}: Reusing existing data $${datas[data].toString(16)}`);
-        object.objectDataBase = datas[data];
-      } else {
-        object.objectDataBase = addr;
-        datas[data] = addr;
-//console.log(`$${object.id.toString(16).padStart(2,0)}: Data is at $${addr.toString(16)}: ${Array.from(ser, x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
-        addr += ser.length;
-// seed 3517811036
+
+  analyzeTiles() {
+    // For any given tile index, what screens does it appear on.
+    // For those screens, which tilesets does *it* appear on.
+    // That tile ID is linked across all those tilesets.
+    // Forms a partitioning for each tile ID => union-find.
+    // Given this partitioning, if I want to move a tile on a given
+    // tileset, all I need to do is find another tile ID with the
+    // same partition and swap them?
+
+    // More generally, we can just partition the tilesets.
+
+
+    // For each screen, find all tilesets T for that screen
+    // Then for each tile on the screen, union T for that tile.
+
+
+    // Given a tileset and a metatile ID, find all the screens that (1) are rendered
+    // with that tileset, and (b) that contain that metatile; then find all *other*
+    // tilesets that those screens are ever rendered with.
+
+    // Given a screen, find all available metatile IDs that could be added to it
+    // without causing problems with other screens that share any tilesets.
+    //  -> unused (or used but shared exclusively) across all tilesets the screen may use
+
+
+    // What I want for swapping is the following:
+    //  1. find all screens I want to work on => tilesets
+    //  2. find unused flaggabble tiles in the hardest one,
+    //     which are also ISOLATED in the others.
+    //  3. want these tiles to be unused in ALL relevant tilesets
+    //  4. to make this so, find *other* unused flaggable tiles in other tilesets
+    //  5. swap the unused with the isolated tiles in the other tilesets
+
+    // Caves:
+    //  0a:      90 / 9c
+    //  15: 80 / 90 / 9c
+    //  19:      90      (will add to 80?)
+    //  3e:      90
+    //
+    // Ideally we could reuse 80's 1/2/3/4 for this
+    //  01: 90 | 94 9c
+    //  02: 90 | 94 9c
+    //  03:      94 9c
+    //  04: 90 | 94 9c
+    //
+    // Need 4 other flaggable tile indices we can swap to?
+    //   90: => (1,2 need flaggable; 3 unused; 4 any) => 07, 0e, 10, 12, 13, ..., 20, 21, 22, ...
+    //   94 9c: => don't need any flaggable => 05, 3c, 68, 83, 88, 89, 8a, 90, ...
+  }
+
+
+  disjointTilesets() {
+    const tilesetByScreen = [];
+    for (const loc of this.locations) {
+      if (!loc) continue;
+      const tileset = loc.tileset;
+      const ext = loc.extended ? 0x100 : 0;
+      for (const row of loc.screens) {
+        for (const s of row) {
+          (tilesetByScreen[s + ext] || (tilesetByScreen[s + ext] = new Set())).add(tileset);
+        }
       }
-      object.write();
     }
-//console.log(`Wrote object data from $1ac00 to $${addr.toString(16).padStart(5, 0)}, saving ${0x1be91 - addr} bytes.`);
-    return addr;
+    const tiles = new Array(256).fill(0).map(() => new UnionFind());
+    for (let s = 0; s < tilesetByScreen.length; s++) {
+      if (!tilesetByScreen[s]) continue;
+      const ts = new Set();
+      for (const row of this.screens[s].tiles) {
+        for (const t of row) {
+          ts.add(t);
+        }
+      }
+      for (const t of ts) {
+        tiles[t].union([...tilesetByScreen[s]]);
+      }
+    }
+    // output
+    for (let t = 0; t < tiles.length; t++) {
+      const p = tiles[t].sets().map(s => [...s].map(x => x.toString(16)).join(' ')).join(' | ');
+      console.log(`Tile ${t.toString(16).padStart(2, 0)}: ${p}`);
+    }
+    //   if (!tilesetByScreen[i]) {
+    //     console.log(`No tileset for screen ${i.toString(16)}`);
+    //     continue;
+    //   }
+    //   union.union([...tilesetByScreen[i]]);
+    // }
+    // return union.sets();
+  }
+
+  // Cycles are not actually cyclic - an explicit loop at the end is required to swap.
+  // Variance: [1, 2, null] will cause instances of 1 to become 2 and will
+  //           cause properties of 1 to be copied into slot 2
+  // Common usage is to swap things out of the way and then copy into the
+  // newly-freed slot.  Say we wanted to free up slots [1, 2, 3, 4] and
+  // had available/free slots [5, 6, 7, 8] and want to copy from [9, a, b, c].
+  // Then cycles will be [1, 5, 9] ??? no
+  //  - probably want to do screens separately from tilesets...?
+  // NOTE - we don't actually want to change tiles for the last copy...!
+  //   in this case, ts[5] <- ts[1], ts[1] <- ts[9], screen.map(1 -> 5)
+  //   replace([0x90], [5, 1, ~9])
+  //     => 1s replaced with 5s in screens but 9s NOT replaced with 1s.
+  // Just build the partition once lazily? then can reuse...
+  //   - ensure both sides of replacement have correct partitioning?E
+  //     or just do it offline - it's simpler
+  // TODO - Sanity check?  Want to make sure nobody is using clobbered tiles?
+  swapMetatiles(/** !Array<number> */ tilesets, /** ...!Array<number|!Array<number>> */ ...cycles) {
+    // Process the cycles
+    const rev = new Map();
+    const revArr = seq(0x100);
+    const alt = new Map();
+    const cpl = x => Array.isArray(x) ? x[0] : x < 0 ? ~x : x;
+    for (const cycle of cycles) {
+      for (let i = 0; i < cycle.length - 1; i++) {
+        if (Array.isArray(cycle[i])) {
+          alt.set(cycle[i][0], cycle[i][1]);
+          cycle[i] = cycle[i][0];
+        }
+      }
+      for (let i = 0; i < cycle.length - 1; i++) {
+        let j = cycle[i];
+        let k = cycle[i + 1];
+        if (j < 0 || k < 0) continue;
+        rev.set(k, j);
+        revArr[k] = j;
+      }
+    }
+    //const replacementSet = new Set(replacements.keys());
+    // Find instances in (1) screens, (2) tilesets and alternates, (3) tileEffects
+    const screens = new Set();
+    const tileEffects = new Set();
+    tilesets = new Set(tilesets);
+    for (const l of this.locations) {
+      if (!l) continue;
+      if (!tilesets.has(l.tileset)) continue;
+      tileEffects.add(l.tileEffects);
+      for (const screen of l.allScreens()) {
+        screens.add(screen);
+      }
+    }
+    // Do replacements.
+    // 1. screens: [5, 1, ~9] => change 1s into 5s
+    for (const screen of screens) {
+      for (const row of screen.tiles) {
+        for (let i = 0; i < row.length; i++) {
+          row[i] = revArr[row[i]];
+        }
+      }
+    }
+    // 2. tilesets: [5, 1 ~9] => copy 5 <= 1 and 1 <= 9
+    for (const tsid of tilesets) {
+      const tileset = this.tilesets[(tsid & 0x7f) >>> 2];
+      for (const cycle of cycles) {
+        for (let i = 0; i < cycle.length - 1; i++) {
+          const a = cpl(cycle[i]);
+          const b = cpl(cycle[i + 1]);
+          for (let j = 0; j < 4; j++) {
+            tileset.tiles[j][a] = tileset.tiles[j][b];
+          }
+          tileset.attrs[a] = tileset.attrs[b];
+          if (b < 0x20 && tileset.alternates[b] != b) {
+            if (a >= 0x20) throw new Error(`Cannot unflag: ${tsid} ${a} ${b} ${tileset.alternates[b]}`);
+            tileset.alternates[a] = tileset.alternates[b];
+          }
+        }
+      }
+      for (const [a, b] of alt) {
+        tileset.alternates[a] = b;
+      }
+    }
+    // 3. tileEffects
+    for (const teid of tileEffects) {
+      const tileEffect = this.tileEffects[teid - 0xb3];
+      for (const cycle of cycles) {
+        for (let i = 0; i < cycle.length - 1; i++) {
+          const a = cpl(cycle[i]);
+          const b = cpl(cycle[i + 1]);
+          tileEffect.effects[a] = tileEffect.effects[b];
+        }
+      }
+      for (const a of alt.keys()) {
+        // This bit is required to indicate that the alternative tile's
+        // effect should be consulted.  Simply having the flag and the
+        // tile index < $20 is not sufficient.
+        tileEffect.effects[a] |= 0x08;
+      }
+    }
+    // Done?!?
   }
 }
+
+
+// const intersects = (left, right) => {
+//   if (left.size > right.size) return intersects(right, left);
+//   for (let i of left) {
+//     if (right.has(i)) return true;
+//   }
+//   return false;
+// }
+
+// const TILE_EFFECTS_BY_TILESET = {
+//   0x80: 0xb3,
+//   0x84: 0xb4,
+//   0x88: 0xb5,
+//   0x8c: 0xb6,
+//   0x90: 0xb7,
+//   0x94: 0xb8,
+//   0x98: 0xb9,
+//   0x9c: 0xba,
+//   0xa0: 0xbb,
+//   0xa4: 0xbc,
+//   0xa8: 0xb5,
+//   0xac: 0xbd,
+// };
 
 const readString = (arr, addr) => {
   const bytes = [];
@@ -1026,6 +1551,65 @@ const pickFile = () => {
       reader.readAsArrayBuffer(file);
     });
   });
+}
+
+class Writer {
+  constructor(rom, start, end) {
+    this.rom = rom;
+    this.start = start;
+    this.pos = start;
+    this.end = end;
+    this.chunks = [];
+    this.promises = [];
+  }
+
+  write(data) {
+    const p = new Promise((resolve, reject) => {
+      this.chunks.push({data, resolve});
+    });
+    this.promises.push(p);
+    return p;
+  }
+
+  find(data) {
+    for (let i = this.start; i <= this.pos - data.length; i++) {
+      let found = true;
+      for (let j = 0; j < data.length; j++) {
+        if (this.rom[i + j] !== data[j]) {
+          found = false;
+          break;
+        }
+      }
+      if (found) return i;
+    }
+//console.log(`could not find ${data.map(x=>x.toString(16))}`);
+    return -1;
+  }
+
+  async commit() {
+    while (this.chunks.length) {
+      const chunks = this.chunks.sort(({data: a}, {data: b}) => b.length - a.length);
+      const promises = this.promises;
+      this.chunks = [];
+      this.promises = [];
+      for (const {data, resolve} of chunks) {
+        const addr = this.find(data);
+        if (addr >= 0) {
+          resolve(addr);
+        } else {
+          // write
+          if (this.pos + data.length >= this.end) throw new Error('Does not fit');
+          this.rom.subarray(this.pos, this.pos + data.length).set(data);
+          resolve(this.pos);
+          this.pos += data.length;
+        }
+      }
+      await Promise.all(promises);
+    }
+    console.log(`Finished writing $${this.start.toString(16)}..$${this.pos.toString(16)
+                 }.  ${this.end - this.pos} bytes free`);
+    return this.pos;
+  }
 }
 
 
@@ -1130,5 +1714,6 @@ const pickFile = () => {
 // building the CSV for the location table.
 //const h=(x)=>x==null?'null':'$'+x.toString(16).padStart(2,0);
 //'id,name,bgm,width,height,animation,extended,tilepat0,tilepat1,tilepal0,tilepal1,tileset,tile effects,exits,sprpat0,sprpat1,sprpal0,sprpal1,obj0d,obj0e,obj0f,obj10,obj11,obj12,obj13,obj14,obj15,obj16,obj17,obj18,obj19,obj1a,obj1b,obj1c,obj1d,obj1e,obj1f\n'+rom.locations.map(l=>!l||!l.valid?'':[h(l.id),l.name,h(l.bgm),l.layoutWidth,l.layoutHeight,l.animation,l.extended,h((l.tilePatterns||[])[0]),h((l.tilePatterns||[])[1]),h((l.tilePalettes||[])[0]),h((l.tilePalettes||[])[1]),h(l.tileset),h(l.tileEffects),[...new Set(l.exits.map(x=>h(x[2])))].join(':'),h((l.spritePatterns||[])[0]),h((l.spritePatterns||[])[1]),h((l.spritePalettes||[])[0]),h((l.spritePalettes||[])[1]),...new Array(19).fill(0).map((v,i)=>((l.objects||[])[i]||[]).slice(2).map(x=>x.toString(16)).join(':'))]).filter(x=>x).join('\n')
+
 
 export const EXPECTED_CRC32 = 0x1bd39032;

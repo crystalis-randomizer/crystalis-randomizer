@@ -179,6 +179,69 @@ export default (nes) => {
     change: () => getItem(nes, 0x47),
     flight: () => getItem(nes, 0x48),
   };
+
+  window.show = (addr, lineCount = 8) => {
+    const lines = ['        -0 -1 -2 -3 -4 -5 -6 -7 -8 -9 -a -b -c -d -e -f'];
+    let line = null;
+    for (let i = addr; lines.length < lineCount + 1; i++) {
+      if (!line) {
+        line = `$${(i >>> 4).toString(16).padStart(4, 0)}x ${'   '.repeat(i & 0xf)}`;
+      }
+      line = `${line} ${nes.rom.rom[i].toString(16).padStart(2, 0)}`;
+      if ((i & 0xf) === 0xf) {
+        lines.push(line);
+        line = null;
+      }
+    }
+    console.log(lines.join('\n'));
+  };
+
+  window.watchFlags = () => {
+    const current = new Array(0x300);
+    for (let i = 0; i < 0x300; i++) {
+      current[i] = window.flag(i).get();
+    }
+
+    const m = nes.debug.logMem;
+    nes.debug.logMem = (...args) => {
+      if ((args[1] & 0xfff80) == 0x6480) {
+        const start = (args[1] & 0x7f) << 3;
+        if (start < 0x300) {
+          for (let i = 0; i < 8; i++) {
+            const f = start + i;
+            const v = window.flag(start + i).get();
+            if (v != current[f]) {
+              current[f] = v;
+              console.log(`Flag ${f.toString(16).padStart(3, 0)} <- ${v}`);
+            }
+          }
+        }
+      }
+      m.apply(nes.debug, args);
+    };
+
+
+  };
+
+  window.watchCallsTo = (addr, func = () => {}) => {
+    nes.debug.breakAt(addr, 'prg', 'x', () => (console.log(`call $${
+        addr.toString(16)} from $${(nes.mmap.prgRomAddress(null,
+        nes.cpu.ram[nes.cpu.REG_SP+1]|nes.cpu.ram[nes.cpu.REG_SP+2]<<8))
+        .toString(16).padStart(4,0)} A=$${
+        nes.cpu.REG_ACC.toString(16)}, X=$${nes.cpu.REG_X.toString(16)
+        }, Y=$${nes.cpu.REG_Y.toString(16)}`), func()));
+  };
+
+  window.heal = () => {
+    for (const a of [0x708, 0x709, 0x3c0, 0x3c1]) {
+      nes.cpu.ram[a] = 0xff;
+    }
+  };
+
+  window.alwaysHeal = () => {
+    window.heal();
+    window.setTimeout(window.alwaysHeal, 500);
+  };
 };
 
 

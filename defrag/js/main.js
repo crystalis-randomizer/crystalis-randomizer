@@ -14,6 +14,8 @@ let rom;
 let romName;
 let race = false;
 
+const ga = window.ga || (() => {});
+
 const initRace = () => {
   race = true;
   loadRomFromStorage();
@@ -116,20 +118,27 @@ const initializeStateFromHash = (initPresets) => {
 
 const click = async (e) => {
   let t = e.target;
+  const label = `${version.LABEL}: ${flags}`;
+  const start = new Date().getTime();
   while (t) {
     if (t.tagName === 'H1' && t.parentElement.classList.contains('expandable')) {
       t.parentElement.classList.toggle('expanded');
       break;
     } else if (t.id === 'preset-apply') {
+      ga('send', 'event', 'custom-preset');
       flags = new FlagSet(document.getElementById('flagstring').value);
       updateDom();
       break;
     } else if (t.id === 'new-seed') {
+      ga('send', 'event', 'Main', 'new-seed');
       seed = Math.floor(Math.random() * 0x100000000).toString(16);
       updateDom();
+      break;
     } else if (t.id === 'generate') {
+      ga('send', 'event', 'Main', 'generate', label);
       const seedHex = patch.parseSeed(seed);
       const [shuffled, crc] = await shuffleRom(seedHex);
+      ga('send', 'timing', 'Main', 'generate', new Date().getTime() - start, label);
       // TODO - should we build the flagset into the filename?
       // Make it an option?
       const filename =
@@ -138,8 +147,12 @@ const click = async (e) => {
               ['_', seedHex.toString(16).padStart(8, 0),
                '_', crc.toString(16).padStart(8, 0), '.nes'].join(''));
       download(shuffled, filename);
+      break;
     } else if (t.id === 'spoiler') {
-      shuffleRom(patch.parseSeed(seed));
+      ga('send', 'event', 'Main', 'spoiler', label);
+      await shuffleRom(patch.parseSeed(seed));
+      ga('send', 'timing', 'Main', 'spoiler', new Date().getTime() - start, label);
+      break;
     }
     t = t.parentElement;
   }

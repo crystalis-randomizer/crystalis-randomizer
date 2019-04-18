@@ -66,7 +66,7 @@ import {FlagSet} from './flagset.js';
 //   equip: 0 - no change
 //          1 - auto-equip power
 
-export const generate = (flags = undefined) => {
+export const generate = (flags = new FlagSet()) => {
 
 const graph = new WorldGraph();
 const option = (name, value = true) => new Option(graph, name, value);
@@ -77,13 +77,6 @@ const condition = (name) => new Condition(graph, name);
 const boss = (index, name, ...deps) => new Boss(graph, index, name, ...deps);
 const area = (name) => new Area(graph, name);
 const location = (id, area, name) => new Location(graph, id, area, name);
-
-const opt = (name, def) => {
-  if (!flags) return def;
-  const invert = name.startsWith('!');
-  if (invert) name = name.substring(1);
-  return flags.check(name) ^ invert;
-}
 
 // TODO - these signatures are for a future "evil mode", if we can work
 // out how to integrate the graph efficiently with the extra data along.
@@ -107,49 +100,57 @@ const hard = (option) => option.value ? option : HARD;
 // Options
 ////////////////////////////////////////////////////////////////
 const leatherBootsGiveSpeed = option('Leather Boots grant speed',
-                                     opt('Ts', true));
+                                     flags.leatherBootsGiveSpeed());
 const assumeGhettoFlight    = glitch(option('Assume ghetto flight',
-                                     opt('Gf', true)));
+                                     flags.assumeGhettoFlight()));
 const assumeStatueGlitch    = glitch(option('Assume statue glitch',
-                                     opt('Gt', true)));
+                                     flags.assumeStatueGlitch()));
 const allowStatueGlitch     = option('Allow statue glitch',
-                                     opt('!Ft', true));
+                                     !flags.disableStatueGlitch());
 const assumeTeleportSkip    = glitch(option('Assume teleport skip',
-                                     opt('Gp', false)));
+                                     flags.assumeTeleportSkip()));
 const allowTeleportSkip     = option('Allow teleport skip',
-                                     opt('!Fp', false));
+                                     !flags.disableTeleportSkip());
 const assumeRabbitSkip      = glitch(option('Assume rabbit skip',
-                                     opt('Gr', false)));
+                                     flags.assumeRabbitSkip()));
 const allowRabbitSkip       = glitch(option('Allow rabbit skip',
-                                     opt('!Fr', false)));
+                                     !flags.disableRabbitSkip()));
 const assumeSwordChargeGlitch = glitch(option('Assume sword charge glitch',
-                                       opt('Gc', false)));
+                                       flags.assumeSwordChargeGlitch()));
 const allowSwordChargeGlitch = option('Allow sword charge glitch',
-                                     opt('!Fc', false));
+                                      !flags.disableSwordChargeGlitch());
 const assumeWildWarp        = glitch(option('Assume wild warp',
-                                     opt('Gw', false)));
+                                     flags.assumeWildWarp()));
 const allowWildWarp         = option('Allow wild warp',
-                                     opt('!Tw', false));
+                                     flags.allowWildWarp());
 const swordMagicOptional    = option('Sword magic optional',
-                                     opt('Hw', false));
+                                     !flags.guaranteeSwordMagic());
 const matchingSwordOptional = option('Matching sword optional',
-                                     opt('Hs', false));
+                                     !flags.guaranteeMatchingSword());
 const gasMaskOptional       = option('Gas mask optional',
-                                     opt('Hg', false));
+                                     !flags.guaranteeGasMask());
 const healedDolphinOptional = option('Healed dolphin optional',
-                                     opt('!Rd', true));
-const freeLunch             = option('Free lunch', // calmed sea optional, etc
-                                     opt('!Rl', false));
+                                     flags.requireHealedDolphinToRide());
+const calmSeaOptional       = option('Calm sea optional',
+                                     !flags.barrierRequiresCalmSea());
+const prisonKeyOptional     = option('Prison key optional',
+                                     !flags.paralysisRequiresPrisonKey());
+const windmillOptional      = option('Windmill optional',
+                                     !flags.sealedCaveRequiresWindmill());
 const teleportToShyron      = option('Sword of Thunder teleports to Shyron',
-                                     opt('Rt', true));
+                                     flags.teleportOnThunderSword());
 const barrierOptional       = option('Barrier magic optional',
-                                     opt('Hb', true));
+                                     !flags.guaranteeBarrier());
 const refreshOptional       = option('Refresh magic optional',
-                                     opt('!Er', true));
+                                     !flags.guaranteeRefresh());
+const deoTelepathyOptional  = option('Telepathy optional for Deo',
+                                     !flags.saharaRabbitsRequireTelepathy());
 const limeTreeConnectsToLeaf = option('Lime Tree connects to Leaf',
-                                      opt('Rp', true));
+                                      flags.connectLimeTreeToLeaf());
 const buffedMedicalHerb     = option('Buffed medical herb',
-                                     opt('!Hm', true));
+                                     flags.buffMedicalHerb());
+const orbsOptional          = option('Orbs optional',
+                                     flags.orbsOptional());
 
 // TODO - for wild warp consider adding a list of locations,
 // then we can hack those into the rom if it changes?
@@ -160,13 +161,13 @@ const buffedMedicalHerb     = option('Buffed medical herb',
 // Items
 ////////////////////////////////////////////////////////////////
 const swordOfWind           = item(0x00, 'Sword of Wind')
-                                .weight(flags.check('Es') ? 10 : 5)
+                                .weight(flags.guaranteeSword() ? 10 : 5)
                                 .fromPerson('Leaf elder', 0x0d)
                                 .npcSpawn(0x5e, 0x10, 1)
                                 .dialog(0x0d, 0xc0, 2)
                                 .key()
 const swordOfFire           = item(0x01, 'Sword of Fire')
-                                .weight(flags.check('Es') ? 10 : 5)
+                                .weight(flags.guaranteeSword() ? 10 : 5)
                                 .fromPerson('Oak elder', 0x1d)
                                 .dialog(0x1d, null, 3)
                                 .key();
@@ -287,7 +288,7 @@ const rabbitBoots           = item(0x2e, 'Rabbit Boots')
                                 .npcSpawn(0xc0)
                                 .key();
 const leatherBoots          = item(0x2f,
-                                   opt('Ts', true) ?
+                                   flags.leatherBootsGiveSpeed() ?
                                        'Speed Boots' :
                                        'Leather Boots').chest().bonus();
 const shieldRing            = item(0x30, 'Shield Ring')
@@ -496,20 +497,24 @@ const anyLevel2             = condition('Any level 2 sword')
                                 .option(swordOfThunder, ballOfThunder)
                                 .option(swordOfThunder, stormBracelet);
 const destroyStone          = condition('Destroy stone')
+                                .option(swordOfWind, orbsOptional)
                                 .option(swordOfWind, ballOfWind)
                                 .option(swordOfWind, tornadoBracelet)
                                 .option(swordChargeGlitch, swordOfWind, anyLevel2);
 const destroyIce            = condition('Destroy ice')
+                                .option(swordOfFire, orbsOptional)
                                 .option(swordOfFire, ballOfFire)
                                 .option(swordOfFire, flameBracelet)
                                 .option(swordChargeGlitch, swordOfFire, anyLevel2);
 const crossRivers           = condition('Cross rivers')
+                                .option(swordOfWater, orbsOptional)
                                 .option(swordOfWater, ballOfWater)
                                 .option(swordOfWater, blizzardBracelet)
                                 .option(flight)
                                 .option(swordChargeGlitch, swordOfWater, anyLevel2);
 
 const destroyIron           = condition('Destroy iron')
+                                .option(swordOfThunder, orbsOptional)
                                 .option(swordOfThunder, ballOfThunder)
                                 .option(swordOfThunder, stormBracelet)
                                 .option(swordChargeGlitch, swordOfThunder, anyLevel2);
@@ -637,10 +642,14 @@ const travelSwamp           = condition('Travel swamp')
                                         swampRunPossible);
 const calmedSeaIfRequired   = condition('Calmed sea if required')
                                 .option(calmedSea)
-                                .option(freeLunch);
+                                .option(calmSeaOptional);
 const startedWindmillIfRequired = condition('Started windmill if required')
                                 .option(startedWindmill)
-                                .option(freeLunch);
+                                .option(windmillOptional);
+// TODO - consider using the same flag for dolphin telepathy?
+const deoTelepathyIfRequired = condition('Telepathy if required for Deo')
+                                .option(telepathy)
+                                .option(deoTelepathyOptional);
 
 // TODO - warp triggers, wild warp, etc...
 
@@ -668,7 +677,7 @@ const dyna        = boss(0x0d, 'Dyna', crystalis);
 const openedPrisonIfRequired = condition('Opened prison if required')
                                 // TODO - (wild warp + summit + key) works too
                                 .option(/*kelbesque1, */ keyToPrison)
-                                .option(freeLunch);
+                                .option(prisonKeyOptional);
 
 ////////////////////////////////////////////////////////////////
 // Areas
@@ -1394,7 +1403,7 @@ const desertCave2           = location(0x95, SHRA, 'Desert Cave 2').cave()
 const saharaMeadow          = location(0x96, SHRA, 'Meadow').overworld()
                                 .connect(desertCave1)
                                 .connectTo(sahara)
-                                .trigger(talkedToDeo, change /* , telepathy */);
+                                .trigger(talkedToDeo, change, deoTelepathyIfRequired);
 const desert2               = location(0x98, SHRA, 'Desert 2').overworld()
                                 .connect(desertCave2);
 
@@ -1734,7 +1743,7 @@ return graph;
 
 export const shuffle = async (rom, random, log = undefined, flags = undefined, progress = undefined) => {
   const graph = generate(flags);
-  if (flags.check('Ps')) graph.shuffleShops(random);
+  if (flags.shuffleShops()) graph.shuffleShops(random);
   const allSlots = graph.nodes.filter(s => s instanceof Slot && s.slots && s.slotName);
 
   // Default shuffling
@@ -1902,7 +1911,7 @@ export const shuffle = async (rom, random, log = undefined, flags = undefined, p
 
 export const shuffle2 = async (rom, random, log = undefined, flags = undefined, progress = undefined) => {
   const graph = generate(flags);
-  if (flags.check('Ps')) graph.shuffleShops(random);
+  if (flags.shuffleShops()) graph.shuffleShops(random);
   const locationList = graph.integrate();
   if (progress) progress.addTasks(1000);
   for (let i = 0; i < 1000; i++) {
@@ -1960,7 +1969,7 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
     // Ensure armor is only in chests (including bosses).
     if (item.item.inventoryRow == 'armor' && !slot.isChest()) return false;
     // If sword guaranteed, fourth sword needs to go in the elder's slot.
-    if (flags.check('Es')) {
+    if (flags.guaranteeSword()) {
       if (slot.slotIndex === 0) return isSword(item);
       if (isSword(item)) {
         swords.add(item);

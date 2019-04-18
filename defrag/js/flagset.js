@@ -6,28 +6,34 @@ export const PRESETS = [{
   descr: `Basic flags for a relatively easy playthrough.`
 }, {
   title: 'Intermediate',
-  flags: 'Ds Edms Fsw Gt Mr Pbns Rlpt Sbkm Sct Tab',
+  flags: 'Ds Edms Fsw Gt Mr Ps Rlpt Sbkm Sct Tab',
   descr: `Slightly more challenge than Casual but still approachable.`,
   default: true,
 }, {
   title: 'Full Shuffle',
-  flags: 'Em Fsw Gt Mr Pbns Rlprt Sbckmt Tab',
+  flags: 'Em Fsw Gt Mr Ps Rlprt Sbckmt Tab',
   descr: `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
 }, {
   title: 'Glitchless',
-  flags: 'Em Fcstw Mr Pbns Rlprt Sbckmt Tab',
+  flags: 'Em Fcpstw Mr Ps Rlprt Sbckmt Tab',
   descr: `Full shuffle but with no glitches.`,
 }, {
   // TODO: add 'Ht' for maxing out tower scaling
   title: 'Advanced',
-  flags: 'Fsw Gfprt Hbw Mr Pbns Rlprt Sbckt Sm Tab',
+  flags: 'Fsw Gfprt Hbw Mr Ps Rlprt Sbckt Sm Tab',
   descr: `A balanced randomization with quite a bit more difficulty.`,
 }, {
   // TODO: add 'Ht'
   title: 'Ludicrous',
-  flags: 'Fs Gfprstw Hbgmswx Mr Pbns Rlprt Sbckmt Tab',
+  flags: 'Fs Gfprstw Hbgmswx Mr Ps Rlprt Sbckmt Tab',
   descr: `Pulls out all the stops, may require superhuman feats.`,
 }];
+
+
+const PRESETS_BY_KEY = {};
+for (const {title, flags} of PRESETS) {
+  PRESETS_BY_KEY[`@${title.replace(/ /g, '').toLowerCase()}`] = flags;
+}
 
 
 export const FLAGS = [{
@@ -208,6 +214,11 @@ export const FLAGS = [{
     hard: true,
     name: 'Experience scales slower',
     text: `More grinding will be required to "keep up" with the difficulty.`,
+  }, {
+    flag: 'Hc',
+    hard: true,
+    name: 'Charge shots only',
+    text: `Stabbing is completely ineffective.  Only charged shots work.`,
   }],
 // }, {
 //   section: 'Weapons, armor, and item balance',
@@ -246,11 +257,6 @@ export const FLAGS = [{
            restores MP while moving.  Rabbit boots enable sword charging up to
            level 2 while walking (level 3 still requires being stationary, so as
            to prevent wasting tons of magic).`,
-  }, {
-    flag: 'Tw',
-    name: 'Disable wild warp',
-    text: `Wild warp will only teleport back to Mezame shrine (to prevent
-           game-breaking soft-locks).`,
   }],
 }, {
   section: 'Routing',
@@ -295,6 +301,12 @@ export const FLAGS = [{
            can be used at the top of the slope in Waterfall Valley to open the
            path in reverse).  Reverse vampire also requires the windmill to have
            been started.`,
+  }, {
+    flag: 'Ro',
+    name: 'Orbs not required to break walls',
+    text: `Walls can be broken and bridges formed with level 1 shots.  Orbs and
+           bracelets are no longer considered progression items (except for
+           Tornado bracelet for Tornel on Mt Sabre).`,
   }],
 }, {
   section: 'Glitches',
@@ -372,6 +384,11 @@ export const FLAGS = [{
     name: 'Disable statue glitch',
     text: `Statues will instead always push downwards, making it impossible to
            glitch through statues for progression.`,
+  }, {
+    flag: 'Fw',
+    name: 'Disable wild warp',
+    text: `Wild warp will only teleport back to Mezame shrine (to prevent
+           game-breaking soft-locks).`,
   }],
 }, {
   section: 'Easy Mode',
@@ -430,8 +447,8 @@ const FLAG_CONFLICTS = {
   Hx: /Ex/,
   Em: /Hm/,
   Ex: /Hx/,
-  Tw: /Gw/,
-  Gw: /Tw/,
+  Fw: /Gw/,
+  Gw: /Fw/,
   Ft: /Gt/,
   Gt: /Ft/,
   Fc: /Gc/,
@@ -443,7 +460,8 @@ const FLAG_CONFLICTS = {
 };
 
 export class FlagSet {
-  constructor(str) {
+  constructor(str = 'RtGftTab') {
+    if (str.startsWith('@')) str = PRESETS_BY_KEY[str.toLowerCase()];
     this.flags = {};
     // parse the string
     str = str.replace(/[^A-Za-z0-9!]/g, '');
@@ -488,30 +506,52 @@ export class FlagSet {
   }
 
   autoEquipBracelet() { return this.check('Ta'); }
+  buffDeosPendant() { return this.check('Tb'); }
+  leatherBootsGiveSpeed() { return this.check('Tb'); }
+  rabbitBootsChargeWhileWalking() { return this.check('Tb'); }
+
+  shuffleMonsters() { return this.check('Mr'); }
+  shuffleShops() { return this.check('Ps'); }
+  bargainHunting() { return this.shuffleShops(); }
+
+  doubleBuffMedicalHerb() { return this.check('Em'); }
+  buffMedicalHerb() { return !this.check('Hm'); }
+  decreaseEnemyDamage() { return this.check('Ed'); }
+  neverDie() { return this.check('Di'); }
+  chargeShotsOnly() { return this.check('Hc'); }
+
   barrierRequiresCalmSea() { return this.check('Rl'); }
   paralysisRequiresPrisonKey() { return this.check('Rl'); }
   sealedCaveRequiresWindmill() { return this.check('Rl'); }
-  buffDeosPendant() { return this.check('Tb'); }
   connectLimeTreeToLeaf() { return this.check('Rp'); }
-  decreaseEnemyDamage() { return this.check('Ed'); }
-  disableShopGlitch() { return this.check('Fs'); }
-  disableStatueGlitch() { return this.check('Ft'); }
-  disableRabbitSkip() { return this.check('Fr'); }
-  disableTeleportSkip() { return this.check('Fp'); }
-  disableSwordChargeGlitch() { return this.check('Fg'); }
-  leatherBootsGiveSpeed() { return this.check('Tb'); }
-  nerfWildWarp() { return this.check('Fw'); }
-  neverDie() { return this.check('Di'); }
   storyMode() { return this.check('Rs'); }
-  rabbitBootsChargeWhileWalking() { return this.check('Tb'); }
   requireHealedDolphinToRide() { return this.check('Rd'); }
   saharaRabbitsRequireTelepathy() { return this.check('Rr'); }
   teleportOnThunderSword() { return this.check('Rt'); }
-  shuffleShops() { return this.check('Ps'); }
-  bargainHunting() { return this.shuffleShops(); }
-  shuffleMonsters() { return this.check('Mr'); }
-  doubleBBuffMedicalHerb() { return this.check('Em'); }
-  singleBuffMedicalHerb() { return !this.check('Hm'); }
+  orbsOptional() { return this.check('Ro'); }
+
+  guaranteeSword() { return this.check('Es'); }
+  guaranteeSwordMagic() { return !this.check('Hw'); }
+  guaranteeMatchingSword() { return !this.check('Hs'); }
+  guaranteeGasMask() { return !this.check('Hg'); }
+  guaranteeBarrier() { return !this.check('Hb'); }
+  guaranteeRefresh() { return this.check('Er'); }
+
+  disableSwordChargeGlitch() { return this.check('Fc'); }
+  disableTeleportSkip() { return this.check('Fp'); }
+  disableRabbitSkip() { return this.check('Fr'); }
+  disableShopGlitch() { return this.check('Fs'); }
+  disableStatueGlitch() { return this.check('Ft'); }
+
+  assumeSwordChargeGlitch() { return this.check('Gc'); }
+  assumeGhettoFlight() { return this.check('Gf'); }
+  assumeTeleportSkip() { return this.check('Gp'); }
+  assumeRabbitSkip() { return this.check('Gr'); }
+  assumeStatueGlitch() { return this.check('Gt'); }
+  assumeWildWarp() { return this.check('Gw'); }
+
+  nerfWildWarp() { return this.check('Fw'); }
+  allowWildWarp() { return !this.nerfWildWarp(); }
 
   expScalingFactor() {
     return this.check('Hx') ? 0.25 : this.check('Ex') ? 2.5 : 1;

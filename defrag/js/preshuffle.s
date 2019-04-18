@@ -629,10 +629,10 @@ ItemGetData_03: ; sword of thunder
   ;; replace akahana's dialog - would be nice to add an extra stanza instead,
   ;; but there's not immediately space - if we ever defrag then we should do it
   ;; or else remove all the changed forms (except maybe soldier)
-  .byte $c2,$43   ; 243 NOT telepathy -> 1a:13
+  .byte $a2,$43   ; 243 NOT telepathy -> 1a:13
 .org $1d671 ; dialog 59 generic sahara bunnies
   ;; replace stom - he can talk to bunnies just fine
-  .byte $c2,$43   ; 243 NOT telepathy -> 1a:12
+  .byte $a2,$43   ; 243 NOT telepathy -> 1a:12
 .endif
 
 
@@ -1177,13 +1177,9 @@ CopyShopPrices:
 
 .org $21f9a ; Free space
 ToolShopScaling:
-  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+  .res 48, 0
 ArmorShopScaling:
-  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-  .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+  .res 48, 0
 .assert < $22000
 
 
@@ -1399,15 +1395,12 @@ CheckForLowHpMp:
 ;; Adjusted stab damage for populating sword object ($02)
 .org $35c5f
   lda #$02
-  sta $03e2
-  rts
-
-
 .ifdef _NERF_FLIGHT
-.org $356c2
-  jsr CheckSwordCollisionPlane
+  jmp CheckSwordCollisionPlane
+.else
+  sta $03e2
 .endif
-
+  rts
 
 .ifdef _RABBIT_BOOTS_CHARGE_WHILE_WALKING
 .org $35e00
@@ -1545,6 +1538,7 @@ ReloadInventoryAfterContinue:
   jsr PostInventoryMenu
   rts
 
+;;; Remove the '10' bit if the player is flying ('20')
 CheckSwordCollisionPlane:
   sta $03e2 ; copied from $35c62
   lda $03a1

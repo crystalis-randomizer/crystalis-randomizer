@@ -138,7 +138,7 @@ const click = async (e) => {
       ga('send', 'event', 'Main', 'generate', label);
       const seedHex = patch.parseSeed(seed);
       const [shuffled, crc] = await shuffleRom(seedHex);
-      ga('send', 'timing', 'Main', 'generate', new Date().getTime() - start, flagStr);
+      ga('send', 'timing', 'Main', 'generate', new Date().getTime() - start, label);
       // TODO - should we build the flagset into the filename?
       // Make it an option?
       const filename =

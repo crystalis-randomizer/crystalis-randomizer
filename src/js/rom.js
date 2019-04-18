@@ -549,40 +549,46 @@ class MessageId {
 }
 
 const UNUSED_NPCS = new Set([0x3c, 0x6a, 0x73, 0x82, 0x86, 0x87, 0x89, 0x8a, 0x8b, 0x8c, 0x8d]);
-class NpcSpawn extends Entity {
+class Npc extends Entity {
   constructor(rom, id) {
     super(rom, id);
-    this.pointer = 0x1c5e0 + (id << 1);
-//console.log(`NPC Spawn $${this.id.toString(16)}: ${rom.prg[this.pointer].toString(16)} ${rom.prg[this.pointer + 1].toString(16)}`);
-    this.base = addr(rom.prg, this.pointer, 0x14000);
     this.used = !UNUSED_NPCS.has(id) /*&& this.base <= 0x1c781*/ && (id < 0x8f || id >= 0xc0);
+
+    this.spawnPointer = 0x1c5e0 + (id << 1);
+//console.log(`NPC Spawn $${this.id.toString(16)}: ${rom.prg[this.pointer].toString(16)} ${rom.prg[this.pointer + 1].toString(16)}`);
+    this.spawnBase = addr(rom.prg, this.spawnPointer, 0x14000);
     // Flags to check per location: positive means "must be set"
-    this.conditions = {};
-    let i = this.base;
+    this.spawnConditions = {};
+
+    this.dataBase = 0x80f0 | ((id & 0xfc) << 6) | ((id & 3) << 2);
+    this.data = slice(rom.prg, this.dataBase, 4);
+
+    // Populate spawn conditions
+    let i = this.spawnBase;
     let loc;
     while (this.used && (loc = rom.prg[i++]) != 0xff) {
-      this.conditions[loc] = [];
+      this.spawnConditions[loc] = [];
       let word;
       do {
         // NOTE: this byte order is inverse from normal.
         word = rom.prg[i] << 8 | rom.prg[i + 1];
         const flag = word & 0x0fff;
-        this.conditions[loc].push(word & 0x2000 ? ~flag : flag);
+        this.spawnConditions[loc].push(word & 0x2000 ? ~flag : flag);
         i += 2;
       } while (!(word & 0x8000));
     }
 //console.log(`NPC Spawn $${this.id.toString(16)} from ${this.base.toString(16)}: bytes: $${this.bytes().map(x=>x.toString(16).padStart(2,0)).join(' ')}`);
   }
 
-  bytes() {
+  spawnConditionsBytes() {
     const bytes = [];
-    for (let loc in this.conditions) {
+    for (let loc in this.spawnConditions) {
       loc = Number(loc);
       bytes.push(loc);
-      for (let i = 0; i < this.conditions[loc].length; i++) {
-        let word = this.conditions[loc][i];
+      for (let i = 0; i < this.spawnConditions[loc].length; i++) {
+        let word = this.spawnConditions[loc][i];
         if (word < 0) word = ~word | 0x2000;
-        if (i === this.conditions[loc].length - 1) word = word | 0x8000;
+        if (i === this.spawnConditions[loc].length - 1) word = word | 0x8000;
         bytes.push(word >>> 8, word & 0xff);
       }
     }
@@ -590,10 +596,12 @@ class NpcSpawn extends Entity {
     return bytes;
   }
 
-  async write(writer, base = 0x1c5e0) {
-    const address = await writer.write(this.bytes());
-    writer.rom[base + 2 * this.id] = address & 0xff;
-    writer.rom[base + 2 * this.id + 1] = (address >>> 8) - 0x40;
+  async write(writer, {spawnConditionsBase = 0x1c5e0} = {}) {
+    const address = await writer.write(this.spawnConditionsBytes());
+    writer.rom[spawnConditionsBase + 2 * this.id] = address & 0xff;
+    writer.rom[spawnConditionsBase + 2 * this.id + 1] = (address >>> 8) - 0x40;
+    // TODO - write the static data
+    // TODO - update pointer to the base???
   }
 }
 
@@ -641,14 +649,6 @@ class ItemGet extends Entity {
     rom.prg[this.itemPointer] = this.item;
     const data = this.table;
     rom.prg.subarray(this.tableBase, this.tableBase + data.length).set(data);
-  }
-}
-
-class Npc extends Entity {
-  constructor(rom, id) {
-    super(rom, id);
-    this.base = 0x80f0 | ((id & 0xfc) << 6) | ((id & 3) << 2);
-    this.data = slice(rom.prg, this.base, 4);
   }
 }
 
@@ -1122,7 +1122,6 @@ export class Rom {
         0x100, i => !LOCATION_NAMES[i] ? null : new Location(this, i));
     this.tileAnimations = seq(4, i => new TileAnimation(this, i));
     this.hitboxes = seq(24, i => new Hitbox(this, i));
-    this.npcSpawns = seq(0xcd, i => new NpcSpawn(this, i));
     this.objects = seq(0x100, i => new ObjectData(this, i));
     this.adHocSpawns = seq(0x60, i => new AdHocSpawn(this, i));
     this.metasprites = seq(0x100, i => new Metasprite(this, i));
@@ -1281,7 +1280,7 @@ export class Rom {
     }
     await triggerData.commit();
     const npcSpawnData = new Writer(this.prg, 0x1c77a, 0x1c95d);
-    for (const s of this.npcSpawns) {
+    for (const s of this.npcs) {
       if (!s.used) continue;
       promises.push(s.write(npcSpawnData));
     }

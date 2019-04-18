@@ -30,6 +30,12 @@ export const PRESETS = [{
 }];
 
 
+const PRESETS_BY_KEY = {};
+for (const {title, flags} of PRESETS) {
+  PRESETS_BY_KEY[`@${title.replace(/ /g, '').toLowerCase()}`] = flags;
+}
+
+
 export const FLAGS = [{
   section: 'Items',
   text: `Items are broken into five pools: <i>key items</i> includes all
@@ -455,6 +461,7 @@ const FLAG_CONFLICTS = {
 
 export class FlagSet {
   constructor(str = 'RtGftTab') {
+    if (str.startsWith('@')) str = PRESETS_BY_KEY[str.toLowerCase()];
     this.flags = {};
     // parse the string
     str = str.replace(/[^A-Za-z0-9!]/g, '');

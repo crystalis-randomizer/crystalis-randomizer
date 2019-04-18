@@ -524,6 +524,15 @@ ItemGetData_03: ; sword of thunder
 
 
 
+;;; Auto level-up and scaling-up dialogs
+.org $1cc87                     ; leaf rabbit -> action 1e
+  .byte $20,$00,$f2,$84
+.org $1cc30                     ; leaf daughter -> action 1d
+  .byte $20,$00,$e8,$1d
+;.org $1cb58                     ; leaf elder -> action 1c
+.org $1cc62                     ; leaf red girl -> action 1c
+  .byte $20,$00,$e0,$0f
+
 
 ;;; NPC Despawn triggers
 
@@ -1613,8 +1622,11 @@ CheckSwordCollisionPlane:
   .byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 .endif
 
+.org $3d15b
+  .word (DialogFollowupAction_1c)
+  .word (DialogFollowupAction_1d)
+  .word (DialogFollowupAction_1e)
 .ifdef _TELEPORT_ON_THUNDER_SWORD
-.org $3d161
   .word (DialogFollowupAction_1f)
 .endif
 
@@ -1815,6 +1827,86 @@ CheckFlag0:
      jsr LoadAndShowDialog
 +   jmp ReadControllersWithDirections
 .endif ; _CHECK_FLAG0
+
+DialogFollowupAction_1c:
+  ;; scaling level
+  lda $64a2
+  clc
+  adc #$04
+  cmp #$2f
+  bcc +
+   lda #$2f
++ sta $64a2
+  lda #$01
+  sta $64a3
+  rts
+
+DialogFollowupAction_1d:
+  ;; level up
+  lda #$0f
+  cmp $0421
+  bcs +
+   rts
++ inc $0421
+  ldy $0421
+  lda $6e
+  pha
+   lda #$1a
+   jsr $c418
+   lda $8b7f,y
+   sta $03c0
+   sta $03c1
+   lda $8b8f,y
+   sta $0708
+   sta $0709
+   jsr $8cc0
+   lda #$00
+   jsr $8e46
+   lda #$02
+   jsr $8e46
+   lda #$03
+   jsr $8e46
+   lda #$04
+   jsr $8e46
+   lda #$05
+   jsr $8e46
+   jsr $c008
+  pla
+  jmp $c418
+
+
+DialogFollowupAction_1e:
+  ;; fill inventory with all worn items, magic, and top shields/armor
+  ;; then warp to mesia
+  ldx #$00
+  clc
+-  txa
+   adc #$11
+   sta $6438,x
+   adc #$08
+   sta $6434,x
+   inx
+   cpx #$04
+  bcc -
+  ldx #$00
+  clc
+-  lda #$22
+   sta $6440,x
+   txa
+   adc #$29
+   sta $6448,x
+   adc #$18
+   sta $6458,x
+   inx
+   cpx #$08
+  bcc -   
+  lda #$5e
+  sta $6c
+  lda #$00
+  sta $6d
+  lda #$01
+  sta $41
+  rts
 
 .assert < $3fe00 ; end of free space started at 3f9ba
 

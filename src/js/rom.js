@@ -554,14 +554,14 @@ class Npc extends Entity {
     super(rom, id);
     this.used = !UNUSED_NPCS.has(id) /*&& this.base <= 0x1c781*/ && (id < 0x8f || id >= 0xc0);
 
+    this.dataBase = 0x80f0 | ((id & 0xfc) << 6) | ((id & 3) << 2);
+    this.data = slice(rom.prg, this.dataBase, 4);
+
     this.spawnPointer = 0x1c5e0 + (id << 1);
 //console.log(`NPC Spawn $${this.id.toString(16)}: ${rom.prg[this.pointer].toString(16)} ${rom.prg[this.pointer + 1].toString(16)}`);
     this.spawnBase = addr(rom.prg, this.spawnPointer, 0x14000);
     // Flags to check per location: positive means "must be set"
     this.spawnConditions = {};
-
-    this.dataBase = 0x80f0 | ((id & 0xfc) << 6) | ((id & 3) << 2);
-    this.data = slice(rom.prg, this.dataBase, 4);
 
     // Populate spawn conditions
     let i = this.spawnBase;

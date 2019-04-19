@@ -17699,7 +17699,7 @@ ObjectData_WindAttack1                                   ; Object 10
         $1afe6              .byte $xx
         ;;                            SPR 32  SPD 36  38  3a  HP  DMG
         $1afe7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;;                            40  42  44  46  48  4a
+        ;;                            40  42  44  46  48  4a  4c  4e
         $1aff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1aff9              .byte $xx,$xx
         $1affb              .byte $xx,$xx,$xx,$xx
@@ -19625,6 +19625,9 @@ DeleteUsedItem
 ;;; Note: 1c000 is physically mapped to 8000
 ;;; When these functions are called, ($24) points to the corresponding
 ;;; item's data table entry ($1dbe2), y is zero, and x is the item ID.
+;;; NOTE: we can get back 40 or so bytes here by just shrinking the
+;;; table and having it jump into garbage for invalid values.  We could
+;;; also fill in the 16-byte gap if needed.
 ItemUseJumpTable
         $1c399              .word ($1c4db)
         $1c39b              .word ($1c4db)
@@ -23200,6 +23203,9 @@ ItemUseData_40 ; BowOfTruth
 ;;; It basically says that if the given trigger is set, the treasure chest
 ;;; should not spawn.
 TreasureChestSpawnFlags
+        ;; NOTE: This table is pointless since we coopted the 200..27f flags for
+        ;; itemgets.  We instead fill it with a bunch of new code.  It would also
+        ;; be possible to expand the triggers table if we wanted to.
         $1e106              .byte $xx,$xx ; 2f
         $1e108              .byte $xx,$xx ; 6d
         $1e10a              .byte $xx,$xx ; 6e
@@ -37971,9 +37977,9 @@ AdHocSpawns
         $29c94              .byte $xx,$xx,$xx,$xx ; 25
         $29c98              .byte $xx,$xx,$xx,$xx ; 26
         $29c9c              .byte $xx,$xx,$xx,$xx ; 27
-        $29ca0              .byte $xx,$xx,$xx,$xx ; 28
-        $29ca4              .byte $xx,$xx,$xx,$xx ; 29
-        $29ca8              .byte $xx,$xx,$xx,$xx ; 2a
+        $29ca0              .byte $xx,$xx,$xx,$xx ; 28 Dyna counter attack
+        $29ca4              .byte $xx,$xx,$xx,$xx ; 29 Dyna laser
+        $29ca8              .byte $xx,$xx,$xx,$xx ; 2a Dyna bubble
         $29cac              .byte $xx,$xx,$xx,$xx ; 2b
         $29cb0              .byte $xx,$xx,$xx,$xx ; 2c
         $29cb4              .byte $xx,$xx,$xx,$xx ; 2d
@@ -44652,32 +44658,33 @@ SpendMPOrDoubleReturn
         $35b0c  xx xx:      xxx + ; $35b11
         $35b0e  xx xx xx:    xxx LoadPalettesForLocation
         ;; --------------------------------
+        ;; This appears to be a one-time initialization?
 +       $35b11  xx xx:      xxx $xx
         $35b13  xx:         xxx
-        $35b14  xx xx:      xxx $xx
+        $35b14  xx xx:      xxx >rts ; $35b40
         $35b16  xx xx:      xxx #$xx
-        $35b18  xx:         xxx
-        $35b19  xx xx:      xxx #$xx
-        $35b1b  xx xx:      xxx $xx
-        $35b1d  xx xx:      xxx #$xx
-        $35b1f  xx xx:      xxx $xx
-        $35b21  xx xx xx:   xxx $xxxx,y
-        $35b24  xx xx:      xxx #$xx
-        $35b26  xx xx:      xxx $xx
-        $35b28  xx xx:      xxx #$xx
-        $35b2a  xx xx xx:   xxx $xxxx,y
-        $35b2d  xx:         xxx
-        $35b2e  xx xx:      xxx #$xx
-        $35b30  xx xx:      xxx $xx
-        $35b32  xx xx:      xxx $xx
-        $35b34  xx xx:      xxx $xx
-        $35b36  xx xx:      xxx $xx
+--      $35b18  xx:          xxx
+        $35b19  xx xx:       xxx #$xx
+        $35b1b  xx xx:         xxx +++ ; $35b34
+-       $35b1d  xx xx:        xxx #$xx
+        $35b1f  xx xx:        xxx + ; $35b28
+        $35b21  xx xx xx:      xxx $xxxx,y
+        $35b24  xx xx:         xxx #$xx
+        $35b26  xx xx:          xxx ++ ; $35b2d
++       $35b28  xx xx:         xxx #$xx
+        $35b2a  xx xx xx:      xxx $xxxx,y
+++      $35b2d  xx:           xxx
+        $35b2e  xx xx:        xxx #$xx
+        $35b30  xx xx:      xxx -- ; $35b18
+        $35b32  xx xx:      xxx >rts ; $35b40
++++     $35b34  xx xx:      xxx $xx
+        $35b36  xx xx:      xxx - ; $35b1d
         $35b38  xx:         xxx
         $35b39  xx:         xxx
         $35b3a  xx:         xxx
         $35b3b  xx:         xxx
         $35b3c  xx xx:      xxx #$xx
-        $35b3e  xx xx:      xxx $xx
+        $35b3e  xx xx:      xxx -- ; $35b18
         $35b40  xx:         xxx
 ;;; --------------------------------
 DataTable_35b41 
@@ -45671,7 +45678,7 @@ ObjectActionJump
         $36330              .word ($365c0) ; 0e
         $36332              .word ($365c5) ; 0f
         $36334              .word ($370b5) ; 10
-        $36336              .word ($370a8) ; 11
+        $36336              .word ($370a8) ; 11 Wind 1/2, Water 1/2, Fire 1
         $36338              .word ($37174) ; 12
         $3633a              .word ($37235) ; 13
         $3633c              .word ($372c5) ; 14
@@ -47358,19 +47365,19 @@ ObjectActionJump_3c
 ;;; --------------------------------
 ObjectActionJump_1d
         $3702c  xx xx xx:   xxx $xxxx,x
-        $3702f  xx xx:      xxx $xx
-        $37031  xx xx:      xxx #$xx
-        $37033  xx xx xx:   xxx $xxxx,x
-        $37036  xx:         xxx
-;;; --------------------------------
-        $37037  xx xx xx:   xxx $xxxx,x
+        $3702f  xx xx:      xxx + ; $37037
+        $37031  xx xx:       xxx #$xx
+        $37033  xx xx xx:    xxx $xxxx,x
+        $37036  xx:          xxx
+        ;; --------------------------------
++       $37037  xx xx xx:   xxx $xxxx,x
         $3703a  xx:         xxx
-        $3703b  xx xx:      xxx $xx
+        $3703b  xx xx:       xxx >rts ; $37047
         $3703d  xx xx xx:   xxx $xxxx,x
         $37040  xx:         xxx
         $37041  xx xx xx:   xxx $xxxx,x
         $37044  xx xx xx:   xxx AdHocSpawnObject
-;;; --------------------------------
+        ;; --------------------------------
         $37047  xx:         xxx
 ;;; --------------------------------
 ObjectActionJump_2f
@@ -47422,43 +47429,48 @@ ObjectActionJump_1f
         $370a2  xx xx xx:   xxx $xxxx,x
         $370a5  xx xx xx:   xxx $370be
 ;;; --------------------------------
+;;; Wind 1/2, Water 1/2, Fire 1
 ObjectActionJump_11
-        $370a8  xx xx xx:   xxx $xxxx,x
+        ;; The first frame, set the correct sprite for the direction
+        $370a8  xx xx xx:   xxx ObjectDirection,x
         $370ab  xx:         xxx
-        $370ac  xx xx xx:   xxx $xxxx,x
-        $370af  xx xx xx:   xxx $xxxx,x
-        $370b2  xx xx xx:   xxx $xxxx,x
+        $370ac  xx xx xx:   xxx ObjectMetasprite,x
+        $370af  xx xx xx:   xxx ObjectMetasprite,x
+        $370b2  xx xx xx:   xxx ObjectActionScript,x
 ObjectActionJump_10
+        ;; Subsequent frames, do normal thing:
+        ;;  1. subtract 4 from 4e0
+        ;;  2. 
         $370b5  xx xx xx:   xxx $xxxx,x
         $370b8  xx:         xxx
         $370b9  xx xx:      xxx #$xx
         $370bb  xx xx xx:   xxx $xxxx,x
 ObjectActionJump_57
         $370be  xx xx xx:   xxx $xxxx,x
-        $370c1  xx xx:      xxx $xx
-        $370c3  xx xx xx:   xxx $358c7
-;;; --------------------------------
-        $370c6  xx xx xx:   xxx $xxxx,x
-        $370c9  xx xx:      xxx $xx
-        $370cb  xx xx xx:   xxx $358cd
-;;; --------------------------------
-        $370ce  xx xx xx:   xxx ReadObjectCoordinatesInto_34_37
-        $370d1  xx xx xx:   xxx $xxxx,x
+        $370c1  xx xx:      xxx + ; $370c6
+        $370c3  xx xx xx:    xxx $358c7
+        ;; --------------------------------
++       $370c6  xx xx xx:   xxx $xxxx,x
+        $370c9  xx xx:      xxx + ; $370ce
+        $370cb  xx xx xx:    xxx $358cd
+        ;; --------------------------------
++       $370ce  xx xx xx:   xxx ReadObjectCoordinatesInto_34_37
+        $370d1  xx xx xx:   xxx ObjectDirection,x
         $370d4  xx xx xx:   xxx ComputeDisplacementVector
         $370d7  xx xx xx:   xxx AddDisplacementVectorShort
-        $370da  xx xx xx:   xxx $xxxx,x
-        $370dd  xx xx:      xxx $xx
+        $370da  xx xx xx:   xxx ObjectTerrainSusceptibility,x
+        $370dd  xx xx:      xxx + ; $370e2
         $370df  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
-;;; --------------------------------
-        $370e2  xx xx:      xxx #$xx ; force check, update $380,x
+        ;; --------------------------------
++       $370e2  xx xx:      xxx #$xx ; force check, update $380,x
         $370e4  xx xx xx:   xxx CheckTerrainUnderObject
         $370e7  xx xx:      xxx $xx
         $370e9  xx xx xx:   xxx $xxxx,x
         $370ec  xx xx:      xxx #$xx
-        $370ee  xx xx:      xxx $xx
+        $370ee  xx xx:      xxx + ; $370f3
         $370f0  xx xx xx:   xxx $358cd
-;;; --------------------------------
-        $370f3  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
+        ;; --------------------------------
++       $370f3  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
 ;;; --------------------------------
 ObjectActionJump_16
         $370f6  xx xx xx:   xxx $xxxx,x
@@ -48548,6 +48560,7 @@ ObjectActionJump_70
         $37a3b  xx xx:      xxx $xx
         $37a3d  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
+;;; Secondary jump tabble keyed off $600,x
 ;;; STRIP: word=$2c000
 JumpTable_37a40
         $37a40              .word ($37a5a) ; 00 object $b2
@@ -48556,14 +48569,15 @@ JumpTable_37a40
         $37a46              .word ($37c0c) ; 03
         $37a48              .word ($37c37) ; 04
         $37a4a              .word ($37c71) ; 05
-        $37a4c              .word ($37c94) ; 06
+        $37a4c              .word ($37c94) ; 06 dyna eye (a4)
         $37a4e              .word ($xxxx)
-        $37a50              .word ($37d29) ; 08
+        $37a50              .word ($37d29) ; 08 dyna pod (b4)
         $37a52              .word ($37cf6) ; 09 object b5
         $37a54              .word ($37d19) ; 0a
         $37a56              .word ($xxxx)
         $37a58              .word ($37da9) ; 0c flail
 ;;; --------------------------------
+ObjectActionJump_70_00
         $37a5a  xx xx xx:   xxx $xxxx
         $37a5d  xx xx:      xxx >rts
         $37a5f  xx xx:      xxx #SFX_CALM_SEAS
@@ -48575,6 +48589,7 @@ JumpTable_37a40
         $37a6d  xx xx xx:   xxx $xxxx,x
         $37a70  xx:         xxx
 ;;; --------------------------------
+ObjectActionJump_70_05
         $37a71  xx xx xx:   xxx FlushNametableDataWrite
         $37a74  xx xx xx:   xxx $37ab8
         $37a77  xx xx:      xxx #$xx
@@ -48641,6 +48656,7 @@ DataTable_37a9a
         $37af1  xx xx xx:   xxx $xxxx
         $37af4  xx:         xxx
 ;;; --------------------------------
+ObjectActionJump_70_01
         $37af5  xx xx:      xxx #$xx
         $37af7  xx xx xx:   xxx $xxxx
         $37afa  xx xx xx:   xxx $xxxx,x
@@ -48748,6 +48764,7 @@ DataTable_37bce
         $37bce              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $37bde              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+ObjectActionJump_70_02
         $37be7  xx xx xx:   xxx FlushNametableDataWrite
         $37bea  xx xx:      xxx #$xx
         $37bec  xx xx:      xxx #$xx
@@ -48766,6 +48783,7 @@ DataTable_37bce
         $37c08  xx xx xx:   xxx $xxxx,x
         $37c0b  xx:         xxx
 ;;; --------------------------------
+ObjectActionJump_70_03
         $37c0c  xx xx xx:   xxx $xxxx,x
         $37c0f  xx xx:      xxx $xx
         $37c11  xx xx:      xxx #$xx
@@ -48788,6 +48806,7 @@ DataTable_37bce
 DataTable_37c34 
         $37c34              .byte $xx,$xx,$xx
 ;;; --------------------------------
+ObjectActionJump_70_04
         $37c37  xx xx:      xxx #$xx
         $37c39  xx xx xx:   xxx $xxxx,x
         $37c3c  xx xx xx:   xxx $37cd7
@@ -48809,47 +48828,50 @@ DataTable_37c34
 DataTable_37c61 
         $37c61              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+ObjectActionJump_70_05
         $37c71  xx xx xx:   xxx $37cd7
         $37c74  xx xx xx:   xxx $xxxx,x
-        $37c77  xx xx:      xxx $xx
+        $37c77  xx xx:      xxx <rts ; $37c60
         $37c79  xx xx xx:   xxx $xxxx,x
         $37c7c  xx xx:      xxx #$xx
         $37c7e  xx xx xx:   xxx $xxxx,x
         $37c81  xx xx xx:   xxx $xxxx,x
         $37c84  xx xx xx:   xxx $xxxx,x
         $37c87  xx xx:      xxx #$xx
-        $37c89  xx xx:      xxx $xx
+        $37c89  xx xx:      xxx <rts ; $37c60
         $37c8b  xx xx xx:   xxx $xxxx,x
         $37c8e  xx xx:      xxx #$xx
         $37c90  xx xx xx:   xxx $xxxx,x
         $37c93  xx:         xxx
 ;;; --------------------------------
+ObjectActionJump_70_06          ; dyna eye
         $37c94  xx xx xx:   xxx $37cd7
         $37c97  xx xx xx:   xxx $xxxx
         $37c9a  xx xx:      xxx #$xx
-        $37c9c  xx xx:      xxx $xx
-        $37c9e  xx xx:      xxx $xx
-        $37ca0  xx xx:      xxx #$xx
-        $37ca2  xx xx:      xxx $xx
-        $37ca4  xx xx:      xxx #$xx
-        $37ca6  xx xx:      xxx #$xx
-        $37ca8  xx xx xx:   xxx AdHocSpawnObject
-        $37cab  xx xx:      xxx $xx
-        $37cad  xx xx:      xxx $xx
-        $37caf  xx xx xx:   xxx $xxxx,y
-        $37cb2  xx:         xxx
-        $37cb3  xx xx:      xxx #$xx
-        $37cb5  xx xx xx:   xxx $xxxx,y
-        $37cb8  xx xx xx:   xxx $xxxx,y
-        $37cbb  xx:         xxx
-        $37cbc  xx xx:      xxx #$xx
-        $37cbe  xx xx xx:   xxx $xxxx,y
-        $37cc1  xx xx xx:   xxx $xxxx,x
-        $37cc4  xx xx:      xxx $xx
+        $37c9c  xx xx:      xxx + ; $37cc1
+        $37c9e  xx xx:       xxx $xx
+        $37ca0  xx xx:       xxx #$xx
+        $37ca2  xx xx:      xxx + ; $37cc1
+        ;; shoot laser downward
+        $37ca4  xx xx:       xxx #$xx
+        $37ca6  xx xx:       xxx #$xx ; Dyna Laser
+        $37ca8  xx xx xx:    xxx AdHocSpawnObject
+        $37cab  xx xx:      xxx + ; $37cc1
+        $37cad  xx xx:       xxx $xx
+        $37caf  xx xx xx:    xxx $xxxx,y
+        $37cb2  xx:          xxx
+        $37cb3  xx xx:       xxx #$xx
+        $37cb5  xx xx xx:    xxx $xxxx,y
+        $37cb8  xx xx xx:    xxx $xxxx,y
+        $37cbb  xx:          xxx
+        $37cbc  xx xx:       xxx #$xx
+        $37cbe  xx xx xx:    xxx $xxxx,y
++       $37cc1  xx xx xx:   xxx $xxxx,x
+        $37cc4  xx xx:       xxx <<rts ; $37c60
         $37cc6  xx xx xx:   xxx $xxxx,x
         $37cc9  xx xx xx:   xxx $xxxx,x
         $37ccc  xx xx xx:   xxx $xxxx,x
-        $37ccf  xx xx:      xxx $xx
+        $37ccf  xx xx:       xxx <<rts ; $37c60
         $37cd1  xx xx:      xxx #$xx
         $37cd3  xx xx xx:   xxx $xxxx,x
         $37cd6  xx:         xxx
@@ -48860,20 +48882,21 @@ DataTable_37c61
         $37cde  xx xx:      xxx ScreenMode
         $37ce0  xx xx:      xxx $xx
         $37ce2  xx xx:      xxx #$xx
-        $37ce4  xx xx:      xxx $xx
+        $37ce4  xx xx:      xxx >rts ; $37cf5
         $37ce6  xx xx:      xxx #$xx
         $37ce8  xx xx:      xxx ScreenMode
         $37cea  xx xx:      xxx #$xx
-        $37cec  xx xx xx:   xxx $xxxx,y
-        $37cef  xx xx xx:   xxx $xxxx,y
-        $37cf2  xx:         xxx
-        $37cf3  xx xx:      xxx $xx
+-       $37cec  xx xx xx:    xxx $xxxx,y
+        $37cef  xx xx xx:    xxx $xxxx,y
+        $37cf2  xx:          xxx
+        $37cf3  xx xx:      xxx - ; $37cec
         $37cf5  xx:         xxx
 ;;; --------------------------------
+ObjectActionJump_70_09
         $37cf6  xx xx xx:   xxx $xxxx,x
-        $37cf9  xx xx xx:   xxx $3c676
+        $37cf9  xx xx xx:   xxx FlushNametableDataWrite
         $37cfc  xx xx:      xxx #$xx
-        $37cfe  xx xx xx:   xxx $3c418
+        $37cfe  xx xx xx:   xxx BankSwitch8k_8000
         $37d01  xx xx:      xxx #$xx
         $37d03  xx xx xx:   xxx $17e00,y
         $37d06  xx xx xx:   xxx $xxxx,y
@@ -48881,10 +48904,11 @@ DataTable_37c61
         $37d0a  xx xx:      xxx $xx
         $37d0c  xx xx:      xxx #$xx
         $37d0e  xx xx xx:   xxx StageNametableWrite
-        $37d11  xx xx xx:   xxx $3c676
+        $37d11  xx xx xx:   xxx FlushNametableDataWrite
         $37d14  xx xx:      xxx #$xx
-        $37d16  xx xx xx:   xxx $3c418
+        $37d16  xx xx xx:   xxx BankSwitch8k_8000
 ;;; --------------------------------
+ObjectActionJump_70_0a
         $37d19  xx xx xx:   xxx $xxxx,x
         $37d1c  xx xx:      xxx $xx
         $37d1e  xx:         xxx
@@ -48895,37 +48919,41 @@ DataTable_37c61
         $37d25  xx xx xx:   xxx $xxxx,x
         $37d28  xx:         xxx
 ;;; --------------------------------
-        $37d29  xx xx xx:   xxx $xxxx
-        $37d2c  xx xx:      xxx $xx
-        $37d2e  xx xx:      xxx $xx
-        $37d30  xx xx:      xxx $xx
-        $37d32  xx xx xx:   xxx $xxxx,x
-        $37d35  xx:         xxx
+ObjectActionJump_70_08          ; dyna pod
+        $37d29  xx xx xx:   xxx $xxxx ; eye knockback - was it just hit?
+        $37d2c  xx xx:      xxx + ; $37d68
+        $37d2e  xx xx:       xxx $xx
+        $37d30  xx xx:       xxx + ; $37d35
+        ;; Once every 8 seconds, if eye wasn't hit, increment 640,x
+        $37d32  xx xx xx:     xxx $xxxx,x
++       $37d35  xx:         xxx
         $37d36  xx:         xxx
         $37d37  xx:         xxx
         $37d38  xx:         xxx
+        ;; a = 0 or 4, effectively (38 or 3c, actually)
         $37d39  xx xx xx:   xxx $xxxx,x
         $37d3c  xx xx:      xxx #$xx
-        $37d3e  xx xx:      xxx $xx
-        $37d40  xx:         xxx
-;;; --------------------------------
-        $37d41  xx xx:      xxx $xx
+        $37d3e  xx xx:      xxx + ; $37d41
+        $37d40  xx:          xxx
+        ;; --------------------------------
+        ;; Shoot bubbles: left when 64e is 0 mod 8, right when 64f is 4 mod 8
++       $37d41  xx xx:      xxx $xx
         $37d43  xx xx:      xxx #$xx
-        $37d45  xx xx:      xxx $xx
+        $37d45  xx xx:       xxx <rts ; $37d40
         $37d47  xx xx:      xxx $xx
         $37d49  xx xx:      xxx #$xx
         $37d4b  xx:         xxx
         $37d4c  xx:         xxx
         $37d4d  xx xx xx:   xxx $37d58,y
-        $37d50  xx xx:      xxx $xx
+        $37d50  xx xx:       xxx <rts ; $37d40
         $37d52  xx:         xxx
-        $37d53  xx xx:      xxx #$xx
+        $37d53  xx xx:      xxx #$xx ; Dyna Bubble
         $37d55  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
 DataTable_37d58 
         $37d58              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; -------------------------------- 
-        $37d68  xx xx:      xxx $xx
++       $37d68  xx xx:      xxx $xx
         $37d6a  xx xx:      xxx #$xx
         $37d6c  xx xx:      xxx $xx
         $37d6e  xx xx:      xxx $xx
@@ -48944,7 +48972,7 @@ DataTable_37d58
         $37d7f  xx:         xxx
         $37d80  xx xx xx:   xxx $37d89,y
         $37d83  xx:         xxx
-        $37d84  xx xx:      xxx #$xx
+        $37d84  xx xx:      xxx #$xx ; Dyna counter attack
         $37d86  xx xx xx:   xxx AdHocSpawnObject
 ;;; --------------------------------
 DataTable_37d89 
@@ -56944,25 +56972,25 @@ MainGameModeJump_11_Dialog
 ;;; Indexed by high 5 bits of first byte of dialog selection.
 ;;; STRIP: word=$30000
 DialogFollowupActionJump
-        $3d123              .word ($3d163) ; 00
+        $3d123              .word ($3d163) ;
         $3d125              .word ($3d19c) ; 01
         $3d127              .word ($3d31c) ; 02 disappear
         $3d129              .word ($3d225) ; 03 learn refresh
-        $3d12b              .word ($3d163) ; 04
+        $3d12b              .word ($3d163) ;
         $3d12d              .word ($3d164) ; 05
         $3d12f              .word ($3d23f) ; 06
         $3d131              .word ($3d163) ; 07
         $3d133              .word ($3d63f) ; 08
         $3d135              .word ($3d263) ; 09
         $3d137              .word ($3d2f4) ; 0a
-        $3d139              .word ($3d163) ; 0b
+        $3d139              .word ($3d163) ;
         $3d13b              .word ($3d25a) ; 0c
         $3d13d              .word ($3d23f) ; 0d
-        $3d13f              .word ($3d163) ; 0e
-        $3d141              .word ($3d163) ; 0f
+        $3d13f              .word ($3d163) ;
+        $3d141              .word ($3d163) ;
         $3d143              .word ($3d1eb) ; 10
         $3d145              .word ($3d21d) ; 11
-        $3d147              .word ($3d163) ; 12
+        $3d147              .word ($3d163) ;
         $3d149              .word ($3d1b5) ; 13
         $3d14b              .word ($3d18e) ; 14
         $3d14d              .word ($3d2d3) ; 15
@@ -56972,10 +57000,10 @@ DialogFollowupActionJump
         $3d155              .word ($3d2ae) ; 19
         $3d157              .word ($3d336) ; 1a get ball of water
         $3d159              .word ($3d341) ; 1b ejected from lime tree ??
-        $3d15b              .word ($3d163) ; 1c
-        $3d15d              .word ($3d163) ; 1d
-        $3d15f              .word ($3d163) ; 1e
-        $3d161              .word ($3d163) ; 1f
+        $3d15b              .word ($3d163) ;
+        $3d15d              .word ($3d163) ;
+        $3d15f              .word ($3d163) ;
+        $3d161              .word ($3d163) ;
 ;;; --------------------------------
 DialogFollowupActionJump_00
 DialogFollowupActionJump_04

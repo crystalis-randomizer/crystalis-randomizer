@@ -162,7 +162,7 @@ DisplayNumber:
 
 
 .org $183fc
-;; ~80 bytes free here in npc data space
+;; ~80 bytes free in middle of SFX data that could be used on the npc data page?
 .assert < $1844d
 
 
@@ -223,6 +223,17 @@ DisplayNumber:
 ;;; Patch the end of ItemUse to check for a few more items.
 .org $1c34d
   jmp PatchTradeInItem
+
+
+.org $1c399 ; 58 bytes of free/unused space at start of itemuse jump
+.assert < $1c3d3
+
+.org $1c3eb ; 16 bytes of free/unused space in middle of itemuse jump
+.assert < $1c3fb
+
+.org $1c41b ; 30 bytes of free/unused space at end of itemuse jump
+.assert < $1c439
+
 
 
 ;; Count uses of Flute of Lime and Alarm Flute - discard after two.

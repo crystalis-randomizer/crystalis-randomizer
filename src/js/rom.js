@@ -1,30 +1,8 @@
 import {UnionFind} from './unionfind.js';
+import {Entity} from './rom/entity.js';
 import {Writer} from './rom/writer.js';
+import {seq, slice, signed, varSlice, addr, group, reverseBits, countBits} from './rom/util.js';
 
-const seq = (x, f = (i) => i) =>  new Array(x).fill(0).map((_, i) => f(i));
-const slice = (arr, start, len) => arr.slice(start, start + len);
-const signed = (x) => x < 0x80 ? x : x - 0x100;
-
-const varSlice = (arr, start, width, sentinel, end = Infinity) => {
-  const out = [];
-  while (start + width <= end && arr[start] != sentinel) {
-    out.push(arr.slice(start, start + width));
-    start += width;
-  }
-  return out;
-};
-
-const addr = (arr, i, offset = 0) => (arr[i] | arr[i + 1] << 8) + offset;
-const group = (width, arr) =>
-      seq(Math.max(0, Math.floor(arr.length / width)), i => slice(arr, i * width, width));
-const reverseBits = (x) => 
-      ((x * 0x0802 & 0x22110) | (x * 0x8020 & 0x88440)) * 0x10101 >>> 16 & 0xff;
-const countBits = (x) => {
-  x -= x >> 1 & 0x55;
-  x = (x & 0x33) + (x >> 2 & 0x33);
-  return (x + (x >> 4)) & 0xf;
-};
-      
 
 // We could add new locations at these spots, if we want,
 // but we should just not bother serializing them into the
@@ -276,17 +254,6 @@ const BAD_SCREENS = {
   0x91: [[0, 11, 0x80], [1, 11, 0x80], [2, 11, 0x80], [3, 11, 0x80],
          [4, 11, 0x80], [5, 11, 0x80], [6, 11, 0x80], [7, 11, 0x80]],
 };
-
-class Entity {
-  constructor(rom, id) {
-    this.rom = rom;
-    this.id = id;
-  }
-
-  toString() {
-    return this.constructor.name + ' $' + this.id.toString(16).padStart(2, 0);
-  }
-}
 
 // TODO - consider adding prepopulated name maps for data
 // tables, e.g. my location names, so that an editor could

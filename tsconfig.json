@@ -4,7 +4,7 @@
     "rootDir": "src/js",
     "outDir": "src/js",
     "module": "es6",
-    "target": "es6",
+    "target": "es2018",
     "removeComments": true,
     "noImplicitAny": true,
     "noImplicitThis": true,

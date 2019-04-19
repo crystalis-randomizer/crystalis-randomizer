@@ -27,9 +27,11 @@ fi
 mkdir -p "deploy/$dir/view"
 mkdir -p "deploy/$dir/css/view"
 mkdir -p "deploy/$dir/js/view"
+mkdir -p "deploy/$dir/js/rom"
 mkdir -p "deploy/$dir/images"
 
 cp src/js/view/*.js "deploy/$dir/js/view/"
+cp src/js/rom/*.js "deploy/$dir/js/rom/"
 cp src/js/*.js "deploy/$dir/js/"
 cp src/js/*.s "deploy/$dir/js/"
 cp src/css/*.css "deploy/$dir/css/"

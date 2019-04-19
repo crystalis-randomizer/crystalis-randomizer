@@ -16,6 +16,7 @@ const COMMON = [
   'patch.js',
   'random.js',
   'rom.js',
+  'rom/*.js',
   'unionfind.js',
   'util.js',
   'version.js',

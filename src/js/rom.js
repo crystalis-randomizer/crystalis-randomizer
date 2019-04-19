@@ -1,4 +1,5 @@
 import {UnionFind} from './unionfind.js';
+import {Writer} from './rom/writer.js';
 
 const seq = (x, f = (i) => i) =>  new Array(x).fill(0).map((_, i) => f(i));
 const slice = (arr, start, len) => arr.slice(start, start + len);
@@ -520,7 +521,7 @@ class Trigger extends Entity {
   }
 
   async write(writer, base = 0x1e17a) {
-    const address = await writer.write(this.bytes());
+    const address = await writer.write(this.bytes(), 0x1e000, 0x1ffff);
     writer.rom[base + 2 * (this.id & 0x7f)] = address & 0xff;
     writer.rom[base + 2 * (this.id & 0x7f) + 1] = (address >>> 8) - 0x40;
   }
@@ -597,7 +598,7 @@ class Npc extends Entity {
   }
 
   async write(writer, {spawnConditionsBase = 0x1c5e0} = {}) {
-    const address = await writer.write(this.spawnConditionsBytes());
+    const address = await writer.write(this.spawnConditionsBytes(), 0x1c000, 0x1dfff);
     writer.rom[spawnConditionsBase + 2 * this.id] = address & 0xff;
     writer.rom[spawnConditionsBase + 2 * this.id + 1] = (address >>> 8) - 0x40;
     // TODO - write the static data
@@ -722,17 +723,18 @@ class Location extends Entity {
           ]]);
   }
 
-  async writeNpcData(npcDataWriter) {
+  async writeNpcData(writer) {
     if (!this.spritePalettes) return;
     const data = [0, ...this.spritePalettes, ...this.spritePatterns,
                   ...[].concat(...this.objects.map(o => [...o.map(x => Number(x))])),
                   0xff];
-    const address = await npcDataWriter.write(data);
-    npcDataWriter.rom[this.npcDataPointer] = address & 0xff;
-    npcDataWriter.rom[this.npcDataPointer + 1] = address >> 8;  // - 0x100
+    const address = await writer.write(data, 0x18000, 0x1bfff);
+    writer.rom[this.npcDataPointer] = address & 0xff;
+    writer.rom[this.npcDataPointer + 1] = address >> 8;  // - 0x100
   }
 
-  async writeMapData(mapDataWriter) {
+  async writeMapData(writer) {
+    const write = (data) => writer.write(data, 0x14000, 0x17fff);
     const layout = [
       this.bgm, this.layoutWidth, this.layoutHeight, this.animation, this.extended,
       ...[].concat(...this.screens.map(s => [...s.map(x => Number(x))]))];
@@ -746,12 +748,12 @@ class Location extends Entity {
     const pits = [].concat(...this.pits.map(p => [...p]));
     const [layoutAddr, graphicsAddr, entrancesAddr, exitsAddr, flagsAddr, pitsAddr] =
         await Promise.all([
-          mapDataWriter.write(layout),
-          mapDataWriter.write(graphics),
-          mapDataWriter.write(entrances),
-          mapDataWriter.write(exits),
-          mapDataWriter.write(flags),
-          pits.length ? mapDataWriter.write(pits) : null,
+          write(layout),
+          write(graphics),
+          write(entrances),
+          write(exits),
+          write(flags),
+          pits.length ? write(pits) : null,
         ]);
     const addresses = [
       layoutAddr & 0xff, (layoutAddr >>> 8) - 0xc0,
@@ -761,9 +763,9 @@ class Location extends Entity {
       flagsAddr & 0xff, (flagsAddr >>> 8) - 0xc0,
       ...(pitsAddr ? [pitsAddr & 0xff, (pitsAddr >> 8) - 0xc0] : []),
     ];
-    const base = await mapDataWriter.write(addresses);
-    mapDataWriter.rom[this.mapDataPointer] = base & 0xff;
-    mapDataWriter.rom[this.mapDataPointer + 1] = (base >>> 8) - 0xc0;
+    const base = await write(addresses);
+    writer.rom[this.mapDataPointer] = base & 0xff;
+    writer.rom[this.mapDataPointer + 1] = (base >>> 8) - 0xc0;
   }
 
   /** @return {!Set<!Screen>} */
@@ -832,7 +834,7 @@ class ObjectData extends Entity {
 
   async write(writer, base = 0x1ac00) {
     // Note: shift of 0x10000 is irrelevant
-    const address = await writer.write(this.serialize());
+    const address = await writer.write(this.serialize(), 0x1a000, 0x1bfff);
     writer.rom[base + 2 * this.id] = address & 0xff;
     writer.rom[base + 2 * this.id + 1] = address >>> 8;
   }
@@ -1245,46 +1247,45 @@ export class Rom {
 //   }
 
   async writeData() {
-    // Move object data table all the way to the end.
-    this.prg[0x3c273] = this.prg[0x3c278] = 0xbe;
-    this.prg[0x3c27f] = this.prg[0x3c284] = 0xbf;
-    // Make writers for MapData and NpcData+ObjectData
-    const mapData = new Writer(this.prg, 0x144f8, 0x17e00);
+    const writer = new Writer(this.prg);
+    // MapData
+    writer.alloc(0x144f8, 0x17e00);
+    // NpcData, ObjectData
     // NOTE: 193f9 is assuming $fb is the last location ID.  If we add more locations at
     // the end then we'll need to push this back a few more bytes.  We could possibly
     // detect the bad write and throw an error, and/or compute the max location ID.
-    const npcData = new Writer(this.prg, 0x193f9, 0x1bb00); // 0x1abf5);
+    writer.alloc(0x193f9, 0x1bb00);
+    // TriggerData
+    writer.alloc(0x1e200, 0x1e3f0);
+    // NpcSpawnConditions
+    writer.alloc(0x1c77a, 0x1c95d);
+
+    // Move object data table all the way to the end.
+    this.prg[0x3c273] = this.prg[0x3c278] = 0xbe;
+    this.prg[0x3c27f] = this.prg[0x3c284] = 0xbf;
     const promises = [];
     for (const l of this.locations) {
       if (!l) continue;
-      promises.push(l.writeMapData(mapData));
-      promises.push(l.writeNpcData(npcData));
+      promises.push(l.writeMapData(writer));
+      promises.push(l.writeNpcData(writer));
     }
-    await mapData.commit();
-    const npcDataEnd = await npcData.commit();
     // NOTE: NpcData can span the entire $18000..$1bfff double-page, but
     // ObjectData (which starts shortly after the end of NpcData) must only
     // live in $1a000..$1bfff.  So we make a new writer that starts at the
     // exact position that NpcData ends (provided it's on the right page).
     // This should afford us the same amount of freed space (usable by either
     // table), but guarantees no objects end up on the wrong page.
-    const objData = new Writer(this.prg, Math.max(0x1a000, npcDataEnd), 0x1bb00);
     for (const o of this.objects) {
-      o.write(objData, 0x1be00); // NOTE: we moved the ObjectData table to 1be00
+      o.write(writer, 0x1be00); // NOTE: we moved the ObjectData table to 1be00
     }
-    await objData.commit();
-    const triggerData = new Writer(this.prg, 0x1e200, 0x1e3f0);
     for (const t of this.triggers) {
       if (!t.used) continue;
-      promises.push(t.write(triggerData));
+      promises.push(t.write(writer));
     }
-    await triggerData.commit();
-    const npcSpawnData = new Writer(this.prg, 0x1c77a, 0x1c95d);
     for (const s of this.npcs) {
       if (!s.used) continue;
-      promises.push(s.write(npcSpawnData));
+      promises.push(s.write(writer));
     }
-    await npcSpawnData.commit();
     for (const tileset of this.tilesets) {
       tileset.write(this.prg);
     }
@@ -1294,6 +1295,7 @@ export class Rom {
     for (const screen of this.screens) {
       screen.write(this.prg);
     }
+    promises.push(writer.commit());
     return Promise.all(promises).then(() => undefined);
   }
 
@@ -1550,65 +1552,6 @@ const pickFile = () => {
       reader.readAsArrayBuffer(file);
     });
   });
-}
-
-class Writer {
-  constructor(rom, start, end) {
-    this.rom = rom;
-    this.start = start;
-    this.pos = start;
-    this.end = end;
-    this.chunks = [];
-    this.promises = [];
-  }
-
-  write(data) {
-    const p = new Promise((resolve, reject) => {
-      this.chunks.push({data, resolve});
-    });
-    this.promises.push(p);
-    return p;
-  }
-
-  find(data) {
-    for (let i = this.start; i <= this.pos - data.length; i++) {
-      let found = true;
-      for (let j = 0; j < data.length; j++) {
-        if (this.rom[i + j] !== data[j]) {
-          found = false;
-          break;
-        }
-      }
-      if (found) return i;
-    }
-//console.log(`could not find ${data.map(x=>x.toString(16))}`);
-    return -1;
-  }
-
-  async commit() {
-    while (this.chunks.length) {
-      const chunks = this.chunks.sort(({data: a}, {data: b}) => b.length - a.length);
-      const promises = this.promises;
-      this.chunks = [];
-      this.promises = [];
-      for (const {data, resolve} of chunks) {
-        const addr = this.find(data);
-        if (addr >= 0) {
-          resolve(addr);
-        } else {
-          // write
-          if (this.pos + data.length >= this.end) throw new Error('Does not fit');
-          this.rom.subarray(this.pos, this.pos + data.length).set(data);
-          resolve(this.pos);
-          this.pos += data.length;
-        }
-      }
-      await Promise.all(promises);
-    }
-    console.log(`Finished writing $${this.start.toString(16)}..$${this.pos.toString(16)
-                 }.  ${this.end - this.pos} bytes free`);
-    return this.pos;
-  }
 }
 
 

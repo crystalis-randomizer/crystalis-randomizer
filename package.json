@@ -3,7 +3,11 @@
   "version": "0.0.3",
   "main": "src/js/patch.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "tsc-watch": "node_modules/typescript/bin/tsc --watch",
+    "tsc": "node_modules/typescript/bin/tsc",
+    "build": "npm run tsc && gulp",
+    "test": "npm run build && test/test_cli.sh",
+    "clean": "for a in $(find src/js -name '*.ts'); do rm -f ${a%.ts}.js; rm -f ${a%.ts}.js.map; done"
   },
   "bin": {
     "cryr": "src/js/cli.js"
@@ -26,6 +30,7 @@
     "google-closure-compiler": "^20190121.0.0",
     "gulp": "^4.0.0",
     "mocha": "^5.2.0",
+    "typescript": "^3.4.4",
     "viz.js": "^2.1.2"
   },
   "description": ""

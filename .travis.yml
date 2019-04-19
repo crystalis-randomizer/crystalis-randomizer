@@ -9,9 +9,7 @@ before_script:
   - eval $(scripts/build_info.sh)
 
 script:
-  - test/test_cli.sh    || ( touch failed; false )
-  - npm run tsc         || ( touch failed; false )
-  - gulp                || ( touch failed; false )
+  - npm test || ( touch failed; false )
   - test ! -e failed && scripts/deploy.sh
 
 before_install:

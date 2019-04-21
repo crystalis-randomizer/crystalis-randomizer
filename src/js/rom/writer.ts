@@ -1,3 +1,5 @@
+import {Data} from './util.js';
+
 function page(addr: number): number {
   return addr >>> 13;
 }
@@ -17,7 +19,7 @@ class Chunk {
   }
 
   /** Returns the address (>= 0) if found, or -1 if not found. */
-  find(data: Data, rom: Uint8Array): number {
+  find(data: Data<number>, rom: Uint8Array): number {
     for (let i = this.start; i <= this.pos - data.length; i++) {
       let found = true;
       for (let j = 0; j < data.length; j++) {
@@ -34,13 +36,13 @@ class Chunk {
 }
 
 type Write = {
-  readonly data: Data,
+  readonly data: Data<number>,
   readonly resolve: (addr: number) => void,
   readonly startPage: number,
   readonly endPage: number, // inclusive
 };
 
-type Data = Uint8Array | Array<number>;
+// type Data = Uint8Array | number[];
 
 export class Writer {
 
@@ -62,7 +64,7 @@ export class Writer {
     this.chunks.push(new Chunk(start, end));
   }
 
-  write(data: Data, start: number, end: number): Promise<number> {
+  write(data: Data<number>, start: number, end: number): Promise<number> {
     const startPage = page(start);
     const endPage = page(end);
     const p = new Promise<number>((resolve, reject) => {

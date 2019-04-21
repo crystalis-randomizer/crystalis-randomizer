@@ -1,259 +1,8 @@
 import {UnionFind} from './unionfind.js';
 import {Entity} from './rom/entity.js';
 import {Writer} from './rom/writer.js';
+import {Location} from './rom/location.js';
 import {seq, slice, signed, varSlice, addr, group, reverseBits, countBits} from './rom/util.js';
-
-
-// We could add new locations at these spots, if we want,
-// but we should just not bother serializing them into the
-// ROM.  We may want to keep track of whether an edit can
-// be done in place or else requires a new layout.
-const INVALID_LOCATIONS = new Set([
-  0x0b, 0x0d,
-  0x12, 0x13, 0x16, 0x17, 0x1d, 0x1f,
-  0x36, 0x37, 0x3a, 0x3b, 0x3f,
-  0x53,
-  0x63, 0x66, 0x67, 0x6f,
-  0x74, 0x75, 0x76, 0x77, 0x79, 0x7a, 0x7b,
-  0x8b, 0x8d,
-  0x97, 0x99, 0x9a, 0x9b,
-  0xbd,
-  0xca, 0xcc,
-  0xdb,
-  0xe6, 0xea,
-  0xfc, 0xfd, 0xfe, 0xff]);
-// 6F also invalid?
-//  -- todo - find all exits that lead to a location?
-
-const LOCATION_NAMES = {
-  [0x00]: 'Mezame Shrine',
-  [0x01]: 'Leaf - Outside Start',
-  [0x02]: 'Leaf',
-  [0x03]: 'Valley of Wind',
-  [0x04]: 'Sealed Cave 1',
-  [0x05]: 'Sealed Cave 2',
-  [0x06]: 'Sealed Cave 3',
-  [0x07]: 'Sealed Cave 4',
-  [0x08]: 'Sealed Cave 5',
-  [0x09]: 'Sealed Cave 6',
-  [0x0a]: 'Sealed Cave 7',
-  [0x0c]: 'Sealed Cave 8',
-  [0x0e]: 'Windmill Cave',
-  [0x0f]: 'Windmill',
-  [0x10]: 'Zebu Cave',
-  [0x11]: 'Mt Sabre West - Cave 1',
-  [0x14]: 'Cordel Plains West',
-  [0x15]: 'Cordel Plains East', // "Maze of Forest"?
-  // [0x16]: ' -- unused copy of 18',
-  [0x18]: 'Brynmaer',
-  [0x19]: 'Outside Stom House',
-  [0x1a]: 'Swamp',
-  [0x1b]: 'Amazones',
-  [0x1c]: 'Oak',
-  [0x1e]: 'Stom House',
-  [0x20]: 'Mt Sabre West - Lower',
-  [0x21]: 'Mt Sabre West - Upper',
-  [0x22]: 'Mt Sabre West - Cave 2',
-  [0x23]: 'Mt Sabre West - Cave 3',
-  [0x24]: 'Mt Sabre West - Cave 4',
-  [0x25]: 'Mt Sabre West - Cave 5',
-  [0x26]: 'Mt Sabre West - Cave 6',
-  [0x27]: 'Mt Sabre West - Cave 7',
-  [0x28]: 'Mt Sabre North - Main',
-  [0x29]: 'Mt Sabre North - Middle',
-  [0x2a]: 'Mt Sabre North - Cave 1',
-  [0x2b]: 'Mt Sabre North - Cave 2',
-  [0x2c]: 'Mt Sabre North - Cave 3',
-  [0x2d]: 'Mt Sabre North - Cave 4',
-  [0x2e]: 'Mt Sabre North - Cave 5',
-  [0x2f]: 'Mt Sabre North - Cave 6',
-  [0x30]: 'Mt Sabre North - Left Cell',
-  [0x31]: 'Mt Sabre North - Prison Key Hall',
-  [0x32]: 'Mt Sabre North - Right Cell',
-  [0x33]: 'Mt Sabre North - Cave 7',
-  [0x34]: 'Mt Sabre North - Cave 8',
-  [0x35]: 'Mt Sabre North - Summit Cave',
-  [0x38]: 'Mt Sabre North - Entrance Cave',
-  [0x39]: 'Mt Sabre North - Cave 5a',
-  [0x3c]: 'Nadare - Inn',
-  [0x3d]: 'Nadare - Tool Shop',
-  [0x3e]: 'Nadare - Back Room',
-  [0x40]: 'Waterfall Valley North',
-  [0x41]: 'Waterfall Valley South',
-  [0x42]: 'Lime Tree Valley',
-  [0x43]: 'Lime Tree Lake',
-  [0x44]: 'Kirisa Plant Cave 1',
-  [0x45]: 'Kirisa Plant Cave 2',
-  [0x46]: 'Kirisa Plant Cave 3',
-  [0x47]: 'Kirisa Meadow',
-  [0x48]: 'Fog Lamp Cave 1',
-  [0x49]: 'Fog Lamp Cave 2',
-  [0x4a]: 'Fog Lamp Cave 3',
-  [0x4b]: 'Fog Lamp Cave Dead End',
-  [0x4c]: 'Fog Lamp Cave 4',
-  [0x4d]: 'Fog Lamp Cave 5',
-  [0x4e]: 'Fog Lamp Cave 6',
-  [0x4f]: 'Fog Lamp Cave 7',
-  [0x50]: 'Portoa',
-  [0x51]: 'Portoa - Fisherman Island',
-  [0x52]: 'Mesia Shrine',
-  [0x54]: 'Waterfall Cave 1',
-  [0x55]: 'Waterfall Cave 2',
-  [0x56]: 'Waterfall Cave 3',
-  [0x57]: 'Waterfall Cave 4',
-  [0x58]: 'Tower - Entrance',
-  [0x59]: 'Tower 1',
-  [0x5a]: 'Tower 2',
-  [0x5b]: 'Tower 3',
-  [0x5c]: 'Tower - Outside Mesia',
-  [0x5d]: 'Tower - Outside Dyna',
-  [0x5e]: 'Tower - Mesia',
-  [0x5f]: 'Tower - Dyna',
-  [0x60]: 'Angry Sea',
-  [0x61]: 'Boat House',
-  [0x62]: 'Joel - Lighthouse',
-  [0x64]: 'Underground Channel',
-  [0x65]: 'Zombie Town',
-  [0x68]: 'Evil Spirit Island 1',
-  [0x69]: 'Evil Spirit Island 2',
-  [0x6a]: 'Evil Spirit Island 3',
-  [0x6b]: 'Evil Spirit Island 4',
-  [0x6c]: 'Sabera Palace 1',
-  [0x6d]: 'Sabera Palace 2',
-  [0x6e]: 'Sabera Palace 3',
-  // [0x6f]: 'Sabera Palace 3 unused copy',
-  [0x70]: 'Joel - Secret Passage',
-  [0x71]: 'Joel',
-  [0x72]: 'Swan',
-  [0x73]: 'Swan - Gate',
-  [0x78]: 'Goa Valley',
-  [0x7c]: 'Mt Hydra',
-  [0x7d]: 'Mt Hydra - Cave 1',
-  [0x7e]: 'Mt Hydra - Outside Shyron',
-  [0x7f]: 'Mt Hydra - Cave 2',
-  [0x80]: 'Mt Hydra - Cave 3',
-  [0x81]: 'Mt Hydra - Cave 4',
-  [0x82]: 'Mt Hydra - Cave 5',
-  [0x83]: 'Mt Hydra - Cave 6',
-  [0x84]: 'Mt Hydra - Cave 7',
-  [0x85]: 'Mt Hydra - Cave 8',
-  [0x86]: 'Mt Hydra - Cave 9',
-  [0x87]: 'Mt Hydra - Cave 10',
-  [0x88]: 'Styx 1',
-  [0x89]: 'Styx 2',
-  [0x8a]: 'Styx 3',
-  [0x8c]: 'Shyron',
-  [0x8e]: 'Goa',
-  [0x8f]: 'Goa Fortress - Oasis Entrance',
-  [0x90]: 'Desert 1',
-  [0x91]: 'Oasis Cave - Main',
-  [0x92]: 'Desert Cave 1',
-  [0x93]: 'Sahara',
-  [0x94]: 'Sahara - Outside Cave',
-  [0x95]: 'Desert Cave 2',
-  [0x96]: 'Sahara Meadow',
-  [0x98]: 'Desert 2',
-  [0x9c]: 'Pyramid Front - Entrance',
-  [0x9d]: 'Pyramid Front - Branch',
-  [0x9e]: 'Pyramid Front - Main',
-  [0x9f]: 'Pyramid Front - Draygon',
-  [0xa0]: 'Pyramid Back - Entrance',
-  [0xa1]: 'Pyramid Back - Hall 1',
-  [0xa2]: 'Pyramid Back - Branch',
-  [0xa3]: 'Pyramid Back - Dead End Left',
-  [0xa4]: 'Pyramid Back - Dead End Right',
-  [0xa5]: 'Pyramid Back - Hall 2',
-  [0xa6]: 'Pyramid Back - Draygon Revisited',
-  [0xa7]: 'Pyramid Back - Teleporter',
-  [0xa8]: 'Goa Fortress - Entrance',
-  [0xa9]: 'Goa Fortress - Kelbesque',
-  [0xaa]: 'Goa Fortress - Zebu',
-  [0xab]: 'Goa Fortress - Sabera',
-  [0xac]: 'Goa Fortress - Tornel',
-  [0xad]: 'Goa Fortress - Mado 1',
-  [0xae]: 'Goa Fortress - Mado 2',
-  [0xaf]: 'Goa Fortress - Mado 3',
-  [0xb0]: 'Goa Fortress - Karmine 1',
-  [0xb1]: 'Goa Fortress - Karmine 2',
-  [0xb2]: 'Goa Fortress - Karmine 3',
-  [0xb3]: 'Goa Fortress - Karmine 4',
-  [0xb4]: 'Goa Fortress - Karmine 5',
-  [0xb5]: 'Goa Fortress - Karmine 6',
-  [0xb6]: 'Goa Fortress - Karmine 7',
-  [0xb7]: 'Goa Fortress - Exit',
-  [0xb8]: 'Oasis Cave - Entrance',
-  [0xb9]: 'Goa Fortress - Asina',
-  [0xba]: 'Goa Fortress - Kensu', // seamless from B4
-  [0xbb]: 'Goa - House',
-  [0xbc]: 'Goa - Inn',
-  [0xbe]: 'Goa - Tool Shop',
-  [0xbf]: 'Goa - Tavern',
-  [0xc0]: 'Leaf - Elder House',
-  [0xc1]: 'Leaf - Rabbit Hut',
-  [0xc2]: 'Leaf - Inn',
-  [0xc3]: 'Leaf - Tool Shop',
-  [0xc4]: 'Leaf - Armor Shop',
-  [0xc5]: 'Leaf - Student House',
-  [0xc6]: 'Brynmaer - Tavern',
-  [0xc7]: 'Brynmaer - Pawn Shop',
-  [0xc8]: 'Brynmaer - Inn',
-  [0xc9]: 'Brynmaer - Armor Shop',
-  [0xcb]: 'Brynmaer - Item Shop',
-  [0xcd]: 'Oak - Elder House',
-  [0xce]: 'Oak - Mother House',
-  [0xcf]: 'Oak - Tool Shop',
-  [0xd0]: 'Oak - Inn',
-  [0xd1]: 'Amazones - Inn',
-  [0xd2]: 'Amazones - Item Shop',
-  [0xd3]: 'Amazones - Armor Shop',
-  [0xd4]: 'Amazones - Elder',
-  [0xd5]: 'Nadare',
-  [0xd6]: 'Portoa - Fisherman House',
-  [0xd7]: 'Portoa - Palace Entrance',
-  [0xd8]: 'Portoa - Fortune Teller',
-  [0xd9]: 'Portoa - Pawn Shop',
-  [0xda]: 'Portoa - Armor Shop',
-  [0xdc]: 'Portoa - Inn',
-  [0xdd]: 'Portoa - Tool Shop',
-  [0xde]: 'Portoa - Palace Left',
-  [0xdf]: 'Portoa - Palace Throne Room',
-  [0xe0]: 'Portoa - Palace Right',
-  [0xe1]: 'Portoa - Asina Room',
-  [0xe2]: 'Amazones - Elder Downstairs',
-  [0xe3]: 'Joel - Elder House',
-  [0xe4]: 'Joel - Shed',
-  [0xe5]: 'Joel - Tool Shop',
-  [0xe7]: 'Joel - Inn',
-  [0xe8]: 'Zombie Town - House',
-  [0xe9]: 'Zombie Town - House Basement',
-  [0xeb]: 'Swan - Tool Shop',
-  [0xec]: 'Swan - Stom Hut',
-  [0xed]: 'Swan - Inn',
-  [0xee]: 'Swan - Armor Shop',
-  [0xef]: 'Swan - Tavern',
-  [0xf0]: 'Swan - Pawn Shop',
-  [0xf1]: 'Swan - Dance Hall',
-  [0xf2]: 'Shyron - Fortress',
-  [0xf3]: 'Shyron - Training Hall',
-  [0xf4]: 'Shyron - Hospital',
-  [0xf5]: 'Shyron - Armor Shop',
-  [0xf6]: 'Shyron - Tool Shop',
-  [0xf7]: 'Shyron - Inn',
-  [0xf8]: 'Sahara - Inn',
-  [0xf9]: 'Sahara - Tool Shop',
-  [0xfa]: 'Sahara - Elder House',
-  [0xfb]: 'Sahara - Pawn Shop',
-};
-
-const BAD_SCREENS = {
-  // mt sabre west cave 4
-  0x24: [[3, 4, 0x80]],
-  // lime tree
-  0x42: [[0, 2, 0x00]],
-  // oasis cave
-  0x91: [[0, 11, 0x80], [1, 11, 0x80], [2, 11, 0x80], [3, 11, 0x80],
-         [4, 11, 0x80], [5, 11, 0x80], [6, 11, 0x80], [7, 11, 0x80]],
-};
 
 // TODO - consider adding prepopulated name maps for data
 // tables, e.g. my location names, so that an editor could
@@ -620,145 +369,6 @@ class ItemGet extends Entity {
   }
 }
 
-class Location extends Entity {
-  constructor(rom, id) {
-    // will include both MapData *and* NpcData, since they share a key.
-    super(rom, id);
-
-    this.mapDataPointer = 0x14300 + (id << 1);
-    this.mapDataBase = addr(rom.prg, this.mapDataPointer, 0xc000);
-    this.valid = this.mapDataBase > 0xc000 && !!LOCATION_NAMES[id];
-    this.name = LOCATION_NAMES[id];
-
-    this.layoutBase = addr(rom.prg, this.mapDataBase, 0xc000);
-    this.graphicsBase = addr(rom.prg, this.mapDataBase + 2, 0xc000);
-    this.entrancesBase = addr(rom.prg, this.mapDataBase + 4, 0xc000);
-    this.exitsBase = addr(rom.prg, this.mapDataBase + 6, 0xc000);
-    this.flagsBase = addr(rom.prg, this.mapDataBase + 8, 0xc000);
-    this.pitsBase = this.layoutBase == this.mapDataBase + 10 ? null :
-        addr(rom.prg, this.mapDataBase + 10, 0xc000);
-
-    this.bgm = rom.prg[this.layoutBase];
-    this.layoutWidth = rom.prg[this.layoutBase + 1];
-    this.layoutHeight = rom.prg[this.layoutBase + 2];
-    this.animation = rom.prg[this.layoutBase + 3];
-    this.extended = rom.prg[this.layoutBase + 4];
-    this.screens = seq(
-        this.height,
-        y => slice(rom.prg, this.layoutBase + 5 + y * this.width, this.width));
-    // TODO - make bad screen replacement conditional?
-    for (let [x, y, replacement] of BAD_SCREENS[id] || []) {
-      this.screens[y][x] = replacement;
-    }
-    this.tilePalettes = slice(rom.prg, this.graphicsBase, 3);
-    this.tileset = rom.prg[this.graphicsBase + 3];
-    this.tileEffects = rom.prg[this.graphicsBase + 4];
-    this.tilePatterns = slice(rom.prg, this.graphicsBase + 5, 2);
-
-    this.entrances =
-        group(4, rom.prg.slice(this.entrancesBase, this.exitsBase));
-    this.exits = varSlice(rom.prg, this.exitsBase, 4, 0xff, this.flagsBase);
-    this.flags = varSlice(rom.prg, this.flagsBase, 2, 0xff);
-    this.pits = this.pitsBase ? varSlice(rom.prg, this.pitsBase, 4, 0xff) : [];
-
-    this.npcDataPointer = 0x19201 + (id << 1);
-    this.npcDataBase = addr(rom.prg, this.npcDataPointer, 0x10000);
-    const hasNpcData = this.npcDataBase != 0x10000;
-    this.spritePalettes =
-        hasNpcData ? slice(rom.prg, this.npcDataBase + 1, 2) : null;
-    this.spritePatterns =
-        hasNpcData ? slice(rom.prg, this.npcDataBase + 3, 2) : null;
-    this.objects =
-        hasNpcData ? varSlice(rom.prg, this.npcDataBase + 5, 4, 0xff) : null;
-  }
-
-  get width() { return this.layoutWidth + 1; }
-  get height() { return this.layoutHeight + 1; }
-
-  monsters() {
-    if (!this.objects) return [];
-    return this.objects.flatMap(
-      ([,, type, id], slot) =>
-        type & 7 || !this.rom.objects[id + 0x50] ? [] : [
-          [this.id,
-           slot + 0x0d,
-           type & 0x80 ? 1 : 0,
-           id + 0x50,
-           this.spritePatterns[type & 0x80 ? 1 : 0],
-           this.rom.objects[id + 0x50].palettes()[0],
-           this.spritePalettes[this.rom.objects[id + 0x50].palettes()[0] - 2],
-          ]]);
-  }
-
-  async writeNpcData(writer) {
-    if (!this.spritePalettes) return;
-    const data = [0, ...this.spritePalettes, ...this.spritePatterns,
-                  ...[].concat(...this.objects.map(o => [...o.map(x => Number(x))])),
-                  0xff];
-    const address = await writer.write(data, 0x18000, 0x1bfff);
-    writer.rom[this.npcDataPointer] = address & 0xff;
-    writer.rom[this.npcDataPointer + 1] = address >> 8;  // - 0x100
-  }
-
-  async writeMapData(writer) {
-    const write = (data) => writer.write(data, 0x14000, 0x17fff);
-    const layout = [
-      this.bgm, this.layoutWidth, this.layoutHeight, this.animation, this.extended,
-      ...[].concat(...this.screens.map(s => [...s.map(x => Number(x))]))];
-    const graphics =
-        [...this.tilePalettes,
-         this.tileset, this.tileEffects,
-         ...this.tilePatterns];
-    const entrances = [].concat(...this.entrances.map(e => [...e]));
-    const exits = [...[].concat(...this.exits.map(e => [...e])), 0xff];
-    const flags = [...[].concat(...this.flags.map(f => [...f])), 0xff];
-    const pits = [].concat(...this.pits.map(p => [...p]));
-    const [layoutAddr, graphicsAddr, entrancesAddr, exitsAddr, flagsAddr, pitsAddr] =
-        await Promise.all([
-          write(layout),
-          write(graphics),
-          write(entrances),
-          write(exits),
-          write(flags),
-          pits.length ? write(pits) : null,
-        ]);
-    const addresses = [
-      layoutAddr & 0xff, (layoutAddr >>> 8) - 0xc0,
-      graphicsAddr & 0xff, (graphicsAddr >>> 8) - 0xc0,
-      entrancesAddr & 0xff, (entrancesAddr >>> 8) - 0xc0,
-      exitsAddr & 0xff, (exitsAddr >>> 8) - 0xc0,
-      flagsAddr & 0xff, (flagsAddr >>> 8) - 0xc0,
-      ...(pitsAddr ? [pitsAddr & 0xff, (pitsAddr >> 8) - 0xc0] : []),
-    ];
-    const base = await write(addresses);
-    writer.rom[this.mapDataPointer] = base & 0xff;
-    writer.rom[this.mapDataPointer + 1] = (base >>> 8) - 0xc0;
-  }
-
-  /** @return {!Set<!Screen>} */
-  allScreens() {
-    const screens = new Set();
-    const ext = this.extended ? 0x100 : 0;
-    for (const row of this.screens) {
-      for (const screen of row) {
-        screens.add(this.rom.screens[screen + ext]);
-      }
-    }
-    return screens
-  }
-
-  /** @return {!Set<number>} */
-  allTiles() {
-    const tiles = new Set();
-    for (const screen of this.screens) {
-      for (const tile of screen.allTiles()) {
-        tiles.add(tile);
-      }
-    }
-    return tiles;
-  }
-}
-
 class ObjectData extends Entity {
   constructor(rom, id) {
     super(rom, id);
@@ -861,8 +471,8 @@ class ObjectData extends Entity {
   locations() {
     // TODO - handle non-monster NPCs.
     return this.rom.locations.filter(l =>
-        l && l.objects && l.objects.some(o =>
-            (o[2] & 7) == 0 && ((o[3] + 0x50) & 0xff) == this.id));
+        l.valid && l.spawns.some(spawn =>
+            spawn.isMonster() && spawn.monsterId === this.id));
   }
 
   palettes(includeChildren = false) {
@@ -1087,8 +697,7 @@ export class Rom {
     this.triggers = seq(0x43, i => new Trigger(this, 0x80 | i));
     this.patterns = seq(this.chr.length >> 4, i => new Pattern(this, i));
     this.palettes = seq(0x100, i => new Palette(this, i));
-    this.locations = seq(
-        0x100, i => !LOCATION_NAMES[i] ? null : new Location(this, i));
+    this.locations = seq(0x100, i => new Location(this, i));
     this.tileAnimations = seq(4, i => new TileAnimation(this, i));
     this.hitboxes = seq(24, i => new Hitbox(this, i));
     this.objects = seq(0x100, i => new ObjectData(this, i));
@@ -1103,8 +712,8 @@ export class Rom {
   get monsters() {
     let monsters = new Set();
     for (const l of this.locations) {
-      if (!l || !l.objects) continue;
-      for (const o of l.objects) {
+      if (!l.valid || !l.hasSpawns) continue;
+      for (const o of l.spawns) {
         if ((o[2] & 7) == 0) monsters.add(this.objects[(o[3] + 0x50) & 0xff]);
       }
     }
@@ -1128,8 +737,8 @@ export class Rom {
   get monsterGraphics() {
     const gfx = {};
     for (const l of this.locations) {
-      if (!l || !l.objects) continue;
-      for (const o of l.objects) {
+      if (!l.valid || !l.hasSpawns) continue;
+      for (const o of l.spawns) {
         if (!(o[2] & 7)) {
           const slot = o[2] & 0x80 ? 1 : 0;
           const id = (o[3] + 0x50).toString(16).padStart(2,0);
@@ -1149,10 +758,10 @@ export class Rom {
   get locationMonsters() {
     const m = {};
     for (const l of this.locations) {
-      if (!l || !l.objects) continue;
+      if (!l.valid || !l.hasSpawns) continue;
       // which monsters are in which slots?
       const s = m['$' + l.id.toString(16).padStart(2,0)] = {};
-      for (const o of l.objects) {
+      for (const o of l.spawns) {
         if (!(o[2] & 7)) {
           const slot = o[2] & 0x80 ? 1 : 0;
           const id = o[3] + 0x50;
@@ -1232,9 +841,8 @@ export class Rom {
     this.prg[0x3c27f] = this.prg[0x3c284] = 0xbf;
     const promises = [];
     for (const l of this.locations) {
-      if (!l) continue;
-      promises.push(l.writeMapData(writer));
-      promises.push(l.writeNpcData(writer));
+      if (!l.valid) continue;
+      promises.push(l.write(writer));
     }
     // NOTE: NpcData can span the entire $18000..$1bfff double-page, but
     // ObjectData (which starts shortly after the end of NpcData) must only
@@ -1321,7 +929,7 @@ export class Rom {
   disjointTilesets() {
     const tilesetByScreen = [];
     for (const loc of this.locations) {
-      if (!loc) continue;
+      if (!loc.valid) continue;
       const tileset = loc.tileset;
       const ext = loc.extended ? 0x100 : 0;
       for (const row of loc.screens) {
@@ -1400,7 +1008,7 @@ export class Rom {
     const tileEffects = new Set();
     tilesets = new Set(tilesets);
     for (const l of this.locations) {
-      if (!l) continue;
+      if (!l.valid) continue;
       if (!tilesets.has(l.tileset)) continue;
       tileEffects.add(l.tileEffects);
       for (const screen of l.allScreens()) {

@@ -3,7 +3,7 @@
   "version": "0.0.3",
   "main": "src/js/patch.js",
   "scripts": {
-    "tsc-watch": "node_modules/typescript/bin/tsc --watch",
+    "watch": "node_modules/typescript/bin/tsc --watch",
     "tsc": "node_modules/typescript/bin/tsc",
     "build": "npm run tsc && gulp",
     "test": "npm run build && test/test_cli.sh",

@@ -2,107 +2,14 @@ import {UnionFind} from './unionfind.js';
 import {Entity} from './rom/entity.js';
 import {Writer} from './rom/writer.js';
 import {Location} from './rom/location.js';
+import {Screen} from './rom/screen.js';
+import {Tileset} from './rom/tileset.js';
 import {seq, slice, signed, varSlice, addr, group, reverseBits, countBits} from './rom/util.js';
 
 // TODO - consider adding prepopulated name maps for data
 // tables, e.g. my location names, so that an editor could
 // use a drop-down menu and show something meaningful.
 
-class Screen extends Entity {
-  constructor(rom, id) {
-    super(rom, id);
-    this.base = (id > 0xff ? 0x40 + id : id) << 8;
-    // metatile index
-    this.tiles = seq(15, y => slice(rom.prg, this.base | y << 4, 16));
-  }
-
-  metatile(y, x) {
-    return this.rom.metatiles[this.tiles[y][x]];
-  }
-
-  /** @return {!Set<number>} */
-  allTilesSet() {
-    const tiles = new Set();
-    for (const row of this.tiles) {
-      for (const tile of row) {
-        tiles.add(tile);
-      }
-    }
-    return tiles;
-  }
-
-  write(rom = this.rom) {
-    let i = this.base;
-    for (const row of this.tiles) {
-      for (const tile of row) {
-        rom[i++] = tile;
-      }
-    }
-  }
-
-  // TODO - accessors for which palettes, tilesets, and patters are used/allowed
-}
-
-// Metatile doesn't mean much without tileset, patterns, etc.
-// may need to rethink this one, make it a transient object that deps on others.
-// class Metatile {
-//   constructor(rom, id) {
-//     this.rom = rom;
-//     this.id = id;
-//   }
-// }
-
-// Mappping from metatile ID to tile quads and palette number.
-class Tileset extends Entity {
-  constructor(rom, id) {
-    // `id` is MapData[1][3], ranges from $80..$bc in increments of 4.
-    super(rom, id);
-    const map = id & 0x3f;
-    this.tileBase = 0x10000 | map << 8;
-    this.attrBase = 0x13000 | map << 4;
-    this.alternatesBase = 0x13e00 | map << 3;
-    this.tiles = seq(4, q => slice(rom.prg, this.tileBase | q << 8 , 256));
-    this.attrs = seq(256, i => rom.prg[this.attrBase | i >> 2] >> ((i & 3) << 1) & 3);
-    this.alternates = slice(rom.prg, this.alternatesBase, 32);
-  }
-
-  write(rom = this.rom) {
-    for (let i = 0; i < 0x100; i++) {
-      if (i < 0x20) {
-        rom[this.alternatesBase + i] = this.alternates[i];
-      }
-      for (let j = 0; j < 4; j++) {
-        rom[this.tileBase + (j << 8) + i] = this.tiles[j][i];
-      }
-    }
-    for (let i = 0; i < 0x40; i++) {
-      const j = i << 2;
-      rom[this.attrBase + i] =
-          (this.attrs[j] & 3) | (this.attrs[j + 1] & 3) << 2 |
-          (this.attrs[j + 2] & 3) << 4 | (this.attrs[j + 3] & 3) << 6;
-    }
-    // Done?!?
-  }
-
-  // Rearranges tiles in the tileset, including the corresponding TileEffects.
-  // For the most part the tilesets and tileeffects are 1:1, the only exception
-  // is 88/b5 and a8/b5 share the same effects and are basically the same
-  // tileset, except for very minor details about the walls.
-  makeFlagTiles(mapping) {
-    // Goal: find unused higher spots and unflagged lower spots
-    // Move all instances around
-    // Return the *new* indices of the mapped tiles
-
-    // Usage: const [caveTL, caveTR, caveBL, caveBR] = tileset.makeFlagTiles({0x1a: 0x00, ...});
-    //        screen[y][x] = caveTL ...
-
-    // TODO - find all locations that have any given screen (incl which tileset, etc)
-    //      --> will need to add flags to them, sometimes?
-
-    // Multimap: tile-id => screen
-    //           screen  => location/tileset
-  }
-}
 
 class TileEffects extends Entity {
   constructor(rom, id) {

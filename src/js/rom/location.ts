@@ -1,4 +1,4 @@
-import {Entity} from './entity.js';
+import {Entity, Rom} from './entity.js';
 import {Writer} from './writer.js';
 import {Data, DataTuple, Mutable,
         addr, concatIterables, group, hex,
@@ -45,7 +45,7 @@ export class Location extends Entity {
   spritePatterns: [number, number];
   spawns: Spawn[];
 
-  constructor(rom: any, id: number) {
+  constructor(rom: Rom, id: number) {
     // will include both MapData *and* NpcData, since they share a key.
     super(rom, id);
 

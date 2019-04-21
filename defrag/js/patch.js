@@ -1,4 +1,5 @@
 import {Assembler, assemble, buildRomPatch} from './6502.js';
+import {Entrance, Exit, Flag, Location, Spawn} from './rom/location.js';
 import {Rom} from './rom.js';
 import {Random} from './random.js';
 import {shuffle2 as shuffleDepgraph} from './depgraph.js';
@@ -213,31 +214,33 @@ const closeCaveEntrances = (rom, flags) => {
     [0x94, 0x00], // cave to desert
     [0x98, 0x41],
   ];
-  for (const [loc, pos] of flagsToClear) {
-    rom.locations[loc].flags.push([0xef, pos]);
+  for (const [loc, yx] of flagsToClear) {
+    rom.locations[loc].flags.push(Flag.of({yx, flag: 0x2ef}));
   }
 
-  const replaceFlag = (loc, pos, flag) => {
-    for (const arr of rom.locations[loc].flags) {
-      if (arr[1] == pos) {
-        arr[0] = flag;
+  const replaceFlag = (loc, yx, flag) => {
+    for (const f of rom.locations[loc].flags) {
+      if (f.yx == yx) {
+        f.flag = flag;
         return;
       }
     }
-    throw new Error(`Could not find flag to replace at ${loc}:${pos}`);
+    throw new Error(`Could not find flag to replace at ${loc}:${yx}`);
   };
 
   if (flags.paralysisRequiresPrisonKey()) { // close off reverse entrances
     // NOTE: we could also close it off until boss killed...?
     //  - const vampireFlag = ~rom.npcSpawns[0xc0].conditions[0x0a][0];
     //  -> kelbesque for the other one.
-    const windmillFlag = 0xee;
+    const windmillFlag = 0x2ee;
     replaceFlag(0x14, 0x30, windmillFlag);
     replaceFlag(0x15, 0x30, windmillFlag);
 
-    replaceFlag(0x40, 0x00, 0xd8); // key to prison flag
-    rom.locations[0x40].objects.splice(1, 0, [0x06, 0x06, 0x04, 0x2c]);
-    rom.locations[0x40].objects.push([0x07, 0x07, 0x02, 0xad]);
+    replaceFlag(0x40, 0x00, 0x2d8); // key to prison flag
+    const explosion = Spawn.of({y: 0x060, x: 0x060, type: 4, id: 0x2c});
+    const keyTrigger = Spawn.of({y: 0x070, x: 0x070, type: 2, id: 0xad});
+    rom.locations[0x40].spawns.splice(1, 0, explosion);
+    rom.locations[0x40].spawns.push(keyTrigger);
   }
 
   //rom.locations[0x14].tileEffects = 0xb3;
@@ -270,22 +273,20 @@ const eastCave = (rom) => {
 
 // Add the statue of onyx and possibly the teleport block trigger to Cordel West
 const addCordelWestTriggers = (rom, flags) => {
-  for (const o of rom.locations[0x15].objects) {
-    if (o[2] === 2) {
+  for (const spawn of rom.locations[0x15].spawns) {
+    if (spawn.isChest() || (flags.disableTeleportSkip() && spawn.isTrigger())) {
       // Copy if (1) it's the chest, or (2) we're disabling teleport skip
-      const copy = o[3] < 0x80 || flags.disableTeleportSkip();
-        // statue of onyx - always move
-      if (copy) rom.locations[0x14].objects.push([...o]);
+      rom.locations[0x14].spawns.push(spawn.clone());
     }
   }
 };
 
 const fixRabbitSkip = (rom) => {
-  for (const o of rom.locations[0x28].objects) {
-    if (o[2] === 2 && o[3] === 0x86) {
-      if (o[1] === 0x74) {
-        o[0]++; // previously we did both?
-        o[1]++;
+  for (const spawn of rom.locations[0x28].spawns) {
+    if (spawn.isTrigger() && spawn.id === 0x86) {
+      if (spawn.x === 0x740) {
+        spawn.x += 16;
+        spawn.y += 16;
       }
     }
   }
@@ -338,15 +339,17 @@ const connectLimeTreeToLeaf = (rom) => {
   limeTree.screens[1][0] = 0x1a; // new exit
   limeTree.screens[2][0] = 0x0c; // nicer mountains
 
-  const windEntrance = valleyOfWind.entrances.push([0xef, 0x04, 0x78, 0x05]) - 1;
-  const limeEntrance = limeTree.entrances.push([0x10, 0x00, 0xc0, 0x01]) - 1;
+  const windEntrance =
+      valleyOfWind.entrances.push(Entrance.of({x: 0x4ef, y: 0x578})) - 1;
+  const limeEntrance =
+      limeTree.entrances.push(Entrance.of({x: 0x010, y: 0x1c0})) - 1;
 
   valleyOfWind.exits.push(
-      [0x4f, 0x56, 0x42, limeEntrance],
-      [0x4f, 0x57, 0x42, limeEntrance]);
+      Exit.of({x: 0x4f0, y: 0x560, dest: 0x42, entrance: limeEntrance}),
+      Exit.of({x: 0x4f0, y: 0x570, dest: 0x42, entrance: limeEntrance}));
   limeTree.exits.push(
-      [0x00, 0x1b, 0x03, windEntrance],
-      [0x00, 0x1c, 0x03, windEntrance]);
+      Exit.of({x: 0x000, y: 0x1b0, dest: 0x03, entrance: windEntrance}),
+      Exit.of({x: 0x000, y: 0x1c0, dest: 0x03, entrance: windEntrance}));
 };
 
 
@@ -643,7 +646,7 @@ const shuffleMonsters = (data, rom, random, log) => {
   // TODO: once we have location names, compile a spoiler of shuffled monsters
   const pool = new MonsterPool({});
   for (const loc of rom.locations) {
-    if (loc) pool.populate(loc);
+    if (loc.valid) pool.populate(loc);
   }
   pool.shuffle(random);
 };
@@ -880,15 +883,15 @@ class MonsterPool {
     //const constraints = {};
     let treasureChest = false;
     let slot = 0x0c;
-    for (const o of location.objects || []) {
+    for (const spawn of location.spawns) {
       ++slot;
-      if (o[2] & 7) continue;
-      const id = o[3] + 0x50;
+      if (!spawn.isMonster()) continue;
+      const id = spawn.monsterId;
       if (id in UNTOUCHED_MONSTERS || !SCALED_MONSTERS.has(id) ||
           SCALED_MONSTERS.get(id).type != 'm') continue;
       const object = location.rom.objects[id];
       if (!object) continue;
-      const patBank = o[2] & 0x80 ? 1 : 0;
+      const patBank = spawn.patternBank;
       const pat = location.spritePatterns[patBank];
       const pal = object.palettes(true);
       const pal2 = pal.includes(2) ? location.spritePalettes[0] : null;
@@ -926,10 +929,10 @@ this.report['post-shuffle monsters'] = this.monsters.map(m=>m.id);
 
       // Determine location constraints
       let treasureChest = false;
-      for (const o of location.objects || []) {
-        if ((o[2] & 7) == 2) treasureChest = true;
-        if (o[2] & 7) continue;
-        const id = o[3] + 0x50;
+      for (const spawn of location.spawns) {
+        if (spawn.isChest()) treasureChest = true;
+        if (!spawn.isMonster()) continue;
+        const id = spawn.monsterId;
         if (id == 0x7e || id == 0x7f || id == 0x9f) {
           pat1 = 0x62;
         } else if (id == 0x8f) {
@@ -961,7 +964,7 @@ this.report['post-shuffle monsters'] = this.monsters.map(m=>m.id);
         let patSlot;
         if (location.rom.objects[m.id].child || RETAIN_SLOTS.has(m.id)) {
           // if there's a child, make sure to keep it in the same pattern slot
-          patSlot = m.patSlot ? 0x80 : 0;
+          patSlot = m.patBank;
           const prev = patSlot ? pat1 : pat0;
           if (prev != null && prev != m.pat) return false;
           if (patSlot) {
@@ -981,7 +984,7 @@ report.push(`  Adding ${m.id.toString(16)}: pat(${patSlot}) <-  ${m.pat.toString
 report.push(`  Adding ${m.id.toString(16)}: pat0 <-  ${m.pat.toString(16)}`);
           } else if (pat1 == null || pat1 == m.pat) {
             pat1 = m.pat;
-            patSlot = 0x80;
+            patSlot = 1;
 report.push(`  Adding ${m.id.toString(16)}: pat1 <-  ${m.pat.toString(16)}`);
           } else {              
             return false;
@@ -989,7 +992,7 @@ report.push(`  Adding ${m.id.toString(16)}: pat1 <-  ${m.pat.toString(16)}`);
         }
         if (m.pal2 != null) pal2 = m.pal2;
         if (m.pal3 != null) pal3 = m.pal3;
-report.push(`    ${Object.keys(m).map(k=>`${k}: ${m[k]}`).join(', ')}`);
+report.push(`    ${Object.keys(m).map(k=>`${k}: ${m[k] && m[k].toString(16)}`).join(', ')}`);
 report.push(`    pal: ${(m.pal2||0).toString(16)} ${(m.pal3||0).toString(16)}`);
 
         // Pick the slot only after we know for sure that it will fit.
@@ -1012,14 +1015,14 @@ report.push(`    pal: ${(m.pal2||0).toString(16)} ${(m.pal3||0).toString(16)}`);
         }
 (this.report[`mon-${m.id.toString(16)}`] = this.report[`mon-${m.id.toString(16)}`] || []).push('$' + location.id.toString(16));
         const slot = slots[eligible];
-        const objData = location.objects[slot - 0x0d];
+        const spawn = location.spawns[slot - 0x0d];
         if (slot in nonFlyers) {
-          objData[0] += nonFlyers[slot][0];
-          objData[1] += nonFlyers[slot][1];
+          spawn.y += nonFlyers[slot][0] * 16;
+          spawn.x += nonFlyers[slot][1] * 16;
         }
-        objData[2] = objData[2] & 0x7f | patSlot;
-        objData[3] = m.id - 0x50;
-report.push(`    slot ${slot.toString(16)}: objData=${objData}`);
+        spawn.patternBank = patSlot;
+        spawn.monsterId = m.id;
+report.push(`    slot ${slot.toString(16)}: ${spawn}`);
 
         // TODO - anything else need splicing?
 
@@ -1085,8 +1088,8 @@ report.push(`    slot ${slot.toString(16)}: objData=${objData}`);
       if (slots.length) {
         report.push(`Failed to fill location ${location.id.toString(16)}: ${slots.length} remaining`);
         for (const slot of slots) {
-          const objData = location.objects[slot - 0x0d];
-          objData[0] = objData[1] = 0;
+          const spawn = location.spawns[slot - 0x0d];
+          spawn.x = spawn.y = 0;
         }
       }
     }

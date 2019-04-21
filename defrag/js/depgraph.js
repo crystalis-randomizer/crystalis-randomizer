@@ -961,11 +961,11 @@ const mtSabreNorthTunnel9   = location(0x34, SBRN, 'Tunnel 9 (connector to summi
                                 .cave()
                                 .connect(mtSabreNorthTunnel8)
                                 .connectTo(mtSabreNorthSummit);
-const mtSabreNorthTunnel10a = location(0x35, SBRN, 'Tunnel 10a (summit cave, front)')
+const mtSabreNorthTunnel10a = location(0x35, SBRN, 'Summit Cave (front)')
                                 .cave()
                                 .from(mtSabreNorthSummit, keyToPrison)
                                 .to(mtSabreNorthSummit);
-const mtSabreNorthTunnel10b = location(0x35, SBRN, 'Tunnel 10b (summit cave, behind ice)')
+const mtSabreNorthTunnel10b = location(0x35, SBRN, 'Summit Cave (behind ice)')
                                 .cave()
                                 .connect(mtSabreNorthTunnel10a, destroyIce) // 64da:80
                                 // TODO - adjust the triggers so that learning
@@ -1054,32 +1054,32 @@ const fogLampCave3c         = location(0x4a, FOGL, 'Tunnel 3c (short passage wit
                                 .chest(mimic, 0x16, 0x71);
 const fogLampCave3d         = location(0x4a, FOGL, 'Tunnel 3d (lower branch)').cave()
                                 .connect(fogLampCave3c, destroyStone); // 64d9:04
-const fogLampCave4          = location(0x4b, FOGL, 'Tunnel 4 (dead end loop)').cave()
+const fogLampCave4          = location(0x4b, FOGL, 'Dead end loop').cave()
                                 .connect(fogLampCave3d); // pointless 64d9:08
-const fogLampCave5a         = location(0x4c, FOGL, 'Tunnel 5a (right branch over bridge)')
+const fogLampCave5a         = location(0x4c, FOGL, 'Tunnel 4a (right branch over bridge)')
                                 .cave()
                                 .connect(fogLampCave3c);
-const fogLampCave5b         = location(0x4c, FOGL, 'Tunnel 5b (past wall over bridge)')
+const fogLampCave5b         = location(0x4c, FOGL, 'Tunnel 4b (past wall over bridge)')
                                 .cave()
                                 .connect(fogLampCave5a, destroyStone); // 64d8:80
-const fogLampCave6a         = location(0x4d, FOGL, 'Tunnel 6a (from left branch)').cave()
+const fogLampCave6a         = location(0x4d, FOGL, 'Tunnel 5a (from left branch)').cave()
                                 .connect(fogLampCave5a);
-const fogLampCave6b         = location(0x4d, FOGL, 'Tunnel 6b (reconvergence)').cave()
+const fogLampCave6b         = location(0x4d, FOGL, 'Tunnel 5b (reconvergence)').cave()
                                 .connect(fogLampCave6a, destroyStone) // 64d8:10
                                 .connect(fogLampCave5b);
-const fogLampCave6c         = location(0x4d, FOGL, 'Tunnel 6c (between walls)').cave()
+const fogLampCave6c         = location(0x4d, FOGL, 'Tunnel 5c (between walls)').cave()
                                 .connect(fogLampCave6b, destroyStone); // 64d8:20
-const fogLampCave6d         = location(0x4d, FOGL, 'Tunnel 6d (under bridge)').cave()
+const fogLampCave6d         = location(0x4d, FOGL, 'Tunnel 5d (under bridge)').cave()
                                 .connect(fogLampCave6c, destroyStone); // 64d8:40
-const fogLampCave7a         = location(0x4e, FOGL, 'Tunnel 7a (over second bridge)')
+const fogLampCave7a         = location(0x4e, FOGL, 'Tunnel 6a (over second bridge)')
                                 .cave()
                                 .connect(fogLampCave6d);
-const fogLampCave7b         = location(0x4e, FOGL, 'Tunnel 7b (past wall)').cave()
+const fogLampCave7b         = location(0x4e, FOGL, 'Tunnel 6b (past wall)').cave()
                                 .connect(fogLampCave7a, destroyStone); // 64d8:08
-const fogLampCave8a         = location(0x4f, FOGL, 'Tunnel 8a (under second bridge)')
+const fogLampCave8a         = location(0x4f, FOGL, 'Tunnel 7a (under second bridge)')
                                 .cave()
                                 .connect(fogLampCave7b);
-const fogLampCave8b         = location(0x4f, FOGL, 'Tunnel 8b (fog lamp)').cave()
+const fogLampCave8b         = location(0x4f, FOGL, 'Tunnel 7b (fog lamp)').cave()
                                 .connect(fogLampCave8a, destroyStone) // 64d8:04
                                 .chest(fogLamp, 0x13);
 

@@ -81,7 +81,7 @@ class MapsView extends View {
     const flags = loc.flags;
     const spritePal = loc.spritePalettes || [0,0];
     const spritePat = loc.spritePatterns || [0,0];
-    const objects = loc.objects || [];
+    const objects = loc.spawns || [];
     const invalid = !this.rom.locations[id];
     if (!wd) wd = mapWd;
     if (!ht) ht = mapHt;

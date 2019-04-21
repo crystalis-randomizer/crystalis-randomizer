@@ -1,11 +1,3 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 function page(addr) {
     return addr >>> 13;
 }
@@ -60,26 +52,24 @@ export class Writer {
         this.promises.push(p);
         return p;
     }
-    commit() {
-        return __awaiter(this, void 0, void 0, function* () {
-            while (this.writes.length) {
-                const writes = this.writes.sort((a, b) => ((a.endPage - a.startPage) - (b.endPage - b.startPage)) ||
-                    (b.data.length - a.data.length));
-                const promises = this.promises;
-                this.writes = [];
-                this.promises = [];
-                for (const write of writes) {
-                    const addr = this.find(write);
-                    if (addr >= 0) {
-                        write.resolve(addr);
-                    }
-                    else {
-                        this.writeOne(write);
-                    }
+    async commit() {
+        while (this.writes.length) {
+            const writes = this.writes.sort((a, b) => ((a.endPage - a.startPage) - (b.endPage - b.startPage)) ||
+                (b.data.length - a.data.length));
+            const promises = this.promises;
+            this.writes = [];
+            this.promises = [];
+            for (const write of writes) {
+                const addr = this.find(write);
+                if (addr >= 0) {
+                    write.resolve(addr);
                 }
-                yield Promise.all(promises);
+                else {
+                    this.writeOne(write);
+                }
             }
-        });
+            await Promise.all(promises);
+        }
     }
     find({ data, startPage, endPage }) {
         for (const chunk of this.chunks) {

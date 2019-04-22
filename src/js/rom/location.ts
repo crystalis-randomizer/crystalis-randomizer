@@ -125,6 +125,7 @@ export class Location extends Entity {
   // }
 
   async write(writer: Writer): Promise<void> {
+    if (!this.valid) return;
     if (this.hasSpawns) {
       // write NPC data first, if present...
       const data = [0, ...this.spritePalettes, ...this.spritePatterns,
@@ -270,7 +271,7 @@ export const Spawn = DataTuple.make(4, {
 });
 export type Spawn = InstanceType<typeof Spawn>;
 
-const LOCATIONS: ReadonlyArray<LocationData> = (() => {
+export const LOCATIONS: ReadonlyArray<LocationData> = (() => {
   const locs: LocationData[] = [];
   type LocParam = {replace?: ScreenReplacement};
   function loc(index: number, name: string, {replace}: LocParam = {}) {

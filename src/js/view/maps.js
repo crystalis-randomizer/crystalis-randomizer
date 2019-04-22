@@ -239,7 +239,7 @@ class MapsView extends View {
         }
         // Indicate entrances (todo - toggle?)
         if (this.annotations & 4) {
-          for (let i = 0; i < opts.entrances.length; i++) {
+          for (let i = 0; i < (opts.entrances || []).length; i++) {
             const [xl, xh, yl, yh] = opts.entrances[i];
             this.drawText(buf, xh*256+xl-8, yh*240+yl-8, i.toString(16).padStart(2, 0), 0x30);
           }

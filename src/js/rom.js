@@ -2,68 +2,16 @@ import {UnionFind} from './unionfind.js';
 import {Entity} from './rom/entity.js';
 import {Writer} from './rom/writer.js';
 import {Location} from './rom/location.js';
+import {Palette} from './rom/palette.js';
+import {Pattern} from './rom/pattern.js';
 import {Screen} from './rom/screen.js';
 import {Tileset} from './rom/tileset.js';
-import {seq, slice, signed, varSlice, addr, group, reverseBits, countBits} from './rom/util.js';
+import {TileEffects} from './rom/tileeffects.js';
+import {seq, slice, signed, varSlice, addr, group, countBits} from './rom/util.js';
 
 // TODO - consider adding prepopulated name maps for data
 // tables, e.g. my location names, so that an editor could
 // use a drop-down menu and show something meaningful.
-
-
-class TileEffects extends Entity {
-  constructor(rom, id) {
-    // `id` is MapData[1][4], which ranges from $b3..$bd
-    super(rom, id);
-    this.base = (id << 8) & 0x1fff | 0x12000;
-    this.effects = slice(rom.prg, this.base, 256);
-  }
-
-  write(rom = this.rom) {
-    for (let i = 0; i < 0x100; i++) {
-      rom[this.base + i] = this.effects[i];
-    }
-  }
-}
-
-class Palette extends Entity {
-  constructor(rom, id) {
-    super(rom, id);
-    this.base = (id & 3) << 2 | (id & 0xfc) << 6 | 0x40f0;
-    this.colors = slice(rom.prg, this.base, 4);
-  }
-  // grayscale palette: [3f, 30, 2d, 0] ??
-
-  color(c) {
-    return this.colors[c] & 0x3f;
-  }
-}
-
-class Pattern extends Entity {
-  constructor(rom, id, pixels = undefined) {
-    super(rom, id);
-    this.pixels = pixels || slice(rom.chr, id << 4, 16);
-  }
-
-  pixelAt(y, x) {
-    return (this.pixels[y | 8] >> x & 1) << 1 | (this.pixels[y] >> x & 1);
-  }
-
-  flipH() {
-    return new Pattern(this.rom, -1, this.pixels.map(reverseBits));
-  }
-
-  flipV() {
-    return new Pattern(this.rom, -1, seq(16, y => this.pixels[y & 8 | ~y & 7]));
-  }
-
-  flip(type) {
-    let p = this;
-    if (type & 0x40) p = p.flipH();
-    if (type & 0x80) p = p.flipV();
-    return p;
-  }
-}
 
 class TileAnimation extends Entity {
   constructor(rom, id) {
@@ -769,13 +717,13 @@ export class Rom {
       promises.push(s.write(writer));
     }
     for (const tileset of this.tilesets) {
-      tileset.write(this.prg);
+      tileset.write(writer);
     }
     for (const tileEffects of this.tileEffects) {
       tileEffects.write(this.prg);
     }
     for (const screen of this.screens) {
-      screen.write(this.prg);
+      screen.write(writer);
     }
     promises.push(writer.commit());
     return Promise.all(promises).then(() => undefined);

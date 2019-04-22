@@ -20,6 +20,7 @@ export function slice<T extends Data<any>>(arr: T, start: number, len: number): 
 
 export function tuple<T>(arr: Data<T>, start: number, len: 2): [T, T];
 export function tuple<T>(arr: Data<T>, start: number, len: 3): [T, T, T];
+export function tuple<T>(arr: Data<T>, start: number, len: 4): [T, T, T, T];
 export function tuple<T>(arr: Data<T>, start: number, len: number): T[];
 export function tuple<T>(arr: Data<T>, start: number, len: number): T[] {
   return Array.from(arr.slice(start, start + len));

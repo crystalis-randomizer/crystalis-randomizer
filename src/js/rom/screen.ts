@@ -1,3 +1,4 @@
+import {Writer} from './writer.js';
 import {Entity, Rom} from './entity.js';
 import {seq, tuple} from './util.js';
 
@@ -27,11 +28,11 @@ export class Screen extends Entity {
     return tiles;
   }
 
-  write(rom: Rom = this.rom): void {
+  write(writer: Writer): void {
     let i = this.base;
     for (const row of this.tiles) {
       for (const tile of row) {
-        rom[i++] = tile;
+        writer.rom[i++] = tile;
       }
     }
   }

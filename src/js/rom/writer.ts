@@ -64,6 +64,7 @@ export class Writer {
     this.chunks.push(new Chunk(start, end));
   }
 
+  // TODO: consider renaming this to queue() or plan() or something?
   write(data: Data<number>, start: number, end: number): Promise<number> {
     const startPage = page(start);
     const endPage = page(end);

@@ -10,6 +10,7 @@ export function seq(x: number, f: (x: number) => number = (i) => i): number[] {
 
 export interface Data<T> {
   slice(start: number, end: number): this;
+  [Symbol.iterator](): Iterator<T>;
   [index: number]: T;
   length: number;
 };
@@ -28,6 +29,10 @@ export function tuple<T>(arr: Data<T>, start: number, len: number): T[] {
 
 export function signed(x: number): number {
   return x < 0x80 ? x : x - 0x100;
+}
+
+export function unsigned(x: number): number {
+  return x < 0 ? x + 0x100 : x;
 }
 
 export function varSlice<T extends Data<number>>(arr: T,
@@ -103,6 +108,25 @@ export function concatIterables(iters: Iterable<number>[]): number[] {
   // return [].concat(...iters.map(Array.from));
 }
 
+export function readBigEndian(data: Data<number>, offset: number): number {
+  return data[offset] << 8 | data[offset + 1];
+}
+
+export function readLittleEndian(data: Data<number>, offset: number): number {
+  return data[offset + 1] << 8 | data[offset];
+}
+
+export function readString(arr: Data<number>, addr: number): string {
+  const bytes = [];
+  while (arr[addr]) {
+    bytes.push(arr[addr++]);
+  }
+  return String.fromCharCode(...bytes);
+};
+
+
+////////////////////////////////////////////////////////////////
+
 export class DataTuple {
   constructor(readonly data: Data<number>) {}
   [Symbol.iterator](): Iterator<number> {
@@ -124,6 +148,9 @@ export class DataTuple {
           out[key] = inits[key];
         }
         return out;
+      }
+      static from(data: Data<number>, offset: number = 0) {
+        return new cls(tuple(data, offset, length) as number[]);
       }
     };
     const descriptors: any = {};
@@ -183,6 +210,7 @@ type DataTupleSub<T> =
 type DataTupleInits<T> =
   {[K in keyof T]?: T[K] extends {set(arg: infer U): void} ? U : T[K]};
 type DataTupleCtor<T> = {
-  new(data: Data<number>): DataTupleSub<T>,
+  new(data?: Data<number>): DataTupleSub<T>,
   of(inits: DataTupleInits<T>): DataTupleSub<T>,
+  from(data: Data<number>, offset: number): DataTupleSub<T>,
 };

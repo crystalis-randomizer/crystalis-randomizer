@@ -1,181 +1,30 @@
-import {UnionFind} from './unionfind.js';
 import {Entity} from './rom/entity.js';
-import {Writer} from './rom/writer.js';
+import {Hitbox} from './rom/hitbox.js';
 import {Location} from './rom/location.js';
+import {Npc} from './rom/npc.js';
 import {Palette} from './rom/palette.js';
 import {Pattern} from './rom/pattern.js';
 import {Screen} from './rom/screen.js';
 import {Tileset} from './rom/tileset.js';
 import {TileEffects} from './rom/tileeffects.js';
-import {seq, slice, signed, varSlice, addr, group, countBits} from './rom/util.js';
+import {TileAnimation} from './rom/tileanimation.js';
+import {Trigger} from './rom/trigger.js';
+import {UnionFind} from './unionfind.js';
+import {Writer} from './rom/writer.js';
+import {addr,
+        countBits,
+        group,
+        readString,
+        seq,
+        slice,
+        signed,
+        varSlice,
+       } from './rom/util.js';
 
 // TODO - consider adding prepopulated name maps for data
 // tables, e.g. my location names, so that an editor could
 // use a drop-down menu and show something meaningful.
 
-class TileAnimation extends Entity {
-  constructor(rom, id) {
-    super(rom, id);
-    this.base = 0x3e779 + (id << 3);
-    this.pages = slice(rom.prg, this.base, 8);
-  }
-}
-
-class Hitbox extends Entity {
-  constructor(rom, id) {
-    super(rom, id);
-    this.base = 0x35691 + (id << 2);
-    this.coordinates = slice(rom.prg, this.base, 4);
-  }
-
-  get w() { return this.coordinates[1]; }
-  get x0() { return signed(this.coordinates[0]); }
-  get x1() { return this.x0 + this.w; }
-  get h() { return this.coordinates[3]; }
-  get y0() { return signed(this.coordinates[2]); }
-  get y1() { return this.y0 + this.h; }
-}
-
-const UNUSED_TRIGGERS = new Set([
-  0x87, 0x88, 0x89, 0x8f, 0x93, 0x96, 0x98, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f,
-  0xa0, 0xb5, 0xb9, 0xbe, 0xc0, // c2 is last one
-]);
-
-class Trigger extends Entity {
-  constructor(rom, id) {
-    // TODO - consider pulling this out into static fromBytes() method?
-    super(rom, id);
-    this.used = !UNUSED_TRIGGERS.has(id); // need to set manually
-    this.pointer = 0x1e17a + ((id & 0x7f) << 1);
-    this.base = addr(rom.prg, this.pointer, 0x14000);
-    // List of flags to check: positive means "must be set"
-    this.conditions = [];
-    // MessageId object
-    this.message = null;
-    // List of flags to set/clear: positive means set
-    this.flags = [];
-    let word;
-    let i = this.base;
-    do {
-      // NOTE: this byte order is inverse from normal.
-      word = rom.prg[i] << 8 | rom.prg[i + 1];
-      const flag = word & 0x0fff;
-      this.conditions.push(word & 0x2000 ? ~flag : flag);
-      i += 2;
-    } while (!(word & 0x8000));
-    this.message = MessageId.from(rom.prg, i);
-    do {
-      i += 2;
-      word = rom.prg[i] << 8 | rom.prg[i + 1];
-      const flag = word & 0x0fff;
-      this.flags.push(word & 0x8000 ? ~flag : flag);
-    } while (!(word & 0x4000));
-//console.log(`Trigger $${this.id.toString(16)}: bytes: $${this.bytes().map(x=>x.toString(16).padStart(2,0)).join(' ')}`);
-  }
-
-  bytes() {
-    const bytes = [];
-    for (let i = 0; i < this.conditions.length; i++) {
-      let word = this.conditions[i];
-      if (word < 0) word = ~word | 0x2000;
-      if (i === this.conditions.length - 1) word = word | 0x8000;
-      bytes.push(word >>> 8, word & 0xff);
-    }
-    bytes.push(...this.message.bytes());
-    for (let i = 0; i < this.flags.length; i++) {
-      let word = this.flags[i];
-      if (word < 0) word = ~word | 0x8000;
-      if (i === this.flags.length - 1) word = word | 0x4000;
-      bytes.push( word >>> 8, word & 0xff);
-    }
-    return bytes;
-  }
-
-  async write(writer, base = 0x1e17a) {
-    const address = await writer.write(this.bytes(), 0x1e000, 0x1ffff);
-    writer.rom[base + 2 * (this.id & 0x7f)] = address & 0xff;
-    writer.rom[base + 2 * (this.id & 0x7f) + 1] = (address >>> 8) - 0x40;
-  }
-}
-
-class MessageId {
-  constructor(action, part, index) {
-    this.action = action;
-    this.part = part;
-    this.index = index;
-  }
-
-  static from(arr, i) {
-    const word = arr[i] << 8 | arr[i + 1];
-    const action = (word >>> 11) & 0x1f;
-    const part = (word >>> 5) & 0x3f;
-    const index = word & 0x1f;
-    return new MessageId(action, part, index);
-  }
-
-  bytes() {
-    const word =
-        (this.action & 0x1f) << 11 | (this.part & 0x3f) << 5 | (this.index & 0x1f);
-    return [word >>> 8, word & 0xff];
-  }
-}
-
-const UNUSED_NPCS = new Set([0x3c, 0x6a, 0x73, 0x82, 0x86, 0x87, 0x89, 0x8a, 0x8b, 0x8c, 0x8d]);
-class Npc extends Entity {
-  constructor(rom, id) {
-    super(rom, id);
-    this.used = !UNUSED_NPCS.has(id) /*&& this.base <= 0x1c781*/ && (id < 0x8f || id >= 0xc0);
-
-    this.dataBase = 0x80f0 | ((id & 0xfc) << 6) | ((id & 3) << 2);
-    this.data = slice(rom.prg, this.dataBase, 4);
-
-    this.spawnPointer = 0x1c5e0 + (id << 1);
-//console.log(`NPC Spawn $${this.id.toString(16)}: ${rom.prg[this.pointer].toString(16)} ${rom.prg[this.pointer + 1].toString(16)}`);
-    this.spawnBase = addr(rom.prg, this.spawnPointer, 0x14000);
-    // Flags to check per location: positive means "must be set"
-    this.spawnConditions = {};
-
-    // Populate spawn conditions
-    let i = this.spawnBase;
-    let loc;
-    while (this.used && (loc = rom.prg[i++]) != 0xff) {
-      this.spawnConditions[loc] = [];
-      let word;
-      do {
-        // NOTE: this byte order is inverse from normal.
-        word = rom.prg[i] << 8 | rom.prg[i + 1];
-        const flag = word & 0x0fff;
-        this.spawnConditions[loc].push(word & 0x2000 ? ~flag : flag);
-        i += 2;
-      } while (!(word & 0x8000));
-    }
-//console.log(`NPC Spawn $${this.id.toString(16)} from ${this.base.toString(16)}: bytes: $${this.bytes().map(x=>x.toString(16).padStart(2,0)).join(' ')}`);
-  }
-
-  spawnConditionsBytes() {
-    const bytes = [];
-    for (let loc in this.spawnConditions) {
-      loc = Number(loc);
-      bytes.push(loc);
-      for (let i = 0; i < this.spawnConditions[loc].length; i++) {
-        let word = this.spawnConditions[loc][i];
-        if (word < 0) word = ~word | 0x2000;
-        if (i === this.spawnConditions[loc].length - 1) word = word | 0x8000;
-        bytes.push(word >>> 8, word & 0xff);
-      }
-    }
-    bytes.push(0xff);
-    return bytes;
-  }
-
-  async write(writer, {spawnConditionsBase = 0x1c5e0} = {}) {
-    const address = await writer.write(this.spawnConditionsBytes(), 0x1c000, 0x1dfff);
-    writer.rom[spawnConditionsBase + 2 * this.id] = address & 0xff;
-    writer.rom[spawnConditionsBase + 2 * this.id + 1] = (address >>> 8) - 0x40;
-    // TODO - write the static data
-    // TODO - update pointer to the base???
-  }
-}
 
 class AdHocSpawn extends Entity {
   constructor(rom, id) {
@@ -708,6 +557,9 @@ export class Rom {
     for (const o of this.objects) {
       o.write(writer, 0x1be00); // NOTE: we moved the ObjectData table to 1be00
     }
+    for (const h of this.hitboxes) {
+      h.write(writer);
+    }
     for (const t of this.triggers) {
       if (!t.used) continue;
       promises.push(t.write(writer));
@@ -720,7 +572,7 @@ export class Rom {
       tileset.write(writer);
     }
     for (const tileEffects of this.tileEffects) {
-      tileEffects.write(this.prg);
+      tileEffects.write(writer);
     }
     for (const screen of this.screens) {
       screen.write(writer);
@@ -944,14 +796,6 @@ export class Rom {
 //   0xa8: 0xb5,
 //   0xac: 0xbd,
 // };
-
-const readString = (arr, addr) => {
-  const bytes = [];
-  while (arr[addr]) {
-    bytes.push(arr[addr++]);
-  }
-  return String.fromCharCode(...bytes);
-};
 
 // Only makes sense in the browser.
 const pickFile = () => {

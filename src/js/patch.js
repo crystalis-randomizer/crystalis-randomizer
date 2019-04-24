@@ -120,7 +120,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   identifyKeyItemsForDifficultyBuffs(parsed);
 
   // Buff medical herb and fruit of power
-  if (flags.doubleBuffMedicalHerb) {
+  if (flags.doubleBuffMedicalHerb()) {
     rom[0x1c50c + 0x10] *= 2;  // fruit of power
     rom[0x1c4ea + 0x10] *= 3;  // medical herb
   } else if (flags.singleBuffMedicalHerb()) {

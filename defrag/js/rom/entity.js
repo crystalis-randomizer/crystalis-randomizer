@@ -4,6 +4,7 @@ export class Entity {
         this.rom = rom;
         this.id = id;
     }
+    write(writer) { }
     toString() {
         return `${this.constructor.name} $${hex(this.id)}`;
     }

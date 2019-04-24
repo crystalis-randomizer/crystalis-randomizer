@@ -48,6 +48,8 @@ export class Location extends Entity {
     get height() { return this.layoutHeight + 1; }
     set height(height) { this.layoutHeight = height - 1; }
     async write(writer) {
+        if (!this.valid)
+            return;
         if (this.hasSpawns) {
             const data = [0, ...this.spritePalettes, ...this.spritePatterns,
                 ...concatIterables(this.spawns), 0xff];
@@ -163,7 +165,7 @@ export const Spawn = DataTuple.make(4, {
         return `Spawn ${this.hex()}: (${hex(this.x)}, ${hex(this.y)}) ${this.timed ? 'timed' : 'fixed'} ${this.type}:${hex(this.id)}`;
     },
 });
-const LOCATIONS = (() => {
+export const LOCATIONS = (() => {
     const locs = [];
     function loc(index, name, { replace } = {}) {
         const data = { name };

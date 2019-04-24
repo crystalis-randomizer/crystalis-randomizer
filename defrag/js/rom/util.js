@@ -11,6 +11,9 @@ export function tuple(arr, start, len) {
 export function signed(x) {
     return x < 0x80 ? x : x - 0x100;
 }
+export function unsigned(x) {
+    return x < 0 ? x + 0x100 : x;
+}
 export function varSlice(arr, start, width, sentinel, end = Infinity, func) {
     if (!func)
         func = (x) => x;
@@ -53,6 +56,20 @@ export function concatIterables(iters) {
     }
     return out;
 }
+export function readBigEndian(data, offset) {
+    return data[offset] << 8 | data[offset + 1];
+}
+export function readLittleEndian(data, offset) {
+    return data[offset + 1] << 8 | data[offset];
+}
+export function readString(arr, addr) {
+    const bytes = [];
+    while (arr[addr]) {
+        bytes.push(arr[addr++]);
+    }
+    return String.fromCharCode(...bytes);
+}
+;
 export class DataTuple {
     constructor(data) {
         this.data = data;
@@ -75,6 +92,9 @@ export class DataTuple {
                     out[key] = inits[key];
                 }
                 return out;
+            }
+            static from(data, offset = 0) {
+                return new cls(tuple(data, offset, length));
             }
         };
         const descriptors = {};

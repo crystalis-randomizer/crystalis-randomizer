@@ -1,6 +1,6 @@
-import {Writer} from './writer.js';
 import {Entity, Rom} from './entity.js';
 import {seq, tuple} from './util.js';
+import {Writer} from './writer.js';
 
 export class Screen extends Entity {
 

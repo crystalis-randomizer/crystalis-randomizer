@@ -1,5 +1,4 @@
 import {Entity, Rom} from './entity.js';
-import {Writer} from './writer.js';
 import {tuple} from './util.js';
 
 // A pattern page sequence for animating background tiles.  ID in 0..3

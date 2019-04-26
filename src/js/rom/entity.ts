@@ -1,7 +1,7 @@
 // Base class for all the different entity types.
 
-import {Writer} from './writer.js';
 import {hex} from './util.js';
+import {Writer} from './writer.js';
 
 export class Entity {
   constructor(readonly rom: Rom, readonly id: number) {}

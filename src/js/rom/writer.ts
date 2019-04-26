@@ -30,17 +30,17 @@ class Chunk {
       }
       if (found) return i;
     }
-//console.log(`could not find ${data.map(x=>x.toString(16))}`);
+    // console.log(`could not find ${data.map(x=>x.toString(16))}`);
     return -1;
   }
 }
 
-type Write = {
-  readonly data: Data<number>,
-  readonly resolve: (addr: number) => void,
-  readonly startPage: number,
-  readonly endPage: number, // inclusive
-};
+interface Write {
+  readonly data: Data<number>;
+  readonly resolve: (addr: number) => void;
+  readonly startPage: number;
+  readonly endPage: number; // inclusive
+}
 
 // type Data = Uint8Array | number[];
 
@@ -98,7 +98,6 @@ export class Writer {
     // TODO - summarize all free chunks???
     //   -- feed free chunk given page into define for assembler?
   }
-
 
   private find({data, startPage, endPage}: Write): number {
     for (const chunk of this.chunks) {

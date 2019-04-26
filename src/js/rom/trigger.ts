@@ -1,7 +1,7 @@
 import {Entity, Rom} from './entity.js';
 import {MessageId} from './messageid.js';
+import {addr, readBigEndian} from './util.js';
 import {Writer} from './writer.js';
-import {addr, readBigEndian, signed, tuple} from './util.js';
 
 const UNUSED_TRIGGERS = new Set([
   0x87, 0x88, 0x89, 0x8f, 0x93, 0x96, 0x98, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f,
@@ -47,7 +47,8 @@ export class Trigger extends Entity {
       const flag = word & 0x0fff;
       this.flags.push(word & 0x8000 ? ~flag : flag);
     } while (!(word & 0x4000));
-//console.log(`Trigger $${this.id.toString(16)}: bytes: $${this.bytes().map(x=>x.toString(16).padStart(2,0)).join(' ')}`);
+    // console.log(`Trigger $${this.id.toString(16)}: bytes: $${
+    //              this.bytes().map(x=>x.toString(16).padStart(2,0)).join(' ')}`);
   }
 
   bytes(): number[] {

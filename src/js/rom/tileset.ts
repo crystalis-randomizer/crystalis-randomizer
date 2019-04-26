@@ -1,6 +1,6 @@
 import {Entity, Rom} from './entity.js';
-import {Writer} from './writer.js';
 import {seq, tuple} from './util.js';
+import {Writer} from './writer.js';
 
 // Mappping from metatile ID to tile quads and palette number.
 export class Tileset extends Entity {
@@ -12,7 +12,6 @@ export class Tileset extends Entity {
   tiles: number[][];    // tile info, outer is 4 quadrants (TL, TR, BL, BR)
   attrs: number[];      // palette info
   alternates: number[]; // 32-element mapping for flag-based alternates
-
 
   constructor(rom: Rom, id: number) {
     // `id` is MapData[1][3], ranges from $80..$bc in increments of 4.

@@ -9,11 +9,11 @@ export function seq(x: number, f: (x: number) => number = (i) => i): number[] {
 }
 
 export interface Data<T> {
-  slice(start: number, end: number): this;
-  [Symbol.iterator](): Iterator<T>;
   [index: number]: T;
   length: number;
-};
+  slice(start: number, end: number): this;
+  [Symbol.iterator](): Iterator<T>;
+}
 
 export function slice<T extends Data<any>>(arr: T, start: number, len: number): T {
   return arr.slice(start, start + len);
@@ -54,7 +54,7 @@ export function varSlice<T extends Data<number>, U>(arr: T,
                                                     func?: (slice: T) => U): U[] {
   if (!func) func = (x: T) => x as any;
   const out = [];
-  while (start + width <= end && arr[start] != sentinel) {
+  while (start + width <= end && arr[start] !== sentinel) {
     out.push(func!(arr.slice(start, start + width)));
     start += width;
   }
@@ -87,7 +87,7 @@ export function countBits(x: number): number {
   x -= x >> 1 & 0x55;
   x = (x & 0x33) + (x >> 2 & 0x33);
   return (x + (x >> 4)) & 0xf;
-};
+}
 
 export function hex(id: number): string {
   return id.toString(16).padStart(2, '0');
@@ -116,14 +116,13 @@ export function readLittleEndian(data: Data<number>, offset: number): number {
   return data[offset + 1] << 8 | data[offset];
 }
 
-export function readString(arr: Data<number>, addr: number): string {
+export function readString(arr: Data<number>, address: number): string {
   const bytes = [];
-  while (arr[addr]) {
-    bytes.push(arr[addr++]);
+  while (arr[address]) {
+    bytes.push(arr[address++]);
   }
   return String.fromCharCode(...bytes);
-};
-
+}
 
 ////////////////////////////////////////////////////////////////
 
@@ -144,8 +143,8 @@ export class DataTuple {
       constructor(data = new Array(length).fill(0)) { super(data); }
       static of(inits: any) {
         const out = new cls() as any;
-        for (const key in inits) {
-          out[key] = inits[key];
+        for (const [key, value] of Object.entries(inits)) {
+          out[key] = value;
         }
         return out;
       }
@@ -196,21 +195,26 @@ export class DataTuple {
   //   return {value: function() { return func(this); }};
   // }
 }
+
 interface GetSet<U> {
   get(): U;
   set(arg: U): void;
 }
+
 type DataTupleSub<T> =
     {[K in keyof T]: T[K] extends GetSet<infer U> ? U :
                      T[K] extends {value: (infer W)} ? W :
-                     T[K] extends Function ? T[K] : never} & DataTuple;
+                     T[K] extends () => void ? T[K] : never} & DataTuple;
+
 // Note: it would be nice for the final T[K] below to be 'never', but
 // this fails because all objects have an implicit toString, which would
 // otherwise need to be {toString?: undefined} for some reason.
-type DataTupleInits<T> =
-    {[K in keyof T]?: T[K] extends {set(arg: infer U): void} ? U : T[K]};
-type DataTupleCtor<T> = {
-  new(data?: Data<number>): DataTupleSub<T>,
-  of(inits: DataTupleInits<T>): DataTupleSub<T>,
-  from(data: Data<number>, offset: number): DataTupleSub<T>,
+type DataTupleInits<T> = {
+  [K in keyof T]?: T[K] extends {set(arg: infer U): void} ? U : T[K]
 };
+
+interface DataTupleCtor<T> {
+  new(data?: Data<number>): DataTupleSub<T>;
+  of(inits: DataTupleInits<T>): DataTupleSub<T>;
+  from(data: Data<number>, offset: number): DataTupleSub<T>;
+}

@@ -1,9 +1,8 @@
 import {Entity, Rom} from './entity.js';
-import {Writer} from './writer.js';
 import {Data, DataTuple, Mutable,
         addr, concatIterables, group, hex,
         seq, slice, tuple, varSlice} from './util.js';
-
+import {Writer} from './writer.js';
 
 // Location entities
 export class Location extends Entity {
@@ -61,7 +60,7 @@ export class Location extends Entity {
     this.entrancesBase = addr(rom.prg, this.mapDataBase + 4, 0xc000);
     this.exitsBase = addr(rom.prg, this.mapDataBase + 6, 0xc000);
     this.flagsBase = addr(rom.prg, this.mapDataBase + 8, 0xc000);
-    this.pitsBase = this.layoutBase == this.mapDataBase + 10 ? 0 :
+    this.pitsBase = this.layoutBase === this.mapDataBase + 10 ? 0 :
         addr(rom.prg, this.mapDataBase + 10, 0xc000);
 
     this.bgm = rom.prg[this.layoutBase];
@@ -73,7 +72,7 @@ export class Location extends Entity {
         this.height,
         y => tuple(rom.prg, this.layoutBase + 5 + y * this.width, this.width));
     // TODO - make bad screen replacement conditional?
-    for (let [x, y, replacement] of locationData.replace || []) {
+    for (const [x, y, replacement] of locationData.replace || []) {
       this.screens[y][x] = replacement;
     }
     this.tilePalettes = tuple<number>(rom.prg, this.graphicsBase, 3);
@@ -93,7 +92,7 @@ export class Location extends Entity {
 
     this.npcDataPointer = 0x19201 + (id << 1);
     this.npcDataBase = addr(rom.prg, this.npcDataPointer, 0x10000);
-    this.hasSpawns = this.npcDataBase != 0x10000;
+    this.hasSpawns = this.npcDataBase !== 0x10000;
     this.spritePalettes =
         this.hasSpawns ? slice(rom.prg, this.npcDataBase + 1, 2) : [0, 0];
     this.spritePatterns =
@@ -179,7 +178,7 @@ export class Location extends Entity {
         screens.add(this.rom.screens[screen + ext]);
       }
     }
-    return screens
+    return screens;
   }
 
   /** @return {!Set<number>} */
@@ -197,6 +196,7 @@ export class Location extends Entity {
 export const Entrance = DataTuple.make(4, {
   x: DataTuple.prop([0], [1, 0xff, -8]),
   y: DataTuple.prop([2], [3, 0xff, -8]),
+
   toString(this: any): string {
     return `Entrance ${this.hex()}: (${hex(this.x)}, ${hex(this.y)})`;
   },
@@ -205,11 +205,15 @@ export type Entrance = InstanceType<typeof Entrance>;
 
 export const Exit = DataTuple.make(4, {
   x:        DataTuple.prop([0, 0xff, -4]),
-  y:        DataTuple.prop([1, 0xff, -4]),
   xt:       DataTuple.prop([0]),
+
+  y:        DataTuple.prop([1, 0xff, -4]),
   yt:       DataTuple.prop([1]),
+
   dest:     DataTuple.prop([2]),
+
   entrance: DataTuple.prop([3]),
+
   toString(this: any): string {
     return `Exit ${this.hex()}: (${hex(this.x)}, ${hex(this.y)}) => ${
             this.dest}:${this.entrance}`;
@@ -218,11 +222,6 @@ export const Exit = DataTuple.make(4, {
 export type Exit = InstanceType<typeof Exit>;
 
 export const Flag = DataTuple.make(2, {
-  x:     DataTuple.prop([1, 0x07, -8]),
-  y:     DataTuple.prop([1, 0xf0, -4]),
-  xs:    DataTuple.prop([1, 0x07]),
-  ys:    DataTuple.prop([1, 0xf0, 4]),
-  yx:    DataTuple.prop([1]), // y in hi nibble, x in lo.
   flag:  {
     get(this: any): number { return this.data[0] | 0x200; },
     set(this: any, f: number) {
@@ -230,6 +229,15 @@ export const Flag = DataTuple.make(2, {
       this.data[0] = f & 0xff;
     },
   },
+
+  x:     DataTuple.prop([1, 0x07, -8]),
+  xs:    DataTuple.prop([1, 0x07]),
+
+  y:     DataTuple.prop([1, 0xf0, -4]),
+  ys:    DataTuple.prop([1, 0xf0, 4]),
+
+  yx:    DataTuple.prop([1]), // y in hi nibble, x in lo.
+
   toString(this: any): string {
     return `Flag ${this.hex()}: (${hex(this.xs)}, ${hex(this.ys)}) @ ${
             hex(this.flag)}`;
@@ -240,9 +248,12 @@ export type Flag = InstanceType<typeof Flag>;
 export const Pit = DataTuple.make(4, {
   fromXs:  DataTuple.prop([1, 0x70, 4]),
   toXs:    DataTuple.prop([1, 0x07]),
+
   fromYs:  DataTuple.prop([3, 0xf0, 4]),
   toYs:    DataTuple.prop([3, 0x0f]),
+
   dest:    DataTuple.prop([0]),
+
   toString(this: any): string {
     return `Pit ${this.hex()}: (${hex(this.fromXs)}, ${hex(this.fromYs)}) => ${
             hex(this.dest)}:(${hex(this.toXs)}, ${hex(this.toYs)})`;
@@ -252,15 +263,19 @@ export type Pit = InstanceType<typeof Pit>;
 
 export const Spawn = DataTuple.make(4, {
   y:     DataTuple.prop([0, 0xff, -4]),
-  x:     DataTuple.prop([1, 0x7f, -4], [2, 0x40, 3]),
   yt:    DataTuple.prop([0]),
-  xt:    DataTuple.prop([1, 0x7f]),
+
   timed: DataTuple.booleanProp([1, 0x80, 7]),
+  x:     DataTuple.prop([1, 0x7f, -4], [2, 0x40, 3]),
+  xt:    DataTuple.prop([1, 0x7f]),
+
+  patternBank: DataTuple.prop([2, 0x80, 7]),
   type:  DataTuple.prop([2, 0x07]),
+
   id:    DataTuple.prop([3]),
+
   monsterId: {get(this: any): number { return (this.id + 0x50) & 0xff; },
               set(this: any, id: number) { this.id = (id - 0x50) & 0xff; }},
-  patternBank: DataTuple.prop([2, 0x80, 7]),
   isChest(this: any): boolean { return this.type === 2 && this.id < 0x80; },
   isTrigger(this: any): boolean { return this.type === 2 && this.id >= 0x80; },
   isMonster(this: any): boolean { return this.type === 0; },
@@ -273,7 +288,9 @@ export type Spawn = InstanceType<typeof Spawn>;
 
 export const LOCATIONS: ReadonlyArray<LocationData> = (() => {
   const locs: LocationData[] = [];
-  type LocParam = {replace?: ScreenReplacement};
+  interface LocParam {
+    replace?: ScreenReplacement;
+  }
   function loc(index: number, name: string, {replace}: LocParam = {}) {
     const data: Mutable<LocationData> = {name};
     if (replace) data.replace = replace;

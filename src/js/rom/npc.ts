@@ -1,7 +1,7 @@
 import {Entity, Rom} from './entity.js';
-import {Writer} from './writer.js';
-import {Data, DataTuple, addr, readBigEndian, tuple} from './util.js';
 import {MessageId} from './messageid.js';
+import {Data, addr, readBigEndian, tuple} from './util.js';
+import {Writer} from './writer.js';
 
 type FlagList = number[];
 
@@ -27,7 +27,8 @@ export class Npc extends Entity {
     this.data = tuple(rom.prg, this.dataBase, 4);
 
     this.spawnPointer = 0x1c5e0 + (id << 1);
-//console.log(`NPC Spawn $${this.id.toString(16)}: ${rom.prg[this.pointer].toString(16)} ${rom.prg[this.pointer + 1].toString(16)}`);
+    // console.log(`NPC Spawn $${this.id.toString(16)}: ${rom.prg[this.pointer].toString(16)} ${
+    //              rom.prg[this.pointer + 1].toString(16)}`);
     this.spawnBase = addr(rom.prg, this.spawnPointer, 0x14000);
     // Flags to check per location: positive means "must be set"
     this.spawnConditions = new Map();
@@ -35,7 +36,7 @@ export class Npc extends Entity {
     // Populate spawn conditions
     let i = this.spawnBase;
     let loc;
-    while (this.used && (loc = rom.prg[i++]) != 0xff) {
+    while (this.used && (loc = rom.prg[i++]) !== 0xff) {
       const flags: number[] = [];
       this.spawnConditions.set(loc, flags);
       let word;
@@ -53,12 +54,12 @@ export class Npc extends Entity {
     this.dialogBase = addr(rom.prg, this.dialogPointer, 0x14000);
     this.globalDialogs = [];
     let a = this.dialogBase;
-    let dialog, last;
-    do {
-      [dialog, last] = GlobalDialog.parse(rom.prg, a);
+    while (true) {
+      const [dialog, last] = GlobalDialog.parse(rom.prg, a);
       a += 4;
       this.globalDialogs.push(dialog);
-    } while (!last);
+      if (last) break;
+    }
     // Read the location table
     const locations: [number, number][] = [];
     while (true) {
@@ -73,17 +74,18 @@ export class Npc extends Entity {
       const dialogs: LocalDialog[] = [];
       this.localDialogs.set(location, dialogs);
       a = base + offset;
-      do {
-        [dialog, last] = LocalDialog.parse(rom.prg, a);
+      while (true) {
+        const [dialog, last] = LocalDialog.parse(rom.prg, a);
         a += dialog.byteLength();
         dialogs.push(dialog);
-      } while (!last);
+        if (last) break;
+      }
     }
 
     // NOTE: still need to write!!!
 
-
-//console.log(`NPC Spawn $${this.id.toString(16)} from ${this.base.toString(16)}: bytes: $${this.bytes().map(x=>x.toString(16).padStart(2,0)).join(' ')}`);
+    // console.log(`NPC Spawn $${this.id.toString(16)} from ${this.base.toString(16)}: bytes: $${
+    //              this.bytes().map(x=>x.toString(16).padStart(2,0)).join(' ')}`);
   }
 
   spawnConditionsBytes(): Data<number> {
@@ -110,7 +112,6 @@ export class Npc extends Entity {
   }
 }
 
-
 export class GlobalDialog {
   constructor(public condition: number, public message: MessageId) {}
 
@@ -118,7 +119,7 @@ export class GlobalDialog {
   static parse(data: Data<number>, offset: number = 0): [GlobalDialog, boolean] {
     const flag = readBigEndian(data, offset);
     const message = MessageId.from(data, offset + 2);
-    
+
     let condition = flag & 0x03ff;
     const last = !!(flag & 0x8000);
     const sign = flag & 0x2000;
@@ -133,8 +134,7 @@ export class GlobalDialog {
     if (last) flag |= 0x8000;
     return [flag >>> 8, flag & 0xff, ...this.message.data];
   }
-};
-
+}
 
 export class LocalDialog {
   constructor(public condition: number,
@@ -148,7 +148,7 @@ export class LocalDialog {
     const message = MessageId.from(data, offset + 2);
     const update = data[offset + 4];
     offset += 5;
-    
+
     let condition = word & 0x03ff;
     const last = !!(word & 0x8000);
     const flags = [];
@@ -182,10 +182,7 @@ export class LocalDialog {
     }
     return out;
   }
-};
-
-
-
+}
 
 const UNUSED_NPCS = new Set([
   0x3c, 0x6a, 0x73, 0x82, 0x86, 0x87, 0x89, 0x8a, 0x8b, 0x8c, 0x8d,

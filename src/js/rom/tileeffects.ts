@@ -1,6 +1,6 @@
 import {Entity, Rom} from './entity.js';
-import {Writer} from './writer.js';
 import {tuple} from './util.js';
+import {Writer} from './writer.js';
 
 // Mappping from metatile ID to a bitfield of terrain effects
 export class TileEffects extends Entity {

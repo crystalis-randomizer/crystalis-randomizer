@@ -1,0 +1,13 @@
+Map alternatives:
+
+Different tilesets have different alternatives, given by $13e00...$13f7f
+ - most do nothing
+
+Need to take an inventory of these
+ - given each location, which metatiles does it use in which way
+ - see if there are any free metatiles in any given tileset?
+ - look into consolidating, rearranging?
+
+No way to break down cave wall currently on ice bridge map.
+01 and 02 intersected between the two
+ - could use $11 and map to 00 ?

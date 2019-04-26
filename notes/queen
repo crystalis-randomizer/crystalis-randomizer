@@ -1,0 +1,4 @@
+First dialog:
+ - set 09c, 019, 01a
+ - 019 and 09c cleared upon leaving palace
+ - 020 set => should be in fortune teller's room

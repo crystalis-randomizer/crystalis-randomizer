@@ -532,6 +532,14 @@ song number that's playing.
  - 111 is sound effect priority???
 
 
+$180..$1d2
+----------
+Mostly-unused space beneath the stack.  $182..$184 are read and then
+written on reset to distinguish hard vs soft, basically just for the
+purpose of setting
+
+
+
 $300,x
 ------
 Metasprite ID.

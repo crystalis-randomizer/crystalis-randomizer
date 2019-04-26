@@ -1,0 +1,32 @@
+# Draygon 2 Logic
+
+## Mode 1
+
+Initial boss mode.
+Walking left/right across top of screen, maybe throwing balls.
+
+* Every 32 frames (by $4e0), if random number is odd and global counter positive,
+    * If (x^y) is *even* then jump straight to initiating lasers
+    * This can be achieved by going to bottom row, then all the way right
+
+
+## Mode 2
+
+Walking down to bottom of screen to shoot nuper.
+
+
+
+
+
+
+
+## Random numbers
+
+Read value $0e index into 64-byte table at $357e4 => 0..7
+
+## Properties
+
+$4e0: timer - reassess action every 32 frames
+$600: current mode
+$620: timer
+$6e0: increments to 0..9

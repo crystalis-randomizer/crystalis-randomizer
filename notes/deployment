@@ -1,0 +1,40 @@
+Plan for deploying versions:
+
+Branches:
+ - "stable"
+ - "master"
+ - etc
+
+Tags:
+ - 1.0.0
+ - 1.0.1 ...
+
+Structure:
+
+  index.html => stable/index.html
+  track.html => stable/track.html
+  js => stable/js
+  css => stable/css
+  stable => 1.0.1
+
+  1.0.1/
+    index.html
+    track.html
+    js/...
+    css/...
+
+  rc/
+    index.html
+    ...    
+
+  latest/
+    ...
+
+
+
+When there is a release candidate (i.e. 'rc' branch
+is different from 'stable'), root points to /rc,
+which has a banner at the top:
+
+  NOTE: this is a release candidate.  For the stable
+  version, please visit /stable.

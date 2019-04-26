@@ -1,0 +1,18 @@
+On entering a checkpoint, we copy some data:
+
+- some random loci are written to 7df0..7dff (player coordinates, HP, level)
+  (StageGameDataForSave_7df0)
+- CopyBytes is called 5 times [pulled from data table at $2fdc0]:
+  1. $80 bytes from $6400 => $7d00
+  2. $200 bytes from $6480 => $7e00
+  3. $1d bytes from $0702 => $7d80
+  4. $24 bytes from $07dc => $7db0
+  5. $300 bytes from $7d00 => $6d00
+- Compute checksum into $70f4
+- Copy $7d00 => $6d00 all over again - happens if not checkpointing, too
+
+
+On loading:
+
+- CopyBytes is called from $2fcba [data table at $2fdde]
+  This is basically the reverse of the above.

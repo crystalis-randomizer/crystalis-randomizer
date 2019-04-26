@@ -19043,6 +19043,10 @@ InitiateDialog
         ;; Done handling locations.  Read the result out of $6580,x which may or may not
         ;; have been mutated based on the location (i.e. older values persist).
         ;; Start by advancing $24$25 by Y so that we can index by Y <- $6580,x.
+        ;; For NPCs that don't have a location table, their 6580,x is just always zero.
+        ;; It seems like we could vastly simplify this, since we can probabbly just
+        ;; store this in a single temporary byte in RAM - the result seems like it's
+        ;; never actually used...?
 ++      $1c046  xx:         xxx
         $1c047  xx:         xxx
         $1c048  xx xx:      xxx $xx
@@ -20913,8 +20917,9 @@ NpcDialog_49 ; swan barkeep
 NpcDialog_4b ; swan dancing ladies
         $1cb12              .byte $xx,$xx,$xx,$xx,$xx
         $1cb17              .byte $xx,$xx,$xx,$xx,$xx ; 0a7 NOT -> 13:11
-        $1cb1c              .byte $xx,$xx
-        $1cb1e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1cb1c              .byte         $xx,$xx
+        $1cb1e              .byte $xx,$xx,$xx,$xx,$xx
+        $1cb23              .byte         $xx,$xx
 ;;; ----------------------------------------------------------------
 NpcDialog_4c ; swan dance instructor
         $1cb25              .byte $xx,$xx,$xx,$xx,$xx
@@ -29884,7 +29889,7 @@ SaveGame
         $21cd9  xx xx:      xxx #$xx
         $21cdb  xx xx xx:   xxx $20a9f
 ;;; --------------------------------
-DatsaTablr_21cde
+DataTable_21cde
         $21cde              .byte $xx,$xx
 ;;; --------------------------------
         $21ce0  xx:         xxx
@@ -39825,7 +39830,7 @@ RevertChangeMagic
         $2fc1e  xx:              xxx
         $2fc1f  xx xx:           xxx #$xx
         $2fc21  xx xx:          xxx - ; $2fc19
-        $2fc23  xx xx xx:       xxx SetCarryIfAllowedToSave
+        $2fc23  xx xx xx:       xxx SetCarryIfCheckpoint
         $2fc26  xx xx:          xxx + ; $2fc65
         $2fc28  xx xx:           xxx #$xx
         $2fc2a  xx:              xxx
@@ -39856,16 +39861,16 @@ RevertChangeMagic
         $2fc5a  xx xx:            xxx $xx
         $2fc5c  xx xx:            xxx #$xx
         $2fc5e  xx xx:           xxx -- ; $2fc3e
-        $2fc60  xx xx xx:        xxx $2fd92
+        $2fc60  xx xx xx:        xxx $2fd92 ; compute checksum => 70f4
         $2fc63  xx xx:           xxx #$xx
-+       $2fc65  xx xx xx:       xxx $xxxx,x
-        $2fc68  xx xx xx:       xxx $xxxx,x
-        $2fc6b  xx xx xx:       xxx $xxxx,x
-        $2fc6e  xx xx xx:       xxx $xxxx,x
-        $2fc71  xx xx xx:       xxx $xxxx,x
-        $2fc74  xx xx xx:       xxx $xxxx,x
-        $2fc77  xx:             xxx
-        $2fc78  xx xx:          xxx -- ; $2fc65
++ -     $2fc65  xx xx xx:         xxx $xxxx,x
+        $2fc68  xx xx xx:         xxx $xxxx,x
+        $2fc6b  xx xx xx:         xxx $xxxx,x
+        $2fc6e  xx xx xx:         xxx $xxxx,x
+        $2fc71  xx xx xx:         xxx $xxxx,x
+        $2fc74  xx xx xx:         xxx $xxxx,x
+        $2fc77  xx:               xxx
+        $2fc78  xx xx:          xxx - ; $2fc65
 -       $2fc7a  xx xx xx:        xxx $xxxx,x
         $2fc7d  xx xx:           xxx $xx,x
         $2fc7f  xx:              xxx
@@ -39943,7 +39948,7 @@ RevertChangeMagic
 ;;; --------------------------------
 ;;; Copy $14$15 bytes from ($10) to ($12).  This is used on
 ;;; starting a new game, saving and loading, as well as when
-;;; entering a new location.
+;;; entering a new location (e.g. checkpointing)
 CopyBytes
         $2fcf7  xx xx:      xxx #$xx
 -       $2fcf9  xx xx:       xxx ($xx),y
@@ -40018,6 +40023,8 @@ StageGameDataForSave_7df0
         $2fd91  xx:         xxx
 ;;; --------------------------------
         ;; Compute a checksum of the save data??
+        ;; TODO - this is really inefficient, we could get back several
+        ;; bytes if we just used zero-page addresses here.
         $2fd92  xx xx:      xxx #$xx
         $2fd94  xx xx xx:   xxx $xxxx
         $2fd97  xx xx xx:   xxx $xxxx
@@ -40039,13 +40046,22 @@ StageGameDataForSave_7df0
         $2fdbd  xx xx:      xxx - ; $2fd9b
         $2fdbf  xx:         xxx
 ;;; --------------------------------
-DataTable_2fdc0 
-        $2fdc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2fdd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2fde0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+DataTable_2fdc0
+        ;; Memory copy data for checkpointing
+        $2fdc0              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $2fdc6              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $2fdcc              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $2fdd2              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $2fdd8              .byte $xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+DataTable_2fdde 
+        ;; Memory copy data for loading
+        $2fdde              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $2fde4              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $2fdea              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $2fdf0              .byte $xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-SetCarryIfAllowedToSave
+SetCarryIfCheckpoint
         $2fdf6  xx xx:      xxx CurrentLocation
         $2fdf8  xx xx xx:   xxx $2ff00,x
         $2fdfb  xx:         xxx
@@ -40077,8 +40093,9 @@ InitialPrg_6400
         $2fef0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 ;;; This data table is indexed by location.  Only the low and high bits are
-;;; read, depending on who's reading it.  My guess is that the :80 bit
-;;; indicates that the location allows saving.
+;;; read, depending on who's reading it.  My guess is that the :01 bit
+;;; indicates that the location allows saving, and the :80 bit is whether
+;;; the location is a checkpoint.
 DataTable_2ff00 
         $2ff00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2ff10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -61419,6 +61436,7 @@ CheckPassiveEffects
         $3f0a0  xx xx xx:   xxx $xxxx
 ++      $3f0a3  xx:         xxx
 ;;; --------------------------------
+        ;; This runs during a soft reset
         $3f0a4  xx xx:      xxx #$xx
         $3f0a6  xx xx xx:   xxx $xxxx
         $3f0a9  xx xx:      xxx $xx
@@ -61428,30 +61446,30 @@ CheckPassiveEffects
         $3f0b3  xx xx:      xxx #$xx
         $3f0b5  xx xx xx:   xxx $xxxx,x
         $3f0b8  xx xx xx:   xxx $xxxx,x
-        $3f0bb  xx xx:      xxx $xx
+        $3f0bb  xx xx:      xxx + ; $3f0e7
         $3f0bd  xx xx xx:   xxx $xxxx,x
         $3f0c0  xx xx xx:   xxx $xxxx,x
-        $3f0c3  xx xx:      xxx $xx
+        $3f0c3  xx xx:      xxx + ; $3f0e7
         $3f0c5  xx xx xx:   xxx $xxxx,x
         $3f0c8  xx xx xx:   xxx $xxxx,x
-        $3f0cb  xx xx:      xxx $xx
+        $3f0cb  xx xx:      xxx + ; $3f0e7
         $3f0cd  xx:         xxx
         $3f0ce  xx xx:      xxx $xx
         $3f0d0  xx xx:      xxx #$xx
         $3f0d2  xx xx xx:   xxx $xxxx
-        $3f0d5  xx xx:      xxx $xx
+        $3f0d5  xx xx:      xxx ++ ; $3f11f
         $3f0d7  xx xx:      xxx #$xx
         $3f0d9  xx xx xx:   xxx $xxxx
-        $3f0dc  xx xx:      xxx $xx
+        $3f0dc  xx xx:      xxx ++ ; $3f11f
         $3f0de  xx xx:      xxx #$xx
         $3f0e0  xx xx xx:   xxx $xxxx
-        $3f0e3  xx xx:      xxx $xx
+        $3f0e3  xx xx:      xxx ++ ; $3f11f
         $3f0e5  xx xx:      xxx $xx
-        $3f0e7  xx xx:      xxx #$xx
++       $3f0e7  xx xx:      xxx #$xx
         $3f0e9  xx xx xx:   xxx $3f23d
         $3f0ec  xx xx xx:   xxx $xxxx
         $3f0ef  xx xx:      xxx $xx
-        $3f0f1  xx xx:      xxx $xx
+        $3f0f1  xx xx:      xxx + ; $3f103
         $3f0f3  xx xx:      xxx #$xx
         $3f0f5  xx xx xx:   xxx $3f273
         $3f0f8  xx xx:      xxx $xx
@@ -61459,11 +61477,11 @@ CheckPassiveEffects
         $3f0fd  xx xx xx:   xxx $xxxx
         $3f100  xx xx xx:   xxx $3f140
 ;;; --------------------------------
-        $3f103  xx xx:      xxx #$xx
++       $3f103  xx xx:      xxx #$xx
         $3f105  xx xx xx:   xxx $3f23d
         $3f108  xx xx xx:   xxx $xxxx
         $3f10b  xx xx:      xxx $xx
-        $3f10d  xx xx:      xxx $xx
+        $3f10d  xx xx:      xxx ++ ; $3f11f
         $3f10f  xx xx:      xxx #$xx
         $3f111  xx xx xx:   xxx $3f273
         $3f114  xx xx:      xxx $xx
@@ -61471,7 +61489,7 @@ CheckPassiveEffects
         $3f119  xx xx xx:   xxx $xxxx
         $3f11c  xx xx xx:   xxx $3f140
 ;;; --------------------------------
-        $3f11f  xx xx:      xxx #$xx
+++      $3f11f  xx xx:      xxx #$xx
         $3f121  xx xx xx:   xxx $2fe00,x
         $3f124  xx xx xx:   xxx $xxxx,x
         $3f127  xx xx xx:   xxx $xxxx,x
@@ -61552,34 +61570,34 @@ CheckPassiveEffects
         $3f1d7  xx xx xx:   xxx $xxxx
         $3f1da  xx xx:      xxx #$xx
         $3f1dc  xx xx xx:   xxx BankSwitch8k_A000
-        $3f1df  xx xx xx:   xxx $3f219
+        $3f1df  xx xx xx:   xxx ++ ; $3f219
 ;;; --------------------------------
         $3f1e2  xx xx:      xxx #$xx
-        $3f1e4  xx xx xx:   xxx $xxxx,x
+-       $3f1e4  xx xx xx:   xxx $xxxx,x
         $3f1e7  xx xx xx:   xxx $xxxx,x
-        $3f1ea  xx xx:      xxx $xx
+        $3f1ea  xx xx:      xxx + ; $3f216
         $3f1ec  xx xx xx:   xxx $xxxx,x
         $3f1ef  xx xx xx:   xxx $xxxx,x
-        $3f1f2  xx xx:      xxx $xx
+        $3f1f2  xx xx:      xxx + ; $3f216
         $3f1f4  xx xx xx:   xxx $xxxx,x
         $3f1f7  xx xx xx:   xxx $xxxx,x
-        $3f1fa  xx xx:      xxx $xx
+        $3f1fa  xx xx:      xxx + ; $3f216
         $3f1fc  xx:         xxx
-        $3f1fd  xx xx:      xxx $xx
+        $3f1fd  xx xx:      xxx - ; $3f1e4
         $3f1ff  xx xx:      xxx #$xx
         $3f201  xx xx xx:   xxx $xxxx
-        $3f204  xx xx:      xxx $xx
+        $3f204  xx xx:      xxx ++ ; $3f219
         $3f206  xx xx:      xxx #$xx
         $3f208  xx xx xx:   xxx $xxxx
-        $3f20b  xx xx:      xxx $xx
+        $3f20b  xx xx:      xxx ++ ; $3f219
         $3f20d  xx xx:      xxx #$xx
         $3f20f  xx xx xx:   xxx $xxxx
-        $3f212  xx xx:      xxx $xx
-        $3f214  xx xx:      xxx $xx
-        $3f216  xx xx xx:   xxx $3f219
+        $3f212  xx xx:      xxx ++ ; $3f219
+        $3f214  xx xx:      xxx $xx ; unconditional
++       $3f216  xx xx xx:   xxx ++ ; $3f219
 ;;; --------------------------------
-        ;; Validation failed?
-        $3f219  xx xx:      xxx #$xx
+        ;; Validation failed?  zero it out
+++      $3f219  xx xx:      xxx #$xx
         $3f21b  xx xx xx:   xxx $2fe00,x
         $3f21e  xx xx xx:   xxx $xxxx,x
         $3f221  xx xx xx:   xxx $xxxx,x
@@ -61764,12 +61782,12 @@ HandleReset
         $3f39c  xx xx xx:   xxx $24028
 ++      $3f39f  xx xx xx:   xxx $3f0a4
         $3f3a2  xx xx:      xxx #$xx
-        $3f3a4  xx xx xx:   xxx $xxxx,x
-        $3f3a7  xx xx xx:   xxx $xxxx,x
-        $3f3aa  xx xx xx:   xxx $xxxx,x
-        $3f3ad  xx xx xx:   xxx $xxxx,x
-        $3f3b0  xx:         xxx
-        $3f3b1  xx xx:      xxx $xx
+-       $3f3a4  xx xx xx:    xxx $xxxx,x
+        $3f3a7  xx xx xx:    xxx $xxxx,x
+        $3f3aa  xx xx xx:    xxx $xxxx,x
+        $3f3ad  xx xx xx:    xxx $xxxx,x
+        $3f3b0  xx:          xxx
+        $3f3b1  xx xx:      xxx - ; $3f3a4
         $3f3b3  xx xx xx:   xxx MainLoop
 ;;; --------------------------------
 ;;; The NMI handler does a number of things.

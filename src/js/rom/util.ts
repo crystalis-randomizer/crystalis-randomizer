@@ -208,7 +208,7 @@ type DataTupleSub<T> =
 // this fails because all objects have an implicit toString, which would
 // otherwise need to be {toString?: undefined} for some reason.
 type DataTupleInits<T> =
-  {[K in keyof T]?: T[K] extends {set(arg: infer U): void} ? U : T[K]};
+    {[K in keyof T]?: T[K] extends {set(arg: infer U): void} ? U : T[K]};
 type DataTupleCtor<T> = {
   new(data?: Data<number>): DataTupleSub<T>,
   of(inits: DataTupleInits<T>): DataTupleSub<T>,

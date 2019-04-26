@@ -534,11 +534,15 @@ export class Rom {
     // NOTE: 193f9 is assuming $fb is the last location ID.  If we add more locations at
     // the end then we'll need to push this back a few more bytes.  We could possibly
     // detect the bad write and throw an error, and/or compute the max location ID.
-    writer.alloc(0x193f9, 0x1bb00);
+    //writer.alloc(0x193f9, 0x1bb00);
+    writer.alloc(0x193f9, 0x1ac00);
+    writer.alloc(0x1ae00, 0x1bd00);
     // TriggerData
     writer.alloc(0x1e200, 0x1e3f0);
     // NpcSpawnConditions
     writer.alloc(0x1c77a, 0x1c95d);
+    // NpcDialog
+    writer.alloc(0x1cae5, 0x1d8f3);
 
     // Move object data table all the way to the end.
     this.prg[0x3c273] = this.prg[0x3c278] = 0xbe;
@@ -555,7 +559,7 @@ export class Rom {
     // This should afford us the same amount of freed space (usable by either
     // table), but guarantees no objects end up on the wrong page.
     for (const o of this.objects) {
-      o.write(writer, 0x1be00); // NOTE: we moved the ObjectData table to 1be00
+      o.write(writer); // , 0x1be00); // NOTE: we moved the ObjectData table to 1be00
     }
     for (const h of this.hitboxes) {
       h.write(writer);
@@ -578,7 +582,10 @@ export class Rom {
       screen.write(writer);
     }
     promises.push(writer.commit());
-    return Promise.all(promises).then(() => undefined);
+    await Promise.all(promises).then(() => undefined);
+const ks=Object.keys(this.DLG).sort((a,b)=>this.npcs[a].dialogBase - this.npcs[b].dialogBase);
+const x=ks.map(k=>`${Number(k).toString(16).padStart(2,0)}: ${this.DLG[k]}`);
+console.log(x);
   }
 
 

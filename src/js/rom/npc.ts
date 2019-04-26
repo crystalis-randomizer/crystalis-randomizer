@@ -1,6 +1,6 @@
 import {Entity, Rom} from './entity.js';
 import {MessageId} from './messageid.js';
-import {Data, addr, readBigEndian, tuple} from './util.js';
+import {Data, addr, readBigEndian, tuple, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
 
 type FlagList = number[];
@@ -22,6 +22,7 @@ export class Npc extends Entity {
   constructor(rom: Rom, id: number) {
     super(rom, id);
     this.used = !UNUSED_NPCS.has(id) /*&& this.base <= 0x1c781*/ && (id < 0x8f || id >= 0xc0);
+    const hasDialog = id <= 0xc3;
 
     this.dataBase = 0x80f0 | ((id & 0xfc) << 6) | ((id & 3) << 2);
     this.data = tuple(rom.prg, this.dataBase, 4);
@@ -50,45 +51,45 @@ export class Npc extends Entity {
     }
 
     // Populate the dialog table
-    this.dialogPointer = 0x1c95d + (id << 1);
-    this.dialogBase = addr(rom.prg, this.dialogPointer, 0x14000);
+    this.dialogPointer = hasDialog ? 0x1c95d + (id << 1) : 0;
+    this.dialogBase = hasDialog ? addr(rom.prg, this.dialogPointer, 0x14000) : 0;
     this.globalDialogs = [];
-    let a = this.dialogBase;
-    while (true) {
-      const [dialog, last] = GlobalDialog.parse(rom.prg, a);
-      a += 4;
-      this.globalDialogs.push(dialog);
-      if (last) break;
-    }
-    // Read the location table
-    const locations: [number, number][] = [];
-    while (true) {
-      const location = rom.prg[a++];
-      if (location === 0xff) break;
-      locations.push([location, rom.prg[a++]]);
-    }
-    if (!locations.length) locations.push([-1, 0]);
-    // Now build up the LocalDialog tables
-    const base = a;
-    for (const [location, offset] of locations) {
-      const dialogs: LocalDialog[] = [];
-      this.localDialogs.set(location, dialogs);
-      a = base + offset;
+    if (hasDialog) {
+      let a = this.dialogBase;
       while (true) {
-        const [dialog, last] = LocalDialog.parse(rom.prg, a);
-        a += dialog.byteLength();
-        dialogs.push(dialog);
+        const [dialog, last] = GlobalDialog.parse(rom.prg, a);
+        a += 4;
+        this.globalDialogs.push(dialog);
         if (last) break;
       }
+      // Read the location table
+      const locations: [number, number][] = [];
+      while (true) {
+        const location = rom.prg[a++];
+        if (location === 0xff) break;
+        locations.push([location, rom.prg[a++]]);
+      }
+      if (!locations.length) locations.push([-1, 0]);
+      // Now build up the LocalDialog tables
+      const base = a;
+      for (const [location, offset] of locations) {
+        const dialogs: LocalDialog[] = [];
+        this.localDialogs.set(location, dialogs);
+        a = base + offset;
+        while (true) {
+          const [dialog, last] = LocalDialog.parse(rom.prg, a);
+          a += dialog.byteLength();
+          dialogs.push(dialog);
+          if (last) break;
+        }
+      }
     }
-
-    // NOTE: still need to write!!!
 
     // console.log(`NPC Spawn $${this.id.toString(16)} from ${this.base.toString(16)}: bytes: $${
     //              this.bytes().map(x=>x.toString(16).padStart(2,0)).join(' ')}`);
   }
 
-  spawnConditionsBytes(): Data<number> {
+  spawnConditionsBytes(): number[] {
     const bytes = [];
     for (const [loc, flags] of this.spawnConditions) {
       bytes.push(loc);
@@ -103,15 +104,64 @@ export class Npc extends Entity {
     return bytes;
   }
 
-  async write(writer: Writer, {spawnConditionsBase = 0x1c5e0} = {}): Promise<void> {
-    const address = await writer.write(this.spawnConditionsBytes(), 0x1c000, 0x1dfff);
-    writer.rom[spawnConditionsBase + 2 * this.id] = address & 0xff;
-    writer.rom[spawnConditionsBase + 2 * this.id + 1] = (address >>> 8) - 0x40;
-    // TODO - write the static data
+  dialogBytes(): number[] {
+    if (!this.dialogPointer) return [];
+    const bytes: number[] = [];
+    function serialize(ds: GlobalDialog[] | LocalDialog[]): number[] {
+      const out: number[] = [];
+      for (let i = 0; i < ds.length; i++) {
+        out.push(...ds[i].bytes(i === ds.length - 1));
+      }
+      return out;
+    }
+    bytes.push(...serialize(this.globalDialogs));
+    const locals: number[] = [];
+    const cache = new Map<string, number>(); // allow reusing locations
+    for (const [location, dialogs] of this.localDialogs) {
+      const localBytes = serialize(dialogs);
+      const label = localBytes.join(',');
+      const cached = cache.get(label);
+      if (cached != null) {
+        bytes.push(location, cached);
+        console.log(`SAVED ${localBytes.length} bytes`);
+        continue;
+      }
+      cache.set(label, locals.length);
+      if (location !== -1) bytes.push(location, locals.length);
+      locals.push(...localBytes);
+    }
+    if (locals.length) bytes.push(0xff, ...locals);
+
+    console.log(`NPC ${this.id.toString(16)}: bytes length ${bytes.length}`);
+
+    return bytes;
+  }
+
+  async write(writer: Writer, {spawnConditionsBase = 0x1c5e0,
+                               dialogBase = 0x1c95d} = {}): Promise<void> {
+    writer.rom.subarray(this.dataBase, this.dataBase + 4).set(this.data);
+    if (!this.used) return;
+
+    let address = await writer.write(this.spawnConditionsBytes(), 0x1c000, 0x1dfff);
+    writeLittleEndian(writer.rom, spawnConditionsBase + 2 * this.id, address - 0x14000);
     // TODO - update pointer to the base???
+
+    if (this.dialogPointer) {
+      try {
+        this.rom.DLG=this.rom.DLG||{};
+      address = await writer.write(this.dialogBytes(), 0x1c000, 0x1dfff);
+        if (SEEN.has(address)){this.rom.DLG[this.id]=`REUSE ${SEEN.get(address).toString(16)}`;}
+        else{ this.rom.DLG[this.id]=`${this.dialogBytes().length}: ${this.dialogBytes().map(x=>x.toString(16).padStart(2,0)).join(',')}`;
+              SEEN.set(address, this.id);}
+      console.log(`WROTE NPC ${this.id.toString(16)} at ${address.toString(16)}`);
+      writeLittleEndian(writer.rom, dialogBase + 2 * this.id, address - 0x14000);
+      } catch (err) {
+        console.log(`Failed to write NPC ${this.id.toString(16)}: ${err}`);
+      }
+    }
   }
 }
-
+const SEEN = new Map<number, number>();
 export class GlobalDialog {
   constructor(public condition: number, public message: MessageId) {}
 
@@ -185,6 +235,6 @@ export class LocalDialog {
 }
 
 const UNUSED_NPCS = new Set([
-  0x3c, 0x6a, 0x73, 0x82, 0x86, 0x87, 0x89, 0x8a, 0x8b, 0x8c, 0x8d,
+  0x31, 0x3c, 0x6a, 0x73, 0x82, 0x86, 0x87, 0x89, 0x8a, 0x8b, 0x8c, 0x8d,
   // also everything from 8f..c0, but that's implicit.
 ]);

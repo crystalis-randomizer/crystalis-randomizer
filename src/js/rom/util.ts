@@ -124,6 +124,11 @@ export function readString(arr: Data<number>, address: number): string {
   return String.fromCharCode(...bytes);
 }
 
+export function writeLittleEndian(data: Data<number>, offset: number, address: number) {
+  data[offset] = address & 0xff;
+  data[offset + 1] = address >>> 8;
+}
+
 ////////////////////////////////////////////////////////////////
 
 export class DataTuple {

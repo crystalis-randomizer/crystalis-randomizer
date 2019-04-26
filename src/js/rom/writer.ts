@@ -1,4 +1,4 @@
-import {Data} from './util.js';
+import {Data, hex} from './util.js';
 
 function page(addr: number): number {
   return addr >>> 13;
@@ -38,6 +38,7 @@ class Chunk {
 interface Write {
   readonly data: Data<number>;
   readonly resolve: (addr: number) => void;
+  readonly reject: (err: unknown) => void;
   readonly startPage: number;
   readonly endPage: number; // inclusive
 }
@@ -48,7 +49,7 @@ export class Writer {
 
   private readonly chunks: Chunk[] = [];
   private writes: Write[] = [];
-  private promises: Promise<number>[] = [];
+  private promises: Promise<unknown>[] = [];
 
   constructor(readonly rom: Uint8Array) {}
 
@@ -69,9 +70,9 @@ export class Writer {
     const startPage = page(start);
     const endPage = page(end);
     const p = new Promise<number>((resolve, reject) => {
-      this.writes.push({data, resolve, startPage, endPage});
+      this.writes.push({data, resolve, reject, startPage, endPage});
     });
-    this.promises.push(p);
+    this.promises.push(p.catch(() => {}));
     return p;
   }
 
@@ -119,6 +120,25 @@ export class Writer {
       chunk.pos += write.data.length;
       return;
     }
-    throw new Error('Could not find sufficient chunk to write');
+
+    console.log(`LOOKING FOR CHUNK: ${write.data.length} bytes in ${hex(write.startPage)
+                     }..${hex(write.endPage)}`);
+    for (const chunk of this.chunks) {
+      if (chunk.page < write.startPage || chunk.page > write.endPage) {
+        console.log(`wrong page: ${hex(chunk.pos)}..${hex(chunk.end)} -> ${hex(chunk.page)}`); continue;
+      }
+      if (chunk.free() < write.data.length) {
+        console.log(`not enough free: ${hex(chunk.pos)}..${hex(chunk.end)} -> ${chunk.free()}`); continue;
+      }
+      // looks like it fits!
+      this.rom.subarray(chunk.pos, chunk.pos + write.data.length).set(write.data);
+      write.resolve(chunk.pos);
+      chunk.pos += write.data.length;
+      return;
+    }
+    console.log(this.chunks);
+    write.reject(
+        new Error(`Could not find sufficient chunk in ${hex(write.startPage)
+                       }..${hex(write.endPage)} to write ${write.data}`));
   }
 }

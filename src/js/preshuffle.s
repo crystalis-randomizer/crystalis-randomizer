@@ -220,6 +220,12 @@ DisplayNumber:
 
 .bank $1c000 $8000:$4000
 
+;;; Fix queen's dialog to terminate on last item, rather than overflow.
+;;; This is important for parsing and defragging to maintain the same size.
+.org $1cff9
+  .byte $e0
+
+
 ;;; Patch the end of ItemUse to check for a few more items.
 .org $1c34d
   jmp PatchTradeInItem

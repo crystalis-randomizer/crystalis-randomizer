@@ -6,7 +6,7 @@
   jmp ComputeEnemyStats
 
 ;;; TODO - use a labe: .org EndOfCompressedMonsterData
-.org $1bb00  ; This should leave some space after compression
+.org $1bd00  ; This should leave some space after compression
 
 DiffAtk:   ; PAtk*8
   .byte $28,$2C,$30,$33,$37,$3B,$3F,$42,$46,$4A,$4E,$51,$55,$59,$5D,$60
@@ -27,7 +27,7 @@ DiffExp:   ; ExpBase * 4, encoded in standard EXP encoding
 
 ;;; $12 and $13 are free RAM at this point
 
-.org $1bbd0  ; Note: this follows immediately from the tables.
+.org $1bdd0  ; Note: this follows immediately from the tables.
 ComputeEnemyStats:
   lda ObjectRecoil,x
   bmi +
@@ -217,5 +217,5 @@ RescaleExp:   ; $1bcbd
 RescaleDone:
    jmp $3c2af
 
-.assert < $1be00
+.assert < $1c000
 ;.assert < $1bff0

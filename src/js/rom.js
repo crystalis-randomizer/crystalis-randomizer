@@ -545,8 +545,8 @@ export class Rom {
     writer.alloc(0x1cae5, 0x1d8f3);
 
     // Move object data table all the way to the end.
-    this.prg[0x3c273] = this.prg[0x3c278] = 0xbe;
-    this.prg[0x3c27f] = this.prg[0x3c284] = 0xbf;
+    //this.prg[0x3c273] = this.prg[0x3c278] = 0xbe;
+    //this.prg[0x3c27f] = this.prg[0x3c284] = 0xbf;
     const promises = [];
     for (const l of this.locations) {
       if (!l.valid) continue;

@@ -1,7 +1,6 @@
 export function seq(x, f = (i) => i) {
     return new Array(x).fill(0).map((_, i) => f(i));
 }
-;
 export function slice(arr, start, len) {
     return arr.slice(start, start + len);
 }
@@ -18,7 +17,7 @@ export function varSlice(arr, start, width, sentinel, end = Infinity, func) {
     if (!func)
         func = (x) => x;
     const out = [];
-    while (start + width <= end && arr[start] != sentinel) {
+    while (start + width <= end && arr[start] !== sentinel) {
         out.push(func(arr.slice(start, start + width)));
         start += width;
     }
@@ -40,7 +39,6 @@ export function countBits(x) {
     x = (x & 0x33) + (x >> 2 & 0x33);
     return (x + (x >> 4)) & 0xf;
 }
-;
 export function hex(id) {
     return id.toString(16).padStart(2, '0');
 }
@@ -62,14 +60,13 @@ export function readBigEndian(data, offset) {
 export function readLittleEndian(data, offset) {
     return data[offset + 1] << 8 | data[offset];
 }
-export function readString(arr, addr) {
+export function readString(arr, address) {
     const bytes = [];
-    while (arr[addr]) {
-        bytes.push(arr[addr++]);
+    while (arr[address]) {
+        bytes.push(arr[address++]);
     }
     return String.fromCharCode(...bytes);
 }
-;
 export class DataTuple {
     constructor(data) {
         this.data = data;
@@ -88,8 +85,8 @@ export class DataTuple {
             constructor(data = new Array(length).fill(0)) { super(data); }
             static of(inits) {
                 const out = new cls();
-                for (const key in inits) {
-                    out[key] = inits[key];
+                for (const [key, value] of Object.entries(inits)) {
+                    out[key] = value;
                 }
                 return out;
             }

@@ -295,16 +295,16 @@ const fixRabbitSkip = (rom) => {
 const storyMode = (rom) => {
   // shuffle has already happened, need to use shuffled flags from
   // NPC spawn conditions...
-  const requirements = rom.npcs[0xcb].spawnConditions[0xa6];
+  const requirements = rom.npcs[0xcb].spawnConditions.get(0xa6);
   // Note: if bosses are shuffled we'll need to detect this...
-  requirements.push(~rom.npcs[0xc2].spawnConditions[0x28][0]); // Kelbesque 1
-  requirements.push(~rom.npcs[0x84].spawnConditions[0x6e][0]); // Sabera 1
+  requirements.push(~rom.npcs[0xc2].spawnConditions.get(0x28)[0]); // Kelbesque 1
+  requirements.push(~rom.npcs[0x84].spawnConditions.get(0x6e)[0]); // Sabera 1
   requirements.push(~rom.triggers[0x9a & 0x7f].conditions[1]); // Mado 1
-  requirements.push(~rom.npcs[0xc5].spawnConditions[0xa9][0]); // Kelbesque 2
-  requirements.push(~rom.npcs[0xc6].spawnConditions[0xac][0]); // Sabera 2
-  requirements.push(~rom.npcs[0xc7].spawnConditions[0xb9][0]); // Mado 2
-  requirements.push(~rom.npcs[0xc8].spawnConditions[0xb6][0]); // Karmine
-  requirements.push(~rom.npcs[0xcb].spawnConditions[0x9f][0]); // Draygon 1
+  requirements.push(~rom.npcs[0xc5].spawnConditions.get(0xa9)[0]); // Kelbesque 2
+  requirements.push(~rom.npcs[0xc6].spawnConditions.get(0xac)[0]); // Sabera 2
+  requirements.push(~rom.npcs[0xc7].spawnConditions.get(0xb9)[0]); // Mado 2
+  requirements.push(~rom.npcs[0xc8].spawnConditions.get(0xb6)[0]); // Karmine
+  requirements.push(~rom.npcs[0xcb].spawnConditions.get(0x9f)[0]); // Draygon 1
   requirements.push(0x200); // Sword of Wind
   requirements.push(0x201); // Sword of Fire
   requirements.push(0x202); // Sword of Water

@@ -13,7 +13,7 @@ export class Location extends Entity {
         this.entrancesBase = addr(rom.prg, this.mapDataBase + 4, 0xc000);
         this.exitsBase = addr(rom.prg, this.mapDataBase + 6, 0xc000);
         this.flagsBase = addr(rom.prg, this.mapDataBase + 8, 0xc000);
-        this.pitsBase = this.layoutBase == this.mapDataBase + 10 ? 0 :
+        this.pitsBase = this.layoutBase === this.mapDataBase + 10 ? 0 :
             addr(rom.prg, this.mapDataBase + 10, 0xc000);
         this.bgm = rom.prg[this.layoutBase];
         this.layoutWidth = rom.prg[this.layoutBase + 1];
@@ -21,7 +21,7 @@ export class Location extends Entity {
         this.animation = rom.prg[this.layoutBase + 3];
         this.extended = rom.prg[this.layoutBase + 4];
         this.screens = seq(this.height, y => tuple(rom.prg, this.layoutBase + 5 + y * this.width, this.width));
-        for (let [x, y, replacement] of locationData.replace || []) {
+        for (const [x, y, replacement] of locationData.replace || []) {
             this.screens[y][x] = replacement;
         }
         this.tilePalettes = tuple(rom.prg, this.graphicsBase, 3);
@@ -35,7 +35,7 @@ export class Location extends Entity {
         this.pits = this.pitsBase ? varSlice(rom.prg, this.pitsBase, 4, 0xff, Infinity, x => new Pit(x)) : [];
         this.npcDataPointer = 0x19201 + (id << 1);
         this.npcDataBase = addr(rom.prg, this.npcDataPointer, 0x10000);
-        this.hasSpawns = this.npcDataBase != 0x10000;
+        this.hasSpawns = this.npcDataBase !== 0x10000;
         this.spritePalettes =
             this.hasSpawns ? slice(rom.prg, this.npcDataBase + 1, 2) : [0, 0];
         this.spritePatterns =
@@ -110,8 +110,8 @@ export const Entrance = DataTuple.make(4, {
 });
 export const Exit = DataTuple.make(4, {
     x: DataTuple.prop([0, 0xff, -4]),
-    y: DataTuple.prop([1, 0xff, -4]),
     xt: DataTuple.prop([0]),
+    y: DataTuple.prop([1, 0xff, -4]),
     yt: DataTuple.prop([1]),
     dest: DataTuple.prop([2]),
     entrance: DataTuple.prop([3]),
@@ -120,11 +120,6 @@ export const Exit = DataTuple.make(4, {
     },
 });
 export const Flag = DataTuple.make(2, {
-    x: DataTuple.prop([1, 0x07, -8]),
-    y: DataTuple.prop([1, 0xf0, -4]),
-    xs: DataTuple.prop([1, 0x07]),
-    ys: DataTuple.prop([1, 0xf0, 4]),
-    yx: DataTuple.prop([1]),
     flag: {
         get() { return this.data[0] | 0x200; },
         set(f) {
@@ -133,6 +128,11 @@ export const Flag = DataTuple.make(2, {
             this.data[0] = f & 0xff;
         },
     },
+    x: DataTuple.prop([1, 0x07, -8]),
+    xs: DataTuple.prop([1, 0x07]),
+    y: DataTuple.prop([1, 0xf0, -4]),
+    ys: DataTuple.prop([1, 0xf0, 4]),
+    yx: DataTuple.prop([1]),
     toString() {
         return `Flag ${this.hex()}: (${hex(this.xs)}, ${hex(this.ys)}) @ ${hex(this.flag)}`;
     },
@@ -149,15 +149,15 @@ export const Pit = DataTuple.make(4, {
 });
 export const Spawn = DataTuple.make(4, {
     y: DataTuple.prop([0, 0xff, -4]),
-    x: DataTuple.prop([1, 0x7f, -4], [2, 0x40, 3]),
     yt: DataTuple.prop([0]),
-    xt: DataTuple.prop([1, 0x7f]),
     timed: DataTuple.booleanProp([1, 0x80, 7]),
+    x: DataTuple.prop([1, 0x7f, -4], [2, 0x40, 3]),
+    xt: DataTuple.prop([1, 0x7f]),
+    patternBank: DataTuple.prop([2, 0x80, 7]),
     type: DataTuple.prop([2, 0x07]),
     id: DataTuple.prop([3]),
     monsterId: { get() { return (this.id + 0x50) & 0xff; },
         set(id) { this.id = (id - 0x50) & 0xff; } },
-    patternBank: DataTuple.prop([2, 0x80, 7]),
     isChest() { return this.type === 2 && this.id < 0x80; },
     isTrigger() { return this.type === 2 && this.id >= 0x80; },
     isMonster() { return this.type === 0; },

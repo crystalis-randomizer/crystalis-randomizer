@@ -1,11 +1,12 @@
 import { Entity } from './entity.js';
 import { MessageId } from './messageid.js';
-import { addr, readBigEndian, tuple } from './util.js';
+import { addr, hex, readBigEndian, tuple, writeLittleEndian } from './util.js';
 export class Npc extends Entity {
     constructor(rom, id) {
         super(rom, id);
         this.localDialogs = new Map();
         this.used = !UNUSED_NPCS.has(id) && (id < 0x8f || id >= 0xc0);
+        const hasDialog = id <= 0xc3;
         this.dataBase = 0x80f0 | ((id & 0xfc) << 6) | ((id & 3) << 2);
         this.data = tuple(rom.prg, this.dataBase, 4);
         this.spawnPointer = 0x1c5e0 + (id << 1);
@@ -24,37 +25,39 @@ export class Npc extends Entity {
                 i += 2;
             } while (!(word & 0x8000));
         }
-        this.dialogPointer = 0x1c95d + (id << 1);
-        this.dialogBase = addr(rom.prg, this.dialogPointer, 0x14000);
+        this.dialogPointer = hasDialog ? 0x1c95d + (id << 1) : 0;
+        this.dialogBase = hasDialog ? addr(rom.prg, this.dialogPointer, 0x14000) : 0;
         this.globalDialogs = [];
-        let a = this.dialogBase;
-        while (true) {
-            const [dialog, last] = GlobalDialog.parse(rom.prg, a);
-            a += 4;
-            this.globalDialogs.push(dialog);
-            if (last)
-                break;
-        }
-        const locations = [];
-        while (true) {
-            const location = rom.prg[a++];
-            if (location === 0xff)
-                break;
-            locations.push([location, rom.prg[a++]]);
-        }
-        if (!locations.length)
-            locations.push([-1, 0]);
-        const base = a;
-        for (const [location, offset] of locations) {
-            const dialogs = [];
-            this.localDialogs.set(location, dialogs);
-            a = base + offset;
+        if (hasDialog) {
+            let a = this.dialogBase;
             while (true) {
-                const [dialog, last] = LocalDialog.parse(rom.prg, a);
-                a += dialog.byteLength();
-                dialogs.push(dialog);
+                const [dialog, last] = GlobalDialog.parse(rom.prg, a);
+                a += 4;
+                this.globalDialogs.push(dialog);
                 if (last)
                     break;
+            }
+            const locations = [];
+            while (true) {
+                const location = rom.prg[a++];
+                if (location === 0xff)
+                    break;
+                locations.push([location, rom.prg[a++]]);
+            }
+            if (!locations.length)
+                locations.push([-1, 0]);
+            const base = a;
+            for (const [location, offset] of locations) {
+                const dialogs = [];
+                this.localDialogs.set(location, dialogs);
+                a = base + offset;
+                while (true) {
+                    const [dialog, last] = LocalDialog.parse(rom.prg, a);
+                    a += dialog.byteLength();
+                    dialogs.push(dialog);
+                    if (last)
+                        break;
+                }
             }
         }
     }
@@ -74,10 +77,47 @@ export class Npc extends Entity {
         bytes.push(0xff);
         return bytes;
     }
-    async write(writer, { spawnConditionsBase = 0x1c5e0 } = {}) {
-        const address = await writer.write(this.spawnConditionsBytes(), 0x1c000, 0x1dfff);
-        writer.rom[spawnConditionsBase + 2 * this.id] = address & 0xff;
-        writer.rom[spawnConditionsBase + 2 * this.id + 1] = (address >>> 8) - 0x40;
+    dialogBytes() {
+        if (!this.dialogPointer)
+            return [];
+        const bytes = [];
+        function serialize(ds) {
+            const out = [];
+            for (let i = 0; i < ds.length; i++) {
+                out.push(...ds[i].bytes(i === ds.length - 1));
+            }
+            return out;
+        }
+        bytes.push(...serialize(this.globalDialogs));
+        const locals = [];
+        const cache = new Map();
+        for (const [location, dialogs] of this.localDialogs) {
+            const localBytes = serialize(dialogs);
+            const label = localBytes.join(',');
+            const cached = cache.get(label);
+            if (cached != null) {
+                bytes.push(location, cached);
+                continue;
+            }
+            cache.set(label, locals.length);
+            if (location !== -1)
+                bytes.push(location, locals.length);
+            locals.push(...localBytes);
+        }
+        if (locals.length)
+            bytes.push(0xff, ...locals);
+        return bytes;
+    }
+    async write(writer) {
+        if (!this.used)
+            return;
+        const promises = [];
+        writer.rom.subarray(this.dataBase, this.dataBase + 4).set(this.data);
+        promises.push(writer.write(this.spawnConditionsBytes(), 0x1c000, 0x1dfff, `SpawnCondition ${hex(this.id)}`).then(address => writeLittleEndian(writer.rom, this.spawnPointer, address - 0x14000)));
+        if (this.dialogPointer) {
+            promises.push(writer.write(this.dialogBytes(), 0x1c000, 0x1dfff, `Dialog ${hex(this.id)}`).then(address => writeLittleEndian(writer.rom, this.dialogPointer, address - 0x14000)));
+        }
+        await Promise.all(promises);
     }
 }
 export class GlobalDialog {
@@ -156,6 +196,6 @@ export class LocalDialog {
     }
 }
 const UNUSED_NPCS = new Set([
-    0x3c, 0x6a, 0x73, 0x82, 0x86, 0x87, 0x89, 0x8a, 0x8b, 0x8c, 0x8d,
+    0x31, 0x3c, 0x6a, 0x73, 0x82, 0x86, 0x87, 0x89, 0x8a, 0x8b, 0x8c, 0x8d,
 ]);
 //# sourceMappingURL=npc.js.map

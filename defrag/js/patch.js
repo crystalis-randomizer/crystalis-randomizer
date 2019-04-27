@@ -145,13 +145,22 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
 
   misc(parsed, flags);
 
+  // NOTE: This needs to happen BEFORE postshuffle
+  await parsed.writeData();
+  const crc = await postParsedShuffle(rom, random, seed, flags, asm, assemble);
+
+  // TODO - optional flags can possibly go here, but MUST NOT use parsed.prg!
+
+  return crc;
+};
+
+// Separate function to guarantee we no longer have access to the parsed rom...
+const postParsedShuffle = async (rom, random, seed, flags, asm, assemble) => {
   await assemble('postshuffle.s');
   updateDifficultyScalingTables(rom, flags, asm);
   updateCoinDrops(rom, flags);
 
   shuffleRandomNumbers(rom, random);
-
-  await parsed.writeData();
 
   return stampVersionSeedAndHash(rom, seed, flags);
 
@@ -656,13 +665,7 @@ const identifyKeyItemsForDifficultyBuffs = (rom) => {
   for (const get of rom.itemGets) {
     const item = ITEMS.get(get.item);
     if (!item || !item.key) continue;
-    if (!get.table) throw new Error(`No table for ${item.name}`);
-    if (get.table[get.table.length - 1] == 0xff) {
-      get.table[get.table.length - 1] = 0xfe;
-    } else {
-      throw new Error(`Expected FF at end of ItemGet table: ${get.id.toString(16)}: ${Array.from(get.table).map(x => x.toString(16).padStart(2, 0)).join(' ')}`);
-    }
-    get.write(rom);
+    get.key = true;
   }
   // console.log(report);
 };

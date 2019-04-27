@@ -67,6 +67,48 @@ export function readString(arr, address) {
     }
     return String.fromCharCode(...bytes);
 }
+export function writeLittleEndian(data, offset, value) {
+    data[offset] = value & 0xff;
+    data[offset + 1] = value >>> 8;
+}
+export class FlagListType {
+    constructor(last, clear) {
+        this.last = last;
+        this.clear = clear;
+    }
+    read(data, offset = 0) {
+        const flags = [];
+        while (true) {
+            const hi = data[offset++];
+            const lo = data[offset++];
+            offset += 2;
+            const flag = (hi & 3) << 8 | lo;
+            flags.push(hi & this.clear ? ~flag : flag);
+            if (hi & this.last)
+                return flags;
+        }
+    }
+    bytes(flags) {
+        const bytes = [];
+        for (let i = 0; i < flags.length; i++) {
+            let flag = flags[i];
+            if (flag < 0)
+                flag = (this.clear << 8) | ~flag;
+            if (i === flags.length - 1)
+                flag |= (this.last << 8);
+            bytes.push(flag >>> 8);
+            bytes.push(flag & 0xff);
+        }
+        return bytes;
+    }
+    write(data, flags, offset = 0) {
+        const bytes = this.bytes(flags);
+        for (let i = 0; i < bytes.length; i++) {
+            data[i + offset] = bytes[i];
+        }
+    }
+}
+export const ITEM_GET_FLAGS = new FlagListType(0x40, 0x80);
 export class DataTuple {
     constructor(data) {
         this.data = data;

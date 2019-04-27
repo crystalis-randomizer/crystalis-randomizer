@@ -1,3 +1,4 @@
+import { hex } from './util.js';
 function page(addr) {
     return addr >>> 13;
 }
@@ -6,7 +7,7 @@ class Chunk {
         this.start = start;
         this.end = end;
         this.page = page(start);
-        if (page(end) !== this.page)
+        if (page(end - 1) !== this.page)
             throw new Error('Chunk spans pages');
         this.pos = start;
     }
@@ -34,41 +35,50 @@ export class Writer {
         this.chunks = [];
         this.writes = [];
         this.promises = [];
+        this.free = [];
     }
     alloc(start, end) {
-        while (page(end) > page(start)) {
+        while (page(end - 1) > page(start)) {
             const boundary = (page(start) + 1) << 13;
-            this.chunks.push(new Chunk(start, boundary - 1));
+            this.addChunk(new Chunk(start, boundary - 1));
             start = boundary;
         }
-        this.chunks.push(new Chunk(start, end));
+        this.addChunk(new Chunk(start, end));
     }
-    write(data, start, end) {
+    addChunk(c) {
+        this.chunks.push(c);
+        this.free[c.page] = (this.free[c.page] || 0) + c.free();
+    }
+    async write(data, start, end, name) {
         const startPage = page(start);
-        const endPage = page(end);
+        const endPage = page(end - 1);
         const p = new Promise((resolve, reject) => {
-            this.writes.push({ data, resolve, startPage, endPage });
+            this.writes.push({ data, resolve, reject, startPage, endPage, name });
         });
-        this.promises.push(p);
+        this.promises.push(p.catch(() => { }));
         return p;
     }
     async commit() {
         while (this.writes.length) {
-            const writes = this.writes.sort((a, b) => ((a.endPage - a.startPage) - (b.endPage - b.startPage)) ||
-                (b.data.length - a.data.length));
-            const promises = this.promises;
+            const writes = this.writes;
             this.writes = [];
+            const promises = this.promises;
             this.promises = [];
+            writes.sort((a, b) => ((a.endPage - a.startPage) - (b.endPage - b.startPage)) ||
+                (b.data.length - a.data.length));
             for (const write of writes) {
-                const addr = this.find(write);
-                if (addr >= 0) {
-                    write.resolve(addr);
+                const address = this.find(write);
+                if (address >= 0) {
+                    write.resolve(address);
                 }
                 else {
                     this.writeOne(write);
                 }
             }
             await Promise.all(promises);
+            await 0;
+            await 0;
+            await 0;
         }
     }
     find({ data, startPage, endPage }) {
@@ -89,10 +99,12 @@ export class Writer {
                 continue;
             this.rom.subarray(chunk.pos, chunk.pos + write.data.length).set(write.data);
             write.resolve(chunk.pos);
+            this.free[chunk.page] -= write.data.length;
             chunk.pos += write.data.length;
             return;
         }
-        throw new Error('Could not find sufficient chunk to write');
+        console.log(`${write.name}: WRITE FAILED ${write.data.length} bytes: ${Array.from(write.data, hex).join(' ')}`);
+        write.reject(new Error(`Could not find sufficient chunk in ${hex(write.startPage)}..${hex(write.endPage)} to write ${write.name}: ${write.data}`));
     }
 }
 //# sourceMappingURL=writer.js.map

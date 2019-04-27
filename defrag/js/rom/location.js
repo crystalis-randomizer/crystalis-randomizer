@@ -1,5 +1,5 @@
 import { Entity } from './entity.js';
-import { DataTuple, addr, concatIterables, group, hex, seq, slice, tuple, varSlice } from './util.js';
+import { DataTuple, addr, concatIterables, group, hex, seq, slice, tuple, varSlice, writeLittleEndian } from './util.js';
 export class Location extends Entity {
     constructor(rom, id) {
         super(rom, id);
@@ -50,14 +50,14 @@ export class Location extends Entity {
     async write(writer) {
         if (!this.valid)
             return;
+        const promises = [];
         if (this.hasSpawns) {
             const data = [0, ...this.spritePalettes, ...this.spritePatterns,
                 ...concatIterables(this.spawns), 0xff];
-            const address = await writer.write(data, 0x18000, 0x1bfff);
-            writer.rom[this.npcDataPointer] = address & 0xff;
-            writer.rom[this.npcDataPointer + 1] = address >> 8;
+            promises.push(writer.write(data, 0x18000, 0x1bfff, `NpcData ${hex(this.id)}`)
+                .then(address => writeLittleEndian(writer.rom, this.npcDataPointer, address - 0x10000)));
         }
-        const write = (data) => writer.write(data, 0x14000, 0x17fff);
+        const write = (data, name) => writer.write(data, 0x14000, 0x17fff, `${name} ${hex(this.id)}`);
         const layout = [
             this.bgm,
             this.layoutWidth, this.layoutHeight, this.animation, this.extended,
@@ -71,12 +71,12 @@ export class Location extends Entity {
         const flags = [...concatIterables(this.flags), 0xff];
         const pits = concatIterables(this.pits);
         const [layoutAddr, graphicsAddr, entrancesAddr, exitsAddr, flagsAddr, pitsAddr] = await Promise.all([
-            write(layout),
-            write(graphics),
-            write(entrances),
-            write(exits),
-            write(flags),
-            ...(pits.length ? [write(pits)] : []),
+            write(layout, 'Layout'),
+            write(graphics, 'Graphics'),
+            write(entrances, 'Entrances'),
+            write(exits, 'Exits'),
+            write(flags, 'Flags'),
+            ...(pits.length ? [write(pits, 'Pits')] : []),
         ]);
         const addresses = [
             layoutAddr & 0xff, (layoutAddr >>> 8) - 0xc0,
@@ -86,9 +86,9 @@ export class Location extends Entity {
             flagsAddr & 0xff, (flagsAddr >>> 8) - 0xc0,
             ...(pitsAddr ? [pitsAddr & 0xff, (pitsAddr >> 8) - 0xc0] : []),
         ];
-        const base = await write(addresses);
-        writer.rom[this.mapDataPointer] = base & 0xff;
-        writer.rom[this.mapDataPointer + 1] = (base >>> 8) - 0xc0;
+        const base = await write(addresses, 'MapData');
+        writeLittleEndian(writer.rom, this.mapDataPointer, base - 0xc000);
+        await Promise.all(promises);
     }
     allScreens() {
         const screens = new Set();

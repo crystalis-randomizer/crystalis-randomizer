@@ -220,6 +220,12 @@ DisplayNumber:
 
 .bank $1c000 $8000:$4000
 
+;;; Fix queen's dialog to terminate on last item, rather than overflow.
+;;; This is important for parsing and defragging to maintain the same size.
+.org $1cff9
+  .byte $e0
+
+
 ;;; Patch the end of ItemUse to check for a few more items.
 .org $1c34d
   jmp PatchTradeInItem
@@ -643,7 +649,7 @@ ItemGetData_03: ; sword of thunder
   .byte $a2,$43   ; 243 NOT telepathy -> 1a:13
 .org $1d671 ; dialog 59 generic sahara bunnies
   ;; replace stom - he can talk to bunnies just fine
-  .byte $a2,$43   ; 243 NOT telepathy -> 1a:12
+  .byte $22,$43   ; 243 NOT telepathy -> 1a:12
 .endif
 
 

@@ -4,6 +4,7 @@ import {Hitbox} from './rom/hitbox.js';
 import {ItemGet} from './rom/itemget.js';
 import {Location} from './rom/location.js';
 import {Npc} from './rom/npc.js';
+import {ObjectData} from './rom/objectdata.js';
 import {Palette} from './rom/palette.js';
 import {Pattern} from './rom/pattern.js';
 import {Screen} from './rom/screen.js';
@@ -63,141 +64,13 @@ const watchArray = (arr, addr) => {
   return new Proxy(arr, arrayChangeHandler);
 };
 
-class ObjectData extends Entity {
-  constructor(rom, id) {
-    super(rom, id);
-// const pr=id==0xe6?console.log:()=>{};
-    this.objectDataPointer = 0x1ac00 + (id << 1);
-    this.objectDataBase = addr(rom.prg, this.objectDataPointer, 0x10000);
-    this.sfx = rom.prg[this.objectDataBase];
-    let a = this.objectDataBase + 1;
-// console.log(`PRG($${id.toString(16)}) at $${this.objectDataBase.toString(16)}: ${Array.from(this.prg.slice(a, a + 23), x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
-    this.objectData = [];
-    let m = 0;
-    for (let i = 0; i < 32; i++) {
-// pr(`  i=${i.toString(16)}: a=${a.toString(16)}`);
-      if (!(i & 7)) {
-        m = rom.prg[a++];
-// pr(`  m=${m.toString(16)}`);
-      }
-      this.objectData.push(m & 0x80 ? rom.prg[a++] : 0);
-      m <<= 1;
-// pr(`  push ${this.objectData[this.objectData.length - 1].toString(16)}, m=${m.toString(16)}`);
-    }
-// console.log(`ObjectData($${id.toString(16)}) at $${this.objectDataBase.toString(16)}: ${Array.from(this.objectData, x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
-  }
-
-  // Returns a byte array for this entry
-  serialize() {
-    const out = [this.sfx];
-    for (let i = 0; i < 4; i++) {
-      let k = out.length;
-      out.push(0);
-      for (let j = 0; j < 8; j++) {
-        if (this.objectData[8 * i + j]) {
-          out[k] |= (0x80 >>> j);
-          out.push(this.objectData[8 * i + j]);
-        }
-      }
-    }
-    return Uint8Array.from(out);
-  }
-
-  async write(writer) {
-    // Note: shift of 0x10000 is irrelevant
-    const address = await writer.write(this.serialize(), 0x1a000, 0x1bfff,
-                                       `Object ${hex(this.id)}`);
-    writer.rom[this.objectDataPointer] = address & 0xff;
-    writer.rom[this.objectDataPointer + 1] = address >>> 8;
-  }
-
-  get(addr) {
-    return this.objectData[(addr - 0x300) >>> 5];
-  }
-
-  static setupProps() {
-    // bits is ...[addr, mask = 0xff, shift = 0]
-    const prop = (...bits) => ({
-      get() {
-        let value = 0;
-        for (const [addr, mask = 0xff, shift = 0] of bits) {
-          const lsh = shift < 0 ? -shift : 0;
-          const rsh = shift < 0 ? 0 : shift;
-          value |= ((this.objectData[(addr - 0x300) >>> 5] & mask) >>> rsh) << lsh;
-        }
-        return value;
-      },
-      set(value) {
-        for (const [addr, mask = 0xff, shift = 0] of bits) {
-          const lsh = shift < 0 ? -shift : 0;
-          const rsh = shift < 0 ? 0 : shift;
-          const v = (value >>> lsh) << rsh & mask;
-          const index = (addr - 0x300) >>> 5;
-          this.objectData[index] = this.objectData[index] & ~mask | v;
-        }
-      },
-    });
-    Object.defineProperties(this.prototype, {
-      metasprite: prop([0x300]),
-      collisionPlane: prop([0x3a0, 0xf0, 4]),
-      hitbox: prop([0x420, 0x40, 2], [0x3a0, 0x0f]),
-      hp: prop([0x3c0]),
-      atk: prop([0x3e0]),
-      def: prop([0x400]),
-      level: prop([0x420, 0x1f]),
-      child: prop([0x440]), // ad-hoc spawn ID
-      terrainSusceptibility: prop([0x460]),
-      immobile: prop([0x4a0, 0x80, 7]), // will not be knocked back
-      action: prop([0x4a0, 0x7f]),
-      replacement: prop([0x4c0]),
-      goldDrop: prop([0x500, 0xf0, 4]),
-      elements: prop([0x500, 0xf]),
-      expReward: prop([0x520]),
-      attackType: prop([0x540]),
-    });
-  }
-
-  parents() {
-    // If this is a projectile that is the parent of some monster,
-    // return an array of parents that spawned it.
-    return this.rom.monsters.filter(m => m.child && this.rom.adHocSpawns[m.child].object == this.id);
-  }
-
-  locations() {
-    // TODO - handle non-monster NPCs.
-    return this.rom.locations.filter(l =>
-        l.valid && l.spawns.some(spawn =>
-            spawn.isMonster() && spawn.monsterId === this.id));
-  }
-
-  palettes(includeChildren = false) {
-    // NOTE: this gets the wrong result for ice/sand zombies and blobs.
-    //  - may just need to guess/assume and experiment?
-    //  - zombies (action 0x22) look like should just be 3
-    //  - lavamen/blobs (action 0x29) are 2
-    //  - wraith shadows (action 0x26) are 3
-    if (this.action == 0x22) return [3]; // zombie
-    let metaspriteId = this.objectData[0];
-    if (this.action == 0x2a) metaspriteId = this.objectData[31] | 1;
-    if (this.action == 0x29) metaspriteId = 0x6b; // blob
-    if (this.action == 0x26) metaspriteId = 0x9c;
-
-    const ms = this.rom.metasprites[metaspriteId];
-    const childMs = includeChildren && this.child ?
-          this.rom.metasprites[this.rom.objects[this.rom.adHocSpawns[this.child].objectId].objectData[0]] : null;
-    const s = new Set([...ms.palettes(), ...(childMs ? childMs.palettes() : [])]);
-    return [...s];
-  }
-}
-ObjectData.setupProps();
-
 
 class Metasprite extends Entity {
   constructor(rom, id) {
     super(rom, id);
 
     this.base = addr(rom.prg, 0x3845c + (this.id << 1), 0x30000);
-    this.valid = this.base > 0x30000;
+    this.used = this.base > 0x30000;
 
     if (rom.prg[this.base] == 0xff) {
       // find the ID of the sprite that's mirrored.
@@ -237,7 +110,7 @@ class Metasprite extends Entity {
 
   // returns an array of [0..3]
   palettes() {
-    if (!this.valid) return [];
+    if (!this.used) return [];
     let ms = this;
     if (ms.mirrored) {
       ms = this.rom.metasprites[ms.mirrored];
@@ -407,7 +280,7 @@ export class Rom {
   get monsters() {
     let monsters = new Set();
     for (const l of this.locations) {
-      if (!l.valid || !l.hasSpawns) continue;
+      if (!l.used || !l.hasSpawns) continue;
       for (const o of l.spawns) {
         if ((o[2] & 7) == 0) monsters.add(this.objects[(o[3] + 0x50) & 0xff]);
       }
@@ -432,7 +305,7 @@ export class Rom {
   get monsterGraphics() {
     const gfx = {};
     for (const l of this.locations) {
-      if (!l.valid || !l.hasSpawns) continue;
+      if (!l.used || !l.hasSpawns) continue;
       for (const o of l.spawns) {
         if (!(o[2] & 7)) {
           const slot = o[2] & 0x80 ? 1 : 0;
@@ -453,7 +326,7 @@ export class Rom {
   get locationMonsters() {
     const m = {};
     for (const l of this.locations) {
-      if (!l.valid || !l.hasSpawns) continue;
+      if (!l.used || !l.hasSpawns) continue;
       // which monsters are in which slots?
       const s = m['$' + l.id.toString(16).padStart(2,0)] = {};
       for (const o of l.spawns) {
@@ -612,7 +485,7 @@ export class Rom {
   disjointTilesets() {
     const tilesetByScreen = [];
     for (const loc of this.locations) {
-      if (!loc.valid) continue;
+      if (!loc.used) continue;
       const tileset = loc.tileset;
       const ext = loc.extended ? 0x100 : 0;
       for (const row of loc.screens) {
@@ -691,7 +564,7 @@ export class Rom {
     const tileEffects = new Set();
     tilesets = new Set(tilesets);
     for (const l of this.locations) {
-      if (!l.valid) continue;
+      if (!l.used) continue;
       if (!tilesets.has(l.tileset)) continue;
       tileEffects.add(l.tileEffects);
       for (const screen of l.allScreens()) {
@@ -890,7 +763,7 @@ const pickFile = () => {
 //   return arr;
 // }
 // 'loc,locname,mon,monname,spawn,type,uniq,patslot,pat,palslot,pal2,pal3\n'+
-// rom.locations.flatMap(l=>!l||!l.valid?[]:uniq(seq(0xd,0x20,s=>{
+// rom.locations.flatMap(l=>!l||!l.used?[]:uniq(seq(0xd,0x20,s=>{
 //   const o=(l.objects||[])[s-0xd]||null;
 //   if (!o) return null;
 //   const type=o[2]&7;
@@ -905,7 +778,7 @@ const pickFile = () => {
 
 // building the CSV for the location table.
 //const h=(x)=>x==null?'null':'$'+x.toString(16).padStart(2,0);
-//'id,name,bgm,width,height,animation,extended,tilepat0,tilepat1,tilepal0,tilepal1,tileset,tile effects,exits,sprpat0,sprpat1,sprpal0,sprpal1,obj0d,obj0e,obj0f,obj10,obj11,obj12,obj13,obj14,obj15,obj16,obj17,obj18,obj19,obj1a,obj1b,obj1c,obj1d,obj1e,obj1f\n'+rom.locations.map(l=>!l||!l.valid?'':[h(l.id),l.name,h(l.bgm),l.layoutWidth,l.layoutHeight,l.animation,l.extended,h((l.tilePatterns||[])[0]),h((l.tilePatterns||[])[1]),h((l.tilePalettes||[])[0]),h((l.tilePalettes||[])[1]),h(l.tileset),h(l.tileEffects),[...new Set(l.exits.map(x=>h(x[2])))].join(':'),h((l.spritePatterns||[])[0]),h((l.spritePatterns||[])[1]),h((l.spritePalettes||[])[0]),h((l.spritePalettes||[])[1]),...new Array(19).fill(0).map((v,i)=>((l.objects||[])[i]||[]).slice(2).map(x=>x.toString(16)).join(':'))]).filter(x=>x).join('\n')
+//'id,name,bgm,width,height,animation,extended,tilepat0,tilepat1,tilepal0,tilepal1,tileset,tile effects,exits,sprpat0,sprpat1,sprpal0,sprpal1,obj0d,obj0e,obj0f,obj10,obj11,obj12,obj13,obj14,obj15,obj16,obj17,obj18,obj19,obj1a,obj1b,obj1c,obj1d,obj1e,obj1f\n'+rom.locations.map(l=>!l||!l.used?'':[h(l.id),l.name,h(l.bgm),l.layoutWidth,l.layoutHeight,l.animation,l.extended,h((l.tilePatterns||[])[0]),h((l.tilePatterns||[])[1]),h((l.tilePalettes||[])[0]),h((l.tilePalettes||[])[1]),h(l.tileset),h(l.tileEffects),[...new Set(l.exits.map(x=>h(x[2])))].join(':'),h((l.spritePatterns||[])[0]),h((l.spritePatterns||[])[1]),h((l.spritePalettes||[])[0]),h((l.spritePalettes||[])[1]),...new Array(19).fill(0).map((v,i)=>((l.objects||[])[i]||[]).slice(2).map(x=>x.toString(16)).join(':'))]).filter(x=>x).join('\n')
 
 
 export const EXPECTED_CRC32 = 0x1bd39032;

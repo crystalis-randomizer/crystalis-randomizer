@@ -132,7 +132,7 @@ export class Npc extends Entity {
     }
     if (locals.length) bytes.push(0xff, ...locals);
 
-    //console.log(`NPC ${this.id.toString(16)}: bytes length ${bytes.length}`);
+    // console.log(`NPC ${this.id.toString(16)}: bytes length ${bytes.length}`);
 
     return bytes;
   }

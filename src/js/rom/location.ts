@@ -7,7 +7,7 @@ import {Writer} from './writer.js';
 // Location entities
 export class Location extends Entity {
 
-  valid: boolean;
+  used: boolean;
   name: string;
 
   private readonly mapDataPointer: number;
@@ -53,7 +53,7 @@ export class Location extends Entity {
     this.mapDataPointer = 0x14300 + (id << 1);
     this.mapDataBase = addr(rom.prg, this.mapDataPointer, 0xc000);
     this.name = locationData.name || '';
-    this.valid = this.mapDataBase > 0xc000 && !!this.name;
+    this.used = this.mapDataBase > 0xc000 && !!this.name;
 
     this.layoutBase = addr(rom.prg, this.mapDataBase, 0xc000);
     this.graphicsBase = addr(rom.prg, this.mapDataBase + 2, 0xc000);
@@ -124,7 +124,7 @@ export class Location extends Entity {
   // }
 
   async write(writer: Writer): Promise<void> {
-    if (!this.valid) return;
+    if (!this.used) return;
     const promises = [];
     if (this.hasSpawns) {
       // write NPC data first, if present...

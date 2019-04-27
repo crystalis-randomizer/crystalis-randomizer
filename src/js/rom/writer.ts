@@ -10,7 +10,7 @@ class Chunk {
 
   constructor(readonly start: number, readonly end: number) {
     this.page = page(start);
-    if (page(end) !== this.page) throw new Error('Chunk spans pages');
+    if (page(end - 1) !== this.page) throw new Error('Chunk spans pages');
     this.pos = start;
   }
 
@@ -37,7 +37,7 @@ class Chunk {
 
 interface Write {
   readonly data: Data<number>;
-  readonly resolve: (addr: number) => void;
+  readonly resolve: (address: number) => void;
   readonly reject: (err: unknown) => void;
   readonly startPage: number;
   readonly endPage: number; // inclusive
@@ -55,9 +55,9 @@ export class Writer {
 
   // TODO: move()?
 
-  /** Note: start and end pages must be the same! */
+  /** Note: start and end pages must be the same!  'end' is exclusive. */
   alloc(start: number, end: number) {
-    while (page(end) > page(start)) {
+    while (page(end - 1) > page(start)) {
       const boundary = (page(start) + 1) << 13;
       this.chunks.push(new Chunk(start, boundary - 1));
       start = boundary;
@@ -66,9 +66,9 @@ export class Writer {
   }
 
   // TODO: consider renaming this to queue() or plan() or something?
-  write(data: Data<number>, start: number, end: number): Promise<number> {
+  async write(data: Data<number>, start: number, end: number): Promise<number> {
     const startPage = page(start);
-    const endPage = page(end);
+    const endPage = page(end - 1);
     const p = new Promise<number>((resolve, reject) => {
       this.writes.push({data, resolve, reject, startPage, endPage});
     });
@@ -85,9 +85,9 @@ export class Writer {
       this.writes = [];
       this.promises = [];
       for (const write of writes) {
-        const addr = this.find(write);
-        if (addr >= 0) {
-          write.resolve(addr);
+        const address = this.find(write);
+        if (address >= 0) {
+          write.resolve(address);
         } else {
           this.writeOne(write);
         }
@@ -121,22 +121,17 @@ export class Writer {
       return;
     }
 
-    console.log(`LOOKING FOR CHUNK: ${write.data.length} bytes in ${hex(write.startPage)
-                     }..${hex(write.endPage)}`);
-    for (const chunk of this.chunks) {
-      if (chunk.page < write.startPage || chunk.page > write.endPage) {
-        console.log(`wrong page: ${hex(chunk.pos)}..${hex(chunk.end)} -> ${hex(chunk.page)}`); continue;
-      }
-      if (chunk.free() < write.data.length) {
-        console.log(`not enough free: ${hex(chunk.pos)}..${hex(chunk.end)} -> ${chunk.free()}`); continue;
-      }
-      // looks like it fits!
-      this.rom.subarray(chunk.pos, chunk.pos + write.data.length).set(write.data);
-      write.resolve(chunk.pos);
-      chunk.pos += write.data.length;
-      return;
-    }
-    console.log(this.chunks);
+    // console.log(`LOOKING FOR CHUNK: ${write.data.length} bytes in ${hex(write.startPage)
+    //                  }..${hex(write.endPage)}`);
+    // for (const chunk of this.chunks) {
+    //   if (chunk.page < write.startPage || chunk.page > write.endPage) {
+    //     console.log(`wrong page: ${hex(chunk.pos)}..${hex(chunk.end)} -> ${hex(chunk.page)}`); continue;
+    //   }
+    //   if (chunk.free() < write.data.length) {
+    //     console.log(`not enough free: ${hex(chunk.pos)}..${hex(chunk.end)} -> ${chunk.free()}`); continue;
+    //   }
+    // }
+    // console.log(this.chunks);
     write.reject(
         new Error(`Could not find sufficient chunk in ${hex(write.startPage)
                        }..${hex(write.endPage)} to write ${write.data}`));

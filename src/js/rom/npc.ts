@@ -123,7 +123,7 @@ export class Npc extends Entity {
       const cached = cache.get(label);
       if (cached != null) {
         bytes.push(location, cached);
-        console.log(`SAVED ${localBytes.length} bytes`);
+        // console.log(`SAVED ${localBytes.length} bytes`);
         continue;
       }
       cache.set(label, locals.length);
@@ -132,36 +132,26 @@ export class Npc extends Entity {
     }
     if (locals.length) bytes.push(0xff, ...locals);
 
-    console.log(`NPC ${this.id.toString(16)}: bytes length ${bytes.length}`);
+    //console.log(`NPC ${this.id.toString(16)}: bytes length ${bytes.length}`);
 
     return bytes;
   }
 
-  async write(writer: Writer, {spawnConditionsBase = 0x1c5e0,
-                               dialogBase = 0x1c95d} = {}): Promise<void> {
-    writer.rom.subarray(this.dataBase, this.dataBase + 4).set(this.data);
+  async write(writer: Writer): Promise<void> {
     if (!this.used) return;
-
-    let address = await writer.write(this.spawnConditionsBytes(), 0x1c000, 0x1dfff);
-    writeLittleEndian(writer.rom, spawnConditionsBase + 2 * this.id, address - 0x14000);
-    // TODO - update pointer to the base???
+    const promises = [];
+    writer.rom.subarray(this.dataBase, this.dataBase + 4).set(this.data);
+    promises.push(writer.write(this.spawnConditionsBytes(), 0x1c000, 0x1dfff).then(
+        address => writeLittleEndian(writer.rom, this.spawnBase, address - 0x14000)));
 
     if (this.dialogPointer) {
-      try {
-        this.rom.DLG=this.rom.DLG||{};
-      address = await writer.write(this.dialogBytes(), 0x1c000, 0x1dfff);
-        if (SEEN.has(address)){this.rom.DLG[this.id]=`REUSE ${SEEN.get(address).toString(16)}`;}
-        else{ this.rom.DLG[this.id]=`${this.dialogBytes().length}: ${this.dialogBytes().map(x=>x.toString(16).padStart(2,0)).join(',')}`;
-              SEEN.set(address, this.id);}
-      console.log(`WROTE NPC ${this.id.toString(16)} at ${address.toString(16)}`);
-      writeLittleEndian(writer.rom, dialogBase + 2 * this.id, address - 0x14000);
-      } catch (err) {
-        console.log(`Failed to write NPC ${this.id.toString(16)}: ${err}`);
-      }
+      promises.push(writer.write(this.dialogBytes(), 0x1c000, 0x1dfff).then(
+          address => writeLittleEndian(writer.rom, this.dialogBase, address - 0x14000)));
     }
+    await Promise.all(promises);
   }
 }
-const SEEN = new Map<number, number>();
+
 export class GlobalDialog {
   constructor(public condition: number, public message: MessageId) {}
 

@@ -649,7 +649,7 @@ ItemGetData_03: ; sword of thunder
   .byte $a2,$43   ; 243 NOT telepathy -> 1a:13
 .org $1d671 ; dialog 59 generic sahara bunnies
   ;; replace stom - he can talk to bunnies just fine
-  .byte $a2,$43   ; 243 NOT telepathy -> 1a:12
+  .byte $22,$43   ; 243 NOT telepathy -> 1a:12
 .endif
 
 

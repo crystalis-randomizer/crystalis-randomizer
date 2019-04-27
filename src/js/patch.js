@@ -656,13 +656,7 @@ const identifyKeyItemsForDifficultyBuffs = (rom) => {
   for (const get of rom.itemGets) {
     const item = ITEMS.get(get.item);
     if (!item || !item.key) continue;
-    if (!get.table) throw new Error(`No table for ${item.name}`);
-    if (get.table[get.table.length - 1] == 0xff) {
-      get.table[get.table.length - 1] = 0xfe;
-    } else {
-      throw new Error(`Expected FF at end of ItemGet table: ${get.id.toString(16)}: ${Array.from(get.table).map(x => x.toString(16).padStart(2, 0)).join(' ')}`);
-    }
-    get.write(rom);
+    get.key = true;
   }
   // console.log(report);
 };

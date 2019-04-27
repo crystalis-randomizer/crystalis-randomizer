@@ -1,5 +1,7 @@
+import {AdHocSpawn} from './rom/adhocspawn.js';
 import {Entity} from './rom/entity.js';
 import {Hitbox} from './rom/hitbox.js';
+import {ItemGet} from './rom/itemget.js';
 import {Location} from './rom/location.js';
 import {Npc} from './rom/npc.js';
 import {Palette} from './rom/palette.js';
@@ -24,54 +26,6 @@ import {addr,
 // TODO - consider adding prepopulated name maps for data
 // tables, e.g. my location names, so that an editor could
 // use a drop-down menu and show something meaningful.
-
-
-class AdHocSpawn extends Entity {
-  constructor(rom, id) {
-    // `id` is MapData[1][4], which ranges from $b3..$bd
-    super(rom, id);
-    this.base = (id << 2) + 0x29c00;
-    this.lowerSlot = rom.prg[this.base];
-    this.upperSlot = rom.prg[this.base + 1];
-    this.object = rom.prg[this.base + 2];
-    this.count = rom.prg[this.base + 3];
-  }
-}
-
-class ItemGet extends Entity {
-  constructor(rom, id) {
-    super(rom, id);
-
-    this.itemPointer = 0x1dd66 + id;
-    this.item = rom.prg[this.itemPointer];
-    // I don't fully understand this table...
-    this.tablePointer = 0x1db00 + 2 * id;
-    this.tableBase = addr(rom.prg, this.tablePointer, 0x14000);
-    const tableContents = [];
-    let a = this.tableBase;
-    tableContents.push(rom.prg[a++]);
-    tableContents.push(rom.prg[a++]);
-    tableContents.push(rom.prg[a++]);
-    tableContents.push(rom.prg[a++]);
-    while (true) {
-      const v = rom.prg[a++];
-      tableContents.push(v);
-      tableContents.push(rom.prg[a++]);
-      if (v & 0x40) break;
-    }
-    tableContents.push(rom.prg[a++]);
-    this.table = Uint8Array.from(tableContents);
-    // NOTE - store the original table length or pointer?
-    // Some way to detect whether it's changed?
-  }
-
-  // NOTE - punt on defragging for now.
-  write(rom = this.rom) {
-    rom.prg[this.itemPointer] = this.item;
-    const data = this.table;
-    rom.prg.subarray(this.tableBase, this.tableBase + data.length).set(data);
-  }
-}
 
 class ObjectData extends Entity {
   constructor(rom, id) {
@@ -113,11 +67,11 @@ class ObjectData extends Entity {
     return Uint8Array.from(out);
   }
 
-  async write(writer, base = 0x1ac00) {
+  async write(writer) {
     // Note: shift of 0x10000 is irrelevant
     const address = await writer.write(this.serialize(), 0x1a000, 0x1bfff);
-    writer.rom[base + 2 * this.id] = address & 0xff;
-    writer.rom[base + 2 * this.id + 1] = address >>> 8;
+    writer.rom[this.objectDataBase] = address & 0xff;
+    writer.rom[this.objectDataBase + 1] = address >>> 8;
   }
 
   get(addr) {
@@ -193,7 +147,7 @@ class ObjectData extends Entity {
 
     const ms = this.rom.metasprites[metaspriteId];
     const childMs = includeChildren && this.child ?
-          this.rom.metasprites[this.rom.objects[this.rom.adHocSpawns[this.child].object].objectData[0]] : null;
+          this.rom.metasprites[this.rom.objects[this.rom.adHocSpawns[this.child].objectId].objectData[0]] : null;
     const s = new Set([...ms.palettes(), ...(childMs ? childMs.palettes() : [])]);
     return [...s];
   }
@@ -530,62 +484,40 @@ export class Rom {
     const writer = new Writer(this.prg);
     // MapData
     writer.alloc(0x144f8, 0x17e00);
-    // NpcData, ObjectData
+    // NpcData
     // NOTE: 193f9 is assuming $fb is the last location ID.  If we add more locations at
     // the end then we'll need to push this back a few more bytes.  We could possibly
     // detect the bad write and throw an error, and/or compute the max location ID.
-    //writer.alloc(0x193f9, 0x1bb00);
     writer.alloc(0x193f9, 0x1ac00);
-    writer.alloc(0x1ae00, 0x1bd00);
-    // TriggerData
-    writer.alloc(0x1e200, 0x1e3f0);
+    // ObjectData (index at 1ac00..1ae00)
+    writer.alloc(0x1ae00, 0x1bd00); // save 512 bytes at end for some extra code
     // NpcSpawnConditions
     writer.alloc(0x1c77a, 0x1c95d);
     // NpcDialog
-    writer.alloc(0x1cae5, 0x1d8f3);
+    writer.alloc(0x1cae5, 0x1d8f4);
+    // ItemGetData
+    writer.alloc(0x1dde6, 0x1e065);
+    // TriggerData
+    writer.alloc(0x1e200, 0x1e3f0);
 
-    // Move object data table all the way to the end.
-    //this.prg[0x3c273] = this.prg[0x3c278] = 0xbe;
-    //this.prg[0x3c27f] = this.prg[0x3c284] = 0xbf;
     const promises = [];
-    for (const l of this.locations) {
-      if (!l.valid) continue;
-      promises.push(l.write(writer));
-    }
-    // NOTE: NpcData can span the entire $18000..$1bfff double-page, but
-    // ObjectData (which starts shortly after the end of NpcData) must only
-    // live in $1a000..$1bfff.  So we make a new writer that starts at the
-    // exact position that NpcData ends (provided it's on the right page).
-    // This should afford us the same amount of freed space (usable by either
-    // table), but guarantees no objects end up on the wrong page.
-    for (const o of this.objects) {
-      o.write(writer); // , 0x1be00); // NOTE: we moved the ObjectData table to 1be00
-    }
-    for (const h of this.hitboxes) {
-      h.write(writer);
-    }
-    for (const t of this.triggers) {
-      if (!t.used) continue;
-      promises.push(t.write(writer));
-    }
-    for (const s of this.npcs) {
-      if (!s.used) continue;
-      promises.push(s.write(writer));
-    }
-    for (const tileset of this.tilesets) {
-      tileset.write(writer);
-    }
-    for (const tileEffects of this.tileEffects) {
-      tileEffects.write(writer);
-    }
-    for (const screen of this.screens) {
-      screen.write(writer);
-    }
+    const writeAll = (writables) => {
+      for (const w of writables) {
+        promises.push(w.write(writer));
+      }
+    };
+    writeAll(this.locations);
+    writeAll(this.objects);
+    writeAll(this.hitboxes);
+    writeAll(this.triggers);
+    writeAll(this.npcs);
+    writeAll(this.tilesets);
+    writeAll(this.tileEffects);
+    writeAll(this.screens);
+    writeAll(this.adHocSpawns);
+    writeAll(this.itemGets);
     promises.push(writer.commit());
     await Promise.all(promises).then(() => undefined);
-const ks=Object.keys(this.DLG).sort((a,b)=>this.npcs[a].dialogBase - this.npcs[b].dialogBase);
-const x=ks.map(k=>`${Number(k).toString(16).padStart(2,0)}: ${this.DLG[k]}`);
-console.log(x);
   }
 
 

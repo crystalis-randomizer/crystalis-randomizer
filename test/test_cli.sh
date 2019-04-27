@@ -14,7 +14,8 @@ set -ex
 } | head -c 393232 > test/test.nes
 
 # Now run the CLI on it.
-node src/js/cli.js --output=test/test_out --force test/test.nes
+node src/js/cli.js --flags=Rst \
+                   --output=test/test_out --force test/test.nes
 
 # Make sure the output has the right size.
 wc -c test/test_out.nes | grep -q 393232

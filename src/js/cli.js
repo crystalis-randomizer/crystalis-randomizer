@@ -141,6 +141,7 @@ const fillTemplate = (str, arg) => {
 };
 
 process.on('unhandledRejection', error => {
+  console.error('Unhandled Failure');
   console.error(error.stack);
   process.exit(1);
 });

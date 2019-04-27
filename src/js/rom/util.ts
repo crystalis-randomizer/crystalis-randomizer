@@ -124,10 +124,48 @@ export function readString(arr: Data<number>, address: number): string {
   return String.fromCharCode(...bytes);
 }
 
-export function writeLittleEndian(data: Data<number>, offset: number, address: number) {
-  data[offset] = address & 0xff;
-  data[offset + 1] = address >>> 8;
+export function writeLittleEndian(data: Data<number>, offset: number, value: number) {
+  data[offset] = value & 0xff;
+  data[offset + 1] = value >>> 8;
 }
+
+export class FlagListType {
+  constructor(readonly last: number, readonly clear: number) {}
+
+  read(data: Data<number>, offset: number = 0): number[] {
+    // TODO - do we ever need to invert clear/last?  If so, use ~ as signal.
+    const flags = [];
+    while (true) {
+      const hi = data[offset++];
+      const lo = data[offset++];
+      offset += 2;
+      const flag = (hi & 3) << 8 | lo;
+      flags.push(hi & this.clear ? ~flag : flag);
+      if (hi & this.last) return flags;
+    }
+  }
+
+  bytes(flags: number[]): number[] {
+    const bytes = [];
+    for (let i = 0; i < flags.length; i++) {
+      let flag = flags[i];
+      if (flag < 0) flag = (this.clear << 8) | ~flag;
+      if (i === flags.length - 1) flag |= (this.last << 8);
+      bytes.push(flag >>> 8);
+      bytes.push(flag & 0xff);
+    }
+    return bytes;
+  }
+
+  write(data: Data<number>, flags: number[], offset: number = 0) {
+    const bytes = this.bytes(flags);
+    for (let i = 0; i < bytes.length; i++) {
+      data[i + offset] = bytes[i];
+    }
+  }
+}
+
+export const ITEM_GET_FLAGS = new FlagListType(0x40, 0x80);
 
 ////////////////////////////////////////////////////////////////
 

@@ -16,6 +16,7 @@ import {Writer} from './rom/writer.js';
 import {addr,
         countBits,
         group,
+        hex,
         readString,
         seq,
         slice,
@@ -26,6 +27,41 @@ import {addr,
 // TODO - consider adding prepopulated name maps for data
 // tables, e.g. my location names, so that an editor could
 // use a drop-down menu and show something meaningful.
+
+const watchArray = (arr, addr) => {
+  const arrayChangeHandler = {
+    get: function(target, property) {
+      //console.log('getting ' + property + ' for ' + target);
+      // property is index in this case
+      let v = target[property];
+      if (property === 'subarray') {
+        return (start, end) => {
+          const sub = target.subarray(start, end);
+          if (start <= addr && addr < end) return watchArray(sub, addr - start);
+          return sub;
+        };
+      } else if (property === 'set') {
+        return (val) => {
+          console.log(`Setting overlapping array ${addr}`);
+          target.set(val);
+        };
+      }
+      if (typeof v === 'function') v = v.bind(target);
+      return v;
+    },
+    set: function(target, property, value, receiver) {
+      //console.log('setting ' + property + ' for '/* + target*/ + ' with value ' + value);
+      if (property == addr) {
+        console.log(`Writing ${addr.toString(16)}`);
+        debugger;
+      }
+      target[property] = value;
+      // you have to return true to accept the changes
+      return true;
+    }
+  };
+  return new Proxy(arr, arrayChangeHandler);
+};
 
 class ObjectData extends Entity {
   constructor(rom, id) {
@@ -69,9 +105,10 @@ class ObjectData extends Entity {
 
   async write(writer) {
     // Note: shift of 0x10000 is irrelevant
-    const address = await writer.write(this.serialize(), 0x1a000, 0x1bfff);
-    writer.rom[this.objectDataBase] = address & 0xff;
-    writer.rom[this.objectDataBase + 1] = address >>> 8;
+    const address = await writer.write(this.serialize(), 0x1a000, 0x1bfff,
+                                       `Object ${hex(this.id)}`);
+    writer.rom[this.objectDataPointer] = address & 0xff;
+    writer.rom[this.objectDataPointer + 1] = address >>> 8;
   }
 
   get(addr) {

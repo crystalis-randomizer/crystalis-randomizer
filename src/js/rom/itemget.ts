@@ -1,6 +1,6 @@
 import {Entity, Rom} from './entity.js';
 import {MessageId} from './messageid.js';
-import {ITEM_GET_FLAGS, readLittleEndian, writeLittleEndian} from './util.js';
+import {ITEM_GET_FLAGS, hex, readLittleEndian, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
 
 // A gettable item slot/check.  Each ItemGet maps to a single item,
@@ -56,7 +56,8 @@ export class ItemGet extends Entity {
       ...ITEM_GET_FLAGS.bytes(this.flags),
       this.key ? 0xfe : 0xff,  // TODO: remove this byte when no longer needed
     ];
-    const address = await writer.write(table, 0x1d000, 0x1efff);
+    const address = await writer.write(table, 0x1d000, 0x1efff,
+                                       `ItemGetData ${hex(this.id)}`);
     writeLittleEndian(writer.rom, this.tablePointer, address - 0x14000);
   }
 }

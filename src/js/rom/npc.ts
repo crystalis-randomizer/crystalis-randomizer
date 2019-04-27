@@ -1,6 +1,6 @@
 import {Entity, Rom} from './entity.js';
 import {MessageId} from './messageid.js';
-import {Data, addr, readBigEndian, tuple, writeLittleEndian} from './util.js';
+import {Data, addr, hex, readBigEndian, tuple, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
 
 type FlagList = number[];
@@ -141,12 +141,14 @@ export class Npc extends Entity {
     if (!this.used) return;
     const promises = [];
     writer.rom.subarray(this.dataBase, this.dataBase + 4).set(this.data);
-    promises.push(writer.write(this.spawnConditionsBytes(), 0x1c000, 0x1dfff).then(
-        address => writeLittleEndian(writer.rom, this.spawnBase, address - 0x14000)));
+    promises.push(writer.write(this.spawnConditionsBytes(), 0x1c000, 0x1dfff,
+                               `SpawnCondition ${hex(this.id)}`).then(
+        address => writeLittleEndian(writer.rom, this.spawnPointer, address - 0x14000)));
 
     if (this.dialogPointer) {
-      promises.push(writer.write(this.dialogBytes(), 0x1c000, 0x1dfff).then(
-          address => writeLittleEndian(writer.rom, this.dialogBase, address - 0x14000)));
+      promises.push(writer.write(this.dialogBytes(), 0x1c000, 0x1dfff,
+                                 `Dialog ${hex(this.id)}`).then(
+          address => writeLittleEndian(writer.rom, this.dialogPointer, address - 0x14000)));
     }
     await Promise.all(promises);
   }

@@ -145,13 +145,22 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
 
   misc(parsed, flags);
 
+  // NOTE: This needs to happen BEFORE postshuffle
+  await parsed.writeData();
+  const crc = await postParsedShuffle(rom, random, seed, flags, asm, assemble);
+
+  // TODO - optional flags can possibly go here, but MUST NOT use parsed.prg!
+
+  return crc;
+};
+
+// Separate function to guarantee we no longer have access to the parsed rom...
+const postParsedShuffle = async (rom, random, seed, flags, asm, assemble) => {
   await assemble('postshuffle.s');
   updateDifficultyScalingTables(rom, flags, asm);
   updateCoinDrops(rom, flags);
 
   shuffleRandomNumbers(rom, random);
-
-  await parsed.writeData();
 
   return stampVersionSeedAndHash(rom, seed, flags);
 

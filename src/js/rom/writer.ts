@@ -41,11 +41,14 @@ interface Write {
   readonly reject: (err: unknown) => void;
   readonly startPage: number;
   readonly endPage: number; // inclusive
+  readonly name: string;
 }
 
 // type Data = Uint8Array | number[];
 
 export class Writer {
+
+  //private writing = false;
 
   private readonly chunks: Chunk[] = [];
   private writes: Write[] = [];
@@ -53,47 +56,64 @@ export class Writer {
 
   constructor(readonly rom: Uint8Array) {}
 
+  private free: number[] = [];
+
   // TODO: move()?
 
   /** Note: start and end pages must be the same!  'end' is exclusive. */
   alloc(start: number, end: number) {
     while (page(end - 1) > page(start)) {
       const boundary = (page(start) + 1) << 13;
-      this.chunks.push(new Chunk(start, boundary - 1));
+      this.addChunk(new Chunk(start, boundary - 1));
       start = boundary;
     }
-    this.chunks.push(new Chunk(start, end));
+    this.addChunk(new Chunk(start, end));
+  }
+
+  addChunk(c: Chunk) {
+    this.chunks.push(c);
+    this.free[c.page] = (this.free[c.page] || 0) + c.free();
   }
 
   // TODO: consider renaming this to queue() or plan() or something?
-  async write(data: Data<number>, start: number, end: number): Promise<number> {
+  async write(data: Data<number>, start: number, end: number, name: string): Promise<number> {
+    //if (this.writing) console.log(`Late write: ${name}`);
     const startPage = page(start);
     const endPage = page(end - 1);
     const p = new Promise<number>((resolve, reject) => {
-      this.writes.push({data, resolve, reject, startPage, endPage});
+      this.writes.push({data, resolve, reject, startPage, endPage, name});
     });
     this.promises.push(p.catch(() => {}));
     return p;
   }
 
   async commit(): Promise<void> {
+    //this.writing = true;
     while (this.writes.length) {
-      const writes = this.writes.sort(
+      const writes = this.writes;
+      this.writes = [];
+      const promises = this.promises;
+      this.promises = [];
+      writes.sort(
           (a, b) => ((a.endPage - a.startPage) - (b.endPage - b.startPage)) ||
           (b.data.length - a.data.length));
-      const promises = this.promises;
-      this.writes = [];
-      this.promises = [];
       for (const write of writes) {
         const address = this.find(write);
         if (address >= 0) {
+          //console.log(`${write.name}: overlaps at ${hex(address)}`);
           write.resolve(address);
         } else {
           this.writeOne(write);
         }
       }
       await Promise.all(promises);
+      // NOTE: This is pretty bad - how can we tell when all the constituent
+      // promises are actually added???
+      await 0;
+      await 0;
+      await 0;
     }
+    //this.writing = false;
     // console.log(`Finished writing $${this.start.toString(16)}..$${this.pos.toString(16)
     //              }.  ${this.end - this.pos} bytes free`);
     // TODO - summarize all free chunks???
@@ -117,6 +137,10 @@ export class Writer {
       // looks like it fits!
       this.rom.subarray(chunk.pos, chunk.pos + write.data.length).set(write.data);
       write.resolve(chunk.pos);
+      this.free[chunk.page] -= write.data.length;
+      // console.log(`${write.name}: writing ${write.data.length} bytes at ${
+      //              hex(chunk.pos)}: ${Array.from(write.data, hex).join(' ')} | FREE ${
+      //              this.free.map((v:number,k:number)=>`${hex(2*k)}:${v}`).join('/')}`);
       chunk.pos += write.data.length;
       return;
     }
@@ -131,9 +155,11 @@ export class Writer {
     //     console.log(`not enough free: ${hex(chunk.pos)}..${hex(chunk.end)} -> ${chunk.free()}`); continue;
     //   }
     // }
-    // console.log(this.chunks);
+    //console.log(this.chunks);
+    console.log(`${write.name}: WRITE FAILED ${write.data.length} bytes: ${
+                 Array.from(write.data, hex).join(' ')}`);
     write.reject(
         new Error(`Could not find sufficient chunk in ${hex(write.startPage)
-                       }..${hex(write.endPage)} to write ${write.data}`));
+                       }..${hex(write.endPage)} to write ${write.name}: ${write.data}`));
   }
 }

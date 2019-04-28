@@ -9,11 +9,13 @@ const fs = require('fs');
 const patch = require('./patch.js');
 const {breakLines} = require('./util.js');
 const {NodeReader} = require('./nodereader.js');
+const version = require('./version.js');
 
 // Usage: node cli.js [--flags=<FLAGS>] [--seed=<SEED>] rom.nes
 
 const usage = (code) => {
-  console.log(`Usage: cryr [OPTIONS...] rom.nes
+  console.log(`Crystalis Randomizer v${version.VERSION}
+Usage: cryr [OPTIONS...] rom.nes
 
 Options
   --flags=FLAGSET    Specify the flagset.
@@ -83,6 +85,9 @@ const main = (...args) => {
       if (value != null) args.unshift(value);
     } else if (arg == 'help') {
       usage(0);
+    } else if (arg == 'version' || arg == '-v') {
+      console.log(version.VERSION);
+      process.exit(0);
     } else if (arg == 'list-flags') {
       // undocumented flag
       for (const {title} of PRESETS) {

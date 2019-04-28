@@ -261,3 +261,39 @@ interface DataTupleCtor<T> {
   of(inits: DataTupleInits<T>): DataTupleSub<T>;
   from(data: Data<number>, offset: number): DataTupleSub<T>;
 }
+
+
+export const watchArray = (arr: Data<unknown>, watch: number) => {
+  const arrayChangeHandler = {
+    get(target: any, property: string | number) {
+      // console.log('getting ' + property + ' for ' + target);
+      // property is index in this case
+      let v = target[property];
+      if (property === 'subarray') {
+        return (start: number, end: number) => {
+          const sub = target.subarray(start, end);
+          if (start <= watch && watch < end) return watchArray(sub, watch - start);
+          return sub;
+        };
+      } else if (property === 'set') {
+        return (val: Data<unknown>) => {
+          console.log(`Setting overlapping array ${watch}`);
+          target.set(val);
+        };
+      }
+      if (typeof v === 'function') v = v.bind(target);
+      return v;
+    },
+    set(target: any, property: string | number, value: any, receiver: any) {
+      // console.log('setting ' + property + ' for '/* + target*/ + ' with value ' + value);
+      if (property === watch) {
+        console.log(`Writing ${watch.toString(16)}`);
+        // debugger;
+      }
+      target[property] = value;
+      // you have to return true to accept the changes
+      return true;
+    },
+  };
+  return new Proxy(arr, arrayChangeHandler);
+};

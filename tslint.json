@@ -1,0 +1,29 @@
+{
+    "defaultSeverity": "error",
+    "extends": [
+        "tslint:recommended"
+    ],
+    "jsRules": {},
+    "rules": {
+      "array-type": [true, "array"],
+      "arrow-parens": false,
+      "curly": false,
+      "interface-name": false,
+      "max-classes-per-file": false,
+      "member-access": false,
+      "member-ordering": false,
+      "no-bitwise": false,
+      "no-conditional-assignment": false,
+      "no-console": false,
+      "no-empty": false,
+      "ordered-imports": [
+        true,
+        {
+          "import-sources-order": "lowercase-last",
+          "named-imports-order": "lowercase-last"
+        }
+      ],
+      "quotemark": [true, "single"]
+    },
+    "rulesDirectory": []
+}

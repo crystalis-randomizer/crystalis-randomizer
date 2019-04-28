@@ -1,42 +1,71 @@
-const REPEATABLE_FLAGS = new Set(['S']);
+const REPEATABLE_FLAGS: Set<string> = new Set(['S']);
 
-export const PRESETS = [{
+interface Preset {
+  descr: string;
+  flags: string;
+  title: string;
+
+  default?: boolean;
+}
+
+export const PRESETS: Preset[] = [{
   title: 'Casual',
+
+  descr: `Basic flags for a relatively easy playthrough.`,
   flags: 'Ds Edmrsx Fw Mr Rp Sbk Sc Sm Tab',
-  descr: `Basic flags for a relatively easy playthrough.`
 }, {
   title: 'Intermediate',
-  flags: 'Ds Edms Fsw Gt Mr Ps Rlpt Sbkm Sct Tab',
+
   descr: `Slightly more challenge than Casual but still approachable.`,
+  flags: 'Ds Edms Fsw Gt Mr Ps Rlpt Sbkm Sct Tab',
+
   default: true,
 }, {
   title: 'Full Shuffle',
-  flags: 'Em Fsw Gt Mr Ps Rlprt Sbckmt Tab',
+
   descr: `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
+  flags: 'Em Fsw Gt Mr Ps Rlprt Sbckmt Tab',
 }, {
   title: 'Glitchless',
-  flags: 'Em Fcpstw Mr Ps Rlprt Sbckmt Tab',
+
   descr: `Full shuffle but with no glitches.`,
+  flags: 'Em Fcpstw Mr Ps Rlprt Sbckmt Tab',
 }, {
   // TODO: add 'Ht' for maxing out tower scaling
   title: 'Advanced',
-  flags: 'Fsw Gfprt Hbw Mr Ps Rlprt Sbckt Sm Tab',
+
   descr: `A balanced randomization with quite a bit more difficulty.`,
+  flags: 'Fsw Gfprt Hbw Mr Ps Rlprt Sbckt Sm Tab',
 }, {
   // TODO: add 'Ht'
   title: 'Ludicrous',
-  flags: 'Fs Gfprstw Hbgmswx Mr Ps Rlprt Sbckmt Tab',
+
   descr: `Pulls out all the stops, may require superhuman feats.`,
+  flags: 'Fs Gfprstw Hbgmswx Mr Ps Rlprt Sbckmt Tab',
 }];
 
-
-const PRESETS_BY_KEY = {};
+// Just the flags, not the whole documentation.
+const PRESETS_BY_KEY: {[key: string]: string} = {};
 for (const {title, flags} of PRESETS) {
   PRESETS_BY_KEY[`@${title.replace(/ /g, '').toLowerCase()}`] = flags;
 }
 
+interface FlagSection {
+  flags: Flag[];
+  section: string;
 
-export const FLAGS = [{
+  text?: string;
+}
+
+interface Flag {
+  flag: string;
+  name: string;
+
+  hard?: boolean;
+  text?: string;
+}
+
+export const FLAGS: FlagSection[] = [{
   section: 'Items',
   text: `Items are broken into five pools: <i>key items</i> includes all
       swords, orbs, bracelets, and progression items (rabbit boots,
@@ -52,6 +81,7 @@ export const FLAGS = [{
       spells; and <i>traps</i> are the 12 trap chests found in various
       places. These pools can be shuffled together, kept separate, or
       left unshuffled.`,
+
   flags: [{
     flag: 'Sk',
     name: 'Shuffle key items',
@@ -133,6 +163,7 @@ export const FLAGS = [{
 }, {
   section: 'Monsters',
   text: `Monster stats are always normalized by scaling level.`,
+
   flags: [{
     flag: 'Mr',
     name: 'Randomize monsters',
@@ -162,6 +193,7 @@ export const FLAGS = [{
   text: `Prices are always normalized by scaling level: prices at tool shops
          and inns double every 10 scaling levels, while prices at armor shops
          halve every 12 scaling levels `,
+
   flags: [{
     flag: 'Ps',
     name: 'Shuffle shop contents',
@@ -171,6 +203,7 @@ export const FLAGS = [{
   }],
 }, {
   section: 'Hard mode',
+
   flags: [{
     flag: 'Hw',
     hard: true,
@@ -243,6 +276,7 @@ export const FLAGS = [{
 //       </div>
 }, {
   section: 'Tweaks',
+
   flags: [{
     flag: 'Ta',
     name: 'Automatically equip orbs and bracelets',
@@ -260,6 +294,7 @@ export const FLAGS = [{
   }],
 }, {
   section: 'Routing',
+
   flags: [{
     flag: 'Rs',
     name: 'Story Mode',
@@ -315,6 +350,7 @@ export const FLAGS = [{
       performed when verifying that a game is winnable.  Enabling
       these glitches tends to increase the randomness of the shuffle,
       since there are more valid options.`,
+
   flags: [{
     flag: 'Gc',
     hard: true,
@@ -358,6 +394,7 @@ export const FLAGS = [{
   section: 'Glitch Fixes',
   text: `Alternatively, glitches may be patched out of the game and made unusable.
          These flags are exclusive with the flags that require the glitch.`,
+
   flags: [{
     flag: 'Fs',
     name: 'Disable shop glitch',
@@ -436,13 +473,13 @@ export const FLAGS = [{
 
 // TODO - flag validation!!!
 
-const exclusiveFlags = (flag) => {
+const exclusiveFlags = (flag: string): RegExp => {
   if (flag.startsWith('S')) {
     return new RegExp(`S.*[${flag.substring(1)}]`);
   }
   return FLAG_CONFLICTS[flag];
 }
-const FLAG_CONFLICTS = {
+const FLAG_CONFLICTS: {[key: string]: RegExp} = {
   Hm: /Em/,
   Hx: /Ex/,
   Em: /Hm/,
@@ -460,6 +497,9 @@ const FLAG_CONFLICTS = {
 };
 
 export class FlagSet {
+
+  private flags: {[section: string]: string[]};
+
   constructor(str = 'RtGftTab') {
     if (str.startsWith('@')) str = PRESETS_BY_KEY[str.toLowerCase()];
     this.flags = {};
@@ -468,17 +508,15 @@ export class FlagSet {
     const re = /([A-Z])([a-z0-9!]+)/g;
     let match;
     while ((match = re.exec(str))) {
-      let [flag, key, terms] = match;
-      if (REPEATABLE_FLAGS.has(key)) {
-        terms = [terms];
-      }
+      const [, key, value] = match;
+      const terms = REPEATABLE_FLAGS.has(key) ? [value] : value;
       for (const term of terms) {
         this.set(key + term, true);
       }
     }
   }
 
-  set(flag, value) {
+  set(flag: string, value: boolean) {
     // check for incompatible flags...?
     const key = flag[0];
     const term = flag.substring(1); // assert: term is only letters/numbers
@@ -487,7 +525,7 @@ export class FlagSet {
       const filtered = (this.flags[key] || []).filter(t => t !== term);
       if (filtered.length) {
         this.flags[key] = filtered;
-      } else{
+      } else {
         delete this.flags[key];
       }
       return;
@@ -500,7 +538,7 @@ export class FlagSet {
     this.flags[key] = terms;
   }
 
-  check(flag) {
+  check(flag: string): boolean {
     const terms = this.flags[flag[0]];
     return !!(terms && (terms.indexOf(flag.substring(1)) >= 0));
   }
@@ -572,11 +610,12 @@ export class FlagSet {
   //   this.flags = that.flags;
   // }
 
-  removeConflicts(flag) {
+  private removeConflicts(flag: string) {
     // NOTE: this is somewhat redundant with set(flag, false)
     const re = exclusiveFlags(flag);
     if (!re) return;
     for (const key in this.flags) {
+      if (!this.flags.hasOwnProperty(key)) continue;
       const terms = this.flags[key].filter(t => !re.test(key + t));
       if (terms.length) {
         this.flags[key] = terms;
@@ -586,7 +625,7 @@ export class FlagSet {
     }
   }
 
-  toStringKey(key) {
+  private toStringKey(key: string) {
     if (REPEATABLE_FLAGS.has(key)) {
       return [...this.flags[key]].sort().map(v => key + v).join(' ');
     }

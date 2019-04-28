@@ -1,5 +1,5 @@
 export const STATUS = 'unstable';
 export const VERSION = 'defrag';
-export const LABEL = 'defrag 8288e1c';
-export const HASH = '8288e1c2c5027b73562ce3bf71d3585d17388a37';
-export const DATE = new Date(1556348439000);
+export const LABEL = 'defrag db76e63';
+export const HASH = 'db76e6319d4c76322f56c5310fb147b5f3d5c82f';
+export const DATE = new Date(1556440103000);

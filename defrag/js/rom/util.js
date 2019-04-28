@@ -175,4 +175,36 @@ export class DataTuple {
             set(value) { prop.set.call(this, +value); } };
     }
 }
+export const watchArray = (arr, watch) => {
+    const arrayChangeHandler = {
+        get(target, property) {
+            let v = target[property];
+            if (property === 'subarray') {
+                return (start, end) => {
+                    const sub = target.subarray(start, end);
+                    if (start <= watch && watch < end)
+                        return watchArray(sub, watch - start);
+                    return sub;
+                };
+            }
+            else if (property === 'set') {
+                return (val) => {
+                    console.log(`Setting overlapping array ${watch}`);
+                    target.set(val);
+                };
+            }
+            if (typeof v === 'function')
+                v = v.bind(target);
+            return v;
+        },
+        set(target, property, value, receiver) {
+            if (property === watch) {
+                console.log(`Writing ${watch.toString(16)}`);
+            }
+            target[property] = value;
+            return true;
+        },
+    };
+    return new Proxy(arr, arrayChangeHandler);
+};
 //# sourceMappingURL=util.js.map

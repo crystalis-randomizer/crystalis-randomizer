@@ -632,7 +632,7 @@ const rescaleMonsters = (data, rom) => {
 
   for (const [id, {sdef, swrd, hits, satk, dgld, sexp}] of SCALED_MONSTERS) {
     // indicate that this object needs scaling
-    const o = rom.objects[id].objectData;
+    const o = rom.objects[id].data;
     const boss =
         [0x57, 0x5e, 0x68, 0x7d, 0x88, 0x97, 0x9b, 0x9e].includes(id) ? 1 : 0;
     o[2] |= 0x80; // recoil
@@ -646,7 +646,7 @@ const rescaleMonsters = (data, rom) => {
   }
 
   // Fix Sabera 1's elemental defense to no longer allow thunder
-  rom.objects[0x7d].objectData[0x10] |= 0x08;
+  rom.objects[0x7d].elements |= 0x08;
 
   //rom.writeObjectData();
 };

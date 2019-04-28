@@ -7,7 +7,7 @@ export class Location extends Entity {
         this.mapDataPointer = 0x14300 + (id << 1);
         this.mapDataBase = addr(rom.prg, this.mapDataPointer, 0xc000);
         this.name = locationData.name || '';
-        this.valid = this.mapDataBase > 0xc000 && !!this.name;
+        this.used = this.mapDataBase > 0xc000 && !!this.name;
         this.layoutBase = addr(rom.prg, this.mapDataBase, 0xc000);
         this.graphicsBase = addr(rom.prg, this.mapDataBase + 2, 0xc000);
         this.entrancesBase = addr(rom.prg, this.mapDataBase + 4, 0xc000);
@@ -48,7 +48,7 @@ export class Location extends Entity {
     get height() { return this.layoutHeight + 1; }
     set height(height) { this.layoutHeight = height - 1; }
     async write(writer) {
-        if (!this.valid)
+        if (!this.used)
             return;
         const promises = [];
         if (this.hasSpawns) {

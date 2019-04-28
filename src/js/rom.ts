@@ -9,12 +9,12 @@ import {ObjectData} from './rom/objectdata.js';
 import {Palette} from './rom/palette.js';
 import {Pattern} from './rom/pattern.js';
 import {Screen} from './rom/screen.js';
-import {Tileset} from './rom/tileset.js';
-import {TileEffects} from './rom/tileeffects.js';
 import {TileAnimation} from './rom/tileanimation.js';
+import {TileEffects} from './rom/tileeffects.js';
+import {Tileset} from './rom/tileset.js';
 import {Trigger} from './rom/trigger.js';
-import {Writer} from './rom/writer.js';
 import {hex, seq} from './rom/util.js';
+import {Writer} from './rom/writer.js';
 import {UnionFind} from './unionfind.js';
 
 export class Rom {
@@ -77,18 +77,18 @@ export class Rom {
 
   // TODO - cross-reference monsters/metasprites/metatiles/screens with patterns/palettes
   get monsters(): ObjectData[] {
-    let monsters = new Set();
+    const monsters = new Set<ObjectData>();
     for (const l of this.locations) {
       if (!l.used || !l.hasSpawns) continue;
       for (const o of l.spawns) {
-        if ((o.data[2] & 7) == 0) monsters.add(this.objects[(o.data[3] + 0x50) & 0xff]);
+        if (o.isMonster()) monsters.add(this.objects[o.monsterId]);
       }
     }
     return [...monsters].sort((x, y) => (x.id - y.id));
   }
 
   get projectiles(): ObjectData[] {
-    let projectiles = new Set();
+    const projectiles = new Set<ObjectData>();
     for (const m of this.monsters) {
       if (m.child) {
         projectiles.add(this.objects[this.adHocSpawns[m.child].objectId]);
@@ -110,9 +110,9 @@ export class Rom {
           const data = gfx[id] = gfx[id] || {};
           data[`${slot}:${l.spritePatterns[slot].toString(16)}:${
                l.spritePalettes[slot].toString(16)}`]
-            = {slot: slot,
+            = {pal: l.spritePalettes[slot],
                pat: l.spritePatterns[slot],
-               pal: l.spritePalettes[slot],
+               slot,
               };
         }
       }
@@ -155,7 +155,6 @@ export class Rom {
   //       5f - also normal, but medusa head is flyer?
   //       77 - soldiers, ice zombie
 
-
   // Use the browser API to load the ROM.  Use #reset to forget and reload.
   static async load(patch?: (data: Uint8Array) => Promise<void>) {
     const file = await pickFile();
@@ -177,13 +176,15 @@ export class Rom {
 //       } else {
 //         object.objectDataBase = addr;
 //         datas[data] = addr;
-// //console.log(`$${object.id.toString(16).padStart(2,0)}: Data is at $${addr.toString(16)}: ${Array.from(ser, x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
+// //console.log(`$${object.id.toString(16).padStart(2,0)}: Data is at $${
+// //             addr.toString(16)}: ${Array.from(ser, x=>'$'+x.toString(16).padStart(2,0)).join(',')}`);
 //         addr += ser.length;
 // // seed 3517811036
 //       }
 //       object.write();
 //     }
-// //console.log(`Wrote object data from $1ac00 to $${addr.toString(16).padStart(5, 0)}, saving ${0x1be91 - addr} bytes.`);
+// //console.log(`Wrote object data from $1ac00 to $${addr.toString(16).padStart(5, 0)
+// //             }, saving ${0x1be91 - addr} bytes.`);
 //     return addr;
 //   }
 
@@ -227,7 +228,6 @@ export class Rom {
     await Promise.all(promises).then(() => undefined);
   }
 
-
   analyzeTiles() {
     // For any given tile index, what screens does it appear on.
     // For those screens, which tilesets does *it* appear on.
@@ -239,10 +239,8 @@ export class Rom {
 
     // More generally, we can just partition the tilesets.
 
-
     // For each screen, find all tilesets T for that screen
     // Then for each tile on the screen, union T for that tile.
-
 
     // Given a tileset and a metatile ID, find all the screens that (1) are rendered
     // with that tileset, and (b) that contain that metatile; then find all *other*
@@ -251,7 +249,6 @@ export class Rom {
     // Given a screen, find all available metatile IDs that could be added to it
     // without causing problems with other screens that share any tilesets.
     //  -> unused (or used but shared exclusively) across all tilesets the screen may use
-
 
     // What I want for swapping is the following:
     //  1. find all screens I want to work on => tilesets
@@ -277,7 +274,6 @@ export class Rom {
     //   90: => (1,2 need flaggable; 3 unused; 4 any) => 07, 0e, 10, 12, 13, ..., 20, 21, 22, ...
     //   94 9c: => don't need any flaggable => 05, 3c, 68, 83, 88, 89, 8a, 90, ...
   }
-
 
   disjointTilesets() {
     const tilesetByScreen = [];
@@ -351,14 +347,14 @@ export class Rom {
         }
       }
       for (let i = 0; i < cycle.length - 1; i++) {
-        let j = cycle[i] as number;
-        let k = cycle[i + 1] as number;
+        const j = cycle[i] as number;
+        const k = cycle[i + 1] as number;
         if (j < 0 || k < 0) continue;
         rev.set(k, j);
         revArr[k] = j;
       }
     }
-    //const replacementSet = new Set(replacements.keys());
+    // const replacementSet = new Set(replacements.keys());
     // Find instances in (1) screens, (2) tilesets and alternates, (3) tileEffects
     const screens = new Set();
     const tileEffects = new Set();
@@ -391,7 +387,7 @@ export class Rom {
             tileset.tiles[j][a] = tileset.tiles[j][b];
           }
           tileset.attrs[a] = tileset.attrs[b];
-          if (b < 0x20 && tileset.alternates[b] != b) {
+          if (b < 0x20 && tileset.alternates[b] !== b) {
             if (a >= 0x20) throw new Error(`Cannot unflag: ${tsid} ${a} ${b} ${tileset.alternates[b]}`);
             tileset.alternates[a] = tileset.alternates[b];
           }
@@ -422,7 +418,6 @@ export class Rom {
   }
 }
 
-
 // const intersects = (left, right) => {
 //   if (left.size > right.size) return intersects(right, left);
 //   for (let i of left) {
@@ -449,8 +444,8 @@ export class Rom {
 // Only makes sense in the browser.
 function pickFile(): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
-    if (window.location.hash != '#reset') {
-      const data = window['localStorage'].getItem('rom');
+    if (window.location.hash !== '#reset') {
+      const data = localStorage.getItem('rom');
       if (data) {
         return resolve(
             Uint8Array.from(
@@ -468,7 +463,7 @@ function pickFile(): Promise<Uint8Array> {
       reader.addEventListener('loadend', () => {
         const arr = new Uint8Array(reader.result as ArrayBuffer);
         const str = Array.from(arr, hex).join('');
-        window['localStorage'].setItem('rom', str);
+        localStorage.setItem('rom', str);
         upload.remove();
         resolve(arr);
       });

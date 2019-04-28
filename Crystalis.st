@@ -21292,7 +21292,10 @@ NpcDialog_25 ; amazones guard
         $1cf01              .byte $xx
         $1cf02              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:07
         $1cf07              .byte         $xx,$xx     ;     Clear: 000 unused
-        $1cf09              .byte $xx,$xx,$xx,$xx,$xx ; 028 NOT change:woman -> 12:06 -> @ ff
+;;; --------------------------------
+        ;; unused
+        $1cf09              .byte $xx,$xx,$xx,$xx     ; 028 NOT change:woman -> 12:06
+        $1cf0d              .byte $xx
         $1cf0e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 12:07
 ;;; ----------------------------------------------------------------
 NpcDialog_28 ; nadare
@@ -22643,8 +22646,8 @@ ItemGetTable                     ;  0   1   2   3   4   5   6   7   8   9   a   
 ;;;   [0]: place to start looking for an empty slot
 ;;;   [1]: number of slots to check
 ;;;        if this is negative then don't try to find.
-;;;   [2]: a 256-bit set address - only nonzero for swords
-;;;   [3]: seems to always be zero
+;;;   [2][3]: a 2-byte "MessageId" - only the "action" segment is used, and this
+;;;           is only non-zero for swords.
 ;;;   [4][5]...: sequence of flags in $6480 to set/clear
 ;;;        [4]:80 is set (if 0) or clear (if 1)
 ;;;        [4]:40 is repeat if clear

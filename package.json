@@ -1,6 +1,6 @@
 {
   "name": "crystalis-randomizer",
-  "version": "0.0.3",
+  "version": "0.0.0",
   "main": "src/js/patch.js",
   "scripts": {
     "watch": "node_modules/typescript/bin/tsc --watch",

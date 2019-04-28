@@ -217,3 +217,18 @@ export class Deque<T> {
 //     return this.list[Symbol.iterator]();
 //   }
 // }
+
+export const breakLines = (str: string, len: number): string => {
+  str = str.trim();
+  const out = [];
+  while (str.length > len) {
+    let b = str.substring(0, len).lastIndexOf(' ');
+    if (b < 0) b = len;
+    out.push(str.substring(0, b).trim());
+    str = str.substring(b).trim();
+  }
+  out.push(str.trim());
+  return out;
+};
+
+export class UsageError extends Error {}

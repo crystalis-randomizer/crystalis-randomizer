@@ -501,7 +501,11 @@ export class FlagSet {
   private flags: {[section: string]: string[]};
 
   constructor(str = 'RtGftTab') {
-    if (str.startsWith('@')) str = PRESETS_BY_KEY[str.toLowerCase()];
+    if (str.startsWith('@')) {
+      const expanded = PRESETS_BY_KEY[str.toLowerCase()];
+      if (!expanded) throw `Unknown preset: ${str}`;
+      str = expanded;
+    }
     this.flags = {};
     // parse the string
     str = str.replace(/[^A-Za-z0-9!]/g, '');

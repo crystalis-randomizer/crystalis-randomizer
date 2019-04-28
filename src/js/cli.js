@@ -3,10 +3,11 @@
 require = require('esm')(module);
 
 const {EXPECTED_CRC32} = require('./rom.js');
-const {FlagSet} = require('./flagset.js');
+const {FlagSet, PRESETS} = require('./flagset.js');
 const {crc32} = require('./crc32.js');
 const fs = require('fs');
 const patch = require('./patch.js');
+const {breakLines} = require('./util.js');
 const {NodeReader} = require('./nodereader.js');
 
 // Usage: node cli.js [--flags=<FLAGS>] [--seed=<SEED>] rom.nes
@@ -16,6 +17,8 @@ const usage = (code) => {
 
 Options
   --flags=FLAGSET    Specify the flagset.
+  --preset=PRESET    Specify the preset by name.
+                     Spaces and capitalization are ignored.
   --seed=SEED        Specify the seed.
   --output=PATTERN   Specify the output filename pattern.
                      May include placeholders:
@@ -33,21 +36,20 @@ Options
 
 Flags
   The randomizer supports a number of options, documented in detail
-  at https://crystalisrandomizer.com.  Some suggested flag sets are
-  as follows (spaces are ignored):
+  at https://crystalisrandomizer.com.  Spaces are ignored.
 
-    Casual: "Emr Mr Rf Sbk Sc Sm Tasd"
-    Basic flags for a relatively easy playthrough.
-
-    Intermediate: "Em Gt Mr Rlpt Sbk Sct Sm Tasd"
-    Slightly more challenge than Casual but still approachable.
-
-    Advanced: "Gfrt Hbw Mr Rlpt Sbckt Sm Tasd"
-    A balanced randomization with quite a bit more difficulty.
-
-    Ludicrous: "Gfrstw Hbgmsw Mr Rflpt Sbckmt Tas"
-    Pulls out all the stops, and may require horrible hell runs.`);
+Presets
+${PRESETS.map(showPreset).join('\n\n')}`);
   process.exit(code);
+};
+
+const showPreset = ({title, flags, descr}) => {
+  const LINE_LENGTH = 68;
+  const flagLen = LINE_LENGTH - title.length - 6;
+  const flagLines = breakLines(flags, flagLen);
+  const descrLines = breakLines(descr, LINE_LENGTH - 2);
+  return `  ${title}: "${flagLines.join('\n' + ' '.repeat(title.length + 5))}"
+  ${descrLines.join('\n  ')}`;
 };
 
 const main = (...args) => {
@@ -68,6 +70,8 @@ const main = (...args) => {
     }
     if (arg == 'flags') {
       flags = value;
+    } else if (arg == 'preset') {
+      flags = '@' + value.replace(/ /g, '');
     } else if (arg == 'output') {
       output = value;
     } else if (arg == 'seed') {
@@ -79,6 +83,12 @@ const main = (...args) => {
       if (value != null) args.unshift(value);
     } else if (arg == 'help') {
       usage(0);
+    } else if (arg == 'list-flags') {
+      // undocumented flag
+      for (const {title} of PRESETS) {
+        console.log(title.replace(/ /g, ''));
+      }
+      process.exit(0);
     } else {
       console.error(`Bad argument: ${arg}`);
       usage(1);
@@ -141,7 +151,8 @@ const fillTemplate = (str, arg) => {
 };
 
 process.on('unhandledRejection', error => {
-  console.error(error.stack);
+  // TODO: get away from throwing strings.
+  console.error(typeof error === 'string' ? error : error.stack);
   process.exit(1);
 });
 

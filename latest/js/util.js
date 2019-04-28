@@ -224,3 +224,17 @@ export class IndexedList {
     return this.list[Symbol.iterator]();
   }
 }
+
+// return string[]
+export const breakLines = (/** string */ str, /** number */ len) => {
+  str = str.trim();
+  const out = [];
+  while (str.length > len) {
+    let b = str.substring(0, len).lastIndexOf(' ');
+    if (b < 0) b = len;
+    out.push(str.substring(0, b).trim());
+    str = str.substring(b).trim();
+  }
+  out.push(str.trim());
+  return out;
+};

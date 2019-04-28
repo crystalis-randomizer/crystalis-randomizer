@@ -575,3 +575,35 @@ interface LocationData {
   /** Bad screens that need to be replaced. */
   readonly replace?: ScreenReplacement;
 }
+
+// building the CSV for the location table.
+//const h=(x)=>x==null?'null':'$'+x.toString(16).padStart(2,0);
+//'id,name,bgm,width,height,animation,extended,tilepat0,tilepat1,tilepal0,tilepal1,tileset,tile effects,exits,sprpat0,sprpat1,sprpal0,sprpal1,obj0d,obj0e,obj0f,obj10,obj11,obj12,obj13,obj14,obj15,obj16,obj17,obj18,obj19,obj1a,obj1b,obj1c,obj1d,obj1e,obj1f\n'+rom.locations.map(l=>!l||!l.used?'':[h(l.id),l.name,h(l.bgm),l.layoutWidth,l.layoutHeight,l.animation,l.extended,h((l.tilePatterns||[])[0]),h((l.tilePatterns||[])[1]),h((l.tilePalettes||[])[0]),h((l.tilePalettes||[])[1]),h(l.tileset),h(l.tileEffects),[...new Set(l.exits.map(x=>h(x[2])))].join(':'),h((l.spritePatterns||[])[0]),h((l.spritePatterns||[])[1]),h((l.spritePalettes||[])[0]),h((l.spritePalettes||[])[1]),...new Array(19).fill(0).map((v,i)=>((l.objects||[])[i]||[]).slice(2).map(x=>x.toString(16)).join(':'))]).filter(x=>x).join('\n')
+
+// building csv for loc-obj cross-reference table
+// seq=(s,e,f)=>new Array(e-s).fill(0).map((x,i)=>f(i+s));
+// uniq=(arr)=>{
+//   const m={};
+//   for (let o of arr) {
+//     o[6]=o[5]?1:0;
+//     if(!o[5])m[o[2]]=(m[o[2]]||0)+1;
+//   }
+//   for (let o of arr) {
+//     if(o[2] in m)o[6]=m[o[2]];
+//     delete m[o[2]];
+//   }
+//   return arr;
+// }
+// 'loc,locname,mon,monname,spawn,type,uniq,patslot,pat,palslot,pal2,pal3\n'+
+// rom.locations.flatMap(l=>!l||!l.used?[]:uniq(seq(0xd,0x20,s=>{
+//   const o=(l.objects||[])[s-0xd]||null;
+//   if (!o) return null;
+//   const type=o[2]&7;
+//   const m=type?null:0x50+o[3];
+//   const patSlot=o[2]&0x80?1:0;
+//   const mon=m?rom.objects[m]:null;
+//   const palSlot=(mon?mon.palettes(false):[])[0];
+//   const allPal=new Set(mon?mon.palettes(true):[]);
+//   return [h(l.id),l.name,h(m),'',h(s),type,0,patSlot,m?h((l.spritePatterns||[])[patSlot]):'',palSlot,allPal.has(2)?h((l.spritePalettes||[])[0]):'',allPal.has(3)?h((l.spritePalettes||[])[1]):''];
+// }).filter(x=>x))).map(a=>a.join(',')).filter(x=>x).join('\n');
+

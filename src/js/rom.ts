@@ -1,5 +1,4 @@
 import {AdHocSpawn} from './rom/adhocspawn.js';
-import {Entity} from './rom/entity.js';
 import {Hitbox} from './rom/hitbox.js';
 import {ItemGet} from './rom/itemget.js';
 import {Location} from './rom/location.js';
@@ -14,28 +13,33 @@ import {Tileset} from './rom/tileset.js';
 import {TileEffects} from './rom/tileeffects.js';
 import {TileAnimation} from './rom/tileanimation.js';
 import {Trigger} from './rom/trigger.js';
-import {UnionFind} from './unionfind.js';
 import {Writer} from './rom/writer.js';
-import {addr,
-        countBits,
-        group,
-        hex,
-        readString,
-        seq,
-        slice,
-        signed,
-        varSlice,
-       } from './rom/util.js';
-
-// TODO - consider adding prepopulated name maps for data
-// tables, e.g. my location names, so that an editor could
-// use a drop-down menu and show something meaningful.
-
-
-
+import {hex, seq} from './rom/util.js';
+import {UnionFind} from './unionfind.js';
 
 export class Rom {
-  constructor(rom) {
+
+  readonly prg: Uint8Array;
+  readonly chr: Uint8Array;
+
+  readonly screens: Screen[];
+  readonly tilesets: Tileset[];
+  readonly tileEffects: TileEffects[];
+  readonly triggers: Trigger[];
+  readonly patterns: Pattern[];
+  readonly palettes: Palette[];
+  readonly locations: Location[];
+  readonly tileAnimations: TileAnimation[];
+  readonly hitboxes: Hitbox[];
+  readonly objects: ObjectData[];
+  readonly adHocSpawns: AdHocSpawn[];
+  readonly metasprites: Metasprite[];
+  readonly itemGets: ItemGet[];
+  readonly npcs: Npc[];
+
+  readonly messages: Messages;
+
+  constructor(rom: Uint8Array) {
     this.prg = rom.subarray(0x10, 0x40010);
     this.chr = rom.subarray(0x40010);
 
@@ -72,39 +76,37 @@ export class Rom {
   }
 
   // TODO - cross-reference monsters/metasprites/metatiles/screens with patterns/palettes
-  get monsters() {
+  get monsters(): ObjectData[] {
     let monsters = new Set();
     for (const l of this.locations) {
       if (!l.used || !l.hasSpawns) continue;
       for (const o of l.spawns) {
-        if ((o[2] & 7) == 0) monsters.add(this.objects[(o[3] + 0x50) & 0xff]);
+        if ((o.data[2] & 7) == 0) monsters.add(this.objects[(o.data[3] + 0x50) & 0xff]);
       }
     }
-    monsters = [...monsters];
-    monsters.sort((x, y) => (x.id - y.id));
-    return monsters;
+    return [...monsters].sort((x, y) => (x.id - y.id));
   }
 
-  get projectiles() {
+  get projectiles(): ObjectData[] {
     let projectiles = new Set();
     for (const m of this.monsters) {
       if (m.child) {
-        projectiles.add(this.objects[this.adHocSpawns[m.child].object]);
+        projectiles.add(this.objects[this.adHocSpawns[m.child].objectId]);
       }
     }
-    projectiles = [...projectiles];
-    projectiles.sort((x, y) => (x.id - y.id));
-    return projectiles;
+    return [...projectiles].sort((x, y) => (x.id - y.id));
   }
 
   get monsterGraphics() {
-    const gfx = {};
+    const gfx: {[id: string]:
+                {[info: string]:
+                 {slot: number, pat: number, pal: number}}} = {};
     for (const l of this.locations) {
       if (!l.used || !l.hasSpawns) continue;
       for (const o of l.spawns) {
-        if (!(o[2] & 7)) {
-          const slot = o[2] & 0x80 ? 1 : 0;
-          const id = (o[3] + 0x50).toString(16).padStart(2,0);
+        if (!(o.data[2] & 7)) {
+          const slot = o.data[2] & 0x80 ? 1 : 0;
+          const id = hex(o.data[3] + 0x50);
           const data = gfx[id] = gfx[id] || {};
           data[`${slot}:${l.spritePatterns[slot].toString(16)}:${
                l.spritePalettes[slot].toString(16)}`]
@@ -119,15 +121,15 @@ export class Rom {
   }
 
   get locationMonsters() {
-    const m = {};
+    const m: {[id: string]: {[info: string]: number}} = {};
     for (const l of this.locations) {
       if (!l.used || !l.hasSpawns) continue;
       // which monsters are in which slots?
-      const s = m['$' + l.id.toString(16).padStart(2,0)] = {};
+      const s: {[info: string]: number} = m['$' + hex(l.id)] = {};
       for (const o of l.spawns) {
-        if (!(o[2] & 7)) {
-          const slot = o[2] & 0x80 ? 1 : 0;
-          const id = o[3] + 0x50;
+        if (!(o.data[2] & 7)) {
+          const slot = o.data[2] & 0x80 ? 1 : 0;
+          const id = o.data[3] + 0x50;
           s[`${slot}:${id.toString(16)}`] =
               (s[`${slot}:${id.toString(16)}`] || 0) + 1;
         }
@@ -155,7 +157,7 @@ export class Rom {
 
 
   // Use the browser API to load the ROM.  Use #reset to forget and reload.
-  static async load(patch = undefined) {
+  static async load(patch?: (data: Uint8Array) => Promise<void>) {
     const file = await pickFile();
     if (patch) await patch(file);
     return new Rom(file);
@@ -206,7 +208,7 @@ export class Rom {
     writer.alloc(0x1e200, 0x1e3f0);
 
     const promises = [];
-    const writeAll = (writables) => {
+    const writeAll = (writables: {write(writer: Writer): unknown}[]) => {
       for (const w of writables) {
         promises.push(w.write(writer));
       }
@@ -289,7 +291,7 @@ export class Rom {
         }
       }
     }
-    const tiles = new Array(256).fill(0).map(() => new UnionFind());
+    const tiles = seq(256, () => new UnionFind<number>());
     for (let s = 0; s < tilesetByScreen.length; s++) {
       if (!tilesetByScreen[s]) continue;
       const ts = new Set();
@@ -304,8 +306,10 @@ export class Rom {
     }
     // output
     for (let t = 0; t < tiles.length; t++) {
-      const p = tiles[t].sets().map(s => [...s].map(x => x.toString(16)).join(' ')).join(' | ');
-      console.log(`Tile ${t.toString(16).padStart(2, 0)}: ${p}`);
+      const p = tiles[t].sets()
+          .map((s: Set<number>) => [...s].map(hex).join(' '))
+          .join(' | ');
+      console.log(`Tile ${hex(t)}: ${p}`);
     }
     //   if (!tilesetByScreen[i]) {
     //     console.log(`No tileset for screen ${i.toString(16)}`);
@@ -332,22 +336,23 @@ export class Rom {
   //   - ensure both sides of replacement have correct partitioning?E
   //     or just do it offline - it's simpler
   // TODO - Sanity check?  Want to make sure nobody is using clobbered tiles?
-  swapMetatiles(/** !Array<number> */ tilesets, /** ...!Array<number|!Array<number>> */ ...cycles) {
+  swapMetatiles(tilesets: number[], ...cycles: (number | number[])[][]) {
     // Process the cycles
-    const rev = new Map();
+    const rev = new Map<number, number>();
     const revArr = seq(0x100);
-    const alt = new Map();
-    const cpl = x => Array.isArray(x) ? x[0] : x < 0 ? ~x : x;
+    const alt = new Map<number, number>();
+    const cpl = (x: number | number[]): number => Array.isArray(x) ? x[0] : x < 0 ? ~x : x;
     for (const cycle of cycles) {
       for (let i = 0; i < cycle.length - 1; i++) {
         if (Array.isArray(cycle[i])) {
-          alt.set(cycle[i][0], cycle[i][1]);
-          cycle[i] = cycle[i][0];
+          const arr = cycle[i] as number[];
+          alt.set(arr[0], arr[1]);
+          cycle[i] = arr[0];
         }
       }
       for (let i = 0; i < cycle.length - 1; i++) {
-        let j = cycle[i];
-        let k = cycle[i + 1];
+        let j = cycle[i] as number;
+        let k = cycle[i + 1] as number;
         if (j < 0 || k < 0) continue;
         rev.set(k, j);
         revArr[k] = j;
@@ -357,10 +362,10 @@ export class Rom {
     // Find instances in (1) screens, (2) tilesets and alternates, (3) tileEffects
     const screens = new Set();
     const tileEffects = new Set();
-    tilesets = new Set(tilesets);
+    const tilesetsSet = new Set(tilesets);
     for (const l of this.locations) {
       if (!l.used) continue;
-      if (!tilesets.has(l.tileset)) continue;
+      if (!tilesetsSet.has(l.tileset)) continue;
       tileEffects.add(l.tileEffects);
       for (const screen of l.allScreens()) {
         screens.add(screen);
@@ -376,7 +381,7 @@ export class Rom {
       }
     }
     // 2. tilesets: [5, 1 ~9] => copy 5 <= 1 and 1 <= 9
-    for (const tsid of tilesets) {
+    for (const tsid of tilesetsSet) {
       const tileset = this.tilesets[(tsid & 0x7f) >>> 2];
       for (const cycle of cycles) {
         for (let i = 0; i < cycle.length - 1; i++) {
@@ -442,7 +447,7 @@ export class Rom {
 // };
 
 // Only makes sense in the browser.
-const pickFile = () => {
+function pickFile(): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
     if (window.location.hash != '#reset') {
       const data = window['localStorage'].getItem('rom');
@@ -458,11 +463,11 @@ const pickFile = () => {
     document.body.appendChild(upload);
     upload.type = 'file';
     upload.addEventListener('change', () => {
-      const file = upload.files[0];
+      const file = upload.files![0];
       const reader = new FileReader();
       reader.addEventListener('loadend', () => {
-        const arr = new Uint8Array(reader.result);
-        const str = Array.from(arr, x => x.toString(16).padStart(2, 0)).join('');
+        const arr = new Uint8Array(reader.result as ArrayBuffer);
+        const str = Array.from(arr, hex).join('');
         window['localStorage'].setItem('rom', str);
         upload.remove();
         resolve(arr);
@@ -471,109 +476,5 @@ const pickFile = () => {
     });
   });
 }
-
-
-// class DataTableCache {
-//   constructor() {
-//     this.data = {};
-//   }
-
-//   /** Returns the address if found, or null. */
-//   find(page, data) {
-//     const str = data.join(' ');
-//     if (str in this.data) {
-//       console.log(`$${object.id.toString(16).padStart(2,0)}: Reusing existing data $${datas[data].toString(16)}`);
-//       return this.data[str];
-//     }
-//     return null;
-//   }
-
-//   /** Adds a length of data to the cache. */
-//   add(address, data) {
-//     const str = data.join(' ');
-//     this.data[str] = address;
-//   }
-// }
-
-// class RomWriter {
-//   constructor() {
-//     this.available = new Array(0x40000);
-//     this.ranges = [];
-//     this.writes = [];
-//     this.waiting = [];
-//   }
-
-//   resort() {
-//     this.ranges.sort((x, y) => (x[1] - x[0]) < (y[1] - y[0]));
-//   }
-
-//   // Marks a region as available.
-//   free(start, end) {
-//     const ranges = new Set();
-//     if (this.available[start - 1]) {
-//       const range = this.available[start - 1];
-//       ranges.add(range);
-//       start = range.end;
-//     }
-//     if (this.available[end]) {
-//       const range = this.available[end];
-//       end = 
-//       ranges.add(this.available[end]);
-//     }
-//     for (let i = start; i < end; i++) {
-      
-//     while (this.available[end] < 0) {
-//       end++;
-//     }
-//     for (let i = start; i < end; i++) {
-//       this.available[i] = ~start;
-//     }
-//     resort();
-//   }
-
-//   // Returns a promise with the actual address of the start.
-//   write(page, data) {
-
-//   }
-
-//   commit(prg) {
-
-//   }
-
-// }
-
-
-// building csv for loc-obj cross-reference table
-// seq=(s,e,f)=>new Array(e-s).fill(0).map((x,i)=>f(i+s));
-// uniq=(arr)=>{
-//   const m={};
-//   for (let o of arr) {
-//     o[6]=o[5]?1:0;
-//     if(!o[5])m[o[2]]=(m[o[2]]||0)+1;
-//   }
-//   for (let o of arr) {
-//     if(o[2] in m)o[6]=m[o[2]];
-//     delete m[o[2]];
-//   }
-//   return arr;
-// }
-// 'loc,locname,mon,monname,spawn,type,uniq,patslot,pat,palslot,pal2,pal3\n'+
-// rom.locations.flatMap(l=>!l||!l.used?[]:uniq(seq(0xd,0x20,s=>{
-//   const o=(l.objects||[])[s-0xd]||null;
-//   if (!o) return null;
-//   const type=o[2]&7;
-//   const m=type?null:0x50+o[3];
-//   const patSlot=o[2]&0x80?1:0;
-//   const mon=m?rom.objects[m]:null;
-//   const palSlot=(mon?mon.palettes(false):[])[0];
-//   const allPal=new Set(mon?mon.palettes(true):[]);
-//   return [h(l.id),l.name,h(m),'',h(s),type,0,patSlot,m?h((l.spritePatterns||[])[patSlot]):'',palSlot,allPal.has(2)?h((l.spritePalettes||[])[0]):'',allPal.has(3)?h((l.spritePalettes||[])[1]):''];
-// }).filter(x=>x))).map(a=>a.join(',')).filter(x=>x).join('\n');
-
-
-// building the CSV for the location table.
-//const h=(x)=>x==null?'null':'$'+x.toString(16).padStart(2,0);
-//'id,name,bgm,width,height,animation,extended,tilepat0,tilepat1,tilepal0,tilepal1,tileset,tile effects,exits,sprpat0,sprpat1,sprpal0,sprpal1,obj0d,obj0e,obj0f,obj10,obj11,obj12,obj13,obj14,obj15,obj16,obj17,obj18,obj19,obj1a,obj1b,obj1c,obj1d,obj1e,obj1f\n'+rom.locations.map(l=>!l||!l.used?'':[h(l.id),l.name,h(l.bgm),l.layoutWidth,l.layoutHeight,l.animation,l.extended,h((l.tilePatterns||[])[0]),h((l.tilePatterns||[])[1]),h((l.tilePalettes||[])[0]),h((l.tilePalettes||[])[1]),h(l.tileset),h(l.tileEffects),[...new Set(l.exits.map(x=>h(x[2])))].join(':'),h((l.spritePatterns||[])[0]),h((l.spritePatterns||[])[1]),h((l.spritePalettes||[])[0]),h((l.spritePalettes||[])[1]),...new Array(19).fill(0).map((v,i)=>((l.objects||[])[i]||[]).slice(2).map(x=>x.toString(16)).join(':'))]).filter(x=>x).join('\n')
-
 
 export const EXPECTED_CRC32 = 0x1bd39032;

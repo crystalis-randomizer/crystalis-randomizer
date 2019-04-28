@@ -1,21 +1,17 @@
-/** @template T */
-export class Deque {
-  constructor() {
-    /** @type {!Array<T|undefined>} */
-    this.buffer = new Array(16);
-    /** @type {number} */
-    this.mask = 0xf;
-    /** @type {number} */
-    this.start = 0;
-    /** @type {number} */
-    this.end = 0;
-    /** @type {number} */
-    this.size = 0; // readonly externally
+export class Deque<T> {
+
+  private buffer: (T | undefined)[] = new Array(16);
+  private mask: number = 0xf;
+  private start: number = 0;
+  private end: number = 0;
+  private size: number = 0;
+
+  // NOTE: as we move users to TS, just use length, not size
+  get length(): number {
+    return this.size;
   }
 
-  get length() { return this.size; } // TODO - just use length
-
-  upsize(target) {
+  upsize(target: number) {
     while (this.mask < target) {
       if (this.end <= this.start) this.start += this.mask + 1;
       this.mask = this.mask << 1 | 1;
@@ -24,8 +20,7 @@ export class Deque {
     this.size = target;
   }
 
-  /** @param {...T} elem */
-  push(...elems) {
+  push(...elems: T[]) {
     this.upsize(this.size + elems.length);
     for (const elem of elems) {
       this.buffer[this.end] = elem;
@@ -33,22 +28,19 @@ export class Deque {
     }
   }
 
-  /** @return {T|undefined} */
-  pop() {
+  pop(): T | undefined {
     if (!this.size) return undefined;
     this.end = (this.end - 1) & this.mask;
     this.size--;
     return this.buffer[this.end];
   }
 
-  /** @return {T|undefined} */
-  peek() {
+  peek(): T | undefined {
     if (!this.size) return undefined;
     return this.buffer[(this.end - 1) & this.mask];
   }
 
-  /** @param {...T} elem */
-  unshift(...elems) {
+  unshift(...elems: T[]) {
     this.upsize(this.size + elems.length);
     for (const elem of elems) {
       this.start = (this.start - 1) & this.mask;
@@ -56,8 +48,7 @@ export class Deque {
     }
   }
 
-  /** @return {T|undefined} */
-  shift() {
+  shift(): T | undefined {
     if (!this.size) return undefined;
     const result = this.buffer[this.start];
     this.start = (this.start + 1) & this.mask;
@@ -65,16 +56,18 @@ export class Deque {
     return result;
   }
 
-  /** @return {T|undefined} */
-  front() {
+  front(): T | undefined {
     if (!this.size) return undefined;
     return this.buffer[this.start];
   }
 
-toString(){
-const parts=new Array(this.size);
-  for (let i = 0; i < this.size; i++)parts[i]=this.buffer[(this.start+i)&this.mask];return '['+parts.join(', ')+']';
-}
+  toString() {
+    const parts = new Array(this.size);
+    for (let i = 0; i < this.size; i++) {
+      parts[i] = this.buffer[(this.start + i) & this.mask];
+    }
+    return `[${parts.join(', ')}]`;
+  }
 }
 
 // /** @template T */
@@ -162,65 +155,65 @@ const parts=new Array(this.size);
 //   }
 // }
 
-export class IndexedList {
-  constructor() {
-    this.list = [];
-    this.map = new Map();
-  }
+// export class IndexedList {
+//   constructor() {
+//     this.list = [];
+//     this.map = new Map();
+//   }
 
-  add(elem) {
-    if (this.map.has(elem)) return;
-    this.map.set(elem, this.list.length);
-    this.list.push(elem);
-  }
+//   add(elem) {
+//     if (this.map.has(elem)) return;
+//     this.map.set(elem, this.list.length);
+//     this.list.push(elem);
+//   }
 
-  indexOf(elem) {
-    return this.map.get(elem);
-  }
+//   indexOf(elem) {
+//     return this.map.get(elem);
+//   }
 
-  remove(elem) {
-    // TODO - this isn't super efficient...
-    // We could maintain a small handful of split points.
-    // Or a RemovalTree where it starts with a fully-balanced
-    // binary tree (height ~ log(n)) and then we just remove
-    // elements from there so that we only need to update
-    // O(log(n)) "size" values on the way up.  Though this
-    // doesn't help to actually *find* the element...
-    // Another option would be to use the bits of the index
-    // to keep track of the number of removed elements before.
-    // So we have a same-size array of numbers
-    // where each entry tells the size to add for the Nth one-bit
-    // and all the higher bits.
-    //   00 -> 0
-    //   01 -> 1
-    //   10 -> 2
-    //   11 -> 3 = 2 + 1
-    // Storing
-    //   X#  -> 2
-    //   1X  -> 1
-    //   0X  -> 1
-    // For bigger list,
-    //   11X -> 1    stored at    111 = 7
-    //   10X -> 1                 110 = 6
-    //   01X -> 1                 101 = 5
-    //   00X -> 1                 100 = 4
-    //   1X# -> 2                 011 = 3
-    //   0X# -> 2                 010 = 2
-    //   X## -> 4                 001 = 1
-    // The upshot is that when removing an element we only need to
-    // update O(log(n)) elements...
-    // And we can avoid splicing the list and even find the first
-    // element with binary search - O(log(n))
-    const index = this.map.get(elem);
-    if (index == null) return;
-    this.list.splice(index, 1);
-    this.map.delete(elem);
-    for (let i = index; i < this.list.length; i++) {
-      this.map.set(this.list[i], i);
-    }
-  }
+//   remove(elem) {
+//     // TODO - this isn't super efficient...
+//     // We could maintain a small handful of split points.
+//     // Or a RemovalTree where it starts with a fully-balanced
+//     // binary tree (height ~ log(n)) and then we just remove
+//     // elements from there so that we only need to update
+//     // O(log(n)) "size" values on the way up.  Though this
+//     // doesn't help to actually *find* the element...
+//     // Another option would be to use the bits of the index
+//     // to keep track of the number of removed elements before.
+//     // So we have a same-size array of numbers
+//     // where each entry tells the size to add for the Nth one-bit
+//     // and all the higher bits.
+//     //   00 -> 0
+//     //   01 -> 1
+//     //   10 -> 2
+//     //   11 -> 3 = 2 + 1
+//     // Storing
+//     //   X#  -> 2
+//     //   1X  -> 1
+//     //   0X  -> 1
+//     // For bigger list,
+//     //   11X -> 1    stored at    111 = 7
+//     //   10X -> 1                 110 = 6
+//     //   01X -> 1                 101 = 5
+//     //   00X -> 1                 100 = 4
+//     //   1X# -> 2                 011 = 3
+//     //   0X# -> 2                 010 = 2
+//     //   X## -> 4                 001 = 1
+//     // The upshot is that when removing an element we only need to
+//     // update O(log(n)) elements...
+//     // And we can avoid splicing the list and even find the first
+//     // element with binary search - O(log(n))
+//     const index = this.map.get(elem);
+//     if (index == null) return;
+//     this.list.splice(index, 1);
+//     this.map.delete(elem);
+//     for (let i = index; i < this.list.length; i++) {
+//       this.map.set(this.list[i], i);
+//     }
+//   }
 
-  [Symbol.iterator]() {
-    return this.list[Symbol.iterator]();
-  }
-}
+//   [Symbol.iterator]() {
+//     return this.list[Symbol.iterator]();
+//   }
+// }

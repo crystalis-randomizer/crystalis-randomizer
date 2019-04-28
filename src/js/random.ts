@@ -13,19 +13,18 @@ const NDIV = 1 + Math.floor(IMM1 / NTAB);
 const EPS = 1.2e-7;
 const RNMX = 1 - EPS;
 
-
 export class Random {
 
-  constructor(seed = Math.floor(Math.random() * 0x100000000)) {
-    /** @type {number} */ this.idum;
-    /** @type {number} */ this.idum2;
-    /** @type {number} */ this.iy;
-    /** @type {!Array<number>} */ this.iv;
-    /** @type {number} */ this.iy;
+  private idum: number = 0;
+  private idum2: number = 0;
+  private iy: number = 0;
+  private iv: number[] = [];
+
+  constructor(seed: number = Math.floor(Math.random() * 0x100000000)) {
     this.seed(seed);
   }
 
-  seed(seed) {
+  seed(seed: number) {
     this.idum = Math.max(1, Math.floor(seed));
     this.idum2 = this.idum;
     this.iy = 0;
@@ -39,7 +38,7 @@ export class Random {
     this.iy = this.iv[0];
   }
 
-  next() {
+  next(): number {
     let k = Math.floor(this.idum / IQ1);
     this.idum = IA1 * (this.idum - k * IQ1) - k * IR1;
     if (this.idum < 0) this.idum += IM1;
@@ -53,11 +52,11 @@ export class Random {
     return Math.min(AM * this.iy, RNMX);
   }
 
-  nextInt(n) {
+  nextInt(n: number): number {
     return Math.floor(this.next() * n);
   }
 
-  shuffle(array) {
+  shuffle<T>(array: T[]): T[] {
     for (let i = array.length; i;) {
       const j = this.nextInt(i--);
       [array[i], array[j]] = [array[j], array[i]];

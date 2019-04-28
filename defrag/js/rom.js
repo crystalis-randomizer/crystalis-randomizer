@@ -9,12 +9,12 @@ import { ObjectData } from './rom/objectdata.js';
 import { Palette } from './rom/palette.js';
 import { Pattern } from './rom/pattern.js';
 import { Screen } from './rom/screen.js';
-import { Tileset } from './rom/tileset.js';
-import { TileEffects } from './rom/tileeffects.js';
 import { TileAnimation } from './rom/tileanimation.js';
+import { TileEffects } from './rom/tileeffects.js';
+import { Tileset } from './rom/tileset.js';
 import { Trigger } from './rom/trigger.js';
-import { Writer } from './rom/writer.js';
 import { hex, seq } from './rom/util.js';
+import { Writer } from './rom/writer.js';
 import { UnionFind } from './unionfind.js';
 export class Rom {
     constructor(rom) {
@@ -37,19 +37,19 @@ export class Rom {
         this.npcs = seq(0xcd, i => new Npc(this, i));
     }
     get monsters() {
-        let monsters = new Set();
+        const monsters = new Set();
         for (const l of this.locations) {
             if (!l.used || !l.hasSpawns)
                 continue;
             for (const o of l.spawns) {
-                if ((o.data[2] & 7) == 0)
-                    monsters.add(this.objects[(o.data[3] + 0x50) & 0xff]);
+                if (o.isMonster())
+                    monsters.add(this.objects[o.monsterId]);
             }
         }
         return [...monsters].sort((x, y) => (x.id - y.id));
     }
     get projectiles() {
-        let projectiles = new Set();
+        const projectiles = new Set();
         for (const m of this.monsters) {
             if (m.child) {
                 projectiles.add(this.objects[this.adHocSpawns[m.child].objectId]);
@@ -68,9 +68,9 @@ export class Rom {
                     const id = hex(o.data[3] + 0x50);
                     const data = gfx[id] = gfx[id] || {};
                     data[`${slot}:${l.spritePatterns[slot].toString(16)}:${l.spritePalettes[slot].toString(16)}`]
-                        = { slot: slot,
+                        = { pal: l.spritePalettes[slot],
                             pat: l.spritePatterns[slot],
-                            pal: l.spritePalettes[slot],
+                            slot,
                         };
                 }
             }
@@ -178,8 +178,8 @@ export class Rom {
                 }
             }
             for (let i = 0; i < cycle.length - 1; i++) {
-                let j = cycle[i];
-                let k = cycle[i + 1];
+                const j = cycle[i];
+                const k = cycle[i + 1];
                 if (j < 0 || k < 0)
                     continue;
                 rev.set(k, j);
@@ -216,7 +216,7 @@ export class Rom {
                         tileset.tiles[j][a] = tileset.tiles[j][b];
                     }
                     tileset.attrs[a] = tileset.attrs[b];
-                    if (b < 0x20 && tileset.alternates[b] != b) {
+                    if (b < 0x20 && tileset.alternates[b] !== b) {
                         if (a >= 0x20)
                             throw new Error(`Cannot unflag: ${tsid} ${a} ${b} ${tileset.alternates[b]}`);
                         tileset.alternates[a] = tileset.alternates[b];
@@ -244,8 +244,8 @@ export class Rom {
 }
 function pickFile() {
     return new Promise((resolve, reject) => {
-        if (window.location.hash != '#reset') {
-            const data = window['localStorage'].getItem('rom');
+        if (window.location.hash !== '#reset') {
+            const data = localStorage.getItem('rom');
             if (data) {
                 return resolve(Uint8Array.from(new Array(data.length / 2).fill(0).map((_, i) => Number.parseInt(data[2 * i] + data[2 * i + 1], 16))));
             }
@@ -259,7 +259,7 @@ function pickFile() {
             reader.addEventListener('loadend', () => {
                 const arr = new Uint8Array(reader.result);
                 const str = Array.from(arr, hex).join('');
-                window['localStorage'].setItem('rom', str);
+                localStorage.setItem('rom', str);
                 upload.remove();
                 resolve(arr);
             });

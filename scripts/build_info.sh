@@ -43,7 +43,7 @@ esac
   echo "export const LABEL = '$label';"
   echo "export const HASH = '$TRAVIS_COMMIT';"
   echo "export const DATE = new Date($(date +%s000));"
-} >| "src/js/version.js"
+} >| "src/js/version.ts"
 
 # Intended use: 'eval $(build_info.sh)'
 echo "export dir='$dir';"

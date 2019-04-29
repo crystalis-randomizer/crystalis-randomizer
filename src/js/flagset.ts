@@ -1,3 +1,5 @@
+import {UsageError} from './util.js';
+
 const REPEATABLE_FLAGS: Set<string> = new Set(['S']);
 
 interface Preset {
@@ -503,7 +505,7 @@ export class FlagSet {
   constructor(str = 'RtGftTab') {
     if (str.startsWith('@')) {
       const expanded = PRESETS_BY_KEY[str.toLowerCase()];
-      if (!expanded) throw `Unknown preset: ${str}`;
+      if (!expanded) throw new UsageError(`Unknown preset: ${str}`);
       str = expanded;
     }
     this.flags = {};

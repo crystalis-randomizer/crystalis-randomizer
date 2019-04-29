@@ -218,9 +218,9 @@ export class Deque<T> {
 //   }
 // }
 
-export const breakLines = (str: string, len: number): string => {
+export const breakLines = (str: string, len: number): string[] => {
   str = str.trim();
-  const out = [];
+  const out: string[] = [];
   while (str.length > len) {
     let b = str.substring(0, len).lastIndexOf(' ');
     if (b < 0) b = len;

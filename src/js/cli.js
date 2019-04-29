@@ -88,7 +88,7 @@ const main = (...args) => {
     } else if (arg == 'version' || arg == '-v') {
       console.log(version.VERSION);
       process.exit(0);
-    } else if (arg == 'list-flags') {
+    } else if (arg == 'list-presets') {
       // undocumented flag
       for (const {title} of PRESETS) {
         console.log(title.replace(/ /g, ''));
@@ -98,7 +98,6 @@ const main = (...args) => {
       console.error(`Bad argument: ${arg}`);
       usage(1);
     }
-    // TODO - preset options
   }
 
   if (args.length != 1) usage(1);
@@ -156,9 +155,23 @@ const fillTemplate = (str, arg) => {
 };
 
 process.on('unhandledRejection', error => {
-  // TODO: get away from throwing strings.
-  console.error(typeof error === 'string' ? error : error.stack);
+  console.error(typeof error === 'string' ? error : error instanceof UsageError ? error.message : error.stack);
   process.exit(1);
 });
 
-main(...process.argv.slice(2)).then(() => process.exit(0));
+const asyncMain = async () => {
+  try {
+    await main(...process.argv.slice(2));
+  } catch (error) {
+    if (error instanceof UsageError) {
+      console.error(error.message);
+      console.error(`Try passing --help for documentation.`);
+      process.exit(1);
+    }
+    throw error;
+  }
+}
+
+asyncMain().then(() => process.exit(0));
+
+

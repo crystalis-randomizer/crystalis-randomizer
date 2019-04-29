@@ -65,4 +65,19 @@ export class Deque {
         return `[${parts.join(', ')}]`;
     }
 }
+export const breakLines = (str, len) => {
+    str = str.trim();
+    const out = [];
+    while (str.length > len) {
+        let b = str.substring(0, len).lastIndexOf(' ');
+        if (b < 0)
+            b = len;
+        out.push(str.substring(0, b).trim());
+        str = str.substring(b).trim();
+    }
+    out.push(str.trim());
+    return out;
+};
+export class UsageError extends Error {
+}
 //# sourceMappingURL=util.js.map

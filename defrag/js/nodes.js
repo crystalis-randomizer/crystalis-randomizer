@@ -106,10 +106,10 @@ export class Slot extends Node {
         });
         return this;
     }
-    npcSpawn(id, location = -1, offset = 0) {
+    npcSpawn(id, location, offset = 0) {
         this.slots.push((rom, slot) => {
             let a = addr(rom, 0x1c5e0, 0x14000, id);
-            while (location !== -1 && rom[a] !== location) {
+            while (location != null && rom[a] !== location) {
                 a++;
                 while (!(rom[a] & 0x80)) {
                     a += 2;
@@ -125,7 +125,7 @@ export class Slot extends Node {
         });
         return this;
     }
-    dialog(id, location = -1, offset = 0, result = -1) {
+    dialog(id, location, offset = 0, result) {
         this.slots.push((rom, slot) => {
             let a = addr(rom, 0x1c95d, 0x14000, id);
             while (!(rom[a] & 0x80)) {
@@ -135,7 +135,7 @@ export class Slot extends Node {
             a += 4;
             let next = 0;
             while (rom[a] !== 0xff) {
-                if (location !== -1 && rom[a] === location)
+                if (location != null && rom[a] === location)
                     next = rom[a + 1];
                 a += 2;
                 checkBounds(a, rom, location);
@@ -155,7 +155,7 @@ export class Slot extends Node {
                 }
                 --offset;
             }
-            if (result !== -1) {
+            if (result != null) {
                 a += 5;
                 while (result) {
                     a += 2;
@@ -168,10 +168,10 @@ export class Slot extends Node {
         });
         return this;
     }
-    trigger(id, offset = 0, result = -1) {
+    trigger(id, offset = 0, result) {
         this.slots.push((rom, slot) => {
             let a = addr(rom, 0x1e17a, 0x14000, id & 0x7f);
-            if (result === -1) {
+            if (result == null) {
                 a += 2 * offset;
             }
             else {

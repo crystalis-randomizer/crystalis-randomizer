@@ -424,6 +424,9 @@ export class FlagSet {
             }
         }
     }
+    get(category) {
+        return this.flags[category] || [];
+    }
     set(flag, value) {
         const key = flag[0];
         const term = flag.substring(1);

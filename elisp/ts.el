@@ -40,7 +40,15 @@ See URL `https://github.com/palantir/tslint'."
 
 (defun sdh-ts-init ()
   (flycheck-mode)
-  (global-set-key (kbd "C-c C-e") 'flycheck-display-error-at-point)
+  (define-key typescript-mode-map (kbd "C-c C-e") 'flycheck-display-error-at-point)
+  ;; Note: these default to 'typescript-insert-and-indent, which is annoying
+  (define-key typescript-mode-map (kbd ",") 'self-insert-command)
+  (define-key typescript-mode-map (kbd ";") 'self-insert-command)
+  (define-key typescript-mode-map (kbd ":") 'self-insert-command)
+  (define-key typescript-mode-map (kbd ")") 'self-insert-command)
+  (define-key typescript-mode-map (kbd "(") 'self-insert-command)
+  (define-key typescript-mode-map (kbd "}") 'self-insert-command)
+  (define-key typescript-mode-map (kbd "{") 'self-insert-command)
 )
 
 (add-hook 'typescript-mode-hook 'sdh-ts-init)

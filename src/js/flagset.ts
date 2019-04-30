@@ -522,6 +522,10 @@ export class FlagSet {
     }
   }
 
+  get(category: string): string[] {
+    return this.flags[category] || [];
+  }
+
   set(flag: string, value: boolean) {
     // check for incompatible flags...?
     const key = flag[0];

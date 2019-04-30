@@ -15,13 +15,16 @@ import {FullRomImage, PrgImage} from './romimage.js';
 //   3. in normal mode with glitch/hard flag off, don't traverse
 // The edges() method needs to behave differently depending on this.
 // Given that, we probably need to accept 'flags'.
+
+type TrackerNodeType = 1 | 2 | 3;
+
 export class TrackerNode extends Node {
 
   static readonly OFF_ROUTE = 1;
   static readonly GLITCH = 2;
   static readonly HARD = 3;
 
-  constructor(graph: Graph, readonly type: string, name: string) {
+  constructor(graph: Graph, readonly type: TrackerNodeType, name: string) {
               // , option, missing, weight
     super(graph, name); // + ': ' + option);
     // this.option = option;
@@ -180,13 +183,13 @@ export class Slot extends Node {
     return this;
   }
 
-  npcSpawn(id: number, location: number = -1, offset: number = 0): this {
+  npcSpawn(id: number, location?: number, offset: number = 0): this {
     this.slots.push((rom, slot) => {
       let a = addr(rom, 0x1c5e0, 0x14000, id);
       // console.log(`looking for npc spawn ${id.toString(16)} loc ${
       //              (location||-1).toString(16)} => a=${a.toString(16)}`);
       // Find the location
-      while (location !== -1 && rom[a] !== location) {
+      while (location != null && rom[a] !== location) {
         a++;
         while (!(rom[a] & 0x80)) {
           a += 2;
@@ -207,7 +210,7 @@ export class Slot extends Node {
   }
 
   dialog(id: number,
-         location: number = -1, offset: number = 0, result: number = -1): this {
+         location?: number, offset: number = 0, result?: number): this {
     this.slots.push((rom, slot) => {
       let a = addr(rom, 0x1c95d, 0x14000, id);
       // console.log(`${this.name2}: ${id.toString(16)} dialog start ${
@@ -221,7 +224,7 @@ export class Slot extends Node {
       // Now find the location
       let next = 0;
       while (rom[a] !== 0xff) {
-        if (location !== -1 && rom[a] === location) next = rom[a + 1];
+        if (location != null && rom[a] === location) next = rom[a + 1];
         a += 2;
         checkBounds(a, rom, location);
       }
@@ -242,7 +245,7 @@ export class Slot extends Node {
         --offset;
       }
       // Jump to the selected result if appropriate
-      if (result !== -1) {
+      if (result != null) {
         a += 5;
         while (result) {
           a += 2;
@@ -260,11 +263,11 @@ export class Slot extends Node {
     return this;
   }
 
-  trigger(id: number, offset: number = 0, result: number = -1): this {
+  trigger(id: number, offset: number = 0, result?: number): this {
     this.slots.push((rom, slot) => {
       let a = addr(rom, 0x1e17a, 0x14000, id & 0x7f);
 
-      if (result === -1) {
+      if (result == null) {
         // Find the appropriate condition
         a += 2 * offset;
       } else {

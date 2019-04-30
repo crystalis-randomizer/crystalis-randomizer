@@ -1,67 +1,60 @@
+import {PrgImage} from './romimage.js';
 import {Deque} from './util.js';
 
-export const Edge = {};
+declare const NODE_ID: unique symbol;
 
-/**
- * First element is destination, rest are requirements.
- * @typedef {!Array<number>}
- */
-export const EdgeT = {};
+export type NodeId = number & {[NODE_ID]: never};
 
-/**
- * @param {...!Node} nodes
- * @return {!EdgeT}
- */
-Edge.of = (...nodes) => nodes.map(n => n.uid);
+export type Edge = NodeId[];
+export const Edge: {of: (...nodes: Node[]) => Edge} = {
+  of: (...nodes) => nodes.map(n => n.uid),
+};
 
+// TODO - consider parametrizing Node and Graph?
 export class Node {
-  constructor(graph, name) {
-    this.graph = graph;
-    this.name = name;
-    this.uid = graph.nodes.length;
+
+  readonly uid: NodeId;
+
+  constructor(readonly graph: Graph, readonly name: string) {
+    this.uid = graph.nodes.length as NodeId;
     graph.nodes.push(this);
   }
 
-  get nodeType() {
+  get nodeType(): string {
     return 'Node';
   }
 
-  toString() {
+  toString(): string {
     return `${this.nodeType} ${this.name}`;
   }
 
-  /**
-   * @param {!Object=} opts
-   * @return {!Array<!EdgeT>}
-   */
-  edges(opts = undefined) {
+  edges(opts?: {}): Edge[] {
     return [];
   }
 
-  /** @param {!Uint8Array} rom The PRG rom image. */
-  write(rom) {}
+  /** @param rom The PRG rom image. */
+  write(rom: PrgImage) {}
 }
 
 export class Graph {
-  constructor() {
-    this.nodes = [];
-  }
+
+  readonly nodes: Node[] = [];
 
   // TODO - options for depth vs breadth first?
   //      - pass wanted list as a named param?
-  traverse(opts = {}) {
-    const {
-      wanted = undefined,
-      dfs = false,
-    } = opts;
+  traverse({wanted, dfs = false}: {wanted?: Node[], dfs?: boolean} = {}): {
+    path: [NodeId, string][],
+    seen: Map<NodeId, Edge>,
+    win: boolean,
+  } {
     // Turn this into a mostly-standard depth-first traversal.
     // Basically what we do is build up a new graph where each edge has a list
     // of other nodes that all need to be seen first to take it.
 
     // Map<Node, Map<string, Array<Node>>>
-    const stack = new Deque(); // TODO option for BFS or DFS
-    const seen = new Map();
-    const g = new Map();
+    const stack = new Deque<NodeId>(); // TODO option for BFS or DFS
+    const seen = new Map<NodeId, Edge>();
+    const g = new Map<NodeId, Map<string, Edge>>();
 
     for (const n of this.nodes) {
       for (const edge of n.edges()) {
@@ -69,9 +62,9 @@ export class Graph {
         for (let i = 1; i < edge.length; i++) {
           const from = edge[i];
           if (!g.has(from)) g.set(from, new Map());
-          g.get(from).set(label, edge);
+          g.get(from)!.set(label, edge);
         }
-        if (edge.length == 1) {
+        if (edge.length === 1) {
           const to = edge[0];
           if (!seen.has(to)) {
             stack.push(to);
@@ -83,12 +76,13 @@ export class Graph {
 
     // We now have a complete graph that we can do a simple DFS on.
     const want =
-        new Set((wanted || this.nodes).map(n => n instanceof Node ? n.uid : n));
-    const empty = new Map();
+        new Set<NodeId>((wanted || this.nodes).map((n: Node | NodeId) =>
+                                                   n instanceof Node ? n.uid : n));
+    const empty = new Map<string, Edge>();
 
     // loop until we don't make any progress
     while (want.size && stack.length) {
-      const n = dfs ? stack.pop() : stack.shift();
+      const n = dfs ? stack.pop()! : stack.shift()!;
       want.delete(n);
       NEXT_EDGE:
       for (const edge of (g.get(n) || empty).values()) {
@@ -102,13 +96,12 @@ export class Graph {
       }
     }
     return {
-      win: !want.size,
-      seen,
       path: [...seen.values()].map(([n, ...deps]) => {
-        const str = o => [
-          //o instanceof Location ? o.area.name + ': ' : '',
+        const str = (o: NodeId) => [
+          // o instanceof Location ? o.area.name + ': ' : '',
           this.nodes[o],
-          //o instanceof Slot && o.index != o.id ? ' $' + o.index.toString(16) : '',
+          // o instanceof Slot && o.index != o.id ?
+          //     ' $' + o.index.toString(16) : '',
         ];
         return [n, [
           ...str(n),
@@ -117,6 +110,8 @@ export class Graph {
           ')',
         ].join('')];
       }),
+      seen,
+      win: !want.size,
     };
   }
 
@@ -140,25 +135,26 @@ export class Graph {
 }
 
 export class SparseDependencyGraph {
-  constructor(size) {
-    /** @const {!Array<!Map<string, !Set<number>>>} */
+
+  readonly nodes: Map<string, Set<NodeId>>[];
+  readonly finalized: boolean[];
+
+  constructor(size: number) {
     this.nodes = new Array(size).fill(0).map(() => new Map());
-    /** @const {!Array<boolean>} */
     this.finalized = new Array(size).fill(false);
   }
 
   // Before adding a route, any target is unreachable
   // To make a target always reachable, add an empty route
 
-  /** @return {!Array<!SparseRoute>} */
-  addRoute(/** !Array<number> */ edge) {
-//console.error(`addRoute: ${edge}`);
+  addRoute(edge: Edge): SparseRoute[] {
+    // console.error(`addRoute: ${edge}`);
     const target = edge[0];
-    if(this.finalized[target]) {
+    if (this.finalized[target]) {
       throw new Error(`Attempted to add a route for finalized node ${target}`);
     }
     // NOTE: if any deps are already integrated out, replace them right away
-    let s = new Set();
+    let s = new Set<NodeId>();
     for (let i = edge.length - 1; i >= 1; i--) s.add(edge[i]);
     while (true) {
       let changed = false;
@@ -170,7 +166,7 @@ export class SparseDependencyGraph {
           if (!repl.size) return [];
           s.delete(d);
           // if there's a single option then just inline it directly
-          if (repl.size == 1) {
+          if (repl.size === 1) {
             for (const dd of repl.values().next().value) {
               s.add(dd);
             }
@@ -184,7 +180,7 @@ export class SparseDependencyGraph {
               routes.set(r2.label, r2);
             }
           }
-          return [...routes.values()];          
+          return [...routes.values()];
         }
       }
       if (!changed) break;
@@ -193,27 +189,27 @@ export class SparseDependencyGraph {
     s = new Set(sorted);
     const label = sorted.join(' ');
     const current = this.nodes[target];
-//console.error(`${target}: ${sorted}`);
+    // console.error(`${target}: ${sorted}`);
     if (current.has(label)) return [];
     for (const [l, d] of current) {
       if (containsAll(s, d)) return [];
       if (containsAll(d, s)) current.delete(l);
     }
-//console.error(`  => set`);
+    // console.error(`  => set`);
     current.set(label, s);
-//console.error(`  => ${target}: ${[...current.keys()].map(x=>`(${x})`)}`);
-    return [new SparseRoute(target, s, `${target}:${label}`)];
+    // console.error(`  => ${target}: ${[...current.keys()].map(x=>`(${x})`)}`);
+    return [{target, deps: s, label: `${target}:${label}`}];
   }
 
-  finalize(/** number */ node) {
-const PR=node==301;
+  finalize(node: NodeId) {
+    // const PR = node === 301;
     if (this.finalized[node]) return;
     // pull the key, remove it from *all* other nodes
-    const alternatives = this.nodes[node];
     this.finalized[node] = true;
-    for (let target = 0; target < this.nodes.length; target++) {
-      const /** !Map<string, !Set<number>> */ routes = this.nodes[target];
-//if(PR)console.log(`finalizing ${node}: target=${target} ${[...routes.keys()].map(x=>`(${x})`)}`);
+    for (let target = 0 as NodeId; target < this.nodes.length; target++) {
+      const routes: Map<string, Set<NodeId>> = this.nodes[target];
+      // if(PR)console.log(`finalizing ${node}: target=${target} ${
+      //                    [...routes.keys()].map(x=>`(${x})`)}`);
       if (!routes.size) continue;
       for (const [label, route] of routes) {
         // substitute... (reusing the code in addRoute)
@@ -226,23 +222,21 @@ const PR=node==301;
         }
       }
     }
-//console.error(`finalized ${node}: ${[...this.nodes[node].values()].map(a => [...a].join('&')).join(' | ')}`);
+    // console.error(`finalized ${node}: ${[...this.nodes[node].values()]
+    //                    .map(a => [...a].join('&')).join(' | ')}`);
   }
 }
 
-class SparseRoute {
-  constructor(/** number */ target, /** !Set<number> */ deps, /** string */ label) {
-    this.target = target;
-    this.deps = deps;
-    this.label = label;
-  }  
+export interface SparseRoute {
+  readonly target: NodeId;
+  readonly deps: Set<NodeId>;
+  readonly label: string;
 }
 
-const containsAll = (/** !Set */ left, /** !Set */ right) => /** boolean */ {
+const containsAll = <T>(left: Set<T>, right: Set<T>): boolean => {
   if (left.size < right.size) return false;
   for (const d of right) {
     if (!left.has(d)) return false;
   }
   return true;
 };
-

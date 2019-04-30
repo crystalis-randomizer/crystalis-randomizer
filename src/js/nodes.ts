@@ -1,7 +1,9 @@
 // TODO - rename to nodes.js ?
 
-import {Node, Edge, EdgeT, Graph, SparseDependencyGraph} from './graph.js';
 import {Bits} from './bits.js';
+import {Edge, Graph, Node, NodeId, SparseDependencyGraph, SparseRoute} from './graph.js';
+import {Random} from './random.js';
+import {FullRomImage, PrgImage} from './romimage.js';
 
 // TODO - move the options into these nodes...?
 //  - then the Dt flag will determine whether to connect or not?
@@ -14,15 +16,20 @@ import {Bits} from './bits.js';
 // The edges() method needs to behave differently depending on this.
 // Given that, we probably need to accept 'flags'.
 export class TrackerNode extends Node {
-  constructor(graph, type, name /*, option, missing, weight */) {
+
+  static readonly OFF_ROUTE = 1;
+  static readonly GLITCH = 2;
+  static readonly HARD = 3;
+
+  constructor(graph: Graph, readonly type: string, name: string) {
+              // , option, missing, weight
     super(graph, name); // + ': ' + option);
-    this.type = type;
     // this.option = option;
     // this.missing = missing;
     // this.weight = weight;
   }
 
-  get nodeType() {
+  get nodeType(): string {
     return 'Tracker';
   }
 
@@ -32,99 +39,105 @@ export class TrackerNode extends Node {
   // but retains them for tracking purposes.  Evil mode will want to
   // retain them as well, but we'll have a bunch more nodes in that
   // case to track missing items.
-  edges({tracker = false} = {}) {
+  edges({tracker = false}: {tracker?: boolean} = {}): Edge[] {
     // return []; // this.option.value ? [Edge.of(this)] : [];
     // return tracker ? [] : [Edge.of(this)];
     return [];
   }
 }
 
-TrackerNode.OFF_ROUTE = 1;
-TrackerNode.GLITCH = 2;
-TrackerNode.HARD = 3;
-
 export class Option extends Node {
-  constructor(graph, name, value) {
+  constructor(graph: Graph, name: string, readonly value: boolean) {
     super(graph, name);
-    this.value = value;
   }
 
-  get nodeType() {
+  get nodeType(): string {
     return 'Option';
   }
 
-  /** @override */
-  edges() {
+  edges(): Edge[] {
     return this.value ? [Edge.of(this)] : [];
   }
 }
 
+type SlotType = 'magic' | 'consumable' | 'trap' | 'key' | 'bonus';
+
 export class Slot extends Node {
-  constructor(graph, name, item, index, slots = []) {
+
+  slotName: string;
+  slotIndex: number;
+  slotType: SlotType;
+  vanillaItemName: string;
+  itemIndex: number;
+  requiresUnique: boolean = false;
+  isInvisible: boolean = false;
+
+  constructor(graph: Graph,
+              name: string,
+              public item: ItemGet,
+              index: number,
+              readonly slots: ((prg: PrgImage, slot: Slot) => void)[] = []) {
     super(graph, name);
     // Information about the slot itself
     this.slotName = name;
     this.slotIndex = index;
     this.slotType = item instanceof Magic ? 'magic' : 'consumable';
     this.vanillaItemName = item.name;
-    this.slots = slots;
     // Information about the current item (if any)
-    this.item = item;
     this.itemIndex = index;
-    this.requiresUnique = false;
   }
 
-  get nodeType() {
+  get nodeType(): string {
     return 'Slot';
   }
 
-  toString() {
+  toString(): string {
     return `${super.toString()} [${this.vanillaItemName} $${
-            this.slotIndex.toString(16).padStart(2, 0)}]`;
+            this.slotIndex.toString(16).padStart(2, '0')}]`;
   }
 
-  edges() {
+  edges(): Edge[] {
     return this.item != null && this.itemIndex != null ?
         [Edge.of(this.item, this)] : [];
   }
 
-  isMimic() {
-    return this.itemIndex >= 0x70;
-  }
+  isFixed(): boolean { return false; }
 
-  requireUnique() {
+  isMimic(): boolean { return this.itemIndex >= 0x70; }
+
+  requireUnique(): this {
     this.requiresUnique = true;
     return this;
   }
 
-  canHoldMimic() {
+  canHoldMimic(): boolean {
     // NOTE: boss drops cannot hold mimics because they cause boss respawn.
     return this instanceof Chest && !this.isInvisible;
   }
 
-  needsChest() {
+  needsChest(): boolean {
     const i = this.itemIndex;
     // NOTE: if alarm flute goes in 3rd row, 0x31 should go away.
     return i >= 0x0d && i <= 0x24 ||
         i === 0x26 ||
-        //i === 0x28 ||
-        //i === 0x31 ||
+        // i === 0x28 ||
+        // i === 0x31 ||
         i > 0x48;
   }
 
-  isChest() {
+  isChest(): boolean {
     // Only chests can hold consumables (unless we override with a flag).
     // Rage is not a chest.
     return (this instanceof Chest || this instanceof BossDrop) &&
-        this.origIndex !== 0x09;
+        this.slotIndex !== 0x09;
   }
 
-  get name2() {
-    if (this.item == this.vanilla) return this.name;
+  get name2(): string {
+    if (this.item.name === this.vanillaItemName) return this.name;
     return `${this.item.name} [${this.vanillaItemName}]`;
   }
 
-  set(item, index) {
+  set(item: ItemGet, index: number): void {
     // NOTE: we can't just use item.index because repeated
     // items need separate indices but we don't make extra
     // Item nodes for them.
@@ -132,8 +145,7 @@ export class Slot extends Node {
     this.itemIndex = index;
   }
 
-  /** @override */
-  write(rom) {
+  write(rom: PrgImage): void {
     if (!this.slots) return;
     for (const slot of this.slots) {
       // TODO - not clear where to write this.
@@ -141,38 +153,40 @@ export class Slot extends Node {
     }
   }
 
-  swap(other) {
+  swap(other: Slot): void {
     const item = this.item;
     const index = this.itemIndex;
     this.set(other.item, other.itemIndex);
     other.set(item, index);
   }
 
-  key() {
+  key(): this {
     this.slotType = 'key';
     return this;
   }
 
-  bonus() {
+  bonus(): this {
     this.slotType = 'bonus';
     return this;
   }
 
-  direct(addr) {
+  direct(address: number): this {
     // slot is usually 'this' for the Slot object that owns this.
     this.slots.push((rom, slot) => {
-      write(rom, addr, slot.itemIndex);
-//console.log(`${this.name2}: ${addr.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
+      write(rom, address, slot.itemIndex);
+      // console.log(`${this.name2}: ${addr.toString(16)} <- ${
+      //              slot.index.toString(16).padStart(2,0)}`);
     });
     return this;
   }
 
-  npcSpawn(id, location = null, offset = 0) {
+  npcSpawn(id: number, location: number = -1, offset: number = 0): this {
     this.slots.push((rom, slot) => {
       let a = addr(rom, 0x1c5e0, 0x14000, id);
-//console.log(`looking for npc spawn ${id.toString(16)} loc ${(location||-1).toString(16)} => a=${a.toString(16)}`);
+      // console.log(`looking for npc spawn ${id.toString(16)} loc ${
+      //              (location||-1).toString(16)} => a=${a.toString(16)}`);
       // Find the location
-      while (location != null && rom[a] != location) {
+      while (location !== -1 && rom[a] !== location) {
         a++;
         while (!(rom[a] & 0x80)) {
           a += 2;
@@ -185,15 +199,19 @@ export class Slot extends Node {
       rom[a] &= ~1;
       rom[a] |= 2;
       write(rom, a + 1, slot.itemIndex);
-//console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(2,0)} ${rom[a+1].toString(16).padStart(2,0)}`);
+      // console.log(`${this.name2}: ${a.toString(16)} <- ${
+      //              rom[a].toString(16).padStart(2,0)} ${
+      //              rom[a+1].toString(16).padStart(2,0)}`);
     });
     return this;
   }
 
-  dialog(id, location = null, offset = 0, result = null) {
+  dialog(id: number,
+         location: number = -1, offset: number = 0, result: number = -1): this {
     this.slots.push((rom, slot) => {
       let a = addr(rom, 0x1c95d, 0x14000, id);
-//console.log(`${this.name2}: ${id.toString(16)} dialog start ${a.toString(16)}`);
+      // console.log(`${this.name2}: ${id.toString(16)} dialog start ${
+      //              a.toString(16)}`);
       // Skip the pre-location parts
       while (!(rom[a] & 0x80)) {
         a += 4;
@@ -202,13 +220,13 @@ export class Slot extends Node {
       a += 4;
       // Now find the location
       let next = 0;
-      while (rom[a] != 0xff) {
-        if (location != null && rom[a] == location) next = rom[a + 1];
+      while (rom[a] !== 0xff) {
+        if (location !== -1 && rom[a] === location) next = rom[a + 1];
         a += 2;
         checkBounds(a, rom, location);
       }
       a += next + 1; // skip the ff
-//console.log(`next=${next}`);
+      // console.log(`next=${next}`);
       // Jump to the location
       while (offset) {
         if (rom[a] & 0x40) {
@@ -224,7 +242,7 @@ export class Slot extends Node {
         --offset;
       }
       // Jump to the selected result if appropriate
-      if (result != null) {
+      if (result !== -1) {
         a += 5;
         while (result) {
           a += 2;
@@ -234,17 +252,19 @@ export class Slot extends Node {
       // update condition
       rom[a] &= ~1;
       rom[a] |= 2;
-//console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(2,0)} ${rom[a+1].toString(16).padStart(2,0)}`);
+      // console.log(`${this.name2}: ${a.toString(16)} <- ${
+      //              rom[a].toString(16).padStart(2,0)} ${
+      //              rom[a+1].toString(16).padStart(2,0)}`);
       write(rom, a + 1, slot.itemIndex);
     });
     return this;
   }
 
-  trigger(id, offset = 0, result = null) {
+  trigger(id: number, offset: number = 0, result: number = -1): this {
     this.slots.push((rom, slot) => {
       let a = addr(rom, 0x1e17a, 0x14000, id & 0x7f);
 
-      if (result == null) {
+      if (result === -1) {
         // Find the appropriate condition
         a += 2 * offset;
       } else {
@@ -259,30 +279,38 @@ export class Slot extends Node {
       rom[a] &= ~1;
       rom[a] |= 2;
       write(rom, a + 1, slot.itemIndex);
-//console.log(`${this.name2}: ${a.toString(16)} <- ${rom[a].toString(16).padStart(2,0)} ${rom[a+1].toString(16).padStart(2,0)}`);
+      // console.log(`${this.name2}: ${a.toString(16)} <- ${
+      //              rom[a].toString(16).padStart(2,0)} ${
+      //              rom[a+1].toString(16).padStart(2,0)}`);
     });
     return this;
   }
 }
 
+export class FixedSlot extends Slot {
+  isFixed(): boolean { return true; }
+}
+
 export class BossDrop extends Slot {
-  get nodeType() {
+  get nodeType(): string {
     return 'BossDrop';
   }
 }
 
 export class Chest extends Slot {
-  constructor(graph, name, item, index) {
+
+  spawnSlot: number | null = null;
+  isInvisible: boolean = false;
+
+  constructor(graph: Graph, name: string, item: ItemGet, index: number) {
     super(graph, name, item, index);
-    this.spawnSlot = null;
-    this.isInvisible = false;
   }
 
-  get nodeType() {
+  get nodeType(): string {
     return 'Chest';
   }
 
-  objectSlot(loc, spawnSlot) {
+  objectSlot(loc: number, spawnSlot: number) {
     this.spawnSlot = spawnSlot;
     this.slots.push((rom, slot) => {
       const base = addr(rom, 0x19201, 0x10000, loc);
@@ -299,102 +327,113 @@ export class Chest extends Slot {
     return this;
   }
 
-  invisible(addr) {
+  invisible(address: number) {
     this.isInvisible = true;
-    return this.direct(addr);
+    return this.direct(address);
   }
 }
 
 const addr =
-    (rom, base, offset, index) =>
-        (/*console.log(`pointer = ${(base + 2 * index).toString(16)}`),*/ rom[base + 2 * index] | rom[base + 2 * index + 1] << 8) + offset;
+    (rom: PrgImage, base: number, offset: number, index: number) =>
+        (/*console.log(`pointer = ${(base + 2 * index).toString(16)}`),*/
+         rom[base + 2 * index] | rom[base + 2 * index + 1] << 8) + offset;
+
+type InventoryRow = 'armor' | 'consumable' | 'unique';
 
 export class ItemGet extends Node {
-  constructor(graph, id, name, index, item) {
+
+  shufflePriority: number = 1;
+  inventoryRow: InventoryRow = 'unique';
+
+  constructor(graph: Graph,
+              readonly id: number,
+              name: string) {
     super(graph, name);
-    this.id = id;
-    this.shufflePriority = 1;
-    this.inventoryRow = 'unique';
   }
 
-  get nodeType() {
+  get nodeType(): string {
     return 'ItemGet';
   }
 
-  chest(name = this.name + ' chest', index = this.id) {
+  chest(name: string = this.name + ' chest', index: number = this.id): Chest {
     return new Chest(this.graph, name, this, index);
   }
 
-  fromPerson(name, personId, offset = 0) {
+  fromPerson(name: string, personId: number, offset: number = 0): Slot {
     return this.direct(name, 0x80f0 | (personId & ~3) << 6 | (personId & 3) << 2 | offset);
   }
 
-  bossDrop(name, bossId, itemGetIndex = this.id) {
+  bossDrop(name: string, bossId: number, itemGetIndex: number = this.id): BossDrop {
     return new BossDrop(this.graph, name, this, itemGetIndex, [(rom, slot) => {
       const a = addr(rom, 0x1f96b, 0x14000, bossId) + 4;
       write(rom, a, slot.itemIndex);
-//console.log(`${this.name == slot.name ? this.name : `${slot.name} (${this.name})`}: ${a.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
+      // console.log(`${this.name == slot.name ? this.name : `${slot.name} (${
+      //              this.name})`}: ${a.toString(16)} <- ${
+      //              slot.index.toString(16).padStart(2,0)}`);
     }]);
   }
 
-  direct(name, a) {
+  direct(name: string, a: number): Slot {
     return new Slot(this.graph, name, this, this.id, [(rom, slot) => {
       write(rom, a, slot.itemIndex);
-//console.log(`${this.name == slot.name ? this.name : `${slot.name} (${this.name})`}: ${a.toString(16)} <- ${slot.index.toString(16).padStart(2,0)}`);
+      // console.log(`${this.name == slot.name ? this.name : `${slot.name} (${
+      //              this.name})`}: ${a.toString(16)} <- ${
+      //              slot.index.toString(16).padStart(2,0)}`);
     }]);
   }
 
-  fixed() {
-    return new Slot(this.graph, null, this, this.id);
+  fixed(): Slot {
+    return new FixedSlot(this.graph, this.name, this, this.id);
   }
 
-  weight(w) {
+  weight(w: number): this {
     this.shufflePriority = w;
     return this;
   }
 
-  consumable() {
+  consumable(): this {
     this.inventoryRow = 'consumable';
     return this;
   }
 
-  armor() {
+  armor(): this {
     this.inventoryRow = 'armor';
     return this;
   }
 }
 
 export class Item extends ItemGet {
-  get nodeType() {
+  get nodeType(): string {
     return 'Item';
   }
 }
 
 export class Magic extends ItemGet {
-  get nodeType() {
+  get nodeType(): string {
     return 'Magic';
   }
 }
 
 export class Trigger extends Node {
-  constructor(graph, name) {
+
+  slot: Slot | null = null;
+  readonly reqs: Edge[] = [];
+
+  constructor(graph: Graph, name: string) {
     super(graph, name);
-    this.slot = null;
-    /** !Array<!EdgeT> */
-    this.reqs = [];
   }
 
-  get nodeType() {
+  get nodeType(): string {
     return 'Trigger';
   }
 
-  edges() {
+  edges(): Edge[] {
     const out = [...this.reqs];
     if (this.slot) out.push(Edge.of(this.slot, this));
     return out;
   }
 
-  get(slot) {
+  get(slot: Slot): this {
     if (this.slot) throw new Error('already have a slot');
     this.slot = slot;
     return this;
@@ -413,32 +452,37 @@ export class Trigger extends Node {
 //   rom.locations[location].objects[slot - 0xd][3] = index;
 // };
 
-
 export class Condition extends Node {
-  constructor(graph, name) {
+
+  readonly options: Node[][] = [];
+
+  constructor(graph: Graph, name: string) {
     super(graph, name);
-    /** @type {!Array<!Array<!Node>>} */
-    this.options = [];
   }
 
-  get nodeType() {
+  get nodeType(): string {
     return 'Condition';
   }
 
-  edges() {
+  edges(): Edge[] {
     return this.options.map((opt) => Edge.of(this, ...opt));
   }
 
-  option(...deps) {
+  option(...deps: Node[]): this {
     this.options.push(deps.map(x => x instanceof Slot ? x.item : x));
     return this;
   }
 }
 
 export class Boss extends Trigger {
-  constructor(graph, index, name, ...deps) {
+
+  readonly deps: Node[];
+
+  constructor(graph: Graph,
+              readonly index: number,
+              name: string,
+              ...deps: Node[]) {
     super(graph, name);
-    this.index = index;
     this.deps = deps.map(x => x instanceof Slot ? x.item : x);
   }
 
@@ -448,53 +492,55 @@ export class Boss extends Trigger {
 }
 
 export class Area extends Node {
-  constructor(graph, name) {
-    super(graph, name);
-    this.name = name;
-  }
-
-  get nodeType() {
+  get nodeType(): string {
     return 'Area';
   }
 }
 
 export class Connection {
-  constructor(from, to, bidi = false, deps = []) {
-    this.from = from;
-    this.to = to;
-    this.bidi = bidi;
+
+  readonly deps: Node[];
+
+  constructor(readonly from: Location,
+              readonly to: Location,
+              readonly bidi: boolean = false,
+              deps: Node[] = []) {
     this.deps = deps.map(x => x instanceof Slot ? x.item : x);
   }
 
-  reverse() {
+  reverse(): Connection {
     return new Connection(this.to, this.from, this.bidi, this.deps);
   }
 }
 
 export class Location extends Node {
-  constructor(graph, id, area, name) {
+
+  readonly simpleName: string;
+  readonly connections: Connection[] = [];
+  readonly chests: Chest[] = [];
+  bossNode: Boss | null = null;
+  type: string | null = null;
+  isStart: boolean = false;
+  isEnd: boolean = false;
+  sells: Item[] = [];
+
+  constructor(graph: Graph,
+              readonly id: number,
+              readonly area: Area,
+              name: string) {
     super(graph, area.name + ': ' + name);
     this.simpleName = name;
-    this.id = id;
-    this.area = area;
-    this.connections = [];
-    this.chests = [];
-    this.bossNode = null;
-    this.type = null;
-    this.isStart = false;
-    this.isEnd = false;
-    this.sells = [];
   }
 
-  get nodeType() {
+  get nodeType(): string {
     return 'Location';
   }
 
-  toString() {
-    return `Location ${this.id.toString(16).padStart(2,0)} ${this.name}`;
+  toString(): string {
+    return `Location ${this.id.toString(16).padStart(2, '0')} ${this.name}`;
   }
 
-  edges() {
+  edges(): Edge[] {
     const out = [];
     for (const c of this.connections) {
       out.push(Edge.of(c.to, c.from, ...c.deps, ...(c.from.bossNode ? [c.from.bossNode] : [])));
@@ -509,29 +555,29 @@ export class Location extends Node {
     return out;
   }
 
-  addConnection(c) {
+  addConnection(c: Connection): this {
     c.from.connections.push(c);
     c.to.connections.push(c);
     return this;
   }
 
-  from(location, ...deps) {
+  from(location: Location, ...deps: Node[]): this {
     return this.addConnection(new Connection(location, this, false, deps));
   }
 
-  to(location, ...deps) {
+  to(location: Location, ...deps: Node[]): this {
     return this.addConnection(new Connection(this, location, false, deps));
   }
 
-  connect(location, ...deps) {
+  connect(location: Location, ...deps: Node[]): this {
     return this.addConnection(new Connection(location, this, true, deps));
   }
 
-  connectTo(location, ...deps) {
+  connectTo(location: Location, ...deps: Node[]): this {
     return this.addConnection(new Connection(this, location, true, deps));
   }
 
-  chest(item, spawn, chest = undefined) {
+  chest(item: ItemGet | Slot, spawn: number, chest?: number): this {
     if (item instanceof Slot && !(item instanceof Chest) && chest != null) {
       // Consider making this an error?
       item = item.item;
@@ -539,22 +585,23 @@ export class Location extends Node {
     if (item instanceof ItemGet) {
       item = item.chest(undefined, chest);
     }
-    const slot = item.objectSlot(this.id, spawn);
+    const chestNode = item as Chest;
+    const slot = chestNode.objectSlot(this.id, spawn);
     this.chests.push(slot);
     if (slot.itemIndex >= 0x70) slot.slotType = 'trap';
     if (!slot.slotName || slot.slotName.endsWith(' chest')) {
-      slot.slotName = item.name + ' in ' + this.area.name;
+      slot.slotName = chestNode.name + ' in ' + this.area.name;
     }
     return this;
   }
 
-  trigger(trigger, ...deps) {
+  trigger(trigger: Trigger, ...deps: Node[]): this {
     deps = deps.map(n => n instanceof Slot ? n.item : n);
     trigger.reqs.push(Edge.of(trigger, this, ...deps));
     return this;
   }
 
-  boss(boss) {
+  boss(boss: Boss): this {
     this.bossNode = boss;
     boss.reqs.push(Edge.of(boss, this, ...boss.deps));
     return this;
@@ -565,58 +612,58 @@ export class Location extends Node {
   // if relevant, as well as sea and overworld.  We should mark each connection
   // with a value indicating the threshold for shuffling it - 1 = always shuffle,
   // 2 = medium, 3 = crazy (e.g. shuffle all exits).
-  overworld() {
+  overworld(): this {
     this.type = 'overworld';
     return this;
   }
 
-  town() {
+  town(): this {
     this.type = 'town';
     return this;
   }
 
-  cave() {
+  cave(): this {
     this.type = 'cave';
     return this;
   }
 
-  sea() {
+  sea(): this {
     this.type = 'sea';
     return this;
   }
 
-  fortress() {
+  fortress(): this {
     this.type = 'fortress';
     return this;
   }
 
-  house() {
+  house(): this {
     this.type = 'house';
     return this;
   }
 
-  shop(...items) {
+  shop(...items: (Item | Slot)[]): this {
     this.type = 'house';
-    this.sells = items.map(x => x instanceof Slot ? x.item : x);
+    this.sells = items.map(x => x instanceof Slot ? x.item as Item : x);
     return this;
   }
 
-  misc() {
+  misc(): this {
     this.type = 'misc';
     return this;
   }
 
-  start() {
+  start(): this {
     this.isStart = true;
     return this;
   }
 
-  end() {
+  end(): this {
     this.isEnd = true;
     return this;
   }
 
-  fullName() {
+  fullName(): string {
     const lines = [this.simpleName];
     if (this.bossNode) {
       lines.push(this.bossNode.name);
@@ -624,51 +671,57 @@ export class Location extends Node {
     return lines.join('\\n');
   }
 
-  write(rom) {
+  write(rom: PrgImage): void {
     if (!this.sells.length) return;
-    const isArmor = this.sells[0].inventoryRow == 'armor';
+    const isArmor = this.sells[0].inventoryRow === 'armor';
     // look up shop index in table
     const LOCS = 0x21f54;
     const INDS = 0x21f75;
     let index = 0;
     for (let i = LOCS; i < INDS; i++) {
-      if (rom[i] == this.id) {
+      if (rom[i] === this.id) {
         index = rom[i + INDS - LOCS];
         break;
       }
     }
-    const addr = (isArmor ? 0x21da4 : 0x21e28) + (index << 2);
+    const address = (isArmor ? 0x21da4 : 0x21e28) + (index << 2);
     for (let i = 0; i < 4; i++) {
-      rom[addr + i] = this.sells[i] ? this.sells[i].id : 0xff;
-      if (!rom[addr + i]) console.error(`uh oh: ${this.sells[i].id} => ${this.sells[i]}`);
+      rom[address + i] = this.sells[i] ? this.sells[i].id : 0xff;
+      if (!rom[address + i]) {
+        console.error(`uh oh: ${this.sells[i].id} => ${this.sells[i]}`);
+      }
     }
   }
 }
 
-const checkBounds = (a, rom, ...data) => {
+const checkBounds = (a: number, rom: Uint8Array, ...data: unknown[]) => {
   if (a > rom.length) {
     throw new Error(
-        'never found: ' + data.map(x => typeof x == 'number' ? x.toString(16) : x).join(' '));
+        'never found: ' + data.map(x => typeof x === 'number' ?
+                                   x.toString(16) : x).join(' '));
   }
-}
-
+};
 
 export class WorldGraph extends Graph {
 
-  write(rom) {
-    rom = rom.subarray(0x10);
+  write(rom: FullRomImage) {
+    const prg = PrgImage.of(rom);
     for (const n of this.nodes) {
-      n.write(rom);
+      n.write(prg);
     }
   }
 
-  shuffleShops(random) {
+  shuffleShops(random: Random) {
     // for now we just dump everything into a pool and shuffle them up.
-    const armor = {shops: [], items: []};
-    const tools = {shops: [], items: []};
+    interface ShopType {
+      shops: Location[];
+      items: Item[];
+    }
+    const armor: ShopType = {shops: [], items: []};
+    const tools: ShopType = {shops: [], items: []};
     for (const n of this.nodes) {
-      if (!n.sells || !n.sells.length) continue;
-      const s = n.sells[0].inventoryRow == 'armor' ? armor : tools
+      if (!(n instanceof Location) || !n.sells.length) continue;
+      const s = n.sells[0].inventoryRow === 'armor' ? armor : tools;
       s.shops.push(n);
       for (let i = 0; i < 4; i++) {
         s.items.push(n.sells[i] || null);
@@ -682,7 +735,7 @@ export class WorldGraph extends Graph {
       let s = 0;
       while (items.length && s < 100000) {
         const item = items.pop();
-        let shop = shops[s++ % shops.length];
+        const shop = shops[s++ % shops.length];
         if (!item) continue;
         if (shop.sells.indexOf(item) >= 0 || shop.sells.length >= 4) {
           items.push(item);
@@ -703,13 +756,9 @@ export class WorldGraph extends Graph {
    * @param {!Object} opts
    * @return {!LocationList}
    */
-  integrate(opts = {}) {
-// for(let i=0;i<this.nodes.length;i++)
-// console.log(`${i} ${this.nodes[i]}`);
-
-    const {
-      tracker = false,
-    } = opts;
+  integrate({tracker = false}: {tracker?: boolean} = {}) {
+    // for(let i=0;i<this.nodes.length;i++)
+    // console.log(`${i} ${this.nodes[i]}`);
 
     const removeConditions = true;
     const removeTriggers = true;
@@ -717,18 +766,17 @@ export class WorldGraph extends Graph {
     const removeTrackers = !tracker;
 
     const depgraph = new SparseDependencyGraph(this.nodes.length);
-    const /** !Array<!Array<!Connection>> */ connectionsByFrom = [];
-    const /** !Array<!Array<!Connection>> */ connectionsByTo = [];
-    const /** !Set<!Connection> */ connections = new Set();
-    const /** !Map<string, !EdgeT> */ queue = new Map();
+    const connectionsByFrom: Connection[][] = [];
+    const connectionsByTo: Connection[][] = [];
+    const connections = new Set<Connection>();
+    const queue = new Map<string, SparseRoute>(); // was: Edge ???
 
-    const options = [];
-    const trackers = [];
-    const conditions = [];
-    const triggers = [];
-    const items = [];
-    const slots = new Set();
-
+    const options: Option[] = [];
+    const trackers: TrackerNode[] = [];
+    const conditions: Condition[] = [];
+    const triggers: Trigger[] = [];
+    const items: ItemGet[] = [];
+    const slots = new Set<Slot>();
 
     // TODO - how to handle tracker nodes?
     //   - if we leave them in, then we should ensure
@@ -744,7 +792,6 @@ export class WorldGraph extends Graph {
     //    temple without BoT, or various caves without certain items;
     //    by simply adding LEAP_OF_FAITH deps to these, we'll increase
     //    the chance that items end up in trollish places?
-
 
     // First index all the nodes and connections.
     for (const n of this.nodes) {
@@ -783,7 +830,7 @@ export class WorldGraph extends Graph {
       else if (n instanceof Trigger) triggers.push(n);
       else if (n instanceof ItemGet) items.push(n);
       else if (n instanceof Slot) slots.add(n);
-      else if (n instanceof Area) {}
+      else if (n instanceof Area) (() => {})(); // do nothing
       else throw new Error(`Unknown node type: ${n.nodeType}`);
     }
 
@@ -792,7 +839,7 @@ export class WorldGraph extends Graph {
       connectionsByTo[c.to.uid].push(c);
     }
 
-    const integrate = (nodes) => {
+    const integrate = (nodes: Node[]) => {
       for (const n of nodes) {
         for (const edge of n.edges({tracker})) {
           depgraph.addRoute(edge);
@@ -826,20 +873,18 @@ export class WorldGraph extends Graph {
     if (removeTriggers) integrate(triggers);
 
     // Next do locations, leaving conditions intact
-    const iter = queue.values();
-    let next;
-    while (!(next = iter.next()).done) {
-      const route = next.value; // (SparseRoute)
+    for (const route /* : SparseRoute */ of queue.values()) {
       const target = route.target;
-//console.error(`loc: ${target} ${this.nodes[target]}: ${[...route.deps]}`);
+      // console.error(`loc: ${target} ${this.nodes[target]}: ${[...route.deps]}`);
       for (const c of connectionsByFrom[target]) {
-//console.error(`c: ${c.from.uid} -> ${c.to.uid} if ${c.deps.map(x=>x.uid)}`); // TODO - no connections???
+        // console.error(`c: ${c.from.uid} -> ${c.to.uid} if ${
+        //                c.deps.map(x=>x.uid)}`); // TODO - no connections???
         const newRoute = [c.to.uid, ...route.deps];
         for (let i = c.deps.length - 1; i >= 0; i--) {
           newRoute.push(c.deps[i].uid);
         }
         if (c.from.bossNode) newRoute.push(c.from.bossNode.uid);
-//console.error(`newRoute: ${newRoute}`);
+        // console.error(`newRoute: ${newRoute}`);
         for (const r of depgraph.addRoute(newRoute)) {
           if (!queue.has(r.label)) queue.set(r.label, r);
         }
@@ -847,20 +892,20 @@ export class WorldGraph extends Graph {
     }
 
     if (removeConditions) integrate(conditions);
-    for (let i = 0; i < this.nodes.length; i++) {
+    for (let i = 0 as NodeId; i < this.nodes.length; i++) {
       if (this.nodes[i] instanceof ItemGet
           || this.nodes[i] instanceof TrackerNode
          ) continue;
-//console.error(`finalizing ${this.nodes[i]}`);
+      // console.error(`finalizing ${this.nodes[i]}`);
       depgraph.finalize(i);
     }
-//console.error(`done w/ nodes`);
+    // console.error(`done w/ nodes`);
 
     // Now we have a dependency graph, where all slots should
     // have only item dependencies (unless we left some in).
     const out = new LocationList(this);
     for (const slot of slots) {
-//console.error(`slot ${slot.uid}: ${[...depgraph.nodes[slot.uid]]}`);
+      // console.error(`slot ${slot.uid}: ${[...depgraph.nodes[slot.uid]]}`);
       for (const alt of depgraph.nodes[slot.uid].values()) {
         out.addRoute([slot.uid, ...alt]);
       }
@@ -876,55 +921,37 @@ export class LocationList {
   //  - how to optimize for assumed fill??
   //  - will want a separate traverse method
 
-
   // could reuse node objects if instead of a single id
   // they had a weakmap from graphs to ids in the graph,
   // then the id is assigned when they're added to the
   // graph, tho that would muck up a lot of stuff...
 
-  constructor(/** !WorldGraph */ graph) {
-    // Bimap between nodes and indices.
+  // Bimap between nodes and indices.
+  readonly uidToLocation: NodeId[] = [];
+  readonly locationToUid: NodeId[] = [];
+  readonly uidToItem: NodeId[] = [];
+  readonly itemToUid: NodeId[] = [];
+  readonly routes: Bits[][] = [];
+  readonly unlocks: Set<NodeId>[] = [];
+  // Slot for the "win condition" node.
+  win: NodeId | null = null;
 
-    /** @const */
-    this.worldGraph = graph;
+  // TODO - custom width?  for now we hardcode width=2
+  constructor(readonly worldGraph: WorldGraph) {}
 
-    /** @const {!Array<number>} */
-    this.uidToLocation = [];
-    /** @const {!Array<number>} */
-    this.locationToUid = [];
-
-    /** @const {!Array<number>} */
-    this.uidToItem = [];
-    /** @const {!Array<number>} */
-    this.itemToUid = [];
-
-    /** @const {!Array<!Array<!Bits>>} */
-    this.routes = [];
-
-    /** @const {!Array<!Set<number>>} */
-    this.unlocks = [];
-
-    /** @type {?number} Slot for "win" */
-    this.win = null;
-
-    // TODO - custom width?  for now we hardcode width=2
+  item(index: NodeId): ItemGet {
+    return this.worldGraph.nodes[this.itemToUid[index]] as ItemGet;
   }
 
-  /** @return {!Node} */
-  item(/** number */ index) {
-    return this.worldGraph.nodes[this.itemToUid[index]];
-  }
-
-  /** @return {!Node} */
-  location(/** number */ index) {
-    return this.worldGraph.nodes[this.locationToUid[index]];
+  location(index: NodeId): Slot {
+    return this.worldGraph.nodes[this.locationToUid[index]] as Slot;
   }
 
   // NOTE: 'route' is in terms of worldgraph uids
-  addRoute(/** !EdgeT */ route) {
+  addRoute(route: Edge): void {
     // Make sure all nodes are mapped.
-    let /** !Bits */ deps = Bits.of();
-    let target;
+    let deps: Bits = Bits.of();
+    let target: NodeId = -1 as NodeId; // will always be reassigned
     const unlocks = [];
     for (let i = route.length - 1; i >= 0; i--) {
       const fwd = i ? this.uidToItem : this.uidToLocation;
@@ -932,18 +959,20 @@ export class LocationList {
       const n = route[i];
       let index = fwd[n];
       if (index == null) {
-        index = bwd.length;
-//console.error(`${i}: ${this.worldGraph.nodes[n]} => ${index}`);
+        index = bwd.length as NodeId;
+        // console.error(`${i}: ${this.worldGraph.nodes[n]} => ${index}`);
         bwd.push(n);
         fwd[n] = index;
         // identify the win location
-        if (!i && this.worldGraph.nodes[n].slotName == null) {
+        const node = this.worldGraph.nodes[n];
+        if (!i && node instanceof Slot && node.isFixed()) {
           this.win = index;
         }
       }
       if (i) {
         deps = Bits.with(deps, index);
-        unlocks.push(this.unlocks[index] || (this.unlocks[index] = new Set()));
+        unlocks.push(this.unlocks[index] ||
+                     (this.unlocks[index] = new Set<NodeId>()));
       } else {
         target = index;
       }
@@ -956,10 +985,10 @@ export class LocationList {
   }
 
   // NOTE: does not take this.slots into account!
-  canReach(/** !Node */ want, /** !Bits */ has) {
-    const target = this.uidToLocation(want.uid);
+  canReach(want: Node, has: Bits): boolean {
+    const target = this.uidToLocation[want.uid];
     const need = this.routes[target];
-    for (let i = 0; i < need.length; i++) {
+    for (let i = 0, len = need.length; i < len; i++) {
       if (Bits.containsAll(has, need[i])) return true;
     }
     return false;
@@ -967,65 +996,62 @@ export class LocationList {
 
   /**
    * Returns a bitmask of reachable locations.
-   * @param {!Bits=} has Bitmask of gotten items.
-   * @param {!Array<number>=} slots Location-to-item
-   * @return {!Set<number>} Reachable locations
+   * @param has Bitmask of gotten items
+   * @param slots Location-to-item mapping
+   * @return Set of reachable locations
    */
-  traverse(has = Bits.of(), slots = []) {
+  traverse(has: Bits = Bits.of(), slots: NodeId[] = []): Set<NodeId> {
     // NOTE: we can't use isArray because the non-bigint polyfill IS an array
     // let hasOut = Array.isArray(has) ? has : null;
     // if (hasOut) has = has[0];
     has = Bits.clone(has);
 
-    const reachable = new Set();
-    let queue = new Set();
-    for (let i = 0; i < this.locationToUid.length; i++) {
+    const reachable = new Set<NodeId>();
+    const queue = new Set<NodeId>();
+    for (let i = 0 as NodeId; i < this.locationToUid.length; i++) {
       queue.add(i);
     }
-    const iter = queue[Symbol.iterator]();
-    let next;
-    while (!(next = iter.next()).done) {
-      const n = next.value;
+    for (const n of queue) {
       queue.delete(n);
       if (reachable.has(n)) continue;
       // can we reach it?
       const needed = this.routes[n];
-      for (let i = 0; i < needed.length; i++) {
-//if(n==4)console.log(`can reach 4? ${Bits.bits(needed[i])} has ${Bits.bits(has)} => ${Bits.containsAll(has, needed[i])}`);
+      for (let i = 0, len = needed.length; i < len; i++) {
+        // if(n==4)console.log(`can reach 4? ${Bits.bits(needed[i])} has ${
+        //           Bits.bits(has)} => ${Bits.containsAll(has, needed[i])}`);
         if (!Bits.containsAll(has, needed[i])) continue;
         reachable.add(n);
         if (slots[n]) {
           has = Bits.with(has, slots[n]);
-          for (let j of this.unlocks[slots[n]]) queue.add(j);
+          for (const j of this.unlocks[slots[n]]) {
+            queue.add(j);
+          }
         }
         break;
       }
     }
-    //if (hasOut) hasOut[0] = has;
+    // if (hasOut) hasOut[0] = has;
     return reachable;
   }
 
   /**
    * Returns a bitmask of reachable locations.
-   * @param {!Array<number>} slots Location-to-item
-   * @return {!Array<number>} Depth of each slot
+   * @param slots Location-to-item mapping
+   * @return Depth of each slot
    */
-  traverseDepths(slots) {
+  traverseDepths(slots: NodeId[]): number[] {
     let has = Bits.of();
     let depth = 0;
-    const depths = [];
+    const depths: number[] = [];
     const BOUNDARY = {};
-    let queue = new Set();
+    const queue = new Set<NodeId | typeof BOUNDARY>();
     for (let i = 0; i < this.locationToUid.length; i++) {
       queue.add(i);
     }
     queue.add(BOUNDARY);
-    const iter = queue[Symbol.iterator]();
-    let next;
-    while (!(next = iter.next()).done) {
-      const n = next.value;
+    for (const n of queue) {
       queue.delete(n);
-      if (n === BOUNDARY) {
+      if (typeof n !== 'number') {
         if (queue.size) queue.add(BOUNDARY);
         depth++;
         continue;
@@ -1033,12 +1059,14 @@ export class LocationList {
       if (depths[n] != null) continue;
       // can we reach it?
       const needed = this.routes[n];
-      for (let i = 0; i < needed.length; i++) {
+      for (let i = 0, len = needed.length; i < len; i++) {
         if (!Bits.containsAll(has, needed[i])) continue;
         depths[n] = depth;
         if (slots[n]) {
           has = Bits.with(has, slots[n]);
-          for (let j of this.unlocks[slots[n]]) queue.add(j);
+          for (const j of this.unlocks[slots[n]]) {
+            queue.add(j);
+          }
         }
         break;
       }
@@ -1046,16 +1074,17 @@ export class LocationList {
     return depths;
   }
 
-  toString() {
+  toString(): string {
     const lines = [];
-    for (let i = 0; i < this.routes.length; i++) {
-      const loc = this.worldGraph.nodes[this.locationToUid[i]];
+    // Note: routes are indexed by location NodeId
+    for (let i = 0 as NodeId; i < this.routes.length; i++) {
+      const loc = this.location(i);
       const route = this.routes[i];
       const terms = [];
-      for (let j = 0; j < route.length; j++) {
+      for (let j = 0, len = route.length; j < len; j++) {
         const term = [];
         for (const bit of Bits.bits(route[j])) {
-          term.push(this.worldGraph.nodes[this.itemToUid[bit]]);
+          term.push(this.item(bit as NodeId));
         }
         terms.push('(' + term.join(' & ') + ')');
       }
@@ -1065,27 +1094,25 @@ export class LocationList {
   }
 
   /**
-   * Attempts to do an assumed fill.  Returns null if the
-   * attempt failed.
-   * @param {!Random} random
-   * @param {function(!Slot, !ItemGet): boolean} fits
-   * @param {function(!ItemGet, !Array<number>, !Random)} strategy
-   * @return {?Array<number>}
+   * Attempts to do an assumed fill.  Returns null if the attempt failed.
+   * Otherwise returns a mapping of location to item.
    */
-  assumedFill(random, fits = (slot, item) => true, strategy = FillStrategy) {
+  assumedFill(random: Random,
+              fits: (slot: Slot, item: ItemGet) => boolean = (slot, item) => true,
+              strategy: FillStrategy = FillStrategy): NodeId[] | null {
     // Start with all items.
     const hasArr = strategy.shuffleItems(
-        this.itemToUid.map(uid => this.worldGraph.nodes[uid]), random);
+        this.itemToUid.map(uid => this.worldGraph.nodes[uid] as ItemGet), random);
     let has = Bits.from(hasArr);
     const filling = new Array(this.locationToUid.length).fill(null);
     // Start something...
     while (hasArr.length) {
-      const bit = hasArr.pop();
+      const bit = hasArr.pop()!;
       if (!Bits.has(has, bit)) continue;
-      const item = this.worldGraph.nodes[this.itemToUid[bit]];
+      const item = this.item(bit);
       has = Bits.without(has, bit);
-      const reachable = 
-          [...this.traverse(has, filling)].filter(n=>filling[n]==null);
+      const reachable =
+          [...this.traverse(has, filling)].filter(n => filling[n] == null);
 
       // NOTE: shuffle the whole thing b/c some items can't
       // go into some slots, so try the next one.
@@ -1094,9 +1121,9 @@ export class LocationList {
       let found = false;
       for (const slot of reachable) {
         if (filling[slot] == null &&
-            slot != this.win &&
-            fits(this.worldGraph.nodes[this.locationToUid[slot]], item)) {
-if(slot>100)throw new Error('WTF');
+            slot !== this.win &&
+            fits(this.location(slot), item)) {
+          if (slot > 100) throw new Error('Something went horribly wrong');
           filling[slot] = bit;
           found = true;
           break;
@@ -1117,7 +1144,6 @@ if(slot>100)throw new Error('WTF');
   //  - 128 bits OK...?
   //  - once all *key* items are assigned, rest can be
   //    filled in totally randomly.
-
 
   // /**
   //  * Attempts to do an assumed fill.  Returns null if the
@@ -1147,7 +1173,7 @@ if(slot>100)throw new Error('WTF');
   //       if (filling[i] || reachable.has(i)) continue;
   //       for (const /** !Bits */ route of this.routes[i]) {
   //         const r = Bits.bits(Bits.difference(route, has));
-          
+
   //       }
   //   /** @const {!Array<!Array<!Bits>>} */
   //   this.routes = [];
@@ -1156,8 +1182,8 @@ if(slot>100)throw new Error('WTF');
   //     if (!Bits.has(has, bit)) continue;
   //     const item = this.worldGraph.nodes[this.itemToUid[bit]];
   //     has = Bits.without(has, bit);
-      
-  //     const reachable = 
+
+  //     const reachable =
   //         [...this.traverse(has, filling)].filter(n=>filling[n]==null);
 
   //     // NOTE: shuffle the whole thing b/c some items can't
@@ -1191,42 +1217,38 @@ if(slot>100)throw new Error('WTF');
   //    filled in totally randomly.
 }
 
+////////////////////////////////////////////////////////////////
 
-/** @record */
-export class FillStrategy {
-  /**
-   * @param {!ItemGet} item
-   * @param {!Array<number>} reachable Shuffles in-place
-   * @param {!Random} random
-   */
-  shuffleSlots(item, reachable, random) {}
+export interface FillStrategy {
+  /** Shuffles `reachable` in-place. */
+  shuffleSlots(item: ItemGet, reachable: NodeId[], random: Random): void;
 
-  static shuffleSlots(item, reachable, random) {
+  /** Returns amn array of indices into the `items` array. */
+  shuffleItems(items: ItemGet[], random: Random): NodeId[];
+}
+
+// Basic FillStrategy that shuffles slots fairly but populates
+// items based on weight.
+export const FillStrategy: FillStrategy = {
+  shuffleSlots: (item, reachable, random) => {
     random.shuffle(reachable);
-  }
+  },
 
-  /**
-   * @param {!Array<!ItemGet>} items
-   * @param {!Random} random
-   * @return {!Array<number>}
-   */
-  shuffleItems(items, random) {}
-
-  static shuffleItems(items, random) {
+  shuffleItems: (items, random) => {
     const shuffled = [];
-    for (let i = 0; i < items.length; i++) {
+    for (let i = 0 as NodeId; i < items.length; i++) {
       const {shufflePriority = 1} = items[i];
       for (let j = 0; j < shufflePriority; j++) shuffled.push(i);
     }
     random.shuffle(shuffled);
     return shuffled;
-  }
-}
+  },
+};
 
 // Funnel all the writes into a single place to find errant writes.
-const write = (rom, addr, value) => {
-  rom[addr] = value;
-}
+const write = (rom: Uint8Array, address: number, value: number) => {
+  rom[address] = value;
+};
 
 // statistics we can do
 //  - distribution of locations for each item
@@ -1274,27 +1296,27 @@ const write = (rom, addr, value) => {
 
 // DEPTH -> how many unlocks do you need...
 
+////////////////////////////////////////////////////////////////
 
-export class Filling {
-  constructor() {
-    this.data = [];
-  }
+// export class Filling {
+//   constructor() {
+//     this.data = [];
+//   }
 
+//   has(slot) {}
 
-  has(slot) {}
+//   get(slot) {}
 
-  get(slot) {}
+//   set(slot, item) {}
 
-  set(slot, item) {}
+//   /** for override */
+//   fits(slot, item) {
+//     // todo - in subclass, keep track of number of
+//     // non-chest slots that need to be filled...
 
-  /** for override */
-  fits(slot, item) {
-    // todo - in subclass, keep track of number of
-    // non-chest slots that need to be filled...
+//     // alternatively, just have set() return a boolean
+//     // for whether it succeeded...
+//     return true;
+//   }
 
-    // alternatively, just have set() return a boolean
-    // for whether it succeeded...
-    return true;
-  }
-
-}
+// }

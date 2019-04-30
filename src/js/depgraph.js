@@ -2058,7 +2058,7 @@ export const shuffle3 = async (graph, locationList, rom, random, log = undefined
   for (const [slotIndex, routeText] of route) {
     log.route.push(routeText);
     const slot = graph.nodes[slotIndex];
-    if (slot.slotName == null) continue;
+    if (slot.isFixed()) continue;
     let slotName = slot.slotName;
     if (slotName.indexOf(slot.orig) < 0) slotName += ` (normally ${slot.vanillaItemName})`;
     log.items.push({slotIndex: slot.slotIndex,

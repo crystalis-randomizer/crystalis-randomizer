@@ -81,7 +81,6 @@ export class FlagListType {
         while (true) {
             const hi = data[offset++];
             const lo = data[offset++];
-            offset += 2;
             const flag = (hi & 3) << 8 | lo;
             flags.push(hi & this.clear ? ~flag : flag);
             if (hi & this.last)
@@ -109,6 +108,8 @@ export class FlagListType {
     }
 }
 export const ITEM_GET_FLAGS = new FlagListType(0x40, 0x80);
+export const SPAWN_CONDITION_FLAGS = new FlagListType(0x80, 0x20);
+export const DIALOG_FLAGS = new FlagListType(0x20, 0x40);
 export class DataTuple {
     constructor(data) {
         this.data = data;

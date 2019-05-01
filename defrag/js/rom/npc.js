@@ -1,17 +1,17 @@
 import { Entity } from './entity.js';
 import { MessageId } from './messageid.js';
-import { addr, hex, readBigEndian, tuple, writeLittleEndian } from './util.js';
+import { addr, hex, readBigEndian, readLittleEndian, tuple, writeLittleEndian } from './util.js';
 export class Npc extends Entity {
     constructor(rom, id) {
         super(rom, id);
+        this.spawnConditions = new Map();
         this.localDialogs = new Map();
         this.used = !UNUSED_NPCS.has(id) && (id < 0x8f || id >= 0xc0);
         const hasDialog = id <= 0xc3;
         this.dataBase = 0x80f0 | ((id & 0xfc) << 6) | ((id & 3) << 2);
         this.data = tuple(rom.prg, this.dataBase, 4);
         this.spawnPointer = 0x1c5e0 + (id << 1);
-        this.spawnBase = addr(rom.prg, this.spawnPointer, 0x14000);
-        this.spawnConditions = new Map();
+        this.spawnBase = readLittleEndian(rom.prg, this.spawnPointer) + 0x14000;
         let i = this.spawnBase;
         let loc;
         while (this.used && (loc = rom.prg[i++]) !== 0xff) {
@@ -186,10 +186,10 @@ export class LocalDialog {
         const out = [flag >>> 8, flag & 0xff, ...this.message.data, this.update];
         for (let i = 0; i < this.flags.length; i++) {
             let word = this.flags[i];
-            if (i >= this.flags.length - 1)
-                word |= 0x4000;
             if (word < 0)
                 word = (~word) | 0x8000;
+            if (i >= this.flags.length - 1)
+                word |= 0x4000;
             out.push(word >>> 8, word & 0xff);
         }
         return out;

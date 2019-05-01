@@ -655,7 +655,7 @@ const shuffleMonsters = (data, rom, random, log) => {
   // TODO: once we have location names, compile a spoiler of shuffled monsters
   const pool = new MonsterPool({});
   for (const loc of rom.locations) {
-    if (loc.valid) pool.populate(loc);
+    if (loc.used) pool.populate(loc);
   }
   pool.shuffle(random);
 };

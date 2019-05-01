@@ -1,6 +1,6 @@
 export const STATUS = 'unstable';
 export const VERSION = 'defrag';
-export const LABEL = 'defrag 7237878';
-export const HASH = '72378784d7e21529fab1abbe593c0623c16eba86';
-export const DATE = new Date(1556615891000);
+export const LABEL = 'defrag 95687ad';
+export const HASH = '95687ada0698456d23538839a56eae9df941b7af';
+export const DATE = new Date(1556695818000);
 //# sourceMappingURL=version.js.map

@@ -221,7 +221,7 @@ class MapsView extends View {
               metaspriteId = frame & 32 ? 0x6b : 0x68;
             } else if ([0x2a, 0x5e].includes(objData.action)) {
               // directional walker (soldier, etc); also tower def mech (5e)
-              metaspriteId = (((frame >> 5) + 2) & 3) | objData.objectData[31];
+              metaspriteId = (((frame >> 5) + 2) & 3) | objData.data[31];
             }
           } else if ((obj[2] & 7) == 1 && (this.annotations & 2)) {
             const npcId = obj[3];

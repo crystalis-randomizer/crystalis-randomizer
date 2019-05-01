@@ -15115,7 +15115,7 @@ NpcData_f8                                            ; Sahara - Inn
         $193fe              .byte $xx,$xx,$xx,$xx
         $19402              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_cb                                    ; Brynmaer - Item Shop
+NpcData_cb                                    ; Brynmaer - Tool Shop
 ;;; ----------------------------------------------------------------
 NpcData_3d                                      ; Nadare - Tool Shop
 ;;; ----------------------------------------------------------------
@@ -15138,7 +15138,7 @@ NpcData_f9                                      ; Sahara - Tool Shop
 ;;; ----------------------------------------------------------------
 NpcData_c9                                   ; Brynmaer - Armor Shop
 ;;; ----------------------------------------------------------------
-NpcData_c4                                        ; Leaf - Item Shop
+NpcData_c4                                       ; Leaf - Armor Shop
 ;;; ----------------------------------------------------------------
 NpcData_da                                     ; Portoa - Armor Shop
 ;;; ----------------------------------------------------------------
@@ -15175,7 +15175,7 @@ NpcData_d1                                          ; Amazones - Inn
         $1943a              .byte $xx,$xx,$xx,$xx
         $1943e              .byte $xx
 ;;; ----------------------------------------------------------------
-NpcData_d2                                    ; Amazones - Item Shop
+NpcData_d2                                    ; Amazones - Tool Shop
         $1943f              .byte $xx,$xx,$xx,$xx,$xx
         $19444              .byte $xx,$xx,$xx,$xx
         $19448              .byte $xx
@@ -17519,6 +17519,7 @@ ObjectData_Object40                                      ; Object 40
         $1aeb4              .byte $xx
         $1aeb5              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
+;;; Tool shopkeeper
 ObjectData_Object41                                      ; Object 41
         $1aeb7              .byte $xx
         $1aeb8              .byte $xx,$xx,$xx,$xx,$xx
@@ -17526,6 +17527,7 @@ ObjectData_Object41                                      ; Object 41
         $1aec2              .byte $xx
         $1aec3              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
+;;; Armor shopkeeper
 ObjectData_Object42                                      ; Object 42
         $1aec5              .byte $xx
         $1aec6              .byte $xx,$xx,$xx,$xx,$xx
@@ -17533,6 +17535,7 @@ ObjectData_Object42                                      ; Object 42
         $1aed0              .byte $xx
         $1aed1              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
+;;; Pawn shopkeeper
 ObjectData_Object43                                      ; Object 43
         $1aed3              .byte $xx
         $1aed4              .byte $xx,$xx,$xx,$xx,$xx
@@ -17540,6 +17543,7 @@ ObjectData_Object43                                      ; Object 43
         $1aede              .byte $xx
         $1aedf              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
+;;; Oak tool shopkeeper
 ObjectData_Object44                                      ; Object 44
         $1aee1              .byte $xx
         $1aee2              .byte $xx,$xx,$xx,$xx,$xx
@@ -17547,6 +17551,7 @@ ObjectData_Object44                                      ; Object 44
         $1aeec              .byte $xx
         $1aeed              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
+;;; Oak innkeeper
 ObjectData_Object45                                      ; Object 45
         $1aeef              .byte $xx
         $1aef0              .byte $xx,$xx,$xx,$xx,$xx
@@ -17554,6 +17559,7 @@ ObjectData_Object45                                      ; Object 45
         $1aefa              .byte $xx
         $1aefb              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
+;;; Amazones innkeeper
 ObjectData_Object46                                      ; Object 46
         $1aefd              .byte $xx
         $1aefe              .byte $xx,$xx,$xx,$xx,$xx
@@ -17561,6 +17567,7 @@ ObjectData_Object46                                      ; Object 46
         $1af08              .byte $xx
         $1af09              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
+;;; Amazones tool shopkeeper
 ObjectData_Object47                                      ; Object 47
         $1af0b              .byte $xx
         $1af0c              .byte $xx,$xx,$xx,$xx,$xx
@@ -17568,6 +17575,7 @@ ObjectData_Object47                                      ; Object 47
         $1af16              .byte $xx
         $1af17              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
+;;; Amazones armor shopkeeper
 ObjectData_Object48                                      ; Object 48
         $1af19              .byte $xx
         $1af1a              .byte $xx,$xx,$xx,$xx,$xx
@@ -59250,9 +59258,9 @@ NpcDataJump
         $3e21a              .word ($3e2b5) ; person or boss
         $3e21c              .word ($3e375) ; chest or trigger
         $3e21e              .word ($3e2a3) ; wall
-        $3e220              .word ($3e222)
+        $3e220              .word ($3e222) ; animations, explosions, etc
 ;;; --------------------------------
-NpcDataJump_4                   ; Called from $3e215
+NpcDataJump_4                   ; Animations, explosions, etc.
         $3e222  xx xx:      xxx $xx
         $3e224  xx xx:      xxx #$xx
         $3e226  xx xx:      xxx #$xx

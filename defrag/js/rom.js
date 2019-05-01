@@ -20,6 +20,8 @@ export class Rom {
     constructor(rom) {
         this.prg = rom.subarray(0x10, 0x40010);
         this.chr = rom.subarray(0x40010);
+        for (const [address, value] of ADJUSTMENTS)
+            this.prg[address] = value;
         this.screens = seq(0x103, i => new Screen(this, i));
         this.tilesets = seq(12, i => new Tileset(this, i << 2 | 0x80));
         this.tileEffects = seq(11, i => new TileEffects(this, i + 0xb3));
@@ -268,4 +270,7 @@ function pickFile() {
     });
 }
 export const EXPECTED_CRC32 = 0x1bd39032;
+const ADJUSTMENTS = new Map([
+    [0x1cff9, 0xe0],
+]);
 //# sourceMappingURL=rom.js.map

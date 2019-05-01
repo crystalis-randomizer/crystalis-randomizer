@@ -536,7 +536,7 @@ $180..$1d2
 ----------
 Mostly-unused space beneath the stack.  $182..$184 are read and then
 written on reset to distinguish hard vs soft, basically just for the
-purpose of setting
+purpose of setting the developer-mode flag.
 
 
 

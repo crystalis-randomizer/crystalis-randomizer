@@ -138,7 +138,6 @@ export class FlagListType {
     while (true) {
       const hi = data[offset++];
       const lo = data[offset++];
-      offset += 2;
       const flag = (hi & 3) << 8 | lo;
       flags.push(hi & this.clear ? ~flag : flag);
       if (hi & this.last) return flags;
@@ -166,6 +165,8 @@ export class FlagListType {
 }
 
 export const ITEM_GET_FLAGS = new FlagListType(0x40, 0x80);
+export const SPAWN_CONDITION_FLAGS = new FlagListType(0x80, 0x20);
+export const DIALOG_FLAGS = new FlagListType(0x20, 0x40);
 
 ////////////////////////////////////////////////////////////////
 
@@ -182,6 +183,7 @@ export class DataTuple {
   }
   static make<T>(length: number, props: T): DataTupleCtor<T> {
     // NOTE: There's a lot of dynamism here, so type checking can't handle it.
+    // TODO: Give this class a name somehow?
     const cls = class extends DataTuple {
       constructor(data = new Array(length).fill(0)) { super(data); }
       static of(inits: any) {

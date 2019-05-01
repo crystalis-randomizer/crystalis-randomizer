@@ -86,8 +86,8 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     _PITY_HP_AND_MP: true,
     _PROGRESSIVE_BRACELET: true,
     _RABBIT_BOOTS_CHARGE_WHILE_WALKING: flags.rabbitBootsChargeWhileWalking(),
-    _REVERSIBLE_SWAN_GATE: true,
     _REQUIRE_HEALED_DOLPHIN_TO_RIDE: flags.requireHealedDolphinToRide(),
+    _REVERSIBLE_SWAN_GATE: true,
     _SAHARA_RABBITS_REQUIRE_TELEPATHY: flags.saharaRabbitsRequireTelepathy(),
     _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
   };
@@ -142,6 +142,9 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   if (flags.orbsOptional()) orbsOptional(parsed);
 
   closeCaveEntrances(parsed, flags);
+  alarmFluteIsKeyItem(parsed);
+  reversibleSwanGate(parsed);
+  adjustGoaFortressTriggers(parsed);
 
   misc(parsed, flags);
 
@@ -278,6 +281,37 @@ const eastCave = (rom) => {
   // TODO fill up graphics, etc --> $1a, $1b, $05 / $88, $b5 / $14, $02
   // Think aobut exits and entrances...?
 
+};
+
+const adjustGoaFortressTriggers = (rom) => {
+  // Move Kelbesque 2 one tile left.
+  rom.locations[0xa9].spawns[0].x -= 8;
+  // Remove sage screen locks (except Kensu).
+  rom.locations[0xaa].spawns.splice(1, 1); // zebu screen lock trigger
+  rom.locations[0xac].spawns.splice(2, 1); // tornel screen lock trigger
+  rom.locations[0xb9].spawns.splice(2, 1); // asina screen lock trigger
+};
+
+const alarmFluteIsKeyItem = (rom) => {
+  // Person 14 (Zebu's student): secondary item -> alarm flute
+  rom.npcs[0x14].data[1] = 0x31;
+  // Move alarm flute to third row
+  rom.itemGets[0x31].inventoryRowStart = 0x20;
+  // Ensure alarm flute cannot be dropped
+  rom.prg[0x21021] = 0x43; // TODO - rom.items[0x31].???
+  // Ensure alarm flute cannot be sold --- TODO - add shops to parsed rom
+  // ...
+};
+
+const reversibleSwanGate = (rom) => {
+  // Allow opening Swan from either side by adding a pair of guards on the
+  // opposite side of the gate.
+  rom.locations[0x73].spawns.push(
+    // NOTE: Soldiers must come in pairs (with index ^1 from each other)
+    Spawn.of({xt: 0x0a, yt: 0x02, type: 1, id: 0x2d}), // new soldier
+    Spawn.of({xt: 0x0b, yt: 0x02, type: 1, id: 0x2d}), // new soldier
+    Spawn.of({xt: 0x0e, yt: 0x0a, type: 2, id: 0xb3})  // new trigger: erase guards
+  );
 };
 
 // Add the statue of onyx and possibly the teleport block trigger to Cordel West

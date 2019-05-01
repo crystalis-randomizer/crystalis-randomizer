@@ -124,18 +124,6 @@ ReadControllersWithDirections:
 DisplayNumber:
 
 
-;;; Zebu student (person 14) secondary item -> alarm flute
-.org $085f1
-  .byte $31
-
-;;; Alarm flute -> third row
-.org $1dffc
-  .byte $20
-
-;;; Alarm flute cannot be dropped
-.org $21021
-  .byte $43
-
 ;;; Alarm flute cannot be sold - set price to zero
 .ifndef _NORMALIZE_SHOP_PRICES
 .org $21f24
@@ -165,58 +153,9 @@ DisplayNumber:
 ;; ~80 bytes free in middle of SFX data that could be used on the npc data page?
 .assert < $1844d
 
-
-.ifdef _REVERSIBLE_SWAN_GATE
-;;; Allow opening swan from either side.  This is editing the NPC data
-;;; of location $73 Swan Gate.  It redirects the entry to some empty
-;;; space at the end of the NpcData table.  The entry is always written
-;;; for now, but we only conditionally activate it.
-.org $192e7
-  .byte $a3,$ab  ; $73 swan gate => $1aba3
-.endif
-
-
-.org $1a181 ;; npcdata a9 slot 0d second byte
-  .byte $67 ;; move kelbesque 2 one tile left
-
-
-;; TODO - despawning swan guards closes the door forever
-;; instead, pick an unused flag, then set it as a prereq for
-;; trigger_b3 (1e34c) and set it as result of dialog_2d @73 +0 (1cf87)
-;;   => need 2 extra bytes to do this...
-;;   ... or add a jump to DialogFollowupActionJump_08 () to
-;;       set the flag manually if $6c==#$73
-
-;; Also fix softlock issue with zebu in reverse fortress.
-;; Remove the $c4,$29 spawn that locks the screen.
-.org $1a1c0  ; npcdata_aa slot 0e
-  .byte $ff  ; just delete the spawn entirely
-.org $1a220  ; npcdata_ac slot 0f
-  .byte $ff  ; same for tornel
-.org $1a2e8  ; npcdata_b9 slot 0f
-  .byte $ff  ; same for asina
-;; NOTE - changing this for kensu seems broken and is unnecessary...
-;; except that it seems to be broken.
-;;.org $1a3ac  ; npcdata_ba slot 0e
-;;  .byte $00,$00,$02,$80 ; more npcs follow so instead change to off-screen trigger
-
-
-;;; NOTE: this is used by _REVERSIBLE_SWAN_GATE above.
-;;;       (points swan gate npcdata to here)
 .org $1aba3 ; empty space at end of npcdata
-  .byte $00,$ff,$09,$6b,$ff
-  .byte $04,$01,$02,$b3
-  .byte $04,$0a,$04,$2c
-  .byte $07,$06,$01,$2d
-  .byte $07,$09,$01,$2d
-  .byte $02,$0a,$01,$2d ; new soldier (they need to come in pairs)
-  .byte $02,$0b,$01,$2d ; new soldier
-  .byte $0a,$0e,$02,$b3 ; new trigger to erase guards
-  .byte $ff
+        ;; unused
 .assert < $1ac00 ; end of free space started at $1aba3
-
-
-
 
 .bank $1c000 $8000:$4000
 

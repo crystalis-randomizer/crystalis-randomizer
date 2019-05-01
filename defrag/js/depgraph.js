@@ -1540,6 +1540,8 @@ export const shuffle = async (rom, random, log, flags = new FlagSet('Sbkm Sct'),
     for (const [slotIndex, routeText] of route) {
         log.route.push(routeText);
         const slot = graph.nodes[slotIndex];
+        if (!(slot instanceof Slot) || slot.isFixed())
+            continue;
         if (slot.slotName == null)
             continue;
         let slotName = slot.slotName;
@@ -1577,7 +1579,7 @@ export const shuffle2 = async (rom, random, log, flags = new FlagSet('Sbkm Sct')
 };
 export const shuffle3 = async (graph, locationList, rom, random, log, flags = new FlagSet('Sbkm Sct'), progress) => {
     const stats = log && log.stats;
-    const slots = graph.nodes.filter(s => s instanceof Slot && s.slots && s.slotName);
+    const slots = graph.nodes.filter(s => s instanceof Slot && s.slots && !s.isFixed());
     const allItems = new Map(random.shuffle(slots.map((s) => [s, [s.item, s.itemIndex]])));
     const allSlots = new Set(random.shuffle(slots));
     const itemToSlot = new Map();
@@ -1687,7 +1689,7 @@ export const shuffle3 = async (graph, locationList, rom, random, log, flags = ne
     for (const [slotIndex, routeText] of route) {
         log.route.push(routeText);
         const slot = graph.nodes[slotIndex];
-        if (slot.isFixed())
+        if (!(slot instanceof Slot) || slot.isFixed())
             continue;
         let slotName = slot.slotName;
         if (slotName.indexOf(slot.vanillaItemName) < 0) {

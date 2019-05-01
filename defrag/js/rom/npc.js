@@ -1,6 +1,6 @@
 import { Entity } from './entity.js';
 import { MessageId } from './messageid.js';
-import { addr, hex, readBigEndian, readLittleEndian, tuple, writeLittleEndian } from './util.js';
+import { DIALOG_FLAGS, SPAWN_CONDITION_FLAGS, addr, hex, readBigEndian, readLittleEndian, tuple, writeLittleEndian } from './util.js';
 export class Npc extends Entity {
     constructor(rom, id) {
         super(rom, id);
@@ -15,15 +15,9 @@ export class Npc extends Entity {
         let i = this.spawnBase;
         let loc;
         while (this.used && (loc = rom.prg[i++]) !== 0xff) {
-            const flags = [];
+            const flags = SPAWN_CONDITION_FLAGS.read(rom.prg, i);
+            i += 2 * flags.length;
             this.spawnConditions.set(loc, flags);
-            let word;
-            do {
-                word = rom.prg[i] << 8 | rom.prg[i + 1];
-                const flag = word & 0x0fff;
-                flags.push(word & 0x2000 ? ~flag : flag);
-                i += 2;
-            } while (!(word & 0x8000));
         }
         this.dialogPointer = hasDialog ? 0x1c95d + (id << 1) : 0;
         this.dialogBase = hasDialog ? addr(rom.prg, this.dialogPointer, 0x14000) : 0;
@@ -64,15 +58,7 @@ export class Npc extends Entity {
     spawnConditionsBytes() {
         const bytes = [];
         for (const [loc, flags] of this.spawnConditions) {
-            bytes.push(loc);
-            for (let i = 0; i < flags.length; i++) {
-                let word = flags[i];
-                if (word < 0)
-                    word = ~word | 0x2000;
-                if (i === flags.length - 1)
-                    word = word | 0x8000;
-                bytes.push(word >>> 8, word & 0xff);
-            }
+            bytes.push(loc, ...SPAWN_CONDITION_FLAGS.bytes(flags));
         }
         bytes.push(0xff);
         return bytes;
@@ -158,18 +144,10 @@ export class LocalDialog {
         offset += 5;
         let condition = word & 0x03ff;
         const last = !!(word & 0x8000);
-        const flags = [];
         const sign = word & 0x2000;
         if (sign)
             condition = ~condition;
-        while (word & 0x4000) {
-            word = readBigEndian(data, offset) ^ 0x4000;
-            offset += 2;
-            let flag = word & 0x03ff;
-            if (word & 0x8000)
-                flag = ~flag;
-            flags.push(flag);
-        }
+        const flags = word & 0x4000 ? DIALOG_FLAGS.read(data, offset) : [];
         return [new LocalDialog(condition, message, update, flags), last];
     }
     byteLength() {
@@ -183,16 +161,8 @@ export class LocalDialog {
             flag |= 0x8000;
         if (this.flags.length)
             flag |= 0x4000;
-        const out = [flag >>> 8, flag & 0xff, ...this.message.data, this.update];
-        for (let i = 0; i < this.flags.length; i++) {
-            let word = this.flags[i];
-            if (word < 0)
-                word = (~word) | 0x8000;
-            if (i >= this.flags.length - 1)
-                word |= 0x4000;
-            out.push(word >>> 8, word & 0xff);
-        }
-        return out;
+        return [flag >>> 8, flag & 0xff, ...this.message.data, this.update,
+            ...DIALOG_FLAGS.bytes(this.flags)];
     }
 }
 const UNUSED_NPCS = new Set([

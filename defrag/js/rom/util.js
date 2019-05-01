@@ -107,9 +107,9 @@ export class FlagListType {
         }
     }
 }
+export const DIALOG_FLAGS = new FlagListType(0x40, 0x80);
 export const ITEM_GET_FLAGS = new FlagListType(0x40, 0x80);
 export const SPAWN_CONDITION_FLAGS = new FlagListType(0x80, 0x20);
-export const DIALOG_FLAGS = new FlagListType(0x20, 0x40);
 export class DataTuple {
     constructor(data) {
         this.data = data;

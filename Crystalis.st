@@ -20947,10 +20947,10 @@ NpcDialog_0d ; leaf elder
         $1cb55              .byte $xx,$xx
         $1cb57              .byte $xx
         ;;                  00: c0 Leaf - Elder House
-        $1cb58              .byte $xx,$xx,$xx,$xx,$xx ; 047 -> 00:11
+        $1cb58              .byte $xx,$xx,$xx,$xx,$xx ; 047 rescued leaf elder -> 00:11
         $1cb5d              .byte $xx,$xx,$xx,$xx,$xx ; 00a windmill key used -> 00:0f
-        $1cb62              .byte $xx,$xx,$xx,$xx,$xx ; 00b NOT -> 00:0e (action 03)
-        $1cb67              .byte         $xx,$xx     ;     Set: 00b
+        $1cb62              .byte $xx,$xx,$xx,$xx,$xx ; 00b NOT talked to leaf elder -> 00:0e (action 03)
+        $1cb67              .byte         $xx,$xx     ;     Set: 00b talked to leaf elder
         $1cb69              .byte $xx,$xx,$xx,$xx,$xx ; default -> 00:0f
         ;;                  16: 35 Mt Sabre North - Summit Cave
         $1cb6e              .byte $xx,$xx,$xx,$xx,$xx ; 083 NOT rescued leaf elder ?? -> 07:09
@@ -58294,6 +58294,8 @@ MainGameModeJump_24_EmptyShop
         $3db0b  xx xx:      xxx - ; $3db05
         $3db0d  xx:         xxx
 ;;; --------------------------------
+;;; If a consumable item or quest item is selected, set EquippedConsumableItem.
+SetEquippedConsumableItem
         $3db0e  xx xx xx:   xxx $xxxx
         $3db11  xx xx:      xxx + ; $3db19
         $3db13  xx xx xx:    xxx $xxxx,y

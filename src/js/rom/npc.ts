@@ -1,7 +1,8 @@
 import {Entity, Rom} from './entity.js';
 import {MessageId} from './messageid.js';
-import {Data, addr, hex, readBigEndian, readLittleEndian,
-        tuple, writeLittleEndian} from './util.js';
+import {DIALOG_FLAGS, Data, SPAWN_CONDITION_FLAGS, addr, hex,
+        readBigEndian, readLittleEndian, tuple,
+        writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
 
 type FlagList = number[];
@@ -38,16 +39,9 @@ export class Npc extends Entity {
     let i = this.spawnBase;
     let loc;
     while (this.used && (loc = rom.prg[i++]) !== 0xff) {
-      const flags: number[] = [];
+      const flags = SPAWN_CONDITION_FLAGS.read(rom.prg, i);
+      i += 2 * flags.length;
       this.spawnConditions.set(loc, flags);
-      let word;
-      do {
-        // NOTE: this byte order is inverse from normal.
-        word = rom.prg[i] << 8 | rom.prg[i + 1];
-        const flag = word & 0x0fff;
-        flags.push(word & 0x2000 ? ~flag : flag);
-        i += 2;
-      } while (!(word & 0x8000));
     }
 
     // Populate the dialog table
@@ -92,13 +86,7 @@ export class Npc extends Entity {
   spawnConditionsBytes(): number[] {
     const bytes = [];
     for (const [loc, flags] of this.spawnConditions) {
-      bytes.push(loc);
-      for (let i = 0; i < flags.length; i++) {
-        let word = flags[i];
-        if (word < 0) word = ~word | 0x2000;
-        if (i === flags.length - 1) word = word | 0x8000;
-        bytes.push(word >>> 8, word & 0xff);
-      }
+      bytes.push(loc, ...SPAWN_CONDITION_FLAGS.bytes(flags));
     }
     bytes.push(0xff);
     return bytes;
@@ -193,16 +181,9 @@ export class LocalDialog {
 
     let condition = word & 0x03ff;
     const last = !!(word & 0x8000);
-    const flags = [];
     const sign = word & 0x2000;
     if (sign) condition = ~condition;
-    while (word & 0x4000) {
-      word = readBigEndian(data, offset) ^ 0x4000;
-      offset += 2;
-      let flag = word & 0x03ff;
-      if (word & 0x8000) flag = ~flag;
-      flags.push(flag);
-    }
+    const flags = word & 0x4000 ? DIALOG_FLAGS.read(data, offset) : [];
     return [new LocalDialog(condition, message, update, flags), last];
   }
 
@@ -215,14 +196,8 @@ export class LocalDialog {
     if (flag < 0) flag = (~flag) | 0x2000;
     if (last) flag |= 0x8000;
     if (this.flags.length) flag |= 0x4000;
-    const out = [flag >>> 8, flag & 0xff, ...this.message.data, this.update];
-    for (let i = 0; i < this.flags.length; i++) {
-      let word = this.flags[i];
-      if (word < 0) word = (~word) | 0x8000;
-      if (i >= this.flags.length - 1) word |= 0x4000;
-      out.push(word >>> 8, word & 0xff);
-    }
-    return out;
+    return [flag >>> 8, flag & 0xff, ...this.message.data, this.update,
+            ...DIALOG_FLAGS.bytes(this.flags)];
   }
 }
 

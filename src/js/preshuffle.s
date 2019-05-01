@@ -159,12 +159,6 @@ DisplayNumber:
 
 .bank $1c000 $8000:$4000
 
-;;; Fix queen's dialog to terminate on last item, rather than overflow.
-;;; This is important for parsing and defragging to maintain the same size.
-.org $1cff9
-  .byte $e0
-
-
 ;;; Patch the end of ItemUse to check for a few more items.
 .org $1c34d
   jmp PatchTradeInItem
@@ -219,19 +213,6 @@ PatchTradeInItem:
 .org $1ca7b ; free space in middle of dialog table
 .assert < $1cae3
 
-
-
-
-;; clark moves back to joel after giving item, not after calming sea
-;; TODO - this is slightly awkward in that you can go up the stairs
-;; and back down and he's disappeared.  An alternative would be to
-;; put a trigger somewhere far away that checks 08d and sets some
-;; other (fresh/unused) flag to key off of.  (disappearing would be
-;; weird for clark, tho)
-.org $1c842
-  .byte $8d
-.org $1c845
-  .byte $8d
 
 
 ;;; change second flute of lime into herb, but then we don't use it anyway
@@ -290,16 +271,6 @@ CheckBelowBoss:
 
 ;;; Dialogs and Spawn Conditions
 
-
-;; Move Draygon's spawn condition up about $100 bytes to make 3 bytes
-;; extra space for a spawn flag check for Draygon 2, who shouldn't
-;; respawn after being defeated.
-.org $1c776         ; cb draygon 1 and 2
-  .byte $54,$88     ; ($1c854)
-.org $1c854
-  .byte $9f,$a1,$0b ; pyramid front: 10b NOT defeated draygon 1
-  .byte $a6,$a2,$8d ; pyramid back:  28d NOT defeated draygon 2
-  .byte $ff
 
 ;; Reorder Zebu cave dialog to spawn windmill guard first
 ;; Alternatively: consider just having him always spawned?

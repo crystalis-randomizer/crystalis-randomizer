@@ -43,6 +43,8 @@ export class Rom {
     this.prg = rom.subarray(0x10, 0x40010);
     this.chr = rom.subarray(0x40010);
 
+    for (const [address, value] of ADJUSTMENTS) this.prg[address] = value;
+
     // Load up a bunch of data tables.  This will include a large number of the
     // data tables in the ROM.  The idea is that we can edit the arrays locally
     // and then have a "commit" function that rebuilds the ROM with the new
@@ -473,3 +475,9 @@ function pickFile(): Promise<Uint8Array> {
 }
 
 export const EXPECTED_CRC32 = 0x1bd39032;
+
+const ADJUSTMENTS = new Map<number, number>([
+  // Fix queen's dialog to terminate on last item, rather than overflow,
+  // so that we don't parse garbage.
+  [0x1cff9, 0xe0],
+]);

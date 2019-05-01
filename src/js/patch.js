@@ -145,6 +145,8 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   alarmFluteIsKeyItem(parsed);
   reversibleSwanGate(parsed);
   adjustGoaFortressTriggers(parsed);
+  fixQueenDialog(parsed);
+  preventNpcDespawns(parsed);
 
   misc(parsed, flags);
 
@@ -312,6 +314,23 @@ const reversibleSwanGate = (rom) => {
     Spawn.of({xt: 0x0b, yt: 0x02, type: 1, id: 0x2d}), // new soldier
     Spawn.of({xt: 0x0e, yt: 0x0a, type: 2, id: 0xb3})  // new trigger: erase guards
   );
+};
+
+const fixQueenDialog = (rom) => {
+  
+
+};
+
+const preventNpcDespawns = (rom) => {
+  // Clark ($44) moves after talking to him (08d) rather than calming sea (08f).
+  rom.npcs[0x44].spawnConditions.set(0xe9, [~0x08d]); // zombie town basement
+  rom.npcs[0x44].spawnConditions.set(0xe4, [0x08d]);  // joel shed
+  // Draygon 2 ($cb @ location $a6) should despawn after being defeated.
+  rom.npcs[0xcb].spawnConditions.set(0xa6, [~0x28d]); // key on back wall destroyed
+
+  // TODO - zebu cave dialog, windmill spawn, etc
+
+  
 };
 
 // Add the statue of onyx and possibly the teleport block trigger to Cordel West

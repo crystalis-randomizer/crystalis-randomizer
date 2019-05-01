@@ -91,7 +91,7 @@ export class ObjectData extends Entity {
         includeChildren && this.child ?
             this.rom.metasprites[
                 this.rom.objects[
-                    this.rom.adHocSpawns[this.child].objectId].objectData[0]] :
+                    this.rom.adHocSpawns[this.child].objectId].data[0]] :
             null;
     const s = new Set([...ms.palettes(), ...(childMs ? childMs.palettes() : [])]);
     return [...s];

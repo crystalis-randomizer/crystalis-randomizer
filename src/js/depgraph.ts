@@ -1947,7 +1947,8 @@ export const shuffle = async (rom: FullRomImage,
   log.route = [];
   for (const [slotIndex, routeText] of route) {
     log.route.push(routeText);
-    const slot = graph.nodes[slotIndex] as Slot;
+    const slot = graph.nodes[slotIndex];
+    if (!(slot instanceof Slot) || slot.isFixed()) continue;
     if (slot.slotName == null) continue;
     let slotName = slot.slotName;
     if (slotName.indexOf(slot.vanillaItemName) < 0) slotName += ` (normally ${slot.vanillaItemName})`;
@@ -2012,7 +2013,7 @@ export const shuffle3 = async (graph: WorldGraph,
                                flags: FlagSet = new FlagSet('Sbkm Sct'),
                                progress?: ProgressTracker) => {
   const stats = log && log.stats;
-  const slots: Slot[] = graph.nodes.filter(s => s instanceof Slot && s.slots && s.slotName) as Slot[];
+  const slots: Slot[] = graph.nodes.filter(s => s instanceof Slot && s.slots && !s.isFixed()) as Slot[];
   const allItems = new Map<Slot, [ItemGet, number]>(random.shuffle(slots.map((s: Slot) => [s, [s.item, s.itemIndex]])));
   const allSlots = new Set<Slot>(random.shuffle(slots));
   const itemToSlot = new Map<ItemGet, Slot>();
@@ -2097,12 +2098,15 @@ export const shuffle3 = async (graph: WorldGraph,
     return false;
   };
   for (const [item, args] of allItems) {
+    // First place mimics
     if (item.isMimic() && !findSlot(item, args, 'traps')) return false;
   }
   for (const [item, args] of allItems) {
+    // Then place items that need to be in a chest (i.e. armors)
     if (item.needsChest() && !findSlot(item, args, 'chest')) return false;
   }
   for (const [item, args] of allItems) {
+    // Finally place everything else
     if (!findSlot(item, args)) return false;
   }
 
@@ -2131,8 +2135,8 @@ export const shuffle3 = async (graph: WorldGraph,
   log.route = [];
   for (const [slotIndex, routeText] of route) {
     log.route.push(routeText);
-    const slot = graph.nodes[slotIndex] as Slot;
-    if (slot.isFixed()) continue;
+    const slot = graph.nodes[slotIndex];
+    if (!(slot instanceof Slot) || slot.isFixed()) continue;
     let slotName = slot.slotName;
     if (slotName.indexOf(slot.vanillaItemName) < 0) {
       slotName += ` (normally ${slot.vanillaItemName})`;

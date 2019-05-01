@@ -1,6 +1,7 @@
 import {Entity, Rom} from './entity.js';
 import {MessageId} from './messageid.js';
-import {Data, addr, hex, readBigEndian, tuple, writeLittleEndian} from './util.js';
+import {Data, addr, hex, readBigEndian, readLittleEndian,
+        tuple, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
 
 type FlagList = number[];
@@ -12,7 +13,8 @@ export class Npc extends Entity {
   data: [number, number, number, number]; // uint8
   spawnPointer: number;
   spawnBase: number;
-  spawnConditions: Map<number, FlagList>; // key uint8
+  // Flags to check per location: positive means "must be set"
+  spawnConditions = new Map<number, FlagList>(); // key uint8
 
   dialogPointer: number;
   dialogBase: number;
@@ -30,9 +32,7 @@ export class Npc extends Entity {
     this.spawnPointer = 0x1c5e0 + (id << 1);
     // console.log(`NPC Spawn $${this.id.toString(16)}: ${rom.prg[this.pointer].toString(16)} ${
     //              rom.prg[this.pointer + 1].toString(16)}`);
-    this.spawnBase = addr(rom.prg, this.spawnPointer, 0x14000);
-    // Flags to check per location: positive means "must be set"
-    this.spawnConditions = new Map();
+    this.spawnBase = readLittleEndian(rom.prg, this.spawnPointer) + 0x14000;
 
     // Populate spawn conditions
     let i = this.spawnBase;
@@ -218,8 +218,8 @@ export class LocalDialog {
     const out = [flag >>> 8, flag & 0xff, ...this.message.data, this.update];
     for (let i = 0; i < this.flags.length; i++) {
       let word = this.flags[i];
-      if (i >= this.flags.length - 1) word |= 0x4000;
       if (word < 0) word = (~word) | 0x8000;
+      if (i >= this.flags.length - 1) word |= 0x4000;
       out.push(word >>> 8, word & 0xff);
     }
     return out;

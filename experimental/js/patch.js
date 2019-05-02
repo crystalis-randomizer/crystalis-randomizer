@@ -943,13 +943,13 @@ class MonsterPool {
   //   - for now, just assume if it has a child then it must keep same pattern bank!
 
   populate(/** !Location */ location) {
-    const {maxFlyers, nonFlyers = {}, skip, fixedSlots = {}, ...unexpected} =
+    const {maxFlyers, nonFlyers = {}, skip, fixedSlots = {}, tower, ...unexpected} =
           MONSTER_ADJUSTMENTS[location.id] || {};
     for (const u in unexpected) {
       throw new Error(
           `Unexpected property '${u}' in MONSTER_ADJUSTMENTS[${location.id}]`);
     }
-    if (skip === true || !location.spritePatterns || !location.spritePalettes) return;
+    if (skip === true || tower || !location.spritePatterns || !location.spritePalettes) return;
     const monsters = [];
     const slots = [];
     //const constraints = {};
@@ -1298,12 +1298,15 @@ const MONSTER_ADJUSTMENTS = {
   },
   [0x59]: { // Tower Floor 1
     //skip: true,
+    tower: true,
   },
   [0x5a]: { // Tower Floor 2
     //skip: true,
+    tower: true,
   },
   [0x5b]: { // Tower Floor 3
     //skip: true,
+    tower: true,
   },
   [0x60]: { // Angry Sea
     skip: true, // not sure how to randomize these well

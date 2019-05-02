@@ -700,9 +700,9 @@ const rescaleMonsters = (rom, flags, random) => {
 
     if (boss ? flags.shuffleBossElements() : flags.shuffleMonsterElements()) {
       if (!SLIMES.has(id)) {
-        const bits = rom.objects[id].elements.toString(2).padStart(4, '0');
+        const bits = [...rom.objects[id].elements.toString(2).padStart(4, '0')];
         random.shuffle(bits);
-        rom.objects[id].elements = Number.parseInt(bits, 2);
+        rom.objects[id].elements = Number.parseInt(bits.join(''), 2);
       }
     }
   }

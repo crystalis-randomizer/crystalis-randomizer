@@ -629,10 +629,9 @@ const matchSwordOfThunder   = condition('Match sword of thunder')
                                              [swordOfThunder], 10),
                                         anySword);
 const swampRunPossible      = condition('Swamp run possible')
-                                .option(buyMedicalHerb)
-                                .option(speedBoots)
-                                .option(buffedMedicalHerb)
-                                .option(refresh);
+                                .option(buyMedicalHerb, speedBoots)
+                                .option(buyMedicalHerb, buffedMedicalHerb)
+                                .option(buyMedicalHerb, refresh);
 const insectPossible        = condition('Insect possible to kill')
                                 //.option(refresh)
                                 .option(gasMask);

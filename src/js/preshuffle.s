@@ -155,6 +155,32 @@ DisplayNumber:
 
 .bank $1c000 $8000:$4000
 
+
+.ifdef _BUFF_DYNA
+;;; Patch ItemGet_Crystalis to remove magics, too
+.org $1c2b7
+
+  ldx #$03
+-  lda #$ff
+   sta $6430,x
+   sta $643c,x
+   sta $6458,x
+   sta $645c,x
+   dex
+  bpl -
+  lda #$04
+  sta $6430
+  lda #$05
+  sta $0711
+  lda #$00
+  sta $0712
+  rts
+
+.assert < $1c2dd
+.endif
+
+
+
 ;;; Patch the end of ItemUse to check for a few more items.
 .org $1c34d
   jmp PatchTradeInItem
@@ -779,13 +805,28 @@ CheckForLowHpMp:
   ;; Don't check pod's status before shooting eye laser
   nop
   nop
-.org $37d37
-  ;; Don't shift the "bubble turns" by 2, so that one or the
-  ;; other is always shooting
-  nop
-  nop
-.org $37d3c
-  and #$01 ; each cannon shoots 1 in 2 rather than 1 in 8
+;.org $37d37
+;  ;; Don't shift the "bubble turns" by 2, so that one or the
+;  ;; other is always shooting
+;  nop
+;  nop
+;.org $37d3c
+;  and #$01 ; each cannon shoots 1 in 2 rather than 1 in 8
+.org $37d35
+  txa
+  asl ; clears carry
+  adc $08
+  and #$03
+  beq +
+   rts
++ lda $08
+  and #$3c
+  lsr
+  lsr
+  jmp $bd4c    ; 37d4c
+.assert < $37d4c
+;;; TODO - change ItemGet_Crystalis to remove magics!
+
 .org $37d55
   ;; Change shots to start from a random location
   jmp DynaShoot
@@ -1160,6 +1201,88 @@ CheckFlag0:
      jsr LoadAndShowDialog
 +   jmp ReadControllersWithDirections
 .endif ; _CHECK_FLAG0
+
+;;; NOTE: These dialog actions are debug functionality.
+DialogFollowupAction_1c:
+  ;; scaling level
+  lda $64a2
+  clc
+  adc #$04
+  cmp #$2f
+  bcc +
+   lda #$2f
++ sta $64a2
+  lda #$01
+  sta $64a3
+  rts
+
+DialogFollowupAction_1d:
+  ;; level up
+  lda #$0f
+  cmp $0421
+  bcs +
+   rts
++ inc $0421
+  ldy $0421
+  lda $6e
+  pha
+   lda #$1a
+   jsr $c418
+   lda $8b7f,y
+   sta $03c0
+   sta $03c1
+   lda $8b8f,y
+   sta $0708
+   sta $0709
+   jsr $8cc0
+   lda #$00
+   jsr $8e46
+   lda #$02
+   jsr $8e46
+   lda #$03
+   jsr $8e46
+   lda #$04
+   jsr $8e46
+   lda #$05
+   jsr $8e46
+   jsr $c008
+  pla
+  jmp $c418
+
+
+DialogFollowupAction_1e:
+  ;; fill inventory with all worn items, magic, and top shields/armor
+  ;; then warp to mesia - actually remove magic...
+  ldx #$00
+  clc
+-  txa
+   adc #$11
+   sta $6438,x
+   adc #$08
+   sta $6434,x
+   inx
+   cpx #$04
+  bcc -
+  ldx #$00
+  clc
+-  lda #$22
+   sta $6440,x
+   txa
+   adc #$29
+   sta $6448,x
+   adc #$18
+   ;lda #$ff
+   sta $6458,x
+   inx
+   cpx #$08
+  bcc -   
+  lda #$5e
+  sta $6c
+  lda #$00
+  sta $6d
+  lda #$01
+  sta $41
+  rts
 
 .assert < $3fe00 ; end of free space started at 3f9ba
 

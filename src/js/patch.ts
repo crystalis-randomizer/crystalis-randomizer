@@ -152,7 +152,7 @@ export const shuffle = async (rom: Uint8Array,
     rescaleShops(parsed, asm, flags.bargainHunting() ? random : undefined);
   }
 
-  rescaleMonsters(parsed);
+  rescaleMonsters(parsed, flags, random);
   if (flags.shuffleMonsters()) shuffleMonsters(parsed, random);
   identifyKeyItemsForDifficultyBuffs(parsed);
 
@@ -980,7 +980,7 @@ const BASE_PRICES: {[itemId: number]: number} = {
 /////////
 /////////
 
-const rescaleMonsters = (rom: Rom) => {
+const rescaleMonsters = (rom: Rom, flags: FlagSet, random: Random) => {
 
   // TODO - find anything sharing the same memory and update them as well
   const unscaledMonsters = new Set<number>(Object.keys(rom.objects).map(Number));
@@ -996,11 +996,15 @@ const rescaleMonsters = (rom: Rom) => {
     }
   }
 
+  // Fix Sabera 1's elemental defense to no longer allow thunder
+  rom.objects[0x7d].elements |= 0x08;
+
+  const BOSSES = new Set([0x57, 0x5e, 0x68, 0x7d, 0x88, 0x97, 0x9b, 0x9e]);
+  const SLIMES = new Set([0x50, 0x53, 0x5f, 0x69]);
   for (const [id, {sdef, swrd, hits, satk, dgld, sexp}] of SCALED_MONSTERS) {
     // indicate that this object needs scaling
     const o = rom.objects[id].data;
-    const boss =
-        [0x57, 0x5e, 0x68, 0x7d, 0x88, 0x97, 0x9b, 0x9e].includes(id) ? 1 : 0;
+    const boss = BOSSES.has(id) ? 1 : 0;
     o[2] |= 0x80; // recoil
     o[6] = hits; // HP
     o[7] = satk;  // ATK
@@ -1009,10 +1013,25 @@ const rescaleMonsters = (rom: Rom) => {
     o[9] = o[9] & 0xe0 | boss;
     o[16] = o[16] & 0x0f | dgld << 4; // GLD
     o[17] = sexp; // EXP
+
+    if (boss ? flags.shuffleBossElements() : flags.shuffleMonsterElements()) {
+      if (!SLIMES.has(id)) {
+        const bits = [...rom.objects[id].elements.toString(2).padStart(4, '0')];
+        random.shuffle(bits);
+        rom.objects[id].elements = Number.parseInt(bits.join(''), 2);
+      }
+    }
   }
 
-  // Fix Sabera 1's elemental defense to no longer allow thunder
-  rom.objects[0x7d].elements |= 0x08;
+  // handle slimes all at once
+  if (flags.shuffleMonsterElements()) {
+    // pick an element for slime defense
+    const e = random.nextInt(4);
+    rom.prg[0x2522d] = e + 1;
+    for (const id of SLIMES) {
+      rom.objects[id].elements = 1 << e;
+    }
+  }
 
   // rom.writeObjectData();
 };
@@ -1625,13 +1644,13 @@ const MONSTER_ADJUSTMENTS: {[loc: number]: MonsterAdjustment} = {
     },
   },
   [0x59]: { // Tower Floor 1
-    skip: true,
+    // skip: true,
   },
   [0x5a]: { // Tower Floor 2
-    skip: true,
+    // skip: true,
   },
   [0x5b]: { // Tower Floor 3
-    skip: true,
+    // skip: true,
   },
   [0x60]: { // Angry Sea
     fixedSlots: {
@@ -1818,6 +1837,7 @@ const UNTOUCHED_MONSTERS: {[id: number]: boolean} = { // not yet +0x50 in these 
   [0x8e]: true, // broken?, but sits on top of iron wall
   [0x8f]: true, // shooting statue
   [0x9f]: true, // vertical platform
+  // [0xa1]: true, // white tower robots
   [0xa6]: true, // glitch in location $af (mado 2)
 };
 

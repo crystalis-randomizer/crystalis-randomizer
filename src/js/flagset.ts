@@ -171,6 +171,13 @@ export const FLAGS: FlagSection[] = [{
     name: 'Randomize monsters',
     text: `Monster locations are shuffled, with the exception of sea creatures
            and tower robots.`,
+  }, {
+    flag: 'Me',
+    hard: true,
+    name: 'Shuffle monster weaknesses',
+    text: `Monster elemental weaknesses are shuffled.  This is <i>not</i>
+           accounted for when guaranteeing matching swords, so use at your
+           own risk (it's recommended to also turn on the 'Hs' flag).`,
   // }, {
   //   flag: 'M!',
   //   name: 'No safety checks',
@@ -561,6 +568,9 @@ export class FlagSet {
   shuffleMonsters() { return this.check('Mr'); }
   shuffleShops() { return this.check('Ps'); }
   bargainHunting() { return this.shuffleShops(); }
+
+  shuffleMonsterElements() { return this.check('Me'); }
+  shuffleBossElements() { return this.shuffleMonsterElements(); }
 
   doubleBuffMedicalHerb() { return this.check('Em'); }
   buffMedicalHerb() { return !this.check('Hm'); }

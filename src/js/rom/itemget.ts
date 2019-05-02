@@ -8,7 +8,7 @@ import {Writer} from './writer.js';
 export class ItemGet extends Entity {
 
   itemPointer: number;
-  item: number;
+  itemId: number;
 
   tablePointer: number;
   tableBase: number;
@@ -32,7 +32,7 @@ export class ItemGet extends Entity {
     super(rom, id);
 
     this.itemPointer = 0x1dd66 + id;
-    this.item = rom.prg[this.itemPointer];
+    this.itemId = rom.prg[this.itemPointer];
     // I don't fully understand this table...
     this.tablePointer = 0x1db00 + 2 * id;
     this.tableBase = readLittleEndian(rom.prg, this.tablePointer) + 0x14000;
@@ -49,7 +49,7 @@ export class ItemGet extends Entity {
 
   async write(writer: Writer): Promise<void> {
     // First write (itemget -> item) mapping
-    writer.rom[this.itemPointer] = this.item;
+    writer.rom[this.itemPointer] = this.itemId;
     const table = [
       this.inventoryRowStart, this.inventoryRowLength,
       ...this.acquisitionAction.data,

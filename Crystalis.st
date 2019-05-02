@@ -28175,9 +28175,9 @@ MenuMessage_ItemName
         $20a16  xx xx:       xxx #$xx
         $20a18  xx:          xxx
         $20a19  xx:          xxx
-        $20a1a  xx xx xx:    xxx $21086,x
+        $20a1a  xx xx xx:    xxx MenuItemNameTable,x
         $20a1d  xx xx:       xxx $xx
-        $20a1f  xx xx xx:    xxx $21087,x
+        $20a1f  xx xx xx:    xxx MenuItemNameTable+1,x
         $20a22  xx xx:       xxx $xx
         $20a24  xx xx:       xxx #$xx
         $20a26  xx xx:       xxx ($xx),y
@@ -28690,6 +28690,7 @@ Inventory_ItemData
         $21020              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $21030              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+Inventory_EquippedId
 	;; This table stores the value that's stored in $711..$715 for various
         ;; types of equipment
         $2103b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -28699,6 +28700,7 @@ Inventory_ItemData
         $2107b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 ;;; STRIP: word=$18000
+MenuItemNameTable
         $21086              .word ($2111a) ; 00
         $21088              .word ($21124) ; 01
         $2108a              .word ($2112e) ; 02
@@ -28774,154 +28776,86 @@ Inventory_ItemData
         $21116              .word ($21461) ; 48
         $21118              .word ($21468) ; 49
 ;;; --------------------------------
-        ;; 00
-        $2111a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 01
-        $21124              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 02
-        $2112e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 03
-        $21139              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 04
-        $21146              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 05
-        $21150              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 07
-        $2115b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 09
-        $21166              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 0b
-        $21172              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 06
-        $21180              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 08
-        $2118d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 0a
-        $21198              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 0c
-        $211a6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 0d
-        $211b1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 0e
-        $211be              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 0f
-        $211c9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 10
-        $211d6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 11
-        $211e3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 12
-        $211ef              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 13
-        $211fa              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 14
-        $21205              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 15
-        $21210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 16
-        $2121c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 17
-        $21228              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 18
-        $21233              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 19
-        $21240              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 1a
-        $2124d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 1b
-        $2125a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 1c
-        $21265              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 1d
-        $21270              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 1e
-        $2127d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 1f
-        $21286              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 20
-        $21292              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 21
-        $2129e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 22
-        $212ab              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 23
-        $212b6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 24
-        $212c3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 25
-        $212ce              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 26
-        $212db              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 27
-        $212e7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 28
-        $212f4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 29
-        $21300              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 2a
-        $21309              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 2b
-        $21314              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 2c
-        $21321              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 2d
-        $2132f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 2e
-        $2133d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 2f
-        $2134a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 30
-        $21358              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 31
-        $21364              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 32
-        $21370              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 33
-        $2137d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 34
-        $2138b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 35
-        $21397              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 36
-        $213a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 37
-        $213ac              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 38
-        $213b8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 39
-        $213c6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 3a
-        $213d3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 3b
-        $213e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 3c
-        $213ed              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 3d
-        $213fa              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 3e
-        $21407              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 3f
-        $21411              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 40
-        $2141a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 41
-        $21425              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 42
-        $2142d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 43
-        $21437              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 44
-        $21441              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 45
-        $2144a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 46
-        $21452              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 47
-        $2145a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 48
-        $21461              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; 49
-        $21468              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; This table uses some byte combinations to shorten words into fewer tiles:
+;;; $0a,$0b,$0c = "Sword"
+;;; $5c,$5d = " of "
+;;; $3c,$3d,$3e,$5b = "Bracelet"
+;;; $0d,$0e,$0f = "Shield"
+;;; $7b,$11,$12 = "Armor"
+        $2111a              .byte $xx,$xx,$xx,$xx,$xx,"xxxx",$xx ; 00
+        $21124              .byte $xx,$xx,$xx,$xx,$xx,"xxxx",$xx ; 01
+        $2112e              .byte $xx,$xx,$xx,$xx,$xx,"xxxxx",$xx ; 02
+        $21139              .byte $xx,$xx,$xx,$xx,$xx,"xxxxxxx",$xx ; 03
+        $21146              .byte "xxxxxxxxx",$xx ; 04
+        $21150              .byte "xxxx",$xx,$xx,"xxxx",$xx ; 05
+        $2115b              .byte "xxxx",$xx,$xx,"xxxx",$xx ; 07
+        $21166              .byte "xxxx",$xx,$xx,"xxxxx",$xx ; 09
+        $21172              .byte "xxxx",$xx,$xx,"xxxxxxx",$xx ; 0b
+        $21180              .byte "xxxxxxxx",$xx,$xx,$xx,$xx,$xx ; 06
+        $2118d              .byte "xxxxxx",$xx,$xx,$xx,$xx,$xx ; 08
+        $21198              .byte "xxxxxxxxx",$xx,$xx,$xx,$xx,$xx ; 0a
+        $211a6              .byte "xxxxxx",$xx,$xx,$xx,$xx,$xx ; 0c
+        $211b1              .byte "xxxxxxxxx",$xx,$xx,$xx,$xx ; 0d
+        $211be              .byte "xxxxxxx",$xx,$xx,$xx,$xx ; 0e
+        $211c9              .byte "xxxxxxxxx",$xx,$xx,$xx,$xx ; 0f
+        $211d6              .byte "xxxxxxxxx",$xx,$xx,$xx,$xx ; 10
+        $211e3              .byte "xxxxxxxx",$xx,$xx,$xx,$xx ; 11
+        $211ef              .byte "xxxxxxx",$xx,$xx,$xx,$xx ; 12
+        $211fa              .byte "xxxxxxx",$xx,$xx,$xx,$xx ; 13
+        $21205              .byte "xxxxxxx",$xx,$xx,$xx,$xx ; 14
+        $21210              .byte "xxxxxxxxxxx",$xx ; 15
+        $2121c              .byte "xxxxxxxx",$xx,$xx,$xx,$xx ; 16
+        $21228              .byte "xxxxxxx",$xx,$xx,$xx,$xx ; 17
+        $21233              .byte "xxxxxxxxx",$xx,$xx,$xx,$xx ; 18
+        $21240              .byte "xxxxxxxxxxxx",$xx ; 19
+        $2124d              .byte "xxxxxxxxxxxx",$xx ; 1a
+        $2125a              .byte "xxxxxxx",$xx,$xx,$xx,$xx ; 1b
+        $21265              .byte "xxxxxxx",$xx,$xx,$xx,$xx ; 1c
+        $21270              .byte "xxxxxxxxxxxx",$xx ; 1d
+        $2127d              .byte "xxxxxxxx",$xx ; 1e
+        $21286              .byte "xxxxxxxxxxx",$xx ; 1f
+        $21292              .byte "xxxxx",$xx,$xx,"xxxx",$xx ; 20
+        $2129e              .byte "xxxxx",$xx,$xx,"xxxxx",$xx ; 21
+        $212ab              .byte "xxxxxxxxxx",$xx ; 22
+        $212b6              .byte "xxxxx",$xx,$xx,"xxxxx",$xx ; 23
+        $212c3              .byte "xxxxxxxxxx",$xx ; 24
+        $212ce              .byte "xxxxxx",$xx,$xx,"xxxx",$xx ; 25
+        $212db              .byte "xxxxxxxxxxx",$xx ; 26
+        $212e7              .byte "xxxxxxxxxxxx",$xx ; 27
+        $212f4              .byte "xxxxx",$xx,$xx,"xxxx",$xx ; 28
+        $21300              .byte "xxxxxxxx",$xx ; 29
+        $21309              .byte "xxxxxxxxxx",$xx ; 2a
+        $21314              .byte "xxxxxxxxxxxx",$xx ; 2b
+        $21321              .byte "xxxxxxxxxxxxx",$xx ; 2c
+        $2132f              .byte "xxxxxxxxxxxxx",$xx ; 2d
+        $2133d              .byte "xxxxxxxxxxxx",$xx ; 2e
+        $2134a              .byte "xxxxxxxxxxxxx",$xx ; 2f
+        $21358              .byte "xxxxxxxxxxx",$xx ; 30
+        $21364              .byte "xxxxxxxxxxx",$xx ; 31
+        $21370              .byte "xxxxxxxxxxxx",$xx ; 32
+        $2137d              .byte "xxxxxxxxxxxxx",$xx ; 33
+        $2138b              .byte "xxxxxxxxxxx",$xx ; 34
+        $21397              .byte "xxxxxxxx",$xx ; 35
+        $213a0              .byte "xxxxxxxxxxx",$xx ; 36
+        $213ac              .byte "xxxxxxxxxxx",$xx ; 37
+        $213b8              .byte "xxxxxxxxxxxxx",$xx ; 38
+        $213c6              .byte "xxxxxxxxxxxx",$xx ; 39
+        $213d3              .byte "xxxxxx",$xx,$xx,"xxxx",$xx ; 3a
+        $213e0              .byte "xxxxxxxxxxxx",$xx ; 3b
+        $213ed              .byte "xxxxxxxxxxxx",$xx ; 3c
+        $213fa              .byte "xxxxxxxxxxxx",$xx ; 3d
+        $21407              .byte "xxx",$xx,$xx,"xxxx",$xx ; 3e
+        $21411              .byte "xxx",$xx,$xx,"xxx",$xx ; 3f
+        $2141a              .byte "xxx",$xx,$xx,"xxxxx",$xx ; 40
+        $21425              .byte "xxxxxxx",$xx ; 41
+        $2142d              .byte "xxxxxxxxx",$xx ; 42
+        $21437              .byte "xxxxxxxxx",$xx ; 43
+        $21441              .byte "xxxxxxxx",$xx ; 44
+        $2144a              .byte "xxxxxxx",$xx ; 45
+        $21452              .byte "xxxxxxx",$xx ; 46
+        $2145a              .byte "xxxxxx",$xx ; 47
+        $21461              .byte "xxxxxx",$xx ; 48
+        $21468              .byte "xxxxxxxx",$xx ; 49
 ;;; --------------------------------
         ;; The following bytes were all uncovered in a full run.
         $21471              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx

@@ -500,6 +500,11 @@ a comment then just bail out."
       (if pos (setq pos (+ pos (length bytes))))
       (setq bytes extra))))
 
+;; (defvar asm/text-escaped "\"#%&'()*+/<=>[\\]^`{|}"
+;;   ;; TODO - was originally just \"\\, but these are also not super helpful
+;;   ;; (string-match-p (regexp-quote (format "%c" byte)) asm/text-escaped)
+;;   "Characters that are escaped rather than inserted into text.")
+
 ;; TODO - track line size, wrap at fixed number, or after a zero? predicate on byte & length?
 (defun asm/insert-text (bytes &optional pos break)
   "Inserts a single .byte directive with printable chars as strings."
@@ -514,7 +519,12 @@ a comment then just bail out."
           (progn
             (insert (if pos (format "        $%05x              " pos) "  ") ".byte ")
             (setq start (point))))
-      (if (or (>= byte #x7f) (< byte #x20) (= byte ?\") (= byte ?\\))
+      (if (or (>= byte #x7f) (< byte #x20)
+              (= byte ?*) (= byte ?+) (= byte ?/)
+              (= byte ?<) (= byte ?=) (= byte ?>)
+              (= byte ?[) (= byte ?]) (= byte ?^)
+              (= byte ?{) (= byte ?|) (= byte ?}) (= byte ?~)
+              (= byte ?\") (= byte ?\\))
           (progn
             ;; Should be unquoted
             (if quot (insert "\""))

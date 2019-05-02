@@ -232,16 +232,6 @@ export default (nes) => {
         }, Y=$${nes.cpu.REG_Y.toString(16)}`), func()));
   };
 
-  window.heal = () => {
-    for (const a of [0x708, 0x709, 0x3c0, 0x3c1]) {
-      nes.cpu.ram[a] = 0xff;
-    }
-  };
-
-  window.alwaysHeal = () => {
-    window.heal();
-    window.setTimeout(window.alwaysHeal, 500);
-  };
 };
 
 

@@ -81,7 +81,7 @@ class MapsView extends View {
     const flags = loc.flags;
     const spritePal = loc.spritePalettes || [0,0];
     const spritePat = loc.spritePatterns || [0,0];
-    const objects = loc.objects || [];
+    const objects = loc.spawns || [];
     const invalid = !this.rom.locations[id];
     if (!wd) wd = mapWd;
     if (!ht) ht = mapHt;
@@ -221,7 +221,7 @@ class MapsView extends View {
               metaspriteId = frame & 32 ? 0x6b : 0x68;
             } else if ([0x2a, 0x5e].includes(objData.action)) {
               // directional walker (soldier, etc); also tower def mech (5e)
-              metaspriteId = (((frame >> 5) + 2) & 3) | objData.objectData[31];
+              metaspriteId = (((frame >> 5) + 2) & 3) | objData.data[31];
             }
           } else if ((obj[2] & 7) == 1 && (this.annotations & 2)) {
             const npcId = obj[3];
@@ -239,7 +239,7 @@ class MapsView extends View {
         }
         // Indicate entrances (todo - toggle?)
         if (this.annotations & 4) {
-          for (let i = 0; i < opts.entrances.length; i++) {
+          for (let i = 0; i < (opts.entrances || []).length; i++) {
             const [xl, xh, yl, yh] = opts.entrances[i];
             this.drawText(buf, xh*256+xl-8, yh*240+yl-8, i.toString(16).padStart(2, 0), 0x30);
           }

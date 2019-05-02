@@ -124,17 +124,13 @@ ReadControllersWithDirections:
 DisplayNumber:
 
 
+;;; NOTE: This needs to be BEFORE shuffling items!
+;;;   - Once item shuffle can accept a parsed rom, we can do this
+;;;     to parsed BEFORE we shuffle items.
 ;;; Zebu student (person 14) secondary item -> alarm flute
 .org $085f1
   .byte $31
 
-;;; Alarm flute -> third row
-.org $1dffc
-  .byte $20
-
-;;; Alarm flute cannot be dropped
-.org $21021
-  .byte $43
 
 ;;; Alarm flute cannot be sold - set price to zero
 .ifndef _NORMALIZE_SHOP_PRICES
@@ -162,67 +158,29 @@ DisplayNumber:
 
 
 .org $183fc
-;; ~80 bytes free here in npc data space
+;; ~80 bytes free in middle of SFX data that could be used on the npc data page?
 .assert < $1844d
 
-
-.ifdef _REVERSIBLE_SWAN_GATE
-;;; Allow opening swan from either side.  This is editing the NPC data
-;;; of location $73 Swan Gate.  It redirects the entry to some empty
-;;; space at the end of the NpcData table.  The entry is always written
-;;; for now, but we only conditionally activate it.
-.org $192e7
-  .byte $a3,$ab  ; $73 swan gate => $1aba3
-.endif
-
-
-.org $1a181 ;; npcdata a9 slot 0d second byte
-  .byte $67 ;; move kelbesque 2 one tile left
-
-
-;; TODO - despawning swan guards closes the door forever
-;; instead, pick an unused flag, then set it as a prereq for
-;; trigger_b3 (1e34c) and set it as result of dialog_2d @73 +0 (1cf87)
-;;   => need 2 extra bytes to do this...
-;;   ... or add a jump to DialogFollowupActionJump_08 () to
-;;       set the flag manually if $6c==#$73
-
-;; Also fix softlock issue with zebu in reverse fortress.
-;; Remove the $c4,$29 spawn that locks the screen.
-.org $1a1c0  ; npcdata_aa slot 0e
-  .byte $ff  ; just delete the spawn entirely
-.org $1a220  ; npcdata_ac slot 0f
-  .byte $ff  ; same for tornel
-.org $1a2e8  ; npcdata_b9 slot 0f
-  .byte $ff  ; same for asina
-;; NOTE - changing this for kensu seems broken and is unnecessary...
-;; except that it seems to be broken.
-;;.org $1a3ac  ; npcdata_ba slot 0e
-;;  .byte $00,$00,$02,$80 ; more npcs follow so instead change to off-screen trigger
-
-
-;;; NOTE: this is used by _REVERSIBLE_SWAN_GATE above.
-;;;       (points swan gate npcdata to here)
 .org $1aba3 ; empty space at end of npcdata
-  .byte $00,$ff,$09,$6b,$ff
-  .byte $04,$01,$02,$b3
-  .byte $04,$0a,$04,$2c
-  .byte $07,$06,$01,$2d
-  .byte $07,$09,$01,$2d
-  .byte $02,$0a,$01,$2d ; new soldier (they need to come in pairs)
-  .byte $02,$0b,$01,$2d ; new soldier
-  .byte $0a,$0e,$02,$b3 ; new trigger to erase guards
-  .byte $ff
+        ;; unused
 .assert < $1ac00 ; end of free space started at $1aba3
-
-
-
 
 .bank $1c000 $8000:$4000
 
 ;;; Patch the end of ItemUse to check for a few more items.
 .org $1c34d
   jmp PatchTradeInItem
+
+
+.org $1c399 ; 58 bytes of free/unused space at start of itemuse jump
+.assert < $1c3d3
+
+.org $1c3eb ; 16 bytes of free/unused space in middle of itemuse jump
+.assert < $1c3fb
+
+.org $1c41b ; 30 bytes of free/unused space at end of itemuse jump
+.assert < $1c439
+
 
 
 ;; Count uses of Flute of Lime and Alarm Flute - discard after two.
@@ -263,19 +221,6 @@ PatchTradeInItem:
 .org $1ca7b ; free space in middle of dialog table
 .assert < $1cae3
 
-
-
-
-;; clark moves back to joel after giving item, not after calming sea
-;; TODO - this is slightly awkward in that you can go up the stairs
-;; and back down and he's disappeared.  An alternative would be to
-;; put a trigger somewhere far away that checks 08d and sets some
-;; other (fresh/unused) flag to key off of.  (disappearing would be
-;; weird for clark, tho)
-.org $1c842
-  .byte $8d
-.org $1c845
-  .byte $8d
 
 
 ;;; change second flute of lime into herb, but then we don't use it anyway
@@ -334,16 +279,6 @@ CheckBelowBoss:
 
 ;;; Dialogs and Spawn Conditions
 
-
-;; Move Draygon's spawn condition up about $100 bytes to make 3 bytes
-;; extra space for a spawn flag check for Draygon 2, who shouldn't
-;; respawn after being defeated.
-.org $1c776         ; cb draygon 1 and 2
-  .byte $54,$88     ; ($1c854)
-.org $1c854
-  .byte $9f,$a1,$0b ; pyramid front: 10b NOT defeated draygon 1
-  .byte $a6,$a2,$8d ; pyramid back:  28d NOT defeated draygon 2
-  .byte $ff
 
 ;; Reorder Zebu cave dialog to spawn windmill guard first
 ;; Alternatively: consider just having him always spawned?
@@ -632,7 +567,7 @@ ItemGetData_03: ; sword of thunder
   .byte $a2,$43   ; 243 NOT telepathy -> 1a:13
 .org $1d671 ; dialog 59 generic sahara bunnies
   ;; replace stom - he can talk to bunnies just fine
-  .byte $a2,$43   ; 243 NOT telepathy -> 1a:12
+  .byte $22,$43   ; 243 NOT telepathy -> 1a:12
 .endif
 
 
@@ -1408,7 +1343,7 @@ CheckForLowHpMp:
 .endif
 
 
-.bank $36000 $a000:$2000
+;.bank $36000 $a000:$2000
 ;
 ;.org $36086
 ;
@@ -1433,26 +1368,8 @@ CheckForLowHpMp:
 ;GateCheckPassed:
   
 
-;;; Beef up dyna
 
-.ifdef _BUFF_DYNA
-.org $37c9c
-  ;; Don't check pod's status before shooting eye laser
-  nop
-  nop
-.org $37d37
-  ;; Don't shift the "bubble turns" by 2, so that one or the
-  ;; other is always shooting
-  nop
-  nop
-.org $37d3c
-  and #$01 ; each cannon shoots 1 in 2 rather than 1 in 8
-.org $37d55
-  ;; Change shots to start from a random location
-  jmp DynaShoot
-.org $37d86
-  jmp DynaShoot
-.endif
+
 
 ;;.org $3c010
 ;;;; Adjusted inventory update - use level instead of sword
@@ -1865,32 +1782,8 @@ FinishEquippingConsumable:
     sta EquippedConsumableItem
     rts
 
-DynaShoot:
-  sta $61        ; Store the spawn ID for later
-  lda $70,x      ; Save pod's position on stack
-  pha            ;
-   tya           ; Store the shot's direction on stack
-   pha           ;
-    lda $70      ; Seed the random number by player's position
-    adc $08      ; Also seed it with the global counter
-    and #$3f     ; Don't overflow
-    tay          ;
-    lda $97e4,y  ; Read from Random number table
-    asl          ; Multiply by 8: range is 0..$3f
-    asl          ;
-    asl          ;
-    adc #$e0     ; Subtract $20
-    adc $70,x    ; Add to pod's position
-    sta $70,x    ; And store it back (temporarily)
-   pla           ; Pull off the direction
-   tay           ;   ...and save it back in Y
-   lda $61       ; Pull off the spawn ID
-   jsr $972d     ; AdHocSpawnObject
-  pla            ; Pull off the pod's position
-  sta $70,x      ;   ...and restore it
-  rts
-
 ;; free space
+
 .assert < $3fe78
 
 

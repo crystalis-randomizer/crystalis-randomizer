@@ -1,4 +1,5 @@
 import {Assembler, assemble, buildRomPatch} from './6502.js';
+import {Entrance, Exit, Flag, Location, Spawn} from './rom/location.js';
 import {Rom} from './rom.js';
 import {Random} from './random.js';
 import {shuffle2 as shuffleDepgraph} from './depgraph.js';
@@ -67,7 +68,6 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     _AUTO_EQUIP_BRACELET: flags.autoEquipBracelet(),
     _BARRIER_REQUIRES_CALM_SEA: flags.barrierRequiresCalmSea(),
     _BUFF_DEOS_PENDANT: flags.buffDeosPendant(),
-    _BUFF_DYNA: true,
     _CHECK_FLAG0: true,
     _DISABLE_SHOP_GLITCH: flags.disableShopGlitch(),
     _DISABLE_STATUE_GLITCH: flags.disableStatueGlitch(),
@@ -86,8 +86,8 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     _PITY_HP_AND_MP: true,
     _PROGRESSIVE_BRACELET: true,
     _RABBIT_BOOTS_CHARGE_WHILE_WALKING: flags.rabbitBootsChargeWhileWalking(),
-    _REVERSIBLE_SWAN_GATE: true,
     _REQUIRE_HEALED_DOLPHIN_TO_RIDE: flags.requireHealedDolphinToRide(),
+    _REVERSIBLE_SWAN_GATE: true,
     _SAHARA_RABBITS_REQUIRE_TELEPATHY: flags.saharaRabbitsRequireTelepathy(),
     _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
   };
@@ -116,15 +116,15 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   // Parse the rom and apply other patches - note: must have shuffled
   // the depgraph FIRST!
   const parsed = new Rom(rom);
-  rescaleMonsters(rom, parsed);
+  rescaleMonsters(parsed, flags, random);
   if (flags.shuffleMonsters()) shuffleMonsters(rom, parsed, random);
   identifyKeyItemsForDifficultyBuffs(parsed);
 
   // Buff medical herb and fruit of power
-  if (flags.doubleBuffMedicalHerb) {
+  if (flags.doubleBuffMedicalHerb()) {
     rom[0x1c50c + 0x10] *= 2;  // fruit of power
     rom[0x1c4ea + 0x10] *= 3;  // medical herb
-  } else if (flags.singleBuffMedicalHerb()) {
+  } else if (flags.buffMedicalHerb()) {
     rom[0x1c50c + 0x10] += 16; // fruit of power
     rom[0x1c4ea + 0x10] *= 2;  // medical herb
   }
@@ -142,18 +142,30 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   if (flags.orbsOptional()) orbsOptional(parsed);
 
   closeCaveEntrances(parsed, flags);
+  alarmFluteIsKeyItem(parsed);
+  reversibleSwanGate(parsed);
+  adjustGoaFortressTriggers(parsed);
+  fixQueenDialog(parsed);
+  preventNpcDespawns(parsed);
 
   misc(parsed, flags);
 
-  buffDyna(parsed, flags); // TODO - conditional
+  // NOTE: This needs to happen BEFORE postshuffle
+  await parsed.writeData();
+  const crc = await postParsedShuffle(rom, random, seed, flags, asm, assemble);
 
+  // TODO - optional flags can possibly go here, but MUST NOT use parsed.prg!
+
+  return crc;
+};
+
+// Separate function to guarantee we no longer have access to the parsed rom...
+const postParsedShuffle = async (rom, random, seed, flags, asm, assemble) => {
   await assemble('postshuffle.s');
   updateDifficultyScalingTables(rom, flags, asm);
   updateCoinDrops(rom, flags);
 
   shuffleRandomNumbers(rom, random);
-
-  await parsed.writeData();
 
   return stampVersionSeedAndHash(rom, seed, flags);
 
@@ -166,12 +178,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
 
 
 const misc = (rom, flags) => {
-};
 
-
-const buffDyna = (rom, flags) => {
-  rom.objects[0xb8].collisionPlane = 3;
-  rom.objects[0xb8].immobile = 1;
 };
 
 const closeCaveEntrances = (rom, flags) => {
@@ -221,31 +228,33 @@ const closeCaveEntrances = (rom, flags) => {
     [0x94, 0x00], // cave to desert
     [0x98, 0x41],
   ];
-  for (const [loc, pos] of flagsToClear) {
-    rom.locations[loc].flags.push([0xef, pos]);
+  for (const [loc, yx] of flagsToClear) {
+    rom.locations[loc].flags.push(Flag.of({yx, flag: 0x2ef}));
   }
 
-  const replaceFlag = (loc, pos, flag) => {
-    for (const arr of rom.locations[loc].flags) {
-      if (arr[1] == pos) {
-        arr[0] = flag;
+  const replaceFlag = (loc, yx, flag) => {
+    for (const f of rom.locations[loc].flags) {
+      if (f.yx == yx) {
+        f.flag = flag;
         return;
       }
     }
-    throw new Error(`Could not find flag to replace at ${loc}:${pos}`);
+    throw new Error(`Could not find flag to replace at ${loc}:${yx}`);
   };
 
   if (flags.paralysisRequiresPrisonKey()) { // close off reverse entrances
     // NOTE: we could also close it off until boss killed...?
     //  - const vampireFlag = ~rom.npcSpawns[0xc0].conditions[0x0a][0];
     //  -> kelbesque for the other one.
-    const windmillFlag = 0xee;
+    const windmillFlag = 0x2ee;
     replaceFlag(0x14, 0x30, windmillFlag);
     replaceFlag(0x15, 0x30, windmillFlag);
 
-    replaceFlag(0x40, 0x00, 0xd8); // key to prison flag
-    rom.locations[0x40].objects.splice(1, 0, [0x06, 0x06, 0x04, 0x2c]);
-    rom.locations[0x40].objects.push([0x07, 0x07, 0x02, 0xad]);
+    replaceFlag(0x40, 0x00, 0x2d8); // key to prison flag
+    const explosion = Spawn.of({y: 0x060, x: 0x060, type: 4, id: 0x2c});
+    const keyTrigger = Spawn.of({y: 0x070, x: 0x070, type: 2, id: 0xad});
+    rom.locations[0x40].spawns.splice(1, 0, explosion);
+    rom.locations[0x40].spawns.push(keyTrigger);
   }
 
   //rom.locations[0x14].tileEffects = 0xb3;
@@ -276,24 +285,70 @@ const eastCave = (rom) => {
 
 };
 
+const adjustGoaFortressTriggers = (rom) => {
+  // Move Kelbesque 2 one tile left.
+  rom.locations[0xa9].spawns[0].x -= 8;
+  // Remove sage screen locks (except Kensu).
+  rom.locations[0xaa].spawns.splice(1, 1); // zebu screen lock trigger
+  rom.locations[0xac].spawns.splice(2, 1); // tornel screen lock trigger
+  rom.locations[0xb9].spawns.splice(2, 1); // asina screen lock trigger
+};
+
+const alarmFluteIsKeyItem = (rom) => {
+  // Person 14 (Zebu's student): secondary item -> alarm flute
+  //rom.npcs[0x14].data[1] = 0x31; // NOTE: Clobbers shuffled item!!!
+  // Move alarm flute to third row
+  rom.itemGets[0x31].inventoryRowStart = 0x20;
+  // Ensure alarm flute cannot be dropped
+  rom.prg[0x21021] = 0x43; // TODO - rom.items[0x31].???
+  // Ensure alarm flute cannot be sold --- TODO - add shops to parsed rom
+  // ...
+};
+
+const reversibleSwanGate = (rom) => {
+  // Allow opening Swan from either side by adding a pair of guards on the
+  // opposite side of the gate.
+  rom.locations[0x73].spawns.push(
+    // NOTE: Soldiers must come in pairs (with index ^1 from each other)
+    Spawn.of({xt: 0x0a, yt: 0x02, type: 1, id: 0x2d}), // new soldier
+    Spawn.of({xt: 0x0b, yt: 0x02, type: 1, id: 0x2d}), // new soldier
+    Spawn.of({xt: 0x0e, yt: 0x0a, type: 2, id: 0xb3})  // new trigger: erase guards
+  );
+};
+
+const fixQueenDialog = (rom) => {
+  
+
+};
+
+const preventNpcDespawns = (rom) => {
+  // Clark ($44) moves after talking to him (08d) rather than calming sea (08f).
+  rom.npcs[0x44].spawnConditions.set(0xe9, [~0x08d]); // zombie town basement
+  rom.npcs[0x44].spawnConditions.set(0xe4, [0x08d]);  // joel shed
+  // Draygon 2 ($cb @ location $a6) should despawn after being defeated.
+  rom.npcs[0xcb].spawnConditions.set(0xa6, [~0x28d]); // key on back wall destroyed
+
+  // TODO - zebu cave dialog, windmill spawn, etc
+
+  
+};
+
 // Add the statue of onyx and possibly the teleport block trigger to Cordel West
 const addCordelWestTriggers = (rom, flags) => {
-  for (const o of rom.locations[0x15].objects) {
-    if (o[2] === 2) {
+  for (const spawn of rom.locations[0x15].spawns) {
+    if (spawn.isChest() || (flags.disableTeleportSkip() && spawn.isTrigger())) {
       // Copy if (1) it's the chest, or (2) we're disabling teleport skip
-      const copy = o[3] < 0x80 || flags.disableTeleportSkip();
-        // statue of onyx - always move
-      if (copy) rom.locations[0x14].objects.push([...o]);
+      rom.locations[0x14].spawns.push(spawn.clone());
     }
   }
 };
 
 const fixRabbitSkip = (rom) => {
-  for (const o of rom.locations[0x28].objects) {
-    if (o[2] === 2 && o[3] === 0x86) {
-      if (o[1] === 0x74) {
-        o[0]++; // previously we did both?
-        o[1]++;
+  for (const spawn of rom.locations[0x28].spawns) {
+    if (spawn.isTrigger() && spawn.id === 0x86) {
+      if (spawn.x === 0x740) {
+        spawn.x += 16;
+        spawn.y += 16;
       }
     }
   }
@@ -302,16 +357,16 @@ const fixRabbitSkip = (rom) => {
 const storyMode = (rom) => {
   // shuffle has already happened, need to use shuffled flags from
   // NPC spawn conditions...
-  const requirements = rom.npcSpawns[0xcb].conditions[0xa6];
+  const requirements = rom.npcs[0xcb].spawnConditions.get(0xa6);
   // Note: if bosses are shuffled we'll need to detect this...
-  requirements.push(~rom.npcSpawns[0xc2].conditions[0x28][0]); // Kelbesque 1
-  requirements.push(~rom.npcSpawns[0x84].conditions[0x6e][0]); // Sabera 1
+  requirements.push(~rom.npcs[0xc2].spawnConditions.get(0x28)[0]); // Kelbesque 1
+  requirements.push(~rom.npcs[0x84].spawnConditions.get(0x6e)[0]); // Sabera 1
   requirements.push(~rom.triggers[0x9a & 0x7f].conditions[1]); // Mado 1
-  requirements.push(~rom.npcSpawns[0xc5].conditions[0xa9][0]); // Kelbesque 2
-  requirements.push(~rom.npcSpawns[0xc6].conditions[0xac][0]); // Sabera 2
-  requirements.push(~rom.npcSpawns[0xc7].conditions[0xb9][0]); // Mado 2
-  requirements.push(~rom.npcSpawns[0xc8].conditions[0xb6][0]); // Karmine
-  requirements.push(~rom.npcSpawns[0xcb].conditions[0x9f][0]); // Draygon 1
+  requirements.push(~rom.npcs[0xc5].spawnConditions.get(0xa9)[0]); // Kelbesque 2
+  requirements.push(~rom.npcs[0xc6].spawnConditions.get(0xac)[0]); // Sabera 2
+  requirements.push(~rom.npcs[0xc7].spawnConditions.get(0xb9)[0]); // Mado 2
+  requirements.push(~rom.npcs[0xc8].spawnConditions.get(0xb6)[0]); // Karmine
+  requirements.push(~rom.npcs[0xcb].spawnConditions.get(0x9f)[0]); // Draygon 1
   requirements.push(0x200); // Sword of Wind
   requirements.push(0x201); // Sword of Fire
   requirements.push(0x202); // Sword of Water
@@ -346,15 +401,17 @@ const connectLimeTreeToLeaf = (rom) => {
   limeTree.screens[1][0] = 0x1a; // new exit
   limeTree.screens[2][0] = 0x0c; // nicer mountains
 
-  const windEntrance = valleyOfWind.entrances.push([0xef, 0x04, 0x78, 0x05]) - 1;
-  const limeEntrance = limeTree.entrances.push([0x10, 0x00, 0xc0, 0x01]) - 1;
+  const windEntrance =
+      valleyOfWind.entrances.push(Entrance.of({x: 0x4ef, y: 0x578})) - 1;
+  const limeEntrance =
+      limeTree.entrances.push(Entrance.of({x: 0x010, y: 0x1c0})) - 1;
 
   valleyOfWind.exits.push(
-      [0x4f, 0x56, 0x42, limeEntrance],
-      [0x4f, 0x57, 0x42, limeEntrance]);
+      Exit.of({x: 0x4f0, y: 0x560, dest: 0x42, entrance: limeEntrance}),
+      Exit.of({x: 0x4f0, y: 0x570, dest: 0x42, entrance: limeEntrance}));
   limeTree.exits.push(
-      [0x00, 0x1b, 0x03, windEntrance],
-      [0x00, 0x1c, 0x03, windEntrance]);
+      Exit.of({x: 0x000, y: 0x1b0, dest: 0x03, entrance: windEntrance}),
+      Exit.of({x: 0x000, y: 0x1c0, dest: 0x03, entrance: windEntrance}));
 };
 
 
@@ -611,10 +668,7 @@ const BASE_PRICES = {
 
 
 
-
-
-
-const rescaleMonsters = (data, rom) => {
+const rescaleMonsters = (rom, flags, random) => {
 
   // TODO - find anything sharing the same memory and update them as well
   for (const id of SCALED_MONSTERS.keys()) {
@@ -626,11 +680,15 @@ const rescaleMonsters = (data, rom) => {
     }
   }
 
+  // Fix Sabera 1's elemental defense to no longer allow thunder
+  rom.objects[0x7d].elements |= 0x08;
+
+  const BOSSES = new Set([0x57, 0x5e, 0x68, 0x7d, 0x88, 0x97, 0x9b, 0x9e]);
+  const SLIMES = new Set([0x50, 0x53, 0x5f, 0x69]);
   for (const [id, {sdef, swrd, hits, satk, dgld, sexp}] of SCALED_MONSTERS) {
     // indicate that this object needs scaling
-    const o = rom.objects[id].objectData;
-    const boss =
-        [0x57, 0x5e, 0x68, 0x7d, 0x88, 0x97, 0x9b, 0x9e].includes(id) ? 1 : 0;
+    const o = rom.objects[id].data;
+    const boss = BOSSES.has(id) ? 1 : 0;
     o[2] |= 0x80; // recoil
     o[6] = hits; // HP
     o[7] = satk;  // ATK
@@ -639,10 +697,25 @@ const rescaleMonsters = (data, rom) => {
     o[9] = o[9] & 0xe0 | boss;
     o[16] = o[16] & 0x0f | dgld << 4; // GLD
     o[17] = sexp; // EXP
+
+    if (boss ? flags.shuffleBossElements() : flags.shuffleMonsterElements()) {
+      if (!SLIMES.has(id)) {
+        const bits = rom.objects[id].elements.toString(2).padStart(4, '0');
+        random.shuffle(bits);
+        rom.objects[id].elements = Number.parseInt(bits, 2);
+      }
+    }
   }
 
-  // Fix Sabera 1's elemental defense to no longer allow thunder
-  rom.objects[0x7d].objectData[0x10] |= 0x08;
+  // handle slimes all at once
+  if (flags.shuffleMonsterElements()) {
+    // pick an element for slime defense
+    const e = random.nextInt(4);
+    rom.prg[0x2522d] = e + 1;
+    for (const id of SLIMES) {
+      rom.objects[id].elements = 1 << e;
+    }
+  }
 
   //rom.writeObjectData();
 };
@@ -651,7 +724,7 @@ const shuffleMonsters = (data, rom, random, log) => {
   // TODO: once we have location names, compile a spoiler of shuffled monsters
   const pool = new MonsterPool({});
   for (const loc of rom.locations) {
-    if (loc) pool.populate(loc);
+    if (loc.used) pool.populate(loc);
   }
   pool.shuffle(random);
 };
@@ -661,13 +734,7 @@ const identifyKeyItemsForDifficultyBuffs = (rom) => {
   for (const get of rom.itemGets) {
     const item = ITEMS.get(get.item);
     if (!item || !item.key) continue;
-    if (!get.table) throw new Error(`No table for ${item.name}`);
-    if (get.table[get.table.length - 1] == 0xff) {
-      get.table[get.table.length - 1] = 0xfe;
-    } else {
-      throw new Error(`Expected FF at end of ItemGet table: ${get.id.toString(16)}: ${Array.from(get.table).map(x => x.toString(16).padStart(2, 0)).join(' ')}`);
-    }
-    get.write(rom);
+    get.key = true;
   }
   // console.log(report);
 };
@@ -754,18 +821,12 @@ const SCALED_MONSTERS = new Map([
   [0xa1, 'm', 'Tower Defense Mech (2)',     5,  ,   16,  36,  ,    /*85*/],
   [0xa2, 'm', 'Tower Sentinel',             ,   ,   2,   ,    ,    /*32*/],
   [0xa3, 'm', 'Air Sentry',                 3,  ,   4,   26,  ,    /*65*/],
-  // [0xa4, 'b', 'Dyna',                       6,  5,  16,  ,    ,    ,],
+  [0xa4, 'b', 'Dyna',                       6,  5,  16,  ,    ,    ,],
   [0xa5, 'b', 'Vampire 2',                  3,  ,   12,  27,  ,    ,],
-  // [0xb4, 'b', 'dyna pod',                   15, ,   255, 26,  ,    ,],
-  // [0xb8, 'p', 'dyna counter',               ,   ,   ,    26,  ,    ,],
-  // [0xb9, 'p', 'dyna laser',                 ,   ,   ,    26,  ,    ,],
-  // [0xba, 'p', 'dyna bubble',                ,   ,   ,    36,  ,    ,],
-  [0xa4, 'b', 'Dyna',                       6,  5,  32,  ,    ,    ,],
-  [0xb4, 'b', 'dyna pod',                   6,  5,  48,  26,  ,    ,],
-  [0xb8, 'p', 'dyna counter',              15,  ,   ,    42,  ,    ,],
-  [0xb9, 'p', 'dyna laser',                 ,   ,   ,    42,  ,    ,],
+  [0xb4, 'b', 'dyna pod',                   15, ,   255, 26,  ,    ,],
+  [0xb8, 'p', 'dyna counter',               ,   ,   ,    26,  ,    ,],
+  [0xb9, 'p', 'dyna laser',                 ,   ,   ,    26,  ,    ,],
   [0xba, 'p', 'dyna bubble',                ,   ,   ,    36,  ,    ,],
-  //
   [0xbc, 'm', 'vamp2 bat',                  ,   ,   ,    16,  ,    15],
   [0xbf, 'p', 'draygon2 fireball',          ,   ,   ,    26,  ,    ,],
   [0xc1, 'm', 'vamp1 bat',                  ,   ,   ,    16,  ,    15],
@@ -894,15 +955,15 @@ class MonsterPool {
     //const constraints = {};
     let treasureChest = false;
     let slot = 0x0c;
-    for (const o of location.objects || []) {
+    for (const spawn of location.spawns) {
       ++slot;
-      if (o[2] & 7) continue;
-      const id = o[3] + 0x50;
+      if (!spawn.isMonster()) continue;
+      const id = spawn.monsterId;
       if (id in UNTOUCHED_MONSTERS || !SCALED_MONSTERS.has(id) ||
           SCALED_MONSTERS.get(id).type != 'm') continue;
       const object = location.rom.objects[id];
       if (!object) continue;
-      const patBank = o[2] & 0x80 ? 1 : 0;
+      const patBank = spawn.patternBank;
       const pat = location.spritePatterns[patBank];
       const pal = object.palettes(true);
       const pal2 = pal.includes(2) ? location.spritePalettes[0] : null;
@@ -940,10 +1001,10 @@ this.report['post-shuffle monsters'] = this.monsters.map(m=>m.id);
 
       // Determine location constraints
       let treasureChest = false;
-      for (const o of location.objects || []) {
-        if ((o[2] & 7) == 2) treasureChest = true;
-        if (o[2] & 7) continue;
-        const id = o[3] + 0x50;
+      for (const spawn of location.spawns) {
+        if (spawn.isChest()) treasureChest = true;
+        if (!spawn.isMonster()) continue;
+        const id = spawn.monsterId;
         if (id == 0x7e || id == 0x7f || id == 0x9f) {
           pat1 = 0x62;
         } else if (id == 0x8f) {
@@ -975,7 +1036,7 @@ this.report['post-shuffle monsters'] = this.monsters.map(m=>m.id);
         let patSlot;
         if (location.rom.objects[m.id].child || RETAIN_SLOTS.has(m.id)) {
           // if there's a child, make sure to keep it in the same pattern slot
-          patSlot = m.patSlot ? 0x80 : 0;
+          patSlot = m.patBank;
           const prev = patSlot ? pat1 : pat0;
           if (prev != null && prev != m.pat) return false;
           if (patSlot) {
@@ -995,7 +1056,7 @@ report.push(`  Adding ${m.id.toString(16)}: pat(${patSlot}) <-  ${m.pat.toString
 report.push(`  Adding ${m.id.toString(16)}: pat0 <-  ${m.pat.toString(16)}`);
           } else if (pat1 == null || pat1 == m.pat) {
             pat1 = m.pat;
-            patSlot = 0x80;
+            patSlot = 1;
 report.push(`  Adding ${m.id.toString(16)}: pat1 <-  ${m.pat.toString(16)}`);
           } else {              
             return false;
@@ -1003,7 +1064,7 @@ report.push(`  Adding ${m.id.toString(16)}: pat1 <-  ${m.pat.toString(16)}`);
         }
         if (m.pal2 != null) pal2 = m.pal2;
         if (m.pal3 != null) pal3 = m.pal3;
-report.push(`    ${Object.keys(m).map(k=>`${k}: ${m[k]}`).join(', ')}`);
+report.push(`    ${Object.keys(m).map(k=>`${k}: ${m[k] && m[k].toString(16)}`).join(', ')}`);
 report.push(`    pal: ${(m.pal2||0).toString(16)} ${(m.pal3||0).toString(16)}`);
 
         // Pick the slot only after we know for sure that it will fit.
@@ -1026,14 +1087,14 @@ report.push(`    pal: ${(m.pal2||0).toString(16)} ${(m.pal3||0).toString(16)}`);
         }
 (this.report[`mon-${m.id.toString(16)}`] = this.report[`mon-${m.id.toString(16)}`] || []).push('$' + location.id.toString(16));
         const slot = slots[eligible];
-        const objData = location.objects[slot - 0x0d];
+        const spawn = location.spawns[slot - 0x0d];
         if (slot in nonFlyers) {
-          objData[0] += nonFlyers[slot][0];
-          objData[1] += nonFlyers[slot][1];
+          spawn.y += nonFlyers[slot][0] * 16;
+          spawn.x += nonFlyers[slot][1] * 16;
         }
-        objData[2] = objData[2] & 0x7f | patSlot;
-        objData[3] = m.id - 0x50;
-report.push(`    slot ${slot.toString(16)}: objData=${objData}`);
+        spawn.patternBank = patSlot;
+        spawn.monsterId = m.id;
+report.push(`    slot ${slot.toString(16)}: ${spawn}`);
 
         // TODO - anything else need splicing?
 
@@ -1099,8 +1160,8 @@ report.push(`    slot ${slot.toString(16)}: objData=${objData}`);
       if (slots.length) {
         report.push(`Failed to fill location ${location.id.toString(16)}: ${slots.length} remaining`);
         for (const slot of slots) {
-          const objData = location.objects[slot - 0x0d];
-          objData[0] = objData[1] = 0;
+          const spawn = location.spawns[slot - 0x0d];
+          spawn.x = spawn.y = 0;
         }
       }
     }
@@ -1236,13 +1297,13 @@ const MONSTER_ADJUSTMENTS = {
     },
   },
   [0x59]: { // Tower Floor 1
-    skip: true,
+    //skip: true,
   },
   [0x5a]: { // Tower Floor 2
-    skip: true,
+    //skip: true,
   },
   [0x5b]: { // Tower Floor 3
-    skip: true,
+    //skip: true,
   },
   [0x60]: { // Angry Sea
     skip: true, // not sure how to randomize these well
@@ -1510,6 +1571,7 @@ const UNTOUCHED_MONSTERS = { // not yet +0x50 in these keys
   [0x8e]: true, // broken?, but sits on top of iron wall
   [0x8f]: true, // shooting statue
   [0x9f]: true, // vertical platform
+  //[0xa1]: true, // white tower robots
   [0xa6]: true, // glitch in location $af (mado 2)
 };
 

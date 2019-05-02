@@ -296,7 +296,7 @@ const adjustGoaFortressTriggers = (rom) => {
 
 const alarmFluteIsKeyItem = (rom) => {
   // Person 14 (Zebu's student): secondary item -> alarm flute
-  rom.npcs[0x14].data[1] = 0x31;
+  //rom.npcs[0x14].data[1] = 0x31; // NOTE: Clobbers shuffled item!!!
   // Move alarm flute to third row
   rom.itemGets[0x31].inventoryRowStart = 0x20;
   // Ensure alarm flute cannot be dropped

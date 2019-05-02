@@ -1,6 +1,5 @@
 import {Entity, Rom} from './entity.js';
-import {MessageId} from './messageid.js';
-import {ITEM_GET_FLAGS, hex, readLittleEndian, writeLittleEndian} from './util.js';
+import {readLittleEndian} from './util.js';
 import {Writer} from './writer.js';
 
 // An item; note that some tables go up to $49 or even $4a - these can bbe ignored

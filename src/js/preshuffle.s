@@ -124,6 +124,14 @@ ReadControllersWithDirections:
 DisplayNumber:
 
 
+;;; NOTE: This needs to be BEFORE shuffling items!
+;;;   - Once item shuffle can accept a parsed rom, we can do this
+;;;     to parsed BEFORE we shuffle items.
+;;; Zebu student (person 14) secondary item -> alarm flute
+.org $085f1
+  .byte $31
+
+
 ;;; Alarm flute cannot be sold - set price to zero
 .ifndef _NORMALIZE_SHOP_PRICES
 .org $21f24

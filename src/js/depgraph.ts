@@ -533,6 +533,7 @@ export const generate = (flags: FlagSet = new FlagSet()): WorldGraph => {
                                   .option(swordOfWind).option(swordOfFire)
                                   .option(swordOfWater).option(swordOfThunder);
   // TODO - actually condition this on anySword + a shop that sells it!
+  //        (OR, shop glitch with a sufficient shop)
   const buyMedicalHerb        = anySword;
   const matchInsectSword      = condition('Match insect sword (fire/water/thunder)')
                                   .option(swordOfFire)
@@ -640,10 +641,9 @@ export const generate = (flags: FlagSet = new FlagSet()): WorldGraph => {
                                                [swordOfThunder], 10),
                                           anySword);
   const swampRunPossible      = condition('Swamp run possible')
-                                  .option(buyMedicalHerb)
-                                  .option(speedBoots)
-                                  .option(buffedMedicalHerb)
-                                  .option(refresh);
+                                  .option(buyMedicalHerb, speedBoots)
+                                  .option(buyMedicalHerb, buffedMedicalHerb)
+                                  .option(buyMedicalHerb, refresh);
   const insectPossible        = condition('Insect possible to kill')
                                   // .option(refresh)
                                   .option(gasMask);

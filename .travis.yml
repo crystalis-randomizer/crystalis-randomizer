@@ -7,6 +7,7 @@ node_js:
 before_script:
   - npm install -g gulp-cli
   - eval $(scripts/build_info.sh)
+  - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
 
 script:
   - test/test_cli.sh || ( touch failed; false )

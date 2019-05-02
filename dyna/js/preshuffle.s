@@ -220,6 +220,32 @@ DisplayNumber:
 
 .bank $1c000 $8000:$4000
 
+
+.ifdef _BUFF_DYNA
+;;; Patch ItemGet_Crystalis to remove magics, too
+.org $1c2b7
+
+  ldx #$03
+-  lda #$ff
+   sta $6430,x
+   sta $643c,x
+   sta $6458,x
+   sta $645c,x
+   dex
+  bpl -
+  lda #$04
+  sta $6430
+  lda #$05
+  sta $0711
+  lda #$00
+  sta $0712
+  rts
+
+.assert < $1c2dd
+.endif
+
+
+
 ;;; Patch the end of ItemUse to check for a few more items.
 .org $1c34d
   jmp PatchTradeInItem
@@ -1449,13 +1475,28 @@ CheckForLowHpMp:
   ;; Don't check pod's status before shooting eye laser
   nop
   nop
-.org $37d37
-  ;; Don't shift the "bubble turns" by 2, so that one or the
-  ;; other is always shooting
-  nop
-  nop
-.org $37d3c
-  and #$01 ; each cannon shoots 1 in 2 rather than 1 in 8
+;.org $37d37
+;  ;; Don't shift the "bubble turns" by 2, so that one or the
+;  ;; other is always shooting
+;  nop
+;  nop
+;.org $37d3c
+;  and #$01 ; each cannon shoots 1 in 2 rather than 1 in 8
+.org $37d35
+  txa
+  asl ; clears carry
+  adc $08
+  and #$03
+  beq +
+   rts
++ lda $08
+  and #$3c
+  lsr
+  lsr
+  jmp $bd4c    ; 37d4c
+.assert < $37d4c
+;;; TODO - change ItemGet_Crystalis to remove magics!
+
 .org $37d55
   ;; Change shots to start from a random location
   jmp DynaShoot
@@ -1877,7 +1918,7 @@ DialogFollowupAction_1d:
 
 DialogFollowupAction_1e:
   ;; fill inventory with all worn items, magic, and top shields/armor
-  ;; then warp to mesia
+  ;; then warp to mesia - actually remove magic...
   ldx #$00
   clc
 -  txa
@@ -1896,6 +1937,7 @@ DialogFollowupAction_1e:
    adc #$29
    sta $6448,x
    adc #$18
+   ;lda #$ff
    sta $6458,x
    inx
    cpx #$08

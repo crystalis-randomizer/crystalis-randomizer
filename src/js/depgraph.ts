@@ -142,7 +142,7 @@ export const generate = (flags: FlagSet = new FlagSet()): WorldGraph => {
   const gasMaskOptional       = option('Gas mask optional',
                                        !flags.guaranteeGasMask());
   const healedDolphinOptional = option('Healed dolphin optional',
-                                       flags.requireHealedDolphinToRide());
+                                       !flags.requireHealedDolphinToRide());
   const calmSeaOptional       = option('Calm sea optional',
                                        !flags.barrierRequiresCalmSea());
   const prisonKeyOptional     = option('Prison key optional',

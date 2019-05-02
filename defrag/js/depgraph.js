@@ -30,7 +30,7 @@ export const generate = (flags = new FlagSet()) => {
     const swordMagicOptional = option('Sword magic optional', !flags.guaranteeSwordMagic());
     const matchingSwordOptional = option('Matching sword optional', !flags.guaranteeMatchingSword());
     const gasMaskOptional = option('Gas mask optional', !flags.guaranteeGasMask());
-    const healedDolphinOptional = option('Healed dolphin optional', flags.requireHealedDolphinToRide());
+    const healedDolphinOptional = option('Healed dolphin optional', !flags.requireHealedDolphinToRide());
     const calmSeaOptional = option('Calm sea optional', !flags.barrierRequiresCalmSea());
     const prisonKeyOptional = option('Prison key optional', !flags.paralysisRequiresPrisonKey());
     const windmillOptional = option('Windmill optional', !flags.sealedCaveRequiresWindmill());
@@ -453,10 +453,9 @@ export const generate = (flags = new FlagSet()) => {
         .option(swordOfThunder)
         .option(hard(matchingSwordOptional, [swordOfThunder], 10), anySword);
     const swampRunPossible = condition('Swamp run possible')
-        .option(buyMedicalHerb)
-        .option(speedBoots)
-        .option(buffedMedicalHerb)
-        .option(refresh);
+        .option(buyMedicalHerb, speedBoots)
+        .option(buyMedicalHerb, buffedMedicalHerb)
+        .option(buyMedicalHerb, refresh);
     const insectPossible = condition('Insect possible to kill')
         .option(gasMask);
     const travelSwamp = condition('Travel swamp')

@@ -5,7 +5,7 @@ export class ItemGet extends Entity {
     constructor(rom, id) {
         super(rom, id);
         this.itemPointer = 0x1dd66 + id;
-        this.item = rom.prg[this.itemPointer];
+        this.itemId = rom.prg[this.itemPointer];
         this.tablePointer = 0x1db00 + 2 * id;
         this.tableBase = readLittleEndian(rom.prg, this.tablePointer) + 0x14000;
         let a = this.tableBase;
@@ -16,7 +16,7 @@ export class ItemGet extends Entity {
         this.key = rom.prg[a + 2 + 2 * this.flags.length + 1] === 0xfe;
     }
     async write(writer) {
-        writer.rom[this.itemPointer] = this.item;
+        writer.rom[this.itemPointer] = this.itemId;
         const table = [
             this.inventoryRowStart, this.inventoryRowLength,
             ...this.acquisitionAction.data,

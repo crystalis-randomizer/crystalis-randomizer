@@ -598,14 +598,14 @@ ItemGetData_03: ; sword of thunder
 ;; leave room for calling the difficulty methods
 .org $1c287
   jsr ItemGet_PickSlotAndAdd
-.org $1c299
+.org $1c297
   jmp ItemGetFollowup
-.org $1c29c
-ItemGet_PickSlotAndAdd:  ; move this up 4 bytes
+        ;; 4 bytes free here
+.assert < $1c29e
+.org $1c29e
+ItemGet_PickSlotAndAdd:  ; move this up a few bytes
   sty $62
-  nop
-  nop
-.org $1c2a0
+.assert $1c2a0
 
 .org $1c2a8
   jsr ItemGet_FindOpenSlotWithOverflow
@@ -640,36 +640,43 @@ ItemGetRedisplayDifficulty:
   sta ShouldRedisplayDifficulty
   rts
 .org $1e110
+KeyItemData:
+  .res 10, 0
 ItemGetFollowup:
-  ;; We have room to exactly copy this behavior, but it does appear
-  ;; to be dead.
-  lda ($24),y
-  pha  ; later -> pla and if pl then repeat ItemGet with A -> $23
-   ;; Maybe increase difficulty (if last element is FE)
-   bpl +
-   lsr
+  ;; The vanilla code checks whether the last byte at ($24),y is negative
+  ;; and if not, then it stores the positive value in $23 as some sort of
+  ;; "chained" ItemGet and repeats the whole ItemGet routine from the
+  ;; start.  But no items actually use this, so we don't bother copying
+  ;; it here.  If we needed to, it's easy enough to `lda ($24),y;pha` and
+  ;; then instead of a simple `rts` we `pla;bmi >rts;sta $23;jmp ItemGet`.
+
+  ;; Check if this is a key item, and maybe increase difficulty.
+  lda $29
+  lsr
+  lsr
+  lsr
+  tay
+  lda $29
+  and #$07
+  tax
+  lda KeyItemData,y
+  and PowersOfTwo,x
+  beq +
+   lda Difficulty
+   cmp #$2f
    bcs +
-    lda Difficulty
-    cmp #$2f
-    bcs +
-     inc Difficulty
-     jsr ItemGetRedisplayDifficulty
+    inc Difficulty
+    jsr ItemGetRedisplayDifficulty
    ;; Always set the dedicated 200+chest flag.
-+  lda #$42
-   sta $61
-   ;; $62 is already the item number, saved from earlier
-   lda #$61
-   sta $24
-   lda #$00
-   sta $25
-   tay
-   jsr SetOrClearFlagsFromBytePair_24y
-  ;; Now finish by maybe chaining to another item if positive
-  pla
-  bmi +
-   sta $23
-   jmp ItemGet
-+ rts
++ lda #$42
+  sta $61
+  ;; $62 is already the item number, saved from earlier
+  lda #$61
+  sta $24
+  lda #$00
+  sta $25
+  tay
+  jmp SetOrClearFlagsFromBytePair_24y
 
 ItemGet_FindOpenSlotWithOverflow:
   tay ; copied from 1c2a8
@@ -700,7 +707,7 @@ ItemGet_FindOpenSlotWithOverflow:
     sta $23
     rts
 ;; TODO - still plenty of space here
-.assert < $1e179 ; 1e17a is above...
+.assert < $1e17a
 
 
 

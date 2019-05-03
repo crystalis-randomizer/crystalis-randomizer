@@ -39,6 +39,21 @@ export class Rom {
 
   readonly messages: Messages;
 
+  // NOTE: The following properties may be changed between reading and writing
+  // the rom.  If this happens, the written rom will have different properties.
+  // This is an effective way to convert between the two styles.
+
+  // Address to read/write the bitfield indicating unique items.
+  uniqueItemTableAddress?: number;
+  // Address of normalized prices table, if present.  If this is absent then we
+  // assume prices are not normalized and are at the normal pawn shop address.
+  normalizedPriceTableAddress?: number;
+  // Whether the trailing $ff should be omitted from the ItemGetData table.
+  omitItemGetDataSuffix: boolean = false;
+  // Whether the trailing byte of each LocalDialog is omitted.  This affects
+  // both reading and writing the table.  May be inferred while reading.
+  omitLocalDialogSuffix: boolean = false;
+
   constructor(rom: Uint8Array) {
     this.prg = rom.subarray(0x10, 0x40010);
     this.chr = rom.subarray(0x40010);

@@ -986,9 +986,7 @@ ArmorShopPriceTable:
 InnPrices:
   .res 11, 0
 BasePrices:
-  .byte 0
-BasePricesPlus1:
-  .res 53, 0                    ; 0 = $0d, 50 = $26, 51 = $27 (inn)
+  .res 54, 0                    ; 0 = $0d, 50 = $26, 51 = $27 (inn)
 
 
 ;;; Inputs:
@@ -1029,7 +1027,7 @@ ComputeShopPrice:               ; ~71 bytes
        tax
 +    lda BasePrices,x
      sta $63
-     lda BasePricesPlus1,x         ; TODO - BasePrices+1 syntax!
+     lda BasePrices+1,x         ; TODO - BasePrices+1 syntax!
      sta $64
      ;; Read the current scaling factor out of the correct table.
      ;; Tools and armor use separate tables: if the ID (still in $61)

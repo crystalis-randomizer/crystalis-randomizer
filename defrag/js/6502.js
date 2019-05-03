@@ -319,6 +319,17 @@ class Context {
         }
     }
     mapLabel(label, pc) {
+        let match = /([^-+]+)([-+])(.*)/.exec(label);
+        if (match) {
+            const left = this.map(parseNumber(match[1], true), pc);
+            const right = this.map(parseNumber(match[3], true), pc);
+            return match[2] === '-' ? left - right : left + right;
+        }
+        match = /([<>])(.*)/.exec(label);
+        if (match) {
+            const arg = this.map(parseNumber(match[2], true), pc);
+            return match[1] === '<' ? arg & 0xff : (arg >>> 8) & 0xff;
+        }
         let addrs = this.labels[label];
         if (!addrs)
             throw new Error(`Label not found: ${label}`);

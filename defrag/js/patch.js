@@ -716,7 +716,7 @@ const shuffleMonsters = (data, rom, random, log) => {
 const identifyKeyItemsForDifficultyBuffs = (rom) => {
   // Tag key items for difficulty buffs
   for (const get of rom.itemGets) {
-    const item = ITEMS.get(get.item);
+    const item = ITEMS.get(get.itemId);
     if (!item || !item.key) continue;
     get.key = true;
   }

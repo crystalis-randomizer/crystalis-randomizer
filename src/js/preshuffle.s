@@ -992,7 +992,7 @@ BasePrices:
 ;;; Inputs:
 ;;;   Difficulty - scaling level
 ;;;   $61 - item ID to load (destroyed). $FF for inn
-;;;   $62 - shop variation factor
+;;;   $62 - shop variation factor (1/32)
 ;;;   Y - index to store output in: $6470,y
 ;;; Output:
 ;;;   $6470,y - shop price (2 bytes)
@@ -1027,7 +1027,7 @@ ComputeShopPrice:               ; ~71 bytes
        tax
 +    lda BasePrices,x
      sta $63
-     lda BasePrices+1,x         ; TODO - BasePrices+1 syntax!
+     lda BasePrices+1,x
      sta $64
      ;; Read the current scaling factor out of the correct table.
      ;; Tools and armor use separate tables: if the ID (still in $61)

@@ -116,9 +116,9 @@ export function readLittleEndian(data: Data<number>, offset: number): number {
   return data[offset + 1] << 8 | data[offset];
 }
 
-export function readString(arr: Data<number>, address: number): string {
+export function readString(arr: Data<number>, address: number, end: number = 0): string {
   const bytes = [];
-  while (arr[address]) {
+  while (arr[address] != end) {
     bytes.push(arr[address++]);
   }
   return String.fromCharCode(...bytes);

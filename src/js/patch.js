@@ -115,7 +115,10 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
 
   // Parse the rom and apply other patches - note: must have shuffled
   // the depgraph FIRST!
-  const parsed = new Rom(rom);
+  const parsed = new Rom(rom, {
+    normalizedPriceTableAddress: asm.expand('BasePrices'),
+    uniqueItemTableAddress: asm.expand('KeyItemData'),
+  });
   rescaleMonsters(rom, parsed);
   if (flags.shuffleMonsters()) shuffleMonsters(rom, parsed, random);
   identifyKeyItemsForDifficultyBuffs(parsed);

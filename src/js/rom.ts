@@ -1,5 +1,6 @@
 import {AdHocSpawn} from './rom/adhocspawn.js';
 import {Hitbox} from './rom/hitbox.js';
+import {Item} from './rom/item.js';
 import {ItemGet} from './rom/itemget.js';
 import {Location} from './rom/location.js';
 import {Messages} from './rom/messages.js';
@@ -35,6 +36,7 @@ export class Rom {
   readonly adHocSpawns: AdHocSpawn[];
   readonly metasprites: Metasprite[];
   readonly itemGets: ItemGet[];
+  readonly items: Item[];
   readonly npcs: Npc[];
 
   readonly messages: Messages;
@@ -54,9 +56,16 @@ export class Rom {
   // both reading and writing the table.  May be inferred while reading.
   omitLocalDialogSuffix: boolean = false;
 
-  constructor(rom: Uint8Array) {
+  constructor(rom: Uint8Array,
+              {normalizedPriceTableAddress,
+               uniqueItemTableAddress,
+              }: {normalizedPriceTableAddress?: number,
+                  uniqueItemTableAddress?: number} = {}) {
     this.prg = rom.subarray(0x10, 0x40010);
     this.chr = rom.subarray(0x40010);
+
+    this.normalizedPriceTableAddress = normalizedPriceTableAddress;
+    this.uniqueItemTableAddress = uniqueItemTableAddress;
 
     for (const [address, value] of ADJUSTMENTS) this.prg[address] = value;
 
@@ -89,6 +98,7 @@ export class Rom {
     this.metasprites = seq(0x100, i => new Metasprite(this, i));
     this.messages = new Messages(this);
     this.itemGets = seq(0x71, i => new ItemGet(this, i));
+    this.items = seq(0x49, i => new Item(this, i));
     this.npcs = seq(0xcd, i => new Npc(this, i));
   }
 
@@ -224,6 +234,10 @@ export class Rom {
     writer.alloc(0x1dde6, 0x1e065);
     // TriggerData
     writer.alloc(0x1e200, 0x1e3f0);
+    // ItemMenuName
+    writer.alloc(0x2111a, 0x21468); // NOTE: uncovered thru 214f1
+    // ItemMessageName
+    writer.alloc(0x28e81, 0x2922b); // NOTE: uncovered thru 29400
 
     const promises = [];
     const writeAll = (writables: {write(writer: Writer): unknown}[]) => {
@@ -241,6 +255,7 @@ export class Rom {
     writeAll(this.screens);
     writeAll(this.adHocSpawns);
     writeAll(this.itemGets);
+    writeAll(this.items);
     promises.push(writer.commit());
     await Promise.all(promises).then(() => undefined);
   }

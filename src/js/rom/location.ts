@@ -1,7 +1,7 @@
 import {Entity, Rom} from './entity.js';
 import {Data, DataTuple, Mutable,
-        addr, concatIterables, group, hex,
-        seq, slice, tuple, varSlice, writeLittleEndian} from './util.js';
+        concatIterables, group, hex, readLittleEndian,
+        seq, tuple, varSlice, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
 
 // Location entities
@@ -51,17 +51,22 @@ export class Location extends Entity {
     const locationData: LocationData = LOCATIONS[id] || {name: ''};
 
     this.mapDataPointer = 0x14300 + (id << 1);
-    this.mapDataBase = addr(rom.prg, this.mapDataPointer, 0xc000);
+    this.mapDataBase = readLittleEndian(rom.prg, this.mapDataPointer) + 0xc000;
     this.name = locationData.name || '';
     this.used = this.mapDataBase > 0xc000 && !!this.name;
 
-    this.layoutBase = addr(rom.prg, this.mapDataBase, 0xc000);
-    this.graphicsBase = addr(rom.prg, this.mapDataBase + 2, 0xc000);
-    this.entrancesBase = addr(rom.prg, this.mapDataBase + 4, 0xc000);
-    this.exitsBase = addr(rom.prg, this.mapDataBase + 6, 0xc000);
-    this.flagsBase = addr(rom.prg, this.mapDataBase + 8, 0xc000);
+    this.layoutBase = readLittleEndian(rom.prg, this.mapDataBase) + 0xc000;
+    this.graphicsBase = readLittleEndian(rom.prg, this.mapDataBase + 2) + 0xc000;
+    this.entrancesBase = readLittleEndian(rom.prg, this.mapDataBase + 4) + 0xc000;
+    this.exitsBase = readLittleEndian(rom.prg, this.mapDataBase + 6) + 0xc000;
+    this.flagsBase = readLittleEndian(rom.prg, this.mapDataBase + 8) + 0xc000;
+    // TODO - these heuristics will not work to re-read the locations.
+    //      - we can look at the order: if the data is BEFORE the pointers
+    //        then we're in a rewritten state; in that case, we need to simply
+    //        find all refs and max...?
+    //      - can we read these parts lazily?
     this.pitsBase = this.layoutBase === this.mapDataBase + 10 ? 0 :
-        addr(rom.prg, this.mapDataBase + 10, 0xc000);
+        readLittleEndian(rom.prg, this.mapDataBase + 10) + 0xc000;
 
     this.bgm = rom.prg[this.layoutBase];
     this.layoutWidth = rom.prg[this.layoutBase + 1];
@@ -78,7 +83,7 @@ export class Location extends Entity {
     this.tilePalettes = tuple<number>(rom.prg, this.graphicsBase, 3);
     this.tileset = rom.prg[this.graphicsBase + 3];
     this.tileEffects = rom.prg[this.graphicsBase + 4];
-    this.tilePatterns = slice(rom.prg, this.graphicsBase + 5, 2);
+    this.tilePatterns = tuple(rom.prg, this.graphicsBase + 5, 2);
 
     this.entrances =
       group(4, rom.prg.slice(this.entrancesBase, this.exitsBase),
@@ -91,12 +96,12 @@ export class Location extends Entity {
                                          x => new Pit(x)) : [];
 
     this.npcDataPointer = 0x19201 + (id << 1);
-    this.npcDataBase = addr(rom.prg, this.npcDataPointer, 0x10000);
+    this.npcDataBase = readLittleEndian(rom.prg, this.npcDataPointer) + 0x10000;
     this.hasSpawns = this.npcDataBase !== 0x10000;
     this.spritePalettes =
-        this.hasSpawns ? slice(rom.prg, this.npcDataBase + 1, 2) : [0, 0];
+        this.hasSpawns ? tuple(rom.prg, this.npcDataBase + 1, 2) : [0, 0];
     this.spritePatterns =
-        this.hasSpawns ? slice(rom.prg, this.npcDataBase + 3, 2) : [0, 0];
+        this.hasSpawns ? tuple(rom.prg, this.npcDataBase + 3, 2) : [0, 0];
     this.spawns =
         this.hasSpawns ? varSlice(rom.prg, this.npcDataBase + 5, 4, 0xff, Infinity,
                                   x => new Spawn(x)) : [];

@@ -61,6 +61,9 @@ define ONE_MINUS_PITY_MP  0
 
 define PITY_HP_AMOUNT     5
 
+define SHOP_COUNT         11
+define SCALING_LEVELS     48
+
 ;;; Constants
 define ITEM_RABBIT_BOOTS     $12
 define ITEM_OPEL_STATUE      $26
@@ -710,7 +713,6 @@ ItemGet_FindOpenSlotWithOverflow:
 .assert < $1e17a
 
 
-
 .ifdef _FIX_VAMPIRE
 ;;; Fix vampire to allow >60 HP.  Normally at 61 HP there's an overflow
 ;;; and the teleport animation gets really fast until HP drops below 61.
@@ -719,10 +721,6 @@ ItemGet_FindOpenSlotWithOverflow:
   nop
 .assert $1e57a ; match up exactly to next instruction
 .endif
-
-
-
-
 
 
 ;;; We moved the LV(menu) display from 06 to 0e so display that instead
@@ -866,7 +864,7 @@ ReloadInventoryAfterLoad:
 ;;; Initialize tool shop
 .org $218ff
   clc
-  adc #$84 ; = $21e54 - $21dd0
+  adc #SHOP_COUNT*4 ; 44 = delta between shop tables
   tax
   jsr CopyShopPrices
   jmp PostInitializeShop
@@ -877,8 +875,13 @@ ReloadInventoryAfterLoad:
   tax
   jsr CopyShopPrices
   jmp PostInitializeShop
+ShopItemHorizontalPositions:
+  .byte 8,13,18,23
 .assert < $218b6
 PostInitializeShop:
+
+.org $218bc  ; use the new position table
+  lda ShopItemHorizontalPositions,x
 
 ;;; Initialize inn price
 .org $215cb
@@ -940,65 +943,69 @@ PostInitializeShop:
 .assert $2065f
 
 
-;;; Second half of the ArmorShopPrices table, recovered
-;;; by storing scaling factors there instead of prices
-.org $21dfc
-;;; Inputs: $61$62 and $63$64
-;;; Output: $10$11$12$13
-Multiply32Bit:
-  ;; Don't need to worry about saving X because the only call doesn't need it
-  ;txa
-  ;pha
-   lda #$00
-   sta $12  ; clear upper bits of product
-   sta $13
-   ldx #$10 ; set binary count to 16
--  lsr $62  ; divide multiplier by 2
-   ror $61
-   bcc +
-   lda $12  ; get upper half of product and add multiplicand
-   clc
-   adc $63
-   sta $12
-   lda $13
-   adc $64
-+  ror      ; rotate partial product
-   sta $13
-   ror $12
-   ror $11
-   ror $10
-   dex
-   bne -
-  ;pla
-  ;tax
+;;; Set up code to stripe the shop locations table.
+.org $21953
+  ldx #$00
+- lda $6c
+   cmp ShopLocations,x
+    beq +
+   inx
+   cpx #SHOP_COUNT*4 ; # of shops
+  bne -
+  ldx #$00
++ txa
+  lsr
+  lsr
+  sta $646d  ; current shop index   
   rts
-.assert < $21e28
+.assert < $21970
 
 .org $21da4
+ShopData:
+;;; NOTE: This structure is hard-coded in the RomOption, with two parameters:
+;;;  1. SHOP_COUNT (11)
+;;;  2. SCALING_LEVELS (48)
 ArmorShopIdTable:
-.org $21dd0
+  .res SHOP_COUNT*4, 0
+ToolShopIdTable:
+  .res SHOP_COUNT*4, 0
 ArmorShopPriceTable:
-
-;;; Second half of ToolShopPrices table: compress the inn prices and
-;;; the relevant slice of base prices directly after it, then we still
-;;; have room for ~150 bytes of code.
-.org $21e80
+  .res SHOP_COUNT*4, 0
+ToolShopPriceTable:
+  .res SHOP_COUNT*4, 0
 InnPrices:
-  .res 11, 0
+  .res SHOP_COUNT, 0
+ShopLocations:
+  .res SHOP_COUNT*4, 0
+ToolShopScaling:
+  .res SCALING_LEVELS, 0
+ArmorShopScaling:
+  .res SCALING_LEVELS, 0
 BasePrices:
-  .res 54, 0                    ; 0 = $0d, 50 = $26, 51 = $27 (inn)
+  .res 54, 0             ; 0 = $0d, 50 = $26, 51 = "$27" (inn)
+
+;;; This is the space freed up by compressing the shop tables
+
+;;;  TODO - can we save some space here?
+;;;  what about consolidating the tables
+;;;  and storing the reverse?
+;;;    - or store one row and then shift
+;;;      for >10 or >12 ?
+;;;  -> this is taking 100 bytes of valuable code space...!
+;;; Could get 48 or 72 bytes back by densifying it?
+;;;   -> only scale every 2 or 4 levels...
 
 
-;;; Inputs:
-;;;   Difficulty - scaling level
-;;;   $61 - item ID to load (destroyed). $FF for inn
-;;;   $62 - shop variation factor (1/32)
-;;;   Y - index to store output in: $6470,y
-;;; Output:
-;;;   $6470,y - shop price (2 bytes)
-;;;  Destroys:
-;;;   A, $61..64 and $10..13
 ComputeShopPrice:               ; ~71 bytes
+    ;; Inputs:
+    ;;   Difficulty - scaling level
+    ;;   $61 - item ID to load (destroyed). $FF for inn
+    ;;   $62 - shop variation factor (1/32)
+    ;;   Y - index to store output in: $6470,y
+    ;; Output:
+    ;;   $6470,y - shop price (2 bytes)
+    ;;  Destroys:
+    ;;   A, $61..64 and $10..13
     txa
     pha
      ;; First find the item index in the base price table.
@@ -1082,49 +1089,35 @@ CopyShopPrices:
   bcc -
   rts
 
-.assert < $21f54
+Multiply32Bit:
+  ;; Inputs: $61$62 and $63$64
+  ;; Output: $10$11$12$13
+  ;; Note: we could save X on the stack if it were needed.
+  lda #$00
+  sta $12  ; clear upper bits of product
+  sta $13
+  ldx #$10 ; set binary count to 16
+- lsr $62  ; divide multiplier by 2
+  ror $61
+  bcc +
+  lda $12  ; get upper half of product and add multiplicand
+  clc
+  adc $63
+  sta $12
+  lda $13
+  adc $64
++ ror      ; rotate partial product
+  sta $13
+  ror $12
+  ror $11
+  ror $10
+  dex
+  bne -
+  rts
 
-
-.endif
-
-
-;;;  TODO - still need to scale INN and PAWN prices...!
-
-
-
-
-
-
-
-
-;;; Compute inn price ?
-        ;;  => add $21eac - $21dd0 => #$dc
-
-;.org $21dd0
-;ShopPriceTable:
-
-
-
-;;;  TODO - can we save some space here?
-;;;  what about consolidating the tables
-;;;  and storing the reverse?
-;;;    - or store one row and then shift
-;;;      for >10 or >12 ?
-;;;  -> this is taking 100 bytes of valuable code space...!
-;;; Could get 48 or 72 bytes back by densifying it?
-;;;   -> only scale every 2 or 4 levels...
-
-
-.org $21f9a ; Free space
-ToolShopScaling:
-  .res 48, 0
-ArmorShopScaling:
-  .res 48, 0
 .assert < $22000
 
-
-
-
+.endif
 
 
 .ifdef _DISABLE_SHOP_GLITCH

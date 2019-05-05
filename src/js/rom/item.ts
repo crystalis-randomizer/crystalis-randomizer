@@ -36,7 +36,7 @@ export class Item extends Entity {
   basePrice: number;
 
   // PROBLEM - read in one format, write in another...?
-  
+
   messageNamePointer: number;
   messageNameBase: number;
   messageName: string; // TODO - this should live link into Messages table
@@ -55,8 +55,12 @@ export class Item extends Entity {
     this.selectedItemPointer = SELECTED_ITEM_TABLE + id;
     this.selectedItemValue = rom.prg[this.selectedItemPointer];
 
-    if (rom.normalizedPriceTableAddress != null) {
-      const address = rom.normalizedPriceTableAddress + 2 * (id - 0xd);
+    if (rom.shopDataTablesAddress != null) {
+      const address =
+          rom.shopDataTablesAddress +
+          21 * rom.shopCount +
+          2 * rom.scalingLevels +
+          2 * (id - 0xd);
       this.basePrice = id >= 0xd && id < 0x27 ? readLittleEndian(rom.prg, address) : 0;
     } else {
       const address = VANILLA_PAWN_PRICE_TABLE + 2 * id;
@@ -72,7 +76,7 @@ export class Item extends Entity {
     this.menuName = MENU_NAME_ENCODE.reduce((s, [d, e]) => s.replace(e, d),
                                             readString(rom.prg, this.menuNameBase, 0xff));
 
-    console.log(`Item ${this.menuName} base price ${this.basePrice}`);
+    // console.log(`Item ${this.menuName} base price ${this.basePrice}`);
     // TODO - rom.uniqueItemTableAddress
     //  -> current hard-coded in patch.identifyKeyItemsForDifficultyBuffs
   }
@@ -84,9 +88,13 @@ export class Item extends Entity {
   async write(writer: Writer): Promise<void> {
     writer.rom[this.itemDataPointer] = this.itemDataValue;
     writer.rom[this.selectedItemPointer] = this.selectedItemValue;
-    if (this.rom.normalizedPriceTableAddress != null) {
+    if (this.rom.shopDataTablesAddress != null) {
       if (this.id >= 0xd && this.id < 0x27) {
-        const address = this.rom.normalizedPriceTableAddress + 2 * (this.id - 0xd);
+        const address =
+            this.rom.shopDataTablesAddress +
+            21 * this.rom.shopCount +
+            2 * this.rom.scalingLevels +
+            2 * (this.id - 0xd);
         writeLittleEndian(writer.rom, address, this.basePrice);
       }
     } else {

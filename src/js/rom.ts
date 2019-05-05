@@ -7,9 +7,11 @@ import {Messages} from './rom/messages.js';
 import {Metasprite} from './rom/metasprite.js';
 import {Npc} from './rom/npc.js';
 import {ObjectData} from './rom/objectdata.js';
+import {RomOption} from './rom/option.js';
 import {Palette} from './rom/palette.js';
 import {Pattern} from './rom/pattern.js';
 import {Screen} from './rom/screen.js';
+import {Shop} from './rom/shop.js';
 import {TileAnimation} from './rom/tileanimation.js';
 import {TileEffects} from './rom/tileeffects.js';
 import {Tileset} from './rom/tileset.js';
@@ -18,7 +20,31 @@ import {hex, seq} from './rom/util.js';
 import {Writer} from './rom/writer.js';
 import {UnionFind} from './unionfind.js';
 
+// A known location for data about structural changes we've made to the rom.
+// The trick is to find a suitable region of ROM that's both unused *and*
+// is not particularly *usable* for our purposes.  The bottom 3 rows of the
+// various single-screen maps are all effectively unused, so that gives 48
+// bytes per map.  Shops (14000..142ff) also have a giant area up top that
+// could possibly be usable, though we'd need to teach the tile-reading code
+// to ignore whatever's written there, since it *is* visible before the menu
+// pops up.  These are bbig enough regions that we could even consider using
+// them via page-swapping to get extra data in arbitrary contexts.
+
+// Shops are particularly nice because they're all 00 in vanilla.
+// Other possible regions:
+//   - 48 bytes at $ffc0 (mezame shrine) => $ffe0 is all $ff in vanilla.
+
+
 export class Rom {
+
+  // These values can be queried to determine how to parse any given rom.
+  // They're all always zero for vanilla
+  static readonly OMIT_ITEM_GET_DATA_SUFFIX    = RomOption.bit(0x142c0, 0);
+  static readonly OMIT_LOCAL_DIALOG_SUFFIX     = RomOption.bit(0x142c0, 1);
+  static readonly SHOP_COUNT                   = RomOption.byte(0x142c1);
+  static readonly SCALING_LEVELS               = RomOption.byte(0x142c2);
+  static readonly UNIQUE_ITEM_TABLE            = RomOption.address(0x142d0);
+  static readonly SHOP_DATA_TABLES             = RomOption.address(0x142d3);
 
   readonly prg: Uint8Array;
   readonly chr: Uint8Array;
@@ -37,35 +63,43 @@ export class Rom {
   readonly metasprites: Metasprite[];
   readonly itemGets: ItemGet[];
   readonly items: Item[];
+  readonly shops: Shop[];
   readonly npcs: Npc[];
 
   readonly messages: Messages;
 
   // NOTE: The following properties may be changed between reading and writing
-  // the rom.  If this happens, the written rom will have different properties.
-  // This is an effective way to convert between the two styles.
+  // the rom.  If this happens, the written rom will have different options.
+  // This is an effective way to convert between two styles.
+
+  // Max number of shops.  Various blocks of memory require knowing this number
+  // to allocate.
+  shopCount: number;
+  // Number of scaling levels.  Determines the size of the scaling tables.
+  scalingLevels: number;
 
   // Address to read/write the bitfield indicating unique items.
-  uniqueItemTableAddress?: number;
+  uniqueItemTableAddress: number;
   // Address of normalized prices table, if present.  If this is absent then we
   // assume prices are not normalized and are at the normal pawn shop address.
-  normalizedPriceTableAddress?: number;
+  shopDataTablesAddress: number;
   // Whether the trailing $ff should be omitted from the ItemGetData table.
-  omitItemGetDataSuffix: boolean = false;
+  omitItemGetDataSuffix: boolean;
   // Whether the trailing byte of each LocalDialog is omitted.  This affects
   // both reading and writing the table.  May be inferred while reading.
-  omitLocalDialogSuffix: boolean = false;
+  omitLocalDialogSuffix: boolean;
 
-  constructor(rom: Uint8Array,
-              {normalizedPriceTableAddress,
-               uniqueItemTableAddress,
-              }: {normalizedPriceTableAddress?: number,
-                  uniqueItemTableAddress?: number} = {}) {
+  constructor(rom: Uint8Array) {
+
     this.prg = rom.subarray(0x10, 0x40010);
     this.chr = rom.subarray(0x40010);
 
-    this.normalizedPriceTableAddress = normalizedPriceTableAddress;
-    this.uniqueItemTableAddress = uniqueItemTableAddress;
+    this.shopCount = Rom.SHOP_COUNT.get(rom);
+    this.scalingLevels = Rom.SCALING_LEVELS.get(rom);
+    this.uniqueItemTableAddress = Rom.UNIQUE_ITEM_TABLE.get(rom);
+    this.shopDataTablesAddress = Rom.SHOP_DATA_TABLES.get(rom);
+    this.omitItemGetDataSuffix = Rom.OMIT_ITEM_GET_DATA_SUFFIX.get(rom);
+    this.omitLocalDialogSuffix = Rom.OMIT_LOCAL_DIALOG_SUFFIX.get(rom);
 
     for (const [address, value] of ADJUSTMENTS) this.prg[address] = value;
 
@@ -99,6 +133,7 @@ export class Rom {
     this.messages = new Messages(this);
     this.itemGets = seq(0x71, i => new ItemGet(this, i));
     this.items = seq(0x49, i => new Item(this, i));
+    this.shops = seq(44, i => new Shop(this, i)); // NOTE: depends on locations and objects
     this.npcs = seq(0xcd, i => new Npc(this, i));
   }
 
@@ -216,6 +251,14 @@ export class Rom {
 //   }
 
   async writeData() {
+    // Write the options first
+    Rom.SHOP_COUNT.set(this.prg, this.shopCount);
+    Rom.SCALING_LEVELS.set(this.prg, this.scalingLevels);
+    Rom.UNIQUE_ITEM_TABLE.set(this.prg, this.uniqueItemTableAddress);
+    Rom.SHOP_DATA_TABLES.set(this.prg, this.shopDataTablesAddress);
+    Rom.OMIT_ITEM_GET_DATA_SUFFIX.set(this.prg, this.omitItemGetDataSuffix);
+    Rom.OMIT_LOCAL_DIALOG_SUFFIX.set(this.prg, this.omitLocalDialogSuffix);
+
     const writer = new Writer(this.prg);
     // MapData
     writer.alloc(0x144f8, 0x17e00);

@@ -1,5 +1,6 @@
 import {Assembler, assemble, buildRomPatch} from './6502.js';
 import {Entrance, Exit, Flag, Location, Spawn} from './rom/location.js';
+import {writeLittleEndian} from './rom/util.js';
 import {Rom} from './rom.js';
 import {Random} from './random.js';
 import {shuffle2 as shuffleDepgraph} from './depgraph.js';
@@ -490,19 +491,20 @@ export const stampVersionSeedAndHash = (rom, seed, flags) => {
 
 const patchBytes = (rom, address, bytes) => {
   for (let i = 0; i < bytes.length; i++) {
-    rom[address + 0x10 + i] = bytes[i];
+    rom[address + i] = bytes[i];
   }
 };
 
 const patchWords = (rom, address, words) => {
   for (let i = 0; i < 2 * words.length; i += 2) {
-    rom[address + 0x10 + i] = words[i >>> 1] & 0xff;
-    rom[address + 0x11 + i] = words[i >>> 1] >>> 8;
+    rom[address + i] = words[i >>> 1] & 0xff;
+    rom[address + i + 1] = words[i >>> 1] >>> 8;
   }
 };
 
 // goes with enemy stat recomputations in postshuffle.s
 const updateCoinDrops = (rom, flags) => {
+  rom = rom.subarray(0x10);
   if (flags.disableShopGlitch()) {
     // bigger gold drops if no shop glitch, particularly at the start
     // - starts out fibonacci, then goes linear at 600
@@ -521,6 +523,8 @@ const updateCoinDrops = (rom, flags) => {
 
 // goes with enemy stat recomputations in postshuffle.s
 const updateDifficultyScalingTables = (rom, flags, asm) => {
+  rom = rom.subarray(0x10);
+
   // Currently this is three $30-byte tables, which we start at the beginning
   // of the postshuffle ComputeEnemyStats.
   const diff = new Array(48).fill(0).map((x, i) => i);
@@ -580,6 +584,8 @@ const updateDifficultyScalingTables = (rom, flags, asm) => {
 
 
 const rescaleShops = (rom, asm, random = undefined) => {
+  rom = rom.subarray(0x10);
+
   // Populate rescaled prices into the various rom locations.
   // Specifically, we read the available item IDs out of the
   // shop tables and then compute new prices from there.
@@ -591,6 +597,9 @@ const rescaleShops = (rom, asm, random = undefined) => {
   const SHOP_COUNT = 11; // 11 of all types of shop for some reason.
   const BASE_PRICE_TABLE = asm.expand('BasePrices');
   const INN_PRICES = asm.expand('InnPrices');
+
+  Rom.NORMALIZED_PRICE_TABLE.set(rom, BASE_PRICE_TABLE);
+  Rom.INN_PRICE_TABLE.set(rom, INN_PRICES);
 
   // TODO - rearrange the tables to defrag the free space a bit.
   // Will need to change the code that reads them, obviously
@@ -618,20 +627,19 @@ const rescaleShops = (rom, asm, random = undefined) => {
   // Set the price multipliers for each item in shops.
   for (const {prices, items} of [TOOLS, ARMOR]) {
     for (let i = 0; i < 4 * SHOP_COUNT; i++) {
-      const invalid = !BASE_PRICES[rom[items + i + 0x10]];
-      rom[prices + i + 0x10] = invalid ? 0 : random ? random.nextInt(32) + 17 : 32;
+      const invalid = !BASE_PRICES[rom[items + i]];
+      rom[prices + i] = invalid ? 0 : random ? random.nextInt(32) + 17 : 32;
     }
   }
 
   // Set the inn prices, with a slightly wider variance [.375, 1.625)
   for (let i = 0; i < SHOP_COUNT; i++) {
-    rom[INN_PRICES + i + 0x10] = random ? random.nextInt(40) + 13 : 32;
+    rom[INN_PRICES + i] = random ? random.nextInt(40) + 13 : 32;
   }
 
   // Set the pawn shop base prices.
   const setBasePrice = (id, price) => {
-    rom[BASE_PRICE_TABLE + 2 * (id - 0x0d) + 0x10] = price & 0xff;
-    rom[BASE_PRICE_TABLE + 2 * (id - 0x0d) + 0x11] = price >>> 8;
+    writeLittleEndian(rom, BASE_PRICE_TABLE + 2 * (id - 0xd), price);
   }
   for (let i = 0x0d; i < 0x27; i++) {
     setBasePrice(i, BASE_PRICES[i]);

@@ -2,6 +2,7 @@
 
 import {hex} from './util.js';
 import {Writer} from './writer.js';
+import {Rom} from '../rom.js'; // type-only re-export!
 
 export class Entity {
   constructor(readonly rom: Rom, readonly id: number) {}
@@ -13,4 +14,4 @@ export class Entity {
   }
 }
 
-export type Rom = any;
+export {Rom};

@@ -7054,6 +7054,7 @@ MetatileAlternativesMap_0B      ; tileset $ac
         $13f60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13f70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+        ;; UNUSED
         $13f80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13f90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13fa0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -7063,6 +7064,7 @@ MetatileAlternativesMap_0B      ; tileset $ac
         $13fe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $13ff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 RomBank_0a                      ; @@ $8000  -- MAPDATA_BANK
+MapScreen_100
         $14000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $14010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $14020              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -7079,6 +7081,7 @@ RomBank_0a                      ; @@ $8000  -- MAPDATA_BANK
         $140d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $140e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $140f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapScreen_101
         $14100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $14110              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $14120              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -7095,6 +7098,7 @@ RomBank_0a                      ; @@ $8000  -- MAPDATA_BANK
         $141d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $141e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $141f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+MapScreen_102
         $14200              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $14210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $14220              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -17512,6 +17516,7 @@ ObjectData_Object31                                      ; Object 31
         $1aea7              .byte $xx
         $1aea8              .byte $xx
 ;;; ----------------------------------------------------------------
+;;; Generic innkeeper
 ObjectData_Object40                                      ; Object 40
         $1aea9              .byte $xx
         $1aeaa              .byte $xx,$xx,$xx,$xx,$xx
@@ -17519,7 +17524,7 @@ ObjectData_Object40                                      ; Object 40
         $1aeb4              .byte $xx
         $1aeb5              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-;;; Tool shopkeeper
+;;; Generic tool shopkeeper
 ObjectData_Object41                                      ; Object 41
         $1aeb7              .byte $xx
         $1aeb8              .byte $xx,$xx,$xx,$xx,$xx
@@ -17527,7 +17532,7 @@ ObjectData_Object41                                      ; Object 41
         $1aec2              .byte $xx
         $1aec3              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-;;; Armor shopkeeper
+;;; Generic armor shopkeeper
 ObjectData_Object42                                      ; Object 42
         $1aec5              .byte $xx
         $1aec6              .byte $xx,$xx,$xx,$xx,$xx
@@ -17535,7 +17540,7 @@ ObjectData_Object42                                      ; Object 42
         $1aed0              .byte $xx
         $1aed1              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
-;;; Pawn shopkeeper
+;;; Generic pawn shopkeeper
 ObjectData_Object43                                      ; Object 43
         $1aed3              .byte $xx
         $1aed4              .byte $xx,$xx,$xx,$xx,$xx
@@ -21096,13 +21101,13 @@ NpcDialog_14 ; windmill guard, zebu's student
         $1ccd5              .byte $xx,$xx
         $1ccd7              .byte $xx,$xx
         $1ccd9              .byte $xx
+        ;;                  00: 0e Windmill Cave
         $1ccda              .byte $xx,$xx,$xx,$xx,$xx ; 088 got windmill key NOT -> 01:01 (action 03)
         $1ccdf              .byte         $xx,$xx     ;     Set: 088 got windmill key
         $1cce1              .byte $xx,$xx,$xx,$xx,$xx ; default -> 01:03
         ;;                  0c: c5 Leaf - Student House
         $1cce6              .byte $xx,$xx,$xx,$xx,$xx ; 0a5 NOT -> 00:0c (action 09)
         $1cceb              .byte         $xx,$xx     ;     Set: 0a5 talked to zebu student
-        ;;                  13: 0e Windmill Cave
         $1cced              .byte $xx,$xx,$xx,$xx,$xx ; default -> 02:0a -> @ 0c
 ;;; ----------------------------------------------------------------
 NpcDialog_15 ; sleeping windmill guard
@@ -26167,64 +26172,64 @@ ObjectActionJump_6f
         $1f854  xx xx:      xxx $xx
         $1f856  xx xx:      xxx #$xx
         $1f858  xx xx:      xxx ($xx),y
-        $1f85a  xx xx xx:   xxx $xxxx
+        $1f85a  xx xx xx:   xxx $xxxx ; restore music from y=3
         $1f85d  xx:         xxx
         $1f85e  xx xx:      xxx ($xx),y
-        $1f860  xx xx xx:   xxx $xxxx,x
+        $1f860  xx xx xx:   xxx $xxxx,x ; boss drop at y=4
         $1f863  xx:         xxx
-        $1f864  xx xx:      xxx #$xx
+        $1f864  xx xx:      xxx #$xx ; loop from y=[5, c]
         $1f866  xx xx:      xxx $xx
-        $1f868  xx xx:      xxx ($xx),y
-        $1f86a  xx xx:      xxx $xx
-        $1f86c  xx xx xx:   xxx $xxxx,y
-        $1f86f  xx:         xxx
-        $1f870  xx xx:      xxx $xx
-        $1f872  xx xx:      xxx $xx
-        $1f874  xx xx:      xxx #$xx
+-       $1f868  xx xx:       xxx ($xx),y
+        $1f86a  xx xx:       xxx + ; $1f86f
+        $1f86c  xx xx xx:     xxx $xxxx,y ; [$7e0..$7e7] - restore palettes
++       $1f86f  xx:          xxx
+        $1f870  xx xx:       xxx $xx
+        $1f872  xx xx:      xxx - ; $1f868
+        $1f874  xx xx:      xxx #$xx ; loop from y=[d, 12]
         $1f876  xx xx:      xxx $xx
-        $1f878  xx xx:      xxx ($xx),y
-        $1f87a  xx xx:      xxx $xx
-        $1f87c  xx xx xx:   xxx $xxxx,y
-        $1f87f  xx:         xxx
-        $1f880  xx xx:      xxx $xx
-        $1f882  xx xx:      xxx $xx
+-       $1f878  xx xx:       xxx ($xx),y
+        $1f87a  xx xx:       xxx + ; $1f87f
+        $1f87c  xx xx xx:     xxx $xxxx,y ; [$7f0..$7f5] - restore patterns
++       $1f87f  xx:          xxx
+        $1f880  xx xx:       xxx $xx
+        $1f882  xx xx:      xxx - ; $1f878
         $1f884  xx xx:      xxx ($xx),y
-        $1f886  xx xx xx:   xxx $xxxx
+        $1f886  xx xx xx:   xxx $xxxx ; restore map animation
         $1f889  xx:         xxx
-        $1f88a  xx xx:      xxx ($xx),y
-        $1f88c  xx xx:      xxx $xx
-        $1f88e  xx xx:      xxx #$xx
-        $1f890  xx xx xx:   xxx $xxxx,y
-        $1f893  xx xx:      xxx #$xx
-        $1f895  xx xx:      xxx + ; $1f8c7
-        $1f897  xx xx:      xxx #$xx
-        $1f899  xx xx:      xxx + ; $1f8c7
-        $1f89b  xx xx:      xxx #$xx
-        $1f89d  xx xx:      xxx + ; $1f8c7
-        $1f89f  xx xx:      xxx #$xx
-        $1f8a1  xx xx:      xxx + ; $1f8c7
-        $1f8a3  xx xx:      xxx #$xx
-        $1f8a5  xx xx:      xxx + ; $1f8c7
-        $1f8a7  xx xx:      xxx #$xx
-        $1f8a9  xx xx:      xxx + ; $1f8c7
-        $1f8ab  xx xx:      xxx $xx
-        $1f8ad  xx xx:      xxx #$xx
-        $1f8af  xx xx:      xxx $xx
-        $1f8b1  xx xx xx:   xxx LoadOneObjectData
-        $1f8b4  xx xx:      xxx #$xx
-        $1f8b6  xx xx xx:   xxx $xxxx,y
-        $1f8b9  xx xx:      xxx #$xx
-        $1f8bb  xx xx xx:   xxx $xxxx,y
-        $1f8be  xx:         xxx
-        $1f8bf  xx:         xxx
-        $1f8c0  xx xx:      xxx #$xx
-        $1f8c2  xx:         xxx
-        $1f8c3  xx:         xxx
-        $1f8c4  xx xx xx:   xxx $xxxx,y
-+       $1f8c7  xx:         xxx
-        $1f8c8  xx xx:      xxx #$xx
-        $1f8ca  xx xx:      xxx $xx
-        $1f8cc  xx xx xx:   xxx $34c0e
+        $1f88a  xx xx:      xxx ($xx),y ; if 1 then explode??
+        $1f88c  xx xx:      xxx ++ ; $1f8cc
+        $1f88e  xx xx:       xxx #$xx
+-       $1f890  xx xx xx:     xxx $xxxx,y
+        $1f893  xx xx:        xxx #$xx
+        $1f895  xx xx:         xxx + ; $1f8c7
+        $1f897  xx xx:        xxx #$xx
+        $1f899  xx xx:         xxx + ; $1f8c7
+        $1f89b  xx xx:        xxx #$xx
+        $1f89d  xx xx:         xxx + ; $1f8c7
+        $1f89f  xx xx:        xxx #$xx
+        $1f8a1  xx xx:         xxx + ; $1f8c7
+        $1f8a3  xx xx:        xxx #$xx
+        $1f8a5  xx xx:         xxx + ; $1f8c7
+        $1f8a7  xx xx:        xxx #$xx
+        $1f8a9  xx xx:         xxx + ; $1f8c7
+        $1f8ab  xx xx:        xxx $xx
+        $1f8ad  xx xx:        xxx #$xx
+        $1f8af  xx xx:        xxx $xx
+        $1f8b1  xx xx xx:     xxx LoadOneObjectData ; replace most objects w/ explosion
+        $1f8b4  xx xx:        xxx #$xx
+        $1f8b6  xx xx xx:     xxx $xxxx,y
+        $1f8b9  xx xx:        xxx #$xx
+        $1f8bb  xx xx xx:     xxx $xxxx,y
+        $1f8be  xx:           xxx
+        $1f8bf  xx:           xxx
+        $1f8c0  xx xx:        xxx #$xx
+        $1f8c2  xx:           xxx
+        $1f8c3  xx:           xxx
+        $1f8c4  xx xx xx:     xxx $xxxx,y
++       $1f8c7  xx:           xxx
+        $1f8c8  xx xx:        xxx #$xx
+        $1f8ca  xx xx:       xxx - ; $1f890
+++      $1f8cc  xx xx xx:   xxx $34c0e
 ;;; --------------------------------
         ;; Runs when insect defeated
         $1f8cf  xx xx xx:   xxx FlushNametableDataWrite
@@ -26303,7 +26308,8 @@ DataTable_1f95d
         $1f95d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 ;;; Data table with some sort of boss info.  Seems to only be read when
-;;; the boss is killed.  Contains the item drop at y=4.
+;;; the boss is killed, at $1f856.  Contains the item drop at y=4.
+;;; y=2 is unused; y=3 looks like maybe the music to restore.
 ;;; STRIP: word=$14000
 DataTable_1f96b
         ;; boss death, BossDrop
@@ -26325,80 +26331,93 @@ DataTable_1f96b
 ;;; 00 vampire 1
         $1f987              .word ($xxxx) ; subroutine to run
         $1f989              .byte $xx,$xx,$xx
-        $1f98c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1f997              .byte $xx,$xx,$xx,$xx,$xx
+        $1f98c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1f994              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1f99a              .byte $xx,$xx
 ;;; --------------------------------
 ;;; 01 insect	
         $1f99c              .word ($xxxx)
         $1f99e              .byte $xx,$xx,$xx
-        $1f9a1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1f9ac              .byte $xx,$xx,$xx,$xx,$xx
+        $1f9a1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1f9a9              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1f9af              .byte $xx,$xx
 ;;; --------------------------------
 ;;; 02 kelbesque	
         $1f9b1              .word ($xxxx)
         $1f9b3              .byte $xx,$xx,$xx
-        $1f9b6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1f9c1              .byte $xx,$xx,$xx,$xx,$xx
+        $1f9b6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1f9be              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1f9c4              .byte $xx,$xx
 ;;; --------------------------------
 ;;; 04 sabera 1	
         $1f9c6              .word ($xxxx)
         $1f9c8              .byte $xx,$xx,$xx
-        $1f9cb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1f9d6              .byte $xx,$xx,$xx,$xx,$xx
+        $1f9cb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1f9d3              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1f9d9              .byte $xx,$xx
 ;;; --------------------------------
 ;;; 05 mado 1	
         $1f9db              .word ($xxxx)
         $1f9dd              .byte $xx,$xx,$xx
-        $1f9e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1f9eb              .byte $xx,$xx,$xx,$xx,$xx
+        $1f9e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1f9e8              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1f9ee              .byte $xx,$xx
 ;;; --------------------------------
 ;;; 06 kelbesque 2	
         $1f9f0              .word ($xxxx)
         $1f9f2              .byte $xx,$xx,$xx
-        $1f9f5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1fa00              .byte $xx,$xx,$xx,$xx,$xx
+        $1f9f5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1f9fd              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1fa03              .byte $xx,$xx
 ;;; --------------------------------
 ;;; 07 sabera 2	
         $1fa05              .word ($xxxx)
         $1fa07              .byte $xx,$xx,$xx
-        $1fa0a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1fa15              .byte $xx,$xx,$xx,$xx,$xx
+        $1fa0a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1fa12              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1fa18              .byte $xx,$xx
 ;;; --------------------------------
 ;;; 08 mado 2	
         $1fa1a              .word ($xxxx)
         $1fa1c              .byte $xx,$xx,$xx
-        $1fa1f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1fa2a              .byte $xx,$xx,$xx,$xx,$xx
+        $1fa1f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1fa27              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1fa2d              .byte $xx,$xx
 ;;; --------------------------------
 ;;; 09 karmine	
         $1fa2f              .word ($xxxx)
         $1fa31              .byte $xx,$xx,$xx
-        $1fa34              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1fa3f              .byte $xx,$xx,$xx,$xx,$xx
+        $1fa34              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1fa3c              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1fa42              .byte $xx,$xx
 ;;; --------------------------------
 ;;; 0a draygon 1
         $1fa44              .word ($xxxx)
         $1fa46              .byte $xx,$xx,$xx
-        $1fa49              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1fa54              .byte $xx,$xx,$xx,$xx,$xx
+        $1fa49              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1fa51              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1fa57              .byte $xx,$xx
 ;;; --------------------------------
 ;;; 0b draygon 2
         $1fa59              .word ($xxxx)
         $1fa5b              .byte $xx,$xx,$xx
-        $1fa5e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1fa69              .byte $xx,$xx,$xx,$xx,$xx
+        $1fa5e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1fa66              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1fa6c              .byte $xx,$xx
 ;;; --------------------------------
 ;;; 0c vampire 2
         $1fa6e              .word ($xxxx)
         $1fa70              .byte $xx,$xx,$xx
-        $1fa73              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1fa7e              .byte $xx,$xx,$xx,$xx,$xx
+        $1fa73              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1fa7b              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1fa81              .byte $xx,$xx
 ;;; --------------------------------
 ;;; 0d dyna
         $1fa83              .word ($xxxx)
         $1fa85              .byte $xx,$xx,$xx
-        $1fa88              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1fa93              .byte $xx,$xx,$xx,$xx,$xx
+        $1fa88              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1fa90              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1fa96              .byte $xx,$xx
 ;;; --------------------------------
         ;; Runs when generals defeated for first time.
         $1fa98  xx xx:      xxx #$xx
@@ -27991,6 +28010,10 @@ LoadInventoryTiles
         $208a5  xx xx:      xxx $xx
         $208a7  xx:         xxx
 ;;; --------------------------------
+;;; Args: $26 = X tile
+;;;       $27 = Y tile
+;;;       $29 = pattern?
+Shop_DrawItemBackground
         $208a8  xx xx:      xxx $xx
         $208aa  xx xx:      xxx $xx
         $208ac  xx xx:      xxx $xx
@@ -29310,14 +29333,15 @@ InitializeArmorShop
         $218b2  xx xx:       xxx #$xx
         $218b4  xx xx:      xxx - ; $218aa
 PostInitializeShop
+        ;; Draw the item boxes and outlines
         $218b6  xx xx:      xxx #$xx
         $218b8  xx xx:      xxx $xx
 -       $218ba  xx xx:       xxx $xx
-        $218bc  xx xx xx:    xxx $21f96,x
+        $218bc  xx xx xx:    xxx ShopItemHorizontalPositions,x
         $218bf  xx xx:       xxx $xx
         $218c1  xx xx:       xxx #$xx
         $218c3  xx xx:       xxx $xx
-        $218c5  xx xx xx:    xxx $xxxx,x
+        $218c5  xx xx xx:    xxx $xxxx,x ; current shop's item selection
         $218c8  xx xx:       xxx #$xx
         $218ca  xx xx:       xxx + ; $218d1
         $218cc  xx xx:         xxx $xx
@@ -29326,7 +29350,7 @@ PostInitializeShop
 +       $218d1  xx:           xxx
         $218d2  xx xx xx:     xxx $20f5a,x
         $218d5  xx xx:        xxx $xx
-++      $218d7  xx xx xx:    xxx $208a8
+++      $218d7  xx xx xx:    xxx Shop_DrawItemBackground
         $218da  xx xx:       xxx $xx
         $218dc  xx xx:       xxx $xx
         $218de  xx xx:       xxx #$xx
@@ -30166,7 +30190,7 @@ ShopIndices
         $21f85              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $21f95              .byte $xx
 ;;; --------------------------------
-DataTable_21f96
+ShopItemHorizontalPositions
         $21f96              .byte $xx,$xx,$xx,$xx
 ;;; --------------------------------
         ;; UNUSED?

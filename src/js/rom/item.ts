@@ -85,6 +85,22 @@ export class Item extends Entity {
     this.messageName = this.menuName = name;
   }
 
+  // Palette for menu icon
+  get palette(): number { return this.itemDataValue & 3; }
+  set palette(p: number) { this.itemDataValue = this.itemDataValue & ~3 | (p & 3); }
+
+  // Unique item: cannot be dropped or sold
+  get unique(): boolean { return !!(this.itemDataValue & 0x40); }
+  set unique(u: boolean) { this.itemDataValue = this.itemDataValue & ~0x40 | (u ? 0x40 : 0); }
+
+  // Worn item (sword/armor/orb/ring/magic) - not clear where this is used
+  get worn(): boolean { return !!(this.itemDataValue & 0x20); }
+  set worn(w: boolean) { this.itemDataValue = this.itemDataValue & ~0x20 | (w ? 0x20 : 0); }
+
+  // Solid background (sword/magic)
+  get solid(): boolean { return !!(this.itemDataValue & 0x80); }
+  set solid(s: boolean) { this.itemDataValue = this.itemDataValue & ~0x80 | (s ? 0x80 : 0); }
+
   async write(writer: Writer): Promise<void> {
     writer.rom[this.itemDataPointer] = this.itemDataValue;
     writer.rom[this.selectedItemPointer] = this.selectedItemValue;

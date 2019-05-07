@@ -1,14 +1,11 @@
 import {Entity, Rom} from './entity.js';
-import {readLittleEndian, seq, tuple} from './util.js';
-// import {Data, DataTuple, Mutable,
-//         addr, concatIterables, group, hex,
-//         seq, slice, tuple, varSlice, writeLittleEndian} from './util.js';
-// import {Writer} from './writer.js';
+import {readLittleEndian, seq, tuple, writeLittleEndian} from './util.js';
+import {Writer} from './writer.js';
 
 // Shops are striped: tool, armor, inn, pawn
 // So the tool shops have ID 0, 4, 8, ..., 40; etc
 
-enum ShopType {
+export enum ShopType {
   ARMOR = 0,
   TOOL = 1,
   INN = 2,
@@ -16,6 +13,24 @@ enum ShopType {
 }
 
 const SHOP_TYPES = [ShopType.ARMOR, ShopType.TOOL, ShopType.INN, ShopType.PAWN];
+
+const CONTENTS_ADDRESSES: ((base: number, count: number) => number)[] = [
+  (base, count) => base ? base : VANILLA_ARMOR_SHOP_ITEMS,
+  (base, count) => base ? base + 4 * count : VANILLA_TOOL_SHOP_ITEMS,
+  (base, count) => 0,
+  (base, count) => 0,
+];
+
+const CONTENTS_COUNTS = [4, 4, 0, 0];
+
+const PRICES_ADDRESSES: ((base: number, count: number) => number)[] = [
+  (base, count) => base ? base + 8 * count : VANILLA_ARMOR_SHOP_PRICES,
+  (base, count) => base ? base + 12 * count : VANILLA_TOOL_SHOP_PRICES,
+  (base, count) => base ? base + 16 * count : VANILLA_INN_PRICES,
+  (base, count) => 0,
+];
+
+const PRICES_COUNTS = [4, 4, 1, 0];
 
 export class Shop extends Entity {
 
@@ -25,13 +40,11 @@ export class Shop extends Entity {
   readonly type: ShopType;
 
   // List of up to 4 item IDs being sold at this shop.
-  contentsAddress?: number;
   contents: number[];
 
   // Meaning depends on whether shops are normalized.  If so then this is
   // the adjustment from the base price, as a fraction.  If not then this
   // is just the 16-bit price.
-  pricesAddress?: number;
   prices: number[];
 
   constructor(rom: Rom, id: number) {
@@ -44,28 +57,8 @@ export class Shop extends Entity {
       // Normalized prices - construct the table locations
       const base = rom.shopDataTablesAddress;
       const count = rom.shopCount;
-      const itemTable = base;
-      const priceTable = base + 8 * count;
-      const innPrices = base + 16 * count;
       const locationTable = base + 17 * count;
       this.location = rom.prg[locationTable + id];
-      if (this.type < 2) { // tool or armor
-        // TODO - extract a method to compute these w/ accounting for rom options
-        this.contentsAddress = itemTable + 4 * (this.type * count + this.index);
-        this.contents = tuple(rom.prg, this.contentsAddress!, 4);
-        this.pricesAddress = priceTable + 4 * (this.type * count + this.index);
-        this.prices = tuple(rom.prg, this.pricesAddress!, 4).map(x => x / 32);
-      } else if (this.type === ShopType.INN) {
-        this.contents = [];
-        this.pricesAddress = innPrices + this.index;
-        this.prices = [rom.prg[this.pricesAddress!] / 32];
-      } else {
-        this.contents = [];
-        this.prices = [];
-      }
-      // TODO - what to do with missing or incorrect shopkeeper?!?
-      //      - we can validate at write time, but should also be able to
-      //        change it as needed...?
     } else {
       // Vanilla shops: need to do a more involved search for shop location.
       this.location = 0xff;
@@ -81,29 +74,31 @@ export class Shop extends Entity {
           }
         }
       }
-
-      if (this.type < 2) {
-        if (this.type === ShopType.ARMOR) {
-          this.contentsAddress = VANILLA_ARMOR_SHOP_ITEMS + 4 * this.index;
-          this.pricesAddress = VANILLA_ARMOR_SHOP_PRICES + 8 * this.index;
-        } else {
-          this.contentsAddress = VANILLA_TOOL_SHOP_ITEMS + 4 * this.index;
-          this.pricesAddress = VANILLA_TOOL_SHOP_PRICES + 8 * this.index;
-        }
-        this.contents = tuple(rom.prg, this.contentsAddress!, 4);
-        this.prices =
-            seq(4, i => readLittleEndian(rom.prg, this.pricesAddress! + 2 * i));
-      } else if (this.type === ShopType.INN) {
-        this.contents = [];
-        this.pricesAddress = VANILLA_INN_PRICES + 2 * this.index;
-        this.prices = [rom.prg[this.pricesAddress!]];
-      } else {
-        this.contents = [];
-        this.prices = [];
-      }
-      // TODO - Populate other data as well....
     }
+
+    const readPrice: (i: number) => number =
+        rom.shopDataTablesAddress ?
+            i => rom.prg[this.pricesAddress + i] / 32 :
+            i => readLittleEndian(rom.prg, this.pricesAddress + 2 * i);
+    this.contents = tuple(rom.prg, this.contentsAddress, CONTENTS_COUNTS[this.type]);
+    this.prices = seq(PRICES_COUNTS[this.type], readPrice);
     this.used = this.location !== 0xff;
+  }
+
+  // private isNormalized(): boolean {
+  //   return !!this.rom.shopDataTablesAddress;
+  // }
+
+  get contentsAddress(): number {
+    const base = CONTENTS_ADDRESSES[this.type](this.rom.shopDataTablesAddress,
+                                               this.rom.shopCount);
+    return base + 4 * this.index;
+  }
+
+  get pricesAddress(): number {
+    const shopTable = this.rom.shopDataTablesAddress;
+    const base = PRICES_ADDRESSES[this.type](shopTable, this.rom.shopCount);
+    return base + (shopTable ? 8 : 4) * this.index;
   }
 
   /**
@@ -118,6 +113,22 @@ export class Shop extends Entity {
     //   we can also make new ones as needed using the unused object slots
     // we could alternatively make location and/or type a getter/setter pair
     throw new Error('not implemented');
+  }
+
+  write(writer: Writer): void {
+    // TODO(sdh): throw an error if shopkeeper doesn't match?
+    const prg = writer.rom;
+    const writePrice: (i: number, price: number) => void =
+        this.rom.shopDataTablesAddress ?
+            (i, p) => prg[this.pricesAddress + i] = Math.round(p * 32) :
+            (i, p) => writeLittleEndian(prg, this.pricesAddress + 2 * i, p);
+    for (let i = 0; i < CONTENTS_COUNTS[this.type]; i++) {
+      prg[this.contentsAddress + i] =
+          this.contents[i] != null ? this.contents[i] : 0xff;
+    }
+    for (let i = 0; i < PRICES_COUNTS[this.type]; i++) {
+      writePrice(i, this.prices[i] || 0);
+    }
   }
 }
 

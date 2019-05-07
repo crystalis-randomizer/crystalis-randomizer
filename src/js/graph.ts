@@ -1,4 +1,4 @@
-import {PrgImage} from './romimage.js';
+import {Rom} from './rom.js';
 import {Deque} from './util.js';
 
 declare const NODE_ID: unique symbol;
@@ -33,12 +33,14 @@ export class Node {
   }
 
   /** @param rom The PRG rom image. */
-  write(rom: PrgImage) {}
+  write() {}
 }
 
 export class Graph {
 
   readonly nodes: Node[] = [];
+
+  constructor(readonly rom?: Rom) {}
 
   // TODO - options for depth vs breadth first?
   //      - pass wanted list as a named param?

@@ -16,7 +16,7 @@ import {
   WorldGraph,
 } from './nodes.js';
 import {Random} from './random.js';
-import {FullRomImage} from './romimage.js';
+import {Rom} from './rom.js';
 
 // Make a fresh/clean graph. We could pass options directly into this function.
 // Options:{
@@ -68,9 +68,9 @@ import {FullRomImage} from './romimage.js';
 //   equip: 0 - no change
 //          1 - auto-equip power
 
-export const generate = (flags: FlagSet = new FlagSet()): WorldGraph => {
+export const generate = (flags: FlagSet = new FlagSet(), rom?: Rom): WorldGraph => {
 
-  const graph = new WorldGraph();
+  const graph = new WorldGraph(rom);
   const option = (name: string, value: boolean = true): Option =>
       new Option(graph, name, value);
   const item = (id: number, name: string): Item =>
@@ -1804,12 +1804,12 @@ interface LogType {
 }
 
 // Performs a "swap-fill" algorithm.
-export const shuffle = async (rom: FullRomImage,
+export const shuffle = async (rom: Rom,
                               random: Random,
                               log?: LogType,
                               flags: FlagSet = new FlagSet('Sbkm Sct'),
                               progress?: ProgressTracker) => {
-  const graph = generate(flags);
+  const graph = generate(flags, rom);
   if (flags.shuffleShops()) graph.shuffleShops(random);
   const allSlots = graph.nodes.filter(s => s instanceof Slot && s.slots && s.slotName);
 
@@ -1938,7 +1938,7 @@ export const shuffle = async (rom: FullRomImage,
   }
 
   // Commit changes
-  if (rom) graph.write(rom);
+  if (rom) graph.write();
 
   if (!log) return;
 
@@ -1975,12 +1975,12 @@ export const shuffle = async (rom: FullRomImage,
   // }
 };
 
-export const shuffle2 = async (rom: FullRomImage,
+export const shuffle2 = async (rom: Rom,
                                random: Random,
                                log?: LogType,
                                flags: FlagSet = new FlagSet('Sbkm Sct'),
                                progress?: ProgressTracker) => {
-  const graph = generate(flags);
+  const graph = generate(flags, rom);
   if (flags.shuffleShops()) graph.shuffleShops(random);
   const locationList = graph.integrate();
   if (progress) progress.addTasks(1000);
@@ -2006,7 +2006,7 @@ export const shuffle2 = async (rom: FullRomImage,
 // TODO - accept log.stats and update it!!!
 export const shuffle3 = async (graph: WorldGraph,
                                locationList: LocationList,
-                               rom: FullRomImage,
+                               rom: Rom,
                                random: Random,
                                log?: LogType,
                                // Default shuffling - only S flags matter.
@@ -2122,7 +2122,7 @@ export const shuffle3 = async (graph: WorldGraph,
   }
 
   // Commit changes
-  if (rom) graph.write(rom);
+  if (rom) graph.write();
 
   if (!log) return true;
   if (stats) {

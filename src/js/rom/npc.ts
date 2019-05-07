@@ -174,7 +174,7 @@ export class LocalDialog {
 
   // Returns [dialog, last]
   static parse(data: Data<number>, offset: number = 0): [LocalDialog, boolean] {
-    let word = readBigEndian(data, offset);
+    const word = readBigEndian(data, offset);
     const message = MessageId.from(data, offset + 2);
     const update = data[offset + 4];
     offset += 5;
@@ -185,6 +185,13 @@ export class LocalDialog {
     if (sign) condition = ~condition;
     const flags = word & 0x4000 ? DIALOG_FLAGS.read(data, offset) : [];
     return [new LocalDialog(condition, message, update, flags), last];
+  }
+
+  static of(condition: number,
+            message: [number, number, number?],
+            flags: FlagList = []): LocalDialog {
+    const [part, index, action = 0] = message;
+    return new LocalDialog(condition, MessageId.of({part, index, action}), 0, flags);
   }
 
   byteLength(): number {

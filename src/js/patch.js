@@ -1,5 +1,7 @@
 import {Assembler, assemble, buildRomPatch} from './6502.js';
 import {Entrance, Exit, Flag, Location, Spawn} from './rom/location.js';
+import {GlobalDialog, LocalDialog} from './rom/npc.js';
+import {ShopType} from './rom/shop.js';
 import {writeLittleEndian} from './rom/util.js';
 import {Rom} from './rom.js';
 import {Random} from './random.js';
@@ -39,7 +41,7 @@ export default ({
 });
 
 export const parseSeed = (/** string */ seed) => /** number */ {
-  if (!seed) return Math.floor(Math.random() * 0x100000000);
+  if (!seed) return Random.newSeed();
   if (/^[0-9a-f]{1,8}$/i.test(seed)) return Number.parseInt(seed, 16);
   return crc32(seed);
 }
@@ -106,20 +108,28 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   await assemble('preshuffle.s');
 
   const random = new Random(newSeed);
-  await shuffleDepgraph(rom, random, log, flags, progress);
 
+  // Parse the rom and apply other patches - note: must have shuffled
+  // the depgraph FIRST!
+  const parsed = new Rom(rom);
+
+  // TODO - consider making a Transformation interface, with ordering checks
+  alarmFluteIsKeyItem(parsed); // NOTE: pre-shuffle
+
+  parsed.scalingLevels = 48;
+  parsed.uniqueItemTableAddress = asm.expand('KeyItemData');
+
+  // TODO - set omitItemGetDataSuffix and omitLocalDialogSuffix
+
+  await shuffleDepgraph(parsed, random, log, flags, progress);
+
+  // TODO - rewrite rescaleShops to take a Rom instead of an array...
   if (touchShops) {
     // TODO - separate logic for handling shops w/o Pn specified (i.e. vanilla
     // shops that may have been randomized)
     rescaleShops(rom, asm, flags.bargainHunting() ? random : null);
   }
 
-  // Parse the rom and apply other patches - note: must have shuffled
-  // the depgraph FIRST!
-  const parsed = new Rom(rom, {
-    normalizedPriceTableAddress: asm.expand('BasePrices'),
-    uniqueItemTableAddress: asm.expand('KeyItemData'),
-  });
   rescaleMonsters(rom, parsed);
   if (flags.shuffleMonsters()) shuffleMonsters(rom, parsed, random);
   identifyKeyItemsForDifficultyBuffs(parsed);
@@ -146,11 +156,10 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   if (flags.orbsOptional()) orbsOptional(parsed);
 
   closeCaveEntrances(parsed, flags);
-  alarmFluteIsKeyItem(parsed);
   reversibleSwanGate(parsed);
   adjustGoaFortressTriggers(parsed);
   fixQueenDialog(parsed);
-  preventNpcDespawns(parsed);
+  preventNpcDespawns(parsed, flags);
 
   misc(parsed, flags);
 
@@ -300,13 +309,42 @@ const adjustGoaFortressTriggers = (rom) => {
 
 const alarmFluteIsKeyItem = (rom) => {
   // Person 14 (Zebu's student): secondary item -> alarm flute
-  //rom.npcs[0x14].data[1] = 0x31; // NOTE: Clobbers shuffled item!!!
+  rom.npcs[0x14].data[1] = 0x31; // NOTE: Clobbers shuffled item!!!
   // Move alarm flute to third row
   rom.itemGets[0x31].inventoryRowStart = 0x20;
   // Ensure alarm flute cannot be dropped
-  rom.prg[0x21021] = 0x43; // TODO - rom.items[0x31].???
-  // Ensure alarm flute cannot be sold --- TODO - add shops to parsed rom
-  // ...
+  // rom.prg[0x21021] = 0x43; // TODO - rom.items[0x31].???
+  rom.items[0x31].unique = true;
+  // Ensure alarm flute cannot be sold
+  rom.items[0x31].basePrice = 0;
+
+  // Remove alarm flute from shops (replace with other items)
+  // NOTE - we could simplify this whole thing by just hardcoding indices.
+  //      - if this is guaranteed to happen early, it's all the same.
+  const replacements = [
+    [0x21, 0.72], // fruit of power, 72% of cost
+    [0x1f, 0.9], // lysis plant, 90% of cost
+  ];
+  let j = 0;
+  for (const shop of rom.shops) {
+    if (shop.type !== ShopType.TOOL) continue;
+    for (let i = 0, len = shop.contents.length; i < len; i++) {
+      if (shop.contents[i] !== 0x31) continue;
+      const [item, priceRatio] = replacements[(j++) % replacements.length];
+      shop.contents[i] = item;
+      if (rom.shopDataTablesAddress) {
+        // NOTE: this is broken - need a controlled way to convert price formats
+        shop.prices[i] = Math.round(shop.prices[i] * priceRatio);
+      }
+    }
+  }
+
+  // Change flute of lime chest's (now-unused) itemget to have medical herb
+  rom.itemGets[0x5b].itemId = 0x1d;
+  // Change the actual spawn for that chest to be the mirrored shield chest
+  rom.locations[0x57].spawns[0x19 - 0xd].id = 0x10;
+
+  // TODO - require new code for two uses
 };
 
 const reversibleSwanGate = (rom) => {
@@ -318,6 +356,12 @@ const reversibleSwanGate = (rom) => {
     Spawn.of({xt: 0x0b, yt: 0x02, type: 1, id: 0x2d}), // new soldier
     Spawn.of({xt: 0x0e, yt: 0x0a, type: 2, id: 0xb3})  // new trigger: erase guards
   );
+
+  // Guards ($2d) at swan gate ($73) ~ set 10d after opening gate => condition for despawn
+  rom.npcs[0x2d].localDialogs.get(0x73)[0].flags.push(0x10d);
+
+  // Despawn guard trigger requires 10d
+  rom.trigger(0xb3).conditions.push(0x10d);
 };
 
 const fixQueenDialog = (rom) => {
@@ -325,12 +369,80 @@ const fixQueenDialog = (rom) => {
 
 };
 
-const preventNpcDespawns = (rom) => {
+const preventNpcDespawns = (rom, flags) => {
+  // Leaf elder in house ($0d @ $c0) ~ sword of wind redundant flag
+  rom.npcs[0x0d].localDialogs.get(0xc0)[2].flags = [];
+
+  // Windmill guard ($14 @ $0e) shouldn't despawn after abduction
+  rom.npcs[0x14].spawnConditions.get(0x0e).pop(); // remove condition 038 NOT leaf attacked
+  rom.npcs[0x14].localDialogs.get(0x0e)[0].flags = []; // remove redundant flag ~ windmill key
+
+  // Akahana ($16) ~ shield ring redundant flag
+  rom.npcs[0x16].localDialogs.get(0x57)[0].flags = [];
+  rom.npcs[0x88].localDialogs.get(0x57)[0].flags = []; // NOTE: need to keep these in sync
+
+  // Oak elder ($1d) ~ sword of fire redundant flag
+  rom.npcs[0x1d].localDialogs.get(-1)[4].flags = [];
+
+  // Oak mother ($1e) ~ insect flute redundant flag
+  rom.npcs[0x1e].localDialogs.get(-1)[2].flags = [];
+
   // Clark ($44) moves after talking to him (08d) rather than calming sea (08f).
+  // TODO - change 08d to whatever actual item he gives, then remove both flags
   rom.npcs[0x44].spawnConditions.set(0xe9, [~0x08d]); // zombie town basement
   rom.npcs[0x44].spawnConditions.set(0xe4, [0x08d]);  // joel shed
+  rom.npcs[0x44].localDialogs.get(0xe9)[1].flags.pop(); // remove redundant itemget flag
+
+  // Brokahana ($54) ~ warrior ring redundant flag
+  rom.npcs[0x54].localDialogs.get(-1)[2].flags = [];
+
+  // Deo ($5a) ~ pendant redundant flag
+  rom.npcs[0x5a].localDialogs.get(-1)[1].flags = [];
+
+  // Zebu ($5e) cave dialog (@ $10)
+  rom.npcs[0x5e].localDialogs.set(0x10, [
+    LocalDialog.of(~0x03a, [0x00, 0x1a], [0x03a]), // 03a NOT talked to zebu in cave -> Set 03a
+    LocalDialog.of( 0x00d, [0x00, 0x1d]), // 00d leaf villagers rescued
+    LocalDialog.of( 0x038, [0x00, 0x1c]), // 038 leaf attacked
+    LocalDialog.of( 0x241, [0x00, 0x1d]), // [241] learned refresh
+    LocalDialog.of( 0x00a, [0x00, 0x1b, 0x03]), // 00a windmill key used -> teach refresh
+    LocalDialog.of(~0x000, [0x00, 0x1d]),
+  ]);
+
+  // Kensu in lighthouse ($74/$7e @ $62) ~ pendant redundant flag
+  rom.npcs[0x74].localDialogs.get(0x62)[0].flags = [];
+  rom.npcs[0x7e].localDialogs.get(0x62)[0].flags = [];
+
+  // Remove useless spawn condition from Mado 1
+  rom.npcs[0xc4].spawnConditions.delete(0xf2); // always spawn
+
   // Draygon 2 ($cb @ location $a6) should despawn after being defeated.
   rom.npcs[0xcb].spawnConditions.set(0xa6, [~0x28d]); // key on back wall destroyed
+
+  // Fix Zebu to give key to stxy even if thunder sword is gotten (just switch the
+  // order of the first two).  Also don't bother setting 03b since the new ItemGet
+  // logic obviates the need.
+  const zebuShyron = rom.npcs[0x5e].localDialogs.get(0xf2);
+  zebuShyron.unshift(zebuShyron.splice(1, 0));
+  zebuShyron[0].flags = [];
+
+  // Shyron massacre ($80) requires key to stxy
+  rom.trigger(0x80).conditions.push(0x234); // 234 key to stxy
+
+  // Enter shyron ($81) should set warp no matter what
+  rom.trigger(0x81).conditions = [];
+
+  if (flags.barrierRequiresCalmSea()) {
+    // Learn barrier ($84) requires calm sea
+    rom.trigger(0x84).conditions.push(0x283); // 283 calmed the sea
+    // TODO - consider not setting 051 and changing the condition to match the item
+  }
+
+  // Add an extra condition to the Leaf abduction trigger (behind zebu).  This ensures
+  // all the items in Leaf proper (elder and student) are gotten before they disappear.
+  rom.trigger(0x8c).conditions.push(0x037); // 03a talked to zebu in cave
+
+ 
 
   // TODO - zebu cave dialog, windmill spawn, etc
 
@@ -584,8 +696,6 @@ const updateDifficultyScalingTables = (rom, flags, asm) => {
 
 
 const rescaleShops = (rom, asm, random = undefined) => {
-  rom = rom.subarray(0x10);
-
   // Populate rescaled prices into the various rom locations.
   // Specifically, we read the available item IDs out of the
   // shop tables and then compute new prices from there.
@@ -594,57 +704,40 @@ const rescaleShops = (rom, asm, random = undefined) => {
   // 50% to 150% of the base price.  The pawn shop price is
   // always 50% of the base price.
 
-  const SHOP_COUNT = 11; // 11 of all types of shop for some reason.
-  const BASE_PRICE_TABLE = asm.expand('BasePrices');
-  const INN_PRICES = asm.expand('InnPrices');
+  rom.shopCount = 11; // 11 of all types of shop for some reason.
+  rom.shopDataTablesAddress = asm.expand('ShopData');
 
-  Rom.NORMALIZED_PRICE_TABLE.set(rom, BASE_PRICE_TABLE);
-  Rom.INN_PRICE_TABLE.set(rom, INN_PRICES);
+  // NOTE: This isn't in the Rom object yet...
+  writeLittleEndian(rom.prg, asm.expand('InnBasePrice'), 20);
 
-  // TODO - rearrange the tables to defrag the free space a bit.
-  // Will need to change the code that reads them, obviously
-  // Move the base price table up a byte into the inn prices (which
-  // gets us 10 more free bytes as well).  We could defrag the whole
-  // thing into $21f9a (though we;d also need to move the location
-  // finding refs and the ref to $21f96 in PostInitializeShop
-  // This gives a much nicer block that we could maybe use more
-  // efficiently
-
-  const TOOLS = {prices: 0x21e54, items: 0x21e28};
-  const ARMOR = {prices: 0x21dd0, items: 0x21da4};
-
-  const BASE_INN_PRICE = 20;
-
-  // First fill the scaling tables.
-  const diff = new Array(48).fill(0).map((x, i) => i);
-  // Tool shops scale as 2 ** (Diff / 10), store in 8ths
-  patchBytes(rom, asm.expand('ToolShopScaling'),
-             diff.map(d => Math.round(8 * (2 ** (d / 10)))));
-  // Armor shops scale as 2 ** ((47 - Diff) / 12), store in 8ths
-  patchBytes(rom, asm.expand('ArmorShopScaling'),
-             diff.map(d => Math.round(8 * (2 ** ((47 - d) / 12)))));
-
-  // Set the price multipliers for each item in shops.
-  for (const {prices, items} of [TOOLS, ARMOR]) {
-    for (let i = 0; i < 4 * SHOP_COUNT; i++) {
-      const invalid = !BASE_PRICES[rom[items + i]];
-      rom[prices + i] = invalid ? 0 : random ? random.nextInt(32) + 17 : 32;
+  for (const shop of rom.shops) {
+    if (shop.type === ShopType.PAWN) continue;
+    for (let i = 0, len = shop.prices.length; i < len; i++) {
+      if (shop.contents[i] < 0x80) {
+        shop.prices[i] = random ? random.nextNormal(1, 0.3, 0.5, 1.5) : 1;
+      } else if (shop.type !== ShopType.INN) {
+        shop.prices[i] = 0;
+      } else {
+        // just set the one price
+        shop.prices[i] = random ? random.nextNormal(1, 0.5, 0.375, 1.625) : 1;
+      }
     }
   }
 
-  // Set the inn prices, with a slightly wider variance [.375, 1.625)
-  for (let i = 0; i < SHOP_COUNT; i++) {
-    rom[INN_PRICES + i] = random ? random.nextInt(40) + 13 : 32;
+  // Also fill the scaling tables.
+  const diff = new Array(48).fill(0).map((x, i) => i);
+  // Tool shops scale as 2 ** (Diff / 10), store in 8ths
+  patchBytes(rom.prg, asm.expand('ToolShopScaling'),
+             diff.map(d => Math.round(8 * (2 ** (d / 10)))));
+  // Armor shops scale as 2 ** ((47 - Diff) / 12), store in 8ths
+  patchBytes(rom.prg, asm.expand('ArmorShopScaling'),
+             diff.map(d => Math.round(8 * (2 ** ((47 - d) / 12)))));
+
+  // Set the item base prices.
+  for (let i = 0x0d; i < 0x27; i++) {
+    rom.items[i].basePrice = BASE_PRICES[i];
   }
 
-  // Set the pawn shop base prices.
-  const setBasePrice = (id, price) => {
-    writeLittleEndian(rom, BASE_PRICE_TABLE + 2 * (id - 0xd), price);
-  }
-  for (let i = 0x0d; i < 0x27; i++) {
-    setBasePrice(i, BASE_PRICES[i]);
-  }
-  setBasePrice(0x27, BASE_INN_PRICE);
   // TODO - separate flag for rescaling monsters???
 };
 

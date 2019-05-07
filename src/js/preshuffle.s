@@ -127,21 +127,6 @@ ReadControllersWithDirections:
 DisplayNumber:
 
 
-;;; NOTE: This needs to be BEFORE shuffling items!
-;;;   - Once item shuffle can accept a parsed rom, we can do this
-;;;     to parsed BEFORE we shuffle items.
-;;; Zebu student (person 14) secondary item -> alarm flute
-.org $085f1
-  .byte $31
-
-
-;;; Alarm flute cannot be sold - set price to zero
-.ifndef _NORMALIZE_SHOP_PRICES
-.org $21f24
-  .byte 0,0
-.endif
-
-
 .bank $14000 $8000:$4000
 
 ;;; NOTE: there's space here, but we glob it into the space
@@ -225,23 +210,6 @@ PatchTradeInItem:
 .assert < $1cae3
 
 
-
-;;; change second flute of lime into herb, but then we don't use it anyway
-.org $1ddc1
-  .byte $1d
-
-;;; npcdata table for second flute of lime chest in waterfall cave
-.org $19b15
-  .byte $10 ; mirrored shield instead
-
-;;; tool shop item table for leaf - alarm flute
-.org $21e2b
-  .byte $21 ; fruit of power instead
-
-;;; tool shop item table for joel - alarm flute
-.org $21e43
-  .byte $1f ; lysis plant instead
-
 ;; Prevent soft-lock when encountering sabera and mado from reverse
 ;; Double-returns if the boss's sprite is not in the top quarter of
 ;; the screen. This is unused space at the end of the triggers.
@@ -282,120 +250,6 @@ CheckBelowBoss:
 
 ;;; Dialogs and Spawn Conditions
 
-
-;; Reorder Zebu cave dialog to spawn windmill guard first
-;; Alternatively: consider just having him always spawned?
-;; NOTE: this reordering requires adjusting the offset for
-;; the refresh give condition.
-.org $1d76c ; zebu dialog 10 cave
-  .byte $60,$3a,$00,$1a,$00 ; 03a NOT talked to zebu in cave -> 00:1a
-  .byte         $40,$3a     ;     Set: 03a talked to zebu in cave
-  .byte $00,$0d,$00,$1d,$00 ; 00d leaf villagers rescued -> 00:1d
-  .byte $00,$38,$00,$1c,$00 ; 038 leaf attacked -> 00:1c
-  .byte $00,$39,$00,$1d,$00 ; 039 learned refresh -> 00:1d
-  .byte $40,$0a,$18,$1b,$00 ; 00a windmill key used -> 00:1b (action 03)
-  .byte         $c0,$00     ;     Clear: 000 (set on item get instead)
-;;.byte         $40,$39     ;     Set: 039 learned refresh
-
-;; Give key to styx regardless of whether sword of thunder found
-;; Also don't duplicate-set 03b, it's already handled by ItemGet.
-.org $1d78e ; zebu dialog f2 shyron temple
-  .byte $60,$3b,$8a,$97,$22,$c0,$00  ; 03b NOT -> 14:17 (action 11)
-  .byte $00,$2d,$02,$c3,$22          ; 02d -> 16:03
-
-;; Move 'Shyron Massacre' trigger to the unused space in triggers
-;; 87 and 88 to get 2 extra bytes (leaves 8 more bytes in that spot).
-.org $1e17a      ; 80 shyron massacre
-  .byte $32,$a2  ; ($1e232)
-.org $1e232
-  .byte $20,$27  ; Condition: 027 NOT shyron massacre
-  .byte $00,$5f  ; Condition: 05f sword of thunder
-  .byte $80,$3b  ; Condition: 03b talked to zebu in shyron -> SLOT(key to styx)
-  .byte $03,$b3  ; Message: 1d:13
-  .byte $40,$27  ; Set: 027 shyron massacre
-.org $1e244
-
-;; Move 'Learn Barrier' trigger into 'Shyron Massacre' to get 2 extra
-;; bytes for the 'Calmed Sea' condition.
-.org $1e182      ; 84 learn barrier
-  .byte $00,$a2  ; ($1e200)
-.org $1e200
-  .byte $20,$51  ; Condition: 051 NOT learned barrier
-.ifdef _BARRIER_REQUIRES_CALM_SEA
-;; Specifically require having calmed the sea to learn barrier
-  .byte $80,$8f  ; Condition: 283 calmed angy sea (also 283)
-.else
-  .byte $a0,$00  ; Condition: 000 NOT false
-.endif
-  .byte $5b,$b2  ; Message: 1d:12  Action: 0b
-  .byte $40,$51  ; Set: 051 learned barrier
-.assert $1e208
-
-
-.org $1e192 ; 8c Leaf abduction
-  .word (Trigger_8c)
-.org $1e2b8 ; Unused trigger space
-;;; Add an extra check to ensure that we don't trigger the Leaf abduction until
-;;; after talking to Zebu in the cave (ensures everything in Leaf is gotten).
-Trigger_8c:
-  .byte $20,$38 ; Condition: 038 NOT leaf attacked
-  .byte $80,$3a ; Condition: 037 talked to zebu in cave (NEW)
-  .byte $00,$00
-  .byte $00,$85 ; Set: 085 leaf elder missing
-  .byte $00,$38 ; Set: 038 leaf attacked
-  .byte $40,$84 ; Set: 084 leaf villagers missing
-.assert < $1e2dc
-
-;; Windmill guard shouldn't despawn on massacre
-.org $1c7d6
-  .byte $00 ; no despawn at all
-
-;; Don't check unwritten 104 flag for mado spawn
-.org $1c93a
-  .byte $a0,$00
-
-;; Remove redundant dialog itemget flag sets
-.org $1cb67 ; sword of wind
-  .byte $c0,$00
-.org $1cde1 ; sword of fire
-  .byte $c0,$00
-.org $1ce0c ; insect flute
-  .byte $c0,$00
-.org $1d5db ; warrior ring
-  .byte $c0,$00
-.org $1d662 ; deo
-  .byte $c0,$00
-.org $1d6ee ; shield ring
-  .byte $c0,$00
-.org $1ccdf ; windmill key
-  .byte $c0,$00
-;.org $1d798 ; key to styx (zebu)
-;  .byte $c0,$00
-.org $1e208 ; key to styx (trigger)
-  .byte $a0,$00
-.org $1d3b4 ; eye glasses (clark)
-  .byte $a0,$00
-.org $1d852 ; kensu lighthouse
-  .byte $c0,$00
-
-; Move NpcDialog_2d to the unused space at 1d1fd..1f21b
-.org $1c9b7
-  .byte $fd,$91
-.org $1d1fd
-  .byte $80,$00,$00,$00
-  .byte $28,$00
-  .byte $73,$05
-  .byte $ff
-  ;; 00: 28 Mt Sabre North - Main
-  .byte $a0,$00,$08,$b0,$00 ; default -> 05:10 (action 01)
-  ;; 05: 73 Swan - Gate
-  .byte $40,$2a,$42,$75,$05 ; 02a change:soldier -> 13:15 (action 08)
-  .byte         $41,$0d     ;     Set: 10d
-  .byte $a0,$00,$0a,$74,$05 ; default -> 13:14 (action 01) -> @ 05
-.org $1d21b
-
-.org $1e34c ; trigger b3: despawn swan guards
-  .byte $81,$0d ; 10d talked to guards from other side -> despawn
 
 ;; NOTE: we could use 2 less bytes if necessary by moving a smaller
 ;; entry here that's otherwise adjacent to some free space.  Or
@@ -982,7 +836,9 @@ ToolShopScaling:
 ArmorShopScaling:
   .res SCALING_LEVELS, 0
 BasePrices:
-  .res 54, 0             ; 0 = $0d, 50 = $26, 51 = "$27" (inn)
+  .res 52, 0             ; 0 = $0d, 50 = $26, 51 = "$27" (inn)
+InnBasePrice:
+  .res 2, 0
 
 ;;; This is the space freed up by compressing the shop tables
 

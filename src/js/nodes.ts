@@ -3,7 +3,8 @@
 import {Bits} from './bits.js';
 import {Edge, Graph, Node, NodeId, SparseDependencyGraph, SparseRoute} from './graph.js';
 import {Random} from './random.js';
-import {FullRomImage, PrgImage} from './romimage.js';
+import {Rom} from './rom.js';
+import {hex} from './rom/util.js';
 
 // TODO - move the options into these nodes...?
 //  - then the Dt flag will determine whether to connect or not?
@@ -79,7 +80,7 @@ export class Slot extends Node {
               name: string,
               public item: ItemGet,
               index: number,
-              readonly slots: ((prg: PrgImage, slot: Slot) => void)[] = []) {
+              readonly slots: ((rom: Rom, slot: Slot) => void)[] = []) {
     super(graph, name);
     // Information about the slot itself
     this.slotName = name;
@@ -148,11 +149,14 @@ export class Slot extends Node {
     this.itemIndex = index;
   }
 
-  write(rom: PrgImage): void {
+  write(): void {
     if (!this.slots) return;
-    for (const slot of this.slots) {
-      // TODO - not clear where to write this.
-      slot(rom, this);
+    const rom = this.graph.rom;
+    if (rom) {
+      for (const slot of this.slots) {
+        // TODO - not clear where to write this.
+        slot(rom, this);
+      }
     }
   }
 
@@ -176,7 +180,7 @@ export class Slot extends Node {
   direct(address: number): this {
     // slot is usually 'this' for the Slot object that owns this.
     this.slots.push((rom, slot) => {
-      write(rom, address, slot.itemIndex);
+      write(rom.prg, address, slot.itemIndex);
       // console.log(`${this.name2}: ${addr.toString(16)} <- ${
       //              slot.index.toString(16).padStart(2,0)}`);
     });
@@ -185,106 +189,43 @@ export class Slot extends Node {
 
   npcSpawn(id: number, location?: number, offset: number = 0): this {
     this.slots.push((rom, slot) => {
-      let a = addr(rom, 0x1c5e0, 0x14000, id);
-      // console.log(`looking for npc spawn ${id.toString(16)} loc ${
-      //              (location||-1).toString(16)} => a=${a.toString(16)}`);
-      // Find the location
-      while (location != null && rom[a] !== location) {
-        a++;
-        while (!(rom[a] & 0x80)) {
-          a += 2;
-          checkBounds(a, rom, this.name2, location);
-        }
-        a += 2;
-        checkBounds(a, rom, this.name2, location);
-      }
-      a += 2 * offset + 1;
-      rom[a] &= ~1;
-      rom[a] |= 2;
-      write(rom, a + 1, slot.itemIndex);
-      // console.log(`${this.name2}: ${a.toString(16)} <- ${
-      //              rom[a].toString(16).padStart(2,0)} ${
-      //              rom[a+1].toString(16).padStart(2,0)}`);
+      const spawns = rom.npcs[id].spawnConditions;
+      if (location == null) location = getFirst(spawns.keys());
+      const spawn = spawns.get(location);
+      if (!spawn) throw new Error(`No spawn found for NPC $${hex(id)} @ $${hex(location)}`);
+      spawn[offset] = setItem(spawn[offset], slot); // 0x200 | slot.itemIndex;
     });
     return this;
   }
 
+  // TODO - better matching, e.g. which condition to replace?
+
   dialog(id: number,
          location?: number, offset: number = 0, result?: number): this {
     this.slots.push((rom, slot) => {
-      let a = addr(rom, 0x1c95d, 0x14000, id);
-      // console.log(`${this.name2}: ${id.toString(16)} dialog start ${
-      //              a.toString(16)}`);
-      // Skip the pre-location parts
-      while (!(rom[a] & 0x80)) {
-        a += 4;
-        checkBounds(a, rom, this.name2);
+      const allDialogs = rom.npcs[id].localDialogs;
+      if (location == null) location = getFirst(allDialogs.keys());
+      const dialogs = allDialogs.get(location);
+      if (!dialogs) throw new Error(`No dialog found for NPC $${hex(id)} @ $${hex(location)}`);
+      const dialog = dialogs[offset];
+      if (!dialog) throw new Error(`No such dialog ${offset}`);
+      if (result == null) {
+        dialog.condition = setItem(dialog.condition, slot); // 0x200 | slot.itemIndex;
+      } else {
+        dialog.flags[result] = setItem(dialog.flags[result], slot); // 0x200 | slot.itemIndex;
       }
-      a += 4;
-      // Now find the location
-      let next = 0;
-      while (rom[a] !== 0xff) {
-        if (location != null && rom[a] === location) next = rom[a + 1];
-        a += 2;
-        checkBounds(a, rom, location);
-      }
-      a += next + 1; // skip the ff
-      // console.log(`next=${next}`);
-      // Jump to the location
-      while (offset) {
-        if (rom[a] & 0x40) {
-          a += 5;
-          while (!(rom[a] & 0x40)) {
-            a += 2;
-            checkBounds(a, rom, this.name2);
-          }
-          a += 2;
-        } else {
-          a += 5;
-        }
-        --offset;
-      }
-      // Jump to the selected result if appropriate
-      if (result != null) {
-        a += 5;
-        while (result) {
-          a += 2;
-          --result;
-        }
-      }
-      // update condition
-      rom[a] &= ~1;
-      rom[a] |= 2;
-      // console.log(`${this.name2}: ${a.toString(16)} <- ${
-      //              rom[a].toString(16).padStart(2,0)} ${
-      //              rom[a+1].toString(16).padStart(2,0)}`);
-      write(rom, a + 1, slot.itemIndex);
     });
     return this;
   }
 
   trigger(id: number, offset: number = 0, result?: number): this {
     this.slots.push((rom, slot) => {
-      let a = addr(rom, 0x1e17a, 0x14000, id & 0x7f);
-
+      const trigger = rom.triggers[id & 0x7f];
       if (result == null) {
-        // Find the appropriate condition
-        a += 2 * offset;
+        trigger.conditions[offset] = setItem(trigger.conditions[offset], slot);
       } else {
-        while (!(rom[a] & 0x80)) {
-          a += 2;
-          checkBounds(a, rom, this.name2);
-        }
-        a += 4; // skip the message, too
-        a += 2 * result;
+        trigger.flags[result] = setItem(trigger.flags[result], slot);
       }
-      // update condition
-      rom[a] &= ~1;
-      rom[a] |= 2;
-      write(rom, a + 1, slot.itemIndex);
-      // console.log(`${this.name2}: ${a.toString(16)} <- ${
-      //              rom[a].toString(16).padStart(2,0)} ${
-      //              rom[a+1].toString(16).padStart(2,0)}`);
     });
     return this;
   }
@@ -316,16 +257,21 @@ export class Chest extends Slot {
   objectSlot(loc: number, spawnSlot: number) {
     this.spawnSlot = spawnSlot;
     this.slots.push((rom, slot) => {
-      const base = addr(rom, 0x19201, 0x10000, loc);
-      const a = base + 4 * (spawnSlot - 0x0b);
+      const location = rom.locations[loc];
+      if (!location || !location.used) throw new Error(`No such location: $${hex(loc)}`);
+      const spawn = location.spawns[spawnSlot - 0x0d];
+      if (!spawn || !spawn.isChest()) {
+        throw new Error(`No chest $${hex(spawnSlot)} on $${hex(loc)}`);
+      }
       if (slot.itemIndex >= 0x70) {
         // mimics respawn on a timer
-        rom[a - 1] |= 0x80;
+        spawn.timed = true;
+        spawn.id = 0x70;
       } else {
         // non-mimics should spawn once on load
-        rom[a - 1] &= 0x7f;
+        spawn.timed = false;
+        spawn.id = slot.itemIndex;
       }
-      write(rom, a, Math.min(0x70, slot.itemIndex));
     });
     return this;
   }
@@ -335,11 +281,6 @@ export class Chest extends Slot {
     return this.direct(address);
   }
 }
-
-const addr =
-    (rom: PrgImage, base: number, offset: number, index: number) =>
-        (/*console.log(`pointer = ${(base + 2 * index).toString(16)}`),*/
-         rom[base + 2 * index] | rom[base + 2 * index + 1] << 8) + offset;
 
 type InventoryRow = 'armor' | 'consumable' | 'unique';
 
@@ -368,17 +309,13 @@ export class ItemGet extends Node {
 
   bossDrop(name: string, bossId: number, itemGetIndex: number = this.id): BossDrop {
     return new BossDrop(this.graph, name, this, itemGetIndex, [(rom, slot) => {
-      const a = addr(rom, 0x1f96b, 0x14000, bossId) + 4;
-      write(rom, a, slot.itemIndex);
-      // console.log(`${this.name == slot.name ? this.name : `${slot.name} (${
-      //              this.name})`}: ${a.toString(16)} <- ${
-      //              slot.index.toString(16).padStart(2,0)}`);
+      rom.bossKills[bossId].itemDrop = slot.itemIndex;
     }]);
   }
 
   direct(name: string, a: number): Slot {
     return new Slot(this.graph, name, this, this.id, [(rom, slot) => {
-      write(rom, a, slot.itemIndex);
+      write(rom.prg, a, slot.itemIndex);
       // console.log(`${this.name == slot.name ? this.name : `${slot.name} (${
       //              this.name})`}: ${a.toString(16)} <- ${
       //              slot.index.toString(16).padStart(2,0)}`);
@@ -674,43 +611,27 @@ export class Location extends Node {
     return lines.join('\\n');
   }
 
-  write(rom: PrgImage): void {
+  write(): void {
     if (!this.sells.length) return;
-    const isArmor = this.sells[0].inventoryRow === 'armor';
-    // look up shop index in table
-    const LOCS = 0x21f54;
-    const INDS = 0x21f75;
-    let index = 0;
-    for (let i = LOCS; i < INDS; i++) {
-      if (rom[i] === this.id) {
-        index = rom[i + INDS - LOCS];
-        break;
-      }
-    }
-    const address = (isArmor ? 0x21da4 : 0x21e28) + (index << 2);
-    for (let i = 0; i < 4; i++) {
-      rom[address + i] = this.sells[i] ? this.sells[i].id : 0xff;
-      if (!rom[address + i]) {
-        console.error(`uh oh: ${this.sells[i].id} => ${this.sells[i]}`);
+    // Write shop contents, ignore prices for now.
+    // Later maybe have mode for shuffle but not renormalize?
+    const rom = this.graph.rom;
+    if (!rom) throw new Error(`Cannot write without a rom`);
+    for (const shop of rom.shops) {
+      if (shop.location === this.id) {
+        for (let i = 0; i < 4; i++) {
+          shop.contents[i] = this.sells[i] ? this.sells[i].id : 0xff;
+        }
       }
     }
   }
 }
 
-const checkBounds = (a: number, rom: Uint8Array, ...data: unknown[]) => {
-  if (a > rom.length) {
-    throw new Error(
-        'never found: ' + data.map(x => typeof x === 'number' ?
-                                   x.toString(16) : x).join(' '));
-  }
-};
-
 export class WorldGraph extends Graph {
 
-  write(rom: FullRomImage) {
-    const prg = PrgImage.of(rom);
+  write() {
     for (const n of this.nodes) {
-      n.write(prg);
+      n.write();
     }
   }
 
@@ -1323,3 +1244,12 @@ const write = (rom: Uint8Array, address: number, value: number) => {
 //   }
 
 // }
+
+function getFirst<T>(iter: Iterable<T>): T {
+  for (const i of iter) return i;
+  throw new Error('Empty iterable');
+}
+
+function setItem(flag: number, slot: Slot): number {
+  return flag < 0 ? ~(0x200 | slot.itemIndex) : 0x200 | slot.itemIndex;
+}

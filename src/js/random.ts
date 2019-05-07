@@ -15,10 +15,16 @@ const RNMX = 1 - EPS;
 
 export class Random {
 
+  // Returns a new seed at random, using the system PRNG.
+  static newSeed(): number {
+    return Math.floor(Math.random() * 0x100000000);
+  }
+
   private idum: number = 0;
   private idum2: number = 0;
   private iy: number = 0;
   private iv: number[] = [];
+  private z1: number | null = null; // extra normal deviate
 
   constructor(seed: number = Math.floor(Math.random() * 0x100000000)) {
     this.seed(seed);
@@ -56,6 +62,25 @@ export class Random {
     return Math.floor(this.next() * n);
   }
 
+  nextNormal(mean: number = 0,
+             stdev: number = 1,
+             min: number = -Infinity,
+             max: number = Infinity) {
+    while (true) {
+      let z = this.z1;
+      if (z == null) {
+        const r = Math.sqrt(-2 * Math.log(this.next()));
+        const theta = TWOPI * this.next();
+        z = r * Math.cos(theta);
+        this.z1 = r * Math.sin(theta);
+      } else {
+        this.z1 = null;
+      }
+      z = mean + z * stdev;
+      if (z >= min && z <= max) return z;
+    }
+  }
+
   shuffle<T>(array: T[]): T[] {
     for (let i = array.length; i;) {
       const j = this.nextInt(i--);
@@ -64,6 +89,8 @@ export class Random {
     return array;
   }
 }
+
+const TWOPI = 2 * Math.PI;
 
 // // Provide a static singleton instance.
 // let random = (() => {

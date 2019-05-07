@@ -1,4 +1,5 @@
 import {AdHocSpawn} from './rom/adhocspawn.js';
+import {BossKill} from './rom/bosskill.js';
 import {Hitbox} from './rom/hitbox.js';
 import {Item} from './rom/item.js';
 import {ItemGet} from './rom/itemget.js';
@@ -65,6 +66,7 @@ export class Rom {
   readonly items: Item[];
   readonly shops: Shop[];
   readonly npcs: Npc[];
+  readonly bossKills: BossKill[];
 
   readonly messages: Messages;
 
@@ -135,6 +137,12 @@ export class Rom {
     this.items = seq(0x49, i => new Item(this, i));
     this.shops = seq(44, i => new Shop(this, i)); // NOTE: depends on locations and objects
     this.npcs = seq(0xcd, i => new Npc(this, i));
+    this.bossKills = seq(0xe, i => new BossKill(this, i));
+  }
+
+  trigger(id: number): Trigger {
+    if (id < 0x80 || id > 0xff) throw new Error(`Bad trigger id $${hex(id)}`);
+    return this.triggers[id & 0x7f];
   }
 
   // TODO - cross-reference monsters/metasprites/metatiles/screens with patterns/palettes

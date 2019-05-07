@@ -251,105 +251,14 @@ CheckBelowBoss:
 ;;; Dialogs and Spawn Conditions
 
 
-;; NOTE: we could use 2 less bytes if necessary by moving a smaller
-;; entry here that's otherwise adjacent to some free space.  Or
-;; just defrag that table.
-.org $1db06
-  .byte $79,$8f ; ItemGetData_03 pointer
-.org $1cf79 ; space freed by moving Dialog_2d
-ItemGetData_03: ; sword of thunder
-  .byte $03,$80 ; slot
-  .byte $08,$00 ; action 01 -> teleport to shyron
-.ifdef _TELEPORT_ON_THUNDER_SWORD
-  .byte $02,$fd ; Set: 2fd warp:shyron
-.endif
-  .byte $40,$5f ; Set: 05f chest:03:sword of thunder
-  .byte $ff
-  ; 15 bytes still available
-.assert < $1cf91
-
-
-;; queen will try to give flute of lime even if got sword first
-.org $1cfab ; queen "you found sword of water" message action
-  .byte $19 ; add action 03
-;.org $3d1f5 ; call to WaitForDialogToBeDismissed
-;  jsr PatchAsinaReveal
-
-;; remove the 092 case for queen dialog, since it fails to set 09c
-;; TODO - once we defrag dialog, re-add this, with a 09c flag set.
-.org $1cfb3
-  .byte $00
-
-;; asina will also give flute of lime if queen never did (after recover)
-.org $098f9
-  .byte $28 ; asina persondata[1] -> flute of lime
-.org $1d80a
-  .byte $89 ; asina love pendant dialog -> give second item
-.org $1d816
-  .byte $89 ; asina default dialog -> give second item
-
-
-
-
 ;; If LookingAt is $1f and the item goes into the $20 row then we can't
 ;; just reject - instead, add the item to an overflow chest.
 ;; We use the bytes at 64b8..64bf to store the overflow.
-
-;; asina reveal depends on mesia recording (01b), not ball of water (01f)
-;; - this ensures you have both sword and ball to get to her --> ???
-.org $1c815 ; throne room back door guard spawn condition
-  .byte $20,$20,$a0,$1b,$ff ; leave two bytes unused
-.assert < $1c81b
-
-.org $1c81f
-  .byte $1b
-.org $1c822
-  .byte $1b
-.org $1c82a
-  .byte $1b
-.org $1cf9c
-  .byte $1b
-.org $1d047
-  .byte $1b
-.org $1e389
-  .byte $1b
-
 
 
 
 ;;; NPC Despawn triggers
 
-;; bow of truth - remove extra itemget flags
-.org $1d8dc ;; Azteca dialog
-  .byte $80,$00,$c0,$00
-
-;; refresh triggers
-;.org $1d780
-;  .byte $c0,$00
-.org $1e358
-  .byte $c0,$00
-
-;; paralysis triggers
-.org $1e34a
-  .byte $c0,$00
-
-;; teleport triggers
-.org $1d7d0
-  .byte $c0,$00
-
-;; barrier triggers - the following don't disappear after barrier
-.org $1c7e2
-  .byte $20,$00 ; akahana (unstoned) in cave
-.org $1c7ef
-  .byte $a0,$00 ; akahana stoned
-.org $1c886
-  .byte $a0,$00 ; zebu
-.org $1c898
-  .byte $a0,$00 ; tornel
-.org $1c8ac
-  .byte $a0,$00 ; stom
-.org $1e222
-  .byte $c0,$00 ; trigger set flag
 
 ;; asina does not disappear after defeating sabera
 .org $1c8b9
@@ -399,20 +308,6 @@ ItemGetData_03: ; sword of thunder
   .byte $20,$8b,$01,$26,$00
   .byte $00,$21,$01,$25,$00
   .byte $a0,$00,$01,$24,$00
-.endif
-
-
-.ifdef _TELEPORT_ON_THUNDER_SWORD
-;; This is the alternative to noTeleportOnThunderSword - if we teleport then
-;; we need a way back to leaf just in case, so have Asina in Shyron act as a
-;; teleport point back to the start.  Add an extra dialog followup for asina
-;; to conditionally use to warp back to leaf from shyron
-.org $1d81b
-  .byte $fa ; 03b -> action 1f
-.org $1d820
-  .byte $fa ; 03b -> action 1f
-.org $1d82c
-  .byte $fa ; default -> action 1f
 .endif
 
 
@@ -1381,7 +1276,7 @@ CheckSwordCollisionPlane:
 
 .ifdef _NERF_WILD_WARP
 .org $3cbec
-  .byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+  .res 16, 0
 .endif
 
 .ifdef _TELEPORT_ON_THUNDER_SWORD
@@ -1422,13 +1317,6 @@ GrantItemInRegisterA:
   jmp FinishTriggerSquare
 .assert $3d552
 
-
-
-.ifndef _TELEPORT_ON_THUNDER_SWORD
-;;; Prevent the teleport-to-shyron sequence upon getting thunder sword.
-.org $3d565
-  .word ($d78c)
-.endif
 
 .org $3d91f
   jsr PostInventoryMenu

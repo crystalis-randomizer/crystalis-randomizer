@@ -115,6 +115,11 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
 
   // TODO - consider making a Transformation interface, with ordering checks
   alarmFluteIsKeyItem(parsed); // NOTE: pre-shuffle
+  if (flags.teleportOnThunderSword()) {
+    teleportOnThunderSword(parsed);
+  } else {
+    noTeleportOnThunderSword(parsed);
+  }
 
   parsed.scalingLevels = 48;
   parsed.uniqueItemTableAddress = asm.expand('KeyItemData');
@@ -380,12 +385,37 @@ const preventNpcDespawns = (rom, flags) => {
   // Akahana ($16) ~ shield ring redundant flag
   rom.npcs[0x16].localDialogs.get(0x57)[0].flags = [];
   rom.npcs[0x88].localDialogs.get(0x57)[0].flags = []; // NOTE: need to keep these in sync
+  // Don't disappear after getting barrier
+  rom.npcs[0x16].spawnConditions.get(0x57).shift(); // remove 051 NOT learned barrier
+  rom.npcs[0x88].spawnConditions.get(0x57).pop(); // remove 051 NOT learned barrier
 
   // Oak elder ($1d) ~ sword of fire redundant flag
   rom.npcs[0x1d].localDialogs.get(-1)[4].flags = [];
 
   // Oak mother ($1e) ~ insect flute redundant flag
   rom.npcs[0x1e].localDialogs.get(-1)[2].flags = [];
+
+  // Throne room back door guard ($33 @ $df) should have same spawn condition as queen
+  // (020 NOT queen not in throne room AND 01b NOT viewed mesia recording)
+  rom.npcs[0x33].spawnConditions.set(0xdf) = [~0x020, ~0x01b];
+
+  // Front palace guard ($34) vacation message keys off 01b instead of 01f
+  rom.npcs[0x34].localDialogs.get(-1)[1].condition = 0x01b;
+
+  // Queen's ($38) dialog needs quite a bit of work
+  const queen = rom.npcs[0x38];
+  const queenDialog = queen.localDialogs.get(-1);
+  // Give item (flute of lime) even if got the sword of water
+  queenDialog[3].message.action = 0x03; // "you found sword" => action 3
+  queenDialog[4].flags.push(0x09c);     // set 09c queen going away
+  // Queen spawn condition depends on 01b (mesia recording) not 01f (ball of water)
+  // This ensures you have both sword and ball to get to her (???)
+  queen.spawnConditions.get(0xdf)[1] = ~0x01b;  // throne room: 01b NOT mesia recording
+  queen.spawnConditions.get(0xe1)[0] = 0x01b;   // back room: 01b mesia recording
+  queenDialog[1].condition = 0x01b;     // reveal condition: 01b mesia recording
+
+  // Fortune teller ($39) should also not spawn based on mesia recording rather than orb
+  rom.npcs[0x39].spawnConditions.get(0xd8)[1] = ~0x01b;  // fortune teller room: 01b NOT
 
   // Clark ($44) moves after talking to him (08d) rather than calming sea (08f).
   // TODO - change 08d to whatever actual item he gives, then remove both flags
@@ -408,10 +438,30 @@ const preventNpcDespawns = (rom, flags) => {
     LocalDialog.of( 0x00a, [0x00, 0x1b, 0x03]), // 00a windmill key used -> teach refresh
     LocalDialog.of(~0x000, [0x00, 0x1d]),
   ]);
+  // Don't despawn on getting barrier
+  rom.npcs[0x5e].spawnConditions.get(0x10).pop(); // remove 051 NOT learned barrier
+
+  // Tornel ($5f) in sabre west ($21) ~ teleport redundant flag
+  rom.npcs[0x5f].localDialogs.get(0x21)[1].flags = [];
+  // Don't despawn on getting barrier
+  rom.npcs[0x5f].spawnConditions.delete(0x21); // remove 051 NOT learned barrier
+
+  // Sto ($60): don't despawn on getting barrier
+  rom.npcs[0x60].spawnConditions.delete(0x1e); // remove 051 NOT learned barrier
+
+  // Asina ($62) in back room ($e1) gives flute of lime
+  const asina = rom.npcs[0x62];
+  asina.data[1] = 0x28;
+  asina.localDialogs.get(0xe1)[0].message.action = 0x11;
+  asina.localDialogs.get(0xe1)[2].message.action = 0x11;
 
   // Kensu in lighthouse ($74/$7e @ $62) ~ pendant redundant flag
   rom.npcs[0x74].localDialogs.get(0x62)[0].flags = [];
   rom.npcs[0x7e].localDialogs.get(0x62)[0].flags = [];
+
+  // Azteca ($83) in pyramid ~ bow of truth redundant flag
+  rom.npcs[0x83].localDialogs.get(-1)[0].condition = ~0x240;  // 240 NOT bow of truth
+  rom.npcs[0x83].localDialogs.get(-1)[0].flags = [];
 
   // Remove useless spawn condition from Mado 1
   rom.npcs[0xc4].spawnConditions.delete(0xf2); // always spawn
@@ -437,16 +487,42 @@ const preventNpcDespawns = (rom, flags) => {
     rom.trigger(0x84).conditions.push(0x283); // 283 calmed the sea
     // TODO - consider not setting 051 and changing the condition to match the item
   }
+  rom.trigger(0x84).flags = [];
 
   // Add an extra condition to the Leaf abduction trigger (behind zebu).  This ensures
   // all the items in Leaf proper (elder and student) are gotten before they disappear.
   rom.trigger(0x8c).conditions.push(0x037); // 03a talked to zebu in cave
 
- 
+  // Paralysis trigger ($b2) ~ remove redundant itemget flag
+  rom.trigger(0xb2).conditions[1] = ~0x242;
+  rom.trigger(0xb2).flags.shift(); // remove 037 learned paralysis
+
+  // Learn refresh trigger ($b4) ~ remove redundant itemget flag
+  rom.trigger(0xb4).conditions[1] = ~0x241;
+  rom.trigger(0xb4).flags = []; // remove 039 learned refresh
+
+  // Portoa palace guard movement trigger ($bb) stops on 01b (mesia) not 01f (orb)
+  rom.trigger(0xbb).conditions[1] = ~0x01b;
 
   // TODO - zebu cave dialog, windmill spawn, etc
-
   
+};
+
+const teleportOnThunderSword = (rom) => {
+  // itemget 03 sword of thunder => set 2fd shyron warp point
+  rom.itemGets[0x03].flags.push(0x2fd);
+  // dialog 62 asina in f2/f4 shyron -> action 1f (teleport to start)
+  //   - note: f2 and f4 dialogs are linked.
+  for (const i of [0, 1, 3]) {
+    for (const loc of [0xf2, 0xf4]) {
+      rom.npcs[0x62].localDialogs.get(loc)[i].message.action = 0x1f;
+    }
+  }
+};
+
+const noTeleportOnThunderSword = (rom) => {
+  // Change sword of thunder's action to bbe the same as other swords (16)
+  rom.itemget[0x03].acquisitionAction.action = 0x16;
 };
 
 // Add the statue of onyx and possibly the teleport block trigger to Cordel West

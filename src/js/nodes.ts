@@ -187,6 +187,13 @@ export class Slot extends Node {
     return this;
   }
 
+  fromPerson(name: string, personId: number, offset: number = 0): this {
+    this.slots.push((rom, slot) => {
+      rom.npcs[personId].data[offset] = slot.itemIndex;
+    });
+    return this;
+  }
+
   npcSpawn(id: number, location?: number, offset: number = 0): this {
     this.slots.push((rom, slot) => {
       const spawns = rom.npcs[id].spawnConditions;
@@ -304,7 +311,9 @@ export class ItemGet extends Node {
   }
 
   fromPerson(name: string, personId: number, offset: number = 0): Slot {
-    return this.direct(name, 0x80f0 | (personId & ~3) << 6 | (personId & 3) << 2 | offset);
+    return new Slot(this.graph, name, this, this.id, [(rom, slot) => {
+      rom.npcs[personId].data[offset] = slot.itemIndex;
+    }]);
   }
 
   bossDrop(name: string, bossId: number, itemGetIndex: number = this.id): BossDrop {

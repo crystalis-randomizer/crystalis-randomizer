@@ -276,10 +276,8 @@ export const generate = (flags: FlagSet = new FlagSet(), rom?: Rom): WorldGraph 
                                   .key();
   const fluteOfLime           = item(0x28, 'Flute of Lime')
                                   .fromPerson('Portoa queen', 0x38)
-                                  .direct(0x98f9) // persondata 62 +1
-                                  // .direct(0x3fa28) // mesia version
+                                  .fromPerson('Asina secondary', 0x62, 1)
                                   .dialog(0x38, undefined, 4)
-                                  // .dialog(0x38, undefined, 5, 0) // eats item
                                   .key();
   const gasMask               = item(0x29, 'Gas Mask')
                                   .direct('Akahana in Brynmaer', 0x3d7fe)

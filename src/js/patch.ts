@@ -403,21 +403,26 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   const oakElderDialog = rom.npcs[0x1d].localDialogs.get(-1)!;
   oakElderDialog[4].flags = [];
   // Make sure that we try to give the item from *all* post-insect dialogs
+  oakElderDialog[0].message.action = 0x03;
+  oakElderDialog[1].message.action = 0x03;
+  oakElderDialog[2].message.action = 0x03;
+  oakElderDialog[3].message.action = 0x03;
   reverseDialog(oakElderDialog);
-  // oakElderDialog[0].message.action = 0x03;
-  // oakElderDialog[1].message.action = 0x03;
-  // oakElderDialog[2].message.action = 0x03;
-  // oakElderDialog[3].message.action = 0x03;
 
   // Oak mother ($1e) ~ insect flute redundant flag
   // TODO - rearrange these flags a bit (maybe ~045, ~0a0 ~041 - so reverse)
   //      - will need to change ballOfFire and insectFlute in depgraph
   const oakMotherDialog = rom.npcs[0x1e].localDialogs.get(-1)!;
   oakMotherDialog[2].flags = [];
-  reverseDialog(oakMotherDialog);
   // Ensure we always give item after insect
-  // oakMotherDialog[0].message.action = 0x03;
-  // oakMotherDialog[1].message.action = 0x03;
+  oakMotherDialog[0].message.action = 0x03;
+  oakMotherDialog[1].message.action = 0x03;
+  reverseDialog(oakMotherDialog);
+
+  // Reverse the other oak dialogs, too.
+  for (const i of [0x20, 0x21, 0x22, 0x7c, 0x7d]) {
+    reverseDialog(rom.npcs[i].localDialogs.get(-1)!);
+  }
 
   // Throne room back door guard ($33 @ $df) should have same spawn condition as queen
   // (020 NOT queen not in throne room AND 01b NOT viewed mesia recording)

@@ -342,7 +342,7 @@ export const generate = (flags: FlagSet = new FlagSet(), rom?: Rom): WorldGraph 
                                   .npcSpawn(0x7f, 0x65) // sabera
                                   .npcSpawn(0x46)
                                   .npcSpawn(0x47)
-                                  .npcSpawn(0x6a)
+                                  // .npcSpawn(0x6a) // unused
                                   .npcSpawn(0x84)
                                   .npcSpawn(0x8e)
                                   .dialog(0x3d)
@@ -2012,7 +2012,10 @@ export const shuffle3 = async (graph: WorldGraph,
                                progress?: ProgressTracker) => {
   const stats = log && log.stats;
   const slots: Slot[] = graph.nodes.filter(s => s instanceof Slot && s.slots && !s.isFixed()) as Slot[];
-  const allItems = new Map<Slot, [ItemGet, number]>(random.shuffle(slots.map((s: Slot) => [s, [s.item, s.itemIndex]])));
+  const allItems =
+          new Map<Slot, [ItemGet, number]>(
+              random.shuffle(slots.map((s: Slot) =>
+                                       [s, [s.item, s.itemIndex]] as [Slot, [ItemGet, number]])));
   const allSlots = new Set<Slot>(random.shuffle(slots));
   const itemToSlot = new Map<ItemGet, Slot>();
   const slotType = (slot: Slot): string => slot.slotType ? slot.slotType[0] : 'c';

@@ -307,6 +307,7 @@ export class Rom {
     writeAll(this.adHocSpawns);
     writeAll(this.itemGets);
     writeAll(this.items);
+    writeAll(this.shops);
     promises.push(writer.commit());
     await Promise.all(promises).then(() => undefined);
   }

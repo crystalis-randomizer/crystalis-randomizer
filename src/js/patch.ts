@@ -1,14 +1,14 @@
-import {Assembler, assemble, buildRomPatch} from './6502.js';
+import {Assembler} from './6502.js';
+import {crc32} from './crc32.js';
+import {LogType, ProgressTracker, shuffle2 as shuffleDepgraph} from './depgraph.js';
+import {FetchReader} from './fetchreader.js';
+import {FlagSet} from './flagset.js';
+import {Random} from './random.js';
+import {Rom} from './rom.js';
 import {Entrance, Exit, Flag, Location, Spawn} from './rom/location.js';
-import {GlobalDialog, LocalDialog} from './rom/npc.js';
+import {LocalDialog} from './rom/npc.js';
 import {ShopType} from './rom/shop.js';
 import {writeLittleEndian} from './rom/util.js';
-import {Rom} from './rom.js';
-import {Random} from './random.js';
-import {shuffle2 as shuffleDepgraph, ProgressTracker, LogType} from './depgraph.js';
-import {crc32} from './crc32.js';
-import {FlagSet} from './flagset.js';
-import {FetchReader} from './fetchreader.js';
 import * as version from './version.js';
 
 // TODO - to shuffle the monsters, we need to find the sprite palttes and
@@ -23,28 +23,28 @@ export default ({
   async apply(rom: Uint8Array, hash: {[key: string]: unknown}, path: string): Promise<void> {
     // Look for flag string and hash
     let flags;
-    if (!hash['seed']) {
+    if (!hash.seed) {
       // TODO - send in a hash object with get/set methods
-      hash['seed'] = parseSeed('').toString(16);
-      window.location.hash += '&seed=' + hash['seed'];
+      hash.seed = parseSeed('').toString(16);
+      window.location.hash += '&seed=' + hash.seed;
     }
-    if (hash['flags']) {
-      flags = new FlagSet(String(hash['flags']));
+    if (hash.flags) {
+      flags = new FlagSet(String(hash.flags));
     } else {
       flags = new FlagSet('Em Gt Mr Rlpt Sbk Sct Sm Tasd');
     }
     for (const key in hash) {
       if (hash[key] === 'false') hash[key] = false;
     }
-    await shuffle(rom, parseSeed(String(hash['seed'])), flags, new FetchReader(path));
-  }
+    await shuffle(rom, parseSeed(String(hash.seed)), flags, new FetchReader(path));
+  },
 });
 
 export const parseSeed = (seed: string): number => {
   if (!seed) return Random.newSeed();
   if (/^[0-9a-f]{1,8}$/i.test(seed)) return Number.parseInt(seed, 16);
   return crc32(seed);
-}
+};
 
 /**
  * Abstract out File I/O.  Node and browser will have completely
@@ -82,8 +82,8 @@ export const shuffle = async (rom: Uint8Array,
     _FIX_SHAKING: true,
     _FIX_VAMPIRE: true,
     _LEATHER_BOOTS_GIVE_SPEED: flags.leatherBootsGiveSpeed(),
-    _NERF_WILD_WARP: flags.nerfWildWarp(),
     _NERF_FLIGHT: true,
+    _NERF_WILD_WARP: flags.nerfWildWarp(),
     _NEVER_DIE: flags.neverDie(),
     _NORMALIZE_SHOP_PRICES: touchShops,
     _PITY_HP_AND_MP: true,
@@ -112,6 +112,8 @@ export const shuffle = async (rom: Uint8Array,
   // Parse the rom and apply other patches - note: must have shuffled
   // the depgraph FIRST!
   const parsed = new Rom(rom);
+
+  await assemble('shops.s');
 
   // TODO - consider making a Transformation interface, with ordering checks
   alarmFluteIsKeyItem(parsed); // NOTE: pre-shuffle
@@ -199,7 +201,6 @@ const postParsedShuffle = async (rom: Uint8Array,
   // return log.join('\n');
 };
 
-
 const misc = (rom: Rom, flags: FlagSet) => {
 
 };
@@ -257,7 +258,7 @@ const closeCaveEntrances = (rom: Rom, flags: FlagSet) => {
 
   const replaceFlag = (loc: number, yx: number, flag: number) => {
     for (const f of rom.locations[loc].flags) {
-      if (f.yx == yx) {
+      if (f.yx === yx) {
         f.flag = flag;
         return;
       }
@@ -280,7 +281,7 @@ const closeCaveEntrances = (rom: Rom, flags: FlagSet) => {
     rom.locations[0x40].spawns.push(keyTrigger);
   }
 
-  //rom.locations[0x14].tileEffects = 0xb3;
+  // rom.locations[0x14].tileEffects = 0xb3;
 
   // d7 for 3?
 
@@ -365,75 +366,74 @@ const reversibleSwanGate = (rom: Rom) => {
     // NOTE: Soldiers must come in pairs (with index ^1 from each other)
     Spawn.of({xt: 0x0a, yt: 0x02, type: 1, id: 0x2d}), // new soldier
     Spawn.of({xt: 0x0b, yt: 0x02, type: 1, id: 0x2d}), // new soldier
-    Spawn.of({xt: 0x0e, yt: 0x0a, type: 2, id: 0xb3})  // new trigger: erase guards
+    Spawn.of({xt: 0x0e, yt: 0x0a, type: 2, id: 0xb3}), // new trigger: erase guards
   );
 
   // Guards ($2d) at swan gate ($73) ~ set 10d after opening gate => condition for despawn
-  rom.npcs[0x2d].localDialogs.get(0x73)[0].flags.push(0x10d);
+  rom.npcs[0x2d].localDialogs.get(0x73)![0].flags.push(0x10d);
 
   // Despawn guard trigger requires 10d
   rom.trigger(0xb3).conditions.push(0x10d);
 };
 
 const fixQueenDialog = (rom: Rom) => {
-  
 
 };
 
 const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   // Leaf elder in house ($0d @ $c0) ~ sword of wind redundant flag
-  rom.npcs[0x0d].localDialogs.get(0xc0)[2].flags = [];
+  rom.npcs[0x0d].localDialogs.get(0xc0)![2].flags = [];
 
   // Windmill guard ($14 @ $0e) shouldn't despawn after abduction
-  rom.npcs[0x14].spawnConditions.get(0x0e).pop(); // remove condition 038 NOT leaf attacked
-  rom.npcs[0x14].localDialogs.get(0x0e)[0].flags = []; // remove redundant flag ~ windmill key
+  rom.npcs[0x14].spawnConditions.get(0x0e)!.pop(); // remove condition 038 NOT leaf attacked
+  rom.npcs[0x14].localDialogs.get(0x0e)![0].flags = []; // remove redundant flag ~ windmill key
 
   // Akahana ($16) ~ shield ring redundant flag
-  rom.npcs[0x16].localDialogs.get(0x57)[0].flags = [];
-  rom.npcs[0x88].localDialogs.get(0x57)[0].flags = []; // NOTE: need to keep these in sync
+  rom.npcs[0x16].localDialogs.get(0x57)![0].flags = [];
+  rom.npcs[0x88].localDialogs.get(0x57)![0].flags = []; // NOTE: need to keep these in sync
   // Don't disappear after getting barrier
-  rom.npcs[0x16].spawnConditions.get(0x57).shift(); // remove 051 NOT learned barrier
-  rom.npcs[0x88].spawnConditions.get(0x57).pop(); // remove 051 NOT learned barrier
+  rom.npcs[0x16].spawnConditions.get(0x57)!.shift(); // remove 051 NOT learned barrier
+  rom.npcs[0x88].spawnConditions.get(0x57)!.pop(); // remove 051 NOT learned barrier
 
   // Oak elder ($1d) ~ sword of fire redundant flag
-  rom.npcs[0x1d].localDialogs.get(-1)[4].flags = [];
+  rom.npcs[0x1d].localDialogs.get(-1)![4].flags = [];
 
   // Oak mother ($1e) ~ insect flute redundant flag
-  rom.npcs[0x1e].localDialogs.get(-1)[2].flags = [];
+  rom.npcs[0x1e].localDialogs.get(-1)![2].flags = [];
 
   // Throne room back door guard ($33 @ $df) should have same spawn condition as queen
   // (020 NOT queen not in throne room AND 01b NOT viewed mesia recording)
-  rom.npcs[0x33].spawnConditions.set(0xdf) = [~0x020, ~0x01b];
+  rom.npcs[0x33].spawnConditions.set(0xdf,  [~0x020, ~0x01b]);
 
   // Front palace guard ($34) vacation message keys off 01b instead of 01f
-  rom.npcs[0x34].localDialogs.get(-1)[1].condition = 0x01b;
+  rom.npcs[0x34].localDialogs.get(-1)![1].condition = 0x01b;
 
   // Queen's ($38) dialog needs quite a bit of work
   const queen = rom.npcs[0x38];
-  const queenDialog = queen.localDialogs.get(-1);
+  const queenDialog = queen.localDialogs.get(-1)!;
   // Give item (flute of lime) even if got the sword of water
   queenDialog[3].message.action = 0x03; // "you found sword" => action 3
   queenDialog[4].flags.push(0x09c);     // set 09c queen going away
   // Queen spawn condition depends on 01b (mesia recording) not 01f (ball of water)
   // This ensures you have both sword and ball to get to her (???)
-  queen.spawnConditions.get(0xdf)[1] = ~0x01b;  // throne room: 01b NOT mesia recording
-  queen.spawnConditions.get(0xe1)[0] = 0x01b;   // back room: 01b mesia recording
+  queen.spawnConditions.get(0xdf)![1] = ~0x01b;  // throne room: 01b NOT mesia recording
+  queen.spawnConditions.get(0xe1)![0] = 0x01b;   // back room: 01b mesia recording
   queenDialog[1].condition = 0x01b;     // reveal condition: 01b mesia recording
 
   // Fortune teller ($39) should also not spawn based on mesia recording rather than orb
-  rom.npcs[0x39].spawnConditions.get(0xd8)[1] = ~0x01b;  // fortune teller room: 01b NOT
+  rom.npcs[0x39].spawnConditions.get(0xd8)![1] = ~0x01b;  // fortune teller room: 01b NOT
 
   // Clark ($44) moves after talking to him (08d) rather than calming sea (08f).
   // TODO - change 08d to whatever actual item he gives, then remove both flags
   rom.npcs[0x44].spawnConditions.set(0xe9, [~0x08d]); // zombie town basement
   rom.npcs[0x44].spawnConditions.set(0xe4, [0x08d]);  // joel shed
-  rom.npcs[0x44].localDialogs.get(0xe9)[1].flags.pop(); // remove redundant itemget flag
+  rom.npcs[0x44].localDialogs.get(0xe9)![1].flags.pop(); // remove redundant itemget flag
 
   // Brokahana ($54) ~ warrior ring redundant flag
-  rom.npcs[0x54].localDialogs.get(-1)[2].flags = [];
+  rom.npcs[0x54].localDialogs.get(-1)![2].flags = [];
 
   // Deo ($5a) ~ pendant redundant flag
-  rom.npcs[0x5a].localDialogs.get(-1)[1].flags = [];
+  rom.npcs[0x5a].localDialogs.get(-1)![1].flags = [];
 
   // Zebu ($5e) cave dialog (@ $10)
   rom.npcs[0x5e].localDialogs.set(0x10, [
@@ -445,10 +445,10 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
     LocalDialog.of(~0x000, [0x00, 0x1d]),
   ]);
   // Don't despawn on getting barrier
-  rom.npcs[0x5e].spawnConditions.get(0x10).pop(); // remove 051 NOT learned barrier
+  rom.npcs[0x5e].spawnConditions.get(0x10)!.pop(); // remove 051 NOT learned barrier
 
   // Tornel ($5f) in sabre west ($21) ~ teleport redundant flag
-  rom.npcs[0x5f].localDialogs.get(0x21)[1].flags = [];
+  rom.npcs[0x5f].localDialogs.get(0x21)![1].flags = [];
   // Don't despawn on getting barrier
   rom.npcs[0x5f].spawnConditions.delete(0x21); // remove 051 NOT learned barrier
 
@@ -458,16 +458,16 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   // Asina ($62) in back room ($e1) gives flute of lime
   const asina = rom.npcs[0x62];
   asina.data[1] = 0x28;
-  asina.localDialogs.get(0xe1)[0].message.action = 0x11;
-  asina.localDialogs.get(0xe1)[2].message.action = 0x11;
+  asina.localDialogs.get(0xe1)![0].message.action = 0x11;
+  asina.localDialogs.get(0xe1)![2].message.action = 0x11;
 
   // Kensu in lighthouse ($74/$7e @ $62) ~ pendant redundant flag
-  rom.npcs[0x74].localDialogs.get(0x62)[0].flags = [];
-  rom.npcs[0x7e].localDialogs.get(0x62)[0].flags = [];
+  rom.npcs[0x74].localDialogs.get(0x62)![0].flags = [];
+  rom.npcs[0x7e].localDialogs.get(0x62)![0].flags = [];
 
   // Azteca ($83) in pyramid ~ bow of truth redundant flag
-  rom.npcs[0x83].localDialogs.get(-1)[0].condition = ~0x240;  // 240 NOT bow of truth
-  rom.npcs[0x83].localDialogs.get(-1)[0].flags = [];
+  rom.npcs[0x83].localDialogs.get(-1)![0].condition = ~0x240;  // 240 NOT bow of truth
+  rom.npcs[0x83].localDialogs.get(-1)![0].flags = [];
 
   // Remove useless spawn condition from Mado 1
   rom.npcs[0xc4].spawnConditions.delete(0xf2); // always spawn
@@ -478,8 +478,8 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   // Fix Zebu to give key to stxy even if thunder sword is gotten (just switch the
   // order of the first two).  Also don't bother setting 03b since the new ItemGet
   // logic obviates the need.
-  const zebuShyron = rom.npcs[0x5e].localDialogs.get(0xf2);
-  zebuShyron.unshift(zebuShyron.splice(1, 0));
+  const zebuShyron = rom.npcs[0x5e].localDialogs.get(0xf2)!;
+  zebuShyron.unshift(...zebuShyron.splice(1, 1));
   zebuShyron[0].flags = [];
 
   // Shyron massacre ($80) requires key to stxy
@@ -511,7 +511,6 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   rom.trigger(0xbb).conditions[1] = ~0x01b;
 
   // TODO - zebu cave dialog, windmill spawn, etc
-  
 };
 
 const teleportOnThunderSword = (rom: Rom) => {
@@ -521,14 +520,14 @@ const teleportOnThunderSword = (rom: Rom) => {
   //   - note: f2 and f4 dialogs are linked.
   for (const i of [0, 1, 3]) {
     for (const loc of [0xf2, 0xf4]) {
-      rom.npcs[0x62].localDialogs.get(loc)[i].message.action = 0x1f;
+      rom.npcs[0x62].localDialogs.get(loc)![i].message.action = 0x1f;
     }
   }
 };
 
 const noTeleportOnThunderSword = (rom: Rom) => {
   // Change sword of thunder's action to bbe the same as other swords (16)
-  rom.itemget[0x03].acquisitionAction.action = 0x16;
+  rom.itemGets[0x03].acquisitionAction.action = 0x16;
 };
 
 // Add the statue of onyx and possibly the teleport block trigger to Cordel West
@@ -557,14 +556,14 @@ const storyMode = (rom: Rom) => {
   // NPC spawn conditions...
   rom.npcs[0xcb].spawnConditions.set(0xa6, [
     // Note: if bosses are shuffled we'll need to detect this...
-    ~rom.npcs[0xc2].spawnConditions.get(0x28)[0], // Kelbesque 1
-    ~rom.npcs[0x84].spawnConditions.get(0x6e)[0], // Sabera 1
+    ~rom.npcs[0xc2].spawnConditions.get(0x28)![0], // Kelbesque 1
+    ~rom.npcs[0x84].spawnConditions.get(0x6e)![0], // Sabera 1
     ~rom.triggers[0x9a & 0x7f].conditions[1], // Mado 1
-    ~rom.npcs[0xc5].spawnConditions.get(0xa9)[0], // Kelbesque 2
-    ~rom.npcs[0xc6].spawnConditions.get(0xac)[0], // Sabera 2
-    ~rom.npcs[0xc7].spawnConditions.get(0xb9)[0], // Mado 2
-    ~rom.npcs[0xc8].spawnConditions.get(0xb6)[0], // Karmine
-    ~rom.npcs[0xcb].spawnConditions.get(0x9f)[0], // Draygon 1
+    ~rom.npcs[0xc5].spawnConditions.get(0xa9)![0], // Kelbesque 2
+    ~rom.npcs[0xc6].spawnConditions.get(0xac)![0], // Sabera 2
+    ~rom.npcs[0xc7].spawnConditions.get(0xb9)![0], // Mado 2
+    ~rom.npcs[0xc8].spawnConditions.get(0xb6)![0], // Karmine
+    ~rom.npcs[0xcb].spawnConditions.get(0x9f)![0], // Draygon 1
     0x200, // Sword of Wind
     0x201, // Sword of Fire
     0x202, // Sword of Water
@@ -573,7 +572,6 @@ const storyMode = (rom: Rom) => {
     // TODO - vampires and insect?
   ]);
 };
-
 
 // Hard mode flag: Hc - zero out the sword's collision plane
 const disableStabs = (rom: Rom) => {
@@ -613,7 +611,6 @@ const connectLimeTreeToLeaf = (rom: Rom) => {
       Exit.of({x: 0x000, y: 0x1c0, dest: 0x03, entrance: windEntrance}));
 };
 
-
 // Stamp the ROM
 export const stampVersionSeedAndHash = (rom: Uint8Array, seed: number, flags: FlagSet) => {
   // Use up to 26 bytes starting at PRG $25ea8
@@ -622,7 +619,7 @@ export const stampVersionSeedAndHash = (rom: Uint8Array, seed: number, flags: Fl
   // For now just stick in the commit and seed in simple hex
   const crc = crc32(rom);
   const crcString = crc.toString(16).padStart(8, '0').toUpperCase();
-  const hash = version.STATUS == 'unstable' ?
+  const hash = version.STATUS === 'unstable' ?
       version.HASH.substring(0, 7).padStart(7, '0').toUpperCase() + '     ' :
       version.VERSION.substring(0, 12).padEnd(12, ' ');
   const seedStr = seed.toString(16).padStart(8, '0').toUpperCase();
@@ -653,12 +650,12 @@ export const stampVersionSeedAndHash = (rom: Uint8Array, seed: number, flags: Fl
   }
   // if (flagString.length <= 36) {
   //   // attempt to break it more favorably
-    
+
   // }
   //   flagString = ['FLAGS ',
   //                 flagString.substring(0, 18).padEnd(18, ' '),
   //                 '      ',
-                  
+
   // }
 
   flagString = flagString.padEnd(46, ' ');
@@ -672,7 +669,7 @@ export const stampVersionSeedAndHash = (rom: Uint8Array, seed: number, flags: Fl
 
   // embed(0x25ea8, `v.${hash}   ${seed}`);
   embed(0x25716, 'RANDOMIZER');
-  if (version.STATUS == 'unstable') embed(0x2573c, 'BETA');
+  if (version.STATUS === 'unstable') embed(0x2573c, 'BETA');
   // NOTE: it would be possible to add the hash/seed/etc to the title
   // page as well, but we'd need to replace the unused letters in bank
   // $1d with the missing numbers (J, Q, W, X), as well as the two
@@ -683,14 +680,13 @@ export const stampVersionSeedAndHash = (rom: Uint8Array, seed: number, flags: Fl
   return crc;
 };
 
-
-const patchBytes = (rom, address, bytes) => {
+const patchBytes = (rom: Uint8Array, address: number, bytes: number[]) => {
   for (let i = 0; i < bytes.length; i++) {
     rom[address + i] = bytes[i];
   }
 };
 
-const patchWords = (rom, address, words) => {
+const patchWords = (rom: Uint8Array, address: number, words: number[]) => {
   for (let i = 0; i < 2 * words.length; i += 2) {
     rom[address + i] = words[i >>> 1] & 0xff;
     rom[address + i + 1] = words[i >>> 1] >>> 8;
@@ -698,14 +694,14 @@ const patchWords = (rom, address, words) => {
 };
 
 // goes with enemy stat recomputations in postshuffle.s
-const updateCoinDrops = (rom, flags) => {
+const updateCoinDrops = (rom: Uint8Array, flags: FlagSet) => {
   rom = rom.subarray(0x10);
   if (flags.disableShopGlitch()) {
     // bigger gold drops if no shop glitch, particularly at the start
     // - starts out fibonacci, then goes linear at 600
     patchWords(rom, 0x34bde, [
-        0,   5,  10,  15,  25,  40,  65, 105,
-      170, 275, 445, 600, 700, 800, 900,1000,
+        0,   5,  10,  15,  25,  40,  65,  105,
+      170, 275, 445, 600, 700, 800, 900, 1000,
     ]);
   } else {
     // this table is basically meaningless b/c shop glitch
@@ -717,7 +713,7 @@ const updateCoinDrops = (rom, flags) => {
 };
 
 // goes with enemy stat recomputations in postshuffle.s
-const updateDifficultyScalingTables = (rom, flags, asm) => {
+const updateDifficultyScalingTables = (rom: Uint8Array, flags: FlagSet, asm: Assembler) => {
   rom = rom.subarray(0x10);
 
   // Currently this is three $30-byte tables, which we start at the beginning
@@ -776,7 +772,6 @@ const updateDifficultyScalingTables = (rom, flags, asm) => {
     0, 2, 6, 10, 14, 18, 16, 32, 20,
   ]);
 };
-
 
 const rescaleShops = (rom: Rom, asm: Assembler, random?: Random) => {
   // Populate rescaled prices into the various rom locations.
@@ -850,22 +845,22 @@ const BASE_PRICES: {[itemId: number]: number} = {
   0x23: 150,  // fruit of repun
   0x24: 80,   // warp boots
   0x26: 300,  // opel statue
-  //0x31: 50, // alarm flute
+  // 0x31: 50, // alarm flute
 };
 
-
-
-
-
+/////////
+/////////
+/////////
 
 const rescaleMonsters = (rom: Rom) => {
 
   // TODO - find anything sharing the same memory and update them as well
-  for (const id of SCALED_MONSTERS.keys()) {
-    for (const other in rom.objects) {
+  for (const [id, monster] of SCALED_MONSTERS) {
+    for (const otherStr of Object.keys(rom.objects)) {
+      const other = Number(otherStr);
       if (SCALED_MONSTERS.has(other)) return;
-      if (rom.objects[id].objectDataBase == rom.objects[other].objectDataBase) {
-        SCALED_MONSTERS[other] = SCALED_MONSTERS[id];
+      if (rom.objects[id].base === rom.objects[other].base) {
+        SCALED_MONSTERS.set(other, monster);
       }
     }
   }
@@ -888,7 +883,7 @@ const rescaleMonsters = (rom: Rom) => {
   // Fix Sabera 1's elemental defense to no longer allow thunder
   rom.objects[0x7d].elements |= 0x08;
 
-  //rom.writeObjectData();
+  // rom.writeObjectData();
 };
 
 const shuffleMonsters = (rom: Rom, random: Random) => {
@@ -900,7 +895,7 @@ const shuffleMonsters = (rom: Rom, random: Random) => {
   pool.shuffle(random);
 };
 
-const identifyKeyItemsForDifficultyBuffs = (rom) => {
+const identifyKeyItemsForDifficultyBuffs = (rom: Rom) => {
   // // Tag key items for difficulty buffs
   // for (const get of rom.itemGets) {
   //   const item = ITEMS.get(get.itemId);
@@ -917,7 +912,6 @@ const identifyKeyItemsForDifficultyBuffs = (rom) => {
   }
 };
 
-
 interface MonsterData {
   id: number;
   type: string;
@@ -925,9 +919,12 @@ interface MonsterData {
   sdef: number;
   swrd: number;
   hits: number;
+  satk: number;
   dgld: number;
   sexp: number;
 }
+
+/* tslint:disable:trailing-comma whitespace */
 
 const SCALED_MONSTERS: Map<number, MonsterData> = new Map([
   // ID  TYPE  NAME                       SDEF SWRD HITS SATK DGLD SEXP
@@ -1065,6 +1062,8 @@ const SCALED_MONSTERS: Map<number, MonsterData> = new Map([
 ].map(([id, type, name, sdef=0, swrd=0, hits=0, satk=0, dgld=0, sexp=0]) =>
       [id, {id, type, name, sdef, swrd, hits, satk, dgld, sexp}])) as any;
 
+/* tslint:enable:trailing-comma whitespace */
+
 // When dealing with constraints, it's basically ksat
 //  - we have a list of requirements that are ANDed together
 //  - each is a list of predicates that are ORed together
@@ -1073,11 +1072,10 @@ const SCALED_MONSTERS: Map<number, MonsterData> = new Map([
 // Predicate is a four-element array [pat0,pat1,pal2,pal3]
 // Rather than a continuation we could go through all the slots again
 
-
 // class Constraints {
 //   constructor() {
 //     // Array of pattern table options.  Null indicates that it can be anything.
-//     // 
+//     //
 //     this.patterns = [[null, null]];
 //     this.palettes = [[null, null]];
 //     this.flyers = 0;
@@ -1088,17 +1086,14 @@ const SCALED_MONSTERS: Map<number, MonsterData> = new Map([
 //   }
 
 //   requireOrderedSlot(slot, set) {
-    
+
 //     if (!this.ordered) {
 
 //     }
 // // TODO
 //     this.pat0 = intersect(this.pat0, set);
 
-
 //   }
-
-  
 
 // }
 
@@ -1109,56 +1104,64 @@ const SCALED_MONSTERS: Map<number, MonsterData> = new Map([
 //   for (const x of left) {
 //     if (right.has(x)) out.add(x);
 //   }
-//   return out;  
+//   return out;
 // }
 
+interface MonsterConstraint {
+  id: number;
+  pat: number;
+  pal2: number | undefined;
+  pal3: number | undefined;
+  patBank: number | undefined;
+}
 
 // A pool of monster spawns, built up from the locations in the rom.
-// Passes through the locations twice, first to build and then to 
+// Passes through the locations twice, first to build and then to
 // reassign monsters.
 class MonsterPool {
 
   // available monsters
-  readonly monsters: unknown[] = [];
+  readonly monsters: MonsterConstraint[] = [];
   // used monsters - as a backup if no available monsters fit
-  readonly used: unknown[] = [];
+  readonly used: MonsterConstraint[] = [];
   // all locations
   readonly locations: {location: Location, slots: number[]}[] = [];
 
-  constructor(readonly report: {[loc: number]: string[]}) {}
+  constructor(readonly report: {[loc: number]: string[], [key: string]: (string|number)[]}) {}
 
   // TODO - monsters w/ projectiles may have a specific bank they need to appear in,
   // since the projectile doesn't know where it came from...?
   //   - for now, just assume if it has a child then it must keep same pattern bank!
 
   populate(location: Location) {
-    const {maxFlyers, nonFlyers = {}, skip, fixedSlots = {}, ...unexpected} =
+    const {maxFlyers = 0, nonFlyers = {}, skip = false, fixedSlots = {}, ...unexpected} =
           MONSTER_ADJUSTMENTS[location.id] || {};
-    for (const u in unexpected) {
+    for (const u of Object.keys(unexpected)) {
       throw new Error(
           `Unexpected property '${u}' in MONSTER_ADJUSTMENTS[${location.id}]`);
     }
     if (skip === true || !location.spritePatterns || !location.spritePalettes) return;
     const monsters = [];
     const slots = [];
-    //const constraints = {};
-    let treasureChest = false;
+    // const constraints = {};
+    // let treasureChest = false;
     let slot = 0x0c;
     for (const spawn of location.spawns) {
       ++slot;
       if (!spawn.isMonster()) continue;
       const id = spawn.monsterId;
       if (id in UNTOUCHED_MONSTERS || !SCALED_MONSTERS.has(id) ||
-          SCALED_MONSTERS.get(id).type != 'm') continue;
+          SCALED_MONSTERS.get(id)!.type !== 'm') continue;
       const object = location.rom.objects[id];
       if (!object) continue;
       const patBank = spawn.patternBank;
       const pat = location.spritePatterns[patBank];
       const pal = object.palettes(true);
-      const pal2 = pal.includes(2) ? location.spritePalettes[0] : null;
-      const pal3 = pal.includes(3) ? location.spritePalettes[1] : null;
+      const pal2 = pal.includes(2) ? location.spritePalettes[0] : undefined;
+      const pal3 = pal.includes(3) ? location.spritePalettes[1] : undefined;
       monsters.push({id, pat, pal2, pal3, patBank});
-(this.report[`start-${id.toString(16)}`] = this.report[`start-${id.toString(16)}`] || []).push('$' + location.id.toString(16));
+      (this.report[`start-${id.toString(16)}`] = this.report[`start-${id.toString(16)}`] || [])
+          .push('$' + location.id.toString(16));
       slots.push(slot);
     }
     if (!monsters.length) return;
@@ -1166,17 +1169,17 @@ class MonsterPool {
     this.monsters.push(...monsters);
   }
 
-  shuffle(random) {
-this.report['pre-shuffle locations'] = this.locations.map(l=>l.location.id);
-this.report['pre-shuffle monsters'] = this.monsters.map(m=>m.id);
+  shuffle(random: Random) {
+    this.report['pre-shuffle locations'] = this.locations.map(l => l.location.id);
+    this.report['pre-shuffle monsters'] = this.monsters.map(m => m.id);
     random.shuffle(this.locations);
     random.shuffle(this.monsters);
-this.report['post-shuffle locations'] = this.locations.map(l=>l.location.id);
-this.report['post-shuffle monsters'] = this.monsters.map(m=>m.id);
+    this.report['post-shuffle locations'] = this.locations.map(l => l.location.id);
+    this.report['post-shuffle monsters'] = this.monsters.map(m => m.id);
     while (this.locations.length) {
-      const {location, slots} = this.locations.pop();
-      let report = this.report['$' + location.id.toString(16).padStart(2, 0)] = [];
-      const {maxFlyers, nonFlyers = {}, fixedSlots = {}} =
+      const {location, slots} = this.locations.pop()!;
+      const report: string[] = this.report['$' + location.id.toString(16).padStart(2, '0')] = [];
+      const {maxFlyers = 0, nonFlyers = {}, fixedSlots = {}} =
             MONSTER_ADJUSTMENTS[location.id] || {};
       // Keep track of pattern and palette slots we've pinned.
       // It might be nice to have a mode where palette conflicts are allowed,
@@ -1194,20 +1197,20 @@ this.report['post-shuffle monsters'] = this.monsters.map(m=>m.id);
         if (spawn.isChest()) treasureChest = true;
         if (!spawn.isMonster()) continue;
         const id = spawn.monsterId;
-        if (id == 0x7e || id == 0x7f || id == 0x9f) {
+        if (id === 0x7e || id === 0x7f || id === 0x9f) {
           pat1 = 0x62;
-        } else if (id == 0x8f) {
+        } else if (id === 0x8f) {
           pat0 = 0x61;
         }
       }
       // Cordel East and Kirisa Meadow have chests but don't need to actually draw them
       // (though we may need to make sure it doesn't end up with some nonsense tile that
       // ends up above the background).
-      if (location.id == 0x15 || location.id == 0x47) treasureChest = false;
+      if (location.id === 0x15 || location.id === 0x47) treasureChest = false;
 
       report.push(`Initial pass: ${[treasureChest, pat0, pat1, pal2, pal3].join(', ')}`);
 
-      const tryAddMonster = (m) => {
+      const tryAddMonster = (m: MonsterConstraint) => {
         const flyer = FLYERS.has(m.id);
         const moth = MOTHS_AND_BATS.has(m.id);
         if (flyer) {
@@ -1216,8 +1219,8 @@ this.report['post-shuffle monsters'] = this.monsters.map(m=>m.id);
           if (!flyers) return false;
           --flyers;
         }
-        if (pal2 != null && m.pal2 != null && pal2 != m.pal2 ||
-            pal3 != null && m.pal3 != null && pal3 != m.pal3) {
+        if (pal2 != null && m.pal2 != null && pal2 !== m.pal2 ||
+            pal3 != null && m.pal3 != null && pal3 !== m.pal3) {
           return false;
         }
         // whether we can put this one in pat0
@@ -1227,7 +1230,7 @@ this.report['post-shuffle monsters'] = this.monsters.map(m=>m.id);
           // if there's a child, make sure to keep it in the same pattern slot
           patSlot = m.patBank;
           const prev = patSlot ? pat1 : pat0;
-          if (prev != null && prev != m.pat) return false;
+          if (prev != null && prev !== m.pat) return false;
           if (patSlot) {
             pat1 = m.pat;
           } else if (pat0ok) {
@@ -1237,24 +1240,25 @@ this.report['post-shuffle monsters'] = this.monsters.map(m=>m.id);
           }
 
           // TODO - if [pat0,pat1] were an array this would be a whole lot easier.
-report.push(`  Adding ${m.id.toString(16)}: pat(${patSlot}) <-  ${m.pat.toString(16)}`);
+          report.push(`  Adding ${m.id.toString(16)}: pat(${patSlot}) <-  ${m.pat.toString(16)}`);
         } else {
-          if (pat0 == null && pat0ok || pat0 == m.pat) {
+          if (pat0 == null && pat0ok || pat0 === m.pat) {
             pat0 = m.pat;
             patSlot = 0;
-report.push(`  Adding ${m.id.toString(16)}: pat0 <-  ${m.pat.toString(16)}`);
-          } else if (pat1 == null || pat1 == m.pat) {
+            report.push(`  Adding ${m.id.toString(16)}: pat0 <-  ${m.pat.toString(16)}`);
+          } else if (pat1 == null || pat1 === m.pat) {
             pat1 = m.pat;
             patSlot = 1;
-report.push(`  Adding ${m.id.toString(16)}: pat1 <-  ${m.pat.toString(16)}`);
-          } else {              
+            report.push(`  Adding ${m.id.toString(16)}: pat1 <-  ${m.pat.toString(16)}`);
+          } else {
             return false;
           }
         }
         if (m.pal2 != null) pal2 = m.pal2;
         if (m.pal3 != null) pal3 = m.pal3;
-report.push(`    ${Object.keys(m).map(k=>`${k}: ${m[k] && m[k].toString(16)}`).join(', ')}`);
-report.push(`    pal: ${(m.pal2||0).toString(16)} ${(m.pal3||0).toString(16)}`);
+        // @ts-ignore: debugging
+        report.push(`    ${Object.keys(m).map(k => `${k}: ${m[k] && m[k].toString(16)}`).join(', ')}`);
+        report.push(`    pal: ${(m.pal2 || 0).toString(16)} ${(m.pal3 || 0).toString(16)}`);
 
         // Pick the slot only after we know for sure that it will fit.
         let eligible = 0;
@@ -1274,24 +1278,23 @@ report.push(`    pal: ${(m.pal2||0).toString(16)} ${(m.pal3||0).toString(16)}`);
             break;
           }
         }
-(this.report[`mon-${m.id.toString(16)}`] = this.report[`mon-${m.id.toString(16)}`] || []).push('$' + location.id.toString(16));
+        (this.report[`mon-${m.id.toString(16)}`] = this.report[`mon-${m.id.toString(16)}`] || [])
+            .push('$' + location.id.toString(16));
         const slot = slots[eligible];
         const spawn = location.spawns[slot - 0x0d];
         if (slot in nonFlyers) {
           spawn.y += nonFlyers[slot][0] * 16;
           spawn.x += nonFlyers[slot][1] * 16;
         }
-        spawn.patternBank = patSlot;
+        spawn.patternBank = patSlot || 0;
         spawn.monsterId = m.id;
-report.push(`    slot ${slot.toString(16)}: ${spawn}`);
+        report.push(`    slot ${slot.toString(16)}: ${spawn}`);
 
         // TODO - anything else need splicing?
 
         slots.splice(eligible, 1);
         return true;
       };
-
-
 
       if (flyers) {
         // look for an eligible flyer in the first 40.  If it's there, add it first.
@@ -1311,9 +1314,7 @@ report.push(`    slot ${slot.toString(16)}: ${spawn}`);
         // also consider allowing a single random flyer to be added out of band if
         // the size of the map exceeds 25?
 
-
         // probably don't add flyers to used?
-
 
       }
 
@@ -1357,10 +1358,10 @@ report.push(`    slot ${slot.toString(16)}: ${spawn}`);
   }
 }
 
-const FLYERS = new Set([0x59, 0x5c, 0x6e, 0x6f, 0x81, 0x8a, 0xa3, 0xc4]);
-const MOTHS_AND_BATS = new Set([0x55, /* swamp plant */ 0x5d, 0x7c, 0xbc, 0xc1]);
-const SWIMMERS = new Set([0x75, 0x76]);
-const STATIONARY = new Set([0x77, 0x87]);  // kraken, sorceror
+const FLYERS: Set<number> = new Set([0x59, 0x5c, 0x6e, 0x6f, 0x81, 0x8a, 0xa3, 0xc4]);
+const MOTHS_AND_BATS: Set<number> = new Set([0x55, /* swamp plant */ 0x5d, 0x7c, 0xbc, 0xc1]);
+// const SWIMMERS: Set<number> = new Set([0x75, 0x76]);
+// const STATIONARY: Set<number> = new Set([0x77, 0x87]);  // kraken, sorceror
 
 // constrains pat0 if map has a treasure chest on it
 const TREASURE_CHEST_BANKS = new Set([
@@ -1370,18 +1371,18 @@ const TREASURE_CHEST_BANKS = new Set([
 ]);
 
 interface MonsterAdjustment {
-  maxFlyers?: number,
-  skip?: boolean,
-  tower?: boolean,
-  fixedSlots?: {pat0?: number, pat1?: number, pal2?: number, pal3?: number},
-  nonFlyers?: {[id: number]: [number, number]},
+  maxFlyers?: number;
+  skip?: boolean;
+  tower?: boolean;
+  fixedSlots?: {pat0?: number, pat1?: number, pal2?: number, pal3?: number};
+  nonFlyers?: {[id: number]: [number, number]};
 }
 const MONSTER_ADJUSTMENTS: {[loc: number]: MonsterAdjustment} = {
   [0x03]: { // Valley of Wind
-    maxFlyers: 2,
     fixedSlots: {
       pat1: 0x60, // required by windmill
     },
+    maxFlyers: 2,
   },
   [0x07]: { // Sealed Cave 4
     nonFlyers: {
@@ -1397,12 +1398,12 @@ const MONSTER_ADJUSTMENTS: {[loc: number]: MonsterAdjustment} = {
     maxFlyers: 2,
   },
   [0x1a]: { // Swamp
-    //skip: 'add',
-    maxFlyers: 2,
+    // skip: 'add',
     fixedSlots: {
-      pat1: 0x4f,
       pal3: 0x23,
+      pat1: 0x4f,
     },
+    maxFlyers: 2,
     nonFlyers: { // TODO - might be nice to keep puffs working?
       [0x10]: [4, 0],
       [0x11]: [5, 0],
@@ -1420,11 +1421,11 @@ const MONSTER_ADJUSTMENTS: {[loc: number]: MonsterAdjustment} = {
     maxFlyers: 1,
   },
   [0x21]: { // Mt Sabre West Upper
-    maxFlyers: 1,
     fixedSlots: {
       pat1: 0x50,
-      //pal2: 0x06, // might be fine to change tornel's color...
+      // pal2: 0x06, // might be fine to change tornel's color...
     },
+    maxFlyers: 1,
   },
   [0x27]: { // Mt Sabre West Cave 7
     nonFlyers: {
@@ -1502,26 +1503,26 @@ const MONSTER_ADJUSTMENTS: {[loc: number]: MonsterAdjustment} = {
     skip: true,
   },
   [0x60]: { // Angry Sea
-    skip: true, // not sure how to randomize these well
-    maxFlyers: 2,
     fixedSlots: {
-      pat1: 0x52, // (as opposed to pat0)
       pal3: 0x08,
+      pat1: 0x52, // (as opposed to pat0)
     },
+    maxFlyers: 2,
+    skip: true, // not sure how to randomize these well
   },
   [0x64]: { // Underground Channel
-    skip: true,
     fixedSlots: {
-      pat1: 0x52, // (as opposed to pat0)
       pal3: 0x08,
+      pat1: 0x52, // (as opposed to pat0)
     },
+    skip: true,
   },
   [0x68]: { // Evil Spirit Island 1
-    skip: true,
     fixedSlots: {
-      pat1: 0x52, // (as opposed to pat0)
       pal3: 0x08,
+      pat1: 0x52, // (as opposed to pat0)
     },
+    skip: true,
   },
   [0x69]: { // Evil Spirit Island 2
     maxFlyers: 1,
@@ -1676,88 +1677,87 @@ const MONSTER_ADJUSTMENTS: {[loc: number]: MonsterAdjustment} = {
   },
 };
 
-const ITEMS: Map<number, {id: number, name: string, key: boolean}> = new Map([
-  // id  name                  key
-  [0x00, 'Sword of Wind',      true],
-  [0x01, 'Sword of Fire',      true],
-  [0x02, 'Sword of Water',     true],
-  [0x03, 'Sword of Thunder',   true],
-  [0x04, 'Crystalis',          true],
-  [0x05, 'Ball of Wind',       true],
-  [0x06, 'Tornado Bracelet',   true],
-  [0x07, 'Ball of Fire',       true],
-  [0x08, 'Flame Bracelet',     true],
-  [0x09, 'Ball of Water',      true],
-  [0x0a, 'Blizzard Bracelet',  true],
-  [0x0b, 'Ball of Thunder',    true],
-  [0x0c, 'Storm Bracelet',     true],
-  [0x0d, 'Carapace Shield',    ],
-  [0x0e, 'Bronze Shield',      ],
-  [0x0f, 'Platinum Shield',    ],
-  [0x10, 'Mirrored Shield',    ],
-  [0x11, 'Ceramic Shield',     ],
-  [0x12, 'Sacred Shield',      ],
-  [0x13, 'Battle Shield',      ],
-  // id  name                  key
-  [0x14, 'Psycho Shield',      true],
-  [0x15, 'Tanned Hide',        ],
-  [0x16, 'Leather Armor',      ],
-  [0x17, 'Bronze Armor',       ],
-  [0x18, 'Platinum Armor',     ],
-  [0x19, 'Soldier Suit',       ],
-  [0x1a, 'Ceramic Suit',       ],
-  [0x1b, 'Battle Armor',       true],
-  [0x1c, 'Psycho Armor',       true],
-  [0x1d, 'Medical Herb',       ],
-  [0x1e, 'Antidote',           ],
-  [0x1f, 'Lysis Plant',        ],
-  [0x20, 'Fruit of Lime',      ],
-  [0x21, 'Fruit of Power',     ],
-  [0x22, 'Magic Ring',         ],
-  [0x23, 'Fruit of Repun',     ],
-  [0x24, 'Warp Boots',         ],
-  [0x25, 'Statue of Onyx',     true],
-  [0x26, 'Opel Statue',        true],
-  [0x27, 'Insect Flute',       true],
-  // id  name                  key
-  [0x28, 'Flute of Lime',      true],
-  [0x29, 'Gas Mask',           true],
-  [0x2a, 'Power Ring',         true],
-  [0x2b, 'Warrior Ring',       true],
-  [0x2c, 'Iron Necklace',      true],
-  [0x2d, 'Deo\'s Pendant',     true],
-  [0x2e, 'Rabbit Boots',       true],
-  [0x2f, 'Leather Boots',      true],
-  [0x30, 'Shield Ring',        true],
-  [0x31, 'Alarm Flute',        true],
-  [0x32, 'Windmill Key',       true],
-  [0x33, 'Key to Prison',      true],
-  [0x34, 'Key to Styx',        true],
-  [0x35, 'Fog Lamp',           true],
-  [0x36, 'Shell Flute',        true],
-  [0x37, 'Eye Glasses',        true],
-  [0x38, 'Broken Statue',      true],
-  [0x39, 'Glowing Lamp',       true],
-  [0x3a, 'Statue of Gold',     true],
-  [0x3b, 'Love Pendant',       true],
-  // id  name                  key
-  [0x3c, 'Kirisa Plant',       true],
-  [0x3d, 'Ivory Statue',       true],
-  [0x3e, 'Bow of Moon',        true],
-  [0x3f, 'Bow of Sun',         true],
-  [0x40, 'Bow of Truth',       true],
-  [0x41, 'Refresh',            true],
-  [0x42, 'Paralysis',          true],
-  [0x43, 'Telepathy',          true],
-  [0x44, 'Teleport',           true],
-  [0x45, 'Recover',            true],
-  [0x46, 'Barrier',            true],
-  [0x47, 'Change',             true],
-  [0x48, 'Flight',             true],
-].map(([id, name, key]) => [id, {id, name, key: !!key}])) as any;
+// const ITEMS: Map<number, {id: number, name: string, key: boolean}> = new Map([
+//   // id  name                  key
+//   [0x00, 'Sword of Wind',      true],
+//   [0x01, 'Sword of Fire',      true],
+//   [0x02, 'Sword of Water',     true],
+//   [0x03, 'Sword of Thunder',   true],
+//   [0x04, 'Crystalis',          true],
+//   [0x05, 'Ball of Wind',       true],
+//   [0x06, 'Tornado Bracelet',   true],
+//   [0x07, 'Ball of Fire',       true],
+//   [0x08, 'Flame Bracelet',     true],
+//   [0x09, 'Ball of Water',      true],
+//   [0x0a, 'Blizzard Bracelet',  true],
+//   [0x0b, 'Ball of Thunder',    true],
+//   [0x0c, 'Storm Bracelet',     true],
+//   [0x0d, 'Carapace Shield',    ],
+//   [0x0e, 'Bronze Shield',      ],
+//   [0x0f, 'Platinum Shield',    ],
+//   [0x10, 'Mirrored Shield',    ],
+//   [0x11, 'Ceramic Shield',     ],
+//   [0x12, 'Sacred Shield',      ],
+//   [0x13, 'Battle Shield',      ],
+//   // id  name                  key
+//   [0x14, 'Psycho Shield',      true],
+//   [0x15, 'Tanned Hide',        ],
+//   [0x16, 'Leather Armor',      ],
+//   [0x17, 'Bronze Armor',       ],
+//   [0x18, 'Platinum Armor',     ],
+//   [0x19, 'Soldier Suit',       ],
+//   [0x1a, 'Ceramic Suit',       ],
+//   [0x1b, 'Battle Armor',       true],
+//   [0x1c, 'Psycho Armor',       true],
+//   [0x1d, 'Medical Herb',       ],
+//   [0x1e, 'Antidote',           ],
+//   [0x1f, 'Lysis Plant',        ],
+//   [0x20, 'Fruit of Lime',      ],
+//   [0x21, 'Fruit of Power',     ],
+//   [0x22, 'Magic Ring',         ],
+//   [0x23, 'Fruit of Repun',     ],
+//   [0x24, 'Warp Boots',         ],
+//   [0x25, 'Statue of Onyx',     true],
+//   [0x26, 'Opel Statue',        true],
+//   [0x27, 'Insect Flute',       true],
+//   // id  name                  key
+//   [0x28, 'Flute of Lime',      true],
+//   [0x29, 'Gas Mask',           true],
+//   [0x2a, 'Power Ring',         true],
+//   [0x2b, 'Warrior Ring',       true],
+//   [0x2c, 'Iron Necklace',      true],
+//   [0x2d, 'Deo\'s Pendant',     true],
+//   [0x2e, 'Rabbit Boots',       true],
+//   [0x2f, 'Leather Boots',      true],
+//   [0x30, 'Shield Ring',        true],
+//   [0x31, 'Alarm Flute',        true],
+//   [0x32, 'Windmill Key',       true],
+//   [0x33, 'Key to Prison',      true],
+//   [0x34, 'Key to Styx',        true],
+//   [0x35, 'Fog Lamp',           true],
+//   [0x36, 'Shell Flute',        true],
+//   [0x37, 'Eye Glasses',        true],
+//   [0x38, 'Broken Statue',      true],
+//   [0x39, 'Glowing Lamp',       true],
+//   [0x3a, 'Statue of Gold',     true],
+//   [0x3b, 'Love Pendant',       true],
+//   // id  name                  key
+//   [0x3c, 'Kirisa Plant',       true],
+//   [0x3d, 'Ivory Statue',       true],
+//   [0x3e, 'Bow of Moon',        true],
+//   [0x3f, 'Bow of Sun',         true],
+//   [0x40, 'Bow of Truth',       true],
+//   [0x41, 'Refresh',            true],
+//   [0x42, 'Paralysis',          true],
+//   [0x43, 'Telepathy',          true],
+//   [0x44, 'Teleport',           true],
+//   [0x45, 'Recover',            true],
+//   [0x46, 'Barrier',            true],
+//   [0x47, 'Change',             true],
+//   [0x48, 'Flight',             true],
+// ].map(([id, name, key]) => [id, {id, name, key: !!key}])) as any;
 
-
-const RETAIN_SLOTS = new Set([0x50, 0x53]);
+const RETAIN_SLOTS: Set<number> = new Set([0x50, 0x53]);
 
 const UNTOUCHED_MONSTERS: {[id: number]: boolean} = { // not yet +0x50 in these keys
   [0x7e]: true, // vertical platform

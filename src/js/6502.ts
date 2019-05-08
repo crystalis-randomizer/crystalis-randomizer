@@ -390,11 +390,11 @@ class Context {
       const right = this.map(parseNumber(match[3].trim(), true), pc);
       return match[2] === '-' ? left - right : left + right;
     }
-    match = /([^*]+)([*])(.*)/.exec(label);
+    match = /([^*]+)[*](.*)/.exec(label);
     if (match) {
       const left = this.map(parseNumber(match[1].trim(), true), pc);
-      const right = this.map(parseNumber(match[3].trim(), true), pc);
-      return match[2] === '-' ? left - right : left + right;
+      const right = this.map(parseNumber(match[2].trim(), true), pc);
+      return left * right;
     }
     match = /([<>])(.*)/.exec(label); // TODO - ^ for bank byte?
     if (match) {

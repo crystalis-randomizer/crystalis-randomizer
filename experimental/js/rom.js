@@ -18,6 +18,8 @@ import { Writer } from './rom/writer.js';
 import { UnionFind } from './unionfind.js';
 export class Rom {
     constructor(rom) {
+        this.omitItemGetDataSuffix = false;
+        this.omitLocalDialogSuffix = false;
         this.prg = rom.subarray(0x10, 0x40010);
         this.chr = rom.subarray(0x40010);
         for (const [address, value] of ADJUSTMENTS)

@@ -731,13 +731,20 @@ const shuffleMonsters = (data, rom, random, log) => {
 };
 
 const identifyKeyItemsForDifficultyBuffs = (rom) => {
-  // Tag key items for difficulty buffs
-  for (const get of rom.itemGets) {
-    const item = ITEMS.get(get.item);
-    if (!item || !item.key) continue;
-    get.key = true;
+  // // Tag key items for difficulty buffs
+  // for (const get of rom.itemGets) {
+  //   const item = ITEMS.get(get.itemId);
+  //   if (!item || !item.key) continue;
+  //   get.key = true;
+  // }
+  // // console.log(report);
+  for (let i = 0; i < 0x49; i++) {
+    // NOTE - special handling for alarm flute until we pre-patch
+    const unique = (rom.prg[0x20ff0 + i] & 0x40) || i === 0x31;
+    const bit = 1 << (i & 7);
+    const addr = 0x1e110 + (i >>> 3);
+    rom.prg[addr] = rom.prg[addr] & ~bit | (unique ? bit : 0);
   }
-  // console.log(report);
 };
 
 

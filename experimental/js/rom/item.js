@@ -7,7 +7,11 @@ export class Item extends Entity {
         this.itemUseDataBase = readLittleEndian(rom.prg, this.itemUseDataPointer) + 0x14000;
         this.itemDataPointer = 0x20ff0 + id;
         this.itemDataValue = rom.prg[this.itemDataPointer];
-        this.basePrice = 0;
+        this.selectedItemPointer = 0x2103b + id;
+        this.selectedItemValue = rom.prg[this.selectedItemPointer];
+        this.basePrice = readLittleEndian(rom.prg, rom.normalizedPriceTableAddress != null ?
+            rom.normalizedPriceTableAddress + id :
+            0x21ec2);
     }
     async write(writer) {
     }

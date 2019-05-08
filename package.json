@@ -7,7 +7,8 @@
     "tsc": "node_modules/typescript/bin/tsc",
     "build": "npm run tsc && gulp",
     "test": "npm run build && test/test_cli.sh",
-    "clean": "for a in $(find src/js -name '*.ts'); do rm -f ${a%.ts}.js; rm -f ${a%.ts}.js.map; done; rm -f src/js/**/flycheck_*.js*"
+    "clean": "for a in $(find src/js -name '*.ts'); do rm -f ${a%.ts}.js; rm -f ${a%.ts}.js.map; done; rm -f src/js/**/flycheck_*.js*",
+    "lsp": "node_modules/typescript-language-server/lib/cli.js --stdio",
   },
   "bin": {
     "cryr": "src/js/cli.js"
@@ -32,6 +33,7 @@
     "mocha": "^5.2.0",
     "tslint": "^5.16.0",
     "typescript": "^3.4.4",
+    "typescript-language-server": "^0.3.7",
     "viz.js": "^2.1.2"
   },
   "description": ""

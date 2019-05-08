@@ -259,26 +259,6 @@ CheckBelowBoss:
 
 ;;; NPC Despawn triggers
 
-
-;; asina does not disappear after defeating sabera
-.org $1c8b9
-  .byte $00
-
-;; insect/dwarf items
-;; Change all the post-insect messages to action 03
-.org $1cdc6
-  .byte $18
-.org $1cdcb
-  .byte $18
-.org $1cdd2
-  .byte $18
-.org $1cdd9
-  .byte $18
-.org $1cdff
-  .byte $18
-.org $1ce04
-  .byte $18
-
 ;; kensu in the cabin needs to be available even after visiting joel.
 ;; just have him disappear after setting the flag. but also require
 ;; having returned the fog lamp before he shows up - this requires

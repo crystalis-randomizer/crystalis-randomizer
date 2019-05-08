@@ -165,7 +165,6 @@ export const shuffle = async (rom: Uint8Array,
   closeCaveEntrances(parsed, flags);
   reversibleSwanGate(parsed);
   adjustGoaFortressTriggers(parsed);
-  fixQueenDialog(parsed);
   preventNpcDespawns(parsed, flags);
 
   misc(parsed, flags);
@@ -376,10 +375,6 @@ const reversibleSwanGate = (rom: Rom) => {
   rom.trigger(0xb3).conditions.push(0x10d);
 };
 
-const fixQueenDialog = (rom: Rom) => {
-
-};
-
 const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   // Leaf elder in house ($0d @ $c0) ~ sword of wind redundant flag
   rom.npcs[0x0d].localDialogs.get(0xc0)![2].flags = [];
@@ -396,10 +391,21 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   rom.npcs[0x88].spawnConditions.get(0x57)!.pop(); // remove 051 NOT learned barrier
 
   // Oak elder ($1d) ~ sword of fire redundant flag
-  rom.npcs[0x1d].localDialogs.get(-1)![4].flags = [];
+  const oakElderDialog = rom.npcs[0x1d].localDialogs.get(-1)!;
+  oakElderDialog[4].flags = [];
+  // Make sure that we try to give the item from *all* post-insect dialogs
+  oakElderDialog[0].message.action = 0x03;
+  oakElderDialog[1].message.action = 0x03;
+  oakElderDialog[2].message.action = 0x03;
+  oakElderDialog[3].message.action = 0x03;
 
   // Oak mother ($1e) ~ insect flute redundant flag
-  rom.npcs[0x1e].localDialogs.get(-1)![2].flags = [];
+  // TODO - rearrange these flags a bit (maybe ~045, ~0a0 ~041 - so reverse)
+  //      - will need to change ballOfFire and insectFlute in depgraph
+  const oakMotherDialog = rom.npcs[0x1e].localDialogs.get(-1)!;
+  oakMotherDialog[2].flags = [];
+  oakMotherDialog[0].message.action = 0x03;
+  oakMotherDialog[1].message.action = 0x03;
 
   // Throne room back door guard ($33 @ $df) should have same spawn condition as queen
   // (020 NOT queen not in throne room AND 01b NOT viewed mesia recording)
@@ -452,7 +458,7 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   // Don't despawn on getting barrier
   rom.npcs[0x5f].spawnConditions.delete(0x21); // remove 051 NOT learned barrier
 
-  // Sto ($60): don't despawn on getting barrier
+  // Stom ($60): don't despawn on getting barrier
   rom.npcs[0x60].spawnConditions.delete(0x1e); // remove 051 NOT learned barrier
 
   // Asina ($62) in back room ($e1) gives flute of lime
@@ -460,6 +466,8 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   asina.data[1] = 0x28;
   asina.localDialogs.get(0xe1)![0].message.action = 0x11;
   asina.localDialogs.get(0xe1)![2].message.action = 0x11;
+  // Prevent despawn from back room after defeating sabera (~$8f)
+  asina.spawnConditions.get(0xe1)!.pop()
 
   // Kensu in lighthouse ($74/$7e @ $62) ~ pendant redundant flag
   rom.npcs[0x74].localDialogs.get(0x62)![0].flags = [];

@@ -1,9 +1,21 @@
 ;;; https://searchcode.com/file/107184872/flycheck-typescript.el
 
 (require 'flycheck)
+;(require 'lsp-mode)
+;(require 'lsp-typescript)
 
 (setq sdh-ts-root
       (file-name-directory (directory-file-name (file-name-directory load-file-name))))
+
+;; (lsp-register-client
+;;  (make-lsp-client :new-connection (lsp-stdio-connection (concat sdh-ts-root "/node_modules/typescript-language-server/lib/cli.js"))
+;;                   :major-modes '(typescript-mode)
+;;                   :server-id 'ts))
+
+;; (add-hook 'typescript-mode-hook #'lsp-javascript-typescript-enable) ;; for typescript support
+
+;(lsp-register-client
+; (make-lsp-client :new-connection (
 
 (flycheck-define-checker typescript-tsc
   "A TypeScript syntax checker using tsc, the TypeScript compiler.
@@ -18,6 +30,18 @@ See URL `http://www.typescriptlang.org/'."
   :modes typescript-mode
   :next-checkers ((warnings-only . typescript-tslint))
 )
+
+;; (flycheck-define-generic-checker 'lsp-ts
+;;   "A syntax checker using the Language Server Protocol (RLS)
+;; provided by lsp-mode.
+
+;; See https://github.com/emacs-lsp/lsp-mode."
+;;   :start #'lsp-ui-flycheck--start
+;;   :modes '(python-mode) ; Need a default mode
+;;   :predicate (lambda () lsp-mode)
+;;   :error-explainer (lambda (e) (flycheck-error-message e))
+;;   :next-checkers ((warnings-only . typescript-tslint))
+;; )
 
 (flycheck-def-config-file-var flycheck-tslint.json typescript-tslint "tslint.json")
 
@@ -40,6 +64,7 @@ See URL `https://github.com/palantir/tslint'."
 
 (defun sdh-ts-init ()
   (flycheck-mode)
+  (lsp)
   (define-key typescript-mode-map (kbd "C-c C-e") 'flycheck-display-error-at-point)
   ;; Note: these default to 'typescript-insert-and-indent, which is annoying
   (define-key typescript-mode-map (kbd ",") 'self-insert-command)
@@ -49,9 +74,11 @@ See URL `https://github.com/palantir/tslint'."
   (define-key typescript-mode-map (kbd "(") 'self-insert-command)
   (define-key typescript-mode-map (kbd "}") 'self-insert-command)
   (define-key typescript-mode-map (kbd "{") 'self-insert-command)
+  (define-key typescript-mode-map (kbd "M-RET") 'company-complete)
 )
 
+(flycheck-add-next-checker 'lsp-ui 'typescript-tslint)
 (add-hook 'typescript-mode-hook 'sdh-ts-init)
 
-(add-to-list 'flycheck-checkers 'typescript-tsc)
+;(add-to-list 'flycheck-checkers 'typescript-tsc)
 (add-to-list 'flycheck-checkers 'typescript-tslint)

@@ -1,3 +1,5 @@
+(require 'asm-mode)
+
 ; Functions for dealing with 6502 assembly code
 
 ; TODO

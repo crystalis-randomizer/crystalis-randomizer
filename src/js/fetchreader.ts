@@ -1,8 +1,6 @@
 export class FetchReader {
-  constructor(path = 'js/') {
-    this.path = path;
-  }
-  async read(file) {
+  constructor(readonly path: string = 'js/') {}
+  async read(file: string) {
     const response = await fetch(this.path + file);
     return await response.text();
   }

@@ -178,7 +178,12 @@ export const shuffle = async (rom: Uint8Array,
 };
 
 // Separate function to guarantee we no longer have access to the parsed rom...
-const postParsedShuffle = async (rom: Uint8Array, random: Random, seed: number, flags: FlagSet, asm: Assembler, assemble: (path: string) => Promise<void>) => {
+const postParsedShuffle = async (rom: Uint8Array,
+                                 random: Random,
+                                 seed: number,
+                                 flags: FlagSet,
+                                 asm: Assembler,
+                                 assemble: (path: string) => Promise<void>) => {
   await assemble('postshuffle.s');
   updateDifficultyScalingTables(rom, flags, asm);
   updateCoinDrops(rom, flags);
@@ -195,11 +200,11 @@ const postParsedShuffle = async (rom: Uint8Array, random: Random, seed: number, 
 };
 
 
-const misc = (rom, flags) => {
+const misc = (rom: Rom, flags: FlagSet) => {
 
 };
 
-const closeCaveEntrances = (rom, flags) => {
+const closeCaveEntrances = (rom: Rom, flags: FlagSet) => {
 
   // Clear tiles 1,2,3,4 for blockable caves in tilesets 90, 94, and 9c
   rom.swapMetatiles([0x90],
@@ -250,7 +255,7 @@ const closeCaveEntrances = (rom, flags) => {
     rom.locations[loc].flags.push(Flag.of({yx, flag: 0x2ef}));
   }
 
-  const replaceFlag = (loc, yx, flag) => {
+  const replaceFlag = (loc: number, yx: number, flag: number) => {
     for (const f of rom.locations[loc].flags) {
       if (f.yx == yx) {
         f.flag = flag;
@@ -286,7 +291,8 @@ const closeCaveEntrances = (rom, flags) => {
   // rom.triggers[0x19].flags.push(0x2f6, 0x2f7, 0x2f8);
 };
 
-const eastCave = (rom) => {
+// @ts-ignore: not yet used
+const eastCave = (rom: Rom) => {
   // NOTE: 0x9c can become 0x99 in top left or 0x97 in top right or bottom middle for a cave exit
   const screens1 = [[0x9c, 0x84, 0x80, 0x83, 0x9c],
                     [0x80, 0x81, 0x83, 0x86, 0x80],
@@ -300,10 +306,10 @@ const eastCave = (rom) => {
                     [0x9c, 0x86, 0x80, 0x80, 0x9a]];
   // TODO fill up graphics, etc --> $1a, $1b, $05 / $88, $b5 / $14, $02
   // Think aobut exits and entrances...?
-
+  console.log(screens1, screens2);
 };
 
-const adjustGoaFortressTriggers = (rom) => {
+const adjustGoaFortressTriggers = (rom: Rom) => {
   // Move Kelbesque 2 one tile left.
   rom.locations[0xa9].spawns[0].x -= 8;
   // Remove sage screen locks (except Kensu).
@@ -312,7 +318,7 @@ const adjustGoaFortressTriggers = (rom) => {
   rom.locations[0xb9].spawns.splice(2, 1); // asina screen lock trigger
 };
 
-const alarmFluteIsKeyItem = (rom) => {
+const alarmFluteIsKeyItem = (rom: Rom) => {
   // Person 14 (Zebu's student): secondary item -> alarm flute
   rom.npcs[0x14].data[1] = 0x31; // NOTE: Clobbers shuffled item!!!
   // Move alarm flute to third row
@@ -352,7 +358,7 @@ const alarmFluteIsKeyItem = (rom) => {
   // TODO - require new code for two uses
 };
 
-const reversibleSwanGate = (rom) => {
+const reversibleSwanGate = (rom: Rom) => {
   // Allow opening Swan from either side by adding a pair of guards on the
   // opposite side of the gate.
   rom.locations[0x73].spawns.push(
@@ -369,12 +375,12 @@ const reversibleSwanGate = (rom) => {
   rom.trigger(0xb3).conditions.push(0x10d);
 };
 
-const fixQueenDialog = (rom) => {
+const fixQueenDialog = (rom: Rom) => {
   
 
 };
 
-const preventNpcDespawns = (rom, flags) => {
+const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   // Leaf elder in house ($0d @ $c0) ~ sword of wind redundant flag
   rom.npcs[0x0d].localDialogs.get(0xc0)[2].flags = [];
 
@@ -508,7 +514,7 @@ const preventNpcDespawns = (rom, flags) => {
   
 };
 
-const teleportOnThunderSword = (rom) => {
+const teleportOnThunderSword = (rom: Rom) => {
   // itemget 03 sword of thunder => set 2fd shyron warp point
   rom.itemGets[0x03].flags.push(0x2fd);
   // dialog 62 asina in f2/f4 shyron -> action 1f (teleport to start)
@@ -520,7 +526,7 @@ const teleportOnThunderSword = (rom) => {
   }
 };
 
-const noTeleportOnThunderSword = (rom) => {
+const noTeleportOnThunderSword = (rom: Rom) => {
   // Change sword of thunder's action to bbe the same as other swords (16)
   rom.itemget[0x03].acquisitionAction.action = 0x16;
 };

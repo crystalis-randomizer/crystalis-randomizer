@@ -357,7 +357,8 @@ const fixRabbitSkip = (rom) => {
 const storyMode = (rom) => {
   // shuffle has already happened, need to use shuffled flags from
   // NPC spawn conditions...
-  const requirements = rom.npcs[0xcb].spawnConditions.get(0xa6);
+  const requirements = [];
+  rom.npcs[0xcb].spawnConditions.set(0xa6, requirements);
   // Note: if bosses are shuffled we'll need to detect this...
   requirements.push(~rom.npcs[0xc2].spawnConditions.get(0x28)[0]); // Kelbesque 1
   requirements.push(~rom.npcs[0x84].spawnConditions.get(0x6e)[0]); // Sabera 1

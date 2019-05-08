@@ -1784,12 +1784,12 @@ export const generate = (flags: FlagSet = new FlagSet(), rom?: Rom): WorldGraph 
 };
 
 // trivial interface for updating a progress bar.
-interface ProgressTracker {
+export interface ProgressTracker {
   addTasks(tasks: number): void;
   addCompleted(tasks: number): void;
 }
 
-interface LogType {
+export interface LogType {
   items?: {slotIndex: number,
            itemIndex: number,
            origName: string,

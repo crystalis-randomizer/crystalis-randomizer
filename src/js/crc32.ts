@@ -12,8 +12,9 @@ const buildTable = () => {
   }
 };
 
-export const crc32 = (arr: number[] | Uint8Array): number => {
+export const crc32 = (arr: number[] | Uint8Array | string): number => {
   if (!table) buildTable();
+  if (typeof arr === 'string') arr = new TextEncoder().encode(arr);
   let sum = -1;
   for (let i = 0, len = arr.length; i < len; i++) {
     sum = (sum >>> 8) ^ table[(sum ^ arr[i]) & 0xff];

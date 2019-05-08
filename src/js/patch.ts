@@ -5,7 +5,7 @@ import {ShopType} from './rom/shop.js';
 import {writeLittleEndian} from './rom/util.js';
 import {Rom} from './rom.js';
 import {Random} from './random.js';
-import {shuffle2 as shuffleDepgraph} from './depgraph.js';
+import {shuffle2 as shuffleDepgraph, ProgressTracker, LogType} from './depgraph.js';
 import {crc32} from './crc32.js';
 import {FlagSet} from './flagset.js';
 import {FetchReader} from './fetchreader.js';
@@ -20,7 +20,7 @@ import * as version from './version.js';
 // TODO - make a debugger window for patches.
 // TODO - this needs to be a separate non-compiled file.
 export default ({
-  async apply(rom, hash, path) {
+  async apply(rom: Uint8Array, hash: {[key: string]: unknown}, path: string): Promise<void> {
     // Look for flag string and hash
     let flags;
     if (!hash['seed']) {
@@ -29,18 +29,18 @@ export default ({
       window.location.hash += '&seed=' + hash['seed'];
     }
     if (hash['flags']) {
-      flags = new FlagSet(hash['flags']);
+      flags = new FlagSet(String(hash['flags']));
     } else {
       flags = new FlagSet('Em Gt Mr Rlpt Sbk Sct Sm Tasd');
     }
     for (const key in hash) {
       if (hash[key] === 'false') hash[key] = false;
     }
-    await shuffle(rom, parseSeed(hash['seed']), flags, new FetchReader(path));
+    await shuffle(rom, parseSeed(String(hash['seed'])), flags, new FetchReader(path));
   }
 });
 
-export const parseSeed = (/** string */ seed) => /** number */ {
+export const parseSeed = (seed: string): number => {
   if (!seed) return Random.newSeed();
   if (/^[0-9a-f]{1,8}$/i.test(seed)) return Number.parseInt(seed, 16);
   return crc32(seed);
@@ -49,24 +49,24 @@ export const parseSeed = (/** string */ seed) => /** number */ {
 /**
  * Abstract out File I/O.  Node and browser will have completely
  * different implementations.
- * @record
  */
-export class Reader {
-  /**
-   * @param {string} filename
-   * @return {!Promise<string>} contents
-   */
-  read(filename) {}
+export interface Reader {
+  read(filename: string): Promise<string>;
 }
 
-export const shuffle = async (rom, seed, flags, reader, log = undefined, progress = undefined) => {
-  // First turn the seed into something useful.
+export const shuffle = async (rom: Uint8Array,
+                              seed: number,
+                              flags: FlagSet,
+                              reader: Reader,
+                              log?: LogType,
+                              progress?: ProgressTracker) => {
+  // First reencode the seed, mixing in the flags for security.
   if (typeof seed !== 'number') throw new Error('Bad seed');
-  const newSeed = crc32(seed.toString(16).padStart(8, 0) + String(flags)) >>> 0;
+  const newSeed = crc32(seed.toString(16).padStart(8, '0') + String(flags)) >>> 0;
 
   const touchShops = true;
 
-  const defines = {
+  const defines: {[name: string]: boolean} = {
     _ALLOW_TELEPORT_OUT_OF_TOWER: true,
     _AUTO_EQUIP_BRACELET: flags.autoEquipBracelet(),
     _BARRIER_REQUIRES_CALM_SEA: flags.barrierRequiresCalmSea(),
@@ -96,8 +96,8 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   };
 
   const asm = new Assembler();
-  const assemble = async (file) => {
-    asm.assemble(await reader.read(file), file);
+  const assemble = async (path: string) => {
+    asm.assemble(await reader.read(path), path);
     asm.patchRom(rom);
   };
 
@@ -132,11 +132,11 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
   if (touchShops) {
     // TODO - separate logic for handling shops w/o Pn specified (i.e. vanilla
     // shops that may have been randomized)
-    rescaleShops(rom, asm, flags.bargainHunting() ? random : null);
+    rescaleShops(parsed, asm, flags.bargainHunting() ? random : undefined);
   }
 
-  rescaleMonsters(rom, parsed);
-  if (flags.shuffleMonsters()) shuffleMonsters(rom, parsed, random);
+  rescaleMonsters(parsed);
+  if (flags.shuffleMonsters()) shuffleMonsters(parsed, random);
   identifyKeyItemsForDifficultyBuffs(parsed);
 
   // Buff medical herb and fruit of power
@@ -178,7 +178,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
 };
 
 // Separate function to guarantee we no longer have access to the parsed rom...
-const postParsedShuffle = async (rom, random, seed, flags, asm, assemble) => {
+const postParsedShuffle = async (rom: Uint8Array, random: Random, seed: number, flags: FlagSet, asm: Assembler, assemble: (path: string) => Promise<void>) => {
   await assemble('postshuffle.s');
   updateDifficultyScalingTables(rom, flags, asm);
   updateCoinDrops(rom, flags);
@@ -771,7 +771,7 @@ const updateDifficultyScalingTables = (rom, flags, asm) => {
 };
 
 
-const rescaleShops = (rom, asm, random = undefined) => {
+const rescaleShops = (rom: Rom, asm: Assembler, random?: Random) => {
   // Populate rescaled prices into the various rom locations.
   // Specifically, we read the available item IDs out of the
   // shop tables and then compute new prices from there.
@@ -818,7 +818,7 @@ const rescaleShops = (rom, asm, random = undefined) => {
 };
 
 // Map of base prices.  (Tools are positive, armors are ones-complement.)
-const BASE_PRICES = {
+const BASE_PRICES: {[itemId: number]: number} = {
   // Armors
   0x0d: 4,    // carapace shield
   0x0e: 16,   // bronze shield
@@ -851,7 +851,7 @@ const BASE_PRICES = {
 
 
 
-const rescaleMonsters = (data, rom) => {
+const rescaleMonsters = (rom: Rom) => {
 
   // TODO - find anything sharing the same memory and update them as well
   for (const id of SCALED_MONSTERS.keys()) {
@@ -884,7 +884,7 @@ const rescaleMonsters = (data, rom) => {
   //rom.writeObjectData();
 };
 
-const shuffleMonsters = (data, rom, random, log) => {
+const shuffleMonsters = (rom: Rom, random: Random) => {
   // TODO: once we have location names, compile a spoiler of shuffled monsters
   const pool = new MonsterPool({});
   for (const loc of rom.locations) {
@@ -911,7 +911,18 @@ const identifyKeyItemsForDifficultyBuffs = (rom) => {
 };
 
 
-const SCALED_MONSTERS = new Map([
+interface MonsterData {
+  id: number;
+  type: string;
+  name: string;
+  sdef: number;
+  swrd: number;
+  hits: number;
+  dgld: number;
+  sexp: number;
+}
+
+const SCALED_MONSTERS: Map<number, MonsterData> = new Map([
   // ID  TYPE  NAME                       SDEF SWRD HITS SATK DGLD SEXP
   [0x3f, 'p', 'Sorceror shot',              ,   ,   ,    19,  ,    ,],
   [0x4b, 'm', 'wraith??',                   2,  ,   2,   22,  4,   61],
@@ -1045,7 +1056,7 @@ const SCALED_MONSTERS = new Map([
   [0xfd, 'p', 'guardian statue missile',    ,   ,   ,    23,  ,    ,],
   [0xfe, 'p', 'demon wall fire',            ,   ,   ,    23,  ,    ,],
 ].map(([id, type, name, sdef=0, swrd=0, hits=0, satk=0, dgld=0, sexp=0]) =>
-      [id, {id, type, name, sdef, swrd, hits, satk, dgld, sexp}]));
+      [id, {id, type, name, sdef, swrd, hits, satk, dgld, sexp}])) as any;
 
 // When dealing with constraints, it's basically ksat
 //  - we have a list of requirements that are ANDed together
@@ -1099,21 +1110,21 @@ const SCALED_MONSTERS = new Map([
 // Passes through the locations twice, first to build and then to 
 // reassign monsters.
 class MonsterPool {
-  constructor(report) {
-    this.report = report;
-    // available monsters
-    this.monsters = [];
-    // used monsters - as a backup if no available monsters fit
-    this.used = [];
-    // all locations
-    this.locations = [];
-  }
+
+  // available monsters
+  readonly monsters: unknown[] = [];
+  // used monsters - as a backup if no available monsters fit
+  readonly used: unknown[] = [];
+  // all locations
+  readonly locations: {location: Location, slots: number[]}[] = [];
+
+  constructor(readonly report: {[loc: number]: string[]}) {}
 
   // TODO - monsters w/ projectiles may have a specific bank they need to appear in,
   // since the projectile doesn't know where it came from...?
   //   - for now, just assume if it has a child then it must keep same pattern bank!
 
-  populate(/** !Location */ location) {
+  populate(location: Location) {
     const {maxFlyers, nonFlyers = {}, skip, fixedSlots = {}, ...unexpected} =
           MONSTER_ADJUSTMENTS[location.id] || {};
     for (const u in unexpected) {
@@ -1351,7 +1362,14 @@ const TREASURE_CHEST_BANKS = new Set([
   0x74, 0x75, 0x76, 0x77,
 ]);
 
-const MONSTER_ADJUSTMENTS = {
+interface MonsterAdjustment {
+  maxFlyers?: number,
+  skip?: boolean,
+  tower?: boolean,
+  fixedSlots?: {pat0?: number, pat1?: number, pal2?: number, pal3?: number},
+  nonFlyers?: {[id: number]: [number, number]},
+}
+const MONSTER_ADJUSTMENTS: {[loc: number]: MonsterAdjustment} = {
   [0x03]: { // Valley of Wind
     maxFlyers: 2,
     fixedSlots: {
@@ -1651,7 +1669,7 @@ const MONSTER_ADJUSTMENTS = {
   },
 };
 
-const ITEMS = new Map([
+const ITEMS: Map<number, {id: number, name: string, key: boolean}> = new Map([
   // id  name                  key
   [0x00, 'Sword of Wind',      true],
   [0x01, 'Sword of Fire',      true],
@@ -1729,12 +1747,12 @@ const ITEMS = new Map([
   [0x46, 'Barrier',            true],
   [0x47, 'Change',             true],
   [0x48, 'Flight',             true],
-].map(([id, name, key]) => [id, {id, name, key}]));
+].map(([id, name, key]) => [id, {id, name, key: !!key}])) as any;
 
 
 const RETAIN_SLOTS = new Set([0x50, 0x53]);
 
-const UNTOUCHED_MONSTERS = { // not yet +0x50 in these keys
+const UNTOUCHED_MONSTERS: {[id: number]: boolean} = { // not yet +0x50 in these keys
   [0x7e]: true, // vertical platform
   [0x7f]: true, // horizontal platform
   [0x83]: true, // glitch in $7c (hydra)
@@ -1745,7 +1763,7 @@ const UNTOUCHED_MONSTERS = { // not yet +0x50 in these keys
   [0xa6]: true, // glitch in location $af (mado 2)
 };
 
-const shuffleRandomNumbers = (rom, random) => {
+const shuffleRandomNumbers = (rom: Uint8Array, random: Random) => {
   const table = rom.subarray(0x357e4 + 0x10, 0x35824 + 0x10);
   random.shuffle(table);
 };

@@ -81,7 +81,7 @@ export class Random {
     }
   }
 
-  shuffle<T>(array: T[]): T[] {
+  shuffle<T extends unknown[] | Uint8Array>(array: T): T {
     for (let i = array.length; i;) {
       const j = this.nextInt(i--);
       [array[i], array[j]] = [array[j], array[i]];

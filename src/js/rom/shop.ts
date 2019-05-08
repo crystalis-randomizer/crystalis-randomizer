@@ -123,7 +123,6 @@ export class Shop extends Entity {
             (i, p) => prg[this.pricesAddress + i] = Math.round(p * 32) :
             (i, p) => writeLittleEndian(prg, this.pricesAddress + 2 * i, p);
     for (let i = 0; i < CONTENTS_COUNTS[this.type]; i++) {
-if(this.id==1)console.log(`shop ${this.id} item ${i} @ ${(this.contentsAddress + i).toString(16)}: ${this.contents[i].toString(16)} @ ${this.prices[i]}`);
       prg[this.contentsAddress + i] =
           this.contents[i] != null ? this.contents[i] : 0xff;
     }

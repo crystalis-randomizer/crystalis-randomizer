@@ -627,11 +627,9 @@ export class Location extends Node {
     const rom = this.graph.rom;
     if (!rom) throw new Error(`Cannot write without a rom`);
     for (const shop of rom.shops) {
-console.log(`SHOP ${hex(this.id)} vs ${hex(shop.location)}`);
       if (shop.location === this.id) {
         for (let i = 0; i < 4; i++) {
           shop.contents[i] = this.sells[i] ? this.sells[i].id : 0xff;
-console.log(`shop at ${hex(shop.location)}: item ${i} => ${shop.contents[i]}`);
         }
       }
     }

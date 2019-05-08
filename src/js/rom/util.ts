@@ -90,7 +90,7 @@ export function countBits(x: number): number {
 }
 
 export function hex(id: number): string {
-  return id.toString(16).padStart(2, '0');
+  return id ? id.toString(16).padStart(2, '0') : String(id);
 }
 
 export function hex4(id: number): string {

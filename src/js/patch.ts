@@ -526,7 +526,7 @@ const noTeleportOnThunderSword = (rom) => {
 };
 
 // Add the statue of onyx and possibly the teleport block trigger to Cordel West
-const addCordelWestTriggers = (rom, flags) => {
+const addCordelWestTriggers = (rom: Rom, flags: FlagSet) => {
   for (const spawn of rom.locations[0x15].spawns) {
     if (spawn.isChest() || (flags.disableTeleportSkip() && spawn.isTrigger())) {
       // Copy if (1) it's the chest, or (2) we're disabling teleport skip
@@ -535,7 +535,7 @@ const addCordelWestTriggers = (rom, flags) => {
   }
 };
 
-const fixRabbitSkip = (rom) => {
+const fixRabbitSkip = (rom: Rom) => {
   for (const spawn of rom.locations[0x28].spawns) {
     if (spawn.isTrigger() && spawn.id === 0x86) {
       if (spawn.x === 0x740) {
@@ -546,36 +546,37 @@ const fixRabbitSkip = (rom) => {
   }
 };
 
-const storyMode = (rom) => {
+const storyMode = (rom: Rom) => {
   // shuffle has already happened, need to use shuffled flags from
   // NPC spawn conditions...
-  const requirements = rom.npcs[0xcb].spawnConditions.get(0xa6);
-  // Note: if bosses are shuffled we'll need to detect this...
-  requirements.push(~rom.npcs[0xc2].spawnConditions.get(0x28)[0]); // Kelbesque 1
-  requirements.push(~rom.npcs[0x84].spawnConditions.get(0x6e)[0]); // Sabera 1
-  requirements.push(~rom.triggers[0x9a & 0x7f].conditions[1]); // Mado 1
-  requirements.push(~rom.npcs[0xc5].spawnConditions.get(0xa9)[0]); // Kelbesque 2
-  requirements.push(~rom.npcs[0xc6].spawnConditions.get(0xac)[0]); // Sabera 2
-  requirements.push(~rom.npcs[0xc7].spawnConditions.get(0xb9)[0]); // Mado 2
-  requirements.push(~rom.npcs[0xc8].spawnConditions.get(0xb6)[0]); // Karmine
-  requirements.push(~rom.npcs[0xcb].spawnConditions.get(0x9f)[0]); // Draygon 1
-  requirements.push(0x200); // Sword of Wind
-  requirements.push(0x201); // Sword of Fire
-  requirements.push(0x202); // Sword of Water
-  requirements.push(0x203); // Sword of Thunder
-  // TODO - statues of moon and sun may be relevant if entrance shuffle?
-  // TODO - vampires and insect?
+  rom.npcs[0xcb].spawnConditions.set(0xa6, [
+    // Note: if bosses are shuffled we'll need to detect this...
+    ~rom.npcs[0xc2].spawnConditions.get(0x28)[0], // Kelbesque 1
+    ~rom.npcs[0x84].spawnConditions.get(0x6e)[0], // Sabera 1
+    ~rom.triggers[0x9a & 0x7f].conditions[1], // Mado 1
+    ~rom.npcs[0xc5].spawnConditions.get(0xa9)[0], // Kelbesque 2
+    ~rom.npcs[0xc6].spawnConditions.get(0xac)[0], // Sabera 2
+    ~rom.npcs[0xc7].spawnConditions.get(0xb9)[0], // Mado 2
+    ~rom.npcs[0xc8].spawnConditions.get(0xb6)[0], // Karmine
+    ~rom.npcs[0xcb].spawnConditions.get(0x9f)[0], // Draygon 1
+    0x200, // Sword of Wind
+    0x201, // Sword of Fire
+    0x202, // Sword of Water
+    0x203, // Sword of Thunder
+    // TODO - statues of moon and sun may be relevant if entrance shuffle?
+    // TODO - vampires and insect?
+  ]);
 };
 
 
 // Hard mode flag: Hc - zero out the sword's collision plane
-const disableStabs = (rom) => {
+const disableStabs = (rom: Rom) => {
   for (const o of [0x08, 0x09, 0x27]) {
     rom.objects[o].collisionPlane = 0;
   }
 };
 
-const orbsOptional = (rom) => {
+const orbsOptional = (rom: Rom) => {
   for (const obj of [0x10, 0x14, 0x18, 0x1d]) {
     // 1. Loosen terrain susceptibility of level 1 shots
     rom.objects[obj].terrainSusceptibility &= ~0x04;
@@ -585,7 +586,7 @@ const orbsOptional = (rom) => {
 };
 
 // Programmatically add a hole between valley of wind and lime tree valley
-const connectLimeTreeToLeaf = (rom) => {
+const connectLimeTreeToLeaf = (rom: Rom) => {
   const valleyOfWind = rom.locations[0x03];
   const limeTree = rom.locations[0x42];
 
@@ -608,23 +609,23 @@ const connectLimeTreeToLeaf = (rom) => {
 
 
 // Stamp the ROM
-export const stampVersionSeedAndHash = (rom, seed, flags) => {
+export const stampVersionSeedAndHash = (rom: Uint8Array, seed: number, flags: FlagSet) => {
   // Use up to 26 bytes starting at PRG $25ea8
   // Would be nice to store (1) commit, (2) flags, (3) seed, (4) hash
   // We can use base64 encoding to help some...
   // For now just stick in the commit and seed in simple hex
   const crc = crc32(rom);
-  const crcString = crc.toString(16).padStart(8, 0).toUpperCase();
+  const crcString = crc.toString(16).padStart(8, '0').toUpperCase();
   const hash = version.STATUS == 'unstable' ?
-      version.HASH.substring(0, 7).padStart(7, 0).toUpperCase() + '     ' :
+      version.HASH.substring(0, 7).padStart(7, '0').toUpperCase() + '     ' :
       version.VERSION.substring(0, 12).padEnd(12, ' ');
-  seed = seed.toString(16).padStart(8, 0).toUpperCase();
-  const embed = (addr, text) => {
+  const seedStr = seed.toString(16).padStart(8, '0').toUpperCase();
+  const embed = (addr: number, text: string) => {
     for (let i = 0; i < text.length; i++) {
       rom[addr + 0x10 + i] = text.charCodeAt(i);
     }
   };
-  const intercalate = (s1, s2) => {
+  const intercalate = (s1: string, s2: string): string => {
     const out = [];
     for (let i = 0; i < s1.length || i < s2.length; i++) {
       out.push(s1[i] || ' ');
@@ -634,7 +635,7 @@ export const stampVersionSeedAndHash = (rom, seed, flags) => {
   };
 
   embed(0x277cf, intercalate('  VERSION     SEED      ',
-                             `  ${hash}${seed}`));
+                             `  ${hash}${seedStr}`));
   let flagString = String(flags);
 
   // if (flagString.length > 36) flagString = flagString.replace(/ /g, '');

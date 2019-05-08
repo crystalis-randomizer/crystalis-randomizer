@@ -8,7 +8,7 @@ import {Rom} from './rom.js';
 import {Entrance, Exit, Flag, Location, Spawn} from './rom/location.js';
 import {LocalDialog} from './rom/npc.js';
 import {ShopType} from './rom/shop.js';
-import {writeLittleEndian} from './rom/util.js';
+import {seq, writeLittleEndian} from './rom/util.js';
 import * as version from './version.js';
 
 // TODO - to shuffle the monsters, we need to find the sprite palttes and
@@ -202,6 +202,7 @@ const postParsedShuffle = async (rom: Uint8Array,
 
 const misc = (rom: Rom, flags: FlagSet) => {
 
+  if (!rom || !flags) console.log(rom, flags);
 };
 
 const closeCaveEntrances = (rom: Rom, flags: FlagSet) => {
@@ -306,7 +307,7 @@ const eastCave = (rom: Rom) => {
                     [0x9c, 0x86, 0x80, 0x80, 0x9a]];
   // TODO fill up graphics, etc --> $1a, $1b, $05 / $88, $b5 / $14, $02
   // Think aobut exits and entrances...?
-  console.log(screens1, screens2);
+  console.log(rom, screens1, screens2);
 };
 
 const adjustGoaFortressTriggers = (rom: Rom) => {
@@ -390,22 +391,33 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   rom.npcs[0x16].spawnConditions.get(0x57)!.shift(); // remove 051 NOT learned barrier
   rom.npcs[0x88].spawnConditions.get(0x57)!.pop(); // remove 051 NOT learned barrier
 
+  const reverseDialog = (ds: LocalDialog[]) => {
+    ds.reverse();
+    for (let i = 0; i < ds.length; i++) {
+      const next = ds[i + 1];
+      ds[i].condition = next ? ~next.condition : ~0;
+    }
+  };
+
   // Oak elder ($1d) ~ sword of fire redundant flag
   const oakElderDialog = rom.npcs[0x1d].localDialogs.get(-1)!;
   oakElderDialog[4].flags = [];
   // Make sure that we try to give the item from *all* post-insect dialogs
-  oakElderDialog[0].message.action = 0x03;
-  oakElderDialog[1].message.action = 0x03;
-  oakElderDialog[2].message.action = 0x03;
-  oakElderDialog[3].message.action = 0x03;
+  reverseDialog(oakElderDialog);
+  // oakElderDialog[0].message.action = 0x03;
+  // oakElderDialog[1].message.action = 0x03;
+  // oakElderDialog[2].message.action = 0x03;
+  // oakElderDialog[3].message.action = 0x03;
 
   // Oak mother ($1e) ~ insect flute redundant flag
   // TODO - rearrange these flags a bit (maybe ~045, ~0a0 ~041 - so reverse)
   //      - will need to change ballOfFire and insectFlute in depgraph
   const oakMotherDialog = rom.npcs[0x1e].localDialogs.get(-1)!;
   oakMotherDialog[2].flags = [];
-  oakMotherDialog[0].message.action = 0x03;
-  oakMotherDialog[1].message.action = 0x03;
+  reverseDialog(oakMotherDialog);
+  // Ensure we always give item after insect
+  // oakMotherDialog[0].message.action = 0x03;
+  // oakMotherDialog[1].message.action = 0x03;
 
   // Throne room back door guard ($33 @ $df) should have same spawn condition as queen
   // (020 NOT queen not in throne room AND 01b NOT viewed mesia recording)
@@ -467,7 +479,7 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   asina.localDialogs.get(0xe1)![0].message.action = 0x11;
   asina.localDialogs.get(0xe1)![2].message.action = 0x11;
   // Prevent despawn from back room after defeating sabera (~$8f)
-  asina.spawnConditions.get(0xe1)!.pop()
+  asina.spawnConditions.get(0xe1)!.pop();
 
   // Kensu in lighthouse ($74/$7e @ $62) ~ pendant redundant flag
   rom.npcs[0x74].localDialogs.get(0x62)![0].flags = [];
@@ -726,7 +738,7 @@ const updateDifficultyScalingTables = (rom: Uint8Array, flags: FlagSet, asm: Ass
 
   // Currently this is three $30-byte tables, which we start at the beginning
   // of the postshuffle ComputeEnemyStats.
-  const diff = new Array(48).fill(0).map((x, i) => i);
+  const diff = seq(48, x => x);
 
   // PAtk = 5 + Diff * 15/32
   // DiffAtk table is 8 * PAtk = round(40 + (Diff * 15 / 4))
@@ -811,7 +823,7 @@ const rescaleShops = (rom: Rom, asm: Assembler, random?: Random) => {
   }
 
   // Also fill the scaling tables.
-  const diff = new Array(48).fill(0).map((x, i) => i);
+  const diff = seq(48, x => x);
   // Tool shops scale as 2 ** (Diff / 10), store in 8ths
   patchBytes(rom.prg, asm.expand('ToolShopScaling'),
              diff.map(d => Math.round(8 * (2 ** (d / 10)))));

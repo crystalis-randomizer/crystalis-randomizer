@@ -1,0 +1,30 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use File::Basename qw/dirname/;
+use File::Temp qw/tempdir/;
+
+my $path = $ARGV[0];
+
+my $tmp = tempdir(CLEANUP => 1);
+my $f = "$tmp/input.ts";
+system "cp $path $f";
+system "cp tslint.json $tmp";
+
+open LOG ">>", "/tmp/fcl";
+
+#print STDERR "node_modules/tslint/bin/tslint --config $tmp/tslint.json $f 2>&1\n";
+
+open TSLINT, '-|', "node_modules/tslint/bin/tslint --config $tmp/tslint.json $f 2>&1";
+
+while ($_ = <TSLINT>) {
+  print LOG "LINE: $_";
+  s/\S*input\.ts/$path/g;
+  print STDERR $_;
+}
+# close LOG;
+close TSLINT or exit 1;
+close LOG;
+#print STDERR "$ARGV[0]:5:5: ERROR - something\n";

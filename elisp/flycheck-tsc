@@ -34,8 +34,7 @@ while ($_ = <TSC>) {
   print STDERR $_;
 }
 # close LOG;
-close TSC or exit 1;
-
 system "rm -f $base.js*"
+close TSC or exit 1;
 
 #print STDERR "$ARGV[0]:5:5: ERROR - something\n";

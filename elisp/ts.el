@@ -50,9 +50,10 @@ See URL `http://www.typescriptlang.org/'."
 
 See URL `https://github.com/palantir/tslint'."
   :command ("tslint"
-            "--project" "tsconfig.json"
+            ;"--project" "tsconfig.json"
             "--config" "tslint.json"
-            source-inplace)
+            ;source-inplace)
+            source)
   :working-directory (lambda (x) sdh-ts-root)
   :error-patterns ((warning "ERROR: " (file-name) ":" line ":" column " - " (message)))
   :modes typescript-mode)
@@ -60,6 +61,7 @@ See URL `https://github.com/palantir/tslint'."
 ;; Link to the correct checker script...?
 (setq flycheck-typescript-tsc-executable (concat (file-name-directory load-file-name) "flycheck-tsc"))
 (setq flycheck-typescript-tslint-executable (concat sdh-ts-root "node_modules/tslint/bin/tslint"))
+;(setq flycheck-typescript-tsc-executable (concat (file-name-directory load-file-name) "flycheck-tslint"))
 
 
 (defun sdh-ts-init ()
@@ -75,6 +77,8 @@ See URL `https://github.com/palantir/tslint'."
   (define-key typescript-mode-map (kbd "}") 'self-insert-command)
   (define-key typescript-mode-map (kbd "{") 'self-insert-command)
   (define-key typescript-mode-map (kbd "M-RET") 'company-complete)
+  ;; https://github.com/emacs-lsp/lsp-ui/issues/266
+  ;(remove-hook 'lsp-after-diagnostics-hook 'lsp-ui-sideline--diagnostics-changed t)
 )
 
 (flycheck-add-next-checker 'lsp-ui 'typescript-tslint)
@@ -82,3 +86,4 @@ See URL `https://github.com/palantir/tslint'."
 
 ;(add-to-list 'flycheck-checkers 'typescript-tsc)
 (add-to-list 'flycheck-checkers 'typescript-tslint)
+

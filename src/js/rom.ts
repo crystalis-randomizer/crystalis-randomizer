@@ -35,7 +35,6 @@ import {UnionFind} from './unionfind.js';
 // Other possible regions:
 //   - 48 bytes at $ffc0 (mezame shrine) => $ffe0 is all $ff in vanilla.
 
-
 export class Rom {
 
   // These values can be queried to determine how to parse any given rom.
@@ -308,6 +307,7 @@ export class Rom {
     writeAll(this.itemGets);
     writeAll(this.items);
     writeAll(this.shops);
+    writeAll(this.bossKills);
     promises.push(writer.commit());
     await Promise.all(promises).then(() => undefined);
   }

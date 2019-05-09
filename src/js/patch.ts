@@ -6,7 +6,7 @@ import {FlagSet} from './flagset.js';
 import {Random} from './random.js';
 import {Rom} from './rom.js';
 import {Entrance, Exit, Flag, Location, Spawn} from './rom/location.js';
-import {LocalDialog} from './rom/npc.js';
+import {GlobalDialog, LocalDialog} from './rom/npc.js';
 import {ShopType} from './rom/shop.js';
 import {seq, writeLittleEndian} from './rom/util.js';
 import * as version from './version.js';
@@ -166,6 +166,10 @@ export const shuffle = async (rom: Uint8Array,
   reversibleSwanGate(parsed);
   adjustGoaFortressTriggers(parsed);
   preventNpcDespawns(parsed, flags);
+  if (flags.requireHealedDolphinToRide()) requireHealedDolphin(parsed);
+  if (flags.saharaRabbitsRequireTelepathy()) requireTelepathyForDeo(parsed);
+
+  adjustItemNames(parsed, flags);
 
   misc(parsed, flags);
 
@@ -486,6 +490,12 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   // Prevent despawn from back room after defeating sabera (~$8f)
   asina.spawnConditions.get(0xe1)!.pop();
 
+  // Kensu in cabin ($68 @ $61) needs to be available even after visiting Joel.
+  // Change him to just disappear after setting the rideable dolphin flag (09b),
+  // and to not even show up at all unless the fog lamp was returned (021).
+  rom.npcs[0x68].spawnConditions.set(0x61, [~0x09b, 0x021]);
+  rom.npcs[0x68].localDialogs.get(-1)![0].message.action = 0x02; // disappear
+
   // Kensu in lighthouse ($74/$7e @ $62) ~ pendant redundant flag
   rom.npcs[0x74].localDialogs.get(0x62)![0].flags = [];
   rom.npcs[0x7e].localDialogs.get(0x62)![0].flags = [];
@@ -538,6 +548,25 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   // TODO - zebu cave dialog, windmill spawn, etc
 };
 
+const requireHealedDolphin = (rom: Rom) => {
+  // Normally the fisherman ($64) spawns in his house ($d6) if you have
+  // the shell flute (236).  Here we also add a requirement on the healed
+  // dolphin slot (025), which we keep around since it's actually useful.
+  rom.npcs[0x64].spawnConditions.set(0xd6, [0x236, 0x025]);
+  // Also fix daughter's dialog ($7b).
+  const daughterDialog = rom.npcs[0x7b].localDialogs.get(-1)!;
+  daughterDialog.unshift(daughterDialog[0].clone());
+  daughterDialog[0].condition = ~0x025;
+  daughterDialog[1].condition = ~0x236;
+};
+
+const requireTelepathyForDeo = (rom: Rom) => {
+  // Not having telepathy (243) will trigger a "kyu kyu" (1a:12, 1a:13) for
+  // both generic bunnies (59) and deo (5a).
+  rom.npcs[0x59].globalDialogs.push(GlobalDialog.of(~0x243, [0x1a, 0x12]));
+  rom.npcs[0x5a].globalDialogs.push(GlobalDialog.of(~0x243, [0x1a, 0x13]));
+};
+
 const teleportOnThunderSword = (rom: Rom) => {
   // itemget 03 sword of thunder => set 2fd shyron warp point
   rom.itemGets[0x03].flags.push(0x2fd);
@@ -553,6 +582,21 @@ const teleportOnThunderSword = (rom: Rom) => {
 const noTeleportOnThunderSword = (rom: Rom) => {
   // Change sword of thunder's action to bbe the same as other swords (16)
   rom.itemGets[0x03].acquisitionAction.action = 0x16;
+};
+
+const adjustItemNames = (rom: Rom, flags: FlagSet) => {
+  if (flags.leatherBootsGiveSpeed()) {
+    // rename leather boots to speed boots
+    const leatherBoots = rom.items[0x2f]!;
+    leatherBoots.menuName = 'Speed Boots';
+    leatherBoots.messageName = 'Speed Boots';
+  }
+
+  // rename balls to orbs
+  for (let i = 0x05; i < 0x0c; i += 2) {
+    rom.items[i].menuName = rom.items[i].menuName.replace('Ball', 'Orb');
+    rom.items[i].messageName = rom.items[i].messageName.replace('Ball', 'Orb');
+  }
 };
 
 // Add the statue of onyx and possibly the teleport block trigger to Cordel West

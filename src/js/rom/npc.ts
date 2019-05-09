@@ -145,6 +145,12 @@ export class Npc extends Entity {
 export class GlobalDialog {
   constructor(public condition: number, public message: MessageId) {}
 
+  static of(condition: number,
+            message: [number, number, number?]): GlobalDialog {
+    const [part, index, action = 0] = message;
+    return new GlobalDialog(condition, MessageId.of({part, index, action}));
+  }
+
   // Returns [dialog, last].
   static parse(data: Data<number>, offset: number = 0): [GlobalDialog, boolean] {
     const flag = readBigEndian(data, offset);
@@ -171,6 +177,10 @@ export class LocalDialog {
               public message: MessageId,
               public update: number,
               public flags: FlagList) {}
+
+  clone(): LocalDialog {
+    return LocalDialog.parse(this.bytes(false))[0];
+  }
 
   // Returns [dialog, last]
   static parse(data: Data<number>, offset: number = 0): [LocalDialog, boolean] {

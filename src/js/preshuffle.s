@@ -246,62 +246,9 @@ CheckBelowBoss:
 .org $1ede8  ; mado pattern 0
   jsr CheckBelowBoss
 
-
-
-;;; Dialogs and Spawn Conditions
-
-
 ;; If LookingAt is $1f and the item goes into the $20 row then we can't
 ;; just reject - instead, add the item to an overflow chest.
 ;; We use the bytes at 64b8..64bf to store the overflow.
-
-
-
-;;; NPC Despawn triggers
-
-;; kensu in the cabin needs to be available even after visiting joel.
-;; just have him disappear after setting the flag. but also require
-;; having returned the fog lamp before he shows up - this requires
-;; moving him up a word.
-.org $1c6b0
-  .byte $f6,$88 ; pointer to kensu 68
-.org $1c8f6
-  .byte $61,$20,$9b,$80,$21,$ff
-.org $1d867
-  .byte $12,$21 ; message 11:01 (action 02 disappear)
-
-.ifdef _REQUIRE_HEALED_DOLPHIN_TO_RIDE
-;; move portoa fisherman up 1 word, make him only
-;; appear if both shell flute AND healed dolphin
-;; NOTE: 8b is the traditional itemget and 25
-;; is tied to the slot (healing dolphin)
-;; We could delete the slot one, but it's actually
-;; convenient to have both...
-.org $1c6a8
-  .byte $99,$87
-.org $1c799
-  .byte $d6,$00,$25,$80,$8b,$ff
-;; daughter's dialog should trigger on both, too
-.org $1d1c5
-  .byte $80,$2a,$03,$cc,$ff
-  .byte $20,$25,$01,$26,$00
-  .byte $20,$8b,$01,$26,$00
-  .byte $00,$21,$01,$25,$00
-  .byte $a0,$00,$01,$24,$00
-.endif
-
-
-.ifdef _SAHARA_RABBITS_REQUIRE_TELEPATHY
-.org $1d653 ; dialog 5a deo
-  ;; replace akahana's dialog - would be nice to add an extra stanza instead,
-  ;; but there's not immediately space - if we ever defrag then we should do it
-  ;; or else remove all the changed forms (except maybe soldier)
-  .byte $a2,$43   ; 243 NOT telepathy -> 1a:13
-.org $1d671 ; dialog 59 generic sahara bunnies
-  ;; replace stom - he can talk to bunnies just fine
-  .byte $22,$43   ; 243 NOT telepathy -> 1a:12
-.endif
-
 
 
 ;;; ITEM GET PATCHES
@@ -609,11 +556,6 @@ ReloadInventoryAfterLoad:
 .endif
 
 
-.ifdef _LEATHER_BOOTS_GIVE_SPEED
-.org $2134a
-  .byte "Speed Boots",$ff
-.endif
-
 
 
 .ifdef _DISABLE_SWORD_CHARGE_GLITCH
@@ -658,16 +600,6 @@ CheckOpelStatue:
         ;; 5 free bytes
 .assert < $2791c
 .endif
-
-
-
-.bank $28000 $8000:$2000
-.ifdef _LEATHER_BOOTS_GIVE_SPEED
-.org $29105
-  .byte "Speed Boots",$00
-.endif
-
-
 
 
 

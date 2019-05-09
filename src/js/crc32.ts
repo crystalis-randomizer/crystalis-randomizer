@@ -12,12 +12,16 @@ const buildTable = () => {
   }
 };
 
+const USE_TEXT_ENCODER = false;
+
+const strToBytes: (str: string) => Uint8Array | number[] =
+    USE_TEXT_ENCODER && typeof TextEncoder === 'function' ?
+        (str: string) => new TextEncoder().encode(str) :
+        (str: string) => str.split('').map(x => x.charCodeAt(0));
+
 export const crc32 = (arr: number[] | Uint8Array | string): number => {
   if (!table) buildTable();
-  if (typeof arr === 'string') arr =
-      typeof TextEncoder === 'function' ?
-          new TextEncoder().encode(arr) :
-          arr.split('').map(x => x.charCodeAt(0));
+  if (typeof arr === 'string') arr = strToBytes(arr);
   let sum = -1;
   for (let i = 0, len = arr.length; i < len; i++) {
     sum = (sum >>> 8) ^ table[(sum ^ arr[i]) & 0xff];

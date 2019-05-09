@@ -2,18 +2,11 @@
 
 set -ex
 
-# Prepares a fake ROM for testing, which contains only the minimal table
-# structures that are necessary for the randomizer to not crash (i.e.
-# address tables, terminations, etc.)
-{
-  # Pad the test data on either side, then chop down to the right size
-  #head -c 81919 /dev/urandom
-  head -c 77823 /dev/urandom
-  cat test/testdata
-  head -c 300000 /dev/urandom
-} | head -c 393232 > test/test.nes
-
-file=${1-test/test.nes}
+# By default, use testdata, which is a fake rom with mostly random bytes, but
+# a few tables whose structure (particularly addresses and delimiters) can be
+# parsed in a reasonable way by the rom parser.  The original rom may also be
+# passed directly.
+file=${1-test/testdata}
 
 # Try all the presets
 for preset in $(node src/js/cli.js --list-presets); do
@@ -24,6 +17,3 @@ for preset in $(node src/js/cli.js --list-presets); do
   wc -c test/test_out.nes | grep -q 393232
   rm -f test/test_out.nes
 done
-
-# Clean up.
-rm -f test/test.nes

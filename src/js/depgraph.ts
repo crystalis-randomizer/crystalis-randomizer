@@ -181,7 +181,7 @@ export const generate = (flags: FlagSet = new FlagSet(), rom?: Rom): WorldGraph 
   const swordOfFire           = item(0x01, 'Sword of Fire')
                                   .weight(flags.guaranteeSword() ? 10 : 5)
                                   .fromPerson('Oak elder', 0x1d)
-                                  .dialog(0x1d, undefined, 2)
+                                  .dialog(0x1d, undefined, 3)
                                   .key();
   const swordOfWater          = item(0x02, 'Sword of Water')
                                   .weight(10)
@@ -196,12 +196,12 @@ export const generate = (flags: FlagSet = new FlagSet(), rom?: Rom): WorldGraph 
   const tornadoBracelet       = item(0x06, 'Tornado Bracelet').chest().key();
   const ballOfFire            = item(0x07, 'Ball of Fire')
                                   .bossDrop('Insect', 0x01)
-                                  .dialog(0x1e, undefined, 3)
+                                  .dialog(0x1e, undefined, 2)
                                   .dialog(0x20, undefined, 0)
                                   .dialog(0x21, undefined, 0)
                                   .dialog(0x22, undefined, 0)
                                   .dialog(0x60, 0x1e, 0)
-                                  .dialog(0x1d, undefined, 3)
+                                  .dialog(0x1d, undefined, 2)
                                   .dialog(0x1f, undefined, 0)
                                   .npcSpawn(0xc1)
                                   .key();
@@ -272,7 +272,7 @@ export const generate = (flags: FlagSet = new FlagSet(), rom?: Rom): WorldGraph 
                                   .key();
   const insectFlute           = item(0x27, 'Insect Flute')
                                   .fromPerson('Oak mother', 0x1e)
-                                  .dialog(0x1e, undefined, 2)
+                                  .dialog(0x1e, undefined, 1)
                                   .key();
   const fluteOfLime           = item(0x28, 'Flute of Lime')
                                   .fromPerson('Portoa queen', 0x38)

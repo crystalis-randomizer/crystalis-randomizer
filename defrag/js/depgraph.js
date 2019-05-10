@@ -1,7 +1,7 @@
 import { FlagSet } from './flagset.js';
 import { Area, Boss, Condition, Item, Location, Magic, Option, Slot, TrackerNode, Trigger, WorldGraph, } from './nodes.js';
-export const generate = (flags = new FlagSet()) => {
-    const graph = new WorldGraph();
+export const generate = (flags = new FlagSet(), rom) => {
+    const graph = new WorldGraph(rom);
     const option = (name, value = true) => new Option(graph, name, value);
     const item = (id, name) => new Item(graph, id, name);
     const magic = (id, name) => new Magic(graph, id, name);
@@ -65,7 +65,7 @@ export const generate = (flags = new FlagSet()) => {
     const tornadoBracelet = item(0x06, 'Tornado Bracelet').chest().key();
     const ballOfFire = item(0x07, 'Ball of Fire')
         .bossDrop('Insect', 0x01)
-        .dialog(0x1e, undefined, 0)
+        .dialog(0x1e, undefined, 2)
         .dialog(0x20, undefined, 0)
         .dialog(0x21, undefined, 0)
         .dialog(0x22, undefined, 0)
@@ -145,7 +145,7 @@ export const generate = (flags = new FlagSet()) => {
         .key();
     const fluteOfLime = item(0x28, 'Flute of Lime')
         .fromPerson('Portoa queen', 0x38)
-        .direct(0x98f9)
+        .fromPerson('Asina secondary', 0x62, 1)
         .dialog(0x38, undefined, 4)
         .key();
     const gasMask = item(0x29, 'Gas Mask')
@@ -202,7 +202,6 @@ export const generate = (flags = new FlagSet()) => {
         .npcSpawn(0x7f, 0x65)
         .npcSpawn(0x46)
         .npcSpawn(0x47)
-        .npcSpawn(0x6a)
         .npcSpawn(0x84)
         .npcSpawn(0x8e)
         .dialog(0x3d)
@@ -1430,7 +1429,7 @@ export const generate = (flags = new FlagSet()) => {
     return graph;
 };
 export const shuffle = async (rom, random, log, flags = new FlagSet('Sbkm Sct'), progress) => {
-    const graph = generate(flags);
+    const graph = generate(flags, rom);
     if (flags.shuffleShops())
         graph.shuffleShops(random);
     const allSlots = graph.nodes.filter(s => s instanceof Slot && s.slots && s.slotName);
@@ -1531,7 +1530,7 @@ export const shuffle = async (rom, random, log, flags = new FlagSet('Sbkm Sct'),
         }
     }
     if (rom)
-        graph.write(rom);
+        graph.write();
     if (!log)
         return;
     log.items = [];
@@ -1556,7 +1555,7 @@ export const shuffle = async (rom, random, log, flags = new FlagSet('Sbkm Sct'),
     }
 };
 export const shuffle2 = async (rom, random, log, flags = new FlagSet('Sbkm Sct'), progress) => {
-    const graph = generate(flags);
+    const graph = generate(flags, rom);
     if (flags.shuffleShops())
         graph.shuffleShops(random);
     const locationList = graph.integrate();
@@ -1676,7 +1675,7 @@ export const shuffle3 = async (graph, locationList, rom, random, log, flags = ne
         return false;
     }
     if (rom)
-        graph.write(rom);
+        graph.write();
     if (!log)
         return true;
     if (stats) {

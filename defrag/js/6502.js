@@ -53,6 +53,11 @@ class File {
         if (index < 0)
             arr.splice(~index, 0, address);
     }
+    parseNumber(num) {
+        const parsed = parseNumber(num, true);
+        return typeof parsed === 'number' ?
+            parsed : new Context(this.labels).mapLabel(parsed);
+    }
     ingest(line) {
         this.lineNumber++;
         this.lineContents = line;
@@ -99,14 +104,14 @@ class File {
             return;
         }
         else if ((match = /^\s*\.res\s+([^,]+)(?:,\s*(.+))?/i.exec(line))) {
-            const l = ByteLine.parseRes(parseNumber(match[1]), parseNumber(match[2] || '0'));
+            const l = ByteLine.parseRes(this.parseNumber(match[1]), this.parseNumber(match[2] || '0'));
             this.addLine(l);
             this.pc += l.size();
             return;
         }
         else if ((match = /^define\s+(\S+)\s+(.*)/.exec(line))) {
             const label = match[1];
-            this.addLabel(label, parseNumber(match[2]));
+            this.addLabel(label, this.parseNumber(match[2]));
             return;
         }
         else if ((match = /^(\S+?):(.*)$/.exec(line))) {
@@ -321,13 +326,19 @@ class Context {
     mapLabel(label, pc) {
         let match = /([^-+]+)([-+])(.*)/.exec(label);
         if (match) {
-            const left = this.map(parseNumber(match[1], true), pc);
-            const right = this.map(parseNumber(match[3], true), pc);
+            const left = this.map(parseNumber(match[1].trim(), true), pc);
+            const right = this.map(parseNumber(match[3].trim(), true), pc);
             return match[2] === '-' ? left - right : left + right;
+        }
+        match = /([^*]+)[*](.*)/.exec(label);
+        if (match) {
+            const left = this.map(parseNumber(match[1].trim(), true), pc);
+            const right = this.map(parseNumber(match[2].trim(), true), pc);
+            return left * right;
         }
         match = /([<>])(.*)/.exec(label);
         if (match) {
-            const arg = this.map(parseNumber(match[2], true), pc);
+            const arg = this.map(parseNumber(match[2].trim(), true), pc);
             return match[1] === '<' ? arg & 0xff : (arg >>> 8) & 0xff;
         }
         let addrs = this.labels[label];

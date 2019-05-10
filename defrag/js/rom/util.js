@@ -40,7 +40,7 @@ export function countBits(x) {
     return (x + (x >> 4)) & 0xf;
 }
 export function hex(id) {
-    return id.toString(16).padStart(2, '0');
+    return id ? id.toString(16).padStart(2, '0') : String(id);
 }
 export function hex4(id) {
     return id.toString(16).padStart(4, '0');
@@ -60,9 +60,9 @@ export function readBigEndian(data, offset) {
 export function readLittleEndian(data, offset) {
     return data[offset + 1] << 8 | data[offset];
 }
-export function readString(arr, address) {
+export function readString(arr, address, end = 0) {
     const bytes = [];
-    while (arr[address]) {
+    while (arr[address] != end) {
         bytes.push(arr[address++]);
     }
     return String.fromCharCode(...bytes);

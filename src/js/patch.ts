@@ -1284,8 +1284,12 @@ class MonsterPool {
   //   - for now, just assume if it has a child then it must keep same pattern bank!
 
   populate(location: Location) {
-    const {maxFlyers = 0, nonFlyers = {}, skip = false, fixedSlots = {}, ...unexpected} =
-          MONSTER_ADJUSTMENTS[location.id] || {};
+    const {maxFlyers = 0,
+           nonFlyers = {},
+           skip = false,
+           tower = false,
+           fixedSlots = {},
+           ...unexpected} = MONSTER_ADJUSTMENTS[location.id] || {};
     for (const u of Object.keys(unexpected)) {
       throw new Error(
           `Unexpected property '${u}' in MONSTER_ADJUSTMENTS[${location.id}]`);
@@ -1329,8 +1333,9 @@ class MonsterPool {
     while (this.locations.length) {
       const {location, slots} = this.locations.pop()!;
       const report: string[] = this.report['$' + location.id.toString(16).padStart(2, '0')] = [];
-      const {maxFlyers = 0, nonFlyers = {}, fixedSlots = {}} =
+      const {maxFlyers = 0, nonFlyers = {}, fixedSlots = {}, tower = false} =
             MONSTER_ADJUSTMENTS[location.id] || {};
+      if (tower) return;
       // Keep track of pattern and palette slots we've pinned.
       // It might be nice to have a mode where palette conflicts are allowed,
       // and we just go with one or the other, though this could lead to poisonous
@@ -1440,6 +1445,7 @@ class MonsterPool {
         spawn.monsterId = m.id;
         report.push(`    slot ${slot.toString(16)}: ${spawn}`);
 
+if((m.id&0xf0)===0xa0)console.log(`${location.id.toString(16)} <- ${m.id.toString(16)}`);
         // TODO - anything else need splicing?
 
         slots.splice(eligible, 1);
@@ -1645,12 +1651,15 @@ const MONSTER_ADJUSTMENTS: {[loc: number]: MonsterAdjustment} = {
   },
   [0x59]: { // Tower Floor 1
     // skip: true,
+    tower: true,
   },
   [0x5a]: { // Tower Floor 2
     // skip: true,
+    tower: true,
   },
   [0x5b]: { // Tower Floor 3
     // skip: true,
+    tower: true,
   },
   [0x60]: { // Angry Sea
     fixedSlots: {

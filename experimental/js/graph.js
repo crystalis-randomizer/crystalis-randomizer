@@ -18,10 +18,11 @@ export class Node {
     edges(opts) {
         return [];
     }
-    write(rom) { }
+    write() { }
 }
 export class Graph {
-    constructor() {
+    constructor(rom) {
+        this.rom = rom;
         this.nodes = [];
     }
     traverse({ wanted, dfs = false } = {}) {

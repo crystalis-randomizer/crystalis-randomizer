@@ -1,14 +1,18 @@
 import { AdHocSpawn } from './rom/adhocspawn.js';
+import { BossKill } from './rom/bosskill.js';
 import { Hitbox } from './rom/hitbox.js';
+import { Item } from './rom/item.js';
 import { ItemGet } from './rom/itemget.js';
 import { Location } from './rom/location.js';
 import { Messages } from './rom/messages.js';
 import { Metasprite } from './rom/metasprite.js';
 import { Npc } from './rom/npc.js';
 import { ObjectData } from './rom/objectdata.js';
+import { RomOption } from './rom/option.js';
 import { Palette } from './rom/palette.js';
 import { Pattern } from './rom/pattern.js';
 import { Screen } from './rom/screen.js';
+import { Shop } from './rom/shop.js';
 import { TileAnimation } from './rom/tileanimation.js';
 import { TileEffects } from './rom/tileeffects.js';
 import { Tileset } from './rom/tileset.js';
@@ -18,10 +22,14 @@ import { Writer } from './rom/writer.js';
 import { UnionFind } from './unionfind.js';
 export class Rom {
     constructor(rom) {
-        this.omitItemGetDataSuffix = false;
-        this.omitLocalDialogSuffix = false;
         this.prg = rom.subarray(0x10, 0x40010);
         this.chr = rom.subarray(0x40010);
+        this.shopCount = Rom.SHOP_COUNT.get(rom);
+        this.scalingLevels = Rom.SCALING_LEVELS.get(rom);
+        this.uniqueItemTableAddress = Rom.UNIQUE_ITEM_TABLE.get(rom);
+        this.shopDataTablesAddress = Rom.SHOP_DATA_TABLES.get(rom);
+        this.omitItemGetDataSuffix = Rom.OMIT_ITEM_GET_DATA_SUFFIX.get(rom);
+        this.omitLocalDialogSuffix = Rom.OMIT_LOCAL_DIALOG_SUFFIX.get(rom);
         for (const [address, value] of ADJUSTMENTS)
             this.prg[address] = value;
         this.screens = seq(0x103, i => new Screen(this, i));
@@ -38,7 +46,15 @@ export class Rom {
         this.metasprites = seq(0x100, i => new Metasprite(this, i));
         this.messages = new Messages(this);
         this.itemGets = seq(0x71, i => new ItemGet(this, i));
+        this.items = seq(0x49, i => new Item(this, i));
+        this.shops = seq(44, i => new Shop(this, i));
         this.npcs = seq(0xcd, i => new Npc(this, i));
+        this.bossKills = seq(0xe, i => new BossKill(this, i));
+    }
+    trigger(id) {
+        if (id < 0x80 || id > 0xff)
+            throw new Error(`Bad trigger id $${hex(id)}`);
+        return this.triggers[id & 0x7f];
     }
     get monsters() {
         const monsters = new Set();
@@ -105,6 +121,12 @@ export class Rom {
         return new Rom(file);
     }
     async writeData() {
+        Rom.SHOP_COUNT.set(this.prg, this.shopCount);
+        Rom.SCALING_LEVELS.set(this.prg, this.scalingLevels);
+        Rom.UNIQUE_ITEM_TABLE.set(this.prg, this.uniqueItemTableAddress);
+        Rom.SHOP_DATA_TABLES.set(this.prg, this.shopDataTablesAddress);
+        Rom.OMIT_ITEM_GET_DATA_SUFFIX.set(this.prg, this.omitItemGetDataSuffix);
+        Rom.OMIT_LOCAL_DIALOG_SUFFIX.set(this.prg, this.omitLocalDialogSuffix);
         const writer = new Writer(this.prg);
         writer.alloc(0x144f8, 0x17e00);
         writer.alloc(0x193f9, 0x1ac00);
@@ -113,6 +135,8 @@ export class Rom {
         writer.alloc(0x1cae5, 0x1d8f4);
         writer.alloc(0x1dde6, 0x1e065);
         writer.alloc(0x1e200, 0x1e3f0);
+        writer.alloc(0x2111a, 0x21468);
+        writer.alloc(0x28e81, 0x2922b);
         const promises = [];
         const writeAll = (writables) => {
             for (const w of writables) {
@@ -129,6 +153,9 @@ export class Rom {
         writeAll(this.screens);
         writeAll(this.adHocSpawns);
         writeAll(this.itemGets);
+        writeAll(this.items);
+        writeAll(this.shops);
+        writeAll(this.bossKills);
         promises.push(writer.commit());
         await Promise.all(promises).then(() => undefined);
     }
@@ -246,6 +273,12 @@ export class Rom {
         }
     }
 }
+Rom.OMIT_ITEM_GET_DATA_SUFFIX = RomOption.bit(0x142c0, 0);
+Rom.OMIT_LOCAL_DIALOG_SUFFIX = RomOption.bit(0x142c0, 1);
+Rom.SHOP_COUNT = RomOption.byte(0x142c1);
+Rom.SCALING_LEVELS = RomOption.byte(0x142c2);
+Rom.UNIQUE_ITEM_TABLE = RomOption.address(0x142d0);
+Rom.SHOP_DATA_TABLES = RomOption.address(0x142d3);
 function pickFile() {
     return new Promise((resolve, reject) => {
         if (window.location.hash !== '#reset') {

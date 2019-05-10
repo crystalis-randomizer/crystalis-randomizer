@@ -61,6 +61,9 @@ define ONE_MINUS_PITY_MP  0
 
 define PITY_HP_AMOUNT     5
 
+define SHOP_COUNT         11
+define SCALING_LEVELS     48
+
 ;;; Constants
 define ITEM_RABBIT_BOOTS     $12
 define ITEM_OPEL_STATUE      $26
@@ -122,21 +125,6 @@ RestoreBanksAndReturn:
 ReadControllersWithDirections:
 .org $3ffa9
 DisplayNumber:
-
-
-;;; NOTE: This needs to be BEFORE shuffling items!
-;;;   - Once item shuffle can accept a parsed rom, we can do this
-;;;     to parsed BEFORE we shuffle items.
-;;; Zebu student (person 14) secondary item -> alarm flute
-.org $085f1
-  .byte $31
-
-
-;;; Alarm flute cannot be sold - set price to zero
-.ifndef _NORMALIZE_SHOP_PRICES
-.org $21f24
-  .byte 0,0
-.endif
 
 
 .bank $14000 $8000:$4000
@@ -222,23 +210,6 @@ PatchTradeInItem:
 .assert < $1cae3
 
 
-
-;;; change second flute of lime into herb, but then we don't use it anyway
-.org $1ddc1
-  .byte $1d
-
-;;; npcdata table for second flute of lime chest in waterfall cave
-.org $19b15
-  .byte $10 ; mirrored shield instead
-
-;;; tool shop item table for leaf - alarm flute
-.org $21e2b
-  .byte $21 ; fruit of power instead
-
-;;; tool shop item table for joel - alarm flute
-.org $21e43
-  .byte $1f ; lysis plant instead
-
 ;; Prevent soft-lock when encountering sabera and mado from reverse
 ;; Double-returns if the boss's sprite is not in the top quarter of
 ;; the screen. This is unused space at the end of the triggers.
@@ -275,301 +246,9 @@ CheckBelowBoss:
 .org $1ede8  ; mado pattern 0
   jsr CheckBelowBoss
 
-
-
-;;; Dialogs and Spawn Conditions
-
-
-;; Reorder Zebu cave dialog to spawn windmill guard first
-;; Alternatively: consider just having him always spawned?
-;; NOTE: this reordering requires adjusting the offset for
-;; the refresh give condition.
-.org $1d76c ; zebu dialog 10 cave
-  .byte $60,$3a,$00,$1a,$00 ; 03a NOT talked to zebu in cave -> 00:1a
-  .byte         $40,$3a     ;     Set: 03a talked to zebu in cave
-  .byte $00,$0d,$00,$1d,$00 ; 00d leaf villagers rescued -> 00:1d
-  .byte $00,$38,$00,$1c,$00 ; 038 leaf attacked -> 00:1c
-  .byte $00,$39,$00,$1d,$00 ; 039 learned refresh -> 00:1d
-  .byte $40,$0a,$18,$1b,$00 ; 00a windmill key used -> 00:1b (action 03)
-  .byte         $c0,$00     ;     Clear: 000 (set on item get instead)
-;;.byte         $40,$39     ;     Set: 039 learned refresh
-
-;; Give key to styx regardless of whether sword of thunder found
-;; Also don't duplicate-set 03b, it's already handled by ItemGet.
-.org $1d78e ; zebu dialog f2 shyron temple
-  .byte $60,$3b,$8a,$97,$22,$c0,$00  ; 03b NOT -> 14:17 (action 11)
-  .byte $00,$2d,$02,$c3,$22          ; 02d -> 16:03
-
-;; Move 'Shyron Massacre' trigger to the unused space in triggers
-;; 87 and 88 to get 2 extra bytes (leaves 8 more bytes in that spot).
-.org $1e17a      ; 80 shyron massacre
-  .byte $32,$a2  ; ($1e232)
-.org $1e232
-  .byte $20,$27  ; Condition: 027 NOT shyron massacre
-  .byte $00,$5f  ; Condition: 05f sword of thunder
-  .byte $80,$3b  ; Condition: 03b talked to zebu in shyron -> SLOT(key to styx)
-  .byte $03,$b3  ; Message: 1d:13
-  .byte $40,$27  ; Set: 027 shyron massacre
-.org $1e244
-
-;; Move 'Learn Barrier' trigger into 'Shyron Massacre' to get 2 extra
-;; bytes for the 'Calmed Sea' condition.
-.org $1e182      ; 84 learn barrier
-  .byte $00,$a2  ; ($1e200)
-.org $1e200
-  .byte $20,$51  ; Condition: 051 NOT learned barrier
-.ifdef _BARRIER_REQUIRES_CALM_SEA
-;; Specifically require having calmed the sea to learn barrier
-  .byte $80,$8f  ; Condition: 283 calmed angy sea (also 283)
-.else
-  .byte $a0,$00  ; Condition: 000 NOT false
-.endif
-  .byte $5b,$b2  ; Message: 1d:12  Action: 0b
-  .byte $40,$51  ; Set: 051 learned barrier
-.assert $1e208
-
-
-.org $1e192 ; 8c Leaf abduction
-  .word (Trigger_8c)
-.org $1e2b8 ; Unused trigger space
-;;; Add an extra check to ensure that we don't trigger the Leaf abduction until
-;;; after talking to Zebu in the cave (ensures everything in Leaf is gotten).
-Trigger_8c:
-  .byte $20,$38 ; Condition: 038 NOT leaf attacked
-  .byte $80,$3a ; Condition: 037 talked to zebu in cave (NEW)
-  .byte $00,$00
-  .byte $00,$85 ; Set: 085 leaf elder missing
-  .byte $00,$38 ; Set: 038 leaf attacked
-  .byte $40,$84 ; Set: 084 leaf villagers missing
-.assert < $1e2dc
-
-;; Windmill guard shouldn't despawn on massacre
-.org $1c7d6
-  .byte $00 ; no despawn at all
-
-;; Don't check unwritten 104 flag for mado spawn
-.org $1c93a
-  .byte $a0,$00
-
-;; Remove redundant dialog itemget flag sets
-.org $1cb67 ; sword of wind
-  .byte $c0,$00
-.org $1cde1 ; sword of fire
-  .byte $c0,$00
-.org $1ce0c ; insect flute
-  .byte $c0,$00
-.org $1d5db ; warrior ring
-  .byte $c0,$00
-.org $1d662 ; deo
-  .byte $c0,$00
-.org $1d6ee ; shield ring
-  .byte $c0,$00
-.org $1ccdf ; windmill key
-  .byte $c0,$00
-;.org $1d798 ; key to styx (zebu)
-;  .byte $c0,$00
-.org $1e208 ; key to styx (trigger)
-  .byte $a0,$00
-.org $1d3b4 ; eye glasses (clark)
-  .byte $a0,$00
-.org $1d852 ; kensu lighthouse
-  .byte $c0,$00
-
-; Move NpcDialog_2d to the unused space at 1d1fd..1f21b
-.org $1c9b7
-  .byte $fd,$91
-.org $1d1fd
-  .byte $80,$00,$00,$00
-  .byte $28,$00
-  .byte $73,$05
-  .byte $ff
-  ;; 00: 28 Mt Sabre North - Main
-  .byte $a0,$00,$08,$b0,$00 ; default -> 05:10 (action 01)
-  ;; 05: 73 Swan - Gate
-  .byte $40,$2a,$42,$75,$05 ; 02a change:soldier -> 13:15 (action 08)
-  .byte         $41,$0d     ;     Set: 10d
-  .byte $a0,$00,$0a,$74,$05 ; default -> 13:14 (action 01) -> @ 05
-.org $1d21b
-
-.org $1e34c ; trigger b3: despawn swan guards
-  .byte $81,$0d ; 10d talked to guards from other side -> despawn
-
-;; NOTE: we could use 2 less bytes if necessary by moving a smaller
-;; entry here that's otherwise adjacent to some free space.  Or
-;; just defrag that table.
-.org $1db06
-  .byte $79,$8f ; ItemGetData_03 pointer
-.org $1cf79 ; space freed by moving Dialog_2d
-ItemGetData_03: ; sword of thunder
-  .byte $03,$80 ; slot
-  .byte $08,$00 ; action 01 -> teleport to shyron
-.ifdef _TELEPORT_ON_THUNDER_SWORD
-  .byte $02,$fd ; Set: 2fd warp:shyron
-.endif
-  .byte $40,$5f ; Set: 05f chest:03:sword of thunder
-  .byte $ff
-  ; 15 bytes still available
-.assert < $1cf91
-
-
-;; queen will try to give flute of lime even if got sword first
-.org $1cfab ; queen "you found sword of water" message action
-  .byte $19 ; add action 03
-;.org $3d1f5 ; call to WaitForDialogToBeDismissed
-;  jsr PatchAsinaReveal
-
-;; remove the 092 case for queen dialog, since it fails to set 09c
-;; TODO - once we defrag dialog, re-add this, with a 09c flag set.
-.org $1cfb3
-  .byte $00
-
-;; asina will also give flute of lime if queen never did (after recover)
-.org $098f9
-  .byte $28 ; asina persondata[1] -> flute of lime
-.org $1d80a
-  .byte $89 ; asina love pendant dialog -> give second item
-.org $1d816
-  .byte $89 ; asina default dialog -> give second item
-
-
-
-
 ;; If LookingAt is $1f and the item goes into the $20 row then we can't
 ;; just reject - instead, add the item to an overflow chest.
 ;; We use the bytes at 64b8..64bf to store the overflow.
-
-;; asina reveal depends on mesia recording (01b), not ball of water (01f)
-;; - this ensures you have both sword and ball to get to her --> ???
-.org $1c815 ; throne room back door guard spawn condition
-  .byte $20,$20,$a0,$1b,$ff ; leave two bytes unused
-.assert < $1c81b
-
-.org $1c81f
-  .byte $1b
-.org $1c822
-  .byte $1b
-.org $1c82a
-  .byte $1b
-.org $1cf9c
-  .byte $1b
-.org $1d047
-  .byte $1b
-.org $1e389
-  .byte $1b
-
-
-
-
-;;; NPC Despawn triggers
-
-;; bow of truth - remove extra itemget flags
-.org $1d8dc ;; Azteca dialog
-  .byte $80,$00,$c0,$00
-
-;; refresh triggers
-;.org $1d780
-;  .byte $c0,$00
-.org $1e358
-  .byte $c0,$00
-
-;; paralysis triggers
-.org $1e34a
-  .byte $c0,$00
-
-;; teleport triggers
-.org $1d7d0
-  .byte $c0,$00
-
-;; barrier triggers - the following don't disappear after barrier
-.org $1c7e2
-  .byte $20,$00 ; akahana (unstoned) in cave
-.org $1c7ef
-  .byte $a0,$00 ; akahana stoned
-.org $1c886
-  .byte $a0,$00 ; zebu
-.org $1c898
-  .byte $a0,$00 ; tornel
-.org $1c8ac
-  .byte $a0,$00 ; stom
-.org $1e222
-  .byte $c0,$00 ; trigger set flag
-
-;; asina does not disappear after defeating sabera
-.org $1c8b9
-  .byte $00
-
-;; insect/dwarf items
-;; Change all the post-insect messages to action 03
-.org $1cdc6
-  .byte $18
-.org $1cdcb
-  .byte $18
-.org $1cdd2
-  .byte $18
-.org $1cdd9
-  .byte $18
-.org $1cdff
-  .byte $18
-.org $1ce04
-  .byte $18
-
-;; kensu in the cabin needs to be available even after visiting joel.
-;; just have him disappear after setting the flag. but also require
-;; having returned the fog lamp before he shows up - this requires
-;; moving him up a word.
-.org $1c6b0
-  .byte $f6,$88 ; pointer to kensu 68
-.org $1c8f6
-  .byte $61,$20,$9b,$80,$21,$ff
-.org $1d867
-  .byte $12,$21 ; message 11:01 (action 02 disappear)
-
-.ifdef _REQUIRE_HEALED_DOLPHIN_TO_RIDE
-;; move portoa fisherman up 1 word, make him only
-;; appear if both shell flute AND healed dolphin
-;; NOTE: 8b is the traditional itemget and 25
-;; is tied to the slot (healing dolphin)
-;; We could delete the slot one, but it's actually
-;; convenient to have both...
-.org $1c6a8
-  .byte $99,$87
-.org $1c799
-  .byte $d6,$00,$25,$80,$8b,$ff
-;; daughter's dialog should trigger on both, too
-.org $1d1c5
-  .byte $80,$2a,$03,$cc,$ff
-  .byte $20,$25,$01,$26,$00
-  .byte $20,$8b,$01,$26,$00
-  .byte $00,$21,$01,$25,$00
-  .byte $a0,$00,$01,$24,$00
-.endif
-
-
-.ifdef _TELEPORT_ON_THUNDER_SWORD
-;; This is the alternative to noTeleportOnThunderSword - if we teleport then
-;; we need a way back to leaf just in case, so have Asina in Shyron act as a
-;; teleport point back to the start.  Add an extra dialog followup for asina
-;; to conditionally use to warp back to leaf from shyron
-.org $1d81b
-  .byte $fa ; 03b -> action 1f
-.org $1d820
-  .byte $fa ; 03b -> action 1f
-.org $1d82c
-  .byte $fa ; default -> action 1f
-.endif
-
-
-.ifdef _SAHARA_RABBITS_REQUIRE_TELEPATHY
-.org $1d653 ; dialog 5a deo
-  ;; replace akahana's dialog - would be nice to add an extra stanza instead,
-  ;; but there's not immediately space - if we ever defrag then we should do it
-  ;; or else remove all the changed forms (except maybe soldier)
-  .byte $a2,$43   ; 243 NOT telepathy -> 1a:13
-.org $1d671 ; dialog 59 generic sahara bunnies
-  ;; replace stom - he can talk to bunnies just fine
-  .byte $22,$43   ; 243 NOT telepathy -> 1a:12
-.endif
-
 
 
 ;;; ITEM GET PATCHES
@@ -710,7 +389,6 @@ ItemGet_FindOpenSlotWithOverflow:
 .assert < $1e17a
 
 
-
 .ifdef _FIX_VAMPIRE
 ;;; Fix vampire to allow >60 HP.  Normally at 61 HP there's an overflow
 ;;; and the teleport animation gets really fast until HP drops below 61.
@@ -719,10 +397,6 @@ ItemGet_FindOpenSlotWithOverflow:
   nop
 .assert $1e57a ; match up exactly to next instruction
 .endif
-
-
-
-
 
 
 ;;; We moved the LV(menu) display from 06 to 0e so display that instead
@@ -861,271 +535,6 @@ ReloadInventoryAfterLoad:
 .assert < $20a5a
 
 
-.ifdef _NORMALIZE_SHOP_PRICES
-
-;;; Initialize tool shop
-.org $218ff
-  clc
-  adc #$84 ; = $21e54 - $21dd0
-  tax
-  jsr CopyShopPrices
-  jmp PostInitializeShop
-.assert < $21912
-
-;;; Initialize armor shop
-.org $218a6
-  tax
-  jsr CopyShopPrices
-  jmp PostInitializeShop
-.assert < $218b6
-PostInitializeShop:
-
-;;; Initialize inn price
-.org $215cb
-  ldx $646d
-  lda InnPrices,x
-  sta $62
-  lda #$ff
-  sta $61
-  ldy #$04
-  jsr ComputeShopPrice
-.assert $215dc ; next display the price
-
-;;; Fix pawn shop sell price
-.org $201c1
-  sta $61
-  lda #$10
-  sta $62
-  ldy #$04
-  jsr ComputeShopPrice
-  nop
-  nop
-  nop
-.assert $201cf
-;;; Second version of the same thing (this one happens only
-;;; once, when you say "yes" to "sell another?").
-.org $204c7
-  sta $61
-  lda #$10
-  sta $62
-  ldy #$04
-  jsr ComputeShopPrice
-  nop
-  nop
-  nop
-.assert $204d5
-;;; Third read of price is immediately when selling.
-.org $20634
-  sta $61
-  lda #$10
-  sta $62
-  ldy #$04
-  jsr ComputeShopPrice
-  clc
-  lda $11
-  adc $0702
-  sta $0702
-  lda $12
-  adc $0703
-  sta $0703
-  bcc +
-   lda #$ff
-   sta $0702
-   sta $0703
-+ nop
-  nop
-  nop
-  nop
-  nop
-.assert $2065f
-
-
-;;; Second half of the ArmorShopPrices table, recovered
-;;; by storing scaling factors there instead of prices
-.org $21dfc
-;;; Inputs: $61$62 and $63$64
-;;; Output: $10$11$12$13
-Multiply32Bit:
-  ;; Don't need to worry about saving X because the only call doesn't need it
-  ;txa
-  ;pha
-   lda #$00
-   sta $12  ; clear upper bits of product
-   sta $13
-   ldx #$10 ; set binary count to 16
--  lsr $62  ; divide multiplier by 2
-   ror $61
-   bcc +
-   lda $12  ; get upper half of product and add multiplicand
-   clc
-   adc $63
-   sta $12
-   lda $13
-   adc $64
-+  ror      ; rotate partial product
-   sta $13
-   ror $12
-   ror $11
-   ror $10
-   dex
-   bne -
-  ;pla
-  ;tax
-  rts
-.assert < $21e28
-
-.org $21da4
-ArmorShopIdTable:
-.org $21dd0
-ArmorShopPriceTable:
-
-;;; Second half of ToolShopPrices table: compress the inn prices and
-;;; the relevant slice of base prices directly after it, then we still
-;;; have room for ~150 bytes of code.
-.org $21e80
-InnPrices:
-  .res 11, 0
-BasePrices:
-  .res 54, 0                    ; 0 = $0d, 50 = $26, 51 = $27 (inn)
-
-
-;;; Inputs:
-;;;   Difficulty - scaling level
-;;;   $61 - item ID to load (destroyed). $FF for inn
-;;;   $62 - shop variation factor
-;;;   Y - index to store output in: $6470,y
-;;; Output:
-;;;   $6470,y - shop price (2 bytes)
-;;;  Destroys:
-;;;   A, $61..64 and $10..13
-ComputeShopPrice:               ; ~71 bytes
-    txa
-    pha
-     ;; First find the item index in the base price table.
-     ;; If the item is out of the bounds of the table [$0d,$27)
-     ;; then return zero (pre-initialize the zero return).
-     ldx #$00
-     stx $11
-     stx $12
-     ;; Get index of item in BasePrices table, using item ID from $61.
-     lda $61
-     ;; Subtract the  $0d BasePrices offset.  If it carries then the ID
-     ;; was under $0d so return zero.
-     sec
-     sbc #$0d
-     bcc ++
-     ;; Double the ID because the table is two-wide.  If the item ID is
-     ;; negative then it's an inn, so read the price out of the spot
-     ;; where $27 would have been.
-     ldx #$34 ; 2 * ($27 - $0d)
-     asl
-     bcs +
-      ;; Check for out of bounds: $26 is the last sellable item.  If it's
-      ;; greater then return zero.
-      cmp #$34 ; ($27 - $0d)
-      bcs ++
-       tax
-+    lda BasePrices,x
-     sta $63
-     lda BasePrices+1,x         ; TODO - BasePrices+1 syntax!
-     sta $64
-     ;; Read the current scaling factor out of the correct table.
-     ;; Tools and armor use separate tables: if the ID (still in $61)
-     ;; is less than $1d then use the armor table, which is $30 bytes
-     ;; after the tools table.
-     lda Difficulty
-     ldx $61
-     cpx #$1d
-     bcs +
-      adc #$30
-+    tax
-     ;; Write the scaling factor (8*s) into $61.  The shop multiplier (32*m)
-     ;; is still in $62 from the original input.  Now multiply everything
-     ;; together to get 256*s*m*b.
-     lda ToolShopScaling,x
-     sta $61
-     jsr Multiply16Bit
-     jsr Multiply32Bit
-     ;; Make sure nothing carried: if $13 is nonzero then we need to push
-     ;; $ff into $11 and $12.
-     lda $13
-     beq ++
-      lda #$ff
-      sta $11
-      sta $12
-++  lda $11
-    sta $6470,y
-    lda $12
-    sta $6471,y
-    pla
-    tax
-    rts
-
-;;; NOTE: we could move this to a smaller chunk if needed, but it's nice to
-;;; store all the shop normalization code in the space it recovered.
-CopyShopPrices:
-  ;; Input:
-  ;;   x: first item in the shop
-  ;;      $21da4,x points to ID of first item
-  ;;      $21dd0,x points to price multiplier
-  ;;      For tool shops, add $84.
-  ldy #$08
--  lda ArmorShopIdTable,x
-   sta $61
-   lda ArmorShopPriceTable,x
-   sta $62
-   jsr ComputeShopPrice
-   inx
-   iny
-   iny
-   cpy #$10
-  bcc -
-  rts
-
-.assert < $21f54
-
-
-.endif
-
-
-;;;  TODO - still need to scale INN and PAWN prices...!
-
-
-
-
-
-
-
-
-;;; Compute inn price ?
-        ;;  => add $21eac - $21dd0 => #$dc
-
-;.org $21dd0
-;ShopPriceTable:
-
-
-
-;;;  TODO - can we save some space here?
-;;;  what about consolidating the tables
-;;;  and storing the reverse?
-;;;    - or store one row and then shift
-;;;      for >10 or >12 ?
-;;;  -> this is taking 100 bytes of valuable code space...!
-;;; Could get 48 or 72 bytes back by densifying it?
-;;;   -> only scale every 2 or 4 levels...
-
-
-.org $21f9a ; Free space
-ToolShopScaling:
-  .res 48, 0
-ArmorShopScaling:
-  .res 48, 0
-.assert < $22000
-
-
-
-
-
 
 .ifdef _DISABLE_SHOP_GLITCH
 ;;; Disable the shop glitch by ensuring prices are updated immediately
@@ -1146,11 +555,6 @@ ArmorShopScaling:
   .byte $00
 .endif
 
-
-.ifdef _LEATHER_BOOTS_GIVE_SPEED
-.org $2134a
-  .byte "Speed Boots",$ff
-.endif
 
 
 
@@ -1196,16 +600,6 @@ CheckOpelStatue:
         ;; 5 free bytes
 .assert < $2791c
 .endif
-
-
-
-.bank $28000 $8000:$2000
-.ifdef _LEATHER_BOOTS_GIVE_SPEED
-.org $29105
-  .byte "Speed Boots",$00
-.endif
-
-
 
 
 
@@ -1532,7 +926,7 @@ CheckSwordCollisionPlane:
 
 .ifdef _NERF_WILD_WARP
 .org $3cbec
-  .byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+  .res 16, 0
 .endif
 
 .ifdef _TELEPORT_ON_THUNDER_SWORD
@@ -1573,13 +967,6 @@ GrantItemInRegisterA:
   jmp FinishTriggerSquare
 .assert $3d552
 
-
-
-.ifndef _TELEPORT_ON_THUNDER_SWORD
-;;; Prevent the teleport-to-shyron sequence upon getting thunder sword.
-.org $3d565
-  .word ($d78c)
-.endif
 
 .org $3d91f
   jsr PostInventoryMenu

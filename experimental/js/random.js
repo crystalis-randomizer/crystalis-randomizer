@@ -18,7 +18,11 @@ export class Random {
         this.idum2 = 0;
         this.iy = 0;
         this.iv = [];
+        this.z1 = null;
         this.seed(seed);
+    }
+    static newSeed() {
+        return Math.floor(Math.random() * 0x100000000);
     }
     seed(seed) {
         this.idum = Math.max(1, Math.floor(seed));
@@ -54,6 +58,23 @@ export class Random {
     nextInt(n) {
         return Math.floor(this.next() * n);
     }
+    nextNormal(mean = 0, stdev = 1, min = -Infinity, max = Infinity) {
+        while (true) {
+            let z = this.z1;
+            if (z == null) {
+                const r = Math.sqrt(-2 * Math.log(this.next()));
+                const theta = TWOPI * this.next();
+                z = r * Math.cos(theta);
+                this.z1 = r * Math.sin(theta);
+            }
+            else {
+                this.z1 = null;
+            }
+            z = mean + z * stdev;
+            if (z >= min && z <= max)
+                return z;
+        }
+    }
     shuffle(array) {
         for (let i = array.length; i;) {
             const j = this.nextInt(i--);
@@ -62,4 +83,5 @@ export class Random {
         return array;
     }
 }
+const TWOPI = 2 * Math.PI;
 //# sourceMappingURL=random.js.map

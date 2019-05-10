@@ -111,6 +111,10 @@ export class GlobalDialog {
         this.condition = condition;
         this.message = message;
     }
+    static of(condition, message) {
+        const [part, index, action = 0] = message;
+        return new GlobalDialog(condition, MessageId.of({ part, index, action }));
+    }
     static parse(data, offset = 0) {
         const flag = readBigEndian(data, offset);
         const message = MessageId.from(data, offset + 2);
@@ -137,8 +141,11 @@ export class LocalDialog {
         this.update = update;
         this.flags = flags;
     }
+    clone() {
+        return LocalDialog.parse(this.bytes(false))[0];
+    }
     static parse(data, offset = 0) {
-        let word = readBigEndian(data, offset);
+        const word = readBigEndian(data, offset);
         const message = MessageId.from(data, offset + 2);
         const update = data[offset + 4];
         offset += 5;
@@ -149,6 +156,10 @@ export class LocalDialog {
             condition = ~condition;
         const flags = word & 0x4000 ? DIALOG_FLAGS.read(data, offset) : [];
         return [new LocalDialog(condition, message, update, flags), last];
+    }
+    static of(condition, message, flags = []) {
+        const [part, index, action = 0] = message;
+        return new LocalDialog(condition, MessageId.of({ part, index, action }), 0, flags);
     }
     byteLength() {
         return 5 + 2 * this.flags.length;

@@ -41,7 +41,8 @@ export class ObjectData extends Entity {
         return this.data[(addr - 0x300) >>> 5];
     }
     parents() {
-        return this.rom.monsters.filter((m) => m.child && this.rom.adHocSpawns[m.child].object === this.id);
+        return this.rom.monsters.filter((m) => m.child &&
+            this.rom.adHocSpawns[m.child].objectId === this.id);
     }
     locations() {
         return this.rom.locations.filter((l) => l.used && l.spawns.some(spawn => spawn.isMonster() && spawn.monsterId === this.id));

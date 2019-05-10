@@ -1,20 +1,20 @@
 import { Entity } from './entity.js';
-import { DataTuple, addr, concatIterables, group, hex, seq, slice, tuple, varSlice, writeLittleEndian } from './util.js';
+import { DataTuple, concatIterables, group, hex, readLittleEndian, seq, tuple, varSlice, writeLittleEndian } from './util.js';
 export class Location extends Entity {
     constructor(rom, id) {
         super(rom, id);
         const locationData = LOCATIONS[id] || { name: '' };
         this.mapDataPointer = 0x14300 + (id << 1);
-        this.mapDataBase = addr(rom.prg, this.mapDataPointer, 0xc000);
+        this.mapDataBase = readLittleEndian(rom.prg, this.mapDataPointer) + 0xc000;
         this.name = locationData.name || '';
         this.used = this.mapDataBase > 0xc000 && !!this.name;
-        this.layoutBase = addr(rom.prg, this.mapDataBase, 0xc000);
-        this.graphicsBase = addr(rom.prg, this.mapDataBase + 2, 0xc000);
-        this.entrancesBase = addr(rom.prg, this.mapDataBase + 4, 0xc000);
-        this.exitsBase = addr(rom.prg, this.mapDataBase + 6, 0xc000);
-        this.flagsBase = addr(rom.prg, this.mapDataBase + 8, 0xc000);
+        this.layoutBase = readLittleEndian(rom.prg, this.mapDataBase) + 0xc000;
+        this.graphicsBase = readLittleEndian(rom.prg, this.mapDataBase + 2) + 0xc000;
+        this.entrancesBase = readLittleEndian(rom.prg, this.mapDataBase + 4) + 0xc000;
+        this.exitsBase = readLittleEndian(rom.prg, this.mapDataBase + 6) + 0xc000;
+        this.flagsBase = readLittleEndian(rom.prg, this.mapDataBase + 8) + 0xc000;
         this.pitsBase = this.layoutBase === this.mapDataBase + 10 ? 0 :
-            addr(rom.prg, this.mapDataBase + 10, 0xc000);
+            readLittleEndian(rom.prg, this.mapDataBase + 10) + 0xc000;
         this.bgm = rom.prg[this.layoutBase];
         this.layoutWidth = rom.prg[this.layoutBase + 1];
         this.layoutHeight = rom.prg[this.layoutBase + 2];
@@ -27,19 +27,19 @@ export class Location extends Entity {
         this.tilePalettes = tuple(rom.prg, this.graphicsBase, 3);
         this.tileset = rom.prg[this.graphicsBase + 3];
         this.tileEffects = rom.prg[this.graphicsBase + 4];
-        this.tilePatterns = slice(rom.prg, this.graphicsBase + 5, 2);
+        this.tilePatterns = tuple(rom.prg, this.graphicsBase + 5, 2);
         this.entrances =
             group(4, rom.prg.slice(this.entrancesBase, this.exitsBase), x => new Entrance(x));
         this.exits = varSlice(rom.prg, this.exitsBase, 4, 0xff, this.flagsBase, x => new Exit(x));
         this.flags = varSlice(rom.prg, this.flagsBase, 2, 0xff, Infinity, x => new Flag(x));
         this.pits = this.pitsBase ? varSlice(rom.prg, this.pitsBase, 4, 0xff, Infinity, x => new Pit(x)) : [];
         this.npcDataPointer = 0x19201 + (id << 1);
-        this.npcDataBase = addr(rom.prg, this.npcDataPointer, 0x10000);
+        this.npcDataBase = readLittleEndian(rom.prg, this.npcDataPointer) + 0x10000;
         this.hasSpawns = this.npcDataBase !== 0x10000;
         this.spritePalettes =
-            this.hasSpawns ? slice(rom.prg, this.npcDataBase + 1, 2) : [0, 0];
+            this.hasSpawns ? tuple(rom.prg, this.npcDataBase + 1, 2) : [0, 0];
         this.spritePatterns =
-            this.hasSpawns ? slice(rom.prg, this.npcDataBase + 3, 2) : [0, 0];
+            this.hasSpawns ? tuple(rom.prg, this.npcDataBase + 3, 2) : [0, 0];
         this.spawns =
             this.hasSpawns ? varSlice(rom.prg, this.npcDataBase + 5, 4, 0xff, Infinity, x => new Spawn(x)) : [];
     }

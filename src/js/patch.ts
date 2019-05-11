@@ -941,12 +941,15 @@ const BASE_PRICES: {[itemId: number]: number} = {
 const rescaleMonsters = (rom: Rom) => {
 
   // TODO - find anything sharing the same memory and update them as well
+  const unscaledMonsters = new Set<number>(Object.keys(rom.objects).map(Number));
+  for (const [id] of SCALED_MONSTERS) {
+    unscaledMonsters.delete(id);
+  }
   for (const [id, monster] of SCALED_MONSTERS) {
-    for (const otherStr of Object.keys(rom.objects)) {
-      const other = Number(otherStr);
-      if (SCALED_MONSTERS.has(other)) return;
+    for (const other of unscaledMonsters) {
       if (rom.objects[id].base === rom.objects[other].base) {
         SCALED_MONSTERS.set(other, monster);
+        unscaledMonsters.delete(id);
       }
     }
   }

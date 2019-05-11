@@ -41,6 +41,9 @@ class Message {
             const b = prg[i];
             this.bytes.push(b);
             if (b === 1) {
+                if (i !== addr && prg[i - 1] !== 3) {
+                    throw new Error(`Unexpected start message signal at ${i.toString(16)}`);
+                }
             }
             else if (b === 2) {
                 parts.push('\n');

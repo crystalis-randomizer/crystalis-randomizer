@@ -191,6 +191,7 @@ export const watchArray = (arr, watch) => {
             else if (property === 'set') {
                 return (val) => {
                     console.log(`Setting overlapping array ${watch}`);
+                    debugger;
                     target.set(val);
                 };
             }
@@ -199,8 +200,9 @@ export const watchArray = (arr, watch) => {
             return v;
         },
         set(target, property, value, receiver) {
-            if (property === watch) {
+            if (property == watch) {
                 console.log(`Writing ${watch.toString(16)}`);
+                debugger;
             }
             target[property] = value;
             return true;

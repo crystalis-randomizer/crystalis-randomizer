@@ -64,14 +64,15 @@ export class Shop extends Entity {
     get pricesAddress() {
         const shopTable = this.rom.shopDataTablesAddress;
         const base = PRICES_ADDRESSES[this.type](shopTable, this.rom.shopCount);
-        return base + (shopTable ? 8 : 4) * this.index;
+        return base + (shopTable ? 1 : 2) * PRICES_COUNTS[this.type] * this.index;
     }
     updateShopkeeper() {
         throw new Error('not implemented');
     }
     write(writer) {
+        const shopData = this.rom.shopDataTablesAddress;
         const prg = writer.rom;
-        const writePrice = this.rom.shopDataTablesAddress ?
+        const writePrice = shopData ?
             (i, p) => prg[this.pricesAddress + i] = Math.round(p * 32) :
             (i, p) => writeLittleEndian(prg, this.pricesAddress + 2 * i, p);
         for (let i = 0; i < CONTENTS_COUNTS[this.type]; i++) {
@@ -80,6 +81,10 @@ export class Shop extends Entity {
         }
         for (let i = 0; i < PRICES_COUNTS[this.type]; i++) {
             writePrice(i, this.prices[i] || 0);
+        }
+        if (shopData) {
+            const shopLocations = shopData + this.rom.shopCount * 17;
+            prg[shopLocations + this.id] = this.location;
         }
     }
 }

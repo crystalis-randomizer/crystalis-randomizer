@@ -1,8 +1,8 @@
 export var RomOption;
 (function (RomOption) {
-    RomOption.bit = (address, bit) => new RomOptionBit(address, bit);
-    RomOption.byte = (address) => new RomOptionByte(address);
-    RomOption.address = (address) => new RomOptionAddress(address);
+    RomOption.bit = (addr, bitNum) => new RomOptionBit(addr, bitNum);
+    RomOption.byte = (addr) => new RomOptionByte(addr);
+    RomOption.address = (addr) => new RomOptionAddress(addr);
 })(RomOption || (RomOption = {}));
 class RomOptionBit {
     constructor(address, bit) {

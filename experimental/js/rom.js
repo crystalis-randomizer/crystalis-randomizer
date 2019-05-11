@@ -280,7 +280,7 @@ Rom.SCALING_LEVELS = RomOption.byte(0x142c2);
 Rom.UNIQUE_ITEM_TABLE = RomOption.address(0x142d0);
 Rom.SHOP_DATA_TABLES = RomOption.address(0x142d3);
 function pickFile() {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         if (window.location.hash !== '#reset') {
             const data = localStorage.getItem('rom');
             if (data) {
@@ -306,6 +306,10 @@ function pickFile() {
 }
 export const EXPECTED_CRC32 = 0x1bd39032;
 const ADJUSTMENTS = new Map([
+    [0x1cf05, 0x48],
     [0x1cff9, 0xe0],
+    [0x2ca90, 0x00],
+    [0x2f573, 0x00],
+    [0x2fae4, 0x00],
 ]);
 //# sourceMappingURL=rom.js.map

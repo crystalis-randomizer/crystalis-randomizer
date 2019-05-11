@@ -81,6 +81,15 @@ export const shuffle = async (rom, seed, flags, reader, log, progress) => {
     await assemble('preshuffle.s');
     const random = new Random(newSeed);
     const parsed = new Rom(rom);
+    closeCaveEntrances(parsed, flags);
+    reversibleSwanGate(parsed);
+    adjustGoaFortressTriggers(parsed);
+    preventNpcDespawns(parsed, flags);
+    if (flags.requireHealedDolphinToRide())
+        requireHealedDolphin(parsed);
+    if (flags.saharaRabbitsRequireTelepathy())
+        requireTelepathyForDeo(parsed);
+    adjustItemNames(parsed, flags);
     await assemble('shops.s');
     alarmFluteIsKeyItem(parsed);
     if (flags.teleportOnThunderSword()) {
@@ -119,15 +128,6 @@ export const shuffle = async (rom, seed, flags, reader, log, progress) => {
         disableStabs(parsed);
     if (flags.orbsOptional())
         orbsOptional(parsed);
-    closeCaveEntrances(parsed, flags);
-    reversibleSwanGate(parsed);
-    adjustGoaFortressTriggers(parsed);
-    preventNpcDespawns(parsed, flags);
-    if (flags.requireHealedDolphinToRide())
-        requireHealedDolphin(parsed);
-    if (flags.saharaRabbitsRequireTelepathy())
-        requireTelepathyForDeo(parsed);
-    adjustItemNames(parsed, flags);
     misc(parsed, flags);
     await parsed.writeData();
     const crc = await postParsedShuffle(rom, random, seed, flags, asm, assemble);
@@ -337,6 +337,10 @@ const preventNpcDespawns = (rom, flags) => {
     rom.trigger(0xb4).conditions[1] = ~0x241;
     rom.trigger(0xb4).flags = [];
     rom.trigger(0xbb).conditions[1] = ~0x01b;
+    const zombieTown = rom.locations[0x65];
+    if (zombieTown.spawns[0x16 - 0x0d].id === 0x8a) {
+        zombieTown.spawns.splice(0x16 - 0x0d, 1);
+    }
 };
 const requireHealedDolphin = (rom) => {
     rom.npcs[0x64].spawnConditions.set(0xd6, [0x236, 0x025]);
@@ -561,13 +565,15 @@ const BASE_PRICES = {
     0x26: 300,
 };
 const rescaleMonsters = (rom, flags, random) => {
+    const unscaledMonsters = new Set(Object.keys(rom.objects).map(Number));
+    for (const [id] of SCALED_MONSTERS) {
+        unscaledMonsters.delete(id);
+    }
     for (const [id, monster] of SCALED_MONSTERS) {
-        for (const otherStr of Object.keys(rom.objects)) {
-            const other = Number(otherStr);
-            if (SCALED_MONSTERS.has(other))
-                return;
+        for (const other of unscaledMonsters) {
             if (rom.objects[id].base === rom.objects[other].base) {
                 SCALED_MONSTERS.set(other, monster);
+                unscaledMonsters.delete(id);
             }
         }
     }
@@ -800,7 +806,7 @@ class MonsterPool {
             const report = this.report['$' + location.id.toString(16).padStart(2, '0')] = [];
             const { maxFlyers = 0, nonFlyers = {}, fixedSlots = {}, tower = false } = MONSTER_ADJUSTMENTS[location.id] || {};
             if (tower)
-                return;
+                continue;
             let pat0 = fixedSlots.pat0 || null;
             let pat1 = fixedSlots.pat1 || null;
             let pal2 = fixedSlots.pal2 || null;
@@ -902,8 +908,6 @@ class MonsterPool {
                 spawn.patternBank = patSlot || 0;
                 spawn.monsterId = m.id;
                 report.push(`    slot ${slot.toString(16)}: ${spawn}`);
-                if ((m.id & 0xf0) === 0xa0)
-                    console.log(`${location.id.toString(16)} <- ${m.id.toString(16)}`);
                 slots.splice(eligible, 1);
                 return true;
             };

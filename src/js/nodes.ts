@@ -272,7 +272,7 @@ export class Chest extends Slot {
       }
       if (slot.itemIndex >= 0x70) {
         // mimics respawn on a timer
-        spawn.timed = true;
+        spawn.timed = location.width * location.height > 1;
         spawn.id = 0x70;
       } else {
         // non-mimics should spawn once on load

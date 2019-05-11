@@ -1,5 +1,5 @@
 import {Entity, Rom} from './entity.js';
-import {hex, readLittleEndian, readString, writeLittleEndian} from './util.js';
+import {hex, readLittleEndian, readString, seq, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
 
 const ITEM_USE_DATA_TABLE = 0x1dbe2;
@@ -133,5 +133,5 @@ export class Item extends Entity {
 }
 
 const stringToBytes = (s: string): number[] => {
-  return new Array(s.length).fill(0).map((c: number, i: number) => s.charCodeAt(i));
+  return seq(s.length, i => s.charCodeAt(i));
 };

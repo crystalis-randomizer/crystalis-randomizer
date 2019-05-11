@@ -16,6 +16,7 @@
       "no-conditional-assignment": false,
       "no-console": false,
       "no-empty": false,
+      "no-namespace": false,
       "ordered-imports": [
         true,
         {

@@ -527,7 +527,7 @@ export class Rom {
 
 // Only makes sense in the browser.
 function pickFile(): Promise<Uint8Array> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     if (window.location.hash !== '#reset') {
       const data = localStorage.getItem('rom');
       if (data) {
@@ -559,7 +559,15 @@ function pickFile(): Promise<Uint8Array> {
 export const EXPECTED_CRC32 = 0x1bd39032;
 
 const ADJUSTMENTS = new Map<number, number>([
+  // Point Amazones outer guard to post-overflow message that actually shows.
+  [0x1cf05, 0x48],
   // Fix queen's dialog to terminate on last item, rather than overflow,
   // so that we don't parse garbage.
   [0x1cff9, 0xe0],
+  // Fix Amazones outer guard message to not overflow.
+  [0x2ca90, 0x00],
+  // Fix seemingly-unused kensu message 1d:17 overflowing into 1d:18
+  [0x2f573, 0x00],
+  // Fix unused karmine treasure chest message 20:18.
+  [0x2fae4, 0x00],
 ]);

@@ -5,11 +5,11 @@ export interface RomOption<T> {
 
 export namespace RomOption {
   export const bit =
-      (address: number, bit: number): RomOption<boolean> => new RomOptionBit(address, bit);
+      (addr: number, bitNum: number): RomOption<boolean> => new RomOptionBit(addr, bitNum);
   export const byte =
-      (address: number): RomOption<number> => new RomOptionByte(address);
+      (addr: number): RomOption<number> => new RomOptionByte(addr);
   export const address =
-      (address: number): RomOption<number> => new RomOptionAddress(address);
+      (addr: number): RomOption<number> => new RomOptionAddress(addr);
 }
 
 class RomOptionBit implements RomOption<boolean> {

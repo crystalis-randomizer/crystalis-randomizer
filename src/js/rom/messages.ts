@@ -58,10 +58,11 @@ class Message {
       this.bytes.push(b);
       if (b === 1) {
         // NOTE - there is one case where two messages seem to abut without a
-        // null terminator - $2ca91 ($12:$08) falls through from 12:07.
-        // if (i != addr && prg[i - 1] != 3) {
-        //   throw new Error(`Unexpected start message signal at ${i.toString(16)}`);
-        // }
+        // null terminator - $2ca91 ($12:$08) falls through from 12:07.  We fix
+        // that with an adjustment in rom.ts.
+        if (i !== addr && prg[i - 1] !== 3) {
+          throw new Error(`Unexpected start message signal at ${i.toString(16)}`);
+        }
       } else if (b === 2) {
         parts.push('\n');
       } else if (b === 3) {

@@ -113,6 +113,15 @@ export const shuffle = async (rom: Uint8Array,
   // the depgraph FIRST!
   const parsed = new Rom(rom);
 
+  closeCaveEntrances(parsed, flags);
+  reversibleSwanGate(parsed);
+  adjustGoaFortressTriggers(parsed);
+  preventNpcDespawns(parsed, flags);
+  if (flags.requireHealedDolphinToRide()) requireHealedDolphin(parsed);
+  if (flags.saharaRabbitsRequireTelepathy()) requireTelepathyForDeo(parsed);
+
+  adjustItemNames(parsed, flags);
+
   await assemble('shops.s');
 
   // TODO - consider making a Transformation interface, with ordering checks
@@ -161,15 +170,6 @@ export const shuffle = async (rom: Uint8Array,
   if (flags.chargeShotsOnly()) disableStabs(parsed);
 
   if (flags.orbsOptional()) orbsOptional(parsed);
-
-  closeCaveEntrances(parsed, flags);
-  reversibleSwanGate(parsed);
-  adjustGoaFortressTriggers(parsed);
-  preventNpcDespawns(parsed, flags);
-  if (flags.requireHealedDolphinToRide()) requireHealedDolphin(parsed);
-  if (flags.saharaRabbitsRequireTelepathy()) requireTelepathyForDeo(parsed);
-
-  adjustItemNames(parsed, flags);
 
   misc(parsed, flags);
 

@@ -556,7 +556,13 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   // Portoa palace guard movement trigger ($bb) stops on 01b (mesia) not 01f (orb)
   rom.trigger(0xbb).conditions[1] = ~0x01b;
 
-  // TODO - zebu cave dialog, windmill spawn, etc
+  // Remove redundant trigger 8a (slot 16) in zombietown ($65)
+  const zombieTown = rom.locations[0x65];
+  if (zombieTown.spawns[0x16 - 0x0d].id === 0x8a) {
+    // TODO - make a "delete if" helper function - delete if trigger 8a
+    // possibly use array.filter?
+    zombieTown.spawns.splice(0x16 - 0x0d, 1);
+  }
 };
 
 const requireHealedDolphin = (rom: Rom) => {

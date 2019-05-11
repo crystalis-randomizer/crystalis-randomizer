@@ -340,6 +340,9 @@ export const generate = (flags: FlagSet = new FlagSet(), rom?: Rom): WorldGraph 
   const brokenStatue          = item(0x38, 'Broken Statue')
                                   .bossDrop('Sabera 1', 0x04)
                                   .npcSpawn(0x7f, 0x65) // sabera
+                                  .npcSpawn(0x09)
+                                  .npcSpawn(0x0a)
+                                  .npcSpawn(0x45)
                                   .npcSpawn(0x46)
                                   .npcSpawn(0x47)
                                   // .npcSpawn(0x6a) // unused

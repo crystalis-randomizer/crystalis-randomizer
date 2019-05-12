@@ -39,9 +39,11 @@ class AddressTable<T> extends Array<T> {
   }
 }
 
+const DELIMITERS = new Map<number, string>([[6, '{}'], [7, '[]']]);
+
 class Message {
 
-  bytes: number[];
+  //bytes: number[];
   text: string;
 
   constructor(readonly messages: Messages,
@@ -52,10 +54,9 @@ class Message {
     // Parse the message
     const prg: Data<number> = messages.rom.prg;
     const parts = [];
-    this.bytes = [];
     for (let i = addr; prg[i]; i++) {
       const b = prg[i];
-      this.bytes.push(b);
+      // this.bytes.push(b);
       if (b === 1) {
         // NOTE - there is one case where two messages seem to abut without a
         // null terminator - $2ca91 ($12:$08) falls through from 12:07.  We fix
@@ -66,18 +67,25 @@ class Message {
       } else if (b === 2) {
         parts.push('\n');
       } else if (b === 3) {
-        parts.push('\u25bc\n'); // black down-pointing triangle
+        parts.push(`${Messages.CONTINUED}\n`); // black down-pointing triangle
       } else if (b === 4) {
-        parts.push('SIMEA');
+        parts.push('{:HERO:}');
       } else if (b === 8) {
-        parts.push('ITEM');
+        parts.push('[:ITEM:]');
       } else if (b >= 5 && b <= 9) {
         const next = prg[++i];
         if (b === 9) {
           parts.push(' '.repeat(next));
           continue;
         }
+        const delims = DELIMITERS.get(b);
+        if (delims) {
+          parts.push(delims[0]);
+          parts.push(next.toString(16).padStart(2, '0'));
+          parts.push(':');
+        }
         parts.push(messages.extraWords[b][next]);
+        if (delims) parts.push(delims[1]);
         if (!PUNCTUATION[String.fromCharCode(prg[i + 1])]) {
           parts.push(' ');
         }
@@ -115,12 +123,14 @@ export class Messages {
   banks: DataTable<number>;
   parts: AddressTable<AddressTable<Message>>;
 
+  static readonly CONTINUED = '\u25bc';
+
   constructor(readonly rom: Rom) {
     const str = (a: number) => readString(rom.prg, a);
     this.basicWords = new AddressTable(rom, 0x28900, 0x80, 0x20000, str);
     this.extraWords = {
       5: new AddressTable(rom, 0x28a00, 10, 0x20000, str), // less common
-      6: new AddressTable(rom, 0x28a14, 36, 0x20000, str), // people
+      6: new AddressTable(rom, 0x28a14, 36, 0x20000, str), // people/places
       7: new AddressTable(rom, 0x28a5c, 74, 0x20000, str), // items (also 8?)
     };
 

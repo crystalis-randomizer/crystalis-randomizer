@@ -19028,7 +19028,7 @@ InitiateDialog
 -       $1c01d  xx xx xx:    xxx ReadFlagFromBytePair_24y
         $1c020  xx xx:       xxx +
         ;;                    We've found a matching condition, so jump.
-        $1c022  xx xx xx:     xxx $1c078
+        $1c022  xx xx xx:     xxx PrepareMessageFrom24y
         ;;                    ----------
 +       $1c025  xx xx xx:    xxx SkipTwoBytesAndContinuationPairs
         $1c028  xx xx:       xxx $xx
@@ -19316,105 +19316,124 @@ ParseFlagFromBytePair_24y
 PowersOfTwo_1c 
         $1c167              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+        ;; Cast telepathy - select message?!?
         $1c16f  xx:         xxx
         $1c170  xx xx xx:   xxx PlayerMP
         $1c173  xx xx:      xxx #$xx
         $1c175  xx xx:      xxx + ; $1c18b
+        ;; not enough MP
         $1c177  xx xx:      xxx #$xx
--       $1c179  xx:         xxx
+        ;; At this point, x is in 0..3.
+        ;;   0 = insufficient mp ????
+        ;;   1 = got free mp (result was 0)
+        ;;   2 = "don't rely on others so much"
+        ;;   3 = use location (result was 2..7), level < minimum
+        ;; $23 is sage index: 0 = tornel, 1 = zebu, 2 = asina, 3 = kensu
+Telepathy_ShowMessage
+        $1c179  xx:         xxx
         $1c17a  xx:         xxx
         $1c17b  xx:         xxx
-        $1c17c  xx xx:      xxx $xx
+        $1c17c  xx xx:      xxx $xx ; which sage?
         $1c17e  xx:         xxx
         $1c17f  xx:         xxx
+        ;; This looks like a 32-byte data table - 8 per value of X
         $1c180  xx xx xx:   xxx $1da2c,x
         $1c183  xx xx:      xxx $xx
         $1c185  xx xx xx:   xxx $1da2d,x
         $1c188  xx xx:      xxx $xx
         $1c18a  xx:         xxx
         ;; --------------------------------
-        ;; Telepathy: free MP?
+        ;; sufficient MP for telepathy
 +       $1c18b  xx xx xx:   xxx PlayerMP
-        $1c18e  xx xx xx:   xxx $1c222
+        $1c18e  xx xx xx:   xxx CheckTelepathyResult ; 0 = MP, 
         $1c191  xx:         xxx
         $1c192  xx xx xx:   xxx $1c21a,x
         $1c195  xx xx:      xxx +++ ; $1c1af
+        ;; give 32 free MP
         $1c197  xx:         xxx
         $1c198  xx xx:      xxx #$xx
         $1c19a  xx xx xx:   xxx PlayerMP
         $1c19d  xx xx:      xxx + ; $1c1a4
-        $1c19f  xx xx xx:   xxx PlayerMaxMP
-        $1c1a2  xx xx:      xxx ++ ; $1c1a7
-+       $1c1a4  xx xx xx:   xxx PlayerMaxMP
+        $1c19f  xx xx xx:    xxx PlayerMaxMP
+        $1c1a2  xx xx:       xxx ++ ; $1c1a7
++       $1c1a4  xx xx xx:     xxx PlayerMaxMP
 ++      $1c1a7  xx xx xx:   xxx PlayerMP
         $1c1aa  xx xx:      xxx #$xx
-        $1c1ac  xx xx xx:   xxx - ; $1c179
+        $1c1ac  xx xx xx:   xxx Telepathy_ShowMessage
         ;; --------------------------------
 +++     $1c1af  xx xx:      xxx #$xx
         $1c1b1  xx xx:      xxx + ; $1c1b8
         $1c1b3  xx xx:      xxx #$xx
-        $1c1b5  xx xx xx:   xxx - ; $1c179
+        $1c1b5  xx xx xx:   xxx Telepathy_ShowMessage
         ;; --------------------------------
-        ;; NOTE - used by telepathy
+        ;; NOTE - used by telepathy for most results (except 0,1)
 +       $1c1b8  xx xx:      xxx #$xx
         $1c1ba  xx xx:      xxx $xx
         $1c1bc  xx xx:      xxx CurrentLocation
-        $1c1be  xx xx xx:   xxx $1d8f4,x
+        $1c1be  xx xx xx:   xxx TelepathyLocations,x ; -> 0..6
         $1c1c1  xx xx:      xxx $xx
         $1c1c3  xx:         xxx
-        $1c1c4  xx xx xx:   xxx $1c213,x
+        $1c1c4  xx xx xx:   xxx $1c213,x ; expected level per area
         $1c1c7  xx xx xx:   xxx PlayerLevel
         $1c1ca  xx xx:      xxx + ; $1c1d1
         ;; Player's level is lower than expected
-        $1c1cc  xx xx:      xxx #$xx
-        $1c1ce  xx xx xx:   xxx $1c179
+        $1c1cc  xx xx:       xxx #$xx
+        $1c1ce  xx xx xx:   xxx Telepathy_ShowMessage
         ;; --------------------------------
-+       $1c1d1  xx xx:      xxx $xx
++       $1c1d1  xx xx:      xxx $xx ; telepathy area 0..6
         $1c1d3  xx:         xxx
         $1c1d4  xx:         xxx
-        $1c1d5  xx xx:      xxx $xx
+        $1c1d5  xx xx:      xxx $xx ; which sage
         $1c1d7  xx:         xxx
         $1c1d8  xx:         xxx
-        $1c1d9  xx xx xx:   xxx $1d9f4,x
+        $1c1d9  xx xx xx:   xxx TelepathyTable,x
         $1c1dc  xx xx:      xxx $xx
-        $1c1de  xx xx xx:   xxx $1d9f5,x
+        $1c1de  xx xx xx:   xxx TelepathyTable+1,x
         $1c1e1  xx xx:      xxx $xx
         $1c1e3  xx xx:      xxx #$xx
-        $1c1e5  xx xx xx:   xxx $1c135
-        $1c1e8  xx xx:      xxx $xx
-        $1c1ea  xx xx:      xxx $xx
-        $1c1ec  xx xx:      xxx #$xx
-        $1c1ee  xx xx:      xxx $xx
-        $1c1f0  xx xx:      xxx $xx
-        $1c1f2  xx xx:      xxx $xx
-        $1c1f4  xx:         xxx
-        $1c1f5  xx:         xxx
-        $1c1f6  xx xx:      xxx ($xx),y
-        $1c1f8  xx xx:      xxx $xx
-        $1c1fa  xx:         xxx
-        $1c1fb  xx xx:      xxx ($xx),y
-        $1c1fd  xx xx:      xxx $xx
-        $1c1ff  xx:         xxx
-;;; --------------------------------
-        $1c200  xx:         xxx
-        $1c201  xx:         xxx
-        $1c202  xx xx:      xxx $xx
-        $1c204  xx xx:      xxx #$xx
-        $1c206  xx xx:      xxx $xx
-        $1c208  xx:         xxx
-        $1c209  xx:         xxx
-        $1c20a  xx xx:      xxx $xx
-        $1c20c  xx xx:      xxx $xx
+-       $1c1e5  xx xx xx:    xxx ReadFlagFromBytePair_24y
+        $1c1e8  xx xx:       xxx ++ ; $1c200
+        ;; Flag didn't match
+        $1c1ea  xx xx:       xxx $xx
+        $1c1ec  xx xx:       xxx #$xx
+        $1c1ee  xx xx:       xxx + ; $1c1f6
+        ;; Flag had a :40 bit -> $29 is a random bit
+        ;; from the results table.
+        $1c1f0  xx xx:        xxx $xx
+        $1c1f2  xx xx:        xxx + ; $1c1f6
+        $1c1f4  xx:            xxx
+        $1c1f5  xx:            xxx
++       $1c1f6  xx xx:       xxx ($xx),y
+        $1c1f8  xx xx:       xxx $xx
+        $1c1fa  xx:          xxx
+        $1c1fb  xx xx:       xxx ($xx),y
+        $1c1fd  xx xx:       xxx $xx
+        $1c1ff  xx:          xxx
+        ;; --------------------------------
+        ;; Flag matched
+++      $1c200  xx:          xxx
+        $1c201  xx:          xxx
+        $1c202  xx xx:       xxx $xx
+        $1c204  xx xx:       xxx #$xx
+        $1c206  xx xx:       xxx + ; $1c20a
+        $1c208  xx:           xxx
+        $1c209  xx:           xxx
++       $1c20a  xx xx:       xxx $xx
+        $1c20c  xx xx:      xxx - ; $1c1e5
         $1c20e  xx xx:      xxx #$xx
-        $1c210  xx xx xx:   xxx $1c179
+        $1c210  xx xx xx:   xxx Telepathy_ShowMessage
 ;;; --------------------------------
 ;;; This is a data table of something about items and inventory... 8213 ???
 ;;; It's also indexed based on the result of the TelepathyLocations table
 ;;; to compare to the player's current level.
 DataTable_1c213 
+        ;; expected level for the different game areas
         $1c213              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; maps telepathy result (1c222) from 0..7 to 0..3
+        ;; (bbut why not just store 0..3 directly?)
         $1c21a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+CheckTelepathyResult
         $1c222  xx xx xx:   xxx $xxxx
         $1c225  xx xx:      xxx #$xx
         $1c227  xx xx xx:   xxx $xxxx
@@ -19424,8 +19443,8 @@ DataTable_1c213
 ;;; --------------------------------
 ;;; Another data table of some sort, seems to have to do with telepathy outcomes.
 ;;; It's indexed by $7c0.  Points into the table at 1c21a.  When it's zero, the
-;;; player gets 32 bonus MP.  At 1, something else happens.  The other numbrers
-;;; point to 2 or 3 in the other table (so clearly this is used for something
+;;; player gets 32 bonus MP.  At 1, something else happens.  The other numbers
+;;; point to 2 or 3 in the other table (1c21a) so clearly this is used for something
 ;;; else, too - except it's not!).  This gives a 9/64 chance of getting 32 MP,
 ;;; at a cost of 8 MP per attempt, so really not a good deal.
 DataTable_1c22f 
@@ -19802,12 +19821,12 @@ ItemUse_CheckRequiredNPC
 +       $1c4a8  xx:         xxx
 ;;; --------------------------------
 ItemUseJump_AlarmFlute
-        $1c4a9  xx xx xx:   xxx $1c497
+        $1c4a9  xx xx xx:   xxx ItemUse_CheckRequiredNPC
         $1c4ac  xx xx:      xxx + ; $1c4af
         $1c4ae  xx:          xxx
         ;;                   ---
-+       $1c4af  xx xx:      xxx #$xx
-        $1c4b1  xx xx:      xxx $xx
++       $1c4af  xx xx:      xxx #$xx ; second try at 6
+        $1c4b1  xx xx:      xxx ItemUseJump_GiveItem
         $1c4b3  xx:         xxx
         $1c4b4  xx xx:      xxx $xx
         $1c4b6  xx xx:      xxx #$xx
@@ -20399,9 +20418,9 @@ NpcSpawnCondition_1f ; dwarf child in swamp
         $1c7f6              .byte $xx ; Oak - Mother House
         $1c7f7              .byte $xx,$xx ; 045
         $1c7f9              .byte $xx ; Swamp
-        $1c7fa              .byte $xx,$xx ; 052
-        $1c7fc              .byte $xx,$xx ; 053 NOT
-        $1c7fe              .byte $xx,$xx ; 045 NOT
+        $1c7fa              .byte $xx,$xx ; 052 talked to dwarf mother
+        $1c7fc              .byte $xx,$xx ; 053 NOT followed by child
+        $1c7fe              .byte $xx,$xx ; 045 NOT rescued child
         $1c800              .byte $xx
 NpcSpawnCondition_2c ; dying man at foot of mt sabre north
         $1c801              .byte $xx ; Mt Sabre North - Main
@@ -20549,7 +20568,7 @@ NpcSpawnCondition_60 ; stom
         $1c8ab              .byte $xx ; Stom House
         $1c8ac              .byte $xx,$xx ; 051 NOT learned barrier
         $1c8ae              .byte $xx ; Swan - Stom Hut
-        $1c8af              .byte $xx,$xx ; 061 NOT
+        $1c8af              .byte $xx,$xx ; 061 NOT talked to stom in swan hut
         $1c8b1              .byte $xx ; Shyron
         $1c8b2              .byte $xx,$xx ; 027 NOT shyron massacre
         $1c8b4              .byte $xx
@@ -22211,7 +22230,7 @@ NpcDialog_84 ; sabera posing as mesia
         $1d8cc              .byte $xx
         $1d8cd              .byte $xx,$xx,$xx,$xx,$xx ; default -> 10:0f
 ;;; ----------------------------------------------------------------
-NpcDialog_83 ; azteca temple front
+NpcDialog_83 ; azteca pyramid front
         $1d8d2              .byte $xx,$xx,$xx,$xx
         $1d8d6              .byte $xx
         $1d8d7              .byte $xx,$xx,$xx,$xx,$xx ; 082 NOT -> 1b:01 (action 03)
@@ -22243,79 +22262,184 @@ TelepathyLocations
         $1d9c4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1d9d4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1d9e4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataTable_1d9f4
-        $1d9f4              .word ($1da7c) ; 00
-        $1d9f6              .word ($1da4c) ; 01
-        $1d9f8              .word ($1dab4) ; 02
-        $1d9fa              .word ($1dae0) ; 03
-        $1d9fc              .word ($1da82) ; 04
-        $1d9fe              .word ($1da52) ; 05
-        $1da00              .word ($1dab4) ; 06
-        $1da02              .word ($1dae0) ; 07
-        $1da04              .word ($1da86) ; 08
-        $1da06              .word ($1da56) ; 09
-        $1da08              .word ($1dab8) ; 0a
-        $1da0a              .word ($1dae0) ; 0b
-        $1da0c              .word ($1da90) ; 0c
-        $1da0e              .word ($1da5c) ; 0d
-        $1da10              .word ($1dac0) ; 0e
-        $1da12              .word ($1dae0) ; 0f
-        $1da14              .word ($1da90) ; 10
-        $1da16              .word ($1da5c) ; 11
-        $1da18              .word ($1dac0) ; 12
-        $1da1a              .word ($1dae0) ; 13
-        $1da1c              .word ($1da9c) ; 14
-        $1da1e              .word ($1da6a) ; 15
-        $1da20              .word ($1dacc) ; 16
-        $1da22              .word ($1daf4) ; 17
-        $1da24              .word ($1daa8) ; 18
-        $1da26              .word ($1da72) ; 19
-        $1da28              .word ($1dad4) ; 1a
-        $1da2a              .word ($1daf8) ; 1b
-        $1da2c              .byte $xx,$xx,$xx,$xx
-        $1da30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1da40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 01
-        $1da4c              .byte $xx,$xx,$xx,$xx,$xx,$xx
-	;; 05
-        $1da52              .byte $xx,$xx,$xx,$xx
-	;; 09
-        $1da56              .byte $xx,$xx,$xx,$xx,$xx,$xx
-	;; 0d, 11
-        $1da5c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 15
-        $1da6a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 19
-        $1da72              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 00
-        $1da7c              .byte $xx,$xx,$xx,$xx,$xx,$xx
-	;; 04
-        $1da82              .byte $xx,$xx,$xx,$xx
-	;; 08
-        $1da86              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 0c,10
-        $1da90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 14
-        $1da9c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 18
-        $1daa8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 02, 06
-        $1dab4              .byte $xx,$xx,$xx,$xx
-	;; 0a
-        $1dab8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 0e, 12
-        $1dac0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 16
-        $1dacc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 1a
-        $1dad4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-	;; 03, 07, 0b, 0f, 13
-        $1dae0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1daf0              .byte $xx,$xx,$xx,$xx
-	;; 17
-        $1daf4              .byte $xx,$xx,$xx,$xx
-	;; 1b
-        $1daf8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+;;; Main table for telepathy, indexed by telepathy area (0..6) << 2 | sage
+TelepathyTable
+        $1d9f4              .word ($1da7c) ; 00 tornel 0
+        $1d9f6              .word ($1da4c) ; 01 zebu 0
+        $1d9f8              .word ($1dab4) ; 02 asina 0
+        $1d9fa              .word ($1dae0) ; 03 kensu 0
+        $1d9fc              .word ($1da82) ; 04 tornel 1
+        $1d9fe              .word ($1da52) ; 05 zebu 1
+        $1da00              .word ($1dab4) ; 06 asina 1
+        $1da02              .word ($1dae0) ; 07 kensu 1
+        $1da04              .word ($1da86) ; 08 tornel 2
+        $1da06              .word ($1da56) ; 09 zebu 2
+        $1da08              .word ($1dab8) ; 0a asina 2
+        $1da0a              .word ($1dae0) ; 0b kensu 2
+        $1da0c              .word ($1da90) ; 0c tornel 3
+        $1da0e              .word ($1da5c) ; 0d zebu 3
+        $1da10              .word ($1dac0) ; 0e asina 3
+        $1da12              .word ($1dae0) ; 0f kensu 3
+        $1da14              .word ($1da90) ; 10 tornel 4
+        $1da16              .word ($1da5c) ; 11 zebu 4
+        $1da18              .word ($1dac0) ; 12 asina 4
+        $1da1a              .word ($1dae0) ; 13 kensu 4
+        $1da1c              .word ($1da9c) ; 14 tornel 5
+        $1da1e              .word ($1da6a) ; 15 zebu 5
+        $1da20              .word ($1dacc) ; 16 asina 5
+        $1da22              .word ($1daf4) ; 17 kensu 5
+        $1da24              .word ($1daa8) ; 18 tornel 6
+        $1da26              .word ($1da72) ; 19 zebu 6
+        $1da28              .word ($1dad4) ; 1a asina 6
+        $1da2a              .word ($1daf8) ; 1b kensu 6
+;;; --------------------------------
+        ;; 20:0e messages -> magic power too low (uncovered??)
+        $1da2c              .byte $xx,$xx ; tornel
+        $1da2e              .byte $xx,$xx ; zebu
+        $1da30              .byte $xx,$xx ; asina
+        $1da32              .byte $xx,$xx ; kensu
+;;; --------------------------------
+        ;; "I will restore your magic" messages
+        $1da34              .byte $xx,$xx ; tornel 1d:01
+        $1da36              .byte $xx,$xx ; zebu   1c:0d
+        $1da38              .byte $xx,$xx ; asina  1d:0e
+        $1da3a              .byte $xx,$xx ; kensu  1d:1c
+;;; --------------------------------
+        ;; "Don't rely on others so much"
+        $1da3c              .byte $xx,$xx ; tornel 1d:02
+        $1da3e              .byte $xx,$xx ; zebu   1c:0e
+        $1da40              .byte $xx,$xx ; asina  1d:0f
+        $1da42              .byte $xx,$xx ; kensu  1d:1d
+;;; --------------------------------
+        ;; Default message when there's no new info to give,
+        ;; or the player is underleveled.
+        $1da44              .byte $xx,$xx ; tornel 05:0c
+        $1da46              .byte $xx,$xx ; zebu   13:13
+        $1da48              .byte $xx,$xx ; asina  1a:0a
+        $1da4a              .byte $xx,$xx ; kensu  13:04
+;;; --------------------------------
+;;; Telepathy data
+;;; Format of data: (read at $1c1d9)
+;;;   first two bytes: a flag
+;;;     :20 negates
+;;;     :40 indicates whether there's a second possible message
+;;;   next 1 (or 2 if :40) is an unrotated message (AAAAAPPP PPPIIIII)
+;;;   repeat, then finally do the normal showmessage if all match
+;;;     -> in that 
+	;; 01 zebu 0
+        $1da4c              .byte $xx,$xx ; 04e tornado bracelet (branch)
+        $1da4e              .byte     $xx,$xx ; 1c:00
+        $1da50              .byte     $xx,$xx ; 1c:01
+	;; 05 zebu 1 (fall-through)
+        $1da52              .byte $xx,$xx ; 077 flame bracelet (last)
+        $1da54              .byte     $xx,$xx ; 1c:02
+	;; 09 zebu 2
+        $1da56              .byte $xx,$xx ; 01e queen revealed as asina
+        $1da58              .byte     $xx,$xx ; 1c:03
+        $1da5a              .byte     $xx,$xx ; 1c:04
+	;; 0d zebu 3, 11 zebu 4
+        $1da5c              .byte $xx,$xx ; 075 talked to kensu in lighthouse
+        $1da5e              .byte     $xx,$xx ; 1c:05
+        $1da60              .byte $xx,$xx ; 063 learned change
+        $1da62              .byte     $xx,$xx ; 1c:06
+        $1da64              .byte $xx,$xx ; 027 shyron massacre
+        $1da66              .byte     $xx,$xx ; 1c:07
+        $1da68              .byte     $xx,$xx ; 1c:08
+	;; 15 zebu 5
+        $1da6a              .byte $xx,$xx ; 055 zebu rescued
+        $1da6c              .byte     $xx,$xx ; 1c:09
+        $1da6e              .byte $xx,$xx ; 02e deo's pendant
+        $1da70              .byte     $xx,$xx ; 1c:0a
+	;; 19 zebu 6
+        $1da72              .byte $xx,$xx ; 079 bow of truth
+        $1da74              .byte     $xx,$xx ; 1c:0b
+        $1da76              .byte $xx,$xx ; 05e draygon 2 defeated
+        $1da78              .byte     $xx,$xx ; 1c:0c
+        $1da7a              .byte     $xx,$xx ; 1c:0a
+        ;; --------------------------------
+	;; 00 tornel 0
+        $1da7c              .byte $xx,$xx
+        $1da7e              .byte     $xx,$xx
+        $1da80              .byte     $xx,$xx
+	;; 04 tornel 1
+        $1da82              .byte $xx,$xx
+        $1da84              .byte     $xx,$xx
+	;; 08 tornel 2
+        $1da86              .byte $xx,$xx
+        $1da88              .byte     $xx,$xx
+        $1da8a              .byte     $xx,$xx
+        $1da8c              .byte $xx,$xx
+        $1da8e              .byte     $xx,$xx
+	;; 0c tornel 3, 10 tornel 4
+        $1da90              .byte $xx,$xx
+        $1da92              .byte     $xx,$xx
+        $1da94              .byte $xx,$xx
+        $1da96              .byte     $xx,$xx
+        $1da98              .byte $xx,$xx
+        $1da9a              .byte     $xx,$xx
+	;; 14 tornel 5
+        $1da9c              .byte $xx,$xx
+        $1da9e              .byte     $xx,$xx
+        $1daa0              .byte $xx,$xx
+        $1daa2              .byte     $xx,$xx
+        $1daa4              .byte $xx,$xx
+        $1daa6              .byte     $xx,$xx
+	;; 18 tornel 6
+        $1daa8              .byte $xx,$xx
+        $1daaa              .byte     $xx,$xx
+        $1daac              .byte $xx,$xx
+        $1daae              .byte     $xx,$xx
+        $1dab0              .byte $xx,$xx
+        $1dab2              .byte     $xx,$xx
+        ;; --------------------------------
+	;; 02 asina 0, 06 asina 1
+        $1dab4              .byte $xx,$xx
+        $1dab6              .byte     $xx,$xx
+	;; 0a asina 2
+        $1dab8              .byte $xx,$xx
+        $1daba              .byte     $xx,$xx
+        $1dabc              .byte $xx,$xx
+        $1dabe              .byte     $xx,$xx
+	;; 0e asina 3, 12 asina 4
+        $1dac0              .byte $xx,$xx
+        $1dac2              .byte     $xx,$xx
+        $1dac4              .byte     $xx,$xx
+        $1dac6              .byte $xx,$xx
+        $1dac8              .byte     $xx,$xx
+        $1daca              .byte     $xx,$xx
+	;; 16 asina 5
+        $1dacc              .byte $xx,$xx
+        $1dace              .byte     $xx,$xx
+        $1dad0              .byte $xx,$xx
+        $1dad2              .byte     $xx,$xx
+	;; 1a asina 6
+        $1dad4              .byte $xx,$xx
+        $1dad6              .byte     $xx,$xx
+        $1dad8              .byte $xx,$xx
+        $1dada              .byte     $xx,$xx
+        $1dadc              .byte $xx,$xx
+        $1dade              .byte     $xx,$xx
+        ;; --------------------------------
+	;; 03 kensu 0, 07 kensu 1, 0b kensu 2, 0f kensu 3, 13 kensu 4
+        $1dae0              .byte $xx,$xx
+        $1dae2              .byte     $xx,$xx
+        $1dae4              .byte     $xx,$xx
+        $1dae6              .byte $xx,$xx
+        $1dae8              .byte     $xx,$xx
+        $1daea              .byte $xx,$xx
+        $1daec              .byte     $xx,$xx
+        $1daee              .byte     $xx,$xx
+        $1daf0              .byte $xx,$xx
+        $1daf2              .byte     $xx,$xx
+	;; 17 kensu 5 (fall-through)
+        $1daf4              .byte $xx,$xx
+        $1daf6              .byte     $xx,$xx
+	;; 1b kensu 6
+        $1daf8              .byte $xx,$xx
+        $1dafa              .byte     $xx,$xx
+        $1dafc              .byte $xx,$xx
+        $1dafe              .byte     $xx,$xx
 ;;; --------------------------------
 ;;; This data table seems to be used by ItemGet, as well as ItemUse_ShellFlute2.
 ;;; Possibly it handles deleting the item?
@@ -23137,37 +23261,53 @@ ItemUseData_1d ; Medical Herb
         $1e065              .byte $xx,$xx ; Expect: NPC 63 hurt dolphin
         $1e067              .byte $xx,$xx ; Message: 0c:01 (action 02 -> dialog 11 and 0d)
         $1e069              .byte $xx,$xx ; Set: 025 healed dolphin
-        $1e06b              .byte $xx,$xx,$xx,$xx
+        ;; normal usage
+        $1e06b              .byte $xx,$xx ; Message: 20:00 (action 05 -> rts)
+        $1e06d              .byte $xx,$xx ; Clear: 000 unused
 ItemUseData_21 ; FruitOfPower
 ItemUseData_22 ; MagicRing
-        $1e06f              .byte $xx,$xx,$xx,$xx
+        $1e06f              .byte $xx,$xx ; Message: 20:01 (action 05 -> rts)
+        $1e071              .byte $xx,$xx
 ItemUseData_20 ; FruitOfLime
 ItemUseData_23 ; FruitOfRepun
-        $1e073              .byte $xx,$xx,$xx,$xx
+        $1e073              .byte $xx,$xx ; Message: 20:02 (action 05)
+        $1e075              .byte $xx,$xx
 ItemUseData_1e ; Antidote
 ItemUseData_1f ; LysisPlant
-        $1e077              .byte $xx,$xx,$xx,$xx
+        $1e077              .byte $xx,$xx ; Message: 20:02 (action 05)
+        $1e079              .byte $xx,$xx
 ItemUseData_26 ; OpelStatue
-        $1e07b              .byte $xx,$xx,$xx,$xx
+        $1e07b              .byte $xx,$xx ; action 05
+        $1e07d              .byte $xx,$xx
 ItemUseData_27 ; InsectFlute
-        $1e07f              .byte $xx,$xx,$xx,$xx,$xx
+        $1e07f              .byte $xx,$xx
+        $1e081              .byte $xx,$xx
+        $1e083              .byte $xx
 ItemUseData_24 ; WarpBoots
-        $1e084              .byte $xx,$xx,$xx,$xx
+        $1e084              .byte $xx,$xx ; action 04 (rts)
+        $1e086              .byte $xx,$xx
 ItemUseData_25 ; StatueOfOnyx
         $1e088              .byte $xx,$xx ; Expect: NPC 16 akahana
-        $1e08a              .byte $xx,$xx
+        $1e08a              .byte $xx,$xx ; 02:02 (action 1c)
         $1e08c              .byte $xx,$xx ; Set: 050 given statue to akahana
 ItemUseData_31 ; AlarmFlute
-        $1e08e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1e08e              .byte $xx,$xx ; Expect: NPC 15 windmill guard asleep
+        $1e090              .byte $xx,$xx ; action 6 (LoadNpcDataForCurrentLocation)
+        $1e092              .byte $xx,$xx ; Set: 00f woke windmill guard
+        ;; try again with another NPC if the first one failed
+        $1e094              .byte $xx,$xx ; Expect: NPC 6b kensu in lighthouse asleep
+        $1e096              .byte $xx,$xx ; action 6 (LoadNpcDataForCurrentLocation)
+        $1e098              .byte $xx,$xx ; Set: 0a4 woke kensu
 ItemUseData_32 ; WindmillKey
-        $1e09a              .byte $xx,$xx,$xx,$xx,$xx
+        $1e09a              .byte $xx,$xx
+        $1e09c              .byte $xx,$xx,$xx
 ItemUseData_33 ; KeyToPrison
         $1e09f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ItemUseData_34 ; KeyToStyx
         $1e0a7              .byte $xx,$xx,$xx,$xx,$xx,$xx
 ItemUseData_35 ; FogLamp
         $1e0ad              .byte $xx,$xx ; Expect: NPC 64 fisherman
-        $1e0af              .byte $xx,$xx
+        $1e0af              .byte $xx,$xx ; 09:01
         $1e0b1              .byte $xx,$xx ; Set: 021 returned fog lamp
 ItemUseData_36 ; ShellFlute
         $1e0b3              .byte $xx,$xx ; Expect: Flag 09b can ride dolphin
@@ -23383,7 +23523,7 @@ Trigger_83
 Trigger_84
         ;; 84 learn barrier
         $1e21e              .byte $xx,$xx ; Condition: 051 NOT learned barrier
-        $1e220              .byte $xx,$xx ; Message 19:12  Action: 0b
+        $1e220              .byte $xx,$xx ; Message 1d:12  Action: 0b
         $1e222              .byte $xx,$xx ; Set: 051 learned barrier
 Trigger_85
         ;; 85 enter stom's house -> ????
@@ -25637,6 +25777,7 @@ BossPatternJump_2c              ; Draygon2 1
         $1f3e4  xx xx:      xxx $xx
         $1f3e6  xx:         xxx
         $1f3e7  xx xx:      xxx + ; $1f3ec
+        ;; X+Y is even
         $1f3e9  xx xx xx:    xxx Draygon2_InitiateLasers
         ;; --------------------------------
 +       $1f3ec  xx xx:      xxx #$xx
@@ -26136,12 +26277,12 @@ ObjectActionJump_6f
         $1f814  xx xx:      xxx #$xx
         $1f816  xx xx:      xxx $xx,x
         $1f818  xx xx:      xxx #$xx
-        $1f81a  xx xx xx:   xxx $1f95d,y
-        $1f81d  xx xx:      xxx $xx
-        $1f81f  xx xx:      xxx $xx
-        $1f821  xx:         xxx
-        $1f822  xx xx:      xxx $xx
-        $1f824  xx:         xxx
+-       $1f81a  xx xx xx:     xxx $1f95d,y
+        $1f81d  xx xx:        xxx CurrentLocation
+        $1f81f  xx xx:        xxx + ; $1f824
+        $1f821  xx:            xxx
+        $1f822  xx xx:       xxx - ; $1f81a
++       $1f824  xx:         xxx
         $1f825  xx xx xx:   xxx $xxxx,x
         $1f828  xx:         xxx
         $1f829  xx:         xxx
@@ -26304,14 +26445,29 @@ ObjectActionJump_6f
         $1f958  xx xx:      xxx $xx
         $1f95a  xx xx xx:   xxx LoadOneObjectData
 ;;; --------------------------------
-DataTable_1f95d 
-        $1f95d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; This is a table of locations, searched by ObjectActionJump_6f when bosses die.
+;;; The index is then stored in $600,x and used to index the next table.
+BossKillLocations
+        $1f95d              .byte $xx ; 00 vampire 1
+        $1f95e              .byte $xx ; 01 insect
+        $1f95f              .byte $xx ; 02 kelbesque 1
+        $1f960              .byte $xx
+        $1f961              .byte $xx ; 04 sabera 1
+        $1f962              .byte $xx ; 05 mado 1
+        $1f963              .byte $xx ; 06 kelbesque 2
+        $1f964              .byte $xx ; 07 sabera 2
+        $1f965              .byte $xx ; 08 mado 2
+        $1f966              .byte $xx ; 09 karmine
+        $1f967              .byte $xx ; 0a draygon 1
+        $1f968              .byte $xx ; 0b draygon 2
+        $1f969              .byte $xx ; 0c vampure 2
+        $1f96a              .byte $xx ; 0d dyna
 ;;; --------------------------------
 ;;; Data table with some sort of boss info.  Seems to only be read when
 ;;; the boss is killed, at $1f856.  Contains the item drop at y=4.
 ;;; y=2 is unused; y=3 looks like maybe the music to restore.
 ;;; STRIP: word=$14000
-DataTable_1f96b
+BossKillDataTable
         ;; boss death, BossDrop
         $1f96b              .word ($1f987) ; 00 vampire 1
         $1f96d              .word ($1f99c) ; 01 insect
@@ -26342,22 +26498,22 @@ DataTable_1f96b
         $1f9a9              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $1f9af              .byte $xx,$xx
 ;;; --------------------------------
-;;; 02 kelbesque	
-        $1f9b1              .word ($xxxx)
+;;; 02 kelbesque 1
+        $1f9b1              .word ($xxxx) ; 1fa98 - general escapes
         $1f9b3              .byte $xx,$xx,$xx
         $1f9b6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1f9be              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $1f9c4              .byte $xx,$xx
 ;;; --------------------------------
 ;;; 04 sabera 1	
-        $1f9c6              .word ($xxxx)
+        $1f9c6              .word ($xxxx) ; 1fa98 - general escapes
         $1f9c8              .byte $xx,$xx,$xx
         $1f9cb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1f9d3              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $1f9d9              .byte $xx,$xx
 ;;; --------------------------------
 ;;; 05 mado 1	
-        $1f9db              .word ($xxxx)
+        $1f9db              .word ($xxxx) ; 1fa98 - general escapes
         $1f9dd              .byte $xx,$xx,$xx
         $1f9e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1f9e8              .byte $xx,$xx,$xx,$xx,$xx,$xx
@@ -26419,7 +26575,9 @@ DataTable_1f96b
         $1fa90              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $1fa96              .byte $xx,$xx
 ;;; --------------------------------
+GeneralEscapes
         ;; Runs when generals defeated for first time.
+        ;; $600,x seems to have come from $1f828
         $1fa98  xx xx:      xxx #$xx
         $1fa9a  xx xx xx:   xxx WaitForMultipleOAMDMA
         $1fa9d  xx xx:      xxx #$xx
@@ -26439,14 +26597,14 @@ DataTable_1f96b
         $1fac0  xx xx xx:   xxx LoadOneObjectData
         $1fac3  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
         $1fac6  xx xx:      xxx $xx
-        $1fac8  xx xx xx:   xxx $xxxx,x
+        $1fac8  xx xx xx:   xxx $xxxx,x ; a = 2,4,5
         $1facb  xx:         xxx
         $1facc  xx:         xxx
         $1facd  xx xx xx:   xxx $1fafe,y
         $1fad0  xx xx:      xxx $xx
         $1fad2  xx xx xx:   xxx $1faff,y
         $1fad5  xx xx:      xxx $xx
-        $1fad7  xx xx:      xxx #$xx
+        $1fad7  xx xx:      xxx #$xx ; why is this 1 and not 0?
         $1fad9  xx xx:      xxx ($xx),y
         $1fadb  xx xx xx:   xxx $xxxx
         $1fade  xx:         xxx
@@ -26464,12 +26622,37 @@ DataTable_1f96b
         $1faf8  xx xx xx:   xxx $3ffcf
         $1fafb  xx xx xx:   xxx $1fb5b
 ;;; --------------------------------
-DataTable_1fafe 
-        $1fafe              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1fb0e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1fb1e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; This table points to a four-byte block with message IDs and some other stuff
+;;; for defeated bosses.  The first two bytes go into $31f and $33f (metasprite
+;;; and chain for slot 1f).  The last two bytes go into the message part:index
+;;; ($7de:$7df).  Indexed by the boss's $600,x.  Could be compressed if needed.
+;;; STRIP: word=$14000
+EscapedGeneralDataTable
+        $1fafe              .word ($xxxx)
+        $1fb00              .word ($xxxx)
+        $1fb02              .word ($1fb1a) ; 02 kelbesque 1
+        $1fb04              .word ($xxxx)
+        $1fb06              .word ($1fb1f) ; 04 sabera 1
+        $1fb08              .word ($1fb24) ; 05 mado 1
+        $1fb0a              .word ($xxxx)
+        $1fb0c              .word ($xxxx)
+        $1fb0e              .word ($xxxx)
+        $1fb10              .word ($xxxx)
+        $1fb12              .word ($xxxx)
+        $1fb14              .word ($xxxx)
+        $1fb16              .word ($xxxx)
+        $1fb18              .word ($xxxx)
 ;;; --------------------------------
-        $1fb28  xx xx xx:   xxx $xxxx,y
+;;; bytes go into $31f, $33f (graphics?), $7d6, $7d7 (message)
+EscapedGeneralData
+        $1fb1a              .byte $xx             ; unread
+        $1fb1b              .byte $xx,$xx,$xx,$xx ; kelbesque 1: 06:01
+        $1fb1f              .byte $xx             ; unread
+        $1fb20              .byte $xx,$xx,$xx,$xx ; sabera 1: 10:13
+        $1fb24              .byte $xx             ; unread
+        $1fb25              .byte $xx,$xx,$xx,$xx ; mado 1: 19:05
+;;; --------------------------------
+        $1fb29  xx xx:      xxx #$xx
         $1fb2b  xx xx:      xxx $xx
         $1fb2d  xx xx:      xxx $xx
         $1fb2f  xx xx:      xxx $xx
@@ -35708,8 +35891,15 @@ MainGameModeJump_1e_ThrustCrystalis
         $27fe7  xx:         xxx
 ;;; --------------------------------
 DataTable_27fe8 
-        $27fe8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $27ff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; Message part:index pairs for endgame
+        $27fe8              .byte $xx,$xx ; 20:1d crystalis thust into reactor
+        $27fea              .byte $xx,$xx ; 1b:0f confirmed meltdown
+        $27fec              .byte $xx,$xx ; 1b:10 mesia: simea! ... threat of evil
+        $27fee              .byte $xx,$xx ; 1b:11 final countdown
+        $27ff0              .byte $xx,$xx ; 1b:12 simea: time to leave
+;;; --------------------------------
+DataTable_27ff2 
+        $27ff2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 RomBank_14                      ; @@ $8000
 ;;; The next four banks (through $2ffff) are all code and data related
@@ -36578,9 +36768,9 @@ MessageDecodeJump_05_LessCommonWord
         $28685  xx xx:      xxx ($xx),y
         $28687  xx:         xxx
         $28688  xx:         xxx
-        $28689  xx xx xx:   xxx $28a00,x
+        $28689  xx xx xx:   xxx LessCommonWords,x
         $2868c  xx xx:      xxx $xx
-        $2868e  xx xx xx:   xxx $28a01,x
+        $2868e  xx xx xx:   xxx LessCommonWords+1,x
         $28691  xx xx:      xxx $xx
 CopyWordToMessageBuffer
         ;; Copies the word at ($2a) to the message buffer.
@@ -36622,9 +36812,9 @@ MessageDecodeJump_06_PersonName
         $286d0  xx xx:      xxx ($xx),y
         $286d2  xx:         xxx
         $286d3  xx:         xxx
-        $286d4  xx xx xx:   xxx $28a14,x
+        $286d4  xx xx xx:   xxx PersonNames,x
         $286d7  xx xx:      xxx $xx
-        $286d9  xx xx xx:   xxx $28a15,x
+        $286d9  xx xx xx:   xxx PersonNames+1,x
         $286dc  xx xx:      xxx $xx
         $286de  xx xx xx:   xxx $28693
 ;;; --------------------------------
@@ -36633,9 +36823,9 @@ MessageDecodeJump_07_ItemName
         $286e4  xx xx:      xxx ($xx),y
         $286e6  xx:         xxx
         $286e7  xx:         xxx
-        $286e8  xx xx xx:   xxx $28a5c,x
+        $286e8  xx xx xx:   xxx ItemNames,x
         $286eb  xx xx:      xxx $xx
-        $286ed  xx xx xx:   xxx $28a5d,x
+        $286ed  xx xx xx:   xxx ItemNames+1,x
         $286f0  xx xx:      xxx $xx
         $286f2  xx xx xx:   xxx $28693
 ;;; --------------------------------
@@ -36725,9 +36915,9 @@ MessageDecodeJump_08_CurrentItemName
         $28784  xx xx:      xxx #$xx
         $28786  xx:         xxx
         $28787  xx:         xxx
-        $28788  xx xx xx:   xxx $28a5c,x
+        $28788  xx xx xx:   xxx ItemNames,x
         $2878b  xx xx:      xxx $xx
-        $2878d  xx xx xx:   xxx $28a5d,x
+        $2878d  xx xx xx:   xxx ItemNames+1,x
         $28790  xx xx:      xxx $xx
         $28792  xx xx:      xxx #$xx
         $28794  xx xx:      xxx ($xx),y
@@ -39730,6 +39920,7 @@ RomBank_17                      ; @@ $a000
         $2faa9              .byte     $xx,$xx,"xxxxxxxxxxxxxxxxxxxxxx",$xx
         ;; Not sure what happened here - this is in the original ROM, but it
         ;; somehow renders properly without the null terminator.
+        ;;   -> looks unused, probably a working version somewhere else.
         $2fac2              .byte $xx,$xx
         $2fac4              .byte     $xx,$xx,$xx,$xx,$xx
         $2fac9              .byte     $xx,$xx,"xxxxxxxxxxxxxxxxxxxxxxxxxx"
@@ -48546,7 +48737,7 @@ ObjectActionJump_70
         $37a3b  xx xx:      xxx $xx
         $37a3d  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
-;;; Secondary jump tabble keyed off $600,x
+;;; Secondary jump table keyed off $600,x
 ;;; STRIP: word=$2c000
 JumpTable_37a40
         $37a40              .word ($37a5a) ; 00 object $b2
@@ -48646,40 +48837,40 @@ ObjectActionJump_70_01
         $37af5  xx xx:      xxx #$xx
         $37af7  xx xx xx:   xxx $xxxx
         $37afa  xx xx xx:   xxx $xxxx,x
-        $37afd  xx xx:      xxx $xx
-        $37aff  xx xx xx:   xxx $xxxx,x
-        $37b02  xx:         xxx
-;;; --------------------------------
-        $37b03  xx xx xx:   xxx $xxxx,x
+        $37afd  xx xx:      xxx + ; $37b03
+        $37aff  xx xx xx:    xxx $xxxx,x
+        $37b02  xx:          xxx
+        ;; --------------------------------
++       $37b03  xx xx xx:   xxx $xxxx,x
         $37b06  xx xx xx:   xxx $xxxx,x
         $37b09  xx xx:      xxx #$xx
-        $37b0b  xx xx:      xxx $xx
+        $37b0b  xx xx:      xxx >>rts ; $37b78
         $37b0d  xx xx xx:   xxx $xxxx,x
         $37b10  xx:         xxx
         $37b11  xx:         xxx
         $37b12  xx:         xxx
         $37b13  xx xx xx:   xxx $37bce,y
         $37b16  xx xx:      xxx #$xx
-        $37b18  xx xx:      xxx $xx
+        $37b18  xx xx:      xxx ++ ; $37b79
         $37b1a  xx xx xx:   xxx $xxxx,x
         $37b1d  xx xx xx:   xxx $xxxx,x
-        $37b20  xx xx:      xxx $xx
-        $37b22  xx xx xx:   xxx $xxxx,x
-        $37b25  xx:         xxx
-;;; --------------------------------
-        $37b26  xx xx:      xxx #$xx
+        $37b20  xx xx:      xxx + ; $37b26
+        $37b22  xx xx xx:    xxx $xxxx,x
+        $37b25  xx:          xxx
+        ;; --------------------------------
++       $37b26  xx xx:      xxx #$xx
         $37b28  xx xx xx:   xxx $xxxx
         $37b2b  xx xx:      xxx #$xx
         $37b2d  xx xx xx:   xxx $xxxx
         $37b30  xx:         xxx
         $37b31  xx:         xxx
-        $37b32  xx xx:       xxx #SFX_DIALOG
-        $37b34  xx xx xx:    xxx StartAudioTrack
-        $37b37  xx xx xx:    xxx $3ffcf
-        $37b3a  xx xx xx:    xxx $xxxx
-        $37b3d  xx xx xx:    xxx $xxxx
-        $37b40  xx xx:       xxx #$xx
-        $37b42  xx xx:       xxx $xx
+-       $37b32  xx xx:        xxx #SFX_DIALOG
+        $37b34  xx xx xx:     xxx StartAudioTrack
+        $37b37  xx xx xx:     xxx $3ffcf
+        $37b3a  xx xx xx:     xxx $xxxx
+        $37b3d  xx xx xx:     xxx $xxxx
+        $37b40  xx xx:        xxx #$xx
+        $37b42  xx xx:       xxx - ; $37b32
         $37b44  xx xx:       xxx #$xx
         $37b46  xx xx xx:    xxx $xxxx
         $37b49  xx xx:       xxx #$xx
@@ -48703,7 +48894,7 @@ ObjectActionJump_70_01
         $37b75  xx xx xx:   xxx $xxxx,x
         $37b78  xx:         xxx
 ;;; --------------------------------
-        $37b79  xx:         xxx
+++      $37b79  xx:         xxx
         $37b7a  xx:         xxx
         $37b7b  xx xx xx:    xxx $xxxx,x
         $37b7e  xx:          xxx
@@ -56889,19 +57080,19 @@ MainGameModeJump_10_StatusMessage
         $3d090  xx xx xx:    xxx $xxxx
         $3d093  xx xx:       xxx #$xx
         $3d095  xx xx:       xxx + ; $3d0ae
-        $3d097  xx xx xx:    xxx $xxxx
-        $3d09a  xx xx:       xxx #$xx
-        $3d09c  xx xx:       xxx + ; $3d0ae
-        $3d09e  xx xx xx:    xxx $xxxx
-        $3d0a1  xx xx:       xxx #$xx
-        $3d0a3  xx xx xx:    xxx $xxxx
-        $3d0a6  xx xx:       xxx #$xx ; Level up or item gain music ???
-        $3d0a8  xx xx xx:    xxx StartAudioTrack
-        $3d0ab  xx xx xx:    xxx $3d0b3
+        $3d097  xx xx xx:     xxx $xxxx
+        $3d09a  xx xx:        xxx #$xx
+        $3d09c  xx xx:        xxx + ; $3d0ae
+        $3d09e  xx xx xx:      xxx $xxxx
+        $3d0a1  xx xx:         xxx #$xx
+        $3d0a3  xx xx xx:      xxx $xxxx
+        $3d0a6  xx xx:         xxx #$xx ; Level up sfx
+        $3d0a8  xx xx xx:      xxx StartAudioTrack
+        $3d0ab  xx xx xx:      xxx ++ ; $3d0b3
         ;; --------------------------------
-+       $3d0ae  xx xx:       xxx #SFX_DIALOG
-        $3d0b0  xx xx xx:    xxx StartAudioTrack
-        $3d0b3  xx xx xx:    xxx $xxxx
++       $3d0ae  xx xx:        xxx #SFX_DIALOG
+        $3d0b0  xx xx xx:     xxx StartAudioTrack
+++      $3d0b3  xx xx xx:    xxx $xxxx
         $3d0b6  xx xx xx:    xxx $xxxx
         $3d0b9  xx xx xx:    xxx $xxxx
         $3d0bc  xx xx xx:    xxx $xxxx
@@ -56943,7 +57134,7 @@ MainGameModeJump_11_Dialog
         $3d105  xx xx:      xxx #$xx
         $3d107  xx xx xx:   xxx BankSwitch16k
         $3d10a  xx xx xx:   xxx InitiateDialog
-        $3d10d  xx xx:      xxx $xx ; 0..31 from high 3 bits of first byte of dialog
+        $3d10d  xx xx:      xxx $xx ; 0..31 from high 5 bits of first byte of dialog
         $3d10f  xx:         xxx
         $3d110  xx xx xx:    xxx LoadAndShowDialog
         $3d113  xx:         xxx ; low: $15: $2a000, high: $16: $2c000 or $18: $30000
@@ -57052,7 +57243,7 @@ DialogFollowupActionJump_13
         $3d1b8  xx xx xx:   xxx $3d1ff
         $3d1bb  xx xx:      xxx #$xx
         $3d1bd  xx xx xx:   xxx $xxxx
-        $3d1c0  xx xx xx:   xxx $3e144
+        $3d1c0  xx xx xx:   xxx loadNpcDataForCurrentLocation
         $3d1c3  xx xx xx:   xxx $xxxx
         $3d1c6  xx:         xxx
         $3d1c7  xx xx xx:   xxx $3d31f
@@ -57064,8 +57255,8 @@ DialogFollowupActionJump_16
         $3d1d1  xx xx xx:   xxx $xxxx
         $3d1d4  xx xx:      xxx #$xx
         $3d1d6  xx xx xx:   xxx $xxxx
-        $3d1d9  xx xx xx:   xxx $3d354
-        $3d1dc  xx xx xx:   xxx $3e144
+        $3d1d9  xx xx xx:   xxx WaitForDialogToBeDismissed
+        $3d1dc  xx xx xx:   xxx loadNpcDataForCurrentLocation
         $3d1df  xx xx xx:   xxx $xxxx
         $3d1e2  xx xx xx:   xxx $3d1ff
         $3d1e5  xx xx:      xxx #$xx
@@ -57073,6 +57264,7 @@ DialogFollowupActionJump_16
         $3d1ea  xx:         xxx
 ;;; --------------------------------
 DialogFollowupActionJump_10
+        ;; NPC reveals change magic when talked to (asina and kensu)
         $3d1eb  xx xx:      xxx #$xx
         $3d1ed  xx xx xx:   xxx $xxxx
         $3d1f0  xx xx:      xxx #$xx
@@ -57256,7 +57448,7 @@ LoadAndShowDialog
         $3d349  xx xx xx:   xxx $xxxx
         $3d34c  xx xx:      xxx $xx
         $3d34e  xx xx xx:   xxx $xxxx
-        $3d351  xx xx xx:   xxx $3d3c2
+        $3d351  xx xx xx:   xxx RotateMessagePartAndIndex
 WaitForDialogToBeDismissed
         $3d354  xx xx:       xxx #$xx
         $3d356  xx xx:       xxx $xx
@@ -58336,21 +58528,21 @@ MainGameModeJump_1d
         $3dba5  xx xx xx:   xxx $3ff8c
         $3dba8  xx xx:      xxx #SCREEN_MODE_TEXT
         $3dbaa  xx xx:      xxx ScreenMode
-        $3dbac  xx xx xx:   xxx $xxxx
-        $3dbaf  xx:         xxx
-        $3dbb0  xx:         xxx
-        $3dbb1  xx:         xxx
-        $3dbb2  xx:         xxx
-        $3dbb3  xx xx:      xxx #$xx
-        $3dbb5  xx xx:      xxx $xx
-        $3dbb7  xx xx:      xxx #$xx
-        $3dbb9  xx xx xx:   xxx $xxxx
-        $3dbbc  xx xx xx:   xxx ReadControllersWithRepeat
-        $3dbbf  xx xx xx:   xxx $3ff8c
-        $3dbc2  xx xx xx:   xxx RemoveSpritesBehindMessageBox
-        $3dbc5  xx xx xx:   xxx WaitForOAMDMA
-        $3dbc8  xx xx xx:   xxx $3c210
-        $3dbcb  xx xx:      xxx $xx
+-       $3dbac  xx xx xx:    xxx $xxxx
+        $3dbaf  xx:          xxx
+        $3dbb0  xx:          xxx
+        $3dbb1  xx:          xxx
+        $3dbb2  xx:          xxx
+        $3dbb3  xx xx:       xxx #$xx
+        $3dbb5  xx xx:       xxx + ; $3dbb9
+        $3dbb7  xx xx:        xxx #$xx
++       $3dbb9  xx xx xx:    xxx $xxxx
+        $3dbbc  xx xx xx:    xxx ReadControllersWithRepeat
+        $3dbbf  xx xx xx:    xxx $3ff8c
+        $3dbc2  xx xx xx:    xxx RemoveSpritesBehindMessageBox
+        $3dbc5  xx xx xx:    xxx WaitForOAMDMA
+        $3dbc8  xx xx xx:    xxx $3c210 ; does something w/ searching for controller input
+        $3dbcb  xx xx:      xxx - ; $3dbac
         $3dbcd  xx:         xxx
         $3dbce  xx:         xxx
         $3dbcf  xx xx xx:   xxx $3dbdc,x
@@ -58360,7 +58552,15 @@ MainGameModeJump_1d
         $3dbd9  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
 DataTable_3dbdc 
-        $3dbdc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; jump table for ... ?
+        $3dbdc              .word ($3dc70)
+        $3dbde              .word ($3dc64)
+        $3dbe0              .word ($3dc64)
+        $3dbe2              .word ($3dc64)
+        $3dbe4              .word ($3dbf4)
+        $3dbe6              .word ($3dc0c)
+        $3dbe8              .word ($3dc26)
+        $3dbea              .word ($3dc3e)
 ;;; --------------------------------
         $3dbec  xx xx:      xxx #SFX_CURSOR_MOVE
         $3dbee  xx xx xx:   xxx StartAudioTrack
@@ -58589,7 +58789,14 @@ MainGameModeJump_15_TelepathyMagic
         $3ddba  xx xx xx:    xxx ($xxxx)
 ;;; --------------------------------
 JumpTable_3ddbd                 ; TODO - expand these labels
-        $3ddbd              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $3ddbd              .word ($3de04) ; main game mode 16 jump -> ??
+        $3ddbf              .word ($3de51)
+        $3ddc1              .word ($3de51)
+        $3ddc3              .word ($3de51)
+        $3ddc5              .word ($3dd9a)
+        $3ddc7              .word ($3dd9a)
+        $3ddc9              .word ($3dde5)
+        $3ddcb              .word ($3dde1)
 ;;; --------------------------------
         $3ddcd  xx xx xx:   xxx $xxxx
         $3ddd0  xx xx xx:   xxx $xxxx
@@ -58626,6 +58833,8 @@ JumpTable_3ddbd                 ; TODO - expand these labels
         $3de03  xx:         xxx
 ;;; --------------------------------
 MainGameModeJump_16
+        ;; NOTE: game mode 16 is never used, but this is entered via
+        ;; the jump table at 3ddbd when telepathy is used
         $3de04  xx xx xx:   xxx SetSprite0_F0
         $3de07  xx xx xx:   xxx RemoveSpritesBehindMessageBox
         $3de0a  xx xx:      xxx $xx
@@ -58638,8 +58847,8 @@ MainGameModeJump_16
         $3de19  xx xx xx:    xxx $xxxx
         $3de1c  xx xx:       xxx $xx
         $3de1e  xx xx xx:    xxx $xxxx
-        $3de21  xx xx xx:    xxx $3d3c2
-        $3de24  xx xx:       xxx #$xx
+        $3de21  xx xx xx:    xxx RotateMessagePartAndIndex
+        $3de24  xx xx:       xxx #$xx ; 28000 -> 8000
         $3de26  xx xx xx:    xxx BankSwitch8k_8000
         $3de29  xx xx xx:    xxx ShowMessage
         $3de2c  xx:         xxx
@@ -58660,6 +58869,7 @@ MainGameModeJump_16
 JumpTable_3df0e_01
 JumpTable_3df0e_02
 JumpTable_3df0e_03
+        ;; these are entered from the 3ddbd jump table as well
         $3de51  xx xx xx:    xxx SetSprite0_F0
         $3de54  xx xx:       xxx #$xx
         $3de56  xx xx xx:    xxx $3c188

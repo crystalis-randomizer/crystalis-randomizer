@@ -19426,11 +19426,12 @@ Telepathy_ShowMessage
 ;;; This is a data table of something about items and inventory... 8213 ???
 ;;; It's also indexed based on the result of the TelepathyLocations table
 ;;; to compare to the player's current level.
-DataTable_1c213 
+TelepathyMinimumLevel
         ;; expected level for the different game areas
         $1c213              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        ;; maps telepathy result (1c222) from 0..7 to 0..3
-        ;; (bbut why not just store 0..3 directly?)
+TelepathyResultMap
+        ;; maps telepathy result (1c222/1c22f) from 0..7 to 0..3
+        ;; (but why not just store 0..3 directly?)
         $1c21a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 CheckTelepathyResult
@@ -19447,7 +19448,7 @@ CheckTelepathyResult
 ;;; point to 2 or 3 in the other table (1c21a) so clearly this is used for something
 ;;; else, too - except it's not!).  This gives a 9/64 chance of getting 32 MP,
 ;;; at a cost of 8 MP per attempt, so really not a good deal.
-DataTable_1c22f 
+TelepathyResults
         $1c22f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1c23f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1c24f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -23348,11 +23349,17 @@ ItemUseData_28 ; FluteOfLime
         $1e0f0              .byte $xx,$xx ; 20:05 (action 06) reload npcs
         $1e0f2              .byte $xx,$xx ; Set: 035 cured akahana
 ItemUseData_3e ; BowOfMoon
-        $1e0f4              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1e0f4              .byte $xx,$xx
+        $1e0f6              .byte $xx,$xx
+        $1e0f8              .byte $xx,$xx
 ItemUseData_3f ; BowOfSun
-        $1e0fa              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1e0fa              .byte $xx,$xx
+        $1e0fc              .byte $xx,$xx
+        $1e0fe              .byte $xx,$xx
 ItemUseData_40 ; BowOfTruth
-        $1e100              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $1e100              .byte $xx,$xx
+        $1e102              .byte $xx,$xx
+        $1e104              .byte $xx,$xx
 ;;; --------------------------------
 ;;; The following are the two-byte values associated with the pointers in
 ;;; the $1dc82 data table.  It's sparse and somewhat scrambled, so the
@@ -26158,7 +26165,8 @@ BossPatternJump_31              ; Draygon2 6
         $1f706  xx xx:      xxx $xx
         $1f708  xx:         xxx
 ;;; --------------------------------
-;;; Points to a striped data tabble every third block of the 0e000 page.
+;;; Points to a striped data table every third block of the 0e000 page.
+;;; This is interwoven with the map data.
 ;;; STRIP: word=$6000
 DataTable_1f709
         $1f709              .word ($0e0f0)
@@ -26181,46 +26189,52 @@ DataTable_1f709
 ObjectActionJump_6c
 ObjectActionJump_6d
 ObjectActionJump_6e
+        ;; These objects seem to only show up after a boss is killed,
+        ;; excluding draygon 2 or dyna.  So 600,x will be the same index
+        ;; as it is in BossKillDataTable.  This happens after the initial
+        ;; explosion or escaping animation is done (so a few frames after
+        ;; BossKillDataTable).
         $1f728  xx xx xx:   xxx $xxxx,x
-        $1f72b  xx xx:      xxx $xx
-        $1f72d  xx xx:      xxx $xx
-        $1f72f  xx xx:      xxx #$xx
-        $1f731  xx xx:      xxx $xx
-        $1f733  xx xx xx:   xxx $3ff80
-;;; --------------------------------
-        $1f736  xx xx xx:   xxx $xxxx,x
-        $1f739  xx xx:      xxx $xx
-        $1f73b  xx xx xx:   xxx $1f7bb
-;;; --------------------------------
-        $1f73e  xx xx:      xxx #$xx
-        $1f740  xx xx:      xxx $xx
-        $1f742  xx xx:      xxx $xx
-        $1f744  xx xx:      xxx $xx
-        $1f746  xx xx xx:   xxx $xxxx,y
-        $1f749  xx xx:      xxx #$xx
-        $1f74b  xx xx:      xxx $xx
-        $1f74d  xx xx:      xxx #$xx
-        $1f74f  xx xx:      xxx $xx
-        $1f751  xx xx:      xxx #$xx
-        $1f753  xx xx:      xxx $xx
-        $1f755  xx xx:      xxx #$xx
-        $1f757  xx xx:      xxx $xx
-        $1f759  xx xx:      xxx #$xx
-        $1f75b  xx xx:      xxx $xx
-        $1f75d  xx xx:      xxx #$xx
-        $1f75f  xx xx:      xxx $xx
-        $1f761  xx:         xxx
-        $1f762  xx xx:      xxx #$xx
-        $1f764  xx xx:      xxx $xx
+        $1f72b  xx xx:      xxx + ; $1f736
+        $1f72d  xx xx:       xxx $xx
+        $1f72f  xx xx:       xxx #$xx
+        $1f731  xx xx:       xxx $xx
+        $1f733  xx xx xx:    xxx LoadOneObjectData
+        ;; --------------------------------
++       $1f736  xx xx xx:   xxx $xxxx,x
+        $1f739  xx xx:      xxx + ; $1f73e
+        $1f73b  xx xx xx:    xxx $1f7bb
+        ;; --------------------------------
++       $1f73e  xx xx:      xxx #$xx
+-       $1f740  xx xx:       xxx $xx
+        $1f742  xx xx:       xxx $xx
+        $1f744  xx xx:        xxx + ; $1f761
+        $1f746  xx xx xx:    xxx ObjectActionScript,y
+        $1f749  xx xx:       xxx #$xx
+        $1f74b  xx xx:        xxx + ; $1f761
+        $1f74d  xx xx:       xxx #$xx
+        $1f74f  xx xx:        xxx + ; $1f761
+        $1f751  xx xx:       xxx #$xx
+        $1f753  xx xx:        xxx + ; $1f761
+        $1f755  xx xx:       xxx #$xx
+        $1f757  xx xx:        xxx + ; $1f761
+        $1f759  xx xx:       xxx #$xx
+        $1f75b  xx xx:        xxx + ; $1f761
+        $1f75d  xx xx:       xxx #$xx
+        $1f75f  xx xx:        xxx ++ ; $1f7bb
++       $1f761  xx:          xxx
+        $1f762  xx xx:       xxx #$xx
+        $1f764  xx xx:      xxx - ; $1f740
+        ;; no matching object found
         $1f766  xx xx xx:   xxx $xxxx,x
-        $1f769  xx xx:      xxx #$xx
-        $1f76b  xx xx:      xxx $xx
-        $1f76d  xx xx xx:   xxx $xxxx,x
-        $1f770  xx xx xx:   xxx $xxxx
-        $1f773  xx xx:      xxx #$xx
-        $1f775  xx xx xx:   xxx $xxxx
-        $1f778  xx xx xx:   xxx $3c125
-        $1f77b  xx xx:      xxx #$xx
+        $1f769  xx xx:      xxx #$xx ; skip Rage
+        $1f76b  xx xx:      xxx + ; $1f77b
+        $1f76d  xx xx xx:    xxx $xxxx,x
+        $1f770  xx xx xx:    xxx $xxxx
+        $1f773  xx xx:       xxx #$xx
+        $1f775  xx xx xx:    xxx $xxxx
+        $1f778  xx xx xx:    xxx StartAudioTrack
++       $1f77b  xx xx:      xxx #$xx
         $1f77d  xx xx xx:   xxx $xxxx,x
         $1f780  xx xx:      xxx #$xx
         $1f782  xx xx xx:   xxx $xxxx,x
@@ -26231,7 +26245,7 @@ ObjectActionJump_6e
         $1f78b  xx xx xx:   xxx $xxxx,x
         $1f78e  xx:         xxx
         $1f78f  xx xx xx:   xxx $1f7c1,y
-        $1f792  xx xx:      xxx $xx
+        $1f792  xx xx:       xxx ++ ; $1f7bb
         $1f794  xx xx xx:   xxx $xxxx
         $1f797  xx xx xx:   xxx $1f7c2,y
         $1f79a  xx xx xx:   xxx $xxxx
@@ -26242,32 +26256,39 @@ ObjectActionJump_6e
         $1f7a9  xx xx xx:   xxx $1f7c5,y
         $1f7ac  xx xx xx:   xxx $xxxx
         $1f7af  xx xx xx:   xxx $xxxx
-        $1f7b2  xx xx:      xxx $xx
-        $1f7b4  xx xx:      xxx #GAME_MODE_STATUS_MSG
-        $1f7b6  xx xx:      xxx GameMode
-        $1f7b8  xx xx xx:   xxx $34c0e
-        $1f7bb  xx xx:      xxx #$xx
+        $1f7b2  xx xx:      xxx + ; $1f7b8
+        $1f7b4  xx xx:       xxx #GAME_MODE_STATUS_MSG
+        $1f7b6  xx xx:       xxx GameMode
++       $1f7b8  xx xx xx:   xxx LoadPalettesForLocation
+++      $1f7bb  xx xx:      xxx #$xx
         $1f7bd  xx xx xx:   xxx $xxxx
         $1f7c0  xx:         xxx
 ;;; --------------------------------
 DataTable_1f7c1                 ; This table is read in fives
+        ;; 1st byte is foreground pal3 (2nd NPC palette)
+        ;; 2nd byte is foreground pat1 (2nd NPC pattern), seems to be
+        ;;     used for treasure chest, and maybe overwrites a temporary
+        ;;     value used for the escape animation.  This seems to actually
+        ;;     matter more than the one in 1f987 table.
+        ;; 3rd byte goes into 320,x
+        ;; 4th and 5th byte are a status message to display
         $1f7c1              .byte $xx,$xx,$xx,$xx,$xx
-        $1f7c6              .byte $xx,$xx,$xx,$xx,$xx
-        $1f7cb              .byte $xx,$xx,$xx,$xx,$xx
-        $1f7d0              .byte $xx,$xx,$xx,$xx,$xx
-        $1f7d5              .byte $xx,$xx,$xx,$xx,$xx
-        $1f7da              .byte $xx,$xx,$xx,$xx,$xx
-        $1f7df              .byte $xx,$xx,$xx,$xx,$xx
-        $1f7e4              .byte $xx,$xx,$xx,$xx,$xx
-        $1f7e9              .byte $xx,$xx,$xx,$xx,$xx
-        $1f7ee              .byte $xx,$xx,$xx,$xx,$xx
+        $1f7c6              .byte $xx,$xx,$xx,$xx,$xx ; 01 insect
+        $1f7cb              .byte $xx,$xx,$xx,$xx,$xx ; 02 kelbesque 1
+        $1f7d0              .byte $xx,$xx,$xx,$xx,$xx ; 03 rage
+        $1f7d5              .byte $xx,$xx,$xx,$xx,$xx ; 04 sabera 1
+        $1f7da              .byte $xx,$xx,$xx,$xx,$xx ; 05 mado 1
+        $1f7df              .byte $xx,$xx,$xx,$xx,$xx ; 06 kelbbesque 2
+        $1f7e4              .byte $xx,$xx,$xx,$xx,$xx ; 07 sabera 2
+        $1f7e9              .byte $xx,$xx,$xx,$xx,$xx ; 08 mado 2
+        $1f7ee              .byte $xx,$xx,$xx,$xx,$xx ; 09 karmine
         $1f7f3              .byte $xx,$xx,$xx,$xx,$xx
         $1f7f8              .byte $xx,$xx,$xx,$xx,$xx
-        $1f7fd              .byte $xx,$xx,$xx,$xx,$xx
+        $1f7fd              .byte $xx,$xx,$xx,$xx,$xx ; 0c vampire 2
         $1f802              .byte $xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 ObjectActionJump_6f
-        ;; This is the action for $CF which spawns after some bosses die (kelby 1, sabera 1)
+        ;; This is the action for $CF which spawns after some (all?) bosses die
         $1f807  xx xx:      xxx $xx
         $1f809  xx xx:      xxx #$xx
         $1f80b  xx xx:      xxx $xx
@@ -35422,7 +35443,7 @@ MainGameModeJump_18_RecoverMagicAnimation
         $27b92  xx xx xx:   xxx $xxxx
         $27b95  xx xx:      xxx #$xx
         $27b97  xx xx xx:   xxx $xxxx
-        $27b9a  xx xx xx:   xxx $3c739
+        $27b9a  xx xx xx:   xxx RequestAttributeTable0Write
 ;;; --------------------------------
 MainGameModeJump_19_ChangeMagicRevertAnimation
         $27b9d  xx xx xx:   xxx ClearBackgroundPaletteAndAttributes
@@ -35836,7 +35857,7 @@ MainGameModeJump_1e_ThrustCrystalis
         $27f6c  xx xx xx:   xxx $3ff8c
         $27f6f  xx xx xx:   xxx $27fc9
         $27f72  xx xx:      xxx #$xx
-        $27f74  xx xx xx:   xxx $3c176
+        $27f74  xx xx xx:   xxx WaitForMultipleOAMDMA
         $27f77  xx xx xx:   xxx $27fc9
         $27f7a  xx xx xx:   xxx $27fc9
         $27f7d  xx xx:      xxx #$xx
@@ -46142,43 +46163,45 @@ ObjectActionJump_39
         $36554  xx:         xxx
 ;;; --------------------------------
 ObjectActionJump_3a
+        ;; fake mesia?
         $36555  xx xx xx:   xxx $xxxx,x
-        $36558  xx xx:      xxx $xx
-        $3655a  xx xx xx:   xxx $xxxx,x
-        $3655d  xx:         xxx
-;;; --------------------------------
-        $3655e  xx xx xx:   xxx $xxxx,x
+        $36558  xx xx:      xxx + ; $3655e
+        $3655a  xx xx xx:    xxx $xxxx,x
+        $3655d  xx:          xxx
+        ;; --------------------------------
++       $3655e  xx xx xx:   xxx $xxxx,x
         $36561  xx xx:      xxx #$xx
-        $36563  xx xx:      xxx $xx
-        $36565  xx xx:      xxx #$xx
-        $36567  xx xx xx:   xxx $xxxx,x
-        $3656a  xx xx xx:   xxx $xxxx,x
-        $3656d  xx xx:      xxx #$xx
-        $3656f  xx xx:      xxx $xx
-        $36571  xx xx:      xxx $xx
-        $36573  xx xx xx:   xxx $3ff80
-;;; --------------------------------
-        $36576  xx xx xx:   xxx $xxxx
+        $36563  xx xx:      xxx + ; $36576
+        $36565  xx xx:       xxx #$xx
+        $36567  xx xx xx:    xxx $xxxx,x
+        $3656a  xx xx xx:    xxx $xxxx,x
+        $3656d  xx xx:       xxx #$xx
+        $3656f  xx xx:       xxx $xx
+        $36571  xx xx:       xxx $xx
+        $36573  xx xx xx:    xxx LoadOneObjectData
+        ;; --------------------------------
++       $36576  xx xx xx:   xxx $xxxx
         $36579  xx:         xxx
         $3657a  xx xx:      xxx #$xx
         $3657c  xx xx:      xxx #$xx
         $3657e  xx:         xxx
         $3657f  xx xx xx:   xxx $xxxx,x
         $36582  xx xx xx:   xxx $xxxx,x
-        $36585  xx xx:      xxx $xx
-        $36587  xx xx xx:   xxx $xxxx,x
-        $3658a  xx:         xxx
-;;; --------------------------------
-        $3658b  xx xx xx:   xxx $xxxx,x
-        $3658e  xx xx:      xxx $xx
+        $36585  xx xx:      xxx + ; $3658b
+        $36587  xx xx xx:    xxx $xxxx,x
+        $3658a  xx:          xxx
+        ;; --------------------------------
++       $3658b  xx xx xx:   xxx $xxxx,x
+        $3658e  xx xx:       xxx >rts ; $365bf
         $36590  xx xx:      xxx $xx
         $36592  xx xx:      xxx #$xx
-        $36594  xx xx:      xxx $xx
+        $36594  xx xx:       xxx >rts ; $365bf
         $36596  xx xx:      xxx $xx
         $36598  xx xx:      xxx #$xx
-        $3659a  xx xx:      xxx $xx
+        $3659a  xx xx:       xxx >rts ; $365bf
         $3659c  xx xx:      xxx #$xx
-        $3659e  xx xx:      xxx $xx
+        $3659e  xx xx:       xxx >rts ; $365bf
+        ;; fake mesia was hit: progress the dialog
         $365a0  xx xx:      xxx #$xx
         $365a2  xx xx xx:   xxx $xxxx,x
         $365a5  xx xx:      xxx #$xx
@@ -46225,18 +46248,18 @@ ObjectActionJump_0d
         $365ed  xx xx:      xxx #$xx
         $365ef  xx xx xx:   xxx $xxxx,x
         $365f2  xx xx xx:   xxx $xxxx,x
-        $365f5  xx xx:      xxx $xx
-        $365f7  xx xx xx:   xxx $xxxx,x
-        $365fa  xx:         xxx
-;;; --------------------------------
-        $365fb  xx xx:      xxx #$xx
+        $365f5  xx xx:      xxx + ; $365fb
+        $365f7  xx xx xx:    xxx $xxxx,x
+        $365fa  xx:          xxx
+        ;; --------------------------------
++       $365fb  xx xx:      xxx #$xx
         $365fd  xx xx xx:   xxx $xxxx,x
         $36600  xx xx:      xxx #$xx
-        $36602  xx xx:      xxx $xx
+        $36602  xx xx:      xxx CurrentLocation
         $36604  xx xx:      xxx #$xx
-        $36606  xx xx:      xxx $xx
-        $36608  xx:         xxx
-        $36609  xx xx xx:   xxx $xxxx
+        $36606  xx xx:      xxx + ; $36609
+        $36608  xx:          xxx
++       $36609  xx xx xx:   xxx $xxxx ; 5 if in evil spirit island entrance, 4 otherwise
         $3660c  xx xx:      xxx #$xx
         $3660e  xx xx xx:   xxx $xxxx
         $36611  xx xx:      xxx #GAME_MODE_STATUS_MSG

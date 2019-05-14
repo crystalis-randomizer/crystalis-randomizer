@@ -147,3 +147,55 @@ export class Messages {
         });
   }
 }
+
+// Message MIDs that are hardcoded in various places.
+export const HARDCODED_MESSAGES: Set<string> = new Set([
+  '00:00', // impossible to identify uses
+  '20:1d', // endgame message 1, exec 27fc9, table 27fe8
+  '1b:0f', // endgame message 2, exec 27fc9, table 27fea
+  '1b:10', // endgame message 3, exec 27fc9, table 27fec
+  '1b:11', // endgame message 4, exec 27fc9, table 27fee
+  '1b:12', // endgame message 5, exec 27fc9, table 27ff0
+  '1b:05', // azteca dialog after draygon2, exec 37b28
+  '1f:00', // zzz paralysis dialog, exec 3d0f3
+  '13:00', // kensu swan asks for love pendant, exec 3d1ca
+  '0b:01', // asina reveal, exec 3d1eb
+  '20:0c', // itemget message 'you now have', exec 3d43c
+  '20:0f', // too many items, exec 3d48a
+  '1c:11', // sword of thunder pre-warp message, exec 1c:11
+  '0e:05', // mesia recording, exec 3d621
+  '16:00', // azteca in shyron story, exec 3d79c
+  '20:11', // empty shop, exec 3d9c4
+  '21:00', // warp menu, exec 3db60
+  '21:02', // telepathy menu, exec 3dd6e
+  '21:01', // change menu, exec 3decb
+  '06:00', // (st) kelbesque 1 monologue, exec 1e99f
+  '18:00', // (st) kelbesque 2 monologue, exec 1e99f
+  '18:02', // (st) sabera 2 monologue, exec 1ece6
+  '18:04', // (st) mado 2 monologue, exec 1ee26
+  '18:08', // (st) karmine monologue, exec 1ef8a
+  '1b:03', // (st) statues monologue, exec 1f0e5
+  '1b:00', // (st) draygon 1 monologue, exec 1f193
+  '1b:00', // (st) draygon 1 monologue, exec 1f193
+  '06:01', // (st) kelbesque 1 escapes, exec 1fae7, table 1fb1bb
+  '10:13', // (st) sabera 1 escapes, exec 1fae7, table 1fb1f
+  '19:05', // (st) mado 1 escapes, exec 1fae7, table 1fb25
+  '20:14', // (st) kelbesque 1 left chest, exec 1f7a3, table 1f7cb
+  '20:15', // (st) sabera 1 left chest, exec 1f7a3, table 1f7d5
+  '20:17', // (st) mado 1 left chest, exec 1f7a3, table 1f7da
+  '20:02', // (st) cure status ailment, exec 27b90
+  '20:0d', // (st) level up, exec 351e2
+  '20:19', // (st) poisoned, exec 352aa
+  '20:1a', // (st) paralyzed, exec 352df
+  '20:1b', // (st) stoned, exec 35317
+  '03:01', // (st) learn telepathy, exec 352cc
+  '03:02', // (st) fail to learn telepathy, exec 352e8
+  '10:10', // (st) fake mesia message 1, exec 365b1
+  '10:11', // (st) fake mesia message 2, exec 365b1
+  '10:12', // (st) fake mesia message 3, exec 365b1
+  '0c:04', // (st) dismount dolphin (not inside ESI cave), exec 36609
+  '0c:05', // (st) dismount dolphin (everywhere in near ESI), exec 36609
+  '03:03', // (st) start stom fight, exec 36716
+  '20:0e', // (st) insufficient magic for spell, exec 3cc23
+  '20:13', // (st) nothing happens item use oerr, exec 3d52a
+]);

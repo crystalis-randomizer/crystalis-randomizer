@@ -12,5 +12,11 @@ export const MessageId = DataTuple.make(2, {
     return `MessageId ${this.hex()}: (${hex(this.part)}:${hex(this.index)}${
             action}`;
   },
+
+  // Unique string ID for the message part only (no action).
+  // Suitable for keying a map.
+  mid(this: any): string {
+    return `${hex(this.part)}:${hex(this.index)}`;
+  },
 });
 export type MessageId = InstanceType<typeof MessageId>;

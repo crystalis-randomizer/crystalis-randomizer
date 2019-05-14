@@ -122,7 +122,7 @@ export const shuffle = async (rom: Uint8Array,
 
   adjustItemNames(parsed, flags);
 
-  await assemble('shops.s');
+  await assemble('postparse.s');
 
   // TODO - consider making a Transformation interface, with ordering checks
   alarmFluteIsKeyItem(parsed); // NOTE: pre-shuffle

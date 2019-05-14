@@ -135,3 +135,15 @@ export class Item extends Entity {
 const stringToBytes = (s: string): number[] => {
   return seq(s.length, i => s.charCodeAt(i));
 };
+
+// maps itemusejump to offset of data for message...?
+const JUMP_TO_MESSAGE = new Map<number, number[]>([
+  [0x1c4e0, [2, 6]],
+  [0x1c524, [0]],
+  [0x1c52f, [0]],
+  [0x1c53a, [0]],
+  [0x1c507, [0]],
+  [0x1c51d, [0]],
+  [0x1c54a, [0]],
+]);
+const {} = {JUMP_TO_MESSAGE} as any;

@@ -13,6 +13,7 @@ import {Palette} from './rom/palette.js';
 import {Pattern} from './rom/pattern.js';
 import {Screen} from './rom/screen.js';
 import {Shop} from './rom/shop.js';
+import {Telepathy} from './rom/telepathy.js';
 import {TileAnimation} from './rom/tileanimation.js';
 import {TileEffects} from './rom/tileeffects.js';
 import {Tileset} from './rom/tileset.js';
@@ -45,6 +46,7 @@ export class Rom {
   static readonly SCALING_LEVELS               = RomOption.byte(0x142c2);
   static readonly UNIQUE_ITEM_TABLE            = RomOption.address(0x142d0);
   static readonly SHOP_DATA_TABLES             = RomOption.address(0x142d3);
+  static readonly TELEPATHY_TABLES             = RomOption.address(0x142d6);
 
   readonly prg: Uint8Array;
   readonly chr: Uint8Array;
@@ -67,6 +69,7 @@ export class Rom {
   readonly npcs: Npc[];
   readonly bossKills: BossKill[];
 
+  readonly telepathy: Telepathy;
   readonly messages: Messages;
 
   // NOTE: The following properties may be changed between reading and writing
@@ -84,6 +87,8 @@ export class Rom {
   // Address of normalized prices table, if present.  If this is absent then we
   // assume prices are not normalized and are at the normal pawn shop address.
   shopDataTablesAddress: number;
+  // Address of rearranged telepathy tables.
+  telepathyTablesAddress: number;
   // Whether the trailing $ff should be omitted from the ItemGetData table.
   omitItemGetDataSuffix: boolean;
   // Whether the trailing byte of each LocalDialog is omitted.  This affects
@@ -99,6 +104,7 @@ export class Rom {
     this.scalingLevels = Rom.SCALING_LEVELS.get(rom);
     this.uniqueItemTableAddress = Rom.UNIQUE_ITEM_TABLE.get(rom);
     this.shopDataTablesAddress = Rom.SHOP_DATA_TABLES.get(rom);
+    this.telepathyTablesAddress = Rom.TELEPATHY_TABLES.get(rom);
     this.omitItemGetDataSuffix = Rom.OMIT_ITEM_GET_DATA_SUFFIX.get(rom);
     this.omitLocalDialogSuffix = Rom.OMIT_LOCAL_DIALOG_SUFFIX.get(rom);
 
@@ -132,6 +138,7 @@ export class Rom {
     this.adHocSpawns = seq(0x60, i => new AdHocSpawn(this, i));
     this.metasprites = seq(0x100, i => new Metasprite(this, i));
     this.messages = new Messages(this);
+    this.telepathy = new Telepathy(this);
     this.itemGets = seq(0x71, i => new ItemGet(this, i));
     this.items = seq(0x49, i => new Item(this, i));
     this.shops = seq(44, i => new Shop(this, i)); // NOTE: depends on locations and objects
@@ -285,9 +292,19 @@ export class Rom {
     // TriggerData
     writer.alloc(0x1e200, 0x1e3f0);
     // ItemMenuName
-    writer.alloc(0x2111a, 0x21468); // NOTE: uncovered thru 214f1
+    writer.alloc(0x2111a, 0x21468);
+    // keep item $49 "        " which is actually used somewhere?
+    // writer.alloc(0x21471, 0x214f1); // TODO - do we need any of this?
     // ItemMessageName
     writer.alloc(0x28e81, 0x2922b); // NOTE: uncovered thru 29400
+    // writer.alloc(0x2922b, 0x29400); // TODO - needed?
+    // NOTE: once we release the other message tables, this will just be one giant block.
+
+    if (this.telepathyTablesAddress) {
+      writer.alloc(0x1d8f4, 0x1db00); // location table all the way thru main
+    } else {
+      writer.alloc(0x1da4c, 0x1db00); // existing main table is here.
+    }
 
     const promises = [];
     const writeAll = (writables: {write(writer: Writer): unknown}[]) => {
@@ -308,6 +325,7 @@ export class Rom {
     writeAll(this.items);
     writeAll(this.shops);
     writeAll(this.bossKills);
+    promises.push(this.telepathy.write(writer));
     promises.push(writer.commit());
     await Promise.all(promises).then(() => undefined);
   }

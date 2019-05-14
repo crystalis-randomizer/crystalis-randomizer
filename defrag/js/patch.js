@@ -90,7 +90,7 @@ export const shuffle = async (rom, seed, flags, reader, log, progress) => {
     if (flags.saharaRabbitsRequireTelepathy())
         requireTelepathyForDeo(parsed);
     adjustItemNames(parsed, flags);
-    await assemble('shops.s');
+    await assemble('postparse.s');
     alarmFluteIsKeyItem(parsed);
     if (flags.teleportOnThunderSword()) {
         teleportOnThunderSword(parsed);

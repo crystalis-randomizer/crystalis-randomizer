@@ -170,6 +170,9 @@ DisplayNumber:
 .assert < $1c439
 
 
+.org $1c157
+  .word (PowersOfTwo) ; no need for multiple copies
+
 
 ;; Count uses of Flute of Lime and Alarm Flute - discard after two.
 .org $1c6f2 ; 10 free bytes in middle of spawn condition table

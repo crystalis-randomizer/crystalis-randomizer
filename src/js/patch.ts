@@ -384,8 +384,9 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   // Leaf elder in house ($0d @ $c0) ~ sword of wind redundant flag
   rom.npcs[0x0d].localDialogs.get(0xc0)![2].flags = [];
 
-  // Windmill guard ($14 @ $0e) shouldn't despawn after abduction
-  rom.npcs[0x14].spawnConditions.get(0x0e)!.pop(); // remove condition 038 NOT leaf attacked
+  // Windmill guard ($14 @ $0e) shouldn't despawn after abduction (038),
+  // but instead after giving the item (232).
+  rom.npcs[0x14].spawnConditions.get(0x0e)![1] = ~0x232; // replace flag ~038 => ~232
   rom.npcs[0x14].localDialogs.get(0x0e)![0].flags = []; // remove redundant flag ~ windmill key
 
   // Akahana ($16) ~ shield ring redundant flag
@@ -546,11 +547,11 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   rom.trigger(0x8c).conditions.push(0x037); // 03a talked to zebu in cave
 
   // Paralysis trigger ($b2) ~ remove redundant itemget flag
-  rom.trigger(0xb2).conditions[1] = ~0x242;
+  rom.trigger(0xb2).conditions[0] = ~0x242;
   rom.trigger(0xb2).flags.shift(); // remove 037 learned paralysis
 
   // Learn refresh trigger ($b4) ~ remove redundant itemget flag
-  rom.trigger(0xb4).conditions[1] = ~0x241;
+  rom.trigger(0xb4).conditions[0] = ~0x241;
   rom.trigger(0xb4).flags = []; // remove 039 learned refresh
 
   // Portoa palace guard movement trigger ($bb) stops on 01b (mesia) not 01f (orb)

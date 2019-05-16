@@ -303,7 +303,8 @@ export const generate = (flags: FlagSet = new FlagSet(), rom?: Rom): WorldGraph 
                                          'Leather Boots').chest().bonus();
   const shieldRing            = item(0x30, 'Shield Ring')
                                   .direct('Akahana in waterfall cave', 0x3d2af)
-                                  .npcSpawn(0x16, 0x57, 2)
+                                  // Redundant? just use ~034
+                                  //.npcSpawn(0x16, 0x57, 1)
                                   .bonus();
   const alarmFlute            = item(0x31, 'Alarm Flute')
                                   .fromPerson('Zebu\'s student', 0x14, 1)

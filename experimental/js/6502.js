@@ -88,6 +88,10 @@ class File {
             this.addLine(new OrgLine((this.pc = parseNumber(match[1]))));
             return;
         }
+        else if ((match = /^\s*\.skip\s+(.+)/i.exec(line))) {
+            this.addLine(new OrgLine((this.pc += this.parseNumber(match[1]))));
+            return;
+        }
         else if ((match = /^\s*\.assert\s+(<\s*)?(\S+)/i.exec(line))) {
             this.addLine(new AssertLine((this.pc = parseNumber(match[2])), !match[1]));
             return;

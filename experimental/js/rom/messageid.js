@@ -7,5 +7,8 @@ export const MessageId = DataTuple.make(2, {
         const action = this.action ? ` (action ${hex(this.action)})` : '';
         return `MessageId ${this.hex()}: (${hex(this.part)}:${hex(this.index)}${action}`;
     },
+    mid() {
+        return `${hex(this.part)}:${hex(this.index)}`;
+    },
 });
 //# sourceMappingURL=messageid.js.map

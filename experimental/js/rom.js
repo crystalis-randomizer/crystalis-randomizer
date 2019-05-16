@@ -13,6 +13,7 @@ import { Palette } from './rom/palette.js';
 import { Pattern } from './rom/pattern.js';
 import { Screen } from './rom/screen.js';
 import { Shop } from './rom/shop.js';
+import { Telepathy } from './rom/telepathy.js';
 import { TileAnimation } from './rom/tileanimation.js';
 import { TileEffects } from './rom/tileeffects.js';
 import { Tileset } from './rom/tileset.js';
@@ -28,6 +29,7 @@ export class Rom {
         this.scalingLevels = Rom.SCALING_LEVELS.get(rom);
         this.uniqueItemTableAddress = Rom.UNIQUE_ITEM_TABLE.get(rom);
         this.shopDataTablesAddress = Rom.SHOP_DATA_TABLES.get(rom);
+        this.telepathyTablesAddress = Rom.TELEPATHY_TABLES.get(rom);
         this.omitItemGetDataSuffix = Rom.OMIT_ITEM_GET_DATA_SUFFIX.get(rom);
         this.omitLocalDialogSuffix = Rom.OMIT_LOCAL_DIALOG_SUFFIX.get(rom);
         for (const [address, value] of ADJUSTMENTS)
@@ -45,6 +47,7 @@ export class Rom {
         this.adHocSpawns = seq(0x60, i => new AdHocSpawn(this, i));
         this.metasprites = seq(0x100, i => new Metasprite(this, i));
         this.messages = new Messages(this);
+        this.telepathy = new Telepathy(this);
         this.itemGets = seq(0x71, i => new ItemGet(this, i));
         this.items = seq(0x49, i => new Item(this, i));
         this.shops = seq(44, i => new Shop(this, i));
@@ -137,6 +140,12 @@ export class Rom {
         writer.alloc(0x1e200, 0x1e3f0);
         writer.alloc(0x2111a, 0x21468);
         writer.alloc(0x28e81, 0x2922b);
+        if (this.telepathyTablesAddress) {
+            writer.alloc(0x1d8f4, 0x1db00);
+        }
+        else {
+            writer.alloc(0x1da4c, 0x1db00);
+        }
         const promises = [];
         const writeAll = (writables) => {
             for (const w of writables) {
@@ -156,6 +165,7 @@ export class Rom {
         writeAll(this.items);
         writeAll(this.shops);
         writeAll(this.bossKills);
+        promises.push(this.telepathy.write(writer));
         promises.push(writer.commit());
         await Promise.all(promises).then(() => undefined);
     }
@@ -279,6 +289,7 @@ Rom.SHOP_COUNT = RomOption.byte(0x142c1);
 Rom.SCALING_LEVELS = RomOption.byte(0x142c2);
 Rom.UNIQUE_ITEM_TABLE = RomOption.address(0x142d0);
 Rom.SHOP_DATA_TABLES = RomOption.address(0x142d3);
+Rom.TELEPATHY_TABLES = RomOption.address(0x142d6);
 function pickFile() {
     return new Promise((resolve) => {
         if (window.location.hash !== '#reset') {

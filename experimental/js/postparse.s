@@ -1,6 +1,98 @@
 ;;; Must come after preshuffle.s for various constants.
 
 .bank $3c000 $c000:$4000
+
+.bank $1c000 $8000:$2000
+
+.ifdef _NORMALIZE_TELEPATHY
+;;; Basic plan: rip out minimum level, result mapping, etc
+;;; Also removed the extra powers of two table, so we have
+;;; room to inline CheckTelepathyResult.
+.org $1c167
+    sec
+    lda PlayerMP
+    sbc #$08 ; should never overflow because already checked
+    sta PlayerMP
+    lda $07c0
+    and #$3f
+    inc $07c0
+    tay
+    lda TelepathyResultTable,y
+    bne +++
+    ;;  give free MP
+    clc
+    lda #$20
+    adc PlayerMP
+    bcs +
+     cmp PlayerMaxMP
+     bcc ++
++     lda PlayerMapMP
+++  sta PlayerMP
+    ldx #$01
+    bne Telepathy_ShowDefaultMessage ; unconditional
+    ;; ------
++++ cmp #$01
+    bne +
+    ldx #$02
+    bne Telepathy_ShowDefaultMessage ; unconditional
+    ;; ------
++   and #$01
+    sta $29
+    lda #23 ; which sage
+    asl
+    tax
+    lda TelepathyTable,x
+    sta $24
+    lda TelepathyTable+1,x
+    sta $25
+    ldy #$00
+-    jsr ReadFlagFromBytePair_24y
+     bne ++
+     lda $26
+     and #$40
+     beq +
+      lda $29
+      beq +
+       iny
+       iny
++    lda ($24),y
+     sta $21
+     iny
+     lda ($24),y
+     sta $20
+     rts
+++   iny
+     iny
+     lda $26
+     and #$40
+     beq +
+      iny
+      iny
++    lda $26
+    bpl -
+    ldx #$03
+Telepathy_ShowDefaultMessage:
+    txa
+    asl
+    asl
+    ora $23 ; which sage
+    asl
+    tax
+    lda TelepathyTable,x
+    sta $21
+    lda TelepathyTable+1,x
+    sta $20
+    rts
+.assert < $1c22f
+TelepathyResults:
+
+.org $1d8f4
+TelepathyTable:
+  .skip 32
+
+.endif
+
+
 .bank $20000 $8000:$2000
 
 .ifdef _NORMALIZE_SHOP_PRICES
@@ -114,25 +206,25 @@ ShopData:
 ;;;  1. SHOP_COUNT (11)
 ;;;  2. SCALING_LEVELS (48)
 ArmorShopIdTable:
-  .res SHOP_COUNT*4, 0
+  .skip SHOP_COUNT*4
 ToolShopIdTable:
-  .res SHOP_COUNT*4, 0
+  .skip SHOP_COUNT*4
 ArmorShopPriceTable:
-  .res SHOP_COUNT*4, 0
+  .skip SHOP_COUNT*4
 ToolShopPriceTable:
-  .res SHOP_COUNT*4, 0
+  .skip SHOP_COUNT*4
 InnPrices:
-  .res SHOP_COUNT, 0
+  .skip SHOP_COUNT
 ShopLocations:
-  .res SHOP_COUNT*4, 0
+  .skip SHOP_COUNT*4
 ToolShopScaling:
-  .res SCALING_LEVELS, 0
+  .skip SCALING_LEVELS
 ArmorShopScaling:
-  .res SCALING_LEVELS, 0
+  .skip SCALING_LEVELS
 BasePrices:
-  .res 52, 0             ; 0 = $0d, 50 = $26, 51 = "$27" (inn)
+  .skip 52             ; 0 = $0d, 50 = $26, 51 = "$27" (inn)
 InnBasePrice:
-  .res 2, 0
+  .skip 2
 
 ;;; This is the space freed up by compressing the shop tables
 

@@ -187,14 +187,8 @@ export class Chest extends Slot {
             if (!spawn || !spawn.isChest()) {
                 throw new Error(`No chest $${hex(spawnSlot)} on $${hex(loc)}`);
             }
-            if (slot.itemIndex >= 0x70) {
-                spawn.timed = location.width * location.height > 1;
-                spawn.id = 0x70;
-            }
-            else {
-                spawn.timed = false;
-                spawn.id = slot.itemIndex;
-            }
+            spawn.timed = false;
+            spawn.id = Math.min(slot.itemIndex, 0x70);
         });
         return this;
     }

@@ -40,7 +40,7 @@ export function countBits(x) {
     return (x + (x >> 4)) & 0xf;
 }
 export function hex(id) {
-    return id ? id.toString(16).padStart(2, '0') : String(id);
+    return id != null ? id.toString(16).padStart(2, '0') : String(id);
 }
 export function hex4(id) {
     return id.toString(16).padStart(4, '0');
@@ -70,6 +70,9 @@ export function readString(arr, address, end = 0) {
 export function writeLittleEndian(data, offset, value) {
     data[offset] = value & 0xff;
     data[offset + 1] = value >>> 8;
+}
+export function write(data, offset, values) {
+    data.subarray(offset, offset + values.length).set(values);
 }
 export class FlagListType {
     constructor(last, clear) {

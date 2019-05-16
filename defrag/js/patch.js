@@ -249,7 +249,7 @@ const reversibleSwanGate = (rom) => {
 };
 const preventNpcDespawns = (rom, flags) => {
     rom.npcs[0x0d].localDialogs.get(0xc0)[2].flags = [];
-    rom.npcs[0x14].spawnConditions.get(0x0e).pop();
+    rom.npcs[0x14].spawnConditions.get(0x0e)[1] = ~0x232;
     rom.npcs[0x14].localDialogs.get(0x0e)[0].flags = [];
     rom.npcs[0x16].localDialogs.get(0x57)[0].flags = [];
     rom.npcs[0x88].localDialogs.get(0x57)[0].flags = [];
@@ -332,9 +332,9 @@ const preventNpcDespawns = (rom, flags) => {
     }
     rom.trigger(0x84).flags = [];
     rom.trigger(0x8c).conditions.push(0x037);
-    rom.trigger(0xb2).conditions[1] = ~0x242;
+    rom.trigger(0xb2).conditions[0] = ~0x242;
     rom.trigger(0xb2).flags.shift();
-    rom.trigger(0xb4).conditions[1] = ~0x241;
+    rom.trigger(0xb4).conditions[0] = ~0x241;
     rom.trigger(0xb4).flags = [];
     rom.trigger(0xbb).conditions[1] = ~0x01b;
     const zombieTown = rom.locations[0x65];

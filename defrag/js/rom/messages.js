@@ -99,6 +99,7 @@ const PUNCTUATION = {
     ',': true,
     '.': true,
     ':': true,
+    ';': true,
     '?': true,
     '_': true,
 };
@@ -119,7 +120,7 @@ export class Messages {
         });
     }
 }
-Messages.CONTINUED = '\u25bc';
+Messages.CONTINUED = '#';
 export const HARDCODED_MESSAGES = new Set([
     '00:00',
     '20:1d',

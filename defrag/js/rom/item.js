@@ -1,4 +1,5 @@
 import { Entity } from './entity.js';
+import { MessageId } from './messageid.js';
 import { hex, readLittleEndian, readString, seq, writeLittleEndian } from './util.js';
 const ITEM_USE_DATA_TABLE = 0x1dbe2;
 const ITEM_DATA_TABLE = 0x20ff0;
@@ -43,6 +44,14 @@ export class Item extends Entity {
         this.menuNameBase = readLittleEndian(rom.prg, this.menuNamePointer) + 0x18000;
         this.menuName = MENU_NAME_ENCODE.reduce((s, [d, e]) => s.replace(e, d), readString(rom.prg, this.menuNameBase, 0xff));
     }
+    itemUseMessages() {
+        const messages = new Map();
+        for (const offset of ITEM_USE_MESSAGE.get(this.id) || []) {
+            const message = MessageId.from(this.rom.prg, this.itemUseDataBase + offset);
+            messages.set(message.mid(), message);
+        }
+        return [...messages.values()];
+    }
     setName(name) {
         this.messageName = this.menuName = name;
     }
@@ -82,14 +91,29 @@ export class Item extends Entity {
 const stringToBytes = (s) => {
     return seq(s.length, i => s.charCodeAt(i));
 };
-const JUMP_TO_MESSAGE = new Map([
-    [0x1c4e0, [2, 6]],
-    [0x1c524, [0]],
-    [0x1c52f, [0]],
-    [0x1c53a, [0]],
-    [0x1c507, [0]],
-    [0x1c51d, [0]],
-    [0x1c54a, [0]],
+const ITEM_USE_MESSAGE = new Map([
+    [0x1d, [2, 6]],
+    [0x1e, [0]],
+    [0x1f, [0]],
+    [0x20, [0]],
+    [0x21, [0]],
+    [0x22, [0]],
+    [0x23, [0]],
+    [0x25, [2]],
+    [0x28, [2, 8, 14, 20]],
+    [0x32, [1]],
+    [0x33, [2]],
+    [0x34, [2]],
+    [0x35, [2]],
+    [0x36, [2]],
+    [0x37, [1]],
+    [0x39, [0]],
+    [0x3a, [2]],
+    [0x3b, [2]],
+    [0x3c, [2]],
+    [0x3d, [2]],
+    [0x3e, [2]],
+    [0x3f, [2]],
+    [0x40, [2]],
 ]);
-const {} = { JUMP_TO_MESSAGE };
 //# sourceMappingURL=item.js.map

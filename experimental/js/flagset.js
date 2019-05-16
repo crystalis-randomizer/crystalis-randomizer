@@ -190,6 +190,11 @@ export const FLAGS = [{
                 hard: true,
                 name: 'Charge shots only',
                 text: `Stabbing is completely ineffective.  Only charged shots work.`,
+            }, {
+                flag: 'Hz',
+                hard: true,
+                name: 'Blackout mode',
+                text: `All caves and fortresses are permanently dark.`,
             }],
     }, {
         section: 'Tweaks',
@@ -492,6 +497,7 @@ export class FlagSet {
     assumeWildWarp() { return this.check('Gw'); }
     nerfWildWarp() { return this.check('Fw'); }
     allowWildWarp() { return !this.nerfWildWarp(); }
+    blackoutMode() { return this.check('Hz'); }
     expScalingFactor() {
         return this.check('Hx') ? 0.25 : this.check('Ex') ? 2.5 : 1;
     }

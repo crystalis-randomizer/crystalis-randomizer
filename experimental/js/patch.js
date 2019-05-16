@@ -1,6 +1,6 @@
 import { Assembler } from './6502.js';
 import { crc32 } from './crc32.js';
-import { shuffle2 as shuffleDepgraph } from './depgraph.js';
+import { generate as generateDepgraph, shuffle2 as shuffleDepgraph } from './depgraph.js';
 import { FetchReader } from './fetchreader.js';
 import { FlagSet } from './flagset.js';
 import { Random } from './random.js';
@@ -81,6 +81,8 @@ export const shuffle = async (rom, seed, flags, reader, log, progress) => {
     await assemble('preshuffle.s');
     const random = new Random(newSeed);
     const parsed = new Rom(rom);
+    if (flags.blackoutMode())
+        blackoutMode(parsed);
     closeCaveEntrances(parsed, flags);
     reversibleSwanGate(parsed);
     adjustGoaFortressTriggers(parsed);
@@ -144,6 +146,15 @@ const misc = (rom, flags) => {
     if (!rom || !flags)
         console.log(rom, flags);
 };
+function blackoutMode(rom) {
+    const dg = generateDepgraph();
+    for (const node of dg.nodes) {
+        const type = node.type;
+        if (node.nodeType === 'Location' && (type === 'cave' || type === 'fortress')) {
+            rom.locations[node.id].tilePalettes.fill(0x9a);
+        }
+    }
+}
 const closeCaveEntrances = (rom, flags) => {
     rom.swapMetatiles([0x90], [0x07, [0x01, 0x00], ~0xc1], [0x0e, [0x02, 0x00], ~0xc1], [0x20, [0x03, 0x0a], ~0xd7], [0x21, [0x04, 0x0a], ~0xd7]);
     rom.swapMetatiles([0x94, 0x9c], [0x68, [0x01, 0x00], ~0xc1], [0x83, [0x02, 0x00], ~0xc1], [0x88, [0x03, 0x0a], ~0xd7], [0x89, [0x04, 0x0a], ~0xd7]);

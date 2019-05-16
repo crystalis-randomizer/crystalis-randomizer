@@ -12,6 +12,19 @@ export default (nes) => {
     return window.onspawn(id, slot);
   });
 
+  window.neverDie = () => {
+    nes.debug.patchRom(0x3cb89, 0xad);
+    nes.debug.patchRom(0x3cb8a, 0xc0);
+    nes.debug.patchRom(0x3cb8b, 0x03);
+    nes.debug.patchRom(0x3cb8c, 0x8d);
+    nes.debug.patchRom(0x3cb8d, 0xc1);
+    nes.debug.patchRom(0x3cb8e, 0x03);
+    nes.debug.patchRom(0x3cb8f, 0xea);
+    nes.debug.patchRom(0x3cbaf, 0xd0);
+    nes.debug.patchRom(0x3cbb0, 0x0f);
+    nes.debug.patchRom(0x3cbc0, 0x60);
+  };
+
   // useful to see what *actually* spawned...
   nes.debug.breakAt(0x3c263, 'prg', 'x', () => {
     return window.onspawned(window.spawningId, window.spawningSlot);

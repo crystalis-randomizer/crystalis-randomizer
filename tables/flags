@@ -71,7 +71,9 @@
 065 - cured kensu
 067 - defeated mado 1
 068 - forged crystalis
-06a - stoned people cured ?
+069 - UNUSED stoned people cured
+06a - stoned people cured
+06b - UNUSED stoned people cured
 070 - kensu paralyzed in tavern
 071 - kensu paralyzed in dance hall
 072 - found kensu in tavern
@@ -91,7 +93,7 @@
 083 - rescued leaf elder ??
 084 - leaf villagers currently abducted (set in cave behind zebu, cleared on using prison key)
 085 - leaf elder currently abducted (set in cave behind zebu, cleared in elder's cell)
-
+086 - used bow of truth
 087 - chest:05:ball of wind
 088 - got windmill key
 089 - spoken to dead stom's girlfriend

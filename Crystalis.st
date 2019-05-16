@@ -19751,26 +19751,30 @@ ItemUseJumpTable
         ;; Don't give kensu the love pendant when he wants the alarm flute.
         $1c439  xx xx:      xxx CurrentLocation
         $1c43b  xx xx:      xxx #LOC_JOEL_LIGHTHOUSE
-        $1c43d  xx xx:      xxx + ; $1c45c
-        $1c43f  xx xx xx:   xxx $1c491
+        $1c43d  xx xx:      xxx ItemUseJump_InvalidRelay
+        $1c43f  xx xx xx:   xxx ItemUseJump_GiveItem
 ;;; --------------------------------
-        ;; itemuse - bow of truth
-        $1c442  xx xx xx:   xxx $1c451
+ItemUseJump_40 ; Bow of Truth
+        $1c442  xx xx xx:   xxx ItemUseJump_3f ; Bow of Sun
         $1c445  xx xx xx:   xxx $xxxx
-        $1c448  xx xx:      xxx + ; $1c45c
+        $1c448  xx xx:      xxx ItemUseJump_InvalidRelay
         $1c44a  xx xx:      xxx CurrentLocation
         $1c44c  xx xx:      xxx #LOC_DRAYGON2
-        $1c44e  xx xx:      xxx + ; $1c45c
+        $1c44e  xx xx:      xxx ItemUseJump_InvalidRelay
         $1c450  xx:         xxx
 ;;; --------------------------------
+ItemUseJump_3e ; Bow of Moon
+ItemUseJump_3f ; Bow of Sun
         $1c451  xx xx xx:   xxx $1c469
         $1c454  xx xx xx:   xxx $xxxx
-        $1c457  xx xx:      xxx + ; $1c45c
-        $1c459  xx xx:      xxx + ; $1c45c
+        $1c457  xx xx:      xxx ItemUseJump_InvalidRelay
+        $1c459  xx xx:      xxx ItemUseJump_InvalidRelay
         $1c45b  xx:         xxx
 ;;; --------------------------------
-+       $1c45c  xx xx xx:   xxx ItemUseJump_Invalid
+ItemUseJump_InvalidRelay
+        $1c45c  xx xx xx:   xxx ItemUseJump_Invalid
 ;;; --------------------------------
+ItemUseJump_32 ; Windmill Key
         $1c45f  xx xx:      xxx ($xx),y
         $1c461  xx xx:      xxx $xx
         $1c463  xx:         xxx
@@ -19778,6 +19782,7 @@ ItemUseJumpTable
         $1c466  xx xx:      xxx $xx
         $1c468  xx:         xxx
 ;;; --------------------------------
+        ;; Checks whether we can use a bow.
         $1c469  xx xx:      xxx ($xx),y
         $1c46b  xx:         xxx
         $1c46c  xx xx:      xxx $xx
@@ -19785,18 +19790,19 @@ ItemUseJumpTable
         $1c470  xx:         xxx
         $1c471  xx xx:      xxx $xx
         $1c473  xx xx:      xxx #$xx
--       $1c475  xx xx xx:   xxx $xxxx,x
-        $1c478  xx xx:      xxx + ; $1c489
-        $1c47a  xx xx xx:   xxx $xxxx,x
-        $1c47d  xx xx:      xxx $xx
-        $1c47f  xx xx:      xxx + ; $1c489
-        $1c481  xx xx xx:   xxx $xxxx,x
-        $1c484  xx xx:      xxx $xx
-        $1c486  xx xx:      xxx + ; $1c489
-        $1c488  xx:         xxx
+        ;; Look for the given object on screen (380)
+-       $1c475  xx xx xx:    xxx $xxxx,x
+        $1c478  xx xx:       xxx + ; $1c489
+        $1c47a  xx xx xx:    xxx $xxxx,x
+        $1c47d  xx xx:       xxx $xx
+        $1c47f  xx xx:       xxx + ; $1c489
+        $1c481  xx xx xx:    xxx $xxxx,x
+        $1c484  xx xx:       xxx $xx
+        $1c486  xx xx:       xxx + ; $1c489
+        $1c488  xx:          xxx
         ;; --------------------------------
-+       $1c489  xx:         xxx
-        $1c48a  xx xx:      xxx #$xx
++       $1c489  xx:          xxx
+        $1c48a  xx xx:       xxx #$xx
         $1c48c  xx xx:      xxx - ; $1c475
         $1c48e  xx xx xx:   xxx ItemUseJump_Invalid
 ;;; --------------------------------
@@ -19810,7 +19816,7 @@ ItemUse_CheckRequiredNPC
         ;; Compares the 560 byte of the currently-facing NPC against the first
         ;; byte of the ItemUseData table.  If they're equal, check $540,x
         ;; against the second, returning the result in the Z flag (Z = match)
-        ;;  -- the second byte might be the type???
+        ;;  -- the second byte is the type (1 for NPC, 2 for trigger)
         $1c497  xx xx xx:   xxx $xxxx
         $1c49a  xx xx:      xxx ($xx),y
         $1c49c  xx:         xxx
@@ -19955,13 +19961,14 @@ ItemUseJump_ShellFlute
 +       $1c584  xx:         xxx
 ;;; --------------------------------
 ItemUseJump_39                  ; Glowing Lamp
+        ;; Look for broken statue in inventory
         $1c585  xx xx:      xxx #$xx
--       $1c587  xx xx xx:   xxx $xxxx,x
-        $1c58a  xx xx:      xxx #INV_BROKEN_STATUE
-        $1c58c  xx xx:      xxx + ; $1c594
-        $1c58e  xx:         xxx
+-       $1c587  xx xx xx:    xxx $xxxx,x
+        $1c58a  xx xx:       xxx #INV_BROKEN_STATUE
+        $1c58c  xx xx:        xxx + ; $1c594
+        $1c58e  xx:          xxx
         $1c58f  xx xx:      xxx - ; $1c587
-        $1c591  xx xx xx:   xxx $1c4db
+        $1c591  xx xx xx:   xxx ItemUseJump_Invalid
         ;; --------------------------------
 +       $1c594  xx xx:      xxx #INV_STATUE_OF_GOLD
         $1c596  xx xx xx:   xxx $xxxx,x
@@ -23258,40 +23265,40 @@ ItemGetData_46 ; barrier
         $1e062              .byte $xx,$xx ; Clear: 000 unused
         $1e064              .byte $xx
 ;;; --------------------------------
-ItemUseData_1d ; Medical Herb
+ItemUseData_1d ; Medical Herb 1c4e0
         $1e065              .byte $xx,$xx ; Expect: NPC 63 hurt dolphin
         $1e067              .byte $xx,$xx ; Message: 0c:01 (action 02 -> dialog 11 and 0d)
         $1e069              .byte $xx,$xx ; Set: 025 healed dolphin
         ;; normal usage
         $1e06b              .byte $xx,$xx ; Message: 20:00 (action 05 -> rts)
         $1e06d              .byte $xx,$xx ; Clear: 000 unused
-ItemUseData_21 ; FruitOfPower
-ItemUseData_22 ; MagicRing
+ItemUseData_21 ; FruitOfPower 1c507
+ItemUseData_22 ; MagicRing 1c51d
         $1e06f              .byte $xx,$xx ; Message: 20:01 (action 05 -> rts)
         $1e071              .byte $xx,$xx
-ItemUseData_20 ; FruitOfLime
-ItemUseData_23 ; FruitOfRepun
-        $1e073              .byte $xx,$xx ; Message: 20:02 (action 05)
+ItemUseData_20 ; FruitOfLime 1c53a
+ItemUseData_23 ; FruitOfRepun 1c54a
+        $1e073              .byte $xx,$xx ; Message: 20:02 (action 05 -> rts)
         $1e075              .byte $xx,$xx
-ItemUseData_1e ; Antidote
-ItemUseData_1f ; LysisPlant
-        $1e077              .byte $xx,$xx ; Message: 20:02 (action 05)
+ItemUseData_1e ; Antidote 1c524
+ItemUseData_1f ; LysisPlant 1c52f
+        $1e077              .byte $xx,$xx ; Message: 20:02 (action 05 -> rts)
         $1e079              .byte $xx,$xx
-ItemUseData_26 ; OpelStatue
-        $1e07b              .byte $xx,$xx ; action 05
+ItemUseData_26 ; OpelStatue 1c450
+        $1e07b              .byte $xx,$xx ; action 05 (rts)
         $1e07d              .byte $xx,$xx
-ItemUseData_27 ; InsectFlute
+ItemUseData_27 ; InsectFlute 1c4bb3
         $1e07f              .byte $xx,$xx
         $1e081              .byte $xx,$xx
         $1e083              .byte $xx
-ItemUseData_24 ; WarpBoots
+ItemUseData_24 ; WarpBoots 1c564
         $1e084              .byte $xx,$xx ; action 04 (rts)
         $1e086              .byte $xx,$xx
-ItemUseData_25 ; StatueOfOnyx
+ItemUseData_25 ; StatueOfOnyx 1c565
         $1e088              .byte $xx,$xx ; Expect: NPC 16 akahana
         $1e08a              .byte $xx,$xx ; 02:02 (action 1c)
         $1e08c              .byte $xx,$xx ; Set: 050 given statue to akahana
-ItemUseData_31 ; AlarmFlute
+ItemUseData_31 ; AlarmFlute 1c4a9
         $1e08e              .byte $xx,$xx ; Expect: NPC 15 windmill guard asleep
         $1e090              .byte $xx,$xx ; action 6 (LoadNpcDataForCurrentLocation)
         $1e092              .byte $xx,$xx ; Set: 00f woke windmill guard
@@ -23299,67 +23306,76 @@ ItemUseData_31 ; AlarmFlute
         $1e094              .byte $xx,$xx ; Expect: NPC 6b kensu in lighthouse asleep
         $1e096              .byte $xx,$xx ; action 6 (LoadNpcDataForCurrentLocation)
         $1e098              .byte $xx,$xx ; Set: 0a4 woke kensu
-ItemUseData_32 ; WindmillKey
-        $1e09a              .byte $xx,$xx
-        $1e09c              .byte $xx,$xx,$xx
-ItemUseData_33 ; KeyToPrison
-        $1e09f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-ItemUseData_34 ; KeyToStyx
-        $1e0a7              .byte $xx,$xx,$xx,$xx,$xx,$xx
-ItemUseData_35 ; FogLamp
+ItemUseData_32 ; WindmillKey 1c45f
+        $1e09a              .byte $xx     ; Expect location $0f (windmill)
+        $1e09b              .byte $xx,$xx ; 20:04 (action 5 - rts)
+        $1e09d              .byte $xx,$xx ; Set: 00a started windmill
+ItemUseData_33 ; KeyToPrison 1c491
+        $1e09f              .byte $xx,$xx ; Expect: Trigger ad
+        $1e0a1              .byte $xx,$xx ; 20:03 (action 10)
+        $1e0a3              .byte $xx,$xx ; Clear: 084 leaf villagers currently abducted
+        $1e0a5              .byte $xx,$xx ; Set: 00d leaf villagers rescued
+ItemUseData_34 ; KeyToStyx 1c491
+        $1e0a7              .byte $xx,$xx ; Expect: Trigger
+        $1e0a9              .byte $xx,$xx ; 20:03 (action 10)
+        $1e0ab              .byte $xx,$xx
+ItemUseData_35 ; FogLamp 1c491
         $1e0ad              .byte $xx,$xx ; Expect: NPC 64 fisherman
         $1e0af              .byte $xx,$xx ; 09:01
         $1e0b1              .byte $xx,$xx ; Set: 021 returned fog lamp
-ItemUseData_36 ; ShellFlute
+ItemUseData_36 ; ShellFlute 1c56bb
         $1e0b3              .byte $xx,$xx ; Expect: Flag 09b can ride dolphin
         $1e0b5              .byte $xx,$xx ; 00:00 (action 09)
         $1e0b7              .byte $xx,$xx ; Set: 054
-ItemUseData_39 ; GlowingLamp
-        $1e0b9              .byte $xx,$xx,$xx,$xx
-ItemUseData_3a ; StatueOfGold
+ItemUseData_39 ; GlowingLamp 1c585
+        $1e0b9              .byte $xx,$xx ; 20:06 (action 5 - rts)
+        $1e0bb              .byte $xx,$xx
+ItemUseData_3a ; StatueOfGold 1c4d0
         $1e0bd              .byte $xx,$xx ; Expect trigger square $af (on altar)
         $1e0bf              .byte $xx,$xx ; 20:08 (action 0a)
         $1e0c1              .byte $xx,$xx ; Set: 283 calmed sea
         $1e0c3              .byte $xx,$xx ; Set: 08f used statue of gold
-ItemUseData_37 ; EyeGlasses
-        $1e0c5              .byte $xx,$xx,$xx,$xx,$xx
-ItemUseData_3b ; LovePendant
+ItemUseData_37 ; EyeGlasses 1c45f
+        $1e0c5              .byte $xx     ; Expect location $e4 (joel shed)
+        $1e0c6              .byte $xx,$xx ; 20:07 (action 10)
+        $1e0c8              .byte $xx,$xx
+ItemUseData_3b ; LovePendant 1c439
         $1e0ca              .byte $xx,$xx ; kensu
         $1e0cc              .byte $xx,$xx ; 13:02 (action 0c)
         $1e0ce              .byte $xx,$xx ; Set: 03c chest:3b:love pendant
-ItemUseData_3c ; KirisaPlant
+ItemUseData_3c ; KirisaPlant 1c491
         $1e0d0              .byte $xx,$xx ; Expect NPC 23 aryllis
         $1e0d2              .byte $xx,$xx ; 12:10 (action 0d)
         $1e0d4              .byte $xx,$xx ; Set: 010 gave kirisa plant to aryllis
-ItemUseData_3d ; IvoryStatue
+ItemUseData_3d ; IvoryStatue 1c491
         $1e0d6              .byte $xx,$xx ; Expect NPC 75 kensu slime
         $1e0d8              .byte $xx,$xx ; 00:00 (action 0e)
         $1e0da              .byte $xx,$xx ; Set: 065 cured kensu
-ItemUseData_28 ; FluteOfLime
+ItemUseData_28 ; FluteOfLime 1c59e
         $1e0dc              .byte $xx,$xx ; Expect NPC 87 unused?
-        $1e0de              .byte $xx,$xx
-        $1e0e0              .byte $xx,$xx
+        $1e0de              .byte $xx,$xx ; 20:05 (action 6 - reload npcs)
+        $1e0e0              .byte $xx,$xx ; Set: 06b UNUSED stoned people cured
         $1e0e2              .byte $xx,$xx ; Expect NPC 86 unused?
-        $1e0e4              .byte $xx,$xx
-        $1e0e6              .byte $xx,$xx
+        $1e0e4              .byte $xx,$xx ; 20:05 (action 6 - reload npcs)
+        $1e0e6              .byte $xx,$xx ; Set: 069 UNUSED stoned people cured
         $1e0e8              .byte $xx,$xx ; Expect NPC 85 stoned pair
         $1e0ea              .byte $xx,$xx ; 20:05 (action 06) reload npcs
         $1e0ec              .byte $xx,$xx ; Set: 06a stoned people cured
         $1e0ee              .byte $xx,$xx ; Expect NPC 88 stoned akahana
         $1e0f0              .byte $xx,$xx ; 20:05 (action 06) reload npcs
         $1e0f2              .byte $xx,$xx ; Set: 035 cured akahana
-ItemUseData_3e ; BowOfMoon
-        $1e0f4              .byte $xx,$xx
-        $1e0f6              .byte $xx,$xx
-        $1e0f8              .byte $xx,$xx
-ItemUseData_3f ; BowOfSun
-        $1e0fa              .byte $xx,$xx
-        $1e0fc              .byte $xx,$xx
-        $1e0fe              .byte $xx,$xx
-ItemUseData_40 ; BowOfTruth
-        $1e100              .byte $xx,$xx
-        $1e102              .byte $xx,$xx
-        $1e104              .byte $xx,$xx
+ItemUseData_3e ; BowOfMoon 1c451
+        $1e0f4              .byte $xx,$xx ; Expect on screen: NPC c9 (statue of moon) 
+        $1e0f6              .byte $xx,$xx ; 20:0a (action 13)
+        $1e0f8              .byte $xx,$xx ; Set: 109 defeated statue of moon
+ItemUseData_3f ; BowOfSun 1c451
+        $1e0fa              .byte $xx,$xx ; Expect on screen: NPC ca (statue of sun)
+        $1e0fc              .byte $xx,$xx ; 20:09 (action 14)
+        $1e0fe              .byte $xx,$xx ; Set: 10a defeated statue of sun
+ItemUseData_40 ; BowOfTruth 1c442
+        $1e100              .byte $xx,$xx ; Expect on screen: NPC cb (draygon)
+        $1e102              .byte $xx,$xx ; 20:0b (action 15)
+        $1e104              .byte $xx,$xx ; Set: 086 used bow of truth
 ;;; --------------------------------
 ;;; The following are the two-byte values associated with the pointers in
 ;;; the $1dc82 data table.  It's sparse and somewhat scrambled, so the
@@ -57732,26 +57748,26 @@ ExecuteItemOrTriggerAction
 ;;; --------------------------------
 ;;; STRIP: word=$30000
 ItemOrTriggerActionJump                 ; TODO - Label the destinations
-        $3d563              .word ($3d5a3) ; 00
+        $3d563              .word ($3d5a3) ; 00 noop (rts)
         $3d565              .word ($3d5a4) ; 01 thunder sword get -> teleport
-        $3d567              .word ($3d5d6) ; 02
-        $3d569              .word ($3d5a3) ; 03
-        $3d56b              .word ($3d653) ; 04
-        $3d56d              .word ($3d5a3) ; 05
-        $3d56f              .word ($3d6d5) ; 06
+        $3d567              .word ($3d5d6) ; 02 heal dolphin
+        $3d569              .word ($3d5a3)
+        $3d56b              .word ($3d653) ; 04 noop - use warp boots
+        $3d56d              .word ($3d5a3) ; 05 noop - use opel statue (?)
+        $3d56f              .word ($3d6d5) ; 06 reload npcs - alarm flute, flute of lime
         $3d571              .word ($3d5e6) ; 07
         $3d573              .word ($3d654) ; 08
-        $3d575              .word ($3d659) ; 09
-        $3d577              .word ($3d63a) ; 0a
+        $3d575              .word ($3d659) ; 09 use shell flute
+        $3d577              .word ($3d63a) ; 0a use statue of gold
         $3d579              .word ($3d6d8) ; 0b
-        $3d57b              .word ($3d6dd) ; 0c love pendant given to kensu - learn change
-        $3d57d              .word ($3d6e7) ; 0d
-        $3d57f              .word ($3d6ec) ; 0e
+        $3d57b              .word ($3d6dd) ; 0c use love pendant (learn change)
+        $3d57d              .word ($3d6e7) ; 0d use kirisa plant
+        $3d57f              .word ($3d6ec) ; 0e use ivory statue
         $3d581              .word ($3d70d) ; 0f learn refresh
-        $3d583              .word ($3d63f) ; 10
+        $3d583              .word ($3d63f) ; 10 open a door (keys, eyeglasses)
         $3d585              .word ($3d6d5) ; 11 unused?
         $3d587              .word ($3d5a3) ; 12 unused?
-        $3d589              .word ($3d718) ; 13
+        $3d589              .word ($3d718) ; 13 use bow of moon
         $3d58b              .word ($3d71f) ; 14
         $3d58d              .word ($3d746) ; 15
         $3d58f              .word ($3d78c) ; 16 sword get
@@ -57760,7 +57776,7 @@ ItemOrTriggerActionJump                 ; TODO - Label the destinations
         $3d595              .word ($3d7b7) ; 19
         $3d597              .word ($3d5a3) ; 1a rescue wise man unused?
         $3d599              .word ($3d7ce) ; 1b
-        $3d59b              .word ($3d7fd) ; 1c
+        $3d59b              .word ($3d7fd) ; 1c return statue of onyx
         $3d59d              .word ($3d805) ; 1d
         $3d59f              .word ($3d827) ; 1e
         $3d5a1              .word ($3d82e) ; 1f
@@ -57841,11 +57857,11 @@ ItemOrTriggerActionJump_07
         $3d637  xx xx:      xxx $xx
         $3d639  xx:         xxx
 ;;; --------------------------------
-ItemOrTriggerActionJump_0a
+ItemOrTriggerActionJump_0a      ; use statue of gold
         $3d63a  xx xx:      xxx #SFX_CALM_SEAS
         $3d63c  xx xx xx:   xxx StartAudioTrack
 ;;; --------------------------------
-ItemOrTriggerActionJump_10
+ItemOrTriggerActionJump_10      ; use key to styx, key to prison, eyeglasses
 DialogFollowupActionJump_08
         $3d63f  xx xx xx:   xxx $xxxx
         $3d642  xx xx:      xxx #$xx
@@ -57959,13 +57975,12 @@ ItemOrTriggerActionJump_0f
         $3d712  xx xx xx:   xxx $xxxx,y
         $3d715  xx xx xx:   xxx MainGameModeJump_07_TriggerSquareOrTreasureChest
 ;;; --------------------------------
-ItemOrTriggerActionJump_13
+ItemOrTriggerActionJump_13      ; destroy statue of moon (in slot 0d)
         $3d718  xx xx:      xxx #$xx
         $3d71a  xx xx xx:   xxx $xxxx
         $3d71d  xx xx:      xxx $xx ; uncond
 ;;; --------------------------------
-;;; Start fight with Statues?
-ItemOrTriggerActionJump_14
+ItemOrTriggerActionJump_14      ; destroy statue of sun (in slot 0e)
         $3d71f  xx xx:      xxx #$xx
         $3d721  xx xx xx:   xxx $xxxx
         $3d724  xx xx:      xxx #$xx

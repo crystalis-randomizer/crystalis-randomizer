@@ -1,4 +1,5 @@
 import {Entity, Rom} from './entity.js';
+import {MessageId} from './messageid.js';
 import {hex, readLittleEndian, readString, seq, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
 
@@ -81,6 +82,15 @@ export class Item extends Entity {
     //  -> current hard-coded in patch.identifyKeyItemsForDifficultyBuffs
   }
 
+  itemUseMessages(): MessageId[] {
+    const messages = new Map<string, MessageId>();
+    for (const offset of ITEM_USE_MESSAGE.get(this.id) || []) {
+      const message = MessageId.from(this.rom.prg, this.itemUseDataBase + offset);
+      messages.set(message.mid(), message);
+    }
+    return [...messages.values()];
+  }
+
   setName(name: string): void {
     this.messageName = this.menuName = name;
   }
@@ -136,14 +146,29 @@ const stringToBytes = (s: string): number[] => {
   return seq(s.length, i => s.charCodeAt(i));
 };
 
-// maps itemusejump to offset of data for message...?
-const JUMP_TO_MESSAGE = new Map<number, number[]>([
-  [0x1c4e0, [2, 6]],
-  [0x1c524, [0]],
-  [0x1c52f, [0]],
-  [0x1c53a, [0]],
-  [0x1c507, [0]],
-  [0x1c51d, [0]],
-  [0x1c54a, [0]],
+// maps item id to offset of data for message...?
+const ITEM_USE_MESSAGE = new Map<number, number[]>([
+  [0x1d, [2, 6]],
+  [0x1e, [0]],
+  [0x1f, [0]],
+  [0x20, [0]],
+  [0x21, [0]],
+  [0x22, [0]],
+  [0x23, [0]],
+  [0x25, [2]],
+  [0x28, [2, 8, 14, 20]], // some unused
+  [0x32, [1]],
+  [0x33, [2]],
+  [0x34, [2]],
+  [0x35, [2]],
+  [0x36, [2]],
+  [0x37, [1]],
+  [0x39, [0]],
+  [0x3a, [2]],
+  [0x3b, [2]],
+  [0x3c, [2]],
+  [0x3d, [2]],
+  [0x3e, [2]],
+  [0x3f, [2]],
+  [0x40, [2]],
 ]);
-const {} = {JUMP_TO_MESSAGE} as any;

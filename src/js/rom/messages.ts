@@ -112,6 +112,7 @@ const PUNCTUATION: {[char: string]: boolean} = {
   ',': true,
   '.': true,
   ':': true,
+  ';': true,
   '?': true,
   '_': true,
 };
@@ -123,7 +124,8 @@ export class Messages {
   banks: DataTable<number>;
   parts: AddressTable<AddressTable<Message>>;
 
-  static readonly CONTINUED = '\u25bc';
+  //static readonly CONTINUED = '\u25bc';
+  static readonly CONTINUED = '#';
 
   constructor(readonly rom: Rom) {
     const str = (a: number) => readString(rom.prg, a);

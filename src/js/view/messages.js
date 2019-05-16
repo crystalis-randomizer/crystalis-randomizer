@@ -26,6 +26,11 @@ const run = async () => {
   for (const trigger of rom.triggers) {
     use(trigger.message, `Trigger $${hex(trigger.id)}`);
   }
+  for (const item of rom.items) {
+    for (const m of item.itemUseMessages()) {
+      use(m, `Item $${hex(item.id)}`);
+    }
+  }
   for (const npc of rom.npcs) {
     for (const d of npc.globalDialogs) {
       use(d.message, `NPC $${hex(npc.id)}`);

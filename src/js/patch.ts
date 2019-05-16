@@ -1,6 +1,8 @@
 import {Assembler} from './6502.js';
 import {crc32} from './crc32.js';
-import {LogType, ProgressTracker, shuffle2 as shuffleDepgraph} from './depgraph.js';
+import {LogType, ProgressTracker,
+        generate as generateDepgraph,
+        shuffle2 as shuffleDepgraph} from './depgraph.js';
 import {FetchReader} from './fetchreader.js';
 import {FlagSet} from './flagset.js';
 import {Random} from './random.js';
@@ -118,7 +120,13 @@ export const shuffle = async (rom: Uint8Array,
   // the depgraph FIRST!
   const parsed = new Rom(rom);
 
+<<<<<<< HEAD
   makeBraceletsProgressive(parsed);
+||||||| merged common ancestors
+=======
+  if (flags.blackoutMode()) blackoutMode(parsed);
+
+>>>>>>> add blackout mode
   closeCaveEntrances(parsed, flags);
   reversibleSwanGate(parsed);
   adjustGoaFortressTriggers(parsed);
@@ -248,6 +256,16 @@ function makeBraceletsProgressive(rom: Rom): void {
   patched[2].condition = ~0x205; // don't have orb
   patched[3].condition = ~0;     // default
   tornel.localDialogs.set(0x21, patched);
+}
+
+function blackoutMode(rom: Rom) {
+  const dg = generateDepgraph();
+  for (const node of dg.nodes) {
+    const type = (node as any).type;
+    if (node.nodeType === 'Location' && (type === 'cave' || type === 'fortress')) {
+      rom.locations[(node as any).id].tilePalettes.fill(0x9a);
+    }
+  }
 }
 
 const closeCaveEntrances = (rom: Rom, flags: FlagSet) => {

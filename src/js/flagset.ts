@@ -265,8 +265,10 @@ export const FLAGS: FlagSection[] = [{
   }, {
     flag: 'Hz',
     hard: true,
-    name: 'Blackout mode',
-    text: `All caves and fortresses are permanently dark.`,
+    name: 'Secret mode',
+    text: `This one is really hard, trust me.`,
+    // name: 'Blackout mode',
+    // text: `All caves and fortresses are permanently dark.`,
   }],
 // }, {
 //   section: 'Weapons, armor, and item balance',

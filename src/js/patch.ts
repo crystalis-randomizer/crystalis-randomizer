@@ -120,13 +120,9 @@ export const shuffle = async (rom: Uint8Array,
   // the depgraph FIRST!
   const parsed = new Rom(rom);
 
-<<<<<<< HEAD
   makeBraceletsProgressive(parsed);
-||||||| merged common ancestors
-=======
   if (flags.blackoutMode()) blackoutMode(parsed);
 
->>>>>>> add blackout mode
   closeCaveEntrances(parsed, flags);
   reversibleSwanGate(parsed);
   adjustGoaFortressTriggers(parsed);

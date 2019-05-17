@@ -579,6 +579,8 @@ export const EXPECTED_CRC32 = 0x1bd39032;
 const ADJUSTMENTS = new Map<number, number>([
   // Point Amazones outer guard to post-overflow message that actually shows.
   [0x1cf05, 0x48],
+  // Remove stray flight granter in Zombietown.
+  [0x1d311, 0xa0], [0x1d312, 0x00],
   // Fix queen's dialog to terminate on last item, rather than overflow,
   // so that we don't parse garbage.
   [0x1cff9, 0xe0],

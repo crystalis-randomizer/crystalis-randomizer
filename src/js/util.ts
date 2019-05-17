@@ -232,3 +232,41 @@ export const breakLines = (str: string, len: number): string[] => {
 };
 
 export class UsageError extends Error {}
+
+export class SuffixTrie<T> {
+  readonly next = new Map<string, SuffixTrie<T>>();
+  data: T | undefined;
+
+  constructor(readonly key: string = '') {}
+
+  get(key: string): T | undefined {
+    let t: SuffixTrie<T> | undefined = this;
+    for (let i = key.length - 1; i >= 0 && t; i++) {
+      t = t.next.get(key[i]);
+    }
+    return t && t.data;
+  }
+
+  with(c: string): SuffixTrie<T> {
+    let t = this.next.get(c);
+    if (!t) this.next.set(c, (t = new SuffixTrie<T>(c + this.key)));
+    return t;
+  }
+
+  set(key: string, value: T | undefined) {
+    let t: SuffixTrie<T> = this;
+    for (let i = key.length - 1; i >= 0 && t; i++) {
+      t = t.with(key[i]);
+    }
+    t.data = value;
+  }
+
+  * values(): Iterable<T> {
+    const stack: SuffixTrie<T>[] = [this];
+    while (stack.length) {
+      const top = stack.pop()!;
+      if (top.data) yield top.data;
+      stack.push(...top.next.values());
+    }
+  }
+}

@@ -1,5 +1,8 @@
 import {Rom} from './entity.js';
-import {Data, readLittleEndian, readString, seq, slice} from './util.js';
+import {MessageId} from './messageid.js';
+import {Data, hex, readLittleEndian, readString, seq, slice} from './util.js';
+import {Writer} from './writer.js';
+import {SuffixTrie} from '../util.js';
 
 class DataTable<T> extends Array<T> {
 
@@ -102,6 +105,10 @@ class Message {
     }
     this.text = parts.join('');
   }
+
+  mid(): string {
+    return `${hex(this.part)}:${hex(this.id)}`;
+  }
 }
 
 const PUNCTUATION: {[char: string]: boolean} = {
@@ -115,6 +122,9 @@ const PUNCTUATION: {[char: string]: boolean} = {
   ';': true,
   '?': true,
   '_': true,
+  // ????
+  '#': true,  // page separator
+  '\n': true, // line separator
 };
 
 export class Messages {
@@ -148,11 +158,229 @@ export class Messages {
               (m, id) => new Message(this, part, id, m));
         });
   }
+
+  // Flattens the messages.  NOTE: returns unused messages.
+  * messages(used?: {has: (mid: string) => boolean}): Iterable<Message> {
+    for (const part of this.parts) {
+      if (used) {
+        for (const message of part) {
+          if (used.has(message.mid())) yield message;
+        }
+      } else {
+        yield * part;
+      }
+    }
+  }
+
+  // Returns a map from message id (mid) to known usages.
+  uses(): Map<string, Set<string>> {
+    const out = new Map<string, Set<string>>();
+    function use(message: MessageId | string, usage: string) {
+      const str = typeof message === 'string' ? message : message.mid();
+      const set = out.get(str) || new Set();
+      set.add(usage);
+      out.set(str, set);
+    }
+    for (const trigger of this.rom.triggers) {
+      if (trigger.message.nonzero()) {
+        use(trigger.message, `Trigger $${hex(trigger.id)}`);
+      }
+    }
+    for (const item of this.rom.items) {
+      for (const m of item.itemUseMessages()) {
+        if (m.nonzero()) use(m, `Item $${hex(item.id)}`);
+      }
+    }
+    for (const npc of this.rom.npcs) {
+      for (const d of npc.globalDialogs) {
+        use(d.message, `NPC $${hex(npc.id)}`);
+      }
+      for (const [l, ds] of npc.localDialogs) {
+        const lh = l >= 0 ? ` @ $${hex(l)}` : '';
+        for (const d of ds) {
+          use(d.message, `NPC $${hex(npc.id)}${lh}`);
+        }
+      }
+    }
+    for (const sage of this.rom.telepathy.sages) {
+      for (const d of sage.defaultMessages) {
+        use(d, `Telepathy ${sage.sage}`);
+      }
+      for (const g of sage.messageGroups) {
+        for (const [, ...ms] of g.messages) {
+          for (const m of ms) {
+            use(m!, `Telepathy ${sage.sage}`);
+          }
+        }
+      }
+    }
+    for (const m of HARDCODED_MESSAGES) {
+      use(m, 'Hardcoded');
+    }
+    return out;
+  }
+
+  buildAbbreviationTable(uses = this.uses()): string[] {
+    //const uses = this.uses();
+    // Count frequencies of used suffixes.
+    interface Suffix {
+      suffix: string;
+      saving: number;
+      count: number;
+    }
+    const suffixes = new SuffixTrie<Suffix>();
+    const addrs = new Set<number>();
+    for (const message of this.messages(uses)) {
+      if (addrs.has(message.addr)) continue;
+      addrs.add(message.addr);
+      // split up the message text into words, from the back,
+      // ignoring names.
+      const text = message.text;
+      // function add(start: number, end: number): void {
+      //   const substr = text.substring(start, end);
+      //   const saved = end - start + (text[end] === ' ' ? 1 : 0) - 1;
+      //   savings[substr] = (savings[substr] || 0) + saved;
+      //   counts[substr] = (counts[substr] || 0) + 1;
+      // }
+      // let last = text.length;
+      // let nextLast = last;
+      // for (let i = last - 1; i >= 0; i--) {
+      //   if (PUNCTUATION[text[i]]) {
+      //     nextLast = last;
+      //     last = i;
+      //     if (text[i] !== ' ') nextLast = last;
+      //   } else if (text[i] === '}' || text[i] === ']') {
+      //     // find the opening, don't worry about expanding yet.
+      //     const open = text.lastIndexOf(OPENERS[text[i]], i);
+      //     if (open >= 0) i = open;
+      //   } else if (last - i > 1) {
+      //     add(i, last);
+      //     if (nextLast > last) add(i, nextLast);
+      //   }
+      // }
+      let words: SuffixTrie<Suffix>[] = [];
+      for (let i = text.length - 1; i >= 0; i--) {
+        const c = text[i];
+        if (!PUNCTUATION[c] && !words.length) words = [suffixes];
+
+        // reset on breaking punctuation
+        if (PUNCTUATION[c] && c !== ' ' && c !== '\'') {
+          words = [];
+          continue;
+        } else if (OPENERS[c]) {
+          // find the opening, don't worry about expanding yet.
+          const open = text.lastIndexOf(OPENERS[c], i);
+          if (open >= 0) i = open;
+          words = [];
+          continue;
+        }
+
+        // prepend the char to each current word
+        for (let j = 0, len = words.length; j < len; j++) {
+          const t = words[j].with(c);
+          words[j] = t;
+          if (PUNCTUATION[c]) continue;
+          const s = t.data || (t.data = {suffix: t.key, count: 0, saving: 0});
+          s.count++;
+          s.saving += t.key.length - (text[i + t.key.length] === ' ' ? 0 : 1);
+        }
+
+        // make a new word on space and apostrophe
+        if (PUNCTUATION[c] && !PUNCTUATION[text[i - 1]]) words.push(suffixes);
+      }
+    }
+
+    // Sort the list to find the most impactful.
+    // substrings whose savings has changed.
+    const updates = new Set<string>();
+    // const abbr: {[substr: string]: number} = {};
+    const rev: string[] = [];
+    const order = ({saving: a}: Suffix, {saving: b}: Suffix) => b - a;
+    const sorted = [...suffixes.values()].sort(order);
+    let tableLength = 0;
+    while (sorted.length && tableLength < MAX_TABLE_LENGTH) {
+      if (updates.has(sorted[0].suffix)) {
+        sorted.sort(order);
+        updates.clear();
+      }
+
+      const {saving, count, suffix} = sorted.shift()!;
+      // figure out if it's worth adding...
+      if (saving <= 0) break;
+      // make the abbreviation
+      tableLength += suffix.length + 3;
+      //abbr[word] = rev.length;
+      rev.push(`${suffix}: ${saving} - ${count}`);
+
+      // shorter words' savings need to be reduced
+      let t = suffixes;
+      for (let i = suffix.length - 1; i > 0; i--) {
+        t = t.with(suffix[i]);
+        // Every suffix accounted for in `saving` is one we don't get to count
+        // here anymore.  The saving is t.key.length + 0 or + 1, but by simply
+        // subtracting the extra length from `saving` we automatically account
+        // for that difference.
+        const data = t.data;
+        if (!data) continue;
+        data.saving -= saving - count * (suffix.length - t.key.length);
+        data.count -= count;
+        updates.add(t.key);
+      }
+      t = t.with(suffix[0]); // but don't subtract anymore.
+      // longer words' savings need to be reduced!
+      for (const data of t.values()) {
+        // we can encode all the words, but only save as much as the difference.
+        data.saving = data.count * (data.suffix.length - suffix.length);
+        // TODO - reduce count to zero? we should when subtracting off
+        // from words shorter than suffix, but not for longer.
+        updates.add(data.suffix);
+      }
+
+      // TODO - how to find them!  need a reverse map...
+
+      // maybe a trie?  decrease score of all shorter and longer
+      // words?
+      //   say we had 'efgh': 20 => save 60
+      //   but    'abcdefgh': 5  => save 35
+      //   when we pull 'efgh' then we can leave 'abcdefgh'
+      //   but its value is now simply 20 (=count * remaining)
+      //   
+      //   
+
+      // if this takes us over 0x80 then we get one less byte of savings each
+      if (rev.length === 0x80) {
+        for (const data of suffixes.values()) {
+          data.saving -= data.count;
+        }
+        sorted.sort(order);
+        updates.clear();
+      }
+    }
+    return rev;
+  }
+
+  async write(writer: Writer): Promise<void> {
+    const uses = this.uses();
+    const table = this.buildAbbreviationTable(uses);
+    const {} = {writer, uses, table} as any;
+    // plan: analyze all the msesages, finding common suffixes.
+    // eligible suffixes must be followed by either space, punctuation, or eol
+    // todo - reformat/flow messages based on current substitution lengths
+  }
 }
+
+// Max length for words table.  Vanilla allocates 932 bytes, but there's
+// an extra 448 available immediately beneath.  For now we'll pick a round
+// number: 1200.
+const MAX_TABLE_LENGTH = 1200;
+
+
+//const PUNCTUATION_REGEX = /[\0 !\\,.:;?_-]/g;
+const OPENERS: {[close: string]: string} = {'}': '{', ']': '['};
 
 // Message MIDs that are hardcoded in various places.
 export const HARDCODED_MESSAGES: Set<string> = new Set([
-  '00:00', // impossible to identify uses
+  // '00:00', // impossible to identify uses
   '20:1d', // endgame message 1, exec 27fc9, table 27fe8
   '1b:0f', // endgame message 2, exec 27fc9, table 27fea
   '1b:10', // endgame message 3, exec 27fc9, table 27fec

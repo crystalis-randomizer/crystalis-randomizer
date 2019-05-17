@@ -18,5 +18,10 @@ export const MessageId = DataTuple.make(2, {
   mid(this: any): string {
     return `${hex(this.part)}:${hex(this.index)}`;
   },
+
+  // Whether the mid is nonzero.
+  nonzero(): boolean {
+    return !!(this.part || this.index);
+  },
 });
 export type MessageId = InstanceType<typeof MessageId>;

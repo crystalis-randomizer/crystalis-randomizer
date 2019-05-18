@@ -6,7 +6,6 @@ export class Deque<T> {
   private end: number = 0;
   private size: number = 0;
 
-  // NOTE: as we move users to TS, just use length, not size
   get length(): number {
     return this.size;
   }

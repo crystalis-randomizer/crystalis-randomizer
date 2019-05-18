@@ -57,6 +57,7 @@ See URL `https://github.com/palantir/tslint'."
   :working-directory (lambda (x) sdh-ts-root)
   :error-patterns ((warning "ERROR: " (file-name) ":" line ":" column " - " (message)))
   :modes typescript-mode)
+;(flycheck-add-next-checker 'lsp-ui 'typescript-tslint)
 
 ;; Link to the correct checker script...?
 (setq flycheck-typescript-tsc-executable (concat (file-name-directory load-file-name) "flycheck-tsc"))
@@ -77,11 +78,11 @@ See URL `https://github.com/palantir/tslint'."
   (define-key typescript-mode-map (kbd "}") 'self-insert-command)
   (define-key typescript-mode-map (kbd "{") 'self-insert-command)
   (define-key typescript-mode-map (kbd "M-RET") 'company-complete)
+  (define-key typescript-mode-map (kbd "C-'") 'company-complete)
   ;; https://github.com/emacs-lsp/lsp-ui/issues/266
   ;(remove-hook 'lsp-after-diagnostics-hook 'lsp-ui-sideline--diagnostics-changed t)
 )
 
-(flycheck-add-next-checker 'lsp-ui 'typescript-tslint)
 (add-hook 'typescript-mode-hook 'sdh-ts-init)
 
 ;(add-to-list 'flycheck-checkers 'typescript-tsc)

@@ -228,12 +228,12 @@ export class Messages {
       str: string;
       // Total number of bytes saved over all occurrences
       saving: number;
-      // Map from word ID to bytes we can save on it?
-      bytes: Map<number, number>;
       // All the initial words this is in (not counting chains)
       words: Set<number>;
       // Number of chains
       chains: number;
+      // Number of letters missing from the first word
+      missing: number;
     }
     interface Word {
       // Actual string
@@ -300,15 +300,13 @@ export class Messages {
         while (true) {
           // For itself and each chainable word thereafter
           let data = suffixes.get(str);
-          if (!data) suffixes.set(str, (data = {str, saving: -str.length, bytes: new Map(), chains: len, words: new Set()}));
+          if (!data) suffixes.set(str, (data = {chains: len, missing: j,
+                                                saving: -str.length, str,
+                                                words: new Set()}));
           data.words.add(i);
           data.saving += saving;
-          // Add all the uses
-          for (let k = len; k >= 0; k--) {
-            // the bytes we could save on the (i+k)th word; k=0 is a special case
-            data.bytes.set(i + k, k ? words[i + k].bytes : word.bytes - j);
-            words[i + k].suffixes.add(data);
-          }
+          // Link the suffixes
+          for (let k = len; k >= 0; k--) words[i + k].suffixes.add(data);
           if (!later.chain) break;
           // If there's another word to chain to, then continue
           str += later.chain;
@@ -331,30 +329,19 @@ export class Messages {
         sorted.sort(order);
         invalid.clear();
       }
-      const {str, saving, bytes, words: ws, chains} = sorted.shift()!;
+      const {str, saving, missing, words: ws, chains} = sorted.shift()!;
       // figure out if it's worth adding...
       if (saving <= 0) break;
       // make the abbreviation
       tableLength += str.length + 3;
       // abbr[word] = rev.length;
-      rev.push(`${str}: ${saving} - ${bytes.size}`);
+      rev.push(`${str}: ${saving} - ${ws.size}`);
 
       // Blast radius: all other suffixes related to all touched words save less
-      // for (const [wordIndex, byteCount] of bytes) {
-      //   const word = words[wordIndex];
-      //   for (const suffix of word.suffixes) {
-      //     const prev = suffix.bytes.get(wordIndex) || 0;
-      //     const next = Math.max(word.bytes - byteCount, 0);
-      //     suffix.saving -= (prev - next);
-      //     suffix.bytes.set(wordIndex, next);
-      //     invalid.add(suffix.str);
-      //   }
-      // }
-
       for (const i of ws) {
         for (let k = 0; k <= chains; k++) {
           const word = words[i + k];
-          const used = k ? word.bytes : bytes.get(i)!;
+          const used = word.bytes - (!k ? missing : 0);
           for (const suffix of word.suffixes) {
             suffix.saving -= (used - word.used);
             invalid.add(suffix.str);
@@ -366,8 +353,7 @@ export class Messages {
       // If this takes us over 0x80 then all suffixes get us one less byte of savings per use
       if (rev.length === 0x80) {
         for (const data of suffixes.values()) {
-          const wordSize = data.str.split(/[ ']/g).length;
-          data.saving -= Math.floor(data.bytes.size / wordSize);
+          data.saving -= data.words.size;
         }
         sorted.sort(order);
         invalid.clear();
@@ -375,150 +361,6 @@ export class Messages {
     }
     return rev;
   }
-
-  // buildAbbreviationTable(uses = this.uses()): string[] {
-  //   // const uses = this.uses();
-  //   // Count frequencies of used suffixes.
-  //   interface Suffix {
-  //     suffix: string;
-  //     saving: number;
-  //     count: number;
-  //     // longer: Set<string>;
-  //   }
-  //   const suffixes = new SuffixTrie<Suffix>();
-  //   const addrs = new Set<number>();
-  //   for (const message of this.messages(uses)) {
-  //     if (addrs.has(message.addr)) continue;
-  //     addrs.add(message.addr);
-  //     // split up the message text into words, from the back,
-  //     // ignoring names.
-  //     const text = message.text;
-  //     // function add(start: number, end: number): void {
-  //     //   const substr = text.substring(start, end);
-  //     //   const saved = end - start + (text[end] === ' ' ? 1 : 0) - 1;
-  //     //   savings[substr] = (savings[substr] || 0) + saved;
-  //     //   counts[substr] = (counts[substr] || 0) + 1;
-  //     // }
-  //     // let last = text.length;
-  //     // let nextLast = last;
-  //     // for (let i = last - 1; i >= 0; i--) {
-  //     //   if (PUNCTUATION[text[i]]) {
-  //     //     nextLast = last;
-  //     //     last = i;
-  //     //     if (text[i] !== ' ') nextLast = last;
-  //     //   } else if (text[i] === '}' || text[i] === ']') {
-  //     //     // find the opening, don't worry about expanding yet.
-  //     //     const open = text.lastIndexOf(OPENERS[text[i]], i);
-  //     //     if (open >= 0) i = open;
-  //     //   } else if (last - i > 1) {
-  //     //     add(i, last);
-  //     //     if (nextLast > last) add(i, nextLast);
-  //     //   }
-  //     // }
-  //     let words: SuffixTrie<Suffix>[] = [];
-  //     for (let i = text.length - 1; i >= 0; i--) {
-  //       const c = text[i];
-  //       if (!PUNCTUATION[c] && !words.length) words = [suffixes];
-
-  //       // reset on breaking punctuation
-  //       if (PUNCTUATION[c] && c !== ' ' && c !== '\'') {
-  //         words = [];
-  //         continue;
-  //       } else if (OPENERS[c]) {
-  //         // find the opening, don't worry about expanding yet.
-  //         const open = text.lastIndexOf(OPENERS[c], i);
-  //         if (open >= 0) i = open;
-  //         words = [];
-  //         continue;
-  //       }
-
-  //       // prepend the char to each current word
-  //       for (let j = 0, len = words.length; j < len; j++) {
-  //         const t = words[j].with(c);
-  //         words[j] = t;
-  //         if (PUNCTUATION[c]) continue;
-  //         const s = t.data || (t.data = {suffix: t.key, count: 0, saving: 0});
-  //         s.count++;
-  //         s.saving += t.key.length - (text[i + t.key.length] === ' ' ? 0 : 1);
-  //         // for (let k = 0; k < j; k++) {
-  //         //   t.data.longer.add(words[k].data!.suffix.substring(t.data.suffix.length));
-  //         // }
-  //       }
-
-  //       // make a new word on space and apostrophe
-  //       if (PUNCTUATION[c] && !PUNCTUATION[text[i - 1]]) words.push(suffixes);
-  //       while (words.length > 2) words.shift();
-  //     }
-  //   }
-
-  //   // Sort the list to find the most impactful.
-  //   // substrings whose savings has changed.
-  //   const updates = new Set<string>();
-  //   // const abbr: {[substr: string]: number} = {};
-  //   const rev: string[] = [];
-  //   const order = ({saving: a}: Suffix, {saving: b}: Suffix) => b - a;
-  //   const sorted = [...suffixes.values()].sort(order);
-  //   let tableLength = 0;
-  //   while (sorted.length && tableLength < MAX_TABLE_LENGTH) {
-  //     if (updates.has(sorted[0].suffix)) {
-  //       sorted.sort(order);
-  //       updates.clear();
-  //     }
-
-  //     const {saving, count, suffix} = sorted.shift()!;
-  //     // figure out if it's worth adding...
-  //     if (saving <= 0) break;
-  //     // make the abbreviation
-  //     tableLength += suffix.length + 3;
-  //     // abbr[word] = rev.length;
-  //     rev.push(`${suffix}: ${saving} - ${count}`);
-
-  //     // shorter words' savings need to be reduced
-  //     let t = suffixes;
-  //     for (let i = suffix.length - 1; i > 0; i--) {
-  //       t = t.with(suffix[i]);
-  //       // Every suffix accounted for in `saving` is one we don't get to count
-  //       // here anymore.  The saving is t.key.length + 0 or + 1, but by simply
-  //       // subtracting the extra length from `saving` we automatically account
-  //       // for that difference.
-  //       const data = t.data;
-  //       if (!data) continue;
-  //       data.saving -= saving - count * (suffix.length - t.key.length);
-  //       data.count -= count;
-  //       updates.add(t.key);
-  //     }
-  //     t = t.with(suffix[0]); // but don't subtract anymore.
-  //     // longer words' savings need to be reduced!
-  //     for (const data of t.values()) {
-  //       // we can encode all the words, but only save as much as the difference.
-  //       data.saving = data.count * (data.suffix.length - suffix.length);
-  //       // TODO - reduce count to zero? we should when subtracting off
-  //       // from words shorter than suffix, but not for longer.
-  //       updates.add(data.suffix);
-  //     }
-
-  //     // TODO - how to find them!  need a reverse map...
-
-  //     // maybe a trie?  decrease score of all shorter and longer
-  //     // words?
-  //     //   say we had 'efgh': 20 => save 60
-  //     //   but    'abcdefgh': 5  => save 35
-  //     //   when we pull 'efgh' then we can leave 'abcdefgh'
-  //     //   but its value is now simply 20 (=count * remaining)
-  //     //   
-  //     //   
-
-  //     // if this takes us over 0x80 then we get one less byte of savings each
-  //     if (rev.length === 0x80) {
-  //       for (const data of suffixes.values()) {
-  //         data.saving -= data.count;
-  //       }
-  //       sorted.sort(order);
-  //       updates.clear();
-  //     }
-  //   }
-  //   return rev;
-  // }
 
   async write(writer: Writer): Promise<void> {
     const uses = this.uses();

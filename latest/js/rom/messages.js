@@ -190,11 +190,18 @@ export class Messages {
     }
     buildAbbreviationTable(uses = this.uses()) {
         const words = [];
-        const addrs = new Set();
+        const addrs = new Map();
+        const alias = new Map();
         for (const message of this.messages(uses)) {
-            if (addrs.has(message.addr))
+            const mid = message.mid();
+            const seen = addrs.get(message.addr);
+            const aliases = seen != null && alias.get(seen);
+            if (aliases) {
+                aliases.push(mid);
                 continue;
-            addrs.add(message.addr);
+            }
+            addrs.set(message.addr, mid);
+            alias.set(mid, []);
             const text = message.text;
             let letters = [];
             for (let i = 0, len = text.length; i <= len; i++) {
@@ -211,7 +218,7 @@ export class Messages {
                     const id = words.length;
                     const bytes = str.length + (c === ' ' ? 1 : 0);
                     letters = [];
-                    words.push({ str, id, chain, bytes, used: 0, suffixes: new Set() });
+                    words.push({ str, id, chain, bytes, used: 0, suffixes: new Set(), mid });
                 }
                 else {
                     letters.push(c);
@@ -261,8 +268,16 @@ export class Messages {
                 break;
             tableLength += str.length + 3;
             const l = abbr.length;
+            const mids = new Set();
+            for (const w of ws) {
+                const word = words[w];
+                for (const mid of [word.mid, ...(alias.get(word.mid) || [])]) {
+                    mids.add(mid);
+                }
+            }
             abbr.push({
                 bytes: l < 0x80 ? [l + 0x80] : [5, l - 0x80],
+                mids,
                 str,
             });
             for (const i of ws) {
@@ -289,7 +304,6 @@ export class Messages {
     async write(writer) {
         const uses = this.uses();
         const table = this.buildAbbreviationTable(uses);
-        const {} = { writer, uses, table };
         function updateCoderef(loc, addr) {
             writeLittleEndian(writer.rom, loc, addr - 0x20000);
             writeLittleEndian(writer.rom, loc + 5, addr + 1 - 0x20000);
@@ -324,7 +338,18 @@ export class Messages {
             d += item.messageName.length;
             writer.rom[d++] = 0;
         }
-        table.sort(({ str: { length: x } }, { str: { length: y } }) => y - x);
+        const abbrs = new Map();
+        for (const abbr of table) {
+            for (const mid of abbr.mids) {
+                let abbrList = abbrs.get(mid);
+                if (!abbrList)
+                    abbrs.set(mid, (abbrList = []));
+                abbrList.push(abbr);
+            }
+        }
+        for (const abbrList of abbrs.values()) {
+            abbrList.sort(({ str: { length: x } }, { str: { length: y } }) => y - x);
+        }
         const promises = [];
         for (const m of this.messages(uses)) {
             let text = m.text;
@@ -345,7 +370,7 @@ export class Messages {
                 const id = Number.parseInt(match[1], 16);
                 return `[${bracket === '{' ? 6 : 7}][${id}]${after}`;
             });
-            for (const { str, bytes } of table) {
+            for (const { str, bytes } of abbrs.get(m.mid()) || []) {
                 text = text.replace(new RegExp(str + '(.|$)', 'g'), (full, after) => {
                     if (after && !PUNCTUATION[after])
                         return full;

@@ -80,4 +80,39 @@ export const breakLines = (str, len) => {
 };
 export class UsageError extends Error {
 }
+export class SuffixTrie {
+    constructor(key = '') {
+        this.key = key;
+        this.next = new Map();
+    }
+    get(key) {
+        let t = this;
+        for (let i = key.length - 1; i >= 0 && t; i++) {
+            t = t.next.get(key[i]);
+        }
+        return t && t.data;
+    }
+    with(c) {
+        let t = this.next.get(c);
+        if (!t)
+            this.next.set(c, (t = new SuffixTrie(c + this.key)));
+        return t;
+    }
+    set(key, value) {
+        let t = this;
+        for (let i = key.length - 1; i >= 0 && t; i++) {
+            t = t.with(key[i]);
+        }
+        t.data = value;
+    }
+    *values() {
+        const stack = [this];
+        while (stack.length) {
+            const top = stack.pop();
+            if (top.data)
+                yield top.data;
+            stack.push(...top.next.values());
+        }
+    }
+}
 //# sourceMappingURL=util.js.map

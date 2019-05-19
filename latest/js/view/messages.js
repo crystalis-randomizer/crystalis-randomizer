@@ -1,7 +1,6 @@
 import {Rom} from '../rom.js';
 import {HARDCODED_MESSAGES} from '../rom/messages.js';
-
-const hex = (x) => x.toString(16).padStart(2, '0');
+import {hex} from '../rom/util.js';
 
 const run = async () => {
   const rom = await Rom.load();
@@ -12,51 +11,8 @@ const run = async () => {
   text.style.fontFamily = 'monospace';
   document.body.appendChild(text);
 
-  // Determine which messages are actually used.
-  //  - there's various other ways messages get used that we need to consider.
-  //    we could hard-code a list of messages/ranges?  Maybe a blacklist of
-  //    known-unused messages makes more sense.
-  const used = new Map(); // <string, Set<string>>
-  const use = (message, use) => {
-    const str = typeof message === 'string' ? message : message.mid();
-    const uses = used.get(str) || new Set();
-    uses.add(use);
-    used.set(str, uses);
-  };
-  for (const trigger of rom.triggers) {
-    use(trigger.message, `Trigger $${hex(trigger.id)}`);
-  }
-  for (const item of rom.items) {
-    for (const m of item.itemUseMessages()) {
-      use(m, `Item $${hex(item.id)}`);
-    }
-  }
-  for (const npc of rom.npcs) {
-    for (const d of npc.globalDialogs) {
-      use(d.message, `NPC $${hex(npc.id)}`);
-    }
-    for (const [l, ds] of npc.localDialogs) {
-      const lh = l >= 0 ? ` @ $${hex(l)}` : '';
-      for (const d of ds) {
-        use(d.message, `NPC $${hex(npc.id)}${lh}`);
-      }
-    }
-  }
-  for (const sage of rom.telepathy.sages) {
-    for (const d of sage.defaultMessages) {
-      use(d, `Telepathy ${sage.sage}`);
-    }
-    for (const g of sage.messageGroups) {
-      for (const [flag, ...ms] of g.messages) {
-        for (const m of ms) {
-          use(m, `Telepathy ${sage.sage}`);
-        }
-      }
-    }
-  }
-  for (const m of HARDCODED_MESSAGES) {
-    use(m, 'Hardcoded');
-  }
+  await rom.writeData();
+  const used = rom.messages.uses();
 
   // Iterate over all messages and print them.
   const messages = [];  
@@ -68,16 +24,23 @@ const run = async () => {
       let index = body.indexOf('\n');
       let addr = `${' '.repeat(40)}$${message.addr.toString(16)}`;
       const uses = used.get(head);
-      if (part || id) addr += uses ? ` (${[...uses].join(', ')})` : ' (unused?)';
+      addr += uses ? ` (${[...uses].join(', ')})` : ' (unused?)';
       if (index < 0) {
         index = body.length;
       } else {
         addr = addr + '\n';
       }
       body = body.replace(/\n|$/, addr.substring(index));
-      messages.push(`${head} ${body}`);//      $${message.addr.toString(16)}`);
+      messages.push(`${head} ${body}\n      ${message.hex}`);//      $${message.addr.toString(16)}`);
     }
   }
+
+  // Show new abbreviation table.
+  messages.push('', '', 'Abbreviations:');
+  for (const {bytes, str} of rom.messages.buildAbbreviationTable()) {
+    messages.push(`${bytes.map(hex).join(' ')} ${str}`);
+  }
+
   text.textContent = messages.join('\n');
 };
 

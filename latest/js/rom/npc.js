@@ -27,7 +27,8 @@ export class Npc extends Entity {
             while (true) {
                 const [dialog, last] = GlobalDialog.parse(rom.prg, a);
                 a += 4;
-                this.globalDialogs.push(dialog);
+                if (dialog.condition)
+                    this.globalDialogs.push(dialog);
                 if (last)
                     break;
             }
@@ -74,7 +75,12 @@ export class Npc extends Entity {
             }
             return out;
         }
-        bytes.push(...serialize(this.globalDialogs));
+        if (this.globalDialogs.length) {
+            bytes.push(...serialize(this.globalDialogs));
+        }
+        else {
+            bytes.push(0x80, 0, 0, 0);
+        }
         const locals = [];
         const cache = new Map();
         for (const [location, dialogs] of this.localDialogs) {

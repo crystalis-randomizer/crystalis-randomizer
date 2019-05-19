@@ -206,7 +206,19 @@ const postParsedShuffle = async (rom: Uint8Array,
 };
 
 const misc = (rom: Rom, flags: FlagSet) => {
-  // TODO - patch a few messages here.
+  // NOTE: we still need to do some work actually adjusting
+  // message texts to prevent line overflow, etc.  We should
+  // also make some hooks to easily swap out items where it
+  // makes sense.
+  rom.messages.parts[2][2].text = `
+{01:Akahana} is handed a statue.#
+Thanks for finding that.
+I was totally gonna sell
+it for tons of cash.#
+Here, have this lame
+[29:Gas Mask] or something.`;
+  rom.messages.parts[0][0xe].text = `It's dangerous to go alone!
+Take this.`;
   if (!rom || !flags) console.log(rom, flags);
 };
 

@@ -31,7 +31,9 @@ const run = async () => {
         addr = addr + '\n';
       }
       body = body.replace(/\n|$/, addr.substring(index));
-      messages.push(`${head} ${body}\n      ${message.hex}`);//      $${message.addr.toString(16)}`);
+      messages.push(`${head} ${body}`);
+      // messages.push(`      ${message.hex}`);
+      //      $${message.addr.toString(16)}`);
     }
   }
 

@@ -261,20 +261,28 @@ export class Messages {
       used: number;
       // All suffixes that touch this word
       suffixes: Set<Suffix>;
-      // // Message ID
-      // mid: string;
+      // Message ID
+      mid: string;
     }
 
     // Ordered list of words
     const words: Word[] = [];
-    // Keep track of addresses we've seen
-    const addrs = new Set<number>();
+    // Keep track of addresses we've seen, mapping to message IDs for aliasing.
+    const addrs = new Map<number, string>();
+    // Aliases mapping multiple message IDs to already-seen ones.
+    const alias = new Map<string, string[]>();
 
     for (const message of this.messages(uses)) {
-      // const mid = message.mid();
+      const mid = message.mid();
       // Don't read the same message twice.
-      if (addrs.has(message.addr)) continue;
-      addrs.add(message.addr);
+      const seen = addrs.get(message.addr);
+      const aliases = seen != null && alias.get(seen);
+      if (aliases) {
+        aliases.push(mid);
+        continue;
+      }
+      addrs.set(message.addr, mid);
+      alias.set(mid, []);
       // Split up the message text into words.
       const text = message.text;
       let letters = [];
@@ -292,7 +300,7 @@ export class Messages {
           const id = words.length;
           const bytes = str.length + (c === ' ' ? 1 : 0);
           letters = [];
-          words.push({str, id, chain, bytes, used: 0, suffixes: new Set() /*, mid*/ });
+          words.push({str, id, chain, bytes, used: 0, suffixes: new Set(), mid});
         } else {
           letters.push(c);
         }
@@ -351,8 +359,16 @@ export class Messages {
       // make the abbreviation
       tableLength += str.length + 3;
       const l = abbr.length;
+      const mids = new Set();
+      for (const w of ws) {
+        const word = words[w];
+        for (const mid of [word.mid, ...(alias.get(word.mid) || [])]) {
+          mids.add(mid);
+        }
+      }
       abbr.push({
         bytes: l < 0x80 ? [l + 0x80] : [5, l - 0x80],
+        mids,
         // messages: new Set([...ws].map(w => words[w].mid)),
         str,
       });
@@ -385,7 +401,6 @@ export class Messages {
   async write(writer: Writer): Promise<void> {
     const uses = this.uses();
     const table = this.buildAbbreviationTable(uses);
-    const {} = {writer, uses, table} as any;
     // plan: analyze all the msesages, finding common suffixes.
     // eligible suffixes must be followed by either space, punctuation, or eol
     // todo - reformat/flow messages based on current substitution lengths
@@ -436,8 +451,19 @@ export class Messages {
       writer.rom[d++] = 0;
     }
 
-    // sort the abbreviations by length.
-    table.sort(({str: {length: x}}: Abbreviation, {str: {length: y}}: Abbreviation) => y - x);
+    // group abbreviations by message and sort by length.
+    const abbrs = new Map<string, Abbreviation[]>(); // by mid
+    for (const abbr of table) {
+      for (const mid of abbr.mids) {
+        let abbrList = abbrs.get(mid);
+        if (!abbrList) abbrs.set(mid, (abbrList = []));
+        abbrList.push(abbr);
+      }
+    }
+    for (const abbrList of abbrs.values()) {
+      abbrList.sort(({str: {length: x}}: Abbreviation, {str: {length: y}}: Abbreviation) => y - x);
+    }
+
     // iterate over the messages and serialize.
     const promises: Promise<void>[] = [];
     for (const m of this.messages(uses)) {
@@ -458,7 +484,7 @@ export class Messages {
         return `[${bracket === '{' ? 6 : 7}][${id}]${after}`;
       });
       // Now start with the longest abbreviation and work our way down.
-      for (const {str, bytes} of table) {
+      for (const {str, bytes} of abbrs.get(m.mid()) || []) {
         text = text.replace(new RegExp(str + '(.|$)', 'g'), (full, after) => {
           if (after && !PUNCTUATION[after]) return full;
           if (after === ' ') after = '';
@@ -517,8 +543,11 @@ export class Messages {
 }
 
 interface Abbreviation {
+  // Bytes to abbreviate to.
   bytes: number[];
-  // messages: Set<string>;
+  // MIDs of the messages to abbreviate.
+  mids: Set<string>;
+  // Expanded text.
   str: string;
 }
 

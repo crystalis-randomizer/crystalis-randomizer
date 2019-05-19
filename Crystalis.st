@@ -19542,12 +19542,12 @@ ItemGet_Bracelet
 +       $1c2f4  xx:         xxx
         $1c2f5  xx xx:      xxx #$xx
         $1c2f7  xx:         xxx
-        $1c2f8  xx xx xx:   xxx $xxxx
+        $1c2f8  xx xx xx:   xxx EquippedBracelet
         $1c2fb  xx xx:      xxx + ; $1c307
         $1c2fd  xx xx:       xxx #$xx
-        $1c2ff  xx xx xx:    xxx $xxxx
+        $1c2ff  xx xx xx:    xxx InventoryMenu_SelectedBracelet
         $1c302  xx xx:       xxx #$xx
-        $1c304  xx xx xx:    xxx $xxxx
+        $1c304  xx xx xx:    xxx EquippedBracelet
 +       $1c307  xx:         xxx
 ;;; --------------------------------
 ItemGet_FindOpenSlot
@@ -24038,7 +24038,22 @@ BossPatternJump_03              ; Vampire 3
 ;;; --------------------------------
 VampireTeleportLocations
         ;; x tile in upper nibble, y tile in lower. Indexed by global counter.
-        $1e4fb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; ......|  |......
+        ;; ......|  |......
+        ;; ......|  |......
+        ;; ./8---/ f\--0-\.
+        ;; .|  d         |.
+        ;; .|    4  7    |.
+        ;; .|          9 |.
+        ;; .| 1     b    |.
+        ;; .|     6      |.
+        ;; .|         2  |.
+        ;; .|       5    |.
+        ;; .\c-3\ e  /--a/.
+        ;; .....|    |.....
+        ;;                        0/8 1/9 2/a 3/b 4/c 5/d 6/e 7/f
+        $1e4fb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1e503              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 BossPatternJump_04              ; Vampire 4
         ;; Disappeared.  1-12 frames => 5
@@ -37997,8 +38012,19 @@ ItemNames
         $29672  xx xx xx:   xxx $2974c
 ;;; --------------------------------
 DataTable_29675 
-        $29675              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29680              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $29675              .byte $xx,$xx
+        $29677              .byte $xx,$xx
+        $29679              .byte $xx,$xx
+        $2967b              .byte $xx,$xx
+;;; --------------------------------
+DataTable_2967d 
+        $2967d              .byte $xx,$xx
+        $2967f              .byte $xx,$xx
+        $29681              .byte $xx,$xx
+        $29683              .byte $xx,$xx
+;;; --------------------------------
+        ;; UNUSED
+        $29685              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $29690              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $296a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $296b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -38372,6 +38398,7 @@ AdHocSpawnDisplacements
         $29e7c              .byte $xx,$xx ; f, left
         $29e7e              .byte $xx,$xx
 ;;; --------------------------------
+        ;; UNUSED ???
         $29e80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $29e90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $29ea0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -57580,18 +57607,18 @@ MainGameModeJump_07_TriggerSquareOrTreasureChest
         $3d3ff  xx xx:      xxx #$xx ; ItemGet
         $3d401  xx xx xx:   xxx HandleItemOrTrigger ; $3d834 ; ultimately calls ItemGet
         $3d404  xx xx:      xxx $xx
-        $3d406  xx xx:      xxx $xx
+        $3d406  xx xx:      xxx HandleTrigger
         $3d408  xx xx xx:   xxx $3d9d8
         $3d40b  xx xx xx:   xxx $xxxx
         $3d40e  xx xx xx:   xxx $xxxx,y
-        $3d411  xx xx:      xxx #$xx
+        $3d411  xx xx:      xxx #$xx ; non-unique checks (>= $50) indirect via the table
         $3d413  xx xx:      xxx + ; $3d41c
         $3d415  xx:          xxx
-        $3d416  xx xx xx:    xxx $3d40c,y
+        $3d416  xx xx xx:    xxx $3d40c,y ; NOTE: table is actually at $3d45c
         $3d419  xx xx xx:    xxx $xxxx
 +       $3d41c  xx xx xx:   xxx $xxxx
         $3d41f  xx xx:      xxx #$xx
-        $3d421  xx xx:      xxx #$xx
+        $3d421  xx xx:      xxx #$xx ; magic (anything that's $4x) gets a fanfare
         $3d423  xx xx:      xxx + ; $3d435
         $3d425  xx xx xx:     xxx $xxxx
         $3d428  xx xx:        xxx #$xx
@@ -57626,6 +57653,7 @@ DataTable_3d45c
         $3d45c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $3d46c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+HandleTrigger
         $3d47c  xx xx:      xxx $xx
         $3d47e  xx xx:      xxx #$xx
         $3d480  xx xx:      xxx $xx
@@ -58342,33 +58370,33 @@ MainGameModeJump_24_EmptyShop
         $3d9d3  xx xx:      xxx GameMode
         $3d9d5  xx xx xx:   xxx $3da72
 ;;; --------------------------------
-        $3d9d8  xx xx xx:   xxx $xxxx
-        $3d9db  xx xx:      xxx $xx
-        $3d9dd  xx xx xx:   xxx $xxxx
-        $3d9e0  xx xx:      xxx $xx
+        $3d9d8  xx xx xx:   xxx EquippedSword
+        $3d9db  xx xx:      xxx >rts ; $3d9fb
+        $3d9dd  xx xx xx:   xxx EquippedBracelet
+        $3d9e0  xx xx:      xxx + ; $3d9fc
         $3d9e2  xx:         xxx
         $3d9e3  xx xx:      xxx $xx
         $3d9e5  xx:         xxx
         $3d9e6  xx xx:      xxx #$xx
         $3d9e8  xx xx:      xxx #$xx
         $3d9ea  xx xx:      xxx $xx
-        $3d9ec  xx xx:      xxx $xx
+        $3d9ec  xx xx:      xxx ++ ; $3da03
         $3d9ee  xx xx xx:   xxx $xxxx
         $3d9f1  xx:         xxx
         $3d9f2  xx xx:      xxx #$xx
         $3d9f4  xx xx:      xxx #$xx
         $3d9f6  xx xx:      xxx #$xx
-        $3d9f8  xx xx:      xxx $xx
-        $3d9fa  xx:         xxx
+        $3d9f8  xx xx:      xxx >rts ; $3d9fb
+        $3d9fa  xx:          xxx
         $3d9fb  xx:         xxx
 ;;; --------------------------------
-        $3d9fc  xx xx xx:   xxx $xxxx,y
++       $3d9fc  xx xx xx:   xxx $xxxx,y
         $3d9ff  xx xx:      xxx #$xx
-        $3da01  xx xx:      xxx $xx
-        $3da03  xx xx:      xxx #$xx
+        $3da01  xx xx:      xxx + ; $3da06
+++      $3da03  xx xx:      xxx #$xx
         $3da05  xx:         xxx
 ;;; --------------------------------
-        $3da06  xx:         xxx
++       $3da06  xx:         xxx
         $3da07  xx xx:      xxx $xx
         $3da09  xx xx:      xxx #$xx
         $3da0b  xx:         xxx

@@ -81,6 +81,7 @@ export const shuffle = async (rom, seed, flags, reader, log, progress) => {
     await assemble('preshuffle.s');
     const random = new Random(newSeed);
     const parsed = new Rom(rom);
+    makeBraceletsProgressive(parsed);
     closeCaveEntrances(parsed, flags);
     reversibleSwanGate(parsed);
     adjustGoaFortressTriggers(parsed);
@@ -144,6 +145,20 @@ const misc = (rom, flags) => {
     if (!rom || !flags)
         console.log(rom, flags);
 };
+function makeBraceletsProgressive(rom) {
+    const tornel = rom.npcs[0x5f];
+    const vanilla = tornel.localDialogs.get(0x21);
+    const patched = [
+        vanilla[0],
+        vanilla[2],
+        vanilla[2],
+        vanilla[1],
+    ];
+    patched[1].condition = ~0x206;
+    patched[2].condition = ~0x205;
+    patched[3].condition = ~0;
+    tornel.localDialogs.set(0x21, patched);
+}
 const closeCaveEntrances = (rom, flags) => {
     rom.swapMetatiles([0x90], [0x07, [0x01, 0x00], ~0xc1], [0x0e, [0x02, 0x00], ~0xc1], [0x20, [0x03, 0x0a], ~0xd7], [0x21, [0x04, 0x0a], ~0xd7]);
     rom.swapMetatiles([0x94, 0x9c], [0x68, [0x01, 0x00], ~0xc1], [0x83, [0x02, 0x00], ~0xc1], [0x88, [0x03, 0x0a], ~0xd7], [0x89, [0x04, 0x0a], ~0xd7]);

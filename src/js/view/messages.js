@@ -1,7 +1,6 @@
 import {Rom} from '../rom.js';
 import {HARDCODED_MESSAGES} from '../rom/messages.js';
-
-const hex = (x) => x.toString(16).padStart(2, '0');
+import {hex} from '../rom/util.js';
 
 const run = async () => {
   const rom = await Rom.load();
@@ -12,6 +11,7 @@ const run = async () => {
   text.style.fontFamily = 'monospace';
   document.body.appendChild(text);
 
+  await rom.writeData();
   const used = rom.messages.uses();
 
   // Iterate over all messages and print them.
@@ -31,15 +31,14 @@ const run = async () => {
         addr = addr + '\n';
       }
       body = body.replace(/\n|$/, addr.substring(index));
-      messages.push(`${head} ${body}`);//      $${message.addr.toString(16)}`);
+      messages.push(`${head} ${body}\n      ${message.hex}`);//      $${message.addr.toString(16)}`);
     }
   }
 
   // Show new abbreviation table.
   messages.push('', '', 'Abbreviations:');
-  for (const [i, str] of rom.messages.buildAbbreviationTable().entries()) {
-    const index = i < 0x80 ? hex(i | 0x80) + '   ' : '05 ' + hex(i - 0x80);
-    messages.push(`${index} ${str}`);
+  for (const {bytes, str} of rom.messages.buildAbbreviationTable()) {
+    messages.push(`${bytes.map(hex).join(' ')} ${str}`);
   }
 
   text.textContent = messages.join('\n');

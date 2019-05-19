@@ -205,7 +205,7 @@ const postParsedShuffle = async (rom: Uint8Array,
 };
 
 const misc = (rom: Rom, flags: FlagSet) => {
-
+  // TODO - patch a few messages here.
   if (!rom || !flags) console.log(rom, flags);
 };
 

@@ -296,9 +296,13 @@ export class Rom {
     // keep item $49 "        " which is actually used somewhere?
     // writer.alloc(0x21471, 0x214f1); // TODO - do we need any of this?
     // ItemMessageName
-    writer.alloc(0x28e81, 0x2922b); // NOTE: uncovered thru 29400
+    // writer.alloc(0x28e81, 0x2922b); // NOTE: uncovered thru 29400
     // writer.alloc(0x2922b, 0x29400); // TODO - needed?
     // NOTE: once we release the other message tables, this will just be one giant block.
+
+    // Message tables
+    // TODO - we don't use the writer to allocate the abbreviation tables, but we could
+    writer.alloc(0x2a000, 0x2fc00);
 
     if (this.telepathyTablesAddress) {
       writer.alloc(0x1d8f4, 0x1db00); // location table all the way thru main
@@ -326,6 +330,7 @@ export class Rom {
     writeAll(this.shops);
     writeAll(this.bossKills);
     promises.push(this.telepathy.write(writer));
+    promises.push(this.messages.write(writer));
     promises.push(writer.commit());
     await Promise.all(promises).then(() => undefined);
   }

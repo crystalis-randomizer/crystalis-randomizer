@@ -131,14 +131,14 @@ export class Item extends Entity {
     const menuNameEncoded =
         MENU_NAME_ENCODE.reduce((s, [d, e]) => s.replace(d, e), this.menuName);
 
-    const [messageAddress, menuAddress] =
-        await Promise.all([
-          writer.write([...stringToBytes(this.messageName), 0],
-                       0x28000, 0x29fff, `ItemMessageName ${hex(this.id)}`),
-          writer.write([...stringToBytes(menuNameEncoded), 0xff],
-                       0x20000, 0x21fff, `ItemMenuName ${hex(this.id)}`)]);
-    writeLittleEndian(writer.rom, this.messageNamePointer, messageAddress - 0x20000);
+    const menuAddress = await writer.write(
+        [...stringToBytes(menuNameEncoded), 0xff],
+        0x20000, 0x21fff, `ItemMenuName ${hex(this.id)}`);
     writeLittleEndian(writer.rom, this.menuNamePointer, menuAddress - 0x18000);
+
+    // writer.write([...stringToBytes(this.messageName), 0],
+    // 0x28000, 0x29fff, `ItemMessageName ${hex(this.id)}`),
+    // writeLittleEndian(writer.rom, this.messageNamePointer, messageAddress - 0x20000);
   }
 }
 

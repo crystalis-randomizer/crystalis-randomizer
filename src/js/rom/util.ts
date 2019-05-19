@@ -129,6 +129,12 @@ export function writeLittleEndian(data: Data<number>, offset: number, value: num
   data[offset + 1] = value >>> 8;
 }
 
+export function writeString(arr: Data<number>, address: number, str: string) {
+  for (let i = 0, len = str.length; i < len; i++) {
+    arr[address + i] = str.charCodeAt(i);
+  }
+}
+
 export function write(data: Uint8Array, offset: number, values: Data<number>) {
   data.subarray(offset, offset + values.length).set(values);
 }

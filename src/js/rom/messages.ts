@@ -1,6 +1,7 @@
 import {Rom} from './entity.js';
 import {MessageId} from './messageid.js';
-import {Data, hex, readLittleEndian, readString, seq, slice} from './util.js';
+import {Data, hex, readLittleEndian, readString,
+        seq, slice, writeLittleEndian, writeString} from './util.js';
 import {Writer} from './writer.js';
 // import {SuffixTrie} from '../util.js';
 
@@ -46,20 +47,23 @@ const DELIMITERS = new Map<number, string>([[6, '{}'], [7, '[]']]);
 
 class Message {
 
-  // bytes: number[];
+  // This is redundant - the text should be used instead.
+  bytes: number[] = [];
+  hex: string = ''; // for debugging
   text: string;
 
   constructor(readonly messages: Messages,
               readonly part: number,
               readonly id: number,
-              readonly addr: number) {
+              readonly addr: number,
+              readonly pointer: number) {
 
     // Parse the message
     const prg: Data<number> = messages.rom.prg;
     const parts = [];
     for (let i = addr; prg[i]; i++) {
       const b = prg[i];
-      // this.bytes.push(b);
+      this.bytes.push(b);
       if (b === 1) {
         // NOTE - there is one case where two messages seem to abut without a
         // null terminator - $2ca91 ($12:$08) falls through from 12:07.  We fix
@@ -122,9 +126,10 @@ const PUNCTUATION: {[char: string]: boolean} = {
   ';': true,
   '?': true,
   '_': true,
+
   // ????
-  '#': true,  // page separator
   '\n': true, // line separator
+  '#': true,  // page separator
 };
 
 export class Messages {
@@ -134,11 +139,18 @@ export class Messages {
   banks: DataTable<number>;
   parts: AddressTable<AddressTable<Message>>;
 
-  //static readonly CONTINUED = '\u25bc';
+  // NOTE: these data structures are redundant with the above.
+  // Once we get things working smoothly, we should clean it up
+  // to only use one or the other.
+  // abbreviations: string[];
+  // personNames: string[];
+
+  // static readonly CONTINUED = '\u25bc';
   static readonly CONTINUED = '#';
 
   constructor(readonly rom: Rom) {
     const str = (a: number) => readString(rom.prg, a);
+    // TODO - read these addresses directly from the code, in case they move
     this.basicWords = new AddressTable(rom, 0x28900, 0x80, 0x20000, str);
     this.extraWords = {
       5: new AddressTable(rom, 0x28a00, 10, 0x20000, str), // less common
@@ -152,10 +164,11 @@ export class Messages {
         (addr, part, addrs) => {
           // need to compute the end based on the array?
           const count = part === 0x21 ? 3 : (addrs[part + 1] - addr) >>> 1;
-          // offset: bank=15 => 20000, bank=16 => 22000, bank=17 => 24000
+          // offset: bank=$15 => $20000, bank=$16 => $22000, bank=$17 => $24000
+          // subtract $a000 because that's the page we're loading at.
           return new AddressTable(
               rom, addr, count, (this.banks[part] << 13) - 0xa000,
-              (m, id) => new Message(this, part, id, m));
+              (m, id) => new Message(this, part, id, m, addr + 2 * id));
         });
   }
 
@@ -220,7 +233,7 @@ export class Messages {
     return out;
   }
 
-  buildAbbreviationTable(uses = this.uses()): string[] {
+  buildAbbreviationTable(uses = this.uses()): Abbreviation[] {
     // const uses = this.uses();
     // Count frequencies of used suffixes.
     interface Suffix {
@@ -248,6 +261,8 @@ export class Messages {
       used: number;
       // All suffixes that touch this word
       suffixes: Set<Suffix>;
+      // // Message ID
+      // mid: string;
     }
 
     // Ordered list of words
@@ -256,6 +271,7 @@ export class Messages {
     const addrs = new Set<number>();
 
     for (const message of this.messages(uses)) {
+      // const mid = message.mid();
       // Don't read the same message twice.
       if (addrs.has(message.addr)) continue;
       addrs.add(message.addr);
@@ -276,7 +292,7 @@ export class Messages {
           const id = words.length;
           const bytes = str.length + (c === ' ' ? 1 : 0);
           letters = [];
-          words.push({str, id, chain, bytes, used: 0, suffixes: new Set()});
+          words.push({str, id, chain, bytes, used: 0, suffixes: new Set() /*, mid*/ });
         } else {
           letters.push(c);
         }
@@ -319,7 +335,7 @@ export class Messages {
 
     // Sort the suffixes to find the most impactful
     const invalid = new Set<string>();
-    const rev: string[] = [];
+    const abbr: Abbreviation[] = [];
     const order = ({saving: a}: Suffix, {saving: b}: Suffix) => b - a;
     const sorted = [...suffixes.values()].sort(order);
     let tableLength = 0;
@@ -334,8 +350,12 @@ export class Messages {
       if (saving <= 0) break;
       // make the abbreviation
       tableLength += str.length + 3;
-      // abbr[word] = rev.length;
-      rev.push(`${str}: ${saving} - ${ws.size}`);
+      const l = abbr.length;
+      abbr.push({
+        bytes: l < 0x80 ? [l + 0x80] : [5, l - 0x80],
+        // messages: new Set([...ws].map(w => words[w].mid)),
+        str,
+      });
 
       // Blast radius: all other suffixes related to all touched words save less
       for (const i of ws) {
@@ -351,7 +371,7 @@ export class Messages {
       }
 
       // If this takes us over 0x80 then all suffixes get us one less byte of savings per use
-      if (rev.length === 0x80) {
+      if (abbr.length === 0x80) {
         for (const data of suffixes.values()) {
           data.saving -= data.words.size;
         }
@@ -359,7 +379,7 @@ export class Messages {
         invalid.clear();
       }
     }
-    return rev;
+    return abbr;
   }
 
   async write(writer: Writer): Promise<void> {
@@ -369,7 +389,137 @@ export class Messages {
     // plan: analyze all the msesages, finding common suffixes.
     // eligible suffixes must be followed by either space, punctuation, or eol
     // todo - reformat/flow messages based on current substitution lengths
+
+    // build up a suffix trie based on the abbreviations.
+    // const trie = new SuffixTrie<number[]>();
+    // for (let i = 0, len = table.length; i < len; i++) {
+    //   trie.set(table[i].str, i < 0x80 ? [i + 0x80] : [5, i - 0x80]);
+    // }
+
+    // write the abbreviation tables (all, rewriting hardcoded coderefs)
+    function updateCoderef(loc: number, addr: number) {
+      writeLittleEndian(writer.rom, loc, addr - 0x20000);
+      // second ref is always 5 bytes later
+      writeLittleEndian(writer.rom, loc + 5, addr + 1 - 0x20000);
+    }
+
+    // start at 288a5, go to 29400
+    let a = 0x288a5;
+    let d = a + 2 * (table.length + this.rom.items.length + this.extraWords[6].count);
+    updateCoderef(0x28704, a);
+    for (let i = 0, len = table.length; i < len; i++) {
+      if (i === 0x80) updateCoderef(0x2868a, a);
+      writeLittleEndian(writer.rom, a, d);
+      a += 2;
+      writeString(writer.rom, d, table[i].str);
+      d += table[i].str.length;
+      writer.rom[d++] = 0;
+    }
+    // move on to people
+    updateCoderef(0x286d5, a);
+    const names = this.extraWords[6];
+    for (const name of names) {
+      writeLittleEndian(writer.rom, a, d);
+      a += 2;
+      writeString(writer.rom, d, name);
+      d += name.length;
+      writer.rom[d++] = 0;
+    }
+    // finally update item names
+    updateCoderef(0x286e9, a);
+    updateCoderef(0x28789, a);
+    for (const item of this.rom.items) {
+      writeLittleEndian(writer.rom, a, d);
+      a += 2;
+      writeString(writer.rom, d, item.messageName);
+      d += item.messageName.length;
+      writer.rom[d++] = 0;
+    }
+
+    // sort the abbreviations by length.
+    table.sort(({str: {length: x}}: Abbreviation, {str: {length: y}}: Abbreviation) => y - x);
+    // iterate over the messages and serialize.
+    const promises: Promise<void>[] = [];
+    for (const m of this.messages(uses)) {
+      let text = m.text;
+      // First replace any items or other names with their bytes.
+      text = text.replace(/([\[{])([^\]}]*)[\]}](.|$)/g, (full, bracket, inside, after) => {
+        if (after && !PUNCTUATION[after]) return full;
+        if (after === ' ') after = '';
+        if (bracket === '[' && inside === ':ITEM:') {
+          return `[8]${after}`;
+        } else if (bracket === '{' && inside === ':HERO:') {
+          return `[4]${after}`;
+        }
+        // find the number before the colon.
+        const match = /^([0-9a-f]+):/.exec(inside);
+        if (!match) throw new Error(`Bad message text: ${full}`);
+        const id = Number.parseInt(match[1], 16);
+        return `[${bracket === '{' ? 6 : 7}][${id}]${after}`;
+      });
+      // Now start with the longest abbreviation and work our way down.
+      for (const {str, bytes} of table) {
+        text = text.replace(new RegExp(str + '(.|$)', 'g'), (full, after) => {
+          if (after && !PUNCTUATION[after]) return full;
+          if (after === ' ') after = '';
+          return bytes.map(b => `[${b}]`).join('') + after;
+        });
+      }
+
+      // build the encoded version
+      const hexParts = ['[01]'];
+      const bs = [];
+      bs.push(1);
+      for (let i = 0, len = text.length; i < len; i++) {
+        const c = text[i];
+        if (c === Messages.CONTINUED) {
+          bs.push(3, 1);
+          hexParts.push('[03][01]');
+          if (text[i + 1] === '\n') i++;
+        } else if (c === '\n') {
+          bs.push(2);
+          hexParts.push('[02]');
+        } else if (c === '[') {
+          const j = text.indexOf(']', i);
+          if (j <= 0) throw new Error(`bad text: ${text}`);
+          const b = Number(text.substring(i + 1, j));
+          if (isNaN(b)) throw new Error(`bad text: ${text}`);
+          bs.push(b);
+          hexParts.push(`[${hex(b)}]`);
+          i = j;
+        } else if (c === ' ' && text[i + 1] === ' ') {
+          let j = i + 2;
+          while (text[j] === ' ') j++;
+          bs.push(9, j - i);
+          hexParts.push(`[09][${hex(j - i)}]`);
+          i = j - 1;
+        } else {
+          bs.push(c.charCodeAt(0));
+          hexParts.push(c);
+        }
+      }
+      bs.push(0);
+      hexParts.push('[0]');
+      m.bytes = bs;
+      m.hex = hexParts.join('');
+
+      // Figure out which page it needs to be on
+      const bank = this.banks[m.part] << 13;
+      const offset = bank - 0xa000;
+      promises.push(writer.write(bs, bank, bank + 0x2000, `Message ${m.mid()}`)
+                   .then(address => {
+                     writeLittleEndian(writer.rom, m.pointer, address - offset);
+                   }));
+    }
+
+    await Promise.all(promises);
   }
+}
+
+interface Abbreviation {
+  bytes: number[];
+  // messages: Set<string>;
+  str: string;
 }
 
 // Max length for words table.  Vanilla allocates 932 bytes, but there's

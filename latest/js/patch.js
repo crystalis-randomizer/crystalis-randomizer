@@ -142,6 +142,15 @@ const postParsedShuffle = async (rom, random, seed, flags, asm, assemble) => {
     return stampVersionSeedAndHash(rom, seed, flags);
 };
 const misc = (rom, flags) => {
+    rom.messages.parts[2][2].text = `
+{01:Akahana} is handed a statue.#
+Thanks for finding that.
+I was totally gonna sell
+it for tons of cash.#
+Here, have this lame
+[29:Gas Mask] or something.`;
+    rom.messages.parts[0][0xe].text = `It's dangerous to go alone!
+Take this.`;
     if (!rom || !flags)
         console.log(rom, flags);
 };

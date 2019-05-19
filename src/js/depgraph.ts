@@ -854,7 +854,8 @@ export const generate = (flags: FlagSet = new FlagSet(), rom?: Rom): WorldGraph 
                                   .from(mtSabreWestEntrance, flight)
                                   .to(mtSabreWestEntrance);
   const mtSabreWestTornel     = location(0x21, SBRW, 'Tornel Dead End').overworld()
-                                  .trigger(talkedToTornelOnMtSabre, tornadoBracelet)
+                                  .trigger(talkedToTornelOnMtSabre,
+                                           ballOfWind, tornadoBracelet)
                                   .chest(magicRing, 0x17, 0x69);
   const mtSabreWestTunnel2a   = location(0x22, SBRW, 'Tunnel 2a (fork at start)').cave()
                                   .connect(mtSabreWestEntrance);

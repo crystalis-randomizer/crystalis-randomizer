@@ -113,6 +113,7 @@ export const shuffle = async (rom: Uint8Array,
   // the depgraph FIRST!
   const parsed = new Rom(rom);
 
+  makeBraceletsProgressive(parsed);
   closeCaveEntrances(parsed, flags);
   reversibleSwanGate(parsed);
   adjustGoaFortressTriggers(parsed);
@@ -208,6 +209,22 @@ const misc = (rom: Rom, flags: FlagSet) => {
   // TODO - patch a few messages here.
   if (!rom || !flags) console.log(rom, flags);
 };
+
+function makeBraceletsProgressive(rom: Rom): void {
+  // tornel's trigger needs both items
+  const tornel = rom.npcs[0x5f];
+  const vanilla = tornel.localDialogs.get(0x21)!;
+  const patched = [
+    vanilla[0], // already learned teleport
+    vanilla[2], // don't have tornado bracelet
+    vanilla[2], // will change to don't have orb
+    vanilla[1], // have bracelet, learn teleport
+  ];
+  patched[1].condition = ~0x206; // don't have bracelet
+  patched[2].condition = ~0x205; // don't have orb
+  patched[3].condition = ~0;     // default
+  tornel.localDialogs.set(0x21, patched);
+}
 
 const closeCaveEntrances = (rom: Rom, flags: FlagSet) => {
 

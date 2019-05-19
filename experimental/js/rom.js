@@ -139,7 +139,7 @@ export class Rom {
         writer.alloc(0x1dde6, 0x1e065);
         writer.alloc(0x1e200, 0x1e3f0);
         writer.alloc(0x2111a, 0x21468);
-        writer.alloc(0x28e81, 0x2922b);
+        writer.alloc(0x2a000, 0x2fc00);
         if (this.telepathyTablesAddress) {
             writer.alloc(0x1d8f4, 0x1db00);
         }
@@ -166,6 +166,7 @@ export class Rom {
         writeAll(this.shops);
         writeAll(this.bossKills);
         promises.push(this.telepathy.write(writer));
+        promises.push(this.messages.write(writer));
         promises.push(writer.commit());
         await Promise.all(promises).then(() => undefined);
     }
@@ -318,6 +319,7 @@ function pickFile() {
 export const EXPECTED_CRC32 = 0x1bd39032;
 const ADJUSTMENTS = new Map([
     [0x1cf05, 0x48],
+    [0x1d311, 0xa0], [0x1d312, 0x00],
     [0x1cff9, 0xe0],
     [0x2ca90, 0x00],
     [0x2f573, 0x00],

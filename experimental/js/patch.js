@@ -81,6 +81,7 @@ export const shuffle = async (rom, seed, flags, reader, log, progress) => {
     await assemble('preshuffle.s');
     const random = new Random(newSeed);
     const parsed = new Rom(rom);
+    makeBraceletsProgressive(parsed);
     if (flags.blackoutMode())
         blackoutMode(parsed);
     closeCaveEntrances(parsed, flags);
@@ -143,9 +144,32 @@ const postParsedShuffle = async (rom, random, seed, flags, asm, assemble) => {
     return stampVersionSeedAndHash(rom, seed, flags);
 };
 const misc = (rom, flags) => {
+    rom.messages.parts[2][2].text = `
+{01:Akahana} is handed a statue.#
+Thanks for finding that.
+I was totally gonna sell
+it for tons of cash.#
+Here, have this lame
+[29:Gas Mask] or something.`;
+    rom.messages.parts[0][0xe].text = `It's dangerous to go alone!
+Take this.`;
     if (!rom || !flags)
         console.log(rom, flags);
 };
+function makeBraceletsProgressive(rom) {
+    const tornel = rom.npcs[0x5f];
+    const vanilla = tornel.localDialogs.get(0x21);
+    const patched = [
+        vanilla[0],
+        vanilla[2],
+        vanilla[2],
+        vanilla[1],
+    ];
+    patched[1].condition = ~0x206;
+    patched[2].condition = ~0x205;
+    patched[3].condition = ~0;
+    tornel.localDialogs.set(0x21, patched);
+}
 function blackoutMode(rom) {
     const dg = generateDepgraph();
     for (const node of dg.nodes) {

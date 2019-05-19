@@ -71,6 +71,11 @@ export function writeLittleEndian(data, offset, value) {
     data[offset] = value & 0xff;
     data[offset + 1] = value >>> 8;
 }
+export function writeString(arr, address, str) {
+    for (let i = 0, len = str.length; i < len; i++) {
+        arr[address + i] = str.charCodeAt(i);
+    }
+}
 export function write(data, offset, values) {
     data.subarray(offset, offset + values.length).set(values);
 }

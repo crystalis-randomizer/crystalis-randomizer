@@ -294,16 +294,19 @@ ItemGet_PickSlotAndAdd:  ; move this up a few bytes
 
 .ifdef _PROGRESSIVE_BRACELET
 .org $1c2de
-  lda $29
-  bcc +
-   inc $6430,x
-   bne ItemGet_Bracelet
-   lsr
    lda $29
-   sbc #$00
-   sta $23
-+ sta $6430,x
-  rts
+   bcc +          ; just compared #$o4, swords are good to go
+    inc $6430,x   ; try incrementing the power slot
+    bne ++        ; if it was empty (ff) then now we're zero
+    lsr           ; clear carry if $29 was even (a bracelet)
+    lda $29
+    sbc #$00      ; subtract one if carry clear, to make it a ball
+    sta $23       ; store the *actual* item back in $23, which is used later
++  sta $6430,x    ; store the item in its spot
+++ lda $6430,x    ; read the item back again (in case we jumped here)
+   sta $07dc      ; store the actual item in the dialog spot to get right message
+   rts ; jmp PostInventoryMenu (note: would be nice to get items right)
+.assert < $1c308
 .endif
 
 .org $1dc82

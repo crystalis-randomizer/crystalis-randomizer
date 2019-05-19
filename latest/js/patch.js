@@ -8,7 +8,7 @@ import { Rom } from './rom.js';
 import { Entrance, Exit, Flag, Spawn } from './rom/location.js';
 import { GlobalDialog, LocalDialog } from './rom/npc.js';
 import { ShopType } from './rom/shop.js';
-import { seq, writeLittleEndian } from './rom/util.js';
+import { seq, watchArray, writeLittleEndian } from './rom/util.js';
 import * as version from './version.js';
 export default ({
     async apply(rom, hash, path) {
@@ -37,6 +37,7 @@ export const parseSeed = (seed) => {
         return Number.parseInt(seed, 16);
     return crc32(seed);
 };
+const {} = { watchArray };
 export const shuffle = async (rom, seed, flags, reader, log, progress) => {
     if (typeof seed !== 'number')
         throw new Error('Bad seed');

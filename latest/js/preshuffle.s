@@ -216,7 +216,7 @@ PatchTradeInItem:
 ;; Prevent soft-lock when encountering sabera and mado from reverse
 ;; Double-returns if the boss's sprite is not in the top quarter of
 ;; the screen. This is unused space at the end of the triggers.
-.org $1e3c0
+.org $1e200
 CheckBelowBoss:
    lda $0380,x
     bmi ++
@@ -237,8 +237,7 @@ CheckBelowBoss:
     bmi ++
    sbc #$40
 ++ rts
-.org $1e3e5
-.org $1e3f0
+.assert < $1e230 ; NOTE: triggers written after this! (see rom.ts alloc)
 
 .org $1e48b  ; vampire pattern 0
   jsr CheckBelowBoss

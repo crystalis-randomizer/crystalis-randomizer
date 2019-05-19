@@ -137,7 +137,7 @@ export class Rom {
         writer.alloc(0x1c77a, 0x1c95d);
         writer.alloc(0x1cae5, 0x1d8f4);
         writer.alloc(0x1dde6, 0x1e065);
-        writer.alloc(0x1e200, 0x1e3f0);
+        writer.alloc(0x1e230, 0x1e3f0);
         writer.alloc(0x2111a, 0x21468);
         writer.alloc(0x2a000, 0x2fc00);
         if (this.telepathyTablesAddress) {

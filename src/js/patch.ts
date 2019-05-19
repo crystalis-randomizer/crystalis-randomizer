@@ -8,7 +8,7 @@ import {Rom} from './rom.js';
 import {Entrance, Exit, Flag, Location, Spawn} from './rom/location.js';
 import {GlobalDialog, LocalDialog} from './rom/npc.js';
 import {ShopType} from './rom/shop.js';
-import {seq, writeLittleEndian} from './rom/util.js';
+import {seq, watchArray, writeLittleEndian} from './rom/util.js';
 import * as version from './version.js';
 
 // TODO - to shuffle the monsters, we need to find the sprite palttes and
@@ -54,12 +54,17 @@ export interface Reader {
   read(filename: string): Promise<string>;
 }
 
+// prevent unused errors about watchArray - it's used for debugging.
+const {} = {watchArray} as any;
+
 export const shuffle = async (rom: Uint8Array,
                               seed: number,
                               flags: FlagSet,
                               reader: Reader,
                               log?: LogType,
                               progress?: ProgressTracker) => {
+  // rom = watchArray(rom, 0x1e3c0);
+
   // First reencode the seed, mixing in the flags for security.
   if (typeof seed !== 'number') throw new Error('Bad seed');
   const newSeed = crc32(seed.toString(16).padStart(8, '0') + String(flags)) >>> 0;

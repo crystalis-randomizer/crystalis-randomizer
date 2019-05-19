@@ -290,7 +290,7 @@ export class Rom {
     // ItemGetData
     writer.alloc(0x1dde6, 0x1e065);
     // TriggerData
-    writer.alloc(0x1e200, 0x1e3f0);
+    writer.alloc(0x1e230, 0x1e3f0);
     // ItemMenuName
     writer.alloc(0x2111a, 0x21468);
     // keep item $49 "        " which is actually used somewhere?

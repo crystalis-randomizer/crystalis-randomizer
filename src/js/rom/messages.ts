@@ -124,7 +124,78 @@ class Message {
   // If any violations are found, the entire message is reflowed.
   fixText(): void {
     if (this.checkText()) return;
-    // TODO - reflow
+    const parts: string[] = [];
+    let lineNum = 0;
+    let lineLen = 0;
+    let space = false;
+    let word: string[] = [];
+    function insert(str: string, len: number = str.length, fallback?: string) {
+      if (lineLen + len > 29) {
+        if (fallback) {
+          const split = fallback.split(/\s+/);
+          for (let i = 0; i < split.length; i++) {
+            if (i) insertSpace();
+            insert(split[i]);
+          }
+          return;
+        }
+        newline();
+      }
+      if (str === ' ') {
+        parts.push(...word, ' ');
+        word = [];
+      } else {
+        word.push(str);
+      }
+      lineLen += len;
+      space = str.endsWith(' ');
+    }
+    function insertSpace() {
+      if (!space) insert(' ');
+      space = true;
+    }
+    function newline() {
+      lineLen = 1;
+      if (++lineNum > 3) {
+        parts.push('#\n ');
+        lineNum = 0;
+      } else {
+        parts.push('\n ');
+      }
+      space = true;
+    }
+    for (let i = 0; i < this.text.length; i++) {
+      const c = this.text[i];
+      const next = this.text[i + 1];
+      if (/\s/.test(c)) {
+        insertSpace();
+      } else if (c === '{') {
+        if (next === ':') {
+          insert('{:HERO:}', 6);
+        } else {
+          const colon = this.text.indexOf(':', i);
+          const id = Number.parseInt(this.text.substring(i + 1, colon), 16);
+          const name = this.messages.extraWords[6][id];
+          insert(`{${id.toString(16)}:${name}}`, name.length, name);
+        }
+        i = this.text.indexOf('}', i);
+      } else if (c === '[') {
+        if (next === ':') {
+          const items = this.messages.rom.items;
+          insert('[:ITEM:]', Math.max(...items.map(i => i.messageName.length)));
+        } else {
+          const colon = this.text.indexOf(':', i);
+          const id = Number.parseInt(this.text.substring(i + 1, colon), 16);
+          const name = this.messages.rom.items[id].messageName;
+          insert(`[${id.toString(16)}:${name}]`, name.length, name);
+        }
+        i = this.text.indexOf(']', i);
+      } else {
+        insert(c);
+      }
+    }
+    parts.push(...word);
+    this.text = parts.join('');
   }
 
   checkText(): boolean {
@@ -149,7 +220,7 @@ class Message {
             const items = this.messages.rom.items;
             lineLen += Math.max(...items.map(i => i.messageName.length));
           }
-          if (lineLen > 27) return false;
+          if (lineLen > 28) return false;
         } else {
           const colon = this.text.indexOf(':', i);
           const id = Number.parseInt(this.text.substring(i + 1, colon), 16);
@@ -161,7 +232,7 @@ class Message {
       } else {
         lineLen++;
       }
-      if (lineLen > 28) return false;
+      if (lineLen > 29 && c !== ' ') return false;
     }
     return true;
   }

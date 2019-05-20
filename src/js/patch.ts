@@ -222,8 +222,14 @@ I was totally gonna sell
 it for tons of cash.#
 Here, have this lame
 [29:Gas Mask] or something.`;
-  rom.messages.parts[0][0xe].text = `It's dangerous to go alone!
-Take this.`;
+  // TODO - would be nice to add some more (higher level) markup,
+  // e.g. `${describeItem(slotNum)}`.  We could also add markup
+  // for e.g. `${sayWant(slotNum)}` and `${sayThanks(slotNum)}`
+  // if we shuffle the wanted items.  These could be randomized
+  // in various ways, as well as having some additional bits like
+  // wantAuxiliary(...) for e.g. "the kirisa plant is ..." - then
+  // it could instead say "the statue of onyx is ...".
+  rom.messages.parts[0][0xe].text = `It's dangerous to go alone! Take this.`;
   if (!rom || !flags) console.log(rom, flags);
 };
 

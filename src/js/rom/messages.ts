@@ -72,7 +72,7 @@ class Message {
           throw new Error(`Unexpected start message signal at ${i.toString(16)}`);
         }
       } else if (b === 2) {
-        parts.push('\n');
+        parts.push('\n ');
       } else if (b === 3) {
         parts.push(`${Messages.CONTINUED}\n`); // black down-pointing triangle
       } else if (b === 4) {
@@ -113,6 +113,58 @@ class Message {
   mid(): string {
     return `${hex(this.part)}:${hex(this.id)}`;
   }
+
+  // Fixes the text to ensure it fits in the dialog box.
+  // Constraints:
+  //  - no line is longer than 28 characters
+  //  - first line after a \n is indented one space
+  //  - uncapitalized (unpunctuated?) first characters are indented, too
+  //  - wrap or unwrap any person or item names
+  //  - at most four lines per message box
+  // If any violations are found, the entire message is reflowed.
+  fixText(): void {
+    if (this.checkText()) return;
+    // TODO - reflow
+  }
+
+  checkText(): boolean {
+    let lineNum = 0;
+    let lineLen = 0;
+    for (let i = 0; i < this.text.length; i++) {
+      const c = this.text[i];
+      const next = this.text[i + 1];
+      if (c === '\n') {
+        lineNum++;
+        lineLen = 1;
+        if (lineNum > 3) return false;
+      } else if (c === '#') {
+        if (next === '\n') i++; // eat newline
+        lineNum = lineLen = 0;
+      } else if (c === '{' || c === '[') {
+        if (next === ':') {
+          if (c === '{') { // {:HERO:}
+            lineLen += 6;
+          } else { // [:ITEM:]
+            // compute the max item length
+            const items = this.messages.rom.items;
+            lineLen += Math.max(...items.map(i => i.messageName.length));
+          }
+          if (lineLen > 27) return false;
+        } else {
+          const colon = this.text.indexOf(':', i);
+          const id = Number.parseInt(this.text.substring(i + 1, colon), 16);
+          lineLen += (c === '{' ?
+                          this.messages.extraWords[6][id] :
+                          this.messages.rom.items[id].messageName).length;
+        }         
+        i = this.text.indexOf(CLOSERS[c], i);
+      } else {
+        lineLen++;
+      }
+      if (lineLen > 28) return false;
+    }
+    return true;
+  }
 }
 
 const PUNCTUATION: {[char: string]: boolean} = {
@@ -149,13 +201,20 @@ export class Messages {
   static readonly CONTINUED = '#';
 
   constructor(readonly rom: Rom) {
+    const commonWordsBase = readLittleEndian(rom.prg, 0x28704) + 0x20000;
+    const extraWordsBase = readLittleEndian(rom.prg, 0x2868a) + 0x20000;
+    const personNamesBase = readLittleEndian(rom.prg, 0x286d5) + 0x20000;
+    const itemNamesBase = readLittleEndian(rom.prg, 0x286e9) + 0x20000;
+
     const str = (a: number) => readString(rom.prg, a);
     // TODO - read these addresses directly from the code, in case they move
-    this.basicWords = new AddressTable(rom, 0x28900, 0x80, 0x20000, str);
+    this.basicWords = new AddressTable(rom, commonWordsBase, 0x80, 0x20000, str);
     this.extraWords = {
-      5: new AddressTable(rom, 0x28a00, 10, 0x20000, str), // less common
-      6: new AddressTable(rom, 0x28a14, 36, 0x20000, str), // people/places
-      7: new AddressTable(rom, 0x28a5c, 74, 0x20000, str), // items (also 8?)
+      5: new AddressTable(rom, extraWordsBase,
+                          (personNamesBase - extraWordsBase) >>> 1, 0x20000,
+                          str), // less common
+      6: new AddressTable(rom, personNamesBase, 36, 0x20000, str), // people/places
+      7: new AddressTable(rom, itemNamesBase, 74, 0x20000, str), // items (also 8?)
     };
 
     this.banks = new DataTable(rom, 0x283fe, 0x24, 1);
@@ -234,7 +293,6 @@ export class Messages {
   }
 
   buildAbbreviationTable(uses = this.uses()): Abbreviation[] {
-    // const uses = this.uses();
     // Count frequencies of used suffixes.
     interface Suffix {
       // Actual string
@@ -273,6 +331,7 @@ export class Messages {
     const alias = new Map<string, string[]>();
 
     for (const message of this.messages(uses)) {
+      message.fixText();
       const mid = message.mid();
       // Don't read the same message twice.
       const seen = addrs.get(message.addr);
@@ -485,7 +544,8 @@ export class Messages {
       });
       // Now start with the longest abbreviation and work our way down.
       for (const {str, bytes} of abbrs.get(m.mid()) || []) {
-        text = text.replace(new RegExp(str + '(.|$)', 'g'), (full, after) => {
+        // NOTE: two spaces in a row after an expansion must be preserved as-is.
+        text = text.replace(new RegExp(str + '(  |.|$)', 'g'), (full, after) => {
           if (after && !PUNCTUATION[after]) return full;
           if (after === ' ') after = '';
           return bytes.map(b => `[${b}]`).join('') + after;
@@ -504,6 +564,7 @@ export class Messages {
           if (text[i + 1] === '\n') i++;
         } else if (c === '\n') {
           bs.push(2);
+          if (text[i + 1] === ' ') i++;
           hexParts.push('[02]');
         } else if (c === '[') {
           const j = text.indexOf(']', i);

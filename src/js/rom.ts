@@ -290,6 +290,8 @@ export class Rom {
     // ItemGetData
     writer.alloc(0x1dde6, 0x1e065);
     // TriggerData
+    // NOTE: There's some free space at 1e3c0..1e3f0, but we use this for the
+    // CheckBelowBoss triggers.
     writer.alloc(0x1e200, 0x1e3c0);
     // ItemMenuName
     writer.alloc(0x2111a, 0x21468);

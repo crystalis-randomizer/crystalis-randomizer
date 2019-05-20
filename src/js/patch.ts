@@ -542,7 +542,7 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   rom.npcs[0x68].spawnConditions.set(0x61, [~0x09b, 0x021]);
   rom.npcs[0x68].localDialogs.get(-1)![0].message.action = 0x02; // disappear
 
-  // Kensu in lighthouse ($74/$7e @ $62) ~ pendant redundant flag
+  // Kensu in lighthouse ($74/$7e @ $62) ~ redundant flag
   rom.npcs[0x74].localDialogs.get(0x62)![0].flags = [];
   rom.npcs[0x7e].localDialogs.get(0x62)![0].flags = [];
 

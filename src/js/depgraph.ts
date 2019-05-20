@@ -422,7 +422,10 @@ export const generate = (flags: FlagSet = new FlagSet(), rom?: Rom): WorldGraph 
                                   .trigger(0x84, 0);
   const change                = magic(0x47, 'Change')
                                   .direct('Kensu in Swan', 0x3d6de)
-                                  .npcSpawn(0x74, 0xf1, 1);
+                                  // NOTE: 74 and 7e are redundant, not sure why.
+                                  // Ideally we could delete one of them entirely?
+                                  .npcSpawn(0x74, 0xf1, 1)
+                                  .npcSpawn(0x7e, 0xf1, 1);
   const flight                = magic(0x48, 'Flight')
                                   .weight(15)
                                   .direct('Kensu in Draygonia Fortress', 0x3d18f);

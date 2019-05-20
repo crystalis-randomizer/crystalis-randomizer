@@ -227,7 +227,7 @@ class Message {
           lineLen += (c === '{' ?
                           this.messages.extraWords[6][id] :
                           this.messages.rom.items[id].messageName).length;
-        }         
+        }
         i = this.text.indexOf(CLOSERS[c], i);
       } else {
         lineLen++;
@@ -402,7 +402,8 @@ export class Messages {
     const alias = new Map<string, string[]>();
 
     for (const message of this.messages(uses)) {
-      message.fixText();
+      // TODO - can't land reflow until we have lipsum text.
+      // message.fixText();
       const mid = message.mid();
       // Don't read the same message twice.
       const seen = addrs.get(message.addr);

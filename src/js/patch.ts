@@ -230,6 +230,7 @@ Here, have this lame
   // wantAuxiliary(...) for e.g. "the kirisa plant is ..." - then
   // it could instead say "the statue of onyx is ...".
   rom.messages.parts[0][0xe].text = `It's dangerous to go alone! Take this.`;
+  rom.messages.parts[0][0xe].fixText();
   if (!rom || !flags) console.log(rom, flags);
 };
 

@@ -2,7 +2,7 @@
 
 // Inject bytes from one file into another.
 // Usage:
-//   inject.js source dest [start:end[@byte]]...
+//   inject.js source dest [start:end[@byte[-byte],...]]...
 // Addresses are always in hex.
 
 const fs = require('fs');
@@ -11,19 +11,25 @@ const main = async (args) => {
   const src = new Uint8Array(fs.readFileSync(args[0]).buffer);
   const dst = new Uint8Array(fs.readFileSync(args[1]).buffer);
   for (const arg of args.slice(2)) {
-    const match = /([0-9a-f]+):([0-9a-f]+)(?:@([0-9a-f]+))?/.exec(arg);
+    const match = /([0-9a-f]+):([0-9a-f]+)(?:@([-,0-9a-f]+))?/.exec(arg);
     if (!match) throw new Error(`Bad arg: ${arg}`);
     const a = Number.parseInt(match[1], 16);
     const b = Number.parseInt(match[2], 16);
-    const req = (() => {
-      if (match[3]) {
-        const c = Number.parseInt(match[3], 16);
-        return (x) => c === x;
+    let keep = () => true;
+    if (match[3]) {
+      const set = new Set();
+      for (const range of match[3].split(',')) {
+        const [lower, upper = lower] = range.split('-');
+        const start = Number.parseInt(lower, 16);
+        const end = Number.parseInt(upper, 16);
+        for (let i = start; i <= end; i++) {
+          set.add(i);
+        }
       }
-      return () => true;
-    })();
+      keep = (x) => set.has(x);
+    }
     for (let j = a; j < b; j++) {
-      if (req(src[j])) dst[j] = src[j];
+      if (keep(src[j])) dst[j] = src[j];
     }
   }
   console.log(`writing ${args[1]}`);

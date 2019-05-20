@@ -63,7 +63,7 @@ export const shuffle = async (rom: Uint8Array,
                               reader: Reader,
                               log?: LogType,
                               progress?: ProgressTracker) => {
-  // rom = watchArray(rom, 0x1e3c0);
+  // rom = watchArray(rom, 0x1e05a + 0x10);
 
   // First reencode the seed, mixing in the flags for security.
   if (typeof seed !== 'number') throw new Error('Bad seed');

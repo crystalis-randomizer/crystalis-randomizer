@@ -18,11 +18,10 @@ class AddressTable extends Array {
         this.base = base;
         this.count = count;
         this.offset = offset;
-        this.rom = rom;
-        this.base = base;
-        this.count = count;
-        this.offset = offset;
-        this.addresses = seq(this.count, (i) => readLittleEndian(rom.prg, base + 2 * i) + offset);
+        this.addresses = seq(this.count, (i) => {
+            const a = readLittleEndian(rom.prg, base + 2 * i);
+            return a && a + offset;
+        });
         for (let i = 0; i < count; i++) {
             this[i] = func(this.addresses[i], i, this.addresses);
         }
@@ -40,7 +39,7 @@ class Message {
         this.hex = '';
         const prg = messages.rom.prg;
         const parts = [];
-        for (let i = addr; prg[i]; i++) {
+        for (let i = addr; addr && prg[i]; i++) {
             const b = prg[i];
             this.bytes.push(b);
             if (b === 1) {
@@ -49,7 +48,7 @@ class Message {
                 }
             }
             else if (b === 2) {
-                parts.push('\n');
+                parts.push('\n ');
             }
             else if (b === 3) {
                 parts.push(`${Messages.CONTINUED}\n`);
@@ -97,6 +96,137 @@ class Message {
     mid() {
         return `${hex(this.part)}:${hex(this.id)}`;
     }
+    fixText() {
+        if (this.checkText())
+            return;
+        const parts = [];
+        let lineNum = 0;
+        let lineLen = 0;
+        let space = false;
+        let word = [];
+        function insert(str, len = str.length, fallback) {
+            if (lineLen + len > 29) {
+                if (fallback) {
+                    const split = fallback.split(/\s+/);
+                    for (let i = 0; i < split.length; i++) {
+                        if (i)
+                            insertSpace();
+                        insert(split[i]);
+                    }
+                    return;
+                }
+                newline();
+            }
+            if (str === ' ') {
+                parts.push(...word, ' ');
+                word = [];
+            }
+            else {
+                word.push(str);
+            }
+            lineLen += len;
+            space = str.endsWith(' ');
+        }
+        function insertSpace() {
+            if (!space)
+                insert(' ');
+            space = true;
+        }
+        function newline() {
+            lineLen = 1;
+            if (++lineNum > 3) {
+                parts.push('#\n ');
+                lineNum = 0;
+            }
+            else {
+                parts.push('\n ');
+            }
+            space = true;
+        }
+        for (let i = 0; i < this.text.length; i++) {
+            const c = this.text[i];
+            const next = this.text[i + 1];
+            if (/\s/.test(c)) {
+                insertSpace();
+            }
+            else if (c === '{') {
+                if (next === ':') {
+                    insert('{:HERO:}', 6);
+                }
+                else {
+                    const colon = this.text.indexOf(':', i);
+                    const id = Number.parseInt(this.text.substring(i + 1, colon), 16);
+                    const name = this.messages.extraWords[6][id];
+                    insert(`{${id.toString(16)}:${name}}`, name.length, name);
+                }
+                i = this.text.indexOf('}', i);
+            }
+            else if (c === '[') {
+                if (next === ':') {
+                    const items = this.messages.rom.items;
+                    insert('[:ITEM:]', Math.max(...items.map(i => i.messageName.length)));
+                }
+                else {
+                    const colon = this.text.indexOf(':', i);
+                    const id = Number.parseInt(this.text.substring(i + 1, colon), 16);
+                    const name = this.messages.rom.items[id].messageName;
+                    insert(`[${id.toString(16)}:${name}]`, name.length, name);
+                }
+                i = this.text.indexOf(']', i);
+            }
+            else {
+                insert(c);
+            }
+        }
+        parts.push(...word);
+        this.text = parts.join('');
+    }
+    checkText() {
+        let lineNum = 0;
+        let lineLen = 0;
+        for (let i = 0; i < this.text.length; i++) {
+            const c = this.text[i];
+            const next = this.text[i + 1];
+            if (c === '\n') {
+                lineNum++;
+                lineLen = 1;
+                if (lineNum > 3)
+                    return false;
+            }
+            else if (c === '#') {
+                if (next === '\n')
+                    i++;
+                lineNum = lineLen = 0;
+            }
+            else if (c === '{' || c === '[') {
+                if (next === ':') {
+                    if (c === '{') {
+                        lineLen += 6;
+                    }
+                    else {
+                        const items = this.messages.rom.items;
+                        lineLen += Math.max(...items.map(i => i.messageName.length));
+                    }
+                    if (lineLen > 28)
+                        return false;
+                }
+                else {
+                    const colon = this.text.indexOf(':', i);
+                    const id = Number.parseInt(this.text.substring(i + 1, colon), 16);
+                    lineLen += (c === '{' ?
+                        this.messages.extraWords[6][id] :
+                        this.messages.rom.items[id].messageName).length;
+                }
+                i = this.text.indexOf(CLOSERS[c], i);
+            }
+            else {
+                lineLen++;
+            }
+            if (lineLen > 29 && c !== ' ')
+                return false;
+        }
+        return true;
+    }
 }
 const PUNCTUATION = {
     '\0': true,
@@ -115,12 +245,16 @@ const PUNCTUATION = {
 export class Messages {
     constructor(rom) {
         this.rom = rom;
+        const commonWordsBase = readLittleEndian(rom.prg, 0x28704) + 0x20000;
+        const extraWordsBase = readLittleEndian(rom.prg, 0x2868a) + 0x20000;
+        const personNamesBase = readLittleEndian(rom.prg, 0x286d5) + 0x20000;
+        const itemNamesBase = readLittleEndian(rom.prg, 0x286e9) + 0x20000;
         const str = (a) => readString(rom.prg, a);
-        this.basicWords = new AddressTable(rom, 0x28900, 0x80, 0x20000, str);
+        this.basicWords = new AddressTable(rom, commonWordsBase, 0x80, 0x20000, str);
         this.extraWords = {
-            5: new AddressTable(rom, 0x28a00, 10, 0x20000, str),
-            6: new AddressTable(rom, 0x28a14, 36, 0x20000, str),
-            7: new AddressTable(rom, 0x28a5c, 74, 0x20000, str),
+            5: new AddressTable(rom, extraWordsBase, (personNamesBase - extraWordsBase) >>> 1, 0x20000, str),
+            6: new AddressTable(rom, personNamesBase, 36, 0x20000, str),
+            7: new AddressTable(rom, itemNamesBase, 74, 0x20000, str),
         };
         this.banks = new DataTable(rom, 0x283fe, 0x24, 1);
         this.parts = new AddressTable(rom, 0x28422, 0x22, 0x20000, (addr, part, addrs) => {
@@ -320,6 +454,8 @@ export class Messages {
             d += table[i].str.length;
             writer.rom[d++] = 0;
         }
+        if (table.length < 0x80)
+            updateCoderef(0x2868a, a);
         updateCoderef(0x286d5, a);
         const names = this.extraWords[6];
         for (const name of names) {
@@ -350,7 +486,7 @@ export class Messages {
         for (const abbrList of abbrs.values()) {
             abbrList.sort(({ str: { length: x } }, { str: { length: y } }) => y - x);
         }
-        const promises = [];
+        const promises = seq(this.parts.length, () => []);
         for (const m of this.messages(uses)) {
             let text = m.text;
             text = text.replace(/([\[{])([^\]}]*)[\]}](.|$)/g, (full, bracket, inside, after) => {
@@ -371,7 +507,7 @@ export class Messages {
                 return `[${bracket === '{' ? 6 : 7}][${id}]${after}`;
             });
             for (const { str, bytes } of abbrs.get(m.mid()) || []) {
-                text = text.replace(new RegExp(str + '(.|$)', 'g'), (full, after) => {
+                text = text.replace(new RegExp(str + '(  |.|$)', 'g'), (full, after) => {
                     if (after && !PUNCTUATION[after])
                         return full;
                     if (after === ' ')
@@ -392,6 +528,8 @@ export class Messages {
                 }
                 else if (c === '\n') {
                     bs.push(2);
+                    if (text[i + 1] === ' ')
+                        i++;
                     hexParts.push('[02]');
                 }
                 else if (c === '[') {
@@ -424,12 +562,26 @@ export class Messages {
             m.hex = hexParts.join('');
             const bank = this.banks[m.part] << 13;
             const offset = bank - 0xa000;
-            promises.push(writer.write(bs, bank, bank + 0x2000, `Message ${m.mid()}`)
-                .then(address => {
-                writeLittleEndian(writer.rom, m.pointer, address - offset);
-            }));
+            promises[m.part][m.id] =
+                writer.write(bs, bank, bank + 0x2000, `Message ${m.mid()}`)
+                    .then(a => a - offset);
         }
-        await Promise.all(promises);
+        const addresses = await Promise.all(promises.map(ps => Promise.all(ps)));
+        const parts = [];
+        let pos = 0x28000;
+        for (let part = 0; part < addresses.length; part++) {
+            const bytes = [];
+            for (let i = 0; i < addresses[part].length; i++) {
+                writeLittleEndian(bytes, 2 * i, addresses[part][i]);
+            }
+            writer.rom.subarray(pos, pos + bytes.length).set(bytes);
+            writeLittleEndian(writer.rom, 0x28422 + 2 * part, pos - 0x20000);
+            pos += bytes.length;
+        }
+        for (let i = 0; i < this.banks.length; i++) {
+            writer.rom[0x283fe + i] = this.banks[i];
+        }
+        await Promise.all(parts);
     }
 }
 Messages.CONTINUED = '#';

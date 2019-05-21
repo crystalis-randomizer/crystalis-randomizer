@@ -61,7 +61,7 @@ export class Telepathy {
                 table = VANILLA_MAIN_TABLE + 2 * i;
                 for (let j = 0, len = sage.messageGroups.length; j < len; j++) {
                     promises.push(writer.write(sage.messageGroups[j].bytes(), 0x1c000, 0x1e000, `Sage ${i}`)
-                        .then(a => writeLittleEndian(writer.rom, table * 2 * i + 8 * j, a - 0x14000)));
+                        .then(a => writeLittleEndian(writer.rom, table + 8 * j, a - 0x14000)));
                 }
             }
         }

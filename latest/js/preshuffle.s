@@ -1005,6 +1005,19 @@ SetEquippedConsumableItem:
 .endif
 
 
+;;; Allow any negative number to terminate an exit table.  Since X coordinates
+;;; are constrained to 0..7f, this is safe, and it gives 7 extra bits for
+;;; storing additional information that we can read when parsing the rom.
+;;; For now, we will store %1p0eeeee where p is 1 if there is a pits table
+;;; and eeeee is the number of entrances (0..1f).
+.org $3eb40
+  bpl +
+   rts
+  nop
++:
+.assert $3eb44
+
+
 .ifdef _BUFF_DEOS_PENDANT
 ;;; Skip the check that the player is stationary.  We could also adjust
 ;;; the speed by changing the mask at $3f02b from $3f to $1f to make it

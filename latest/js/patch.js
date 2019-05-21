@@ -150,8 +150,8 @@ I was totally gonna sell
 it for tons of cash.#
 Here, have this lame
 [29:Gas Mask] or something.`;
-    rom.messages.parts[0][0xe].text = `It's dangerous to go alone!
-Take this.`;
+    rom.messages.parts[0][0xe].text = `It's dangerous to go alone! Take this.`;
+    rom.messages.parts[0][0xe].fixText();
     if (!rom || !flags)
         console.log(rom, flags);
 };

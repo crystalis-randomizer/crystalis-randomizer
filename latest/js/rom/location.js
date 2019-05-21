@@ -13,7 +13,22 @@ export class Location extends Entity {
         this.entrancesBase = readLittleEndian(rom.prg, this.mapDataBase + 4) + 0xc000;
         this.exitsBase = readLittleEndian(rom.prg, this.mapDataBase + 6) + 0xc000;
         this.flagsBase = readLittleEndian(rom.prg, this.mapDataBase + 8) + 0xc000;
-        this.pitsBase = this.layoutBase === this.mapDataBase + 10 ? 0 :
+        let hasPits = this.layoutBase !== this.mapDataBase + 10;
+        let entranceLen = this.exitsBase - this.entrancesBase;
+        this.exits = (() => {
+            const exits = [];
+            let i = this.exitsBase;
+            while (!(rom.prg[i] & 0x80)) {
+                exits.push(new Exit(rom.prg.slice(i, i + 4)));
+                i += 4;
+            }
+            if (rom.prg[i] !== 0xff) {
+                hasPits = !!(rom.prg[i] & 0x40);
+                entranceLen = (rom.prg[i] & 0x1f) << 2;
+            }
+            return exits;
+        })();
+        this.pitsBase = !hasPits ? 0 :
             readLittleEndian(rom.prg, this.mapDataBase + 10) + 0xc000;
         this.bgm = rom.prg[this.layoutBase];
         this.layoutWidth = rom.prg[this.layoutBase + 1];
@@ -29,8 +44,7 @@ export class Location extends Entity {
         this.tileEffects = rom.prg[this.graphicsBase + 4];
         this.tilePatterns = tuple(rom.prg, this.graphicsBase + 5, 2);
         this.entrances =
-            group(4, rom.prg.slice(this.entrancesBase, this.exitsBase), x => new Entrance(x));
-        this.exits = varSlice(rom.prg, this.exitsBase, 4, 0xff, this.flagsBase, x => new Exit(x));
+            group(4, rom.prg.slice(this.entrancesBase, this.entrancesBase + entranceLen), x => new Entrance(x));
         this.flags = varSlice(rom.prg, this.flagsBase, 2, 0xff, Infinity, x => new Flag(x));
         this.pits = this.pitsBase ? varSlice(rom.prg, this.pitsBase, 4, 0xff, Infinity, x => new Pit(x)) : [];
         this.npcDataPointer = 0x19201 + (id << 1);
@@ -67,7 +81,9 @@ export class Location extends Entity {
             this.tileset, this.tileEffects,
             ...this.tilePatterns];
         const entrances = concatIterables(this.entrances);
-        const exits = [...concatIterables(this.exits), 0xff];
+        const exits = [...concatIterables(this.exits),
+            0x80 | (this.pits.length ? 0x40 : 0) | this.entrances.length,
+        ];
         const flags = [...concatIterables(this.flags), 0xff];
         const pits = concatIterables(this.pits);
         const [layoutAddr, graphicsAddr, entrancesAddr, exitsAddr, flagsAddr, pitsAddr] = await Promise.all([

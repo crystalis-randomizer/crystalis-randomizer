@@ -171,13 +171,20 @@ export const FLAGS: FlagSection[] = [{
     name: 'Randomize monsters',
     text: `Monster locations are shuffled, with the exception of sea creatures
            and tower robots.`,
-  // }, {
-  //   flag: 'Me',
-  //   hard: true,
-  //   name: 'Shuffle monster weaknesses',
-  //   text: `Monster elemental weaknesses are shuffled.  This is <i>not</i>
-  //          accounted for when guaranteeing matching swords, so use at your
-  //          own risk (it's recommended to also turn on the 'Hs' flag).`,
+  }, {
+    flag: 'Me',
+    hard: true,
+    name: 'Shuffle monster weaknesses',
+    text: `Monster elemental weaknesses are shuffled.  This is <i>not</i>
+           accounted for when guaranteeing matching swords, so use at your
+           own risk (it's recommended to also turn on the 'Hs' flag).`,
+  }, {
+    flag: 'Mt',
+    hard: true,
+    name: 'Shuffle tower robots',
+    text: `Tower robots will be shuffled into the normal pool.  At some
+           point, normal monsters may be shuffled into the tower as well.
+           NOTE: tower robots currently don't give any gold or experience.`,
 
   // }, {
   //   flag: 'M!',
@@ -265,10 +272,8 @@ export const FLAGS: FlagSection[] = [{
   }, {
     flag: 'Hz',
     hard: true,
-    name: 'Secret mode',
-    text: `This one is really hard, trust me.`,
-    // name: 'Blackout mode',
-    // text: `All caves and fortresses are permanently dark.`,
+    name: 'Blackout mode',
+    text: `All caves and fortresses are permanently dark.`,
   }],
 // }, {
 //   section: 'Weapons, armor, and item balance',
@@ -577,7 +582,8 @@ export class FlagSet {
   shuffleShops() { return this.check('Ps'); }
   bargainHunting() { return this.shuffleShops(); }
 
-  shuffleMonsterElements() { return true; } // return this.check('Me'); }
+  shuffleTowerMonsters() { return this.check('Mt'); }
+  shuffleMonsterElements() { return this.check('Me'); }
   shuffleBossElements() { return this.shuffleMonsterElements(); }
 
   doubleBuffMedicalHerb() { return this.check('Em'); }

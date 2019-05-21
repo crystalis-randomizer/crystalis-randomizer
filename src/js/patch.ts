@@ -157,7 +157,7 @@ export const shuffle = async (rom: Uint8Array,
   }
 
   rescaleMonsters(parsed, flags, random);
-  if (flags.shuffleMonsters()) shuffleMonsters(parsed, random);
+  if (flags.shuffleMonsters()) shuffleMonsters(parsed, flags, random);
   identifyKeyItemsForDifficultyBuffs(parsed);
 
   // Buff medical herb and fruit of power
@@ -1050,9 +1050,9 @@ const rescaleMonsters = (rom: Rom, flags: FlagSet, random: Random) => {
   // rom.writeObjectData();
 };
 
-const shuffleMonsters = (rom: Rom, random: Random) => {
+const shuffleMonsters = (rom: Rom, flags: FlagSet, random: Random) => {
   // TODO: once we have location names, compile a spoiler of shuffled monsters
-  const pool = new MonsterPool({});
+  const pool = new MonsterPool(flags, {});
   for (const loc of rom.locations) {
     if (loc.used) pool.populate(loc);
   }
@@ -1291,7 +1291,9 @@ class MonsterPool {
   // all locations
   readonly locations: {location: Location, slots: number[]}[] = [];
 
-  constructor(readonly report: {[loc: number]: string[], [key: string]: (string|number)[]}) {}
+  constructor(
+      readonly flags: FlagSet,
+      readonly report: {[loc: number]: string[], [key: string]: (string|number)[]}) {}
 
   // TODO - monsters w/ projectiles may have a specific bank they need to appear in,
   // since the projectile doesn't know where it came from...?
@@ -1308,7 +1310,10 @@ class MonsterPool {
       throw new Error(
           `Unexpected property '${u}' in MONSTER_ADJUSTMENTS[${location.id}]`);
     }
-    if (skip === true || !location.spritePatterns || !location.spritePalettes) return;
+    if (skip === true ||
+        (!this.flags.shuffleTowerMonsters() && tower) ||
+        !location.spritePatterns ||
+        !location.spritePalettes) return;
     const monsters = [];
     const slots = [];
     // const constraints = {};

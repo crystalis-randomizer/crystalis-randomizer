@@ -87,7 +87,7 @@ export class Telepathy {
           promises.push(
               writer.write(sage.messageGroups[j].bytes(), 0x1c000, 0x1e000, `Sage ${i}`)
                   .then(a => writeLittleEndian(writer.rom,
-                                               table * 2 * i + 8 * j, a - 0x14000)));
+                                               table + 8 * j, a - 0x14000)));
         }
       }
     }

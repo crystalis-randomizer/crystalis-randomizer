@@ -10015,9 +10015,14 @@ MapData_6a                                    ; Evil Spirit Island 3
         $15c13              .word ($xxxx) ; $15c6b
         $15c15              .word ($xxxx)
 MapData_6a_Layout
-        $15c17              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15c20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $15c30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $15c17              .byte $xx
+        $15c18              .byte $xx,$xx,$xx,$xx
+        ;; Map 7x5
+        $15c1c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $15c23              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $15c2a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $15c31              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $15c38              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
 MapData_6a_Graphics
         $15c3f              .byte $xx,$xx,$xx
         $15c42              .byte $xx,$xx
@@ -10050,7 +10055,11 @@ MapData_6b                                    ; Evil Spirit Island 4
         $15c7d              .word ($xxxx) ; $15c9e
 MapData_6b_Layout
         $15c7f              .byte $xx
-        $15c80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $15c80              .byte $xx,$xx,$xx,$xx
+        ;; Map 2x3
+        $15c84              .byte $xx,$xx
+        $15c86              .byte $xx,$xx
+        $15c88              .byte $xx,$xx
 MapData_6b_Graphics
         $15c8a              .byte $xx,$xx,$xx
         $15c8d              .byte $xx,$xx
@@ -10377,7 +10386,7 @@ MapData_78_Graphics
 MapData_78_Entrances
         $15f37              .byte $xx,$xx,$xx,$xx
         $15f3b              .byte $xx,$xx,$xx,$xx
-        $15f3f              .byte $xx,$xx,$xx,$xx
+        $15f3f              .byte $xx,$xx,$xx,$xx ; unused - in the mountains
         $15f43              .byte $xx,$xx,$xx,$xx
         $15f47              .byte $xx,$xx,$xx,$xx
 MapData_78_Exits
@@ -60763,24 +60772,24 @@ FindExit
         ;; Note: this runs every frame to see if an exit has been triggered,
         ;; in which case, we jump straight to TakeExit and update $6c and $6d
         $3eb32  xx xx:      xxx #$xx
-        $3eb34  xx xx:      xxx ($xx),y
-        $3eb36  xx:         xxx
-        $3eb37  xx xx:      xxx $xx
-        $3eb39  xx xx:      xxx ($xx),y
-        $3eb3b  xx:         xxx
-        $3eb3c  xx xx:      xxx $xx
-        $3eb3e  xx xx:      xxx $xx
-        $3eb40  xx xx:      xxx #$xx ; no exit found
-        $3eb42  xx xx:      xxx $xx
-        $3eb44  xx xx:      xxx $xx
-        $3eb46  xx xx:      xxx $xx
-        $3eb48  xx xx:      xxx $xx
-        $3eb4a  xx xx:      xxx $xx
-        $3eb4c  xx xx:      xxx $xx
-        $3eb4e  xx xx:      xxx $xx
-        $3eb50  xx:         xxx
-        $3eb51  xx:         xxx
-        $3eb52  xx xx:      xxx $xx ; if something went wrong, don't loop forever
+-       $3eb34  xx xx:       xxx ($xx),y
+        $3eb36  xx:          xxx
+        $3eb37  xx xx:       xxx $xx
+        $3eb39  xx xx:       xxx ($xx),y
+        $3eb3b  xx:          xxx
+        $3eb3c  xx xx:       xxx $xx
+        $3eb3e  xx xx:       xxx $xx
+        $3eb40  xx xx:       xxx #$xx ; no exit found
+        $3eb42  xx xx:        xxx >rts ; $3eb54
+        $3eb44  xx xx:       xxx $xx
+        $3eb46  xx xx:       xxx $xx
+        $3eb48  xx xx:       xxx + ; $3eb50
+        $3eb4a  xx xx:       xxx $xx
+        $3eb4c  xx xx:       xxx $xx
+        $3eb4e  xx xx:        xxx TakeExit
++       $3eb50  xx:          xxx
+        $3eb51  xx:          xxx
+        $3eb52  xx xx:      xxx - ; $3eb34 ; if something went wrong, don't loop forever
         $3eb54  xx:         xxx
 ;;; --------------------------------
 TakeExit

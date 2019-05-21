@@ -60,12 +60,31 @@ export class Location extends Entity {
     this.entrancesBase = readLittleEndian(rom.prg, this.mapDataBase + 4) + 0xc000;
     this.exitsBase = readLittleEndian(rom.prg, this.mapDataBase + 6) + 0xc000;
     this.flagsBase = readLittleEndian(rom.prg, this.mapDataBase + 8) + 0xc000;
+
+    // Read the exits first so that we can determine if there's entrance/pits
+    // metadata encoded at the end.
+    let hasPits = this.layoutBase !== this.mapDataBase + 10;
+    let entranceLen = this.exitsBase - this.entrancesBase;
+    this.exits = (() => {
+      const exits = [];
+      let i = this.exitsBase;
+      while (!(rom.prg[i] & 0x80)) {
+        exits.push(new Exit(rom.prg.slice(i, i + 4)));
+        i += 4;
+      }
+      if (rom.prg[i] !== 0xff) {
+        hasPits = !!(rom.prg[i] & 0x40);
+        entranceLen = (rom.prg[i] & 0x1f) << 2;
+      }
+      return exits;
+    })();
+
     // TODO - these heuristics will not work to re-read the locations.
     //      - we can look at the order: if the data is BEFORE the pointers
     //        then we're in a rewritten state; in that case, we need to simply
     //        find all refs and max...?
     //      - can we read these parts lazily?
-    this.pitsBase = this.layoutBase === this.mapDataBase + 10 ? 0 :
+    this.pitsBase = !hasPits ? 0 :
         readLittleEndian(rom.prg, this.mapDataBase + 10) + 0xc000;
 
     this.bgm = rom.prg[this.layoutBase];
@@ -86,10 +105,8 @@ export class Location extends Entity {
     this.tilePatterns = tuple(rom.prg, this.graphicsBase + 5, 2);
 
     this.entrances =
-      group(4, rom.prg.slice(this.entrancesBase, this.exitsBase),
+      group(4, rom.prg.slice(this.entrancesBase, this.entrancesBase + entranceLen),
             x => new Entrance(x));
-    this.exits = varSlice(rom.prg, this.exitsBase, 4, 0xff, this.flagsBase,
-                          x => new Exit(x));
     this.flags = varSlice(rom.prg, this.flagsBase, 2, 0xff, Infinity,
                           x => new Flag(x));
     this.pits = this.pitsBase ? varSlice(rom.prg, this.pitsBase, 4, 0xff, Infinity,
@@ -152,7 +169,9 @@ export class Location extends Entity {
          this.tileset, this.tileEffects,
          ...this.tilePatterns];
     const entrances = concatIterables(this.entrances);
-    const exits = [...concatIterables(this.exits), 0xff];
+    const exits = [...concatIterables(this.exits),
+                   0x80 | (this.pits.length ? 0x40 : 0) | this.entrances.length,
+                  ];
     const flags = [...concatIterables(this.flags), 0xff];
     const pits = concatIterables(this.pits);
     const [layoutAddr, graphicsAddr, entrancesAddr, exitsAddr, flagsAddr, pitsAddr] =

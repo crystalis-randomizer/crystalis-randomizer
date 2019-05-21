@@ -132,6 +132,20 @@ export const FLAGS = [{
                 name: 'Randomize monsters',
                 text: `Monster locations are shuffled, with the exception of sea creatures
            and tower robots.`,
+            }, {
+                flag: 'Me',
+                hard: true,
+                name: 'Shuffle monster weaknesses',
+                text: `Monster elemental weaknesses are shuffled.  This is <i>not</i>
+           accounted for when guaranteeing matching swords, so use at your
+           own risk (it's recommended to also turn on the 'Hs' flag).`,
+            }, {
+                flag: 'Mt',
+                hard: true,
+                name: 'Shuffle tower robots',
+                text: `Tower robots will be shuffled into the normal pool.  At some
+           point, normal monsters may be shuffled into the tower as well.
+           NOTE: tower robots currently don't give any gold or experience.`,
             }],
     }, {
         section: 'Shops',
@@ -190,6 +204,11 @@ export const FLAGS = [{
                 hard: true,
                 name: 'Charge shots only',
                 text: `Stabbing is completely ineffective.  Only charged shots work.`,
+            }, {
+                flag: 'Hz',
+                hard: true,
+                name: 'Blackout mode',
+                text: `All caves and fortresses are permanently dark.`,
             }],
     }, {
         section: 'Tweaks',
@@ -457,6 +476,9 @@ export class FlagSet {
     shuffleMonsters() { return this.check('Mr'); }
     shuffleShops() { return this.check('Ps'); }
     bargainHunting() { return this.shuffleShops(); }
+    shuffleTowerMonsters() { return this.check('Mt'); }
+    shuffleMonsterElements() { return this.check('Me'); }
+    shuffleBossElements() { return this.shuffleMonsterElements(); }
     doubleBuffMedicalHerb() { return this.check('Em'); }
     buffMedicalHerb() { return !this.check('Hm'); }
     decreaseEnemyDamage() { return this.check('Ed'); }
@@ -490,6 +512,7 @@ export class FlagSet {
     assumeWildWarp() { return this.check('Gw'); }
     nerfWildWarp() { return this.check('Fw'); }
     allowWildWarp() { return !this.nerfWildWarp(); }
+    blackoutMode() { return this.check('Hz'); }
     expScalingFactor() {
         return this.check('Hx') ? 0.25 : this.check('Ex') ? 2.5 : 1;
     }

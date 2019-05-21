@@ -1,6 +1,6 @@
 import { Assembler } from './6502.js';
 import { crc32 } from './crc32.js';
-import { shuffle2 as shuffleDepgraph } from './depgraph.js';
+import { generate as generateDepgraph, shuffle2 as shuffleDepgraph } from './depgraph.js';
 import { FetchReader } from './fetchreader.js';
 import { FlagSet } from './flagset.js';
 import { Random } from './random.js';
@@ -83,6 +83,8 @@ export const shuffle = async (rom, seed, flags, reader, log, progress) => {
     const random = new Random(newSeed);
     const parsed = new Rom(rom);
     makeBraceletsProgressive(parsed);
+    if (flags.blackoutMode())
+        blackoutMode(parsed);
     closeCaveEntrances(parsed, flags);
     reversibleSwanGate(parsed);
     adjustGoaFortressTriggers(parsed);
@@ -106,9 +108,9 @@ export const shuffle = async (rom, seed, flags, reader, log, progress) => {
     if (touchShops) {
         rescaleShops(parsed, asm, flags.bargainHunting() ? random : undefined);
     }
-    rescaleMonsters(parsed);
+    rescaleMonsters(parsed, flags, random);
     if (flags.shuffleMonsters())
-        shuffleMonsters(parsed, random);
+        shuffleMonsters(parsed, flags, random);
     identifyKeyItemsForDifficultyBuffs(parsed);
     if (flags.doubleBuffMedicalHerb()) {
         rom[0x1c50c + 0x10] *= 2;
@@ -168,6 +170,15 @@ function makeBraceletsProgressive(rom) {
     patched[2].condition = ~0x205;
     patched[3].condition = ~0;
     tornel.localDialogs.set(0x21, patched);
+}
+function blackoutMode(rom) {
+    const dg = generateDepgraph();
+    for (const node of dg.nodes) {
+        const type = node.type;
+        if (node.nodeType === 'Location' && (type === 'cave' || type === 'fortress')) {
+            rom.locations[node.id].tilePalettes.fill(0x9a);
+        }
+    }
 }
 const closeCaveEntrances = (rom, flags) => {
     rom.swapMetatiles([0x90], [0x07, [0x01, 0x00], ~0xc1], [0x0e, [0x02, 0x00], ~0xc1], [0x20, [0x03, 0x0a], ~0xd7], [0x21, [0x04, 0x0a], ~0xd7]);
@@ -589,7 +600,7 @@ const BASE_PRICES = {
     0x24: 80,
     0x26: 300,
 };
-const rescaleMonsters = (rom) => {
+const rescaleMonsters = (rom, flags, random) => {
     const unscaledMonsters = new Set(Object.keys(rom.objects).map(Number));
     for (const [id] of SCALED_MONSTERS) {
         unscaledMonsters.delete(id);
@@ -602,9 +613,12 @@ const rescaleMonsters = (rom) => {
             }
         }
     }
+    rom.objects[0x7d].elements |= 0x08;
+    const BOSSES = new Set([0x57, 0x5e, 0x68, 0x7d, 0x88, 0x97, 0x9b, 0x9e]);
+    const SLIMES = new Set([0x50, 0x53, 0x5f, 0x69]);
     for (const [id, { sdef, swrd, hits, satk, dgld, sexp }] of SCALED_MONSTERS) {
         const o = rom.objects[id].data;
-        const boss = [0x57, 0x5e, 0x68, 0x7d, 0x88, 0x97, 0x9b, 0x9e].includes(id) ? 1 : 0;
+        const boss = BOSSES.has(id) ? 1 : 0;
         o[2] |= 0x80;
         o[6] = hits;
         o[7] = satk;
@@ -612,11 +626,24 @@ const rescaleMonsters = (rom) => {
         o[9] = o[9] & 0xe0 | boss;
         o[16] = o[16] & 0x0f | dgld << 4;
         o[17] = sexp;
+        if (boss ? flags.shuffleBossElements() : flags.shuffleMonsterElements()) {
+            if (!SLIMES.has(id)) {
+                const bits = [...rom.objects[id].elements.toString(2).padStart(4, '0')];
+                random.shuffle(bits);
+                rom.objects[id].elements = Number.parseInt(bits.join(''), 2);
+            }
+        }
     }
-    rom.objects[0x7d].elements |= 0x08;
+    if (flags.shuffleMonsterElements()) {
+        const e = random.nextInt(4);
+        rom.prg[0x2522d] = e + 1;
+        for (const id of SLIMES) {
+            rom.objects[id].elements = 1 << e;
+        }
+    }
 };
-const shuffleMonsters = (rom, random) => {
-    const pool = new MonsterPool({});
+const shuffleMonsters = (rom, flags, random) => {
+    const pool = new MonsterPool(flags, {});
     for (const loc of rom.locations) {
         if (loc.used)
             pool.populate(loc);
@@ -760,18 +787,22 @@ const SCALED_MONSTERS = new Map([
     [0xfe, 'p', 'demon wall fire', , , , 23, , ,],
 ].map(([id, type, name, sdef = 0, swrd = 0, hits = 0, satk = 0, dgld = 0, sexp = 0]) => [id, { id, type, name, sdef, swrd, hits, satk, dgld, sexp }]));
 class MonsterPool {
-    constructor(report) {
+    constructor(flags, report) {
+        this.flags = flags;
         this.report = report;
         this.monsters = [];
         this.used = [];
         this.locations = [];
     }
     populate(location) {
-        const { maxFlyers = 0, nonFlyers = {}, skip = false, fixedSlots = {}, ...unexpected } = MONSTER_ADJUSTMENTS[location.id] || {};
+        const { maxFlyers = 0, nonFlyers = {}, skip = false, tower = false, fixedSlots = {}, ...unexpected } = MONSTER_ADJUSTMENTS[location.id] || {};
         for (const u of Object.keys(unexpected)) {
             throw new Error(`Unexpected property '${u}' in MONSTER_ADJUSTMENTS[${location.id}]`);
         }
-        if (skip === true || !location.spritePatterns || !location.spritePalettes)
+        if (skip === true ||
+            (!this.flags.shuffleTowerMonsters() && tower) ||
+            !location.spritePatterns ||
+            !location.spritePalettes)
             return;
         const monsters = [];
         const slots = [];
@@ -813,7 +844,9 @@ class MonsterPool {
         while (this.locations.length) {
             const { location, slots } = this.locations.pop();
             const report = this.report['$' + location.id.toString(16).padStart(2, '0')] = [];
-            const { maxFlyers = 0, nonFlyers = {}, fixedSlots = {} } = MONSTER_ADJUSTMENTS[location.id] || {};
+            const { maxFlyers = 0, nonFlyers = {}, fixedSlots = {}, tower = false } = MONSTER_ADJUSTMENTS[location.id] || {};
+            if (tower)
+                continue;
             let pat0 = fixedSlots.pat0 || null;
             let pat1 = fixedSlots.pat1 || null;
             let pal2 = fixedSlots.pal2 || null;
@@ -1081,13 +1114,13 @@ const MONSTER_ADJUSTMENTS = {
         },
     },
     [0x59]: {
-        skip: true,
+        tower: true,
     },
     [0x5a]: {
-        skip: true,
+        tower: true,
     },
     [0x5b]: {
-        skip: true,
+        tower: true,
     },
     [0x60]: {
         fixedSlots: {

@@ -290,7 +290,8 @@ export const watchArray = (arr: Data<unknown>, watch: number) => {
       } else if (property === 'set') {
         return (val: Data<unknown>) => {
           console.log(`Setting overlapping array ${watch}`);
-          debugger
+          // throw new Error('');
+          debugger;
           target.set(val);
         };
       }
@@ -302,6 +303,7 @@ export const watchArray = (arr: Data<unknown>, watch: number) => {
       // tslint:disable-next-line:triple-equals
       if (property == watch) {
         console.log(`Writing ${watch.toString(16)}`);
+        // throw new Error('');
         debugger;
       }
       target[property] = value;

@@ -9,22 +9,37 @@ const {Rom} = require('./rom.js');
 const {Entrance, Exit, Flag, Location, Spawn} = require('./rom/location.js');
 const {GlobalDialog, LocalDialog} = require('./rom/npc.js');
 const {ShopType} = require('./rom/shop.js');
+const {watchArray} = require('./rom/util.js');
 
+// Usage: node generate_testdata.js rom.nes testdata
 
-// Usage: node generate_testdata.js rom.nes
-
-const main = async (...args) => {
+const main = async (args) => {
   const data = new Uint8Array(fs.readFileSync(args[0]).buffer);
   const rom = new Rom(data);
 
   // Fill the rom with completely random data.
   const random = new Random(1);
+  const lorem = new LoremIpsum({random: () => random.next()});
   const r = (n = 0x100) => random.nextInt(n);
   const rr = (l, n = 0x100) => seq(l, () => random.nextInt(n));
+  const ra = (arr, n = 0x100) => {
+    for (let i = 0; i < arr.length; i++) {
+      if (typeof arr[i] === 'number') {
+        arr[i] = r(n);
+      } else if (arr[i] instanceof Array) {
+        ra(arr[i], n);
+      } else {
+        throw new Error('bad arg');
+      }
+    }
+  }
 
   for (let i = 0; i < data.length; i++) {
     data[i] = r();
   }
+  data.subarray(0x28010, 0x2a010).fill(0);
+  data.subarray(0x14010, 0x16010).fill(0);
+  data.subarray(0x18010, 0x20010).fill(0);
 
   // Scramble everything.
   rom.shopCount = 11;
@@ -36,46 +51,129 @@ const main = async (...args) => {
   for (const loc of rom.locations) {
     loc.bgm = r();
     loc.animation = r(4);
-    for (let i = 0; i < loc.screens.length; i++) {
-      loc.screens[i] = rr(16);
-    }
-    loc.tilePatterns = rr(2);
-    loc.tilePalettes = rr(3);
+    ra(loc.screens);
+    ra(loc.tilePatterns);
+    ra(loc.tilePalettes);
     for (const entrance of loc.entrances) {
-      entrance.data.splice(0, 4, r(0x80), r(), r(), r());
+      ra(entrance.data, 0x80);
     }
-    for (const exits of loc.exits) {
-      exit.data.splice(0, 4, r(0x80), r(), r(), r());
+    for (const exit of loc.exits) {
+      ra(exit.data, 0x80);
     }
-    for (const flags of loc.flags) {
-      flag.data.splice(0, 2, r(0x80), r());
+    for (const flag of loc.flags) {
+      ra(flag.data, 0x80);
     }
-    for (const pit of loc.pits || []) {
-      flag.data.splice(0, 4, r(0x80), r(), r(), r());
-    }
+    loc.pits = []; // just delete the pits to save space
     for (const spawn of loc.spawns) {
-      spawn.data.splice(0, 4, r(0x80), r(), r(), r());
+      // leave chests alone for depgraph preconditions
+      if (!spawn.isChest) ra(spawn.data, 0x80);
     }
-    loc.spritePalettes = rr(2);
-    loc.spritePatterns = rr(2);
+    ra(loc.spritePalettes);
+    ra(loc.spritePatterns);
   }
 
   for (const o of rom.objects) {
-    // shuffle non-zero stats, etc...
+    o.sfx = r();
+    for (let i = 0; i < o.data.length; i++) {
+      if (o.data) o.data = r(2) ? r() : 0;
+    }
+  }
+
+  for (const h of rom.hitboxes) {
+    ra(h.coordinates);
+  }
+
+  for (const t of rom.triggers) {
+    ra(t.conditions);
+    ra(t.message.data);
+    ra(t.flags);
+  }
+
+  for (const n of rom.npcs) {
+    ra(n.data);
+    ra([...n.spawnConditions.values()]);
+    for (const d of [...n.globalDialogs, ...n.localDialogs.values()]) {
+      d.condition = r();
+      if (d.message) ra(d.message.data);
+      ra(d.flags || []);
+    }
+  }
+
+  for (const t of rom.tilesets) {
+    ra(t.tiles);
+    ra(t.attrs);
+    // leave alternates alone because there's a precondition check
+  }
+
+  for (const t of rom.tileEffects) {
+    ra(t.effects);
   }
 
   // TODO - preserve the tileset behavior
-  for (const screen of rom.screens) {
-    for (const row of screen.tiles) {
-      for (let i = 0; i < row.length; i++) {
-        row[i] = random.nextInt(0x100);
+  for (const s of rom.screens) {
+    ra(s.tiles);
+  }
+
+  for (const s of rom.adHocSpawns) {
+    ra(s.data);
+  }
+
+  for (const i of rom.itemGets) {
+    i.inventoryRowStart = r();
+    i.inventoryRowLenth = r();
+    ra(i.acquisitionAction.data);
+    ra(i.flags);
+  }
+
+  for (const i of rom.items) {
+    i.itemDataValue = r();
+    i.selectedItemValue = r();
+    i.basePrice = r();
+    i.menuName = i.messageName = lorem.generateWords(1);
+  }
+
+  for (const s of rom.shops) {
+    ra(s.contents);
+    ra(s.prices);
+  }
+
+  for (const b of rom.bossKills) {
+    ra(b.data);
+  }
+
+  ra(rom.telepathy.resultTable);
+  for (const s of rom.telepathy.sages) {
+    for (const m of s.defaultMessages) {
+      ra(m.data);
+    }
+    for (const g of s.messageGroups) {
+      for (const m of g.messages) {
+        m[0] = r();
+        ra(m[1].data);
+        if (m[2]) ra(m[2].data);
       }
     }
   }
 
+  for (let i = 0; i < rom.messages.banks.length; i++) {
+    rom.messages.banks[i] = r(3) + 0x15;
+  }
+  for (let i = 0; i < rom.messages.extraWords[6].length; i++) {
+    rom.messages.extraWords[6][i] = lorem.generateWords(1);
+  }
+  for (const p of rom.messages.parts) {
+    for (const m of p) {
+      m.text = lorem.generateSentences(1);
+    }
+  }
+  
+
+  // Commit the changes.
+  await rom.writeData();
+
   // Write the actual data back to disk.
   await new Promise((resolve, reject) =>
-                    fs.writeFile(args[1], shuffled,
+                    fs.writeFile(args[1], data,
                                  (err) => err ? reject(err) : resolve()));
   console.log(`Wrote ${args[1]}`);
 };
@@ -85,4 +183,4 @@ process.on('unhandledRejection', error => {
   process.exit(1);
 });
 
-main().then(() => process.exit(0));
+main(process.argv.slice(2)).then(() => process.exit(0));

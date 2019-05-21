@@ -302,6 +302,8 @@ export class Rom {
     // writer.alloc(0x2922b, 0x29400); // TODO - needed?
     // NOTE: once we release the other message tables, this will just be one giant block.
 
+    // Message table parts
+    // writer.alloc(0x28000, 0x283fe);
     // Message tables
     // TODO - we don't use the writer to allocate the abbreviation tables, but we could
     writer.alloc(0x2a000, 0x2fc00);

@@ -31,12 +31,12 @@ class AddressTable<T> extends Array<T> {
               readonly offset: number,
               func: (x: number, i: number, arr: number[]) => T = i => i as any) {
     super(count);
-    this.rom = rom;
-    this.base = base;
-    this.count = count;
-    this.offset = offset;
     this.addresses = seq(this.count,
-                         (i: number) => readLittleEndian(rom.prg, base + 2 * i) + offset);
+                         (i: number) => {
+                           const a = readLittleEndian(rom.prg, base + 2 * i);
+                           return a && a + offset;
+                         });
+                         
     for (let i = 0; i < count; i++) {
       this[i] = func(this.addresses[i], i, this.addresses);
     }
@@ -61,7 +61,7 @@ class Message {
     // Parse the message
     const prg: Data<number> = messages.rom.prg;
     const parts = [];
-    for (let i = addr; prg[i]; i++) {
+    for (let i = addr; addr && prg[i]; i++) {
       const b = prg[i];
       this.bytes.push(b);
       if (b === 1) {
@@ -561,6 +561,7 @@ export class Messages {
       d += table[i].str.length;
       writer.rom[d++] = 0;
     }
+    if (table.length < 0x80) updateCoderef(0x2868a, a);
     // move on to people
     updateCoderef(0x286d5, a);
     const names = this.extraWords[6];
@@ -596,7 +597,7 @@ export class Messages {
     }
 
     // iterate over the messages and serialize.
-    const promises: Promise<void>[] = [];
+    const promises: Promise<number>[][] = seq(this.parts.length, () => []);
     for (const m of this.messages(uses)) {
       let text = m.text;
       // First replace any items or other names with their bytes.
@@ -665,13 +666,36 @@ export class Messages {
       // Figure out which page it needs to be on
       const bank = this.banks[m.part] << 13;
       const offset = bank - 0xa000;
-      promises.push(writer.write(bs, bank, bank + 0x2000, `Message ${m.mid()}`)
-                   .then(address => {
-                     writeLittleEndian(writer.rom, m.pointer, address - offset);
-                   }));
+      
+      promises[m.part][m.id] =
+          writer.write(bs, bank, bank + 0x2000, `Message ${m.mid()}`)
+              .then(a => a - offset);
     }
 
-    await Promise.all(promises);
+    const addresses = await Promise.all(promises.map(ps => Promise.all(ps))) as number[][];
+    const parts: Promise<void>[] = [];
+    let pos = 0x28000;
+    for (let part = 0; part < addresses.length; part++) {
+      const bytes: number[] = [];
+      for (let i = 0; i < addresses[part].length; i++) {
+        writeLittleEndian(bytes, 2 * i, addresses[part][i]);
+      }
+      // TODO - would be nice to let the writer pick where to put the parts, but
+      // then we don't know how many to read from each.  So do it sequentially.
+      // parts.push(writer.write(bytes, 0x28000, 0x2a000, `MessagePart ${hex(part)}`)
+      //            .then(a => writeLittleEndian(writer.rom, 0x28422 + 2 * part,
+      //                                         a - 0x20000)));
+      writer.rom.subarray(pos, pos + bytes.length).set(bytes)
+      writeLittleEndian(writer.rom, 0x28422 + 2 * part, pos - 0x20000);
+      pos += bytes.length;
+    }
+
+    // Write the banks
+    for (let i = 0; i < this.banks.length; i++) {
+      writer.rom[0x283fe + i] = this.banks[i];
+    }
+
+    await Promise.all(parts);
   }
 }
 

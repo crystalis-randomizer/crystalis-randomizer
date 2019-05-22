@@ -40,7 +40,8 @@ RescaleDefAndHP:
    ;; DiffAtk = 8 * PAtk
    ;; DEF = (8 * PAtk) * SDEF / 64   (alt, SDEF = 8 * DEF / PAtk)
    lda ObjectHP,x
-    beq RescaleAtk
+   bne +
+    jmp RescaleAtk
    ;; Start by computing 8*DEF, but don't write it to DEF yet.
 +  lda ObjectDef,x
    pha
@@ -101,7 +102,15 @@ RescaleDefAndHP:
    ;; $1bc3c:
 +  lda ObjectHP,x
    sta $62
-   jsr Multiply16Bit
+   lda $6c
+   and #$f8
+   cmp #$58
+   bne +
+    asl $62
+    bcc +
+     lda #$ff
+     sta $62
++  jsr Multiply16Bit
    ;; Subtract 1
    lda $61
    sec
@@ -157,7 +166,19 @@ RescaleAtk:   ; $1bc63
   sta ObjectAtk,x
 RescaleGold:   ; $1bc98
   ;; GOLD = min(15, (8 * DGLD + 3 * DIFF) / 16)
-  lda ObjectGold,x
+  lda $6c
+  and #$f8
+  cmp #$58
+  bne +
+   ;; Zero out exp and gold
+   lda ObjectGold,x
+   and #$0f
+   sta ObjectGold,x
+   lda #$00
+   sta ObjectExp,x
+   beq RescaleDone ; unconditional
+   ;; ------------
++ lda ObjectGold,x
   and #$f0
    beq RescaleExp
   lsr
@@ -178,7 +199,7 @@ RescaleExp:   ; $1bcbd
   ;; EXP = min(2032, DiffExp * SEXP)
   ;; NOTE: SEXP is compressed for values > $7f.
   lda ObjectExp,x
-   beq RescaleDone
+   jmp $3c2af
   sta $61
   lda DiffExp,y
   php ; keep track of whether we were compressed or not.

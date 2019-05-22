@@ -108,6 +108,7 @@ export const shuffle = async (rom, seed, flags, reader, log, progress) => {
     if (touchShops) {
         rescaleShops(parsed, asm, flags.bargainHunting() ? random : undefined);
     }
+    normalizeSwords(parsed, flags, random);
     rescaleMonsters(parsed, flags, random);
     if (flags.shuffleMonsters())
         shuffleMonsters(parsed, flags, random);
@@ -600,6 +601,24 @@ const BASE_PRICES = {
     0x24: 80,
     0x26: 300,
 };
+function normalizeSwords(rom, flags, random) {
+    const {} = { flags, random };
+    rom.objects[0x10].atk = 3;
+    rom.objects[0x11].atk = 6;
+    rom.objects[0x12].atk = 8;
+    rom.objects[0x18].atk = 3;
+    rom.objects[0x13].atk = 5;
+    rom.objects[0x19].atk = 5;
+    rom.objects[0x17].atk = 7;
+    rom.objects[0x1a].atk = 7;
+    rom.objects[0x14].atk = 3;
+    rom.objects[0x15].atk = 6;
+    rom.objects[0x16].atk = 8;
+    rom.objects[0x1c].atk = 3;
+    rom.objects[0x1e].atk = 5;
+    rom.objects[0x1b].atk = 7;
+    rom.objects[0x1f].atk = 7;
+}
 const rescaleMonsters = (rom, flags, random) => {
     const unscaledMonsters = new Set(Object.keys(rom.objects).map(Number));
     for (const [id] of SCALED_MONSTERS) {
@@ -731,11 +750,11 @@ const SCALED_MONSTERS = new Map([
     [0x9a, 'm', 'Tomb Guardian', 7, , 60, 37, 6, 106],
     [0x9b, 'b', 'Draygon', 5, 6, 16, 41, , ,],
     [0x9e, 'b', 'Draygon 2', 7, 6, 28, 40, , ,],
-    [0xa0, 'm', 'Ground Sentry (1)', 4, , 12, 26, ,],
-    [0xa1, 'm', 'Tower Defense Mech (2)', 5, , 16, 36, ,],
-    [0xa2, 'm', 'Tower Sentinel', , , 2, , ,],
-    [0xa3, 'm', 'Air Sentry', 3, , 4, 26, ,],
-    [0xa4, 'b', 'Dyna', 6, 5, 16, , , ,],
+    [0xa0, 'm', 'Ground Sentry (1)', 4, , 6, 26, ,],
+    [0xa1, 'm', 'Tower Defense Mech (2)', 5, , 8, 36, ,],
+    [0xa2, 'm', 'Tower Sentinel', , , 1, , ,],
+    [0xa3, 'm', 'Air Sentry', 3, , 2, 26, ,],
+    [0xa4, 'b', 'Dyna', 6, 5, 8, , , ,],
     [0xa5, 'b', 'Vampire 2', 3, , 12, 27, , ,],
     [0xb4, 'b', 'dyna pod', 15, , 255, 26, , ,],
     [0xb8, 'p', 'dyna counter', , , , 26, , ,],

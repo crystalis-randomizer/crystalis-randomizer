@@ -2,7 +2,7 @@
 
 // Inject bytes from one file into another.
 // Usage:
-//   inject.js source dest [start:end[@byte[-byte],...]]...
+//   inject.js source dest [+/-offset] [start:end[@byte[-byte],...]]...
 // Addresses are always in hex.
 
 const fs = require('fs');
@@ -10,11 +10,16 @@ const fs = require('fs');
 const main = async (args) => {
   const src = new Uint8Array(fs.readFileSync(args[0]).buffer);
   const dst = new Uint8Array(fs.readFileSync(args[1]).buffer);
+  let offset = 0;
   for (const arg of args.slice(2)) {
+    if (/^[-+][0-9a-f]+$/.test(arg)) {
+      offset = Number.parseInt(arg, 16);
+      continue;
+    }
     const match = /([0-9a-f]+):([0-9a-f]+)(?:@([-,0-9a-f]+))?/.exec(arg);
     if (!match) throw new Error(`Bad arg: ${arg}`);
-    const a = Number.parseInt(match[1], 16);
-    const b = Number.parseInt(match[2], 16);
+    const a = Number.parseInt(match[1], 16) + offset;
+    const b = Number.parseInt(match[2], 16) + offset;
     let keep = () => true;
     if (match[3]) {
       const set = new Set();

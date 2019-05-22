@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+// Usage: node generate_testdata.js rom.nes testdata
+
 require = require('esm')(module);
 
 const fs = require('fs');
@@ -10,8 +12,6 @@ const {Entrance, Exit, Flag, Location, Spawn} = require('./rom/location.js');
 const {GlobalDialog, LocalDialog} = require('./rom/npc.js');
 const {ShopType} = require('./rom/shop.js');
 const {watchArray} = require('./rom/util.js');
-
-// Usage: node generate_testdata.js rom.nes testdata
 
 const main = async (args) => {
   const data = new Uint8Array(fs.readFileSync(args[0]).buffer);

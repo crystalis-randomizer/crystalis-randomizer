@@ -7,15 +7,23 @@ upload.addEventListener('change', () => {
     const rom = new Uint8Array(/** @type {!ArrayBuffer} */ (reader.result)).slice(16);
     document.getElementById('filename').textContent = file.name;
     document.getElementById('hash').textContent = read(rom, 0x277d4, 12);
-    document.getElementById('seed').textContent = read(rom, 0x277ec, 8);
-    document.getElementById('flags').textContent =
-        read(rom, 0x277ff, 23) + read(rom, 0x27800, 23);
+    const seed = read(rom, 0x277ec, 8).trim()
+    document.getElementById('seed').textContent = seed;
+    let flags = read(rom, 0x277ff, 23) + read(rom, 0x27800, 23);
     if (read(rom, 0x2782f, 23).trim()) {
-    document.getElementById('flags').textContent +=
-        read(rom, 0x2782f, 23) + read(rom, 0x27830, 23);
+      flags += read(rom, 0x2782f, 23) + read(rom, 0x27830, 23);
     }
+    // for (const group of flags.trim().split(/ +/g)) {
+    //   const g = document.createElement('span');
+    //   g.classList.add('group');
+    //   g.textContent = group;
+    //   document.getElementById('flags').appendChild(g);
+    // }
+    document.getElementById('flags').textContent = flags;
     document.getElementById('checksum').textContent =
         read(rom, 0x27885, 4) + read(rom, 0x27886, 4);
+    document.getElementById('query').textContent =
+        `flags=${flags.replace(/ /g, '')}&seed=${seed}`;
   });
   reader.readAsArrayBuffer(file);
 });

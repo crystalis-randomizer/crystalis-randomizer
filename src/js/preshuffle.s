@@ -1157,7 +1157,7 @@ CheckRabbitBoots:
   ;; return instead to after the charge is increased
 + pla
   pla
-  jmp $9e39
+  jmp $9e39 ; 35e39
 .assert < $3fe16
 
 ;; NOTE: 3fe2e might be safer than 3fe18

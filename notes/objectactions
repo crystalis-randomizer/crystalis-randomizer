@@ -51,6 +51,29 @@ Shoot
 
 ================================================================
 
+$10 Projectiles
+  Boss fireballs, stone gaze, rocks, bert, birds, ...
+$11 Projectiles
+  paralysis, web, trident, archer, knight, lavaman, wind1-2, water1-2, fire1
+$12 Wind 3
+$13 Water 3
+$14 Dissipating children?
+  fire2-3 and thunder3 children, vampire smoke
+$15 Fire 2
+$16 Mado shuriken
+$17 Demon wall fire
+$18 Thunder 1
+$19 Thunder 2
+$1a Thunder 3
+$1b Projectiles
+  draygon 2 balls, karmine balls
+$1c Fire 3 child
+$1d ???
+$1e Draygon 2 Laser
+$1f Paralysis Powder
+
+=====
+
 $20 Random Movement
   Slimes $50 $53, Jellies $52 $6b, Living rocks $61 $66, Spider $62
   Crab $6d, Jellyfish $76, Scorpion $96
@@ -99,7 +122,7 @@ $26 Orc Move Or Throw : Homing Movement, Shoot
     probably a mistake and should have been some other address?
   $6e0
     metasprite base when directional and shooting
-    
+
 
 $27 Troll Move Or Throw : $26 Orc Move Or Throw
   Troll $6a, Red spider $74, Fishman $75, Salamander $86,
@@ -116,6 +139,7 @@ $28 Golem Move Or Throw : Homing Movement, Shoot
   it to move at all.  Seems kind of silly.
 
   Hard-codes metasprite IDs #$65 and #$91 (when shooting)
+             => requires [60,6c] for pattern banks always
   Diagonal shots allowed
 
   $660
@@ -145,6 +169,8 @@ $2a Solider : Homing Motion, Shoot 2
   $6e0
     alternate base metasprite for shooting frames
 
+$2b Mimic : ??
+  Mimic $73
 
 $2e Flail Knights
   Lizardman $84, Black Knight $95
@@ -161,6 +187,22 @@ $2e Flail Knights
   $6a0
     when nonzero, just do soldier action
 
+$2f Dyna Laser
+$30 Person
+$38 Platform
+$3c Crumbling Platform
+
+$40 Bat, Moth
+  Blue Bat $55, Killer Moth $7c
+
+  ??
+
+$41 (c1) Skeleton
+
+$44 Swamp Tomato
+  Swamp Tomato $5b
+
+  ??
 
 $45 Basic Flyer
   Flying Insects $59 $5c, Flying Medusa head $6e, Birds $6f $81, Devil $8a
@@ -184,6 +226,36 @@ $45 Basic Flyer
     (knockback/speed)
     TODO - haven't really figured this one out
 
+$4c (cc) Stationary Swamp Plant
+
+$4d (cd) Stationary Kraken
+
+$4e (ce) Stationary Burt
+
+$57 Dyna Shot
+  Counter $b8, Bubble $bba
+
+$58 (d8) Sabera 2 fire
+
+$5c (dc) Tower Sentinel
+
+$5d Robot Helicopter
+  Air Sentry $a3
+
+  ??
+
+$5e Tower Defense Mech - waiting to be released
+  Tower Defense Mech $a1
+
+  TODO - adapt this? do we hold back the masses first? spawn them
+         once the first 3 are killed?  i don't see why...
+         store the object id to spawn in some position???
+
+$61 Vampire Bats
+  Bats on bosses: $bc $c1
+
+$64 Projectile: Kelbesque 1 rock
+$6e Boss treasure chest
 
 $70 Flail
   Lizardman Flail $fa, Black knight flail $f9
@@ -194,5 +266,6 @@ $70 Flail
     index into a secondary jump table - $c for flails
     not clear what writes this...
 
+$78 Treasure chest
 
-
+$07 Breakable wall

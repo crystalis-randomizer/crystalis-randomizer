@@ -607,7 +607,7 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   rom.trigger(0xb2).flags.shift(); // remove 037 learned paralysis
 
   // Learn refresh trigger ($b4) ~ remove redundant itemget flag
-  rom.trigger(0xb4).conditions[0] = ~0x241;
+  rom.trigger(0xb4).conditions[1] = ~0x241;
   rom.trigger(0xb4).flags = []; // remove 039 learned refresh
 
   // Portoa palace guard movement trigger ($bb) stops on 01b (mesia) not 01f (orb)

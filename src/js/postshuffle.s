@@ -199,7 +199,7 @@ RescaleExp:   ; $1bcbd
   ;; EXP = min(2032, DiffExp * SEXP)
   ;; NOTE: SEXP is compressed for values > $7f.
   lda ObjectExp,x
-   jmp $3c2af
+   beq RescaleDone
   sta $61
   lda DiffExp,y
   php ; keep track of whether we were compressed or not.

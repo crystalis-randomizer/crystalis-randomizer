@@ -371,7 +371,7 @@ const preventNpcDespawns = (rom, flags) => {
     rom.trigger(0x8c).conditions.push(0x037);
     rom.trigger(0xb2).conditions[0] = ~0x242;
     rom.trigger(0xb2).flags.shift();
-    rom.trigger(0xb4).conditions[0] = ~0x241;
+    rom.trigger(0xb4).conditions[1] = ~0x241;
     rom.trigger(0xb4).flags = [];
     rom.trigger(0xbb).conditions[1] = ~0x01b;
     const zombieTown = rom.locations[0x65];

@@ -1053,6 +1053,9 @@ const rescaleMonsters = (rom: Rom, flags: FlagSet, random: Random) => {
 
   // Fix Sabera 1's elemental defense to no longer allow thunder
   rom.objects[0x7d].elements |= 0x08;
+  // Fix Sabera 2's fireballs to do shield damage and not cause paralysis
+  rom.objects[0xc8].attackType = 0xff;
+  rom.objects[0xc8].statusEffect = 0;
 
   const BOSSES = new Set([0x57, 0x5e, 0x68, 0x7d, 0x88, 0x97, 0x9b, 0x9e]);
   const SLIMES = new Set([0x50, 0x53, 0x5f, 0x69]);
@@ -1065,7 +1068,13 @@ const rescaleMonsters = (rom: Rom, flags: FlagSet, random: Random) => {
     o[7] = satk;  // ATK
     // Sword: 0..3 (wind - thunder) preserved, 4 (crystalis) => 7
     o[8] = sdef | swrd << 4; // DEF
-    o[9] = o[9] & 0xe0 | boss;
+    // NOTE: long ago we stored whether this was a boss in the lowest
+    // bit of the now-unused LEVEL. so that we could increase scaling
+    // on killing them, but now that scaling is tied to items, that's
+    // no longer needed - we could co-opt this to instead store upper
+    // bits of HP (or possibly lower bits so that HP-based effects
+    // still work correctly).
+    // o[9] = o[9] & 0xe0;
     o[16] = o[16] & 0x0f | dgld << 4; // GLD
     o[17] = sexp; // EXP
 

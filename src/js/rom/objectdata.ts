@@ -98,8 +98,17 @@ export class ObjectData extends Entity {
     return [...s];
   }
 
+  isShadow() {
+    // NOTE: internally the game checks that the metasprite
+    // is $a7 (see $350f3), but we'll just hardcode.
+    return this.id === 0x7b || this.id === 0x8c;
+  }
+
   get metasprite(): number { return METASPRITE.get(this.data); }
   set metasprite(x: number) { METASPRITE.set(this.data, x); }
+
+  get speed(): number { return SPEED.get(this.data); }
+  set speed(x: number) { SPEED.set(this.data, x); }
 
   get collisionPlane(): number { return COLLISION_PLANE.get(this.data); }
   set collisionPlane(x: number) { COLLISION_PLANE.set(this.data, x); }
@@ -145,6 +154,9 @@ export class ObjectData extends Entity {
 
   get attackType(): number { return ATTACK_TYPE.get(this.data); }
   set attackType(x: number) { ATTACK_TYPE.set(this.data, x); }
+
+  get statusEffect(): number { return STATUS_EFFECT.get(this.data); }
+  set statusEffect(x: number) { STATUS_EFFECT.set(this.data, x); }
 }
 
 function prop(...spec: [number, number?, number?][]) {
@@ -181,6 +193,7 @@ class Stat {
 }
 
 const METASPRITE = prop([0x300]);
+const SPEED = prop([0x340, 0xf]);
 const COLLISION_PLANE = prop([0x3a0, 0xf0, 4]);
 const HITBOX = prop([0x420, 0x40, 2], [0x3a0, 0x0f]);
 const HP = prop([0x3c0]);
@@ -196,3 +209,4 @@ const GOLD_DROP = prop([0x500, 0xf0, 4]);
 const ELEMENTS = prop([0x500, 0xf]);
 const EXP_REWARD = prop([0x520]);
 const ATTACK_TYPE = prop([0x540]);
+const STATUS_EFFECT = prop([0x560, 0xf]);

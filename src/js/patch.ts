@@ -73,13 +73,15 @@ export const shuffle = async (rom: Uint8Array,
 
   const touchShops = true;
 
+  const shouldBuffDyna = flags.buffDyna();
   const defines: {[name: string]: boolean} = {
     _ALLOW_TELEPORT_OUT_OF_TOWER: true,
     _AUTO_EQUIP_BRACELET: flags.autoEquipBracelet(),
     _BARRIER_REQUIRES_CALM_SEA: flags.barrierRequiresCalmSea(),
     _BUFF_DEOS_PENDANT: flags.buffDeosPendant(),
-    _BUFF_DYNA: true,
+    _BUFF_DYNA: shouldBuffDyna, // true,
     _CHECK_FLAG0: true,
+    _DEBUG_DIALOG: seed === 0x17bc,
     _DISABLE_SHOP_GLITCH: flags.disableShopGlitch(),
     _DISABLE_STATUE_GLITCH: flags.disableStatueGlitch(),
     _DISABLE_SWORD_CHARGE_GLITCH: flags.disableSwordChargeGlitch(),
@@ -187,6 +189,7 @@ export const shuffle = async (rom: Uint8Array,
   misc(parsed, flags, random);
 
   // NOTE: This needs to happen BEFORE postshuffle
+  if (flags.buffDyna) buffDyna(parsed, flags); // TODO - conditional
   await parsed.writeData();
   const crc = await postParsedShuffle(rom, random, seed, flags, asm, assemble);
 
@@ -202,8 +205,6 @@ const postParsedShuffle = async (rom: Uint8Array,
                                  flags: FlagSet,
                                  asm: Assembler,
                                  assemble: (path: string) => Promise<void>) => {
-  buffDyna(parsed, flags); // TODO - conditional
-
   await assemble('postshuffle.s');
   updateDifficultyScalingTables(rom, flags, asm);
   updateCoinDrops(rom, flags);
@@ -312,8 +313,11 @@ function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
 }
 
 function buffDyna(rom: Rom, flags: FlagSet): void {
-  rom.objects[0xb8].collisionPlane = 3;
-  rom.objects[0xb8].immobile = 1;
+  rom.objects[0xb8].collisionPlane = 1;
+  rom.objects[0xb8].immobile = true;
+  rom.objects[0xb9].collisionPlane = 1;
+  rom.objects[0xb9].immobile = true;
+  rom.objects[0x33].collisionPlane = 2;
 }
 
 function makeBraceletsProgressive(rom: Rom): void {
@@ -1307,7 +1311,7 @@ const SCALED_MONSTERS: Map<number, MonsterData> = new Map([
   [0xa4, 'b', 'Dyna',                       6,  5,  32,  ,    ,    ,],
   [0xb4, 'b', 'dyna pod',                   6,  5,  48,  26,  ,    ,],
   [0xb8, 'p', 'dyna counter',              15,  ,   ,    42,  ,    ,],
-  [0xb9, 'p', 'dyna laser',                 ,   ,   ,    42,  ,    ,],
+  [0xb9, 'p', 'dyna laser',                15,  ,   ,    42,  ,    ,],
   [0xba, 'p', 'dyna bubble',                ,   ,   ,    36,  ,    ,],
   //
   [0xbc, 'm', 'vamp2 bat',                  ,   ,   ,    16,  ,    15],

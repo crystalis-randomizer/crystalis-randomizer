@@ -157,6 +157,7 @@ DisplayNumber:
 
 
 .ifdef _BUFF_DYNA
+.ifdef _REMOVE_MAGIC_FOR_DYNA
 ;;; Patch ItemGet_Crystalis to remove magics, too
 .org $1c2b7
 
@@ -178,7 +179,7 @@ DisplayNumber:
 
 .assert < $1c2dd
 .endif
-
+.endif
 
 
 ;;; Patch the end of ItemUse to check for a few more items.
@@ -278,6 +279,16 @@ CheckBelowBoss:
 ;; just reject - instead, add the item to an overflow chest.
 ;; We use the bytes at 64b8..64bf to store the overflow.
 
+.ifdef _DEBUG_DIALOG
+;;; Auto level-up and scaling-up dialogs
+.org $1cc87                     ; leaf rabbit -> action 1e
+  .byte $20,$00,$f2,$84
+.org $1cc30                     ; leaf daughter -> action 1d
+  .byte $20,$00,$e8,$1d
+;.org $1cb58                     ; leaf elder -> action 1c
+.org $1cc62                     ; leaf red girl -> action 1c
+  .byte $20,$00,$e0,$0f
+.endif
 
 ;;; ITEM GET PATCHES
 
@@ -801,6 +812,15 @@ CheckForLowHpMp:
 ;;; Beef up dyna
 
 .ifdef _BUFF_DYNA
+
+.org $29ca0
+  .byte $1c ; adhoc spawn 28 (counter) lower bound: [1c
+.org $29ca5
+  .byte $1c ; adhoc spawn 29 (laser) upper bound: 1c)
+.org $29ca9
+  .byte $1c ; adhoc spawn 2a (bubble) upper bound: 1c)
+
+
 .org $37c9c
   ;; Don't check pod's status before shooting eye laser
   nop
@@ -831,7 +851,11 @@ CheckForLowHpMp:
   ;; Change shots to start from a random location
   jmp DynaShoot
 .org $37d86
-  jmp DynaShoot
+  jmp DynaShoot2
+
+.org $37d6c
+  nop
+  nop
 .endif
 
 ;;.org $3c010
@@ -1357,6 +1381,19 @@ DynaShoot:
   pla            ; Pull off the pod's position
   sta $70,x      ;   ...and restore it
   rts
+
+DynaShoot2:
+  pha
+  lda $08
+  asl
+  bcc +
+   iny
++ asl
+  bcc +
+   dey
++ pla
+  jmp $972d     ; AdHocSpawnObject
+
 
 ;; free space
 .assert < $3fe78

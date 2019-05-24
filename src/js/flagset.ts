@@ -269,6 +269,13 @@ export const FLAGS: FlagSection[] = [{
     name: 'Charge shots only',
     text: `Stabbing is completely ineffective.  Only charged shots work.`,
   }, {
+    flag: 'Hd',
+    hard: true,
+    name: 'Buff Dyna',
+    text: `Makes the Dyna fight a bit more of a challenge.  Side pods will fire
+           significantly more.  The safe spot has been removed.  The counter
+           attacks pass through barrier.  Side pods can now be killed.`,
+  }, {
     flag: 'Hz',
     hard: true,
     name: 'Blackout mode',
@@ -632,6 +639,7 @@ export class FlagSet {
   allowWildWarp() { return !this.nerfWildWarp(); }
 
   blackoutMode() { return this.check('Hz'); }
+  buffDyna() { return this.check('Hd'); }
 
   expScalingFactor() {
     return this.check('Hx') ? 0.25 : this.check('Ex') ? 2.5 : 1;

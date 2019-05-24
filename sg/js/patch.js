@@ -62,7 +62,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
 
   const touchShops = true;
 
-  const shouldBuffDyna = seed.toString(16).toLowerCase().startsWith('17bc');
+  const shouldBuffDyna = true; // seed.toString(16).toLowerCase().startsWith('17bc');
 
   const defines = {
     _ALLOW_TELEPORT_OUT_OF_TOWER: true,
@@ -71,7 +71,7 @@ export const shuffle = async (rom, seed, flags, reader, log = undefined, progres
     _BUFF_DEOS_PENDANT: flags.buffDeosPendant(),
     _BUFF_DYNA: shouldBuffDyna, // true,
     _CHECK_FLAG0: true,
-    _DEBUG_DIALOG: seed === 0x17bc,
+    _DEBUG_DIALOG: false, // seed === 0x17bc,
     _DISABLE_SHOP_GLITCH: flags.disableShopGlitch(),
     _DISABLE_STATUE_GLITCH: flags.disableStatueGlitch(),
     _DISABLE_SWORD_CHARGE_GLITCH: flags.disableSwordChargeGlitch(),

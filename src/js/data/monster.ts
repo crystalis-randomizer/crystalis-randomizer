@@ -64,7 +64,7 @@ const ACTION_DIFFICULTY: {[action: number]: (o: ObjectData) => number} = {
   0x21: () => 3,
   // Wraith/zombie
   //  - maybe 2 + (speed / 2) + (isWraith ? 1 : 0)...?
-  0x22: (o) => o.isWraith() ? 5 : 3,
+  0x22: (o) => 3, // o.isWraith() ? 5 : 3,
   0x24: () => 3,
   0x25: () => 3,
   // TODO - maybe depends on shot type? stone/curse more dangerous?
@@ -74,6 +74,8 @@ const ACTION_DIFFICULTY: {[action: number]: (o: ObjectData) => number} = {
   0x28: () => 3,
   0x29: () => 5,
 };
+
+const {} = {VANILLA_SWORDS, ACTION_DIFFICULTY} as any;
 
 export function generate(rom: Rom, flags: FlagSet, random: Random): Monster[] {
   const {} = {rom, flags, random} as any;
@@ -90,7 +92,7 @@ export function generate(rom: Rom, flags: FlagSet, random: Random): Monster[] {
   function base(id: number, name: string, adj: Adjustments = {}) {
     const o = rom.objects[id];
     let {action, immobile, level, atk, def, hp,
-         elements, goldDrop, expReward, status} = o;
+         elements, goldDrop, expReward, statusEffect} = o;
 
     // // What level should the player be at when encountering this in vanilla?
     // if (adj.vanillaLevel) level = adj.vanillaLevel;
@@ -121,16 +123,20 @@ export function generate(rom: Rom, flags: FlagSet, random: Random): Monster[] {
     // TODO - then compute gold/exp
 
 
+    const {} = {sdef, satk, hits, immobile, goldDrop, expReward, statusEffect} as any;
 
-    const m: Monster = {id, name};
-
+    const m: Monster = {id, name} as any;
 
     m.id = id;
     m.name = name;
     m.type = 'monster';
     m.action = action;
-    m.count = count;
+    m.count = 0; // count;
     out.push(m);
+  }
+
+  function monster(...x: any[]): void {
+    base(0, '');
   }
 
   // TODO - additional constraints about e.g. placement, etc?
@@ -164,3 +170,5 @@ function pat(id: number): Constraint {
 function pal(which: number, id: number): Constraint {
   return [];
 }
+
+const {} = {and, pat, pal} as any;

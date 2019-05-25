@@ -239,8 +239,10 @@ Here, have this lame
   rom.messages.parts[0][0xe].fixText();
 
   // try to partition the bgms of the different areas.
-  const bgmPartitions = rom.locations.partition(loc => loc.bgm).filter((l) => l[1]);
-  const bgmValues = bgmPartitions.map(x => x[1]);
+  const bgmPartitions =
+      rom.locations.partition((loc: Location) => loc.bgm)
+          .filter((l: [Location[], number]) => l[1]);
+  const bgmValues = bgmPartitions.map((x: [Location[], number]) => x[1]);
   random.shuffle(bgmValues);
   for (const [locs] of bgmPartitions) {
     const value = bgmValues.pop()!;
@@ -248,7 +250,6 @@ Here, have this lame
       loc.bgm = value;
     }
   }
-  (window as any).rom = rom;
 };
 
 function makeBraceletsProgressive(rom: Rom): void {

@@ -226,6 +226,9 @@ export const FLAGS = [{
            restores MP while moving.  Rabbit boots enable sword charging up to
            level 2 while walking (level 3 still requires being stationary, so as
            to prevent wasting tons of magic).`,
+            }, {
+                flag: 'Tm',
+                name: 'Randomize music',
             }],
     }, {
         section: 'Routing',
@@ -473,6 +476,7 @@ export class FlagSet {
     buffDeosPendant() { return this.check('Tb'); }
     leatherBootsGiveSpeed() { return this.check('Tb'); }
     rabbitBootsChargeWhileWalking() { return this.check('Tb'); }
+    randomizeMusic() { return this.check('Tm'); }
     shuffleMonsters() { return this.check('Mr'); }
     shuffleShops() { return this.check('Ps'); }
     bargainHunting() { return this.shuffleShops(); }

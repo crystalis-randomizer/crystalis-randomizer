@@ -194,8 +194,19 @@ function shuffleMusic(rom, flags, random) {
         }
         (monsters >= part[0].length ? hostile : peaceful).push(part);
     }
+    const evenWeight = true;
     function shuffle(parts) {
         const values = parts.map((x) => x[1]);
+        if (evenWeight) {
+            const used = [...new Set(values)];
+            for (const [locs] of parts) {
+                const value = used[random.nextInt(used.length)];
+                for (const loc of locs) {
+                    loc.bgm = value;
+                }
+            }
+            return;
+        }
         random.shuffle(values);
         for (const [locs] of parts) {
             const value = values.pop();

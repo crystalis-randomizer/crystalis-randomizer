@@ -182,6 +182,7 @@ export const shuffle = async (rom: Uint8Array,
 
   if (flags.orbsOptional()) orbsOptional(parsed);
 
+  shuffleMusic(parsed, flags, random);
   misc(parsed, flags, random);
 
   // NOTE: This needs to happen BEFORE postshuffle
@@ -237,20 +238,61 @@ Here, have this lame
   // it could instead say "the statue of onyx is ...".
   rom.messages.parts[0][0xe].text = `It's dangerous to go alone! Take this.`;
   rom.messages.parts[0][0xe].fixText();
+};
 
-  // try to partition the bgms of the different areas.
-  const bgmPartitions =
-      rom.locations.partition((loc: Location) => loc.bgm)
-          .filter((l: [Location[], number]) => l[1]);
-  const bgmValues = bgmPartitions.map((x: [Location[], number]) => x[1]);
-  random.shuffle(bgmValues);
-  for (const [locs] of bgmPartitions) {
-    const value = bgmValues.pop()!;
-    for (const loc of locs) {
-      loc.bgm = value;
+function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
+  interface HasMusic { bgm: number; }
+  class BossMusic implements HasMusic {
+    constructor(readonly addr: number) {}
+    get bgm() { return rom.prg[this.addr]; }
+    set bgm(x) { rom.prg[this.addr] = x; }
+    partition(): Partition { return [[this], this.bgm]; }
+  }
+  type Partition = [HasMusic[], number];
+  const bossAddr = [
+    0x1e4b8, // vampire 1
+    0x1e690, // insect
+    0x1e99b, // kelbesque
+    0x1ecb1, // sabera
+    0x1ee0f, // mado
+    0x1ef83, // karmine
+    0x1f187, // draygon 1
+    0x1f311, // draygon 2
+    0x37c30, // dyna
+  ];
+
+  const partitions =
+      rom.locations.partition((loc: Location) => loc.id !== 0x5f ? loc.bgm : 0)
+          .filter((l: Partition) => l[1]); // filter out start and dyna
+
+  const peaceful: Partition[] = [];
+  const hostile: Partition[] = [];
+  const bosses: Partition[] = bossAddr.map(a => new BossMusic(a).partition());
+
+  for (const part of partitions) {
+    let monsters = 0;
+    for (const loc of part[0]) {
+      for (const spawn of loc.spawns) {
+        if (spawn.isMonster()) monsters++;
+      }
+    }
+    (monsters >= part[0].length ? hostile : peaceful).push(part);
+  }
+  function shuffle(parts: Partition[]) {
+    const values = parts.map((x: Partition) => x[1]);
+    random.shuffle(values);
+    for (const [locs] of parts) {
+      const value = values.pop()!;
+      for (const loc of locs) {
+        loc.bgm = value;
+      }
     }
   }
-};
+  // shuffle(peaceful);
+  // shuffle(hostile);
+  // shuffle(bosses);
+  shuffle([...peaceful, ...hostile, ...bosses]);
+}
 
 function makeBraceletsProgressive(rom: Rom): void {
   // tornel's trigger needs both items

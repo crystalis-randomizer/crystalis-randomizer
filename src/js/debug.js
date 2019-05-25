@@ -1,3 +1,5 @@
+import {Rom} from './rom.js'
+
 export default (nes) => {
   window.onspawn = () => {};
   window.onspawned = () => {};
@@ -245,6 +247,9 @@ export default (nes) => {
         }, Y=$${nes.cpu.REG_Y.toString(16)}`), func()));
   };
 
+  const rom = new Uint8Array(nes.rom.rom.length + 0x10);
+  rom.subarray(0x10).set(nes.rom.rom);
+  window.rom = new Rom(rom);
 };
 
 

@@ -350,20 +350,20 @@ define BGM_PLAINS        $01
 define BGM_SWAMP         $03
 define BGM_DESERT        $04
 define BGM_OCEAN         $06
-define BGM_FORTRESS      $07    ; sabera, goa, etc?
-define BGM_08            $08    ; one of the later dungeons
+define BGM_CAVE3         $07    ; evil spirit, hydra, styx, oasis, sabera 2
+define BGM_FORTRESS      $08    ; sabera 1, goa
 define BGM_START_MOVIE   $09    ; music that plays after hitting 'start'
 define BGM_INTRO         $0a    ; music that plays in intro movie
 define BGM_TITLE         $0b    ; music just for title screen
 define BGM_DRAYGON2      $0c    ; music for draygon 2 fight
 define BGM_SHYRON        $0d
-define BGM_0E            $0e    ; similar to asina's theme, but a little diff
-define BGM_ASINA         $0f    ; asina's theme
+define BGM_FORTUNE       $0e    ; fortune teller: very similar to queen's theme
+define BGM_PORTOA_QUEEN  $0f    ; portoa queen theme
 define BGM_CAVE          $11    ; standard cave theme (gets old fast)
 define BGM_BOSS          $12    ; standard boss theme
 define BGM_FANFARE       $13    ; plays upon getting important key items
-define BGM_14            $14    ; this is a fancy boss theme
-define BGM_15            $15    ; final tower theme?
+define BGM_DYNA          $14    ; plays during dyna fight
+define BGM_TOWER         $15    ; final tower theme
 define BGM_TOWN          $16
 define BGM_CAVE2         $17    ; alternate cave theme (waterfall cave)
 define BGM_MOUNTAIN      $18    ; mount sabre - maybe also hydra?
@@ -372,7 +372,7 @@ define BGM_1A            $1a    ; ending credits???
 define BGM_WISDOM        $1b    ; wise men areas
 define BGM_1C            $1c    ; ending credits???
 define BGM_1D            $1d    ; ending credits???
-define BGM_1E            $1e    ; basically just a heart beat - fight with dyna?
+define BGM_HEARTBEAT     $1e    ; prelude to dyna fight
 define BGM_START_BOOT    $1f    ; computer booting up sound
 define BGM_FANFARE_ALT   $93    ; TODO - what does the $80 bit do?
 
@@ -428,7 +428,7 @@ define SFX_COMPUTER_BEEPS    $57  ; sequence of beeps (i.e. at start)
 define SFX_COMPUTER_BEEP     $58  ; input a letter of name at start
 define SFX_COMPUTER_PROMPT   $5a  ; plays when message appears at start
 define SFX_5B                $5b  ; some sort of explostion
-define SFX_SECRET_DOOR       $5c  ; in joel - also at after 5d in start sequence
+define SFX_SECRET_DOOR       $5c  ; in joel - also after 5d at start; also thrust crystalis
 define SFX_START_DOOR_OPEN   $5d  ; plays when door opens in front of player
 define SFX_START_DOOR_SHUT   $5e  ; plays when door shuts behind player
 define SFX_PLAYER_HIT        $5f
@@ -451,7 +451,7 @@ define SFX_MNST_FLAIL        $6f  ; black knight, lizard man, etc
 define SFX_DRAYGON_LIGHTNING $72  ; sounds like computer destruct sound maybe?
 define SFX_DYNA_EYE_LASER    $74
 define SFX_CRYSTALIS_SHOT    $75  ; similar to 6b, but a little different
-define SFX_76                $76  ; a different lower sort of klaxon
+define SFX_CRYSTALIS_KLAXON  $76  ; klaxon when tower is exploding
 define SFX_7F                $7f  ; another explosion
 
 ;;; Corresponds to values of $40
@@ -26347,10 +26347,10 @@ ObjectActionJump_6f
         $1f825  xx xx xx:   xxx $xxxx,x
         $1f828  xx:         xxx
         $1f829  xx:         xxx
-        $1f82a  xx xx xx:   xxx $1f96b,y
+        $1f82a  xx xx xx:   xxx BossKillDataTable,y
         $1f82d  xx xx:      xxx $xx
         $1f82f  xx:         xxx
-        $1f830  xx xx xx:    xxx $1f96c,y
+        $1f830  xx xx xx:    xxx BossKillDataTable+1,y
         $1f833  xx xx:       xxx $xx
         $1f835  xx:          xxx
         $1f836  xx:           xxx
@@ -26552,7 +26552,7 @@ BossKillDataTable
         $1f994              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $1f99a              .byte $xx,$xx
 ;;; --------------------------------
-;;; 01 insect	
+;;; 01 insect
         $1f99c              .word ($xxxx)
         $1f99e              .byte $xx,$xx,$xx
         $1f9a1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -35753,11 +35753,11 @@ MainGameModeJump_1e_ThrustCrystalis
         $27e17  xx xx:      xxx #$xx
         $27e19  xx xx xx:   xxx $xxxx
         $27e1c  xx xx:      xxx #$xx
-        $27e1e  xx xx xx:   xxx $3c418
-        $27e21  xx xx xx:   xxx $34c0e
+        $27e1e  xx xx xx:   xxx BankSwitch8k_8000
+        $27e21  xx xx xx:   xxx LoadPalettesForLocation
         $27e24  xx xx:      xxx #$xx
         $27e26  xx xx xx:   xxx $xxxx
-        $27e29  xx xx xx:   xxx $3c008
+        $27e29  xx xx xx:   xxx UpdateEquipmentAndStatus
         $27e2c  xx xx:      xxx #$xx
         $27e2e  xx xx:      xxx #$xx
         $27e30  xx xx xx:   xxx $xxxx,y
@@ -35776,7 +35776,7 @@ MainGameModeJump_1e_ThrustCrystalis
         $27e4e  xx xx xx:   xxx $xxxx,y
         $27e51  xx:         xxx
         $27e52  xx xx:      xxx $xx
-        $27e54  xx xx xx:   xxx $3c739
+        $27e54  xx xx xx:   xxx RequestAttributeTable0Write
         $27e57  xx xx:      xxx #$xx
         $27e59  xx xx xx:   xxx $3c418
         $27e5c  xx xx:      xxx #$xx
@@ -35808,7 +35808,7 @@ MainGameModeJump_1e_ThrustCrystalis
         $27e98  xx xx:      xxx $xx
         $27e9a  xx xx:      xxx $xx
         $27e9c  xx xx:      xxx $xx
-        $27e9e  xx xx xx:   xxx $3ff8c
+        $27e9e  xx xx xx:   xxx DrawAllObjectSprites
         $27ea1  xx xx:      xxx $xx
         $27ea3  xx xx:      xxx #$xx
         $27ea5  xx xx:      xxx $xx
@@ -35831,7 +35831,7 @@ MainGameModeJump_1e_ThrustCrystalis
         $27ecd  xx xx xx:   xxx $xxxx
         $27ed0  xx xx:      xxx #$xx
         $27ed2  xx xx xx:   xxx $xxxx
-        $27ed5  xx xx xx:   xxx $3c169
+        $27ed5  xx xx xx:   xxx WaitForOAMDMA
         $27ed8  xx xx xx:   xxx $3ff8c
         $27edb  xx xx xx:   xxx $xxxx
         $27ede  xx xx xx:   xxx $xxxx
@@ -35839,8 +35839,8 @@ MainGameModeJump_1e_ThrustCrystalis
         $27ee3  xx xx:      xxx $xx
         $27ee5  xx xx:      xxx #$xx
         $27ee7  xx xx xx:   xxx $xxxx
-        $27eea  xx xx:      xxx #$xx
-        $27eec  xx xx xx:   xxx $3c125
+        $27eea  xx xx:      xxx #SFX_SECRET_DOOR
+        $27eec  xx xx xx:   xxx StartAudioTrack
         $27eef  xx xx:      xxx #$xx
         $27ef1  xx xx xx:   xxx ReadObjectCoordinatesInto_34_37
         $27ef4  xx xx:      xxx #$xx
@@ -35865,7 +35865,7 @@ MainGameModeJump_1e_ThrustCrystalis
         $27f20  xx xx xx:   xxx $3c176
         $27f23  xx xx:      xxx #$xx
         $27f25  xx xx xx:   xxx $xxxx
-        $27f28  xx xx xx:   xxx $3ff8c
+        $27f28  xx xx xx:   xxx DrawAllObjectSprites
         $27f2b  xx xx xx:   xxx $27fc9
         $27f2e  xx xx:      xxx #$xx
         $27f30  xx xx xx:   xxx $3c176
@@ -35910,8 +35910,8 @@ MainGameModeJump_1e_ThrustCrystalis
         $27f8e  xx xx:      xxx $xx
         $27f90  xx xx:      xxx #$xx
         $27f92  xx xx:      xxx $xx
-        $27f94  xx xx:      xxx #$xx
-        $27f96  xx xx xx:   xxx $3c125
+        $27f94  xx xx:      xxx #SFX_CRYSTALIS_KLAXON
+        $27f96  xx xx xx:   xxx StartAudioTrack
         $27f99  xx xx:      xxx #$xx
         $27f9b  xx xx xx:   xxx $27ddc
         $27f9e  xx xx xx:   xxx $27fa4
@@ -45099,16 +45099,19 @@ DataTable_35c66
         ;; Sword elements
         $35c66              .byte $xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+        ;; Figure out what kind of shot to fire.
 ++      $35c6c  xx xx xx:   xxx EquippedSword
         $35c6f  xx xx:       xxx SwordSwingEnd ; no sword equipped
         $35c71  xx xx:      xxx #SWORD_CRYSTALIS
         $35c73  xx xx:       xxx SwordSwingCrystalis
-        $35c75  xx xx xx:   xxx $xxxx
+        $35c75  xx xx xx:   xxx PlayerSwordChargeAmount
         $35c78  xx:         xxx
         $35c79  xx:         xxx
         $35c7a  xx:         xxx
+        ;; $10 holds the level
         $35c7b  xx xx:      xxx $xx
         $35c7d  xx xx:      xxx + ; $35c91
+        ;; If not charged AND not paralyzed AND wearing warrior ring => level 1
         $35c7f  xx xx xx:    xxx PlayerStatus
         $35c82  xx xx:       xxx #$xx
         $35c84  xx xx:       xxx #STATUS_PARALYZED
@@ -45120,31 +45123,35 @@ DataTable_35c66
 +       $35c91  xx xx:      xxx $xx
         $35c93  xx xx:      xxx #$xx
         $35c95  xx xx:      xxx + ; $35ca7
-        $35c97  xx xx xx:    xxx $xxxx
+        ;; Firing a level 3 shot: spend the MP or decrease the level
+        $35c97  xx xx xx:    xxx EquippedSword
         $35c9a  xx xx xx:    xxx $34bd8,y
-        $35c9d  xx xx xx:    xxx $xxxx
+        $35c9d  xx xx xx:    xxx PlayerMP
         $35ca0  xx xx:       xxx + ; $35ca7
         $35ca2  xx xx:        xxx $xx
-        $35ca4  xx xx xx:     xxx $xxxx
+        $35ca4  xx xx xx:     xxx PlayerSwordChargeAmount
 +       $35ca7  xx xx xx:   xxx EquippedSword
         $35caa  xx:         xxx
         $35cab  xx xx:      xxx #$xx
         $35cad  xx:         xxx
         $35cae  xx:         xxx
         $35caf  xx xx:      xxx $xx
+        ;; A <- sword<<2 | level
         $35cb1  xx:         xxx
-        $35cb2  xx xx xx:    xxx $xxxx,x
+        $35cb2  xx xx xx:    xxx ObjectMetasprite,x
         $35cb5  xx xx:       xxx #$xx
         $35cb7  xx:          xxx
         $35cb8  xx:          xxx
+        ;; Y <- direction << 1
         $35cb9  xx:         xxx
+        ;; Spawn the sword charge
         $35cba  xx xx xx:   xxx AdHocSpawnObject
-        $35cbd  xx xx:      xxx $xx
-        $35cbf  xx xx xx:   xxx $xxxx
+        $35cbd  xx xx:      xxx SwordSwingEnd
+        $35cbf  xx xx xx:   xxx PlayerSwordChargeAmount
         $35cc2  xx xx:      xxx #$xx
         $35cc4  xx xx:      xxx #$xx
-        $35cc6  xx xx:      xxx $xx
-        $35cc8  xx xx xx:   xxx $xxxx
+        $35cc6  xx xx:      xxx SwordSwingEnd
+        $35cc8  xx xx xx:   xxx EquippedSword
         $35ccb  xx xx xx:   xxx $34bd8,y
         $35cce  xx xx xx:   xxx SpendMPOrDoubleReturn
 SwordSwingEnd
@@ -47751,32 +47758,32 @@ ObjectActionJump_17
         $3712b  xx xx:      xxx $xx
 ObjectActionJump_1b
         $3712d  xx xx xx:   xxx $xxxx,x
-        $37130  xx xx:      xxx $xx
-        $37132  xx xx xx:   xxx $358c7
+        $37130  xx xx:      xxx + ; $37135
+        $37132  xx xx xx:    xxx $358c7 ; despawn
 ;;; --------------------------------
-        $37135  xx xx:      xxx #$xx
++       $37135  xx xx:      xxx #$xx
         $37137  xx xx:      xxx $xx
-        $37139  xx xx xx:   xxx $xxxx,x
-        $3713c  xx xx xx:   xxx $xxxx,x
-        $3713f  xx xx:      xxx $xx
-        $37141  xx xx xx:   xxx ReadObjectCoordinatesInto_34_37
-        $37144  xx xx xx:   xxx $xxxx,x
-        $37147  xx xx xx:   xxx ComputeDisplacementVector
-        $3714a  xx xx xx:   xxx AddDisplacementVectorShort
-        $3714d  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
-        $37150  xx xx:      xxx #$xx ; update $380,x
-        $37152  xx xx xx:   xxx CheckTerrainUnderObject
-        $37155  xx xx:      xxx $xx
-        $37157  xx xx xx:   xxx $xxxx,x
-        $3715a  xx xx:      xxx #$xx
-        $3715c  xx xx:      xxx $xx
-        $3715e  xx xx xx:   xxx $xxxx,x
-        $37161  xx:         xxx
-        $37162  xx xx:      xxx #$xx
-        $37164  xx xx:      xxx #$xx
-        $37166  xx xx xx:   xxx $xxxx,x
-        $37169  xx xx:      xxx $xx
-        $3716b  xx xx:      xxx $xx
+-       $37139  xx xx xx:    xxx $xxxx,x
+        $3713c  xx xx xx:    xxx $xxxx,x
+        $3713f  xx xx:       xxx $xx
+        $37141  xx xx xx:    xxx ReadObjectCoordinatesInto_34_37
+        $37144  xx xx xx:    xxx $xxxx,x
+        $37147  xx xx xx:    xxx ComputeDisplacementVector
+        $3714a  xx xx xx:    xxx AddDisplacementVectorShort
+        $3714d  xx xx xx:    xxx WriteObjectCoordinatesFrom_34_37
+        $37150  xx xx:       xxx #$xx ; update $380,x
+        $37152  xx xx xx:    xxx CheckTerrainUnderObject
+        $37155  xx xx:       xxx $xx
+        $37157  xx xx xx:    xxx $xxxx,x
+        $3715a  xx xx:       xxx #$xx
+        $3715c  xx xx:        xxx >>rts ; $37173
+        $3715e  xx xx xx:    xxx $xxxx,x
+        $37161  xx:          xxx
+        $37162  xx xx:       xxx #$xx
+        $37164  xx xx:       xxx #$xx
+        $37166  xx xx xx:    xxx $xxxx,x
+        $37169  xx xx:       xxx $xx
+        $3716b  xx xx:      xxx - ; $37139
         $3716d  xx:         xxx
 ;;; --------------------------------
         $3716e  xx xx:      xxx #$xx
@@ -49052,7 +49059,7 @@ ObjectActionJump_70_03
         $37c28  xx xx:      xxx #$xx
         $37c2a  xx xx xx:   xxx $xxxx
         $37c2d  xx xx:      xxx $xx
-        $37c2f  xx xx:      xxx #$xx ; BGM 14
+        $37c2f  xx xx:      xxx #BGM_DYNA
         $37c31  xx xx xx:   xxx StartAudioTrack
 ;;; --------------------------------
 DataTable_37c34 

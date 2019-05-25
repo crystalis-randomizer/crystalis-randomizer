@@ -13,7 +13,6 @@ export class BossKill extends Entity {
   readonly patterns: Uint8Array;
 
   constructor(rom: Rom, id: number) {
-    // not clear where ID comes from - probably stored in object?
     super(rom, id);
     this.pointer = 0x1f96b + 2 * id;
     this.base = readLittleEndian(rom.prg, this.pointer) + 0x14000;

@@ -278,8 +278,21 @@ function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
     }
     (monsters >= part[0].length ? hostile : peaceful).push(part);
   }
+  const evenWeight = true;
   function shuffle(parts: Partition[]) {
     const values = parts.map((x: Partition) => x[1]);
+
+    if (evenWeight) {
+      const used = [...new Set(values)];
+      for (const [locs] of parts) {
+        const value = used[random.nextInt(used.length)];
+        for (const loc of locs) {
+          loc.bgm = value;
+        }
+      }
+      return;
+    }
+
     random.shuffle(values);
     for (const [locs] of parts) {
       const value = values.pop()!;
@@ -291,6 +304,7 @@ function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
   // shuffle(peaceful);
   // shuffle(hostile);
   // shuffle(bosses);
+
   shuffle([...peaceful, ...hostile, ...bosses]);
 }
 

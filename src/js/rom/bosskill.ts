@@ -46,6 +46,12 @@ export class BossKill extends Entity {
     // NOTE: we could compress this table quite a bit if we wanted to,
     // there's a lot of zeros in the restore sections.  Something as
     // simple as a bitmask before each could help.
-    writer.rom.subarray(this.base, this.base + 21).set(this.data);
+    // writer.rom.subarray(this.base, this.base + 21).set(this.data);
+
+    // NOTE: we're only going to write the bits that aren't owned by
+    // the Location object.
+    for (const i of [0, 1, 4]) {
+      writer.rom[this.base + i] = this.data[i];
+    }
   }
 }

@@ -182,7 +182,7 @@ export const shuffle = async (rom: Uint8Array,
 
   if (flags.orbsOptional()) orbsOptional(parsed);
 
-  misc(parsed, flags);
+  misc(parsed, flags, random);
 
   // NOTE: This needs to happen BEFORE postshuffle
   await parsed.writeData();
@@ -215,7 +215,8 @@ const postParsedShuffle = async (rom: Uint8Array,
   // return log.join('\n');
 };
 
-const misc = (rom: Rom, flags: FlagSet) => {
+function misc(rom: Rom, flags: FlagSet, random: Random) {
+  const {} = {rom, flags, random} as any;
   // NOTE: we still need to do some work actually adjusting
   // message texts to prevent line overflow, etc.  We should
   // also make some hooks to easily swap out items where it
@@ -236,7 +237,18 @@ Here, have this lame
   // it could instead say "the statue of onyx is ...".
   rom.messages.parts[0][0xe].text = `It's dangerous to go alone! Take this.`;
   rom.messages.parts[0][0xe].fixText();
-  if (!rom || !flags) console.log(rom, flags);
+
+  // try to partition the bgms of the different areas.
+  const bgmPartitions = rom.locations.partition(loc => loc.bgm).filter((l) => l[1]);
+  const bgmValues = bgmPartitions.map(x => x[1]);
+  random.shuffle(bgmValues);
+  for (const [locs] of bgmPartitions) {
+    const value = bgmValues.pop()!;
+    for (const loc of locs) {
+      loc.bgm = value;
+    }
+  }
+  (window as any).rom = rom;
 };
 
 function makeBraceletsProgressive(rom: Rom): void {
@@ -1416,10 +1428,12 @@ class MonsterPool {
       let flyers = maxFlyers; // count down...
 
       // Determine location constraints
-      let treasureChest = false;
+      // Note that bosses always leave chests.
+      let treasureChest = location.bossId() != null;
       for (const spawn of location.spawns) {
         if (spawn.isChest()) treasureChest = true;
         if (!spawn.isMonster()) continue;
+        // hard-code a few monster requirements.
         const id = spawn.monsterId;
         if (id === 0x7e || id === 0x7f || id === 0x9f) {
           pat1 = 0x62;
@@ -1448,6 +1462,7 @@ class MonsterPool {
           return false;
         }
         // whether we can put this one in pat0
+        // NOTE - treasure chest wants to be in pattern 1, I think?
         const pat0ok = !treasureChest || TREASURE_CHEST_BANKS.has(m.pat);
         let patSlot;
         if (location.rom.objects[m.id].child || RETAIN_SLOTS.has(m.id)) {

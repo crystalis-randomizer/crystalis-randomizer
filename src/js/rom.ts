@@ -3,7 +3,7 @@ import {BossKill} from './rom/bosskill.js';
 import {Hitbox} from './rom/hitbox.js';
 import {Item} from './rom/item.js';
 import {ItemGet} from './rom/itemget.js';
-import {Location} from './rom/location.js';
+import {Locations} from './rom/locations.js';
 import {Messages} from './rom/messages.js';
 import {Metasprite} from './rom/metasprite.js';
 import {Npc} from './rom/npc.js';
@@ -57,7 +57,7 @@ export class Rom {
   readonly triggers: Trigger[];
   readonly patterns: Pattern[];
   readonly palettes: Palette[];
-  readonly locations: Location[];
+  readonly locations: Locations;
   readonly tileAnimations: TileAnimation[];
   readonly hitboxes: Hitbox[];
   readonly objects: ObjectData[];
@@ -131,7 +131,7 @@ export class Rom {
     this.triggers = seq(0x43, i => new Trigger(this, 0x80 | i));
     this.patterns = seq(this.chr.length >> 4, i => new Pattern(this, i));
     this.palettes = seq(0x100, i => new Palette(this, i));
-    this.locations = seq(0x100, i => new Location(this, i));
+    this.locations = new Locations(this);
     this.tileAnimations = seq(4, i => new TileAnimation(this, i));
     this.hitboxes = seq(24, i => new Hitbox(this, i));
     this.objects = seq(0x100, i => new ObjectData(this, i));
@@ -586,6 +586,14 @@ function pickFile(): Promise<Uint8Array> {
 export const EXPECTED_CRC32 = 0x1bd39032;
 
 const ADJUSTMENTS = new Map<number, number>([
+  // Fix garbage map square in bottom-right of Mt Sabre West cave
+  [0x14db9, 0x80],
+  // Fix garbage map square in bottom-left of Lime Tree Valley
+  [0x1545d, 0x00],
+  // Fix garbage at bottom of oasis cave map (it's 8x11, not 8x12 => fix height)
+  [0x164ff, 0x0a],
+  // Fix bad music in zombietown houses: $10 should be $01
+  [0x1782a, 0x01], [0x17857, 0x01],
   // Point Amazones outer guard to post-overflow message that actually shows.
   [0x1cf05, 0x48],
   // Remove stray flight granter in Zombietown.

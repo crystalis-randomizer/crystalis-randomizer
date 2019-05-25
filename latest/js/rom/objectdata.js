@@ -64,8 +64,13 @@ export class ObjectData extends Entity {
         const s = new Set([...ms.palettes(), ...(childMs ? childMs.palettes() : [])]);
         return [...s];
     }
+    isShadow() {
+        return this.id === 0x7b || this.id === 0x8c;
+    }
     get metasprite() { return METASPRITE.get(this.data); }
     set metasprite(x) { METASPRITE.set(this.data, x); }
+    get speed() { return SPEED.get(this.data); }
+    set speed(x) { SPEED.set(this.data, x); }
     get collisionPlane() { return COLLISION_PLANE.get(this.data); }
     set collisionPlane(x) { COLLISION_PLANE.set(this.data, x); }
     get hitbox() { return HITBOX.get(this.data); }
@@ -96,6 +101,8 @@ export class ObjectData extends Entity {
     set expReward(x) { EXP_REWARD.set(this.data, x); }
     get attackType() { return ATTACK_TYPE.get(this.data); }
     set attackType(x) { ATTACK_TYPE.set(this.data, x); }
+    get statusEffect() { return STATUS_EFFECT.get(this.data); }
+    set statusEffect(x) { STATUS_EFFECT.set(this.data, x); }
 }
 function prop(...spec) {
     return new Stat(...spec);
@@ -125,6 +132,7 @@ class Stat {
     }
 }
 const METASPRITE = prop([0x300]);
+const SPEED = prop([0x340, 0xf]);
 const COLLISION_PLANE = prop([0x3a0, 0xf0, 4]);
 const HITBOX = prop([0x420, 0x40, 2], [0x3a0, 0x0f]);
 const HP = prop([0x3c0]);
@@ -140,4 +148,5 @@ const GOLD_DROP = prop([0x500, 0xf0, 4]);
 const ELEMENTS = prop([0x500, 0xf]);
 const EXP_REWARD = prop([0x520]);
 const ATTACK_TYPE = prop([0x540]);
+const STATUS_EFFECT = prop([0x560, 0xf]);
 //# sourceMappingURL=objectdata.js.map

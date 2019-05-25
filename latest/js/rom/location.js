@@ -105,6 +105,27 @@ export class Location extends Entity {
         const base = await write(addresses, 'MapData');
         writeLittleEndian(writer.rom, this.mapDataPointer, base - 0xc000);
         await Promise.all(promises);
+        const bossId = this.bossId();
+        if (bossId != null && this.id !== 0x5f) {
+            const bossBase = readLittleEndian(writer.rom, 0x1f96b + 2 * bossId) + 0x14000;
+            const bossRestore = [
+                ,
+                , , this.bgm, ,
+                ...this.tilePalettes, , , , this.spritePalettes[0], ,
+                ,
+                , , , this.spritePatterns[0], ,
+                this.animation,
+            ];
+            for (let j = 0; j < bossRestore.length; j++) {
+                const restored = bossRestore[j];
+                if (restored == null)
+                    continue;
+                writer.rom[bossBase + j] = restored;
+            }
+            const bossBase2 = 0x1f7c1 + 5 * bossId;
+            writer.rom[bossBase2] = this.spritePalettes[1];
+            writer.rom[bossBase2 + 1] = this.spritePatterns[1];
+        }
     }
     allScreens() {
         const screens = new Set();
@@ -115,6 +136,20 @@ export class Location extends Entity {
             }
         }
         return screens;
+    }
+    bossId() {
+        for (let i = 0; i < 0x0e; i++) {
+            if (this.rom.prg[0x1f95d + i] === this.id)
+                return i;
+        }
+        return undefined;
+    }
+    neighbors() {
+        const out = new Set();
+        for (const exit of this.exits) {
+            out.add(this.rom.locations[exit.dest]);
+        }
+        return out;
     }
 }
 export const Entrance = DataTuple.make(4, {
@@ -217,7 +252,7 @@ export const LOCATIONS = (() => {
     loc(0x21, 'Mt Sabre West - Upper');
     loc(0x22, 'Mt Sabre West - Cave 2');
     loc(0x23, 'Mt Sabre West - Cave 3');
-    loc(0x24, 'Mt Sabre West - Cave 4', { replace: [[3, 4, 0x80]] });
+    loc(0x24, 'Mt Sabre West - Cave 4');
     loc(0x25, 'Mt Sabre West - Cave 5');
     loc(0x26, 'Mt Sabre West - Cave 6');
     loc(0x27, 'Mt Sabre West - Cave 7');
@@ -242,7 +277,7 @@ export const LOCATIONS = (() => {
     loc(0x3e, 'Nadare - Back Room');
     loc(0x40, 'Waterfall Valley North');
     loc(0x41, 'Waterfall Valley South');
-    loc(0x42, 'Lime Tree Valley', { replace: [[0, 2, 0x00]] });
+    loc(0x42, 'Lime Tree Valley');
     loc(0x43, 'Lime Tree Lake');
     loc(0x44, 'Kirisa Plant Cave 1');
     loc(0x45, 'Kirisa Plant Cave 2');
@@ -307,10 +342,7 @@ export const LOCATIONS = (() => {
     loc(0x8e, 'Goa');
     loc(0x8f, 'Goa Fortress - Oasis Entrance');
     loc(0x90, 'Desert 1');
-    loc(0x91, 'Oasis Cave - Main', { replace: [
-            [0, 11, 0x80], [1, 11, 0x80], [2, 11, 0x80], [3, 11, 0x80],
-            [4, 11, 0x80], [5, 11, 0x80], [6, 11, 0x80], [7, 11, 0x80]
-        ] });
+    loc(0x91, 'Oasis Cave - Main');
     loc(0x92, 'Desert Cave 1');
     loc(0x93, 'Sahara');
     loc(0x94, 'Sahara - Outside Cave');

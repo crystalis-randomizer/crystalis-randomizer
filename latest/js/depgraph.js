@@ -71,7 +71,7 @@ export const generate = (flags = new FlagSet(), rom) => {
         .dialog(0x22, undefined, 0)
         .dialog(0x60, 0x1e, 0)
         .dialog(0x1d, undefined, 2)
-        .dialog(0x1f, undefined, 0)
+        .dialog(0x1f, undefined, 1)
         .npcSpawn(0xc1)
         .key();
     const flameBracelet = item(0x08, 'Flame Bracelet')

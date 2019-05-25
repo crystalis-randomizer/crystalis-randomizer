@@ -25,7 +25,9 @@ export class BossKill extends Entity {
     get explode() { return !!this.data[20]; }
     set explode(x) { this.data[20] = x ? 1 : 0; }
     write(writer) {
-        writer.rom.subarray(this.base, this.base + 21).set(this.data);
+        for (const i of [0, 1, 4]) {
+            writer.rom[this.base + i] = this.data[i];
+        }
     }
 }
 //# sourceMappingURL=bosskill.js.map

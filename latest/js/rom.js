@@ -3,7 +3,7 @@ import { BossKill } from './rom/bosskill.js';
 import { Hitbox } from './rom/hitbox.js';
 import { Item } from './rom/item.js';
 import { ItemGet } from './rom/itemget.js';
-import { Location } from './rom/location.js';
+import { Locations } from './rom/locations.js';
 import { Messages } from './rom/messages.js';
 import { Metasprite } from './rom/metasprite.js';
 import { Npc } from './rom/npc.js';
@@ -40,7 +40,7 @@ export class Rom {
         this.triggers = seq(0x43, i => new Trigger(this, 0x80 | i));
         this.patterns = seq(this.chr.length >> 4, i => new Pattern(this, i));
         this.palettes = seq(0x100, i => new Palette(this, i));
-        this.locations = seq(0x100, i => new Location(this, i));
+        this.locations = new Locations(this);
         this.tileAnimations = seq(4, i => new TileAnimation(this, i));
         this.hitboxes = seq(24, i => new Hitbox(this, i));
         this.objects = seq(0x100, i => new ObjectData(this, i));
@@ -318,6 +318,10 @@ function pickFile() {
 }
 export const EXPECTED_CRC32 = 0x1bd39032;
 const ADJUSTMENTS = new Map([
+    [0x14db9, 0x80],
+    [0x1545d, 0x00],
+    [0x164ff, 0x0a],
+    [0x1782a, 0x01], [0x17857, 0x01],
     [0x1cf05, 0x48],
     [0x1d311, 0xa0], [0x1d312, 0x00],
     [0x1cff9, 0xe0],

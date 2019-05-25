@@ -133,7 +133,7 @@ export const shuffle = async (rom, seed, flags, reader, log, progress) => {
         disableStabs(parsed);
     if (flags.orbsOptional())
         orbsOptional(parsed);
-    misc(parsed, flags);
+    misc(parsed, flags, random);
     await parsed.writeData();
     const crc = await postParsedShuffle(rom, random, seed, flags, asm, assemble);
     return crc;
@@ -145,7 +145,8 @@ const postParsedShuffle = async (rom, random, seed, flags, asm, assemble) => {
     shuffleRandomNumbers(rom, random);
     return stampVersionSeedAndHash(rom, seed, flags);
 };
-const misc = (rom, flags) => {
+function misc(rom, flags, random) {
+    const {} = { rom, flags, random };
     rom.messages.parts[2][2].text = `
 {01:Akahana} is handed a statue.#
 Thanks for finding that.
@@ -155,9 +156,18 @@ Here, have this lame
 [29:Gas Mask] or something.`;
     rom.messages.parts[0][0xe].text = `It's dangerous to go alone! Take this.`;
     rom.messages.parts[0][0xe].fixText();
-    if (!rom || !flags)
-        console.log(rom, flags);
-};
+    const bgmPartitions = rom.locations.partition((loc) => loc.bgm)
+        .filter((l) => l[1]);
+    const bgmValues = bgmPartitions.map((x) => x[1]);
+    random.shuffle(bgmValues);
+    for (const [locs] of bgmPartitions) {
+        const value = bgmValues.pop();
+        for (const loc of locs) {
+            loc.bgm = value;
+        }
+    }
+}
+;
 function makeBraceletsProgressive(rom) {
     const tornel = rom.npcs[0x5f];
     const vanilla = tornel.localDialogs.get(0x21);
@@ -633,6 +643,8 @@ const rescaleMonsters = (rom, flags, random) => {
         }
     }
     rom.objects[0x7d].elements |= 0x08;
+    rom.objects[0xc8].attackType = 0xff;
+    rom.objects[0xc8].statusEffect = 0;
     const BOSSES = new Set([0x57, 0x5e, 0x68, 0x7d, 0x88, 0x97, 0x9b, 0x9e]);
     const SLIMES = new Set([0x50, 0x53, 0x5f, 0x69]);
     for (const [id, { sdef, swrd, hits, satk, dgld, sexp }] of SCALED_MONSTERS) {
@@ -642,7 +654,6 @@ const rescaleMonsters = (rom, flags, random) => {
         o[6] = hits;
         o[7] = satk;
         o[8] = sdef | swrd << 4;
-        o[9] = o[9] & 0xe0 | boss;
         o[16] = o[16] & 0x0f | dgld << 4;
         o[17] = sexp;
         if (boss ? flags.shuffleBossElements() : flags.shuffleMonsterElements()) {
@@ -871,7 +882,7 @@ class MonsterPool {
             let pal2 = fixedSlots.pal2 || null;
             let pal3 = fixedSlots.pal3 || null;
             let flyers = maxFlyers;
-            let treasureChest = false;
+            let treasureChest = location.bossId() != null;
             for (const spawn of location.spawns) {
                 if (spawn.isChest())
                     treasureChest = true;

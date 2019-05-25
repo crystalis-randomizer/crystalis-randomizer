@@ -133,6 +133,7 @@ export const shuffle = async (rom, seed, flags, reader, log, progress) => {
         disableStabs(parsed);
     if (flags.orbsOptional())
         orbsOptional(parsed);
+    shuffleMusic(parsed, flags, random);
     misc(parsed, flags, random);
     await parsed.writeData();
     const crc = await postParsedShuffle(rom, random, seed, flags, asm, assemble);
@@ -156,18 +157,55 @@ Here, have this lame
 [29:Gas Mask] or something.`;
     rom.messages.parts[0][0xe].text = `It's dangerous to go alone! Take this.`;
     rom.messages.parts[0][0xe].fixText();
-    const bgmPartitions = rom.locations.partition((loc) => loc.bgm)
-        .filter((l) => l[1]);
-    const bgmValues = bgmPartitions.map((x) => x[1]);
-    random.shuffle(bgmValues);
-    for (const [locs] of bgmPartitions) {
-        const value = bgmValues.pop();
-        for (const loc of locs) {
-            loc.bgm = value;
-        }
-    }
 }
 ;
+function shuffleMusic(rom, flags, random) {
+    class BossMusic {
+        constructor(addr) {
+            this.addr = addr;
+        }
+        get bgm() { return rom.prg[this.addr]; }
+        set bgm(x) { rom.prg[this.addr] = x; }
+        partition() { return [[this], this.bgm]; }
+    }
+    const bossAddr = [
+        0x1e4b8,
+        0x1e690,
+        0x1e99b,
+        0x1ecb1,
+        0x1ee0f,
+        0x1ef83,
+        0x1f187,
+        0x1f311,
+        0x37c30,
+    ];
+    const partitions = rom.locations.partition((loc) => loc.id !== 0x5f ? loc.bgm : 0)
+        .filter((l) => l[1]);
+    const peaceful = [];
+    const hostile = [];
+    const bosses = bossAddr.map(a => new BossMusic(a).partition());
+    for (const part of partitions) {
+        let monsters = 0;
+        for (const loc of part[0]) {
+            for (const spawn of loc.spawns) {
+                if (spawn.isMonster())
+                    monsters++;
+            }
+        }
+        (monsters >= part[0].length ? hostile : peaceful).push(part);
+    }
+    function shuffle(parts) {
+        const values = parts.map((x) => x[1]);
+        random.shuffle(values);
+        for (const [locs] of parts) {
+            const value = values.pop();
+            for (const loc of locs) {
+                loc.bgm = value;
+            }
+        }
+    }
+    shuffle([...peaceful, ...hostile, ...bosses]);
+}
 function makeBraceletsProgressive(rom) {
     const tornel = rom.npcs[0x5f];
     const vanilla = tornel.localDialogs.get(0x21);

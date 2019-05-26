@@ -183,8 +183,7 @@ export const FLAGS: FlagSection[] = [{
     hard: true,
     name: 'Shuffle tower robots',
     text: `Tower robots will be shuffled into the normal pool.  At some
-           point, normal monsters may be shuffled into the tower as well.
-           NOTE: tower robots currently don't give any gold or experience.`,
+           point, normal monsters may be shuffled into the tower as well.`,
 
   // }, {
   //   flag: 'M!',
@@ -489,6 +488,8 @@ export const FLAGS: FlagSection[] = [{
   flags: [{
     flag: 'Ds',
     name: 'Generate a spoiler log',
+    text: `Note: <b>this will change the placement of items</b> compared to a
+      seed generated without this flag turned on.`
   }, {
     flag: 'Di',
     name: 'Player never dies',

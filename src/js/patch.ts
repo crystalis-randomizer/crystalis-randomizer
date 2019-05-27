@@ -334,7 +334,9 @@ function blackoutMode(rom: Rom) {
   }
 }
 
-const closeCaveEntrances = (rom: Rom, flags: FlagSet) => {
+function closeCaveEntrances(rom: Rom, flags: FlagSet): void {
+  // Prevent softlock from exiting sealed cave before windmill started
+  rom.locations.valleyOfWind.entrances[1].y += 16;
 
   // Clear tiles 1,2,3,4 for blockable caves in tilesets 90, 94, and 9c
   rom.swapMetatiles([0x90],
@@ -349,44 +351,56 @@ const closeCaveEntrances = (rom: Rom, flags: FlagSet) => {
                     [0x89, [0x04, 0x0a], ~0xd7]);
 
   // Now replace the tiles with the blockable ones
-  rom.screens[0x0a].tiles[0x3][0x8] = 0x01;
-  rom.screens[0x0a].tiles[0x3][0x9] = 0x02;
-  rom.screens[0x0a].tiles[0x4][0x8] = 0x03;
-  rom.screens[0x0a].tiles[0x4][0x9] = 0x04;
+  rom.screens[0x0a].tiles[0x38] = 0x01;
+  rom.screens[0x0a].tiles[0x39] = 0x02;
+  rom.screens[0x0a].tiles[0x48] = 0x03;
+  rom.screens[0x0a].tiles[0x49] = 0x04;
 
-  rom.screens[0x15].tiles[0x7][0x9] = 0x01;
-  rom.screens[0x15].tiles[0x7][0xa] = 0x02;
-  rom.screens[0x15].tiles[0x8][0x9] = 0x03;
-  rom.screens[0x15].tiles[0x8][0xa] = 0x04;
+  rom.screens[0x15].tiles[0x79] = 0x01;
+  rom.screens[0x15].tiles[0x7a] = 0x02;
+  rom.screens[0x15].tiles[0x89] = 0x03;
+  rom.screens[0x15].tiles[0x8a] = 0x04;
 
-  rom.screens[0x19].tiles[0x4][0x8] = 0x01;
-  rom.screens[0x19].tiles[0x4][0x9] = 0x02;
-  rom.screens[0x19].tiles[0x5][0x8] = 0x03;
-  rom.screens[0x19].tiles[0x5][0x9] = 0x04;
+  rom.screens[0x19].tiles[0x48] = 0x01;
+  rom.screens[0x19].tiles[0x49] = 0x02;
+  rom.screens[0x19].tiles[0x58] = 0x03;
+  rom.screens[0x19].tiles[0x59] = 0x04;
 
-  rom.screens[0x3e].tiles[0x5][0x6] = 0x01;
-  rom.screens[0x3e].tiles[0x5][0x7] = 0x02;
-  rom.screens[0x3e].tiles[0x6][0x6] = 0x03;
-  rom.screens[0x3e].tiles[0x6][0x7] = 0x04;
+  rom.screens[0x3e].tiles[0x56] = 0x01;
+  rom.screens[0x3e].tiles[0x57] = 0x02;
+  rom.screens[0x3e].tiles[0x66] = 0x03;
+  rom.screens[0x3e].tiles[0x67] = 0x04;
+
+  // Destructure out a few locations by name
+  const {
+    valleyOfWind,
+    cordelPlainsWest,
+    cordelPlainsEast,
+    waterfallValleyNorth,
+    waterfallValleySouth,
+    kirisaMeadow,
+    saharaOutsideCave,
+    desert2,
+  } = rom.locations;
 
   // NOTE: flag 2ef is ALWAYS set - use it as a baseline.
   const flagsToClear = [
-    [0x03, 0x30], // valley of wind, zebu's cave
-    [0x14, 0x30], // cordel west, vampire cave
-    [0x15, 0x30], // cordel east, vampire cave
-    [0x40, 0x00], // waterfall north, prison cave
-    [0x40, 0x14], // waterfall north, fog lamp
-    [0x41, 0x74], // waterfall south, kirisa
-    [0x47, 0x10], // kirisa meadow
-    [0x94, 0x00], // cave to desert
-    [0x98, 0x41],
-  ];
+    [valleyOfWind, 0x30], // valley of wind, zebu's cave
+    [cordelPlainsWest, 0x30], // cordel west, vampire cave
+    [cordelPlainsEast, 0x30], // cordel east, vampire cave
+    [waterfallValleyNorth, 0x00], // waterfall north, prison cave
+    [waterfallValleyNorth, 0x14], // waterfall north, fog lamp
+    [waterfallValleySouth, 0x74], // waterfall south, kirisa
+    [kirisaMeadow, 0x10], // kirisa meadow
+    [saharaOutsideCave, 0x00], // cave to desert
+    [desert2, 0x41],
+  ] as const;
   for (const [loc, yx] of flagsToClear) {
-    rom.locations[loc].flags.push(Flag.of({yx, flag: 0x2ef}));
+    loc.flags.push(Flag.of({yx, flag: 0x2ef}));
   }
 
-  const replaceFlag = (loc: number, yx: number, flag: number) => {
-    for (const f of rom.locations[loc].flags) {
+  function replaceFlag(loc: Location, yx: number, flag: number): void {
+    for (const f of loc.flags) {
       if (f.yx === yx) {
         f.flag = flag;
         return;
@@ -400,14 +414,14 @@ const closeCaveEntrances = (rom: Rom, flags: FlagSet) => {
     //  - const vampireFlag = ~rom.npcSpawns[0xc0].conditions[0x0a][0];
     //  -> kelbesque for the other one.
     const windmillFlag = 0x2ee;
-    replaceFlag(0x14, 0x30, windmillFlag);
-    replaceFlag(0x15, 0x30, windmillFlag);
+    replaceFlag(cordelPlainsWest, 0x30, windmillFlag);
+    replaceFlag(cordelPlainsEast, 0x30, windmillFlag);
 
-    replaceFlag(0x40, 0x00, 0x2d8); // key to prison flag
+    replaceFlag(waterfallValleyNorth, 0x00, 0x2d8); // key to prison flag
     const explosion = Spawn.of({y: 0x060, x: 0x060, type: 4, id: 0x2c});
     const keyTrigger = Spawn.of({y: 0x070, x: 0x070, type: 2, id: 0xad});
-    rom.locations[0x40].spawns.splice(1, 0, explosion);
-    rom.locations[0x40].spawns.push(keyTrigger);
+    waterfallValleyNorth.spawns.splice(1, 0, explosion);
+    waterfallValleyNorth.spawns.push(keyTrigger);
   }
 
   // rom.locations[0x14].tileEffects = 0xb3;
@@ -440,15 +454,18 @@ const eastCave = (rom: Rom) => {
 };
 
 const adjustGoaFortressTriggers = (rom: Rom) => {
+  const l = rom.locations;
   // Move Kelbesque 2 one tile left.
-  rom.locations[0xa9].spawns[0].x -= 8;
+  l.goaFortressKelbesque.spawns[0].x -= 8;
   // Remove sage screen locks (except Kensu).
-  rom.locations[0xaa].spawns.splice(1, 1); // zebu screen lock trigger
-  rom.locations[0xac].spawns.splice(2, 1); // tornel screen lock trigger
-  rom.locations[0xb9].spawns.splice(2, 1); // asina screen lock trigger
+  l.goaFortressZebu.spawns.splice(1, 1); // zebu screen lock trigger
+  l.goaFortressKensu.spawns.splice(2, 1); // tornel screen lock trigger
+  l.goaFortressAsina.spawns.splice(2, 1); // asina screen lock trigger
 };
 
 const alarmFluteIsKeyItem = (rom: Rom) => {
+  const {waterfallCave4} = rom.locations;
+
   // Person 14 (Zebu's student): secondary item -> alarm flute
   rom.npcs[0x14].data[1] = 0x31; // NOTE: Clobbers shuffled item!!!
   // Move alarm flute to third row
@@ -483,7 +500,7 @@ const alarmFluteIsKeyItem = (rom: Rom) => {
   // Change flute of lime chest's (now-unused) itemget to have medical herb
   rom.itemGets[0x5b].itemId = 0x1d;
   // Change the actual spawn for that chest to be the mirrored shield chest
-  rom.locations[0x57].spawns[0x19 - 0xd].id = 0x10;
+  waterfallCave4.spawn(0x19).id = 0x10;
 
   // TODO - require new code for two uses
 };
@@ -683,7 +700,7 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   rom.trigger(0xbb).conditions[1] = ~0x01b;
 
   // Remove redundant trigger 8a (slot 16) in zombietown ($65)
-  const zombieTown = rom.locations[0x65];
+  const {zombieTown} = rom.locations;
   if (zombieTown.spawns[0x16 - 0x0d].id === 0x8a) {
     // TODO - make a "delete if" helper function - delete if trigger 8a
     // possibly use array.filter?
@@ -744,16 +761,17 @@ const adjustItemNames = (rom: Rom, flags: FlagSet) => {
 
 // Add the statue of onyx and possibly the teleport block trigger to Cordel West
 const addCordelWestTriggers = (rom: Rom, flags: FlagSet) => {
-  for (const spawn of rom.locations[0x15].spawns) {
+  const {cordelPlainsEast, cordelPlainsWest} = rom.locations;
+  for (const spawn of cordelPlainsEast.spawns) {
     if (spawn.isChest() || (flags.disableTeleportSkip() && spawn.isTrigger())) {
       // Copy if (1) it's the chest, or (2) we're disabling teleport skip
-      rom.locations[0x14].spawns.push(spawn.clone());
+      cordelPlainsWest.spawns.push(spawn.clone());
     }
   }
 };
 
 const fixRabbitSkip = (rom: Rom) => {
-  for (const spawn of rom.locations[0x28].spawns) {
+  for (const spawn of rom.locations.mtSabreNorthMain.spawns) {
     if (spawn.isTrigger() && spawn.id === 0x86) {
       if (spawn.x === 0x740) {
         spawn.x += 16;
@@ -803,22 +821,21 @@ const orbsOptional = (rom: Rom) => {
 
 // Programmatically add a hole between valley of wind and lime tree valley
 const connectLimeTreeToLeaf = (rom: Rom) => {
-  const valleyOfWind = rom.locations[0x03];
-  const limeTree = rom.locations[0x42];
+  const {valleyOfWind, limeTreeValley} = rom.locations;
 
   valleyOfWind.screens[5][4] = 0x10; // new exit
-  limeTree.screens[1][0] = 0x1a; // new exit
-  limeTree.screens[2][0] = 0x0c; // nicer mountains
+  limeTreeValley.screens[1][0] = 0x1a; // new exit
+  limeTreeValley.screens[2][0] = 0x0c; // nicer mountains
 
   const windEntrance =
       valleyOfWind.entrances.push(Entrance.of({x: 0x4ef, y: 0x578})) - 1;
   const limeEntrance =
-      limeTree.entrances.push(Entrance.of({x: 0x010, y: 0x1c0})) - 1;
+      limeTreeValley.entrances.push(Entrance.of({x: 0x010, y: 0x1c0})) - 1;
 
   valleyOfWind.exits.push(
       Exit.of({x: 0x4f0, y: 0x560, dest: 0x42, entrance: limeEntrance}),
       Exit.of({x: 0x4f0, y: 0x570, dest: 0x42, entrance: limeEntrance}));
-  limeTree.exits.push(
+  limeTreeValley.exits.push(
       Exit.of({x: 0x000, y: 0x1b0, dest: 0x03, entrance: windEntrance}),
       Exit.of({x: 0x000, y: 0x1c0, dest: 0x03, entrance: windEntrance}));
 };

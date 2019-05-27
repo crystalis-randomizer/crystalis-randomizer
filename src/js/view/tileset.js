@@ -6,6 +6,8 @@ import {Canvas} from './canvas.js';
 import {Rom} from '../rom.js';
 
 const run = async () => {
+  const showUnused = /unused/.test(window.location.hash);
+  const mixPalettes = /(-|no)pal/.test(window.location.hash);
   const usedByTileset = {};
   for (let i = 0x80; i < 0xb0; i += 4) usedByTileset[i] = new Set();
   const rom = await Rom.load();
@@ -19,11 +21,11 @@ const run = async () => {
   // First identify all combinations of tilesets, effects, patterns, palettes.
   const configs = {};
   for (const loc of rom.locations) {
-    if (!loc) continue;
+    if (!loc || !loc.used) continue;
     const config =
         [loc.tileset,
          ...loc.tilePatterns,
-         ...loc.tilePalettes,
+         ...(mixPalettes ? [] : loc.tilePalettes),
          loc.tileEffects,
         ].join(' ');
     (configs[config] || (configs[config] = [])).push(loc);
@@ -48,27 +50,7 @@ const run = async () => {
     const tileset = rom.tilesets[(loc.tileset & 0x7f) >>> 2];
     const tileEffects = rom.tileEffects[loc.tileEffects - 0xb3];
 
-    //canvas.clear(0x3d); // background 0f = black
-    canvas.clear(loc.tilePalettes[0]); // background 0f = black
-    for (let i = 0; i < 0x20; i++) {
-      const alt = tileset.alternates[i];
-      canvas.metatile((i & 0x1f) * 18, 0, i, loc.id);
-      canvas.text((i & 0x1f) * 18, 16, hex(i)); // different color?
-      if (alt != i) {
-        canvas.metatile((i & 0x1f) * 18, 26, alt, loc.id);
-        canvas.text((i & 0x1f) * 18, 26 + 16, hex(alt)); // different color?
-      }
-    }
-    for (let i = 0x20; i < 0x100; i++) {
-      canvas.metatile((i & 0x1f) * 18, (i >>> 5) * 26 + 26, i, loc.id);
-      canvas.text((i & 0x1f) * 18, (i >>> 5) * 26 + 42, hex(i));
-    }
-    canvas.render();
-    const img = document.createElement('img');
-    img.src = canvas.toDataUrl();
-    document.body.appendChild(img);
-
-    // Determine which tiles are unused...?
+    // Determine which tiles are used
     const usedScreens = new Set();
     for (const l of configs[key]) {
       for (const row of l.screens) {
@@ -86,7 +68,30 @@ const run = async () => {
         }
       }
     }
-    
+
+    //canvas.clear(0x3d); // background 0f = black
+    canvas.clear(loc.tilePalettes[0]); // background 0f = black
+    for (let i = 0; i < 0x20; i++) {
+      if (!usedTiles.has(i) && !showUnused) continue;
+      const alt = tileset.alternates[i];
+      canvas.metatile((i & 0x1f) * 18, 0, i, loc.id);
+      canvas.text((i & 0x1f) * 18, 16, hex(i)); // different color?
+      if (alt != i) {
+        canvas.metatile((i & 0x1f) * 18, 26, alt, loc.id);
+        canvas.text((i & 0x1f) * 18, 26 + 16, hex(alt)); // different color?
+      }
+    }
+    for (let i = 0x20; i < 0x100; i++) {
+      if (!usedTiles.has(i) && !showUnused) continue;
+      canvas.metatile((i & 0x1f) * 18, (i >>> 5) * 26 + 26, i, loc.id);
+      canvas.text((i & 0x1f) * 18, (i >>> 5) * 26 + 42, hex(i));
+    }
+    canvas.render();
+    const img = document.createElement('img');
+    img.src = canvas.toDataUrl();
+    document.body.appendChild(img);
+
+    // Build the list of unused tiles
     const unusedTiles = [];
     for (let i = 0; i < 0x100; i++) {
       if (!usedTiles.has(i)) unusedTiles.push(hex(i));

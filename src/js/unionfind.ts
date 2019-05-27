@@ -4,6 +4,7 @@ export class UnionFind<T> {
   private readonly data: Map<T, T> = new Map();
   private readonly sizes: Map<T, number> = new Map();
 
+  /** Returns the canonical element for the given entry. */
   find(elem: T): T {
     if (!this.data.has(elem)) {
       this.data.set(elem, elem);
@@ -23,7 +24,7 @@ export class UnionFind<T> {
     }
   }
 
-  unionInternal(a: T, b: T) {
+  private unionInternal(a: T, b: T) {
     a = this.find(a);
     b = this.find(b);
     if (a === b) return;

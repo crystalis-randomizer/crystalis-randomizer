@@ -81,6 +81,7 @@ See URL `https://github.com/palantir/tslint'."
   (define-key typescript-mode-map (kbd "C-'") 'company-complete)
   ;; https://github.com/emacs-lsp/lsp-ui/issues/266
   ;(remove-hook 'lsp-after-diagnostics-hook 'lsp-ui-sideline--diagnostics-changed t)
+  (lsp-ui-mode nil)
 )
 
 (add-hook 'typescript-mode-hook 'sdh-ts-init)

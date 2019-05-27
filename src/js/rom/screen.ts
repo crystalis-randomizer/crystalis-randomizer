@@ -5,13 +5,17 @@ import {Writer} from './writer.js';
 export class Screen extends Entity {
 
   base: number;
-  tiles: number[][]; // always 15x16
+  tiles: number[]; // always 15x16
 
   constructor(rom: Rom, id: number) {
     super(rom, id);
     this.base = (id > 0xff ? 0x40 + id : id) << 8;
     // metatile index
-    this.tiles = seq(15, y => tuple(rom.prg, this.base | y << 4, 16));
+    this.tiles = tuple(rom.prg, this.base, 0xf0);
+  }
+
+  tile(y: number, x: number): number {
+    return this.tiles[y << 4 | x];
   }
 
   // metatile(y, x): Metatile {
@@ -19,22 +23,11 @@ export class Screen extends Entity {
   // }
 
   allTilesSet(): Set<number> {
-    const tiles = new Set();
-    for (const row of this.tiles) {
-      for (const tile of row) {
-        tiles.add(tile);
-      }
-    }
-    return tiles;
+    return new Set(this.tiles);
   }
 
   write(writer: Writer): void {
-    let i = this.base;
-    for (const row of this.tiles) {
-      for (const tile of row) {
-        writer.rom[i++] = tile;
-      }
-    }
+    writer.rom.subarray(this.base, this.base + 0xf0).set(this.tiles);
   }
 
   // TODO - accessors for which palettes, tilesets, and patterns are used/allowed

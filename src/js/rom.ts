@@ -1,3 +1,4 @@
+import {crc32} from './crc32.js';
 import {AdHocSpawn} from './rom/adhocspawn.js';
 import {BossKill} from './rom/bosskill.js';
 import {Hitbox} from './rom/hitbox.js';
@@ -108,7 +109,10 @@ export class Rom {
     this.omitItemGetDataSuffix = Rom.OMIT_ITEM_GET_DATA_SUFFIX.get(rom);
     this.omitLocalDialogSuffix = Rom.OMIT_LOCAL_DIALOG_SUFFIX.get(rom);
 
-    for (const [address, value] of ADJUSTMENTS) this.prg[address] = value;
+    // if (crc32(rom) === EXPECTED_CRC32) {
+    for (const [address, old, value] of ADJUSTMENTS) {
+      if (this.prg[address] === old) this.prg[address] = value;
+    }
 
     // Load up a bunch of data tables.  This will include a large number of the
     // data tables in the ROM.  The idea is that we can edit the arrays locally
@@ -585,26 +589,28 @@ function pickFile(): Promise<Uint8Array> {
 
 export const EXPECTED_CRC32 = 0x1bd39032;
 
-const ADJUSTMENTS = new Map<number, number>([
+const ADJUSTMENTS = [
   // Fix garbage map square in bottom-right of Mt Sabre West cave
-  [0x14db9, 0x80],
+  [0x14db9, 0x08, 0x80],
   // Fix garbage map square in bottom-left of Lime Tree Valley
-  [0x1545d, 0x00],
+  [0x1545d, 0xff, 0x00],
   // Fix garbage at bottom of oasis cave map (it's 8x11, not 8x12 => fix height)
-  [0x164ff, 0x0a],
+  [0x164ff, 0x0b, 0x0a],
   // Fix bad music in zombietown houses: $10 should be $01
-  [0x1782a, 0x01], [0x17857, 0x01],
-  // Point Amazones outer guard to post-overflow message that actually shows.
-  [0x1cf05, 0x48],
+  [0x1782a, 0x10, 0x01],
+  [0x17857, 0x10, 0x01],
+  // Point Amazones outer guard to post-overflow message that's actually shown.
+  [0x1cf05, 0x47, 0x48],
   // Remove stray flight granter in Zombietown.
-  [0x1d311, 0xa0], [0x1d312, 0x00],
+  [0x1d311, 0x20, 0xa0],
+  [0x1d312, 0x30, 0x00],
   // Fix queen's dialog to terminate on last item, rather than overflow,
   // so that we don't parse garbage.
-  [0x1cff9, 0xe0],
+  [0x1cff9, 0x60, 0xe0],
   // Fix Amazones outer guard message to not overflow.
-  [0x2ca90, 0x00],
+  [0x2ca90, 0x02, 0x00],
   // Fix seemingly-unused kensu message 1d:17 overflowing into 1d:18
-  [0x2f573, 0x00],
+  [0x2f573, 0x02, 0x00],
   // Fix unused karmine treasure chest message 20:18.
-  [0x2fae4, 0x00],
-]);
+  [0x2fae4, 0x5f, 0x00],
+] as const;

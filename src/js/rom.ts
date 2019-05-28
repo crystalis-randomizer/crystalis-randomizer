@@ -1,4 +1,3 @@
-import {crc32} from './crc32.js';
 import {AdHocSpawn} from './rom/adhocspawn.js';
 import {BossKill} from './rom/bosskill.js';
 import {Hitbox} from './rom/hitbox.js';
@@ -405,13 +404,7 @@ export class Rom {
     const tiles = seq(256, () => new UnionFind<number>());
     for (let s = 0; s < tilesetByScreen.length; s++) {
       if (!tilesetByScreen[s]) continue;
-      const ts = new Set();
-      for (const row of this.screens[s].tiles) {
-        for (const t of row) {
-          ts.add(t);
-        }
-      }
-      for (const t of ts) {
+      for (const t of this.screens[s].allTilesSet()) {
         tiles[t].union([...tilesetByScreen[s]]);
       }
     }

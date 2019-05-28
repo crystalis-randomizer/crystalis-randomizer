@@ -42,11 +42,11 @@ export default ({
   },
 });
 
-export const parseSeed = (seed: string): number => {
+export function parseSeed(seed: string): number {
   if (!seed) return Random.newSeed();
   if (/^[0-9a-f]{1,8}$/i.test(seed)) return Number.parseInt(seed, 16);
   return crc32(seed);
-};
+}
 
 /**
  * Abstract out File I/O.  Node and browser will have completely
@@ -59,12 +59,12 @@ export interface Reader {
 // prevent unused errors about watchArray - it's used for debugging.
 const {} = {watchArray} as any;
 
-export const shuffle = async (rom: Uint8Array,
+export async function shuffle(rom: Uint8Array,
                               seed: number,
                               flags: FlagSet,
                               reader: Reader,
                               log?: LogType,
-                              progress?: ProgressTracker) => {
+                              progress?: ProgressTracker): Promise<number> {
   // rom = watchArray(rom, 0x1e05a + 0x10);
 
   // First reencode the seed, mixing in the flags for security.
@@ -103,10 +103,10 @@ export const shuffle = async (rom: Uint8Array,
   };
 
   const asm = new Assembler();
-  const assemble = async (path: string) => {
+  async function assemble(path: string) {
     asm.assemble(await reader.read(path), path);
     asm.patchRom(rom);
-  };
+  }
 
   const flagFile =
       Object.keys(defines)
@@ -144,6 +144,8 @@ export const shuffle = async (rom: Uint8Array,
 
   parsed.scalingLevels = 48;
   parsed.uniqueItemTableAddress = asm.expand('KeyItemData');
+
+  undergroundChannelLandBridge(parsed);
 
   // TODO - set omitItemGetDataSuffix and omitLocalDialogSuffix
 
@@ -192,15 +194,15 @@ export const shuffle = async (rom: Uint8Array,
   // TODO - optional flags can possibly go here, but MUST NOT use parsed.prg!
 
   return crc;
-};
+}
 
 // Separate function to guarantee we no longer have access to the parsed rom...
-const postParsedShuffle = async (rom: Uint8Array,
+async function postParsedShuffle(rom: Uint8Array,
                                  random: Random,
                                  seed: number,
                                  flags: FlagSet,
                                  asm: Assembler,
-                                 assemble: (path: string) => Promise<void>) => {
+                                 assemble: (path: string) => Promise<void>): Promise<number> {
   await assemble('postshuffle.s');
   updateDifficultyScalingTables(rom, flags, asm);
   updateCoinDrops(rom, flags);
@@ -855,7 +857,7 @@ const connectLimeTreeToLeaf = (rom: Rom) => {
 };
 
 // Stamp the ROM
-export const stampVersionSeedAndHash = (rom: Uint8Array, seed: number, flags: FlagSet) => {
+export function stampVersionSeedAndHash(rom: Uint8Array, seed: number, flags: FlagSet): number {
   // Use up to 26 bytes starting at PRG $25ea8
   // Would be nice to store (1) commit, (2) flags, (3) seed, (4) hash
   // We can use base64 encoding to help some...

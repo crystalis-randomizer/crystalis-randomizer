@@ -51,31 +51,31 @@ export class Tileset extends Entity {
     return this.rom.tileEffects[index];
   }
 
-  passage(tileId: number, tileEffects = this.effects()): Terrain {
-    const effects = tileEffects.effects;
-    // Note: for this purpose, pits can be traversed because there should always
-    // be a platform across it.  The dolphin counts as flying, and we have
-    // special logic to translate that.
-    const bits = effects[tileId] & 0x26;
-    if (!bits) return Passage.ALWAYS;
-    // Note: this will lose the flight bit from angry sea waterfall, but
-    // that's probably fine.
-    if (bits & 0x20) return Passage.SLOPE;
-    // TODO - require the 0x08 bit before checking alternate?
-    if (tileId < 0x20 && this.alternates[tileId] !== tileId) {
-      const altBits = effects[this.alternates[tileId]] & 0x26;
-      if (!altBits) return Passage.FLAG;
-    }
-    if (!(bits & 0x04)) return Passage.FLY;
-    return Passage.NEVER;
-  }
+  // passage(tileId: number, tileEffects = this.effects()): Terrain {
+  //   const effects = tileEffects.effects;
+  //   // Note: for this purpose, pits can be traversed because there should always
+  //   // be a platform across it.  The dolphin counts as flying, and we have
+  //   // special logic to translate that.
+  //   const bits = effects[tileId] & 0x26;
+  //   if (!bits) return Passage.ALWAYS;
+  //   // Note: this will lose the flight bit from angry sea waterfall, but
+  //   // that's probably fine.
+  //   if (bits & 0x20) return Passage.SLOPE;
+  //   // TODO - require the 0x08 bit before checking alternate?
+  //   if (tileId < 0x20 && this.alternates[tileId] !== tileId) {
+  //     const altBits = effects[this.alternates[tileId]] & 0x26;
+  //     if (!altBits) return Passage.FLAG;
+  //   }
+  //   if (!(bits & 0x04)) return Passage.FLY;
+  //   return Passage.NEVER;
+  // }
 }
 
 
-export enum Passage {
-  ALWAYS = 0,
-  SLOPE = 1,
-  FLAG = 2,
-  FLY = 3,
-  NEVER = 4,
-}
+// export enum Passage {
+//   ALWAYS = 0,
+//   SLOPE = 1,
+//   FLAG = 2,
+//   FLY = 3,
+//   NEVER = 4,
+// }

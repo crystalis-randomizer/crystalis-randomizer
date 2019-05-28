@@ -1,8 +1,5 @@
-import {Entrance, Exit, Location} from './location.js';
-import {Screen} from './screen.js';
 import {Terrain} from './terrain.js';
 import {TileEffects} from './tileeffects.js';
-import {Tileset} from './tileset.js';
 import {Rom} from '../rom.js';
 import {UnionFind} from '../unionfind.js';
 
@@ -16,11 +13,13 @@ export class LocationGraph {
 
   // All tiles unioned by same reachability.
   private readonly tiles = new UnionFind<number>();
+
   // Exits between groups of different reachability.
   // Optional third element is list of requirements to use the exit.
-  private readonly exits = new Array<[number, number, number[]?]>();
+  // private readonly exits = new Array<[number, number, number[][]?]>();
+
   // Blocks for any given tile group.
-  private readonly blocks = new Array<[number, number[]]>();
+  // private readonly blocks = new Array<[number, number[][]]>();
 
   constructor(readonly rom: Rom, start = 0) {    
     // 1. start with entrance 0 at the start location, add it to the tiles and queue.
@@ -36,9 +35,7 @@ export class LocationGraph {
 
     // Start by getting a full map of all terrains and triggers
     const terrains = new Map<number, Terrain>();
-    // NOTE: if a tile is in the exitMap, there are no other exits!
-    // This should make seamless exits work correctly?
-    const exitMap = new Map<number, number>();
+
     for (const location of rom.locations) {
       const ext = location.extended ? 0x100 : 0;
       const locBits = location.id << 16;
@@ -54,6 +51,8 @@ export class LocationGraph {
           const scrBits = rowBits | (x << 8);
           const flagYx = y << 4 | x;
           const flag = location.flags.find(f => f.yx === flagYx);
+          const flagTerrain = flag && {enter: [[flag.flag]]};
+          const flagFlyTerrain = flag && {enter: [[flag.flag], Terrain.FLY.enter[0]]};
           for (let t = 0; t < 0xf0; t++) {
             const tid = scrBits | t;
             const tile = screen.tiles[t];
@@ -61,9 +60,9 @@ export class LocationGraph {
             let terrain: Terrain | undefined = Terrain.OPEN;
             if (effects & TileEffects.SLOPE) {
               terrain = effects & TileEffects.NO_WALK ? Terrain.WATERFALL : Terrain.SLOPE;
-            } else if (tile < 0x20 && tileset.alternates[tile] !== tile && flag &&
-                       !(tileEffects.effects[tileset.alternates[tile]] & TileEffects.IMPASSIBLE)) {
-              terrain = {enter: [[flag.flag]]};
+            } else if (tile < 0x20 && tileset.alternates[tile] !== tile && flagTerrain &&
+                       !(tileEffects.effects[tileset.alternates[tile]] & TileEffects.NO_WALK)) {
+              terrain = effects & TileEffects.IMPASSIBLE ? flagTerrain : flagFlyTerrain;
             } else if (effects & TileEffects.IMPASSIBLE) {
               terrain = undefined;
             } else if (effects & TileEffects.NO_WALK) {
@@ -76,80 +75,152 @@ export class LocationGraph {
 
       // Add exits
       for (const exit of location.exits) {
-        const {dest, entrance} = exit;
-        const from = parseEntrance(location.id, exit);
-        const to =
-            // Handle seamless exits
-            entrance === 0x20 ?
-                from & 0xffff | (dest << 16) :
-                parseEntrance(dest, rom.locations[dest].entrances[entrance]);
-        exitMap.set(from, to);
+        if (exit.entrance === 0x20) {
+          terrains.set(parseCoord(location.id, exit), Terrain.SEAMLESS);
+        }
       }
 
+      // Find "terrain triggers" that prevent movement one way or another
       for (const spawn of location.spawns) {
-        // Add flags and triggers....?
         if (spawn.isTrigger()) {
+          // For triggers, which tiles do we mark?
+          // The trigger hitbox is 2 tiles wide and 1 tile tall, but it does not
+          // line up nicely to the tile grid.  Also, the player hitbox is only
+          // $c wide (though it's $14 tall) so there's some slight disparity.
+          // It seems like probably marking it as (x-1, y-1) .. (x, y) makes the
+          // most sense, with the caveat that triggers shifted right by a half
+          // tile should go from x .. x+1 instead.
           const trigger = TRIGGERS[spawn.id];
+          // TODO - consider checking trigger's action: $19 -> push-down message
           if (trigger) {
-            // TODO - which tiles to tag?  trigger is 2 wide and 1 tall, but
-            // player hitbox is slightly bigger ($c x $14)
-            // It's not perfect (we'd need to model pixels, which isn't worth it)
-            // but given a trigger at (x, y) set terrain (x-1, y-1) ... (x, y);
-            // or (x, y-1) ... (x+1, y) if the trigger is shifted a half tile right.
+            let {x: x0, y: y0} = spawn;
+            x0 += 8;
+            for (const dx of [-16, 0]) {
+              for (const dy of [-16, 0]) {
+                terrains.set(parseCoord(location.id, {x: x0 + dx, y: y0 + dy}), trigger);
+              }
+            }
           }
         }
-
-
       }
-
-      
     }
 
-    const neighors = new Exits(this.tiles);
-
-    // returns 
-    function getTerrain(tile: number): number {
-      const ys = (tile >>> 12) & 0xf;
-      const xs = (tile >>> 8) & 0xf;
-      // const yt = (tile >>> 4) & 0xf;
-      // const xt = tile & 0xf;
-      const tyx = tile & 0xff;
-      const location = rom.locations[tile >>> 16];
-      const tile = screen.tiles[tyx];
-      return 
+    // At this point we've got a full mapping of all terrains per location.
+    // Now we do a giant unionfind and establish connections between same areas.
+    for (const [tile, terrain] of terrains) {
+      const x1 = tileAdd(tile, 0, 1);
+      if (terrains.get(x1) === terrain) this.tiles.union([tile, x1]);
+      const y1 = tileAdd(tile, 1, 0);
+      if (terrains.get(y1) === terrain) this.tiles.union([tile, y1]);
     }
 
-    function addEntrance(tile: number): void {
-
+    // Add exits to a map.  We do this *after* the initial unionfind so that
+    // two-way exits can be unioned easily.
+    const exitSet = new Set<number>();
+    for (const location of rom.locations) {
+      for (const exit of location.exits) {
+        const {dest, entrance} = exit;
+        const from = this.tiles.find(parseCoord(location.id, exit));
+        const to =
+            this.tiles.find(
+                // Handle seamless exits
+                entrance === 0x20 ?
+                    from & 0xffff | (dest << 16) :
+                    parseCoord(dest, rom.locations[dest].entrances[entrance]));
+        exitSet.add(from * (1 << 24) + to);
+        // exitMap.set(this.tiles.find(from), this.tiles.find(to));
+      }
+    }
+    for (const exit of exitSet) {
+      const from = Math.floor(exit / (1 << 24));
+      const to = exit % (1 << 24);
+      if (terrains.get(from) !== terrains.get(to)) continue;
+      const reverse = to * (1 << 24) + from;
+      if (exitSet.has(reverse)) {
+        this.tiles.union([from, to]);
+        exitSet.delete(exit);
+        exitSet.delete(reverse);
+      }
     }
 
+    // Now look for all different-terrain neighbors and track connections.
+    const neighbors = new Neighbors(this.tiles);
+    for (const [tile, terrain] of terrains) {
+      const x1 = tileAdd(tile, 0, 1);
+      const tx1 = terrains.get(x1);
+      if (tx1 && tx1 !== terrain) neighbors.addAdjacent(tile, x1, true);
+      const y1 = tileAdd(tile, 1, 0);
+      const ty1 = terrains.get(y1);
+      if (ty1 && ty1 !== terrain) neighbors.addAdjacent(tile, y1, true);
+    }
 
+    // Also add all the remaining exits.  We decompose and recompose them to
+    // take advantage of any new unions from the previous exit step.
+    for (const exit of exitSet) {
+      const from = Math.floor(exit / (1 << 24));
+      const to = exit % (1 << 24);
+      neighbors.addExit(from, to);
+    }
 
-    const entrance = rom.locations[start].entrances[0];
-
-
-
-    this.addEntrance(parseEntrance(start, entrance));
+    // const entrance = rom.locations[start].entrances[0];
+    // this.addEntrance(parseCoord(start, entrance));
   }
-
-  addEntrance(tile: number): void {
-    this.
-  }
-
 }
 
 
-class Exits {
+
+// Adds the given delta to the tile address.
+function tileAdd(tile: number, dy: number, dx: number): number {
+  if (dy) {
+    let y = (tile & 0xf0) + (dy << 4);
+    while (y >= 0xf0) {
+      if ((tile & 0xf000) >= 0xf000) return -1;
+      y -= 0xf0;
+      tile += 0x1000;
+    }
+    while (y < 0) {
+      if (!(tile & 0xf000)) return -1;
+      y += 0xf0
+      tile -= 0x1000;
+    }
+    tile = tile & ~0xf0 | y;
+  }
+  if (dx) {
+    let x = (tile & 0xf) + dx;
+    while (x >= 0x10) {
+      if ((tile & 0xf00) >= 0x700) return -1;
+      x -= 0x10;
+      tile += 0x100;
+    }
+    while (x < 0) {
+      if (!(tile & 0xf00)) return -1;
+      x += 0x10
+      tile -= 0x100;
+    }
+    tile = tile & ~0xf | x;
+  }
+  return tile;
+}
+
+
+class Neighbors {
   // high 24 = from, low 24 = to
   private readonly south = new Set<number>();
   private readonly other = new Set<number>();
   constructor(private readonly tiles: UnionFind<number>) {}
 
-  add(from: number, to: number): void {
-    const exit = this.tiles.find(from) * (1 << 24) + this.tiles.find(to);
-    // NOTE: this is not exact, but there are no triggers at the very bottom of
-    // any screens.
-    (to === from + 16 ? this.south : this.other).add(exit);
+  // NOTE: lo < hi is required, so that lo->hi is south if vertical
+  addAdjacent(lo: number, hi: number, vertical: boolean): void {
+    lo = this.tiles.find(lo);
+    hi = this.tiles.find(hi);
+    this.other.add(hi * (1 << 24) + lo);
+    (vertical ? this.south : this.other).add(lo * (1 << 24) + hi);
+  }
+
+  addExit(from: number, to: number): void {
+    from = this.tiles.find(from);
+    to = this.tiles.find(to);
+    this.other.add(from * (1 << 24) + to);
   }
 
   * [Symbol.iterator](): IterableIterator<{from: number, to: number, south: boolean}> {
@@ -176,7 +247,12 @@ function * concat<T>(...iters: Array<Iterable<T>>): IterableIterator<T> {
   }
 }
 
-function parseEntrance(location: number, {x, y}: Entrance | Exit): number {
+interface Coordinate {
+  x: number;
+  y: number;
+}
+
+function parseCoord(location: number, {x, y}: Coordinate): number {
   // Works with both entrances and exits
   const xs = x >>> 8;
   const xt = (x >>> 4) & 0xf;
@@ -184,3 +260,15 @@ function parseEntrance(location: number, {x, y}: Entrance | Exit): number {
   const yt = (y >>> 4) & 0xf;
   return location << 16 | ys << 12 | xs << 8 | yt << 4 | xt;
 }
+
+enum Events {
+  // different number?  from flag?
+  talkedToLeafRabbit = -1,
+}
+
+const TRIGGERS: {[id: number]: Terrain} = {
+  0x86: {
+    exit: [[Events.talkedToLeafRabbit]],
+    exitSouth: [[]], // open
+  },
+};

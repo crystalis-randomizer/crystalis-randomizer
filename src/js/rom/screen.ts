@@ -1,5 +1,5 @@
 import {Entity, Rom} from './entity.js';
-import {seq, tuple} from './util.js';
+import {tuple} from './util.js';
 import {Writer} from './writer.js';
 
 export class Screen extends Entity {
@@ -14,9 +14,9 @@ export class Screen extends Entity {
     this.tiles = tuple(rom.prg, this.base, 0xf0);
   }
 
-  tile(y: number, x: number): number {
-    return this.tiles[y << 4 | x];
-  }
+  // tile(y: number, x: number): number {
+  //   return this.tiles[y << 4 | x];
+  // }
 
   // metatile(y, x): Metatile {
   //   return this.rom.metatiles[this.tiles[y][x]];

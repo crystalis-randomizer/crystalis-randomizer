@@ -485,10 +485,8 @@ export class Rom {
     // Do replacements.
     // 1. screens: [5, 1, ~9] => change 1s into 5s
     for (const screen of screens) {
-      for (const row of screen.tiles) {
-        for (let i = 0; i < row.length; i++) {
-          row[i] = revArr[row[i]];
-        }
+      for (let i = 0, len = screen.tiles.length; i < len; i++) {
+        screen.tiles[i] = revArr[screen.tiles[i]];
       }
     }
     // 2. tilesets: [5, 1 ~9] => copy 5 <= 1 and 1 <= 9

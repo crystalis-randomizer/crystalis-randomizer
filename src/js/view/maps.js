@@ -259,7 +259,7 @@ class MapsView extends View {
   drawScreen(img, x0, y0, screen, tileset, palettes, patterns, flag) {
     for (let y = 0; y < 15; y++) {
       for (let x = 0; x < 16; x++) {
-        let metatileId = screen.tiles[y][x];
+        let metatileId = screen.tiles[y << 4 | x];
         if (metatileId < 0x20 && flag) {
           metatileId = tileset.alternates[metatileId];
         }
@@ -336,7 +336,7 @@ class MapsView extends View {
     const scrId = opts.screens[scrY][scrX];
     if (!scrId) return;
     const metatileId = this.rom.screens[(opts.ext ? 0x100 : 0) | scrId]
-          .tiles[tileY][tileX];
+          .tiles[tileY << 4 | tileX];
     const flagged =
           metatileId < 0x20 && (opts.flags[scrY] || [])[scrX] ?
               this.rom.tilesets[opts.ts[0] >> 2 & 0xf]

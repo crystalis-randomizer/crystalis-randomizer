@@ -27,7 +27,15 @@ export class Screen extends Entity {
   }
 
   write(writer: Writer): void {
-    writer.rom.subarray(this.base, this.base + 0xf0).set(this.tiles);
+    if (this.id < 0x100) {
+      writer.rom.subarray(this.base, this.base + 0xf0).set(this.tiles);
+    } else {
+      // we reuse the last 2 rows of extended screens (covered by HUD) for
+      // global flags in the rom.
+      for (let i = 0; i < 0xc0; i++) {
+        writer.rom[this.base + i] = this.tiles[i];
+      }
+    }
   }
 
   // TODO - accessors for which palettes, tilesets, and patterns are used/allowed

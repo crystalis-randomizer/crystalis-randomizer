@@ -216,6 +216,20 @@ const postParsedShuffle = async (rom: Uint8Array,
   // return log.join('\n');
 };
 
+/** Make a land bridge in underground channel */
+function undergroundChannelLandBridge(rom: Rom) {
+  const {tiles} = rom.screens[0xa1];
+  tiles[0x28] = 0x9f;
+  tiles[0x37] = 0x23;
+  tiles[0x38] = 0x23; // 0x8e;
+  tiles[0x39] = 0x21;
+  tiles[0x47] = 0x8d;
+  tiles[0x48] = 0x8f;
+  tiles[0x56] = 0x99;
+  tiles[0x57] = 0x9a;
+  tiles[0x58] = 0x8c;
+}
+
 function misc(rom: Rom, flags: FlagSet, random: Random) {
   const {} = {rom, flags, random} as any;
   // NOTE: we still need to do some work actually adjusting

@@ -51,7 +51,7 @@ export class Tileset extends Entity {
     return this.rom.tileEffects[index];
   }
 
-  passage(tileId: number, tileEffects = this.effects()): Passage {
+  passage(tileId: number, tileEffects = this.effects()): Terrain {
     const effects = tileEffects.effects;
     // Note: for this purpose, pits can be traversed because there should always
     // be a platform across it.  The dolphin counts as flying, and we have
@@ -70,6 +70,7 @@ export class Tileset extends Entity {
     return Passage.NEVER;
   }
 }
+
 
 export enum Passage {
   ALWAYS = 0,

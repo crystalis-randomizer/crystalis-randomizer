@@ -1,14 +1,34 @@
-export namespace Events {
-  export const STATUE_GLITCH = Condition(-2);
-  export const LEAF_ABDUCTION = Condition(0x28);
-}
-
-export namespace Flags {
+export namespace Event {
+  export const LEAF_ABDUCTION = Condition(0x38);
   export const TALKED_TO_LEAF_RABBIT = Condition(0xa9);
-  
 }
 
-//function 
+export namespace Capability {
+  export const SWORD = Condition(-1);
+  // export const MONEY = Condition(-2); // TODO - should this be an event?
+  export const BREAK_STONE = Condition(-3);
+  export const BREAK_ICE = Condition(-4);
+  export const FORM_BRIDGE = Condition(-5);
+  export const BREAK_IRON = Condition(-6);
+
+  export const STATUE_GLITCH = Condition(-10);
+}
+
+export namespace Item {
+  export const SWORD_OF_WIND = Condition(0x200);
+  export const SWORD_OF_FIRE = Condition(0x201);
+  export const SWORD_OF_WATER = Condition(0x202);
+  export const SWORD_OF_THUNDER = Condition(0x203);
+  export const CRYSTALIS = Condition(0x204);
+  export const ORB_OF_WIND = Condition(0x205);
+  export const TORNADO_BRACELET = Condition(0x206);
+  export const ORB_OF_FIRE = Condition(0x207);
+  export const FLAME_BRACELET = Condition(0x208);
+  export const ORB_OF_WATER = Condition(0x209);
+  export const BLIZZARD_BRACELET = Condition(0x20a);
+  export const ORB_OF_THUNDER = Condition(0x20b);
+  export const STORM_BRACELET = Condition(0x20c);
+}
 
 export namespace Magic {
   export const PARALYSIS = Condition(0x242);
@@ -22,7 +42,6 @@ export function statue(...reqs: Requirement[]): Terrain {
 };
 
 // Newtypes for different number purposes
-
 
 export enum WallType {
   WIND = 0,
@@ -47,6 +66,18 @@ export function or(...cs: Requirement[]): Requirement {
 
 export namespace Condition {
   export const OPEN: Requirement = [[]];
+}
+
+
+export interface Trigger {
+  condition?: Requirement;
+  set: readonly [readonly Condition[]];
+}
+
+export namespace Trigger {
+  export function chest(id: number): Trigger[] {
+    return [{set: Condition(0x200 | id)}];
+  }
 }
 
 

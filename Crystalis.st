@@ -3185,6 +3185,7 @@ RomBank_04                      ; @@ $8000
 ;;;   1. goes to $6a0
 ;;;   2. if positive, ...?  if negative, ...? -> 6e0 at least, sometimes 4a0
 ;;;      $06e0,x & #$04 != 0 indicates a statue
+;;;      => different actions (walking vs statue).
 ;;;   3. metasprite
 MapScreen_80
         $08000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -20405,7 +20406,7 @@ NpcSpawnCondition_14 ; windmill guard, zebu's student
         $1c7d0              .byte $xx,$xx ; 03a NOT talked to zebu in cave
         $1c7d2              .byte $xx ; Windmill Cave
         $1c7d3              .byte $xx,$xx ; 00f woke windmill guard
-        $1c7d5              .byte $xx,$xx ; 038 NOT leaf attacked
+        $1c7d5              .byte $xx,$xx ; 038 NOT leaf abducted
         $1c7d7              .byte $xx
 NpcSpawnCondition_15 ; sleeping windmill guard
         $1c7d8              .byte $xx ; Windmill Cave
@@ -21104,7 +21105,7 @@ NpcDialog_13 ; leaf rabbit
         $1cc82              .byte $xx,$xx,$xx,$xx     ; 029 change:akahana -> 00:14
         $1cc86              .byte $xx
         $1cc87              .byte $xx,$xx,$xx,$xx,$xx ; 00e NOT telepathy -> 00:14
-        $1cc8c              .byte $xx,$xx,$xx,$xx,$xx ; 038 NOT leaf attacked -> 00:15
+        $1cc8c              .byte $xx,$xx,$xx,$xx,$xx ; 038 NOT leaf abducted -> 00:15
         $1cc91              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:17
         $1cc96              .byte $xx,$xx,$xx,$xx,$xx ; default -> 00:16
         $1cc9b              .byte         $xx,$xx     ;     Set: 0a9 talked to leaf rabbit
@@ -22103,7 +22104,7 @@ NpcDialog_5e ; zebu
         $1d76b              .byte $xx
         ;;                  00: 10 Zebu Cave
         $1d76c              .byte $xx,$xx,$xx,$xx,$xx ; 00d leaf villagers rescued -> 00:1d
-        $1d771              .byte $xx,$xx,$xx,$xx,$xx ; 038 leaf attacked -> 00:1c
+        $1d771              .byte $xx,$xx,$xx,$xx,$xx ; 038 leaf abducted -> 00:1c
         $1d776              .byte $xx,$xx,$xx,$xx,$xx ; 039 learned refresh -> 00:1d
         $1d77b              .byte $xx,$xx,$xx,$xx,$xx ; 00a windmill key used -> 00:1b (action 03)
         $1d780              .byte         $xx,$xx     ;     Set: 039 learned refresh
@@ -23594,11 +23595,11 @@ Trigger_8b
         $1e24c              .byte $xx,$xx
         $1e24e              .byte $xx,$xx ; Set: 2fb warp:joel
 Trigger_8c
-        ;; 8c attack leaf
-        $1e250              .byte $xx,$xx ; Condition: 038 NOT leaf attacked
+        ;; 8c leaf abduction
+        $1e250              .byte $xx,$xx ; Condition: 038 NOT leaf abducted
         $1e252              .byte $xx,$xx
         $1e254              .byte $xx,$xx ; Set: 085 leaf elder missing
-        $1e256              .byte $xx,$xx ; Set: 038 leaf attacked
+        $1e256              .byte $xx,$xx ; Set: 038 leaf abducted
         $1e258              .byte $xx,$xx ; Set: 084 leaf villagers missing
 Trigger_8d
         ;; 8d restore leaf elder
@@ -44250,7 +44251,7 @@ Hitboxes
         $356ad              .byte $xx,$xx,$xx,$xx ; 07
         $356b1              .byte $xx,$xx,$xx,$xx ; 08
         $356b5              .byte $xx,$xx,$xx,$xx ; 09
-        $356b9              .byte $xx,$xx,$xx,$xx ; 0a
+        $356b9              .byte $xx,$xx,$xx,$xx ; 0a trigger
         $356bd              .byte $xx,$xx,$xx,$xx ; 0b
         $356c1              .byte $xx,$xx,$xx,$xx ; 0c sword
         $356c5              .byte $xx,$xx,$xx,$xx ; 0d

@@ -1,6 +1,7 @@
 import {Neighbors, ScreenId, TileId, TilePair} from './geometry.js';
-import {Condition, Magic, Terrain, WallType, or} from './condition.js';
-import {NPCS, TRIGGERS} from './overlay.js';
+import {Condition, Magic, Terrain, Trigger, WallType, or} from './condition.js';
+import {Overlay} from './overlay.js';
+import {FlagSet} from '../flagset.js';
 import {TileEffects} from '../rom/tileeffects.js';
 import {hex} from '../rom/util.js';
 import {Rom} from '../rom.js';
@@ -26,7 +27,7 @@ export class World {
   // Blocks for any given tile group.
   // private readonly blocks = new Array<[number, number[][]]>();
 
-  constructor(readonly rom: Rom, start = 0) {    
+  constructor(readonly rom: Rom, flags: FlagSet, start = 0) {    
     // 1. start with entrance 0 at the start location, add it to the tiles and queue.
     // 2. for tile T in the queue
     //    - for each passable neighbor N of T:
@@ -39,10 +40,12 @@ export class World {
     //  - one-way 
 
     // Start by getting a full map of all terrains and triggers
+    const overlay = new Overlay(rom, flags);
     const terrains = new Map<TileId, Terrain>();
     const walls = new Map<ScreenId, WallType>();
     const bosses = new Map<ScreenId, number>();
     const npcs = new Map<TileId, number>();
+    const triggers = new Map<TileId, Trigger[]>();
 
     for (const location of rom.locations/*.slice(0,2)*/) {
       if (!location.used) continue;
@@ -65,7 +68,7 @@ export class World {
           for (let t = 0; t < 0xf0; t++) {
             const tid = TileId(scrBits | t);
             let tile = screen.tiles[t];
-            // flag 2ef is "always on".
+            // flag 2ef is "always on", don't even bother making it conditional.
             if (flag && flag.flag === 0x2ef && tile < 0x20) tile = tileset.alternates[tile];
             const effects = tileEffects.effects[tile] & 0x26;
             let terrain: Terrain | undefined = Terrain.OPEN;
@@ -84,7 +87,7 @@ export class World {
         }
       }
 
-      // Add exits
+      // Clobber terrain with seamless exits
       for (const exit of location.exits) {
         if (exit.entrance & 0x20) {
           terrains.set(TileId.from(location, exit), Terrain.SEAMLESS);
@@ -101,33 +104,43 @@ export class World {
           // It seems like probably marking it as (x-1, y-1) .. (x, y) makes the
           // most sense, with the caveat that triggers shifted right by a half
           // tile should go from x .. x+1 instead.
-          const trigger = TRIGGERS[spawn.id];
+          const trigger = overlay.trigger(spawn.id);
           // TODO - consider checking trigger's action: $19 -> push-down message
-          if (trigger && trigger.terrain) {
+          if (trigger.terrain || trigger.trigger) {
             let {x: x0, y: y0} = spawn;
             x0 += 8;
             for (const dx of [-16, 0]) {
               for (const dy of [-16, 0]) {
-                terrains.set(TileId.from(location, {x: x0 + dx, y: y0 + dy}), trigger.terrain);
+                if (trigger.terrain) {
+                  terrains.set(TileId.from(location, {x: x0 + dx, y: y0 + dy}), trigger.terrain);
+                }
+                if (trigger.trigger) {
+                  triggers.set(TileId.from(location, {x: x0 + dx, y: y0 + dy}), trigger.trigger);
+                }
               }
             }
           }
         } else if (spawn.isNpc()) {
           npcs.set(TileId.from(location, spawn), spawn.id);
-          const npc = NPCS[spawn.id];
-          if (npc && npc.terrain) {
-            let {x: x0, y: y0} = spawn;
-            x0 += 8;
-            for (const dx of [-16, 0]) {
-              for (const dy of [-16, 0]) {
-                terrains.set(TileId.from(location, {x: x0 + dx, y: y0 + dy}), npc.terrain);
+          const npc = overlay.npc(spawn.id, location);
+          if (npc.terrain || npc.trigger) {
+            let {x, y} = spawn;
+            let {x0, x1, y0, y1} = npc.hitbox || {x0: 0, y0: 0, x1: 1, y1: 1};
+            for (let dx = x0; dx < x1; dx++) {
+              for (let dy = y0; dy < y1; dy++) {
+                terrains.set(TileId.from(location, {x: x + 16 * dx, y: y + 16 * dy}),
+                             npc.terrain);
               }
             }
           }
         } else if (spawn.isBoss()) {
+          // Bosses will clobber the entrance portion of all tiles on the screen,
+          // and will also add their drop.
           bosses.set(ScreenId.from(location, spawn), spawn.id);
         } else if (spawn.isWall()) {
           walls.set(ScreenId.from(location, spawn), spawn.id as WallType);
+        } else if (spawn.isChest()) {
+          triggers.set(TileId.from(location, spawn), Trigger.chest(spawn.id));
         }
       }
     }

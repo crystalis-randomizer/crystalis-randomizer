@@ -346,7 +346,10 @@ export const Spawn = DataTuple.make(4, {
               set(this: any, id: number) { this.id = (id - 0x50) & 0xff; }},
   isChest(this: any): boolean { return this.type === 2 && this.id < 0x80; },
   isTrigger(this: any): boolean { return this.type === 2 && this.id >= 0x80; },
+  isNpc(this: any): boolean { return this.type === 1 && this.id < 0xc0; },
+  isBoss(this: any): boolean { return this.type === 1 && this.id >= 0xc0; },
   isMonster(this: any): boolean { return this.type === 0; },
+  isWall(this: any): boolean { return this.type === 3 && this.id < 4; },
   toString(this: any): string {
     return `Spawn ${this.hex()}: (${hex(this.x)}, ${hex(this.y)}) ${
             this.timed ? 'timed' : 'fixed'} ${this.type}:${hex(this.id)}`;

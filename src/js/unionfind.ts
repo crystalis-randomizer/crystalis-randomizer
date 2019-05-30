@@ -40,12 +40,32 @@ export class UnionFind<T> {
   }
 
   sets(): Set<T>[] {
-    const sets = new Map();
+    const sets = new Map<T, Set<T>>();
     for (const elem of this.data.keys()) {
       const root = this.find(elem);
-      if (!sets.has(root)) sets.set(root, new Set());
-      sets.get(root).add(elem);
+      let set = sets.get(root);
+      if (!set) sets.set(root, set = new Set<T>());
+      set.add(elem);
     }
     return [...sets.values()];
+  }
+
+  map(): Map<T, Set<T>> {
+    const sets = new Map<T, Set<T>>();
+    for (const elem of this.data.keys()) {
+      const root = this.find(elem);
+      let set = sets.get(root);
+      if (!set) sets.set(root, set = new Set<T>());
+      set.add(elem);
+    }
+    return sets;
+  }
+
+  roots(): T[] {
+    const roots = new Set<T>();
+    for (const elem of this.data.keys()) {
+      roots.add(this.find(elem));
+    }
+    return [...roots];
   }
 }

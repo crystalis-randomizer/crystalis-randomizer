@@ -1,7 +1,12 @@
-import {Terrain} from './terrain.js';
-import {TileEffects} from './tileeffects.js';
+import {Neighbors, ScreenId, TileId, TilePair} from './geometry.js';
+import {Condition, Magic, Terrain, WallType, or} from './condition.js';
+import {NPCS, TRIGGERS} from './overlay.js';
+import {TileEffects} from '../rom/tileeffects.js';
+import {hex} from '../rom/util.js';
 import {Rom} from '../rom.js';
 import {UnionFind} from '../unionfind.js';
+
+const {} = {hex} as any; // for debugging
 
 // A tile is a 24-bit number:
 //   <loc><ys><xs><yt><xt>
@@ -9,10 +14,10 @@ import {UnionFind} from '../unionfind.js';
 // Filling is a union-find, so we start by assigning each element itself, but
 // when we find a neighbor, we join them.
 
-export class LocationGraph {
+export class World {
 
   // All tiles unioned by same reachability.
-  private readonly tiles = new UnionFind<number>();
+  private readonly tiles = new UnionFind<TileId>();
 
   // Exits between groups of different reachability.
   // Optional third element is list of requirements to use the exit.
@@ -34,13 +39,17 @@ export class LocationGraph {
     //  - one-way 
 
     // Start by getting a full map of all terrains and triggers
-    const terrains = new Map<number, Terrain>();
+    const terrains = new Map<TileId, Terrain>();
+    const walls = new Map<ScreenId, WallType>();
+    const bosses = new Map<ScreenId, number>();
+    const npcs = new Map<TileId, number>();
 
-    for (const location of rom.locations) {
+    for (const location of rom.locations/*.slice(0,2)*/) {
+      if (!location.used) continue;
       const ext = location.extended ? 0x100 : 0;
       const locBits = location.id << 16;
-      const tileset = rom.tilesets[location.tileset];
-      const tileEffects = rom.tileEffects[location.tileEffects];
+      const tileset = rom.tilesets[(location.tileset & 0x7f) >> 2];
+      const tileEffects = rom.tileEffects[location.tileEffects - 0xb3];
 
       // Add terrains
       for (let y = 0, height = location.height; y < height; y++) {
@@ -51,11 +60,13 @@ export class LocationGraph {
           const scrBits = rowBits | (x << 8);
           const flagYx = y << 4 | x;
           const flag = location.flags.find(f => f.yx === flagYx);
-          const flagTerrain = flag && {enter: [[flag.flag]]};
-          const flagFlyTerrain = flag && {enter: [[flag.flag], Terrain.FLY.enter[0]]};
+          const flagTerrain = flag && {enter: Condition(flag.flag)};
+          const flagFlyTerrain = flag && {enter: or(Condition(flag.flag), Magic.FLIGHT)};
           for (let t = 0; t < 0xf0; t++) {
-            const tid = scrBits | t;
-            const tile = screen.tiles[t];
+            const tid = TileId(scrBits | t);
+            let tile = screen.tiles[t];
+            // flag 2ef is "always on".
+            if (flag && flag.flag === 0x2ef && tile < 0x20) tile = tileset.alternates[tile];
             const effects = tileEffects.effects[tile] & 0x26;
             let terrain: Terrain | undefined = Terrain.OPEN;
             if (effects & TileEffects.SLOPE) {
@@ -75,8 +86,8 @@ export class LocationGraph {
 
       // Add exits
       for (const exit of location.exits) {
-        if (exit.entrance === 0x20) {
-          terrains.set(parseCoord(location.id, exit), Terrain.SEAMLESS);
+        if (exit.entrance & 0x20) {
+          terrains.set(TileId.from(location, exit), Terrain.SEAMLESS);
         }
       }
 
@@ -92,50 +103,76 @@ export class LocationGraph {
           // tile should go from x .. x+1 instead.
           const trigger = TRIGGERS[spawn.id];
           // TODO - consider checking trigger's action: $19 -> push-down message
-          if (trigger) {
+          if (trigger && trigger.terrain) {
             let {x: x0, y: y0} = spawn;
             x0 += 8;
             for (const dx of [-16, 0]) {
               for (const dy of [-16, 0]) {
-                terrains.set(parseCoord(location.id, {x: x0 + dx, y: y0 + dy}), trigger);
+                terrains.set(TileId.from(location, {x: x0 + dx, y: y0 + dy}), trigger.terrain);
               }
             }
           }
+        } else if (spawn.isNpc()) {
+          npcs.set(TileId.from(location, spawn), spawn.id);
+          const npc = NPCS[spawn.id];
+          if (npc && npc.terrain) {
+            let {x: x0, y: y0} = spawn;
+            x0 += 8;
+            for (const dx of [-16, 0]) {
+              for (const dy of [-16, 0]) {
+                terrains.set(TileId.from(location, {x: x0 + dx, y: y0 + dy}), npc.terrain);
+              }
+            }
+          }
+        } else if (spawn.isBoss()) {
+          bosses.set(ScreenId.from(location, spawn), spawn.id);
+        } else if (spawn.isWall()) {
+          walls.set(ScreenId.from(location, spawn), spawn.id as WallType);
         }
       }
     }
 
+    // let s = 1;
+    // const weak = new WeakMap<object, number>();
+    // function uid(x: unknown): number {
+    //   if (typeof x !== 'object' || !x) return -1;
+    //   if (!weak.has(x)) weak.set(x, s++);
+    //   return weak.get(x) || -1;
+    // }
+
     // At this point we've got a full mapping of all terrains per location.
     // Now we do a giant unionfind and establish connections between same areas.
     for (const [tile, terrain] of terrains) {
-      const x1 = tileAdd(tile, 0, 1);
+      const x1 = TileId.add(tile, 0, 1);
       if (terrains.get(x1) === terrain) this.tiles.union([tile, x1]);
-      const y1 = tileAdd(tile, 1, 0);
+      const y1 = TileId.add(tile, 1, 0);
       if (terrains.get(y1) === terrain) this.tiles.union([tile, y1]);
+      //console.log(`${hex(tile)}: ${uid(terrain)}`);
+      //console.log(terrain);
+      //console.log(` +x: ${hex(x1)}: ${uid(terrains.get(x1))}`);
+      //console.log(` +y: ${hex(y1)}: ${uid(terrains.get(y1))}`);
     }
 
     // Add exits to a map.  We do this *after* the initial unionfind so that
     // two-way exits can be unioned easily.
-    const exitSet = new Set<number>();
-    for (const location of rom.locations) {
+    const exitSet = new Set<TilePair>();
+    for (const location of rom.locations/*.slice(0,2)*/) {
+      if (!location.used) continue;
       for (const exit of location.exits) {
         const {dest, entrance} = exit;
-        const from = this.tiles.find(parseCoord(location.id, exit));
-        const to =
-            this.tiles.find(
-                // Handle seamless exits
-                entrance === 0x20 ?
-                    from & 0xffff | (dest << 16) :
-                    parseCoord(dest, rom.locations[dest].entrances[entrance]));
-        exitSet.add(from * (1 << 24) + to);
-        // exitMap.set(this.tiles.find(from), this.tiles.find(to));
+        const from = TileId.from(location, exit);
+        // Handle seamless exits
+        const to = entrance & 0x20 ?
+            TileId(from & 0xffff | (dest << 16)) :
+            TileId.from({id: dest} as any, rom.locations[dest].entrances[entrance]);
+        exitSet.add(TilePair.of(this.tiles.find(from), this.tiles.find(to)));
       }
     }
     for (const exit of exitSet) {
-      const from = Math.floor(exit / (1 << 24));
-      const to = exit % (1 << 24);
+//console.log(`exit: ${exit.toString(16)}`);
+      const [from, to] = TilePair.split(exit);
       if (terrains.get(from) !== terrains.get(to)) continue;
-      const reverse = to * (1 << 24) + from;
+      const reverse = TilePair.of(to, from);
       if (exitSet.has(reverse)) {
         this.tiles.union([from, to]);
         exitSet.delete(exit);
@@ -146,10 +183,10 @@ export class LocationGraph {
     // Now look for all different-terrain neighbors and track connections.
     const neighbors = new Neighbors(this.tiles);
     for (const [tile, terrain] of terrains) {
-      const x1 = tileAdd(tile, 0, 1);
+      const x1 = TileId.add(tile, 0, 1);
       const tx1 = terrains.get(x1);
-      if (tx1 && tx1 !== terrain) neighbors.addAdjacent(tile, x1, true);
-      const y1 = tileAdd(tile, 1, 0);
+      if (tx1 && tx1 !== terrain) neighbors.addAdjacent(tile, x1, false);
+      const y1 = TileId.add(tile, 1, 0);
       const ty1 = terrains.get(y1);
       if (ty1 && ty1 !== terrain) neighbors.addAdjacent(tile, y1, true);
     }
@@ -157,118 +194,26 @@ export class LocationGraph {
     // Also add all the remaining exits.  We decompose and recompose them to
     // take advantage of any new unions from the previous exit step.
     for (const exit of exitSet) {
-      const from = Math.floor(exit / (1 << 24));
-      const to = exit % (1 << 24);
-      neighbors.addExit(from, to);
+      neighbors.addExit(...TilePair.split(exit));
     }
 
     // const entrance = rom.locations[start].entrances[0];
     // this.addEntrance(parseCoord(start, entrance));
+
+    const w = window as any;
+    console.log(w.roots = (w.tiles = this.tiles).roots());
+    console.log([...(w.neighbors = neighbors)]);
+
+    // Summary: 1055 roots, 1724 neighbors
+    // This is too much for a full graph traversal, but many can be removed???
+    //   -> specifically what?
+
+    // Add itemgets and npcs to roots
+    //  - NPC will need to come from a metastructure of shuffled NPCs, maybe?
+    //  --- if we move akahana out of brynmaer, need to know which item is which
+
   }
 }
 
 
-
-// Adds the given delta to the tile address.
-function tileAdd(tile: number, dy: number, dx: number): number {
-  if (dy) {
-    let y = (tile & 0xf0) + (dy << 4);
-    while (y >= 0xf0) {
-      if ((tile & 0xf000) >= 0xf000) return -1;
-      y -= 0xf0;
-      tile += 0x1000;
-    }
-    while (y < 0) {
-      if (!(tile & 0xf000)) return -1;
-      y += 0xf0
-      tile -= 0x1000;
-    }
-    tile = tile & ~0xf0 | y;
-  }
-  if (dx) {
-    let x = (tile & 0xf) + dx;
-    while (x >= 0x10) {
-      if ((tile & 0xf00) >= 0x700) return -1;
-      x -= 0x10;
-      tile += 0x100;
-    }
-    while (x < 0) {
-      if (!(tile & 0xf00)) return -1;
-      x += 0x10
-      tile -= 0x100;
-    }
-    tile = tile & ~0xf | x;
-  }
-  return tile;
-}
-
-
-class Neighbors {
-  // high 24 = from, low 24 = to
-  private readonly south = new Set<number>();
-  private readonly other = new Set<number>();
-  constructor(private readonly tiles: UnionFind<number>) {}
-
-  // NOTE: lo < hi is required, so that lo->hi is south if vertical
-  addAdjacent(lo: number, hi: number, vertical: boolean): void {
-    lo = this.tiles.find(lo);
-    hi = this.tiles.find(hi);
-    this.other.add(hi * (1 << 24) + lo);
-    (vertical ? this.south : this.other).add(lo * (1 << 24) + hi);
-  }
-
-  addExit(from: number, to: number): void {
-    from = this.tiles.find(from);
-    to = this.tiles.find(to);
-    this.other.add(from * (1 << 24) + to);
-  }
-
-  * [Symbol.iterator](): IterableIterator<{from: number, to: number, south: boolean}> {
-    const seen = new Set();
-    let south = true;
-    for (const exit of concat(this.south, [-1], this.other)) {
-      if (exit === -1) {
-        south = false;
-        continue;
-      }
-      const from = this.tiles.find(Math.floor(exit / (1 << 24)));
-      const to = this.tiles.find(exit % (1 << 24));
-      const normalized = from * (1 << 24) + to;
-      if (seen.has(normalized)) continue;
-      seen.add(normalized);
-      yield {from, to, south};
-    }
-  }
-}
-
-function * concat<T>(...iters: Array<Iterable<T>>): IterableIterator<T> {
-  for (const iter of iters) {
-    yield * iter;
-  }
-}
-
-interface Coordinate {
-  x: number;
-  y: number;
-}
-
-function parseCoord(location: number, {x, y}: Coordinate): number {
-  // Works with both entrances and exits
-  const xs = x >>> 8;
-  const xt = (x >>> 4) & 0xf;
-  const ys = y >>> 8;
-  const yt = (y >>> 4) & 0xf;
-  return location << 16 | ys << 12 | xs << 8 | yt << 4 | xt;
-}
-
-enum Events {
-  // different number?  from flag?
-  talkedToLeafRabbit = -1,
-}
-
-const TRIGGERS: {[id: number]: Terrain} = {
-  0x86: {
-    exit: [[Events.talkedToLeafRabbit]],
-    exitSouth: [[]], // open
-  },
-};
+/////////////

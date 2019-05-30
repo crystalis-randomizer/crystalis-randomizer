@@ -5,6 +5,7 @@ import {LogType, ProgressTracker,
         shuffle2 as shuffleDepgraph} from './depgraph.js';
 import {FetchReader} from './fetchreader.js';
 import {FlagSet} from './flagset.js';
+import {World} from './graph/world.js';
 import {Random} from './random.js';
 import {Rom} from './rom.js';
 import {Entrance, Exit, Flag, Location, Spawn} from './rom/location.js';
@@ -119,6 +120,7 @@ export async function shuffle(rom: Uint8Array,
   // Parse the rom and apply other patches - note: must have shuffled
   // the depgraph FIRST!
   const parsed = new Rom(rom);
+  new World(parsed);
 
   makeBraceletsProgressive(parsed);
   if (flags.blackoutMode()) blackoutMode(parsed);
@@ -254,6 +256,9 @@ Here, have this lame
   // it could instead say "the statue of onyx is ...".
   rom.messages.parts[0][0xe].text = `It's dangerous to go alone! Take this.`;
   rom.messages.parts[0][0xe].fixText();
+
+  rom.npcs[0x16].data[3]++;
+  rom.npcs[0x16].data[2]++;
 };
 
 function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {

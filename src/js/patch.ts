@@ -8,6 +8,7 @@ import {FlagSet} from './flagset.js';
 import {World} from './graph/world.js';
 import {Random} from './random.js';
 import {Rom} from './rom.js';
+//import {shuffleBosses} from './rom/boss.js';
 import {Entrance, Exit, Flag, Location, Spawn} from './rom/location.js';
 import {GlobalDialog, LocalDialog} from './rom/npc.js';
 import {ShopType} from './rom/shop.js';
@@ -120,7 +121,7 @@ export async function shuffle(rom: Uint8Array,
   // Parse the rom and apply other patches - note: must have shuffled
   // the depgraph FIRST!
   const parsed = new Rom(rom);
-  new World(parsed);
+  new World(parsed, flags, 0);
 
   makeBraceletsProgressive(parsed);
   if (flags.blackoutMode()) blackoutMode(parsed);
@@ -235,6 +236,7 @@ function undergroundChannelLandBridge(rom: Rom) {
 }
 
 function misc(rom: Rom, flags: FlagSet, random: Random) {
+  //shuffleBosses(rom, random);
   const {} = {rom, flags, random} as any;
   // NOTE: we still need to do some work actually adjusting
   // message texts to prevent line overflow, etc.  We should
@@ -300,11 +302,13 @@ function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
     (monsters >= part[0].length ? hostile : peaceful).push(part);
   }
   const evenWeight = true;
+  const extraMusic = true;
   function shuffle(parts: Partition[]) {
     const values = parts.map((x: Partition) => x[1]);
 
     if (evenWeight) {
       const used = [...new Set(values)];
+      if (extraMusic) used.push(0x9, 0xa, 0xb, 0x1a, 0x1c, 0x1d);
       for (const [locs] of parts) {
         const value = used[random.nextInt(used.length)];
         for (const loc of locs) {
@@ -327,6 +331,9 @@ function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
   // shuffle(bosses);
 
   shuffle([...peaceful, ...hostile, ...bosses]);
+
+  // TODO - consider also shuffling SFX?
+  //  - e.g. flail guy could make the flame sound?
 }
 
 function makeBraceletsProgressive(rom: Rom): void {

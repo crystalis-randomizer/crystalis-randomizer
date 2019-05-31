@@ -38,7 +38,7 @@ export namespace Magic {
 }
 
 export function statue(...reqs: Requirement[]): Terrain {
-  return {exit: or(...reqs, Events.STATUE_GLITCH), exitSouth: Condition.OPEN};
+  return {exit: or(...reqs, Capability.STATUE_GLITCH), exitSouth: Condition.OPEN};
 };
 
 // Newtypes for different number purposes

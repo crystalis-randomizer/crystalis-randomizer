@@ -1,5 +1,5 @@
 import {Capability, Condition, Event, Item, Magic, Requirement, Terrain, Trigger,
-        and, or, statue} from './condition.js';
+        WallType, and, or, statue} from './condition.js';
 import {FlagSet} from '../flagset.js';
 import {Rom} from '../rom.js';
 import {Location} from '../rom/location.js';
@@ -89,6 +89,11 @@ export class Overlay {
     }
 
     return capabilities;
+  }
+
+  wallCapability(type: WallType): {flag: number} {
+    return {flag: [Capability.BREAK_STONE, Capability.BREAK_ICE,
+                   Capability.FORM_BRIDGE, Capability.BREAK_IRON][type][0][0]};
   }
 }
 

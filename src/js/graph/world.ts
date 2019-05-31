@@ -46,27 +46,29 @@ export class World {
     const bosses = new Map<ScreenId, number>();
     const npcs = new Map<TileId, number>();
     const triggers = new Map<TileId, Trigger[]>();
+    const monsters = new Map<TileId, number>(); // elemental immunities
 
     for (const location of rom.locations/*.slice(0,2)*/) {
       if (!location.used) continue;
       const ext = location.extended ? 0x100 : 0;
-      const locBits = location.id << 16;
       const tileset = rom.tilesets[(location.tileset & 0x7f) >> 2];
       const tileEffects = rom.tileEffects[location.tileEffects - 0xb3];
 
       // Add terrains
       for (let y = 0, height = location.height; y < height; y++) {
         const row = location.screens[y];
-        const rowBits = locBits | (y << 12);
+        const rowId = location.id << 8 | y;
         for (let x = 0, width = location.width; x < width; x++) {
           const screen = rom.screens[row[x] | ext];
-          const scrBits = rowBits | (x << 8);
-          const flagYx = y << 4 | x;
-          const flag = location.flags.find(f => f.yx === flagYx);
+          const screenId = ScreenId(rowId << 4 | x);
+          const flagYx = screenId & 0xff;
+          const wall = walls.get(screenId);
+          const flag = wall != null ? overlay.wallCapability(wall) :
+                                      location.flags.find(f => f.yx === flagYx);
           const flagTerrain = flag && {enter: Condition(flag.flag)};
           const flagFlyTerrain = flag && {enter: or(Condition(flag.flag), Magic.FLIGHT)};
           for (let t = 0; t < 0xf0; t++) {
-            const tid = TileId(scrBits | t);
+            const tid = TileId(screenId << 8 | t);
             let tile = screen.tiles[t];
             // flag 2ef is "always on", don't even bother making it conditional.
             if (flag && flag.flag === 0x2ef && tile < 0x20) tile = tileset.alternates[tile];
@@ -111,12 +113,11 @@ export class World {
             x0 += 8;
             for (const dx of [-16, 0]) {
               for (const dy of [-16, 0]) {
-                if (trigger.terrain) {
-                  terrains.set(TileId.from(location, {x: x0 + dx, y: y0 + dy}), trigger.terrain);
-                }
-                if (trigger.trigger) {
-                  triggers.set(TileId.from(location, {x: x0 + dx, y: y0 + dy}), trigger.trigger);
-                }
+                const x = x0 + dx;
+                const y = y0 + dy;
+                const tile = TileId.from(location, {x, y});
+                if (trigger.terrain) terrains.set(tile, trigger.terrain);
+                if (trigger.trigger) triggers.set(tile, trigger.trigger);
               }
             }
           }
@@ -124,12 +125,15 @@ export class World {
           npcs.set(TileId.from(location, spawn), spawn.id);
           const npc = overlay.npc(spawn.id, location);
           if (npc.terrain || npc.trigger) {
-            let {x, y} = spawn;
+            let {x: xs, y: ys} = spawn;
             let {x0, x1, y0, y1} = npc.hitbox || {x0: 0, y0: 0, x1: 1, y1: 1};
             for (let dx = x0; dx < x1; dx++) {
               for (let dy = y0; dy < y1; dy++) {
-                terrains.set(TileId.from(location, {x: x + 16 * dx, y: y + 16 * dy}),
-                             npc.terrain);
+                const x = xs + 16 * dx;
+                const y = ys + 16 * dy;
+                const tile = TileId.from(location, {x, y});
+                if (npc.terrain) terrains.set(tile, npc.terrain);
+                if (npc.trigger) triggers.set(tile, npc.trigger);
               }
             }
           }
@@ -141,6 +145,11 @@ export class World {
           walls.set(ScreenId.from(location, spawn), spawn.id as WallType);
         } else if (spawn.isChest()) {
           triggers.set(TileId.from(location, spawn), Trigger.chest(spawn.id));
+        } else if (spawn.isMonster()) {
+          // TODO - compute money-dropping monster vulnerabilities and add a trigger
+          // for the MONEY capability dependent on any of the swords.
+          const monster = rom.objects[spawn.monsterId];
+          if (monster.goldDrop) monsters.set(TileId.from(location, spawn), monster.elements);
         }
       }
     }
@@ -209,6 +218,13 @@ export class World {
     for (const exit of exitSet) {
       neighbors.addExit(...TilePair.split(exit));
     }
+
+
+    // For monsters - figure out which swords lead to money
+          // if (!(elements & 0x1)) moneySwords.add(0);
+          // if (!(elements & 0x2)) moneySwords.add(1);
+          // if (!(elements & 0x4)) moneySwords.add(2);
+          // if (!(elements & 0x8)) moneySwords.add(3);
 
     // const entrance = rom.locations[start].entrances[0];
     // this.addEntrance(parseCoord(start, entrance));

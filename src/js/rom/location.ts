@@ -1,9 +1,10 @@
-import {Entity, Rom} from './entity.js';
+import {Entity} from './entity.js';
 import {Screen} from './screen.js';
 import {Data, DataTuple,
         concatIterables, group, hex, readLittleEndian,
         seq, tuple, varSlice, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
+import {Rom} from '../rom.js';
 
 // Location entities
 export class Location extends Entity {

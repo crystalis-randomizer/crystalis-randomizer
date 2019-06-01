@@ -1,6 +1,7 @@
-import {Entity, Rom} from './entity.js';
+import {Entity} from './entity.js';
 import {readLittleEndian, seq, tuple, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
+import {Rom} from '../rom.js';
 
 // Shops are striped: tool, armor, inn, pawn
 // So the tool shops have ID 0, 4, 8, ..., 40; etc

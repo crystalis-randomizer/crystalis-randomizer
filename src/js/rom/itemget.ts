@@ -1,7 +1,8 @@
-import {Entity, Rom} from './entity.js';
+import {Entity} from './entity.js';
 import {MessageId} from './messageid.js';
 import {ITEM_GET_FLAGS, hex, readLittleEndian, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
+import {Rom} from '../rom.js';
 
 // A gettable item slot/check.  Each ItemGet maps to a single item,
 // but non-unique items may map to multiple ItemGets.

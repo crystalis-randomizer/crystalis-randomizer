@@ -1,7 +1,8 @@
-import {Entity, Rom} from './entity.js';
+import {Entity} from './entity.js';
 import {TileEffects} from './tileeffects.js';
 import {seq, tuple} from './util.js';
 import {Writer} from './writer.js';
+import {Rom} from '../rom.js';
 
 // Mappping from metatile ID to tile quads and palette number.
 export class Tileset extends Entity {

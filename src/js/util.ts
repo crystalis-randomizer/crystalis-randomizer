@@ -269,3 +269,17 @@ export class SuffixTrie<T> {
     }
   }
 }
+
+export class DefaultMap<K, V extends {}> extends Map<K, V> {
+  constructor(private readonly supplier: () => V) { super(); }
+  get(key: K): V {
+    let value = super.get(key);
+    if (value == null) super.set(key, value = this.supplier());
+    return value;
+  }
+}
+
+// export class LabeledSet<T> {
+//   private map: Map<String, T>
+// }
+

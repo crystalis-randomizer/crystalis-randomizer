@@ -14,27 +14,28 @@ export namespace Capability {
   export const STATUE_GLITCH = Condition(-10);
 }
 
+// NOTE: use complement for items
 export namespace Item {
-  export const SWORD_OF_WIND = Condition(0x200);
-  export const SWORD_OF_FIRE = Condition(0x201);
-  export const SWORD_OF_WATER = Condition(0x202);
-  export const SWORD_OF_THUNDER = Condition(0x203);
-  export const CRYSTALIS = Condition(0x204);
-  export const ORB_OF_WIND = Condition(0x205);
-  export const TORNADO_BRACELET = Condition(0x206);
-  export const ORB_OF_FIRE = Condition(0x207);
-  export const FLAME_BRACELET = Condition(0x208);
-  export const ORB_OF_WATER = Condition(0x209);
-  export const BLIZZARD_BRACELET = Condition(0x20a);
-  export const ORB_OF_THUNDER = Condition(0x20b);
-  export const STORM_BRACELET = Condition(0x20c);
+  export const SWORD_OF_WIND = Condition(~0x200);
+  export const SWORD_OF_FIRE = Condition(~0x201);
+  export const SWORD_OF_WATER = Condition(~0x202);
+  export const SWORD_OF_THUNDER = Condition(~0x203);
+  export const CRYSTALIS = Condition(~0x204);
+  export const ORB_OF_WIND = Condition(~0x205);
+  export const TORNADO_BRACELET = Condition(~0x206);
+  export const ORB_OF_FIRE = Condition(~0x207);
+  export const FLAME_BRACELET = Condition(~0x208);
+  export const ORB_OF_WATER = Condition(~0x209);
+  export const BLIZZARD_BRACELET = Condition(~0x20a);
+  export const ORB_OF_THUNDER = Condition(~0x20b);
+  export const STORM_BRACELET = Condition(~0x20c);
 }
 
 export namespace Magic {
-  export const PARALYSIS = Condition(0x242);
-  export const TELEPATHY = Condition(0x243);
-  export const CHANGE = Condition(0x247);
-  export const FLIGHT = Condition(0x248);
+  export const PARALYSIS = Condition(~0x242);
+  export const TELEPATHY = Condition(~0x243);
+  export const CHANGE = Condition(~0x247);
+  export const FLIGHT = Condition(~0x248);
 }
 
 export function statue(...reqs: Requirement[]): Terrain {
@@ -53,6 +54,26 @@ export enum WallType {
 // Flag, item, or condition.
 export type Condition = number & {__condition__: never};
 export type Requirement = readonly (readonly Condition[])[];
+
+export class MutableRequirement extends Map<string, Set<Condition>> {
+  add(newLabel: string, newDeps: Set<Condition>): boolean {
+    if (this.has(newLabel)) return false;
+    for (const [curLabel, curDeps] of this) {
+      if (containsAll(newDeps, curDeps)) return false;
+      if (containsAll(curDeps, newDeps)) this.delete(curLabel);
+    }
+    this.set(newLabel, newDeps);
+    return true;
+  }
+}
+
+const containsAll = <T>(left: Set<T>, right: Set<T>): boolean => {
+  if (left.size < right.size) return false;
+  for (const d of right) {
+    if (!left.has(d)) return false;
+  }
+  return true;
+};
 
 export function Condition(x: number): readonly [readonly [Condition]] {
   return [[x as Condition]];
@@ -106,7 +127,7 @@ export namespace Terrain {
     exitSouth: Condition.OPEN,
   };
   // export function flag(id: number, flight?: boolean) {
-  //   return {enter: flight ? [[id], [0x248]] : [[id]]};
+  //   return {enter: flight ? [[id], [~0x248]] : [[id]]};
   // }
   export function flag(id: number) {
     return {enter: Condition(id)};

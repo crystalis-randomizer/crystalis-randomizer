@@ -8,7 +8,6 @@ import {FlagSet} from './flagset.js';
 import {World} from './graph/world.js';
 import {Random} from './random.js';
 import {Rom} from './rom.js';
-//import {shuffleBosses} from './rom/boss.js';
 import {Entrance, Exit, Flag, Location, Spawn} from './rom/location.js';
 import {GlobalDialog, LocalDialog} from './rom/npc.js';
 import {ShopType} from './rom/shop.js';
@@ -236,7 +235,6 @@ function undergroundChannelLandBridge(rom: Rom) {
 }
 
 function misc(rom: Rom, flags: FlagSet, random: Random) {
-  //shuffleBosses(rom, random);
   const {} = {rom, flags, random} as any;
   // NOTE: we still need to do some work actually adjusting
   // message texts to prevent line overflow, etc.  We should

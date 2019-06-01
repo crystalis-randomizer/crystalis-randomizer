@@ -1,6 +1,7 @@
-import {Entity, Rom} from './entity.js';
+import {Entity} from './entity.js';
 import {signed, tuple, unsigned} from './util.js';
 import {Writer} from './writer.js';
+import {Rom} from '../rom.js';
 
 // A pattern page sequence for animating background tiles.  ID in 0..3
 export class Hitbox extends Entity {

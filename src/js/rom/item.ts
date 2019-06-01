@@ -1,7 +1,8 @@
-import {Entity, Rom} from './entity.js';
+import {Entity} from './entity.js';
 import {MessageId} from './messageid.js';
 import {hex, readLittleEndian, readString, seq, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
+import {Rom} from '../rom.js';
 
 const ITEM_USE_DATA_TABLE = 0x1dbe2;
 const ITEM_DATA_TABLE = 0x20ff0;

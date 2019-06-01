@@ -1,5 +1,6 @@
-import {Entity, Rom} from './entity.js';
+import {Entity} from './entity.js';
 import {reverseBits, seq, tuple} from './util.js';
+import {Rom} from '../rom.js';
 
 export class Pattern extends Entity {
 

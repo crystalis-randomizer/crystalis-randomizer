@@ -219,6 +219,22 @@ export class World {
       neighbors.addExit(...TilePair.split(exit));
     }
 
+    // Build up a graph?!?
+    // Will need to map to smaller numbers?
+    // Can we compress lazily?
+    //  - everything we see as a requirement goes into one list/map
+    //  - everything we see as a "get" goes into another
+    //  - filling maps between them
+    // start at entrance, build full requirements for each place
+    // follow exits:
+    //  - for each exit, update requirements, queue recheck if changed
+    //  - we could do a less-thorough version:
+    //     - start at entrance, add (open) requirement
+    //     - queue all exits, ignoring any already seen
+    //       keep track of which locations had changed reqs
+    //     - once queue flushes, replace queue with changed
+    //     - repeat until changed is empty at end of queue
+
 
     // For monsters - figure out which swords lead to money
           // if (!(elements & 0x1)) moneySwords.add(0);

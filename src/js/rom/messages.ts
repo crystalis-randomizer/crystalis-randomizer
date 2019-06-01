@@ -1,8 +1,8 @@
-import {Rom} from './entity.js';
 import {MessageId} from './messageid.js';
 import {Data, hex, readLittleEndian, readString,
         seq, slice, writeLittleEndian, writeString} from './util.js';
 import {Writer} from './writer.js';
+import {Rom} from '../rom.js';
 // import {SuffixTrie} from '../util.js';
 
 class DataTable<T> extends Array<T> {

@@ -1,6 +1,7 @@
-import {Entity, Rom} from './entity.js';
+import {Entity} from './entity.js';
 import {readLittleEndian, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
+import {Rom} from '../rom.js';
 
 // Data for when a boss is killed
 export class BossKill extends Entity {

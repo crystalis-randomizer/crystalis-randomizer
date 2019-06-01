@@ -1,5 +1,6 @@
-import {Entity, Rom} from './entity.js';
+import {Entity} from './entity.js';
 import {hex, readLittleEndian, seq, tuple} from './util.js';
+import {Rom} from '../rom.js';
 
 const METASPRITE_TABLE = 0x3845c;
 

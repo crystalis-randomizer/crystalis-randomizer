@@ -1,6 +1,7 @@
-import {Entity, Rom} from './entity.js';
+import {Entity} from './entity.js';
 import {tuple} from './util.js';
 import {Writer} from './writer.js';
+import {Rom} from '../rom.js';
 
 // An entry of the ad-hoc spawn table, which can be spawned arbitrarily
 // by AdHocSpawnObject (provided there's an available spawn slot in range).

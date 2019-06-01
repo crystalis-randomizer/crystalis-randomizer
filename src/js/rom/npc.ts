@@ -1,9 +1,10 @@
-import {Entity, Rom} from './entity.js';
+import {Entity} from './entity.js';
 import {MessageId} from './messageid.js';
 import {DIALOG_FLAGS, Data, SPAWN_CONDITION_FLAGS, addr, hex,
         readBigEndian, readLittleEndian, tuple,
         writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
+import {Rom} from '../rom.js';
 
 type FlagList = number[];
 

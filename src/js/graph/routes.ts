@@ -80,7 +80,7 @@ export class Routes {
 
 // export type Route = readonly [TileId, ...Condition[]];
 
-function LabeledRoute(target: TileId, route: readonly Condition[]): LabeledRoute {
+export function LabeledRoute(target: TileId, route: readonly Condition[]): LabeledRoute {
   const sorted = [...new Set(route)].sort();
   const deps = new Set(sorted);
   const depsLabel = sorted.join(' ');
@@ -95,10 +95,10 @@ export interface LabeledRoute {
   readonly depsLabel: string;
 }
 
-export interface LabeledRequirements {
-  readonly label: string;
-  readonly deps: Set<Condition>;
-}
+// export interface LabeledRequirements {
+//   readonly label: string;
+//   readonly deps: Set<Condition>;
+// }
 
 // export interface LabeledEdge {
 //   readonly target: TileId;

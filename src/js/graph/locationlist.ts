@@ -1,15 +1,21 @@
+import {Condition, MutableRequirement, Requirement, Slot, Terrain, Trigger} from './condition.js';
 import {TileId, TilePair} from './geometry.js';
-import {Condition, Requirement, Terrain, Trigger} from './condition.js';
+import {Routes} from './routes.js';
 import {Bits} from '../bits.js';
+import {DefaultMap} from '../util.js';
+
+const {} = {Trigger, TilePair, Bits} as any;
 
 // Specifies a location list.
 // Helps to build it up incrementally.
 
 export class LocationListBuilder {
 
-  private locations = new BiMap<TileId>();
-  private reqs = new BiMap<Condition>();
-  private slots = new BiMap<Condition>();
+  readonly routes = new Routes();
+  private readonly reqs = new BiMap<Condition>();
+  private readonly slots = new BiMap<Slot>();
+
+  private readonly out = new DefaultMap<Slot, MutableRequirement>(() => new MutableRequirement());
 
   // TODO - instead of storing terrains, change them all to Req ???
   //      - compress first?!?
@@ -19,27 +25,25 @@ export class LocationListBuilder {
   //          addRoute should just move the destination to the end of the queue
   //          with an updated list of source tiles => breadth first
 
-  private terrains = new Array<Terrain>();
-  private exits = new Array<Map<number, boolean>>();
+  constructor(private readonly terrains: Map<TileId, Terrain>) {}
 
-  private changed = new Set<number>();
-  private routes: Bits[][] = [];
-  private queue = new Set<number>();
-
-  constructor() {}
-
-  addTerrain(tile: TileId, terrain: Terrain): void {
-    const index = this.locations.add(tile);
-    this.terrains[index] = terrain;
-    this.addRequirement(terrain.exit || []);
-    this.addRequirement(terrain.exitSouth || []);
-    this.addRequirement(terrain.enter || []);
-  }
+  // addTerrain(tile: TileId, terrain: Terrain): void {
+  //   this.terrains.set(index, terrain);
+  //   this.addRequirement(terrain.exit || []);
+  //   this.addRequirement(terrain.exitSouth || []);
+  //   this.addRequirement(terrain.enter || []);
+  // }
 
   addEdge(from: TileId, to: TileId, south: boolean): void {
-    const fromIndex = this.locations.add(from);
-    const toIndex = this.locations.add(to);
-    this.exits[fromIndex] || (this.exits[fromIndex] = new Map()).set(toIndex, south);
+    // all terrains added, so can connect.
+    const f = this.terrains.get(from);
+    const t = this.terrains.get(to);
+    if (!f || !t) throw new Error(`missing terrain ${f ? to : from}`);
+    for (const exit of (south ? f.exitSouth : f.exit) || [[]]) {
+      for (const entrance of t.enter || [[]]) {
+        this.routes.addEdge(to, from, [...entrance, ...exit]);
+      }
+    }
   }
 
   addRequirement(req: Requirement): void {
@@ -50,73 +54,27 @@ export class LocationListBuilder {
     }
   }
 
+  // must be called AFTER all calls to addEdge?
+  addSlot(slot: Slot, tile: TileId, route: readonly Condition[]) {
+    this.slots.add(slot);
+    const slotRoute = this.out.get(slot);
+    for (const r of this.routes.routes.get(tile).values()) {
+      const deps = new Set([...r, ...route].sort());
+      const label = [...deps].join(' ');
+      slotRoute.add(label, deps);
+    }
+  }
+
   build(): LocationList {
+    // process the bimaps to translate everything down to a compact format?
     return new LocationList();
   }
 }
 
-interface GeneralReq {
-  values(): IterableIterator<Iterable<Condition>>;
-}
-
-class Req extends Map<string, Set<Condition>> implements GeneralReq {
-
-  add(...others: ReadonlyArray<GeneralReq>): boolean {
-    // add the ANDs of a bunch of other reqs in-place
-    // return true if this has changed
-
-    // 1. build cross product of all others
-    let all: Condition[][] = [[]];
-    for (const other of others) {
-      const newAll = [];
-      for (const req of other.values()) {
-        for (const current of all) {
-          newAll.push([...req, ...current]);
-        }
-        all = newAll;
-      }
-    }
-
-    // 2. collapse 'all' into a map
-    const map = new Map<string, Set<Condition>>();
-    for (let conds of all) {
-      conds = [...new Set(conds)].sort();
-      const label = conds.join(' ');
-      map.set(label, new Set(conds));      
-    }
-
-    // 2. merge it into this
-    let changed = false;
-    OUTER:
-    for (const [newLabel, conds] of map) {
-      for (const [label, has] of this) {
-        if (containsAll(conds, has)) {
-          continue OUTER;
-        } else if (containsAll(has, conds)) {
-          this.delete(label);
-          changed = true; // probably redundant
-        }
-      }
-      this.set(newLabel, conds);
-      changed = true;
-    }
-
-    return changed;
-  }
+export class LocationList {
+  
 
 }
-
-
-function containsAll<T>(left: Set<T>, right: Set<T>): boolean {
-  if (left.size < right.size) return false;
-  for (const d of right) {
-    if (!left.has(d)) return false;
-  }
-  return true;
-};
-
-
-class LocationList {}
 
 
 class BiMap<T> {

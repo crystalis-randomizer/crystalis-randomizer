@@ -54,6 +54,7 @@ export enum WallType {
 // Flag, item, or condition.
 export type Condition = number & {__condition__: never};
 export type Requirement = readonly (readonly Condition[])[];
+export type Slot = number & {__slot__: never};
 
 export class MutableRequirement extends Map<string, Set<Condition>> {
   add(newLabel: string, newDeps: Set<Condition>): boolean {
@@ -103,8 +104,11 @@ export namespace Trigger {
 
 
 export interface Terrain {
+  // Requirement to enter tile, defaults to OPEN
   enter?: Requirement;
+  // Requirement to exit any direction other than south
   exit?: Requirement;
+  // Requirement to exit south
   exitSouth?: Requirement;
 }
 
@@ -122,19 +126,23 @@ export namespace Terrain {
   // What about flags over water - not impassable? shouldn't matter?
 
   export const OPEN = {};
+
   export const SLOPE = {
     exit: Magic.FLIGHT,
-    exitSouth: Condition.OPEN,
   };
+
   // export function flag(id: number, flight?: boolean) {
   //   return {enter: flight ? [[id], [~0x248]] : [[id]]};
   // }
+
   export function flag(id: number) {
     return {enter: Condition(id)};
   }
+
   export const FLY = {
     enter: Magic.FLIGHT,
   };
+
   // TODO - make a version of waterfall that requires flight?
   //      - it probably doesn't matter, since flight is required
   //        to get to the waterfall in the first place?

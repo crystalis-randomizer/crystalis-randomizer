@@ -1,5 +1,6 @@
 import {Neighbors, ScreenId, TileId, TilePair} from './geometry.js';
 import {Condition, Magic, Terrain, Trigger, WallType, or} from './condition.js';
+import {LocationList, LocationListBuilder} from './locationlist.js';
 import {Overlay} from './overlay.js';
 import {FlagSet} from '../flagset.js';
 import {TileEffects} from '../rom/tileeffects.js';
@@ -7,7 +8,7 @@ import {hex} from '../rom/util.js';
 import {Rom} from '../rom.js';
 import {UnionFind} from '../unionfind.js';
 
-const {} = {hex} as any; // for debugging
+const {} = {hex, LocationList} as any; // for debugging
 
 // A tile is a 24-bit number:
 //   <loc><ys><xs><yt><xt>
@@ -27,7 +28,7 @@ export class World {
   // Blocks for any given tile group.
   // private readonly blocks = new Array<[number, number[][]]>();
 
-  constructor(readonly rom: Rom, flags: FlagSet, start = 0) {    
+  constructor(readonly rom: Rom, flags = new FlagSet('@FullShuffle'), start = 0) {    
     // 1. start with entrance 0 at the start location, add it to the tiles and queue.
     // 2. for tile T in the queue
     //    - for each passable neighbor N of T:
@@ -57,10 +58,10 @@ export class World {
       // Add terrains
       for (let y = 0, height = location.height; y < height; y++) {
         const row = location.screens[y];
-        const rowId = location.id << 8 | y;
+        const rowId = location.id << 8 | y << 4;
         for (let x = 0, width = location.width; x < width; x++) {
           const screen = rom.screens[row[x] | ext];
-          const screenId = ScreenId(rowId << 4 | x);
+          const screenId = ScreenId(rowId | x);
           const flagYx = screenId & 0xff;
           const wall = walls.get(screenId);
           const flag = wall != null ? overlay.wallCapability(wall) :
@@ -72,7 +73,7 @@ export class World {
             let tile = screen.tiles[t];
             // flag 2ef is "always on", don't even bother making it conditional.
             if (flag && flag.flag === 0x2ef && tile < 0x20) tile = tileset.alternates[tile];
-            const effects = tileEffects.effects[tile] & 0x26;
+            const effects = ext ? 0 : tileEffects.effects[tile] & 0x26;
             let terrain: Terrain | undefined = Terrain.OPEN;
             if (effects & TileEffects.SLOPE) {
               terrain = effects & TileEffects.NO_WALK ? Terrain.WATERFALL : Terrain.SLOPE;
@@ -187,11 +188,11 @@ export class World {
         const to = entrance & 0x20 ?
             TileId(from & 0xffff | (dest << 16)) :
             TileId.from({id: dest} as any, rom.locations[dest].entrances[entrance]);
+        // NOTE: we could skip adding exits if the tiles are not known
         exitSet.add(TilePair.of(this.tiles.find(from), this.tiles.find(to)));
       }
     }
     for (const exit of exitSet) {
-//console.log(`exit: ${exit.toString(16)}`);
       const [from, to] = TilePair.split(exit);
       if (terrains.get(from) !== terrains.get(to)) continue;
       const reverse = TilePair.of(to, from);
@@ -216,7 +217,22 @@ export class World {
     // Also add all the remaining exits.  We decompose and recompose them to
     // take advantage of any new unions from the previous exit step.
     for (const exit of exitSet) {
-      neighbors.addExit(...TilePair.split(exit));
+      const [from, to] = TilePair.split(exit);
+      if (!terrains.has(from) || !terrains.has(to)) continue;
+      neighbors.addExit(from, to);
+    }
+
+    // TODO - hardcode some exits
+    //  - the transition from $51 to $60 is impassible on both sides:
+    //    add a conditional exit from the boat tile to the beach (both ways)
+    //  - some transitions in the tower are on top of impassible-looking tiles
+
+    const builder = new LocationListBuilder(terrains);
+    const startLoc = rom.locations[start];
+    const startTile = this.tiles.find(TileId.from(startLoc, startLoc.entrances[0]));
+    builder.routes.addRoute(startTile, []);
+    for (const {from, to, south} of neighbors) {
+      builder.addEdge(from, to, south);
     }
 
     // Build up a graph?!?
@@ -235,7 +251,6 @@ export class World {
     //     - once queue flushes, replace queue with changed
     //     - repeat until changed is empty at end of queue
 
-
     // For monsters - figure out which swords lead to money
           // if (!(elements & 0x1)) moneySwords.add(0);
           // if (!(elements & 0x2)) moneySwords.add(1);
@@ -248,6 +263,7 @@ export class World {
     const w = window as any;
     console.log(w.roots = (w.tiles = this.tiles).roots());
     console.log([...(w.neighbors = neighbors)]);
+    console.log(w.ll = builder);
 
     // Summary: 1055 roots, 1724 neighbors
     // This is too much for a full graph traversal, but many can be removed???

@@ -7,7 +7,7 @@ import {View} from './view.js';
 import {Rom} from '../rom.js';
 import {ImageBuffer} from './imagebuffer.js';
 
-
+import {World} from '../graph/world.js';
 
 // TODO - move colors to view.js?
 //   - maybe the API I want is drawTile(x, y, id, attr)?
@@ -371,6 +371,8 @@ const run = async () => {
   }
   const rom = await Rom.load(patch);
   window.rom = rom;
+  window.World = World;
+  window.world = new World(rom);
 
   const view = new MapsView(rom);
   document.body.appendChild(view.element);

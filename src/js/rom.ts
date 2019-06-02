@@ -580,7 +580,14 @@ function pickFile(): Promise<Uint8Array> {
 
 export const EXPECTED_CRC32 = 0x1bd39032;
 
+// Format: [address, broken, fixed]
 const ADJUSTMENTS = [
+  // Fix softlock in crypt due to flyable wall (effects $b6 tile $46)
+  [0x13646, 0x02, 0x06],
+  // Fix broken (fall-through) exit outside start
+  [0x1456a, 0x00, 0xff],
+  // Redundant exit next to stom's door in $19
+  [0x14aeb, 0x09, 0xff],
   // Fix garbage map square in bottom-right of Mt Sabre West cave
   [0x14db9, 0x08, 0x80],
   // Fix garbage map square in bottom-left of Lime Tree Valley

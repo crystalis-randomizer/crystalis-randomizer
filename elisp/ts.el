@@ -81,8 +81,11 @@ See URL `https://github.com/palantir/tslint'."
   (define-key typescript-mode-map (kbd "C-'") 'company-complete)
   ;; https://github.com/emacs-lsp/lsp-ui/issues/266
   ;(remove-hook 'lsp-after-diagnostics-hook 'lsp-ui-sideline--diagnostics-changed t)
-  (lsp-ui-mode nil)
+  ; For some reason I can't actually just disable it straightaway.
+  (define-key typescript-mode-map (kbd "C-c \\") 'lsp-ui-sideline-mode)
 )
+
+(set-variable 'lsp-ui-sideline-enable nil)
 
 (add-hook 'typescript-mode-hook 'sdh-ts-init)
 

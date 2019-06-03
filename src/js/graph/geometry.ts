@@ -68,11 +68,11 @@ export namespace ScreenId {
   export const from: {(tile: TileId): ScreenId;
                       (loc: Location, coordin: Coordinate): ScreenId} =
     (tileOrLoc: TileId | Location, coord?: Coordinate): ScreenId => {
-      if (typeof tileOrLoc === 'number') {
-        return (tileOrLoc >>> 8) as ScreenId;
+      if (typeof tileOrLoc === 'number' || !coord) {
+        return (Number(tileOrLoc) >>> 8) as ScreenId;
       }
       const loc = tileOrLoc as Location;
-      return (loc.id << 8 | (coord!.y >>> 8) << 4 | coord!.x >>> 4) as ScreenId;
+      return (loc.id << 8 | (coord.y >>> 8) << 4 | coord.x >>> 8) as ScreenId;
     };
 }
 

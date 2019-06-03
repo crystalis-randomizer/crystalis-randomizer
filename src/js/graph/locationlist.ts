@@ -1,10 +1,10 @@
-import {Condition, MutableRequirement, Requirement, Slot, Terrain, Trigger} from './condition.js';
+import {Check, Condition, MutableRequirement, Requirement, Slot, Terrain} from './condition.js';
 import {TileId, TilePair} from './geometry.js';
 import {Routes} from './routes.js';
 import {Bits} from '../bits.js';
 import {DefaultMap} from '../util.js';
 
-const {} = {Trigger, TilePair, Bits} as any;
+const {} = {Check, TilePair, Bits} as any;
 
 // Specifies a location list.
 // Helps to build it up incrementally.
@@ -58,7 +58,7 @@ export class LocationListBuilder {
   addSlot(slot: Slot, tile: TileId, route: readonly Condition[]) {
     this.slots.add(slot);
     const slotRoute = this.out.get(slot);
-    for (const r of this.routes.routes.get(tile).values()) {
+    for (const r of this.routes.routes.get(tile)) {
       const deps = new Set([...r, ...route].sort());
       const label = [...deps].join(' ');
       slotRoute.add(label, deps);

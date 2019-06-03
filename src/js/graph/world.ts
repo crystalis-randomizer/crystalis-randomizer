@@ -1,5 +1,6 @@
 import {Neighbors, ScreenId, TileId, TilePair} from './geometry.js';
-import {Condition, Magic, Terrain, Trigger, WallType, or} from './condition.js';
+import {Check, Condition, Magic, MutableRequirement,
+        Slot, Terrain, WallType, or} from './condition.js';
 import {LocationList, LocationListBuilder} from './locationlist.js';
 import {Overlay} from './overlay.js';
 import {FlagSet} from '../flagset.js';
@@ -7,6 +8,7 @@ import {TileEffects} from '../rom/tileeffects.js';
 import {hex} from '../rom/util.js';
 import {Rom} from '../rom.js';
 import {UnionFind} from '../unionfind.js';
+import {DefaultMap} from '../util.js';
 
 const {} = {hex, LocationList} as any; // for debugging
 
@@ -40,13 +42,13 @@ export class World {
     //  - blocked(item/trigger - both are just numbers...)
     //  - one-way 
 
-    // Start by getting a full map of all terrains and triggers
+    // Start by getting a full map of all terrains and checks
     const overlay = new Overlay(rom, flags);
     const terrains = new Map<TileId, Terrain>();
     const walls = new Map<ScreenId, WallType>();
     const bosses = new Map<ScreenId, number>();
     const npcs = new Map<TileId, number>();
-    const triggers = new Map<TileId, Trigger[]>();
+    const checks = new DefaultMap<TileId, Check[]>(() => []);
     const monsters = new Map<TileId, number>(); // elemental immunities
 
     for (const location of rom.locations/*.slice(0,2)*/) {
@@ -54,6 +56,21 @@ export class World {
       const ext = location.extended ? 0x100 : 0;
       const tileset = rom.tilesets[(location.tileset & 0x7f) >> 2];
       const tileEffects = rom.tileEffects[location.tileEffects - 0xb3];
+
+      // Find a few spawns early
+      for (const spawn of location.spawns) {
+        // Walls need to come first so we can avoid adding separate
+        // requirements for every single wall - just use the type.
+        if (spawn.isWall()) {
+          walls.set(ScreenId.from(location, spawn), spawn.id as WallType);
+        }
+
+        // TODO - currently this is bbroken -
+        //   [...ll.routes.routes.get(tiles.find(0xa60088)).values()].map(s => [...s].map(x => x.toString(16)).join(' & '))
+        // Lists 5 things: flight, break iron, mt sabre prison, swan gate, crypt entrance
+        //   - should at least require breaking stone or ice?
+
+      }
 
       // Add terrains
       for (let y = 0, height = location.height; y < height; y++) {
@@ -109,7 +126,7 @@ export class World {
           // tile should go from x .. x+1 instead.
           const trigger = overlay.trigger(spawn.id);
           // TODO - consider checking trigger's action: $19 -> push-down message
-          if (trigger.terrain || trigger.trigger) {
+          if (trigger.terrain || trigger.check) {
             let {x: x0, y: y0} = spawn;
             x0 += 8;
             for (const dx of [-16, 0]) {
@@ -118,14 +135,14 @@ export class World {
                 const y = y0 + dy;
                 const tile = TileId.from(location, {x, y});
                 if (trigger.terrain) terrains.set(tile, trigger.terrain);
-                if (trigger.trigger) triggers.set(tile, trigger.trigger);
+                if (trigger.check) checks.get(tile).push(...trigger.check);
               }
             }
           }
         } else if (spawn.isNpc()) {
           npcs.set(TileId.from(location, spawn), spawn.id);
           const npc = overlay.npc(spawn.id, location);
-          if (npc.terrain || npc.trigger) {
+          if (npc.terrain || npc.check) {
             let {x: xs, y: ys} = spawn;
             let {x0, x1, y0, y1} = npc.hitbox || {x0: 0, y0: 0, x1: 1, y1: 1};
             for (let dx = x0; dx < x1; dx++) {
@@ -134,7 +151,7 @@ export class World {
                 const y = ys + 16 * dy;
                 const tile = TileId.from(location, {x, y});
                 if (npc.terrain) terrains.set(tile, npc.terrain);
-                if (npc.trigger) triggers.set(tile, npc.trigger);
+                if (npc.check) checks.get(tile).push(...npc.check);
               }
             }
           }
@@ -142,10 +159,8 @@ export class World {
           // Bosses will clobber the entrance portion of all tiles on the screen,
           // and will also add their drop.
           bosses.set(ScreenId.from(location, spawn), spawn.id);
-        } else if (spawn.isWall()) {
-          walls.set(ScreenId.from(location, spawn), spawn.id as WallType);
         } else if (spawn.isChest()) {
-          triggers.set(TileId.from(location, spawn), Trigger.chest(spawn.id));
+          checks.get(TileId.from(location, spawn)).push(Check.chest(spawn.id));
         } else if (spawn.isMonster()) {
           // TODO - compute money-dropping monster vulnerabilities and add a trigger
           // for the MONEY capability dependent on any of the swords.
@@ -235,6 +250,31 @@ export class World {
       builder.addEdge(from, to, south);
     }
 
+    const reqs = new DefaultMap<Slot, MutableRequirement>(() => new MutableRequirement());
+    // Now we add the slots.
+    // Note that we need a way to ensure that all the right spots get updated
+    // when we fill a slot.  One way is to only use the 2xx flags in the various
+    // places for things that should be replaced when the slot is filled.
+    //
+    // For the actual slots, we keep track of where they were found in a separate
+    // data structure so that we can fill them.
+
+    // Add fixed capabilities
+    for (const {condition = [[]], capability} of overlay.capabilities()) {
+      reqs.get(Slot(capability)).addAll(condition);
+    }
+
+    for (const [tile, checklist] of checks) {
+      for (const {slot, condition = [[]]} of checklist) {
+        const req = reqs.get(slot);
+        for (const r1 of condition) {
+          for (const r2 of builder.routes.routes.get(this.tiles.find(tile)) || []) {
+            req.addList([...r1, ...r2]);
+          }
+        }
+      }
+    }
+
     // Build up a graph?!?
     // Will need to map to smaller numbers?
     // Can we compress lazily?
@@ -264,6 +304,21 @@ export class World {
     console.log(w.roots = (w.tiles = this.tiles).roots());
     console.log([...(w.neighbors = neighbors)]);
     console.log(w.ll = builder);
+
+function h(x: number): string { return x < 0 ? '~' + (~x).toString(16) : x.toString(16); }
+function dnf(x: Iterable<Iterable<number>>): string {
+  const xs = [...x];
+  if (!xs.length) return 'no route';
+  return '(' + xs.map(y => [...y].map(h).join(' & ')).join (') | (') + ')';
+}
+w.area = (tile: TileId) => {
+  const s = [...this.tiles.sets().filter(s => s.has(tile))[0]].map(x=>x.toString(16).padStart(6,'0'));
+  const r = [...builder.routes.routes.get(this.tiles.find(tile))].map(s => [...s].map(x => x < 0 ? '~' + (~x).toString(16) : x.toString(16)).join(' & ')).join(') | (');
+  return `${s.join('\n')}\ncount = ${s.length}\nroutes = (${r})`;
+};
+
+    w.reqs = reqs;
+    console.log('reqs\n', [...reqs].map(([s, r]) => `${h(s)}: ${dnf(r)}`).join('\n'));
 
     // Summary: 1055 roots, 1724 neighbors
     // This is too much for a full graph traversal, but many can be removed???

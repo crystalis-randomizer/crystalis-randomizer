@@ -36,7 +36,7 @@ export class Routes {
     this.edges.get(source).set(edge.label, edge);
     // if (source === target) return [];
     //const routes = new Map<string, LabeledRoute>();
-    for (const srcRoute of this.routes.get(source).values()) {
+    for (const srcRoute of this.routes.get(source)) {
       this.addRoute(target, [...srcRoute, ...route]);
       // for (const r of this.addRoute(target, [...srcRoute, ...route])) {
       //   routes.set(r.label, r);

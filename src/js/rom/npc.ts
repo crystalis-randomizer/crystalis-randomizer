@@ -11,6 +11,7 @@ type FlagList = number[];
 export class Npc extends Entity {
 
   used: boolean;
+
   dataBase: number;
   data: [number, number, number, number]; // uint8
   spawnPointer: number;
@@ -46,7 +47,7 @@ export class Npc extends Entity {
     }
 
     // Populate the dialog table
-    this.dialogPointer = hasDialog ? 0x1c95d + (id << 1) : 0;
+    this.dialogPointer = 0x1c95d + (id << 1);
     this.dialogBase = hasDialog ? addr(rom.prg, this.dialogPointer, 0x14000) : 0;
     this.globalDialogs = [];
     if (hasDialog) {
@@ -93,8 +94,12 @@ export class Npc extends Entity {
     return bytes;
   }
 
+  hasDialog(): boolean {
+    return Boolean(this.globalDialogs.length || this.localDialogs.size);
+  }
+
   dialogBytes(): number[] {
-    if (!this.dialogPointer) return [];
+    if (!this.hasDialog()) return [];
     const bytes: number[] = [];
     function serialize(ds: GlobalDialog[] | LocalDialog[]): number[] {
       const out: number[] = [];
@@ -130,6 +135,19 @@ export class Npc extends Entity {
     return bytes;
   }
 
+  // Makes a "hardlink" between two NPCs, for spawn conditions and dialog.
+  link(id: number): void {
+    const other = this.rom.npcs[id];
+    this.spawnConditions = other.spawnConditions;
+    this.linkDialog(id);
+  }
+
+  linkDialog(id: number): void {
+    const other = this.rom.npcs[id];
+    this.globalDialogs = other.globalDialogs;
+    this.localDialogs = other.localDialogs;
+  }
+
   async write(writer: Writer): Promise<void> {
     if (!this.used) return;
     const promises = [];
@@ -138,7 +156,7 @@ export class Npc extends Entity {
                                `SpawnCondition ${hex(this.id)}`).then(
         address => writeLittleEndian(writer.rom, this.spawnPointer, address - 0x14000)));
 
-    if (this.dialogPointer) {
+    if (this.hasDialog()) {
       promises.push(writer.write(this.dialogBytes(), 0x1c000, 0x1dfff,
                                  `Dialog ${hex(this.id)}`).then(
           address => writeLittleEndian(writer.rom, this.dialogPointer, address - 0x14000)));

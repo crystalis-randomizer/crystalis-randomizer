@@ -345,6 +345,7 @@ export const Spawn = DataTuple.make(4, {
 
   monsterId: {get(this: any): number { return (this.id + 0x50) & 0xff; },
               set(this: any, id: number) { this.id = (id - 0x50) & 0xff; }},
+  /** Note: this includes mimics. */
   isChest(this: any): boolean { return this.type === 2 && this.id < 0x80; },
   isTrigger(this: any): boolean { return this.type === 2 && this.id >= 0x80; },
   isNpc(this: any): boolean { return this.type === 1 && this.id < 0xc0; },

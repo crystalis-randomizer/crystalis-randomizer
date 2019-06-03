@@ -11,7 +11,7 @@ import {Rom} from './rom.js';
 import {Entrance, Exit, Flag, Location, Spawn} from './rom/location.js';
 import {GlobalDialog, LocalDialog} from './rom/npc.js';
 import {ShopType} from './rom/shop.js';
-import {seq, watchArray, writeLittleEndian} from './rom/util.js';
+import {hex, seq, watchArray, writeLittleEndian} from './rom/util.js';
 import * as version from './version.js';
 
 // TODO - to shuffle the monsters, we need to find the sprite palttes and
@@ -120,7 +120,7 @@ export async function shuffle(rom: Uint8Array,
   // Parse the rom and apply other patches - note: must have shuffled
   // the depgraph FIRST!
   const parsed = new Rom(rom);
-  new World(parsed, flags, 0);
+  preventTimerSpawnMimics(parsed);
 
   makeBraceletsProgressive(parsed);
   if (flags.blackoutMode()) blackoutMode(parsed);
@@ -150,6 +150,7 @@ export async function shuffle(rom: Uint8Array,
   undergroundChannelLandBridge(parsed);
 
   // TODO - set omitItemGetDataSuffix and omitLocalDialogSuffix
+  new World(parsed, flags, 0);
 
   await shuffleDepgraph(parsed, random, log, flags, progress);
 
@@ -548,23 +549,50 @@ const reversibleSwanGate = (rom: Rom) => {
   rom.trigger(0xb3).conditions.push(0x10d);
 };
 
-const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
+function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
+  function remove<T>(arr: T[], elem: T): void {
+    const index = arr.indexOf(elem);
+    if (index < 0) throw new Error(`Could not find element ${elem} in ${arr}`);
+    arr.splice(index, 1);
+  }
+
+  function dialog(id: number, loc: number = -1): LocalDialog[] {
+    const result = rom.npcs[id].localDialogs.get(loc);
+    if (!result) throw new Error(`Missing dialog $${hex(id)} at $${hex(loc)}`);
+    return result;
+  }
+  function spawns(id: number, loc: number): number[] {
+    const result = rom.npcs[id].spawnConditions.get(loc);
+    if (!result) throw new Error(`Missing spawn condition $${hex(id)} at $${hex(loc)}`);
+    return result;
+  }
+
+  // Link some redundant NPCs: Kensu (7e, 74) and Akahana (88, 16)
+  rom.npcs[0x7e].link(0x74);
+  rom.npcs[0x88].linkDialog(0x16);
+
+  // Make a new NPC for Akahana in Shyron that won't accept the Statue of Onyx.
+  // Linking spawn conditions and dialogs is sufficient, since the actual NPC ID
+  // (16) is what matters for the trade-in
+  rom.npcs[0x87].used = true;
+  rom.npcs[0x87].link(0x16);
+  rom.locations.shyron.spawns.find(s => s.isNpc() && s.id === 0x16)!.id = 0x87;
+
   // Leaf elder in house ($0d @ $c0) ~ sword of wind redundant flag
-  rom.npcs[0x0d].localDialogs.get(0xc0)![2].flags = [];
+  dialog(0x0d, 0xc0)[2].flags = [];
 
   // Windmill guard ($14 @ $0e) shouldn't despawn after abduction (038),
   // but instead after giving the item (232).
-  rom.npcs[0x14].spawnConditions.get(0x0e)![1] = ~0x232; // replace flag ~038 => ~232
-  rom.npcs[0x14].localDialogs.get(0x0e)![0].flags = []; // remove redundant flag ~ windmill key
+  spawns(0x14, 0x0e)[1] = ~0x232; // replace flag ~038 => ~232
+  dialog(0x14, 0x0e)[0].flags = []; // remove redundant flag ~ windmill key
 
-  // Akahana ($16) ~ shield ring redundant flag
-  rom.npcs[0x16].localDialogs.get(0x57)![0].flags = [];
-  rom.npcs[0x88].localDialogs.get(0x57)![0].flags = []; // NOTE: need to keep these in sync
-  // Don't disappear after getting barrier
-  rom.npcs[0x16].spawnConditions.get(0x57)!.shift(); // remove 051 NOT learned barrier
-  rom.npcs[0x88].spawnConditions.get(0x57)!.pop(); // remove 051 NOT learned barrier
+  // Akahana ($16 / 88) ~ shield ring redundant flag
+  dialog(0x16, 0x57)[0].flags = [];
+  // Don't disappear after getting barrier (note 88's spawns not linked to 16)
+  remove(spawns(0x16, 0x57), ~0x051);
+  remove(spawns(0x88, 0x57), ~0x051);
 
-  const reverseDialog = (ds: LocalDialog[]) => {
+  function reverseDialog(ds: LocalDialog[]): void {
     ds.reverse();
     for (let i = 0; i < ds.length; i++) {
       const next = ds[i + 1];
@@ -573,7 +601,7 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   };
 
   // Oak elder ($1d) ~ sword of fire redundant flag
-  const oakElderDialog = rom.npcs[0x1d].localDialogs.get(-1)!;
+  const oakElderDialog = dialog(0x1d);
   oakElderDialog[4].flags = [];
   // Make sure that we try to give the item from *all* post-insect dialogs
   oakElderDialog[0].message.action = 0x03;
@@ -584,7 +612,7 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   // Oak mother ($1e) ~ insect flute redundant flag
   // TODO - rearrange these flags a bit (maybe ~045, ~0a0 ~041 - so reverse)
   //      - will need to change ballOfFire and insectFlute in depgraph
-  const oakMotherDialog = rom.npcs[0x1e].localDialogs.get(-1)!;
+  const oakMotherDialog = dialog(0x1e);
   (() => {
     const [killedInsect, gotItem, getItem, findChild] = oakMotherDialog;
     findChild.condition = ~0x045;
@@ -601,11 +629,11 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
 
   // Reverse the other oak dialogs, too.
   for (const i of [0x20, 0x21, 0x22, 0x7c, 0x7d]) {
-    reverseDialog(rom.npcs[i].localDialogs.get(-1)!);
+    reverseDialog(dialog(i));
   }
 
   // Swap the first two oak child dialogs.
-  const oakChildDialog = rom.npcs[0x1f].localDialogs.get(-1)!;
+  const oakChildDialog = dialog(0x1f);
   oakChildDialog.unshift(...oakChildDialog.splice(1, 1));
 
   // Throne room back door guard ($33 @ $df) should have same spawn condition as queen
@@ -613,36 +641,35 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   rom.npcs[0x33].spawnConditions.set(0xdf,  [~0x020, ~0x01b]);
 
   // Front palace guard ($34) vacation message keys off 01b instead of 01f
-  rom.npcs[0x34].localDialogs.get(-1)![1].condition = 0x01b;
+  dialog(0x34)[1].condition = 0x01b;
 
   // Queen's ($38) dialog needs quite a bit of work
-  const queen = rom.npcs[0x38];
-  const queenDialog = queen.localDialogs.get(-1)!;
   // Give item (flute of lime) even if got the sword of water
-  queenDialog[3].message.action = 0x03; // "you found sword" => action 3
-  queenDialog[4].flags.push(0x09c);     // set 09c queen going away
+  dialog(0x38)[3].message.action = 0x03; // "you found sword" => action 3
+  dialog(0x38)[4].flags.push(0x09c);     // set 09c queen going away
   // Queen spawn condition depends on 01b (mesia recording) not 01f (ball of water)
   // This ensures you have both sword and ball to get to her (???)
-  queen.spawnConditions.get(0xdf)![1] = ~0x01b;  // throne room: 01b NOT mesia recording
-  queen.spawnConditions.get(0xe1)![0] = 0x01b;   // back room: 01b mesia recording
-  queenDialog[1].condition = 0x01b;     // reveal condition: 01b mesia recording
+  spawns(0x38, 0xdf)[1] = ~0x01b;  // throne room: 01b NOT mesia recording
+  spawns(0x38, 0xe1)[0] = 0x01b;   // back room: 01b mesia recording
+  dialog(0x38)[1].condition = 0x01b;     // reveal condition: 01b mesia recording
 
   // Fortune teller ($39) should also not spawn based on mesia recording rather than orb
-  rom.npcs[0x39].spawnConditions.get(0xd8)![1] = ~0x01b;  // fortune teller room: 01b NOT
+  spawns(0x39, 0xd8)[1] = ~0x01b;  // fortune teller room: 01b NOT
 
   // Clark ($44) moves after talking to him (08d) rather than calming sea (08f).
   // TODO - change 08d to whatever actual item he gives, then remove both flags
   rom.npcs[0x44].spawnConditions.set(0xe9, [~0x08d]); // zombie town basement
   rom.npcs[0x44].spawnConditions.set(0xe4, [0x08d]);  // joel shed
-  rom.npcs[0x44].localDialogs.get(0xe9)![1].flags.pop(); // remove redundant itemget flag
+  dialog(0x44, 0xe9)[1].flags.pop(); // remove redundant itemget flag
 
   // Brokahana ($54) ~ warrior ring redundant flag
-  rom.npcs[0x54].localDialogs.get(-1)![2].flags = [];
+  dialog(0x54)[2].flags = [];
 
   // Deo ($5a) ~ pendant redundant flag
-  rom.npcs[0x5a].localDialogs.get(-1)![1].flags = [];
+  dialog(0x5a)[1].flags = [];
 
   // Zebu ($5e) cave dialog (@ $10)
+  // TODO - dialogs(0x5e, 0x10).rearrange(~0x03a, 0x00d, 0x038, 0x241, 0x00a, ~0x000);
   rom.npcs[0x5e].localDialogs.set(0x10, [
     LocalDialog.of(~0x03a, [0x00, 0x1a], [0x03a]), // 03a NOT talked to zebu in cave -> Set 03a
     LocalDialog.of( 0x00d, [0x00, 0x1d]), // 00d leaf villagers rescued
@@ -652,10 +679,10 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
     LocalDialog.of(~0x000, [0x00, 0x1d]),
   ]);
   // Don't despawn on getting barrier
-  rom.npcs[0x5e].spawnConditions.get(0x10)!.pop(); // remove 051 NOT learned barrier
+  remove(spawns(0x5e, 0x10), ~0x051); // remove 051 NOT learned barrier
 
   // Tornel ($5f) in sabre west ($21) ~ teleport redundant flag
-  rom.npcs[0x5f].localDialogs.get(0x21)![1].flags = [];
+  dialog(0x5f, 0x21)[1].flags = [];
   // Don't despawn on getting barrier
   rom.npcs[0x5f].spawnConditions.delete(0x21); // remove 051 NOT learned barrier
 
@@ -665,24 +692,23 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   // Asina ($62) in back room ($e1) gives flute of lime
   const asina = rom.npcs[0x62];
   asina.data[1] = 0x28;
-  asina.localDialogs.get(0xe1)![0].message.action = 0x11;
-  asina.localDialogs.get(0xe1)![2].message.action = 0x11;
-  // Prevent despawn from back room after defeating sabera (~$8f)
-  asina.spawnConditions.get(0xe1)!.pop();
+  dialog(asina.id, 0xe1)[0].message.action = 0x11;
+  dialog(asina.id, 0xe1)[2].message.action = 0x11;
+  // Prevent despawn from back room after defeating sabera (~08f)
+  remove(spawns(asina.id, 0xe1), ~0x08f);
 
   // Kensu in cabin ($68 @ $61) needs to be available even after visiting Joel.
   // Change him to just disappear after setting the rideable dolphin flag (09b),
   // and to not even show up at all unless the fog lamp was returned (021).
   rom.npcs[0x68].spawnConditions.set(0x61, [~0x09b, 0x021]);
-  rom.npcs[0x68].localDialogs.get(-1)![0].message.action = 0x02; // disappear
+  dialog(0x68)[0].message.action = 0x02; // disappear
 
   // Kensu in lighthouse ($74/$7e @ $62) ~ redundant flag
-  rom.npcs[0x74].localDialogs.get(0x62)![0].flags = [];
-  rom.npcs[0x7e].localDialogs.get(0x62)![0].flags = [];
+  dialog(0x74, 0x62)[0].flags = [];
 
   // Azteca ($83) in pyramid ~ bow of truth redundant flag
-  rom.npcs[0x83].localDialogs.get(-1)![0].condition = ~0x240;  // 240 NOT bow of truth
-  rom.npcs[0x83].localDialogs.get(-1)![0].flags = [];
+  dialog(0x83)[0].condition = ~0x240;  // 240 NOT bow of truth
+  dialog(0x83)[0].flags = [];
 
   // Remove useless spawn condition from Mado 1
   rom.npcs[0xc4].spawnConditions.delete(0xf2); // always spawn
@@ -733,6 +759,14 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
     zombieTown.spawns.splice(0x16 - 0x0d, 1);
   }
 };
+
+function preventTimerSpawnMimics(rom: Rom): void {
+  for (const loc of rom.locations) {
+    for (const s of loc.spawns) {
+      if (s.isChest()) s.timed = false;
+    }
+  }
+}
 
 const requireHealedDolphin = (rom: Rom) => {
   // Normally the fisherman ($64) spawns in his house ($d6) if you have

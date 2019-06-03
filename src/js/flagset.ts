@@ -625,6 +625,7 @@ export class FlagSet {
   assumeTeleportSkip() { return this.check('Gp'); }
   assumeRabbitSkip() { return this.check('Gr'); }
   assumeStatueGlitch() { return this.check('Gt'); }
+  assumeTriggerGlitch() { return false; } // TODO - only works on land?
   assumeWildWarp() { return this.check('Gw'); }
 
   nerfWildWarp() { return this.check('Fw'); }

@@ -1,4 +1,5 @@
 export namespace Event {
+  export const ENTERED_SHYRON = Condition(0x26);
   export const SHYRON_MASSACRE = Condition(0x27);
   export const LEAF_ABDUCTION = Condition(0x38);
   export const TALKED_TO_LEAF_RABBIT = Condition(0xa9);
@@ -82,7 +83,7 @@ export namespace Magic {
 }
 
 export function statue(...reqs: Requirement[]): Terrain {
-  return {exit: or(...reqs, Capability.STATUE_GLITCH), exitSouth: Condition.OPEN};
+  return {exit: or(...reqs, Capability.STATUE_GLITCH)};
 };
 
 // Newtypes for different number purposes

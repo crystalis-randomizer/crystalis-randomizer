@@ -2,22 +2,51 @@ import {Capability, Check, Condition, Event, Item, Magic, MutableRequirement,
         Requirement, Slot, Terrain, WallType, and, meet, or, statue} from './condition.js';
 import {FlagSet} from '../flagset.js';
 import {Rom} from '../rom.js';
+import {Item as RomItem} from '../rom/item.js';
 import {Location} from '../rom/location.js';
 import {hex} from '../rom/util.js';
 
 // Additional information needed to interpret the world graph data.
 
 const RELEVANT_FLAGS = [
+  0x00a, // used windmill key
+  0x00b, // talked to leaf elder
   0x018, // entered underground channel
   0x01b, // mesia recording played
+  0x01e, // queen revealed
+  0x021, // returned fog lamp
+  0x024, // generals defeated (got ivory statue)
+  0x025, // healed dolphin
+  0x026, // entered shyron (for goa guards)
   0x027, // shyron massacre
+  // 0x35, // cured akahana
   0x037, // talked to zebu in cave (added as req for abduction)
   0x038, // leaf abduction
+  0x045, // rescued child
+  0x052, // talked to dwarf mother
+  0x053, // child following
+  0x061, // talked to stom in swan hut
+  0x06c, // defeated draygon 1
+  0x072, // kensu found in tavern
+  0x08b, // got shell flute
+  0x09b, // able to ride dolphin
+  0x0a5, // talked to zebu student
   0x0a9, // talked to leaf rabbit
 
   0x2f7, // warp:oak (for telepathy)
   0x2fb, // warp:joel (for evil spirit island)
+
+  // Magic.CHANGE[0][0],
+  // Magic.TELEPATHY[0][0],
 ];
+
+const FLAG_MAP: Map<number, readonly [readonly [Condition]]> = new Map([
+  [0x00e, Magic.TELEPATHY],
+  [0x028, Magic.CHANGE],
+  [0x029, Magic.CHANGE],
+  [0x02a, Magic.CHANGE],
+  [0x02b, Magic.CHANGE],
+]);
 
 // Maps trigger actions to the slot they grant.
 const TRIGGER_ACTION_ITEMS: {[action: number]: Slot} = {
@@ -59,12 +88,21 @@ function swordRequirement(sword: number, level: number): Requirement {
 export class Overlay {
 
   private readonly relevantFlags = new Set<number>();
+  private readonly tradeIns: ReadonlyArray<RomItem>;
 
   constructor(readonly rom: Rom, readonly flags: FlagSet) {
     // TODO - adjust based on flagset?
     for (const flag of RELEVANT_FLAGS) {
       this.relevantFlags.add(flag);
     }
+    this.tradeIns = this.rom.items.filter(i => i.recipient != null);
+    //   0x1d, // medical herb
+    //   0x25, // statue of onyx
+    //   0x35, // fog lamp
+    //   0x3b, // love pendant
+    //   0x3c, // kirisa plant
+    //   0x3d, // ivory statue
+    // ].map(i => this.rom.items[i]);
   }
 
   /** @param id Object ID of the boss. */
@@ -126,9 +164,9 @@ export class Overlay {
     }
     // Check for relevant flags and known action types.
     const trigger = this.rom.triggers[id & 0x7f];
+    if (!trigger || !trigger.used) throw new Error(`Unknown trigger: ${hex(id)}`);
     const relevant = (f: number) => this.relevantFlags.has(f);
-    const relevantAndSet = (f: number) => f >= 0 && this.relevantFlags.has(f);
-    if (!trigger) throw new Error(`Unknown trigger: ${hex(id)}`);
+    const relevantAndSet = (f: number) => f > 0 && this.relevantFlags.has(f);
     const actionItem = TRIGGER_ACTION_ITEMS[trigger.message.action];
     const condition = and(...trigger.conditions.filter(relevantAndSet).map(Condition));
     if (trigger.message.action === 0x19) { // push-down trigger
@@ -149,22 +187,80 @@ export class Overlay {
   }
 
   npc(id: number, loc: Location): NpcData {
-    switch (id) {
-    case 0x13: // leaf rabbit
-      return {
-        check: [{
-          condition: and(Magic.TELEPATHY, Event.LEAF_ABDUCTION),
-          slot: Slot(Event.TALKED_TO_LEAF_RABBIT),
-        }],
-      };
+    const npc = this.rom.npcs[id];
+    if (!npc || !npc.used) throw new Error(`Unknown trigger: ${hex(id)}`);
 
-    case 0x25: // amazones guard
-      return {
-        hitbox: {x0: 0, x1: 2, y0: 0, y1: 1},
-        terrain: statue(or(Magic.CHANGE, Magic.PARALYSIS)),
-      };
+    const spawnConditions: readonly number[] = npc.spawnConditions.get(loc.id) || [];
+
+    const result: NpcData & {check: Check[]} = {check: []};
+
+    if (npc.data[2] & 0x04) {
+      // person is a statue.
+      result.terrain =
+          statue(...spawnConditions.map(x => FLAG_MAP.get(~x) || (this.relevantFlags.has(~x) ? Condition(~x) : [])));
     }
-    return {};
+
+    switch (id) {
+    case 0x25: // amazones guard
+      if (!result.terrain) throw new Error(`Missing terrain for guard`);
+      result.hitbox = {x0: 0, x1: 2, y0: 0, y1: 1};
+      result.terrain.exit = or(result.terrain.exit || [], Magic.CHANGE, Magic.PARALYSIS);
+    case 0x33: // portoa guard (throne room, though the palace one is the one that matters)
+      // NOTE: this means that we cannot separate the palace foyer from the throne room, since
+      // there's no way to represent the condition for paralyzing the guard and still have him
+      // passable when the queen is there.  The whole sequence is also tightly coupled, so it
+      // probably wouldn't make sense to split it up anyway.
+      if (!result.terrain) throw new Error(`Missing terrain for guard`);
+      result.terrain.exit = or(result.terrain.exit || [], Magic.PARALYSIS);
+    case 0x4e: // shyron guard
+      if (!result.terrain) throw new Error(`Missing terrain for guard`);
+      result.hitbox = {x0: -1, x1: 2, y0: 0, y1: 1};
+      result.terrain.exit = or(result.terrain.exit || [], Magic.CHANGE, Event.ENTERED_SHYRON);
+    }
+
+    // Look for trade-ins
+    for (const tradeIn of this.tradeIns) {
+      if (id === tradeIn.tradeInRecipient) {
+        result.check
+      }
+    }
+
+    const requirements: Array<readonly [readonly [Condition]]> = [];
+    const addReq = (flag: number): void => {
+      if (flag <= 0) return; // negative or zero flag ignored
+      const req = FLAG_MAP.get(flag) || (this.relevantFlags.has(flag) ? Condition(flag) : null);
+      if (req != null) requirements.push(req);
+    };
+    for (const flag of spawnConditions) {
+      addReq(flag);
+    }
+    for (const d of npc.globalDialogs) {
+      addReq(~d.condition);
+    }
+    for (const d of npc.localDialogs.get(loc.id) || npc.localDialogs.get(-1) || []) {
+      const mapped = FLAG_MAP.get(d.condition);
+      const positive =
+          mapped ? [mapped] :
+          this.relevantFlags.has(d.condition) ? [Condition(d.condition)] :
+          [];
+      const condition = and(...positive, ...requirements);
+      const negative =
+          FLAG_MAP.get(~d.condition) ||
+          (this.relevantFlags.has(~d.condition) ? Condition(~d.condition) : null);
+      if (negative != null) requirements.push(negative);
+      const action = d.message.action;
+      if (action === 0x03) {
+        result.check.push({slot: Slot(npc.data[0]), condition});
+      } else if (action === 0x11) {
+        result.check.push({slot: Slot(npc.data[0]), condition});
+      }
+      for (const flag of d.flags) {
+        const mflag = FLAG_MAP.get(flag);
+        const pflag = mflag ? mflag : this.relevantFlags.has(flag) ? Condition(flag) : null;
+        if (pflag) result.check.push({slot: Slot(pflag), condition});        
+      }
+    }
+    return result;
   }
 
   capabilities(): CapabilityData[] {

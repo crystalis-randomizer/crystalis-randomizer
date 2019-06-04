@@ -1,5 +1,6 @@
 import {Entity} from './entity.js';
 import {MessageId} from './messageid.js';
+import {Npc} from './npc.js';
 import {hex, readLittleEndian, readString, seq, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
 import {Rom} from '../rom.js';
@@ -28,6 +29,8 @@ export class Item extends Entity {
 
   itemUseDataPointer: number;
   itemUseDataBase: number;
+
+  recipient?: ItemRecipient;
 
   itemDataPointer: number; // starts at 20ff0, one byte each
   itemDataValue: number; // :03 is palette, :80 is sword and magic (solid bg)
@@ -146,6 +149,19 @@ export class Item extends Entity {
 const stringToBytes = (s: string): number[] => {
   return seq(s.length, i => s.charCodeAt(i));
 };
+
+interface ItemRecipient {
+  recipient: number;
+  reward(npc: Npc): Item;
+  // write?(npc: Npc, item: Item): void;
+}
+
+const RECIPIENTS = new Map<number, ItemRecipient>([
+  [0x25, { // statue of onyx
+    recipient: 0x16, // akahana in bbrynmaer
+    reward: (npc) => npc.data[0],
+  }],
+]);
 
 // maps item id to offset of data for message...?
 const ITEM_USE_MESSAGE = new Map<number, number[]>([

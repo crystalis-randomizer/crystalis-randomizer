@@ -1,7 +1,6 @@
 import {Entity} from './entity.js';
 import {MessageId} from './messageid.js';
-import {Npc} from './npc.js';
-import {hex, readLittleEndian, readString, seq, writeLittleEndian} from './util.js';
+import {hex, readLittleEndian, readString, seq, tuple, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
 import {Rom} from '../rom.js';
 
@@ -30,7 +29,8 @@ export class Item extends Entity {
   itemUseDataPointer: number;
   itemUseDataBase: number;
 
-  recipient?: ItemRecipient;
+  // Determines the first 6*N bytes of ItemUseData
+  tradeIn?: number[];
 
   itemDataPointer: number; // starts at 20ff0, one byte each
   itemDataValue: number; // :03 is palette, :80 is sword and magic (solid bg)
@@ -80,6 +80,10 @@ export class Item extends Entity {
     this.menuNameBase = readLittleEndian(rom.prg, this.menuNamePointer) + 0x18000;
     this.menuName = MENU_NAME_ENCODE.reduce((s, [d, e]) => s.replace(e, d),
                                             readString(rom.prg, this.menuNameBase, 0xff));
+
+    const tradeInCount = TRADE_INS.get(id);
+    this.tradeIn =
+        tradeInCount ? tuple(rom.prg, this.itemUseDataBase, 6 * tradeInCount) : undefined;
 
     // console.log(`Item ${this.menuName} base price ${this.basePrice}`);
     // TODO - rom.uniqueItemTableAddress
@@ -140,6 +144,11 @@ export class Item extends Entity {
         0x20000, 0x21fff, `ItemMenuName ${hex(this.id)}`);
     writeLittleEndian(writer.rom, this.menuNamePointer, menuAddress - 0x18000);
 
+    if (this.tradeIn) {
+      const base = this.itemUseDataBase;
+      writer.rom.subarray(base, base + this.tradeIn.length).set(this.tradeIn);
+    }
+
     // writer.write([...stringToBytes(this.messageName), 0],
     // 0x28000, 0x29fff, `ItemMessageName ${hex(this.id)}`),
     // writeLittleEndian(writer.rom, this.messageNamePointer, messageAddress - 0x20000);
@@ -150,17 +159,26 @@ const stringToBytes = (s: string): number[] => {
   return seq(s.length, i => s.charCodeAt(i));
 };
 
-interface ItemRecipient {
-  recipient: number;
-  reward(npc: Npc): Item;
-  // write?(npc: Npc, item: Item): void;
-}
-
-const RECIPIENTS = new Map<number, ItemRecipient>([
-  [0x25, { // statue of onyx
-    recipient: 0x16, // akahana in bbrynmaer
-    reward: (npc) => npc.data[0],
-  }],
+// Trade-in slots could be customized quite a bit:
+//  - NPC
+//  - item required
+//  - item given
+//  - flags given
+//  - location
+// etc...
+const TRADE_INS = new Map([
+  [0x1d, 1], // medical herb
+  [0x25, 1], // statue of onyx
+  [0x28, 4], // flute of lime (first two unused)
+  [0x31, 2], // alarm flute
+  [0x35, 1], // fog lamp
+  [0x3b, 1], // love pendant
+  [0x3c, 1], // kirisa plant
+  [0x3d, 1], // ivory statue
+  // TODO - consider moving sleeping people?
+  //      --> would want to put something in their place?
+  //          - maybe even a boss in close quarters area?
+  // TODO - maybe NPC should have an "item wanted" property?
 ]);
 
 // maps item id to offset of data for message...?

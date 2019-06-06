@@ -1,6 +1,6 @@
 import {Neighbors, ScreenId, TileId, TilePair} from './geometry.js';
 import {Check, Condition, Magic, MutableRequirement,
-        Slot, Terrain, WallType, or} from './condition.js';
+        Slot, Terrain, WallType, meet, or} from './condition.js';
 import {LocationList, LocationListBuilder} from './locationlist.js';
 import {Overlay} from './overlay.js';
 import {FlagSet} from '../flagset.js';
@@ -115,6 +115,15 @@ export class World {
       }
 
       // Find "terrain triggers" that prevent movement one way or another
+      function meetTerrain(tile: TileId, terrain: Terrain): void {
+        const previous = terrains.get(tile);
+        // if tile is impossible to reach, don't bother.
+        if (!previous) return;
+        terrain.enter = meet(previous.enter || [[]], terrain.enter || [[]]);
+        terrain.exit = meet(previous.exit || [[]], terrain.exit || [[]]);
+        terrain.exitSouth = meet(previous.exitSouth || [[]], terrain.exitSouth || [[]]);
+        terrains.set(tile, terrain);
+      }
       for (const spawn of location.spawns) {
         if (spawn.isTrigger()) {
           // For triggers, which tiles do we mark?
@@ -134,7 +143,7 @@ export class World {
                 const x = x0 + dx;
                 const y = y0 + dy;
                 const tile = TileId.from(location, {x, y});
-                if (trigger.terrain) terrains.set(tile, trigger.terrain);
+                if (trigger.terrain) meetTerrain(tile, trigger.terrain);
                 if (trigger.check) checks.get(tile).push(...trigger.check);
               }
             }
@@ -150,7 +159,7 @@ export class World {
                 const x = xs + 16 * dx;
                 const y = ys + 16 * dy;
                 const tile = TileId.from(location, {x, y});
-                if (npc.terrain) terrains.set(tile, npc.terrain);
+                if (npc.terrain) meetTerrain(tile, npc.terrain);
                 if (npc.check) checks.get(tile).push(...npc.check);
               }
             }
@@ -318,7 +327,7 @@ w.area = (tile: TileId) => {
 };
 
     w.reqs = reqs;
-    console.log('reqs\n', [...reqs].map(([s, r]) => `${h(s)}: ${dnf(r)}`).join('\n'));
+    console.log('reqs\n', [...reqs].sort(([a],[b])=>a-b).map(([s, r]) => `${h(s).padStart(3,'0')}: ${dnf(r)}`).join('\n'));
 
     // Summary: 1055 roots, 1724 neighbors
     // This is too much for a full graph traversal, but many can be removed???

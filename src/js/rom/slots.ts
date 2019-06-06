@@ -57,6 +57,11 @@ export class Slots {
   // }
 }
 
+
+// NOTE: to change aryllis's demand, need to also change the hard-coded
+// check preventing using kirisa plant unless a girl.
+
+
 const slots: ReadonlyArray<readonly [number, readonly Slot[]]> = [
   [0x38, [new ReverseFlagSlot(0x013)]], // broken statue -> defeated sabera
 ]

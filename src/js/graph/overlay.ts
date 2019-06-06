@@ -2,7 +2,6 @@ import {Capability, Check, Condition, Event, Item, Magic, MutableRequirement,
         Requirement, Slot, Terrain, WallType, and, meet, or, statue} from './condition.js';
 import {FlagSet} from '../flagset.js';
 import {Rom} from '../rom.js';
-import {Item as RomItem} from '../rom/item.js';
 import {Location} from '../rom/location.js';
 import {hex} from '../rom/util.js';
 
@@ -11,6 +10,7 @@ import {hex} from '../rom/util.js';
 const RELEVANT_FLAGS = [
   0x00a, // used windmill key
   0x00b, // talked to leaf elder
+  0x013, // defeated sabera
   0x018, // entered underground channel
   0x01b, // mesia recording played
   0x01e, // queen revealed
@@ -46,6 +46,7 @@ const FLAG_MAP: Map<number, readonly [readonly [Condition]]> = new Map([
   [0x029, Magic.CHANGE],
   [0x02a, Magic.CHANGE],
   [0x02b, Magic.CHANGE],
+  [0x2ee, Event.STARTED_WINDMILL],
 ]);
 
 // Maps trigger actions to the slot they grant.
@@ -88,14 +89,20 @@ function swordRequirement(sword: number, level: number): Requirement {
 export class Overlay {
 
   private readonly relevantFlags = new Set<number>();
-  private readonly tradeIns: ReadonlyArray<RomItem>;
+  // npc id -> wanted item
+  private readonly tradeIns = new Map<number, readonly [readonly [Condition]]>();
 
   constructor(readonly rom: Rom, readonly flags: FlagSet) {
     // TODO - adjust based on flagset?
     for (const flag of RELEVANT_FLAGS) {
       this.relevantFlags.add(flag);
     }
-    this.tradeIns = this.rom.items.filter(i => i.recipient != null);
+    for (const item of rom.items) {
+      if (!item.tradeIn) continue;
+      for (let i = 0; i < item.tradeIn.length; i += 6) {
+        this.tradeIns.set(item.tradeIn[i], Condition(0x200 | item.id));
+      }
+    }
     //   0x1d, // medical herb
     //   0x25, // statue of onyx
     //   0x35, // fog lamp
@@ -197,34 +204,48 @@ export class Overlay {
     if (npc.data[2] & 0x04) {
       // person is a statue.
       result.terrain =
-          statue(...spawnConditions.map(x => FLAG_MAP.get(~x) || (this.relevantFlags.has(~x) ? Condition(~x) : [])));
+          statue(...spawnConditions.map(x => FLAG_MAP.get(x) || (this.relevantFlags.has(x) ?
+                                                                 Condition(x) : [])));
+    }
+
+    function statueOr(...reqs: Requirement[]): void {
+      if (!result.terrain) throw new Error('Missing terrain for guard');
+      result.terrain.exit = or(result.terrain.exit || [], ...reqs);
+    }
+
+    if (loc.id === 0x0f) { // windmill
+      // There's some random spawns in the windmill for the gears moving.
+      // Move the hitbox and use that for the key trade-in.
+      result.hitbox = {x0: 0, x1: 1, y0: 3, y1: 4};
+      result.check.push({
+        slot: Slot(Event.STARTED_WINDMILL),
+        condition: Item.WINDMILL_KEY,
+      });
+      return result;
     }
 
     switch (id) {
     case 0x25: // amazones guard
-      if (!result.terrain) throw new Error(`Missing terrain for guard`);
       result.hitbox = {x0: 0, x1: 2, y0: 0, y1: 1};
-      result.terrain.exit = or(result.terrain.exit || [], Magic.CHANGE, Magic.PARALYSIS);
+      statueOr(Magic.CHANGE, Magic.PARALYSIS);
+      break;
     case 0x33: // portoa guard (throne room, though the palace one is the one that matters)
       // NOTE: this means that we cannot separate the palace foyer from the throne room, since
       // there's no way to represent the condition for paralyzing the guard and still have him
       // passable when the queen is there.  The whole sequence is also tightly coupled, so it
       // probably wouldn't make sense to split it up anyway.
-      if (!result.terrain) throw new Error(`Missing terrain for guard`);
-      result.terrain.exit = or(result.terrain.exit || [], Magic.PARALYSIS);
+      statueOr(Magic.PARALYSIS);
+      break;
     case 0x4e: // shyron guard
-      if (!result.terrain) throw new Error(`Missing terrain for guard`);
       result.hitbox = {x0: -1, x1: 2, y0: 0, y1: 1};
-      result.terrain.exit = or(result.terrain.exit || [], Magic.CHANGE, Event.ENTERED_SHYRON);
+      statueOr(Magic.CHANGE, Event.ENTERED_SHYRON);
+      break;
+    case 0x85: // stoned pair
+      statueOr(Item.FLUTE_OF_LIME);
+      break;
     }
 
-    // Look for trade-ins
-    for (const tradeIn of this.tradeIns) {
-      if (id === tradeIn.tradeInRecipient) {
-        result.check
-      }
-    }
-
+    // intersect spawn conditions
     const requirements: Array<readonly [readonly [Condition]]> = [];
     const addReq = (flag: number): void => {
       if (flag <= 0) return; // negative or zero flag ignored
@@ -234,6 +255,59 @@ export class Overlay {
     for (const flag of spawnConditions) {
       addReq(flag);
     }
+
+    // Look for trade-ins
+    const tradeIn = this.tradeIns.get(id)
+    if (tradeIn != null) {
+      const t = tradeIn;
+      function trade(slot: Slot, ...reqs: Array<readonly [readonly Condition[]]>): void {
+        const condition = and(...requirements, t, ...reqs);
+        result.check.push({slot, condition});
+      }
+      switch (id) {
+      case 0x15: // sleeping windmill guard => windmill key slot
+        trade(Slot(Item.WINDMILL_KEY));
+        break;
+      case 0x23: // aryllis => bow of moon slot
+        trade(Slot(Item.BOW_OF_MOON), Magic.CHANGE);
+        break;
+      case 0x63: // hurt dolphin => healed dolphin
+        trade(Slot(Event.HEALED_DOLPHIN));
+        trade(Slot(Item.SHELL_FLUTE));
+        break;
+      case 0x64: // fisherman
+        trade(Slot(Event.RETURNED_FOG_LAMP));
+        // TODO - use this as proxy for boat
+        break;
+      case 0x6b: // sleeping kensu
+        trade(Slot(Item.GLOWING_LAMP));
+        break;
+      case 0x75: // slimed kensu => flight slot
+        trade(Slot(Magic.FLIGHT));
+        break;
+      case 0x74: // kensu in dance hall => change slot
+        // NOTE: this is normally 7e but we change it to 74 in this one
+        // location to identify it
+        trade(Slot(Magic.CHANGE), Magic.PARALYSIS, Event.FOUND_KENSU);
+        break;
+      case 0x87: // akahana => gas mask slot (changed 16 -> 87)
+        trade(Slot(Item.GAS_MASK));
+        break;
+      case 0x88: // stoned akahana => shield ring slot
+        trade(Slot(Item.SHIELD_RING));
+        break;
+      }
+    }
+
+    if (id === 0x84) { // start fight with sabera
+      // TODO - look up who the actual boss is once we get boss shuffle!!!
+      const condition = this.bossRequirements(0x79);
+      return {check: [
+        {condition, slot: Slot(Item.BROKEN_STATUE)},
+        {condition, slot: Slot(Event.DEFEATED_SABERA)},
+      ]};
+    }
+
     for (const d of npc.globalDialogs) {
       addReq(~d.condition);
     }
@@ -250,9 +324,9 @@ export class Overlay {
       if (negative != null) requirements.push(negative);
       const action = d.message.action;
       if (action === 0x03) {
-        result.check.push({slot: Slot(npc.data[0]), condition});
+        result.check.push({slot: Slot(0x200 | npc.data[0]), condition});
       } else if (action === 0x11) {
-        result.check.push({slot: Slot(npc.data[0]), condition});
+        result.check.push({slot: Slot(0x200 | npc.data[1]), condition});
       }
       for (const flag of d.flags) {
         const mflag = FLAG_MAP.get(flag);
@@ -302,7 +376,7 @@ export class Overlay {
     ];
 
     if (this.flags.assumeStatueGlitch()) {
-      capabilities.push([Capability.STATUE_GLITCH]);
+      capabilities.push([Capability.STATUE_GLITCH, [[]]]);
     }
 
     return capabilities.map(([capability, ...deps]) => ({capability, condition: or(...deps)}));

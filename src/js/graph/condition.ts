@@ -1,8 +1,14 @@
 export namespace Event {
-  export const ENTERED_SHYRON = Condition(0x26);
-  export const SHYRON_MASSACRE = Condition(0x27);
-  export const LEAF_ABDUCTION = Condition(0x38);
-  export const TALKED_TO_LEAF_RABBIT = Condition(0xa9);
+  export const STARTED_WINDMILL = Condition(0x00a);
+  export const DEFEATED_SABERA = Condition(0x013);
+  export const RETURNED_FOG_LAMP = Condition(0x021);
+  export const HEALED_DOLPHIN = Condition(0x025);
+  export const ENTERED_SHYRON = Condition(0x026);
+  export const SHYRON_MASSACRE = Condition(0x027);
+  export const LEAF_ABDUCTION = Condition(0x038);
+  export const FOUND_KENSU = Condition(0x072);
+  export const RIDE_DOLPHIN = Condition(0x09b);
+  export const TALKED_TO_LEAF_RABBIT = Condition(0x0a9);
   export const CALMED_SEA = Condition(0x283);
   export const OPENED_CRYPT = Condition(0x28e);
   export const OPENED_STYX = Condition(0x2b0);
@@ -24,62 +30,62 @@ export namespace Capability {
 
 // NOTE: use complement for items
 export namespace Item {
-  export const SWORD_OF_WIND = Condition(~0x200);
-  export const SWORD_OF_FIRE = Condition(~0x201);
-  export const SWORD_OF_WATER = Condition(~0x202);
-  export const SWORD_OF_THUNDER = Condition(~0x203);
-  export const CRYSTALIS = Condition(~0x204);
-  export const ORB_OF_WIND = Condition(~0x205);
-  export const TORNADO_BRACELET = Condition(~0x206);
-  export const ORB_OF_FIRE = Condition(~0x207);
-  export const FLAME_BRACELET = Condition(~0x208);
-  export const ORB_OF_WATER = Condition(~0x209);
-  export const BLIZZARD_BRACELET = Condition(~0x20a);
-  export const ORB_OF_THUNDER = Condition(~0x20b);
-  export const STORM_BRACELET = Condition(~0x20c);
+  export const SWORD_OF_WIND = Condition(0x200);
+  export const SWORD_OF_FIRE = Condition(0x201);
+  export const SWORD_OF_WATER = Condition(0x202);
+  export const SWORD_OF_THUNDER = Condition(0x203);
+  export const CRYSTALIS = Condition(0x204);
+  export const ORB_OF_WIND = Condition(0x205);
+  export const TORNADO_BRACELET = Condition(0x206);
+  export const ORB_OF_FIRE = Condition(0x207);
+  export const FLAME_BRACELET = Condition(0x208);
+  export const ORB_OF_WATER = Condition(0x209);
+  export const BLIZZARD_BRACELET = Condition(0x20a);
+  export const ORB_OF_THUNDER = Condition(0x20b);
+  export const STORM_BRACELET = Condition(0x20c);
 
-  export const MEDICAL_HERB = Condition(~0x21d);
-  export const WARP_BOOTS = Condition(~0x224);
+  export const MEDICAL_HERB = Condition(0x21d);
+  export const WARP_BOOTS = Condition(0x224);
 
-  export const STATUE_OF_ONYX = Condition(~0x225);
-  export const INSECT_FLUTE = Condition(~0x227);
-  export const FLUTE_OF_LIME = Condition(~0x228);
-  export const GAS_MASK = Condition(~0x229);
-  export const POWER_RING = Condition(~0x22a);
-  export const WARRIOR_RING = Condition(~0x22b);
-  export const IRON_NECKLACE = Condition(~0x22c);
-  export const DEOS_PENDANT = Condition(~0x22d);
-  export const RABBIT_BOOTS = Condition(~0x22e);
-  export const LEATHER_BOOTS = Condition(~0x22f);
-  export const SHIELD_RING = Condition(~0x230);
-  export const ALARM_FLUTE = Condition(~0x231);
-  export const WINDMILL_KEY = Condition(~0x232);
-  export const KEY_TO_PRISON = Condition(~0x233);
-  export const KEY_TO_STYX = Condition(~0x234);
-  export const FOG_LAMP = Condition(~0x235);
-  export const SHELL_FLUTE = Condition(~0x236);
-  export const EYE_GLASSES = Condition(~0x237);
-  export const BROKEN_STATUE = Condition(~0x238);
-  export const GLOWING_LAMP = Condition(~0x239);
+  export const STATUE_OF_ONYX = Condition(0x225);
+  export const INSECT_FLUTE = Condition(0x227);
+  export const FLUTE_OF_LIME = Condition(0x228);
+  export const GAS_MASK = Condition(0x229);
+  export const POWER_RING = Condition(0x22a);
+  export const WARRIOR_RING = Condition(0x22b);
+  export const IRON_NECKLACE = Condition(0x22c);
+  export const DEOS_PENDANT = Condition(0x22d);
+  export const RABBIT_BOOTS = Condition(0x22e);
+  export const LEATHER_BOOTS = Condition(0x22f);
+  export const SHIELD_RING = Condition(0x230);
+  export const ALARM_FLUTE = Condition(0x231);
+  export const WINDMILL_KEY = Condition(0x232);
+  export const KEY_TO_PRISON = Condition(0x233);
+  export const KEY_TO_STYX = Condition(0x234);
+  export const FOG_LAMP = Condition(0x235);
+  export const SHELL_FLUTE = Condition(0x236);
+  export const EYE_GLASSES = Condition(0x237);
+  export const BROKEN_STATUE = Condition(0x238);
+  export const GLOWING_LAMP = Condition(0x239);
   // TODO - consider making this an actual item.
   export const STATUE_OF_GOLD = and(Item.BROKEN_STATUE, Item.GLOWING_LAMP);
-  export const LOVE_PENDANT = Condition(~0x23b);
-  export const KIRISA_PLANT = Condition(~0x23c);
-  export const IVORY_STATUE = Condition(~0x23d);
-  export const BOW_OF_MOON = Condition(~0x23e);
-  export const BOW_OF_SUN = Condition(~0x23f);
-  export const BOW_OF_TRUTH = Condition(~0x240);
+  export const LOVE_PENDANT = Condition(0x23b);
+  export const KIRISA_PLANT = Condition(0x23c);
+  export const IVORY_STATUE = Condition(0x23d);
+  export const BOW_OF_MOON = Condition(0x23e);
+  export const BOW_OF_SUN = Condition(0x23f);
+  export const BOW_OF_TRUTH = Condition(0x240);
 }
 
 export namespace Magic {
-  export const REFRESH = Condition(~0x241);
-  export const PARALYSIS = Condition(~0x242);
-  export const TELEPATHY = Condition(~0x243);
-  export const TELEPORT = Condition(~0x244);
-  export const RECOVER = Condition(~0x245);
-  export const BARRIER = Condition(~0x246);
-  export const CHANGE = Condition(~0x247);
-  export const FLIGHT = Condition(~0x248);
+  export const REFRESH = Condition(0x241);
+  export const PARALYSIS = Condition(0x242);
+  export const TELEPATHY = Condition(0x243);
+  export const TELEPORT = Condition(0x244);
+  export const RECOVER = Condition(0x245);
+  export const BARRIER = Condition(0x246);
+  export const CHANGE = Condition(0x247);
+  export const FLIGHT = Condition(0x248);
 }
 
 export function statue(...reqs: Requirement[]): Terrain {

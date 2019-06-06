@@ -486,7 +486,7 @@ const adjustGoaFortressTriggers = (rom: Rom) => {
   l.goaFortressKelbesque.spawns[0].x -= 8;
   // Remove sage screen locks (except Kensu).
   l.goaFortressZebu.spawns.splice(1, 1); // zebu screen lock trigger
-  l.goaFortressKensu.spawns.splice(2, 1); // tornel screen lock trigger
+  l.goaFortressTornel.spawns.splice(2, 1); // tornel screen lock trigger
   l.goaFortressAsina.spawns.splice(2, 1); // asina screen lock trigger
 };
 
@@ -568,7 +568,12 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   }
 
   // Link some redundant NPCs: Kensu (7e, 74) and Akahana (88, 16)
-  rom.npcs[0x7e].link(0x74);
+  rom.npcs[0x74].link(0x7e);
+  rom.npcs[0x74].used = true;
+  rom.locations.swanDanceHall.spawns.find(s => s.isNpc() && s.id === 0x7e)!.id = 0x74;
+  rom.items[0x3b].tradeIn![0] = 0x74;
+
+  // dialog is shared between 88 and 16.
   rom.npcs[0x88].linkDialog(0x16);
 
   // Make a new NPC for Akahana in Shyron that won't accept the Statue of Onyx.
@@ -576,7 +581,9 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   // (16) is what matters for the trade-in
   rom.npcs[0x87].used = true;
   rom.npcs[0x87].link(0x16);
-  rom.locations.shyron.spawns.find(s => s.isNpc() && s.id === 0x16)!.id = 0x87;
+  rom.locations.brynmaer.spawns.find(s => s.isNpc() && s.id === 0x16)!.id = 0x87;
+  rom.npcs[0x87].data = [...rom.npcs[0x16].data] as any; // ensure give item
+  rom.items[0x25].tradeIn![0] = 0x87;
 
   // Leaf elder in house ($0d @ $c0) ~ sword of wind redundant flag
   dialog(0x0d, 0xc0)[2].flags = [];

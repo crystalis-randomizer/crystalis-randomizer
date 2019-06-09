@@ -1,5 +1,6 @@
 import {AdHocSpawn} from './rom/adhocspawn.js';
 import {BossKill} from './rom/bosskill.js';
+import {Bosses} from './rom/bosses.js';
 import {Hitbox} from './rom/hitbox.js';
 import {Item} from './rom/item.js';
 import {ItemGet} from './rom/itemget.js';
@@ -68,6 +69,7 @@ export class Rom {
   readonly shops: Shop[];
   readonly npcs: Npc[];
   readonly bossKills: BossKill[];
+  readonly bosses: Bosses;
 
   readonly telepathy: Telepathy;
   readonly messages: Messages;
@@ -147,6 +149,7 @@ export class Rom {
     this.shops = seq(44, i => new Shop(this, i)); // NOTE: depends on locations and objects
     this.npcs = seq(0xcd, i => new Npc(this, i));
     this.bossKills = seq(0xe, i => new BossKill(this, i));
+    this.bosses = new Bosses(this);
   }
 
   trigger(id: number): Trigger {

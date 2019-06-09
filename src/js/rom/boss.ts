@@ -1,6 +1,10 @@
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 
+// TODO - we need a consistent way to refer to bosses...
+//  - maybe bosses.fromNpcId(), bosses.fromObjectId(), bosses.fromBossKill()
+
+
 // Figure out what address holds the object to spawn...
 const BOSS_OBJECT_ADDRESS = [
   [0x0b0f1, true], // vampire 1  - persondata c0 [1]

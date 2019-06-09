@@ -149,9 +149,13 @@ export async function shuffle(rom: Uint8Array,
 
   undergroundChannelLandBridge(parsed);
 
-  // TODO - set omitItemGetDataSuffix and omitLocalDialogSuffix
-  new World(parsed, flags, 0);
+  if (flags.connectLimeTreeToLeaf()) connectLimeTreeToLeaf(parsed);
 
+  // This wants to go as late as possible since we need to pick up
+  // all the normalization and other handling that happened before.
+  new World(parsed, flags);
+
+  // TODO - set omitItemGetDataSuffix and omitLocalDialogSuffix
   await shuffleDepgraph(parsed, random, log, flags, progress);
 
   // TODO - rewrite rescaleShops to take a Rom instead of an array...
@@ -173,10 +177,6 @@ export async function shuffle(rom: Uint8Array,
   } else if (flags.buffMedicalHerb()) {
     rom[0x1c50c + 0x10] += 16; // fruit of power
     rom[0x1c4ea + 0x10] *= 2;  // medical herb
-  }
-
-  if (flags.connectLimeTreeToLeaf()) {
-    connectLimeTreeToLeaf(parsed);
   }
 
   addCordelWestTriggers(parsed, flags);
@@ -579,11 +579,11 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   // Make a new NPC for Akahana in Shyron that won't accept the Statue of Onyx.
   // Linking spawn conditions and dialogs is sufficient, since the actual NPC ID
   // (16) is what matters for the trade-in
-  rom.npcs[0x87].used = true;
-  rom.npcs[0x87].link(0x16);
-  rom.locations.brynmaer.spawns.find(s => s.isNpc() && s.id === 0x16)!.id = 0x87;
-  rom.npcs[0x87].data = [...rom.npcs[0x16].data] as any; // ensure give item
-  rom.items[0x25].tradeIn![0] = 0x87;
+  rom.npcs[0x89].used = true;
+  rom.npcs[0x89].link(0x16);
+  rom.locations.brynmaer.spawns.find(s => s.isNpc() && s.id === 0x16)!.id = 0x89;
+  rom.npcs[0x89].data = [...rom.npcs[0x16].data] as any; // ensure give item
+  rom.items[0x25].tradeIn![0] = 0x89;
 
   // Leaf elder in house ($0d @ $c0) ~ sword of wind redundant flag
   dialog(0x0d, 0xc0)[2].flags = [];

@@ -99,6 +99,11 @@ export class ObjectData extends Entity {
     return [...s];
   }
 
+  // 0 for wind, 1 for fire, 2 for water, 3 for thunder
+  isVulnerable(element: number) {
+    return !(this.elements & (1 << element));
+  }
+
   isShadow() {
     // NOTE: internally the game checks that the metasprite
     // is $a7 (see $350f3), but we'll just hardcode.

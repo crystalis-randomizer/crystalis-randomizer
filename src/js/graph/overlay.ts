@@ -1,16 +1,21 @@
-import {Capability, Check, Condition, Event, Item, Magic, MutableRequirement,
-        Requirement, Slot, Terrain, WallType, and, meet, or, statue} from './condition.js';
+import {Boss, Capability, Check, Condition, Event, Item, Magic, MutableRequirement,
+        Requirement, Slot, Terrain, WallType, and, meet, or} from './condition.js';
+import {TileId} from './geometry.js';
 import {FlagSet} from '../flagset.js';
 import {Rom} from '../rom.js';
+import {Boss as RomBoss} from '../rom/bosses.js';
 import {Location} from '../rom/location.js';
 import {hex} from '../rom/util.js';
 
 // Additional information needed to interpret the world graph data.
+// This gets into more specifics and hardcoding.
+
+// TODO - maybe consider having a set of ASSUMED and a set of IGNORED flags?
+//      - e.g. always assume 00f is FALSE rather than TRUE, to avoid free windmill key
 
 const RELEVANT_FLAGS = [
   0x00a, // used windmill key
   0x00b, // talked to leaf elder
-  0x013, // defeated sabera
   0x018, // entered underground channel
   0x01b, // mesia recording played
   0x01e, // queen revealed
@@ -33,6 +38,8 @@ const RELEVANT_FLAGS = [
   0x0a5, // talked to zebu student
   0x0a9, // talked to leaf rabbit
 
+  0x2ee, // started windmill
+
   0x2f7, // warp:oak (for telepathy)
   0x2fb, // warp:joel (for evil spirit island)
 
@@ -40,13 +47,17 @@ const RELEVANT_FLAGS = [
   // Magic.TELEPATHY[0][0],
 ];
 
+// TODO - this is not pervasive enough!!!
+//  - need a way to put it everywhere
+//    -> maybe in MutableRequirements?
 const FLAG_MAP: Map<number, readonly [readonly [Condition]]> = new Map([
   [0x00e, Magic.TELEPATHY],
+  [0x013, Boss.SABERA1],
   [0x028, Magic.CHANGE],
   [0x029, Magic.CHANGE],
   [0x02a, Magic.CHANGE],
   [0x02b, Magic.CHANGE],
-  [0x2ee, Event.STARTED_WINDMILL],
+  [0x00a, Event.STARTED_WINDMILL], // this is ref'd outside this file!
 ]);
 
 // Maps trigger actions to the slot they grant.
@@ -55,20 +66,6 @@ const TRIGGER_ACTION_ITEMS: {[action: number]: Slot} = {
   0x0b: Slot(Magic.BARRIER),
   0x0f: Slot(Magic.REFRESH),
   0x18: Slot(Magic.TELEPATHY),
-};
-
-const BOSS_SWORD_MAGIC_LEVELS: {[objectId: number]: number} = {
-  0x57: 1, // vampire 1
-  0x5e: 1, // insect
-  0x68: 3, // kelbesque 1
-  0x7d: 3, // sabera 1
-  0x88: 3, // mado 1
-  0x8b: 3, // kelbesque 2
-  0x90: 3, // sabera 2
-  0x93: 3, // mado 2
-  0x97: 2, // karmine
-  0x9b: 2, // draygon
-  0x9e: 3, // draygon 2
 };
 
 const SWORDS = [Item.SWORD_OF_WIND, Item.SWORD_OF_FIRE,
@@ -100,7 +97,7 @@ export class Overlay {
     for (const item of rom.items) {
       if (!item.tradeIn) continue;
       for (let i = 0; i < item.tradeIn.length; i += 6) {
-        this.tradeIns.set(item.tradeIn[i], Condition(0x200 | item.id));
+        this.tradeIns.set(item.tradeIn[i], Item(item.id));
       }
     }
     //   0x1d, // medical herb
@@ -113,15 +110,19 @@ export class Overlay {
   }
 
   /** @param id Object ID of the boss. */
-  bossRequirements(id: number): Requirement {
+  bossRequirements(boss: RomBoss): Requirement {
     // TODO - handle boss shuffle somehow?
+    if (boss === this.rom.bosses.rage) {
+      // TODO - allow shuffling this item?
+      return Item.SWORD_OF_WATER;
+    }
+    const id = boss.object;
     const out = new MutableRequirement();
     if (this.flags.guaranteeMatchingSword()) {
-      const level = this.flags.guaranteeSwordMagic() ? BOSS_SWORD_MAGIC_LEVELS[id] : 1;
+      const level = this.flags.guaranteeSwordMagic() ? boss.swordLevel : 1;
       const obj = this.rom.objects[id];
-      let {elements} = obj;
       for (let i = 0; i < 4; i++) {
-        if (elements & (1 << i)) out.addAll(swordRequirement(i, level));
+        if (obj.isVulnerable(i)) out.addAll(swordRequirement(i, level));
       }
     } else {
       out.addAll(Capability.SWORD);
@@ -140,14 +141,72 @@ export class Overlay {
     return out.freeze();
   }
 
+  location(loc: Location): LocationData {
+    if (loc.id === 0x0f) { // windmill
+      return {
+        check: [{
+          tile: TileId(0x0f0088),
+          slot: Slot(Event.STARTED_WINDMILL),
+          condition: Item.WINDMILL_KEY,
+        }],
+      };
+    }
+    return {};
+  }
+
+  /** Returns undefined if impassable. */
+  makeTerrain(effects: number, tile: TileId): Terrain | undefined {
+    // Check for dolphin or swamp.  Currently don't support shuffling these.
+    const loc = tile >>> 16;
+    effects &= 0x26;
+    if (loc === 0x1a) effects |= 0x08;
+    if (loc === 0x60 || loc === 0x68) effects |= 0x10;
+    // NOTE: only the top half-screen in underground channel is dolphinable
+    if (loc === 0x64 && ((tile & 0xf0f0) < 0x90)) effects |= 0x10;
+    return TERRAINS[effects];
+  }
+
+  // TODO - consider folding this into location/trigger/npc as an extra return?
+  extraRoutes(): ExtraRoute[] {
+    const routes = [];
+    const entrance = (location: number, entrance: number = 0): TileId => {
+      const l = this.rom.locations[location];
+      const e = l.entrances[entrance];
+      return TileId.from(l, e);
+    };
+    // Start the game at 0:0
+    routes.push({tile: entrance(0)});
+    // Sword of Thunder warp
+    if (this.flags.teleportOnThunderSword()) {
+      routes.push({tile: entrance(0xf2), condition: Item.SWORD_OF_THUNDER});
+    }
+    // TODO - wild warp
+    return routes;
+  }
+
+  // TODO - consider folding this into location/trigger/npc as an extra return?
+  extraEdges(): ExtraEdge[] {
+    const edges = [];
+    // need an edge from the boat house to the beach - we could build this into the
+    // boat boarding trigger, but for now it's here.
+    edges.push({
+      from: TileId(0x510088), // in front of boat house
+      to: TileId(0x608688), // in front of cabin
+      condition: Event.RETURNED_FOG_LAMP,
+    });
+    return edges;
+  }
+
   trigger(id: number): TriggerData {
     switch (id) {
     case 0x9a: // start fight with mado if shyron massacre started
       // TODO - look up who the actual boss is once we get boss shuffle!!!
       return {check: [{
-        condition: meet(Event.SHYRON_MASSACRE, this.bossRequirements(0x88)),
-        slot: Slot(Item.ORB_OF_THUNDER),
+        condition: meet(Event.SHYRON_MASSACRE, this.bossRequirements(this.rom.bosses.mado1)),
+        slot: Slot(Boss.MADO1),
       }]};
+    case 0xaa: // enter oak after insect
+      return {};
     case 0xad: // allow opening prison door
       return {check: [{
         condition: Item.KEY_TO_PRISON,
@@ -203,25 +262,18 @@ export class Overlay {
 
     if (npc.data[2] & 0x04) {
       // person is a statue.
-      result.terrain =
-          statue(...spawnConditions.map(x => FLAG_MAP.get(x) || (this.relevantFlags.has(x) ?
-                                                                 Condition(x) : [])));
+      result.terrain = {
+        exit: this.flags.assumeStatueGlitch() ?
+                  [[]] : 
+                  or(...spawnConditions.map(
+                         x => FLAG_MAP.get(x) || (this.relevantFlags.has(x) ?
+                                                  Condition(x) : []))),
+      };
     }
 
     function statueOr(...reqs: Requirement[]): void {
       if (!result.terrain) throw new Error('Missing terrain for guard');
       result.terrain.exit = or(result.terrain.exit || [], ...reqs);
-    }
-
-    if (loc.id === 0x0f) { // windmill
-      // There's some random spawns in the windmill for the gears moving.
-      // Move the hitbox and use that for the key trade-in.
-      result.hitbox = {x0: 0, x1: 1, y0: 3, y1: 4};
-      result.check.push({
-        slot: Slot(Event.STARTED_WINDMILL),
-        condition: Item.WINDMILL_KEY,
-      });
-      return result;
     }
 
     switch (id) {
@@ -243,6 +295,9 @@ export class Overlay {
     case 0x85: // stoned pair
       statueOr(Item.FLUTE_OF_LIME);
       break;
+    case 0x14: // woken-up windmill guard
+      // skip because we tie the item to the sleeping one.
+      if (loc.spawns.find(l => l.isNpc() && l.id === 0x15)) return {};
     }
 
     // intersect spawn conditions
@@ -290,7 +345,7 @@ export class Overlay {
         // location to identify it
         trade(Slot(Magic.CHANGE), Magic.PARALYSIS, Event.FOUND_KENSU);
         break;
-      case 0x87: // akahana => gas mask slot (changed 16 -> 87)
+      case 0x89: // akahana => gas mask slot (changed 16 -> 87)
         trade(Slot(Item.GAS_MASK));
         break;
       case 0x88: // stoned akahana => shield ring slot
@@ -299,12 +354,20 @@ export class Overlay {
       }
     }
 
+    // NPCs that need a little extra care
+
     if (id === 0x84) { // start fight with sabera
       // TODO - look up who the actual boss is once we get boss shuffle!!!
-      const condition = this.bossRequirements(0x79);
+      const condition = this.bossRequirements(this.rom.bosses.sabera1);
       return {check: [
-        {condition, slot: Slot(Item.BROKEN_STATUE)},
-        {condition, slot: Slot(Event.DEFEATED_SABERA)},
+        {condition, slot: Slot(Boss.SABERA1)},
+      ]};
+    } else if (id === 0x1d) { // oak elder has some weird untracked conditions.
+      const slot = Slot(Item.SWORD_OF_FIRE);
+      return {check: [
+        // two different ways to get the sword of fire item
+        {condition: and(Magic.TELEPATHY, Boss.INSECT), slot},
+        {condition: Event.RESCUED_CHILD, slot},
       ]};
     }
 
@@ -324,9 +387,10 @@ export class Overlay {
       if (negative != null) requirements.push(negative);
       const action = d.message.action;
       if (action === 0x03) {
-        result.check.push({slot: Slot(0x200 | npc.data[0]), condition});
-      } else if (action === 0x11) {
-        result.check.push({slot: Slot(0x200 | npc.data[1]), condition});
+        result.check.push({slot: Slot.item(npc.data[0]), condition});
+      } else if (action === 0x11 || action === 0x09) {
+        // NOTE: $09 is zebu student, which we've patched to give the item.
+        result.check.push({slot: Slot.item(npc.data[1]), condition});
       }
       for (const flag of d.flags) {
         const mflag = FLAG_MAP.get(flag);
@@ -373,11 +437,33 @@ export class Overlay {
       [Capability.BREAK_ICE, breakIce],
       [Capability.FORM_BRIDGE, formBridge],
       [Capability.BREAK_IRON, breakIron],
+      [Capability.MONEY, Capability.SWORD], // TODO - clear this up
+      [Capability.CLIMB_WATERFALL, Magic.FLIGHT],
     ];
 
-    if (this.flags.assumeStatueGlitch()) {
-      capabilities.push([Capability.STATUE_GLITCH, [[]]]);
+    if (this.flags.assumeGhettoFlight()) {
+      capabilities.push([Capability.CLIMB_WATERFALL, and(Event.RIDE_DOLPHIN, Item.RABBIT_BOOTS)]);
     }
+
+    for (const boss of this.rom.bosses) {
+      if (boss.kill != null && boss.drop != null) {
+        // Saves redundancy of putting the item in the actual room.
+        capabilities.push([Item(boss.drop), Boss(boss.kill)]);
+      }
+    }
+
+    if (this.flags.guaranteeGasMask()) {
+      capabilities.push([Capability.TRAVEL_SWAMP, Item.GAS_MASK]);
+    } else {
+      capabilities.push([Capability.TRAVEL_SWAMP, 
+                         or(Item.GAS_MASK,
+                            and(Capability.MONEY, Item.MEDICAL_HERB),
+                            and(Capability.MONEY, Magic.REFRESH))]);
+    }
+
+    // if (this.flags.assumeStatueGlitch()) {
+    //   capabilities.push([Capability.STATUE_GLITCH, [[]]]);
+    // }
 
     return capabilities.map(([capability, ...deps]) => ({capability, condition: or(...deps)}));
   }
@@ -386,6 +472,26 @@ export class Overlay {
     return {flag: [Capability.BREAK_STONE, Capability.BREAK_ICE,
                    Capability.FORM_BRIDGE, Capability.BREAK_IRON][type][0][0]};
   }
+}
+
+type TileCheck = Check & {tile: TileId};
+
+// TODO - maybe pull triggers and npcs, etc, back together?
+//      - or make the location overlay a single function?
+//        -> needs closed-over state to share instances...
+interface LocationData {
+  terrain?: (original: Terrain, tile: TileId) => Terrain;
+  check?: TileCheck[];
+}
+
+interface ExtraRoute {
+  tile: TileId;
+  condition?: Requirement;
+}
+interface ExtraEdge {
+  from: TileId;
+  to: TileId;
+  condition?: Requirement;
 }
 
 interface TriggerData {
@@ -410,3 +516,43 @@ interface CapabilityData {
   condition?: Requirement;
   capability: readonly [readonly [Condition]];
 }
+
+// Static map of terrains.
+const TERRAINS: Array<Terrain | undefined> = (() => {
+  const out = [];
+  for (let effects = 0; effects < 64; effects += 2) {
+    out[effects] = terrain(effects);
+  }
+  console.log('TERRAINS', out);
+  return out;
+
+  /**
+   * @param effects The $26 bits of tileeffects, plus $08 for swamp, $10 for dolphin
+   * @return undefined if the terrain is impassable.
+   */
+  function terrain(effects: number): Terrain | undefined {
+    if (effects & 0x04) return undefined; // impassible
+    const terrain: Terrain = {};
+    if ((effects & 0x12) === 0x12) { // dolphin or fly
+      if (effects & 0x20) terrain.exit = Capability.CLIMB_WATERFALL;
+      terrain.enter = or(Event.RIDE_DOLPHIN, Magic.FLIGHT);
+    } else {
+      if (effects & 0x20) terrain.exit = Magic.FLIGHT; // slope
+      if (effects & 0x02) terrain.enter = Magic.FLIGHT; // no-walk
+    }
+    if (effects & 0x08) { // swamp
+      terrain.enter = (terrain.enter || [[]]).map(cs => Capability.TRAVEL_SWAMP[0].concat(cs));
+    }
+    return terrain;
+  }
+})();
+
+// TODO - figure out what this looks like...?
+//  - maybe we just want to make a pseudo DEFEATED_INSECT event, but this would need to be
+//    separate from 101, since that's attached to the itemget, which will move with the slot!
+//  - probably want a flag for each boss defeated...?
+//    could use bosskill ID for it?
+//    - then make the drop a simple derivative from that...
+//    - upshot - no longer need to mix it into npc() or trigger() overlay, instead move it
+//      to capability overlay.
+// function slotFor<T>(item: T): T { return item; }

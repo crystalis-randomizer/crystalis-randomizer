@@ -1,10 +1,9 @@
 import {Neighbors, ScreenId, TileId, TilePair} from './geometry.js';
-import {Check, Condition, Magic, MutableRequirement,
-        Slot, Terrain, WallType, meet, or} from './condition.js';
+import {Boss, Check, Capability, Condition, Event, Item, Magic, MutableRequirement,
+        Slot, Terrain, WallType, meet, memoize, memoize2} from './condition.js';
 import {LocationList, LocationListBuilder} from './locationlist.js';
 import {Overlay} from './overlay.js';
 import {FlagSet} from '../flagset.js';
-import {TileEffects} from '../rom/tileeffects.js';
 import {hex} from '../rom/util.js';
 import {Rom} from '../rom.js';
 import {UnionFind} from '../unionfind.js';
@@ -30,7 +29,7 @@ export class World {
   // Blocks for any given tile group.
   // private readonly blocks = new Array<[number, number[][]]>();
 
-  constructor(readonly rom: Rom, flags = new FlagSet('@FullShuffle'), start = 0) {    
+  constructor(readonly rom: Rom, flags = new FlagSet('@FullShuffle')) {    
     // 1. start with entrance 0 at the start location, add it to the tiles and queue.
     // 2. for tile T in the queue
     //    - for each passable neighbor N of T:
@@ -46,12 +45,12 @@ export class World {
     const overlay = new Overlay(rom, flags);
     const terrains = new Map<TileId, Terrain>();
     const walls = new Map<ScreenId, WallType>();
-    const bosses = new Map<ScreenId, number>();
+    const bosses = new Map<TileId, number>();
     const npcs = new Map<TileId, number>();
     const checks = new DefaultMap<TileId, Check[]>(() => []);
     const monsters = new Map<TileId, number>(); // elemental immunities
 
-    for (const location of rom.locations/*.slice(0,2)*/) {
+    for (const location of rom.locations /*.slice(0,4)*/) {
       if (!location.used) continue;
       const ext = location.extended ? 0x100 : 0;
       const tileset = rom.tilesets[(location.tileset & 0x7f) >> 2];
@@ -72,6 +71,11 @@ export class World {
 
       }
 
+      const locationData = overlay.location(location);
+      for (const check of locationData.check || []) {
+        checks.get(check.tile).push(check);
+      }
+
       // Add terrains
       for (let y = 0, height = location.height; y < height; y++) {
         const row = location.screens[y];
@@ -83,34 +87,40 @@ export class World {
           const wall = walls.get(screenId);
           const flag = wall != null ? overlay.wallCapability(wall) :
                                       location.flags.find(f => f.yx === flagYx);
-          const flagTerrain = flag && {enter: Condition(flag.flag)};
-          const flagFlyTerrain = flag && {enter: or(Condition(flag.flag), Magic.FLIGHT)};
+          const withFlagMemoized = memoize2((t1: Terrain, t2: Terrain) => {
+            if (!flag) throw new Error(`flag expected`);
+            t2 = {...t2, enter: meet(t2.enter || [[]], Condition(flag.flag))};
+            return Terrain.join(t1, t2);
+          });
+          function withFlag(t1: Terrain | undefined, t2: Terrain | undefined) {
+            if (!flag) throw new Error(`flag expected`);
+            if (!t2) return t1;
+            if (!t1) return Terrain.meet({enter: Condition(flag.flag)}, t2);
+            return withFlagMemoized(t1, t2);
+          };
+
           for (let t = 0; t < 0xf0; t++) {
             const tid = TileId(screenId << 8 | t);
             let tile = screen.tiles[t];
             // flag 2ef is "always on", don't even bother making it conditional.
             if (flag && flag.flag === 0x2ef && tile < 0x20) tile = tileset.alternates[tile];
             const effects = ext ? 0 : tileEffects.effects[tile] & 0x26;
-            let terrain: Terrain | undefined = Terrain.OPEN;
-            if (effects & TileEffects.SLOPE) {
-              terrain = effects & TileEffects.NO_WALK ? Terrain.WATERFALL : Terrain.SLOPE;
-            } else if (tile < 0x20 && tileset.alternates[tile] !== tile && flagTerrain &&
-                       !(tileEffects.effects[tileset.alternates[tile]] & TileEffects.NO_WALK)) {
-              terrain = effects & TileEffects.IMPASSIBLE ? flagTerrain : flagFlyTerrain;
-            } else if (effects & TileEffects.IMPASSIBLE) {
-              terrain = undefined;
-            } else if (effects & TileEffects.NO_WALK) {
-              terrain = Terrain.FLY;
+            let terrain = overlay.makeTerrain(effects, tid);
+            if (tile < 0x20 && tileset.alternates[tile] != tile && flag && flag.flag !== 0x2ef) {
+              const alternate =
+                  overlay.makeTerrain(tileEffects.effects[tileset.alternates[tile]], tid);
+              terrain = withFlag(terrain, alternate);
             }
             if (terrain) terrains.set(tid, terrain);
-          }          
+          }
         }
       }
 
       // Clobber terrain with seamless exits
       for (const exit of location.exits) {
         if (exit.entrance & 0x20) {
-          terrains.set(TileId.from(location, exit), Terrain.SEAMLESS);
+          const previous = terrains.get(TileId.from(location, exit));
+          if (previous) terrains.set(TileId.from(location, exit), Terrain.seamless(previous));
         }
       }
 
@@ -119,10 +129,7 @@ export class World {
         const previous = terrains.get(tile);
         // if tile is impossible to reach, don't bother.
         if (!previous) return;
-        terrain.enter = meet(previous.enter || [[]], terrain.enter || [[]]);
-        terrain.exit = meet(previous.exit || [[]], terrain.exit || [[]]);
-        terrain.exitSouth = meet(previous.exitSouth || [[]], terrain.exitSouth || [[]]);
-        terrains.set(tile, terrain);
+        terrains.set(tile, Terrain.meet(previous, terrain));
       }
       for (const spawn of location.spawns) {
         if (spawn.isTrigger()) {
@@ -167,7 +174,7 @@ export class World {
         } else if (spawn.isBoss()) {
           // Bosses will clobber the entrance portion of all tiles on the screen,
           // and will also add their drop.
-          bosses.set(ScreenId.from(location, spawn), spawn.id);
+          bosses.set(TileId.from(location, spawn), spawn.id);
         } else if (spawn.isChest()) {
           checks.get(TileId.from(location, spawn)).push(Check.chest(spawn.id));
         } else if (spawn.isMonster()) {
@@ -177,6 +184,30 @@ export class World {
           if (monster.goldDrop) monsters.set(TileId.from(location, spawn), monster.elements);
         }
       }
+    }
+
+    // TODO - add gas mask requirement for swamp...? (overlay?)
+
+    for (const [bossTile, bossId] of bosses) {
+      const loc = bossTile >> 16;
+      const rage = bossId === 0xc3;
+      const boss = !rage ? rom.bosses.fromLocation(loc) : rom.bosses.rage;
+      if (loc === 0xa0 || loc === 0x5f) continue; // skip statues and dyna
+      if (!boss || boss.kill == null) throw new Error(`bad boss at loc ${loc.toString(16)}`);
+      // TODO - shuffle Rage's demand
+      const kill = Boss(boss.kill);
+
+      const merge = memoize((t: Terrain) => Terrain.meet(t, {exit: kill, exitSouth: kill}));
+      const tileBase = bossTile & ~0xff;
+      for (let i = 0; i < 0xf0; i++) {
+        const tile = TileId(tileBase | i);
+        const t = terrains.get(tile);
+        if (!t) continue;
+        terrains.set(tile, merge(t));
+      }
+      const condition = overlay.bossRequirements(boss);
+      const checkTile = rage ? TileId(tileBase | 0x88) : bossTile;
+      checks.get(checkTile).push({slot: Slot(kill), condition});
     }
 
     // let s = 1;
@@ -252,9 +283,16 @@ export class World {
     //  - some transitions in the tower are on top of impassible-looking tiles
 
     const builder = new LocationListBuilder(terrains);
-    const startLoc = rom.locations[start];
-    const startTile = this.tiles.find(TileId.from(startLoc, startLoc.entrances[0]));
-    builder.routes.addRoute(startTile, []);
+    for (const r of overlay.extraRoutes()) {
+      for (const c of r.condition || [[]]) {
+        builder.routes.addRoute(this.tiles.find(r.tile), c);
+      }
+    }
+    for (const {from, to, condition} of overlay.extraEdges()) {
+      for (const deps of condition || [[]]) {
+        builder.routes.addEdge(this.tiles.find(to), this.tiles.find(from), deps);
+      }
+    }
     for (const {from, to, south} of neighbors) {
       builder.addEdge(from, to, south);
     }
@@ -314,20 +352,62 @@ export class World {
     console.log([...(w.neighbors = neighbors)]);
     console.log(w.ll = builder);
 
-function h(x: number): string { return x < 0 ? '~' + (~x).toString(16) : x.toString(16); }
-function dnf(x: Iterable<Iterable<number>>): string {
+function h(x: number): string { return x < 0 ? '~' + (~x).toString(16).padStart(2,'0') : x.toString(16).padStart(3,'0'); }
+function dnf(x: Iterable<Iterable<number>>, f = h): string {
   const xs = [...x];
   if (!xs.length) return 'no route';
-  return '(' + xs.map(y => [...y].map(h).join(' & ')).join (') | (') + ')';
+  return '(' + xs.map(y => [...y].map(f).join(' & ')).join (') |\n     (') + ')';
 }
-w.area = (tile: TileId) => {
+w.area = (tile: TileId, f: (x:number)=>string = h) => {
   const s = [...this.tiles.sets().filter(s => s.has(tile))[0]].map(x=>x.toString(16).padStart(6,'0'));
-  const r = [...builder.routes.routes.get(this.tiles.find(tile))].map(s => [...s].map(x => x < 0 ? '~' + (~x).toString(16) : x.toString(16)).join(' & ')).join(') | (');
-  return `${s.join('\n')}\ncount = ${s.length}\nroutes = (${r})`;
+  // const r = '(' + [...builder.routes.routes.get(this.tiles.find(tile))].map(s => [...s].map(x => x < 0 ? '~' + (~x).toString(16) : x.toString(16)).join(' & ')).join(') | (') + ')';
+  const r = dnf(builder.routes.routes.get(this.tiles.find(tile)), f);
+  // neighbors
+  const edges = [];
+  const t = this.tiles.find(tile);
+  for (const out of (builder.routes.edges.get(t) || new Map()).values()) {
+    edges.push(`\nto ${out.target.toString(16)} if (${[...out.deps].map(f).join(' & ')})`);
+  }
+  for (const [from, rs] of builder.routes.edges) {
+    for (const to of rs.values()) {
+      if (to.target !== t) continue;
+      edges.push(`\nfrom ${from.toString(16)} if (${[...to.deps].map(f).join(' & ')})`);
+    }
+  }
+  function group(arr: unknown[], count: number, spacer: string): string[] {
+    const out = [];
+    for (let i = 0; i < arr.length; i += count) {
+      out.push(arr.slice(i, i + count).join(spacer));
+    }
+    return out;
+  }
+  return `${hex(t)}\n${group(s, 16, ' ').join('\n')}\ncount = ${s.length}\nroutes = ${r}${edges.join('')}`;
+};
+
+w.whatFlag = (f: number) => {
+  for (const l of rom.locations) {
+    if (!l.used) continue;
+    for (const fl of l.flags) {
+      if (fl.flag === f) return `Location ${l.id.toString(16)} (${l.name}) Flag ${fl.ys},${fl.xs}`;
+    }
+  }
+  const enums = {Boss, Event, Capability, Item, Magic};
+  for (const enumName in enums) {
+    const e = enums[enumName as keyof typeof enums] as any;
+    for (const elem in e) {
+      if (e[elem] === f || Array.isArray(e[elem]) && e[elem][0][0] === f) return `${enumName}.${elem}`;
+    }
+  }
+  return h(f);
 };
 
     w.reqs = reqs;
-    console.log('reqs\n', [...reqs].sort(([a],[b])=>a-b).map(([s, r]) => `${h(s).padStart(3,'0')}: ${dnf(r)}`).join('\n'));
+    console.log('reqs\n' + [...reqs].sort(([a],[b])=>a-b).map(([s, r]) => `${w.whatFlag(s)}: ${dnf(r,w.whatFlag)}`).join('\n'));
+
+    w.reqs.check = (id: number, f: ((flag: number) => string) = h): string => `${f(id)}: ${dnf(reqs.get(Slot(id)), f)}`;
+    w.reqs.check2 = (id: number): string => w.reqs.check(id, w.whatFlag);
+
+
 
     // Summary: 1055 roots, 1724 neighbors
     // This is too much for a full graph traversal, but many can be removed???
@@ -339,6 +419,5 @@ w.area = (tile: TileId) => {
 
   }
 }
-
 
 /////////////

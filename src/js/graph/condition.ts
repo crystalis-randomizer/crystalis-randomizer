@@ -22,8 +22,10 @@ export namespace Event {
   export const ZEBU_STUDENT = Condition(0x0a5);
   export const LEAF_RABBIT = Condition(0x0a9);
   export const CALMED_SEA = Condition(0x283);
+  export const OPENED_JOEL_SHED = Condition(0x287);
   export const OPENED_CRYPT = Condition(0x28e);
   export const OPENED_STYX = Condition(0x2b0);
+  export const OPENED_SWAN = Condition(0x2b3);
   export const OPENED_PRISON = Condition(0x2d8);
   export const OPENED_SEALED_CAVE = Condition(0x2ee);
   export const WARP_OAK = Condition(0x2f7);
@@ -43,6 +45,7 @@ export namespace Capability {
   export const BREAK_IRON = Condition(~5);
   export const TRAVEL_SWAMP = Condition(~6);
   export const CLIMB_WATERFALL = Condition(~7);
+  export const BUY_MEDICAL_HERB = Condition(~8);
 
   // export const STATUE_GLITCH = Condition(~10);
 }

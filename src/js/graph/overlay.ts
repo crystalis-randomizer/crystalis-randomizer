@@ -13,6 +13,11 @@ import {hex} from '../rom/util.js';
 // TODO - maybe consider having a set of ASSUMED and a set of IGNORED flags?
 //      - e.g. always assume 00f is FALSE rather than TRUE, to avoid free windmill key
 
+
+// TODO - prison key missing from paralysis deps (or rather a non-flight version)!
+
+
+
 const RELEVANT_FLAGS = [
   0x00a, // used windmill key
   0x00b, // talked to leaf elder
@@ -38,6 +43,8 @@ const RELEVANT_FLAGS = [
   0x0a5, // talked to zebu student
   0x0a9, // talked to leaf rabbit
 
+  0x243, // telepathy
+  0x244, // teleport
   0x2ee, // started windmill
 
   0x2f7, // warp:oak (for telepathy)
@@ -52,6 +59,7 @@ const RELEVANT_FLAGS = [
 //    -> maybe in MutableRequirements?
 const FLAG_MAP: Map<number, readonly [readonly [Condition]]> = new Map([
   [0x00e, Magic.TELEPATHY],
+  [0x03f, Magic.TELEPORT],
   [0x013, Boss.SABERA1],
   [0x028, Magic.CHANGE],
   [0x029, Magic.CHANGE],
@@ -96,8 +104,9 @@ export class Overlay {
     }
     for (const item of rom.items) {
       if (!item.tradeIn) continue;
+      const cond = item.id === 0x1d ? Capability.BUY_MEDICAL_HERB : Item(item.id);
       for (let i = 0; i < item.tradeIn.length; i += 6) {
-        this.tradeIns.set(item.tradeIn[i], Item(item.id));
+        this.tradeIns.set(item.tradeIn[i], cond);
       }
     }
     //   0x1d, // medical herb
@@ -233,14 +242,18 @@ export class Overlay {
     if (!trigger || !trigger.used) throw new Error(`Unknown trigger: ${hex(id)}`);
     const relevant = (f: number) => this.relevantFlags.has(f);
     const relevantAndSet = (f: number) => f > 0 && this.relevantFlags.has(f);
+    function map(f: number): number {
+      if (f < 0) return ~map(~f);
+      return FLAG_MAP.has(f) ? FLAG_MAP.get(f)![0][0] : f;
+    }
     const actionItem = TRIGGER_ACTION_ITEMS[trigger.message.action];
-    const condition = and(...trigger.conditions.filter(relevantAndSet).map(Condition));
+    const condition = and(...trigger.conditions.map(map).filter(relevantAndSet).map(Condition));
     if (trigger.message.action === 0x19) { // push-down trigger
       // TODO - pass in terrain; if on land and trigger skip is on then
       // add a route requiring rabbit boots and either warp boots or teleport?
       const [cond, ...rest] = trigger.conditions;
-      if (!rest.length && cond < 0 && relevant(~cond)) {
-        return {terrain: {exit: Condition(~cond)}};
+      if (!rest.length && cond < 0 && relevant(~map(cond))) {
+        return {terrain: {exit: Condition(~map(cond))}};
       }
     } else if (actionItem != null) {
       return {check: [{condition, slot: actionItem}]};
@@ -281,6 +294,8 @@ export class Overlay {
       result.hitbox = {x0: 0, x1: 2, y0: 0, y1: 1};
       statueOr(Magic.CHANGE, Magic.PARALYSIS);
       break;
+    case 0x2d: // mt sabre soldiers
+      return {};
     case 0x33: // portoa guard (throne room, though the palace one is the one that matters)
       // NOTE: this means that we cannot separate the palace foyer from the throne room, since
       // there's no way to represent the condition for paralyzing the guard and still have him
@@ -324,9 +339,13 @@ export class Overlay {
         trade(Slot(Item.WINDMILL_KEY));
         break;
       case 0x23: // aryllis => bow of moon slot
+        // NOTE: sitting on impassible throne
+        result.hitbox = {x0: -1, x1: 2, y0: -1, y1: 2};
         trade(Slot(Item.BOW_OF_MOON), Magic.CHANGE);
         break;
       case 0x63: // hurt dolphin => healed dolphin
+        // NOTE: dolphin on water, but can heal from land
+        result.hitbox = {x0: -1, x1: 2, y0: -1, y1: 2};
         trade(Slot(Event.HEALED_DOLPHIN));
         trade(Slot(Item.SHELL_FLUTE));
         break;

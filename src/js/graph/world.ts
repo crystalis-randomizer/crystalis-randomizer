@@ -49,6 +49,7 @@ export class World {
     const npcs = new Map<TileId, number>();
     const checks = new DefaultMap<TileId, Check[]>(() => []);
     const monsters = new Map<TileId, number>(); // elemental immunities
+    const allExits = new Set<TileId>();
 
     for (const location of rom.locations /*.slice(0,4)*/) {
       if (!location.used) continue;
@@ -119,8 +120,10 @@ export class World {
       // Clobber terrain with seamless exits
       for (const exit of location.exits) {
         if (exit.entrance & 0x20) {
-          const previous = terrains.get(TileId.from(location, exit));
-          if (previous) terrains.set(TileId.from(location, exit), Terrain.seamless(previous));
+          const tile = TileId.from(location, exit);
+          allExits.add(tile);
+          const previous = terrains.get(tile);
+          if (previous) terrains.set(tile, Terrain.seamless(previous));
         }
       }
 
@@ -176,6 +179,7 @@ export class World {
           // and will also add their drop.
           bosses.set(TileId.from(location, spawn), spawn.id);
         } else if (spawn.isChest()) {
+          // TODO - if spawn.id >= $70 then differentiate?
           checks.get(TileId.from(location, spawn)).push(Check.chest(spawn.id));
         } else if (spawn.isMonster()) {
           // TODO - compute money-dropping monster vulnerabilities and add a trigger
@@ -259,7 +263,7 @@ export class World {
     }
 
     // Now look for all different-terrain neighbors and track connections.
-    const neighbors = new Neighbors(this.tiles);
+    const neighbors = new Neighbors(this.tiles, allExits);
     for (const [tile, terrain] of terrains) {
       const x1 = TileId.add(tile, 0, 1);
       const tx1 = terrains.get(x1);
@@ -385,17 +389,17 @@ w.area = (tile: TileId, f: (x:number)=>string = h) => {
 };
 
 w.whatFlag = (f: number) => {
-  for (const l of rom.locations) {
-    if (!l.used) continue;
-    for (const fl of l.flags) {
-      if (fl.flag === f) return `Location ${l.id.toString(16)} (${l.name}) Flag ${fl.ys},${fl.xs}`;
-    }
-  }
   const enums = {Boss, Event, Capability, Item, Magic};
   for (const enumName in enums) {
     const e = enums[enumName as keyof typeof enums] as any;
     for (const elem in e) {
       if (e[elem] === f || Array.isArray(e[elem]) && e[elem][0][0] === f) return `${enumName}.${elem}`;
+    }
+  }
+  for (const l of rom.locations) {
+    if (!l.used) continue;
+    for (const fl of l.flags) {
+      if (fl.flag === f) return `Location ${l.id.toString(16)} (${l.name}) Flag ${fl.ys},${fl.xs}`;
     }
   }
   return h(f);

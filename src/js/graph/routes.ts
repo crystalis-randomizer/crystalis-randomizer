@@ -71,7 +71,6 @@ export class Routes {
     // We added a new route.  Compute all the new neighbor routes.
     const out = new Map<string, LabeledRoute>();
     for (const next of this.edges.get(target).values()) {
-      if ((target&0xff0000) === 0xab0000 && (next.target&0xff0000) === 0xa90000) console.error(`ROUTE: ab -> a9 => ${[...deps, -1, ...next.deps].map(x=>x.toString(16))}`);
       const follow = LabeledRoute(next.target, [...deps, ...next.deps]);
       out.set(follow.label, follow);
     }

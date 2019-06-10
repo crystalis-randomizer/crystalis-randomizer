@@ -96,14 +96,18 @@ export class Neighbors {
   // high 24 = from, low 24 = to
   private readonly south = new Set<TilePair>();
   private readonly other = new Set<TilePair>();
-  constructor(private readonly tiles: UnionFind<TileId>) {}
+  constructor(private readonly tiles: UnionFind<TileId>, private readonly exits: Set<TileId>) {}
 
   // NOTE: lo < hi is required, so that lo->hi is south if vertical
   addAdjacent(lo: TileId, hi: TileId, vertical: boolean): void {
-    lo = this.tiles.find(lo);
-    hi = this.tiles.find(hi);
-    this.other.add(TilePair.of(hi, lo));
-    (vertical ? this.south : this.other).add(TilePair.of(lo, hi));
+    const lo1 = this.tiles.find(lo);
+    const hi1 = this.tiles.find(hi);
+    if (!this.exits.has(hi)) {
+      this.other.add(TilePair.of(hi1, lo1));
+    }
+    if (!this.exits.has(lo)) {
+      (vertical ? this.south : this.other).add(TilePair.of(lo1, hi1));
+    }
   }
 
   addExit(from: TileId, to: TileId): void {

@@ -150,6 +150,8 @@ export async function shuffle(rom: Uint8Array,
   undergroundChannelLandBridge(parsed);
 
   if (flags.connectLimeTreeToLeaf()) connectLimeTreeToLeaf(parsed);
+  addCordelWestTriggers(parsed, flags);
+  if (flags.disableRabbitSkip()) fixRabbitSkip(parsed);
 
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.
@@ -179,8 +181,6 @@ export async function shuffle(rom: Uint8Array,
     rom[0x1c4ea + 0x10] *= 2;  // medical herb
   }
 
-  addCordelWestTriggers(parsed, flags);
-  if (flags.disableRabbitSkip()) fixRabbitSkip(parsed);
   if (flags.storyMode()) storyMode(parsed);
 
   if (flags.chargeShotsOnly()) disableStabs(parsed);

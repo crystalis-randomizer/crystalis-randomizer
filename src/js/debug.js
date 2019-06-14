@@ -211,6 +211,15 @@ export default (nes) => {
     console.log(lines.join('\n'));
   };
 
+  show.trigger = (id, ...x) => showTable(0x1e17a, 0x14000, id & 0x7f, ...x);
+
+  function showTable(table, offset, id, ...args) {
+    const lo = nes.rom.rom[table + 2 * id];
+    const hi = nes.rom.rom[table + 2 * id + 1];
+    const addr = (hi << 8 | lo) + offset;
+    show(addr, ...args);
+  }
+
   window.watchFlags = () => {
     const current = new Array(0x300);
     for (let i = 0; i < 0x300; i++) {

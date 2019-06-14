@@ -263,6 +263,7 @@ Here, have this lame
 };
 
 function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
+  if (!flags.randomizeMusic()) return;
   interface HasMusic { bgm: number; }
   class BossMusic implements HasMusic {
     constructor(readonly addr: number) {}
@@ -745,7 +746,7 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
 
   // Add an extra condition to the Leaf abduction trigger (behind zebu).  This ensures
   // all the items in Leaf proper (elder and student) are gotten before they disappear.
-  rom.trigger(0x8c).conditions.push(0x037); // 03a talked to zebu in cave
+  rom.trigger(0x8c).conditions.push(0x03a); // 03a talked to zebu in cave
 
   // Paralysis trigger ($b2) ~ remove redundant itemget flag
   rom.trigger(0xb2).conditions[0] = ~0x242;

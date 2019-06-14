@@ -34,7 +34,7 @@ class ReverseFlagSlot implements Slot {
   // TODO - 013 defeated sabera should be a reverse flag slot for sabera's drop
   //      - then we can remove all the extra sets
   set(rom: Rom, item: number): void {
-    for (const itemget of rom.itemgets) {
+    for (const itemget of rom.itemGets) {
       const index = itemget.flags.indexOf(this.flag);
       if (itemget.id === item && index < 0) itemget.flags.push(this.flag);
       if (itemget.id !== item && index >= 0) itemget.flags.splice(index, 1);

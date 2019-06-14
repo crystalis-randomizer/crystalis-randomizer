@@ -1,3 +1,4 @@
+import {Terrain, MutableRequirement} from './condition.js'; // NOTE: cycle
 import {Location} from '../rom/location.js';
 import {UnionFind} from '../unionfind.js';
 
@@ -140,3 +141,18 @@ function * concat<T>(...iters: Array<Iterable<T>>): IterableIterator<T> {
     yield * iter;
   }
 }
+
+export interface Geometry {
+  terrains: Map<TileId, Terrain>;
+  domains: UnionFind<TileId>;
+  edges: Iterable<[TileId, TileId, boolean]>;
+}
+
+// type BuildGeometry = (rom: Rom, overlay: Overlay) => Geometry;
+// type ComputeRoutes = (g: Geometry) => Routes;
+// type Routes = Map<TileId, MutableRequirement>;
+// type AddChecks = (g: Geometry, r: Routes, checks: Check[]): Graph;
+
+// probably combine geometry and condition into files types.
+// then geometry will have geometry and these functions
+// -> World? (maybe Routes => World)

@@ -65,7 +65,7 @@ export class Routes {
     }
   }
 
-  addRouteInternal({target, depsLabel, deps}: LabeledRoute): Iterable<LabeledRoute> {
+  private addRouteInternal({target, depsLabel, deps}: LabeledRoute): Iterable<LabeledRoute> {
     const current = this.routes.get(target);
     if (!current.add(depsLabel, deps)) return [];
     // We added a new route.  Compute all the new neighbor routes.

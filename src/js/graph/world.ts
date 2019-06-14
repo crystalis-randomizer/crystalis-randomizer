@@ -51,6 +51,8 @@ export class World {
     const monsters = new Map<TileId, number>(); // elemental immunities
     const allExits = new Set<TileId>();
 
+    let mimic = 0x70;
+
     for (const location of rom.locations /*.slice(0,4)*/) {
       if (!location.used) continue;
       const ext = location.extended ? 0x100 : 0;
@@ -70,11 +72,6 @@ export class World {
         // Lists 5 things: flight, break iron, mt sabre prison, swan gate, crypt entrance
         //   - should at least require breaking stone or ice?
 
-      }
-
-      const locationData = overlay.location(location);
-      for (const check of locationData.check || []) {
-        checks.get(check.tile).push(check);
       }
 
       // Add terrains
@@ -180,7 +177,8 @@ export class World {
           bosses.set(TileId.from(location, spawn), spawn.id);
         } else if (spawn.isChest()) {
           // TODO - if spawn.id >= $70 then differentiate?
-          checks.get(TileId.from(location, spawn)).push(Check.chest(spawn.id));
+          const id = spawn.id <  0x70 ? spawn.id : mimic++;
+          checks.get(TileId.from(location, spawn)).push(Check.chest(id));
         } else if (spawn.isMonster()) {
           // TODO - compute money-dropping monster vulnerabilities and add a trigger
           // for the MONEY capability dependent on any of the swords.
@@ -212,6 +210,10 @@ export class World {
       const condition = overlay.bossRequirements(boss);
       const checkTile = rage ? TileId(tileBase | 0x88) : bossTile;
       checks.get(checkTile).push({slot: Slot(kill), condition});
+    }
+
+    for (const check of overlay.locations() || []) {
+      checks.get(check.tile).push(check);
     }
 
     // let s = 1;
@@ -325,6 +327,14 @@ export class World {
         }
       }
     }
+
+    // Note: at this point we've built up the main initial location list.
+    // We need to return something useful out of it.
+    //  - some interface that can be used for assumed-fill logic.
+    //  - want a usable toString for spoiler log.
+    //  - would be nice to have packed bigints if possible?
+    // Any slots that are NOT requirements should be filtered out
+
 
     // Build up a graph?!?
     // Will need to map to smaller numbers?

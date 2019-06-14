@@ -5,6 +5,7 @@ import {FlagSet} from '../flagset.js';
 import {Rom} from '../rom.js';
 import {Boss as RomBoss} from '../rom/bosses.js';
 import {Location} from '../rom/location.js';
+import {ShopType} from '../rom/shop.js';
 import {hex} from '../rom/util.js';
 
 // Additional information needed to interpret the world graph data.
@@ -104,7 +105,7 @@ export class Overlay {
     }
     for (const item of rom.items) {
       if (!item.tradeIn) continue;
-      const cond = item.id === 0x1d ? Capability.BUY_MEDICAL_HERB : Item(item.id);
+      const cond = item.id === 0x1d ? Capability.BUY_HEALING : Item(item.id);
       for (let i = 0; i < item.tradeIn.length; i += 6) {
         this.tradeIns.set(item.tradeIn[i], cond);
       }
@@ -150,17 +151,29 @@ export class Overlay {
     return out.freeze();
   }
 
-  location(loc: Location): LocationData {
-    if (loc.id === 0x0f) { // windmill
-      return {
-        check: [{
-          tile: TileId(0x0f0088),
-          slot: Slot(Event.STARTED_WINDMILL),
-          condition: Item.WINDMILL_KEY,
-        }],
+  locations(): TileCheck[] {
+    const locations: TileCheck[] = [];
+    locations.push({
+      tile: TileId(0x0f0088),
+      slot: Slot(Event.STARTED_WINDMILL),
+      condition: Item.WINDMILL_KEY,
+    });
+    for (const shop of this.rom.shops) {
+      if (!shop.used) continue;
+      if (shop.type !== ShopType.TOOL) continue;
+      const check = {
+        tile: TileId(shop.location << 16 | 0x88),
+        condition: Capability.MONEY,
       };
+      for (const item of shop.contents) {
+        if (item === Item.MEDICAL_HERB[0][0]) {
+          locations.push({...check, slot: Slot(Capability.BUY_HEALING)});
+        } else if (item === Item.WARP_BOOTS[0][0]) {
+          locations.push({...check, slot: Slot(Capability.BUY_WARP)});
+        }
+      }
     }
-    return {};
+    return locations;
   }
 
   /** Returns undefined if impassable. */
@@ -244,7 +257,8 @@ export class Overlay {
     const relevantAndSet = (f: number) => f > 0 && this.relevantFlags.has(f);
     function map(f: number): number {
       if (f < 0) return ~map(~f);
-      return FLAG_MAP.has(f) ? FLAG_MAP.get(f)![0][0] : f;
+      const mapped = FLAG_MAP.get(f);
+      return mapped != null ? mapped[0][0] : f;
     }
     const actionItem = TRIGGER_ACTION_ITEMS[trigger.message.action];
     const condition = and(...trigger.conditions.map(map).filter(relevantAndSet).map(Condition));
@@ -264,6 +278,10 @@ export class Overlay {
 
     return {};
   }
+
+
+  // TODO - monster ID 3f (8f) => entire screen requires SHOOTING_STATUE to enter
+
 
   npc(id: number, loc: Location): NpcData {
     const npc = this.rom.npcs[id];
@@ -350,7 +368,8 @@ export class Overlay {
         trade(Slot(Item.SHELL_FLUTE));
         break;
       case 0x64: // fisherman
-        trade(Slot(Event.RETURNED_FOG_LAMP));
+        trade(Slot(Event.RETURNED_FOG_LAMP),
+              ...(this.flags.requireHealedDolphinToRide() ? [Event.HEALED_DOLPHIN] : []));
         // TODO - use this as proxy for boat
         break;
       case 0x6b: // sleeping kensu
@@ -458,10 +477,24 @@ export class Overlay {
       [Capability.BREAK_IRON, breakIron],
       [Capability.MONEY, Capability.SWORD], // TODO - clear this up
       [Capability.CLIMB_WATERFALL, Magic.FLIGHT],
+      [Capability.SHOOTING_STATUE, Magic.BARRIER], // TODO - allow shield ring?
+      [Capability.CLIMB_SLOPE, Item.RABBIT_BOOTS],
     ];
 
     if (this.flags.assumeGhettoFlight()) {
       capabilities.push([Capability.CLIMB_WATERFALL, and(Event.RIDE_DOLPHIN, Item.RABBIT_BOOTS)]);
+    }
+
+    if (!this.flags.guaranteeBarrier()) {
+      // TODO - sword charge glitch might be a problem with the healing option...
+      capabilities.push([Capability.SHOOTING_STATUE,
+                         and(Capability.MONEY, Capability.BUY_HEALING),
+                         and(Capability.MONEY, Item.SHIELD_RING),
+                         and(Capability.MONEY, Magic.REFRESH)]);
+    }
+
+    if (this.flags.leatherBootsGiveSpeed()) {
+      capabilities.push([Capability.CLIMB_SLOPE, Item.LEATHER_BOOTS]);
     }
 
     for (const boss of this.rom.bosses) {
@@ -498,10 +531,6 @@ type TileCheck = Check & {tile: TileId};
 // TODO - maybe pull triggers and npcs, etc, back together?
 //      - or make the location overlay a single function?
 //        -> needs closed-over state to share instances...
-interface LocationData {
-  terrain?: (original: Terrain, tile: TileId) => Terrain;
-  check?: TileCheck[];
-}
 
 interface ExtraRoute {
   tile: TileId;

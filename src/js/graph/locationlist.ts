@@ -71,6 +71,19 @@ export class LocationListBuilder {
   }
 }
 
+
+interface Compression<T> {
+  readonly size: number;
+  get(index: number): T;
+  name(index: number): string;
+  index(item: T): number;
+}
+
+// TODO - two-way? need to get "unused"
+type Fill = ReadonlyArray<number|undefined>;
+
+
+
 export class LocationList {
   
 

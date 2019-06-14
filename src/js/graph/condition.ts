@@ -45,7 +45,10 @@ export namespace Capability {
   export const BREAK_IRON = Condition(~5);
   export const TRAVEL_SWAMP = Condition(~6);
   export const CLIMB_WATERFALL = Condition(~7);
-  export const BUY_MEDICAL_HERB = Condition(~8);
+  export const BUY_HEALING = Condition(~8);
+  export const BUY_WARP = Condition(~9);
+  export const SHOOTING_STATUE = Condition(~10);
+  export const CLIMB_SLOPE = Condition(~11);
 
   // export const STATUE_GLITCH = Condition(~10);
 }

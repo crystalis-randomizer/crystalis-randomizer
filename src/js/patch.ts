@@ -73,13 +73,12 @@ export const shuffle = async (rom: Uint8Array,
 
   const touchShops = true;
 
-  const shouldBuffDyna = flags.buffDyna();
   const defines: {[name: string]: boolean} = {
     _ALLOW_TELEPORT_OUT_OF_TOWER: true,
     _AUTO_EQUIP_BRACELET: flags.autoEquipBracelet(),
     _BARRIER_REQUIRES_CALM_SEA: flags.barrierRequiresCalmSea(),
     _BUFF_DEOS_PENDANT: flags.buffDeosPendant(),
-    _BUFF_DYNA: shouldBuffDyna, // true,
+    _BUFF_DYNA: flags.buffDyna(), // true,
     _CHECK_FLAG0: true,
     _DEBUG_DIALOG: seed === 0x17bc,
     _DISABLE_SHOP_GLITCH: flags.disableShopGlitch(),
@@ -189,7 +188,7 @@ export const shuffle = async (rom: Uint8Array,
   misc(parsed, flags, random);
 
   // NOTE: This needs to happen BEFORE postshuffle
-  if (flags.buffDyna) buffDyna(parsed, flags); // TODO - conditional
+  if (flags.buffDyna()) buffDyna(parsed, flags); // TODO - conditional
   await parsed.writeData();
   const crc = await postParsedShuffle(rom, random, seed, flags, asm, assemble);
 

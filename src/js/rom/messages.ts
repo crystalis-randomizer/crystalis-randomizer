@@ -734,6 +734,9 @@ export const HARDCODED_MESSAGES: Set<string> = new Set([
   '1c:11', // sword of thunder pre-warp message, exec 1c:11
   '0e:05', // mesia recording, exec 3d621
   '16:00', // azteca in shyron story, exec 3d79c
+  '16:02', // azteca in shyron story, exec 3d79c (loop)
+  '16:04', // azteca in shyron story, exec 3d79c (loop)
+  '16:06', // azteca in shyron story, exec 3d79c (loop)
   '20:11', // empty shop, exec 3d9c4
   '21:00', // warp menu, exec 3db60
   '21:02', // telepathy menu, exec 3dd6e

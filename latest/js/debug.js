@@ -211,6 +211,15 @@ export default (nes) => {
     console.log(lines.join('\n'));
   };
 
+  show.trigger = (id, ...x) => showTable(0x1e17a, 0x14000, id & 0x7f, ...x);
+
+  function showTable(table, offset, id, ...args) {
+    const lo = nes.rom.rom[table + 2 * id];
+    const hi = nes.rom.rom[table + 2 * id + 1];
+    const addr = (hi << 8 | lo) + offset;
+    show(addr, ...args);
+  }
+
   window.watchFlags = () => {
     const current = new Array(0x300);
     for (let i = 0; i < 0x300; i++) {
@@ -250,6 +259,17 @@ export default (nes) => {
   const rom = new Uint8Array(nes.rom.rom.length + 0x10);
   rom.subarray(0x10).set(nes.rom.rom);
   window.rom = new Rom(rom);
+
+  window.heal = () => {
+    for (const a of [0x708, 0x709, 0x3c0, 0x3c1]) {
+      nes.cpu.ram[a] = 0xff;
+    }
+  };
+
+  window.alwaysHeal = () => {
+    window.heal();
+    window.setTimeout(window.alwaysHeal, 500);
+  };
 };
 
 

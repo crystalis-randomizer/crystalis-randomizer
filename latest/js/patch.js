@@ -43,12 +43,15 @@ export const shuffle = async (rom, seed, flags, reader, log, progress) => {
         throw new Error('Bad seed');
     const newSeed = crc32(seed.toString(16).padStart(8, '0') + String(flags)) >>> 0;
     const touchShops = true;
+    const shouldBuffDyna = flags.buffDyna();
     const defines = {
         _ALLOW_TELEPORT_OUT_OF_TOWER: true,
         _AUTO_EQUIP_BRACELET: flags.autoEquipBracelet(),
         _BARRIER_REQUIRES_CALM_SEA: flags.barrierRequiresCalmSea(),
         _BUFF_DEOS_PENDANT: flags.buffDeosPendant(),
+        _BUFF_DYNA: shouldBuffDyna,
         _CHECK_FLAG0: true,
+        _DEBUG_DIALOG: seed === 0x17bc,
         _DISABLE_SHOP_GLITCH: flags.disableShopGlitch(),
         _DISABLE_STATUE_GLITCH: flags.disableStatueGlitch(),
         _DISABLE_SWORD_CHARGE_GLITCH: flags.disableSwordChargeGlitch(),
@@ -135,6 +138,8 @@ export const shuffle = async (rom, seed, flags, reader, log, progress) => {
         orbsOptional(parsed);
     shuffleMusic(parsed, flags, random);
     misc(parsed, flags, random);
+    if (flags.buffDyna)
+        buffDyna(parsed, flags);
     await parsed.writeData();
     const crc = await postParsedShuffle(rom, random, seed, flags, asm, assemble);
     return crc;
@@ -160,6 +165,8 @@ Here, have this lame
 }
 ;
 function shuffleMusic(rom, flags, random) {
+    if (!flags.randomizeMusic())
+        return;
     class BossMusic {
         constructor(addr) {
             this.addr = addr;
@@ -216,6 +223,13 @@ function shuffleMusic(rom, flags, random) {
         }
     }
     shuffle([...peaceful, ...hostile, ...bosses]);
+}
+function buffDyna(rom, flags) {
+    rom.objects[0xb8].collisionPlane = 1;
+    rom.objects[0xb8].immobile = true;
+    rom.objects[0xb9].collisionPlane = 1;
+    rom.objects[0xb9].immobile = true;
+    rom.objects[0x33].collisionPlane = 2;
 }
 function makeBraceletsProgressive(rom) {
     const tornel = rom.npcs[0x5f];
@@ -427,7 +441,7 @@ const preventNpcDespawns = (rom, flags) => {
         rom.trigger(0x84).conditions.push(0x283);
     }
     rom.trigger(0x84).flags = [];
-    rom.trigger(0x8c).conditions.push(0x037);
+    rom.trigger(0x8c).conditions.push(0x03a);
     rom.trigger(0xb2).conditions[0] = ~0x242;
     rom.trigger(0xb2).flags.shift();
     rom.trigger(0xb4).conditions[1] = ~0x241;
@@ -814,11 +828,11 @@ const SCALED_MONSTERS = new Map([
     [0xa1, 'm', 'Tower Defense Mech (2)', 5, , 8, 36, , 85],
     [0xa2, 'm', 'Tower Sentinel', , , 1, , , 32],
     [0xa3, 'm', 'Air Sentry', 3, , 2, 26, , 65],
-    [0xa4, 'b', 'Dyna', 6, 5, 8, , , ,],
     [0xa5, 'b', 'Vampire 2', 3, , 12, 27, , ,],
-    [0xb4, 'b', 'dyna pod', 15, , 255, 26, , ,],
-    [0xb8, 'p', 'dyna counter', , , , 26, , ,],
-    [0xb9, 'p', 'dyna laser', , , , 26, , ,],
+    [0xa4, 'b', 'Dyna', 6, 5, 32, , , ,],
+    [0xb4, 'b', 'dyna pod', 6, 5, 48, 26, , ,],
+    [0xb8, 'p', 'dyna counter', 15, , , 42, , ,],
+    [0xb9, 'p', 'dyna laser', 15, , , 42, , ,],
     [0xba, 'p', 'dyna bubble', , , , 36, , ,],
     [0xbc, 'm', 'vamp2 bat', , , , 16, , 15],
     [0xbf, 'p', 'draygon2 fireball', , , , 26, , ,],

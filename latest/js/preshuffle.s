@@ -155,6 +155,33 @@ DisplayNumber:
 
 .bank $1c000 $8000:$4000
 
+
+.ifdef _BUFF_DYNA
+.ifdef _REMOVE_MAGIC_FOR_DYNA
+;;; Patch ItemGet_Crystalis to remove magics, too
+.org $1c2b7
+
+  ldx #$03
+-  lda #$ff
+   sta $6430,x
+   sta $643c,x
+   sta $6458,x
+   sta $645c,x
+   dex
+  bpl -
+  lda #$04
+  sta $6430
+  lda #$05
+  sta $0711
+  lda #$00
+  sta $0712
+  rts
+
+.assert < $1c2dd
+.endif
+.endif
+
+
 ;;; Patch the end of ItemUse to check for a few more items.
 .org $1c34d
   jmp PatchTradeInItem
@@ -252,6 +279,16 @@ CheckBelowBoss:
 ;; just reject - instead, add the item to an overflow chest.
 ;; We use the bytes at 64b8..64bf to store the overflow.
 
+.ifdef _DEBUG_DIALOG
+;;; Auto level-up and scaling-up dialogs
+.org $1cc87                     ; leaf rabbit -> action 1e
+  .byte $20,$00,$f2,$84
+.org $1cc30                     ; leaf daughter -> action 1d
+  .byte $20,$00,$e8,$1d
+;.org $1cb58                     ; leaf elder -> action 1c
+.org $1cc62                     ; leaf red girl -> action 1c
+  .byte $20,$00,$e0,$0f
+.endif
 
 ;;; ITEM GET PATCHES
 
@@ -747,7 +784,7 @@ CheckForLowHpMp:
 .endif
 
 
-;.bank $36000 $a000:$2000
+.bank $36000 $a000:$2000
 ;
 ;.org $36086
 ;
@@ -772,8 +809,54 @@ CheckForLowHpMp:
 ;GateCheckPassed:
   
 
+;;; Beef up dyna
+
+.ifdef _BUFF_DYNA
+
+.org $29ca0
+  .byte $1c ; adhoc spawn 28 (counter) lower bound: [1c
+.org $29ca5
+  .byte $1c ; adhoc spawn 29 (laser) upper bound: 1c)
+.org $29ca9
+  .byte $1c ; adhoc spawn 2a (bubble) upper bound: 1c)
 
 
+.org $37c9c
+  ;; Don't check pod's status before shooting eye laser
+  nop
+  nop
+;.org $37d37
+;  ;; Don't shift the "bubble turns" by 2, so that one or the
+;  ;; other is always shooting
+;  nop
+;  nop
+;.org $37d3c
+;  and #$01 ; each cannon shoots 1 in 2 rather than 1 in 8
+.org $37d35
+  txa
+  asl ; clears carry
+  adc $08
+  and #$03
+  beq +
+   rts
++ lda $08
+  and #$3c
+  lsr
+  lsr
+  jmp $bd4c    ; 37d4c
+.assert < $37d4c
+;;; TODO - change ItemGet_Crystalis to remove magics!
+
+.org $37d55
+  ;; Change shots to start from a random location
+  jmp DynaShoot
+.org $37d86
+  jmp DynaShoot2
+
+.org $37d6c
+  nop
+  nop
+.endif
 
 ;;.org $3c010
 ;;;; Adjusted inventory update - use level instead of sword
@@ -1143,6 +1226,88 @@ CheckFlag0:
 +   jmp ReadControllersWithDirections
 .endif ; _CHECK_FLAG0
 
+;;; NOTE: These dialog actions are debug functionality.
+DialogFollowupAction_1c:
+  ;; scaling level
+  lda $64a2
+  clc
+  adc #$04
+  cmp #$2f
+  bcc +
+   lda #$2f
++ sta $64a2
+  lda #$01
+  sta $64a3
+  rts
+
+DialogFollowupAction_1d:
+  ;; level up
+  lda #$0f
+  cmp $0421
+  bcs +
+   rts
++ inc $0421
+  ldy $0421
+  lda $6e
+  pha
+   lda #$1a
+   jsr $c418
+   lda $8b7f,y
+   sta $03c0
+   sta $03c1
+   lda $8b8f,y
+   sta $0708
+   sta $0709
+   jsr $8cc0
+   lda #$00
+   jsr $8e46
+   lda #$02
+   jsr $8e46
+   lda #$03
+   jsr $8e46
+   lda #$04
+   jsr $8e46
+   lda #$05
+   jsr $8e46
+   jsr $c008
+  pla
+  jmp $c418
+
+
+DialogFollowupAction_1e:
+  ;; fill inventory with all worn items, magic, and top shields/armor
+  ;; then warp to mesia - actually remove magic...
+  ldx #$00
+  clc
+-  txa
+   adc #$11
+   sta $6438,x
+   adc #$08
+   sta $6434,x
+   inx
+   cpx #$04
+  bcc -
+  ldx #$00
+  clc
+-  lda #$22
+   sta $6440,x
+   txa
+   adc #$29
+   sta $6448,x
+   adc #$18
+   ;lda #$ff
+   sta $6458,x
+   inx
+   cpx #$08
+  bcc -   
+  lda #$5e
+  sta $6c
+  lda #$00
+  sta $6d
+  lda #$01
+  sta $41
+  rts
+
 .assert < $3fe00 ; end of free space started at 3f9ba
 
 .org $3fe01
@@ -1192,8 +1357,45 @@ FinishEquippingConsumable:
     sta EquippedConsumableItem
     rts
 
-;; free space
+DynaShoot:
+  sta $61        ; Store the spawn ID for later
+  lda $70,x      ; Save pod's position on stack
+  pha            ;
+   tya           ; Store the shot's direction on stack
+   pha           ;
+    lda $70      ; Seed the random number by player's position
+    adc $08      ; Also seed it with the global counter
+    and #$3f     ; Don't overflow
+    tay          ;
+    lda $97e4,y  ; Read from Random number table
+    asl          ; Multiply by 8: range is 0..$3f
+    asl          ;
+    asl          ;
+    adc #$e0     ; Subtract $20
+    adc $70,x    ; Add to pod's position
+    sta $70,x    ; And store it back (temporarily)
+   pla           ; Pull off the direction
+   tay           ;   ...and save it back in Y
+   lda $61       ; Pull off the spawn ID
+   jsr $972d     ; AdHocSpawnObject
+  pla            ; Pull off the pod's position
+  sta $70,x      ;   ...and restore it
+  rts
 
+DynaShoot2:
+  pha
+  lda $08
+  asl
+  bcc +
+   iny
++ asl
+  bcc +
+   dey
++ pla
+  jmp $972d     ; AdHocSpawnObject
+
+
+;; free space
 .assert < $3fe78
 
 

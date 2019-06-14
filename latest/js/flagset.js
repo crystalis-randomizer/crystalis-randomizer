@@ -144,8 +144,7 @@ export const FLAGS = [{
                 hard: true,
                 name: 'Shuffle tower robots',
                 text: `Tower robots will be shuffled into the normal pool.  At some
-           point, normal monsters may be shuffled into the tower as well.
-           NOTE: tower robots currently don't give any gold or experience.`,
+           point, normal monsters may be shuffled into the tower as well.`,
             }],
     }, {
         section: 'Shops',
@@ -204,6 +203,13 @@ export const FLAGS = [{
                 hard: true,
                 name: 'Charge shots only',
                 text: `Stabbing is completely ineffective.  Only charged shots work.`,
+            }, {
+                flag: 'Hd',
+                hard: true,
+                name: 'Buff Dyna',
+                text: `Makes the Dyna fight a bit more of a challenge.  Side pods will fire
+           significantly more.  The safe spot has been removed.  The counter
+           attacks pass through barrier.  Side pods can now be killed.`,
             }, {
                 flag: 'Hz',
                 hard: true,
@@ -399,6 +405,8 @@ export const FLAGS = [{
         flags: [{
                 flag: 'Ds',
                 name: 'Generate a spoiler log',
+                text: `Note: <b>this will change the placement of items</b> compared to a
+      seed generated without this flag turned on.`
             }, {
                 flag: 'Di',
                 name: 'Player never dies',
@@ -517,6 +525,7 @@ export class FlagSet {
     nerfWildWarp() { return this.check('Fw'); }
     allowWildWarp() { return !this.nerfWildWarp(); }
     blackoutMode() { return this.check('Hz'); }
+    buffDyna() { return this.check('Hd'); }
     expScalingFactor() {
         return this.check('Hx') ? 0.25 : this.check('Ex') ? 2.5 : 1;
     }

@@ -43,13 +43,12 @@ export const shuffle = async (rom, seed, flags, reader, log, progress) => {
         throw new Error('Bad seed');
     const newSeed = crc32(seed.toString(16).padStart(8, '0') + String(flags)) >>> 0;
     const touchShops = true;
-    const shouldBuffDyna = flags.buffDyna();
     const defines = {
         _ALLOW_TELEPORT_OUT_OF_TOWER: true,
         _AUTO_EQUIP_BRACELET: flags.autoEquipBracelet(),
         _BARRIER_REQUIRES_CALM_SEA: flags.barrierRequiresCalmSea(),
         _BUFF_DEOS_PENDANT: flags.buffDeosPendant(),
-        _BUFF_DYNA: shouldBuffDyna,
+        _BUFF_DYNA: flags.buffDyna(),
         _CHECK_FLAG0: true,
         _DEBUG_DIALOG: seed === 0x17bc,
         _DISABLE_SHOP_GLITCH: flags.disableShopGlitch(),
@@ -138,7 +137,7 @@ export const shuffle = async (rom, seed, flags, reader, log, progress) => {
         orbsOptional(parsed);
     shuffleMusic(parsed, flags, random);
     misc(parsed, flags, random);
-    if (flags.buffDyna)
+    if (flags.buffDyna())
         buffDyna(parsed, flags);
     await parsed.writeData();
     const crc = await postParsedShuffle(rom, random, seed, flags, asm, assemble);

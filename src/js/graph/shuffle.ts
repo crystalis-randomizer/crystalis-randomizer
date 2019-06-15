@@ -5,14 +5,49 @@ import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 import { seq } from '../rom/util.js';
 
-type SlotIndex = number & {__slotIndex__: never};
-type ItemIndex = number & {__itemIndex__: never};
+declare const SLOTINDEX: unique symbol;
+declare const ITEMINDEX: unique symbol;
+
+// NOTE: a tagged newtype would be better here, but TS won't take it as a key
+// export type SlotKey = {[SLOTINDEX]: never};
+// export type ItemKey = {[ITEMINDEX]: never};
+// type KeyOf<T> = T extends SlotIndex ? SlotKey : T extends ItemIndex ? ItemKey : {};
+export type SlotIndex = 'slotIndex'; // typeof SLOTINDEX; //  & number;
+export type ItemIndex = 'itemIndex'; // typeof ITEMINDEX; //  & number;
+
+export function SlotIndex(i: number): SlotIndex { return i as any; }
+export function ItemIndex(i: number): ItemIndex { return i as any; }
+
+// interface Keys<V> {
+//   [SLOTINDEX]: {[SLOTINDEX]: V};
+//   [ITEMINDEX]: {[ITEMINDEX]: V};
+// }
+
+interface Keys<V> {
+  slotIndex: {slotIndex: V};
+  itemIndex: {itemIndex: V};
+}
+
+// export type SlotArray<V> = Array<unknown> & {[SLOTINDEX]: V};
+// export type ReadonlySlotArray<V> = ReadonlyArray<unknown> & {readonly [SLOTINDEX]: V};
+
+// export type ItemArray<V> = Array<unknown> & {[ITEMINDEX]: V};
+// export type ReadonlyItemArray<V> = ReadonlyArray<unknown> & {readonly [ITEMINDEX]: V};
+
+// export type Keyed<K, V> = Array<unknown> & {[E in keyof KeyOf<K>]: V};
+// export type ReadonlyKeyed<K extends keyof Keys, V> = ReadonlyArray<unknown> & {readonly [E in keyof Keys[K]]: V};
+
+
+export type Keyed<K extends keyof Keys<V>, V> = Array<unknown> & Keys<V>[K];
+export type ReadonlyKeyed<K extends keyof Keys<V>, V> = ReadonlyArray<unknown> & Keys<V>[K];
+
+export function Keyed<K extends keyof Keys<V>, V>() { return [] as any; }
 
 export interface Node {
   item?: number; // only set for legit items/slots
   name:  string;
   condition: number; // condition number for tracking this node
-  index: number;
+  //index: number;
 }
 export interface SlotNode extends Node {
   index: SlotIndex;
@@ -21,23 +56,37 @@ export interface ItemNode extends Node {
   index: ItemIndex;
 }
 
+// type Keyed<K, V> = Array<V>; // & {__keyed__: (k: K) => V, __writeable__: never};
+// type ReadonlyKeyed<K, V> = ReadonlyArray<V>; // & {__keyed__: (k: K) => V};
+// function Keyed<K, V>(a: V[]): Keyed<K, V> { return a as any; }
+// namespace Keyed {
+//   // export const toArray: {<K, V>(a: Keyed<K, V>): Array<V>,
+//   //                        <K, V>(a: ReadonlyKeyed<K, V>): ReadonlyArray<V>} = (a: any) => a;
+//   export function get<K, V>(a: ReadonlyKeyed<K, V>, k: K): V {
+//     return (a as any)[k];
+//   }
+//   export function set<K, V>(a: Keyed<K, V>, k: K, v: V): void {
+//     (a as any)[k] = v;
+//   }
+// }
+
 export interface Graph {
   readonly fixed: number;  // index before which slots & deps are the same?
-  readonly slots: Node[];
-  readonly items: Node[];
+  readonly slots: ReadonlyKeyed<SlotIndex, SlotNode>;
+  readonly items: ReadonlyKeyed<ItemIndex, ItemNode>;
   /** Map from location to DNF of items required to reach. */
-  readonly graph: ReadonlyArray<readonly Bits[]>;
+  readonly graph: ReadonlyKeyed<SlotIndex, readonly Bits[]>;
   /** Map from item to locations that may now be reachable. */
-  readonly unlocks: ReadonlyArray<Set<number>>;
+  readonly unlocks: ReadonlyKeyed<ItemIndex, readonly SlotIndex[]>;
 }
 
 export class Fill {
   /** Maps location to item. */
-  slots: number[] = [];
+  slots: Keyed<SlotIndex, ItemIndex> = Keyed();
   /** Maps item to location. */
-  items: number[] = [];
+  items: Keyed<ItemIndex, SlotIndex> = Keyed();
 
-  set(slot: number, item: number) {
+  set(slot: SlotIndex, item: ItemIndex) {
     if (this.slots[slot] != null) throw new Error(`already filled slot ${slot}`);
     if (this.items[item] != null) throw new Error(`already filled item ${item}`);
     this.slots[slot] = item;
@@ -50,13 +99,13 @@ export interface Shuffle {
 }
 
 /** @return The set of reachable slots. */
-export function traverse(graph: Graph, fill: Fill, has: Bits): Set<number> {
+export function traverse(graph: Graph, fill: Fill, has: Bits): Set<SlotIndex> {
   // NOTE: we can't use isArray because the non-bigint polyfill IS an array
   has = Bits.clone(has);
-  const reachable = new Set<number>();
-  const queue = new Set<number>();
+  const reachable = new Set<SlotIndex>();
+  const queue = new Set<SlotIndex>();
   for (let i = 0; i < graph.slots.length; i++) {
-    queue.add(i);
+    queue.add(SlotIndex(i));
   }
   for (const n of queue) {
     queue.delete(n);
@@ -106,6 +155,7 @@ enum Type {
   TRIGGER = 5,
 }
 
+// TODO - pull out a base class with fits, etc.
 export class AssumedFill implements Shuffle {
   // TODO - other configuration?
 
@@ -169,63 +219,82 @@ export class AssumedFill implements Shuffle {
     return slotType !== Type.TRIGGER;
   }
 
-  shuffle(graph: Graph, random: Random): Fill | null {
-    for (const item of this.rom.items) {
-      
-
+  // Note: duplicates are allowed.
+  protected items(graph: Graph, random: Random): ItemIndex[] {
+    const arr = [];
+    for (const item of graph.items) {
+      if (item.item == null) continue;
+      let count = 1;
+      if (item.item === 0x00 || item.item === 0x01) count = 5;
+      if (item.item === 0x02) count = 10;
+      if (item.item === 0x03 || item.item === 0x48) count = 15;
+      for (let i = 0; i < count; i++) arr.push(item.index);
     }
-
-
-
-    const slots: Slot[] = graph.nodes.filter(s => s instanceof Slot && s.slots && !s.isFixed()) as Slot[];
-  const allItems =
-          new Map<Slot, [ItemGet, number]>(
-              random.shuffle(slots.map((s: Slot) =>
-                                       [s, [s.item, s.itemIndex]] as [Slot, [ItemGet, number]])));
-  const allSlots = new Set<Slot>(random.shuffle(slots));
-  const itemToSlot = new Map<ItemGet, Slot>();
-  const slotType = (slot: Slot): string => slot.slotType ? slot.slotType[0] : 'c';
-  const buckets: {[type: string]: number} = {};
-
-  for (const slot of allSlots) {
-    itemToSlot.set(slot.item, slot);
+    random.shuffle(arr);
+    return arr;
   }
 
-  const isSword = (item: Slot) => item.item.id < 4;
-  const swords = new Set<Slot>();
+  shuffle(graph: Graph, random: Random): Fill | null {
+    const items = this.items(graph, random);
+//      this.itemToUid.map(uid => this.worldGraph.nodes[uid] as ItemGet), random);
+    let has = Bits.from(new Set(items));
+    const fill = new Fill();
 
-    // Start with all items.
-    const hasArr = strategy.shuffleItems(
-        this.itemToUid.map(uid => this.worldGraph.nodes[uid] as ItemGet), random);
-    let has = Bits.from(hasArr);
-    const filling = new Array(this.locationToUid.length).fill(null);
-    // Start something...
-    while (hasArr.length) {
-      const bit = hasArr.pop()!;
-      if (!Bits.has(has, bit)) continue;
-      const item = this.item(bit);
-      has = Bits.without(has, bit);
-      const reachable =
-          [...this.traverse(has, filling)].filter(n => filling[n] == null);
+  //   if (this.flags.guaranteeSword()) {
+  //     // pick a sword at random and put it in slot 0
+  //     // TODO: if exits shuffled then find a slot in zero-sphere.
+  //   }
 
-      // NOTE: shuffle the whole thing b/c some items can't
-      // go into some slots, so try the next one.
-      strategy.shuffleSlots(item, reachable, random);
-      // For now, we don't have any way to know...
-      let found = false;
-      for (const slot of reachable) {
-        if (filling[slot] == null &&
-            slot !== this.win &&
-            fits(this.location(slot), item)) {
-          if (slot > 100) throw new Error('Something went horribly wrong');
-          filling[slot] = bit;
-          found = true;
-          break;
-        }
-      }
-      if (!found) return null;
-    }
-    return filling;
+
+  //   const slots: Slot[] = graph.nodes.filter(s => s instanceof Slot && s.slots && !s.isFixed()) as Slot[];
+  // const allItems =
+  //         new Map<Slot, [ItemGet, number]>(
+  //             random.shuffle(slots.map((s: Slot) =>
+  //                                      [s, [s.item, s.itemIndex]] as [Slot, [ItemGet, number]])));
+  // const allSlots = new Set<Slot>(random.shuffle(slots));
+  // const itemToSlot = new Map<ItemGet, Slot>();
+  // const slotType = (slot: Slot): string => slot.slotType ? slot.slotType[0] : 'c';
+  // const buckets: {[type: string]: number} = {};
+
+  // for (const slot of allSlots) {
+  //   itemToSlot.set(slot.item, slot);
+  // }
+
+  // const isSword = (item: Slot) => item.item.id < 4;
+  // const swords = new Set<Slot>();
+
+  //   // Start with all items.
+  //   const hasArr = strategy.shuffleItems(
+  //       this.itemToUid.map(uid => this.worldGraph.nodes[uid] as ItemGet), random);
+  //   let has = Bits.from(hasArr);
+  //   const filling = new Array(this.locationToUid.length).fill(null);
+  //   // Start something...
+  //   while (hasArr.length) {
+  //     const bit = hasArr.pop()!;
+  //     if (!Bits.has(has, bit)) continue;
+  //     const item = this.item(bit);
+  //     has = Bits.without(has, bit);
+  //     const reachable =
+  //         [...this.traverse(has, filling)].filter(n => filling[n] == null);
+
+  //     // NOTE: shuffle the whole thing b/c some items can't
+  //     // go into some slots, so try the next one.
+  //     strategy.shuffleSlots(item, reachable, random);
+  //     // For now, we don't have any way to know...
+  //     let found = false;
+  //     for (const slot of reachable) {
+  //       if (filling[slot] == null &&
+  //           slot !== this.win &&
+  //           fits(this.location(slot), item)) {
+  //         if (slot > 100) throw new Error('Something went horribly wrong');
+  //         filling[slot] = bit;
+  //         found = true;
+  //         break;
+  //       }
+  //     }
+  //     if (!found) return null;
+  //   }
+    return fill;
 
 
   }

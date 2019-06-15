@@ -3,56 +3,34 @@ import {Bits} from '../bits.js';
 import {FlagSet} from '../flagset.js';
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
-import { seq } from '../rom/util.js';
+import {seq} from '../rom/util.js';
 
-declare const SLOTINDEX: unique symbol;
-declare const ITEMINDEX: unique symbol;
+export type SlotIndex = number & {__slotIndex__: never};
+export type ItemIndex = number & {__itemIndex__: never};
+export type SlotId = number & {__slotId__: never};
+export type ItemId = number & {__itemId__: never};
 
-// NOTE: a tagged newtype would be better here, but TS won't take it as a key
-// export type SlotKey = {[SLOTINDEX]: never};
-// export type ItemKey = {[ITEMINDEX]: never};
-// type KeyOf<T> = T extends SlotIndex ? SlotKey : T extends ItemIndex ? ItemKey : {};
-export type SlotIndex = 'slotIndex'; // typeof SLOTINDEX; //  & number;
-export type ItemIndex = 'itemIndex'; // typeof ITEMINDEX; //  & number;
+export type Keyed<_K, V> = Array<V>;
+export type ReadonlyKeyed<_K, V> = ReadonlyArray<V>;
 
-export function SlotIndex(i: number): SlotIndex { return i as any; }
-export function ItemIndex(i: number): ItemIndex { return i as any; }
-
-// interface Keys<V> {
-//   [SLOTINDEX]: {[SLOTINDEX]: V};
-//   [ITEMINDEX]: {[ITEMINDEX]: V};
-// }
-
-interface Keys<V> {
-  slotIndex: {slotIndex: V};
-  itemIndex: {itemIndex: V};
-}
-
-// export type SlotArray<V> = Array<unknown> & {[SLOTINDEX]: V};
-// export type ReadonlySlotArray<V> = ReadonlyArray<unknown> & {readonly [SLOTINDEX]: V};
-
-// export type ItemArray<V> = Array<unknown> & {[ITEMINDEX]: V};
-// export type ReadonlyItemArray<V> = ReadonlyArray<unknown> & {readonly [ITEMINDEX]: V};
-
-// export type Keyed<K, V> = Array<unknown> & {[E in keyof KeyOf<K>]: V};
-// export type ReadonlyKeyed<K extends keyof Keys, V> = ReadonlyArray<unknown> & {readonly [E in keyof Keys[K]]: V};
-
-
-export type Keyed<K extends keyof Keys<V>, V> = Array<unknown> & Keys<V>[K];
-export type ReadonlyKeyed<K extends keyof Keys<V>, V> = ReadonlyArray<unknown> & Keys<V>[K];
-
-export function Keyed<K extends keyof Keys<V>, V>() { return [] as any; }
+// declare const s: SlotIndex;
+// declare const i: ItemIndex;
+// const a: Keyed<SlotIndex, ItemIndex> = [];
+// const x = a[s];
+// const [] = [s, i, a, x];
 
 export interface Node {
   item?: number; // only set for legit items/slots
   name:  string;
-  condition: number; // condition number for tracking this node
-  //index: number;
+  condition: number; // flag/condition number for tracking this node (e.g. 0x248 for flight)
+  index: number;
 }
 export interface SlotNode extends Node {
+  item?: SlotId;
   index: SlotIndex;
 }
 export interface ItemNode extends Node {
+  item?: ItemId;
   index: ItemIndex;
 }
 
@@ -80,32 +58,54 @@ export interface Graph {
   readonly unlocks: ReadonlyKeyed<ItemIndex, readonly SlotIndex[]>;
 }
 
-export class Fill {
+class GenericFill<S extends number, I extends number> {
   /** Maps location to item. */
-  slots: Keyed<SlotIndex, ItemIndex> = Keyed();
+  slots: Keyed<S, I> = [];
   /** Maps item to location. */
-  items: Keyed<ItemIndex, SlotIndex> = Keyed();
+  items: Keyed<I, S> = [];
 
-  set(slot: SlotIndex, item: ItemIndex) {
+  set(slot: S, item: I) {
     if (this.slots[slot] != null) throw new Error(`already filled slot ${slot}`);
     if (this.items[item] != null) throw new Error(`already filled item ${item}`);
     this.slots[slot] = item;
     this.items[item] = slot;
   }
+
+  hasSlot(slot: S): boolean {
+    return this.slots[slot] != null;
+  }
+
+  hasItem(item: I): boolean {
+    return this.items[item] != null;
+  }
 }
+
+export type Fill = GenericFill<SlotId, ItemId>;
+//export const Fill: {new(): Fill} = GenericFill;
+type IndexFill = GenericFill<SlotIndex, ItemIndex>;
+
+function expandFill(g: Graph, f: IndexFill): Fill {
+  const out = new GenericFill<SlotId, ItemId>();
+  for (let s = g.fixed; s < g.slots.length; s++) {
+    const i: ItemIndex = f.slots[s];
+    out.set(g.slots[s].item!, g.items[i].item!);
+  }
+  return out;
+}
+
 
 export interface Shuffle {
   shuffle(graph: Graph, random: Random): Fill | null;
 }
 
 /** @return The set of reachable slots. */
-export function traverse(graph: Graph, fill: Fill, has: Bits): Set<SlotIndex> {
+export function traverse(graph: Graph, fill: IndexFill, has: Bits): Set<SlotIndex> {
   // NOTE: we can't use isArray because the non-bigint polyfill IS an array
   has = Bits.clone(has);
   const reachable = new Set<SlotIndex>();
   const queue = new Set<SlotIndex>();
   for (let i = 0; i < graph.slots.length; i++) {
-    queue.add(SlotIndex(i));
+    queue.add(i as SlotIndex);
   }
   for (const n of queue) {
     queue.delete(n);
@@ -146,20 +146,21 @@ export function traverse(graph: Graph, fill: Fill, has: Bits): Set<SlotIndex> {
 //  - Mimics may not go into npcs, triggers, or boss drops.
 
 enum Type {
-  MIMIC = 0,
-  CONSUMABLE = 1,
-  KEY = 2,
-  BOSS_DROP = 3,
-  NPC = 4,
+  EMPTY = 0,
+  MIMIC = 1,
+  CONSUMABLE = 2,
+  KEY = 3,
+  BOSS_DROP = 4,
+  NPC = 5,
   // TODO - separate out MAGIC = 5, TRIGGER = 6?
-  TRIGGER = 5,
+  TRIGGER = 6,
 }
 
 // TODO - pull out a base class with fits, etc.
 export class AssumedFill implements Shuffle {
   // TODO - other configuration?
 
-  slotTypes: Type[];
+  slotTypes: ReadonlyKeyed<SlotId | ItemId, Type | undefined>;
 
   shuffleTraps: boolean = false;
   shuffleFull: boolean = false;
@@ -186,13 +187,10 @@ export class AssumedFill implements Shuffle {
     this.slotTypes = seq(0x7c, i => {
       if (triggers.has(i)) return Type.TRIGGER;
       if (i >= 0x70) return Type.MIMIC;
-      if (i > 0x48) return Type.CONSUMABLE;
-      // if (i >= 0x41) return SlotType.MAGIC;
       const item = rom.items[i];
-      if (!item.unique) return Type.CONSUMABLE;
-      if (chests.has(i)) return Type.KEY;
+      if (chests.has(i)) return item && item.unique ? Type.KEY : Type.CONSUMABLE;
       if (bossDrops.has(i)) return Type.BOSS_DROP;
-      return Type.NPC;
+      return item && item.unique ? Type.NPC : Type.EMPTY;
     });
 
     for (const f of flags.get('S') || []) {
@@ -201,20 +199,21 @@ export class AssumedFill implements Shuffle {
     }
   }
 
-  private fits(graph: Graph, slot: number, item: number): boolean {
-    const slotType = this.slotTypes[slot];
+  private fits(slot: SlotId, item: ItemId /* , uniquesLeft: boolean */): boolean {
+    const slotType = this.slotTypes[slot] || Type.EMPTY;
     if (item >= 0x70) {
       // Mimics
       if (!this.shuffleTraps) return slotType === Type.MIMIC;
       if (!this.shuffleFull) return slotType <= Type.CONSUMABLE;
       return slotType <= Type.KEY;
-    } else if (this.rom.items[item].unique) {
+    } else if (item <= 0x48 && this.rom.items[item].unique) {
       // Unique item
       if (!this.shuffleFull) return slotType >= Type.KEY;
       if (!this.shuffleTraps) return slotType !== Type.MIMIC;
       return true;
     }
     // Consumable
+    // if (uniquesLeft && slotType > Type.CONSUMABLE) return false;
     if (!this.shuffleTraps) return slotType !== Type.MIMIC;
     return slotType !== Type.TRIGGER;
   }
@@ -238,66 +237,85 @@ export class AssumedFill implements Shuffle {
     const items = this.items(graph, random);
 //      this.itemToUid.map(uid => this.worldGraph.nodes[uid] as ItemGet), random);
     let has = Bits.from(new Set(items));
-    const fill = new Fill();
+    const fill: IndexFill = new GenericFill();
 
-  //   if (this.flags.guaranteeSword()) {
-  //     // pick a sword at random and put it in slot 0
-  //     // TODO: if exits shuffled then find a slot in zero-sphere.
-  //   }
+    if (this.flags.guaranteeSword()) {
+      // pick a sword at random and put it in slot 0
+      // TODO: if exits shuffled then find a slot in zero-sphere.
+    }
 
-
-  //   const slots: Slot[] = graph.nodes.filter(s => s instanceof Slot && s.slots && !s.isFixed()) as Slot[];
-  // const allItems =
-  //         new Map<Slot, [ItemGet, number]>(
-  //             random.shuffle(slots.map((s: Slot) =>
-  //                                      [s, [s.item, s.itemIndex]] as [Slot, [ItemGet, number]])));
-  // const allSlots = new Set<Slot>(random.shuffle(slots));
-  // const itemToSlot = new Map<ItemGet, Slot>();
-  // const slotType = (slot: Slot): string => slot.slotType ? slot.slotType[0] : 'c';
-  // const buckets: {[type: string]: number} = {};
-
-  // for (const slot of allSlots) {
-  //   itemToSlot.set(slot.item, slot);
-  // }
-
-  // const isSword = (item: Slot) => item.item.id < 4;
-  // const swords = new Set<Slot>();
-
-  //   // Start with all items.
-  //   const hasArr = strategy.shuffleItems(
-  //       this.itemToUid.map(uid => this.worldGraph.nodes[uid] as ItemGet), random);
-  //   let has = Bits.from(hasArr);
-  //   const filling = new Array(this.locationToUid.length).fill(null);
-  //   // Start something...
-  //   while (hasArr.length) {
-  //     const bit = hasArr.pop()!;
-  //     if (!Bits.has(has, bit)) continue;
-  //     const item = this.item(bit);
-  //     has = Bits.without(has, bit);
-  //     const reachable =
-  //         [...this.traverse(has, filling)].filter(n => filling[n] == null);
-
-  //     // NOTE: shuffle the whole thing b/c some items can't
-  //     // go into some slots, so try the next one.
-  //     strategy.shuffleSlots(item, reachable, random);
-  //     // For now, we don't have any way to know...
-  //     let found = false;
-  //     for (const slot of reachable) {
-  //       if (filling[slot] == null &&
-  //           slot !== this.win &&
-  //           fits(this.location(slot), item)) {
-  //         if (slot > 100) throw new Error('Something went horribly wrong');
-  //         filling[slot] = bit;
-  //         found = true;
-  //         break;
-  //       }
-  //     }
-  //     if (!found) return null;
-  //   }
-    return fill;
-
-
+    for (let bit: ItemIndex | undefined = items.pop(); bit != null; bit = items.pop()) {
+      if (!Bits.has(has, bit)) continue; // item already placed: skip
+      const itemId = graph.items[bit].item;
+      if (!itemId) throw new Error(`bad item: ${Object.entries(graph.items[bit])}`);
+      has = Bits.without(has, bit);
+      const reachable = [...traverse(graph, fill, has)];
+      random.shuffle(reachable);
+      let found = false;
+      for (const slot of reachable) {
+        const slotId = graph.slots[slot].item;
+        if (slotId == null) continue;
+        if (!fill.hasSlot(slot) && this.fits(slotId, itemId /*, true*/)) { // slot !== this.win &&
+          fill.set(slot, bit);
+          found = true;
+          break;
+        }
+      }
+      if (!found) return null;
+    }
+    return this.fill(expandFill(graph, fill), random);
   }
 
+  fill(fill: Fill, random: Random): Fill | null {
+    // Figure out what still needs to be filled.  Will be mostlu consumables or mimics.
+    // Start with unique items since we have rules to prevent putting uniques in non-unique
+    // slots (if the flag is set) but not vice versa.
 
+    const uniques: ItemId[] = [];
+    const consumables: ItemId[] = [];
+    const mimics: ItemId[] = [];
+    // earlySlots are filled first, if they're non-empty.
+    const earlySlots: SlotId[] = [];
+    const otherSlots: SlotId[] = [];
+    for (let i = 0; i < 0x7c; i++) {
+      if (!fill.hasSlot(i as SlotId)) {
+        const slotType = this.slotTypes[i] || Type.EMPTY;
+        if (slotType <= (this.shuffleFull ? Type.NPC : Type.CONSUMABLE)) {
+          otherSlots.push(i as SlotId);
+        } else {
+          earlySlots.push(i as SlotId);
+        }
+      }
+      if (!fill.hasItem(i as ItemId)) {
+        if (i <= 0x48 && this.rom.items[i].unique) {
+          uniques.push(i as ItemId);
+        } else if (i >= 0x7c) {
+          mimics.push(i as ItemId);
+        } else {
+          consumables.push(i as ItemId);
+        }
+      }
+    }
+    random.shuffle(earlySlots);
+    random.shuffle(otherSlots);
+    random.shuffle(uniques);
+    random.shuffle(consumables);
+
+    for (const item of [...uniques, ...mimics, ...consumables]) {
+      // Try to place the item, starting with earlies first.
+      // Mimics come before consumables because there's fewer places they can go.
+      // Since key slots are allowed to contain consumables (even in full shuffle),
+      // we need to make sure that the uniques go into those slots first.
+      let found = false;
+      for (const slot of (earlySlots.length ? earlySlots : otherSlots)) {
+        if (this.fits(slot, item /*, false*/)) {
+          fill.set(slot, item);
+          found = true;
+          break;
+        }
+      }
+      if (!found) return null;
+    }
+    return fill;
+  }
 }

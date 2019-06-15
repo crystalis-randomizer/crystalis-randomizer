@@ -335,6 +335,8 @@ export class World {
     //  - would be nice to have packed bigints if possible?
     // Any slots that are NOT requirements should be filtered out
 
+    const item
+
 
     // Build up a graph?!?
     // Will need to map to smaller numbers?

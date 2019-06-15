@@ -1,4 +1,4 @@
-import {Terrain, MutableRequirement} from './condition.js'; // NOTE: cycle
+import {Terrain} from './condition.js'; // NOTE: cycle
 import {Location} from '../rom/location.js';
 import {UnionFind} from '../unionfind.js';
 

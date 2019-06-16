@@ -600,6 +600,13 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   // Leaf elder in house ($0d @ $c0) ~ sword of wind redundant flag
   dialog(0x0d, 0xc0)[2].flags = [];
 
+  // Leaf rabbit ($13) normally stops setting its flag after prison door opened,
+  // but that doesn't necessarily open mt sabre.  Instead (a) trigger on 047
+  // (set by 8d upon entering elder's cell).  Also make sure that that path also
+  // provides the needed flag to get into mt sabre.
+  dialog(0x13)[3].condition = 0x047;
+  dialog(0x13)[3].flags = [0x0a9];
+
   // Windmill guard ($14 @ $0e) shouldn't despawn after abduction (038),
   // but instead after giving the item (232).
   spawns(0x14, 0x0e)[1] = ~0x232; // replace flag ~038 => ~232

@@ -3,6 +3,7 @@ import {Boss, Check, Capability, Condition, Event, Item, Magic, MutableRequireme
         Slot, Terrain, WallType, meet, memoize, memoize2} from './condition.js';
 import {LocationList, LocationListBuilder} from './locationlist.js';
 import {Overlay} from './overlay.js';
+import * as shuffle from './shuffle.js';
 import {FlagSet} from '../flagset.js';
 import {hex} from '../rom/util.js';
 import {Rom} from '../rom.js';
@@ -335,8 +336,9 @@ export class World {
     //  - would be nice to have packed bigints if possible?
     // Any slots that are NOT requirements should be filtered out
 
-    const item
-
+    // Build up shuffle.Graph
+    // First figure out which items and events are actually needed.
+    const graph = makeGraph(reqs, rom);
 
     // Build up a graph?!?
     // Will need to map to smaller numbers?
@@ -400,22 +402,7 @@ w.area = (tile: TileId, f: (x:number)=>string = h) => {
   return `${hex(t)}\n${group(s, 16, ' ').join('\n')}\ncount = ${s.length}\nroutes = ${r}${edges.join('')}`;
 };
 
-w.whatFlag = (f: number) => {
-  const enums = {Boss, Event, Capability, Item, Magic};
-  for (const enumName in enums) {
-    const e = enums[enumName as keyof typeof enums] as any;
-    for (const elem in e) {
-      if (e[elem] === f || Array.isArray(e[elem]) && e[elem][0][0] === f) return `${enumName}.${elem}`;
-    }
-  }
-  for (const l of rom.locations) {
-    if (!l.used) continue;
-    for (const fl of l.flags) {
-      if (fl.flag === f) return `Location ${l.id.toString(16)} (${l.name}) Flag ${fl.ys},${fl.xs}`;
-    }
-  }
-  return h(f);
-};
+    w.whatFlag = (f: number) => conditionName(f, rom);
 
     w.reqs = reqs;
     console.log('reqs\n' + [...reqs].sort(([a],[b])=>a-b).map(([s, r]) => `${w.whatFlag(s)}: ${dnf(r,w.whatFlag)}`).join('\n'));
@@ -436,4 +423,103 @@ w.whatFlag = (f: number) => {
   }
 }
 
+function makeGraph(reqs: Map<Slot, MutableRequirement>, rom: Rom): shuffle.Graph {
+  // Figure out which items are used, build two sets.
+  const allConditionsSet = new Set<Condition>();
+  const allSlotsSet = new Set<Slot>();
+  for (const [slot, req] of reqs) {
+    allSlotsSet.add(slot);
+    for (const cs of req) {
+      for (const c of cs) {
+        allConditionsSet.add(c);
+      }
+    }
+  }
+
+  function isItem(c: number): boolean { return c >= 0x200 && c < 0x280; }
+  const allConditions = [...allConditionsSet].filter(c => !isItem(c)).sort();
+  const allItems = [...allConditionsSet].filter(isItem).sort();
+  const allSlots = [...allSlotsSet].filter(isItem).sort();
+  const fixed = allConditions.length;
+
+  const makeNode = (condition: number, index: number): shuffle.Node =>
+      ({name: conditionName(condition, rom), condition, index} as shuffle.Node);
+  const conditionNodes = allConditions.map(makeNode);
+  const itemNodes =
+      allItems.map((c, i) => Object.assign(makeNode(c, i + fixed), {item: (i & 0x7f) as any}));
+
+
+
+
+
+
+  const conditionIndexMap =
+      new Map<Condition, shuffle.ItemIndex>(
+          allConditions.map((c, i) => [c, i as shuffle.ItemIndex]));
+  const slotIndexMap =
+      new Map<Slot, shuffle.SlotIndex>(
+          allSlots.map((c, i) => [c, i as shuffle.SlotIndex]));
+
+  const itemIndexMap = new Map<shuffle.ItemId, shuffle.ItemIndex>();
+  const conditions = [...conditionSet].sort()
+      .map((c, i) => makeNode(c, i) as shuffle.ItemNode & shuffle.SlotNode);
+  const items: shuffle.ItemNode[] = [...conditions];
+  for (const item of [...itemSet].sort()) {
+    const node = makeNode(item, items.length) as shuffle.ItemNode;
+    node.item = (item & 0x7f) as shuffle.ItemId;
+    items.push(node);
+  }
+  
+  const slots: shuffle.SlotNode[] = [...conditions];
+  for (const [slot, req] of reqs) {
+    // NOTE: need map from full to compressed.
+    for (const cs of req) {
+      for (const c of cs) {
+        (c >= 0x200 && c < 0x280 ? itemSet : conditionSet).add(c);
+      }
+    }
+    
+  }
+  const unlocks: Array<shuffle.SlotIndex[]>
+  return {fixed, slots, items, graph, unlocks};
+
+
+[...reqs].sort(([a],[b])=>a-b).map(([s, r]) => `${w.whatFlag(s)}: ${dnf(r,w.whatFlag)}`)
+
+function conditionName(f: number, rom: Rom): string {
+  const enums = {Boss, Event, Capability, Item, Magic};
+  for (const enumName in enums) {
+    const e = enums[enumName as keyof typeof enums] as any;
+    for (const elem in e) {
+      if (e[elem] === f || Array.isArray(e[elem]) && e[elem][0][0] === f) {
+        return `${enumName}.${elem}`;
+      }
+    }
+  }
+  for (const l of rom.locations) {
+    if (!l.used) continue;
+    for (const fl of l.flags) {
+      if (fl.flag === f) {
+        return `Location ${l.id.toString(16)} (${l.name}) Flag ${fl.ys},${fl.xs}`;
+      }
+    }
+  }
+  return f < 0 ? `~${(~f).toString(16).padStart(2, '0')}` : f.toString(16).padStart(2, '0');
+}
+
 /////////////
+
+class BiMap<T> {
+  private forward: T[] = [];
+  private reverse = new Map<T, number>();
+
+  add(elem: T): number {
+    let result = this.reverse.get(elem);
+    if (!result) this.reverse.set(elem, result = this.forward.push(elem) - 1);
+    return result;
+  }
+
+  get(index: number): T {
+    return this.forward[index];
+  }
+}

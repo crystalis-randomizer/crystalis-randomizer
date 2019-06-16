@@ -12,7 +12,7 @@ export namespace Event {
   export const ZEBU_IN_CAVE = Condition(0x037);
   export const LEAF_ABDUCTION = Condition(0x038);
   export const RESCUED_CHILD = Condition(0x045);
-  export const DWARF_MOTHER = Condition(0x052);
+  export const DWARF_MOTHER = Condition(0x052); // talked to w/ telepathy
   export const DWARF_CHILD = Condition(0x053); // following
   export const STOM_IN_SWAN = Condition(0x061);
   export const DRAYGON1 = Condition(0x06c);

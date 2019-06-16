@@ -1,6 +1,6 @@
 import {Boss, Capability, Check, Condition, Event, Item, Magic, MutableRequirement,
         Requirement, Slot, Terrain, WallType, and, meet, or} from './condition.js';
-import {TileId} from './geometry.js';
+import {TileId, ScreenId} from './geometry.js';
 import {FlagSet} from '../flagset.js';
 import {Rom} from '../rom.js';
 import {Boss as RomBoss} from '../rom/bosses.js';
@@ -98,6 +98,8 @@ export class Overlay {
   // npc id -> wanted item
   private readonly tradeIns = new Map<number, readonly [readonly [Condition]]>();
 
+  private readonly shootingStatues = new Set<ScreenId>();
+
   constructor(readonly rom: Rom, readonly flags: FlagSet) {
     // TODO - adjust based on flagset?
     for (const flag of RELEVANT_FLAGS) {
@@ -108,6 +110,13 @@ export class Overlay {
       const cond = item.id === 0x1d ? Capability.BUY_HEALING : Item(item.id);
       for (let i = 0; i < item.tradeIn.length; i += 6) {
         this.tradeIns.set(item.tradeIn[i], cond);
+      }
+    }
+    for (const loc of rom.locations) {
+      for (const spawn of loc.spawns) {
+        if (spawn.isMonster() && spawn.id === 0x3f) { // shooting statues
+          this.shootingStatues.add(ScreenId.from(loc, spawn));
+        }
       }
     }
     //   0x1d, // medical herb
@@ -185,6 +194,36 @@ export class Overlay {
     if (loc === 0x60 || loc === 0x68) effects |= 0x10;
     // NOTE: only the top half-screen in underground channel is dolphinable
     if (loc === 0x64 && ((tile & 0xf0f0) < 0x90)) effects |= 0x10;
+    if (this.shootingStatues.has(ScreenId.fromTile(tile))) effects |= 0x01;
+    if (effects & 0x20) { // slope
+      // Determine length of slope: short slopes are climbable.
+      // 6-8 are both doable with boots
+      // 0-5 is doable with no boots
+      // 9 is doable with rabbit boots only (not aware of any of these...)
+      // 10 is right out
+      const getEffects = (tile: TileId): number => {
+        const l = this.rom.locations[tile >>> 16];
+        const screen = l.screens[(tile & 0xf000) >>> 12][(tile & 0xf00) >>> 8];
+        return this.rom.tileEffects[l.tileEffects - 0xb3]
+            .effects[this.rom.screens[screen].tiles[tile & 0xff]];
+      };
+      let bottom = tile;
+      let height = -1;
+      while (getEffects(bottom) & 0x20) {
+        bottom = TileId.add(bottom, 1, 0);
+        height++;
+      }
+      let top = tile;
+      while (getEffects(top) & 0x20) {
+        top = TileId.add(top, -1, 0);
+        height++;
+      }
+      if (height < 6) {
+        effects &= ~0x20;
+      } else if (height < 9) {
+        effects |= 0x40;
+      }
+    }
     return TERRAINS[effects];
   }
 
@@ -308,6 +347,9 @@ export class Overlay {
     }
 
     switch (id) {
+    case 0x14: // woken-up windmill guard
+      // skip because we tie the item to the sleeping one.
+      if (loc.spawns.find(l => l.isNpc() && l.id === 0x15)) return {};
     case 0x25: // amazones guard
       result.hitbox = {x0: 0, x1: 2, y0: 0, y1: 1};
       statueOr(Magic.CHANGE, Magic.PARALYSIS);
@@ -328,9 +370,6 @@ export class Overlay {
     case 0x85: // stoned pair
       statueOr(Item.FLUTE_OF_LIME);
       break;
-    case 0x14: // woken-up windmill guard
-      // skip because we tie the item to the sleeping one.
-      if (loc.spawns.find(l => l.isNpc() && l.id === 0x15)) return {};
     }
 
     // intersect spawn conditions
@@ -407,6 +446,10 @@ export class Overlay {
         {condition: and(Magic.TELEPATHY, Boss.INSECT), slot},
         {condition: Event.RESCUED_CHILD, slot},
       ]};
+    } else if (id === 0x1f) { // dwarf child
+      return {check: [
+        {condition: Event.DWARF_MOTHER, slot: Slot(Event.DWARF_CHILD)},
+      ]};
     }
 
     for (const d of npc.globalDialogs) {
@@ -478,7 +521,7 @@ export class Overlay {
       [Capability.MONEY, Capability.SWORD], // TODO - clear this up
       [Capability.CLIMB_WATERFALL, Magic.FLIGHT],
       [Capability.SHOOTING_STATUE, Magic.BARRIER], // TODO - allow shield ring?
-      [Capability.CLIMB_SLOPE, Item.RABBIT_BOOTS],
+      [Capability.CLIMB_SLOPE, Item.RABBIT_BOOTS, Magic.FLIGHT],
     ];
 
     if (this.flags.assumeGhettoFlight()) {
@@ -568,14 +611,15 @@ interface CapabilityData {
 // Static map of terrains.
 const TERRAINS: Array<Terrain | undefined> = (() => {
   const out = [];
-  for (let effects = 0; effects < 64; effects += 2) {
+  for (let effects = 0; effects < 128; effects++) {
     out[effects] = terrain(effects);
   }
   console.log('TERRAINS', out);
   return out;
 
   /**
-   * @param effects The $26 bits of tileeffects, plus $08 for swamp, $10 for dolphin
+   * @param effects The $26 bits of tileeffects, plus $08 for swamp, $10 for dolphin,
+   * $01 for shooting statues, $40 for short slope
    * @return undefined if the terrain is impassable.
    */
   function terrain(effects: number): Terrain | undefined {
@@ -585,11 +629,18 @@ const TERRAINS: Array<Terrain | undefined> = (() => {
       if (effects & 0x20) terrain.exit = Capability.CLIMB_WATERFALL;
       terrain.enter = or(Event.RIDE_DOLPHIN, Magic.FLIGHT);
     } else {
-      if (effects & 0x20) terrain.exit = Magic.FLIGHT; // slope
+      if (effects & 0x40) { // short slope
+        terrain.exit = Capability.CLIMB_SLOPE;
+      } else if (effects & 0x20) { // slope
+        terrain.exit = Magic.FLIGHT;
+      }
       if (effects & 0x02) terrain.enter = Magic.FLIGHT; // no-walk
     }
     if (effects & 0x08) { // swamp
       terrain.enter = (terrain.enter || [[]]).map(cs => Capability.TRAVEL_SWAMP[0].concat(cs));
+    }
+    if (effects & 0x01) { // shooting statues
+      terrain.enter = (terrain.enter || [[]]).map(cs => Capability.SHOOTING_STATUE[0].concat(cs));
     }
     return terrain;
   }

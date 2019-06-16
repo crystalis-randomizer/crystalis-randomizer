@@ -4,6 +4,7 @@ import {Boss, Check, Capability, Condition, Event, Item, Magic, MutableRequireme
 import {LocationList, LocationListBuilder} from './locationlist.js';
 import {Overlay} from './overlay.js';
 import * as shuffle from './shuffle.js';
+import {Bits} from '../bits.js';
 import {FlagSet} from '../flagset.js';
 import {hex} from '../rom/util.js';
 import {Rom} from '../rom.js';
@@ -22,6 +23,8 @@ export class World {
 
   // All tiles unioned by same reachability.
   private readonly tiles = new UnionFind<TileId>();
+
+  readonly graph: shuffle.Graph;
 
   // Exits between groups of different reachability.
   // Optional third element is list of requirements to use the exit.
@@ -189,8 +192,6 @@ export class World {
       }
     }
 
-    // TODO - add gas mask requirement for swamp...? (overlay?)
-
     for (const [bossTile, bossId] of bosses) {
       const loc = bossTile >> 16;
       const rage = bossId === 0xc3;
@@ -338,7 +339,7 @@ export class World {
 
     // Build up shuffle.Graph
     // First figure out which items and events are actually needed.
-    const graph = makeGraph(reqs, rom);
+    this.graph = makeGraph(reqs, rom);
 
     // Build up a graph?!?
     // Will need to map to smaller numbers?
@@ -442,49 +443,50 @@ function makeGraph(reqs: Map<Slot, MutableRequirement>, rom: Rom): shuffle.Graph
   const allSlots = [...allSlotsSet].filter(isItem).sort();
   const fixed = allConditions.length;
 
-  const makeNode = (condition: number, index: number): shuffle.Node =>
-      ({name: conditionName(condition, rom), condition, index} as shuffle.Node);
+  function makeNode(condition: number, index: number) {
+    return {name: conditionName(condition, rom), condition, index} as
+        shuffle.ItemNode & shuffle.SlotNode;
+  }
+  function itemNode(condition: number, index: number) {
+    return Object.assign(makeNode(condition, index + fixed), {item: (condition & 0x7f) as any});
+  }
   const conditionNodes = allConditions.map(makeNode);
-  const itemNodes =
-      allItems.map((c, i) => Object.assign(makeNode(c, i + fixed), {item: (i & 0x7f) as any}));
+  const itemNodes = allItems.map(itemNode);
+  const slotNodes = allSlots.map(itemNode);
 
+  const items: shuffle.ItemNode[] = [...conditionNodes, ...itemNodes];
+  const slots: shuffle.SlotNode[] = [...conditionNodes, ...slotNodes];
 
-
-
-
-
-  const conditionIndexMap =
+  const itemIndexMap =
       new Map<Condition, shuffle.ItemIndex>(
-          allConditions.map((c, i) => [c, i as shuffle.ItemIndex]));
+          items.map((c, i) => [c.condition as Condition, i as shuffle.ItemIndex]));
+  function getItemIndex(c: Condition): shuffle.ItemIndex {
+    const index = itemIndexMap.get(c);
+    if (index == null) throw new Error(`Missing item for ${c}`);
+    return index;
+  }
   const slotIndexMap =
       new Map<Slot, shuffle.SlotIndex>(
-          allSlots.map((c, i) => [c, i as shuffle.SlotIndex]));
+          slots.map((c, i) => [c.condition as Slot, i as shuffle.SlotIndex]));
 
-  const itemIndexMap = new Map<shuffle.ItemId, shuffle.ItemIndex>();
-  const conditions = [...conditionSet].sort()
-      .map((c, i) => makeNode(c, i) as shuffle.ItemNode & shuffle.SlotNode);
-  const items: shuffle.ItemNode[] = [...conditions];
-  for (const item of [...itemSet].sort()) {
-    const node = makeNode(item, items.length) as shuffle.ItemNode;
-    node.item = (item & 0x7f) as shuffle.ItemId;
-    items.push(node);
-  }
-  
-  const slots: shuffle.SlotNode[] = [...conditions];
+  const graph: Bits[][] = [];
+  const unlocksSet: Array<Set<shuffle.SlotIndex>> = [];
+
   for (const [slot, req] of reqs) {
     // NOTE: need map from full to compressed.
+    const s = slotIndexMap.get(slot);
+    if (s == null) throw new Error(`Missing slot for ${slot}`);
     for (const cs of req) {
-      for (const c of cs) {
-        (c >= 0x200 && c < 0x280 ? itemSet : conditionSet).add(c);
+      const is = [...cs].map(getItemIndex);
+      (graph[slot] || (graph[s] = [])).push(Bits.from(is));
+      for (const i of is) {
+        (unlocksSet[i] || (unlocksSet[i] = new Set())).add(s);
       }
     }
-    
   }
-  const unlocks: Array<shuffle.SlotIndex[]>
+  const unlocks = unlocksSet.map(x => [...x]);
   return {fixed, slots, items, graph, unlocks};
-
-
-[...reqs].sort(([a],[b])=>a-b).map(([s, r]) => `${w.whatFlag(s)}: ${dnf(r,w.whatFlag)}`)
+}
 
 function conditionName(f: number, rom: Rom): string {
   const enums = {Boss, Event, Capability, Item, Magic};
@@ -509,17 +511,3 @@ function conditionName(f: number, rom: Rom): string {
 
 /////////////
 
-class BiMap<T> {
-  private forward: T[] = [];
-  private reverse = new Map<T, number>();
-
-  add(elem: T): number {
-    let result = this.reverse.get(elem);
-    if (!result) this.reverse.set(elem, result = this.forward.push(elem) - 1);
-    return result;
-  }
-
-  get(index: number): T {
-    return this.forward[index];
-  }
-}

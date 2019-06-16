@@ -75,6 +75,9 @@ export namespace ScreenId {
       const loc = tileOrLoc as Location;
       return (loc.id << 8 | (coord.y >>> 8) << 4 | coord.x >>> 8) as ScreenId;
     };
+  export function fromTile(tile: TileId): ScreenId {
+    return (tile >>> 8) as ScreenId;
+  }
 }
 
 // 48-bit connection between two tiles.

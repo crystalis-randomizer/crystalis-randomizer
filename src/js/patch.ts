@@ -5,6 +5,7 @@ import {LogType, ProgressTracker,
         shuffle2 as shuffleDepgraph} from './depgraph.js';
 import {FetchReader} from './fetchreader.js';
 import {FlagSet} from './flagset.js';
+import {AssumedFill} from './graph/shuffle.js';
 import {World} from './graph/world.js';
 import {Random} from './random.js';
 import {Rom} from './rom.js';
@@ -157,7 +158,9 @@ export async function shuffle(rom: Uint8Array,
 
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.
-  new World(parsed, flags);
+  const w = new World(parsed, flags);
+  const fill = new AssumedFill(parsed, flags).shuffle(w.graph, random);
+  console.log('fill', fill);  
 
   // TODO - set omitItemGetDataSuffix and omitLocalDialogSuffix
   await shuffleDepgraph(parsed, random, log, flags, progress);

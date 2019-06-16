@@ -520,6 +520,13 @@ const preventNpcDespawns = (rom: Rom, flags: FlagSet) => {
   // Leaf elder in house ($0d @ $c0) ~ sword of wind redundant flag
   rom.npcs[0x0d].localDialogs.get(0xc0)![2].flags = [];
 
+  // Leaf rabbit ($13) normally stops setting its flag after prison door opened,
+  // but that doesn't necessarily open mt sabre.  Instead (a) trigger on 047
+  // (set by 8d upon entering elder's cell).  Also make sure that that path also
+  // provides the needed flag to get into mt sabre.
+  rom.npcs[0x13].localDialogs.get(-1)![3].condition = 0x047;
+  rom.npcs[0x13].localDialogs.get(-1)![3].flags = [0x0a9];
+
   // Windmill guard ($14 @ $0e) shouldn't despawn after abduction (038),
   // but instead after giving the item (232).
   rom.npcs[0x14].spawnConditions.get(0x0e)![1] = ~0x232; // replace flag ~038 => ~232

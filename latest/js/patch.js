@@ -358,6 +358,8 @@ const reversibleSwanGate = (rom) => {
 };
 const preventNpcDespawns = (rom, flags) => {
     rom.npcs[0x0d].localDialogs.get(0xc0)[2].flags = [];
+    rom.npcs[0x13].localDialogs.get(-1)[3].condition = 0x047;
+    rom.npcs[0x13].localDialogs.get(-1)[3].flags = [0x0a9];
     rom.npcs[0x14].spawnConditions.get(0x0e)[1] = ~0x232;
     rom.npcs[0x14].localDialogs.get(0x0e)[0].flags = [];
     rom.npcs[0x16].localDialogs.get(0x57)[0].flags = [];

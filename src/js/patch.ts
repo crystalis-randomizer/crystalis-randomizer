@@ -695,8 +695,8 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   // but that doesn't necessarily open mt sabre.  Instead (a) trigger on 047
   // (set by 8d upon entering elder's cell).  Also make sure that that path also
   // provides the needed flag to get into mt sabre.
-  dialog(0x13)[3].condition = 0x047;
-  dialog(0x13)[3].flags = [0x0a9];
+  dialog(0x13)[2].condition = 0x047;
+  dialog(0x13)[2].flags = [0x0a9];
 
   // Windmill guard ($14 @ $0e) shouldn't despawn after abduction (038),
   // but instead after giving the item (088)

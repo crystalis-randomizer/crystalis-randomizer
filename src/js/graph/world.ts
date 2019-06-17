@@ -51,7 +51,7 @@ export class World {
     const walls = new Map<ScreenId, WallType>();
     const bosses = new Map<TileId, number>();
     const npcs = new Map<TileId, number>();
-    const checks = new DefaultMap<TileId, Check[]>(() => []);
+    const checks = new DefaultMap<TileId, Set<Check>>(() => new Set());
     const monsters = new Map<TileId, number>(); // elemental immunities
     const allExits = new Set<TileId>();
 
@@ -155,7 +155,9 @@ export class World {
                 const y = y0 + dy;
                 const tile = TileId.from(location, {x, y});
                 if (trigger.terrain) meetTerrain(tile, trigger.terrain);
-                if (trigger.check) checks.get(tile).push(...trigger.check);
+                for (const check of trigger.check || []) {
+                  checks.get(tile).add(check);
+                }
               }
             }
           }
@@ -171,7 +173,9 @@ export class World {
                 const y = ys + 16 * dy;
                 const tile = TileId.from(location, {x, y});
                 if (npc.terrain) meetTerrain(tile, npc.terrain);
-                if (npc.check) checks.get(tile).push(...npc.check);
+                for (const check of npc.check || []) {
+                  checks.get(tile).add(check);
+                }
               }
             }
           }
@@ -182,7 +186,7 @@ export class World {
         } else if (spawn.isChest()) {
           // TODO - if spawn.id >= $70 then differentiate?
           const id = spawn.id <  0x70 ? spawn.id : mimic++;
-          checks.get(TileId.from(location, spawn)).push(Check.chest(id));
+          checks.get(TileId.from(location, spawn)).add(Check.chest(id));
         } else if (spawn.isMonster()) {
           // TODO - compute money-dropping monster vulnerabilities and add a trigger
           // for the MONEY capability dependent on any of the swords.
@@ -203,19 +207,20 @@ export class World {
 
       const merge = memoize((t: Terrain) => Terrain.meet(t, {exit: kill, exitSouth: kill}));
       const tileBase = bossTile & ~0xff;
+      const condition = overlay.bossRequirements(boss);
+      const check = {slot: Slot(kill), condition};
       for (let i = 0; i < 0xf0; i++) {
         const tile = TileId(tileBase | i);
         const t = terrains.get(tile);
         if (!t) continue;
         terrains.set(tile, merge(t));
+        checks.get(tile).add(check);
       }
-      const condition = overlay.bossRequirements(boss);
-      const checkTile = rage ? TileId(tileBase | 0x88) : bossTile;
-      checks.get(checkTile).push({slot: Slot(kill), condition});
+      // const checkTile = rage ? TileId(tileBase | 0x88) : bossTile;
     }
 
     for (const check of overlay.locations() || []) {
-      checks.get(check.tile).push(check);
+      checks.get(check.tile).add(check);
     }
 
     // let s = 1;
@@ -319,11 +324,22 @@ export class World {
       reqs.get(Slot(capability)).addAll(condition);
     }
 
-    for (const [tile, checklist] of checks) {
-      for (const {slot, condition = [[]]} of checklist) {
+    // Consolidate all the checks into a single set.
+    for (const [tile, checkset] of checks) {
+      const root = this.tiles.find(tile);
+      if (tile === root) continue;
+      for (const check of checkset) {
+        checks.get(root).add(check);
+      }
+      checks.delete(tile);
+    }
+
+    // Now all keys are unionfind roots.
+    for (const [tile, checkset] of checks) {
+      for (const {slot, condition = [[]]} of checkset) {
         const req = reqs.get(slot);
         for (const r1 of condition) {
-          for (const r2 of builder.routes.routes.get(this.tiles.find(tile)) || []) {
+          for (const r2 of builder.routes.routes.get(tile) || []) {
             req.addList([...r1, ...r2]);
           }
         }
@@ -487,11 +503,12 @@ function makeGraph(reqs: Map<Slot, MutableRequirement>, rom: Rom): shuffle.Graph
     }
     for (const cs of req) {
       const is = [...cs].map(getItemIndex);
-      (graph[slot] || (graph[s] = [])).push(Bits.from(is));
+      (graph[s] || (graph[s] = [])).push(Bits.from(is));
       for (const i of is) {
         (unlocksSet[i] || (unlocksSet[i] = new Set())).add(s);
       }
     }
+    // TODO - loop thru all slots - find any missing and show useful "not provided" message
   }
   const unlocks = unlocksSet.map(x => [...x]);
   return {fixed, slots, items, graph, unlocks};

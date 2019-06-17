@@ -337,10 +337,6 @@ export class World {
     //  - would be nice to have packed bigints if possible?
     // Any slots that are NOT requirements should be filtered out
 
-    // Build up shuffle.Graph
-    // First figure out which items and events are actually needed.
-    this.graph = makeGraph(reqs, rom);
-
     // Build up a graph?!?
     // Will need to map to smaller numbers?
     // Can we compress lazily?
@@ -421,6 +417,11 @@ w.area = (tile: TileId, f: (x:number)=>string = h) => {
     //  - NPC will need to come from a metastructure of shuffled NPCs, maybe?
     //  --- if we move akahana out of brynmaer, need to know which item is which
 
+
+    // Build up shuffle.Graph
+    // First figure out which items and events are actually needed.
+    this.graph = makeGraph(reqs, rom);
+
   }
 }
 
@@ -436,6 +437,8 @@ function makeGraph(reqs: Map<Slot, MutableRequirement>, rom: Rom): shuffle.Graph
       }
     }
   }
+  // Nothing depends on this but we should track it anyway.
+  allConditionsSet.add(Boss.DRAYGON2[0][0]);
 
   function isItem(c: number): boolean { return c >= 0x200 && c < 0x280; }
   const allConditions = [...allConditionsSet].filter(c => !isItem(c)).sort();
@@ -462,7 +465,9 @@ function makeGraph(reqs: Map<Slot, MutableRequirement>, rom: Rom): shuffle.Graph
           items.map((c, i) => [c.condition as Condition, i as shuffle.ItemIndex]));
   function getItemIndex(c: Condition): shuffle.ItemIndex {
     const index = itemIndexMap.get(c);
-    if (index == null) throw new Error(`Missing item for ${c}`);
+    if (index == null) {
+      throw new Error(`Missing item $${c.toString(16)}: ${conditionName(c, rom)}`);
+    }
     return index;
   }
   const slotIndexMap =
@@ -475,7 +480,11 @@ function makeGraph(reqs: Map<Slot, MutableRequirement>, rom: Rom): shuffle.Graph
   for (const [slot, req] of reqs) {
     // NOTE: need map from full to compressed.
     const s = slotIndexMap.get(slot);
-    if (s == null) throw new Error(`Missing slot for ${slot}`);
+    if (s == null) {
+      if (MAYBE_MISSING_SLOTS.has(slot)) continue;
+      console.error(`Nothing depended on $${slot.toString(16)}: ${conditionName(slot, rom)}`);
+      continue;
+    }
     for (const cs of req) {
       const is = [...cs].map(getItemIndex);
       (graph[slot] || (graph[s] = [])).push(Bits.from(is));
@@ -487,6 +496,11 @@ function makeGraph(reqs: Map<Slot, MutableRequirement>, rom: Rom): shuffle.Graph
   const unlocks = unlocksSet.map(x => [...x]);
   return {fixed, slots, items, graph, unlocks};
 }
+
+const MAYBE_MISSING_SLOTS = new Set([
+  0x025, // healed dolphin, only matters if 'Rd' is set.
+  0x026, // entered shyron, only matters if 'Gt' not set.
+]);
 
 function conditionName(f: number, rom: Rom): string {
   const enums = {Boss, Event, Capability, Item, Magic};

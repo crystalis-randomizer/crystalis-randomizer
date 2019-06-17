@@ -65,3 +65,5 @@ export class Slots {
 const slots: ReadonlyArray<readonly [number, readonly Slot[]]> = [
   [0x38, [new ReverseFlagSlot(0x013)]], // broken statue -> defeated sabera
 ]
+
+const [] = [slots, PersonDataSlot, ChestSlot, Writer, ITEM_GET_FLAGS, hex, readLittleEndian, writeLittleEndian, MessageId];

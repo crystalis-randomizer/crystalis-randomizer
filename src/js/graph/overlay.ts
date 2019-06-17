@@ -31,8 +31,8 @@ const RELEVANT_FLAGS = [
   0x026, // entered shyron (for goa guards)
   0x027, // shyron massacre
   // 0x35, // cured akahana
-  0x037, // talked to zebu in cave (added as req for abduction)
   0x038, // leaf abduction
+  0x03a, // talked to zebu in cave (added as req for abduction)
   0x045, // rescued child
   0x052, // talked to dwarf mother
   0x053, // child following
@@ -59,14 +59,16 @@ const RELEVANT_FLAGS = [
 //  - need a way to put it everywhere
 //    -> maybe in MutableRequirements?
 const FLAG_MAP: Map<number, readonly [readonly [Condition]]> = new Map([
+  [0x00a, Event.STARTED_WINDMILL], // this is ref'd outside this file!
   [0x00e, Magic.TELEPATHY],
   [0x03f, Magic.TELEPORT],
   [0x013, Boss.SABERA1],
+  // Queen will give flute of lime w/o paralysis in this case.
+  [0x017, Item.SWORD_OF_WATER],
   [0x028, Magic.CHANGE],
   [0x029, Magic.CHANGE],
   [0x02a, Magic.CHANGE],
   [0x02b, Magic.CHANGE],
-  [0x00a, Event.STARTED_WINDMILL], // this is ref'd outside this file!
 ]);
 
 // Maps trigger actions to the slot they grant.
@@ -151,8 +153,11 @@ export class Overlay {
       // TODO - make this "guarantee defensive magic" and allow refresh OR barrier?
       extra.push(Magic.REFRESH);
     }
-    if (id === 0x5e) { // insect
+    if (boss === this.rom.bosses.insect) { // insect
       extra.push(Item.INSECT_FLUTE, Item.GAS_MASK);
+    }
+    if (boss === this.rom.bosses.draygon2) {
+      extra.push(Item.BOW_OF_TRUTH);
     }
     if (extra.length) {
       out.restrict(and(...extra));
@@ -168,6 +173,8 @@ export class Overlay {
       condition: Item.WINDMILL_KEY,
     });
     for (const shop of this.rom.shops) {
+      // leaf and shyron may not always be accessible, so don't rely on them.
+      if (shop.location === 0xc3 || shop.location === 0xf6) continue;
       if (!shop.used) continue;
       if (shop.type !== ShopType.TOOL) continue;
       const check = {
@@ -175,9 +182,9 @@ export class Overlay {
         condition: Capability.MONEY,
       };
       for (const item of shop.contents) {
-        if (item === Item.MEDICAL_HERB[0][0]) {
+        if (item === (Item.MEDICAL_HERB[0][0] & 0xff)) {
           locations.push({...check, slot: Slot(Capability.BUY_HEALING)});
-        } else if (item === Item.WARP_BOOTS[0][0]) {
+        } else if (item === (Item.WARP_BOOTS[0][0] & 0xff)) {
           locations.push({...check, slot: Slot(Capability.BUY_WARP)});
         }
       }
@@ -267,7 +274,15 @@ export class Overlay {
         slot: Slot(Boss.MADO1),
       }]};
     case 0xaa: // enter oak after insect
-      return {};
+      // NOTE: This is not the trigger that checks, but rather it happens on the entrance.
+      // This is a convenient place to handle it, though, since we already need to explicitly
+      // ignore this trigger.  We also require warp boots because it's possible that there's
+      // no direct walking path and it's not feasible to carry the child with us everywhere,
+      // due to graphics reasons.
+      return {check:[{
+        condition: and(Event.DWARF_CHILD, Capability.BUY_WARP),
+        slot: Slot(Event.RESCUED_CHILD),
+      }]};
     case 0xad: // allow opening prison door
       return {check: [{
         condition: Item.KEY_TO_PRISON,
@@ -310,8 +325,9 @@ export class Overlay {
       }
     } else if (actionItem != null) {
       return {check: [{condition, slot: actionItem}]};
-    } else if (trigger.flags.some(relevant)) {
-      const flags = trigger.flags.filter(relevantAndSet);
+    }
+    const flags = trigger.flags.filter(relevantAndSet);
+    if (flags.length) {
       return {check: flags.map(f => ({condition, slot: Slot(f)}))};
     }
 
@@ -346,6 +362,11 @@ export class Overlay {
       result.terrain.exit = or(result.terrain.exit || [], ...reqs);
     }
 
+    // TODO - fortune teller (39) requires access to portoa to get her to move?
+    //      -> maybe instead change the flag to set immediately on talking to her
+    //         rather than the trigger outside the door...? this would allow getting
+    //         through it by just talking and then leaving the room...
+
     switch (id) {
     case 0x14: // woken-up windmill guard
       // skip because we tie the item to the sleeping one.
@@ -363,9 +384,17 @@ export class Overlay {
       // probably wouldn't make sense to split it up anyway.
       statueOr(Magic.PARALYSIS);
       break;
+    case 0x38: // portoa queen sitting on impassable throne
+      if (loc.id === 0xdf) result.hitbox = {x0: 0, x1: 1, y0: 2, y1: 3};
+      break;
     case 0x4e: // shyron guard
       result.hitbox = {x0: -1, x1: 2, y0: 0, y1: 1};
       statueOr(Magic.CHANGE, Event.ENTERED_SHYRON);
+      break;
+    case 0x80: // goa guards
+      // TODO - add a check for ~024 to SpawnCondition_80 and then find a way
+      // to not have to hard-code it here...?
+      statueOr(...spawnConditions.map(c => Condition(~c))); // Event.ENTERED_SHYRON
       break;
     case 0x85: // stoned pair
       statueOr(Item.FLUTE_OF_LIME);
@@ -447,6 +476,8 @@ export class Overlay {
         {condition: Event.RESCUED_CHILD, slot},
       ]};
     } else if (id === 0x1f) { // dwarf child
+      const spawns = this.rom.npcs[id].spawnConditions.get(loc.id);
+      if (spawns && spawns.includes(0x045)) return {}; // in mother's house
       return {check: [
         {condition: Event.DWARF_MOTHER, slot: Slot(Event.DWARF_CHILD)},
       ]};
@@ -456,12 +487,18 @@ export class Overlay {
       addReq(~d.condition);
     }
     for (const d of npc.localDialogs.get(loc.id) || npc.localDialogs.get(-1) || []) {
+      // If the check condition is opposite to the spawn condition, then skip.
+      // This ensures we don't expect the queen to give recover in the throne room.
+      if (spawnConditions.includes(~d.condition)) continue;
+      // Apply the FLAG_MAP.
       const mapped = FLAG_MAP.get(d.condition);
       const positive =
           mapped ? [mapped] :
           this.relevantFlags.has(d.condition) ? [Condition(d.condition)] :
           [];
       const condition = and(...positive, ...requirements);
+      // If the condition is a negative then any future conditions must include
+      // it as a positive requirement.
       const negative =
           FLAG_MAP.get(~d.condition) ||
           (this.relevantFlags.has(~d.condition) ? Condition(~d.condition) : null);
@@ -472,12 +509,22 @@ export class Overlay {
       } else if (action === 0x11 || action === 0x09) {
         // NOTE: $09 is zebu student, which we've patched to give the item.
         result.check.push({slot: Slot.item(npc.data[1]), condition});
+      } else if (action === 0x10) {
+        // NOTE: Queen can't be revealed as asina in the throne room.  In particular,
+        // this ensures that the back room is reachable before requiring the dolphin
+        // to appear.  This should be handled by the above check for the dialog and
+        // spawn conditions to be compatible.
+        result.check.push({slot: Slot(Magic.RECOVER), condition});
       }
       for (const flag of d.flags) {
         const mflag = FLAG_MAP.get(flag);
         const pflag = mflag ? mflag : this.relevantFlags.has(flag) ? Condition(flag) : null;
-        if (pflag) result.check.push({slot: Slot(pflag), condition});        
+        if (pflag) result.check.push({slot: Slot(pflag), condition});
       }
+      // If the spawn *requires* this condition then don't evaluate any more.  This
+      // ensures we don't expect the queen to give the flute of lime in the back room,
+      // since she wouldn't have spawned there intime to give it.
+      if (positive.length && spawnConditions.includes(d.condition)) break;
     }
     return result;
   }

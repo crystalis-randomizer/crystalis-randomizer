@@ -84,10 +84,11 @@ export type Fill = GenericFill<SlotId, ItemId>;
 //export const Fill: {new(): Fill} = GenericFill;
 type IndexFill = GenericFill<SlotIndex, ItemIndex>;
 
+/** Converts an IndexFill to a full Fill. */
 function expandFill(g: Graph, f: IndexFill): Fill {
   const out = new GenericFill<SlotId, ItemId>();
-  for (let s = g.fixed; s < g.slots.length; s++) {
-    const i: ItemIndex = f.slots[s];
+  for (let i = g.fixed; i < g.items.length; i++) {
+    const s: SlotIndex = f.items[i];
     out.set(g.slots[s].item!, g.items[i].item!);
   }
   return out;
@@ -118,7 +119,7 @@ export function traverse(graph: Graph, fill: IndexFill, has: Bits): Set<SlotInde
       const item = n < graph.fixed ? n : fill.slots[n];
       if (item != null) {
         has = Bits.with(has, item);
-        for (const j of graph.unlocks[item]) {
+        for (const j of graph.unlocks[item] || []) {
           queue.add(j);
         }
       }
@@ -126,6 +127,49 @@ export function traverse(graph: Graph, fill: IndexFill, has: Bits): Set<SlotInde
     }
   }
   return reachable;
+}
+
+// TODO - this is a lot of copy pasta, we should consolidate!
+/** Copy of traverse but outputs a human-readable path. */
+export function traverseFill(graph: Graph, fill: Fill): number[][] {
+  const items = [];
+  for (const i of graph.items) {
+    if (i.item != null) items[i.item] = i.index;
+  }
+  const slots = [];
+  for (const s of graph.slots) {
+    if (s.item != null && fill.slots[s.item] != null) {
+      slots[s.index] = items[fill.slots[s.item]];
+    }
+  }
+  const out = [];
+
+  let has = Bits.of()
+  const reachable = new Set<SlotIndex>();
+  const queue = new Set<SlotIndex>();
+  for (let i = 0; i < graph.slots.length; i++) {
+    queue.add(i as SlotIndex);
+  }
+  for (const n of queue) {
+    queue.delete(n);
+    if (reachable.has(n)) continue;
+    // can we reach it?
+    const needed = graph.graph[n];
+    for (let i = 0, len = needed.length; i < len; i++) {
+      if (!Bits.containsAll(has, needed[i])) continue;
+      out.push([n, ...Bits.bits(needed[i])]);
+      reachable.add(n);
+      const item = n < graph.fixed ? n : slots[n];
+      if (item != null) {
+        has = Bits.with(has, item);
+        for (const j of graph.unlocks[item] || []) {
+          queue.add(j);
+        }
+      }
+      break;
+    }
+  }
+  return out;
 }
 
 // Shuffle modes:
@@ -247,7 +291,7 @@ export class AssumedFill implements Shuffle {
     for (let bit: ItemIndex | undefined = items.pop(); bit != null; bit = items.pop()) {
       if (!Bits.has(has, bit)) continue; // item already placed: skip
       const itemId = graph.items[bit].item;
-      if (!itemId) throw new Error(`bad item: ${Object.entries(graph.items[bit])}`);
+      if (itemId == null) throw new Error(`bad item: ${Object.entries(graph.items[bit])}`);
       has = Bits.without(has, bit);
       const reachable = [...traverse(graph, fill, has)];
       random.shuffle(reachable);
@@ -263,13 +307,24 @@ export class AssumedFill implements Shuffle {
       }
       if (!found) return null;
     }
-    return this.fill(expandFill(graph, fill), random);
+    const final = traverse(graph, fill, has);
+    if (final.size !== graph.slots.length) {
+      console.error(final, graph);
+      return null;
+    }
+      console.error(final, graph);
+    return this.fill(graph, expandFill(graph, fill), random);
   }
 
-  fill(fill: Fill, random: Random): Fill | null {
+  /** Fils the remaining slots with non-progression items. */
+  private fill(graph: Graph, fill: Fill, random: Random): Fill | null {
     // Figure out what still needs to be filled.  Will be mostlu consumables or mimics.
     // Start with unique items since we have rules to prevent putting uniques in non-unique
     // slots (if the flag is set) but not vice versa.
+    const validItems = new Set<number>();
+    for (const slot of graph.slots) {
+      if (slot.item != null) validItems.add(slot.item);
+    }
 
     const uniques: ItemId[] = [];
     const consumables: ItemId[] = [];
@@ -278,6 +333,10 @@ export class AssumedFill implements Shuffle {
     const earlySlots: SlotId[] = [];
     const otherSlots: SlotId[] = [];
     for (let i = 0; i < 0x7c; i++) {
+      if (i < 0x70 && !validItems.has(i)) {
+        if (fill.hasSlot(i as SlotId) !== fill.hasItem(i as ItemId)) console.error('MISMATCH',i);
+        continue;
+      }
       if (!fill.hasSlot(i as SlotId)) {
         const slotType = this.slotTypes[i] || Type.EMPTY;
         if (slotType <= (this.shuffleFull ? Type.NPC : Type.CONSUMABLE)) {
@@ -289,10 +348,10 @@ export class AssumedFill implements Shuffle {
       if (!fill.hasItem(i as ItemId)) {
         if (i <= 0x48 && this.rom.items[i].unique) {
           uniques.push(i as ItemId);
-        } else if (i >= 0x7c) {
-          mimics.push(i as ItemId);
-        } else {
+        } else if (i < 0x70) {
           consumables.push(i as ItemId);
+        } else {
+          mimics.push(i as ItemId);
         }
       }
     }
@@ -307,10 +366,12 @@ export class AssumedFill implements Shuffle {
       // Since key slots are allowed to contain consumables (even in full shuffle),
       // we need to make sure that the uniques go into those slots first.
       let found = false;
-      for (const slot of (earlySlots.length ? earlySlots : otherSlots)) {
+      const slots = earlySlots.length ? earlySlots : otherSlots;
+      for (const slot of slots) {
         if (this.fits(slot, item /*, false*/)) {
           fill.set(slot, item);
           found = true;
+          slots.splice(slots.indexOf(slot), 1);
           break;
         }
       }

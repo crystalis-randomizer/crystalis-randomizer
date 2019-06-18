@@ -159,8 +159,25 @@ export async function shuffle(rom: Uint8Array,
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.
   const w = new World(parsed, flags);
-  const fill = new AssumedFill(parsed, flags).shuffle(w.graph, random);
-  console.log('fill', fill);  
+  let fill = null;
+  for (let i = 0; fill == null && i < 10; i++) {
+    fill = new AssumedFill(parsed, flags).shuffle(w.graph, random);
+  }
+  if (fill) {
+    const n = (i: number) => {
+      if (i >= 0x70) return 'mimic';
+      const item = parsed.items[parsed.itemGets[i].itemId];
+      return item ? item.menuName : `invalid ${i}`;
+    };
+    console.log('item: slot');
+    for (let i = 0; i < fill.items.length; i++) {
+      if (fill.items[i] != null) {
+        console.log(`$${hex(i)} ${n(i)}: ${n(fill.items[i])} $${hex(fill.items[i])}`);
+      }
+    }
+    console.log(w.traverse(w.graph, fill).join('\n'));
+  }
+  //console.log('fill', fill);
 
   // TODO - set omitItemGetDataSuffix and omitLocalDialogSuffix
   await shuffleDepgraph(parsed, random, log, flags, progress);
@@ -357,7 +374,7 @@ function makeBraceletsProgressive(rom: Rom): void {
   const patched = [
     vanilla[0], // already learned teleport
     vanilla[2], // don't have tornado bracelet
-    vanilla[2], // will change to don't have orb
+    vanilla[2].clone(), // will change to don't have orb
     vanilla[1], // have bracelet, learn teleport
   ];
   patched[1].condition = ~0x206; // don't have bracelet
@@ -601,7 +618,8 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   rom.items[0x25].tradeIn![0] = 0x89;
 
   // Leaf elder in house ($0d @ $c0) ~ sword of wind redundant flag
-  dialog(0x0d, 0xc0)[2].flags = [];
+  // dialog(0x0d, 0xc0)[2].flags = [];
+  rom.itemGets[0x00].flags = []; // clear redundant flag
 
   // Leaf rabbit ($13) normally stops setting its flag after prison door opened,
   // but that doesn't necessarily open mt sabre.  Instead (a) trigger on 047

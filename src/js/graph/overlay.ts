@@ -37,16 +37,20 @@ const RELEVANT_FLAGS = [
   0x052, // talked to dwarf mother
   0x053, // child following
   0x061, // talked to stom in swan hut
-  0x06c, // defeated draygon 1
+  // 0x06c, // defeated draygon 1
   0x072, // kensu found in tavern
   0x08b, // got shell flute
   0x09b, // able to ride dolphin
   0x0a5, // talked to zebu student
   0x0a9, // talked to leaf rabbit
 
-  0x243, // telepathy
-  0x244, // teleport
-  0x2ee, // started windmill
+  0x205, // orb of wind (for teleport)
+  0x206, // tornado bracelet (for teleport)
+  0x236, // shell flute (for fisherman spawn)
+  0x243, // telepathy (for rabbit, oak, deo)
+  0x244, // teleport (for mt sabre trigger)
+  0x283, // calmed sea (for barrier)
+  0x2ee, // started windmill (for refresh)
 
   0x2f7, // warp:oak (for telepathy)
   0x2fb, // warp:joel (for evil spirit island)
@@ -69,6 +73,7 @@ const FLAG_MAP: Map<number, readonly [readonly [Condition]]> = new Map([
   [0x029, Magic.CHANGE],
   [0x02a, Magic.CHANGE],
   [0x02b, Magic.CHANGE],
+  [0x06c, Boss.DRAYGON1],
 ]);
 
 // Maps trigger actions to the slot they grant.
@@ -158,6 +163,21 @@ export class Overlay {
     }
     if (boss === this.rom.bosses.draygon2) {
       extra.push(Item.BOW_OF_TRUTH);
+      if (this.flags.storyMode()) {
+        extra.push(
+          Boss.KELBESQUE1,
+          Boss.KELBESQUE2,
+          Boss.SABERA1,
+          Boss.SABERA2,
+          Boss.MADO1,
+          Boss.MADO2,
+          Boss.KARMINE,
+          Boss.DRAYGON1,
+          Item.SWORD_OF_WIND,
+          Item.SWORD_OF_FIRE,
+          Item.SWORD_OF_WATER,
+          Item.SWORD_OF_THUNDER);
+      }
     }
     if (extra.length) {
       out.restrict(and(...extra));
@@ -167,10 +187,15 @@ export class Overlay {
 
   locations(): TileCheck[] {
     const locations: TileCheck[] = [];
+    // TODO - pull the location out of itemUseData[0] for these items
     locations.push({
       tile: TileId(0x0f0088),
       slot: Slot(Event.STARTED_WINDMILL),
       condition: Item.WINDMILL_KEY,
+    }, {
+      tile: TileId(0xe40088),
+      slot: Slot(Event.OPENED_JOEL_SHED),
+      condition: Item.EYE_GLASSES,
     });
     for (const shop of this.rom.shops) {
       // leaf and shyron may not always be accessible, so don't rely on them.
@@ -334,10 +359,6 @@ export class Overlay {
     return {};
   }
 
-
-  // TODO - monster ID 3f (8f) => entire screen requires SHOOTING_STATUE to enter
-
-
   npc(id: number, loc: Location): NpcData {
     const npc = this.rom.npcs[id];
     if (!npc || !npc.used) throw new Error(`Unknown trigger: ${hex(id)}`);
@@ -375,8 +396,8 @@ export class Overlay {
       result.hitbox = {x0: 0, x1: 2, y0: 0, y1: 1};
       statueOr(Magic.CHANGE, Magic.PARALYSIS);
       break;
-    case 0x2d: // mt sabre soldiers
-      return {};
+    //case 0x2d: // mt sabre soldiers (but also swan)
+    //  return {};
     case 0x33: // portoa guard (throne room, though the palace one is the one that matters)
       // NOTE: this means that we cannot separate the palace foyer from the throne room, since
       // there's no way to represent the condition for paralyzing the guard and still have him
@@ -515,6 +536,8 @@ export class Overlay {
         // to appear.  This should be handled by the above check for the dialog and
         // spawn conditions to be compatible.
         result.check.push({slot: Slot(Magic.RECOVER), condition});
+      } else if (action === 0x08 && id === 0x2d) {
+        result.check.push({slot: Slot(Event.OPENED_SWAN), condition});
       }
       for (const flag of d.flags) {
         const mflag = FLAG_MAP.get(flag);
@@ -569,6 +592,8 @@ export class Overlay {
       [Capability.CLIMB_WATERFALL, Magic.FLIGHT],
       [Capability.SHOOTING_STATUE, Magic.BARRIER], // TODO - allow shield ring?
       [Capability.CLIMB_SLOPE, Item.RABBIT_BOOTS, Magic.FLIGHT],
+      [Event.GENERALS_DEFEATED, Item.IVORY_STATUE], // TODO - fix this
+      [Event.OPENED_SEALED_CAVE, Event.STARTED_WINDMILL], // TODO - merge completely?
     ];
 
     if (this.flags.assumeGhettoFlight()) {
@@ -593,6 +618,7 @@ export class Overlay {
         capabilities.push([Item(boss.drop), Boss(boss.kill)]);
       }
     }
+    capabilities.push([Item.ORB_OF_WATER, Boss.RAGE]);
 
     if (this.flags.guaranteeGasMask()) {
       capabilities.push([Capability.TRAVEL_SWAMP, Item.GAS_MASK]);

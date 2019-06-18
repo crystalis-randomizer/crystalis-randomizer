@@ -71,7 +71,7 @@ export class World {
           walls.set(ScreenId.from(location, spawn), spawn.id as WallType);
         }
 
-        // TODO - currently this is bbroken -
+        // TODO - currently this is broken -
         //   [...ll.routes.routes.get(tiles.find(0xa60088)).values()].map(s => [...s].map(x => x.toString(16)).join(' & '))
         // Lists 5 things: flight, break iron, mt sabre prison, swan gate, crypt entrance
         //   - should at least require breaking stone or ice?
@@ -439,6 +439,19 @@ w.area = (tile: TileId, f: (x:number)=>string = h) => {
     this.graph = makeGraph(reqs, rom);
 
   }
+
+  traverse(graph: shuffle.Graph, fill: shuffle.Fill): string[] {
+    const out = [];
+    for (const [si, ...iis] of shuffle.traverseFill(graph, fill)) {
+      const slot = conditionName(graph.slots[si].condition, this.rom);
+      const items = iis.map(ii => conditionName(graph.items[ii].condition, this.rom));
+      const slotItem = graph.slots[si].item;
+      const item = slotItem != null ?
+          ` => ${conditionName(0x200 | fill.slots[slotItem], this.rom)}` : '';
+      out.push(`${slot}${item}: [${items.join(', ')}]`);
+    }
+    return out;
+  }
 }
 
 function makeGraph(reqs: Map<Slot, MutableRequirement>, rom: Rom): shuffle.Graph {
@@ -508,8 +521,19 @@ function makeGraph(reqs: Map<Slot, MutableRequirement>, rom: Rom): shuffle.Graph
         (unlocksSet[i] || (unlocksSet[i] = new Set())).add(s);
       }
     }
-    // TODO - loop thru all slots - find any missing and show useful "not provided" message
   }
+  // sanity check to make sure all slots are provided
+  for (const n of [...conditionNodes, ...slotNodes]) {
+    //if (i.item != null) continue;
+    if (!graph[n.index] || !graph[n.index].length) {
+      const c = n.condition;
+      console.error(`Nothing provided $${c.toString(16)}: ${conditionName(c, rom)
+                     } (index ${n.index})`);
+    }
+  }
+
+  console.log(graph);
+
   const unlocks = unlocksSet.map(x => [...x]);
   return {fixed, slots, items, graph, unlocks};
 }

@@ -12,19 +12,19 @@ export const PRESETS = [{
     }, {
         title: 'Full Shuffle',
         descr: `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
-        flags: 'Em Fsw Gt Mr Ps Rlprt Sbckmt Tab',
+        flags: 'Em Fsw Gt Mrt Ps Rlprt Sbckmt Tabm',
     }, {
         title: 'Glitchless',
         descr: `Full shuffle but with no glitches.`,
-        flags: 'Em Fcpstw Mr Ps Rlprt Sbckmt Tab',
+        flags: 'Em Fcpstw Mrt Ps Rlprt Sbckmt Tabm',
     }, {
         title: 'Advanced',
         descr: `A balanced randomization with quite a bit more difficulty.`,
-        flags: 'Fsw Gfprt Hbw Mr Ps Rlprt Sbckt Sm Tab',
+        flags: 'Fsw Gfprt Hbdgw Mert Ps Rloprst Sbckt Sm Tabm',
     }, {
         title: 'Ludicrous',
         descr: `Pulls out all the stops, may require superhuman feats.`,
-        flags: 'Fs Gfprstw Hbgmswx Mr Ps Rlprt Sbckmt Tab',
+        flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Rloprst Sbckmt Tabm',
     }];
 const PRESETS_BY_KEY = {};
 for (const { title, flags } of PRESETS) {

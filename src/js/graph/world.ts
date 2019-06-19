@@ -55,8 +55,6 @@ export class World {
     const monsters = new Map<TileId, number>(); // elemental immunities
     const allExits = new Set<TileId>();
 
-    let mimic = 0x70;
-
     for (const location of rom.locations /*.slice(0,4)*/) {
       if (!location.used) continue;
       const ext = location.extended ? 0x100 : 0;
@@ -184,9 +182,7 @@ export class World {
           // and will also add their drop.
           bosses.set(TileId.from(location, spawn), spawn.id);
         } else if (spawn.isChest()) {
-          // TODO - if spawn.id >= $70 then differentiate?
-          const id = spawn.id <  0x70 ? spawn.id : mimic++;
-          checks.get(TileId.from(location, spawn)).add(Check.chest(id));
+          checks.get(TileId.from(location, spawn)).add(Check.chest(spawn.id));
         } else if (spawn.isMonster()) {
           // TODO - compute money-dropping monster vulnerabilities and add a trigger
           // for the MONEY capability dependent on any of the swords.
@@ -541,6 +537,8 @@ function makeGraph(reqs: Map<Slot, MutableRequirement>, rom: Rom): shuffle.Graph
 const MAYBE_MISSING_SLOTS = new Set([
   0x025, // healed dolphin, only matters if 'Rd' is set.
   0x026, // entered shyron, only matters if 'Gt' not set.
+  0x0a9, // leaf rabbit not required if 'Fr' not set.
+  0x244, // teleport may not be required if 'Fp' not set.
 ]);
 
 function conditionName(f: number, rom: Rom): string {

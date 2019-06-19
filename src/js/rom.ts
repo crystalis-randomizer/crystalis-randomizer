@@ -14,12 +14,14 @@ import {Palette} from './rom/palette.js';
 import {Pattern} from './rom/pattern.js';
 import {Screen} from './rom/screen.js';
 import {Shop} from './rom/shop.js';
+import {Slots} from './rom/slots.js';
 import {Telepathy} from './rom/telepathy.js';
 import {TileAnimation} from './rom/tileanimation.js';
 import {TileEffects} from './rom/tileeffects.js';
 import {Tileset} from './rom/tileset.js';
 import {Trigger} from './rom/trigger.js';
 import {hex, seq} from './rom/util.js';
+import {WildWarp} from './rom/wildwarp.js';
 import {Writer} from './rom/writer.js';
 import {UnionFind} from './unionfind.js';
 
@@ -70,6 +72,8 @@ export class Rom {
   readonly npcs: Npc[];
   readonly bossKills: BossKill[];
   readonly bosses: Bosses;
+  readonly wildWarp: WildWarp;
+  readonly slots: Slots;
 
   readonly telepathy: Telepathy;
   readonly messages: Messages;
@@ -150,6 +154,8 @@ export class Rom {
     this.npcs = seq(0xcd, i => new Npc(this, i));
     this.bossKills = seq(0xe, i => new BossKill(this, i));
     this.bosses = new Bosses(this);
+    this.wildWarp = new WildWarp(this);
+    this.slots = new Slots(this);
   }
 
   trigger(id: number): Trigger {
@@ -339,6 +345,7 @@ export class Rom {
     writeAll(this.items);
     writeAll(this.shops);
     writeAll(this.bossKills);
+    this.wildWarp.write(writer);
     promises.push(this.telepathy.write(writer));
     promises.push(this.messages.write(writer));
     promises.push(writer.commit());

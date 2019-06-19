@@ -2,7 +2,7 @@ import {Assembler} from './6502.js';
 import {crc32} from './crc32.js';
 import {LogType, ProgressTracker,
         generate as generateDepgraph,
-        shuffle2 as shuffleDepgraph} from './depgraph.js';
+        shuffle2 as _shuffleDepgraph} from './depgraph.js';
 import {FetchReader} from './fetchreader.js';
 import {FlagSet} from './flagset.js';
 import {AssumedFill} from './graph/shuffle.js';
@@ -11,7 +11,7 @@ import {Random} from './random.js';
 import {Rom} from './rom.js';
 import {Entrance, Exit, Flag, Location, Spawn} from './rom/location.js';
 import {GlobalDialog, LocalDialog} from './rom/npc.js';
-import {ShopType} from './rom/shop.js';
+import {ShopType, Shop} from './rom/shop.js';
 import {hex, seq, watchArray, writeLittleEndian} from './rom/util.js';
 import * as version from './version.js';
 
@@ -123,7 +123,7 @@ export async function shuffle(rom: Uint8Array,
   // Parse the rom and apply other patches - note: must have shuffled
   // the depgraph FIRST!
   const parsed = new Rom(rom);
-  preventTimerSpawnMimics(parsed);
+  fixMimics(parsed);
 
   makeBraceletsProgressive(parsed);
   if (flags.blackoutMode()) blackoutMode(parsed);
@@ -156,6 +156,8 @@ export async function shuffle(rom: Uint8Array,
   addCordelWestTriggers(parsed, flags);
   if (flags.disableRabbitSkip()) fixRabbitSkip(parsed);
 
+  if (flags.shuffleShops()) shuffleShops(parsed, flags, random);
+
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.
   const w = new World(parsed, flags);
@@ -176,11 +178,12 @@ export async function shuffle(rom: Uint8Array,
       }
     }
     console.log(w.traverse(w.graph, fill).join('\n'));
+    parsed.slots.update(fill.slots);
   }
   //console.log('fill', fill);
 
   // TODO - set omitItemGetDataSuffix and omitLocalDialogSuffix
-  await shuffleDepgraph(parsed, random, log, flags, progress);
+  //await shuffleDepgraph(parsed, random, log, flags, progress);
 
   // TODO - rewrite rescaleShops to take a Rom instead of an array...
   if (touchShops) {
@@ -210,6 +213,8 @@ export async function shuffle(rom: Uint8Array,
   if (flags.orbsOptional()) orbsOptional(parsed);
 
   shuffleMusic(parsed, flags, random);
+  if (flags.randomizeWildWarp()) shuffleWildWarp(parsed, flags, random);
+
   misc(parsed, flags, random);
 
   // NOTE: This needs to happen BEFORE postshuffle
@@ -286,6 +291,43 @@ Here, have this lame
   rom.npcs[0x16].data[2]++;
 };
 
+function shuffleShops(rom: Rom, _flags: FlagSet, random: Random): void {
+  const shops: {[type: number]: {contents: number[], shops: Shop[]}} = {
+    [ShopType.ARMOR]: {contents: [], shops: []},
+    [ShopType.TOOL]: {contents: [], shops: []},
+  };
+  // Read all the contents.
+  for (const shop of rom.shops) {
+    const data = shops[shop.type];
+    if (data) {
+      data.contents.push(...shop.contents.filter(x => x !== 0xff));
+      data.shops.push(shop, shop, shop, shop, shop, shop);
+      shop.contents = [];
+    }
+  }
+  // Shuffle the contents.  Pick order to drop items in.
+  for (const data of Object.values(shops)) {
+    random.shuffle(data.contents);
+    random.shuffle(data.shops);
+    while (data.contents.length && data.shops.length) {
+      const item = data.contents[0];
+      const shop = data.shops[0];
+      if (shop.contents.length < 4 && !shop.contents.includes(item)) {
+        shop.contents.push(item);
+        data.contents.shift();
+      }
+      data.shops.shift();
+    }
+  }
+  // Sort and add 0xff's
+  for (const data of Object.values(shops)) {
+    for (const shop of data.shops) {
+      while (shop.contents.length < 4) shop.contents.push(0xff);
+      shop.contents.sort((a, b) => a - b);
+    }
+  }
+}
+
 function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
   if (!flags.randomizeMusic()) return;
   interface HasMusic { bgm: number; }
@@ -359,7 +401,18 @@ function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
   //  - e.g. flail guy could make the flame sound?
 }
 
-function buffDyna(rom: Rom, flags: FlagSet): void {
+function shuffleWildWarp(rom: Rom, _flags: FlagSet, random: Random): void {
+  const locations = [];
+  for (const l of rom.locations) {
+    if (l && l.used && l.id && !l.extended && (l.id & 0xf8) !== 0x58) {
+      locations.push(l.id);
+    }
+  }
+  random.shuffle(locations);
+  rom.wildWarp.locations = [...locations.slice(0, 15).sort((a, b) => a - b), 0];
+}
+
+function buffDyna(rom: Rom, _flags: FlagSet): void {
   rom.objects[0xb8].collisionPlane = 1;
   rom.objects[0xb8].immobile = true;
   rom.objects[0xb9].collisionPlane = 1;
@@ -768,10 +821,10 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   // logic obviates the need.
   const zebuShyron = rom.npcs[0x5e].localDialogs.get(0xf2)!;
   zebuShyron.unshift(...zebuShyron.splice(1, 1));
-  zebuShyron[0].flags = [];
+  // zebuShyron[0].flags = [];
 
   // Shyron massacre ($80) requires key to stxy
-  rom.trigger(0x80).conditions.push(0x234); // 234 key to stxy
+  rom.trigger(0x80).conditions.push(0x03b); // 234 key to stxy
 
   // Enter shyron ($81) should set warp no matter what
   rom.trigger(0x81).conditions = [];
@@ -807,10 +860,17 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   }
 };
 
-function preventTimerSpawnMimics(rom: Rom): void {
+/**
+ * Remove timer spawns, renumbers them so that they're unique. Should be run
+ * before parsing the ROM.
+ */
+function fixMimics(rom: Rom): void {
+  let mimic = 0x70;
   for (const loc of rom.locations) {
     for (const s of loc.spawns) {
-      if (s.isChest()) s.timed = false;
+      if (!s.isChest()) continue;
+      s.timed = false;
+      if (s.id >= 0x70) s.id = mimic++;
     }
   }
 }

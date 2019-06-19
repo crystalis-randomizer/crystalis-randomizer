@@ -46,6 +46,12 @@ export class ItemGet extends Entity {
 
     // TODO: remove this check
     this.key = rom.prg[a + 2 + 2 * this.flags.length + 1] === 0xfe;
+
+    if (id !== 0 && this.tableBase === readLittleEndian(rom.prg, 0x1dd66) + 0x14000) {
+      // This is one of the unused items that point to sword of wind.
+      this.key = false;
+      this.flags = [];
+    }
   }
 
   async write(writer: Writer): Promise<void> {

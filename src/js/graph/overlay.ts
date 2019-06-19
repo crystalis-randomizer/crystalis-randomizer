@@ -33,6 +33,7 @@ const RELEVANT_FLAGS = [
   // 0x35, // cured akahana
   0x038, // leaf abduction
   0x03a, // talked to zebu in cave (added as req for abduction)
+  0x03b, // talked to zebu in shyron (added as req for massacre)
   0x045, // rescued child
   0x052, // talked to dwarf mother
   0x053, // child following
@@ -74,6 +75,7 @@ const FLAG_MAP: Map<number, readonly [readonly [Condition]]> = new Map([
   [0x02a, Magic.CHANGE],
   [0x02b, Magic.CHANGE],
   [0x06c, Boss.DRAYGON1],
+  [0x08b, Item.SHELL_FLUTE],
 ]);
 
 // Maps trigger actions to the slot they grant.
@@ -273,7 +275,11 @@ export class Overlay {
     if (this.flags.teleportOnThunderSword()) {
       routes.push({tile: entrance(0xf2), condition: Item.SWORD_OF_THUNDER});
     }
-    // TODO - wild warp
+    if (this.flags.assumeWildWarp()) {
+      for (const location of this.rom.wildWarp.locations) {
+        routes.push({tile: entrance(location)});
+      }
+    }
     return routes;
   }
 
@@ -396,8 +402,10 @@ export class Overlay {
       result.hitbox = {x0: 0, x1: 2, y0: 0, y1: 1};
       statueOr(Magic.CHANGE, Magic.PARALYSIS);
       break;
-    //case 0x2d: // mt sabre soldiers (but also swan)
-    //  return {};
+    case 0x2d: // mt sabre/swan soldiers
+      // These don't count as statues because they'll move if you talk to them.
+      delete result.terrain;
+      break;
     case 0x33: // portoa guard (throne room, though the palace one is the one that matters)
       // NOTE: this means that we cannot separate the palace foyer from the throne room, since
       // there's no way to represent the condition for paralyzing the guard and still have him
@@ -413,8 +421,6 @@ export class Overlay {
       statueOr(Magic.CHANGE, Event.ENTERED_SHYRON);
       break;
     case 0x80: // goa guards
-      // TODO - add a check for ~024 to SpawnCondition_80 and then find a way
-      // to not have to hard-code it here...?
       statueOr(...spawnConditions.map(c => Condition(~c))); // Event.ENTERED_SHYRON
       break;
     case 0x85: // stoned pair

@@ -322,6 +322,10 @@ export const FLAGS: FlagSection[] = [{
   }, {
     flag: 'Tm',
     name: 'Randomize music',
+  }, {
+    flag: 'Tw',
+    name: 'Randomize wild warp',
+    text: `Wild warp will go to Mezame Shrine and 15 other random locations.`,
   }],
 }, {
   section: 'Routing',
@@ -517,8 +521,9 @@ const FLAG_CONFLICTS: {[key: string]: RegExp} = {
   Hx: /Ex/,
   Em: /Hm/,
   Ex: /Hx/,
-  Fw: /Gw/,
+  Fw: /[GT]w/,
   Gw: /Fw/,
+  Tw: /Fw/,
   Ft: /Gt/,
   Gt: /Ft/,
   Fc: /Gc/,
@@ -637,6 +642,7 @@ export class FlagSet {
 
   nerfWildWarp() { return this.check('Fw'); }
   allowWildWarp() { return !this.nerfWildWarp(); }
+  randomizeWildWarp() { return this.check('Tw'); }
 
   blackoutMode() { return this.check('Hz'); }
   buffDyna() { return this.check('Hd'); }

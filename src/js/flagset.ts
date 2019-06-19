@@ -26,24 +26,24 @@ export const PRESETS: Preset[] = [{
   title: 'Full Shuffle',
 
   descr: `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
-  flags: 'Em Fsw Gt Mr Ps Rlprt Sbckmt Tab',
+  flags: 'Em Fsw Gt Mrt Ps Rlprt Sbckmt Tabm',
 }, {
   title: 'Glitchless',
 
   descr: `Full shuffle but with no glitches.`,
-  flags: 'Em Fcpstw Mr Ps Rlprt Sbckmt Tab',
+  flags: 'Em Fcpstw Mrt Ps Rlprt Sbckmt Tabm',
 }, {
   // TODO: add 'Ht' for maxing out tower scaling
   title: 'Advanced',
 
   descr: `A balanced randomization with quite a bit more difficulty.`,
-  flags: 'Fsw Gfprt Hbw Mr Ps Rlprt Sbckt Sm Tab',
+  flags: 'Fsw Gfprt Hbdgw Mert Ps Rloprst Sbckt Sm Tabm',
 }, {
   // TODO: add 'Ht'
   title: 'Ludicrous',
 
   descr: `Pulls out all the stops, may require superhuman feats.`,
-  flags: 'Fs Gfprstw Hbgmswx Mr Ps Rlprt Sbckmt Tab',
+  flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Rloprst Sbckmt Tabm',
 }];
 
 // Just the flags, not the whole documentation.

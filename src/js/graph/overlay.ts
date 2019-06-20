@@ -65,8 +65,8 @@ const RELEVANT_FLAGS = [
 //    -> maybe in MutableRequirements?
 const FLAG_MAP: Map<number, readonly [readonly [Condition]]> = new Map([
   [0x00a, Event.STARTED_WINDMILL], // this is ref'd outside this file!
-  [0x00e, Magic.TELEPATHY],
-  [0x03f, Magic.TELEPORT],
+  //[0x00e, Magic.TELEPATHY],
+  //[0x03f, Magic.TELEPORT],
   [0x013, Boss.SABERA1],
   // Queen will give flute of lime w/o paralysis in this case.
   [0x017, Item.SWORD_OF_WATER],
@@ -440,6 +440,7 @@ export class Overlay {
     }
 
     // Look for trade-ins
+    //  - TODO - don't hard-code the NPCs? read from the itemdata?
     const tradeIn = this.tradeIns.get(id)
     if (tradeIn != null) {
       const t = tradeIn;
@@ -478,7 +479,7 @@ export class Overlay {
         // location to identify it
         trade(Slot(Magic.CHANGE), Magic.PARALYSIS, Event.FOUND_KENSU);
         break;
-      case 0x89: // akahana => gas mask slot (changed 16 -> 87)
+      case 0x82: // akahana => gas mask slot (changed 16 -> 82)
         trade(Slot(Item.GAS_MASK));
         break;
       case 0x88: // stoned akahana => shield ring slot

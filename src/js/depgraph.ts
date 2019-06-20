@@ -1805,7 +1805,8 @@ export interface LogType {
            itemName: string,
            text: string,
           }[];
-  route?: string[];
+  route?: unknown[];
+  slots?: unknown[];
   stats?: any;  // TODO - uodate this!
 }
 

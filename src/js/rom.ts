@@ -14,7 +14,7 @@ import {Palette} from './rom/palette.js';
 import {Pattern} from './rom/pattern.js';
 import {Screen} from './rom/screen.js';
 import {Shop} from './rom/shop.js';
-import {Slots} from './rom/slots.js';
+import {Spoiler} from './rom/spoiler.js';
 import {Telepathy} from './rom/telepathy.js';
 import {TileAnimation} from './rom/tileanimation.js';
 import {TileEffects} from './rom/tileeffects.js';
@@ -73,10 +73,11 @@ export class Rom {
   readonly bossKills: BossKill[];
   readonly bosses: Bosses;
   readonly wildWarp: WildWarp;
-  readonly slots: Slots;
 
   readonly telepathy: Telepathy;
   readonly messages: Messages;
+
+  spoiler?: Spoiler;
 
   // NOTE: The following properties may be changed between reading and writing
   // the rom.  If this happens, the written rom will have different options.
@@ -155,7 +156,6 @@ export class Rom {
     this.bossKills = seq(0xe, i => new BossKill(this, i));
     this.bosses = new Bosses(this);
     this.wildWarp = new WildWarp(this);
-    this.slots = new Slots(this);
   }
 
   trigger(id: number): Trigger {

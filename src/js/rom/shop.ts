@@ -62,19 +62,20 @@ export class Shop extends Entity {
       this.location = rom.prg[locationTable + id];
     } else {
       // Vanilla shops: need to do a more involved search for shop location.
-      this.location = 0xff;
-      for (let i = 0; i < 33 && this.location === 0xff; i++) {
+      let shopLocation = 0xff;
+      for (let i = 0; i < 33 && shopLocation === 0xff; i++) {
         if (rom.prg[VANILLA_SHOP_INDICES + i] !== this.index) continue;
         const location = rom.prg[VANILLA_SHOP_LOCATIONS + i];
         for (const spawn of rom.locations[location].spawns) {
           if (spawn.type !== 4) continue;
           const obj = rom.objects[spawn.id];
           if (obj.data[25] === 0x20 + this.type) {
-            this.location = location;
+            shopLocation = location;
             break;
           }
         }
       }
+      this.location = shopLocation;
     }
 
     const readPrice: (i: number) => number =

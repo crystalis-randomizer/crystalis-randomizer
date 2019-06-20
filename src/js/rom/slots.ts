@@ -2,6 +2,7 @@ import {readLittleEndian, seq} from './util.js';
 import {Rom} from '../rom.js';
 
 interface Slot {
+  readonly slot: number;
   set(rom: Rom, item: number): void;
 }
 
@@ -9,38 +10,58 @@ interface Slot {
 //      - are we getting benefit from inspection at all?
 
 class ChestSlot implements Slot {
-  constructor(readonly location: number, readonly spawn: number) {}
+  constructor(readonly slot: number, readonly location: number, readonly spawn: number) {}
 
   set(rom: Rom, item: number): void {
     rom.locations[this.location].spawns[this.spawn].id = item;
+
+    if (rom.spoiler) {
+      rom.spoiler.addSlot(this.slot, `Chest in ${rom.locations[this.location].name}`, item);
+    }
   }
 }
 
 class HardcodedSlot implements Slot {
-  constructor(readonly address: number) {}
+  constructor(readonly slot: number, readonly address: number, readonly name?: string) {}
 
   set(rom: Rom, item: number): void {
     rom.prg[this.address] = item;
+
+    if (this.name && rom.spoiler) rom.spoiler.addSlot(this.slot, this.name || '', item);
   }
 }
 
 class BossDropSlot implements Slot {
-  constructor(readonly boss: number) {}
+  constructor(readonly slot: number, readonly boss: number) {}
 
   set(rom: Rom, item: number): void {
     //rom.bosses.fromBossKill(this.boss).drop = item;
     const addr = readLittleEndian(rom.prg, 0x1f987 + 2 * this.boss) + 0x14000;
     if (item >= 0x70) throw new Error('no mimics on bosses');
     rom.prg[addr] = item;
+
+    if (rom.spoiler) {
+      rom.spoiler.addSlot(this.slot, rom.bosses.fromBossKill(this.boss)!.name, item);
+    }
   }
 }
 
 class PersonDataSlot implements Slot {
-  constructor(readonly person: number, readonly index: number) {}
+  constructor(readonly slot: number, readonly person: number, readonly index: number) {}
 
   set(rom: Rom, item: number): void {
     if (item >= 0x70) throw new Error(`no mimics on people`);
     rom.npcs[this.person].data[this.index] = item;
+
+    if (rom.spoiler) {
+      const npc = rom.npcs[this.person];
+      let name = npc && npc.name;
+      if (npc && npc.itemNames) {
+        const itemName = npc.itemNames[this.index];
+        name = itemName ? name + ' ' + itemName : undefined;
+      }
+      rom.spoiler.addSlot(this.slot, name || '', item);
+    }
   }
 }
 
@@ -63,32 +84,41 @@ class PersonDataSlot implements Slot {
 
 // Maps from slot to item actually in the slot.
 // Manages all the necessary updates for rearranging items.
-export class Slots {
- 
+class Slots {
+
   private slots: ReadonlyArray<ReadonlyArray<Slot>>;
 
   constructor(readonly rom: Rom) {
+
+    // TODO - this needs to move to AFTER we've done some initial fixup...!
+    // Maybe we really do need to make it separate from the rom?
+
     const slots: Slot[][] = seq(0x80, () => []);
+    function addSlot(slot: Slot): void {
+      slots[slot.slot].push(slot);
+    }
 
     // Find chests
     for (const loc of rom.locations) {
+      if (!loc.used) continue;
       for (let i = 0; i < loc.spawns.length; i++) {
         const spawn = loc.spawns[i];
-        if (spawn.isChest()) slots[spawn.id].push(new ChestSlot(loc.id, i));
+        if (spawn.isChest()) addSlot(new ChestSlot(spawn.id, loc.id, i));
       }
     }
 
     // Find item givers
     for (const npc of rom.npcs) {
+      if (!npc.used || !npc.hasDialog) continue;
       for (const ds of npc.localDialogs.values()) {
         for (const d of ds) {
           switch (d.message.action) {
           case 0x03:
-            slots[npc.data[0]].push(new PersonDataSlot(npc.id, 0));
+            addSlot(new PersonDataSlot(npc.data[0], npc.id, 0));
             break;
           case 0x09:
           case 0x11:
-            slots[npc.data[1]].push(new PersonDataSlot(npc.id, 1));
+            addSlot(new PersonDataSlot(npc.data[1], npc.id, 1));
             break;
           }
         }
@@ -97,16 +127,19 @@ export class Slots {
 
     // Find boss drops
     for (const boss of rom.bosses) {
+      if (boss.kill === 3 || boss.kill === 13) continue; // false alarms
       if (boss.kill != null && boss.drop != null) {
-        slots[boss.drop].push(new BossDropSlot(boss.kill));
+        addSlot(new BossDropSlot(boss.drop, boss.kill));
       }
     }
 
     // Record hardcoded slots
-    for (const addr of hardcodedItems) {
-      const id = this.rom.prg[addr];
-      slots[id].push(new HardcodedSlot(addr));
+    for (const [addr, name] of hardcodedItems) {
+      addSlot(new HardcodedSlot(this.rom.prg[addr], addr, name));
     }
+    extraSlots.forEach(addSlot);
+
+    console.log('slots', slots);
 
     this.slots = slots;
   }
@@ -142,20 +175,31 @@ export class Slots {
 }
 
 
-const hardcodedItems = [
-  0x367f4, // telepathy from stom
-  0x3d18f, // flight from kensu
-  0x3d1f9, // recover from asina
-  0x3d337, // ball of water from rage
-  0x3d655, // paralysis from trigger
-  0x3d6d9, // barrier from trigger
-  0x3d6de, // change from kensu
-  0x3d6e8, // bow of moon from aryllis
-  0x3d711, // refresh from trigger
-  0x3e3a2, // invisible flag for statue of onyx
-  0x3e3a6, // invisible flag for kirisa plant
-  0x3e3aa, // invisible flag for love pendant
+const hardcodedItems: ReadonlyArray<readonly [number, string?]> = [
+  [0x367f4, 'Stom fight'],
+  [0x3d18f, 'Slimed Kensu'],
+  [0x3d1f9, 'Asina'],
+  [0x3d2af, 'Stoned Akahana'],
+  [0x3d30e, 'Lighthouse Kensu'],
+  [0x3d337, 'Rage'],
+  [0x3d655, 'Mt Sabre summit trigger'],
+  [0x3d6d9, 'Whirlpool trigger'],
+  [0x3d6de, 'Swan Kensu'],
+  [0x3d6e8, 'Aryllis'],
+  [0x3d711], // refresh from trigger
+  [0x3d7fe, 'Akahana statue trade-in'],
+  [0x3e3a2], // invisible flag for statue of onyx
+  [0x3e3a6], // invisible flag for kirisa plant
+  [0x3e3aa], // invisible flag for love pendant
 ];
+
+const extraSlots = [
+  new PersonDataSlot(0x36, 0x63, 1), // shell flute (dolphin)
+];
+
+export function update(rom: Rom, fill: number[]): void {
+  new Slots(rom).update(fill);
+}
 
 
 /**
@@ -165,9 +209,9 @@ const hardcodedItems = [
  * into the normal 2xx item flags.
  */
 const preservedItemGetFlags = new Set([
-  0x00e, // telepathy - used for talking to animals/dwarfs
+  // 0x00e, // telepathy - used for talking to animals/dwarfs
   0x024, // generals defeated - will deal with this later
-  0x03f, // teleport - used for trigger
-  0x05f, // sword of thunder - used to trigger massacre
+  // 0x03f, // teleport - used for trigger
+  // 0x05f, // sword of thunder - used to trigger massacre
   0x08b, // shell flute - checked by fisherman -- TODO change to 236?
 ]);

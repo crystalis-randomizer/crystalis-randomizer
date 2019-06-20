@@ -12,6 +12,8 @@ import {Rom} from './rom.js';
 import {Entrance, Exit, Flag, Location, Spawn} from './rom/location.js';
 import {GlobalDialog, LocalDialog} from './rom/npc.js';
 import {ShopType, Shop} from './rom/shop.js';
+import * as slots from './rom/slots.js';
+import {Spoiler} from './rom/spoiler.js';
 import {hex, seq, watchArray, writeLittleEndian} from './rom/util.js';
 import * as version from './version.js';
 
@@ -66,8 +68,8 @@ export async function shuffle(rom: Uint8Array,
                               flags: FlagSet,
                               reader: Reader,
                               log?: LogType,
-                              progress?: ProgressTracker): Promise<number> {
-  // rom = watchArray(rom, 0x1e05a + 0x10);
+                              _progress?: ProgressTracker): Promise<number> {
+  //rom = watchArray(rom, 0x1c6f2 + 0x10);
 
   // First reencode the seed, mixing in the flags for security.
   if (typeof seed !== 'number') throw new Error('Bad seed');
@@ -123,6 +125,12 @@ export async function shuffle(rom: Uint8Array,
   // Parse the rom and apply other patches - note: must have shuffled
   // the depgraph FIRST!
   const parsed = new Rom(rom);
+  if (typeof window == 'object') (window as any).rom = parsed;
+  parsed.spoiler = new Spoiler(parsed);
+  if (log) {
+    log.slots = parsed.spoiler.slots;
+    log.route = parsed.spoiler.route;
+  }
   fixMimics(parsed);
 
   makeBraceletsProgressive(parsed);
@@ -167,9 +175,9 @@ export async function shuffle(rom: Uint8Array,
   }
   if (fill) {
     const n = (i: number) => {
-      if (i >= 0x70) return 'mimic';
+      if (i >= 0x70) return 'Mimic';
       const item = parsed.items[parsed.itemGets[i].itemId];
-      return item ? item.menuName : `invalid ${i}`;
+      return item ? item.messageName : `invalid ${i}`;
     };
     console.log('item: slot');
     for (let i = 0; i < fill.items.length; i++) {
@@ -178,7 +186,9 @@ export async function shuffle(rom: Uint8Array,
       }
     }
     console.log(w.traverse(w.graph, fill).join('\n'));
-    parsed.slots.update(fill.slots);
+    slots.update(parsed, fill.slots);
+  } else {
+    console.error('COULD NOT FILL!');
   }
   //console.log('fill', fill);
 
@@ -298,25 +308,32 @@ function shuffleShops(rom: Rom, _flags: FlagSet, random: Random): void {
   };
   // Read all the contents.
   for (const shop of rom.shops) {
+    if (!shop.used || shop.location === 0xff) continue;
     const data = shops[shop.type];
     if (data) {
       data.contents.push(...shop.contents.filter(x => x !== 0xff));
-      data.shops.push(shop, shop, shop, shop, shop, shop);
+      data.shops.push(shop);
       shop.contents = [];
     }
   }
   // Shuffle the contents.  Pick order to drop items in.
   for (const data of Object.values(shops)) {
-    random.shuffle(data.contents);
-    random.shuffle(data.shops);
-    while (data.contents.length && data.shops.length) {
-      const item = data.contents[0];
-      const shop = data.shops[0];
+    let slots: Shop[] | null = null;
+    const items = [...data.contents];
+    random.shuffle(items);
+    while (items.length) {
+      if (!slots || !slots.length) {
+        if (slots) items.shift();
+        slots = [...data.shops, ...data.shops, ...data.shops, ...data.shops];
+        random.shuffle(slots);
+      }
+      const item = items[0];
+      const shop = slots[0];
       if (shop.contents.length < 4 && !shop.contents.includes(item)) {
         shop.contents.push(item);
-        data.contents.shift();
+        items.shift();
       }
-      data.shops.shift();
+      slots.shift();
     }
   }
   // Sort and add 0xff's
@@ -661,14 +678,14 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   // dialog is shared between 88 and 16.
   rom.npcs[0x88].linkDialog(0x16);
 
-  // Make a new NPC for Akahana in Shyron that won't accept the Statue of Onyx.
+  // Make a new NPC for Akahana in Brynmaer; others won't accept the Statue of Onyx.
   // Linking spawn conditions and dialogs is sufficient, since the actual NPC ID
-  // (16) is what matters for the trade-in
-  rom.npcs[0x89].used = true;
-  rom.npcs[0x89].link(0x16);
-  rom.locations.brynmaer.spawns.find(s => s.isNpc() && s.id === 0x16)!.id = 0x89;
-  rom.npcs[0x89].data = [...rom.npcs[0x16].data] as any; // ensure give item
-  rom.items[0x25].tradeIn![0] = 0x89;
+  // (16 or 82) is what matters for the trade-in
+  rom.npcs[0x82].used = true;
+  rom.npcs[0x82].link(0x16);
+  rom.locations.brynmaer.spawns.find(s => s.isNpc() && s.id === 0x16)!.id = 0x82;
+  rom.npcs[0x82].data = [...rom.npcs[0x16].data] as any; // ensure give item
+  rom.items[0x25].tradeIn![0] = 0x82;
 
   // Leaf elder in house ($0d @ $c0) ~ sword of wind redundant flag
   // dialog(0x0d, 0xc0)[2].flags = [];
@@ -682,8 +699,8 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   dialog(0x13)[3].flags = [0x0a9];
 
   // Windmill guard ($14 @ $0e) shouldn't despawn after abduction (038),
-  // but instead after giving the item (232).
-  spawns(0x14, 0x0e)[1] = ~0x232; // replace flag ~038 => ~232
+  // but instead after giving the item (088)
+  spawns(0x14, 0x0e)[1] = ~0x088; // replace flag ~038 => ~088
   dialog(0x14, 0x0e)[0].flags = []; // remove redundant flag ~ windmill key
 
   // Akahana ($16 / 88) ~ shield ring redundant flag
@@ -716,8 +733,8 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   (() => {
     const [killedInsect, gotItem, getItem, findChild] = oakMotherDialog;
     findChild.condition = ~0x045;
-    getItem.condition = ~0x227;
-    getItem.flags = [];
+    //getItem.condition = ~0x227;
+    //getItem.flags = [];
     gotItem.condition = ~0;
     rom.npcs[0x1e].localDialogs.set(-1, [findChild, getItem, killedInsect, gotItem]);
   })();
@@ -760,21 +777,21 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   // TODO - change 08d to whatever actual item he gives, then remove both flags
   rom.npcs[0x44].spawnConditions.set(0xe9, [~0x08d]); // zombie town basement
   rom.npcs[0x44].spawnConditions.set(0xe4, [0x08d]);  // joel shed
-  dialog(0x44, 0xe9)[1].flags.pop(); // remove redundant itemget flag
+  //dialog(0x44, 0xe9)[1].flags.pop(); // remove redundant itemget flag
 
   // Brokahana ($54) ~ warrior ring redundant flag
-  dialog(0x54)[2].flags = [];
+  //dialog(0x54)[2].flags = [];
 
   // Deo ($5a) ~ pendant redundant flag
-  dialog(0x5a)[1].flags = [];
+  //dialog(0x5a)[1].flags = [];
 
   // Zebu ($5e) cave dialog (@ $10)
-  // TODO - dialogs(0x5e, 0x10).rearrange(~0x03a, 0x00d, 0x038, 0x241, 0x00a, ~0x000);
+  // TODO - dialogs(0x5e, 0x10).rearrange(~0x03a, 0x00d, 0x038, 0x039, 0x00a, ~0x000);
   rom.npcs[0x5e].localDialogs.set(0x10, [
     LocalDialog.of(~0x03a, [0x00, 0x1a], [0x03a]), // 03a NOT talked to zebu in cave -> Set 03a
     LocalDialog.of( 0x00d, [0x00, 0x1d]), // 00d leaf villagers rescued
     LocalDialog.of( 0x038, [0x00, 0x1c]), // 038 leaf attacked
-    LocalDialog.of( 0x241, [0x00, 0x1d]), // [241] learned refresh
+    LocalDialog.of( 0x039, [0x00, 0x1d]), // 039 learned refresh
     LocalDialog.of( 0x00a, [0x00, 0x1b, 0x03]), // 00a windmill key used -> teach refresh
     LocalDialog.of(~0x000, [0x00, 0x1d]),
   ]);
@@ -782,7 +799,7 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   remove(spawns(0x5e, 0x10), ~0x051); // remove 051 NOT learned barrier
 
   // Tornel ($5f) in sabre west ($21) ~ teleport redundant flag
-  dialog(0x5f, 0x21)[1].flags = [];
+  //dialog(0x5f, 0x21)[1].flags = [];
   // Don't despawn on getting barrier
   rom.npcs[0x5f].spawnConditions.delete(0x21); // remove 051 NOT learned barrier
 
@@ -804,11 +821,11 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   dialog(0x68)[0].message.action = 0x02; // disappear
 
   // Kensu in lighthouse ($74/$7e @ $62) ~ redundant flag
-  dialog(0x74, 0x62)[0].flags = [];
+  //dialog(0x74, 0x62)[0].flags = [];
 
   // Azteca ($83) in pyramid ~ bow of truth redundant flag
-  dialog(0x83)[0].condition = ~0x240;  // 240 NOT bow of truth
-  dialog(0x83)[0].flags = [];
+  //dialog(0x83)[0].condition = ~0x240;  // 240 NOT bow of truth
+  //dialog(0x83)[0].flags = [];
 
   // Remove useless spawn condition from Mado 1
   rom.npcs[0xc4].spawnConditions.delete(0xf2); // always spawn
@@ -824,7 +841,11 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   // zebuShyron[0].flags = [];
 
   // Shyron massacre ($80) requires key to stxy
-  rom.trigger(0x80).conditions.push(0x03b); // 234 key to stxy
+  rom.trigger(0x80).conditions = [
+    ~0x027, // not triggered massacre yet
+     0x03b, // got item from key to stxy slot
+     0x203, // got sword of thunder
+  ];
 
   // Enter shyron ($81) should set warp no matter what
   rom.trigger(0x81).conditions = [];
@@ -841,22 +862,29 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   rom.trigger(0x8c).conditions.push(0x03a); // 03a talked to zebu in cave
 
   // Paralysis trigger ($b2) ~ remove redundant itemget flag
-  rom.trigger(0xb2).conditions[0] = ~0x242;
-  rom.trigger(0xb2).flags.shift(); // remove 037 learned paralysis
+  //rom.trigger(0xb2).conditions[0] = ~0x242;
+  //rom.trigger(0xb2).flags.shift(); // remove 037 learned paralysis
 
   // Learn refresh trigger ($b4) ~ remove redundant itemget flag
-  rom.trigger(0xb4).conditions[1] = ~0x241;
-  rom.trigger(0xb4).flags = []; // remove 039 learned refresh
+  //rom.trigger(0xb4).conditions[1] = ~0x241;
+  //rom.trigger(0xb4).flags = []; // remove 039 learned refresh
+
+  // Teleport block on mt sabre is from spell, not slot
+  rom.trigger(0xba).conditions[0] = ~0x244; // ~03f -> ~244
 
   // Portoa palace guard movement trigger ($bb) stops on 01b (mesia) not 01f (orb)
   rom.trigger(0xbb).conditions[1] = ~0x01b;
 
   // Remove redundant trigger 8a (slot 16) in zombietown ($65)
   const {zombieTown} = rom.locations;
-  if (zombieTown.spawns[0x16 - 0x0d].id === 0x8a) {
-    // TODO - make a "delete if" helper function - delete if trigger 8a
-    // possibly use array.filter?
-    zombieTown.spawns.splice(0x16 - 0x0d, 1);
+  zombieTown.spawns = zombieTown.spawns.filter(x => !x.isTrigger() || x.id != 0x8a);
+
+  // Replace all dialog conditions from 00e to 243
+  for (const npc of rom.npcs) {
+    for (const d of npc.allDialogs()) {
+      if (d.condition === 0x00e) d.condition = 0x243;
+      if (d.condition === ~0x00e) d.condition = ~0x243;
+    }
   }
 };
 
@@ -955,7 +983,7 @@ const storyMode = (rom: Rom) => {
     // Note: if bosses are shuffled we'll need to detect this...
     ~rom.npcs[0xc2].spawnConditions.get(0x28)![0], // Kelbesque 1
     ~rom.npcs[0x84].spawnConditions.get(0x6e)![0], // Sabera 1
-    ~rom.triggers[0x9a & 0x7f].conditions[1], // Mado 1
+    ~rom.trigger(0x9a).conditions[1], // Mado 1
     ~rom.npcs[0xc5].spawnConditions.get(0xa9)![0], // Kelbesque 2
     ~rom.npcs[0xc6].spawnConditions.get(0xac)![0], // Sabera 2
     ~rom.npcs[0xc7].spawnConditions.get(0xb9)![0], // Mado 2

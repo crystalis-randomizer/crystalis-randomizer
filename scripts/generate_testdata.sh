@@ -34,7 +34,10 @@ scripts/inject.js "$1" test/testdata +10 \
   35691:3572d \
   357e4:35824 \
   3845c:3bf35 \
-  3e779:3e799
+  3cbec:3cbfc \
+  3e3a2:3e3ab \
+  3e779:3e799 \
+  367f4 3d18f 3d1f9 3d2af 3d30e 3d337 3d655 3d6d9 3d6de 3d6e8 3d711 3d7fe
 
 if [ "$2" = "-e" ]; then encrypt=true; fi
 

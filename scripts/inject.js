@@ -16,10 +16,10 @@ const main = async (args) => {
       offset = Number.parseInt(arg, 16);
       continue;
     }
-    const match = /([0-9a-f]+):([0-9a-f]+)(?:@([-,0-9a-f]+))?/.exec(arg);
+    const match = /([0-9a-f]+)(?::([0-9a-f]+)(?:@([-,0-9a-f]+))?)?/.exec(arg);
     if (!match) throw new Error(`Bad arg: ${arg}`);
     const a = Number.parseInt(match[1], 16) + offset;
-    const b = Number.parseInt(match[2], 16) + offset;
+    const b = match[2] ? Number.parseInt(match[2], 16) + offset : a + 1;
     let keep = () => true;
     if (match[3]) {
       const set = new Set();

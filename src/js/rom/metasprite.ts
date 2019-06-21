@@ -36,7 +36,7 @@ export class Metasprite extends Entity {
         }
       }
       if (this.mirrored == null) {
-        throw new Error(`could not find mirrored sprite for ${hex(id)}`);
+        throw new Error(`could not find mirrored sprite for ${hex(id)}: ${hex(target)}`);
       }
       this.size = 0;
       this.frameMask = 0;

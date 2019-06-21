@@ -694,7 +694,7 @@ const TERRAINS: Array<Terrain | undefined> = (() => {
   for (let effects = 0; effects < 128; effects++) {
     out[effects] = terrain(effects);
   }
-  console.log('TERRAINS', out);
+  //console.log('TERRAINS', out);
   return out;
 
   /**

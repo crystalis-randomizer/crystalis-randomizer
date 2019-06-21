@@ -169,10 +169,7 @@ export async function shuffle(rom: Uint8Array,
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.
   const w = new World(parsed, flags);
-  let fill = null;
-  for (let i = 0; fill == null && i < 10; i++) {
-    fill = await new AssumedFill(parsed, flags).shuffle(w.graph, random);
-  }
+  const fill = await new AssumedFill(parsed, flags).shuffle(w.graph, random);
   if (fill) {
     // const n = (i: number) => {
     //   if (i >= 0x70) return 'Mimic';
@@ -428,14 +425,6 @@ function shuffleWildWarp(rom: Rom, _flags: FlagSet, random: Random): void {
   }
   random.shuffle(locations);
   rom.wildWarp.locations = [...locations.slice(0, 15).sort((a, b) => a - b), 0];
-}
-
-function buffDyna(rom: Rom, _flags: FlagSet): void {
-  rom.objects[0xb8].collisionPlane = 1;
-  rom.objects[0xb8].immobile = true;
-  rom.objects[0xb9].collisionPlane = 1;
-  rom.objects[0xb9].immobile = true;
-  rom.objects[0x33].collisionPlane = 2;
 }
 
 function buffDyna(rom: Rom, flags: FlagSet): void {

@@ -14,6 +14,7 @@ const COMMON = [
   'fetchreader.js',
   'flagset.js',
   'graph.js',
+  'graph/*.js',
   'nodes.js',
   'patch.js',
   'random.js',

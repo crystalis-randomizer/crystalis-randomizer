@@ -38,7 +38,9 @@ esac
 
 # Build up the version.js file.
 {
-  echo "export const STATUS = '$status';"
+  # Note: we need to explicitly type STATUS as a string so that
+  # TypeScript doesn't complain on unnecessary checks.
+  echo "export const STATUS: string = '$status';"
   echo "export const VERSION = '$dir';"
   echo "export const LABEL = '$label';"
   echo "export const HASH = '$TRAVIS_COMMIT';"

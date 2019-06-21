@@ -18,5 +18,7 @@
   "include": [
     "**/*.ts"
   ],
-  "exclude": []
+  "exclude": [
+    "unused/*.ts"
+  ]
 }

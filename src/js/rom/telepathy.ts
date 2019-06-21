@@ -1,7 +1,7 @@
-import {Rom} from './entity.js';
 import {MessageId} from './messageid.js';
 import {Data, readBigEndian, readLittleEndian, seq, tuple, write, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
+import {Rom} from '../rom.js';
 
 export enum Sage {
   TORNEL = 0,

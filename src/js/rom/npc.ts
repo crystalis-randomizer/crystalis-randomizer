@@ -1,15 +1,19 @@
-import {Entity, Rom} from './entity.js';
+import {Entity} from './entity.js';
 import {MessageId} from './messageid.js';
 import {DIALOG_FLAGS, Data, SPAWN_CONDITION_FLAGS, addr, hex,
         readBigEndian, readLittleEndian, tuple,
         writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
+import {Rom} from '../rom.js';
 
 type FlagList = number[];
 
 export class Npc extends Entity {
 
   used: boolean;
+  name?: string;
+  itemNames?: [string, string];
+
   dataBase: number;
   data: [number, number, number, number]; // uint8
   spawnPointer: number;
@@ -45,7 +49,7 @@ export class Npc extends Entity {
     }
 
     // Populate the dialog table
-    this.dialogPointer = hasDialog ? 0x1c95d + (id << 1) : 0;
+    this.dialogPointer = 0x1c95d + (id << 1);
     this.dialogBase = hasDialog ? addr(rom.prg, this.dialogPointer, 0x14000) : 0;
     this.globalDialogs = [];
     if (hasDialog) {
@@ -79,6 +83,17 @@ export class Npc extends Entity {
       }
     }
 
+    for (const i in NAMES) {
+      if (!NAMES.hasOwnProperty(i)) continue;
+      const name = (NAMES as {} as {[key: string]: [number, string, string?, string?]})[i];
+      if (name[0] === id) {
+        this.name = name[1];
+        if (name.length > 2) {
+          this.itemNames = name.slice(2, 4) as [string, string];
+        }
+      }
+    }
+
     // console.log(`NPC Spawn $${this.id.toString(16)} from ${this.base.toString(16)}: bytes: $${
     //              this.bytes().map(x=>x.toString(16).padStart(2,0)).join(' ')}`);
   }
@@ -92,8 +107,19 @@ export class Npc extends Entity {
     return bytes;
   }
 
+  hasDialog(): boolean {
+    return Boolean(this.globalDialogs.length || this.localDialogs.size);
+  }
+
+  * allDialogs(): Iterable<LocalDialog | GlobalDialog> {
+    yield * this.globalDialogs;
+    for (const ds of this.localDialogs.values()) {
+      yield * ds;
+    }
+  }
+
   dialogBytes(): number[] {
-    if (!this.dialogPointer) return [];
+    if (!this.hasDialog()) return [];
     const bytes: number[] = [];
     function serialize(ds: GlobalDialog[] | LocalDialog[]): number[] {
       const out: number[] = [];
@@ -129,6 +155,19 @@ export class Npc extends Entity {
     return bytes;
   }
 
+  // Makes a "hardlink" between two NPCs, for spawn conditions and dialog.
+  link(id: number): void {
+    const other = this.rom.npcs[id];
+    this.spawnConditions = other.spawnConditions;
+    this.linkDialog(id);
+  }
+
+  linkDialog(id: number): void {
+    const other = this.rom.npcs[id];
+    this.globalDialogs = other.globalDialogs;
+    this.localDialogs = other.localDialogs;
+  }
+
   async write(writer: Writer): Promise<void> {
     if (!this.used) return;
     const promises = [];
@@ -137,7 +176,7 @@ export class Npc extends Entity {
                                `SpawnCondition ${hex(this.id)}`).then(
         address => writeLittleEndian(writer.rom, this.spawnPointer, address - 0x14000)));
 
-    if (this.dialogPointer) {
+    if (this.hasDialog()) {
       promises.push(writer.write(this.dialogBytes(), 0x1c000, 0x1dfff,
                                  `Dialog ${hex(this.id)}`).then(
           address => writeLittleEndian(writer.rom, this.dialogPointer, address - 0x14000)));
@@ -226,3 +265,38 @@ const UNUSED_NPCS = new Set([
   0x31, 0x3c, 0x6a, 0x73, 0x82, 0x86, 0x87, 0x89, 0x8a, 0x8b, 0x8c, 0x8d,
   // also everything from 8f..c0, but that's implicit.
 ]);
+
+export const NAMES = {
+  leafElder: [0x0d, 'Leaf elder'],
+  leafRabbit: [0x13, 'Leaf rabbit'],
+  windmillGuard: [0x14, 'Windmill guard', 'in cave', 'in house'],
+  windmillGuardSleeping: [0x15, 'Sleeping windmill guard'],
+  akahanaShyron: [0x16, 'Akahana in Shyron'], // also in cave
+  oakElder: [0x1d, 'Oak elder'],
+  oakMother: [0x1e, 'Oak mother'],
+  dwarfChild: [0x1f, 'Dwarf child'],
+  aryllis: [0x23, 'Aryllis'],
+  portoaQueen: [0x38, 'Portoa queen'],
+  fortuneTeller: [0x39, 'Fortune teller'],
+  clark: [0x44, 'Clark'],
+  brokahana: [0x54, 'Akahana\'s friend'],
+  deo: [0x5a, 'Deo'],
+  zebu: [0x5e, 'Zebu', 'in cave', 'in Shyron'],
+  tornel: [0x5f, 'Tornel'],
+  stom: [0x60, 'Stom'],
+  mesiaShrine: [0x61, 'Mesia in Shrine'],
+  asina: [0x62, 'Asina', 'in back room', ''],
+  hurtDolphin: [0x63, 'Hurt dolphin'],
+  fisherman: [0x64, 'Fisherman'],
+  kensuCabin: [0x68, 'Kensu in cabin'],
+  kensuSleeping: [0x6b, 'Sleeping kensu'],
+  kensuSwan: [0x74, 'Kensu in Swan'],
+  kensuSlime: [0x75, 'Slimed Kensu'],
+  kensuLighthouse: [0x7e, 'Kensu in lighthouse'],
+  akahanaBrynmaer: [0x82, 'Akahana in Brynmaer'], // Note: originally $16
+  azteca: [0x83, 'Azteca'],
+  fakeMesia: [0x84, 'Fake Mesia'],
+  akahanaStoned: [0x88, 'Stoned Akahana'],
+  mesia: [0x8e, 'Mesia'],
+  rage: [0xc3, 'Rage'],
+};

@@ -4,6 +4,7 @@ export class UnionFind<T> {
   private readonly data: Map<T, T> = new Map();
   private readonly sizes: Map<T, number> = new Map();
 
+  /** Returns the canonical element for the given entry. */
   find(elem: T): T {
     if (!this.data.has(elem)) {
       this.data.set(elem, elem);
@@ -23,7 +24,7 @@ export class UnionFind<T> {
     }
   }
 
-  unionInternal(a: T, b: T) {
+  private unionInternal(a: T, b: T) {
     a = this.find(a);
     b = this.find(b);
     if (a === b) return;
@@ -39,12 +40,32 @@ export class UnionFind<T> {
   }
 
   sets(): Set<T>[] {
-    const sets = new Map();
+    const sets = new Map<T, Set<T>>();
     for (const elem of this.data.keys()) {
       const root = this.find(elem);
-      if (!sets.has(root)) sets.set(root, new Set());
-      sets.get(root).add(elem);
+      let set = sets.get(root);
+      if (!set) sets.set(root, set = new Set<T>());
+      set.add(elem);
     }
     return [...sets.values()];
+  }
+
+  map(): Map<T, Set<T>> {
+    const sets = new Map<T, Set<T>>();
+    for (const elem of this.data.keys()) {
+      const root = this.find(elem);
+      let set = sets.get(root);
+      if (!set) sets.set(root, set = new Set<T>());
+      set.add(elem);
+    }
+    return sets;
+  }
+
+  roots(): T[] {
+    const roots = new Set<T>();
+    for (const elem of this.data.keys()) {
+      roots.add(this.find(elem));
+    }
+    return [...roots];
   }
 }

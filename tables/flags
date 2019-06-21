@@ -37,7 +37,7 @@
 035 - cured akahana
 037 - learned paralysis
       $6486
-038 - leaf attacked
+038 - leaf abducted
 039 - learned refresh (windmill started)
 03a - talked to zebu in cave
 03b - talked to zebu in shyron
@@ -46,7 +46,7 @@
 03f - learned teleport
 
 041 - got ball of fire
-043 - entered oak after defeating insect ???
+043 - entered oak after defeating insect (used for elder dialog)
 044 - got ball of fire
 045 - rescued child
 047 - rescued leaf elder 
@@ -74,6 +74,7 @@
 069 - UNUSED stoned people cured
 06a - stoned people cured
 06b - UNUSED stoned people cured
+06c - defeated draygon 1
 070 - kensu paralyzed in tavern
 071 - kensu paralyzed in dance hall
 072 - found kensu in tavern
@@ -110,6 +111,8 @@
 0a0 - got insect flute
 0a4 - woke kensu
 0a5 - talked to zebu student
+0a6 - heard some oak elder dialog
+0a8 - heard some more oak elder dialog
 0a9 - talked to leaf rabbit
 0aa - chest:1d:medical herb
 0ab - chest:50:merical herb

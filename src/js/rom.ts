@@ -1,5 +1,6 @@
 import {AdHocSpawn} from './rom/adhocspawn.js';
 import {BossKill} from './rom/bosskill.js';
+import {Bosses} from './rom/bosses.js';
 import {Hitbox} from './rom/hitbox.js';
 import {Item} from './rom/item.js';
 import {ItemGet} from './rom/itemget.js';
@@ -13,12 +14,14 @@ import {Palette} from './rom/palette.js';
 import {Pattern} from './rom/pattern.js';
 import {Screen} from './rom/screen.js';
 import {Shop} from './rom/shop.js';
+import {Spoiler} from './rom/spoiler.js';
 import {Telepathy} from './rom/telepathy.js';
 import {TileAnimation} from './rom/tileanimation.js';
 import {TileEffects} from './rom/tileeffects.js';
 import {Tileset} from './rom/tileset.js';
 import {Trigger} from './rom/trigger.js';
 import {hex, seq} from './rom/util.js';
+import {WildWarp} from './rom/wildwarp.js';
 import {Writer} from './rom/writer.js';
 import {UnionFind} from './unionfind.js';
 
@@ -68,9 +71,13 @@ export class Rom {
   readonly shops: Shop[];
   readonly npcs: Npc[];
   readonly bossKills: BossKill[];
+  readonly bosses: Bosses;
+  readonly wildWarp: WildWarp;
 
   readonly telepathy: Telepathy;
   readonly messages: Messages;
+
+  spoiler?: Spoiler;
 
   // NOTE: The following properties may be changed between reading and writing
   // the rom.  If this happens, the written rom will have different options.
@@ -108,7 +115,10 @@ export class Rom {
     this.omitItemGetDataSuffix = Rom.OMIT_ITEM_GET_DATA_SUFFIX.get(rom);
     this.omitLocalDialogSuffix = Rom.OMIT_LOCAL_DIALOG_SUFFIX.get(rom);
 
-    for (const [address, value] of ADJUSTMENTS) this.prg[address] = value;
+    // if (crc32(rom) === EXPECTED_CRC32) {
+    for (const [address, old, value] of ADJUSTMENTS) {
+      if (this.prg[address] === old) this.prg[address] = value;
+    }
 
     // Load up a bunch of data tables.  This will include a large number of the
     // data tables in the ROM.  The idea is that we can edit the arrays locally
@@ -144,6 +154,8 @@ export class Rom {
     this.shops = seq(44, i => new Shop(this, i)); // NOTE: depends on locations and objects
     this.npcs = seq(0xcd, i => new Npc(this, i));
     this.bossKills = seq(0xe, i => new BossKill(this, i));
+    this.bosses = new Bosses(this);
+    this.wildWarp = new WildWarp(this);
   }
 
   trigger(id: number): Trigger {
@@ -333,6 +345,7 @@ export class Rom {
     writeAll(this.items);
     writeAll(this.shops);
     writeAll(this.bossKills);
+    this.wildWarp.write(writer);
     promises.push(this.telepathy.write(writer));
     promises.push(this.messages.write(writer));
     promises.push(writer.commit());
@@ -401,13 +414,7 @@ export class Rom {
     const tiles = seq(256, () => new UnionFind<number>());
     for (let s = 0; s < tilesetByScreen.length; s++) {
       if (!tilesetByScreen[s]) continue;
-      const ts = new Set();
-      for (const row of this.screens[s].tiles) {
-        for (const t of row) {
-          ts.add(t);
-        }
-      }
-      for (const t of ts) {
+      for (const t of this.screens[s].allTilesSet()) {
         tiles[t].union([...tilesetByScreen[s]]);
       }
     }
@@ -481,10 +488,8 @@ export class Rom {
     // Do replacements.
     // 1. screens: [5, 1, ~9] => change 1s into 5s
     for (const screen of screens) {
-      for (const row of screen.tiles) {
-        for (let i = 0; i < row.length; i++) {
-          row[i] = revArr[row[i]];
-        }
+      for (let i = 0, len = screen.tiles.length; i < len; i++) {
+        screen.tiles[i] = revArr[screen.tiles[i]];
       }
     }
     // 2. tilesets: [5, 1 ~9] => copy 5 <= 1 and 1 <= 9
@@ -585,26 +590,35 @@ function pickFile(): Promise<Uint8Array> {
 
 export const EXPECTED_CRC32 = 0x1bd39032;
 
-const ADJUSTMENTS = new Map<number, number>([
+// Format: [address, broken, fixed]
+const ADJUSTMENTS = [
+  // Fix softlock in crypt due to flyable wall (effects $b6 tile $46)
+  [0x13646, 0x02, 0x06],
+  // Fix broken (fall-through) exit outside start
+  [0x1456a, 0x00, 0xff],
+  // Redundant exit next to stom's door in $19
+  [0x14aeb, 0x09, 0xff],
   // Fix garbage map square in bottom-right of Mt Sabre West cave
-  [0x14db9, 0x80],
+  [0x14db9, 0x08, 0x80],
   // Fix garbage map square in bottom-left of Lime Tree Valley
-  [0x1545d, 0x00],
+  [0x1545d, 0xff, 0x00],
   // Fix garbage at bottom of oasis cave map (it's 8x11, not 8x12 => fix height)
-  [0x164ff, 0x0a],
+  [0x164ff, 0x0b, 0x0a],
   // Fix bad music in zombietown houses: $10 should be $01
-  [0x1782a, 0x01], [0x17857, 0x01],
-  // Point Amazones outer guard to post-overflow message that actually shows.
-  [0x1cf05, 0x48],
+  [0x1782a, 0x10, 0x01],
+  [0x17857, 0x10, 0x01],
+  // Point Amazones outer guard to post-overflow message that's actually shown.
+  [0x1cf05, 0x47, 0x48],
   // Remove stray flight granter in Zombietown.
-  [0x1d311, 0xa0], [0x1d312, 0x00],
+  [0x1d311, 0x20, 0xa0],
+  [0x1d312, 0x30, 0x00],
   // Fix queen's dialog to terminate on last item, rather than overflow,
   // so that we don't parse garbage.
-  [0x1cff9, 0xe0],
+  [0x1cff9, 0x60, 0xe0],
   // Fix Amazones outer guard message to not overflow.
-  [0x2ca90, 0x00],
+  [0x2ca90, 0x02, 0x00],
   // Fix seemingly-unused kensu message 1d:17 overflowing into 1d:18
-  [0x2f573, 0x00],
+  [0x2f573, 0x02, 0x00],
   // Fix unused karmine treasure chest message 20:18.
-  [0x2fae4, 0x00],
-]);
+  [0x2fae4, 0x5f, 0x00],
+] as const;

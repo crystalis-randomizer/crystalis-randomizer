@@ -1,6 +1,8 @@
-import {Entity, Rom} from './entity.js';
+import {Entity} from './entity.js';
+import {TileEffects} from './tileeffects.js';
 import {seq, tuple} from './util.js';
 import {Writer} from './writer.js';
+import {Rom} from '../rom.js';
 
 // Mappping from metatile ID to tile quads and palette number.
 export class Tileset extends Entity {
@@ -41,4 +43,40 @@ export class Tileset extends Entity {
           (this.attrs[j + 2] & 3) << 4 | (this.attrs[j + 3] & 3) << 6;
     }
   }
+
+  effects(): TileEffects {
+    // NOTE: it's possible this could get out of sync...
+    let index = (this.id >>> 2) & 0xf;
+    if (this.id === 0xa8) index = 2;
+    if (this.id === 0xac) index--;
+    return this.rom.tileEffects[index];
+  }
+
+  // passage(tileId: number, tileEffects = this.effects()): Terrain {
+  //   const effects = tileEffects.effects;
+  //   // Note: for this purpose, pits can be traversed because there should always
+  //   // be a platform across it.  The dolphin counts as flying, and we have
+  //   // special logic to translate that.
+  //   const bits = effects[tileId] & 0x26;
+  //   if (!bits) return Passage.ALWAYS;
+  //   // Note: this will lose the flight bit from angry sea waterfall, but
+  //   // that's probably fine.
+  //   if (bits & 0x20) return Passage.SLOPE;
+  //   // TODO - require the 0x08 bit before checking alternate?
+  //   if (tileId < 0x20 && this.alternates[tileId] !== tileId) {
+  //     const altBits = effects[this.alternates[tileId]] & 0x26;
+  //     if (!altBits) return Passage.FLAG;
+  //   }
+  //   if (!(bits & 0x04)) return Passage.FLY;
+  //   return Passage.NEVER;
+  // }
 }
+
+
+// export enum Passage {
+//   ALWAYS = 0,
+//   SLOPE = 1,
+//   FLAG = 2,
+//   FLY = 3,
+//   NEVER = 4,
+// }

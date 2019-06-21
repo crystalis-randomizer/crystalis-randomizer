@@ -1,7 +1,8 @@
-import {Entity, Rom} from './entity.js';
+import {Entity} from './entity.js';
 import {Location} from './location.js';
 import {hex, readLittleEndian, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
+import {Rom} from '../rom.js';
 
 // NOTE: Would be nice to call this Object, but that seems confusing...
 export class ObjectData extends Entity {
@@ -96,6 +97,11 @@ export class ObjectData extends Entity {
             null;
     const s = new Set([...ms.palettes(), ...(childMs ? childMs.palettes() : [])]);
     return [...s];
+  }
+
+  // 0 for wind, 1 for fire, 2 for water, 3 for thunder
+  isVulnerable(element: number) {
+    return !(this.elements & (1 << element));
   }
 
   isShadow() {

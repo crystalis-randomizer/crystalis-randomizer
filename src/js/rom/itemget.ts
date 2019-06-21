@@ -1,7 +1,8 @@
-import {Entity, Rom} from './entity.js';
+import {Entity} from './entity.js';
 import {MessageId} from './messageid.js';
 import {ITEM_GET_FLAGS, hex, readLittleEndian, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
+import {Rom} from '../rom.js';
 
 // A gettable item slot/check.  Each ItemGet maps to a single item,
 // but non-unique items may map to multiple ItemGets.
@@ -45,6 +46,12 @@ export class ItemGet extends Entity {
 
     // TODO: remove this check
     this.key = rom.prg[a + 2 + 2 * this.flags.length + 1] === 0xfe;
+
+    if (id !== 0 && this.tableBase === readLittleEndian(rom.prg, 0x1dd66) + 0x14000) {
+      // This is one of the unused items that point to sword of wind.
+      this.key = false;
+      this.flags = [];
+    }
   }
 
   async write(writer: Writer): Promise<void> {

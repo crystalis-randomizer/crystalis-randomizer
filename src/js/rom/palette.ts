@@ -1,5 +1,6 @@
-import {Entity, Rom} from './entity.js';
+import {Entity} from './entity.js';
 import {tuple} from './util.js';
+import {Rom} from '../rom.js';
 
 export class Palette extends Entity {
 

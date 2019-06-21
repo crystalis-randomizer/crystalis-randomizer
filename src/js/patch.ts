@@ -171,24 +171,25 @@ export async function shuffle(rom: Uint8Array,
   const w = new World(parsed, flags);
   let fill = null;
   for (let i = 0; fill == null && i < 10; i++) {
-    fill = new AssumedFill(parsed, flags).shuffle(w.graph, random);
+    fill = await new AssumedFill(parsed, flags).shuffle(w.graph, random);
   }
   if (fill) {
-    const n = (i: number) => {
-      if (i >= 0x70) return 'Mimic';
-      const item = parsed.items[parsed.itemGets[i].itemId];
-      return item ? item.messageName : `invalid ${i}`;
-    };
-    console.log('item: slot');
-    for (let i = 0; i < fill.items.length; i++) {
-      if (fill.items[i] != null) {
-        console.log(`$${hex(i)} ${n(i)}: ${n(fill.items[i])} $${hex(fill.items[i])}`);
-      }
-    }
-    console.log(w.traverse(w.graph, fill).join('\n'));
+    // const n = (i: number) => {
+    //   if (i >= 0x70) return 'Mimic';
+    //   const item = parsed.items[parsed.itemGets[i].itemId];
+    //   return item ? item.messageName : `invalid ${i}`;
+    // };
+    // console.log('item: slot');
+    // for (let i = 0; i < fill.items.length; i++) {
+    //   if (fill.items[i] != null) {
+    //     console.log(`$${hex(i)} ${n(i)}: ${n(fill.items[i])} $${hex(fill.items[i])}`);
+    //   }
+    // }
+    w.traverse(w.graph, fill); // fill the spoiler (may also want to just be a sanity check?)
+
     slots.update(parsed, fill.slots);
   } else {
-    console.error('COULD NOT FILL!');
+    //console.error('COULD NOT FILL!');
   }
   //console.log('fill', fill);
 

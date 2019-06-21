@@ -374,6 +374,7 @@ export class World {
     // const entrance = rom.locations[start].entrances[0];
     // this.addEntrance(parseCoord(start, entrance));
 
+if(DEBUG){
     const w = window as any;
     console.log(w.roots = (w.tiles = this.tiles).roots());
     console.log([...(w.neighbors = neighbors)]);
@@ -418,7 +419,7 @@ w.area = (tile: TileId, f: (x:number)=>string = h) => {
 
     w.reqs.check = (id: number, f: ((flag: number) => string) = h): string => `${f(id)}: ${dnf(reqs.get(Slot(id)), f)}`;
     w.reqs.check2 = (id: number): string => w.reqs.check(id, w.whatFlag);
-
+}
 
 
     // Summary: 1055 roots, 1724 neighbors
@@ -436,17 +437,25 @@ w.area = (tile: TileId, f: (x:number)=>string = h) => {
 
   }
 
-  traverse(graph: shuffle.Graph, fill: shuffle.Fill): string[] {
-    const out = [];
-    for (const [si, ...iis] of shuffle.traverseFill(graph, fill)) {
-      const slot = conditionName(graph.slots[si].condition, this.rom);
-      const items = iis.map(ii => conditionName(graph.items[ii].condition, this.rom));
-      const slotItem = graph.slots[si].item;
-      const item = slotItem != null ?
-          ` => ${conditionName(0x200 | fill.slots[slotItem], this.rom)}` : '';
-      out.push(`${slot}${item}: [${items.join(', ')}]`);
+  traverse(graph: shuffle.Graph, fill: shuffle.Fill): void {
+    const {spoiler} = this.rom;
+    if (!spoiler) return;
+    // TODO - improve this!
+    for (let i = -0x200; i < 0x300; i++) {
+      spoiler.addCondition(i, conditionName(i, this.rom));
     }
-    return out;
+    // Do the traversal and add all the routes
+    for (const [si, ...iis] of shuffle.traverseFill(graph, fill)) {
+      const slot = graph.slots[si].condition;
+      // const slot = conditionName(graph.slots[si].condition, this.rom);
+      const items = iis.map(ii => graph.items[ii].condition);
+      // const items = iis.map(ii => conditionName(graph.items[ii].condition, this.rom));
+      const slotItem = fill.slots[graph.slots[si].item!];
+      spoiler.addCheck(slot, items, slotItem);
+      // const item = slotItem != null ?
+      //     ` => ${conditionName(0x200 | fill.slots[slotItem], this.rom)}` : '';
+      // out.push(`${slot}${item}: [${items.join(', ')}]`);
+    }
   }
 }
 
@@ -528,7 +537,7 @@ function makeGraph(reqs: Map<Slot, MutableRequirement>, rom: Rom): shuffle.Graph
     }
   }
 
-  console.log(graph);
+  if(DEBUG)console.log(graph);
 
   const unlocks = unlocksSet.map(x => [...x]);
   return {fixed, slots, items, graph, unlocks};
@@ -547,7 +556,9 @@ function conditionName(f: number, rom: Rom): string {
     const e = enums[enumName as keyof typeof enums] as any;
     for (const elem in e) {
       if (e[elem] === f || Array.isArray(e[elem]) && e[elem][0][0] === f) {
-        return `${enumName}.${elem}`;
+        return elem.replace(/([A-Z])([A-Z]+)/g, (_, f, s) => f + s.toLowerCase())
+                   .replace(/_/g, ' ');
+        //return `${enumName}.${elem}`;
       }
     }
   }
@@ -564,3 +575,4 @@ function conditionName(f: number, rom: Rom): string {
 
 /////////////
 
+const DEBUG: boolean = false;

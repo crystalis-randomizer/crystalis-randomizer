@@ -15,7 +15,7 @@ export class Spoiler {
 
   // Used for lazily displaying route
   readonly slotNames: {[id: number]: string} = [];
-  readonly conditionNames: {[id: number]: string} = [];
+  readonly conditionNames: {[id: number]: string} = {};
 
   constructor(readonly rom: Rom) {}
 
@@ -36,9 +36,9 @@ export class Spoiler {
     // Ordinary symmetic conditions
     if (id < 0x200 || id >= 0x280) return this.conditionNames[id] || conditionHex(id);
     // Dependency items - always < 248
-    if (item == null) return this.rom.items[id & 0xff].messageName;
+    if (item == null) return slotToItem(this.rom, id & 0xff);
     // Slot - print both slot and item name
-    return `${this.formatCondition(item)} (${this.slotNames[id] || conditionHex(id)})`;
+    return `${this.slotNames[id] || conditionHex(id)} (${this.formatCondition(item | 0x200)})`;
   }
 }
 

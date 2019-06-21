@@ -5,6 +5,17 @@ import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 import {seq} from '../rom/util.js';
 
+export interface Shuffle {
+  shuffle(graph: Graph,
+          random: Random,
+          progress?: ProgressTracker,
+          attempts?: number): Promise<Fill | null>;
+}
+export interface ProgressTracker {
+  addTasks(tasks: number): void;
+  addCompleted(tasks: number): void;
+}
+
 export type SlotIndex = number & {__slotIndex__: never};
 export type ItemIndex = number & {__itemIndex__: never};
 export type SlotId = number & {__slotId__: never};
@@ -94,10 +105,6 @@ function expandFill(g: Graph, f: IndexFill): Fill {
   return out;
 }
 
-
-export interface Shuffle {
-  shuffle(graph: Graph, random: Random): Fill | null;
-}
 
 /** @return The set of reachable slots. */
 export function traverse(graph: Graph, fill: IndexFill, has: Bits): Set<SlotIndex> {
@@ -277,43 +284,58 @@ export class AssumedFill implements Shuffle {
     return arr;
   }
 
-  shuffle(graph: Graph, random: Random): Fill | null {
-    const items = this.items(graph, random);
-//      this.itemToUid.map(uid => this.worldGraph.nodes[uid] as ItemGet), random);
-    let has = Bits.from(new Set(items));
-    const fill: IndexFill = new GenericFill();
-
-    if (this.flags.guaranteeSword()) {
-      // pick a sword at random and put it in slot 0
-      // TODO: if exits shuffled then find a slot in zero-sphere.
-    }
-
-    for (let bit: ItemIndex | undefined = items.pop(); bit != null; bit = items.pop()) {
-      if (!Bits.has(has, bit)) continue; // item already placed: skip
-      const itemId = graph.items[bit].item;
-      if (itemId == null) throw new Error(`bad item: ${Object.entries(graph.items[bit])}`);
-      has = Bits.without(has, bit);
-      const reachable = [...traverse(graph, fill, has)];
-      random.shuffle(reachable);
-      let found = false;
-      for (const slot of reachable) {
-        const slotId = graph.slots[slot].item;
-        if (slotId == null) continue;
-        if (!fill.hasSlot(slot) && this.fits(slotId, itemId /*, true*/)) { // slot !== this.win &&
-          fill.set(slot, bit);
-          found = true;
-          break;
-        }
+  async shuffle(graph: Graph,
+                random: Random,
+                progress?: ProgressTracker,
+                attempts: number = 1000): Promise<Fill | null> {
+    if (progress) progress.addTasks(Math.floor(attempts / 100));
+    OUTER:
+    while (attempts-- > 0) {
+      // ensure I updates
+      if (progress && (attempts % 100 === 0)) {
+        await new Promise(requestAnimationFrame);
+        progress.addCompleted(1);
       }
-      if (!found) return null;
+      const items = this.items(graph, random);
+  //      this.itemToUid.map(uid => this.worldGraph.nodes[uid] as ItemGet), random);
+      let has = Bits.from(new Set(items));
+      const fill: IndexFill = new GenericFill();
+
+      if (this.flags.guaranteeSword()) {
+        // pick a sword at random and put it in slot 0
+        // TODO: if exits shuffled then find a slot in zero-sphere.
+      }
+
+      for (let bit: ItemIndex | undefined = items.pop(); bit != null; bit = items.pop()) {
+        if (!Bits.has(has, bit)) continue; // item already placed: skip
+        const itemId = graph.items[bit].item;
+        if (itemId == null) throw new Error(`bad item: ${Object.entries(graph.items[bit])}`);
+        has = Bits.without(has, bit);
+        const reachable = [...traverse(graph, fill, has)];
+        random.shuffle(reachable);
+        let found = false;
+        for (const slot of reachable) {
+          const slotId = graph.slots[slot].item;
+          if (slotId == null) continue;
+          if (!fill.hasSlot(slot) && this.fits(slotId, itemId /*, true*/)) { // slot !== this.win &&
+            fill.set(slot, bit);
+            found = true;
+            break;
+          }
+        }
+        if (!found) continue OUTER;
+      }
+      const final = traverse(graph, fill, has);
+      if (final.size !== graph.slots.length) {
+        //console.error(final, graph);
+        continue;
+      }
+      const out = this.fill(graph, expandFill(graph, fill), random);
+      if (out == null) continue;
+      if (progress) progress.addCompleted(Math.floor(attempts / 100));
+      return out;
     }
-    const final = traverse(graph, fill, has);
-    if (final.size !== graph.slots.length) {
-      console.error(final, graph);
-      return null;
-    }
-      console.error(final, graph);
-    return this.fill(graph, expandFill(graph, fill), random);
+    return null;
   }
 
   /** Fils the remaining slots with non-progression items. */

@@ -11,7 +11,7 @@ export namespace Event {
   export const SHYRON_MASSACRE = Condition(0x027);
   export const LEAF_ABDUCTION = Condition(0x038);
   export const ZEBU_CAVE = Condition(0x03a);
-  export const ZEBU_SHYRON = Condition(0x03a);
+  export const ZEBU_SHYRON = Condition(0x03b);
   export const RESCUED_CHILD = Condition(0x045);
   export const DWARF_MOTHER = Condition(0x052); // talked to w/ telepathy
   export const DWARF_CHILD = Condition(0x053); // following

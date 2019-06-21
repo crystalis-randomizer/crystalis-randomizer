@@ -374,7 +374,7 @@ export class World {
     // const entrance = rom.locations[start].entrances[0];
     // this.addEntrance(parseCoord(start, entrance));
 
-if(DEBUG){
+if(DEBUG&&typeof window !== 'undefined'){
     const w = window as any;
     console.log(w.roots = (w.tiles = this.tiles).roots());
     console.log([...(w.neighbors = neighbors)]);
@@ -575,4 +575,4 @@ function conditionName(f: number, rom: Rom): string {
 
 /////////////
 
-const DEBUG: boolean = false;
+const DEBUG: boolean = true;

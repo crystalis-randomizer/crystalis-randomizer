@@ -400,7 +400,7 @@ export class Rom {
   }
 
   disjointTilesets() {
-    const tilesetByScreen = [];
+    const tilesetByScreen: Array<Set<number>> = [];
     for (const loc of this.locations) {
       if (!loc.used) continue;
       const tileset = loc.tileset;
@@ -453,7 +453,7 @@ export class Rom {
   swapMetatiles(tilesets: number[], ...cycles: (number | number[])[][]) {
     // Process the cycles
     const rev = new Map<number, number>();
-    const revArr = seq(0x100);
+    const revArr: number[] = seq(0x100);
     const alt = new Map<number, number>();
     const cpl = (x: number | number[]): number => Array.isArray(x) ? x[0] : x < 0 ? ~x : x;
     for (const cycle of cycles) {
@@ -474,8 +474,8 @@ export class Rom {
     }
     // const replacementSet = new Set(replacements.keys());
     // Find instances in (1) screens, (2) tilesets and alternates, (3) tileEffects
-    const screens = new Set();
-    const tileEffects = new Set();
+    const screens = new Set<Screen>();
+    const tileEffects = new Set<number>();
     const tilesetsSet = new Set(tilesets);
     for (const l of this.locations) {
       if (!l.used) continue;

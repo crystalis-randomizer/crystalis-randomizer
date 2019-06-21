@@ -161,6 +161,8 @@ export class MutableRequirement {
   }
 
   add(newLabel: string, newDeps: Set<Condition>): boolean {
+    for (const c of newDeps) if (Array.isArray(c)) throw new Error();
+
     if (this.map.has(newLabel)) return false;
     for (const [curLabel, curDeps] of this.map) {
       if (containsAll(newDeps, curDeps)) return false;
@@ -213,7 +215,10 @@ export function Condition(x: number): readonly [readonly [Condition]] {
   return [[x as Condition]];
 }
 export function and(...cs: (readonly [readonly Condition[]])[]): Requirement {
-  return [([] as Condition[]).concat(...cs.map(([c]) => c))];
+  // TODO - this was a destructuring function ([c]) => c but Closure is destroying
+  // it into (c) => [c] = c.
+  //return [([] as Condition[]).concat(...cs.map(([c]) => c))];
+  return [([] as Condition[]).concat(...cs.map((c) => c[0]))];
 }
 export function or(...cs: Requirement[]): Requirement {
   return ([] as Requirement).concat(...cs);

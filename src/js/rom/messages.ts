@@ -490,7 +490,7 @@ export class Messages {
       // make the abbreviation
       tableLength += str.length + 3;
       const l = abbr.length;
-      const mids = new Set();
+      const mids = new Set<string>();
       for (const w of ws) {
         const word = words[w];
         for (const mid of [word.mid, ...(alias.get(word.mid) || [])]) {

@@ -225,7 +225,7 @@ export class Location extends Entity {
   }
 
   allScreens(): Set<Screen> {
-    const screens = new Set();
+    const screens = new Set<Screen>();
     const ext = this.extended ? 0x100 : 0;
     for (const row of this.screens) {
       for (const screen of row) {

@@ -96,9 +96,12 @@ const SWORD_POWERS = [
 ] as const;
 
 function swordRequirement(sword: number, level: number): Requirement {
-  if (level === 1) return SWORDS[sword];
-  if (level === 3) return and(SWORDS[sword], ...SWORD_POWERS[sword]);
-  return or(...SWORD_POWERS[sword].map(p => and(SWORDS[sword], p)));
+  let r;
+  if (level === 1) r= SWORDS[sword];
+  else if (level === 3) r= and(SWORDS[sword], ...SWORD_POWERS[sword]);
+  else r= or(...SWORD_POWERS[sword].map(p => and(SWORDS[sword], p)));
+  if (Array.isArray(r[0][0])) throw new Error();
+  return r;
 }
 
 export class Overlay {

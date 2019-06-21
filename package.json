@@ -23,17 +23,17 @@
   },
   "homepage": "https://github.com/shicks/crystalis-randomizer#readme",
   "dependencies": {
-    "esm": "^3.2.4",
-    "lorem-ipsum": "^2.0.2"
+    "esm": "^3.2.25",
+    "lorem-ipsum": "^2.0.3"
   },
   "devDependencies": {
     "chai": "^4.2.0",
     "google-closure-compiler": "^20190121.0.0",
-    "gulp": "^4.0.0",
+    "gulp": "^4.0.2",
     "mocha": "^5.2.0",
-    "tslint": "^5.16.0",
-    "typescript": "^3.4.4",
-    "typescript-language-server": "^0.3.7",
+    "tslint": "^5.17.0",
+    "typescript": "^3.5.2",
+    "typescript-language-server": "^0.3.8",
     "viz.js": "^2.1.2"
   },
   "description": ""

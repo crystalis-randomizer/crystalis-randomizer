@@ -27,5 +27,13 @@ export class Tileset extends Entity {
                     (this.attrs[j + 2] & 3) << 4 | (this.attrs[j + 3] & 3) << 6;
         }
     }
+    effects() {
+        let index = (this.id >>> 2) & 0xf;
+        if (this.id === 0xa8)
+            index = 2;
+        if (this.id === 0xac)
+            index--;
+        return this.rom.tileEffects[index];
+    }
 }
 //# sourceMappingURL=tileset.js.map

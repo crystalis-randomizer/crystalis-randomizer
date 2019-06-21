@@ -115,4 +115,16 @@ export class SuffixTrie {
         }
     }
 }
+export class DefaultMap extends Map {
+    constructor(supplier) {
+        super();
+        this.supplier = supplier;
+    }
+    get(key) {
+        let value = super.get(key);
+        if (value == null)
+            super.set(key, value = this.supplier());
+        return value;
+    }
+}
 //# sourceMappingURL=util.js.map

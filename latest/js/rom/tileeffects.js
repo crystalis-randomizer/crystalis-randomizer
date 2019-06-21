@@ -12,4 +12,12 @@ export class TileEffects extends Entity {
         }
     }
 }
+TileEffects.PIT = 0x01;
+TileEffects.NO_WALK = 0x02;
+TileEffects.IMPASSIBLE = 0x04;
+TileEffects.ALTERNATIVE = 0x08;
+TileEffects.BEHIND = 0x10;
+TileEffects.SLOPE = 0x20;
+TileEffects.SLOW = 0x40;
+TileEffects.PAIN = 0x80;
 //# sourceMappingURL=tileeffects.js.map

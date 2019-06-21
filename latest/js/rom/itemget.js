@@ -14,6 +14,10 @@ export class ItemGet extends Entity {
         this.acquisitionAction = MessageId.from(rom.prg, a);
         this.flags = ITEM_GET_FLAGS.read(rom.prg, a + 2);
         this.key = rom.prg[a + 2 + 2 * this.flags.length + 1] === 0xfe;
+        if (id !== 0 && this.tableBase === readLittleEndian(rom.prg, 0x1dd66) + 0x14000) {
+            this.key = false;
+            this.flags = [];
+        }
     }
     async write(writer) {
         writer.rom[this.itemPointer] = this.itemId;

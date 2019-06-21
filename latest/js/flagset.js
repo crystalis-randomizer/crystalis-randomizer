@@ -235,6 +235,10 @@ export const FLAGS = [{
             }, {
                 flag: 'Tm',
                 name: 'Randomize music',
+            }, {
+                flag: 'Tw',
+                name: 'Randomize wild warp',
+                text: `Wild warp will go to Mezame Shrine and 15 other random locations.`,
             }],
     }, {
         section: 'Routing',
@@ -423,8 +427,9 @@ const FLAG_CONFLICTS = {
     Hx: /Ex/,
     Em: /Hm/,
     Ex: /Hx/,
-    Fw: /Gw/,
+    Fw: /[GT]w/,
     Gw: /Fw/,
+    Tw: /Fw/,
     Ft: /Gt/,
     Gt: /Ft/,
     Fc: /Gc/,
@@ -521,9 +526,11 @@ export class FlagSet {
     assumeTeleportSkip() { return this.check('Gp'); }
     assumeRabbitSkip() { return this.check('Gr'); }
     assumeStatueGlitch() { return this.check('Gt'); }
+    assumeTriggerGlitch() { return false; }
     assumeWildWarp() { return this.check('Gw'); }
     nerfWildWarp() { return this.check('Fw'); }
     allowWildWarp() { return !this.nerfWildWarp(); }
+    randomizeWildWarp() { return this.check('Tw'); }
     blackoutMode() { return this.check('Hz'); }
     buffDyna() { return this.check('Hd'); }
     expScalingFactor() {

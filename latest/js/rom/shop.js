@@ -34,8 +34,8 @@ export class Shop extends Entity {
             this.location = rom.prg[locationTable + id];
         }
         else {
-            this.location = 0xff;
-            for (let i = 0; i < 33 && this.location === 0xff; i++) {
+            let shopLocation = 0xff;
+            for (let i = 0; i < 33 && shopLocation === 0xff; i++) {
                 if (rom.prg[VANILLA_SHOP_INDICES + i] !== this.index)
                     continue;
                 const location = rom.prg[VANILLA_SHOP_LOCATIONS + i];
@@ -44,11 +44,12 @@ export class Shop extends Entity {
                         continue;
                     const obj = rom.objects[spawn.id];
                     if (obj.data[25] === 0x20 + this.type) {
-                        this.location = location;
+                        shopLocation = location;
                         break;
                     }
                 }
             }
+            this.location = shopLocation;
         }
         const readPrice = rom.shopDataTablesAddress ?
             i => rom.prg[this.pricesAddress + i] / 32 :

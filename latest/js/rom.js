@@ -1,5 +1,6 @@
 import { AdHocSpawn } from './rom/adhocspawn.js';
 import { BossKill } from './rom/bosskill.js';
+import { Bosses } from './rom/bosses.js';
 import { Hitbox } from './rom/hitbox.js';
 import { Item } from './rom/item.js';
 import { ItemGet } from './rom/itemget.js';
@@ -19,6 +20,7 @@ import { TileEffects } from './rom/tileeffects.js';
 import { Tileset } from './rom/tileset.js';
 import { Trigger } from './rom/trigger.js';
 import { hex, seq } from './rom/util.js';
+import { WildWarp } from './rom/wildwarp.js';
 import { Writer } from './rom/writer.js';
 import { UnionFind } from './unionfind.js';
 export class Rom {
@@ -32,8 +34,10 @@ export class Rom {
         this.telepathyTablesAddress = Rom.TELEPATHY_TABLES.get(rom);
         this.omitItemGetDataSuffix = Rom.OMIT_ITEM_GET_DATA_SUFFIX.get(rom);
         this.omitLocalDialogSuffix = Rom.OMIT_LOCAL_DIALOG_SUFFIX.get(rom);
-        for (const [address, value] of ADJUSTMENTS)
-            this.prg[address] = value;
+        for (const [address, old, value] of ADJUSTMENTS) {
+            if (this.prg[address] === old)
+                this.prg[address] = value;
+        }
         this.screens = seq(0x103, i => new Screen(this, i));
         this.tilesets = seq(12, i => new Tileset(this, i << 2 | 0x80));
         this.tileEffects = seq(11, i => new TileEffects(this, i + 0xb3));
@@ -53,6 +57,8 @@ export class Rom {
         this.shops = seq(44, i => new Shop(this, i));
         this.npcs = seq(0xcd, i => new Npc(this, i));
         this.bossKills = seq(0xe, i => new BossKill(this, i));
+        this.bosses = new Bosses(this);
+        this.wildWarp = new WildWarp(this);
     }
     trigger(id) {
         if (id < 0x80 || id > 0xff)
@@ -165,6 +171,7 @@ export class Rom {
         writeAll(this.items);
         writeAll(this.shops);
         writeAll(this.bossKills);
+        this.wildWarp.write(writer);
         promises.push(this.telepathy.write(writer));
         promises.push(this.messages.write(writer));
         promises.push(writer.commit());
@@ -189,13 +196,7 @@ export class Rom {
         for (let s = 0; s < tilesetByScreen.length; s++) {
             if (!tilesetByScreen[s])
                 continue;
-            const ts = new Set();
-            for (const row of this.screens[s].tiles) {
-                for (const t of row) {
-                    ts.add(t);
-                }
-            }
-            for (const t of ts) {
+            for (const t of this.screens[s].allTilesSet()) {
                 tiles[t].union([...tilesetByScreen[s]]);
             }
         }
@@ -242,10 +243,8 @@ export class Rom {
             }
         }
         for (const screen of screens) {
-            for (const row of screen.tiles) {
-                for (let i = 0; i < row.length; i++) {
-                    row[i] = revArr[row[i]];
-                }
+            for (let i = 0, len = screen.tiles.length; i < len; i++) {
+                screen.tiles[i] = revArr[screen.tiles[i]];
             }
         }
         for (const tsid of tilesetsSet) {
@@ -317,16 +316,21 @@ function pickFile() {
     });
 }
 export const EXPECTED_CRC32 = 0x1bd39032;
-const ADJUSTMENTS = new Map([
-    [0x14db9, 0x80],
-    [0x1545d, 0x00],
-    [0x164ff, 0x0a],
-    [0x1782a, 0x01], [0x17857, 0x01],
-    [0x1cf05, 0x48],
-    [0x1d311, 0xa0], [0x1d312, 0x00],
-    [0x1cff9, 0xe0],
-    [0x2ca90, 0x00],
-    [0x2f573, 0x00],
-    [0x2fae4, 0x00],
-]);
+const ADJUSTMENTS = [
+    [0x13646, 0x02, 0x06],
+    [0x1456a, 0x00, 0xff],
+    [0x14aeb, 0x09, 0xff],
+    [0x14db9, 0x08, 0x80],
+    [0x1545d, 0xff, 0x00],
+    [0x164ff, 0x0b, 0x0a],
+    [0x1782a, 0x10, 0x01],
+    [0x17857, 0x10, 0x01],
+    [0x1cf05, 0x47, 0x48],
+    [0x1d311, 0x20, 0xa0],
+    [0x1d312, 0x30, 0x00],
+    [0x1cff9, 0x60, 0xe0],
+    [0x2ca90, 0x02, 0x00],
+    [0x2f573, 0x02, 0x00],
+    [0x2fae4, 0x5f, 0x00],
+];
 //# sourceMappingURL=rom.js.map

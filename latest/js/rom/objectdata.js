@@ -64,6 +64,9 @@ export class ObjectData extends Entity {
         const s = new Set([...ms.palettes(), ...(childMs ? childMs.palettes() : [])]);
         return [...s];
     }
+    isVulnerable(element) {
+        return !(this.elements & (1 << element));
+    }
     isShadow() {
         return this.id === 0x7b || this.id === 0x8c;
     }

@@ -1,6 +1,6 @@
 import { Entity } from './entity.js';
 import { MessageId } from './messageid.js';
-import { hex, readLittleEndian, readString, seq, writeLittleEndian } from './util.js';
+import { hex, readLittleEndian, readString, seq, tuple, writeLittleEndian } from './util.js';
 const ITEM_USE_DATA_TABLE = 0x1dbe2;
 const ITEM_DATA_TABLE = 0x20ff0;
 const SELECTED_ITEM_TABLE = 0x2103b;
@@ -43,6 +43,9 @@ export class Item extends Entity {
         this.menuNamePointer = MENU_NAME_TABLE + 2 * id;
         this.menuNameBase = readLittleEndian(rom.prg, this.menuNamePointer) + 0x18000;
         this.menuName = MENU_NAME_ENCODE.reduce((s, [d, e]) => s.replace(e, d), readString(rom.prg, this.menuNameBase, 0xff));
+        const tradeInCount = TRADE_INS.get(id);
+        this.tradeIn =
+            tradeInCount ? tuple(rom.prg, this.itemUseDataBase, 6 * tradeInCount) : undefined;
     }
     itemUseMessages() {
         const messages = new Map();
@@ -82,11 +85,25 @@ export class Item extends Entity {
         const menuNameEncoded = MENU_NAME_ENCODE.reduce((s, [d, e]) => s.replace(d, e), this.menuName);
         const menuAddress = await writer.write([...stringToBytes(menuNameEncoded), 0xff], 0x20000, 0x21fff, `ItemMenuName ${hex(this.id)}`);
         writeLittleEndian(writer.rom, this.menuNamePointer, menuAddress - 0x18000);
+        if (this.tradeIn) {
+            const base = this.itemUseDataBase;
+            writer.rom.subarray(base, base + this.tradeIn.length).set(this.tradeIn);
+        }
     }
 }
 const stringToBytes = (s) => {
     return seq(s.length, i => s.charCodeAt(i));
 };
+const TRADE_INS = new Map([
+    [0x1d, 1],
+    [0x25, 1],
+    [0x28, 4],
+    [0x31, 2],
+    [0x35, 1],
+    [0x3b, 1],
+    [0x3c, 1],
+    [0x3d, 1],
+]);
 const ITEM_USE_MESSAGE = new Map([
     [0x1d, [2, 6]],
     [0x1e, [0]],

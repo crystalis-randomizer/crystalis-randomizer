@@ -2,6 +2,10 @@
 //  - see if we can improve/streamline the UI a bit
 //  - build tiles and text into base canvas class?
 
+// TODO -
+//  for each tileeffects/screen combo, find edges and exits and connections
+
+
 import {Canvas} from './canvas.js';
 import {Rom} from '../rom.js';
 
@@ -13,7 +17,7 @@ const run = async () => {
 
   const screens = [];
   for (const loc of rom.locations) {
-    if (!loc) continue;
+    if (!loc || !loc.used) continue;
     const config =
         [loc.tileset,
          ...loc.tilePatterns,

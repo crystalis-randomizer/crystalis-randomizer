@@ -1,14 +1,18 @@
 import { Assembler } from './6502.js';
 import { crc32 } from './crc32.js';
-import { generate as generateDepgraph, shuffle2 as shuffleDepgraph } from './depgraph.js';
+import { generate as generateDepgraph } from './depgraph.js';
 import { FetchReader } from './fetchreader.js';
 import { FlagSet } from './flagset.js';
+import { AssumedFill } from './graph/shuffle.js';
+import { World } from './graph/world.js';
 import { Random } from './random.js';
 import { Rom } from './rom.js';
 import { Entrance, Exit, Flag, Spawn } from './rom/location.js';
 import { GlobalDialog, LocalDialog } from './rom/npc.js';
 import { ShopType } from './rom/shop.js';
-import { seq, watchArray, writeLittleEndian } from './rom/util.js';
+import * as slots from './rom/slots.js';
+import { Spoiler } from './rom/spoiler.js';
+import { hex, seq, watchArray, writeLittleEndian } from './rom/util.js';
 import * as version from './version.js';
 export default ({
     async apply(rom, hash, path) {
@@ -30,15 +34,15 @@ export default ({
         await shuffle(rom, parseSeed(String(hash.seed)), flags, new FetchReader(path));
     },
 });
-export const parseSeed = (seed) => {
+export function parseSeed(seed) {
     if (!seed)
         return Random.newSeed();
     if (/^[0-9a-f]{1,8}$/i.test(seed))
         return Number.parseInt(seed, 16);
     return crc32(seed);
-};
+}
 const {} = { watchArray };
-export const shuffle = async (rom, seed, flags, reader, log, progress) => {
+export async function shuffle(rom, seed, flags, reader, log, _progress) {
     if (typeof seed !== 'number')
         throw new Error('Bad seed');
     const newSeed = crc32(seed.toString(16).padStart(8, '0') + String(flags)) >>> 0;
@@ -74,16 +78,24 @@ export const shuffle = async (rom, seed, flags, reader, log, progress) => {
         _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
     };
     const asm = new Assembler();
-    const assemble = async (path) => {
+    async function assemble(path) {
         asm.assemble(await reader.read(path), path);
         asm.patchRom(rom);
-    };
+    }
     const flagFile = Object.keys(defines)
         .filter(d => defines[d]).map(d => `define ${d} 1\n`).join('');
     asm.assemble(flagFile, 'flags.s');
     await assemble('preshuffle.s');
     const random = new Random(newSeed);
     const parsed = new Rom(rom);
+    if (typeof window == 'object')
+        window.rom = parsed;
+    parsed.spoiler = new Spoiler(parsed);
+    if (log) {
+        log.slots = parsed.spoiler.slots;
+        log.route = parsed.spoiler.route;
+    }
+    fixMimics(parsed);
     makeBraceletsProgressive(parsed);
     if (flags.blackoutMode())
         blackoutMode(parsed);
@@ -106,7 +118,22 @@ export const shuffle = async (rom, seed, flags, reader, log, progress) => {
     }
     parsed.scalingLevels = 48;
     parsed.uniqueItemTableAddress = asm.expand('KeyItemData');
-    await shuffleDepgraph(parsed, random, log, flags, progress);
+    undergroundChannelLandBridge(parsed);
+    if (flags.connectLimeTreeToLeaf())
+        connectLimeTreeToLeaf(parsed);
+    addCordelWestTriggers(parsed, flags);
+    if (flags.disableRabbitSkip())
+        fixRabbitSkip(parsed);
+    if (flags.shuffleShops())
+        shuffleShops(parsed, flags, random);
+    const w = new World(parsed, flags);
+    const fill = await new AssumedFill(parsed, flags).shuffle(w.graph, random);
+    if (fill) {
+        w.traverse(w.graph, fill);
+        slots.update(parsed, fill.slots);
+    }
+    else {
+    }
     if (touchShops) {
         rescaleShops(parsed, asm, flags.bargainHunting() ? random : undefined);
     }
@@ -123,12 +150,6 @@ export const shuffle = async (rom, seed, flags, reader, log, progress) => {
         rom[0x1c50c + 0x10] += 16;
         rom[0x1c4ea + 0x10] *= 2;
     }
-    if (flags.connectLimeTreeToLeaf()) {
-        connectLimeTreeToLeaf(parsed);
-    }
-    addCordelWestTriggers(parsed, flags);
-    if (flags.disableRabbitSkip())
-        fixRabbitSkip(parsed);
     if (flags.storyMode())
         storyMode(parsed);
     if (flags.chargeShotsOnly())
@@ -136,20 +157,36 @@ export const shuffle = async (rom, seed, flags, reader, log, progress) => {
     if (flags.orbsOptional())
         orbsOptional(parsed);
     shuffleMusic(parsed, flags, random);
+    if (flags.randomizeWildWarp())
+        shuffleWildWarp(parsed, flags, random);
     misc(parsed, flags, random);
     if (flags.buffDyna())
         buffDyna(parsed, flags);
     await parsed.writeData();
+    buffDyna(parsed, flags);
     const crc = await postParsedShuffle(rom, random, seed, flags, asm, assemble);
     return crc;
-};
-const postParsedShuffle = async (rom, random, seed, flags, asm, assemble) => {
+}
+async function postParsedShuffle(rom, random, seed, flags, asm, assemble) {
     await assemble('postshuffle.s');
     updateDifficultyScalingTables(rom, flags, asm);
     updateCoinDrops(rom, flags);
     shuffleRandomNumbers(rom, random);
     return stampVersionSeedAndHash(rom, seed, flags);
-};
+}
+;
+function undergroundChannelLandBridge(rom) {
+    const { tiles } = rom.screens[0xa1];
+    tiles[0x28] = 0x9f;
+    tiles[0x37] = 0x23;
+    tiles[0x38] = 0x23;
+    tiles[0x39] = 0x21;
+    tiles[0x47] = 0x8d;
+    tiles[0x48] = 0x8f;
+    tiles[0x56] = 0x99;
+    tiles[0x57] = 0x9a;
+    tiles[0x58] = 0x8c;
+}
 function misc(rom, flags, random) {
     const {} = { rom, flags, random };
     rom.messages.parts[2][2].text = `
@@ -161,8 +198,53 @@ Here, have this lame
 [29:Gas Mask] or something.`;
     rom.messages.parts[0][0xe].text = `It's dangerous to go alone! Take this.`;
     rom.messages.parts[0][0xe].fixText();
+    rom.npcs[0x16].data[3]++;
+    rom.npcs[0x16].data[2]++;
 }
 ;
+function shuffleShops(rom, _flags, random) {
+    const shops = {
+        [ShopType.ARMOR]: { contents: [], shops: [] },
+        [ShopType.TOOL]: { contents: [], shops: [] },
+    };
+    for (const shop of rom.shops) {
+        if (!shop.used || shop.location === 0xff)
+            continue;
+        const data = shops[shop.type];
+        if (data) {
+            data.contents.push(...shop.contents.filter(x => x !== 0xff));
+            data.shops.push(shop);
+            shop.contents = [];
+        }
+    }
+    for (const data of Object.values(shops)) {
+        let slots = null;
+        const items = [...data.contents];
+        random.shuffle(items);
+        while (items.length) {
+            if (!slots || !slots.length) {
+                if (slots)
+                    items.shift();
+                slots = [...data.shops, ...data.shops, ...data.shops, ...data.shops];
+                random.shuffle(slots);
+            }
+            const item = items[0];
+            const shop = slots[0];
+            if (shop.contents.length < 4 && !shop.contents.includes(item)) {
+                shop.contents.push(item);
+                items.shift();
+            }
+            slots.shift();
+        }
+    }
+    for (const data of Object.values(shops)) {
+        for (const shop of data.shops) {
+            while (shop.contents.length < 4)
+                shop.contents.push(0xff);
+            shop.contents.sort((a, b) => a - b);
+        }
+    }
+}
 function shuffleMusic(rom, flags, random) {
     if (!flags.randomizeMusic())
         return;
@@ -201,10 +283,13 @@ function shuffleMusic(rom, flags, random) {
         (monsters >= part[0].length ? hostile : peaceful).push(part);
     }
     const evenWeight = true;
+    const extraMusic = true;
     function shuffle(parts) {
         const values = parts.map((x) => x[1]);
         if (evenWeight) {
             const used = [...new Set(values)];
+            if (extraMusic)
+                used.push(0x9, 0xa, 0xb, 0x1a, 0x1c, 0x1d);
             for (const [locs] of parts) {
                 const value = used[random.nextInt(used.length)];
                 for (const loc of locs) {
@@ -223,6 +308,16 @@ function shuffleMusic(rom, flags, random) {
     }
     shuffle([...peaceful, ...hostile, ...bosses]);
 }
+function shuffleWildWarp(rom, _flags, random) {
+    const locations = [];
+    for (const l of rom.locations) {
+        if (l && l.used && l.id && !l.extended && (l.id & 0xf8) !== 0x58) {
+            locations.push(l.id);
+        }
+    }
+    random.shuffle(locations);
+    rom.wildWarp.locations = [...locations.slice(0, 15).sort((a, b) => a - b), 0];
+}
 function buffDyna(rom, flags) {
     rom.objects[0xb8].collisionPlane = 1;
     rom.objects[0xb8].immobile = true;
@@ -236,7 +331,7 @@ function makeBraceletsProgressive(rom) {
     const patched = [
         vanilla[0],
         vanilla[2],
-        vanilla[2],
+        vanilla[2].clone(),
         vanilla[1],
     ];
     patched[1].condition = ~0x206;
@@ -253,59 +348,63 @@ function blackoutMode(rom) {
         }
     }
 }
-const closeCaveEntrances = (rom, flags) => {
+function closeCaveEntrances(rom, flags) {
+    rom.locations.valleyOfWind.entrances[1].y += 16;
     rom.swapMetatiles([0x90], [0x07, [0x01, 0x00], ~0xc1], [0x0e, [0x02, 0x00], ~0xc1], [0x20, [0x03, 0x0a], ~0xd7], [0x21, [0x04, 0x0a], ~0xd7]);
     rom.swapMetatiles([0x94, 0x9c], [0x68, [0x01, 0x00], ~0xc1], [0x83, [0x02, 0x00], ~0xc1], [0x88, [0x03, 0x0a], ~0xd7], [0x89, [0x04, 0x0a], ~0xd7]);
-    rom.screens[0x0a].tiles[0x3][0x8] = 0x01;
-    rom.screens[0x0a].tiles[0x3][0x9] = 0x02;
-    rom.screens[0x0a].tiles[0x4][0x8] = 0x03;
-    rom.screens[0x0a].tiles[0x4][0x9] = 0x04;
-    rom.screens[0x15].tiles[0x7][0x9] = 0x01;
-    rom.screens[0x15].tiles[0x7][0xa] = 0x02;
-    rom.screens[0x15].tiles[0x8][0x9] = 0x03;
-    rom.screens[0x15].tiles[0x8][0xa] = 0x04;
-    rom.screens[0x19].tiles[0x4][0x8] = 0x01;
-    rom.screens[0x19].tiles[0x4][0x9] = 0x02;
-    rom.screens[0x19].tiles[0x5][0x8] = 0x03;
-    rom.screens[0x19].tiles[0x5][0x9] = 0x04;
-    rom.screens[0x3e].tiles[0x5][0x6] = 0x01;
-    rom.screens[0x3e].tiles[0x5][0x7] = 0x02;
-    rom.screens[0x3e].tiles[0x6][0x6] = 0x03;
-    rom.screens[0x3e].tiles[0x6][0x7] = 0x04;
+    rom.screens[0x0a].tiles[0x38] = 0x01;
+    rom.screens[0x0a].tiles[0x39] = 0x02;
+    rom.screens[0x0a].tiles[0x48] = 0x03;
+    rom.screens[0x0a].tiles[0x49] = 0x04;
+    rom.screens[0x15].tiles[0x79] = 0x01;
+    rom.screens[0x15].tiles[0x7a] = 0x02;
+    rom.screens[0x15].tiles[0x89] = 0x03;
+    rom.screens[0x15].tiles[0x8a] = 0x04;
+    rom.screens[0x19].tiles[0x48] = 0x01;
+    rom.screens[0x19].tiles[0x49] = 0x02;
+    rom.screens[0x19].tiles[0x58] = 0x03;
+    rom.screens[0x19].tiles[0x59] = 0x04;
+    rom.screens[0x3e].tiles[0x56] = 0x01;
+    rom.screens[0x3e].tiles[0x57] = 0x02;
+    rom.screens[0x3e].tiles[0x66] = 0x03;
+    rom.screens[0x3e].tiles[0x67] = 0x04;
+    const { valleyOfWind, cordelPlainsWest, cordelPlainsEast, waterfallValleyNorth, waterfallValleySouth, kirisaMeadow, saharaOutsideCave, desert2, } = rom.locations;
     const flagsToClear = [
-        [0x03, 0x30],
-        [0x14, 0x30],
-        [0x15, 0x30],
-        [0x40, 0x00],
-        [0x40, 0x14],
-        [0x41, 0x74],
-        [0x47, 0x10],
-        [0x94, 0x00],
-        [0x98, 0x41],
+        [valleyOfWind, 0x30],
+        [cordelPlainsWest, 0x30],
+        [cordelPlainsEast, 0x30],
+        [waterfallValleyNorth, 0x00],
+        [waterfallValleyNorth, 0x14],
+        [waterfallValleySouth, 0x74],
+        [kirisaMeadow, 0x10],
+        [saharaOutsideCave, 0x00],
+        [desert2, 0x41],
     ];
     for (const [loc, yx] of flagsToClear) {
-        rom.locations[loc].flags.push(Flag.of({ yx, flag: 0x2ef }));
+        loc.flags.push(Flag.of({ yx, flag: 0x2ef }));
     }
-    const replaceFlag = (loc, yx, flag) => {
-        for (const f of rom.locations[loc].flags) {
+    function replaceFlag(loc, yx, flag) {
+        for (const f of loc.flags) {
             if (f.yx === yx) {
                 f.flag = flag;
                 return;
             }
         }
         throw new Error(`Could not find flag to replace at ${loc}:${yx}`);
-    };
+    }
+    ;
     if (flags.paralysisRequiresPrisonKey()) {
         const windmillFlag = 0x2ee;
-        replaceFlag(0x14, 0x30, windmillFlag);
-        replaceFlag(0x15, 0x30, windmillFlag);
-        replaceFlag(0x40, 0x00, 0x2d8);
+        replaceFlag(cordelPlainsWest, 0x30, windmillFlag);
+        replaceFlag(cordelPlainsEast, 0x30, windmillFlag);
+        replaceFlag(waterfallValleyNorth, 0x00, 0x2d8);
         const explosion = Spawn.of({ y: 0x060, x: 0x060, type: 4, id: 0x2c });
         const keyTrigger = Spawn.of({ y: 0x070, x: 0x070, type: 2, id: 0xad });
-        rom.locations[0x40].spawns.splice(1, 0, explosion);
-        rom.locations[0x40].spawns.push(keyTrigger);
+        waterfallValleyNorth.spawns.splice(1, 0, explosion);
+        waterfallValleyNorth.spawns.push(keyTrigger);
     }
-};
+}
+;
 const eastCave = (rom) => {
     const screens1 = [[0x9c, 0x84, 0x80, 0x83, 0x9c],
         [0x80, 0x81, 0x83, 0x86, 0x80],
@@ -320,12 +419,14 @@ const eastCave = (rom) => {
     console.log(rom, screens1, screens2);
 };
 const adjustGoaFortressTriggers = (rom) => {
-    rom.locations[0xa9].spawns[0].x -= 8;
-    rom.locations[0xaa].spawns.splice(1, 1);
-    rom.locations[0xac].spawns.splice(2, 1);
-    rom.locations[0xb9].spawns.splice(2, 1);
+    const l = rom.locations;
+    l.goaFortressKelbesque.spawns[0].x -= 8;
+    l.goaFortressZebu.spawns.splice(1, 1);
+    l.goaFortressTornel.spawns.splice(2, 1);
+    l.goaFortressAsina.spawns.splice(2, 1);
 };
 const alarmFluteIsKeyItem = (rom) => {
+    const { waterfallCave4 } = rom.locations;
     rom.npcs[0x14].data[1] = 0x31;
     rom.itemGets[0x31].inventoryRowStart = 0x20;
     rom.items[0x31].unique = true;
@@ -349,110 +450,147 @@ const alarmFluteIsKeyItem = (rom) => {
         }
     }
     rom.itemGets[0x5b].itemId = 0x1d;
-    rom.locations[0x57].spawns[0x19 - 0xd].id = 0x10;
+    waterfallCave4.spawn(0x19).id = 0x10;
 };
 const reversibleSwanGate = (rom) => {
     rom.locations[0x73].spawns.push(Spawn.of({ xt: 0x0a, yt: 0x02, type: 1, id: 0x2d }), Spawn.of({ xt: 0x0b, yt: 0x02, type: 1, id: 0x2d }), Spawn.of({ xt: 0x0e, yt: 0x0a, type: 2, id: 0xb3 }));
     rom.npcs[0x2d].localDialogs.get(0x73)[0].flags.push(0x10d);
     rom.trigger(0xb3).conditions.push(0x10d);
 };
-const preventNpcDespawns = (rom, flags) => {
-    rom.npcs[0x0d].localDialogs.get(0xc0)[2].flags = [];
+function preventNpcDespawns(rom, flags) {
+    function remove(arr, elem) {
+        const index = arr.indexOf(elem);
+        if (index < 0)
+            throw new Error(`Could not find element ${elem} in ${arr}`);
+        arr.splice(index, 1);
+    }
+    function dialog(id, loc = -1) {
+        const result = rom.npcs[id].localDialogs.get(loc);
+        if (!result)
+            throw new Error(`Missing dialog $${hex(id)} at $${hex(loc)}`);
+        return result;
+    }
+    function spawns(id, loc) {
+        const result = rom.npcs[id].spawnConditions.get(loc);
+        if (!result)
+            throw new Error(`Missing spawn condition $${hex(id)} at $${hex(loc)}`);
+        return result;
+    }
+    rom.npcs[0x74].link(0x7e);
+    rom.npcs[0x74].used = true;
+    rom.locations.swanDanceHall.spawns.find(s => s.isNpc() && s.id === 0x7e).id = 0x74;
+    rom.items[0x3b].tradeIn[0] = 0x74;
+    rom.npcs[0x88].linkDialog(0x16);
+    rom.npcs[0x82].used = true;
+    rom.npcs[0x82].link(0x16);
+    rom.locations.brynmaer.spawns.find(s => s.isNpc() && s.id === 0x16).id = 0x82;
+    rom.npcs[0x82].data = [...rom.npcs[0x16].data];
+    rom.items[0x25].tradeIn[0] = 0x82;
+    rom.itemGets[0x00].flags = [];
+    dialog(0x13)[2].condition = 0x047;
+    dialog(0x13)[2].flags = [0x0a9];
     rom.npcs[0x13].localDialogs.get(-1)[3].condition = 0x047;
     rom.npcs[0x13].localDialogs.get(-1)[3].flags = [0x0a9];
-    rom.npcs[0x14].spawnConditions.get(0x0e)[1] = ~0x232;
-    rom.npcs[0x14].localDialogs.get(0x0e)[0].flags = [];
-    rom.npcs[0x16].localDialogs.get(0x57)[0].flags = [];
-    rom.npcs[0x88].localDialogs.get(0x57)[0].flags = [];
-    rom.npcs[0x16].spawnConditions.get(0x57).shift();
-    rom.npcs[0x88].spawnConditions.get(0x57).pop();
-    const reverseDialog = (ds) => {
+    spawns(0x14, 0x0e)[1] = ~0x088;
+    dialog(0x14, 0x0e)[0].flags = [];
+    dialog(0x16, 0x57)[0].flags = [];
+    remove(spawns(0x16, 0x57), ~0x051);
+    remove(spawns(0x88, 0x57), ~0x051);
+    function reverseDialog(ds) {
         ds.reverse();
         for (let i = 0; i < ds.length; i++) {
             const next = ds[i + 1];
             ds[i].condition = next ? ~next.condition : ~0;
         }
-    };
-    const oakElderDialog = rom.npcs[0x1d].localDialogs.get(-1);
+    }
+    ;
+    const oakElderDialog = dialog(0x1d);
     oakElderDialog[4].flags = [];
     oakElderDialog[0].message.action = 0x03;
     oakElderDialog[1].message.action = 0x03;
     oakElderDialog[2].message.action = 0x03;
     oakElderDialog[3].message.action = 0x03;
-    const oakMotherDialog = rom.npcs[0x1e].localDialogs.get(-1);
+    const oakMotherDialog = dialog(0x1e);
     (() => {
         const [killedInsect, gotItem, getItem, findChild] = oakMotherDialog;
         findChild.condition = ~0x045;
-        getItem.condition = ~0x227;
-        getItem.flags = [];
         gotItem.condition = ~0;
         rom.npcs[0x1e].localDialogs.set(-1, [findChild, getItem, killedInsect, gotItem]);
     })();
     for (const i of [0x20, 0x21, 0x22, 0x7c, 0x7d]) {
-        reverseDialog(rom.npcs[i].localDialogs.get(-1));
+        reverseDialog(dialog(i));
     }
-    const oakChildDialog = rom.npcs[0x1f].localDialogs.get(-1);
+    const oakChildDialog = dialog(0x1f);
     oakChildDialog.unshift(...oakChildDialog.splice(1, 1));
     rom.npcs[0x33].spawnConditions.set(0xdf, [~0x020, ~0x01b]);
-    rom.npcs[0x34].localDialogs.get(-1)[1].condition = 0x01b;
-    const queen = rom.npcs[0x38];
-    const queenDialog = queen.localDialogs.get(-1);
-    queenDialog[3].message.action = 0x03;
-    queenDialog[4].flags.push(0x09c);
-    queen.spawnConditions.get(0xdf)[1] = ~0x01b;
-    queen.spawnConditions.get(0xe1)[0] = 0x01b;
-    queenDialog[1].condition = 0x01b;
-    rom.npcs[0x39].spawnConditions.get(0xd8)[1] = ~0x01b;
+    dialog(0x34)[1].condition = 0x01b;
+    dialog(0x38)[3].message.action = 0x03;
+    dialog(0x38)[4].flags.push(0x09c);
+    spawns(0x38, 0xdf)[1] = ~0x01b;
+    spawns(0x38, 0xe1)[0] = 0x01b;
+    dialog(0x38)[1].condition = 0x01b;
+    spawns(0x39, 0xd8)[1] = ~0x01b;
     rom.npcs[0x44].spawnConditions.set(0xe9, [~0x08d]);
     rom.npcs[0x44].spawnConditions.set(0xe4, [0x08d]);
-    rom.npcs[0x44].localDialogs.get(0xe9)[1].flags.pop();
-    rom.npcs[0x54].localDialogs.get(-1)[2].flags = [];
-    rom.npcs[0x5a].localDialogs.get(-1)[1].flags = [];
     rom.npcs[0x5e].localDialogs.set(0x10, [
         LocalDialog.of(~0x03a, [0x00, 0x1a], [0x03a]),
         LocalDialog.of(0x00d, [0x00, 0x1d]),
         LocalDialog.of(0x038, [0x00, 0x1c]),
-        LocalDialog.of(0x241, [0x00, 0x1d]),
+        LocalDialog.of(0x039, [0x00, 0x1d]),
         LocalDialog.of(0x00a, [0x00, 0x1b, 0x03]),
         LocalDialog.of(~0x000, [0x00, 0x1d]),
     ]);
-    rom.npcs[0x5e].spawnConditions.get(0x10).pop();
-    rom.npcs[0x5f].localDialogs.get(0x21)[1].flags = [];
+    remove(spawns(0x5e, 0x10), ~0x051);
     rom.npcs[0x5f].spawnConditions.delete(0x21);
     rom.npcs[0x60].spawnConditions.delete(0x1e);
     const asina = rom.npcs[0x62];
     asina.data[1] = 0x28;
-    asina.localDialogs.get(0xe1)[0].message.action = 0x11;
-    asina.localDialogs.get(0xe1)[2].message.action = 0x11;
-    asina.spawnConditions.get(0xe1).pop();
+    dialog(asina.id, 0xe1)[0].message.action = 0x11;
+    dialog(asina.id, 0xe1)[2].message.action = 0x11;
+    remove(spawns(asina.id, 0xe1), ~0x08f);
     rom.npcs[0x68].spawnConditions.set(0x61, [~0x09b, 0x021]);
-    rom.npcs[0x68].localDialogs.get(-1)[0].message.action = 0x02;
-    rom.npcs[0x74].localDialogs.get(0x62)[0].flags = [];
-    rom.npcs[0x7e].localDialogs.get(0x62)[0].flags = [];
-    rom.npcs[0x83].localDialogs.get(-1)[0].condition = ~0x240;
-    rom.npcs[0x83].localDialogs.get(-1)[0].flags = [];
+    dialog(0x68)[0].message.action = 0x02;
     rom.npcs[0xc4].spawnConditions.delete(0xf2);
     rom.npcs[0xcb].spawnConditions.set(0xa6, [~0x28d]);
     const zebuShyron = rom.npcs[0x5e].localDialogs.get(0xf2);
     zebuShyron.unshift(...zebuShyron.splice(1, 1));
-    zebuShyron[0].flags = [];
-    rom.trigger(0x80).conditions.push(0x234);
+    rom.trigger(0x80).conditions = [
+        ~0x027,
+        0x03b,
+        0x203,
+    ];
     rom.trigger(0x81).conditions = [];
     if (flags.barrierRequiresCalmSea()) {
         rom.trigger(0x84).conditions.push(0x283);
     }
     rom.trigger(0x84).flags = [];
     rom.trigger(0x8c).conditions.push(0x03a);
-    rom.trigger(0xb2).conditions[0] = ~0x242;
-    rom.trigger(0xb2).flags.shift();
-    rom.trigger(0xb4).conditions[1] = ~0x241;
-    rom.trigger(0xb4).flags = [];
+    rom.trigger(0xba).conditions[0] = ~0x244;
     rom.trigger(0xbb).conditions[1] = ~0x01b;
-    const zombieTown = rom.locations[0x65];
-    if (zombieTown.spawns[0x16 - 0x0d].id === 0x8a) {
-        zombieTown.spawns.splice(0x16 - 0x0d, 1);
+    const { zombieTown } = rom.locations;
+    zombieTown.spawns = zombieTown.spawns.filter(x => !x.isTrigger() || x.id != 0x8a);
+    for (const npc of rom.npcs) {
+        for (const d of npc.allDialogs()) {
+            if (d.condition === 0x00e)
+                d.condition = 0x243;
+            if (d.condition === ~0x00e)
+                d.condition = ~0x243;
+        }
     }
-};
+}
+;
+function fixMimics(rom) {
+    let mimic = 0x70;
+    for (const loc of rom.locations) {
+        for (const s of loc.spawns) {
+            if (!s.isChest())
+                continue;
+            s.timed = false;
+            if (s.id >= 0x70)
+                s.id = mimic++;
+        }
+    }
+}
 const requireHealedDolphin = (rom) => {
     rom.npcs[0x64].spawnConditions.set(0xd6, [0x236, 0x025]);
     const daughterDialog = rom.npcs[0x7b].localDialogs.get(-1);
@@ -487,14 +625,15 @@ const adjustItemNames = (rom, flags) => {
     }
 };
 const addCordelWestTriggers = (rom, flags) => {
-    for (const spawn of rom.locations[0x15].spawns) {
+    const { cordelPlainsEast, cordelPlainsWest } = rom.locations;
+    for (const spawn of cordelPlainsEast.spawns) {
         if (spawn.isChest() || (flags.disableTeleportSkip() && spawn.isTrigger())) {
-            rom.locations[0x14].spawns.push(spawn.clone());
+            cordelPlainsWest.spawns.push(spawn.clone());
         }
     }
 };
 const fixRabbitSkip = (rom) => {
-    for (const spawn of rom.locations[0x28].spawns) {
+    for (const spawn of rom.locations.mtSabreNorthMain.spawns) {
         if (spawn.isTrigger() && spawn.id === 0x86) {
             if (spawn.x === 0x740) {
                 spawn.x += 16;
@@ -507,7 +646,7 @@ const storyMode = (rom) => {
     rom.npcs[0xcb].spawnConditions.set(0xa6, [
         ~rom.npcs[0xc2].spawnConditions.get(0x28)[0],
         ~rom.npcs[0x84].spawnConditions.get(0x6e)[0],
-        ~rom.triggers[0x9a & 0x7f].conditions[1],
+        ~rom.trigger(0x9a).conditions[1],
         ~rom.npcs[0xc5].spawnConditions.get(0xa9)[0],
         ~rom.npcs[0xc6].spawnConditions.get(0xac)[0],
         ~rom.npcs[0xc7].spawnConditions.get(0xb9)[0],
@@ -531,17 +670,16 @@ const orbsOptional = (rom) => {
     }
 };
 const connectLimeTreeToLeaf = (rom) => {
-    const valleyOfWind = rom.locations[0x03];
-    const limeTree = rom.locations[0x42];
+    const { valleyOfWind, limeTreeValley } = rom.locations;
     valleyOfWind.screens[5][4] = 0x10;
-    limeTree.screens[1][0] = 0x1a;
-    limeTree.screens[2][0] = 0x0c;
+    limeTreeValley.screens[1][0] = 0x1a;
+    limeTreeValley.screens[2][0] = 0x0c;
     const windEntrance = valleyOfWind.entrances.push(Entrance.of({ x: 0x4ef, y: 0x578 })) - 1;
-    const limeEntrance = limeTree.entrances.push(Entrance.of({ x: 0x010, y: 0x1c0 })) - 1;
+    const limeEntrance = limeTreeValley.entrances.push(Entrance.of({ x: 0x010, y: 0x1c0 })) - 1;
     valleyOfWind.exits.push(Exit.of({ x: 0x4f0, y: 0x560, dest: 0x42, entrance: limeEntrance }), Exit.of({ x: 0x4f0, y: 0x570, dest: 0x42, entrance: limeEntrance }));
-    limeTree.exits.push(Exit.of({ x: 0x000, y: 0x1b0, dest: 0x03, entrance: windEntrance }), Exit.of({ x: 0x000, y: 0x1c0, dest: 0x03, entrance: windEntrance }));
+    limeTreeValley.exits.push(Exit.of({ x: 0x000, y: 0x1b0, dest: 0x03, entrance: windEntrance }), Exit.of({ x: 0x000, y: 0x1c0, dest: 0x03, entrance: windEntrance }));
 };
-export const stampVersionSeedAndHash = (rom, seed, flags) => {
+export function stampVersionSeedAndHash(rom, seed, flags) {
     const crc = crc32(rom);
     const crcString = crc.toString(16).padStart(8, '0').toUpperCase();
     const hash = version.STATUS === 'unstable' ?
@@ -580,7 +718,8 @@ export const stampVersionSeedAndHash = (rom, seed, flags) => {
     if (version.STATUS === 'unstable')
         embed(0x2573c, 'BETA');
     return crc;
-};
+}
+;
 const patchBytes = (rom, address, bytes) => {
     for (let i = 0; i < bytes.length; i++) {
         rom[address + i] = bytes[i];

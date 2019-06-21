@@ -40,11 +40,30 @@ export class UnionFind {
         const sets = new Map();
         for (const elem of this.data.keys()) {
             const root = this.find(elem);
-            if (!sets.has(root))
-                sets.set(root, new Set());
-            sets.get(root).add(elem);
+            let set = sets.get(root);
+            if (!set)
+                sets.set(root, set = new Set());
+            set.add(elem);
         }
         return [...sets.values()];
+    }
+    map() {
+        const sets = new Map();
+        for (const elem of this.data.keys()) {
+            const root = this.find(elem);
+            let set = sets.get(root);
+            if (!set)
+                sets.set(root, set = new Set());
+            set.add(elem);
+        }
+        return sets;
+    }
+    roots() {
+        const roots = new Set();
+        for (const elem of this.data.keys()) {
+            roots.add(this.find(elem));
+        }
+        return [...roots];
     }
 }
 //# sourceMappingURL=unionfind.js.map

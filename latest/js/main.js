@@ -186,7 +186,7 @@ const shuffleRom = async (seed) => {
   done = true;
   document.body.classList.remove('shuffling');
   if (log) {
-    replaceSpoiler('spoiler-items', log.items.map(x => x.text));
+    replaceSpoiler('spoiler-items', sortBy(log.slots.filter(x => x), x => x.item));
     replaceSpoiler('spoiler-route', log.route);
   }
   document.getElementById('checksum').textContent =
@@ -194,6 +194,14 @@ const shuffleRom = async (seed) => {
       read(shuffled, 0x27895, 4) + read(shuffled, 0x27896, 4);
   return [shuffled, crc];
 };
+
+function sortBy(arr, f) {
+  return arr.sort((a, b) => {
+    const fa = f(a);
+    const fb = f(b);
+    return fa < fb ? -1 : fa > fb ? 1 : 0;
+  });
+}
 
 const replaceSpoiler = (name, log) => {
   const el = document.getElementById(name);

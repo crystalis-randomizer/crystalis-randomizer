@@ -212,6 +212,7 @@ export default (nes) => {
   };
 
   show.trigger = (id, ...x) => showTable(0x1e17a, 0x14000, id & 0x7f, ...x);
+  show.dialog = (id, ...x) => showTable(0x1c95d, 0x14000, id, ...x);
 
   function showTable(table, offset, id, ...args) {
     const lo = nes.rom.rom[table + 2 * id];
@@ -256,6 +257,7 @@ export default (nes) => {
         }, Y=$${nes.cpu.REG_Y.toString(16)}`), func()));
   };
 
+<<<<<<< HEAD
   const rom = new Uint8Array(nes.rom.rom.length + 0x10);
   rom.subarray(0x10).set(nes.rom.rom);
   window.rom = new Rom(rom);
@@ -270,6 +272,26 @@ export default (nes) => {
     window.heal();
     window.setTimeout(window.alwaysHeal, 500);
   };
+||||||| merged common ancestors
+  const rom = new Uint8Array(nes.rom.rom.length + 0x10);
+  rom.subarray(0x10).set(nes.rom.rom);
+  window.rom = new Rom(rom);
+=======
+  //const rom = new Uint8Array(nes.rom.rom.length + 0x10);
+  //rom.subarray(0x10).set(nes.rom.rom);
+  //window.rom = new Rom(rom);
+
+  window.heal = () => {
+    for (const a of [0x708, 0x709, 0x3c0, 0x3c1]) {
+      nes.cpu.ram[a] = 0xff;
+    }
+  };
+
+  window.alwaysHeal = () => {
+    window.heal();
+    window.setTimeout(window.alwaysHeal, 500);
+  };
+>>>>>>> locationgraph
 };
 
 

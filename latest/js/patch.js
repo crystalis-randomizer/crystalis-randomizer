@@ -550,6 +550,7 @@ function preventNpcDespawns(rom, flags) {
     remove(spawns(asina.id, 0xe1), ~0x08f);
     rom.npcs[0x68].spawnConditions.set(0x61, [~0x09b, 0x021]);
     dialog(0x68)[0].message.action = 0x02;
+    dialog(0xc3)[0].condition = 0x202;
     rom.npcs[0xc4].spawnConditions.delete(0xf2);
     rom.npcs[0xcb].spawnConditions.set(0xa6, [~0x28d]);
     const zebuShyron = rom.npcs[0x5e].localDialogs.get(0xf2);

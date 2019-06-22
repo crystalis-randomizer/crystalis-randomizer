@@ -832,6 +832,9 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   //dialog(0x83)[0].condition = ~0x240;  // 240 NOT bow of truth
   //dialog(0x83)[0].flags = [];
 
+  // Rage blocks on sword of water, not random item from the chest
+  dialog(0xc3)[0].condition = 0x202;
+
   // Remove useless spawn condition from Mado 1
   rom.npcs[0xc4].spawnConditions.delete(0xf2); // always spawn
 

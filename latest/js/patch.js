@@ -283,7 +283,7 @@ function shuffleMusic(rom, flags, random) {
         (monsters >= part[0].length ? hostile : peaceful).push(part);
     }
     const evenWeight = true;
-    const extraMusic = true;
+    const extraMusic = false;
     function shuffle(parts) {
         const values = parts.map((x) => x[1]);
         if (evenWeight) {

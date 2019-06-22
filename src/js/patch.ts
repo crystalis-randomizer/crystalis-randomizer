@@ -381,8 +381,8 @@ function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
     }
     (monsters >= part[0].length ? hostile : peaceful).push(part);
   }
-  const evenWeight = true;
-  const extraMusic = true;
+  const evenWeight: boolean = true;
+  const extraMusic: boolean = false;
   function shuffle(parts: Partition[]) {
     const values = parts.map((x: Partition) => x[1]);
 

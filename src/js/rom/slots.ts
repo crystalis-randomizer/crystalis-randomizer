@@ -1,4 +1,4 @@
-import {readLittleEndian, seq} from './util.js';
+import {seq} from './util.js';
 import {Rom} from '../rom.js';
 
 interface Slot {
@@ -36,9 +36,10 @@ class BossDropSlot implements Slot {
 
   set(rom: Rom, item: number): void {
     //rom.bosses.fromBossKill(this.boss).drop = item;
-    const addr = readLittleEndian(rom.prg, 0x1f96b + 2 * this.boss) + 0x14000;
+    //const addr = readLittleEndian(rom.prg, 0x1f96b + 2 * this.boss) + 0x14000;
     if (item >= 0x70) throw new Error('no mimics on bosses');
-    rom.prg[addr + 4] = item;
+    rom.bossKills[this.boss].data[4] = item;
+    //rom.prg[addr + 4] = item;
 
     if (rom.spoiler) {
       rom.spoiler.addSlot(this.slot, rom.bosses.fromBossKill(this.boss)!.name, item);

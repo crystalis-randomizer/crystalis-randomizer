@@ -257,26 +257,6 @@ export default (nes) => {
         }, Y=$${nes.cpu.REG_Y.toString(16)}`), func()));
   };
 
-<<<<<<< HEAD
-  const rom = new Uint8Array(nes.rom.rom.length + 0x10);
-  rom.subarray(0x10).set(nes.rom.rom);
-  window.rom = new Rom(rom);
-
-  window.heal = () => {
-    for (const a of [0x708, 0x709, 0x3c0, 0x3c1]) {
-      nes.cpu.ram[a] = 0xff;
-    }
-  };
-
-  window.alwaysHeal = () => {
-    window.heal();
-    window.setTimeout(window.alwaysHeal, 500);
-  };
-||||||| merged common ancestors
-  const rom = new Uint8Array(nes.rom.rom.length + 0x10);
-  rom.subarray(0x10).set(nes.rom.rom);
-  window.rom = new Rom(rom);
-=======
   //const rom = new Uint8Array(nes.rom.rom.length + 0x10);
   //rom.subarray(0x10).set(nes.rom.rom);
   //window.rom = new Rom(rom);
@@ -291,7 +271,6 @@ export default (nes) => {
     window.heal();
     window.setTimeout(window.alwaysHeal, 500);
   };
->>>>>>> locationgraph
 };
 
 

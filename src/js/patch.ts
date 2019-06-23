@@ -69,7 +69,7 @@ export async function shuffle(rom: Uint8Array,
                               reader: Reader,
                               log?: LogType,
                               _progress?: ProgressTracker): Promise<number> {
-  //rom = watchArray(rom, 0x1c6f2 + 0x10);
+  // rom = watchArray(rom, 0x1f9a0 + 0x10);
 
   // First reencode the seed, mixing in the flags for security.
   if (typeof seed !== 'number') throw new Error('Bad seed');

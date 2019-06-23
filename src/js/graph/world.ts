@@ -575,4 +575,4 @@ function conditionName(f: number, rom: Rom): string {
 
 /////////////
 
-const DEBUG: boolean = false;
+const DEBUG: boolean = true;

@@ -168,7 +168,7 @@ export async function shuffle(rom: Uint8Array,
 
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.
-  const w = new World(parsed, flags);
+  const w = World.build(parsed, flags);
   const fill = await new AssumedFill(parsed, flags).shuffle(w.graph, random);
   if (fill) {
     // const n = (i: number) => {

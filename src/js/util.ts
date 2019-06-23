@@ -279,6 +279,30 @@ export class DefaultMap<K, V extends {}> extends Map<K, V> {
   }
 }
 
+export class IndexedSet<T extends {}> {
+  private forward: T[] = [];
+  private reverse = new Map<T, number>();
+
+  add(elem: T): number {
+    let result = this.reverse.get(elem);
+    if (result == null) this.reverse.set(elem, result = this.forward.push(elem) - 1);
+    return result;
+  }
+
+  get(index: number): T {
+    return this.forward[index];
+  }
+}
+
+export namespace iters {
+  // Concatenates iterables.
+  export function * concat<T>(...iters: Array<Iterable<T>>): IterableIterator<T> {
+    for (const iter of iters) {
+      yield * iter;
+    }
+  }
+}
+
 // export class LabeledSet<T> {
 //   private map: Map<String, T>
 // }

@@ -1,6 +1,7 @@
 import {Terrain} from './condition.js'; // NOTE: cycle
 import {Location} from '../rom/location.js';
 import {UnionFind} from '../unionfind.js';
+import {iters} from '../util.js';
 
 // Implemented by Entrance, Exit, Spawn, etc...
 interface Coordinate {
@@ -123,7 +124,7 @@ export class Neighbors {
   * [Symbol.iterator](): IterableIterator<{from: TileId, to: TileId, south: boolean}> {
     const seen = new Set();
     let south = true;
-    for (const exit of concat(this.south, [-1 as TilePair], this.other)) {
+    for (const exit of iters.concat(this.south, [-1 as TilePair], this.other)) {
       if (exit === -1) {
         south = false;
         continue;
@@ -136,12 +137,6 @@ export class Neighbors {
       seen.add(normalized);
       yield {from, to, south};
     }
-  }
-}
-
-function * concat<T>(...iters: Array<Iterable<T>>): IterableIterator<T> {
-  for (const iter of iters) {
-    yield * iter;
   }
 }
 

@@ -38,7 +38,7 @@ class BossDropSlot implements Slot {
     //rom.bosses.fromBossKill(this.boss).drop = item;
     //const addr = readLittleEndian(rom.prg, 0x1f96b + 2 * this.boss) + 0x14000;
     if (item >= 0x70) throw new Error('no mimics on bosses');
-    rom.bossKills[this.boss].data[4] = item;
+    rom.bossKills[this.boss].itemDrop = item;
     //rom.prg[addr + 4] = item;
 
     if (rom.spoiler) {

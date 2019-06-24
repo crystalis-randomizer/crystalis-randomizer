@@ -687,7 +687,7 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
 
   // Leaf elder in house ($0d @ $c0) ~ sword of wind redundant flag
   // dialog(0x0d, 0xc0)[2].flags = [];
-  rom.itemGets[0x00].flags = []; // clear redundant flag
+  //rom.itemGets[0x00].flags = []; // clear redundant flag
 
   // Leaf rabbit ($13) normally stops setting its flag after prison door opened,
   // but that doesn't necessarily open mt sabre.  Instead (a) trigger on 047
@@ -706,10 +706,10 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   // Windmill guard ($14 @ $0e) shouldn't despawn after abduction (038),
   // but instead after giving the item (088)
   spawns(0x14, 0x0e)[1] = ~0x088; // replace flag ~038 => ~088
-  dialog(0x14, 0x0e)[0].flags = []; // remove redundant flag ~ windmill key
+  //dialog(0x14, 0x0e)[0].flags = []; // remove redundant flag ~ windmill key
 
   // Akahana ($16 / 88) ~ shield ring redundant flag
-  dialog(0x16, 0x57)[0].flags = [];
+  //dialog(0x16, 0x57)[0].flags = [];
   // Don't disappear after getting barrier (note 88's spawns not linked to 16)
   remove(spawns(0x16, 0x57), ~0x051);
   remove(spawns(0x88, 0x57), ~0x051);
@@ -724,7 +724,7 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
 
   // Oak elder ($1d) ~ sword of fire redundant flag
   const oakElderDialog = dialog(0x1d);
-  oakElderDialog[4].flags = [];
+  //oakElderDialog[4].flags = [];
   // Make sure that we try to give the item from *all* post-insect dialogs
   oakElderDialog[0].message.action = 0x03;
   oakElderDialog[1].message.action = 0x03;
@@ -863,7 +863,7 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
     rom.trigger(0x84).conditions.push(0x283); // 283 calmed the sea
     // TODO - consider not setting 051 and changing the condition to match the item
   }
-  rom.trigger(0x84).flags = [];
+  //rom.trigger(0x84).flags = [];
 
   // Add an extra condition to the Leaf abduction trigger (behind zebu).  This ensures
   // all the items in Leaf proper (elder and student) are gotten before they disappear.

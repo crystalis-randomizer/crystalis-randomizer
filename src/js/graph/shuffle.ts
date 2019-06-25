@@ -4,6 +4,7 @@ import {FlagSet} from '../flagset.js';
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 import {seq} from '../rom/util.js';
+import {iters} from '../util.js';
 
 export interface Shuffle {
   shuffle(graph: Graph,
@@ -203,25 +204,15 @@ enum Type {
   KEY = 3,
   BOSS_DROP = 4,
   NPC = 5,
-  // TODO - separate out MAGIC = 5, TRIGGER = 6?
-  TRIGGER = 6,
+  MAGIC = 6,
+  TRIGGER = 7,
 }
 
-// TODO - pull out a base class with fits, etc.
-export class AssumedFill implements Shuffle {
-  // TODO - other configuration?
+export class ShuffleRules {
+  private readonly slotTypes: ReadonlyKeyed<SlotId | ItemId, Type | undefined>;
+  private readonly pools = new Map<Type, number>();
 
-  slotTypes: ReadonlyKeyed<SlotId | ItemId, Type | undefined>;
-
-  shuffleTraps: boolean = false;
-  shuffleFull: boolean = false;
- 
-  constructor(private readonly rom: Rom, private readonly flags: FlagSet) {
-    // First compute a table of allowed locations, and whether items are unique.
-
-    // For each slot, figure out (a) is it a chest (or mimic), (b) is it a trigger square.
-    // If neither then it's an NPC or bossdrop.
-
+  constructor(private readonly rom: Rom, flags: FlagSet) {
     const triggers = new Set([0x41, 0x42, 0x46]);
     const chests = new Set();
     const bossDrops = new Set();
@@ -238,35 +229,131 @@ export class AssumedFill implements Shuffle {
     this.slotTypes = seq(0x7c, i => {
       if (triggers.has(i)) return Type.TRIGGER;
       if (i >= 0x70) return Type.MIMIC;
+      if (i <= 0x48 && i >= 0x41) return Type.MAGIC;
       const item = rom.items[i];
       if (chests.has(i)) return item && item.unique ? Type.KEY : Type.CONSUMABLE;
       if (bossDrops.has(i)) return Type.BOSS_DROP;
       return item && item.unique ? Type.NPC : Type.EMPTY;
     });
 
-    for (const f of flags.get('S') || []) {
-      if (/c.*k/.test(f)) this.shuffleFull = true;
-      if (/t/.test(f)) this.shuffleTraps = true;
+    const poolFlags = flags.get('S') || [];
+    for (let i = 0; i < poolFlags.length; i++) {
+      const flag = poolFlags[i];
+      if (/c/.test(flag)) {
+        this.pools.set(Type.CONSUMABLE, i + 1);
+      }
+      if (/t/.test(flag)) {
+        this.pools.set(Type.MIMIC, i + 1);
+      }
+      if (/k/.test(flag)) {
+        this.pools.set(Type.KEY, i + 1);
+        this.pools.set(Type.BOSS_DROP, i + 1);
+        this.pools.set(Type.NPC, i + 1);
+      }
+      if (/m/.test(flag)) {
+        this.pools.set(Type.MAGIC, i + 1);
+        this.pools.set(Type.TRIGGER, i + 1);
+      }
     }
   }
 
-  private fits(slot: SlotId, item: ItemId /* , uniquesLeft: boolean */): boolean {
+  fits(slot: SlotId, item: ItemId): boolean {
+    // Vanilla placement is always legal.
+    if (slot as number === item) return true;
     const slotType = this.slotTypes[slot] || Type.EMPTY;
+    const slotPool = this.pools.get(slotType);
+    if (slotPool == null) return false;
+    // TODO - account for new MAGIC type and use pools instead!
+    let itemPool;
     if (item >= 0x70) {
-      // Mimics
-      if (!this.shuffleTraps) return slotType === Type.MIMIC;
-      if (!this.shuffleFull) return slotType <= Type.CONSUMABLE;
-      return slotType <= Type.KEY;
-    } else if (item <= 0x48 && this.rom.items[item].unique) {
-      // Unique item
-      if (!this.shuffleFull) return slotType >= Type.KEY;
-      if (!this.shuffleTraps) return slotType !== Type.MIMIC;
-      return true;
+      // Mimics - can never show up except in non-boss-drop chests.
+      if (slotType > Type.KEY) return false;
+      itemPool = this.pools.get(Type.MIMIC);
+    } else if (item <= 0x48 && item >= 0x41) {
+      // Magics - can be anywhere.
+      itemPool = this.pools.get(Type.MAGIC);
+    } else if (item < 0x41 && this.rom.items[item].unique) {
+      // Unique item - can be anywhere.
+      itemPool = this.pools.get(Type.KEY);
+    } else if (this.pools.get(Type.CONSUMABLE) == null &&
+               this.slotTypes[item] === Type.BOSS_DROP) {
+      // If consumables are *not* shuffled then all boss dropa
+      // need to be treated as key items, not consumables.
+      itemPool = this.pools.get(Type.BOSS_DROP)
+    } else {
+      // Consumables - cannot be on an NPC, Magic, or Trigger.
+      if (slotType === Type.TRIGGER) return false;
+      itemPool = this.pools.get(Type.CONSUMABLE);
     }
-    // Consumable
-    // if (uniquesLeft && slotType > Type.CONSUMABLE) return false;
-    if (!this.shuffleTraps) return slotType !== Type.MIMIC;
-    return slotType !== Type.TRIGGER;
+    if (itemPool == null) return false;
+
+    // No hard blocker, so check for same pool.
+    if (slotPool === itemPool) return true;
+
+    // Different pools, but we need to shuffle some consumables
+    // into key item slots occasionally.
+    return (itemPool === this.pools.get(Type.CONSUMABLE));
+
+  //     if (!this.shuffleFull) return slotType >= Type.KEY;
+  //     if (!this.shuffleTraps) return slotType !== Type.MIMIC;
+  //     return true;
+  //   }
+  //   // Consumable
+  //   // if (uniquesLeft && slotType > Type.CONSUMABLE) return false;
+  //   if (!this.shuffleTraps) return slotType !== Type.MIMIC;
+  //   return slotType !== Type.TRIGGER;
+
+
+  // // mimic
+  //     if (!this.shuffleTraps) return slotType === Type.MIMIC;
+  //     if (!this.shuffleFull) return slotType <= Type.CONSUMABLE;
+  //     return slotType <= Type.KEY;
+
+  }
+
+  shouldShuffle(id: number): boolean {
+    return this.pools.get(this.slotTypes[id] || 0) != null;
+  }
+
+  isEarly(slot: SlotId): boolean {
+    const slotType = this.slotTypes[slot] || Type.EMPTY;
+
+    // Early slots:
+    //  - Trigger slots are always early, for all flags, since they cannot get
+    //    consumables (or mimics).
+    //  - TODO - consider a compromise full-shuffle flag/mode where NPCs don't
+    //    ever have consumables.
+    //  - Otherwise any slot type that does not shuffle w/ consumables needs
+    //    to be early.
+
+    if (slotType >= Type.TRIGGER) return true;
+    const pool = this.pools.get(slotType);
+    const consumablePool = this.pools.get(Type.CONSUMABLE);
+    const mimicPool = this.pools.get(Type.MIMIC);
+    return pool !== consumablePool && pool !== mimicPool;
+
+    // return slotType > (fullShuffle ? Type.NPC : Type.CONSUMABLE);
+  }
+}
+
+
+// TODO - pull out a base class with fits, etc.
+export class AssumedFill implements Shuffle {
+  // TODO - other configuration?
+
+  readonly shuffleRules: ShuffleRules;
+ 
+  constructor(private readonly rom: Rom, private readonly flags: FlagSet) {
+    this.shuffleRules = new ShuffleRules(rom, flags);
+    // First compute a table of allowed locations, and whether items are unique.
+
+    // For each slot, figure out (a) is it a chest (or mimic), (b) is it a trigger square.
+    // If neither then it's an NPC or bossdrop.
+
+  }
+
+  private fits(slot: SlotId, item: ItemId /* , uniquesLeft: boolean */): boolean {
+    return this.shuffleRules.fits(slot, item);
   }
 
   // Note: duplicates are allowed.
@@ -287,11 +374,11 @@ export class AssumedFill implements Shuffle {
   async shuffle(graph: Graph,
                 random: Random,
                 progress?: ProgressTracker,
-                attempts: number = 1000): Promise<Fill | null> {
+                attempts: number = 10): Promise<Fill | null> {
     if (progress) progress.addTasks(Math.floor(attempts / 100));
     OUTER:
     while (attempts-- > 0) {
-      // ensure I updates
+      // ensure UI updates
       if (progress && (attempts % 100 === 0)) {
         await new Promise(requestAnimationFrame);
         progress.addCompleted(1);
@@ -300,6 +387,22 @@ export class AssumedFill implements Shuffle {
   //      this.itemToUid.map(uid => this.worldGraph.nodes[uid] as ItemGet), random);
       let has = Bits.from(new Set(items));
       const fill: IndexFill = new GenericFill();
+
+      // Initialize fill with non-shuffled items.
+      const nonShuffledItems = new Map<SlotId, ItemIndex>();
+      for (let i = graph.fixed as ItemIndex; i < graph.items.length; i++) {
+        const id = graph.items[i].item;
+        if (id == null) continue;
+        if (!this.shuffleRules.shouldShuffle(id)) nonShuffledItems.set(id as ItemId & SlotId, i);
+      }
+      for (let s = graph.fixed as SlotIndex; s < graph.slots.length; s++) {
+        const id = graph.slots[s].item;
+        if (id == null) continue;
+        const i = nonShuffledItems.get(id);
+        if (i == null) continue;
+        fill.set(s, i);
+        has = Bits.without(has, i);
+      }
 
       if (this.flags.guaranteeSword()) {
         // pick a sword at random and put it in slot 0
@@ -323,11 +426,18 @@ export class AssumedFill implements Shuffle {
             break;
           }
         }
-        if (!found) continue OUTER;
+        if (!found) {
+
+          // TODO - it looks like we're placing random items in magic slots when Sm is off?!?
+          //     ----> figure out what was placed in its spot?
+
+          console.error(`Failed to place key item ${itemId}: available ${reachable.map(s => graph.slots[s].item)}`);
+          continue OUTER;
+        }
       }
       const final = traverse(graph, fill, has);
       if (final.size !== graph.slots.length) {
-        //console.error(final, graph);
+        console.error('unexpected size mismatch!', final, graph);
         continue;
       }
       const out = this.fill(graph, expandFill(graph, fill), random);
@@ -354,26 +464,29 @@ export class AssumedFill implements Shuffle {
     // earlySlots are filled first, if they're non-empty.
     const earlySlots: SlotId[] = [];
     const otherSlots: SlotId[] = [];
-    for (let i = 0; i < 0x7c; i++) {
+    for (let i = 0 as SlotId & ItemId; i < 0x7c; i++) {
       if (i < 0x70 && !validItems.has(i)) {
-        if (fill.hasSlot(i as SlotId) !== fill.hasItem(i as ItemId)) console.error('MISMATCH',i);
+        if (fill.hasSlot(i) !== fill.hasItem(i)) console.error('MISMATCH',i);
         continue;
       }
-      if (!fill.hasSlot(i as SlotId)) {
-        const slotType = this.slotTypes[i] || Type.EMPTY;
-        if (slotType <= (this.shuffleFull ? Type.NPC : Type.CONSUMABLE)) {
-          otherSlots.push(i as SlotId);
+      if (!fill.hasSlot(i) && !fill.hasItem(i) && !this.shuffleRules.shouldShuffle(i)) {
+        fill.set(i, i);
+        continue;
+      }
+      if (!fill.hasSlot(i)) {
+        if (this.shuffleRules.isEarly(i)) {
+          earlySlots.push(i);
         } else {
-          earlySlots.push(i as SlotId);
+          otherSlots.push(i);
         }
       }
-      if (!fill.hasItem(i as ItemId)) {
+      if (!fill.hasItem(i)) {
         if (i <= 0x48 && this.rom.items[i].unique) {
-          uniques.push(i as ItemId);
+          uniques.push(i);
         } else if (i < 0x70) {
-          consumables.push(i as ItemId);
+          consumables.push(i);
         } else {
-          mimics.push(i as ItemId);
+          mimics.push(i);
         }
       }
     }
@@ -382,22 +495,27 @@ export class AssumedFill implements Shuffle {
     random.shuffle(uniques);
     random.shuffle(consumables);
 
-    for (const item of [...uniques, ...mimics, ...consumables]) {
+    for (const item of iters.concat(uniques, mimics, consumables)) {
       // Try to place the item, starting with earlies first.
       // Mimics come before consumables because there's fewer places they can go.
       // Since key slots are allowed to contain consumables (even in full shuffle),
       // we need to make sure that the uniques go into those slots first.
       let found = false;
-      const slots = earlySlots.length ? earlySlots : otherSlots;
-      for (const slot of slots) {
-        if (this.fits(slot, item /*, false*/)) {
-          fill.set(slot, item);
-          found = true;
-          slots.splice(slots.indexOf(slot), 1);
-          break;
+      for (const slots of [earlySlots, otherSlots]) {
+        if (found) break;
+        for (const slot of slots) {
+          if (this.fits(slot, item /*, false*/)) {
+            fill.set(slot, item);
+            found = true;
+            slots.splice(slots.indexOf(slot), 1);
+            break;
+          }
         }
       }
-      if (!found) return null;
+      if (!found) {
+        console.error(`Failed to fill extra item ${item}. Slots: ${earlySlots}, ${otherSlots}`);
+        return null;
+      }
     }
     return fill;
   }

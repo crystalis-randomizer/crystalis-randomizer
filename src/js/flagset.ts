@@ -14,36 +14,36 @@ export const PRESETS: Preset[] = [{
   title: 'Casual',
 
   descr: `Basic flags for a relatively easy playthrough.`,
-  flags: 'Ds Edmrsx Fw Mr Rp Sbk Sc Sm Tab',
+  flags: 'Ds Edmrsx Fw Mr Rp Sc Sk Sm Tab',
 }, {
   title: 'Intermediate',
 
   descr: `Slightly more challenge than Casual but still approachable.`,
-  flags: 'Ds Edms Fsw Gt Mr Ps Rlpt Sbkm Sct Tab',
+  flags: 'Ds Edms Fsw Gt Mr Ps Rlpt Sct Skm Tab',
 
   default: true,
 }, {
   title: 'Full Shuffle',
 
   descr: `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
-  flags: 'Em Fsw Gt Mrt Ps Rlprt Sbckmt Tabm',
+  flags: 'Em Fsw Gt Mrt Ps Rlprt Sckmt Tabm',
 }, {
   title: 'Glitchless',
 
   descr: `Full shuffle but with no glitches.`,
-  flags: 'Em Fcpstw Mrt Ps Rlprt Sbckmt Tabm',
+  flags: 'Em Fcpstw Mrt Ps Rlprt Sckmt Tabm',
 }, {
   // TODO: add 'Ht' for maxing out tower scaling
   title: 'Advanced',
 
   descr: `A balanced randomization with quite a bit more difficulty.`,
-  flags: 'Fsw Gfprt Hbdgw Mert Ps Rloprst Sbckt Sm Tabm',
+  flags: 'Fsw Gfprt Hbdgw Mert Ps Rloprst Sckt Sm Tabm',
 }, {
   // TODO: add 'Ht'
   title: 'Ludicrous',
 
   descr: `Pulls out all the stops, may require superhuman feats.`,
-  flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Rloprst Sbckmt Tabm',
+  flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Rloprst Sckmt Tabm',
 }];
 
 // Just the flags, not the whole documentation.
@@ -70,19 +70,10 @@ interface Flag {
 export const FLAGS: FlagSection[] = [{
   section: 'Items',
   text: `Items are broken into five pools: <i>key items</i> includes all
-      swords, orbs, bracelets, and progression items (rabbit boots,
-      gas mask, and all items in the third row: windmill key through
-      bow of truth), as well as anything dropped by a boss (one each
-      of fruit of power, opel statue, fruit of repun, sacred shield,
-      and psycho armor); <i>bonus items</i> includes items that are
-      never required but are nice to have, specifically the remaining
-      six passive effect items in the second inventory row;
-      <i>consumable items</i> includes everything else found in
-      chests: primarily first row one-use items, but also includes
-      psycho shield and battle armor; <i>magic</i> is the eight
-      spells; and <i>traps</i> are the 12 trap chests found in various
-      places. These pools can be shuffled together, kept separate, or
-      left unshuffled.`,
+      unique items; <i>consumable items</i> includes anything that can be
+      dropped; <i>magic</i> is the eight spells; and <i>traps</i> are the
+      12 trap chests found in various places. These pools can be shuffled
+      together, kept separate, or left unshuffled.`,
 
   flags: [{
     flag: 'Sk',
@@ -91,20 +82,8 @@ export const FLAGS: FlagSection[] = [{
     flag: 'Sm',
     name: 'Shuffle magics',
   }, {
-    flag: 'Sb',
-    name: 'Shuffle bonus items',
-  }, {
     flag: 'Sc',
     name: 'Shuffle consumables',
-  }, {
-    flag: 'Sbk',
-    name: 'Shuffle key items with bonus items',
-  }, {
-    flag: 'Sbm',
-    name: 'Shuffle bonus items with magic',
-  }, {
-    flag: 'Sbt',
-    name: 'Shuffle bonus items with traps',
   }, {
     flag: 'Sct',
     name: 'Shuffle consumables with traps',
@@ -115,13 +94,6 @@ export const FLAGS: FlagSection[] = [{
     flag: 'Skt',
     name: 'Shuffle key items with traps',
   }, {
-    flag: 'Sbkm',
-    name: 'Shuffle bonus, key, and magic',
-  }, {
-    flag: 'Sbc',
-    hard: true,
-    name: 'Shuffle bonus items with consumables',
-  }, {
     flag: 'Sck',
     hard: true,
     name: 'Shuffle consumables with key items',
@@ -130,35 +102,19 @@ export const FLAGS: FlagSection[] = [{
     hard: true,
     name: 'Shuffle consumables with magic',
   }, {
-    flag: 'Sbck',
-    hard: true,
-    name: 'Shuffle bonus, consumables, and key items',
-  }, {
-    flag: 'Sbct',
-    hard: true,
-    name: 'Shuffle bonus, consumables, and traps',
-  }, {
-    flag: 'Sbkt',
-    hard: true,
-    name: 'Shuffle bonus, key, and traps',
-  }, {
     flag: 'Skmt',
     hard: true,
     name: 'Shuffle key, magic, and traps',
   }, {
-    flag: 'Sbckm',
+    flag: 'Sckm',
     hard: true,
-    name: 'Shuffle bonus, key, consumables, and magic',
+    name: 'Shuffle key, consumables, and magic',
   }, {
-    flag: 'Sbckt',
+    flag: 'Sckt',
     hard: true,
-    name: 'Shuffle bonus, key, consumables, and traps',
+    name: 'Shuffle key, consumables, and traps',
   }, {
-    flag: 'Sbkmt',
-    hard: true,
-    name: 'Shuffle bonus, key, magic, and traps',
-  }, {
-    flag: 'Sbckmt',
+    flag: 'Sckmt',
     hard: true,
     name: 'Shuffle all items and traps together',
   }], // TODO: Ss to shuffle shops?

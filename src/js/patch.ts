@@ -68,8 +68,8 @@ export async function shuffle(rom: Uint8Array,
                               flags: FlagSet,
                               reader: Reader,
                               log?: LogType,
-                              _progress?: ProgressTracker): Promise<number> {
-  // rom = watchArray(rom, 0x1f9a0 + 0x10);
+                              progress?: ProgressTracker): Promise<number> {
+  //rom = watchArray(rom, 0x85fa + 0x10);
 
   // First reencode the seed, mixing in the flags for security.
   if (typeof seed !== 'number') throw new Error('Bad seed');
@@ -171,7 +171,7 @@ export async function shuffle(rom: Uint8Array,
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.
   const w = World.build(parsed, flags);
-  const fill = await new AssumedFill(parsed, flags).shuffle(w.graph, random);
+  const fill = await new AssumedFill(parsed, flags).shuffle(w.graph, random, progress);
   if (fill) {
     // const n = (i: number) => {
     //   if (i >= 0x70) return 'Mimic';
@@ -295,9 +295,6 @@ Here, have this lame
   // it could instead say "the statue of onyx is ...".
   rom.messages.parts[0][0xe].text = `It's dangerous to go alone! Take this.`;
   rom.messages.parts[0][0xe].fixText();
-
-  rom.npcs[0x16].data[3]++;
-  rom.npcs[0x16].data[2]++;
 };
 
 function shuffleShops(rom: Rom, _flags: FlagSet, random: Random): void {

@@ -166,6 +166,8 @@ export async function shuffle(rom: Uint8Array,
 
   if (flags.shuffleShops()) shuffleShops(parsed, flags, random);
 
+  if (flags.randomizeWildWarp()) shuffleWildWarp(parsed, flags, random);
+
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.
   const w = World.build(parsed, flags);
@@ -221,7 +223,6 @@ export async function shuffle(rom: Uint8Array,
   if (flags.orbsOptional()) orbsOptional(parsed);
 
   shuffleMusic(parsed, flags, random);
-  if (flags.randomizeWildWarp()) shuffleWildWarp(parsed, flags, random);
 
   misc(parsed, flags, random);
 

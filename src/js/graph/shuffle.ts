@@ -343,7 +343,8 @@ export class AssumedFill implements Shuffle {
 
   readonly shuffleRules: ShuffleRules;
  
-  constructor(private readonly rom: Rom, private readonly flags: FlagSet) {
+  constructor(private readonly rom: Rom,
+              private readonly flags: FlagSet) {
     this.shuffleRules = new ShuffleRules(rom, flags);
     // First compute a table of allowed locations, and whether items are unique.
 
@@ -374,78 +375,117 @@ export class AssumedFill implements Shuffle {
   async shuffle(graph: Graph,
                 random: Random,
                 progress?: ProgressTracker,
-                attempts: number = 10): Promise<Fill | null> {
+                attempts: number = 2000): Promise<Fill | null> {
     if (progress) progress.addTasks(Math.floor(attempts / 100));
-    OUTER:
-    while (attempts-- > 0) {
+    for (let attempt = 0; attempt < attempts; attempt++) {
       // ensure UI updates
-      if (progress && (attempts % 100 === 0)) {
+      if (progress && (attempt % 100 === 99)) {
         await new Promise(requestAnimationFrame);
         progress.addCompleted(1);
       }
       const items = this.items(graph, random);
-  //      this.itemToUid.map(uid => this.worldGraph.nodes[uid] as ItemGet), random);
       let has = Bits.from(new Set(items));
       const fill: IndexFill = new GenericFill();
 
       // Initialize fill with non-shuffled items.
-      const nonShuffledItems = new Map<SlotId, ItemIndex>();
+      const itemIndex = new Map<ItemId | SlotId, ItemIndex>();
+      const slotIndex = new Map<ItemId | SlotId, SlotIndex>();
+      const nonShuffledItems: ItemId[] = [];
       for (let i = graph.fixed as ItemIndex; i < graph.items.length; i++) {
         const id = graph.items[i].item;
         if (id == null) continue;
-        if (!this.shuffleRules.shouldShuffle(id)) nonShuffledItems.set(id as ItemId & SlotId, i);
+        itemIndex.set(id, i);
+        if (!this.shuffleRules.shouldShuffle(id)) nonShuffledItems.push(id);
       }
+
       for (let s = graph.fixed as SlotIndex; s < graph.slots.length; s++) {
         const id = graph.slots[s].item;
-        if (id == null) continue;
-        const i = nonShuffledItems.get(id);
-        if (i == null) continue;
+        if (id != null) slotIndex.set(id, s);
+      }
+
+      for (const id of nonShuffledItems) {
+        const i = itemIndex.get(id);
+        const s = slotIndex.get(id);
+        if (s == null || i == null) continue;
         fill.set(s, i);
         has = Bits.without(has, i);
       }
 
       if (this.flags.guaranteeSword()) {
         // pick a sword at random and put it in slot 0
+        const sword = random.nextInt(4) as ItemId;
+        const i = itemIndex.get(sword);
+        const s = slotIndex.get(0 as SlotId); // elder normall gives sword of wind
+        if (i != null && s != null && !fill.hasSlot(s) && !fill.hasItem(i)) {
+          fill.set(s, i);
+          has = Bits.without(has, i);
+        }
         // TODO: if exits shuffled then find a slot in zero-sphere.
       }
 
-      for (let bit: ItemIndex | undefined = items.pop(); bit != null; bit = items.pop()) {
-        if (!Bits.has(has, bit)) continue; // item already placed: skip
-        const itemId = graph.items[bit].item;
-        if (itemId == null) throw new Error(`bad item: ${Object.entries(graph.items[bit])}`);
-        has = Bits.without(has, bit);
-        const reachable = [...traverse(graph, fill, has)];
-        random.shuffle(reachable);
-        let found = false;
-        for (const slot of reachable) {
-          const slotId = graph.slots[slot].item;
-          if (slotId == null) continue;
-          if (!fill.hasSlot(slot) && this.fits(slotId, itemId /*, true*/)) { // slot !== this.win &&
-            fill.set(slot, bit);
-            found = true;
-            break;
-          }
-        }
-        if (!found) {
+      if (!this.fillInternal(graph, random, fill, items, has, Math.floor(attempt / 5))) continue;
 
-          // TODO - it looks like we're placing random items in magic slots when Sm is off?!?
-          //     ----> figure out what was placed in its spot?
-
-          console.error(`Failed to place key item ${itemId}: available ${reachable.map(s => graph.slots[s].item)}`);
-          continue OUTER;
-        }
-      }
-      const final = traverse(graph, fill, has);
+      const final = traverse(graph, fill, Bits.of());
       if (final.size !== graph.slots.length) {
         console.error('unexpected size mismatch!', final, graph);
         continue;
       }
       const out = this.fill(graph, expandFill(graph, fill), random);
       if (out == null) continue;
-      if (progress) progress.addCompleted(Math.floor(attempts / 100));
+      if (progress) progress.addCompleted(Math.floor((attempts - attempt) / 100));
       return out;
     }
     return null;
+  }
+
+  protected fillInternal(graph: Graph,
+                         random: Random,
+                         fill: IndexFill,
+                         items: ItemIndex[],
+                         has: Bits,
+                         backSteps: number): boolean {
+    for (let bit: ItemIndex | undefined = items.pop(); bit != null; bit = items.pop()) {
+      if (!Bits.has(has, bit)) continue; // item already placed: skip
+      const itemId = graph.items[bit].item;
+      if (itemId == null) throw new Error(`bad item: ${Object.entries(graph.items[bit])}`);
+      has = Bits.without(has, bit);
+      const reachable = [...traverse(graph, fill, has)];
+      random.shuffle(reachable);
+      let found = false;
+      for (const slot of reachable) {
+        const slotId = graph.slots[slot].item;
+        if (slotId == null) continue;
+        if (!fill.hasSlot(slot) && this.fits(slotId, itemId /*, true*/)) { // slot !== this.win &&
+          fill.set(slot, bit);
+          found = true;
+          break;
+        }
+      }
+      if (found) continue;
+      if (backSteps-- > 0) {
+        // take a back step.
+        for (const slot of reachable) {
+          const slotId = graph.slots[slot].item;
+          if (slotId == null) continue;
+          if (this.fits(slotId, itemId)) {
+            const previousItem = fill.slots[slot];
+            fill.slots[slot] = fill.items[previousItem] = undefined as any;
+            has = Bits.with(has, previousItem);
+            items.push(previousItem);
+            random.shuffle(items);
+            fill.set(slot, bit);
+            found = true;
+            break;            
+          }
+        }
+        if (found) continue;
+      }
+      // TODO - it looks like we're placing random items in magic slots when Sm is off?!?
+      //     ----> figure out what was placed in its spot?
+      console.error(`Failed to place key item ${itemId}: available ${reachable.map(s => graph.slots[s].item)}`);
+      return false;
+    }
+    return true;
   }
 
   /** Fils the remaining slots with non-progression items. */
@@ -520,3 +560,87 @@ export class AssumedFill implements Shuffle {
     return fill;
   }
 }
+
+// export class ForwardFill extends AssumedFill {
+//   protected fillInternal(graph: Graph,
+//                          random: Random,
+//                          fill: IndexFill,
+//                          items: ItemIndex[],
+//                          has: Bits): boolean {
+//     while (!Bits.empty(has)) {
+//       // What's reachable with nothing?
+//       const reachable = [...traverse(graph, fill, Bits.of())];
+//       // What are the immediate blocks?!? Need to add an API to get these?
+//       // Translate reachabble into a "has"
+//       let gettable = Bits.from(
+//           reachable.map(s => s < graph.fixed ? s : fill.slots[s]).filter(i => i));
+//       let unlocks = new Set<ItemIndex>();
+//       const unlocks2 = new Set<ItemIndex>();
+//       for (let s = 0 as SlotIndex; s < graph.graph.length; s++) {
+//         for (const route of graph.graph[s]) {
+//           const bits = Bits.bits(Bits.difference(route, gettable)) as ItemIndex[];
+//           if (bits.length === 1) unlocks.add(bits[0]);
+//           if (bits.length === 2) {
+//             unlocks2.add(bits[0]);
+//             unlocks2.add(bits[1]);
+//             // TODO - multimap, and then go with item that's least eventful
+//           }
+//         }        
+//       }
+
+//       // Pick an unlockable and a slot.
+//       const allItems = [...(unlocks.size ? unlocks : unlocks2)];
+//       const item = allItems[random.nextInt(allItems.length)];
+      
+//     //   random.shuffle(reachable);
+//     //   let found = false;
+//     //   for (const slot of reachable) {
+//     //     const slotId = graph.slots[slot].item;
+//     //     if (slotId == null) continue;
+//     //     if (!fill.hasSlot(slot) && this.fits(slotId, itemId /*, true*/)) { // slot !== this.win &&
+//     //       fill.set(slot, bit);
+//     //       found = true;
+//     //       break;
+//     //     }
+//     //   }
+//     //   if (!found) {
+
+//     //     // TODO - it looks like we're placing random items in magic slots when Sm is off?!?
+//     //     //     ----> figure out what was placed in its spot?
+
+//     //     console.error(`Failed to place key item ${itemId}: available ${reachable.map(s => graph.slots[s].item)}`);
+//     //     return false;
+//     //   }
+                       
+//     // }
+
+
+//     for (let bit: ItemIndex | undefined = items.pop(); bit != null; bit = items.pop()) {
+//       if (!Bits.has(has, bit)) continue; // item already placed: skip
+//       const itemId = graph.items[bit].item;
+//       if (itemId == null) throw new Error(`bad item: ${Object.entries(graph.items[bit])}`);
+//       has = Bits.without(has, bit);
+//       const reachable = [...traverse(graph, fill, has)];
+//       random.shuffle(reachable);
+//       let found = false;
+//       for (const slot of reachable) {
+//         const slotId = graph.slots[slot].item;
+//         if (slotId == null) continue;
+//         if (!fill.hasSlot(slot) && this.fits(slotId, itemId /*, true*/)) { // slot !== this.win &&
+//           fill.set(slot, bit);
+//           found = true;
+//           break;
+//         }
+//       }
+//       if (!found) {
+
+//         // TODO - it looks like we're placing random items in magic slots when Sm is off?!?
+//         //     ----> figure out what was placed in its spot?
+
+//         console.error(`Failed to place key item ${itemId}: available ${reachable.map(s => graph.slots[s].item)}`);
+//         return false;
+//       }
+//     }
+//     return true;
+//   }
+// }

@@ -141,6 +141,7 @@ const click = async (e) => {
       ga('send', 'timing', 'Main', 'generate', new Date().getTime() - start, label);
       // TODO - should we build the flagset into the filename?
       // Make it an option?
+      if (!shuffled) break;
       const filename =
           romName.replace(
               /\.nes|$/,
@@ -183,6 +184,10 @@ const shuffleRom = async (seed) => {
   const crc =
       await patch.shuffle(
           shuffled, seed, flagsClone, new FetchReader(), log, progressTracker);
+  if (crc < 0) {
+    document.getElementById('checksum').textContent = 'SHUFFLE FAILED!';
+    return [null, null];
+  }
   done = true;
   document.body.classList.remove('shuffling');
   if (log) {

@@ -188,6 +188,7 @@ export async function shuffle(rom: Uint8Array,
 
     slots.update(parsed, fill.slots);
   } else {
+    return -1;
     //console.error('COULD NOT FILL!');
   }
   //console.log('fill', fill);

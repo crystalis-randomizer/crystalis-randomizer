@@ -127,4 +127,28 @@ export class DefaultMap extends Map {
         return value;
     }
 }
+export class IndexedSet {
+    constructor() {
+        this.forward = [];
+        this.reverse = new Map();
+    }
+    add(elem) {
+        let result = this.reverse.get(elem);
+        if (result == null)
+            this.reverse.set(elem, result = this.forward.push(elem) - 1);
+        return result;
+    }
+    get(index) {
+        return this.forward[index];
+    }
+}
+export var iters;
+(function (iters_1) {
+    function* concat(...iters) {
+        for (const iter of iters) {
+            yield* iter;
+        }
+    }
+    iters_1.concat = concat;
+})(iters || (iters = {}));
 //# sourceMappingURL=util.js.map

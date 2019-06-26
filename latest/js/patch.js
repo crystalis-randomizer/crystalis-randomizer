@@ -42,7 +42,7 @@ export function parseSeed(seed) {
     return crc32(seed);
 }
 const {} = { watchArray };
-export async function shuffle(rom, seed, flags, reader, log, _progress) {
+export async function shuffle(rom, seed, flags, reader, log, progress) {
     if (typeof seed !== 'number')
         throw new Error('Bad seed');
     const newSeed = crc32(seed.toString(16).padStart(8, '0') + String(flags)) >>> 0;
@@ -126,13 +126,16 @@ export async function shuffle(rom, seed, flags, reader, log, _progress) {
         fixRabbitSkip(parsed);
     if (flags.shuffleShops())
         shuffleShops(parsed, flags, random);
-    const w = new World(parsed, flags);
-    const fill = await new AssumedFill(parsed, flags).shuffle(w.graph, random);
+    if (flags.randomizeWildWarp())
+        shuffleWildWarp(parsed, flags, random);
+    const w = World.build(parsed, flags);
+    const fill = await new AssumedFill(parsed, flags).shuffle(w.graph, random, progress);
     if (fill) {
         w.traverse(w.graph, fill);
         slots.update(parsed, fill.slots);
     }
     else {
+        return -1;
     }
     if (touchShops) {
         rescaleShops(parsed, asm, flags.bargainHunting() ? random : undefined);
@@ -157,8 +160,6 @@ export async function shuffle(rom, seed, flags, reader, log, _progress) {
     if (flags.orbsOptional())
         orbsOptional(parsed);
     shuffleMusic(parsed, flags, random);
-    if (flags.randomizeWildWarp())
-        shuffleWildWarp(parsed, flags, random);
     misc(parsed, flags, random);
     if (flags.buffDyna())
         buffDyna(parsed, flags);
@@ -198,8 +199,6 @@ Here, have this lame
 [29:Gas Mask] or something.`;
     rom.messages.parts[0][0xe].text = `It's dangerous to go alone! Take this.`;
     rom.messages.parts[0][0xe].fixText();
-    rom.npcs[0x16].data[3]++;
-    rom.npcs[0x16].data[2]++;
 }
 ;
 function shuffleShops(rom, _flags, random) {
@@ -486,14 +485,11 @@ function preventNpcDespawns(rom, flags) {
     rom.locations.brynmaer.spawns.find(s => s.isNpc() && s.id === 0x16).id = 0x82;
     rom.npcs[0x82].data = [...rom.npcs[0x16].data];
     rom.items[0x25].tradeIn[0] = 0x82;
-    rom.itemGets[0x00].flags = [];
     dialog(0x13)[2].condition = 0x047;
     dialog(0x13)[2].flags = [0x0a9];
     rom.npcs[0x13].localDialogs.get(-1)[3].condition = 0x047;
     rom.npcs[0x13].localDialogs.get(-1)[3].flags = [0x0a9];
     spawns(0x14, 0x0e)[1] = ~0x088;
-    dialog(0x14, 0x0e)[0].flags = [];
-    dialog(0x16, 0x57)[0].flags = [];
     remove(spawns(0x16, 0x57), ~0x051);
     remove(spawns(0x88, 0x57), ~0x051);
     function reverseDialog(ds) {
@@ -505,7 +501,6 @@ function preventNpcDespawns(rom, flags) {
     }
     ;
     const oakElderDialog = dialog(0x1d);
-    oakElderDialog[4].flags = [];
     oakElderDialog[0].message.action = 0x03;
     oakElderDialog[1].message.action = 0x03;
     oakElderDialog[2].message.action = 0x03;
@@ -564,7 +559,6 @@ function preventNpcDespawns(rom, flags) {
     if (flags.barrierRequiresCalmSea()) {
         rom.trigger(0x84).conditions.push(0x283);
     }
-    rom.trigger(0x84).flags = [];
     rom.trigger(0x8c).conditions.push(0x03a);
     rom.trigger(0xba).conditions[0] = ~0x244;
     rom.trigger(0xbb).conditions[1] = ~0x01b;

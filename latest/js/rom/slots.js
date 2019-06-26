@@ -32,7 +32,7 @@ class BossDropSlot {
     set(rom, item) {
         if (item >= 0x70)
             throw new Error('no mimics on bosses');
-        rom.bossKills[this.boss].data[4] = item;
+        rom.bossKills[this.boss].itemDrop = item;
         if (rom.spoiler) {
             rom.spoiler.addSlot(this.slot, rom.bosses.fromBossKill(this.boss).name, item);
         }

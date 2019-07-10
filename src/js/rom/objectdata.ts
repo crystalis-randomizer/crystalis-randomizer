@@ -134,6 +134,9 @@ export class ObjectData extends Entity {
   get level(): number { return LEVEL.get(this.data); }
   set level(x: number) { LEVEL.set(this.data, x); }
 
+  get poison(): boolean { return !!POISON.get(this.data); }
+  set poison(x: boolean) { POISON.set(this.data, x ? 1 : 0); }
+
   get child(): number { return CHILD.get(this.data); }
   set child(x: number) { CHILD.set(this.data, x); }
 
@@ -155,6 +158,7 @@ export class ObjectData extends Entity {
   get elements(): number { return ELEMENTS.get(this.data); }
   set elements(x: number) { ELEMENTS.set(this.data, x); }
 
+  /** Unprocessed experience reward ($520,x). */
   get expReward(): number { return EXP_REWARD.get(this.data); }
   set expReward(x: number) { EXP_REWARD.set(this.data, x); }
 
@@ -206,6 +210,7 @@ const HP = prop([0x3c0]);
 const ATK = prop([0x3e0]);
 const DEF = prop([0x400]);
 const LEVEL = prop([0x420, 0x1f]);
+const POISON = prop([0x420, 0x80, 7]);
 const CHILD = prop([0x440]); // ad-hoc spawn index
 const TERRAIN_SUSCEPTIBILITY = prop([0x460]);
 const IMMOBILE = prop([0x4a0, 0x80, 7]); // will not be knocked back

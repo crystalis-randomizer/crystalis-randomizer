@@ -317,12 +317,15 @@ function shuffleWildWarp(rom, _flags, random) {
     random.shuffle(locations);
     rom.wildWarp.locations = [...locations.slice(0, 15).sort((a, b) => a - b), 0];
 }
-function buffDyna(rom, flags) {
+function buffDyna(rom, _flags) {
     rom.objects[0xb8].collisionPlane = 1;
     rom.objects[0xb8].immobile = true;
     rom.objects[0xb9].collisionPlane = 1;
     rom.objects[0xb9].immobile = true;
     rom.objects[0x33].collisionPlane = 2;
+    rom.adHocSpawns[0x28].slotRangeLower = 0x1c;
+    rom.adHocSpawns[0x29].slotRangeUpper = 0x1c;
+    rom.adHocSpawns[0x2a].slotRangeUpper = 0x1c;
 }
 function makeBraceletsProgressive(rom) {
     const tornel = rom.npcs[0x5f];
@@ -828,7 +831,7 @@ function normalizeSwords(rom, flags, random) {
     rom.objects[0x1f].atk = 7;
 }
 const rescaleMonsters = (rom, flags, random) => {
-    const unscaledMonsters = new Set(Object.keys(rom.objects).map(Number));
+    const unscaledMonsters = new Set(seq(0x100, x => x).filter(s => s in rom.objects));
     for (const [id] of SCALED_MONSTERS) {
         unscaledMonsters.delete(id);
     }

@@ -813,14 +813,6 @@ CheckForLowHpMp:
 
 .ifdef _BUFF_DYNA
 
-.org $29ca0
-  .byte $1c ; adhoc spawn 28 (counter) lower bound: [1c
-.org $29ca5
-  .byte $1c ; adhoc spawn 29 (laser) upper bound: 1c)
-.org $29ca9
-  .byte $1c ; adhoc spawn 2a (bubble) upper bound: 1c)
-
-
 .org $37c9c
   ;; Don't check pod's status before shooting eye laser
   nop

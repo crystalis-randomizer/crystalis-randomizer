@@ -86,6 +86,8 @@ export class ObjectData extends Entity {
     set def(x) { DEF.set(this.data, x); }
     get level() { return LEVEL.get(this.data); }
     set level(x) { LEVEL.set(this.data, x); }
+    get poison() { return !!POISON.get(this.data); }
+    set poison(x) { POISON.set(this.data, x ? 1 : 0); }
     get child() { return CHILD.get(this.data); }
     set child(x) { CHILD.set(this.data, x); }
     get terrainSusceptibility() { return TERRAIN_SUSCEPTIBILITY.get(this.data); }
@@ -142,6 +144,7 @@ const HP = prop([0x3c0]);
 const ATK = prop([0x3e0]);
 const DEF = prop([0x400]);
 const LEVEL = prop([0x420, 0x1f]);
+const POISON = prop([0x420, 0x80, 7]);
 const CHILD = prop([0x440]);
 const TERRAIN_SUSCEPTIBILITY = prop([0x460]);
 const IMMOBILE = prop([0x4a0, 0x80, 7]);

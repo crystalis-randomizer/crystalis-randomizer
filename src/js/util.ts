@@ -271,10 +271,10 @@ export class SuffixTrie<T> {
 }
 
 export class DefaultMap<K, V extends {}> extends Map<K, V> {
-  constructor(private readonly supplier: () => V) { super(); }
+  constructor(private readonly supplier: (key: K) => V) { super(); }
   get(key: K): V {
     let value = super.get(key);
-    if (value == null) super.set(key, value = this.supplier());
+    if (value == null) super.set(key, value = this.supplier(key));
     return value;
   }
 }
@@ -307,3 +307,93 @@ export namespace iters {
 //   private map: Map<String, T>
 // }
 
+
+export class SetMultimap<K, V> {
+
+  private readonly map =
+      new MultimapMap<K, V, MultimapSet<K, V>>(
+          (key: K) => new MultimapSet<K, V>(this, key),
+          s => !s.size, s => s.clear());
+
+  constructor(entries: Iterable<readonly [K, V]> = []) {
+    for (const [k, v] of entries) {
+      this.add(k, v);
+    }
+  }
+
+  asMap(): Map<K, Set<V>> {
+    return this.map;
+  }
+
+  set(k: K, vs: Iterable<V>): this {
+    const set = this.maps.get(k);
+    set.clear();
+    for (const v of vs) set.add(v);
+    return this;
+  }
+
+  add(k: K, v: V): void {
+    this.sets.get(k).add(v);
+  }
+}
+
+class MultimapMap<K, V, C extends Iterable<V>> extends DefaultMap<K, C> {
+  // PROBLEM: size will be wrong if we retain the empty sets...?
+
+  constructor(supplier: (k: K) => C,
+              private readonly isCollectionEmpty: (c: C) => boolean,
+              private readonly clearCollection: (c: C) => void) {
+    super(supplier);
+  }
+
+  * [Symbol.iterator](): IterableIterator<[K, C]> {
+    for (const [k, c] of super[Symbol.iterator]()) {
+      if (!this.isCollectionEmpty(c)) yield [k, c];
+    }
+  }
+
+  * keys(): IterableIterator<K> {
+    for (const [k] of this) yield k;
+  }
+
+  * values(): IterableIterator<C> {
+    for (const [, c] of this) yield c;
+  }
+
+  clear() {
+    for (const c of this.values()) this.clearCollection(c);
+  }
+
+  has(k: 
+
+  set(k: K, c: Iterable<V>): this {
+    this.get(k)
+    return this;
+  }
+}
+
+class MultimapSet<K, V> extends Set<V> {
+  constructor(private readonly owner: SetMultimap<K, V>,
+              private readonly key: K) {
+    super();
+  }
+
+  clear() {
+    super.clear();
+    this.owner.delete(this.key);
+  }
+
+  add(elem: V) {
+    if (!this.size) this.owner.set(this.key, this);
+    return super.add(elem);
+  }
+
+  delete(elem: V) {
+    const ret = super.delete(elem);
+    if (!this.size) this.owner.delete(this.key);
+    return ret;
+  }
+
+  // TODO - new iterator for Multimap.
+ 
+}

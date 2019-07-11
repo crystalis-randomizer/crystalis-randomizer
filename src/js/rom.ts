@@ -286,7 +286,7 @@ export class Rom {
     Rom.OMIT_ITEM_GET_DATA_SUFFIX.set(this.prg, this.omitItemGetDataSuffix);
     Rom.OMIT_LOCAL_DIALOG_SUFFIX.set(this.prg, this.omitLocalDialogSuffix);
 
-    const writer = new Writer(this.prg);
+    const writer = new Writer(this.prg, this.chr);
     // MapData
     writer.alloc(0x144f8, 0x17e00);
     // NpcData
@@ -346,6 +346,7 @@ export class Rom {
     writeAll(this.items);
     writeAll(this.shops);
     writeAll(this.bossKills);
+    writeAll(this.patterns);
     this.wildWarp.write(writer);
     promises.push(this.telepathy.write(writer));
     promises.push(this.messages.write(writer));

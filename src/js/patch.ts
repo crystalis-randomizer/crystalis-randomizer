@@ -91,6 +91,7 @@ export async function shuffle(rom: Uint8Array,
     _DISABLE_WILD_WARP: false,
     _DISPLAY_DIFFICULTY: true,
     _EXTRA_PITY_MP: true,  // TODO: allow disabling this
+    _FIX_COIN_SPRITES: true,
     _FIX_OPEL_STATUE: true,
     _FIX_SHAKING: true,
     _FIX_VAMPIRE: true,
@@ -125,6 +126,7 @@ export async function shuffle(rom: Uint8Array,
   // Parse the rom and apply other patches - note: must have shuffled
   // the depgraph FIRST!
   const parsed = new Rom(rom);
+  fixCoinSprites(parsed);
   if (typeof window == 'object') (window as any).rom = parsed;
   parsed.spoiler = new Spoiler(parsed);
   if (log) {
@@ -259,6 +261,15 @@ async function postParsedShuffle(rom: Uint8Array,
   // console.log('patch applied');
   // return log.join('\n');
 };
+
+function fixCoinSprites(rom: Rom): void {
+  for (const page of [0x60, 0x64, 0x65, 0x66, 0x67, 0x68,
+                      0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6f]) {
+    for (const pat of [0, 1, 2]) {
+      rom.patterns[page << 6 | pat].pixels = rom.patterns[0x5e << 6 | pat].pixels;
+    }
+  }
+}
 
 /** Make a land bridge in underground channel */
 function undergroundChannelLandBridge(rom: Rom) {

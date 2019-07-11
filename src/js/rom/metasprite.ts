@@ -64,6 +64,22 @@ export class Metasprite extends Entity {
     }
   }
 
+  patternBanks(): number[] {
+    if (!this.used) return [];
+    let ms: Metasprite = this;
+    if (ms.mirrored) {
+      ms = this.rom.metasprites[ms.mirrored];
+    }
+    const pats = new Set<number>();
+    for (const version of ms.sprites) {
+      for (const [dx, , , pat] of version) {
+        if (dx === 0x80) break;
+        pats.add(pat >>> 6);
+      }
+    }
+    return [...pats];
+  }
+
   // returns an array of [0..3]
   palettes(): number[] {
     if (!this.used) return [];

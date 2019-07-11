@@ -807,6 +807,14 @@ CheckForLowHpMp:
 ;GateCheckFailed:
 ;.org $37896
 ;GateCheckPassed:
+
+
+.ifdef _FIX_COIN_SPRITES
+.org $37a23
+  nop
+  lda #$a9
+.assert $37a26
+.endif
   
 
 ;;; Beef up dyna

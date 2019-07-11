@@ -307,93 +307,95 @@ export namespace iters {
 //   private map: Map<String, T>
 // }
 
+const INVALIDATED = Symbol('Invalidated');
+const SIZE = Symbol('Size');
+
+class SetMultimapSetView<K, V> implements Set<V> {
+  constructor(private readonly ownerMap: Map<K, Set<V>>,
+              private readonly ownerKey: K, private currentSet?: Set<V>) {}
+  private getCurrentSet() {
+    if (!this.currentSet || (this.currentSet as any)[INVALIDATED]) {
+      this.currentSet = this.ownerMap.get(this.ownerKey) || new Set<V>();
+    }
+    return this.currentSet;
+  }
+  private mutateSet<R>(f: (s: Set<V>) => R): R {
+    const set = this.getCurrentSet();
+    const size = set.size;
+    try {
+      return f(set);
+    } finally {
+      (this.ownerMap as any)[SIZE] += set.size - size;
+      if (!set.size) {
+        this.ownerMap.delete(this.ownerKey);
+        (set as any)[INVALIDATED] = true;
+      }
+    }
+  }
+  add(elem: V): this {
+    this.mutateSet(s => s.add(elem));
+    return this;
+  }
+  has(elem: V): boolean {
+    return this.getCurrentSet().has(elem);
+  }
+  clear(): void {
+    this.mutateSet(s => s.clear());
+  }
+  delete(elem: V): boolean {
+    return this.mutateSet(s => s.delete(elem));
+  }
+  [Symbol.iterator](): IterableIterator<V> {
+    return this.getCurrentSet()[Symbol.iterator]();
+  }
+  values(): IterableIterator<V> {
+    return this.getCurrentSet().values();
+  }
+  keys(): IterableIterator<V> {
+    return this.getCurrentSet().keys();
+  }
+  entries(): IterableIterator<[V, V]> {
+    return this.getCurrentSet().entries();
+  }
+  forEach<T>(callback: (value: V, key: V, set: Set<V>) => void, thisArg?: T): void {
+    this.getCurrentSet().forEach(callback, thisArg);
+  }
+  get size(): number {
+    return this.getCurrentSet().size;
+  }
+  get [Symbol.toStringTag](): string {
+    return 'Set';
+  }
+}
+// Fix 'instanceof' to work properly without requiring actual superclass...
+Reflect.setPrototypeOf(SetMultimapSetView.prototype, Set.prototype);
 
 export class SetMultimap<K, V> {
 
-  private readonly map =
-      new MultimapMap<K, V, MultimapSet<K, V>>(
-          (key: K) => new MultimapSet<K, V>(this, key),
-          s => !s.size, s => s.clear());
+  private readonly map = new Map<K, Set<V>>();
 
   constructor(entries: Iterable<readonly [K, V]> = []) {
+    (this.map as any)[SIZE] = 0;
     for (const [k, v] of entries) {
       this.add(k, v);
     }
   }
 
-  asMap(): Map<K, Set<V>> {
-    return this.map;
+  get size(): number {
+    return (this.map as any)[SIZE];
   }
 
-  set(k: K, vs: Iterable<V>): this {
-    const set = this.maps.get(k);
-    set.clear();
-    for (const v of vs) set.add(v);
-    return this;
+  get(k: K): Set<V> {
+    return new SetMultimapSetView(this.map, k, this.map.get(k));
   }
 
   add(k: K, v: V): void {
-    this.sets.get(k).add(v);
-  }
-}
-
-class MultimapMap<K, V, C extends Iterable<V>> extends DefaultMap<K, C> {
-  // PROBLEM: size will be wrong if we retain the empty sets...?
-
-  constructor(supplier: (k: K) => C,
-              private readonly isCollectionEmpty: (c: C) => boolean,
-              private readonly clearCollection: (c: C) => void) {
-    super(supplier);
+    let set = this.map.get(k);
+    if (!set) this.map.set(k, set = new Set());
+    const size = set.size;
+    set.add(v);
+    (this.map as any)[SIZE] += set.size - size;
   }
 
-  * [Symbol.iterator](): IterableIterator<[K, C]> {
-    for (const [k, c] of super[Symbol.iterator]()) {
-      if (!this.isCollectionEmpty(c)) yield [k, c];
-    }
-  }
-
-  * keys(): IterableIterator<K> {
-    for (const [k] of this) yield k;
-  }
-
-  * values(): IterableIterator<C> {
-    for (const [, c] of this) yield c;
-  }
-
-  clear() {
-    for (const c of this.values()) this.clearCollection(c);
-  }
-
-  has(k: 
-
-  set(k: K, c: Iterable<V>): this {
-    this.get(k)
-    return this;
-  }
-}
-
-class MultimapSet<K, V> extends Set<V> {
-  constructor(private readonly owner: SetMultimap<K, V>,
-              private readonly key: K) {
-    super();
-  }
-
-  clear() {
-    super.clear();
-    this.owner.delete(this.key);
-  }
-
-  add(elem: V) {
-    if (!this.size) this.owner.set(this.key, this);
-    return super.add(elem);
-  }
-
-  delete(elem: V) {
-    const ret = super.delete(elem);
-    if (!this.size) this.owner.delete(this.key);
-    return ret;
-  }
-
-  // TODO - new iterator for Multimap.
- 
+  // TODO - iteration?
 }

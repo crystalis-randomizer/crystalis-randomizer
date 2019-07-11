@@ -1,6 +1,7 @@
 import {Entity} from './entity.js';
 import {reverseBits, seq, tuple} from './util.js';
 import {Rom} from '../rom.js';
+import { Writer } from './writer.js';
 
 export class Pattern extends Entity {
 
@@ -29,6 +30,11 @@ export class Pattern extends Entity {
     if (type & Flip.HORIZONTAL) p = p.flipH();
     if (type & Flip.VERTICAL) p = p.flipV();
     return p;
+  }
+
+  write(writer: Writer): void {
+    const a = this.id << 4;
+    writer.chr.subarray(a, a + 16).set(this.pixels);
   }
 }
 

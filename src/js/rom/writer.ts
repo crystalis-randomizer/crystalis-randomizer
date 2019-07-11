@@ -54,7 +54,7 @@ export class Writer {
   private writes: Write[] = [];
   private promises: Promise<unknown>[] = [];
 
-  constructor(readonly rom: Uint8Array) {}
+  constructor(readonly rom: Uint8Array, readonly chr: Uint8Array) {}
 
   private free: number[] = [];
 

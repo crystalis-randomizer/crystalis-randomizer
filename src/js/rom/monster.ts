@@ -1,5 +1,7 @@
 import {ObjectData} from './objectdata.js';
-import { Rom } from '../rom.js';
+import {Location, Spawn} from './location.js';
+import {Rom} from '../rom.js';
+import { DefaultMap } from '../util.js';
 
 export type MonsterData = [string, number, number, Adjustments?];
 
@@ -237,6 +239,7 @@ interface ActionScriptData {
   boss?: boolean;
   projectile?: number;
   movement?: number;
+  metasprites?: (o: ObjectData) => readonly number[];
   // This is on top of any effect from satk, status, etc.
   // difficulty?: (o: Monster, c?: Monster) => DifficultyFactor;
   // flyer? stationary? large? required space?
@@ -297,11 +300,13 @@ const ACTION_SCRIPTS = new Map<number, ActionScriptData>([
     child: true,
     // projectile does no damage
     movement: 5, // puddle
+    metasprites: () => [0x6b, 0x68],
   }],
   [0x2a, { // soldier/archer/knight/brown robot
     child: true,
     projectile: 1,
     movement: 4, // fast homing
+    metasprites: (o) => [0, 1, 2, 3].map(x => x + o.data[31]), // directional walker
   }],
   [0x2b, { // mimic
     movement: 4, // fast homing
@@ -367,6 +372,7 @@ const ACTION_SCRIPTS = new Map<number, ActionScriptData>([
     child: true,
     projectile: 1,
     movement: 4, // fast homing
+    metasprites: (o) => [0, 1, 2, 3].map(x => x + o.data[31]), // directional walker
   }],
   [0x60, { // vampire
     boss: true,
@@ -445,3 +451,77 @@ function lookup<K extends Comparable, V>(x: K,
 }
 
 type Comparable = number | string;
+
+////////////////////////////////////////////////////////////////
+
+export class Monsters {
+
+  constructor(readonly rom: Rom) {
+    // Iterate over locations/spawns to build multimap of where monsters appear.
+    const monsterSpawns =
+        new DefaultMap<number, Array<readonly [Location, number, Spawn]>>(() => []);
+    for (const l of rom.locations) {
+      if (!l.used) continue;
+      for (let i = 0; i < l.spawns.length; i++) {
+        const s = l.spawns[i];
+        if (!s.isMonster()) continue;
+        monsterSpawns.get(s.monsterId).push([l, i, s]);
+      }
+    }
+    // For each monster, determine which patterns and palettes are used.
+    for (const [m, spawns] of monsterSpawns) {
+      const obj = rom.objects[m];
+      const action = ACTION_SCRIPTS.get(obj.action);
+      const metaspriteFn = action && action.metasprites || (() => [obj.metasprite]);
+      const patterns = new Set<number>();
+      const palettes = new Set<number>();
+      for (const metasprite of metaspriteFn(obj).map(s => rom.metasprites[s])) {
+        // Which palette and pattern banks are referenced?
+        for (const p of metasprite.palettes()) {
+          palettes.add(p);
+        }
+        for (const p of metasprite.patternBanks()) {
+          patterns.add(p);
+        }
+      }
+
+      // Coins:
+      //  - metasprites a8 and a9
+      //  - pattern bank 2 matters, 5e, 5f, 61, 63, 6e, 70, 74, 75, 76, 77
+      //    require a9
+      // Tower monsters use pattern page 5x, which does not support gold.
+      // $62 does not support coins either, nor does 71, 72, 73.
+      // Plan - trigger off of $7f4 instead of $500,x
+      // If $7f4 is ineligible but $7f5 is good, we could also set $380,x:20?
+      //  --> 37a28 is responsible for selecting graphics.
+
+      // OR... just make them all $a9.
+      //  - 5e,5f  already ok for a9
+      //  - 60     needs copy (first 3)
+      //  - 61,63  ok
+      //  - 62     no coin
+      //  - 64..6d needs copy
+      //  - 6e     ok
+      //  - 6f     needs copy
+      //  - 70,74..77 ok
+      //  - 71..73 no coin
+
+
+      const shiftable = patterns.size == 1 && [...patterns][0] === 2;
+      
+
+      // If the spawn sets patternBank then we need to increment each pattern.
+      // We have the freedom to set this to either, depending.
+      const locs = new Set<number>();
+      for (const [l,, {patternBank}] of spawns) {
+        locs.add(patternBank ? ~l.id : l.id);
+      }
+    }
+    
+
+
+    for (const l of new Set(spawns.map(s => s[0]))) {
+      // 
+    }
+  }
+}

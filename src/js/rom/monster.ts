@@ -31,6 +31,8 @@ export class Monster extends ObjectData {
   /** Extra difficulty factor. */
   extraDifficulty: number;
 
+  constraint: Constraint;
+
   constructor(rom: Rom, [name, id, scaling, adjustments = {}]: MonsterData) {
     super(rom, id);
     this.name = name;
@@ -485,35 +487,15 @@ export class Monsters {
         }
       }
 
-      // Coins:
-      //  - metasprites a8 and a9
-      //  - pattern bank 2 matters, 5e, 5f, 61, 63, 6e, 70, 74, 75, 76, 77
-      //    require a9
-      // Tower monsters use pattern page 5x, which does not support gold.
-      // $62 does not support coins either, nor does 71, 72, 73.
-      // Plan - trigger off of $7f4 instead of $500,x
-      // If $7f4 is ineligible but $7f5 is good, we could also set $380,x:20?
-      //  --> 37a28 is responsible for selecting graphics.
-
-      // OR... just make them all $a9.
-      //  - 5e,5f  already ok for a9
-      //  - 60     needs copy (first 3)
-      //  - 61,63  ok
-      //  - 62     no coin
-      //  - 64..6d needs copy
-      //  - 6e     ok
-      //  - 6f     needs copy
-      //  - 70,74..77 ok
-      //  - 71..73 no coin
-
-
+      // If only third-bank patterns are used, then the metasprite can be
+      // shifted to fourth bank when necessary.  This is only true for NPC
+      // spawns.  Ad hoc spawns cannot be shifted (yet?).
       const shiftable = patterns.size == 1 && [...patterns][0] === 2;
-      
 
       // If the spawn sets patternBank then we need to increment each pattern.
       // We have the freedom to set this to either, depending.
       const locs = new Set<number>();
-      for (const [l,, {patternBank}] of spawns) {
+      for (const [l, , {patternBank}] of spawns) {
         locs.add(patternBank ? ~l.id : l.id);
       }
     }

@@ -1,7 +1,8 @@
+import {Constraint} from './constraint.js';
 import {ObjectData} from './objectdata.js';
 import {Location, Spawn} from './location.js';
 import {Rom} from '../rom.js';
-import { DefaultMap } from '../util.js';
+import {DefaultMap} from '../util.js';
 
 export type MonsterData = [string, number, number, Adjustments?];
 
@@ -31,7 +32,8 @@ export class Monster extends ObjectData {
   /** Extra difficulty factor. */
   extraDifficulty: number;
 
-  constraint: Constraint;
+  constraint: Constraint = Constraint.ALL;
+  shiftPatterns?: Set<number>;
 
   constructor(rom: Rom, [name, id, scaling, adjustments = {}]: MonsterData) {
     super(rom, id);
@@ -187,6 +189,13 @@ export class Monster extends ObjectData {
     const sexp = 0.488 + this.totalDifficulty() * (1 - this.wealth) * 0.256;
     return Math.max(1, Math.min(255, Math.round(sexp * 32)));
   }
+
+  /** Configures a spawn based on the chosen banks for a location. */
+  configure(location: Location, spawn: Spawn) {
+    if (!this.shiftPatterns) return;
+    if (this.shiftPatterns.has(location.spritePalettes[0])) spawn.patternBank = 0;
+    if (this.shiftPatterns.has(location.spritePalettes[1])) spawn.patternBank = 1;
+  }
 }
 
 function processExpReward(raw: number): number {
@@ -323,6 +332,13 @@ const ACTION_SCRIPTS = new Map<number, ActionScriptData>([
     movement: 3, // slow homing
   }],
   [0x2f, { // dyna laser
+  }],
+  [0x34, { // guardian statue
+    child: true,
+  }],
+  [0x38, { // moving platform
+  }],
+  [0x3c, { // crumbling moving platform
   }],
   [0x40, { // bat, moth
     child: true,
@@ -472,38 +488,72 @@ export class Monsters {
     }
     // For each monster, determine which patterns and palettes are used.
     for (const [m, spawns] of monsterSpawns) {
-      const obj = rom.objects[m];
-      const action = ACTION_SCRIPTS.get(obj.action);
-      const metaspriteFn = action && action.metasprites || (() => [obj.metasprite]);
-      const patterns = new Set<number>();
-      const palettes = new Set<number>();
-      for (const metasprite of metaspriteFn(obj).map(s => rom.metasprites[s])) {
-        // Which palette and pattern banks are referenced?
-        for (const p of metasprite.palettes()) {
-          palettes.add(p);
+      let constraint = Constraint.ALL;
+      const parent = this.rom.objects[m];
+      if (!(parent instanceof Monster)) throw new Error(`expected monster: ${parent} from ${spawns}`);
+      for (const obj of allObjects(rom, parent)) {
+        // const obj = rom.objects[m];
+        const action = ACTION_SCRIPTS.get(obj.action);
+        const metaspriteFn: (m: Monster) => readonly number[] =
+            action && action.metasprites || (() => [obj.metasprite]);
+        const patterns = new Set<number>();
+        const palettes = new Set<number>();
+        for (const metasprite of metaspriteFn(obj).map(s => rom.metasprites[s])) {
+          // Which palette and pattern banks are referenced?
+          for (const p of metasprite.palettes()) {
+            palettes.add(p);
+          }
+          for (const p of metasprite.patternBanks()) {
+            patterns.add(p);
+          }
         }
-        for (const p of metasprite.patternBanks()) {
-          patterns.add(p);
+
+        // If only third-bank patterns are used, then the metasprite can be
+        // shifted to fourth bank when necessary.  This is only true for NPC
+        // spawns.  Ad hoc spawns cannot be shifted (yet?).
+        const shiftable = obj.id === m && patterns.size == 1 && [...patterns][0] === 2;
+
+        // If the spawn sets patternBank then we need to increment each pattern.
+        // We have the freedom to set this to either, depending.
+        const locs = new Map<number, Spawn>();
+        for (const [l, , spawn] of spawns) {
+          locs.set(spawn.patternBank && shiftable ? ~l.id : l.id, spawn);
         }
+
+        // TODO - ConstraintBuilder
+        //   -- keeps track only of relevant factors, in a join.
+        //      --> no meeting involved!
+        let child = undefined;
+
+        for (let [l, spawn] of locs) {
+          const loc = rom.locations[l < 0 ? ~l : l];
+          const c = Constraint.fromSpawn(palettes, patterns, loc, spawn, shiftable);
+          child = child ? child.join(c) : c;
+
+          // --- handle shifts better...? suppose e.g. multiple pal2's
+          //    -> we want to join them - will have multiple shiftables...
+          //constraint = constraint.
+        }
+
+        // If we're shiftable, save the set of possible shift banks
+        if (!child) throw new Error(`Expected child to appear`);
+        if (child.float.length === 1) {
+          parent.shiftPatterns = new Set(child.float[0]);
+        }
+        const meet = constraint.meet(child);
+        if (!meet) throw new Error(`Bad meet for ${m} with ${obj.id}`);
+        if (meet) constraint = meet;
+        // TODO - else error? warn?
       }
-
-      // If only third-bank patterns are used, then the metasprite can be
-      // shifted to fourth bank when necessary.  This is only true for NPC
-      // spawns.  Ad hoc spawns cannot be shifted (yet?).
-      const shiftable = patterns.size == 1 && [...patterns][0] === 2;
-
-      // If the spawn sets patternBank then we need to increment each pattern.
-      // We have the freedom to set this to either, depending.
-      const locs = new Set<number>();
-      for (const [l, , {patternBank}] of spawns) {
-        locs.add(patternBank ? ~l.id : l.id);
-      }
-    }
-    
-
-
-    for (const l of new Set(spawns.map(s => s[0]))) {
-      // 
-    }
+      parent.constraint = constraint;
+    }    
   }
+}
+
+function* allObjects(rom: Rom, parent: Monster): Iterable<Monster> {
+  yield parent;
+  const repl = parent.spawnedReplacement();
+  if (repl) yield* allObjects(rom, repl);
+  const child = parent.spawnedChild();
+  if (child) yield* allObjects(rom, child);
 }

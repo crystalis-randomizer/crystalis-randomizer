@@ -64,9 +64,10 @@ export class ObjectData extends Entity {
   parents(): ObjectData[] {
     // If this is a projectile that is the parent of some monster,
     // return an array of parents that spawned it.
-    return this.rom.monsters.filter(
-        (m: ObjectData) => m.child &&
-                           this.rom.adHocSpawns[m.child].objectId === this.id);
+    return [];
+    // return this.rom.monsters.filter(
+    //     (m: ObjectData) => m.child &&
+    //                        this.rom.adHocSpawns[m.child].objectId === this.id);
   }
 
   locations(): Location[] {

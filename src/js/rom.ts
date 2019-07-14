@@ -7,6 +7,7 @@ import {ItemGet} from './rom/itemget.js';
 import {Locations} from './rom/locations.js';
 import {Messages} from './rom/messages.js';
 import {Metasprite} from './rom/metasprite.js';
+import {Monster, Monsters} from './rom/monster.js';
 import {Npc} from './rom/npc.js';
 import {ObjectData} from './rom/objectdata.js';
 import {Objects} from './rom/objects.js';
@@ -165,20 +166,24 @@ export class Rom {
   }
 
   // TODO - cross-reference monsters/metasprites/metatiles/screens with patterns/palettes
-  get monsters(): ObjectData[] {
-    const monsters = new Set<ObjectData>();
-    for (const l of this.locations) {
-      if (!l.used || !l.hasSpawns) continue;
-      for (const o of l.spawns) {
-        if (o.isMonster()) monsters.add(this.objects[o.monsterId]);
-      }
-    }
-    return [...monsters].sort((x, y) => (x.id - y.id));
+  // get monsters(): ObjectData[] {
+  //   const monsters = new Set<ObjectData>();
+  //   for (const l of this.locations) {
+  //     if (!l.used || !l.hasSpawns) continue;
+  //     for (const o of l.spawns) {
+  //       if (o.isMonster()) monsters.add(this.objects[o.monsterId]);
+  //     }
+  //   }
+  //   return [...monsters].sort((x, y) => (x.id - y.id));
+  // }
+
+  get monsters(): Monsters {
+    return new Monsters(this);
   }
 
   get projectiles(): ObjectData[] {
     const projectiles = new Set<ObjectData>();
-    for (const m of this.monsters) {
+    for (const m of this.objects.filter(o => o instanceof Monster)) {
       if (m.child) {
         projectiles.add(this.objects[this.adHocSpawns[m.child].objectId]);
       }
@@ -609,6 +614,9 @@ const ADJUSTMENTS = [
   // Fix bad music in zombietown houses: $10 should be $01
   [0x1782a, 0x10, 0x01],
   [0x17857, 0x10, 0x01],
+  // Fix bad spawns in Mt Hydra
+  [0x19f02, 0x40, 0x80],
+  [0x19f03, 0x33, 0x32],
   // Point Amazones outer guard to post-overflow message that's actually shown.
   [0x1cf05, 0x47, 0x48],
   // Remove stray flight granter in Zombietown.

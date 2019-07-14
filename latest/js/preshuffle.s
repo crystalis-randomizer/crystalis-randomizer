@@ -807,6 +807,18 @@ CheckForLowHpMp:
 ;GateCheckFailed:
 ;.org $37896
 ;GateCheckPassed:
+
+
+.ifdef _FIX_COIN_SPRITES
+;;; Normally this code reads from a table to give the 16 different coin drop
+;;; buckets a different metasprite.  Instead, we just change the CHR pages
+;;; so that they're all compatible with $a9, and all show a single big coin.
+;;; This leads to slightly less variety, but less glitchy graphics.
+.org $37a23
+  nop
+  lda #$a9
+.assert $37a26
+.endif
   
 
 ;;; Beef up dyna

@@ -30,8 +30,9 @@ class Chunk {
     }
 }
 export class Writer {
-    constructor(rom) {
+    constructor(rom, chr) {
         this.rom = rom;
+        this.chr = chr;
         this.chunks = [];
         this.writes = [];
         this.promises = [];

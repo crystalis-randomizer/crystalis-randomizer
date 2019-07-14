@@ -61,6 +61,7 @@ export async function shuffle(rom, seed, flags, reader, log, progress) {
         _DISABLE_WILD_WARP: false,
         _DISPLAY_DIFFICULTY: true,
         _EXTRA_PITY_MP: true,
+        _FIX_COIN_SPRITES: true,
         _FIX_OPEL_STATUE: true,
         _FIX_SHAKING: true,
         _FIX_VAMPIRE: true,
@@ -88,6 +89,7 @@ export async function shuffle(rom, seed, flags, reader, log, progress) {
     await assemble('preshuffle.s');
     const random = new Random(newSeed);
     const parsed = new Rom(rom);
+    fixCoinSprites(parsed);
     if (typeof window == 'object')
         window.rom = parsed;
     parsed.spoiler = new Spoiler(parsed);
@@ -176,6 +178,14 @@ async function postParsedShuffle(rom, random, seed, flags, asm, assemble) {
     return stampVersionSeedAndHash(rom, seed, flags);
 }
 ;
+function fixCoinSprites(rom) {
+    for (const page of [0x60, 0x64, 0x65, 0x66, 0x67, 0x68,
+        0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6f]) {
+        for (const pat of [0, 1, 2]) {
+            rom.patterns[page << 6 | pat].pixels = rom.patterns[0x5e << 6 | pat].pixels;
+        }
+    }
+}
 function undergroundChannelLandBridge(rom) {
     const { tiles } = rom.screens[0xa1];
     tiles[0x28] = 0x9f;

@@ -1,7 +1,10 @@
+import { Constraint } from './constraint.js';
 import { ObjectData } from './objectdata.js';
+import { DefaultMap } from '../util.js';
 export class Monster extends ObjectData {
     constructor(rom, [name, id, scaling, adjustments = {}]) {
         super(rom, id);
+        this.constraint = Constraint.ALL;
         this.name = name;
         const expectedLevel = (level(scaling) + this.level) / 2;
         const expectedAttack = expectedLevel + playerSword(scaling, this.elements);
@@ -120,6 +123,14 @@ export class Monster extends ObjectData {
         const sexp = 0.488 + this.totalDifficulty() * (1 - this.wealth) * 0.256;
         return Math.max(1, Math.min(255, Math.round(sexp * 32)));
     }
+    configure(location, spawn) {
+        if (!this.shiftPatterns)
+            return;
+        if (this.shiftPatterns.has(location.spritePalettes[0]))
+            spawn.patternBank = 0;
+        if (this.shiftPatterns.has(location.spritePalettes[1]))
+            spawn.patternBank = 1;
+    }
 }
 function processExpReward(raw) {
     return raw < 128 ? raw : (raw & 0x7f) << 4;
@@ -185,11 +196,13 @@ const ACTION_SCRIPTS = new Map([
     [0x29, {
             child: true,
             movement: 5,
+            metasprites: () => [0x6b, 0x68],
         }],
     [0x2a, {
             child: true,
             projectile: 1,
             movement: 4,
+            metasprites: (o) => [0, 1, 2, 3].map(x => x + o.data[31]),
         }],
     [0x2b, {
             movement: 4,
@@ -204,6 +217,11 @@ const ACTION_SCRIPTS = new Map([
             movement: 3,
         }],
     [0x2f, {}],
+    [0x34, {
+            child: true,
+        }],
+    [0x38, {}],
+    [0x3c, {}],
     [0x40, {
             child: true,
             moth: true,
@@ -251,6 +269,7 @@ const ACTION_SCRIPTS = new Map([
             child: true,
             projectile: 1,
             movement: 4,
+            metasprites: (o) => [0, 1, 2, 3].map(x => x + o.data[31]),
         }],
     [0x60, {
             boss: true,
@@ -313,5 +332,72 @@ function lookup(x, first, ...table) {
             return v;
     }
     return first;
+}
+export class Monsters {
+    constructor(rom) {
+        this.rom = rom;
+        const monsterSpawns = new DefaultMap(() => []);
+        for (const l of rom.locations) {
+            if (!l.used)
+                continue;
+            for (let i = 0; i < l.spawns.length; i++) {
+                const s = l.spawns[i];
+                if (!s.isMonster())
+                    continue;
+                monsterSpawns.get(s.monsterId).push([l, i, s]);
+            }
+        }
+        for (const [m, spawns] of monsterSpawns) {
+            let constraint = Constraint.ALL;
+            const parent = this.rom.objects[m];
+            if (!(parent instanceof Monster))
+                throw new Error(`expected monster: ${parent} from ${spawns}`);
+            for (const obj of allObjects(rom, parent)) {
+                const action = ACTION_SCRIPTS.get(obj.action);
+                const metaspriteFn = action && action.metasprites || (() => [obj.metasprite]);
+                const patterns = new Set();
+                const palettes = new Set();
+                for (const metasprite of metaspriteFn(obj).map(s => rom.metasprites[s])) {
+                    for (const p of metasprite.palettes()) {
+                        palettes.add(p);
+                    }
+                    for (const p of metasprite.patternBanks()) {
+                        patterns.add(p);
+                    }
+                }
+                const shiftable = obj.id === m && patterns.size == 1 && [...patterns][0] === 2;
+                const locs = new Map();
+                for (const [l, , spawn] of spawns) {
+                    locs.set(spawn.patternBank && shiftable ? ~l.id : l.id, spawn);
+                }
+                let child = undefined;
+                for (let [l, spawn] of locs) {
+                    const loc = rom.locations[l < 0 ? ~l : l];
+                    const c = Constraint.fromSpawn(palettes, patterns, loc, spawn, shiftable);
+                    child = child ? child.join(c) : c;
+                }
+                if (!child)
+                    throw new Error(`Expected child to appear`);
+                if (child.float.length === 1) {
+                    parent.shiftPatterns = new Set(child.float[0]);
+                }
+                const meet = constraint.meet(child);
+                if (!meet)
+                    throw new Error(`Bad meet for ${m} with ${obj.id}`);
+                if (meet)
+                    constraint = meet;
+            }
+            parent.constraint = constraint;
+        }
+    }
+}
+function* allObjects(rom, parent) {
+    yield parent;
+    const repl = parent.spawnedReplacement();
+    if (repl)
+        yield* allObjects(rom, repl);
+    const child = parent.spawnedChild();
+    if (child)
+        yield* allObjects(rom, child);
 }
 //# sourceMappingURL=monster.js.map

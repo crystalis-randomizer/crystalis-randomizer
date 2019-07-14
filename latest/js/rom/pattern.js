@@ -22,6 +22,10 @@ export class Pattern extends Entity {
             p = p.flipV();
         return p;
     }
+    write(writer) {
+        const a = this.id << 4;
+        writer.chr.subarray(a, a + 16).set(this.pixels);
+    }
 }
 export var Flip;
 (function (Flip) {

@@ -7,6 +7,7 @@ import { ItemGet } from './rom/itemget.js';
 import { Locations } from './rom/locations.js';
 import { Messages } from './rom/messages.js';
 import { Metasprite } from './rom/metasprite.js';
+import { Monster, Monsters } from './rom/monster.js';
 import { Npc } from './rom/npc.js';
 import { Objects } from './rom/objects.js';
 import { RomOption } from './rom/option.js';
@@ -66,20 +67,11 @@ export class Rom {
         return this.triggers[id & 0x7f];
     }
     get monsters() {
-        const monsters = new Set();
-        for (const l of this.locations) {
-            if (!l.used || !l.hasSpawns)
-                continue;
-            for (const o of l.spawns) {
-                if (o.isMonster())
-                    monsters.add(this.objects[o.monsterId]);
-            }
-        }
-        return [...monsters].sort((x, y) => (x.id - y.id));
+        return new Monsters(this);
     }
     get projectiles() {
         const projectiles = new Set();
-        for (const m of this.monsters) {
+        for (const m of this.objects.filter(o => o instanceof Monster)) {
             if (m.child) {
                 projectiles.add(this.objects[this.adHocSpawns[m.child].objectId]);
             }
@@ -136,7 +128,7 @@ export class Rom {
         Rom.SHOP_DATA_TABLES.set(this.prg, this.shopDataTablesAddress);
         Rom.OMIT_ITEM_GET_DATA_SUFFIX.set(this.prg, this.omitItemGetDataSuffix);
         Rom.OMIT_LOCAL_DIALOG_SUFFIX.set(this.prg, this.omitLocalDialogSuffix);
-        const writer = new Writer(this.prg);
+        const writer = new Writer(this.prg, this.chr);
         writer.alloc(0x144f8, 0x17e00);
         writer.alloc(0x193f9, 0x1ac00);
         writer.alloc(0x1ae00, 0x1bd00);
@@ -171,6 +163,7 @@ export class Rom {
         writeAll(this.items);
         writeAll(this.shops);
         writeAll(this.bossKills);
+        writeAll(this.patterns);
         this.wildWarp.write(writer);
         promises.push(this.telepathy.write(writer));
         promises.push(this.messages.write(writer));
@@ -325,6 +318,8 @@ const ADJUSTMENTS = [
     [0x164ff, 0x0b, 0x0a],
     [0x1782a, 0x10, 0x01],
     [0x17857, 0x10, 0x01],
+    [0x19f02, 0x40, 0x80],
+    [0x19f03, 0x33, 0x32],
     [0x1cf05, 0x47, 0x48],
     [0x1d311, 0x20, 0xa0],
     [0x1d312, 0x30, 0x00],

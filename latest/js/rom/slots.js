@@ -155,5 +155,6 @@ export function update(rom, fill) {
 const preservedItemGetFlags = new Set([
     0x024,
     0x08b,
+    0x2fd,
 ]);
 //# sourceMappingURL=slots.js.map

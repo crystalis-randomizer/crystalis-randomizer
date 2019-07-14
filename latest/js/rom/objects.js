@@ -5,7 +5,7 @@ export class ObjectsClass extends Array {
         super(0x100);
         this.rom = rom;
         const monsters = new Map();
-        const all = Object.assign({}, MONSTERS, BOSSES, PROJECTILES);
+        const all = ALL_MONSTERS;
         for (const key in all) {
             const data = all[key];
             monsters.set(data[1], [key, data]);
@@ -90,6 +90,17 @@ export const MONSTERS = {
     towerSentinel: ['Tower Sentinel', 0xa2, 47],
     helicopter: ['Helicopter', 0xa3, 47],
 };
+const OBJECTS = {
+    verticalPlatform: ['Vertical Platform', 0x7e, 28],
+    horizotalPlatform: ['Horizontal Platform', 0x7f, 28],
+    glitch1: ['Glitch', 0x8d, 41],
+    glitch2: ['Glitch', 0x8e, 41],
+    guardianStatue: ['Guardian Statue', 0x8f, 41],
+    statueOfSun: ['Statue of Sun', 0x9c, 47],
+    statueOfMoon: ['Statue of Moon', 0x9d, 47],
+    crumblingVerticalPlatform: ['Crumbling Vertical Platform', 0x9f, 47],
+    glitch3: ['Glitch', 0xa6, 41],
+};
 const BOSSES = {
     vampire1: ['Vampire 1', 0x57, 5],
     giantInsect: ['Giant Insect', 0x5e, 11],
@@ -155,5 +166,5 @@ const PROJECTILES = {
     guardianStatueMissile: ['Guardian Statue Missile', 0xfd, 36],
     demonWallFire: ['Demon Wall Fire', 0xfe, 37],
 };
-const ALL_MONSTERS = { ...MONSTERS, ...BOSSES, ...PROJECTILES };
+const ALL_MONSTERS = { ...MONSTERS, ...OBJECTS, ...BOSSES, ...PROJECTILES };
 //# sourceMappingURL=objects.js.map

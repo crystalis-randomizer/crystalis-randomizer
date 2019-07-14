@@ -123,7 +123,7 @@ export class DefaultMap extends Map {
     get(key) {
         let value = super.get(key);
         if (value == null)
-            super.set(key, value = this.supplier());
+            super.set(key, value = this.supplier(key));
         return value;
     }
 }
@@ -151,4 +151,91 @@ export var iters;
     }
     iters_1.concat = concat;
 })(iters || (iters = {}));
+const INVALIDATED = Symbol('Invalidated');
+const SIZE = Symbol('Size');
+class SetMultimapSetView {
+    constructor(ownerMap, ownerKey, currentSet) {
+        this.ownerMap = ownerMap;
+        this.ownerKey = ownerKey;
+        this.currentSet = currentSet;
+    }
+    getCurrentSet() {
+        if (!this.currentSet || this.currentSet[INVALIDATED]) {
+            this.currentSet = this.ownerMap.get(this.ownerKey) || new Set();
+        }
+        return this.currentSet;
+    }
+    mutateSet(f) {
+        const set = this.getCurrentSet();
+        const size = set.size;
+        try {
+            return f(set);
+        }
+        finally {
+            this.ownerMap[SIZE] += set.size - size;
+            if (!set.size) {
+                this.ownerMap.delete(this.ownerKey);
+                set[INVALIDATED] = true;
+            }
+        }
+    }
+    add(elem) {
+        this.mutateSet(s => s.add(elem));
+        return this;
+    }
+    has(elem) {
+        return this.getCurrentSet().has(elem);
+    }
+    clear() {
+        this.mutateSet(s => s.clear());
+    }
+    delete(elem) {
+        return this.mutateSet(s => s.delete(elem));
+    }
+    [Symbol.iterator]() {
+        return this.getCurrentSet()[Symbol.iterator]();
+    }
+    values() {
+        return this.getCurrentSet().values();
+    }
+    keys() {
+        return this.getCurrentSet().keys();
+    }
+    entries() {
+        return this.getCurrentSet().entries();
+    }
+    forEach(callback, thisArg) {
+        this.getCurrentSet().forEach(callback, thisArg);
+    }
+    get size() {
+        return this.getCurrentSet().size;
+    }
+    get [Symbol.toStringTag]() {
+        return 'Set';
+    }
+}
+Reflect.setPrototypeOf(SetMultimapSetView.prototype, Set.prototype);
+export class SetMultimap {
+    constructor(entries = []) {
+        this.map = new Map();
+        this.map[SIZE] = 0;
+        for (const [k, v] of entries) {
+            this.add(k, v);
+        }
+    }
+    get size() {
+        return this.map[SIZE];
+    }
+    get(k) {
+        return new SetMultimapSetView(this.map, k, this.map.get(k));
+    }
+    add(k, v) {
+        let set = this.map.get(k);
+        if (!set)
+            this.map.set(k, set = new Set());
+        const size = set.size;
+        set.add(v);
+        this.map[SIZE] += set.size - size;
+    }
+}
 //# sourceMappingURL=util.js.map

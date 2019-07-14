@@ -41,6 +41,23 @@ export class Metasprite extends Entity {
             });
         }
     }
+    patternBanks() {
+        if (!this.used)
+            return [];
+        let ms = this;
+        if (ms.mirrored) {
+            ms = this.rom.metasprites[ms.mirrored];
+        }
+        const pats = new Set();
+        for (const version of ms.sprites) {
+            for (const [dx, , , pat] of version) {
+                if (dx === 0x80)
+                    break;
+                pats.add(pat >>> 6);
+            }
+        }
+        return [...pats];
+    }
     palettes() {
         if (!this.used)
             return [];

@@ -7,7 +7,7 @@ import {ItemGet} from './rom/itemget.js';
 import {Locations} from './rom/locations.js';
 import {Messages} from './rom/messages.js';
 import {Metasprite} from './rom/metasprite.js';
-import {Monster, Monsters} from './rom/monster.js';
+import {Monster} from './rom/monster.js';
 import {Npc} from './rom/npc.js';
 import {ObjectData} from './rom/objectdata.js';
 import {Objects} from './rom/objects.js';
@@ -176,10 +176,6 @@ export class Rom {
   //   }
   //   return [...monsters].sort((x, y) => (x.id - y.id));
   // }
-
-  get monsters(): Monsters {
-    return new Monsters(this);
-  }
 
   get projectiles(): ObjectData[] {
     const projectiles = new Set<ObjectData>();
@@ -617,6 +613,17 @@ const ADJUSTMENTS = [
   // Fix bad spawns in Mt Hydra
   [0x19f02, 0x40, 0x80],
   [0x19f03, 0x33, 0x32],
+  // Remove stray (off-screen) slime spawns in Draygon 2's room
+  [0x1a677, 0x00, 0xb0],
+  [0x1a67b, 0x00, 0xb0],
+  [0x1a67f, 0x00, 0xb0],
+  [0x1a683, 0x00, 0xb0],
+  [0x1a687, 0x00, 0xb0],
+  [0x1a68b, 0x00, 0xb0],
+  // Remove stray (off-screen) slime spawn in Amazones by changing object ID to 0
+  [0x1a875, 0x00, 0xb0],
+  // Remove stray (off-screen) slime spawn in Amazones by changing object ID to 0
+  [0x1a96f, 0x00, 0xb0],
   // Point Amazones outer guard to post-overflow message that's actually shown.
   [0x1cf05, 0x47, 0x48],
   // Remove stray flight granter in Zombietown.

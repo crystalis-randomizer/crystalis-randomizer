@@ -110,7 +110,7 @@ export const MONSTERS = {
   scorpion: ['Scorpion', 0x96, 41],
   sandBlob: ['Sand Blob', 0x98, 44],
   mummy: ['Mummy', 0x99, 44],
-  tombGuardian: ['Tomb Guardian', 0x9a, 46],
+  warlock: ['Warlock', 0x9a, 46],
   brownRobot: ['Brown Robot', 0xa0, 47, {difficulty: 1}],
   whiteRobot: ['White Robot', 0xa1, 47],
   towerSentinel: ['Tower Sentinel', 0xa2, 47],

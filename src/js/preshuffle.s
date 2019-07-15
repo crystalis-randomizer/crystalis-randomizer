@@ -1097,6 +1097,15 @@ SetEquippedConsumableItem:
 .endif
 
 
+.ifdef _SIMPLIFY_INVISIBLE_CHESTS
+.org $3e39f
+  lda $2e
+  bpl $e3ad  ; normal chest
+  bmi $e3b0  ; invisible chest
+  ;; 8 free bytes now
+.endif
+
+
 ;;; Allow any negative number to terminate an exit table.  Since X coordinates
 ;;; are constrained to 0..7f, this is safe, and it gives 7 extra bits for
 ;;; storing additional information that we can read when parsing the rom.

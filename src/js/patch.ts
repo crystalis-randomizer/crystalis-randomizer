@@ -16,6 +16,8 @@ import * as slots from './rom/slots.js';
 import {Spoiler} from './rom/spoiler.js';
 import {hex, seq, watchArray, writeLittleEndian} from './rom/util.js';
 import * as version from './version.js';
+import {Graphics} from './rom/graphics.js';
+import { Constraint } from './rom/constraint.js';
 
 // TODO - to shuffle the monsters, we need to find the sprite palttes and
 // patterns for each monster.  Each location supports up to two matchups,
@@ -106,6 +108,7 @@ export async function shuffle(rom: Uint8Array,
     _REQUIRE_HEALED_DOLPHIN_TO_RIDE: flags.requireHealedDolphinToRide(),
     _REVERSIBLE_SWAN_GATE: true,
     _SAHARA_RABBITS_REQUIRE_TELEPATHY: flags.saharaRabbitsRequireTelepathy(),
+    _SIMPLIFY_INVISIBLE_CHESTS: true,
     _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
   };
 
@@ -163,6 +166,7 @@ export async function shuffle(rom: Uint8Array,
   undergroundChannelLandBridge(parsed);
 
   if (flags.connectLimeTreeToLeaf()) connectLimeTreeToLeaf(parsed);
+  simplifyInvisibleChests(parsed);
   addCordelWestTriggers(parsed, flags);
   if (flags.disableRabbitSkip()) fixRabbitSkip(parsed);
 
@@ -207,6 +211,9 @@ export async function shuffle(rom: Uint8Array,
 
   normalizeSwords(parsed, flags, random);
   rescaleMonsters(parsed, flags, random);
+  // NOTE: monster shuffle needs to go after item shuffle because of mimic
+  // placement constraints, but it would be nice to go before in order to
+  // guarantee money.
   if (flags.shuffleMonsters()) shuffleMonsters(parsed, flags, random);
   identifyKeyItemsForDifficultyBuffs(parsed);
 
@@ -975,6 +982,17 @@ const adjustItemNames = (rom: Rom, flags: FlagSet) => {
   }
 };
 
+function simplifyInvisibleChests(rom: Rom): void {
+  for (const location of [rom.locations.cordelPlainsEast,
+                          rom.locations.undergroundChannel,
+                          rom.locations.kirisaMeadow]) {
+    for (const spawn of location.spawns) {
+      // set the new "invisible" flag on the chest.
+      if (spawn.isChest()) spawn.data[2] |= 0x80;
+    }
+  }
+}
+
 // Add the statue of onyx and possibly the teleport block trigger to Cordel West
 const addCordelWestTriggers = (rom: Rom, flags: FlagSet) => {
   const {cordelPlainsEast, cordelPlainsWest} = rom.locations;
@@ -1405,11 +1423,12 @@ const rescaleMonsters = (rom: Rom, flags: FlagSet, random: Random) => {
 
 const shuffleMonsters = (rom: Rom, flags: FlagSet, random: Random) => {
   // TODO: once we have location names, compile a spoiler of shuffled monsters
+  const graphics = new Graphics(rom);
   const pool = new MonsterPool(flags, {});
   for (const loc of rom.locations) {
     if (loc.used) pool.populate(loc);
   }
-  pool.shuffle(random);
+  pool.shuffle(random, graphics);
 };
 
 const identifyKeyItemsForDifficultyBuffs = (rom: Rom) => {
@@ -1701,7 +1720,7 @@ class MonsterPool {
     this.monsters.push(...monsters);
   }
 
-  shuffle(random: Random) {
+  shuffle(random: Random, graphics: Graphics) {
     this.report['pre-shuffle locations'] = this.locations.map(l => l.location.id);
     this.report['pre-shuffle monsters'] = this.monsters.map(m => m.id);
     random.shuffle(this.locations);
@@ -1711,39 +1730,35 @@ class MonsterPool {
     while (this.locations.length) {
       const {location, slots} = this.locations.pop()!;
       const report: string[] = this.report['$' + location.id.toString(16).padStart(2, '0')] = [];
-      const {maxFlyers = 0, nonFlyers = {}, fixedSlots = {}, tower = false} =
+      const {maxFlyers = 0, nonFlyers = {}, tower = false} =
             MONSTER_ADJUSTMENTS[location.id] || {};
       if (tower) continue;
-      // Keep track of pattern and palette slots we've pinned.
-      // It might be nice to have a mode where palette conflicts are allowed,
-      // and we just go with one or the other, though this could lead to poisonous
-      // blue slimes and non-poisonous red slimes by accident.
-      let pat0 = fixedSlots.pat0 || null;
-      let pat1 = fixedSlots.pat1 || null;
-      let pal2 = fixedSlots.pal2 || null;
-      let pal3 = fixedSlots.pal3 || null;
       let flyers = maxFlyers; // count down...
 
       // Determine location constraints
-      // Note that bosses always leave chests.
-      let treasureChest = location.bossId() != null;
+      let constraint = Constraint.ALL;
+      if (location.bossId() != null) {
+        // Note that bosses always leave chests.
+        // TODO - it's possible this is out of order w.r.t. writing the boss?
+        constraint = constraint.meet(Constraint.TREASURE_CHEST) || constraint;
+      }
       for (const spawn of location.spawns) {
-        if (spawn.isChest()) treasureChest = true;
-        if (!spawn.isMonster()) continue;
-        // hard-code a few monster requirements.
-        const id = spawn.monsterId;
-        if (id === 0x7e || id === 0x7f || id === 0x9f) {
-          pat1 = 0x62;
-        } else if (id === 0x8f) {
-          pat0 = 0x61;
+        if (spawn.isChest() && !(spawn.data[2] & 0x80)) {
+          if (spawn.id < 0x70) {
+            constraint = constraint.meet(Constraint.TREASURE_CHEST) || constraint;
+          } else {
+            constraint = constraint.meet(Constraint.MIMIC) || constraint;
+          }
+        } else if (spawn.isNpc()) {
+          const c = graphics.npcConstraints.get(spawn.id);
+          if (c) constraint = constraint.meet(c) || constraint;
+        } else if (spawn.isMonster() && UNTOUCHED_MONSTERS[spawn.monsterId]) {
+          const c = graphics.monsterConstraints.get(spawn.monsterId);
+          if (c) constraint = constraint.meet(c) || constraint;
         }
       }
-      // Cordel East and Kirisa Meadow have chests but don't need to actually draw them
-      // (though we may need to make sure it doesn't end up with some nonsense tile that
-      // ends up above the background).
-      if (location.id === 0x15 || location.id === 0x47) treasureChest = false;
 
-      report.push(`Initial pass: ${[treasureChest, pat0, pat1, pal2, pal3].join(', ')}`);
+      report.push(`Initial pass: ${constraint.fixed.map(s=>s.size<Infinity?'['+[...s].join(', ')+']':'all')}`);
 
       const tryAddMonster = (m: MonsterConstraint) => {
         const flyer = FLYERS.has(m.id);
@@ -1754,47 +1769,11 @@ class MonsterPool {
           if (!flyers) return false;
           --flyers;
         }
-        if (pal2 != null && m.pal2 != null && pal2 !== m.pal2 ||
-            pal3 != null && m.pal3 != null && pal3 !== m.pal3) {
-          return false;
-        }
-        // whether we can put this one in pat0
-        // NOTE - treasure chest wants to be in pattern 1, I think?
-        const pat0ok = !treasureChest || TREASURE_CHEST_BANKS.has(m.pat);
-        let patSlot;
-        if (location.rom.objects[m.id].child || RETAIN_SLOTS.has(m.id)) {
-          // if there's a child, make sure to keep it in the same pattern slot
-          patSlot = m.patBank;
-          const prev = patSlot ? pat1 : pat0;
-          if (prev != null && prev !== m.pat) return false;
-          if (patSlot) {
-            pat1 = m.pat;
-          } else if (pat0ok) {
-            pat0 = m.pat;
-          } else {
-            return false;
-          }
-
-          // TODO - if [pat0,pat1] were an array this would be a whole lot easier.
-          report.push(`  Adding ${m.id.toString(16)}: pat(${patSlot}) <-  ${m.pat.toString(16)}`);
-        } else {
-          if (pat0 == null && pat0ok || pat0 === m.pat) {
-            pat0 = m.pat;
-            patSlot = 0;
-            report.push(`  Adding ${m.id.toString(16)}: pat0 <-  ${m.pat.toString(16)}`);
-          } else if (pat1 == null || pat1 === m.pat) {
-            pat1 = m.pat;
-            patSlot = 1;
-            report.push(`  Adding ${m.id.toString(16)}: pat1 <-  ${m.pat.toString(16)}`);
-          } else {
-            return false;
-          }
-        }
-        if (m.pal2 != null) pal2 = m.pal2;
-        if (m.pal3 != null) pal3 = m.pal3;
-        // @ts-ignore: debugging
-        report.push(`    ${Object.keys(m).map(k => `${k}: ${m[k] && m[k].toString(16)}`).join(', ')}`);
-        report.push(`    pal: ${(m.pal2 || 0).toString(16)} ${(m.pal3 || 0).toString(16)}`);
+        const c = graphics.monsterConstraints.get(m.id);
+        const meet = c && constraint.meet(c);
+        if (!meet) return false;
+        report.push(`  Adding ${m.id.toString(16)}: ${meet}`);
+        constraint = meet;
 
         // Pick the slot only after we know for sure that it will fit.
         let eligible = 0;
@@ -1822,7 +1801,6 @@ class MonsterPool {
           spawn.y += nonFlyers[slot][0] * 16;
           spawn.x += nonFlyers[slot][1] * 16;
         }
-        spawn.patternBank = patSlot || 0;
         spawn.monsterId = m.id;
         report.push(`    slot ${slot.toString(16)}: ${spawn}`);
 
@@ -1878,17 +1856,21 @@ class MonsterPool {
           i--;
         }
       }
-      if (pat0 != null) location.spritePatterns[0] = pat0;
-      if (pat1 != null) location.spritePatterns[1] = pat1;
-      if (pal2 != null) location.spritePalettes[0] = pal2;
-      if (pal3 != null) location.spritePalettes[1] = pal3;
+      [location.spritePatterns[0],
+       location.spritePatterns[1],
+       location.spritePalettes[0],
+       location.spritePalettes[1]] = constraint.fix(random);
 
       if (slots.length) {
         report.push(`Failed to fill location ${location.id.toString(16)}: ${slots.length} remaining`);
         for (const slot of slots) {
           const spawn = location.spawns[slot - 0x0d];
           spawn.x = spawn.y = 0;
+          spawn.id = 0xb0;
         }
+      }
+      for (const spawn of location.spawns) {
+        graphics.configure(location, spawn);
       }
     }
   }
@@ -1898,13 +1880,6 @@ const FLYERS: Set<number> = new Set([0x59, 0x5c, 0x6e, 0x6f, 0x81, 0x8a, 0xa3, 0
 const MOTHS_AND_BATS: Set<number> = new Set([0x55, /* swamp plant */ 0x5d, 0x7c, 0xbc, 0xc1]);
 // const SWIMMERS: Set<number> = new Set([0x75, 0x76]);
 // const STATIONARY: Set<number> = new Set([0x77, 0x87]);  // kraken, sorceror
-
-// constrains pat0 if map has a treasure chest on it
-const TREASURE_CHEST_BANKS = new Set([
-  0x5e, 0x5f, 0x60, 0x61, 0x64, 0x65, 0x66, 0x67,
-  0x68, 0x69, 0x6a, 0x6c, 0x6d, 0x6e, 0x6f, 0x70,
-  0x74, 0x75, 0x76, 0x77,
-]);
 
 interface MonsterAdjustment {
   maxFlyers?: number;
@@ -2215,8 +2190,6 @@ const MONSTER_ADJUSTMENTS: {[loc: number]: MonsterAdjustment} = {
     skip: true,
   },
 };
-
-const RETAIN_SLOTS: Set<number> = new Set([0x50, 0x53]);
 
 const UNTOUCHED_MONSTERS: {[id: number]: boolean} = { // not yet +0x50 in these keys
   [0x7e]: true, // vertical platform

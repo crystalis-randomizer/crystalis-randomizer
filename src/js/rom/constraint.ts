@@ -1,6 +1,7 @@
 import {Location, Spawn} from "./location.js";
 import {seq} from "./util.js";
-import { iters } from "../util.js";
+import {iters} from "../util.js";
+import {Random} from "../random.js";
 
 // Constraint for pattern and palette pages.
 // Allows multiple possibilities, and a callback when one is picked.
@@ -58,6 +59,14 @@ namespace CSet {
     }
     return out;
   }
+  export function isSubset(subset: CSet, superset: CSet): boolean {
+    if (superset === ALL || !subset.size) return true;
+    if (subset.size > superset.size) return false;
+    for (const x of subset) {
+      if (!superset.has(x)) return false;
+    }
+    return true;
+  }
   export function label(x: CSet): string {
     return x === ALL ? 'all' : [...x].sort().join(' ');
   }
@@ -111,10 +120,39 @@ export class Constraint {
     return new Constraint([NONE, NONE, NONE, NONE], []);
   }
 
+  static get MIMIC() {
+    return new Constraint([ALL, bit(0x6c), ALL, ALL], []);
+  }
+
+  static get TREASURE_CHEST() {
+    return new Constraint([ALL, new Set(TREASURE_CHEST_BANKS), ALL, ALL], []);
+  }
+
+  // Returns the "starting constraint" for the given location, taking things like
+  // windmill blades into account.
+  static forLocation(id: number): Constraint {
+    switch (id) {
+    case 0x03: // valley of wind (windmill blades)
+      return new Constraint([ALL, bit(0x60), ALL, ALL], []);
+    //case 0x1a: // swamp (child)
+    //  return new Constraint([ALL, bit(0x4f), ALL, bit(0x23)], []);
+    case 0x60: // angry sea (dolphin)
+    case 0x64: // underground channel
+    case 0x68: // ESI entrance
+      return new Constraint([ALL, bit(0x52), ALL,bit(0x08)], []);
+    }
+    return Constraint.ALL;
+  }
+
   // NOTE: Static spawns may be shiftable; ad-hoc spawns are not.
-  static fromSpawn(palettes: Set<number>, patterns: Set<number>, location: Location, spawn: Spawn, shiftable: boolean): Constraint {
+  static fromSpawn(palettes: Set<number>,
+                   patterns: Set<number>,
+                   location: Location, 
+                   spawn: Spawn,
+                   shiftable: boolean): Constraint {
     const [firstPattern, ...rest] = patterns;
     shiftable = shiftable && firstPattern === 2 && !rest.length;
+    if (shiftable && spawn.patternBank) patterns = new Set([3]);
     const pat0 = shiftable || !patterns.has(2) ? ALL : bit(location.spritePatterns[0]);
     const pat1 = shiftable || !patterns.has(3) ? ALL : bit(location.spritePatterns[1]);
     const float = shiftable ? [bit(location.spritePatterns[spawn.patternBank])] : [];
@@ -124,6 +162,10 @@ export class Constraint {
   }
 
   // TODO - combine these...
+
+  ignorePalette(): Constraint {
+    return new Constraint([this.fixed[0], this.fixed[1], ALL, ALL], this.float);
+  }
 
   // All the possible constraints for a given monster are joined together.
   // So if the same monster shows up with two different palettes, then we
@@ -154,6 +196,27 @@ export class Constraint {
     // const pal3 = this.pal3 && that.pal3 && this.pal3.union(that.pal3);
     // const shiftable = this.shiftable || that.shiftable;
     // return new Constraint(pat0, pat1, patX, patY, pal2, pal3, shiftable);
+  }
+
+  fix(random?: Random): [number, number, number, number] {
+    // Concretizes the "float" elements.
+    const nextInt: (x: number) => number = random ? (x) => random.nextInt(x) : () => 0;
+    const fixed = [...this.fixed];
+    if (this.float.length) {
+      // TODO - if float.length === 1 then one fixed bank might be better than the
+      // other (i.e. if pat0 is [11] and pat1 is ALL, and float[0] is [11], then it
+      // would be silly to pick pat1 to be [11].  Except that by the time we run this,
+      // it's irrelevant, since no new patterns are going to be added anyway.
+      const x0 = nextInt(2);
+      const x1 = 1 - x0;
+      if (x0 < this.float.length) fixed[0] = CSet.intersect(fixed[0], this.float[x0]);
+      if (x1 < this.float.length) fixed[1] = CSet.intersect(fixed[1], this.float[x1]);
+    }
+    return fixed.map(s => {
+      if (s === ALL) return 0xff;
+      const elems = [...s];
+      return elems[nextInt(elems.length)];
+    }) as [number, number, number, number];
   }
 
   meet(that: Constraint): Constraint | undefined {
@@ -213,6 +276,11 @@ export class Constraint {
           // Reset the outer for loop and check again.
           i = -1;
           break;
+        } else if (intersect.size === float[i].size) {
+          // If float[i] is a subset of fixed[j] then just drop the float.
+          // float.splice(i, 1);
+          // i--;
+          // break;
         }
       }
     }
@@ -377,3 +445,9 @@ export class Constraint {
 //   if (a === b) return a;
 //   return NaN;
 // }
+
+const TREASURE_CHEST_BANKS = new Set([
+  0x5e, 0x5f, 0x60, 0x61, 0x64, 0x65, 0x66, 0x67,
+  0x68, 0x69, 0x6a, 0x6c, 0x6d, 0x6e, 0x6f, 0x70,
+  0x74, 0x75, 0x76, 0x77,
+]);

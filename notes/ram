@@ -556,7 +556,7 @@ Usage: $3dada looks like nonzero causes some sort of "chain" to the next object?
        - this routine looks to be zeroing out the sprites (specifically $4a0, the action)
 
 This is added to the pattern ID.
-It's zero for all monsters.
+It's zero for all monsters (except mimic, which is why mimics don't behave reasonably w.r.t. 380,x:20)
 Orcs zero out the upper 6 bits when moving (but it was already 0 and nobody's reading it?)
   - it's possible this was a mistake and should have been a different register
 

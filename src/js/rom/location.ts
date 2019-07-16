@@ -343,6 +343,7 @@ export const Spawn = DataTuple.make(4, {
 
   id:    DataTuple.prop([3]),
 
+  used: {get(this: any): boolean { return this.data[0] !== 0xfe; }},
   monsterId: {get(this: any): number { return (this.id + 0x50) & 0xff; },
               set(this: any, id: number) { this.id = (id - 0x50) & 0xff; }},
   /** Note: this includes mimics. */

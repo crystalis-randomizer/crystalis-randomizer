@@ -988,7 +988,7 @@ function simplifyInvisibleChests(rom: Rom): void {
                           rom.locations.kirisaMeadow]) {
     for (const spawn of location.spawns) {
       // set the new "invisible" flag on the chest.
-      if (spawn.isChest()) spawn.data[2] |= 0x80;
+      if (spawn.isChest()) spawn.data[2] |= 0x20;
     }
   }
 }
@@ -1699,7 +1699,7 @@ class MonsterPool {
     let slot = 0x0c;
     for (const spawn of location.spawns) {
       ++slot;
-      if (!spawn.isMonster()) continue;
+      if (!spawn.used || !spawn.isMonster()) continue;
       const id = spawn.monsterId;
       if (id in UNTOUCHED_MONSTERS || !SCALED_MONSTERS.has(id) ||
           SCALED_MONSTERS.get(id)!.type !== 'm') continue;
@@ -1743,7 +1743,7 @@ class MonsterPool {
         constraint = constraint.meet(Constraint.TREASURE_CHEST) || constraint;
       }
       for (const spawn of location.spawns) {
-        if (spawn.isChest() && !(spawn.data[2] & 0x80)) {
+        if (spawn.isChest() && !(spawn.data[2] & 0x20)) {
           if (spawn.id < 0x70) {
             constraint = constraint.meet(Constraint.TREASURE_CHEST) || constraint;
           } else {
@@ -1862,11 +1862,12 @@ class MonsterPool {
        location.spritePalettes[1]] = constraint.fix(random);
 
       if (slots.length) {
-        report.push(`Failed to fill location ${location.id.toString(16)}: ${slots.length} remaining`);
+        console.error/*report.push*/(`Failed to fill location ${location.id.toString(16)}: ${slots.length} remaining`);
         for (const slot of slots) {
           const spawn = location.spawns[slot - 0x0d];
           spawn.x = spawn.y = 0;
           spawn.id = 0xb0;
+          spawn.data[0] = 0xfe; // indicate unused
         }
       }
       for (const spawn of location.spawns) {

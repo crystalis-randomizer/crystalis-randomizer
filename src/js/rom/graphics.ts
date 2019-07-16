@@ -24,6 +24,7 @@ export class Graphics {
       if (!l.used) continue;
       for (let i = 0; i < l.spawns.length; i++) {
         const s = l.spawns[i];
+        if (!s.used) continue;
         if (s.isMonster()) {
           allSpawns.get(s.monsterId).push([l, i, s]);
         } else if (s.isNpc()) {
@@ -34,7 +35,7 @@ export class Graphics {
     // For each monster, determine which patterns and palettes are used.
     for (const [m, spawns] of allSpawns) {
       // TODO - fold into patch.shuffleMonsters
-      if (m === 0) continue; // used to suppress buggy stray spawns
+      //if (m === 0) continue; // used to suppress buggy stray spawns
       if (m < 0) { // NPC
         const metasprite = rom.metasprites[rom.npcs[~m].data[3]];
         if (!metasprite) throw new Error(`bad NPC: ${~m}`);
@@ -66,14 +67,22 @@ export class Graphics {
 
   configure(location: Location, spawn: Spawn) {
     const c = spawn.isMonster() ? this.monsterConstraints.get(spawn.monsterId) :
-        spawn.isNpc() ? this.npcConstraints.get(spawn.id) : undefined;
-    if (!c || !c.float.length) {
+        spawn.isNpc() ? this.npcConstraints.get(spawn.id) :
+        spawn.isChest() ? (spawn.id < 0x70 ? Constraint.TREASURE_CHEST :
+                           Constraint.MIMIC) :
+        undefined;
+    if (!c) return;
+    if (c.shift === 3 || c.float.length >= 2) {
+      throw new Error(`don't know what to do with two floats`);
+    } else if (!c.float.length) {
+      spawn.patternBank = Number(c.shift === 2);
+    } else if (c.float[0].has(location.spritePatterns[0])) {
       spawn.patternBank = 0;
-      return;
+    } else if (c.float[0].has(location.spritePatterns[1])) {
+      spawn.patternBank = 1;
+    } else if (spawn.isMonster()) {
+      throw new Error(`no matching pattern bank`);
     }
-    if (c.float.length > 1) throw new Error(`don't know what to do with two floats`);
-    if (c.float[0].has(location.spritePatterns[0])) spawn.patternBank = 0;
-    if (c.float[0].has(location.spritePatterns[1])) spawn.patternBank = 1;
   }
 }
 

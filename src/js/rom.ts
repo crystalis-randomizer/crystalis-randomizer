@@ -610,20 +610,9 @@ const ADJUSTMENTS = [
   // Fix bad music in zombietown houses: $10 should be $01
   [0x1782a, 0x10, 0x01],
   [0x17857, 0x10, 0x01],
-  // Fix bad spawns in Mt Hydra
+  // Fix bad spawn in Mt Hydra (make it an extra puddle).
   [0x19f02, 0x40, 0x80],
   [0x19f03, 0x33, 0x32],
-  // Remove stray (off-screen) slime spawns in Draygon 2's room
-  [0x1a677, 0x00, 0xb0],
-  [0x1a67b, 0x00, 0xb0],
-  [0x1a67f, 0x00, 0xb0],
-  [0x1a683, 0x00, 0xb0],
-  [0x1a687, 0x00, 0xb0],
-  [0x1a68b, 0x00, 0xb0],
-  // Remove stray (off-screen) slime spawn in Amazones by changing object ID to 0
-  [0x1a875, 0x00, 0xb0],
-  // Remove stray (off-screen) slime spawn in Amazones by changing object ID to 0
-  [0x1a96f, 0x00, 0xb0],
   // Point Amazones outer guard to post-overflow message that's actually shown.
   [0x1cf05, 0x47, 0x48],
   // Remove stray flight granter in Zombietown.

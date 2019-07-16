@@ -105,7 +105,9 @@ namespace CSet {
 
 export class Constraint {
   constructor(readonly fixed: ReadonlyArray<CSet>, // length always 4
-              readonly float: ReadonlyArray<CSet>) {}
+              readonly float: ReadonlyArray<CSet>,
+              // bitset of pages that have been shifted from a float.
+              readonly shift: number) {}
 
   get pat0(): CSet { return this.fixed[0]; }
   get pat1(): CSet { return this.fixed[1]; }
@@ -113,19 +115,19 @@ export class Constraint {
   get pal3(): CSet { return this.fixed[3]; }
 
   static get ALL() {
-    return new Constraint([ALL, ALL, ALL, ALL], []);
+    return new Constraint([ALL, ALL, ALL, ALL], [], 0);
   }
 
   static get NONE() {
-    return new Constraint([NONE, NONE, NONE, NONE], []);
+    return new Constraint([NONE, NONE, NONE, NONE], [], 0);
   }
 
   static get MIMIC() {
-    return new Constraint([ALL, bit(0x6c), ALL, ALL], []);
+    return new Constraint([ALL, bit(0x6c), ALL, ALL], [], 0);
   }
 
   static get TREASURE_CHEST() {
-    return new Constraint([ALL, new Set(TREASURE_CHEST_BANKS), ALL, ALL], []);
+    return new Constraint([ALL, ALL, ALL, ALL], [new Set(TREASURE_CHEST_BANKS)], 0);
   }
 
   // Returns the "starting constraint" for the given location, taking things like
@@ -133,13 +135,13 @@ export class Constraint {
   static forLocation(id: number): Constraint {
     switch (id) {
     case 0x03: // valley of wind (windmill blades)
-      return new Constraint([ALL, bit(0x60), ALL, ALL], []);
+      return new Constraint([ALL, bit(0x60), ALL, ALL], [], 0);
     //case 0x1a: // swamp (child)
     //  return new Constraint([ALL, bit(0x4f), ALL, bit(0x23)], []);
     case 0x60: // angry sea (dolphin)
     case 0x64: // underground channel
     case 0x68: // ESI entrance
-      return new Constraint([ALL, bit(0x52), ALL,bit(0x08)], []);
+      return new Constraint([ALL, bit(0x52), ALL,bit(0x08)], [], 0);
     }
     return Constraint.ALL;
   }
@@ -158,13 +160,14 @@ export class Constraint {
     const float = shiftable ? [bit(location.spritePatterns[spawn.patternBank])] : [];
     const pal2 = palettes.has(2) ? bit(location.spritePalettes[0]) : ALL;
     const pal3 = palettes.has(3) ? bit(location.spritePalettes[1]) : ALL;
-    return new Constraint([pat0, pat1, pal2, pal3], float);
+    return new Constraint([pat0, pat1, pal2, pal3], float, 0);
   }
 
   // TODO - combine these...
 
   ignorePalette(): Constraint {
-    return new Constraint([this.fixed[0], this.fixed[1], ALL, ALL], this.float);
+    return new Constraint([this.fixed[0], this.fixed[1], ALL, ALL],
+                          this.float, this.shift);
   }
 
   // All the possible constraints for a given monster are joined together.
@@ -177,7 +180,7 @@ export class Constraint {
       throw new Error(`incompatible float: ${this.float} ${that.float}`);
     }
     const float = seq(this.float.length, i => CSet.union(this.float[i], that.float[i]));
-    return new Constraint(fixed, float);
+    return new Constraint(fixed, float, this.shift | that.shift);
 
     // const floatMap = new Map<string, CSet>();
     // for (const s of iters.concat(this.float, that.float)) {
@@ -228,6 +231,7 @@ export class Constraint {
     // undefined.
 
     const fixed = [];
+    let shift = this.shift;
     for (let i = 0; i < 4; i++) {
       const meet = CSet.intersect(this.fixed[i], that.fixed[i]);
       if (!meet.size) return undefined;
@@ -271,6 +275,7 @@ export class Constraint {
         if (!intersect.size) {
           // A float is disjoint from a fixed: resolve the other fixed slot.
           const c = fixed[1 - j] = CSet.intersect(float[i], fixed[1 - j]);
+          shift |= 1 << (1 - j);
           if (!c.size) return undefined;
           float.splice(i, 1);
           // Reset the outer for loop and check again.
@@ -286,7 +291,7 @@ export class Constraint {
     }
 
     // At this point, the invariants are satisfied, so we can return.
-    return new Constraint(fixed, float);
+    return new Constraint(fixed, float, shift);
 
     // const pal2 = (this.pal2 || UNCONSTRAINED).intersect(that.pal2 || UNCONSTRAINED);
     // const pal3 = (this.pal3 || UNCONSTRAINED).intersect(that.pal3 || UNCONSTRAINED);

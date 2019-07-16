@@ -1098,11 +1098,13 @@ SetEquippedConsumableItem:
 
 
 .ifdef _SIMPLIFY_INVISIBLE_CHESTS
+;;; We co-opt the unused npcdata[2]:20 bit to signify invisible chests
 .org $3e39f
   lda $2e
-  bpl $e3ad  ; normal chest
-  bmi $e3b0  ; invisible chest
-  ;; 8 free bytes now
+  and #$20
+  beq $e3ad  ; normal chest
+  bne $e3b0  ; invisible chest
+  ;; 6 free bytes now
 .endif
 
 

@@ -1097,6 +1097,17 @@ SetEquippedConsumableItem:
 .endif
 
 
+.ifdef _SIMPLIFY_INVISIBLE_CHESTS
+;;; We co-opt the unused npcdata[2]:20 bit to signify invisible chests
+.org $3e39f
+  lda $2e
+  and #$20
+  beq $e3ad  ; normal chest
+  bne $e3b0  ; invisible chest
+  ;; 6 free bytes now
+.endif
+
+
 ;;; Allow any negative number to terminate an exit table.  Since X coordinates
 ;;; are constrained to 0..7f, this is safe, and it gives 7 extra bits for
 ;;; storing additional information that we can read when parsing the rom.

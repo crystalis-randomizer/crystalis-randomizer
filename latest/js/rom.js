@@ -7,7 +7,7 @@ import { ItemGet } from './rom/itemget.js';
 import { Locations } from './rom/locations.js';
 import { Messages } from './rom/messages.js';
 import { Metasprite } from './rom/metasprite.js';
-import { Monster, Monsters } from './rom/monster.js';
+import { Monster } from './rom/monster.js';
 import { Npc } from './rom/npc.js';
 import { Objects } from './rom/objects.js';
 import { RomOption } from './rom/option.js';
@@ -65,9 +65,6 @@ export class Rom {
         if (id < 0x80 || id > 0xff)
             throw new Error(`Bad trigger id $${hex(id)}`);
         return this.triggers[id & 0x7f];
-    }
-    get monsters() {
-        return new Monsters(this);
     }
     get projectiles() {
         const projectiles = new Set();

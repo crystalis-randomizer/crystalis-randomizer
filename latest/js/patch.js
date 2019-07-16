@@ -14,6 +14,8 @@ import * as slots from './rom/slots.js';
 import { Spoiler } from './rom/spoiler.js';
 import { hex, seq, watchArray, writeLittleEndian } from './rom/util.js';
 import * as version from './version.js';
+import { Graphics } from './rom/graphics.js';
+import { Constraint } from './rom/constraint.js';
 export default ({
     async apply(rom, hash, path) {
         let flags;
@@ -76,6 +78,7 @@ export async function shuffle(rom, seed, flags, reader, log, progress) {
         _REQUIRE_HEALED_DOLPHIN_TO_RIDE: flags.requireHealedDolphinToRide(),
         _REVERSIBLE_SWAN_GATE: true,
         _SAHARA_RABBITS_REQUIRE_TELEPATHY: flags.saharaRabbitsRequireTelepathy(),
+        _SIMPLIFY_INVISIBLE_CHESTS: true,
         _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
     };
     const asm = new Assembler();
@@ -123,6 +126,7 @@ export async function shuffle(rom, seed, flags, reader, log, progress) {
     undergroundChannelLandBridge(parsed);
     if (flags.connectLimeTreeToLeaf())
         connectLimeTreeToLeaf(parsed);
+    simplifyInvisibleChests(parsed);
     addCordelWestTriggers(parsed, flags);
     if (flags.disableRabbitSkip())
         fixRabbitSkip(parsed);
@@ -632,6 +636,16 @@ const adjustItemNames = (rom, flags) => {
         rom.items[i].messageName = rom.items[i].messageName.replace('Ball', 'Orb');
     }
 };
+function simplifyInvisibleChests(rom) {
+    for (const location of [rom.locations.cordelPlainsEast,
+        rom.locations.undergroundChannel,
+        rom.locations.kirisaMeadow]) {
+        for (const spawn of location.spawns) {
+            if (spawn.isChest())
+                spawn.data[2] |= 0x20;
+        }
+    }
+}
 const addCordelWestTriggers = (rom, flags) => {
     const { cordelPlainsEast, cordelPlainsWest } = rom.locations;
     for (const spawn of cordelPlainsEast.spawns) {
@@ -884,12 +898,13 @@ const rescaleMonsters = (rom, flags, random) => {
     }
 };
 const shuffleMonsters = (rom, flags, random) => {
+    const graphics = new Graphics(rom);
     const pool = new MonsterPool(flags, {});
     for (const loc of rom.locations) {
         if (loc.used)
             pool.populate(loc);
     }
-    pool.shuffle(random);
+    pool.shuffle(random, graphics);
 };
 const identifyKeyItemsForDifficultyBuffs = (rom) => {
     for (let i = 0; i < 0x49; i++) {
@@ -1050,7 +1065,7 @@ class MonsterPool {
         let slot = 0x0c;
         for (const spawn of location.spawns) {
             ++slot;
-            if (!spawn.isMonster())
+            if (!spawn.used || !spawn.isMonster())
                 continue;
             const id = spawn.monsterId;
             if (id in UNTOUCHED_MONSTERS || !SCALED_MONSTERS.has(id) ||
@@ -1075,7 +1090,7 @@ class MonsterPool {
             this.locations.push({ location, slots });
         this.monsters.push(...monsters);
     }
-    shuffle(random) {
+    shuffle(random, graphics) {
         this.report['pre-shuffle locations'] = this.locations.map(l => l.location.id);
         this.report['pre-shuffle monsters'] = this.monsters.map(m => m.id);
         random.shuffle(this.locations);
@@ -1085,31 +1100,35 @@ class MonsterPool {
         while (this.locations.length) {
             const { location, slots } = this.locations.pop();
             const report = this.report['$' + location.id.toString(16).padStart(2, '0')] = [];
-            const { maxFlyers = 0, nonFlyers = {}, fixedSlots = {}, tower = false } = MONSTER_ADJUSTMENTS[location.id] || {};
+            const { maxFlyers = 0, nonFlyers = {}, tower = false } = MONSTER_ADJUSTMENTS[location.id] || {};
             if (tower)
                 continue;
-            let pat0 = fixedSlots.pat0 || null;
-            let pat1 = fixedSlots.pat1 || null;
-            let pal2 = fixedSlots.pal2 || null;
-            let pal3 = fixedSlots.pal3 || null;
             let flyers = maxFlyers;
-            let treasureChest = location.bossId() != null;
+            let constraint = Constraint.ALL;
+            if (location.bossId() != null) {
+                constraint = constraint.meet(Constraint.TREASURE_CHEST) || constraint;
+            }
             for (const spawn of location.spawns) {
-                if (spawn.isChest())
-                    treasureChest = true;
-                if (!spawn.isMonster())
-                    continue;
-                const id = spawn.monsterId;
-                if (id === 0x7e || id === 0x7f || id === 0x9f) {
-                    pat1 = 0x62;
+                if (spawn.isChest() && !(spawn.data[2] & 0x20)) {
+                    if (spawn.id < 0x70) {
+                        constraint = constraint.meet(Constraint.TREASURE_CHEST) || constraint;
+                    }
+                    else {
+                        constraint = constraint.meet(Constraint.MIMIC) || constraint;
+                    }
                 }
-                else if (id === 0x8f) {
-                    pat0 = 0x61;
+                else if (spawn.isNpc()) {
+                    const c = graphics.npcConstraints.get(spawn.id);
+                    if (c)
+                        constraint = constraint.meet(c) || constraint;
+                }
+                else if (spawn.isMonster() && UNTOUCHED_MONSTERS[spawn.monsterId]) {
+                    const c = graphics.monsterConstraints.get(spawn.monsterId);
+                    if (c)
+                        constraint = constraint.meet(c) || constraint;
                 }
             }
-            if (location.id === 0x15 || location.id === 0x47)
-                treasureChest = false;
-            report.push(`Initial pass: ${[treasureChest, pat0, pat1, pal2, pal3].join(', ')}`);
+            report.push(`Initial pass: ${constraint.fixed.map(s => s.size < Infinity ? '[' + [...s].join(', ') + ']' : 'all')}`);
             const tryAddMonster = (m) => {
                 const flyer = FLYERS.has(m.id);
                 const moth = MOTHS_AND_BATS.has(m.id);
@@ -1118,49 +1137,12 @@ class MonsterPool {
                         return false;
                     --flyers;
                 }
-                if (pal2 != null && m.pal2 != null && pal2 !== m.pal2 ||
-                    pal3 != null && m.pal3 != null && pal3 !== m.pal3) {
+                const c = graphics.monsterConstraints.get(m.id);
+                const meet = c && constraint.meet(c);
+                if (!meet)
                     return false;
-                }
-                const pat0ok = !treasureChest || TREASURE_CHEST_BANKS.has(m.pat);
-                let patSlot;
-                if (location.rom.objects[m.id].child || RETAIN_SLOTS.has(m.id)) {
-                    patSlot = m.patBank;
-                    const prev = patSlot ? pat1 : pat0;
-                    if (prev != null && prev !== m.pat)
-                        return false;
-                    if (patSlot) {
-                        pat1 = m.pat;
-                    }
-                    else if (pat0ok) {
-                        pat0 = m.pat;
-                    }
-                    else {
-                        return false;
-                    }
-                    report.push(`  Adding ${m.id.toString(16)}: pat(${patSlot}) <-  ${m.pat.toString(16)}`);
-                }
-                else {
-                    if (pat0 == null && pat0ok || pat0 === m.pat) {
-                        pat0 = m.pat;
-                        patSlot = 0;
-                        report.push(`  Adding ${m.id.toString(16)}: pat0 <-  ${m.pat.toString(16)}`);
-                    }
-                    else if (pat1 == null || pat1 === m.pat) {
-                        pat1 = m.pat;
-                        patSlot = 1;
-                        report.push(`  Adding ${m.id.toString(16)}: pat1 <-  ${m.pat.toString(16)}`);
-                    }
-                    else {
-                        return false;
-                    }
-                }
-                if (m.pal2 != null)
-                    pal2 = m.pal2;
-                if (m.pal3 != null)
-                    pal3 = m.pal3;
-                report.push(`    ${Object.keys(m).map(k => `${k}: ${m[k] && m[k].toString(16)}`).join(', ')}`);
-                report.push(`    pal: ${(m.pal2 || 0).toString(16)} ${(m.pal3 || 0).toString(16)}`);
+                report.push(`  Adding ${m.id.toString(16)}: ${meet}`);
+                constraint = meet;
                 let eligible = 0;
                 if (flyer || moth) {
                     for (let i = 0; i < slots.length; i++) {
@@ -1186,7 +1168,6 @@ class MonsterPool {
                     spawn.y += nonFlyers[slot][0] * 16;
                     spawn.x += nonFlyers[slot][1] * 16;
                 }
-                spawn.patternBank = patSlot || 0;
                 spawn.monsterId = m.id;
                 report.push(`    slot ${slot.toString(16)}: ${spawn}`);
                 slots.splice(eligible, 1);
@@ -1220,31 +1201,27 @@ class MonsterPool {
                     i--;
                 }
             }
-            if (pat0 != null)
-                location.spritePatterns[0] = pat0;
-            if (pat1 != null)
-                location.spritePatterns[1] = pat1;
-            if (pal2 != null)
-                location.spritePalettes[0] = pal2;
-            if (pal3 != null)
-                location.spritePalettes[1] = pal3;
+            [location.spritePatterns[0],
+                location.spritePatterns[1],
+                location.spritePalettes[0],
+                location.spritePalettes[1]] = constraint.fix(random);
             if (slots.length) {
-                report.push(`Failed to fill location ${location.id.toString(16)}: ${slots.length} remaining`);
+                console.error(`Failed to fill location ${location.id.toString(16)}: ${slots.length} remaining`);
                 for (const slot of slots) {
                     const spawn = location.spawns[slot - 0x0d];
                     spawn.x = spawn.y = 0;
+                    spawn.id = 0xb0;
+                    spawn.data[0] = 0xfe;
                 }
+            }
+            for (const spawn of location.spawns) {
+                graphics.configure(location, spawn);
             }
         }
     }
 }
 const FLYERS = new Set([0x59, 0x5c, 0x6e, 0x6f, 0x81, 0x8a, 0xa3, 0xc4]);
 const MOTHS_AND_BATS = new Set([0x55, 0x5d, 0x7c, 0xbc, 0xc1]);
-const TREASURE_CHEST_BANKS = new Set([
-    0x5e, 0x5f, 0x60, 0x61, 0x64, 0x65, 0x66, 0x67,
-    0x68, 0x69, 0x6a, 0x6c, 0x6d, 0x6e, 0x6f, 0x70,
-    0x74, 0x75, 0x76, 0x77,
-]);
 const MONSTER_ADJUSTMENTS = {
     [0x03]: {
         fixedSlots: {
@@ -1533,7 +1510,6 @@ const MONSTER_ADJUSTMENTS = {
         skip: true,
     },
 };
-const RETAIN_SLOTS = new Set([0x50, 0x53]);
 const UNTOUCHED_MONSTERS = {
     [0x7e]: true,
     [0x7f]: true,

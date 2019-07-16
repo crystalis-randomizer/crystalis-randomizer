@@ -209,6 +209,7 @@ export const Spawn = DataTuple.make(4, {
     patternBank: DataTuple.prop([2, 0x80, 7]),
     type: DataTuple.prop([2, 0x07]),
     id: DataTuple.prop([3]),
+    used: { get() { return this.data[0] !== 0xfe; } },
     monsterId: { get() { return (this.id + 0x50) & 0xff; },
         set(id) { this.id = (id - 0x50) & 0xff; } },
     isChest() { return this.type === 2 && this.id < 0x80; },

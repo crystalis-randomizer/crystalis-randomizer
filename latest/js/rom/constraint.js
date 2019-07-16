@@ -164,13 +164,19 @@ export class Constraint {
             for (const p of s) {
                 const prev = inverseFloat.get(p);
                 if (prev != null) {
+                    for (const r of float[prev])
+                        inverseFloat.delete(r);
                     float[prev] = CSet.intersect(float[prev], s);
+                    for (const r of float[prev])
+                        inverseFloat.set(r, prev);
                     found = true;
                     break;
                 }
             }
             if (found)
                 break;
+            for (const p of s)
+                inverseFloat.set(p, float.length);
             float.push(s);
             if (float.length > 2)
                 return undefined;

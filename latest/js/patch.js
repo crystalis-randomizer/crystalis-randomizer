@@ -1104,7 +1104,7 @@ class MonsterPool {
             if (tower)
                 continue;
             let flyers = maxFlyers;
-            let constraint = Constraint.ALL;
+            let constraint = Constraint.forLocation(location.id);
             if (location.bossId() != null) {
                 constraint = constraint.meet(Constraint.TREASURE_CHEST) || constraint;
             }
@@ -1180,7 +1180,6 @@ class MonsterPool {
                             this.monsters.splice(i, 1);
                         }
                     }
-                    random.shuffle(this.monsters);
                 }
             }
             for (let i = 0; i < this.monsters.length; i++) {

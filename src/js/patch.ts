@@ -1736,7 +1736,7 @@ class MonsterPool {
       let flyers = maxFlyers; // count down...
 
       // Determine location constraints
-      let constraint = Constraint.ALL;
+      let constraint = Constraint.forLocation(location.id);
       if (location.bossId() != null) {
         // Note that bosses always leave chests.
         // TODO - it's possible this is out of order w.r.t. writing the boss?
@@ -1810,6 +1810,8 @@ class MonsterPool {
         return true;
       };
 
+      // For each location.... try to fill up the slots
+
       if (flyers) {
         // look for an eligible flyer in the first 40.  If it's there, add it first.
         for (let i = 0; i < Math.min(40, this.monsters.length); i++) {
@@ -1818,7 +1820,7 @@ class MonsterPool {
               this.monsters.splice(i, 1);
             }
           }
-          random.shuffle(this.monsters);
+          // random.shuffle(this.monsters);
         }
 
         // maybe added a single flyer, to make sure we don't run out.  Now just work normally

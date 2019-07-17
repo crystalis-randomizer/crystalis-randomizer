@@ -109,13 +109,16 @@ export class Location extends Entity {
         await Promise.all(promises);
         const bossId = this.bossId();
         if (bossId != null && this.id !== 0x5f) {
+            let pats = [this.spritePatterns[0], undefined];
+            if (this.id === 0xa6)
+                pats = [0x53, 0x50];
             const bossBase = readLittleEndian(writer.rom, 0x1f96b + 2 * bossId) + 0x14000;
             const bossRestore = [
                 ,
                 , , this.bgm, ,
                 ...this.tilePalettes, , , , this.spritePalettes[0], ,
                 ,
-                , , , this.spritePatterns[0], ,
+                , , , pats[0], pats[1],
                 this.animation,
             ];
             for (let j = 0; j < bossRestore.length; j++) {
@@ -126,7 +129,6 @@ export class Location extends Entity {
             }
             const bossBase2 = 0x1f7c1 + 5 * bossId;
             writer.rom[bossBase2] = this.spritePalettes[1];
-            writer.rom[bossBase2 + 1] = this.spritePatterns[1];
         }
     }
     allScreens() {

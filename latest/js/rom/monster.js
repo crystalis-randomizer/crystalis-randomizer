@@ -149,6 +149,9 @@ export const ACTION_SCRIPTS = new Map([
     [0x16, {}],
     [0x17, {}],
     [0x1b, {}],
+    [0x1d, {
+            child: true,
+        }],
     [0x1e, {}],
     [0x1f, {}],
     [0x20, {

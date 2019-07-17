@@ -134,6 +134,7 @@ export async function shuffle(rom, seed, flags, reader, log, progress) {
         shuffleShops(parsed, flags, random);
     if (flags.randomizeWildWarp())
         shuffleWildWarp(parsed, flags, random);
+    rescaleMonsters(parsed, flags, random);
     const w = World.build(parsed, flags);
     const fill = await new AssumedFill(parsed, flags).shuffle(w.graph, random, progress);
     if (fill) {
@@ -147,7 +148,6 @@ export async function shuffle(rom, seed, flags, reader, log, progress) {
         rescaleShops(parsed, asm, flags.bargainHunting() ? random : undefined);
     }
     normalizeSwords(parsed, flags, random);
-    rescaleMonsters(parsed, flags, random);
     if (flags.shuffleMonsters())
         shuffleMonsters(parsed, flags, random);
     identifyKeyItemsForDifficultyBuffs(parsed);
@@ -494,13 +494,14 @@ function preventNpcDespawns(rom, flags) {
     }
     rom.npcs[0x74].link(0x7e);
     rom.npcs[0x74].used = true;
+    rom.npcs[0x74].data = [...rom.npcs[0x7e].data];
     rom.locations.swanDanceHall.spawns.find(s => s.isNpc() && s.id === 0x7e).id = 0x74;
     rom.items[0x3b].tradeIn[0] = 0x74;
     rom.npcs[0x88].linkDialog(0x16);
     rom.npcs[0x82].used = true;
     rom.npcs[0x82].link(0x16);
-    rom.locations.brynmaer.spawns.find(s => s.isNpc() && s.id === 0x16).id = 0x82;
     rom.npcs[0x82].data = [...rom.npcs[0x16].data];
+    rom.locations.brynmaer.spawns.find(s => s.isNpc() && s.id === 0x16).id = 0x82;
     rom.items[0x25].tradeIn[0] = 0x82;
     dialog(0x13)[2].condition = 0x047;
     dialog(0x13)[2].flags = [0x0a9];
@@ -854,7 +855,7 @@ function normalizeSwords(rom, flags, random) {
     rom.objects[0x1b].atk = 7;
     rom.objects[0x1f].atk = 7;
 }
-const rescaleMonsters = (rom, flags, random) => {
+function rescaleMonsters(rom, flags, random) {
     const unscaledMonsters = new Set(seq(0x100, x => x).filter(s => s in rom.objects));
     for (const [id] of SCALED_MONSTERS) {
         unscaledMonsters.delete(id);
@@ -896,7 +897,8 @@ const rescaleMonsters = (rom, flags, random) => {
             rom.objects[id].elements = 1 << e;
         }
     }
-};
+}
+;
 const shuffleMonsters = (rom, flags, random) => {
     const graphics = new Graphics(rom);
     const pool = new MonsterPool(flags, {});
@@ -1106,7 +1108,7 @@ class MonsterPool {
             let flyers = maxFlyers;
             let constraint = Constraint.forLocation(location.id);
             if (location.bossId() != null) {
-                constraint = constraint.meet(Constraint.TREASURE_CHEST) || constraint;
+                constraint = constraint.meet(Constraint.BOSS) || constraint;
             }
             for (const spawn of location.spawns) {
                 if (spawn.isChest() && !(spawn.data[2] & 0x20)) {
@@ -1137,8 +1139,8 @@ class MonsterPool {
                         return false;
                     --flyers;
                 }
-                const c = graphics.monsterConstraints.get(m.id);
-                const meet = c && constraint.meet(c);
+                const c = graphics.getMonsterConstraint(location.id, m.id);
+                const meet = constraint.meet(c);
                 if (!meet)
                     return false;
                 report.push(`  Adding ${m.id.toString(16)}: ${meet}`);

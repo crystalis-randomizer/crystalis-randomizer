@@ -507,7 +507,7 @@ export class Messages {
                 return `[${bracket === '{' ? 6 : 7}][${id}]${after}`;
             });
             for (const { str, bytes } of abbrs.get(m.mid()) || []) {
-                text = text.replace(new RegExp(str + '(  |.|$)', 'g'), (full, after) => {
+                text = text.replace(new RegExp(str + '( [ &]|.|$)', 'g'), (full, after) => {
                     if (after && !PUNCTUATION[after])
                         return full;
                     if (after === ' ')
@@ -594,6 +594,8 @@ export const HARDCODED_MESSAGES = new Set([
     '1b:11',
     '1b:12',
     '1b:05',
+    '1b:06',
+    '1b:07',
     '1f:00',
     '13:00',
     '0b:01',

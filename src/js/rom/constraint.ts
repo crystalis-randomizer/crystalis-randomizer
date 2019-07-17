@@ -127,7 +127,15 @@ export class Constraint {
   }
 
   static get TREASURE_CHEST() {
-    return new Constraint([ALL, ALL, ALL, ALL], [new Set(TREASURE_CHEST_BANKS)], 0);
+    return new Constraint([ALL, ALL, ALL, ALL], [TREASURE_CHEST_BANKS], 0);
+  }
+
+  static get BOSS() {
+    return new Constraint([TREASURE_CHEST_BANKS, ALL, ALL, ALL], [], 0);
+  }
+
+  static get COIN() {
+    return new Constraint([COIN_BANKS, ALL, ALL, ALL], [], 0);
   }
 
   // Returns the "starting constraint" for the given location, taking things like
@@ -135,7 +143,8 @@ export class Constraint {
   static forLocation(id: number): Constraint {
     switch (id) {
     case 0x03: // valley of wind (windmill blades)
-      return new Constraint([ALL, bit(0x60), ALL, ALL], [], 0);
+      // TODO - pattern bank is shiftable, but need to link to spawn 3,e0
+      return new Constraint([ALL, bit(0x60), ALL, bit(0x20)], [], 0);
     //case 0x1a: // swamp (child)
     //  return new Constraint([ALL, bit(0x4f), ALL, bit(0x23)], []);
     case 0x60: // angry sea (dolphin)
@@ -168,6 +177,10 @@ export class Constraint {
   ignorePalette(): Constraint {
     return new Constraint([this.fixed[0], this.fixed[1], ALL, ALL],
                           this.float, this.shift);
+  }
+
+  shifted(): Constraint {
+    return new Constraint(this.fixed, this.float, this.shift | 2);
   }
 
   // All the possible constraints for a given monster are joined together.
@@ -231,7 +244,7 @@ export class Constraint {
     // undefined.
 
     const fixed = [];
-    let shift = this.shift;
+    let shift = this.shift | that.shift;
     for (let i = 0; i < 4; i++) {
       const meet = CSet.intersect(this.fixed[i], that.fixed[i]);
       if (!meet.size) return undefined;
@@ -458,4 +471,10 @@ const TREASURE_CHEST_BANKS = new Set([
   0x5e, 0x5f, 0x60, 0x61, 0x64, 0x65, 0x66, 0x67,
   0x68, 0x69, 0x6a, 0x6c, 0x6d, 0x6e, 0x6f, 0x70,
   0x74, 0x75, 0x76, 0x77,
+]);
+
+const COIN_BANKS = new Set([
+  0x5e, 0x5f, 0x60, 0x61, 0x63, 0x64, 0x65, 0x66,
+  0x67, 0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e,
+  0x6f, 0x70, 0x74, 0x75, 0x76, 0x77,
 ]);

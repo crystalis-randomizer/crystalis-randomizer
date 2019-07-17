@@ -618,7 +618,7 @@ export class Messages {
       // Now start with the longest abbreviation and work our way down.
       for (const {str, bytes} of abbrs.get(m.mid()) || []) {
         // NOTE: two spaces in a row after an expansion must be preserved as-is.
-        text = text.replace(new RegExp(str + '(  |.|$)', 'g'), (full, after) => {
+        text = text.replace(new RegExp(str + '( [ &]|.|$)', 'g'), (full, after) => {
           if (after && !PUNCTUATION[after]) return full;
           if (after === ' ') after = '';
           return bytes.map(b => `[${b}]`).join('') + after;
@@ -726,6 +726,8 @@ export const HARDCODED_MESSAGES: Set<string> = new Set([
   '1b:11', // endgame message 4, exec 27fc9, table 27fee
   '1b:12', // endgame message 5, exec 27fc9, table 27ff0
   '1b:05', // azteca dialog after draygon2, exec 37b28
+  '1b:06', // azteca dialog after draygon2, exec 37b28
+  '1b:07', // azteca dialog after draygon2, exec 37b28
   '1f:00', // zzz paralysis dialog, exec 3d0f3
   '13:00', // kensu swan asks for love pendant, exec 3d1ca
   '0b:01', // asina reveal, exec 3d1eb

@@ -270,6 +270,9 @@ export const ACTION_SCRIPTS = new Map<number, ActionScriptData>([
   }],
   [0x1b, { // draygon2 / karmine balls
   }],
+  [0x1d, { // brown robot harpoon source (object $be)
+    child: true,
+  }],
   [0x1e, { // draygon2 lasers
   }],
   [0x1f, { // paralysis powder

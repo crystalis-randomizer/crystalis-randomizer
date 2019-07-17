@@ -65,6 +65,14 @@ export class Graphics {
     }    
   }
 
+  getMonsterConstraint(locationId: number, monsterId: number): Constraint {
+    const c = this.monsterConstraints.get(monsterId) || Constraint.NONE;
+    if ((locationId & 0x58) === 0x58) return c;
+    const m = this.rom.objects[monsterId].goldDrop;
+    if (!m) return c;
+    return c.meet(Constraint.COIN) || Constraint.NONE;
+  }
+
   configure(location: Location, spawn: Spawn) {
     const c = spawn.isMonster() ? this.monsterConstraints.get(spawn.monsterId) :
         spawn.isNpc() ? this.npcConstraints.get(spawn.id) :
@@ -144,6 +152,7 @@ function computeConstraint(rom: Rom,
     const loc = rom.locations[l < 0 ? ~l : l];
     const c = Constraint.fromSpawn(palettes, patterns, loc, spawn, shiftable);
     child = child ? child.join(c) : c;
+    if (!shiftable && spawn.patternBank) child = child.shifted();
 
     // --- handle shifts better...? suppose e.g. multiple pal2's
     //    -> we want to join them - will have multiple shiftables...

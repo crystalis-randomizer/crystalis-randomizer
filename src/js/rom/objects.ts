@@ -153,6 +153,7 @@ const PROJECTILES = {
   dynaLaser: ['Dyna Laser', 0xb9, 47],
   dynaBubble: ['Dyna Bubble', 0xba, 47],
   vampire2Bat: ['Vampire 2 Bat', 0xbc, 28], // projectile of sorts
+  brownRobotLaserSource: ['Brown Robot Laser Source', 0xbe, 47], // projectile of sorts
   draygon2Fireball: ['Draygon 2 Fireball', 0xbf, 47],
   vampire1Bat: ['Vampire 1 Bat', 0xc1, 5],
   giantInsectFireball: ['Giant Insect Fireball', 0xc3, 11],

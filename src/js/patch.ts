@@ -173,6 +173,7 @@ export async function shuffle(rom: Uint8Array,
   if (flags.shuffleShops()) shuffleShops(parsed, flags, random);
 
   if (flags.randomizeWildWarp()) shuffleWildWarp(parsed, flags, random);
+  rescaleMonsters(parsed, flags, random);
 
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.
@@ -210,7 +211,6 @@ export async function shuffle(rom: Uint8Array,
   }
 
   normalizeSwords(parsed, flags, random);
-  rescaleMonsters(parsed, flags, random);
   // NOTE: monster shuffle needs to go after item shuffle because of mimic
   // placement constraints, but it would be nice to go before in order to
   // guarantee money.
@@ -690,6 +690,7 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   // Link some redundant NPCs: Kensu (7e, 74) and Akahana (88, 16)
   rom.npcs[0x74].link(0x7e);
   rom.npcs[0x74].used = true;
+  rom.npcs[0x74].data = [...rom.npcs[0x7e].data] as any;
   rom.locations.swanDanceHall.spawns.find(s => s.isNpc() && s.id === 0x7e)!.id = 0x74;
   rom.items[0x3b].tradeIn![0] = 0x74;
 
@@ -701,8 +702,8 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   // (16 or 82) is what matters for the trade-in
   rom.npcs[0x82].used = true;
   rom.npcs[0x82].link(0x16);
-  rom.locations.brynmaer.spawns.find(s => s.isNpc() && s.id === 0x16)!.id = 0x82;
   rom.npcs[0x82].data = [...rom.npcs[0x16].data] as any; // ensure give item
+  rom.locations.brynmaer.spawns.find(s => s.isNpc() && s.id === 0x16)!.id = 0x82;
   rom.items[0x25].tradeIn![0] = 0x82;
 
   // Leaf elder in house ($0d @ $c0) ~ sword of wind redundant flag
@@ -1355,7 +1356,7 @@ function normalizeSwords(rom: Rom, flags: FlagSet, random: Random) {
   rom.objects[0x1f].atk = 7; // thunder 3
 }
 
-const rescaleMonsters = (rom: Rom, flags: FlagSet, random: Random) => {
+function rescaleMonsters(rom: Rom, flags: FlagSet, random: Random): void {
 
   // TODO - find anything sharing the same memory and update them as well
   const unscaledMonsters =
@@ -1740,7 +1741,7 @@ class MonsterPool {
       if (location.bossId() != null) {
         // Note that bosses always leave chests.
         // TODO - it's possible this is out of order w.r.t. writing the boss?
-        constraint = constraint.meet(Constraint.TREASURE_CHEST) || constraint;
+        constraint = constraint.meet(Constraint.BOSS) || constraint;
       }
       for (const spawn of location.spawns) {
         if (spawn.isChest() && !(spawn.data[2] & 0x20)) {
@@ -1769,8 +1770,8 @@ class MonsterPool {
           if (!flyers) return false;
           --flyers;
         }
-        const c = graphics.monsterConstraints.get(m.id);
-        const meet = c && constraint.meet(c);
+        const c = graphics.getMonsterConstraint(location.id, m.id);
+        const meet = constraint.meet(c);
         if (!meet) return false;
         report.push(`  Adding ${m.id.toString(16)}: ${meet}`);
         constraint = meet;

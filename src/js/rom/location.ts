@@ -201,11 +201,14 @@ export class Location extends Entity {
     // If this is a boss room, write the restoration.
     const bossId = this.bossId();
     if (bossId != null && this.id !== 0x5f) { // don't restore dyna
+      // This table should restore pat0 but not pat1
+      let pats = [this.spritePatterns[0], undefined];
+      if (this.id === 0xa6) pats = [0x53, 0x50]; // draygon 2
       const bossBase = readLittleEndian(writer.rom, 0x1f96b + 2 * bossId) + 0x14000;
       const bossRestore = [
         ,,, this.bgm,,
         ...this.tilePalettes,,,, this.spritePalettes[0],,
-        ,,,, this.spritePatterns[0],,
+        ,,,, pats[0], pats[1],
         this.animation,
       ];
         
@@ -220,7 +223,11 @@ export class Location extends Entity {
       // later spot for pal3 and pat1 *after* explosion
       const bossBase2 = 0x1f7c1 + 5 * bossId;
       writer.rom[bossBase2] = this.spritePalettes[1];
-      writer.rom[bossBase2 + 1] = this.spritePatterns[1];
+      // NOTE: This ruins the treasure chest.
+      // TODO - add some asm after a chest is cleared to reload patterns?
+      // Another option would be to add a location-specific contraint to be
+      // whatever the boss 
+      //writer.rom[bossBase2 + 1] = this.spritePatterns[1];
     }
   }
 

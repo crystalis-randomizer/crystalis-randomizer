@@ -901,6 +901,8 @@ function rescaleMonsters(rom, flags, random) {
 ;
 const shuffleMonsters = (rom, flags, random) => {
     const graphics = new Graphics(rom);
+    if (flags.shuffleSpritePalettes())
+        graphics.shufflePalettes(random);
     const pool = new MonsterPool(flags, {});
     for (const loc of rom.locations) {
         if (loc.used)
@@ -1140,7 +1142,12 @@ class MonsterPool {
                     --flyers;
                 }
                 const c = graphics.getMonsterConstraint(location.id, m.id);
-                const meet = constraint.meet(c);
+                let meet = constraint.meet(c);
+                if (!meet) {
+                    if (this.flags.shuffleSpritePalettes()) {
+                        meet = constraint.meet(c.ignorePalette());
+                    }
+                }
                 if (!meet)
                     return false;
                 report.push(`  Adding ${m.id.toString(16)}: ${meet}`);

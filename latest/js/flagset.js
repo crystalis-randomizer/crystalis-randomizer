@@ -12,19 +12,19 @@ export const PRESETS = [{
     }, {
         title: 'Full Shuffle',
         descr: `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
-        flags: 'Em Fsw Gt Mrt Ps Rlprt Sckmt Tabm',
+        flags: 'Em Fsw Gt Mrt Ps Rlprt Sckmt Tabmp',
     }, {
         title: 'Glitchless',
         descr: `Full shuffle but with no glitches.`,
-        flags: 'Em Fcpstw Mrt Ps Rlprt Sckmt Tabm',
+        flags: 'Em Fcpstw Mrt Ps Rlprt Sckmt Tab',
     }, {
         title: 'Advanced',
         descr: `A balanced randomization with quite a bit more difficulty.`,
-        flags: 'Fsw Gfprt Hbdgw Mert Ps Rloprst Sckt Sm Tabm',
+        flags: 'Fsw Gfprt Hbdgw Mert Ps Rloprst Sckt Sm Tabmp',
     }, {
         title: 'Ludicrous',
         descr: `Pulls out all the stops, may require superhuman feats.`,
-        flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Rloprst Sckmt Tabm',
+        flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Rloprst Sckmt Tabmp',
     }];
 const PRESETS_BY_KEY = {};
 for (const { title, flags } of PRESETS) {
@@ -191,6 +191,9 @@ export const FLAGS = [{
             }, {
                 flag: 'Tm',
                 name: 'Randomize music',
+            }, {
+                flag: 'Tp',
+                name: 'Randomize sprite palettes',
             }, {
                 flag: 'Tw',
                 name: 'Randomize wild warp',
@@ -446,6 +449,7 @@ export class FlagSet {
     leatherBootsGiveSpeed() { return this.check('Tb'); }
     rabbitBootsChargeWhileWalking() { return this.check('Tb'); }
     randomizeMusic() { return this.check('Tm'); }
+    shuffleSpritePalettes() { return this.check('Tp'); }
     shuffleMonsters() { return this.check('Mr'); }
     shuffleShops() { return this.check('Ps'); }
     bargainHunting() { return this.shuffleShops(); }

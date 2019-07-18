@@ -87,7 +87,7 @@ export class Constraint {
         return new Constraint([NONE, NONE, NONE, NONE], [], 0);
     }
     static get MIMIC() {
-        return new Constraint([ALL, bit(0x6c), ALL, ALL], [], 0);
+        return new Constraint([ALL, bit(0x6c), ALL, ALL], [], 2);
     }
     static get TREASURE_CHEST() {
         return new Constraint([ALL, ALL, ALL, ALL], [TREASURE_CHEST_BANKS], 0);

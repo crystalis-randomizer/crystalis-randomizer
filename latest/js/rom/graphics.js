@@ -6,6 +6,7 @@ export class Graphics {
         this.rom = rom;
         this.monsterConstraints = new Map();
         this.npcConstraints = new Map();
+        this.allSpritePalettes = new Set();
         const allSpawns = new DefaultMap(() => []);
         for (const l of rom.locations) {
             if (!l.used)
@@ -27,7 +28,7 @@ export class Graphics {
                 const metasprite = rom.metasprites[rom.npcs[~m].data[3]];
                 if (!metasprite)
                     throw new Error(`bad NPC: ${~m}`);
-                let constraint = computeConstraint(rom, [rom.npcs[~m].data[3]], spawns, true);
+                let constraint = this.computeConstraint([rom.npcs[~m].data[3]], spawns, true);
                 if (~m === 0x5f)
                     constraint = constraint.ignorePalette();
                 this.npcConstraints.set(~m, constraint);
@@ -41,7 +42,7 @@ export class Graphics {
                 for (const obj of allObjects(rom, parent)) {
                     const action = ACTION_SCRIPTS.get(obj.action);
                     const metaspriteFn = action && action.metasprites || (() => [obj.metasprite]);
-                    const child = computeConstraint(rom, metaspriteFn(obj), spawns, obj.id === m);
+                    const child = this.computeConstraint(metaspriteFn(obj), spawns, obj.id === m);
                     const meet = constraint.meet(child);
                     if (!meet)
                         throw new Error(`Bad meet for ${m} with ${obj.id}`);
@@ -61,6 +62,32 @@ export class Graphics {
         if (!m)
             return c;
         return c.meet(Constraint.COIN) || Constraint.NONE;
+    }
+    shufflePalettes(random) {
+        const pal = [...this.allSpritePalettes];
+        function pick() {
+            const size = Math.floor(5 - Math.log2(random.nextInt(15) + 2));
+            const out = new Set();
+            for (let i = 0; i < size; i++) {
+                out.add(pal[random.nextInt(pal.length)]);
+            }
+            return out;
+        }
+        function shuffle(c) {
+            const fixed = [...c.fixed];
+            for (let i = 2; i < 4; i++) {
+                if (fixed[i].size < Infinity) {
+                    fixed[i] = pick();
+                }
+            }
+            return new Constraint(fixed, c.float, c.shift);
+        }
+        for (const [k, c] of this.monsterConstraints) {
+            this.monsterConstraints.set(k, shuffle(c));
+        }
+        for (const [k, c] of this.npcConstraints) {
+            this.npcConstraints.set(k, shuffle(c));
+        }
     }
     configure(location, spawn) {
         const c = spawn.isMonster() ? this.monsterConstraints.get(spawn.monsterId) :
@@ -86,6 +113,38 @@ export class Graphics {
             throw new Error(`no matching pattern bank`);
         }
     }
+    computeConstraint(metaspriteIds, spawns, shiftable) {
+        const patterns = new Set();
+        const palettes = new Set();
+        for (const metasprite of metaspriteIds.map(s => this.rom.metasprites[s])) {
+            for (const p of metasprite.palettes()) {
+                palettes.add(p);
+            }
+            for (const p of metasprite.patternBanks()) {
+                patterns.add(p);
+            }
+        }
+        shiftable = shiftable && patterns.size == 1 && [...patterns][0] === 2;
+        const locs = new Map();
+        for (const [l, , spawn] of spawns) {
+            locs.set(spawn.patternBank && shiftable ? ~l.id : l.id, spawn);
+        }
+        let child = undefined;
+        for (let [l, spawn] of locs) {
+            const loc = this.rom.locations[l < 0 ? ~l : l];
+            for (const pal of palettes) {
+                if (pal > 1)
+                    this.allSpritePalettes.add(loc.spritePalettes[pal - 2]);
+            }
+            const c = Constraint.fromSpawn(palettes, patterns, loc, spawn, shiftable);
+            child = child ? child.join(c) : c;
+            if (!shiftable && spawn.patternBank)
+                child = child.shifted();
+        }
+        if (!child)
+            throw new Error(`Expected child to appear`);
+        return child;
+    }
 }
 function* allObjects(rom, parent) {
     yield parent;
@@ -99,33 +158,5 @@ function* allObjects(rom, parent) {
         yield rom.objects[0x5f];
     if (parent.id === 0x53)
         yield rom.objects[0x69];
-}
-function computeConstraint(rom, metaspriteIds, spawns, shiftable) {
-    const patterns = new Set();
-    const palettes = new Set();
-    for (const metasprite of metaspriteIds.map(s => rom.metasprites[s])) {
-        for (const p of metasprite.palettes()) {
-            palettes.add(p);
-        }
-        for (const p of metasprite.patternBanks()) {
-            patterns.add(p);
-        }
-    }
-    shiftable = shiftable && patterns.size == 1 && [...patterns][0] === 2;
-    const locs = new Map();
-    for (const [l, , spawn] of spawns) {
-        locs.set(spawn.patternBank && shiftable ? ~l.id : l.id, spawn);
-    }
-    let child = undefined;
-    for (let [l, spawn] of locs) {
-        const loc = rom.locations[l < 0 ? ~l : l];
-        const c = Constraint.fromSpawn(palettes, patterns, loc, spawn, shiftable);
-        child = child ? child.join(c) : c;
-        if (!shiftable && spawn.patternBank)
-            child = child.shifted();
-    }
-    if (!child)
-        throw new Error(`Expected child to appear`);
-    return child;
 }
 //# sourceMappingURL=graphics.js.map

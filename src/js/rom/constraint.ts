@@ -123,7 +123,7 @@ export class Constraint {
   }
 
   static get MIMIC() {
-    return new Constraint([ALL, bit(0x6c), ALL, ALL], [], 0);
+    return new Constraint([ALL, bit(0x6c), ALL, ALL], [], 2);
   }
 
   static get TREASURE_CHEST() {

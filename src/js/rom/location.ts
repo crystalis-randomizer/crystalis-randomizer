@@ -211,7 +211,7 @@ export class Location extends Entity {
         ,,,, pats[0], pats[1],
         this.animation,
       ];
-        
+
       // if (readLittleEndian(writer.rom, bossBase) === 0xba98) {
       //   // escape animation: don't clobber patterns yet?
       // }
@@ -348,6 +348,9 @@ export const Spawn = DataTuple.make(4, {
   patternBank: DataTuple.prop([2, 0x80, 7]),
   type:  DataTuple.prop([2, 0x07]),
 
+// patternBank: {get(this: any): number { return this.data[2] >>> 7; },
+//               set(this: any, v: number) { if (this.data[3] === 120) debugger;
+//                                           if (v) this.data[2] |= 0x80; else this.data[2] &= 0x7f; }},
   id:    DataTuple.prop([3]),
 
   used: {get(this: any): boolean { return this.data[0] !== 0xfe; }},

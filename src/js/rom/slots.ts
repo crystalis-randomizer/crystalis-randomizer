@@ -13,7 +13,9 @@ class ChestSlot implements Slot {
   constructor(readonly slot: number, readonly location: number, readonly spawn: number) {}
 
   set(rom: Rom, item: number): void {
-    rom.locations[this.location].spawns[this.spawn].id = item;
+    const spawn = rom.locations[this.location].spawns[this.spawn];
+    spawn.id = item;
+    if (item >= 0x70) spawn.patternBank = 1; // mimics always use pattern bank 1
 
     if (rom.spoiler) {
       rom.spoiler.addSlot(this.slot, `Chest in ${rom.locations[this.location].name}`, item);

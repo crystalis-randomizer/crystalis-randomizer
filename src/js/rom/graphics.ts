@@ -3,6 +3,7 @@ import {DefaultMap} from '../util.js';
 import {Location, Spawn} from './location.js';
 import {ACTION_SCRIPTS, Monster} from './monster.js';
 import {Constraint} from './constraint.js';
+import {Random} from '../random.js';
 
 ////////////////////////////////////////////////////////////////
 
@@ -13,6 +14,8 @@ export class Graphics {
 
   monsterConstraints = new Map<number, Constraint>();
   npcConstraints = new Map<number, Constraint>();
+
+  allSpritePalettes = new Set<number>();
 
   constructor(readonly rom: Rom) {
     // Iterate over locations/spawns to build multimap of where monsters appear.
@@ -39,7 +42,7 @@ export class Graphics {
       if (m < 0) { // NPC
         const metasprite = rom.metasprites[rom.npcs[~m].data[3]];
         if (!metasprite) throw new Error(`bad NPC: ${~m}`);
-        let constraint = computeConstraint(rom, [rom.npcs[~m].data[3]], spawns, true);
+        let constraint = this.computeConstraint([rom.npcs[~m].data[3]], spawns, true);
         // TODO - better way sreamline this...?
         if (~m === 0x5f) constraint = constraint.ignorePalette();
         this.npcConstraints.set(~m, constraint);
@@ -53,7 +56,7 @@ export class Graphics {
           const action = ACTION_SCRIPTS.get(obj.action);
           const metaspriteFn: (m: Monster) => readonly number[] =
               action && action.metasprites || (() => [obj.metasprite]);
-          const child = computeConstraint(rom, metaspriteFn(obj), spawns, obj.id === m);
+          const child = this.computeConstraint(metaspriteFn(obj), spawns, obj.id === m);
           const meet = constraint.meet(child);
           if (!meet) throw new Error(`Bad meet for ${m} with ${obj.id}`);
           if (meet) constraint = meet;
@@ -71,6 +74,33 @@ export class Graphics {
     const m = this.rom.objects[monsterId].goldDrop;
     if (!m) return c;
     return c.meet(Constraint.COIN) || Constraint.NONE;
+  }
+
+  shufflePalettes(random: Random): void {
+    const pal = [...this.allSpritePalettes];
+    function pick(): Set<number> {
+      const size = Math.floor(5 - Math.log2(random.nextInt(15) + 2));
+      const out = new Set<number>();
+      for (let i = 0; i < size; i++) {
+        out.add(pal[random.nextInt(pal.length)]);
+      }
+      return out;
+    }
+    function shuffle(c: Constraint): Constraint {
+      const fixed = [...c.fixed];
+      for (let i = 2; i < 4; i++) {
+        if (fixed[i].size < Infinity) {
+          fixed[i] = pick();
+        }
+      }
+      return new Constraint(fixed, c.float, c.shift);
+    }
+    for (const [k, c] of this.monsterConstraints) {
+      this.monsterConstraints.set(k, shuffle(c));
+    }
+    for (const [k, c] of this.npcConstraints) {
+      this.npcConstraints.set(k, shuffle(c));
+    }
   }
 
   configure(location: Location, spawn: Spawn) {
@@ -92,6 +122,64 @@ export class Graphics {
       throw new Error(`no matching pattern bank`);
     }
   }
+
+  computeConstraint(metaspriteIds: readonly number[],
+                    spawns: Spawns,
+                    shiftable: boolean): Constraint {
+
+    const patterns = new Set<number>();
+    const palettes = new Set<number>();
+    for (const metasprite of metaspriteIds.map(s => this.rom.metasprites[s])) {
+      // Which palette and pattern banks are referenced?
+      for (const p of metasprite.palettes()) {
+        palettes.add(p);
+      }
+      for (const p of metasprite.patternBanks()) {
+        patterns.add(p);
+      }
+    }
+
+    // obj.usedPalettes = [...palettes];
+    // obj.usedPatterns = [...patterns];
+
+    // If only third-bank patterns are used, then the metasprite can be
+    // shifted to fourth bank when necessary.  This is only true for NPC
+    // spawns.  Ad hoc spawns cannot be shifted (yet?).
+    shiftable = shiftable && patterns.size == 1 && [...patterns][0] === 2;
+
+    // If the spawn sets patternBank then we need to increment each pattern.
+    // We have the freedom to set this to either, depending.
+    const locs = new Map<number, Spawn>();
+    for (const [l, , spawn] of spawns) {
+      locs.set(spawn.patternBank && shiftable ? ~l.id : l.id, spawn);
+    }
+
+    // TODO - ConstraintBuilder
+    //   -- keeps track only of relevant factors, in a join.
+    //      --> no meeting involved!
+    let child = undefined;
+
+    for (let [l, spawn] of locs) {
+      const loc = this.rom.locations[l < 0 ? ~l : l];
+      for (const pal of palettes) {
+        if (pal > 1) this.allSpritePalettes.add(loc.spritePalettes[pal - 2]);
+      }
+      const c = Constraint.fromSpawn(palettes, patterns, loc, spawn, shiftable);
+      child = child ? child.join(c) : c;
+      if (!shiftable && spawn.patternBank) child = child.shifted();
+
+      // --- handle shifts better...? suppose e.g. multiple pal2's
+      //    -> we want to join them - will have multiple shiftables...
+      //constraint = constraint.
+    }
+
+    // If we're shiftable, save the set of possible shift banks
+    if (!child) throw new Error(`Expected child to appear`);
+    // if (child.float.length === 1) {
+    //   parent.shiftPatterns = new Set(child.float[0]);
+    // }
+    return child;
+  }
 }
 
 function* allObjects(rom: Rom, parent: Monster): Iterable<Monster> {
@@ -110,59 +198,3 @@ function* allObjects(rom: Rom, parent: Monster): Iterable<Monster> {
 }
 
 type Spawns = ReadonlyArray<readonly [Location, number, Spawn]>;
-
-function computeConstraint(rom: Rom,
-                           metaspriteIds: readonly number[],
-                           spawns: Spawns,
-                           shiftable: boolean): Constraint {
-
-  const patterns = new Set<number>();
-  const palettes = new Set<number>();
-  for (const metasprite of metaspriteIds.map(s => rom.metasprites[s])) {
-    // Which palette and pattern banks are referenced?
-    for (const p of metasprite.palettes()) {
-      palettes.add(p);
-    }
-    for (const p of metasprite.patternBanks()) {
-      patterns.add(p);
-    }
-  }
-
-  // obj.usedPalettes = [...palettes];
-  // obj.usedPatterns = [...patterns];
-
-  // If only third-bank patterns are used, then the metasprite can be
-  // shifted to fourth bank when necessary.  This is only true for NPC
-  // spawns.  Ad hoc spawns cannot be shifted (yet?).
-  shiftable = shiftable && patterns.size == 1 && [...patterns][0] === 2;
-
-  // If the spawn sets patternBank then we need to increment each pattern.
-  // We have the freedom to set this to either, depending.
-  const locs = new Map<number, Spawn>();
-  for (const [l, , spawn] of spawns) {
-    locs.set(spawn.patternBank && shiftable ? ~l.id : l.id, spawn);
-  }
-
-  // TODO - ConstraintBuilder
-  //   -- keeps track only of relevant factors, in a join.
-  //      --> no meeting involved!
-  let child = undefined;
-
-  for (let [l, spawn] of locs) {
-    const loc = rom.locations[l < 0 ? ~l : l];
-    const c = Constraint.fromSpawn(palettes, patterns, loc, spawn, shiftable);
-    child = child ? child.join(c) : c;
-    if (!shiftable && spawn.patternBank) child = child.shifted();
-
-    // --- handle shifts better...? suppose e.g. multiple pal2's
-    //    -> we want to join them - will have multiple shiftables...
-    //constraint = constraint.
-  }
-
-  // If we're shiftable, save the set of possible shift banks
-  if (!child) throw new Error(`Expected child to appear`);
-  // if (child.float.length === 1) {
-  //   parent.shiftPatterns = new Set(child.float[0]);
-  // }
-  return child;
-}

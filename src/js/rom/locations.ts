@@ -17,7 +17,8 @@ class LocationsClass extends Array<Location> {
   }
 
   // Find all groups of neighboring locations with matching properties.
-  partition<T>(func: (loc: Location) => T, eq: Eq<T> = (a, b) => a === b): [Location[], T][] {
+  // TODO - optional arg: check adjacent # IDs...?
+  partition<T>(func: (loc: Location) => T, eq: Eq<T> = (a, b) => a === b, adj: number = 0): [Location[], T][] {
     const seen = new Set<Location>();
     const out: [Location[], T][] = [];
     for (let loc of this) {
@@ -29,7 +30,7 @@ class LocationsClass extends Array<Location> {
       while (queue.length) {
         const next = queue.pop()!;
         group.push(next);
-        for (const n of next.neighbors()) {
+        for (const n of next.neighbors(adj)) {
           if (!seen.has(n) && eq(func(n), value)) {
             seen.add(n);
             queue.push(n);

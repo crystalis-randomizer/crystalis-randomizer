@@ -107,6 +107,8 @@ PowersOfTwo:
 UpdateEquipmentAndStatus:
 .org $3c125
 StartAudioTrack:
+.org $3c25d
+LoadOneObjectDataInternal:
 .org $3cab6
 MainLoop_01_Game:
 .org $3cb84
@@ -809,6 +811,19 @@ CheckForLowHpMp:
 ;GateCheckPassed:
 
 
+.ifdef _CUSTOM_SHOOTING_WALLS
+.org $1a168
+  .byte $33,$33 ; make the wall at the front of goa shoot
+.org $1a48e
+  .byte $33,$33 ; make the oasis cave wall shoot
+.org $36864
+  lda $06c0,x
+  nop
+  nop
+  nop
+  cmp #$ff
+.endif
+
 .ifdef _FIX_COIN_SPRITES
 ;;; Normally this code reads from a table to give the 16 different coin drop
 ;;; buckets a different metasprite.  Instead, we just change the CHR pages
@@ -1328,7 +1343,44 @@ DialogFollowupAction_1e:
   sta $41
   rts
 
+SpawnWall:
+  ;; Spawns a breakable wall.  The $2e byte (3rd) determines
+  ;; several changes if type:$20 bit is set:
+  ;;   id:$30 determines the spawned object, id:$03 is element
+  ;;   type:$10 determine if it shoots (stored in $6c0,x)
+  ;; Works together with _CUSTOM_SHOOTING_WALLS
+  lda $2e
+  and #$20
+  bne +
+   jmp LoadOneObjectDataInternal
+  ;; Do extra processing
++ lda $2f
+  and #$30
+  lsr
+  lsr
+  lsr
+  lsr
+  adc #$d0 ; carry clear
+  sta $11
+  jsr LoadOneObjectDataInternal
+  lda $2e
+  and #$10
+  beq +
+   lda #$ff
+   sta $06c0,x
++ lda $2f
+  and #$03
+  tay
+  lda WallElements,y
+  sta $0500,x
++ rts
+WallElements:
+  .byte $0e,$0d,$0b,$07
+  
 .assert < $3fe00 ; end of free space started at 3f9ba
+
+.org $3e2ac ; normally loads object data for wall
+  jsr SpawnWall  
 
 .org $3fe01
 CheckRabbitBoots:

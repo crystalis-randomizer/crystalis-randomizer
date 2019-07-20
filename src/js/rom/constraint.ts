@@ -179,6 +179,19 @@ export class Constraint {
                           this.float, this.shift);
   }
 
+  shufflePalette(random: Random, usedPalettes: readonly number[]): Constraint {
+    const fixed = [...this.fixed];
+    for (let i = 2; i < 4; i++) {
+      if (fixed[i] === ALL) continue;
+      const size = Math.floor(5 - Math.log2(random.nextInt(15) + 2));
+      const out = fixed[i] = new Set<number>();
+      for (let i = 0; i < size; i++) {
+        out.add(random.pick(usedPalettes));
+      }
+    }
+    return new Constraint(fixed, this.float, this.shift);
+  }
+
   shifted(): Constraint {
     return new Constraint(this.fixed, this.float, this.shift | 2);
   }

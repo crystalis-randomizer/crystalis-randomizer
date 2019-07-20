@@ -249,10 +249,15 @@ export class Location extends Entity {
     return undefined;
   }
 
-  neighbors(): Set<Location> {
+  neighbors(adjacentIds: number = 0): Set<Location> {
     const out = new Set<Location>();
     for (const exit of this.exits) {
-      out.add(this.rom.locations[exit.dest]);
+      const l = this.rom.locations[exit.dest];
+      if (l && l.used) out.add(l);
+    }
+    for (let i = -adjacentIds; i < adjacentIds; i++) {
+      const l = i !== 0 ? this.rom.locations[this.id + i] : undefined;
+      if (l && l.used) out.add(l);
     }
     return out;
   }
@@ -362,7 +367,9 @@ export const Spawn = DataTuple.make(4, {
   isNpc(this: any): boolean { return this.type === 1 && this.id < 0xc0; },
   isBoss(this: any): boolean { return this.type === 1 && this.id >= 0xc0; },
   isMonster(this: any): boolean { return this.type === 0; },
-  isWall(this: any): boolean { return this.type === 3 && this.id < 4; },
+  isWall(this: any): boolean {
+    return Boolean(this.type === 3 && (this.id < 4 || (this.data[2] & 0x20)));
+  },
   toString(this: any): string {
     return `Spawn ${this.hex()}: (${hex(this.x)}, ${hex(this.y)}) ${
             this.timed ? 'timed' : 'fixed'} ${this.type}:${hex(this.id)}`;

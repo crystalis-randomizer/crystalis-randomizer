@@ -86,6 +86,7 @@ export async function shuffle(rom: Uint8Array,
     _BUFF_DEOS_PENDANT: flags.buffDeosPendant(),
     _BUFF_DYNA: flags.buffDyna(), // true,
     _CHECK_FLAG0: true,
+    _CUSTOM_SHOOTING_WALLS: true,
     _DEBUG_DIALOG: seed === 0x17bc,
     _DISABLE_SHOP_GLITCH: flags.disableShopGlitch(),
     _DISABLE_STATUE_GLITCH: flags.disableStatueGlitch(),
@@ -172,6 +173,8 @@ export async function shuffle(rom: Uint8Array,
 
   if (flags.shuffleShops()) shuffleShops(parsed, flags, random);
 
+  randomizeWalls(parsed, flags, random);
+
   if (flags.randomizeWildWarp()) shuffleWildWarp(parsed, flags, random);
   rescaleMonsters(parsed, flags, random);
 
@@ -233,6 +236,7 @@ export async function shuffle(rom: Uint8Array,
   if (flags.orbsOptional()) orbsOptional(parsed);
 
   shuffleMusic(parsed, flags, random);
+  shuffleBackgroundPalettes(parsed, flags, random);
 
   misc(parsed, flags, random);
 
@@ -356,6 +360,140 @@ function shuffleShops(rom: Rom, _flags: FlagSet, random: Random): void {
     for (const shop of data.shops) {
       while (shop.contents.length < 4) shop.contents.push(0xff);
       shop.contents.sort((a, b) => a - b);
+    }
+  }
+}
+
+function shuffleBackgroundPalettes(rom: Rom, flags: FlagSet, random: Random): void {
+  if (!flags.shuffleSpritePalettes()) return;
+
+  function eq(a: Location, b: Location): boolean {
+    return a.tilePalettes[0] === b.tilePalettes[0] &&
+      a.tilePalettes[1] === b.tilePalettes[1] &&
+      a.tilePalettes[2] === b.tilePalettes[2] &&
+      a.tilePatterns[0] === b.tilePatterns[0] &&
+      a.tilePatterns[1] === b.tilePatterns[1] &&
+      a.tileset === b.tileset &&
+      a.tileEffects === b.tileEffects;
+  }
+
+  // // Key: (tileId/screenId) << 8 | tileset
+  // // Value: Set<~pattern | palette>
+  // const tileCache = new Map<number, Set<number>>();
+  // const screenCache = new Map<number, Set<number>>();
+
+  // function screenData(screen: number, tileset: number) {
+
+  // }
+
+  // for (const loc of rom.locations) {
+  //   if (!loc.used) continue;
+  //   const tileset = rom.tilesets[(loc.tileset & 0x7f) >> 2];
+  //   for (const screen of loc.allScreens()) {
+  //     const graphics = new Set();
+  //     for (const tile of screen.tiles) {
+  //       const tileId = tile << 8 | tileset.id;
+  //       const prev = tileCache.get(tileId);
+  //       if (prev) {
+  //         for (const g of prev) graphics.add(g);
+  //         continue;
+  //       }
+  //       const set = new Set<number>();
+  //       for (const quad of tileset.tiles) {
+  //         set.add(~quad[tile]);
+  //         graphics.add(~quad[tile]);
+  //       }
+  //       set.add(tileset.attrs[tile]);
+  //       graphics.add(tileset.attrs[tile]);
+  //       tileCache.set(tileId, set);
+  //     }
+  //   }
+  // }
+
+  const partitions = rom.locations.partition(x => x, eq, 3);
+
+  const pal = [new Map<number, Set<number>>(), new Map<number, Set<number>>()];
+
+  for (const part of partitions) {
+    const l = part[1];
+    for (let i = 0; i < 2; i++) {
+      for (let j = 0; j < 2; j++) {
+
+        // TODO - check that patterns and palettes actually USED?
+
+        let set = pal[i].get(l.tilePatterns[j]);
+        if (!set) pal[i].set(l.tilePatterns[j], set = new Set());
+        set.add(l.tilePalettes[i]);
+      }
+    }
+  }
+
+  for (const part of partitions) {
+    const l = part[1];
+    const s = [new Set<number>(), new Set<number>()];
+    for (let i = 0; i < 2; i++) {
+      s[i] = new Set<number>([...pal[i].get(l.tilePatterns[0])!,
+                              ...pal[i].get(l.tilePatterns[1])!,]);
+    }
+    
+    const p0 = random.pick([...s[0]]);
+    const p1 = random.pick([...s[1]]);
+    for (const loc of part[0]) {
+      loc.tilePalettes[0] = p0;
+      loc.tilePalettes[1] = p1;
+    }
+  }
+}
+
+function randomizeWalls(rom: Rom, flags: FlagSet, random: Random): void {
+  // NOTE: We can make any wall shoot by setting its $10 bit on the type byte.
+  // But this also requires matching pattern tables, so we'll leave that alone
+  // for now to avoid gross graphics.
+
+  // All other walls will need their type moved into the upper nibble and then
+  // the new element goes in the lower nibble.  Since there are so few iron
+  // walls, we will give them arbitrary elements independent of the palette.
+  // Rock/ice walls can also have any element, but the third palette will
+  // indicate what they expect.
+
+  if (!flags.randomizeWalls()) return;
+  // Basic plan: partition based on palette, look for walls.
+  const pals = [
+    [0x05, 0x38],
+    [0x11],
+    [0x6a],
+    [0x14],
+  ];
+
+  function wallType(spawn: Spawn): number {
+    if (spawn.data[2] & 0x20) {
+      return (spawn.id >>> 4) & 3;
+    }
+    return spawn.id & 3;
+  }
+
+  const partition =
+      rom.locations.partition(l => l.tilePalettes.join(' '), undefined, 3);
+  for (const [locations] of partition) {
+    // pick a random wall type.
+    const elt = random.nextInt(4);
+    const pal = random.pick(pals[elt]);
+    for (const location of locations) {
+      for (const spawn of location.spawns) {
+        if (spawn.isWall()) {
+          const type = wallType(spawn);
+          if (type === 2) continue;
+          if (type === 3) {
+            spawn.data[2] |= 0x20;
+            spawn.id = 0x30 | random.nextInt(4);
+          } else {
+            spawn.data[2] |= 0x20;
+            spawn.id <<= 4;
+            spawn.id |= elt;
+            location.tilePalettes[2] = pal;
+          }
+        }
+      }
     }
   }
 }
@@ -1774,7 +1912,7 @@ class MonsterPool {
         }
         const c = graphics.getMonsterConstraint(location.id, m.id);
         let meet = constraint.meet(c);
-        if (!meet) {
+        if (!meet && constraint.pal2.size < Infinity && constraint.pal3.size < Infinity) {
           if (this.flags.shuffleSpritePalettes()) {
             meet = constraint.meet(c.ignorePalette());
           }

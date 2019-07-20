@@ -92,7 +92,7 @@ function build(rom: Rom, flags = new FlagSet('@FullShuffle')): World {
       // Walls need to come first so we can avoid adding separate
       // requirements for every single wall - just use the type.
       if (spawn.isWall()) {
-        walls.set(ScreenId.from(location, spawn), spawn.id as WallType);
+        walls.set(ScreenId.from(location, spawn), (spawn.id & 3) as WallType);
       }
 
       // TODO - currently this is broken -

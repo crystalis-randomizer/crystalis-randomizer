@@ -555,6 +555,8 @@ export class FlagSet {
   randomizeMusic() { return this.check('Tm'); }
   shuffleSpritePalettes() { return this.check('Tp'); }
 
+  randomizeWalls() { return true; }
+
   shuffleMonsters() { return this.check('Mr'); }
   shuffleShops() { return this.check('Ps'); }
   bargainHunting() { return this.shuffleShops(); }

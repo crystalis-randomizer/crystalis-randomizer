@@ -61,11 +61,9 @@ const run = async () => {
     }
     const usedTiles = new Set();
     for (const s of usedScreens) {
-      for (let x = 0; x < 0x10; x++) {
-        for (let y = 0; y < 0xf; y++) {
-          usedTiles.add(rom.screens[s].tiles[y][x]);
-          usedByTileset[tileset.id].add(rom.screens[s].tiles[y][x]);
-        }
+      for (let t = 0; t < 0xf0; t++) {
+        usedTiles.add(rom.screens[s].tiles[t]);
+        usedByTileset[tileset.id].add(rom.screens[s].tiles[t]);
       }
     }
 

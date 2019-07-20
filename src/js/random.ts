@@ -88,6 +88,11 @@ export class Random {
     }
     return array;
   }
+
+  pick<T>(arr: readonly T[]): T {
+    if (!arr.length) throw new Error('empty array');
+    return arr[this.nextInt(arr.length)];
+  }
 }
 
 const TWOPI = 2 * Math.PI;

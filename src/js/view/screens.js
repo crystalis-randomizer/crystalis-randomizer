@@ -49,7 +49,7 @@ const run = async () => {
         canvas.clear(locs[0].tilePalettes[0]);
         for (let r = 0; r < 15; r++) {
           for (let c = 0; c < 16; c++) {
-            let metatile = screen.tiles[r][c];
+            let metatile = screen.tiles[r << 4 | c];
             if (metatile < 0x20 && metatile != tileset.alternates[metatile]) {
               flag = true;
               if (f) metatile = tileset.alternates[metatile];

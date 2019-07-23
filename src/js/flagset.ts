@@ -26,24 +26,24 @@ export const PRESETS: Preset[] = [{
   title: 'Full Shuffle',
 
   descr: `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
-  flags: 'Em Fsw Gt Mrt Ps Rlprt Sckmt Tabmp',
+  flags: 'Em Fsw Gt Mrt Ps Rlprt Sckmt Tabmp Ww',
 }, {
   title: 'Glitchless',
 
   descr: `Full shuffle but with no glitches.`,
-  flags: 'Em Fcpstw Mrt Ps Rlprt Sckmt Tab',
+  flags: 'Em Fcpstw Mrt Ps Rlprt Sckmt Tab Ww',
 }, {
   // TODO: add 'Ht' for maxing out tower scaling
   title: 'Advanced',
 
   descr: `A balanced randomization with quite a bit more difficulty.`,
-  flags: 'Fsw Gfprt Hbdgw Mert Ps Rloprst Sckt Sm Tabmp',
+  flags: 'Fsw Gfprt Hbdgw Mert Ps Rloprst Sckt Sm Tabmp Ww',
 }, {
   // TODO: add 'Ht'
   title: 'Ludicrous',
 
   descr: `Pulls out all the stops, may require superhuman feats.`,
-  flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Rloprst Sckmt Tabmp',
+  flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Rloprst Sckmt Tabmp Ww',
 }];
 
 // Just the flags, not the whole documentation.
@@ -118,6 +118,20 @@ export const FLAGS: FlagSection[] = [{
     hard: true,
     name: 'Shuffle all items and traps together',
   }], // TODO: Ss to shuffle shops?
+}, {
+  section: 'World',
+  flags: [{
+    flag: 'Ww',
+    name: 'Mystery flag',
+    // name: 'Randomize elements to break walls',
+    // text: `Walls will require a randomized element to break.  Normal rock and
+    //        ice walls will indicate the required element by the color (light
+    //        grey or yellow for wind, blue for fire, bright orange ("fire") for
+    //        water, or dark grey ("steel") for thunder.  The element to break
+    //        these wills is the same throughout an area.  Iron walls require a
+    //        one-off random element, with no visual cue, and two walls in the
+    //        same area may have different requirements.`,
+  }],
 }, {
   section: 'Monsters',
   text: `Monster stats are always normalized by scaling level.`,
@@ -555,8 +569,6 @@ export class FlagSet {
   randomizeMusic() { return this.check('Tm'); }
   shuffleSpritePalettes() { return this.check('Tp'); }
 
-  randomizeWalls() { return true; }
-
   shuffleMonsters() { return this.check('Mr'); }
   shuffleShops() { return this.check('Ps'); }
   bargainHunting() { return this.shuffleShops(); }
@@ -580,6 +592,7 @@ export class FlagSet {
   saharaRabbitsRequireTelepathy() { return this.check('Rr'); }
   teleportOnThunderSword() { return this.check('Rt'); }
   orbsOptional() { return this.check('Ro'); }
+  randomizeWalls() { return this.check('Ww'); }
 
   guaranteeSword() { return this.check('Es'); }
   guaranteeSwordMagic() { return !this.check('Hw'); }

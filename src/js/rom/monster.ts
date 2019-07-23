@@ -4,8 +4,9 @@ import {Rom} from '../rom.js';
 
 export type MonsterData = [string, number, number, Adjustments?];
 
-interface Adjustments {
+export interface Adjustments {
   difficulty?: number;
+  monsterClass?: string
 }
 
 type DifficultyFactor = number & {__difficulty__: never};
@@ -35,6 +36,8 @@ export class Monster extends ObjectData {
   usedPalettes?: readonly number[];
   usedPatterns?: readonly number[];
 
+  monsterClass?: string;
+
   constructor(rom: Rom, [name, id, scaling, adjustments = {}]: MonsterData) {
     super(rom, id);
     this.name = name;
@@ -54,6 +57,7 @@ export class Monster extends ObjectData {
     const expectedPlayerHP = Math.min(255, Math.max(16, 32 + expectedLevel * 16));
     this.satk = (this.atk - expectedPlayerDefense(scaling, this.attackType)) / expectedPlayerHP;
     this.extraDifficulty = adjustments.difficulty || 0;
+    this.monsterClass = adjustments.monsterClass;
 
     // Compute vanilla scaled exp and gold.
     const vsExp = processExpReward(this.expReward) / baselineExp(scaling);
@@ -431,6 +435,8 @@ export const ACTION_SCRIPTS = new Map<number, ActionScriptData>([
   }],
   // TODO - just hardcode boss difficulties?  fix them at max?
 ]);
+
+
 
 // Scaling formulas
 function level(scaling: number): number {

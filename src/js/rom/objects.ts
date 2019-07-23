@@ -2,7 +2,7 @@
 // import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 import {ObjectData} from './objectdata.js';
-import {Monster, MonsterData} from './monster.js';
+import {Adjustments, Monster, MonsterData} from './monster.js';
 
 // Manual data about monsters.  Every monster needs at least an ID-to-name mapping,
 // We also can't expect to get the difficulty mapping automatically, so that's
@@ -49,73 +49,89 @@ export type Constraint = Map<string, readonly [readonly number[], boolean | null
 // value[1] is true if need pat1, false if need pat0, null if neither
 //   ---> but we need to keep track of a hanful of spawns, not just tone.
 
+const BIRD = {monsterClass: 'BIRD'};
+const BRAIN = {monsterClass: 'BRAIN'};
+const ENTITY = {monsterClass: 'ENTITY'};
+const EYE = {monsterClass: 'EYE'};
+const GOLEM = {monsterClass: 'GOLEM'};
+const JELLY = {monsterClass: 'JELLY'};
+const MOSQUITO = {monsterClass: 'MOSQUITO'};
+const MUSHROOM = {monsterClass: 'MUSHROOM'};
+const PUDDLE = {monsterClass: 'PUDDLE'};
+const SLIME = {monsterClass: 'SLIME'};
+const SOLDIER = {monsterClass: 'SOLDIER'};
+const SPIDER = {monsterClass: 'SPIDER'};
+const WRAITH = {monsterClass: 'WRAITH'};
+const WYVERN = {monsterClass: 'WYVERN'};
+const ZOMBIE = {monsterClass: 'ZOMBIE'};
+
 export const MONSTERS = {
-  wraith1: ['Wraith 1', 0x4b, 28],
-  wraith2: ['Wraith 2', 0x4f, 28],
-  blueSlime: ['Blue Slime', 0x50, 1],
+  wraith1: ['Wraith 1', 0x4b, 28, WRAITH],
+  wraith2: ['Wraith 2', 0x4f, 28, WRAITH],
+  blueSlime: ['Blue Slime', 0x50, 1, SLIME],
   weretiger: ['Weretiger', 0x51, 1],
-  greenJelly: ['Green Jelly', 0x52, 4],
-  redSlime: ['Red Slime', 0x53, 4],
-  rockGolem: ['Rock Golem', 0x54, 4],
+  greenJelly: ['Green Jelly', 0x52, 4, JELLY],
+  redSlime: ['Red Slime', 0x53, 4, SLIME],
+  rockGolem: ['Rock Golem', 0x54, 4, GOLEM],
   blueBat: ['Blue Bat', 0x55, 4],
-  greenWyvern: ['Green Wyvern', 0x56, 4],
+  greenWyvern: ['Green Wyvern', 0x56, 4, WYVERN],
   orc: ['Orc', 0x58, 6],
-  redMosquito: ['Red Mosquito', 0x59, 10],
-  blueMushroom: ['Blue Mushroom', 0x5a, 10],
+  redMosquito: ['Red Mosquito', 0x59, 10, MOSQUITO],
+  blueMushroom: ['Blue Mushroom', 0x5a, 10, MUSHROOM],
   swampTomato: ['Swamp Tomato', 0x5b, 10],
-  blueMosquito: ['Blue Mosquito', 0x5c, 23],
+  blueMosquito: ['Blue Mosquito', 0x5c, 23, MOSQUITO],
   swampPlant: ['Swamp Plant', 0x5d, 10],
-  largeBlueSlime: ['Large Blue Slime', 0x5f, 11],
-  iceZombie: ['Ice Zombie', 0x60, 12],
-  greenBrain: ['Green Brain', 0x61, 12],
-  greenSpider: ['Green Spider', 0x62, 12],
-  redWyvern: ['Red Wyvern', 0x63, 12], // also purple?
-  soldier: ['Soldier', 0x64, 14],
-  iceEntity: ['Ice Entity', 0x65, 14],
-  redBrain: ['Red Brain', 0x66, 14],
-  iceGolem: ['Ice Golem', 0x67, 14],
-  largeRedSlime: ['Large Red Slime', 0x69, 18],
+  largeBlueSlime: ['Large Blue Slime', 0x5f, 11, SLIME],
+  iceZombie: ['Ice Zombie', 0x60, 12, ZOMBIE],
+  greenBrain: ['Green Brain', 0x61, 12, BRAIN],
+  greenSpider: ['Green Spider', 0x62, 12, SPIDER],
+  redWyvern: ['Red Wyvern', 0x63, 12, WYVERN], // also purple?
+  soldier: ['Soldier', 0x64, 14, SOLDIER],
+  iceEntity: ['Ice Entity', 0x65, 14, ENTITY],
+  redBrain: ['Red Brain', 0x66, 14, BRAIN],
+  iceGolem: ['Ice Golem', 0x67, 14, GOLEM],
+  largeRedSlime: ['Large Red Slime', 0x69, 18, SLIME],
   troll: ['Troll', 0x6a, 18],
-  redJelly: ['Red Jelly', 0x6b, 18],
+  redJelly: ['Red Jelly', 0x6b, 18, JELLY],
   medusa: ['Medusa', 0x6c, 19],
   crab: ['Crab', 0x6d, 19],
   medusaHead: ['Medusa Head', 0x6e, 20],
-  bird: ['Bird', 0x6f, 20],
-  redMushroom: ['Red Mushroom', 0x71, 21], // also purple
-  earthEntity: ['Earth Entity', 0x72, 22],
+  bird: ['Bird', 0x6f, 20, BIRD],
+  redMushroom: ['Red Mushroom', 0x71, 21, MUSHROOM], // also purple
+  earthEntity: ['Earth Entity', 0x72, 22, ENTITY],
   mimic: ['Mimic', 0x73, 22],
-  redSpider: ['Red Spider', 0x74, 22],
+  redSpider: ['Red Spider', 0x74, 22, SPIDER],
   fishman: ['Fishman', 0x75, 25],
   jellyfish: ['Jellyfish', 0x76, 25],
   kraken: ['Kraken', 0x77, 25],
-  darkGreenWyvern: ['Dark Green Wyvern', 0x78, 27],
-  sandZombie: ['Sand Zombie', 0x79, 38],
-  wraithShadow1: ['Wraith Shadow 1', 0x7b, 28],
+  darkGreenWyvern: ['Dark Green Wyvern', 0x78, 27, WYVERN],
+  sandZombie: ['Sand Zombie', 0x79, 38, ZOMBIE],
+  wraithShadow1: ['Wraith Shadow 1', 0x7b, 28, WRAITH],
   moth: ['Moth', 0x7c, 28, {difficulty: 3}],
-  archer: ['Archer', 0x80, 33],
-  bomberBird: ['Bomber Bird', 0x81, 33],
-  lavaBlob: ['Lava Blob', 0x82, 37],
+  archer: ['Archer', 0x80, 33, SOLDIER],
+  bomberBird: ['Bomber Bird', 0x81, 33, BIRD],
+  lavaBlob: ['Lava Blob', 0x82, 37, PUDDLE],
   flailGuy: ['Flail Guy', 0x84, 37], // lizard man
-  blueEye: ['Blue Eye', 0x85, 37],
+  blueEye: ['Blue Eye', 0x85, 37, EYE],
   salamander: ['Salamander', 0x86, 37],
   sorceror: ['Sorceror', 0x87, 37], // burt
   mado1: ['Mado 1', 0x88, 37],
   knight: ['Knight', 0x89, 41, {difficulty: 1}],
   devil: ['Devil', 0x8a, 41],
-  wraitShadow2: ['Wraith Shadow 2', 0x8c, 41],
+  wraitShadow2: ['Wraith Shadow 2', 0x8c, 41, WRAITH],
   tarantula: ['Tarantula', 0x91, 41],
   skeleton: ['Skeleton', 0x92, 41],
-  purpleEye: ['Purple Eye', 0x94, 41],
+  purpleEye: ['Purple Eye', 0x94, 41, EYE],
   flailKnight: ['Flail Knight', 0x95, 41],
   scorpion: ['Scorpion', 0x96, 41],
-  sandBlob: ['Sand Blob', 0x98, 44],
+  sandBlob: ['Sand Blob', 0x98, 44, PUDDLE],
   mummy: ['Mummy', 0x99, 44],
   warlock: ['Warlock', 0x9a, 46],
   brownRobot: ['Brown Robot', 0xa0, 47, {difficulty: 1}],
   whiteRobot: ['White Robot', 0xa1, 47],
   towerSentinel: ['Tower Sentinel', 0xa2, 47],
   helicopter: ['Helicopter', 0xa3, 47],
-};
+} as const;
 
 // Not actually technically monsters, but lump them together.
 const OBJECTS = {
@@ -128,7 +144,7 @@ const OBJECTS = {
   statueOfMoon: ['Statue of Moon', 0x9d, 47],
   crumblingVerticalPlatform: ['Crumbling Vertical Platform', 0x9f, 47],
   glitch3: ['Glitch', 0xa6, 41],
-};
+} as const;
 
 const BOSSES = {
   vampire1: ['Vampire 1', 0x57, 5],
@@ -144,7 +160,7 @@ const BOSSES = {
   dyna: ['Dyna', 0xa4, 47],
   vampire2: ['Vampire 2', 0xa5, 28],
   dynaPod: ['Dyna Pod', 0xb4, 47],
-};
+} as const ;
 
 const PROJECTILES = {
   sorcerorShot: ['Sorceror Shot', 0x3f, 37],
@@ -196,9 +212,11 @@ const PROJECTILES = {
   madoShuriken: ['Mado Shuriken', 0xfc, 37],
   guardianStatueMissile: ['Guardian Statue Missile', 0xfd, 36],
   demonWallFire: ['Demon Wall Fire', 0xfe, 37],
-};
+} as const;
 
-const ALL_MONSTERS = {...MONSTERS, ...OBJECTS, ...BOSSES, ...PROJECTILES};
+const ALL_MONSTERS = {...MONSTERS, ...OBJECTS, ...BOSSES, ...PROJECTILES} as const;
+const CHECK: {[key: string]: readonly [string, number, number, ...Adjustments[]]} = ALL_MONSTERS;
+const [] = [CHECK];
 
   // monster(0x50, 'Blue Slime', 0x20, 6, {
   //   hits: 1, satk: 16, dgld: 2, sexp: 32,

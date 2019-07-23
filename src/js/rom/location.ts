@@ -249,16 +249,22 @@ export class Location extends Entity {
     return undefined;
   }
 
-  neighbors(adjacentIds: number = 0): Set<Location> {
+  neighbors(joinNexuses: boolean = false): Set<Location> {
     const out = new Set<Location>();
-    for (const exit of this.exits) {
-      const l = this.rom.locations[exit.dest];
-      if (l && l.used) out.add(l);
+    const addNeighbors = (l: Location) => {
+      for (const exit of l.exits) {
+        const id = exit.dest;
+        const neighbor = this.rom.locations[id];
+        if (neighbor && neighbor.used &&
+            neighbor !== this && !out.has(neighbor)) {
+          out.add(neighbor);
+          if (joinNexuses && NEXUSES.has(id)) {
+            addNeighbors(neighbor);
+          }
+        }
+      }
     }
-    for (let i = -adjacentIds; i < adjacentIds; i++) {
-      const l = i !== 0 ? this.rom.locations[this.id + i] : undefined;
-      if (l && l.used) out.add(l);
-    }
+    addNeighbors(this);
     return out;
   }
 
@@ -630,7 +636,7 @@ export const LOCATIONS = {
   saharaToolShop: [0xf9, 'Sahara - Tool Shop'],
   saharaElderHouse: [0xfa, 'Sahara - Elder House'],
   saharaPawnShop: [0xfb, 'Sahara - Pawn Shop'],
-};
+} as const;
 // type Locations = typeof LOCATIONS;
 
 // NOTE: this works to constrain the keys to exactly the same.
@@ -691,3 +697,14 @@ const locationNames: (string | undefined)[] = (() => {
 //   return [h(l.id),l.name,h(m),'',h(s),type,0,patSlot,m?h((l.spritePatterns||[])[patSlot]):'',palSlot,allPal.has(2)?h((l.spritePalettes||[])[0]):'',allPal.has(3)?h((l.spritePalettes||[])[1]):''];
 // }).filter(x=>x))).map(a=>a.join(',')).filter(x=>x).join('\n');
 
+const NEXUSES = new Set<number>([
+  LOCATIONS.mtSabreWestLower[0],
+  LOCATIONS.mtSabreWestUpper[0],
+  LOCATIONS.mtSabreNorthMain[0],
+  LOCATIONS.mtSabreNorthMiddle[0],
+  LOCATIONS.mtSabreNorthCave1[0],
+  LOCATIONS.mtSabreNorthCave2[0],
+  LOCATIONS.mtHydra[0],
+  LOCATIONS.mtHydraOutsideShyron[0],
+  LOCATIONS.mtHydraCave1[0],
+]);

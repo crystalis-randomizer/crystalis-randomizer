@@ -80,3 +80,99 @@ export class Tileset extends Entity {
 //   FLY = 3,
 //   NEVER = 4,
 // }
+
+function paletteTypes(tileset: number, location: number): readonly string[] {
+  // NOTE: underground cavern $64 has middle for water, must be $1f
+  switch (location) {
+  case 0x57: // tileet 88
+    // don't include the water in the normal pool...
+    return ['main', '', 'out'];
+  case 0x64: case 0x68: // tileset 88
+    // some water in this cave uses the HUD's palette so don't shuffle it
+    return ['main', '', 'out'];
+  }
+
+  switch (tileset) {
+  case 0x80: return ['main', 'out', 'trim'];
+  case 0x84: return ['main', 'main', 'trim'];
+  case 0x88:
+    return ['main', 'trim', ''];
+  case 0x8c: return ['main', 'trim', 'accept???'];
+  }
+  return ['', '', ''];
+}
+//   [0x90, ['trees', 'mountain', 'grass']],
+//   // NOTE: 0 and 2 need same background for ocean
+//   // lime tree is very different usage: (water, tree trunk, trees).
+//   // mountains also different (rock, trim (on 28/7c), bridge)
+//   // for mountains, 0 and 1 are same-bg
+//   [0x94, ['water/ground', 'mountain', 'shallows']],
+//   [0x98, ['door', 'room', 'rocks']], // shrine
+//   // NOTE: hydra very diff: (rock/ground, bridge, river)
+//   [0x9c, ['mountain/ground', 'trees', 'desert']],
+//   // NOTE: this is swamp, but also includes all indoors
+//   // all 3 need same bg for swamp
+//   [0xa0, ['ground', 'trees', 'some haze']],
+//   [0xa4, ['', '', '']], // fortress
+//   [0xa8, ['', '', '']], // ice cave
+//   [0xac, ['', '', '']], // endgame
+// ]);
+
+const ALLOWED_PALETTES = new Map<string, readonly number[]>([
+  ['path', [...r(0x00, 0x12), ...r(0x15, 0x1b), ...r(0x1e, 0x25),
+            ...r(0x26, 0x2b), ...r(0x2c, 0x30), ...r(0x39, 0x3f),
+            0x42, ...r(0x44, 0x48), ...r(0x4d, 0x59), ...r(0x80, 0x84),
+            0x87, ...r(0x8b, 0x93)]],
+  ['mountain', [0x01, ...r(0x03, 0x07), ...r(0x08, 0x0b), 0x0c, 0x0d, 0x0e,
+               ...r(0x11, 0x18), 0x19, 0x1a, 0x1c, 0x1d, 0x1e, 0x20, 0x21,
+               0x23, 0x27, 0x2a, 0x2b, 0x2f, 0x31, 0x33, 0x36, 0x37, 0x38,
+               0x39, 0x3c, 0x42, 0x44, 0x46, 0x4b, 0x4c, 0x4f, 0x53, 0x58,
+               ...r(0x80, 0x85), 0x87, 0x88, 0x8b, 0x8e]],
+  ['trees', [0x01, 0x02, 0x04, 0x06, ...r(0x07, 0x0f), ...r(0x14, 0x18),
+             0x1a, 0x1c, 0x1e, 0x20, 0x23, 0x27, 0x29, 0x2a, 0x2b, 0x2e,
+             0x2f, 0x31, 0x33, 0x37, 0x38, 0x39, 0x3c, 0x3d, 0x43, 0x44,
+             0x46, 0x49, 0x4a, 0x4b, 0x4f, 0x52, 0x57, 0x6e,
+             ...r(0x80, 0x85), 0x87, 0x88, ...r(0x8b, 0x90)]],
+
+]);
+
+// infer constraints?
+//  - treat BG color separately
+//    - figure out which pals on a map share same bg
+//    - keep black ones black
+//    - keep light ones light, dark ones dark?
+//  - all shared colors moved in lockstep?
+//  - categorize individual colors?
+//    look at how much is used?  no bright colors for very common?
+//  TODO - fix the no-ice BG for hydra/stxy/goa in the tileset
+
+// next step - make pattern/palette viewer (editor?)
+
+const TERRAIN_BY_PALETTE = new Map<number, readonly [string, string, string]>([
+  [0x80, ['path', 'mountain', 'trees']],
+  [0x84, ['mountain-path', 'brick', 'trees']],
+  [0x88, ['cave wall/ground', 'cave bridge', '']],
+  // NOTE: underground cavern $64 has middle for water, must be $1f
+  [0x8c, ['floor', 'fire', 'accept']],
+  [0x90, ['trees', 'mountain', 'grass']],
+  // NOTE: 0 and 2 need same background for ocean
+  // lime tree is very different usage: (water, tree trunk, trees).
+  // mountains also different (rock, trim (on 28/7c), bridge)
+  // for mountains, 0 and 1 are same-bg
+  [0x94, ['water/ground', 'mountain', 'shallows']],
+  [0x98, ['door', 'room', 'rocks']], // shrine
+  // NOTE: hydra very diff: (rock/ground, bridge, river)
+  [0x9c, ['mountain/ground', 'trees', 'desert']],
+  // NOTE: this is swamp, but also includes all indoors
+  // all 3 need same bg for swamp
+  [0xa0, ['ground', 'trees', 'some haze']],
+  [0xa4, ['', '', '']], // fortress
+  [0xa8, ['', '', '']], // ice cave
+  [0xac, ['', '', '']], // endgame
+]);
+
+function r(a: number, b: number): readonly number[] {
+  return new Array(b - a).fill(0).map((_x, i) => i + a);
+}
+
+const [] = [TERRAIN_BY_PALETTE, ALLOWED_PALETTES, paletteTypes];

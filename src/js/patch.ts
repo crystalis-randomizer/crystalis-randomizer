@@ -7,6 +7,7 @@ import {FetchReader} from './fetchreader.js';
 import {FlagSet} from './flagset.js';
 import {AssumedFill} from './graph/shuffle.js';
 import {World} from './graph/world.js';
+import {shufflePalettes} from './pass/shufflepalettes.js';
 import {Random} from './random.js';
 import {Rom} from './rom.js';
 import {Entrance, Exit, Flag, Location, Spawn} from './rom/location.js';
@@ -17,7 +18,8 @@ import {Spoiler} from './rom/spoiler.js';
 import {hex, seq, watchArray, writeLittleEndian} from './rom/util.js';
 import * as version from './version.js';
 import {Graphics} from './rom/graphics.js';
-import { Constraint } from './rom/constraint.js';
+import {Constraint} from './rom/constraint.js';
+import {Monster} from './rom/monster.js';
 
 // TODO - to shuffle the monsters, we need to find the sprite palttes and
 // patterns for each monster.  Each location supports up to two matchups,
@@ -236,7 +238,7 @@ export async function shuffle(rom: Uint8Array,
   if (flags.orbsOptional()) orbsOptional(parsed);
 
   shuffleMusic(parsed, flags, random);
-  shuffleBackgroundPalettes(parsed, flags, random);
+  shufflePalettes(parsed, flags, random);
 
   misc(parsed, flags, random);
 
@@ -364,87 +366,6 @@ function shuffleShops(rom: Rom, _flags: FlagSet, random: Random): void {
   }
 }
 
-function shuffleBackgroundPalettes(rom: Rom, flags: FlagSet, random: Random): void {
-  if (!flags.shuffleSpritePalettes()) return;
-
-  function eq(a: Location, b: Location): boolean {
-    return a.tilePalettes[0] === b.tilePalettes[0] &&
-      a.tilePalettes[1] === b.tilePalettes[1] &&
-      a.tilePalettes[2] === b.tilePalettes[2] &&
-      a.tilePatterns[0] === b.tilePatterns[0] &&
-      a.tilePatterns[1] === b.tilePatterns[1] &&
-      a.tileset === b.tileset &&
-      a.tileEffects === b.tileEffects;
-  }
-
-  // // Key: (tileId/screenId) << 8 | tileset
-  // // Value: Set<~pattern | palette>
-  // const tileCache = new Map<number, Set<number>>();
-  // const screenCache = new Map<number, Set<number>>();
-
-  // function screenData(screen: number, tileset: number) {
-
-  // }
-
-  // for (const loc of rom.locations) {
-  //   if (!loc.used) continue;
-  //   const tileset = rom.tilesets[(loc.tileset & 0x7f) >> 2];
-  //   for (const screen of loc.allScreens()) {
-  //     const graphics = new Set();
-  //     for (const tile of screen.tiles) {
-  //       const tileId = tile << 8 | tileset.id;
-  //       const prev = tileCache.get(tileId);
-  //       if (prev) {
-  //         for (const g of prev) graphics.add(g);
-  //         continue;
-  //       }
-  //       const set = new Set<number>();
-  //       for (const quad of tileset.tiles) {
-  //         set.add(~quad[tile]);
-  //         graphics.add(~quad[tile]);
-  //       }
-  //       set.add(tileset.attrs[tile]);
-  //       graphics.add(tileset.attrs[tile]);
-  //       tileCache.set(tileId, set);
-  //     }
-  //   }
-  // }
-
-  const partitions = rom.locations.partition(x => x, eq, 3);
-
-  const pal = [new Map<number, Set<number>>(), new Map<number, Set<number>>()];
-
-  for (const part of partitions) {
-    const l = part[1];
-    for (let i = 0; i < 2; i++) {
-      for (let j = 0; j < 2; j++) {
-
-        // TODO - check that patterns and palettes actually USED?
-
-        let set = pal[i].get(l.tilePatterns[j]);
-        if (!set) pal[i].set(l.tilePatterns[j], set = new Set());
-        set.add(l.tilePalettes[i]);
-      }
-    }
-  }
-
-  for (const part of partitions) {
-    const l = part[1];
-    const s = [new Set<number>(), new Set<number>()];
-    for (let i = 0; i < 2; i++) {
-      s[i] = new Set<number>([...pal[i].get(l.tilePatterns[0])!,
-                              ...pal[i].get(l.tilePatterns[1])!,]);
-    }
-    
-    const p0 = random.pick([...s[0]]);
-    const p1 = random.pick([...s[1]]);
-    for (const loc of part[0]) {
-      loc.tilePalettes[0] = p0;
-      loc.tilePalettes[1] = p1;
-    }
-  }
-}
-
 function randomizeWalls(rom: Rom, flags: FlagSet, random: Random): void {
   // NOTE: We can make any wall shoot by setting its $10 bit on the type byte.
   // But this also requires matching pattern tables, so we'll leave that alone
@@ -473,7 +394,7 @@ function randomizeWalls(rom: Rom, flags: FlagSet, random: Random): void {
   }
 
   const partition =
-      rom.locations.partition(l => l.tilePalettes.join(' '), undefined, 3);
+      rom.locations.partition(l => l.tilePalettes.join(' '), undefined, true);
   for (const [locations] of partition) {
     // pick a random wall type.
     const elt = random.nextInt(4);
@@ -1602,7 +1523,6 @@ interface MonsterData {
 }
 
 /* tslint:disable:trailing-comma whitespace */
-
 const SCALED_MONSTERS: Map<number, MonsterData> = new Map([
   // ID  TYPE  NAME                       SDEF SWRD HITS SATK DGLD SEXP
   [0x3f, 'p', 'Sorceror shot',              ,   ,   ,    19,  ,    ,],
@@ -1901,7 +1821,13 @@ class MonsterPool {
 
       report.push(`Initial pass: ${constraint.fixed.map(s=>s.size<Infinity?'['+[...s].join(', ')+']':'all')}`);
 
+      const classes = new Map<string, number>();
       const tryAddMonster = (m: MonsterConstraint) => {
+        const monster = location.rom.objects[m.id] as Monster;
+        if (monster.monsterClass) {
+          const representative = classes.get(monster.monsterClass);
+          if (representative != null && representative !== m.id) return false;
+        }
         const flyer = FLYERS.has(m.id);
         const moth = MOTHS_AND_BATS.has(m.id);
         if (flyer) {
@@ -1922,6 +1848,7 @@ class MonsterPool {
         constraint = meet;
 
         // Pick the slot only after we know for sure that it will fit.
+        if (monster.monsterClass) classes.set(monster.monsterClass, m.id)
         let eligible = 0;
         if (flyer || moth) {
           // look for a flyer slot if possible.

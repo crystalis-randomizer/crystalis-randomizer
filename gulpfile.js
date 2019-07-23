@@ -16,6 +16,7 @@ const COMMON = [
   'graph.js',
   'graph/*.js',
   'nodes.js',
+  'pass/*.js',
   'patch.js',
   'random.js',
   'rom.js',

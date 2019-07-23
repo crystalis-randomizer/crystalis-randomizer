@@ -292,9 +292,9 @@ function randomizeWalls(rom, flags, random) {
                         spawn.id = 0x30 | random.nextInt(4);
                     }
                     else {
+                        console.log(`${location.name} ${type} => ${elt}`);
                         spawn.data[2] |= 0x20;
-                        spawn.id <<= 4;
-                        spawn.id |= elt;
+                        spawn.id = type << 4 | elt;
                         location.tilePalettes[2] = pal;
                     }
                 }
@@ -549,8 +549,7 @@ function preventNpcDespawns(rom, flags) {
     rom.items[0x25].tradeIn[0] = 0x82;
     dialog(0x13)[2].condition = 0x047;
     dialog(0x13)[2].flags = [0x0a9];
-    rom.npcs[0x13].localDialogs.get(-1)[3].condition = 0x047;
-    rom.npcs[0x13].localDialogs.get(-1)[3].flags = [0x0a9];
+    dialog(0x13)[3].flags = [0x0a9];
     spawns(0x14, 0x0e)[1] = ~0x088;
     remove(spawns(0x16, 0x57), ~0x051);
     remove(spawns(0x88, 0x57), ~0x051);

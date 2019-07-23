@@ -691,8 +691,10 @@ CheckForLowHpMp:
   jsr CheckForLowHpMp
 .endif ; _PITY_HP_AND_MP
 
-
-
+.ifdef _HARDCORE_MODE
+.org $2ff00
+  .res 256, 0
+.endif
 
 
 .bank $34000 $8000:$2000

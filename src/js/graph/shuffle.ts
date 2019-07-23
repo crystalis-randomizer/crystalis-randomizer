@@ -196,6 +196,7 @@ export function traverseFill(graph: Graph, fill: Fill): number[][] {
 //  - If trap shuffle off then ignore mimic slots
 //  - Consumables may not go into triggers
 //  - Mimics may not go into npcs, triggers, or boss drops.
+//  - We treat invisible chests like boss drops.
 
 enum Type {
   EMPTY = 0,
@@ -219,7 +220,11 @@ export class ShuffleRules {
     for (const l of rom.locations) {
       if (!l.used) continue;
       for (const s of l.spawns) {
-        if (s.isChest()) chests.add(s.id);
+        if (s.isInvisible()) {
+          bossDrops.add(s.id);
+        } else if (s.isChest()) {
+          chests.add(s.id);
+        }
       }
     }
     for (const b of rom.bosses) {

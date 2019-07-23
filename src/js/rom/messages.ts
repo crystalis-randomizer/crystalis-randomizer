@@ -403,7 +403,7 @@ export class Messages {
 
     for (const message of this.messages(uses)) {
       // TODO - can't land reflow until we have lipsum text.
-      // message.fixText();
+      message.fixText();
       const mid = message.mid();
       // Don't read the same message twice.
       const seen = addrs.get(message.addr);
@@ -618,7 +618,7 @@ export class Messages {
       // Now start with the longest abbreviation and work our way down.
       for (const {str, bytes} of abbrs.get(m.mid()) || []) {
         // NOTE: two spaces in a row after an expansion must be preserved as-is.
-        text = text.replace(new RegExp(str + '( [ &]|.|$)', 'g'), (full, after) => {
+        text = text.replace(new RegExp(str + '( [ &0-9]|.|$)', 'g'), (full, after) => {
           if (after && !PUNCTUATION[after]) return full;
           if (after === ' ') after = '';
           return bytes.map(b => `[${b}]`).join('') + after;

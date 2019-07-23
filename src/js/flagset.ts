@@ -26,12 +26,12 @@ export const PRESETS: Preset[] = [{
   title: 'Full Shuffle',
 
   descr: `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
-  flags: 'Em Fsw Gt Mrt Ps Rlprt Sckmt Tabmp Ww',
+  flags: 'Em Fsw Gt Mert Ps Rlprt Sckmt Tabmp Ww',
 }, {
   title: 'Glitchless',
 
   descr: `Full shuffle but with no glitches.`,
-  flags: 'Em Fcpstw Mrt Ps Rlprt Sckmt Tab Ww',
+  flags: 'Em Fcpstw Mert Ps Rlprt Sckmt Tab Ww',
 }, {
   // TODO: add 'Ht' for maxing out tower scaling
   title: 'Advanced',
@@ -121,16 +121,29 @@ export const FLAGS: FlagSection[] = [{
 }, {
   section: 'World',
   flags: [{
+  //   flag: 'Wt',
+  //   name: 'Randomize trade-in items',
+  //   text: `Items expected by various NPCs will be shuffled: specifically,
+  //          Statue of Onyx, Kirisa Plant, Love Pendant, Ivory Statue, Fog
+  //          Lamp, and Flute of Lime (for Akahana).  Rage will expect a
+  //          random sword.`,
+  // }, {
+  //   flag: 'Wu',
+  //   hard: true,
+  //   name: 'Unidentified key items',
+  //   text: `Item names will be generic and effects will be shuffled.  This
+  //          includes keys, flutes, lamps, and statues.`,
+  //   // TODO - turn off sorting for this row, only consolidate gaps.
+  // }, {
     flag: 'Ww',
-    name: 'Mystery flag',
-    // name: 'Randomize elements to break walls',
-    // text: `Walls will require a randomized element to break.  Normal rock and
-    //        ice walls will indicate the required element by the color (light
-    //        grey or yellow for wind, blue for fire, bright orange ("fire") for
-    //        water, or dark grey ("steel") for thunder.  The element to break
-    //        these wills is the same throughout an area.  Iron walls require a
-    //        one-off random element, with no visual cue, and two walls in the
-    //        same area may have different requirements.`,
+    name: 'Randomize elements to break walls',
+    text: `Walls will require a randomized element to break.  Normal rock and
+           ice walls will indicate the required element by the color (light
+           grey or yellow for wind, blue for fire, bright orange ("embers") for
+           water, or dark grey ("steel") for thunder.  The element to break
+           these wills is the same throughout an area.  Iron walls require a
+           one-off random element, with no visual cue, and two walls in the
+           same area may have different requirements.`,
   }],
 }, {
   section: 'Monsters',
@@ -143,11 +156,8 @@ export const FLAGS: FlagSection[] = [{
            and tower robots.`,
   }, {
     flag: 'Me',
-    hard: true,
     name: 'Shuffle monster weaknesses',
-    text: `Monster elemental weaknesses are shuffled.  This is <i>not</i>
-           accounted for when guaranteeing matching swords, so use at your
-           own risk (it's recommended to also turn on the 'Hs' flag).`,
+    text: `Monster elemental weaknesses are shuffled.`,
   }, {
     flag: 'Mt',
     hard: true,
@@ -250,6 +260,11 @@ export const FLAGS: FlagSection[] = [{
     hard: true,
     name: 'Blackout mode',
     text: `All caves and fortresses are permanently dark.`,
+  }, {
+    flag: 'Hh',
+    hard: true,
+    name: 'Hardcore mode',
+    text: `Checkpoints and saves are removed.`,
   }],
 // }, {
 //   section: 'Weapons, armor, and item balance',
@@ -592,6 +607,9 @@ export class FlagSet {
   saharaRabbitsRequireTelepathy() { return this.check('Rr'); }
   teleportOnThunderSword() { return this.check('Rt'); }
   orbsOptional() { return this.check('Ro'); }
+
+  randomizeTrades() { return this.check('Wt'); }
+  unidentifiedItems() { return this.check('Wu'); }
   randomizeWalls() { return this.check('Ww'); }
 
   guaranteeSword() { return this.check('Es'); }
@@ -620,6 +638,7 @@ export class FlagSet {
   randomizeWildWarp() { return this.check('Tw'); }
 
   blackoutMode() { return this.check('Hz'); }
+  hardcoreMode() { return this.check('Hh'); }
   buffDyna() { return this.check('Hd'); }
 
   expScalingFactor() {

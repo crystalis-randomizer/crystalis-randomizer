@@ -213,6 +213,8 @@ export default (nes) => {
 
   show.trigger = (id, ...x) => showTable(0x1e17a, 0x14000, id & 0x7f, ...x);
   show.dialog = (id, ...x) => showTable(0x1c95d, 0x14000, id, ...x);
+  show.npcData = (id, ...x) => showTable(0x19201, 0x10000, id, ...x);
+  show.object = (id) => showTable(0x1ac00, 0x10000, id, 3);
 
   function showTable(table, offset, id, ...args) {
     const lo = nes.rom.rom[table + 2 * id];

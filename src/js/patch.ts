@@ -408,9 +408,9 @@ function randomizeWalls(rom: Rom, flags: FlagSet, random: Random): void {
             spawn.data[2] |= 0x20;
             spawn.id = 0x30 | random.nextInt(4);
           } else {
+            console.log(`${location.name} ${type} => ${elt}`);
             spawn.data[2] |= 0x20;
-            spawn.id <<= 4;
-            spawn.id |= elt;
+            spawn.id = type << 4 | elt;
             location.tilePalettes[2] = pal;
           }
         }
@@ -775,13 +775,7 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   // provides the needed flag to get into mt sabre.
   dialog(0x13)[2].condition = 0x047;
   dialog(0x13)[2].flags = [0x0a9];
-
-  // Leaf rabbit ($13) normally stops setting its flag after prison door opened,
-  // but that doesn't necessarily open mt sabre.  Instead (a) trigger on 047
-  // (set by 8d upon entering elder's cell).  Also make sure that that path also
-  // provides the needed flag to get into mt sabre.
-  rom.npcs[0x13].localDialogs.get(-1)![3].condition = 0x047;
-  rom.npcs[0x13].localDialogs.get(-1)![3].flags = [0x0a9];
+  dialog(0x13)[3].flags = [0x0a9];
 
   // Windmill guard ($14 @ $0e) shouldn't despawn after abduction (038),
   // but instead after giving the item (088)

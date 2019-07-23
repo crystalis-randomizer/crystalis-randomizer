@@ -82,6 +82,11 @@ export class Random {
         }
         return array;
     }
+    pick(arr) {
+        if (!arr.length)
+            throw new Error('empty array');
+        return arr[this.nextInt(arr.length)];
+    }
 }
 const TWOPI = 2 * Math.PI;
 //# sourceMappingURL=random.js.map

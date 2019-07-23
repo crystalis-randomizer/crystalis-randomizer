@@ -12,6 +12,7 @@ export class Monster extends ObjectData {
         const expectedPlayerHP = Math.min(255, Math.max(16, 32 + expectedLevel * 16));
         this.satk = (this.atk - expectedPlayerDefense(scaling, this.attackType)) / expectedPlayerHP;
         this.extraDifficulty = adjustments.difficulty || 0;
+        this.monsterClass = adjustments.monsterClass;
         const vsExp = processExpReward(this.expReward) / baselineExp(scaling);
         const vsGld = VANILLA_GOLD_DROPS[this.goldDrop] / baselineGold(scaling);
         this.wealth = vsGld && vsGld / (vsExp + vsGld);

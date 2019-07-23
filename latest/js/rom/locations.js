@@ -12,7 +12,7 @@ class LocationsClass extends Array {
         }
     }
     static get [Symbol.species]() { return Array; }
-    partition(func, eq = (a, b) => a === b) {
+    partition(func, eq = (a, b) => a === b, joinNexuses = false) {
         const seen = new Set();
         const out = [];
         for (let loc of this) {
@@ -25,7 +25,7 @@ class LocationsClass extends Array {
             while (queue.length) {
                 const next = queue.pop();
                 group.push(next);
-                for (const n of next.neighbors()) {
+                for (const n of next.neighbors(joinNexuses)) {
                     if (!seen.has(n) && eq(func(n), value)) {
                         seen.add(n);
                         queue.push(n);

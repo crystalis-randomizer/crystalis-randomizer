@@ -5,6 +5,7 @@ import { FetchReader } from './fetchreader.js';
 import { FlagSet } from './flagset.js';
 import { AssumedFill } from './graph/shuffle.js';
 import { World } from './graph/world.js';
+import { shufflePalettes } from './pass/shufflepalettes.js';
 import { Random } from './random.js';
 import { Rom } from './rom.js';
 import { Entrance, Exit, Flag, Spawn } from './rom/location.js';
@@ -56,6 +57,7 @@ export async function shuffle(rom, seed, flags, reader, log, progress) {
         _BUFF_DEOS_PENDANT: flags.buffDeosPendant(),
         _BUFF_DYNA: flags.buffDyna(),
         _CHECK_FLAG0: true,
+        _CUSTOM_SHOOTING_WALLS: true,
         _DEBUG_DIALOG: seed === 0x17bc,
         _DISABLE_SHOP_GLITCH: flags.disableShopGlitch(),
         _DISABLE_STATUE_GLITCH: flags.disableStatueGlitch(),
@@ -132,6 +134,7 @@ export async function shuffle(rom, seed, flags, reader, log, progress) {
         fixRabbitSkip(parsed);
     if (flags.shuffleShops())
         shuffleShops(parsed, flags, random);
+    randomizeWalls(parsed, flags, random);
     if (flags.randomizeWildWarp())
         shuffleWildWarp(parsed, flags, random);
     rescaleMonsters(parsed, flags, random);
@@ -166,6 +169,7 @@ export async function shuffle(rom, seed, flags, reader, log, progress) {
     if (flags.orbsOptional())
         orbsOptional(parsed);
     shuffleMusic(parsed, flags, random);
+    shufflePalettes(parsed, flags, random);
     misc(parsed, flags, random);
     if (flags.buffDyna())
         buffDyna(parsed, flags);
@@ -255,6 +259,46 @@ function shuffleShops(rom, _flags, random) {
             while (shop.contents.length < 4)
                 shop.contents.push(0xff);
             shop.contents.sort((a, b) => a - b);
+        }
+    }
+}
+function randomizeWalls(rom, flags, random) {
+    if (!flags.randomizeWalls())
+        return;
+    const pals = [
+        [0x05, 0x38],
+        [0x11],
+        [0x6a],
+        [0x14],
+    ];
+    function wallType(spawn) {
+        if (spawn.data[2] & 0x20) {
+            return (spawn.id >>> 4) & 3;
+        }
+        return spawn.id & 3;
+    }
+    const partition = rom.locations.partition(l => l.tilePalettes.join(' '), undefined, true);
+    for (const [locations] of partition) {
+        const elt = random.nextInt(4);
+        const pal = random.pick(pals[elt]);
+        for (const location of locations) {
+            for (const spawn of location.spawns) {
+                if (spawn.isWall()) {
+                    const type = wallType(spawn);
+                    if (type === 2)
+                        continue;
+                    if (type === 3) {
+                        spawn.data[2] |= 0x20;
+                        spawn.id = 0x30 | random.nextInt(4);
+                    }
+                    else {
+                        spawn.data[2] |= 0x20;
+                        spawn.id <<= 4;
+                        spawn.id |= elt;
+                        location.tilePalettes[2] = pal;
+                    }
+                }
+            }
         }
     }
 }
@@ -1133,7 +1177,14 @@ class MonsterPool {
                 }
             }
             report.push(`Initial pass: ${constraint.fixed.map(s => s.size < Infinity ? '[' + [...s].join(', ') + ']' : 'all')}`);
+            const classes = new Map();
             const tryAddMonster = (m) => {
+                const monster = location.rom.objects[m.id];
+                if (monster.monsterClass) {
+                    const representative = classes.get(monster.monsterClass);
+                    if (representative != null && representative !== m.id)
+                        return false;
+                }
                 const flyer = FLYERS.has(m.id);
                 const moth = MOTHS_AND_BATS.has(m.id);
                 if (flyer) {
@@ -1143,7 +1194,7 @@ class MonsterPool {
                 }
                 const c = graphics.getMonsterConstraint(location.id, m.id);
                 let meet = constraint.meet(c);
-                if (!meet) {
+                if (!meet && constraint.pal2.size < Infinity && constraint.pal3.size < Infinity) {
                     if (this.flags.shuffleSpritePalettes()) {
                         meet = constraint.meet(c.ignorePalette());
                     }
@@ -1152,6 +1203,8 @@ class MonsterPool {
                     return false;
                 report.push(`  Adding ${m.id.toString(16)}: ${meet}`);
                 constraint = meet;
+                if (monster.monsterClass)
+                    classes.set(monster.monsterClass, m.id);
                 let eligible = 0;
                 if (flyer || moth) {
                     for (let i = 0; i < slots.length; i++) {

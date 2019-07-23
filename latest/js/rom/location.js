@@ -148,11 +148,22 @@ export class Location extends Entity {
         }
         return undefined;
     }
-    neighbors() {
+    neighbors(joinNexuses = false) {
         const out = new Set();
-        for (const exit of this.exits) {
-            out.add(this.rom.locations[exit.dest]);
-        }
+        const addNeighbors = (l) => {
+            for (const exit of l.exits) {
+                const id = exit.dest;
+                const neighbor = this.rom.locations[id];
+                if (neighbor && neighbor.used &&
+                    neighbor !== this && !out.has(neighbor)) {
+                    out.add(neighbor);
+                    if (joinNexuses && NEXUSES.has(id)) {
+                        addNeighbors(neighbor);
+                    }
+                }
+            }
+        };
+        addNeighbors(this);
         return out;
     }
 }
@@ -219,7 +230,9 @@ export const Spawn = DataTuple.make(4, {
     isNpc() { return this.type === 1 && this.id < 0xc0; },
     isBoss() { return this.type === 1 && this.id >= 0xc0; },
     isMonster() { return this.type === 0; },
-    isWall() { return this.type === 3 && this.id < 4; },
+    isWall() {
+        return Boolean(this.type === 3 && (this.id < 4 || (this.data[2] & 0x20)));
+    },
     toString() {
         return `Spawn ${this.hex()}: (${hex(this.x)}, ${hex(this.y)}) ${this.timed ? 'timed' : 'fixed'} ${this.type}:${hex(this.id)}`;
     },
@@ -449,4 +462,15 @@ const locationNames = (() => {
     }
     return names;
 })();
+const NEXUSES = new Set([
+    LOCATIONS.mtSabreWestLower[0],
+    LOCATIONS.mtSabreWestUpper[0],
+    LOCATIONS.mtSabreNorthMain[0],
+    LOCATIONS.mtSabreNorthMiddle[0],
+    LOCATIONS.mtSabreNorthCave1[0],
+    LOCATIONS.mtSabreNorthCave2[0],
+    LOCATIONS.mtHydra[0],
+    LOCATIONS.mtHydraOutsideShyron[0],
+    LOCATIONS.mtHydraCave1[0],
+]);
 //# sourceMappingURL=location.js.map

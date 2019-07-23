@@ -65,28 +65,11 @@ export class Graphics {
     }
     shufflePalettes(random) {
         const pal = [...this.allSpritePalettes];
-        function pick() {
-            const size = Math.floor(5 - Math.log2(random.nextInt(15) + 2));
-            const out = new Set();
-            for (let i = 0; i < size; i++) {
-                out.add(pal[random.nextInt(pal.length)]);
-            }
-            return out;
-        }
-        function shuffle(c) {
-            const fixed = [...c.fixed];
-            for (let i = 2; i < 4; i++) {
-                if (fixed[i].size < Infinity) {
-                    fixed[i] = pick();
-                }
-            }
-            return new Constraint(fixed, c.float, c.shift);
-        }
         for (const [k, c] of this.monsterConstraints) {
-            this.monsterConstraints.set(k, shuffle(c));
+            this.monsterConstraints.set(k, c.shufflePalette(random, pal));
         }
         for (const [k, c] of this.npcConstraints) {
-            this.npcConstraints.set(k, shuffle(c));
+            this.npcConstraints.set(k, c.shufflePalette(random, pal));
         }
     }
     configure(location, spawn) {

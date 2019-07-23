@@ -12,19 +12,19 @@ export const PRESETS = [{
     }, {
         title: 'Full Shuffle',
         descr: `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
-        flags: 'Em Fsw Gt Mrt Ps Rlprt Sckmt Tabmp',
+        flags: 'Em Fsw Gt Mrt Ps Rlprt Sckmt Tabmp Ww',
     }, {
         title: 'Glitchless',
         descr: `Full shuffle but with no glitches.`,
-        flags: 'Em Fcpstw Mrt Ps Rlprt Sckmt Tab',
+        flags: 'Em Fcpstw Mrt Ps Rlprt Sckmt Tab Ww',
     }, {
         title: 'Advanced',
         descr: `A balanced randomization with quite a bit more difficulty.`,
-        flags: 'Fsw Gfprt Hbdgw Mert Ps Rloprst Sckt Sm Tabmp',
+        flags: 'Fsw Gfprt Hbdgw Mert Ps Rloprst Sckt Sm Tabmp Ww',
     }, {
         title: 'Ludicrous',
         descr: `Pulls out all the stops, may require superhuman feats.`,
-        flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Rloprst Sckmt Tabmp',
+        flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Rloprst Sckmt Tabmp Ww',
     }];
 const PRESETS_BY_KEY = {};
 for (const { title, flags } of PRESETS) {
@@ -79,6 +79,12 @@ export const FLAGS = [{
                 flag: 'Sckmt',
                 hard: true,
                 name: 'Shuffle all items and traps together',
+            }],
+    }, {
+        section: 'World',
+        flags: [{
+                flag: 'Ww',
+                name: 'Mystery flag',
             }],
     }, {
         section: 'Monsters',
@@ -470,6 +476,7 @@ export class FlagSet {
     saharaRabbitsRequireTelepathy() { return this.check('Rr'); }
     teleportOnThunderSword() { return this.check('Rt'); }
     orbsOptional() { return this.check('Ro'); }
+    randomizeWalls() { return this.check('Ww'); }
     guaranteeSword() { return this.check('Es'); }
     guaranteeSwordMagic() { return !this.check('Hw'); }
     guaranteeMatchingSword() { return !this.check('Hs'); }

@@ -327,6 +327,7 @@ export class Messages {
         const addrs = new Map();
         const alias = new Map();
         for (const message of this.messages(uses)) {
+            message.fixText();
             const mid = message.mid();
             const seen = addrs.get(message.addr);
             const aliases = seen != null && alias.get(seen);
@@ -507,7 +508,7 @@ export class Messages {
                 return `[${bracket === '{' ? 6 : 7}][${id}]${after}`;
             });
             for (const { str, bytes } of abbrs.get(m.mid()) || []) {
-                text = text.replace(new RegExp(str + '( [ &]|.|$)', 'g'), (full, after) => {
+                text = text.replace(new RegExp(str + '( [ &0-9]|.|$)', 'g'), (full, after) => {
                     if (after && !PUNCTUATION[after])
                         return full;
                     if (after === ' ')

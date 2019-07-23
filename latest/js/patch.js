@@ -6,6 +6,7 @@ import { FlagSet } from './flagset.js';
 import { AssumedFill } from './graph/shuffle.js';
 import { World } from './graph/world.js';
 import { shufflePalettes } from './pass/shufflepalettes.js';
+import { unidentifiedItems } from './pass/unidentifieditems.js';
 import { Random } from './random.js';
 import { Rom } from './rom.js';
 import { Entrance, Exit, Flag, Spawn } from './rom/location.js';
@@ -69,6 +70,7 @@ export async function shuffle(rom, seed, flags, reader, log, progress) {
         _FIX_OPEL_STATUE: true,
         _FIX_SHAKING: true,
         _FIX_VAMPIRE: true,
+        _HARDCORE_MODE: flags.hardcoreMode(),
         _LEATHER_BOOTS_GIVE_SPEED: flags.leatherBootsGiveSpeed(),
         _NERF_FLIGHT: true,
         _NERF_WILD_WARP: flags.nerfWildWarp(),
@@ -170,6 +172,7 @@ export async function shuffle(rom, seed, flags, reader, log, progress) {
         orbsOptional(parsed);
     shuffleMusic(parsed, flags, random);
     shufflePalettes(parsed, flags, random);
+    unidentifiedItems(parsed, flags, random);
     misc(parsed, flags, random);
     if (flags.buffDyna())
         buffDyna(parsed, flags);
@@ -1156,7 +1159,7 @@ class MonsterPool {
                 constraint = constraint.meet(Constraint.BOSS) || constraint;
             }
             for (const spawn of location.spawns) {
-                if (spawn.isChest() && !(spawn.data[2] & 0x20)) {
+                if (spawn.isChest() && !spawn.isInvisible()) {
                     if (spawn.id < 0x70) {
                         constraint = constraint.meet(Constraint.TREASURE_CHEST) || constraint;
                     }

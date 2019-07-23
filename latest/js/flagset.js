@@ -12,11 +12,11 @@ export const PRESETS = [{
     }, {
         title: 'Full Shuffle',
         descr: `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
-        flags: 'Em Fsw Gt Mrt Ps Rlprt Sckmt Tabmp Ww',
+        flags: 'Em Fsw Gt Mert Ps Rlprt Sckmt Tabmp Ww',
     }, {
         title: 'Glitchless',
         descr: `Full shuffle but with no glitches.`,
-        flags: 'Em Fcpstw Mrt Ps Rlprt Sckmt Tab Ww',
+        flags: 'Em Fcpstw Mert Ps Rlprt Sckmt Tab Ww',
     }, {
         title: 'Advanced',
         descr: `A balanced randomization with quite a bit more difficulty.`,
@@ -84,7 +84,14 @@ export const FLAGS = [{
         section: 'World',
         flags: [{
                 flag: 'Ww',
-                name: 'Mystery flag',
+                name: 'Randomize elements to break walls',
+                text: `Walls will require a randomized element to break.  Normal rock and
+           ice walls will indicate the required element by the color (light
+           grey or yellow for wind, blue for fire, bright orange ("embers") for
+           water, or dark grey ("steel") for thunder.  The element to break
+           these wills is the same throughout an area.  Iron walls require a
+           one-off random element, with no visual cue, and two walls in the
+           same area may have different requirements.`,
             }],
     }, {
         section: 'Monsters',
@@ -96,11 +103,8 @@ export const FLAGS = [{
            and tower robots.`,
             }, {
                 flag: 'Me',
-                hard: true,
                 name: 'Shuffle monster weaknesses',
-                text: `Monster elemental weaknesses are shuffled.  This is <i>not</i>
-           accounted for when guaranteeing matching swords, so use at your
-           own risk (it's recommended to also turn on the 'Hs' flag).`,
+                text: `Monster elemental weaknesses are shuffled.`,
             }, {
                 flag: 'Mt',
                 hard: true,
@@ -177,6 +181,11 @@ export const FLAGS = [{
                 hard: true,
                 name: 'Blackout mode',
                 text: `All caves and fortresses are permanently dark.`,
+            }, {
+                flag: 'Hh',
+                hard: true,
+                name: 'Hardcore mode',
+                text: `Checkpoints and saves are removed.`,
             }],
     }, {
         section: 'Tweaks',
@@ -476,6 +485,8 @@ export class FlagSet {
     saharaRabbitsRequireTelepathy() { return this.check('Rr'); }
     teleportOnThunderSword() { return this.check('Rt'); }
     orbsOptional() { return this.check('Ro'); }
+    randomizeTrades() { return this.check('Wt'); }
+    unidentifiedItems() { return this.check('Wu'); }
     randomizeWalls() { return this.check('Ww'); }
     guaranteeSword() { return this.check('Es'); }
     guaranteeSwordMagic() { return !this.check('Hw'); }
@@ -499,6 +510,7 @@ export class FlagSet {
     allowWildWarp() { return !this.nerfWildWarp(); }
     randomizeWildWarp() { return this.check('Tw'); }
     blackoutMode() { return this.check('Hz'); }
+    hardcoreMode() { return this.check('Hh'); }
     buffDyna() { return this.check('Hd'); }
     expScalingFactor() {
         return this.check('Hx') ? 0.25 : this.check('Ex') ? 2.5 : 1;

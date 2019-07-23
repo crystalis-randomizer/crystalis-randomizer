@@ -1,6 +1,6 @@
 export const STATUS = 'unstable';
 export const VERSION = 'latest';
-export const LABEL = 'latest bb3b935';
-export const HASH = 'bb3b9352b5b4931eee326355da78b4addb70f304';
-export const DATE = new Date(1563854659000);
+export const LABEL = 'latest bc12e51';
+export const HASH = 'bc12e51b9067aeb2f1afa7b73d20c62b6041d8a9';
+export const DATE = new Date(1563879834000);
 //# sourceMappingURL=version.js.map

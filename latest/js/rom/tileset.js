@@ -36,22 +36,42 @@ export class Tileset extends Entity {
         return this.rom.tileEffects[index];
     }
 }
-function paletteTypes(tileset, location) {
+const NONE = 0;
+const TRIM = 1;
+const MAIN = 2;
+export function paletteTypes(tileset, location) {
     switch (location) {
+        case 0x1a:
+            return [MAIN, MAIN, TRIM, (p0, p1, p2) => p0[3] === p1[3] && p1[3] === p2[3]];
+        case 0x43:
+            return [MAIN, TRIM, TRIM];
         case 0x57:
-            return ['main', '', 'out'];
+            return [MAIN, NONE, NONE];
+        case 0x60:
+            return [MAIN, MAIN, MAIN, (p0, _p1, p2) => p0[2] === p2[2]];
         case 0x64:
         case 0x68:
-            return ['main', '', 'out'];
+            return [MAIN, NONE, TRIM];
+        case 0x7c:
+            return [MAIN, TRIM, TRIM];
     }
     switch (tileset) {
-        case 0x80: return ['main', 'out', 'trim'];
-        case 0x84: return ['main', 'main', 'trim'];
+        case 0x80:
+        case 0x84:
+            return [MAIN, MAIN, TRIM, (p0, p1) => p0[3] === p1[3]];
         case 0x88:
-            return ['main', 'trim', ''];
-        case 0x8c: return ['main', 'trim', 'accept???'];
+            return [MAIN, TRIM, NONE];
+        case 0x8c: return [MAIN, TRIM, MAIN];
+        case 0x90: return [MAIN, MAIN, MAIN];
+        case 0x94: return [MAIN, TRIM, TRIM, (p0, p1) => p0[3] === p1[3]];
+        case 0x98: return [TRIM, TRIM, TRIM];
+        case 0x9c: return [MAIN, TRIM, MAIN];
+        case 0xa0: return [TRIM, TRIM, TRIM];
+        case 0xa4: return [MAIN, MAIN, TRIM];
+        case 0xa8: return [MAIN, MAIN, TRIM];
+        case 0xac: return [MAIN, TRIM, MAIN];
     }
-    return ['', '', ''];
+    throw new Error(`unxpected: ${tileset}`);
 }
 const ALLOWED_PALETTES = new Map([
     ['path', [...r(0x00, 0x12), ...r(0x15, 0x1b), ...r(0x1e, 0x25),
@@ -86,5 +106,5 @@ const TERRAIN_BY_PALETTE = new Map([
 function r(a, b) {
     return new Array(b - a).fill(0).map((_x, i) => i + a);
 }
-const [] = [TERRAIN_BY_PALETTE, ALLOWED_PALETTES, paletteTypes];
+const [] = [TERRAIN_BY_PALETTE, ALLOWED_PALETTES];
 //# sourceMappingURL=tileset.js.map

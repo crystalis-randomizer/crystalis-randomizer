@@ -5,6 +5,7 @@ import { FetchReader } from './fetchreader.js';
 import { FlagSet } from './flagset.js';
 import { AssumedFill } from './graph/shuffle.js';
 import { World } from './graph/world.js';
+import { fixDialog } from './pass/fixdialog.js';
 import { shufflePalettes } from './pass/shufflepalettes.js';
 import { unidentifiedItems } from './pass/unidentifieditems.js';
 import { Random } from './random.js';
@@ -84,6 +85,7 @@ export async function shuffle(rom, seed, flags, reader, log, progress) {
         _SAHARA_RABBITS_REQUIRE_TELEPATHY: flags.saharaRabbitsRequireTelepathy(),
         _SIMPLIFY_INVISIBLE_CHESTS: true,
         _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
+        _UNIDENTIFIED_ITEMS: flags.unidentifiedItems(),
     };
     const asm = new Assembler();
     async function assemble(path) {
@@ -174,6 +176,7 @@ export async function shuffle(rom, seed, flags, reader, log, progress) {
     shufflePalettes(parsed, flags, random);
     unidentifiedItems(parsed, flags, random);
     misc(parsed, flags, random);
+    fixDialog(parsed);
     if (flags.buffDyna())
         buffDyna(parsed, flags);
     await parsed.writeData();

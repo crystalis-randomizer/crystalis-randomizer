@@ -64,6 +64,12 @@ define PITY_HP_AMOUNT     5
 define SHOP_COUNT         11
 define SCALING_LEVELS     48
 
+.ifdef _UNIDENTIFIED_ITEMS
+define SORT_START_ROW     3
+.else
+define SORT_START_ROW     2
+.endif
+
 ;;; Constants
 define ITEM_RABBIT_BOOTS     $12
 define ITEM_OPEL_STATUE      $26
@@ -488,10 +494,11 @@ InvItemData:
 ;; swords from clobbering one another.  We swap the second and fourth
 ;; items from the table of row starts so that when we start at two instead
 ;; of zero, we end up skipping exactly the first and fourth rows.
-.org $205a7
-  .byte $0c
-.org $205a9
-  .byte $04
+;; We change the sort order more generally so that we can prevent sorting
+;; the key item row as well if unidentified items is set.
+.org $2059e
+  .byte $04,$04,$08,$08,$08,$08,$04,$04
+  .byte $00,$0c,$20,$10,$18,$28,$04,$08
 
 
 .org $21471 ; unused space, 130 or so bytes
@@ -533,10 +540,30 @@ MaybeDrop:  ; 21486
   sta $64b8,x
   rts
 FillQuestItemsFromBuffer: ; 214af
+  ;; First fill in any gaps in the quest item row
+  ;; Note: we're very short space, but we need to increment x and y.
+  ;; Start them at -9 (due to preincr) and -8 so that they end at zero.
+  ldx #$f8
+  ldy #$f7
+-  iny
+   beq +
+   lda $6358,y ; NOTE: $6450..$6457
+    bmi - ; nothing in y so loop
+   sta $6358,x
+   inx
+   beq ++
+  bne - ; uncond
++ lda #$ff
+-  sta $6358,x
+   inx
+  bne -
+  ;; Now check the overflow buffer...
+
   ;; If there's anything in the buffer and any space in the inventory,
   ;; fill them in.  Just take the most recently added ones, not worrying
   ;; about cycling the queue (that's only needed for dropping).
-  ldy #$08     ; predecrement, so start at $64c0
+++:
+  ldy #$08     ; predecrement, so start at $64c0 even tho last item at $64bf
 -  dey
    bmi +       ; buffer is full
    lda $64b8,y
@@ -561,7 +588,7 @@ FillQuestItemsFromBuffer: ; 214af
   bne -
   ;; The following is copied from $20534, patched to not sort
   ;; the swords or powerups (so it loads 2 instead of 0)
-+ lda #$02
++ lda #SORT_START_ROW
   sta $2e
   rts
 
@@ -570,7 +597,7 @@ ReloadInventoryAfterLoad:
   jsr PostInventoryMenu
   jmp AfterLoadGame
 
-        ;; FREE: 29 bytes
+        ;; FREE: 3 bytes?
 .assert < $21500
 
 

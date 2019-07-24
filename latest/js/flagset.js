@@ -83,6 +83,12 @@ export const FLAGS = [{
     }, {
         section: 'World',
         flags: [{
+                flag: 'Wu',
+                hard: true,
+                name: 'Unidentified key items',
+                text: `Item names will be generic and effects will be shuffled.  This
+           includes keys, flutes, lamps, and statues.`,
+            }, {
                 flag: 'Ww',
                 name: 'Randomize elements to break walls',
                 text: `Walls will require a randomized element to break.  Normal rock and

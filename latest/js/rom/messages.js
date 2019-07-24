@@ -133,7 +133,7 @@ class Message {
             space = true;
         }
         function newline() {
-            lineLen = 1;
+            lineLen = 1 + word.reduce((a, b) => a + b.length, 0);
             if (++lineNum > 3) {
                 parts.push('#\n ');
                 lineNum = 0;

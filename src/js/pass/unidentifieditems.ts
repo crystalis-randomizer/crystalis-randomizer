@@ -31,13 +31,15 @@ const LAMP_NAMES = [
   'Empty Lamp',
 ];
 const STATUE_NAMES = [
-  'Black Statue',
+  'Rusty Statue',
   'Forbidden Statue',
   'Golden Idol',
   'Strange Statue',
   'Glass Statue',
   'Burt Figurine',
-  'Statue of Mattrick',
+  'Mado Figurine',
+  'Sabera Figurine',
+  'Mattrick Figurine',
   'Copper Statue',
   'White Statue',
   'Unknown Statue',
@@ -45,13 +47,23 @@ const STATUE_NAMES = [
 
 
 export function unidentifiedItems(rom: Rom, flags: FlagSet, random: Random) {
+  if (!flags.unidentifiedItems()) return;
   const items = (...ids: number[]) => ids.map(id => rom.items[id]);
   const keys = items(0x32, 0x33, 0x34);
   const flutes = items(0x27, 0x28, 0x31, 0x36);
   const lamps = items(0x35, 0x39);
-  const statues = items(0x25, 0x26, 0x38, 0x3a, 0x3d);
+  const statues = items(0x25, /* opel 0x26, */ 0x38, 0x3a, 0x3d);
 
-  // TODO ???
-  const [] = [keys, flutes, lamps, statues];
+  for (const [list, [...names]] of [[keys, KEY_NAMES],
+                                    [flutes, FLUTE_NAMES],
+                                    [lamps, LAMP_NAMES],
+                                    [statues, STATUE_NAMES]] as const) {
+    // palettes are :03 bit of item.itemDataValue
+    random.shuffle(names);
+    const palettes = random.shuffle([0, 1, 2, 3]);
+    for (const item of list) {
+      item.menuName = item.messageName = names.pop()!;
+      item.palette = palettes.pop()!;
+    }
+  }
 }
-const [] = [KEY_NAMES, FLUTE_NAMES, LAMP_NAMES, STATUE_NAMES];

@@ -126,15 +126,14 @@ export const FLAGS: FlagSection[] = [{
   //   text: `Items expected by various NPCs will be shuffled: specifically,
   //          Statue of Onyx, Kirisa Plant, Love Pendant, Ivory Statue, Fog
   //          Lamp, and Flute of Lime (for Akahana).  Rage will expect a
-  //          random sword.`,
+  //          random sword, and Tornel will expect a random bracelet.`,
   // }, {
-  //   flag: 'Wu',
-  //   hard: true,
-  //   name: 'Unidentified key items',
-  //   text: `Item names will be generic and effects will be shuffled.  This
-  //          includes keys, flutes, lamps, and statues.`,
-  //   // TODO - turn off sorting for this row, only consolidate gaps.
-  // }, {
+    flag: 'Wu',
+    hard: true,
+    name: 'Unidentified key items',
+    text: `Item names will be generic and effects will be shuffled.  This
+           includes keys, flutes, lamps, and statues.`,
+  }, {
     flag: 'Ww',
     name: 'Randomize elements to break walls',
     text: `Walls will require a randomized element to break.  Normal rock and

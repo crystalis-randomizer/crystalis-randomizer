@@ -7,6 +7,7 @@ import {FetchReader} from './fetchreader.js';
 import {FlagSet} from './flagset.js';
 import {AssumedFill} from './graph/shuffle.js';
 import {World} from './graph/world.js';
+import {fixDialog} from './pass/fixdialog.js';
 import {shufflePalettes} from './pass/shufflepalettes.js';
 import {unidentifiedItems} from './pass/unidentifieditems.js';
 import {Random} from './random.js';
@@ -115,6 +116,7 @@ export async function shuffle(rom: Uint8Array,
     _SAHARA_RABBITS_REQUIRE_TELEPATHY: flags.saharaRabbitsRequireTelepathy(),
     _SIMPLIFY_INVISIBLE_CHESTS: true,
     _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
+    _UNIDENTIFIED_ITEMS: flags.unidentifiedItems(),
   };
 
   const asm = new Assembler();
@@ -244,6 +246,7 @@ export async function shuffle(rom: Uint8Array,
   unidentifiedItems(parsed, flags, random);
 
   misc(parsed, flags, random);
+  fixDialog(parsed);
 
   // NOTE: This needs to happen BEFORE postshuffle
   if (flags.buffDyna()) buffDyna(parsed, flags); // TODO - conditional

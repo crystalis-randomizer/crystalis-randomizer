@@ -7,6 +7,7 @@ import { AssumedFill } from './graph/shuffle.js';
 import { World } from './graph/world.js';
 import { fixDialog } from './pass/fixdialog.js';
 import { shufflePalettes } from './pass/shufflepalettes.js';
+import { shuffleTrades } from './pass/shuffletrades.js';
 import { unidentifiedItems } from './pass/unidentifieditems.js';
 import { Random } from './random.js';
 import { Rom } from './rom.js';
@@ -142,6 +143,7 @@ export async function shuffle(rom, seed, flags, reader, log, progress) {
     if (flags.randomizeWildWarp())
         shuffleWildWarp(parsed, flags, random);
     rescaleMonsters(parsed, flags, random);
+    shuffleTrades(parsed, flags, random);
     const w = World.build(parsed, flags);
     const fill = await new AssumedFill(parsed, flags).shuffle(w.graph, random, progress);
     if (fill) {

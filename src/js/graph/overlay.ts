@@ -144,8 +144,8 @@ export class Overlay {
   bossRequirements(boss: RomBoss): Requirement {
     // TODO - handle boss shuffle somehow?
     if (boss === this.rom.bosses.rage) {
-      // TODO - allow shuffling this item?
-      return Item.SWORD_OF_WATER;
+      // return Item.SWORD_OF_WATER;
+      return Condition(this.rom.npcs[0xc3].localDialogs.get(-1)![0].condition);
     }
     const id = boss.object;
     const out = new MutableRequirement();

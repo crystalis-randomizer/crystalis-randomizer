@@ -3,6 +3,7 @@ const closure = require('google-closure-compiler').gulp();
 
 const COMMON = [
   '6502.js',
+  'assert.js',
   'bits.js',
   'bits_array.js',
   'bits_base.js',

@@ -10,6 +10,7 @@ const patch = require('./patch.js');
 const {UsageError, breakLines} = require('./util.js');
 const {NodeReader} = require('./nodereader.js');
 const version = require('./version.js');
+const {disableAsserts} = require('./assert.js');
 
 // Usage: node cli.js [--flags=<FLAGS>] [--seed=<SEED>] rom.nes
 
@@ -82,6 +83,7 @@ const main = (...args) => {
       count = Number(value);
     } else if (arg == 'force') {
       force = true;
+      disableAsserts();
       if (value != null) args.unshift(value);
     } else if (arg == 'help') {
       usage(0);

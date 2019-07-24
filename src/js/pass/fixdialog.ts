@@ -2,6 +2,8 @@ import {Rom} from '../rom.js';
 import {Item} from '../rom/item.js';
 import {Npc} from '../rom/npc.js';
 import {hex} from '../rom/util.js';
+import {buildTradeInMap} from './shuffletrades.js';
+import {fail} from '../assert.js';
 
 /** Finds references to given items and replaces it with the actual items. */
 export function fixDialog(rom: Rom) {
@@ -12,7 +14,13 @@ export function fixDialog(rom: Rom) {
   if (zebu.data[0] < 0x41) unmagic('00:1b');
   replaceMessage('00:1b', '[41:Refresh]', item(zebu.data[0]));
 
+  const akahanaTradeIn = tradeIns.get(0x82);
+  if (akahanaTradeIn) {
+    replaceMessage('02:01', 'an unusual statue', vague(akahanaTradeIn));
+  }
+
   const gasMaskSlot = rom.prg[0x3d7fe];
+  replaceMessage('02:02', 'a statue', `the ${commonNoun(gasMaskSlot)}`);
   replaceMessage('02:02', '[29:Gas Mask]', item(gasMaskSlot));
 
   const telepathySlot = rom.prg[0x367f4];
@@ -70,6 +78,7 @@ export function fixDialog(rom: Rom) {
   const aryllisTradeIn = tradeIns.get(0x23);
   if (aryllisTradeIn != null) {
     replaceMessage('12:05', '[3c:Kirisa Plant]', item(aryllisTradeIn));
+    replaceMessage('12:10', 'the plant', `the ${commonNoun(aryllisTradeIn)}`);
     replaceMessage('12:10', '[3c:Kirisa Plant]', item(aryllisTradeIn));
     // TODO - refs in 12:09 and 12:0a have location, too.
     replaceMessage('12:09', /s*\n.*/, '.');
@@ -148,16 +157,30 @@ function findTornelTradeIn(tornel: Npc): number {
   return 0x06; // default to tornado bracelet.
 }
 
-/** Builds a map from NPC id to wanted item id. */
-function buildTradeInMap(rom: Rom): Map<number, number> {
-  const map = new Map();
-  for (const item of rom.items) {
-    if (!item.tradeIn) continue;
-    for (let i = 0; i < item.tradeIn.length; i += 6) {
-      map.set(item.tradeIn[i], item.id);
-    }
+function vague(id: number): string {
+  switch (id) {
+    case 0x25: return 'an unusual statue';
+    case 0x28: return 'a rare instrument';
+    case 0x35: return 'a brilliant lamp';
+    case 0x3b: return 'a beautiful charm';
+    case 0x3c: return 'a fragrant plant';
+    case 0x3d: return 'an exotic statue';
   }
-  return map;
+  fail();
+  return 'a valuable item';
+}
+
+function commonNoun(id: number): string {
+  switch (id) {
+    case 0x25: return 'statue';
+    case 0x28: return 'instrument';
+    case 0x35: return 'lamp';
+    case 0x3b: return 'pendant';
+    case 0x3c: return 'plant';
+    case 0x3d: return 'statue';
+  }
+  fail();
+  return 'item';
 }
 
 // function replaceDialog(npc: Npc, orig: number | RegExp, replacementId: number) {

@@ -17,10 +17,10 @@ export function fixDialog(rom: Rom) {
   const akahanaTradeIn = tradeIns.get(0x82);
   if (akahanaTradeIn) {
     replaceMessage('02:01', 'an unusual statue', vague(akahanaTradeIn));
+    replaceMessage('02:02', 'a statue', `the ${commonNoun(akahanaTradeIn)}`);
   }
 
   const gasMaskSlot = rom.prg[0x3d7fe];
-  replaceMessage('02:02', 'a statue', `the ${commonNoun(gasMaskSlot)}`);
   replaceMessage('02:02', '[29:Gas Mask]', item(gasMaskSlot));
 
   const telepathySlot = rom.prg[0x367f4];

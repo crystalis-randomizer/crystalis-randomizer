@@ -85,6 +85,8 @@ export async function shuffle(rom: Uint8Array,
   const touchShops = true;
 
   const defines: {[name: string]: boolean} = {
+    _ALLOW_TELEPORT_OUT_OF_BOSS: flags.hardcoreMode() &&
+                                 flags.shuffleBossElements(),
     _ALLOW_TELEPORT_OUT_OF_TOWER: true,
     _AUTO_EQUIP_BRACELET: flags.autoEquipBracelet(),
     _BARRIER_REQUIRES_CALM_SEA: flags.barrierRequiresCalmSea(),

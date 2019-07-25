@@ -38,6 +38,7 @@ export function fixDialog(rom: Rom) {
     replaceMessage('09:01', '[35:Fog Lamp]', item(fogLampTradeIn));
     replaceMessage('09:04', '[35:Fog Lamp]', item(fogLampTradeIn));
     replaceMessage('09:05', '[35:Fog Lamp]', item(fogLampTradeIn));
+    replaceMessage('09:06', 'lamp', commonNoun(fogLampTradeIn));
   }
 
   const queen = rom.npcs[0x38];
@@ -81,8 +82,11 @@ export function fixDialog(rom: Rom) {
     replaceMessage('12:10', 'the plant', `the ${commonNoun(aryllisTradeIn)}`);
     replaceMessage('12:10', '[3c:Kirisa Plant]', item(aryllisTradeIn));
     // TODO - refs in 12:09 and 12:0a have location, too.
-    replaceMessage('12:09', /s*\n.*/, '.');
-    replaceMessage('12:0a', /s*\n.*/, '.');
+    // replaceMessage('12:09', /\s*\n.*/, '.');
+    // replaceMessage('12:0a', /\s*\n.*/, '.');
+    const clue = `Our illustrious chief seeks ${vague(aryllisTradeIn)}.`;
+    replaceMessage('12:09', /[^]*/, clue);
+    replaceMessage('12:0a', /[^]*/, clue);
   }
 
   const lovePendantTradeIn = tradeIns.get(0x74);
@@ -108,6 +112,8 @@ export function fixDialog(rom: Rom) {
   const paralysisSlot = rom.prg[0x3d655];
   if (paralysisSlot < 0x41) unmagic('1c:10');
   replaceMessage('1c:10', '[42:Paralysis]', item(paralysisSlot));
+
+  replaceMessage('20:06', 'Statue of Gold', item(0x3a));
 
   // TODO - consider warping on a random sword? - message 1c:11
 

@@ -18,15 +18,15 @@ export function shuffleTrades(rom: Rom, flags: FlagSet, random: Random) {
   const npcs = [];
   for (const [item, offset] of items) {
     if (!item.tradeIn) throw new Error(`Expected trade-in for ${item.id}`);
-    // save expected NPC, along with message id
-    npcs.push(item.tradeIn.slice(offset, offset + 4));
+    // save expected NPC, along with message id and flag
+    npcs.push(item.tradeIn.slice(offset, offset + 6));
   }
 
   random.shuffle(npcs);
 
   for (const [item, offset] of items) {
     const npc = npcs.pop()!;
-    item.tradeIn!.splice(offset, 4, ...npc);
+    item.tradeIn!.splice(offset, 6, ...npc);
     if (npc[0] === 0x23) { // aryllis item requires being a girl
       rom.prg[0x3d4b5] = item.id - 0x1c;
     }

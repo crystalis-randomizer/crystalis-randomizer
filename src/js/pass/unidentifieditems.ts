@@ -14,7 +14,7 @@ const KEY_NAMES = [
 ];
 const FLUTE_NAMES = [
   'Wooden Flute',
-  'Tooled Horn',
+  'Horn of Plenty',
   'Ocarina',
   'Pan Pipes',
   'Bugle',
@@ -22,13 +22,15 @@ const FLUTE_NAMES = [
   'Kazoo',
   'Magic Whistle',
   'Dog Whistle',
+  'Recorder',
 ];
 const LAMP_NAMES = [
   'Bronze Lamp',
   'Magic Lamp',
   'Dull Lamp',
   'Shimmering Lamp',
-  'Empty Lamp',
+  'Oil Lamp',
+  'Broken Lamp',
 ];
 const STATUE_NAMES = [
   'Rusty Statue',
@@ -37,12 +39,17 @@ const STATUE_NAMES = [
   'Strange Statue',
   'Glass Statue',
   'Burt Figurine',
+  'Draygon Figurine',
+  'Karmine Figurine',
   'Mado Figurine',
   'Sabera Figurine',
-  'Mattrick Figurine',
+  'Kelbesque Figurine',
   'Copper Statue',
   'White Statue',
-  'Unknown Statue',
+  'Invisible Statue',
+  'Mattrick Figurine',
+  'Dragondarch Statue',
+  'Overswarm Statue',
 ];
 
 

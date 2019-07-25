@@ -54,6 +54,8 @@ export async function shuffle(rom, seed, flags, reader, log, progress) {
     const newSeed = crc32(seed.toString(16).padStart(8, '0') + String(flags)) >>> 0;
     const touchShops = true;
     const defines = {
+        _ALLOW_TELEPORT_OUT_OF_BOSS: flags.hardcoreMode() &&
+            flags.shuffleBossElements(),
         _ALLOW_TELEPORT_OUT_OF_TOWER: true,
         _AUTO_EQUIP_BRACELET: flags.autoEquipBracelet(),
         _BARRIER_REQUIRES_CALM_SEA: flags.barrierRequiresCalmSea(),

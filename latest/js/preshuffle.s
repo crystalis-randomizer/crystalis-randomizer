@@ -1141,6 +1141,12 @@ SetEquippedConsumableItem:
 .endif
 
 
+.ifdef _ALLOW_TELEPORT_OUT_OF_BOSS
+.org $3db31
+  .byte $00   ; don't jump
+.endif
+
+
 .ifdef _SIMPLIFY_INVISIBLE_CHESTS
 ;;; We co-opt the unused npcdata[2]:20 bit to signify invisible chests
 .org $3e39f

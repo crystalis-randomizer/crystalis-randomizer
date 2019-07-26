@@ -1753,16 +1753,17 @@ class MonsterPool {
       throw new Error(
           `Unexpected property '${u}' in MONSTER_ADJUSTMENTS[${location.id}]`);
     }
-    if (skip === true ||
-        (!this.flags.shuffleTowerMonsters() && tower) ||
-        !location.spritePatterns ||
-        !location.spritePalettes) return;
+    const skipMonsters =
+        (skip === true ||
+            (!this.flags.shuffleTowerMonsters() && tower) ||
+            !location.spritePatterns ||
+            !location.spritePalettes);
     const monsters = [];
-    const slots = [];
+    let slots = [];
     // const constraints = {};
     // let treasureChest = false;
     let slot = 0x0c;
-    for (const spawn of location.spawns) {
+    for (const spawn of skipMonsters ? [] : location.spawns) {
       ++slot;
       if (!spawn.used || !spawn.isMonster()) continue;
       const id = spawn.monsterId;
@@ -1780,8 +1781,8 @@ class MonsterPool {
           .push('$' + location.id.toString(16));
       slots.push(slot);
     }
-    if (!monsters.length) return;
-    if (!skip) this.locations.push({location, slots});
+    if (!monsters.length || skip) slots = [];
+    this.locations.push({location, slots});
     this.monsters.push(...monsters);
   }
 
@@ -1935,10 +1936,7 @@ class MonsterPool {
           i--;
         }
       }
-      [location.spritePatterns[0],
-       location.spritePatterns[1],
-       location.spritePalettes[0],
-       location.spritePalettes[1]] = constraint.fix(random);
+      constraint.fix(location, random);
 
       if (slots.length) {
         console.error/*report.push*/(`Failed to fill location ${location.id.toString(16)}: ${slots.length} remaining`);

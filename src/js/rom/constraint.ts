@@ -227,9 +227,13 @@ export class Constraint {
     // return new Constraint(pat0, pat1, patX, patY, pal2, pal3, shiftable);
   }
 
-  fix(random?: Random): [number, number, number, number] {
+  fix(location: Location, random?: Random) {
     // Concretizes the "float" elements.
-    const nextInt: (x: number) => number = random ? (x) => random.nextInt(x) : () => 0;
+    const nextInt: (x: number) => number =
+        random ? (x) => random.nextInt(x) : () => 0;
+    const pick: <T>(x: Iterable<T>) => T =
+        random ? (xs) => random.pick([...xs]) :
+                 (xs) => xs[Symbol.iterator]().next().value;
     const fixed = [...this.fixed];
     if (this.float.length) {
       // TODO - if float.length === 1 then one fixed bank might be better than the
@@ -241,11 +245,10 @@ export class Constraint {
       if (x0 < this.float.length) fixed[0] = CSet.intersect(fixed[0], this.float[x0]);
       if (x1 < this.float.length) fixed[1] = CSet.intersect(fixed[1], this.float[x1]);
     }
-    return fixed.map(s => {
-      if (s === ALL) return 0xff;
-      const elems = [...s];
-      return elems[nextInt(elems.length)];
-    }) as [number, number, number, number];
+    if (fixed[0] !== ALL) location.spritePatterns[0] = pick([...fixed[0]]);
+    if (fixed[1] !== ALL) location.spritePatterns[1] = pick([...fixed[1]]);
+    if (fixed[2] !== ALL) location.spritePalettes[0] = pick([...fixed[2]]);
+    if (fixed[3] !== ALL) location.spritePalettes[1] = pick([...fixed[3]]);
   }
 
   meet(that: Constraint): Constraint | undefined {

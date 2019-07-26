@@ -22,7 +22,7 @@ export class TileEffects extends Entity {
     }
   }
 
-  // Bits:
+  // Bits: e.g. mountain is 6, river is 2, plain is 0
   static PIT = 0x01;
   static NO_WALK = 0x02; // but maybe still can fly?
   static IMPASSIBLE = 0x04; // neither walking or flying

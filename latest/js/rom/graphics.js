@@ -73,6 +73,8 @@ export class Graphics {
         }
     }
     configure(location, spawn) {
+        if (!spawn.used)
+            return;
         const c = spawn.isMonster() ? this.monsterConstraints.get(spawn.monsterId) :
             spawn.isNpc() ? this.npcConstraints.get(spawn.id) :
                 spawn.isChest() ? (spawn.id < 0x70 ? Constraint.TREASURE_CHEST :

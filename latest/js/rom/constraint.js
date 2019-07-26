@@ -150,8 +150,10 @@ export class Constraint {
         const float = seq(this.float.length, i => CSet.union(this.float[i], that.float[i]));
         return new Constraint(fixed, float, this.shift | that.shift);
     }
-    fix(random) {
+    fix(location, random) {
         const nextInt = random ? (x) => random.nextInt(x) : () => 0;
+        const pick = random ? (xs) => random.pick([...xs]) :
+            (xs) => xs[Symbol.iterator]().next().value;
         const fixed = [...this.fixed];
         if (this.float.length) {
             const x0 = nextInt(2);
@@ -161,12 +163,14 @@ export class Constraint {
             if (x1 < this.float.length)
                 fixed[1] = CSet.intersect(fixed[1], this.float[x1]);
         }
-        return fixed.map(s => {
-            if (s === ALL)
-                return 0xff;
-            const elems = [...s];
-            return elems[nextInt(elems.length)];
-        });
+        if (fixed[0] !== ALL)
+            location.spritePatterns[0] = pick([...fixed[0]]);
+        if (fixed[1] !== ALL)
+            location.spritePatterns[1] = pick([...fixed[1]]);
+        if (fixed[2] !== ALL)
+            location.spritePalettes[0] = pick([...fixed[2]]);
+        if (fixed[3] !== ALL)
+            location.spritePalettes[1] = pick([...fixed[3]]);
     }
     meet(that) {
         const fixed = [];

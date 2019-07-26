@@ -1,4 +1,5 @@
 import { Assembler } from './6502.js';
+import { assert } from './assert.js';
 import { crc32 } from './crc32.js';
 import { generate as generateDepgraph } from './depgraph.js';
 import { FetchReader } from './fetchreader.js';
@@ -945,7 +946,7 @@ function rescaleMonsters(rom, flags, random) {
     }
     if (flags.shuffleMonsterElements()) {
         const e = random.nextInt(4);
-        rom.prg[0x2522d] = e + 1;
+        rom.prg[0x3522d] = e + 1;
         for (const id of SLIMES) {
             rom.objects[id].elements = 1 << e;
         }
@@ -1112,15 +1113,14 @@ class MonsterPool {
         for (const u of Object.keys(unexpected)) {
             throw new Error(`Unexpected property '${u}' in MONSTER_ADJUSTMENTS[${location.id}]`);
         }
-        if (skip === true ||
+        const skipMonsters = (skip === true ||
             (!this.flags.shuffleTowerMonsters() && tower) ||
             !location.spritePatterns ||
-            !location.spritePalettes)
-            return;
+            !location.spritePalettes);
         const monsters = [];
-        const slots = [];
+        let slots = [];
         let slot = 0x0c;
-        for (const spawn of location.spawns) {
+        for (const spawn of skipMonsters ? [] : location.spawns) {
             ++slot;
             if (!spawn.used || !spawn.isMonster())
                 continue;
@@ -1141,10 +1141,9 @@ class MonsterPool {
                 .push('$' + location.id.toString(16));
             slots.push(slot);
         }
-        if (!monsters.length)
-            return;
-        if (!skip)
-            this.locations.push({ location, slots });
+        if (!monsters.length || skip)
+            slots = [];
+        this.locations.push({ location, slots });
         this.monsters.push(...monsters);
     }
     shuffle(random, graphics) {
@@ -1188,6 +1187,9 @@ class MonsterPool {
             report.push(`Initial pass: ${constraint.fixed.map(s => s.size < Infinity ? '[' + [...s].join(', ') + ']' : 'all')}`);
             const classes = new Map();
             const tryAddMonster = (m) => {
+                assert(slots.length);
+                if (!slots.length)
+                    return false;
                 const monster = location.rom.objects[m.id];
                 if (monster.monsterClass) {
                     const representative = classes.get(monster.monsterClass);
@@ -1271,10 +1273,7 @@ class MonsterPool {
                     i--;
                 }
             }
-            [location.spritePatterns[0],
-                location.spritePatterns[1],
-                location.spritePalettes[0],
-                location.spritePalettes[1]] = constraint.fix(random);
+            constraint.fix(location, random);
             if (slots.length) {
                 console.error(`Failed to fill location ${location.id.toString(16)}: ${slots.length} remaining`);
                 for (const slot of slots) {

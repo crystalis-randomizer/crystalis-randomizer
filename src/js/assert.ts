@@ -4,7 +4,7 @@ export function disableAsserts() {
   assertionsEnabled = false;
 }
 
-export function assert(x: boolean) {
+export function assert(x: any) {
   if (assertionsEnabled && !x) throw new Error('impossible');
 }
 

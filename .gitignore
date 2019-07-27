@@ -1,7 +1,12 @@
 .DS_Store
 Crystalis.s
 *.nes
+deploy_key
+
+# testing
 cov.*
 test/testdata
-deploy_key
+
+# npm stuff
 npm_token
+node_modules

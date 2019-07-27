@@ -1,4 +1,5 @@
 import {Entity} from './entity.js';
+import {MapScreen} from './mapscreen.js';
 import {TileEffects} from './tileeffects.js';
 import {seq, tuple} from './util.js';
 import {Writer} from './writer.js';
@@ -15,6 +16,8 @@ export class Tileset extends Entity {
   attrs: number[];      // palette info
   alternates: number[]; // 32-element mapping for flag-based alternates
 
+  private lazyScreens?: readonly MapScreen[];
+
   constructor(rom: Rom, id: number) {
     // `id` is MapData[1][3], ranges from $80..$bc in increments of 4.
     super(rom, id);
@@ -25,6 +28,12 @@ export class Tileset extends Entity {
     this.tiles = seq(4, q => tuple(rom.prg, this.tileBase | q << 8 , 256));
     this.attrs = seq(256, i => rom.prg[this.attrBase | i >> 2] >> ((i & 3) << 1) & 3);
     this.alternates = tuple(rom.prg, this.alternatesBase, 32);
+  }
+
+  get screens(): readonly MapScreen[] {
+    if (this.lazyScreens) return this.lazyScreens;
+    return this.lazyScreens =
+        seq(256, i => new MapScreen(this.rom.screens[i], this));
   }
 
   write(writer: Writer) {

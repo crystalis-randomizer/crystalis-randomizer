@@ -1,5 +1,4 @@
 import {Assembler} from './6502.js';
-import {assert} from './assert.js';
 import {crc32} from './crc32.js';
 import {LogType, ProgressTracker,
         generate as generateDepgraph,

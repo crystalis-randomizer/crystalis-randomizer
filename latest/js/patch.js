@@ -1,5 +1,4 @@
 import { Assembler } from './6502.js';
-import { assert } from './assert.js';
 import { crc32 } from './crc32.js';
 import { generate as generateDepgraph } from './depgraph.js';
 import { FetchReader } from './fetchreader.js';
@@ -1187,9 +1186,6 @@ class MonsterPool {
             report.push(`Initial pass: ${constraint.fixed.map(s => s.size < Infinity ? '[' + [...s].join(', ') + ']' : 'all')}`);
             const classes = new Map();
             const tryAddMonster = (m) => {
-                assert(slots.length);
-                if (!slots.length)
-                    return false;
                 const monster = location.rom.objects[m.id];
                 if (monster.monsterClass) {
                     const representative = classes.get(monster.monsterClass);
@@ -1246,7 +1242,7 @@ class MonsterPool {
                 slots.splice(eligible, 1);
                 return true;
             };
-            if (flyers) {
+            if (flyers && slots.length) {
                 for (let i = 0; i < Math.min(40, this.monsters.length); i++) {
                     if (FLYERS.has(this.monsters[i].id)) {
                         if (tryAddMonster(this.monsters[i])) {

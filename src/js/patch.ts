@@ -1,5 +1,4 @@
 import {Assembler} from './6502.js';
-import {assert} from './assert.js';
 import {crc32} from './crc32.js';
 import {LogType, ProgressTracker,
         generate as generateDepgraph,
@@ -1829,8 +1828,6 @@ class MonsterPool {
 
       const classes = new Map<string, number>();
       const tryAddMonster = (m: MonsterConstraint) => {
-        assert(slots.length); // only happens in testing?
-        if (!slots.length) return false;
         const monster = location.rom.objects[m.id] as Monster;
         if (monster.monsterClass) {
           const representative = classes.get(monster.monsterClass);
@@ -1893,7 +1890,7 @@ class MonsterPool {
 
       // For each location.... try to fill up the slots
 
-      if (flyers) {
+      if (flyers && slots.length) {
         // look for an eligible flyer in the first 40.  If it's there, add it first.
         for (let i = 0; i < Math.min(40, this.monsters.length); i++) {
           if (FLYERS.has(this.monsters[i].id)) {

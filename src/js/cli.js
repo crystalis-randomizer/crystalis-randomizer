@@ -1,16 +1,17 @@
 #!/usr/bin/env node
 
 require = require('esm')(module);
+var path = require('path');
 
-const {EXPECTED_CRC32} = require('./rom.js');
-const {FlagSet, PRESETS} = require('./flagset.js');
-const {crc32} = require('./crc32.js');
+const { EXPECTED_CRC32 } = require('./rom.js');
+const { FlagSet, PRESETS } = require('./flagset.js');
+const { crc32 } = require('./crc32.js');
 const fs = require('fs');
 const patch = require('./patch.js');
-const {UsageError, breakLines} = require('./util.js');
-const {NodeReader} = require('./nodereader.js');
+const { UsageError, breakLines } = require('./util.js');
+const { NodeReader } = require('./nodereader.js');
 const version = require('./version.js');
-const {disableAsserts} = require('./assert.js');
+const { disableAsserts } = require('./assert.js');
 
 // Usage: node cli.js [--flags=<FLAGS>] [--seed=<SEED>] rom.nes
 
@@ -46,7 +47,7 @@ ${PRESETS.map(showPreset).join('\n\n')}`);
   process.exit(code);
 };
 
-const showPreset = ({title, flags, descr}) => {
+const showPreset = ({ title, flags, descr }) => {
   const LINE_LENGTH = 68;
   const flagLen = LINE_LENGTH - title.length - 6;
   const flagLines = breakLines(flags, flagLen);
@@ -92,7 +93,7 @@ const main = (...args) => {
       process.exit(0);
     } else if (arg == 'list-presets') {
       // undocumented flag
-      for (const {title} of PRESETS) {
+      for (const { title } of PRESETS) {
         console.log(title.replace(/ /g, ''));
       }
       process.exit(0);
@@ -111,7 +112,7 @@ const main = (...args) => {
   }
 
   const flagset = new FlagSet(flags);
-  const rom = new Uint8Array(fs.readFileSync(args[0]).buffer);
+  const rom = new Uint8Array(fs.readFileSync(path.join(__dirname, '..\\..', args[0])).buffer);
   if (crc32(rom) != EXPECTED_CRC32) {
     console.error(`WARNING: Bad CRC for input rom: ${crc32(rom).toString(16)}`);
     if (!force) fail('Run with --force to proceed anyway');
@@ -125,10 +126,10 @@ const main = (...args) => {
     const n = args[0].replace('.nes', '');
     const f = String(flagset).replace(/ /g, '');
     const v = patch.BUILD_HASH;
-    const filename = fillTemplate(output, {c, n, s, v, f, '%': '%'}) + '.nes';
+    const filename = fillTemplate(output, { c, n, s, v, f, '%': '%' }) + '.nes';
     await new Promise((resolve, reject) =>
-                      fs.writeFile(filename, shuffled,
-                                   (err) => err ? reject(err) : resolve()));
+      fs.writeFile(filename, shuffled,
+        (err) => err ? reject(err) : resolve()));
     console.log(`Wrote ${filename}`);
   }));
 };

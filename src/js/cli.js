@@ -112,7 +112,7 @@ const main = (...args) => {
   }
 
   const flagset = new FlagSet(flags);
-  const rom = new Uint8Array(fs.readFileSync(path.join(__dirname, '..\\..', args[0])).buffer);
+  const rom = new Uint8Array(fs.readFileSync(path.join(__dirname, '..\\..', (args[0]))).buffer);
   if (crc32(rom) != EXPECTED_CRC32) {
     console.error(`WARNING: Bad CRC for input rom: ${crc32(rom).toString(16)}`);
     if (!force) fail('Run with --force to proceed anyway');

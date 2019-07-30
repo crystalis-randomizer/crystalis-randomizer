@@ -44,6 +44,11 @@ export const PRESETS: Preset[] = [{
 
   descr: `Pulls out all the stops, may require superhuman feats.`,
   flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Rloprst Sckmt Tabmp Ww',
+}, {
+title: 'Mattrick',
+
+  descr: 'Not for the faint of heart. Good luck...',
+  flags: 'Fcprsw Gt Hbdghwx Mert Ps Rlopst Sckmt Tabmp Wtuw',
 }];
 
 // Just the flags, not the whole documentation.
@@ -140,7 +145,7 @@ export const FLAGS: FlagSection[] = [{
            ice walls will indicate the required element by the color (light
            grey or yellow for wind, blue for fire, bright orange ("embers") for
            water, or dark grey ("steel") for thunder.  The element to break
-           these wills is the same throughout an area.  Iron walls require a
+           these walls is the same throughout an area.  Iron walls require a
            one-off random element, with no visual cue, and two walls in the
            same area may have different requirements.`,
   }],
@@ -156,7 +161,7 @@ export const FLAGS: FlagSection[] = [{
   }, {
     flag: 'Me',
     name: 'Shuffle monster weaknesses',
-    text: `Monster elemental weaknesses are shuffled.`,
+    text: `Monster and Boss elemental weaknesses are shuffled.`,
   }, {
     flag: 'Mt',
     hard: true,
@@ -328,7 +333,7 @@ export const FLAGS: FlagSection[] = [{
     text: `Normally when acquiring the thunder sword, the player is instantly
            teleported to Shyron. This flag maintains that behavior regardless of
            where it is found (immediately activating the warp point; talking
-           to Asina will teleport back to the start, in case no other means of
+           to Asina will teleport back to the Shrine of Mezame, in case no other means of
            return is available).  Disabling this flag means that the Sword of
            Thunder will act like all other items and not teleport.`,
   }, {
@@ -353,10 +358,10 @@ export const FLAGS: FlagSection[] = [{
     flag: 'Rl',
     name: 'No "free lunch" magic',
     text: `Disables "free lunch" magics that only require stepping on a square to
-           learn (specifally Barrier and Paralysis).  Instead, Barrier requires
+           learn (specifically Barrier and Paralysis).  Instead, Barrier requires
            the seas to be calmed, and Paralysis requires the prison key (which
            can be used at the top of the slope in Waterfall Valley to open the
-           path in reverse).  Reverse vampire also requires the windmill to have
+           path in reverse).  Reverse Vampire cave also requires the windmill to have
            been started.`,
   }, {
     flag: 'Ro',

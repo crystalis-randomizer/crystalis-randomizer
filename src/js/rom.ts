@@ -165,6 +165,11 @@ export class Rom {
     return this.triggers[id & 0x7f];
   }
 
+  tileset(id: number): Tileset {
+    if (id < 0x80 || id > 0xac || id & 3) throw new Error(`Bad tileset id $${hex(id)}`);
+    return this.tilesets[(id & 0x7f) >>> 2];
+  }
+
   // TODO - cross-reference monsters/metasprites/metatiles/screens with patterns/palettes
   // get monsters(): ObjectData[] {
   //   const monsters = new Set<ObjectData>();

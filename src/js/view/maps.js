@@ -5,8 +5,10 @@
 
 import {View} from './view.js';
 import {Rom} from '../rom.js';
+import {Random} from '../random.js';
 import {ImageBuffer} from './imagebuffer.js';
 
+import {shuffleSwamp} from '../pass/shufflemazes.js';
 import {World} from '../graph/world.js';
 
 // TODO - move colors to view.js?
@@ -31,6 +33,7 @@ class MapsView extends View {
     super();
 
     this.rom = rom;
+
     this.location = -1;
     this.readHash();
     window.addEventListener('hashchange', () => this.readHash());
@@ -371,6 +374,7 @@ const run = async () => {
   }
   const rom = await Rom.load(patch);
   window.rom = rom;
+  window.shuffleSwamp = () => shuffleSwamp(rom, new Random(window.SEED || 2));
   window.World = World;
   window.world = new World(rom);
 

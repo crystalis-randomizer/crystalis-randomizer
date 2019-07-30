@@ -399,9 +399,7 @@ export const FLAGS: FlagSection[] = [{
     flag: 'Gt',
     name: 'Statue glitch may be required',
     text: `Progression may require glitching past guards without Change or Paralysis,
-           or people turned to stone without a Flute of Lime.  The logic ensures that 
-           using the Flute of Lime on the two statues will not break the game since
-           it can be used twice.`,
+           or people turned to stone without a Flute of Lime.`,
   }, {
     flag: 'Gw',
     hard: true,

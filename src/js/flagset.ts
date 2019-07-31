@@ -1,15 +1,15 @@
 import {debugModeFlags} from './flags/debug-mode';
 import {easyModeFlags} from './flags/easy-mode';
+import {Flag, FlagSection, Preset} from './flags/flag';
+import {getFlagForName} from './flags/getFlagForName';
 import {glitchFixFlags} from './flags/glitch-fixes';
 import {glitchFlags} from './flags/glitches';
 import {hardModeFlags} from './flags/hard-mode';
 import {itemFlags} from './flags/items';
-import {Flag, FlagSection, Preset} from './flags/model';
 import {monsterFlags} from './flags/monsters';
 import {routingFlags} from './flags/routing';
 import {shopFlags} from './flags/shops';
 import {tweakFlags} from './flags/tweaks';
-import {getFlagForName} from './flags/util';
 import {worldFlags} from './flags/world';
 import {UsageError} from './util.js';
 

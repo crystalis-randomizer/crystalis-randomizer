@@ -4,7 +4,7 @@ import {glitchFixFlags} from './glitch-fixes';
 import {glitchFlags} from './glitches';
 import {hardModeFlags} from './hard-mode';
 import {itemFlags} from './items';
-import {Flag} from './model';
+import {Flag} from './flag';
 import {monsterFlags} from './monsters';
 import {routingFlags} from './routing';
 import {shopFlags} from './shops';

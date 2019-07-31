@@ -1,4 +1,4 @@
-import {FlagSection} from './model';
+import {FlagSection} from './flag';
 
 export const glitchFixFlags: FlagSection = {
   section: 'Glitch Fixes',

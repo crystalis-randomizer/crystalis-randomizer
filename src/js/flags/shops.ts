@@ -1,4 +1,4 @@
-import {FlagSection} from './model';
+import {FlagSection} from './flag';
 
 export const shopFlags: FlagSection = {
   section: 'Shops',

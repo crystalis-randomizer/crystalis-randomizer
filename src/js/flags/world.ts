@@ -1,4 +1,4 @@
-import {FlagSection} from './model';
+import {FlagSection} from './flag';
 
 export const worldFlags: FlagSection = {
   section: 'World',

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<title>Crystalis Editor</title>
+<link rel="stylesheet" href="css/edit.css">
+<script type="module" src="js/edit/index.min.js"></script>
+
+<!-- TODO - top-level file menu, incl reload rom, etc -->
+<nav id="nav">
+  <ul>
+    <li><a href="javascript:" id="nav-screens">Screens</a>
+    <li><a href="javascript:" id="nav-palettes">Palettes</a>
+  </ul>
+</nav>
+<hr>
+<div>
+  <main id="main">
+    <section id="screen-editor"></section>
+    <!-- main editor content goes here -->
+  </main>
+  <footer id="foot">
+    <div class="tileset-palette"></div>
+    <!-- drag palettes or such might go here - palettes, metatiles, etc -->
+  </footer>
+</div>
+
+<dialog id="load-rom">
+</dialog>

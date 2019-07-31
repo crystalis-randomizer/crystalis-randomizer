@@ -250,13 +250,6 @@ export class Rom {
   //       5f - also normal, but medusa head is flyer?
   //       77 - soldiers, ice zombie
 
-  // Use the browser API to load the ROM.  Use #reset to forget and reload.
-  static async load(patch?: (data: Uint8Array) => Promise<void>) {
-    const file = await pickFile();
-    if (patch) await patch(file);
-    return new Rom(file);
-  }
-
 //   // Don't worry about other datas yet
 //   writeObjectData() {
 //     // build up a map from actual data to indexes that point to it
@@ -540,6 +533,14 @@ export class Rom {
     }
     // Done?!?
   }
+
+  // Use the browser API to load the ROM.  Use #reset to forget and reload.
+  static async load(patch?: (data: Uint8Array) => Promise<void>,
+                    receiver?: (picker: Element) => void) {
+    const file = await pickFile(receiver);
+    if (patch) await patch(file);
+    return new Rom(file);
+  }  
 }
 
 // const intersects = (left, right) => {
@@ -566,7 +567,8 @@ export class Rom {
 // };
 
 // Only makes sense in the browser.
-function pickFile(): Promise<Uint8Array> {
+function pickFile(receiver?: (picker: Element) => void): Promise<Uint8Array> {
+  if (!receiver) receiver = picker => document.body.appendChild(picker);
   return new Promise((resolve) => {
     if (window.location.hash !== '#reset') {
       const data = localStorage.getItem('rom');

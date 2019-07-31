@@ -84,5 +84,22 @@ gulp.task('tracker', function() {
       .pipe(gulp.dest('./dist'));
 });
 
+gulp.task('edit', function() {
+  return gulp.src(srcs(...COMMON, 'edit/*.js'),
+                  {base: './src/js/'})
+      .pipe(closure({
+        compilation_level: 'SIMPLE',
+        warning_level: 'VERBOSE',
+        language_in: 'ECMASCRIPT_2018',
+        language_out: 'ECMASCRIPT6_STRICT',
+        output_wrapper: '(function(){\nconst global=window;%output%\n}).call(this)',
+        js_output_file: 'edit.min.js',
+        module_resolution: 'WEBPACK',
+      }, {
+        platform: ['native', 'java', 'javascript'],
+      }))
+      .pipe(gulp.dest('./dist'));
+});
+
 // TODO - build the modified HTML files here, too?
 gulp.task('default', gulp.parallel('main', 'check', 'tracker'));

@@ -68,6 +68,7 @@ See URL `https://github.com/palantir/tslint'."
 (defun sdh-ts-init ()
   (flycheck-mode)
   (lsp)
+  (setq lsp-javascript-format-insert-space-after-opening-and-before-closing-nonempty-braces nil)
   (define-key typescript-mode-map (kbd "C-c C-e") 'flycheck-display-error-at-point)
   ;; Note: these default to 'typescript-insert-and-indent, which is annoying
   (define-key typescript-mode-map (kbd ",") 'self-insert-command)

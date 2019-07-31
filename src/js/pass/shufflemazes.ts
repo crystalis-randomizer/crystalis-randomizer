@@ -99,6 +99,7 @@ export function shuffleSwamp(rom: Rom, random: Random) {
     0x7a, // 1110 —v—
     0x77, // 1111 —|—
   ];
+
   const w = 5;
   const h = 5;
   const map = new Array(0x100).fill(0xf);
@@ -283,6 +284,30 @@ export function shuffleSwamp(rom: Rom, random: Random) {
   }
 }
 
+const SWAMP_SCREENS = {
+  0x1: `c8 c8 c8 c8 cf d3 c2 c3 c3 c3 d2 cc c8 c8 c8
+        c8 c8 c8 c8 cf d3 c4 c5 c3 b7 f6 cc c8 c8 c8
+        c8 c8 c8 c8 cf f6 b7 b8 c4 c5 f6 cc c8 c8 c8
+        c8 c8 c8 c8 cf d3 c2 c3 b7 b8 d2 cc c8 c8 c8
+        c8 c8 c8 c8 cf d3 b6 b6 b6 b6 d2 cc c8 c8 c8
+        c8 c8 c8 c8 cf d3 ad ad ad ad d2 cc c8 c8 c8
+        c8 c8 c8 c8 cf d3 ad b9 b7 b7 f6 cc c8 c8 c8
+        c8 c8 c8 c8 cf d3 ad b6 b9 b7 f6 e2 c8 c8 c8
+        c8 c8 c8 c8 e3 d3 ad ad b6 fc e2 c8 c8 c8 c8
+        c8 c8 c8 c8 c8 e3 fd ad fc fe c8 c8 c8 c8 c8
+        c8 c8 c8 c8 c8 c8 ff fb fe fa c8 c8 c8 c8 c8
+        c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8
+        c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8
+        c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8
+        c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8`,
+  0x4: ``, // down (door)
+  0x5: ``, // down-up
+  0x6: ``, // down-right (door?)
+  0x7: ``, // up-down-right
+  0xa: ``, // left-right (door)
+};
+
+const [] = [SWAMP_SCREENS];
 
 export function extendSwampScreens(rom: Rom) {
   // Move up to 13 swamp tiles to the alternate palette

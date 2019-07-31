@@ -1,23 +1,23 @@
 export interface Preset {
-    descr: string;
-    flags: string;
-    title: string;
+  descr: string;
+  flags: string;
+  title: string;
 
-    default?: boolean;
-};
+  default?: boolean;
+}
 
 export interface FlagSection {
-    flags: Flag[];
-    section: string;
+  flags: Flag[];
+  section: string;
 
-    text?: string;
-};
+  text?: string;
+}
 
 export interface Flag {
-    flag: string;
-    name: string;
+  flag: string;
+  name: string;
 
-    conflict?: RegExp;
-    hard?: boolean;
-    text?: string;
-};
+  conflict?: RegExp;
+  hard?: boolean;
+  text?: string;
+}

@@ -1,81 +1,89 @@
-import { UsageError } from './util.js';
-
-import { getFlagForName } from './flags/util';
-import { Preset, FlagSection, Flag } from './flags/model';
-import { itemFlags } from './flags/items';
-import { worldFlags } from './flags/world';
-import { monsterFlags } from './flags/monsters';
-import { shopFlags } from './flags/shops';
-import { hardModeFlags } from './flags/hard-mode';
-import { tweakFlags } from './flags/tweaks';
-import { routingFlags } from './flags/routing';
-import { glitchFlags } from './flags/glitches';
-import { glitchFixFlags } from './flags/glitch-fixes';
-import { easyModeFlags } from './flags/easy-mode';
-import { debugModeFlags } from './flags/debug-mode';
+import {debugModeFlags} from './flags/debug-mode';
+import {easyModeFlags} from './flags/easy-mode';
+import {glitchFixFlags} from './flags/glitch-fixes';
+import {glitchFlags} from './flags/glitches';
+import {hardModeFlags} from './flags/hard-mode';
+import {itemFlags} from './flags/items';
+import {Flag, FlagSection, Preset} from './flags/model';
+import {monsterFlags} from './flags/monsters';
+import {routingFlags} from './flags/routing';
+import {shopFlags} from './flags/shops';
+import {tweakFlags} from './flags/tweaks';
+import {getFlagForName} from './flags/util';
+import {worldFlags} from './flags/world';
+import {UsageError} from './util.js';
 
 const REPEATABLE_FLAGS: Set<string> = new Set(['S']);
 
-export const PRESETS: Preset[] = [{
-  title: 'Casual',
+export const PRESETS: Preset[] = [
+  {
+    title: 'Casual',
 
-  descr: `Basic flags for a relatively easy playthrough.`,
-  flags: 'Ds Edmrsx Fw Mr Rp Sc Sk Sm Tab',
-}, {
-  title: 'Intermediate',
+    descr: `Basic flags for a relatively easy playthrough.`,
+    flags: 'Ds Edmrsx Fw Mr Rp Sc Sk Sm Tab',
+  },
+  {
+    title: 'Intermediate',
 
-  descr: `Slightly more challenge than Casual but still approachable.`,
-  flags: 'Ds Edms Fsw Gt Mr Ps Rlpt Sct Skm Tab',
+    descr: `Slightly more challenge than Casual but still approachable.`,
+    flags: 'Ds Edms Fsw Gt Mr Ps Rlpt Sct Skm Tab',
 
-  default: true,
-}, {
-  title: 'Full Shuffle',
+    default: true,
+  },
+  {
+    title: 'Full Shuffle',
 
-  descr: `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
-  flags: 'Em Fsw Gt Mert Ps Rlprt Sckmt Tabmp Ww',
-}, {
-  title: 'Glitchless',
+    descr:
+        `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
+    flags: 'Em Fsw Gt Mert Ps Rlprt Sckmt Tabmp Ww',
+  },
+  {
+    title: 'Glitchless',
 
-  descr: `Full shuffle but with no glitches.`,
-  flags: 'Em Fcpstw Mert Ps Rlprt Sckmt Tab Ww',
-}, {
-  // TODO: add 'Ht' for maxing out tower scaling
-  title: 'Advanced',
+    descr: `Full shuffle but with no glitches.`,
+    flags: 'Em Fcpstw Mert Ps Rlprt Sckmt Tab Ww',
+  },
+  {
+    // TODO: add 'Ht' for maxing out tower scaling
+    title: 'Advanced',
 
-  descr: `A balanced randomization with quite a bit more difficulty.`,
-  flags: 'Fsw Gfprt Hbdgw Mert Ps Rloprst Sckt Sm Tabmp Ww',
-}, {
-  // TODO: add 'Ht'
-  title: 'Ludicrous',
+    descr: `A balanced randomization with quite a bit more difficulty.`,
+    flags: 'Fsw Gfprt Hbdgw Mert Ps Rloprst Sckt Sm Tabmp Ww',
+  },
+  {
+    // TODO: add 'Ht'
+    title: 'Ludicrous',
 
-  descr: `Pulls out all the stops, may require superhuman feats.`,
-  flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Rloprst Sckmt Tabmp Ww',
-}];
+    descr: `Pulls out all the stops, may require superhuman feats.`,
+    flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Rloprst Sckmt Tabmp Ww',
+  }
+];
 
 // Just the flags, not the whole documentation.
-const PRESETS_BY_KEY: { [key: string]: string } = {};
-for (const { title, flags } of PRESETS) {
+const PRESETS_BY_KEY: {[key: string]: string} = {};
+for (const {title, flags} of PRESETS) {
   PRESETS_BY_KEY[`@${title.replace(/ /g, '').toLowerCase()}`] = flags;
 }
 
-export const FLAGS: FlagSection[] = [itemFlags, worldFlags, monsterFlags,
-  shopFlags, hardModeFlags, tweakFlags, routingFlags, glitchFlags, glitchFixFlags,
-  easyModeFlags, debugModeFlags];
+export const FLAGS: FlagSection[] = [
+  itemFlags, worldFlags, monsterFlags, shopFlags, hardModeFlags, tweakFlags,
+  routingFlags, glitchFlags, glitchFixFlags, easyModeFlags, debugModeFlags
+];
 
 // TODO - flag validation!!!
 
-const exclusiveFlags = (flag: string): RegExp | undefined => {
-  if (flag.startsWith('S')) {
-    return new RegExp(`S.*[${flag.substring(1)}]`);
-  }
+const exclusiveFlags = (flag: string):
+    RegExp|undefined => {
+      if (flag.startsWith('S')) {
+        return new RegExp(`S.*[${flag.substring(1)}]`);
+      }
 
-  var flagForName: Flag | undefined = getFlagForName(flag);
-  return flagForName === undefined ? undefined : flagForName.conflict;
-}
+      var flagForName: Flag|undefined = getFlagForName(flag);
+      return flagForName === undefined ? undefined : flagForName.conflict;
+    }
 
 export class FlagSet {
-
-  private flags: { [section: string]: string[] };
+  private flags: {[section: string]: string[]};
 
   constructor(str = 'RtGftTab') {
     if (str.startsWith('@')) {
@@ -104,7 +112,7 @@ export class FlagSet {
   set(flag: string, value: boolean) {
     // check for incompatible flags...?
     const key = flag[0];
-    const term = flag.substring(1); // assert: term is only letters/numbers
+    const term = flag.substring(1);  // assert: term is only letters/numbers
     if (!value) {
       // Just delete - that's easy.
       const filtered = (this.flags[key] || []).filter(t => t !== term);
@@ -128,69 +136,175 @@ export class FlagSet {
     return !!(terms && (terms.indexOf(flag.substring(1)) >= 0));
   }
 
-  autoEquipBracelet() { return this.check('Ta'); }
-  buffDeosPendant() { return this.check('Tb'); }
-  leatherBootsGiveSpeed() { return this.check('Tb'); }
-  rabbitBootsChargeWhileWalking() { return this.check('Tb'); }
-  randomizeMusic() { return this.check('Tm'); }
-  shuffleSpritePalettes() { return this.check('Tp'); }
+  autoEquipBracelet() {
+    return this.check('Ta');
+  }
+  buffDeosPendant() {
+    return this.check('Tb');
+  }
+  leatherBootsGiveSpeed() {
+    return this.check('Tb');
+  }
+  rabbitBootsChargeWhileWalking() {
+    return this.check('Tb');
+  }
+  randomizeMusic() {
+    return this.check('Tm');
+  }
+  shuffleSpritePalettes() {
+    return this.check('Tp');
+  }
 
-  shuffleMonsters() { return this.check('Mr'); }
-  shuffleShops() { return this.check('Ps'); }
-  bargainHunting() { return this.shuffleShops(); }
+  shuffleMonsters() {
+    return this.check('Mr');
+  }
+  shuffleShops() {
+    return this.check('Ps');
+  }
+  bargainHunting() {
+    return this.shuffleShops();
+  }
 
-  shuffleTowerMonsters() { return this.check('Mt'); }
-  shuffleMonsterElements() { return this.check('Me'); }
-  shuffleBossElements() { return this.shuffleMonsterElements(); }
+  shuffleTowerMonsters() {
+    return this.check('Mt');
+  }
+  shuffleMonsterElements() {
+    return this.check('Me');
+  }
+  shuffleBossElements() {
+    return this.shuffleMonsterElements();
+  }
 
-  doubleBuffMedicalHerb() { return this.check('Em'); }
-  buffMedicalHerb() { return !this.check('Hm'); }
-  decreaseEnemyDamage() { return this.check('Ed'); }
-  neverDie() { return this.check('Di'); }
-  chargeShotsOnly() { return this.check('Hc'); }
+  doubleBuffMedicalHerb() {
+    return this.check('Em');
+  }
+  buffMedicalHerb() {
+    return !this.check('Hm');
+  }
+  decreaseEnemyDamage() {
+    return this.check('Ed');
+  }
+  neverDie() {
+    return this.check('Di');
+  }
+  chargeShotsOnly() {
+    return this.check('Hc');
+  }
 
-  barrierRequiresCalmSea() { return this.check('Rl'); }
-  paralysisRequiresPrisonKey() { return this.check('Rl'); }
-  sealedCaveRequiresWindmill() { return this.check('Rl'); }
-  connectLimeTreeToLeaf() { return this.check('Rp'); }
-  storyMode() { return this.check('Rs'); }
-  requireHealedDolphinToRide() { return this.check('Rd'); }
-  saharaRabbitsRequireTelepathy() { return this.check('Rr'); }
-  teleportOnThunderSword() { return this.check('Rt'); }
-  orbsOptional() { return this.check('Ro'); }
+  barrierRequiresCalmSea() {
+    return this.check('Rl');
+  }
+  paralysisRequiresPrisonKey() {
+    return this.check('Rl');
+  }
+  sealedCaveRequiresWindmill() {
+    return this.check('Rl');
+  }
+  connectLimeTreeToLeaf() {
+    return this.check('Rp');
+  }
+  storyMode() {
+    return this.check('Rs');
+  }
+  requireHealedDolphinToRide() {
+    return this.check('Rd');
+  }
+  saharaRabbitsRequireTelepathy() {
+    return this.check('Rr');
+  }
+  teleportOnThunderSword() {
+    return this.check('Rt');
+  }
+  orbsOptional() {
+    return this.check('Ro');
+  }
 
-  randomizeTrades() { return this.check('Wt'); }
-  unidentifiedItems() { return this.check('Wu'); }
-  randomizeWalls() { return this.check('Ww'); }
+  randomizeTrades() {
+    return this.check('Wt');
+  }
+  unidentifiedItems() {
+    return this.check('Wu');
+  }
+  randomizeWalls() {
+    return this.check('Ww');
+  }
 
-  guaranteeSword() { return this.check('Es'); }
-  guaranteeSwordMagic() { return !this.check('Hw'); }
-  guaranteeMatchingSword() { return !this.check('Hs'); }
-  guaranteeGasMask() { return !this.check('Hg'); }
-  guaranteeBarrier() { return !this.check('Hb'); }
-  guaranteeRefresh() { return this.check('Er'); }
+  guaranteeSword() {
+    return this.check('Es');
+  }
+  guaranteeSwordMagic() {
+    return !this.check('Hw');
+  }
+  guaranteeMatchingSword() {
+    return !this.check('Hs');
+  }
+  guaranteeGasMask() {
+    return !this.check('Hg');
+  }
+  guaranteeBarrier() {
+    return !this.check('Hb');
+  }
+  guaranteeRefresh() {
+    return this.check('Er');
+  }
 
-  disableSwordChargeGlitch() { return this.check('Fc'); }
-  disableTeleportSkip() { return this.check('Fp'); }
-  disableRabbitSkip() { return this.check('Fr'); }
-  disableShopGlitch() { return this.check('Fs'); }
-  disableStatueGlitch() { return this.check('Ft'); }
+  disableSwordChargeGlitch() {
+    return this.check('Fc');
+  }
+  disableTeleportSkip() {
+    return this.check('Fp');
+  }
+  disableRabbitSkip() {
+    return this.check('Fr');
+  }
+  disableShopGlitch() {
+    return this.check('Fs');
+  }
+  disableStatueGlitch() {
+    return this.check('Ft');
+  }
 
-  assumeSwordChargeGlitch() { return this.check('Gc'); }
-  assumeGhettoFlight() { return this.check('Gf'); }
-  assumeTeleportSkip() { return this.check('Gp'); }
-  assumeRabbitSkip() { return this.check('Gr'); }
-  assumeStatueGlitch() { return this.check('Gt'); }
-  assumeTriggerGlitch() { return false; } // TODO - only works on land?
-  assumeWildWarp() { return this.check('Gw'); }
+  assumeSwordChargeGlitch() {
+    return this.check('Gc');
+  }
+  assumeGhettoFlight() {
+    return this.check('Gf');
+  }
+  assumeTeleportSkip() {
+    return this.check('Gp');
+  }
+  assumeRabbitSkip() {
+    return this.check('Gr');
+  }
+  assumeStatueGlitch() {
+    return this.check('Gt');
+  }
+  assumeTriggerGlitch() {
+    return false;
+  }  // TODO - only works on land?
+  assumeWildWarp() {
+    return this.check('Gw');
+  }
 
-  nerfWildWarp() { return this.check('Fw'); }
-  allowWildWarp() { return !this.nerfWildWarp(); }
-  randomizeWildWarp() { return this.check('Tw'); }
+  nerfWildWarp() {
+    return this.check('Fw');
+  }
+  allowWildWarp() {
+    return !this.nerfWildWarp();
+  }
+  randomizeWildWarp() {
+    return this.check('Tw');
+  }
 
-  blackoutMode() { return this.check('Hz'); }
-  hardcoreMode() { return this.check('Hh'); }
-  buffDyna() { return this.check('Hd'); }
+  blackoutMode() {
+    return this.check('Hz');
+  }
+  hardcoreMode() {
+    return this.check('Hh');
+  }
+  buffDyna() {
+    return this.check('Hd');
+  }
 
   expScalingFactor() {
     return this.check('Hx') ? 0.25 : this.check('Ex') ? 2.5 : 1;

@@ -2,15 +2,15 @@
 
 require = require('esm')(module);
 
-const { EXPECTED_CRC32 } = require('./rom.js');
-const { FlagSet, PRESETS } = require('./flagset.js');
-const { crc32 } = require('./crc32.js');
+const {EXPECTED_CRC32} = require('./rom.js');
+const {FlagSet, PRESETS} = require('./flagset.js');
+const {crc32} = require('./crc32.js');
 const fs = require('fs');
 const patch = require('./patch.js');
-const { UsageError, breakLines } = require('./util.js');
-const { NodeReader } = require('./nodereader.js');
+const {UsageError, breakLines} = require('./util.js');
+const {NodeReader} = require('./nodereader.js');
 const version = require('./version.js');
-const { disableAsserts } = require('./assert.js');
+const {disableAsserts} = require('./assert.js');
 
 // Usage: node cli.js [--flags=<FLAGS>] [--seed=<SEED>] rom.nes
 
@@ -46,12 +46,15 @@ ${PRESETS.map(showPreset).join('\n\n')}`);
   process.exit(code);
 };
 
-const showPreset = ({ title, flags, descr }) => {
+const showPreset = ({title, flags, descr}) => {
   const LINE_LENGTH = 68;
   const flagLen = LINE_LENGTH - title.length - 6;
   const flagLines = breakLines(flags, flagLen);
   const descrLines = breakLines(descr, LINE_LENGTH - 2);
-  return `  ${title}: "${flagLines.join('\n' + ' '.repeat(title.length + 5))}"
+  return `  ${title}: "${
+      flagLines.join(
+          '\n' +
+          ' '.repeat(title.length + 5))}"
   ${descrLines.join('\n  ')}`;
 };
 
@@ -92,7 +95,7 @@ const main = (...args) => {
       process.exit(0);
     } else if (arg == 'list-presets') {
       // undocumented flag
-      for (const { title } of PRESETS) {
+      for (const {title} of PRESETS) {
         console.log(title.replace(/ /g, ''));
       }
       process.exit(0);
@@ -125,10 +128,10 @@ const main = (...args) => {
     const n = args[0].replace('.nes', '');
     const f = String(flagset).replace(/ /g, '');
     const v = patch.BUILD_HASH;
-    const filename = fillTemplate(output, { c, n, s, v, f, '%': '%' }) + '.nes';
-    await new Promise((resolve, reject) =>
-      fs.writeFile(filename, shuffled,
-        (err) => err ? reject(err) : resolve()));
+    const filename = fillTemplate(output, {c, n, s, v, f, '%': '%'}) + '.nes';
+    await new Promise(
+        (resolve, reject) => fs.writeFile(
+            filename, shuffled, (err) => err ? reject(err) : resolve()));
     console.log(`Wrote ${filename}`);
   }));
 };
@@ -157,11 +160,15 @@ const fillTemplate = (str, arg) => {
 };
 
 process.on('unhandledRejection', error => {
-  console.error(typeof error === 'string' ? error : error instanceof UsageError ? error.message : error.stack);
+  console.error(
+      typeof error === 'string' ?
+          error :
+          error instanceof UsageError ? error.message : error.stack);
   process.exit(1);
 });
 
-const asyncMain = async () => {
+const asyncMain =
+    async () => {
   try {
     await main(...process.argv.slice(2));
   } catch (error) {
@@ -174,4 +181,5 @@ const asyncMain = async () => {
   }
 }
 
-asyncMain().then(() => process.exit(0));
+                asyncMain()
+                    .then(() => process.exit(0));

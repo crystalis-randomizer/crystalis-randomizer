@@ -51,15 +51,13 @@ const showPreset = ({title, flags, descr}) => {
   const flagLen = LINE_LENGTH - title.length - 6;
   const flagLines = breakLines(flags, flagLen);
   const descrLines = breakLines(descr, LINE_LENGTH - 2);
-  return `  ${title}: "${
-      flagLines.join(
-          '\n' +
-          ' '.repeat(title.length + 5))}"
+  const indent = '\n' + ' '.repeat(title.length + 5);
+  return `  ${title}: "${flagLines.join(indent)}"
   ${descrLines.join('\n  ')}`;
 };
 
 const main = (...args) => {
-  let flags = 'Em Gt Mr Rlpt Sbkm Sct Tasd';
+  let flags = '@FullShuffle';
   let count = 1;
   let seed = '';
   let output = '%n_%c';

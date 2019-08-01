@@ -19,5 +19,3 @@ export const debugModeFlags: FlagSection = {
     }
   ],  // TODO - quick itemget/teleport options?
 };
-
-

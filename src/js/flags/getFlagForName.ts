@@ -54,3 +54,5 @@ const getFlagFromCollection =
     (flags: Flag[], searchFlag: string): Flag|undefined => {
       return flags.find(flag => flag.flag === searchFlag);
     }
+
+    

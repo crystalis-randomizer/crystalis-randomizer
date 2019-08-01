@@ -13,6 +13,7 @@ const COMMON = [
   'depgraph.js',
   'externs.js',
   'fetchreader.js',
+  'flags/*.js',
   'flagset.js',
   'graph.js',
   'graph/*.js',

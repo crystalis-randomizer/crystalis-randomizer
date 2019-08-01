@@ -1,10 +1,10 @@
 import {FlagSection} from './flag';
 
-export const easyModeFlags: FlagSection = {
+export const EASY_MODE_FLAGS: FlagSection = {
   section: 'Easy Mode',
   text: `The following options make parts of the game easier.`,
   prefix: 'E',
-  
+
   flags: [
     {
       flag: 'Ed',

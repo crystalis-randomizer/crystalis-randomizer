@@ -1,6 +1,6 @@
 import {FlagSection} from './flag';
 
-export const glitchFixFlags: FlagSection = {
+export const GLITCH_FIX_FLAGS: FlagSection = {
   section: 'Glitch Fixes',
   prefix: 'F',
   text:

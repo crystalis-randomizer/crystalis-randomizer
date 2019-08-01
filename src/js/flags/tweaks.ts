@@ -1,6 +1,6 @@
 import {FlagSection} from './flag';
 
-export const tweakFlags: FlagSection = {
+export const TWEAK_FLAGS: FlagSection = {
   section: 'Tweaks',
   prefix: 'T',
 

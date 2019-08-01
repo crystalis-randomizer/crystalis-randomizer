@@ -1,6 +1,6 @@
 import {FlagSection} from './flag';
 
-export const itemFlags: FlagSection = {
+export const ITEM_FLAGS: FlagSection = {
   section: 'Items',
   prefix: 'S',
   text: `Items are broken into five pools: <i>key items</i> includes all

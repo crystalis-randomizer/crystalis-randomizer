@@ -1,6 +1,6 @@
 import {FlagSection} from './flag';
 
-export const routingFlags: FlagSection = {
+export const ROUTING_FLAGS: FlagSection = {
   section: 'Routing',
   prefix: 'R',
 

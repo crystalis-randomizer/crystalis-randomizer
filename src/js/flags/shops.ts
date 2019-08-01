@@ -1,6 +1,6 @@
 import {FlagSection} from './flag';
 
-export const shopFlags: FlagSection = {
+export const SHOP_FLAGS: FlagSection = {
   section: 'Shops',
   prefix: 'P',  
   text: `Prices are always normalized by scaling level: prices at tool shops

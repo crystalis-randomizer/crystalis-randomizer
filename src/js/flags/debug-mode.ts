@@ -1,6 +1,6 @@
 import {FlagSection} from './flag';
 
-export const debugModeFlags: FlagSection = {
+export const DEBUG_MODE_FLAGS: FlagSection = {
   section: 'Debug Mode',
   prefix: 'D',
   text: `These options are helpful for exploring or debugging.  Note that,

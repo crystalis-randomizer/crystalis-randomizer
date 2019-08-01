@@ -1,16 +1,15 @@
-import {debugModeFlags} from './flags/debug-mode';
-import {easyModeFlags} from './flags/easy-mode';
+import {DEBUG_MODE_FLAGS} from './flags/debug-mode';
+import {EASY_MODE_FLAGS} from './flags/easy-mode';
 import {Flag, FlagSection, Preset} from './flags/flag';
-import {getFlagForName} from './flags/getFlagForName';
-import {glitchFixFlags} from './flags/glitch-fixes';
-import {glitchFlags} from './flags/glitches';
-import {hardModeFlags} from './flags/hard-mode';
-import {itemFlags} from './flags/items';
-import {monsterFlags} from './flags/monsters';
-import {routingFlags} from './flags/routing';
-import {shopFlags} from './flags/shops';
-import {tweakFlags} from './flags/tweaks';
-import {worldFlags} from './flags/world';
+import {GLITCH_FIX_FLAGS} from './flags/glitch-fixes';
+import {GLITCH_FLAGS} from './flags/glitches';
+import {HARD_MODE_FLAGS} from './flags/hard-mode';
+import {ITEM_FLAGS} from './flags/items';
+import {MONSTER_FLAGS} from './flags/monsters';
+import {ROUTING_FLAGS} from './flags/routing';
+import {SHOP_FLAGS} from './flags/shops';
+import {TWEAK_FLAGS} from './flags/tweaks';
+import {WORLD_FLAGS} from './flags/world';
 import {UsageError} from './util.js';
 
 const REPEATABLE_FLAGS: Set<string> = new Set(['S']);
@@ -66,21 +65,10 @@ for (const {title, flags} of PRESETS) {
 }
 
 export const FLAGS: FlagSection[] = [
-  itemFlags, worldFlags, monsterFlags, shopFlags, hardModeFlags, tweakFlags,
-  routingFlags, glitchFlags, glitchFixFlags, easyModeFlags, debugModeFlags
+  ITEM_FLAGS, WORLD_FLAGS, MONSTER_FLAGS, SHOP_FLAGS, HARD_MODE_FLAGS,
+  TWEAK_FLAGS, ROUTING_FLAGS, GLITCH_FLAGS, GLITCH_FIX_FLAGS, EASY_MODE_FLAGS,
+  DEBUG_MODE_FLAGS
 ];
-
-// TODO - flag validation!!!
-
-const exclusiveFlags = (flag: string):
-    RegExp|undefined => {
-      if (flag.startsWith('S')) {
-        return new RegExp(`S.*[${flag.substring(1)}]`);
-      }
-
-      var flagForName: Flag|undefined = getFlagForName(flag);
-      return flagForName === undefined ? undefined : flagForName.conflict;
-    }
 
 export class FlagSet {
   private flags: {[section: string]: string[]};
@@ -327,7 +315,7 @@ export class FlagSet {
 
   private removeConflicts(flag: string) {
     // NOTE: this is somewhat redundant with set(flag, false)
-    const re = exclusiveFlags(flag);
+    const re = this.exclusiveFlags(flag);
     if (!re) return;
     for (const key in this.flags) {
       if (!this.flags.hasOwnProperty(key)) continue;
@@ -345,6 +333,24 @@ export class FlagSet {
       return [...this.flags[key]].sort().map(v => key + v).join(' ');
     }
     return key + [...this.flags[key]].sort().join('');
+  }
+
+  private exclusiveFlags(flag: string): RegExp|undefined {
+    if (flag.startsWith('S')) {
+      return new RegExp(`S.*[${flag.substring(1)}]`);
+    }
+
+    var flagForName: Flag = this.getFlagForName(flag);
+    return flagForName.conflict;
+  }
+
+  private getFlagForName(flag: string): Flag {
+    const matchingFlagSection = FLAGS.find(flagSection => {
+      return flag.startsWith(flagSection.prefix);
+    });
+
+    return <Flag>(<FlagSection>matchingFlagSection)
+        .flags.find(flagToMatch => flagToMatch.flag === flag);
   }
 
   toString() {

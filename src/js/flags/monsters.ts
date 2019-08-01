@@ -1,6 +1,6 @@
 import {FlagSection} from './flag';
 
-export const monsterFlags: FlagSection = {
+export const MONSTER_FLAGS: FlagSection = {
   section: 'Monsters',
   text: `Monster stats are always normalized by scaling level.`,
   prefix: 'M',

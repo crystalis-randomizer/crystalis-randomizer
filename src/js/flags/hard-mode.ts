@@ -1,6 +1,6 @@
 import {FlagSection} from './flag';
 
-export const hardModeFlags: FlagSection = {
+export const HARD_MODE_FLAGS: FlagSection = {
   section: 'Hard mode',
   prefix: 'H',
 

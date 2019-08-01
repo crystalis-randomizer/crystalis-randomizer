@@ -1,6 +1,6 @@
 import {FlagSection} from './flag';
 
-export const glitchFlags: FlagSection = {
+export const GLITCH_FLAGS: FlagSection = {
   section: 'Glitches',
   prefix: 'G',
   text: `The routing logic can be made aware of the following

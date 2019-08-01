@@ -45,8 +45,10 @@ const RELEVANT_FLAGS = [
   0x0a5, // talked to zebu student
   0x0a9, // talked to leaf rabbit
 
-  0x205, // orb of wind (for teleport)
-  0x206, // tornado bracelet (for teleport)
+  // swords (may be needed for rage, SoT for massacre)
+  0x200, 0x201, 0x202, 0x203,
+  // balls and bracelets may be needed for teleport
+  0x205, 0x206, 0x207, 0x208, 0x209, 0x20a, 0x20b, 0x20c,
   0x236, // shell flute (for fisherman spawn)
   0x243, // telepathy (for rabbit, oak, deo)
   0x244, // teleport (for mt sabre trigger)

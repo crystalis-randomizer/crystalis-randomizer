@@ -27,6 +27,9 @@ export class Context {
 
   readonly graphics: Graphics;
 
+  // TODO - update about this?
+  selection: any;
+
   private readonly data: Data = {
     location: undefined,
     tileset: 0x80,
@@ -60,7 +63,7 @@ export class Context {
   get location(): number|undefined { return this.data.location; }
 
   set tileset(x: number) {
-    if ((x & 3) !== 0 || x < 0x80 || x >= 0xaf) return;}
+    if ((x & 3) !== 0 || x < 0x80 || x >= 0xaf) return;
     this.data.tileset = x;
     this.update({graphics: true, tileset: true});
   }
@@ -135,17 +138,29 @@ export class Context {
     return iter;
   }      
 
-  readonly static LOCATION: GetSet<number|undefined> = {
+  static readonly LOCATION: GetSet<number|undefined> = {
     get(context) { return context.location; },
     set(context, value) { context.location = value; },
   }
-  readonly static TILESET: GetSet = {
+  static readonly TILESET: GetSet<number> = {
     get(context) { return context.tileset; },
     set(context, value) { context.tileset = value; },
   }
+  static pattern(id: number): GetSet<number> {
+    return {
+      get(context) { return context.data.patterns[id]; },
+      set(context, value) { context.setPattern(id, value); },
+    };
+  }
+  static palette(id: number): GetSet<number> {
+    return {
+      get(context) { return context.data.palettes[id]; },
+      set(context, value) { context.setPalette(id, value); },
+    };
+  }
 }
 
-interface GetSet<T = number> {
+export interface GetSet<T> {
   get(context: Context): T;
   set(context: Context, value: T): void;
 }

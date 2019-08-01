@@ -285,24 +285,70 @@ export function shuffleSwamp(rom: Rom, random: Random) {
 }
 
 const SWAMP_SCREENS = {
-  0x1: `c8 c8 c8 c8 cf d3 c2 c3 c3 c3 d2 cc c8 c8 c8
-        c8 c8 c8 c8 cf d3 c4 c5 c3 b7 f6 cc c8 c8 c8
-        c8 c8 c8 c8 cf f6 b7 b8 c4 c5 f6 cc c8 c8 c8
-        c8 c8 c8 c8 cf d3 c2 c3 b7 b8 d2 cc c8 c8 c8
-        c8 c8 c8 c8 cf d3 b6 b6 b6 b6 d2 cc c8 c8 c8
-        c8 c8 c8 c8 cf d3 ad ad ad ad d2 cc c8 c8 c8
-        c8 c8 c8 c8 cf d3 ad b9 b7 b7 f6 cc c8 c8 c8
-        c8 c8 c8 c8 cf d3 ad b6 b9 b7 f6 e2 c8 c8 c8
-        c8 c8 c8 c8 e3 d3 ad ad b6 fc e2 c8 c8 c8 c8
-        c8 c8 c8 c8 c8 e3 fd ad fc fe c8 c8 c8 c8 c8
-        c8 c8 c8 c8 c8 c8 ff fb fe fa c8 c8 c8 c8 c8
-        c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8
-        c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8
-        c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8
-        c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8`,
-  0x4: ``, // down (door)
-  0x5: ``, // down-up
-  0x6: ``, // down-right (door?)
+  // open upward, dead end
+  0x1: `c8 c8 c8 c8 cf d3 c2 c3 c3 c3 d2 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 c4 c5 c3 b7 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf f6 b7 b8 c4 c5 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 c2 c3 b7 b8 d2 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 b6 b6 b6 b6 d2 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 ad ad ad ad d2 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 ad b9 b7 b7 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 ad b6 b9 b7 f6 e2 c8 c8 c8 c8
+        c8 c8 c8 c8 e3 d3 ad ad b6 fc e2 c8 c8 c8 c8 c8
+        c8 c8 c8 c8 c8 e3 fd ad fc fe c8 c8 c8 c8 c8 c8
+        c8 c8 c8 c8 c8 c8 ff fb fe fa c8 c8 c8 c8 c8 c8
+        c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8
+        c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8
+        c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8
+        c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8`,
+  // open downward, dead end (door)
+  0x4: `c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8
+        c8 c8 c8 c8 c8 c8 cd c9 c9 ca c8 c8 c8 c8 c8 c8
+        c8 c8 c8 c8 c8 cd eb a0 a0 cb ca c8 c8 c8 c8 c8
+        c8 c8 c8 c8 cf a0 f9 f5 f7 f8 cb cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf a0 ed 08 09 a0 a0 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf db ee 0c 0b ef a0 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d0 d1 03 03 d8 db cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf f6 c7 ad ad ae d2 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 ad b9 b7 b7 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 c2 c3 c3 b7 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf f6 c5 c3 c3 b7 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 b6 c2 c3 c3 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf f6 b8 b6 b6 b6 d2 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf f6 b7 b7 b7 b7 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf f6 b7 b7 b8 b6 d2 cc c8 c8 c8 c8`,
+  // vertical passage
+  0x5: `c8 c8 c8 c8 cf d3 b6 b6 c6 b6 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 b6 c3 c7 b6 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf f5 c3 c7 b6 b6 d2 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 b6 b6 c6 c5 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d9 b6 c6 c3 c7 d2 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf f5 c3 c3 c3 c3 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d9 ad c2 c3 c3 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d9 c4 c5 c3 c3 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf f5 b7 b7 b8 b6 d2 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d9 c2 b8 b6 b6 d2 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d9 b6 c2 b7 b7 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d9 b6 b6 b6 b6 d2 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf f6 b7 b7 b8 b6 d2 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 b9 b7 b7 b7 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf f6 b7 b7 c7 b6 d2 cc c8 c8 c8 c8`,
+  // down-right openings (turn right), with door
+  0x6: `c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8
+        c8 c8 c8 c8 c8 c8 cd c9 c9 c9 c9 c9 c9 c9 c9 c9
+        c8 c8 c8 c8 c8 cd a0 a0 a0 e8 04 a0 e8 a0 a0 e4
+        c8 c8 c8 c8 cf f8 a0 f0 f1 f5 f5 f7 e9 f4 f7 e5
+        c8 c8 c8 c8 cf f6 f7 f8 f2 ea 06 aa e9 f0 f1 e6
+        c8 c8 c8 c8 cf a0 dd e0 f3 e0 07 0c ea db f3 e7
+        c8 c8 c8 c8 cf db d5 d0 d1 d1 03 03 d0 d1 da da
+        c8 c8 c8 c8 cf d5 af ad ad ad ad ad ad ad ad ad
+        c8 c8 c8 c8 cf d3 ad ad ad ad ad ad ad ad ad ad
+        c8 c8 c8 c8 cf f6 c3 c7 c4 c5 c3 c3 c3 c3 c7 ad
+        c8 c8 c8 c8 cf f6 c5 c3 c3 c3 c7 fc fb fb fb fb
+        c8 c8 c8 c8 cf d3 b9 b7 b7 b8 d6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 b9 b7 b8 b6 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf f6 c3 c3 c7 b6 d2 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 b6 b9 b7 b7 f6 cc c8 c8 c8 c8`,
   0x7: ``, // up-down-right
   0xa: ``, // left-right (door)
 };

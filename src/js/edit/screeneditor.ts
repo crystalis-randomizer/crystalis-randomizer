@@ -1,20 +1,24 @@
+import {BackgroundAttrs} from './backgroundattrs.js';
+import {Context} from './context.js';
 import {Screen} from './screen.js';
-import {Graphics} from './graphics.js';
-import {Rom} from '../rom.js';
-import {seq} from '../rom/util.js';
-import { BackgroundAttrs } from './backgroundattrs.js';
+import {TilesetPalette} from './tilesetpalette.js';
 
 export class ScreenEditor {
 
-  bg: BackgroundAttrs;
-  screen: Screen;
-
-  constructor(readonly rom: Rom, readonly graphics: Graphics, readonly el: Element) {
+  constructor(readonly context: Context, readonly el: Element) {
     // Expect a SECTION element with class already.
-
-    const screenEl = document.createElement('div');
-    el.appendChild(screenEl);
-    this.screen = new Screen(rom, graphics, screenEl);
+    el.appendChild(new BackgroundAttrs(context).el);
+    let div = document.createElement('div');
+    div.classList.add('row');
+    el.appendChild(div);
+    div.appendChild(new Screen(context).el);
+    div.appendChild(new Screen(context).el);
+    div = document.createElement('div');
+    div.classList.add('row');
+    el.appendChild(div);
+    div.appendChild(new Screen(context, true).el);
+    div.appendChild(new Screen(context, true).el);
+    el.appendChild(new TilesetPalette(context).el);
   }
 }
 

@@ -2,6 +2,8 @@ import {FlagSection} from './flag';
 
 export const worldFlags: FlagSection = {
   section: 'World',
+  prefix: 'W',
+
   flags: [
     {
       flag: 'Wt',

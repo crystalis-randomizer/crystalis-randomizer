@@ -1,10 +1,10 @@
 import {debugModeFlags} from './debug-mode';
 import {easyModeFlags} from './easy-mode';
+import {Flag} from './flag';
 import {glitchFixFlags} from './glitch-fixes';
 import {glitchFlags} from './glitches';
 import {hardModeFlags} from './hard-mode';
 import {itemFlags} from './items';
-import {Flag} from './flag';
 import {monsterFlags} from './monsters';
 import {routingFlags} from './routing';
 import {shopFlags} from './shops';
@@ -54,5 +54,3 @@ const getFlagFromCollection =
     (flags: Flag[], searchFlag: string): Flag|undefined => {
       return flags.find(flag => flag.flag === searchFlag);
     }
-
-    

@@ -2,6 +2,7 @@ import {FlagSection} from './flag';
 
 export const itemFlags: FlagSection = {
   section: 'Items',
+  prefix: 'S',
   text: `Items are broken into five pools: <i>key items</i> includes all
             unique items; <i>consumable items</i> includes anything that can be
             dropped; <i>magic</i> is the eight spells; and <i>traps</i> are the

@@ -2,6 +2,7 @@ import {FlagSection} from './flag';
 
 export const glitchFixFlags: FlagSection = {
   section: 'Glitch Fixes',
+  prefix: 'F',
   text:
       `Alternatively, glitches may be patched out of the game and made unusable.
          These flags are exclusive with the flags that require the glitch.`,

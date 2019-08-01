@@ -9,6 +9,7 @@ export interface Preset {
 export interface FlagSection {
   flags: Flag[];
   section: string;
+  prefix: string;
 
   text?: string;
 }

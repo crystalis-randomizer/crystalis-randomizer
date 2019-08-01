@@ -2,6 +2,7 @@ import {FlagSection} from './flag';
 
 export const tweakFlags: FlagSection = {
   section: 'Tweaks',
+  prefix: 'T',
 
   flags: [
     {

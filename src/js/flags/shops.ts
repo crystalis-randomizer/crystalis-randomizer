@@ -2,6 +2,7 @@ import {FlagSection} from './flag';
 
 export const shopFlags: FlagSection = {
   section: 'Shops',
+  prefix: 'P',  
   text: `Prices are always normalized by scaling level: prices at tool shops
            and inns double every 10 scaling levels, while prices at armor shops
            halve every 12 scaling levels `,

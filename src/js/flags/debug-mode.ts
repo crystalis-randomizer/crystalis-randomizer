@@ -2,10 +2,12 @@ import {FlagSection} from './flag';
 
 export const debugModeFlags: FlagSection = {
   section: 'Debug Mode',
+  prefix: 'D',
   text: `These options are helpful for exploring or debugging.  Note that,
       while they do not directly affect any randomization, they
       <i>do</i> factor into the seed to prevent cheating, and they
       will remove the option to generate a seed for racing.`,
+
   flags: [
     {
       flag: 'Ds',
@@ -19,4 +21,3 @@ export const debugModeFlags: FlagSection = {
     }
   ],  // TODO - quick itemget/teleport options?
 };
-

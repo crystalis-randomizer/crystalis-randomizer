@@ -3,6 +3,7 @@ import {FlagSection} from './flag';
 export const monsterFlags: FlagSection = {
   section: 'Monsters',
   text: `Monster stats are always normalized by scaling level.`,
+  prefix: 'M',
 
   flags: [
     {

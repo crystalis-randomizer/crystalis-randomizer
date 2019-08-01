@@ -2,6 +2,7 @@ import {FlagSection} from './flag';
 
 export const glitchFlags: FlagSection = {
   section: 'Glitches',
+  prefix: 'G',
   text: `The routing logic can be made aware of the following
       glitches.  If selected, it will assume that the glitch can be
       performed when verifying that a game is winnable.  Enabling

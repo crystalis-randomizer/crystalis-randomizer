@@ -2,6 +2,7 @@ import {FlagSection} from './flag';
 
 export const hardModeFlags: FlagSection = {
   section: 'Hard mode',
+  prefix: 'H',
 
   flags: [
     {

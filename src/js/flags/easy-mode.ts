@@ -3,6 +3,8 @@ import {FlagSection} from './flag';
 export const easyModeFlags: FlagSection = {
   section: 'Easy Mode',
   text: `The following options make parts of the game easier.`,
+  prefix: 'E',
+  
   flags: [
     {
       flag: 'Ed',
@@ -40,4 +42,4 @@ export const easyModeFlags: FlagSection = {
     }
   ],
 };
-
+//

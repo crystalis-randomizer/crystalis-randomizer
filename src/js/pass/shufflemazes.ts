@@ -284,19 +284,19 @@ export function shuffleSwamp(rom: Rom, random: Random) {
   }
 }
 
-const SWAMP_SCREENS = {
+const SWAMP_SCREENS: {[id: number]: string} = {
   // open upward, dead end
-  0x1: `c8 c8 c8 c8 cf d3 c2 c3 c3 c3 d2 cc c8 c8 c8 c8
-        c8 c8 c8 c8 cf d3 c4 c5 c3 b7 f6 cc c8 c8 c8 c8
-        c8 c8 c8 c8 cf f6 b7 b8 c4 c5 f6 cc c8 c8 c8 c8
+  0x1: `c8 c8 c8 c8 cf f6 c7 ad c4 b7 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf f6 b8 b9 c3 b7 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf f6 b7 b8 ad ad d2 cc c8 c8 c8 c8
         c8 c8 c8 c8 cf d3 c2 c3 b7 b8 d2 cc c8 c8 c8 c8
-        c8 c8 c8 c8 cf d3 b6 b6 b6 b6 d2 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 b6 c2 b7 b7 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 ad ad b9 b7 f6 cc c8 c8 c8 c8
         c8 c8 c8 c8 cf d3 ad ad ad ad d2 cc c8 c8 c8 c8
-        c8 c8 c8 c8 cf d3 ad b9 b7 b7 f6 cc c8 c8 c8 c8
-        c8 c8 c8 c8 cf d3 ad b6 b9 b7 f6 e2 c8 c8 c8 c8
-        c8 c8 c8 c8 e3 d3 ad ad b6 fc e2 c8 c8 c8 c8 c8
-        c8 c8 c8 c8 c8 e3 fd ad fc fe c8 c8 c8 c8 c8 c8
-        c8 c8 c8 c8 c8 c8 ff fb fe fa c8 c8 c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 b9 b8 ad ad d2 e2 c8 c8 c8 c8
+        c8 c8 c8 c8 e3 f6 c3 c3 b8 b6 d2 c8 c8 c8 c8 c8
+        c8 c8 c8 c8 c8 e3 fd ad ad fc e2 c8 c8 c8 c8 c8
+        c8 c8 c8 c8 c8 c8 ff fb fb fa c8 c8 c8 c8 c8 c8
         c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8
         c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8
         c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8
@@ -341,17 +341,50 @@ const SWAMP_SCREENS = {
         c8 c8 c8 c8 cf f6 f7 f8 f2 ea 06 aa e9 f0 f1 e6
         c8 c8 c8 c8 cf a0 dd e0 f3 e0 07 0c ea db f3 e7
         c8 c8 c8 c8 cf db d5 d0 d1 d1 03 03 d0 d1 da da
-        c8 c8 c8 c8 cf d5 af ad ad ad ad ad ad ad ad ad
-        c8 c8 c8 c8 cf d3 ad ad ad ad ad ad ad ad ad ad
-        c8 c8 c8 c8 cf f6 c3 c7 c4 c5 c3 c3 c3 c3 c7 ad
-        c8 c8 c8 c8 cf f6 c5 c3 c3 c3 c7 fc fb fb fb fb
-        c8 c8 c8 c8 cf d3 b9 b7 b7 b8 d6 cc c8 c8 c8 c8
-        c8 c8 c8 c8 cf d3 b9 b7 b8 b6 f6 cc c8 c8 c8 c8
-        c8 c8 c8 c8 cf f6 c3 c3 c7 b6 d2 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d5 af c4 c4 ad ad ad ad ad c4 ad
+        c8 c8 c8 c8 cf d3 b9 c3 c3 b8 ad ad ad c2 b7 b8
+        c8 c8 c8 c8 cf f6 c3 c3 c3 c3 b8 ad ad ad ad ad
+        c8 c8 c8 c8 cf f6 c7 ad c2 c3 c7 fc fb fb fb fb
+        c8 c8 c8 c8 cf d3 ad ad ad ad d6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 b9 b8 ad b9 f6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf f6 c7 ad b9 c7 d2 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 b6 b9 c3 b8 d2 cc c8 c8 c8 c8`,
+  // up-down-right
+  0x7: `c8 c8 c8 c8 cf d3 c4 c3 c3 c3 f7 f8 ca c8 c8 c8
+        c8 c8 c8 c8 cf f5 c3 c3 c3 c3 f7 f7 a0 ca c9 c9
+        c8 c8 c8 c8 cf f6 c3 c3 b8 b6 d2 cf cf e8 e4 a0
+        c8 c8 c8 c8 cf f5 b7 c3 b7 b8 d2 f0 f1 e9 e5 cf
+        c8 c8 c8 c8 cf d3 c2 b8 c2 b8 d8 db cf ea e6 cf
+        c8 c8 c8 c8 cf d3 ad ad ad ad ae d4 f3 dd e7 cf
+        c8 c8 c8 c8 cf d3 ad ad ad ad ad ae d0 d1 d0 d1
+        c8 c8 c8 c8 cf d3 c2 c3 c3 b7 b8 ad ad ad ad ad
+        c8 c8 c8 c8 cf d3 ad ad c2 b7 b7 b7 b8 c4 ad ad
+        c8 c8 c8 c8 cf d3 ad ad b6 b9 b7 b7 b7 b7 b8 ad
+        c8 c8 c8 c8 cf d3 ad c4 c3 b7 b8 fc fb fb fb fb
+        c8 c8 c8 c8 cf d3 b6 ad ad ad d6 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 ad ad ad ad d2 cc c8 c8 c8 c8
+        c8 c8 c8 c8 cf d3 c4 c3 b7 b8 d2 cc c8 c8 c8 c8
         c8 c8 c8 c8 cf d3 b6 b9 b7 b7 f6 cc c8 c8 c8 c8`,
-  0x7: ``, // up-down-right
-  0xa: ``, // left-right (door)
+  // horizontal tunnel
+  0xa: `c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8
+        c9 c9 c9 c9 c9 c9 c9 c9 c9 c9 c9 c9 c9 c9 c9 c9
+        a0 e4 e8 eb e4 a0 a0 a0 eb eb e8 f0 f1 a0 e4 a0
+        a0 e5 e9 f9 f5 f6 f6 f7 ec f9 f7 f8 f2 a0 e5 a0
+        a0 e6 f0 f1 e6 e0 08 09 ed de ea de f2 a0 e6 a0
+        db e7 db f3 e7 e1 0c 0b dd df e0 df f3 db e7 e0
+        d0 d1 da da d0 d1 03 03 d0 d1 d0 d1 da da da da
+        ad c4 ad ad ad ad ad ad ad ad ad ad ad ad ad ad
+        c2 c5 b8 c6 c4 c4 b9 c7 c4 c5 c5 c7 ad ad ad ad
+        ad ad ad ad c2 c3 c3 c3 c3 c3 c7 ad ad ad ad ad
+        fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+        c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8
+        c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8
+        c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8
+        c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8`,
 };
+
+// TODO - parse these screens, add them temporarily elsewhere
+// so we can put them together and see how repetitive the fog is
 
 const [] = [SWAMP_SCREENS];
 
@@ -361,6 +394,12 @@ export function extendSwampScreens(rom: Rom) {
   // the Oak entrance (or possibly hide other caves?)
   //  - Screens 76, 7a, 7b and then close up 7e.
   //  - Tiles   ac -> da; aa -> dc, e4, e5, e6, e7, f0, f1, f2, f3
+
+  for (let i = 0; i < 0xa; i++) {
+    const screen = SWAMP_SCREENS[i];
+    if (!screen) continue;
+    rom.screens[0x80 | i].tiles = screen.split(/\s+/g).map(x => parseInt(x, 16));
+  }
 
   // Make a handful of removable tiles
   rom.swapMetatiles([0xa0],

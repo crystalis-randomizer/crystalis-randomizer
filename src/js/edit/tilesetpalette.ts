@@ -20,6 +20,7 @@ export class TilesetPalette {
     //grid.addEventListener('drop', (ev) => this.handleDrop(ev as DragEvent));
     grid.addEventListener('dragstart', (ev) => this.handleDragStart(ev as DragEvent));
     //grid.addEventListener('dragover', (ev) => ev.preventDefault());
+    grid.addEventListener('click', (ev) => this.handleClick(ev as MouseEvent));
     // add 240 children
     for (let i = 0; i < 256; i++) {
       const img = document.createElement('img');
@@ -55,5 +56,17 @@ export class TilesetPalette {
       'metatile': index,
       'png': target.src,
     }));
+  }
+
+  private handleClick(ev: MouseEvent) {
+    const target = ev.target as HTMLImageElement;
+    if (!target.dataset['index']) return;
+    const index = Number(target.dataset['index']);
+    if (ev.shiftKey) {
+      this.context.selection = {
+        'metatile': index,
+        'png': target.src,
+      };
+    }
   }
 }

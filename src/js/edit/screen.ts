@@ -53,7 +53,8 @@ export class Screen {
     const tiles = this.rom.screens[this.screen].tiles;
     const tileset = this.rom.tileset(this.context.tileset);
     for (let i = 0; i < 240; i++) {
-      const tile = tiles[i];
+      let tile = tiles[i];
+      if (tile < 0x20 && this.context.flag) tile = tileset.alternates[tile];
       let attr = tileset.attrs[tile];
       const pal = attr < 3 ? this.context.tilePalettes[attr] : 0x7f;
       (this.grid.children[i] as HTMLImageElement).src =

@@ -26,6 +26,12 @@ export class BackgroundAttrs {
     input(Context.palette(2));
     text(' Location: ');
     input(Context.LOCATION);
+    text(' Flag: ');
+    const flag = document.createElement('input');
+    el.appendChild(flag);
+    flag.type = 'checkbox';
+    flag.checked = context.flag;
+    flag.addEventListener('change', () => context.flag = flag.checked);
   }
 }
 

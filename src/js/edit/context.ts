@@ -6,6 +6,7 @@ interface Data {
   tileset: number;
   patterns: number[];
   palettes: number[];
+  flag: boolean;
   // TODO - current object?  other stuff?
 }
 
@@ -19,6 +20,7 @@ interface Update {
   tilePalette?: boolean;
   spritePattern?: boolean;
   spritePalette?: boolean;
+  flag?: boolean;
   // TODO - drag/drop?  map updates?  etc
 }
 
@@ -36,6 +38,7 @@ export class Context {
     patterns: [0, 0, 0, 0, 0, 0],
     // TODO - permanent purple palette, sword palette
     palettes: [0, 0, 0, 0x7f, 0, 0, 0, 0],
+    flag: false,
   };
   private readonly listeners: Set<(update: Update) => void> = new Set();
 
@@ -82,6 +85,14 @@ export class Context {
     this.update({graphics: true, palettes: true, tilePalette: true});
   }
   get tilePalettes(): [number, number, number] { return this.data.palettes.slice(0, 3) as any; }
+
+  set flag(x: boolean) {
+    this.data.flag = x;
+    this.update({graphics: true, flag: true});
+  }
+  get flag(): boolean {
+    return this.data.flag;
+  }
 
   // TODO - sprite setters/getters
 

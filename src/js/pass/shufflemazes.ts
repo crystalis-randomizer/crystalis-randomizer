@@ -83,16 +83,16 @@ export function shuffleSwamp(rom: Rom, random: Random) {
   // Collect the available screens (7c is boss room, 7f is solid)
   const screens = [
     0x7f, // 0000 x
-    0x9a, // 0001 ^
+    , // 0001 ^
     0x76, // 0010 >
     0x79, // 0011 ^>
-    0x9b, // 0100 v
-    0x8f, // 0101 |
-    0x83, // 0110 v>
-    0x87, // 0111 |>
+    , // 0100 v
+    , // 0101 |
+    , // 0110 v>
+    , // 0111 |>
     0x7b, // 1000 <
     0x75, // 1001 <^
-    0x90, // 1010 _
+    , // 1010 _
     0x7d, // 1011 —^—
     0x7e, // 1100 <v
     0x78, // 1101 <|
@@ -100,6 +100,9 @@ export function shuffleSwamp(rom: Rom, random: Random) {
     0x77, // 1111 —|—
   ];
 
+  //for (let i = 0; i < 16; i++) if (screens[i] > 0x7f) delete screens[i];
+
+  const AVAILABLE = 9;
   const w = 5;
   const h = 5;
   const map = new Array(0x100).fill(0xf);
@@ -206,7 +209,14 @@ export function shuffleSwamp(rom: Rom, random: Random) {
         queue.push(next + delta[bit]);
       }
     }
-    return seen.size === w * h - closed;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const pos = y << 4 | x;
+        if (!seen.has(pos) && map[pos]) return false;
+      }
+    }
+    return true;
+    //return seen.size === w * h - closed;
   }
 
   // Attempt to add w*h walls
@@ -242,13 +252,13 @@ export function shuffleSwamp(rom: Rom, random: Random) {
   let attempts = 1000;
   function consolidate(): boolean {
     // Pick a random tile and add to it
-    const u = unique(9);
+    const u = unique(AVAILABLE);
     if (!u) return false;
     const bad = [];
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         const pos = y << 4 | x;
-        if (ok(pos) && !u.has(map[pos])) {
+        if (ok(pos) && (!u.has(map[pos]) || !random.nextInt(w * h * 2))) {
           bad.push(pos);
           for (const dir of random.shuffle([...dirs])) {
             const npos = pos + delta[dir];
@@ -268,8 +278,25 @@ export function shuffleSwamp(rom: Rom, random: Random) {
   if (!attempts) throw new Error(`Failed to converge`);
 
   // Plug in the most common 9 screens
+  const used = new Set(counts.flatMap((x, i) => x ? [i] : []));
+  const available = [];
+  for (let i = 0; i < 16; i++) {
+    const screen = screens[i];
+    if (screen != null && !used.has(i)) {
+      available.push(screen);
+      delete screens[i];
+    }
+  }
+  for (const i of used) {
+    if (screens[i]) continue;
+    const next = available.pop();
+    if (next == null) throw new Error(`No available screen`);
+    screens[i] = next;
+    rom.screens[next].tiles = SWAMP_SCREENS[i].split(/\s+/g).map(x => parseInt(x, 16));
+  }
 
   // Set everything
+  swamp.screens = seq(h, () => []);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const pos = y << 4 | x;
@@ -279,7 +306,7 @@ export function shuffleSwamp(rom: Rom, random: Random) {
       }
       swamp.width = w;
       swamp.height = h;
-      swamp.screens[y][x] = screens[map[pos]];
+      swamp.screens[y][x] = screens[map[pos]]!;
     }
   }
 }
@@ -395,11 +422,11 @@ export function extendSwampScreens(rom: Rom) {
   //  - Screens 76, 7a, 7b and then close up 7e.
   //  - Tiles   ac -> da; aa -> dc, e4, e5, e6, e7, f0, f1, f2, f3
 
-  for (let i = 0; i < 0xa; i++) {
-    const screen = SWAMP_SCREENS[i];
-    if (!screen) continue;
-    rom.screens[0x80 | i].tiles = screen.split(/\s+/g).map(x => parseInt(x, 16));
-  }
+  // for (let i = 0; i < 0xa; i++) {
+  //   const screen = SWAMP_SCREENS[i];
+  //   if (!screen) continue;
+  //   rom.screens[0x80 | i].tiles = screen.split(/\s+/g).map(x => parseInt(x, 16));
+  // }
 
   // Make a handful of removable tiles
   rom.swapMetatiles([0xa0],

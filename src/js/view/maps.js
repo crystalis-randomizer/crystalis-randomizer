@@ -8,7 +8,7 @@ import {Rom} from '../rom.js';
 import {Random} from '../random.js';
 import {ImageBuffer} from './imagebuffer.js';
 
-import {shuffleSwamp} from '../pass/shufflemazes.js';
+import {extendSwampScreens, shuffleSwamp} from '../pass/shufflemazes.js';
 import {World} from '../graph/world.js';
 
 // TODO - move colors to view.js?
@@ -375,6 +375,7 @@ const run = async () => {
   const rom = await Rom.load(patch);
   window.rom = rom;
   window.shuffleSwamp = () => shuffleSwamp(rom, new Random(window.SEED || 2));
+  window.extendSwampScreens = () => extendSwampScreens(rom);
   window.World = World;
   window.world = new World(rom);
 

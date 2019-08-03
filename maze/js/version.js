@@ -1,6 +1,6 @@
 export const STATUS = 'unstable';
 export const VERSION = 'maze';
-export const LABEL = 'maze 7d8fd6b';
-export const HASH = '7d8fd6b4e843d794db8db1312f3f31e9ffba7304';
-export const DATE = new Date(1564655943000);
+export const LABEL = 'maze 7142360';
+export const HASH = '7142360fb5fa5c62aa37ec0068874c825a2ed28e';
+export const DATE = new Date(1564875031000);
 //# sourceMappingURL=version.js.map

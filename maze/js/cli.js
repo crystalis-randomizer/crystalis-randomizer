@@ -51,12 +51,13 @@ const showPreset = ({title, flags, descr}) => {
   const flagLen = LINE_LENGTH - title.length - 6;
   const flagLines = breakLines(flags, flagLen);
   const descrLines = breakLines(descr, LINE_LENGTH - 2);
-  return `  ${title}: "${flagLines.join('\n' + ' '.repeat(title.length + 5))}"
+  const indent = '\n' + ' '.repeat(title.length + 5);
+  return `  ${title}: "${flagLines.join(indent)}"
   ${descrLines.join('\n  ')}`;
 };
 
 const main = (...args) => {
-  let flags = 'Em Gt Mr Rlpt Sbkm Sct Tasd';
+  let flags = '@FullShuffle';
   let count = 1;
   let seed = '';
   let output = '%n_%c';
@@ -126,9 +127,9 @@ const main = (...args) => {
     const f = String(flagset).replace(/ /g, '');
     const v = patch.BUILD_HASH;
     const filename = fillTemplate(output, {c, n, s, v, f, '%': '%'}) + '.nes';
-    await new Promise((resolve, reject) =>
-                      fs.writeFile(filename, shuffled,
-                                   (err) => err ? reject(err) : resolve()));
+    await new Promise(
+        (resolve, reject) => fs.writeFile(
+            filename, shuffled, (err) => err ? reject(err) : resolve()));
     console.log(`Wrote ${filename}`);
   }));
 };
@@ -157,11 +158,15 @@ const fillTemplate = (str, arg) => {
 };
 
 process.on('unhandledRejection', error => {
-  console.error(typeof error === 'string' ? error : error instanceof UsageError ? error.message : error.stack);
+  console.error(
+      typeof error === 'string' ?
+          error :
+          error instanceof UsageError ? error.message : error.stack);
   process.exit(1);
 });
 
-const asyncMain = async () => {
+const asyncMain =
+    async () => {
   try {
     await main(...process.argv.slice(2));
   } catch (error) {
@@ -174,4 +179,5 @@ const asyncMain = async () => {
   }
 }
 
-asyncMain().then(() => process.exit(0));
+                asyncMain()
+                    .then(() => process.exit(0));

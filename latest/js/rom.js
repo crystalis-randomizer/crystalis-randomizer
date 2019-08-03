@@ -66,6 +66,11 @@ export class Rom {
             throw new Error(`Bad trigger id $${hex(id)}`);
         return this.triggers[id & 0x7f];
     }
+    tileset(id) {
+        if (id < 0x80 || id > 0xac || id & 3)
+            throw new Error(`Bad tileset id $${hex(id)}`);
+        return this.tilesets[(id & 0x7f) >>> 2];
+    }
     get projectiles() {
         const projectiles = new Set();
         for (const m of this.objects.filter(o => o instanceof Monster)) {
@@ -111,12 +116,6 @@ export class Rom {
             }
         }
         return m;
-    }
-    static async load(patch) {
-        const file = await pickFile();
-        if (patch)
-            await patch(file);
-        return new Rom(file);
     }
     async writeData() {
         Rom.SHOP_COUNT.set(this.prg, this.shopCount);
@@ -272,6 +271,12 @@ export class Rom {
             }
         }
     }
+    static async load(patch, receiver) {
+        const file = await pickFile(receiver);
+        if (patch)
+            await patch(file);
+        return new Rom(file);
+    }
 }
 Rom.OMIT_ITEM_GET_DATA_SUFFIX = RomOption.bit(0x142c0, 0);
 Rom.OMIT_LOCAL_DIALOG_SUFFIX = RomOption.bit(0x142c0, 1);
@@ -280,7 +285,9 @@ Rom.SCALING_LEVELS = RomOption.byte(0x142c2);
 Rom.UNIQUE_ITEM_TABLE = RomOption.address(0x142d0);
 Rom.SHOP_DATA_TABLES = RomOption.address(0x142d3);
 Rom.TELEPATHY_TABLES = RomOption.address(0x142d6);
-function pickFile() {
+function pickFile(receiver) {
+    if (!receiver)
+        receiver = picker => document.body.appendChild(picker);
     return new Promise((resolve) => {
         if (window.location.hash !== '#reset') {
             const data = localStorage.getItem('rom');

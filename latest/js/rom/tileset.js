@@ -1,4 +1,5 @@
 import { Entity } from './entity.js';
+import { MapScreen } from './mapscreen.js';
 import { seq, tuple } from './util.js';
 export class Tileset extends Entity {
     constructor(rom, id) {
@@ -10,6 +11,12 @@ export class Tileset extends Entity {
         this.tiles = seq(4, q => tuple(rom.prg, this.tileBase | q << 8, 256));
         this.attrs = seq(256, i => rom.prg[this.attrBase | i >> 2] >> ((i & 3) << 1) & 3);
         this.alternates = tuple(rom.prg, this.alternatesBase, 32);
+    }
+    get screens() {
+        if (this.lazyScreens)
+            return this.lazyScreens;
+        return this.lazyScreens =
+            seq(256, i => new MapScreen(this.rom.screens[i], this));
     }
     write(writer) {
         for (let i = 0; i < 0x100; i++) {

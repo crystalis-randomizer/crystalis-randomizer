@@ -87,6 +87,20 @@ export class Random {
             throw new Error('empty array');
         return arr[this.nextInt(arr.length)];
     }
+    bitGenerator() {
+        let bits = 0;
+        let next = 0;
+        return () => {
+            if (!bits) {
+                bits = 32;
+                next = this.nextInt(0x100000000);
+            }
+            bits--;
+            const result = !(next & 1);
+            next >>>= 1;
+            return result;
+        };
+    }
 }
 const TWOPI = 2 * Math.PI;
 //# sourceMappingURL=random.js.map

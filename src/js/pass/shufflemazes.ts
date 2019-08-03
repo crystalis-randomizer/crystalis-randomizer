@@ -75,299 +75,304 @@ export function shuffleSwamp1(rom: Rom, random: Random): boolean {
   return true;
 }
 
-export function shuffleSwamp(rom: Rom, random: Random) {
+export function shuffleSwamp(rom: Rom, random: Random, attempts = 100) {
   const swamp = rom.locations.swamp;
   // 1. Start by fixing up the swamp tiles.
   extendSwampScreens(rom);
 
-  // Collect the available screens (7c is boss room, 7f is solid)
-  const screens = [
-    0x7f, // 0000 x
-    , // 0001 ^
-    0x76, // 0010 >
-    0x79, // 0011 ^>
-    , // 0100 v
-    , // 0101 |
-    , // 0110 v>
-    , // 0111 |>
-    0x7b, // 1000 <
-    0x75, // 1001 <^
-    , // 1010 _
-    0x7d, // 1011 —^—
-    0x7e, // 1100 <v
-    0x78, // 1101 <|
-    0x7a, // 1110 —v—
-    0x77, // 1111 —|—
-  ];
+  while (attempts-- > 0) {
 
-  //for (let i = 0; i < 16; i++) if (screens[i] > 0x7f) delete screens[i];
+    // Collect the available screens (7c is boss room, 7f is solid)
+    const screens = [
+      0x7f, // 0000 x
+      , // 0001 ^
+      0x76, // 0010 >
+      0x79, // 0011 ^>
+      , // 0100 v
+      , // 0101 |
+      , // 0110 v>
+      , // 0111 |>
+      0x7b, // 1000 <
+      0x75, // 1001 <^
+      , // 1010 _
+      0x7d, // 1011 —^—
+      0x7e, // 1100 <v
+      0x78, // 1101 <|
+      0x7a, // 1110 —v—
+      0x77, // 1111 —|—
+    ];
 
-  const AVAILABLE = 9;
-  const w = 5;
-  const h = 5;
-  const map = new Array(0x100).fill(0xf);
-  const dirs = [0, 1, 2, 3] as const;
-  const delta = [-16, 1, 16, -1] as const;
-  const counts = new Array(16).fill(0);
-  counts[0xf] = w * h - 1;
-  let closed = 0;
-  const fixed = new Set<number>();
+    //for (let i = 0; i < 16; i++) if (screens[i] > 0x7f) delete screens[i];
 
-  const allPos: number[] = [];
-  for (let y = 0; y < h; y++) {
+    const AVAILABLE = 9;
+    const w = 5;
+    const h = 5;
+    const map = new Array(0x100).fill(0xf);
+    const dirs = [0, 1, 2, 3] as const;
+    const delta = [-16, 1, 16, -1] as const;
+    const counts = new Array(16).fill(0);
+    counts[0xf] = w * h - 1;
+    let closed = 0;
+    const fixed = new Set<number>();
+
+    const allPos: number[] = [];
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        allPos.push(y << 4 | x);
+      }
+    }
+
+    function bits(x: number): number[] {
+      const out = [];
+      if (x & 1) out.push(0);
+      if (x & 2) out.push(1);
+      if (x & 4) out.push(2);
+      if (x & 8) out.push(3);
+      return out;
+    }
+
+    function ok(x: number): boolean {
+      return x >= 0 && (x & 0xf) < w && (x >> 4) < h && !fixed.has(x);
+    }
+
+    function set(pos: number, value: number) {
+      if (pos !== boss) counts[map[pos]]--;
+      map[pos] = value;
+      if (pos !== boss) counts[value]++;
+    }
+
+    function cut(pos: number, dir: number): () => void {
+      const mask = 1 << dir;
+      const npos = pos + delta[dir];
+      const nmask = 1 << (dir ^ 2);
+      const origClosed = closed;
+      const origPos = map[pos];
+      const okNpos = ok(npos);
+      const origNpos = okNpos ? map[npos] : 0;
+      if (origPos === mask) closed++;
+      set(pos, map[pos] & ~mask);
+      if (okNpos) {
+        if (origNpos === nmask) closed++;
+        set(npos, map[npos] & ~nmask);
+      }
+      return () => {
+        set(pos, origPos);
+        if (okNpos) set(npos, origNpos);
+        closed = origClosed;
+      };
+    }
+
+    function kill(pos: number) {
+      for (const dir of bits(map[pos])) {
+        cut(pos, dir);
+      }
+    }
+
+    function unique(max: number): Set<number> | null {
+      const c = counts.flatMap((x, i) => x ? [[x, i]] : []).sort(([a], [b]) => b - a);
+      if (c.length <= max) return null;
+      return new Set(c.map(x => x[1]).slice(0, max));
+    }
+
+    function randomPos(): number {
+      const yx = random.nextInt(w * h);
+      return Math.floor(yx / w) << 4 | (yx % w);
+    }
+
+    const [boss, entrance] = (() => {
+      let boss;
+      let entrance;
+      do {
+        boss = random.nextInt(w);
+        entrance = random.nextInt(h);
+      } while (boss < 2 || entrance < 2);
+      return [boss, entrance << 4];
+    })();
+
+    // Set up boundary, boss, and entrance
     for (let x = 0; x < w; x++) {
-      allPos.push(y << 4 | x);
+      cut(x, 0);
+      cut(x | (h - 1) << 4, 2);
     }
-  }
-
-  function bits(x: number): number[] {
-    const out = [];
-    if (x & 1) out.push(0);
-    if (x & 2) out.push(1);
-    if (x & 4) out.push(2);
-    if (x & 8) out.push(3);
-    return out;
-  }
-
-  function ok(x: number): boolean {
-    return x >= 0 && (x & 0xf) < w && (x >> 4) < h && !fixed.has(x);
-  }
-
-  function set(pos: number, value: number) {
-    if (pos !== boss) counts[map[pos]]--;
-    map[pos] = value;
-    if (pos !== boss) counts[value]++;
-  }
-  
-  function cut(pos: number, dir: number): () => void {
-    const mask = 1 << dir;
-    const npos = pos + delta[dir];
-    const nmask = 1 << (dir ^ 2);
-    const origClosed = closed;
-    const origPos = map[pos];
-    const okNpos = ok(npos);
-    const origNpos = okNpos ? map[npos] : 0;
-    if (origPos === mask) closed++;
-    set(pos, map[pos] & ~mask);
-    if (okNpos) {
-      if (origNpos === nmask) closed++;
-      set(npos, map[npos] & ~nmask);
+    for (let y = 0; y < h; y++) {
+      cut(y << 4, 3);
+      cut(y << 4 | (w - 1), 1);
     }
-    return () => {
-      set(pos, origPos);
-      if (okNpos) set(npos, origNpos);
-      closed = origClosed;
-    };
-  }
+    if (boss > 0) kill(boss - 1);
+    if (boss < w - 1) kill(boss + 1);
+    set(entrance, map[entrance] | 8);
+    set(boss, 4);
+    fixed.add(boss);
+    fixed.add(boss - 1);
+    fixed.add(boss + 1);
 
-  function kill(pos: number) {
-    for (const dir of bits(map[pos])) {
-      cut(pos, dir);
+    function check(): boolean {
+      // check whether we can do a full traverse.
+      const queue: number[] = [map.findIndex(x => x)];
+      const seen = new Set<number>();
+      while (queue.length) {
+        const next = queue.pop();
+        if (next == null || (!ok(next) && next !== boss) || seen.has(next)) continue;
+        seen.add(next);
+        for (const bit of bits(map[next])) {
+          queue.push(next + delta[bit]);
+        }
+      }
+      for (const pos of allPos) {
+        if (!seen.has(pos) && map[pos]) return false;
+      }
+      return true;
+      //return seen.size === w * h - closed;
     }
-  }
 
-  function unique(max: number): Set<number> | null {
-    const c = counts.flatMap((x, i) => x ? [[x, i]] : []).sort(([a], [b]) => b - a);
-    if (c.length <= max) return null;
-    return new Set(c.map(x => x[1]).slice(0, max));
-  }
+    // Attempt to add w*h walls
+    for (let i = Math.floor(0.75 * w * h); i; i--) {
+      const pos = randomPos();
+      const cur = map[pos];
+      if (!cur) continue;
+      const ds = bits(cur);
+      const d = random.pick(ds);
+      if (!ok(pos) || !ok(pos + delta[d])) continue;
+      const undo = cut(pos, d);
+      if (!check()) undo();
+    }
 
-  function randomPos(): number {
-    const yx = random.nextInt(w * h);
-    return Math.floor(yx / w) << 4 | (yx % w);
-  }
+    function toggle(pos: number, dir: number): boolean {
+      const npos = pos + delta[dir];
+      if (ok(npos)) {
+        if (map[pos] & (1 << dir)) {
+          // attempt a cut
+          const undo = cut(pos, dir);
+          if (check()) return true;
+          undo();
+        } else {
+          // do a join
+          set(pos, map[pos] | (1 << dir));
+          set(npos, map[npos] | (1 << (dir ^ 2)));
+          return true;
+        }
+      }
+      return false;
+    }
 
-  const [boss, entrance] = (() => {
-    let boss;
-    let entrance;
-    do {
-      boss = random.nextInt(w);
-      entrance = random.nextInt(h);
-    } while (boss < 2 || entrance < 2);
-    return [boss, entrance << 4];
-  })();
+    let steps = 1000;
+    function consolidate(): boolean {
+      // Pick a random tile and add to it
+      const u = unique(AVAILABLE);
+      if (!u) return false;
+      const bad = [];
+      for (const pos of allPos) {
+        if (ok(pos) && (!u.has(map[pos]) || !random.nextInt(w * h * 2))) {
+          bad.push(pos);
+          for (const dir of random.shuffle([...dirs])) {
+            const npos = pos + delta[dir];
+            if (ok(npos) && !u.has(map[npos]) && toggle(pos, dir)) return true;
+          }
+        }
+      }
+      const pos = random.pick(bad);
+      const dir = random.pick(dirs);
+      if (ok(pos + delta[dir])) toggle(pos, dir);
+      return true;
+    }
 
-  // Set up boundary, boss, and entrance
-  for (let x = 0; x < w; x++) {
-    cut(x, 0);
-    cut(x | (h - 1) << 4, 2);
-  }
-  for (let y = 0; y < h; y++) {
-    cut(y << 4, 3);
-    cut(y << 4 | (w - 1), 1);
-  }
-  if (boss > 0) kill(boss - 1);
-  if (boss < w - 1) kill(boss + 1);
-  set(entrance, map[entrance] | 8);
-  set(boss, 4);
-  fixed.add(boss);
-  fixed.add(boss - 1);
-  fixed.add(boss + 1);
-  
-  function check(): boolean {
-    // check whether we can do a full traverse.
-    const queue: number[] = [map.findIndex(x => x)];
-    const seen = new Set<number>();
-    while (queue.length) {
-      const next = queue.pop();
-      if (next == null || (!ok(next) && next !== boss) || seen.has(next)) continue;
-      seen.add(next);
-      for (const bit of bits(map[next])) {
-        queue.push(next + delta[bit]);
+    // Now find the minority tiles
+    while (--steps && consolidate());
+    if (!steps) break;
+
+    // Plug in the most common 9 screens
+    const used = new Set(counts.flatMap((x, i) => x ? [i] : []));
+    const available = [];
+    for (let i = 0; i < 16; i++) {
+      const screen = screens[i];
+      if (screen != null && !used.has(i)) {
+        available.push(screen);
+        delete screens[i];
       }
     }
-    for (const pos of allPos) {
-      if (!seen.has(pos) && map[pos]) return false;
+    for (const i of used) {
+      if (screens[i] != null) continue;
+      const next = available.pop();
+      if (next == null) throw new Error(`No available screen`);
+      screens[i] = next;
+      rom.screens[next].tiles = SWAMP_SCREENS[i].split(/\s+/g).map(x => parseInt(x, 16));
     }
-    return true;
-    //return seen.size === w * h - closed;
-  }
 
-  // Attempt to add w*h walls
-  for (let i = Math.floor(0.75 * w * h); i; i--) {
-    const pos = randomPos();
-    const cur = map[pos];
-    if (!cur) continue;
-    const ds = bits(cur);
-    const d = random.pick(ds);
-    if (!ok(pos) || !ok(pos + delta[d])) continue;
-    const undo = cut(pos, d);
-    if (!check()) undo();
-  }
-
-  function toggle(pos: number, dir: number): boolean {
-    const npos = pos + delta[dir];
-    if (ok(npos)) {
-      if (map[pos] & (1 << dir)) {
-        // attempt a cut
-        const undo = cut(pos, dir);
-        if (check()) return true;
-        undo();
-      } else {
-        // do a join
-        set(pos, map[pos] | (1 << dir));
-        set(npos, map[npos] | (1 << (dir ^ 2)));
-        return true;
-      }
-    }
-    return false;
-  }
-
-  let attempts = 1000;
-  function consolidate(): boolean {
-    // Pick a random tile and add to it
-    const u = unique(AVAILABLE);
-    if (!u) return false;
-    const bad = [];
+    // Set everything
+    swamp.screens = seq(h, () => []);
     for (const pos of allPos) {
-      if (ok(pos) && (!u.has(map[pos]) || !random.nextInt(w * h * 2))) {
-        bad.push(pos);
-        for (const dir of random.shuffle([...dirs])) {
-          const npos = pos + delta[dir];
-          if (ok(npos) && !u.has(map[npos]) && toggle(pos, dir)) return true;
+      swamp.screens[pos >> 4][pos & 0xf] = pos === boss ? 0x7c : screens[map[pos]]!;
+    }
+    swamp.width = w;
+    swamp.height = h;
+
+    // Analyze screens
+    const exitScreens = new Map<number, number>();
+    const puffSpots = new Map<number, number[]>();
+    for (let i = 0; i < 0xf; i++) {
+      const screen = screens[i];
+      if (screen == null) continue;
+      const tiles = rom.screens[screen].tiles;
+      for (let t = 0; t < 240; t++) {
+        if (tiles[t] === 3 && tiles[t - 1] !== 3) exitScreens.set(i, t);
+        if (tiles[t] === 0xf0) {
+          let arr = puffSpots.get(i);
+          if (!arr) puffSpots.set(i, arr = []);
+          arr.push(t);
         }
       }
     }
-    const pos = random.pick(bad);
-    const dir = random.pick(dirs);
-    if (ok(pos + delta[dir])) toggle(pos, dir);
-    return true;
-  }
-
-  // Now find the minority tiles
-  while (--attempts && consolidate());
-  if (!attempts) throw new Error(`Failed to converge`);
-
-  // Plug in the most common 9 screens
-  const used = new Set(counts.flatMap((x, i) => x ? [i] : []));
-  const available = [];
-  for (let i = 0; i < 16; i++) {
-    const screen = screens[i];
-    if (screen != null && !used.has(i)) {
-      available.push(screen);
-      delete screens[i];
+    const doors = [];
+    const deadEnds = [];
+    const bends = [];
+    for (const pos of allPos) {
+      if (pos === boss) continue;
+      const scr = map[pos];
+      if (exitScreens.has(scr)) doors.push(pos);
+      if (scr === 1 || scr === 2 || scr === 4 || scr === 8) deadEnds.push(pos);
+      if (scr === 3 || scr === 6 || scr === 9 || scr === 12) bends.push(pos);
     }
-  }
-  for (const i of used) {
-    if (screens[i] != null) continue;
-    const next = available.pop();
-    if (next == null) throw new Error(`No available screen`);
-    screens[i] = next;
-    rom.screens[next].tiles = SWAMP_SCREENS[i].split(/\s+/g).map(x => parseInt(x, 16));
-  }
 
-  // Set everything
-  swamp.screens = seq(h, () => []);
-  for (const pos of allPos) {
-    swamp.screens[pos >> 4][pos & 0xf] = pos === boss ? 0x7c : screens[map[pos]]!;
-  }
-  swamp.width = w;
-  swamp.height = h;
+    // Move main entrnace
+    swamp.entrances[0].screen = entrance;
+    for (let i = 0; i < 5; i++) swamp.exits[i].screen = entrance;
 
-  // Analyze screens
-  const exitScreens = new Map<number, number>();
-  const puffSpots = new Map<number, number[]>();
-  for (let i = 0; i < 0xf; i++) {
-    const screen = screens[i];
-    if (screen == null) continue;
-    const tiles = rom.screens[screen].tiles;
-    for (let t = 0; t < 240; t++) {
-      if (tiles[t] === 3 && tiles[t - 1] !== 3) exitScreens.set(i, t);
-      if (tiles[t] === 0xf0) {
-        let arr = puffSpots.get(i);
-        if (!arr) puffSpots.set(i, arr = []);
-        arr.push(t);
-      }
+    // Move oak exit
+    const oak = random.pick(doors);
+    const oakTile = exitScreens.get(map[oak])!;
+    swamp.entrances[1].screen = oak;
+    swamp.entrances[1].tile = oakTile + 0x11;
+    for (let i = 0; i < 2; i++) {
+      swamp.exits[5 + i].screen = oak;
+      swamp.exits[5 + i].tile = oakTile + i;
     }
-  }
-  const doors = [];
-  const deadEnds = [];
-  const bends = [];
-  for (const pos of allPos) {
-    if (pos === boss) continue;
-    const scr = map[pos];
-    if (exitScreens.has(scr)) doors.push(pos);
-    if (scr === 1 || scr === 2 || scr === 4 || scr === 8) deadEnds.push(pos);
-    if (scr === 3 || scr === 6 || scr === 9 || scr === 12) bends.push(pos);
-  }
+    swamp.flags.push(Flag.of({screen: oak, flag: 0x2ef}));
 
-  // Move main entrnace
-  swamp.entrances[0].screen = entrance;
-  for (let i = 0; i < 5; i++) swamp.exits[i].screen = entrance;
+    // Place boss in screen and child in a dead end (if possible)
+    swamp.spawns[0].screen = boss;
+    const child = random.pick(deadEnds.length ? deadEnds : bends);
+    swamp.spawns[1].screen = child;
 
-  // Move oak exit
-  const oak = random.pick(doors);
-  const oakTile = exitScreens.get(map[oak])!;
-  swamp.entrances[1].screen = oak;
-  swamp.entrances[1].tile = oakTile + 0x11;
-  for (let i = 0; i < 2; i++) {
-    swamp.exits[5 + i].screen = oak;
-    swamp.exits[5 + i].tile = oakTile + i;
-  }
-  swamp.flags.push(Flag.of({screen: oak, flag: 0x2ef}));
-
-  // Place boss in screen and child in a dead end (if possible)
-  swamp.spawns[0].screen = boss;
-  const child = random.pick(deadEnds.length ? deadEnds : bends);
-  swamp.spawns[1].screen = child;
-
-  // Put puffs on the tips of plants
-  const usedSpawns = new Set();
-  for (let i = 2; i < swamp.spawns.length; i++) {
-    const spawn = swamp.spawns[i];
-    const pos = random.pick(allPos);
-    if (pos === boss || pos === entrance || !map[pos] || usedSpawns.has(pos) ||
-       (spawn.id === 0xd && !puffSpots.has(map[pos]))) {
-      i--;
-    } else {
-      spawn.screen = pos;
-      if (spawn.id === 0xd) {
-        spawn.tile = random.pick(puffSpots.get(map[pos])!);
+    // Put puffs on the tips of plants
+    const usedSpawns = new Set();
+    for (let i = 2; i < swamp.spawns.length; i++) {
+      const spawn = swamp.spawns[i];
+      const pos = random.pick(allPos);
+      if (pos === boss || pos === entrance || !map[pos] || usedSpawns.has(pos) ||
+         (spawn.id === 0xd && !puffSpots.has(map[pos]))) {
+        i--;
       } else {
-        spawn.tile = 0x88; // TODO - do a better job
+        spawn.screen = pos;
+        if (spawn.id === 0xd) {
+          spawn.tile = random.pick(puffSpots.get(map[pos])!);
+        } else {
+          spawn.tile = 0x88; // TODO - do a better job
+        }
       }
     }
+    return;
   }
+  throw new Error('Failed to shuffle');
 }
 
 const SWAMP_SCREENS: {[id: number]: string} = {

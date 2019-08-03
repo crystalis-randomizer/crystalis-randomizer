@@ -34,27 +34,27 @@ export const PRESETS: Preset[] = [
 
     descr:
         `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
-    flags: 'Em Fsw Gt Mert Ps Rlprt Sckmt Tabmp Ww',
+    flags: 'Em Fsw Gt Mert Ps Rlprt Sckmt Tabmp Wmtuw',
   },
   {
     title: 'Glitchless',
 
     descr: `Full shuffle but with no glitches.`,
-    flags: 'Em Fcpstw Mert Ps Rlprt Sckmt Tab Ww',
+    flags: 'Em Fcpstw Mert Ps Rlprt Sckmt Tab Wmtuw',
   },
   {
     // TODO: add 'Ht' for maxing out tower scaling
     title: 'Advanced',
 
     descr: `A balanced randomization with quite a bit more difficulty.`,
-    flags: 'Fsw Gfprt Hbdgw Mert Ps Rloprst Sckt Sm Tabmp Ww',
+    flags: 'Fsw Gfprt Hbdgw Mert Ps Rloprst Sckt Sm Tabmp Wmtuw',
   },
   {
     // TODO: add 'Ht'
     title: 'Ludicrous',
 
     descr: `Pulls out all the stops, may require superhuman feats.`,
-    flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Rloprst Sckmt Tabmp Ww',
+    flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Rloprst Sckmt Tabmp Wmtuw',
   }
 ];
 
@@ -207,6 +207,9 @@ export class FlagSet {
     return this.check('Ro');
   }
 
+  randomizeMaps() {
+    return this.check('Wm');
+  }
   randomizeTrades() {
     return this.check('Wt');
   }

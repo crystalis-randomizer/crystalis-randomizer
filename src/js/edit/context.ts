@@ -147,7 +147,7 @@ export class Context {
       [Symbol.asyncIterator]: () => iter,
     }
     return iter;
-  }      
+  }
 
   static readonly LOCATION: GetSet<number|undefined> = {
     get(context) { return context.location; },

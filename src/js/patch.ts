@@ -8,6 +8,7 @@ import {FlagSet} from './flagset.js';
 import {AssumedFill} from './graph/shuffle.js';
 import {World} from './graph/world.js';
 import {fixDialog} from './pass/fixdialog.js';
+import {shuffleSwamp} from './pass/shufflemazes.js';
 import {shufflePalettes} from './pass/shufflepalettes.js';
 import {shuffleTrades} from './pass/shuffletrades.js';
 import {unidentifiedItems} from './pass/unidentifieditems.js';
@@ -187,6 +188,7 @@ export async function shuffle(rom: Uint8Array,
   if (flags.randomizeWildWarp()) shuffleWildWarp(parsed, flags, random);
   rescaleMonsters(parsed, flags, random);
   shuffleTrades(parsed, flags, random);
+  if (flags.randomizeMaps()) shuffleSwamp(parsed, random);
 
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.

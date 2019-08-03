@@ -284,6 +284,9 @@ export const Entrance = DataTuple.make(4, {
   x: DataTuple.prop([0], [1, 0xff, -8]),
   y: DataTuple.prop([2], [3, 0xff, -8]),
 
+  screen: DataTuple.prop([3, 0x0f, -4], [1, 0x0f]),
+  tile:   DataTuple.prop([2, 0xf0], [0, 0xf0, 4]),
+
   toString(this: any): string {
     return `Entrance ${this.hex()}: (${hex(this.x)}, ${hex(this.y)})`;
   },
@@ -296,6 +299,9 @@ export const Exit = DataTuple.make(4, {
 
   y:        DataTuple.prop([1, 0xff, -4]),
   yt:       DataTuple.prop([1]),
+
+  screen:   DataTuple.prop([1, 0xf0], [0, 0xf0, 4]),
+  tile:     DataTuple.prop([1, 0x0f, -4], [0, 0x0f]),
 
   dest:     DataTuple.prop([2]),
 
@@ -323,7 +329,9 @@ export const Flag = DataTuple.make(2, {
   y:     DataTuple.prop([1, 0xf0, -4]),
   ys:    DataTuple.prop([1, 0xf0, 4]),
 
+  // TODO - remove the 'yx' version
   yx:    DataTuple.prop([1]), // y in hi nibble, x in lo.
+  screen: DataTuple.prop([1]),
 
   toString(this: any): string {
     return `Flag ${this.hex()}: (${hex(this.xs)}, ${hex(this.ys)}) @ ${
@@ -355,6 +363,9 @@ export const Spawn = DataTuple.make(4, {
   timed: DataTuple.booleanProp([1, 0x80, 7]),
   x:     DataTuple.prop([1, 0x7f, -4], [2, 0x40, 3]),
   xt:    DataTuple.prop([1, 0x7f]),
+
+  screen: DataTuple.prop([0, 0xf0], [1, 0xf0, 4]),
+  tile:   DataTuple.prop([0, 0x0f, -4], [1, 0x0f]),
 
   patternBank: DataTuple.prop([2, 0x80, 7]),
   type:  DataTuple.prop([2, 0x07]),

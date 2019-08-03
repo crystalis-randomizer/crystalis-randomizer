@@ -78,7 +78,7 @@ export function shuffleSwamp1(rom: Rom, random: Random): boolean {
 export function shuffleSwamp(rom: Rom, random: Random) {
   const swamp = rom.locations.swamp;
   // 1. Start by fixing up the swamp tiles.
-  //extendSwampScreens(rom);
+  extendSwampScreens(rom);
 
   // Collect the available screens (7c is boss room, 7f is solid)
   const screens = [
@@ -112,6 +112,13 @@ export function shuffleSwamp(rom: Rom, random: Random) {
   counts[0xf] = w * h - 1;
   let closed = 0;
   const fixed = new Set<number>();
+
+  const allPos: number[] = [];
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      allPos.push(y << 4 | x);
+    }
+  }
 
   function bits(x: number): number[] {
     const out = [];
@@ -209,11 +216,8 @@ export function shuffleSwamp(rom: Rom, random: Random) {
         queue.push(next + delta[bit]);
       }
     }
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const pos = y << 4 | x;
-        if (!seen.has(pos) && map[pos]) return false;
-      }
+    for (const pos of allPos) {
+      if (!seen.has(pos) && map[pos]) return false;
     }
     return true;
     //return seen.size === w * h - closed;
@@ -255,15 +259,12 @@ export function shuffleSwamp(rom: Rom, random: Random) {
     const u = unique(AVAILABLE);
     if (!u) return false;
     const bad = [];
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const pos = y << 4 | x;
-        if (ok(pos) && (!u.has(map[pos]) || !random.nextInt(w * h * 2))) {
-          bad.push(pos);
-          for (const dir of random.shuffle([...dirs])) {
-            const npos = pos + delta[dir];
-            if (ok(npos) && !u.has(map[npos]) && toggle(pos, dir)) return true;
-          }
+    for (const pos of allPos) {
+      if (ok(pos) && (!u.has(map[pos]) || !random.nextInt(w * h * 2))) {
+        bad.push(pos);
+        for (const dir of random.shuffle([...dirs])) {
+          const npos = pos + delta[dir];
+          if (ok(npos) && !u.has(map[npos]) && toggle(pos, dir)) return true;
         }
       }
     }
@@ -288,7 +289,7 @@ export function shuffleSwamp(rom: Rom, random: Random) {
     }
   }
   for (const i of used) {
-    if (screens[i]) continue;
+    if (screens[i] != null) continue;
     const next = available.pop();
     if (next == null) throw new Error(`No available screen`);
     screens[i] = next;
@@ -297,16 +298,74 @@ export function shuffleSwamp(rom: Rom, random: Random) {
 
   // Set everything
   swamp.screens = seq(h, () => []);
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const pos = y << 4 | x;
-      if (pos === boss) {
-        swamp.screens[y][x] = 0x7c;
-        continue;
+  for (const pos of allPos) {
+    swamp.screens[pos >> 4][pos & 0xf] = pos === boss ? 0x7c : screens[map[pos]]!;
+  }
+  swamp.width = w;
+  swamp.height = h;
+
+  // Analyze screens
+  const exitScreens = new Map<number, number>();
+  const puffSpots = new Map<number, number[]>();
+  for (let i = 0; i < 0xf; i++) {
+    const screen = screens[i];
+    if (screen == null) continue;
+    const tiles = rom.screens[screen].tiles;
+    for (let t = 0; t < 240; t++) {
+      if (tiles[t] === 3 && tiles[t - 1] !== 3) exitScreens.set(i, t);
+      if (tiles[t] === 0xf0) {
+        let arr = puffSpots.get(i);
+        if (!arr) puffSpots.set(i, arr = []);
+        arr.push(t);
       }
-      swamp.width = w;
-      swamp.height = h;
-      swamp.screens[y][x] = screens[map[pos]]!;
+    }
+  }
+  const doors = [];
+  const deadEnds = [];
+  const bends = [];
+  for (const pos of allPos) {
+    if (pos === boss) continue;
+    const scr = map[pos];
+    if (exitScreens.has(scr)) doors.push(pos);
+    if (scr === 1 || scr === 2 || scr === 4 || scr === 8) deadEnds.push(pos);
+    if (scr === 3 || scr === 6 || scr === 9 || scr === 12) bends.push(pos);
+  }
+
+  // Move main entrnace
+  swamp.entrances[0].screen = entrance;
+  for (let i = 0; i < 5; i++) swamp.exits[i].screen = entrance;
+
+  // Move oak exit
+  const oak = random.pick(doors);
+  const oakTile = exitScreens.get(map[oak])!;
+  swamp.entrances[1].screen = oak;
+  swamp.entrances[1].tile = oakTile + 0x11;
+  for (let i = 0; i < 2; i++) {
+    swamp.exits[5 + i].screen = oak;
+    swamp.exits[5 + i].tile = oakTile + i;
+  }
+  swamp.flags.push(Flag.of({screen: oak, flag: 0x2ef}));
+
+  // Place boss in screen and child in a dead end (if possible)
+  swamp.spawns[0].screen = boss;
+  const child = random.pick(deadEnds.length ? deadEnds : bends);
+  swamp.spawns[1].screen = child;
+
+  // Put puffs on the tips of plants
+  const usedSpawns = new Set();
+  for (let i = 2; i < swamp.spawns.length; i++) {
+    const spawn = swamp.spawns[i];
+    const pos = random.pick(allPos);
+    if (pos === boss || pos === entrance || !map[pos] || usedSpawns.has(pos) ||
+       (spawn.id === 0xd && !puffSpots.has(map[pos]))) {
+      i--;
+    } else {
+      spawn.screen = pos;
+      if (spawn.id === 0xd) {
+        spawn.tile = random.pick(puffSpots.get(map[pos])!);
+      } else {
+        spawn.tile = 0x88; // TODO - do a better job
+      }
     }
   }
 }

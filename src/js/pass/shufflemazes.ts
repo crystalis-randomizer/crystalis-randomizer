@@ -20,6 +20,80 @@ function shuffleGoa1(location: Location, random: Random) {
 
 
 }
+
+export function extendGoaScreens(rom: Rom) {
+  // PLAN:
+  // tileset a4,8c: move 19,1b -> 2b,38
+  // tileset a8:    move 19,1b -> 17,18
+  // tileset 88:    move c5 -> 19,1b
+  //     17,18 used in 88, which shares a lot with a8, but
+  //     no 88 maps have any 19,1b so they'll never see conflicting 17,18
+  // change the 88 users of e1,e2 (hydra) to tileset a8 with pat1=2a to avoid
+  // conflict?  the cost is one wall that doesn't fit in quite as well.
+  // This frees up 19,1b to absorb c6/c4 with alts of c5
+  
+  for (const t of [0x8c, 0xa4, 0xa8]) { // get around check
+    const ts = rom.tileset(t);
+    ts.alternates[0x19] = 0x19;
+    ts.alternates[0x1b] = 0x1b;
+  }
+  rom.swapMetatiles([0xa4, 0x8c],
+                    [0x2b, [0x19, 0xc5], ~0xc6],
+                    [0x38, [0x1b, 0xc5], ~0xc4]);
+  rom.swapMetatiles([0xa8],
+                    [[0x17, 0x54], ~0x19],
+                    [[0x18, 0x58], ~0x1b]);
+  rom.swapMetatiles([0x88],
+                    [0x19, ~0xc5],
+                    [0x1b, ~0xc5]);
+
+  // Screens that can now be opened or shut (* means currently shut):
+  //   e0, e1*, e2, e3*, e4, e5, e6, e7, e8**
+  // We need to pick which wall(s) are toggled...
+  
+  const w = [[0x19, 0x19], [0x1b, 0x1b]] as const;
+  write(rom.screens[0xe0].tiles, 0x61, w); // open up (wide), right (vanilla open)
+  write(rom.screens[0xe1].tiles, 0x6d, w); // open up (wide), left (vanilla shut)
+  write(rom.screens[0xe2].tiles, 0x91, w); // open down (wide), right (vanilla open)
+  write(rom.screens[0xe3].tiles, 0x9d, w); // open down (wide), left (vanilla shut)
+  write(rom.screens[0xe4].tiles, 0x41, w); // stairs
+  write(rom.screens[0xe4].tiles, 0x8d, w);
+  write(rom.screens[0xe5].tiles, 0x61, w); // horizontal wall
+  write(rom.screens[0xe5].tiles, 0xad, w);
+  write(rom.screens[0xe6].tiles, 0x0d, w); // four-way passages
+  write(rom.screens[0xe6].tiles, 0xd1, w);
+  write(rom.screens[0xe7].tiles, 0x01, w); // corners up top
+  write(rom.screens[0xe7].tiles, 0x0d, w);
+  write(rom.screens[0xe8].tiles, 0xd1, w); // corners on bottom
+  write(rom.screens[0xe8].tiles, 0xdd, w);
+
+  // To maintain current behavior we need to push flags for all the
+  // screens that need to be *open*.
+
+  // NOTE: after testing, only normally-open tiles need flags...?
+  //   - just make a list and iterate over 
+
+  rom.locations[0xa9].flags.push(
+      Flag.of({screen: 0x10, flag: 0x2ef}),
+      Flag.of({screen: 0x14, flag: 0x200}),
+      Flag.of({screen: 0x20, flag: 0x2ef}),
+      Flag.of({screen: 0x21, flag: 0x2ef}),
+      Flag.of({screen: 0x24, flag: 0x2ef}),
+      Flag.of({screen: 0x25, flag: 0x2ef}),
+      Flag.of({screen: 0x26, flag: 0x200}),
+      Flag.of({screen: 0x30, flag: 0x2ef}),
+      Flag.of({screen: 0x31, flag: 0x2ef}),
+      Flag.of({screen: 0x33, flag: 0x2ef}),
+      Flag.of({screen: 0x34, flag: 0x2ef}),
+      Flag.of({screen: 0x41, flag: 0x2ef}),
+      Flag.of({screen: 0x54, flag: 0x2ef}),
+      Flag.of({screen: 0x62, flag: 0x2ef}),
+      Flag.of({screen: 0x64, flag: 0x2ef}),
+      Flag.of({screen: 0x64, flag: 0x2ef}),
+      Flag.of({screen: 0x72, flag: 0x2ef}),
+      Flag.of({screen: 0x74, flag: 0x200}));
+}
+
 const [] = [GOA1, shuffleGoa1, Flag];
 
 export function shuffleSwamp1(rom: Rom, random: Random): boolean {
@@ -600,3 +674,38 @@ if (!Array.prototype.flatMap) {
     },
   });
 }
+
+// Goa 1 - need 2 extra flaggable tiles
+//  - 0..12 used for walls
+//  - 17,18,1c,1d used for bridges
+
+// a8 (intersecting)
+//  - 13..16, 19..1b,1f used for walls
+
+// 8c
+//  - 07..13 for wall
+//  - 17,18,1c,1d stairs behind statues
+//  - 14..16,1a.1e hole in floor
+
+// 8c does not use tiles 0..6
+//  -> can we shift 1a..1f there?
+// But these are shared with a4, which does use them... so no
+
+// 8c does not *flag* 19 or 1b
+//  -> shift to higher spot
+// a8 does flag them, and we share
+//  -> can a8 move them to elsewhere, too?
+//  -> 17,18 or 1c..1e ???
+//   - 17,18 is used by 8c, but not on any shared screens?
+//   - but 17,18 is used by 88, which does share with a8.
+//   - 1a,1e looks like the ones we need...?
+
+// PLAN
+// for a4,8c, move 19,1b -> 2b,38
+// for a8, move 19,1b -> 17,18
+//     17,18 used in 88, which shares a lot with a8, but
+//     no 88 maps have any 19,1b so they'll never see conflicting 17,18
+
+
+
+// NOTE: Screens 93, 9d are UNUSED!

@@ -9,7 +9,7 @@ import {Random} from '../random.js';
 import {ImageBuffer} from './imagebuffer.js';
 
 import {World} from '../graph/world.js';
-import {extendGoaScreens} from '../pass/shufflemazes.js';
+import * as shuffleMazes from '../pass/shufflemazes.js';
 
 // TODO - move colors to view.js?
 //   - maybe the API I want is drawTile(x, y, id, attr)?
@@ -373,7 +373,8 @@ const run = async () => {
     patch = p && p.apply ? (rom) => p.apply(rom, hash) : undefined;
   }
   const rom = await Rom.load(patch);
-  extendGoaScreens(rom);
+  shuffleMazes.extendGoaScreens(rom);
+  window.shuffleGoa1 = (s) => shuffleMazes.shuffleGoa1(rom, new Random(s || 1));
   window.rom = rom;
   window.World = World;
   window.world = new World(rom);

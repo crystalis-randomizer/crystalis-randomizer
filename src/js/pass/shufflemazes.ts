@@ -15,9 +15,200 @@ const GOA1 = [
   [0xe3, [3], [4, 7], [5, 6], [11]],
 ];
 
-function shuffleGoa1(location: Location, random: Random) {
+export function shuffleGoa1(rom: Rom, random: Random) {
   // NOTE: also need to move enemies...
 
+  const loc = rom.locations.goaFortressKelbesque;
+  const w = loc.width;
+  const h = loc.height;
+  function inBounds(x: number): boolean {
+    return x >= 0 && (x & 0xf) < w && (x >> 4) < h;
+  }
+
+  const screens = [
+    0x80, // 0000 no exits
+    ,     // 0001 fixed screen (entrance/boss)
+    ,
+    0xe0, // 0011 up/right exits
+    0xe5, // 0100 vertical dead ends (H)
+    0xe4, // 0101 stairs
+    0xe2, // 0110 down/right exits
+    ,
+    ,
+    0xe1, // 1001 up/left exits
+    0xea, // 1010 horizontal hallway
+    0xe7, // 1011 up/left/right (upside-down T)
+    0xe3, // 1100 down/left exits
+    ,
+    0xe8, // 1110 down/left/right (T)
+    0xe6, // 1111 all exits
+  ];
+  const usedScreens =
+      seq(16, x => screens[x] != null ? x : -1).filter(x => x >= 0);
+
+  // HEX            1 2 8|1 2 4|2  4  8| 1  4  8 
+  // closed top:    0         6   10    12 14    => 5441
+  // open top:        1 3 4 5   9    11       15 => 8a3a
+  // closed bottom: 0   3       9 10 11          => 0e09
+  // open bottom:     1   4 5 6         12 14 15 => 
+  // closed left:   0 1 3 4 5 6
+  // open left:                 9 10 11 12 14 15
+  // closed right:  0 1   4 5   9       12
+  // open right:        3     6   10 11    14 15
+
+  // Allowed neighbors.  Key is left/top and value is a bitmap of
+  // right/bottom IDs.
+
+  // NOTE: It's pretty hideous to hard-code these, but it makes it a lot
+  // easier to deal with the various exceptions, rather than trying to
+  // intuit it all programmatically.
+  const horizontal = new Set([
+    0x00, 0x01, 0x03, 0x04, 0x05, 0x06,
+    0x10,
+                                        0x39, 0x3a, 0x3b, 0x3c, 0x3e, 0x3f,
+    0x40,       0x43, 0x44, 0x45, 0x46,
+    0x50,       0x53, 0x54, 0x55, 0x56,
+                                        0x69, 0x6a, 0x6b, 0x6c, 0x6e, 0x6f,
+    0x90,       0x93, 0x94, 0x95, 0x96,
+                                        0xa9, 0xaa, 0xab, 0xac, 0xae, 0xaf,
+                                        0xb9, 0xba, 0xbb, 0xbc, 0xbe, 0xbf,
+    0xc0,       0xc3, 0xc4, 0xc5, 0xc6,
+                                        0xe9, 0xea, 0xeb, 0xec, 0xee, 0xef,
+                                        0xf9, 0xfa, 0xfb, 0xfc, 0xfe, 0xff,
+  ]);
+  const vertical = new Set([
+    0x00,                         0x06,       0x0a,       0x0c, 0x0e,
+          0x11, 0x13, 0x14, 0x15,       0x19,       0x1b,             0x1f,
+    0x30,                         0x36,       0x3a,       0x3c, 0x3e,
+          0x41, 0x43, 0x44,             0x49,       0x4b,             0x4f,
+          0x51, 0x53, 0x54,             0x59,       0x5b,             0x5f,
+    0x90,                         0x96,       0x9a,       0x9c, 0x9e,
+    0xa0,                         0xa6,       0xaa,       0xac, 0xae,
+    0xb0,                         0xb6,       0xba,       0xbc, 0xbe,
+          0xc1, 0xc3, 0xc4, 0xc5,       0xc9,       0xcb,             0xcf,
+          0xe1, 0xe3, 0xe4, 0xe5,       0xe9,       0xeb,             0xef,
+          0xf1, 0xf3, 0xf4, 0xf5,       0xf9,       0xfb,             0xff,
+  ]);
+
+  const check: ReadonlyArray<(a: number, b: number) => boolean> = [
+    (a, b) => vertical.has(b << 4 | a),
+    (a, b) => horizontal.has(a << 4 | b),
+    (a, b) => vertical.has(a << 4 | b),
+    (a, b) => horizontal.has(b << 4 | a),
+  ]
+
+  // Set of connected edges, mapping [1 2 3] as top edges (left to right),
+  // [5 6 7] as left edges (top to bottom), then [9 a b] and [d e f] for
+  // the bottom and right edges, respectively (OR'ing with 8 corresponds).
+  // Moreover, we introduce additional "screens" 10..1f for flag *clear*.
+  // Outer index is screen id, inner array is a partition, where each number
+  // is taken as a set of nibbles.  Ultimately these are mapped to arrays of
+  // tile indices within a screen.
+  const connections: number[][][] = [
+    ,,, // 0..2 make no connections
+    [0x3d, 0x2e, 0x1f], // 3
+    [0x139b], // 4
+    [0x1239ab], // 5
+    [0x9d, 0xae, 0xbf], // 6
+    ,, // 7..8
+    [0x15, 0x26, 0x37], // 9
+    [0xd5, 0xe6, 0xf7], // a
+    [0x26e, 0x7f, 0x15, 0x3d], // b
+    [0x6a, 0x79, 0x5b], // c
+    , // d
+    [0x6ae, 0x5d, 0x79, 0xbf], // e
+    [0x26ae, 0x15, 0xbf, 0x3d, 0x79], // f
+    ,,, // 0..2 make no connections, not flaggable
+    [0x3d, 0x2e], // 13
+    [0x39], // 14
+    [0x12ab], // 15
+    [0xae, 0xbf], // 16
+    ,, // 7..8 missing
+    [0x15, 0x26], // 19
+    , // 'a' is not flaggable
+    [0x26e, 0x7f], // 1b
+    [0x6a, 0x79], // 1c
+    , // d missing
+    [0x6ae, 0x5d], // 1e
+    [0x26ae, 0x15, 0xbf], // 1f
+  ].map(xs => !xs ? [] : xs.map(x => {
+    const tiles = [];
+    while (x) {
+      // Canonical indices: 2,8,d for 1239ab and 2,8,c for rest
+      // 8 bit indicates "next screen" - shift to 100 bit
+      // x&4 indicates left/right edge -> shift one nibble
+      let tile = [2, 8, x & 4 ? 0xc : 0xd][x & 3] | (x & 8) << 5;
+      tiles.push(x & 4 ? tile << 4 : tile);
+      x >>>= 4;
+    }
+    return tiles;
+  }));
+  if (connections.length != 32) throw new Error(`bad connections array`);
+
+  OUTER:
+  for (let attempt = 0; attempt < 1000; attempt++) {
+
+    // Start building a map
+    const map = new Array(h << 4);
+
+    // Place the entrance at the bottom, boss at top.
+    const entrance = random.nextInt(w);
+    const boss = random.nextInt(w);
+    map[(h - 1) << 4 | entrance] = map[boss] = map[0x10 | boss] = 1;
+
+    // Start filling in  map squares, breadth first
+    const queue = new Set([(h - 2) << 4 | entrance, 0x20 | boss]);
+    for (const next of queue) {
+      if (map[next] != null) continue;
+      const options = [];
+      for (const option of usedScreens) {
+        let valid = true;
+        // test neighbors
+        for (let dir = 0; dir < 4 && valid; dir++) {
+          const tile = next + delta[dir];
+          const neighbor = inBounds(tile) ? map[tile] : 0;
+          if (neighbor != null && !check[dir](option, neighbor)) valid = false;
+        }
+        if (valid) {
+          options.push(option);
+          if (option === 5 || option === 0xb || option === 0xe) {
+            options.push(option, option, option, option, option);
+          }
+        }
+      }
+      // If no valid options, then we need to replace a neighbor?
+      if (!options.length) {
+        console.error(`failed to fill after ${queue.size} tiles`, showMap(map), [...queue].map(x => x.toString(16)));
+        continue OUTER; //throw new Error('failed to fill');
+      }
+      const option = random.pick(options);
+      map[next] = option;
+      for (const dir of dirs) {
+        if (!(option & (1 << dir))) continue;
+        const n = next + delta[dir];
+        if (inBounds(n)) queue.add(next + delta[dir]);
+      }
+    }
+
+    // Fill the rest with zero
+    for (let i = 0; i < map.length; i++) if (map[i] == null) map[i] = 0;
+    console.log(`success after ${attempt} attempts`);
+    console.log(showMap(map));
+    return;
+  }
+
+  function showMap(map) {
+    return seq(h, y => map.slice(16 * y, 16 * y + w).map(x => (x || 0).toString(16)).join(' ')).join('\n');
+  }
+
+  // Now build the skeleton of a map?
+  // Start with the most open possibility?  All flags on (no walls) and
+  // go along perimeter?  Domains of lower-floor, connected by parapets?
+
+  // Only "T" in parapet is from dead-end in lower area.  Otherwise
+  // everything is a cycle.
+
+  // Pretend 4 & 5 are vertical halls?  Then 
 
 }
 
@@ -88,7 +279,6 @@ export function extendGoaScreens(rom: Rom) {
       Flag.of({screen: 0x41, flag: 0x2ef}),
       Flag.of({screen: 0x54, flag: 0x2ef}),
       Flag.of({screen: 0x62, flag: 0x2ef}),
-      Flag.of({screen: 0x64, flag: 0x2ef}),
       Flag.of({screen: 0x64, flag: 0x2ef}),
       Flag.of({screen: 0x72, flag: 0x2ef}),
       Flag.of({screen: 0x74, flag: 0x200}));
@@ -182,8 +372,6 @@ export function shuffleSwamp(rom: Rom, random: Random, attempts = 100) {
     const w = 5;
     const h = 5;
     const map = new Array(0x100).fill(0xf);
-    const dirs = [0, 1, 2, 3] as const;
-    const delta = [-16, 1, 16, -1] as const;
     const counts = new Array(16).fill(0);
     counts[0xf] = w * h - 1;
     let closed = 0;
@@ -709,3 +897,6 @@ if (!Array.prototype.flatMap) {
 
 
 // NOTE: Screens 93, 9d are UNUSED!
+
+const dirs = [0, 1, 2, 3] as const;
+const delta = [-16, 1, 16, -1] as const;

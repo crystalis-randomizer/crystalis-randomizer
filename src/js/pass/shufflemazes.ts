@@ -1,8 +1,9 @@
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
-import {Location, Flag} from '../rom/location.js';
+import {Flag} from '../rom/location.js';
 import {MapBuilder} from '../rom/mapscreen.js';
-import { seq } from '../rom/util.js';
+import {seq} from '../rom/util.js';
+import {UnionFind} from '../unionfind.js';
 
 // For now we hardcode data about the available screens...
 // Edges of tile: [0 1 2] along top, [3 4 5] down left,
@@ -25,6 +26,9 @@ export function shuffleGoa1(rom: Rom, random: Random) {
     return x >= 0 && (x & 0xf) < w && (x >> 4) < h;
   }
 
+  const allPos: readonly number[] =
+      ([] as number[]).concat(...seq(h, y => seq(w, x => y << 4 | x)));
+
   const screens = [
     0x80, // 0000 no exits
     ,     // 0001 fixed screen (entrance/boss)
@@ -45,6 +49,7 @@ export function shuffleGoa1(rom: Rom, random: Random) {
   ];
   const usedScreens =
       seq(16, x => screens[x] != null ? x : -1).filter(x => x >= 0);
+  const [] = [usedScreens];
 
   // HEX            1 2 8|1 2 4|2  4  8| 1  4  8 
   // closed top:    0         6   10    12 14    => 5441
@@ -80,8 +85,9 @@ export function shuffleGoa1(rom: Rom, random: Random) {
     0x00,                         0x06,       0x0a,       0x0c, 0x0e,
           0x11, 0x13, 0x14, 0x15,       0x19,       0x1b,             0x1f,
     0x30,                         0x36,       0x3a,       0x3c, 0x3e,
-          0x41, 0x43, 0x44,             0x49,       0x4b,             0x4f,
+          0x41, 0x43, 0x44, 0x45,       0x49,       0x4b,             0x4f,
           0x51, 0x53, 0x54,             0x59,       0x5b,             0x5f,
+          0x61, 0x63, 0x64,             0x69,       0x6b,             0x6f,
     0x90,                         0x96,       0x9a,       0x9c, 0x9e,
     0xa0,                         0xa6,       0xaa,       0xac, 0xae,
     0xb0,                         0xb6,       0xba,       0xbc, 0xbe,
@@ -149,56 +155,267 @@ export function shuffleGoa1(rom: Rom, random: Random) {
   for (let attempt = 0; attempt < 1000; attempt++) {
 
     // Start building a map
-    const map = new Array(h << 4);
+    let map = new Array(h << 4);
 
     // Place the entrance at the bottom, boss at top.
     const entrance = random.nextInt(w);
     const boss = random.nextInt(w);
     map[(h - 1) << 4 | entrance] = map[boss] = map[0x10 | boss] = 1;
 
-    // Start filling in  map squares, breadth first
-    const queue = new Set([(h - 2) << 4 | entrance, 0x20 | boss]);
-    for (const next of queue) {
-      if (map[next] != null) continue;
-      const options = [];
-      for (const option of usedScreens) {
-        let valid = true;
-        // test neighbors
-        for (let dir = 0; dir < 4 && valid; dir++) {
-          const tile = next + delta[dir];
-          const neighbor = inBounds(tile) ? map[tile] : 0;
-          if (neighbor != null && !check[dir](option, neighbor)) valid = false;
-        }
-        if (valid) {
-          options.push(option);
-          if (option === 5 || option === 0xb || option === 0xe) {
-            options.push(option, option, option, option, option);
-          }
-        }
-      }
-      // If no valid options, then we need to replace a neighbor?
-      if (!options.length) {
-        console.error(`failed to fill after ${queue.size} tiles`, showMap(map), [...queue].map(x => x.toString(16)));
-        continue OUTER; //throw new Error('failed to fill');
-      }
-      const option = random.pick(options);
-      map[next] = option;
-      for (const dir of dirs) {
-        if (!(option & (1 << dir))) continue;
-        const n = next + delta[dir];
-        if (inBounds(n)) queue.add(next + delta[dir]);
-      }
+    console.log('initial', showMap(map));
+
+    // make the initial path from the entrance to the boss
+    if (!navigate(map, (h - 1) << 4 | entrance, 0, 0x20 | boss, 0)) continue OUTER;
+
+    // add an extra path until we fail 10 times
+    for (let i = 0; i < 10; i++) {
+      if (addExtraPath()) i = 0;
     }
+
 
     // Fill the rest with zero
     for (let i = 0; i < map.length; i++) if (map[i] == null) map[i] = 0;
     console.log(`success after ${attempt} attempts`);
     console.log(showMap(map));
     return;
+
+    function addExtraPath(): boolean {
+      // TODO - find an eligible tile to split?
+console.log(`addExtraPath\n${showMap(map)}`);
+      const m = [...map];
+      const expansions: Array<[number, number]> = [];
+      const uf = new UnionFind<number>();
+      for (const pos of allPos) {
+        const scr = m[pos];
+        if (scr == null) {
+          if ((pos & 0xf0) && m[pos - 16] == null) uf.union([pos, pos - 16]);
+          if ((pos & 0x0f) && m[pos - 1] == null) uf.union([pos, pos - 1]);
+        }
+        if (!scr || scr === 1 || scr === 4 || scr === 5) continue;
+        for (let dir = 0; dir < 4; dir++) {
+          const mask = 1 << dir;
+          if ((scr & mask) || screens[scr | mask] == null) continue;
+          delete m[pos];
+          if (ok(m, pos, scr | mask)) expansions.push([pos, dir]);
+          m[pos] = scr;
+        }
+      }
+
+      const [pos1, dir1] = random.pick(expansions);
+      const next = pos1 + delta[dir1];
+      const group = uf.map().get(uf.find(next));
+      if (!group) {
+        console.log(`no group`);
+        return false;
+      }
+
+      // try to find a nearby screen to also expand
+      const connected: Array<[number, number]> = [];
+      for (const [pos2, dir2] of expansions) {
+        if (pos2 === pos1 && dir2 === dir1) continue;
+        if (group.has(pos2 + delta[dir2])) connected.push([pos2, dir2]);
+      }
+      const [pos2, dir2] = random.pick(connected);
+      m[pos1] |= (1 << dir1);
+      m[pos2] |= (1 << dir2);
+      if (navigate(m, pos1, dir1, pos2 + delta[dir2], dir2 ^ 2)) {
+        map = m;
+        return true;
+      }
+      return false;
+    }
+
+    function ok(map: readonly number[], pos: number, screen: number): boolean {
+      if (!inBounds(pos)) return false;
+      if (map[pos] != null) return false;
+      for (let dir = 0; dir < 4; dir++) {
+        const tile = pos + delta[dir];
+        const neighbor = inBounds(tile) ? map[tile] : 0;
+        if (neighbor != null && !check[dir](screen, neighbor)) return false;
+      }
+      return true;
+    }
+
+    // Attempt to make a path from start to end.
+    // Returns true if successful.  Copies the map first.
+    // start tile is an already-placed screen
+    // startDir is the direction coming out
+    // end tile is the not-yet-placed screen
+    // endDir points from not-yet-placed screen to actually-placed one
+    // Ideally start and end are same direction
+    function navigate(map: number[],
+                      start: number, startDir: number,
+                      end: number, endDir: number): boolean {
+      const m = [...map];
+      let currentVertical = 5; // next tile to place for vertical.
+
+      function advanceStart(): boolean {
+        const newStart = start + delta[startDir];
+        console.log(`advanceStart: ${newStart.toString(16)}`);
+        if (!(startDir & 1)) { // vertical
+          if (!ok(m, newStart, currentVertical)) {
+            currentVertical ^= 1;
+            if (!ok(m, newStart, currentVertical)) {
+              console.error('could not advance start vert');
+              return false;
+            }
+          }
+          m[newStart] = currentVertical;
+          currentVertical ^= 1; // toggle between 4 and 5
+        } else { // horizontal
+          if (!ok(m, newStart, 10)) {
+            console.error('could not advance start horiz');
+            return false;
+          }
+          m[newStart] = 10;
+        }
+        start = newStart;
+console.log(`start: ${start.toString(16)}, startDir: ${startDir}\n${showMap(m)}`);
+        return true;
+      }
+      function advanceEnd(): boolean {
+        console.log(`advanceEnd: ${newEnd.toString(16)}`);
+        const tile = 1 << endDir | 1 << (endDir ^ 2);
+        if (!ok(m, end, tile)) {
+          console.error('could not advance end');
+          return false;
+        }
+        m[end] = tile;
+        end -= delta[endDir];
+//console.log(`start: ${start.toString(16)}, startDir: ${startDir}\n${showMap(m)}`);
+        return true;
+      }
+      function turnStart(dirs: number): boolean {
+        console.log(`turnStart(${dirs})`);
+        let newStartDir = (startDir + 1) & 3;
+        if (!(dirs & (1 << newStartDir))) newStartDir = (startDir - 1) & 3;
+        if (!(dirs & (1 << newStartDir))) {
+          console.error('could not turn start');
+          return false;
+        }
+        start += delta[startDir];
+        const newTile = 1 << (startDir ^ 2) | 1 << newStartDir;
+        if (!ok(m, start, newTile)) {
+          console.error('could not turn start: obstructed');
+          return advanceStart();
+          //return false;
+        }
+        m[start] = newTile;
+        startDir = newStartDir;
+console.log(`start: ${start.toString(16)}, startDir: ${startDir}\n${showMap(m)}`);
+        return true;
+      }
+
+      function turnEnd(dirs: number): boolean {
+        console.log(`turnEnd(${dirs})`);
+        let newEndDir = (endDir + 1) & 3;
+        if (!(dirs & (1 << newEndDir))) newEndDir = (endDir - 1) & 3;
+        if (!(dirs & (1 << newEndDir))) {
+          console.error('could not turn end');
+          return false;
+        }
+        const newTile = 1 << (newEndDir ^ 2) | 1 << (startDir ^ 2);
+        if (!ok(m, end, newTile)) {
+          console.error('could not turn end: obstructed');
+          return advanceEnd();
+          //return false;
+        }
+        m[end] = newTile;
+        end += delta[newEndDir ^ 2];
+        endDir = newEndDir;
+console.log(`end: ${end.toString(16)}, endDir: ${endDir}\n${showMap(m)}`);
+        return true;
+      }
+
+      while (start != end) {
+        // First check if one direction is opposite.
+        const dirs = directionsTo(start, end);
+        if (!(dirs & (1 << startDir))) {
+          // Try to turn start toward end
+          if (!turnStart(dirs)) return false;
+          continue;
+        }
+        if (!(dirs & (1 << endDir))) {
+          // Try to turn end toward start (TODO - less repetition)
+          if (!turnEnd(dirs)) return false;
+          continue;
+        }
+
+        // At this point, start and end dirs are roughly in the right
+        // direction.  If they're different, turn one toward the other.
+        if (startDir != endDir) {
+          let wantDir = 0; // up-down
+          let mask = 5;
+          if (Math.abs((start >>> 4) - (end >>> 4)) <
+              Math.abs((start & 0xf) - (end & 0xf))) {
+            wantDir = 1; // left-right
+            mask = 10;
+          }
+          if ((startDir & 1) !== wantDir) {
+            if (!turnStart(dirs & mask)) return false;
+          }
+          if ((endDir & 1) !== wantDir) {
+            if (!turnEnd(dirs & mask)) return false;
+          }
+        }
+
+        // Now startDir == endDir.  Figure out the breakout of
+        // turns vs ahead vs across.
+        const isVertical = !(startDir & 1);
+        const dy = (start >>> 4) - (end >>> 4);
+        const dx = (start & 0xf) - (end & 0xf);
+        const ahead = Math.abs(startDir & 1 ? dx : dy);
+        const across = Math.abs(startDir & 1 ? dy : dx);
+        let sideDir = (isVertical ? 10 : 5) & dirs;
+        if (across === 0) sideDir &= (random.nextInt(2) ? 0xc : 0x3);
+        const aheadDir = 1 << startDir;
+
+        console.log(`vert: ${isVertical}
+start: ${start.toString(16)}, startDir: ${startDir}, end: ${end.toString(16)}, endDir: ${endDir}
+dy: ${dy}, dx: ${dx}, ahead: ${ahead}, across: ${across}, sideDir: ${sideDir}, aheadDir: ${aheadDir}
+${showMap(m)}`);
+
+        // Chance of turning on this row: 1/ahead
+        // If turn, place (across - 1) tiles, with variance of ±(ahead - 1)
+        if (ahead === 1 || !random.nextInt(ahead)) {
+          if (ahead === 1 && !across) {
+            if (!advanceStart()) return false;
+            continue; // should return immediately?
+          }
+          // turn and go directly - no time to waste
+          const deltaAdvance = ahead > 1 ? random.nextInt(2 * ahead - 1) : 0;
+          let advances = across + deltaAdvance - ahead;
+          if (advances == -1) {
+            if (!advanceStart()) return false;
+          } else if (advances < 0) {
+            advances = -advances - 2
+            sideDir ^= (isVertical ? 10 : 5);
+          }
+          if (!turnStart(sideDir)) return false;
+          for (let i = 0; i < advances; i++) {
+            if (!advanceStart()) break;
+          }
+          let turned;
+          while (!(turned = turnStart(aheadDir)) && advances-- > 0) {
+            // unadvance one space
+            delete m[start];
+            start -= delta[startDir];
+          }
+          if (!turned) return false;
+          // if (!turnStart(aheadDir)) return false;
+          continue;
+        } else {
+          if (!advanceStart()) return false;
+        }
+      }
+      console.log(`NAVIGATION FINISHED: ${showMap(m)}`);
+      map.splice(0, map.length, ...m);
+      return true;
+    }
   }
 
-  function showMap(map) {
-    return seq(h, y => map.slice(16 * y, 16 * y + w).map(x => (x || 0).toString(16)).join(' ')).join('\n');
+  function showMap(map: number[]) {
+    return seq(h, y => Array.from(map.slice(16 * y, 16 * y + w), x => (x || ' ').toString(16)).join(' ')).join('\n');
   }
 
   // Now build the skeleton of a map?
@@ -210,6 +427,16 @@ export function shuffleGoa1(rom: Rom, random: Random) {
 
   // Pretend 4 & 5 are vertical halls?  Then 
 
+}
+
+/** Returns a bitmap of directions from start to end. */
+function directionsTo(start: number, end: number): number {
+  let out = 0;
+  if ((start & 0xf0) >= (end & 0xf0)) out |= 1;
+  if ((start & 0x0f) <= (end & 0x0f)) out |= 2;
+  if ((start & 0xf0) <= (end & 0xf0)) out |= 4;
+  if ((start & 0x0f) >= (end & 0x0f)) out |= 8;
+  return out;
 }
 
 export function extendGoaScreens(rom: Rom) {
@@ -826,10 +1053,12 @@ export function extendSwampScreens(rom: Rom) {
   // }      
 }
 
-function write<T>(arr: T[], corner: number, repl: readonly T[][]) {
+function write<T>(arr: T[], corner: number,
+                  repl: ReadonlyArray<ReadonlyArray<T|undefined>>) {
   for (let i = 0; i < repl.length; i++) {
     for (let j = 0; j < repl[i].length; j++) {
-      if (repl[i][j] != null) arr[corner + (i << 4 | j)] = repl[i][j];
+      const x = repl[i][j];
+      if (x != null) arr[corner + (i << 4 | j)] = x;
     }
   }
 }

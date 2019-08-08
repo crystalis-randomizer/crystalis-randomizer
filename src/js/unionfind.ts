@@ -6,12 +6,13 @@ export class UnionFind<T> {
 
   /** Returns the canonical element for the given entry. */
   find(elem: T): T {
+    if (elem !== elem) throw('nan');
     if (!this.data.has(elem)) {
       this.data.set(elem, elem);
       this.sizes.set(elem, 1);
     }
     let next: T;
-    while ((next = this.data.get(elem)!) !== elem) {
+    while (!Object.is((next = this.data.get(elem)!), elem)) {
       this.data.set(elem, elem = this.data.get(next)!);
     }
     return elem;
@@ -20,6 +21,7 @@ export class UnionFind<T> {
   union(elems: T[]) {
     this.find(elems[0]);
     for (let i = 1; i < elems.length; i++) {
+      if (elems[i] !== elems[i]) throw('nan');
       this.unionInternal(elems[0], elems[i]);
     }
   }

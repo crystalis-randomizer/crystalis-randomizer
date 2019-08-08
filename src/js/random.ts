@@ -94,6 +94,18 @@ export class Random {
     return arr[this.nextInt(arr.length)];
   }
 
+  pickWeighted<T>(arr: ReadonlyArray<readonly [number, T]>): T {
+    if (!arr.length) throw new Error('empty array');
+    let total = 0;
+    for (const [weight] of arr) total += weight;
+    let choice = this.next() * total;
+    for (const [weight, elem] of arr) {
+      if (choice < weight) return elem;
+      choice -= weight;
+    }
+    throw new Error('bad weights');
+  }
+
   bitGenerator(): () => boolean {
     let bits = 0;
     let next = 0;

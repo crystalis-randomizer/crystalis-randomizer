@@ -97,6 +97,10 @@ export function hex4(id: number): string {
   return id.toString(16).padStart(4, '0');
 }
 
+export function hex5(id: number): string {
+  return id.toString(16).padStart(5, '0');
+}
+
 export function concatIterables(iters: Iterable<number>[]): number[] {
   const out: number[] = [];
   for (const iter of iters) {

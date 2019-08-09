@@ -1,5 +1,7 @@
 import {hex, hex5, seq} from "../rom/util";
 import { Random } from "../random";
+import { DefaultMap } from "../util";
+import { UnionFind } from "../unionfind";
 
 export class Maze {
 
@@ -7,6 +9,7 @@ export class Maze {
   //private mapStack: Array<Array<Screen|undefined>> = [];
 
   private screens: Set<Screen>;
+  private screenExtensions: DefaultMap<number, ReadonlyArray<readonly [Dir, Screen]>>;
 
   private allPos: Set<Pos>;
 
@@ -19,6 +22,17 @@ export class Maze {
     this.allPos = new Set(
         ([] as Pos[]).concat(
             ...seq(height, y => seq(width, x => (y << 4 | x) as Pos))));
+
+    const extensions = new DefaultMap<number, Array<[Dir, Screen]>>(() => []);
+    for (const screen of this.screens) {
+      for (const dir of Dir.ALL) {
+        const mask = 0xf << (dir << 2);
+        if (screen & mask) {
+          extensions.get(screen & ~mask & 0xffff).push([dir, screen]);
+        }
+      }
+    }
+    this.screenExtensions = extensions;
   }
 
   // Higher-level functionality
@@ -55,6 +69,38 @@ export class Maze {
     }
   }
 
+  /**
+   * Finds all screens that can be extended with an extra exit.
+   * Returns an array of quads.
+   */
+  * extensions(): IterableIterator<[Pos, Screen, Dir, number]> {
+    const uf = new UnionFind<Pos>();
+    const extensions: Array<[Pos, Screen, Dir, number]> = [];
+    for (const pos of this.allPos) {
+      const scr = this.map[pos];
+      if (scr == null) {
+        // Empty: build up the unionfind.
+        for (const neighbor of [pos - 1, pos - 16] as Pos[]) {
+          if (this.empty(neighbor)) {
+            uf.union([pos, neighbor]);
+          }
+        }
+      } else {
+        // Filled: find extensions.
+        for (const [dir, ext] of this.screenExtensions.get(scr & 0xffff)) {
+          // make sure there's space on that side.
+          const neighbor = Pos.plus(pos, dir);
+          if (this.empty(neighbor)) extensions.push([pos, ext, dir, 0]);
+        }
+      }
+    }
+    for (const ext of extensions) {
+      const [pos, , dir] = ext;
+      ext[3] = uf.find(Pos.plus(pos, dir)) << 4 | Screen.edge(ext[1], ext[2]);
+      yield ext;
+    }
+  }
+
   fill(pos: Pos, maxExits?: number): boolean {
     const eligible = [...this.eligible(pos, maxExits)];
     if (!eligible.length) {
@@ -65,101 +111,97 @@ export class Maze {
     return true;
   }
 
-  * openExits(pos: Pos, screen: Screen): IterableIterator<[Dir, number]> {
-    for (const dir of Dir.ALL) {
-      const neighbor = Pos.plus(pos, dir);
-      if (this.inBounds(neighbor) && this.map[neighbor] == null) {
-        const edge = Screen.edge(screen, dir);
-        if (edge) yield [dir, edge];
-      }
-    }
-  }
-
-  * eligibleTunnelExits(pos: Pos): IterableIterator<[Screen, Dir, number]> {
-    for (const eligible of this.eligible(pos, 2)) {
-      const [exit, ...rest] = this.openExits(pos, eligible);
-      if (!exit || rest.length) continue;
-      const [dir, edge] = exit;
-      yield [eligible, dir, edge];
-    }
-  }
-
-  // Assumes all 6 tunnel screens are available for each exit type.
-  makePath(start: Pos, end: Pos): boolean {
+  fillPath(pos: Pos, dir: Dir, path: Path, exitType: number): boolean {
     return this.saveExcursion(() => {
-      // Trivial case.
-      if (start === end) return this.fill(start, 2);
-
-      // Find a clear path.  Start and End should both be constrained but empty.
-      // Picks a single edge type and sticks with it.
-      const startEligible = [...this.eligibleTunnelExits(start)];
-      const endEligible = [...this.eligibleTunnelExits(end)];
-      // Figure out what the new exit types are for each.
-
-      const exitType = this.random.pick([...intersect(startEligible.map(x => x[2]),
-                                                      endEligible.map(x => x[2]))]);
-      const startExit = this.random.pick(startEligible.filter(x => x[2] === exitType));
-      const endExit = this.random.pick(endEligible.filter(x => x[2] === exitType));
-      this.set(start, startExit[0]);
-      this.set(end, endExit[0]);
-
-      // Now we have a pair of (Pos, Dir) for either side.
-      // We need to snake out a path between them that does
-      // not intersect any other tiles.
-
-      // Two cases: (1) are directions (anti)parallel or (2) perpendicular?
-      // Each case has two subcases:
-      // (1a) parallel: two turns, same direction, at some point beyond farthest
-      // (1b) antiparallel: S-turn, require facing each other
-      // (2a) ray intersection in front of both: straight, allow dimple
-      // (2b) rays intersect on or behind one: need three same turns
-
-      const startDir = startExit[1];
-      const endDir = endExit[1];
-      const vertical = (exitType << 8 | exitType) as Screen;
-      const horizontal = (vertical << 4) as Screen;
-      if (startDir == endDir) { // parallel
-        const paths = []; // consider options?!?
-        const startCoord = this.coord(start, endDir);
-        const endCoord = this.coord(end, endDir);
-        const near = Math.min(startCoord, endCoord);
-        const far = Math.max(startCoord, endCoord);
-        const space = endDir & 1 ? this.width : this.height;
-        const extendStraight = endDir & 1 ? horizontal : vertical;
-        while (this.coord(start, endDir) < this.coord(end, endDir)) {
-          start = Pos.plus(start, endDir);
-          this.set(start, extendStraight);
-        }
-        for (let extent = near + 1; extent <= far; extent++) {
-
-          // TODO - consider a PathBuilder that has a position and
-          // a target and can take detours if necessary?
-          //   - internal methods like clearAhead(), turnLeft(), etc?
-
-          // Maybe build up a list of possible paths (for all 4 cases?)
-          //   - shuffle and test each against the map...
-
-
-          // find eligible rows? select longer ones sometimes?
-
-        }
-
+      for (const step of path) {
+        pos = Pos.plus(pos, dir);
+        const nextDir = Dir.turn(dir, step);
+        const screen = Screen.fromExits(DirMask.of(Dir.inv(dir), nextDir), exitType);
+        if (!this.trySet(pos, screen)) return false;
+        dir = nextDir;
       }
-
-      for (const eligible of startEligible) {
-        const exitType = this.openExitType(start, eligible);
-        startEligibleExits = 
-      }
-
-
-      if (!this.fill(start, 2)) return false;
-      if (start === end) return true;
-      if (!this.fill(end, 2)) return false;
-      // Now look for the single open edge on each, see what direction they go.
-      
-
+      return this.fill(Pos.plus(pos, dir), 2);
     });
   }
+
+  // * openExits(pos: Pos, screen: Screen): IterableIterator<[Dir, number]> {
+  //   for (const dir of Dir.ALL) {
+  //     const neighbor = Pos.plus(pos, dir);
+  //     if (this.inBounds(neighbor) && this.map[neighbor] == null) {
+  //       const edge = Screen.edge(screen, dir);
+  //       if (edge) yield [dir, edge];
+  //     }
+  //   }
+  // }
+
+  // * eligibleTunnelExits(pos: Pos): IterableIterator<[Screen, Dir, number]> {
+  //   for (const eligible of this.eligible(pos, 2)) {
+  //     const [exit, ...rest] = this.openExits(pos, eligible);
+  //     if (!exit || rest.length) continue;
+  //     const [dir, edge] = exit;
+  //     yield [eligible, dir, edge];
+  //   }
+  // }
+
+  addDeadEnd(): boolean {
+    // Find an extension point.
+    // Find an accessible target.
+    // Make the path one screen at a time, with a 1/3 chance of ending in a
+    // dead end if one is available.
+    return false;
+  }
+
+  addLoop(): boolean {
+    // Find a start/end pair.
+    const exts = new DefaultMap<number, Array<[Pos, Screen, Dir, number]>>(() => []);
+    for (const [pos, scr, dir, part] of this.extensions()) {
+      exts.get(part).push([pos, scr, dir, part & 0xf]);
+    }
+    // Make sure there's at least 2 extension points in the same partition.
+    const partitions = [...exts.values()];
+    this.random.shuffle(partitions);
+    let partition;
+    do {
+      partition = partitions.pop();
+      if (!partition) return false;
+    } while (partition.length < 2);
+    this.random.shuffle(partition);
+    const [[pos1, scr1, dir1, exitType], [pos2, scr2, dir2]] = partition;
+    return this.saveExcursion(() => {
+      this.replace(pos1, scr1);
+      this.replace(pos2, scr2);
+      const start = Pos.plus(pos1, dir1);
+      const end = Pos.plus(pos2, dir2);
+      if (start === end) {
+        // Trivial case
+        return this.fill(end, 2);
+      }
+      // Find clear path given exit type
+      const [forward, right] = relative(start, dir1, end);
+      let attempts = 0;
+      for (const path of generatePaths(this.random, forward, right)) {
+        if (this.fillPath(start, dir1, path, exitType)) break;
+        if (++attempts > 20) return false;
+      }
+      return this.fill(end, 2);
+    });
+  }
+
+  // // Assumes all 6 tunnel screens are available for each exit type.
+  // makeLoop(start: Pos, startDir: Dir, end: Pos): boolean {
+  //   return this.saveExcursion(() => {
+  //     const [forward, right] = relative(start, startDir, end);
+
+  //     // const vertical = (exitType << 8 | exitType) as Screen;
+  //     // const horizontal = (vertical << 4) as Screen;
+  //     let attempts = 0;
+  //     for (const path of generatePaths(this.random, forward, right)) {
+  //       if (this.fillPath(start, startDir, path, exitType)) break;
+  //       if (++attempts > 20) return false;
+  //       // TODO - how many tries before we give up?
+  //     }
+  //   });
+  // }
 
   // // Temporarily save the state to try an experimental change.
   // push(): void {
@@ -192,6 +234,12 @@ export class Maze {
     this.map[pos] = screen;
   }
 
+  trySet(pos: Pos, screen: Screen): boolean {
+    if (!this.fitsAndEmpty(pos, screen)) return false;
+    this.map[pos] = screen;
+    return true;
+  }
+
   replace(pos: Pos, screen: Screen): void {
     if (!this.fits(pos, screen)) {
       throw new Error(`Cannot place ${hex5(screen)} at ${hex(pos)}`);
@@ -199,7 +247,11 @@ export class Maze {
   }
 
   fitsAndEmpty(pos: Pos, screen: Screen): boolean {
-    return this.map[pos] == null && this.fits(pos, screen);
+    return this.empty(pos) && this.fits(pos, screen);
+  }
+
+  empty(pos: Pos): boolean {
+    return this.map[pos] == null && this.inBounds(pos);
   }
 
   fits(pos: Pos, screen: Screen): boolean {
@@ -214,12 +266,12 @@ export class Maze {
   }
 }
 
-function* intersect<T>(a: Iterable<T>, b: Iterable<T>): IterableIterator<T> {
-  const set = new Set(a);
-  for (const x of b) {
-    if (set.has(x)) yield x;
-  }
-}
+// function* intersect<T>(a: Iterable<T>, b: Iterable<T>): IterableIterator<T> {
+//   const set = new Set(a);
+//   for (const x of b) {
+//     if (set.has(x)) yield x;
+//   }
+// }
 
 // 0 is straight, -1 is left turn, +1 is right turn
 type TunnelDirection = 0 | -1 | 1;
@@ -235,24 +287,8 @@ function relative(p1: Pos, d1: Dir, p2: Pos): [number, number] {
   throw new Error(`impossible: ${d1}`);
 }
 
-function* paths(p1: Pos, d1: Dir,
-                p2: Pos, d2: Dir,
-                w: number, h: number): IterableIterator<TunnelDirection> {
-  if (d1 === d2) {
-    // Parallel.
-    let [forward, right] = relative(p1, d1, p2);
-    let [max] = relative(p1, d1, (h << 4 | w) as Pos);
-    if (max < 0) [max] = relative(p1, d1, 0 as Pos);
-
-    // Go from forward to max, but also consider detours?
-    //  -- dynamic programming?!?
-
-  }
-
-}
-
 function* generatePaths(random: Random,
-                        foward: number,
+                        forward: number,
                         right: number): IterableIterator<Path> {
   while (true) {
     yield generatePath(random, forward, right);
@@ -302,6 +338,16 @@ type Path = IterableIterator<TunnelDirection>;
 /** A mask of directions (1 << Dir). */
 type DirMask = number & {__dirmask__: never};
 
+namespace DirMask {
+  export function of(...dirs: readonly Dir[]): DirMask {
+    let mask = 0;
+    for (let dir of dirs) {
+      mask |= (1 << dir);
+    }
+    return mask as DirMask;
+  }
+}
+
 /** A direction: 0 = up, 1 = right, 2 = down, 3 = left. */
 type Dir = number & {__dir__: never};
 
@@ -314,6 +360,9 @@ namespace Dir {
   }
   export function edgeMask(dir: Dir): number {
     return 0xf << (dir << 2);
+  }
+  export function turn(dir: Dir, change: number): Dir {
+    return ((dir + change) & 3) as Dir;
   }
 }
 
@@ -333,7 +382,9 @@ namespace Pos {
  * flag status, alternatives, etc).  Most nibbles will be 0 or 1
  * but we may use e.g. 'f' for a "fixed" screen that may not be
  * expanded, etc.  The mapping to actual screen (or screen+flag)
- * combinations is up to the caller.
+ * combinations is up to the caller.  We can also use this to
+ * distinguish separate floors under/over a bridge (maybe make a
+ * three-level setup??) - e.g. 1212 for the bridge, 1020 for stairs.
  */
 type Screen = number & {__screen__: never};
 
@@ -348,5 +399,14 @@ namespace Screen {
       screen = (screen >>> 4) as Screen;
     }
     return count;
+  }
+  export function fromExits(dirMask: DirMask, exitType: number): Screen {
+    let screen = 0;
+    for (let i = 0; i < 4; i++) {
+      screen <<= 4;
+      if (dirMask & 8) screen |= exitType;
+      dirMask = ((dirMask & 7) << 1) as DirMask;
+    }
+    return screen as Screen;
   }
 }

@@ -1,3 +1,4 @@
+import {Maze} from './maze.js';
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 import {Flag} from '../rom/location.js';

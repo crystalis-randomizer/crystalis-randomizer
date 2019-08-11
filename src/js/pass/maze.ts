@@ -1,7 +1,7 @@
-import {hex, hex5, seq} from "../rom/util";
-import { Random } from "../random";
-import { DefaultMap } from "../util";
-import { UnionFind } from "../unionfind";
+import {hex, hex5, seq} from "../rom/util.js";
+import { Random } from "../random.js";
+import { DefaultMap } from "../util.js";
+import { UnionFind } from "../unionfind.js";
 
 export class Maze {
 
@@ -56,8 +56,8 @@ export class Maze {
     for (const dir of Dir.ALL) {
       const screen = this.get(Pos.plus(pos, dir));
       if (screen == null) continue;
-      const edge = Dir.edgeMask(dir);
-      constraint |= (screen & edge);
+      const edge = Dir.edgeMask(Dir.inv(dir));
+      constraint |= ((screen & edge) >>> 8 | (screen & edge) << 8) & 0xffff;
       mask |= edge;
     }
     // Now iterate over available screens to find matches.
@@ -111,11 +111,15 @@ export class Maze {
     return true;
   }
 
+  // pos should be the last already-set tile before the new ones
+  // adds N+1 screens where N is length of path
   fillPath(pos: Pos, dir: Dir, path: Path, exitType: number): boolean {
     return this.saveExcursion(() => {
-      for (const step of path) {
-        pos = Pos.plus(pos, dir);
+      const pathSaved = [...path];
+      for (const step of pathSaved) {
         const nextDir = Dir.turn(dir, step);
+console.log(`step ${step}: ${pos.toString(16)},${dir} => ${Pos.plus(pos,dir).toString(16)},${nextDir}`);
+        pos = Pos.plus(pos, dir);
         const screen = Screen.fromExits(DirMask.of(Dir.inv(dir), nextDir), exitType);
         if (!this.trySet(pos, screen)) return false;
         dir = nextDir;
@@ -170,21 +174,46 @@ export class Maze {
     return this.saveExcursion(() => {
       this.replace(pos1, scr1);
       this.replace(pos2, scr2);
-      const start = Pos.plus(pos1, dir1);
+      //const start = Pos.plus(pos1, dir1);
       const end = Pos.plus(pos2, dir2);
-      if (start === end) {
+      if (Pos.plus(pos1, dir1) === end) {
         // Trivial case
         return this.fill(end, 2);
       }
       // Find clear path given exit type
-      const [forward, right] = relative(start, dir1, end);
+      const [forward, right] = relative(pos1, dir1, end);
       let attempts = 0;
       for (const path of generatePaths(this.random, forward, right)) {
-        if (this.fillPath(start, dir1, path, exitType)) break;
+        if (this.fillPath(pos1, dir1, path, exitType)) break;
         if (++attempts > 20) return false;
       }
-      return this.fill(end, 2);
+      // return this.fill(end, 2); // handled in fillPath
+      return true;
     });
+  }
+
+  connect(pos1: Pos, dir1: Dir, pos2: Pos, dir2: Dir): boolean {
+    const exitType = Screen.edge(this.map[pos1] || 0 as Screen, dir1);
+    if (exitType !== Screen.edge(this.map[pos2] || 0 as Screen, dir2)) {
+      throw new Error(`Incompatible exit types`);
+    }
+    pos2 = Pos.plus(pos2, dir2);
+    const [forward, right] = relative(pos1, dir1, pos2);
+    //pos1 = Pos.plus(pos1, dir1);
+    let attempts = 0;
+    for (const path of generatePaths(this.random, forward, right)) {
+      if (this.fillPath(pos1, dir1, path, exitType)) break;
+      if (++attempts > 20) return false;
+    }
+    // return this.fill(pos2, 2); // handled in fillPath
+    return true;
+  }
+
+  fillZeros() {
+    // Fill the rest with zero
+    for (let i = 0; i < this.map.length; i++) {
+      if (this.map[i] == null) this.map[i] = 0 as Screen;
+    }
   }
 
   // // Assumes all 6 tunnel screens are available for each exit type.
@@ -218,20 +247,27 @@ export class Maze {
     return pos >= 0 && (pos & 0xf) < this.width && (pos >>> 4) < this.height;
   }
 
+  density(): number {
+    const count = [...this.allPos].filter(pos => this.map[pos]).length;
+    return count / (this.width * this.height);
+  }
+
   get(pos: Pos): Screen | undefined {
     if (!this.inBounds(pos)) return 0 as Screen;
     return this.map[pos];
   }
 
   // NOTE: it's not required that screen be an element of this.screens.
-  set(pos: Pos, screen: Screen): void {
-    if (!this.fitsAndEmpty(pos, screen)) {
+  set(pos: Pos, screen: Screen, force = false): void {
+    // TODO - instead of force, consider allowing OUTSIDE EDGES to be non-zero?
+    //      - maybe use the border? or a separate array?
+    if (!force && !this.fitsAndEmpty(pos, screen)) {
       const prev = this.map[pos];
       throw new Error(`Cannot overwrite ${hex(pos)} (${
                        prev != null ? hex5(prev) : 'empty'}) with ${
                        hex5(screen)}`);
     }
-    this.map[pos] = screen;
+    if (this.inBounds(pos)) this.map[pos] = screen;
   }
 
   trySet(pos: Pos, screen: Screen): boolean {
@@ -241,9 +277,10 @@ export class Maze {
   }
 
   replace(pos: Pos, screen: Screen): void {
-    if (!this.fits(pos, screen)) {
+    if (!this.fits(pos, screen) || !this.inBounds(pos)) {
       throw new Error(`Cannot place ${hex5(screen)} at ${hex(pos)}`);
     }
+    this.map[pos] = screen;
   }
 
   fitsAndEmpty(pos: Pos, screen: Screen): boolean {
@@ -264,6 +301,27 @@ export class Maze {
     }
     return true;
   }
+
+  // For now, just show broad structure.
+  show(): string {
+    const header = ' ' + seq(this.width).join('') + '\n';
+    const body = seq(this.height, y => y.toString(16) + seq(this.width, x => {
+      const pos = y << 4 | x;
+      const scr = this.map[pos];
+      if (scr == null) return ' ';
+      let index = 0;
+      for (const dir of Dir.ALL) {
+        if (scr & (0xf << (dir << 2))) index |= (1 << (dir << 2));
+      }
+      return UNICODE_TILES[index] || ' ';
+    }).join('')).join('\n');
+    return header + body;
+  }
+}
+
+export class MazeScreen {
+  
+
 }
 
 // function* intersect<T>(a: Iterable<T>, b: Iterable<T>): IterableIterator<T> {
@@ -277,6 +335,8 @@ export class Maze {
 type TunnelDirection = 0 | -1 | 1;
 
 // Returns [forward, right]
+// e.g. (p1 = 65, d1 = up, p2 = 24) then fwd = 4, rt = -1
+// but we need to fill 55, 45, 35, 34, 24 - so 4 rows
 function relative(p1: Pos, d1: Dir, p2: Pos): [number, number] {
   const dy = (p2 >>> 4) - (p1 >>> 4);
   const dx = (p2 & 0xf) - (p1 & 0xf);
@@ -315,7 +375,8 @@ function* generatePath(random: Random, forward: number, right: number): Path {
       if (forward > 2 && random.next() < 0.5) yield advance();
       continue;
     }
-    if (forward < 0 && random.next() < 0.05) {
+    // 50% chance of advancing no matter what (unless target behind us)
+    if (random.next() < (forward < 0 ? 0.1 : 0.5)) {
       yield advance();
       continue;
     }
@@ -349,9 +410,9 @@ namespace DirMask {
 }
 
 /** A direction: 0 = up, 1 = right, 2 = down, 3 = left. */
-type Dir = number & {__dir__: never};
+export type Dir = number & {__dir__: never};
 
-namespace Dir {
+export namespace Dir {
   export const ALL: readonly Dir[] = [0, 1, 2, 3] as Dir[];
   //export const REVERSE: readonly Dir[] = [3, 2, 1, 0] as Dir[];
   export const DELTA: readonly number[] = [-16, 1, 16, -1];
@@ -367,9 +428,9 @@ namespace Dir {
 }
 
 /** A position on the map: y in the high nibble, x in the low. */
-type Pos = number & {__pos__: never};
+export type Pos = number & {__pos__: never};
 
-namespace Pos {
+export namespace Pos {
   export function plus(pos: Pos, dir: Dir): Pos {
     return (pos + Dir.DELTA[dir]) as Pos;
   }
@@ -386,9 +447,9 @@ namespace Pos {
  * distinguish separate floors under/over a bridge (maybe make a
  * three-level setup??) - e.g. 1212 for the bridge, 1020 for stairs.
  */
-type Screen = number & {__screen__: never};
+export type Screen = number & {__screen__: never};
 
-namespace Screen {
+export namespace Screen {
   export function edge(screen: Screen, dir: Dir): number {
     return (screen >>> (dir << 2)) & 0xf;
   }
@@ -410,3 +471,21 @@ namespace Screen {
     return screen as Screen;
   }
 }
+
+const UNICODE_TILES: {[exits: number]: string} = {
+  0x1010: '\u2500',
+  0x0101: '\u2502',
+  0x0110: '\u250c',
+  0x1100: '\u2510',
+  0x0011: '\u2514',
+  0x1001: '\u2518',
+  0x0111: '\u251c',
+  0x1101: '\u2524',
+  0x1110: '\u252c',
+  0x1011: '\u2534',
+  0x1111: '\u253c',
+  0x1000: '\u2574',
+  0x0001: '\u2575',
+  0x0010: '\u2576',
+  0x0100: '\u2577',
+};

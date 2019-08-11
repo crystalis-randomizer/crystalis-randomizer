@@ -1,10 +1,115 @@
-import {Maze} from './maze.js';
+import {Dir, Maze, Pos, Screen} from './maze.js';
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 import {Flag} from '../rom/location.js';
 import {MapBuilder} from '../rom/mapscreen.js';
 import {seq} from '../rom/util.js';
 import {UnionFind} from '../unionfind.js';
+
+export function shuffleGoa1(rom: Rom, random: Random): void {
+  // NOTE: also need to move enemies...
+  const loc = rom.locations.goaFortressKelbesque;
+  const w = loc.width;
+  const h = loc.height;
+
+  const screens = [
+    0x0000,
+    0x0011,
+    0x0101,
+    0x0110,
+    0x1001,
+    0x1010,
+    0x1100,
+    0x1011,
+    0x1110,
+    0x1111,
+  ];
+
+
+  OUTER:
+  for (let attempt = 0; attempt < 1000; attempt++) {
+    const maze = new Maze(random, h, w, screens);
+
+    // Place the entrance at the bottom, boss at top.
+    const entrance = ((h - 1) << 4 | random.nextInt(w)) as Pos;
+    const boss = random.nextInt(w) as Pos;
+    const translation = new Map<number, number>();
+    function fixed(pos: number, value: number, screen: number): number {
+      // NOTE: may be out of bounds, set(force) will handle that
+      maze.set(pos as Pos, value as Screen, true);
+      translation.set(value, screen);
+      return value;
+    }
+
+    fixed(entrance, 0xf0f1, 0x71);
+    fixed(entrance - 1, 0x00f0, 0x80);
+    fixed(entrance + 1, 0xf000, 0x80);
+    fixed(boss, 0xfff0, 0x73);
+    fixed(boss - 1, 0x0ff0, 0x80);
+    fixed(boss + 1, 0xff00, 0x80);
+    fixed(boss + 16, 0xf1ff, 0x72);
+    fixed(boss + 15, 0x00ff, 0x80);
+    fixed(boss + 17, 0xf00f, 0x80);
+
+    console.log(`initial\n${maze.show()}`);
+
+    // make the initial path from the entrance to the boss
+    if (!maze.connect(entrance as Pos, 0 as Dir, boss + 16 as Pos, 2 as Dir)) {
+      continue OUTER;
+    }
+    console.log('first', maze.show());
+
+    // add an extra path until we fail 10 times
+    for (let i = 0; i < 10 && maze.density() < 0.65; i++) {
+      if (maze.addLoop()) i = 0;
+    }
+    console.log('loop', maze.show());
+
+    // Ensure a minimum density
+    if (maze.density() < 0.45) continue OUTER;
+
+    // Now start adding walls and ensure the maze is completeable.
+    // In particular, we need to convert some of the vertical hallways
+    // into either stairways or dead ends.
+    // The basic strategy at this point is to make the map as open as
+    // possible, count the number of reachable tiles, and then add
+    // walls until we can't do so any more without making some
+    // previously-reachable tile unreachable.  At that point, try every
+    // wall once more and then quit.
+
+
+    maze.fillZeros();
+    console.log(`success after ${attempt} attempts`);
+    console.log(maze.show());
+
+    return;
+  }
+
+  // function showMap(map: number[]) {
+  //   return seq(h, y => Array.from(map.slice(16 * y, 16 * y + w), x => (x || ' ').toString(16)).join(' ')).join('\n');
+  // }
+
+  // Now build the skeleton of a map?
+  // Start with the most open possibility?  All flags on (no walls) and
+  // go along perimeter?  Domains of lower-floor, connected by parapets?
+
+  // Only "T" in parapet is from dead-end in lower area.  Otherwise
+  // everything is a cycle.
+
+  // Pretend 4 & 5 are vertical halls?  Then 
+
+
+
+  return;
+}
+
+
+
+
+
+
+
+
 
 // For now we hardcode data about the available screens...
 // Edges of tile: [0 1 2] along top, [3 4 5] down left,
@@ -17,7 +122,7 @@ const GOA1 = [
   [0xe3, [3], [4, 7], [5, 6], [11]],
 ];
 
-export function shuffleGoa1(rom: Rom, random: Random) {
+export function shuffleGoa1a(rom: Rom, random: Random) {
   // NOTE: also need to move enemies...
 
   const loc = rom.locations.goaFortressKelbesque;
@@ -275,7 +380,7 @@ console.log(`start: ${start.toString(16)}, startDir: ${startDir}\n${showMap(m)}`
         return true;
       }
       function advanceEnd(): boolean {
-        console.log(`advanceEnd: ${newEnd.toString(16)}`);
+        //console.log(`advanceEnd: ${newEnd.toString(16)}`);
         const tile = 1 << endDir | 1 << (endDir ^ 2);
         if (!ok(m, end, tile)) {
           console.error('could not advance end');

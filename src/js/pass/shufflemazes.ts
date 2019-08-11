@@ -1,4 +1,4 @@
-import {Dir, Maze, Pos, Screen} from './maze.js';
+import {Dir, Maze, Pos, Scr, Spec} from './maze.js';
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 import {Flag} from '../rom/location.js';
@@ -13,18 +13,43 @@ export function shuffleGoa1(rom: Rom, random: Random): void {
   const h = loc.height;
 
   const screens = [
-    0x0000,
-    0x0011,
-    0x0101,
-    0x0110,
-    0x1001,
-    0x1010,
-    0x1100,
-    0x1011,
-    0x1110,
-    0x1111,
+    // Clear screens
+    Spec(0x0000, 0x80, ' '),
+    Spec(0x0011, 0xe0, '└', 0x1f, 0x2e, 0x3d),
+    Spec(0x0101, 0xe4, '│', 0x1239ab),
+    Spec(0x0110, 0xe2, '┌', 0x9d, 0xae, 0xbf),
+    Spec(0x1001, 0xe1, '┘', 0x15, 0x26, 0x37),
+    Spec(0x1010, 0xea, '─', 0x5d, 0x6e, 0x7f),
+    Spec(0x1011, 0xe7, '┴', 0x15, 0x26e, 0x3d, 0x7f),
+    Spec(0x1100, 0xe3, '┐', 0x5b, 0x6a, 0x79),
+    Spec(0x1110, 0xe8, '┬', 0x5d, 0x6ae, 0x79, 0xbf),
+    Spec(0x1111, 0xe6, '┼', 0x15, 0x26ae, 0x3d, 0x79, 0xbf),
+    // Simple flagged screens (don't generate these!)
+    Spec(0x1_0011, 0xe0, '└', 'fixed', 'flag', 0x2e, 0x3d),
+    Spec(0x1_0101, 0xe4, '│', 'fixed', 'flag', 0x12ab),
+    Spec(0x1_0110, 0xe2, '┌', 'fixed', 'flag', 0xae, 0xbf),
+    Spec(0x1_1001, 0xe1, '┘', 'fixed', 'flag', 0x15, 0x26),
+    Spec(0x1_1011, 0xe7, '┴', 'fixed', 'flag', 0x26e, 0x7f),
+    Spec(0x1_1100, 0xe3, '┐', 'fixed', 'flag', 0x6a, 0x79),
+    Spec(0x1_1110, 0xe8, '┬', 'fixed', 'flag', 0x5d, 0x6ae),
+    Spec(0x1_1111, 0xe6, '┼', 'fixed', 'flag', 0x15, 0x26ae, 0xbf),
+    // Dead ends
+    Spec(0x3_0101, 0xe4, '┊', 'fixed', 'flag', 0x39), // dead end
+    Spec(0x2_0101, 0xe4, '┊', 'fixed', 0x139b), // dead end
+    // Fixed screens (entrance)
+    Spec(0xf0f1, 0x71, '╽', 'fixed', 0x2a),
+    Spec(0x00f0, 0x80, '█', 'fixed'),
+    Spec(0xf000, 0x80, '█', 'fixed'),
+    // Fixed screens (boss)
+    Spec(0xfff0, 0x73, '═', 'fixed', 0x2a),
+    Spec(0xf1ff, 0x72, '╤', 'fixed', 0x2a),
+    Spec(0x0ff0, 0x80, '╔', 'fixed'),
+    Spec(0xff00, 0x80, '╗', 'fixed'),
+    Spec(0x00ff, 0x80, '╚', 'fixed'),
+    Spec(0xf00f, 0x80, '╝', 'fixed'),
   ];
 
+  // TODO - consider bigger icons? '┘║└\n═╬═\n┐║┌' or '┘┃└\n━╋━\n┐┃┌' ??
 
   OUTER:
   for (let attempt = 0; attempt < 1000; attempt++) {
@@ -36,7 +61,7 @@ export function shuffleGoa1(rom: Rom, random: Random): void {
     const translation = new Map<number, number>();
     function fixed(pos: number, value: number, screen: number): number {
       // NOTE: may be out of bounds, set(force) will handle that
-      maze.set(pos as Pos, value as Screen, true);
+      maze.set(pos as Pos, value as Scr, true);
       translation.set(value, screen);
       return value;
     }

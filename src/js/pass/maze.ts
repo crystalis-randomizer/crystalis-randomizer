@@ -5,26 +5,27 @@ import { UnionFind } from "../unionfind.js";
 
 export class Maze {
 
-  private map: Array<Screen|undefined>;
-  //private mapStack: Array<Array<Screen|undefined>> = [];
+  private map: Array<Scr|undefined>;
+  //private mapStack: Array<Array<Scr|undefined>> = [];
 
-  private screens: Set<Screen>;
-  private screenExtensions: DefaultMap<number, ReadonlyArray<readonly [Dir, Screen]>>;
+  private screens: Map<Scr, Spec>;
+  private screenExtensions: DefaultMap<number, ReadonlyArray<readonly [Dir, Scr]>>;
 
   private allPos: Set<Pos>;
 
   constructor(private readonly random: Random,
               readonly height: number,
               readonly width: number,
-              screens: readonly number[]) {
+              screens: readonly Spec[]) {
     this.map = new Array(height << 4).fill(undefined);
-    this.screens = new Set(screens as Screen[]);
+    this.screens = new Map(screens.map(spec => [spec.edges, spec]));
     this.allPos = new Set(
         ([] as Pos[]).concat(
             ...seq(height, y => seq(width, x => (y << 4 | x) as Pos))));
 
-    const extensions = new DefaultMap<number, Array<[Dir, Screen]>>(() => []);
-    for (const screen of this.screens) {
+    const extensions = new DefaultMap<number, Array<[Dir, Scr]>>(() => []);
+    for (const [screen, spec] of this.screens) {
+      if (spec.fixed) continue;
       for (const dir of Dir.ALL) {
         const mask = 0xf << (dir << 2);
         if (screen & mask) {
@@ -49,7 +50,7 @@ export class Maze {
     return false;
   }
 
-  * eligible(pos: Pos, maxExits?: number): IterableIterator<Screen> {
+  * eligible(pos: Pos, maxExits?: number): IterableIterator<Scr> {
     // Build up the constraint.
     let mask = 0;
     let constraint = 0;
@@ -61,9 +62,10 @@ export class Maze {
       mask |= edge;
     }
     // Now iterate over available screens to find matches.
-    for (const screen of this.screens) {
+    for (const [screen, spec] of this.screens) {
+      if (spec.fixed) continue;
       if ((screen & mask) === constraint &&
-          (!maxExits || Screen.numExits(screen) <= maxExits)) {
+          (!maxExits || Scr.numExits(screen) <= maxExits)) {
         yield screen;
       }
     }
@@ -73,9 +75,9 @@ export class Maze {
    * Finds all screens that can be extended with an extra exit.
    * Returns an array of quads.
    */
-  * extensions(): IterableIterator<[Pos, Screen, Dir, number]> {
+  * extensions(): IterableIterator<[Pos, Scr, Dir, number]> {
     const uf = new UnionFind<Pos>();
-    const extensions: Array<[Pos, Screen, Dir, number]> = [];
+    const extensions: Array<[Pos, Scr, Dir, number]> = [];
     for (const pos of this.allPos) {
       const scr = this.map[pos];
       if (scr == null) {
@@ -96,7 +98,7 @@ export class Maze {
     }
     for (const ext of extensions) {
       const [pos, , dir] = ext;
-      ext[3] = uf.find(Pos.plus(pos, dir)) << 4 | Screen.edge(ext[1], ext[2]);
+      ext[3] = uf.find(Pos.plus(pos, dir)) << 4 | Scr.edge(ext[1], ext[2]);
       yield ext;
     }
   }
@@ -120,7 +122,7 @@ export class Maze {
         const nextDir = Dir.turn(dir, step);
 console.log(`step ${step}: ${pos.toString(16)},${dir} => ${Pos.plus(pos,dir).toString(16)},${nextDir}`);
         pos = Pos.plus(pos, dir);
-        const screen = Screen.fromExits(DirMask.of(Dir.inv(dir), nextDir), exitType);
+        const screen = Scr.fromExits(DirMask.of(Dir.inv(dir), nextDir), exitType);
         if (!this.trySet(pos, screen)) return false;
         dir = nextDir;
       }
@@ -128,17 +130,17 @@ console.log(`step ${step}: ${pos.toString(16)},${dir} => ${Pos.plus(pos,dir).toS
     });
   }
 
-  // * openExits(pos: Pos, screen: Screen): IterableIterator<[Dir, number]> {
+  // * openExits(pos: Pos, screen: Scr): IterableIterator<[Dir, number]> {
   //   for (const dir of Dir.ALL) {
   //     const neighbor = Pos.plus(pos, dir);
   //     if (this.inBounds(neighbor) && this.map[neighbor] == null) {
-  //       const edge = Screen.edge(screen, dir);
+  //       const edge = Scr.edge(screen, dir);
   //       if (edge) yield [dir, edge];
   //     }
   //   }
   // }
 
-  // * eligibleTunnelExits(pos: Pos): IterableIterator<[Screen, Dir, number]> {
+  // * eligibleTunnelExits(pos: Pos): IterableIterator<[Scr, Dir, number]> {
   //   for (const eligible of this.eligible(pos, 2)) {
   //     const [exit, ...rest] = this.openExits(pos, eligible);
   //     if (!exit || rest.length) continue;
@@ -157,7 +159,7 @@ console.log(`step ${step}: ${pos.toString(16)},${dir} => ${Pos.plus(pos,dir).toS
 
   addLoop(): boolean {
     // Find a start/end pair.
-    const exts = new DefaultMap<number, Array<[Pos, Screen, Dir, number]>>(() => []);
+    const exts = new DefaultMap<number, Array<[Pos, Scr, Dir, number]>>(() => []);
     for (const [pos, scr, dir, part] of this.extensions()) {
       exts.get(part).push([pos, scr, dir, part & 0xf]);
     }
@@ -193,8 +195,8 @@ console.log(`step ${step}: ${pos.toString(16)},${dir} => ${Pos.plus(pos,dir).toS
   }
 
   connect(pos1: Pos, dir1: Dir, pos2: Pos, dir2: Dir): boolean {
-    const exitType = Screen.edge(this.map[pos1] || 0 as Screen, dir1);
-    if (exitType !== Screen.edge(this.map[pos2] || 0 as Screen, dir2)) {
+    const exitType = Scr.edge(this.map[pos1] || 0 as Scr, dir1);
+    if (exitType !== Scr.edge(this.map[pos2] || 0 as Scr, dir2)) {
       throw new Error(`Incompatible exit types`);
     }
     pos2 = Pos.plus(pos2, dir2);
@@ -212,7 +214,7 @@ console.log(`step ${step}: ${pos.toString(16)},${dir} => ${Pos.plus(pos,dir).toS
   fillZeros() {
     // Fill the rest with zero
     for (let i = 0; i < this.map.length; i++) {
-      if (this.map[i] == null) this.map[i] = 0 as Screen;
+      if (this.map[i] == null) this.map[i] = 0 as Scr;
     }
   }
 
@@ -221,8 +223,8 @@ console.log(`step ${step}: ${pos.toString(16)},${dir} => ${Pos.plus(pos,dir).toS
   //   return this.saveExcursion(() => {
   //     const [forward, right] = relative(start, startDir, end);
 
-  //     // const vertical = (exitType << 8 | exitType) as Screen;
-  //     // const horizontal = (vertical << 4) as Screen;
+  //     // const vertical = (exitType << 8 | exitType) as Scr;
+  //     // const horizontal = (vertical << 4) as Scr;
   //     let attempts = 0;
   //     for (const path of generatePaths(this.random, forward, right)) {
   //       if (this.fillPath(start, startDir, path, exitType)) break;
@@ -252,13 +254,13 @@ console.log(`step ${step}: ${pos.toString(16)},${dir} => ${Pos.plus(pos,dir).toS
     return count / (this.width * this.height);
   }
 
-  get(pos: Pos): Screen | undefined {
-    if (!this.inBounds(pos)) return 0 as Screen;
+  get(pos: Pos): Scr | undefined {
+    if (!this.inBounds(pos)) return 0 as Scr;
     return this.map[pos];
   }
 
   // NOTE: it's not required that screen be an element of this.screens.
-  set(pos: Pos, screen: Screen, force = false): void {
+  set(pos: Pos, screen: Scr, force = false): void {
     // TODO - instead of force, consider allowing OUTSIDE EDGES to be non-zero?
     //      - maybe use the border? or a separate array?
     if (!force && !this.fitsAndEmpty(pos, screen)) {
@@ -270,20 +272,20 @@ console.log(`step ${step}: ${pos.toString(16)},${dir} => ${Pos.plus(pos,dir).toS
     if (this.inBounds(pos)) this.map[pos] = screen;
   }
 
-  trySet(pos: Pos, screen: Screen): boolean {
+  trySet(pos: Pos, screen: Scr): boolean {
     if (!this.fitsAndEmpty(pos, screen)) return false;
     this.map[pos] = screen;
     return true;
   }
 
-  replace(pos: Pos, screen: Screen): void {
+  replace(pos: Pos, screen: Scr): void {
     if (!this.fits(pos, screen) || !this.inBounds(pos)) {
       throw new Error(`Cannot place ${hex5(screen)} at ${hex(pos)}`);
     }
     this.map[pos] = screen;
   }
 
-  fitsAndEmpty(pos: Pos, screen: Screen): boolean {
+  fitsAndEmpty(pos: Pos, screen: Scr): boolean {
     return this.empty(pos) && this.fits(pos, screen);
   }
 
@@ -291,11 +293,11 @@ console.log(`step ${step}: ${pos.toString(16)},${dir} => ${Pos.plus(pos,dir).toS
     return this.map[pos] == null && this.inBounds(pos);
   }
 
-  fits(pos: Pos, screen: Screen): boolean {
+  fits(pos: Pos, screen: Scr): boolean {
     for (const dir of Dir.ALL) {
       const neighbor = this.get(Pos.plus(pos, dir));
       if (neighbor == null) continue; // anything is fair game
-      if (Screen.edge(screen, dir) !== Screen.edge(neighbor, Dir.inv(dir))) {
+      if (Scr.edge(screen, dir) !== Scr.edge(neighbor, Dir.inv(dir))) {
         return false;
       }
     }
@@ -309,6 +311,9 @@ console.log(`step ${step}: ${pos.toString(16)},${dir} => ${Pos.plus(pos,dir).toS
       const pos = y << 4 | x;
       const scr = this.map[pos];
       if (scr == null) return ' ';
+      const spec = this.screens.get(scr);
+      if (spec) return spec.icon;
+      // build it up manually
       let index = 0;
       for (const dir of Dir.ALL) {
         if (scr & (0xf << (dir << 2))) index |= (1 << (dir << 2));
@@ -319,9 +324,54 @@ console.log(`step ${step}: ${pos.toString(16)},${dir} => ${Pos.plus(pos,dir).toS
   }
 }
 
-export class MazeScreen {
-  
+/** Spec for a screen. */
+export interface Spec {
+  readonly edges: Scr;
+  readonly tile: number;
+  readonly icon: string;
+  readonly connections: Connections;
+  readonly fixed: boolean;
+  readonly flag: boolean;
+}
 
+type Connections = ReadonlyArray<ReadonlyArray<number>>;
+type SpecFlag = 'fixed' | 'flag';
+
+export function Spec(edges: number,
+                     tile: number,
+                     icon: string,
+                     ...extra: Array<number|SpecFlag>) {
+  const connections = [];
+  let fixed = false;
+  let flag = false;
+  for (let data of extra) {
+    if (typeof data === 'string') {
+      if (data === 'fixed') {
+        fixed = true;
+      } else if (data === 'flag') {
+        flag = true;
+      } else {
+        throw new Error(`Bad flag`);
+      }
+    } else {
+      const connection: number[] = [];
+      connections.push(connection);
+      while (data) {
+        // Each of the four edges has possible exits 1, 2, and 3,
+        // represented by that corresponding tile.  The 4 bit is
+        // for left/right edge and the 8 bit is for right/bottom.
+        let tile = (data & 3) | (data & 8) << 5;
+        connection.push(data & 4 ? tile << 4 : tile);
+        data >>>= 4;
+      }
+    }
+  }
+  return {edges: edges as Scr, tile, icon, connections, fixed, flag};
+}
+export namespace Spec {
+  export function fixed(edges: number, tile: number, ...connections: Connections) {
+    return {edges: edges as Scr, tile, connections, fixed: true};
+  }
 }
 
 // function* intersect<T>(a: Iterable<T>, b: Iterable<T>): IterableIterator<T> {
@@ -447,28 +497,28 @@ export namespace Pos {
  * distinguish separate floors under/over a bridge (maybe make a
  * three-level setup??) - e.g. 1212 for the bridge, 1020 for stairs.
  */
-export type Screen = number & {__screen__: never};
+export type Scr = number & {__screen__: never};
 
-export namespace Screen {
-  export function edge(screen: Screen, dir: Dir): number {
+export namespace Scr {
+  export function edge(screen: Scr, dir: Dir): number {
     return (screen >>> (dir << 2)) & 0xf;
   }
-  export function numExits(screen: Screen): number {
+  export function numExits(screen: Scr): number {
     let count = 0;
     for (let i = 0; i < 4; i++) {
       if (screen & 0xf) count++;
-      screen = (screen >>> 4) as Screen;
+      screen = (screen >>> 4) as Scr;
     }
     return count;
   }
-  export function fromExits(dirMask: DirMask, exitType: number): Screen {
+  export function fromExits(dirMask: DirMask, exitType: number): Scr {
     let screen = 0;
     for (let i = 0; i < 4; i++) {
       screen <<= 4;
       if (dirMask & 8) screen |= exitType;
       dirMask = ((dirMask & 7) << 1) as DirMask;
     }
-    return screen as Screen;
+    return screen as Scr;
   }
 }
 

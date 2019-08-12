@@ -3,7 +3,6 @@ import {Location, Flag} from "../rom/location.js";
 import {Random} from "../random.js";
 import {DefaultMap, assertNever} from "../util.js";
 import {UnionFind} from "../unionfind.js";
-import { Monster } from "../rom/monster.js";
 
 export class Maze implements Iterable<[Pos, Scr]> {
 
@@ -120,7 +119,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
   fill(pos: Pos, maxExits?: number): boolean {
     const eligible = [...this.eligible(pos, maxExits)];
     if (!eligible.length) {
-      console.error(`No eligible tiles for ${hex(pos)}`);
+      //console.error(`No eligible tiles for ${hex(pos)}`);
       return false;
     }
     this.set(pos, this.random.pick(eligible));
@@ -392,45 +391,6 @@ export class Maze implements Iterable<[Pos, Scr]> {
       }
     }
   }
-
-  // Probably this belongs in Location, but we need the boss screen info...?
-  moveMonsters(loc: Location, random: Random): void {
-    // NOTE: need to use info about screens to exclude boss screens.
-    const boss = new Set<number>();
-    for (const s of this.screens.values()) {
-      if (s.boss) boss.add(s.tile);
-    }
-    // Start with list of reachable tiles.
-    const reachable = loc.reachableTiles(false);
-    // Do a breadth-first search of all tiles to find "distance" (1-norm).
-    const extended = new Map<number, number>([...reachable.keys()].map(x => [x, 0]));
-    const normal = []; // reachable, not slope or water
-    const moths = []; // distance ∈ 3..7
-    const birds = []; // distance > 12
-    const plants = []; // distance ∈ 2..4
-    const normalTerrainMask = loc.hasDolphin() ? 0x25 : 0x27;
-    for (const [t, distance] of extended) {
-      for (const n of neighbors(t, loc.width, loc.height)) {
-        if (extended.has(t)) continue;
-        extended.set(n, distance + 1);
-      }
-      if (!distance && !(reachable.get(t)! & normalTerrainMask)) normal.push(t);
-      if (distance >= 2 && distance <= 4) plants.push(t);
-      if (distance >= 3 && distance <= 7) moths.push(t);
-      if (distance >= 12) birds.push(t);
-    }
-    // We now know all the possible places to place things.
-    //  - NOTE: still need to move chests to dead ends, etc?
-    for (const spawn of loc.spawns) {
-      if (!spawn.isMonster()) continue;
-      const monster = loc.rom.objects[spawn.monsterId];
-      if (!(monster instanceof Monster)) continue;
-      // check for placement.
-
-      // NOTE - boss status is now known to Location, we can move this there.
-    }
-
-  }
 }
 
 /** Spec for a screen. */
@@ -653,22 +613,3 @@ const UNICODE_TILES: {[exits: number]: string} = {
   0x0010: '\u2576',
   0x0100: '\u2577',
 };
-
-function neighbors(tile: number, width: number, height: number): number[] {
-  const out = [];
-  const y = tile & 0xf0f0;
-  const x = tile & 0x0f0f;
-  if (y < ((height - 1) << 12 | 0xe0)) {
-    out.push((tile & 0xf0) === 0xe0 ? tile + 32 : tile + 16);
-  }
-  if (y) {
-    out.push((tile & 0xf0) === 0x00 ? tile - 32 : tile - 16);
-  }
-  if (x < ((width - 1) << 8 | 0x0f)) {
-    out.push(tile + 1);
-  }
-  if (x) {
-    out.push(tile - 1);
-  }
-  return out;
-}

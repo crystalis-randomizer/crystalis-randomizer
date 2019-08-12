@@ -6,7 +6,9 @@ import {Data, DataTuple,
 import {Writer} from './writer.js';
 import {Rom} from '../rom.js';
 import { UnionFind } from '../unionfind.js';
-import { iters } from '../util.js';
+import { iters, assertNever } from '../util.js';
+import { Monster } from './monster.js';
+import { Random } from '../random.js';
 
 // Location entities
 export class Location extends Entity {
@@ -57,7 +59,7 @@ export class Location extends Entity {
     this.mapDataBase = readLittleEndian(rom.prg, this.mapDataPointer) + 0xc000;
     // TODO - pass this in and move LOCATIONS to locations.ts
     this.name = locationNames[this.id] || '';
-    this.key = locationKeys[this.id] || '';
+    this.key = locationKeys[this.id] || '' as any;
     this.used = this.mapDataBase > 0xc000 && !!this.name;
 
     this.layoutBase = readLittleEndian(rom.prg, this.mapDataBase) + 0xc000;
@@ -282,9 +284,10 @@ export class Location extends Entity {
    * unflagged tileeffects.
    */
   reachableTiles(fly: boolean): Map<number, number> {
-    // Dolphin.
+    // Dolphin makes NO_WALK okay for some levels.
     if (this.hasDolphin()) fly = true;
     // Take into account the tileset and flags but not any overlay.
+    const exits = new Set(this.exits.map(exit => exit.screen << 8 | exit.tile));
     const uf = new UnionFind<number>();
     const tileset = this.rom.tileset(this.tileset);
     const tileEffects = this.rom.tileEffects[this.tileEffects - 0xb3];
@@ -297,6 +300,8 @@ export class Location extends Entity {
         const pos = y << 4 | x;
         const flag = this.flags.find(f => f.screen === pos);
         for (let t = 0; t < 0xf0; t++) {
+          const tileId = pos << 8 | t;
+          if (exits.has(tileId)) continue; // don't go past exits
           let tile = screen.tiles[t];
           // flag 2ef is "always on", don't even bother making it conditional.
           let effects = tileEffects.effects[tile];
@@ -306,14 +311,15 @@ export class Location extends Entity {
             effects = tileEffects.effects[tile];
             blocked = fly ? effects & 0x04 : effects & 0x06;
           }
-          if (!blocked) passable.add(pos << 8 | t);
+          if (!blocked) passable.add(tileId);
         }
       }
     }
 
     for (let t of passable) {
-      if (passable.has(t + 1)) uf.union([t, t + 1]);
-      const below = (t & 0xf0) === 0xe0 ? t + 32 : t + 16;
+      const right = (t & 0x0f) === 0x0f ? t + 0xf1 : t + 1;
+      if (passable.has(right)) uf.union([t, right]);
+      const below = (t & 0xf0) === 0xe0 ? t + 0xf20 : t + 16;
       if (passable.has(below)) uf.union([t, below]);
     }
 
@@ -346,6 +352,68 @@ export class Location extends Entity {
     }
   }
 
+  monsterPlacer(random: Random): (m: Monster) => number | undefined {
+    // If there's a boss screen, exclude it from getting enemies.
+    const boss = BOSS_SCREENS[this.key];
+    // Start with list of reachable tiles.
+    const reachable = this.reachableTiles(false);
+    // Do a breadth-first search of all tiles to find "distance" (1-norm).
+    const extended = new Map<number, number>([...reachable.keys()].map(x => [x, 0]));
+    const normal: number[] = []; // reachable, not slope or water
+    const moths: number[] = [];  // distance ∈ 3..7
+    const birds: number[] = [];  // distance > 12
+    const plants: number[] = []; // distance ∈ 2..4
+    const placed: Array<[Monster, number, number, number]> = [];
+    const normalTerrainMask = this.hasDolphin() ? 0x25 : 0x27;
+    for (const [t, distance] of extended) {
+      if (this.screens[t >>> 12][(t >>> 8) & 0xf] === boss) continue;
+      for (const n of neighbors(t, this.width, this.height)) {
+        if (extended.has(n)) continue;
+        extended.set(n, distance + 1);
+      }
+      if (!distance && !(reachable.get(t)! & normalTerrainMask)) normal.push(t);
+      if (distance >= 2 && distance <= 4) plants.push(t);
+      if (distance >= 3 && distance <= 7) moths.push(t);
+      if (distance >= 12) birds.push(t);
+      // TODO - special-case swamp for plant locations?
+    }
+    // We now know all the possible places to place things.
+    //  - NOTE: still need to move chests to dead ends, etc?
+    return (m: Monster) => {
+      // check for placement.
+      const placement = m.placement();
+      const pool = [...(placement === 'normal' ? normal :
+                        placement === 'moth' ? moths :
+                        placement === 'bird' ? birds :
+                        placement === 'plant' ? plants :
+                        assertNever(placement))]
+      POOL:
+      while (pool.length) {
+        const i = random.nextInt(pool.length);
+        const [pos] = pool.splice(i, 1);
+
+        const x = (pos & 0xf00) >>> 4 | (pos & 0xf);
+        const y = (pos & 0xf000) >>> 8 | (pos & 0xf0) >>> 4;
+        const r = m.clearance();
+
+        // test distance from other enemies.
+        for (const [, x1, y1, r1] of placed) {
+          const z2 = ((y - y1) ** 2 + (x - x1) ** 2);
+          if (z2 < (r + r1) ** 2) continue POOL;
+        }
+
+        // Valid spot (still, how toa approximately *maximize* distances?)
+        placed.push([m, x, y, r]);
+        const scr = (y & 0xf0) | (x & 0xf0) >>> 4;
+        const tile = (y & 0x0f) << 4 | (x & 0x0f);
+        return scr << 8 | tile;
+      }
+      return undefined;
+    }
+  }
+  // TODO - allow less randomness for certain cases, e.g. top of north sabre or
+  // appropriate side of cordel.
+
   /** @return {!Set<number>} */
   // allTiles() {
   //   const tiles = new Set();
@@ -356,6 +424,26 @@ export class Location extends Entity {
   //   }
   //   return tiles;
   // }
+}
+
+// TODO - move to a better-organized dedicated "geometry" module?
+function neighbors(tile: number, width: number, height: number): number[] {
+  const out = [];
+  const y = tile & 0xf0f0;
+  const x = tile & 0x0f0f;
+  if (y < ((height - 1) << 12 | 0xe0)) {
+    out.push((tile & 0xf0) === 0xe0 ? tile + 0x0f20 : tile + 16);
+  }
+  if (y) {
+    out.push((tile & 0xf0) === 0x00 ? tile - 0x0f20 : tile - 16);
+  }
+  if (x < ((width - 1) << 8 | 0x0f)) {
+    out.push((tile & 0x0f) === 0x0f ? tile + 0x00f1 : tile + 1);
+  }
+  if (x) {
+    out.push((tile & 0x0f) === 0x00 ? tile - 0x00f1 : tile - 1);
+  }
+  return out;
 }
 
 export const Entrance = DataTuple.make(4, {
@@ -453,7 +541,8 @@ export const Spawn = DataTuple.make(4, {
 //                                           if (v) this.data[2] |= 0x80; else this.data[2] &= 0x7f; }},
   id:    DataTuple.prop([3]),
 
-  used: {get(this: any): boolean { return this.data[0] !== 0xfe; }},
+  used: {get(this: any): boolean { return this.data[0] !== 0xfe; },
+         set(this: any, used: boolean) { this.data[0] = used ? 0 : 0xfe; }},
   monsterId: {get(this: any): number { return (this.id + 0x50) & 0xff; },
               set(this: any, id: number) { this.id = (id - 0x50) & 0xff; }},
   /** Note: this includes mimics. */
@@ -764,7 +853,7 @@ const locationKeys: (keyof typeof LOCATIONS | undefined)[] = (() => {
     const [id] = (LOCATIONS as any)[key];
     keys[id] = key;
   }
-  return keys;
+  return keys as any;
 })();
 
 

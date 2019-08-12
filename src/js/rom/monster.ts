@@ -66,6 +66,16 @@ export class Monster extends ObjectData {
     this.wealth = vsGld && vsGld / (vsExp + vsGld);
   }
 
+  placement(): Placement {
+    const action = ACTION_SCRIPTS.get(this.action);
+    return action && action.placement || 'normal';
+  }
+
+  clearance(): number {
+    const action = ACTION_SCRIPTS.get(this.action);
+    return action && action.large ? 6 : 3;
+  }
+
   totalDifficulty(): number {
     return this.toughness() + this.attack() + this.statusDifficulty() +
         this.immunities() + this.movement();
@@ -255,11 +265,13 @@ interface ActionScriptData {
   projectile?: number;
   movement?: number;
   metasprites?: (o: ObjectData) => readonly number[];
-  placement?: 'moth' | 'bird' | 'plant';
+  placement?: Placement;
   // This is on top of any effect from satk, status, etc.
   // difficulty?: (o: Monster, c?: Monster) => DifficultyFactor;
   // flyer? stationary? large? required space?
 }
+
+type Placement = 'normal' | 'moth' | 'bird' | 'plant';
 
 // Set of action script IDs.
 // We could possibly do better with a quick coverage analysis of the actual code.

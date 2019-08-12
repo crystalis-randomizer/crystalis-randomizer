@@ -3,8 +3,8 @@ import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 import {Flag} from '../rom/location.js';
 import {MapBuilder} from '../rom/mapscreen.js';
-import {seq} from '../rom/util.js';
-import {UnionFind} from '../unionfind.js';
+import {hex, seq} from '../rom/util.js';
+import {Monster} from '../rom/monster.js';
 
 export function shuffleGoa1(rom: Rom, random: Random): void {
   // NOTE: also need to move enemies...
@@ -87,8 +87,8 @@ export function shuffleGoa1(rom: Rom, random: Random): void {
       continue OUTER;
     }
     // don't allow a direct forward entrance
-    if (maze.get(boss + 32) === 0x0101 ||
-        maze.get(entrance - 16) === 0x0101) continue OUTER;
+    if (maze.get((boss + 32) as Pos) === 0x0101 ||
+        maze.get((entrance - 16) as Pos) === 0x0101) continue OUTER;
     console.log('first', maze.show());
 
     // add an extra path until we fail 10 times
@@ -112,10 +112,10 @@ export function shuffleGoa1(rom: Rom, random: Random): void {
     if (!check()) continue OUTER;
 
     for (const [pos, scr] of maze) {
-      if (scr === 0x0101 && maze.get(pos + 16) === 0x0101) {
+      if (scr === 0x0101 && maze.get((pos + 16) as Pos) === 0x0101) {
         const order = random.shuffle([0, 16]);
-        if (!tryFlag(pos + order[0], 0x2_0000) &&
-            !tryFlag(pos + order[1], 0x2_0000)) {
+        if (!tryFlag((pos + order[0]) as Pos, 0x2_0000) &&
+            !tryFlag((pos + order[1]) as Pos, 0x2_0000)) {
           continue OUTER;
         }
       }
@@ -137,7 +137,8 @@ export function shuffleGoa1(rom: Rom, random: Random): void {
       const traversal = maze.traverse();
       (window as any).TRAV = traversal;
 
-      let main = traversal.get(entranceTile);
+      const main = traversal.get(entranceTile);
+      if (!main) return false;
       if (!exitTiles.filter(t => main.has(t)).length) return false;
       if (main.size < 0.8 * traversal.size) return false;
       return true;
@@ -145,7 +146,8 @@ export function shuffleGoa1(rom: Rom, random: Random): void {
 
     function tryFlag(pos: Pos, mod = 0x1_0000): boolean {
       const prev = maze.get(pos);
-      maze.replace(pos, prev | mod);
+      if (prev == null) throw new Error(`Cannot flag empty screen ${hex(pos)}`);
+      maze.replace(pos, (prev | mod) as Scr);
       if (check()) return true;
       maze.replace(pos, prev);
       return false;
@@ -158,8 +160,21 @@ export function shuffleGoa1(rom: Rom, random: Random): void {
 
     maze.write(loc, new Set());
 
-    moveMonsters(loc, random);
-    
+    const monsterPlacer = loc.monsterPlacer(random);
+    for (const spawn of loc.spawns) {
+      if (!spawn.isMonster()) continue;
+      const monster = rom.objects[spawn.monsterId];
+      if (!(monster instanceof Monster)) continue;
+      const pos = monsterPlacer(monster);
+      if (pos == null) {
+        console.error(`no valid location for ${hex(monster.id)} in ${hex(loc.id)}`);
+        spawn.used = false;
+        continue;
+      } else {
+        spawn.screen = pos >>> 8;
+        spawn.tile = pos & 0xff;
+      }
+    }    
 
     console.log(`success after ${attempt} attempts`);
     // console.log(traversal);

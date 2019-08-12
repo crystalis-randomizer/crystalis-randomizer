@@ -135,7 +135,8 @@ class MapsView extends View {
       const addr = hex(0x200 | flag);
       const y = tile >> 4;
       const x = tile & 0xf;
-      lines.push(`  ${addr} => (${x}, ${y}) [flags.${y}.${x}<checkbox>:0]`);
+      // NOTE: 2ef is on by default, since we use it as "always-open".
+      lines.push(`  ${addr} => (${x}, ${y}) [flags.${y}.${x}<checkbox>:${flag === 0xef ? 1 : 0}]`);
     }
 
     // Look at NpcData, too!
@@ -375,6 +376,7 @@ const run = async () => {
   const rom = await Rom.load(patch);
   shuffleMazes.extendGoaScreens(rom);
   window.shuffleGoa1 = (s) => shuffleMazes.shuffleGoa1(rom, new Random(s || 1));
+  window.shuffleSwamp = (s) => shuffleMazes.shuffleSwamp(rom, new Random(s || 1));
   window.rom = rom;
   window.World = World;
   window.world = new World(rom);

@@ -5,12 +5,15 @@ import {Data, DataTuple,
         seq, tuple, varSlice, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
 import {Rom} from '../rom.js';
+import { UnionFind } from '../unionfind.js';
+import { iters } from '../util.js';
 
 // Location entities
 export class Location extends Entity {
 
   used: boolean;
   name: string;
+  key: keyof typeof LOCATIONS;
 
   private readonly mapDataPointer: number;
   private readonly mapDataBase: number;
@@ -54,6 +57,7 @@ export class Location extends Entity {
     this.mapDataBase = readLittleEndian(rom.prg, this.mapDataPointer) + 0xc000;
     // TODO - pass this in and move LOCATIONS to locations.ts
     this.name = locationNames[this.id] || '';
+    this.key = locationKeys[this.id] || '';
     this.used = this.mapDataBase > 0xc000 && !!this.name;
 
     this.layoutBase = readLittleEndian(rom.prg, this.mapDataBase) + 0xc000;
@@ -259,7 +263,7 @@ export class Location extends Entity {
         if (neighbor && neighbor.used &&
             neighbor !== this && !out.has(neighbor)) {
           out.add(neighbor);
-          if (joinNexuses && NEXUSES.has(id)) {
+          if (joinNexuses && NEXUSES[neighbor.key]) {
             addNeighbors(neighbor);
           }
         }
@@ -267,6 +271,79 @@ export class Location extends Entity {
     }
     addNeighbors(this);
     return out;
+  }
+
+  hasDolphin(): boolean {
+    return this.id === 0x60 || this.id === 0x64 || this.id === 0x68;
+  }
+
+  /**
+   * @return Map of tiles ($YXyx) reachable from any entrance to
+   * unflagged tileeffects.
+   */
+  reachableTiles(fly: boolean): Map<number, number> {
+    // Dolphin.
+    if (this.hasDolphin()) fly = true;
+    // Take into account the tileset and flags but not any overlay.
+    const uf = new UnionFind<number>();
+    const tileset = this.rom.tileset(this.tileset);
+    const tileEffects = this.rom.tileEffects[this.tileEffects - 0xb3];
+    const passable = new Set<number>();
+    
+    for (let y = 0; y < this.height; y++) {
+      const row = this.screens[y];
+      for (let x = 0; x < this.width; x++) {
+        const screen = this.rom.screens[row[x] | (this.extended ? 0x100 : 0)];
+        const pos = y << 4 | x;
+        const flag = this.flags.find(f => f.screen === pos);
+        for (let t = 0; t < 0xf0; t++) {
+          let tile = screen.tiles[t];
+          // flag 2ef is "always on", don't even bother making it conditional.
+          let effects = tileEffects.effects[tile];
+          let blocked = fly ? effects & 0x04 : effects & 0x06;
+          if (flag && blocked && tile < 0x20 && tileset.alternates[tile] != tile) {
+            tile = tileset.alternates[tile];
+            effects = tileEffects.effects[tile];
+            blocked = fly ? effects & 0x04 : effects & 0x06;
+          }
+          if (!blocked) passable.add(pos << 8 | t);
+        }
+      }
+    }
+
+    for (let t of passable) {
+      if (passable.has(t + 1)) uf.union([t, t + 1]);
+      const below = (t & 0xf0) === 0xe0 ? t + 32 : t + 16;
+      if (passable.has(below)) uf.union([t, below]);
+    }
+
+    const map = uf.map();
+    const sets = new Set<Set<number>>();
+    for (const entrance of this.entrances) {
+      const id = entrance.screen << 8 | entrance.tile;
+      sets.add(map.get(id)!);
+    }
+
+    const out = new Map<number, number>();
+    for (const set of sets) {
+      for (const t of set) {
+        const scr = this.screens[t >>> 12][(t >>> 8) & 0x0f];
+        const screen = this.rom.screens[scr | (this.extended ? 0x100 : 0)];
+        out.set(t, tileEffects.effects[screen.tiles[t & 0xff]]);
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Moves all spawns, entrances, and exits.
+   * @param orig YX of the original screen.
+   * @param repl YX of the equivalent replacement screen.
+   */
+  moveScreen(orig: number, repl: number): void {
+    for (const obj of iters.concat(this.spawns, this.exits, this.entrances)) {
+      if (obj.screen === orig) obj.screen = repl;
+    }
   }
 
   /** @return {!Set<number>} */
@@ -681,6 +758,16 @@ const locationNames: (string | undefined)[] = (() => {
   return names;
 })();
 
+const locationKeys: (keyof typeof LOCATIONS | undefined)[] = (() => {
+  const keys = [];
+  for (const key of Object.keys(LOCATIONS)) {
+    const [id] = (LOCATIONS as any)[key];
+    keys[id] = key;
+  }
+  return keys;
+})();
+
+
 // building the CSV for the location table.
 //const h=(x)=>x==null?'null':'$'+x.toString(16).padStart(2,0);
 //'id,name,bgm,width,height,animation,extended,tilepat0,tilepat1,tilepal0,tilepal1,tileset,tile effects,exits,sprpat0,sprpat1,sprpal0,sprpal1,obj0d,obj0e,obj0f,obj10,obj11,obj12,obj13,obj14,obj15,obj16,obj17,obj18,obj19,obj1a,obj1b,obj1c,obj1d,obj1e,obj1f\n'+rom.locations.map(l=>!l||!l.used?'':[h(l.id),l.name,h(l.bgm),l.layoutWidth,l.layoutHeight,l.animation,l.extended,h((l.tilePatterns||[])[0]),h((l.tilePatterns||[])[1]),h((l.tilePalettes||[])[0]),h((l.tilePalettes||[])[1]),h(l.tileset),h(l.tileEffects),[...new Set(l.exits.map(x=>h(x[2])))].join(':'),h((l.spritePatterns||[])[0]),h((l.spritePatterns||[])[1]),h((l.spritePalettes||[])[0]),h((l.spritePalettes||[])[1]),...new Array(19).fill(0).map((v,i)=>((l.objects||[])[i]||[]).slice(2).map(x=>x.toString(16)).join(':'))]).filter(x=>x).join('\n')
@@ -712,14 +799,33 @@ const locationNames: (string | undefined)[] = (() => {
 //   return [h(l.id),l.name,h(m),'',h(s),type,0,patSlot,m?h((l.spritePatterns||[])[patSlot]):'',palSlot,allPal.has(2)?h((l.spritePalettes||[])[0]):'',allPal.has(3)?h((l.spritePalettes||[])[1]):''];
 // }).filter(x=>x))).map(a=>a.join(',')).filter(x=>x).join('\n');
 
-const NEXUSES = new Set<number>([
-  LOCATIONS.mtSabreWestLower[0],
-  LOCATIONS.mtSabreWestUpper[0],
-  LOCATIONS.mtSabreNorthMain[0],
-  LOCATIONS.mtSabreNorthMiddle[0],
-  LOCATIONS.mtSabreNorthCave1[0],
-  LOCATIONS.mtSabreNorthCave2[0],
-  LOCATIONS.mtHydra[0],
-  LOCATIONS.mtHydraOutsideShyron[0],
-  LOCATIONS.mtHydraCave1[0],
-]);
+/**
+ * Locations with cave systems that should all be treated as neighboring.
+ */
+const NEXUSES: {[T in keyof typeof LOCATIONS]?: true} = {
+  mtSabreWestLower: true,
+  mtSabreWestUpper: true,
+  mtSabreNorthMain: true,
+  mtSabreNorthMiddle: true,
+  mtSabreNorthCave1: true,
+  mtSabreNorthCave2: true,
+  mtHydra: true,
+  mtHydraOutsideShyron: true,
+  mtHydraCave1: true,
+};
+
+const BOSS_SCREENS: {[T in keyof typeof LOCATIONS]?: number} = {
+  sealedCave7: 0x91,
+  swamp: 0x7c,
+  mtSabreNorthMain: 0xb5,
+  saberaPalace1: 0xfd,
+  saberaPalace3: 0xfd,
+  shyronFortress: 0x70,
+  goaFortressKelbesque: 0x73,
+  goaFortressTornel: 0x91,
+  goaFortressAsina: 0x91,
+  goaFortressKarmine7: 0xfd,
+  pyramidDraygon: 0xf9,
+  cryptDraygon2: 0xfa,
+  towerDyna: 0x5c,
+};

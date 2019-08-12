@@ -52,12 +52,12 @@ export class UnionFind<T> {
     return [...sets.values()];
   }
 
+  /** @return map of all elements to their equivalence set. */
   map(): Map<T, Set<T>> {
     const sets = new Map<T, Set<T>>();
     for (const elem of this.data.keys()) {
-      const root = this.find(elem);
-      let set = sets.get(root);
-      if (!set) sets.set(root, set = new Set<T>());
+      let set = sets.get(this.find(elem));
+      sets.set(elem, set || (set = new Set<T>()));
       set.add(elem);
     }
     return sets;

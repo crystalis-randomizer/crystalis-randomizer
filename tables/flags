@@ -191,6 +191,12 @@
 10c - defeated vampire 2
 10d - UNUSED? - shyron gate
 
+## NOTE - we use 110..11f for scaling bookkeeping (I think - 64a2)
+##               180..1ff is the overflow buffer
+##               200..26f is chests
+## Map flags seem to run from 282 to 2ef, leaving only a few free.
+## (270..281, 288..28c, 2a7, 2ab, 2b4, 2f0..2f4)
+
 283 - calmed angry sea
 
 

@@ -1,9 +1,11 @@
 import {hex, hex5, seq} from "../rom/util.js";
-import { Random } from "../random.js";
-import { DefaultMap } from "../util.js";
-import { UnionFind } from "../unionfind.js";
+import {Location, Flag} from "../rom/location.js";
+import {Random} from "../random.js";
+import {DefaultMap, assertNever} from "../util.js";
+import {UnionFind} from "../unionfind.js";
+import { Monster } from "../rom/monster.js";
 
-export class Maze {
+export class Maze implements Iterable<[Pos, Scr]> {
 
   private map: Array<Scr|undefined>;
   //private mapStack: Array<Array<Scr|undefined>> = [];
@@ -37,6 +39,18 @@ export class Maze {
   }
 
   // Higher-level functionality
+
+  * alternates(): IterableIterator<[Pos, number]> {
+    for (const pos of this.allPos) {
+      const scr = this.map[pos];
+      if (scr == null) continue;
+      for (let bit = 0x1_0000; bit < 0x10_0000; bit <<= 1) {
+        if (!(scr & bit) && this.screens.has((scr | bit) as Scr)) {
+          yield [pos, bit];
+        }
+      }
+    }
+  }
 
   saveExcursion(f: () => boolean): boolean {
     let m = [...this.map];
@@ -120,7 +134,6 @@ export class Maze {
       const pathSaved = [...path];
       for (const step of pathSaved) {
         const nextDir = Dir.turn(dir, step);
-console.log(`step ${step}: ${pos.toString(16)},${dir} => ${Pos.plus(pos,dir).toString(16)},${nextDir}`);
         pos = Pos.plus(pos, dir);
         const screen = Scr.fromExits(DirMask.of(Dir.inv(dir), nextDir), exitType);
         if (!this.trySet(pos, screen)) return false;
@@ -254,6 +267,13 @@ console.log(`step ${step}: ${pos.toString(16)},${dir} => ${Pos.plus(pos,dir).toS
     return count / (this.width * this.height);
   }
 
+  * [Symbol.iterator](): IterableIterator<[Pos, Scr]> {
+    for (const pos of this.allPos) {
+      const scr = this.map[pos];
+      if (scr != null) yield [pos, scr];
+    }
+  }
+
   get(pos: Pos): Scr | undefined {
     if (!this.inBounds(pos)) return 0 as Scr;
     return this.map[pos];
@@ -265,9 +285,8 @@ console.log(`step ${step}: ${pos.toString(16)},${dir} => ${Pos.plus(pos,dir).toS
     //      - maybe use the border? or a separate array?
     if (!force && !this.fitsAndEmpty(pos, screen)) {
       const prev = this.map[pos];
-      throw new Error(`Cannot overwrite ${hex(pos)} (${
-                       prev != null ? hex5(prev) : 'empty'}) with ${
-                       hex5(screen)}`);
+      const hexPrev = prev != null ? hex5(prev) : 'empty';
+      throw new Error(`Cannot overwrite ${hex(pos)} (${hexPrev}) with ${hex5(screen)}`);
     }
     if (this.inBounds(pos)) this.map[pos] = screen;
   }
@@ -304,6 +323,32 @@ console.log(`step ${step}: ${pos.toString(16)},${dir} => ${Pos.plus(pos,dir).toS
     return true;
   }
 
+  traverse(): Map<number, Set<number>> {
+    // Returns a map from unionfind root to a list of all reachable tiles.
+    // All elements of set are keys pointing to the same value ref.
+    const uf = new UnionFind<number>();
+    for (const pos of this.allPos) {
+      const scr = this.map[pos];
+      if (scr == null) continue;
+      const spec = this.screens.get(scr);
+      if (spec == null) continue;
+      for (const connection of spec.connections) {
+        uf.union(connection.map(c => (pos << 8) + c));
+      }
+    }
+
+    const map = new Map<number, Set<number>>();
+    const sets = uf.sets();
+    for (let i = 0; i < sets.length; i++) {
+      const set = sets[i];
+      for (const elem of set) {
+        map.set(elem, set);
+      }
+    }
+
+    return map;
+  }
+
   // For now, just show broad structure.
   show(): string {
     const header = ' ' + seq(this.width).join('') + '\n';
@@ -322,6 +367,70 @@ console.log(`step ${step}: ${pos.toString(16)},${dir} => ${Pos.plus(pos,dir).toS
     }).join('')).join('\n');
     return header + body;
   }
+
+  write(loc: Location, availableFlags: Set<number>) {
+    for (const flag of loc.flags) {
+      availableFlags.add(flag.flag);
+    }
+    loc.flags = [];
+    loc.width = this.width;
+    loc.height = this.height;
+    for (let y = 0; y < this.height; y++) {
+      loc.screens[y] = [];
+      for (let x = 0; x < this.width; x++) {
+        const pos = y << 4 | x;
+        const scr = this.map[pos];
+        if (scr == null) throw new Error(`Missing screen at pos ${hex(pos)}`);
+        const spec = this.screens.get(scr);
+        if (!spec) throw new Error(`Missing spec for ${hex5(scr)} at ${hex(pos)}`);
+        loc.screens[y].push(spec.tile);
+        if (spec.flag) loc.flags.push(Flag.of({screen: pos, flag: 0x2ef}));
+        // if (spec.wall) {
+        //   // pop an available flag and use that.
+        //   loc.flags.push();
+        // }
+      }
+    }
+  }
+
+  // Probably this belongs in Location, but we need the boss screen info...?
+  moveMonsters(loc: Location, random: Random): void {
+    // NOTE: need to use info about screens to exclude boss screens.
+    const boss = new Set<number>();
+    for (const s of this.screens.values()) {
+      if (s.boss) boss.add(s.tile);
+    }
+    // Start with list of reachable tiles.
+    const reachable = loc.reachableTiles(false);
+    // Do a breadth-first search of all tiles to find "distance" (1-norm).
+    const extended = new Map<number, number>([...reachable.keys()].map(x => [x, 0]));
+    const normal = []; // reachable, not slope or water
+    const moths = []; // distance ∈ 3..7
+    const birds = []; // distance > 12
+    const plants = []; // distance ∈ 2..4
+    const normalTerrainMask = loc.hasDolphin() ? 0x25 : 0x27;
+    for (const [t, distance] of extended) {
+      for (const n of neighbors(t, loc.width, loc.height)) {
+        if (extended.has(t)) continue;
+        extended.set(n, distance + 1);
+      }
+      if (!distance && !(reachable.get(t)! & normalTerrainMask)) normal.push(t);
+      if (distance >= 2 && distance <= 4) plants.push(t);
+      if (distance >= 3 && distance <= 7) moths.push(t);
+      if (distance >= 12) birds.push(t);
+    }
+    // We now know all the possible places to place things.
+    //  - NOTE: still need to move chests to dead ends, etc?
+    for (const spawn of loc.spawns) {
+      if (!spawn.isMonster()) continue;
+      const monster = loc.rom.objects[spawn.monsterId];
+      if (!(monster instanceof Monster)) continue;
+      // check for placement.
+
+      // NOTE - boss status is now known to Location, we can move this there.
+    }
+
+  }
 }
 
 /** Spec for a screen. */
@@ -332,10 +441,11 @@ export interface Spec {
   readonly connections: Connections;
   readonly fixed: boolean;
   readonly flag: boolean;
+  readonly boss: boolean;
 }
 
 type Connections = ReadonlyArray<ReadonlyArray<number>>;
-type SpecFlag = 'fixed' | 'flag';
+type SpecFlag = 'fixed' | 'flag' | 'boss';
 
 export function Spec(edges: number,
                      tile: number,
@@ -344,14 +454,17 @@ export function Spec(edges: number,
   const connections = [];
   let fixed = false;
   let flag = false;
+  let boss = false;
   for (let data of extra) {
     if (typeof data === 'string') {
       if (data === 'fixed') {
         fixed = true;
       } else if (data === 'flag') {
         flag = true;
+      } else if (data === 'boss') {
+        boss = true;
       } else {
-        throw new Error(`Bad flag`);
+        assertNever(data);
       }
     } else {
       const connection: number[] = [];
@@ -360,13 +473,14 @@ export function Spec(edges: number,
         // Each of the four edges has possible exits 1, 2, and 3,
         // represented by that corresponding tile.  The 4 bit is
         // for left/right edge and the 8 bit is for right/bottom.
-        let tile = (data & 3) | (data & 8) << 5;
-        connection.push(data & 4 ? tile << 4 : tile);
+        const channel = (data & 3) << (data & 4); // 01, 02, 03, 10, 20, or 30
+        const offset = data & 8 ? (data & 4 ? 0x0100 : 0x1000) : 0;
+        connection.push(channel | offset);
         data >>>= 4;
       }
     }
   }
-  return {edges: edges as Scr, tile, icon, connections, fixed, flag};
+  return {edges: edges as Scr, tile, icon, connections, fixed, flag, boss};
 }
 export namespace Spec {
   export function fixed(edges: number, tile: number, ...connections: Connections) {
@@ -539,3 +653,22 @@ const UNICODE_TILES: {[exits: number]: string} = {
   0x0010: '\u2576',
   0x0100: '\u2577',
 };
+
+function neighbors(tile: number, width: number, height: number): number[] {
+  const out = [];
+  const y = tile & 0xf0f0;
+  const x = tile & 0x0f0f;
+  if (y < ((height - 1) << 12 | 0xe0)) {
+    out.push((tile & 0xf0) === 0xe0 ? tile + 32 : tile + 16);
+  }
+  if (y) {
+    out.push((tile & 0xf0) === 0x00 ? tile - 32 : tile - 16);
+  }
+  if (x < ((width - 1) << 8 | 0x0f)) {
+    out.push(tile + 1);
+  }
+  if (x) {
+    out.push(tile - 1);
+  }
+  return out;
+}

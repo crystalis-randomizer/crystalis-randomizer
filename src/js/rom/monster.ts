@@ -255,6 +255,7 @@ interface ActionScriptData {
   projectile?: number;
   movement?: number;
   metasprites?: (o: ObjectData) => readonly number[];
+  placement?: 'moth' | 'bird' | 'plant';
   // This is on top of any effect from satk, status, etc.
   // difficulty?: (o: Monster, c?: Monster) => DifficultyFactor;
   // flyer? stationary? large? required space?
@@ -354,6 +355,7 @@ export const ACTION_SCRIPTS = new Map<number, ActionScriptData>([
     moth: true,
     // projectile: 2,
     movement: 4, // slow flyer
+    placement: 'moth',
   }],
   [0x41, { // skeleton (mp drain web)
     child: true,
@@ -367,11 +369,13 @@ export const ACTION_SCRIPTS = new Map<number, ActionScriptData>([
     bird: true,
     projectile: 2,
     movement: 5, // fast flyer
+    placement: 'bird',
   }],
   [0x4c, { // swamp plant -> ea/10 =5
     child: true,
     stationary: true,
     projectile: 3,
+    placement: 'plant',
   }],
   [0x4d, { // kraken
     child: true,
@@ -394,6 +398,7 @@ export const ACTION_SCRIPTS = new Map<number, ActionScriptData>([
   [0x5d, { // helicopter
     bird: true,
     movement: 6,
+    placement: 'bird',
   }],
   [0x5e, { // white robot
     child: true,

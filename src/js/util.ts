@@ -399,3 +399,7 @@ export class SetMultimap<K, V> {
 
   // TODO - iteration?
 }
+
+export function assertNever(x: never): never {
+  throw new Error(`non-exhaustive check: ${x}`);
+}

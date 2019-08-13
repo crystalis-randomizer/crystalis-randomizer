@@ -20,6 +20,7 @@ const COMMON = [
   'nodes.js',
   'pass/*.js',
   'patch.js',
+  'polyfill.js',
   'random.js',
   'rom.js',
   'romimage.js',

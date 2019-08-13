@@ -1,3 +1,5 @@
+import '../polyfill.js';
+
 import {Dir, Maze, Pos, Scr, Spec} from './maze.js';
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
@@ -117,6 +119,7 @@ export function shuffleGoa1(rom: Rom, random: Random, attempts = 1500): void {
 
     if (!check()) continue OUTER;
 
+    // Find any vertically-adjacent 0101 and try to make them into 20101
     for (const [pos, scr] of maze) {
       if (scr === 0x0101 && maze.get((pos + 16) as Pos) === 0x0101) {
         const order = random.shuffle([0, 16]);
@@ -159,8 +162,6 @@ export function shuffleGoa1(rom: Rom, random: Random, attempts = 1500): void {
       return false;
     }
 
-    // Find any vertically-adjacent 0101 and try to make them into 20101
-
     loc.moveScreen(0x06, boss);
     loc.moveScreen(0x83, entrance);
 
@@ -183,36 +184,13 @@ export function shuffleGoa1(rom: Rom, random: Random, attempts = 1500): void {
     }    
 
     console.log(`success after ${attempt} attempts`);
-    // console.log(traversal);
-    // console.log(traversal.get(entranceTile));
-    // console.log(traversal.get(exitTile));
     console.log(maze.show());
-
 
     return;
   }
 
-  // function showMap(map: number[]) {
-  //   return seq(h, y => Array.from(map.slice(16 * y, 16 * y + w), x => (x || ' ').toString(16)).join(' ')).join('\n');
-  // }
-
-  // Now build the skeleton of a map?
-  // Start with the most open possibility?  All flags on (no walls) and
-  // go along perimeter?  Domains of lower-floor, connected by parapets?
-
-  // Only "T" in parapet is from dead-end in lower area.  Otherwise
-  // everything is a cycle.
-
-  // Pretend 4 & 5 are vertical halls?  Then 
-
-
   throw new Error(`unable to shuffle goa1 after ${attempts} attempts`);
-  //return;
 }
-
-
-
-
 
 export function extendGoaScreens(rom: Rom) {
   // PLAN:
@@ -268,12 +246,10 @@ export function extendGoaScreens(rom: Rom) {
 
   rom.locations[0xa9].flags.push(
       Flag.of({screen: 0x10, flag: 0x2ef}),
-      Flag.of({screen: 0x14, flag: 0x200}),
       Flag.of({screen: 0x20, flag: 0x2ef}),
       Flag.of({screen: 0x21, flag: 0x2ef}),
       Flag.of({screen: 0x24, flag: 0x2ef}),
       Flag.of({screen: 0x25, flag: 0x2ef}),
-      Flag.of({screen: 0x26, flag: 0x200}),
       Flag.of({screen: 0x30, flag: 0x2ef}),
       Flag.of({screen: 0x31, flag: 0x2ef}),
       Flag.of({screen: 0x33, flag: 0x2ef}),
@@ -284,59 +260,6 @@ export function extendGoaScreens(rom: Rom) {
       Flag.of({screen: 0x64, flag: 0x2ef}),
       Flag.of({screen: 0x72, flag: 0x2ef}),
       Flag.of({screen: 0x74, flag: 0x200}));
-}
-
-export function shuffleSwamp1(rom: Rom, random: Random): boolean {
-  const swamp = rom.locations.swamp;
-  // 1. Start by fixing up the swamp tiles.
-  //extendSwampScreens(rom);
-
-  // Collect the available screens (7c is boss room, 7f is solid)
-  const screens = [0x75, 0x76, 0x77, 0x78, 0x79, 0x7a, 0x7b, 0x7d, 0x7e, 0x7f];
-  //const doorable = new Set([0x76, 0x7a, 0x7b, 0x7e]);
-  const leftEntrances = [/*0x75,*/ /*0x77, 0x78,*/ 0x7a,/* 0x7d,*/ 0x7e];
-
-  const builder = new MapBuilder(rom.tileset(swamp.tileset), screens, random,
-                                 swamp.height, swamp.width);
-
-  // Pick random location for entrance and boss.
-  let bossPos;
-  let entrancePos;
-
-  do {
-    bossPos = random.nextInt(swamp.width);
-    // TODO - builder.setFixed(pos, tile) - return false if bad constraints
-    // TODO - specify edge rather than tile?
-    entrancePos = (1 + random.nextInt(swamp.height - 2)) << 4;
-  } while (bossPos < 2 && entrancePos < 0x20);
-  builder.screens[entrancePos] = ~random.pick(leftEntrances);
-  builder.screens[bossPos] = ~0x7c;
-
-  const targets = [entrancePos << 8 | 0x88, bossPos << 8 | 0x1008];
-  builder.reset();
-  for (let i = 0; i < 100; i++) {
-    if (!builder.fill(100)) throw new Error(`failed to fill`);
-    const map = builder.traverse();
-    const targetParts = targets.map(t => map.get(t));
-    if (!allSame(targetParts)) { // end tiles not in same partition
-      builder.deleteSomeScreens();
-      continue;
-    }
-  }
-
-  // Actually commit the change!
-  swamp.screens = seq(swamp.height, y => seq(swamp.width, x => {
-    const pos = y << 4 | x;
-    const scr = builder.screens[pos];
-    return scr as number < 0 ? ~(scr as number) : scr || 0;
-    //if (scr == null) throw new Error(`Missing screen`);
-    //return scr < 0 ? ~scr : scr;
-    //builder.screens[pos] =
-    // TODO - set flag
-  }));
-
-  //const swamp = rom.locations.swamp;
-  return true;
 }
 
 export function shuffleSwamp(rom: Rom, random: Random, attempts = 100) {
@@ -736,11 +659,6 @@ const SWAMP_SCREENS: {[id: number]: string} = {
         c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8 c8`,
 };
 
-// TODO - parse these screens, add them temporarily elsewhere
-// so we can put them together and see how repetitive the fog is
-
-const [] = [SWAMP_SCREENS];
-
 export function extendSwampScreens(rom: Rom) {
   // Move up to 13 swamp tiles to the alternate palette
   // so that we can selectively open up different options for
@@ -836,34 +754,6 @@ function write<T>(arr: T[], corner: number,
   }
 }
 
-function allSame<T>(arr: T[],
-                    eq: (a: T, b: T) => boolean = (a, b) => a === b): boolean {
-  for (const elem of arr) {
-    if (!eq(elem, arr[0])) {
-      return false;
-    }
-  }
-  return true;
-}
-
-// PROVIDE FLATMAP POLYFILL?
-if (!Array.prototype.flatMap) {
-  Object.defineProperties(Array.prototype, {
-    flatMap: {
-      value<T, U>(this: Array<T>, f: (x: T, i: number) => U[]): U[] {
-        const out = [];
-        let i = 0;
-        for (const x of this) {
-          let y = f(x, i++);
-          if (typeof y[Symbol.iterator] !== 'function') y = [y] as any;
-          y = [...y];
-          if (y.length) out.push(...y);
-        }
-        return out;
-      },
-    },
-  });
-}
 
 // Goa 1 - need 2 extra flaggable tiles
 //  - 0..12 used for walls

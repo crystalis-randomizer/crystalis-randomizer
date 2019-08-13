@@ -6,8 +6,14 @@ import {MapBuilder} from '../rom/mapscreen.js';
 import {hex, seq} from '../rom/util.js';
 import {Monster} from '../rom/monster.js';
 
-export function shuffleGoa1(rom: Rom, random: Random): void {
+export function shuffleMazes(rom: Rom, random: Random) {
+  shuffleSwamp(rom, random);
+  shuffleGoa1(rom, random);
+}
+
+export function shuffleGoa1(rom: Rom, random: Random, attempts = 1500): void {
   // NOTE: also need to move enemies...
+  extendGoaScreens(rom);
   const loc = rom.locations.goaFortressKelbesque;
   const w = loc.width;
   const h = loc.height;
@@ -52,7 +58,7 @@ export function shuffleGoa1(rom: Rom, random: Random): void {
   // TODO - consider bigger icons? '┘║└\n═╬═\n┐║┌' or '┘┃└\n━╋━\n┐┃┌' ??
 
   OUTER:
-  for (let attempt = 0; attempt < 1000; attempt++) {
+  for (let attempt = 0; attempt < attempts; attempt++) {
     const maze = new Maze(random, h, w, screens);
 
     // Place the entrance at the bottom, boss at top.
@@ -200,7 +206,7 @@ export function shuffleGoa1(rom: Rom, random: Random): void {
   // Pretend 4 & 5 are vertical halls?  Then 
 
 
-  throw new Error(`unable to shuffle goa1 after 1000(?) attempts`);
+  throw new Error(`unable to shuffle goa1 after ${attempts} attempts`);
   //return;
 }
 

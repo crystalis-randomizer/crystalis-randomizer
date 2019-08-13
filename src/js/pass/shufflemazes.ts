@@ -4,7 +4,6 @@ import {Dir, Maze, Pos, Scr, Spec} from './maze.js';
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 import {Flag} from '../rom/location.js';
-import {MapBuilder} from '../rom/mapscreen.js';
 import {hex, seq} from '../rom/util.js';
 import {Monster} from '../rom/monster.js';
 

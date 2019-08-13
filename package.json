@@ -7,7 +7,7 @@
     "tsc": "node_modules/typescript/bin/tsc",
     "build": "npm run tsc && gulp",
     "test": "npm run build && test/test_cli.sh",
-    "clean": "for a in $(find src/js -name '*.ts'); do rm -f ${a%.ts}.js; rm -f ${a%.ts}.js.map; done; rm -f src/js/**/flycheck_*.js*"
+    "clean": "rm -rf dist src/js/**/flycheck_*"
   },
   "bin": {
     "cryr": "src/js/cli.js"

@@ -1,0 +1,363 @@
+Basic plan:
+
+Two scaling tables (tool, armor)
+ - stores factor * 8 (8s)
+ 
+Single base-price table
+ - stores base price in two bytes (b)
+
+Individual store price tables
+ - store single byte per item: multiplier * 32 (32m)
+
+Then multiply 8s*b*32m = 256sbm = price
+Need to do three-byte multiplication now.
+
+$61 <- 8s
+$62 <- 32m
+multiply
+$63$64 <- b
+
+
+could do a 32-bit multiply ~ 40 bytes and needs 8 bytes of ram
+
+b < 4096 - 12 bits
+32m < 64 - 6 bits
+8s < 256 - 8 bits
+
+=> 26 bits
+
+$61 <- 8s
+$62 <- 32m
+mult16
+$63 <- <b
+$64 <- >b
+mult32 -> $10..13
+answer in $11$12
+
+if $13 nonzero then $ffff
+
+
+
+MultiplyShopPrice:
+  ;; A is scaling factor, X is offset into price table
+  ;; Y is item index, goes from 4..12 in normal shops,
+  ;; but is zero for inn since inn goes straight to current item
+  sta $61
+  lda ShopPriceTable,x
+MultiplyPawnPrice:
+  sta $62
+  jsr Multiply16Bit
+  ;; $61$62 is product * 8, so rotate 3 bits
+  lda $61
+  lsr $62
+  ror
+  lsr $62
+  ror
+  lsr $62
+  ror
+  sta $6474,y
+  inx
+  iny
+  lda $62
+  rts
+
+
+
+
+;;; Problem - having a hard time cramming the code we need into
+;;; the three available blocks (35, 35, 27 bytes).  We could
+;;; consider paging in the objectdata page where there's still
+;;; a few hundred spare bytes? or keep iterating on the current
+;;; approach when i'm more awake.  or look for another uncovered
+;;; block that we could use? (unlikely, unless we densify the scaling table)
+
+
+
+;;; Another possibility would be to consolidate - use the pawn shop price
+;;; table exclusively and then the shop price table can be converted to
+;;; only containing a fraction to multiply it by - this would recover quite
+;;; a few bytes as well since the fraction can then just be a single byte,
+;;; so we get back 88 more bytes that way, and only need to look up a single
+;;; number.  We would probably want to define a simpler Multiply24Bit routine
+;;; that multiplied some numbers in place or something?  Or really just
+
+ScaleItemPrice:
+  ;; inputs:
+  ;;   X: item ID
+  ;;   A: fraction (always 1/2 for pawn shops!)
+  ;; output:
+  ;;   $61$62 scaled price
+
+
+
+;;; If carry set then use pawn table, else other shops
+;;; Determine the scaled price and store it in $6474,y
+;;; Use value of X to determine type of scaling...
+;;;   - if X < $80 then use armor scaling, else tool scaling
+;;; Implication: we need to OFFSET the pawn shop table
+;;;   so that the scaling works... :-/
+
+
+        ;; could put this in the 21-byte region at 3fe01???
+LookupItemScale:
+        ;; Input: X offset
+        lda Difficulty
+        cpy #$80
+        bcs +
+         adc $30
++       tax
+        lda ToolShopScaling,x
+        sta $61
+        lda ($10),y
+        sta $62
+        iny
+        rts ; if we had one more byte, jump straight to the multiply
+        
+        ;; now we can call LookupItemScale whenever we need scale
+        ;; no need to bend over backwards to save it...!
+
+ScalePrice:
+  jsr Multiply8ths
+  sta $63
+  jsr Multiply8ths
+  bne +
+   lda $63
+   adc ($12,x)
+   bcc ++
++   lda #$ff
+++ sta ($12,x)
+   rts
+
+ScalePrices:
+  lda #$..
+  sta $10
+  lda #$..
+  sta $11
+  lda #$..
+  sta $12
+
+   
+
+
+Multiply8ths: ; 27 bytes
+  jsr LookupItemScale
+  jsr Multiply16Bit
+  lda $61
+  lsr $62
+  ror
+  lsr $62
+  ror
+  lsr $62
+  ror
+  ldx #$00
+  sta ($12,x)
+  inc $12
+  lda $62
+  clc ; helps later for adc in ScalePrice
+  rts
+
+
+
+;;; Input: ($10),y
+;;; Output to ($12)?
+;;; y < $80 indicates armor
+ScalePrice:
+  lda Difficulty
+  cpy #$80  
+  bcs +
+   adc #$30
++ tax
+  lda ToolShopScaling,x
+  pha
+   jsr MultiplyByte
+   sta $63
+   iny ; can we get these two into multiplybyte?
+   inc $12
+  pla
+  jsr MultiplyByte
+  bne +
+   lda $63
+   clc ; check needed?!?
+   adc ($12,x)
+   bcc ++
++   lda #$ff
+++ sta ($12,x)
+  iny
+  inc $12
+
+   
+
+;;; NOTE: 27 bytes even
+MultiplyByte:
+  sta $61
+  lda ($10),y
+  sta $62
+  jsr Multiply16Bit
+  lda $61
+  lsr $62
+  ror
+  lsr $62
+  ror
+  lsr $62
+  ror
+  ldx #$00
+  sta ($12,x)
+  ;; TODO - increment $12, iny
+  lda $62
+  rts
+
+
+
+
+
+MultiplyItemPrice:
+  lda $64
+  sta $61
+  lda ShopPriceTable,x
+  bcc +
+   lda OffsetPawnPriceTable,x
++ sta $62
+  jsr Multiply16Bit
+  lda $61
+  lsr $62
+  ror
+  lsr $62
+  ror
+  lsr $62
+  ror
+  sta $6474,y
+  inx
+  lda $62
+  rts
+
+
+
+ScalePrice:
+  ;; Save the carry flag so that we can use it later
+  php
+   stx $64
+   txa
+   php
+    lda Difficulty
+   plp
+   bmi +
+    clc
+    adc #$30
++  tax
+   lda ToolShopScaling,x
+  plp
+  ldx $64
+  pha
+   php
+    jsr MultiplyItemPrice
+    iny
+    sta $63
+   plp
+  pla
+  php
+   jsr MultiplyItemPrice
+   php
+    iny
+    lda $63
+   plp
+   bne +
+   clc
+   adc $6473,y
+   bcc ++
++   lda #$ff
+++ sta $6473,y
+  plp
+  rts
+
+
+ScalePrice:
+  ;; Save the carry flag so that we can use it later
+  php
+   php
+    ;; Determine the scaling factor
+    txa
+    pha
+     php
+      lda Difficulty
+     plp
+     bmi +
+      clc
+      adc #$30
++    tax
+     lda ToolShopScaling,x
+     sta $64
+    pla
+    tax
+   plp ; pull the carry bit for selecting the table
+   jsr MultiplyItemPrice
+   
+  plp
+
+  txa
+  
+
+
+  
+
+
+.org $20de2
+ScalePawnPrice:
+  lda Difficulty
+  cpx #$3a ; $1d << 1
+  bcs +
+   adc #$30
++ tay
+  lda ToolShopScaling,y ; Note: armor follows tools immediately
+  ldy #$00
+  pha
+   sta $61
+   lda PawnShopPrices,x
+   jsr MultiplyPawnPrice
+  pla
+  pha
+   sta $61
+   lda PawnShopPrices,x
+   jsr MultiplyPawnPrice
+   php
+    lda $63
+   plp
+   bne +
+   clc
+   adc $6473,y
+
+.assert < $20dfd
+
+.org $201c6
+
+  ldy Difficulty
+  lda PawnShopPrices,x
+  
+
+
+
+.org $20a37
+;;; Input: x = offset from $21dd0
+;;;        a = scaling factor * 8
+CopyShopPrices:
+  ;ldy #$00 ; note: could move this to callers
+-  pha
+    jsr MultiplyShopPrice
+    sta $63
+   pla
+   pha
+    jsr MultiplyShopPrice
+    ;; add the previous high byte, pay attn to carry
+    php        ;;;  TODO - move lda $63 below bne - then php/plp unneeded?
+     lda $63
+    plp
+    bne +
+    clc
+    adc $6473,y ; $63
+    bcc ++
++    lda #$ff
+    ;; finally store the price
+++  sta $6473,y
+   pla
+   cpy #$0c
+  bne -
+  rts

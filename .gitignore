@@ -2,10 +2,13 @@
 Crystalis.s
 *.nes
 deploy_key
+deploy_key.pub
+dist
 
 # testing
 cov.*
 test/testdata
+unused
 
 # npm stuff
 npm_token

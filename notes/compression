@@ -1,0 +1,16 @@
+Better compression to get more space for maps?
+
+ - switch ext to be a page number (5-6 bits), then all we need is (aligned) blocks
+   of 240 bytes to move one-off maps to
+   --> could still use 2 bits for compressed animation (~100 bytes saved?)
+ - remove 5th dialog byte - should give us back several hundred bytes?
+ - consolidate all the change dialogs w/ just "do i know you?"
+   --> 390 bytes from dialog table, 100-200 maybe from messages?
+ - write message blocks into separate individual arrays, then place opportunistically
+   and update banks as needed (again, we can reuse arbitrary banks here)
+   --> see how much space we already save in our recompression?
+ - gut fluff dialog
+
+Ideally we could find ~2k for new maps, maybe?
+
+We could replace all shops with 100 (inn - stairs) to get 512 back easily enough

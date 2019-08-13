@@ -2,9 +2,11 @@
   "compilerOptions": {
     "allowJs": false,
     "rootDir": "src/js",
-    "outDir": "src/js",
+    "outDir": "dist/js",
     "module": "es6",
     "target": "esnext",
+    "inlineSourceMap": true,
+    "inlineSources": true,
     "removeComments": true,
     "noImplicitAny": true,
     "noImplicitThis": true,
@@ -12,11 +14,10 @@
     "noUnusedLocals": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
-    "strictPropertyInitialization": true,
-    "sourceMap": true
+    "strictPropertyInitialization": true
   },
   "include": [
-    "**/*.ts"
+    "src/js/**/*.ts"
   ],
   "exclude": [
     "unused/*.ts"

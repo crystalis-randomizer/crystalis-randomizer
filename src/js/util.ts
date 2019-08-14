@@ -271,7 +271,10 @@ export class SuffixTrie<T> {
 }
 
 export class DefaultMap<K, V extends {}> extends Map<K, V> {
-  constructor(private readonly supplier: (key: K) => V) { super(); }
+  constructor(private readonly supplier: (key: K) => V,
+              init?: Iterable<readonly [K, V]>) {
+    super(init as any); // NOTE: Map's declarations are off, Iterable is fine.
+  }
   get(key: K): V {
     let value = super.get(key);
     if (value == null) super.set(key, value = this.supplier(key));
@@ -402,7 +405,10 @@ export class SetMultimap<K, V> {
 
 
 export class Multiset<T> implements Iterable<[T, number]> {
-  entries = new DefaultMap<T, number>(() => 0);
+  private entries: DefaultMap<T, number>;
+  constructor(entries: Iterable<[T, number]> = []) {
+    this.entries = new DefaultMap(() => 0, entries);
+  }
   add(elem: T) {
     this.entries.set(elem, this.entries.get(elem) + 1);
   }

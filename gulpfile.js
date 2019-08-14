@@ -17,6 +17,7 @@ const COMMON = [
   'flagset.js',
   'graph.js',
   'graph/*.js',
+  'maze/*.js',
   'nodes.js',
   'pass/*.js',
   'patch.js',

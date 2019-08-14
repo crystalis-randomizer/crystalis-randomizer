@@ -7,7 +7,7 @@ import {UnionFind} from "../unionfind.js";
 export class Maze implements Iterable<[Pos, Scr]> {
 
   private map: Array<Scr|undefined>;
-  private counts: Multiset<Scr>;
+  private counts?: Multiset<Scr>;
   private border: Array<Scr>;
   //private mapStack: Array<Array<Scr|undefined>> = [];
 
@@ -41,6 +41,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
     }
     this.screenExtensions = extensions;
     this.border = new Array(height << 4).fill(0 as Scr);
+    if (extraTiles) this.counts = new Multiset();
   }
 
   // Higher-level functionality
@@ -59,13 +60,16 @@ export class Maze implements Iterable<[Pos, Scr]> {
 
   saveExcursion(f: () => boolean): boolean {
     let m = [...this.map];
+    let c = this.counts ? [...this.counts] : null;
     try {
       if (f()) return true;
     } catch (err) {
       this.map = m;
+      if (c) this.counts = new Multiset(c);
       throw err;
     }
     this.map = m;
+    if (c) this.counts = new Multiset(c);
     return false;
   }
 
@@ -78,7 +82,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
     let constraint = 0;
     for (const dir of Dir.ALL) {
       let screen = this.get(pos, dir);
-      if (screen == null) screen = defaultScreen;
+      if (screen == null) screen = defaultScreen as Scr | undefined;
       if (screen == null) continue;
       const edgeMask = Dir.edgeMask(Dir.inv(dir));
       constraint |= ((screen & edgeMask) >>> 8 | (screen & edgeMask) << 8) & 0xffff;
@@ -294,10 +298,6 @@ export class Maze implements Iterable<[Pos, Scr]> {
     return count / (this.width * this.height);
   }
 
-  frequencies(): Array<[Scr, number]> {
-    return [...this.counts];
-  }
-
   * [Symbol.iterator](): IterableIterator<[Pos, Scr]> {
     for (const pos of this.allPos) {
       const scr = this.map[pos];
@@ -379,6 +379,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
 
   private setInternal(pos: Pos, scr: Scr): void {
     const prev = this.map[pos];
+    if (!this.counts) return;
     if (prev != null) this.counts.delete(prev);
     this.counts.add(scr);
     this.counts[pos] = scr;
@@ -431,6 +432,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
 
   /** Adjust screens until we fit. */
   consolidate(available: number[], check: () => boolean): boolean {
+    if (!this.counts) throw new Error(`Cannot run consolidate without counts.`);
     // tile slots we can actually use
     const availableSet = new Set(available);
     // screens that are "in play"
@@ -489,9 +491,10 @@ export class Maze implements Iterable<[Pos, Scr]> {
     for (const scr of used) {
       // At this point it's guaranteed not to have a tile, but one's available.
       const next = available.pop();
-      if (next == null) throw new Error(`No available screen`);
-      rom.screens[next].tiles = this.extraTiles[~scr.tile];
-      this.extraTilesMap[~scr.tile] = next;
+      const spec = this.screens.get(scr);
+      if (next == null || !spec) throw new Error(`No available screen`);
+      rom.screens[next].tiles = this.extraTiles[~spec.tile];
+      this.extraTilesMap[~spec.tile] = next;
     }
   }
 
@@ -499,7 +502,8 @@ export class Maze implements Iterable<[Pos, Scr]> {
   tryConsolidate(pos: Pos, good: Set<Scr>, bad: Set<Scr>,
                  check: () => boolean): boolean {
     const scr = this.map[pos];
-    for (const newScr of random.shuffle([...good])) {
+    if (scr == null) throw new Error(`Expected defined`);
+    for (const newScr of this.random.shuffle([...good])) {
       // is g a single edge off?
       const diff = scr ^ newScr;
       for (const dir of Dir.ALL) {
@@ -513,11 +517,14 @@ export class Maze implements Iterable<[Pos, Scr]> {
         if (!bad.has(scr2) && !good.has(scr2)) break;
         const dir2 = Dir.inv(dir);
         const mask2 = Dir.edgeMask(dir2);
-        const newScr2 = (scr2 & ~mask2) | (edge << Dir.shift(dir2));
+        const newScr2 = ((scr2 & ~mask2) | (edge << Dir.shift(dir2))) as Scr;
         if (bad.has(newScr2) && !bad.has(scr2)) break;
-        this.setInternal(pos, newScr);
-        this.setInternal(pos2, newScr2);
-        return true;
+        const ok = this.saveExcursion(() => {
+          this.setInternal(pos, newScr);
+          this.setInternal(pos2, newScr2);
+          return check();
+        });
+        if (ok) return true;
       }
     }
     return false;

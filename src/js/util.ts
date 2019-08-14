@@ -400,6 +400,29 @@ export class SetMultimap<K, V> {
   // TODO - iteration?
 }
 
+
+export class Multiset<T> implements Iterable<[T, number]> {
+  entries = new DefaultMap<T, number>(() => 0);
+  add(elem: T) {
+    this.entries.set(elem, this.entries.get(elem) + 1);
+  }
+  delete(elem: T) {
+    const count = this.entries.get(elem) - 1;
+    if (count > 0) {
+      this.entries.set(elem, count);
+    } else {
+      this.entries.delete(elem);
+    }
+  }
+  unique(): number {
+    return this.entries.size;
+  }
+  [Symbol.iterator](): IterableIterator<[T, number]> {
+    return this.entries.entries();
+  }
+}
+
+
 export function assertNever(x: never): never {
   throw new Error(`non-exhaustive check: ${x}`);
 }

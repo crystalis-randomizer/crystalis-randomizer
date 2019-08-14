@@ -366,13 +366,19 @@ export class Location extends Entity {
     const placed: Array<[Monster, number, number, number]> = [];
     const normalTerrainMask = this.hasDolphin() ? 0x25 : 0x27;
     for (const [t, distance] of extended) {
-      if (this.screens[t >>> 12][(t >>> 8) & 0xf] === boss) continue;
+      const scr = this.screens[t >>> 12][(t >>> 8) & 0xf];
+      if (scr === boss) continue;
       for (const n of neighbors(t, this.width, this.height)) {
         if (extended.has(n)) continue;
         extended.set(n, distance + 1);
       }
       if (!distance && !(reachable.get(t)! & normalTerrainMask)) normal.push(t);
-      if (distance >= 2 && distance <= 4) plants.push(t);
+      if (this.id === 0x1a) {
+        // Special-case the swamp for plant placement
+        if (this.rom.screens[scr].tiles[t & 0xff] === 0xf0) plants.push(t);
+      } else {
+        if (distance >= 2 && distance <= 4) plants.push(t);
+      }
       if (distance >= 3 && distance <= 7) moths.push(t);
       if (distance >= 12) birds.push(t);
       // TODO - special-case swamp for plant locations?

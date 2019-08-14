@@ -1,5 +1,6 @@
 import '../polyfill.js';
 
+import {shuffleSwamp} from './maze/swamp.js';
 import {Dir, Maze, Pos, Scr, Spec} from './maze.js';
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
@@ -139,7 +140,7 @@ export function shuffleGoa1(rom: Rom, random: Random, attempts = 1500): void {
       tryFlag(pos, alt);
     }
 
-    maze.fillZeros();
+    maze.fillAll({edge: 0});
 
     function check(): boolean {
       const traversal = maze.traverse();
@@ -743,15 +744,6 @@ export function extendSwampScreens(rom: Rom) {
   // }      
 }
 
-function write<T>(arr: T[], corner: number,
-                  repl: ReadonlyArray<ReadonlyArray<T|undefined>>) {
-  for (let i = 0; i < repl.length; i++) {
-    for (let j = 0; j < repl[i].length; j++) {
-      const x = repl[i][j];
-      if (x != null) arr[corner + (i << 4 | j)] = x;
-    }
-  }
-}
 
 
 // Goa 1 - need 2 extra flaggable tiles

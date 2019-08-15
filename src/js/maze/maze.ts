@@ -3,6 +3,7 @@ import {Location, Flag} from "../rom/location.js";
 import {Random} from "../random.js";
 import {DefaultMap, Multiset, assertNever} from "../util.js";
 import {UnionFind} from "../unionfind.js";
+import { Rom } from "../rom.js";
 
 export class Maze implements Iterable<[Pos, Scr]> {
 
@@ -308,7 +309,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
   get(pos: Pos, dir?: Dir): Scr | undefined {
     const pos2 = dir != null ? Pos.plus(pos, dir) : pos;
     if (!this.inBounds(pos2)) {
-      return this.border[pos] & (0xf << ((dir ^ 2) << 2));
+      return (this.border[pos] & (0xf << ((dir! ^ 2) << 2))) as Scr;
     }
     return this.map[pos2];
   }
@@ -321,12 +322,12 @@ export class Maze implements Iterable<[Pos, Scr]> {
 
   setBorder(pos: Pos, dir: Dir, edge: number): void {
     if (!this.inBounds(pos) || this.inBounds(Pos.plus(pos, dir))) {
-      throw new Error(`Not on border: ${hex(pos)}, ${dir}`);
+      throw new Error(`Not on border: ${hex(pos)}, ${dir}`); // `
     }
     if (this.map[pos] != null) throw new Error(`Must set border first.`);
     const shift = (dir ^ 2) << 2;
     if (this.border[pos] & (0xf << shift)) throw new Error(`Border already set`);
-    this.border[pos] |= (edge << shift);
+    (this.border[pos] as number) |= (edge << shift);
   }
 
   replaceEdge(pos: Pos, dir: Dir, edge: number): void {
@@ -371,18 +372,18 @@ export class Maze implements Iterable<[Pos, Scr]> {
 
   replace(pos: Pos, screen: Scr): void {
     if (!this.fits(pos, screen) || !this.inBounds(pos)) {
-      throw new Error(`Cannot place ${hex5(screen)} at ${hex(pos)}`);
+      throw new Error(`Cannot place ${hex5(screen)} at ${hex(pos)}`); // `
     }
-    if (!this.screens.has(screen)) throw new Error(`No such screen ${hex5(screen)}`);
+    if (!this.screens.has(screen)) throw new Error(`No such screen ${hex5(screen)}`); // `
     this.setInternal(pos, screen);
   }
 
   private setInternal(pos: Pos, scr: Scr): void {
     const prev = this.map[pos];
+    this.map[pos] = scr;
     if (!this.counts) return;
     if (prev != null) this.counts.delete(prev);
     this.counts.add(scr);
-    this.counts[pos] = scr;
   }
 
   fitsAndEmpty(pos: Pos, screen: Scr): boolean {
@@ -431,14 +432,16 @@ export class Maze implements Iterable<[Pos, Scr]> {
   }
 
   /** Adjust screens until we fit. */
-  consolidate(available: number[], check: () => boolean): boolean {
-    if (!this.counts) throw new Error(`Cannot run consolidate without counts.`);
+  consolidate(available: number[], check: () => boolean, rom: Rom): boolean {
+    if (!this.counts || !this.extraTiles) {
+      throw new Error(`Cannot run consolidate without counts.`);
+    }
     // tile slots we can actually use
     const availableSet = new Set(available);
     // screens that are "in play"
     const mutableScreens = new Set<Scr>();
     for (const spec of this.screens.values()) {
-      // 
+      if (spec.fixed) continue;
       if (spec.tile < 0 || availableSet.has(spec.tile)) {
         mutableScreens.add(spec.edges);
       }
@@ -450,7 +453,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
     for (const [scr] of this.counts) {
       if (!mutableScreens.has(scr)) extra.add(scr);
     }
-    const target = extra.size + mutableScreens.size;
+    const target = extra.size + available.length;
 
     // Try to turn a bad screen into a good screen
     let attempts = 1000;
@@ -464,7 +467,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
       const bad = new Set(sorted.slice(available.length));
       const shuffled = this.random.shuffle([...this.allPos]);
       for (const pos of shuffled) {
-        if (!bad.has(this.map[pos])) continue;
+        if (!bad.has(this.map[pos]!)) continue;
         if (this.tryConsolidate(pos, good, bad, check)) break;
       }
     }
@@ -476,26 +479,29 @@ export class Maze implements Iterable<[Pos, Scr]> {
             .filter((x) => mutableScreens.has(x[0]))
             .map(x => x[0]));
 
-    const available = []; // tiles
+    const freed = []; // tiles
     for (const scr of mutableScreens) {
-      if (scr.tile >= 0) {
+      const spec = this.screens.get(scr);
+      if (!spec) throw new Error('missing spec');
+      if (spec.tile >= 0) {
         if (used.has(scr)) {
           // If it has a tile and is used, then nothing to do.
           used.delete(scr);
         } else {
           // If it's not used then make it available.
-          available.push(scr.tile);
+          freed.push(spec.tile);
         }
       }
     }
     for (const scr of used) {
       // At this point it's guaranteed not to have a tile, but one's available.
-      const next = available.pop();
+      const next = freed.pop();
       const spec = this.screens.get(scr);
       if (next == null || !spec) throw new Error(`No available screen`);
-      rom.screens[next].tiles = this.extraTiles[~spec.tile];
+      rom.screens[next].tiles.splice(0, 0xf0, ...this.extraTiles[~spec.tile]);
       this.extraTilesMap[~spec.tile] = next;
     }
+    return true;
   }
 
   /** Try to make a bad screen into a good screen. */
@@ -508,13 +514,13 @@ export class Maze implements Iterable<[Pos, Scr]> {
       const diff = scr ^ newScr;
       for (const dir of Dir.ALL) {
         const mask = Dir.edgeMask(dir);
-        const edge = (scr >>> Dir.shift(dir)) & 0xf;
         if (diff & ~mask) continue;
         // dir is the only difference.  Look at neighbor
         const pos2 = Pos.plus(pos, dir); 
         const scr2 = this.map[pos2];
         if (scr2 == null) break;
         if (!bad.has(scr2) && !good.has(scr2)) break;
+        const edge = (newScr >>> Dir.shift(dir)) & 0xf;
         const dir2 = Dir.inv(dir);
         const mask2 = Dir.edgeMask(dir2);
         const newScr2 = ((scr2 & ~mask2) | (edge << Dir.shift(dir2))) as Scr;

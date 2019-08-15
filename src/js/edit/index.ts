@@ -1,7 +1,7 @@
 import {Rom} from '../rom.js';
 import {Context} from './context.js';
 import {ScreenEditor} from './screeneditor.js';
-import {extendSwampScreens} from '../pass/shufflemazes.js';
+import {extendSwampScreens} from '../maze/swamp.js';
 
 async function main() {
   const el = document.getElementById('load-rom');

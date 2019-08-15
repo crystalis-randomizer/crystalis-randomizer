@@ -1,4 +1,4 @@
-import {Dir, Maze, Pos, Scr, Spec} from './maze.js';
+import {Dir, Maze, Pos, Scr, Spec, write} from './maze.js';
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 import {Flag} from '../rom/location.js';
@@ -41,7 +41,7 @@ export function shuffleGoa1(rom: Rom, random: Random, attempts = 1500): void {
     Spec(0x00f0, 0x80, '█', 'fixed'),
     Spec(0xf000, 0x80, '█', 'fixed'),
     // Fixed screens (boss)
-    Spec(0xfff0, 0x73, '═', 'fixed', 'boss'), // , 0x2a),
+    Spec(0xfff0, 0x73, '═', 'fixed'), // , 0x2a),
     Spec(0xf1ff, 0x72, '╤', 'fixed'), // , 0x29b),
     Spec(0x0ff0, 0x80, '╔', 'fixed'),
     Spec(0xff00, 0x80, '╗', 'fixed'),
@@ -58,27 +58,23 @@ export function shuffleGoa1(rom: Rom, random: Random, attempts = 1500): void {
     // Place the entrance at the bottom, boss at top.
     const entrance = ((h - 1) << 4 | random.nextInt(w)) as Pos;
     const boss = random.nextInt(w) as Pos;
-    const translation = new Map<number, number>();
 
     const entranceTile = entrance << 8 | 0x02;
     const exitTiles = [(boss + 32) << 8 | 0x01, (boss + 32) << 8 | 0x03];
 
-    function fixed(pos: number, value: number, screen: number): number {
-      // NOTE: may be out of bounds, set(force) will handle that
-      maze.set(pos as Pos, value as Scr, true);
-      translation.set(value, screen);
-      return value;
+    function fixed(pos: number, value: number) {
+      maze.set(pos as Pos, value as Scr, true); // NOTE: set(force) in case OOB
     }
 
-    fixed(entrance, 0xf0f1, 0x71);
-    fixed(entrance - 1, 0x00f0, 0x80);
-    fixed(entrance + 1, 0xf000, 0x80);
-    fixed(boss, 0xfff0, 0x73);
-    fixed(boss - 1, 0x0ff0, 0x80);
-    fixed(boss + 1, 0xff00, 0x80);
-    fixed(boss + 16, 0xf1ff, 0x72);
-    fixed(boss + 15, 0x00ff, 0x80);
-    fixed(boss + 17, 0xf00f, 0x80);
+    fixed(entrance, 0xf0f1);
+    fixed(entrance - 1, 0x00f0);
+    fixed(entrance + 1, 0xf000);
+    fixed(boss, 0xfff0);
+    fixed(boss - 1, 0x0ff0);
+    fixed(boss + 1, 0xff00);
+    fixed(boss + 16, 0xf1ff);
+    fixed(boss + 15, 0x00ff);
+    fixed(boss + 17, 0xf00f);
 
     console.log(`initial\n${maze.show()}`);
 

@@ -25,14 +25,14 @@ export function shuffleSwamp(rom: Rom, random: Random, attempts = 100): void {
   // Collect the available screens (7c is boss room, 7f is solid)
   const screens = [
     Spec(0x0000, 0x7f, ' '),
-    Spec(0x0001, ~0,   '╵'),
-    Spec(0x0010, 0x76, '╶'),
+    Spec(0x0001, ~0,   '╵', 0x1),
+    Spec(0x0010, 0x76, '╶', 0xd),
     Spec(0x0011, 0x79, '└', 0x1d),
-    Spec(0x0100, ~1,   '╷'),
+    Spec(0x0100, ~1,   '╷', 0x9),
     Spec(0x0101, ~2,   '│', 0x19),
     Spec(0x0110, ~3,   '┌', 0x9d),
     Spec(0x0111, ~4,   '├', 0x19d),
-    Spec(0x1000, 0x7b, '╴'),
+    Spec(0x1000, 0x7b, '╴', 0x5),
     Spec(0x1001, 0x75, '┘', 0x15),
     Spec(0x1010, ~5,   '─', 0x5d),
     Spec(0x1011, 0x7d, '┴', 0x15d),
@@ -41,14 +41,14 @@ export function shuffleSwamp(rom: Rom, random: Random, attempts = 100): void {
     Spec(0x1110, 0x7a, '┬', 0x59d),
     Spec(0x1111, 0x77, '┼', 0x159d),
     // Boss
-    Spec(0xf1f0, 0x73, '╤', 'fixed'),
+    Spec(0xf1f0, 0x7c, '╤', 'fixed', 0x9),
     Spec(0xf000, 0x7f, '╝', 'fixed'),
     Spec(0x00f0, 0x7f, '╚', 'fixed'),
     // Doors (via flag)
-    Spec(0x1_0010, 0x76, '╶', 'fixed', 'flag'),
-    Spec(0x1_0100, ~1,   '╷', 'fixed', 'flag'),
+    Spec(0x1_0010, 0x76, '╶', 'fixed', 'flag', 0xd),
+    Spec(0x1_0100, ~1,   '╷', 'fixed', 'flag', 0x9),
     Spec(0x1_0110, ~3,   '┌', 'fixed', 'flag', 0x9d),
-    Spec(0x1_1000, 0x7b, '╴', 'fixed', 'flag'),
+    Spec(0x1_1000, 0x7b, '╴', 'fixed', 'flag', 0x5),
     Spec(0x1_1010, ~5,   '─', 'fixed', 'flag', 0x5d),
     Spec(0x1_1100, 0x7e, '┐', 'fixed', 'flag', 0x59),
     Spec(0x1_1110, 0x7a, '┬', 'fixed', 'flag', 0x59d),
@@ -83,7 +83,9 @@ function tryShuffleSwamp(rom: Rom, random: Random, swamp: Location,
   maze.setBorder(entrance, Dir.LEFT, 1);
 
   // Set up boundary, boss, and entrance
-  maze.set(boss, 0xf1f0 as Scr);
+  maze.set(boss, 0xf1f0 as Scr, true);
+  maze.set((boss - 1) as Pos, 0x00f0 as Scr, true);
+  maze.set((boss + 1) as Pos, 0xf000 as Scr, true);
   maze.fillAll({edge: 1});
   // for (let y = 0; y < h; y++) {
   //   for (let x = 0; x < w; x++) {
@@ -102,10 +104,13 @@ function tryShuffleSwamp(rom: Rom, random: Random, swamp: Location,
   // }
 
   // Attempt to add w*h walls
+  const entranceRoute = entrance << 8 | 0x10; // TODO - handle opposite sides?
+  // const bossRoute = (boss + 16) << 8 | 0x01;
   function check(): boolean {
     const traversal = maze.traverse();
-    const main = traversal.get(entrance);
-    return main && main.has(boss) || false;
+    const main = traversal.get(entranceRoute);
+    return main && main.size === traversal.size || false;
+    // return main && main.has(bossRoute) || false;
   }
 
   const allPos = [...maze].map(s => s[0]);
@@ -115,17 +120,18 @@ function tryShuffleSwamp(rom: Rom, random: Random, swamp: Location,
     const pos2 = Pos.plus(pos, dir);
     if (maze.isFixed(pos) || maze.isFixed(pos2) ||
         !(maze.get(pos)! & Dir.edgeMask(dir))) {
-      i--; // try again
+      i++; // try again
       continue;
     }
     maze.saveExcursion(() => {
       maze.replaceEdge(pos, dir, 0);
-      return maze.get(pos) && maze.get(pos2) && check() || false;
+      return maze.get(pos) && maze.get(pos2) && check() || (() => { console.log(`failed\n${maze.show()}`); return false; })();
     });
+    console.log(maze.show());
   }
 
   // Need to consolidate.
-  if (!maze.consolidate(available, check)) return false;
+  if (!maze.consolidate(available, check, rom)) return false;
 
   // Find a flaggable screen for the Oak entrance.
   const [oak, alt] = random.pick([...maze.alternates()]);
@@ -137,22 +143,7 @@ function tryShuffleSwamp(rom: Rom, random: Random, swamp: Location,
   swamp.moveScreen(0x04, boss);
   maze.write(swamp, new Set());
 
-  // Place monsters
-  const monsterPlacer = swamp.monsterPlacer(random);
-  for (const spawn of swamp.spawns) {
-    if (!spawn.isMonster()) continue;
-    const monster = rom.objects[spawn.monsterId];
-    if (!(monster instanceof Monster)) continue;
-    const pos = monsterPlacer(monster);
-    if (pos == null) {
-      console.error(`no valid location for ${hex(monster.id)} in ${hex(swamp.id)}`);
-      spawn.used = false;
-      continue;
-    } else {
-      spawn.screen = pos >>> 8;
-      spawn.tile = pos & 0xff;
-    }
-  }    
+  console.log(maze.show());
 
   // Analyze screens
   const deadEnds = [];
@@ -201,7 +192,23 @@ function tryShuffleSwamp(rom: Rom, random: Random, swamp: Location,
   const child = random.pick(deadEnds.length ? deadEnds : bends);
   swamp.spawns[1].screen = child;
 
-  console.log(maze.show());
+  // Move monsters to reasonable places.
+  const monsterPlacer = swamp.monsterPlacer(random);
+  for (const spawn of swamp.spawns) {
+    if (!spawn.isMonster()) continue;
+    const monster = rom.objects[spawn.monsterId];
+    if (!(monster instanceof Monster)) continue;
+    const pos = monsterPlacer(monster);
+    if (pos == null) {
+      console.error(`no valid location for ${hex(monster.id)} in ${hex(swamp.id)}`);
+      spawn.used = false;
+      continue;
+    } else {
+      spawn.screen = pos >>> 8;
+      spawn.tile = pos & 0xff;
+    }
+  }    
+
   return true;
 }
 

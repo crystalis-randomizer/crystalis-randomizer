@@ -19,6 +19,9 @@ export class Maze implements Iterable<[Pos, Scr]> {
   // Mapping to actual tile slots, from consolidate
   private extraTilesMap: number[] = [];
 
+  // pos << 2 | dir
+  private openEdges?: Set<number>;
+
   constructor(private readonly random: Random,
               readonly height: number,
               readonly width: number,
@@ -43,6 +46,10 @@ export class Maze implements Iterable<[Pos, Scr]> {
     this.screenExtensions = extensions;
     this.border = new Array(height << 4).fill(0 as Scr);
     if (extraTiles) this.counts = new Multiset();
+  }
+
+  trackOpenEdges() {
+    this.openEdges = new Set();
   }
 
   // Higher-level functionality
@@ -76,7 +83,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
 
   * eligible(pos: Pos, opts: FillOpts = {}): IterableIterator<Scr> {
     // Build up the constraint.
-    const {maxExits, edge} = opts;
+    const {maxExits, edge, stair} = opts;
     const defaultScreen =
         edge != null ? edge | edge << 4 | edge << 8 | edge << 12 : undefined;
     let mask = 0;
@@ -92,10 +99,10 @@ export class Maze implements Iterable<[Pos, Scr]> {
     // Now iterate over available screens to find matches.
     for (const [screen, spec] of this.screens) {
       if (spec.fixed) continue;
-      if ((screen & mask) === constraint &&
-          (!maxExits || Scr.numExits(screen) <= maxExits)) {
-        yield screen;
-      }
+      if (stair != null && !spec.stairs.some(s => s.dir === stair)) continue;
+      if ((screen & mask) !== constraint) continue;
+      if (maxExits && Scr.numExits(screen) > maxExits) continue;
+      yield screen;
     }
   }
 
@@ -173,6 +180,37 @@ export class Maze implements Iterable<[Pos, Scr]> {
       }
     }
   }
+
+  // Returns true if branched.
+  // randomExtension(branchProbability: number): boolean {
+  //   // Find an existing screen.  All screens should be "capped".
+  //   for (const pos of this.allPos) {
+
+  //   }
+  // }
+
+  // Ensure there's not too many open at once, ???
+  // add short paths between them when possible.
+  // Travel along existing routes when they exist.
+  // trackOpenEdges(pos: Pos): void {
+    
+
+  // }
+
+  // Uses openEdges to keep track
+  // Maybe try to "upgrade" a plain screen?
+  addScreen(scr: Screen): Pos | undefined {
+    for (const pos of this.random.shuffle([...this.allPos])) {
+      if (this.map[pos] != null) continue;
+      if (this.trySet(scr)) {
+        //this.trackOpenEdges(pos);
+        return pos;
+      }
+    }
+    return undefined;
+  }
+
+  
 
   // * openExits(pos: Pos, screen: Scr): IterableIterator<[Dir, number]> {
   //   for (const dir of Dir.ALL) {
@@ -381,9 +419,19 @@ export class Maze implements Iterable<[Pos, Scr]> {
   private setInternal(pos: Pos, scr: Scr): void {
     const prev = this.map[pos];
     this.map[pos] = scr;
-    if (!this.counts) return;
-    if (prev != null) this.counts.delete(prev);
-    this.counts.add(scr);
+    if (this.openEdges) {
+      for (const dir of Dir.ALL) {
+        if (!(scr & Dir.edgeMask(dir))) continue;
+        const pos2 = Pos.plus(pos, dir);
+        if (!this.inBounds(pos2)) continue;
+        this.openEdges.delete(pos2 << 2 | (dir ^ 2));
+        if (this.map[pos2] == null) this.openEdges.add(pos << 2 | dir);
+      }
+    }
+    if (this.counts) {
+      if (prev != null) this.counts.delete(prev);
+      this.counts.add(scr);
+    }
   }
 
   fitsAndEmpty(pos: Pos, screen: Scr): boolean {
@@ -587,6 +635,8 @@ interface FillOpts {
   maxExits?: number;
   // Edge type to use when unconstrained
   edge?: number;
+  // Required stair direction
+  stair?: Dir;
 }
 
 /** Spec for a screen. */
@@ -597,29 +647,57 @@ export interface Spec {
   readonly connections: Connections;
   readonly fixed: boolean;
   readonly flag: boolean;
+  readonly wall: boolean;
+  readonly stairs: Stair[];
+  readonly pit: boolean;
+}
+
+// pixel is four nibbles: YyXx of exact pixel on screen.
+declare const STAIR_NOMINAL: unique symbol;
+export class Stair {
+  [STAIR_NOMINAL]: never;
+  private constructor(readonly dir: Dir, readonly pixel: number) {}
+  static up(pixel: number): Stair { return new Stair(Dir.UP, pixel); }
+  static down(pixel: number): Stair { return new Stair(Dir.DOWN, pixel); }
+}
+
+export function wall(a: number, b: number): Array<'wall'|number> {
+  let count = b;
+  while (count) {
+    count >>= 4;
+    a <<= 4;
+  }
+  return ['wall', a | b];
 }
 
 type Connections = ReadonlyArray<ReadonlyArray<number>>;
-type SpecFlag = 'fixed' | 'flag';
+type SpecFlag = 'fixed' | 'flag' | 'pit' | 'wall';
+type ExtraArg = number | Stair | SpecFlag;
 
 export function Spec(edges: number,
                      tile: number,
                      icon: string,
-                     ...extra: Array<number|SpecFlag>) {
+                     ...extra: Array<ExtraArg>): Spec {
   const connections = [];
   let fixed = false;
   let flag = false;
-  let boss = false;
+  let wall = false;
+  let pit = false;
+  let stairs = [];
   for (let data of extra) {
     if (typeof data === 'string') {
       if (data === 'fixed') {
         fixed = true;
       } else if (data === 'flag') {
         flag = true;
+      } else if (data === 'wall') {
+        wall = true;
+      } else if (data === 'pit') {
+        pit = true;
       } else {
         assertNever(data);
       }
-    } else {
+    } else if (typeof data === 'number') {
       const connection: number[] = [];
       connections.push(connection);
       while (data) {
@@ -631,9 +709,15 @@ export function Spec(edges: number,
         connection.push(channel | offset);
         data >>>= 4;
       }
+    } else if (data instanceof Stair) {
+      stairs.push(data);
+    } else {
+      assertNever(data);
     }
   }
-  return {edges: edges as Scr, tile, icon, connections, fixed, flag, boss};
+  return {edges: edges as Scr,
+          tile, icon, connections,
+          fixed, flag, wall, pit, stairs};
 }
 
 // function* intersect<T>(a: Iterable<T>, b: Iterable<T>): IterableIterator<T> {
@@ -720,6 +804,10 @@ namespace DirMask {
     return mask as DirMask;
   }
 }
+
+// TODO - invert the rotation direction!  =>  1 = left, 3 = right
+// This will be consistent with how we do routes, and is easier to
+// work with because dir&2 corresponds to 0/max and dir&1 is h/v
 
 /** A direction: 0 = up, 1 = right, 2 = down, 3 = left. */
 export type Dir = number & {__dir__: never};

@@ -5,6 +5,7 @@ import {Location} from '../rom/location.js';
 import {Monster} from '../rom/monster.js';
 import {hex} from '../rom/util.js';
 
+// TODO - add a spoiler argument and draw map into it?
 export function shuffleSwamp(rom: Rom, random: Random, attempts = 100): void {
   // 1. Start by fixing up the swamp tiles (note: we could possibly wait on this).
   extendSwampScreens(rom);

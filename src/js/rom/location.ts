@@ -283,7 +283,8 @@ export class Location extends Entity {
    * @return Map of tiles ($YXyx) reachable from any entrance to
    * unflagged tileeffects.
    */
-  reachableTiles(fly: boolean): Map<number, number> {
+  reachableTiles(fly = false): Map<number, number> {
+    // TODO - args for (1) use non-2ef flags, (2) only from given entrance/tile
     // Dolphin makes NO_WALK okay for some levels.
     if (this.hasDolphin()) fly = true;
     // Take into account the tileset and flags but not any overlay.

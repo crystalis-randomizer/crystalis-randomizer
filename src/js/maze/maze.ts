@@ -16,11 +16,9 @@ export class Maze implements Iterable<[Pos, Scr]> {
   private screenExtensions: DefaultMap<number, ReadonlyArray<readonly [Dir, Scr]>>;
 
   private allPos: Set<Pos>;
+  private allPosArray: readonly Pos[];
   // Mapping to actual tile slots, from consolidate
   private extraTilesMap: number[] = [];
-
-  // pos << 2 | dir
-  private openEdges?: Set<number>;
 
   constructor(private readonly random: Random,
               readonly height: number,
@@ -32,6 +30,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
     this.allPos = new Set(
         ([] as Pos[]).concat(
             ...seq(height, y => seq(width, x => (y << 4 | x) as Pos))));
+    this.allPosArray = [...this.allPos];
 
     const extensions = new DefaultMap<number, Array<[Dir, Scr]>>(() => []);
     for (const [screen, spec] of this.screens) {
@@ -46,10 +45,6 @@ export class Maze implements Iterable<[Pos, Scr]> {
     this.screenExtensions = extensions;
     this.border = new Array(height << 4).fill(0 as Scr);
     if (extraTiles) this.counts = new Multiset();
-  }
-
-  trackOpenEdges() {
-    this.openEdges = new Set();
   }
 
   // Higher-level functionality
@@ -79,31 +74,6 @@ export class Maze implements Iterable<[Pos, Scr]> {
     this.map = m;
     if (c) this.counts = new Multiset(c);
     return false;
-  }
-
-  * eligible(pos: Pos, opts: FillOpts = {}): IterableIterator<Scr> {
-    // Build up the constraint.
-    const {maxExits, edge, stair} = opts;
-    const defaultScreen =
-        edge != null ? edge | edge << 4 | edge << 8 | edge << 12 : undefined;
-    let mask = 0;
-    let constraint = 0;
-    for (const dir of Dir.ALL) {
-      let screen = this.get(pos, dir);
-      if (screen == null) screen = defaultScreen as Scr | undefined;
-      if (screen == null) continue;
-      const edgeMask = Dir.edgeMask(Dir.inv(dir));
-      constraint |= ((screen & edgeMask) >>> 8 | (screen & edgeMask) << 8) & 0xffff;
-      mask |= edgeMask;
-    }
-    // Now iterate over available screens to find matches.
-    for (const [screen, spec] of this.screens) {
-      if (spec.fixed) continue;
-      if (stair != null && !spec.stairs.some(s => s.dir === stair)) continue;
-      if ((screen & mask) !== constraint) continue;
-      if (maxExits && Scr.numExits(screen) > maxExits) continue;
-      yield screen;
-    }
   }
 
   /**
@@ -138,6 +108,56 @@ export class Maze implements Iterable<[Pos, Scr]> {
     }
   }
 
+  * eligible(pos: Pos, opts: FillOpts = {}): IterableIterator<Scr> {
+    // Build up the constraint.
+    const {skipAlternates, maxExits, edge, fuzzy, stair} = opts;
+    const defaultScreen =
+        edge != null ? edge | edge << 4 | edge << 8 | edge << 12 : undefined;
+    let mask = 0;
+    let fuzzyMask = 0;
+    let constraint = 0;
+    for (const dir of Dir.ALL) {
+      const edgeMask = Dir.edgeMask(dir);
+      const invMask = Dir.edgeMask(Dir.inv(dir));
+      let screen = this.get(pos, dir);
+      if (screen == null) screen = defaultScreen as Scr | undefined;
+      if (screen == null) continue;
+      constraint |= ((screen & invMask) >>> 8 | (screen & invMask) << 8) & 0xffff;
+      mask |= edgeMask;
+      if (fuzzy && this.isFixed(Pos.plus(pos, dir))) fuzzyMask |= edgeMask;
+    }
+    if (!fuzzy) fuzzyMask = mask;
+    const fuzzyConstraint = constraint & fuzzyMask;
+    let screens: Scr[] = [];
+    let fuzziness = Infinity;
+
+    // Now iterate over available screens to find matches.
+    for (const [screen, spec] of this.screens) {
+      if (spec.fixed) continue;
+      if (skipAlternates && (spec.edges & ~0xffff)) continue;
+      if (stair != null && !spec.stairs.some(s => s.dir === stair)) continue;
+      if (stair == null && spec.stairs.length) continue;
+      if ((screen & fuzzyMask) !== fuzzyConstraint) continue;
+      if (maxExits && Scr.numExits(screen) > maxExits) continue;
+      if (!fuzzy) {
+        yield screen;
+      } else {
+        let fuzz = 0;
+        const cmp = (screen & mask) ^ constraint;
+        for (const d of Dir.ALL) {
+          if (cmp & (0xf << Dir.shift(d))) fuzz++;
+        }
+        if (fuzz < fuzziness) {
+          fuzziness = fuzz;
+          screens = [screen];
+        } else if (fuzz === fuzziness) {
+          screens.push(screen);
+        }
+      } 
+    }
+    if (fuzzy) yield* screens;
+  }
+
   fill(pos: Pos, opts: FillOpts = {}): boolean {
     // if (opts.edge != null) {
     //   const {edge, ...rest} = opts;
@@ -145,12 +165,16 @@ export class Maze implements Iterable<[Pos, Scr]> {
     //     throw new Error(`edge option incompatible with rest`);
     //   }
     // }
+    if (opts.force && opts.fuzzy) throw new Error(`invalid`);
     const eligible = [...this.eligible(pos, opts)];
     if (!eligible.length) {
       //console.error(`No eligible tiles for ${hex(pos)}`);
       return false;
     }
-    this.set(pos, this.random.pick(eligible), opts.force);
+    if (opts.fuzzy) {
+      return this.setAndUpdate(pos, this.random.pick(eligible), opts);
+    }
+    this.set(pos, this.random.pick(eligible), opts);
     return true;
   }
 
@@ -170,62 +194,26 @@ export class Maze implements Iterable<[Pos, Scr]> {
     });
   }
 
-  fillAll(opts: FillOpts = {}) {
+  fillAll(opts: FillOpts = {}): boolean {
+    const allPos = opts.shuffleOrder ?
+        this.random.shuffle([...this.allPos]) : this.allPos;
     // Fill the rest with zero
-    for (const pos of this.allPos) {
+    for (const pos of allPos) {
       if (this.map[pos] == null) {
         if (!this.fill(pos, opts)) {
+          if (opts.fuzzy) return false;
+          //   console.log(`failed at ${hex(pos)}`); return false;
+          // }
           throw new Error(`Could not fill ${hex(pos)}`);
         }
       }
     }
+    return true;
   }
 
-  // Use a full monte carlo approach to fill out a maze.
-  // The basic idea is that we're okay with invalid connections,
-  // but will try to satisfy as many as possible for random tiles.
-  // Initial tiles will have a (density) chance of being empty,
-  // and we will randomly adjust the density in between steps?
-  monteCarloFill(density: number, fixed: Scr[], stairs: Dir[]) {
-    // Start off by just populating the initial tiles.
-    // Use 'fill' for this, but manipulate max exits to try to
-    // reach density target...?
-
-    let steps = 100 * this.width * this.height;
-
-    // Pos << 2 | dir
-    const badEdges = new Set<number>();
-    const randomBit = this.random.bitGenerator();
-
-    while (true) {
-      if (!--steps) throw new Error(`Monte carlo fill failed`);
-
-      // 1. are all edges satisfied?
-      if (badEdges.size) {
-        const edge = this.random.pick([...badEdges]);
-        let pos = edge >>> 2;
-        let dir = edge & 3;
-        // If pos is fixed or stair, then add it back to the queue
-        this.fill(pos, {force: true});
-        for (const dir of Dir.ALL) {
-          const pos2 = Pos.plus(pos, dir);
-          if (this.checkFit(pos, dir)) {
-            badEdges.delete(pos << 2 | dir);
-            if (this.inBounds(pos2)) badEdges.delete(pos2 << 2 | Dir.inv(dir));
-          } else {
-            // should this ever happen?!?  maybe sometimes...
-            badEdges.add(pos << 2 | dir);
-            if (this.inBounds(pos2)) badEdges.add(pos2 << 2 | Dir.inv(dir));
-          }
-        }
-      }
-
-      // 2. are all components connected?
-      const traversal = this.traverse();
-      
-
-
-
+  randomPos(): Pos {
+    return this.random.pick(this.allPosArray);
+  }
 
       // TODO - percolation!
       // back off on "fixed", just have an "arrange" method for
@@ -235,49 +223,13 @@ export class Maze implements Iterable<[Pos, Scr]> {
       //  - each step updates neighbors (until it reaches a cycle?)
 
 
-
-      // 3. are all necessary tiles placed?
-
-      // 4. is the density roughly correct?
-      //    if too low then maybe add a new edge somewhere.
-      //    if too high, maybe remove a dead end?
-
-      const yx = random.nextInt(this.width * this.height);
-      const x = yx % this.width;
-      const y = (yx - x) / y;
-      const pos = y << 4 | x;
-      if (this.map[pos]) {
-        // check all edges: if any don't match up, try to fill.
-        for (const _dir of Dir.ALL) {
-        }
-      }
-    }
-  }
-
-
-  // Returns true if branched.
-  // randomExtension(branchProbability: number): boolean {
-  //   // Find an existing screen.  All screens should be "capped".
-  //   for (const pos of this.allPos) {
-
-  //   }
   // }
 
-  // Ensure there's not too many open at once, ???
-  // add short paths between them when possible.
-  // Travel along existing routes when they exist.
-  // trackOpenEdges(pos: Pos): void {
-    
-
-  // }
-
-  // Uses openEdges to keep track
   // Maybe try to "upgrade" a plain screen?
   addScreen(scr: Scr): Pos | undefined {
     for (const pos of this.random.shuffle([...this.allPos])) {
       if (this.map[pos] != null) continue;
       if (this.trySet(pos, scr)) {
-        //this.trackOpenEdges(pos);
         return pos;
       }
     }
@@ -403,11 +355,11 @@ export class Maze implements Iterable<[Pos, Scr]> {
     const scr = this.map[pos];
     if (scr == null) return false;
     const spec = this.screens.get(scr);
-    return spec != null && spec.fixed;
+    return !!(spec != null && (spec.fixed || spec.stairs.length))
   }
 
   density(): number {
-    const count = [...this.allPos].filter(pos => this.map[pos]).length;
+    const count = this.allPosArray.filter(pos => this.map[pos]).length;
     return count / (this.width * this.height);
   }
 
@@ -462,11 +414,33 @@ export class Maze implements Iterable<[Pos, Scr]> {
     this.setInternal(pos2, scr2);
   }
 
+  setAndUpdate(pos: Pos, scr: Scr, opts: FillOpts = {}): boolean {
+    return this.saveExcursion(() => {
+      const newOpts = {
+        ...opts,
+        fuzzy: opts.fuzzy && opts.fuzzy - 1,
+        replace: true,
+      };
+      this.setInternal(pos, scr);
+      for (const dir of Dir.ALL) {
+        if (!this.checkFit(pos, dir)) {
+          const pos2 = Pos.plus(pos, dir);
+          if (this.isFixed(pos2)) return false;
+          if (!this.fill(pos2, newOpts)) return false;
+        }
+      }
+      return true;
+    });
+  }
+
   // NOTE: it's not required that screen be an element of this.screens.
-  set(pos: Pos, screen: Scr, force = false): void {
+  set(pos: Pos, screen: Scr, opts: FillOpts = {}): void {
     // TODO - instead of force, consider allowing OUTSIDE EDGES to be non-zero?
     //      - maybe use the border? or a separate array?
-    if (!force && !this.fitsAndEmpty(pos, screen)) {
+    const ok = opts.force ? true :
+        opts.replace ? this.fits(pos, screen) :
+        this.fitsAndEmpty(pos, screen);
+    if (!ok) {
       const prev = this.map[pos];
       const hexPrev = prev != null ? hex5(prev) : 'empty';
       throw new Error(`Cannot overwrite ${hex(pos)} (${hexPrev}) with ${hex5(screen)}`);
@@ -493,15 +467,6 @@ export class Maze implements Iterable<[Pos, Scr]> {
   private setInternal(pos: Pos, scr: Scr): void {
     const prev = this.map[pos];
     this.map[pos] = scr;
-    if (this.openEdges) {
-      for (const dir of Dir.ALL) {
-        if (!(scr & Dir.edgeMask(dir))) continue;
-        const pos2 = Pos.plus(pos, dir);
-        if (!this.inBounds(pos2)) continue;
-        this.openEdges.delete(pos2 << 2 | (dir ^ 2));
-        if (this.map[pos2] == null) this.openEdges.add(pos << 2 | dir);
-      }
-    }
     if (this.counts) {
       if (prev != null) this.counts.delete(prev);
       this.counts.add(scr);
@@ -716,15 +681,24 @@ export class Maze implements Iterable<[Pos, Scr]> {
 
 interface FillOpts {
   // Max number of exits
-  maxExits?: number;
+  readonly maxExits?: number;
   // Edge type to use when unconstrained
-  edge?: number;
+  readonly edge?: number;
   // Required stair direction
-  stair?: Dir;
+  readonly stair?: Dir;
   // Whether to force the set
-  force?: boolean;
+  readonly force?: boolean;
+  // If we're fuzzy then allow a non-fixed edge to not match
+  readonly fuzzy?: number;
+  // Shuffle the order of the tiles to fill
+  readonly shuffleOrder?: boolean;
+  // Do not pick alternate tiles (>ffff)
+  readonly skipAlternates?: boolean;
+  // Allow replacing
+  readonly replace?: boolean;
 }
 
+  
 /** Spec for a screen. */
 export interface Spec {
   readonly edges: Scr;

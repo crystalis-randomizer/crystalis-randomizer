@@ -84,9 +84,9 @@ function tryShuffleSwamp(rom: Rom, random: Random, swamp: Location,
   maze.setBorder(entrance, Dir.LEFT, 1);
 
   // Set up boundary, boss, and entrance
-  maze.set(boss, 0xf1f0 as Scr, true);
-  maze.set((boss - 1) as Pos, 0x00f0 as Scr, true);
-  maze.set((boss + 1) as Pos, 0xf000 as Scr, true);
+  maze.set(boss, 0xf1f0 as Scr, {force: true});
+  maze.set((boss - 1) as Pos, 0x00f0 as Scr, {force: true});
+  maze.set((boss + 1) as Pos, 0xf000 as Scr, {force: true});
   maze.fillAll({edge: 1});
   // for (let y = 0; y < h; y++) {
   //   for (let x = 0; x < w; x++) {

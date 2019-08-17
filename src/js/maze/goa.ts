@@ -63,7 +63,7 @@ export function shuffleGoa1(rom: Rom, random: Random, attempts = 1500): void {
     const exitTiles = [(boss + 32) << 8 | 0x01, (boss + 32) << 8 | 0x03];
 
     function fixed(pos: number, value: number) {
-      maze.set(pos as Pos, value as Scr, true); // NOTE: set(force) in case OOB
+      maze.set(pos as Pos, value as Scr, {force: true}); // NOTE: no check OOB
     }
 
     fixed(entrance, 0xf0f1);

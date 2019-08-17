@@ -150,7 +150,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
       //console.error(`No eligible tiles for ${hex(pos)}`);
       return false;
     }
-    this.set(pos, this.random.pick(eligible));
+    this.set(pos, this.random.pick(eligible), opts.force);
     return true;
   }
 
@@ -181,6 +181,80 @@ export class Maze implements Iterable<[Pos, Scr]> {
     }
   }
 
+  // Use a full monte carlo approach to fill out a maze.
+  // The basic idea is that we're okay with invalid connections,
+  // but will try to satisfy as many as possible for random tiles.
+  // Initial tiles will have a (density) chance of being empty,
+  // and we will randomly adjust the density in between steps?
+  monteCarloFill(density: number, fixed: Scr[], stairs: Dir[]) {
+    // Start off by just populating the initial tiles.
+    // Use 'fill' for this, but manipulate max exits to try to
+    // reach density target...?
+
+    let steps = 100 * this.width * this.height;
+
+    // Pos << 2 | dir
+    const badEdges = new Set<number>();
+    const randomBit = this.random.bitGenerator();
+
+    while (true) {
+      if (!--steps) throw new Error(`Monte carlo fill failed`);
+
+      // 1. are all edges satisfied?
+      if (badEdges.size) {
+        const edge = this.random.pick([...badEdges]);
+        let pos = edge >>> 2;
+        let dir = edge & 3;
+        // If pos is fixed or stair, then add it back to the queue
+        this.fill(pos, {force: true});
+        for (const dir of Dir.ALL) {
+          const pos2 = Pos.plus(pos, dir);
+          if (this.checkFit(pos, dir)) {
+            badEdges.delete(pos << 2 | dir);
+            if (this.inBounds(pos2)) badEdges.delete(pos2 << 2 | Dir.inv(dir));
+          } else {
+            // should this ever happen?!?  maybe sometimes...
+            badEdges.add(pos << 2 | dir);
+            if (this.inBounds(pos2)) badEdges.add(pos2 << 2 | Dir.inv(dir));
+          }
+        }
+      }
+
+      // 2. are all components connected?
+      const traversal = this.traverse();
+      
+
+
+
+
+      // TODO - percolation!
+      // back off on "fixed", just have an "arrange" method for
+      // each cave, and then percolate() takes a set of fixed pos
+      // that it won't touch.
+      //  - maybe percolateEdges(edge#) vs percolateScreen(scr#)
+      //  - each step updates neighbors (until it reaches a cycle?)
+
+
+
+      // 3. are all necessary tiles placed?
+
+      // 4. is the density roughly correct?
+      //    if too low then maybe add a new edge somewhere.
+      //    if too high, maybe remove a dead end?
+
+      const yx = random.nextInt(this.width * this.height);
+      const x = yx % this.width;
+      const y = (yx - x) / y;
+      const pos = y << 4 | x;
+      if (this.map[pos]) {
+        // check all edges: if any don't match up, try to fill.
+        for (const _dir of Dir.ALL) {
+        }
+      }
+    }
+  }
+
+
   // Returns true if branched.
   // randomExtension(branchProbability: number): boolean {
   //   // Find an existing screen.  All screens should be "capped".
@@ -199,10 +273,10 @@ export class Maze implements Iterable<[Pos, Scr]> {
 
   // Uses openEdges to keep track
   // Maybe try to "upgrade" a plain screen?
-  addScreen(scr: Screen): Pos | undefined {
+  addScreen(scr: Scr): Pos | undefined {
     for (const pos of this.random.shuffle([...this.allPos])) {
       if (this.map[pos] != null) continue;
-      if (this.trySet(scr)) {
+      if (this.trySet(pos, scr)) {
         //this.trackOpenEdges(pos);
         return pos;
       }
@@ -453,6 +527,16 @@ export class Maze implements Iterable<[Pos, Scr]> {
     return true;
   }
 
+  checkFit(pos: Pos, dir: Dir): boolean {
+    const scr = this.get(pos);
+    const neighbor = this.get(pos, dir);
+    if (scr == null || neighbor == null) return true; // anything is fair game
+    if (Scr.edge(scr, dir) !== Scr.edge(neighbor, Dir.inv(dir))) {
+      return false;
+    }
+    return true;
+  }
+
   traverse(): Map<number, Set<number>> {
     // Returns a map from unionfind root to a list of all reachable tiles.
     // All elements of set are keys pointing to the same value ref.
@@ -637,6 +721,8 @@ interface FillOpts {
   edge?: number;
   // Required stair direction
   stair?: Dir;
+  // Whether to force the set
+  force?: boolean;
 }
 
 /** Spec for a screen. */

@@ -306,70 +306,83 @@ export function shuffleCave(loc: Location, random: Random, {attempts = 100} = {}
     //const maze = new Maze(random, h0 + 2, Math.min(8, w0 + 2), screens);
 
     const maze = new Maze(random, h0, w0, screens);
-    maze.trackOpenEdges();
+    //maze.trackOpenEdges();
 
-    const mapping: Array<[Pos, Pos]> = []; // NOTE: may need to xform if shrink
+    //const mapping: Array<[Pos, Pos]> = []; // NOTE: may need to xform if shrink
     //const poi: Array<[Pos, Dir]> = [];
-    let {branches, deadEnds, size, walls} = survey;
+    //let {branches, deadEnds, size, walls} = survey;
+
     const density = survey.size / w0 / h0;
 
-    // Possible approach:
-    //  1. seed a bunch of initial screens
-    //  2. check step: traverse the map with
-    //     missing items treated as connecting everything
-    //  3. add random screens, biasing toward fewer exits
-    //     based on branching factor?
-    // This should ensure we don't do anything too stupid to
-    // paint ourselves into a corner.
-
-    // Place (1) edge exits, (2) fixed screens, (3) stairs.
-    for (const [pos, edge] of survey.edges) {
-      const tile = /*1 +*/ random.nextInt(edge.dir & 1 ? h0 : w0);
-      const other =
-          edge.dir === Dir.RIGHT ? /*1 +*/ w0 :
-          edge.dir === Dir.DOWN ? /*1 +*/ h0 : 0;
-      const moved = (edge.dir & 1 ? other << 4 | tile : tile << 4 | other) as Pos;
-      maze.setBorder(moved, edge.dir, 6);
-      if (!maze.fill(moved, {maxExits: 2 + branches})) continue OUTER;
-      const filled = maze.get(moved)!;
-      mapping.push([pos, moved]);
-      let exits = 0;
-      for (const dir of Dir.ALL) {
-        if (dir != edge.dir && (filled & Dir.edgeMask(dir))) {
-          // poi.push([moved, dir]);
-          exits++;
-        }
-      }
-      size--;
-      if (exits > 1) branches -= (exits - 1);
-    }
-
-    for (const [pos, scr] of survey.fixed) {
-      const mapped = maze.addScreen(scr);
-      if (mapped == null) continue OUTER;
-    }
     
 
+    // // Possible approach:
+    // //  1. seed a bunch of initial screens
+    // //  2. check step: traverse the map with
+    // //     missing items treated as connecting everything
+    // //  3. add random screens, biasing toward fewer exits
+    // //     based on branching factor?
+    // // This should ensure we don't do anything too stupid to
+    // // paint ourselves into a corner.
 
-    // Now fill out a basic structure by walking random paths.
-    while (maze.density() < density) {
-      if (maze.randomExtension(branches / size)) branches--;
-      size--;
+    // Place (1) edge exits, (2) fixed screens, (3) stairs.
+    const setEdges = new Set<Pos>();
+    for (const [, edge] of survey.edges) {
+      while (true) {
+        const tile = /*1 +*/ random.nextInt(edge.dir & 1 ? h0 : w0);
+        const other =
+            edge.dir === Dir.RIGHT ? /*1 +*/ w0 :
+            edge.dir === Dir.DOWN ? /*1 +*/ h0 : 0;
+        const pos = (edge.dir & 1 ? tile << 4 | other : other << 4 | tile) as Pos;
+        if (setEdges.has(pos)) continue;
+        maze.setBorder(pos, edge.dir, 6);
+        break;
+      }
+      // if (!maze.fill(moved, {maxExits: 2 + branches})) continue OUTER;
+      // const filled = maze.get(moved)!;
+      // mapping.push([pos, moved]);
+      // let exits = 0;
+      // for (const dir of Dir.ALL) {
+      //   if (dir != edge.dir && (filled & Dir.edgeMask(dir))) {
+      //     // poi.push([moved, dir]);
+      //     exits++;
+      //   }
+      // }
+      // size--;
+      // if (exits > 1) branches -= (exits - 1);
     }
 
-
-      for (let i = 0; i < 10; i++) {
-        const tile0 = random.nextInt(h0 * w0);
-        const x = tile0 % w0;
-        const y = (tile0 - x) / w0;
-        if (!maze.trySet(pos, 
+    for (const [, scr] of survey.fixed) {
+      if (maze.addScreen(scr) == null) continue OUTER;
     }
-
 
     for (const stair of survey.stairs) {
-      // Find a random location for a correct-direction stair.
-      const pos = maze.randomUnfilledPos();
+      const eligible = [];
+      for (const spec of screens) {
+        if (spec.stairs.some(s => s.dir === stair.dir)) eligible.push(spec.edges);
+      }
+      if (maze.addScreen(random.pick(eligible)) == null) continue OUTER;
     }
+
+    // // Now fill out a basic structure by walking random paths.
+    // while (maze.density() < density) {
+    //   if (maze.randomExtension(branches / size)) branches--;
+    //   size--;
+    // }
+
+
+    //   for (let i = 0; i < 10; i++) {
+    //     const tile0 = random.nextInt(h0 * w0);
+    //     const x = tile0 % w0;
+    //     const y = (tile0 - x) / w0;
+    //     if (!maze.trySet(pos, 
+    // }
+
+
+    // for (const stair of survey.stairs) {
+    //   // Find a random location for a correct-direction stair.
+    //   const pos = maze.randomUnfilledPos();
+    // }
 
     console.log(maze.show());
   }

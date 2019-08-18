@@ -125,7 +125,7 @@ function tryShuffleSwamp(rom: Rom, random: Random, swamp: Location,
       continue;
     }
     maze.saveExcursion(() => {
-      maze.replaceEdge(pos, dir, 0);
+      if (!maze.replaceEdge(pos, dir, 0)) return false;
       return maze.get(pos) && maze.get(pos2) && check() || (() => { console.log(`failed\n${maze.show()}`); return false; })();
     });
     console.log(maze.show());

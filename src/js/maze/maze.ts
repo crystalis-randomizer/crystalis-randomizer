@@ -21,8 +21,8 @@ export class Maze implements Iterable<[Pos, Scr]> {
   private extraTilesMap: number[] = [];
 
   constructor(private readonly random: Random,
-              readonly height: number,
-              readonly width: number,
+              public height: number,
+              public width: number,
               screens: readonly Spec[],
               private readonly extraTiles?: Array<readonly number[]>) {
     this.map = new Array(height << 4).fill(undefined);
@@ -49,13 +49,15 @@ export class Maze implements Iterable<[Pos, Scr]> {
 
   // Higher-level functionality
 
-  * alternates(): IterableIterator<[Pos, number]> {
+  * alternates(): IterableIterator<[Pos, number, Scr, Spec]> {
     for (const pos of this.allPos) {
       const scr = this.map[pos];
       if (scr == null) continue;
       for (let bit = 0x1_0000; bit < 0x10_0000; bit <<= 1) {
-        if (!(scr & bit) && this.screens.has((scr | bit) as Scr)) {
-          yield [pos, bit];
+        const newScr = (scr | bit) as Scr;
+        const spec = this.screens.get(newScr);
+        if (!(scr & bit) && spec) {
+          yield [pos, bit, newScr, spec];
         }
       }
     }
@@ -64,14 +66,17 @@ export class Maze implements Iterable<[Pos, Scr]> {
   saveExcursion(f: () => boolean): boolean {
     let m = [...this.map];
     let c = this.counts ? [...this.counts] : null;
+    let b = [...this.border];
     try {
       if (f()) return true;
     } catch (err) {
       this.map = m;
+      this.border = b;
       if (c) this.counts = new Multiset(c);
       throw err;
     }
     this.map = m;
+    this.border = b;
     if (c) this.counts = new Multiset(c);
     return false;
   }
@@ -97,7 +102,9 @@ export class Maze implements Iterable<[Pos, Scr]> {
         for (const [dir, ext] of this.screenExtensions.get(scr & 0xffff)) {
           // make sure there's space on that side.
           const neighbor = Pos.plus(pos, dir);
-          if (this.empty(neighbor)) extensions.push([pos, ext, dir, 0]);
+          if (!this.map[neighbor] && this.inBounds(neighbor)) {
+            extensions.push([pos, ext, dir, 0]);
+          }
         }
       }
     }
@@ -180,17 +187,17 @@ export class Maze implements Iterable<[Pos, Scr]> {
 
   // pos should be the last already-set tile before the new ones
   // adds N+1 screens where N is length of path
-  fillPath(pos: Pos, dir: Dir, path: Path, exitType: number): boolean {
+  fillPath(pos: Pos, dir: Dir, path: Path, exitType: number, opts: FillOpts = {}): boolean {
     return this.saveExcursion(() => {
       const pathSaved = [...path];
       for (const step of pathSaved) {
         const nextDir = Dir.turn(dir, step);
         pos = Pos.plus(pos, dir);
         const screen = Scr.fromExits(DirMask.of(Dir.inv(dir), nextDir), exitType);
-        if (!this.trySet(pos, screen)) return false;
+        if (!this.trySet(pos, screen, opts)) return false;
         dir = nextDir;
       }
-      return this.fill(Pos.plus(pos, dir), {maxExits: 2});
+      return this.fill(Pos.plus(pos, dir), {...opts, maxExits: 2});
     });
   }
 
@@ -288,13 +295,13 @@ export class Maze implements Iterable<[Pos, Scr]> {
       const end = Pos.plus(pos2, dir2);
       if (Pos.plus(pos1, dir1) === end) {
         // Trivial case
-        return this.fill(end, {maxExits: 2});
+        return this.fill(end, {maxExits: 2, replace: true});
       }
       // Find clear path given exit type
       const [forward, right] = relative(pos1, dir1, end);
       let attempts = 0;
       for (const path of generatePaths(this.random, forward, right)) {
-        if (this.fillPath(pos1, dir1, path, exitType)) break;
+        if (this.fillPath(pos1, dir1, path, exitType, {replace: true})) break;
         if (++attempts > 20) return false;
       }
       // return this.fill(end, 2); // handled in fillPath
@@ -363,6 +370,50 @@ export class Maze implements Iterable<[Pos, Scr]> {
     return count / (this.width * this.height);
   }
 
+  size(): number {
+    return this.allPosArray.filter(pos => this.map[pos]).length;
+  }
+
+  /** Trim the size of the map by removing empty rows/columns. */
+  trim(): void {
+    // First figure out which screens are actually "empty".
+    const empty = new Set<number>();
+    for (const spec of this.screens.values()) {
+      if (!spec.edges) empty.add(spec.tile);
+    }
+    const isEmpty = (pos: number) =>
+        !this.map[pos] || empty.has(this.screens.get(this.map[pos]!)!.tile);
+    // Now go through rows and columns from the edges to find empties.
+    for (const y = 0;;) {
+      if (!seq(this.width, x => y << 4 | x).every(isEmpty)) break;
+      this.map.splice(0, 16)
+      this.border.splice(0, 16);
+      this.height--;
+    }
+    for (let y = this.height - 1; y >= 0; y--) {
+      if (!seq(this.width, x => y << 4 | x).every(isEmpty)) break;
+      this.map.splice((this.height - 1) << 4, 16);
+      this.border.splice((this.height - 1) << 4, 16);
+      this.height--;
+    }
+    for (const x = 0;;) {
+      if (!seq(this.height, y => y << 4 | x).every(isEmpty)) break;
+      for (let y = this.height - 1; y >= 0; y--) {
+        this.map.splice(y << 4, 1);
+        this.border.splice(y << 4, 1);
+      }
+      this.width--;
+    }
+    for (let x = this.width - 1; x >= 0; x--) {
+      if (!seq(this.height, y => y << 4 | x).every(isEmpty)) break;
+      for (let y = this.height - 1; y >= 0; y--) {
+        this.map.splice(y << 4 | x, 1);
+        this.border.splice(y << 4 | x, 1);
+      }
+      this.width--;
+    }
+  }
+
   * [Symbol.iterator](): IterableIterator<[Pos, Scr]> {
     for (const pos of this.allPos) {
       const scr = this.map[pos];
@@ -394,7 +445,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
     (this.border[pos] as number) |= (edge << shift);
   }
 
-  replaceEdge(pos: Pos, dir: Dir, edge: number): void {
+  replaceEdge(pos: Pos, dir: Dir, edge: number): boolean {
     const pos2 = Pos.plus(pos, dir);
     if (!this.inBounds(pos)) throw new Error(`Out of bounds ${hex(pos)}`);
     if (!this.inBounds(pos2)) throw new Error(`Out of bounds ${hex(pos2)}`);
@@ -408,10 +459,11 @@ export class Maze implements Iterable<[Pos, Scr]> {
     const edge2 = edge << Dir.shift(Dir.inv(dir));
     scr1 = ((scr1 & ~mask1) | edge1) as Scr;
     scr2 = ((scr2 & ~mask2) | edge2) as Scr;
-    if (!this.screens.has(scr1)) throw new Error(`Invalid screen ${hex5(scr1)}`);
-    if (!this.screens.has(scr2)) throw new Error(`Invalid screen ${hex5(scr2)}`);
+    if (!this.screens.has(scr1)) return false;
+    if (!this.screens.has(scr2)) return false;
     this.setInternal(pos, scr1);
     this.setInternal(pos2, scr2);
+    return true;
   }
 
   setAndUpdate(pos: Pos, scr: Scr, opts: FillOpts = {}): boolean {
@@ -449,8 +501,11 @@ export class Maze implements Iterable<[Pos, Scr]> {
     if (this.inBounds(pos)) this.setInternal(pos, screen);
   }
 
-  trySet(pos: Pos, screen: Scr): boolean {
-    if (!this.fitsAndEmpty(pos, screen)) return false;
+  trySet(pos: Pos, screen: Scr, opts: FillOpts = {}): boolean {
+    const ok = opts.force ? true :
+        opts.replace ? this.fits(pos, screen) :
+        this.fitsAndEmpty(pos, screen);
+    if (!ok) return false;
     if (!this.screens.has(screen)) throw new Error(`No such screen ${hex5(screen)}`);
     this.setInternal(pos, screen);
     return true;
@@ -502,11 +557,13 @@ export class Maze implements Iterable<[Pos, Scr]> {
     return true;
   }
 
-  traverse(): Map<number, Set<number>> {
+  traverse(opts: TraverseOpts = {}): Map<number, Set<number>> {
     // Returns a map from unionfind root to a list of all reachable tiles.
     // All elements of set are keys pointing to the same value ref.
+    const without = new Set(opts.without || []);
     const uf = new UnionFind<number>();
     for (const pos of this.allPos) {
+      if (without.has(pos)) continue;
       const scr = this.map[pos];
       if (scr == null) continue;
       const spec = this.screens.get(scr);
@@ -677,6 +734,11 @@ export class Maze implements Iterable<[Pos, Scr]> {
       }
     }
   }
+}
+
+interface TraverseOpts {
+  // Do not pass certain tiles in traverse
+  readonly without?: readonly Pos[];
 }
 
 interface FillOpts {
@@ -888,6 +950,17 @@ export namespace Dir {
   export function turn(dir: Dir, change: number): Dir {
     return ((dir + change) & 3) as Dir;
   }
+  // export function* allEdge(dir: Dir,
+  //                          height: number,
+  //                          width: number): IterableIterator<Pos> {
+  //   const extent = dir & 1 ? height << 4 : width;
+  //   const incr = dir & 1 ? 16 : 1;
+  //   const start =
+  //       dir === RIGHT ? width - 1 : dir === DOWN ? (height - 1) << 4 : 0;
+  //   for (let i = start; i < extent; i += incr) {
+  //     yield i as Pos;
+  //   }
+  // }
   export const UP = 0 as Dir;
   export const RIGHT = 1 as Dir;
   export const DOWN = 2 as Dir;

@@ -89,6 +89,32 @@ export class Random {
     return array;
   }
 
+  * ishuffle<T>(iterable: Iterable<T>): IterableIterator<T> {
+    const arr = [];
+    if (!Array.isArray(iterable)) {
+      if (hasSize(iterable)) {
+        const iter = iterable[Symbol.iterator]();
+        for (let i = 0; i < iterable.size; i++) {
+          const j = this.nextInt(iterable.size - i);
+          const k = Math.max(i, j);
+          while (arr.length <= k) {
+            arr.push(iter.next().value);
+          }
+          yield arr[j];
+          arr[j] = arr[i];
+        }
+      } else {
+        iterable = [...iterable];
+      }
+    }
+    if (!Array.isArray(iterable)) throw new Error('impossible');
+    for (let i = 0; i < iterable.length; i++) {
+      const j = this.nextInt(iterable.length - i);
+      yield j in arr ? arr[j] : iterable[j];
+      arr[j] = iterable[i];
+    }
+  }
+
   pick<T>(arr: readonly T[]): T {
     if (!arr.length) throw new Error('empty array');
     return arr[this.nextInt(arr.length)];
@@ -120,6 +146,13 @@ export class Random {
       return result;
     };
   }
+}
+
+interface HasSize<T> extends Iterable<T> {
+  readonly size: number;
+}
+function hasSize<T>(iter: Iterable<T>): iter is HasSize<T> {
+  return 'size' in iter;
 }
 
 const TWOPI = 2 * Math.PI;

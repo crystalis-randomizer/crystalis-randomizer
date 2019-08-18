@@ -3,8 +3,8 @@ import {Random} from '../random.js';
 //import {Rom} from '../rom.js';
 import {Location} from '../rom/location.js';
 //import {Monster} from '../rom/monster.js';
-import {hex} from '../rom/util.js';
-import {iters} from '../util.js';
+import {hex, seq} from '../rom/util.js';
+import {iters, Multiset} from '../util.js';
 
 const [] = [write];
 
@@ -44,7 +44,7 @@ const BASIC_SCREENS = [
   Spec(0x8_0101, 0x8c, '┋', 0x2a), // full-screen stair hallway
   Spec(0x1_0101, 0x8f, '┆', ...wall(0x2, 0xa)),
   Spec(0x1_1010, 0x90, '┄', ...wall(0x2, 0xa)),
-  Spec(0x1_1011, 0x94, '┴', ...wall(0x2, 0x6e)),
+  Spec(0x1_1011, 0x94, '┸'/*┴*/, ...wall(0x2, 0x6e)),
   Spec(0x2_1010, 0x95, '┸', 0x6e, Stair.up(0x40_80)),
   Spec(0x1_1000, 0x96, '┚', 0x6, Stair.up(0x40_30)),
   Spec(0x2_1000, 0x97, '┒', 0x6, Stair.down(0xaf_30)),
@@ -143,7 +143,7 @@ const STAIRS_BY_TILE = new Map<number, Dir>();
 // Which tiles have walls
 const WALLS = new Set<number>();
 // Which tiles are fixed
-const FIXED_TILES = new Map<number, Scr>();
+const FIXED_TILES = new Map<number, Spec>();
 
 // Dead end tiles.
 const DEAD_ENDS = new Set([0x9b, 0x9c, 0xf0, 0xf1]);
@@ -162,7 +162,7 @@ for (const spec of iters.concat(...ALL_SCREENS)) {
     STAIRS_BY_TILE.set(spec.tile << 8 | pos, stair.dir);
   }
   if (spec.wall) WALLS.add(spec.tile);
-  if (spec.tile != 0x80 && spec.fixed) FIXED_TILES.set(spec.tile, spec.edges);
+  if (spec.tile != 0x80 && spec.fixed) FIXED_TILES.set(spec.tile, spec);
 }
 
 // function exitCount(tile: number): number {
@@ -216,7 +216,8 @@ interface Survey {
   stairs: Exit[];
   walls: number;
   edges: Map<Pos, Exit>;
-  fixed: Map<Pos, Scr>;
+  fixed: Map<Pos, Spec>;
+  tiles: Multiset<number>;
 }
 function surveyMap(loc: Location): Survey {
   let size = 0;
@@ -225,11 +226,12 @@ function surveyMap(loc: Location): Survey {
   let walls = 0;
   const stairs: Exit[] = [];
   const edges = new Map<Pos, Exit>();
-  const fixed = new Map<Pos, Scr>();
+  const fixed = new Map<Pos, Spec>();
+  const tiles = new Multiset<number>();
 
   for (let y = 0; y < loc.height; y++) {
     let edgeMask = 0;
-    if (!y) edgeMask |= 0;
+    if (!y) edgeMask |= 1;
     if (y === loc.height - 1) edgeMask |= 4;
     for (let x = 0; x < loc.width; x++) {
       const pos = (y << 4 | x) as Pos;
@@ -237,6 +239,7 @@ function surveyMap(loc: Location): Survey {
       if (!x) edgeMask |= 8;
       if (x === loc.width - 1) edgeMask |= 2;
       const tile = loc.screens[y][x];
+      tiles.add(tile);
       if (tile === 0x80) continue;
       size++;
       // Look for exits on the edge of the map
@@ -263,7 +266,6 @@ function surveyMap(loc: Location): Survey {
           //const entrancePos = loc.entrances[entrance];
           const exit = findExit(entrance);
           edges.set(pos, {entrance, exit, dir});
-          fixedScr = undefined;
         }
       }
       if (fixedScr != null) fixed.set(pos, fixedScr);
@@ -275,7 +277,7 @@ function surveyMap(loc: Location): Survey {
     const dir = STAIRS_BY_TILE.get(scr << 8 | entrance.tile);
     if (dir != null) stairs.push({entrance: i, exit: findExit(i), dir});
   }
-  return {size, deadEnds, branches, walls, stairs, edges, fixed};
+  return {size, deadEnds, branches, walls, stairs, edges, fixed, tiles};
 
   function findExit(entranceNum: number): number {
     const entrance = loc.entrances[entranceNum];
@@ -290,7 +292,7 @@ function surveyMap(loc: Location): Survey {
 }
 
 function matchesDir(tile: number, dir: Dir): boolean {
-  if (dir === 0) return (tile >>> 4) < 0x2;
+  if (dir === 0) return (tile >>> 4) < 0x4;
   if (dir === 1) return (tile & 0xf) > 0xd;
   if (dir === 2) return (tile >>> 4) > 0xc;
   if (dir === 3) return (tile & 0xf) < 0x2;
@@ -305,7 +307,24 @@ export function shuffleBridgeCave(upper: Location, lower: Location,
   shuffleCave(lower, random, {attempts});
 }
 
-export function shuffleCave(loc: Location, random: Random, {attempts = 10} = {}) {
+interface ShuffleCaveOptions {
+  attempts?: number;
+  check?: (maze: Maze) => boolean;
+}
+
+function defaultCheck(maze: Maze): boolean {
+  const traverse = maze.traverse();
+  return traverse[Symbol.iterator]().next().value[1].size === traverse.size;
+}
+
+export function shuffleCave(loc: Location, random: Random,
+                            opts: ShuffleCaveOptions = {}) {
+  let {
+    attempts = 10,
+    check = defaultCheck,
+  } = opts;
+  if (loc.id === 0x27) check = tornadoBraceletCaveCheck;
+
   // Want a general-purpose algorithm.
   // Analyze the current location.
   const screens = detectScreenSet(loc);
@@ -313,6 +332,7 @@ export function shuffleCave(loc: Location, random: Random, {attempts = 10} = {})
   const h0 = loc.height;
   const w = Math.min(w0 + 1, 8);
   const h = Math.min(h0 + 1, 16);
+  const allPos = seq(w * h, yx => ((yx % w) | Math.floor(yx / w) << 4) as Pos);
 
   // Count entrances and exits.
   const survey = surveyMap(loc);
@@ -332,19 +352,36 @@ export function shuffleCave(loc: Location, random: Random, {attempts = 10} = {})
       // Initial setup: add points of interest, then fill map with 1's as much
       // as possible.
 
+      let {walls} = survey;
       const fixed = new Set<Pos>();
-      for (const [, edge] of survey.edges) {
+      for (const [pos0, edge] of survey.edges) {
         while (true) {
           const pos = randomEdge(edge.dir);
           if (fixed.has(pos)) continue;
           fixed.add(pos);
           maze.setBorder(pos, edge.dir, 6);
+          const fixedScr = survey.fixed.get(pos0);
+          if (fixedScr != null) {
+            fixBorders(maze, pos, fixedScr.edges);
+            maze.set(pos, fixedScr.edges);
+          }
           break;
         }
       }
 
-      for (const [, scr] of survey.fixed) {
-        if (maze.addScreen(scr) == null) return false;
+      for (const [pos0, scr] of survey.fixed) {
+        if (survey.edges.has(pos0)) continue;
+        for (const pos of random.ishuffle(allPos)) {
+          if (fixed.has(pos)) continue;
+          const ok = maze.saveExcursion(() => {
+            fixBorders(maze, pos, scr.edges);
+            return maze.trySet(pos, scr.edges);
+          });
+          if (!ok) continue;
+          fixed.add(pos);
+          if (scr.wall) walls--;
+          break;
+        }
       }
 
       const {stairs} = survey;
@@ -370,11 +407,7 @@ export function shuffleCave(loc: Location, random: Random, {attempts = 10} = {})
       };
       if (!maze.fillAll(fillOpts)) return false;
 
-      function check(): boolean {
-        const traverse = maze.traverse();
-        return traverse[Symbol.iterator]().next().value[1].size === traverse.size;
-      }
-      if (!check()) return false;
+      if (!check(maze)) return false;
 
       console.log(`initial:\n${maze.show()}`);
 
@@ -385,21 +418,67 @@ export function shuffleCave(loc: Location, random: Random, {attempts = 10} = {})
         if (!maze.isFixed(pos)) {
           const changed =
               maze.saveExcursion(
-                  () => maze.setAndUpdate(pos, empty, opts) && check());
+                  () => maze.setAndUpdate(pos, empty, opts) && check(maze));
           if (changed) continue;
         }
       }
+
+      console.log(`percolated:\n${maze.show()}`);
+
+      // Remove any tight cycles
+      for (let y = 1; y < h; y++) {
+        for (let x = 1; x < w; x++) {
+          const pos = (y << 4 | x) as Pos;
+          if (!isTightCycle(maze, pos)) continue;
+          // remove the tight cycle
+          let replaced = false;
+          for (const dir of random.ishuffle(Dir.ALL)) {
+            // TODO - this will need to change if we invert the direction!
+            const pos2 = (dir < 2 ? pos - 1 : pos - 16) as Pos;
+            const ok =
+                maze.saveExcursion(
+                    () => maze.replaceEdge(pos2, dir, 0) && check(maze));
+            if (!ok) continue;
+            replaced = true;
+          }
+          if (!replaced) return false;
+        }
+      }
+
+      // Add stair hallways and walls
+      {
+        const replaced = new Set<Pos>();
+        const alts = [...maze.alternates()];
+        if (survey.tiles.count(0x8c)) {
+          const steps = random.shuffle(alts.filter(x => x[3].tile === 0x8c));
+          if (steps.length < survey.tiles.count(0x8c)) return false;
+          for (let i = survey.tiles.count(0x8c) - 1; i >= 0; i--) {
+            maze.replace(steps[i][0], steps[i][2]);
+            replaced.add(steps[i][0]);
+          }
+        }
+        const wallScreens = random.shuffle(alts.filter(x => x[3].wall));
+        for (let i = 0; i < walls; i++) {
+          const scr = wallScreens.pop();
+          if (scr == null) return false;
+          if (replaced.has(scr[0])) {
+            i--;
+            continue;
+          }
+          maze.replace(scr[0], scr[2]);
+          replaced.add(scr[0]);
+        }
+      }
+
+      //maze.trim();
+
       console.log(`final:\n${maze.show()}`);
 
-      // TODO - boss rooms are broken
-      // TODO - break any tight loops?
-      // TODO - maybe reroll if no room for walls we want
       // TODO - add back special screens, like stairs, reroll if can't?
       // TODO - need to actually fill in exits, stairs, monsters, chests
       // TODO - extend out any additional needed dead-ends, either
       //        just to get the right number, or to have a chest
       // TODO - trim down the maze before doing anything else
-
 
       return true;      
 
@@ -410,9 +489,31 @@ export function shuffleCave(loc: Location, random: Random, {attempts = 10} = {})
       const other = dir === Dir.RIGHT ? w - 1 : dir === Dir.DOWN ? h - 1 : 0;
       return (dir & 1 ? tile << 4 | other : other << 4 | tile) as Pos;
     }
-
   }
   throw new Error(`Could not shuffle`);
+}
+
+function tornadoBraceletCaveCheck(maze: Maze): boolean {
+  const t1 = [...maze.traverse({without: [0x30, 0x21] as Pos[]})];
+  const t2 = [...maze.traverse({without: [0x22, 0x33] as Pos[]})];
+  return t1[0][1].size === t1.length && t2[0][1].size === t2.length;
+}
+
+function isTightCycle(maze: Maze, pos: Pos): boolean {
+  const ul = maze.get((pos - 17) as Pos) || 0;
+  const dr = maze.get((pos) as Pos) || 0;
+  return !!((ul & 0x0f00) && (ul & 0x00f0) && (dr & 0xf000) && (dr & 0x000f));
+}
+
+function fixBorders(maze: Maze, pos: Pos, scr: Scr): void {
+  try {
+    for (const dir of Dir.ALL) {
+      if (!maze.inBounds(Pos.plus(pos, dir)) &&
+          ((scr >> Dir.shift(dir)) & 0x7) === 7) {
+        maze.setBorder(pos, dir, 7);
+      }
+    }
+  } catch (err) {}
 }
 
     //maze.trackOpenEdges();

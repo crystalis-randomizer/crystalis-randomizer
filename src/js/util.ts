@@ -423,6 +423,9 @@ export class Multiset<T> implements Iterable<[T, number]> {
   unique(): number {
     return this.entries.size;
   }
+  count(elem: T): number {
+    return this.entries.has(elem) ? this.entries.get(elem) : 0;
+  }
   [Symbol.iterator](): IterableIterator<[T, number]> {
     return this.entries.entries();
   }

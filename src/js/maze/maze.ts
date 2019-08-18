@@ -399,16 +399,17 @@ export class Maze implements Iterable<[Pos, Scr]> {
     for (const x = 0;;) {
       if (!seq(this.height, y => y << 4 | x).every(isEmpty)) break;
       for (let y = this.height - 1; y >= 0; y--) {
-        this.map.splice(y << 4, 1);
-        this.border.splice(y << 4, 1);
+        delete this.map[y << 4 | x];
+        this.border[y << 4 | x] = 0 as Scr;
       }
+      this.map.push(this.map.shift());
       this.width--;
     }
     for (let x = this.width - 1; x >= 0; x--) {
       if (!seq(this.height, y => y << 4 | x).every(isEmpty)) break;
       for (let y = this.height - 1; y >= 0; y--) {
-        this.map.splice(y << 4 | x, 1);
-        this.border.splice(y << 4 | x, 1);
+        delete this.map[y << 4 | x];
+        this.border[y << 4 | x] = 0 as Scr;
       }
       this.width--;
     }
@@ -778,9 +779,14 @@ export interface Spec {
 declare const STAIR_NOMINAL: unique symbol;
 export class Stair {
   [STAIR_NOMINAL]: never;
-  private constructor(readonly dir: Dir, readonly pixel: number) {}
-  static up(pixel: number): Stair { return new Stair(Dir.UP, pixel); }
-  static down(pixel: number): Stair { return new Stair(Dir.DOWN, pixel); }
+  private constructor(readonly dir: Dir, readonly entrance: number,
+                      readonly exit: number) {}
+  static up(entrance: number, exit: number): Stair {
+    return new Stair(Dir.UP, entrance, exit);
+  }
+  static down(entrance: number, exit: number): Stair {
+    return new Stair(Dir.DOWN, entrance, exit);
+  }
 }
 
 export function wall(a: number, b: number): Array<'wall'|number> {
@@ -950,17 +956,17 @@ export namespace Dir {
   export function turn(dir: Dir, change: number): Dir {
     return ((dir + change) & 3) as Dir;
   }
-  // export function* allEdge(dir: Dir,
-  //                          height: number,
-  //                          width: number): IterableIterator<Pos> {
-  //   const extent = dir & 1 ? height << 4 : width;
-  //   const incr = dir & 1 ? 16 : 1;
-  //   const start =
-  //       dir === RIGHT ? width - 1 : dir === DOWN ? (height - 1) << 4 : 0;
-  //   for (let i = start; i < extent; i += incr) {
-  //     yield i as Pos;
-  //   }
-  // }
+  export function* allEdge(dir: Dir,
+                           height: number,
+                           width: number): IterableIterator<Pos> {
+    const extent = dir ? height << 4 : width;
+    const incr = dir & 1 ? 16 : 1;
+    const start =
+        dir === RIGHT ? width - 1 : dir === DOWN ? (height - 1) << 4 : 0;
+    for (let i = start; i < extent; i += incr) {
+      yield i as Pos;
+    }
+  }
   export const UP = 0 as Dir;
   export const RIGHT = 1 as Dir;
   export const DOWN = 2 as Dir;

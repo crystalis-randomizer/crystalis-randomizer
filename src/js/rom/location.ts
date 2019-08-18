@@ -6,7 +6,7 @@ import {Data, DataTuple,
 import {Writer} from './writer.js';
 import {Rom} from '../rom.js';
 import { UnionFind } from '../unionfind.js';
-import { iters, assertNever } from '../util.js';
+import { iters, assertNever, DefaultMap } from '../util.js';
 import { Monster } from './monster.js';
 import { Random } from '../random.js';
 
@@ -177,6 +177,16 @@ export class Location extends Entity {
         [...this.tilePalettes,
          this.tileset, this.tileEffects,
          ...this.tilePatterns];
+    // Quick sanity check: if an entrance/exit is below the HUD on a
+    // non-vertically scrolling map, then we need to move it up.
+    if (this.height === 1) {
+      for (const entrance of this.entrances) {
+        if (entrance.y > 0xbf) entrance.y = 0xbf;
+      }
+      for (const exit of this.exits) {
+        if (exit.yt > 0x0c) exit.yt = 0x0c;
+      }
+    }
     const entrances = concatIterables(this.entrances);
     const exits = [...concatIterables(this.exits),
                    0x80 | (this.pits.length ? 0x40 : 0) | this.entrances.length,
@@ -342,13 +352,30 @@ export class Location extends Entity {
     return out;
   }
 
+  /** Safer version of the below? */
+  screenMover(): (orig: number, repl: number) => void {
+    const map = new DefaultMap<number, Array<{screen: number}>>(() => []);
+    const objs =
+        iters.concat<{screen: number}>(this.spawns, this.exits, this.entrances);
+    for (const obj of objs) {
+      map.get(obj.screen).push(obj);
+    }
+    return (orig: number, repl: number) => {
+      for (const obj of map.get(orig)) {
+        obj.screen = repl;
+      }
+    };
+  }
+
   /**
    * Moves all spawns, entrances, and exits.
    * @param orig YX of the original screen.
    * @param repl YX of the equivalent replacement screen.
    */
   moveScreen(orig: number, repl: number): void {
-    for (const obj of iters.concat(this.spawns, this.exits, this.entrances)) {
+    const objs =
+        iters.concat<{screen: number}>(this.spawns, this.exits, this.entrances);
+    for (const obj of objs) {
       if (obj.screen === orig) obj.screen = repl;
     }
   }
@@ -459,6 +486,7 @@ export const Entrance = DataTuple.make(4, {
 
   screen: DataTuple.prop([3, 0x0f, -4], [1, 0x0f]),
   tile:   DataTuple.prop([2, 0xf0], [0, 0xf0, 4]),
+  coord:  DataTuple.prop([2, 0xff, -8], [0, 0xff]),
 
   toString(this: any): string {
     return `Entrance ${this.hex()}: (${hex(this.x)}, ${hex(this.y)})`;

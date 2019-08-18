@@ -354,7 +354,8 @@ interface ShuffleCaveOptions {
 
 function defaultCheck(maze: Maze): boolean {
   const traverse = maze.traverse();
-  return traverse[Symbol.iterator]().next().value[1].size === traverse.size;
+  return traverse.size > 2 &&
+      traverse[Symbol.iterator]().next().value[1].size === traverse.size;
   // TODO - must have at least one non-dead-end tile???
 }
 
@@ -554,6 +555,7 @@ export function shuffleCave(loc: Location, random: Random,
         const allStairs: Array<Array<readonly [Pos, EntranceSpec]>> =
             [[], [], [], []]; // NOTE: 1 and 3 unused
         for (const [pos, scr] of maze) {
+          // TODO - should no longer need STAIR_SCREENS w/ Maze#getSpec
           const dir = STAIR_SCREENS.get(scr);
           if (dir != null) allStairs[dir[0]].push([pos, dir[1]]);
         }

@@ -8,6 +8,7 @@ import {FlagSet} from './flagset.js';
 import {AssumedFill} from './graph/shuffle.js';
 import {World} from './graph/world.js';
 import {fixDialog} from './pass/fixdialog.js';
+import {fixReverseWalls} from './pass/fixreversewalls.js';
 import {shuffleMazes} from './pass/shufflemazes.js';
 import {shufflePalettes} from './pass/shufflepalettes.js';
 import {shuffleTrades} from './pass/shuffletrades.js';
@@ -253,6 +254,7 @@ export async function shuffle(rom: Uint8Array,
 
   misc(parsed, flags, random);
   fixDialog(parsed);
+  fixReverseWalls(parsed);
 
   // NOTE: This needs to happen BEFORE postshuffle
   if (flags.buffDyna()) buffDyna(parsed, flags); // TODO - conditional

@@ -436,6 +436,11 @@ export class Maze implements Iterable<[Pos, Scr]> {
     return (scr >> Dir.shift(dir)) & 0xf;
   }
 
+  getSpec(pos: Pos): Spec | undefined {
+    const scr = this.map[pos];
+    return scr != null ? this.screens.get(scr) : scr;
+  }
+
   setBorder(pos: Pos, dir: Dir, edge: number): void {
     if (!this.inBounds(pos) || this.inBounds(Pos.plus(pos, dir))) {
       throw new Error(`Not on border: ${hex(pos)}, ${dir}`); // `

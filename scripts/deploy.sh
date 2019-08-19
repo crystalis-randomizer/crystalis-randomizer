@@ -15,7 +15,7 @@ git clone --depth=1 -b gh-pages "git@github.com:$TRAVIS_REPO_SLUG" deploy
 
 # Just pull favicon straight from master...?
 if [ "$TRAVIS_BRANCH" = master ]; then
-  cp src/favicon.ico "deploy/"
+  cp dist/favicon.ico "deploy/"
 fi
 
 # If the branch exists, wipe it out.
@@ -30,18 +30,18 @@ mkdir -p "deploy/$dir/js/view"
 mkdir -p "deploy/$dir/js/rom"
 mkdir -p "deploy/$dir/images"
 
-cp src/js/view/*.js "deploy/$dir/js/view/"
-cp src/js/rom/*.js "deploy/$dir/js/rom/"
-cp src/js/*.js "deploy/$dir/js/"
-cp src/js/*.s "deploy/$dir/js/"
-cp src/css/*.css "deploy/$dir/css/"
-cp src/css/view/*.css "deploy/$dir/css/view/"
-cp src/images/* "deploy/$dir/images/"
+cp dist/js/view/*.js "deploy/$dir/js/view/"
+cp dist/js/rom/*.js "deploy/$dir/js/rom/"
+cp dist/js/*.js "deploy/$dir/js/"
+cp dist/js/*.s "deploy/$dir/js/"
+cp dist/css/*.css "deploy/$dir/css/"
+cp dist/css/view/*.css "deploy/$dir/css/view/"
+cp dist/images/* "deploy/$dir/images/"
 # Clobber the *.min.js files.
 cp dist/*.js "deploy/$dir/js/"
 # Prepend the analytics tag to each .html file.
-for a in src/*.html src/view/*.html; do
-  cat src/ga.tag ${a} >| "deploy/$dir/${a#src/}"
+for a in dist/*.html dist/view/*.html; do
+  cat dist/ga.tag ${a} >| "deploy/$dir/${a#dist/}"
 done
 
 # Also make the minimum necessary dirs for permalinks

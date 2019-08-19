@@ -2,6 +2,11 @@
 
 # Link all files in src/ to dist/ so that we can serve out of there.
 
+copy=false
+if [ "$1" = "--copy" ]; then
+  copy=true
+fi
+
 find src -type f | while read src; do
   dist=dist/${src#src/}
   count=$(dirname "$dist")
@@ -19,10 +24,16 @@ find src -type f | while read src; do
     rel=../$rel
   done
   mkdir -p "$(dirname "$dist")"
-  ln -s "$rel" "$dist"
+  if $copy; then
+    cp "$src" "$dist"
+  else
+    ln -s "$rel" "$dist"
+  fi
 done
 
-for file in main check tracker edit/index; do
-  mkdir -p "$(dirname "dist/js/$file")"
-  ln -s "$file.js" "dist/js/$file.min.js"
-done
+if ! $copy; then
+  for file in main check tracker edit/index; do
+    mkdir -p "$(dirname "dist/js/$file")"
+    ln -s "$file.js" "dist/js/$file.min.js"
+  done
+fi

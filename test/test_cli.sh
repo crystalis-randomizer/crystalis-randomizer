@@ -9,9 +9,9 @@ set -ex
 file=${1-test/testdata}
 
 # Try all the presets
-for preset in $(node src/js/cli.js --list-presets); do
+for preset in $(node dist/js/cli.js --list-presets); do
   # Now run the CLI on it.
-  node src/js/cli.js --preset=$preset --output=test/test_out --force "$file"
+  node dist/js/cli.js --preset=$preset --output=test/test_out --force "$file"
 
   # Make sure the output has the right size.
   wc -c test/test_out.nes | grep -q 393232

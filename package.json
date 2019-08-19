@@ -1,7 +1,7 @@
 {
   "name": "crystalis-randomizer",
   "version": "0.0.0",
-  "main": "src/js/patch.js",
+  "main": "dist/js/patch.js",
   "scripts": {
     "watch": "node_modules/typescript/bin/tsc --watch",
     "tsc": "node_modules/typescript/bin/tsc",
@@ -10,7 +10,7 @@
     "clean": "rm -rf dist src/js/**/flycheck_*"
   },
   "bin": {
-    "cryr": "src/js/cli.js"
+    "cryr": "dist/js/cli.js"
   },
   "repository": {
     "type": "git",

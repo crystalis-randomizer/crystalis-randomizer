@@ -6,6 +6,8 @@ node_js:
 
 before_script:
   - npm install -g gulp-cli
+  - scripts/link.sh --copy
+  - rm -f dist/js/*.min.js
   - eval $(scripts/build_info.sh)
 
 script:

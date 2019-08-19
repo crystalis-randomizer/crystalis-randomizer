@@ -132,7 +132,7 @@ export function shuffleGoa1(rom: Rom, random: Random, attempts = 1500): void {
 
     function check(): boolean {
       const traversal = maze.traverse();
-      (window as any).TRAV = traversal;
+      //(window as any).TRAV = traversal;
 
       const main = traversal.get(entranceTile);
       if (!main) return false;

@@ -31,7 +31,7 @@ const COMMON = [
   'version.js',
 ];
 
-const srcs = (...srcs) => srcs.map(s => './src/js/' + s);
+const srcs = (...srcs) => srcs.map(s => './dist/js/' + s);
 
 gulp.task('main', function() {
   return gulp.src(srcs(...COMMON,
@@ -39,7 +39,7 @@ gulp.task('main', function() {
                        'progress.js',
                        'render.js',
                        'main.js'),
-                  {base: './src/js/'})
+                  {base: './dist/js/'})
       .pipe(closure({
         compilation_level: 'SIMPLE',
         warning_level: 'VERBOSE',
@@ -55,7 +55,7 @@ gulp.task('main', function() {
 });
 
 gulp.task('check', function() {
-  return gulp.src(srcs('check.js'), {base: './src/'})
+  return gulp.src(srcs('check.js'), {base: './dist/'})
       .pipe(closure({
         compilation_level: 'SIMPLE',
         warning_level: 'VERBOSE',
@@ -71,7 +71,7 @@ gulp.task('check', function() {
 });
 
 gulp.task('tracker', function() {
-  return gulp.src(srcs(...COMMON, 'tracker.js'), {base: './src/'})
+  return gulp.src(srcs(...COMMON, 'tracker.js'), {base: './dist/'})
       .pipe(closure({
         compilation_level: 'SIMPLE',
         warning_level: 'VERBOSE',
@@ -88,7 +88,7 @@ gulp.task('tracker', function() {
 
 gulp.task('edit', function() {
   return gulp.src(srcs(...COMMON, 'edit/*.js'),
-                  {base: './src/js/'})
+                  {base: './dist/js/'})
       .pipe(closure({
         compilation_level: 'SIMPLE',
         warning_level: 'VERBOSE',

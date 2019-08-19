@@ -355,9 +355,20 @@ export class Overlay {
     if (trigger.message.action === 0x19) { // push-down trigger
       // TODO - pass in terrain; if on land and trigger skip is on then
       // add a route requiring rabbit boots and either warp boots or teleport?
+      const extra: TriggerData = {};
+      if (trigger.id === 0x86 &&
+          !this.flags.disableRabbitSkip() &&
+          !this.flags.assumeRabbitSkip()) {
+        extra.dx = [-32, -16, 0, 16];
+      }
+      if (trigger.id === 0xba &&
+          !this.flags.disableTeleportSkip() &&
+          !this.flags.assumeTeleportSkip()) {
+        extra.extraLocations = [this.rom.locations.cordelPlainsWest];
+      }
       const [cond, ...rest] = trigger.conditions;
       if (!rest.length && cond < 0 && relevant(~map(cond))) {
-        return {terrain: {exit: Condition(~map(cond))}};
+        return {...extra, terrain: {exit: Condition(~map(cond))}};
       }
     } else if (actionItem != null) {
       return {check: [{condition, slot: actionItem}]};
@@ -673,6 +684,10 @@ interface ExtraEdge {
 interface TriggerData {
   terrain?: Terrain;
   check?: Check[];
+  // allows not assuming teleport skip
+  extraLocations?: Location[];
+  // allows not assuming rabbit skip
+  dx?: number[];
 }
 
 interface NpcData {

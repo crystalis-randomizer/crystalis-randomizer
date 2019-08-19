@@ -173,14 +173,16 @@ function build(rom: Rom, flags = new FlagSet('@FullShuffle')): World {
         if (trigger.terrain || trigger.check) {
           let {x: x0, y: y0} = spawn;
           x0 += 8;
-          for (const dx of [-16, 0]) {
-            for (const dy of [-16, 0]) {
-              const x = x0 + dx;
-              const y = y0 + dy;
-              const tile = TileId.from(location, {x, y});
-              if (trigger.terrain) meetTerrain(tile, trigger.terrain);
-              for (const check of trigger.check || []) {
-                checks.get(tile).add(check);
+          for (const loc of [location, ...(trigger.extraLocations || [])]) {
+            for (const dx of trigger.dx || [-16, 0]) {
+              for (const dy of [-16, 0]) {
+                const x = x0 + dx;
+                const y = y0 + dy;
+                const tile = TileId.from(loc, {x, y});
+                if (trigger.terrain) meetTerrain(tile, trigger.terrain);
+                for (const check of trigger.check || []) {
+                  checks.get(tile).add(check);
+                }
               }
             }
           }

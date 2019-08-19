@@ -550,7 +550,6 @@ export function shuffleCave(loc: Location, random: Random,
     if (!maze.fillAll(fillOpts)) return fail(`could not fill open`);
 
     console.log(`initial:\n${maze.show()}`);
-if(loc.id===6)debugger;
     if (!check(maze)) return fail(`check failed after initial setup`);
 
     const empty = 0 as Scr;

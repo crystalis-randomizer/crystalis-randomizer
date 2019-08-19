@@ -169,7 +169,7 @@ export function shuffleGoa1(rom: Rom, random: Random, attempts = 1500): void {
         spawn.screen = pos >>> 8;
         spawn.tile = pos & 0xff;
       }
-    }    
+    }
 
     console.log(`success after ${attempt} attempts`);
     console.log(maze.show());

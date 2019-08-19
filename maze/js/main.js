@@ -174,7 +174,7 @@ const shuffleRom = async (seed) => {
   let done = false;
   const flagsClone = new FlagSet(String(flags)); // prevent modifying
   document.body.classList.add('shuffling');
-  const log = flags.check('Ds') ? {} : undefined;
+  const log = {}; // flags.check('Ds') ? {} : undefined;
   const showWork = () => {
     if (done) return;
     progressEl.value = progressTracker.value();
@@ -197,6 +197,7 @@ const shuffleRom = async (seed) => {
   document.getElementById('checksum').textContent =
       // shifted by header
       read(shuffled, 0x27895, 4) + read(shuffled, 0x27896, 4);
+  window.SHUFFLED = shuffled.slice(16);
   return [shuffled, crc];
 };
 
@@ -282,7 +283,7 @@ const updateDom = () => {
 
 const updateRaceDom = () => {
   const flagString = String(flags)
-  document.body.classList.toggle('spoiled', flags.check('Ds'));
+  document.body.classList.toggle('spoiled', flags.check('Ds') || true);
   document.body.classList.toggle('debug-mode', /D/.test(flagString));
   document.getElementById('flagstring-out').textContent = flagString;
   document.getElementById('track-url').href =

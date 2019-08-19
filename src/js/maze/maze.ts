@@ -1,9 +1,9 @@
-import {hex, hex5, seq} from "../rom/util.js";
-import {Location, Flag} from "../rom/location.js";
-import {Random} from "../random.js";
-import {DefaultMap, Multiset, assertNever} from "../util.js";
-import {UnionFind} from "../unionfind.js";
-import { Rom } from "../rom.js";
+import {hex, hex5, seq} from '../rom/util.js';
+import {Location, Flag, Spawn} from '../rom/location.js';
+import {Random} from '../random.js';
+import {DefaultMap, Multiset, assertNever} from '../util.js';
+import {UnionFind} from '../unionfind.js';
+import {Rom} from '../rom.js';
 
 export class Maze implements Iterable<[Pos, Scr]> {
 
@@ -53,7 +53,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
     for (const pos of this.allPos) {
       const scr = this.map[pos];
       if (scr == null) continue;
-      for (let bit = 0x1_0000; bit < 0x10_0000; bit <<= 1) {
+      for (let bit = 0x1_0000; bit < 0x20_0000; bit <<= 1) {
         const newScr = (scr | bit) as Scr;
         const spec = this.screens.get(newScr);
         if (!(scr & bit) && spec) {
@@ -198,6 +198,25 @@ export class Maze implements Iterable<[Pos, Scr]> {
         dir = nextDir;
       }
       return this.fill(Pos.plus(pos, dir), {...opts, maxExits: 2});
+    });
+  }
+
+  // pos should be the last already-set tile before the new ones
+  // adds N+1 screens where N is length of path
+  // Used by cave shuffle for non-branching caves.
+  fillPathToDeadEnd(pos: Pos, dir: Dir, path: Path,
+                    opts: FillOpts = {}, finalOpts: FillOpts = {}): boolean {
+    return this.saveExcursion(() => {
+      const pathSaved = [...path];
+      for (const step of pathSaved) {
+        const nextDir = Dir.turn(dir, step);
+        pos = Pos.plus(pos, dir);
+        const screen = Scr.fromExits(DirMask.of(Dir.inv(dir), nextDir),
+                                     opts.edge || 1);
+        if (!this.trySet(pos, screen, opts)) return false;
+        dir = nextDir;
+      }
+      return this.fill(Pos.plus(pos, dir), {...finalOpts, maxExits: 1});
     });
   }
 
@@ -567,6 +586,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
     // Returns a map from unionfind root to a list of all reachable tiles.
     // All elements of set are keys pointing to the same value ref.
     const without = new Set(opts.without || []);
+    const flagged = !opts.noFlagged;
     const uf = new UnionFind<number>();
     for (const pos of this.allPos) {
       if (without.has(pos)) continue;
@@ -576,6 +596,11 @@ export class Maze implements Iterable<[Pos, Scr]> {
       if (spec == null) continue;
       for (const connection of spec.connections) {
         uf.union(connection.map(c => (pos << 8) + c));
+      }
+      if (spec.wall) {
+        for (const connection of spec.wall.connections(flagged)) {
+          uf.union(connection.map(c => (pos << 8) + c));
+        }
       }
     }
 
@@ -719,6 +744,13 @@ export class Maze implements Iterable<[Pos, Scr]> {
     for (const flag of loc.flags) {
       availableFlags.add(flag.flag);
     }
+    let wallElement = 0;
+    const wallSpawns = {'wall': [] as Spawn[], 'bridge': [] as Spawn[]};
+    for (const spawn of loc.spawns) {
+      const type = spawn.wallType();
+      if (type) wallSpawns[type].push(spawn);
+      if (type === 'wall') wallElement = spawn.wallElement();
+    }
     loc.flags = [];
     loc.width = this.width;
     loc.height = this.height;
@@ -733,18 +765,38 @@ export class Maze implements Iterable<[Pos, Scr]> {
         const tile = spec.tile < 0 ? this.extraTilesMap[~spec.tile] : spec.tile;
         loc.screens[y].push(tile);
         if (spec.flag) loc.flags.push(Flag.of({screen: pos, flag: 0x2ef}));
-        // if (spec.wall) {
-        //   // pop an available flag and use that.
-        //   loc.flags.push();
-        // }
+        if (spec.wall) {
+          // pop an available flag and use that.
+          loc.flags.push(Flag.of({screen: pos, flag: pop(availableFlags)}));
+          const spawn = wallSpawns[spec.wall.type].pop() || (() => {
+            const s =
+                Spawn.of({screen: pos, tile: spec.wall.tile,
+                          type: 3,
+                          id: spec.wall.type === 'wall' ? wallElement : 2});
+            loc.spawns.push(s); // TODO - check for too many or unused?
+            return s;
+          })();
+          spawn.screen = pos;
+          spawn.tile = spec.wall.tile;
+        }
       }
     }
   }
 }
 
+function pop<T>(set: Set<T>): T {
+  for (const elem of set) {
+    set.delete(elem);
+    return elem;
+  }
+  throw new Error(`cannot pop from empty set`);
+}
+
 interface TraverseOpts {
   // Do not pass certain tiles in traverse
   readonly without?: readonly Pos[];
+  // Whether to break walls/form bridges
+  readonly noFlagged?: boolean;
 }
 
 interface FillOpts {
@@ -775,12 +827,13 @@ export interface Spec {
   readonly connections: Connections;
   readonly fixed: boolean;
   readonly flag: boolean;
-  readonly wall: boolean;
-  readonly stairs: Stair[];
   readonly pit: boolean;
+  readonly stairs: Stair[];
+  readonly wall: Wall | undefined;
+  readonly poi: Poi[];
 }
 
-// pixel is four nibbles: YyXx of exact pixel on screen.
+// entrance is four nibbles: YyXx of exact pixel on screen.
 declare const STAIR_NOMINAL: unique symbol;
 export class Stair {
   [STAIR_NOMINAL]: never;
@@ -794,63 +847,102 @@ export class Stair {
   }
 }
 
-export function wall(a: number, b: number): Array<'wall'|number> {
-  let count = b;
-  while (count) {
-    count >>= 4;
-    a <<= 4;
+declare const WALL_NOMINAL: unique symbol;
+export class Wall {
+  [WALL_NOMINAL]: never;
+  constructor(readonly type: 'wall' | 'bridge', readonly tile: number,
+              readonly a: number, readonly b: number) {}
+  connections(flagged: boolean): Connections {
+    if (!flagged) return [connection(this.a), connection(this.b)];
+    let count = this.b;
+    let a = this.a;
+    while (count) {
+      count >>= 4;
+      a <<= 4;
+    }
+    return [connection(a | this.b)];
   }
-  return ['wall', a | b];
+}
+
+export function wall(tile: number, [a, b]: readonly [number, number]): Wall {
+  return new Wall('wall', tile, a, b);
+}
+
+export function bridge(tile: number, [a, b]: readonly [number, number]): Wall {
+  return new Wall('bridge', tile, a, b);
+}
+
+declare const POI_NOMINAL: unique symbol;
+export class Poi {
+  [POI_NOMINAL]: never;
+  constructor(readonly priority: number,
+              readonly dy: number, readonly dx: number) {}
+}
+
+/**
+ * @param priority Starting at zero for best spots
+ * @param dy Pixel position from (0, 0) of screen
+ * @param dx Pixel position from (0, 0) of screen
+ */
+export function poi(priority: number, dy = 0x70, dx = 0x78) {
+  return new Poi(priority, dy, dx);
 }
 
 type Connections = ReadonlyArray<ReadonlyArray<number>>;
-type SpecFlag = 'fixed' | 'flag' | 'pit' | 'wall';
-type ExtraArg = number | Stair | SpecFlag;
+type SpecFlag = 'fixed' | 'flag' | 'pit';
+type ExtraArg = number | Stair | Wall | Poi | SpecFlag;
+
+function connection(data: number): number[] {
+  const connection = [];
+  while (data) {
+    // Each of the four edges has possible exits 1, 2, and 3,
+    // represented by that corresponding tile.  The 4 bit is
+    // for left/right edge and the 8 bit is for right/bottom.
+    const channel = (data & 3) << (data & 4); // 01, 02, 03, 10, 20, or 30
+    const offset = data & 8 ? (data & 4 ? 0x0100 : 0x1000) : 0;
+    connection.push(channel | offset);
+    data >>>= 4;
+  }
+  return connection;
+}
 
 export function Spec(edges: number,
                      tile: number,
                      icon: string,
                      ...extra: Array<ExtraArg>): Spec {
   const connections = [];
+  const poi = [];
+  const stairs = [];
   let fixed = false;
   let flag = false;
-  let wall = false;
+  let wall: Wall | undefined = undefined;
   let pit = false;
-  let stairs = [];
   for (let data of extra) {
     if (typeof data === 'string') {
       if (data === 'fixed') {
         fixed = true;
       } else if (data === 'flag') {
         flag = true;
-      } else if (data === 'wall') {
-        wall = true;
       } else if (data === 'pit') {
         pit = true;
       } else {
         assertNever(data);
       }
     } else if (typeof data === 'number') {
-      const connection: number[] = [];
-      connections.push(connection);
-      while (data) {
-        // Each of the four edges has possible exits 1, 2, and 3,
-        // represented by that corresponding tile.  The 4 bit is
-        // for left/right edge and the 8 bit is for right/bottom.
-        const channel = (data & 3) << (data & 4); // 01, 02, 03, 10, 20, or 30
-        const offset = data & 8 ? (data & 4 ? 0x0100 : 0x1000) : 0;
-        connection.push(channel | offset);
-        data >>>= 4;
-      }
+      connections.push(connection(data));
     } else if (data instanceof Stair) {
       stairs.push(data);
+    } else if (data instanceof Wall) {
+      wall = data;
+    } else if (data instanceof Poi) {
+      poi.push(data);
     } else {
       assertNever(data);
     }
   }
   return {edges: edges as Scr,
           tile, icon, connections,
-          fixed, flag, wall, pit, stairs};
+          fixed, flag, wall, pit, poi, stairs};
 }
 
 // function* intersect<T>(a: Iterable<T>, b: Iterable<T>): IterableIterator<T> {

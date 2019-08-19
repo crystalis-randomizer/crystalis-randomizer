@@ -394,10 +394,10 @@ function randomizeWalls(rom: Rom, flags: FlagSet, random: Random): void {
   if (!flags.randomizeWalls()) return;
   // Basic plan: partition based on palette, look for walls.
   const pals = [
-    [0x05, 0x38],
-    [0x11],
-    [0x6a],
-    [0x14],
+    [0x05, 0x38], // rock wall palettes
+    [0x11], // ice wall palettes
+    [0x6a], // "ember wall" palettes
+    [0x14], // "iron wall" palettes
   ];
 
   function wallType(spawn: Spawn): number {

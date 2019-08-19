@@ -592,6 +592,16 @@ export const Spawn = DataTuple.make(4, {
   isWall(this: any): boolean {
     return Boolean(this.type === 3 && (this.id < 4 || (this.data[2] & 0x20)));
   },
+  wallType(this: any): '' | 'wall' | 'bridge' {
+    if (this.type !== 3) return '';
+    const obj = this.data[2] & 0x20 ? this.id >>> 4 : this.id;
+    if (obj >= 4) return '';
+    return obj === 2 ? 'bridge' : 'wall';
+  },
+  wallElement(this: any): number {
+    if (!this.isWall()) return -1;
+    return this.id & 3;
+  },
   toString(this: any): string {
     return `Spawn ${this.hex()}: (${hex(this.x)}, ${hex(this.y)}) ${
             this.timed ? 'timed' : 'fixed'} ${this.type}:${hex(this.id)}`;

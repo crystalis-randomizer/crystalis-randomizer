@@ -435,6 +435,11 @@ export class Location extends Entity {
           const z2 = ((y - y1) ** 2 + (x - x1) ** 2);
           if (z2 < (r + r1) ** 2) continue POOL;
         }
+        // test distance from entrances.
+        for (const {x: x1, y: y1} of this.entrances) {
+          const z2 = ((y - (y1 >> 4)) ** 2 + (x - (x1 >> 4)) ** 2);
+          if (z2 < (r + 1) ** 2) continue POOL;
+        }
 
         // Valid spot (still, how toa approximately *maximize* distances?)
         placed.push([m, x, y, r]);

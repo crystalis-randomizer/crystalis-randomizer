@@ -1,10 +1,12 @@
 import {shuffleCave} from '../maze/cave.js';
 import {shuffleGoa1} from '../maze/goa.js';
 import {shuffleSwamp} from '../maze/swamp.js';
+import {shufflePyramid} from '../maze/pyramid.js';
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 
 export function shuffleMazes(rom: Rom, random: Random) {
+  shufflePyramid(rom, random);
   shuffleSwamp(rom, random);
   shuffleGoa1(rom, random);
   for (const cave of SHUFFLED_CAVES) {
@@ -46,7 +48,7 @@ const SHUFFLED_CAVES = [
   // Connectors
   0x92, 0x95,
   // Pyramid
-  // 0x9d, 0x9e,
+  0x9d, //0x9e,
   // Crypt
   // 0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5,
   // Goa - Sabera 2

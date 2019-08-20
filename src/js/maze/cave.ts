@@ -363,7 +363,7 @@ function defaultCheck(maze: Maze): boolean {
 }
 
 export function shuffleCave(loc: Location, random: Random,
-                            opts: ShuffleCaveOptions = {}) {
+                            opts: ShuffleCaveOptions = {}): void {
   let {
     attempts = 50,
     check = defaultCheck,

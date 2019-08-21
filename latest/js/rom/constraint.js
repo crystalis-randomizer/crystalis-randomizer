@@ -172,13 +172,22 @@ export class Constraint {
         if (fixed[3] !== ALL)
             location.spritePalettes[1] = pick([...fixed[3]]);
     }
-    meet(that) {
+    meet(that, joinPatterns = false) {
+        const result = this.tryMeet(that, joinPatterns);
+        if (!result)
+            throw new Error(`Could not reconcile patterns`);
+        return result;
+    }
+    tryMeet(that, joinPatterns = false) {
         const fixed = [];
         let shift = this.shift | that.shift;
         for (let i = 0; i < 4; i++) {
-            const meet = CSet.intersect(this.fixed[i], that.fixed[i]);
-            if (!meet.size)
-                return undefined;
+            let meet = CSet.intersect(this.fixed[i], that.fixed[i]);
+            if (!meet.size) {
+                if (!joinPatterns || i < 2)
+                    return undefined;
+                meet = CSet.union(this.fixed[i], that.fixed[i]);
+            }
             fixed.push(meet);
         }
         const inverseFloat = new Map();

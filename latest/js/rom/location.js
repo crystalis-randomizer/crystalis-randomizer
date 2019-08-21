@@ -118,9 +118,10 @@ export class Location extends Entity {
                 , , this.bgm, ,
                 ...this.tilePalettes, , , , this.spritePalettes[0], ,
                 ,
-                , , , pats[0], pats[1],
+                , , , , ,
                 this.animation,
             ];
+            const [] = [pats];
             for (let j = 0; j < bossRestore.length; j++) {
                 const restored = bossRestore[j];
                 if (restored == null)

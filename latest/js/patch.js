@@ -1161,26 +1161,25 @@ class MonsterPool {
             let flyers = maxFlyers;
             let constraint = Constraint.forLocation(location.id);
             if (location.bossId() != null) {
-                constraint = constraint.meet(Constraint.BOSS) || constraint;
             }
             for (const spawn of location.spawns) {
                 if (spawn.isChest() && !spawn.isInvisible()) {
                     if (spawn.id < 0x70) {
-                        constraint = constraint.meet(Constraint.TREASURE_CHEST) || constraint;
+                        constraint = constraint.meet(Constraint.TREASURE_CHEST, true);
                     }
                     else {
-                        constraint = constraint.meet(Constraint.MIMIC) || constraint;
+                        constraint = constraint.meet(Constraint.MIMIC, true);
                     }
                 }
                 else if (spawn.isNpc()) {
                     const c = graphics.npcConstraints.get(spawn.id);
                     if (c)
-                        constraint = constraint.meet(c) || constraint;
+                        constraint = constraint.meet(c, true);
                 }
                 else if (spawn.isMonster() && UNTOUCHED_MONSTERS[spawn.monsterId]) {
                     const c = graphics.monsterConstraints.get(spawn.monsterId);
                     if (c)
-                        constraint = constraint.meet(c) || constraint;
+                        constraint = constraint.meet(c, true);
                 }
             }
             report.push(`Initial pass: ${constraint.fixed.map(s => s.size < Infinity ? '[' + [...s].join(', ') + ']' : 'all')}`);
@@ -1200,10 +1199,10 @@ class MonsterPool {
                     --flyers;
                 }
                 const c = graphics.getMonsterConstraint(location.id, m.id);
-                let meet = constraint.meet(c);
+                let meet = constraint.tryMeet(c);
                 if (!meet && constraint.pal2.size < Infinity && constraint.pal3.size < Infinity) {
                     if (this.flags.shuffleSpritePalettes()) {
-                        meet = constraint.meet(c.ignorePalette());
+                        meet = constraint.tryMeet(c, true);
                     }
                 }
                 if (!meet)

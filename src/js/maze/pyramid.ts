@@ -10,7 +10,7 @@ export function shufflePyramid(rom: Rom, random: Random): void {
   let realDir: Dir = 'u';
 
   // 50% chance to flip the top entrance upside down.
-  if (random.next() < 0.5) {
+  if (random.next() < 0/*.5*/) {
     loc.screens[0][3] = 0x84;
     loc.screens[0][2] = 0x99;
     loc.entrances[12].screen = 0x02;

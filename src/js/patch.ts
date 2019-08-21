@@ -1806,21 +1806,23 @@ class MonsterPool {
       if (location.bossId() != null) {
         // Note that bosses always leave chests.
         // TODO - it's possible this is out of order w.r.t. writing the boss?
-        constraint = constraint.meet(Constraint.BOSS) || constraint;
+        //    constraint = constraint.meet(Constraint.BOSS, true);
+        // NOTE: this does not work for (e.g.) mado 1, where azteca requires
+        // 53 which is not a compatible chest page.
       }
       for (const spawn of location.spawns) {
         if (spawn.isChest() && !spawn.isInvisible()) {
           if (spawn.id < 0x70) {
-            constraint = constraint.meet(Constraint.TREASURE_CHEST) || constraint;
+            constraint = constraint.meet(Constraint.TREASURE_CHEST, true);
           } else {
-            constraint = constraint.meet(Constraint.MIMIC) || constraint;
+            constraint = constraint.meet(Constraint.MIMIC, true);
           }
         } else if (spawn.isNpc()) {
           const c = graphics.npcConstraints.get(spawn.id);
-          if (c) constraint = constraint.meet(c) || constraint;
+          if (c) constraint = constraint.meet(c, true);
         } else if (spawn.isMonster() && UNTOUCHED_MONSTERS[spawn.monsterId]) {
           const c = graphics.monsterConstraints.get(spawn.monsterId);
-          if (c) constraint = constraint.meet(c) || constraint;
+          if (c) constraint = constraint.meet(c, true);
         }
       }
 
@@ -1842,10 +1844,10 @@ class MonsterPool {
           --flyers;
         }
         const c = graphics.getMonsterConstraint(location.id, m.id);
-        let meet = constraint.meet(c);
+        let meet = constraint.tryMeet(c);
         if (!meet && constraint.pal2.size < Infinity && constraint.pal3.size < Infinity) {
           if (this.flags.shuffleSpritePalettes()) {
-            meet = constraint.meet(c.ignorePalette());
+            meet = constraint.tryMeet(c, true);
           }
         }
         if (!meet) return false;

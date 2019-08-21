@@ -43,7 +43,7 @@ export class Graphics {
         const metasprite = rom.metasprites[rom.npcs[~m].data[3]];
         if (!metasprite) throw new Error(`bad NPC: ${~m}`);
         let constraint = this.computeConstraint([rom.npcs[~m].data[3]], spawns, true);
-        // TODO - better way sreamline this...?
+        // TODO - better way streamline this...?
         if (~m === 0x5f) constraint = constraint.ignorePalette();
         this.npcConstraints.set(~m, constraint);
       } else { // monster

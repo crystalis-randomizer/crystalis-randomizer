@@ -251,7 +251,15 @@ export class Constraint {
     if (fixed[3] !== ALL) location.spritePalettes[1] = pick([...fixed[3]]);
   }
 
-  meet(that: Constraint): Constraint | undefined {
+  // TODO - should joinPatterns ever be false?
+  meet(that: Constraint, joinPatterns = false): Constraint {
+    const result = this.tryMeet(that, joinPatterns);
+    if (!result) throw new Error(`Could not reconcile patterns`);
+    return result;
+  }
+
+  /** @param force allow incompatible palettes. */
+  tryMeet(that: Constraint, joinPatterns = false): Constraint | undefined {
     // This is the tricky one.  It's used (a) to combine projectiles with
     // their parents, and (b) to add additional monsters to a location.
     // We need to maintain some invariants: (1) If pat0 or pat1 is set,
@@ -262,8 +270,11 @@ export class Constraint {
     const fixed = [];
     let shift = this.shift | that.shift;
     for (let i = 0; i < 4; i++) {
-      const meet = CSet.intersect(this.fixed[i], that.fixed[i]);
-      if (!meet.size) return undefined;
+      let meet = CSet.intersect(this.fixed[i], that.fixed[i]);
+      if (!meet.size) {
+        if (!joinPatterns || i < 2) return undefined;
+        meet = CSet.union(this.fixed[i], that.fixed[i]);
+      }
       fixed.push(meet);
     }
 

@@ -208,9 +208,10 @@ export class Location extends Entity {
       const bossRestore = [
         ,,, this.bgm,,
         ...this.tilePalettes,,,, this.spritePalettes[0],,
-        ,,,, pats[0], pats[1],
+        ,,,, /*pats[0]*/, /*pats[1]*/,
         this.animation,
       ];
+      const [] = [pats]; // avoid error
 
       // if (readLittleEndian(writer.rom, bossBase) === 0xba98) {
       //   // escape animation: don't clobber patterns yet?

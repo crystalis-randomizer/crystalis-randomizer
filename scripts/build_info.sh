@@ -6,6 +6,9 @@ if [ -z "$TRAVIS_BRANCH" ]; then
   exit 0
 fi
 
+# 7-char abbreviated commit
+commit="$(echo $TRAVIS_COMMIT | cut -c1-7)"
+
 # Tags should be of the form "v1.0.0" for a stable release,
 # or "v1.0.0-rc1" for a pre-release.  For stable releases,
 # update the 'stable' symlink to point to that version.
@@ -28,7 +31,7 @@ case "$TRAVIS_TAG" in
       (*)      dir=$TRAVIS_BRANCH ;;
     esac
     status=unstable
-    label="$dir $(echo $TRAVIS_COMMIT | cut -c1-7)"
+    label="$dir $commit"
     ;;
   (*)
     echo "Bad travis tag: $TRAVIS_TAG" >&2
@@ -51,3 +54,4 @@ esac
 echo "export dir='$dir';"
 echo "export status='$status';"
 echo "export label='$label';"
+echo "export commit='$commit';"

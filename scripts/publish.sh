@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# NOTE: This is no longer used!
+
 set -ex
 
 shopt -s nullglob

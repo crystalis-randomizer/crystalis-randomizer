@@ -44,6 +44,15 @@ for a in src/*.html src/view/*.html; do
   cat src/ga.tag ${a} >| "deploy/$dir/${a#src/}"
 done
 
+# Also make the minimum necessary dirs for permalinks
+sha=sha/$commit
+mkdir -p "deploy/$sha/js"
+mkdir -p "deploy/$sha/css"
+echo '<script>var CR_PERMALINK = true;</script>' > deploy/$sha/index.html
+cat deploy/$dir/index.html >> deploy/$sha/index.html
+cp deploy/$dir/js/main.min.js deploy/$sha/js/main.min.js
+cp deploy/$dir/css/main.css deploy/$sha/css/main.css
+
 # Link stable and current if necessary.
 link_stable=false
 link_current=false

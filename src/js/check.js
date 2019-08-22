@@ -6,7 +6,8 @@ upload.addEventListener('change', () => {
   reader.addEventListener('loadend', () => {
     const rom = new Uint8Array(/** @type {!ArrayBuffer} */ (reader.result)).slice(16);
     document.getElementById('filename').textContent = file.name;
-    document.getElementById('hash').textContent = read(rom, 0x277d4, 12);
+    const version = read(rom, 0x277d4, 12);
+    document.getElementById('hash').textContent = version;
     const seed = read(rom, 0x277ec, 8).trim()
     document.getElementById('seed').textContent = seed;
     let flags = read(rom, 0x277ff, 23) + read(rom, 0x27800, 23);
@@ -22,8 +23,14 @@ upload.addEventListener('change', () => {
     document.getElementById('flags').textContent = flags;
     document.getElementById('checksum').textContent =
         read(rom, 0x27885, 4) + read(rom, 0x27886, 4);
-    document.getElementById('query').textContent =
-        `flags=${flags.replace(/ /g, '')}&seed=${seed}`;
+    const query = `flags=${flags.replace(/ /g, '')}&seed=${seed}`;
+    document.getElementById('query').textContent = query;
+    const permalink = `https://crystalisrandomizer.com/sha/${
+                       version.toLowerCase()}/#${query}`;
+    const link = document.createElement('a');
+    link.href = permalink;
+    link.textContent = permalink;
+    document.getElementById('permalink').appendChild(link);
   });
   reader.readAsArrayBuffer(file);
 });

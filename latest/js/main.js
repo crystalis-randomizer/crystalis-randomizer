@@ -30,6 +30,9 @@ const initRace = () => {
 };
 
 const main = () => {
+  if (typeof CR_PERMALINK === 'boolean') {
+    document.body.classList.add('permalink');
+  }
   if (document.getElementById('race') == null) { // no button
     initRace();
     render.renderRaceFlags(document.getElementById('flags'), flags);
@@ -75,8 +78,9 @@ const main = () => {
 
 const initVersion = () => {
   if (version.HASH !== 'latest') {
+    const prefix = typeof CR_PERMALINK === 'boolean' ? '' : 'Current version: ';
     document.getElementById('version').textContent =
-        `Current version: ${version.LABEL} (${version.DATE.toDateString()})`;
+        `${prefix}${version.LABEL} (${version.DATE.toDateString()})`;
   }
   document.body.classList.add('js-works');
   document.body.classList.remove('js-broken');

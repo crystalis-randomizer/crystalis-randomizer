@@ -52,6 +52,7 @@ echo '<script>var CR_PERMALINK = true;</script>' > deploy/$sha/index.html
 cat deploy/$dir/index.html >> deploy/$sha/index.html
 cp deploy/$dir/js/main.min.js deploy/$sha/js/main.min.js
 cp deploy/$dir/css/main.css deploy/$sha/css/main.css
+cp deploy/$dir/js/*.s deploy/$sha/js/
 
 # Link stable and current if necessary.
 link_stable=false

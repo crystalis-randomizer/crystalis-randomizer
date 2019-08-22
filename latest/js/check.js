@@ -25,7 +25,8 @@ upload.addEventListener('change', () => {
         read(rom, 0x27885, 4) + read(rom, 0x27886, 4);
     const query = `flags=${flags.replace(/ /g, '')}&seed=${seed}`;
     document.getElementById('query').textContent = query;
-    const permalink = `https://crystalisrandomizer.com/${version}/#${query}`;
+    const permalink = `https://crystalisrandomizer.com/${
+                       version.toLowerCase()}/#${query}`;
     const link = document.createElement('a');
     link.href = permalink;
     link.textContent = permalink;

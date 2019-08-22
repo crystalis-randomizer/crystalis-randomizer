@@ -114,6 +114,7 @@ export function traverse(graph: Graph, fill: IndexFill, has: Bits): Set<SlotInde
   const reachable = new Set<SlotIndex>();
   const queue = new Set<SlotIndex>();
   for (let i = 0; i < graph.slots.length; i++) {
+    if (graph.graph[i] == null) {console.dir(graph);throw new Error(`adding bad node ${i} from slot`);}
     queue.add(i as SlotIndex);
   }
   for (const n of queue) {
@@ -121,6 +122,7 @@ export function traverse(graph: Graph, fill: IndexFill, has: Bits): Set<SlotInde
     if (reachable.has(n)) continue;
     // can we reach it?
     const needed = graph.graph[n];
+    if (needed == null) throw new Error(`not in graph: ${n}`);
     for (let i = 0, len = needed.length; i < len; i++) {
       if (!Bits.containsAll(has, needed[i])) continue;
       reachable.add(n);
@@ -128,6 +130,7 @@ export function traverse(graph: Graph, fill: IndexFill, has: Bits): Set<SlotInde
       if (item != null) {
         has = Bits.with(has, item);
         for (const j of graph.unlocks[item] || []) {
+          if (graph.graph[j] == null) {console.dir(graph);throw new Error(`adding bad node ${j} from unlock ${item}`);}
           queue.add(j);
         }
       }

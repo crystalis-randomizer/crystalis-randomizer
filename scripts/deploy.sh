@@ -51,6 +51,7 @@ mkdir -p "deploy/$sha/css"
 echo '<script>var CR_PERMALINK = true;</script>' > deploy/$sha/index.html
 cat deploy/$dir/index.html >> deploy/$sha/index.html
 cp deploy/$dir/js/main.min.js deploy/$sha/js/main.min.js
+cp deploy/$dir/js/build_info.js deploy/$sha/js/build_info.js
 cp deploy/$dir/css/main.css deploy/$sha/css/main.css
 cp deploy/$dir/js/*.s deploy/$sha/js/
 

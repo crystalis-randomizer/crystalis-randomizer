@@ -5,10 +5,10 @@ node_js:
   - '8'
 
 before_script:
+  - eval $(scripts/build_info.sh)
   - npm install -g gulp-cli
   - scripts/link.sh --copy
   - rm -f dist/js/*.min.js
-  - eval $(scripts/build_info.sh)
 
 script:
   - npm test || ( touch failed; false )

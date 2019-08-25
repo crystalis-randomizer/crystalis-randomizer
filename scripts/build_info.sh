@@ -39,16 +39,19 @@ case "$TRAVIS_TAG" in
     ;;
 esac
 
-# Build up the version.js file.
+# Build up the build_info.js file.
 {
   # Note: we need to explicitly type STATUS as a string so that
   # TypeScript doesn't complain on unnecessary checks.
-  echo "export const STATUS: string = '$status';"
-  echo "export const VERSION = '$dir';"
-  echo "export const LABEL = '$label';"
-  echo "export const HASH = '$TRAVIS_COMMIT';"
-  echo "export const DATE = new Date($(date +%s000));"
-} >| "src/js/version.ts"
+  echo "var __VERSION__ = {"
+  echo "  STATUS: '$status',"
+  echo "  VERSION: '$dir',"
+  echo "  LABEL: '$label',"
+  echo "  HASH: '$TRAVIS_COMMIT',"
+  echo "  DATE: new Date($(date +%s000)),"
+  echo "};"
+  echo "if (typeof global !== 'undefined') global.__VERSION__ = __VERSION__;"
+} >| "src/js/build_info.js"
 
 # Intended use: 'eval $(build_info.sh)'
 echo "export dir='$dir';"

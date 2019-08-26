@@ -77,7 +77,6 @@ a.button {
   text-decoration: none;
 }
 
-.permalink nav a,
 .permalink .if-not-permalink {
   display: none;
 }

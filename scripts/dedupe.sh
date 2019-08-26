@@ -29,8 +29,13 @@ to=$(cd $2; pwd)
 find "$from" -type f |
 while read file; do
   sha=$(shasum "$file" | cut -d\  -f1)
+  prefix=$(echo "$sha" | head -c2)
+  sha="$prefix/$(echo "$sha" | tail -c +3)"
   dir=$(dirname "$file")
+  mkdir -p "$to/$prefix"
   cp "$file" "$to/$sha"
   rm "$file"
   ln -s "$(relpath "$dir" "$to")/$sha" "$file"
 done
+
+echo "$(basename "$from") -- $(date)" >> "$to/manifest"

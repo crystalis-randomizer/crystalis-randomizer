@@ -14,6 +14,8 @@ let rom;
 let romName;
 let race = false;
 
+const permalink = typeof CR_PERMALINK === 'boolean' && CR_PERMALINK;
+
 const ga = window.ga || (() => {});
 
 const initRace = () => {
@@ -30,7 +32,7 @@ const initRace = () => {
 };
 
 const main = () => {
-  if (typeof CR_PERMALINK === 'boolean') {
+  if (permalink) {
     document.body.classList.add('permalink');
   }
   if (document.getElementById('race') == null) { // no button
@@ -78,7 +80,7 @@ const main = () => {
 
 const initVersion = () => {
   if (version.HASH !== 'latest') {
-    const prefix = typeof CR_PERMALINK === 'boolean' ? '' : 'Current version: ';
+    const prefix = permalink ? '' : 'Current version: ';
     document.getElementById('version').textContent =
         `${prefix}${version.LABEL} (${version.DATE.toDateString()})`;
   }

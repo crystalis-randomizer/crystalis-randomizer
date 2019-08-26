@@ -23,10 +23,10 @@ upload.addEventListener('change', () => {
     document.getElementById('flags').textContent = flags;
     document.getElementById('checksum').textContent =
         read(rom, 0x27885, 4) + read(rom, 0x27886, 4);
-    const query = `flags=${flags.replace(/ /g, '')}&seed=${seed}`;
+    const query = `flags=${flags.replace(/ /g, '')}&seed=${seed.toLowerCase()}`;
     document.getElementById('query').textContent = query;
-    const permalink = `https://crystalisrandomizer.com/sha/${
-                       version.toLowerCase()}/#${query}`;
+    const sha = /\./.test(version) ? version : `sha/${version.toLowerCase()}`;
+    const permalink = `https://crystalisrandomizer.com/${sha}/#${query}`;
     const link = document.createElement('a');
     link.href = permalink;
     link.textContent = permalink;

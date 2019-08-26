@@ -52,18 +52,29 @@ const run = async () => {
 
     // Determine which tiles are used
     const usedScreens = new Set();
+    const flaggedScreens = new Set();
     for (const l of configs[key]) {
       for (const row of l.screens) {
         for (const s of row) {
           usedScreens.add(l.extended ? s + 0x100 : s);
         }
       }
+      for (const flag of l.flags) {
+        flaggedScreens.add(l.screens[flag.ys][flag.xs] + (l.extended ? 0x100 : 0));
+      }
     }
     const usedTiles = new Set();
+    const flaggedTiles = new Set();
     for (const s of usedScreens) {
       for (let t = 0; t < 0xf0; t++) {
         usedTiles.add(rom.screens[s].tiles[t]);
         usedByTileset[tileset.id].add(rom.screens[s].tiles[t]);
+      }
+    }
+    for (const s of flaggedScreens) {
+      for (let t = 0; t < 0xf0; t++) {
+        const id = rom.screens[s].tiles[t];
+        if (id < 0x20) flaggedTiles.add(id);
       }
     }
 
@@ -74,7 +85,7 @@ const run = async () => {
       const alt = tileset.alternates[i];
       canvas.metatile((i & 0x1f) * 18, 0, i, loc.id);
       canvas.text((i & 0x1f) * 18, 16, hex(i)); // different color?
-      if (alt != i) {
+      if (alt != i && flaggedTiles.has(i)) {
         canvas.metatile((i & 0x1f) * 18, 26, alt, loc.id);
         canvas.text((i & 0x1f) * 18, 26 + 16, hex(alt)); // different color?
       }

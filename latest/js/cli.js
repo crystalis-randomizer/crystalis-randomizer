@@ -2,6 +2,8 @@
 
 require = require('esm')(module);
 
+require('./build_info.js'); // side effect global set
+
 const {EXPECTED_CRC32} = require('./rom.js');
 const {FlagSet, PRESETS} = require('./flagset.js');
 const {crc32} = require('./crc32.js');

@@ -89,5 +89,5 @@ fi
 
 cd deploy
 git add .
-git commit -m "Release $dir"
+git commit -m "Release $label"
 git push origin gh-pages

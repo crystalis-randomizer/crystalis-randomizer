@@ -34,33 +34,33 @@ export const PRESETS: Preset[] = [
 
     descr:
         `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
-    flags: 'Em Fsw Gt Mert Ps Rprt Sckmt Tabmp Wtuw',
+    flags: 'Em Fsw Gt Mert Ps Rprt Sckmt Tabmp Wmtuw',
   },
   {
     title: 'Glitchless',
 
     descr: `Full shuffle but with no glitches.`,
-    flags: 'Em Fcpstw Mert Ps Rprt Sckmt Tab Wtuw',
+    flags: 'Em Fcpstw Mert Ps Rprt Sckmt Tab Wmtuw',
   },
   {
     // TODO: add 'Ht' for maxing out tower scaling
     title: 'Advanced',
 
     descr: `A balanced randomization with quite a bit more difficulty.`,
-    flags: 'Fsw Gfprt Hbdgw Mert Ps Roprst Sckt Sm Tabmp Wtuw',
+    flags: 'Fsw Gfprt Hbdgw Mert Ps Roprst Sckt Sm Tabmp Wmtuw',
   },
   {
     // TODO: add 'Ht'
     title: 'Ludicrous',
 
     descr: `Pulls out all the stops, may require superhuman feats.`,
-    flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Roprst Sckmt Tabmp Wtuw',
+    flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Roprst Sckmt Tabmp Wmtuw',
   },
   {
     title: 'Mattrick',
 
     descr: 'Not for the faint of heart. Good luck...',
-    flags: 'Fcprsw Gt Hbdhwx Mert Ps Ropst Sckmt Tabmp Wtuw',
+    flags: 'Fcprsw Gt Hbdhwx Mert Ps Ropst Sckmt Tabmp Wmtuw',
   },
   // TOURNAMENT PRESETS
   {
@@ -230,7 +230,7 @@ export class FlagSet {
   }
 
   randomizeMaps() {
-    return false;
+    return this.check('Wm');
   }
   randomizeTrades() {
     return this.check('Wt');

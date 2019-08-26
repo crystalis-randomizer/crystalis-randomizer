@@ -6,6 +6,13 @@ export const WORLD_FLAGS: FlagSection = {
 
   flags: [
     {
+      flag: 'Wm',
+      name: 'Randomize maps',
+      text: `Individual maps are randomized.  For now this is only a subset of
+             possible maps.  A randomized map will have all the same features
+             (exits, chests, NPCs, etc) except things are moved around.`,
+    },
+    {
       flag: 'Wt',
       name: 'Randomize trade-in items',
       text: `Items expected by various NPCs will be shuffled: specifically,

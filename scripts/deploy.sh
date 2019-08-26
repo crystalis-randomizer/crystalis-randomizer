@@ -49,6 +49,8 @@ sha=sha/$commit
 mkdir -p "deploy/$sha/js"
 mkdir -p "deploy/$sha/css"
 echo '<script>var CR_PERMALINK = true;</script>' > deploy/$sha/index.html
+echo '<script type="module">document.body.classList.add("permalink")</script>' \
+     > deploy/$sha/help.html
 cat deploy/$dir/index.html >> deploy/$sha/index.html
 cat deploy/$dir/help.html >> deploy/$sha/help.html
 cp deploy/$dir/js/main.min.js deploy/$sha/js/main.min.js

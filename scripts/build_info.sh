@@ -44,13 +44,13 @@ esac
   # Note: we need to explicitly type STATUS as a string so that
   # TypeScript doesn't complain on unnecessary checks.
   echo "var __VERSION__ = {"
-  echo "  STATUS: '$status',"
-  echo "  VERSION: '$dir',"
-  echo "  LABEL: '$label',"
-  echo "  HASH: '$TRAVIS_COMMIT',"
-  echo "  DATE: new Date($(date +%s000)),"
+  echo "  'STATUS': '$status',"
+  echo "  'VERSION': '$dir',"
+  echo "  'LABEL': '$label',"
+  echo "  'HASH': '$TRAVIS_COMMIT',"
+  echo "  'DATE': new Date($(date +%s000)),"
   echo "};"
-  echo "if (typeof global !== 'undefined') global.__VERSION__ = __VERSION__;"
+  echo "if (typeof global !== 'undefined') global['__VERSION__'] = __VERSION__;"
 } >| "src/js/build_info.js"
 
 # Intended use: 'eval $(build_info.sh)'

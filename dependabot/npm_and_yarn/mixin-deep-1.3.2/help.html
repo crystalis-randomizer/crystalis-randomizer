@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-131783670-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-131783670-1');
+</script>
+<title>Crystalis Randomizer</title>
+<link rel="stylesheet" href="css/main.css">
+
+<nav>
+  <a class="img if-not-permalink" href="/"><img src="images/crystalis-sword.png"></a>
+  <a href="index">Play</a>
+  <a class="if-not-permalink" href="track">Track</a>
+  <a href="help">Help</a>
+  <!-- TODO: better process for stable version numbers. -->
+  <span id="version"></span>
+</nav>
+<div></div>
+
+<main>
+  <section>
+    <h1>Introduction</h1>
+    <div>
+      <p>Welcome to Crystalis Randomizer.  This project seeks to
+        provide fresh gameplay experiences through the classic NES game
+        Crystalis.
+    </div>
+  </section>
+
+  <section>
+    <h1>Getting Started</h1>
+    <div>
+      <ul>
+      <li><b>Start with a casual flagset</b>, even if you're super-familiar
+        with the original game!  Many of the flags, especially the "hard-mode"
+        flags, are simply not suited to beginning players, and will most likely
+        lead to frustraton.
+      <li>A good way to get started is to turn on some casual flags and to use
+        a tracker (such as the one provided here, or else the emotracker pack).
+        Clicking on "Track" in the top menu will automatically
+        use the currently selected flag set to determine availability of each
+        item on the mini map.  Availability is indicated by colors, from red
+        (completely blocked) to orange and yellow (available via hard mode
+        strat or glitch, respectively) to greenish yellow (available but not
+        considered by the current flag's logic) to green (available and probably
+        expected).  Locations may be marked as "checked" by clicking on them,
+        or by right-clicking on the major item that's usually there.
+      <li>Learn the <a href="http://mikesrpgcenter.com/crystalis/index.html#maps">dungeon
+        maps</a> to the main key item locations.
+      <li>Do not shuffle minor items in with the major ones, and then do not
+        worry about the minor item chests.
+      <li>Expect to spend 2-4 hours the first time.  With some practice it's
+        not too difficult to get down to the 1-2 hour range.
+      <li>Grinding is not as time-consuming in the randomizer as in vanilla,
+        but levels are a huge help to scale down the difficulty.  Pay attention
+        to the EXP from different enemies and grind out a level or two if things
+        get too difficult.
+      <li><span class="item">Medical herbs</span> (especially buffed) are often
+        more valuable than <span class="item">magic rings</span>.
+        <span class="item">Warp boots</span> are also very helpful, both for fast
+        travel and for getting out of a pinch.  Always keep one or two in inventory.
+        They can be stolen from <span class="location">Brynmaer</span>.
+      <li>Learn to exploit the most important glitches:
+        <ul>
+        <li>Shop glitch: get an item for cheap (or free) by selecting a
+          neighboring item (or blank space), then press the direction toward
+          the item you want and very quickly afterwards (next frame or two)
+          tap A to buy it for the previously-selected price.  Take advantage
+          of this at the start of the game by walking through the new passage
+          to <span class="location">Portoa</span> and stealing some better armor.
+          <a href="https://www.youtube.com/watch?v=j05u6x3irNg&list=PLyA9BtOXggkiOGWAj-tjnqLang97E8G7C&index=7">See video explanation</a>
+        <li>Statue glitch: pass a number of spots that are supposed to
+          be blocked by statues or guards by approaching them from the right,
+          then holding left and down while continually dismissing the dialog.
+          You will be pushed up a little each time and eventually will pass
+          them.  To do the reverse, hold down and right to be pushed left.
+          <a href="https://www.youtube.com/watch?v=ROBcZpUwiJ8&list=PLyA9BtOXggkiOGWAj-tjnqLang97E8G7C&index=5">See video explanation</a>
+        <li>Stom fight glitch: warp to <span clas="location">Leaf</span>
+          immediately after Stom takes the first stab to win the fight right
+          away.  Don't warp anywhere else as it can softlock the game.
+        <li>Sword charge glitch: higher level charges can be used temporarily
+          without having the ball or bracelet if a different sword does have
+          the higher level upgrade.  To do so, equip the sword and the higher
+          upgrade and leave the inventory screen.  Then go back into inventory,
+          equip the sword without the upgrade, and before leaving the menu,
+          press "start" to save the game.  Soft-reset the console and load the
+          game.  The higher charges (and higher damage) will be available until
+          the inventory screen is entered.
+          <a href="https://www.youtube.com/watch?v=6hXOutvuD1Q&index=2&list=PLyA9BtOXggkiOGWAj-tjnqLang97E8G7C">See video explanation</a>
+        <li>A few very specific skips are also possible:
+          <a href="https://www.youtube.com/watch?v=bsHdN4_5q4M&list=PLyA9BtOXggkiOGWAj-tjnqLang97E8G7C&index=1">Teleport skip</a>,
+          <a href="https://www.youtube.com/watch?v=P2Ou1TI8yTk&index=4&list=PLyA9BtOXggkiOGWAj-tjnqLang97E8G7C">Rabbit skip</a>,
+          <a href="https://www.youtube.com/watch?v=X0SFVii-U-U&index=6&list=PLyA9BtOXggkiOGWAj-tjnqLang97E8G7C">Ghetto flight</a>
+        <li>Many of these glitches may be disabled completely.  If the shop
+          glitch is disabled, then larger gold drops will be provided.
+        </ul>
+      <li>The early game is the hardest, when you don't have many sword options.
+        Once it starts to open up a bit, things usually get quite a bit easier.
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h1>Gameplay Changes</h1>
+    <div>
+      <p>A number of gameplay changes have been made to support randomization.
+      <ul>
+      <li>Items are shuffled throughout the game.  Items are split into five
+        categories (key items (anything required for progression, like swords,
+        orbs, bows, and fetch quest items), bonus items (unique items not
+        required for progression, like the passive equipped items), consumables
+        (non-unique items), magics, and traps (mimics).  Flags are provided to
+        control exactly whether and how these categories are shuffled.
+      <li>Adds a "difficulty level", which can be seen in the
+        bottom-right corner next to the player's level.  Each key or
+        bonus item that is picked up increases the difficulty level by 1, to a
+        maximum of 47.
+      <li>Enemies are shuffled throughout the game.
+      <li>Enemy stats (attack, defense, HP, experience and gold
+        rewards) are normalized based on the difficulty level.
+      <li>A passage is (optionally) opened between <span class="location">Valley
+        of Wind</span> and <span class="location">Lime Tree</span>.
+      <li>A number of triggers have been slightly changed (see below).
+      <li>A number of characters spawn in multiple locations independent of
+        game events (e.g. <span class="npc">Zebu</span> remains in <span class="location">Zebu's
+        Cave</span> the entire game, rather than "moving" to <span class="location">Shyron</span>
+        after calming the sea).
+      <li>Some minor bug fixes: screen shaking is fixed, and <span class="boss">Vampire 2</span>
+        no longer speeds up near the start of the fight.
+      <li><span class="location">Swan gate</span> now has a pair of guards on the opposite side,
+        to allow going through either direction (with <span class="magic">Change</span>).
+        The guards will only despawn after the gate is open.
+      <li>It is now possible to teleport out of the tower, and to get
+        back in via the <span class="location">crypt</span>.
+      <li><span class="item">Sword of Thunder</span> always teleports to
+        <span class="location">Shyron</span>, no matter where it's found
+        (though this can be disabled).  The warp checkpoint is immediately set,
+        and in case there's no way back, <span class="npc">Asina</span> will
+        teleport the player back to <span class="location">Mezame Shrine</span>.
+      <li>When continuing, a minimum amount of "pity" HP and MP are given.
+        Normally this is 5 HP and 1 MP (to prevent immediate death from
+        terrain and ensure <span class="magic">Flight</span> is possible), but
+        when swordless it is 20 MP (to ensure <span class="magic">Change</span>
+        or <span class="magic">Teleport</span> is possible as well).
+      <li>The "quest item" inventory row (3rd row of second page) has eight extra
+        invisible slots to accommodate situations where quest items build up
+        without being consumed.  To access the additional items, "drop" one of the
+        visible items and it will cycle a new item into its place (the item is not
+        lost: it can be recovered by repeating this process enough times).
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h1>Items</h1>
+    <div>
+      <ul>
+      <li>Inventory sorting is disabled for swords and orbs/bracelets to prevent
+        items from clobbering each other.
+      <li>Key items can overflow into an invisible buffer; if you have items in
+        this buffer, you can "drop" a key item to recover the overflowed items.
+        The "dropped" item will take its place in the buffer.
+      <li><span class="item">Alarm Flute</span> is now a key item, given by
+        Zebu's student (along with the starting cash) in Leaf.
+      <li><span class="item">Alarm Flute</span> and <span class="item">Flute of
+        Lime</span> are now multi-use items. Each will disappear after the
+        second successful use.
+      <li>The second <span class="item">Flute of Lime</span> chest now contains
+        a <span class="item">Mirrored Shield</span> and is counted as a bonus
+        item for shuffling purposes.
+      <li>Orbs and bracelets are progressive upgrades: the first item you get,
+        even if it says "bracelet" will give you the orb, and the second will
+        give the bracelet.  The distinction is important only because
+        <span class="npc">Tornel</span> on <span class="location">Mt Sabre</span>
+        is keyed off finding the <emph>chest<emph> that gives the <span class="item">Tornado
+        Bracelet</span>, rather than by finding both upgrades.
+      <li>Orbs and bracelets may now (optionally) be automatically equipped.
+        Just change swords and the powerup will change, too.
+      <li>Sword damage has been renormalized.  Rather than depending on the
+        element (normally, wind=1, fire=2, water=4, thunder=8), the sword power
+        depends on the number of upgrades (no upgrades=2, ball only=4, bracelet=8).
+      <li>Stab damage no longer doubles the sword base power, but is
+        now always just 2, on top of the base power of the sword.
+      <li>The <span class="item">Power Ring</span> is nerfed to double the
+        sword base damage, rather than the level.
+      <li><span class="item">Pendant of Deo</span> is buffed to provide MP while
+        moving (under <span class="flag">Td</span>).
+      <li><span class="item">Iron Necklace</span> and <span class="item">Shield
+        Ring</span> are buffed to double the armor/shield value, rather than the
+        level.
+      <li><span class="item">Rabbit Boots</span> now also allows charging swords
+        to level 2 while moving (under <span class="flag">Tr</span>).
+      <li><span class="item">Leather Boots</span> are (optionally) replaced with
+        <span class="item">Speed Boots</span>.
+      <li><span class="item">Medical Herb</span> and <span class="item">Fruit of
+        Power</span> can be optionally buffed to three different levels: in
+        hard mode (<span class="flag">Hm</span>) there is no buff (32 HP, 32 MP),
+        in default mode (no flag) they are buffed to 64 HP and 48 MP.  In easy
+        mode (<span class="flag">Em</span>) they are buffed to 96 HP and 64 MP.
+      <li>Mimics will only ever shuffle into visible chests (this does not include
+        boss drops).
+      <li>Consumables and armor/shields can only shuffle into chests, so that
+        a full inventory does not cause the item to disappear.
+      <li><span class="item">Opel Statue</span> now works automatically and
+        cannot be selected.  It also correctly clears status effects.
+      <li><span class="item">Psycho Shield</span> and <span class="item">Psycho
+        Armor</span> are nerfed to only provide 20 DEF each.
+        <span class="item">Battle Shield</span> and <span class="item">Ceramic
+        Armor</span> are now the armors with highest (32) DEF.
+      <li><span class="item">Sacred Shield</span> now prevents curse instead of
+        paralysis.  <span class="item">Ceramic Shield</span> blocks paralysis.
+      <li><span class="item">Platinum Shield</span> and <span class="item">Mirrored
+        Shield</span> each have 2 DEF extra.
+      <li>Powerful armors will only provide up to a maximum of LVL*3 defense.
+      <li>Shops are now randomized (under <span class="flag">Ps</span>).
+        The prices of tools and inns increases over time (doubling every 10
+        scaling levels), while the prices of armors decreases over time (halving
+        every 12 scaling levels).
+      <li>Flute of Lime can be used twice for both the "guards" as well as Akahana.
+      <li>Alarm Flute can no longer be found in shops but is instead shuffled in as 
+        a multi-use key item for windmill guard and Kensu.
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h1>Triggers</h1>
+    <div>
+      <p>In the following, items in brackets refer to whatever item
+        is shuffled into a slot, while unparenthesized items refer to the
+        actual item.
+      <ul>
+      <li>Zebu, Tornel, Stom, Akahana, Asina, and Kensu are always available
+        in the different locations as long as they need to be, regardless of
+        any other story events that occur.
+      <li>Zebu will spawn the sleeping Windmill Guard even after starting the
+        windmill.
+      <li>Tornel teaching [Teleport] is blocked on finding exactly the
+        Tornado Bracelet, regardless of whether the Ball of Wind has been
+        found.
+      <li>[Barrier] now (optionally) requires calming the sea, rather
+        than just ghetto flight.
+      <li>The Queen of Portoa will not "go on vacation" and reveal herself as
+        Asina until after the Mesia recording has been viewed (this ensures
+        both Sword and Orb of Water are acquired, guaranteeing that the back
+        room is reachable).
+      <li>If Queen of Portoa doesn't give [Flute of Lime] before turning into
+        Asina, just talk to her again after getting [Recover].
+      <li>Fog Lamp cannot be returned unless Shell Flute is
+        acquired. Optionally (with the 'Rd' flag), it's also required
+        to have healed the dolphin (note that this means that without
+        the flag it's possible to heal the dolphin while riding the
+        dolphin.  Don't worry, it's his sister).
+      <li>Kensu will not appear in the beach cabin until Fog Lamp has been
+        returned.
+      <li>The Shyron massacre requires both the actual Sword of Thunder and
+        getting the [Key to Stxy] from Zebu in Shyron.
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h1>Bug Reports</h1>
+    <div>
+      <p>Please report bugs either on
+      <a href="https://github.com/shicks/crystalis-randomizer/issues">GitHub</a>
+      or on the Discord.  An effective bug report includes the following:
+      <ul>
+        <li>All relevant information about the seed: the software
+          version that generated it, the flag set, the seed, and the
+          checksum.  These can all be seen in the "codename entry"
+          computer upon starting a new game, but the easiest way to
+          get it is The easiest way to get this is to <a href="check">
+          extract it directly from the image</a>.
+        <li>As much detail as possible to reproduce the bug.  A link
+          to a twitch clip of the bug manifesting is ideal, together
+          with explanation of any preceding events that seem relevant.
+          At the very least, answer the following questions: (1) what
+          were you doing, (2) what did you expect to happen, and (3)
+          what happened instead?
+      </ul>
+    </div>
+  </section>
+</main>

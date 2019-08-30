@@ -563,23 +563,17 @@ Orcs zero out the upper 6 bits when moving (but it was already 0 and nobody's re
 
 $340,x
 ------
-knockback/recoil (if it's negative??)
+Upper nibble: knockback/recoil if >= 8, otherwise zero
  - each frame it increases a bit while the object is knocked back
-not sure what positive values mean
+   Looks like maybe player turns positive while enemies turn negative,
+      count up from 82->92->a2->b2->c2->d2->e2->f2->02->02...
+Lower nibble: object's speed
 
-Normally 35bff writes $06 to $340.  it clears the :0f bits and ORs in A,
+Normally 35bff writes 6 to $340.  it clears the :0f bits and ORs in A,
   which comes from an immediate LDA #$?? right before the call, except when
   called by 35b5f where it just preserves the current value.
-
-Looks like maybe player turns positive while enemies turn negative,
-  count up from 82->92->a2->b2->c2->d2->e2->f2->02->02...
-
-lower nibble of $340 has other information
-for player (see SetPlayer340Lower),
- - 2 = mutated, 5 = changed, 9 = dolphin
- - 
-
-for all others (341, etc) this is walking speed in low nibble
+  for player (see SetPlayer340Lower),
+    - 2 = mutated, 5 = changed, 9 = dolphin
 
 
 $360,x

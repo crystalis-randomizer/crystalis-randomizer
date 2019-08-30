@@ -507,6 +507,8 @@ define LOC_OUTSIDE_START $01
 define LOC_LEAF          $02
 ;;; ...
 define LOC_SWAMP                $1a
+define LOC_OAK                  $1c
+define LOC_OAK_MOTHER_HOUSE     $ce
 define LOC_MT_SABRE_NORTH_MAIN  $28
 define LOC_MESIA_SHRINE         $52
 define LOC_DYNA                 $5f
@@ -516,6 +518,7 @@ define LOC_EVIL_SPIRIT_ISLAND_1 $68
 define LOC_JOEL_LIGHTHOUSE      $62
 define LOC_SWAN_GATE            $73
 define LOC_MT_HYDRA             $7c
+define LOC_SHYRON               $8c
 define LOC_DRAYGON2             $a6
 define LOC_JOEL_SHED            $e4
 define LOC_SHYRON_TEMPLE        $f2
@@ -534,6 +537,12 @@ define STATUS_PARALYZED  $01
 define STATUS_STONE      $02
 define STATUS_POISON     $03
 define STATUS_CURSED     $04
+define STATUS_DOLPHIN    $40
+define STATUS_CHANGED    $80
+define STATUS_STOM       $00
+define STATUS_SOLDIER    $10
+define STATUS_GIRL       $20
+define STATUS_AKAHANA    $30
 
 define OBJ_MIMIC   $73
 
@@ -3681,7 +3690,7 @@ PersonData_4a ; swan tavern soldiers
 PersonData_4b ; swan dancing ladies
         $092fc              .byte $xx,$xx,$xx,$xx
 ;;; --------------------------------
-MapScreen_93
+MapScreen_93 ; UNUSED ???
         $09300              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09310              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09320              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -3941,7 +3950,7 @@ PersonData_72 ; dead stom
 PersonData_73 ; UNUSED
         $09cfc              .byte $xx,$xx,$xx,$xx
 ;;; --------------------------------
-MapScreen_9D
+MapScreen_9D ; UNUSED ???
         $09d00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09d10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $09d20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4479,7 +4488,7 @@ MapScreen_B1
         $0b1d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0b1e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-PersonData_c4 ; mado
+PersonData_c4 ; mado 1 (unused)
         $0b1f0              .byte $xx,$xx,$xx,$xx
 PersonData_c5 ; kelbesque 2
         $0b1f4              .byte $xx,$xx,$xx,$xx
@@ -15296,8 +15305,8 @@ NpcData_0c                                           ; Sealed Cave 8
 NpcData_10                                               ; Zebu Cave
         $19567              .byte $xx,$xx,$xx,$xx,$xx
         $1956c              .byte $xx,$xx,$xx,$xx ; ice wall
-        $19570              .byte $xx,$xx,$xx,$xx ; zebu:1
-        $19574              .byte $xx,$xx,$xx,$xx ; ???
+        $19570              .byte $xx,$xx,$xx,$xx ; zebu
+        $19574              .byte $xx,$xx,$xx,$xx ; abduction trigger
         $19578              .byte $xx ; done
 ;;; ----------------------------------------------------------------
 NpcData_0e                                           ; Windmill Cave
@@ -16854,7 +16863,7 @@ NpcData_ce                                      ; Oak - Mother House
 NpcData_1b                                                ; Amazones
         $1a869              .byte $xx,$xx,$xx,$xx,$xx
         $1a86e              .byte $xx,$xx,$xx,$xx
-        $1a872              .byte $xx,$xx,$xx,$xx
+        $1a872              .byte $xx,$xx,$xx,$xx ; unused
         $1a876              .byte $xx,$xx,$xx,$xx
         $1a87a              .byte $xx,$xx,$xx,$xx
         $1a87e              .byte $xx,$xx,$xx,$xx
@@ -16949,7 +16958,7 @@ NpcData_e1                                     ; Portoa - Asina Room
 NpcData_d7                                ; Portoa - Palace Entrance
         $1a963              .byte $xx,$xx,$xx,$xx,$xx
         $1a968              .byte $xx,$xx,$xx,$xx
-        $1a96c              .byte $xx,$xx,$xx,$xx
+        $1a96c              .byte $xx,$xx,$xx,$xx ; unused
         $1a970              .byte $xx,$xx,$xx,$xx
         $1a974              .byte $xx,$xx,$xx,$xx
         $1a978              .byte $xx,$xx,$xx,$xx
@@ -19712,7 +19721,7 @@ ItemUseJumpTable
         $1c3db              .word ($1c507) ; 21 fruit of power
         $1c3dd              .word ($1c51d) ; 22 magic ring
         $1c3df              .word ($1c54a) ; 23 fruit of repun
-        $1c3e1              .word ($1c564) ; 24 warp boots
+        $1c3e1              .word ($1c564) ; 24 warp boots -> rts
         $1c3e3              .word ($1c565) ; 25 statue of onyx
         $1c3e5              .word ($1c450) ; 26 opel statue
         $1c3e7              .word ($1c4b3) ; 27 insect flute
@@ -19785,10 +19794,11 @@ ItemUseJump_InvalidRelay
         $1c45c  xx xx xx:   xxx ItemUseJump_Invalid
 ;;; --------------------------------
 ItemUseJump_32 ; Windmill Key
+ItemUseJump_37 ; Eye Glasses
         $1c45f  xx xx:      xxx ($xx),y
         $1c461  xx xx:      xxx $xx
         $1c463  xx:         xxx
-        $1c464  xx xx:      xxx $xx
+        $1c464  xx xx:      xxx CurrentLocation
         $1c466  xx xx:      xxx $xx
         $1c468  xx:         xxx
 ;;; --------------------------------
@@ -20183,11 +20193,11 @@ NpcSpawnConditionTablePart2
         $1c6ec              .word ($1c781) ; 86 UNUSED
         $1c6ee              .word ($1c82c) ; 87 UNUSED
         $1c6f0              .word ($1c7ec) ; 88 stoned akahana
-        $1c6f2              .word ($1c780) ; 89 UNUSED
-        $1c6f4              .word ($1c7b9) ; 8a UNUSED
-        $1c6f6              .word ($1c780) ; 8b UNUSED
-        $1c6f8              .word ($1c781) ; 8c UNUSED
-        $1c6fa              .word ($1c781) ; 8d UNUSED
+        $1c6f2              .word ($1c780) ; 89 UNUSED -- REPURPOSED in preshuffle.s
+        $1c6f4              .word ($1c7b9) ; 8a UNUSED          |
+        $1c6f6              .word ($1c780) ; 8b UNUSED          |
+        $1c6f8              .word ($1c781) ; 8c UNUSED          |
+        $1c6fa              .word ($1c781) ; 8d UNUSED _________v_________
         $1c6fc              .word ($1c91d) ; 8e mesia
         $1c6fe              .word ($1c781) ; 8f 
         $1c700              .word ($1c781) ; 90 
@@ -20668,7 +20678,7 @@ NpcSpawnCondition_75 ; kensu slime
         $1c912              .byte $xx
 NpcSpawnCondition_83 ; azteca temple front
         $1c913              .byte $xx ; Pyramid Front - Entrance
-        $1c914              .byte $xx,$xx ; 06c
+        $1c914              .byte $xx,$xx ; 06c defeated draygon 1
         $1c916              .byte $xx,$xx ; 079 NOT chest:40:bow of truth
         $1c918              .byte $xx
 NpcSpawnCondition_84 ; sabera posing as mesia
@@ -20682,12 +20692,12 @@ NpcSpawnCondition_8e ; mesia
 NpcSpawnCondition_20 ; oak inn guard (post-telepathy)
 NpcSpawnCondition_21 ; oak tool shop guard (post-telepathy)
         $1c921              .byte $xx ; Oak
-        $1c922              .byte $xx,$xx ; 045
+        $1c922              .byte $xx,$xx ; 045 rescued child
         $1c924              .byte $xx
 NpcSpawnCondition_7c ; oak inn guard (pre-telepathy)
 NpcSpawnCondition_7d ; oak tool shop guard (pre-telepathy)
         $1c925              .byte $xx ; Oak
-        $1c926              .byte $xx,$xx ; 045 NOT
+        $1c926              .byte $xx,$xx ; 045 NOT rescued child
         $1c928              .byte $xx
 NpcSpawnCondition_c0 ; vampire 1
         $1c929              .byte $xx ; Sealed Cave 7
@@ -21389,7 +21399,7 @@ NpcDialog_29 ; nadare back room red woman (right)
         $1cf72              .byte $xx,$xx,$xx,$xx,$xx ; default -> 05:02
         $1cf77              .byte         $xx,$xx     ;     Set: 098
 ;;; ----------------------------------------------------------------
-NpcDialog_2d ; mt sabre guard soldiers (both)
+NpcDialog_2d ; mt sabre guard soldiers (both), swan guard (both)
         $1cf79              .byte $xx,$xx,$xx,$xx
         $1cf7d              .byte $xx,$xx
         $1cf7f              .byte $xx,$xx
@@ -23019,7 +23029,7 @@ ItemGetData_1c ; psycho armor
         $1df06              .byte $xx,$xx
         $1df08              .byte $xx,$xx ; Set: 10b defeated draygon 1
         $1df0a              .byte $xx,$xx ; Set: 0cc chest:1c:psycho armor
-        $1df0c              .byte $xx,$xx ; Set: 06c
+        $1df0c              .byte $xx,$xx ; Set: 06c defeated draygon 1
         $1df0e              .byte $xx
 ItemGetData_14 ; psycho shield
         $1df0f              .byte $xx,$xx
@@ -23752,10 +23762,10 @@ Trigger_a9
         $1e30e              .byte $xx,$xx
         $1e310              .byte $xx,$xx ; Set: 2fc warp:swan
 Trigger_aa
-        ;; aa enter oak
+        ;; aa enter oak after insect
         $1e312              .byte $xx,$xx ; Condition: 0a8
         $1e314              .byte $xx,$xx
-        $1e316              .byte $xx,$xx ; Set: 043 entered oak ?
+        $1e316              .byte $xx,$xx ; Set: 043 entered oak AFTER insect
         $1e318              .byte $xx,$xx ; Set: 2f7 warp:oak
 Trigger_ab
         ;; ab enter goa
@@ -23974,7 +23984,7 @@ BossPatternJump
 ;;; --------------------------------
 ObjectActionJump_60_Vampire
         $1e477  xx xx:      xxx #$xx
-        $1e479  xx xx xx:   xxx $35b07
+        $1e479  xx xx xx:   xxx LoadBossPalettes
         $1e47c  xx xx xx:   xxx ObjectBossMode,x
         $1e47f  xx xx:      xxx + ; $1e486
         ;; If the fight has started...
@@ -24268,7 +24278,7 @@ ObjectActionJump_61
 ;;; --------------------------------
 ObjectActionJump_62_GiantInsect
         $1e675  xx xx:      xxx #$xx
-        $1e677  xx xx xx:   xxx $35b07
+        $1e677  xx xx xx:   xxx LoadBossPalettes
         $1e67a  xx xx:      xxx #$xx
         $1e67c  xx xx xx:   xxx $xxxx
         $1e67f  xx xx:      xxx #$xx
@@ -24539,9 +24549,9 @@ ObjectActionJump_63_GeneralKelbesque
         $1e962  xx xx:       xxx #$xx
         $1e964  xx xx xx:    xxx $xxxx
 +       $1e967  xx xx:      xxx #$xx
-        $1e969  xx xx xx:   xxx $35b07
+        $1e969  xx xx xx:   xxx LoadBossPalettes
         $1e96c  xx xx:      xxx #$xx
-        $1e96e  xx xx xx:   xxx $1e400
+        $1e96e  xx xx xx:   xxx ExecuteBossPattern
 ;;; --------------------------------
 BossPatternJump_0a              ; Kelbesque 0
         $1e971  xx xx xx:   xxx $xxxx,x
@@ -24937,7 +24947,7 @@ ObjectActionJump_66_Sabera
         $1ec80  xx xx:       xxx #$xx
         $1ec82  xx xx xx:    xxx $xxxx
 +       $1ec85  xx xx:      xxx #$xx
-        $1ec87  xx xx xx:   xxx $35b07
+        $1ec87  xx xx xx:   xxx LoadBossPalettes
         $1ec8a  xx xx:      xxx #$xx
         $1ec8c  xx xx xx:   xxx $1e400
 ;;; --------------------------------
@@ -25096,7 +25106,7 @@ ObjectActionJump_67_Mado
         $1edd9  xx xx:       xxx #$xx
         $1eddb  xx xx xx:    xxx $xxxx
 +       $1edde  xx xx:      xxx #$xx
-        $1ede0  xx xx xx:   xxx $35b07
+        $1ede0  xx xx xx:   xxx LoadBossPalettes
         $1ede3  xx xx:      xxx #$xx
         $1ede5  xx xx xx:   xxx ExecuteBossPattern
 ;;; --------------------------------
@@ -25138,14 +25148,14 @@ BossPatternJump_1c              ; Mado 1
         $1ee35  xx xx xx:   xxx $xxxx,x
         $1ee38  xx xx:      xxx #$xx
         $1ee3a  xx xx xx:   xxx $xxxx,x
-        $1ee3d  xx xx:      xxx #$xx
+        $1ee3d  xx xx:      xxx #$xx ; Wait 15 cycles in mode 2
         $1ee3f  xx xx xx:   xxx $xxxx,x
         $1ee42  xx:         xxx
 ;;; --------------------------------
 BossPatternJump_1d              ; Mado 2
         $1ee43  xx xx xx:   xxx $xxxx,x
-        $1ee46  xx xx:      xxx $xx
-        $1ee48  xx xx xx:   xxx $xxxx,x
+        $1ee46  xx xx:       xxx <rts ; $1ee34
+        $1ee48  xx xx xx:   xxx $xxxx,x ; Switch to pattern 3
         $1ee4b  xx xx:      xxx #$xx
         $1ee4d  xx xx xx:   xxx $xxxx,x
         $1ee50  xx xx xx:   xxx $xxxx,x
@@ -25159,21 +25169,23 @@ BossPatternJump_1e              ; Mado 3
         $1ee5d  xx xx xx:   xxx $xxxx,x
         $1ee60  xx xx xx:   xxx $xxxx,x
         $1ee63  xx xx xx:   xxx $1eeba
-        $1ee66  xx xx:      xxx #$xx
+        ;; Check if Mado should bounce off a wall
+        $1ee66  xx xx:      xxx #$xx ; top wall
         $1ee68  xx xx:      xxx $xx,x
         $1ee6a  xx xx:      xxx #$xx
-        $1ee6c  xx xx:      xxx $xx
-        $1ee6e  xx xx:      xxx #$xx
+        $1ee6c  xx xx:      xxx + ; $1ee82
+        $1ee6e  xx xx:      xxx #$xx ; bottom wall
         $1ee70  xx xx:      xxx #$xx
-        $1ee72  xx xx:      xxx $xx
-        $1ee74  xx xx:      xxx #$xx
+        $1ee72  xx xx:      xxx + ; $1ee82
+        $1ee74  xx xx:      xxx #$xx ; left wall
         $1ee76  xx xx:      xxx $xx,x
         $1ee78  xx xx:      xxx #$xx
-        $1ee7a  xx xx:      xxx $xx
-        $1ee7c  xx xx:      xxx #$xx
+        $1ee7a  xx xx:      xxx + ; $1ee82
+        $1ee7c  xx xx:      xxx #$xx ; rigt wall
         $1ee7e  xx xx:      xxx #$xx
         $1ee80  xx xx:      xxx $xx
-        $1ee82  xx xx:      xxx $xx
+        ;; Mado bounced off a wall
++       $1ee82  xx xx:      xxx $xx
         $1ee84  xx xx:      xxx #$xx ; TODO - what is this?
         $1ee86  xx xx xx:   xxx StartAudioTrack
         $1ee89  xx xx:      xxx #$xx
@@ -25255,9 +25267,16 @@ BossPatternJump_20              ; Mado 5
         $1ef24  xx xx xx:   xxx $xxxx,x
         $1ef27  xx:         xxx
 ;;; --------------------------------
-DataTable_1ef28 
-        $1ef28              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $1ef38              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; Mado directions
+DataTable_1ef28
+        ;; Top wall
+        $1ef28              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; Right wall
+        $1ef30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; Bottom wall
+        $1ef38              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; Left wall
+        $1ef40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 ObjectActionJump_68_Karmine
         $1ef48  xx xx xx:   xxx $xxxx,x
@@ -25265,7 +25284,7 @@ ObjectActionJump_68_Karmine
         $1ef4d  xx xx:       xxx #$xx
         $1ef4f  xx xx xx:    xxx $xxxx
 +       $1ef52  xx xx:      xxx #$xx
-        $1ef54  xx xx xx:   xxx $35b07
+        $1ef54  xx xx xx:   xxx LoadBossPalettes
         $1ef57  xx xx:      xxx #$xx
         $1ef59  xx xx xx:   xxx $1e400
 ;;; --------------------------------
@@ -25488,7 +25507,7 @@ DataTable_1f12c
 ;;; --------------------------------
 ObjectActionJump_6a_Draygon
         $1f130  xx xx:      xxx #$xx
-        $1f132  xx xx xx:   xxx $35b07
+        $1f132  xx xx xx:   xxx LoadBossPalettes
         $1f135  xx xx:      xxx $xx
         $1f137  xx xx:      xxx #$xx
         $1f139  xx xx:      xxx $xx
@@ -25700,7 +25719,7 @@ DataTable_1f2d2
 ;;; $620,x is a timer for when the mode will finish
 ObjectActionJump_6b_Draygon2
         $1f2da  xx xx:      xxx #$xx
-        $1f2dc  xx xx xx:   xxx $35b07
+        $1f2dc  xx xx xx:   xxx LoadBossPalettes
         $1f2df  xx xx xx:   xxx $xxxx,x
         $1f2e2  xx xx:      xxx $xx
         $1f2e4  xx xx:      xxx #$xx
@@ -26528,6 +26547,9 @@ BossKillLocations
 ;;; Data table with some sort of boss info.  Seems to only be read when
 ;;; the boss is killed, at $1f856.  Contains the item drop at y=4.
 ;;; y=2 is unused; y=3 looks like maybe the music to restore.
+;;; Later parts are a set of patterns and palettes, possibly for the
+;;; explosion only (at least in some cases), since $1f7c1 seems to
+;;; restore the *final* pattern/palette, at least for pat1/pal3.
 ;;; STRIP: word=$14000
 BossKillDataTable
         ;; boss death, BossDrop
@@ -26567,7 +26589,7 @@ BossKillDataTable
         $1f9be              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $1f9c4              .byte $xx,$xx
 ;;; --------------------------------
-;;; 04 sabera 1	
+;;; 04 sabera 1
         $1f9c6              .word ($xxxx) ; 1fa98 - general escapes
         $1f9c8              .byte $xx,$xx,$xx
         $1f9cb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -27786,23 +27808,23 @@ Inventory_SortRows
         $20542  xx:         xxx
         $20543  xx xx:      xxx #$xx
         ;; copy item to the scratch sort row
-        $20545  xx xx xx:   xxx Inventory,x      ; $6430,x
-        $20548  xx xx xx:   xxx ScratchSortRow,y ; $60e0,y
-        $2054b  xx:         xxx
-        $2054c  xx:         xxx
-        $2054d  xx xx:      xxx $xx
-        $2054f  xx xx:      xxx $xx
+-       $20545  xx xx xx:    xxx Inventory,x      ; $6430,x
+        $20548  xx xx xx:    xxx ScratchSortRow,y ; $60e0,y
+        $2054b  xx:          xxx
+        $2054c  xx:          xxx
+        $2054d  xx xx:       xxx $xx
+        $2054f  xx xx:      xxx - ; $20545
 Inventory_BubbleSortRow
         $20551  xx xx:      xxx $xx
         $20553  xx xx xx:   xxx $2059e,x
         $20556  xx:         xxx
         $20557  xx xx:      xxx #$xx
         $20559  xx xx:      xxx $xx
-        $2055b  xx xx xx:   xxx $xxxx,x
-        $2055e  xx:         xxx
-        $2055f  xx xx:      xxx $xx
-        $20561  xx xx xx:   xxx $xxxx,x
-        $20564  xx xx:      xxx $xx
+-       $2055b  xx xx xx:    xxx $xxxx,x
+        $2055e  xx:          xxx
+        $2055f  xx xx:       xxx $xx
+        $20561  xx xx xx:    xxx $xxxx,x
+        $20564  xx xx:      xxx - ; $2055b
         $20566  xx:         xxx
         $20567  xx xx xx:   xxx $xxxx,x
         $2056a  xx:         xxx
@@ -27811,7 +27833,7 @@ Inventory_BubbleSortRow
         $2056f  xx:         xxx
         $20570  xx xx xx:   xxx $xxxx,x
         $20573  xx xx:      xxx $xx
-        $20575  xx xx xx:   xxx $2055b
+        $20575  xx xx xx:   xxx - ; $2055b
 ;;; --------------------------------
 Inventory_BubbleSortRow_CheckFinished
         $20578  xx xx:      xxx $xx
@@ -42575,7 +42597,7 @@ DataTable_344bc                 ;  0   1   2   3   4   5   6   7   8   9   a   b
 DataTable_344dc
         $344dc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-DataTable_344bc_00              ; SPD == 0
+DataTable_344bc_00              ; SPD == 0 (0.5/frame)
         $344ec              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $344f4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $344fc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42587,7 +42609,7 @@ DataTable_344bc_00              ; SPD == 0
         $3452c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $34534              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_01              ; SPD == 1
+DataTable_344bc_01              ; SPD == 1 (0.75/frame)
         $3453c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $34544              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $3454c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42599,7 +42621,7 @@ DataTable_344bc_01              ; SPD == 1
         $3457c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $34584              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_02              ; SPD == 2
+DataTable_344bc_02              ; SPD == 2 (1/frame)
         $3458c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $34594              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $3459c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42611,7 +42633,7 @@ DataTable_344bc_02              ; SPD == 2
         $345cc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $345d4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_03              ; SPD == 3
+DataTable_344bc_03              ; SPD == 3 (1.25/frame)
         $345dc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)      
         $345e4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $345ec              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42623,7 +42645,7 @@ DataTable_344bc_03              ; SPD == 3
         $3461c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $34624              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_04              ; SPD == 4
+DataTable_344bc_04              ; SPD == 4 (1.5/frame)
         $3462c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $34634              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $3463c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42635,7 +42657,7 @@ DataTable_344bc_04              ; SPD == 4
         $3466c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $34674              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_05              ; SPD == 5
+DataTable_344bc_05              ; SPD == 5 (1.75/frame)
         $3467c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $34684              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $3468c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42647,7 +42669,7 @@ DataTable_344bc_05              ; SPD == 5
         $346bc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $346c4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_06              ; SPD == 6
+DataTable_344bc_06              ; SPD == 6 (2/frame)
         $346cc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $346d4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $346dc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42659,7 +42681,7 @@ DataTable_344bc_06              ; SPD == 6
         $3470c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $34714              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_07              ; SPD == 7
+DataTable_344bc_07              ; SPD == 7 (2.5/frame)
         $3471c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $34724              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $3472c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42671,7 +42693,7 @@ DataTable_344bc_07              ; SPD == 7
         $3475c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $34764              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_08              ; SPD == 8
+DataTable_344bc_08              ; SPD == 8 (5/frame)
         $3476c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $34774              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $3477c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42683,7 +42705,7 @@ DataTable_344bc_08              ; SPD == 8
         $347ac              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $347b4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_09              ; SPD == 9
+DataTable_344bc_09              ; SPD == 9 (6.5/frame)
         $347bc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $347c4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $347cc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42695,7 +42717,7 @@ DataTable_344bc_09              ; SPD == 9
         $347fc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $34804              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_0a              ; SPD == $a
+DataTable_344bc_0a              ; SPD == $a (8/frame)
         $3480c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $34814              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $3481c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42707,65 +42729,115 @@ DataTable_344bc_0a              ; SPD == $a
         $3484c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $34854              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_0b              ; SPD == $b
-        $3485c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3486c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3487c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3488c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3489c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $348ac              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $348bc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $348cc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $348dc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $348ec              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+DataTable_344bc_0b              ; SPD == $b (7/frame)
+        $3485c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dxC)
+        $34864              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dxD)
+        $3486c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2 (dxE)
+        $34874              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy3 (dxF)
+        $3487c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy4  dx0
+        $34884              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy5  dx1
+        $3488c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy6  dx2
+        $34894              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy7  dx3
+        $3489c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy8  dx4
+        $348a4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy9  dx5
+        $348ac              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyA  dx6
+        $348b4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyB  dx7
+        $348bc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyC  dx8
+        $348c4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyD  dx9
+        $348cc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyE  dxA
+        $348d4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyF  dxB
+        $348dc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxC (dy0)
+        $348e4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxD (dy1)
+        $348ec              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxE (dy2)
+        $348f4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxF (dy3)
 ;;; --------------------------------
-DataTable_344bc_0c              ; SPD == $c
-        $348fc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3490c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3491c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3492c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3493c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3494c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3495c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3496c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3497c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3498c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+DataTable_344bc_0c              ; SPD == $c (1.75/frame)
+        $348fc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dxC)
+        $34904              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dxD)
+        $3490c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2 (dxE)
+        $34914              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy3 (dxF)
+        $3491c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy4  dx0 
+        $34924              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy5  dx1 
+        $3492c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy6  dx2 
+        $34934              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy7  dx3 
+        $3493c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy8  dx4 
+        $34944              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy9  dx5 
+        $3494c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyA  dx6 
+        $34954              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyB  dx7 
+        $3495c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyC  dx8 
+        $34964              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyD  dx9 
+        $3496c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyE  dxA 
+        $34974              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyF  dxB 
+        $3497c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxC (dy0)
+        $34984              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxD (dy1)
+        $3498c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxE (dy2)
+        $34994              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxF (dy3)
 ;;; --------------------------------
-DataTable_344bc_0d              ; SPD == $d
-        $3499c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $349ac              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $349bc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $349cc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $349dc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $349ec              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $349fc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34a0c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34a1c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34a2c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+DataTable_344bc_0d              ; SPD == $d (2.5/frame)
+        $3499c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dxC)
+        $349a4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dxD)
+        $349ac              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2 (dxE)
+        $349b4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy3 (dxF)
+        $349bc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy4  dx0 
+        $349c4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy5  dx1 
+        $349cc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy6  dx2 
+        $349d4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy7  dx3 
+        $349dc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy8  dx4 
+        $349e4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy9  dx5 
+        $349ec              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyA  dx6 
+        $349f4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyB  dx7 
+        $349fc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyC  dx8 
+        $34a04              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyD  dx9 
+        $34a0c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyE  dxA 
+        $34a14              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyF  dxB 
+        $34a1c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxC (dy0)
+        $34a24              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxD (dy1)
+        $34a2c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxE (dy2)
+        $34a34              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxF (dy3)
 ;;; --------------------------------
-DataTable_344bc_0e              ; SPD == $e
-        $34a3c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34a4c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34a5c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34a6c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34a7c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34a8c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34a9c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34aac              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34abc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34acc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+DataTable_344bc_0e              ; SPD == $e (3/frame)
+        $34a3c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dxC)
+        $34a44              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dxD)
+        $34a4c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2 (dxE)
+        $34a54              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy3 (dxF)
+        $34a5c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy4  dx0 
+        $34a64              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy5  dx1 
+        $34a6c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy6  dx2 
+        $34a74              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy7  dx3 
+        $34a7c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy8  dx4 
+        $34a84              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy9  dx5 
+        $34a8c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyA  dx6 
+        $34a94              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyB  dx7 
+        $34a9c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyC  dx8 
+        $34aa4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyD  dx9 
+        $34aac              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyE  dxA 
+        $34ab4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyF  dxB 
+        $34abc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxC (dy0)
+        $34ac4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxD (dy1)
+        $34acc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxE (dy2)
+        $34ad4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxF (dy3)
 ;;; --------------------------------
-DataTable_344bc_0f              ; SPD == $f
-        $34adc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34aec              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34afc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34b0c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34b1c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34b2c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34b3c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34b4c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34b5c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $34b6c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+DataTable_344bc_0f              ; SPD == $f (2/frame)
+        $34adc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dxC)
+        $34ae4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dxD)
+        $34aec              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2 (dxE)
+        $34af4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy3 (dxF)
+        $34afc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy4  dx0 
+        $34b04              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy5  dx1 
+        $34b0c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy6  dx2 
+        $34b14              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy7  dx3 
+        $34b1c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy8  dx4 
+        $34b24              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy9  dx5 
+        $34b2c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyA  dx6 
+        $34b34              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyB  dx7 
+        $34b3c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyC  dx8 
+        $34b44              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyD  dx9 
+        $34b4c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyE  dxA 
+        $34b54              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dyF  dxB 
+        $34b5c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxC (dy0)
+        $34b64              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxD (dy1)
+        $34b6c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxE (dy2)
+        $34b74              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxF (dy3)
 ;;; --------------------------------
         $34b7c              .byte $xx,$xx,$xx ; never used?
 ;;; --------------------------------
@@ -42799,7 +42871,7 @@ SwordStabDamage
         $34bd2              .byte $xx,$xx,$xx,$xx,$xx,$xx
 SwordMagicCost
         $34bd8              .byte $xx,$xx,$xx,$xx,$xx,$xx
-CoinAmounts
+CoinAmounts ; GoldDrop bucket amounts
         $34bde              .word ($xxxx) ; 0: 0
         $34be0              .word ($xxxx) ; 1: 1
         $34be2              .word ($xxxx) ; 2: 2
@@ -42817,6 +42889,8 @@ CoinAmounts
         $34bfa              .word ($xxxx) ; e: 400
         $34bfc              .word ($xxxx) ; f: 500
 ;;; --------------------------------
+CoinMetasprites
+        ;; The first 11 are a8, then the reset back to 50 is a9, then mimic at 500.
         $34bfe              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 LoadPalettesForLocation
@@ -43917,6 +43991,7 @@ SetTemporaryInvincibility
         $3543b  xx xx xx:   xxx $xxxx
         $3543e  xx:         xxx
 ;;; --------------------------------
+        ;; Knock object x back at speed 2 (.75/step?) in y's direction
         $3543f  xx xx xx:   xxx $xxxx
         $35442  xx xx:      xxx $xx
         $35444  xx xx xx:   xxx $xxxx
@@ -44137,7 +44212,8 @@ KnockbackObject
         $355f1  xx xx:      xxx $xx
         $355f3  xx:         xxx
 ;;; --------------------------------
---      $355f4  xx xx:      xxx $xx
+DoneCheckHitbox
+        $355f4  xx xx:      xxx $xx
         $355f6  xx:         xxx
         $355f7  xx:         xxx
 ;;; --------------------------------
@@ -44160,13 +44236,13 @@ KnockbackObject
 CheckHitbox
         $355f8  xx xx:      xxx $xx
         $355fa  xx xx xx:    xxx ObjectTerrain,x
-        $355fd  xx xx:       xxx -- ; $355f4 off screen => no hit
+        $355fd  xx xx:       xxx DoneCheckHitbox ; off screen => no hit
         $355ff  xx xx xx:    xxx ObjectKnockback,x
-        $35602  xx xx:       xxx -- ; $355f4 being knocked back => no hit
+        $35602  xx xx:       xxx DoneCheckHitbox ; being knocked back => no hit
         $35604  xx xx xx:    xxx ObjectHitbox,x
         $35607  xx xx:       xxx #$xx
-        $35609  xx xx:       xxx -- ; $355f4 -> no hit (not spawned? exploding walls have zero)
-        $3560b  xx xx:       xxx $xx
+        $35609  xx xx:       xxx DoneCheckHitbox ; no hit (not spawned? exploding walls have zero)
+        $3560b  xx xx:       xxx $xx             ; collision plane
         $3560d  xx xx xx:    xxx ObjectHitbox,x
         $35610  xx xx:       xxx #$xx
         $35612  xx:          xxx
@@ -44190,11 +44266,11 @@ CheckHitbox
         $35636  xx:          xxx
         $35637  xx xx xx:    xxx Hitboxes+1,y
         $3563a  xx xx:       xxx $xx
-        $3563c  xx xx:       xxx $xx
-        ;;                           For each object, check same conditions
+        ;; For each object, check same conditions
+        $3563c  xx xx:       xxx $xx ; lower bound of range to check
 -       $3563e  xx:                  xxx
-        $3563f  xx xx:               xxx $xx
-        $35641  xx xx:               xxx -- ; $355f4 -> no hit
+        $3563f  xx xx:               xxx $xx ; upper bound of range
+        $35641  xx xx:                xxx DoneCheckHitbox
         $35643  xx xx xx:            xxx $xxxx,y
         $35646  xx xx:              xxx - ; $3563e
         $35648  xx xx xx:           xxx $xxxx,y
@@ -44202,7 +44278,7 @@ CheckHitbox
         $3564d  xx xx:             xxx - ; $3563e
         $3564f  xx xx xx:          xxx $xxxx,y
         $35652  xx xx:            xxx - ; $3563e
-        $35654  xx xx:            xxx $xx ; skip the object we're checking
+        $35654  xx xx:            xxx $xx ; don't check the object against itself
         $35656  xx xx:           xxx - ; $3563e
         ;;                       Both objs are eligible for collisions
         $35658  xx xx xx:        xxx $xxxx,y
@@ -44528,6 +44604,7 @@ FindEmptySpawnSlot
 +       $358c5  xx:         xxx
         $358c6  xx:         xxx
 ;;; --------------------------------
+ClearSpawnSlot
         $358c7  xx xx:      xxx #$xx
         $358c9  xx xx xx:   xxx $xxxx,x
         $358cc  xx:         xxx
@@ -44904,15 +44981,18 @@ SpendMPOrDoubleReturn
         $35b03  xx xx xx:   xxx DisplayNumberInternal
         $35b06  xx:         xxx
 ;;; --------------------------------
+LoadBossPalettes
+        ;; Input: A = #$c0 for most bosses, #$c7 for insect and draygon 2
+        ;;        X = index of boss object
         $35b07  xx xx:      xxx $xx
         $35b09  xx xx xx:   xxx $xxxx,x
         $35b0c  xx xx:      xxx + ; $35b11
         $35b0e  xx xx xx:    xxx LoadPalettesForLocation
         ;; --------------------------------
-        ;; This appears to be a one-time initialization?
+        ;; Flash the boss white while it's knocked back??
 +       $35b11  xx xx:      xxx $xx
         $35b13  xx:         xxx
-        $35b14  xx xx:      xxx >rts ; $35b40
+        $35b14  xx xx:       xxx >rts ; $35b40
         $35b16  xx xx:      xxx #$xx
 --      $35b18  xx:          xxx
         $35b19  xx xx:       xxx #$xx
@@ -46232,6 +46312,9 @@ ObjectActionJump_3a
 +       $3655e  xx xx xx:   xxx $xxxx,x
         $36561  xx xx:      xxx #$xx
         $36563  xx xx:      xxx + ; $36576
+        ;; Actually spawn sabera.  Zero out the spawns before and after.
+        ;; The next time this action script runs, it would get zeroed too,
+        ;; except we replace ourselves with object $7d first.
         $36565  xx xx:       xxx #$xx
         $36567  xx xx xx:    xxx $xxxx,x
         $3656a  xx xx xx:    xxx $xxxx,x
@@ -46610,9 +46693,11 @@ ObjectActionJump_54
         $3685e  xx:         xxx
 ;;; --------------------------------
 ObjectActionJump_07
+        ;; breakable wall/bridgeable channel
         $3685f  xx xx xx:   xxx $xxxx,x
         $36862  xx xx:      xxx ++ ; $368b0
-        $36864  xx xx:      xxx $xx
+        ;; Check for two hard-coded locations for spitting fire.
+        $36864  xx xx:      xxx CurrentLocation
         $36866  xx xx:      xxx #$xx
         $36868  xx xx:      xxx + ; $36875
         $3686a  xx xx:       xxx #$xx
@@ -47173,7 +47258,7 @@ ObjectAction_Soldier_CheckShoot
         $36c5e  xx:         xxx
         $36c5f  xx:         xxx
 ;;; --------------------------------
-ObjectActionJump_2b
+ObjectActionJump_2b             ; Mimic
         $36c60  xx xx xx:   xxx $xxxx,x
         $36c63  xx xx:      xxx ++ ; $36cae
         $36c65  xx xx xx:   xxx $xxxx,x
@@ -47708,7 +47793,7 @@ ObjectActionJump_10
 ObjectActionJump_57
         $370be  xx xx xx:   xxx $xxxx,x
         $370c1  xx xx:      xxx + ; $370c6
-        $370c3  xx xx xx:    xxx $358c7
+        $370c3  xx xx xx:    xxx ClearSpawnSlot
         ;; --------------------------------
 +       $370c6  xx xx xx:   xxx $xxxx,x
         $370c9  xx xx:      xxx + ; $370ce
@@ -47760,7 +47845,7 @@ ObjectActionJump_17
 ObjectActionJump_1b
         $3712d  xx xx xx:   xxx $xxxx,x
         $37130  xx xx:      xxx + ; $37135
-        $37132  xx xx xx:    xxx $358c7 ; despawn
+        $37132  xx xx xx:    xxx ClearSpawnSlot ; despawn
 ;;; --------------------------------
 +       $37135  xx xx:      xxx #$xx
         $37137  xx xx:      xxx $xx
@@ -47798,7 +47883,7 @@ ObjectActionJump_12
         $3717c  xx xx xx:   xxx $xxxx,x
         $3717f  xx xx xx:   xxx $xxxx,x
         $37182  xx xx:      xxx $xx
-        $37184  xx xx xx:   xxx $358c7
+        $37184  xx xx xx:   xxx ClearSpawnSlot
 ;;; --------------------------------
         $37187  xx xx xx:   xxx $xxxx,x
         $3718a  xx xx:      xxx #$xx
@@ -47860,7 +47945,7 @@ ObjectActionJump_13
         $37246  xx xx:      xxx $xx
         $37248  xx xx xx:   xxx $xxxx,x
         $3724b  xx xx:      xxx $xx
-        $3724d  xx xx xx:   xxx $358c7
+        $3724d  xx xx xx:   xxx ClearSpawnSlot
 ;;; --------------------------------
         $37250  xx:         xxx
         $37251  xx xx:      xxx #$xx
@@ -47884,7 +47969,7 @@ ObjectActionJump_13
 ObjectActionJump_15
         $3727a  xx xx xx:   xxx $xxxx,x
         $3727d  xx xx:      xxx $xx
-        $3727f  xx xx xx:   xxx $358c7
+        $3727f  xx xx xx:   xxx ClearSpawnSlot
 ;;; --------------------------------
         $37282  xx xx xx:   xxx $xxxx,x
         $37285  xx xx:      xxx #$xx
@@ -47922,7 +48007,7 @@ ObjectActionJump_14
         $372c9  xx xx xx:   xxx $xxxx,x
         $372cc  xx xx xx:   xxx $xxxx,x
         $372cf  xx xx:      xxx $xx
-        $372d1  xx xx xx:   xxx $358c7
+        $372d1  xx xx xx:   xxx ClearSpawnSlot
 ;;; --------------------------------
         $372d4  xx:         xxx
 ;;; --------------------------------
@@ -48739,8 +48824,8 @@ ObjectActionJump_06
 ;;; --------------------------------
         $3799e  xx xx xx:   xxx $xxxx,x
         $379a1  xx xx xx:   xxx $xxxx,x
-        $379a4  xx xx:      xxx $xx
-        $379a6  xx xx xx:   xxx $358c7
+        $379a4  xx xx:      xxx >rts ; $379a9
+        $379a6  xx xx xx:   xxx ClearSpawnSlot
 ;;; --------------------------------
         $379a9  xx:         xxx
 ;;; --------------------------------
@@ -48752,7 +48837,7 @@ ObjectActionJump_7d
         $379b5  xx:         xxx
         $379b6  xx xx:      xxx #$xx
         $379b8  xx:         xxx
-        $379b9  xx xx xx:   xxx $37a2c,y
+        $379b9  xx xx xx:   xxx $37a2c,y ; ±4
         $379bc  xx xx:      xxx $xx
         $379be  xx xx:      xxx #$xx
         $379c0  xx xx:      xxx $xx
@@ -48760,10 +48845,10 @@ ObjectActionJump_7d
         $379c5  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
         $379c8  xx xx xx:   xxx $xxxx,x
         $379cb  xx xx xx:   xxx $xxxx,x
-        $379ce  xx xx:      xxx $xx
-        $379d0  xx:         xxx
+        $379ce  xx xx:      xxx + ; $379d1
+        $379d0  xx:          xxx
 ;;; --------------------------------
-        $379d1  xx xx xx:   xxx $xxxx,x
++       $379d1  xx xx xx:   xxx $xxxx,x
         $379d4  xx xx:      xxx #$xx
         $379d6  xx xx:      xxx #$xx
         $379d8  xx xx xx:   xxx $xxxx,x
@@ -48779,6 +48864,7 @@ ObjectActionJump_7d
         $379f2  xx xx:      xxx $xx
         $379f4  xx:         xxx
 ;;; --------------------------------
+        ;; Spawn a coin
         $379f5  xx xx:      xxx #$xx
         $379f7  xx xx:      xxx #$xx
         $379f9  xx xx xx:   xxx AdHocSpawnObject
@@ -48802,7 +48888,7 @@ ObjectActionJump_7d
         $37a1f  xx:         xxx
         $37a20  xx xx:      xxx #$xx
         $37a22  xx:         xxx
-        $37a23  xx xx xx:   xxx $34bfe,y
+        $37a23  xx xx xx:   xxx CoinMetasprites,y
         $37a26  xx xx:      xxx $xx
         $37a28  xx xx xx:   xxx $xxxx,y
         $37a2b  xx:         xxx
@@ -49137,7 +49223,7 @@ ObjectActionJump_70_06          ; dyna eye
         $37cd6  xx:         xxx
 ;;; --------------------------------
         $37cd7  xx xx:      xxx #$xx
-        $37cd9  xx xx xx:   xxx $35b07
+        $37cd9  xx xx xx:   xxx LoadBossPalettes
         $37cdc  xx xx:      xxx #SCREEN_MODE_NORMAL
         $37cde  xx xx:      xxx ScreenMode
         $37ce0  xx xx:      xxx $xx
@@ -49657,6 +49743,7 @@ DataTable_381ba
 ;;;    $360,x     Offset to add to the ID if $380,x is even = direction facing
 ;;;    $380,x:01  If even, add offset
 ;;;    $380,x:10  Sprite behind background
+;;;    $380,x:20  Use the alternate pattern bank
 ;;;    $4e0,x:f8  Step count, affects animation frame
 DrawMetasprite
         $38268  xx xx:      xxx #$xx
@@ -52348,7 +52435,7 @@ Metasprite_77                   ; Metasprite 77
         $39e71              .byte $xx
         $39e72              .word ($xxxx)
 ;;; ----------------------------------------------------------------
-Metasprite_90                   ; Metasprite 90
+Metasprite_90                   ; Metasprite 90 - mimic (alt page 6c)
         $39e74              .byte $xx,$xx
         ;; Variant 0
         $39e76              .byte $xx,$xx,$xx,$xx
@@ -57686,52 +57773,57 @@ HandleTrigger
 MainGameModeJump_06_ItemUseMessage
         ;; Includes status recovery, health, and warp boot town selection
         $3d497  xx xx xx:   xxx EquippedConsumableItem
-        $3d49a  xx xx:      xxx #$xx
-        $3d49c  xx xx:      xxx $xx
-        $3d49e  xx xx xx:   xxx $xxxx
-        $3d4a1  xx xx:      xxx $xx
-        $3d4a3  xx xx:      xxx $xx
-        $3d4a5  xx xx:      xxx #GAME_MODE_NORMAL
-        $3d4a7  xx xx:      xxx GameMode
-        $3d4a9  xx xx xx:   xxx $3cab6
+        $3d49a  xx xx:      xxx #ITEM_OPEL_STATUE
+        $3d49c  xx xx:      xxx + ; $3d4ac
+        $3d49e  xx xx xx:    xxx $xxxx
+        $3d4a1  xx xx:       xxx + ; $3d4ac
+        $3d4a3  xx xx:        xxx $xx
+        $3d4a5  xx xx:        xxx #GAME_MODE_NORMAL
+        $3d4a7  xx xx:        xxx GameMode
+        $3d4a9  xx xx xx:     xxx MainLoop_01_Game
 ;;; --------------------------------
-        $3d4ac  xx xx:      xxx #$xx
+        ;; Require changed to a girl to even use kirisa plant
++       $3d4ac  xx xx:      xxx #$xx
         $3d4ae  xx xx xx:   xxx $xxxx
         $3d4b1  xx xx xx:   xxx EquippedConsumableItem
-        $3d4b4  xx xx:      xxx #$xx
-        $3d4b6  xx xx:      xxx $xx
-        $3d4b8  xx xx xx:   xxx $xxxx
-        $3d4bb  xx xx:      xxx $xx
-        $3d4bd  xx xx:      xxx #$xx
-        $3d4bf  xx xx:      xxx #$xx
-        $3d4c1  xx xx:      xxx $xx
-        $3d4c3  xx xx:      xxx #GAME_MODE_NORMAL
-        $3d4c5  xx xx:      xxx GameMode
-        $3d4c7  xx:         xxx
+        $3d4b4  xx xx:      xxx #ITEM_KIRISA_PLANT
+        $3d4b6  xx xx:      xxx ++ ; $3d4c8
+        $3d4b8  xx xx xx:    xxx PlayerStatus
+        $3d4bb  xx xx:       xxx + ; $3d4c3
+        $3d4bd  xx xx:        xxx #$xx
+        $3d4bf  xx xx:        xxx #STATUS_GIRL
+        $3d4c1  xx xx:         xxx ++ ; $3d4c8
++       $3d4c3  xx xx:       xxx #GAME_MODE_NORMAL
+        $3d4c5  xx xx:       xxx GameMode
+        $3d4c7  xx:          xxx
 ;;; --------------------------------
-        $3d4c8  xx xx xx:   xxx EquippedConsumableItem
-        $3d4cb  xx xx:      xxx #$xx
-        $3d4cd  xx xx:      xxx $xx
+++      $3d4c8  xx xx xx:   xxx EquippedConsumableItem
+        $3d4cb  xx xx:      xxx #ITEM_WARP_BOOTS
+        $3d4cd  xx xx:      xxx ItemUse_Main
+        ;; Use warp boots, but not while changed
         $3d4cf  xx xx xx:   xxx $xxxx
-        $3d4d2  xx xx:      xxx $xx
-        $3d4d4  xx xx:      xxx #GAME_MODE_NORMAL
-        $3d4d6  xx xx:      xxx GameMode
-        $3d4d8  xx:         xxx
+        $3d4d2  xx xx:      xxx + ; $3d4d9
+        $3d4d4  xx xx:       xxx #GAME_MODE_NORMAL
+        $3d4d6  xx xx:       xxx GameMode
+        $3d4d8  xx:          xxx
 ;;; --------------------------------
-        $3d4d9  xx xx:      xxx CurrentLocation
++       $3d4d9  xx xx:      xxx CurrentLocation
         $3d4db  xx:         xxx
         $3d4dc  xx xx xx:    xxx MainGameModeJump_1d
         $3d4df  xx:         xxx
         $3d4e0  xx xx:      xxx CurrentLocation
-        $3d4e2  xx xx:      xxx $xx
-        $3d4e4  xx xx xx:   xxx $3d45b
+        $3d4e2  xx xx:      xxx + ; $3d4e7
+        ;; didn't go anywhere
+        $3d4e4  xx xx xx:    xxx $3d45b
 ;;; --------------------------------
-        $3d4e7  xx xx xx:   xxx $3d4f2
+        ;; teleported
++       $3d4e7  xx xx xx:   xxx ItemUse_Main
         $3d4ea  xx xx:      xxx #$xx
         $3d4ec  xx xx xx:   xxx BankSwitch8k_A000
         $3d4ef  xx xx xx:   xxx $2fc00
 ;;; --------------------------------
         ;; This is pretty clearly code for using an item.
+ItemUse_Main
         $3d4f2  xx xx xx:   xxx EquippedConsumableItem
         $3d4f5  xx xx:      xxx #ITEM_INSECT_FLUTE
         $3d4f7  xx xx:      xxx + ; $3d501
@@ -57804,7 +57896,7 @@ ItemOrTriggerActionJump                 ; TODO - Label the destinations
         $3d573              .word ($3d654) ; 08
         $3d575              .word ($3d659) ; 09 use shell flute
         $3d577              .word ($3d63a) ; 0a use statue of gold
-        $3d579              .word ($3d6d8) ; 0b
+        $3d579              .word ($3d6d8) ; 0b learn barrier
         $3d57b              .word ($3d6dd) ; 0c use love pendant (learn change)
         $3d57d              .word ($3d6e7) ; 0d use kirisa plant
         $3d57f              .word ($3d6ec) ; 0e use ivory statue
@@ -57907,7 +57999,7 @@ ItemOrTriggerActionJump_0a      ; use statue of gold
         $3d63c  xx xx xx:   xxx StartAudioTrack
 ;;; --------------------------------
 ItemOrTriggerActionJump_10      ; use key to styx, key to prison, eyeglasses
-DialogFollowupActionJump_08
+DialogFollowupActionJump_08     ; open swan gate
         $3d63f  xx xx xx:   xxx $xxxx
         $3d642  xx xx:      xxx #$xx
         $3d644  xx xx:      xxx + ; $3d652
@@ -58552,6 +58644,8 @@ SetEquippedConsumableItem
 ;;; --------------------------------
 MainGameModeJump_14_TeleportMagic
 MainGameModeJump_1d
+        ;; Prevent teleporting if (a) the screen is locked, (b)
+        ;; we're in the tower, or (c) the player is slimed.
         $3db28  xx xx xx:   xxx PlayerHP
         $3db2b  xx xx:      xxx ++ ; $3db4a
         $3db2d  xx xx xx:    xxx $xxxx
@@ -59393,6 +59487,7 @@ CheckForNpcSpawn
         ;; $fe in the first spot means something - not sure what
         ;;     used 6x in A6 (draygon's room), once in amazones,
         ;;          and once in D7 (portoa castle entrance)
+        ;; Actually it looks like it's just a "commented-out" spawn.
         $3e195  xx xx:      xxx #$xx    ; npc[0] == $fe => skip to the next one
         $3e197  xx xx:      xxx +++     ; $3e1af
         $3e199  xx:         xxx
@@ -59805,9 +59900,9 @@ ExitTypeJump_0_Normal
         $3e443  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
         $3e446  xx:         xxx
         $3e447  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
-        $3e44a  xx xx xx:   xxx $3e799
-        $3e44d  xx xx xx:   xxx $3e7c4
-        $3e450  xx xx xx:   xxx $3e823
+        $3e44a  xx xx xx:   xxx CheckForRidingDolphin
+        $3e44d  xx xx xx:   xxx CheckForDwarfChild
+        $3e450  xx xx xx:   xxx CheckForShyronMassacre
         $3e453  xx xx:      xxx #$xx
         $3e455  xx xx:      xxx $xx
         $3e457  xx xx:      xxx $xx
@@ -60287,40 +60382,49 @@ BackgroundAnimationTable
         $3e789              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $3e791              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-        $3e799  xx xx xx:   xxx $xxxx
-        $3e79c  xx xx:      xxx $xx
+CheckForRidingDolphin
+        $3e799  xx xx xx:   xxx PlayerStatus
+        $3e79c  xx xx:       xxx >rts ; $3e7c3
         $3e79e  xx xx:      xxx #$xx
-        $3e7a0  xx xx:      xxx $xx
-        $3e7a2  xx xx:      xxx #$xx
-        $3e7a4  xx xx:      xxx $xx
-        $3e7a6  xx xx:      xxx #$xx
-        $3e7a8  xx xx:      xxx $xx
-        $3e7aa  xx xx:      xxx #$xx
-        $3e7ac  xx xx:      xxx $xx
-        $3e7ae  xx xx xx:   xxx $xxxx
+        $3e7a0  xx xx:      xxx CurrentLocation
+        $3e7a2  xx xx:      xxx #LOC_ANGRY_SEA
+        $3e7a4  xx xx:       xxx + ; $3e7b9
+        $3e7a6  xx xx:      xxx #LOC_UNDERGROUND_CHANNEL
+        $3e7a8  xx xx:       xxx + ; $3e7b9
+        $3e7aa  xx xx:      xxx #LOC_EVIL_SPIRIT_ISLAND_1
+        $3e7ac  xx xx:       xxx + ; $3e7b9
+        ;; Remove riding dolphin bit
+        $3e7ae  xx xx xx:   xxx PlayerStatus
         $3e7b1  xx xx:      xxx #$xx
-        $3e7b3  xx xx xx:   xxx $xxxx
-        $3e7b6  xx xx xx:   xxx $3e7c3
+        $3e7b3  xx xx xx:   xxx PlayerStatus
+        $3e7b6  xx xx xx:   xxx >rts ; $3e7c3
 ;;; --------------------------------
-        $3e7b9  xx xx:      xxx #$xx
+        ;; Currently riding dolphin - "spawn" dolphin at player's position
++       $3e7b9  xx xx:      xxx #$xx
         $3e7bb  xx xx xx:   xxx $xxxx
         $3e7be  xx xx:      xxx #$xx
         $3e7c0  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
 ;;; --------------------------------
         $3e7c3  xx:         xxx
 ;;; --------------------------------
-        $3e7c4  xx xx:      xxx $xx
-        $3e7c6  xx xx:      xxx #$xx
-        $3e7c8  xx xx:      xxx $xx
-        $3e7ca  xx xx:      xxx #$xx
-        $3e7cc  xx xx:      xxx $xx
+CheckForDwarfChild
+        $3e7c4  xx xx:      xxx CurrentLocation
+        $3e7c6  xx xx:      xxx #LOC_OAK_MOTHER_HOUSE
+        $3e7c8  xx xx:       xxx >rts ; $3e822
+        $3e7ca  xx xx:      xxx #LOC_OAK
+        $3e7cc  xx xx:       xxx RemoveChildFollowingFlag ; if anywhere other than oak
+        ;; Check flag 045 rescued child - if set then remove flag
         $3e7ce  xx xx xx:   xxx $xxxx
         $3e7d1  xx:         xxx
         $3e7d2  xx:         xxx
-        $3e7d3  xx xx:      xxx $xx
+        $3e7d3  xx xx:       xxx RemoveChildFollowingFlag
+        ;; Check flag 053 followed by child
         $3e7d5  xx xx xx:   xxx $xxxx
         $3e7d8  xx xx:      xxx #$xx
-        $3e7da  xx xx:      xxx $xx
+        $3e7da  xx xx:       xxx >rts ; $3e822
+        ;; Child currently following, not previously rescued
+        ;; Start the animation for child walking to house,
+        ;; and Set: 045 rescued child
         $3e7dc  xx xx xx:   xxx $xxxx
         $3e7df  xx xx:      xxx #$xx
         $3e7e1  xx xx xx:   xxx $xxxx
@@ -60346,17 +60450,22 @@ BackgroundAnimationTable
         $3e814  xx xx xx:   xxx $xxxx,x
         $3e817  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
 ;;; --------------------------------
+RemoveChildFollowingFlag
+        ;; Clear: 053 followed by child
         $3e81a  xx xx xx:   xxx $xxxx
         $3e81d  xx xx:      xxx #$xx
         $3e81f  xx xx xx:   xxx $xxxx
         $3e822  xx:         xxx
 ;;; --------------------------------
-        $3e823  xx xx:      xxx $xx
-        $3e825  xx xx:      xxx #$xx
-        $3e827  xx xx:      xxx $xx
+CheckForShyronMassacre
+        $3e823  xx xx:      xxx CurrentLocation
+        $3e825  xx xx:      xxx #LOC_SHYRON
+        $3e827  xx xx:       xxx >rts ; $3e844
+        ;; Check flag 027 shyron massacre
         $3e829  xx xx xx:   xxx $xxxx
-        $3e82c  xx xx:      xxx #$xx
-        $3e82e  xx xx:      xxx $xx
+        $3e82c  xx xx:      xxx #$xx ; bpl... ?
+        $3e82e  xx xx:       xxx >rts ; $3e844
+        ;; Shyron massacre has happened. Swap out patterns and palettes.
         $3e830  xx xx:      xxx #$xx
         $3e832  xx xx xx:   xxx $xxxx
         $3e835  xx xx:      xxx #$xx

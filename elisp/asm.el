@@ -1364,3 +1364,10 @@ of a non-divisible line, then the entire line will be deleted."
 (define-key asm-mode-map (kbd "C-'") 'asm-cycle-define)
 (define-key asm-mode-map (kbd "C-j") 'electric-newline-and-maybe-indent)
 (define-key asm-mode-map (kbd "C-m") 'newline)
+
+(add-hook 'asm-mode-hook 'sdh-setup-asm-mode)
+
+(defun sdh-setup-asm-mode ()
+  (setq tab-width 4)
+  (setq indent-line-function 'insert-tab)
+  (setq asm-indent-level 4))

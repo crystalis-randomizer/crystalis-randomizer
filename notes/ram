@@ -581,6 +581,9 @@ $360,x
 direction facing: 0 = up, 2 = right, 4 = down, 6 = left (odds diagonal)
  - used for metasprite selection when 380,x is odd (??)
 
+upper nibble used for knockback direction (we could possibly truncate this to
+only upper 3 bits, allowing 32 directions total, still have diagonal knockback)
+
 
 $380,x
 ------

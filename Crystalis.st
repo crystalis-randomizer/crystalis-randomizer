@@ -4878,7 +4878,7 @@ MapScreen_C0
         $0c0c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c0d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c0e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0c0f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0c0f0              .byte "xxxxxxxxxxxxxxxx"
 MapScreen_C1
         $0c100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c110              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4895,7 +4895,7 @@ MapScreen_C1
         $0c1c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c1d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c1e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0c1f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0c1f0              .byte "xx",$xx,$xx,$xx,$xx,$xx,"xxxxxxxxx"
 MapScreen_C2
         $0c200              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4912,7 +4912,7 @@ MapScreen_C2
         $0c2c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c2d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c2e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0c2f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0c2f0              .byte "xx",$xx,$xx,$xx,$xx,$xx,"xxxxxxxxx"
 MapScreen_C3
         $0c300              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c310              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4929,7 +4929,7 @@ MapScreen_C3
         $0c3c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c3d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c3e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0c3f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0c3f0              .byte "xx",$xx,$xx,$xx,$xx,$xx,"xxxxxxxxx"
 MapScreen_C4
         $0c400              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c410              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4946,7 +4946,7 @@ MapScreen_C4
         $0c4c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c4d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c4e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0c4f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0c4f0              .byte "xx",$xx,$xx,$xx,$xx,$xx,"xxxxxxxxx"
 MapScreen_C5
         $0c500              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c510              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4963,7 +4963,7 @@ MapScreen_C5
         $0c5c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c5d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c5e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0c5f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0c5f0              .byte "xxxxxxxxxxxxxxxx"
 MapScreen_C6
         $0c600              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c610              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4980,7 +4980,7 @@ MapScreen_C6
         $0c6c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c6d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c6e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0c6f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0c6f0              .byte "xxxxxxxxxxxxxxxx"
 MapScreen_C7
         $0c700              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c710              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -4997,7 +4997,7 @@ MapScreen_C7
         $0c7c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c7d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c7e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0c7f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0c7f0              .byte "xxxxxxxxxxxxxxxx"
 MapScreen_C8
         $0c800              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c810              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5014,7 +5014,7 @@ MapScreen_C8
         $0c8c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c8d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c8e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0c8f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0c8f0              .byte "xxxxxxxxxxxxxxxx"
 MapScreen_C9
         $0c900              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c910              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5031,7 +5031,7 @@ MapScreen_C9
         $0c9c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c9d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0c9e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0c9f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0c9f0              .byte "xxxxxxxxxxxxxxxx"
 MapScreen_CA
         $0ca00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0ca10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5048,7 +5048,7 @@ MapScreen_CA
         $0cac0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0cad0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0cae0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0caf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0caf0              .byte "xxxxxxxxxxxxxxxx"
 MapScreen_CB
         $0cb00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0cb10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5065,7 +5065,7 @@ MapScreen_CB
         $0cbc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0cbd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0cbe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0cbf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0cbf0              .byte "xxxxxxxxxxxxxxxx"
 MapScreen_CC
         $0cc00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0cc10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5082,7 +5082,7 @@ MapScreen_CC
         $0ccc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0ccd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0cce0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0ccf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0ccf0              .byte "xxxxxxxxxxxxxxxx"
 MapScreen_CD
         $0cd00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0cd10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5099,7 +5099,7 @@ MapScreen_CD
         $0cdc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0cdd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0cde0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0cdf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0cdf0              .byte "xxxxxxxxxxxxxxxx"
 MapScreen_CE
         $0ce00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0ce10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5116,7 +5116,7 @@ MapScreen_CE
         $0cec0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0ced0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0cee0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0cef0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0cef0              .byte "xxxxxxxxxxxxxxxx"
 MapScreen_CF
         $0cf00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0cf10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5133,7 +5133,7 @@ MapScreen_CF
         $0cfc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0cfd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0cfe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0cff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0cff0              .byte "xxxxxxxxxxxxxxxx"
 MapScreen_D0
         $0d000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5150,7 +5150,7 @@ MapScreen_D0
         $0d0c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d0d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d0e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0d0f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0d0f0              .byte "xxxxxxxxxx",$xx,$xx,$xx,"xxx"
 MapScreen_D1
         $0d100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d110              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5167,7 +5167,7 @@ MapScreen_D1
         $0d1c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d1d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d1e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0d1f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0d1f0              .byte "xxxxxxxxx",$xx,$xx,$xx,"xxxx"
 MapScreen_D2
         $0d200              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5184,7 +5184,7 @@ MapScreen_D2
         $0d2c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d2d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d2e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0d2f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0d2f0              .byte "xxxxxxxxxxx",$xx,$xx,$xx,"xx"
 MapScreen_D3
         $0d300              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d310              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5201,7 +5201,7 @@ MapScreen_D3
         $0d3c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d3d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d3e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0d3f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0d3f0              .byte "xxxxxxxxxxxxxxxx"
 MapScreen_D4
         $0d400              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d410              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5218,7 +5218,7 @@ MapScreen_D4
         $0d4c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d4d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d4e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0d4f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0d4f0              .byte "xxxxxxxxxxxxxxxx"
 MapScreen_D5
         $0d500              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d510              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5235,7 +5235,7 @@ MapScreen_D5
         $0d5c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d5d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d5e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0d5f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0d5f0              .byte "xxxxxxxxx",$xx,$xx,$xx,"xxxx"
 MapScreen_D6
         $0d600              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d610              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5252,7 +5252,7 @@ MapScreen_D6
         $0d6c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d6d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d6e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0d6f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0d6f0              .byte "xxxxxxxxx",$xx,$xx,$xx,"xxxx"
 MapScreen_D7
         $0d700              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d710              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5269,7 +5269,7 @@ MapScreen_D7
         $0d7c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d7d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d7e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0d7f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0d7f0              .byte "xxxxxxxxxxxxxxxx"
 MapScreen_D8
         $0d800              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d810              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5286,7 +5286,7 @@ MapScreen_D8
         $0d8c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d8d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d8e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0d8f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0d8f0              .byte "xxxxxxxxxxx",$xx,$xx,$xx,"xx"
 MapScreen_D9
         $0d900              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d910              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5303,7 +5303,7 @@ MapScreen_D9
         $0d9c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d9d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0d9e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0d9f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0d9f0              .byte "xxxxxxxxx",$xx,$xx,$xx,"xxxx"
 MapScreen_DA
         $0da00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0da10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5320,7 +5320,7 @@ MapScreen_DA
         $0dac0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0dad0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0dae0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0daf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0daf0              .byte "xxxxxxxxxxx",$xx,$xx,$xx,"xx"
 MapScreen_DB
         $0db00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0db10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5337,7 +5337,7 @@ MapScreen_DB
         $0dbc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0dbd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0dbe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0dbf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0dbf0              .byte "xxxxxxxxxxx",$xx,$xx,$xx,"xx"
 MapScreen_DC
         $0dc00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0dc10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5354,7 +5354,7 @@ MapScreen_DC
         $0dcc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0dcd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0dce0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0dcf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0dcf0              .byte "xxxxxxxxxx",$xx,$xx,$xx,"xxx"
 MapScreen_DD
         $0dd00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0dd10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5371,7 +5371,7 @@ MapScreen_DD
         $0ddc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0ddd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0dde0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0ddf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0ddf0              .byte "xxxxxxxxx",$xx,$xx,$xx,"xxxx"
 MapScreen_DE
         $0de00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0de10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5388,7 +5388,7 @@ MapScreen_DE
         $0dec0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0ded0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0dee0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0def0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0def0              .byte "xxxxxxxxx",$xx,$xx,$xx,"xxxx"
 MapScreen_DF
         $0df00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0df10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -5405,7 +5405,7 @@ MapScreen_DF
         $0dfc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0dfd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $0dfe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $0dff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $0dff0              .byte "xxxxxxxxx",$xx,$xx,$xx,"xxxx"
 RomBank_07                      ; @@ $a000
 MapScreen_E0
         $0e000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -24606,7 +24606,8 @@ BossPatternJump_0b              ; Kelbesque 1
         $1e9e2  xx xx xx:   xxx $xxxx,x
         $1e9e5  xx xx:      xxx $xx
         $1e9e7  xx xx:      xxx #$xx
-        $1e9e9  xx xx:      xxx $xx
+        ;;                   Kelbesque 1 -> stop
+        $1e9e9  xx xx:       xxx <rts ; $1e9c5
         $1e9eb  xx xx:      xxx #$xx
         $1e9ed  xx xx xx:   xxx VectorBetweenObjectsXY
         $1e9f0  xx xx:      xxx $xx
@@ -27036,8 +27037,12 @@ DataTable_1fe2a
         $1feb2  xx xx:      xxx #$xx
         $1feb4  xx xx xx:   xxx BankSwitch8k_8000
 ;;; --------------------------------
+;;; STRIP: word=$4000
 DataTable_1feb7 
-        $1feb7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1feb7              .word ($0c0f0)
+        $1feb9              .word ($0c5f0)
+        $1febb              .word ($0cef0)
+        $1febd              .word ($0d7f0)
 ;;; --------------------------------
         $1febf  xx xx xx:   xxx $3c676
         $1fec2  xx xx xx:   xxx $xxxx
@@ -38295,20 +38300,22 @@ AdHocSpawnsPart2
         $29d7c              .byte $xx,$xx,$xx,$xx ; 5f
 ;;; --------------------------------
 ;;; These are pairs used for ad-hoc spawning.  The key is
-;;; %aaaa.ddd0 where %aaaa is the low nibble of the spawned
+;;; %aaaa_ddd0 where %aaaa is the low nibble of the spawned
 ;;; object's $6e0 and %ddd is the direction.  The first byte
 ;;; is stored in $30, which is ..., and the second byte is
 ;;; added to 0 (normally) or 2 (if origin slowed by terrain).
 ;;; So basically, this is a displacement vector.
 AdHocSpawnDisplacements
+        ;; 0: no displacement
         $29d80              .byte $xx,$xx ; 0, up
-        $29d82              .byte $xx,$xx
+        $29d82              .byte $xx,$xx ; 0, up-right
         $29d84              .byte $xx,$xx ; 0, right
         $29d86              .byte $xx,$xx
         $29d88              .byte $xx,$xx ; 0, down
         $29d8a              .byte $xx,$xx
         $29d8c              .byte $xx,$xx ; 0, left
         $29d8e              .byte $xx,$xx
+        ;; 1: paralysis powder, axes
         $29d90              .byte $xx,$xx ; 1, up
         $29d92              .byte $xx,$xx
         $29d94              .byte $xx,$xx ; 1, right
@@ -38333,6 +38340,7 @@ AdHocSpawnDisplacements
         $29dba              .byte $xx,$xx
         $29dbc              .byte $xx,$xx ; 3, left
         $29dbe              .byte $xx,$xx
+        ;; 4: flails, stab
         $29dc0              .byte $xx,$xx ; 4, up
         $29dc2              .byte $xx,$xx
         $29dc4              .byte $xx,$xx ; 4, right
@@ -38341,6 +38349,7 @@ AdHocSpawnDisplacements
         $29dca              .byte $xx,$xx
         $29dcc              .byte $xx,$xx ; 4, left
         $29dce              .byte $xx,$xx
+        ;; 5: fire 3
         $29dd0              .byte $xx,$xx ; 5, up
         $29dd2              .byte $xx,$xx
         $29dd4              .byte $xx,$xx ; 5, right
@@ -42500,6 +42509,11 @@ VectorBetweenObjectsXY
         $34455  xx:          xxx
         $34456  xx:          xxx
         $34457  xx:          xxx
+        ;; NOTE: if we want to increase the resolution of this table, we need
+        ;; to start right here.  We also need some way to bail out early and
+        ;; change which direction we report... easiest might be to store the
+        ;; lower bits in a separate location (A?) so that all the callers don't
+        ;; need to change - only the ones that could use 64-dir angles.
 +       $34458  xx xx:      xxx $xx
         $3445a  xx xx:      xxx #$xx
         $3445c  xx:         xxx
@@ -42597,7 +42611,7 @@ DataTable_344bc                 ;  0   1   2   3   4   5   6   7   8   9   a   b
 DataTable_344dc
         $344dc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-DataTable_344bc_00              ; SPD == 0 (0.5/frame)
+DataTable_344bc_00              ; SPD == 0 (0.5/frame); 8-dir (0=up, 2=right)
         $344ec              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $344f4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $344fc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -44368,7 +44382,7 @@ CollisionTable
 ;;; --------------------------------
 ;;; Input: A - the index of the ad-hoc spawn in $29c00 (up to $5e or so)
 ;;;        X - index of the originating object
-;;;        Y - direction of spawned object (0..7)
+;;;        Y - direction of spawned object (0..7 or 0..f)
 ;;; The spawn table holds quads, which end up in $21,$22,$11,$20.
 ;;; The $11 is passed to LoadOneObjectData as the objid to load.
 ;;; $23 is temporarily init to 0.
@@ -44449,7 +44463,8 @@ AdHocSpawnObject
         $357b2  xx xx:        xxx $xx
         $357b4  xx:           xxx
         ;; Y looks like %aaaa_ddd0 where aaaa is the low nibble of
-        ;; the spawned object's $6e0, and ddd is the direction.
+        ;; the spawned object's $6e0, and xddd is the direction (ignoring
+        ;; any upper bit)
         $357b5  xx xx xx:     xxx AdHocSpawnDisplacements,y
         $357b8  xx xx:        xxx $xx
         $357ba  xx xx xx:     xxx AdHocSpawnDisplacements+1,y
@@ -49739,7 +49754,7 @@ DataTable_381ba
 ;;;    x          Object index to draw
 ;;;                - if this is exactly #$1 then write ($10) to $7ef - why?
 ;;;    $300,x     The metasprite ID
-;;;    $320,x     ???
+;;;    $320,x      - extra offset added to ID (why?!?)
 ;;;    $360,x     Offset to add to the ID if $380,x is even = direction facing
 ;;;    $380,x:01  If even, add offset
 ;;;    $380,x:10  Sprite behind background

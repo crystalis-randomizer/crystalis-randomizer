@@ -226,7 +226,13 @@ export class ShuffleRules {
         if (s.isInvisible()) {
           bossDrops.add(s.id);
         } else if (s.isChest()) {
-          chests.add(s.id);
+          if (l.bossId() != null) {
+            // Non-drop chests on boss screens also don't work for mimics,
+            // so count those chests as boss drops, too (e.g. storm bracelet)
+            bossDrops.add(s.id);
+          } else {
+            chests.add(s.id);
+          }
         }
       }
     }

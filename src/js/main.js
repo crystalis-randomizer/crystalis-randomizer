@@ -317,11 +317,10 @@ const loadRomFromStorage = () => {
     const file = upload.files[0];
     const reader = new FileReader();
     reader.addEventListener('loadend', () => {
-      const arr = new Uint8Array(reader.result);
+      const arr = new Uint8Array(reader.result).slice(0, 0x60010);
       const str = Array.from(arr, x => x.toString(16).padStart(2, 0)).join('');
       window['localStorage'].setItem('rom', str);
       window['localStorage'].setItem('name', file.name);
-      rom = arr.slice(0, 0x60010);
       checkCrc();
       romName = file.name;
     });

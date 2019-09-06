@@ -138,6 +138,10 @@ export class Constraint {
     return new Constraint([COIN_BANKS, ALL, ALL, ALL], [], 0);
   }
 
+  static get STOM_FIGHT() {
+    return new Constraint([ALL, new Set([0x4d]), ALL, ALL], [], 0);
+  }
+
   // Returns the "starting constraint" for the given location, taking things like
   // windmill blades into account.
   static forLocation(id: number): Constraint {

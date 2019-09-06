@@ -12,8 +12,8 @@ import {Random} from '../random.js';
 
 export class Graphics {
 
-  monsterConstraints = new Map<number, Constraint>();
-  npcConstraints = new Map<number, Constraint>();
+  private monsterConstraints = new Map<number, Constraint>();
+  private npcConstraints = new Map<number, Constraint>();
 
   allSpritePalettes = new Set<number>();
 
@@ -84,6 +84,15 @@ export class Graphics {
     return c.meet(Constraint.COIN) || Constraint.NONE;
   }
 
+  getNpcConstraint(locationId: number, npcId: number): Constraint {
+    const c = this.npcConstraints.get(npcId) || Constraint.NONE;
+    if (locationId === 0x1e && npcId === 0x60) {
+      // TODO: change this to actually look at the location's triggers?
+      return c.meet(Constraint.STOM_FIGHT);
+    }
+    return c;
+  }
+
   shufflePalettes(random: Random): void {
     const pal = [...this.allSpritePalettes];
     for (const [k, c] of this.monsterConstraints) {
@@ -117,9 +126,8 @@ export class Graphics {
 
   computeConstraint(metaspriteIds: readonly number[],
                     spawns: Spawns,
-                    shiftable: boolean
+                    shiftable: boolean,
                     offset = 0): Constraint {
-
     const patterns = new Set<number>();
     const palettes = new Set<number>();
     for (const metasprite of metaspriteIds.map(s => this.rom.metasprites[s])) {

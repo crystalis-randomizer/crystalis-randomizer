@@ -1822,11 +1822,11 @@ class MonsterPool {
             constraint = constraint.meet(Constraint.MIMIC, true);
           }
         } else if (spawn.isNpc() || spawn.isBoss()) {
-          const c = graphics.npcConstraints.get(spawn.id);
-          if (c) constraint = constraint.meet(c, true);
+          const c = graphics.getNpcConstraint(location.id, spawn.id);
+          constraint = constraint.meet(c, true);
         } else if (spawn.isMonster() && UNTOUCHED_MONSTERS[spawn.monsterId]) {
-          const c = graphics.monsterConstraints.get(spawn.monsterId);
-          if (c) constraint = constraint.meet(c, true);
+          const c = graphics.getMonsterConstraint(location.id, spawn.monsterId);
+          constraint = constraint.meet(c, true);
         }
       }
 

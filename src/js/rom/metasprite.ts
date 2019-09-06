@@ -64,7 +64,7 @@ export class Metasprite extends Entity {
     }
   }
 
-  patternBanks(): number[] {
+  patternBanks(offset = 0): number[] {
     if (!this.used) return [];
     let ms: Metasprite = this;
     if (ms.mirrored) {
@@ -74,7 +74,7 @@ export class Metasprite extends Entity {
     for (const version of ms.sprites) {
       for (const [dx, , , pat] of version) {
         if (dx === 0x80) break;
-        pats.add(pat >>> 6);
+        pats.add(((pat + offset) >>> 6) & 0xff);
       }
     }
     return [...pats];

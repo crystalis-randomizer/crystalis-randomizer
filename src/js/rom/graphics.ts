@@ -40,10 +40,17 @@ export class Graphics {
       // TODO - fold into patch.shuffleMonsters
       //if (m === 0) continue; // used to suppress buggy stray spawns
       if (m < 0) { // NPC
-        const metasprite = rom.metasprites[rom.npcs[~m].data[3]];
+        const npc = rom.npcs[~m];
+        const metaspriteIds = [npc.data[3]];
+        const metasprite = rom.metasprites[metaspriteIds[0]];
         if (!metasprite) throw new Error(`bad NPC: ${~m}`);
-        let constraint = this.computeConstraint([rom.npcs[~m].data[3]], spawns, true);
-        // TODO - better way streamline this...?
+        // Hardcode exception for jumping man (action script $50)
+        if (npc.data[2] === 0xd0) metaspriteIds.push(0xc0);
+        // Compute constraint
+        const offset = npc.data[2] < 0x80 ? npc.data[2] & 0x70 : 0;
+        let constraint =
+            this.computeConstraint(metaspriteIds, spawns, true, offset);
+        // TODO - better way streamline this...? (tornel on sabre)
         if (~m === 0x5f) constraint = constraint.ignorePalette();
         this.npcConstraints.set(~m, constraint);
       } else { // monster
@@ -56,7 +63,8 @@ export class Graphics {
           const action = ACTION_SCRIPTS.get(obj.action);
           const metaspriteFn: (m: Monster) => readonly number[] =
               action && action.metasprites || (() => [obj.metasprite]);
-          const child = this.computeConstraint(metaspriteFn(obj), spawns, obj.id === m);
+          const child = this.computeConstraint(metaspriteFn(obj), spawns,
+                                               obj.id === m, obj.data[1]);
           const meet = constraint.meet(child);
           if (!meet) throw new Error(`Bad meet for ${m} with ${obj.id}`);
           if (meet) constraint = meet;
@@ -109,7 +117,8 @@ export class Graphics {
 
   computeConstraint(metaspriteIds: readonly number[],
                     spawns: Spawns,
-                    shiftable: boolean): Constraint {
+                    shiftable: boolean
+                    offset = 0): Constraint {
 
     const patterns = new Set<number>();
     const palettes = new Set<number>();
@@ -118,7 +127,7 @@ export class Graphics {
       for (const p of metasprite.palettes()) {
         palettes.add(p);
       }
-      for (const p of metasprite.patternBanks()) {
+      for (const p of metasprite.patternBanks(offset)) {
         patterns.add(p);
       }
     }

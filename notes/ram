@@ -830,6 +830,13 @@ which is run during its update action
 
 For random movement, this is a wait timer.
 
+For NPCs, this is initialized from a lookup table ($3e35f) indexed by
+the #$03 bit of the person ID (spawn[3]), provided the person is not
+a statue.  The values are $da,$22,$4a,$aa => ???
+  This is read from ObjectActionJump_30 (the standard NPC action)
+  to determine whether to move the NPC by reading it as a bitmask
+  indexed by $08.  So it's basically a speed: [5, 2, 3, 4].
+
 
 $620,x
 ------

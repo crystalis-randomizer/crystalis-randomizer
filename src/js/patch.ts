@@ -1821,7 +1821,7 @@ class MonsterPool {
           } else {
             constraint = constraint.meet(Constraint.MIMIC, true);
           }
-        } else if (spawn.isNpc()) {
+        } else if (spawn.isNpc() || spawn.isBoss()) {
           const c = graphics.npcConstraints.get(spawn.id);
           if (c) constraint = constraint.meet(c, true);
         } else if (spawn.isMonster() && UNTOUCHED_MONSTERS[spawn.monsterId]) {

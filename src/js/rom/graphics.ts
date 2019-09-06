@@ -30,7 +30,7 @@ export class Graphics {
         if (!s.used) continue;
         if (s.isMonster()) {
           allSpawns.get(s.monsterId).push([l, i, s]);
-        } else if (s.isNpc()) {
+        } else if (s.isNpc() || s.isBoss()) {
           allSpawns.get(~s.id).push([l, i, s]);
         }
       }

@@ -36,4 +36,7 @@ if ! $copy; then
     mkdir -p "$(dirname "dist/js/$file")"
     ln -s "$file.js" "dist/js/$file.min.js"
   done
+  # Test needs cli to not be a symlink
+  rm dist/js/cli.js
+  cp src/js/cli.js dist/js/
 fi

@@ -123,6 +123,7 @@ const main = (...args) => {
 
   return Promise.all(new Array(count).fill(0).map(async () => {
     const s = patch.parseSeed(seed);
+    console.log(`Seed: ${s.toString(16)}`);
     const shuffled = rom.slice();
     const c = await patch.shuffle(shuffled, s, flagset, new NodeReader());
     const n = args[0].replace('.nes', '');

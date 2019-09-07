@@ -196,9 +196,25 @@ const shuffleRom = async (seed) => {
   }
   done = true;
   document.body.classList.remove('shuffling');
-  if (log) {
-    replaceSpoiler('spoiler-items', sortBy(log.slots.filter(x => x), x => x.item));
-    replaceSpoiler('spoiler-route', log.route);
+  if (log && log.spoiler) {
+    const s = log.spoiler;
+    replaceSpoiler('spoiler-items', sortBy(s.slots.filter(x => x), x => x.item));
+    replaceSpoiler('spoiler-route', s.route);
+    replaceSpoiler('spoiler-mazes',
+                   sortBy(s.mazes, x => x.location)
+                       .map(({name, maze}) => `${name}:\n${maze}`));
+    replaceSpoiler('spoiler-trades',
+                   s.trades.map(({item, npc}) => `${npc}: ${item}`).sort());
+    replaceSpoiler('spoiler-item-names',
+                   s.unidentifiedItems.map(
+                       ({oldName, newName}) => `${newName}: ${oldName}`).sort());
+    replaceSpoiler(
+        'spoiler-walls',
+        sortBy(s.walls, x => x.location)
+            .map(({location, oldElement, newElement}) =>
+                      `${location}${oldElement === 3 ? ' (iron)' : ''}: ${
+                       ['wind', 'fire', 'water', 'thunder'][newElement]}`));
+    replaceSpoiler('spoiler-wild-warps', s.wildWarps.map(({name}) => name));
   }
   document.getElementById('checksum').textContent =
       // shifted by header
@@ -207,7 +223,7 @@ const shuffleRom = async (seed) => {
 };
 
 function sortBy(arr, f) {
-  return arr.sort((a, b) => {
+  return [...arr].sort((a, b) => {
     const fa = f(a);
     const fb = f(b);
     return fa < fb ? -1 : fa > fb ? 1 : 0;
@@ -222,6 +238,7 @@ const replaceSpoiler = (name, log) => {
     li.textContent = line;
     el.appendChild(li);
   }
+  el.previousElementSibling.classList.toggle('empty-spoiler', !log.length);
 };
 
 // TODO - need to store the checkbox somewhere keyed by the flag?

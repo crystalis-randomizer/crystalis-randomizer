@@ -1,6 +1,6 @@
 import {Assembler} from './6502.js';
 import {crc32} from './crc32.js';
-import {LogType, ProgressTracker,
+import {ProgressTracker,
         generate as generateDepgraph,
         shuffle2 as _shuffleDepgraph} from './depgraph.js';
 import {FetchReader} from './fetchreader.js';
@@ -76,7 +76,7 @@ export async function shuffle(rom: Uint8Array,
                               seed: number,
                               flags: FlagSet,
                               reader: Reader,
-                              log?: LogType,
+                              log?: {spoiler?: Spoiler},
                               progress?: ProgressTracker): Promise<number> {
   //rom = watchArray(rom, 0x85fa + 0x10);
 
@@ -144,10 +144,7 @@ export async function shuffle(rom: Uint8Array,
   fixCoinSprites(parsed);
   if (typeof window == 'object') (window as any).rom = parsed;
   parsed.spoiler = new Spoiler(parsed);
-  if (log) {
-    log.slots = parsed.spoiler.slots;
-    log.route = parsed.spoiler.route;
-  }
+  if (log) log.spoiler = parsed.spoiler;
   fixMimics(parsed);
 
   makeBraceletsProgressive(parsed);
@@ -188,6 +185,7 @@ export async function shuffle(rom: Uint8Array,
 
   if (flags.randomizeWildWarp()) shuffleWildWarp(parsed, flags, random);
   rescaleMonsters(parsed, flags, random);
+  unidentifiedItems(parsed, flags, random);
   shuffleTrades(parsed, flags, random);
   if (flags.randomizeMaps()) shuffleMazes(parsed, random);
 
@@ -250,7 +248,6 @@ export async function shuffle(rom: Uint8Array,
 
   shuffleMusic(parsed, flags, random);
   shufflePalettes(parsed, flags, random);
-  unidentifiedItems(parsed, flags, random);
 
   misc(parsed, flags, random);
   fixDialog(parsed);
@@ -413,16 +410,23 @@ function randomizeWalls(rom: Rom, flags: FlagSet, random: Random): void {
     // pick a random wall type.
     const elt = random.nextInt(4);
     const pal = random.pick(pals[elt]);
+    let found = false;
     for (const location of locations) {
       for (const spawn of location.spawns) {
         if (spawn.isWall()) {
           const type = wallType(spawn);
           if (type === 2) continue;
           if (type === 3) {
+            const newElt = random.nextInt(4);
+            if (rom.spoiler) rom.spoiler.addWall(location.name, type, newElt);
             spawn.data[2] |= 0x20;
-            spawn.id = 0x30 | random.nextInt(4);
+            spawn.id = 0x30 | newElt;
           } else {
-            console.log(`${location.name} ${type} => ${elt}`);
+            // console.log(`${location.name} ${type} => ${elt}`);
+            if (!found && rom.spoiler) {
+              rom.spoiler.addWall(location.name, type, elt);
+              found = true;
+            }
             spawn.data[2] |= 0x20;
             spawn.id = type << 4 | elt;
             location.tilePalettes[2] = pal;
@@ -507,14 +511,19 @@ function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
 }
 
 function shuffleWildWarp(rom: Rom, _flags: FlagSet, random: Random): void {
-  const locations = [];
+  const locations: Location[] = [];
   for (const l of rom.locations) {
     if (l && l.used && l.id && !l.extended && (l.id & 0xf8) !== 0x58) {
-      locations.push(l.id);
+      locations.push(l);
     }
   }
   random.shuffle(locations);
-  rom.wildWarp.locations = [...locations.slice(0, 15).sort((a, b) => a - b), 0];
+  rom.wildWarp.locations = [];
+  for (const loc of [...locations.slice(0, 15).sort((a, b) => a.id - b.id)]) {
+    rom.wildWarp.locations.push(loc.id);
+    if (rom.spoiler) rom.spoiler.addWildWarp(loc.id, loc.name);
+  }
+  rom.wildWarp.locations.push(0);
 }
 
 function buffDyna(rom: Rom, _flags: FlagSet): void {

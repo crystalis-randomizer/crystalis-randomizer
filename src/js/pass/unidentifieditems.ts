@@ -50,6 +50,7 @@ const STATUE_NAMES = [
   'Mattrick Figurine',
   'Dragondarch Statue',
   'Overswarm Statue',
+  'Trueblue83 Statue',
 ];
 
 
@@ -69,7 +70,9 @@ export function unidentifiedItems(rom: Rom, flags: FlagSet, random: Random) {
     random.shuffle(names);
     const palettes = random.shuffle([0, 1, 2, 3]);
     for (const item of list) {
-      item.menuName = item.messageName = names.pop()!;
+      const name = names.pop()!;
+      if (rom.spoiler) rom.spoiler.addUnidentifiedItem(item.id, item.messageName, name);
+      item.menuName = item.messageName = name;
       item.palette = palettes.pop()!;
     }
   }

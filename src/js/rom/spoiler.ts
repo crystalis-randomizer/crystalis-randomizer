@@ -12,6 +12,11 @@ import {Rom} from '../rom.js';
 export class Spoiler {
   readonly slots: Slot[] = [];
   readonly route: Check[] = [];
+  readonly mazes: Maze[] = [];
+  readonly trades: Trade[] = [];
+  readonly walls: Wall[] = [];
+  readonly unidentifiedItems: UnidentifiedItem[] = [];
+  readonly wildWarps: WildWarp[] = [];
 
   // Used for lazily displaying route
   readonly slotNames: {[id: number]: string} = [];
@@ -32,6 +37,26 @@ export class Spoiler {
     if (slotName) this.slotNames[0x200 | slot] = slotName;
   }
 
+  addMaze(id: number, name: string, maze: string): void {
+    this.mazes.push({id, name, maze});
+  }
+
+  addTrade(itemId: number, item: string, npc: string): void {
+    this.trades.push({itemId, item, npc});
+  }
+
+  addUnidentifiedItem(itemId: number, oldName: string, newName: string): void {
+    this.unidentifiedItems.push({itemId, oldName, newName});
+  }
+
+  addWall(location: string, oldElement: number, newElement: number): void {
+    this.walls.push({location, oldElement, newElement});
+  }
+
+  addWildWarp(id: number, name: string): void {
+    this.wildWarps.push({id, name});
+  }
+
   formatCondition(id: number, item?: number): string {
     // Ordinary symmetic conditions
     if (id < 0x200 || id >= 0x280) return this.conditionNames[id] || conditionHex(id);
@@ -40,6 +65,35 @@ export class Spoiler {
     // Slot - print both slot and item name
     return `${this.slotNames[id] || conditionHex(id)} (${this.formatCondition(item | 0x200)})`;
   }
+}
+
+interface Maze {
+  id: number;
+  name: string;
+  maze: string;
+}
+
+interface Trade {
+  itemId: number;
+  item: string;
+  npc: string;
+}
+
+interface UnidentifiedItem {
+  itemId: number;
+  oldName: string;
+  newName: string;
+}
+
+interface Wall {
+  location: string;
+  oldElement: number;
+  newElement: number;
+}
+
+interface WildWarp {
+  id: number;
+  name: string;
 }
 
 class Check {

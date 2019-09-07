@@ -263,10 +263,10 @@ function build(rom: Rom, flags = new FlagSet('@FullShuffle')): World {
     if (terrains.get(x1) === terrain) tiles.union([tile, x1]);
     const y1 = TileId.add(tile, 1, 0);
     if (terrains.get(y1) === terrain) tiles.union([tile, y1]);
-    //console.log(`${hex(tile)}: ${uid(terrain)}`);
-    //console.log(terrain);
-    //console.log(` +x: ${hex(x1)}: ${uid(terrains.get(x1))}`);
-    //console.log(` +y: ${hex(y1)}: ${uid(terrains.get(y1))}`);
+    // console.log(`${hex(tile)}: ${uid(terrain)}`);
+    // console.log(terrain);
+    // console.log(` +x: ${hex(x1)}: ${uid(terrains.get(x1))}`);
+    // console.log(` +y: ${hex(y1)}: ${uid(terrains.get(y1))}`);
   }
 
   // Add exits to a map.  We do this *after* the initial unionfind so that
@@ -411,52 +411,67 @@ function build(rom: Rom, flags = new FlagSet('@FullShuffle')): World {
   // const entrance = rom.locations[start].entrances[0];
   // this.addEntrance(parseCoord(start, entrance));
 
-if(DEBUG&&typeof window !== 'undefined'){
+  if (DEBUG && typeof window !== 'undefined') {
     const w = window as any;
     console.log(w.roots = (w.tiles = tiles).roots());
     console.log([...(w.neighbors = neighbors)]);
     console.log(w.ll = routes);
 
-function h(x: number): string { return x < 0 ? '~' + (~x).toString(16).padStart(2,'0') : x.toString(16).padStart(3,'0'); }
-function dnf(x: Iterable<Iterable<number>>, f = h): string {
-  const xs = [...x];
-  if (!xs.length) return 'no route';
-  return '(' + xs.map(y => [...y].map(f).join(' & ')).join (') |\n     (') + ')';
-}
-w.area = (tile: TileId, f: (x:number)=>string = h) => {
-  const s = [...tiles.sets().filter(s => s.has(tile))[0]].map(x=>x.toString(16).padStart(6,'0'));
-  // const r = '(' + [...routes.routes.get(tiles.find(tile))].map(s => [...s].map(x => x < 0 ? '~' + (~x).toString(16) : x.toString(16)).join(' & ')).join(') | (') + ')';
-  const r = dnf(routes.routes.get(tiles.find(tile)), f);
-  // neighbors
-  const edges = [];
-  const t = tiles.find(tile);
-  for (const out of (routes.edges.get(t) || new Map()).values()) {
-    edges.push(`\nto ${out.target.toString(16)} if (${[...out.deps].map(f).join(' & ')})`);
-  }
-  for (const [from, rs] of routes.edges) {
-    for (const to of rs.values()) {
-      if (to.target !== t) continue;
-      edges.push(`\nfrom ${from.toString(16)} if (${[...to.deps].map(f).join(' & ')})`);
+    function h(x: number): string {
+      return x < 0 ? '~' + (~x).toString(16).padStart(2, '0') :
+          x.toString(16).padStart(3, '0');
     }
-  }
-  function group(arr: unknown[], count: number, spacer: string): string[] {
-    const out = [];
-    for (let i = 0; i < arr.length; i += count) {
-      out.push(arr.slice(i, i + count).join(spacer));
+    function dnf(x: Iterable<Iterable<number>>, f = h): string {
+      const xs = [...x];
+      if (!xs.length) return 'no route';
+      return '(' + xs.map(y => [...y].map(f).join(' & '))
+          .join(') |\n     (') + ')';
     }
-    return out;
-  }
-  return `${hex(t)}\n${group(s, 16, ' ').join('\n')}\ncount = ${s.length}\nroutes = ${r}${edges.join('')}`;
-};
+    w.area = (tile: TileId, f: (x: number) => string = h) => {
+      const s = [...tiles.sets().filter(s => s.has(tile))[0]]
+          .map(x => x.toString(16).padStart(6, '0'));
+      // const r = '(' + [...routes.routes.get(tiles.find(tile))]
+      //     .map(s => [...s].map(x => x < 0 ? '~' + (~x).toString(16) :
+      //                          x.toString(16)).join(' & '))
+      //     .join(') | (') + ')';
+      const r = dnf(routes.routes.get(tiles.find(tile)), f);
+      // neighbors
+      const edges = [];
+      const t = tiles.find(tile);
+      for (const out of (routes.edges.get(t) || new Map()).values()) {
+        edges.push(`\nto ${out.target.toString(16)} if (${
+                    [...out.deps].map(f).join(' & ')})`);
+      }
+      for (const [from, rs] of routes.edges) {
+        for (const to of rs.values()) {
+          if (to.target !== t) continue;
+          edges.push(`\nfrom ${from.toString(16)} if (${
+                      [...to.deps].map(f).join(' & ')})`);
+        }
+      }
+      function group(arr: unknown[], count: number, spacer: string): string[] {
+        const out = [];
+        for (let i = 0; i < arr.length; i += count) {
+          out.push(arr.slice(i, i + count).join(spacer));
+        }
+        return out;
+      }
+      return `${hex(t)}\n${group(s, 16, ' ').join('\n')}\ncount = ${
+              s.length}\nroutes = ${r}${edges.join('')}`;
+    };
 
     w.whatFlag = (f: number) => conditionName(f, rom);
 
     w.reqs = reqs;
-    console.log('reqs\n' + [...reqs].sort(([a],[b])=>a-b).map(([s, r]) => `${w.whatFlag(s)}: ${dnf(r,w.whatFlag)}`).join('\n'));
+    console.log('reqs\n' + [...reqs].sort(([a], [b]) => a - b)
+                .map(([s, r]) => `${w.whatFlag(s)}: ${dnf(r,w.whatFlag)}`)
+                .join('\n'));
 
-    w.reqs.check = (id: number, f: ((flag: number) => string) = h): string => `${f(id)}: ${dnf(reqs.get(Slot(id)), f)}`;
+    w.reqs.check =
+        (id: number, f: ((flag: number) => string) = h): string =>
+            `${f(id)}: ${dnf(reqs.get(Slot(id)), f)}`;
     w.reqs.check2 = (id: number): string => w.reqs.check(id, w.whatFlag);
-}
+  }
 
   // Summary: 1055 roots, 1724 neighbors
   // This is too much for a full graph traversal, but many can be removed???
@@ -498,7 +513,8 @@ function makeGraph(reqs: Map<Slot, MutableRequirement>, rom: Rom): shuffle.Graph
         shuffle.ItemNode & shuffle.SlotNode;
   }
   function itemNode(condition: number, index: number) {
-    return Object.assign(makeNode(condition, index + fixed), {item: (condition & 0x7f) as any});
+    return Object.assign(makeNode(condition, index + fixed),
+                         {item: (condition & 0x7f) as any});
   }
   const conditionNodes = allConditions.map(makeNode);
   const itemNodes = allItems.map(itemNode);
@@ -529,7 +545,8 @@ function makeGraph(reqs: Map<Slot, MutableRequirement>, rom: Rom): shuffle.Graph
     const s = slotIndexMap.get(slot);
     if (s == null) {
       if (MAYBE_MISSING_SLOTS.has(slot)) continue;
-      console.error(`Nothing depended on $${slot.toString(16)}: ${conditionName(slot, rom)}`);
+      console.error(`Nothing depended on $${slot.toString(16)}: ${
+                     conditionName(slot, rom)}`);
       continue;
     }
     for (const cs of req) {
@@ -542,7 +559,7 @@ function makeGraph(reqs: Map<Slot, MutableRequirement>, rom: Rom): shuffle.Graph
   }
   // sanity check to make sure all slots are provided
   for (const n of [...conditionNodes, ...slotNodes]) {
-    //if (i.item != null) continue;
+    // if (i.item != null) continue;
     if (!graph[n.index] || !graph[n.index].length) {
       const c = n.condition;
       console.error(`Nothing provided $${c.toString(16)}: ${conditionName(c, rom)
@@ -550,7 +567,7 @@ function makeGraph(reqs: Map<Slot, MutableRequirement>, rom: Rom): shuffle.Graph
     }
   }
 
-  if(DEBUG)console.log(graph);
+  if (DEBUG) console.log(graph);
 
   const unlocks = unlocksSet.map(x => [...x]);
   return {fixed, slots, items, graph, unlocks};
@@ -583,9 +600,10 @@ function conditionName(f: number, rom: Rom): string {
       }
     }
   }
-  return f < 0 ? `~${(~f).toString(16).padStart(2, '0')}` : f.toString(16).padStart(2, '0');
+  return f < 0 ? `~${(~f).toString(16).padStart(2, '0')}` :
+      f.toString(16).padStart(2, '0');
 }
 
 /////////////
 
-const DEBUG: boolean = true;
+const DEBUG: boolean = false;

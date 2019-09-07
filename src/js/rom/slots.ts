@@ -142,7 +142,7 @@ class Slots {
     }
     extraSlots.forEach(addSlot);
 
-    console.log('slots', slots);
+    // console.log('slots', slots);
 
     this.slots = slots;
   }

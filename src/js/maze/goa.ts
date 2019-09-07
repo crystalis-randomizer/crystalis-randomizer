@@ -76,7 +76,7 @@ export function shuffleGoa1(rom: Rom, random: Random, attempts = 1500): void {
     fixed(boss + 15, 0x00ff);
     fixed(boss + 17, 0xf00f);
 
-    console.log(`initial\n${maze.show()}`);
+    // console.log(`initial\n${maze.show()}`);
 
     // make the initial path from the entrance to the boss
     if (!maze.connect(entrance as Pos, 0 as Dir, boss + 16 as Pos, 2 as Dir)) {
@@ -171,9 +171,9 @@ export function shuffleGoa1(rom: Rom, random: Random, attempts = 1500): void {
       }
     }
 
-    console.log(`success after ${attempt} attempts`);
-    console.log(maze.show());
-
+    // console.log(`success after ${attempt} attempts`);
+    // console.log(maze.show());
+    if (rom.spoiler) rom.spoiler.addMaze(loc.id, loc.name, maze.show());
     return;
   }
 

@@ -79,11 +79,11 @@ const [] = [ADDRESS_TABLE];
 // These are just the complement of 16-N:
 //   9: 10101101 01010110 = ad 56
 //  10: 10110110 10110110 = b6 b6
-//  11:                   = 9b b6
-//  12:                   = ee ee
-//  13:                   = f7 ce
-//  14:                   = fe fe
-//  15:                   = ff fe
+//  11: 11011011 10110110 = 9b b6
+//  12: 11101110 11101110 = ee ee
+//  13: 11110111 10111110 = f7 ce
+//  14: 11111110 11111110 = fe fe
+//  15: 11111111 11111110 = ff fe
 
 // Then we just store floor(16*s*cos(t*pi/32)) for t=0..15, values of s
 

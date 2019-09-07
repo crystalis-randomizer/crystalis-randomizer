@@ -8,6 +8,7 @@ dist
 # testing
 cov.*
 test/testdata
+test/testdata.backup
 unused
 
 # npm stuff

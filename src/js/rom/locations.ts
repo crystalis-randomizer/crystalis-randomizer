@@ -34,7 +34,6 @@ class LocationsClass extends Array<Location> {
           if (!seen.has(n) && eq(func(n), value)) {
             seen.add(n);
             queue.push(n);
-            group.push(n);
           }
         }
       }

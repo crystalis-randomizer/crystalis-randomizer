@@ -479,7 +479,8 @@ export function shuffleCave(loc: Location, random: Random,
     //   }
     // }
 
-    console.log(`done\n${maze.show()}`);
+    // console.log(`done\n${maze.show()}`);
+    if (loc.rom.spoiler) loc.rom.spoiler.addMaze(loc.id, loc.name, maze.show());
     return true;
   }
 
@@ -533,7 +534,7 @@ export function shuffleCave(loc: Location, random: Random,
       if (fixed.has(pos)) continue;
       if (!maze.fill(pos, {stair: stairs[i].dir})) continue;
       fixed.add(pos);
-      console.log(`Added ${stairs[i].dir} stair at ${hex(pos)}`);
+      // console.log(`Added ${stairs[i].dir} stair at ${hex(pos)}`);
       tries = 0;
       i++;
     }
@@ -549,7 +550,7 @@ export function shuffleCave(loc: Location, random: Random,
     };
     if (!maze.fillAll(fillOpts)) return fail(`could not fill open`);
 
-    console.log(`initial:\n${maze.show()}`);
+    // console.log(`initial:\n${maze.show()}`);
     if (!check(maze)) return fail(`check failed after initial setup`);
 
     const empty = 0 as Scr;
@@ -564,7 +565,7 @@ export function shuffleCave(loc: Location, random: Random,
       }
     }
 
-    console.log(`percolated:\n${maze.show()}`);
+    // console.log(`percolated:\n${maze.show()}`);
 
     // Remove any tight cycles
     if (!opts.allowTightCycles) {
@@ -623,7 +624,7 @@ export function shuffleCave(loc: Location, random: Random,
 
   function finish(maze: Maze): boolean {
     maze.trim();
-    console.log(`final:\n${maze.show()}`);
+    //console.log(`final:\n${maze.show()}`);
     maze.write(loc, new Set());
 
     // Map from priority to array of [y, x] pixel coords
@@ -789,9 +790,8 @@ export function shuffleCave(loc: Location, random: Random,
     // TODO - extend out any additional needed dead-ends, either
     //        just to get the right number, or to have a chest
 
-
+    if (loc.rom.spoiler) loc.rom.spoiler.addMaze(loc.id, loc.name, maze.show());
     return true;      
-
   }
 
   function randomEdge(dir: Dir): Pos {

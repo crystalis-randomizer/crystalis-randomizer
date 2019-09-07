@@ -353,6 +353,14 @@ p + .flag-list {
   display: inherit;
 }
 
+.empty-spoiler, .empty-spoiler + * {
+  display: none;
+}
+#spoiler-mazes {
+  white-space: pre;
+  font-family: fixed;
+}
+
 progress {
   flex-grow: 1;
   margin-top: 10px;

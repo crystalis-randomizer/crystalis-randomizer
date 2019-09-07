@@ -126,9 +126,10 @@ function tryShuffleSwamp(rom: Rom, random: Random, swamp: Location,
     }
     maze.saveExcursion(() => {
       if (!maze.replaceEdge(pos, dir, 0)) return false;
-      return maze.get(pos) && maze.get(pos2) && check() || (() => { console.log(`failed\n${maze.show()}`); return false; })();
+      return !!(maze.get(pos) && maze.get(pos2) && check());
+      //  || (() => { console.log(`failed\n${maze.show()}`); return false; })();
     });
-    console.log(maze.show());
+    // console.log(maze.show());
   }
 
   // Need to consolidate.
@@ -144,7 +145,7 @@ function tryShuffleSwamp(rom: Rom, random: Random, swamp: Location,
   swamp.moveScreen(0x04, boss);
   maze.write(swamp, new Set());
 
-  console.log(maze.show());
+  // console.log(maze.show());
 
   // Analyze screens
   const deadEnds = [];
@@ -208,8 +209,9 @@ function tryShuffleSwamp(rom: Rom, random: Random, swamp: Location,
       spawn.screen = pos >>> 8;
       spawn.tile = pos & 0xff;
     }
-  }    
+  }
 
+  if (rom.spoiler) rom.spoiler.addMaze(swamp.id, swamp.name, maze.show());
   return true;
 }
 

@@ -356,9 +356,14 @@ p + .flag-list {
 .empty-spoiler, .empty-spoiler + * {
   display: none;
 }
-#spoiler-mazes {
+#spoiler-mazes > li {
   white-space: pre;
-  font-family: fixed;
+  font-family: Menlo, monospace;
+  font-size: 11px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid black;
+  margin-bottom: 4px;
+  list-style: none;
 }
 
 progress {

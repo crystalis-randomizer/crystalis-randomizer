@@ -3190,12 +3190,20 @@ RomBank_04                      ; @@ $8000
 ;;; Banks 4 and 5 include some sort of NPC data in the otherwise-unused last row.
 ;;; PersonData is quads keyed off of the NPC's ID.
 ;;; Each quad contains:
-;;;   0. goes to $680
-;;;   1. goes to $6a0
-;;;   2. if positive, ...?  if negative, ...? -> 6e0 at least, sometimes 4a0
-;;;      $06e0,x & #$04 != 0 indicates a statue
-;;;      => different actions (walking vs statue).
-;;;   3. metasprite
+;;;   0. goes to $680,x
+;;;   1. goes to $6a0,x
+;;;   2. always => #$7f bits go to $6e0,x
+;;;      if positive => #$70 bits go into $320,x (pattern ID offset)
+;;;      if negative => #$7f bits go into $4a0,x (action script, default $30)
+;;;      $06e0,x:04 set indicates a statue (cf $354d2)
+;;;        => different actions (walking vs statue).
+;;;        => :01 for statue indicates 4e0 step counter updates w/ global ctr
+;;;           (in-place animations, like a dancer?)
+;;;      if not a statue, id&3 determines movement via table => $600,x
+;;;        (read in action $30 at $36cf4).  Specifically, this is a bitmask
+;;;        for which (global counter) frames the npc may move in
+;;;          => speed = [5, 2, 3, 4][id&3]
+;;;   3. metasprite => 300,x and 6c0,x
 MapScreen_80
         $08000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $08010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -17069,18 +17077,18 @@ NpcData_73                                             ; Swan - Gate
 ;;; ----------------------------------------------------------------
 NpcData_8c                                                  ; Shyron
         $1aa97              .byte $xx,$xx,$xx,$xx,$xx
-        $1aa9c              .byte $xx,$xx,$xx,$xx
-        $1aaa0              .byte $xx,$xx,$xx,$xx
-        $1aaa4              .byte $xx,$xx,$xx,$xx
-        $1aaa8              .byte $xx,$xx,$xx,$xx
-        $1aaac              .byte $xx,$xx,$xx,$xx
-        $1aab0              .byte $xx,$xx,$xx,$xx
-        $1aab4              .byte $xx,$xx,$xx,$xx
-        $1aab8              .byte $xx,$xx,$xx,$xx
-        $1aabc              .byte $xx,$xx,$xx,$xx
-        $1aac0              .byte $xx,$xx,$xx,$xx
-        $1aac4              .byte $xx,$xx,$xx,$xx
-        $1aac8              .byte $xx,$xx,$xx,$xx
+        $1aa9c              .byte $xx,$xx,$xx,$xx ; 0d stom
+        $1aaa0              .byte $xx,$xx,$xx,$xx ; 0e akahana
+        $1aaa4              .byte $xx,$xx,$xx,$xx ; 0f stom gf
+        $1aaa8              .byte $xx,$xx,$xx,$xx ; 10 red man in middle
+        $1aaac              .byte $xx,$xx,$xx,$xx ; 11 welcome person
+        $1aab0              .byte $xx,$xx,$xx,$xx ; 12 entrance trigger
+        $1aab4              .byte $xx,$xx,$xx,$xx ; 13 dead stom
+        $1aab8              .byte $xx,$xx,$xx,$xx ; 14 dead akahana
+        $1aabc              .byte $xx,$xx,$xx,$xx ; 15 dead stom gf
+        $1aac0              .byte $xx,$xx,$xx,$xx ; 16 dead
+        $1aac4              .byte $xx,$xx,$xx,$xx ; 17 dead
+        $1aac8              .byte $xx,$xx,$xx,$xx ; 18 entrance trigger
         $1aacc              .byte $xx
 ;;; ----------------------------------------------------------------
 NpcData_f3                                  ; Shyron - Training Hall
@@ -46481,6 +46489,7 @@ ObjectActionJump_50
         $36685  xx xx xx:   xxx $xxxx
         $36688  xx:         xxx
 ;;; --------------------------------
+        ;; Make NPC jump outside starting cave
         $36689  xx xx:      xxx #$xx
         $3668b  xx xx xx:   xxx $xxxx,x
         $3668e  xx xx xx:   xxx $xxxx,x
@@ -46579,6 +46588,7 @@ ObjectActionJump_0a
         $36752  xx:         xxx
 ;;; --------------------------------
 ObjectActionJump_52
+        ;; Stom during fight
         $36753  xx xx xx:   xxx $xxxx,x
         $36756  xx xx:      xxx $xx
         $36758  xx xx xx:   xxx $xxxx,x
@@ -47331,7 +47341,7 @@ ObjectActionJump_2c
         $36cd4  xx xx xx:   xxx $xxxx,x
         $36cd7  xx:         xxx
 ;;; --------------------------------
--       $36cd8  xx:         xxx
+        $36cd8  xx:         xxx
         ;; --------------------------------
 ObjectActionJump_30
         $36cd9  xx xx xx:   xxx $xxxx,x
@@ -47342,18 +47352,19 @@ ObjectActionJump_30
 +       $36ce2  xx xx xx:   xxx $xxxx,x
         $36ce5  xx xx:      xxx #$xx
         $36ce7  xx xx:      xxx + ; $36cec
-        $36ce9  xx xx xx:   xxx $36e16
+        $36ce9  xx xx xx:    xxx ObjectActionJump_31 ; statue
         ;; --------------------------------
+        ;; Non-statue
 +       $36cec  xx xx:      xxx $xx
         $36cee  xx xx:      xxx #$xx
         $36cf0  xx:         xxx
         $36cf1  xx xx xx:   xxx PowersOfTwo,y
         $36cf4  xx xx xx:   xxx $xxxx,x
-        $36cf7  xx xx:      xxx - ; $36cd8
+        $36cf7  xx xx:       xxx <rts ; $36cd8
         $36cf9  xx xx xx:   xxx $xxxx,x
         $36cfc  xx xx:      xxx #$xx
         $36cfe  xx xx:      xxx + ; $36d03
-        $36d00  xx xx xx:   xxx $36d84
+        $36d00  xx xx xx:    xxx $36d84
         ;; --------------------------------
 +       $36d03  xx xx:      xxx #$xx
         $36d05  xx xx:      xxx $xx
@@ -47496,16 +47507,17 @@ DataTable_36d9c
         $36e15  xx:         xxx
 ;;; --------------------------------
 ObjectActionJump_31
+        ;; Entry point: object action 30 if a statue (6e0:04 set)
         $36e16  xx xx xx:   xxx $xxxx,x
         $36e19  xx xx:      xxx #$xx
-        $36e1b  xx xx:      xxx $xx
-        $36e1d  xx xx:      xxx $xx
-        $36e1f  xx:         xxx
-        $36e20  xx:         xxx
-        $36e21  xx:         xxx
-        $36e22  xx xx xx:   xxx $xxxx,x
-        $36e25  xx xx xx:   xxx $xxxx
-        $36e28  xx xx:      xxx $xx
+        $36e1b  xx xx:      xxx + ; $36e25
+        $36e1d  xx xx:       xxx $xx
+        $36e1f  xx:          xxx
+        $36e20  xx:          xxx
+        $36e21  xx:          xxx
+        $36e22  xx xx xx:    xxx $xxxx,x
++       $36e25  xx xx xx:   xxx $xxxx
+        $36e28  xx xx:       xxx >rts ; $36e30
         $36e2a  xx xx xx:   xxx $xxxx,x
         $36e2d  xx xx xx:   xxx $xxxx,x
         $36e30  xx:         xxx
@@ -59717,6 +59729,7 @@ NpcDataJump_1_PersonOrBoss      ; Called from $3e215 - Conditional appearance?
         $3e2c8  xx xx:      xxx #$xx
         $3e2ca  xx xx:      xxx $xx ; $25 = %10AA AAAA
         ;; Copy 4 bytes from the bth quad beneath the bottom row of tile (128+a)
+        ;; into $20..$23.
         $3e2cc  xx xx:      xxx #$xx
 -       $3e2ce  xx xx:       xxx ($xx),y
         $3e2d0  xx xx xx:    xxx $xxxx,y
@@ -59747,20 +59760,21 @@ LoadPersonObjectData
         $3e304  xx xx xx:     xxx ++ ; $3e311
         ;;                    ------
 +       $3e307  xx xx xx:    xxx $xxxx,x
-        $3e30a  xx xx:       xxx $xx
+        $3e30a  xx xx:       xxx $xx ; no-op
         $3e30c  xx xx:       xxx #$xx
         $3e30e  xx xx xx:    xxx $xxxx,x
 ++      $3e311  xx xx xx:   xxx $xxxx,x
         $3e314  xx xx:      xxx #$xx
         $3e316  xx xx:      xxx + ; $3e323
-        $3e318  xx xx:       xxx $xx
+        $3e318  xx xx:       xxx $xx ; spawn[3]
         $3e31a  xx xx:       xxx #$xx
         $3e31c  xx:          xxx
-        $3e31d  xx xx xx:    xxx $3e35f,y ; see data below
+        $3e31d  xx xx xx:    xxx $3e35f,y ; speed table
         $3e320  xx xx xx:    xxx $xxxx,x
 +       $3e323  xx xx:      xxx $xx
-        $3e325  xx xx:      xxx #$xx
+        $3e325  xx xx:      xxx #$xx ; why 8? seems backwards
         $3e327  xx xx:      xxx + ; $3e32f
+        ;;                   Statue - adjust position a little?
         $3e329  xx xx:       xxx $xx,x
         $3e32b  xx xx:       xxx #$xx
         $3e32d  xx xx:       xxx $xx,x
@@ -60491,14 +60505,14 @@ CheckForShyronMassacre
         $3e841  xx xx xx:   xxx $xxxx
         $3e844  xx:         xxx
 ;;; --------------------------------
-        $3e845  xx xx xx:   xxx $3c676
+        $3e845  xx xx xx:   xxx FlushNametableDataWrite
         $3e848  xx xx:      xxx #$xx
         $3e84a  xx xx xx:   xxx BankSwitch8k_8000
         $3e84d  xx xx xx:   xxx $xxxx
         $3e850  xx:         xxx
         $3e851  xx xx:       xxx #$xx
         $3e853  xx xx xx:    xxx $xxxx
-        $3e856  xx xx xx:    xxx $34c0e
+        $3e856  xx xx xx:    xxx LoadPalettesForLocation
         $3e859  xx xx:       xxx #$xx
         $3e85b  xx xx:       xxx #$xx
         $3e85d  xx xx:       xxx $xx

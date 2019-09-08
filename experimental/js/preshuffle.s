@@ -1157,6 +1157,25 @@ SetEquippedConsumableItem:
   ;; 6 free bytes now
 .endif
 
+;;; Fix post-massacre Shyron sprites.  When we do sprite calculations,
+;;; we don't really have any way to take into account the fact that
+;;; post-massacre the game swaps $51 into pat1.  But pat0 is unused so
+;;; if we make it $51 as well then we're good to go, even if we decide
+;;; to flip the pattern slots.  Also, the changes to the color palettes
+;;; are irrelevant, since it only changes pal3, which seems to be unused.
+;;; So stop doing that so that peoples' colors don't change.
+.org $3e823
+  lda $6c   ; check current location
+  cmp #$8c  ; is it shyron?
+  bne +     ; if not, then return
+  lda $6484 ; check flag $27
+  bpl +     ; if it's unset then return
+  lda #$51
+  sta $07f4
+  sta $07f5
++ rts
+  ;; and we save 14 bytes, to boot.
+.assert < $3e845
 
 ;;; Allow any negative number to terminate an exit table.  Since X coordinates
 ;;; are constrained to 0..7f, this is safe, and it gives 7 extra bits for

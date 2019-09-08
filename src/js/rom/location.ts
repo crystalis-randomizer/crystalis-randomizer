@@ -338,7 +338,9 @@ export class Location extends Entity {
     const sets = new Set<Set<number>>();
     for (const entrance of this.entrances) {
       const id = entrance.screen << 8 | entrance.tile;
-      sets.add(map.get(id)!);
+      // NOTE: map should always have id, but bogus entrances
+      // (e.g. Goa Valley entrance 2) can cause problems.
+      sets.add(map.get(id) || new Set());
     }
 
     const out = new Map<number, number>();
@@ -570,7 +572,7 @@ export const Spawn = DataTuple.make(4, {
   x:     DataTuple.prop([1, 0x7f, -4], [2, 0x40, 3]),
   xt:    DataTuple.prop([1, 0x7f]),
 
-  screen: DataTuple.prop([0, 0xf0], [1, 0xf0, 4]),
+  screen: DataTuple.prop([0, 0xf0], [1, 0x70, 4]),
   tile:   DataTuple.prop([0, 0x0f, -4], [1, 0x0f]),
 
   patternBank: DataTuple.prop([2, 0x80, 7]),

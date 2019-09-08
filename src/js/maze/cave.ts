@@ -723,7 +723,7 @@ export function shuffleCave(loc: Location, random: Random,
     const spawnMap = new Map<number, number>(); // map of old -> new yyyxxx
     const monsterPlacer = loc.monsterPlacer(random);
     for (const spawn of loc.spawns) {
-      // Walls already moved.
+      // Walls already moved (by maze#write).
       if (spawn.type === 3) continue;
       if (spawn.isMonster()) {
         const monster = loc.rom.objects[spawn.monsterId];

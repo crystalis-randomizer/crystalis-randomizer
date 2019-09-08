@@ -1864,6 +1864,18 @@ class MonsterPool {
           }
         }
         if (!meet) return false;
+
+        // Figure out early if the monster is placeable.
+        let pos: number | undefined;
+        if (monsterPlacer) {
+          const monster = location.rom.objects[m.id];
+          if (!(monster instanceof Monster)) {
+            throw new Error(`non-monster: ${monster}`);
+          }
+          pos = monsterPlacer(monster);
+          if (pos == null) return false;
+        }
+
         report.push(`  Adding ${m.id.toString(16)}: ${meet}`);
         constraint = meet;
 
@@ -1890,7 +1902,10 @@ class MonsterPool {
             .push('$' + location.id.toString(16));
         const slot = slots[eligible];
         const spawn = location.spawns[slot - 0x0d];
-        if (slot in nonFlyers) {
+        if (monsterPlacer) { // pos == null returned false earlier
+          spawn.screen = pos! >>> 8;
+          spawn.tile = pos! & 0xff;
+        } else if (slot in nonFlyers) {
           spawn.y += nonFlyers[slot][0] * 16;
           spawn.x += nonFlyers[slot][1] * 16;
         }
@@ -1904,6 +1919,9 @@ class MonsterPool {
       };
 
       // For each location.... try to fill up the slots
+      const monsterPlacer =
+          slots.length && this.flags.randomizeMaps() ?
+              location.monsterPlacer(random) : null;
 
       if (flyers && slots.length) {
         // look for an eligible flyer in the first 40.  If it's there, add it first.

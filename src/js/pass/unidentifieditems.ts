@@ -14,6 +14,7 @@ const KEY_NAMES = [
 ];
 const FLUTE_NAMES = [
   'Wooden Flute',
+  'Metal Flute',
   'Horn of Plenty',
   'Ocarina',
   'Pan Pipes',
@@ -23,6 +24,11 @@ const FLUTE_NAMES = [
   'Magic Whistle',
   'Dog Whistle',
   'Recorder',
+  'Accordion',
+  'Harmonica',
+  'Sousaphone',
+  'Violin',
+  'Cello',
 ];
 const LAMP_NAMES = [
   'Bronze Lamp',

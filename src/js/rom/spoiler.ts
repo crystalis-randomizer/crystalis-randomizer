@@ -18,6 +18,8 @@ export class Spoiler {
   readonly unidentifiedItems: UnidentifiedItem[] = [];
   readonly wildWarps: WildWarp[] = [];
 
+  // TODO - shops, boss weaknesses
+
   // Used for lazily displaying route
   readonly slotNames: {[id: number]: string} = [];
   readonly conditionNames: {[id: number]: string} = {};

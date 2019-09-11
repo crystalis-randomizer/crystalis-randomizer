@@ -34,7 +34,7 @@ import {UnionFind} from './unionfind.js';
 // bytes per map.  Shops (14000..142ff) also have a giant area up top that
 // could possibly be usable, though we'd need to teach the tile-reading code
 // to ignore whatever's written there, since it *is* visible before the menu
-// pops up.  These are bbig enough regions that we could even consider using
+// pops up.  These are big enough regions that we could even consider using
 // them via page-swapping to get extra data in arbitrary contexts.
 
 // Shops are particularly nice because they're all 00 in vanilla.
@@ -47,6 +47,7 @@ export class Rom {
   // They're all always zero for vanilla
   static readonly OMIT_ITEM_GET_DATA_SUFFIX    = RomOption.bit(0x142c0, 0);
   static readonly OMIT_LOCAL_DIALOG_SUFFIX     = RomOption.bit(0x142c0, 1);
+  static readonly COMPRESSED_MAPDATA           = RomOption.bit(0x142c0, 2);
   static readonly SHOP_COUNT                   = RomOption.byte(0x142c1);
   static readonly SCALING_LEVELS               = RomOption.byte(0x142c2);
   static readonly UNIQUE_ITEM_TABLE            = RomOption.address(0x142d0);
@@ -103,6 +104,8 @@ export class Rom {
   // Whether the trailing byte of each LocalDialog is omitted.  This affects
   // both reading and writing the table.  May be inferred while reading.
   omitLocalDialogSuffix: boolean;
+  // Whether mapdata has been compressed.
+  compressedMapData: boolean;
 
   constructor(rom: Uint8Array) {
 
@@ -116,6 +119,7 @@ export class Rom {
     this.telepathyTablesAddress = Rom.TELEPATHY_TABLES.get(rom);
     this.omitItemGetDataSuffix = Rom.OMIT_ITEM_GET_DATA_SUFFIX.get(rom);
     this.omitLocalDialogSuffix = Rom.OMIT_LOCAL_DIALOG_SUFFIX.get(rom);
+    this.compressedMapData = Rom.COMPRESSED_MAPDATA.get(rom);
 
     // if (crc32(rom) === EXPECTED_CRC32) {
     for (const [address, old, value] of ADJUSTMENTS) {
@@ -284,6 +288,7 @@ export class Rom {
     Rom.SHOP_DATA_TABLES.set(this.prg, this.shopDataTablesAddress);
     Rom.OMIT_ITEM_GET_DATA_SUFFIX.set(this.prg, this.omitItemGetDataSuffix);
     Rom.OMIT_LOCAL_DIALOG_SUFFIX.set(this.prg, this.omitLocalDialogSuffix);
+    Rom.COMPRESSED_MAPDATA.set(this.prg, this.compressedMapData);
 
     const writer = new Writer(this.prg, this.chr);
     // MapData

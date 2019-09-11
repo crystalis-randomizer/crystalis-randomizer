@@ -23,3 +23,5 @@ export function compressMapData(rom: Rom) {
   // TODO - update screens.write
 
 }
+
+const [] = [Location];

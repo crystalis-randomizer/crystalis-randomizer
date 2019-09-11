@@ -589,7 +589,7 @@ function makeGraph(reqs: Map<Slot, MutableRequirement>,
   if (DEBUG) console.log(graph);
 
   const unlocks = unlocksSet.map(x => [...x]);
-  return {fixed, slots, items, graph, unlocks};
+  return {fixed, slots, items, graph, unlocks, rom};
 }
 
 const MAYBE_MISSING_SLOTS = new Set([

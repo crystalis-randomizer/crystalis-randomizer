@@ -11,7 +11,11 @@ file=${1-test/testdata}
 # Try all the presets
 for preset in $(node dist/js/cli.js --list-presets); do
   # Now run the CLI on it.
-  node dist/js/cli.js --preset=$preset --output=test/test_out --force "$file"
+  node dist/js/cli.js --seed=1 --preset=$preset --output=test/test_out \
+                      --force "$file" || {
+    echo "Failed to shuffle: @$preset seed 1" >&2
+    exit 1
+  }
 
   # Make sure the output has the right size.
   wc -c test/test_out.nes | grep -q 393232

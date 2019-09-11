@@ -68,6 +68,7 @@ export interface Graph {
   readonly graph: ReadonlyKeyed<SlotIndex, readonly Bits[]>;
   /** Map from item to locations that may now be reachable. */
   readonly unlocks: ReadonlyKeyed<ItemIndex, readonly SlotIndex[]>;
+  readonly rom: Rom;
 }
 
 class GenericFill<S extends number, I extends number> {
@@ -118,7 +119,7 @@ export function traverse(graph: Graph, fill: IndexFill, has: Bits): Set<SlotInde
   const reachable = new Set<SlotIndex>();
   const queue = new Set<SlotIndex>();
   for (let i = 0; i < graph.slots.length; i++) {
-    if (graph.graph[i] == null) {console.dir(graph);throw new Error(`adding bad node ${i} from slot`);}
+    if (graph.graph[i] == null) {console.dir(graph);throw new Error(`adding bad node ${i} (${graph.slots[i].name}) from slot`);}
     queue.add(i as SlotIndex);
   }
   for (const n of queue) {

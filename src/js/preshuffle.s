@@ -856,12 +856,23 @@ CheckForLowHpMp:
 .ifdef _FIX_COIN_SPRITES
 ;;; Normally this code reads from a table to give the 16 different coin drop
 ;;; buckets a different metasprite.  Instead, we just change the CHR pages
-;;; so that they're all compatible with $a9, and all show a single big coin.
-;;; This leads to slightly less variety, but less glitchy graphics.
-.org $37a23
-  nop
-  lda #$a9
-.assert $37a26
+;;; so that they're all compatible with $a9, which is loaded by LoadObject
+;;; (after we updated the coin's object data to use a9 instead of a8).
+;;; Now everything shows a single big coin.  This leads to slightly less
+;;; variety, but less glitchy graphics.  Mimics should load $aa instead.
+;;; We can tell because $300,x == $90.  This also frees up metasprite a8.
+.org $34bfe
+  ;; this table is no longer read, free up 16 bytes
+.assert < $34c0e
+
+.org $37a1c
+  lda $0300,x
+  cmp #$90
+  bne +
+   inc $0300,y
++ rts
+  ;; freed 5 bytes
+.assert < $37a2c
 .endif
   
 

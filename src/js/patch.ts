@@ -293,6 +293,7 @@ function fixCoinSprites(rom: Rom): void {
       rom.patterns[page << 6 | pat].pixels = rom.patterns[0x5e << 6 | pat].pixels;
     }
   }
+  rom.objects[0x0c].metasprite = 0xa9;
 }
 
 /** Make a land bridge in underground channel */

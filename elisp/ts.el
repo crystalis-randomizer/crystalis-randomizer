@@ -1,14 +1,22 @@
 ;;; https://searchcode.com/file/107184872/flycheck-typescript.el
 
 (require 'flycheck)
-;(require 'lsp-mode)
+(require 'lsp-mode)
 ;(require 'lsp-typescript)
+(require 'yasnippet)
 
 (setq sdh-ts-root
       (file-name-directory (directory-file-name (file-name-directory load-file-name))))
 
+(setq exec-path (cons (concat (getenv "HOME") "/local/bin") exec-path))
+
+
+;;; NOTE: UNCOMMENT AND RUN THIS LINE???
+;;;       May also need to run 'npm i -g typescript-language-server'
+;;;       and/or add nvm's bin directory to the path
+;;;       The variable 'exec-path' is also relevant???
 ;; (lsp-register-client
-;;  (make-lsp-client :new-connection (lsp-stdio-connection (concat sdh-ts-root "/node_modules/typescript-language-server/lib/cli.js"))
+;;  (make-lsp-client :new-connection (lsp-stdio-connection (concat sdh-ts-root "node_modules/typescript-language-server/lib/cli.js"))
 ;;                   :major-modes '(typescript-mode)
 ;;                   :server-id 'ts))
 
@@ -66,8 +74,10 @@ See URL `https://github.com/palantir/tslint'."
 
 
 (defun sdh-ts-init ()
-  (flycheck-mode)
-  (lsp)
+  (tide-setup)
+  (tide-mode)
+  ;(flycheck-mode)
+  ;(lsp)
   (setq lsp-javascript-format-insert-space-after-opening-and-before-closing-nonempty-braces nil)
   (define-key typescript-mode-map (kbd "C-c C-e") 'flycheck-display-error-at-point)
   ;; Note: these default to 'typescript-insert-and-indent, which is annoying
@@ -86,10 +96,10 @@ See URL `https://github.com/palantir/tslint'."
   (define-key typescript-mode-map (kbd "C-c \\") 'lsp-ui-sideline-mode)
 )
 
-(set-variable 'lsp-ui-sideline-enable nil)
+;(set-variable 'lsp-ui-sideline-enable nil)
 
 (add-hook 'typescript-mode-hook 'sdh-ts-init)
 
 ;(add-to-list 'flycheck-checkers 'typescript-tsc)
-(add-to-list 'flycheck-checkers 'typescript-tslint)
+;(add-to-list 'flycheck-checkers 'typescript-tslint)
 

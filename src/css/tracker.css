@@ -45,190 +45,186 @@
   grid-template-columns: repeat(4, var(--icon-width));
 }
 
-.slot {
+.item {
   background-color: #555;
 }
-.slot.available {
-  background-color: #4a4;
-}
-.slot.got {
+.item.got {
   background-color: #0070ec;
 }
-.slot.sword-of-wind > div {
+.item.sword-of-wind > div {
   background-position: 0px 0px;
 }
-.slot.sword-of-fire > div {
+.item.sword-of-fire > div {
   background-position: -40px 0px;
 }
-.slot.sword-of-water > div {
+.item.sword-of-water > div {
   background-position: -80px 0px;
 }
-.slot.sword-of-thunder > div {
+.item.sword-of-thunder > div {
   background-position: -120px 0px;
 }
-.slot.ball-of-wind > div {
+.item.ball-of-wind > div {
   background-position: 0px -40px;
 }
-.slot.ball-of-fire > div {
+.item.ball-of-fire > div {
   background-position: -40px -40px;
 }
-.slot.ball-of-water > div {
+.item.ball-of-water > div {
   background-position: -80px -40px;
 }
-.slot.ball-of-thunder > div {
+.item.ball-of-thunder > div {
   background-position: -120px -40px;
 }
-.slot.tornado-bracelet > div {
+.item.tornado-bracelet > div {
   background-position: 0px -80px;
 }
-.slot.flame-bracelet > div {
+.item.flame-bracelet > div {
   background-position: -40px -80px;
 }
-.slot.blizzard-bracelet > div {
+.item.blizzard-bracelet > div {
   background-position: -80px -80px;
 }
-.slot.storm-bracelet > div {
+.item.storm-bracelet > div {
   background-position: -120px -80px;
 }
-.slot.alarm-flute > div {
+.item.alarm-flute > div {
   background-position: -240px -200px;
 }
-.slot.sacred-shield > div {
+.item.sacred-shield > div {
   background-position: -240px -240px;
 }
-.slot.kirisa-plant > div {
+.item.kirisa-plant > div {
   background-position: -160px -200px;
 }
-.slot.psycho-armor > div {
+.item.psycho-armor > div {
   background-position: -200px -240px;
 }
-.slot.shield-ring > div {
+.item.shield-ring > div {
   background-position: -120px -160px;
 }
-.slot.power-ring > div {
+.item.power-ring > div {
   background-position: -40px -120px;
 }
-.slot.warrior-ring > div {
+.item.warrior-ring > div {
   background-position: -80px -120px;
 }
-.slot.insect-flute > div {
+.item.insect-flute > div {
   background-position: -160px -80px;
 }
-.slot.flute-of-lime > div {
+.item.flute-of-lime > div {
   background-position: -200px -80px;
 }
-.slot.shell-flute > div {
+.item.shell-flute > div {
   background-position: -240px -80px;
 }
-.slot.rabbit-boots > div {
+.item.rabbit-boots > div {
   background-position: -40px -160px;
 }
-.slot.leather-boots > div {
+.item.leather-boots > div {
   background-position: -80px -160px;
 }
-.slot.opel-statue > div {
+.item.opel-statue > div {
   background-position: -160px -240px;
 }
-.slot.statue-of-onyx > div {
+.item.statue-of-onyx > div {
   background-position: -160px -120px;
 }
-.slot.broken-statue > div {
+.item.broken-statue > div {
   background-position: -200px -120px;
 }
-.slot.ivory-statue > div {
+.item.ivory-statue > div {
   background-position: -240px -120px;
 }
-.slot.windmill-key > div {
+.item.windmill-key > div {
   background-position: -160px -40px;
 }
-.slot.key-to-prison > div {
+.item.key-to-prison > div {
   background-position: -200px -40px;
 }
-.slot.key-to-styx > div {
+.item.key-to-styx > div {
   background-position: -240px -40px;
 }
-.slot.gas-mask > div {
+.item.gas-mask > div {
   background-position: 0px -120px;
 }
-.slot.eye-glasses > div {
+.item.eye-glasses > div {
   background-position: -240px -160px;
 }
-.slot.fog-lamp > div {
+.item.fog-lamp > div {
   background-position: -160px -160px;
 }
-.slot.glowing-lamp > div {
+.item.glowing-lamp > div {
   background-position: -200px -160px;
 }
-.slot.iron-necklace > div {
+.item.iron-necklace > div {
   background-position: -120px -120px;
 }
-.slot.deos-pendant > div {
+.item.deos-pendant > div {
   background-position: 0px -160px;
 }
-.slot.love-pendant > div {
+.item.love-pendant > div {
   background-position: -200px -200px;
 }
-.slot.bow-of-moon > div {
+.item.bow-of-moon > div {
   background-position: -160px 0px;
 }
-.slot.bow-of-sun > div {
+.item.bow-of-sun > div {
   background-position: -200px 0px;
 }
-.slot.bow-of-truth > div {
+.item.bow-of-truth > div {
   background-position: -240px 0px;
 }
-.slot.refresh > div {
+.item.refresh > div {
   background-position: 0px -200px;
 }
-.slot.paralysis > div {
+.item.paralysis > div {
   background-position: -40px -200px;
 }
-.slot.telepathy > div {
+.item.telepathy > div {
   background-position: -80px -200px;
 }
-.slot.teleport > div {
+.item.teleport > div {
   background-position: -120px -200px;
 }
-.slot.recover > div {
+.item.recover > div {
   background-position: 0px -240px;
 }
-.slot.barrier > div {
+.item.barrier > div {
   background-position: -40px -240px;
 }
-.slot.change > div {
+.item.change > div {
   background-position: -80px -240px;
 }
-.slot.flight > div {
+.item.flight > div {
   background-position: -120px -240px;
 }
 
 
-.slot {
+.item {
   width: var(--icon-width);
   height: var(--icon-height);
 }
 
-.slot.blocked {
+/*
+.slot[data-state="blocked"] {
   background: #fbb;
 }
-.slot.available {
+.slot[data-state="available"] {
   background: #bfb;
 }
-.slot.glitched {
-  background: #ffb;
-}
-.slot.checked {
+.slot[data-state="got"] {
   background: #bbf;
 }
+*/
 
-.slot > div {
+.item > div {
   background-image: var(--disabled);
   background-repeat: no-repeat;
   xbackground-size: 1000%;  /* ??? */
   width: var(--icon-width);
   height: var(--icon-height);
 }
-.slot.got > div {
+.item.got > div {
   background-image: var(--enabled);
 }
 
@@ -250,22 +246,13 @@
   width: 7px;
   height: 7px;
 }
-.map > div.blocked {
+.map > div[data-state="blocked"] {
   background: red;
 }
-.map > div.available {
+.map > div[data-state="available"] {
   background: #5f5;
 }
-.map > div.glitched {
-  background: #cb3;
-}
-.map > div.off-route {
-  background: #8c5;
-}
-.map > div.hard {
-  background: #f83;
-}
-.map > div.checked {
+.map > div[data-state="got"] {
   background: #888;
 }
 .map > div > div {
@@ -286,18 +273,9 @@
 }
 
 
-li.blocked {
+li[data-state="blocked"] {
   color: #b00;
 }
-li.available {
+li[data-state="available"] {
   color: #4d4;
-}
-li.glitched {
-  color: #cb3;
-}
-li.off-route {
-  color: #8c5;
-}
-li.hard {
-  color: #fa5;
 }

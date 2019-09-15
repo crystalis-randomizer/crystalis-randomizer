@@ -94,7 +94,7 @@ class GenericFill<S extends number, I extends number> {
 
 export type Fill = GenericFill<SlotId, ItemId>;
 //export const Fill: {new(): Fill} = GenericFill;
-type IndexFill = GenericFill<SlotIndex, ItemIndex>;
+export type IndexFill = GenericFill<SlotIndex, ItemIndex>;
 
 /** Converts an IndexFill to a full Fill. */
 function expandFill(g: Graph, f: IndexFill): Fill {
@@ -104,6 +104,10 @@ function expandFill(g: Graph, f: IndexFill): Fill {
     out.set(g.slots[s].item!, g.items[i].item!);
   }
   return out;
+}
+
+export function newFill<S extends number, I extends number>(): GenericFill<S, I> {
+  return new GenericFill();
 }
 
 

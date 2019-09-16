@@ -192,7 +192,20 @@ const BOSSES = new Map([
 
 // slots that come from trade-ins
 //  - note: the fog lamp trade-in doesn't have a good slot for this
-const TRADES = new Set([0x29, 0x3e, 0x47, 0x48]);
+// TODO - add "traded fog lamp" to items, add a box for it.
+// TODO - count number of traded boxes checked, set rest to blocked if
+//        <= number of items already traded in...?
+// TODO - find-and-replace for tornel's item after the fact??
+const TRADES = new Set([0x29, 0x3e, 0x44, 0x47, 0x48]);
+
+// TODO - add extra indirection for walls in overlay if tracking
+//  - one for each separate region... how to keep track of that?
+//  - then keep them as items...?  bosses?  maybe just hardcode
+//    the linkages?  or just add all walls as items and link them
+//    directly here... - that might be better.
+
+// x, y, ...flags
+// const WALLS: [number, number, ...number] = [];
 
 class Graph {
   /** map from id to slot index */

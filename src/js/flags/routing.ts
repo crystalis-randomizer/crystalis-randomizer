@@ -44,17 +44,6 @@ export const ROUTING_FLAGS: FlagSection = {
       text: `Deo's item is additionally blocked on telepathy.`,
     },
     {
-      flag: 'Rl',
-      name: 'No "free lunch" magic',
-      text:
-          `Disables "free lunch" magics that only require stepping on a square to
-           learn (specifally Barrier and Paralysis).  Instead, Barrier requires
-           the seas to be calmed, and Paralysis requires the prison key (which
-           can be used at the top of the slope in Waterfall Valley to open the
-           path in reverse).  Reverse vampire also requires the windmill to have
-           been started.`,
-    },
-    {
       flag: 'Ro',
       name: 'Orbs not required to break walls',
       text:

@@ -25,7 +25,7 @@ export const PRESETS: Preset[] = [
     title: 'Intermediate',
 
     descr: `Slightly more challenge than Casual but still approachable.`,
-    flags: 'Ds Edms Fsw Gt Mr Ps Rlpt Sct Skm Tab',
+    flags: 'Ds Edms Fsw Gt Mr Ps Rpt Sct Skm Tab',
 
     default: true,
   },
@@ -34,27 +34,27 @@ export const PRESETS: Preset[] = [
 
     descr:
         `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
-    flags: 'Em Fsw Gt Mert Ps Rlprt Sckmt Tabmp Wtuw',
+    flags: 'Em Fsw Gt Mert Ps Rprt Sckmt Tabmp Wtuw',
   },
   {
     title: 'Glitchless',
 
     descr: `Full shuffle but with no glitches.`,
-    flags: 'Em Fcpstw Mert Ps Rlprt Sckmt Tab Wtuw',
+    flags: 'Em Fcpstw Mert Ps Rprt Sckmt Tab Wtuw',
   },
   {
     // TODO: add 'Ht' for maxing out tower scaling
     title: 'Advanced',
 
     descr: `A balanced randomization with quite a bit more difficulty.`,
-    flags: 'Fsw Gfprt Hbdgw Mert Ps Rloprst Sckt Sm Tabmp Wtuw',
+    flags: 'Fsw Gfprt Hbdgw Mert Ps Roprst Sckt Sm Tabmp Wtuw',
   },
   {
     // TODO: add 'Ht'
     title: 'Ludicrous',
 
     descr: `Pulls out all the stops, may require superhuman feats.`,
-    flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Rloprst Sckmt Tabmp Wtuw',
+    flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Roprst Sckmt Tabmp Wtuw',
   }
 ];
 
@@ -180,13 +180,13 @@ export class FlagSet {
   }
 
   barrierRequiresCalmSea() {
-    return this.check('Rl');
+    return true; // this.check('Rl');
   }
   paralysisRequiresPrisonKey() {
-    return this.check('Rl');
+    return true; // this.check('Rl');
   }
   sealedCaveRequiresWindmill() {
-    return this.check('Rl');
+    return true; // this.check('Rl');
   }
   connectLimeTreeToLeaf() {
     return this.check('Rp');

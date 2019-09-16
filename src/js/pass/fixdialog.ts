@@ -154,13 +154,14 @@ function findTornelTradeIn(tornel: Npc): number {
   //   NOT bracelet -> ...
   //   NOT ball -> ...
   //   -> give item
-  // So find the give (action 3) and step back two messages
   for (const ds of tornel.localDialogs.values()) {
     for (let i = 2; i < ds.length; i++) {
-      if (ds[i].message.action === 3) return ~ds[i - 2].condition & 0xff;
+      const item = ~ds[i].condition;
+      // Look for any negative condition on a bracelet (doesn't matter where)
+      if (item > 0x204 && item <= 0x20c && !(item & 1)) return item & 0xff;
     }
   }
-  return 0x06; // default to tornado bracelet.
+  return 0x06; // default to tornado bracelet
 }
 
 function vague(id: number): string {

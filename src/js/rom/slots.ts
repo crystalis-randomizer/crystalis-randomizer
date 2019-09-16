@@ -185,7 +185,7 @@ const hardcodedItems: ReadonlyArray<readonly [number, string?]> = [
   [0x3d2af, 'Stoned Akahana'],
   [0x3d30e, 'Lighthouse Kensu'],
   [0x3d337, 'Rage'],
-  [0x3d655, 'Mt Sabre summit trigger'],
+  [0x3d655, 'Mt Sabre summit trigger'], // paralysis
   [0x3d6d9, 'Whirlpool trigger'],
   [0x3d6de, 'Swan Kensu'],
   [0x3d6e8, 'Aryllis'],

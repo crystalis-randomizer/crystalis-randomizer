@@ -422,6 +422,11 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
     if (index < 0) throw new Error(`Could not find element ${elem} in ${arr}`);
     arr.splice(index, 1);
   }
+  function removeIf<T>(arr: T[], pred: (elem: T) => boolean): void {
+    const index = arr.findIndex(pred);
+    if (index < 0) throw new Error(`Could not find element in ${arr}`);
+    arr.splice(index, 1);
+  }
 
   function dialog(id: number, loc: number = -1): LocalDialog[] {
     const result = rom.npcs[id].localDialogs.get(loc);
@@ -630,6 +635,27 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   // Add an extra condition to the Leaf abduction trigger (behind zebu).  This ensures
   // all the items in Leaf proper (elder and student) are gotten before they disappear.
   rom.trigger(0x8c).conditions.push(0x03a); // 03a talked to zebu in cave
+
+  // More work on abduction triggers:
+  // 1. Remove the 8d trigger in the front of the cell, swap it out
+  //    for b2 (learn paralysis).
+  rom.trigger(0x8d).used = false;
+  for (const spawn of rom.locations.mtSabreNorthSummitCave.spawns) {
+    if (spawn.isTrigger() && spawn.id === 0x8d) spawn.id = 0xb2;
+  }
+  removeIf(rom.locations.waterfallValleyNorth.spawns,
+           spawn => spawn.isTrigger() && spawn.id === 0x8d);
+  // 2. Set the trigger to require having killed kelbesque.
+  rom.trigger(0xb2).conditions.push(0x102); // killed kelbesque
+  // 3. Also set the trigger to free the villagers and the elder.
+  rom.trigger(0xb2).flags.push(~0x084, ~0x085, 0x00d);
+  // 4. Don't trigger the abduction in the first place if kelbesque dead
+  rom.trigger(0x8c).conditions.push(~0x102); // killed kelbesque
+  // 5. Don't trigger rabbit block if kelbesque dead
+  rom.trigger(0x86).conditions.push(~0x102); // killed kelbesque
+  // 6. Don't free villagers from using prison key
+  rom.prg[0x1e0a3] = 0xc0;
+  rom.prg[0x1e0a4] = 0x00;
 
   // TODO - additional work on abduction trigger:
   //   - get rid of the flags on key to prison use

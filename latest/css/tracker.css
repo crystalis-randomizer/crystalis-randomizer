@@ -252,7 +252,7 @@
 .map > div[data-state="available"] {
   background: #5f5;
 }
-.map > div[data-state="got"] {
+.map > div.got { /* comes last to override */
   background: #888;
 }
 .map > div > div {
@@ -268,10 +268,34 @@
   z-index: 1;
   pointer-events: none;
 }
+.boss::after {
+  content: " ?";
+  font-size: 5pt;
+  font-family: sans-serif;
+  white-space: pre;
+}
 .hidden {
   display: none;
 }
 
+.flags {
+  display: flex;
+}
+.flags > div {
+  border: 1px solid black;
+  border-radius: 2px;
+  padding: 2px 4px;
+  margin-right: 4px;
+}
+.flags > div[data-state="blocked"] {
+  background: #fbb;
+}
+.flags > div[data-state="available"] {
+  background: #bfb;
+}
+.flags > div.got {
+  background: #bbf !important;
+}
 
 li[data-state="blocked"] {
   color: #b00;

@@ -171,7 +171,28 @@ const SLOTS: ReadonlyArray<readonly [number, number, number]> = [
   [0x6f,  44, 97], // magic ring fortress 3 lower
 ];
 
+// non-unique key item slots
 const KEY = new Set([0x10, 0x12, 0x23, 0x26, 0x61]);
+
+const BOSSES = new Map([
+  [~0x100, 0x2e], // rabbit boots slot -> vampire 1
+  [~0x101, 0x07], // ball of fire slot -> insect
+  [~0x102, 0x08], // flame bracelet slot -> kelbesque 1
+  [~0x103, 0x09], // ball of water slot -> rage
+  [~0x104, 0x38], // broken statue slot -> sabera 1
+  [~0x105, 0x0b], // ball of thunder slot -> mado 1
+  [~0x106, 0x26], // opel statue slot -> kelbesque 2
+  [~0x107, 0x23], // fruit of repun slot -> sabera 2
+  [~0x108, 0x12], // sacred shield slot -> mado 2
+  [~0x109, 0x3d], // ivory statue slot -> karmine
+  [~0x10a, 0x1c], // psycho armor slot -> draygon 1
+  // [, ~0x10b], // draygon 2
+  [~0x10c, 0x61], // fruit of power slot -> vampire 2
+]);
+
+// slots that come from trade-ins
+//  - note: the fog lamp trade-in doesn't have a good slot for this
+const TRADES = new Set([0x29, 0x3e, 0x47, 0x48]);
 
 class Graph {
   /** map from id to slot index */
@@ -183,7 +204,7 @@ class Graph {
   /** map from item index to element */
   //readonly itemElts = new Map<number, HTMLElement>();
   /** set of slot index */
-  readonly checked = new Set<number>();
+  //readonly checked = new Set<number>();
   // /** map from slot id to node */
   // readonly nodeFromSlot = new Map<number, any>();
   // readonly nodes = new Map<any, any>();
@@ -195,9 +216,15 @@ class Graph {
   readonly grid: Element;
   readonly map: Element;
 
-  constructor(readonly rom: Rom, readonly world: World) {
+  unusedItems: number;
+
+  constructor(readonly rom: Rom,
+              readonly world: World,
+              readonly flags: FlagSet) {
     // TODO - compute two depgraphs: one with glitches and one without
     //  - then we can show green vs yellow for glitchable locations..?
+
+    (window as any).GRAPH = this;
 
     this.grid = document.getElementsByClassName('grid')[0];
     this.map = document.getElementsByClassName('map')[0];
@@ -212,8 +239,10 @@ class Graph {
       if (id == null) continue; // throw new Error(`bad item: ${index}`);
       this.items.set(id, index);
       const item = rom.items[id];
-      if (!item || !item.unique) always = Bits.with(always, index);
+      // TODO - setup always from non-added items?
+      if (item && !item.unique) always = Bits.with(always, index);
     }
+    this.unusedItems = world.graph.items.length;
 
     this.has = this.always = always;
 
@@ -247,34 +276,25 @@ class Graph {
       //   this.route[n.uid] = color;
       // }
 
-    const toggle = (e: Event, slot: boolean) => {
+    const toggle = (e: Event) => {
       let t = e.target as HTMLElement|null;
-      const key = slot ? 'slot' : 'item';
-      while (t && !t.dataset[key]) {
+      while (t && !t.dataset['index']) {
         t = t.parentElement;
       }
       if (!t) return;
-      const uid = Number(t.dataset[key]);
-      if (slot) {
-        if (this.checked.has(uid)) {
-          this.checked.delete(uid);
-        } else {
-          this.checked.add(uid);
-        }
-      } else {
-        this.has = Bits.has(this.has, uid) ?
-            Bits.without(this.has, uid) :
-            Bits.with(this.has, uid);
-      }
-      if (!slot) {
-        t.classList.toggle('got', Bits.has(this.has, uid));
+      const uid = Number(t.dataset['index']);
+      const has = t.classList.toggle('got');
+      if (t.dataset['item']) {
+        this.has = has ?
+            Bits.with(this.has, uid) :
+            Bits.without(this.has, uid);
       }
       this.update();
       e.preventDefault();
     };
 
-    this.grid.addEventListener('click', e => toggle(e, false));
-    this.map.addEventListener('click', e => toggle(e, true));
+    this.grid.addEventListener('click', toggle);
+    //this.map.addEventListener('click', toggle);
   }
 
   addSlot(slotId: number, x: number, y: number) {
@@ -289,7 +309,7 @@ class Graph {
       x--; y--;
     }
     x--; y--;
-    div.dataset['slot'] = String(index);
+    div.dataset['index'] = String(index);
     div.style.left = x + 'px';
     div.style.top = y + 'px';
     //div.textContent = '\xa0';
@@ -299,6 +319,9 @@ class Graph {
         slotId >= 0x70 ?
             'Mimic' :
             this.rom.items[itemget.itemId].messageName.replace(' ', '\xa0');
+    if (this.flags.randomizeTrades() && TRADES.has(slotId)) {
+      div.classList.add('boss');
+    }
     this.slotElts.set(index, div);
     this.map.appendChild(div);
   }
@@ -311,28 +334,41 @@ class Graph {
     outer.appendChild(inner);
     let index = this.items.get(uid);
     if (index == null) {
-      this.items.set(uid, index = this.items.size);
+      // Items that don't block anything won't have shown up yet.
+      this.items.set(uid, index = this.unusedItems++);
     }
+    outer.dataset['index'] = String(index);
     outer.dataset['item'] = String(index);
     //this.slotElts.set(index, outer);
   }
 
+  addExtraFlags() {
+    const g = this.world.graph;
+    for (const slot of g.slots.slice(g.fixed)) {
+      const c = slot.condition;
+      const bossSlot = BOSSES.get(c);
+      const replaced = bossSlot && this.slots.get(bossSlot);
+      if (replaced == null) continue;
+      const elt = this.slotElts.get(replaced);
+      if (elt == null) throw new Error('expected');
+      this.slotElts.delete(Number(elt.dataset['index']));
+      this.slotElts.set(slot.index, elt);
+      elt.classList.add('boss');
+      elt.dataset['index'] = String(slot.index);
+      elt.dataset['item'] = String(slot.index);
+    }
+  }
+
   update() {
-    main:
-    for (const [index, elt] of this.slotElts) {
-      if (this.checked.has(index)) {
-        // no work, it's already checked
-        elt.dataset['state'] = 'got';
-      } else {
-        elt.dataset['state'] = 'blocked';
-      }
+    for (const elt of this.slotElts.values()) {
+      elt.dataset['state'] = elt.classList.contains('got') ? '' : 'blocked';
     }
     for (const slot of traverse(this.world.graph, newFill(), this.has)) {
       // figure out whether it's available or not
       // TODO - consider having multiple worlds, for glitched/hard?
       //      -> adjust flags to add all glitches/hard mode
       const elt = this.slotElts.get(slot);
-      if (elt && elt.dataset['state'] !== 'got') {
+      if (elt && !elt.classList.contains('got')) {
         elt.dataset['state'] = 'available';
       }
     }
@@ -343,7 +379,7 @@ class Graph {
 //      - all others (minus wild warp if disabled) tracked as glitches
 //      - consider dark yellow and dark green as well as dark blue ??
 
-let flags = 'Rlpt Ts';
+let flags = 'Rlpt Tb';
 for (const arg of location.hash.substring(1).split('&')) {
   const [key, value] = arg.split('=');
   if (key === 'flags') {
@@ -363,8 +399,8 @@ async function main() {
   const rom = await Rom.load();
   const flagset = new FlagSet(flags);
   deterministic(rom, flagset); // make deterministic changes
-  const world = World.build(rom, flagset); // + ' Dt'));
-  const graph = new Graph(rom, world);
+  const world = World.build(rom, flagset, true); // + ' Dt'));
+  const graph = new Graph(rom, world, flagset);
   for (let item of ITEMS.split('\n')) {
     item = item.replace(/#.*/, '').trim();
     if (!item) continue;
@@ -373,6 +409,7 @@ async function main() {
   for (const slot of SLOTS) {
     graph.addSlot(...slot);
   }
+  graph.addExtraFlags();
   graph.update();
 
   document.getElementById('toggle-map')!.addEventListener('click', () => {
@@ -383,7 +420,6 @@ async function main() {
       e.classList.remove('got');
     }
     graph.has = graph.always;
-    graph.checked.clear();
     graph.update();
   });
 };

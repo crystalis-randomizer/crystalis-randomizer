@@ -114,7 +114,9 @@ export class Overlay {
 
   private readonly shootingStatues = new Set<ScreenId>();
 
-  constructor(readonly rom: Rom, readonly flags: FlagSet) {
+  constructor(readonly rom: Rom,
+              readonly flags: FlagSet,
+              private readonly tracker: boolean) {
     // TODO - adjust based on flagset?
     for (const flag of RELEVANT_FLAGS) {
       this.relevantFlags.add(flag);
@@ -146,12 +148,15 @@ export class Overlay {
   bossRequirements(boss: RomBoss): Requirement {
     // TODO - handle boss shuffle somehow?
     if (boss === this.rom.bosses.rage) {
+      if (this.tracker && this.flags.randomizeTrades()) return Capability.SWORD;
       // return Item.SWORD_OF_WATER;
       return Condition(this.rom.npcs[0xc3].localDialogs.get(-1)![0].condition);
     }
     const id = boss.object;
     const out = new MutableRequirement();
-    if (this.flags.guaranteeMatchingSword()) {
+    if (this.tracker && this.flags.shuffleBossElements()) {
+      out.addAll(Capability.SWORD);
+    } else if (this.flags.guaranteeMatchingSword()) {
       const level = this.flags.guaranteeSwordMagic() ? boss.swordLevel : 1;
       const obj = this.rom.objects[id];
       for (let i = 0; i < 4; i++) {
@@ -464,6 +469,21 @@ export class Overlay {
         const condition = and(...requirements, t, ...reqs);
         result.check.push({slot, condition});
       }
+      let tradeR = trade;
+      if (this.tracker && this.flags.randomizeTrades()) {
+        tradeR = (slot, ...reqs) => {
+          const items = [
+            Item.STATUE_OF_ONYX,
+            Item.FOG_LAMP,
+            Item.LOVE_PENDANT,
+            Item.KIRISA_PLANT,
+            Item.IVORY_STATUE,
+          ];
+          const condition =
+              or(...items.map(i => and(...requirements, i, ...reqs)));
+          result.check.push({slot, condition});
+        }
+      }
       switch (id) {
       case 0x15: // sleeping windmill guard => windmill key slot
         trade(Slot(Item.WINDMILL_KEY));
@@ -471,7 +491,7 @@ export class Overlay {
       case 0x23: // aryllis => bow of moon slot
         // NOTE: sitting on impassible throne
         result.hitbox = {x0: -1, x1: 2, y0: -1, y1: 2};
-        trade(Slot(Item.BOW_OF_MOON), Magic.CHANGE);
+        tradeR(Slot(Item.BOW_OF_MOON), Magic.CHANGE);
         break;
       case 0x63: // hurt dolphin => healed dolphin
         // NOTE: dolphin on water, but can heal from land
@@ -480,23 +500,24 @@ export class Overlay {
         trade(Slot(Item.SHELL_FLUTE));
         break;
       case 0x64: // fisherman
-        trade(Slot(Event.RETURNED_FOG_LAMP),
-              ...(this.flags.requireHealedDolphinToRide() ? [Event.HEALED_DOLPHIN] : []));
+        tradeR(Slot(Event.RETURNED_FOG_LAMP),
+               ...(this.flags.requireHealedDolphinToRide() ?
+                   [Event.HEALED_DOLPHIN] : []));
         // TODO - use this as proxy for boat
         break;
       case 0x6b: // sleeping kensu
         trade(Slot(Item.GLOWING_LAMP));
         break;
       case 0x75: // slimed kensu => flight slot
-        trade(Slot(Magic.FLIGHT));
+        tradeR(Slot(Magic.FLIGHT));
         break;
       case 0x74: // kensu in dance hall => change slot
         // NOTE: this is normally 7e but we change it to 74 in this one
         // location to identify it
-        trade(Slot(Magic.CHANGE), Magic.PARALYSIS, Event.FOUND_KENSU);
+        tradeR(Slot(Magic.CHANGE), Magic.PARALYSIS, Event.FOUND_KENSU);
         break;
       case 0x82: // akahana => gas mask slot (changed 16 -> 82)
-        trade(Slot(Item.GAS_MASK));
+        tradeR(Slot(Item.GAS_MASK));
         break;
       case 0x88: // stoned akahana => shield ring slot
         trade(Slot(Item.SHIELD_RING));

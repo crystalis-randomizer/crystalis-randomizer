@@ -76,6 +76,7 @@ See URL `https://github.com/palantir/tslint'."
 (defun sdh-ts-init ()
   (tide-setup)
   (tide-mode)
+  (company-mode t)
   ;(flycheck-mode)
   ;(lsp)
   (setq lsp-javascript-format-insert-space-after-opening-and-before-closing-nonempty-braces nil)

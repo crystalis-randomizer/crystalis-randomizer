@@ -631,6 +631,23 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   // all the items in Leaf proper (elder and student) are gotten before they disappear.
   rom.trigger(0x8c).conditions.push(0x03a); // 03a talked to zebu in cave
 
+  // TODO - additional work on abduction trigger:
+  //   - get rid of the flags on key to prison use
+  //   - add a condition that abduction doesn't happen if rescued
+  // Get rid of BOTH triggers in summit cave,  Instead, tie everything
+  // to the elder dialog on top
+  //   - if kelbesque still alive, maybe give a hint about weakness
+  //   - if kelbesque dead then teach paralysis and set/clear flags
+  //   - if paralysis learned then say something generic
+  // Still need to keep the trigger in the front in case no
+  // abduction yet
+  //   - if NOT paralysis AND if NOT elder missing AND if kelbeque dead
+  // ---> need special handling for two ways to get (like refresh)?
+  //
+  // Also add a check that the rabbit trigger is gone if rescued!
+
+
+
   // Paralysis trigger ($b2) ~ remove redundant itemget flag
   //rom.trigger(0xb2).conditions[0] = ~0x242;
   //rom.trigger(0xb2).flags.shift(); // remove 037 learned paralysis

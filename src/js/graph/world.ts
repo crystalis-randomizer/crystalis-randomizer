@@ -47,8 +47,8 @@ export class World {
     }
   }
 
-  static build(rom: Rom, flags?: FlagSet): World {
-    return build(rom, flags);
+  static build(rom: Rom, flags?: FlagSet, tracker?: boolean): World {
+    return build(rom, flags, tracker);
   }
 }
 
@@ -59,7 +59,7 @@ export class World {
 // Blocks for any given tile group.
 // private readonly blocks = new Array<[number, number[][]]>();
 
-function build(rom: Rom, flags = new FlagSet('@FullShuffle')): World {    
+function build(rom: Rom, flags = new FlagSet('@FullShuffle'), tracker = false): World {    
   // 1. start with entrance 0 at the start location, add it to the tiles and queue.
   // 2. for tile T in the queue
   //    - for each passable neighbor N of T:
@@ -72,7 +72,7 @@ function build(rom: Rom, flags = new FlagSet('@FullShuffle')): World {
   //  - one-way 
 
   // Start by getting a full map of all terrains and checks
-  const overlay = new Overlay(rom, flags);
+  const overlay = new Overlay(rom, flags, tracker);
   const terrains = new Map<TileId, Terrain>();
   const walls = new Map<ScreenId, WallType>();
   const bosses = new Map<TileId, number>();
@@ -484,10 +484,30 @@ function build(rom: Rom, flags = new FlagSet('@FullShuffle')): World {
 
   // Build up shuffle.Graph
   // First figure out which items and events are actually needed.
-  return new World(rom, tiles, makeGraph(reqs, rom));
+  let filled = isItem;
+  if (tracker) {
+    // pull out other bits to be filled in.
+    filled = function(c: number): boolean {
+      if (isItem(c)) return true;
+      if (flags.shuffleBossElements() && isBoss(c)) return true;
+      // TODO - walls?
+      return false;
+    }
+  }
+  return new World(rom, tiles, makeGraph(reqs, rom, filled));
 }
 
-function makeGraph(reqs: Map<Slot, MutableRequirement>, rom: Rom): shuffle.Graph {
+function isBoss(c: number): boolean {
+  return ~c >= 0x100 && ~c < 0x110;
+}
+function isItem(c: number): boolean {
+  return c >= 0x200 && c < 0x280;
+}
+
+/** @param flags Only if tracker */
+function makeGraph(reqs: Map<Slot, MutableRequirement>,
+                   rom: Rom,
+                   filled: (c: number) => boolean): shuffle.Graph {
   // Figure out which items are used, build two sets.
   const allConditionsSet = new Set<Condition>();
   const allSlotsSet = new Set<Slot>();
@@ -502,10 +522,9 @@ function makeGraph(reqs: Map<Slot, MutableRequirement>, rom: Rom): shuffle.Graph
   // Nothing depends on this but we should track it anyway.
   allConditionsSet.add(Boss.DRAYGON2[0][0]);
 
-  function isItem(c: number): boolean { return c >= 0x200 && c < 0x280; }
-  const allConditions = [...allConditionsSet].filter(c => !isItem(c)).sort();
-  const allItems = [...allConditionsSet].filter(isItem).sort();
-  const allSlots = [...allSlotsSet].filter(isItem).sort();
+  const allConditions = [...allConditionsSet].filter(c => !filled(c)).sort();
+  const allItems = [...allConditionsSet].filter(filled).sort();
+  const allSlots = [...allSlotsSet].filter(filled).sort();
   const fixed = allConditions.length;
 
   function makeNode(condition: number, index: number) {

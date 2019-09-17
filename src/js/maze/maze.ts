@@ -83,7 +83,8 @@ export class Maze implements Iterable<[Pos, Scr]> {
 
   /**
    * Finds all screens that can be extended with an extra exit.
-   * Returns an array of quads.
+   * Returns an array of quads.  Fourth element in the quad is
+   * a partition index, which includes exit type in the low nibble.
    */
   * extensions(): IterableIterator<[Pos, Scr, Dir, number]> {
     const uf = new UnionFind<Pos>();
@@ -176,6 +177,12 @@ export class Maze implements Iterable<[Pos, Scr]> {
     const eligible = [...this.eligible(pos, opts)];
     if (!eligible.length) {
       //console.error(`No eligible tiles for ${hex(pos)}`);
+      if (opts.deleteNeighbors) {
+        for (const dir of Dir.ALL) {
+          const pos1 = Pos.plus(pos, dir);
+          if (!this.isFixed(pos1)) this.setInternal(pos1, null);
+        }
+      }
       return false;
     }
     if (opts.fuzzy) {
@@ -328,8 +335,32 @@ export class Maze implements Iterable<[Pos, Scr]> {
     });
   }
 
-  connect(pos1: Pos, dir1: Dir, pos2: Pos, dir2: Dir): boolean {
+  // pos1 and pos2 are pos that have already been filled, with an empty neighbor
+  connect(pos1: Pos, dir1?: Dir|null, pos2?: Pos|null, dir2?: Dir|null): boolean {
+    // Infer directions if necessary
+    if (dir1 == null) dir1 = this.findEmptyDir(pos1);
+    if (dir1 == null) return false;
     const exitType = Scr.edge(this.map[pos1] || 0 as Scr, dir1);
+    // If only one pos is given, connect to any existing path.
+    // TODO - for now we connect at the closest possible point, in an attempt
+    //        to avoid ridiculously circuitous paths.  May not be necessary?
+    if (pos2 == null) {
+      // For each possibility, store the distance to pos1.
+      const exts: Array<[Pos, Scr, number]> = [];
+      for (const [pos, scr,, exit] of this.extensions()) {
+        if ((exit & 0xf) === exitType) {
+          //const n = Pos.plus(pos, dir);
+          exts.push([pos, scr, 0]); // Pos.hypot(n, pos1)]);
+        }
+      }
+      if (!exts.length) return false;
+      const ext = this.random.pick(exts);
+      this.replace((pos2 = ext[0]), ext[1]);
+    }
+
+    if (dir2 == null) dir2 = this.findEmptyDir(pos2);
+    if (dir1 == null || dir2 == null) return false;
+    // Now start working
     if (exitType !== Scr.edge(this.map[pos2] || 0 as Scr, dir2)) {
       throw new Error(`Incompatible exit types`);
     }
@@ -343,6 +374,18 @@ export class Maze implements Iterable<[Pos, Scr]> {
     }
     // return this.fill(pos2, 2); // handled in fillPath
     return true;
+  }
+
+  private findEmptyDir(pos: Pos): Dir|null {
+    const scr = this.map[pos];
+    if (scr == null) return null;
+    const dirs = [];
+    for (const dir of Dir.ALL) {
+      if (Scr.edge(scr, dir) && this.empty(Pos.plus(pos, dir))) {
+        dirs.push(dir);
+      }
+    }
+    return dirs.length === 1 ? dirs[0] : null;
   }
 
   // // Assumes all 6 tunnel screens are available for each exit type.
@@ -544,8 +587,13 @@ export class Maze implements Iterable<[Pos, Scr]> {
     this.setInternal(pos, screen);
   }
 
-  private setInternal(pos: Pos, scr: Scr): void {
+  private setInternal(pos: Pos, scr: Scr | null): void {
     const prev = this.map[pos];
+    if (scr == null) {
+      this.map[pos] = undefined;
+      if (this.counts && prev != null) this.counts.delete(prev);
+      return;
+    }
     this.map[pos] = scr;
     if (this.counts) {
       if (prev != null) this.counts.delete(prev);
@@ -816,6 +864,8 @@ interface FillOpts {
   readonly skipAlternates?: boolean;
   // Allow replacing
   readonly replace?: boolean;
+  // Delete neighboring tiles on failure
+  readonly deleteNeighbors?: boolean;
 }
 
   

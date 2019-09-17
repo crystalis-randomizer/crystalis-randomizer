@@ -145,15 +145,19 @@ const RIVER_SCREENS = [
 const WIDE_SCREENS = [
   Spec(0x0_0002, 0x71, '┻', 0x2, Stair.down(0xcf_80, 0xd7)),
   Spec(0x0_0202, 0x72, '┃', 0x2a),
-  Spec(0x0_0012, 0xe0, '┖', 0x2e),
-  Spec(0x0_1002, 0xe1, '┚', 0x26),
-  Spec(0x0_1200, 0xe2, '┒', 0x6a),
-  Spec(0x0_0210, 0xe3, '┎', 0xae),
-  Spec(0x0_1212, 0xe6, '╂', 0x26ae),
-  Spec(0x0_1012, 0xe7, '┸', 0x26e),
-  Spec(0x0_1210, 0xe8, '┰', 0x6ae),
-  Spec(0x0_0201, 0xe9, '╽', wall(0x37, [0x2, 0xa])),
+  Spec(0x0_0022, 0xe0, '┖', 0x2e),
+  Spec(0x0_2002, 0xe1, '┚', 0x26),
+  Spec(0x0_0220, 0xe2, '┎', 0xae),
+  Spec(0x0_2200, 0xe3, '┒', 0x6a),
+  Spec(0x1_0202, 0xe5, '╏', 0x2, 0xa),
+  Spec(0x0_2222, 0xe6, '╂', 0x26ae),
+  Spec(0x0_2022, 0xe7, '┸', 0x26e),
+  Spec(0x0_2220, 0xe8, '┰', 0x6ae),
+  Spec(0x0_0201, 0xe9, '╽', 'fixed', wall(0x37, [0x2, 0xa])),
+  Spec(0x0_2020, 0xea, '─', 0x6e),
+  Spec(0x1_0201, 0xfd, '╽', 'fixed', 0x2a), // burt room
 ] as const;
+const WIDE_SET = new Set([0x80, ...WIDE_SCREENS.map(spec => spec.tile)]);
 
 const PIT_SCREENS = [
   Spec(0x8_1010, 0xeb, '┈', 'pit', 0x6e),
@@ -213,16 +217,20 @@ for (const spec of iters.concat(...ALL_SCREENS)) {
 function detectScreenSet(loc: Location): Spec[] {
   const out: Spec[] = [];
   const screens = new Set(([] as number[]).concat(...loc.screens));
+  let zero = false;
   // NOTE: no bridges yet.
   for (const set of ALL_SCREENS) {
     for (const scr of set) {
       if (scr.tile === 0x80) continue;
       if (screens.has(scr.tile)) {
+        if (set === BASIC_SCREENS) zero = true;
         out.push(...set);
         break;
       }
     }
   }
+  // ensure the zero screen is in here.
+  if (!zero) out.push(BASIC_SCREENS[0]);
   return out;
 }
 
@@ -236,8 +244,9 @@ interface Survey {
   size: number;
   deadEnds: number;
   branches: number;
-  stairs: Map<Pos, ExitSpec>;
   walls: number;
+  wide: boolean;
+  stairs: Map<Pos, ExitSpec>;
   edges: Map<Pos, ExitSpec>;
   fixed: Map<Pos, Spec>;
   tiles: Multiset<number>;
@@ -247,6 +256,8 @@ function surveyMap(loc: Location): Survey {
   let deadEnds = 0;
   let branches = 0;
   let walls = 0;
+  let wide = true;
+  let anyWide = false;
   const stairs = new Map<Pos, ExitSpec>();
   const edges = new Map<Pos, ExitSpec>();
   const fixed = new Map<Pos, Spec>();
@@ -279,6 +290,11 @@ function surveyMap(loc: Location): Survey {
       const tile = loc.screens[y][x];
       tiles.add(tile);
       if (tile === 0x80) continue;
+      if (WIDE_SET.has(tile)) {
+        anyWide = true;
+      } else {
+        wide = false;
+      }
       size++;
       // Look for exits on the edge of the map
       let edgeExits = EDGES_BY_TILE.get(tile)
@@ -314,7 +330,8 @@ function surveyMap(loc: Location): Survey {
       if (fixedScr != null) fixed.set(pos, fixedScr);
     }
   }
-  return {size, deadEnds, branches, walls, stairs, edges, fixed, tiles};
+  if (wide != anyWide) throw new Error(`Found inconsistent use of wide tiles`);
+  return {size, deadEnds, branches, walls, stairs, edges, fixed, tiles, wide};
 
   function findExit(entranceNum: number): number {
     const entrance = loc.entrances[entranceNum];
@@ -389,11 +406,11 @@ export function shuffleCave(loc: Location, random: Random,
 
   let tryShuffle: (maze: Maze) => boolean;
 
-  if ((false as any) && !survey.branches) {
-    tryShuffle = tryShuffleNoBranch;
-  } else {
-    tryShuffle = tryShuffleCave;
-  }
+  //if ((false as any) && !survey.branches) {
+  //  tryShuffle = tryShuffleNoBranch;
+  //} else {
+  tryShuffle = tryShuffleCave;
+  //}
 
   for (let attempt = 0; attempt < attempts; attempt++) {
     // Grow the width/height just a little.  We still try to keep roughly
@@ -405,85 +422,7 @@ export function shuffleCave(loc: Location, random: Random,
     if (tryShuffle(maze)) return;
   }
 
-  function tryShuffleNoBranch(maze: Maze): boolean {
-    if (survey.tiles.count(0x91) || survey.tiles.count(0x92)) {
-      throw new Error(`Cannot handle tile`);
-    }
-
-    // Basic plan: make a list of screens, which include turns, straights,
-    // and fixed screens.
-    let {size, walls} = survey;
-    const [] = [walls];
-
-    // We need at most two exits, at most one can be an edge.
-    const edgeCount = survey.edges.size;
-    const stairCount = survey.stairs.size;
-    const exitCount = edgeCount + stairCount;
-    if (edgeCount > 1) throw new Error(`too many edges: ${edgeCount}`);
-    if (exitCount > 2) throw new Error(`too many exits: ${exitCount}`);
-
-    let start: Pos;
-    let entranceEdges: number;
-    let target: ExitSpec | undefined;
-
-    // Place the first tile.
-    const stairs = [...survey.stairs.values()];
-    if (edgeCount) {
-      const [edge] = [...survey.edges.values()];
-      start = randomEdge(edge.dir);
-      maze.setBorder(start, edge.dir, 6);
-      if (!maze.fill(start, {maxExits: 2})) return fail('entrance edge fill');
-      entranceEdges = maze.get(start)! & ~Dir.edgeMask(edge.dir) & 0xffff;
-      target = stairs[0];
-    } else {
-      // start with a stair
-      start = maze.randomPos();
-      if (!maze.fill(start, {maxExits: 1, stair: stairs[0].dir})) {
-        return fail('entrance stair fill');
-      }
-      entranceEdges = maze.get(start)! & 0xffff;
-      target = stairs[1];
-    }    
-
-    // Figure out start direction
-    let startDir = 0 as Dir;
-    for (; startDir < 4; startDir++) {
-      if (entranceEdges & Dir.edgeMask(startDir)) break;
-    }
-    if (startDir === 4) return fail('no edge exit');
-
-    // Make up a path
-    type Turn = -1 | 0 | 1;
-    function turn(): Turn { return (random.nextInt(3) - 1) as Turn; }
-    const path = seq(size - 2 + random.nextInt(2), turn);
-    const finalOpts = target ? {stair: target.dir} : {};
-    if (!maze.fillPathToDeadEnd(start, startDir, path[Symbol.iterator](),
-                                {edge: 1}, finalOpts)) {
-      return fail(`could not fill path: ${path}`);
-    }
-
-    // Add in [fixed screens], stair halls/bridges, and walls (respectively).
-
-    // TODO - flesh this out LATER, for now don't worry about non-branching.
-
-    // for (const tile of [0x8c]) { // , 0x8d, 0x8e]) {
-    //   if (survey.tiles.count(tile)) {
-    //     const steps = random.shuffle(alts.filter(x => x[3].tile === tile));
-    //     if (steps.length < survey.tiles.count(tile)) {
-    //       return fail(`could not add stair hallway`);
-    //     }
-    //     for (let i = survey.tiles.count(tile) - 1; i >= 0; i--) {
-    //       maze.replace(steps[i][0], steps[i][2]);
-    //       replaced.add(steps[i][0]);
-    //     }
-    //   }
-    // }
-
-    // console.log(`done\n${maze.show()}`);
-    if (loc.rom.spoiler) loc.rom.spoiler.addMaze(loc.id, loc.name, maze.show());
-    return true;
-  }
-
+  // TODO - consider moving "tryShuffleNoBranch" here?
 
   function tryShuffleCave(maze: Maze): boolean {
 
@@ -541,6 +480,8 @@ export function shuffleCave(loc: Location, random: Random,
     if (tries >= 10) return fail(`could not add all stairs`);
     // fill the edge screens and fixed screens and their neighbors first, since
     // they tend to have more esoteric requirements.
+
+    if (survey.wide) return fillWideMaze(maze, fixed);
 
     const fillOpts = {
       edge: 1,
@@ -619,6 +560,22 @@ export function shuffleCave(loc: Location, random: Random,
       }
     }
 
+    return finish(maze);
+  }
+
+  function fillWideMaze(maze: Maze, fixed: Set<Pos>): boolean {
+    // Initial state should be some exit screens on top, and a stair
+    // somewhere beneath.  These are listed in `fixed`.  Iterate over
+    // this set and connect them in some way or other.
+    const poi = [...fixed];
+    // First connect poi[0] to poi[1].
+    if (!maze.connect(poi[0], null, poi[1], null)) return false;
+    // Connect all remaining poi to the existing channel.
+    for (let i = 2; i < poi.length; i++) {
+      if (!maze.connect(poi[i])) return false;
+    }
+    console.log(maze.show());
+    maze.fillAll({edge: 0});
     return finish(maze);
   }
 
@@ -930,3 +887,82 @@ function fixBorders(maze: Maze, pos: Pos, scr: Scr): void {
 //     console.log(maze.show());
 //   }
 // }
+
+  // function tryShuffleNoBranch(maze: Maze): boolean {
+  //   if (survey.tiles.count(0x91) || survey.tiles.count(0x92)) {
+  //     throw new Error(`Cannot handle tile`);
+  //   }
+
+  //   // Basic plan: make a list of screens, which include turns, straights,
+  //   // and fixed screens.
+  //   let {size, walls} = survey;
+  //   const [] = [walls];
+
+  //   // We need at most two exits, at most one can be an edge.
+  //   const edgeCount = survey.edges.size;
+  //   const stairCount = survey.stairs.size;
+  //   const exitCount = edgeCount + stairCount;
+  //   if (edgeCount > 1) throw new Error(`too many edges: ${edgeCount}`);
+  //   if (exitCount > 2) throw new Error(`too many exits: ${exitCount}`);
+
+  //   let start: Pos;
+  //   let entranceEdges: number;
+  //   let target: ExitSpec | undefined;
+
+  //   // Place the first tile.
+  //   const stairs = [...survey.stairs.values()];
+  //   if (edgeCount) {
+  //     const [edge] = [...survey.edges.values()];
+  //     start = randomEdge(edge.dir);
+  //     maze.setBorder(start, edge.dir, 6);
+  //     if (!maze.fill(start, {maxExits: 2})) return fail('entrance edge fill');
+  //     entranceEdges = maze.get(start)! & ~Dir.edgeMask(edge.dir) & 0xffff;
+  //     target = stairs[0];
+  //   } else {
+  //     // start with a stair
+  //     start = maze.randomPos();
+  //     if (!maze.fill(start, {maxExits: 1, stair: stairs[0].dir})) {
+  //       return fail('entrance stair fill');
+  //     }
+  //     entranceEdges = maze.get(start)! & 0xffff;
+  //     target = stairs[1];
+  //   }
+
+  //   // Figure out start direction
+  //   let startDir = 0 as Dir;
+  //   for (; startDir < 4; startDir++) {
+  //     if (entranceEdges & Dir.edgeMask(startDir)) break;
+  //   }
+  //   if (startDir === 4) return fail('no edge exit');
+
+  //   // Make up a path
+  //   type Turn = -1 | 0 | 1;
+  //   function turn(): Turn { return (random.nextInt(3) - 1) as Turn; }
+  //   const path = seq(size - 2 + random.nextInt(2), turn);
+  //   const finalOpts = target ? {stair: target.dir} : {};
+  //   if (!maze.fillPathToDeadEnd(start, startDir, path[Symbol.iterator](),
+  //                               {edge: 1}, finalOpts)) {
+  //     return fail(`could not fill path: ${path}`);
+  //   }
+
+  //   // Add in [fixed screens], stair halls/bridges, and walls (respectively).
+
+  //   // TODO - flesh this out LATER, for now don't worry about non-branching.
+
+  //   // for (const tile of [0x8c]) { // , 0x8d, 0x8e]) {
+  //   //   if (survey.tiles.count(tile)) {
+  //   //     const steps = random.shuffle(alts.filter(x => x[3].tile === tile));
+  //   //     if (steps.length < survey.tiles.count(tile)) {
+  //   //       return fail(`could not add stair hallway`);
+  //   //     }
+  //   //     for (let i = survey.tiles.count(tile) - 1; i >= 0; i--) {
+  //   //       maze.replace(steps[i][0], steps[i][2]);
+  //   //       replaced.add(steps[i][0]);
+  //   //     }
+  //   //   }
+  //   // }
+
+  //   // console.log(`done\n${maze.show()}`);
+  //   if (loc.rom.spoiler) loc.rom.spoiler.addMaze(loc.id, loc.name, maze.show());
+  //   return true;
+  // }

@@ -79,19 +79,19 @@ export function shuffleGoa1(rom: Rom, random: Random, attempts = 1500): void {
     // console.log(`initial\n${maze.show()}`);
 
     // make the initial path from the entrance to the boss
-    if (!maze.connect(entrance as Pos, 0 as Dir, boss + 16 as Pos, 2 as Dir)) {
+    if (!maze.connect(entrance as Pos, Dir.UP, boss + 16 as Pos, Dir.DOWN)) {
       continue OUTER;
     }
     // don't allow a direct forward entrance
     if (maze.get((boss + 32) as Pos) === 0x0101 ||
         maze.get((entrance - 16) as Pos) === 0x0101) continue OUTER;
-    console.log('first', maze.show());
+    //console.log('first', maze.show());
 
     // add an extra path until we fail 10 times
     for (let i = 0; i < 10 && maze.density() < 0.65; i++) {
       if (maze.addLoop()) i = 0;
     }
-    console.log(`loop\n${maze.show()}`);
+    //console.log(`loop\n${maze.show()}`);
 
     // Ensure a minimum density
     if (maze.density() < 0.45) continue OUTER;

@@ -1,4 +1,6 @@
-import {Dir, Maze, Pos, Scr, Spec, readScreen, write} from './maze.js';
+import {Maze} from './maze.js';
+import {SWAMP_SCREENS, readScreen, write2d} from './spec.js';
+import {Dir, Pos, Scr} from './types.js';
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 import {Location} from '../rom/location.js';
@@ -24,39 +26,8 @@ export function shuffleSwamp(rom: Rom, random: Random, attempts = 100): void {
   const available = [0x75, 0x76, 0x77, 0x78, 0x79, 0x7a, 0x7b, 0x7d, 0x7e];
 
   // Collect the available screens (7c is boss room, 7f is solid)
-  const screens = [
-    Spec(0x0000, 0x7f, ' '),
-    Spec(0x0001, ~0,   '╵', 0x1),
-    Spec(0x0010, 0x76, '╶', 0xd),
-    Spec(0x0011, 0x79, '└', 0x1d),
-    Spec(0x0100, ~1,   '╷', 0x9),
-    Spec(0x0101, ~2,   '│', 0x19),
-    Spec(0x0110, ~3,   '┌', 0x9d),
-    Spec(0x0111, ~4,   '├', 0x19d),
-    Spec(0x1000, 0x7b, '╴', 0x5),
-    Spec(0x1001, 0x75, '┘', 0x15),
-    Spec(0x1010, ~5,   '─', 0x5d),
-    Spec(0x1011, 0x7d, '┴', 0x15d),
-    Spec(0x1100, 0x7e, '┐', 0x59),
-    Spec(0x1101, 0x78, '┤', 0x159),
-    Spec(0x1110, 0x7a, '┬', 0x59d),
-    Spec(0x1111, 0x77, '┼', 0x159d),
-    // Boss
-    Spec(0xf1f0, 0x7c, '╤', 'fixed', 0x9),
-    Spec(0xf000, 0x7f, '╝', 'fixed'),
-    Spec(0x00f0, 0x7f, '╚', 'fixed'),
-    // Doors (via flag)
-    Spec(0x1_0010, 0x76, '╶', 'fixed', 'flag', 0xd),
-    Spec(0x1_0100, ~1,   '╷', 'fixed', 'flag', 0x9),
-    Spec(0x1_0110, ~3,   '┌', 'fixed', 'flag', 0x9d),
-    Spec(0x1_1000, 0x7b, '╴', 'fixed', 'flag', 0x5),
-    Spec(0x1_1010, ~5,   '─', 'fixed', 'flag', 0x5d),
-    Spec(0x1_1100, 0x7e, '┐', 'fixed', 'flag', 0x59),
-    Spec(0x1_1110, 0x7a, '┬', 'fixed', 'flag', 0x59d),
-  ];
-
   for (let attempt = 0; attempt < attempts; attempt) {
-    const maze = new Maze(random, h, w, screens, extraTiles);
+    const maze = new Maze(random, h, w, SWAMP_SCREENS, extraTiles);
     if (!tryShuffleSwamp(rom, random, swamp, maze, available)) continue;
     
     return;
@@ -346,7 +317,7 @@ export function extendSwampScreens(rom: Rom) {
                     [[0x0d, 0xaa], ~0xdd]);
 
   // Plug removable tiles into several of the screens.
-  write(rom.screens[0x7f].tiles, 0x00, [ // solid block - add left column
+  write2d(rom.screens[0x7f].tiles, 0x00, [ // solid block - add left column
     [0xa8, 0xcc], // 0
     [0xa8, 0xcc],
     [0xa8, 0xcc],
@@ -363,13 +334,13 @@ export function extendSwampScreens(rom: Rom) {
     [0xe2, 0xc8], // d
   ]);
 
-  write(rom.screens[0x76].tiles, 0x4c, [ // left dead end - add optional door
+  write2d(rom.screens[0x76].tiles, 0x4c, [ // left dead end - add optional door
     [0x08, 0x09], // f0 f1
     [0x0c, 0x0b], // dc f3
     [0x03, 0x03], // da da
   ]);
 
-  write(rom.screens[0x7a].tiles, 0x25, [ // tee - add an optional door
+  write2d(rom.screens[0x7a].tiles, 0x25, [ // tee - add an optional door
     [    ,     , 0x04], //       e4
     [0x08, 0x09, 0x05], // f0 f1 e5
     [    , 0x0a, 0x06], //    f2 e6
@@ -377,7 +348,7 @@ export function extendSwampScreens(rom: Rom) {
     [    , 0x03, 0x03], //    da da
   ]);
 
-  write(rom.screens[0x7b].tiles, 0x24, [ // right dead end - add optional door
+  write2d(rom.screens[0x7b].tiles, 0x24, [ // right dead end - add optional door
     [0x04      ], // e4
     [          ], //
     [0x06      ], // e6
@@ -385,7 +356,7 @@ export function extendSwampScreens(rom: Rom) {
     [0x03, 0x03], // da da
   ]);
 
-  write(rom.screens[0x7e].tiles, 0x47, [ // down/left - existing door optional
+  write2d(rom.screens[0x7e].tiles, 0x47, [ // down/left - existing door optional
     [0x08, 0x09], // f0 f1
     [0x0c, 0x0b], // dc f3
     [0x03, 0x03], // da da

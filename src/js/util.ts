@@ -435,3 +435,11 @@ export class Multiset<T> implements Iterable<[T, number]> {
 export function assertNever(x: never): never {
   throw new Error(`non-exhaustive check: ${x}`);
 }
+
+export function isNonNull<T extends {}>(x: T|undefined|null): x is T {
+  return x != null;
+}
+// export function nonNull<T extends {}>(x: T|undefined|null): T {
+//   if (x != null) return x;
+//   throw new Error(`Expected non-null`);
+// }

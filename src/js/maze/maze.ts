@@ -1,9 +1,12 @@
-import {hex, hex5, seq} from '../rom/util.js';
-import {Location, Flag, Spawn} from '../rom/location.js';
+import {EDGE_TYPES, EntranceSpec, Spec, Survey} from './spec.js';
+import {Dir, DirMask, Path, Pos, Scr} from './types.js';
 import {Random} from '../random.js';
-import {DefaultMap, Multiset, assertNever} from '../util.js';
-import {UnionFind} from '../unionfind.js';
 import {Rom} from '../rom.js';
+import {Location, Flag, Spawn, Exit, Entrance} from '../rom/location.js';
+import {Monster} from '../rom/monster.js';
+import {hex, hex5, seq} from '../rom/util.js';
+import {UnionFind} from '../unionfind.js';
+import {DefaultMap, Multiset} from '../util.js';
 
 export class Maze implements Iterable<[Pos, Scr]> {
 
@@ -205,25 +208,8 @@ export class Maze implements Iterable<[Pos, Scr]> {
         dir = nextDir;
       }
       return this.fill(Pos.plus(pos, dir), {...opts, maxExits: 2});
-    });
-  }
-
-  // pos should be the last already-set tile before the new ones
-  // adds N+1 screens where N is length of path
-  // Used by cave shuffle for non-branching caves.
-  fillPathToDeadEnd(pos: Pos, dir: Dir, path: Path,
-                    opts: FillOpts = {}, finalOpts: FillOpts = {}): boolean {
-    return this.saveExcursion(() => {
-      const pathSaved = [...path];
-      for (const step of pathSaved) {
-        const nextDir = Dir.turn(dir, step);
-        pos = Pos.plus(pos, dir);
-        const screen = Scr.fromExits(DirMask.of(Dir.inv(dir), nextDir),
-                                     opts.edge || 1);
-        if (!this.trySet(pos, screen, opts)) return false;
-        dir = nextDir;
-      }
-      return this.fill(Pos.plus(pos, dir), {...finalOpts, maxExits: 1});
+      // TODO - to fill a path ending in a dead end, we may want to
+      // pass a separate "opts" and use maxExits: 1.
     });
   }
 
@@ -324,9 +310,9 @@ export class Maze implements Iterable<[Pos, Scr]> {
         return this.fill(end, {maxExits: 2, replace: true});
       }
       // Find clear path given exit type
-      const [forward, right] = relative(pos1, dir1, end);
+      const [forward, right] = Pos.relative(pos1, dir1, end);
       let attempts = 0;
-      for (const path of generatePaths(this.random, forward, right)) {
+      for (const path of Path.generate(this.random, forward, right)) {
         if (this.fillPath(pos1, dir1, path, exitType, {replace: true})) break;
         if (++attempts > 20) return false;
       }
@@ -365,10 +351,10 @@ export class Maze implements Iterable<[Pos, Scr]> {
       throw new Error(`Incompatible exit types`);
     }
     pos2 = Pos.plus(pos2, dir2);
-    const [forward, right] = relative(pos1, dir1, pos2);
+    const [forward, right] = Pos.relative(pos1, dir1, pos2);
     //pos1 = Pos.plus(pos1, dir1);
     let attempts = 0;
-    for (const path of generatePaths(this.random, forward, right)) {
+    for (const path of Path.generate(this.random, forward, right)) {
       if (this.fillPath(pos1, dir1, path, exitType)) break;
       if (++attempts > 20) return false;
     }
@@ -391,7 +377,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
   // // Assumes all 6 tunnel screens are available for each exit type.
   // makeLoop(start: Pos, startDir: Dir, end: Pos): boolean {
   //   return this.saveExcursion(() => {
-  //     const [forward, right] = relative(start, startDir, end);
+  //     const [forward, right] = Pos.relative(start, startDir, end);
 
   //     // const vertical = (exitType << 8 | exitType) as Scr;
   //     // const horizontal = (vertical << 4) as Scr;
@@ -830,6 +816,206 @@ export class Maze implements Iterable<[Pos, Scr]> {
       }
     }
   }
+
+  finish(survey: Survey, loc: Location): boolean {
+    this.trim();
+    this.write(loc, new Set());
+    // Clear exits: we need to re-add them later.
+    const finisher = new MazeFinisher(this, loc, survey, this.random);
+    finisher.shuffleFixed();
+    finisher.placeExits();
+    finisher.placeNpcs();
+    if (loc.rom.spoiler) {
+      loc.rom.spoiler.addMaze(loc.id, loc.name, this.show());
+    }
+    return true;
+  }
+}
+
+class MazeFinisher {
+
+  readonly poi =
+      new DefaultMap<number, Array<readonly [number, number]>>(() => []);
+  readonly fixedPos = new DefaultMap<Scr, Pos[]>(() => []);
+  readonly posMapping = new Map<Pos, Pos>();
+  // positions of edge screens ([dir][ordinal]) that aren't fixed screens
+  readonly allEdges: Array<Array<Pos>> = [[], [], [], []];
+  // positions of edge screens ([dir][ordinal]) that are fixed screens
+  readonly fixedEdges: Array<Array<Pos>> = [[], [], [], []];
+  // positions and directions of all stairs
+  readonly allStairs: Array<Array<readonly [Pos, EntranceSpec]>> =
+      [[], [], [], []]; // NOTE: 1 and 3 unused
+  // stairs may move to a different coordinate: map the delta so that we
+  // can place triggers/NPCs in the right spot relative to it.
+  readonly stairDisplacements = new Map<Pos, [number, number]>();
+
+  constructor(readonly maze: Maze,
+              readonly loc: Location,
+              readonly survey: Survey,
+              readonly random: Random) {
+    // Initialize poi and fixedPos
+    for (const [pos, scr] of maze) {
+      const spec = this.maze.getSpec(pos)!;
+      if (spec.fixed) this.fixedPos.get(scr).push(pos);
+      for (const {priority, dy, dx} of spec.poi) {
+        this.poi.get(priority)
+            .push([((pos & 0xf0) << 4) + dy, ((pos & 0xf) << 8) + dx]);
+      }
+    }
+    // Initialize allEdges and fixedEdges
+    for (const dir of Dir.ALL) {
+      for (const pos of Dir.allEdge(dir, maze.height, maze.width)) {
+        const scr = maze.get(pos);
+        if (!scr) continue;
+        const edgeType = Scr.edge(scr, dir);
+        if (edgeType && edgeType != 7) {
+          if (survey.specSet.fixedTiles.has(loc.screens[pos >> 4][pos & 0xf])) {
+            this.fixedEdges[dir].push(pos);
+          } else {
+            this.allEdges[dir].push(pos);
+          }
+        }
+      }
+    }
+    for (const [pos, scr] of maze) {
+      // TODO - should no longer need STAIR_SCREENS w/ Maze#getSpec
+      const dir = survey.specSet.stairScreens.get(scr);
+      if (dir != null) this.allStairs[dir[0]].push([pos, dir[1]]);
+    }
+  }
+
+  // Shuffles the fixed screens, updating posMapping
+  shuffleFixed(): void {
+    for (const fixed of this.fixedPos.values()) this.random.shuffle(fixed);
+    for (const [pos0, spec] of this.survey.fixed) {
+      const pos = this.fixedPos.get(spec.edges).pop();
+      if (pos == null) throw new Error(`Unreplaced fixed screen`);
+      this.posMapping.set(pos0, pos);
+    }
+  }
+
+  // Further updates posMapping as needed
+  placeExits(): void {
+    // First work on entrances, exits, and NPCs.
+    // loc.entrances = [];
+    this.loc.exits = [];
+    for (const dir of Dir.ALL) {
+      this.random.shuffle(this.allEdges[dir]);
+      this.random.shuffle(this.fixedEdges[dir]);
+    }
+    this.random.shuffle(this.allStairs[Dir.UP]);
+    this.random.shuffle(this.allStairs[Dir.DOWN]);
+    // Shuffle first, then place stuff
+    for (const [pos0, exit] of this.survey.edges) {
+      const edgeList =
+          this.survey.fixed.has(pos0) ? this.fixedEdges : this.allEdges;
+      const edge: Pos | undefined = edgeList[exit.dir].pop();
+      if (edge == null) throw new Error('missing edge');
+      this.posMapping.set(pos0, edge);
+      //mover(pos0, edge); // move spawns??
+      const edgeType = Scr.edge(this.maze.get(edge)!, exit.dir);
+      const edgeData = EDGE_TYPES[edgeType][exit.dir];
+      this.loc.entrances[exit.entrance] =
+          Entrance.of({screen: edge, coord: edgeData.entrance});
+      for (const tile of edgeData.exits) {
+        this.loc.exits.push(
+            Exit.of({screen: edge, tile,
+                     dest: exit.exit >>> 8, entrance: exit.exit & 0xff}));
+      }
+    }
+    for (const [pos0, exit] of this.survey.stairs) {
+      const stair: readonly [Pos, EntranceSpec] | undefined =
+          this.allStairs[exit.dir].pop();
+      if (stair == null) throw new Error('missing stair');
+      this.posMapping.set(pos0, stair[0]);
+      const entrance = this.loc.entrances[exit.entrance];
+      const x0 = entrance.tile & 0xf;
+      const y0 = entrance.tile >>> 4;
+      entrance.screen = stair[0];
+      entrance.coord = stair[1].entrance;
+      const x1 = entrance.tile & 0xf;
+      const y1 = entrance.tile >>> 4;
+      this.stairDisplacements.set(pos0, [y1 - y0, x1 - x0]);
+      for (const tile of stair[1].exits) {
+        this.loc.exits.push(Exit.of({
+          screen: stair[0], tile,
+          dest: exit.exit >>> 8, entrance: exit.exit & 0xff}));
+      }
+    }
+  }
+
+  placeMonster(spawn: Spawn, monsterPlacer: (m: Monster) => number|undefined) {
+    const monster = this.loc.rom.objects[spawn.monsterId];
+    if (!(monster instanceof Monster)) return;
+    const pos = monsterPlacer(monster);
+    if (pos == null) {
+      console.error(
+          `no valid location for ${hex(monster.id)} in ${hex(this.loc.id)}`);
+      spawn.used = false;
+    } else {
+      spawn.screen = pos >>> 8;
+      spawn.tile = pos & 0xff;
+    }
+  }
+
+  // Move other NPCs.  Wall spawns have already been handled by Maze#write()
+  placeNpcs() {
+    // Keep track of spawns that may be on top of each other (e.g. people)
+    const spawnMap = new Map<number, number>(); // map of old -> new yyyxxx
+    const monsterPlacer = this.loc.monsterPlacer(this.random);
+    for (const spawn of this.loc.spawns) {
+      // Walls already moved (by maze#write).
+      if (spawn.type === 3) continue;
+      if (spawn.isMonster()) {
+        this.placeMonster(spawn, monsterPlacer);
+        continue;
+      }
+      // Check if there's a paired spawn at the same position already moved?
+      const sameSpawn = spawnMap.get(spawn.y << 12 | spawn.x);
+      if (sameSpawn != null) {
+        spawn.y = sameSpawn >>> 12;
+        spawn.x = sameSpawn & 0xfff;
+        continue;
+      }
+      // Check if this screen is fixed and has been moved somewhere?
+      const pos0 = spawn.screen as Pos;
+      const mapped = this.posMapping.get(pos0);
+      if (mapped != null) {
+        spawn.screen = mapped;
+        // If the remapping was a stairs, then we may have more work to do...
+        // Specifically - if a trigger or NPC was next to a stair, make sure
+        // it stays next to the stair.
+        const displacement = this.stairDisplacements.get(pos0);
+        if (displacement != null) {
+          const [dy, dx] = displacement;
+          spawn.yt += dy;
+          spawn.xt += dx;
+        }
+      } else if (spawn.isTrigger()) {
+        // Can't move triggers, need a way to handle them.
+        if (spawn.id === 0x8c) {
+          // Handle leaf abduction trigger behind zebu
+          spawn.screen = this.posMapping.get(0x21 as Pos)! - 16;
+        } else {
+          console.error(`unhandled trigger: ${spawn.id}`);
+        }
+      } else {
+        // NPCs, chests - pick a POI
+        const keys = [...this.poi.keys()].sort((a, b) => a - b);
+        if (!keys.length) throw new Error(`no poi`);
+        for (const key of keys) {
+          const displacements = this.poi.get(key)!;
+          if (!displacements.length) continue;
+          const oldSpawn = spawn.y << 12 | spawn.x;
+          const i = this.random.nextInt(displacements.length);
+          [[spawn.y, spawn.x]] = displacements.splice(i, 1);
+          spawnMap.set(oldSpawn, spawn.y << 12 | spawn.x);
+          if (!displacements.length) this.poi.delete(key);
+          break;
+        }
+      }      
+    }
+  }
 }
 
 function pop<T>(set: Set<T>): T {
@@ -868,132 +1054,6 @@ interface FillOpts {
   readonly deleteNeighbors?: boolean;
 }
 
-  
-/** Spec for a screen. */
-export interface Spec {
-  readonly edges: Scr;
-  readonly tile: number;
-  readonly icon: string;
-  readonly connections: Connections;
-  readonly fixed: boolean;
-  readonly flag: boolean;
-  readonly pit: boolean;
-  readonly stairs: Stair[];
-  readonly wall: Wall | undefined;
-  readonly poi: Poi[];
-}
-
-// entrance is four nibbles: YyXx of exact pixel on screen.
-declare const STAIR_NOMINAL: unique symbol;
-export class Stair {
-  [STAIR_NOMINAL]: never;
-  private constructor(readonly dir: Dir, readonly entrance: number,
-                      readonly exit: number) {}
-  static up(entrance: number, exit: number): Stair {
-    return new Stair(Dir.UP, entrance, exit);
-  }
-  static down(entrance: number, exit: number): Stair {
-    return new Stair(Dir.DOWN, entrance, exit);
-  }
-}
-
-declare const WALL_NOMINAL: unique symbol;
-export class Wall {
-  [WALL_NOMINAL]: never;
-  constructor(readonly type: 'wall' | 'bridge', readonly tile: number,
-              readonly a: number, readonly b: number) {}
-  connections(flagged: boolean): Connections {
-    if (!flagged) return [connection(this.a), connection(this.b)];
-    let count = this.b;
-    let a = this.a;
-    while (count) {
-      count >>= 4;
-      a <<= 4;
-    }
-    return [connection(a | this.b)];
-  }
-}
-
-export function wall(tile: number, [a, b]: readonly [number, number]): Wall {
-  return new Wall('wall', tile, a, b);
-}
-
-export function bridge(tile: number, [a, b]: readonly [number, number]): Wall {
-  return new Wall('bridge', tile, a, b);
-}
-
-declare const POI_NOMINAL: unique symbol;
-export class Poi {
-  [POI_NOMINAL]: never;
-  constructor(readonly priority: number,
-              readonly dy: number, readonly dx: number) {}
-}
-
-/**
- * @param priority Starting at zero for best spots
- * @param dy Pixel position from (0, 0) of screen
- * @param dx Pixel position from (0, 0) of screen
- */
-export function poi(priority: number, dy = 0x70, dx = 0x78) {
-  return new Poi(priority, dy, dx);
-}
-
-type Connections = ReadonlyArray<ReadonlyArray<number>>;
-type SpecFlag = 'fixed' | 'flag' | 'pit';
-type ExtraArg = number | Stair | Wall | Poi | SpecFlag;
-
-function connection(data: number): number[] {
-  const connection = [];
-  while (data) {
-    // Each of the four edges has possible exits 1, 2, and 3,
-    // represented by that corresponding tile.  The 4 bit is
-    // for left/right edge and the 8 bit is for right/bottom.
-    const channel = (data & 3) << (data & 4); // 01, 02, 03, 10, 20, or 30
-    const offset = data & 8 ? (data & 4 ? 0x0100 : 0x1000) : 0;
-    connection.push(channel | offset);
-    data >>>= 4;
-  }
-  return connection;
-}
-
-export function Spec(edges: number,
-                     tile: number,
-                     icon: string,
-                     ...extra: Array<ExtraArg>): Spec {
-  const connections = [];
-  const poi = [];
-  const stairs = [];
-  let fixed = false;
-  let flag = false;
-  let wall: Wall | undefined = undefined;
-  let pit = false;
-  for (let data of extra) {
-    if (typeof data === 'string') {
-      if (data === 'fixed') {
-        fixed = true;
-      } else if (data === 'flag') {
-        flag = true;
-      } else if (data === 'pit') {
-        pit = true;
-      } else {
-        assertNever(data);
-      }
-    } else if (typeof data === 'number') {
-      connections.push(connection(data));
-    } else if (data instanceof Stair) {
-      stairs.push(data);
-    } else if (data instanceof Wall) {
-      wall = data;
-    } else if (data instanceof Poi) {
-      poi.push(data);
-    } else {
-      assertNever(data);
-    }
-  }
-  return {edges: edges as Scr,
-          tile, icon, connections,
-          fixed, flag, wall, pit, poi, stairs};
-}
 
 // function* intersect<T>(a: Iterable<T>, b: Iterable<T>): IterableIterator<T> {
 //   const set = new Set(a);
@@ -1002,168 +1062,8 @@ export function Spec(edges: number,
 //   }
 // }
 
-// 0 is straight, -1 is left turn, +1 is right turn
-type Turn = 0 | -1 | 1;
 
-// Returns [forward, right]
-// e.g. (p1 = 65, d1 = up, p2 = 24) then fwd = 4, rt = -1
-// but we need to fill 55, 45, 35, 34, 24 - so 4 rows
-function relative(p1: Pos, d1: Dir, p2: Pos): [number, number] {
-  const dy = (p2 >>> 4) - (p1 >>> 4);
-  const dx = (p2 & 0xf) - (p1 & 0xf);
-  if (d1 === 0) return [-dy, dx];
-  if (d1 === 1) return [dx, dy];
-  if (d1 === 2) return [dy, -dx];
-  if (d1 === 3) return [-dx, -dy];
-  throw new Error(`impossible: ${d1}`);
-}
-
-function* generatePaths(random: Random,
-                        forward: number,
-                        right: number): IterableIterator<Path> {
-  while (true) {
-    yield generatePath(random, forward, right);
-  }
-}
-
-function* generatePath(random: Random, forward: number, right: number): Path {
-  function advance(): Turn {
-    forward--;
-    return 0;
-  }
-  function turnLeft(): Turn {
-    [forward, right] = [-right, forward - 1];
-    return -1;
-  }
-  function turnRight(): Turn {
-    [forward, right] = [right, 1 - forward];
-    return 1;
-  }
-  while (forward !== 1 || right !== 0) {
-    if (forward > 0 && random.next() < 0.5) {
-      yield advance();
-      // extra chance of going two
-      if (forward > 2 && random.next() < 0.5) yield advance();
-      continue;
-    }
-    // 50% chance of advancing no matter what (unless target behind us)
-    if (random.next() < (forward < 0 ? 0.1 : 0.5)) {
-      yield advance();
-      continue;
-    }
-    if (right > 0) {
-      yield turnRight();
-      continue;
-    }
-    if (right < 0) {
-      yield turnLeft();
-      continue;
-    }
-    yield (random.next() < 0.5 ? turnLeft() : turnRight());
-  }
-}
-
-type Path = IterableIterator<Turn>;
-
-
-
-/** A mask of directions (1 << Dir). */
-type DirMask = number & {__dirmask__: never};
-
-namespace DirMask {
-  export function of(...dirs: readonly Dir[]): DirMask {
-    let mask = 0;
-    for (let dir of dirs) {
-      mask |= (1 << dir);
-    }
-    return mask as DirMask;
-  }
-}
-
-// TODO - invert the rotation direction!  =>  1 = left, 3 = right
-// This will be consistent with how we do routes, and is easier to
-// work with because dir&2 corresponds to 0/max and dir&1 is h/v
-
-/** A direction: 0 = up, 1 = right, 2 = down, 3 = left. */
-export type Dir = number & {__dir__: never};
-
-export namespace Dir {
-  export const ALL: readonly Dir[] = [0, 1, 2, 3] as Dir[];
-  //export const REVERSE: readonly Dir[] = [3, 2, 1, 0] as Dir[];
-  export const DELTA: readonly number[] = [-16, 1, 16, -1];
-  export function inv(dir: Dir): Dir {
-    return (dir ^ 2) as Dir;
-  }
-  export function edgeMask(dir: Dir): number {
-    return 0xf << (dir << 2);
-  }
-  export function shift(dir: Dir): number {
-    return dir << 2;
-  }
-  export function turn(dir: Dir, change: number): Dir {
-    return ((dir + change) & 3) as Dir;
-  }
-  export function* allEdge(dir: Dir,
-                           height: number,
-                           width: number): IterableIterator<Pos> {
-    const extent = dir ? height << 4 : width;
-    const incr = dir & 1 ? 16 : 1;
-    const start =
-        dir === RIGHT ? width - 1 : dir === DOWN ? (height - 1) << 4 : 0;
-    for (let i = start; i < extent; i += incr) {
-      yield i as Pos;
-    }
-  }
-  export const UP = 0 as Dir;
-  export const RIGHT = 1 as Dir;
-  export const DOWN = 2 as Dir;
-  export const LEFT = 3 as Dir;
-}
-
-/** A position on the map: y in the high nibble, x in the low. */
-export type Pos = number & {__pos__: never};
-
-export namespace Pos {
-  export function plus(pos: Pos, dir: Dir): Pos {
-    return (pos + Dir.DELTA[dir]) as Pos;
-  }
-}
-
-/**
- * 16 (or more) bit number, in 4 nibbles, where each corresponds
- * to different screen interface types (e.g. closed, open, river,
- * etc).  The higher byte stores any additional information (e.g.
- * flag status, alternatives, etc).  Most nibbles will be 0 or 1
- * but we may use e.g. 'f' for a "fixed" screen that may not be
- * expanded, etc.  The mapping to actual screen (or screen+flag)
- * combinations is up to the caller.  We can also use this to
- * distinguish separate floors under/over a bridge (maybe make a
- * three-level setup??) - e.g. 1212 for the bridge, 1020 for stairs.
- */
-export type Scr = number & {__screen__: never};
-
-export namespace Scr {
-  export function edge(screen: Scr, dir: Dir): number {
-    return (screen >>> (dir << 2)) & 0xf;
-  }
-  export function numExits(screen: Scr): number {
-    let count = 0;
-    for (let i = 0; i < 4; i++) {
-      if (screen & 0xf) count++;
-      screen = (screen >>> 4) as Scr;
-    }
-    return count;
-  }
-  export function fromExits(dirMask: DirMask, exitType: number): Scr {
-    let screen = 0;
-    for (let i = 0; i < 4; i++) {
-      screen <<= 4;
-      if (dirMask & 8) screen |= exitType;
-      dirMask = ((dirMask & 7) << 1) as DirMask;
-    }
-    return screen as Scr;
-  }
-}
+// NOTE: Screens 93, 9d are UNUSED!
 
 const UNICODE_TILES: {[exits: number]: string} = {
   0x1010: '\u2500',
@@ -1182,26 +1082,3 @@ const UNICODE_TILES: {[exits: number]: string} = {
   0x0010: '\u2576',
   0x0100: '\u2577',
 };
-
-// NOTE: Screens 93, 9d are UNUSED!
-
-/** Writes 2d data into a an Nx16 (flattened) array. */
-export function write<T>(arr: T[], corner: number,
-                         repl: ReadonlyArray<ReadonlyArray<T|undefined>>) {
-  for (let i = 0; i < repl.length; i++) {
-    for (let j = 0; j < repl[i].length; j++) {
-      const x = repl[i][j];
-      if (x != null) arr[corner + (i << 4 | j)] = x;
-    }
-  }
-}
-
-export function readScreen(str: string): number[] {
-  const scr = str.split(/ +/g).map(x => parseInt(x, 16));
-  for (const x of scr) {
-    if (typeof x != 'number' || isNaN(x)) {
-      throw new Error(`Bad screen: ${x} in ${str}`);
-    }
-  }
-  return scr;
-}

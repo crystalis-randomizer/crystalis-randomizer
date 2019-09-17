@@ -382,6 +382,9 @@ export class Location extends Entity {
     }
   }
 
+  // TODO - factor this out into a separate class?
+  //   - holds metadata about map tiles in general?
+  //   - need to figure out what to do with pits...
   monsterPlacer(random: Random): (m: Monster) => number | undefined {
     // If there's a boss screen, exclude it from getting enemies.
     const boss = BOSS_SCREENS[this.key];

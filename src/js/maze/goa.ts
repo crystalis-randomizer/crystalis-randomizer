@@ -1,4 +1,6 @@
-import {Dir, Maze, Pos, Scr, Spec, write} from './maze.js';
+import {Maze} from './maze.js';
+import {GOA1_SCREENS, write2d} from './spec.js';
+import {Dir, Pos, Scr} from './types.js';
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 import {Flag} from '../rom/location.js';
@@ -12,48 +14,11 @@ export function shuffleGoa1(rom: Rom, random: Random, attempts = 1500): void {
   const w = loc.width;
   const h = loc.height;
 
-  const screens = [
-    // Clear screens
-    Spec(0x0000, 0x80, ' '),
-    Spec(0x0011, 0xe0, '└', 'flag', 0x1f, 0x2e, 0x3d),
-    Spec(0x0101, 0xe4, '│', 'flag', 0x1239ab),
-    Spec(0x0110, 0xe2, '┌', 'flag', 0x9d, 0xae, 0xbf),
-    Spec(0x1001, 0xe1, '┘', 'flag', 0x15, 0x26, 0x37),
-    Spec(0x1010, 0xea, '─',         0x5d, 0x6e, 0x7f),
-    Spec(0x1011, 0xe7, '┴', 'flag', 0x15, 0x26e, 0x3d, 0x7f),
-    Spec(0x1100, 0xe3, '┐', 'flag', 0x5b, 0x6a, 0x79),
-    Spec(0x1110, 0xe8, '┬', 'flag', 0x5d, 0x6ae, 0x79, 0xbf),
-    Spec(0x1111, 0xe6, '┼', 'flag', 0x15, 0x26ae, 0x3d, 0x79, 0xbf),
-    // Simple flagged screens (don't generate these!)
-    Spec(0x1_0011, 0xe0, '└', 'fixed', 0x2e, 0x3d),
-    Spec(0x1_0101, 0xe4, '│', 'fixed', 0x12ab),
-    Spec(0x1_0110, 0xe2, '┌', 'fixed', 0xae, 0xbf),
-    Spec(0x1_1001, 0xe1, '┘', 'fixed', 0x15, 0x26),
-    Spec(0x1_1011, 0xe7, '┴', 'fixed', 0x26e, 0x7f),
-    Spec(0x1_1100, 0xe3, '┐', 'fixed', 0x6a, 0x79),
-    Spec(0x1_1110, 0xe8, '┬', 'fixed', 0x5d, 0x6ae),
-    Spec(0x1_1111, 0xe6, '┼', 'fixed', 0x15, 0x26ae, 0xbf),
-    // Dead ends
-    Spec(0x2_0101, 0xe5, '┊', 'fixed', 'flag', 0x139b), // dead end
-    Spec(0x3_0101, 0xe5, '┊', 'fixed', 0x39), // dead end
-    // Fixed screens (entrance)
-    Spec(0xf0f1, 0x71, '╽', 'fixed', 0x2a),
-    Spec(0x00f0, 0x80, '█', 'fixed'),
-    Spec(0xf000, 0x80, '█', 'fixed'),
-    // Fixed screens (boss)
-    Spec(0xfff0, 0x73, '═', 'fixed'), // , 0x2a),
-    Spec(0xf1ff, 0x72, '╤', 'fixed'), // , 0x29b),
-    Spec(0x0ff0, 0x80, '╔', 'fixed'),
-    Spec(0xff00, 0x80, '╗', 'fixed'),
-    Spec(0x00ff, 0x80, '╚', 'fixed'),
-    Spec(0xf00f, 0x80, '╝', 'fixed'),
-  ];
-
   // TODO - consider bigger icons? '┘║└\n═╬═\n┐║┌' or '┘┃└\n━╋━\n┐┃┌' ??
 
   OUTER:
   for (let attempt = 0; attempt < attempts; attempt++) {
-    const maze = new Maze(random, h, w, screens);
+    const maze = new Maze(random, h, w, GOA1_SCREENS);
 
     // Place the entrance at the bottom, boss at top.
     const entrance = ((h - 1) << 4 | random.nextInt(w)) as Pos;
@@ -211,20 +176,20 @@ export function extendGoaScreens(rom: Rom) {
   // We need to pick which wall(s) are toggled...
   
   const w = [[0x19, 0x19], [0x1b, 0x1b]] as const;
-  write(rom.screens[0xe0].tiles, 0x61, w); // open up (wide), right (vanilla open)
-  write(rom.screens[0xe1].tiles, 0x6d, w); // open up (wide), left (vanilla shut)
-  write(rom.screens[0xe2].tiles, 0x91, w); // open down (wide), right (vanilla open)
-  write(rom.screens[0xe3].tiles, 0x9d, w); // open down (wide), left (vanilla shut)
-  write(rom.screens[0xe4].tiles, 0x41, w); // stairs
-  write(rom.screens[0xe4].tiles, 0x8d, w);
-  write(rom.screens[0xe5].tiles, 0x61, w); // horizontal wall
-  write(rom.screens[0xe5].tiles, 0xad, w);
-  write(rom.screens[0xe6].tiles, 0x0d, w); // four-way passages
-  write(rom.screens[0xe6].tiles, 0xd1, w);
-  write(rom.screens[0xe7].tiles, 0x01, w); // corners up top
-  write(rom.screens[0xe7].tiles, 0x0d, w);
-  write(rom.screens[0xe8].tiles, 0xd1, w); // corners on bottom
-  write(rom.screens[0xe8].tiles, 0xdd, w);
+  write2d(rom.screens[0xe0].tiles, 0x61, w); // open up (wide), right (vanilla open)
+  write2d(rom.screens[0xe1].tiles, 0x6d, w); // open up (wide), left (vanilla shut)
+  write2d(rom.screens[0xe2].tiles, 0x91, w); // open down (wide), right (vanilla open)
+  write2d(rom.screens[0xe3].tiles, 0x9d, w); // open down (wide), left (vanilla shut)
+  write2d(rom.screens[0xe4].tiles, 0x41, w); // stairs
+  write2d(rom.screens[0xe4].tiles, 0x8d, w);
+  write2d(rom.screens[0xe5].tiles, 0x61, w); // horizontal wall
+  write2d(rom.screens[0xe5].tiles, 0xad, w);
+  write2d(rom.screens[0xe6].tiles, 0x0d, w); // four-way passages
+  write2d(rom.screens[0xe6].tiles, 0xd1, w);
+  write2d(rom.screens[0xe7].tiles, 0x01, w); // corners up top
+  write2d(rom.screens[0xe7].tiles, 0x0d, w);
+  write2d(rom.screens[0xe8].tiles, 0xd1, w); // corners on bottom
+  write2d(rom.screens[0xe8].tiles, 0xdd, w);
 
   // To maintain current behavior we need to push flags for all the
   // screens that need to be *open*.

@@ -156,6 +156,28 @@
   </section>
 
   <section>
+    <h1>Maps</h1>
+    <div>
+      <ul>
+      <li>A passage may optionally (via the <span class="flag">Rp</span> flag)
+        be opened between the Valley of Wind (outside Leaf) and Waterfall Valley
+        (outside Portoa).
+      <li>The back entrance to the windmill cave is closed until the
+        <span class="item">Windmill Key</span> has been used in the windmill.
+      <li>The back entrance to the summit cave (next to Portoa) is now closed
+        until the <span class="item">Key to Prison</span> has been used.  The
+        key can be used on either side of the cave.
+      <li>A small piece of land has been added to connect the entrance to the
+        underground channel with the beach that the hurt dolphin spawns on.
+        This prevents some possible softlocks.
+      <li>A number of cave entrances in the game are closed until the player
+        exits Mezame shrine.  This should be unobservable unless the player
+        wild warps out of the starting screen, rather than exiting to the south.
+      </ul>
+    </div>
+  </section>
+
+  <section>
     <h1>Items</h1>
     <div>
       <ul>
@@ -172,12 +194,9 @@
       <li>The second <span class="item">Flute of Lime</span> chest now contains
         a <span class="item">Mirrored Shield</span> and is counted as a bonus
         item for shuffling purposes.
-      <li>Orbs and bracelets are progressive upgrades: the first item you get,
-        even if it says "bracelet" will give you the orb, and the second will
-        give the bracelet.  The distinction is important only because
-        <span class="npc">Tornel</span> on <span class="location">Mt Sabre</span>
-        is keyed off finding the <emph>chest<emph> that gives the <span class="item">Tornado
-        Bracelet</span>, rather than by finding both upgrades.
+      <li>Orbs and bracelets are progressive upgrades: the first item will be
+        the orb, and the second will be the bracelet, regardless of the order
+        the chests are opened in.
       <li>Orbs and bracelets may now (optionally) be automatically equipped.
         Just change swords and the powerup will change, too.
       <li>Sword damage has been renormalized.  Rather than depending on the
@@ -239,11 +258,14 @@
         any other story events that occur.
       <li>Zebu will spawn the sleeping Windmill Guard even after starting the
         windmill.
-      <li>Tornel teaching [Teleport] is blocked on finding exactly the
-        Tornado Bracelet, regardless of whether the Ball of Wind has been
-        found.
-      <li>[Barrier] now (optionally) requires calming the sea, rather
-        than just ghetto flight.
+      <li>The Leaf abduction will not happen unless the player has talked to
+        Zebu and Kelbesque has not yet been defeated.
+      <li>Defeating Kelbesque is an alternative condition (rather than talking
+        to the rabbit) to get into Mt Sabre North.
+      <li>[Paralysis] and freeing the villagers now both require having defeated
+        Kelbesque, rather than just stepping into the cave.  It can be learned
+        at either entrance.
+      <li>[Barrier] now requires calming the sea, rather than just ghetto flight.
       <li>The Queen of Portoa will not "go on vacation" and reveal herself as
         Asina until after the Mesia recording has been viewed (this ensures
         both Sword and Orb of Water are acquired, guaranteeing that the back

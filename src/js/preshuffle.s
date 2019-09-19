@@ -1186,7 +1186,15 @@ SetEquippedConsumableItem:
   sta $07f5
 + rts
   ;; and we save 14 bytes, to boot.
+ReloadLocationGraphicsAfterChest:
+    ;; After player picks up a chest, reload the location's graphics.
+    jsr $3e148 ; reload just graphics, not objects
+    jmp $3d552 ; ExecuteItemOrTriggerAction
 .assert < $3e845
+
+.org $3d458
+    ;; Once we pick up a chest, reset the graphics?
+    jmp ReloadLocationGraphicsAfterChest
 
 ;;; Allow any negative number to terminate an exit table.  Since X coordinates
 ;;; are constrained to 0..7f, this is safe, and it gives 7 extra bits for
@@ -1596,6 +1604,36 @@ CheckToRedisplayDifficulty:
 .assert < $3fffa ; end of free space from 3ffe3
 
 
+;;; Repurpose $3e148 to skip loading NPCs and just reset pattern table.
+;;; The only difference from $3e144 is that $18 gets set to 1 instead of 0,
+;;; but this value is never read.  Start by changing all jumps to $3e148
+;;; to instead jump to $3e144.  Then we grab some space and have a nonzero
+;;; value in $18 return early.
+.org $3d199
+  jmp $3e144 ; unused?
+.org $3e6ff
+  jmp $3e144
+.org $3d21a
+  jmp $3e144
+.org $3d6d5
+  jmp $3e144
+
+;;; Now fix the LoadNpcDataForLocation code
+.org $3e19a
+  lda $18
+  beq LoadNpcDataForLocation_Rts ; $3e173 ; <rts
+  lda ($10),y
+  dey
+  asl
+  bcs LoadNpcDataForLocation_Skip ; $3e1af ; skip
+  jsr $3e1b6 ; TryNpcSpawn
+  inx
+  jmp $3e18f ; Check next NPC spawn.
+.assert < $3e1ae
+.org $3e1ae
+LoadNpcDataForLocation_Rts:
+  rts
+LoadNpcDataForLocation_Skip:
 
 ;;; TODO - quick select items
 ;; .org $3cb62

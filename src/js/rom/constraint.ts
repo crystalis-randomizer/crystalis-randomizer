@@ -142,6 +142,17 @@ export class Constraint {
     return new Constraint([ALL, new Set([0x4d]), ALL, ALL], [], 0);
   }
 
+  static get KENSU_CHEST() {
+    // Kensu explicitly gives his lighthosue chest a sprite offset of 9
+    // (via $1f7d2 in the boss chest table), which can only be satisfied
+    // if $51 (the sleeping NPC page) is in the first slot.  We could
+    // be more flexible if we rewrote that offset, but then we wouldn't
+    // get both versions of Kensu so easily.
+    // NOTE: after we get the chest, we could reset the patterns by
+    //       shunting $3d458
+    return new Constraint([new Set([0x51]), ALL, ALL, ALL], [], 0);
+  }
+
   // Returns the "starting constraint" for the given location, taking things like
   // windmill blades into account.
   static forLocation(id: number): Constraint {
@@ -499,6 +510,7 @@ export class Constraint {
 // }
 
 const TREASURE_CHEST_BANKS = new Set([
+  // NOTE: $51 has the treasure chest sprites, but in the wrong spot.
   0x5e, 0x5f, 0x60, 0x61, 0x64, 0x65, 0x66, 0x67,
   0x68, 0x69, 0x6a, 0x6c, 0x6d, 0x6e, 0x6f, 0x70,
   0x74, 0x75, 0x76, 0x77,

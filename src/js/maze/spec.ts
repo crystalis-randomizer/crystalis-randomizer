@@ -280,7 +280,10 @@ const WIDE_SCREENS = [
   Spec(0x0_2002, 0xe1, '┚', 0x26),
   Spec(0x0_0220, 0xe2, '┎', 0xae),
   Spec(0x0_2200, 0xe3, '┒', 0x6a),
-  Spec(0x1_0202, 0xe5, '╏', 0x2, 0xa),
+  // NOTE: Currently these aren't viable, using a path-based
+  // strategy for these rooms, since we can't place this safely.
+  // Marking it 'fixed' prevents trying to place them randomly.
+  Spec(0x1_0202, 0xe5, '╏', 'fixed', 0x2, 0xa),
   Spec(0x0_2222, 0xe6, '╂', 0x26ae),
   Spec(0x0_2022, 0xe7, '┸', 0x26e),
   Spec(0x0_2220, 0xe8, '┰', 0x6ae),

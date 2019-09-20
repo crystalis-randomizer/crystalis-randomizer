@@ -147,7 +147,7 @@ export function shuffleGoa1(rom: Rom, random: Random, attempts = 1500): void {
 
 export function extendGoaScreens(rom: Rom) {
   // PLAN:
-  // tileset a4,8c: move 19,1b -> 2b,38
+  // tileset a4,8c: move 19,1b -> 2b,ba
   // tileset a8:    move 19,1b -> 17,18
   // tileset 88:    move c5 -> 19,1b
   //     17,18 used in 88, which shares a lot with a8, but
@@ -163,7 +163,7 @@ export function extendGoaScreens(rom: Rom) {
   }
   rom.swapMetatiles([0xa4, 0x8c],
                     [0x2b, [0x19, 0xc5], ~0xc6],
-                    [0x38, [0x1b, 0xc5], ~0xc4]);
+                    [0xba, [0x1b, 0xc5], ~0xc4]);
   rom.swapMetatiles([0xa8],
                     [[0x17, 0x54], ~0x19],
                     [[0x18, 0x58], ~0x1b]);
@@ -213,4 +213,9 @@ export function extendGoaScreens(rom: Rom) {
       Flag.of({screen: 0x64, flag: 0x2ef}),
       Flag.of({screen: 0x72, flag: 0x2ef}),
       Flag.of({screen: 0x74, flag: 0x200}));
+
+  // This defaults to a8, but that doesn't work for wide screens.
+  // We should make sure this doesn't break partitions for music
+  // and/or palette shuffles.
+  rom.locations.waterfallCave3.tileset = 0x88;
 }

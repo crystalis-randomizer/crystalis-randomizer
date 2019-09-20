@@ -1,5 +1,5 @@
 import {shuffleCave} from '../maze/cave.js';
-import {shuffleGoa1} from '../maze/goa.js';
+import {extendGoaScreens, shuffleGoa1} from '../maze/goa.js';
 import {shuffleSwamp} from '../maze/swamp.js';
 import {shufflePyramid} from '../maze/pyramid.js';
 import {Random} from '../random.js';
@@ -14,6 +14,10 @@ export function shuffleMazes(rom: Rom, random: Random) {
   for (const cave of SHUFFLED_CAVES) {
     shuffleCave(rom.locations[cave], random);
   }
+}
+
+export function prepareScreens(rom: Rom) {
+  extendGoaScreens(rom);
 }
 
 const SHUFFLED_CAVES = [

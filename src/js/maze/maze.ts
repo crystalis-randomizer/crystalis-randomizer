@@ -822,7 +822,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
     this.write(loc, new Set());
     // Clear exits: we need to re-add them later.
     const finisher = new MazeFinisher(this, loc, survey, this.random);
-    finisher.shuffleFixed();
+    if (!finisher.shuffleFixed()) return false;
     finisher.placeExits();
     finisher.placeNpcs();
     if (loc.rom.spoiler) {
@@ -885,13 +885,14 @@ class MazeFinisher {
   }
 
   // Shuffles the fixed screens, updating posMapping
-  shuffleFixed(): void {
+  shuffleFixed(): boolean {
     for (const fixed of this.fixedPos.values()) this.random.shuffle(fixed);
     for (const [pos0, spec] of this.survey.fixed) {
       const pos = this.fixedPos.get(spec.edges).pop();
-      if (pos == null) throw new Error(`Unreplaced fixed screen`);
+      if (pos == null) return false; // throw new Error(`Unreplaced fixed screen`);
       this.posMapping.set(pos0, pos);
     }
+    return true;
   }
 
   // Further updates posMapping as needed
@@ -959,7 +960,7 @@ class MazeFinisher {
   }
 
   // Move other NPCs.  Wall spawns have already been handled by Maze#write()
-  placeNpcs() {
+  placeNpcs(): void {
     // Keep track of spawns that may be on top of each other (e.g. people)
     const spawnMap = new Map<number, number>(); // map of old -> new yyyxxx
     const monsterPlacer = this.loc.monsterPlacer(this.random);

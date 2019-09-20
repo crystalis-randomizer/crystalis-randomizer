@@ -282,8 +282,13 @@ export class Overlay {
     // Start the game at 0:0
     routes.push({tile: entrance(0)});
     // Sword of Thunder warp
+    // TODO - entrance shuffle will break the auto-warp-point affordance.
     if (this.flags.teleportOnThunderSword()) {
-      routes.push({tile: entrance(0xf2), condition: Item.SWORD_OF_THUNDER});
+      routes.push({
+        tile: entrance(0xf2),
+        condition: or(and(Item.SWORD_OF_THUNDER, Capability.BUY_WARP),
+                      and(Item.SWORD_OF_THUNDER, Magic.TELEPORT)),
+      });
     }
     if (this.flags.assumeWildWarp()) {
       for (const location of this.rom.wildWarp.locations) {

@@ -55,7 +55,7 @@ export namespace Capability {
 // These indicate the boss is actually defeated.
 export type Boss = readonly [readonly [Condition]];
 export function Boss(id: number): Boss {
-  return Condition(~(0x100 | id));
+  return Condition(0x100 | id);
 }
 export namespace Boss {
   export const VAMPIRE1 = Boss(0x0);

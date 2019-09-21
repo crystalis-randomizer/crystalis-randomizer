@@ -44,6 +44,19 @@ const RELEVANT_FLAGS = [
   0x09b, // able to ride dolphin
   0x0a5, // talked to zebu student
   0x0a9, // talked to leaf rabbit
+  0x100, // killed vampire 1
+  0x101, // killed insect
+  0x102, // killed kelbesque 1
+  0x103, // rage
+  0x104, // killed sabera 1
+  0x105, // killed mado 1
+  0x106, // killed kelbesque 2
+  0x107, // killed sabera 2
+  0x108, // killed mado 2
+  0x109, // killed karmine
+  0x10a, // killed draygon 1
+  0x10b, // killed draygon 2
+  0x10c, // killed vampire 2
 
   // swords (may be needed for rage, SoT for massacre)
   0x200, 0x201, 0x202, 0x203,

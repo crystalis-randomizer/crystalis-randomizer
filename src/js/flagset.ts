@@ -343,7 +343,8 @@ export class FlagSet {
       return new RegExp(`S.*[${flag.substring(1)}]`);
     }
 
-    var flagForName: Flag = this.getFlagForName(flag);
+    const flagForName: Flag = this.getFlagForName(flag);
+    if (flagForName == null) throw new Error(`Unknown flag: ${flag}`);
     return flagForName.conflict;
   }
 

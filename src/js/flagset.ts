@@ -48,7 +48,7 @@ export const PRESETS: Preset[] = [{
 title: 'Mattrick',
 
   descr: 'Not for the faint of heart. Good luck...',
-  flags: 'Fcprsw Gt Hbdghwx Mert Ps Rlopst Sckmt Tabmp Wtuw',
+  flags: 'Fcprsw Gt Hbdhwx Mert Ps Ropst Sckmt Tabmp Wmtuw',
 }];
 
 // Just the flags, not the whole documentation.

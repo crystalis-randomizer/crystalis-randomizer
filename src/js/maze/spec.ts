@@ -263,8 +263,8 @@ const RIVER_SCREENS = [
        poi(1, 0x60, 0x108), poi(1, 0xa0, 0x108)),
   Spec(0x0_3000, 0xf1, ' ', 0x5, 0x7, // horizontal dead end
        poi(1, 0x60, -0x28), poi(1, 0xa0, -0x28)),
-  Spec(0x0_0003, 0xf2, '╨', bridge(0x17, [0x1, 0x3])), // top/bottom bridge (top)
-  Spec(0x0_0300, 0xf2, '╥', bridge(0xc6, [0x9, 0xb])), // top/bottom bridge (bot)
+  Spec(0x1_0003, 0xf2, '╨', bridge(0x17, [0x1, 0x3])), // top/bottom bridge (top)
+  Spec(0x1_0300, 0xf2, '╥', bridge(0xc6, [0x9, 0xb])), // top/bottom bridge (bot)
   Spec(0x0_3330, 0xf3, '╦', 0x5d, 0x79, 0xbf),
   Spec(0x0_3033, 0xf4, '╩', 0x15, 0x3d, 0x7f),
   Spec(0x2_0303, 0xf5, '╠', 0x19, 0x3, 0xb, // notched vertical hall
@@ -406,8 +406,8 @@ export class SpecSet {
   readonly stairsByTile = new Map<number, Dir>();
   // Maps Scr to direction and entrance
   readonly stairScreens = new Map<Scr, readonly [Dir, EntranceSpec]>();
-  // Set of 8-bit tile IDs that have walls
-  readonly walls = new Set<number>();
+  // Maps of 8-bit tile IDs to wall type
+  readonly walls = new Map<number, 'wall' | 'bridge'>();
 
   constructor(readonly specSets: ReadonlyArray<ReadonlyArray<Spec>>,
               readonly empty?: Spec) {
@@ -428,7 +428,7 @@ export class SpecSet {
             stair.dir,
             {entrance: stair.entrance, exits: [stair.exit, stair.exit + 1]}]);
       }
-      if (spec.wall) this.walls.add(spec.tile);
+      if (spec.wall) this.walls.set(spec.tile, spec.wall.type);
       if (spec.tile != 0x80 && spec.fixed) {
         this.fixedTiles.set(spec.tile, spec);
       }
@@ -440,6 +440,7 @@ export class SpecSet {
     let deadEnds = 0;
     let branches = 0;
     let walls = 0;
+    let bridges = 0;
     let wide = true;
     let anyWide = false;
     const stairs = new Map<Pos, ExitSpec>();
@@ -520,7 +521,9 @@ export class SpecSet {
         }
         if (edgeCount === 1) deadEnds++;
         if (edgeCount > 2) branches += (edgeCount - 2);
-        if (this.walls.has(tile)) walls++;
+        const wall = this.walls.get(tile);
+        if (wall === 'wall') walls++;
+        if (wall === 'bridge') bridges++;
         let fixedScr = this.fixedTiles.get(tile);
         if (DEAD_ENDS.has(tile)) edgeExits = 0;
         for (const dir of Dir.ALL) {
@@ -545,11 +548,11 @@ export class SpecSet {
       }
     }
     if (wide != anyWide) throw new Error(`Found inconsistent use of wide tiles`);
-    return {size, deadEnds, branches, walls, stairs,
+    return {size, deadEnds, branches, walls, bridges, stairs,
             edges, fixed, tiles, wide, specs, specSet: this};
   }
 
-  static readonly CAVE = new SpecSet(ALL_CAVE_SCREENS, EMPTY_CAVE_SCREEN);
+   static readonly CAVE = new SpecSet(ALL_CAVE_SCREENS, EMPTY_CAVE_SCREEN);
 }
 
 interface ExitSpec {
@@ -562,6 +565,7 @@ export interface Survey {
   size: number;
   deadEnds: number;
   branches: number;
+  bridges: number;
   walls: number;
   wide: boolean;
   stairs: Map<Pos, ExitSpec>;

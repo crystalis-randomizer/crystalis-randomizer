@@ -6,8 +6,6 @@ import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 
 export function shuffleMazes(rom: Rom, random: Random) {
-  //shuffleCave(rom.locations[0x57], random);
-
   shufflePyramid(rom, random);
   shuffleSwamp(rom, random);
   shuffleGoa1(rom, random);
@@ -36,7 +34,7 @@ const SHUFFLED_CAVES = [
   // Fog Lamp
   0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,
   // Waterfall
-  0x54, 0x55, 0x56, // 0x57, // can't handle this one yet
+  0x54, 0x55, 0x56, 0x57, // can't handle this one yet
   // Evil spirit
   // 0x69, 0x6a, 0x6b
   // Sabera palace (probably just skip sabera map 6e)

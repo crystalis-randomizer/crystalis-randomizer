@@ -220,6 +220,9 @@ export class Maze implements Iterable<[Pos, Scr]> {
     for (const pos of allPos) {
       if (this.map[pos] == null) {
         if (!this.fill(pos, opts)) {
+          if (opts.print) {
+            console.log(`Could not fill ${hex(pos)}\n${this.show()}`);
+          }
           if (opts.fuzzy) return false;
           //   console.log(`failed at ${hex(pos)}`); return false;
           // }
@@ -322,7 +325,8 @@ export class Maze implements Iterable<[Pos, Scr]> {
   }
 
   // pos1 and pos2 are pos that have already been filled, with an empty neighbor
-  connect(pos1: Pos, dir1?: Dir|null, pos2?: Pos|null, dir2?: Dir|null): boolean {
+  connect(pos1: Pos, dir1?: Dir|null, pos2?: Pos|null, dir2?: Dir|null,
+          opts?: FillOpts): boolean {
     // Infer directions if necessary
     if (dir1 == null) dir1 = this.findEmptyDir(pos1);
     if (dir1 == null) return false;
@@ -355,7 +359,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
     //pos1 = Pos.plus(pos1, dir1);
     let attempts = 0;
     for (const path of Path.generate(this.random, forward, right)) {
-      if (this.fillPath(pos1, dir1, path, exitType)) break;
+      if (this.fillPath(pos1, dir1, path, exitType, opts)) break;
       if (++attempts > 20) return false;
     }
     // return this.fill(pos2, 2); // handled in fillPath
@@ -819,11 +823,12 @@ export class Maze implements Iterable<[Pos, Scr]> {
 
   finish(survey: Survey, loc: Location): boolean {
     this.trim();
-    this.write(loc, new Set());
-    // Clear exits: we need to re-add them later.
     const finisher = new MazeFinisher(this, loc, survey, this.random);
     if (!finisher.shuffleFixed()) return false;
-    finisher.placeExits();
+    if (!finisher.placeExits()) return false;
+    this.write(loc, new Set());
+    // After this point, do nothing that could fail!
+    // Clear exits: we need to re-add them later.
     finisher.placeNpcs();
     if (loc.rom.spoiler) {
       loc.rom.spoiler.addMaze(loc.id, loc.name, this.show());
@@ -896,7 +901,7 @@ class MazeFinisher {
   }
 
   // Further updates posMapping as needed
-  placeExits(): void {
+  placeExits(): boolean {
     // First work on entrances, exits, and NPCs.
     // loc.entrances = [];
     this.loc.exits = [];
@@ -911,7 +916,7 @@ class MazeFinisher {
       const edgeList =
           this.survey.fixed.has(pos0) ? this.fixedEdges : this.allEdges;
       const edge: Pos | undefined = edgeList[exit.dir].pop();
-      if (edge == null) throw new Error('missing edge');
+      if (edge == null) return false; // throw new Error('missing edge');
       this.posMapping.set(pos0, edge);
       //mover(pos0, edge); // move spawns??
       const edgeType = Scr.edge(this.maze.get(edge)!, exit.dir);
@@ -943,6 +948,7 @@ class MazeFinisher {
           dest: exit.exit >>> 8, entrance: exit.exit & 0xff}));
       }
     }
+    return true;
   }
 
   placeMonster(spawn: Spawn, monsterPlacer: (m: Monster) => number|undefined) {
@@ -1053,6 +1059,8 @@ interface FillOpts {
   readonly replace?: boolean;
   // Delete neighboring tiles on failure
   readonly deleteNeighbors?: boolean;
+  // Debugging: print why we stopped
+  readonly print?: boolean;
 }
 
 

@@ -7,6 +7,8 @@ import {Location} from '../rom/location.js';
 //import {Monster} from '../rom/monster.js';
 import {hex, seq} from '../rom/util.js';
 
+const DEBUG: boolean = false;
+
 // invariants for shuffling caves:
 //  - dead ends
 //  - doors (types/directions)
@@ -31,7 +33,7 @@ interface ShuffleStrategy {
   new(loc: Location, random: Random): {shuffle: () => void};
 }
 
-const ATTEMPTS = 50;
+const ATTEMPTS = 100;
 class BasicCaveShuffle {
   readonly survey: Survey;
 
@@ -41,6 +43,7 @@ class BasicCaveShuffle {
   density!: number;
   allPos!: Pos[];
   walls!: number;
+  bridges!: number;
   fixed!: Set<Pos>;
 
   constructor(readonly loc: Location, readonly random: Random) {
@@ -55,6 +58,7 @@ class BasicCaveShuffle {
           seq(w * h, yx => ((yx % w) | Math.floor(yx / w) << 4) as Pos);
       this.density = this.survey.size / w / h;
       this.walls = this.survey.walls;
+      this.bridges = this.survey.bridges;
       this.fixed = new Set();
       const maze = new Maze(this.random, this.h, this.w, this.survey.specs);
       if (this.tryShuffle(maze)) return;
@@ -65,34 +69,35 @@ class BasicCaveShuffle {
   check(maze: Maze): boolean {
     const traverse = maze.traverse();
     return traverse.size > 2 &&
-        traverse[Symbol.iterator]().next().value[1].size === traverse.size;
+        traverse.values().next().value.size === traverse.size;
   }
 
   pickWidth(): number {
-    return this.loc.width + Math.floor((this.random.nextInt(6) - 1) / 3);
+    return this.loc.width + Math.floor((this.random.nextInt(5)) / 3);
+    //return this.loc.width + Math.floor((this.random.nextInt(6) - 1) / 3);
   }
 
   pickHeight(): number {
-    return this.loc.height + Math.floor((this.random.nextInt(6) - 1) / 3);
+    return this.loc.height + Math.floor((this.random.nextInt(5)) / 3);
+    //return this.loc.height + Math.floor((this.random.nextInt(6) - 1) / 3);
   }
 
   tryShuffle(maze: Maze): boolean {
-    //console.log(`Shuffle ${this.loc.name}`);
+    console.log(`Shuffle ${this.loc.name}`);
     if (!this.initializeFixedScreens(maze)) return false;
-    //console.log(`Initialized\n${maze.show()}`);
+    console.log(`Initialized\n${maze.show()}`);
     if (!this.initialFillMaze(maze)) return false;
-    //console.log(`Initial fill\n${maze.show()}`);
+    console.log(`Initial fill\n${maze.show()}`);
     if (!this.refineMaze(maze)) return false;
-    //console.log(`Refined\n${maze.show()}`);
+    console.log(`Refined\n${maze.show()}`);
     if (!this.addFeatures(maze)) return false;
-    //console.log(`Features\n${maze.show()}`);
+    console.log(`Features\n${maze.show()}`);
     return this.finish(maze);
   }
 
   initializeFixedScreens(maze: Maze): boolean {
     for (const [pos0, edge] of this.survey.edges) {
-      while (true) {
-        const pos = this.randomEdge(edge.dir);
+      for (const pos of this.random.ishuffle(this.edges(edge.dir))) {
         if (this.fixed.has(pos)) continue;
         this.fixed.add(pos);
         const fixedScr = this.survey.fixed.get(pos0);
@@ -100,6 +105,8 @@ class BasicCaveShuffle {
           maze.setBorder(pos, edge.dir, 6);
         } else {
           // NOTE: location 35 (sabre N summit prison) has a '1' exit edge
+          // NOTE: can't handle edge exits for 1x? maps.
+          if (this.h === 1) return false;
           maze.setBorder(pos, edge.dir,
                          (fixedScr.edges >>> Dir.shift(edge.dir)) & 0xf);
           fixBorders(maze, pos, fixedScr.edges);
@@ -157,7 +164,7 @@ class BasicCaveShuffle {
     // Initial setup: add points of interest, then fill map with 1's as much
     // as possible.
     // console.log(`initial:\n${maze.show()}`);
-    if (!this.check(maze)) return fail(`check failed after initial setup`);
+    if (!this.check(maze)) return fail(`check failed after initial setup`, maze);
 
     const empty = 0 as Scr;
     const opts2 = {skipAlternates: true};
@@ -202,25 +209,28 @@ class BasicCaveShuffle {
   addFeatures(maze: Maze): boolean {
     // Add stair hallways and walls
     //   TODO - make sure they're on *a* critical path?
-    {
-      const replaced = new Set<Pos>();
-      const alts = [...maze.alternates()];
-      for (const tile of [0x8c]) { // , 0x8d, 0x8e]) {
-        if (this.survey.tiles.count(tile)) {
-          const steps = this.random.shuffle(alts.filter(x => x[3].tile === tile));
-          if (steps.length < this.survey.tiles.count(tile)) {
-            return fail(`could not add stair hallway`);
-          }
-          for (let i = this.survey.tiles.count(tile) - 1; i >= 0; i--) {
-            maze.replace(steps[i][0], steps[i][2]);
-            replaced.add(steps[i][0]);
-          }
+    const replaced = new Set<Pos>();
+    const alts = [...maze.alternates()];
+    for (const tile of [0x8c]) { // , 0x8d, 0x8e]) {
+      if (this.survey.tiles.count(tile)) {
+        const steps = this.random.shuffle(alts.filter(x => x[3].tile === tile));
+        if (steps.length < this.survey.tiles.count(tile)) {
+          return fail(`could not add stair hallway`);
+        }
+        for (let i = this.survey.tiles.count(tile) - 1; i >= 0; i--) {
+          maze.replace(steps[i][0], steps[i][2]);
+          replaced.add(steps[i][0]);
         }
       }
-      const wallScreens = this.random.shuffle(alts.filter(x => x[3].wall));
-      for (let i = 0; i < this.walls; i++) {
-        const scr = wallScreens.pop();
-        if (scr == null) return fail(`could not add wall ${i}`);
+    }
+    for (const type of ['wall', 'bridge']) {
+      const screens =
+          this.random.shuffle(alts.filter(x => x[3].wall &&
+                                               x[3].wall.type === type));
+      const count = type === 'wall' ? this.walls : this.bridges;
+      for (let i = 0; i < count; i++) {
+        const scr = screens.pop();
+        if (scr == null) return fail(`could not add ${type} ${i}`);
         if (replaced.has(scr[0])) {
           i--;
           continue;
@@ -238,7 +248,7 @@ class BasicCaveShuffle {
   //        goa and swamp?
   finish(maze: Maze): boolean {
     maze.trim();
-    //console.log(`final:\n${maze.show()}`);
+    console.log(`final:\n${maze.show()}`);
     maze.write(this.loc, new Set());
     return maze.finish(this.survey, this.loc);
     // Map from priority to array of [y, x] pixel coords
@@ -249,6 +259,13 @@ class BasicCaveShuffle {
     // TODO - need to actually fill in exits, stairs, monsters, chests
     // TODO - extend out any additional needed dead-ends, either
     //        just to get the right number, or to have a chest
+  }
+
+  edges(dir: Dir): Pos[] {
+    const other =
+        dir === Dir.RIGHT ? this.w - 1 : dir === Dir.DOWN ? this.h - 1 : 0;
+    if (dir & 1) return seq(this.h, y => (y << 4 | other) as Pos);
+    return seq(this.w, x => (other << 4 | x) as Pos);
   }
 
   randomEdge(dir: Dir): Pos {
@@ -286,13 +303,49 @@ class WideCaveShuffle extends BasicCaveShuffle {
   }
 }
 
+class WaterfallRiverCaveShuffle extends BasicCaveShuffle {
+  initializeFixedScreens(maze: Maze): boolean {
+    const set = (pos: number, scr: number) => {
+      this.fixed.add(pos as Pos);
+      maze.set(pos as Pos, scr as Scr);
+    };
+    const river = 1 + this.random.nextInt(this.w - 2);
+    const left = this.random.nextInt(river);
+    const right = this.w - 1 - this.random.nextInt(this.w - river - 1);
+    const bottom = (this.h - 1) << 4;
+    set(bottom + left, 0x2_0001);
+    set(bottom + right, 0x2_0001);
+    set(bottom + river, 0x0_0003);
+    set(river, 0x0_0300);
+    const riverScreens = [];
+    for (let y = 1; y < this.h - 1; y += 2) {
+      riverScreens.push(0x0_1303);
+      riverScreens.push(0x0_0313);
+    }
+    this.random.shuffle(riverScreens);
+    for (let y = 1; y < this.h - 1; y++) {
+      set((y << 4) + river, riverScreens.pop()!);
+    }
+    console.log(maze.show());
+    return true;
+  }
+
+  check(maze: Maze): boolean {
+    const traverse = maze.traverse();
+    const partitions = [...new Set(traverse.values())].map(s => s.size);
+    return partitions.length === 2 &&
+      partitions[0] + partitions[1] === traverse.size &&
+      partitions[0] > 2 && partitions[1] > 2;
+  }
+}
+
 class CycleCaveShuffle extends BasicCaveShuffle {
   // Ensure the cave has at least one cycle.
   check(maze: Maze): boolean {
     const allTiles = [...maze];
     const nonCritical = allTiles.filter(t => {
       const trav = [...maze.traverse({without: [t[0]]})];
-      return trav[0][1].size === trav.length;
+      return trav.length && trav[0][1].size === trav.length;
     });
     if (!nonCritical.length) return false;
     // find two noncritical tiles that together *are* critical
@@ -300,7 +353,7 @@ class CycleCaveShuffle extends BasicCaveShuffle {
       for (let j = 0; j < i; j++) {
         const trav = [...maze.traverse({without: [nonCritical[i][0],
                                                   nonCritical[j][0]]})];
-        if (trav[0][1].size !== trav.length) return true;
+        if (trav.length && trav[0][1].size !== trav.length) return true;
       }
     }
     return false;
@@ -314,8 +367,9 @@ class TightCycleCaveShuffle extends CycleCaveShuffle {
   }
 }
 
-function fail(msg: string): false {
+function fail(msg: string, maze?: Maze): false {
   console.error(`Reroll: ${msg}`);
+  if (maze && DEBUG) console.log(maze.show());
   return false;
 }
 
@@ -504,6 +558,7 @@ const STRATEGIES = new Map<number, ShuffleStrategy>([
   [0x4b, TightCycleCaveShuffle],
   [0x54, CycleCaveShuffle],
   [0x56, WideCaveShuffle],
+  [0x57, WaterfallRiverCaveShuffle],
   [0x84, WideCaveShuffle],
 ]);
 

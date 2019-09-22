@@ -8,10 +8,14 @@
 
 import {Canvas} from './canvas.js';
 import {Rom} from '../rom.js';
+import {prepareScreens} from '../pass/shufflemazes.js';
 
 const run = async () => {
   const rom = await Rom.load();
   window.rom = rom;
+  if (/extend/.test(location.hash)) {
+    prepareScreens(rom);
+  }
 
   const canvas = new Canvas(rom, 256, 256);
 

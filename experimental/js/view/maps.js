@@ -12,6 +12,7 @@ import {World} from '../graph/world.js';
 import {shuffleCave} from '../maze/cave.js';
 import {shuffleSwamp} from '../maze/swamp.js';
 import {shuffleGoa1} from '../maze/goa.js';
+import {prepareScreens} from '../pass/shufflemazes.js';
 
 // TODO - move colors to view.js?
 //   - maybe the API I want is drawTile(x, y, id, attr)?
@@ -35,6 +36,9 @@ class MapsView extends View {
     super();
 
     this.rom = rom;
+    if (/extend/.test(window.location.hash)) {
+      prepareScreens(rom);
+    }
 
     this.location = -1;
     this.readHash();

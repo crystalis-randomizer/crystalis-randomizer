@@ -4,6 +4,7 @@
 
 import {Canvas} from './canvas.js';
 import {Rom} from '../rom.js';
+import {prepareScreens} from '../pass/shufflemazes.js';
 
 const run = async () => {
   const showUnused = /unused/.test(window.location.hash);
@@ -12,6 +13,9 @@ const run = async () => {
   for (let i = 0x80; i < 0xb0; i += 4) usedByTileset[i] = new Set();
   const rom = await Rom.load();
   window.rom = rom;
+  if (/extend/.test(window.location.hash)) {
+    prepareScreens(rom);
+  }
 
   // for (const s of rom.disjointTilesets()) {
   //   console.log(`Disjoint: ${[...s].map(hex).join(' ')}`);

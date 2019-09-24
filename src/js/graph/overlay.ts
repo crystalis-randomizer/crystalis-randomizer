@@ -379,9 +379,7 @@ export class Overlay {
       // TODO - pass in terrain; if on land and trigger skip is on then
       // add a route requiring rabbit boots and either warp boots or teleport?
       const extra: TriggerData = {};
-      if (trigger.id === 0x86 &&
-          !this.flags.disableRabbitSkip() &&
-          !this.flags.assumeRabbitSkip()) {
+      if (trigger.id === 0x86 && !this.flags.assumeRabbitSkip()) {
         extra.dx = [-32, -16, 0, 16];
       }
       if (trigger.id === 0xba &&

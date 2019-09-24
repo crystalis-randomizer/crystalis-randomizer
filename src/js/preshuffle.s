@@ -792,6 +792,18 @@ CheckForLowHpMp:
   jsr CheckSacredShieldForCurse
 
 
+.ifdef _DISABLE_TRIGGER_SKIP
+.org $354a2
+  lda $41
+  cmp #$08
+   beq +
+  cmp #$06
+   beq +
+  rts
++ jmp SwitchGameModeToTriggerTile
+.assert < $354b0
+.endif
+
 .ifdef _DISABLE_STATUE_GLITCH
 .org $3559a
   ;; Just always push down.
@@ -1190,6 +1202,11 @@ ReloadLocationGraphicsAfterChest:
     ;; After player picks up a chest, reload the location's graphics.
     jsr $3e148 ; reload just graphics, not objects
     jmp $3d552 ; ExecuteItemOrTriggerAction
+SwitchGameModeToTriggerTile:    ; relocated from $354a8
+    sty $0623
+    lda #$07  ; GAME_MODE_TRIGGER_TILE
+    sta $41   ; GameMode
+    rts
 .assert < $3e845
 
 .org $3d458

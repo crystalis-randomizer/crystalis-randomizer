@@ -1,4 +1,4 @@
-import {Maze} from './maze.js';
+import {FillOpts, Maze} from './maze.js';
 import {SpecSet, Survey} from './spec.js';
 import {Dir, Pos, Scr} from './types.js';
 import {Random} from '../random.js';
@@ -7,7 +7,7 @@ import {Location} from '../rom/location.js';
 //import {Monster} from '../rom/monster.js';
 import {hex, seq} from '../rom/util.js';
 
-const DEBUG: boolean = false;
+const DEBUG: boolean = true;
 
 // invariants for shuffling caves:
 //  - dead ends
@@ -83,15 +83,15 @@ class BasicCaveShuffle {
   }
 
   tryShuffle(maze: Maze): boolean {
-    console.log(`Shuffle ${this.loc.name}`);
+    if (DEBUG) console.log(`Shuffle ${this.loc.name}`);
     if (!this.initializeFixedScreens(maze)) return false;
-    console.log(`Initialized\n${maze.show()}`);
+    if (DEBUG) console.log(`Initialized\n${maze.show()}`);
     if (!this.initialFillMaze(maze)) return false;
-    console.log(`Initial fill\n${maze.show()}`);
+    if (DEBUG) console.log(`Initial fill\n${maze.show()}`);
     if (!this.refineMaze(maze)) return false;
-    console.log(`Refined\n${maze.show()}`);
+    if (DEBUG) console.log(`Refined\n${maze.show()}`);
     if (!this.addFeatures(maze)) return false;
-    console.log(`Features\n${maze.show()}`);
+    if (DEBUG) console.log(`Features\n${maze.show()}`);
     return this.finish(maze);
   }
 
@@ -149,31 +149,33 @@ class BasicCaveShuffle {
     return true;
   }
 
-  initialFillMaze(maze: Maze): boolean {
+  initialFillMaze(maze: Maze, opts: FillOpts = {}): boolean {
     const fillOpts = {
       edge: 1,
       fuzzy: 1,
       shuffleOrder: true,
       skipAlternates: true,
+      ...opts,
     };
-    if (!maze.fillAll(fillOpts)) return fail(`could not fill open`);
+    if (!maze.fillAll(fillOpts)) return fail(`could not fill open`, maze);
     return true;
   }
 
-  refineMaze(maze: Maze): boolean {
+  refineMaze(maze: Maze, opts: FillOpts = {}): boolean {
     // Initial setup: add points of interest, then fill map with 1's as much
     // as possible.
     // console.log(`initial:\n${maze.show()}`);
     if (!this.check(maze)) return fail(`check failed after initial setup`, maze);
 
     const empty = 0 as Scr;
-    const opts2 = {skipAlternates: true};
+    const fillOpts = {skipAlternates: true, ...opts};
     for (const [pos] of this.random.shuffle([...maze])) {
       if (maze.density() <= this.density) break;
       if (!maze.isFixed(pos)) {
         const changed =
             maze.saveExcursion(
-                () => maze.setAndUpdate(pos, empty, opts2) && this.check(maze));
+                () => maze.setAndUpdate(pos, empty, fillOpts) &&
+                      this.check(maze));
         if (changed) continue;
       }
     }
@@ -336,6 +338,101 @@ class WaterfallRiverCaveShuffle extends BasicCaveShuffle {
     return partitions.length === 2 &&
       partitions[0] + partitions[1] === traverse.size &&
       partitions[0] > 2 && partitions[1] > 2;
+  }
+}
+
+class EvilSpiritRiverCaveShuffle extends BasicCaveShuffle {
+  phase: 'river' | 'cave';
+
+  initializeFixedScreens(maze: Maze): boolean {
+    // Basic plan: do two full rounds of shuffle.
+    // First round is low-density just for river tiles.
+    this.density = this.survey.rivers / this.w / this.h;
+    this.phase = 'river';
+    
+    // This is copied from initialFillMaze
+
+    // NOTE: This is a difficult fill because there's no
+    // ||= or =|| tiles, so the left/right edges get a little
+    // troubled.  But there ARE dead-ends, so we can fill the
+    // column with either pairs of tight cycles or else
+    // dead ends, as we see fit.  Do this manually.
+
+    for (let y = 0; y < this.h; y++) {
+      for (let x = 0; x < this.w; x++) {
+        let tile = 0x3333;
+        const pos = (y << 4 | x) as Pos;
+        if (y === 0) tile &= 0xfff0;
+        if (y === this.h - 1) tile &= 0xf0ff;
+        const loop = y > 0 && (maze.get((pos - 16) as Pos)! & 0x0f00) != 0;
+        if (x === 0) {
+          if (loop) {
+            tile = 0x0033;
+          } else {
+            tile = y < this.h - 1 && this.random.nextInt(2) ? 0x0330 : 0x0030;
+          }
+        } else if (x === this.w - 1) {
+          if (loop) {
+            tile = 0x3003;
+          } else {
+            tile = y < this.h - 1 && this.random.nextInt(2) ? 0x3300 : 0x3000;
+          }
+        }
+        maze.set(pos, tile as Scr);
+      }
+    }
+
+    // if (!super.initialFillMaze(maze, {
+    //   edge: 3,
+    //   print: true,
+    //   fuzzy: opts => {
+    //     return {
+    //       ...opts,
+    //       edge: 1,
+    //       fuzzy: 1,
+    //     };
+    //   },
+    // })) return false;
+
+    if (!this.refineMaze(maze)) return false;
+
+    // Delete all the blanks
+    for (const pos of this.allPos) {
+      if (!maze.get(pos)) {
+        maze.delete(pos);
+      } else {
+        this.fixed.add(pos);
+      }
+    }
+
+    if (!super.initializeFixedScreens(maze)) return false;
+
+
+    // Figure out how many bridges we have so far (only from 4-way tiles),
+    // if it's too many then bail out; if it's not enough then add a few.
+
+    // Block off some of the edges to ensure a single path...?
+
+    // Then extend the tiles whenever possible.
+
+    // Then do the normal thing from there.
+    this.density = this.survey.size / this.w / this.h;
+    this.phase = 'cave';
+    return true;
+  }
+
+  check(maze: Maze): boolean {
+    if (this.phase === 'cave') return super.check(maze);
+    // River check involves just ensuring everything is reachable by flight?
+    // But we don't have that for now...
+
+    const traverse = maze.traverse(); // TODO - traverse with flight?!?
+    const partitions = [...new Set(traverse.values())].map(s => s.size);
+    let sum = 0;
+    for (const part of partitions) {
+      sum += part;
+    }
+    return partitions.every(p => p > 2) && sum === traverse.size;
   }
 }
 
@@ -559,6 +656,7 @@ const STRATEGIES = new Map<number, ShuffleStrategy>([
   [0x54, CycleCaveShuffle],
   [0x56, WideCaveShuffle],
   [0x57, WaterfallRiverCaveShuffle],
+  [0x69, EvilSpiritRiverCaveShuffle],
   [0x84, WideCaveShuffle],
 ]);
 

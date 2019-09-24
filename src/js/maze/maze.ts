@@ -526,7 +526,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
 
   setAndUpdate(pos: Pos, scr: Scr, opts: FillOpts = {}): boolean {
     return this.saveExcursion(() => {
-      const newOpts = {
+      const newOpts = typeof opts.fuzzy === 'function' ? opts.fuzzy(opts) : {
         ...opts,
         fuzzy: opts.fuzzy && opts.fuzzy - 1,
         replace: true,
@@ -575,6 +575,10 @@ export class Maze implements Iterable<[Pos, Scr]> {
     }
     if (!this.screens.has(screen)) throw new Error(`No such screen ${hex5(screen)}`); // `
     this.setInternal(pos, screen);
+  }
+
+  delete(pos: Pos): void {
+    this.setInternal(pos, null);
   }
 
   private setInternal(pos: Pos, scr: Scr | null): void {
@@ -1040,7 +1044,7 @@ interface TraverseOpts {
   readonly noFlagged?: boolean;
 }
 
-interface FillOpts {
+export interface FillOpts {
   // Max number of exits
   readonly maxExits?: number;
   // Edge type to use when unconstrained
@@ -1050,7 +1054,7 @@ interface FillOpts {
   // Whether to force the set
   readonly force?: boolean;
   // If we're fuzzy then allow a non-fixed edge to not match
-  readonly fuzzy?: number;
+  readonly fuzzy?: number | ((opts: FillOpts) => FillOpts);
   // Shuffle the order of the tiles to fill
   readonly shuffleOrder?: boolean;
   // Do not pick alternate tiles (>ffff)

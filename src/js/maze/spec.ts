@@ -397,6 +397,9 @@ const BITCOUNT = [0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4] as const;
 // Dead end tiles.
 const DEAD_ENDS = new Set([0x9b, 0x9c, 0xf0, 0xf1]);
 
+// Tiles with water on them.
+const RIVER_TILES = new Set(RIVER_SCREENS.map(s => s.tile));
+
 export class SpecSet {
   // Which tiles are fixed -> maps tile to spec
   readonly fixedTiles = new Map<number, Spec>();
@@ -441,6 +444,7 @@ export class SpecSet {
     let branches = 0;
     let walls = 0;
     let bridges = 0;
+    let rivers = 0;
     let wide = true;
     let anyWide = false;
     const stairs = new Map<Pos, ExitSpec>();
@@ -510,6 +514,7 @@ export class SpecSet {
           wide = false;
         }
         size++;
+        if (RIVER_TILES.has(tile)) rivers++;
         // Look for exits on the edge of the map
         let edgeExits = this.edgesByTile.get(tile)
         if (edgeExits == null) throw new Error(`Bad tile: ${hex(tile)}`);
@@ -548,7 +553,7 @@ export class SpecSet {
       }
     }
     if (wide != anyWide) throw new Error(`Found inconsistent use of wide tiles`);
-    return {size, deadEnds, branches, walls, bridges, stairs,
+    return {size, rivers, deadEnds, branches, walls, bridges, stairs,
             edges, fixed, tiles, wide, specs, specSet: this};
   }
 
@@ -563,6 +568,7 @@ interface ExitSpec {
 
 export interface Survey {
   size: number;
+  rivers: number;
   deadEnds: number;
   branches: number;
   bridges: number;

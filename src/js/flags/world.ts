@@ -27,7 +27,7 @@ export const WORLD_FLAGS: FlagSection = {
              ice walls will indicate the required element by the color (light
              grey or yellow for wind, blue for fire, bright orange ("embers") for
              water, or dark grey ("steel") for thunder.  The element to break
-             these wills is the same throughout an area.  Iron walls require a
+             these walls is the same throughout an area.  Iron walls require a
              one-off random element, with no visual cue, and two walls in the
              same area may have different requirements.`,
     }

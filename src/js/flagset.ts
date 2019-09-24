@@ -55,7 +55,13 @@ export const PRESETS: Preset[] = [
 
     descr: `Pulls out all the stops, may require superhuman feats.`,
     flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Roprst Sckmt Tabmp Wtuw',
-  }
+  },
+  {
+    title: 'Mattrick',
+
+    descr: 'Not for the faint of heart. Good luck...',
+    flags: 'Fcprsw Gt Hbdhwx Mert Ps Ropst Sckmt Tabmp Wmtuw',
+  },
 ];
 
 // Just the flags, not the whole documentation.

@@ -16,7 +16,7 @@ export const MONSTER_FLAGS: FlagSection = {
     {
       flag: 'Me',
       name: 'Shuffle monster weaknesses',
-      text: `Monster elemental weaknesses are shuffled.`,
+      text: `Monster and boss elemental weaknesses are shuffled.`,
     },
     {
       flag: 'Mt',

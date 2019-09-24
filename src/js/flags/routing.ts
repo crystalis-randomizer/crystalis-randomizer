@@ -17,9 +17,9 @@ export const ROUTING_FLAGS: FlagSection = {
       text: `Normally when acquiring the thunder sword, the player is instantly
            teleported to Shyron. This flag maintains that behavior regardless of
            where it is found (immediately activating the warp point; talking
-           to Asina will teleport back to the start, in case no other means of
-           return is available).  Disabling this flag means that the Sword of
-           Thunder will act like all other items and not teleport.`,
+           to Asina will teleport back to the Shrine of Mezame, in case no other
+           means of return is available).  Disabling this flag means that the
+           Sword of Thunder will act like all other items and not teleport.`,
     },
     {
       flag: 'Rd',

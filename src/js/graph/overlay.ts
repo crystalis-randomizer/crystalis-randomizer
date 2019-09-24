@@ -387,9 +387,12 @@ export class Overlay {
           !this.flags.assumeTeleportSkip()) {
         extra.extraLocations = [this.rom.locations.cordelPlainsWest];
       }
-      const [cond, ...rest] = trigger.conditions;
-      if (!rest.length && cond < 0 && relevant(~map(cond))) {
-        return {...extra, terrain: {exit: Condition(~map(cond))}};
+      const cond =
+          trigger.conditions.map(c => c < 0 && relevant(~map(c)) ?
+                                 Condition(~map(c)) : null)
+              .filter((c: unknown): c is [[Condition]] => c != null);
+      if (cond && cond.length) {
+        return {...extra, terrain: {exit: or(...cond)}};
       }
     } else if (actionItem != null) {
       return {check: [{condition, slot: actionItem}]};

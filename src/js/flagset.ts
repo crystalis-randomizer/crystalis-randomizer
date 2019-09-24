@@ -60,7 +60,7 @@ export const PRESETS: Preset[] = [
     title: 'Mattrick',
 
     descr: 'Not for the faint of heart. Good luck...',
-    flags: 'Fcprsw Gt Hbdhwx Mert Ps Ropst Sckmt Tabmp Wmtuw',
+    flags: 'Fcprsw Gt Hbdhwx Mert Ps Ropst Sckmt Tabmp Wtuw',
   },
 ];
 

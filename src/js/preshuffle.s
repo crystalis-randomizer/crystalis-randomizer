@@ -724,7 +724,7 @@ CheckForLowHpMp:
 .endif
 
 
-.bank $34000 $8000:$2000
+.bank $34000 $8000:$4000
 
 ;;; Numeric displays
 .org $34ee9  ; 06 - was LV(menu) but now it's difficulty
@@ -793,15 +793,16 @@ CheckForLowHpMp:
 
 
 .ifdef _DISABLE_TRIGGER_SKIP
-.org $354a2
-  lda $41
-  cmp #$08
-   beq +
-  cmp #$06
-   beq +
-  rts
-+ jmp SwitchGameModeToTriggerTile
-.assert < $354b0
+;;; The jumping warp-boots trigger skip works as follows:
+;;; Because the main loop reads the controller first and
+;;; sets the mode to #$06.  The trigger square only takes
+;;; effect (by setting the mode to #$07) if the mode was
+;;; #$08 (normal mode for walking on the map).  Because
+;;; the item is being used, the trigger effect is skipped.
+;;; The solution is to simply prevent using items while
+;;; flying.
+.org $35b4b
+  jsr PreventItemUseWhileJumping
 .endif
 
 .ifdef _DISABLE_STATUE_GLITCH
@@ -850,6 +851,25 @@ CheckForLowHpMp:
 ;GateCheckFailed:
 ;.org $37896
 ;GateCheckPassed:
+
+;;; Free up some space in the magic table by consolidating the used magics.
+.org $36033
+  .byte $98 ; this table moved back 6 bytes, to 36098
+.org $36086
+PreventItemUseWhileJumping:
+  lda $0620
+  beq +
+  cmp #$13 ; apex of jump, flight
+  beq +
+  lda #$00
+  rts
++ lda $0715
+  rts
+  ;; 2 bytes of free space left (of the original 18)
+.assert < $36098
+.org $36098
+  .byte $08,$00,$08,$08,$08,$08,$00,$08,$00,$08
+.assert < $360a2
 
 
 .ifdef _CUSTOM_SHOOTING_WALLS
@@ -1202,11 +1222,7 @@ ReloadLocationGraphicsAfterChest:
     ;; After player picks up a chest, reload the location's graphics.
     jsr $3e148 ; reload just graphics, not objects
     jmp $3d552 ; ExecuteItemOrTriggerAction
-SwitchGameModeToTriggerTile:    ; relocated from $354a8
-    sty $0623
-    lda #$07  ; GAME_MODE_TRIGGER_TILE
-    sta $41   ; GameMode
-    rts
+    ;; 8 bytes free
 .assert < $3e845
 
 .org $3d458

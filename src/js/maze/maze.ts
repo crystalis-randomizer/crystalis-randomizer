@@ -636,13 +636,20 @@ export class Maze implements Iterable<[Pos, Scr]> {
       if (scr == null) continue;
       const spec = this.screens.get(scr);
       if (spec == null) continue;
+      if (opts.flight && spec.deadEnd) continue;
       for (const connection of spec.connections) {
+        // Connect within each segment
         uf.union(connection.map(c => (pos << 8) + c));
       }
       if (spec.wall) {
         for (const connection of spec.wall.connections(flagged)) {
+          // Connect the bridged segments
           uf.union(connection.map(c => (pos << 8) + c));
         }
+      }
+      if (opts.flight) {
+        // Connect all the segments to each other
+        uf.union(spec.connections.map(c => (pos << 8) + c[0]));
       }
     }
 
@@ -1042,6 +1049,8 @@ interface TraverseOpts {
   readonly without?: readonly Pos[];
   // Whether to break walls/form bridges
   readonly noFlagged?: boolean;
+  // Whether to assume flight
+  readonly flight?: boolean;
 }
 
 export interface FillOpts {

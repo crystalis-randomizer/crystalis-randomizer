@@ -161,14 +161,14 @@ class BasicCaveShuffle {
     return true;
   }
 
-  refineMaze(maze: Maze, opts: FillOpts = {}): boolean {
+  refineMaze(maze: Maze, opts: RefineOpts = {}): boolean {
     // Initial setup: add points of interest, then fill map with 1's as much
     // as possible.
     // console.log(`initial:\n${maze.show()}`);
     if (!this.check(maze)) return fail(`check failed after initial setup`, maze);
 
     const empty = 0 as Scr;
-    const fillOpts = {skipAlternates: true, ...opts};
+    const fillOpts = {skipAlternates: true, ...(opts.fill || {})};
     for (const [pos] of this.random.shuffle([...maze])) {
       if (maze.density() <= this.density) break;
       if (!maze.isFixed(pos)) {
@@ -278,6 +278,11 @@ class BasicCaveShuffle {
   }
 }
 
+interface RefineOpts {
+  fill?: FillOpts;
+  loop?: boolean;
+}
+
 class WideCaveShuffle extends BasicCaveShuffle {
   initialFillMaze(maze: Maze): boolean {
     // Initial state should be some exit screens on top, and a stair
@@ -342,7 +347,7 @@ class WaterfallRiverCaveShuffle extends BasicCaveShuffle {
 }
 
 class EvilSpiritRiverCaveShuffle extends BasicCaveShuffle {
-  phase: 'river' | 'cave';
+  phase!: 'river' | 'cave';
 
   initializeFixedScreens(maze: Maze): boolean {
     // Basic plan: do two full rounds of shuffle.
@@ -352,12 +357,53 @@ class EvilSpiritRiverCaveShuffle extends BasicCaveShuffle {
     
     // This is copied from initialFillMaze
 
+    if (!this.initializeRiver(maze)) return false;
+
+    // if (!super.initialFillMaze(maze, {
+    //   edge: 3,
+    //   print: true,
+    //   fuzzy: opts => {
+    //     return {
+    //       ...opts,
+    //       edge: 1,
+    //       fuzzy: 1,
+    //     };
+    //   },
+    // })) return false;
+
+    if (!this.refineMaze(maze)) return false;
+    console.log(`REFINEMENT:\n${maze.show()}`);
+
+    // Delete all the blanks
+    for (const pos of this.allPos) {
+      if (!maze.get(pos)) {
+        maze.delete(pos);
+      } else {
+        this.fixed.add(pos);
+      }
+    }
+
+    if (!super.initializeFixedScreens(maze)) return false;
+
+    // Figure out how many bridges we have so far (only from 4-way tiles),
+    // if it's too many then bail out; if it's not enough then add a few.
+
+    // Block off some of the edges to ensure a single path...?
+
+    // Then extend the tiles whenever possible.
+
+    // Then do the normal thing from there.
+    this.density = this.survey.size / this.w / this.h;
+    this.phase = 'cave';
+    return true;
+  }
+
+  initializeRiver(maze: Maze): boolean {
     // NOTE: This is a difficult fill because there's no
     // ||= or =|| tiles, so the left/right edges get a little
     // troubled.  But there ARE dead-ends, so we can fill the
     // column with either pairs of tight cycles or else
     // dead ends, as we see fit.  Do this manually.
-
     for (let y = 0; y < this.h; y++) {
       for (let x = 0; x < this.w; x++) {
         let tile = 0x3333;
@@ -381,43 +427,6 @@ class EvilSpiritRiverCaveShuffle extends BasicCaveShuffle {
         maze.set(pos, tile as Scr);
       }
     }
-
-    // if (!super.initialFillMaze(maze, {
-    //   edge: 3,
-    //   print: true,
-    //   fuzzy: opts => {
-    //     return {
-    //       ...opts,
-    //       edge: 1,
-    //       fuzzy: 1,
-    //     };
-    //   },
-    // })) return false;
-
-    if (!this.refineMaze(maze)) return false;
-
-    // Delete all the blanks
-    for (const pos of this.allPos) {
-      if (!maze.get(pos)) {
-        maze.delete(pos);
-      } else {
-        this.fixed.add(pos);
-      }
-    }
-
-    if (!super.initializeFixedScreens(maze)) return false;
-
-
-    // Figure out how many bridges we have so far (only from 4-way tiles),
-    // if it's too many then bail out; if it's not enough then add a few.
-
-    // Block off some of the edges to ensure a single path...?
-
-    // Then extend the tiles whenever possible.
-
-    // Then do the normal thing from there.
-    this.density = this.survey.size / this.w / this.h;
-    this.phase = 'cave';
     return true;
   }
 
@@ -426,13 +435,14 @@ class EvilSpiritRiverCaveShuffle extends BasicCaveShuffle {
     // River check involves just ensuring everything is reachable by flight?
     // But we don't have that for now...
 
-    const traverse = maze.traverse(); // TODO - traverse with flight?!?
+    const traverse = maze.traverse({flight: true});
     const partitions = [...new Set(traverse.values())].map(s => s.size);
-    let sum = 0;
-    for (const part of partitions) {
-      sum += part;
-    }
-    return partitions.every(p => p > 2) && sum === traverse.size;
+    return partitions.length === 1 && partitions[0] === traverse.size;
+    // let sum = 0;
+    // for (const part of partitions) {
+    //   sum += part;
+    // }
+    // return partitions.every(p => p > 2) && sum === traverse.size;
   }
 }
 

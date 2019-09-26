@@ -617,6 +617,10 @@ const ADJUSTMENTS = [
   [0x14db9, 0x08, 0x80],
   // Fix garbage map square in bottom-left of Lime Tree Valley
   [0x1545d, 0xff, 0x00],
+  // Remove unused map screens from Evil Spirit lower
+  [0x15baf, 0xf0, 0x80],
+  [0x15bb6, 0xdf, 0x80],
+  [0x15bb7, 0x96, 0x80],
   // Fix garbage at bottom of oasis cave map (it's 8x11, not 8x12 => fix height)
   [0x164ff, 0x0b, 0x0a],
   // Fix bad music in zombietown houses: $10 should be $01

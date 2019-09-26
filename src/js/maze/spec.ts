@@ -23,6 +23,7 @@ export interface Spec {
   readonly fixed: boolean;
   readonly flag: boolean;
   readonly pit: boolean;
+  readonly deadEnd: boolean;
   readonly stairs: Stair[];
   readonly wall: Wall | undefined;
   readonly poi: Poi[];
@@ -35,6 +36,7 @@ export function Spec(edges: number,
   const connections = [];
   const poi = [];
   const stairs = [];
+  let deadEnd = false;
   let fixed = false;
   let flag = false;
   let wall: Wall | undefined = undefined;
@@ -47,6 +49,8 @@ export function Spec(edges: number,
         flag = true;
       } else if (data === 'pit') {
         pit = true;
+      } else if (data === 'deadend') {
+        deadEnd = true;
       } else {
         assertNever(data);
       }
@@ -63,7 +67,7 @@ export function Spec(edges: number,
     }
   }
   return {edges: edges as Scr,
-          tile, icon, connections,
+          tile, icon, connections, deadEnd,
           fixed, flag, wall, pit, poi, stairs};
 }
 
@@ -124,7 +128,7 @@ export function poi(priority: number, dy = 0x70, dx = 0x78) {
 
 type Connections = ReadonlyArray<ReadonlyArray<number>>;
 
-type SpecFlag = 'fixed' | 'flag' | 'pit';
+type SpecFlag = 'fixed' | 'flag' | 'pit' | 'deadend';
 
 type ExtraArg = number | Stair | Wall | Poi | SpecFlag;
 
@@ -220,12 +224,15 @@ const BASIC_CAVE_SCREENS = [
   Spec(0x2_0010, 0x99, '┎', 0xe, Stair.down(0xaf_d0, 0xbc)),
   Spec(0x2_0001, 0x9a, '╹', 0x2, Stair.down(0x1f_80, 0x27)),
   Spec(0x2_0100, 0x9a, '╻', 0xa, Stair.up(0xd0_80, 0xc7)),
-  Spec(0x4_0101, 0x9b, ' ', 0x2, 0xa), // vertical dead ends
-  Spec(0x0_0001, 0x9b, '╵', 0x2, poi(0, -0x30, 0x78)), // vertical dead end
-  Spec(0x0_0100, 0x9b, '╷', 0xa, poi(0, 0x110, 0x78)), // vertical dead end
-  Spec(0x4_1010, 0x9c, ' ', 0x6, 0xe), // horizontal dead ends
-  Spec(0x0_0010, 0x9c, '╶', 0xe, poi(0, 0x70, 0x108)), // horizontal dead end
-  Spec(0x0_1000, 0x9c, '╴', 0x6, poi(0, 0x70, -0x28)), // horizontal dead end
+  // vertical dead ends
+  Spec(0x4_0101, 0x9b, ' ', 0x2, 0xa, 'deadend'), // double
+  Spec(0x0_0001, 0x9b, '╵', 0x2, poi(0, -0x30, 0x78), 'deadend'),
+  Spec(0x0_0100, 0x9b, '╷', 0xa, poi(0, 0x110, 0x78), 'deadend'),
+  // horizontal dead ends
+  Spec(0x4_1010, 0x9c, ' ', 0x6, 0xe, 'deadend'),
+  Spec(0x0_0010, 0x9c, '╶', 0xe, poi(0, 0x70, 0x108), 'deadend'),
+  Spec(0x0_1000, 0x9c, '╴', 0x6, poi(0, 0x70, -0x28), 'deadend'),
+  //
   Spec(0x0_0601, 0x9e, '╽', 0x2a), // narrow bottom entrance
 ] as const;
 
@@ -253,16 +260,19 @@ const RIVER_SCREENS = [
   Spec(0x0_3130, 0xdd, '╤', 0x5d, 0x7af),
   Spec(0x0_1303, 0xde, '╢', 0x169, 0x3b),
   Spec(0x0_0313, 0xdf, '╟', 0x19, 0x3be),
-  Spec(0x8_0303, 0xf0, ' ', 0x1, 0x3, 0x9, 0xb), // vertical dead ends
-  Spec(0x0_0003, 0xf0, ' ', 0x1, 0x3, // vertical dead end
-       poi(1, -0x30, 0x48), poi(1, -0x30, 0x98)),
-  Spec(0x0_0300, 0xf0, ' ', 0x9, 0xb, // vertical dead end
-       poi(1, 0x110, 0x48), poi(1, 0x110, 0x98)),
-  Spec(0x8_3030, 0xf1, ' ', 0x5, 0x7, 0xd, 0xf), // horizontal dead ends
-  Spec(0x0_0030, 0xf1, ' ', 0xd, 0xf, // horizontal dead end
-       poi(1, 0x60, 0x108), poi(1, 0xa0, 0x108)),
-  Spec(0x0_3000, 0xf1, ' ', 0x5, 0x7, // horizontal dead end
-       poi(1, 0x60, -0x28), poi(1, 0xa0, -0x28)),
+  // vertical dead ends
+  Spec(0x8_0303, 0xf0, ' ', 0x1, 0x3, 0x9, 0xb, 'deadend'), // double
+  Spec(0x0_0003, 0xf0, ' ', 0x1, 0x3,
+       poi(1, -0x30, 0x48), poi(1, -0x30, 0x98), 'deadend'),
+  Spec(0x0_0300, 0xf0, ' ', 0x9, 0xb,
+       poi(1, 0x110, 0x48), poi(1, 0x110, 0x98), 'deadend'),
+  // horizontal dead ends
+  Spec(0x8_3030, 0xf1, ' ', 0x5, 0x7, 0xd, 0xf, 'deadend'), // double
+  Spec(0x0_0030, 0xf1, ' ', 0xd, 0xf,
+       poi(1, 0x60, 0x108), poi(1, 0xa0, 0x108), 'deadend'),
+  Spec(0x0_3000, 0xf1, ' ', 0x5, 0x7,
+       poi(1, 0x60, -0x28), poi(1, 0xa0, -0x28), 'deadend'),
+  //
   Spec(0x1_0003, 0xf2, '╨', bridge(0x17, [0x1, 0x3])), // top/bottom bridge (top)
   Spec(0x1_0300, 0xf2, '╥', bridge(0xc6, [0x9, 0xb])), // top/bottom bridge (bot)
   Spec(0x0_3330, 0xf3, '╦', 0x5d, 0x79, 0xbf),
@@ -385,6 +395,9 @@ const ALL_CAVE_SCREENS = [
   SPIKE_SCREENS,
 ];
 
+// Tiles with water on them.
+const RIVER_TILES = new Set(RIVER_SCREENS.map(s => s.tile));
+
 // const ALL_SCREENS = [
 //   ...ALL_CAVE_SCREENS,
 //   SWAMP_SCREENS,
@@ -394,15 +407,11 @@ const ALL_CAVE_SCREENS = [
 // Maps a 4-bit mask to a count
 const BITCOUNT = [0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4] as const;
 
-// Dead end tiles.
-const DEAD_ENDS = new Set([0x9b, 0x9c, 0xf0, 0xf1]);
-
-// Tiles with water on them.
-const RIVER_TILES = new Set(RIVER_SCREENS.map(s => s.tile));
-
 export class SpecSet {
   // Which tiles are fixed -> maps tile to spec
   readonly fixedTiles = new Map<number, Spec>();
+  // Dead end tiles
+  readonly deadEndTiles = new Set<number>();
   // Mask of open edges (1=up, 2=right, 4=down, 8=left) by 8-bit tile id
   readonly edgesByTile = new Map<number, number>();
   // Maps (8-bit tile << 8 | YX (tile) for entrance) => dir (up/down)
@@ -435,6 +444,7 @@ export class SpecSet {
       if (spec.tile != 0x80 && spec.fixed) {
         this.fixedTiles.set(spec.tile, spec);
       }
+      if (spec.deadEnd) this.deadEndTiles.add(spec.tile);
     }
   }
 
@@ -530,7 +540,7 @@ export class SpecSet {
         if (wall === 'wall') walls++;
         if (wall === 'bridge') bridges++;
         let fixedScr = this.fixedTiles.get(tile);
-        if (DEAD_ENDS.has(tile)) edgeExits = 0;
+        if (this.deadEndTiles.has(tile)) edgeExits = 0;
         for (const dir of Dir.ALL) {
           if (edgeExits & edgeMask & (1 << dir)) {
             let entrance = null;

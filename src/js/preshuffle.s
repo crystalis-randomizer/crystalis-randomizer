@@ -799,10 +799,21 @@ CheckForLowHpMp:
 ;;; effect (by setting the mode to #$07) if the mode was
 ;;; #$08 (normal mode for walking on the map).  Because
 ;;; the item is being used, the trigger effect is skipped.
-;;; The solution is to simply prevent using items while
-;;; flying.
-.org $35b4b
-  jsr PreventItemUseWhileJumping
+;;; The solution is to add a new game mode #$05 for using
+;;; an item while on a trigger square.  After evaluating
+;;; the item use, we jump right into to the trigger mode.
+.org $354a2
+  ;; save 623 first regardless
+  lda $41
+  cmp #$08
+  beq +
+   cmp #$06
+   beq +
+    rts
++ jmp SetTriggerTileGameMode
+.org $3cae8
+  .word (GameModeJump_05_ItemTrigger)
+
 .endif
 
 .ifdef _DISABLE_STATUE_GLITCH
@@ -856,20 +867,15 @@ CheckForLowHpMp:
 .org $36033
   .byte $98 ; this table moved back 6 bytes, to 36098
 .org $36086
-PreventItemUseWhileJumping:
-  lda $0620
-  beq +
-  cmp #$13 ; apex of jump, flight
-  beq +
-  lda #$00
+SetTriggerTileGameMode:
+  sty $0623
+  dec $41
   rts
-+ lda $0715
-  rts
-  ;; 2 bytes of free space left (of the original 18)
+  ;; 12 bytes free
 .assert < $36098
 .org $36098
   .byte $08,$00,$08,$08,$08,$08,$00,$08,$00,$08
-.assert < $360a2
+.assert $360a2
 
 
 .ifdef _CUSTOM_SHOOTING_WALLS
@@ -1482,6 +1488,18 @@ SpawnWall:
 + rts
 WallElements:
   .byte $0e,$0d,$0b,$07
+GameModeJump_05_ItemTrigger:
+  lda $0623
+  pha
+  jsr $d497 ; 3d497 game mode 06 item use
+  pla
+  sta $0623
+  lda $41
+  cmp #$08
+  bne +
+   dec $41
+   jmp $d3eb ; 3d3eb game mode 07 trigger
++ rts
   
 .assert < $3fe00 ; end of free space started at 3f9ba
 

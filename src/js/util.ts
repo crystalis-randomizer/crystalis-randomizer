@@ -304,6 +304,11 @@ export namespace iters {
       yield * iter;
     }
   }
+  export function * map<T, U>(iter: Iterable<T>, f: (elem: T) => U): IterableIterator<U> {
+    for (const elem of iter) {
+      yield f(elem);
+    }
+  }
 }
 
 // export class LabeledSet<T> {

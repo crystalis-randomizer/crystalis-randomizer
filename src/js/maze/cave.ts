@@ -171,12 +171,16 @@ class BasicCaveShuffle {
     const fillOpts = {skipAlternates: true, ...(opts.fill || {})};
     for (const [pos] of this.random.shuffle([...maze])) {
       if (maze.density() <= this.density) break;
-      if (!maze.isFixed(pos)) {
+      if (!maze.isFixed(pos) && !this.fixed.has(pos)) {
         const changed =
             maze.saveExcursion(
                 () => maze.setAndUpdate(pos, empty, fillOpts) &&
                       this.check(maze));
-        if (changed) continue;
+        //console.log(`Refinement step ${pos.toString(16)} changed ${changed}\n${maze.show()}`);
+        if (changed) {
+          this.postRefine(maze, pos);
+          continue;
+        }
       }
     }
 
@@ -185,6 +189,9 @@ class BasicCaveShuffle {
     // Remove any tight cycles
     return this.removeTightCycles(maze);
   }
+
+  // Runs after a tile is deleted during refinement.  For override.
+  postRefine(maze: Maze, pos: Pos) {}
 
   removeTightCycles(maze: Maze): boolean {
     for (let y = 1; y < this.h; y++) {
@@ -276,6 +283,13 @@ class BasicCaveShuffle {
         dir === Dir.RIGHT ? this.w - 1 : dir === Dir.DOWN ? this.h - 1 : 0;
     return (dir & 1 ? tile << 4 | other : other << 4 | tile) as Pos;
   }
+
+  retry(maze: Maze, f: () => boolean, tries: number): boolean {
+    for (let i = 0; i < tries; i++) {
+      if (maze.saveExcursion(f)) return true;
+    }
+    return false;
+  }
 }
 
 interface RefineOpts {
@@ -333,7 +347,7 @@ class WaterfallRiverCaveShuffle extends BasicCaveShuffle {
     for (let y = 1; y < this.h - 1; y++) {
       set((y << 4) + river, riverScreens.pop()!);
     }
-    console.log(maze.show());
+    //console.log(maze.show());
     return true;
   }
 
@@ -343,106 +357,6 @@ class WaterfallRiverCaveShuffle extends BasicCaveShuffle {
     return partitions.length === 2 &&
       partitions[0] + partitions[1] === traverse.size &&
       partitions[0] > 2 && partitions[1] > 2;
-  }
-}
-
-class EvilSpiritRiverCaveShuffle extends BasicCaveShuffle {
-  phase!: 'river' | 'cave';
-
-  initializeFixedScreens(maze: Maze): boolean {
-    // Basic plan: do two full rounds of shuffle.
-    // First round is low-density just for river tiles.
-    this.density = this.survey.rivers / this.w / this.h;
-    this.phase = 'river';
-    
-    // This is copied from initialFillMaze
-
-    if (!this.initializeRiver(maze)) return false;
-
-    // if (!super.initialFillMaze(maze, {
-    //   edge: 3,
-    //   print: true,
-    //   fuzzy: opts => {
-    //     return {
-    //       ...opts,
-    //       edge: 1,
-    //       fuzzy: 1,
-    //     };
-    //   },
-    // })) return false;
-
-    if (!this.refineMaze(maze)) return false;
-    console.log(`REFINEMENT:\n${maze.show()}`);
-
-    // Delete all the blanks
-    for (const pos of this.allPos) {
-      if (!maze.get(pos)) {
-        maze.delete(pos);
-      } else {
-        this.fixed.add(pos);
-      }
-    }
-
-    if (!super.initializeFixedScreens(maze)) return false;
-
-    // Figure out how many bridges we have so far (only from 4-way tiles),
-    // if it's too many then bail out; if it's not enough then add a few.
-
-    // Block off some of the edges to ensure a single path...?
-
-    // Then extend the tiles whenever possible.
-
-    // Then do the normal thing from there.
-    this.density = this.survey.size / this.w / this.h;
-    this.phase = 'cave';
-    return true;
-  }
-
-  initializeRiver(maze: Maze): boolean {
-    // NOTE: This is a difficult fill because there's no
-    // ||= or =|| tiles, so the left/right edges get a little
-    // troubled.  But there ARE dead-ends, so we can fill the
-    // column with either pairs of tight cycles or else
-    // dead ends, as we see fit.  Do this manually.
-    for (let y = 0; y < this.h; y++) {
-      for (let x = 0; x < this.w; x++) {
-        let tile = 0x3333;
-        const pos = (y << 4 | x) as Pos;
-        if (y === 0) tile &= 0xfff0;
-        if (y === this.h - 1) tile &= 0xf0ff;
-        const loop = y > 0 && (maze.get((pos - 16) as Pos)! & 0x0f00) != 0;
-        if (x === 0) {
-          if (loop) {
-            tile = 0x0033;
-          } else {
-            tile = y < this.h - 1 && this.random.nextInt(2) ? 0x0330 : 0x0030;
-          }
-        } else if (x === this.w - 1) {
-          if (loop) {
-            tile = 0x3003;
-          } else {
-            tile = y < this.h - 1 && this.random.nextInt(2) ? 0x3300 : 0x3000;
-          }
-        }
-        maze.set(pos, tile as Scr);
-      }
-    }
-    return true;
-  }
-
-  check(maze: Maze): boolean {
-    if (this.phase === 'cave') return super.check(maze);
-    // River check involves just ensuring everything is reachable by flight?
-    // But we don't have that for now...
-
-    const traverse = maze.traverse({flight: true});
-    const partitions = [...new Set(traverse.values())].map(s => s.size);
-    return partitions.length === 1 && partitions[0] === traverse.size;
-    // let sum = 0;
-    // for (const part of partitions) {
-    //   sum += part;
-    // }
-    // return partitions.every(p => p > 2) && sum === traverse.size;
   }
 }
 
@@ -473,6 +387,311 @@ class TightCycleCaveShuffle extends CycleCaveShuffle {
     return true;
   }
 }
+
+class EvilSpiritRiverCaveShuffle extends BasicCaveShuffle {
+
+  // Setting up a viable rivier is really hard.
+  // Possible ideas:
+  //  1. start with full river coverage, anneal away tiles until we get the
+  //     correct river density, then do land tiles the same way
+  //     - issue: we don't get enough straight tiles that way
+  //  2. use lines?  start w/ full vertical line rivers, disconnected
+  //     then add random horizontal segments, discarding rivers above/below
+  //     as necessary (shorter direction)
+  //  3. fill in all bridges at the start, then randomly remove bridges
+  //     or add outcroppings?
+  //  4. a. draw an initial path from left to right
+  //     b. add additional paths from there
+  //     c. 1/4 or so chance of turning a path to help encourage straight
+  //        segments
+  //     d. spurs can come out of top/bottom of a straight or dead end
+  //     e. 1/5 chance of ending a path?  or it runs into something...?
+  //     f. paths can come any direction out of a dead end
+  //     g. start w/ all bridges, remove randomly?
+
+  phase!: 'first river' | 'river' | 'cave';
+  fixedRiver!: Set<Pos>;
+
+  goodScrs = new Set([0x0003, 0x0030, 0x0300, 0x3000,
+                      0x0033, 0x0303, 0x3003, 0x0330, 0x3030, 0x3300,
+                      0x3033, 0x3330, 0x3333]) as Set<Scr>;
+  badScrs = new Set([0x3303, 0x0303]) as Set<Scr>;
+
+  addBridge = new Map([[0x0_3030, 0x1_3030],
+                       [0x0_0303, 0x1_0303],
+                       [0x0_0003, 0x1_0003],
+                       [0x0_0300, 0x1_0300]]);
+  // notch: 0_0303 -> 2_ or 4_
+  riverPathAlternatives = new Map([[0x0303 as Scr, [1]], [0x3030 as Scr, [1]]]);
+  initialRiverAllowed = [0x1_0303, 0x1_3030,
+                         0x0033, 0x0330, 0x3300, 0x3003] as Scr[];
+  riverLoopAllowed = [0x1_0303, 0x1_3030, 0x1_0303, 0x1_3030,
+                      0x8_0303, 0x8_3030, // also allow "broken" paths?
+                      0x0033, 0x0330, 0x3300, 0x3003,
+                      0x3033, 0x3330, 0x3333] as Scr[];
+
+  makeInitialRiver(maze: Maze): boolean {
+    const leftY = this.random.nextInt(this.h - 2) + 1;
+    const leftScr = (leftY < this.h / 2 ? 0x1_0300 : 0x1_0003) as Scr;
+    const rightY = this.random.nextInt(this.h - 2) + 1;
+    const rightScr = (rightY < this.h / 2 ? 0x1_0300 : 0x1_0003) as Scr;
+    const left = (leftY << 4) as Pos;
+    const right = (rightY << 4 | (this.w - 1)) as Pos;
+    maze.set(left, leftScr);
+    maze.set(right, rightScr);
+    if (!maze.connect(left, null, right, null,
+                      {allowed: this.initialRiverAllowed,
+                       pathAlternatives: this.riverPathAlternatives})) {
+      return false;
+    }
+    return true;
+  }
+
+  branchRiver(maze: Maze): boolean {
+    // TODO - use survey and density to get a sense of when to stop?
+    // How to know how many loops to add?
+    const targetDensity = this.survey.rivers / this.w / this.h;
+    for (let i = 0; i < 10 && maze.density() < targetDensity; i++) {
+      // TODO - add spurs in addition to loops...
+      if (maze.addLoop({allowed: this.riverLoopAllowed,
+                        pathAlternatives: this.riverPathAlternatives})) {
+        i = 0;
+      }
+    }
+    return true;
+  }
+
+  // TODO - this probably shouldn't be in "initializeFixedScreens" anymore, just
+  // make a new top-level driver.
+  // TODO - can this be used for waterfall cave (with a slight tweak since there
+  // are no bridges? - detect this case and allow it?)
+  initializeFixedScreens(maze: Maze): boolean {
+    // I. send a river all the way across the map.
+    if (!this.retry(maze, () => this.makeInitialRiver(maze), 5)) return false;
+    console.log(`Initial river:\n${maze.show()}`);
+    // II. make it a bit more interesting with some branches and loops.
+    if (!this.retry(maze, () => this.branchRiver(maze), 5)) return false;
+    console.log(`Branched river:\n${maze.show()}\n${maze.show(true)}`);
+    // III. do some checks to make sure the entire map is accessible.
+    // Then remove bridges and add blockages to reduce to a minimum accessibility.
+    // Ensure we have fewer than the total available number of bridges left.
+
+
+    // IV. add connections to land and fill the remainder of the map with land.
+    // Make sure everything is still accessible.  Consider deleting any two-tile
+    // segments that are otherwise inaccessible.
+
+    // V. temporarily remove the river and find the disconnected land masses.
+    // Distribute the stairs evenly across these.
+
+    // VI. perform the normal percolation on just the land tiles.
+
+    return true;
+  }
+}
+
+class EvilSpiritRiverCaveShuffle_old extends BasicCaveShuffle {
+
+  // Setting up a viable rivier is really hard.
+  // Possible ideas:
+  //  1. start with full river coverage, anneal away tiles until we get the
+  //     correct river density, then do land tiles the same way
+  //     - issue: we don't get enough straight tiles that way
+  //  2. use lines?  start w/ full vertical line rivers, disconnected
+  //     then add random horizontal segments, discarding rivers above/below
+  //     as necessary (shorter direction)
+  //  3. fill in all bridges at the start, then randomly remove bridges
+  //     or add outcroppings?
+  //  4. a. draw an initial path from left to right
+  //     b. add additional paths from there
+  //     c. 1/4 or so chance of turning a path to help encourage straight
+  //        segments
+  //     d. spurs can come out of top/bottom of a straight or dead end
+  //     e. 1/5 chance of ending a path?  or it runs into something...?
+  //     f. paths can come any direction out of a dead end
+  //     g. start w/ all bridges, remove randomly?
+
+
+  phase!: 'river' | 'cave';
+  fixedRiver!: Set<Pos>;
+
+  goodScrs = new Set([0x0003, 0x0030, 0x0300, 0x3000,
+                      0x0033, 0x0303, 0x3003, 0x0330, 0x3030, 0x3300,
+                      0x3033, 0x3330, 0x3333]) as Set<Scr>;
+  badScrs = new Set([0x3303, 0x0303]) as Set<Scr>;
+
+  initializeFixedScreens(maze: Maze): boolean {
+    // Basic plan: do two full rounds of shuffle.
+    // First round is low-density just for river tiles.
+    this.density = this.survey.rivers / this.w / this.h;
+    this.phase = 'river';
+    this.fixedRiver = new Set();
+
+    // This is copied from initialFillMaze
+
+    if (!this.initializeRiver(maze)) return false;
+
+    // if (!super.initialFillMaze(maze, {
+    //   edge: 3,
+    //   print: true,
+    //   fuzzy: opts => {
+    //     return {
+    //       ...opts,
+    //       edge: 1,
+    //       fuzzy: 1,
+    //     };
+    //   },
+    // })) return false;
+
+    if (!this.refineMaze(maze)) return false;
+    console.log(`REFINEMENT:\n${maze.show()}`);
+
+    // Find any remaining "fake" tiles and add dead-ends at least
+    for (const pos of this.allPos) {
+      const scr = maze.get(pos);
+      if (!scr) continue;
+      const dir = scr === 0x3303 ? Dir.LEFT : scr === 0x0333 ? Dir.RIGHT : null;
+      if (dir != null) {
+        const pos1 = Pos.plus(pos, dir);
+        const scr1 = maze.get(pos1);
+        if (scr1) return false;
+        maze.replace(pos1, (scr ^ 0x3333) as Scr);
+      }
+    }
+
+    // Delete all the blanks
+    for (const pos of this.allPos) {
+      if (!maze.get(pos)) {
+        maze.delete(pos);
+      } else {
+        this.fixed.add(pos);
+      }
+    }
+
+    // Find all the possible connections between river and land.
+    for (const pos of this.allPos) {
+      const scr = maze.get(pos);
+      if (!scr) continue;
+      // Can only augment straight paths
+      if (scr !== ((scr << 8 | scr >> 8) & 0xffff)) continue;
+      // Pick one of the two directions to add a land path
+      const aug = (scr << 4 | scr >> 4) & this.random.pick([0x1100, 0x0011]);
+      const scr1 = (scr | aug) as Scr;
+      maze.saveExcursion(() => maze.setAndUpdate(pos, scr1));
+    }    
+
+    console.log(`CONNECTED:\n${maze.show()}`);
+
+    
+    if (!super.initializeFixedScreens(maze)) return false;
+
+    // Figure out how many bridges we have so far (only from 4-way tiles),
+    // if it's too many then bail out; if it's not enough then add a few.
+
+    // Block off some of the edges to ensure a single path...?
+
+    // Then extend the tiles whenever possible.
+
+    // Then do the normal thing from there.
+    this.density = this.survey.size / this.w / this.h;
+    this.phase = 'cave';
+    return true;
+  }
+
+  postRefine(maze: Maze, pos: Pos) {
+    //let bad = 0;
+    //let fixed = 0;
+    //console.log(`postRefine ${pos.toString(16)}\n${maze.show()}`);
+    if (this.phase !== 'river') return;
+    // If any neighbors were made into fake tiles, then try to delete an
+    // edge to bring them back to non-fake.
+    for (const dir of Dir.ALL) {
+      const scr = maze.get(pos, dir);
+      if (scr != null && this.badScrs.has(scr)) {
+        //bad++;
+        /*if (*/maze.saveExcursion(
+            () => maze.tryConsolidate(
+                Pos.plus(pos, dir),
+                this.goodScrs,
+                this.badScrs,
+                () => this.check(maze)));//) fixed++;
+      }
+    }
+    //if (fixed) console.log(`postRefine bad ${bad} fixed ${fixed}\n${maze.show()}`);
+  }
+
+  initializeRiver(maze: Maze): boolean {
+    // NOTE: This is a difficult fill because there's no
+    // ||= or =|| tiles, so the left/right edges get a little
+    // troubled.  But there ARE dead-ends, so we can fill the
+    // column with either pairs of tight cycles or else
+    // dead ends, as we see fit.  Do this manually.
+    for (let y = 0; y < this.h; y++) {
+      for (let x = 0; x < this.w; x++) {
+        let tile = 0x3333;
+        const pos = (y << 4 | x) as Pos;
+        if (y === 0) tile &= 0xfff0;
+        if (y === this.h - 1) tile &= 0xf0ff;
+
+        if (x === 0) tile &= 0x0fff;
+        if (x === this.w - 1) tile &= 0xff0f;
+
+        // const loop = y > 0 && (maze.get((pos - 16) as Pos)! & 0x0f00) != 0;
+        // if (x === 0) {
+        //   if (loop) {
+        //     tile = 0x0033;
+        //   } else {
+        //     tile = y < this.h - 1 && this.random.nextInt(2) ? 0x0330 : 0x0030;
+        //   }
+        // } else if (x === this.w - 1) {
+        //   if (loop) {
+        //     tile = 0x3003;
+        //   } else {
+        //     tile = y < this.h - 1 && this.random.nextInt(2) ? 0x3300 : 0x3000;
+        //   }
+        // }
+
+        maze.set(pos, tile as Scr);
+      }
+    }
+    // Pick a few tiles on opposite edges to mark as fixed.
+    // Make sure to pick non-fake tiles, for better results.
+    // const turns = new Set([0x0033, 0x0330, 0x3300, 0x3003]) as Set<Scr>;
+
+    // TODO - randomly make a vertical river instead of horizontal?
+    for (const x of [0, this.w - 1]) {
+      for (const y of this.random.ishuffle(seq(this.h - 3, y => y + 2))) {
+        const pos = (y << 4 | x) as Pos;
+        // const scr = maze.get(pos);
+        // if (scr && turns.has(scr)) {
+          this.fixed.add(pos);
+          //this.fixed.add(pos - 16 as Pos);
+          this.fixedRiver.add(pos);
+          //this.fixedRiver.add(pos - 16 as Pos);
+          if (this.random.nextInt(2)) break;
+        // }
+      }
+    }
+    return true;
+  }
+
+  check(maze: Maze): boolean {
+    if (this.phase === 'cave') return super.check(maze);
+    // River check involves just ensuring everything is reachable by flight?
+    // But we don't have that for now...
+
+    if ([...this.fixedRiver].some(pos => !maze.get(pos))) return false;
+    const traverse = maze.traverse({flight: true});
+    const partitions = [...new Set(traverse.values())].map(s => s.size);
+    return partitions.length === 1 && partitions[0] === traverse.size;
+    // let sum = 0;
+    // for (const part of partitions) {
+    //   sum += part;
+    // }
+    // return partitions.every(p => p > 2) && sum === traverse.size;
+  }
+}
+const [] = [EvilSpiritRiverCaveShuffle_old];
 
 function fail(msg: string, maze?: Maze): false {
   console.error(`Reroll: ${msg}`);

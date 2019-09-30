@@ -6,7 +6,7 @@ import {Location, Flag, Spawn, Exit, Entrance} from '../rom/location.js';
 import {Monster} from '../rom/monster.js';
 import {hex, hex5, seq} from '../rom/util.js';
 import {UnionFind} from '../unionfind.js';
-import {DefaultMap, Multiset} from '../util.js';
+import {DefaultMap, Multiset, iters} from '../util.js';
 
 export class Maze implements Iterable<[Pos, Scr]> {
 
@@ -121,7 +121,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
 
   * eligible(pos: Pos, opts: FillOpts = {}): IterableIterator<Scr> {
     // Build up the constraint.
-    const {skipAlternates, maxExits, edge, fuzzy, stair} = opts;
+    const {allowed, skipAlternates, maxExits, edge, fuzzy, stair} = opts;
     const defaultScreen =
         edge != null ? edge | edge << 4 | edge << 8 | edge << 12 : undefined;
     let mask = 0;
@@ -143,7 +143,12 @@ export class Maze implements Iterable<[Pos, Scr]> {
     let fuzziness = Infinity;
 
     // Now iterate over available screens to find matches.
-    for (const [screen, spec] of this.screens) {
+    const allowedMap: Iterable<readonly [Scr, Spec | undefined]> =
+        allowed ?
+            iters.map(allowed, s => [s, this.screens.get(s)] as const) :
+            this.screens;
+    for (const [screen, spec] of allowedMap) {
+      if (!spec) throw new Error(`Bad Scr in 'allowed'!`)
       if (spec.fixed) continue;
       if (skipAlternates && (spec.edges & ~0xffff)) continue;
       if (stair != null && !spec.stairs.some(s => s.dir === stair)) continue;
@@ -203,7 +208,9 @@ export class Maze implements Iterable<[Pos, Scr]> {
       for (const step of pathSaved) {
         const nextDir = Dir.turn(dir, step);
         pos = Pos.plus(pos, dir);
-        const screen = Scr.fromExits(DirMask.of(Dir.inv(dir), nextDir), exitType);
+        let screen = Scr.fromExits(DirMask.of(Dir.inv(dir), nextDir), exitType);
+        const alts = opts.pathAlternatives && opts.pathAlternatives.get(screen);
+        if (alts) screen = (screen | (this.random.pick(alts) << 16)) as Scr;
         if (!this.trySet(pos, screen, opts)) return false;
         dir = nextDir;
       }
@@ -287,7 +294,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
     return false;
   }
 
-  addLoop(): boolean {
+  addLoop(opts: FillOpts = {}): boolean {
     // Find a start/end pair.
     const exts = new DefaultMap<number, Array<[Pos, Scr, Dir, number]>>(() => []);
     for (const [pos, scr, dir, part] of this.extensions()) {
@@ -310,13 +317,13 @@ export class Maze implements Iterable<[Pos, Scr]> {
       const end = Pos.plus(pos2, dir2);
       if (Pos.plus(pos1, dir1) === end) {
         // Trivial case
-        return this.fill(end, {maxExits: 2, replace: true});
+        return this.fill(end, {...opts, maxExits: 2, replace: true});
       }
       // Find clear path given exit type
       const [forward, right] = Pos.relative(pos1, dir1, end);
       let attempts = 0;
       for (const path of Path.generate(this.random, forward, right)) {
-        if (this.fillPath(pos1, dir1, path, exitType, {replace: true})) break;
+        if (this.fillPath(pos1, dir1, path, exitType, {...opts, replace: true})) break;
         if (++attempts > 20) return false;
       }
       // return this.fill(end, 2); // handled in fillPath
@@ -636,7 +643,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
       if (scr == null) continue;
       const spec = this.screens.get(scr);
       if (spec == null) continue;
-      if (opts.flight && spec.deadEnd) continue;
+      //if (opts.flight && spec.deadEnd) continue;
       for (const connection of spec.connections) {
         // Connect within each segment
         uf.union(connection.map(c => (pos << 8) + c));
@@ -647,7 +654,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
           uf.union(connection.map(c => (pos << 8) + c));
         }
       }
-      if (opts.flight) {
+      if (opts.flight && spec.connections.length && !spec.deadEnd) {
         // Connect all the segments to each other
         uf.union(spec.connections.map(c => (pos << 8) + c[0]));
       }
@@ -771,11 +778,14 @@ export class Maze implements Iterable<[Pos, Scr]> {
   }
 
   // For now, just show broad structure.
-  show(): string {
+  show(hex = false): string {
     const header = ' ' + seq(this.width).join('') + '\n';
     const body = seq(this.height, y => y.toString(16) + seq(this.width, x => {
       const pos = y << 4 | x;
       const scr = this.map[pos];
+      if (hex) {
+        return ' ' + (scr || 0).toString(16).padStart(5, '0');
+      }
       if (scr == null) return ' ';
       const spec = this.screens.get(scr);
       if (spec) return spec.icon;
@@ -1068,10 +1078,17 @@ export interface FillOpts {
   readonly shuffleOrder?: boolean;
   // Do not pick alternate tiles (>ffff)
   readonly skipAlternates?: boolean;
+  // Set of allowed screens to pick from
+  readonly allowed?: Scr[];
+  // Allowed alternatives for filling paths
+  readonly pathAlternatives?: Map<Scr, readonly number[]>;
   // Allow replacing
   readonly replace?: boolean;
   // Delete neighboring tiles on failure
   readonly deleteNeighbors?: boolean;
+  // // Try to avoid making "fake" tiles when possible, by
+  // // looking for a non-fake neighbor to replace with.
+  // readonly tryAvoidFakes?: boolean;
   // Debugging: print why we stopped
   readonly print?: boolean;
 }

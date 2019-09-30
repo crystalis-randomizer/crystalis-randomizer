@@ -3,6 +3,7 @@
 /** Removes readonly from fields. */
 export type Mutable<T> = {-readonly [K in keyof(T)]: T[K]};
 
+export function seq(x: number): number[];
 export function seq<T>(x: number, f?: (x: number) => T): T[];
 export function seq(x: number, f: (x: number) => number = (i) => i): number[] {
   return new Array(x).fill(0).map((_, i) => f(i));

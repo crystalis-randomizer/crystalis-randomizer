@@ -89,8 +89,9 @@ export class Random {
     return array;
   }
 
+  /** Does not destroy the input iterable. */
   * ishuffle<T>(iterable: Iterable<T>): IterableIterator<T> {
-    const arr = [];
+    const arr: T[] = [];
     if (!Array.isArray(iterable)) {
       if (hasSize(iterable)) {
         const iter = iterable[Symbol.iterator]();
@@ -103,15 +104,16 @@ export class Random {
           yield arr[j];
           arr[j] = arr[i];
         }
+        return; // TODO - why was this not required?
       } else {
         iterable = [...iterable];
       }
     }
     if (!Array.isArray(iterable)) throw new Error('impossible');
     for (let i = 0; i < iterable.length; i++) {
-      const j = this.nextInt(iterable.length - i);
+      const j = i + this.nextInt(iterable.length - i);
       yield j in arr ? arr[j] : iterable[j];
-      arr[j] = iterable[i];
+      arr[j] = i in arr ? arr[i] : iterable[i];
     }
   }
 

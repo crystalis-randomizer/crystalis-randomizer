@@ -6,6 +6,7 @@ import {Random} from '../random.js';
 import {Location} from '../rom/location.js';
 //import {Monster} from '../rom/monster.js';
 import {hex, seq} from '../rom/util.js';
+import {iters} from '../util.js';
 
 const DEBUG: boolean = true;
 
@@ -409,18 +410,26 @@ class EvilSpiritRiverCaveShuffle extends BasicCaveShuffle {
   //     f. paths can come any direction out of a dead end
   //     g. start w/ all bridges, remove randomly?
 
-  phase!: 'first river' | 'river' | 'cave';
-  fixedRiver!: Set<Pos>;
-
-  goodScrs = new Set([0x0003, 0x0030, 0x0300, 0x3000,
-                      0x0033, 0x0303, 0x3003, 0x0330, 0x3030, 0x3300,
-                      0x3033, 0x3330, 0x3333]) as Set<Scr>;
-  badScrs = new Set([0x3303, 0x0303]) as Set<Scr>;
+  landPartitions!: Array<Set<Pos>>;
+  river!: Set<Pos>;
 
   addBridge = new Map([[0x0_3030, 0x1_3030],
                        [0x0_0303, 0x1_0303],
                        [0x0_0003, 0x1_0003],
                        [0x0_0300, 0x1_0300]]);
+
+  removeBridge = new Map([
+    [0x1_3030, [0, 8]],
+    [0x1_0303, [0, 2, 4, 8]],
+    [0x1_0003, [0]],
+    [0x1_0300, [0]],
+  ]);
+
+  stairScreens = new Map<Dir, readonly Scr[]>([
+    [Dir.DOWN, [0x2_1000, 0x2_0010, 0x2_0001] as Scr[]],
+    [Dir.UP, [0x2_1010, 0x1_1000, 0x1_0010, 0x2_0100] as Scr[]],
+  ]);
+
   // notch: 0_0303 -> 2_ or 4_
   riverPathAlternatives = new Map([[0x0303 as Scr, [1]], [0x3030 as Scr, [1]]]);
   initialRiverAllowed = [0x1_0303, 0x1_3030,
@@ -429,6 +438,35 @@ class EvilSpiritRiverCaveShuffle extends BasicCaveShuffle {
                       0x8_0303, 0x8_3030, // also allow "broken" paths?
                       0x0033, 0x0330, 0x3300, 0x3003,
                       0x3033, 0x3330, 0x3333] as Scr[];
+
+  // TODO - can this be used for waterfall cave (with a slight tweak since there
+  // are no bridges? - detect this case and allow it?)
+  tryShuffle(maze: Maze): boolean {
+    this.landPartitions = [];
+    this.river = new Set();
+    // I. send a river all the way across the map.
+    if (!this.retry(maze, () => this.makeInitialRiver(maze), 5)) return false;
+    console.log(`Initial river:\n${maze.show()}`);
+    // II. make it a bit more interesting with some branches and loops.
+    if (!this.retry(maze, () => this.branchRiver(maze), 5)) return false;
+    console.log(`Branched river:\n${maze.show()}`);
+    // III. add connections to land and fill the remainder of the map with land.
+    // Make sure everything is still accessible.  Consider deleting any two-tile
+    // segments that are otherwise inaccessible.
+    if (!this.retry(maze, () => this.connectLand(maze), 3)) return false;
+    console.log(`Connected land:\n${maze.show()}`);
+    // IV. do some checks to make sure the entire map is accessible.
+    // Then remove bridges and add blockages to reduce to a minimum accessibility.
+    // Ensure we have fewer than the total available number of bridges left.
+    if (!this.retry(maze, () => this.removeBridges(maze), 5)) return false;
+    console.log(`Removed bridges:\n${maze.show(true)}`);
+    // V. Distribute stairs across multiple partitions.
+    if (!this.retry(maze, () => this.addStairs(maze), 3)) return false;
+    console.log(`Added stairs:\n${maze.show()}`);
+    // VI. perform the normal percolation on just the land tiles.
+
+    return true;
+  }
 
   makeInitialRiver(maze: Maze): boolean {
     const leftY = this.random.nextInt(this.h - 2) + 1;
@@ -458,35 +496,111 @@ class EvilSpiritRiverCaveShuffle extends BasicCaveShuffle {
         i = 0;
       }
     }
+    for (const pos of this.allPos) {
+      if (maze.get(pos)) this.river.add(pos);
+    }
     return true;
   }
 
-  // TODO - this probably shouldn't be in "initializeFixedScreens" anymore, just
-  // make a new top-level driver.
-  // TODO - can this be used for waterfall cave (with a slight tweak since there
-  // are no bridges? - detect this case and allow it?)
-  initializeFixedScreens(maze: Maze): boolean {
-    // I. send a river all the way across the map.
-    if (!this.retry(maze, () => this.makeInitialRiver(maze), 5)) return false;
-    console.log(`Initial river:\n${maze.show()}`);
-    // II. make it a bit more interesting with some branches and loops.
-    if (!this.retry(maze, () => this.branchRiver(maze), 5)) return false;
-    console.log(`Branched river:\n${maze.show()}\n${maze.show(true)}`);
-    // III. do some checks to make sure the entire map is accessible.
-    // Then remove bridges and add blockages to reduce to a minimum accessibility.
-    // Ensure we have fewer than the total available number of bridges left.
+  connectLand(maze: Maze): boolean {
+    // Add a bunch of land tiles, then try to add connections to each, or else
+    // remove the connected segments.
+    if (!this.initialFillMaze(maze)) return false;
+    // At this point everything is disconnected.  For each partition, look for
+    // a suitable connection point.
+    const traversal = maze.traverse();
+    const partitions = [...new Set(traversal.values())];
+    NEXT_PARTITION:
+    for (const partition of partitions) {
+      const positions = new Set<Pos>();
+      for (const spot of partition) {
+        const pos = (spot >> 8) as Pos;
+        // Skip the water partition.
+        if (this.river.has(pos)) continue NEXT_PARTITION;
+        // Otherwise add stuff.
+        positions.add(pos);
+        if (!(spot & 0x0f)) { // e.g. 2310 - on the left edge -> so (2,3) and (2,2)
+          positions.add((pos - 1) as Pos);
+        } else if (!(spot & 0xf0)) {
+          positions.add((pos - 16) as Pos);
+        }
+      }
+      this.landPartitions.push(positions);
+      // We now have the set of all pos in this partition.  Find a neighbor that's
+      // water and try to connect.
+      let found = false;
+      for (const pos of this.random.ishuffle([...positions])) {
+        for (const dir of Dir.ALL) {
+          const pos1 = Pos.plus(pos, dir);
+          const river = maze.get(pos1)! & 0xffff;
+          if (river !== (dir & 1 ? 0x0303 : 0x3030)) continue;
+          //const riverAdj = 1 << ((dir ^ 2) << 2);
+          const landAdj = 1 << (dir << 2);
+          //maze.setAndUpdate(pos1, (river | riverAdj) as Scr, {force: true});
+          maze.setAndUpdate(pos, (maze.get(pos)! | landAdj) as Scr, {replace: true});
+          found = true;
+          if (this.random.nextInt(2)) break; // maybe add another connection?
+          continue NEXT_PARTITION;
+        }
+      }
+      // Failed to connect.  If it's tiny (2 or less) then delete, else fail.
+      if (found) continue NEXT_PARTITION;
+      if (positions.size > 2) return false;
+      for (const pos of positions) {
+        maze.delete(pos);
+        this.landPartitions.pop();
+      }
+    }
+    return this.check(maze);
+  }
 
+  removeBridges(maze: Maze): boolean {
+    // Basic plan: take out as many bridges as we can until the map is no longer
+    // traversible.
+    for (const pos of this.random.ishuffle([...this.river])) {
+      const scr = maze.get(pos);
+      if (scr == null) throw new Error(`expected a screen at ${hex(pos)}`);
+      for (const opt of this.random.ishuffle(this.removeBridge.get(scr) || [])) {
+        const success = maze.saveExcursion(() => {
+          maze.replace(pos, (scr & 0xffff | opt << 16) as Scr);
+          return this.check(maze);
+        });
+        if (success) break; // don't try any other options
+      }
+    }
+    // Count bridges, make sure we don't still have too many!
+    const bridges = iters.count(iters.filter(this.river, pos => {
+      const wall = maze.getSpec(pos)!.wall;
+      return wall ? wall.type === 'bridge' : false;
+    }));
+    return bridges <= this.survey.bridges;
+  }
 
-    // IV. add connections to land and fill the remainder of the map with land.
-    // Make sure everything is still accessible.  Consider deleting any two-tile
-    // segments that are otherwise inaccessible.
-
-    // V. temporarily remove the river and find the disconnected land masses.
-    // Distribute the stairs evenly across these.
-
-    // VI. perform the normal percolation on just the land tiles.
-
-    return true;
+  addStairs(maze: Maze): boolean {
+    // First make sure there's no edges.
+    if (this.survey.edges.size) throw new Error(`Unexpected edge: ${this.survey.edges}`);
+    // Now try to pick spots for stairs.
+    const stairs = [...this.survey.stairs];
+    NEXT_PARTITION:
+    for (const partition of this.random.ishuffle(this.landPartitions)) {
+      if (!stairs.length) break;
+      for (const pos of this.random.ishuffle([...partition])) {
+        for (const stairScr of this.stairScreens.get(stairs[0][1].dir)!) {
+          const success = maze.saveExcursion(() => {
+            // TODO - what are all the eligible stairs for the given spec?!?
+            const opts = {replace: true, skipAlternates: true};
+            return maze.setAndUpdate(pos, stairScr, opts) && this.check(maze);
+          });
+// TODO - we're never making it from here...?
+          if (success) {
+            stairs.shift()!;
+            this.fixed.add(pos);
+            continue NEXT_PARTITION;
+          }
+        }
+      }
+    }
+    return !stairs.length;
   }
 }
 

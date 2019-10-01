@@ -280,8 +280,8 @@ const RIVER_SCREENS = [
   Spec(0x4_0303, 0xf6, '╣', 0x1, 0x9, 0x3b, // notched vertical hall
        poi(1, 0xb0, 0x48), poi(1, 0x30, 0x48)),
   // Made-up tiles to help bootstrapping
-  Spec(0x0_0333, ~6, '╠', 0x19, 0x3d, 0xbf), // made-up tile w/ right branch
-  Spec(0x0_3303, ~7, '╣', 0x3b, 0x79, 0x15), // made-up tile w/ left branch
+  //Spec(0x0_0333, ~6, '╠', 0x19, 0x3d, 0xbf), // made-up tile w/ right branch
+  //Spec(0x0_3303, ~7, '╣', 0x3b, 0x79, 0x15), // made-up tile w/ left branch
 ] as const;
 
 const WIDE_SCREENS = [

@@ -8,6 +8,8 @@ import {Rom} from '../rom.js';
 export function shuffleMazes(rom: Rom, random: Random) {
   shuffleCave(rom.locations[0x69], random);
 
+  if (random.nextInt(2) < 2) return;
+
   shufflePyramid(rom, random);
   shuffleSwamp(rom, random);
   shuffleGoa1(rom, random);

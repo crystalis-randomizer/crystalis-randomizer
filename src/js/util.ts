@@ -309,6 +309,23 @@ export namespace iters {
       yield f(elem);
     }
   }
+  export function * filter<T>(iter: Iterable<T>, f: (elem: T) => boolean): Iterable<T> {
+    for (const elem of iter) {
+      if (f(elem)) yield elem;
+    }
+  }
+  export function * flatMap<T, U>(iter: Iterable<T>, f: (elem: T) => Iterable<U>): IterableIterator<U> {
+    for (const elem of iter) {
+      yield * f(elem);
+    }
+  }
+  export function count(iter: Iterable<unknown>): number {
+    let count = 0;
+    for (const _ of iter) {
+      count++;
+    }
+    return count;
+  }
 }
 
 // export class LabeledSet<T> {

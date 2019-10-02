@@ -23,15 +23,15 @@ if [ -d "deploy/$dir" ]; then
   rm -rf "deploy/$dir"
 fi
 
+dirs="edit flags graph maze pass rom view"
 # Make directories and copy the relevant files.
 mkdir -p "deploy/$dir/view"
 mkdir -p "deploy/$dir/css/view"
-mkdir -p "deploy/$dir/js/view"
-mkdir -p "deploy/$dir/js/rom"
 mkdir -p "deploy/$dir/images"
-
-cp dist/js/view/*.js "deploy/$dir/js/view/"
-cp dist/js/rom/*.js "deploy/$dir/js/rom/"
+for sub in $dirs; do
+  mkdir -p "deploy/$dir/js/$sub"
+  cp dist/js/$sub/*.js "deploy/$dir/js/$sub/"
+done
 cp dist/js/*.js "deploy/$dir/js/"
 cp dist/js/*.s "deploy/$dir/js/"
 cp dist/css/*.css "deploy/$dir/css/"

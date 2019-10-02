@@ -907,8 +907,9 @@ class MazeFinisher {
         if (edgeType && edgeType != 7) {
           // if (survey.specSet.fixedTiles.has(loc.screens[pos >> 4][pos & 0xf])) {
           // if (survey.specSet.fixedTiles.has(maze.getSpec(pos))) {
-          if (survey.specSet.fixedTiles.has(
-              (loc.screens[pos >> 4] || [])[pos & 0xf])) {
+          // if (survey.specSet.fixedTiles.has(
+          //     (loc.screens[pos >> 4] || [])[pos & 0xf])) {
+          if (maze.getSpec(pos)!.fixed) {
             this.fixedEdges[dir].push(pos);
           } else {
             this.allEdges[dir].push(pos);

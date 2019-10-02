@@ -501,7 +501,7 @@ export class AssumedFill implements Shuffle {
       }
       // TODO - it looks like we're placing random items in magic slots when Sm is off?!?
       //     ----> figure out what was placed in its spot?
-      console.error(`Failed to place key item ${itemId}: available ${reachable.map(s => graph.slots[s].item)}`);
+      // console.error(`Failed to place key item ${itemId}: available ${reachable.map(s => graph.slots[s].item)}`);
       return false;
     }
     return true;
@@ -572,7 +572,7 @@ export class AssumedFill implements Shuffle {
         }
       }
       if (!found) {
-        console.error(`Failed to fill extra item ${item}. Slots: ${earlySlots}, ${otherSlots}`);
+        // console.error(`Failed to fill extra item ${item}. Slots: ${earlySlots}, ${otherSlots}`);
         return null;
       }
     }

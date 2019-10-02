@@ -801,6 +801,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
 
   write(loc: Location, availableFlags: Set<number>) {
     for (const flag of loc.flags) {
+      //console.log(`adding flag ${hex(flag.flag)}`);
       availableFlags.add(flag.flag);
     }
     let wallElement = 0;
@@ -810,6 +811,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
       if (type) wallSpawns[type].push(spawn);
       if (type === 'wall') wallElement = spawn.wallElement();
     }
+    //console.log(`wall spawns:`, wallSpawns, `available flags:`, availableFlags);
     loc.flags = [];
     loc.width = this.width;
     loc.height = this.height;
@@ -825,6 +827,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
         loc.screens[y].push(tile);
         if (spec.flag) loc.flags.push(Flag.of({screen: pos, flag: 0x2ef}));
         if (spec.wall) {
+          //console.log(`pos: ${hex(pos)}: ${hex5(scr)}`, spec.wall);
           // pop an available flag and use that.
           loc.flags.push(Flag.of({screen: pos, flag: pop(availableFlags)}));
           const spawn = wallSpawns[spec.wall.type].pop() || (() => {
@@ -845,9 +848,9 @@ export class Maze implements Iterable<[Pos, Scr]> {
   finish(survey: Survey, loc: Location): boolean {
     this.trim();
     const finisher = new MazeFinisher(this, loc, survey, this.random);
-    if (!finisher.shuffleFixed()) return false;
-    if (!finisher.placeExits()) return false;
-    this.write(loc, new Set());
+    if (!finisher.shuffleFixed()) return fail('could not shuffle fixed', this);
+    if (!finisher.placeExits()) return fail('could not place exits', this);
+    this.write(loc, new Set()); // TODO - take set from elsewhere?
     // After this point, do nothing that could fail!
     // Clear exits: we need to re-add them later.
     finisher.placeNpcs();
@@ -856,6 +859,13 @@ export class Maze implements Iterable<[Pos, Scr]> {
     }
     return true;
   }
+}
+
+const DEBUG: boolean = false;
+function fail(msg: string, maze?: Maze): false {
+  if (DEBUG) console.error(`Reroll: ${msg}`);
+  if (maze && DEBUG) console.log(maze.show());
+  return false;
 }
 
 class MazeFinisher {
@@ -895,7 +905,10 @@ class MazeFinisher {
         if (!scr) continue;
         const edgeType = Scr.edge(scr, dir);
         if (edgeType && edgeType != 7) {
-          if (survey.specSet.fixedTiles.has(loc.screens[pos >> 4][pos & 0xf])) {
+          // if (survey.specSet.fixedTiles.has(loc.screens[pos >> 4][pos & 0xf])) {
+          // if (survey.specSet.fixedTiles.has(maze.getSpec(pos))) {
+          if (survey.specSet.fixedTiles.has(
+              (loc.screens[pos >> 4] || [])[pos & 0xf])) {
             this.fixedEdges[dir].push(pos);
           } else {
             this.allEdges[dir].push(pos);

@@ -6,10 +6,6 @@ import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 
 export function shuffleMazes(rom: Rom, random: Random) {
-  shuffleCave(rom.locations[0x69], random);
-
-  if (random.nextInt(2) < 2) return;
-
   shufflePyramid(rom, random);
   shuffleSwamp(rom, random);
   shuffleGoa1(rom, random);
@@ -40,7 +36,7 @@ const SHUFFLED_CAVES = [
   // Waterfall
   0x54, 0x55, 0x56, 0x57, // can't handle this one yet
   // Evil spirit
-  // 0x69, 0x6a, 0x6b
+  0x69, // 0x6a, 0x6b
   // Sabera palace (probably just skip sabera map 6e)
   // 0x6c, 0x6d
   // Joel passage
@@ -59,8 +55,10 @@ const SHUFFLED_CAVES = [
   0x9d, //0x9e,
   // Crypt
   // 0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5,
+  // Goa - Kelbesque 2
+  // 0xa8, 0xa9, // NOTE: a9 handled by shuffleGoa1
   // Goa - Sabera 2
-  // 0xab,
+  0xab,
   // Goa - Mado 2
   // 0xad, 0xae, 0xaf, 0xb9
   // Goa - Karmine

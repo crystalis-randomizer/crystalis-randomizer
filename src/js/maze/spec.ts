@@ -236,6 +236,7 @@ const BASIC_CAVE_SCREENS = [
 
 const BOSS_CAVE_SCREENS = [
   Spec(0x0_7176, 0x91, '╤', 'fixed', 0x2a, poi(1, 0x60, 0x78)),
+  Spec(0x7_0101, 0x91, '╤', 'fixed', 0x2a, poi(1, 0x60, 0x78)),
   Spec(0x1_7176, 0x92, '╤', 'fixed',
        wall(0x27, [0x2, 0xa]), poi(1, 0x60, 0x78)),
   Spec(0x0_0070, 0x80, '╘'), // empty spot to left of boss room
@@ -443,7 +444,10 @@ export class SpecSet {
       }
       if (spec.wall) this.walls.set(spec.tile, spec.wall.type);
       if (spec.tile != 0x80 && spec.fixed) {
-        this.fixedTiles.set(spec.tile, spec);
+        if (!this.fixedTiles.has(spec.tile)) {
+          // tile 91 has two options - use the first one.
+          this.fixedTiles.set(spec.tile, spec);
+        }
       }
       if (spec.deadEnd) this.deadEndTiles.add(spec.tile);
     }
@@ -474,6 +478,13 @@ export class SpecSet {
           specs.push(...set);
           break;
         }
+      }
+    }
+
+    // Special case: tileset a4 cannot handle horizontal wall corridors
+    if (loc.tileset === 0xa4) {
+      for (let i = specs.length - 1; i >= 0; i--) {
+        if (specs[i].edges === 0x1_1010) specs.splice(i, 1);
       }
     }
 
@@ -561,6 +572,15 @@ export class SpecSet {
           }
         }
         if (fixedScr != null) fixed.set(pos, fixedScr);
+      }
+    }
+    if (rivers) {
+      // river screens can't easily support blanks on either side of the boss
+      // room so instead replace 0_7176 with 7_0101.
+      for (const [pos, scr] of fixed) {
+        if (scr.edges !== 0x7176) continue;
+        const spec = specs.find(s => s.edges === 0x7_0101);
+        if (spec) fixed.set(pos, spec);
       }
     }
     if (wide != anyWide) throw new Error(`Found inconsistent use of wide tiles`);

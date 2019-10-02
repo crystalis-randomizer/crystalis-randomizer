@@ -8,7 +8,7 @@ import {Location} from '../rom/location.js';
 import {hex, seq} from '../rom/util.js';
 import {iters} from '../util.js';
 
-const DEBUG: boolean = true;
+const DEBUG: boolean = false;
 
 // invariants for shuffling caves:
 //  - dead ends
@@ -234,6 +234,11 @@ class BasicCaveShuffle {
       }
     }
     for (const type of ['wall', 'bridge']) {
+
+      // TODO http://localhost:8081/#rom=orig.nes&init=crystalis/debug&patch=crystalis/patch&flags=DsFcprstwGfHbdgwMertPsRoprstScktSmTabmpWmtuw&seed=3138e151
+      // - only placed 1 wall, also missed a chest, maybe? - needs to error
+      // 152 -> can't make iron walls horizontal! --> look at tileset!!!
+
       const screens =
           this.random.shuffle(alts.filter(x => x[3].wall &&
                                                x[3].wall.type === type));
@@ -257,9 +262,7 @@ class BasicCaveShuffle {
   //        so that we can reuse them more widely - consolidate
   //        goa and swamp?
   finish(maze: Maze): boolean {
-    maze.trim();
-    console.log(`final:\n${maze.show()}`);
-    maze.write(this.loc, new Set());
+    if (DEBUG) console.log(`finish:\n${maze.show()}`);
     return maze.finish(this.survey, this.loc);
     // Map from priority to array of [y, x] pixel coords
     // Write back to the location.  Exits, entrances, npcs, triggers,
@@ -389,7 +392,7 @@ class TightCycleCaveShuffle extends CycleCaveShuffle {
   }
 }
 
-class EvilSpiritRiverCaveShuffle extends BasicCaveShuffle {
+class RiverCaveShuffle extends BasicCaveShuffle {
 
   // Setting up a viable rivier is really hard.
   // Possible ideas:
@@ -420,7 +423,8 @@ class EvilSpiritRiverCaveShuffle extends BasicCaveShuffle {
 
   removeBridge = new Map([
     [0x1_3030, [0, 8]],
-    [0x1_0303, [0, 2, 4, 8]],
+    // Give extra weight to adding an outcropping
+    [0x1_0303, [0, 2, 2, 2, 4, 4, 4, 8]],
     [0x1_0003, [0]],
     [0x1_0300, [0]],
   ]);
@@ -444,28 +448,38 @@ class EvilSpiritRiverCaveShuffle extends BasicCaveShuffle {
   tryShuffle(maze: Maze): boolean {
     this.landPartitions = [];
     this.river = new Set();
+
+    // if (!this.retry(maze, () => this.initializeFixedScreens(maze), 5)) return false;
+    // if (DEBUG) console.log(`Initialize fixed:\n${maze.show()}`);
+
     // I. send a river all the way across the map.
     if (!this.retry(maze, () => this.makeInitialRiver(maze), 5)) return false;
-    console.log(`Initial river:\n${maze.show()}`);
+    if (DEBUG) console.log(`Initial river:\n${maze.show()}`);
     // II. make it a bit more interesting with some branches and loops.
     if (!this.retry(maze, () => this.branchRiver(maze), 5)) return false;
-    console.log(`Branched river:\n${maze.show()}`);
+    if (DEBUG) console.log(`Branched river:\n${maze.show()}`);
     // III. add connections to land and fill the remainder of the map with land.
     // Make sure everything is still accessible.  Consider deleting any two-tile
     // segments that are otherwise inaccessible.
     if (!this.retry(maze, () => this.connectLand(maze), 3)) return false;
-    console.log(`Connected land:\n${maze.show()}`);
+    if (DEBUG) console.log(`Connected land:\n${maze.show()}`);
     // IV. do some checks to make sure the entire map is accessible.
     // Then remove bridges and add blockages to reduce to a minimum accessibility.
     // Ensure we have fewer than the total available number of bridges left.
     if (!this.retry(maze, () => this.removeBridges(maze), 5)) return false;
-    console.log(`Removed bridges:\n${maze.show(true)}`);
+    if (DEBUG) console.log(`Removed bridges:\n${maze.show(true)}`);
     // V. Distribute stairs across multiple partitions.
     if (!this.retry(maze, () => this.addStairs(maze), 3)) return false;
-    console.log(`Added stairs:\n${maze.show()}`);
+    if (DEBUG) console.log(`Added stairs:\n${maze.show()}`);
     // VI. perform the normal percolation on just the land tiles.
-
-    return true;
+    for (const pos of this.river) this.fixed.add(pos);
+    if (!this.refineMaze(maze)) return false;
+    for (const pos of this.river) this.fixed.delete(pos);
+    this.bridges = 0;
+    if (!this.addFeatures(maze)) return false;
+    if (DEBUG) console.log(`Features\n${maze.show()}\n${maze.show(true)}`);
+    maze.fillAll({edge: 0});
+    return this.finish(maze);
   }
 
   makeInitialRiver(maze: Maze): boolean {
@@ -579,28 +593,75 @@ class EvilSpiritRiverCaveShuffle extends BasicCaveShuffle {
   addStairs(maze: Maze): boolean {
     // First make sure there's no edges.
     if (this.survey.edges.size) throw new Error(`Unexpected edge: ${this.survey.edges}`);
-    // Now try to pick spots for stairs.
-    const stairs = [...this.survey.stairs];
-    NEXT_PARTITION:
-    for (const partition of this.random.ishuffle(this.landPartitions)) {
-      if (!stairs.length) break;
-      for (const pos of this.random.ishuffle([...partition])) {
-        for (const stairScr of this.stairScreens.get(stairs[0][1].dir)!) {
-          const success = maze.saveExcursion(() => {
-            // TODO - what are all the eligible stairs for the given spec?!?
-            const opts = {replace: true, skipAlternates: true};
-            return maze.setAndUpdate(pos, stairScr, opts) && this.check(maze);
-          });
-// TODO - we're never making it from here...?
-          if (success) {
-            stairs.shift()!;
-            this.fixed.add(pos);
-            continue NEXT_PARTITION;
-          }
-        }
+    // Add any fixed screens.
+    OUTER:
+    for (const spec of this.survey.fixed.values()) {
+      for (const pos of this.random.ishuffle(this.allPos)) {
+        if (this.fixed.has(pos) || this.river.has(pos)) continue;
+        const ok = maze.saveExcursion(() => {
+          const opts = {replace: true, skipAlternates: true};
+          return maze.setAndUpdate(pos, spec.edges, opts) && this.check(maze);
+        });
+        if (!ok) continue;
+        this.fixed.add(pos);
+        continue OUTER;
+      }
+      return fail(`Could not place fixed screen ${hex(spec.edges)}`);
+    }
+    // TODO - Also add any other fixed screens...?
+    // NOTE - will need to clear out some space for $91 - 0x0_7176
+    //      - might be tricky...?  maybe should do that first?
+
+    const posToPartition = new Map<Pos, Set<Pos>>();
+    for (const partition of this.landPartitions) {
+      for (const pos of partition) {
+        posToPartition.set(pos, partition);
       }
     }
-    return !stairs.length;
+
+    // Now try to pick spots for stairs.
+    const stairs = [...this.survey.stairs];
+    const seen = new Set<Set<Pos>>();
+    for (const pos of this.random.ishuffle([...posToPartition.keys()])) {
+      if (!stairs.length) break;
+      const partition = posToPartition.get(pos)!;
+      if (seen.has(partition)) continue;
+      if (this.fixed.has(pos)) continue;
+      for (const stairScr of this.stairScreens.get(stairs[0][1].dir)!) {
+        const ok = maze.saveExcursion(() => {
+          // TODO - what are all the eligible stairs for the given spec?!?
+          const opts = {replace: true, skipAlternates: true};
+          return maze.setAndUpdate(pos, stairScr, opts) && this.check(maze);
+        });
+        if (!ok) continue;
+        stairs.shift()!;
+        this.fixed.add(pos);
+        seen.add(partition);
+        break;
+      }
+    }
+
+    // NEXT_PARTITION:
+    // for (const partition of this.random.ishuffle(this.landPartitions)) {
+    //   if (!stairs.length) break;
+    //   for (const pos of this.random.ishuffle([...partition])) {
+    //     if (this.fixed.has(pos)) continue;
+    //     for (const stairScr of this.stairScreens.get(stairs[0][1].dir)!) {
+    //       const ok = maze.saveExcursion(() => {
+    //         // TODO - what are all the eligible stairs for the given spec?!?
+    //         const opts = {replace: true, skipAlternates: true};
+    //         return maze.setAndUpdate(pos, stairScr, opts) && this.check(maze);
+    //       });
+    //       if (!ok) continue;
+    //       stairs.shift()!;
+    //       this.fixed.add(pos);
+    //       continue NEXT_PARTITION;
+    //     }
+    //   }
+    // }
+
+    if (stairs.length) return false;
+    return true;
   }
 }
 
@@ -658,7 +719,7 @@ class EvilSpiritRiverCaveShuffle_old extends BasicCaveShuffle {
     // })) return false;
 
     if (!this.refineMaze(maze)) return false;
-    console.log(`REFINEMENT:\n${maze.show()}`);
+    //console.log(`REFINEMENT:\n${maze.show()}`);
 
     // Find any remaining "fake" tiles and add dead-ends at least
     for (const pos of this.allPos) {
@@ -694,7 +755,7 @@ class EvilSpiritRiverCaveShuffle_old extends BasicCaveShuffle {
       maze.saveExcursion(() => maze.setAndUpdate(pos, scr1));
     }    
 
-    console.log(`CONNECTED:\n${maze.show()}`);
+    //console.log(`CONNECTED:\n${maze.show()}`);
 
     
     if (!super.initializeFixedScreens(maze)) return false;
@@ -999,8 +1060,9 @@ const STRATEGIES = new Map<number, ShuffleStrategy>([
   [0x54, CycleCaveShuffle],
   [0x56, WideCaveShuffle],
   [0x57, WaterfallRiverCaveShuffle],
-  [0x69, EvilSpiritRiverCaveShuffle],
+  [0x69, RiverCaveShuffle],
   [0x84, WideCaveShuffle],
+  [0xab, RiverCaveShuffle],
 ]);
 
 export function shuffleCave(loc: Location, random: Random): void {

@@ -1,3 +1,4 @@
+import {DefaultMap} from "./util.js";
 
 export class UnionFind<T> {
 
@@ -54,10 +55,10 @@ export class UnionFind<T> {
 
   /** @return map of all elements to their equivalence set. */
   map(): Map<T, Set<T>> {
-    const sets = new Map<T, Set<T>>();
+    const sets = new DefaultMap<T, Set<T>>(() => new Set());
     for (const elem of this.data.keys()) {
       let set = sets.get(this.find(elem));
-      sets.set(elem, set || (set = new Set<T>()));
+      sets.set(elem, set);
       set.add(elem);
     }
     return sets;

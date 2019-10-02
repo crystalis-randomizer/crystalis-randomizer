@@ -1248,6 +1248,55 @@ ReloadLocationGraphicsAfterChest:
 .assert $3eb44
 
 
+.ifdef _EXTRA_EXTENDED_SCREENS
+;;; In this setup, we compress the map data by two bytes:
+;;;  - The layout table (0) is now [music], [yx], [ext+anim],
+;;;    where (x, y, anim, ext) have been compressed into only
+;;;    two bytes, saving some room for other purposes.
+;;;  - (yx) packs the height into the upper nibble and the
+;;;    width into the lower nibble.
+;;;  - (ext+anim) packs the ext number into the upper 6 bits
+;;;    and the animation into the lower 2.  Thus, $28 would
+;;;    indicate that screen 00 is at $14000, up through screen
+;;;    $1f at $15f00.
+.org $140f0
+  lda ($10),y
+  and #$0f
+  sta $62fc
+  lda ($10),y
+  lsr
+  lsr
+  lsr
+  lsr
+  sta $13
+  rts
+.assert < $14100  
+
+.org $3e639
+  ;; read the y=1 byte into both 62fc AND 62fd/13
+  jsr $80f0 ; $140f0
+  sta $62fd
+  iny
+  lda ($10),y
+  lsr
+  lsr
+  sta $62ff
+  ;; read the y=2 byte into both 62ff AND 62fe
+  lda ($10),y
+  and #$03
+  sta $62fe
+  bpl $3e652
+.assert < $3e652
+
+.org $3ebe8
+  ;; note: the AND should no longer be necessary since it's zero already
+  and #$3f    ; note: we only need the 20 bit if we expand the rom
+  beq $3ebef
+   jsr $c418  ; BankSwitch8k_8000
+.assert $3ebef
+.endif
+
+
 .ifdef _BUFF_DEOS_PENDANT
 ;;; Skip the check that the player is stationary.  We could also adjust
 ;;; the speed by changing the mask at $3f02b from $3f to $1f to make it

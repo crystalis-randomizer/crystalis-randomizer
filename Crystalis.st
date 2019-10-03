@@ -46576,6 +46576,7 @@ ObjectActionJump_0a
         $36722  xx xx:      xxx GameMode
         $36724  xx:         xxx
         ;; --------------------------------
+        ;; Initiate Stom fight: set hardcoded pattern 4e into second slot
 +       $36725  xx xx:      xxx $xx
         $36727  xx xx:      xxx $xx
         $36729  xx xx xx:   xxx $xxxx

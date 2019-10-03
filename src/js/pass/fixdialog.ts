@@ -7,6 +7,9 @@ import {fail} from '../assert.js';
 
 /** Finds references to given items and replaces it with the actual items. */
 export function fixDialog(rom: Rom) {
+  // Stom's "I'll, be waiting..." dialog - the comma is just wrong.
+  replaceMessage('03:06', ',', '');
+
   const tradeIns = buildTradeInMap(rom);
   // NOTE: we need to hardcode original names in case they were shuffled.
 

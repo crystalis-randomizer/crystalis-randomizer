@@ -1226,9 +1226,15 @@ SetEquippedConsumableItem:
   ;; and we save 14 bytes, to boot.
 ReloadLocationGraphicsAfterChest:
     ;; After player picks up a chest, reload the location's graphics.
-    jsr $3e148 ; reload just graphics, not objects
-    jmp $3d552 ; ExecuteItemOrTriggerAction
-    ;; 8 bytes free
+    ;; NOTE: we make an exception for Stom's house, since it needs to
+    ;;       keep the modified pattern (4e instead of 4d)
+    ;;       TODO - this is pretty crummy, consider finding a better solution
+    lda $6c
+    cmp #$1e
+    beq +
+     jsr $3e148 ; reload just graphics, not objects
++   jmp $3d552 ; ExecuteItemOrTriggerAction
+    ;; 2 bytes free
 .assert < $3e845
 
 .org $3d458

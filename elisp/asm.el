@@ -524,7 +524,7 @@ a comment then just bail out."
       (if (or (>= byte #x7f) (< byte #x20)
               (= byte ?*) (= byte ?+) (= byte ?/)
               (= byte ?<) (= byte ?=) (= byte ?>)
-              (= byte ?[) (= byte ?]) (= byte ?^)
+              (= byte ?\[) (= byte ?\]) (= byte ?^)
               (= byte ?{) (= byte ?|) (= byte ?}) (= byte ?~)
               (= byte ?\") (= byte ?\\))
           (progn

@@ -10,7 +10,9 @@ encrypt=false
 if [ "$1" = "-e" ]; then encrypt=true; shift; fi
 
 head -c 393232 /dev/urandom > test/testdata
-scripts/inject.js "$1" test/testdata +10 \
+scripts/inject.js "$1" test/testdata \
+  4:8 \
+  +10 \
   0:10000 \
   13300:13f80 \
   14000:17cfa \

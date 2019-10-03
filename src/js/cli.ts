@@ -1,22 +1,21 @@
-#!/usr/bin/env node
+#!/usr/bin/env node -r esm
 
-require = require('esm')(module);
+import './build_info.js'; // side effect global set (affects version module)
 
-require('./build_info.js'); // side effect global set
-
-const {EXPECTED_CRC32} = require('./rom.js');
-const {FlagSet, PRESETS} = require('./flagset.js');
-const {crc32} = require('./crc32.js');
-const fs = require('fs');
-const patch = require('./patch.js');
-const {UsageError, breakLines} = require('./util.js');
-const {NodeReader} = require('./nodereader.js');
-const version = require('./version.js');
-const {disableAsserts} = require('./assert.js');
+import {EXPECTED_CRC32} from './rom.js';
+import {FlagSet, PRESETS} from './flagset.js';
+import {Preset} from './flags/flag.js';
+import {crc32} from './crc32.js';
+import * as fs from 'fs';
+import * as patch from './patch.js';
+import {UsageError, breakLines} from './util.js';
+import {NodeReader} from './nodereader.js';
+import * as version from './version.js';
+import {disableAsserts} from './assert.js';
 
 // Usage: node cli.js [--flags=<FLAGS>] [--seed=<SEED>] rom.nes
 
-const usage = (code) => {
+const usage = (code: number) => {
   console.log(`Crystalis Randomizer v${version.VERSION}
 Usage: cryr [OPTIONS...] rom.nes
 
@@ -48,7 +47,7 @@ ${PRESETS.map(showPreset).join('\n\n')}`);
   process.exit(code);
 };
 
-const showPreset = ({title, flags, descr}) => {
+const showPreset = ({title, flags, descr}: Preset) => {
   const LINE_LENGTH = 68;
   const flagLen = LINE_LENGTH - title.length - 6;
   const flagLines = breakLines(flags, flagLen);
@@ -58,14 +57,14 @@ const showPreset = ({title, flags, descr}) => {
   ${descrLines.join('\n  ')}`;
 };
 
-const main = (...args) => {
+const main = (...args: string[]) => {
   let flags = '@FullShuffle';
   let count = 1;
   let seed = '';
   let output = '%n_%c';
   let force = false;
   while (args[0] && args[0].startsWith('--')) {
-    let arg = args.shift().substring(2);
+    let arg = args.shift()!.substring(2);
     let value = undefined;
     const eq = arg.indexOf('=');
     if (eq >= 0) {
@@ -74,15 +73,15 @@ const main = (...args) => {
     } else {
       value = args.shift();
     }
-    if (arg == 'flags') {
+    if (arg == 'flags' && value) {
       flags = value;
-    } else if (arg == 'preset') {
+    } else if (arg == 'preset' && value) {
       flags = '@' + value.replace(/ /g, '');
-    } else if (arg == 'output') {
+    } else if (arg == 'output' && value) {
       output = value;
-    } else if (arg == 'seed') {
+    } else if (arg == 'seed' && value) {
       seed = value;
-    } else if (arg == 'count') {
+    } else if (arg == 'count' && value) {
       count = Number(value);
     } else if (arg == 'force') {
       force = true;
@@ -129,7 +128,7 @@ const main = (...args) => {
         await patch.shuffle(orig, s, flagset, new NodeReader());
     const n = args[0].replace('.nes', '');
     const f = String(flagset).replace(/ /g, '');
-    const v = patch.BUILD_HASH;
+    const v = version.VERSION;
     const filename = fillTemplate(output, {c, n, s, v, f, '%': '%'}) + '.nes';
     await new Promise(
         (resolve, reject) => fs.writeFile(
@@ -138,12 +137,12 @@ const main = (...args) => {
   }));
 };
 
-const fail = (message) => {
+function fail(message: string): never {
   console.error(message);
-  process.exit(2);
-};
+  throw process.exit(2);
+}
 
-const fillTemplate = (str, arg) => {
+function fillTemplate(str: string, arg: {[key: string]: unknown}): string {
   const terms = [];
   while (str) {
     const index = str.indexOf('%');
@@ -159,9 +158,9 @@ const fillTemplate = (str, arg) => {
     }
   }
   return terms.join('');
-};
+}
 
-process.on('unhandledRejection', error => {
+process.on('unhandledRejection', (error: any) => {
   console.error(
       typeof error === 'string' ?
           error :

@@ -110,8 +110,9 @@ export class Rom {
   constructor(rom: Uint8Array) {
     const prgSize = rom[4] * 0x4000;
     // NOTE: chrSize = rom[5] * 0x2000;
-    const prgEnd = 0x10 + prgSize;
-    this.prg = rom.subarray(0x10, prgEnd);
+    const prgStart = 0x10 + (rom[6] & 4 ? 512 : 0);
+    const prgEnd = prgStart + prgSize;
+    this.prg = rom.subarray(prgStart, prgEnd);
     this.chr = rom.subarray(prgEnd);
 
     this.shopCount = Rom.SHOP_COUNT.get(rom);

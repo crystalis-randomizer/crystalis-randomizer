@@ -89,6 +89,8 @@ export class Graphics {
     if (locationId === 0x1e && npcId === 0x60) {
       // TODO: change this to actually look at the location's triggers?
       return c.meet(Constraint.STOM_FIGHT);
+    } else if (locationId === 0xa0 && npcId === 0xc9) {
+      return c.meet(Constraint.GUARDIAN_STATUE);
     }
     return c;
   }

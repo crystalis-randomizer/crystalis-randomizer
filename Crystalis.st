@@ -544,7 +544,8 @@ define STATUS_SOLDIER    $10
 define STATUS_GIRL       $20
 define STATUS_AKAHANA    $30
 
-define OBJ_MIMIC   $73
+define OBJ_BOSS_CHEST   $0f
+define OBJ_MIMIC        $73
 
 define OP_JMP_ABS  $4c
 
@@ -23622,9 +23623,9 @@ Trigger_8c
 Trigger_8d
         ;; 8d restore leaf elder
         $1e25a              .byte $xx,$xx ; Condition: 037 learned paralysis
-        $1e25c              .byte $xx,$xx ; Condition: 047 NOT
+        $1e25c              .byte $xx,$xx ; Condition: 047 NOT rescued leaf elder
         $1e25e              .byte $xx,$xx
-        $1e260              .byte $xx,$xx ; Set: 047
+        $1e260              .byte $xx,$xx ; Set: 047 rescued leaf elder
         $1e262              .byte $xx,$xx ; Clear: 085 leaf elder missing
 Trigger_8e
         ;; 8e enter oak
@@ -26263,6 +26264,9 @@ ObjectActionJump_6e
         ;; as it is in BossKillDataTable.  This happens after the initial
         ;; explosion or escaping animation is done (so a few frames after
         ;; BossKillDataTable).
+        ;; This also happens when Kensu drops his chest in the lighthouse,
+        ;; taking up Rage's spot since Rage doesn't have a chest (it's set
+        ;; explicitly by the dialog followup action).
         $1f728  xx xx xx:   xxx $xxxx,x
         $1f72b  xx xx:      xxx + ; $1f736
         $1f72d  xx xx:       xxx $xx
@@ -26274,6 +26278,11 @@ ObjectActionJump_6e
         $1f739  xx xx:      xxx + ; $1f73e
         $1f73b  xx xx xx:    xxx $1f7bb
         ;; --------------------------------
+        ;; Look for an object with action script OTHER THAN
+        ;; $78 (treasure chest or trigger square), $70 (some
+        ;; bosses/projectiles), $7f (insect, ??), $30 (person),
+        ;; or $39 (??).  If we find one then bail out (++),
+        ;; resetting $7d7 (screen lock).
 +       $1f73e  xx xx:      xxx #$xx
 -       $1f740  xx xx:       xxx $xx
         $1f742  xx xx:       xxx $xx
@@ -26296,7 +26305,7 @@ ObjectActionJump_6e
         $1f764  xx xx:      xxx - ; $1f740
         ;; no matching object found
         $1f766  xx xx xx:   xxx $xxxx,x
-        $1f769  xx xx:      xxx #$xx ; skip Rage
+        $1f769  xx xx:      xxx #$xx ; skip Kensu
         $1f76b  xx xx:      xxx + ; $1f77b
         $1f76d  xx xx xx:    xxx $xxxx,x
         $1f770  xx xx xx:    xxx $xxxx
@@ -26339,12 +26348,13 @@ DataTable_1f7c1                 ; This table is read in fives
         ;;     used for treasure chest, and maybe overwrites a temporary
         ;;     value used for the escape animation.  This seems to actually
         ;;     matter more than the one in 1f987 table.
-        ;; 3rd byte goes into 320,x
+        ;; 3rd byte goes into 320,x (sprite ID offset)
         ;; 4th and 5th byte are a status message to display
         $1f7c1              .byte $xx,$xx,$xx,$xx,$xx
         $1f7c6              .byte $xx,$xx,$xx,$xx,$xx ; 01 insect
         $1f7cb              .byte $xx,$xx,$xx,$xx,$xx ; 02 kelbesque 1
-        $1f7d0              .byte $xx,$xx,$xx,$xx,$xx ; 03 rage
+        ;; The pat1=$62 kind of pointless - the chest loads from pat0
+        $1f7d0              .byte $xx,$xx,$xx,$xx,$xx ; 03 kensu lighthouse
         $1f7d5              .byte $xx,$xx,$xx,$xx,$xx ; 04 sabera 1
         $1f7da              .byte $xx,$xx,$xx,$xx,$xx ; 05 mado 1
         $1f7df              .byte $xx,$xx,$xx,$xx,$xx ; 06 kelbbesque 2
@@ -38272,7 +38282,7 @@ AdHocSpawns
         $29cf0              .byte $xx,$xx,$xx,$xx ; 3c
         $29cf4              .byte $xx,$xx,$xx,$xx ; 3d
         $29cf8              .byte $xx,$xx,$xx,$xx ; 3e
-        $29cfc              .byte $xx,$xx,$xx,$xx ; 3f
+        $29cfc              .byte $xx,$xx,$xx,$xx ; 3f Coin
 AdHocSpawnsPart2
         $29d00              .byte $xx,$xx,$xx,$xx ; 40
         $29d04              .byte $xx,$xx,$xx,$xx ; 41
@@ -43362,13 +43372,13 @@ CheckAllObjectCollisions
         $34f89  xx:          xxx
         $34f8a  xx:          xxx
         $34f8b  xx:          xxx
-        $34f8c  xx xx xx:    xxx $356f1,y
+        $34f8c  xx xx xx:    xxx CollisionTable,y
         $34f8f  xx:          xxx
-        $34f90  xx xx xx:    xxx $356f2,y
+        $34f90  xx xx xx:    xxx CollisionTable+1,y
         $34f93  xx xx:       xxx $xx
-        $34f95  xx xx xx:    xxx $356f3,y
+        $34f95  xx xx xx:    xxx CollisionTable+2,y
         $34f98  xx xx:       xxx $xx
-        $34f9a  xx xx xx:    xxx $356f4,y
+        $34f9a  xx xx xx:    xxx CollisionTable+3,y
         $34f9d  xx:          xxx
         $34f9e  xx xx:       xxx #OP_JMP_ABS
         $34fa0  xx xx:       xxx $xx
@@ -57418,6 +57428,7 @@ DialogFollowupActionJump_14
         $3d190  xx xx xx:   xxx GrantItemInRegisterA
         $3d193  xx xx xx:   xxx DialogFollowupActionJump_17_HealPlayerAndDisappear
 ;;; --------------------------------
+;;; UNUSED?!?
         $3d196  xx xx xx:   xxx $3d88b
         $3d199  xx xx xx:   xxx $3e148
 ;;; --------------------------------
@@ -57440,7 +57451,7 @@ DialogFollowupActionJump_13
         $3d1b8  xx xx xx:   xxx $3d1ff
         $3d1bb  xx xx:      xxx #$xx
         $3d1bd  xx xx xx:   xxx $xxxx
-        $3d1c0  xx xx xx:   xxx loadNpcDataForCurrentLocation
+        $3d1c0  xx xx xx:   xxx LoadNpcDataForCurrentLocation
         $3d1c3  xx xx xx:   xxx $xxxx
         $3d1c6  xx:         xxx
         $3d1c7  xx xx xx:   xxx $3d31f
@@ -57453,7 +57464,7 @@ DialogFollowupActionJump_16
         $3d1d4  xx xx:      xxx #$xx
         $3d1d6  xx xx xx:   xxx $xxxx
         $3d1d9  xx xx xx:   xxx WaitForDialogToBeDismissed
-        $3d1dc  xx xx xx:   xxx loadNpcDataForCurrentLocation
+        $3d1dc  xx xx xx:   xxx LoadNpcDataForCurrentLocation
         $3d1df  xx xx xx:   xxx $xxxx
         $3d1e2  xx xx xx:   xxx $3d1ff
         $3d1e5  xx xx:      xxx #$xx
@@ -57600,7 +57611,7 @@ DialogFollowupActionJump_0a
         $3d2fc  xx xx xx:   xxx ReadObjectCoordinatesInto_34_37
         $3d2ff  xx xx:      xxx #$xx
         $3d301  xx xx:      xxx $xx
-        $3d303  xx xx:      xxx #$xx
+        $3d303  xx xx:      xxx #OBJ_BOSS_CHEST
         $3d305  xx xx:      xxx $xx
         $3d307  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
         $3d30a  xx xx xx:   xxx LoadOneObjectData
@@ -57608,7 +57619,7 @@ DialogFollowupActionJump_0a
         $3d30f  xx xx xx:   xxx $xxxx
         $3d312  xx xx:      xxx #$xx
         $3d314  xx xx xx:   xxx $xxxx
-        $3d317  xx xx:      xxx #$xx
+        $3d317  xx xx:      xxx #$xx ; "Boss ID" 3 (since rage has no chest)
         $3d319  xx xx xx:   xxx $xxxx
 DialogFollowupActionJump_02_Disappear
         $3d31c  xx xx xx:   xxx $xxxx
@@ -58117,7 +58128,7 @@ ItemOrTriggerActionJump_0d
         $3d6e9  xx xx xx:   xxx GrantItemInRegisterA
 ;;; --------------------------------
 ItemOrTriggerActionJump_0e
-        $3d6ec  xx xx xx:   xxx loadNpcDataForCurrentLocation
+        $3d6ec  xx xx xx:   xxx LoadNpcDataForCurrentLocation
         $3d6ef  xx xx:      xxx #$xx
         $3d6f1  xx xx:      xxx #$xx
         $3d6f3  xx xx xx:   xxx BankSwitch8k_8000
@@ -59451,10 +59462,11 @@ ClcIfObjectIsOnScreen
 +       $3e142  xx:         xxx
         $3e143  xx:         xxx
 ;;; --------------------------------
-loadNpcDataForCurrentLocation
+LoadNpcDataForCurrentLocation
         $3e144  xx xx:      xxx #$xx
         $3e146  xx xx:      xxx + ; $3e14a - unconditional
         ;; This is an alternate entry point, from some trigger/item actions
+        ;; NOTE: this doesn't appear to actually ever be read!
         $3e148  xx xx:       xxx #$xx
 +       $3e14a  xx xx:      xxx $xx
         ;; Load the NpcData table for the current location
@@ -59474,7 +59486,7 @@ loadNpcDataForCurrentLocation
         ;; At this point, ($10),y == NpcData[$6c][y]
         
 +       $3e169  xx xx:      xxx $xx
-        $3e16b  xx xx:      xxx ++       ; $3e1ae: rts bail out if no table entry
+        $3e16b  xx xx:      xxx >>rts ; $3e1ae: rts bail out if no table entry
         $3e16d  xx xx:      xxx #$xx
         ;; Zeroth element of the entry is always zero.  This seems like an odd
         ;; defensive assertion, since it never actually fires.
@@ -59510,35 +59522,35 @@ CheckForNpcSpawn
         ;; This will loop until NpcData is $ff.
 -       $3e18f  xx xx:      xxx ($xx),y ; y=5, ...
         $3e191  xx xx:      xxx #$xx    ; npc[0] == $ff => break out of loop
-        $3e193  xx xx:      xxx ++      ; $3e1ae: rts ; on ff in slot 5, 9, ... => done
+        $3e193  xx xx:      xxx >rts    ; $3e1ae: rts ; on ff in slot 5, 9, ... => done
         ;; $fe in the first spot means something - not sure what
         ;;     used 6x in A6 (draygon's room), once in amazones,
         ;;          and once in D7 (portoa castle entrance)
         ;; Actually it looks like it's just a "commented-out" spawn.
         $3e195  xx xx:      xxx #$xx    ; npc[0] == $fe => skip to the next one
-        $3e197  xx xx:      xxx +++     ; $3e1af
+        $3e197  xx xx:      xxx ++      ; $3e1af
         $3e199  xx:         xxx
         $3e19a  xx xx:      xxx ($xx),y    ; a <- npc[1]
         $3e19c  xx:         xxx            ; y <- &npc[0]
         $3e19d  xx:         xxx            ; a <- npc[1] << 1
         $3e19e  xx xx:      xxx + ; $3e1a7 - npc[1] < $80 => try to spawn the NPC
-        ;; This looks pretty redundant with +++ below, since this is where we'd end
+        ;; This looks pretty redundant with ++ below, since this is where we'd end
         ;; up if npc[0] == $fe anyway.  Basically, if (npc[0] & $80) then skip.
         $3e1a0  xx:         xxx
         $3e1a1  xx:         xxx
         $3e1a2  xx:         xxx
         $3e1a3  xx:         xxx
         $3e1a4  xx:         xxx
-        $3e1a5  xx xx:      xxx - ; $3e18f - this is probably unconditional?
+        $3e1a5  xx xx:      xxx - ; $3e18f - this is unconditional
         ;; --------------------------------
 +       $3e1a7  xx xx xx:   xxx TryNpcSpawn ; $3e1b6
         $3e1aa  xx:         xxx
         $3e1ab  xx xx xx:   xxx - ; $3e18f
         ;; --------------------------------
-++      $3e1ae  xx:         xxx
+        $3e1ae  xx:         xxx   ; bail out (via >rts jumps)
         ;; --------------------------------
         ;; This appears to just skip the NPC entirely - a comment?
-+++     $3e1af  xx:         xxx
+++      $3e1af  xx:         xxx
         $3e1b0  xx:         xxx
         $3e1b1  xx:         xxx
         $3e1b2  xx:         xxx
@@ -60186,20 +60198,20 @@ ChangeLocation
         $3e62d  xx xx:      xxx #$xx
         $3e62f  xx xx xx:   xxx LoadMapData_A  ; Load &MapData[$6c][0] into $10$11
         $3e632  xx xx:      xxx ($xx),y ; y should be 0 here?
-        $3e634  xx xx xx:   xxx StartAudioTrack
+        $3e634  xx xx xx:   xxx StartAudioTrack ; destroys y
         $3e637  xx xx:      xxx #$xx
-        $3e639  xx xx:      xxx ($xx),y
-        $3e63b  xx xx xx:   xxx $xxxx
+        $3e639  xx xx:      xxx ($xx),y ; y=1
+        $3e63b  xx xx xx:   xxx $xxxx   ; width
         $3e63e  xx:         xxx
-        $3e63f  xx xx:      xxx ($xx),y
-        $3e641  xx xx xx:   xxx $xxxx
+        $3e63f  xx xx:      xxx ($xx),y ; y=2
+        $3e641  xx xx xx:   xxx $xxxx   ; height
         $3e644  xx xx:      xxx $xx
         $3e646  xx:         xxx
-        $3e647  xx xx:      xxx ($xx),y
-        $3e649  xx xx xx:   xxx $xxxx
+        $3e647  xx xx:      xxx ($xx),y ; y=3
+        $3e649  xx xx xx:   xxx $xxxx   ; animation
         $3e64c  xx:         xxx
-        $3e64d  xx xx:      xxx ($xx),y
-        $3e64f  xx xx xx:   xxx $xxxx
+        $3e64d  xx xx:      xxx ($xx),y ; y=4
+        $3e64f  xx xx xx:   xxx $xxxx   ; extended screenset
         $3e652  xx:         xxx
         ;; First zero out the map.
         $3e653  xx xx:      xxx #$xx

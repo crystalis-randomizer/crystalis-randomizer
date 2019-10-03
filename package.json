@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/shicks/crystalis-randomizer#readme",
   "dependencies": {
+    "@types/node": "^12.7.10",
     "esm": "^3.2.25",
     "lorem-ipsum": "^2.0.3"
   },

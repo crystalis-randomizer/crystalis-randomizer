@@ -108,9 +108,12 @@ export class Rom {
   compressedMapData: boolean;
 
   constructor(rom: Uint8Array) {
-
-    this.prg = rom.subarray(0x10, 0x40010);
-    this.chr = rom.subarray(0x40010);
+    const prgSize = rom[4] * 0x4000;
+    // NOTE: chrSize = rom[5] * 0x2000;
+    const prgStart = 0x10 + (rom[6] & 4 ? 512 : 0);
+    const prgEnd = prgStart + prgSize;
+    this.prg = rom.subarray(prgStart, prgEnd);
+    this.chr = rom.subarray(prgEnd);
 
     this.shopCount = Rom.SHOP_COUNT.get(rom);
     this.scalingLevels = Rom.SCALING_LEVELS.get(rom);

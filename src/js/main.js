@@ -334,7 +334,10 @@ const loadRomFromStorage = () => {
     const file = upload.files[0];
     const reader = new FileReader();
     reader.addEventListener('loadend', () => {
-      const arr = new Uint8Array(reader.result).slice(0, 0x60010);
+      const raw = new Uint8Array(reader.result);
+      const expectedSize =
+          16 + (raw[6] & 4 ? 512 : 0) + (raw[4] << 14) + (raw[5] << 13);
+      const arr = raw.slice(0, expectedSize);
       const str = Array.from(arr, x => x.toString(16).padStart(2, 0)).join('');
       window['localStorage'].setItem('rom', str);
       window['localStorage'].setItem('name', file.name);

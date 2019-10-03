@@ -25,6 +25,8 @@ import {Graphics} from './rom/graphics.js';
 import {Constraint} from './rom/constraint.js';
 import {Monster} from './rom/monster.js';
 
+const EXPAND_PRG: boolean = true;
+
 // TODO - to shuffle the monsters, we need to find the sprite palttes and
 // patterns for each monster.  Each location supports up to two matchups,
 // so can only support monsters that match.  Moreover, different monsters
@@ -34,7 +36,7 @@ import {Monster} from './rom/monster.js';
 // TODO - make a debugger window for patches.
 // TODO - this needs to be a separate non-compiled file.
 export default ({
-  async apply(rom: Uint8Array, hash: {[key: string]: unknown}, path: string): Promise<void> {
+  async apply(rom: Uint8Array, hash: {[key: string]: unknown}, path: string): Promise<Uint8Array> {
     // Look for flag string and hash
     let flags;
     if (!hash.seed) {
@@ -50,7 +52,10 @@ export default ({
     for (const key in hash) {
       if (hash[key] === 'false') hash[key] = false;
     }
-    await shuffle(rom, parseSeed(String(hash.seed)), flags, new FetchReader(path));
+    const [result,] =
+        await shuffle(rom, parseSeed(String(hash.seed)),
+                      flags, new FetchReader(path));
+    return result;
   },
 });
 
@@ -76,8 +81,16 @@ export async function shuffle(rom: Uint8Array,
                               flags: FlagSet,
                               reader: Reader,
                               log?: {spoiler?: Spoiler},
-                              progress?: ProgressTracker): Promise<number> {
+                              progress?: ProgressTracker): Promise<readonly [Uint8Array, number]> {
   //rom = watchArray(rom, 0x85fa + 0x10);
+
+  if (EXPAND_PRG && rom.length < 0x80000) {
+    const newRom = new Uint8Array(rom.length + 0x40000);
+    newRom.subarray(0, 0x40010).set(rom.subarray(0, 0x40010));
+    newRom.subarray(0x80010).set(rom.subarray(0x40010));
+    newRom[4] <<= 1;
+    rom = newRom;
+  }
 
   // First reencode the seed, mixing in the flags for security.
   if (typeof seed !== 'number') throw new Error('Bad seed');
@@ -185,7 +198,7 @@ export async function shuffle(rom: Uint8Array,
 
     slots.update(parsed, fill.slots);
   } else {
-    return -1;
+    return [rom, -1];
     //console.error('COULD NOT FILL!');
   }
   //console.log('fill', fill);
@@ -255,7 +268,11 @@ export async function shuffle(rom: Uint8Array,
 
   // TODO - optional flags can possibly go here, but MUST NOT use parsed.prg!
 
-  return crc;
+  if (EXPAND_PRG) {
+    const prg = rom.subarray(0x10);
+    prg.subarray(0x7c000, 0x80000).set(prg.subarray(0x3c000, 0x40000));
+  }
+  return [rom, crc];
 }
 
 // Separate function to guarantee we no longer have access to the parsed rom...

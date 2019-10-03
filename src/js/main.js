@@ -176,7 +176,7 @@ const read = (arr, index, len) => {
 const shuffleRom = async (seed) => {
   const progressEl = document.getElementById('progress');
   const progressTracker = new ProgressTracker();
-  const shuffled = rom.slice();
+  const orig = rom.slice();
   let done = false;
   const flagsClone = new FlagSet(String(flags)); // prevent modifying
   document.body.classList.add('shuffling');
@@ -187,9 +187,9 @@ const shuffleRom = async (seed) => {
     setTimeout(showWork, 120);
   }
   showWork();
-  const crc =
+  const [shuffled, crc] =
       await patch.shuffle(
-          shuffled, seed, flagsClone, new FetchReader(), log, progressTracker);
+          orig, seed, flagsClone, new FetchReader(), log, progressTracker);
   if (crc < 0) {
     document.getElementById('checksum').textContent = 'SHUFFLE FAILED!';
     return [null, null];

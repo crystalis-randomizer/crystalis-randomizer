@@ -176,7 +176,7 @@ const read = (arr, index, len) => {
 const shuffleRom = async (seed) => {
   const progressEl = document.getElementById('progress');
   const progressTracker = new ProgressTracker();
-  const shuffled = rom.slice();
+  const orig = rom.slice();
   let done = false;
   const flagsClone = new FlagSet(String(flags)); // prevent modifying
   document.body.classList.add('shuffling');
@@ -187,9 +187,9 @@ const shuffleRom = async (seed) => {
     setTimeout(showWork, 120);
   }
   showWork();
-  const crc =
+  const [shuffled, crc] =
       await patch.shuffle(
-          shuffled, seed, flagsClone, new FetchReader(), log, progressTracker);
+          orig, seed, flagsClone, new FetchReader(), log, progressTracker);
   if (crc < 0) {
     document.getElementById('checksum').textContent = 'SHUFFLE FAILED!';
     return [null, null];
@@ -334,6 +334,7 @@ const loadRomFromStorage = () => {
     const file = upload.files[0];
     const reader = new FileReader();
     reader.addEventListener('loadend', () => {
+      // TODO - consider accepting expanded roms?
       const arr = new Uint8Array(reader.result).slice(0, 0x60010);
       const str = Array.from(arr, x => x.toString(16).padStart(2, 0)).join('');
       window['localStorage'].setItem('rom', str);

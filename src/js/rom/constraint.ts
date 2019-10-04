@@ -146,6 +146,10 @@ export class Constraint {
     return new Constraint([new Set([0x74]), new Set([0x62]), ALL, ALL], [], 0);
   }
 
+  static get SHOOTING_WALL() {
+    return new Constraint([new Set([0x61]), ALL, ALL, ALL], [], 0);
+  }
+
   static get KENSU_CHEST() {
     // Kensu explicitly gives his lighthosue chest a sprite offset of 9
     // (via $1f7d2 in the boss chest table), which can only be satisfied

@@ -27,10 +27,9 @@ upload.addEventListener('change', () => {
     document.getElementById('query').textContent = query;
     const sha = /\./.test(version) ? version : `sha/${version}`;
     const permalink = `https://crystalisrandomizer.com/${sha}/#${query}`;
-    const link = document.createElement('a');
+    const link = document.getElementById('permalink')
     link.href = permalink;
     link.textContent = permalink;
-    document.getElementById('permalink').appendChild(link);
   });
   reader.readAsArrayBuffer(file);
 });

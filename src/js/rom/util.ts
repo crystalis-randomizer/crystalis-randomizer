@@ -264,7 +264,7 @@ interface GetSet<U> {
 type DataTupleSub<T> =
     {[K in keyof T]: T[K] extends GetSet<infer U> ? U :
                      T[K] extends {value: (infer W)} ? W :
-                     T[K] extends () => void ? T[K] : never} & DataTuple;
+                     T[K] extends (...args: any[]) => void ? T[K] : never} & DataTuple;
 
 // Note: it would be nice for the final T[K] below to be 'never', but
 // this fails because all objects have an implicit toString, which would

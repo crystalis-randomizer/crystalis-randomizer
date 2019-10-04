@@ -1207,6 +1207,8 @@ class MonsterPool {
         } else if (spawn.isMonster() && UNTOUCHED_MONSTERS[spawn.monsterId]) {
           const c = graphics.getMonsterConstraint(location.id, spawn.monsterId);
           constraint = constraint.meet(c, true);
+        } else if (spawn.isShootingWall(location)) {
+          constraint = constraint.meet(Constraint.SHOOTING_WALL, true);
         }
       }
 

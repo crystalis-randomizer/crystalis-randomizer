@@ -602,6 +602,11 @@ export const Spawn = DataTuple.make(4, {
   isWall(this: any): boolean {
     return Boolean(this.type === 3 && (this.id < 4 || (this.data[2] & 0x20)));
   },
+  isShootingWall(this: any, location: Location): boolean {
+    return this.isWall() &&
+        !!(this.data[2] & 0x20 ? this.data[2] & 0x10 :
+           location.id === 0x8f || location.id === 0xa8);
+  },
   wallType(this: any): '' | 'wall' | 'bridge' {
     if (this.type !== 3) return '';
     const obj = this.data[2] & 0x20 ? this.id >>> 4 : this.id;

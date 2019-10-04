@@ -510,7 +510,7 @@ function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
 function shuffleWildWarp(rom: Rom, _flags: FlagSet, random: Random): void {
   const locations: Location[] = [];
   for (const l of rom.locations) {
-    if (l && l.used && l.id && !l.extended && (l.id & 0xf8) !== 0x58) {
+    if (l && l.used && l.id && !l.isShop() && (l.id & 0xf8) !== 0x58) {
       locations.push(l);
     }
   }

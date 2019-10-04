@@ -7,9 +7,11 @@ export class Screen extends Entity {
 
   base: number;
   tiles: number[]; // always 15x16
+  used: boolean;
 
   constructor(rom: Rom, id: number) {
     super(rom, id);
+    this.used = true; // TODO - track unused tiles?
     this.base = (id > 0xff ? 0x40 + id : id) << 8;
     // metatile index
     this.tiles = tuple(rom.prg, this.base, 0xf0);

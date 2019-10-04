@@ -465,6 +465,7 @@ export class Location extends Entity {
   layoutWidth: number;
   layoutHeight: number;
   animation: number;
+  // Screen indices are (extended << 8 | screen)
   extended: number;
   screens: number[][];
 
@@ -595,6 +596,16 @@ export class Location extends Entity {
 
   get hasSpawns(): boolean {
     return this.spawns.length > 0;
+  }
+
+  // Offset to OR with screen IDs.
+  get screenPage(): number {
+    if (!this.rom.compressedMapData) return this.extended ? 0x100 : 0;
+    return this.extended << 8;
+  }
+
+  isShop(): boolean {
+    return this.rom.shops.findIndex(s => s.location === this.id) >= 0;
   }
 
   // Offset to OR with screen IDs.

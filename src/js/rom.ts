@@ -423,7 +423,7 @@ export class Rom {
     for (const loc of this.locations) {
       if (!loc.used) continue;
       const tileset = loc.tileset;
-      const ext = loc.extended ? 0x100 : 0;
+      const ext = loc.screenPage;
       for (const row of loc.screens) {
         for (const s of row) {
           (tilesetByScreen[s + ext] || (tilesetByScreen[s + ext] = new Set())).add(tileset);

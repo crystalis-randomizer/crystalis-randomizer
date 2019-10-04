@@ -30,7 +30,7 @@ const run = async () => {
         ].join(' ');
     for (const row of loc.screens) {
       for (let s of row) {
-        if (loc.extended) s += 0x100;
+        s |= loc.screenPage;
         const screen = screens[s] || (screens[s] = {});
         screen[config] || (screen[config] = new Set()).add(loc);
       }

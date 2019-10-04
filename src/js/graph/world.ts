@@ -83,7 +83,7 @@ function build(rom: Rom, flags = new FlagSet('@FullShuffle'), tracker = false): 
 
   for (const location of rom.locations /*.slice(0,4)*/) {
     if (!location.used) continue;
-    const ext = location.extended ? 0x100 : 0;
+    const ext = location.screenPage;
     const tileset = rom.tilesets[(location.tileset & 0x7f) >> 2];
     const tileEffects = rom.tileEffects[location.tileEffects - 0xb3];
 
@@ -103,6 +103,7 @@ function build(rom: Rom, flags = new FlagSet('@FullShuffle'), tracker = false): 
     }
 
     // Add terrains
+    const isShop = location.isShop();
     for (let y = 0, height = location.height; y < height; y++) {
       const row = location.screens[y];
       const rowId = location.id << 8 | y << 4;
@@ -130,7 +131,7 @@ function build(rom: Rom, flags = new FlagSet('@FullShuffle'), tracker = false): 
           let tile = screen.tiles[t];
           // flag 2ef is "always on", don't even bother making it conditional.
           if (flag && flag.flag === 0x2ef && tile < 0x20) tile = tileset.alternates[tile];
-          const effects = ext ? 0 : tileEffects.effects[tile] & 0x26;
+          const effects = isShop ? 0 : tileEffects.effects[tile] & 0x26;
           let terrain = overlay.makeTerrain(effects, tid);
           if (tile < 0x20 && tileset.alternates[tile] != tile && flag && flag.flag !== 0x2ef) {
             const alternate =

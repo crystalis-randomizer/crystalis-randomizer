@@ -60,11 +60,11 @@ const run = async () => {
     for (const l of configs[key]) {
       for (const row of l.screens) {
         for (const s of row) {
-          usedScreens.add(l.extended ? s + 0x100 : s);
+          usedScreens.add(l.screenPage | s);
         }
       }
       for (const flag of l.flags) {
-        flaggedScreens.add(l.screens[flag.ys][flag.xs] + (l.extended ? 0x100 : 0));
+        flaggedScreens.add(l.screens[flag.ys][flag.xs] | l.screenPage);
       }
     }
     const usedTiles = new Set();

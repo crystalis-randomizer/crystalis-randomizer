@@ -30,11 +30,16 @@ export class Screen extends Entity {
   }
 
   write(writer: Writer): void {
+    this.base = this.rom.compressedMapData ?
+        this.id << 8 : (id > 0xff ? 0x40 + id : id) << 8;
     if (this.id < 0x100) {
       writer.rom.subarray(this.base, this.base + 0xf0).set(this.tiles);
     } else {
       // we reuse the last 2 rows of extended screens (covered by HUD) for
-      // global flags in the rom.
+      // global flags in the rom.  -- only for page 7...!?
+
+      // TODO - only do this for page 7
+
       for (let i = 0; i < 0xc0; i++) {
         writer.rom[this.base + i] = this.tiles[i];
       }

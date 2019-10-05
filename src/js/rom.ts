@@ -356,13 +356,28 @@ export class Rom {
     writeAll(this.npcs);
     writeAll(this.tilesets);
     writeAll(this.tileEffects);
-    writeAll(this.screens);
     writeAll(this.adHocSpawns);
     this.itemGets.write(writer);
     this.items.write(writer);
     writeAll(this.shops);
     writeAll(this.bossKills);
     writeAll(this.patterns);
+
+    if (this.compressedMapData) {
+      for (let s = 0; s < 0x100; s++) {
+        const scr = this.screens[s];
+        if (scr.used) promises.push(scr.write(writer));
+      }
+      for (let p = 1; p < 0x40; p++) {
+        for (let s = 0; s < 0x20; s++) {
+          const scr = this.screens[p << 8 | s];
+          if (scr && scr.used) promises.push(scr.write(writer));
+        }
+      }
+    } else {
+      writeAll(this.screens);
+    }
+
     this.wildWarp.write(writer);
     this.townWarp.write(writer);
     promises.push(this.telepathy.write(writer));

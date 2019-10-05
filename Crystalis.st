@@ -62457,7 +62457,7 @@ IRQCallback_03
         $3f55b  xx xx xx:   xxx $xxxx
         $3f55e  xx xx xx:   xxx $xxxx
         $3f561  xx xx xx:   xxx $xxxx
-        $3f564  xx xx xx:   xxx $3f883
+        $3f564  xx xx xx:   xxx SelectCHRRomBanks
         $3f567  xx xx:      xxx #$xx
         $3f569  xx:         xxx
         $3f56a  xx xx xx:   xxx $xxxx
@@ -62690,7 +62690,7 @@ ScreenModeJumpTable_07
 ScreenModeJumpTable_01
 ScreenModeJumpTable_09
         $3f731  xx xx xx:   xxx $3f71b
-        $3f734  xx xx xx:   xxx $3f883
+        $3f734  xx xx xx:   xxx SelectCHRRomBanks
         $3f737  xx xx xx:   xxx $xxxx
         $3f73a  xx xx:      xxx #$xx
         $3f73c  xx xx:      xxx #$xx
@@ -62723,13 +62723,13 @@ ScreenModeJumpTable_03
         $3f771  xx xx:      xxx $xx
         $3f773  xx xx xx:   xxx $xxxx
         $3f776  xx xx xx:   xxx $3eb6d
-        $3f779  xx xx xx:   xxx $3f883
+        $3f779  xx xx xx:   xxx SelectCHRRomBanks
         $3f77c  xx xx xx:   xxx $xxxx
         $3f77f  xx xx xx:   xxx MaybeUpdateMusic
 ;;; --------------------------------
 ScreenModeJumpTable_04
         $3f782  xx xx xx:   xxx $3eb6d
-        $3f785  xx xx xx:   xxx $3f883
+        $3f785  xx xx xx:   xxx SelectCHRRomBanks
         $3f788  xx xx:      xxx $xx
         $3f78a  xx xx:      xxx + ; $3f7aa
         $3f78c  xx xx:       xxx $xx
@@ -62756,7 +62756,7 @@ DataTable_3f7b5
 ;;; --------------------------------
 ScreenModeJumpTable_05
         $3f7c5  xx xx xx:   xxx $3eb6d
-        $3f7c8  xx xx xx:   xxx $3f883
+        $3f7c8  xx xx xx:   xxx SelectCHRRomBanks
         $3f7cb  xx xx:      xxx $xx
         $3f7cd  xx xx xx:   xxx $xxxx
         $3f7d0  xx xx xx:   xxx $xxxx

@@ -8,6 +8,11 @@ import {Rom} from '../rom.js';
 // Mappping from metatile ID to tile quads and palette number.
 export class Tileset extends Entity {
 
+  // TODO - permanently attach behavior
+  // Store more information, such as screen types, edge types, etc.
+  // Names...
+  // Does palette info belong here?  Maybe...
+
   tileBase: number;
   attrBase: number;
   alternatesBase: number;
@@ -80,6 +85,99 @@ export class Tileset extends Entity {
   //   return Passage.NEVER;
   // }
 }
+
+
+// TODO - Tilesets class extending SparseArray<Tileset>
+//      - some Tileset are MultiTileset with separate semantic tilesets inside?
+const TILESETS = {
+  grass: { // has various features: windmill, fortress, flowers
+    id: 0x80,
+    tiles: { // } as Filter<{grass:true}>,
+      mountain: 0x00,
+    },
+    patterns: [0x00, 0x0c],
+  },
+  town: {
+    id: 0x84,
+  },
+  cave: { // supports water, but has ugly wall
+    id: 0x88,
+  },
+  pyramid: {
+    id: 0x8c,
+  },
+  river: {
+    id: 0x90,
+    tiles: {
+      mountain: 0x00,
+    },
+    patterns: [0x14, 0x00], // TODO - animated clobbers 2nd entry anyway
+    animated: [0, 1],
+  },
+  sea: {
+    id: 0x94, // primarily tiles 80..ff
+    tiles: {
+      mountain: 0x00,
+    }
+  },
+  mountain: { // parts with "features" like entrancways and houses
+    id: 0x94, // primarily tiles 0..5f
+  },
+  shrine: {
+    id: 0x98, // NOTE: free space from 90..ff
+  },
+  desert: {
+    id: 0x9c, // primarily tiles 50..ff
+    tiles: {
+      mountain: 0x00,
+    },
+  },
+  mountainRiver: { // gives up other features to allow crossable rivers
+    id: 0x9c, // primarily tiles 00..4f
+  },
+  swamp: {
+    id: 0x1a0, // tiles a0..ff
+  },
+  house: {
+    id: 0xa0, // tiles 00..9f
+  },
+  fortress: {
+    id: 0xa4,
+  },
+  iceCave: { // no water, but prettier ice wall - same behavior as 88
+    id: 0xa8,
+  },
+  tower: {
+    id: 0xac,
+  },
+} as const;
+
+
+// NOTE: This could automatically convert the above names into
+// properties on exactly the correct tilesets, though we likely
+// want to change them dynamically, so it's maybe less relevant?
+//   - though we should set them all upfront, including unavailable ones...
+// const X = {
+//   a: {
+//     grass: true,
+//   },
+//   b: {
+//     tower: true,
+//   },
+// } as const;
+// type XType = typeof X;
+// type Filter1<T> = {[K in keyof XType]: XType[K]['tilesets'] extends T ? number : never};
+// type Filter2<T> = ({[P in keyof T]: T[P] extends never ? never : P})[keyof T]; 
+// type Filter<T> = Pick<Filter1<T>, Filter2<Filter1<T>>>;
+// interface S {
+//   tower: Filter<{tower: true}>;
+//   grass: Filter<{grass: true}>;
+// }
+// type Filter<T> = {[K in typeof X]: (typeof X)[K] extends T ? number : never;
+// interface S {
+//   tower: Filter<{tower: true}>;
+//   grass: Filter<{grass: true}>;
+// }
 
 
 // export enum Passage {
@@ -216,4 +314,4 @@ function r(a: number, b: number): readonly number[] {
   return new Array(b - a).fill(0).map((_x, i) => i + a);
 }
 
-const [] = [TERRAIN_BY_PALETTE, ALLOWED_PALETTES];
+const [] = [TERRAIN_BY_PALETTE, ALLOWED_PALETTES, TILESETS];

@@ -454,6 +454,23 @@ export class Multiset<T> implements Iterable<[T, number]> {
 }
 
 
+export class SparseArray<T> implements Iterable<T> {
+  readonly [id: number]: T; // NOTE: readonly is only for external!
+  private elements = new Map<number, T>();
+
+  [Symbol.iterator]() { return this.elements.values(); }
+
+  set(id: number, value: T) {
+    (this as {[id: number]: T})[id] = value;
+    this.elements.set(id, value);
+  }
+  delete(id: number) {
+    delete (this as {[id: number]: T})[id];
+    this.elements.delete(id);
+  }
+}
+
+
 export function assertNever(x: never): never {
   throw new Error(`non-exhaustive check: ${x}`);
 }

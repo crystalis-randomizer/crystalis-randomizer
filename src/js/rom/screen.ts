@@ -5,6 +5,16 @@ import {Rom} from '../rom.js';
 
 export class Screen extends Entity {
 
+  // What do we need to track?
+  //  - vanilla ID (0..$102)
+  //  - relocated ID (0..$201f)
+  //  - tilesets it's a part of
+  //    - flag info (separate from bridge/wall)?
+  //    - bridge/wall/door info
+  //    - stairs
+  //    - edge and path info
+  //    - required/allowed neighbors?
+  //    - upgrade paths?
   base: number;
   tiles: number[]; // always 15x16
   used: boolean;
@@ -31,7 +41,7 @@ export class Screen extends Entity {
 
   write(writer: Writer): void {
     this.base = this.rom.compressedMapData ?
-        this.id << 8 : (id > 0xff ? 0x40 + id : id) << 8;
+        this.id << 8 : (this.id > 0xff ? 0x40 + this.id : this.id) << 8;
     if (this.id < 0x100) {
       writer.rom.subarray(this.base, this.base + 0xf0).set(this.tiles);
     } else {

@@ -42,7 +42,7 @@ export class Graphics {
       key = Math.floor(key / 256);
       const id = key >>> 24;
       const pats = [(key >>> 16) & 0xff, (key >>> 8) & 0xff];
-      const ts = this.rom.tileset(key & 0xff);
+      const ts = this.rom.tilesets[key & 0xff];
       // Plot on the canvas
       for (let r = 0; r < 2; r++) {
         for (let c = 0; c < 2; c++) {

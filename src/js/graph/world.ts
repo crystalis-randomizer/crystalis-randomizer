@@ -84,7 +84,7 @@ function build(rom: Rom, flags = new FlagSet('@FullShuffle'), tracker = false): 
   for (const location of rom.locations /*.slice(0,4)*/) {
     if (!location.used) continue;
     const ext = location.screenPage;
-    const tileset = rom.tilesets[(location.tileset & 0x7f) >> 2];
+    const tileset = rom.tilesets[location.tileset];
     const tileEffects = rom.tileEffects[location.tileEffects - 0xb3];
 
     // Find a few spawns early

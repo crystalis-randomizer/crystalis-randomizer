@@ -51,7 +51,7 @@ export class Screen {
 
   redraw() {
     const tiles = this.rom.screens[this.screen].tiles;
-    const tileset = this.rom.tileset(this.context.tileset);
+    const tileset = this.rom.tilesets[this.context.tileset];
     for (let i = 0; i < 240; i++) {
       let tile = tiles[i];
       if (tile < 0x20 && this.context.flag) tile = tileset.alternates[tile];

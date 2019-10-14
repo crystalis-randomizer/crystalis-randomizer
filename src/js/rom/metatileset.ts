@@ -1,100 +1,71 @@
 import {Entity} from './entity.js';
 import {MapScreen} from './mapscreen.js';
 import {TileEffects} from './tileeffects.js';
-import {seq, tuple} from './util.js';
+import {Tileset} from './tileset.js';
+import {NonNever, seq, tuple} from './util.js';
 import {Writer} from './writer.js';
+import {METASCREENS} from './metascreen.js';
 import {Rom} from '../rom.js';
-import {assertType} from '../util.js';
 
-class TilesetsClass implements Iterable<Tileset> {
+type Index = typeof METATILESETS;
+type ScreenIndex = typeof METASCREENS;
+type Marker<T extends string> = {[K in T]: unknown};
+type FilterScreens<M extends Marker<any>> =
+    {readonly [S in keyof ScreenIndex]:
+     ScreenIndex[S]['tilesets'] extends M ? Metascreen : never };
+type TilesetScreens<T extends Marker<any>> = NonNever<FilterScreens<M>>;
 
-  private tilesets: Tileset[] = [];
+// // Alternative formulation with no deps:
+// type TilesetScreens<M> =
+//   Pick<
+//     { readonly [K in keyof ScreenIndex]: Screen },
+//     ({ [K in keyof ScreenIndex]:
+//       ScreenIndex[K]['tilesets'] extends M ? K : never }
+//     )[keyof ScreenIndex]>;
 
-  readonly [id: number]: Tileset;
-
-  constructor(readonly rom: Rom) {
-    for (const name in indexedTilesets) {
-      const data = indexedTilesets[name];
-      // Is this the first one we've seen with this ID?
-      let tileset = this[data.id];
-      if (!tileset) {
-        tileset = (this as any)[data.id] = new Tileset(rom, data.id);
-        this.tilesets.push(tileset);
-      }
-      (this as any)[name] = new Metatileset(tileset, data);
+export type Metatilesets =
+    {readonly [T in keyof Index]: Metatileset<TilesetScreens<Marker<T>>>};
+export const Metatilesets: {new(rom: Rom): Metatilesets} = class {
+  constructor(rom: Rom) {
+    for (const key in METATILESETS) {
+      (this as any)[key] = new Metatileset<unknown>(rom, key);
     }
   }
-
-  [Symbol.iterator](): IterableIterator<Tileset> {
-    return this.tilesets[Symbol.iterator]();
-  }
-}
-
-export type Tilesets = TilesetsClass & {[T in keyof typeof TILESETS]: Metatileset};
-
-export const Tilesets: {new(rom: Rom): Tilesets} = TilesetsClass as any;
-
+} as any;
 
 // Mappping from metatile ID to tile quads and palette number.
-export class Tileset extends Entity {
+export class Metatileset<S> {
 
   // TODO - permanently attach behavior
   // Store more information, such as screen types, edge types, etc.
   // Names...
   // Does palette info belong here?  Maybe...
 
-  tileBase: number;
-  attrBase: number;
-  alternatesBase: number;
+  readonly data: MetatilesetData;
+  readonly tilesetId: number;
+  readonly screens: S;
 
-  tiles: number[][];    // tile info, outer is 4 quadrants (TL, TR, BL, BR)
-  attrs: number[];      // palette info
-  alternates: number[]; // 32-element mapping for flag-based alternates
-
-  private lazyScreens?: readonly MapScreen[];
-
-  constructor(rom: Rom, id: number) {
-    // `id` is MapData[1][3], ranges from $80..$bc in increments of 4.
-    super(rom, id);
-    const map = id & 0x3f;
-    this.tileBase = 0x10000 | map << 8;
-    this.attrBase = 0x13000 | map << 4;
-    this.alternatesBase = 0x13e00 | map << 3;
-    this.tiles = seq(4, q => tuple(rom.prg, this.tileBase | q << 8 , 256));
-    this.attrs = seq(256, i => rom.prg[this.attrBase | i >> 2] >> ((i & 3) << 1) & 3);
-    this.alternates = tuple(rom.prg, this.alternatesBase, 32);
+  constructor(readonly rom: Rom, readonly key: keyof METATILESETS) {
+    this.data = METATILESETS[key];
+    this.tilesetId = this.data.id;
+    const screens: {[key: string]: Metascreen} = {};
+    for (const name in METASCREENS) {
+      const screen = METASCREENS[name as keyof typeof METASCREENS];
+      if (key in screen.tileset) {
+        // TODO - not a great technique? - order dependent?
+        (screens as any)[name] = rom.metascreens[name];
+      }
+    }
+    this.screens = screens as S;
   }
 
   // TODO - is this unused?
-  get screens(): readonly MapScreen[] {
-    if (this.lazyScreens) return this.lazyScreens;
-    return this.lazyScreens =
-        seq(256, i => new MapScreen(this.rom.screens[i], this));
-  }
-
-  write(writer: Writer) {
-    for (let i = 0; i < 0x100; i++) {
-      if (i < 0x20) {
-        writer.rom[this.alternatesBase + i] = this.alternates[i];
-      }
-      for (let j = 0; j < 4; j++) {
-        writer.rom[this.tileBase + (j << 8) + i] = this.tiles[j][i];
-      }
-    }
-    for (let i = 0; i < 0x40; i++) {
-      const j = i << 2;
-      writer.rom[this.attrBase + i] =
-          (this.attrs[j] & 3) | (this.attrs[j + 1] & 3) << 2 |
-          (this.attrs[j + 2] & 3) << 4 | (this.attrs[j + 3] & 3) << 6;
-    }
+  get tileset(): Tileset {
+    return this.rom.tilesets[this.tilesetId];
   }
 
   effects(): TileEffects {
-    // NOTE: it's possible this could get out of sync...
-    let index = (this.id >>> 2) & 0xf;
-    if (this.id === 0xa8) index = 2;
-    if (this.id === 0xac) index--;
-    return this.rom.tileEffects[index];
+    return this.rom.tilesets[this.tilesetId].effects();
   }
 
   // passage(tileId: number, tileEffects = this.effects()): Terrain {
@@ -115,17 +86,6 @@ export class Tileset extends Entity {
   //   if (!(bits & 0x04)) return Passage.FLY;
   //   return Passage.NEVER;
   // }
-}
-
-export class Metatileset {
-  // TODO - extra stuff, info about capabilities, etc?
-
-  constructor(readonly tileset: Tileset, readonly data: MetatilesetData) {}
-
-  getTile(id: number): Metatile {
-    return new Metatile(this.tileset, id);
-  }
-
 }
 
 export class Metatile {
@@ -256,9 +216,9 @@ const TILESETS = {
     id: 0xac,
   },
 } as const;
-const indexedTilesets: {[name: string]: MetatilesetData} = TILESETS as any;
+//const indexedTilesets: {[name: string]: MetatilesetData} = TILESETS as any;
 
-assertType<{[name in keyof typeof TILESETS]: MetatilesetData}>(TILESETS);
+// assertType<{[name in keyof typeof TILESETS]: MetatilesetData}>(TILESETS);
 
 // NOTE: This could automatically convert the above names into
 // properties on exactly the correct tilesets, though we likely

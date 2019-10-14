@@ -302,7 +302,27 @@ export function extendSwampScreens(rom: Rom) {
   //   rom.screens[0x80 | i].tiles = screen.split(/\s+/g).map(x => parseInt(x, 16));
   // }
 
-  // Make a handful of removable tiles
+  // Make a handful of removable tiles - defaults to CLOSED!
+  const ts = rom.metatilesets.swamp;
+  ts.tile.getTile(0x03).copyFrom(0xda).setAlternate(0xac);
+  ts.tile.getTile(0x04).copyFrom(0xe4).setAlternate(0xaa);
+  ts.tile.getTile(0x05).copyFrom(0xe5).setAlternate(0xaa);
+  ts.tile.getTile(0x06).copyFrom(0xe6).setAlternate(0xaa);
+  ts.tile.getTile(0x07).copyFrom(0xe7).setAlternate(0xaa);
+  ts.tile.getTile(0x08).copyFrom(0xf0).setAlternate(0xaa);
+  ts.tile.getTile(0x09).copyFrom(0xf1).setAlternate(0xaa);
+  ts.tile.getTile(0x0a).copyFrom(0xf2).setAlternate(0xaa);
+  ts.tile.getTile(0x0b).copyFrom(0xf3).setAlternate(0xaa);
+  ts.tile.getTile(0x0c).copyFrom(0xdc).setAlternate(0xaa);
+  ts.tile.getTile(0x0d).copyFrom(0xdd).setAlternate(0xaa);
+
+  // TODO - none of these should actually touch the screens...?
+  //      - we could have a moveFrom primitive that does?
+
+  // TODO - how to do modifications with new metascreen system?
+  
+
+
   rom.swapMetatiles([0xa0],
                     [[0x03, 0xac], ~0xda],
                     [[0x04, 0xaa], ~0xe4],
@@ -315,6 +335,8 @@ export function extendSwampScreens(rom: Rom) {
                     [[0x0b, 0xaa], ~0xf3],
                     [[0x0c, 0xaa], ~0xdc],
                     [[0x0d, 0xaa], ~0xdd]);
+
+  // TODO - can we make the removables default closed?
 
   // Plug removable tiles into several of the screens.
   write2d(rom.screens[0x7f].tiles, 0x00, [ // solid block - add left column

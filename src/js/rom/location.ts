@@ -805,7 +805,7 @@ export class Location extends Entity {
     // Take into account the tileset and flags but not any overlay.
     const exits = new Set(this.exits.map(exit => exit.screen << 8 | exit.tile));
     const uf = new UnionFind<number>();
-    const tileset = this.rom.tileset(this.tileset);
+    const tileset = this.rom.tilesets[this.tileset];
     const tileEffects = this.rom.tileEffects[this.tileEffects - 0xb3];
     const passable = new Set<number>();
     

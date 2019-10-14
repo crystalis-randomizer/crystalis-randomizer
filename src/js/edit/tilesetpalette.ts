@@ -36,7 +36,7 @@ export class TilesetPalette {
   }
 
   redraw() {
-    const tileset = this.rom.tileset(this.context.tileset);
+    const tileset = this.rom.tilesets[this.context.tileset];
     for (let tile = 0; tile < 256; tile++) {
       let attr = tileset.attrs[tile];
       const pal = attr < 3 ? this.context.tilePalettes[attr] : 0x7f;

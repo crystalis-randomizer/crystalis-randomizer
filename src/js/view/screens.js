@@ -47,7 +47,7 @@ const run = async () => {
       const locs = [...screens[i][config]];
       const [loc] = locs;
       const screen = rom.screens[i];
-      const tileset = rom.tilesets[(loc.tileset & 0x7f) >>> 2];
+      const tileset = rom.tilesets[loc.tileset];
       let flag = false;
       for (let f = 0; !f || f == 1 && flag; f++) { 
         canvas.clear(locs[0].tilePalettes[0]);

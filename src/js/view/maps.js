@@ -14,6 +14,7 @@ import {shuffleSwamp} from '../maze/swamp.js';
 import {shuffleGoa1} from '../maze/goa.js';
 import {shuffleGoa} from '../pass/shufflegoa.js';
 import {prepareScreens} from '../pass/shufflemazes.js';
+import {fixTilesets} from '../rom/metascreen.js';
 
 // TODO - move colors to view.js?
 //   - maybe the API I want is drawTile(x, y, id, attr)?
@@ -39,6 +40,7 @@ class MapsView extends View {
     this.rom = rom;
     if (/extend/.test(window.location.hash)) {
       prepareScreens(rom);
+      fixTilesets(rom);
     }
     if (/goa/.test(window.location.hash)) {
       shuffleGoa(rom, new Random(1));
@@ -203,7 +205,7 @@ class MapsView extends View {
       //   if (lastIndex == 0) return;
       //   lastIndex = 0;
       // }
-      const tileset = this.rom.tilesets[opts.ts[0] >> 2 & 0xf];
+      const tileset = this.rom.tilesets[opts.ts[0]];
       const tilePal = [...opts.pal, 0x7f].map(p => this.rom.palettes[p]);
       const buf = ImageBuffer.create(256 * opts.wd, 240 * opts.ht)
             .fill(colors[tilePal[0].colors[0]]);
@@ -353,7 +355,7 @@ class MapsView extends View {
           .tiles[tileY << 4 | tileX];
     const flagged =
           metatileId < 0x20 && (opts.flags[scrY] || [])[scrX] ?
-              this.rom.tilesets[opts.ts[0] >> 2 & 0xf]
+              this.rom.tilesets[opts.ts[0]]
                   .alternates[metatileId] :
               metatileId;
     const attributes = this.rom.tileEffects[opts.ts[1] - 0xb3].effects[flagged];

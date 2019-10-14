@@ -47,7 +47,7 @@ class Shuffle {
 
     // for (const loc of rom.locations) {
     //   if (!loc.used) continue;
-    //   const tileset = rom.tilesets[(loc.tileset & 0x7f) >> 2];
+    //   const tileset = rom.tilesets[loc.tileset];
     //   for (const screen of loc.allScreens()) {
     //     const graphics = new Set();
     //     for (const tile of screen.tiles) {
@@ -139,7 +139,7 @@ class Shuffle {
 
     for (const loc of this.rom.locations) {
       if (!loc.used) continue;
-      const tileset = this.rom.tilesets[(loc.tileset & 0x7f) >> 2];
+      const tileset = this.rom.tilesets[loc.tileset];
       const types = paletteTypes(tileset.id, loc.id);
       for (let i = 0; i < 3; i++) {
         for (let i = 0; i < (types[i] as number); i++) {

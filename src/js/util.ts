@@ -454,21 +454,21 @@ export class Multiset<T> implements Iterable<[T, number]> {
 }
 
 
-export class SparseArray<T> implements Iterable<T> {
-  readonly [id: number]: T; // NOTE: readonly is only for external!
-  private elements = new Map<number, T>();
+// export class SparseArray<T> implements Iterable<T> {
+//   readonly [id: number]: T; // NOTE: readonly is only for external!
+//   private elements = new Map<number, T>();
 
-  [Symbol.iterator]() { return this.elements.values(); }
+//   [Symbol.iterator]() { return this.elements.values(); }
 
-  set(id: number, value: T) {
-    (this as {[id: number]: T})[id] = value;
-    this.elements.set(id, value);
-  }
-  delete(id: number) {
-    delete (this as {[id: number]: T})[id];
-    this.elements.delete(id);
-  }
-}
+//   protected set(id: number, value: T) {
+//     (this as {[id: number]: T})[id] = value;
+//     this.elements.set(id, value);
+//   }
+//   delete(id: number) {
+//     delete (this as {[id: number]: T})[id];
+//     this.elements.delete(id);
+//   }
+// }
 
 
 export function assertNever(x: never): never {
@@ -487,3 +487,5 @@ export function isNonNull<T extends {}>(x: T|undefined|null): x is T {
 //   if (x != null) return x;
 //   throw new Error(`Expected non-null`);
 // }
+
+export function assertType<T>(actual: T): void {}

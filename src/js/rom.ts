@@ -23,6 +23,7 @@ import {Telepathy} from './rom/telepathy.js';
 import {TileAnimation} from './rom/tileanimation.js';
 import {TileEffects} from './rom/tileeffects.js';
 import {Tileset} from './rom/tileset.js';
+import {Tilesets} from './rom/tileset.js';
 import {TownWarp} from './rom/townwarp.js';
 import {Trigger} from './rom/trigger.js';
 import {hex, seq} from './rom/util.js';
@@ -62,7 +63,7 @@ export class Rom {
 
   readonly areas: Areas;
   readonly screens: Screen[];
-  readonly tilesets: Tileset[];
+  readonly tilesets: Tilesets;
   readonly tileEffects: TileEffects[];
   readonly triggers: Trigger[];
   readonly patterns: Pattern[];
@@ -152,7 +153,7 @@ export class Rom {
     // length is known.
     this.areas = new Areas(this); // note: must come before locations
     this.screens = seq(0x103, i => new Screen(this, i));
-    this.tilesets = seq(12, i => new Tileset(this, i << 2 | 0x80));
+    this.tilesets = new Tilesets(this);
     this.tileEffects = seq(11, i => new TileEffects(this, i + 0xb3));
     this.triggers = seq(0x43, i => new Trigger(this, 0x80 | i));
     this.patterns = seq(this.chr.length >> 4, i => new Pattern(this, i));
@@ -179,11 +180,6 @@ export class Rom {
   trigger(id: number): Trigger {
     if (id < 0x80 || id > 0xff) throw new Error(`Bad trigger id $${hex(id)}`);
     return this.triggers[id & 0x7f];
-  }
-
-  tileset(id: number): Tileset {
-    if (id < 0x80 || id > 0xac || id & 3) throw new Error(`Bad tileset id $${hex(id)}`);
-    return this.tilesets[(id & 0x7f) >>> 2];
   }
 
   // TODO - cross-reference monsters/metasprites/metatiles/screens with patterns/palettes
@@ -344,7 +340,7 @@ export class Rom {
     }
 
     const promises = [];
-    const writeAll = (writables: {write(writer: Writer): unknown}[]) => {
+    const writeAll = (writables: Iterable<{write(writer: Writer): unknown}>) => {
       for (const w of writables) {
         promises.push(w.write(writer));
       }
@@ -528,7 +524,7 @@ export class Rom {
     }
     // 2. tilesets: [5, 1 ~9] => copy 5 <= 1 and 1 <= 9
     for (const tsid of tilesetsSet) {
-      const tileset = this.tilesets[(tsid & 0x7f) >>> 2];
+      const tileset = this.tilesets[tsid];
       for (const cycle of cycles) {
         for (let i = 0; i < cycle.length - 1; i++) {
           const a = cpl(cycle[i]);

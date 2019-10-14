@@ -157,7 +157,7 @@ export function extendGoaScreens(rom: Rom) {
   // This frees up 19,1b to absorb c6/c4 with alts of c5
   
   for (const t of [0x8c, 0xa4, 0xa8]) { // get around check
-    const ts = rom.tileset(t);
+    const ts = rom.tilesets[t];
     ts.alternates[0x19] = 0x19;
     ts.alternates[0x1b] = 0x1b;
   }
@@ -175,6 +175,8 @@ export function extendGoaScreens(rom: Rom) {
   //   e0, e1*, e2, e3*, e4, e5, e6, e7, e8**
   // We need to pick which wall(s) are toggled...
   
+  // TODO - figure out new way to randomly mutate/flag existing sreens
+
   const w = [[0x19, 0x19], [0x1b, 0x1b]] as const;
   write2d(rom.screens[0xe0].tiles, 0x61, w); // open up (wide), right (vanilla open)
   write2d(rom.screens[0xe1].tiles, 0x6d, w); // open up (wide), left (vanilla shut)

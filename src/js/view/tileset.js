@@ -51,7 +51,7 @@ const run = async () => {
     const text = document.createElement('p');
     text.textContent = configs[key].map(l => `${l.name} ${hex(l.id)}`).join(', ');
     document.body.appendChild(text);
-    const tileset = rom.tilesets[(loc.tileset & 0x7f) >>> 2];
+    const tileset = rom.tilesets[loc.tileset];
     const tileEffects = rom.tileEffects[loc.tileEffects - 0xb3];
 
     // Determine which tiles are used

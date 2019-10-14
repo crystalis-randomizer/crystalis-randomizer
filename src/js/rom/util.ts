@@ -224,6 +224,101 @@ export interface Initializer<P extends readonly any[], T> {
 
 ////////////////////////////////////////////////////////////////
 
+type NonNeverProps<T> = ({[K in keyof T]: T[K] extends never ? never : K})[keyof T];
+export type NonNever<T> = Pick<T, NonNeverProps<T>>;
+
+////////////////////////////////////////////////////////////////
+
+// interface ReadonlySet<V> extends Iterable<V> {
+//   has(elem: V): boolean;
+// }
+interface HasId {
+  id: number;
+}
+
+type CollectionBase<K, V> = {[T in keyof K]: V} & ReadonlySet<V>;
+type CollectionBaseIndex<K, V extends {id: number}> =
+    CollectionBase<K, V> & {[id: number]: V};
+type CollectionBaseArray<K, V extends {id: number}> =
+    {[T in keyof K]: V} & ReadonlyArray<V> & Iterable<V>;
+
+type CollectionMapper<K, V> = <T extends keyof K>(elem: K[T], key: T) => V;
+interface CollectionCtor<K, V> {
+  new(data: K, mapper: CollectionMapper<K, V>): CollectionBase<K, V>;
+}
+interface CollectionCtorIndex<K, V extends {id: number}> {
+  new(data: K, mapper: CollectionMapper<K, V>): CollectionBaseIndex<K, V>;
+}
+interface CollectionCtorArray<K, V extends {id: number}> {
+  new(data: K, mapper: CollectionMapper<K, V>, initialSize?: number):
+      CollectionBaseArray<K, V>;
+}
+
+// function collectionBase<K, V>(): {
+//   new(data: K, mapper: CollectionMapper<K, V>): CollectionBase<K, V>
+// } {
+//   return class extends Set<unknown> {
+//     constructor(data: K, mapper: <T extends keyof K>(elem: K[T], key: T) => V) {
+//       super();
+//       for (const key in data) {
+//         const value = mapper(data[key], key);
+//         super.add((this as any)[key] = value);
+//         if (indexed) (this as any)[(value as any).id] = value;
+//       }
+//     }
+//     add(): never { throw new Error('not implemented'); }
+//     delete(): never { throw new Error('not implemented'); }
+//     clear(): never { throw new Error('not implemented'); }
+//   } as any;
+// }
+
+export function collectionBase<K, V extends HasId>(indexed: true): CollectionCtorIndex<K, V>;
+export function collectionBase<K, V>(indexed: boolean): CollectionCtor<K, V> {
+  return class extends Set<unknown> {
+    constructor(data: K, mapper: <T extends keyof K>(elem: K[T], key: T) => V) {
+      super();
+      for (const key in data) {
+        const value = mapper(data[key], key);
+        super.add((this as any)[key] = value);
+        if (indexed) (this as any)[(value as any).id] = value;
+      }
+    }
+    add(): never { throw new Error('not implemented'); }
+    delete(): never { throw new Error('not implemented'); }
+    clear(): never { throw new Error('not implemented'); }
+  } as any;
+}
+
+export function collectionBaseArray<K, V extends HasId>(): CollectionCtorArray<K, V> {
+  return class extends Array<unknown> {
+    static get [Symbol.species]() { return Array; }
+    constructor(data: K,
+                mapper: <T extends keyof K>(elem: K[T], key: T) => V,
+                initialSize = 0) {
+      super(initialSize);
+      for (const key in data) {
+        const value = mapper(data[key], key);
+        (this as any)[value.id] = value;
+      }
+    }
+  } as any;
+}
+
+// export class Collection<K, V> extends collectionBase<K, V>() implements CollectionBase<K, V> {}
+// export class IndexedCollection<K, V extends {id: number}>
+//     extends collectionBase<K, V>(true) {}
+// export class ArrayCollection<K, V extends {id: number}>
+//     extends collectionBaseArray<K, V>() {}
+
+// type CollectionBase<K, V> = {
+//   readonly [T in keyof K]: V,
+  
+// export function collectionBase<K, V>(): {new(): {[T in keyof K]: V}} {
+//   return Object as unknown as {new(): {[T in keyof K]: V}};
+// }
+
+////////////////////////////////////////////////////////////////
+
 export class DataTuple {
   constructor(readonly data: Data<number>) {}
   [Symbol.iterator](): Iterator<number> {

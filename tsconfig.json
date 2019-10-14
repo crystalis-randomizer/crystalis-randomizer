@@ -5,6 +5,7 @@
     "outDir": "dist/js",
     "module": "es6",
     "target": "es2018",
+    "incremental": true,
     "inlineSourceMap": true,
     "inlineSources": true,
     "removeComments": true,

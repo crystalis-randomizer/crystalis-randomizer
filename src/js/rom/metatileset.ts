@@ -81,6 +81,10 @@ export class Metatileset {
     return this.rom.tilesets[this.tilesetId].effects();
   }
 
+  getTile(id: number): Metatile {
+    throw new Error('unimplemented');
+  }
+
   // passage(tileId: number, tileEffects = this.effects()): Terrain {
   //   const effects = tileEffects.effects;
   //   // Note: for this purpose, pits can be traversed because there should always

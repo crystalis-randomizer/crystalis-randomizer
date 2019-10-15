@@ -8,7 +8,9 @@ import {Items} from './rom/item.js';
 import {ItemGets} from './rom/itemget.js';
 import {Locations} from './rom/location.js';
 import {Messages} from './rom/messages.js';
+import {Metascreens} from './rom/metascreen.js';
 import {Metasprite} from './rom/metasprite.js';
+import {Metatilesets} from './rom/metatileset.js';
 import {Monster} from './rom/monster.js';
 import {Npc} from './rom/npc.js';
 import {ObjectData} from './rom/objectdata.js';
@@ -73,7 +75,9 @@ export class Rom {
   readonly hitboxes: Hitbox[];
   readonly objects: Objects;
   readonly adHocSpawns: AdHocSpawn[];
+  readonly metascreens: Metascreens;
   readonly metasprites: Metasprite[];
+  readonly metatilesets: Metatilesets;
   readonly itemGets: ItemGets;
   readonly items: Items;
   readonly shops: Shop[];
@@ -152,8 +156,10 @@ export class Rom {
     // allocate methods - one where the content is known and one where only the
     // length is known.
     this.areas = new Areas(this); // note: must come before locations
-    this.screens = seq(0x103, i => new Screen(this, i));
     this.tilesets = new Tilesets(this);
+    this.screens = seq(0x103, i => new Screen(this, i));
+    this.metatilesets = new Metatilesets(this);
+    this.metascreens = new Metascreens(this);
     this.tileEffects = seq(11, i => new TileEffects(this, i + 0xb3));
     this.triggers = seq(0x43, i => new Trigger(this, 0x80 | i));
     this.patterns = seq(this.chr.length >> 4, i => new Pattern(this, i));

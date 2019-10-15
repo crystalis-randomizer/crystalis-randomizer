@@ -1,27 +1,27 @@
 import {Entity} from './entity.js';
-import {collectionBase, tuple} from './util.js';
+import {tuple} from './util.js';
 import {Writer} from './writer.js';
 import {Rom} from '../rom.js';
 
-const EFFECTS = {
-  0xb3: 0xb3,
-  0xb4: 0xb4,
-  0xb5: 0xb5,
-  0xb6: 0xb6,
-  0xb7: 0xb7,
-  0xb8: 0xb8,
-  0xb9: 0xb9,
-  0xba: 0xba,
-  0xbb: 0xbb,
-  0xbc: 0xbc,
-  0xbd: 0xbd,
-}
+// const EFFECTS = {
+//   0xb3: 0xb3,
+//   0xb4: 0xb4,
+//   0xb5: 0xb5,
+//   0xb6: 0xb6,
+//   0xb7: 0xb7,
+//   0xb8: 0xb8,
+//   0xb9: 0xb9,
+//   0xba: 0xba,
+//   0xbb: 0xbb,
+//   0xbc: 0xbc,
+//   0xbd: 0xbd,
+// }
 
-export class AllTileEffects extends collectionBase<typeof EFFECTS, TileEffects>(true) {
-  constructor(readonly rom: Rom) {
-    super(EFFECTS, (id: number) => new TileEffects(rom, id));
-  }
-}
+// export class AllTileEffects extends collectionBase<typeof EFFECTS, TileEffects>(true) {
+//   constructor(readonly rom: Rom) {
+//     super(EFFECTS, (id: number) => new TileEffects(rom, id));
+//   }
+// }
 
 // Mappping from metatile ID to a bitfield of terrain effects
 export class TileEffects extends Entity {

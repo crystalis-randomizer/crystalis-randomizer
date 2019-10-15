@@ -304,17 +304,17 @@ export function extendSwampScreens(rom: Rom) {
 
   // Make a handful of removable tiles - defaults to CLOSED!
   const ts = rom.metatilesets.swamp;
-  ts.tile.getTile(0x03).copyFrom(0xda).setAlternate(0xac);
-  ts.tile.getTile(0x04).copyFrom(0xe4).setAlternate(0xaa);
-  ts.tile.getTile(0x05).copyFrom(0xe5).setAlternate(0xaa);
-  ts.tile.getTile(0x06).copyFrom(0xe6).setAlternate(0xaa);
-  ts.tile.getTile(0x07).copyFrom(0xe7).setAlternate(0xaa);
-  ts.tile.getTile(0x08).copyFrom(0xf0).setAlternate(0xaa);
-  ts.tile.getTile(0x09).copyFrom(0xf1).setAlternate(0xaa);
-  ts.tile.getTile(0x0a).copyFrom(0xf2).setAlternate(0xaa);
-  ts.tile.getTile(0x0b).copyFrom(0xf3).setAlternate(0xaa);
-  ts.tile.getTile(0x0c).copyFrom(0xdc).setAlternate(0xaa);
-  ts.tile.getTile(0x0d).copyFrom(0xdd).setAlternate(0xaa);
+  ts.getTile(0x03).copyFrom(0xda).setAlternative(0xac);
+  ts.getTile(0x04).copyFrom(0xe4).setAlternative(0xaa);
+  ts.getTile(0x05).copyFrom(0xe5).setAlternative(0xaa);
+  ts.getTile(0x06).copyFrom(0xe6).setAlternative(0xaa);
+  ts.getTile(0x07).copyFrom(0xe7).setAlternative(0xaa);
+  ts.getTile(0x08).copyFrom(0xf0).setAlternative(0xaa);
+  ts.getTile(0x09).copyFrom(0xf1).setAlternative(0xaa);
+  ts.getTile(0x0a).copyFrom(0xf2).setAlternative(0xaa);
+  ts.getTile(0x0b).copyFrom(0xf3).setAlternative(0xaa);
+  ts.getTile(0x0c).copyFrom(0xdc).setAlternative(0xaa);
+  ts.getTile(0x0d).copyFrom(0xdd).setAlternative(0xaa);
 
   // TODO - none of these should actually touch the screens...?
   //      - we could have a moveFrom primitive that does?

@@ -1,63 +1,76 @@
-import {Entity} from './entity.js';
-import {MapScreen} from './mapscreen.js';
+import {Rom} from '../rom.js';
+import {Metascreen} from './metascreen.js';
 import {TileEffects} from './tileeffects.js';
 import {Tileset} from './tileset.js';
-import {NonNever, seq, tuple} from './util.js';
-import {Writer} from './writer.js';
-import {METASCREENS} from './metascreen.js';
-import {Rom} from '../rom.js';
+import {Initial, InitialProps} from './util.js';
 
-type Index = typeof METATILESETS;
-type ScreenIndex = typeof METASCREENS;
-type Marker<T extends string> = {[K in T]: unknown};
-type FilterScreens<M extends Marker<any>> =
-    {readonly [S in keyof ScreenIndex]:
-     ScreenIndex[S]['tilesets'] extends M ? Metascreen : never };
-type TilesetScreens<T extends Marker<any>> = NonNever<FilterScreens<M>>;
+// NOTE: Must be initialized BEFORE Metascreens
+export class Metatilesets {
 
-// // Alternative formulation with no deps:
-// type TilesetScreens<M> =
-//   Pick<
-//     { readonly [K in keyof ScreenIndex]: Screen },
-//     ({ [K in keyof ScreenIndex]:
-//       ScreenIndex[K]['tilesets'] extends M ? K : never }
-//     )[keyof ScreenIndex]>;
+  readonly grass = this._(0x80, {
+    patterns: [0x00, 0x0c],
+  });
 
-export type Metatilesets =
-    {readonly [T in keyof Index]: Metatileset<TilesetScreens<Marker<T>>>};
-export const Metatilesets: {new(rom: Rom): Metatilesets} = class {
-  constructor(rom: Rom) {
-    for (const key in METATILESETS) {
-      (this as any)[key] = new Metatileset<unknown>(rom, key);
-    }
+  readonly town = this._(0x84, {});
+
+  // supports water, but has ugly wall
+  readonly cave = this._(0x88, {});
+
+  readonly pyramid = this._(0x8c, {});
+
+  readonly river = this._(0x90, {
+    animated: [0, 1],
+    patterns: [0x14, 0x00], // TODO - animated clobbers 2nd entry anyway
+  });
+
+  readonly sea = this._(0x94, {}); // primarily tiles 80..ff
+
+  // parts with "features": arches and houses
+  readonly mountain = this._(0x94, {}); // primarily tiles 0..5f
+
+  // NOTE: free space from 90..ff
+  readonly shrine = this._(0x98, {});
+
+  readonly desert = this._(0x9c, {}); // primarily tiles 50..ff
+
+  // trades features for crossable river
+  readonly mountainRiver = this._(0x9c, {}); // primarily tiles 00..4f
+
+  readonly swamp = this._(0x1a0, {}); // tiles a0..ff
+
+  readonly house = this._(0xa0, {}); // tiles 00..9f
+
+  readonly fortress = this._(0xa4, {});
+
+  readonly goa1 = this._(0xa4, {});
+
+  // same as 88, but trades rivers for prettier ice wall
+  readonly iceCave = this._(0xa8, {});
+
+  readonly tower = this._(0xac, {});
+
+  constructor(private readonly rom: Rom) {}
+
+  private _(id: number, opts: MetatilesetData): Metatileset & Initial {
+    return new Metatileset(this.rom, id, opts) as Metatileset & Initial;
   }
-} as any;
+}
+
+export type MetatilesetNames = InitialProps<Metatilesets>;
 
 // Mappping from metatile ID to tile quads and palette number.
-export class Metatileset<S> {
+export class Metatileset {
 
   // TODO - permanently attach behavior
   // Store more information, such as screen types, edge types, etc.
   // Names...
   // Does palette info belong here?  Maybe...
 
-  readonly data: MetatilesetData;
-  readonly tilesetId: number;
-  readonly screens: S;
+  readonly screens = new Set<Metascreen>();
 
-  constructor(readonly rom: Rom, readonly key: keyof METATILESETS) {
-    this.data = METATILESETS[key];
-    this.tilesetId = this.data.id;
-    const screens: {[key: string]: Metascreen} = {};
-    for (const name in METASCREENS) {
-      const screen = METASCREENS[name as keyof typeof METASCREENS];
-      if (key in screen.tileset) {
-        // TODO - not a great technique? - order dependent?
-        (screens as any)[name] = rom.metascreens[name];
-      }
-    }
-    this.screens = screens as S;
-  }
+  constructor(readonly rom: Rom,
+              readonly tilesetId: number,
+              readonly data: MetatilesetData) {}
 
   // TODO - is this unused?
   get tileset(): Tileset {
@@ -153,70 +166,11 @@ export class Metatile {
 }
 
 interface MetatilesetData {
-  id: number;
   patterns?: readonly [number, number];
   animated?: readonly number[];
 }
 
-// TODO - Tilesets class extending SparseArray<Tileset>
-//      - some Tileset are MultiTileset with separate semantic tilesets inside?
-const TILESETS = {
-  grass: { // has various features: windmill, fortress, flowers
-    id: 0x80,
-    // tiles: { // } as Filter<{grass:true}>,
-    //   mountain: 0x00,
-    // },
-    patterns: [0x00, 0x0c],
-  },
-  town: {
-    id: 0x84,
-  },
-  cave: { // supports water, but has ugly wall
-    id: 0x88,
-  },
-  pyramid: {
-    id: 0x8c,
-  },
-  river: {
-    id: 0x90,
-    patterns: [0x14, 0x00], // TODO - animated clobbers 2nd entry anyway
-    animated: [0, 1],
-  },
-  sea: {
-    id: 0x94, // primarily tiles 80..ff
-  },
-  mountain: { // parts with "features" like entrancways and houses
-    id: 0x94, // primarily tiles 0..5f
-  },
-  shrine: {
-    id: 0x98, // NOTE: free space from 90..ff
-  },
-  desert: {
-    id: 0x9c, // primarily tiles 50..ff
-  },
-  mountainRiver: { // gives up other features to allow crossable rivers
-    id: 0x9c, // primarily tiles 00..4f
-  },
-  swamp: {
-    id: 0x1a0, // tiles a0..ff
-  },
-  house: {
-    id: 0xa0, // tiles 00..9f
-  },
-  fortress: {
-    id: 0xa4,
-  },
-  goa1: {
-    id: 0xa4,
-  },
-  iceCave: { // no water, but prettier ice wall - same behavior as 88
-    id: 0xa8,
-  },
-  tower: {
-    id: 0xac,
-  },
-} as const;
-//const indexedTilesets: {[name: string]: MetatilesetData} = TILESETS as any;
+// const indexedTilesets: {[name: string]: MetatilesetData} = TILESETS as any;
 
 // assertType<{[name in keyof typeof TILESETS]: MetatilesetData}>(TILESETS);
 
@@ -234,7 +188,7 @@ const TILESETS = {
 // } as const;
 // type XType = typeof X;
 // type Filter1<T> = {[K in keyof XType]: XType[K]['tilesets'] extends T ? number : never};
-// type Filter2<T> = ({[P in keyof T]: T[P] extends never ? never : P})[keyof T]; 
+// type Filter2<T> = ({[P in keyof T]: T[P] extends never ? never : P})[keyof T];
 // type Filter<T> = Pick<Filter1<T>, Filter2<Filter1<T>>>;
 // interface S {
 //   tower: Filter<{tower: true}>;
@@ -245,7 +199,6 @@ const TILESETS = {
 //   tower: Filter<{tower: true}>;
 //   grass: Filter<{grass: true}>;
 // }
-
 
 // export enum Passage {
 //   ALWAYS = 0,
@@ -381,4 +334,4 @@ function r(a: number, b: number): readonly number[] {
   return new Array(b - a).fill(0).map((_x, i) => i + a);
 }
 
-const [] = [TERRAIN_BY_PALETTE, ALLOWED_PALETTES, TILESETS];
+const [] = [TERRAIN_BY_PALETTE, ALLOWED_PALETTES];

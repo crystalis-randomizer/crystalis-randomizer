@@ -1,6 +1,6 @@
 import {DataTuple, hex} from './util.js';
 
-export const MessageId = DataTuple.make(2, {
+export class MessageId extends DataTuple.make(2, {
   action:   DataTuple.prop([0, 0xf8, 3]),
 
   part:     DataTuple.prop([0, 0x07, -3], [1, 0xe0, 5]),
@@ -23,5 +23,4 @@ export const MessageId = DataTuple.make(2, {
   nonzero(): boolean {
     return !!(this.part || this.index);
   },
-});
-export type MessageId = InstanceType<typeof MessageId>;
+}) {}

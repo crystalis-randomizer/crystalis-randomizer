@@ -1093,7 +1093,62 @@ function neighbors(tile: number, width: number, height: number): number[] {
   return out;
 }
 
-export const Entrance = DataTuple.make(4, {
+// class _Entrance extends DataTuple.Base {
+//   x = DataTuple.prop([0], [1, 0xff, -8]);
+//   y = DataTuple.prop([2], [3, 0xff, -8]);
+//   screen = DataTuple.prop([3, 0x0f, -4], [x, 0x0f]);
+// }
+// export class Entrance extends _Entrance {
+//   constructor() {
+//     super();
+//     DataTuple.fix(this);
+//   }
+// }
+
+// export class Entrance extends DataTuple.of(4, class {
+//   x = DataTuple.prop([0], [1, 0xff, -8]),
+//   y = DataTuple.prop([2], [3, 0xff, -8]),
+
+//   toString(): string {
+//     return `Entrance ${this.hex()}: (${hex(this.x)}, ${hex(this.y)})`;
+//   }    
+// });
+
+
+// function DataTuple<T>(size: number, base: T): 
+
+// export class Entrance extends DataTuple(4, {
+//   x: this.prop('x', [0], [1, 0xff, -8])
+//   y: this.prop([2], [3, 0xff, -8])
+// }
+
+// class DataTupleBase {
+
+// }
+// function DataTuple(size: number): typeof DataTupleBase {
+//   return class extends DataTupleBase {
+//     constructor(data: Data<number>) {
+//       super(size, data);
+//     }
+//   }
+// }
+// class DataTupleBase {
+//   static of<T extends typeof DataTupleBase>(this: T, inits: any): InstanceType<T> {
+    
+//   }
+//   static from<T extends typeof DataTupleBase>(this: T, data: Data<number>, offset = 0): InstanceType<T> {
+    
+//   }
+//   protected prop(...spec: Array<[number, number?, number?]>): number {
+
+//   }
+//   protected booleanProp(...spec: Array<[number, number]>): boolean {
+
+//   }
+  
+// }
+
+export class Entrance extends DataTuple.make(4, {
   x: DataTuple.prop([0], [1, 0xff, -8]),
   y: DataTuple.prop([2], [3, 0xff, -8]),
 
@@ -1108,10 +1163,9 @@ export const Entrance = DataTuple.make(4, {
   toString(this: any): string {
     return `Entrance ${this.hex()}: (${hex(this.x)}, ${hex(this.y)})`;
   },
-});
-export type Entrance = InstanceType<typeof Entrance>;
+}) {}
 
-export const Exit = DataTuple.make(4, {
+export class Exit extends DataTuple.make(4, {
   x:        DataTuple.prop([0, 0xff, -4]),
   xt:       DataTuple.prop([0]),
 
@@ -1129,10 +1183,9 @@ export const Exit = DataTuple.make(4, {
     return `Exit ${this.hex()}: (${hex(this.x)}, ${hex(this.y)}) => ${
             this.dest}:${this.entrance}`;
   },
-});
-export type Exit = InstanceType<typeof Exit>;
+}) {}
 
-export const Flag = DataTuple.make(2, {
+export class Flag extends DataTuple.make(2, {
   flag:  {
     get(this: any): number { return this.data[0] | 0x200; },
     set(this: any, f: number) {
@@ -1155,10 +1208,9 @@ export const Flag = DataTuple.make(2, {
     return `Flag ${this.hex()}: (${hex(this.xs)}, ${hex(this.ys)}) @ ${
             hex(this.flag)}`;
   },
-});
-export type Flag = InstanceType<typeof Flag>;
+}) {}
 
-export const Pit = DataTuple.make(4, {
+export class Pit extends DataTuple.make(4, {
   fromXs:  DataTuple.prop([1, 0x70, 4]),
   toXs:    DataTuple.prop([1, 0x07]),
 
@@ -1171,10 +1223,9 @@ export const Pit = DataTuple.make(4, {
     return `Pit ${this.hex()}: (${hex(this.fromXs)}, ${hex(this.fromYs)}) => ${
             hex(this.dest)}:(${hex(this.toXs)}, ${hex(this.toYs)})`;
   },
-});
-export type Pit = InstanceType<typeof Pit>;
+}) {}
 
-export const Spawn = DataTuple.make(4, {
+export class Spawn extends DataTuple.make(4, {
   y:     DataTuple.prop([0, 0xff, -4]),
   yt:    DataTuple.prop([0]),
 
@@ -1228,8 +1279,7 @@ export const Spawn = DataTuple.make(4, {
     return `Spawn ${this.hex()}: (${hex(this.x)}, ${hex(this.y)}) ${
             this.timed ? 'timed' : 'fixed'} ${this.type}:${hex(this.id)}`;
   },
-});
-export type Spawn = InstanceType<typeof Spawn>;
+}) {}
 
 export const LOCATIONS = {
   mezameShrine: [0x00, 'Mezame Shrine'],

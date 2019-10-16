@@ -334,7 +334,6 @@ const loadRomFromStorage = () => {
     const file = upload.files[0];
     const reader = new FileReader();
     reader.addEventListener('loadend', () => {
-      // TODO - consider accepting expanded roms?
       const raw = new Uint8Array(reader.result);
       const expectedSize =
           16 + (raw[6] & 4 ? 512 : 0) + (raw[4] << 14) + (raw[5] << 13);

@@ -1546,7 +1546,12 @@ WallElements:
 GameModeJump_05_ItemTrigger:
   lda $0623
   pha
-  jsr $d497 ; 3d497 game mode 06 item use
+   lda $6c
+   pha
+    jsr $d497 ; 3d497 game mode 06 item use
+   pla
+   cmp $6c
+   bne ++
   pla
   sta $0623
   lda $41
@@ -1555,7 +1560,8 @@ GameModeJump_05_ItemTrigger:
    dec $41
    jmp $d3eb ; 3d3eb game mode 07 trigger
 + rts
-  
+++ pla
+  rts
 .assert < $3fe00 ; end of free space started at 3f9ba
 
 .org $3e2ac ; normally loads object data for wall

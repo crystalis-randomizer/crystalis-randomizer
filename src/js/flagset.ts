@@ -62,6 +62,11 @@ export const PRESETS: Preset[] = [
     descr: 'Not for the faint of heart. Good luck...',
     flags: 'Fcprsw Gt Hbdhwx Mert Ps Ropst Sckmt Tabmp Wmtuw',
   },
+  {
+    title: 'Tournament Swiss Round',
+
+    descr: 'Flagset for Swiss ROund of Tournament',
+    flags: 'Es Fcprsw Gt Hd Mr Ps Rpt Sckmt Tab',
 ];
 
 // Just the flags, not the whole documentation.

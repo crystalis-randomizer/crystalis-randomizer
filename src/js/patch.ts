@@ -45,7 +45,7 @@ export default ({
     if (hash.flags) {
       flags = new FlagSet(String(hash.flags));
     } else {
-      flags = new FlagSet('Em Gt Mr Rlpt Sbk Sct Sm Tasd');
+      flags = new FlagSet('@FullShuffle');
     }
     for (const key in hash) {
       if (hash[key] === 'false') hash[key] = false;

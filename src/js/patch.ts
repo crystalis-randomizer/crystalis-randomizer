@@ -817,6 +817,9 @@ function rescaleMonsters(rom: Rom, flags: FlagSet, random: Random): void {
     }
   }
 
+  // Flails should be projectiles.
+  rom.objects[0xf9].attackType = 0xff;
+  rom.objects[0xfa].attackType = 0xff;
   // Fix Sabera 1's elemental defense to no longer allow thunder
   rom.objects[0x7d].elements |= 0x08;
   // Fix Sabera 2's fireballs to do shield damage and not cause paralysis

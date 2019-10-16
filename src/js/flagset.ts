@@ -62,6 +62,13 @@ export const PRESETS: Preset[] = [
     descr: 'Not for the faint of heart. Good luck...',
     flags: 'Fcprsw Gt Hbdhwx Mert Ps Ropst Sckmt Tabmp Wtuw',
   },
+  // TOURNAMENT PRESETS
+  {
+    title: 'Tournament: Swiss Round',
+
+    descr: 'Quick-paced full-shuffle flags for Swiss Round of 2019 Tournament',
+    flags: 'Es Fcprsw Gt Hd Mr Ps Rpt Sckmt Tab',
+  },
 ];
 
 // Just the flags, not the whole documentation.

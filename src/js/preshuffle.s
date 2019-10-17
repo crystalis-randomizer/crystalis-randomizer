@@ -792,6 +792,17 @@ CheckForLowHpMp:
   jsr CheckSacredShieldForCurse
 
 
+;;; Allow other negative numbers to indicate projectile damage.
+;;; Only $ff exactly will cause it to despawn.  This allows marking
+;;; flails as $fe so that they still do projectile damage, but won't
+;;; disappear.
+.org $353df
+  nop
+  nop
+  bpl + ; $353e8
+.org $353e8
++:
+
 .ifdef _DISABLE_TRIGGER_SKIP
 ;;; The jumping warp-boots trigger skip works as follows:
 ;;; Because the main loop reads the controller first and

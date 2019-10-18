@@ -1148,138 +1148,172 @@ function neighbors(tile: number, width: number, height: number): number[] {
   
 // }
 
-export class Entrance extends DataTuple.make(4, {
-  x: DataTuple.prop([0], [1, 0xff, -8]),
-  y: DataTuple.prop([2], [3, 0xff, -8]),
+// IDEA: we make a new implementation in of() and from() and
+//       patch it in to DataTuple's ctor but with the subclass prototype.
 
-  screen: DataTuple.prop([3, 0x0f, -4], [1, 0x0f]),
-  tile:   DataTuple.prop([2, 0xf0], [0, 0xf0, 4]),
-  coord:  DataTuple.prop([2, 0xff, -8], [0, 0xff]),
+// export abstract class Entrance extends DataTuple {
+//   static size = 4;
+//   x = this.prop([0], [1, 0xff, -8]);
+//   y = this.prop([2], [3, 0xff, -8]);
+// }
 
-  used: {
-    get(this: any): boolean { return this.data[1] != 0xff; },
-  },
+export class Entrance extends DataTuple {
+  // Basic pattern: xlo xhi ylo yhi = (xp)(xt) (xs)(0) (yp)(yt) (ys)(0)
+  // where xp is pixel position within tile, xt is tile, and xs is screen
+  static size = 4;
 
-  toString(this: any): string {
+  // x = this.bits([0, 16])
+  // y = this.bits([16, 32])
+  x = this.prop([0], [1, 0xff, -8]);
+  y = this.prop([2], [3, 0xff, -8]);
+
+  // screen = this.bits([8, 12], [24, 28]);
+  // tile   = this.bits([4, 8], [20, 24]);
+  // coord  = this.bits([0, 8], [16, 24]);
+  screen = this.prop([3, 0x0f, -4], [1, 0x0f]);
+  tile   = this.prop([2, 0xf0], [0, 0xf0, 4]);
+  coord  = this.prop([2, 0xff, -8], [0, 0xff]);
+
+  get used(): boolean { return this.data[1] != 0xff; },
+
+  toString(): string {
     return `Entrance ${this.hex()}: (${hex(this.x)}, ${hex(this.y)})`;
-  },
-}) {}
+  }
+}
 
-export class Exit extends DataTuple.make(4, {
-  x:        DataTuple.prop([0, 0xff, -4]),
-  xt:       DataTuple.prop([0]),
+export class Exit extends DataTuple {
+  static size = 4;
 
-  y:        DataTuple.prop([1, 0xff, -4]),
-  yt:       DataTuple.prop([1]),
+  x        = this.prop([0, 0xff, -4]);
+  xt       = this.prop([0]);
 
-  screen:   DataTuple.prop([1, 0xf0], [0, 0xf0, 4]),
-  tile:     DataTuple.prop([1, 0x0f, -4], [0, 0x0f]),
+  y        = this.prop([1, 0xff, -4]);
+  yt       = this.prop([1]);
 
-  dest:     DataTuple.prop([2]),
+  screen   = this.prop([1, 0xf0], [0, 0xf0, 4]);
+  tile     = this.prop([1, 0x0f, -4], [0, 0x0f]);
 
-  entrance: DataTuple.prop([3]),
+  dest     = this.prop([2]);
 
-  toString(this: any): string {
+  entrance = this.prop([3]);
+
+  toString(): string {
     return `Exit ${this.hex()}: (${hex(this.x)}, ${hex(this.y)}) => ${
             this.dest}:${this.entrance}`;
-  },
-}) {}
+  }
+}
 
-export class Flag extends DataTuple.make(2, {
-  flag:  {
-    get(this: any): number { return this.data[0] | 0x200; },
-    set(this: any, f: number) {
-      if ((f & ~0xff) !== 0x200) throw new Error(`bad flag: ${hex(f)}`);
-      this.data[0] = f & 0xff;
-    },
-  },
+export class Flag extends DataTuple {
+  static size = 2;
 
-  x:     DataTuple.prop([1, 0x07, -8]),
-  xs:    DataTuple.prop([1, 0x07]),
+  get flag(): number {
+    return this.data[0] | 0x200;
+  }
+  set flag(f: number) {
+    if ((f & ~0xff) !== 0x200) throw new Error(`bad flag: ${hex(f)}`);
+    this.data[0] = f & 0xff;
+  }
 
-  y:     DataTuple.prop([1, 0xf0, -4]),
-  ys:    DataTuple.prop([1, 0xf0, 4]),
+  x      = this.prop([1, 0x07, -8]);
+  xs     = this.prop([1, 0x07]);
+
+  y      = this.prop([1, 0xf0, -4]);
+  ys     = this.prop([1, 0xf0, 4]);
 
   // TODO - remove the 'yx' version
-  yx:    DataTuple.prop([1]), // y in hi nibble, x in lo.
-  screen: DataTuple.prop([1]),
+  yx     = this.prop([1]); // y in hi nibble, x in lo
+  screen = this.prop([1]);
 
-  toString(this: any): string {
+  toString(): string {
     return `Flag ${this.hex()}: (${hex(this.xs)}, ${hex(this.ys)}) @ ${
             hex(this.flag)}`;
-  },
-}) {}
+  }
+}
 
-export class Pit extends DataTuple.make(4, {
-  fromXs:  DataTuple.prop([1, 0x70, 4]),
-  toXs:    DataTuple.prop([1, 0x07]),
+export class Pit extends DataTuple {
+  static size = 4;
 
-  fromYs:  DataTuple.prop([3, 0xf0, 4]),
-  toYs:    DataTuple.prop([3, 0x0f]),
+  fromXs = this.prop([1, 0x70, 4]);
+  toXs   = this.prop([1, 0x07]);
 
-  dest:    DataTuple.prop([0]),
+  fromYs = this.prop([3, 0xf0, 4]);
+  toYs   = this.prop([3, 0x0f]);
 
-  toString(this: any): string {
+  dest   = this.prop([0]);
+
+  toString(): string {
     return `Pit ${this.hex()}: (${hex(this.fromXs)}, ${hex(this.fromYs)}) => ${
             hex(this.dest)}:(${hex(this.toXs)}, ${hex(this.toYs)})`;
-  },
-}) {}
+  }
+}
 
-export class Spawn extends DataTuple.make(4, {
-  y:     DataTuple.prop([0, 0xff, -4]),
-  yt:    DataTuple.prop([0]),
+export class Spawn extends DataTuple {
+  static size = 4;
 
-  timed: DataTuple.booleanProp([1, 0x80, 7]),
-  x:     DataTuple.prop([1, 0x7f, -4], [2, 0x40, 3]),
-  xt:    DataTuple.prop([1, 0x7f]),
+  y      = this.prop([0, 0xff, -4]);
+  yt     = this.prop([0]);
 
-  screen: DataTuple.prop([0, 0xf0], [1, 0x70, 4]),
-  tile:   DataTuple.prop([0, 0x0f, -4], [1, 0x0f]),
+  timed  = this.booleanProp(1, 7);
+  x      = this.prop([1, 0x7f, -4], [2, 0x40, 3]);
+  xt     = this.prop([1, 0x7f]);
 
-  patternBank: DataTuple.prop([2, 0x80, 7]),
-  type:  DataTuple.prop([2, 0x07]),
+  screen = this.prop([0, 0xf0], [1, 0x70, 4]);
+  tile   = this.prop([0, 0x0f, -4], [1, 0x0f]);
+
+  patternBank = this.prop([2, 0x80, 7]);
+  type        = this.prop([2, 0x07]);
 
 // patternBank: {get(this: any): number { return this.data[2] >>> 7; },
 //               set(this: any, v: number) { if (this.data[3] === 120) debugger;
 //                                           if (v) this.data[2] |= 0x80; else this.data[2] &= 0x7f; }},
-  id:    DataTuple.prop([3]),
+  id    = this.prop([3]);
 
-  used: {get(this: any): boolean { return this.data[0] !== 0xfe; },
-         set(this: any, used: boolean) { this.data[0] = used ? 0 : 0xfe; }},
-  monsterId: {get(this: any): number { return (this.id + 0x50) & 0xff; },
-              set(this: any, id: number) { this.id = (id - 0x50) & 0xff; }},
+  get used(): boolean {
+    return this.data[0] !== 0xfe;
+  }
+  set used(used: boolean) {
+    this.data[0] = used ? 0 : 0xfe;
+  }
+
+  get monsterId(): number {
+    return (this.id + 0x50) & 0xff;
+  }
+  set monsterId(id: number) {
+    this.id = (id - 0x50) & 0xff;
+  }
+
   /** Note: this includes mimics. */
-  isChest(this: any): boolean { return this.type === 2 && this.id < 0x80; },
-  isInvisible(this: any): boolean {
+  isChest(): boolean { return this.type === 2 && this.id < 0x80; }
+  isInvisible(): boolean {
     return this.isChest() && Boolean(this.data[2] & 0x20);
-  },
-  isTrigger(this: any): boolean { return this.type === 2 && this.id >= 0x80; },
-  isNpc(this: any): boolean { return this.type === 1 && this.id < 0xc0; },
-  isBoss(this: any): boolean { return this.type === 1 && this.id >= 0xc0; },
-  isMonster(this: any): boolean { return this.type === 0; },
-  isWall(this: any): boolean {
+  }
+  isTrigger(): boolean { return this.type === 2 && this.id >= 0x80; }
+  isNpc(): boolean { return this.type === 1 && this.id < 0xc0; }
+  isBoss(): boolean { return this.type === 1 && this.id >= 0xc0; }
+  isMonster(): boolean { return this.type === 0; }
+  isWall(): boolean {
     return Boolean(this.type === 3 && (this.id < 4 || (this.data[2] & 0x20)));
-  },
-  isShootingWall(this: any, location: Location): boolean {
+  }
+  isShootingWall(location: Location): boolean {
     return this.isWall() &&
         !!(this.data[2] & 0x20 ? this.data[2] & 0x10 :
            location.id === 0x8f || location.id === 0xa8);
-  },
-  wallType(this: any): '' | 'wall' | 'bridge' {
+  }
+  wallType(): '' | 'wall' | 'bridge' {
     if (this.type !== 3) return '';
     const obj = this.data[2] & 0x20 ? this.id >>> 4 : this.id;
     if (obj >= 4) return '';
     return obj === 2 ? 'bridge' : 'wall';
-  },
-  wallElement(this: any): number {
+  }
+  wallElement(): number {
     if (!this.isWall()) return -1;
     return this.id & 3;
-  },
-  toString(this: any): string {
+  }
+  toString(): string {
     return `Spawn ${this.hex()}: (${hex(this.x)}, ${hex(this.y)}) ${
             this.timed ? 'timed' : 'fixed'} ${this.type}:${hex(this.id)}`;
-  },
-}) {}
+  }
+}
 
 export const LOCATIONS = {
   mezameShrine: [0x00, 'Mezame Shrine'],

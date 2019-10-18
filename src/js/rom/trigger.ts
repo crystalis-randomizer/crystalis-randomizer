@@ -30,7 +30,7 @@ export class Trigger extends Entity {
     this.pointer = 0x1e17a + ((id & 0x7f) << 1);
     this.base = addr(rom.prg, this.pointer, 0x14000);
     this.conditions = [];
-    this.message = new MessageId();
+    this.message = MessageId.of({});
     this.flags = [];
     let word;
     let i = this.base;

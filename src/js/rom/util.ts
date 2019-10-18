@@ -319,48 +319,78 @@ export type NonNever<T> = Pick<T, NonNeverProps<T>>;
 
 ////////////////////////////////////////////////////////////////
 
-export class DataTuple {
+const PROP_TAG = Symbol();
+
+type SetterHelper<X, Y, Z, A> =
+  Z extends Function ? never :
+  (<T>() => T extends X ? 1 : 2) extends
+  (<T>() => T extends Y ? 1 : 2) ? A : never;
+type SetterProps<T> = {
+  [P in keyof T]-?: SetterHelper<{[Q in P]: T[P]},
+                                 {-readonly [Q in P]: T[P]}, T[P], P>
+}[keyof T];
+//type Settable<T> = { [P in SetterProps<T>]?: T[P] };
+type Settable<T> = Partial<Pick<T, SetterProps<T>>>;
+type DataTupleCtor<T extends DataTuple> = {new(data: Data<number>): T, size: number};
+
+const dataTupleMap = new WeakMap();
+
+function dataTupleActualClass<T extends DataTupleCtor<any>>(arg: T): T {
+  let result = dataTupleMap.get(arg);
+  if (!result) {
+    // Make a new direct subtype of DataTuple, but make it look like arg.
+    result = class extends DataTuple {};
+    Object.defineProperties(result, {name: {value: arg.name}});
+    Reflect.setPrototypeOf(result, arg);
+    Reflect.setPrototypeOf(result.prototype, arg.prototype);
+    // Reflect on an actual instance to find the props.
+    const proto = new (arg as any)();
+    const descriptors: any = {};
+    for (const [prop, descr] of Object.entries(proto)) {
+      if ((descr as {[PROP_TAG]: boolean})[PROP_TAG]) descriptors[prop] = descr;
+    }
+    Object.defineProperties(result.prototype, descriptors);
+    // Finally add it to the map for both arg and result.
+    dataTupleMap.set(arg, result);
+    dataTupleMap.set(result, result);
+  }
+  return result;
+}
+
+export abstract class DataTuple implements Iterable<number> {
+  static size: number;
+
   constructor(readonly data: Data<number>) {}
+
+  static of<T extends DataTuple>(this: DataTupleCtor<T>, inits: Settable<T>):
+  T {
+    return Object.assign(
+        new (dataTupleActualClass(this) as any)(new Array(this.size).fill(0)),
+        inits);
+  }
+
+  static from<T extends DataTuple>(this: DataTupleCtor<T>,
+                                   data: Data<number>, offset: number = 0):
+  T {
+    return new (dataTupleActualClass(this) as any)(
+        tuple(data, offset, this.size));
+  }
+
   [Symbol.iterator](): Iterator<number> {
     return (this.data as number[])[Symbol.iterator]();
   }
+
   hex(): string {
     return Array.from(this.data, hex).join(' ');
   }
+
   clone(): this {
     return new (this.constructor as any)(this.data);
   }
-  static make<T>(length: number, props: T): DataTupleCtor<T> {
-    // NOTE: There's a lot of dynamism here, so type checking can't handle it.
-    // TODO: Give this class a name somehow?
-    const cls = class extends DataTuple {
-      constructor(data = new Array(length).fill(0)) { super(data); }
-      static of(inits: any) {
-        const out = new cls() as any;
-        for (const [key, value] of Object.entries(inits)) {
-          out[key] = value;
-        }
-        return out;
-      }
-      static from(data: Data<number>, offset: number = 0) {
-        return new cls(tuple(data, offset, length) as number[]);
-      }
-    };
-    const descriptors: any = {};
-    for (const key in props) {
-      if (typeof props[key] === 'function') {
-        descriptors[key] = {value: props[key]};
-      } else {
-        descriptors[key] = props[key];
-      }
-    }
-    Object.defineProperties(cls.prototype, descriptors);
-    return cls as any;
-  }
-  static prop(...bits: [number, number?, number?][]):
-      (GetSet<number> & ThisType<DataTuple>) {
+
+  protected prop(...bits: [number, number?, number?][]): number {
     return {
-      get() {
+      get(this: DataTuple): number {
         let value = 0;
         for (const [index, mask = 0xff, shift = 0] of bits) {
           const lsh = shift < 0 ? -shift : 0;
@@ -369,7 +399,7 @@ export class DataTuple {
         }
         return value;
       },
-      set(value) {
+      set(this: DataTuple, value: number) {
         for (const [index, mask = 0xff, shift = 0] of bits) {
           const lsh = shift < 0 ? -shift : 0;
           const rsh = shift < 0 ? 0 : shift;
@@ -377,41 +407,53 @@ export class DataTuple {
           this.data[index] = this.data[index] & ~mask | v;
         }
       },
-    };
+      [PROP_TAG]: true,
+    } as unknown as number;
   }
-  static booleanProp(bit: [number, number, number]):
-      (GetSet<boolean> & ThisType<DataTuple>) {
-    const prop = DataTuple.prop(bit);
-    return {get() { return !!prop.get.call(this); },
-            set(value) { prop.set.call(this, +value); }};
+
+  protected booleanProp(byte: number, bit: number): boolean {
+    return {
+      get(this: DataTuple): boolean {
+        return Boolean(this.data[byte] & (1 << bit));
+      },
+      set(this: DataTuple, value: boolean) {
+        const mask = 1 << bit;
+        if (value) {
+          this.data[byte] |= mask;
+        } else {
+          this.data[byte] &= ~mask;
+        }
+      },
+      [PROP_TAG]: true,
+    } as unknown as boolean;
   }
-  // static func<T>(func: (x: any) => T): ({value: any} & ThisType<DataTuple>) {
-  //   return {value: function() { return func(this); }};
-  // }
-}
+}  
 
-interface GetSet<U> {
-  get(): U;
-  set(arg: U): void;
-}
 
-type DataTupleSub<T> =
-    {[K in keyof T]: T[K] extends GetSet<infer U> ? U :
-                     T[K] extends {value: (infer W)} ? W :
-                     T[K] extends (...args: any[]) => void ? T[K] : never} & DataTuple;
 
-// Note: it would be nice for the final T[K] below to be 'never', but
-// this fails because all objects have an implicit toString, which would
-// otherwise need to be {toString?: undefined} for some reason.
-type DataTupleInits<
-  T, K = {[P in keyof T]: T[P] extends {set(arg: infer U): void} ? U : never}>
-  = {[P in NonNeverProps<K>]?: K[P]};
 
-interface DataTupleCtor<T> {
-  new(data?: Data<number>): DataTupleSub<T>;
-  of<V extends DataTupleCtor<T>>(this: V, inits: DataTupleInits<T>): InstanceType<V>;
-  from<V extends DataTupleCtor<T>>(data: Data<number>, offset?: number): InstanceType<V>;
-}
+// interface GetSet<U> {
+//   get(): U;
+//   set(arg: U): void;
+// }
+
+// type DataTupleSub<T> =
+//     {[K in keyof T]: T[K] extends GetSet<infer U> ? U :
+//                      T[K] extends {value: (infer W)} ? W :
+//                      T[K] extends (...args: any[]) => void ? T[K] : never} & DataTuple;
+
+// // Note: it would be nice for the final T[K] below to be 'never', but
+// // this fails because all objects have an implicit toString, which would
+// // otherwise need to be {toString?: undefined} for some reason.
+// type DataTupleInits<
+//   T, K = {[P in keyof T]: T[P] extends {set(arg: infer U): void} ? U : never}>
+//   = {[P in NonNeverProps<K>]?: K[P]};
+
+// interface DataTupleCtor<T> {
+//   new(data?: Data<number>): DataTupleSub<T>;
+//   of<V extends DataTupleCtor<T>>(this: V, inits: DataTupleInits<T>): InstanceType<V>;
+//   from<V extends DataTupleCtor<T>>(data: Data<number>, offset: number): InstanceType<V>;
+// }
 
 export const watchArray = (arr: Data<unknown>, watch: number) => {
   const arrayChangeHandler = {

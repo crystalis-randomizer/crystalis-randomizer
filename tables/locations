@@ -123,18 +123,18 @@ $94	Sahara - Outside Cave
 $95	Desert Cave 2
 $96	Sahara Meadow
 $98	Desert 2
-$9c	Pyramid Front - Entrance
-$9d	Pyramid Front - Branch
-$9e	Pyramid Front - Main
-$9f	Pyramid Front - Draygon
-$a0	Pyramid Back - Entrance
-$a1	Pyramid Back - Hall 1
-$a2	Pyramid Back - Branch
-$a3	Pyramid Back - Dead End Left
-$a4	Pyramid Back - Dead End Right
-$a5	Pyramid Back - Hall 2
-$a6	Pyramid Back - Draygon Revisited
-$a7	Pyramid Back - Teleporter
+$9c	Pyramid - Entrance
+$9d	Pyramid - Branch
+$9e	Pyramid - Main
+$9f	Pyramid - Draygon
+$a0	Crypt - Entrance
+$a1	Crypt - Hall 1
+$a2	Crypt - Branch
+$a3	Crypt - Dead End Left
+$a4	Crypt - Dead End Right
+$a5	Crypt - Hall 2
+$a6	Crypt - Draygon Revisited
+$a7	Crypt - Teleporter
 $a8	Goa Fortress - Entrance
 $a9	Goa Fortress - Kelbesque
 $aa	Goa Fortress - Zebu

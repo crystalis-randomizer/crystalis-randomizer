@@ -14,6 +14,7 @@ export function deterministic(rom: Rom, flags: FlagSet) {
 
   makeBraceletsProgressive(rom);
 
+  addTowerExit(rom);
   closeCaveEntrances(rom, flags);
   reversibleSwanGate(rom);
   adjustGoaFortressTriggers(rom);
@@ -257,6 +258,15 @@ function fixRabbitSkip(rom: Rom): void {
       }
     }
   }
+}
+
+function addTowerExit(rom: Rom): void {
+  const {towerEntrance, cryptTeleporter} = rom.locations;
+  const entrance = cryptTeleporter.entrances.length;
+  const dest = cryptTeleporter.id;
+  cryptTeleporter.entrances.push(Entrance.of({tile: 0x68}));
+  towerEntrance.exits.push(Exit.of({tile: 0x57, dest, entrance}));
+  towerEntrance.exits.push(Exit.of({tile: 0x58, dest, entrance}));
 }
 
 // Programmatically add a hole between valley of wind and lime tree valley

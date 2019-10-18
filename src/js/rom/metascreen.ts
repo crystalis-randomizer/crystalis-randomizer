@@ -18,11 +18,25 @@ const $ = initializer<[MetascreenData], Metascreen>();
 
 // export const Tilesets: {new(rom: Rom): Tilesets} = TilesetsClass as any;
 
+
+// TODO - Metascreens should define MetaExits (Connections?) that
+//        include data about tiles for entrance and exits; then
+//        we teach Location to work with these.
+
 export class Metascreen {
   readonly screen?: number;
 
   constructor(readonly rom: Rom, readonly data: MetascreenData) {
     this.screen = data.id;
+  }
+
+  replace(from: number, to: number): Metascreen {
+    if (this.screen == null) throw new Error(`cannot replace unused screen`);
+    const scr = this.rom.screens[this.screen];
+    for (let i = 0; i < scr.tiles.length; i++) {
+      if (scr.tiles[i] === from) scr.tiles[i] = to;
+    }
+    return this;
   }
 }
 
@@ -1797,39 +1811,40 @@ export class Metascreens extends Set<Metascreen> {
 //
 // ∩ \cap
 
-const TILESET_FIXES = {
-  grass: {
-    id: 0x80,
-    0x40: 0x51,
-    0x41: 0x52,
-    0x42: 0x53,
-    0x43: 0x54,
-    0x44: 0x55,
-    0x45: 0x56,
-    0x46: 0x58,
-    0x47: 0x59,
-  },
-  desert: {
-    id: 0x9c,
-    0x5a: {base: 0x98, bl: 0x94, br: 0x94},
-    0x5b: {base: 0x80, tl: 0xfd, tr: 0xfc},
-    0x5c: {base: 0x80, bl: 0xff, br: 0xfe},
-    0x5d: {base: 0x80, tr: 0xff, br: 0xfd},
-    0x5e: {base: 0x80, tl: 0xfe, bl: 0xfc},
-    0x63: 0x71,
-    0x68: 0x70,
-    0x69: 0x60,
-    0x6a: 0x65,
-    0x6c: 0x70,
-    0x6e: 0x76,
-    0x6f: 0x78,
-  },
-} as const;
+// const TILESET_FIXES = {
+//   grass: {
+//     id: 0x80,
+//     0x40: 0x51,
+//     0x41: 0x52,
+//     0x42: 0x53,
+//     0x43: 0x54,
+//     0x44: 0x55,
+//     0x45: 0x56,
+//     0x46: 0x58,
+//     0x47: 0x59,
+//   },
+//   desert: {
+//     id: 0x9c,
+//     0x5a: {base: 0x98, bl: 0x94, br: 0x94},
+//     0x5b: {base: 0x80, tl: 0xfd, tr: 0xfc},
+//     0x5c: {base: 0x80, bl: 0xff, br: 0xfe},
+//     0x5d: {base: 0x80, tr: 0xff, br: 0xfd},
+//     0x5e: {base: 0x80, tl: 0xfe, bl: 0xfc},
+//     0x63: 0x71,
+//     0x68: 0x70,
+//     0x69: 0x60,
+//     0x6a: 0x65,
+//     0x6c: 0x70,
+//     0x6e: 0x76,
+//     0x6f: 0x78,
+//   },
+// } as const;
 
-const SCREEN_REMAPS = [
-  {tilesets: [0x9c], src: 0x5b, dest: 0x5f, screens: [0xcf]},
-];
-const [] = SCREEN_REMAPS;
+// const SCREEN_REMAPS = [
+//   {tilesets: [0x9c], src: 0x5b, dest: 0x5f, screens: [0xcf]},
+// ];
+// const [] = SCREEN_REMAPS;
+
 // TODO - copy 5f <- 5b in 9c, then remap in screen cf
 //      - better notation?
 // Consider doing this programmatically, though we'd want to use
@@ -1837,7 +1852,6 @@ const [] = SCREEN_REMAPS;
 
 export function fixTilesets(rom: Rom) {
   const desert = rom.tilesets.desert;
-  //const grass = rom.tilesets.grass;
 
   desert.getTile(0x5f).copyFrom(0x5b); //.moveUses(rom.screens.oasis);
   rom.metascreens.oasisCave.replace(0x5b, 0x5f);
@@ -1849,28 +1863,45 @@ export function fixTilesets(rom: Rom) {
   desert.getTile(0x5d).copyFrom(0x80).setTiles([, 0x37, , 0x34]);
   desert.getTile(0x5e).copyFrom(0x80).setTiles([0x35, , 0x32, ]);
   desert.getTile(0x63).copyFrom(0x71);
+  desert.getTile(0x68).copyFrom(0x70);
+  desert.getTile(0x69).copyFrom(0x60);
+  desert.getTile(0x6a).copyFrom(0x65);
+  desert.getTile(0x6c).copyFrom(0x70);
+  desert.getTile(0x6e).copyFrom(0x76);
+  desert.getTile(0x6f).copyFrom(0x78);
 
-  for (const x of Object.values(TILESET_FIXES)) {
-    const id = x.id;
-    const ts = rom.tilesets[id];
-    const te = ts.effects();
-    for (const tstr in x) {
-      const t = Number(tstr);
-      if (isNaN(t)) continue;
-      const y: number|{base: number} = (x as any)[t];
-      const base = typeof y === 'number' ? y : (y as any).base;
-      const rest: any = typeof y === 'number' ? {} : y;
-      ts.attrs[t] = ts.attrs[base];
-      te.effects[t] = te.effects[base];
-      [rest.tl, rest.tr, rest.bl, rest.br].forEach((m, i) => {
-        ts.tiles[i][t] = ts.tiles[i][m != null ? m : base];
-      });
-      if (rest.move) {}
-      // if (rest.tiles) {
-      //   rest.tiles.forEach((s: number, i: number) => void (ts.tiles[i][t] = s));
-      // }
-    }
-  }
+  const grass = rom.tilesets.grass;
+
+  grass.getTile(0x40).copyFrom(0x51);
+  grass.getTile(0x41).copyFrom(0x52);
+  grass.getTile(0x42).copyFrom(0x53);
+  grass.getTile(0x43).copyFrom(0x54);
+  grass.getTile(0x44).copyFrom(0x55);
+  grass.getTile(0x45).copyFrom(0x56);
+  grass.getTile(0x46).copyFrom(0x58);
+  grass.getTile(0x47).copyFrom(0x59);
+
+  // for (const x of Object.values(TILESET_FIXES)) {
+  //   const id = x.id;
+  //   const ts = rom.tilesets[id];
+  //   const te = ts.effects();
+  //   for (const tstr in x) {
+  //     const t = Number(tstr);
+  //     if (isNaN(t)) continue;
+  //     const y: number|{base: number} = (x as any)[t];
+  //     const base = typeof y === 'number' ? y : (y as any).base;
+  //     const rest: any = typeof y === 'number' ? {} : y;
+  //     ts.attrs[t] = ts.attrs[base];
+  //     te.effects[t] = te.effects[base];
+  //     [rest.tl, rest.tr, rest.bl, rest.br].forEach((m, i) => {
+  //       ts.tiles[i][t] = ts.tiles[i][m != null ? m : base];
+  //     });
+  //     if (rest.move) {}
+  //     // if (rest.tiles) {
+  //     //   rest.tiles.forEach((s: number, i: number) => void (ts.tiles[i][t] = s));
+  //     // }
+  //   }
+  // }
 }
 
 // class LocationsClass extends Array<Location> {

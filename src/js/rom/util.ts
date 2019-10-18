@@ -329,9 +329,13 @@ type SetterProps<T> = {
   [P in keyof T]-?: SetterHelper<{[Q in P]: T[P]},
                                  {-readonly [Q in P]: T[P]}, T[P], P>
 }[keyof T];
-//type Settable<T> = { [P in SetterProps<T>]?: T[P] };
-type Settable<T> = Partial<Pick<T, SetterProps<T>>>;
-type DataTupleCtor<T extends DataTuple> = {new(data: Data<number>): T, size: number};
+// NOTE: This form gives the best tooltip messages.
+type Settable<T> = PickPartial<T, SetterProps<T>>;
+interface DataTupleCtor<T extends DataTuple> {
+  new(arg: never): T; // NOTE: it's actually data: Data<number>
+  size: number;
+}
+type PickPartial<T, K extends keyof T> = {[P in K]?: T[P]};
 
 const dataTupleMap = new WeakMap();
 
@@ -360,7 +364,10 @@ function dataTupleActualClass<T extends DataTupleCtor<any>>(arg: T): T {
 export abstract class DataTuple implements Iterable<number> {
   static size: number;
 
-  constructor(readonly data: Data<number>) {}
+  readonly data: Data<number>;
+  constructor(arg: never) {
+    this.data = arg;
+  }
 
   static of<T extends DataTuple>(this: DataTupleCtor<T>, inits: Settable<T>):
   T {
@@ -370,10 +377,13 @@ export abstract class DataTuple implements Iterable<number> {
   }
 
   static from<T extends DataTuple>(this: DataTupleCtor<T>,
-                                   data: Data<number>, offset: number = 0):
+                                   data: Data<number>, offset = 0):
   T {
-    return new (dataTupleActualClass(this) as any)(
-        tuple(data, offset, this.size));
+    const cls: any = dataTupleActualClass(this);
+    const arg =
+        !offset && data.length === this.size ?
+        data : tuple(data, offset, this.size);
+    return new cls(arg);
   }
 
   [Symbol.iterator](): Iterator<number> {

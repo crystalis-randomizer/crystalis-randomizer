@@ -7,7 +7,9 @@
     "tsc": "node_modules/typescript/bin/tsc",
     "build": "npm run tsc && gulp",
     "test": "npm run build && test/test_cli.sh",
-    "clean": "rm -rf dist src/js/**/flycheck_*"
+    "clean": "rm -rf dist src/js/**/flycheck_*",
+    "checkout": "scripts/update.sh out",
+    "checkin": "scripts/update.sh in"
   },
   "bin": {
     "cryr": "dist/js/cli.js"

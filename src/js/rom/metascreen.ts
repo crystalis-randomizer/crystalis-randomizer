@@ -599,7 +599,7 @@ export class Metascreens extends Set<Metascreen> {
     id: 0x3c,
     tilesets: {tower: {}},
   });
-  towerEntrance = $({
+  towerTeleporter = $({
     id: 0x3d,
     tilesets: {tower: {}},
   });
@@ -870,7 +870,7 @@ export class Metascreens extends Set<Metascreen> {
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
   });
-  wideDeadEndN_goa = $({
+  goaWideDeadEndN = $({
     id: 0x71,
     icon: icon`
       |╵┃╵|
@@ -886,7 +886,7 @@ export class Metascreens extends Set<Metascreen> {
       | ┃ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
   });
-  wideHallNS_goa = $({
+  goaWideHallNS = $({
     id: 0x72,
     // TODO - don't show this for all fortresses,
     //        just opt in for the one where we actually use it...
@@ -897,7 +897,7 @@ export class Metascreens extends Set<Metascreen> {
       |│┃│|`,
     tilesets: {goa1: {}},
   });
-  wideHallNS_goaBlockedRight = $({
+  goaWideHallNS_blockedRight = $({
     // NOTE: this is a possible unflagged 72?
     icon: icon`
       |│┃│|
@@ -912,7 +912,7 @@ export class Metascreens extends Set<Metascreen> {
     //   - probably given an existing screen?
     //   - will need to also tell where to put itself?
   });
-  wideArena_parapets = $({
+  goaWideArena = $({
     id: 0x73,
     icon: icon`<
       |╻<╻|
@@ -1783,9 +1783,555 @@ export class Metascreens extends Set<Metascreen> {
     icon: icon`
       |┘║└|
       |═╬═|
-      |┬┆┬|`,
+      |┬┇┬|`,
+      // |▘║▝|
+      // |═╬═|
+      // |▖┆▗|`,
     tilesets: {cave: {}, fortress: {}},
     // TODO - consider using solids for the corners instead?
+  });
+  riverCaveNS = $({
+    id: 0xd4,
+    icon: icon`
+      |│║│|
+      |│║│|
+      |│║│|`,
+      // |▌║▐|
+      // |▌║▐|
+      // |▌║▐|`,
+    tilesets: {cave: {}, fortress: {}},
+  });
+  riverCaveWE = $({
+    id: 0xd5,
+    icon: icon`
+      |───|
+      |═══|
+      |───|`,
+    tilesets: {cave: {}, fortress: {}},
+  });
+  riverCaveNS_bridge = $({
+    id: 0xd6,
+    icon: icon`
+      |│║│|
+      |├┇┤|
+      |│║│|`,
+    tilesets: {cave: {}, fortress: {}},
+  });
+  riverCaveWE_bridge = $({
+    id: 0xd7,
+    icon: icon`
+      |─┬─|
+      |═┅═|
+      |─┴─|`,
+    tilesets: {cave: {}, fortress: {}},
+  });
+  riverCaveSE = $({
+    id: 0xd8,
+    icon: icon`
+      |┌──|
+      |│╔═|
+      |│║┌|`,
+    tilesets: {cave: {}, fortress: {}},
+  });
+  riverCaveWS = $({
+    id: 0xd9,
+    icon: icon`
+      |──┐|
+      |═╗│|
+      |┐║│|`,
+    tilesets: {cave: {}, fortress: {}},
+  });
+  riverCaveNE = $({
+    id: 0xda,
+    icon: icon`
+      |│║└|
+      |│╚═|
+      |└──|`,
+    tilesets: {cave: {}, fortress: {}},
+  });
+  riverCaveNW = $({
+    id: 0xdb,
+    icon: icon`
+      |┘║│|
+      |═╝│|
+      |──┘|`,
+    tilesets: {cave: {}, fortress: {}},
+  });
+  riverCaveWE_passageN = $({
+    id: 0xdc,
+    icon: icon`╧
+      |─┴─|
+      |═══|
+      |───|`,
+    tilesets: {cave: {}, fortress: {}},
+  });
+  riverCaveWE_passageS = $({
+    id: 0xdd,
+    icon: icon`╤
+      |───|
+      |═══|
+      |─┬─|`,
+    tilesets: {cave: {}, fortress: {}},
+  });
+  riverCaveNS_passageW = $({
+    id: 0xde,
+    icon: icon`╢
+      |│║│|
+      |┤║│|
+      |│║│|`,
+    tilesets: {cave: {}, fortress: {}},
+  });
+  riverCaveNS_passageE = $({
+    id: 0xdf,
+    icon: icon`╟
+      |│║│|
+      |│║├|
+      |│║│|`,
+    tilesets: {cave: {}, fortress: {}},
+  });
+  wideHallNE = $({
+    id: 0xe0,
+    icon: icon`
+      | ┃ |
+      | ┗━|
+      |   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+  });
+  goaWideHallNE = $({
+    id: 0xe0,
+    icon: icon`
+      |│┃└|
+      |│┗━|
+      |└──|`,
+    tilesets: {goa1: {}},
+  });
+  goaWideHallNE_blockedLeft = $({
+    id: 0xe0,
+    icon: icon`
+      |│┃└|
+      | ┗━|
+      |└──|`,
+    tilesets: {goa1: {}},
+    generate: { // TODO - method to generate this screen
+    },
+  });
+  wideHallNW = $({
+    id: 0xe1,
+    icon: icon`
+      | ┃ |
+      |━┛ |
+      |   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+  });
+  goaWideHallNW = $({
+    id: 0xe1,
+    icon: icon`
+      |┘┃│|
+      |━┛│|
+      |──┘|`,
+    tilesets: {goa1: {}},
+    generate: {}, // fix tiles, then this is the flagged version
+  });
+  goaWideHallNW_blockedRight = $({
+    id: 0xe1,
+    icon: icon`
+      |┘┃│|
+      |━┛ |
+      |──┘|`,
+    tilesets: {goa1: {}},
+  });
+  wideHallSE = $({
+    id: 0xe2,
+    icon: icon`
+      |   |
+      | ┏━|
+      | ┃ |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+  });
+  goaWideHallSE = $({
+    id: 0xe2,
+    icon: icon`
+      |┌──|
+      |│┏━|
+      |│┃┌|`,
+    tilesets: {goa1: {}},
+  });
+  goaWideHallSE_blockedLeft = $({
+    id: 0xe2,
+    icon: icon`
+      |┌──|
+      | ┏━|
+      |│┃┌|`,
+    tilesets: {goa1: {}},
+    generate: {}, // fix tiles, then this is the UNflagged version
+  });
+  wideHallWS = $({
+    id: 0xe3,
+    icon: icon`
+      |   |
+      |━┓ |
+      | ┃ |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+  });
+  goaWideHallWS = $({
+    id: 0xe3,
+    icon: icon`
+      |──┐|
+      |━┓│|
+      |┐┃│|`,
+    tilesets: {goa1: {}},
+    generate: {}, // fix tiles, then this is the flagged version
+  });
+  goaWideHallWS_blockedRight = $({
+    id: 0xe3,
+    icon: icon`
+      |──┐|
+      |━┓ |
+      |┐┃│|`,
+    tilesets: {goa1: {}},
+  });
+  goaWideHallNS_stairs = $({
+    id: 0xe4,
+    icon: icon`
+      |├┨│|
+      |│┃│|
+      |│┠┤|`,
+    tilesets: {goa1: {}},
+  });
+  goaWideHallNS_stairsBlocked = $({
+    id: 0xe4,
+    icon: icon`
+      |└┨│|
+      |╷┃╵|
+      |│┠┐|`,
+    tilesets: {goa1: {}},
+    generate: {}, // fix tiles, then this is the UNflagged version
+  });
+  // TODO - custom inverted version of e4 with the top stair on the right
+  wideHallNS_deadEnds = $({
+    id: 0xe5,
+    icon: icon`
+      | ╹ |
+      |   |
+      | ╻ |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+  });
+  // TODO - add one-way views of this?!?
+  goaWideHallNS_deadEnd = $({
+    id: 0xe5,
+    icon: icon`
+      |│╹│|
+      |├─┤|
+      |│╻│|`,
+    tilesets: {goa1: {}},
+  });
+  goaWideHallNS_deadEndBlocked = $({
+    id: 0xe5,
+    icon: icon`
+      |╵╹│|
+      |┌─┘|
+      |│╻╷|`,
+    tilesets: {goa1: {}},
+    generate: {}, // fix tiles, then this is the UNflagged version (TODO - alt)
+  });
+  wideHallNWSE = $({
+    id: 0xe6,
+    icon: icon`
+      | ┃ |
+      |━╋━|
+      | ┃ |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+  });
+  goaWideHallNWSE = $({
+    id: 0xe6,
+    icon: icon`
+      |┘┃└|
+      |━╋━|
+      |┐┃┌|`,
+    tilesets: {goa1: {}},
+  });
+  goaWideHallNWSE_blocked = $({
+    id: 0xe6,
+    icon: icon`
+      |┘┃ |
+      |━╋━|
+      | ┃┌|`,
+    tilesets: {goa1: {}},
+    generate: {}, // fix tiles, then this is UNflagged version (TODO - alt)
+  });
+  wideHallNWE = $({
+    id: 0xe7,
+    icon: icon`
+      | ┃ |
+      |━┻━|
+      |   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+  });
+  goaWideHallNWE = $({
+    id: 0xe7,
+    icon: icon`
+      |┘┃└|
+      |━┻━|
+      |───|`,
+    tilesets: {goa1: {}},
+  });
+  goaWideHallNWE_blockedTop = $({
+    id: 0xe7,
+    icon: icon`
+      | ┃ |
+      |━┻━|
+      |───|`,
+    tilesets: {goa1: {}},
+    generate: {}, // fix tiles, then this is UNflagged
+  });
+  wideHallWSE = $({
+    id: 0xe8,
+    icon: icon`
+      |   |
+      |━┳━|
+      | ┃ |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+  });
+  goaWideHallWSE = $({
+    id: 0xe8,
+    icon: icon`
+      |───|
+      |━┳━|
+      |┐┃┌|`,
+    tilesets: {goa1: {}},
+  });
+  goaWideHallWSE_blockedBottom = $({
+    id: 0xe8,
+    icon: icon`
+      |───|
+      |━┳━|
+      | ┃ |`,
+    tilesets: {goa1: {}},
+    generate: {}, // fix tiles, then this is UNflagged
+  });
+  wideHallNS_wallTop = $({
+    id: 0xe9,    // NOTE: the passage narrows at the top
+    icon: icon`
+      | ┆ |
+      | ┃ |
+      | ┃ |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+  });
+  goaWideHallNS_wallTop = $({
+    id: 0xe9,    // NOTE: the passage narrows at the top
+    icon: icon`
+      | ┆ |
+      |╷┃╷|
+      |│┃│|`,
+    tilesets: {goa1: {}},
+  });
+  wideHallWE = $({
+    id: 0xea,
+    icon: icon`
+      |   |
+      |━━━|
+      |   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+  });
+  goaWideHallWE = $({
+    id: 0xea,
+    icon: icon`
+      |───|
+      |━━━|
+      |───|`,
+    tilesets: {goa1: {}},
+  });
+  pitWE = $({
+    id: 0xeb,
+    icon: icon`
+      |   |
+      |─╳─|
+      |   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    // TODO - annotate the pit
+  });
+  pitNS = $({
+    id: 0xec,
+    icon: icon`
+      | │ |
+      | ╳ |
+      | │ |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    // TODO - annotate the pit
+  });
+  spikesNS_hallS = $({
+    id: 0xed,
+    icon: icon`
+      | ░ |
+      | ░ |
+      | │ |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    // TODO - annotate the spikes?
+  });
+  spikesNS_hallN = $({
+    id: 0xee,
+    icon: icon`
+      | │ |
+      | ░ |
+      | ░ |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    // TODO - annotate the spikes?
+  });
+  spikesNS_hallWE = $({
+    id: 0xef,
+    icon: icon`
+      | ░ |
+      |─░─|
+      | ░ |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    // TODO - annotate the spikes?
+  });
+  riverCave_deadEndsNS = $({
+    id: 0xf0,
+    icon: icon`
+      | ╨ |
+      |   |
+      | ╥ |`,
+    tilesets: {cave: {}, fortress: {}},
+  });
+  // TODO - single-direction dead-ends
+  riverCave_deadEndsWE = $({
+    id: 0xf1,
+    icon: icon`
+      |   |
+      |╡ ╞|
+      |   |`,
+    tilesets: {cave: {}, fortress: {}},
+  });
+  riverCaveN_bridge = $({
+    id: 0xf2,
+    icon: icon`
+      | ┇ |
+      | ╨ |
+      |   |`,
+    tilesets: {cave: {}, fortress: {}},
+    // TODO - note bridge
+  });
+  riverCaveS_bridge = $({
+    id: 0xf2,
+    icon: icon`
+      |   |
+      | ╥ |
+      | ┇ |`,
+    tilesets: {cave: {}, fortress: {}},
+    // TODO - note bridge
+  });
+  riverCaveWSE = $({
+    id: 0xf3,
+    icon: icon`
+      |───|
+      |═╦═|
+      |┐║┌|`,
+    tilesets: {cave: {}, fortress: {}},
+  });
+  riverCaveNWE = $({
+    id: 0xf4,
+    icon: icon`
+      |┘║└|
+      |═╩═|
+      |───|`,
+    tilesets: {cave: {}, fortress: {}},
+  });
+  riverCaveNS_blockedRight = $({
+    id: 0xf5,
+    icon: icon`
+      |│║│|
+      |│║ |
+      |│║│|`,
+    tilesets: {cave: {}, fortress: {}},
+  });
+  riverCaveNS_blockedLeft = $({
+    id: 0xf6,
+    icon: icon`
+      |│║│|
+      | ║│|
+      |│║│|`,
+    tilesets: {cave: {}, fortress: {}},
+  });
+  spikesNS = $({
+    id: 0xf7,
+    icon: icon`
+      | ░ |
+      | ░ |
+      | ░ |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    // TODO - annotate the spikes?
+  });
+  cryptArena_statues = $({
+    id: 0xf8,
+    icon: icon`<
+      |&<&|
+      |│ │|
+      |└┬┘|`,
+    tilesets: {pyramid: {}},
+  });
+  pyramidArena_draygon = $({
+    id: 0xf9,
+    icon: icon`
+      |┌─┐|
+      |│╳│|
+      |└┬┘|`,
+    tilesets: {pyramid: {}},
+  });
+  cryptArena_draygon2 = $({
+    id: 0xfa,
+    icon: icon`
+      |┏┷┓|
+      |┃&┃|
+      |┗┳┛|`,
+    tilesets: {pyramid: {}},
+  });
+  cryptArena_entrance = $({
+    id: 0xfb,
+    icon: icon`
+      | ┃ |
+      | ┃ |
+      | ╿ |`,
+    tilesets: {pyramid: {}},
+    // NOTE: narrow bottom
+  });
+  cryptTeleporter = $({
+    id: 0xfc,
+    tilesets: {pyramid: {}},
+  });
+  pyramidArena_azteca = $({
+    id: 0xfd,
+    icon: icon`╽
+      |┌┴┐|
+      |│ │|
+      |┕┳┙|`,
+    tilesets: {pyramid: {}},
+    // NOTE: wide bottom
+    // NOTE: we could use this for a pit that requires flight to cross?
+  });
+  fortressTrap = $({
+    id: 0xfe,
+    icon: icon`
+      |└─┘|
+      | ╳ |
+      |╶┬╴|`,
+    tilesets: {pyramid: {}},
+  });
+  shrine = $({
+    id: 0xff,
+    tilesets: {shrine: {}},
+  });
+  inn = $({
+    id: 0x100,
+    tilesets: {house: {}},
+  });
+  toolShop = $({
+    id: 0x101,
+    tilesets: {house: {}},
+  });
+  armorShop = $({
+    id: 0x102,
+    tilesets: {house: {}},
   });
 }
 

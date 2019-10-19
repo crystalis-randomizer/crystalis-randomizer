@@ -319,7 +319,7 @@ export type NonNever<T> = Pick<T, NonNeverProps<T>>;
 
 ////////////////////////////////////////////////////////////////
 
-const PROP_TAG = Symbol();
+const PROP_TAG = Symbol('PROP_TAG');
 
 type SetterHelper<X, Y, Z, A> =
   Z extends Function ? never :
@@ -351,7 +351,9 @@ function dataTupleActualClass<T extends DataTupleCtor<any>>(arg: T): T {
     const proto = new (arg as any)();
     const descriptors: any = {};
     for (const [prop, descr] of Object.entries(proto)) {
-      if ((descr as {[PROP_TAG]: boolean})[PROP_TAG]) descriptors[prop] = descr;
+      if (descr && (descr as {[PROP_TAG]: boolean})[PROP_TAG]) {
+        descriptors[prop] = descr;
+      }
     }
     Object.defineProperties(result.prototype, descriptors);
     // Finally add it to the map for both arg and result.

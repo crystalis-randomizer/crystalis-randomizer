@@ -455,37 +455,8 @@ ItemGet_FindOpenSlotWithOverflow:
 
 
 .org $1ff46
-;;; This will clobber the debug mode, but we have a perfect jump point into
-;;; it from the start menu input loop, so it makes sense to use it.
-.ifdef _WILD_WARP_FROM_START_MENU
-  lda $43   ; Ctrl1CurrentlyPressed
-  and #$08  ; BUTTON_UP
-  beq +
-   lda $4b   ; Ctrl1NewlyPressed
-   and #$80  ; BUTTON_A
-   beq +
-    inc $0780 ; Advance wild warp
-    lda #$ff  ; Set a flag to indicate we're warping
-    sta $6c   ; The old location no longer needed!
-+:
-  ;; TODO - consider accepting other inputs?
-  rts
-
-ReturnFromStartMenu:
-  lda $6c
-  cmp #$ff
-  bne +
-   dec $0780
-   jsr $cbd3
-+ jmp $fe80  ; ReadControllersWithDirections
-  
-.endif
+;;; TODO - consider grafting in our own debug mode here?
 .assert < $1ff97
-
-.ifdef _WILD_WARP_FROM_START_MENU
-.org $1fe0e
-  jmp ReturnFromStartMenu
-.endif
 
 ;; This looks like it's just junk at the end, but we could
 ;; probably go to $1ff47 if we don't care about developer mode
@@ -498,8 +469,6 @@ ComputeVampireAnimationStart:
    bcc ++
 +  lda #$ff
 ++ rts
-
-;;; Handle wild warp during start menu
 
 .assert < $20000
 
@@ -1144,10 +1113,29 @@ CheckSwordCollisionPlane:
   sta $03c1
   nop
 .org $3cbaf
-  bne +
-.org $3cbc0
-+ rts  ; no change
+  bne $cbc0  ; rts at end of CheckForSelectMenu
 .endif
+
+
+.ifdef _CTRL1_SHORTCUTS
+.org $3cb87  ; check wild warp before start menu
+  bne CheckForNewCtrl1Combos
+.org $3cbb8  ; don't jump to the normal wild warp check after select
+  beq $cbc0  ; rts at end of CheckForSelectMenu
+.org $3cbc1
+CheckForNewCtrl1Combos:
+  ;; Ditch the ctrl2 pause, and move wild warp to start
+  lda $43
+  cmp #$d0
+  bne +
+   lda $4b
+   cmp #$10
+    beq $cbd3  ; wild warp
+  ;; TODO - JSR to check for other combos??
++ jmp $cb90   ; check start menu normally
+.assert < $3cbd3
+.endif
+
 
 
 .ifdef _DISABLE_WILD_WARP

@@ -94,6 +94,7 @@ export async function shuffle(rom: Uint8Array,
     _BUFF_DEOS_PENDANT: flags.buffDeosPendant(),
     _BUFF_DYNA: flags.buffDyna(), // true,
     _CHECK_FLAG0: true,
+    _CTRL1_SHORTCUTS: true,
     _CUSTOM_SHOOTING_WALLS: true,
     _DEBUG_DIALOG: seed === 0x17bc,
     _DISABLE_SHOP_GLITCH: flags.disableShopGlitch(),
@@ -122,7 +123,6 @@ export async function shuffle(rom: Uint8Array,
     _SIMPLIFY_INVISIBLE_CHESTS: true,
     _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
     _UNIDENTIFIED_ITEMS: flags.unidentifiedItems(),
-    _WARP_FROM_START_MENU: true,
   };
 
   const asm = new Assembler();

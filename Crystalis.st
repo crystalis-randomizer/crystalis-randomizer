@@ -26818,6 +26818,7 @@ DataTable_1fb8f
         $1fc2f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1fc3f              .byte $xx
 ;;; --------------------------------
+DisplayStartMenu
 MainGameModeJump_0c
         $1fc40  xx xx:      xxx $xx
         $1fc42  xx:         xxx
@@ -56692,7 +56693,7 @@ CheckForStartMenu
         $3cba1  xx xx:       xxx ScreenMode
 +       $3cba3  xx xx:      xxx #$xx
         $3cba5  xx xx xx:   xxx BankSwitch16k
-        $3cba8  xx xx xx:   xxx MainGameModeJump_0c
+        $3cba8  xx xx xx:   xxx DisplayStartMenu
         $3cbab  xx xx:      xxx CurrentLocation
         $3cbad  xx xx:      xxx #LOC_DYNA
         $3cbaf  xx xx:      xxx <rts ; $3cb8f

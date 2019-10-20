@@ -26977,13 +26977,13 @@ DataTable_1fd84
         $1fdd4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 MainGameModeJump_0d
-        $1fddb  xx xx xx:   xxx $3c169
+-       $1fddb  xx xx xx:   xxx $3c169
         $1fdde  xx xx xx:   xxx $1febf
         $1fde1  xx xx xx:   xxx ReadControllersWithRepeat
         $1fde4  xx xx xx:   xxx $1ff46
-        $1fde7  xx xx:      xxx $xx
-        $1fde9  xx xx:      xxx #$xx
-        $1fdeb  xx xx:      xxx $xx
+        $1fde7  xx xx:      xxx Ctrl1NewlyPressed
+        $1fde9  xx xx:      xxx #BUTTON_START
+        $1fdeb  xx xx:      xxx - ; $1fddb
         $1fded  xx xx:      xxx #$xx
         $1fdef  xx xx:      xxx #$xx
         $1fdf1  xx xx xx:   xxx $xxxx,x
@@ -56586,14 +56586,14 @@ MainGameModeJump_00_Initialize
 +       $3cab5  xx:         xxx
 ;;; --------------------------------
 MainLoop_01_Game
-        $3cab6  xx xx:      xxx $xx
+        $3cab6  xx xx:      xxx GameMode
         $3cab8  xx xx:      xxx #$xx
         $3caba  xx xx:      xxx + ; $3cac3
         $3cabc  xx xx:       xxx #$xx
         $3cabe  xx xx:       xxx + ; $3cac3
         $3cac0  xx xx xx:     xxx $3cc2e
 +       $3cac3  xx xx:      xxx $xx ; update the global counter
-        $3cac5  xx xx:      xxx $xx
+        $3cac5  xx xx:      xxx GameMode
         $3cac7  xx:         xxx
         $3cac8  xx:         xxx
         $3cac9  xx xx xx:   xxx MainGameModeJumpTable,x

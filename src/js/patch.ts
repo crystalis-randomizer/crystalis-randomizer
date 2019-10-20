@@ -122,6 +122,7 @@ export async function shuffle(rom: Uint8Array,
     _SIMPLIFY_INVISIBLE_CHESTS: true,
     _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
     _UNIDENTIFIED_ITEMS: flags.unidentifiedItems(),
+    _WARP_FROM_START_MENU: true,
   };
 
   const asm = new Assembler();

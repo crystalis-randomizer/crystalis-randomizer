@@ -454,6 +454,39 @@ ItemGet_FindOpenSlotWithOverflow:
   lda #$0e
 
 
+.org $1ff46
+;;; This will clobber the debug mode, but we have a perfect jump point into
+;;; it from the start menu input loop, so it makes sense to use it.
+.ifdef _WILD_WARP_FROM_START_MENU
+  lda $43   ; Ctrl1CurrentlyPressed
+  and #$08  ; BUTTON_UP
+  beq +
+   lda $4b   ; Ctrl1NewlyPressed
+   and #$80  ; BUTTON_A
+   beq +
+    inc $0780 ; Advance wild warp
+    lda #$ff  ; Set a flag to indicate we're warping
+    sta $6c   ; The old location no longer needed!
++:
+  ;; TODO - consider accepting other inputs?
+  rts
+
+ReturnFromStartMenu:
+  lda $6c
+  cmp #$ff
+  bne +
+   dec $0780
+   jsr $cbd3
++ jmp $fe80  ; ReadControllersWithDirections
+  
+.endif
+.assert < $1ff97
+
+.ifdef _WILD_WARP_FROM_START_MENU
+.org $1fe0e
+  jmp ReturnFromStartMenu
+.endif
+
 ;; This looks like it's just junk at the end, but we could
 ;; probably go to $1ff47 if we don't care about developer mode
 .org $1ff97
@@ -466,7 +499,9 @@ ComputeVampireAnimationStart:
 +  lda #$ff
 ++ rts
 
+;;; Handle wild warp during start menu
 
+.assert < $20000
 
 .bank $20000 $8000:$2000
 

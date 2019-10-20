@@ -1,3 +1,23 @@
+(load-file (concat (file-name-directory load-file-name) "asm.el"))
+(setq crystalis-root-path
+      (file-name-directory (directory-file-name (file-name-directory load-file-name))))
+
+(defun crystalis-checkout-source ()
+  "Checks out the source, making it read-write"
+  (interactive)
+  (if (and
+       (string= "Crystalis.s" (file-name-nondirectory buffer-file-name))
+       (= 0 (shell-command (format "cd %s; scripts/update.sh out" crystalis-root-path))))
+      (read-only-mode 0)))
+
+(defun crystalis-checkin-source ()
+  "Checks in the source, making it read-only"
+  (interactive)
+  (if (and
+       (string= "Crystalis.s" (file-name-nondirectory buffer-file-name))
+       (= 0 (shell-command (format "cd %s; scripts/update.sh in" crystalis-root-path))))
+      (read-only-mode 1)))
+
 (defun crystalis-label-exits ()
   "Labels the exits for a mapdata block."
   (interactive)
@@ -512,6 +532,9 @@
       ;; TODO - add more info - want object names...
 )))
 (define-key asm-mode-map (kbd "C-c C-n") 'annotate-npcdata)
+
+(define-key asm-mode-map (kbd "C-c s o") 'crystalis-checkout-source)
+(define-key asm-mode-map (kbd "C-c s i") 'crystalis-checkin-source)
 
 (defun link-data-table-entry ()
   (interactive)

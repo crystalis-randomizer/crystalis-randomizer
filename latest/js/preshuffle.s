@@ -454,6 +454,10 @@ ItemGet_FindOpenSlotWithOverflow:
   lda #$0e
 
 
+.org $1ff46
+;;; TODO - consider grafting in our own debug mode here?
+.assert < $1ff97
+
 ;; This looks like it's just junk at the end, but we could
 ;; probably go to $1ff47 if we don't care about developer mode
 .org $1ff97
@@ -466,7 +470,57 @@ ComputeVampireAnimationStart:
 +  lda #$ff
 ++ rts
 
+.ifdef _CTRL1_SHORTCUTS
+-- rts
+HandleStart:
+  lda $43
+  cmp #$d0    ; A+B+Start (exactly)
+  bne +
+   ;; wild warp
+   pla
+   pla
+   jmp $cbd3  ; wild warp
+;+ and #$04    ; check for Down (may be present _with_ B)
+;  beq +
+;   ;; decrease power level
+;   lda $0719  ; max charge level
+;   cmp #$02   ; if it's bracelet, take it down one
+;   bne --     ; rts
+;   dec $0719
+;   rts
++ lda $43
+  and #$40    ; BUTTON_B
+  beq NormalDisplayStartMenu
+   ;; quick-change sword
+   ldx $0711
+   cpx #$05
+   beq --     ; rts if crystalis
+-   inx
+    cpx #$05
+    bne +
+     ldx #$00
++   cpx $0711
+     beq --   ; rts if no other sword found
+    cpx #$00
+     beq -
+    lda $642f,x
+     bmi -    ; don't own sword
+    ;; Found a new sword - equip it
+    sta $6428 ; currently equipped index
+    stx $0711 ; equipped sword
+    lda #$00
+    sta $06c0 ; zero out the current charge
+    jmp PostInventoryMenu
+NormalDisplayStartMenu:
+  jmp $bc40   ; normal DisplayStartMenu
+.endif
 
+.assert < $20000
+
+.ifdef _CTRL1_SHORTCUTS
+.org $3cba8  ; divert start menu display to do other stuff instead
+  jsr HandleStart
+.endif
 
 .bank $20000 $8000:$2000
 
@@ -1109,9 +1163,7 @@ CheckSwordCollisionPlane:
   sta $03c1
   nop
 .org $3cbaf
-  bne +
-.org $3cbc0
-+ rts  ; no change
+  bne $cbc0  ; rts at end of CheckForSelectMenu
 .endif
 
 
@@ -1348,7 +1400,7 @@ PostInventoryMenu:
 .ifdef _AUTO_EQUIP_BRACELET
   jsr AutoEquipBracelets
 .else
-  lda AutoEquipBracelets
+  lda AutoEquipBracelets ; basically just a 3-byte no-op
 .endif
   jmp UpdateEquipmentAndStatus
 AutoEquipBracelets:

@@ -470,7 +470,57 @@ ComputeVampireAnimationStart:
 +  lda #$ff
 ++ rts
 
+.ifdef _CTRL1_SHORTCUTS
+-- rts
+HandleStart:
+  lda $43
+  cmp #$d0    ; A+B+Start (exactly)
+  bne +
+   ;; wild warp
+   pla
+   pla
+   jmp $cbd3  ; wild warp
+;+ and #$04    ; check for Down (may be present _with_ B)
+;  beq +
+;   ;; decrease power level
+;   lda $0719  ; max charge level
+;   cmp #$02   ; if it's bracelet, take it down one
+;   bne --     ; rts
+;   dec $0719
+;   rts
++ lda $43
+  and #$40    ; BUTTON_B
+  beq NormalDisplayStartMenu
+   ;; quick-change sword
+   ldx $0711
+   cpx #$05
+   beq --     ; rts if crystalis
+-   inx
+    cpx #$05
+    bne +
+     ldx #$00
++   cpx $0711
+     beq --   ; rts if no other sword found
+    cpx #$00
+     beq -
+    lda $642f,x
+     bmi -    ; don't own sword
+    ;; Found a new sword - equip it
+    sta $6428 ; currently equipped index
+    stx $0711 ; equipped sword
+    lda #$00
+    sta $06c0 ; zero out the current charge
+    jmp PostInventoryMenu
+NormalDisplayStartMenu:
+  jmp $bc40   ; normal DisplayStartMenu
+.endif
+
 .assert < $20000
+
+.ifdef _CTRL1_SHORTCUTS
+.org $3cba8  ; divert start menu display to do other stuff instead
+  jsr HandleStart
+.endif
 
 .bank $20000 $8000:$2000
 
@@ -1117,27 +1167,6 @@ CheckSwordCollisionPlane:
 .endif
 
 
-.ifdef _CTRL1_SHORTCUTS
-.org $3cb87  ; check wild warp before start menu
-  bne CheckForNewCtrl1Combos
-.org $3cbb8  ; don't jump to the normal wild warp check after select
-  beq $cbc0  ; rts at end of CheckForSelectMenu
-.org $3cbc1
-CheckForNewCtrl1Combos:
-  ;; Ditch the ctrl2 pause, and move wild warp to start
-  lda $43
-  cmp #$d0
-  bne +
-   lda $4b
-   cmp #$10
-    beq $cbd3  ; wild warp
-  ;; TODO - JSR to check for other combos??
-+ jmp $cb90   ; check start menu normally
-.assert < $3cbd3
-.endif
-
-
-
 .ifdef _DISABLE_WILD_WARP
 .org $3cbc7
   rts
@@ -1371,7 +1400,7 @@ PostInventoryMenu:
 .ifdef _AUTO_EQUIP_BRACELET
   jsr AutoEquipBracelets
 .else
-  lda AutoEquipBracelets
+  lda AutoEquipBracelets ; basically just a 3-byte no-op
 .endif
   jmp UpdateEquipmentAndStatus
 AutoEquipBracelets:

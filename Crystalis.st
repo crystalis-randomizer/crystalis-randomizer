@@ -58530,7 +58530,7 @@ MainGameModeJump_24_EmptyShop
         $3d9e8  xx xx:      xxx #$xx
         $3d9ea  xx xx:      xxx $xx
         $3d9ec  xx xx:      xxx ++ ; $3da03
-        $3d9ee  xx xx xx:   xxx $xxxx
+        $3d9ee  xx xx xx:   xxx EquippedBracelet
         $3d9f1  xx:         xxx
         $3d9f2  xx xx:      xxx #$xx
         $3d9f4  xx xx:      xxx #$xx

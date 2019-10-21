@@ -80,16 +80,71 @@ function icon(arr: TemplateStringsArray): Icon {
 // const ICE_CAVE = 0xa8;
 // const TOWER = 0xac;
 
-export class Metascreens extends Set<Metascreen> {
+// Simple tileset-only fixes that unlock some screen-tileset combinations
+export enum ScreenFix {
+  // Support "long grass" river screens on the grass tileset by copying
+  // some tiles from 51..59 into 40..47.
+  GrassLongGrass,
+  // In addition to just making the new long grass tiles, we need to
+  // also remap the existing ones in some situations to point to the
+  // new ones, e.g. for screens 1d,29 to work on river, we need to use
+  // the 4x tiles instead of the 5x ones to fix the surrounding.
+  GrassLongGrassRemapping,
+  // River tilesets don't define 10,12,14,16,17,1a,1b,1c,22,23,24,25,26,
+  // which are used for the "short grass" in the grass tileset.  These
+  // would be easy to copy from somewhere else to open up a few screens.
+  RiverShortGrass,
+  // Angry sea uses 0a oddly for a simple diagonal beach/mountain tile,
+  // preventing parity with grass/river cave entrance bottoms.  Move this
+  // tile elsewhere (ad) and fix the graphics/effects.  Note that the
+  // actual fix is not entirely satisfying.
+  SeaCaveEntrance,
+  // Angry sea does not handle rocks correctly.  Fix 5a..5e for parity
+  // with grass/river tilesets.  TODO - implement the fix (we could move
+  // the existing tiles, used by mountain gates, elsewhere pretty easily,
+  // or alternatively move all the 5a..5e in all other tilesets into
+  // 89,8a,90,99,9d,d1,d2 which are free in 80,90,94,9c).
+  SeaRocks,
+  // Allow the sea to support 34,38,3c..3f, used as marsh in river tileset.
+  // These woud need to map to simple ocean tiles.  TODO - implement.
+  SeaMarsh,
+  // Support 6x,7x tiles (trees) on angry sea.  Probably not worth it.
+  // Would need to move (e.g.) Lime Tree Lake to a totally different tileset
+  // to free up the metatiles.
+  SeaTrees,
+  // Fixing RiverShortGrass for desert is a lot harder because it touches a
+  // bunch of tiles used by the mountainRiver tileset (10,14,2x).
+  DesertShortGrass,
+  // Fixing GrassLongGrass for desert is difficult because the 4x tiles
+  // are used by mountainRiver.
+  DesertLongGrass,
+  // Desert doesn't support the 3x marsh tiles (clash with mountainRiver).
+  // It's probably not feasible to add support - it would allow screen 33,
+  // but there's a similar south-edge-exit screen with DesertTownEntrance.
+  DesertMarsh,
+  // Fix 5a..5e to be compatible with grass/river.  5b is already in use
+  // on the two oasis screens, so that tile is moved to 5f to make space.
+  DesertRocks,
+  // Add some missing tree tiles in 63,68,69,6a,6c,6e,6f, required for
+  // parity with some river screens.
+  DesertTrees,
+  // South-facing town entrances use 07 for the top of the town wall.
+  // This could be replaced with (e.g. 8c) or maybe something better.
+  DesertTownEntrance,
+}
+
+export class Metascreens { // extends Set<Metascreen> {
 
   constructor(readonly rom: Rom) {
-    super();
+    //super();
     $.commit(this, (key: string, data: MetascreenData) => {
       const screen = new Metascreen(rom, data);
-      this.add(screen);
+      //this.add(screen);
       return screen;
     });
   }
+
+  registerFix(fix: ScreenFix) {}
 
   mountain = $({
     id: 0x00,
@@ -106,13 +161,9 @@ export class Metascreens extends Set<Metascreen> {
       |█▌ |
       |█▌^|
       |█▌ |`,
-    tilesets: {grass: {}, river: {}},
-    // NOTE: could use this on 9c (desert) if we move 5b elsewhere
-    // (only used on oasis screen) and define 5e - then just copy
-    // existing tiles into those slots.  Same with 94 (sea) - these
-    // tiles intersect w/ mountain but could be moved and only a
-    // handful of screens (which don't share tilesets) would need to
-    // be updated.
+    tilesets: {grass: {}, river: {},
+               desert: {requires: [ScreenFix.DesertRocks]},
+               sea: {requires: [ScreenFix.SeaTrees]}},
   });
   boundaryW = $({
     id: 0x02,
@@ -128,8 +179,9 @@ export class Metascreens extends Set<Metascreen> {
       |.▐█|
       | ▐█|
       |.▐█|`,
-    tilesets: {grass: {}, river: {}},
-    // NOTE: could use this on desert/sea if move 5a, 5c, 5d
+    tilesets: {grass: {}, river: {},
+               desert: {requires: [ScreenFix.DesertRocks]},
+               sea: {requires: [ScreenFix.SeaRocks]}},
   });
   boundaryE = $({
     id: 0x04,
@@ -145,11 +197,8 @@ export class Metascreens extends Set<Metascreen> {
       |vv |
       | vv|
       |   |`,
-    tilesets: {river: {}},
-    // NOTE: could use this on 80 (grass) if we made 40..47
-    // meaningful.  These are currently completely unused in this
-    // tileset, and we'd only need to copy a handful of grass-border
-    // from 50..57 to make it work.
+    tilesets: {river: {},
+               grass: {requires: [ScreenFix.GrassLongGrass]}},
   });
   longGrassN = $({
     id: 0x06,
@@ -157,8 +206,8 @@ export class Metascreens extends Set<Metascreen> {
       |   |
       | vv|
       |vv |`,
-    tilesets: {river: {}},
-    // See note above
+    tilesets: {river: {},
+               grass: {requires: [ScreenFix.GrassLongGrass]}},
   });
   boundaryS_rocks = $({
     id: 0x07,
@@ -166,8 +215,9 @@ export class Metascreens extends Set<Metascreen> {
       | . |
       |▄▄▄|
       |███|`,
-    tilesets: {grass: {}, river: {}},
-    // See note above about rocks
+    tilesets: {grass: {}, river: {},
+               desert: {requires: [ScreenFix.DesertRocks]},
+               sea: {requires: [ScreenFix.SeaRocks]}},
   });
   fortressTownEntrance = $({ // goa
     id: 0x08,
@@ -197,7 +247,8 @@ export class Metascreens extends Set<Metascreen> {
       |███|`,
     // TODO - entrance
     // TODO - edge
-    tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
+    tilesets: {grass: {}, river: {}, desert: {},
+               sea: {requires: [ScreenFix.SeaCaveEntrance]}},
   });
   bendNE_grassRocks = $({
     id: 0x0b,
@@ -205,7 +256,10 @@ export class Metascreens extends Set<Metascreen> {
       |.▐█|
       |  ▀|
       |;;;|`,
-    tilesets: {grass: {}, river: {}}, // See note above about rocks
+    tilesets: {grass: {},
+               river: {requires: [ScreenFix.RiverShortGrass]},
+               desert: {requires: [ScreenFix.DesertShortGrass,
+                                   ScreenFix.DesertRocks]}},
   });
   cornerNW = $({
     id: 0x0c,
@@ -245,7 +299,8 @@ export class Metascreens extends Set<Metascreen> {
       | ▐█|
       |   |
       | ▐█|`,
-    tilesets: {grass: {}, river: {}}, // See note above about rocks
+    tilesets: {grass: {}, river: {},
+               desert: {requires: [ScreenFix.DesertRocks]}},
     // TODO - edge
   });
   boundaryN_trees = $({
@@ -254,7 +309,8 @@ export class Metascreens extends Set<Metascreen> {
       |███|
       |▀▀▀|
       | ^ |`,
-    tilesets: {grass: {}, river: {}, desert: {}}, // See note about trees in sea
+    tilesets: {grass: {}, river: {}, desert: {},
+               sea: {requires: [ScreenFix.SeaTrees]}},
   });
   bridgeToPortoa = $({
     id: 0x12,
@@ -287,7 +343,8 @@ export class Metascreens extends Set<Metascreen> {
       |█▌ |
       |█∩ |
       |█▌ |`,
-    tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
+    tilesets: {grass: {}, river: {}, desert: {},
+               sea: {requires: [ScreenFix.SeaCaveEntrance]}},
     // TODO - flaggable?
   });
   exitN = $({
@@ -320,9 +377,11 @@ export class Metascreens extends Set<Metascreen> {
     id: 0x19,
     icon: icon`
       | ▐█|
-      | ∩█|
-      | ▐█|`,
-    tilesets: {river: {}}, // desert seems infeasible here? see above re: grass
+      |v∩█|
+      |v▐█|`,
+    tilesets: {river: {},
+               grass: {requires: [ScreenFix.GrassLongGrass]},
+               desert: {requires: [ScreenFix.DesertLongGrass]}},
   });
   exitW_southwest = $({
     id: 0x1a,
@@ -330,13 +389,15 @@ export class Metascreens extends Set<Metascreen> {
       |█▌ |
       |▀ ▄|
       |▄██|`,
-    tilesets: {grass: {}, river: {}}, // TODO - desert with 5a/5e fix
-    // sea also possible, but not sure where it would go? some other beach?
+    tilesets: {grass: {}, river: {},
+               desert: {requires: [ScreenFix.DesertRocks]},
+               // Sea has no need for this screen?  Go to some other beach?
+               sea: {requires: [ScreenFix.SeaRocks]}},
   });
   nadare = $({
     id: 0x1b,
     //icon: '?',
-    migrated: 0x2000,
+    //migrated: 0x2000,
     tilesets: {house: {}},
   });
   townExitW = $({
@@ -353,7 +414,9 @@ export class Metascreens extends Set<Metascreen> {
       |;;;|
       | v |
       |   |`,
-    tilesets: {grass: {}},
+    tilesets: {grass: {},
+               river: {requires: [ScreenFix.RiverShortGrass,
+                                  ScreenFix.GrassLongGrassRemapping]}},
   });
   townExitS = $({
     id: 0x1e,
@@ -361,7 +424,9 @@ export class Metascreens extends Set<Metascreen> {
       | ^ |
       |▄ ▄|
       |█ █|`,
-    tilesets: {grass: {}, river: {}},
+    tilesets: {grass: {}, river: {},
+               desert: {requires: [ScreenFix.DesertRocks,
+                                   ScreenFix.DesertTownEntrance]}},
   });
   swanGate = $({
     id: 0x1f,
@@ -420,7 +485,11 @@ export class Metascreens extends Set<Metascreen> {
       |█▌ |
       |▀ ^|
       | ^^|`,
-    tilesets: {grass: {}, river: {}}, // TODO - desert
+    tilesets: {grass: {}, river: {},
+               desert: {requires: [ScreenFix.DesertRocks,
+                                   ScreenFix.DesertTrees]},
+               sea: {requires: [ScreenFix.SeaRocks,
+                                ScreenFix.SeaTrees]}},
   });
   shortGrassSW = $({
     id: 0x27,
@@ -428,7 +497,8 @@ export class Metascreens extends Set<Metascreen> {
       |;;;|
       |  ;|
       |^ ;|`,
-    tilesets: {grass: {}},
+    tilesets: {grass: {},
+               river: {requires: [ScreenFix.RiverShortGrass]}},
   });
   riverBranchNWS = $({
     id: 0x28,
@@ -444,7 +514,9 @@ export class Metascreens extends Set<Metascreen> {
       |  ;|
       | v;|
       |;;;|`,
-    tilesets: {grass: {}},
+    tilesets: {grass: {},
+               river: {requires: [ScreenFix.RiverShortGrass,
+                                  ScreenFix.GrassLongGrassRemapping]}},
   });
   valleyBridge = $({
     id: 0x2a,
@@ -460,9 +532,9 @@ export class Metascreens extends Set<Metascreen> {
       |█∩█|
       |▌ ▐|
       |█ █|`,
-    tilesets: {grass: {}, river: {}, desert: {}},
-    // TODO - could be viable in sea except for $0a blocking entrance.
-    //      - consider changing these?
+    tilesets: {grass: {}, river: {}, desert: {},
+               // Not particularly useful since no connector on south end?
+               sea: {requires: [ScreenFix.SeaCaveEntrance]}},
   });
   outsideWindmill = $({
     id: 0x2c,
@@ -506,7 +578,7 @@ export class Metascreens extends Set<Metascreen> {
       | ║ |`,
     tilesets: {river: {}},
   });
-  borderN_waterfallCave = $({
+  boundaryN_waterfallCave = $({
     id: 0x31,
     icon: icon`
       |▛║█|
@@ -520,7 +592,9 @@ export class Metascreens extends Set<Metascreen> {
       | ^ |
       |^ ^|
       | ^ |`,
-    tilesets: {river: {}}, // fix 5x for grass, 68..6f for desert
+    tilesets: {grass: {}, river: {},
+               desert: {requires: [ScreenFix.DesertTrees,
+                                   ScreenFix.DesertRocks]}},
   });
   exitS = $({
     id: 0x33,
@@ -528,7 +602,10 @@ export class Metascreens extends Set<Metascreen> {
       | w |
       |▄ ▄|
       |█ █|`,
-    tilesets: {grass: {}, river: {}},
+    tilesets: {grass: {}, river: {},
+               // NOTE: These fixes are not likely to ever land.
+               desert: {requires: [ScreenFix.DesertMarsh]},
+               sea: {requires: [ScreenFix.SeaMarsh]}},
   });
   bendNW = $({
     id: 0x34,
@@ -1744,7 +1821,7 @@ export class Metascreens extends Set<Metascreen> {
       |▗▄▖|
       |▜∩▛|
       | ╳ |`,
-    tilesets: {desert: {}},
+    tilesets: {desert: {}, sea: {tiles: [0x0a]}},
   });
   oasisCave = $({
     id: 0xcf,
@@ -2396,18 +2473,29 @@ export class Metascreens extends Set<Metascreen> {
 // Consider doing this programmatically, though we'd want to use
 // the _actual_ screen-tileset usages rather than declared options
 
-export function fixTilesets(rom: Rom) {
-  const desert = rom.tilesets.desert;
+// class X {
+//   readonly m: Metascreens;
+//   constructor(r: Rom) {
+//     this.m = new Metascreens(r);
+//   }
+// }
 
-  desert.getTile(0x5f).copyFrom(0x5b); //.moveUses(rom.screens.oasis);
-  rom.metascreens.oasisCave.replace(0x5b, 0x5f);
-  rom.metascreens.oasisLake.replace(0x5b, 0x5f);
+export function fixTilesets(rom: Rom) {
+  const {desert, grass, sea} = rom.metatilesets;
+  const $ = rom.metascreens;
+
+  // Several of the grass/river screens with forest tiles don't work on
+  // desert.  Fix them by making 5a..6f work correctly.
+  $.registerFix(ScreenFix.DesertRocks);
+  desert.getTile(0x5f).copyFrom(0x5b).replaceIn($.oasisCave, $.oasisLake);
 
   desert.getTile(0x5a).copyFrom(0x98).setTiles([, , 0x1a, 0x18]);
   desert.getTile(0x5b).copyFrom(0x80).setTiles([0x34, 0x32, , ]);
   desert.getTile(0x5c).copyFrom(0x80).setTiles([, , 0x37, 0x35]);
   desert.getTile(0x5d).copyFrom(0x80).setTiles([, 0x37, , 0x34]);
   desert.getTile(0x5e).copyFrom(0x80).setTiles([0x35, , 0x32, ]);
+
+  $.registerFix(ScreenFix.DesertTrees);
   desert.getTile(0x63).copyFrom(0x71);
   desert.getTile(0x68).copyFrom(0x70);
   desert.getTile(0x69).copyFrom(0x60);
@@ -2416,8 +2504,9 @@ export function fixTilesets(rom: Rom) {
   desert.getTile(0x6e).copyFrom(0x76);
   desert.getTile(0x6f).copyFrom(0x78);
 
-  const grass = rom.tilesets.grass;
-
+  // Long grass screens don't work on grass tilesets because of a few
+  // different tiles - copy them where they need to go.
+  $.registerFix(ScreenFix.GrassLongGrass);
   grass.getTile(0x40).copyFrom(0x51);
   grass.getTile(0x41).copyFrom(0x52);
   grass.getTile(0x42).copyFrom(0x53);
@@ -2426,6 +2515,35 @@ export function fixTilesets(rom: Rom) {
   grass.getTile(0x45).copyFrom(0x56);
   grass.getTile(0x46).copyFrom(0x58);
   grass.getTile(0x47).copyFrom(0x59);
+
+  // Angry sea tileset doesn't support tile 0a (used elsewhere for the
+  // bottom tile in cave entrances) because it's already in use (but
+  // not as an alternative).  Move it to ad and get 0a back.
+  $.registerFix(ScreenFix.SeaCaveEntrance);
+  sea.getTile(0xad).copyFrom(0x0a)
+      .replaceIn($.beachExitN, $.lighthouseEntrance, $.oceanShrine);
+  sea.getTile(0x0a).copyFrom(0xa2); // don't bother setting an alternative.
+  sea.screens.add($.boundaryW_cave);
+  sea.screens.add($.desertCaveEntrance);
+
+  // sea.getTile(0x0a).copyFrom(0xa2).setTiles([,,0x91,0x91]).setAttrs(0);
+  // This does open up screen $ce (desert cave entrance) for use in the sea,
+  // which is interesting because whirlpools can't be flown past - we'd need
+  // to add flags to clear the whirlpools, but it would be a cave that's
+  // blocked on calming the sea...
+
+  // We could add a number of screens to the sea if we could move 5a..5e
+  // (which collides with mountain gates).  89,8a,90,99,9d,d1,d2 are free
+  // in 80 (grass), 90 (river), and 9c (desert).  The main problem is that
+  // at least the cave entrances don't quite work for these - they end up
+  // in shallow water, are a little too short, and it seems to be impossible
+  // to pick a palette that is light blue on bottom and black on top.
+  //
+  // Other options for the sea are 34,38,3c..3f which are marsh tiles in
+  // river - would open up some narrow passages (33, 
+
+
+  //  rom.metascreens;
 
   // for (const x of Object.values(TILESET_FIXES)) {
   //   const id = x.id;

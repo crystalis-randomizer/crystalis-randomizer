@@ -4,24 +4,16 @@ import {TileEffects} from './tileeffects.js';
 import {seq, tuple} from './util.js';
 import {Writer} from './writer.js';
 import {Rom} from '../rom.js';
-import {assertType} from '../util.js';
 
-class TilesetsClass implements Iterable<Tileset> {
+export class Tilesets implements Iterable<Tileset> {
 
   private tilesets: Tileset[] = [];
 
   readonly [id: number]: Tileset;
 
   constructor(readonly rom: Rom) {
-    for (const name in indexedTilesets) {
-      const data = indexedTilesets[name];
-      // Is this the first one we've seen with this ID?
-      let tileset = this[data.id];
-      if (!tileset) {
-        tileset = (this as any)[data.id] = new Tileset(rom, data.id);
-        this.tilesets.push(tileset);
-      }
-      (this as any)[name] = new Metatileset(tileset, data);
+    for (let i = 0x80; i < 0xb0; i += 4) {
+      this.tilesets.push(((this as any)[i] = new Tileset(rom, i)));
     }
   }
 
@@ -29,11 +21,6 @@ class TilesetsClass implements Iterable<Tileset> {
     return this.tilesets[Symbol.iterator]();
   }
 }
-
-export type Tilesets = TilesetsClass & {[T in keyof typeof TILESETS]: Metatileset};
-
-export const Tilesets: {new(rom: Rom): Tilesets} = TilesetsClass as any;
-
 
 // Mappping from metatile ID to tile quads and palette number.
 export class Tileset extends Entity {
@@ -117,148 +104,160 @@ export class Tileset extends Entity {
   // }
 }
 
-export class Metatileset {
-  // TODO - extra stuff, info about capabilities, etc?
+// export class Metatileset {
+//   // TODO - extra stuff, info about capabilities, etc?
 
-  constructor(readonly tileset: Tileset, readonly data: MetatilesetData) {}
+//   constructor(readonly tileset: Tileset, readonly data: MetatilesetData) {}
 
-  getTile(id: number): Metatile {
-    return new Metatile(this.tileset, id);
-  }
+//   getTile(id: number): Metatile {
+//     return new Metatile(this.tileset, id);
+//   }
 
-}
+// }
 
-export class Metatile {
-  constructor(readonly tileset: Tileset, readonly id: number) {}
+// export class Metatile {
+//   private copiedFrom = -1;
+//   constructor(readonly tileset: Tileset, readonly id: number) {}
 
-  // get topLeft(): number { return this.tileset.tileset.tiles[0][this.id]; }
-  // set topLeft(x: number) { this.tileset.tileset.tiles[0][this.id] = x; }
+//   // get topLeft(): number { return this.tileset.tileset.tiles[0][this.id]; }
+//   // set topLeft(x: number) { this.tileset.tileset.tiles[0][this.id] = x; }
 
-  // get topRight(): number { return this.tileset.tileset.tiles[1][this.id]; }
-  // set topRight(x: number) { this.tileset.tileset.tiles[1][this.id] = x; }
+//   // get topRight(): number { return this.tileset.tileset.tiles[1][this.id]; }
+//   // set topRight(x: number) { this.tileset.tileset.tiles[1][this.id] = x; }
 
-  // get bottomLeft(): number { return this.tileset.tileset.tiles[2][this.id]; }
-  // set bottomLeft(x: number) { this.tileset.tileset.tiles[2][this.id] = x; }
+//   // get bottomLeft(): number { return this.tileset.tileset.tiles[2][this.id]; }
+//   // set bottomLeft(x: number) { this.tileset.tileset.tiles[2][this.id] = x; }
 
-  // get bottomRight(): number { return this.tileset.tileset.tiles[3][this.id]; }
-  // set bottomRight(x: number) { this.tileset.tileset.tiles[3][this.id] = x; }
+//   // get bottomRight(): number { return this.tileset.tileset.tiles[3][this.id]; }
+//   // set bottomRight(x: number) { this.tileset.tileset.tiles[3][this.id] = x; }
 
-  // TODO - getters?
+//   // TODO - getters?
 
-  get tiles(): readonly number[] {
-    return [0, 1, 2, 3].map(i => this.tileset.tiles[i][this.id]);
-  }
-  setTiles(tiles: ReadonlyArray<number|undefined>): this {
-    for (let i = 0; i < 4; i++) {
-      const tile = tiles[i];
-      if (tile != null) this.tileset.tiles[i][this.id] = tile;
-    }
-    return this;
-  }
+//   get tiles(): readonly number[] {
+//     return [0, 1, 2, 3].map(i => this.tileset.tiles[i][this.id]);
+//   }
+//   setTiles(tiles: ReadonlyArray<number|undefined>): this {
+//     for (let i = 0; i < 4; i++) {
+//       const tile = tiles[i];
+//       if (tile != null) this.tileset.tiles[i][this.id] = tile;
+//     }
+//     return this;
+//   }
 
-  get alternative(): number|null {
-    const alt = this.id < 0x20 ? this.tileset.alternates[this.id] : this.id;
-    return alt !== this.id ? alt : null;
-  }
-  setAlternative(tile: number|null): this {
-    if (this.id >= 0x20) return this;
-    this.tileset.alternates[this.id] = tile != null ? tile : this.id;
-    return this;
-  }
+//   get alternative(): number|null {
+//     const alt = this.id < 0x20 ? this.tileset.alternates[this.id] : this.id;
+//     return alt !== this.id ? alt : null;
+//   }
+//   setAlternative(tile: number|null): this {
+//     if (this.id >= 0x20) return this;
+//     this.tileset.alternates[this.id] = tile != null ? tile : this.id;
+//     return this;
+//   }
 
-  get attrs(): number {
-    return this.tileset.attrs[this.id];
-  }
-  setAttrs(attrs: number): this {
-    this.tileset.attrs[this.id] = attrs;
-    return this;
-  }
+//   get attrs(): number {
+//     return this.tileset.attrs[this.id];
+//   }
+//   setAttrs(attrs: number): this {
+//     this.tileset.attrs[this.id] = attrs;
+//     return this;
+//   }
 
-  get effects(): number {
-    return this.tileset.effects().effects[this.id];
-  }
-  setEffects(effects: number): this {
-    this.tileset.effects().effects[this.id] = effects;
-    return this;
-  }
+//   get effects(): number {
+//     return this.tileset.effects().effects[this.id];
+//   }
+//   setEffects(effects: number): this {
+//     this.tileset.effects().effects[this.id] = effects;
+//     return this;
+//   }
 
-  copyFrom(other: number): this {
-    const that = new Metatile(this.tileset, other);
-    this.setTiles(that.tiles);
-    this.setAlternative(that.alternative);
-    this.setAttrs(that.attrs);
-    this.setEffects(that.effects);
-    return this;
-  }
-}
+//   copyFrom(other: number): this {
+//     const that = new Metatile(this.tileset, other);
+//     this.copiedFrom = other;
+//     this.setTiles(that.tiles);
+//     if ((this.id | that.id) < 0x20) {
+//       this.setAlternative(that.alternative);
+//     }
+//     this.setAttrs(that.attrs);
+//     this.setEffects(that.effects);
+//     return this;
+//   }
 
-interface MetatilesetData {
-  id: number;
-  patterns?: readonly [number, number];
-  animated?: readonly number[];
-}
+//   replaceIn(...screens: Metascreen[]): this {
+//     if (this.copiedFrom < 0) throw new Error(`Must copyFrom first.`);
+//     for (const screen of screens) {
+//       screen.replace(this.copiedFrom, this.id);
+//     }
+//     return this;
+//   }
+// }
 
-// TODO - Tilesets class extending SparseArray<Tileset>
-//      - some Tileset are MultiTileset with separate semantic tilesets inside?
-const TILESETS = {
-  grass: { // has various features: windmill, fortress, flowers
-    id: 0x80,
-    // tiles: { // } as Filter<{grass:true}>,
-    //   mountain: 0x00,
-    // },
-    patterns: [0x00, 0x0c],
-  },
-  town: {
-    id: 0x84,
-  },
-  cave: { // supports water, but has ugly wall
-    id: 0x88,
-  },
-  pyramid: {
-    id: 0x8c,
-  },
-  river: {
-    id: 0x90,
-    patterns: [0x14, 0x00], // TODO - animated clobbers 2nd entry anyway
-    animated: [0, 1],
-  },
-  sea: {
-    id: 0x94, // primarily tiles 80..ff
-  },
-  mountain: { // parts with "features" like entrancways and houses
-    id: 0x94, // primarily tiles 0..5f
-  },
-  shrine: {
-    id: 0x98, // NOTE: free space from 90..ff
-  },
-  desert: {
-    id: 0x9c, // primarily tiles 50..ff
-  },
-  mountainRiver: { // gives up other features to allow crossable rivers
-    id: 0x9c, // primarily tiles 00..4f
-  },
-  swamp: {
-    id: 0x1a0, // tiles a0..ff
-  },
-  house: {
-    id: 0xa0, // tiles 00..9f
-  },
-  fortress: {
-    id: 0xa4,
-  },
-  goa1: {
-    id: 0xa4,
-  },
-  iceCave: { // no water, but prettier ice wall - same behavior as 88
-    id: 0xa8,
-  },
-  tower: {
-    id: 0xac,
-  },
-} as const;
-const indexedTilesets: {[name: string]: MetatilesetData} = TILESETS as any;
+// interface MetatilesetData {
+//   id: number;
+//   patterns?: readonly [number, number];
+//   animated?: readonly number[];
+// }
 
-assertType<{[name in keyof typeof TILESETS]: MetatilesetData}>(TILESETS);
+// // TODO - Tilesets class extending SparseArray<Tileset>
+// //      - some Tileset are MultiTileset with separate semantic tilesets inside?
+// const TILESETS = {
+//   grass: { // has various features: windmill, fortress, flowers
+//     id: 0x80,
+//     // tiles: { // } as Filter<{grass:true}>,
+//     //   mountain: 0x00,
+//     // },
+//     patterns: [0x00, 0x0c],
+//   },
+//   town: {
+//     id: 0x84,
+//   },
+//   cave: { // supports water, but has ugly wall
+//     id: 0x88,
+//   },
+//   pyramid: {
+//     id: 0x8c,
+//   },
+//   river: {
+//     id: 0x90,
+//     patterns: [0x14, 0x00], // TODO - animated clobbers 2nd entry anyway
+//     animated: [0, 1],
+//   },
+//   sea: {
+//     id: 0x94, // primarily tiles 80..ff
+//   },
+//   mountain: { // parts with "features" like entrancways and houses
+//     id: 0x94, // primarily tiles 0..5f
+//   },
+//   shrine: {
+//     id: 0x98, // NOTE: free space from 90..ff
+//   },
+//   desert: {
+//     id: 0x9c, // primarily tiles 50..ff
+//   },
+//   mountainRiver: { // gives up other features to allow crossable rivers
+//     id: 0x9c, // primarily tiles 00..4f
+//   },
+//   swamp: {
+//     id: 0x1a0, // tiles a0..ff
+//   },
+//   house: {
+//     id: 0xa0, // tiles 00..9f
+//   },
+//   fortress: {
+//     id: 0xa4,
+//   },
+//   goa1: {
+//     id: 0xa4,
+//   },
+//   iceCave: { // no water, but prettier ice wall - same behavior as 88
+//     id: 0xa8,
+//   },
+//   tower: {
+//     id: 0xac,
+//   },
+// } as const;
+// const indexedTilesets: {[name: string]: MetatilesetData} = TILESETS as any;
+
+// assertType<{[name in keyof typeof TILESETS]: MetatilesetData}>(TILESETS);
 
 // NOTE: This could automatically convert the above names into
 // properties on exactly the correct tilesets, though we likely
@@ -421,4 +420,4 @@ function r(a: number, b: number): readonly number[] {
   return new Array(b - a).fill(0).map((_x, i) => i + a);
 }
 
-const [] = [TERRAIN_BY_PALETTE, ALLOWED_PALETTES, TILESETS];
+const [] = [TERRAIN_BY_PALETTE, ALLOWED_PALETTES];

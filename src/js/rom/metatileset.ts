@@ -82,7 +82,8 @@ export class Metatileset {
   }
 
   getTile(id: number): Metatile {
-    throw new Error('unimplemented');
+    // TODO - does this rather belong in tileset.ts?
+    return new Metatile(this.tileset, id);
   }
 
   // passage(tileId: number, tileEffects = this.effects()): Terrain {
@@ -106,6 +107,7 @@ export class Metatileset {
 }
 
 export class Metatile {
+  private copiedFrom = -1;
   constructor(readonly tileset: Tileset, readonly id: number) {}
 
   // get topLeft(): number { return this.tileset.tileset.tiles[0][this.id]; }
@@ -159,12 +161,23 @@ export class Metatile {
     return this;
   }
 
-  copyFrom(other: number): this {
+  copyFrom(other: number, ...screens: Metascreen[]): this {
     const that = new Metatile(this.tileset, other);
+    this.copiedFrom = other;
     this.setTiles(that.tiles);
-    this.setAlternative(that.alternative);
+    if ((this.id | that.id) < 0x20) {
+      this.setAlternative(that.alternative);
+    }
     this.setAttrs(that.attrs);
     this.setEffects(that.effects);
+    return this;
+  }
+
+  replaceIn(...screens: Metascreen[]): this {
+    if (this.copiedFrom < 0) throw new Error(`Must copyFrom first.`);
+    for (const screen of screens) {
+      screen.replace(this.copiedFrom, this.id);
+    }
     return this;
   }
 }

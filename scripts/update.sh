@@ -34,7 +34,7 @@ done
 
 # Pick a default rom if present
 if [ -z "$rom" ]; then
-  rom=$(crc32 *.nes | grep ^1bd39032)
+  rom=$(crc32 *.nes | grep ^1bd39032 | head -1)
   rom=$(echo ${rom#1bd39032})
 fi
 

@@ -1634,18 +1634,20 @@ QuickChangeSword:
     lda #$00
     sta $06c0 ; zero out the current charge
     jmp PostInventoryMenu
-CheckQuickChange:
+CheckSelectShortcuts:
   lda $4b
-  cmp #$10   ; newly pressed start?
-  bne +
+  cmp #$40   ; newly pressed B?
+  beq QuickChangeSword  ; yes -> change sword
+- rts
+CheckStartShortcuts:
+  lda $4b
+  cmp #$20   ; newly pressed select?
+  bne -
    lda $48   ; activated, so zero out start/select from $48
    and #$cf
    sta $48
    jmp $cbd3 ; yes -> wild warp
-+ cmp #$40   ; newly pressed B?
-  beq QuickChangeSword  ; yes -> change sword
-  rts
-
+  
 
 .assert < $3fe00 ; end of free space started at 3f9ba
 
@@ -1844,8 +1846,12 @@ LoadNpcDataForLocation_Skip:
 .org $3cbc1
   lda $43
   and #$20   ; select pressed?
-  beq $cbeb ; no -> rts
-  jmp CheckQuickChange
+  beq +
+   jsr CheckSelectShortcuts
++ lda $43
+  and #$10   ; start pressed?
+  beq $cbeb  ; no -> rts
+   jmp CheckStartShortcuts
 .assert < $3cbd3
 .endif
 

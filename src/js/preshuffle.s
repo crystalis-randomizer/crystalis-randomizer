@@ -470,57 +470,7 @@ ComputeVampireAnimationStart:
 +  lda #$ff
 ++ rts
 
-.ifdef _CTRL1_SHORTCUTS
--- rts
-HandleStart:
-  lda $43
-  cmp #$d0    ; A+B+Start (exactly)
-  bne +
-   ;; wild warp
-   pla
-   pla
-   jmp $cbd3  ; wild warp
-;+ and #$04    ; check for Down (may be present _with_ B)
-;  beq +
-;   ;; decrease power level
-;   lda $0719  ; max charge level
-;   cmp #$02   ; if it's bracelet, take it down one
-;   bne --     ; rts
-;   dec $0719
-;   rts
-+ lda $43
-  and #$40    ; BUTTON_B
-  beq NormalDisplayStartMenu
-   ;; quick-change sword
-   ldx $0711
-   cpx #$05
-   beq --     ; rts if crystalis
--   inx
-    cpx #$05
-    bne +
-     ldx #$00
-+   cpx $0711
-     beq --   ; rts if no other sword found
-    cpx #$00
-     beq -
-    lda $642f,x
-     bmi -    ; don't own sword
-    ;; Found a new sword - equip it
-    sta $6428 ; currently equipped index
-    stx $0711 ; equipped sword
-    lda #$00
-    sta $06c0 ; zero out the current charge
-    jmp PostInventoryMenu
-NormalDisplayStartMenu:
-  jmp $bc40   ; normal DisplayStartMenu
-.endif
-
 .assert < $20000
-
-.ifdef _CTRL1_SHORTCUTS
-.org $3cba8  ; divert start menu display to do other stuff instead
-  jsr HandleStart
-.endif
 
 .bank $20000 $8000:$2000
 
@@ -1167,6 +1117,14 @@ CheckSwordCollisionPlane:
 .endif
 
 
+.ifdef _CTRL1_SHORTCUTS
+.org $3cb90
+  lda $4a
+.org $3cbb4
+  lda $4a
+.endif
+
+
 .ifdef _DISABLE_WILD_WARP
 .org $3cbc7
   rts
@@ -1625,6 +1583,70 @@ GameModeJump_05_ItemTrigger:
 + rts
 ++ pla
   rts
+
+;;; Rather than reading ctrl2, we instead just read ctrl1 and
+;;; then use $4a to store buttons released.
+;;; $48 is buttons that have been pressed outside a menu.
+;;; When a shortcut activates, we need to remove "select" from it.
+RememberLastButtons:
+  lda $43
+  sta $4a
+  jmp $ff17 ; ReadControllerX
+RegisterButtonRelease:
+  ;; any newly-pressed buttons go in $48
+  lda $4b
+  eor $48
+  sta $48
+  ;; any buttons in $48 not in $43 go in $4a
+  lda $43
+  eor #$ff
+  and $48
+  sta $4a
+  ;; any unpressed buttons are removed from $48
+  lda $43
+  and $48
+  sta $48
+  ;; start/select removed from $43...?
+  ;;lda $43
+  ;;and #$cf
+  ;;sta $43
+-- rts
+QuickChangeSword:
+   lda $48
+   and #$cf
+   sta $48   ; zero out pressed buttons
+   ldx $0711
+   cpx #$05
+   beq --     ; rts if crystalis
+-   inx
+    cpx #$05
+    bne +
+     ldx #$00
++   cpx $0711
+     beq --   ; rts if no other sword found
+    cpx #$00
+     beq -
+    lda $642f,x
+     bmi -    ; don't own sword
+    ;; Found a new sword - equip it
+    sta $6428 ; currently equipped index
+    stx $0711 ; equipped sword
+    lda #$00
+    sta $06c0 ; zero out the current charge
+    jmp PostInventoryMenu
+CheckQuickChange:
+  lda $4b
+  cmp #$10   ; newly pressed start?
+  bne +
+   lda $48   ; activated, so zero out start/select from $48
+   and #$cf
+   sta $48
+   jmp $cbd3 ; yes -> wild warp
++ cmp #$40   ; newly pressed B?
+  beq QuickChangeSword  ; yes -> change sword
+  rts
+
+
 .assert < $3fe00 ; end of free space started at 3f9ba
 
 .org $3e2ac ; normally loads object data for wall
@@ -1809,6 +1831,23 @@ CheckToRedisplayDifficulty:
 LoadNpcDataForLocation_Rts:
   rts
 LoadNpcDataForLocation_Skip:
+
+.ifdef _CTRL1_SHORTCUTS
+    ;; NOTE: we could save a bit of space by using relative jumps
+    ;; and inserting the code around $3fe70
+.org $3fe80
+  ldx #$00
+  jsr RememberLastButtons
+.org $3fecc
+  jmp RegisterButtonRelease
+
+.org $3cbc1
+  lda $43
+  and #$20   ; select pressed?
+  beq $cbeb ; no -> rts
+  jmp CheckQuickChange
+.assert < $3cbd3
+.endif
 
 ;;; TODO - quick select items
 ;; .org $3cb62

@@ -1,6 +1,8 @@
 import {Rom} from '../rom.js';
 //import {Screen} from './screen.js';
-import {initializer} from './util.js';
+import { initializer, seq} from './util.js';
+import {DefaultMap} from '../util.js';
+import {Metatileset, Metatilesets} from './metatileset.js';
 //import {SparseArray} from '../util.js';
 
 // TODO - make a separate Metascreens??? Then Screens can just be normal?
@@ -23,6 +25,131 @@ const $ = initializer<[MetascreenData], Metascreen>();
 //        include data about tiles for entrance and exits; then
 //        we teach Location to work with these.
 
+type StairType = 'stair:up' | 'stair:down';
+type EdgeType = 'edge:top' | 'edge:bottom' | 'edge:left' | 'edge:right';
+type ConnectionType =
+     StairType | EdgeType | 'cave' | 'door' | 'fortress' | 'other';
+
+export interface Connection {
+  readonly type: ConnectionType;
+  readonly dir: number;              // 0=up, 1=left, 2=down, 3=right
+  readonly entrance: number;         // pos YyXx
+  readonly exits: readonly number[]; // tile YX
+  // TODO - singleHeightEntrance - for dir=2 just subtract 0x20 ??
+  // TODO - opposite direction? waterfall cave is a right/down matchup...
+}
+
+/** @param tile position of lower-left metatile (e.g. 0x42 for 40_30). */
+function upStair(tile: number, width = 2): Connection {
+  // from map 04: entrance 40_30  => exits 32,33
+  // from map 19 (single-width): tile 68 => entrance 78_88, exit 68
+  const y = tile >>> 4;
+  const x = tile & 0xf;
+  if (width === 1) {
+    const entrance = ((y << 12) + 0x1800) | ((x << 4) + 0x0008);
+    return {
+      type: 'stair:down',
+      dir: 2,
+      entrance,
+      exits: [tile],
+    };
+  }
+  const entrance = y << 12 | (x + 1) << 4;
+  return {
+    type: 'stair:up',
+    dir: 0,
+    entrance,
+    exits: seq(width, i => tile - 0x10 + i),
+  };
+}
+
+/** @param tile position of upper-left metatile (e.g. 0xa2 for af_30). */
+function downStair(tile: number, width = 2): Connection {
+  // from map 05: entrance af_30  => exits b2,b3
+  // from map d4 (single-width): tile 4c => entrance 38_c8, exit 4c
+  const y = tile >>> 4;
+  const x = tile & 0xf;
+  if (width === 1) {
+    const entrance = ((y << 12) - 0x0800) | ((x << 4) + 0x0008);
+    return {
+      type: 'stair:down',
+      dir: 2,
+      entrance,
+      exits: [tile],
+    };
+  }
+  const entrance = y << 12 | 0x0f00 | (x + 1) << 4;
+  return {
+    type: 'stair:down',
+    dir: 2,
+    entrance,
+    exits: [seq(width, i => tile + 0x10 + i)],
+  };
+}
+
+function cave(tile: number, type = 'cave'): Connection {
+  return {...upStair(tile), type};
+}
+
+function door(tile: number, type = 'door'): Connection {
+  return {...upStair(tile, 1), type};
+}
+
+/** @param tile bottom-left metatile */
+function waterfallCave(tile: number): Connection {
+  const y = tile >>> 4;
+  const x = tile & 0xf;
+  return {
+    type: 'cave',
+    dir: 0,
+    entrance: y << 12 | 0x0f00 | x << 4,
+    exits: [tile - 0xf, tile + 1],
+  };
+}
+
+function topEdge(left = 7, width = 2): Connection {
+  return {
+    type: 'edge:top',
+    dir: 0,
+    entrance: 0x30_00 | (left + 1) << 4, // TODO - do single-height maps differ?
+    exits: seq(width, i => 0x20 | (i + left)),
+  };
+}
+
+function bottomEdge(left = 7, width = 2): Connection {
+  // TODO - maybe just make a separate set of numbers for single-height?
+  //  - the function call will still be correct.
+  return {
+    type: 'edge:bottom',
+    dir: 2,
+    entrance: 0xdf_00 | (left + 1) << 4, // NOTE - single-height maps differ!!
+    exits: seq(width, i => 0xe0 | (i + left)),
+  };
+}
+
+function leftEdge(top = 7, height = 2): Connection {
+  return {
+    type: 'edge:left',
+    dir: 1,
+    // entrance: 0x30_00 | (top + 1) << 4, // TODO - do single-height maps differ?
+    // exits: seq(height, i => 0x20 | (i + height)),
+  };
+}
+
+function rightEdge(top = 7, height = 2): Connection {
+  return {
+    type: 'edge:right',
+    dir: 1,
+    // entrance: 0x30_00 | (top + 1) << 4, // TODO - do single-height maps differ?
+    // exits: seq(height, i => 0x20 | (i + height)),
+  };
+}
+
+/** @param tile Top-left tile of transition (height 2) */
+function seamlessVertical(tile: number, width = 2): Connection {
+  throw new Error();
+}
+
 export class Metascreen {
   readonly screen?: number;
 
@@ -43,7 +170,10 @@ export class Metascreen {
 interface MetascreenData {
   id?: number;
   icon?: Icon;
-  tilesets?: unknown;
+  tilesets?: {[name in keyof Metatilesets]?: {
+    requires?: ScreenFix[],
+    type?: string, // for town?
+  }};
   generate?: unknown;
   migrated?: number;
 }
@@ -135,16 +265,50 @@ export enum ScreenFix {
 
 export class Metascreens { // extends Set<Metascreen> {
 
+  screens = new Set<Metascreen>();
+  fixes = new Set<ScreenFix>();
+  screensByFix = new DefaultMap<ScreenFix, Metascreen[]>(() => []);
+
   constructor(readonly rom: Rom) {
     //super();
     $.commit(this, (key: string, data: MetascreenData) => {
       const screen = new Metascreen(rom, data);
+      this.screens.add(screen);
+      for (const tilesetName in data.tilesets) {
+        const key = tilesetName as keyof Metatilesets;
+        const tilesetData = data.tilesets[key]!;
+        if (tilesetData.requires) {
+          for (const fix of tilesetData.requires) {
+            this.screensByFix.get(fix).push(screen);
+          }
+        } else {
+          (rom.metatilesets[key] as Metatileset).screens.add(screen)
+        }
+      }
       //this.add(screen);
       return screen;
     });
   }
 
-  registerFix(fix: ScreenFix) {}
+  registerFix(fix: ScreenFix) {
+    this.fixes.add(fix);
+    for (const screen of this.screensByFix.get(fix)) {
+      for (const tilesetName in screen.data.tilesets) {
+        const key = tilesetName as keyof Metatilesets;
+        const data = screen.data.tilesets[key];
+        if (!data || !data.requires) continue;
+        let match = true;
+        for (const require of data.requires) {
+          if (this.fixes.has(require)) continue;
+          match = false;
+          break;
+        }
+        if (match) {
+          (this.rom.metatilesets[key] as Metatileset).screens.add(screen);
+        }
+      }
+    }
+  }
 
   mountain = $({
     id: 0x00,
@@ -230,6 +394,7 @@ export class Metascreens { // extends Set<Metascreen> {
     //        any top half (bottom half plain), top edge can have any
     //        left-half (right-half mountain)
     tilesets: {grass: {}},
+    connections: [cave(0xa7, 'fortress')],
   });
   bendSE_longGrass = $({
     id: 0x09,
@@ -249,6 +414,7 @@ export class Metascreens { // extends Set<Metascreen> {
     // TODO - edge
     tilesets: {grass: {}, river: {}, desert: {},
                sea: {requires: [ScreenFix.SeaCaveEntrance]}},
+    connections: [cave(0x48), leftEdge(6)],
   });
   bendNE_grassRocks = $({
     id: 0x0b,
@@ -301,6 +467,7 @@ export class Metascreens { // extends Set<Metascreen> {
       | ▐█|`,
     tilesets: {grass: {}, river: {},
                desert: {requires: [ScreenFix.DesertRocks]}},
+    connections: [rightEdge(6)],
     // TODO - edge
   });
   boundaryN_trees = $({
@@ -319,6 +486,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |╞══|
       |│  |`,
     tilesets: {river: {}},
+    connections: [leftEdge(1)],
     // TODO - edge
   });
   slopeAbovePortoa = $({
@@ -345,6 +513,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |█▌ |`,
     tilesets: {grass: {}, river: {}, desert: {},
                sea: {requires: [ScreenFix.SeaCaveEntrance]}},
+    connections: [cave(0x89)],
     // TODO - flaggable?
   });
   exitN = $({
@@ -354,6 +523,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |▀ ▀|
       | ^ |`,
     tilesets: {grass: {}, river: {}, desert: {}}, // sea has no need for exits?
+    connections: [topEdge()],
     // TODO - edge
   });
   riverWE_woodenBridge = $({
@@ -363,7 +533,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |═║═|
       |   |`,
     tilesets: {river: {}},
-    // TODO - seamless transition????
+    connections: [seamlessVertical(0x77)],
   });
   riverBoundaryE_waterfall = $({
     id: 0x18,
@@ -382,6 +552,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {river: {},
                grass: {requires: [ScreenFix.GrassLongGrass]},
                desert: {requires: [ScreenFix.DesertLongGrass]}},
+    connections: [cave(0x58)],
   });
   exitW_southwest = $({
     id: 0x1a,
@@ -393,12 +564,14 @@ export class Metascreens { // extends Set<Metascreen> {
                desert: {requires: [ScreenFix.DesertRocks]},
                // Sea has no need for this screen?  Go to some other beach?
                sea: {requires: [ScreenFix.SeaRocks]}},
+    connections: [leftEdge(0xb)],
   });
   nadare = $({
     id: 0x1b,
     //icon: '?',
     //migrated: 0x2000,
     tilesets: {house: {}},
+    connections: [bottomEdge(), door(0x23), door(0x25), door(0x2a)],
   });
   townExitW = $({
     id: 0x1c,
@@ -407,6 +580,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |▀ ^|
       |█▌ |`,
     tilesets: {grass: {}, river: {}},
+    connections: [leftEdge(8)],
   });
   shortGrassS = $({
     id: 0x1d,
@@ -427,11 +601,13 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {grass: {}, river: {},
                desert: {requires: [ScreenFix.DesertRocks,
                                    ScreenFix.DesertTownEntrance]}},
+    connections: [bottomEdge()],
   });
   swanGate = $({
     id: 0x1f,
     //icon: '?',
     tilesets: {town: {}},
+    connections: [leftEdge(3), rightEdge(9)],
   }); 
 
   riverBranchNSE = $({
@@ -478,6 +654,7 @@ export class Metascreens { // extends Set<Metascreen> {
     id: 0x25,
     //icon: '?', // Should never share a map??? - or just make something
     tilesets: {grass: {}},
+    connections: [door(0x68), bottomEdge()],
   });
   bendNW_trees = $({
     id: 0x26,
@@ -525,6 +702,7 @@ export class Metascreens { // extends Set<Metascreen> {
       | ║ |
       |▙║▟|`,
     tilesets: {grass: {}, river: {}},
+    connections: [seamlessVertical(0x77)],
   });
   exitS_cave = $({
     id: 0x2b,
@@ -535,6 +713,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {grass: {}, river: {}, desert: {},
                // Not particularly useful since no connector on south end?
                sea: {requires: [ScreenFix.SeaCaveEntrance]}},
+    connections: [cave(0x67), bottomEdge()]
   });
   outsideWindmill = $({
     id: 0x2c,
@@ -544,6 +723,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |█ █|`,
     tilesets: {grass: {}},
     // TODO - annotate 3 exits, spawn for windmill blade
+    connections: [cave(0x63), bottomEdge(), door(0x89), door(0x8c)],
   });
   townExitW_cave = $({ // outside leaf (TODO - consider just deleting?)
     id: 0x2d,
@@ -552,6 +732,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |▄▄█|
       |███|`,
     tilesets: {grass: {}}, // cave entrance breaks river and others...
+    connections: [cave(0x4a), leftEdge(5)],
   });
   riverNS = $({
     id: 0x2e,
@@ -585,6 +766,9 @@ export class Metascreens { // extends Set<Metascreen> {
       |▘║▀|
       | ║ |`,
     tilesets: {river: {}},
+    // TODO - flag version without entrance?
+    //  - will need a tileset fix
+    connections: [waterfallCave(0x75)],
   });
   open_trees = $({
     id: 0x32,
@@ -606,6 +790,7 @@ export class Metascreens { // extends Set<Metascreen> {
                // NOTE: These fixes are not likely to ever land.
                desert: {requires: [ScreenFix.DesertMarsh]},
                sea: {requires: [ScreenFix.SeaMarsh]}},
+    connections: [bottomEdge()],
   });
   bendNW = $({
     id: 0x34,
@@ -655,6 +840,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |─┬─|
       | ┊ |`,
     tilesets: {tower: {}},
+    // TODO - connections
   });
   towerDynaDoor = $({
     id: 0x3a,
@@ -663,6 +849,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |└┬┘|
       | ┊ |`,
     tilesets: {tower: {}},
+    // TODO - connections
   });
   towerLongStairs = $({
     id: 0x3b,
@@ -671,14 +858,17 @@ export class Metascreens { // extends Set<Metascreen> {
       | ┊ |
       | ┊ |`,
     tilesets: {tower: {}},
+    // TODO - connections
   });
   towerMesiaRoom = $({
     id: 0x3c,
     tilesets: {tower: {}},
+    // TODO - connections
   });
   towerTeleporter = $({
     id: 0x3d,
     tilesets: {tower: {}},
+    // TODO - connections
   });
   caveAbovePortoa = $({
     id: 0x3e,
@@ -687,6 +877,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |█∩█|
       |█↓█|`,
     tilesets: {river: {}},
+    connections: [cave(0x66)],
   });
   cornerNE_flowers = $({
     id: 0x3f,
@@ -722,30 +913,39 @@ export class Metascreens { // extends Set<Metascreen> {
       |─┴─|
       |   |`,
     tilesets: {tower: {}},
+    // TODO - connections
   });
   house_bedroom = $({
     id: 0x43,
     tilesets: {house: {}},
+    connections: [bottomEdge()],
   });
   shed = $({
     id: 0x44,
     tilesets: {house: {}},
+    connections: [bottomEdge()],
   });
+  // TODO - separate metascreen for shedWithHiddenDoor
   tavern = $({
     id: 0x45,
     tilesets: {house: {}},
+    connections: [bottomEdge()],
   });
   house_twoBeds = $({
     id: 0x46,
     tilesets: {house: {}},
+    connections: [bottomEdge()],
   });
   throneRoom_stairs = $({
     id: 0x47,
     tilesets: {house: {}},
+    // TODO - need to fix the single-width stair!
+    connections: [bottomEdge(), downStair(0x4c, 1)],
   });
   house_ruinedUpstairs = $({
     id: 0x48,
     tilesets: {house: {}},
+    connections: [bottomEdge(), downStair(0x9c, 1)],
   });
   house_ruinedDownstairs = $({
     id: 0x49,
@@ -1821,7 +2021,9 @@ export class Metascreens { // extends Set<Metascreen> {
       |▗▄▖|
       |▜∩▛|
       | ╳ |`,
-    tilesets: {desert: {}, sea: {tiles: [0x0a]}},
+    tilesets: {desert: {},
+               // TODO - probably need to pull this out since flags differ
+               sea: {requires: [ScreenFix.SeaCaveEntrance]}},
   });
   oasisCave = $({
     id: 0xcf,

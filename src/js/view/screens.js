@@ -73,6 +73,14 @@ const run = async () => {
       }
     }
   }
+
+  document.body.addEventListener('mousemove', e => {
+    if (e.target.tagName.toLowerCase() !== 'img') return;
+    const x = e.offsetX >>> 4 & 0xf;
+    const y = e.offsetY >>> 4 & 0xf;
+    document.getElementById('coord').textContent = y.toString(16) + x.toString(16);
+    
+  });
 };
 
 const hex = (x) => x.toString(16).padStart(2, 0);

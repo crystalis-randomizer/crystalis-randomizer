@@ -122,6 +122,7 @@ export async function shuffle(rom: Uint8Array,
     _SAHARA_RABBITS_REQUIRE_TELEPATHY: flags.saharaRabbitsRequireTelepathy(),
     _SIMPLIFY_INVISIBLE_CHESTS: true,
     _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
+    _TRAINER: flags.trainer(),
     _UNIDENTIFIED_ITEMS: flags.unidentifiedItems(),
   };
 
@@ -227,6 +228,28 @@ export async function shuffle(rom: Uint8Array,
 
   // NOTE: This needs to happen BEFORE postshuffle
   if (flags.buffDyna()) buffDyna(parsed, flags); // TODO - conditional
+
+  if (flags.trainer()) {
+    parsed.wildWarp.locations = [
+      0x00, // mezame
+      0x0a, // vampire
+      0x1a, // swamp/insect
+      0x35, // summit cave
+      0x48, // fog lamp
+      0x6c, // vampire 2
+      0x6e, // sabera 1
+      0x8c, // shyron
+      0xaa, // behind kelbesqye 2
+      0xac, // sabera 2
+      0xb0, // behind mado 2
+      0xb6, // karmine
+      0x9f, // draygon 1
+      0xa6, // draygon 2
+      0x58, // tower
+      0x5c, // tower outside mesia
+    ];
+  }
+
   await parsed.writeData();
   buffDyna(parsed, flags); // TODO - conditional
   const crc = await postParsedShuffle(rom, random, seed, flags, asm, assemble);

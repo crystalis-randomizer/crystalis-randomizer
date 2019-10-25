@@ -185,6 +185,9 @@ export class FlagSet {
   decreaseEnemyDamage() {
     return this.check('Ed');
   }
+  trainer() {
+    return this.check('Dt');
+  }
   neverDie() {
     return this.check('Di');
   }

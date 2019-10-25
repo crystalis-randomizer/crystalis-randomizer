@@ -16,8 +16,26 @@ export const DEBUG_MODE_FLAGS: FlagSection = {
       seed generated without this flag turned on.`
     },
     {
+      flag: 'Dt',
+      name: 'Trainer mode',
+      text: `Installs a trainer for practicing certain parts of the game.
+      Accepts certain button combinations:<ul>
+       <li>Start+B+Up: get all swords, basic armors, worn items, magics,
+           and bow of truth, maximum cash, activate all warp points, and
+           trigger the Shyron massacre
+       <li>Start+B+Down: get a full set of consumable items
+       <li>Start+B+Left: get all balls
+       <li>Start+B+Right: get all bracelets
+       <li>Start+Up: increase player level
+       <li>Start+Down: increase scaling level
+       <li>Start+Left: get all advanced armors
+       <li>Start+Right: get all advanced shields
+      </ul>
+      Additionally, wild warp is reconfigured to go to all the bosses.`,
+    },
+    {
       flag: 'Di',
       name: 'Player never dies',
-    }
+    },
   ],  // TODO - quick itemget/teleport options?
 };

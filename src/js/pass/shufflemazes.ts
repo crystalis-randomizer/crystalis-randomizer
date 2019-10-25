@@ -6,6 +6,11 @@ import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 
 export function shuffleMazes(rom: Rom, random: Random) {
+  // TODO - consolidate free flags?  Find a list of what's used...
+  // [...new Set(rom.locations.flatMap(l => l.flags.map(f => f.flag)
+  //           .filter(f => f != 0x200).map(x=>x.toString(16))))].sort()
+  // Also map over triggers, dialogs - find what's set/cleared
+  // Also 2f0 is co-opted as an "always true" trigger.
   shufflePyramid(rom, random);
   shuffleSwamp(rom, random);
   shuffleGoa1(rom, random);

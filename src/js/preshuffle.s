@@ -1178,6 +1178,9 @@ GrantItemInRegisterA:
   jmp FinishTriggerSquare
 .assert $3d552
 
+;; Change trigger action 4 to do any "start game" actions.
+.org $3d56b
+  .word (InitialAction)
 
 .org $3d91f
   jsr PostInventoryMenu
@@ -1654,10 +1657,17 @@ CheckStartShortcuts:
    sta $48
    jmp $cbd3 ; yes -> wild warp
 
+;;; Defines code to run on game start
+InitialAction:
+.ifdef _TRAINER
+  jsr TrainerStart
+.endif
+  rts
+
+
 .ifdef _TRAINER
 ;;; Trainer mode: provides a number of controller shortcuts
 ;;; to do a wide variety of things:
-;;;   Start+B+Up -> all swords, magics, armor, accessories, bow
 ;;;   Start+B+Left -> all balls
 ;;;   Start+B+Right -> all bracelets
 ;;;   Start+B+Down -> some consumables
@@ -1673,20 +1683,7 @@ CheckTrainerShortcuts:
     lda $4b   ; Newly pressed?
     cmp #$08  ; Up
     bne +
-     ;; Get all swords, armor, magic, bow of truth, max money
-     lda #$ff  ; max gold
-     sta $0702
-     sta $0703
-     lda $6484 ; shyron massacre
-     eor #$80
-     sta $6484
-     lda #$ff  ; activate all warp points
-     sta $64de
-     sta $64df
-     lda #$00
-     jsr TrainerGetItems
-     lda #$01
-     jmp TrainerGetItems
+     ;; TODO - something here?
 +   cmp #$04  ; Down
     bne +
      lda #$04
@@ -1724,6 +1721,32 @@ CheckTrainerShortcuts:
    bne -
    lda #$06
    jmp TrainerGetItems
+
+TrainerStart:
+  ;; Get all swords, armor, magic, bow of truth, max money
+  lda #$ff  ; max gold
+  sta $0702
+  sta $0703
+  lda $6484 ; shyron massacre
+  eor #$80
+  sta $6484
+  lda #$ff  ; activate all warp points
+  sta $64de
+  sta $64df
+  lda #$00
+  jsr TrainerGetItems
+  lda #$01
+  jsr TrainerGetItems
+  lda #$04
+  jsr TrainerGetItems
+  lda $6e ; NOTE: could just jmp $3d276 ?? but less hygeinic
+  pha
+   lda #$1a
+   jsr $c418 ; bank switch 8k 8000
+   lda #$01
+   jsr $8e46 ; display number internal
+  pla
+  jmp $c418
 
 TrainerData:
   .word (TrainerData_Swords)      ; 0 swords, armors, shields

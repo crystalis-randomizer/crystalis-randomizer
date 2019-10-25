@@ -19,19 +19,20 @@ export const DEBUG_MODE_FLAGS: FlagSection = {
       flag: 'Dt',
       name: 'Trainer mode',
       text: `Installs a trainer for practicing certain parts of the game.
-      Accepts certain button combinations:<ul>
-       <li>Start+B+Up: get all swords, basic armors, worn items, magics,
-           and bow of truth, maximum cash, activate all warp points, and
-           trigger the Shyron massacre
-       <li>Start+B+Down: get a full set of consumable items
-       <li>Start+B+Left: get all balls
-       <li>Start+B+Right: get all bracelets
+      At the start of the game, the player will have all swords, basic armors
+      and shields, all worn items and magics, a selection of consumables,
+      bow of truth, maximum cash, all warp points activated, and the Shyron
+      massacre will have been triggered.  Wild warp is reconfigured to provide
+      easy access to all bosses.  Additionally, the following button
+      combinations are recognized:<ul>
        <li>Start+Up: increase player level
        <li>Start+Down: increase scaling level
        <li>Start+Left: get all advanced armors
        <li>Start+Right: get all advanced shields
-      </ul>
-      Additionally, wild warp is reconfigured to go to all the bosses.`,
+       <li>Start+B+Down: get a full set of consumable items
+       <li>Start+B+Left: get all balls
+       <li>Start+B+Right: get all bracelets
+      </ul>`,
     },
     {
       flag: 'Di',

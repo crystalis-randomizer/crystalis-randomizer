@@ -7,7 +7,7 @@ import {FetchReader} from './fetchreader.js';
 import {FlagSet} from './flagset.js';
 import {AssumedFill} from './graph/shuffle.js';
 import {World} from './graph/world.js';
-import {deterministic} from './pass/deterministic.js';
+import {deterministic, deterministicPreParse} from './pass/deterministic.js';
 import {fixDialog} from './pass/fixdialog.js';
 import {shuffleMazes} from './pass/shufflemazes.js';
 import {shufflePalettes} from './pass/shufflepalettes.js';
@@ -132,6 +132,8 @@ export async function shuffle(rom: Uint8Array,
     asm.patchRom(rom);
   }
 
+  deterministicPreParse(rom.subarray(0x10)); // TODO - trainer...
+
   const flagFile =
       Object.keys(defines)
           .filter(d => defines[d]).map(d => `define ${d} 1\n`).join('');
@@ -139,9 +141,6 @@ export async function shuffle(rom: Uint8Array,
   await assemble('preshuffle.s');
 
   const random = new Random(newSeed);
-
-  // Parse the rom and apply other patches - note: must have shuffled
-  // the depgraph FIRST!
   const parsed = new Rom(rom);
   if (typeof window == 'object') (window as any).rom = parsed;
   parsed.spoiler = new Spoiler(parsed);
@@ -236,7 +235,7 @@ export async function shuffle(rom: Uint8Array,
       0x1a, // swamp/insect
       0x35, // summit cave
       0x48, // fog lamp
-      0x6c, // vampire 2
+      0x6d, // vampire 2
       0x6e, // sabera 1
       0x8c, // shyron
       0xaa, // behind kelbesqye 2

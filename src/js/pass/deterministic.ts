@@ -3,11 +3,26 @@
 import {FlagSet} from '../flagset.js';
 import {Rom} from '../rom.js';
 import {Entrance, Exit, Flag, Location, Spawn} from '../rom/location.js';
+import {MessageId} from '../rom/messageid.js';
 import {GlobalDialog, LocalDialog} from '../rom/npc.js';
 import {ShopType} from '../rom/shop.js';
 import {hex} from '../rom/util.js';
 
-export function deterministic(rom: Rom, flags: FlagSet) {
+export function deterministicPreParse(prg: Uint8Array): void {
+  // Remove unused item/trigger actions
+  prg[0x1e06b] &= 7; // medical herb normal usage => action 05 to action 00
+  prg[0x1e06f] &= 7; // magic ring itemuse[0] => action 05 to action 00
+  prg[0x1e073] &= 7; // fruit of lime itemuse[0] => action 05 to action 00
+  prg[0x1e077] &= 7; // antidote itemuse[0] => action 05 to action 00
+  prg[0x1e07b] &= 7; // opel statue itemuse[0] => action 05 to action 00
+  prg[0x1e084] &= 7; // warp boots itemuse[0] => action 04 to action 00
+  prg[0x1e09b] &= 7; // windmill key itemuse[1] => action 05 to action 00
+  prg[0x1e0b9] &= 7; // glowing lamp itemuse[0] => action 05 to action 00
+}
+
+export function deterministic(rom: Rom, flags: FlagSet): void {
+
+  addMezameTrigger(rom);
 
   fixCoinSprites(rom);
   fixMimics(rom);
@@ -42,6 +57,17 @@ export function deterministic(rom: Rom, flags: FlagSet) {
   fixReverseWalls(rom);
   if (flags.chargeShotsOnly()) disableStabs(rom);
   if (flags.orbsOptional()) orbsOptional(rom);
+}
+
+// Adds a trigger action to mezame.  Use 87 leftover from rescuing zebu.
+function addMezameTrigger(rom: Rom): void {
+  const trigger = rom.trigger(0x87);
+  trigger.used = true;
+  trigger.conditions = [~0x2f0];
+  trigger.message = MessageId.of({action: 4});
+  trigger.flags = [0x2f0];
+  const mezame = rom.locations.mezameShrine;
+  mezame.spawns.push(Spawn.of({tile: 0x88, type: 2, id: 0x87}));
 }
 
 function fixCoinSprites(rom: Rom): void {

@@ -1640,8 +1640,8 @@ CheckSelectShortcuts:
   beq QuickChangeSword  ; yes -> change sword
 - rts
 CheckStartShortcuts:
-  lda $4b
-  cmp #$20   ; newly pressed select?
+  lda $43
+  cmp #$d0   ; A+B+start exactly?
   bne -
    lda $48   ; activated, so zero out start/select from $48
    and #$cf

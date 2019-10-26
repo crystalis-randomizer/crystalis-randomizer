@@ -27,11 +27,11 @@ export const DEBUG_MODE_FLAGS: FlagSection = {
       combinations are recognized:<ul>
        <li>Start+Up: increase player level
        <li>Start+Down: increase scaling level
-       <li>Start+Left: get all advanced armors
-       <li>Start+Right: get all advanced shields
+       <li>Start+Left: get all balls
+       <li>Start+Right: get all bracelets
        <li>Start+B+Down: get a full set of consumable items
-       <li>Start+B+Left: get all balls
-       <li>Start+B+Right: get all bracelets
+       <li>Start+B+Left: get all advanced armors
+       <li>Start+B+Right: get all advanced shields
       </ul>`,
     },
     {

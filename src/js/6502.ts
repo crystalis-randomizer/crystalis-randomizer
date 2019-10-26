@@ -585,7 +585,9 @@ class Opcode extends AbstractLine {
 
   expand(context: Context): void {
     this.arg[2] = context.map(this.arg[2], this.pc);
-    this.pcInternal = context.map(~this.pc);
+    try {
+      this.pcInternal = context.map(~this.pc);
+    } catch (err) { /* ok */ }
   }
 }
 

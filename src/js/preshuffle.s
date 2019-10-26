@@ -453,7 +453,6 @@ ItemGet_FindOpenSlotWithOverflow:
 .org $1fd27
   lda #$0e
 
-
 .org $1ff46
 ;;; TODO - consider grafting in our own debug mode here?
 .assert < $1ff97
@@ -1118,9 +1117,18 @@ CheckSwordCollisionPlane:
 
 
 .ifdef _CTRL1_SHORTCUTS
-.org $3cb90
+;;; These cases need to watch for button-up instead of button-down
+.org $1fde7 ; exit start menu
   lda $4a
-.org $3cbb4
+.org $20140 ; exit select menu
+  lda $4a
+.org $26749 ; title screen (start)
+  lda $4a
+.org $2674f ; title screen (select)
+  lda $4a
+.org $3cb90 ; enter start menu
+  lda $4a
+.org $3cbb4 ; enter select menu
   lda $4a
 .endif
 
@@ -1690,12 +1698,12 @@ CheckTrainerShortcuts:
      jmp TrainerGetItems
 +   cmp #$02  ; Left
     bne +
-     lda #$02
+     lda #$05
      jmp TrainerGetItems
 +   cmp #$01  ; Right
     beq +
 -    rts
-+   lda #$03
++   lda #$06
     jmp TrainerGetItems
     ;; ----
 ++ cmp #$10  ; Start only
@@ -1715,11 +1723,11 @@ CheckTrainerShortcuts:
     jmp TrainerIncreaseScaling
 +  cmp #$02  ; Left
    bne +
-    lda #$05
+    lda #$02
     jmp TrainerGetItems
 +  cmp #$01
    bne -
-   lda #$06
+   lda #$03
    jmp TrainerGetItems
 
 TrainerStart:
@@ -2010,6 +2018,12 @@ LoadNpcDataForLocation_Skip:
   ldx #$00
   jsr RememberLastButtons
 .org $3fecc
+  jmp RegisterButtonRelease
+
+.org $3fee0
+  ldx #$00
+  jsr RememberLastButtons
+.org $3ff13
   jmp RegisterButtonRelease
 
 .org $3cbc1

@@ -26823,7 +26823,7 @@ MainGameModeJump_0c
         $1fc40  xx xx:      xxx $xx
         $1fc42  xx:         xxx
         $1fc43  xx xx xx:   xxx FlushNametableDataWrite
-        $1fc46  xx xx xx:   xxx $3c169
+        $1fc46  xx xx xx:   xxx WaitForOAMDMA
         $1fc49  xx xx:      xxx ScreenMode
         $1fc4b  xx xx:      xxx #$xx
         $1fc4d  xx xx:      xxx ScreenMode
@@ -26834,33 +26834,33 @@ MainGameModeJump_0c
         $1fc57  xx xx:      xxx #$xx
         $1fc59  xx xx xx:   xxx $xxxx
         $1fc5c  xx xx:      xxx #$xx
-        $1fc5e  xx xx xx:   xxx $xxxx,x
-        $1fc61  xx:         xxx
-        $1fc62  xx xx:      xxx $xx
+-       $1fc5e  xx xx xx:    xxx $xxxx,x
+        $1fc61  xx:          xxx
+        $1fc62  xx xx:      xxx - ; $1fc5e
         $1fc64  xx xx:      xxx #$xx
-        $1fc66  xx xx:      xxx #$xx
-        $1fc68  xx xx xx:   xxx $xxxx,x
-        $1fc6b  xx xx:      xxx #$xx
-        $1fc6d  xx xx xx:   xxx $xxxx,x
-        $1fc70  xx:         xxx
-        $1fc71  xx:         xxx
-        $1fc72  xx xx:      xxx #$xx
-        $1fc74  xx:         xxx
-        $1fc75  xx xx:      xxx $xx
+-       $1fc66  xx xx:       xxx #$xx
+        $1fc68  xx xx xx:    xxx $xxxx,x
+        $1fc6b  xx xx:       xxx #$xx
+        $1fc6d  xx xx xx:    xxx $xxxx,x
+        $1fc70  xx:          xxx
+        $1fc71  xx:          xxx
+        $1fc72  xx xx:       xxx #$xx
+        $1fc74  xx:          xxx
+        $1fc75  xx xx:      xxx - ; $1fc66
         $1fc77  xx xx:      xxx #$xx
         $1fc79  xx xx xx:   xxx StageNametableWrite
         $1fc7c  xx xx:      xxx #$xx
         $1fc7e  xx xx xx:   xxx StageNametableWrite
         $1fc81  xx xx:      xxx #$xx
-        $1fc83  xx xx:      xxx #$xx
-        $1fc85  xx xx xx:   xxx $xxxx,x
-        $1fc88  xx xx xx:   xxx $xxxx,x
-        $1fc8b  xx xx:      xxx #$xx
-        $1fc8d  xx xx xx:   xxx $xxxx,x
-        $1fc90  xx xx:      xxx #$xx
-        $1fc92  xx xx xx:   xxx $xxxx,x
-        $1fc95  xx:         xxx
-        $1fc96  xx xx:      xxx $xx
+-       $1fc83  xx xx:       xxx #$xx
+        $1fc85  xx xx xx:    xxx $xxxx,x
+        $1fc88  xx xx xx:    xxx $xxxx,x
+        $1fc8b  xx xx:       xxx #$xx
+        $1fc8d  xx xx xx:    xxx $xxxx,x
+        $1fc90  xx xx:       xxx #$xx
+        $1fc92  xx xx xx:    xxx $xxxx,x
+        $1fc95  xx:          xxx
+        $1fc96  xx xx:      xxx - ; $1fc83
         $1fc98  xx xx:      xxx #$xx
         $1fc9a  xx xx xx:   xxx $xxxx
         $1fc9d  xx xx:      xxx #$xx
@@ -26875,12 +26875,12 @@ MainGameModeJump_0c
         $1fcb2  xx xx xx:   xxx StageNametableWrite
         $1fcb5  xx xx:      xxx #$xx
         $1fcb7  xx xx:      xxx #$xx
-        $1fcb9  xx xx xx:   xxx $xxxx,x
-        $1fcbc  xx:         xxx
-        $1fcbd  xx xx:      xxx $xx
+-       $1fcb9  xx xx xx:    xxx $xxxx,x
+        $1fcbc  xx:          xxx
+        $1fcbd  xx xx:      xxx - ; $1fcb9
         $1fcbf  xx xx:      xxx #$xx
         $1fcc1  xx xx xx:   xxx StageNametableWrite
-        $1fcc4  xx xx xx:   xxx $3c169
+        $1fcc4  xx xx xx:   xxx WaitForOAMDMA
         $1fcc7  xx xx xx:   xxx $1febf
         $1fcca  xx xx:      xxx $xx
         $1fccc  xx xx:      xxx #$xx
@@ -26900,20 +26900,20 @@ MainGameModeJump_0c
         $1fcea  xx xx:      xxx #$xx
         $1fcec  xx xx:      xxx $xx
         $1fcee  xx xx:      xxx #$xx
-        $1fcf0  xx xx xx:   xxx $1fd84,x
-        $1fcf3  xx xx xx:   xxx $xxxx,x
-        $1fcf6  xx:         xxx
-        $1fcf7  xx xx:      xxx $xx
+-       $1fcf0  xx xx xx:    xxx $1fd84,x
+        $1fcf3  xx xx xx:    xxx $xxxx,x
+        $1fcf6  xx:          xxx
+        $1fcf7  xx xx:      xxx - ; $1fcf0
         $1fcf9  xx xx xx:   xxx $1fe11
         $1fcfc  xx xx:      xxx #$xx
         $1fcfe  xx xx xx:   xxx StageNametableWrite
         $1fd01  xx xx:      xxx #$xx
-        $1fd03  xx xx xx:   xxx $xxxx,x
-        $1fd06  xx xx xx:   xxx $xxxx,x
-        $1fd09  xx xx xx:   xxx $xxxx,x
-        $1fd0c  xx xx xx:   xxx $xxxx,x
-        $1fd0f  xx:         xxx
-        $1fd10  xx xx:      xxx $xx
+-       $1fd03  xx xx xx:    xxx $xxxx,x
+        $1fd06  xx xx xx:    xxx $xxxx,x
+        $1fd09  xx xx xx:    xxx $xxxx,x
+        $1fd0c  xx xx xx:    xxx $xxxx,x
+        $1fd0f  xx:          xxx
+        $1fd10  xx xx:      xxx - ; $1fd03
         $1fd12  xx xx:      xxx #$xx
         $1fd14  xx xx xx:   xxx StageNametableWrite
         $1fd17  xx xx:      xxx #$xx
@@ -26978,7 +26978,7 @@ DataTable_1fd84
         $1fdd4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 MainGameModeJump_0d
--       $1fddb  xx xx xx:   xxx $3c169
+-       $1fddb  xx xx xx:   xxx WaitForOAMDMA
         $1fdde  xx xx xx:   xxx $1febf
         $1fde1  xx xx xx:   xxx ReadControllersWithRepeat
         $1fde4  xx xx xx:   xxx $1ff46
@@ -27063,49 +27063,49 @@ DataTable_1feb7
         $1febb              .word ($0cef0)
         $1febd              .word ($0d7f0)
 ;;; --------------------------------
-        $1febf  xx xx xx:   xxx $3c676
+        $1febf  xx xx xx:   xxx FlushNametableDataWrite
         $1fec2  xx xx xx:   xxx $xxxx
-        $1fec5  xx xx:      xxx $xx
+        $1fec5  xx xx:      xxx ++ ; $1ff0a
         $1fec7  xx xx:      xxx #$xx
         $1fec9  xx xx:      xxx #$xx
-        $1fecb  xx xx:      xxx $xx
-        $1fecd  xx xx:      xxx #$xx
-        $1fecf  xx xx:      xxx $xx
-        $1fed1  xx xx:      xxx #$xx
+        $1fecb  xx xx:      xxx + ; $1fed1
+        $1fecd  xx xx:       xxx #$xx
+        $1fecf  xx xx:       xxx +++ ; $1ff0e
++       $1fed1  xx xx:      xxx #$xx
         $1fed3  xx xx xx:   xxx $xxxx
         $1fed6  xx xx:      xxx #$xx
         $1fed8  xx xx xx:   xxx $xxxx
         $1fedb  xx xx:      xxx #$xx
         $1fedd  xx xx xx:   xxx $xxxx
-        $1fee0  xx xx:      xxx $xx
-        $1fee2  xx xx:      xxx #$xx
-        $1fee4  xx xx xx:   xxx $xxxx
+        $1fee0  xx xx:      xxx + ; $1fee4
+        $1fee2  xx xx:       xxx #$xx
++       $1fee4  xx xx xx:   xxx $xxxx
         $1fee7  xx xx:      xxx #$xx
         $1fee9  xx xx xx:   xxx $xxxx
-        $1feec  xx xx:      xxx $xx
-        $1feee  xx xx:      xxx #$xx
-        $1fef0  xx xx xx:   xxx $xxxx
+        $1feec  xx xx:      xxx + ; $1fef0
+        $1feee  xx xx:       xxx #$xx
++       $1fef0  xx xx xx:   xxx $xxxx
         $1fef3  xx xx:      xxx #$xx
         $1fef5  xx xx xx:   xxx $xxxx
         $1fef8  xx xx:      xxx #$xx
         $1fefa  xx xx xx:   xxx $xxxx
         $1fefd  xx xx xx:   xxx $xxxx
         $1ff00  xx xx xx:   xxx $xxxx
-        $1ff03  xx xx:      xxx #$xx
+--      $1ff03  xx xx:      xxx #$xx
         $1ff05  xx xx:      xxx $xx
         $1ff07  xx xx xx:   xxx $3c1ae
 ;;; --------------------------------
-        $1ff0a  xx:         xxx
+++      $1ff0a  xx:         xxx
         $1ff0b  xx xx:      xxx #$xx
         $1ff0d  xx:         xxx
-        $1ff0e  xx xx:      xxx #$xx
-        $1ff10  xx xx xx:   xxx $1ff1e,y
++++     $1ff0e  xx xx:      xxx #$xx
+-       $1ff10  xx xx xx:   xxx $1ff1e,y
         $1ff13  xx xx xx:   xxx $xxxx,x
         $1ff16  xx:         xxx
         $1ff17  xx:         xxx
         $1ff18  xx xx:      xxx #$xx
-        $1ff1a  xx xx:      xxx $xx
-        $1ff1c  xx xx:      xxx $xx
+        $1ff1a  xx xx:      xxx - ; $1ff10
+        $1ff1c  xx xx:      xxx -- ; $1ff03
 ;;; --------------------------------
 DataTable_1ff1e 
         $1ff1e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx

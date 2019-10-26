@@ -610,9 +610,8 @@ ReloadInventoryAfterLoad:
 
 .org $20a37
 FixBufferedItemUseTiming:
-  lda $43
-  and $c0
-  sta $4b
+  lda #$20
+  sta $46
   rts
         ;; FREE: 28 (not 35) bytes
 .assert < $20a5a
@@ -1129,8 +1128,9 @@ CheckSwordCollisionPlane:
 ;;; These cases need to watch for button-up instead of button-down
 .org $1fde7 ; exit start menu
   lda $4a
-.org $20140 ; exit select menu
-  lda $4a
+;;; NOTE: $20140 is exit select menu, but we actually want that
+;;; on button-down and we use the $46 blacklist to avoid bad
+;;; behavior.
 .org $26749 ; title screen (start)
   lda $4a
 .org $2674f ; title screen (select)
@@ -1610,20 +1610,25 @@ GameModeJump_05_ItemTrigger:
 ;;; then use $4a to store buttons released.
 ;;; $48 is buttons that have been pressed outside a menu.
 ;;; When a shortcut activates, we need to remove "select" from it.
+;;; $46 is a "blacklist" of buttons to ignore until they're unpressed
 RememberLastButtons:
   lda $43
+  ora $46
   sta $4a
   jmp $ff17 ; ReadControllerX
-RegisterButtonRelease2:
-  ;; Called from read w/ repeat
-  ;; Removes A+B from newly pressed when select is held
-  lda $43
-  and #$20
-  beq RegisterButtonRelease
-  lda $4b
-  and #$3f
-  sta $4b
 RegisterButtonRelease:
+  ;; clean up the blacklist
+  lda $43
+  and $46
+  sta $46
+  ;; apply the blacklist
+  eor #$ff
+  pha
+  and $43
+  sta $43
+  pla
+  and $4b
+  sta $4b
   ;; any newly-pressed buttons go in $48
   lda $4b
   eor $48
@@ -2042,7 +2047,7 @@ LoadNpcDataForLocation_Skip:
   ldx #$00
   jsr RememberLastButtons
 .org $3ff13
-  jmp RegisterButtonRelease2
+  jmp RegisterButtonRelease
 
 .org $3cbc1
   lda $43

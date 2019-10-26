@@ -603,9 +603,18 @@ ReloadInventoryAfterLoad:
         ;; FREE: 3 bytes?
 .assert < $21500
 
+.ifdef _CTRL1_SHORTCUTS
+.org $20146
+  jmp FixBufferedItemUseTiming
+.endif
 
 .org $20a37
-        ;; FREE: 35 bytes
+FixBufferedItemUseTiming:
+  lda $43
+  and $c0
+  sta $4b
+  rts
+        ;; FREE: 28 (not 35) bytes
 .assert < $20a5a
 
 
@@ -1605,6 +1614,15 @@ RememberLastButtons:
   lda $43
   sta $4a
   jmp $ff17 ; ReadControllerX
+RegisterButtonRelease2:
+  ;; Called from read w/ repeat
+  ;; Removes A+B from newly pressed when select is held
+  lda $43
+  and #$20
+  beq RegisterButtonRelease
+  lda $4b
+  and #$3f
+  sta $4b
 RegisterButtonRelease:
   ;; any newly-pressed buttons go in $48
   lda $4b
@@ -2024,7 +2042,7 @@ LoadNpcDataForLocation_Skip:
   ldx #$00
   jsr RememberLastButtons
 .org $3ff13
-  jmp RegisterButtonRelease
+  jmp RegisterButtonRelease2
 
 .org $3cbc1
   lda $43

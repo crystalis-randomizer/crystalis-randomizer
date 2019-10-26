@@ -27526,7 +27526,7 @@ InventoryMenu_LoadSelectedPage2
         $202cb  xx xx:      xxx #$xx ; (spaces)
         $202cd  xx xx xx:   xxx ShowMenuMessage
 ;;; --------------------------------
-;;; Runs when selecting an item in inventory menu?
+;;; Runs when selecting an item in inventory menu? (dropping?)
         $202d0  xx xx xx:   xxx $xxxx
         $202d3  xx xx:      xxx $xx
         $202d5  xx xx:      xxx #$xx

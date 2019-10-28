@@ -1682,8 +1682,15 @@ CheckSelectShortcuts:
 CheckStartShortcuts:
   lda $43
   cmp #$d0   ; A+B+start exactly?
-  bne -
-   lda $48   ; activated, so zero out start/select from $48
+  bne -      ; done -> rts
+.ifndef _NO_BIDI_WILD_WARP ; save 12 bytes without this...?
+   lda $4b
+   and #$40  ; B newly pressed -> go backwards
+   beq +
+    dec $0780
+    dec $0780
+.endif
++  lda $48   ; activated, so zero out start/select from $48
    and #$cf
    sta $48
    jmp $cbd3 ; yes -> wild warp

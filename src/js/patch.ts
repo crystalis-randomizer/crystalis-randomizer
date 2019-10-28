@@ -230,7 +230,6 @@ export async function shuffle(rom: Uint8Array,
 
   if (flags.trainer()) {
     parsed.wildWarp.locations = [
-      0x00, // mezame
       0x0a, // vampire
       0x1a, // swamp/insect
       0x35, // summit cave
@@ -246,6 +245,7 @@ export async function shuffle(rom: Uint8Array,
       0xa6, // draygon 2
       0x58, // tower
       0x5c, // tower outside mesia
+      0x00, // mezame
     ];
   }
 

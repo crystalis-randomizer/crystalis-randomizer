@@ -825,7 +825,7 @@ export class Maze implements Iterable<[Pos, Scr]> {
         if (!spec) throw new Error(`Missing spec for ${hex5(scr)} at ${hex(pos)}`);
         const tile = spec.tile < 0 ? this.extraTilesMap[~spec.tile] : spec.tile;
         loc.screens[y].push(tile);
-        if (spec.flag) loc.flags.push(Flag.of({screen: pos, flag: 0x2ef}));
+        if (spec.flag) loc.flags.push(Flag.of({screen: pos, flag: 0x2f0}));
         if (spec.wall) {
           //console.log(`pos: ${hex(pos)}: ${hex5(scr)}`, spec.wall);
           // pop an available flag and use that.

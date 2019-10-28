@@ -365,7 +365,7 @@ function closeCaveEntrances(rom: Rom, flags: FlagSet): void {
     desert2,
   } = rom.locations;
 
-  // NOTE: flag 2ef is ALWAYS set - use it as a baseline.
+  // NOTE: flag 2f0 is ALWAYS set - use it as a baseline.
   const flagsToClear = [
     [valleyOfWind, 0x30], // valley of wind, zebu's cave
     [cordelPlainsWest, 0x30], // cordel west, vampire cave
@@ -378,7 +378,7 @@ function closeCaveEntrances(rom: Rom, flags: FlagSet): void {
     [desert2, 0x41],
   ] as const;
   for (const [loc, yx] of flagsToClear) {
-    loc.flags.push(Flag.of({yx, flag: 0x2ef}));
+    loc.flags.push(Flag.of({yx, flag: 0x2f0}));
   }
 
   function replaceFlag(loc: Location, yx: number, flag: number): void {

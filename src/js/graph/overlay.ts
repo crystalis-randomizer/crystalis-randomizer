@@ -644,6 +644,7 @@ export class Overlay {
     }
     type CapabilityList = Array<[readonly [readonly [Condition]], ...Requirement[]]>;
     const capabilities: CapabilityList = [
+      [Event.ALWAYS_TRUE, and()],
       [Capability.SWORD,
        Item.SWORD_OF_WIND, Item.SWORD_OF_FIRE,
        Item.SWORD_OF_WATER, Item.SWORD_OF_THUNDER],

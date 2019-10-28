@@ -29,6 +29,7 @@ export namespace Event {
   export const OPENED_SWAN = Condition(0x2b3);
   export const OPENED_PRISON = Condition(0x2d8);
   export const OPENED_SEALED_CAVE = Condition(0x2ee);
+  export const ALWAYS_TRUE = Condition(0x2f0);
   export const WARP_OAK = Condition(0x2f7);
   export const WARP_JOEL = Condition(0x2fb);
   // export const WARP_SHYRON = Condition(0x2fd);

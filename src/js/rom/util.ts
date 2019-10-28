@@ -345,7 +345,7 @@ function dataTupleActualClass<T extends DataTupleCtor<any>>(arg: T): T {
     // Make a new direct subtype of DataTuple, but make it look like arg.
     result = class extends DataTuple {};
     Object.defineProperties(result, {name: {value: arg.name}});
-    Reflect.setPrototypeOf(result, arg);
+    Object.assign(result, arg); // copy static properties to ensure ctor skipped
     Reflect.setPrototypeOf(result.prototype, arg.prototype);
     // Reflect on an actual instance to find the props.
     const proto = new (arg as any)();

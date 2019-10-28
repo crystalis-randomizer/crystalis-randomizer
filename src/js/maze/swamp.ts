@@ -321,8 +321,6 @@ export function extendSwampScreens(rom: Rom) {
 
   // TODO - how to do modifications with new metascreen system?
   
-
-
   rom.swapMetatiles([0xa0],
                     [[0x03, 0xac], ~0xda],
                     [[0x04, 0xaa], ~0xe4],

@@ -36,7 +36,7 @@ export class Metatilesets {
   // trades features for crossable river
   readonly mountainRiver = this._(0x9c, {}); // primarily tiles 00..4f
 
-  readonly swamp = this._(0x1a0, {}); // tiles a0..ff
+  readonly swamp = this._(0xa0, {}); // tiles a0..ff
 
   readonly house = this._(0xa0, {}); // tiles 00..9f
 

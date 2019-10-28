@@ -46,7 +46,10 @@ function upStair(tile: number, width = 2): Connection {
   const y = tile >>> 4;
   const x = tile & 0xf;
   if (width === 1) {
-    const entrance = ((y << 12) + 0x1800) | ((x << 4) + 0x0008);
+    // TODO - what does it mean for entrance to be > 0xffff...?
+    //      - screen 6c (oak NW) has this
+    const dy = y === 0xe ? 0x2800 : 0x1800;
+    const entrance = ((y << 12) + dy) | ((x << 4) + 0x0008);
     return {
       type: 'stair:down',
       dir: 2,
@@ -54,7 +57,8 @@ function upStair(tile: number, width = 2): Connection {
       exits: [tile],
     };
   }
-  const entrance = y << 12 | (x + 1) << 4;
+  // TODO - if y is 0xe then we may need to adjust for screen edge?
+  const entrance = y << 12 | ((x << 4) + (width << 3));
   return {
     type: 'stair:up',
     dir: 0,
@@ -78,7 +82,7 @@ function downStair(tile: number, width = 2): Connection {
       exits: [tile],
     };
   }
-  const entrance = y << 12 | 0x0f00 | (x + 1) << 4;
+  const entrance = y << 12 | 0x0f00 | ((x << 4) + (width << 3));
   return {
     type: 'stair:down',
     dir: 2,
@@ -87,11 +91,11 @@ function downStair(tile: number, width = 2): Connection {
   };
 }
 
-function cave(tile: number, type = 'cave'): Connection {
+function cave(tile: number, type: ConnectionType = 'cave'): Connection {
   return {...upStair(tile), type};
 }
 
-function door(tile: number, type = 'door'): Connection {
+function door(tile: number, type: ConnectionType = 'door'): Connection {
   return {...upStair(tile, 1), type};
 }
 
@@ -111,7 +115,7 @@ function topEdge(left = 7, width = 2): Connection {
   return {
     type: 'edge:top',
     dir: 0,
-    entrance: 0x30_00 | (left + 1) << 4, // TODO - do single-height maps differ?
+    entrance: 0x30_00 | ((left << 4) + (width << 3)), // TODO - do single-height maps differ?
     exits: seq(width, i => 0x20 | (i + left)),
   };
 }
@@ -119,10 +123,11 @@ function topEdge(left = 7, width = 2): Connection {
 function bottomEdge(left = 7, width = 2): Connection {
   // TODO - maybe just make a separate set of numbers for single-height?
   //  - the function call will still be correct.
+  // OR... any entrance/exit below row B will clamp to B?
   return {
     type: 'edge:bottom',
     dir: 2,
-    entrance: 0xdf_00 | (left + 1) << 4, // NOTE - single-height maps differ!!
+    entrance: 0xdf_00 | ((left << 4) + (width << 3)), // NOTE - single-height maps differ!!
     exits: seq(width, i => 0xe0 | (i + left)),
   };
 }
@@ -147,7 +152,8 @@ function rightEdge(top = 7, height = 2): Connection {
 
 /** @param tile Top-left tile of transition (height 2) */
 function seamlessVertical(tile: number, width = 2): Connection {
-  throw new Error();
+  //throw new Error();
+  return {} as Connection;
 }
 
 export class Metascreen {
@@ -936,11 +942,11 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {house: {}},
     connections: [bottomEdge()],
   });
-  throneRoom_stairs = $({
+  throneRoom_amazones = $({
     id: 0x47,
     tilesets: {house: {}},
     // TODO - need to fix the single-width stair!
-    connections: [bottomEdge(), downStair(0x4c, 1)],
+    connections: [bottomEdge(7, 3), downStair(0x4c, 1)],
   });
   house_ruinedUpstairs = $({
     id: 0x48,
@@ -950,90 +956,109 @@ export class Metascreens { // extends Set<Metascreen> {
   house_ruinedDownstairs = $({
     id: 0x49,
     tilesets: {house: {}},
+    connetions: [upStair(0x56, 1)],
   });
   foyer = $({
     id: 0x4a,
     tilesets: {house: {}},
+    connections: [bottomEdge(), door(0x28), door(0x53), door(0x5c)],
   });
-  throneRoom_door = $({
+  throneRoom_portoa = $({
     id: 0x4b,
     tilesets: {house: {}},
+    connections: [bottomEdge(), door(0x2b)],
   });
   fortuneTeller = $({
     id: 0x4c,
     tilesets: {house: {}},
+    connections: [bottomEdge(), door(0x56), door(0x59)],
   });
   backRoom = $({
     id: 0x4d,
     tilesets: {house: {}},
+    connections: [bottomEdge()],
   });
   dojo = $({
     id: 0x4e,
     tilesets: {house: {}},
+    connections: [bottomEdge()],
   });
   windmillInside = $({
     id: 0x4f,
     tilesets: {house: {}},
+    connections: [bottomEdge(9, 1)],
   });
   horizontalTownMiddle = $({
     // brynmaer + swan (TODO - split so we can move exits)
     id: 0x50,
     tilesets: {town: {}},
+    connections: [door(0x4c), door(0x55)],
   });
   brynmaerRight_exitE = $({
     // brynmaer
     id: 0x51,
     tilesets: {town: {type: 'horizontal'}},
+    connections: [rightEdge(8), door(0x41)],
   });
   brynmaerLeft_deadEnd = $({
     // brynmaer
     id: 0x52,
     tilesets: {town: {type: 'horizontal'}},
+    connections: [door(0x49), door(0x4c)],
   });
   swanLeft_exitW = $({
     // swan
     id: 0x53,
     tilesets: {town: {type: 'horizontal'}},
+    connections: [leftEdge(9), door(0x49), door(0x5e)],
   });
   swanRight_exitS = $({
     // swan
     id: 0x54,
     tilesets: {town: {type: 'horizontal'}},
+    connections: [bottomEdge(3), door(0x41), door(0x43), door(0x57)],
   });
   horizontalTownLeft_exitN = $({
     // sahara, amazones (TODO - split so we can move exits)
     id: 0x55,
     tilesets: {town: {type: 'horizontal'}},
+    connections: [topEdge(0xd), door(0x46), door(0x4b)],
   });
   amazonesRight_deadEnd = $({
     // amazones
     id: 0x56,
     tilesets: {town: {type: 'horizontal'}},
+    connections: [door(0x40), door(0x58)],
   });
   saharaRight_exitE = $({
     // sahara
     id: 0x57,
     tilesets: {town: {type: 'horizontal'}},
+    connections: [rightEdge(7), door(0x40), door(0x66)],
   });
   portoaNW = $({
     // portoa
     id: 0x58,
     tilesets: {town: {type: 'square'}},
+    connections: [cave(0x47, 'fortress'), bottomEdge()], // bottom just in case?
   });
   portoaNE = $({
     // portoa
     id: 0x59,
     tilesets: {town: {type: 'square'}},
+    connections: [door(0x63), door(0x8a), bottomEdge(3, 4)],
   });
   portoaSW_exitW = $({
     // portoa
     id: 0x5a,
     tilesets: {town: {type: 'square'}},
+    connections: [leftEdge(9), door(0x86), topEdge(],
   });
   portoaSE_exitE = $({
     // portoa
     id: 0x5b,
     tilesets: {town: {type: 'square'}},
+    connections: [rightEdge(9), door(0x7a), door(0x87)],
   });
   dyna = $({
     id: 0x5c,
@@ -1043,71 +1068,85 @@ export class Metascreens { // extends Set<Metascreen> {
     // portoa
     id: 0x5d,
     tilesets: {town: {type: 'square'}},
+    connections: [rightEdge(6), leftEdge(4, 6), door(0x68)],
   });
   verticalTownTop_fortress = $({
     // shyron, zombie town (probably not worth splitting this one)
     id: 0x5e,
     tilesets: {town: {type: 'vertical'}},
+    connections: [cave(0x47), bottomEdge()],
   });
   shyronMiddle = $({
     // shyron
     id: 0x5f,
     tilesets: {town: {type: 'vertical'}},
+    connections: [door(0x54), door(0x5b), topEdge()],
   });
   shyronBottom_exitS = $({
     // shyron
     id: 0x60,
     tilesets: {town: {type: 'vertical'}},
+    connections: [bottomEdge(3), door(0x04), door(0x06), door(0x99)],
   });
   zombieTownMiddle = $({
     // zombie town
     id: 0x61,
     tilesets: {town: {type: 'vertical'}},
+    connections: [door(0x99), topEdge()],
   });
   zombieTownBottom_caveExit = $({
     // zombie town
     id: 0x62,
     tilesets: {town: {type: 'vertical'}},
+    connections: [cave(0x92), door(0x23), door(0x4d)],
   });
   leafNW_houseShed = $({
     // leaf
     id: 0x63,
     tilesets: {town: {type: 'square'}},
+    connections: [door(0x8c), door(0x95)],
   });
   squareTownNE_house = $({
     // leaf, goa (TODO - split)
     id: 0x64,
     tilesets: {town: {type: 'square'}},
+    connections: [topEdge(1), door(0xb7)],
   });
   leafSW_shops = $({
     // leaf
     id: 0x65,
     tilesets: {town: {type: 'square'}},
+    connections: [door(0x77), door(0x8a)],
   });
   leafSE_exitE = $({
     // leaf
     id: 0x66,
     tilesets: {town: {type: 'square'}},
+    connections: [rightEdge(3), door(0x84)],
   });
   goaNW_tavern = $({
     // goa
     id: 0x67,
     tilesets: {town: {type: 'square'}},
+    connections: [door(0xba)],
   });
-  squareTownNW_exitS = $({
+  squareTownSW_exitS = $({
     // goa, joel (TODO - split)
     id: 0x68,
     tilesets: {town: {type: 'square'}},
+    connections: [bottomEdge(8), door(0x84)],
   });
   goaSE_shop = $({
     // goa
     id: 0x69,
     tilesets: {town: {type: 'square'}},
+    connections: [door(0x82)],
   });
   joelNE_shop = $({
     // joel
     id: 0x6a,
     tilesets: {town: {type: 'square'}},
+    connections: [door(0x47)],
   });
   joelSE_lake = $({
     // joel
@@ -1118,26 +1157,31 @@ export class Metascreens { // extends Set<Metascreen> {
     // oak
     id: 0x6c,
     tilesets: {town: {type: 'square'}},
+    connections: [door(0xe7)],
   });
   oakNE = $({
     // oak
     id: 0x6d,
     tilesets: {town: {type: 'square'}},
+    connections: [door(0x60)],
   });
   oakSW = $({
     // oak
     id: 0x6e,
     tilesets: {town: {type: 'square'}},
+    connections: [door(0x7c)],
   });
   oakSE = $({
     // oak
     id: 0x6f,
     tilesets: {town: {type: 'square'}},
+    connections: [bottomEdge(0), door(0x97)],
   });
   temple = $({
     // shyron
     id: 0x70,
     tilesets: {house: {}},
+    connections: [bottomEdge()],
   });
   wideDeadEndN = $({
     id: 0x71,
@@ -1146,6 +1190,7 @@ export class Metascreens { // extends Set<Metascreen> {
       | > |
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    connections: [downStair(0xc7)],
   });
   goaWideDeadEndN = $({
     id: 0x71,
@@ -1154,6 +1199,7 @@ export class Metascreens { // extends Set<Metascreen> {
       | > |
       |   |`,
     tilesets: {goa1: {}},
+    connections: [downStair(0xc7)],
   });
   wideHallNS = $({
     id: 0x72,
@@ -1196,10 +1242,13 @@ export class Metascreens { // extends Set<Metascreen> {
       |┡━┩|
       |│╻│|`,
     tilesets: {goa1: {}},
+    connections: [upStair(0x27)],
   });
   limeTreeLake = $({
     id: 0x74,
     tilesets: {}, // sea or mountain (94) - but not really
+    connection: [bottomEdge(), cave(0x47)],
+    // TODO - bridge
   });
   // Swamp screens
   swampNW = $({
@@ -1209,6 +1258,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |─┘ |
       |   |`,
     tilesets: {swamp: {}},
+    // TODO - do we actually want to put all these edges in?
+    connections: [topEdge(6, 4), leftEdge(7, 3)],
   });
   swampE = $({
     id: 0x76,
@@ -1217,7 +1268,8 @@ export class Metascreens { // extends Set<Metascreen> {
       | ╶─|
       |   |`,
     tilesets: {swamp: {}},
-    // TODO - flaggable for door
+    connections: [rightEdge(7, 3)],
+    // TODO - flaggable for door ?????
   });
   swampE_door = $({
     icon: icon`∩
@@ -1225,6 +1277,7 @@ export class Metascreens { // extends Set<Metascreen> {
       | ╶─|
       |   |`,
     tilesets: {swamp: {}},
+    connections: [upStair(0x6c), rightEdge(7, 3)],
   });
   swampNWSE = $({
     id: 0x77,
@@ -1233,6 +1286,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |─┼─|
       | │ |`,
     tilesets: {swamp: {}},
+    connections: [topEdge(6, 4), leftEdge(7, 3), bottomEdge(6, 4), rightEdge(7, 3)],
   });
   swampNWS = $({
     id: 0x78,
@@ -1241,6 +1295,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |─┤ |
       | │ |`,
     tilesets: {swamp: {}},
+    connections: [topEdge(6, 4), leftEdge(7, 3), bottomEdge(6, 4)],
   });
   swampNE = $({
     id: 0x79,
@@ -1249,6 +1304,7 @@ export class Metascreens { // extends Set<Metascreen> {
       | └─|
       |   |`,
     tilesets: {swamp: {}},
+    connections: [topEdge(6, 4), rightEdge(7, 3)],
   });
   swampWSE = $({
     id: 0x7a,
@@ -1257,6 +1313,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |─┬─|
       | │ |`,
     tilesets: {swamp: {}},
+    connections: [leftEdge(7, 3), bottomEdge(6, 4), rightEdge(7, 3)],
     // TODO - flaggable
   });
   swampWSE_door = $({
@@ -1265,6 +1322,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |─┬─|
       | │ |`,
     tilesets: {swamp: {}},
+    connections: [upStair(0x66), leftEdge(7, 3), bottomEdge(6, 4), rightEdge(7, 3)],
     // TODO - flaggable
   });
   swampW = $({
@@ -1274,6 +1332,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |─╴ |
       |   |`,
     tilesets: {swamp: {}},
+    connections: [leftEdge(7, 3)],
     // TODO - flaggable
   });
   swampW_door = $({
@@ -1282,6 +1341,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |─╴ |
       |   |`,
     tilesets: {swamp: {}},
+    connections: [upStair(0x64), leftEdge(7, 3)],
     // TODO - flaggable
   });
   swampArena = $({
@@ -1291,6 +1351,13 @@ export class Metascreens { // extends Set<Metascreen> {
       |┗┯┛|
       | │ |`,
     tilesets: {swamp: {}},
+    // NOTE: no edge exit since we don't want to go straight here...
+    // TODO - constraint that we put solids on either side?
+    // TODO - undo the attempt to allow this not on the right edge,
+    //        maybe make a few custom combinations? (is it still broken?)
+    //        --> looks like we did fix that earlier somehow?  maybe by moving
+    //            the whole screen a column over, or else by changing the tiles?
+    // TODO - NOTE SWAMP GRAPHICS STILL BROKEN!!
   });
   swampNWE = $({
     id: 0x7d,

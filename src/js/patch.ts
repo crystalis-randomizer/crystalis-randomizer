@@ -200,7 +200,6 @@ export async function shuffle(rom: Uint8Array,
     rescaleShops(parsed, asm, flags.bargainHunting() ? random : undefined);
   }
 
-  normalizeSwords(parsed, flags, random);
   // NOTE: monster shuffle needs to go after item shuffle because of mimic
   // placement constraints, but it would be nice to go before in order to
   // guarantee money.
@@ -783,46 +782,6 @@ const BASE_PRICES: {[itemId: number]: number} = {
 /////////
 /////////
 /////////
-
-function normalizeSwords(rom: Rom, flags: FlagSet, random: Random) {
-  // TODO - flags to randomize sword damage?
-  const {} = {flags, random} as any;
-
-  // wind 1 => 1 hit               => 3
-  // wind 2 => 1 hit               => 6
-  // wind 3 => 2-3 hits 8MP        => 8
-
-  // fire 1 => 1 hit               => 3
-  // fire 2 => 3 hits              => 5
-  // fire 3 => 4-6 hits 16MP       => 7
-
-  // water 1 => 1 hit              => 3
-  // water 2 => 1-2 hits           => 6
-  // water 3 => 3-6 hits 16MP      => 8
-
-  // thunder 1 => 1-2 hits spread  => 3
-  // thunder 2 => 1-3 hits spread  => 5
-  // thunder 3 => 7-10 hits 40MP   => 7
-
-  rom.objects[0x10].atk = 3; // wind 1
-  rom.objects[0x11].atk = 6; // wind 2
-  rom.objects[0x12].atk = 8; // wind 3
-
-  rom.objects[0x18].atk = 3; // fire 1
-  rom.objects[0x13].atk = 5; // fire 2
-  rom.objects[0x19].atk = 5; // fire 2
-  rom.objects[0x17].atk = 7; // fire 3
-  rom.objects[0x1a].atk = 7; // fire 3
-
-  rom.objects[0x14].atk = 3; // water 1
-  rom.objects[0x15].atk = 6; // water 2
-  rom.objects[0x16].atk = 8; // water 3
-
-  rom.objects[0x1c].atk = 3; // thunder 1
-  rom.objects[0x1e].atk = 5; // thunder 2
-  rom.objects[0x1b].atk = 7; // thunder 3
-  rom.objects[0x1f].atk = 7; // thunder 3
-}
 
 function rescaleMonsters(rom: Rom, flags: FlagSet, random: Random): void {
 

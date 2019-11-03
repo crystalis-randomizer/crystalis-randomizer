@@ -143,6 +143,9 @@ export class FlagSet {
   buffDeosPendant() {
     return this.check('Tb');
   }
+  slowDownTornado() {
+    return this.check('Tb');
+  }
   leatherBootsGiveSpeed() {
     return this.check('Tb');
   }

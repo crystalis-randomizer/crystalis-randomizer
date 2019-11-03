@@ -24,9 +24,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
 
   addMezameTrigger(rom);
 
-  // TODO - tornado (obj 12) => speed 07 instead of 08
-  //      - action 12 => figure out how to live longer?
-  //        (looks like increasing 480 should do it?) 70 maybe too long, 60?
+  normalizeSwords(rom, flags);
 
   fixCoinSprites(rom);
   fixMimics(rom);
@@ -72,6 +70,51 @@ function addMezameTrigger(rom: Rom): void {
   trigger.flags = [0x2f0];
   const mezame = rom.locations.mezameShrine;
   mezame.spawns.push(Spawn.of({tile: 0x88, type: 2, id: 0x87}));
+}
+
+function normalizeSwords(rom: Rom, flags: FlagSet) {
+  // wind 1 => 1 hit               => 3
+  // wind 2 => 1 hit               => 6
+  // wind 3 => 2-3 hits 8MP        => 8
+
+  // fire 1 => 1 hit               => 3
+  // fire 2 => 3 hits              => 5
+  // fire 3 => 4-6 hits 16MP       => 7
+
+  // water 1 => 1 hit              => 3
+  // water 2 => 1-2 hits           => 6
+  // water 3 => 3-6 hits 16MP      => 8
+
+  // thunder 1 => 1-2 hits spread  => 3
+  // thunder 2 => 1-3 hits spread  => 5
+  // thunder 3 => 7-10 hits 40MP   => 7
+
+  rom.objects[0x10].atk = 3; // wind 1
+  rom.objects[0x11].atk = 6; // wind 2
+  rom.objects[0x12].atk = 8; // wind 3
+
+  rom.objects[0x18].atk = 3; // fire 1
+  rom.objects[0x13].atk = 5; // fire 2
+  rom.objects[0x19].atk = 5; // fire 2
+  rom.objects[0x17].atk = 7; // fire 3
+  rom.objects[0x1a].atk = 7; // fire 3
+
+  rom.objects[0x14].atk = 3; // water 1
+  rom.objects[0x15].atk = 6; // water 2
+  rom.objects[0x16].atk = 8; // water 3
+
+  rom.objects[0x1c].atk = 3; // thunder 1
+  rom.objects[0x1e].atk = 5; // thunder 2
+  rom.objects[0x1b].atk = 7; // thunder 3
+  rom.objects[0x1f].atk = 7; // thunder 3
+
+  if (flags.slowDownTornado()) {
+    // TODO - tornado (obj 12) => speed 07 instead of 08
+    //      - lifetime is 480 => 70 maybe too long, 60 sweet spot?
+    const tornado = rom.objects[0x12];
+    tornado.speed = 0x07;
+    tornado.data[0x0c] = 0x60; // increase lifetime (480) by 20%
+  }
 }
 
 function fixCoinSprites(rom: Rom): void {

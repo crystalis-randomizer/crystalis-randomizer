@@ -1669,6 +1669,8 @@ QuickChangeSword:
     stx $0711 ; equipped sword
     lda #$00
     sta $06c0 ; zero out the current charge
+    lda #$4c  ; sfx: cursor select
+    jsr $c125 ; StartAudioTrack
     jmp PostInventoryMenu
 CheckSelectShortcuts:
   lda $4b

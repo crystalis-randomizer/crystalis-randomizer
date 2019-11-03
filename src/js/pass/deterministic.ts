@@ -24,6 +24,10 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
 
   addMezameTrigger(rom);
 
+  // TODO - tornado (obj 12) => speed 07 instead of 08
+  //      - action 12 => figure out how to live longer?
+  //        (looks like increasing 480 should do it?) 70 maybe too long, 60?
+
   fixCoinSprites(rom);
   fixMimics(rom);
 

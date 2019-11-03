@@ -26722,7 +26722,7 @@ GeneralEscapes
         $1faf0  xx xx xx:   xxx $1fb29
         $1faf3  xx xx:      xxx #$xx
         $1faf5  xx xx xx:   xxx StartAudioTrack
-        $1faf8  xx xx xx:   xxx $3ffcf
+        $1faf8  xx xx xx:   xxx WaitForDialogToBeDismissed
         $1fafb  xx xx xx:   xxx $1fb5b
 ;;; --------------------------------
 ;;; This table points to a four-byte block with message IDs and some other stuff
@@ -35991,8 +35991,8 @@ MainGameModeJump_1e_ThrustCrystalis
         $27fd4  xx xx xx:    xxx $27fe9,y
         $27fd7  xx xx xx:    xxx $xxxx
         $27fda  xx xx:       xxx #$xx
-        $27fdc  xx xx xx:    xxx $3c125
-        $27fdf  xx xx xx:    xxx $3ffcf
+        $27fdc  xx xx xx:    xxx StartAudioTrack
+        $27fdf  xx xx xx:    xxx WaitForDialogToBeDismissed
         $27fe2  xx:         xxx
         $27fe3  xx xx:      xxx $xx
         $27fe5  xx xx:      xxx $xx
@@ -42622,15 +42622,15 @@ ComputeDisplacementVector
 ;;; adjustments by $380).  Note that the last 20% of each table is identical to the
 ;;; first 20%, and is just used for efficient wrap-around.  So there's effectively only
 ;;; 8 rows per table.  These are speed and direction tables.
-DataTable_344bc                 ;  0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f
+SpeedTable                      ;  0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f
         $344bc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $344cc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; This is a table of offsets to add to the indexes in the tables below.
 ;;; When it's $20, the table needs to be twice as long...?
-DataTable_344dc
+SpeedTable_Widths
         $344dc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-DataTable_344bc_00              ; SPD == 0 (0.5/frame); 8-dir (0=up, 2=right)
+SpeedTable_00               ; SPD == 0 (0.5/frame); 8-dir (0=up, 2=right)
         $344ec              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $344f4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $344fc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42642,7 +42642,7 @@ DataTable_344bc_00              ; SPD == 0 (0.5/frame); 8-dir (0=up, 2=right)
         $3452c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $34534              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_01              ; SPD == 1 (0.75/frame)
+SpeedTable_01               ; SPD == 1 (0.75/frame)
         $3453c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $34544              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $3454c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42654,7 +42654,7 @@ DataTable_344bc_01              ; SPD == 1 (0.75/frame)
         $3457c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $34584              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_02              ; SPD == 2 (1/frame)
+SpeedTable_02               ; SPD == 2 (1/frame)
         $3458c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $34594              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $3459c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42666,7 +42666,7 @@ DataTable_344bc_02              ; SPD == 2 (1/frame)
         $345cc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $345d4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_03              ; SPD == 3 (1.25/frame)
+SpeedTable_03               ; SPD == 3 (1.25/frame)
         $345dc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)      
         $345e4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $345ec              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42678,7 +42678,7 @@ DataTable_344bc_03              ; SPD == 3 (1.25/frame)
         $3461c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $34624              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_04              ; SPD == 4 (1.5/frame)
+SpeedTable_04               ; SPD == 4 (1.5/frame)
         $3462c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $34634              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $3463c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42690,7 +42690,7 @@ DataTable_344bc_04              ; SPD == 4 (1.5/frame)
         $3466c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $34674              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_05              ; SPD == 5 (1.75/frame)
+SpeedTable_05               ; SPD == 5 (1.75/frame)
         $3467c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $34684              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $3468c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42702,7 +42702,7 @@ DataTable_344bc_05              ; SPD == 5 (1.75/frame)
         $346bc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $346c4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_06              ; SPD == 6 (2/frame)
+SpeedTable_06               ; SPD == 6 (2/frame)
         $346cc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $346d4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $346dc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42714,7 +42714,7 @@ DataTable_344bc_06              ; SPD == 6 (2/frame)
         $3470c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $34714              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_07              ; SPD == 7 (2.5/frame)
+SpeedTable_07               ; SPD == 7 (2.5/frame)
         $3471c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $34724              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $3472c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42726,7 +42726,7 @@ DataTable_344bc_07              ; SPD == 7 (2.5/frame)
         $3475c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $34764              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_08              ; SPD == 8 (5/frame)
+SpeedTable_08               ; SPD == 8 (5/frame)
         $3476c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $34774              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $3477c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42738,7 +42738,7 @@ DataTable_344bc_08              ; SPD == 8 (5/frame)
         $347ac              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $347b4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_09              ; SPD == 9 (6.5/frame)
+SpeedTable_09               ; SPD == 9 (6.5/frame)
         $347bc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $347c4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $347cc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42750,7 +42750,7 @@ DataTable_344bc_09              ; SPD == 9 (6.5/frame)
         $347fc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $34804              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_0a              ; SPD == $a (8/frame)
+SpeedTable_0a               ; SPD == $a (8/frame)
         $3480c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dx6)
         $34814              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dx7)
         $3481c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2  dx0 
@@ -42762,7 +42762,7 @@ DataTable_344bc_0a              ; SPD == $a (8/frame)
         $3484c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx6 (dy0)
         $34854              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dx7 (dy1)
 ;;; --------------------------------
-DataTable_344bc_0b              ; SPD == $b (7/frame)
+SpeedTable_0b               ; SPD == $b (7/frame)
         $3485c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dxC)
         $34864              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dxD)
         $3486c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2 (dxE)
@@ -42784,7 +42784,7 @@ DataTable_344bc_0b              ; SPD == $b (7/frame)
         $348ec              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxE (dy2)
         $348f4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxF (dy3)
 ;;; --------------------------------
-DataTable_344bc_0c              ; SPD == $c (1.75/frame)
+SpeedTable_0c               ; SPD == $c (1.75/frame)
         $348fc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dxC)
         $34904              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dxD)
         $3490c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2 (dxE)
@@ -42806,7 +42806,7 @@ DataTable_344bc_0c              ; SPD == $c (1.75/frame)
         $3498c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxE (dy2)
         $34994              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxF (dy3)
 ;;; --------------------------------
-DataTable_344bc_0d              ; SPD == $d (2.5/frame)
+SpeedTable_0d               ; SPD == $d (2.5/frame)
         $3499c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dxC)
         $349a4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dxD)
         $349ac              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2 (dxE)
@@ -42828,7 +42828,7 @@ DataTable_344bc_0d              ; SPD == $d (2.5/frame)
         $34a2c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxE (dy2)
         $34a34              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxF (dy3)
 ;;; --------------------------------
-DataTable_344bc_0e              ; SPD == $e (3/frame)
+SpeedTable_0e               ; SPD == $e (3/frame)
         $34a3c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dxC)
         $34a44              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dxD)
         $34a4c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2 (dxE)
@@ -42850,7 +42850,7 @@ DataTable_344bc_0e              ; SPD == $e (3/frame)
         $34acc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxE (dy2)
         $34ad4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dxF (dy3)
 ;;; --------------------------------
-DataTable_344bc_0f              ; SPD == $f (2/frame)
+SpeedTable_0f               ; SPD == $f (2/frame)
         $34adc              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy0 (dxC)
         $34ae4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy1 (dxD)
         $34aec              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx ; dy2 (dxE)
@@ -43480,7 +43480,7 @@ DataTable_35045
         $35071  xx xx:      xxx #$xx
         $35073  xx xx xx:   xxx $xxxx,y
         $35076  xx xx:      xxx #$xx
-        $35078  xx xx xx:   xxx $3c125
+        $35078  xx xx xx:   xxx StartAudioTrack
 ;;; --------------------------------
         $3507b  xx:         xxx
 ;;; --------------------------------
@@ -47916,15 +47916,16 @@ ObjectActionJump_1b
         $37173  xx:         xxx
 ;;; --------------------------------
 ObjectActionJump_12
+        ;; Tornado attack
         $37174  xx xx xx:   xxx $xxxx,x
         $37177  xx xx:      xxx $xx
         $37179  xx xx xx:   xxx $xxxx,x
         $3717c  xx xx xx:   xxx $xxxx,x
         $3717f  xx xx xx:   xxx $xxxx,x
-        $37182  xx xx:      xxx $xx
-        $37184  xx xx xx:   xxx ClearSpawnSlot
+        $37182  xx xx:      xxx + ; $37187
+        $37184  xx xx xx:    xxx ClearSpawnSlot
 ;;; --------------------------------
-        $37187  xx xx xx:   xxx $xxxx,x
++       $37187  xx xx xx:   xxx $xxxx,x
         $3718a  xx xx:      xxx #$xx
         $3718c  xx:         xxx
         $3718d  xx:         xxx
@@ -49074,7 +49075,7 @@ ObjectActionJump_70_01
         $37b31  xx:         xxx
 -       $37b32  xx xx:        xxx #SFX_DIALOG
         $37b34  xx xx xx:     xxx StartAudioTrack
-        $37b37  xx xx xx:     xxx $3ffcf
+        $37b37  xx xx xx:     xxx WaitForDialogToBeDismissed
         $37b3a  xx xx xx:     xxx $xxxx
         $37b3d  xx xx xx:     xxx $xxxx
         $37b40  xx xx:        xxx #$xx
@@ -57305,7 +57306,7 @@ MainGameModeJump_10_StatusMessage
         $3d0b6  xx xx xx:    xxx $xxxx
         $3d0b9  xx xx xx:    xxx $xxxx
         $3d0bc  xx xx xx:    xxx $xxxx
-        $3d0bf  xx xx xx:    xxx $3d354
+        $3d0bf  xx xx xx:    xxx WaitForDialogToBeDismissedInternal
         $3d0c2  xx:         xxx
         $3d0c3  xx xx:      xxx ScreenMode
         $3d0c5  xx xx xx:   xxx $3c8a9
@@ -57336,7 +57337,7 @@ MainGameModeJump_11_Dialog
         $3d0f5  xx xx xx:   xxx $xxxx
         $3d0f8  xx xx:      xxx #$xx
         $3d0fa  xx xx xx:   xxx $xxxx
-        $3d0fd  xx xx xx:   xxx WaitForDialogToBeDismissed
+        $3d0fd  xx xx xx:   xxx WaitForDialogToBeDismissedInternal
         ;; --------------------------------
 ++      $3d100  xx xx xx:   xxx $xxxx,y
         $3d103  xx xx:      xxx $xx
@@ -57465,7 +57466,7 @@ DialogFollowupActionJump_16
         $3d1d1  xx xx xx:   xxx $xxxx
         $3d1d4  xx xx:      xxx #$xx
         $3d1d6  xx xx xx:   xxx $xxxx
-        $3d1d9  xx xx xx:   xxx WaitForDialogToBeDismissed
+        $3d1d9  xx xx xx:   xxx WaitForDialogToBeDismissedInternal
         $3d1dc  xx xx xx:   xxx LoadNpcDataForCurrentLocation
         $3d1df  xx xx xx:   xxx $xxxx
         $3d1e2  xx xx xx:   xxx $3d1ff
@@ -57479,7 +57480,7 @@ DialogFollowupActionJump_10
         $3d1ed  xx xx xx:   xxx $xxxx
         $3d1f0  xx xx:      xxx #$xx
         $3d1f2  xx xx xx:   xxx $xxxx
-        $3d1f5  xx xx xx:   xxx WaitForDialogToBeDismissed
+        $3d1f5  xx xx xx:   xxx WaitForDialogToBeDismissedInternal
         $3d1f8  xx xx:      xxx #INV_MAGIC_RECOVER
         $3d1fa  xx xx xx:   xxx GrantItemInRegisterA
         $3d1fd  xx xx:      xxx #$xx
@@ -57659,7 +57660,7 @@ LoadAndShowDialog
         $3d34c  xx xx:      xxx $xx
         $3d34e  xx xx xx:   xxx $xxxx
         $3d351  xx xx xx:   xxx RotateMessagePartAndIndex
-WaitForDialogToBeDismissed
+WaitForDialogToBeDismissedInternal
         $3d354  xx xx:       xxx #$xx
         $3d356  xx xx:       xxx $xx
         $3d358  xx xx:       xxx #$xx
@@ -57691,7 +57692,7 @@ WaitForDialogToBeDismissed
         $3d397  xx xx:       xxx $xx
         $3d399  xx xx:       xxx #$xx
         $3d39b  xx xx:       xxx + ; $3d3a0
-        $3d39d  xx xx xx:     xxx WaitForDialogToBeDismissed
+        $3d39d  xx xx xx:     xxx WaitForDialogToBeDismissedInternal
         ;;                    ------
 +       $3d3a0  xx xx:      xxx $xx
         $3d3a2  xx xx:      xxx #$xx
@@ -57779,7 +57780,7 @@ MainGameModeJump_07_TriggerSquareOrTreasureChest
         $3d441  xx xx xx:   xxx $xxxx
         $3d444  xx xx:      xxx $xx
         $3d446  xx:         xxx
-        $3d447  xx xx xx:    xxx WaitForDialogToBeDismissed
+        $3d447  xx xx xx:    xxx WaitForDialogToBeDismissedInternal
         $3d44a  xx xx xx:    xxx $3cc2e
         $3d44d  xx:         xxx
         $3d44e  xx xx:      xxx $xx
@@ -57808,7 +57809,7 @@ HandleTrigger
         $3d48c  xx xx xx:   xxx $xxxx
         $3d48f  xx xx:      xxx #SFX_DIALOG
         $3d491  xx xx xx:   xxx StartAudioTrack
-        $3d494  xx xx xx:   xxx $3d354
+        $3d494  xx xx xx:   xxx WaitForDialogToBeDismissedInternal
 ;;; --------------------------------
 MainGameModeJump_06_ItemUseMessage
         ;; Includes status recovery, health, and warp boot town selection
@@ -57978,7 +57979,7 @@ ItemOrTriggerActionJump_01
         $3d5b9  xx xx xx:   xxx $xxxx
         $3d5bc  xx xx:      xxx #$xx
         $3d5be  xx xx xx:   xxx $xxxx
-        $3d5c1  xx xx xx:   xxx WaitForDialogToBeDismissed
+        $3d5c1  xx xx xx:   xxx WaitForDialogToBeDismissedInternal
         $3d5c4  xx xx:      xxx #SFX_START_DOOR
         $3d5c6  xx xx xx:   xxx StartAudioTrack
         $3d5c9  xx xx:      xxx #LOC_SHYRON_TEMPLE
@@ -58026,7 +58027,7 @@ ItemOrTriggerActionJump_07
         $3d623  xx xx xx:   xxx $xxxx
         $3d626  xx xx:      xxx #$xx
         $3d628  xx xx xx:   xxx $xxxx
-        $3d62b  xx xx xx:   xxx WaitForDialogToBeDismissed
+        $3d62b  xx xx xx:   xxx WaitForDialogToBeDismissedInternal
 ;;; --------------------------------
         $3d62e  xx xx xx:   xxx WaitForOAMDMA
         $3d631  xx xx xx:   xxx DrawAllObjectSprites
@@ -58223,7 +58224,7 @@ ItemOrTriggerActionJump_17
         $3d79e  xx xx xx:   xxx $xxxx
         $3d7a1  xx xx:      xxx #$xx
         $3d7a3  xx xx xx:   xxx $xxxx
-        $3d7a6  xx xx xx:   xxx $3d354
+        $3d7a6  xx xx xx:   xxx WaitForDialogToBeDismissedInternal
         $3d7a9  xx xx xx:   xxx $xxxx
         $3d7ac  xx xx xx:   xxx $xxxx
         $3d7af  xx xx xx:   xxx $xxxx
@@ -58514,7 +58515,7 @@ MainGameModeJump_24_EmptyShop
         $3d9c6  xx xx xx:   xxx $xxxx
         $3d9c9  xx xx:      xxx #$xx
         $3d9cb  xx xx xx:   xxx $xxxx
-        $3d9ce  xx xx xx:   xxx $3d354
+        $3d9ce  xx xx xx:   xxx WaitForDialogToBeDismissedInternal
         $3d9d1  xx xx:      xxx #GAME_MODE_EMPTY_SHOP
         $3d9d3  xx xx:      xxx GameMode
         $3d9d5  xx xx xx:   xxx $3da72
@@ -63264,12 +63265,13 @@ UpdateHPDisplay
         $3ffc9  xx xx xx:     xxx UpdateHPDisplayInternal
         $3ffcc  xx xx xx:     xxx RestoreBanks
 ;;; --------------------------------
-        ;; Call $3d354 and restore banks afterwards
+        ;; Call WaitForDialogToBeDismissedInternal and restore banks afterwards
+WaitForDialogToBeDismissed
         $3ffcf  xx xx:      xxx $xx
         $3ffd1  xx:         xxx
         $3ffd2  xx xx:       xxx $xx
         $3ffd4  xx:          xxx
-        $3ffd5  xx xx xx:     xxx $3d354
+        $3ffd5  xx xx xx:     xxx WaitForDialogToBeDismissedInternal
         $3ffd8  xx xx xx:     xxx RestoreBanks
 ;;; --------------------------------
 ;;; Restores the banks from the stack, as saved in the above routines

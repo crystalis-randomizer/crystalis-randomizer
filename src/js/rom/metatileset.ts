@@ -16,6 +16,8 @@ export class Metatilesets {
   // supports water, but has ugly wall
   readonly cave = this._(0x88, {});
 
+  readonly dolphinCave = this._(0x88, {});
+
   readonly pyramid = this._(0x8c, {});
 
   readonly river = this._(0x90, {

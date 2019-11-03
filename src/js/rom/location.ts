@@ -1250,6 +1250,9 @@ export class Pit extends DataTuple {
 export class Spawn extends DataTuple {
   static size = 4;
 
+  // get y(): number  { return SPAWN_Y.get(this); }
+  // set y(y: number) { SPAWN_Y.set(this, y); }
+
   y      = this.prop([0, 0xff, -4]);
   yt     = this.prop([0]);
 
@@ -1260,13 +1263,14 @@ export class Spawn extends DataTuple {
   screen = this.prop([0, 0xf0], [1, 0x70, 4]);
   tile   = this.prop([0, 0x0f, -4], [1, 0x0f]);
 
+  type   = this.prop([2, 0x07]);
+  id     = this.prop([3]);
+
   patternBank = this.prop([2, 0x80, 7]);
-  type        = this.prop([2, 0x07]);
 
 // patternBank: {get(this: any): number { return this.data[2] >>> 7; },
 //               set(this: any, v: number) { if (this.data[3] === 120) debugger;
 //                                           if (v) this.data[2] |= 0x80; else this.data[2] &= 0x7f; }},
-  id    = this.prop([3]);
 
   get used(): boolean {
     return this.data[0] !== 0xfe;

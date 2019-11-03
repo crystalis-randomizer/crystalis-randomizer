@@ -28,7 +28,7 @@ const $ = initializer<[MetascreenData], Metascreen>();
 type StairType = 'stair:up' | 'stair:down';
 type EdgeType = 'edge:top' | 'edge:bottom' | 'edge:left' | 'edge:right';
 type ConnectionType =
-     StairType | EdgeType | 'cave' | 'door' | 'fortress' | 'other';
+     StairType | EdgeType | 'cave' | 'door' | 'fortress' | 'gate';
 
 export interface Connection {
   readonly type: ConnectionType;
@@ -316,16 +316,17 @@ export class Metascreens { // extends Set<Metascreen> {
     }
   }
 
-  mountain = $({
+  readonly mountain = $({
     id: 0x00,
     icon: icon`
       |███|
       |███|
       |███|`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
+    edges: '    ',
   });
   // boundaryW_trees: ???
-  boundaryW_trees = $({
+  readonly boundaryW_trees = $({
     id: 0x01,
     icon: icon`
       |█▌ |
@@ -334,16 +335,18 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {grass: {}, river: {},
                desert: {requires: [ScreenFix.DesertRocks]},
                sea: {requires: [ScreenFix.SeaTrees]}},
+    edges: '> >o', // o = open
   });
-  boundaryW = $({
+  readonly boundaryW = $({
     id: 0x02,
     icon: icon`
       |█▌ |
       |█▌ |
       |█▌ |`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
+    edges: '> >o',
   });
-  boundaryE_rocks = $({
+  readonly boundaryE_rocks = $({
     id: 0x03,
     icon: icon`
       |.▐█|
@@ -352,16 +355,18 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {grass: {}, river: {},
                desert: {requires: [ScreenFix.DesertRocks]},
                sea: {requires: [ScreenFix.SeaRocks]}},
+    edges: '<o< ',
   });
-  boundaryE = $({
+  readonly boundaryE = $({
     id: 0x04,
     icon: icon`
       | ▐█|
       | ▐█|
       | ▐█|`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
+    edges: '<o< ',
   });
-  longGrassS = $({
+  readonly longGrassS = $({
     id: 0x05,
     icon: icon`
       |vv |
@@ -369,8 +374,9 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |`,
     tilesets: {river: {},
                grass: {requires: [ScreenFix.GrassLongGrass]}},
+    edges: 'looo', // l = long grass
   });
-  longGrassN = $({
+  readonly longGrassN = $({
     id: 0x06,
     icon: icon`
       |   |
@@ -378,8 +384,9 @@ export class Metascreens { // extends Set<Metascreen> {
       |vv |`,
     tilesets: {river: {},
                grass: {requires: [ScreenFix.GrassLongGrass]}},
+    edges: 'oolo',
   });
-  boundaryS_rocks = $({
+  readonly boundaryS_rocks = $({
     id: 0x07,
     icon: icon`
       | . |
@@ -388,8 +395,9 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {grass: {}, river: {},
                desert: {requires: [ScreenFix.DesertRocks]},
                sea: {requires: [ScreenFix.SeaRocks]}},
+    edges: 'o^ ^',
   });
-  fortressTownEntrance = $({ // goa
+  readonly fortressTownEntrance = $({ // goa
     id: 0x08,
     icon: icon`
       |███|
@@ -400,17 +408,19 @@ export class Metascreens { // extends Set<Metascreen> {
     //        any top half (bottom half plain), top edge can have any
     //        left-half (right-half mountain)
     tilesets: {grass: {}},
-    connections: [cave(0xa7, 'fortress')],
+    edges: ' vov',
+    exits: [cave(0xa7, 'fortress')],
   });
-  bendSE_longGrass = $({
+  readonly bendSE_longGrass = $({
     id: 0x09,
     icon: icon`▗
       | v |
       |vv▄|
       | ▐█|`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
+    edges: 'oo<^',
   });
-  exitW_cave = $({ // near sahara, fog lamp
+  readonly exitW_cave = $({ // near sahara, fog lamp
     id: 0x0a,
     icon: icon`∩
       |█∩█|
@@ -420,9 +430,10 @@ export class Metascreens { // extends Set<Metascreen> {
     // TODO - edge
     tilesets: {grass: {}, river: {}, desert: {},
                sea: {requires: [ScreenFix.SeaCaveEntrance]}},
-    connections: [cave(0x48), leftEdge(6)],
+    edges: ' n  ', // n = narrow
+    exits: [cave(0x48), leftEdge(6)],
   });
-  bendNE_grassRocks = $({
+  readonly bendNE_grassRocks = $({
     id: 0x0b,
     icon: icon`▝
       |.▐█|
@@ -432,40 +443,45 @@ export class Metascreens { // extends Set<Metascreen> {
                river: {requires: [ScreenFix.RiverShortGrass]},
                desert: {requires: [ScreenFix.DesertShortGrass,
                                    ScreenFix.DesertRocks]}},
+    edges: '<osv', // s = short grass
   });
-  cornerNW = $({
+  readonly cornerNW = $({
     id: 0x0c,
     icon: icon`▛
       |███|
       |█ ▀|
       |█▌ |`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
+    edges: '  >v',
   });
-  cornerNE = $({
+  readonly cornerNE = $({
     id: 0x0d,
     icon: icon`▜
       |███|
       |▀██|
       | ▐█|`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
+    edges: ' v< ',
   });
-  cornerSW = $({
+  readonly cornerSW = $({
     id: 0x0e,
     icon: icon`▙
       |█▌ |
       |██▄|
       |███|`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
+    edges: '>  ^',
   });
-  cornerSE = $({
+  readonly cornerSE = $({
     id: 0x0f,
     icon: icon`▟
       | ▐█|
       |▄██|
       |███|`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
+    edges: '<^  ',
   });
-  exitE = $({
+  readonly exitE = $({
     id: 0x10,
     icon: icon`╶
       | ▐█|
@@ -473,10 +489,11 @@ export class Metascreens { // extends Set<Metascreen> {
       | ▐█|`,
     tilesets: {grass: {}, river: {},
                desert: {requires: [ScreenFix.DesertRocks]}},
-    connections: [rightEdge(6)],
+    edges: '<o<n',
+    exits: [rightEdge(6)],
     // TODO - edge
   });
-  boundaryN_trees = $({
+  readonly boundaryN_trees = $({
     id: 0x11,
     icon: icon`
       |███|
@@ -484,34 +501,41 @@ export class Metascreens { // extends Set<Metascreen> {
       | ^ |`,
     tilesets: {grass: {}, river: {}, desert: {},
                sea: {requires: [ScreenFix.SeaTrees]}},
+    edges: ' vov',
   });
-  bridgeToPortoa = $({
+  readonly bridgeToPortoa = $({
     id: 0x12,
     icon: icon`╴
       |═  |
       |╞══|
       |│  |`,
     tilesets: {river: {}},
-    connections: [leftEdge(1)],
-    // TODO - edge
+    // TODO - this is super custom, no edges for it?
+    // It needs special handling, at least.
+    feature: 'portoa3',
+    edges: '**>r',
+    exits: [leftEdge(1)],
   });
-  slopeAbovePortoa = $({
+  readonly slopeAbovePortoa = $({
     id: 0x13,
     icon: icon`
       |█↓█|
       |█↓▀|
       |│  |`,
     tilesets: {river: {}},
+    feature: 'portoa2',
+    edges: '***v',
   });
-  riverBendSE = $({
+  readonly riverBendSE = $({
     id: 0x14,
     icon: icon`
       |w  |
       | ╔═|
       | ║ |`,
     tilesets: {river: {}},
+    edges: 'oorr',
   });
-  boundaryW_cave = $({
+  readonly boundaryW_cave = $({
     id: 0x15,
     icon: icon`
       |█▌ |
@@ -519,37 +543,41 @@ export class Metascreens { // extends Set<Metascreen> {
       |█▌ |`,
     tilesets: {grass: {}, river: {}, desert: {},
                sea: {requires: [ScreenFix.SeaCaveEntrance]}},
-    connections: [cave(0x89)],
+    edges: '> >o',
+    exits: [cave(0x89)],
     // TODO - flaggable?
   });
-  exitN = $({
+  readonly exitN = $({
     id: 0x16,
     icon: icon`╵
       |█ █|
       |▀ ▀|
       | ^ |`,
     tilesets: {grass: {}, river: {}, desert: {}}, // sea has no need for exits?
-    connections: [topEdge()],
+    edges: 'nvov',
+    exits: [topEdge()],
     // TODO - edge
   });
-  riverWE_woodenBridge = $({
+  readonly riverWE_woodenBridge = $({
     id: 0x17,
     icon: icon`═
       |   |
       |═║═|
       |   |`,
     tilesets: {river: {}},
-    connections: [seamlessVertical(0x77)],
+    edges: 'oror',
+    exits: [seamlessVertical(0x77)],
   });
-  riverBoundaryE_waterfall = $({
+  readonly riverBoundaryE_waterfall = $({
     id: 0x18,
     icon: icon`╡
       | ▐█|
       |══/|
       | ▐█|`,
     tilesets: {river: {}},
+    edges: '<r< ',
   });
-  boundaryE_cave = $({
+  readonly boundaryE_cave = $({
     id: 0x19,
     icon: icon`
       | ▐█|
@@ -558,9 +586,10 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {river: {},
                grass: {requires: [ScreenFix.GrassLongGrass]},
                desert: {requires: [ScreenFix.DesertLongGrass]}},
-    connections: [cave(0x58)],
+    edges: '<o< ',
+    exits: [cave(0x58)],
   });
-  exitW_southwest = $({
+  readonly exitW_southwest = $({
     id: 0x1a,
     icon: icon`╴
       |█▌ |
@@ -570,25 +599,27 @@ export class Metascreens { // extends Set<Metascreen> {
                desert: {requires: [ScreenFix.DesertRocks]},
                // Sea has no need for this screen?  Go to some other beach?
                sea: {requires: [ScreenFix.SeaRocks]}},
-    connections: [leftEdge(0xb)],
+    edges: '>* ^',
+    exits: [leftEdge(0xb)],
   });
-  nadare = $({
+  readonly nadare = $({
     id: 0x1b,
     //icon: '?',
     //migrated: 0x2000,
     tilesets: {house: {}},
-    connections: [bottomEdge(), door(0x23), door(0x25), door(0x2a)],
+    exits: [bottomEdge(), door(0x23), door(0x25), door(0x2a)],
   });
-  townExitW = $({
+  readonly townExitW = $({
     id: 0x1c,
     icon: icon`╴
       |█▌ |
       |▀ ^|
       |█▌ |`,
     tilesets: {grass: {}, river: {}},
-    connections: [leftEdge(8)],
+    edges: '>n>o',
+    exits: [leftEdge(8)],
   });
-  shortGrassS = $({
+  readonly shortGrassS = $({
     id: 0x1d,
     icon: icon` |
       |;;;|
@@ -597,8 +628,9 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {grass: {},
                river: {requires: [ScreenFix.RiverShortGrass,
                                   ScreenFix.GrassLongGrassRemapping]}},
+    edges: 'sooo',
   });
-  townExitS = $({
+  readonly townExitS = $({
     id: 0x1e,
     icon: icon`╷
       | ^ |
@@ -607,62 +639,68 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {grass: {}, river: {},
                desert: {requires: [ScreenFix.DesertRocks,
                                    ScreenFix.DesertTownEntrance]}},
-    connections: [bottomEdge()],
+    edges: 'o^n^',
+    exits: [bottomEdge()],
   });
-  swanGate = $({
+  readonly swanGate = $({
     id: 0x1f,
     //icon: '?',
     tilesets: {town: {}},
-    connections: [leftEdge(3), rightEdge(9)],
+    exits: [leftEdge(3), rightEdge(9)],
   }); 
 
-  riverBranchNSE = $({
+  readonly riverBranchNSE = $({
     id: 0x20,
     icon: icon`
       | ║ |
       | ╠═|
       | ║ |`,
     tilesets: {river: {}},
+    edges: 'rorr',
   });
-  riverWE = $({
+  readonly riverWE = $({
     id: 0x21,
     icon: icon`
       |   |
       |═══|
       |   |`,
     tilesets: {river: {}},
+    edges: 'oror',
   });
-  riverBoundaryS_waterfall = $({
+  readonly riverBoundaryS_waterfall = $({
     id: 0x22,
     icon: icon`╨
       | ║ |
       |▄║▄|
       |█/█|`,
     tilesets: {river: {}},
+    edges: 'r^ ^',
   });
-  shortGrassSE = $({
+  readonly shortGrassSE = $({
     id: 0x23,
     icon: icon`
       |;;;|
       |;  |
       |; ^|`,
     tilesets: {grass: {}},
+    edges: 'ssoo',
   });
-  shortGrassNE = $({
+  readonly shortGrassNE = $({
     id: 0x24,
     icon: icon` |
       |;  |
       |;v |
       |;;;|`,
     tilesets: {grass: {}},
+    edges: 'osso',
   });
-  stomHouse = $({
+  readonly stomHouse = $({
     id: 0x25,
     //icon: '?', // Should never share a map??? - or just make something
     tilesets: {grass: {}},
-    connections: [door(0x68), bottomEdge()],
+    exits: [door(0x68), bottomEdge()],
   });
-  bendNW_trees = $({
+  readonly bendNW_trees = $({
     id: 0x26,
     icon: icon`▘
       |█▌ |
@@ -673,8 +711,9 @@ export class Metascreens { // extends Set<Metascreen> {
                                    ScreenFix.DesertTrees]},
                sea: {requires: [ScreenFix.SeaRocks,
                                 ScreenFix.SeaTrees]}},
+    edges: '>voo',
   });
-  shortGrassSW = $({
+  readonly shortGrassSW = $({
     id: 0x27,
     icon: icon`
       |;;;|
@@ -682,16 +721,18 @@ export class Metascreens { // extends Set<Metascreen> {
       |^ ;|`,
     tilesets: {grass: {},
                river: {requires: [ScreenFix.RiverShortGrass]}},
+    edges: 'soos',
   });
-  riverBranchNWS = $({
+  readonly riverBranchNWS = $({
     id: 0x28,
     icon: icon`
       | ║ |
       |═╣ |
       | ║ |`,
     tilesets: {river: {}},
+    edges: 'rrro',
   });
-  shortGrassNW = $({
+  readonly shortGrassNW = $({
     id: 0x29,
     icon: icon`
       |  ;|
@@ -700,17 +741,19 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {grass: {},
                river: {requires: [ScreenFix.RiverShortGrass,
                                   ScreenFix.GrassLongGrassRemapping]}},
+    edges: 'ooss',
   });
-  valleyBridge = $({
+  readonly valleyBridge = $({
     id: 0x2a,
     icon: icon` |
       |▛║▜|
       | ║ |
       |▙║▟|`,
     tilesets: {grass: {}, river: {}},
-    connections: [seamlessVertical(0x77)],
+    edges: 'n n ',
+    exits: [seamlessVertical(0x77)],
   });
-  exitS_cave = $({
+  readonly exitS_cave = $({
     id: 0x2b,
     icon: icon`∩
       |█∩█|
@@ -719,9 +762,10 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {grass: {}, river: {}, desert: {},
                // Not particularly useful since no connector on south end?
                sea: {requires: [ScreenFix.SeaCaveEntrance]}},
-    connections: [cave(0x67), bottomEdge()]
+    edges: '  n ',
+    exits: [cave(0x67), bottomEdge()]
   });
-  outsideWindmill = $({
+  readonly outsideWindmill = $({
     id: 0x2c,
     icon: icon`╳
       |██╳|
@@ -729,18 +773,20 @@ export class Metascreens { // extends Set<Metascreen> {
       |█ █|`,
     tilesets: {grass: {}},
     // TODO - annotate 3 exits, spawn for windmill blade
-    connections: [cave(0x63), bottomEdge(), door(0x89), door(0x8c)],
+    edges: '  n ',
+    exits: [cave(0x63), bottomEdge(), door(0x89), door(0x8c)],
   });
-  townExitW_cave = $({ // outside leaf (TODO - consider just deleting?)
+  readonly townExitW_cave = $({ // outside leaf (TODO - consider just deleting?)
     id: 0x2d,
     icon: icon`∩
       |█∩█|
       |▄▄█|
       |███|`,
     tilesets: {grass: {}}, // cave entrance breaks river and others...
-    connections: [cave(0x4a), leftEdge(5)],
+    edges: ' n  ',
+    exits: [cave(0x4a), leftEdge(5)],
   });
-  riverNS = $({
+  readonly riverNS = $({
     id: 0x2e,
     icon: icon`
       | ║ |
@@ -748,7 +794,7 @@ export class Metascreens { // extends Set<Metascreen> {
       | ║ |`,
     tilesets: {river: {}},
   });
-  riverNS_bridge = $({
+  readonly riverNS_bridge = $({
     id: 0x2f,
     icon: icon`
       | ║ |
@@ -757,7 +803,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {river: {}},
     // TODO - indicate bridge
   });
-  riverBendWS = $({
+  readonly riverBendWS = $({
     id: 0x30,
     icon: icon`
       | w▜|
@@ -765,7 +811,7 @@ export class Metascreens { // extends Set<Metascreen> {
       | ║ |`,
     tilesets: {river: {}},
   });
-  boundaryN_waterfallCave = $({
+  readonly boundaryN_waterfallCave = $({
     id: 0x31,
     icon: icon`
       |▛║█|
@@ -774,9 +820,9 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {river: {}},
     // TODO - flag version without entrance?
     //  - will need a tileset fix
-    connections: [waterfallCave(0x75)],
+    exits: [waterfallCave(0x75)],
   });
-  open_trees = $({
+  readonly open_trees = $({
     id: 0x32,
     icon: icon`
       | ^ |
@@ -786,7 +832,7 @@ export class Metascreens { // extends Set<Metascreen> {
                desert: {requires: [ScreenFix.DesertTrees,
                                    ScreenFix.DesertRocks]}},
   });
-  exitS = $({
+  readonly exitS = $({
     id: 0x33,
     icon: icon`╷
       | w |
@@ -796,9 +842,9 @@ export class Metascreens { // extends Set<Metascreen> {
                // NOTE: These fixes are not likely to ever land.
                desert: {requires: [ScreenFix.DesertMarsh]},
                sea: {requires: [ScreenFix.SeaMarsh]}},
-    connections: [bottomEdge()],
+    exits: [bottomEdge()],
   });
-  bendNW = $({
+  readonly bendNW = $({
     id: 0x34,
     icon: icon`▘
       |█▌ |
@@ -806,7 +852,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
   });
-  bendNE = $({
+  readonly bendNE = $({
     id: 0x35,
     icon: icon`▝
       | ▐█|
@@ -814,7 +860,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
   });
-  bendSE = $({
+  readonly bendSE = $({
     id: 0x36,
     icon: icon`▗
       |   |
@@ -822,7 +868,7 @@ export class Metascreens { // extends Set<Metascreen> {
       | ▐█|`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
   });
-  bendWS = $({
+  readonly bendWS = $({
     id: 0x37,
     icon: icon`▖
       |   |
@@ -830,7 +876,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |█▌ |`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
   });
-  towerPlain = $({
+  readonly towerPlain = $({
     id: 0x38,
     icon: icon`┴
       | ┊ |
@@ -839,7 +885,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {tower: {}},
     // TODO - annotate possible stairway w/ flag?
   });
-  towerRobotDoor_downStair = $({
+  readonly towerRobotDoor_downStair = $({
     id: 0x39,
     icon: icon`┬
       | ∩ |
@@ -848,7 +894,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {tower: {}},
     // TODO - connections
   });
-  towerDynaDoor = $({
+  readonly towerDynaDoor = $({
     id: 0x3a,
     icon: icon`∩
       | ∩ |
@@ -857,7 +903,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {tower: {}},
     // TODO - connections
   });
-  towerLongStairs = $({
+  readonly towerLongStairs = $({
     id: 0x3b,
     icon: icon`
       | ┊ |
@@ -866,26 +912,26 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {tower: {}},
     // TODO - connections
   });
-  towerMesiaRoom = $({
+  readonly towerMesiaRoom = $({
     id: 0x3c,
     tilesets: {tower: {}},
     // TODO - connections
   });
-  towerTeleporter = $({
+  readonly towerTeleporter = $({
     id: 0x3d,
     tilesets: {tower: {}},
     // TODO - connections
   });
-  caveAbovePortoa = $({
+  readonly caveAbovePortoa = $({
     id: 0x3e,
     icon: icon`
       |███|
       |█∩█|
       |█↓█|`,
     tilesets: {river: {}},
-    connections: [cave(0x66)],
+    exits: [cave(0x66)],
   });
-  cornerNE_flowers = $({
+  readonly cornerNE_flowers = $({
     id: 0x3f,
     icon: icon`▜
       |███|
@@ -896,7 +942,7 @@ export class Metascreens { // extends Set<Metascreen> {
     // with e.g. a windmill or castle tile that's not used in 9c, but
     // we still don't have a good sprite to use for it...
   });
-  towerEdge = $({
+  readonly towerEdge = $({
     id: 0x40,
     icon: icon` |
       |   |
@@ -904,7 +950,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |`,
     tilesets: {tower: {}},
   });
-  towerRobotDoor = $({
+  readonly towerRobotDoor = $({
     id: 0x41,
     icon: icon`─
       | O |
@@ -912,7 +958,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |`,
     tilesets: {tower: {}},
   });
-  towerDoor = $({
+  readonly towerDoor = $({
     id: 0x42,
     icon: icon`∩
       | ∩ |
@@ -921,287 +967,287 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {tower: {}},
     // TODO - connections
   });
-  house_bedroom = $({
+  readonly house_bedroom = $({
     id: 0x43,
     tilesets: {house: {}},
-    connections: [bottomEdge()],
+    exits: [bottomEdge()],
   });
-  shed = $({
+  readonly shed = $({
     id: 0x44,
     tilesets: {house: {}},
-    connections: [bottomEdge()],
+    exits: [bottomEdge()],
   });
   // TODO - separate metascreen for shedWithHiddenDoor
-  tavern = $({
+  readonly tavern = $({
     id: 0x45,
     tilesets: {house: {}},
-    connections: [bottomEdge()],
+    exits: [bottomEdge()],
   });
-  house_twoBeds = $({
+  readonly house_twoBeds = $({
     id: 0x46,
     tilesets: {house: {}},
-    connections: [bottomEdge()],
+    exits: [bottomEdge()],
   });
-  throneRoom_amazones = $({
+  readonly throneRoom_amazones = $({
     id: 0x47,
     tilesets: {house: {}},
     // TODO - need to fix the single-width stair!
-    connections: [bottomEdge(7, 3), downStair(0x4c, 1)],
+    exits: [bottomEdge(7, 3), downStair(0x4c, 1)],
   });
-  house_ruinedUpstairs = $({
+  readonly house_ruinedUpstairs = $({
     id: 0x48,
     tilesets: {house: {}},
-    connections: [bottomEdge(), downStair(0x9c, 1)],
+    exits: [bottomEdge(), downStair(0x9c, 1)],
   });
-  house_ruinedDownstairs = $({
+  readonly house_ruinedDownstairs = $({
     id: 0x49,
     tilesets: {house: {}},
     connetions: [upStair(0x56, 1)],
   });
-  foyer = $({
+  readonly foyer = $({
     id: 0x4a,
     tilesets: {house: {}},
-    connections: [bottomEdge(), door(0x28), door(0x53), door(0x5c)],
+    exits: [bottomEdge(), door(0x28), door(0x53), door(0x5c)],
   });
-  throneRoom_portoa = $({
+  readonly throneRoom_portoa = $({
     id: 0x4b,
     tilesets: {house: {}},
-    connections: [bottomEdge(), door(0x2b)],
+    exits: [bottomEdge(), door(0x2b)],
   });
-  fortuneTeller = $({
+  readonly fortuneTeller = $({
     id: 0x4c,
     tilesets: {house: {}},
-    connections: [bottomEdge(), door(0x56), door(0x59)],
+    exits: [bottomEdge(), door(0x56), door(0x59)],
   });
-  backRoom = $({
+  readonly backRoom = $({
     id: 0x4d,
     tilesets: {house: {}},
-    connections: [bottomEdge()],
+    exits: [bottomEdge()],
   });
-  dojo = $({
+  readonly dojo = $({
     id: 0x4e,
     tilesets: {house: {}},
-    connections: [bottomEdge()],
+    exits: [bottomEdge()],
   });
-  windmillInside = $({
+  readonly windmillInside = $({
     id: 0x4f,
     tilesets: {house: {}},
-    connections: [bottomEdge(9, 1)],
+    exits: [bottomEdge(9, 1)],
   });
-  horizontalTownMiddle = $({
+  readonly horizontalTownMiddle = $({
     // brynmaer + swan (TODO - split so we can move exits)
     id: 0x50,
     tilesets: {town: {}},
-    connections: [door(0x4c), door(0x55)],
+    exits: [door(0x4c), door(0x55)],
   });
-  brynmaerRight_exitE = $({
+  readonly brynmaerRight_exitE = $({
     // brynmaer
     id: 0x51,
     tilesets: {town: {type: 'horizontal'}},
-    connections: [rightEdge(8), door(0x41)],
+    exits: [rightEdge(8), door(0x41)],
   });
-  brynmaerLeft_deadEnd = $({
+  readonly brynmaerLeft_deadEnd = $({
     // brynmaer
     id: 0x52,
     tilesets: {town: {type: 'horizontal'}},
-    connections: [door(0x49), door(0x4c)],
+    exits: [door(0x49), door(0x4c)],
   });
-  swanLeft_exitW = $({
+  readonly swanLeft_exitW = $({
     // swan
     id: 0x53,
     tilesets: {town: {type: 'horizontal'}},
-    connections: [leftEdge(9), door(0x49), door(0x5e)],
+    exits: [leftEdge(9), door(0x49), door(0x5e)],
   });
-  swanRight_exitS = $({
+  readonly swanRight_exitS = $({
     // swan
     id: 0x54,
     tilesets: {town: {type: 'horizontal'}},
-    connections: [bottomEdge(3), door(0x41), door(0x43), door(0x57)],
+    exits: [bottomEdge(3), door(0x41), door(0x43), door(0x57)],
   });
-  horizontalTownLeft_exitN = $({
+  readonly horizontalTownLeft_exitN = $({
     // sahara, amazones (TODO - split so we can move exits)
     id: 0x55,
     tilesets: {town: {type: 'horizontal'}},
-    connections: [topEdge(0xd), door(0x46), door(0x4b)],
+    exits: [topEdge(0xd), door(0x46), door(0x4b)],
   });
-  amazonesRight_deadEnd = $({
+  readonly amazonesRight_deadEnd = $({
     // amazones
     id: 0x56,
     tilesets: {town: {type: 'horizontal'}},
-    connections: [door(0x40), door(0x58)],
+    exits: [door(0x40), door(0x58)],
   });
-  saharaRight_exitE = $({
+  readonly saharaRight_exitE = $({
     // sahara
     id: 0x57,
     tilesets: {town: {type: 'horizontal'}},
-    connections: [rightEdge(7), door(0x40), door(0x66)],
+    exits: [rightEdge(7), door(0x40), door(0x66)],
   });
-  portoaNW = $({
+  readonly portoaNW = $({
     // portoa
     id: 0x58,
     tilesets: {town: {type: 'square'}},
-    connections: [cave(0x47, 'fortress'), bottomEdge()], // bottom just in case?
+    exits: [cave(0x47, 'fortress'), bottomEdge()], // bottom just in case?
   });
-  portoaNE = $({
+  readonly portoaNE = $({
     // portoa
     id: 0x59,
     tilesets: {town: {type: 'square'}},
-    connections: [door(0x63), door(0x8a), bottomEdge(3, 4)],
+    exits: [door(0x63), door(0x8a), bottomEdge(3, 4)],
   });
-  portoaSW_exitW = $({
+  readonly portoaSW_exitW = $({
     // portoa
     id: 0x5a,
     tilesets: {town: {type: 'square'}},
-    connections: [leftEdge(9), door(0x86), topEdge(],
+    exits: [leftEdge(9), door(0x86), topEdge()],
   });
-  portoaSE_exitE = $({
+  readonly portoaSE_exitE = $({
     // portoa
     id: 0x5b,
     tilesets: {town: {type: 'square'}},
-    connections: [rightEdge(9), door(0x7a), door(0x87)],
+    exits: [rightEdge(9), door(0x7a), door(0x87)],
   });
-  dyna = $({
+  readonly dyna = $({
     id: 0x5c,
     tilesets: {tower: {}},
   });
-  portoaFisherman = $({
+  readonly portoaFisherman = $({
     // portoa
     id: 0x5d,
     tilesets: {town: {type: 'square'}},
-    connections: [rightEdge(6), leftEdge(4, 6), door(0x68)],
+    exits: [rightEdge(6), leftEdge(4, 6), door(0x68)],
   });
-  verticalTownTop_fortress = $({
+  readonly verticalTownTop_fortress = $({
     // shyron, zombie town (probably not worth splitting this one)
     id: 0x5e,
     tilesets: {town: {type: 'vertical'}},
-    connections: [cave(0x47), bottomEdge()],
+    exits: [cave(0x47), bottomEdge()],
   });
-  shyronMiddle = $({
+  readonly shyronMiddle = $({
     // shyron
     id: 0x5f,
     tilesets: {town: {type: 'vertical'}},
-    connections: [door(0x54), door(0x5b), topEdge()],
+    exits: [door(0x54), door(0x5b), topEdge()],
   });
-  shyronBottom_exitS = $({
+  readonly shyronBottom_exitS = $({
     // shyron
     id: 0x60,
     tilesets: {town: {type: 'vertical'}},
-    connections: [bottomEdge(3), door(0x04), door(0x06), door(0x99)],
+    exits: [bottomEdge(3), door(0x04), door(0x06), door(0x99)],
   });
-  zombieTownMiddle = $({
+  readonly zombieTownMiddle = $({
     // zombie town
     id: 0x61,
     tilesets: {town: {type: 'vertical'}},
-    connections: [door(0x99), topEdge()],
+    exits: [door(0x99), topEdge()],
   });
-  zombieTownBottom_caveExit = $({
+  readonly zombieTownBottom_caveExit = $({
     // zombie town
     id: 0x62,
     tilesets: {town: {type: 'vertical'}},
-    connections: [cave(0x92), door(0x23), door(0x4d)],
+    exits: [cave(0x92), door(0x23), door(0x4d)],
   });
-  leafNW_houseShed = $({
+  readonly leafNW_houseShed = $({
     // leaf
     id: 0x63,
     tilesets: {town: {type: 'square'}},
-    connections: [door(0x8c), door(0x95)],
+    exits: [door(0x8c), door(0x95)],
   });
-  squareTownNE_house = $({
+  readonly squareTownNE_house = $({
     // leaf, goa (TODO - split)
     id: 0x64,
     tilesets: {town: {type: 'square'}},
-    connections: [topEdge(1), door(0xb7)],
+    exits: [topEdge(1), door(0xb7)],
   });
-  leafSW_shops = $({
+  readonly leafSW_shops = $({
     // leaf
     id: 0x65,
     tilesets: {town: {type: 'square'}},
-    connections: [door(0x77), door(0x8a)],
+    exits: [door(0x77), door(0x8a)],
   });
-  leafSE_exitE = $({
+  readonly leafSE_exitE = $({
     // leaf
     id: 0x66,
     tilesets: {town: {type: 'square'}},
-    connections: [rightEdge(3), door(0x84)],
+    exits: [rightEdge(3), door(0x84)],
   });
-  goaNW_tavern = $({
+  readonly goaNW_tavern = $({
     // goa
     id: 0x67,
     tilesets: {town: {type: 'square'}},
-    connections: [door(0xba)],
+    exits: [door(0xba)],
   });
-  squareTownSW_exitS = $({
+  readonly squareTownSW_exitS = $({
     // goa, joel (TODO - split)
     id: 0x68,
     tilesets: {town: {type: 'square'}},
-    connections: [bottomEdge(8), door(0x84)],
+    exits: [bottomEdge(8), door(0x84)],
   });
-  goaSE_shop = $({
+  readonly goaSE_shop = $({
     // goa
     id: 0x69,
     tilesets: {town: {type: 'square'}},
-    connections: [door(0x82)],
+    exits: [door(0x82)],
   });
-  joelNE_shop = $({
+  readonly joelNE_shop = $({
     // joel
     id: 0x6a,
     tilesets: {town: {type: 'square'}},
-    connections: [door(0x47)],
+    exits: [door(0x47)],
   });
-  joelSE_lake = $({
+  readonly joelSE_lake = $({
     // joel
     id: 0x6b,
     tilesets: {town: {type: 'square'}},
   });
-  oakNW = $({
+  readonly oakNW = $({
     // oak
     id: 0x6c,
     tilesets: {town: {type: 'square'}},
-    connections: [door(0xe7)],
+    exits: [door(0xe7)],
   });
-  oakNE = $({
+  readonly oakNE = $({
     // oak
     id: 0x6d,
     tilesets: {town: {type: 'square'}},
-    connections: [door(0x60)],
+    exits: [door(0x60)],
   });
-  oakSW = $({
+  readonly oakSW = $({
     // oak
     id: 0x6e,
     tilesets: {town: {type: 'square'}},
-    connections: [door(0x7c)],
+    exits: [door(0x7c)],
   });
-  oakSE = $({
+  readonly oakSE = $({
     // oak
     id: 0x6f,
     tilesets: {town: {type: 'square'}},
-    connections: [bottomEdge(0), door(0x97)],
+    exits: [bottomEdge(0), door(0x97)],
   });
-  temple = $({
+  readonly temple = $({
     // shyron
     id: 0x70,
     tilesets: {house: {}},
-    connections: [bottomEdge()],
+    exits: [bottomEdge()],
   });
-  wideDeadEndN = $({
+  readonly wideDeadEndN = $({
     id: 0x71,
     icon: icon`
       | ┃ |
       | > |
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
-    connections: [downStair(0xc7)],
+    exits: [downStair(0xc7)],
   });
-  goaWideDeadEndN = $({
+  readonly goaWideDeadEndN = $({
     id: 0x71,
     icon: icon`
       |╵┃╵|
       | > |
       |   |`,
     tilesets: {goa1: {}},
-    connections: [downStair(0xc7)],
+    exits: [downStair(0xc7)],
   });
-  wideHallNS = $({
+  readonly wideHallNS = $({
     id: 0x72,
     icon: icon`
       | ┃ |
@@ -1209,7 +1255,7 @@ export class Metascreens { // extends Set<Metascreen> {
       | ┃ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
   });
-  goaWideHallNS = $({
+  readonly goaWideHallNS = $({
     id: 0x72,
     // TODO - don't show this for all fortresses,
     //        just opt in for the one where we actually use it...
@@ -1220,7 +1266,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |│┃│|`,
     tilesets: {goa1: {}},
   });
-  goaWideHallNS_blockedRight = $({
+  readonly goaWideHallNS_blockedRight = $({
     // NOTE: this is a possible unflagged 72?
     icon: icon`
       |│┃│|
@@ -1235,23 +1281,23 @@ export class Metascreens { // extends Set<Metascreen> {
     //   - probably given an existing screen?
     //   - will need to also tell where to put itself?
   });
-  goaWideArena = $({
+  readonly goaWideArena = $({
     id: 0x73,
     icon: icon`<
       |╻<╻|
       |┡━┩|
       |│╻│|`,
     tilesets: {goa1: {}},
-    connections: [upStair(0x27)],
+    exits: [upStair(0x27)],
   });
-  limeTreeLake = $({
+  readonly limeTreeLake = $({
     id: 0x74,
     tilesets: {}, // sea or mountain (94) - but not really
     connection: [bottomEdge(), cave(0x47)],
     // TODO - bridge
   });
   // Swamp screens
-  swampNW = $({
+  readonly swampNW = $({
     id: 0x75,
     icon: icon`
       | │ |
@@ -1259,92 +1305,92 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |`,
     tilesets: {swamp: {}},
     // TODO - do we actually want to put all these edges in?
-    connections: [topEdge(6, 4), leftEdge(7, 3)],
+    exits: [topEdge(6, 4), leftEdge(7, 3)],
   });
-  swampE = $({
+  readonly swampE = $({
     id: 0x76,
     icon: icon`
       |   |
       | ╶─|
       |   |`,
     tilesets: {swamp: {}},
-    connections: [rightEdge(7, 3)],
+    exits: [],
     // TODO - flaggable for door ?????
   });
-  swampE_door = $({
+  readonly swampE_door = $({
     icon: icon`∩
       | ∩ |
       | ╶─|
       |   |`,
     tilesets: {swamp: {}},
-    connections: [upStair(0x6c), rightEdge(7, 3)],
+    exits: [upStair(0x6c)],
   });
-  swampNWSE = $({
+  readonly swampNWSE = $({
     id: 0x77,
     icon: icon`
       | │ |
       |─┼─|
       | │ |`,
     tilesets: {swamp: {}},
-    connections: [topEdge(6, 4), leftEdge(7, 3), bottomEdge(6, 4), rightEdge(7, 3)],
+    exits: [topEdge(6, 4), leftEdge(7, 3), bottomEdge(6, 4), rightEdge(7, 3)],
   });
-  swampNWS = $({
+  readonly swampNWS = $({
     id: 0x78,
     icon: icon`
       | │ |
       |─┤ |
       | │ |`,
     tilesets: {swamp: {}},
-    connections: [topEdge(6, 4), leftEdge(7, 3), bottomEdge(6, 4)],
+    exits: [topEdge(6, 4), leftEdge(7, 3), bottomEdge(6, 4)],
   });
-  swampNE = $({
+  readonly swampNE = $({
     id: 0x79,
     icon: icon`
       | │ |
       | └─|
       |   |`,
     tilesets: {swamp: {}},
-    connections: [topEdge(6, 4), rightEdge(7, 3)],
+    exits: [topEdge(6, 4), rightEdge(7, 3)],
   });
-  swampWSE = $({
+  readonly swampWSE = $({
     id: 0x7a,
     icon: icon`
       |   |
       |─┬─|
       | │ |`,
     tilesets: {swamp: {}},
-    connections: [leftEdge(7, 3), bottomEdge(6, 4), rightEdge(7, 3)],
+    exits: [leftEdge(7, 3), bottomEdge(6, 4), rightEdge(7, 3)],
     // TODO - flaggable
   });
-  swampWSE_door = $({
+  readonly swampWSE_door = $({
     icon: icon`∩
       | ∩  |
       |─┬─|
       | │ |`,
     tilesets: {swamp: {}},
-    connections: [upStair(0x66), leftEdge(7, 3), bottomEdge(6, 4), rightEdge(7, 3)],
+    // NOTE: door screens should not be on an edge!
+    exits: [upStair(0x66)],
     // TODO - flaggable
   });
-  swampW = $({
+  readonly swampW = $({
     id: 0x7b,
     icon: icon`
       |   |
       |─╴ |
       |   |`,
     tilesets: {swamp: {}},
-    connections: [leftEdge(7, 3)],
     // TODO - flaggable
   });
-  swampW_door = $({
+  readonly swampW_door = $({
     icon: icon`∩
       | ∩ |
       |─╴ |
       |   |`,
     tilesets: {swamp: {}},
-    connections: [upStair(0x64), leftEdge(7, 3)],
+    exits: [upStair(0x64)],
     // TODO - flaggable
   });
-  swampArena = $({
+  readonly swampArena = $({
     id: 0x7c,
     icon: icon`
       |   |
@@ -1359,30 +1405,33 @@ export class Metascreens { // extends Set<Metascreen> {
     //            the whole screen a column over, or else by changing the tiles?
     // TODO - NOTE SWAMP GRAPHICS STILL BROKEN!!
   });
-  swampNWE = $({
+  readonly swampNWE = $({
     id: 0x7d,
     icon: icon`
       | │ |
       |─┴─|
       |   |`,
     tilesets: {swamp: {}},
+    exits: [topEdge(6, 4), leftEdge(7, 3), rightEdge(7, 3)],
   });
-  swampSW = $({
+  readonly swampSW = $({
     id: 0x7e,
     icon: icon`
       |   |
       |─┐ |
       | │ |`,
     tilesets: {swamp: {}},
+    exits: [leftEdge(7, 3), bottomEdge(6, 4)],
   });
-  swampSW_door = $({
+  readonly swampSW_door = $({
     icon: icon`∩
       | ∩ |
       |─┐ |
       | │ |`,
     tilesets: {swamp: {}},
+    exits: [upStair(0x67)],
   });
-  swampEmpty = $({
+  readonly swampEmpty = $({
     id: 0x7f,
     icon: icon`
       |   |
@@ -1391,564 +1440,785 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {swamp: {}},
   });
   // Missing swamp screens
-  swampN = $({
+  readonly swampN = $({
     icon: icon`
       | │ |
       | ╵ |
       |   |`,
     tilesets: {swamp: {}},
   });
-  swampS = $({
+  readonly swampS = $({
     icon: icon`
       |   |
       | ╷ |
       | │ |`,
     tilesets: {swamp: {}},
   });
-  swampNS = $({
+  readonly swampNS = $({
     icon: icon`
       | │ |
       | │ |
       | │ |`,
     tilesets: {swamp: {}},
+    exits: [topEdge(6, 4), bottomEdge(6, 4)],
   });
-  swampWE = $({
+  readonly swampWE = $({
     icon: icon`
       |   |
       |───|
       |   |`,
     tilesets: {swamp: {}},
+    exits: [leftEdge(7, 3), rightEdge(7, 3)],
   });
-  swampWE_door = $({
+  readonly swampWE_door = $({
     icon: icon`∩
       | ∩ |
       |───|
       |   |`,
     tilesets: {swamp: {}},
+    exits: [upStair(0x66)],
     // TODO - how to link to swampWE to indicate flag=false?
   });
-  swampSE = $({
+  readonly swampSE = $({
     icon: icon`
       |   |
       | ┌─|
       | │ |`,
     tilesets: {swamp: {}},
+    exits: [leftEdge(7, 3), bottomEdge(6, 4)],
   });
-  swampSE_door = $({
+  readonly swampSE_door = $({
     icon: icon`∩
       | ∩ |
       | ┌─|
       | │ |`,
     tilesets: {swamp: {}},
+    exits: [upStair(0x6a)],
   });
-  swampNSE = $({
+  readonly swampNSE = $({
     icon: icon`
       | │ |
       | ├─|
       | │ |`,
     tilesets: {swamp: {}},
+    exits: [topEdge(6, 4), bottomEdge(6, 4), rightEdge(7, 3)],
   });
   // Cave screens
-  empty = $({
+  readonly empty = $({
     id: 0x80,
     icon: icon`
       |   |
       |   |
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: '    ',
   });
-  hallNS = $({
+  readonly hallNS = $({
     id: 0x81,
     icon: icon`
       | │ |
       | │ |
       | │ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: 'c c ',
+    connect: '2a',
   });
-  hallWE = $({
+  readonly hallWE = $({
     id: 0x82,
     icon: icon`
       |   |
       |───|
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: ' c c',
+    connect: '6e',
   });
-  hallSE = $({
+  readonly hallSE = $({
     id: 0x83,
     icon: icon`
       |   |
       | ┌─|
       | │ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: '  cc',
+    connect: 'ae',
   });
-  hallWS = $({
+  readonly hallWS = $({
     id: 0x84,
     icon: icon`
       |   |
       |─┐ |
       | │ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: ' cc ',
+    connect: '6a',
   });
-  hallNE = $({
+  readonly hallNE = $({
     id: 0x85,
     icon: icon`
       | │ |
       | └─|
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: 'c  c',
+    connect: '2e',
   });
-  hallNW = $({
+  readonly hallNW = $({
     id: 0x86,
     icon: icon`
       | │ |
       |─┘ |
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: 'cc  ',
+    connect: '26',
   });
-  branchNSE = $({
+  readonly branchNSE = $({
     id: 0x87,
     icon: icon`
       | │ |
       | ├─|
       | │ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: 'c cc',
+    connect: '2ae',
   });
-  branchNWSE = $({
+  readonly branchNWSE = $({
     id: 0x88,
     icon: icon`
       | │ |
       |─┼─|
       | │ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: 'cccc',
+    connect: '26ae',
   });
-  branchNWS = $({
+  readonly branchNWS = $({
     id: 0x89,
     icon: icon`
       | │ |
       |─┤ |
       | │ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: 'ccc ',
+    connect: '26a',
   });
-  branchWSE = $({
+  readonly branchWSE = $({
     id: 0x8a,
     icon: icon`
       |   |
       |─┬─|
       | │ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: ' ccc',
+    connect: '6ae',
   });
-  branchNWE = $({
+  readonly branchNWE = $({
     id: 0x8b,
     icon: icon`
       | │ |
       |─┴─|
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: 'cc c',
+    connect: '26e',
   });
-  hallNS_stairs = $({
+  readonly hallNS_stairs = $({
     id: 0x8c,
     icon: icon`
       | ┋ |
       | ┋ |
       | ┋ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    feature: 'stairs',
+    edges: 'c c ',
+    connect: '2a',
   });
-  hallSN_overBridge = $({
+  readonly hallSN_overBridge = $({
     id: 0x8d,
     icon: icon`
       | ╽ |
       |─┃─|
       | ╿ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    feature: 'overBridge',
+    edges: 'cbcb', // TODO - 'b' for other side of bridge??
+    connect: '2a',
   });
-  hallWE_underBridge = $({
+  readonly hallWE_underBridge = $({
     id: 0x8e,
     icon: icon`
       | ╽ |
       |───|
       | ╿ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    feature: 'underBridge',
+    edges: 'bcbc',
+    connect: '6e',
   });
-  hallNS_wall = $({
+  readonly hallNS_wall = $({
     id: 0x8f,
     icon: icon`
       | │ |
       | ┆ |
       | │ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: 'c c ',
+    feature: 'wall',
+    // TODO - can we just detect the connections?
+    //      - for each tileset, map 1..f to various edge pos?
+    //      - e.g. cave: 0x02 = 1, 0x08 = 2, 0x0c = 3,
+    //                   0x20 = 5, 0x80 = 6, 0xc0 = 7, ...
+    //        need to be WALKABLE
+    //        may need to reevaluate each screen for each tileset...
+    //        and need to wait until the screen is BUILT!
+    connect: '2=a', // wall will always connect the first two?
+    wall: 0x87, 
     // TODO - record the wall
   });
-  hallWE_wall = $({
+  readonly hallWE_wall = $({
     id: 0x90,
     icon: icon`
       |   |
       |─┄─|
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    feature: 'wall',
+    edges: ' c c',
+    connect: '6=e',
+    wall: 0x67
   });
-  hallNS_arena = $({
+  readonly hallNS_arena = $({
     id: 0x91,
     icon: icon`
       |┌┸┐|
       |│&│|
       |└┬┘|`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    feature: 'arena',
+    edges: 'n c ', // 'n' for 'narrow'
+    connect: '2a',
   });
-  hallNS_arenaWall = $({
+  readonly hallNS_arenaWall = $({
     id: 0x92,
     icon: icon`
       |┌┄┐|
       |│&│|
       |└┬┘|`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    feature: ['arena', 'wall'],
+    edges: 'n c ',
+    connect: '2=a',
   });
   // NOTE: screen 93 is missing!
-  branchNWE_wall = $({
+  readonly branchNWE_wall = $({
     id: 0x94,
     icon: icon`
       | ┆ |
       |─┴─|
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: 'cc c',
+    connect: '2=6e',
   });
-  branchNWE_upStair = $({
+  readonly branchNWE_upStair = $({
     id: 0x95,
     icon: icon`<
       | < |
       |─┴─|
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: ' c c',
+    connect: '6e',
+    exits: [upStair(0x47)],
   });
-  deadEndW_upStair = $({
+  readonly deadEndW_upStair = $({
     id: 0x96,
     icon: icon`<
       | < |
       |─┘ |
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: ' c  ',
+    connect: '6',
+    exits: [upStair(0x42)],
   });
-  deadEndW_downStair = $({
+  readonly deadEndW_downStair = $({
     id: 0x97,
     icon: icon`>
       |   |
       |─┐ |
       | > |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: ' c  ',
+    connect: '6',
+    exits: [downStair(0xa2)],
   });
-  deadEndE_upStair = $({
+  readonly deadEndE_upStair = $({
     id: 0x98,
     icon: icon`<
       | < |
       | └─|
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: '   c',
+    connect: 'e',
+    exits: [upStair(0x4c)],
   });
-  deadEndE_downStair = $({
+  readonly deadEndE_downStair = $({
     id: 0x99,
     icon: icon`>
       |   |
       | ┌─|
       | > |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: '   c',
+    connect: 'e',
+    exits: [downStair(0xac)],
   });
-  deadEndNS_stairs = $({
+  readonly deadEndNS_stairs = $({
     id: 0x9a,
     icon: icon`
       | > |
       |   |
       | < |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: 'c c ',
+    connect: '2|a',
+    exits: [downStair(0x17), upStair(0xd7)],
   });
-  deadEndNS = $({
+  readonly deadEndN_stairs = $({
+    id: 0x9a,
+    icon: icon`
+      | > |
+      |   |
+      |   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: 'c   ',
+    connect: '2',
+    exits: [downStair(0x17)],
+  });
+  readonly deadEndS_stairs = $({
+    id: 0x9a,
+    icon: icon`
+      |   |
+      |   |
+      | < |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: '  c ',
+    connect: 'a',
+    exits: [upStair(0xd7)],
+  });
+  readonly deadEndNS = $({
     id: 0x9b,
     icon: icon`
       | ╵ |
       |   |
       | ╷ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: 'c c ',
+    connect: '2|a',
   });
-  deadEndWE = $({
+  readonly deadEndN = $({
+    id: 0x9b,
+    icon: icon`
+      | ╵ |
+      |   |
+      |   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: 'c   ',
+    connect: '2',
+  });
+  readonly deadEndS = $({
+    id: 0x9b,
+    icon: icon`
+      |   |
+      |   |
+      | ╷ |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: '  c ',
+    connect: 'a',
+  });
+  readonly deadEndWE = $({
     id: 0x9c,
     icon: icon`
       |   |
       |╴ ╶|
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: ' c c',
+    connect: '6|e',
+  });
+  readonly deadEndW = $({
+    id: 0x9c,
+    icon: icon`
+      |   |
+      |╴  |
+      |   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: ' c  ',
+    connect: '6',
+  });
+  readonly deadEndE = $({
+    id: 0x9c,
+    icon: icon`
+      |   |
+      |  ╶|
+      |   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: '   c',
+    connect: 'e',
   });
   // NOTE: 9d missing
-  hallNS_entrance = $({
+  readonly hallNS_entrance = $({
     id: 0x9e,
     icon: icon`╽
       | │ |
       | │ |
       | ╽ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    edges: 'c n ',
+    connect: '2a',
+    exits: [bottomEdge()],
   });
-  channelExitSE = $({
+  readonly channelExitSE = $({
     id: 0x9f,
     icon: icon`
       |   |
       | ╔═|
       | ║ |`,
-    tilesets: {cave: {}},
+    tilesets: {dolphinCave: {}},
+    //edges: '  rr',
+    //connect: '9d~bf',  // ~ means water - flight needed
   });
-  channelBendWS = $({
+  readonly channelBendWS = $({
     id: 0xa0,
     icon: icon`
       |█  |
       |═╗ |
       |█║ |`,
-    tilesets: {cave: {}},
+    tilesets: {dolphinCave: {}},
+    //edges: ' rr ',
   });
-  channelHallNS = $({
+  readonly channelHallNS = $({
     id: 0xa1,
     icon: icon`
       | ║ |
       | ╠┈|
       | ║ |`,
-    tilesets: {cave: {}},
+    tilesets: {dolphinCave: {}},
   });
-  channelEntranceSE = $({
+  readonly channelEntranceSE = $({
     id: 0xa2,
     icon: icon`
       |   |
       | ╔┈|
       |╷║ |`,
-    tilesets: {cave: {}},
+    tilesets: {dolphinCave: {}},
+    // NOTE: This would ALMOST work as a connection to the
+    // normal river cave tiles, but the river is one tile
+    // taller at the top, so there's no match!
   });
-  channelCross = $({
+  readonly channelCross = $({
     id: 0xa3,
     icon: icon`
       | ║ |
       |═╬═|
       |╷║╷|`,
-    tilesets: {cave: {}},
+    tilesets: {dolphinCave: {}},
   });
-  channelDoor = $({
+  readonly channelDoor = $({
     id: 0xa4,
     icon: icon`∩
       | ∩█|
       |┈══|
       |  █|`,
-    tilesets: {cave: {}},
+    tilesets: {dolphinCave: {}},
   });
-  mountainFloatingIsland = $({
+  readonly mountainFloatingIsland = $({
     id: 0xa5,
     icon: icon`*
       |═╗█|
       |*║ |
       |═╣█|`,
     tilesets: {mountainRiver: {}},
+    edges: '  wp',  // w = waterfall, p = path
+    connect: 'e',
   });
-  mountainPathNE_stair = $({
+  readonly mountainPathNE_stair = $({
     id: 0xa6,
     icon: icon`└
       |█┋█|
       |█  |
       |███|`,
     tilesets: {mountain: {}, mountainRiver: {}},
+    edges: 'l  p',  // l = ladder (stairs)
+    connect: '2e',
+    exits: [topEdge()], // never used as an exit in vanilla
   });
-  mountainBranchNWE = $({
+  readonly mountainBranchNWE = $({
     id: 0xa7,
     icon: icon`┴
       |█ █|
       |   |
       |███|`,
     tilesets: {mountain: {}, mountainRiver: {}},
+    edges: 'pp p',
+    connect: '26e',
   });
-  mountainPathWE_iceBridge = $({
+  readonly mountainPathWE_iceBridge = $({
     id: 0xa8,
     icon: icon`╫
       |█║█|
       | ┆ |
       |█║█|`,
     tilesets: {mountainRiver: {}},
+    feature: 'bridge',
+    edges: 'wpwp',
+    connect: '6-e~2a',
+    wall: 0x87,
   });
-  mountainPathSE = $({
+  readonly mountainPathSE = $({
     id: 0xa9,
     icon: icon`┌
       |███|
       |█  |
       |█ █|`,
     tilesets: {mountain: {}, mountainRiver: {}},
+    edges: '  pp',
+    connect: 'ae',
   });
-  mountainDeadEndW_caveEmpty = $({
+  readonly mountainDeadEndW_caveEmpty = $({
     id: 0xaa,
     icon: icon`∩
       |█∩█|
       |▐ ▐|
       |███|`,
     tilesets: {mountain: {}, mountainRiver: {}},
+    edges: ' p  ',
+    connect: '6',
+    exits: [cave(0x5a)],
   });
-  mountainPathNE = $({
+  readonly mountainPathNE = $({
     id: 0xab,
     icon: icon`└
       |█ █|
       |█  |
       |███|`,
     tilesets: {mountain: {}, mountainRiver: {}},
+    edges: 'p  p',
+    connect: '2e',
   });
-  mountainBranchWSE = $({
+  readonly mountainBranchWSE = $({
     id: 0xac,
     icon: icon`┬
       |███|
       |   |
       |█ █|`,
     tilesets: {mountain: {}, mountainRiver: {}},
+    edges: ' ppp',
+    connect: '6ae',
   });
-  mountainPathW_cave = $({
+  readonly mountainPathW_cave = $({
     id: 0xad,
     icon: icon`∩
       |█∩█|
       |  ▐|
       |███|`,
     tilesets: {mountain: {}, mountainRiver: {}},
+    edges: ' p  ',
+    connect: '6',
+    exits: [cave(0x55)],
   });
-  mountainPathE_slopeS = $({
+  readonly mountainPathE_slopeS = $({
     id: 0xae,
     icon: icon`╓
       |███|
       |█  |
       |█↓█|`,
     tilesets: {mountain: {}},
+    edges: '  sp', // s = slope
+    connect: 'ae',
   });
-  mountainPathNW = $({
+  readonly mountainPathNW = $({
     id: 0xaf,
     icon: icon`┘
       |█ █|
       |  █|
       |███|`,
     tilesets: {mountain: {}, mountainRiver: {}},
+    edges: 'pp  ',
+    connect: '26',
   });
-  mountainCave_empty = $({
+  readonly mountainCave_empty = $({
     id: 0xb0,
     icon: icon`∩
       |█∩█|
       |▌ ▐|
       |███|`,
     tilesets: {mountain: {}, mountainRiver: {}},
+    edges: '    ',
+    connect: '',
+    exits: [cave(0x58)],
   });
-  mountainPathE_cave = $({
+  readonly mountainPathE_cave = $({
     id: 0xb1,
     icon: icon`∩
       |█∩█|
       |█  |
       |███|`,
     tilesets: {mountain: {}, mountainRiver: {}},
+    edges: '   p',
+    connect: 'e',
+    exits: [cave(0x57)],
   });
-  mountainPathWE_slopeN = $({
+  readonly mountainPathWE_slopeN = $({
     id: 0xb2,
     icon: icon`╨
       |█↓█|
       |   |
       |███|`,
     tilesets: {mountain: {}},
+    edges: 'sp p',
+    connect: '26e',
   });
-  mountainDeadEndW = $({
+  readonly mountainDeadEndW = $({
     id: 0xb3,
     icon: icon`╴
       |███|
       |  █|
       |███|`,
     tilesets: {mountain: {}, mountainRiver: {}},
+    edges: ' p  ',
+    connect: '6',
   });
-  mountainPathWE = $({
+  readonly mountainPathWE = $({
     id: 0xb4,
     icon: icon`─
       |███|
       |   |
       |███|`,
     tilesets: {mountain: {}, mountainRiver: {}},
+    edges: ' p p',
+    connect: '6e',
   });
-  mountainArena_gate = $({
+  readonly mountainArena_gate = $({
     id: 0xb5,
     icon: icon`#
       |█#█|
       |▌ ▐|
       |█┋█|`,
     tilesets: {mountain: {}, mountainRiver: {}},
+    feature: 'arena',
+    edges: '  l ',
+    connect: 'a',
+    exits: [{...upStair(0x37, 3), type: 'cave'}],
   });
-  mountainPathN_slopeS_cave = $({
+  readonly mountainPathN_slopeS_cave = $({
     id: 0xb6,
     icon: icon`∩
       |█┋∩|
       |▌  |
       |█↓█|`,
     tilesets: {mountain: {}},
+    edges: 'l s ',
+    connect: '2a',
+    exits: [cave(0x5a), topEdge()],
   });
-  mountainPathWE_slopeNS = $({
+  readonly mountainPathWE_slopeNS = $({
     id: 0xb7,
     icon: icon`╫
       |█↓█|
       |   |
       |█↓█|`,
     tilesets: {mountain: {}},
+    edges: 'spsp',
+    connect: '26ae',
   });
-  mountainPathWE_slopeN_cave = $({
+  readonly mountainPathWE_slopeN_cave = $({
     id: 0xb8,
     icon: icon`∩
       |█↓∩|
       |   |
       |███|`,
     tilesets: {mountain: {}},
+    edges: 'sp p',
+    connect: '26e',
+    exits: [cave(0x5c)],
   });
-  mountainPathWS = $({
+  readonly mountainPathWS = $({
     id: 0xb9,
     icon: icon`┐
       |███|
       |  █|
       |█ █|`,
     tilesets: {mountain: {}, mountainRiver: {}},
+    edges: ' pp ',
+    connect: '6a',
   });
-  mountainSlope = $({
+  readonly mountainSlope = $({
     id: 0xba,
     icon: icon`↓
       |█↓█|
       |█↓█|
       |█↓█|`,
     tilesets: {mountain: {}},
+    edges: 's s '
+    connect: '2a',
   });
-  mountainRiver = $({
+  readonly mountainRiver = $({
     id: 0xba,
     icon: icon`║
       |█║█|
       |█║█|
       |█║█|`,
     tilesets: {mountainRiver: {}},
+    edges: 'w w ',
+    connect: '2~e',
   });
-  mountainPathE_gate = $({
+  readonly mountainPathE_gate = $({
     id: 0xbb,
     icon: icon`∩
       |█∩█|
       |█  |
       |███|`,
     tilesets: {mountain: {}},
+    edges: '   p',
+    connect: 'e',
+    exits: [cave(0x57, 'gate')],
   });
-  mountainPathWE_inn = $({
+  readonly mountainPathWE_inn = $({
     id: 0xbc,
     icon: icon`∩
       |█∩█|
       |   |
       |███|`,
     tilesets: {mountain: {}},
+    edges: ' p p',
+    connect: '6e',
+    exits: [door(0x76)],
   });
-  mountainPathWE_bridgeOverSlope = $({
+  readonly mountainPathWE_bridgeOverSlope = $({
     id: 0xbd,
     icon: icon`═
       |█↓█|
       | ═ |
       |█↓█|`,
     tilesets: {mountain: {}},
+    edges: 'spsp',
+    connect: '6e', // '2a|6e',
   });
-  mountainPathWE_bridgeOverRiver = $({
+  readonly mountainPathWE_bridgeOverRiver = $({
     id: 0xbd,
     icon: icon`═
       |█║█|
       | ═ |
       |█║█|`,
     tilesets: {mountainRiver: {}},
+    edges: 'wpwp',
+    connect: '6e|2|a',
   });
-  mountainSlope_underBridge = $({
+  readonly mountainSlope_underBridge = $({
     id: 0xbe,
     icon: icon`↓
       |█↓█|
@@ -1956,16 +2226,19 @@ export class Metascreens { // extends Set<Metascreen> {
       |█↓█|`,
     tilesets: {mountain: {}},
     // TODO - could fly under bridge on mountainRiver
+    edges: 'spsp',
+    connect: '2a', // '2a|6e',
   });
-  mountainSolid = $({
+  readonly mountainSolid = $({
     id: 0xbf,
     icon: icon`
       |███|
       |███|
       |███|`,
     tilesets: {mountain: {}, mountainRiver: {}},
+    edges: '    ',
   });
-  boundaryS = $({
+  readonly boundaryS = $({
     id: 0xc0,
     icon: icon`
       |   |
@@ -1973,32 +2246,39 @@ export class Metascreens { // extends Set<Metascreen> {
       |███|`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
     // TODO - grass/river should maybe use rocks instead?
+    edges: 'o^ ^', // o = open, ^ = open up
+    //connect: '26e',
   });
-  boundaryN_cave = $({
+  readonly boundaryN_cave = $({
     id: 0xc1,
     icon: icon`
       |███|
       |▀∩▀|
       |   |`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
+    edges: ' vov', // o = open, v = open down
+    exits: [cave(0x49)],
   });
-  boundarySE_cave = $({
+  readonly boundarySE_cave = $({
     id: 0xc2,
     icon: icon`
       | ▐█|
       |▄∩█|
       |███|`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
+    edges: '<^  ',
+    exits: [cave(0x5a)],
   });
-  waterfall = $({
+  readonly waterfall = $({
     id: 0xc3,
     icon: icon`
       |   |
       |↓↓↓|
       |   |`,
     tilesets: {sea: {}},
+    edges: 'oooo',
   });
-  whirlpoolBlocker = $({
+  readonly whirlpoolBlocker = $({
     id: 0xc4,
     icon: icon`
       |   |
@@ -2006,24 +2286,32 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |`,
     tilesets: {sea: {}},
     // TODO - indicate flag
+    feature: 'whirlpool',
+    flag: 'calm', // calmed sea
+    edges: 'oooo',
   });
-  beachExitN = $({
+  readonly beachExitN = $({
     id: 0xc5,
     icon: icon`
       |█ █|
       |█╱▀|
       |█▌ |`,
     tilesets: {sea: {}},
+    edges: 'n >v', // n = "narrow"
+    exits: [topEdge(0xa, 1)],
   });
-  whirlpoolOpen = $({
+  readonly whirlpoolOpen = $({
     id: 0xc6,
     icon: icon`
       |   |
       | ╳ |
       |   |`,
     tilesets: {sea: {}},
+    feature: 'whirlpool',
+    edges: 'oooo',
+    flag: 'calm', // but only if on angry sea - not desert...
   });
-  lighthouseEntrance = $({
+  readonly lighthouseEntrance = $({
     id: 0xc7,
     icon: icon`
       |▗▟█|
@@ -2031,24 +2319,32 @@ export class Metascreens { // extends Set<Metascreen> {
       |▝▀▘|`,
     tilesets: {sea: {}},
     // TODO - indicate uniqueness?
+    feature: 'lighthouse',
+    edges: '<oov',
+    exits: [cave(0x2a), door(0x75)],
   });
-  beachCave = $({
+  readonly beachCave = $({
     id: 0xc8,
     icon: icon`
       |█∩█|
       |▀╲█|
       |   |`,
     tilesets: {sea: {}},
+    edges: ' vov',
+    exits: [cave(0x28)],
   });
-  beachCabinEntrance = $({
+  readonly beachCabinEntrance = $({
     id: 0xc9,
     icon: icon`
       | ∩█|
       | ╲▀|
       |█▄▄|`,
     tilesets: {sea: {}},
+    feature: 'cabin',
+    edges: '<^ b', // b = "boat"
+    exits: [door(0x55), rightEdge(8, 3)],
   });
-  oceanShrine = $({
+  readonly oceanShrine = $({
     id: 0xca,
     icon: icon`
       |▗▄▖|
@@ -2056,8 +2352,10 @@ export class Metascreens { // extends Set<Metascreen> {
       |▝ ▘|`,
     tilesets: {sea: {}},
     // TODO - indicate uniqueness?
+    feature: 'altar',
+    edges: 'oooo',
   });
-  pyramidEntrance = $({
+  readonly pyramidEntrance = $({
     id: 0xcb,
     icon: icon`
       | ▄ |
@@ -2065,24 +2363,32 @@ export class Metascreens { // extends Set<Metascreen> {
       | ╳ |`,
     tilesets: {desert: {}},
     // TODO - indicate uniqueness?
+    feature: 'pyramid',
+    edges: 'oooo',
+    exits: [cave(0xa7)],
   });
-  cryptEntrance = $({
+  readonly cryptEntrance = $({
     id: 0xcc,
     icon: icon`
       | ╳ |
       |▐>▌|
       |▝▀▘|`,
     tilesets: {desert: {}},
+    feature: 'crypt',
+    edges: 'oooo',
+    exits: [downStair(0x67)],
   });
-  oasisLake = $({
+  readonly oasisLake = $({
     id: 0xcd,
     icon: icon`
       | ^ |
       |vOv|
       | vv|`,
     tilesets: {desert: {}},
+    feature: 'lake',
+    edges: 'oolo',
   });
-  desertCaveEntrance = $({
+  readonly desertCaveEntrance = $({
     id: 0xce,
     icon: icon`
       |▗▄▖|
@@ -2091,40 +2397,46 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {desert: {},
                // TODO - probably need to pull this out since flags differ
                sea: {requires: [ScreenFix.SeaCaveEntrance]}},
+    edges: 'oooo',
+    exits: [cave(0xa7)],
   });
-  oasisCave = $({
+  readonly oasisCave = $({
     id: 0xcf,
     icon: icon`
       | vv|
       |▄∩v|
       |█▌ |`,
     tilesets: {desert: {}},
+    edges: 'l^>o',
+    exits: [upStair(0x47)],
   });
-  channelEndW_cave = $({
+  readonly channelEndW_cave = $({
     id: 0xd0,
     icon: icon`
       |██∩|
       |══ |
       |███|`,
-    tilesets: {cave: {}},
+    tilesets: {dolphinCave: {}},
   });
-  boatChannel = $({
+  readonly boatChannel = $({
     id: 0xd1,
     icon: icon`
       |███|
       |▀▀▀|
       |▄▄▄|`,
     tilesets: {sea: {}},
+    edges: ' b b',
+    exits: [rightEdge(8, 3), leftEdge(8, 3)],
   });
-  channelWE = $({
+  readonly channelWE = $({
     id: 0xd2,
     icon: icon`
       |███|
       |═══|
       |███|`,
-    tilesets: {cave: {}},
+    tilesets: {dolphinCave: {}},
   });
-  riverCaveNWSE = $({
+  readonly riverCaveNWSE = $({
     id: 0xd3,
     icon: icon`
       |┘║└|
@@ -2133,10 +2445,14 @@ export class Metascreens { // extends Set<Metascreen> {
       // |▘║▝|
       // |═╬═|
       // |▖┆▗|`,
-    tilesets: {cave: {}, fortress: {}},
     // TODO - consider using solids for the corners instead?
+    tilesets: {cave: {}, fortress: {}},
+    feature: 'bridge',
+    edges: 'rrrr',
+    connect: '15~3d~79-af',
+    wall: 0xb6,
   });
-  riverCaveNS = $({
+  readonly riverCaveNS = $({
     id: 0xd4,
     icon: icon`
       |│║│|
@@ -2146,112 +2462,144 @@ export class Metascreens { // extends Set<Metascreen> {
       // |▌║▐|
       // |▌║▐|`,
     tilesets: {cave: {}, fortress: {}},
+    edges: 'r r ',
+    connect: '19~3a',
   });
-  riverCaveWE = $({
+  readonly riverCaveWE = $({
     id: 0xd5,
     icon: icon`
       |───|
       |═══|
       |───|`,
     tilesets: {cave: {}, fortress: {}},
+    edges: ' r r',
+    connect: '5d~7f',
   });
-  riverCaveNS_bridge = $({
+  readonly riverCaveNS_bridge = $({
     id: 0xd6,
     icon: icon`
       |│║│|
       |├┇┤|
       |│║│|`,
     tilesets: {cave: {}, fortress: {}},
+    feature: 'bridge',
+    edges: 'r r ',
+    connect: '19-3a',
+    wall: 0x87,
   });
-  riverCaveWE_bridge = $({
+  readonly riverCaveWE_bridge = $({
     id: 0xd7,
     icon: icon`
       |─┬─|
       |═┅═|
       |─┴─|`,
     tilesets: {cave: {}, fortress: {}},
+    feature: 'bridge',
+    edges: ' r r',
+    connect: '5d-7f',
+    wall: 0x86,
   });
-  riverCaveSE = $({
+  readonly riverCaveSE = $({
     id: 0xd8,
     icon: icon`
       |┌──|
       |│╔═|
       |│║┌|`,
     tilesets: {cave: {}, fortress: {}},
+    edges: '  rr',
+    connect: '9d~af',
   });
-  riverCaveWS = $({
+  readonly riverCaveWS = $({
     id: 0xd9,
     icon: icon`
       |──┐|
       |═╗│|
       |┐║│|`,
     tilesets: {cave: {}, fortress: {}},
+    edges: ' rr ',
+    connect: '5a~79',
   });
-  riverCaveNE = $({
+  readonly riverCaveNE = $({
     id: 0xda,
     icon: icon`
       |│║└|
       |│╚═|
       |└──|`,
     tilesets: {cave: {}, fortress: {}},
+    edges: 'r  r',
+    connect: '1f~3d',
   });
-  riverCaveNW = $({
+  readonly riverCaveNW = $({
     id: 0xdb,
     icon: icon`
       |┘║│|
       |═╝│|
       |──┘|`,
     tilesets: {cave: {}, fortress: {}},
+    edges: 'rr  ',
+    connect: '15~37',
   });
-  riverCaveWE_passageN = $({
+  readonly riverCaveWE_passageN = $({
     id: 0xdc,
     icon: icon`╧
       |─┴─|
       |═══|
       |───|`,
     tilesets: {cave: {}, fortress: {}},
+    edges: 'cr r',
+    connect: '25d~7f',
   });
-  riverCaveWE_passageS = $({
+  readonly riverCaveWE_passageS = $({
     id: 0xdd,
     icon: icon`╤
       |───|
       |═══|
       |─┬─|`,
     tilesets: {cave: {}, fortress: {}},
+    edges: ' rcr',
+    connect: '5d~7af',
   });
-  riverCaveNS_passageW = $({
+  readonly riverCaveNS_passageW = $({
     id: 0xde,
     icon: icon`╢
       |│║│|
       |┤║│|
       |│║│|`,
     tilesets: {cave: {}, fortress: {}},
+    edges: 'rcr ',
+    connect: '169~3b',
   });
-  riverCaveNS_passageE = $({
+  readonly riverCaveNS_passageE = $({
     id: 0xdf,
     icon: icon`╟
       |│║│|
       |│║├|
       |│║│|`,
     tilesets: {cave: {}, fortress: {}},
+    edges: 'r rc',
+    connect: '19~3be',
   });
-  wideHallNE = $({
+  readonly wideHallNE = $({
     id: 0xe0,
     icon: icon`
       | ┃ |
       | ┗━|
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    edges: 'w  w',
+    connect: '2e',
   });
-  goaWideHallNE = $({
+  readonly goaWideHallNE = $({
     id: 0xe0,
     icon: icon`
       |│┃└|
       |│┗━|
       |└──|`,
     tilesets: {goa1: {}},
+    edges: 'w  w',
+    connect: '1f|2e|3d',
   });
-  goaWideHallNE_blockedLeft = $({
+  readonly goaWideHallNE_blockedLeft = $({
     id: 0xe0,
     icon: icon`
       |│┃└|
@@ -2260,16 +2608,20 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {goa1: {}},
     generate: { // TODO - method to generate this screen
     },
+    edges: 'w  w',
+    connect: '1|f|2e|3d',
   });
-  wideHallNW = $({
+  readonly wideHallNW = $({
     id: 0xe1,
     icon: icon`
       | ┃ |
       |━┛ |
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    edges: 'ww  ',
+    connect: '26',
   });
-  goaWideHallNW = $({
+  readonly goaWideHallNW = $({
     id: 0xe1,
     icon: icon`
       |┘┃│|
@@ -2277,32 +2629,40 @@ export class Metascreens { // extends Set<Metascreen> {
       |──┘|`,
     tilesets: {goa1: {}},
     generate: {}, // fix tiles, then this is the flagged version
+    edges: 'ww  ',
+    connect: '15|26|37',
   });
-  goaWideHallNW_blockedRight = $({
+  readonly goaWideHallNW_blockedRight = $({
     id: 0xe1,
     icon: icon`
       |┘┃│|
       |━┛ |
       |──┘|`,
     tilesets: {goa1: {}},
+    edges: 'ww  ',
+    connect: '15|26|3|7',
   });
-  wideHallSE = $({
+  readonly wideHallSE = $({
     id: 0xe2,
     icon: icon`
       |   |
       | ┏━|
       | ┃ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    edges: '  ww',
+    connect: 'ae',
   });
-  goaWideHallSE = $({
+  readonly goaWideHallSE = $({
     id: 0xe2,
     icon: icon`
       |┌──|
       |│┏━|
       |│┃┌|`,
     tilesets: {goa1: {}},
+    edges: '  ww',
+    connect: '9d|ae|bf',
   });
-  goaWideHallSE_blockedLeft = $({
+  readonly goaWideHallSE_blockedLeft = $({
     id: 0xe2,
     icon: icon`
       |┌──|
@@ -2310,16 +2670,20 @@ export class Metascreens { // extends Set<Metascreen> {
       |│┃┌|`,
     tilesets: {goa1: {}},
     generate: {}, // fix tiles, then this is the UNflagged version
+    edges: '  ww',
+    connect: '9|d|ae|bf',
   });
-  wideHallWS = $({
+  readonly wideHallWS = $({
     id: 0xe3,
     icon: icon`
       |   |
       |━┓ |
       | ┃ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    edges: ' ww ',
+    connect: '6a',
   });
-  goaWideHallWS = $({
+  readonly goaWideHallWS = $({
     id: 0xe3,
     icon: icon`
       |──┐|
@@ -2327,24 +2691,30 @@ export class Metascreens { // extends Set<Metascreen> {
       |┐┃│|`,
     tilesets: {goa1: {}},
     generate: {}, // fix tiles, then this is the flagged version
+    edges: ' ww ',
+    connect: '5b|6a|79',
   });
-  goaWideHallWS_blockedRight = $({
+  readonly goaWideHallWS_blockedRight = $({
     id: 0xe3,
     icon: icon`
       |──┐|
       |━┓ |
       |┐┃│|`,
     tilesets: {goa1: {}},
+    edges: ' ww ',
+    connect: '5|b|6a|79'],
   });
-  goaWideHallNS_stairs = $({
+  readonly goaWideHallNS_stairs = $({
     id: 0xe4,
     icon: icon`
       |├┨│|
       |│┃│|
       |│┠┤|`,
     tilesets: {goa1: {}},
+    edges: 'w w ',
+    connect: '1239ab',
   });
-  goaWideHallNS_stairsBlocked = $({
+  readonly goaWideHallNS_stairsBlocked = $({
     id: 0xe4,
     icon: icon`
       |└┨│|
@@ -2352,26 +2722,32 @@ export class Metascreens { // extends Set<Metascreen> {
       |│┠┐|`,
     tilesets: {goa1: {}},
     generate: {}, // fix tiles, then this is the UNflagged version
+    edges: 'w w ',
+    connect: '12ab|3|9',
   });
   // TODO - custom inverted version of e4 with the top stair on the right
-  wideHallNS_deadEnds = $({
+  readonly wideHallNS_deadEnds = $({
     id: 0xe5,
     icon: icon`
       | ╹ |
       |   |
       | ╻ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    edges: 'w w ',
+    connect: '2|a',
   });
   // TODO - add one-way views of this?!?
-  goaWideHallNS_deadEnd = $({
+  readonly goaWideHallNS_deadEnd = $({
     id: 0xe5,
     icon: icon`
       |│╹│|
       |├─┤|
       |│╻│|`,
     tilesets: {goa1: {}},
+    edges: 'w w ',
+    connect: '139b|2|a',
   });
-  goaWideHallNS_deadEndBlocked = $({
+  readonly goaWideHallNS_deadEndBlocked = $({
     id: 0xe5,
     icon: icon`
       |╵╹│|
@@ -2379,24 +2755,30 @@ export class Metascreens { // extends Set<Metascreen> {
       |│╻╷|`,
     tilesets: {goa1: {}},
     generate: {}, // fix tiles, then this is the UNflagged version (TODO - alt)
+    edges: '2 2 ',
+    connect: '1|2|39|a|b',
   });
-  wideHallNWSE = $({
+  readonly wideHallNWSE = $({
     id: 0xe6,
     icon: icon`
       | ┃ |
       |━╋━|
       | ┃ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    edges: 'wwww',
+    connect: '26ae',
   });
-  goaWideHallNWSE = $({
+  readonly goaWideHallNWSE = $({
     id: 0xe6,
     icon: icon`
       |┘┃└|
       |━╋━|
       |┐┃┌|`,
     tilesets: {goa1: {}},
+    edges: 'wwww',
+    connect: '26ae|15|3d|79|bf',
   });
-  goaWideHallNWSE_blocked = $({
+  readonly goaWideHallNWSE_blocked = $({
     id: 0xe6,
     icon: icon`
       |┘┃ |
@@ -2404,24 +2786,30 @@ export class Metascreens { // extends Set<Metascreen> {
       | ┃┌|`,
     tilesets: {goa1: {}},
     generate: {}, // fix tiles, then this is UNflagged version (TODO - alt)
+    edges: 'wwww',
+    connect: '26ae|15|3|d|7|9|bf',
   });
-  wideHallNWE = $({
+  readonly wideHallNWE = $({
     id: 0xe7,
     icon: icon`
       | ┃ |
       |━┻━|
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    edges: 'ww w',
+    connect: '26e',
   });
-  goaWideHallNWE = $({
+  readonly goaWideHallNWE = $({
     id: 0xe7,
     icon: icon`
       |┘┃└|
       |━┻━|
       |───|`,
     tilesets: {goa1: {}},
+    edges: 'ww w',
+    connect: '26e|15|3d|7f',
   });
-  goaWideHallNWE_blockedTop = $({
+  readonly goaWideHallNWE_blockedTop = $({
     id: 0xe7,
     icon: icon`
       | ┃ |
@@ -2429,24 +2817,30 @@ export class Metascreens { // extends Set<Metascreen> {
       |───|`,
     tilesets: {goa1: {}},
     generate: {}, // fix tiles, then this is UNflagged
+    edges: 'ww w',
+    connect: '26e|1|5|3|d|7f',
   });
-  wideHallWSE = $({
+  readonly wideHallWSE = $({
     id: 0xe8,
     icon: icon`
       |   |
       |━┳━|
       | ┃ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    edges: ' www',
+    connect: '6ae',
   });
-  goaWideHallWSE = $({
+  readonly goaWideHallWSE = $({
     id: 0xe8,
     icon: icon`
       |───|
       |━┳━|
       |┐┃┌|`,
     tilesets: {goa1: {}},
+    edges: ' www',
+    connect: '6ae|5d|79|bf',
   });
-  goaWideHallWSE_blockedBottom = $({
+  readonly goaWideHallWSE_blockedBottom = $({
     id: 0xe8,
     icon: icon`
       |───|
@@ -2454,40 +2848,52 @@ export class Metascreens { // extends Set<Metascreen> {
       | ┃ |`,
     tilesets: {goa1: {}},
     generate: {}, // fix tiles, then this is UNflagged
+    edges: ' www',
+    connect: '6ae|5d|7|9|b|f',
   });
-  wideHallNS_wallTop = $({
+  readonly wideHallNS_wallTop = $({
     id: 0xe9,    // NOTE: the passage narrows at the top
     icon: icon`
       | ┆ |
       | ┃ |
       | ┃ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    edges: 'c w',
+    connect: '2a',
+    exits: [topEdge(6, 4)],
   });
-  goaWideHallNS_wallTop = $({
+  readonly goaWideHallNS_wallTop = $({
     id: 0xe9,    // NOTE: the passage narrows at the top
     icon: icon`
       | ┆ |
       |╷┃╷|
       |│┃│|`,
     tilesets: {goa1: {}},
+    edges: 'c w ',
+    connect: '2a|9|b',
+    exits: [topEdge(6, 4)],
   });
-  wideHallWE = $({
+  readonly wideHallWE = $({
     id: 0xea,
     icon: icon`
       |   |
       |━━━|
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    edges: ' w w',
+    connect: '6e',
   });
-  goaWideHallWE = $({
+  readonly goaWideHallWE = $({
     id: 0xea,
     icon: icon`
       |───|
       |━━━|
       |───|`,
     tilesets: {goa1: {}},
+    edges: ' w w',
+    connect: '5d|6e|7f',
   });
-  pitWE = $({
+  readonly pitWE = $({
     id: 0xeb,
     icon: icon`
       |   |
@@ -2495,8 +2901,12 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     // TODO - annotate the pit
+    feature: 'pit',
+    edges: 'c c',
+    connect: '6e',
+    platform: {type: 'horizontal', y: 0x70, x: 0x38},
   });
-  pitNS = $({
+  readonly pitNS = $({
     id: 0xec,
     icon: icon`
       | │ |
@@ -2504,8 +2914,12 @@ export class Metascreens { // extends Set<Metascreen> {
       | │ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     // TODO - annotate the pit
+    feature: 'pit',
+    edges: ' c c',
+    connect: '2a',
+    platform: {type: 'vertical', y: 0x40, x: 0x78},
   });
-  spikesNS_hallS = $({
+  readonly spikesNS_hallS = $({
     id: 0xed,
     icon: icon`
       | ░ |
@@ -2513,8 +2927,11 @@ export class Metascreens { // extends Set<Metascreen> {
       | │ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     // TODO - annotate the spikes?
+    feature: 'spikes',
+    edges: 's c ', // s = spikes
+    connect: '2a',
   });
-  spikesNS_hallN = $({
+  readonly spikesNS_hallN = $({
     id: 0xee,
     icon: icon`
       | │ |
@@ -2522,8 +2939,11 @@ export class Metascreens { // extends Set<Metascreen> {
       | ░ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     // TODO - annotate the spikes?
+    feature: 'spikes',
+    edges: 'c s ',
+    connect: '2a',
   });
-  spikesNS_hallWE = $({
+  readonly spikesNS_hallWE = $({
     id: 0xef,
     icon: icon`
       | ░ |
@@ -2531,153 +2951,252 @@ export class Metascreens { // extends Set<Metascreen> {
       | ░ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     // TODO - annotate the spikes?
+    feature: 'spikes',
+    edges: 'scsc',
+    connect: '26ae',
   });
-  riverCave_deadEndsNS = $({
+  readonly riverCave_deadEndsNS = $({
     id: 0xf0,
     icon: icon`
       | ╨ |
       |   |
       | ╥ |`,
     tilesets: {cave: {}, fortress: {}},
+    edges: 'r r ',
+    connect: '1~3|9~b',
   });
-  // TODO - single-direction dead-ends
-  riverCave_deadEndsWE = $({
+  readonly riverCave_deadEndsN = $({
+    id: 0xf0,
+    icon: icon`
+      | ╨ |
+      |   |
+      |   |`,
+    tilesets: {cave: {}, fortress: {}},
+    edges: 'r   ',
+    connect: '1~3',
+  });
+  readonly riverCave_deadEndsS = $({
+    id: 0xf0,
+    icon: icon`
+      |   |
+      |   |
+      | ╥ |`,
+    tilesets: {cave: {}, fortress: {}},
+    edges: '  r ',
+    connect: '9~b',
+  });
+  readonly riverCave_deadEndsWE = $({
     id: 0xf1,
     icon: icon`
       |   |
       |╡ ╞|
       |   |`,
     tilesets: {cave: {}, fortress: {}},
+    edges: ' r r',
+    connect: '5~7|d~f',
   });
-  riverCaveN_bridge = $({
+  readonly riverCave_deadEndsW = $({
+    id: 0xf1,
+    icon: icon`
+      |   |
+      |╡  |
+      |   |`,
+    tilesets: {cave: {}, fortress: {}},
+    edges: ' r  ',
+    connect: '5~7',
+  });
+  readonly riverCave_deadEndsE = $({
+    id: 0xf1,
+    icon: icon`
+      |   |
+      |  ╞|
+      |   |`,
+    tilesets: {cave: {}, fortress: {}},
+    edges: '   r',
+    connect: 'd~f',
+  });
+  readonly riverCaveN_bridge = $({
     id: 0xf2,
     icon: icon`
       | ┇ |
       | ╨ |
       |   |`,
     tilesets: {cave: {}, fortress: {}},
-    // TODO - note bridge
+    feature: 'bridge',
+    edges: 'r   ',
+    connect: '1-3',
+    wall: 0x17,
   });
-  riverCaveS_bridge = $({
+  readonly riverCaveS_bridge = $({
     id: 0xf2,
     icon: icon`
       |   |
       | ╥ |
       | ┇ |`,
     tilesets: {cave: {}, fortress: {}},
-    // TODO - note bridge
+    feature: 'bridge',
+    edges: '  r ',
+    connect: '9-b',
+    wall: 0xc6,
   });
-  riverCaveWSE = $({
+  readonly riverCaveWSE = $({
     id: 0xf3,
     icon: icon`
       |───|
       |═╦═|
       |┐║┌|`,
     tilesets: {cave: {}, fortress: {}},
+    edges: ' rrr',
+    connect: '5d~79~bf',
   });
-  riverCaveNWE = $({
+  readonly riverCaveNWE = $({
     id: 0xf4,
     icon: icon`
       |┘║└|
       |═╩═|
       |───|`,
     tilesets: {cave: {}, fortress: {}},
+    edges: 'rr r',
+    connect: '15~3d~7f',
   });
-  riverCaveNS_blockedRight = $({
+  readonly riverCaveNS_blockedRight = $({
     id: 0xf5,
     icon: icon`
       |│║│|
       |│║ |
       |│║│|`,
     tilesets: {cave: {}, fortress: {}},
+    edges: 'r r ',
+    connect: '19~3~b',
   });
-  riverCaveNS_blockedLeft = $({
+  readonly riverCaveNS_blockedLeft = $({
     id: 0xf6,
     icon: icon`
       |│║│|
       | ║│|
       |│║│|`,
     tilesets: {cave: {}, fortress: {}},
+    edges: 'r r ',
+    connect: '1~3b~9',
   });
-  spikesNS = $({
+  readonly spikesNS = $({
     id: 0xf7,
     icon: icon`
       | ░ |
       | ░ |
       | ░ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
-    // TODO - annotate the spikes?
+    feature: 'spikes',
+    edges: 's s ',
+    connect: '2a',
   });
-  cryptArena_statues = $({
+  readonly cryptArena_statues = $({
     id: 0xf8,
     icon: icon`<
       |&<&|
       |│ │|
       |└┬┘|`,
     tilesets: {pyramid: {}},
+    feature: 'arena',
+    edges: '  c ',
+    connect: 'a',
+    exits: [upStair(0x47)]
   });
-  pyramidArena_draygon = $({
+  readonly pyramidArena_draygon = $({
     id: 0xf9,
     icon: icon`
       |┌─┐|
       |│╳│|
       |└┬┘|`,
     tilesets: {pyramid: {}},
+    feature: ['arena', 'pit'],
+    edges: '  w ',
+    connect: 'a',
   });
-  cryptArena_draygon2 = $({
+  readonly cryptArena_draygon2 = $({
     id: 0xfa,
     icon: icon`
       |┏┷┓|
       |┃&┃|
       |┗┳┛|`,
     tilesets: {pyramid: {}},
+    feature: 'arena',
+    edges: 'c w ',
+    connect: '2a',
+    exits: [topEdge(6, 4)],
   });
-  cryptArena_entrance = $({
+  readonly cryptArena_entrance = $({
     id: 0xfb,
     icon: icon`
       | ┃ |
       | ┃ |
       | ╿ |`,
     tilesets: {pyramid: {}},
-    // NOTE: narrow bottom
+    edges: 'w n ',
+    connect: '2a',
+    exits: [bottomEdge()],
   });
-  cryptTeleporter = $({
+  readonly cryptTeleporter = $({
     id: 0xfc,
     tilesets: {pyramid: {}},
   });
-  pyramidArena_azteca = $({
+  readonly fortressArena_through = $({
     id: 0xfd,
     icon: icon`╽
       |┌┴┐|
       |│ │|
       |┕┳┙|`,
     tilesets: {pyramid: {}},
-    // NOTE: wide bottom
     // NOTE: we could use this for a pit that requires flight to cross?
+    feature: 'arena',
+    edges: 'n w ',
+    connect: '2a',
+    exits: [topEdge()],
   });
-  fortressTrap = $({
+  // readonly fortressArena_pit = $({
+  //   id: 0xfd,
+  //   icon: icon`╽
+  //     |┌┴┐|
+  //     |│ │|
+  //     |┕┳┙|`,
+  //   tilesets: {pyramid: {}},
+  //   feature: ['arena', 'pit'],
+  //   edges: 'n w ',
+  //   connect: '2a', // TODO - no way yet to notice flagged and have
+  //   exits: [topEdge()],   // logic require flight...
+  //   flagged: true,
+  // });
+  readonly fortressTrap = $({
     id: 0xfe,
     icon: icon`
       |└─┘|
       | ╳ |
       |╶┬╴|`,
     tilesets: {pyramid: {}},
+    feature: 'pit',
+    edges: '  n ',
+    connect: 'a',
+    exits: [bottomEdge()],
   });
-  shrine = $({
+  readonly shrine = $({
     id: 0xff,
     tilesets: {shrine: {}},
+    exits: [bottomEdge(6, 5)],
   });
-  inn = $({
+  readonly inn = $({
     id: 0x100,
     tilesets: {house: {}},
+    exits: [door(0x86)],
   });
-  toolShop = $({
+  readonly toolShop = $({
     id: 0x101,
     tilesets: {house: {}},
+    exits: [door(0x86)],
   });
-  armorShop = $({
+  readonly armorShop = $({
     id: 0x102,
     tilesets: {house: {}},
+    exits: [door(0x86)],
   });
 }
 

@@ -453,7 +453,6 @@ ItemGet_FindOpenSlotWithOverflow:
 .org $1fd27
   lda #$0e
 
-
 .org $1ff46
 ;;; TODO - consider grafting in our own debug mode here?
 .assert < $1ff97
@@ -470,57 +469,7 @@ ComputeVampireAnimationStart:
 +  lda #$ff
 ++ rts
 
-.ifdef _CTRL1_SHORTCUTS
--- rts
-HandleStart:
-  lda $43
-  cmp #$d0    ; A+B+Start (exactly)
-  bne +
-   ;; wild warp
-   pla
-   pla
-   jmp $cbd3  ; wild warp
-;+ and #$04    ; check for Down (may be present _with_ B)
-;  beq +
-;   ;; decrease power level
-;   lda $0719  ; max charge level
-;   cmp #$02   ; if it's bracelet, take it down one
-;   bne --     ; rts
-;   dec $0719
-;   rts
-+ lda $43
-  and #$40    ; BUTTON_B
-  beq NormalDisplayStartMenu
-   ;; quick-change sword
-   ldx $0711
-   cpx #$05
-   beq --     ; rts if crystalis
--   inx
-    cpx #$05
-    bne +
-     ldx #$00
-+   cpx $0711
-     beq --   ; rts if no other sword found
-    cpx #$00
-     beq -
-    lda $642f,x
-     bmi -    ; don't own sword
-    ;; Found a new sword - equip it
-    sta $6428 ; currently equipped index
-    stx $0711 ; equipped sword
-    lda #$00
-    sta $06c0 ; zero out the current charge
-    jmp PostInventoryMenu
-NormalDisplayStartMenu:
-  jmp $bc40   ; normal DisplayStartMenu
-.endif
-
 .assert < $20000
-
-.ifdef _CTRL1_SHORTCUTS
-.org $3cba8  ; divert start menu display to do other stuff instead
-  jsr HandleStart
-.endif
 
 .bank $20000 $8000:$2000
 
@@ -654,9 +603,17 @@ ReloadInventoryAfterLoad:
         ;; FREE: 3 bytes?
 .assert < $21500
 
+.ifdef _CTRL1_SHORTCUTS
+.org $20146
+  jmp FixBufferedItemUseTiming
+.endif
 
 .org $20a37
-        ;; FREE: 35 bytes
+FixBufferedItemUseTiming:
+  lda #$20
+  sta $46
+  rts
+        ;; FREE: 28 (not 35) bytes
 .assert < $20a5a
 
 
@@ -1167,6 +1124,24 @@ CheckSwordCollisionPlane:
 .endif
 
 
+.ifdef _CTRL1_SHORTCUTS
+;;; These cases need to watch for button-up instead of button-down
+.org $1fde7 ; exit start menu
+  lda $4a
+;;; NOTE: $20140 is exit select menu, but we actually want that
+;;; on button-down and we use the $46 blacklist to avoid bad
+;;; behavior.
+.org $26749 ; title screen (start)
+  lda $4a
+.org $2674f ; title screen (select)
+  lda $4a
+.org $3cb90 ; enter start menu
+  lda $4a
+.org $3cbb4 ; enter select menu
+  lda $4a
+.endif
+
+
 .ifdef _DISABLE_WILD_WARP
 .org $3cbc7
   rts
@@ -1220,6 +1195,9 @@ GrantItemInRegisterA:
   jmp FinishTriggerSquare
 .assert $3d552
 
+;; Change trigger action 4 to do any "start game" actions.
+.org $3d56b
+  .word (InitialAction)
 
 .org $3d91f
   jsr PostInventoryMenu
@@ -1493,10 +1471,11 @@ CheckFlag0:
 
 ;;; NOTE: These dialog actions are debug functionality.
 DialogFollowupAction_1c:
+TrainerIncreaseScaling:
   ;; scaling level
   lda $64a2
   clc
-  adc #$04
+  adc #$02
   cmp #$2f
   bcc +
    lda #$2f
@@ -1506,6 +1485,7 @@ DialogFollowupAction_1c:
   rts
 
 DialogFollowupAction_1d:
+TrainerIncreaseLevel:
   ;; level up
   lda #$0f
   cmp $0421
@@ -1625,6 +1605,259 @@ GameModeJump_05_ItemTrigger:
 + rts
 ++ pla
   rts
+
+;;; Rather than reading ctrl2, we instead just read ctrl1 and
+;;; then use $4a to store buttons released.
+;;; $48 is buttons that have been pressed outside a menu.
+;;; When a shortcut activates, we need to remove "select" from it.
+;;; $46 is a "blacklist" of buttons to ignore until they're unpressed
+RememberLastButtons:
+  lda $43
+  ora $46
+  sta $4a
+  jmp $ff17 ; ReadControllerX
+RegisterButtonRelease:
+  ;; clean up the blacklist
+  lda $43
+  and $46
+  sta $46
+  ;; apply the blacklist
+  eor #$ff
+  pha
+  and $43
+  sta $43
+  pla
+  and $4b
+  sta $4b
+  ;; any newly-pressed buttons go in $48
+  lda $4b
+  eor $48
+  sta $48
+  ;; any buttons in $48 not in $43 go in $4a
+  lda $43
+  eor #$ff
+  and $48
+  sta $4a
+  ;; any unpressed buttons are removed from $48
+  lda $43
+  and $48
+  sta $48
+  ;; start/select removed from $43...?
+  ;;lda $43
+  ;;and #$cf
+  ;;sta $43
+-- rts
+QuickChangeSword:
+   lda $48
+   and #$cf
+   sta $48   ; zero out pressed buttons
+   ldx $0711
+   cpx #$05
+   beq --     ; rts if crystalis
+-   inx
+    cpx #$05
+    bne +
+     ldx #$00
++   cpx $0711
+     beq --   ; rts if no other sword found
+    cpx #$00
+     beq -
+    lda $642f,x
+     bmi -    ; don't own sword
+    ;; Found a new sword - equip it
+    sta $6428 ; currently equipped index
+    stx $0711 ; equipped sword
+    lda #$00
+    sta $06c0 ; zero out the current charge
+    lda #$4c  ; sfx: cursor select
+    jsr $c125 ; StartAudioTrack
+    jmp PostInventoryMenu
+CheckSelectShortcuts:
+  lda $4b
+  cmp #$40   ; newly pressed B?
+  beq QuickChangeSword  ; yes -> change sword
+-:
+.ifdef _TRAINER
+  jmp CheckTrainerShortcuts
+.endif
+  rts
+CheckStartShortcuts:
+  lda $43
+  cmp #$d0   ; A+B+start exactly?
+  bne -      ; done -> rts
+.ifndef _NO_BIDI_WILD_WARP ; save 12 bytes without this...?
+   lda $4b
+   and #$40  ; B newly pressed -> go backwards
+   beq +
+    dec $0780
+    dec $0780
+.endif
++  lda $48   ; activated, so zero out start/select from $48
+   and #$cf
+   sta $48
+   jmp $cbd3 ; yes -> wild warp
+
+;;; Defines code to run on game start
+InitialAction:
+.ifdef _TRAINER
+  jsr TrainerStart
+.endif
+  rts
+
+
+.ifdef _TRAINER
+;;; Trainer mode: provides a number of controller shortcuts
+;;; to do a wide variety of things:
+;;;   Start+B+Left -> all balls
+;;;   Start+B+Right -> all bracelets
+;;;   Start+B+Down -> some consumables
+;;;   Start+Up -> gain a level
+;;;   Start+Down -> increase scaling by 2
+;;;   Start+Left -> better armors
+;;;   Start+Right -> better shields
+CheckTrainerShortcuts:
+   lda $43    ; Currently pressed?
+   and #$50   ; Start+B
+   cmp #$50
+   bne ++
+    lda $4b   ; Newly pressed?
+    cmp #$08  ; Up
+    bne +
+     ;; TODO - something here?
++   cmp #$04  ; Down
+    bne +
+     lda #$04
+     jmp TrainerGetItems
++   cmp #$02  ; Left
+    bne +
+     lda #$05
+     jmp TrainerGetItems
++   cmp #$01  ; Right
+    beq +
+-    rts
++   lda #$06
+    jmp TrainerGetItems
+    ;; ----
+++ cmp #$10  ; Start only
+   bne -
+   lda $4b   ; Newly pressed?
+   cmp #$08  ; Up
+   bne +
+    lda $48
+    and #$ef
+    sta $48
+    jmp TrainerIncreaseLevel
++  cmp #$04  ; Down
+   bne +
+    lda $48
+    and #$ef
+    sta $48
+    jmp TrainerIncreaseScaling
++  cmp #$02  ; Left
+   bne +
+    lda #$02
+    jmp TrainerGetItems
++  cmp #$01
+   bne -
+   lda #$03
+   jmp TrainerGetItems
+
+TrainerStart:
+  ;; Get all swords, armor, magic, bow of truth, max money
+  lda #$ff  ; max gold
+  sta $0702
+  sta $0703
+  lda $6484 ; shyron massacre
+  eor #$80
+  sta $6484
+  lda #$ff  ; activate all warp points
+  sta $64de
+  sta $64df
+  lda #$00
+  jsr TrainerGetItems
+  lda #$01
+  jsr TrainerGetItems
+  lda #$04
+  jsr TrainerGetItems
+  lda $6e ; NOTE: could just jmp $3d276 ?? but less hygeinic
+  pha
+   lda #$1a
+   jsr $c418 ; bank switch 8k 8000
+   lda #$01
+   jsr $8e46 ; display number internal
+  pla
+  jmp $c418
+
+TrainerData:
+  .word (TrainerData_Swords)      ; 0 swords, armors, shields
+  .word (TrainerData_Magic)       ; 1 accessories, bow of truth, magic
+  .word (TrainerData_Balls)       ; 2
+  .word (TrainerData_Bracelets)   ; 3
+  .word (TrainerData_Consumables) ; 4
+  .word (TrainerData_Armors)      ; 5
+  .word (TrainerData_Shields)     ; 6
+
+TrainerGetItems:
+    ;; Input: A = index into TrainerData table
+    asl
+    tax
+    lda TrainerData,x
+    sta $10
+    lda TrainerData+1,x
+    sta $11
+    ldy #$00
+    lda ($10),y
+    sta $12
+    iny
+    lda ($10),y
+    tay
+    iny
+    iny
+    clc
+    adc $12
+    tax
+    dex
+    dey
+    ;; At this point, we move $6430,x <- ($10),y
+    ;; and then decrease both until y=2
+-    lda ($10),y
+     bmi +
+      sta $6430,x
++    dex
+     dey
+     cpy #$02
+    bcs -
+    lda $48
+    and #$ef
+    sta $48
+    rts  
+
+TrainerData_Swords:
+  .byte $00,$0c
+  .byte $00,$01,$02,$03,$15,$16,$17,$18,$0d,$0e,$0f,$10
+TrainerData_Magic:
+  .byte $18,$18
+  .byte $29,$2a,$2b,$2c,$2d,$2e,$2f,$30
+  .byte $ff,$ff,$ff,$ff,$ff,$ff,$ff,$40
+  .byte $41,$42,$43,$44,$45,$46,$47,$48
+TrainerData_Balls:
+  .byte $0c,$04
+  .byte $05,$07,$09,$0b
+TrainerData_Bracelets:
+  .byte $0c,$04
+  .byte $06,$08,$0a,$0c
+TrainerData_Consumables:
+  .byte $10,$08
+  .byte $1d,$1d,$21,$21,$22,$22,$24,$26
+TrainerData_Armors:
+  .byte $04,$04
+  .byte $19,$1a,$1b,$1c
+TrainerData_Shields:
+  .byte $08,$04
+  .byte $11,$12,$13,$14
+
+.endif  
+
 .assert < $3fe00 ; end of free space started at 3f9ba
 
 .org $3e2ac ; normally loads object data for wall
@@ -1809,6 +2042,33 @@ CheckToRedisplayDifficulty:
 LoadNpcDataForLocation_Rts:
   rts
 LoadNpcDataForLocation_Skip:
+
+.ifdef _CTRL1_SHORTCUTS
+    ;; NOTE: we could save a bit of space by using relative jumps
+    ;; and inserting the code around $3fe70
+.org $3fe80
+  ldx #$00
+  jsr RememberLastButtons
+.org $3fecc
+  jmp RegisterButtonRelease
+
+.org $3fee0
+  ldx #$00
+  jsr RememberLastButtons
+.org $3ff13
+  jmp RegisterButtonRelease
+
+.org $3cbc1
+  lda $43
+  and #$20   ; select pressed?
+  beq +
+   jsr CheckSelectShortcuts
++ lda $43
+  and #$10   ; start pressed?
+  beq $cbeb  ; no -> rts
+   jmp CheckStartShortcuts
+.assert < $3cbd3
+.endif
 
 ;;; TODO - quick select items
 ;; .org $3cb62

@@ -1,6 +1,8 @@
 # Changes
 
 ## 1.2.0
+(NOTE: this version is published as 1.1.4 on NPM since I accidentally
+unpublished 1.2.0)
 * `Wt` randomizes the trade-in items NPCs want.
 * `Wu` randomizes the names of certain items.
 * `Ww` randomizes wall elements.

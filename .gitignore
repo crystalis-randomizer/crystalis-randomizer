@@ -1,6 +1,7 @@
 .DS_Store
 Crystalis.s
 *.nes
+deploy
 deploy_key
 deploy_key.pub
 dist

@@ -84,13 +84,16 @@ if $link_current; then
   done
 fi
 
-cd deploy
-git add .
-git commit -m "Release $label"
-git push origin gh-pages
+(
+  cd deploy
+  git add .
+  git commit -m "Release $label"
+  git push origin gh-pages
+)
 
 if $link_stable; then
   # Do an NPM release - first update package.json
+  rm -rf deploy
   sed -i '3 s/0\.0\.0/'"$dir"'/' package.json
   npm publish
 fi

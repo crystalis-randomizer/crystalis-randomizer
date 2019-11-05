@@ -1,0 +1,27 @@
+.DS_Store
+Crystalis.s
+Crystalis.st
+*.nes
+debug
+deploy/*
+deploy_key
+deploy_key.enc
+deploy_key.pub
+elisp/*
+notes/*
+patches/*
+scripts/*
+src/*
+tables/*
+theory/*
+xcf/*
+
+# testing
+cov.*
+test/*
+unused
+
+# npm stuff
+npm_token
+node_modules
+tsconfig.tsbuildinfo

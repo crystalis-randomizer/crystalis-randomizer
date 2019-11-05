@@ -1,6 +1,79 @@
 # Changes
 
-## 1.1.0 (rc)
+## 1.2.0
+* `Wt` randomizes the trade-in items NPCs want.
+* `Wu` randomizes the names of certain items.
+* `Ww` randomizes wall elements.
+* `Tp` randomizes color palettes.
+* `Tw` randomizes wild warp locations.
+* `Hh` enables "hardcore mode", removing all checkpoints and saves.
+* `Dt` enables a "trainer mode" that provides nearly all required items
+  up-front, provides shortcuts for changing level and scaling, and redefines
+  the wild warp spots for convenient access to bosses and the tower.
+* Paralysis check now requires killing Kelbesque 1.
+* Flails now do projectile/shield damage.
+* Changes to item shuffle:
+    * Removed `Sb` flag: all unique items are now shuffled together under
+      `Sk`.
+    * Improved consumable boss drop handling by allowing arbitrary consumables
+      to fill leftover slots once all key items are placed.
+* Removed controller 2 bindings in favor of new single-controller shortcuts:
+    * Start+B+A triggers "wild warp".  Pressing A+B in the opposite order warps
+      "backwards" in the list.  This shortcut is considered to be fully allowed
+      in races.
+    * Select+B quickly switches the equipped sword.
+* Shuffled boss elements *from `Me`) are now accounted for in logic.
+* It's now possible to walk out of the tower by touching the crystal.
+* Fixed almost all known graphical issues (still outstanding are garbled bosses
+  before the fight and the mosquito on some maps).
+* Made `Hd` (buffed Dyna fight) a little harder.
+* Removed `Rl` flag (it's now always on).
+* Warp boots or teleport is now guaranteed for all checks around Shyron after
+  warping there via the Sword of Thunder.
+* Fixed a major random number generator glitch.
+* Fixed some broken triggers and dialogs:
+    * Leaf villagers can no longer get stranded on Mt. Sabre.
+    * Prevent Draygon 2 from respawning in story mode.
+    * Walking out of the initial cave is no longer required to ensure all caves
+      are open.
+* Degraded some tracker features (it can no longer show off-logic checks),
+  but added some rudimentary handling for random elements and trade-ins.
+* Added permalink capability.
+* Misc improvements:
+    * New underlying logic engine.
+
+## 1.1.3
+* `Me` flag shuffles monster weaknesses (but not accounted in logic).
+* `Mt` shuffles tower monsters into the rest of the game.
+* `Hz` turns on "blackout mode" in caves.
+* `Hd` makes Dyna into a real boss fight, with killable side pods.
+* `Tm` randomizes music.
+* Sword charge damage is normalized: Wind and Water charges do 3/6/8
+  damage, Fire and Thunder do 3/5/7 damage (on top of the normal base
+  damage from the sword's power level).
+* Orbs and bracelets are fully progressive: the orb will always be found
+  before the bracelet.
+    * Tornel on Mt. Sabre requires finding both the Orb and Bracelet.
+* Defeating the insect is no longer sufficient for the insect flute check
+  (rescuing the child is now required).
+* Mimics are always inital spawns, rather than timer spawns.
+* Fixed some graphical glitches, but introduced some new ones (in particular,
+  garbled chests are no longer guaranteed to be mimics).
+* Misc improvements:
+    * Introduced better data structure abstractions.
+    * Changed a few dialog messages.
+    * Moved from JavaScript to TypeScript.
+    * More robust testing.
+
+## 1.1.2
+* Fixed `Hg` swamp run to require sword to be in-logic.
+* Fixed `Rd` flag logic to not make unwinnable seeds.
+
+## 1.1.1
+* Fixed `Em` and `Hm` flags.
+* Added some analytics to the homepage.
+
+## 1.1.0
 * `Rl` flag ("no free lunch") now closes the back entrance to Mt Sabre North,
   requiring the Prison Key to open it (from either side), as well as the back
   entrance to the sealed cave (which can only be opened by starting the

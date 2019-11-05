@@ -793,6 +793,7 @@ export class Metascreens { // extends Set<Metascreen> {
       | ║ |
       | ║ |`,
     tilesets: {river: {}},
+    edges: 'roro',
   });
   readonly riverNS_bridge = $({
     id: 0x2f,
@@ -801,7 +802,9 @@ export class Metascreens { // extends Set<Metascreen> {
       |w╏w|
       | ║ |`,
     tilesets: {river: {}},
-    // TODO - indicate bridge
+    feature: 'bridge',
+    edges: 'roro',
+    wall: 0x77,
   });
   readonly riverBendWS = $({
     id: 0x30,
@@ -810,6 +813,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |═╗w|
       | ║ |`,
     tilesets: {river: {}},
+    edges: '<rrv',
   });
   readonly boundaryN_waterfallCave = $({
     id: 0x31,
@@ -820,6 +824,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {river: {}},
     // TODO - flag version without entrance?
     //  - will need a tileset fix
+    edges: ' vrv',
     exits: [waterfallCave(0x75)],
   });
   readonly open_trees = $({
@@ -831,6 +836,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {grass: {}, river: {},
                desert: {requires: [ScreenFix.DesertTrees,
                                    ScreenFix.DesertRocks]}},
+    edges: 'oooo',
   });
   readonly exitS = $({
     id: 0x33,
@@ -842,6 +848,7 @@ export class Metascreens { // extends Set<Metascreen> {
                // NOTE: These fixes are not likely to ever land.
                desert: {requires: [ScreenFix.DesertMarsh]},
                sea: {requires: [ScreenFix.SeaMarsh]}},
+    edges: 'o^n^',
     exits: [bottomEdge()],
   });
   readonly bendNW = $({
@@ -851,6 +858,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |▀▀ |
       |   |`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
+    edges: '>voo',
   });
   readonly bendNE = $({
     id: 0x35,
@@ -859,6 +867,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |  ▀|
       |   |`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
+    edges: '<oov',
   });
   readonly bendSE = $({
     id: 0x36,
@@ -867,6 +876,7 @@ export class Metascreens { // extends Set<Metascreen> {
       | ▄▄|
       | ▐█|`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
+    edges: 'oo<^',
   });
   readonly bendWS = $({
     id: 0x37,
@@ -875,6 +885,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |▄▄ |
       |█▌ |`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
+    edges: 'o^>o',
   });
   readonly towerPlain = $({
     id: 0x38,
@@ -883,6 +894,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |─┴─|
       |   |`,
     tilesets: {tower: {}},
+    edges: 'st t',
     // TODO - annotate possible stairway w/ flag?
   });
   readonly towerRobotDoor_downStair = $({
@@ -892,6 +904,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |─┬─|
       | ┊ |`,
     tilesets: {tower: {}},
+    edges: ' tst',
     // TODO - connections
   });
   readonly towerDynaDoor = $({
@@ -901,6 +914,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |└┬┘|
       | ┊ |`,
     tilesets: {tower: {}},
+    edges: '  s ',
     // TODO - connections
   });
   readonly towerLongStairs = $({
@@ -910,6 +924,7 @@ export class Metascreens { // extends Set<Metascreen> {
       | ┊ |
       | ┊ |`,
     tilesets: {tower: {}},
+    edges: 's s ',
     // TODO - connections
   });
   readonly towerMesiaRoom = $({
@@ -929,6 +944,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |█∩█|
       |█↓█|`,
     tilesets: {river: {}},
+    edges: '  * ',
     exits: [cave(0x66)],
   });
   readonly cornerNE_flowers = $({
@@ -941,6 +957,7 @@ export class Metascreens { // extends Set<Metascreen> {
     // NOTE: could extend this to desert/etc by swapping the 7e/7f tiles
     // with e.g. a windmill or castle tile that's not used in 9c, but
     // we still don't have a good sprite to use for it...
+    edges: ' v< ',
   });
   readonly towerEdge = $({
     id: 0x40,
@@ -949,6 +966,25 @@ export class Metascreens { // extends Set<Metascreen> {
       |┤ ├|
       |   |`,
     tilesets: {tower: {}},
+    edges: ' t t',
+  });
+  readonly towerEdgeW = $({
+    id: 0x40,
+    icon: icon` |
+      |   |
+      |┤  |
+      |   |`,
+    tilesets: {tower: {}},
+    edges: ' t  ',
+  });
+  readonly towerEdgeE = $({
+    id: 0x40,
+    icon: icon` |
+      |   |
+      |  ├|
+      |   |`,
+    tilesets: {tower: {}},
+    edges: '   t',
   });
   readonly towerRobotDoor = $({
     id: 0x41,
@@ -957,6 +993,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |───|
       |   |`,
     tilesets: {tower: {}},
+    edges: ' t t',
   });
   readonly towerDoor = $({
     id: 0x42,
@@ -965,6 +1002,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |─┴─|
       |   |`,
     tilesets: {tower: {}},
+    edges: ' t t',
+    exits: [cave(0x68)],
     // TODO - connections
   });
   readonly house_bedroom = $({
@@ -1002,7 +1041,7 @@ export class Metascreens { // extends Set<Metascreen> {
   readonly house_ruinedDownstairs = $({
     id: 0x49,
     tilesets: {house: {}},
-    connetions: [upStair(0x56, 1)],
+    exits: [upStair(0x56, 1)],
   });
   readonly foyer = $({
     id: 0x4a,
@@ -1236,6 +1275,8 @@ export class Metascreens { // extends Set<Metascreen> {
       | > |
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    edges: 'w   ',
+    connect: '2',
     exits: [downStair(0xc7)],
   });
   readonly goaWideDeadEndN = $({
@@ -1245,6 +1286,8 @@ export class Metascreens { // extends Set<Metascreen> {
       | > |
       |   |`,
     tilesets: {goa1: {}},
+    edges: 'w   ',
+    connect: '1|2|3',
     exits: [downStair(0xc7)],
   });
   readonly wideHallNS = $({
@@ -1254,6 +1297,8 @@ export class Metascreens { // extends Set<Metascreen> {
       | ┃ |
       | ┃ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    edges: 'w w ',
+    connect: '2a',
   });
   readonly goaWideHallNS = $({
     id: 0x72,
@@ -1265,6 +1310,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |│┃│|
       |│┃│|`,
     tilesets: {goa1: {}},
+    edges: 'w w ',
+    connect: '19|2a|3b',
   });
   readonly goaWideHallNS_blockedRight = $({
     // NOTE: this is a possible unflagged 72?
@@ -1278,6 +1325,8 @@ export class Metascreens { // extends Set<Metascreen> {
       option: 0,
       flagged: false,
     },
+    edges: 'w w ',
+    connect: '19|2a|3|b',
     //   - probably given an existing screen?
     //   - will need to also tell where to put itself?
   });
@@ -1288,12 +1337,14 @@ export class Metascreens { // extends Set<Metascreen> {
       |┡━┩|
       |│╻│|`,
     tilesets: {goa1: {}},
+    edges: 'w w ',
+    connect: '9b|a',
     exits: [upStair(0x27)],
   });
   readonly limeTreeLake = $({
     id: 0x74,
     tilesets: {}, // sea or mountain (94) - but not really
-    connection: [bottomEdge(), cave(0x47)],
+    exits: [bottomEdge(), cave(0x47)],
     // TODO - bridge
   });
   // Swamp screens
@@ -1305,6 +1356,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |`,
     tilesets: {swamp: {}},
     // TODO - do we actually want to put all these edges in?
+    edges: 'ss  ',
+    connect: '26',
     exits: [topEdge(6, 4), leftEdge(7, 3)],
   });
   readonly swampE = $({
@@ -1314,6 +1367,8 @@ export class Metascreens { // extends Set<Metascreen> {
       | ╶─|
       |   |`,
     tilesets: {swamp: {}},
+    edges: '   s',
+    connect: 'e',
     exits: [],
     // TODO - flaggable for door ?????
   });
@@ -1323,6 +1378,8 @@ export class Metascreens { // extends Set<Metascreen> {
       | ╶─|
       |   |`,
     tilesets: {swamp: {}},
+    edges: '   s',
+    connect: 'e',
     exits: [upStair(0x6c)],
   });
   readonly swampNWSE = $({
@@ -1332,6 +1389,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |─┼─|
       | │ |`,
     tilesets: {swamp: {}},
+    edges: 'ssss',
+    connect: '26ae',
     exits: [topEdge(6, 4), leftEdge(7, 3), bottomEdge(6, 4), rightEdge(7, 3)],
   });
   readonly swampNWS = $({
@@ -1341,6 +1400,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |─┤ |
       | │ |`,
     tilesets: {swamp: {}},
+    edges: 'sss ',
+    connect: '26a',
     exits: [topEdge(6, 4), leftEdge(7, 3), bottomEdge(6, 4)],
   });
   readonly swampNE = $({
@@ -1350,6 +1411,8 @@ export class Metascreens { // extends Set<Metascreen> {
       | └─|
       |   |`,
     tilesets: {swamp: {}},
+    edges: 's  s',
+    connect: '2e',
     exits: [topEdge(6, 4), rightEdge(7, 3)],
   });
   readonly swampWSE = $({
@@ -1359,6 +1422,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |─┬─|
       | │ |`,
     tilesets: {swamp: {}},
+    edges: ' sss',
+    connect: '6ae',
     exits: [leftEdge(7, 3), bottomEdge(6, 4), rightEdge(7, 3)],
     // TODO - flaggable
   });
@@ -1369,6 +1434,8 @@ export class Metascreens { // extends Set<Metascreen> {
       | │ |`,
     tilesets: {swamp: {}},
     // NOTE: door screens should not be on an edge!
+    edges: ' sss',
+    connect: '6ae',
     exits: [upStair(0x66)],
     // TODO - flaggable
   });
@@ -1379,6 +1446,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |─╴ |
       |   |`,
     tilesets: {swamp: {}},
+    edges: ' s  ',
+    connect: '6',
     // TODO - flaggable
   });
   readonly swampW_door = $({
@@ -1387,6 +1456,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |─╴ |
       |   |`,
     tilesets: {swamp: {}},
+    edges: ' s  ',
+    connect: '6',
     exits: [upStair(0x64)],
     // TODO - flaggable
   });
@@ -1397,6 +1468,9 @@ export class Metascreens { // extends Set<Metascreen> {
       |┗┯┛|
       | │ |`,
     tilesets: {swamp: {}},
+    feature: 'arena',
+    edges: '  s ',
+    connect: 'a',
     // NOTE: no edge exit since we don't want to go straight here...
     // TODO - constraint that we put solids on either side?
     // TODO - undo the attempt to allow this not on the right edge,
@@ -1412,6 +1486,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |─┴─|
       |   |`,
     tilesets: {swamp: {}},
+    edges: 'ss s',
+    connect: '26e',
     exits: [topEdge(6, 4), leftEdge(7, 3), rightEdge(7, 3)],
   });
   readonly swampSW = $({
@@ -1421,6 +1497,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |─┐ |
       | │ |`,
     tilesets: {swamp: {}},
+    edges: ' ss ',
+    connect: '6a',
     exits: [leftEdge(7, 3), bottomEdge(6, 4)],
   });
   readonly swampSW_door = $({
@@ -1429,6 +1507,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |─┐ |
       | │ |`,
     tilesets: {swamp: {}},
+    edges: ' ss ',
+    connect: '6a',
     exits: [upStair(0x67)],
   });
   readonly swampEmpty = $({
@@ -1438,6 +1518,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |
       |   |`,
     tilesets: {swamp: {}},
+    edges: '    ',
+    connect: '',
   });
   // Missing swamp screens
   readonly swampN = $({
@@ -1446,6 +1528,8 @@ export class Metascreens { // extends Set<Metascreen> {
       | ╵ |
       |   |`,
     tilesets: {swamp: {}},
+    edges: 's   ',
+    connect: '2',
   });
   readonly swampS = $({
     icon: icon`
@@ -1453,6 +1537,8 @@ export class Metascreens { // extends Set<Metascreen> {
       | ╷ |
       | │ |`,
     tilesets: {swamp: {}},
+    edges: '  s ',
+    connect: 'a',
   });
   readonly swampNS = $({
     icon: icon`
@@ -1460,6 +1546,8 @@ export class Metascreens { // extends Set<Metascreen> {
       | │ |
       | │ |`,
     tilesets: {swamp: {}},
+    edges: 's s ',
+    connect: '2a',
     exits: [topEdge(6, 4), bottomEdge(6, 4)],
   });
   readonly swampWE = $({
@@ -1468,6 +1556,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |───|
       |   |`,
     tilesets: {swamp: {}},
+    edges: ' s s',
+    connect: '6e',
     exits: [leftEdge(7, 3), rightEdge(7, 3)],
   });
   readonly swampWE_door = $({
@@ -1476,6 +1566,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |───|
       |   |`,
     tilesets: {swamp: {}},
+    edges: ' s s',
+    connect: '6e',
     exits: [upStair(0x66)],
     // TODO - how to link to swampWE to indicate flag=false?
   });
@@ -1485,6 +1577,8 @@ export class Metascreens { // extends Set<Metascreen> {
       | ┌─|
       | │ |`,
     tilesets: {swamp: {}},
+    edges: '  ss',
+    connect: 'ae',
     exits: [leftEdge(7, 3), bottomEdge(6, 4)],
   });
   readonly swampSE_door = $({
@@ -1493,6 +1587,8 @@ export class Metascreens { // extends Set<Metascreen> {
       | ┌─|
       | │ |`,
     tilesets: {swamp: {}},
+    edges: '  ss',
+    connect: 'ae',
     exits: [upStair(0x6a)],
   });
   readonly swampNSE = $({
@@ -1501,6 +1597,8 @@ export class Metascreens { // extends Set<Metascreen> {
       | ├─|
       | │ |`,
     tilesets: {swamp: {}},
+    edges: 's ss',
+    connect: '2ae',
     exits: [topEdge(6, 4), bottomEdge(6, 4), rightEdge(7, 3)],
   });
   // Cave screens

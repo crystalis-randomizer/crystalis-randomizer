@@ -138,6 +138,7 @@ export async function shuffle(rom: Uint8Array,
     _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
     _TRAINER: flags.trainer(),
     _UNIDENTIFIED_ITEMS: flags.unidentifiedItems(),
+    _ZEBU_STUDENT_GIVES_ITEM: flags.zebuStudentGivesItem(),
   };
 
   const asm = new Assembler();
@@ -176,7 +177,7 @@ export async function shuffle(rom: Uint8Array,
   rescaleMonsters(parsed, flags, random);
   unidentifiedItems(parsed, flags, random);
   shuffleTrades(parsed, flags, random);
-  if (flags.randomizeMaps()) shuffleMazes(parsed, random);
+  if (flags.randomizeMaps()) shuffleMazes(parsed, flags, random);
 
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.

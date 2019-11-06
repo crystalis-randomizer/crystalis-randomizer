@@ -32,7 +32,6 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   makeBraceletsProgressive(rom);
 
   addTowerExit(rom);
-  closeCaveEntrances(rom, flags);
   reversibleSwanGate(rom);
   adjustGoaFortressTriggers(rom);
   preventNpcDespawns(rom, flags);
@@ -42,7 +41,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   adjustItemNames(rom, flags);
 
   // TODO - consider making a Transformation interface, with ordering checks
-  alarmFluteIsKeyItem(rom); // NOTE: pre-shuffle
+  alarmFluteIsKeyItem(rom, flags); // NOTE: pre-shuffle
   if (flags.teleportOnThunderSword()) {
     teleportOnThunderSword(rom);
   } else {
@@ -51,7 +50,12 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
 
   undergroundChannelLandBridge(rom);
 
-  if (flags.connectLimeTreeToLeaf()) connectLimeTreeToLeaf(rom);
+  if (flags.addEastCave()) {
+    eastCave(rom, flags);
+  } else if (flags.connectLimeTreeToLeaf()) {
+    connectLimeTreeToLeaf(rom);
+  }
+  closeCaveEntrances(rom, flags);
   simplifyInvisibleChests(rom);
   addCordelWestTriggers(rom, flags);
   if (flags.disableRabbitSkip()) fixRabbitSkip(rom);
@@ -191,11 +195,9 @@ function adjustGoaFortressTriggers(rom: Rom): void {
   l.goaFortressAsina.spawns.splice(2, 1); // asina screen lock trigger
 }
 
-function alarmFluteIsKeyItem(rom: Rom): void {
+function alarmFluteIsKeyItem(rom: Rom, flags: FlagSet): void {
   const {waterfallCave4} = rom.locations;
 
-  // Person 14 (Zebu's student): secondary item -> alarm flute
-  rom.npcs[0x14].data[1] = 0x31; // NOTE: Clobbers shuffled item!!!
   // Move alarm flute to third row
   rom.itemGets[0x31].inventoryRowStart = 0x20;
   // Ensure alarm flute cannot be dropped
@@ -203,6 +205,11 @@ function alarmFluteIsKeyItem(rom: Rom): void {
   rom.items[0x31].unique = true;
   // Ensure alarm flute cannot be sold
   rom.items[0x31].basePrice = 0;
+
+  if (flags.zebuStudentGivesItem()) {
+    // Person 14 (Zebu's student): secondary item -> alarm flute
+    rom.npcs[0x14].data[1] = 0x31; // NOTE: Clobbers shuffled item!!!
+  }
 
   // Remove alarm flute from shops (replace with other items)
   // NOTE - we could simplify this whole thing by just hardcoding indices.
@@ -413,7 +420,7 @@ function closeCaveEntrances(rom: Rom, flags: FlagSet): void {
   } = rom.locations;
 
   // NOTE: flag 2f0 is ALWAYS set - use it as a baseline.
-  const flagsToClear = [
+  const flagsToClear: [Location, number][] = [
     [valleyOfWind, 0x30], // valley of wind, zebu's cave
     [cordelPlainsWest, 0x30], // cordel west, vampire cave
     [cordelPlainsEast, 0x30], // cordel east, vampire cave
@@ -423,7 +430,10 @@ function closeCaveEntrances(rom: Rom, flags: FlagSet): void {
     [kirisaMeadow, 0x10], // kirisa meadow
     [saharaOutsideCave, 0x00], // cave to desert
     [desert2, 0x41],
-  ] as const;
+  ];
+  if (flags.addEastCave() && flags.connectLimeTreeToLeaf()) {
+    flagsToClear.push([rom.locations.limeTreeValley, 0x10]);
+  }
   for (const [loc, yx] of flagsToClear) {
     loc.flags.push(Flag.of({yx, flag: 0x2f0}));
   }
@@ -465,21 +475,96 @@ function closeCaveEntrances(rom: Rom, flags: FlagSet): void {
 }
 
 // @ts-ignore: not yet used
-const eastCave = (rom: Rom) => {
-  // NOTE: 0x9c can become 0x99 in top left or 0x97 in top right or bottom middle for a cave exit
-  const screens1 = [[0x9c, 0x84, 0x80, 0x83, 0x9c],
-                    [0x80, 0x81, 0x83, 0x86, 0x80],
-                    [0x83, 0x88, 0x89, 0x80, 0x80],
-                    [0x81, 0x8c, 0x85, 0x82, 0x84],
-                    [0x9a, 0x85, 0x9c, 0x98, 0x86]];
-  const screens2 = [[0x9c, 0x84, 0x9b, 0x80, 0x9b],
-                    [0x80, 0x81, 0x81, 0x80, 0x81],
-                    [0x80, 0x87, 0x8b, 0x8a, 0x86],
-                    [0x80, 0x8c, 0x80, 0x85, 0x84],
-                    [0x9c, 0x86, 0x80, 0x80, 0x9a]];
+function eastCave(rom: Rom, flags: FlagSet): void {
   // TODO fill up graphics, etc --> $1a, $1b, $05 / $88, $b5 / $14, $02
   // Think aobut exits and entrances...?
-  console.log(rom, screens1, screens2);
+
+  const {valleyOfWind, limeTreeValley, sealedCave1} = rom.locations;
+
+  const loc1 = rom.locations[0x0b];
+  const loc2 = rom.locations[0x0d];
+
+  // NOTE: 0x9c can become 0x99 in top left or 0x97 in top right or bottom middle for a cave exit
+  loc1.screens = [[0x9c, 0x84, 0x80, 0x83, 0x9c],
+                  [0x80, 0x81, 0x83, 0x86, 0x80],
+                  [0x83, 0x88, 0x89, 0x80, 0x80],
+                  [0x81, 0x8c, 0x85, 0x82, 0x84],
+                  [0x9e, 0x85, 0x9c, 0x98, 0x86]];
+
+  loc2.screens = [[0x9c, 0x84, 0x9b, 0x80, 0x9b],
+                  [0x80, 0x81, 0x81, 0x80, 0x81],
+                  [0x80, 0x87, 0x8b, 0x8a, 0x86],
+                  [0x80, 0x8c, 0x80, 0x85, 0x84],
+                  [0x9c, 0x86, 0x80, 0x80, 0x9a]];
+
+  for (const l of [loc1, loc2]) {
+    l.entrances = [];
+    l.exits = [];
+    l.pits = [];
+    l.spawns = [];
+    l.flags = [];
+    l.height = l.screens.length;
+    l.width = l.screens[0].length;
+    l.used = l.hasSpawns = true;
+    l.extended = 0;
+    l.tilePalettes = [0x1a, 0x1b, 0x05];
+    l.tileset = 0x88;
+    l.tileEffects = 0xb5;
+    l.tilePatterns = [0x14, 0x02];
+    l.spritePatterns = [...sealedCave1.spritePatterns];
+    l.spritePalettes = [...sealedCave1.spritePalettes];
+  }
+
+  // Add entrance to valley of wind
+  // TODO - maybe just do (0x33, [[0x19]]) once we fix that screen for grass
+  valleyOfWind.writeScreens2d(0x23, [
+    [0x11, 0x0d],
+    [0x09, 0xc2]]);
+  rom.tileEffects[0].effects[0xc0] = 0;
+  // TODO - do this once we fix the sea tileset
+  // rom.screens[0xc2].tiles[0x5a] = 0x0a;
+  // rom.screens[0xc2].tiles[0x5b] = 0x0a;
+
+  // Connect maps
+  loc1.connect(0x43, loc2, 0x44);
+  loc1.connect(0x40, valleyOfWind, 0x34);
+
+  if (flags.connectLimeTreeToLeaf()) {
+    // Add entrance to lime tree valley
+    limeTreeValley.resizeScreens(0, 1, 0, 0); // add one screen to left edge
+    limeTreeValley.writeScreens2d(0x00, [
+      [0x0c, 0x11],
+      [0x15, 0x36],
+      [0x0e, 0x0f]]);
+    loc1.screens[0][4] = 0x97; // down stair
+    loc1.connect(0x04, limeTreeValley, 0x10);
+  }
+
+  // Add monsters
+  loc1.spawns.push(
+    Spawn.of({screen: 0x21, tile: 0x87, timed: true, id: 0x2}),
+    Spawn.of({screen: 0x12, tile: 0x88, timed: false, id: 0x2}),
+    Spawn.of({screen: 0x13, tile: 0x89, timed: true, id: 0x2}),
+    Spawn.of({screen: 0x32, tile: 0x68, timed: false, id: 0x2}),
+    Spawn.of({screen: 0x41, tile: 0x88, timed: true, id: 0x2}),
+    Spawn.of({screen: 0x33, tile: 0x98, timed: true, id: 0x2}),
+    Spawn.of({screen: 0x03, tile: 0x88, timed: true, id: 0x2}),
+  );
+  loc2.spawns.push(
+    Spawn.of({screen: 0x01, tile: 0x88, timed: true, id: 0x2}),
+    Spawn.of({screen: 0x11, tile: 0x48, timed: false, id: 0x2}),
+    Spawn.of({screen: 0x12, tile: 0x77, timed: true, id: 0x2}),
+    Spawn.of({screen: 0x14, tile: 0x28, timed: false, id: 0x2}),
+    Spawn.of({screen: 0x23, tile: 0x85, timed: true, id: 0x2}),
+    Spawn.of({screen: 0x31, tile: 0x88, timed: true, id: 0x2}),
+    Spawn.of({screen: 0x33, tile: 0x8a, timed: false, id: 0x2}),
+    Spawn.of({screen: 0x34, tile: 0x98, timed: true, id: 0x2}),
+    Spawn.of({screen: 0x41, tile: 0x82, timed: true, id: 0x2}),
+  );
+  if (!flags.zebuStudentGivesItem()) {
+    // chest: alarm flute
+    loc2.spawns.push(Spawn.of({y: 0x110, x: 0x478, type: 2, id: 0x31}));
+  }
 };
 
 function reversibleSwanGate(rom: Rom) {

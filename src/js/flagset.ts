@@ -213,6 +213,12 @@ export class FlagSet {
   connectLimeTreeToLeaf() {
     return this.check('Rp');
   }
+  zebuStudentGivesItem() {
+    return false;
+  }
+  addEastCave() {
+    return true;
+  }
   storyMode() {
     return this.check('Rs');
   }

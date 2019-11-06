@@ -468,6 +468,83 @@ export class Location extends Entity {
   //   }
   //   return tiles;
   // }
+
+
+  // TODO - use metascreen for this later
+  resizeScreens(top: number, left: number, bottom: number, right: number) {
+    const newWidth = this.width + left + right;
+    const newHeight = this.height + top + bottom;
+    const newScreens = Array.from({length: newHeight}, (_, y) => {
+      y -= top;
+      return Array.from({length: newWidth}, (_, x) => {
+        x -= left;
+        if (y < 0 || x < 0 || y >= this.height || x >= this.width) return 0;
+        return this.screens[y][x];
+      });
+    });
+    this.width = newWidth;
+    this.height = newHeight;
+    this.screens = newScreens;
+    // TODO - if any of these go negative, we're in trouble...
+    // Probably the best bet would be to put a check in the setter?
+    for (const f of this.flags) {
+      f.xs += left;
+      f.ys += top;
+    }
+    for (const p of this.pits) {
+      p.fromXs += left;
+      p.fromYs += top;
+    }
+    for (const s of [...this.spawns, ...this.exits]) {
+      s.xt += 16 * left;
+      s.yt += 16 * top;
+    }
+    for (const e of this.entrances) {
+      e.x += 256 * left;
+      e.y += 256 * top;
+    }
+  }
+
+  writeScreens2d(start: number,
+                 data: ReadonlyArray<ReadonlyArray<number | null>>) {
+    const x0 = start & 0xf;
+    const y0 = start >>> 4;
+    for (let y = 0; y < data.length; y++) {
+      const row = data[y];
+      for (let x = 0; x < row.length; x++) {
+        const tile = row[x];
+        if (tile != null) this.screens[y0 + y][x0 + x] = tile;
+      }
+    }
+  }
+
+  // Connect two screens via entrances.
+  // Assumes exits and entrances are completely absent.
+  // Screen IDs must be in screenExits.
+  connect(pos: number, that: Location, thatPos: number) {
+    const thisY = pos >>> 4;
+    const thisX = pos & 0xf;
+    const thatY = thatPos >>> 4;
+    const thatX = thatPos & 0xf;
+    const thisTile = this.screens[thisY][thisX];
+    const thatTile = that.screens[thatY][thatX];
+    const [thisEntrance, thisExits] = screenExits[thisTile];
+    const [thatEntrance, thatExits] = screenExits[thatTile];
+    const thisEntranceIndex = this.entrances.length;
+    const thatEntranceIndex = that.entrances.length;
+    this.entrances.push(Entrance.of({y: thisY << 8 | thisEntrance >>> 8,
+                                     x: thisX << 8 | thisEntrance & 0xff}));
+    that.entrances.push(Entrance.of({y: thatY << 8 | thatEntrance >>> 8,
+                                     x: thatX << 8 | thatEntrance & 0xff}));
+    for (const exit of thisExits) {
+      this.exits.push(Exit.of({screen: pos, tile: exit,
+                               dest: that.id, entrance: thatEntranceIndex}));
+    }
+    for (const exit of thatExits) {
+      that.exits.push(Exit.of({screen: thatPos, tile: exit,
+                               dest: this.id, entrance: thisEntranceIndex}));
+    }
+  }
 }
 
 // TODO - move to a better-organized dedicated "geometry" module?
@@ -916,6 +993,19 @@ const locationKeys: (keyof typeof LOCATIONS | undefined)[] = (() => {
   return keys as any;
 })();
 
+
+// very simple version of what we're doing with metascreens
+const screenExits = {
+  0x15: [0x90_a0, [0x89, 0x8a]], // cave on left boundary
+  0x19: [0x60_90, [0x58, 0x59]], // cave on right boundary (not on grass)
+  0x96: [0x40_30, [0x32, 0x33]], // up stair from left
+  0x97: [0xaf_30, [0xb2, 0xb3]], // down stair from left
+  0x98: [0x40_d0, [0x3c, 0x3d]], // up stair from right
+  0x99: [0xaf_d0, [0xbc, 0xbd]], // down stair from right
+  0x9a: [0x1f_80, [0x27, 0x28]], // down stair (double - just use down!)
+  0x9e: [0xdf_80, [0xe7, 0xe8]], // bottom edge
+  0xc2: [0x60_b0, [0x5a, 0x5b]], // cave on bottom-right boundary
+};
 
 // building the CSV for the location table.
 //const h=(x)=>x==null?'null':'$'+x.toString(16).padStart(2,0);

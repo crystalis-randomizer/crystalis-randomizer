@@ -590,8 +590,10 @@ export class Overlay {
       const action = d.message.action;
       if (action === 0x03) {
         result.check.push({slot: Slot.item(npc.data[0]), condition});
-      } else if (action === 0x11 || action === 0x09) {
+      } else if (action === 0x11
+                 || (this.flags.zebuStudentGivesItem() && action === 0x09)) {
         // NOTE: $09 is zebu student, which we've patched to give the item.
+        // TODO - check the patch rather than the flag?
         result.check.push({slot: Slot.item(npc.data[1]), condition});
       } else if (action === 0x10) {
         // NOTE: Queen can't be revealed as asina in the throne room.  In particular,

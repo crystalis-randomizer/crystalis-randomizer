@@ -8,7 +8,7 @@ import {Location} from '../rom/location.js';
 import {hex, seq} from '../rom/util.js';
 import {iters} from '../util.js';
 
-const DEBUG: boolean = false;
+const DEBUG: boolean = true;
 
 // invariants for shuffling caves:
 //  - dead ends

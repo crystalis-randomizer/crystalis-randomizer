@@ -1186,8 +1186,10 @@ GrantItemInRegisterA:
 
 
 
+.ifdef _ZEBU_STUDENT_GIVES_ITEM
 .org $3d27d
   jmp PatchZebuStudentFollowUp
+.endif
 
 
 ;;; Convert a beq to a bcs for mimic spawns - any chest between $70 and $80
@@ -2007,10 +2009,12 @@ PatchUpdateShieldDefense:
 ;; If we just ASL the whole defense then we can do them simultaneously,
 ;; and then go into power ring.
 
+.ifdef _ZEBU_STUDENT_GIVES_ITEM
 PatchZebuStudentFollowUp:
 .bank $34000 $8000:$2000
   jsr DisplayNumberInternal
   jmp DialogAction_11
+.endif
 
 .assert < $3ff80 ; end of free space from 3ff44
 

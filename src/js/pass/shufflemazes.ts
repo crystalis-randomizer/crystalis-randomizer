@@ -1,3 +1,4 @@
+import {FlagSet} from '../flagset.js';
 import {shuffleCave} from '../maze/cave.js';
 import {extendGoaScreens, shuffleGoa1} from '../maze/goa.js';
 import {shuffleSwamp} from '../maze/swamp.js';
@@ -5,7 +6,7 @@ import {shufflePyramid} from '../maze/pyramid.js';
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 
-export function shuffleMazes(rom: Rom, random: Random) {
+export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
   // TODO - consolidate free flags?  Find a list of what's used...
   // [...new Set(rom.locations.flatMap(l => l.flags.map(f => f.flag)
   //           .filter(f => f != 0x200).map(x=>x.toString(16))))].sort()
@@ -16,6 +17,10 @@ export function shuffleMazes(rom: Rom, random: Random) {
   shuffleGoa1(rom, random);
   for (const cave of SHUFFLED_CAVES) {
     shuffleCave(rom.locations[cave], random);
+  }
+  if (flags.addEastCave()) {
+    shuffleCave(rom.locations[0x0b], random);
+    shuffleCave(rom.locations[0x0d], random);
   }
 }
 

@@ -511,8 +511,8 @@ function eastCave(rom: Rom, flags: FlagSet): void {
     l.tileset = 0x88;
     l.tileEffects = 0xb5;
     l.tilePatterns = [0x14, 0x02];
-    l.spritePatterns = [...sealedCave1.spritePatterns];
-    l.spritePalettes = [...sealedCave1.spritePalettes];
+    l.spritePatterns = [...sealedCave1.spritePatterns] as [number, number];
+    l.spritePalettes = [...sealedCave1.spritePalettes] as [number, number];
   }
 
   // Add entrance to valley of wind

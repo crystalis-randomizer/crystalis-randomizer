@@ -995,7 +995,7 @@ const locationKeys: (keyof typeof LOCATIONS | undefined)[] = (() => {
 
 
 // very simple version of what we're doing with metascreens
-const screenExits = {
+const screenExits: {[id: number]: readonly [number, readonly [number, number]]} = {
   0x15: [0x90_a0, [0x89, 0x8a]], // cave on left boundary
   0x19: [0x60_90, [0x58, 0x59]], // cave on right boundary (not on grass)
   0x96: [0x40_30, [0x32, 0x33]], // up stair from left

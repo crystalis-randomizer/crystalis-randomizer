@@ -214,10 +214,10 @@ export class FlagSet {
     return this.check('Rp');
   }
   zebuStudentGivesItem() {
-    return false;
+    return !this.check('Re');;
   }
   addEastCave() {
-    return true;
+    return this.check('Re');
   }
   storyMode() {
     return this.check('Rs');

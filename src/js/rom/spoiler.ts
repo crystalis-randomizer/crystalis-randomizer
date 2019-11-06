@@ -106,7 +106,8 @@ class Check {
 
   toString(): string {
     return `${this.spoiler.formatCondition(this.condition, this.item)}: [${
-            this.deps.map(d => this.spoiler.formatCondition(d)).join(', ')}]`;
+            this.deps.map(d => this.spoiler.formatCondition(d))
+                     .filter(x => x !== 'Always True').join(', ')}]`;
   }
 }
 

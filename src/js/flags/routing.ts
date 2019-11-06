@@ -6,6 +6,10 @@ export const ROUTING_FLAGS: FlagSection = {
 
   flags: [
     {
+      flag: 'Re',
+      name: '???',
+    },
+    {
       flag: 'Rs',
       name: 'Story Mode',
       text: `Draygon 2 won't spawn unless you have all four swords and have

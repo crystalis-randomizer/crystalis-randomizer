@@ -542,6 +542,44 @@ export class Rom {
     // Done?!?
   }
 
+  moveFlag(oldFlag: number, newFlag: number) {
+    // need to update triggers, spawns, dialogs
+    function replace(arr: number[]) {
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i] === oldFlag) arr[i] = newFlag;
+        if (arr[i] === ~oldFlag) arr[i] = ~newFlag;
+      }
+    }
+    for (const trigger of this.triggers) {
+      replace(trigger.conditions);
+      replace(trigger.flags);
+    }
+    for (const npc of this.npcs) {
+      for (const conds of npc.spawnConditions.values()) replace(conds);
+      for (const dialogs of [npc.globalDialogs, ...npc.localDialogs.values()]) {
+        for (const dialog of dialogs) {
+          if (dialog.condition === oldFlag) dialog.condition = newFlag;
+          if (dialog.condition === ~oldFlag) dialog.condition = ~newFlag;
+        }
+      }
+    }
+    // also need to update map flags if >= $200
+    if ((oldFlag & ~0xff) === 0x200 && (newFlag & ~0xff) === 0x200) {
+      for (const loc of this.locations) {
+        for (const flag of loc.flags) {
+          if (flag.flag === oldFlag) flag.flag = newFlag;
+        }
+      }
+    }
+  }
+
+  nextFreeTrigger(): Trigger {
+    for (const t of this.triggers) {
+      if (!t.used) return t;
+    }
+    throw new Error('Could not find an unused trigger.');
+  }
+
   // Use the browser API to load the ROM.  Use #reset to forget and reload.
   static async load(patch?: (data: Uint8Array) => Promise<void>,
                     receiver?: (picker: Element) => void) {

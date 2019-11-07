@@ -1249,6 +1249,16 @@ SetEquippedConsumableItem:
 .endif
 
 
+.ifdef _TWELVTH_WARP_POINT
+.org $3dc7b
+  cmp #$0c  ; $0c is the first invalid slot (probably could just nop here)
+.org $3dd40
+  ;lda #$0b  ; start drawing menu at $b
+.org $3dd59
+  adc #$04  ; lower offset, start at 2f4 instead
+.endif
+
+
 .ifdef _SIMPLIFY_INVISIBLE_CHESTS
 ;;; We co-opt the unused npcdata[2]:20 bit to signify invisible chests
 .org $3e39f

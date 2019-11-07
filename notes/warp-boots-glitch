@@ -1,0 +1,31 @@
+Let's fix the warp boots reuse glitch.
+Easiest way is probably to eliminate the extra checkpoints.
+
+2fc00 is the most common entrance into the checkpoint code
+2fc28 only runs once it's actually going to set it
+
+on walking into a new map, ony hit 2fc28 once
+ only call is from 3e503
+  - game mode is 1
+
+on teleport, 2fc28 runs twice:
+ first call from 3e538
+  - game mode is 14
+ second call from 3e503
+  - game mode still 14 
+
+on a warp, 2fc28 runs three times!
+ first call from 3e538 (ExitTypeJump_2_Warp)
+  - location set, coords not
+  - game mode is 6
+ second call from 3e503 (ExitTypeJump_0_Normal)
+  - coords fixed
+  - boots still haven't been used up yet!
+  - game mode is still 6
+ third call from 3d4ef ("Teleported" follow-up of GameMode 06)
+  - item finally consumed
+  - game mode is 8
+
+Probably we should just not set a checkpoint if game mode is 6?
+
+

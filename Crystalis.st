@@ -30089,7 +30089,7 @@ SaveGame
         $21c44  xx xx xx:   xxx $xxxx
         $21c47  xx xx:      xxx #$xx
         $21c49  xx xx:      xxx $xx
-        $21c4b  xx xx xx:   xxx $2fc00
+        $21c4b  xx xx xx:   xxx MaybeSetCheckpoint
         $21c4e  xx xx:      xxx #$xx
         $21c50  xx xx xx:   xxx $21ce0
         $21c53  xx xx:      xxx #$xx
@@ -30099,7 +30099,7 @@ SaveGame
         $21c5e  xx xx xx:   xxx $xxxx
         $21c61  xx xx xx:   xxx $21c7a
 ;;; --------------------------------
-        $21c64  xx xx xx:   xxx $2fc00
+        $21c64  xx xx xx:   xxx MaybeSetCheckpoint
         $21c67  xx xx:      xxx #$xx
         $21c69  xx xx xx:   xxx $21ce0
         $21c6c  xx xx:      xxx #$xx
@@ -40093,6 +40093,7 @@ RevertChangeMagic
         $2fbfd  xx xx:      xxx #$xx
         $2fbff              .byte $xx
 ;;; --------------------------------
+MaybeSetCheckpoint
         $2fc00  xx xx xx:   xxx $2fc09
 ;;; --------------------------------
         $2fc03  xx xx xx:   xxx $2fc8e
@@ -57861,7 +57862,7 @@ MainGameModeJump_06_ItemUseMessage
 +       $3d4e7  xx xx xx:   xxx ItemUse_Main
         $3d4ea  xx xx:      xxx #$xx
         $3d4ec  xx xx xx:   xxx BankSwitch8k_A000
-        $3d4ef  xx xx xx:   xxx $2fc00
+        $3d4ef  xx xx xx:   xxx MaybeSetCheckpoint
 ;;; --------------------------------
         ;; This is pretty clearly code for using an item.
 ItemUse_Main
@@ -58838,7 +58839,7 @@ DataTable_3dbdc
         $3dc53  xx xx:      xxx $xx
         $3dc55  xx xx xx:   xxx $3dbec
 ;;; --------------------------------
-DataTable_3dc58 
+TownWarpTable
         $3dc58              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
         $3dc64  xx xx xx:   xxx SetSprite0_F0
@@ -58859,7 +58860,7 @@ DataTable_3dc58
         $3dc7d  xx xx:      xxx $xx
         $3dc7f  xx xx xx:   xxx $3dbac
 ;;; --------------------------------
-        $3dc82  xx xx xx:   xxx $3dd58
+        $3dc82  xx xx xx:   xxx CheckWarpPointFlag
         $3dc85  xx xx:      xxx $xx
         $3dc87  xx xx xx:   xxx $3dbac
 ;;; --------------------------------
@@ -58937,6 +58938,7 @@ DataTable_3dc58
         $3dd30  xx xx xx:   xxx UpdateEquipmentAndStatus
         $3dd33  xx xx xx:   xxx DrawAllObjectSprites
 ;;; --------------------------------
+BuildWarpMenu                   ; I *think* that's what this does, anyway?
         $3dd36  xx xx:      xxx #$xx
         $3dd38  xx xx:      xxx #$xx
         $3dd3a  xx xx xx:   xxx $xxxx,x
@@ -58945,7 +58947,7 @@ DataTable_3dc58
         $3dd40  xx xx:      xxx #$xx
         $3dd42  xx xx:      xxx $xx
         $3dd44  xx xx:      xxx $xx
-        $3dd46  xx xx xx:   xxx $3dd58
+        $3dd46  xx xx xx:   xxx CheckWarpPointFlag
         $3dd49  xx xx:      xxx $xx
         $3dd4b  xx xx:      xxx $xx
         $3dd4d  xx:         xxx
@@ -58955,8 +58957,9 @@ DataTable_3dc58
         $3dd55  xx xx:      xxx $xx
         $3dd57  xx:         xxx
 ;;; --------------------------------
+CheckWarpPointFlag
         $3dd58  xx:         xxx
-        $3dd59  xx xx:      xxx #$xx
+        $3dd59  xx xx:      xxx #$xx ; explicit offset
         $3dd5b  xx:         xxx
         $3dd5c  xx:          xxx
         $3dd5d  xx:          xxx
@@ -60028,7 +60031,7 @@ ExitTypeJump_0_Normal
         $3e4fb  xx xx xx:   xxx $34c49
 +       $3e4fe  xx xx:      xxx #$xx ; a000 -> 2e000
         $3e500  xx xx xx:   xxx BankSwitch8k_A000
-        $3e503  xx xx xx:   xxx $2fc00
+        $3e503  xx xx xx:   xxx MaybeSetCheckpoint
         $3e506  xx xx:      xxx #$xx
         $3e508  xx xx xx:   xxx $xxxx
         $3e50b  xx xx xx:   xxx $xxxx
@@ -60054,9 +60057,9 @@ ExitTypeJump_1_Seamless
 ;;; --------------------------------
 ExitTypeJump_2_Warp
         ;; Teleport
-        $3e533  xx xx:      xxx #$xx ; 2d000 -> a000
+        $3e533  xx xx:      xxx #$xx ; 2e000 -> a000
         $3e535  xx xx xx:   xxx BankSwitch8k_A000
-        $3e538  xx xx xx:   xxx $2ec00
+        $3e538  xx xx xx:   xxx MaybeSetCheckpoint
         $3e53b  xx xx xx:   xxx $3e845
         $3e53e  xx xx xx:   xxx $3e61b
         $3e541  xx xx xx:   xxx $3e439

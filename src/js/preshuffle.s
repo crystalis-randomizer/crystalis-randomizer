@@ -711,9 +711,33 @@ CheckForLowHpMp:
      sta PlayerMP
 +   rts
 
+;;; This glitch works because the game sets three separate checkpoints
+;;; when using warp boots: one from $3e538 (ExitTypeJump_2_Warp) after
+;;; setting the location/exit but before setting coordinates, another
+;;; from $3e503 (ExitTypeJump_0_Normal) after setting the coordinates
+;;; but before consuming the item, and then the third time from $3d4ef
+;;; (the warp boots follow-up of MainGameModeJump_06).  The third one
+;;; is unique to Warp Boots (Teleport only does the first two), and is
+;;; also the only one that does not run with GameMode == #$06.  The fix
+;;; is simple: don't set the checkpoint in GameMode_06.
+FixWarpBootsReuseGlitch:
+  lda $41  ; GameMode
+  cmp #$06 ; item use
+  bne MaybeSetCheckpointActual
+  rts
+
 .assert < $2fc00 ; end of unused block from $2fbd5
 
+.ifdef _DISABLE_WARP_BOOTS_REUSE
+.org $2fc00
+  ;; Normally this just jumps to MaybeSetCheckpointActual, which is kind
+  ;; of pointless, but it provides a convenient point of indirection for
+  ;; us to use here.
+  jmp FixWarpBootsReuseGlitch
+.endif
 
+.org $2fc09
+MaybeSetCheckpointActual:
 
 .ifdef _PITY_HP_AND_MP
 .org $2fd82 ; normally "sta $03c1"

@@ -101,6 +101,7 @@ export async function shuffle(rom: Uint8Array,
     _DISABLE_STATUE_GLITCH: flags.disableStatueGlitch(),
     _DISABLE_SWORD_CHARGE_GLITCH: flags.disableSwordChargeGlitch(),
     _DISABLE_TRIGGER_SKIP: true,
+    _DISABLE_WARP_BOOTS_REUSE: flags.disableShopGlitch(),
     _DISABLE_WILD_WARP: false,
     _DISPLAY_DIFFICULTY: true,
     _EXTRA_PITY_MP: true,  // TODO: allow disabling this

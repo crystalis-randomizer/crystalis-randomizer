@@ -1,0 +1,20 @@
+Warping to zombie town:
+
+The warp code all starts around 3dc58, which is the table with warp locations.
+It conveniently has an empty slot at the end that we could use, but the main
+difficulty is that the flags it checks are offset so that Sahara (entry $0a)
+is at flag 2ff, the last one that's actually saved.  We would need to move the
+flags to start at 2f4 instead of 2f5.
+
+Here are things we'd need to adjust to add a new town warp:
+ * add the town to the TownWarpTable (3dc58) - we probably want to put it
+   somewhere in the middle, rather than at the end
+ * if the order changes then we need to reformat the message (21:00)
+ * we also need to change the flag references:
+    - warp setpoint triggers
+    - oak (2f7): set by two triggers (8e and aa - is aa unneeded?)
+    - oak (2f7): checked by tornel spawn @1e, stom dialog @1e, trigger 85
+    - joel (2fb): checked by kensu 68 spawn @61, trigger 8a (ESI)
+ * the offset $05 is added explicitly (3dd59) -> change to #$04
+ * the loop to build the menu starts at #$0a (3dd40) -> change to #$0b
+ * there's a check that $22 is not #$0b (3dc7b) -> remove this check

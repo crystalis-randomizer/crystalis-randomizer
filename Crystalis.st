@@ -23589,12 +23589,12 @@ Trigger_86
         $1e22e              .byte $xx,$xx ; Message 1c:0f  Action: 19
         $1e230              .byte $xx,$xx
 Trigger_87
-        ;; 87 rescue zebu (UNUSED)
+        ;; 87 rescue zebu (UNUSED => co-opted as start of game trigger)
         $1e232              .byte $xx,$xx ; Condition: 055 NOT zebu rescued
         $1e234              .byte $xx,$xx ; Message 18:01  Action: 1a
         $1e236              .byte $xx,$xx
 Trigger_88
-        ;; 88 rescue tornel (UNUSED)
+        ;; 88 rescue tornel (UNUSED => co-opted as zombie town warp point)
         $1e238              .byte $xx,$xx ; Condition: 056 NOT tornel rescued
         $1e23a              .byte $xx,$xx ; Message 18:03  Action: 1a
         $1e23c              .byte $xx,$xx
@@ -55981,17 +55981,17 @@ DataTable_3c518
         $3c5a9              .byte $xx,$xx,$xx,$xx,$xx ; 1d
         $3c5ae              .byte $xx,$xx,$xx,$xx,$xx ; 1e
         $3c5b3              .byte $xx,$xx,$xx,$xx,$xx ; 1f
-        $3c5b8              .byte $xx,$xx,$xx,$xx,$xx ; 20
-        $3c5bd              .byte $xx,$xx,$xx,$xx,$xx ; 21
-        $3c5c2              .byte $xx,$xx,$xx,$xx,$xx ; 22
-        $3c5c7              .byte $xx,$xx,$xx,$xx,$xx ; 23
-        $3c5cc              .byte $xx,$xx,$xx,$xx,$xx ; 24
-        $3c5d1              .byte $xx,$xx,$xx,$xx,$xx ; 25
-        $3c5d6              .byte $xx,$xx,$xx,$xx,$xx ; 26
-        $3c5db              .byte $xx,$xx,$xx,$xx,$xx ; 27
-        $3c5e0              .byte $xx,$xx,$xx,$xx,$xx ; 28
-        $3c5e5              .byte $xx,$xx,$xx,$xx,$xx ; 29
-        $3c5ea              .byte $xx,$xx,$xx,$xx,$xx ; 2a
+        $3c5b8              .byte $xx,$xx,$xx,$xx,$xx ; 20 Leaf warp
+        $3c5bd              .byte $xx,$xx,$xx,$xx,$xx ; 21 Brynmaer warp
+        $3c5c2              .byte $xx,$xx,$xx,$xx,$xx ; 22 Oak warp
+        $3c5c7              .byte $xx,$xx,$xx,$xx,$xx ; 23 Nadare warp
+        $3c5cc              .byte $xx,$xx,$xx,$xx,$xx ; 24 Portoa warp
+        $3c5d1              .byte $xx,$xx,$xx,$xx,$xx ; 25 Amazones warp
+        $3c5d6              .byte $xx,$xx,$xx,$xx,$xx ; 26 Joel warp
+        $3c5db              .byte $xx,$xx,$xx,$xx,$xx ; 27 Swan warp
+        $3c5e0              .byte $xx,$xx,$xx,$xx,$xx ; 28 Shyron warp
+        $3c5e5              .byte $xx,$xx,$xx,$xx,$xx ; 29 Goa warp
+        $3c5ea              .byte $xx,$xx,$xx,$xx,$xx ; 2a Sahara warp
         $3c5ef              .byte $xx,$xx,$xx,$xx,$xx ; 2b
         $3c5f4              .byte $xx,$xx,$xx,$xx,$xx ; 2c
         $3c5f9              .byte $xx,$xx,$xx,$xx,$xx ; 2d
@@ -58941,20 +58941,20 @@ TownWarpTable
 BuildWarpMenu                   ; I *think* that's what this does, anyway?
         $3dd36  xx xx:      xxx #$xx
         $3dd38  xx xx:      xxx #$xx
-        $3dd3a  xx xx xx:   xxx $xxxx,x
-        $3dd3d  xx:         xxx
-        $3dd3e  xx xx:      xxx $xx
+-       $3dd3a  xx xx xx:    xxx $xxxx,x
+        $3dd3d  xx:          xxx
+        $3dd3e  xx xx:      xxx - ; $3dd3a
         $3dd40  xx xx:      xxx #$xx
         $3dd42  xx xx:      xxx $xx
-        $3dd44  xx xx:      xxx $xx
-        $3dd46  xx xx xx:   xxx CheckWarpPointFlag
-        $3dd49  xx xx:      xxx $xx
-        $3dd4b  xx xx:      xxx $xx
-        $3dd4d  xx:         xxx
-        $3dd4e  xx xx:      xxx #$xx
-        $3dd50  xx xx xx:   xxx StageNametableWrite
-        $3dd53  xx xx:      xxx $xx
-        $3dd55  xx xx:      xxx $xx
+-       $3dd44  xx xx:       xxx $xx
+        $3dd46  xx xx xx:    xxx CheckWarpPointFlag
+        $3dd49  xx xx:       xxx + ; $3dd53
+        $3dd4b  xx xx:        xxx $xx
+        $3dd4d  xx:           xxx
+        $3dd4e  xx xx:        xxx #$xx
+        $3dd50  xx xx xx:     xxx StageNametableWrite
++       $3dd53  xx xx:       xxx $xx
+        $3dd55  xx xx:      xxx - ; $3dd44
         $3dd57  xx:         xxx
 ;;; --------------------------------
 CheckWarpPointFlag

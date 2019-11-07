@@ -498,6 +498,7 @@ function eastCave(rom: Rom, flags: FlagSet): void {
                   [0x9c, 0x86, 0x80, 0x80, 0x9a]];
 
   for (const l of [loc1, loc2]) {
+    l.bgm = 0x17; // mt sabre cave music?
     l.entrances = [];
     l.exits = [];
     l.pits = [];

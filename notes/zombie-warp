@@ -18,3 +18,11 @@ Here are things we'd need to adjust to add a new town warp:
  * the offset $05 is added explicitly (3dd59) -> change to #$04
  * the loop to build the menu starts at #$0a (3dd40) -> change to #$0b
  * there's a check that $22 is not #$0b (3dc7b) -> remove this check
+
+Looks like a big difficulty is the call to StageNametableWrite
+ - it currently runs on $20..$2a, but that's an index to a table,
+   and 2b is used for something else!  We need to get that back?
+ - the entire table is completely full, so need to get more creative.
+ - ...?
+ - also, just starting at $0b instead of $0a is insufficient, it puts
+   town names in the wrong place.

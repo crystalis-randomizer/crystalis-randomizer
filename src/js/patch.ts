@@ -137,6 +137,7 @@ export async function shuffle(rom: Uint8Array,
     _SIMPLIFY_INVISIBLE_CHESTS: true,
     _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
     _TRAINER: flags.trainer(),
+    _TWELVTH_WARP_POINT: true, // zombie town warp
     _UNIDENTIFIED_ITEMS: flags.unidentifiedItems(),
     _ZEBU_STUDENT_GIVES_ITEM: flags.zebuStudentGivesItem(),
   };

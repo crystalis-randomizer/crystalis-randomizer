@@ -23,6 +23,7 @@ export function deterministicPreParse(prg: Uint8Array): void {
 export function deterministic(rom: Rom, flags: FlagSet): void {
 
   addMezameTrigger(rom);
+  addZombieWarp(rom);
 
   normalizeSwords(rom, flags);
 
@@ -67,13 +68,13 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
 
 // Adds a trigger action to mezame.  Use 87 leftover from rescuing zebu.
 function addMezameTrigger(rom: Rom): void {
-  const trigger = rom.trigger(0x87);
+  const trigger = rom.nextFreeTrigger();
   trigger.used = true;
   trigger.conditions = [~0x2f0];
   trigger.message = MessageId.of({action: 4});
   trigger.flags = [0x2f0];
   const mezame = rom.locations.mezameShrine;
-  mezame.spawns.push(Spawn.of({tile: 0x88, type: 2, id: 0x87}));
+  mezame.spawns.push(Spawn.of({tile: 0x88, type: 2, id: trigger.id}));
 }
 
 function normalizeSwords(rom: Rom, flags: FlagSet) {
@@ -568,6 +569,41 @@ function eastCave(rom: Rom, flags: FlagSet): void {
   }
 };
 
+function addZombieWarp(rom: Rom) {
+  // Make space for the new flag between Joel and Swan
+  for (let i = 0x2f5; i < 0x2fc; i++) {
+    rom.moveFlag(i, i - 1);
+  }
+  // Update the menu
+  const message = rom.messages.parts[0x21][0];
+  message.text = [
+    ' {1a:Leaf}      {16:Brynmaer} {1d:Oak}',
+    '{0c:Nadare}\'s  {1e:Portoa}   {14:Amazones}',
+    '{19:Joel}       Zombie   {20:Swan}',
+    '{23:Shyron}     {18:Goa}      {21:Sahara}',
+  ].join('\n');
+  // Add a trigger to the entrance - there's already a spawn for 8a
+  // but we can't reuse that since it's the same as the one outside
+  // the main ESI entrance; so reuse a different one.
+  const trigger = rom.nextFreeTrigger();
+  trigger.used = true;
+  trigger.conditions = [];
+  trigger.message = MessageId.of({});
+  trigger.flags = [0x2fb]; // new warp point flag
+  // Actually replace the trigger.
+  for (const spawn of rom.locations.zombieTown.spawns) {
+    if (spawn.isTrigger() && spawn.id === 0x8a) {
+      spawn.id = trigger.id;
+    }    
+  }
+  // Insert into the warp table.
+  for (let i = 0x3dc62; i >= 0x3dc5f; i--) {
+    rom.prg[i + 1] = rom.prg[i];
+  }
+  rom.prg[0x3dc5f] = rom.locations.zombieTown.id;
+  // ASM fixes should have happened in preshuffle.s
+}
+
 function reversibleSwanGate(rom: Rom) {
   // Allow opening Swan from either side by adding a pair of guards on the
   // opposite side of the gate.
@@ -858,8 +894,9 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   rom.trigger(0xbb).conditions[1] = ~0x01b;
 
   // Remove redundant trigger 8a (slot 16) in zombietown ($65)
-  const {zombieTown} = rom.locations;
-  zombieTown.spawns = zombieTown.spawns.filter(x => !x.isTrigger() || x.id != 0x8a);
+  //  -- note: no longer necessary since we repurpose it instead.
+  // const {zombieTown} = rom.locations;
+  // zombieTown.spawns = zombieTown.spawns.filter(x => !x.isTrigger() || x.id != 0x8a);
 
   // Replace all dialog conditions from 00e to 243
   for (const npc of rom.npcs) {

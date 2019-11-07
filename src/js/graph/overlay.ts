@@ -68,8 +68,9 @@ const RELEVANT_FLAGS = [
   0x283, // calmed sea (for barrier)
   0x2ee, // started windmill (for refresh)
 
-  0x2f7, // warp:oak (for telepathy)
-  0x2fb, // warp:joel (for evil spirit island)
+  // NOTE: these are moved because of zombie warp!
+  0x2f6, // warp:oak (for telepathy)
+  0x2fa, // warp:joel (for evil spirit island)
 
   // Magic.CHANGE[0][0],
   // Magic.TELEPATHY[0][0],
@@ -646,7 +647,7 @@ export class Overlay {
     }
     type CapabilityList = Array<[readonly [readonly [Condition]], ...Requirement[]]>;
     const capabilities: CapabilityList = [
-      [Event.ALWAYS_TRUE, and()],
+      [Event.START, and()],
       [Capability.SWORD,
        Item.SWORD_OF_WIND, Item.SWORD_OF_FIRE,
        Item.SWORD_OF_WATER, Item.SWORD_OF_THUNDER],

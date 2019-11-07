@@ -26,3 +26,9 @@ Looks like a big difficulty is the call to StageNametableWrite
  - ...?
  - also, just starting at $0b instead of $0a is insufficient, it puts
    town names in the wrong place.
+
+Probably the clever way to handle this would be to skip the bit that
+reads the table and instead populate $20..$24 by hand.  We can get
+by with a small custom table (possibly even using the space we reclaim
+from the actual table - 55 bytes! though we only get 43 back since we
+need 12 to store the new table)

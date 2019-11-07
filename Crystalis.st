@@ -58938,7 +58938,8 @@ TownWarpTable
         $3dd30  xx xx xx:   xxx UpdateEquipmentAndStatus
         $3dd33  xx xx xx:   xxx DrawAllObjectSprites
 ;;; --------------------------------
-BuildWarpMenu                   ; I *think* that's what this does, anyway?
+;;; This works by overwriting parts of the message with blank?
+BuildWarpMenu
         $3dd36  xx xx:      xxx #$xx
         $3dd38  xx xx:      xxx #$xx
 -       $3dd3a  xx xx xx:    xxx $xxxx,x

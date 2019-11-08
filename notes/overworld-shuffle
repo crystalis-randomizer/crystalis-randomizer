@@ -1,0 +1,74 @@
+Goal: rebuild connections between areas to be totally different.
+
+Basic approach:
+ - build a graph connecting all major overworld areas
+   (non-overworld areas have significantly lower coordination)
+ - remove edges until there are no cycles
+ - add back 2-3 extra edges randomly (including on top of existing ones)
+    - require that (waterfall valley / angry sea) is arterial?
+    - maybe not...
+ - add appropriate connectors between overworld spots, getting correct tyoes
+ - branching connectors will always branch to a terminal (possibly via some
+   number of connectors), never to a third area?? (east cave??)
+    - doing so would make a connector into an artery, which we don't want!?
+
+Overworld:
+ - Valley of Wind (1-3 edges, 3-4 caves)
+ - Cordel Plains (6 edges)
+ - Waterfall Valley (2 edges, 4 caves)
+ - Angry Sea (1-2 edges, 1 edge/cave, 2-3 dolphin caves)
+ - Goa Valley (2-3 edges, 0-2 caves, 1 fortress)
+ - Desert 1 (1-3 edges, 2-3 caves)
+ - Desert 2 (1-2 edges, 0-1 caves, 2 cave/fortress)
+
+Connectors:
+ ? Leaf (1-2 edges)
+ ? East Cave (1-3 caves)
+ - Windmill Cave (2 caves)
+ - Sealed Cave (2 caves)
+ - Zebu's Cave (2 caves)
+ ? Brynmaer (1-2 edges)
+ - Swamp (1-2 edges, 1-2 edge/cave)
+ - Mt Sabre W (1 edge, 1 cave)
+ ? Amazones (1-2 edges)
+ - Mt Sabre N (1 edge, 1 cave)
+ - Lime Tree Valley (2-3 edges, 0-1 cave)
+ - Portoa (1 edge, 1 fortress, boat)
+ - Portoa Palace (1 fortress', 1 cave)
+ - Beach (1 edge, boat)  -- new map??
+ - Underground Channel (1 cave, 1 dolphin cave)
+ - Joel (1 edge, 1 cave)
+ - Joel Passage (2 caves)
+ - Evil Spirit Island Entrance (1 dolphin cave, 1 cave)
+ ? Evil Spirit Island Main (1-2 cave)
+ - Zombie Town (1 cave, 1 fortress)
+ - Kirisa Plant Cave (2 cave)
+ ? Swan (1-2 edge)
+ - Swan Gate (2 edge)  -- consider including in swan?
+ - Mt Hydra (1 edge, 1 edge/cave, 1 fortress)
+ - Goa (1 edge, 1 edge/fortress)
+ - Fortress (1 edge/fortress', 1 cave)
+ - Oasis Entrance (3 cave)
+ - Oasis Cave (2 cave)
+ - Shyron (1 edge, 1 fortress)
+ - Desert Cave 1 (2 cave)
+ ? Sahara Meadow (0-1 edge, 0-1 cave)
+ ? Sahara (1-2 edges)
+ - Desert Cave 2 (2 cave)
+
+Terminals:
+ - Start (1 edge)
+ - Windmill (1 cave)
+ - Stom's House (1 edge)
+ - Oak (1 edge)
+ - Waterfall Cave (1 cave)
+ - Kirisa Meadow (1 cave)
+ - Fog Lamp Cave (1 cave)
+ - Lime Tree Lake (1 edge)
+ - Lighthoue (1 cave)
+ - Sabera (1 fortress')
+ - Shyron Temple (1 cave/fortress')
+ - Stxy (1 fortress')
+ - Fortress Basement (1 cave)
+ - Pyramid (1 cave/fortress)
+ - Crypt (1 cave/fortress)

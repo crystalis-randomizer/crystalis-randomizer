@@ -1,0 +1,40 @@
+Goal: make the boat and shell flute each useful on their own.
+ - with randomized overworld, boat will go to a separate lake
+   disconnected from the main ocean (though maybe it could have
+   dolphin/flight-accessible locations as well?)
+ - boat beach connected to some other land exit?
+
+To make the boat appear somewhere else:
+ - move the entrance (60:0)
+ - move the spawn (slot 1b -> 4:3a)
+ - optionally change the tiles to c9/d1 (not required)
+
+Boat in Portoa:
+ - spawn slot 0d -> 4:39
+ - same location trigger 2:b0 - condition 021 => action 1f
+ - behavior is the same: just move left and drag the player along with
+
+Idea:
+ - turn boat around (sprite)
+    - could probably add a separate animation frame to same metasprite (c1)
+    - just keep the animation frame constant... (remove `dec 4e0,x`)
+ - generalize the direction, endpoint, and drop-off somehow.
+   no good way to build it into spawn table, but we could use a table of
+   locations to handle differently?
+ - what to do about the boat being in two different spots? i.e. we need a
+   spawn at the screen edge, but we also need one on beach
+ - check player coordinate next to boat?
+ - may need a second spawn, but be clever about despawning it?
+ - spawn it at the edge, but on first frame check player location and if
+   not entering screen then relocate to dock and flip direction.
+ - consider adding a new location for this, rather than using the sea?
+   will also need new map screens
+
+Flags:
+ - fisherman now always in boat house?
+    - single fog lamp item gets access to other side of channel
+ - dolphin now always spawns? -> extra check
+    - single shell flute item gets access to sea
+    - what about spawning hurt dolphin?  probably don't
+    - so the dolphin in the cave is just a check
+

@@ -510,6 +510,8 @@ define LOC_SWAMP                $1a
 define LOC_OAK                  $1c
 define LOC_OAK_MOTHER_HOUSE     $ce
 define LOC_MT_SABRE_NORTH_MAIN  $28
+define LOC_PORTOA               $50
+define LOC_FISHERMANS_ISLAND    $51
 define LOC_MESIA_SHRINE         $52
 define LOC_DYNA                 $5f
 define LOC_ANGRY_SEA            $60
@@ -17630,6 +17632,11 @@ ObjectData_Object38                                      ; Object 38
         $1af40              .byte $xx,$xx,$xx
         $1af43              .byte $xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
+;;; Boat in portoa
+;;; Action script starts as $ff which does nothing, but it's set
+;;; by the trigger (conditionally) once the player gets in to $55.
+;;; We could probably do something fancy to set it to something
+;;; different (or set something else) to go a different direction.
 ObjectData_Object39                                      ; Object 39
         $1af47              .byte $xx
         $1af48              .byte $xx,$xx,$xx,$xx,$xx,$xx
@@ -17637,6 +17644,7 @@ ObjectData_Object39                                      ; Object 39
         $1af53              .byte $xx
         $1af54              .byte $xx
 ;;; ----------------------------------------------------------------
+;;; Boat in angry sea
 ObjectData_Object3A                                      ; Object 3a
         $1af55              .byte $xx
         $1af56              .byte $xx,$xx,$xx,$xx,$xx,$xx
@@ -46444,41 +46452,48 @@ ObjectActionJump_0d
         $36613  xx xx:      xxx GameMode
         $36615  xx:         xxx
 ;;; --------------------------------
+;;; Move the boat.
 ObjectActionJump_55
-        $36616  xx xx:      xxx $xx
-        $36618  xx xx:      xxx #$xx
-        $3661a  xx xx:      xxx $xx
-        $3661c  xx xx:      xxx #$xx
-        $3661e  xx xx:      xxx $xx
-        $36620  xx xx:      xxx $xx
-        $36622  xx xx:      xxx $xx
-        $36624  xx xx:      xxx $xx,x
-        $36626  xx xx:      xxx $xx
-        $36628  xx xx:      xxx $xx,x
-        $3662a  xx xx:      xxx $xx,x
+        ;; Check location and entrance - do nothing if mismatch.
+        $36616  xx xx:      xxx CurrentLocation
+        $36618  xx xx:      xxx #LOC_FISHERMANS_ISLAND
+        $3661a  xx xx:      xxx + ; $36624
+        $3661c  xx xx:       xxx #LOC_ANGRY_SEA
+        $3661e  xx xx:       xxx >rts ; $3665f
+        $36620  xx xx:       xxx CurrentEntrance
+        $36622  xx xx:       xxx >rts ; $3665f
+        ;; Initial check passed, so move left one pixel (with carry)
++       $36624  xx xx:      xxx $xx,x
+        $36626  xx xx:      xxx + ; $3662a
+        $36628  xx xx:       xxx $xx,x
++       $3662a  xx xx:      xxx $xx,x
         $3662c  xx xx xx:   xxx $xxxx,x
+        ;; Save X temporarily while we track 00/01 (player) along with object X.
         $3662f  xx xx:      xxx $xx
-        $36631  xx xx xx:   xxx ReadObjectCoordinatesInto_34_37
-        $36634  xx xx:      xxx #$xx
-        $36636  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
-        $36639  xx:         xxx
-        $3663a  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
+        $36631  xx xx xx:    xxx ReadObjectCoordinatesInto_34_37
+        $36634  xx xx:       xxx #$xx
+        $36636  xx xx xx:    xxx WriteObjectCoordinatesFrom_34_37
+        $36639  xx:          xxx
+        $3663a  xx xx xx:    xxx WriteObjectCoordinatesFrom_34_37
         $3663d  xx xx:      xxx $xx
+        ;; Zero out a few higher registers
         $3663f  xx xx:      xxx #$xx
         $36641  xx xx xx:   xxx $xxxx
         $36644  xx xx xx:   xxx $xxxx
         $36647  xx xx xx:   xxx $xxxx
+        ;; Stop at x=680
         $3664a  xx xx:      xxx $xx,x
         $3664c  xx xx:      xxx #$xx
-        $3664e  xx xx:      xxx $xx
+        $3664e  xx xx:       xxx >rts ; $3665f
         $36650  xx xx:      xxx $xx,x
         $36652  xx xx:      xxx #$xx
-        $36654  xx xx:      xxx $xx
+        $36654  xx xx:       xxx >rts ; $3665f
+        ;; Once we've stopped, kick the player out and reset action back to ff
         $36656  xx xx:      xxx #$xx
         $36658  xx xx:      xxx $xx
         $3665a  xx xx:      xxx #$xx
         $3665c  xx xx xx:   xxx $xxxx,x
-        $3665f  xx:         xxx
+ +      $3665f  xx:         xxx
 ;;; --------------------------------
 ObjectActionJump_50
         $36660  xx xx xx:   xxx $xxxx,x
@@ -54041,6 +54056,7 @@ Metasprite_c0                   ; Metasprite c0
         $3b180              .byte $xx,$xx,$xx,$xx
         $3b184              .byte $xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
+;;; Boat
 Metasprite_c1                   ; Metasprite c1
         $3b188              .byte $xx,$xx
         ;; Variant 0
@@ -57958,7 +57974,7 @@ ItemOrTriggerActionJump                 ; TODO - Label the destinations
         $3d59b              .word ($3d7fd) ; 1c return statue of onyx
         $3d59d              .word ($3d805) ; 1d
         $3d59f              .word ($3d827) ; 1e
-        $3d5a1              .word ($3d82e) ; 1f
+        $3d5a1              .word ($3d82e) ; 1f board boat
 ;;; --------------------------------
 ItemOrTriggerActionJump_00
 ItemOrTriggerActionJump_03
@@ -58303,6 +58319,8 @@ ItemOrTriggerActionJump_1e
         $3d82c  xx:         xxx
         $3d82d  xx:         xxx
 ;;; --------------------------------
+ItemOrTriggerActionJump_1e ; board boat
+        ;; Set the action of the boat spawn (slot d => 4:39) to 55
         $3d82e  xx xx:      xxx #$xx
         $3d830  xx xx xx:   xxx $xxxx
         $3d833  xx:         xxx
@@ -59652,11 +59670,11 @@ NpcDataJump
         $3e21e              .word ($3e2a3) ; wall
         $3e220              .word ($3e222) ; animations, explosions, etc
 ;;; --------------------------------
-NpcDataJump_4                   ; Animations, explosions, etc.
-        $3e222  xx xx:      xxx $xx
+NpcDataJump_4                   ; Animations, explosions, shopkeepers, etc.
+        $3e222  xx xx:      xxx $xx ; id
         $3e224  xx xx:      xxx #$xx
         $3e226  xx xx:      xxx #$xx
-        $3e228  xx xx:      xxx + ; $3e239
+        $3e228  xx xx:      xxx SpawnShopkeeper ; $3e239
 -       $3e22a  xx xx:         xxx $xx
         $3e22c  xx xx:         xxx $xx
         $3e22e  xx xx:         xxx $xx
@@ -59664,7 +59682,8 @@ NpcDataJump_4                   ; Animations, explosions, etc.
         $3e233  xx xx xx:      xxx MaybeRecordAlternativePatternBank
         $3e236  xx xx xx:      xxx NpcDataJump_Finish
         ;;                     ----------------------
-+       $3e239  xx xx:        xxx $xx
+SpawnShopkeeper
+        $3e239  xx xx:        xxx $xx
         $3e23b  xx xx:        xxx #$xx
         $3e23d  xx:           xxx
         $3e23e  xx xx:        xxx #$xx

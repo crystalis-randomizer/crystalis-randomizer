@@ -859,6 +859,8 @@ MaybeSetCheckpointActual:
   lda #$04
 .endif
 
+.org $35b96 ; clear dolphin bit => also clear the flag
+  jsr UpdatePlayerStatusAndDolphinFlag
 
 ;; Adjusted stab damage for populating sword object ($02)
 .org $35c5f
@@ -1216,6 +1218,9 @@ GrantItemInRegisterA:
   jmp PatchZebuStudentFollowUp
 .endif
 
+.org $3d29d ; Just set dolphin status bit => also set the flag
+  jsr UpdatePlayerStatusAndDolphinFlag
+
 
 ;;; Convert a beq to a bcs for mimic spawns - any chest between $70 and $80
 ;;; will now spawn a mimic.
@@ -1300,6 +1305,9 @@ SetEquippedConsumableItem:
   bne $e3b0  ; invisible chest
   ;; 6 free bytes now
 .endif
+
+.org $3e7b3 ; just cleared dolphin status => also clear the flag
+  jsr UpdatePlayerStatusAndDolphinFlag
 
 ;;; Fix post-massacre Shyron sprites.  When we do sprite calculations,
 ;;; we don't really have any way to take into account the fact that
@@ -1761,6 +1769,27 @@ InitialAction:
 .endif
   rts
 
+;;; NOTE: this is 23 bytes.  If we do anything else with flags
+;;; it would make sense to write a pair of functions SetFlag
+;;; and ClearFlag that take an offset in Y and a bit in A (with
+;;; appropriate CPL already applied for clear) - these are each
+;;; 7 bytes to define and 7 bytes to call, so this ends up costing
+;;; 34 bytes total, but only 20 on the margin.  It would take
+;;; a number of calls to pay off.
+UpdatePlayerStatusAndDolphinFlag:
+  ;; Args: A = new value for $0710, bit 40 will go into flag 0ee (649d:40)
+  sta $0710
+  and #$40
+  beq +
+   ora $649d
+   sta $649d
+   rts
++ lda #$bf
+  and $649d
+  sta $649d
+  rts
+
+;;;  FREE SPACE
 
 .ifdef _TRAINER
 ;;; Trainer mode: provides a number of controller shortcuts

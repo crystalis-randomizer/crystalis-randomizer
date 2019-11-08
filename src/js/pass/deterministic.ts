@@ -56,6 +56,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   } else if (flags.connectLimeTreeToLeaf()) {
     connectLimeTreeToLeaf(rom);
   }
+  evilSpiritIslandRequiresDolphin(rom);
   closeCaveEntrances(rom, flags);
   simplifyInvisibleChests(rom);
   addCordelWestTriggers(rom, flags);
@@ -602,6 +603,13 @@ function addZombieWarp(rom: Rom) {
   }
   rom.prg[0x3dc5f] = rom.locations.zombieTown.id;
   // ASM fixes should have happened in preshuffle.s
+}
+
+function evilSpiritIslandRequiresDolphin(rom: Rom) {
+  rom.trigger(0x8a).conditions = [~0x0ee]; // new flag for riding dolphin
+  rom.messages.parts[0x1d][0x10].text = `The cave entrance appears
+to be underwater. You'll
+need to swim.`;
 }
 
 function reversibleSwanGate(rom: Rom) {

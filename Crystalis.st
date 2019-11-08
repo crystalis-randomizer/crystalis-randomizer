@@ -27010,7 +27010,7 @@ MainGameModeJump_0d
         $1fe0c  xx xx:      xxx ScreenMode
         $1fe0e  xx xx xx:   xxx ReadControllersWithDirections
 ;;; --------------------------------
-        $1fe11  xx xx xx:   xxx $xxxx
+        $1fe11  xx xx xx:   xxx PlayerStatus
         $1fe14  xx xx:      xxx #$xx
         $1fe16  xx:         xxx
         $1fe17  xx:         xxx
@@ -27072,7 +27072,7 @@ DataTable_1feb7
         $1febd              .word ($0d7f0)
 ;;; --------------------------------
         $1febf  xx xx xx:   xxx FlushNametableDataWrite
-        $1fec2  xx xx xx:   xxx $xxxx
+        $1fec2  xx xx xx:   xxx PlayerStatus
         $1fec5  xx xx:      xxx ++ ; $1ff0a
         $1fec7  xx xx:      xxx #$xx
         $1fec9  xx xx:      xxx #$xx
@@ -29319,9 +29319,9 @@ MenuItemNameTable
         $21629  xx xx xx:   xxx $xxxx
         $2162c  xx xx xx:   xxx $xxxx
         $2162f  xx xx xx:   xxx $xxxx
-        $21632  xx xx xx:   xxx $xxxx
+        $21632  xx xx xx:   xxx PlayerStatus
         $21635  xx xx:      xxx #$xx
-        $21637  xx xx xx:   xxx $xxxx
+        $21637  xx xx xx:   xxx PlayerStatus
         $2163a  xx xx xx:   xxx ShopMenu_CurrentItemPrice
         $2163d  xx xx xx:   xxx $xxxx
         $21640  xx xx xx:   xxx ShopMenu_CurrentItemPrice+1
@@ -30071,24 +30071,24 @@ LoadGame
         $21c0c  xx xx xx:    xxx $xxxx
         $21c0f  xx xx xx:    xxx $21c7a
         ;; --------------------------------
-+       $21c12  xx xx xx:   xxx $xxxx
++       $21c12  xx xx xx:   xxx PlayerStatus
         $21c15  xx xx:      xxx #$xx
-        $21c17  xx xx:      xxx $xx
-        $21c19  xx xx:      xxx #$xx
-        $21c1b  xx xx xx:   xxx $20a9f
-        $21c1e  xx xx:      xxx #$xx ; (spaces)
-        $21c20  xx xx xx:   xxx ShowMenuMessage
-        $21c23  xx xx:      xxx #$xx ; "1: ______ LV: ##"
-        $21c25  xx xx xx:   xxx ShowMenuMessage
-        $21c28  xx xx xx:   xxx $21bfd
-;;; --------------------------------
-        $21c2b  xx xx:      xxx #$xx ; "Save this game?"
+        $21c17  xx xx:      xxx + ; $21c2b
+        $21c19  xx xx:       xxx #$xx
+        $21c1b  xx xx xx:    xxx $20a9f
+        $21c1e  xx xx:       xxx #$xx ; (spaces)
+        $21c20  xx xx xx:    xxx ShowMenuMessage
+        $21c23  xx xx:       xxx #$xx ; "1: ______ LV: ##"
+        $21c25  xx xx xx:    xxx ShowMenuMessage
+        $21c28  xx xx xx:    xxx $21bfd
+        ;;;                  ----------
++       $21c2b  xx xx:      xxx #$xx ; "Save this game?"
         $21c2d  xx xx xx:   xxx ShowMenuMessage
         $21c30  xx xx:      xxx #$xx ; "YES NO"
         $21c32  xx xx xx:   xxx ShowMenuMessage
         $21c35  xx xx:      xxx #$xx
         $21c37  xx xx xx:   xxx Menu_ReadYesNo_CarrySetIfNo
-        $21c3a  xx xx:      xxx $xx
+        $21c3a  xx xx:      xxx SaveGame
         $21c3c  xx xx:      xxx #$xx ; (spaces)
         $21c3e  xx xx xx:   xxx ShowMenuMessage
         $21c41  xx xx xx:   xxx $21b3a
@@ -35291,9 +35291,9 @@ DataTable_27162
         $278fd              .byte $xx,$xx,$xx
 ;;; --------------------------------
 MainGameModeJump_03_DeathAnimation
-        $27900  xx xx xx:   xxx $xxxx
+        $27900  xx xx xx:   xxx PlayerStatus
         $27903  xx xx:      xxx #$xx
-        $27905  xx xx xx:   xxx $xxxx
+        $27905  xx xx xx:   xxx PlayerStatus
         $27908  xx xx xx:   xxx UpdateEquipmentAndStatus
         $2790b  xx xx:      xxx #$xx
         $2790d  xx xx xx:   xxx $xxxx,x
@@ -35500,9 +35500,9 @@ DataTable_27ad9
 ;;; --------------------------------
 MainGameModeJump_18_RecoverMagicAnimation
         $27b39  xx xx xx:   xxx ClearBackgroundPaletteAndAttributes
-        $27b3c  xx xx xx:   xxx $xxxx
+        $27b3c  xx xx xx:   xxx PlayerStatus
         $27b3f  xx xx:      xxx #$xx
-        $27b41  xx xx xx:   xxx $xxxx
+        $27b41  xx xx xx:   xxx PlayerStatus
         $27b44  xx xx:      xxx #$xx
         $27b46  xx xx xx:   xxx $xxxx
         $27b49  xx xx:      xxx #$xx
@@ -35563,9 +35563,9 @@ MainGameModeJump_19_ChangeMagicRevertAnimation
         $27bcd  xx xx xx:   xxx $xxxx
         $27bd0  xx xx:      xxx #$xx
         $27bd2  xx xx xx:   xxx $xxxx
-        $27bd5  xx xx xx:   xxx $xxxx
+        $27bd5  xx xx xx:   xxx PlayerStatus
         $27bd8  xx xx:      xxx #$xx
-        $27bda  xx xx xx:   xxx $xxxx
+        $27bda  xx xx xx:   xxx PlayerStatus
         $27bdd  xx xx:      xxx #SFX_CHANGE_MAGIC
         $27bdf  xx xx xx:   xxx StartAudioTrack
         $27be2  xx xx:      xxx #$xx
@@ -35631,7 +35631,7 @@ MainGameModeJump_1b_ForgeCrystalis
         $27c6d  xx xx xx:   xxx $xxxx
         $27c70  xx xx xx:   xxx $xxxx
         $27c73  xx xx xx:   xxx $xxxx
-        $27c76  xx xx xx:   xxx $xxxx
+        $27c76  xx xx xx:   xxx PlayerStatus
         $27c79  xx xx xx:   xxx $xxxx
         $27c7c  xx xx:      xxx #$xx
         $27c7e  xx xx xx:   xxx $xxxx
@@ -35811,7 +35811,7 @@ MainGameModeJump_1e_ThrustCrystalis
         $27e1e  xx xx xx:   xxx BankSwitch8k_8000
         $27e21  xx xx xx:   xxx LoadPalettesForLocation
         $27e24  xx xx:      xxx #$xx
-        $27e26  xx xx xx:   xxx $xxxx
+        $27e26  xx xx xx:   xxx PlayerStatus
         $27e29  xx xx xx:   xxx UpdateEquipmentAndStatus
         $27e2c  xx xx:      xxx #$xx
         $27e2e  xx xx:      xxx #$xx
@@ -40081,9 +40081,9 @@ RomBank_17                      ; @@ $a000
 ;;; NOTE: This whole block appears to be unused (down to $2fc00)
 RevertChangeMagic
         ;; Remove the status bits used by change magic
-        $2fbd5  xx xx xx:   xxx $xxxx
+        $2fbd5  xx xx xx:   xxx PlayerStatus
         $2fbd8  xx xx:      xxx #$xx
-        $2fbda  xx xx xx:   xxx $xxxx
+        $2fbda  xx xx xx:   xxx PlayerStatus
         ;; Play the revert sound
         $2fbdd  xx xx:      xxx #SFX_CHANGE_MAGIC
         $2fbdf  xx xx xx:   xxx StartAudioTrack
@@ -40113,10 +40113,10 @@ MaybeSetCheckpoint
         $2fc0b  xx:          xxx
         $2fc0c  xx:           xxx
         $2fc0d  xx:           xxx
-        $2fc0e  xx xx xx:      xxx $xxxx
+        $2fc0e  xx xx xx:      xxx PlayerStatus
         $2fc11  xx:            xxx
         $2fc12  xx xx:          xxx #$xx
-        $2fc14  xx xx xx:       xxx $xxxx
+        $2fc14  xx xx xx:       xxx PlayerStatus
         $2fc17  xx xx:          xxx #$xx
 -       $2fc19  xx xx:           xxx $xx,x
         $2fc1b  xx xx xx:        xxx $xxxx,x
@@ -40170,7 +40170,7 @@ MaybeSetCheckpoint
         $2fc80  xx xx:           xxx #$xx
         $2fc82  xx xx:          xxx - ; $2fc7a
         $2fc84  xx:            xxx
-        $2fc85  xx xx xx:      xxx $xxxx
+        $2fc85  xx xx xx:      xxx PlayerStatus
         $2fc88  xx:           xxx
         $2fc89  xx:           xxx
         $2fc8a  xx:          xxx
@@ -45396,7 +45396,7 @@ ObjectActionJump_03
         $35ddc  xx xx xx:   xxx $xxxx,x
         $35ddf  xx xx:      xxx ++ ; $35de1
 ++      $35de1  xx xx xx:   xxx $36022
-        $35de4  xx xx xx:   xxx $xxxx
+        $35de4  xx xx xx:   xxx PlayerStatus
         $35de7  xx xx:      xxx ++ ; $35e39
         $35de9  xx xx:      xxx #$xx
         $35deb  xx xx:      xxx #$xx
@@ -45590,7 +45590,7 @@ ObjectActionJump_03
         $35fa2  xx xx:      xxx + ; $35fb4
         $35fa4  xx xx xx:   xxx $xxxx,x
         $35fa7  xx xx:      xxx +++ ; $35fd1
-        $35fa9  xx xx xx:   xxx $xxxx
+        $35fa9  xx xx xx:   xxx PlayerStatus
         $35fac  xx xx:      xxx ++ ; $35fc4
         $35fae  xx xx:      xxx $xx
         $35fb0  xx xx:      xxx #$xx
@@ -45658,7 +45658,7 @@ DataTable_36017
         $36039  xx xx:      xxx $xx
         $3603b  xx:         xxx
 ;;; --------------------------------
-        $3603c  xx xx xx:   xxx $xxxx
+        $3603c  xx xx xx:   xxx PlayerStatus
         $3603f  xx xx:      xxx #$xx
         $36041  xx xx:      xxx #$xx
         $36043  xx xx:      xxx $xx
@@ -49594,7 +49594,7 @@ DrawAllObjectSpritesInternal
         $380b0  xx:         xxx
         $380b1  xx:         xxx
         $380b2  xx xx:      xxx $xx
-        $380b4  xx xx xx:   xxx $xxxx
+        $380b4  xx xx xx:   xxx PlayerStatus
         $380b7  xx xx:      xxx $xx
         $380b9  xx xx:      xxx #$xx
         $380bb  xx xx xx:   xxx $xxxx
@@ -57580,9 +57580,9 @@ DialogFollowupActionJump_18
         $3d291  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
         $3d294  xx:         xxx
         $3d295  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
-        $3d298  xx xx xx:   xxx $xxxx
+        $3d298  xx xx xx:   xxx PlayerStatus
         $3d29b  xx xx:      xxx #$xx
-        $3d29d  xx xx xx:   xxx $xxxx
+        $3d29d  xx xx xx:   xxx PlayerStatus
         $3d2a0  xx xx:      xxx #$xx
         $3d2a2  xx xx xx:   xxx $xxxx
         $3d2a5  xx xx xx:   xxx $xxxx
@@ -57859,7 +57859,7 @@ MainGameModeJump_06_ItemUseMessage
         $3d4cb  xx xx:      xxx #ITEM_WARP_BOOTS
         $3d4cd  xx xx:      xxx ItemUse_Main
         ;; Use warp boots, but not while changed
-        $3d4cf  xx xx xx:   xxx $xxxx
+        $3d4cf  xx xx xx:   xxx PlayerStatus
         $3d4d2  xx xx:      xxx + ; $3d4d9
         $3d4d4  xx xx:       xxx #GAME_MODE_NORMAL
         $3d4d6  xx xx:       xxx GameMode
@@ -59245,9 +59245,9 @@ JumpTable_3df0e_00
         $3df77  xx:         xxx
         $3df78  xx:         xxx
         $3df79  xx:         xxx
-        $3df7a  xx xx xx:   xxx $xxxx
+        $3df7a  xx xx xx:   xxx PlayerStatus
         $3df7d  xx xx:      xxx #$xx
-        $3df7f  xx xx xx:   xxx $xxxx
+        $3df7f  xx xx xx:   xxx PlayerStatus
         $3df82  xx xx:      xxx #$xx
         $3df84  xx xx xx:   xxx BankSwitch8k_8000
         $3df87  xx xx:      xxx #$xx
@@ -59952,13 +59952,13 @@ ExitTypeJump_7
 ;;; --------------------------------
 ExitTypeJump_0_Normal
         $3e422  xx xx xx:   xxx $3e611
-        $3e425  xx xx xx:   xxx $xxxx
+        $3e425  xx xx xx:   xxx PlayerStatus
         $3e428  xx xx:      xxx #$xx
         $3e42a  xx xx:      xxx #$xx
         $3e42c  xx xx:      xxx + ; $3e439
-        $3e42e  xx xx xx:   xxx $xxxx
+        $3e42e  xx xx xx:   xxx PlayerStatus
         $3e431  xx xx:      xxx #$xx
-        $3e433  xx xx xx:   xxx $xxxx
+        $3e433  xx xx xx:   xxx PlayerStatus
         $3e436  xx xx xx:   xxx $3c008
 +       $3e439  xx xx xx:   xxx $3e628
         $3e43c  xx xx:      xxx #$xx
@@ -60171,13 +60171,13 @@ FallIntoPit
         $3e5cb  xx xx:      xxx $xx
         $3e5cd  xx:         xxx
         ;; Cure mutation if present (presumably $3c008 destroys $20).
-        $3e5ce  xx xx xx:    xxx $xxxx
+        $3e5ce  xx xx xx:    xxx PlayerStatus
         $3e5d1  xx xx:       xxx #$xx
         $3e5d3  xx xx:       xxx #$xx
         $3e5d5  xx xx:       xxx + ; $3e5e2
-        $3e5d7  xx xx xx:    xxx $xxxx
+        $3e5d7  xx xx xx:    xxx PlayerStatus
         $3e5da  xx xx:       xxx #$xx
-        $3e5dc  xx xx xx:    xxx $xxxx
+        $3e5dc  xx xx xx:    xxx PlayerStatus
         $3e5df  xx xx xx:    xxx UpdateEquipmentAndStatus
 +       $3e5e2  xx:         xxx
         $3e5e3  xx xx:      xxx $xx
@@ -61773,7 +61773,7 @@ PrepareScreenMapRead
         $3efd3  xx xx xx:   xxx $xxxx
         $3efd6  xx xx:      xxx #SFX_LANDING
         $3efd8  xx xx xx:   xxx StartAudioTrack
-        $3efdb  xx xx xx:   xxx $xxxx
+        $3efdb  xx xx xx:   xxx PlayerStatus
         $3efde  xx xx:      xxx #$xx
         $3efe0  xx xx:      xxx #$xx
         $3efe2  xx xx:      xxx CheckPassiveEffects

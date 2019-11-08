@@ -1,0 +1,21 @@
+Goal: Attach a flag to whether the player is *currently* riding dolphin
+
+Currently stored in $710:40
+ - bit is removed at $35b94
+ - also removed at $3e7b1
+ - bit is set at $3d29b
+
+Should be as simple as finding an unused flag and setting/clearing it.
+ - 0ee seems like a winner (649d:40)
+     lda $649d
+     ora #$40
+     sta $649d  =>  8 bytes, 9 if rts
+
+This seems to work, but another option would be to actually edit the map.
+We could define an alternate tile based on the dolphin flag and see what
+happens - it may be the case that it responds dynamically.  Then we could
+cover the cave with actual impassible water, and it only becomes passible
+when on the dolphin...  Alternatively, just a whirlpool would get the job
+done as well...  Unfortunately, it only updates the flags when you enter
+the area.  There's clearly a "reload" function somewhere, so we'd need to
+call that, and I'm not sure it's worth it.

@@ -300,7 +300,7 @@ export class Overlay {
     // TODO - entrance shuffle will break the auto-warp-point affordance.
     if (this.flags.teleportOnThunderSword()) {
       routes.push({
-        tile: entrance(0xf2),
+        tile: entrance(0x8c, 1), // not f2 since no-thunder-sword-for-massacre
         condition: or(and(Item.SWORD_OF_THUNDER, Capability.BUY_WARP),
                       and(Item.SWORD_OF_THUNDER, Magic.TELEPORT)),
       });

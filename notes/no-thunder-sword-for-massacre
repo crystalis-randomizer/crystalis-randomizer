@@ -1,0 +1,28 @@
+Goal: Shyron massacre does not require Sword of Thunder to trigger it.
+
+Reason: It's somewhat artificial, and blocks Mado 1 from ever holding it.
+
+Problem: It's a bad experience to open a chest and warp immediately into
+a boss fight.  By requiring SoT for massacre, that can never happen.  It
+might also be possible to have a different sword trigger the warp.
+
+We can get around this by instead warping to right outside the temple:
+ - Change $3d5c9 to set 6c/6d to 8c/41 instead of f2/41.
+
+We will probably need to add something in pass/deterministic.ts to
+remove the flag (though we probably already added something somewhere
+to tweak it to a different version?)
+
+Will definitely need to update overlay.ts to understand that SoT
+teleports to a different location.
+
+We *may* need to update overlay.ts to not use the requirement (though that
+might come for free), or any other custom logic that assumes it's required.
+
+Possible side effect: overworld shuffle
+ - Will Shyron temple be separable from Shyron itself?  It would be nice
+   if it were, but it's not clear that that's tenable.  Because Zebu is
+   a requirement for the massacre, it's guaranteed you know where the
+   temple *is* before you can trigger it, but it's less clear whether you
+   need to have been to Shyron - it seems like that would not be
+   unreasonable...?

@@ -22,8 +22,11 @@ export function deterministicPreParse(prg: Uint8Array): void {
 
 export function deterministic(rom: Rom, flags: FlagSet): void {
 
-  addMezameTrigger(rom);
+  // NOTE: this is done very early, make sure any references to warp
+  // point flags are updated to reflect the new ones!
   addZombieWarp(rom);
+
+  addMezameTrigger(rom);
 
   normalizeSwords(rom, flags);
 
@@ -832,7 +835,8 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   rom.trigger(0x80).conditions = [
     ~0x027, // not triggered massacre yet
      0x03b, // got item from key to stxy slot
-     0x203, // got sword of thunder
+     0x2fd, // shyron warp point triggered
+     // 0x203, // got sword of thunder - NOT ANY MORE!
   ];
 
   // Enter shyron ($81) should set warp no matter what

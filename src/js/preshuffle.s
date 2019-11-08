@@ -1109,6 +1109,31 @@ CheckSwordCollisionPlane:
 
 .assert < $3c482  ; end of empty area from $3c446
 
+.ifdef _TWELVTH_WARP_POINT
+.org $3c5b8
+StageCustomNametableWrite:
+  jsr $c676 ; FlushNametableDataWrite
+  txa
+  pha
+  jmp $3c4b8
+StageWarpMenuNametableWrite:
+  ;; 20=a8, 21=DATA, 22=09, 23=00, 24=01
+  sta $21
+  lda #$a8
+  sta $20
+  lda #$09
+  sta $22
+  ldx #$00
+  stx $23
+  inx
+  stx $24
+  bne StageCustomNametableWrite ; uncond
+WarpMenuNametableData:
+  .byte $23,$2d,$36,$63,$6d,$76,$a3,$ad,$b6,$e3,$ed,$f6
+  ;; should be 16 bytes free, still!
+.assert < $3c5ef
+.endif
+
 
 .ifdef _DISABLE_SWORD_CHARGE_GLITCH
 .org $3c9fb
@@ -1253,7 +1278,12 @@ SetEquippedConsumableItem:
 .org $3dc7b
   cmp #$0c  ; $0c is the first invalid slot (probably could just nop here)
 .org $3dd40
-  ;lda #$0b  ; start drawing menu at $b
+  lda #$0b  ; start drawing menu at $b
+.org $3dd4b
+  ldx $11
+  lda WarpMenuNametableData,x
+  jsr StageWarpMenuNametableWrite
+.assert $3dd53
 .org $3dd59
   adc #$04  ; lower offset, start at 2f4 instead
 .endif

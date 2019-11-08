@@ -577,10 +577,10 @@ function addZombieWarp(rom: Rom) {
   // Update the menu
   const message = rom.messages.parts[0x21][0];
   message.text = [
-    ' {1a:Leaf}      {16:Brynmaer} {1d:Oak}',
-    '{0c:Nadare}\'s  {1e:Portoa}   {14:Amazones}',
-    '{19:Joel}       Zombie   {20:Swan}',
-    '{23:Shyron}     {18:Goa}      {21:Sahara}',
+    ' {1a:Leaf}      {16:Brynmaer} {1d:Oak} ',
+    '{0c:Nadare}\'s  {1e:Portoa}   {14:Amazones} ',
+    '{19:Joel}      Zombie   {20:Swan} ',
+    '{23:Shyron}    {18:Goa}      {21:Sahara}',
   ].join('\n');
   // Add a trigger to the entrance - there's already a spawn for 8a
   // but we can't reuse that since it's the same as the one outside

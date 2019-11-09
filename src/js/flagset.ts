@@ -149,6 +149,9 @@ export class FlagSet {
   rabbitBootsChargeWhileWalking() {
     return this.check('Tb');
   }
+  controllerShortcuts() {
+    return !this.check('Tc');
+  }
   randomizeMusic() {
     return this.check('Tm');
   }

@@ -1126,19 +1126,25 @@ CheckSwordCollisionPlane:
 
 .ifdef _CTRL1_SHORTCUTS
 ;;; These cases need to watch for button-up instead of button-down
-.org $1fde7 ; exit start menu
-  lda $4a
+;.org $1fde7 ; exit start menu
+;  lda $4a
 ;;; NOTE: $20140 is exit select menu, but we actually want that
 ;;; on button-down and we use the $46 blacklist to avoid bad
 ;;; behavior.
-.org $26749 ; title screen (start)
-  lda $4a
-.org $2674f ; title screen (select)
-  lda $4a
+;.org $26749 ; title screen (start)
+;  lda $4a
+;.org $2674f ; title screen (select)
+;  lda $4a
 .org $3cb90 ; enter start menu
   lda $4a
 .org $3cbb4 ; enter select menu
   lda $4a
+
+.ifndef _CHECK_FLAG0
+.org $3cb62 ; game mode 8
+  jsr ReadControllersWithButtonUp
+.endif
+
 .endif
 
 
@@ -1466,7 +1472,13 @@ CheckFlag0:
       dex
      bpl -
      jsr LoadAndShowDialog
-+   jmp ReadControllersWithDirections
+
+.ifdef _CTRL1_SHORTCUTS
++  jmp ReadControllersWithButtonUp
+.else
++  jmp ReadControllersWithDirections
+.endif
+
 .endif ; _CHECK_FLAG0
 
 ;;; NOTE: These dialog actions are debug functionality.
@@ -1611,14 +1623,20 @@ GameModeJump_05_ItemTrigger:
 ;;; $48 is buttons that have been pressed outside a menu.
 ;;; When a shortcut activates, we need to remove "select" from it.
 ;;; $46 is a "blacklist" of buttons to ignore until they're unpressed
-RememberLastButtons:
-  lda $43
-  ora $46
-  sta $4a
+ReadControllersWithButtonUp:
+  lda #$01
+  jmp $fe82 ; ReadControllersWithDirections+2
+StartReadCtrl1:
+  sta $44
+  ldx #$00
   jmp $ff17 ; ReadControllerX
 RegisterButtonRelease:
+  ;; do nothing if not read with button up
+  lda $44
+  bne +
+   rts
   ;; clean up the blacklist
-  lda $43
++ lda $43
   and $46
   sta $46
   ;; apply the blacklist
@@ -2047,16 +2065,15 @@ LoadNpcDataForLocation_Skip:
     ;; NOTE: we could save a bit of space by using relative jumps
     ;; and inserting the code around $3fe70
 .org $3fe80
-  ldx #$00
-  jsr RememberLastButtons
+  lda #$00
+  jsr StartReadCtrl1
 .org $3fecc
   jmp RegisterButtonRelease
 
 .org $3fee0
   ldx #$00
-  jsr RememberLastButtons
 .org $3ff13
-  jmp RegisterButtonRelease
+  rts ; jmp RegisterButtonRelease
 
 .org $3cbc1
   lda $43

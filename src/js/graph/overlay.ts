@@ -26,7 +26,7 @@ const RELEVANT_FLAGS = [
   0x01b, // mesia recording played
   0x01e, // queen revealed
   0x021, // returned fog lamp
-  0x024, // generals defeated (got ivory statue)
+  // 0x024, // generals defeated (got ivory statue)
   0x025, // healed dolphin
   0x026, // entered shyron (for goa guards)
   0x027, // shyron massacre
@@ -70,7 +70,7 @@ const RELEVANT_FLAGS = [
 
   // NOTE: these are moved because of zombie warp!
   0x2f6, // warp:oak (for telepathy)
-  0x2fa, // warp:joel (for evil spirit island)
+  // 0x2fa, // warp:joel (for evil spirit island)
 
   // Magic.CHANGE[0][0],
   // Magic.TELEPATHY[0][0],
@@ -660,7 +660,7 @@ export class Overlay {
       [Capability.CLIMB_WATERFALL, Magic.FLIGHT],
       [Capability.SHOOTING_STATUE, Magic.BARRIER], // TODO - allow shield ring?
       [Capability.CLIMB_SLOPE, Item.RABBIT_BOOTS, Magic.FLIGHT],
-      [Event.GENERALS_DEFEATED, Item.IVORY_STATUE], // TODO - fix this
+      // [Event.GENERALS_DEFEATED, Item.IVORY_STATUE], // TODO - fix this
       [Event.OPENED_SEALED_CAVE, Event.STARTED_WINDMILL], // TODO - merge completely?
     ];
 

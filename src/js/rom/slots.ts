@@ -218,4 +218,5 @@ const preservedItemGetFlags = new Set([
   // 0x05f, // sword of thunder - used to trigger massacre
   0x08b, // shell flute - checked by fisherman -- TODO change to 236?
   0x2fd, // shyron warp point from sword of thunder
+  // 0x067, // defeated mado 1 (ball of thunder) - want slot, not item
 ]);

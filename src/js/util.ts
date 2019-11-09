@@ -458,6 +458,11 @@ export function assertNever(x: never): never {
   throw new Error(`non-exhaustive check: ${x}`);
 }
 
+export function assert<T>(x: T|undefined|null): T {
+  if (!x) throw new Error(`asserted but falsy: ${x}`);
+  return x;
+}
+
 export function isNonNull<T extends {}>(x: T|undefined|null): x is T {
   return x != null;
 }

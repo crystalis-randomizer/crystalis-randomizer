@@ -7,6 +7,7 @@ import {MessageId} from '../rom/messageid.js';
 import {GlobalDialog, LocalDialog} from '../rom/npc.js';
 import {ShopType} from '../rom/shop.js';
 import {hex} from '../rom/util.js';
+import {assert} from '../util.js';
 
 export function deterministicPreParse(prg: Uint8Array): void {
   // Remove unused item/trigger actions
@@ -46,6 +47,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
 
   // TODO - consider making a Transformation interface, with ordering checks
   alarmFluteIsKeyItem(rom, flags); // NOTE: pre-shuffle
+  brokahanaWantsMado1(rom);
   if (flags.teleportOnThunderSword()) {
     teleportOnThunderSword(rom);
   } else {
@@ -243,6 +245,15 @@ function alarmFluteIsKeyItem(rom: Rom, flags: FlagSet): void {
   waterfallCave4.spawn(0x19).id = 0x10;
 
   // TODO - require new code for two uses
+}
+
+function brokahanaWantsMado1(rom: Rom): void {
+  const brokahana = rom.npcs[0x54];
+  const dialog = assert(brokahana.localDialogs.get(-1))[0];
+  if (dialog.condition !== ~0x024) {
+    throw new Error(`Bad brokahana condition: ${dialog.condition}`);
+  }
+  dialog.condition = ~0x067; // vanilla ball of thunder / defeated mado 1
 }
 
 function requireHealedDolphin(rom: Rom): void {

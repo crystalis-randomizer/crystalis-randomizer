@@ -5,7 +5,7 @@ export namespace Event {
   export const MESIA_RECORDING = Condition(0x01b);
   export const QUEEN_REVEALED = Condition(0x01e);
   export const RETURNED_FOG_LAMP = Condition(0x021);
-  export const GENERALS_DEFEATED = Condition(0x024);
+  // export const GENERALS_DEFEATED = Condition(0x024);
   export const HEALED_DOLPHIN = Condition(0x025);
   export const ENTERED_SHYRON = Condition(0x026);
   export const SHYRON_MASSACRE = Condition(0x027);
@@ -32,7 +32,7 @@ export namespace Event {
   export const START = Condition(0x2f0);  // always true
   // NOTE: These are moved from vanilla because of zombie warp!
   export const WARP_OAK = Condition(0x2f6);
-  export const WARP_JOEL = Condition(0x2fa);
+  // export const WARP_JOEL = Condition(0x2fa);
   // export const WARP_SHYRON = Condition(0x2fd);
   // export const WARP_SAHARA = Condition(0x2ff);
 }

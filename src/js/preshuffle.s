@@ -603,17 +603,8 @@ ReloadInventoryAfterLoad:
         ;; FREE: 3 bytes?
 .assert < $21500
 
-.ifdef _CTRL1_SHORTCUTS
-.org $20146
-  jmp FixBufferedItemUseTiming
-.endif
-
 .org $20a37
-FixBufferedItemUseTiming:
-  lda #$20
-  sta $46
-  rts
-        ;; FREE: 28 (not 35) bytes
+        ;; FREE: 35 bytes
 .assert < $20a5a
 
 
@@ -1126,15 +1117,6 @@ CheckSwordCollisionPlane:
 
 .ifdef _CTRL1_SHORTCUTS
 ;;; These cases need to watch for button-up instead of button-down
-;.org $1fde7 ; exit start menu
-;  lda $4a
-;;; NOTE: $20140 is exit select menu, but we actually want that
-;;; on button-down and we use the $46 blacklist to avoid bad
-;;; behavior.
-;.org $26749 ; title screen (start)
-;  lda $4a
-;.org $2674f ; title screen (select)
-;  lda $4a
 .org $3cb90 ; enter start menu
   lda $4a
 .org $3cbb4 ; enter select menu
@@ -1620,50 +1602,41 @@ GameModeJump_05_ItemTrigger:
 
 ;;; Rather than reading ctrl2, we instead just read ctrl1 and
 ;;; then use $4a to store buttons released.
-;;; $48 is buttons that have been pressed outside a menu.
-;;; When a shortcut activates, we need to remove "select" from it.
-;;; $46 is a "blacklist" of buttons to ignore until they're unpressed
+;;; $46 and $48 are buttons that have been pressed in button-up mode,
+;;; but we remove bits from 48 to prevent button-up when a shortcut
+;;; activates, but keep them in 46.
+;;; $4c is the indicator that we're in button-up mode
 ReadControllersWithButtonUp:
   lda #$01
   jmp $fe82 ; ReadControllersWithDirections+2
 StartReadCtrl1:
-  sta $44
+  sta $4c
   ldx #$00
   jmp $ff17 ; ReadControllerX
 RegisterButtonRelease:
   ;; do nothing if not read with button up
-  lda $44
+  lda $4c
   bne +
+   sta $46 ; also zero out pressed buttons
+   sta $48
    rts
-  ;; clean up the blacklist
-+ lda $43
-  and $46
-  sta $46
-  ;; apply the blacklist
-  eor #$ff
-  pha
-  and $43
-  sta $43
-  pla
-  and $4b
-  sta $4b
   ;; any newly-pressed buttons go in $48
-  lda $4b
-  eor $48
++ lda $4b
+  ora $48
   sta $48
+  ora $46  ; NOTE: 46 should always be a superset of 48
+  sta $46
   ;; any buttons in $48 not in $43 go in $4a
   lda $43
   eor #$ff
   and $48
   sta $4a
-  ;; any unpressed buttons are removed from $48
+  ;; any unpressed buttons are removed from $48 and $46
   lda $43
+  and $46
+  sta $46
   and $48
   sta $48
-  ;; start/select removed from $43...?
-  ;;lda $43
-  ;;and #$cf
-  ;;sta $43
 -- rts
 QuickChangeSword:
    lda $48
@@ -1700,7 +1673,7 @@ CheckSelectShortcuts:
 .endif
   rts
 CheckStartShortcuts:
-  lda $43
+  lda $46
   cmp #$d0   ; A+B+start exactly?
   bne -      ; done -> rts
 .ifndef _NO_BIDI_WILD_WARP ; save 12 bytes without this...?
@@ -1734,7 +1707,7 @@ InitialAction:
 ;;;   Start+Left -> better armors
 ;;;   Start+Right -> better shields
 CheckTrainerShortcuts:
-   lda $43    ; Currently pressed?
+   lda $46    ; Currently pressed?
    and #$50   ; Start+B
    cmp #$50
    bne ++
@@ -2071,16 +2044,17 @@ LoadNpcDataForLocation_Skip:
   jmp RegisterButtonRelease
 
 .org $3fee0
-  ldx #$00
+  lda #$00
+  jsr StartReadCtrl1
 .org $3ff13
-  rts ; jmp RegisterButtonRelease
+  jmp RegisterButtonRelease
 
 .org $3cbc1
-  lda $43
+  lda $46
   and #$20   ; select pressed?
   beq +
    jsr CheckSelectShortcuts
-+ lda $43
++ lda $46
   and #$10   ; start pressed?
   beq $cbeb  ; no -> rts
    jmp CheckStartShortcuts

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-131783670-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-131783670-1');
+</script>
+<title>Crystalis Randomizer</title>
+<link rel="stylesheet" href="css/main.css">
+<script type="module" src="js/check.min.js"></script>
+
+<main>
+  <section>
+    <h1>Check ROM</h1>
+    <div>
+      <p><label class="file-picker button">
+        Select Shuffled Crystalis ROM File
+        <input type="file" accept=".nes" id="pick-file" style="display: none;">
+      </label>
+      <h2>Information</h2>
+      <ul>
+        <li>Filename: <span id="filename"></span>
+        <li>Version: <span id="hash"></span>
+        <li>Seed: <span id="seed"></span>
+        <li>Flags: <span id="flags"></span>
+        <li>Checksum: <span id="checksum"></span>
+        <li>Query: <span id="query"></span>
+        <li>Permalink: <a id="permalink"></a>
+      </ul>
+    </div>
+  </section>
+</main>

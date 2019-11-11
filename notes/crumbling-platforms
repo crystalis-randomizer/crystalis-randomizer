@@ -1,0 +1,13 @@
+Goal: Randomize whether any given platform will crumble after you exit.
+
+Background:
+Currently there are three platform objects: 7e, 7f, and 9f.  7e is the normal
+vertical platform, 7f i the normal horizontal platform, and 9f is the crumbling
+vertical platform that only ever shows up in the crypt.  The platform direction
+is controlled by $360,x.
+
+Plan:
+Find a free object ID (e.g. 8d is nearby) and copy 9f into 8d, but switch $360,x
+to be 2 instead of 0.  Then in a randomized pass, randomize which is used:
+ - change random 7e to 9f and vice versa
+ - change random 7f to 8d

@@ -774,7 +774,7 @@ const BASE_PRICES: {[itemId: number]: number} = {
   0x21: 36,   // fruit of power
   0x22: 200,  // magic ring
   0x23: 150,  // fruit of repun
-  0x24: 80,   // warp boots
+  0x24: 65,   // warp boots
   0x26: 300,  // opel statue
   // 0x31: 50, // alarm flute
 };

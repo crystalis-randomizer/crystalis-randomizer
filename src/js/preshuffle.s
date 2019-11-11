@@ -2098,6 +2098,12 @@ LoadNpcDataForLocation_Rts:
   rts
 LoadNpcDataForLocation_Skip:
 
+.ifdef _HAZMAT_SUIT
+.org $3ef66
+  ;; Check for gas mask instead of leather boots for pain terrain
+  cmp #$0d
+.endif
+
 .ifdef _CTRL1_SHORTCUTS
     ;; NOTE: we could save a bit of space by using relative jumps
     ;; and inserting the code around $3fe70

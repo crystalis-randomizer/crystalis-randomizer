@@ -664,12 +664,14 @@ const ADJUSTMENTS = [
   [0x15bb7, 0x96, 0x80],
   // Fix garbage at bottom of oasis cave map (it's 8x11, not 8x12 => fix height)
   [0x164ff, 0x0b, 0x0a],
-  // Fix bad music in zombietown houses: $10 should be $01
+  // Fix bad music in zombietown houses: $10 should be $01.
   [0x1782a, 0x10, 0x01],
   [0x17857, 0x10, 0x01],
   // Fix bad spawn in Mt Hydra (make it an extra puddle).
   [0x19f02, 0x40, 0x80],
   [0x19f03, 0x33, 0x32],
+  // Fix bad spawn in Sabera 2's level (probably meant to be a flail guy).
+  [0x1a1e1, 0x3d, 0x34],
   // Point Amazones outer guard to post-overflow message that's actually shown.
   [0x1cf05, 0x47, 0x48],
   // Remove stray flight granter in Zombietown.

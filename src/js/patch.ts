@@ -7,6 +7,7 @@ import {FetchReader} from './fetchreader.js';
 import {FlagSet} from './flagset.js';
 import {AssumedFill} from './graph/shuffle.js';
 import {World} from './graph/world.js';
+import {crumblingPlatforms} from './pass/crumblingplatforms.js';
 import {deterministic, deterministicPreParse} from './pass/deterministic.js';
 import {fixDialog} from './pass/fixdialog.js';
 import {shuffleMazes} from './pass/shufflemazes.js';
@@ -175,6 +176,7 @@ export async function shuffle(rom: Uint8Array,
   if (flags.shuffleShops()) shuffleShops(parsed, flags, random);
 
   randomizeWalls(parsed, flags, random);
+  crumblingPlatforms(parsed, random);
 
   if (flags.randomizeWildWarp()) shuffleWildWarp(parsed, flags, random);
   rescaleMonsters(parsed, flags, random);
@@ -1689,10 +1691,10 @@ const UNTOUCHED_MONSTERS: {[id: number]: boolean} = { // not yet +0x50 in these 
   [0x7e]: true, // vertical platform
   [0x7f]: true, // horizontal platform
   [0x83]: true, // glitch in $7c (hydra)
-  [0x8d]: true, // glitch in location $ab (sabera 2)
+  [0x8d]: true, // glitch in location $ab (sabera 2) - crumbling horizontal platform
   [0x8e]: true, // broken?, but sits on top of iron wall
   [0x8f]: true, // shooting statue
-  [0x9f]: true, // vertical platform
+  [0x9f]: true, // crumbling vertical platform
   // [0xa1]: true, // white tower robots
   [0xa6]: true, // glitch in location $af (mado 2)
 };

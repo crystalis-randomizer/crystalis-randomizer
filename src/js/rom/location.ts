@@ -1,31 +1,441 @@
+import {Area, Areas} from './area.js';
 import {Entity} from './entity.js';
 import {Screen} from './screen.js';
 import {Data, DataTuple,
-        concatIterables, group, hex, readLittleEndian,
-        seq, tuple, varSlice, writeLittleEndian} from './util.js';
+        concatIterables, group, hex, initializer,
+        readLittleEndian, seq, tuple, varSlice,
+        writeLittleEndian, upperCamelToSpaces} from './util.js';
 import {Writer} from './writer.js';
 import {Rom} from '../rom.js';
-import { UnionFind } from '../unionfind.js';
-import { iters, assertNever, DefaultMap } from '../util.js';
-import { Monster } from './monster.js';
-import { Random } from '../random.js';
+import {UnionFind} from '../unionfind.js';
+import {assertNever, iters, DefaultMap} from '../util.js';
+import {Monster} from './monster.js';
+import {Random} from '../random.js';
+
+type Key = string | symbol;
+// Local for defining names on Locations objects.
+interface LocationInit {
+  area?: (areas: Areas) => Area;
+  subArea?: string;
+  music?: Key | ((area: Area) => Key);
+  palette?: Key | ((area: Area) => Key);
+  bossScreen?: number;
+}
+interface LocationData {
+  area: Area;
+  name: string;
+  music: Key;
+  palette: Key;
+  subArea?: string;
+  bossScreen?: number;
+}
+
+const CAVE = {
+  subArea: 'cave',
+  music: (area: Area) => `${area.name}-Cave`,
+  palette: (area: Area) => `${area.name}-Cave`,
+} as const;
+const HOUSE = {
+  subArea: 'house',
+  palette: () => Symbol(),
+} as const;
+const FORTUNE_TELLER = {
+  subArea: 'house',
+  palette: () => Symbol(),
+  music: (area: Area) => `${area.name}-FortuneTeller`,
+} as const;
+const MESIA = {
+  name: 'mesia',
+  music: (area: Area) => `${area.name}-Mesia`,
+  // Mesia in tower keeps same palette
+  palette: (area: Area) => area.name === 'Tower' ?
+      area.name : `${area.name}-Mesia`,
+} as const;
+const DYNA = {
+  name: 'dyna',
+  music: (area: Area) => `${area.name}-Dyna`,
+  palette: (area: Area) => `${area.name}-Dyna`,
+} as const;
+const KELBESQUE = {
+  name: 'goa 1',
+  music: 'goa 1',
+  palette: 'goa 1',
+} as const;
+const SABERA = {
+  name: 'goa 2',
+  music: 'goa 2',
+  palette: 'goa 2',
+} as const;
+const MADO_LOWER = {
+  name: 'goa 3',
+  music: 'goa 3',
+  palette: 'goa 3',
+} as const;
+const MADO_UPPER = {...MADO_LOWER, palette: 'goa 3 upper'} as const;
+const KARMINE_UPPER = {
+  name: 'goa 4',
+  music: 'goa 4',
+  palette: 'goa 4',
+} as const;
+const KARMINE_LOWER = {...KARMINE_UPPER, palette: 'goa 4 lower'} as const;
+
+type InitParams = readonly [number, LocationInit?];
+type Init = {(...args: InitParams): Location,
+             commit(locations: Locations): void};
+const $: Init = (() => {
+  const $ = initializer<[number, LocationInit], Location>();
+  let area!: (areas: Areas) => Area;
+  function $$(id: number, data: LocationInit = {}): Location {
+    area = data.area || area;
+    return $(id, {area});
+  };
+  ($$ as Init).commit = (locations: Locations) => {
+    const areas = locations.rom.areas;
+    $.commit(locations, (prop: string, id: number, init: LocationInit) => {
+      const name = upperCamelToSpaces(prop);
+      const area = init.area!(areas);
+      const music = typeof init.music === 'function' ?
+          init.music(area) : init.music || area.name;
+      const palette = typeof init.palette === 'function' ?
+          init.palette(area) : init.palette || area.name;
+      const data: LocationData = {area, name, music, palette};
+      if (init.subArea != null) data.subArea = init.subArea;
+      if (init.bossScreen != null) data.bossScreen = init.bossScreen;
+      const location = new Location(locations.rom, id, data);
+      // negative id indicates it's not registered.
+      if (id >= 0) locations[id] = location;
+      return location;
+    });
+  };
+  return $$ as Init;
+})();
+
+export class Locations extends Array<Location> {
+
+  readonly MezameShrine             = $(0x00, {area: a => a.Mezame});
+  readonly Leaf_OutsideStart        = $(0x01);
+  readonly Leaf                     = $(0x02, {area: a => a.Leaf});
+  readonly ValleyOfWind             = $(0x03, {area: a => a.ValleyOfWind});
+  readonly SealedCave1              = $(0x04, {area: a => a.SealedCave});
+  readonly SealedCave2              = $(0x05);
+  readonly SealedCave6              = $(0x06);
+  readonly SealedCave4              = $(0x07);
+  readonly SealedCave5              = $(0x08);
+  readonly SealedCave3              = $(0x09);
+  readonly SealedCave7              = $(0x0a, {bossScreen: 0x91});
+  // INVALID: 0x0b
+  readonly SealedCave8              = $(0x0c);
+  // INVALID: 0x0d
+  readonly WindmillCave             = $(0x0e, {area: a => a.WindmillCave});
+  readonly Windmill                 = $(0x0f, {area: a => a.Windmill});
+  readonly ZebuCave                 = $(0x10, {area: a => a.ZebuCave});
+  readonly MtSabreWest_Cave1        = $(0x11, {area: a => a.MtSabreWest, ...CAVE});
+  // INVALID: 0x12
+  // INVALID: 0x13
+  readonly CordelPlainWest          = $(0x14, {area: a => a.CordelPlain});
+  readonly CordelPlainEast          = $(0x15);
+  // INVALID: 0x16 -- unused copy of 18
+  // INVALID: 0x17
+  readonly Brynmaer                 = $(0x18, {area: a => a.Brynmaer});
+  readonly OutsideStomHouse         = $(0x19, {area: a => a.StomHouse});
+  readonly Swamp                    = $(0x1a, {area: a => a.Swamp,
+                                               bossScreen: 0x7c});
+  readonly Amazones                 = $(0x1b, {area: a => a.Amazones});
+  readonly Oak                      = $(0x1c, {area: a => a.Oak});
+  // INVALID: 0x1d
+  readonly StomHouse                = $(0x1e, {area: a => a.StomHouse});
+  // INVALID: 0x1f
+  readonly MtSabreWest_Lower        = $(0x20, {area: a => a.MtSabreWest});
+  readonly MtSabreWest_Upper        = $(0x21);
+  readonly MtSabreWest_Cave2        = $(0x22, CAVE);
+  readonly MtSabreWest_Cave3        = $(0x23, CAVE);
+  readonly MtSabreWest_Cave4        = $(0x24, CAVE);
+  readonly MtSabreWest_Cave5        = $(0x25, CAVE);
+  readonly MtSabreWest_Cave6        = $(0x26, CAVE);
+  readonly MtSabreWest_Cave7        = $(0x27, CAVE);
+  readonly MtSabreNorth_Main        = $(0x28, {area: a => a.MtSabreNorth,
+                                              bossScreen: 0xb5});
+  readonly MtSabreNorth_Middle      = $(0x29);
+  readonly MtSabreNorth_Cave2       = $(0x2a, CAVE);
+  readonly MtSabreNorth_Cave3       = $(0x2b, CAVE);
+  readonly MtSabreNorth_Cave4       = $(0x2c, CAVE);
+  readonly MtSabreNorth_Cave5       = $(0x2d, CAVE);
+  readonly MtSabreNorth_Cave6       = $(0x2e, CAVE);
+  readonly MtSabreNorth_PrisonHall  = $(0x2f, CAVE);
+  readonly MtSabreNorth_LeftCell    = $(0x30, CAVE);
+  readonly MtSabreNorth_LeftCell2   = $(0x31, CAVE);
+  readonly MtSabreNorth_RightCell   = $(0x32, CAVE);
+  readonly MtSabreNorth_Cave8       = $(0x33, CAVE);
+  readonly MtSabreNorth_Cave9       = $(0x34, CAVE);
+  readonly MtSabreNorth_SummitCave  = $(0x35, CAVE);
+  // INVALID: 0x36
+  // INVALID: 0x37
+  readonly MtSabreNorth_Cave1       = $(0x38, CAVE);
+  readonly MtSabreNorth_Cave7       = $(0x39, CAVE);
+  // INVALID: 0x3a
+  // INVALID: 0x3b
+  readonly Nadare_Inn               = $(0x3c, {area: a => a.Nadare, ...HOUSE});
+  readonly Nadare_ToolShop          = $(0x3d, HOUSE);
+  readonly Nadare_BackRoom          = $(0x3e, HOUSE);
+  // INVALID: 0x3f
+  readonly WaterfallValleyNorth     = $(0x40, {area: a => a.WaterfallValley});
+  readonly WaterfallValleySouth     = $(0x41);
+  readonly LimeTreeValley           = $(0x42, {area: a => a.LimeTreeValley});
+  readonly LimeTreeLake             = $(0x43, {area: a => a.LimeTreeLake});
+  readonly KirisaPlantCave1         = $(0x44, {area: a => a.KirisaPlantCave});
+  readonly KirisaPlantCave2         = $(0x45);
+  readonly KirisaPlantCave3         = $(0x46);
+  readonly KirisaMeadow             = $(0x47, {area: a => a.KirisaMeadow});
+  readonly FogLampCave1             = $(0x48, {area: a => a.FogLampCave});
+  readonly FogLampCave2             = $(0x49);
+  readonly FogLampCave3             = $(0x4a);
+  readonly FogLampCaveDeadEnd       = $(0x4b);
+  readonly FogLampCave4             = $(0x4c);
+  readonly FogLampCave5             = $(0x4d);
+  readonly FogLampCave6             = $(0x4e);
+  readonly FogLampCave7             = $(0x4f);
+  readonly Portoa                   = $(0x50, {area: a => a.Portoa});
+  readonly Portoa_FishermanIsland   = $(0x51, {area: a => a.FishermanHouse});
+  readonly MesiaShrine              = $(0x52, {area: a => a.LimeTreeLake,
+                                               ...MESIA});
+  // INVALID: 0x53
+  readonly WaterfallCave1           = $(0x54, {area: a => a.WaterfallCave});
+  readonly WaterfallCave2           = $(0x55);
+  readonly WaterfallCave3           = $(0x56);
+  readonly WaterfallCave4           = $(0x57);
+  readonly TowerEntrance            = $(0x58, {area: a => a.Tower});
+  readonly Tower1                   = $(0x59);
+  readonly Tower2                   = $(0x5a);
+  readonly Tower3                   = $(0x5b);
+  readonly TowerOutsideMesia        = $(0x5c);
+  readonly TowerOutsideDyna         = $(0x5d);
+  readonly TowerMesia               = $(0x5e, MESIA);
+  readonly TowerDyna                = $(0x5f, DYNA);
+  readonly AngrySea                 = $(0x60, {area: a => a.AngrySea});
+  readonly BoatHouse                = $(0x61);
+  readonly JoelLighthouse           = $(0x62, {area: a => a.Lighthouse});
+  // INVALID: 0x63
+  readonly UndergroundChannel       = $(0x64, {area: a => a.UndergroundChannel});
+  readonly ZombieTown               = $(0x65, {area: a => a.ZombieTown});
+  // INVALID: 0x66
+  // INVALID: 0x67
+  readonly EvilSpiritIsland1        = $(0x68, {area: a => a.EvilSpiritIslandEntrance});
+  readonly EvilSpiritIsland2        = $(0x69, {area: a => a.EvilSpiritIsland});
+  readonly EvilSpiritIsland3        = $(0x6a);
+  readonly EvilSpiritIsland4        = $(0x6b);
+  readonly SaberaPalace1            = $(0x6c, {area: a => a.SaberaFortress,
+                                               bossScreen: 0xfd});
+  readonly SaberaPalace2            = $(0x6d);
+  readonly SaberaPalace3            = $(0x6e, {bossScreen: 0xfd});
+  // INVALID: 0x6f -- Sabera Palace 3 unused copy
+  readonly JoelSecretPassage        = $(0x70, {area: a => a.JoelPassage});
+  readonly Joel                     = $(0x71, {area: a => a.Joel});
+  readonly Swan                     = $(0x72, {area: a => a.Swan});
+  readonly SwanGate                 = $(0x73, {area: a => a.SwanGate});
+  // INVALID: 0x74
+  // INVALID: 0x75
+  // INVALID: 0x76
+  // INVALID: 0x77
+  readonly GoaValley                = $(0x78, {area: a => a.GoaValley});
+  // INVALID: 0x79
+  // INVALID: 0x7a
+  // INVALID: 0x7b
+  readonly MtHydra                  = $(0x7c, {area: a => a.MtHydra});
+  readonly MtHydra_Cave1            = $(0x7d, CAVE);
+  readonly MtHydra_OutsideShyron    = $(0x7e);
+  readonly MtHydra_Cave2            = $(0x7f, CAVE);
+  readonly MtHydra_Cave3            = $(0x80, CAVE);
+  readonly MtHydra_Cave4            = $(0x81, CAVE);
+  readonly MtHydra_Cave5            = $(0x82, CAVE);
+  readonly MtHydra_Cave6            = $(0x83, CAVE);
+  readonly MtHydra_Cave7            = $(0x84, CAVE);
+  readonly MtHydra_Cave8            = $(0x85, CAVE);
+  readonly MtHydra_Cave9            = $(0x86, CAVE);
+  readonly MtHydra_Cave10           = $(0x87, CAVE);
+  readonly Styx1                    = $(0x88, {area: a => a.Styx});
+  readonly Styx2                    = $(0x89);
+  readonly Styx3                    = $(0x8a);
+  // INVALID: 0x8b
+  readonly Shyron                   = $(0x8c, {area: a => a.Shyron});
+  // INVALID: 0x8d
+  readonly Goa                      = $(0x8e, {area: a => a.Goa});
+  readonly GoaFortressBasement      = $(0x8f, {area: a => a.FortressBasement});
+  readonly Desert1                  = $(0x90, {area: a => a.Desert1});
+  readonly OasisCaveMain            = $(0x91, {area: a => a.OasisCave});
+  readonly DesertCave1              = $(0x92, {area: a => a.DesertCave1});
+  readonly Sahara                   = $(0x93, {area: a => a.Sahara});
+  readonly SaharaOutsideCave        = $(0x94); // TODO - sahara?? generic??
+  readonly DesertCave2              = $(0x95, {area: a => a.DesertCave2});
+  readonly SaharaMeadow             = $(0x96, {area: a => a.SaharaMeadow});
+  // INVALID: 0x97
+  readonly Desert2                  = $(0x98, {area: a => a.Desert2});
+  // INVALID: 0x99
+  // INVALID: 0x9a
+  // INVALID: 0x9b
+  readonly Pyramid_Entrance         = $(0x9c, {area: a => a.Pyramid});
+  readonly Pyramid_Branch           = $(0x9d);
+  readonly Pyramid_Main             = $(0x9e);
+  readonly Pyramid_Draygon          = $(0x9f);
+  readonly Crypt_Entrance           = $(0xa0, {area: a => a.Crypt});
+  readonly Crypt_Hall1              = $(0xa1);
+  readonly Crypt_Branch             = $(0xa2);
+  readonly Crypt_DeadEndLeft        = $(0xa3);
+  readonly Crypt_DeadEndRight       = $(0xa4);
+  readonly Crypt_Hall2              = $(0xa5);
+  readonly Crypt_Draygon2           = $(0xa6);
+  readonly Crypt_Teleporter         = $(0xa7);
+  readonly GoaFortress_Entrance     = $(0xa8, {area: a => a.GoaFortress,
+                                               music: KELBESQUE.music});
+  readonly GoaFortress_Kelbesque    = $(0xa9, {bossScreen: 0x73,
+                                               ...KELBESQUE});
+  readonly GoaFortress_Zebu         = $(0xaa, {...KELBESQUE,
+                                               palette: SABERA.palette});
+  readonly GoaFortress_Sabera       = $(0xab, SABERA);
+  readonly GoaFortress_Tornel       = $(0xac, {bossScreen: 0x91,
+                                               ...SABERA,
+                                               palette: MADO_LOWER.palette});
+  readonly GoaFortress_Mado1        = $(0xad, MADO_LOWER);
+  readonly GoaFortress_Mado2        = $(0xae, MADO_UPPER);
+  readonly GoaFortress_Mado3        = $(0xaf, MADO_UPPER);
+  readonly GoaFortress_Karmine1     = $(0xb0, KARMINE_UPPER);
+  readonly GoaFortress_Karmine2     = $(0xb1, KARMINE_UPPER);
+  readonly GoaFortress_Karmine3     = $(0xb2, KARMINE_UPPER);
+  readonly GoaFortress_Karmine4     = $(0xb3, KARMINE_UPPER);
+  readonly GoaFortress_Karmine5     = $(0xb4, KARMINE_UPPER);
+  readonly GoaFortress_Karmine6     = $(0xb5, KARMINE_LOWER);
+  readonly GoaFortress_Karmine7     = $(0xb6, {bossScreen: 0xfd,
+                                               ...KARMINE_LOWER});
+  readonly GoaFortress_Exit         = $(0xb7, {music: KARMINE_UPPER.music});
+  readonly OasisCave_Entrance       = $(0xb8, {area: a => a.OasisEntrance});
+  readonly GoaFortress_Asina        = $(0xb9, {area: a => a.GoaFortress,
+                                               ...MADO_UPPER,
+                                               bossScreen: 0x91});
+  readonly GoaFortress_Kensu        = $(0xba, KARMINE_UPPER);
+  readonly Goa_House                = $(0xbb, {area: a => a.Goa, ...HOUSE});
+  readonly Goa_Inn                  = $(0xbc, HOUSE);
+  // INVALID: 0xbd
+  readonly Goa_ToolShop             = $(0xbe, HOUSE);
+  readonly Goa_Tavern               = $(0xbf, HOUSE);
+  readonly Leaf_ElderHouse          = $(0xc0, {area: a => a.Leaf, ...HOUSE});
+  readonly Leaf_RabbitHut           = $(0xc1, HOUSE);
+  readonly Leaf_Inn                 = $(0xc2, HOUSE);
+  readonly Leaf_ToolShop            = $(0xc3, HOUSE);
+  readonly Leaf_ArmorShop           = $(0xc4, HOUSE);
+  readonly Leaf_StudentHouse        = $(0xc5, HOUSE);
+  readonly Brynmaer_Tavern          = $(0xc6, {area: a => a.Brynmaer, ...HOUSE});
+  readonly Brynmaer_PawnShop        = $(0xc7, HOUSE);
+  readonly Brynmaer_Inn             = $(0xc8, HOUSE);
+  readonly Brynmaer_ArmorShop       = $(0xc9, HOUSE);
+  // INVALID: 0xca
+  readonly Brynmaer_ItemShop        = $(0xcb, HOUSE);
+  // INVALID: 0xcc
+  readonly Oak_ElderHouse           = $(0xcd, {area: a => a.Oak, ...HOUSE});
+  readonly Oak_MotherHouse          = $(0xce, HOUSE);
+  readonly Oak_ToolShop             = $(0xcf, HOUSE);
+  readonly Oak_Inn                  = $(0xd0, HOUSE);
+  readonly Amazones_Inn             = $(0xd1, {area: a => a.Amazones, ...HOUSE});
+  readonly Amazones_ItemShop        = $(0xd2, HOUSE);
+  readonly Amazones_ArmorShop       = $(0xd3, HOUSE);
+  readonly Amazones_Elder           = $(0xd4, HOUSE);
+  readonly Nadare                   = $(0xd5, {area: a => a.Nadare}); // edge-door?
+  readonly Portoa_FishermanHouse    = $(0xd6, {area: a => a.FishermanHouse,
+                                               ...HOUSE});
+  readonly Portoa_PalaceEntrance    = $(0xd7, {area: a => a.PortoaPalace});
+  readonly Portoa_FortuneTeller     = $(0xd8, {area: a => a.Portoa,
+                                               ...FORTUNE_TELLER});
+  readonly Portoa_PawnShop          = $(0xd9, HOUSE);
+  readonly Portoa_ArmorShop         = $(0xda, HOUSE);
+  // INVALID: 0xdb
+  readonly Portoa_Inn               = $(0xdc, HOUSE);
+  readonly Portoa_ToolShop          = $(0xdd, HOUSE);
+  readonly PortoaPalace_Left        = $(0xde, {area: a => a.PortoaPalace,
+                                               ...HOUSE});
+  readonly PortoaPalace_ThroneRoom  = $(0xdf, HOUSE);
+  readonly PortoaPalace_Right       = $(0xe0, HOUSE);
+  readonly Portoa_AsinaRoom         = $(0xe1, {area: a => a.UndergroundChannel,
+                                               ...HOUSE});
+  readonly Amazones_ElderDownstairs = $(0xe2, {area: a => a.Amazones,
+                                               ...HOUSE});
+  readonly Joel_ElderHouse          = $(0xe3, {area: a => a.Joel, ...HOUSE});
+  readonly Joel_Shed                = $(0xe4, HOUSE);
+  readonly Joel_ToolShop            = $(0xe5, HOUSE);
+  // INVALID: 0xe6
+  readonly Joel_Inn                 = $(0xe7, HOUSE);
+  readonly ZombieTown_House         = $(0xe8, {area: a => a.ZombieTown,
+                                               ...HOUSE});
+  readonly ZombieTown_HouseBasement = $(0xe9, HOUSE);
+  // INVALID: 0xea
+  readonly Swan_ToolShop            = $(0xeb, {area: a => a.Swan, ...HOUSE});
+  readonly Swan_StomHut             = $(0xec, HOUSE);
+  readonly Swan_Inn                 = $(0xed, HOUSE);
+  readonly Swan_ArmorShop           = $(0xee, HOUSE);
+  readonly Swan_Tavern              = $(0xef, HOUSE);
+  readonly Swan_PawnShop            = $(0xf0, HOUSE);
+  readonly Swan_DanceHall           = $(0xf1, HOUSE);
+  readonly Shyron_Temple            = $(0xf2, {area: a => a.ShyronTemple,
+                                               bossScreen: 0x70});
+  readonly Shyron_TrainingHall      = $(0xf3, {area: a => a.Shyron, ...HOUSE});
+  readonly Shyron_Hospital          = $(0xf4, HOUSE);
+  readonly Shyron_ArmorShop         = $(0xf5, HOUSE);
+  readonly Shyron_ToolShop          = $(0xf6, HOUSE);
+  readonly Shyron_Inn               = $(0xf7, HOUSE);
+  readonly Sahara_Inn               = $(0xf8, {area: a => a.Sahara, ...HOUSE});
+  readonly Sahara_ToolShop          = $(0xf9, HOUSE);
+  readonly Sahara_ElderHouse        = $(0xfa, HOUSE);
+  readonly Sahara_PawnShop          = $(0xfb, HOUSE);
+
+  // New locations, no ID procured yet.
+  readonly EastCave1      = $(-1, {area: a => a.EastCave});
+  readonly EastCave2      = $(-1);
+  readonly FishermanBeach = $(-1, {area: a => a.FishermanHouse, ...HOUSE});
+
+  constructor(readonly rom: Rom) {
+    super(0x100);
+    $.commit(this);
+    // Fill in any missing ones
+    for (let id = 0; id < 0x100; id++) {
+      if (this[id]) continue;
+      this[id] = new Location(rom, id, {
+        area: rom.areas.Empty,
+        name: 'Unused',
+        music: '',
+        palette: '',
+      });
+    }
+    // TODO - method to add an unregistered location to an empty index.
+  }
+
+  // // Find all groups of neighboring locations with matching properties.
+  // // TODO - optional arg: check adjacent # IDs...?
+  // partition<T>(func: (loc: Location) => T, eq: Eq<T> = (a, b) => a === b, joinNexuses = false): [Location[], T][] {
+  //   const seen = new Set<Location>();
+  //   const out: [Location[], T][] = [];
+  //   for (let loc of this) {
+  //     if (seen.has(loc) || !loc.used) continue;
+  //     seen.add(loc);
+  //     const value = func(loc);
+  //     const group = [];
+  //     const queue = [loc];
+  //     while (queue.length) {
+  //       const next = queue.pop()!;
+  //       group.push(next);
+  //       for (const n of next.neighbors(joinNexuses)) {
+  //         if (!seen.has(n) && eq(func(n), value)) {
+  //           seen.add(n);
+  //           queue.push(n);
+  //         }
+  //       }
+  //     }
+  //     out.push([[...group], value]);
+  //   }
+  //   return out;
+  // }
+}
 
 // Location entities
 export class Location extends Entity {
 
   used: boolean;
-  name: string;
-  key: keyof typeof LOCATIONS;
-
-  private readonly mapDataPointer: number;
-  private readonly mapDataBase: number;
-
-  private readonly layoutBase: number;
-  private readonly graphicsBase: number;
-  private readonly entrancesBase: number;
-  private readonly exitsBase: number;
-  private readonly flagsBase: number;
-  private readonly pitsBase: number;
 
   bgm: number;
   layoutWidth: number;
@@ -44,39 +454,54 @@ export class Location extends Entity {
   flags: Flag[];
   pits: Pit[];
 
-  hasSpawns: boolean;
-  npcDataPointer: number;
-  npcDataBase: number;
   spritePalettes: [number, number];
   spritePatterns: [number, number];
   spawns: Spawn[];
 
-  constructor(rom: Rom, id: number) {
+  constructor(rom: Rom, id: number, readonly data: LocationData) {
     // will include both MapData *and* NpcData, since they share a key.
     super(rom, id);
 
-    this.mapDataPointer = 0x14300 + (id << 1);
-    this.mapDataBase = readLittleEndian(rom.prg, this.mapDataPointer) + 0xc000;
+    const mapDataBase = readLittleEndian(rom.prg, this.mapDataPointer) + 0xc000;
     // TODO - pass this in and move LOCATIONS to locations.ts
-    this.name = locationNames[this.id] || '';
-    this.key = locationKeys[this.id] || '' as any;
-    this.used = this.mapDataBase > 0xc000 && !!this.name;
+    this.used = id >= 0 && mapDataBase > 0xc000 && !!this.name;
 
-    this.layoutBase = readLittleEndian(rom.prg, this.mapDataBase) + 0xc000;
-    this.graphicsBase = readLittleEndian(rom.prg, this.mapDataBase + 2) + 0xc000;
-    this.entrancesBase = readLittleEndian(rom.prg, this.mapDataBase + 4) + 0xc000;
-    this.exitsBase = readLittleEndian(rom.prg, this.mapDataBase + 6) + 0xc000;
-    this.flagsBase = readLittleEndian(rom.prg, this.mapDataBase + 8) + 0xc000;
+    if (!this.used) {
+      this.bgm = 0;
+      this.layoutWidth = 0;
+      this.layoutHeight = 0;
+      this.animation = 0;
+      this.extended = 0;
+      this.screens = [[0]];
+      this.tilePalettes = [0x24, 0x01, 0x26];
+      this.tileset = 0x80;
+      this.tileEffects = 0xb3;
+      this.tilePatterns = [2, 4];
+      this.exits = [];
+      this.entrances = [];
+      this.flags = [];
+      this.pits = [];
+      this.spawns = [];
+      this.spritePalettes = [0, 0];
+      this.spritePatterns = [0, 0];
+      return;
+    }
+
+    const layoutBase = readLittleEndian(rom.prg, mapDataBase) + 0xc000;
+    const graphicsBase = readLittleEndian(rom.prg, mapDataBase + 2) + 0xc000;
+    const entrancesBase = readLittleEndian(rom.prg, mapDataBase + 4) + 0xc000;
+    const exitsBase = readLittleEndian(rom.prg, mapDataBase + 6) + 0xc000;
+    const flagsBase = readLittleEndian(rom.prg, mapDataBase + 8) + 0xc000;
 
     // Read the exits first so that we can determine if there's entrance/pits
     // metadata encoded at the end.
-    let hasPits = this.layoutBase !== this.mapDataBase + 10;
-    let entranceLen = this.exitsBase - this.entrancesBase;
+    let hasPits = this.used && layoutBase !== mapDataBase + 10;
+    let entranceLen = exitsBase - entrancesBase;
     this.exits = (() => {
       const exits = [];
-      let i = this.exitsBase;
+      let i = exitsBase;
       while (!(rom.prg[i] & 0x80)) {
-        exits.push(new Exit(rom.prg.slice(i, i + 4)));
+        exits.push(Exit.from(rom.prg, i));
         i += 4;
       }
       if (rom.prg[i] !== 0xff) {
@@ -91,40 +516,67 @@ export class Location extends Entity {
     //        then we're in a rewritten state; in that case, we need to simply
     //        find all refs and max...?
     //      - can we read these parts lazily?
-    this.pitsBase = !hasPits ? 0 :
-        readLittleEndian(rom.prg, this.mapDataBase + 10) + 0xc000;
+    const pitsBase =
+        !hasPits ? 0 : readLittleEndian(rom.prg, mapDataBase + 10) + 0xc000;
 
-    this.bgm = rom.prg[this.layoutBase];
-    this.layoutWidth = rom.prg[this.layoutBase + 1];
-    this.layoutHeight = rom.prg[this.layoutBase + 2];
-    this.animation = rom.prg[this.layoutBase + 3];
-    this.extended = rom.prg[this.layoutBase + 4];
+    this.bgm = rom.prg[layoutBase];
+    this.layoutWidth = rom.prg[layoutBase + 1];
+    this.layoutHeight = rom.prg[layoutBase + 2];
+    this.animation = rom.prg[layoutBase + 3];
+    this.extended = rom.prg[layoutBase + 4];
     this.screens = seq(
         this.height,
-        y => tuple(rom.prg, this.layoutBase + 5 + y * this.width, this.width));
-    this.tilePalettes = tuple<number>(rom.prg, this.graphicsBase, 3);
-    this.tileset = rom.prg[this.graphicsBase + 3];
-    this.tileEffects = rom.prg[this.graphicsBase + 4];
-    this.tilePatterns = tuple(rom.prg, this.graphicsBase + 5, 2);
+        y => tuple(rom.prg, layoutBase + 5 + y * this.width, this.width));
+    this.tilePalettes = tuple<number>(rom.prg, graphicsBase, 3);
+    this.tileset = rom.prg[graphicsBase + 3];
+    this.tileEffects = rom.prg[graphicsBase + 4];
+    this.tilePatterns = tuple(rom.prg, graphicsBase + 5, 2);
 
     this.entrances =
-      group(4, rom.prg.slice(this.entrancesBase, this.entrancesBase + entranceLen),
-            x => new Entrance(x));
-    this.flags = varSlice(rom.prg, this.flagsBase, 2, 0xff, Infinity,
-                          x => new Flag(x));
-    this.pits = this.pitsBase ? varSlice(rom.prg, this.pitsBase, 4, 0xff, Infinity,
-                                         x => new Pit(x)) : [];
+      group(4, rom.prg.slice(entrancesBase, entrancesBase + entranceLen),
+            x => Entrance.from(x));
+    this.flags = varSlice(rom.prg, flagsBase, 2, 0xff, Infinity,
+                          x => Flag.from(x));
+    this.pits = pitsBase ? varSlice(rom.prg, pitsBase, 4, 0xff, Infinity,
+                                    x => Pit.from(x)) : [];
 
-    this.npcDataPointer = 0x19201 + (id << 1);
-    this.npcDataBase = readLittleEndian(rom.prg, this.npcDataPointer) + 0x10000;
-    this.hasSpawns = this.npcDataBase !== 0x10000;
+    const npcDataBase = readLittleEndian(rom.prg, this.npcDataPointer) + 0x10000;
+    const hasSpawns = npcDataBase !== 0x10000;
     this.spritePalettes =
-        this.hasSpawns ? tuple(rom.prg, this.npcDataBase + 1, 2) : [0, 0];
+        hasSpawns ? tuple(rom.prg, npcDataBase + 1, 2) : [0, 0];
     this.spritePatterns =
-        this.hasSpawns ? tuple(rom.prg, this.npcDataBase + 3, 2) : [0, 0];
+        hasSpawns ? tuple(rom.prg, npcDataBase + 3, 2) : [0, 0];
     this.spawns =
-        this.hasSpawns ? varSlice(rom.prg, this.npcDataBase + 5, 4, 0xff, Infinity,
-                                  x => new Spawn(x)) : [];
+        hasSpawns ? varSlice(rom.prg, npcDataBase + 5, 4, 0xff, Infinity,
+                             x => Spawn.from(x)) : [];
+  }
+
+  get name(): string {
+    return this.data.name;
+  }
+
+  get mapDataPointer(): number {
+    if (this.id < 0) throw new Error(`no mapdata pointer for ${this.name}`);
+    return 0x14300 + (this.id << 1);
+  }
+
+  get npcDataPointer(): number {
+    if (this.id < 0) throw new Error(`no npcdata pointer for ${this.name}`);
+    return 0x19201 + (this.id << 1);
+  }
+
+  get hasSpawns(): boolean {
+    return this.spawns.length > 0;
+  }
+
+  // Offset to OR with screen IDs.
+  get screenPage(): number {
+    if (!this.rom.compressedMapData) return this.extended ? 0x100 : 0;
+    return this.extended << 8;
+  }
+
+  isShop(): boolean {
+    return this.rom.shops.findIndex(s => s.location === this.id) >= 0;
   }
 
   spawn(id: number): Spawn {
@@ -157,7 +609,7 @@ export class Location extends Entity {
   async write(writer: Writer): Promise<void> {
     if (!this.used) return;
     const promises = [];
-    if (this.hasSpawns) {
+    if (this.spawns.length) {
       // write NPC data first, if present...
       const data = [0, ...this.spritePalettes, ...this.spritePatterns,
                     ...concatIterables(this.spawns), 0xff];
@@ -169,10 +621,17 @@ export class Location extends Entity {
 
     const write = (data: Data<number>, name: string) =>
         writer.write(data, 0x14000, 0x17fff, `${name} ${hex(this.id)}`);
-    const layout = [
+    const layout = this.rom.compressedMapData ? [
+      this.bgm,
+      // Compressed version: yx in one byte, ext+anim in one byte
+      this.layoutHeight << 4 | this.layoutWidth,
+      this.extended << 2 | this.animation,
+      ...concatIterables(this.screens),
+    ] : [
       this.bgm,
       this.layoutWidth, this.layoutHeight, this.animation, this.extended,
-      ...concatIterables(this.screens)];
+      ...concatIterables(this.screens),
+    ];
     const graphics =
         [...this.tilePalettes,
          this.tileset, this.tileEffects,
@@ -250,7 +709,7 @@ export class Location extends Entity {
 
   allScreens(): Set<Screen> {
     const screens = new Set<Screen>();
-    const ext = this.extended ? 0x100 : 0;
+    const ext = this.screenPage;
     for (const row of this.screens) {
       for (const screen of row) {
         screens.add(this.rom.screens[screen + ext]);
@@ -266,24 +725,24 @@ export class Location extends Entity {
     return undefined;
   }
 
-  neighbors(joinNexuses: boolean = false): Set<Location> {
-    const out = new Set<Location>();
-    const addNeighbors = (l: Location) => {
-      for (const exit of l.exits) {
-        const id = exit.dest;
-        const neighbor = this.rom.locations[id];
-        if (neighbor && neighbor.used &&
-            neighbor !== this && !out.has(neighbor)) {
-          out.add(neighbor);
-          if (joinNexuses && NEXUSES[neighbor.key]) {
-            addNeighbors(neighbor);
-          }
-        }
-      }
-    }
-    addNeighbors(this);
-    return out;
-  }
+  // neighbors(joinNexuses: boolean = false): Set<Location> {
+  //   const out = new Set<Location>();
+  //   const addNeighbors = (l: Location) => {
+  //     for (const exit of l.exits) {
+  //       const id = exit.dest;
+  //       const neighbor = this.rom.locations[id];
+  //       if (neighbor && neighbor.used &&
+  //           neighbor !== this && !out.has(neighbor)) {
+  //         out.add(neighbor);
+  //         if (joinNexuses && NEXUSES[neighbor.key]) {
+  //           addNeighbors(neighbor);
+  //         }
+  //       }
+  //     }
+  //   }
+  //   addNeighbors(this);
+  //   return out;
+  // }
 
   hasDolphin(): boolean {
     return this.id === 0x60 || this.id === 0x64 || this.id === 0x68;
@@ -307,7 +766,7 @@ export class Location extends Entity {
     for (let y = 0; y < this.height; y++) {
       const row = this.screens[y];
       for (let x = 0; x < this.width; x++) {
-        const screen = this.rom.screens[row[x] | (this.extended ? 0x100 : 0)];
+        const screen = this.rom.screens[row[x] | this.screenPage];
         const pos = y << 4 | x;
         const flag = this.flags.find(f => f.screen === pos);
         for (let t = 0; t < 0xf0; t++) {
@@ -347,7 +806,7 @@ export class Location extends Entity {
     for (const set of sets) {
       for (const t of set) {
         const scr = this.screens[t >>> 12][(t >>> 8) & 0x0f];
-        const screen = this.rom.screens[scr | (this.extended ? 0x100 : 0)];
+        const screen = this.rom.screens[scr | this.screenPage];
         out.set(t, tileEffects.effects[screen.tiles[t & 0xff]]);
       }
     }
@@ -387,7 +846,7 @@ export class Location extends Entity {
   //   - need to figure out what to do with pits...
   monsterPlacer(random: Random): (m: Monster) => number | undefined {
     // If there's a boss screen, exclude it from getting enemies.
-    const boss = BOSS_SCREENS[this.key];
+    const boss = this.data.bossScreen;
     // Start with list of reachable tiles.
     const reachable = this.reachableTiles(false);
     // Do a breadth-first search of all tiles to find "distance" (1-norm).
@@ -898,23 +1357,23 @@ export const LOCATIONS = {
 //   return arg => arg;
 // }
 
-const locationNames: (string | undefined)[] = (() => {
-  const names = [];
-  for (const key of Object.keys(LOCATIONS)) {
-    const [id, name] = (LOCATIONS as any)[key];
-    names[id] = name;
-  }
-  return names;
-})();
+// const locationNames: (string | undefined)[] = (() => {
+//   const names = [];
+//   for (const key of Object.keys(LOCATIONS)) {
+//     const [id, name] = (LOCATIONS as any)[key];
+//     names[id] = name;
+//   }
+//   return names;
+// })();
 
-const locationKeys: (keyof typeof LOCATIONS | undefined)[] = (() => {
-  const keys = [];
-  for (const key of Object.keys(LOCATIONS)) {
-    const [id] = (LOCATIONS as any)[key];
-    keys[id] = key;
-  }
-  return keys as any;
-})();
+// const locationKeys: (locationKey | undefined)[] = (() => {
+//   const keys = [];
+//   for (const key of Object.keys(LOCATIONS)) {
+//     const [id] = (LOCATIONS as any)[key];
+//     keys[id] = key;
+//   }
+//   return keys as any;
+// })();
 
 
 // building the CSV for the location table.
@@ -947,34 +1406,3 @@ const locationKeys: (keyof typeof LOCATIONS | undefined)[] = (() => {
 //   const allPal=new Set(mon?mon.palettes(true):[]);
 //   return [h(l.id),l.name,h(m),'',h(s),type,0,patSlot,m?h((l.spritePatterns||[])[patSlot]):'',palSlot,allPal.has(2)?h((l.spritePalettes||[])[0]):'',allPal.has(3)?h((l.spritePalettes||[])[1]):''];
 // }).filter(x=>x))).map(a=>a.join(',')).filter(x=>x).join('\n');
-
-/**
- * Locations with cave systems that should all be treated as neighboring.
- */
-const NEXUSES: {[T in keyof typeof LOCATIONS]?: true} = {
-  mtSabreWestLower: true,
-  mtSabreWestUpper: true,
-  mtSabreNorthMain: true,
-  mtSabreNorthMiddle: true,
-  mtSabreNorthCave1: true,
-  mtSabreNorthCave2: true,
-  mtHydra: true,
-  mtHydraOutsideShyron: true,
-  mtHydraCave1: true,
-};
-
-const BOSS_SCREENS: {[T in keyof typeof LOCATIONS]?: number} = {
-  sealedCave7: 0x91,
-  swamp: 0x7c,
-  mtSabreNorthMain: 0xb5,
-  saberaPalace1: 0xfd,
-  saberaPalace3: 0xfd,
-  shyronFortress: 0x70,
-  goaFortressKelbesque: 0x73,
-  goaFortressTornel: 0x91,
-  goaFortressAsina: 0x91,
-  goaFortressKarmine7: 0xfd,
-  pyramidDraygon: 0xf9,
-  cryptDraygon2: 0xfa,
-  towerDyna: 0x5c,
-};

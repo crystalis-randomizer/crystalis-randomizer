@@ -1,62 +1,11 @@
-Damage calculations
- - figure out how to scale
- - current plan - have tables for HP, atk, def at each difficulty level
- - each monster's data has a multiplier (0 .. 2 ?  .5 .. 1.5 ?) and adder (-8 .. 7)
- - TODO - figure out if there's any attribute always set on monsters and use that to trigger
+1. Add crumbling horizontal platform, shuffle crumbling platforms.
+2. Gas mask -> hazmat suit
 
-
-SetPlayer340Lower
- - what is this actually doing?
-
-
-crap... lost the buffer positions!
-
-
-Text - how is the message ID populated?
-Triggers - still not clear on how other NPC types work
-         - people and bosses...?
-
+================
 
 Graphics
  - for each pattern table, list out available metasprites/metatiles
  - palettes, too?
-
-
-
-
-Prototype
- - code up damage scalaing, then randomize just enemies - try to play, see how it goes?
-   - will need to pay attention to vulnerabilities...
- - next can try randomizing items.
-
-
-====
-
-shuffle a list of map changes, as manual functions
- - would need to operate on both the depgraph and the rom
- - e.g. sealed cave dumps out on portoa, close up other exit entirely
-        extra swamp exit
-        extra amazones exit, etc
-        go right from start to get to desert 1?
-   possibly shuffle these into normal swaps, too?
-manually swap swords of wind and fire - could maybe do this before depgraph?
- - no rabbit boots -> no tornado bracelet ?
-add bracelets to shuffle (may need to change teleport trigger tho, or just remove)
-
-
-====
-
-Use a graph traversal approach to populate the rom, locations, screens, etc
- - figure out which locations are reachable
- - figure out which entrances are used for each location
- - figure out which screens use pits, etc
- - flood-fill screens to see what connects to what
-
-class Screen(id, terrainSet) {
-  - populated lazily, when found on a reachable location
-  - segments
-  - exits and entrances, borders (incl exitable borders)
-}
 
 ====
 

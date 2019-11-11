@@ -1,5 +1,11 @@
 // General utilities for rom package.
 
+export function upperCamelToSpaces(upperCamel: string): string {
+  return upperCamel.replace(/([a-z])([A-Z0-9])/g, '$1 $2')
+      .replace(/Of/g, 'of')
+      .replace(/_/g, ' - ');
+}
+
 /** Removes readonly from fields. */
 export type Mutable<T> = {-readonly [K in keyof(T)]: T[K]};
 
@@ -185,6 +191,34 @@ export const SPAWN_CONDITION_FLAGS = new FlagListType(0x80, 0x20);
 
 ////////////////////////////////////////////////////////////////
 
+declare const initialTag: unique symbol;
+export interface Initial { [initialTag]: never; }
+export type InitialProps<T,
+    X = {[P in keyof T]: T[P] extends Initial ? P : never}> = X[keyof X];
+
+// Impl - question - can we do something similar for DataTuple???
+
+export function initializer<P extends readonly any[], T>(): Initializer<P, T> {
+  const tag = Symbol();
+  function f(...args: P): T & Initial {
+    return {tag, args} as any; // NOTE: this is a complete lie for now.
+  }
+  f.commit = (instance: any, builder: (prop: string, ...args: P) => T) => {
+    for (const prop of Object.getOwnPropertyNames(instance)) {
+      const value = instance[prop];
+      if (value.tag !== tag) continue;
+      instance[prop] = builder(prop, ...value.args);
+    }
+  };
+  return f;
+}
+export interface Initializer<P extends readonly any[], T> {
+  (...args: P): T;
+  commit(instance: any, builder: (prop: string, ...args: P) => T): void;
+}
+
+////////////////////////////////////////////////////////////////
+
 export class DataTuple {
   constructor(readonly data: Data<number>) {}
   [Symbol.iterator](): Iterator<number> {
@@ -276,7 +310,7 @@ type DataTupleInits<T> = {
 interface DataTupleCtor<T> {
   new(data?: Data<number>): DataTupleSub<T>;
   of(inits: DataTupleInits<T>): DataTupleSub<T>;
-  from(data: Data<number>, offset: number): DataTupleSub<T>;
+  from(data: Data<number>, offset?: number): DataTupleSub<T>;
 }
 
 

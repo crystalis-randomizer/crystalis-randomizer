@@ -1,10 +1,11 @@
 import {AdHocSpawn} from './rom/adhocspawn.js';
+import {Areas} from './rom/area.js';
 import {BossKill} from './rom/bosskill.js';
 import {Bosses} from './rom/bosses.js';
 import {Hitbox} from './rom/hitbox.js';
 import {Item} from './rom/item.js';
 import {ItemGet} from './rom/itemget.js';
-import {Locations} from './rom/locations.js';
+import {Locations} from './rom/location.js';
 import {Messages} from './rom/messages.js';
 import {Metasprite} from './rom/metasprite.js';
 import {Monster} from './rom/monster.js';
@@ -57,6 +58,7 @@ export class Rom {
   readonly prg: Uint8Array;
   readonly chr: Uint8Array;
 
+  readonly areas: Areas;
   readonly screens: Screen[];
   readonly tilesets: Tileset[];
   readonly tileEffects: TileEffects[];
@@ -144,6 +146,7 @@ export class Rom {
     // knowing their contents BEFORE allocating their space.  So we need two
     // allocate methods - one where the content is known and one where only the
     // length is known.
+    this.areas = new Areas(this); // note: must come before locations
     this.screens = seq(0x103, i => new Screen(this, i));
     this.tilesets = seq(12, i => new Tileset(this, i << 2 | 0x80));
     this.tileEffects = seq(11, i => new TileEffects(this, i + 0xb3));

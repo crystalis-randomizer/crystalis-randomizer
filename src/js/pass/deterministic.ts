@@ -298,6 +298,11 @@ function adjustItemNames(rom: Rom, flags: FlagSet): void {
     const leatherBoots = rom.items[0x2f]!;
     leatherBoots.menuName = 'Speed Boots';
     leatherBoots.messageName = 'Speed Boots';
+    if (flags.changeGasMaskToHazmatSuit()) {
+      const gasMask = rom.items[0x29];
+      gasMask.menuName = 'Hazmat Suit';
+      gasMask.messageName = 'Hazmat Suit';
+    }
   }
 
   // rename balls to orbs

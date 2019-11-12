@@ -25066,6 +25066,7 @@ BossPatternJump_18              ; Sabera 1
         $1ed58  xx xx:      xxx $xx
         $1ed5a  xx:         xxx
         $1ed5b  xx xx xx:   xxx $xxxx,x
+        ;; Set the speed based on the HP.
         $1ed5e  xx xx xx:   xxx $xxxx,x
         $1ed61  xx:         xxx
         $1ed62  xx:         xxx
@@ -25084,7 +25085,9 @@ BossPatternJump_18              ; Sabera 1
         $1ed7f  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
 ;;; --------------------------------
 DataTable_1ed82 
-        $1ed82              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; NOTE: These are 16-dir speeds for sabera at different HPs.
+        $1ed82              .byte $xx,$xx,$xx,$xx
+        $1ed86              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1ed92              .byte $xx,$xx,$xx,$xx
 ;;; --------------------------------
         $1ed96  xx xx:      xxx #$xx

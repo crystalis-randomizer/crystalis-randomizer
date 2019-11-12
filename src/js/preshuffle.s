@@ -274,6 +274,17 @@ CheckBelowBoss:
 ++ rts
 .assert < $1e3f0
 
+.ifdef _NERF_MADO
+;;; Mado's cannonball time is a function of his HP: framecount = HP + #$20.
+;;; This causes problems when HP >= #$e0, since it overflows.  We can make
+;;; sure he bounces for less time by dividing by two instead of clearing
+;;; carry.  We also change the shift to #$18, making the range 24..152
+;;; rather than 0..255.
+.org $1ee53
+  lsr
+  adc #$18
+.endif
+
 .org $1e48b  ; vampire pattern 0
   jsr CheckBelowBoss
 .org $1e971  ; kelbesque pattern 0

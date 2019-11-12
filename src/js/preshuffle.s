@@ -1112,11 +1112,15 @@ CheckSwordCollisionPlane:
   sta $03e2 ; copied from $35c62
   lda $03a1
   and #$20
-  lsr
-  eor #$ff
-  and $03a2
-  sta $03a2
-  rts
+  ; lsr
+  ; eor #$ff
+  ; and $03a2
+  ; sta $03a2
+  ; rts
+  beq +
+   lda #$0c  ; zero out the collision plane entirely
+   sta $03a2
++ rts
 
         ;; 8 bytes free
 

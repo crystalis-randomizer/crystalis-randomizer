@@ -22,6 +22,7 @@ import {hex} from '../rom/util.js';
 const RELEVANT_FLAGS = [
   0x00a, // used windmill key
   0x00b, // talked to leaf elder
+  0x013, // killed sabera 1
   0x018, // entered underground channel
   0x01b, // mesia recording played
   0x01e, // queen revealed
@@ -38,6 +39,7 @@ const RELEVANT_FLAGS = [
   0x052, // talked to dwarf mother
   0x053, // child following
   0x061, // talked to stom in swan hut
+  0x067, // killed mado 1
   // 0x06c, // defeated draygon 1
   0x072, // kensu found in tavern
   0x08b, // got shell flute
@@ -48,14 +50,11 @@ const RELEVANT_FLAGS = [
   0x101, // killed insect
   0x102, // killed kelbesque 1
   0x103, // rage
-  0x104, // killed sabera 1
-  0x105, // killed mado 1
-  0x106, // killed kelbesque 2
-  0x107, // killed sabera 2
-  0x108, // killed mado 2
-  0x109, // killed karmine
-  0x10a, // killed draygon 1
-  0x10b, // killed draygon 2
+  0x105, // killed kelbesque 2
+  0x106, // killed sabera 2
+  0x107, // killed mado 2
+  0x108, // killed karmine
+  0x10b, // killed draygon 1
   0x10c, // killed vampire 2
 
   // swords (may be needed for rage, SoT for massacre)
@@ -66,11 +65,13 @@ const RELEVANT_FLAGS = [
   0x243, // telepathy (for rabbit, oak, deo)
   0x244, // teleport (for mt sabre trigger)
   0x283, // calmed sea (for barrier)
+  0x28d, // killed draygon 2 (wall destroyed)
   0x2ee, // started windmill (for refresh)
 
   // NOTE: these are moved because of zombie warp!
   0x2f6, // warp:oak (for telepathy)
   // 0x2fa, // warp:joel (for evil spirit island)
+  0x2fd, // warp:shyron (for telepathy)
 
   // Magic.CHANGE[0][0],
   // Magic.TELEPATHY[0][0],
@@ -83,7 +84,6 @@ const FLAG_MAP: Map<number, readonly [readonly [Condition]]> = new Map([
   [0x00a, Event.STARTED_WINDMILL], // this is ref'd outside this file!
   //[0x00e, Magic.TELEPATHY],
   //[0x03f, Magic.TELEPORT],
-  [0x013, Boss.SABERA1],
   // Queen will give flute of lime w/o paralysis in this case.
   [0x017, Item.SWORD_OF_WATER],
   [0x028, Magic.CHANGE],
@@ -683,7 +683,7 @@ export class Overlay {
     for (const boss of this.rom.bosses) {
       if (boss.kill != null && boss.drop != null) {
         // Saves redundancy of putting the item in the actual room.
-        capabilities.push([Item(boss.drop), Boss(boss.kill)]);
+        capabilities.push([Item(boss.drop), Boss(boss.flag)]);
       }
     }
     capabilities.push([Item.ORB_OF_WATER, Boss.RAGE]);

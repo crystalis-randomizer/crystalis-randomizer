@@ -1,3 +1,24 @@
+// TODO - we can recover a ton of flags by just getting rid of the redundant
+// item flags - e.g. draygon1/psych armor has 06c, 0cc, and 10b - we only need
+// one of these, so let's consolidate and delete the rest (and also garbage
+// collect the unused triggers associated with them).
+
+// It might make sense to enumerate ALL the flags, both existing and new.
+// We could use an enum to keep track of them, though we'd need an indirection
+// so that we could map them properly...? Use strings to ensure the indirection
+// is always applied!
+
+// export enum Flag {
+//   StartedWindmill = '00a',
+//   RidingDolphin = 'riding dolphin',
+// }
+// const flagToNameMap: Map<Flag, string> = (() => { return new Map(); })();
+// const flagToFlagIdMap: BiMap<Flag, number> = new BiMap();
+
+// Then work to reduce things to a single ID ahead of time, before building
+// the world graph.
+
+
 export namespace Event {
   export const STARTED_WINDMILL = Condition(0x00a);
   export const LEAF_ELDER = Condition(0x00b);
@@ -33,7 +54,7 @@ export namespace Event {
   // NOTE: These are moved from vanilla because of zombie warp!
   export const WARP_OAK = Condition(0x2f6);
   // export const WARP_JOEL = Condition(0x2fa);
-  // export const WARP_SHYRON = Condition(0x2fd);
+  export const WARP_SHYRON = Condition(0x2fd);
   // export const WARP_SAHARA = Condition(0x2ff);
 }
 
@@ -57,22 +78,23 @@ export namespace Capability {
 // These indicate the boss is actually defeated.
 export type Boss = readonly [readonly [Condition]];
 export function Boss(id: number): Boss {
-  return Condition(0x100 | id);
+  return Condition(id);
 }
+// TODO - clean these up globally so that bosses are simple 10x?
 export namespace Boss {
-  export const VAMPIRE1 = Boss(0x0);
-  export const INSECT = Boss(0x1);
-  export const KELBESQUE1 = Boss(0x2);
-  export const RAGE = Boss(0x3);
-  export const SABERA1 = Boss(0x4);
-  export const MADO1 = Boss(0x5);
-  export const KELBESQUE2 = Boss(0x6);
-  export const SABERA2 = Boss(0x7);
-  export const MADO2 = Boss(0x8);
-  export const KARMINE = Boss(0x9);
-  export const DRAYGON1 = Boss(0xa);
-  export const DRAYGON2 = Boss(0xb);
-  export const VAMPIRE2 = Boss(0xc);
+  export const VAMPIRE1 = Boss(0x100);
+  export const INSECT = Boss(0x101);
+  export const KELBESQUE1 = Boss(0x102);
+  export const RAGE = Boss(0x103);
+  export const SABERA1 = Boss(0x013);
+  export const MADO1 = Boss(0x067);
+  export const KELBESQUE2 = Boss(0x105);
+  export const SABERA2 = Boss(0x106);
+  export const MADO2 = Boss(0x107);
+  export const KARMINE = Boss(0x108);
+  export const DRAYGON1 = Boss(0x10b);
+  export const DRAYGON2 = Boss(0x28d);
+  export const VAMPIRE2 = Boss(0x10c);
 }
 
 export type Item = readonly [readonly [Condition]];

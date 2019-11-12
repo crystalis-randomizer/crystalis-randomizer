@@ -227,7 +227,7 @@ function build(rom: Rom, flags = new FlagSet('@FullShuffle'), tracker = false): 
     if (loc === 0xa0 || loc === 0x5f) continue; // skip statues and dyna
     if (!boss || boss.kill == null) throw new Error(`bad boss at loc ${loc.toString(16)}`);
     // TODO - shuffle Rage's demand
-    const kill = Boss(boss.kill);
+    const kill = Boss(boss.flag);
 
     const merge = memoize((t: Terrain) => Terrain.meet(t, {exit: kill, exitSouth: kill}));
     const tileBase = bossTile & ~0xff;
@@ -489,7 +489,7 @@ function build(rom: Rom, flags = new FlagSet('@FullShuffle'), tracker = false): 
     // pull out other bits to be filled in.
     filled = function(c: number): boolean {
       if (isItem(c)) return true;
-      if (flags.shuffleBossElements() && isBoss(c)) return true;
+      if (flags.shuffleBossElements() && rom.bosses.isBossFlag(c)) return true;
       // TODO - walls?
       return false;
     }
@@ -497,9 +497,9 @@ function build(rom: Rom, flags = new FlagSet('@FullShuffle'), tracker = false): 
   return new World(rom, tiles, makeGraph(reqs, rom, filled));
 }
 
-function isBoss(c: number): boolean {
-  return ~c >= 0x100 && ~c < 0x110;
-}
+// function isBoss(c: number): boolean {
+//   return ~c >= 0x100 && ~c < 0x110;
+// }
 function isItem(c: number): boolean {
   return c >= 0x200 && c < 0x280;
 }

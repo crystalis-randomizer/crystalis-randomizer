@@ -119,7 +119,12 @@ export function traverse(graph: Graph, fill: IndexFill, has: Bits): Set<SlotInde
   const reachable = new Set<SlotIndex>();
   const queue = new Set<SlotIndex>();
   for (let i = 0; i < graph.slots.length; i++) {
-    if (graph.graph[i] == null) {console.dir(graph);throw new Error(`adding bad node ${i} (${graph.slots[i].name}) from slot`);}
+    if (graph.graph[i] == null) {
+      console.dir(graph);
+      // I think this corresponds to an unreachable check?
+      //  - how is this different from "nothing provided" in world.ts?
+      throw new Error(`adding bad node ${i} (${graph.slots[i].name}) from slot`);
+    }
     queue.add(i as SlotIndex);
   }
   for (const n of queue) {
@@ -135,7 +140,10 @@ export function traverse(graph: Graph, fill: IndexFill, has: Bits): Set<SlotInde
       if (item != null) {
         has = Bits.with(has, item);
         for (const j of graph.unlocks[item] || []) {
-          if (graph.graph[j] == null) {console.dir(graph);throw new Error(`adding bad node ${j} from unlock ${item}`);}
+          if (graph.graph[j] == null) {
+            console.dir(graph);
+            throw new Error(`adding bad node ${j} from unlock ${item}`);
+          }
           queue.add(j);
         }
       }

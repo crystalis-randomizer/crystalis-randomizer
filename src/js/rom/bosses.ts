@@ -26,27 +26,39 @@ export class Bosses implements Iterable<Boss> {
   readonly dyna: Boss;
 
   private readonly all: Boss[];
+  private flags?: Set<number>;
 
   constructor(readonly rom: Rom) {
     this.all = [
-      this.vampire1 = new Boss(this, 'Vampire 1', 0xc0, 0x0, true),
-      this.insect = new Boss(this, 'Insect', 0xc1, 0x1),
-      this.kelbesque1 = new Boss(this, 'Kelbesque 1', 0xc2, 0x2, true).sword(3),
-      this.rage = new Boss(this, 'Rage', 0xc3, 0x3),
-      this.sabera1 = new Boss(this, 'Sabera 1', 0x84, 0x4, true, 0x3656e).sword(3),
-      this.vampire2 = new Boss(this, 'Vampire 2', 0xcc, 0xc, true),
-      this.mado1 = new Boss(this, 'Mado 1', -1, 0x5, true, 0x3d820).sword(3),
-      this.kelbesque2 = new Boss(this, 'Kelbesque 2', 0xc5, 0x6, true).sword(3),
-      this.sabera2 = new Boss(this, 'Sabera 2', 0xc6, 0x7, true).sword(3),
-      this.mado2 = new Boss(this, 'Mado 2', 0xc7, 0x8, true).sword(3),
-      this.karmine = new Boss(this, 'Karmine', 0xc8, 0x9, true).sword(2),
-      this.draygon1 = new Boss(this, 'Draygon 1', 0xcb, 0xa).sword(2),
-      this.statueOfMoon = new Boss(this, 'Statue of Moon', 0xc9),
-      this.statueOfSun = new Boss(this, 'Statue of Sun', 0xca),
+      this.vampire1 = new Boss(this, 'Vampire 1', 0x100, 0xc0, 0x0, true),
+      this.insect = new Boss(this, 'Insect', 0x101, 0xc1, 0x1),
+      this.kelbesque1 = new Boss(this, 'Kelbesque 1', 0x102, 0xc2, 0x2, true).sword(3),
+      this.rage = new Boss(this, 'Rage', 0x103, 0xc3, 0x3),
+      this.sabera1 = new Boss(this, 'Sabera 1', 0x013, 0x84, 0x4, true, 0x3656e).sword(3),
+      this.vampire2 = new Boss(this, 'Vampire 2', 0x10c, 0xcc, 0xc, true),
+      this.mado1 = new Boss(this, 'Mado 1', 0x067, -1, 0x5, true, 0x3d820).sword(3),
+      this.kelbesque2 = new Boss(this, 'Kelbesque 2', 0x105, 0xc5, 0x6, true).sword(3),
+      this.sabera2 = new Boss(this, 'Sabera 2', 0x106, 0xc6, 0x7, true).sword(3),
+      this.mado2 = new Boss(this, 'Mado 2', 0x107, 0xc7, 0x8, true).sword(3),
+      this.karmine = new Boss(this, 'Karmine', 0x108, 0xc8, 0x9, true).sword(2),
+      this.draygon1 = new Boss(this, 'Draygon 1', 0x10b, 0xcb, 0xa).sword(2),
+      this.statueOfMoon = new Boss(this, 'Statue of Moon', 0x109, 0xc9),
+      this.statueOfSun = new Boss(this, 'Statue of Sun', 0x10a, 0xca),
       // TODO - give Draygon 2 a different NPC id (say, c4?)
-      this.draygon2 = new Boss(this, 'Draygon 2', 0xcb, 0xb).sword(3),
-      this.dyna = new Boss(this, 'Dyna', -1, 0xd),
+      this.draygon2 = new Boss(this, 'Draygon 2', 0x28d, 0xcb, 0xb).sword(3),
+      this.dyna = new Boss(this, 'Dyna', 0x300, -1, 0xd), // note: flag is a fake
     ];
+  }
+
+  isBossFlag(flag: number): boolean {
+    const flags = this.flags || (this.flags = (() => {
+      const f = new Set<number>();
+      for (const boss of this.all) {
+        f.add(boss.flag);
+      }
+      return f;
+    })());
+    return flags.has(flag);
   }
 
   fromLocation(id: number): Boss|undefined {
@@ -80,6 +92,7 @@ export class Boss {
 
   constructor(readonly bosses: Bosses,
               readonly name: string,
+              readonly flag: number,
               readonly npc: number,
               readonly kill?: number,
               readonly shuffled?: boolean,

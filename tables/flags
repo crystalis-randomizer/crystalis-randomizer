@@ -176,7 +176,7 @@
 0eb - received tower message 2
 0ec - received tower message 3
 0ed - mesia (8e) first dialog flag
-0ee - UNUSED (use for riding dolphin)
+0ee - UNUSED ==> we use for *currently* riding dolphin
 0ef...0ff UNUSED?? (check first)
 
 100 - defeated vampire 1

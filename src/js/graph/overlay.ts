@@ -92,6 +92,7 @@ const FLAG_MAP: Map<number, readonly [readonly [Condition]]> = new Map([
   [0x02b, Magic.CHANGE],
   [0x06c, Boss.DRAYGON1],
   [0x08b, Item.SHELL_FLUTE],
+  [0x0ee, Event.RIDE_DOLPHIN], // NOTE: custom flag
 ]);
 
 // Maps trigger actions to the slot they grant.

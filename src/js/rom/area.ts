@@ -15,6 +15,7 @@ interface AreaOptions {
 
 // Export an enum so that we can at least refer to these statically.
 export class Areas {
+  readonly Empty = area();
   // Overworld areas: these are the "hubs".
   readonly ValleyOfWind = area({type: 'overworld'});
   readonly CordelPlain = area();
@@ -81,8 +82,6 @@ export class Areas {
   readonly Pyramid = area();
   readonly Crypt = area();
   readonly Tower = area();
-
-  readonly Empty = area();
 
   constructor(readonly rom: Rom) {
     area.commit(this, (key: string, opts?: AreaOptions) =>

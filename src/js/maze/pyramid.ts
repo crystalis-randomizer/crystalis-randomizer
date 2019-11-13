@@ -22,7 +22,7 @@ export function shufflePyramid(rom: Rom, random: Random): void {
   // there, or because they reversibly point to each other.  We must
   // detect either case and reroll.
 
-  const loc = rom.locations.pyramidMain;
+  const loc = rom.locations.Pyramid_Main;
   const dir = 'dudududuudududduu'.split('') as Dir[];
   let realDir: Dir = 'u';
 
@@ -49,7 +49,7 @@ export function shufflePyramid(rom: Rom, random: Random): void {
     loc.exits[2 * 16 + 1].tile = 0xbd;
 
     // Fix up the landing to be the other direction, too.
-    const loc2 = rom.locations.pyramidDraygon;
+    const loc2 = rom.locations.Pyramid_Draygon;
     loc2.width = 2;
     loc2.screens[0].push(0x9a);
     loc2.screens[1].push(0xfd);

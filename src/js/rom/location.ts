@@ -87,8 +87,9 @@ const $: Init = (() => {
   const $ = initializer<[number, LocationInit], Location>();
   let area!: (areas: Areas) => Area;
   function $$(id: number, data: LocationInit = {}): Location {
-    area = data.area || area;
-    return $(id, {area});
+    data = {...data};
+    area = data.area = data.area || area;
+    return $(id, data);
   };
   ($$ as Init).commit = (locations: Locations) => {
     const areas = locations.rom.areas;
@@ -96,7 +97,8 @@ const $: Init = (() => {
       const name = upperCamelToSpaces(prop);
       const area = init.area!(areas);
       const music = typeof init.music === 'function' ?
-          init.music(area) : init.music || area.name;
+          init.music(area) : init.music != null ?
+          init.music : area.name;
       const palette = typeof init.palette === 'function' ?
           init.palette(area) : init.palette || area.name;
       const data: LocationData = {area, name, music, palette};
@@ -127,9 +129,8 @@ export class Locations extends Array<Location> {
   // INVALID: 0x0b
   readonly SealedCave8              = $(0x0c);
   // INVALID: 0x0d
-  readonly WindmillCave             = $(0x0e, {area: a => a.WindmillCave,
-                                               music: 0});
-  readonly Windmill                 = $(0x0f, {area: a => a.Windmill});
+  readonly WindmillCave             = $(0x0e, {area: a => a.WindmillCave});
+  readonly Windmill                 = $(0x0f, {area: a => a.Windmill, music: 0});
   readonly ZebuCave                 = $(0x10, {area: a => a.ZebuCave});
   readonly MtSabreWest_Cave1        = $(0x11, {area: a => a.MtSabreWest, ...CAVE});
   // INVALID: 0x12
@@ -351,7 +352,7 @@ export class Locations extends Array<Location> {
   readonly Amazones_Elder           = $(0xd4, HOUSE);
   readonly Nadare                   = $(0xd5, {area: a => a.Nadare}); // edge-door?
   readonly Portoa_FishermanHouse    = $(0xd6, {area: a => a.FishermanHouse,
-                                               ...HOUSE});
+                                               ...HOUSE, music: 0});
   readonly Portoa_PalaceEntrance    = $(0xd7, {area: a => a.PortoaPalace});
   readonly Portoa_FortuneTeller     = $(0xd8, {area: a => a.Portoa,
                                                ...FORTUNE_TELLER});
@@ -409,12 +410,23 @@ export class Locations extends Array<Location> {
       if (this[id]) continue;
       this[id] = new Location(rom, id, {
         area: rom.areas.Empty,
-        name: 'Unused',
+        name: '',
         music: '',
         palette: '',
       });
     }
     // TODO - method to add an unregistered location to an empty index.
+  }
+
+  allocate(location: Location): Location {
+    // pick an unused location
+    for (const l of this) {
+      if (l.used) continue;
+      (location as any).id = l.id;
+      location.used = true;
+      return this[l.id] = location;
+    }
+    throw new Error('No unused location');
   }
 
   // // Find all groups of neighboring locations with matching properties.
@@ -474,9 +486,10 @@ export class Location extends Entity {
     // will include both MapData *and* NpcData, since they share a key.
     super(rom, id);
 
-    const mapDataBase = readLittleEndian(rom.prg, this.mapDataPointer) + 0xc000;
+    const mapDataBase =
+        id >= 0 ? readLittleEndian(rom.prg, this.mapDataPointer) + 0xc000 : 0;
     // TODO - pass this in and move LOCATIONS to locations.ts
-    this.used = id >= 0 && mapDataBase > 0xc000 && !!this.name;
+    this.used = mapDataBase > 0xc000 && !!this.name;
 
     if (!this.used) {
       this.bgm = 0;
@@ -513,7 +526,10 @@ export class Location extends Entity {
       const exits = [];
       let i = exitsBase;
       while (!(rom.prg[i] & 0x80)) {
-        exits.push(Exit.from(rom.prg, i));
+        // NOTE: set dest to FF to disable an exit (it's an invalid location anyway)
+        if (rom.prg[i + 2] != 0xff) {
+          exits.push(Exit.from(rom.prg, i));
+        }
         i += 4;
       }
       if (rom.prg[i] !== 0xff) {
@@ -621,16 +637,17 @@ export class Location extends Entity {
   async write(writer: Writer): Promise<void> {
     if (!this.used) return;
     const promises = [];
-    if (this.spawns.length) {
-      // write NPC data first, if present...
-      const data = [0, ...this.spritePalettes, ...this.spritePatterns,
-                    ...concatIterables(this.spawns), 0xff];
-      promises.push(
-          writer.write(data, 0x18000, 0x1bfff, `NpcData ${hex(this.id)}`)
-              .then(address => writeLittleEndian(
-                  writer.rom, this.npcDataPointer, address - 0x10000)));
+    if (!this.spawns.length) {
+      this.spritePalettes = [0xff, 0xff];
+      this.spritePatterns = [0xff, 0xff];
     }
-
+    // write NPC data first, if present...
+    const data = [0, ...this.spritePalettes, ...this.spritePatterns,
+                  ...concatIterables(this.spawns), 0xff];
+    promises.push(
+        writer.write(data, 0x18000, 0x1bfff, `NpcData ${hex(this.id)}`)
+            .then(address => writeLittleEndian(
+                writer.rom, this.npcDataPointer, address - 0x10000)));
     const write = (data: Data<number>, name: string) =>
         writer.write(data, 0x14000, 0x17fff, `${name} ${hex(this.id)}`);
     const layout = this.rom.compressedMapData ? [
@@ -652,6 +669,7 @@ export class Location extends Entity {
     // non-vertically scrolling map, then we need to move it up.
     if (this.height === 1) {
       for (const entrance of this.entrances) {
+        if (!entrance.used) continue;
         if (entrance.y > 0xbf) entrance.y = 0xbf;
       }
       for (const exit of this.exits) {
@@ -808,6 +826,7 @@ export class Location extends Entity {
     const map = uf.map();
     const sets = new Set<Set<number>>();
     for (const entrance of this.entrances) {
+      if (!entrance.used) continue;
       const id = entrance.screen << 8 | entrance.tile;
       // NOTE: map should always have id, but bogus entrances
       // (e.g. Goa Valley entrance 2) can cause problems.
@@ -912,7 +931,8 @@ export class Location extends Entity {
           if (z2 < (r + r1) ** 2) continue POOL;
         }
         // test distance from entrances.
-        for (const {x: x1, y: y1} of this.entrances) {
+        for (const {x: x1, y: y1, used} of this.entrances) {
+          if (!used) continue;
           const z2 = ((y - (y1 >> 4)) ** 2 + (x - (x1 >> 4)) ** 2);
           if (z2 < (r + 1) ** 2) continue POOL;
         }
@@ -939,6 +959,95 @@ export class Location extends Entity {
   //   }
   //   return tiles;
   // }
+
+  // TODO - use metascreen for this later
+  resizeScreens(top: number, left: number, bottom: number, right: number) {
+    const newWidth = this.width + left + right;
+    const newHeight = this.height + top + bottom;
+    const newScreens = Array.from({length: newHeight}, (_, y) => {
+      y -= top;
+      return Array.from({length: newWidth}, (_, x) => {
+        x -= left;
+        if (y < 0 || x < 0 || y >= this.height || x >= this.width) return 0;
+        return this.screens[y][x];
+      });
+    });
+    this.width = newWidth;
+    this.height = newHeight;
+    this.screens = newScreens;
+    // TODO - if any of these go negative, we're in trouble...
+    // Probably the best bet would be to put a check in the setter?
+    for (const f of this.flags) {
+      f.xs += left;
+      f.ys += top;
+    }
+    for (const p of this.pits) {
+      p.fromXs += left;
+      p.fromYs += top;
+    }
+    for (const s of [...this.spawns, ...this.exits]) {
+      s.xt += 16 * left;
+      s.yt += 16 * top;
+    }
+    for (const e of this.entrances) {
+      if (!e.used) continue;
+      e.x += 256 * left;
+      e.y += 256 * top;
+    }
+  }
+
+  writeScreens2d(start: number,
+                 data: ReadonlyArray<ReadonlyArray<number | null>>) {
+    const x0 = start & 0xf;
+    const y0 = start >>> 4;
+    for (let y = 0; y < data.length; y++) {
+      const row = data[y];
+      for (let x = 0; x < row.length; x++) {
+        const tile = row[x];
+        if (tile != null) this.screens[y0 + y][x0 + x] = tile;
+      }
+    }
+  }
+
+  // Connect two screens via entrances.
+  // Assumes exits and entrances are completely absent.
+  // Screen IDs must be in screenExits.
+  connect(pos: number, that: Location, thatPos: number) {
+    const thisY = pos >>> 4;
+    const thisX = pos & 0xf;
+    const thatY = thatPos >>> 4;
+    const thatX = thatPos & 0xf;
+    const thisTile = this.screens[thisY][thisX];
+    const thatTile = that.screens[thatY][thatX];
+    const [thisEntrance, thisExits] = screenExits[thisTile];
+    const [thatEntrance, thatExits] = screenExits[thatTile];
+    const thisEntranceIndex = this.entrances.length;
+    const thatEntranceIndex = that.entrances.length;
+    this.entrances.push(Entrance.of({y: thisY << 8 | thisEntrance >>> 8,
+                                     x: thisX << 8 | thisEntrance & 0xff}));
+    that.entrances.push(Entrance.of({y: thatY << 8 | thatEntrance >>> 8,
+                                     x: thatX << 8 | thatEntrance & 0xff}));
+    for (const exit of thisExits) {
+      this.exits.push(Exit.of({screen: pos, tile: exit,
+                               dest: that.id, entrance: thatEntranceIndex}));
+    }
+    for (const exit of thatExits) {
+      that.exits.push(Exit.of({screen: thatPos, tile: exit,
+                               dest: this.id, entrance: thisEntranceIndex}));
+    }
+  }
+
+  neighborForEntrance(entranceId: number): Location {
+    const entrance = this.entrances[entranceId];
+    if (!entrance) throw new Error(`no entrance ${hex(this.id)}:${entranceId}`);
+    for (const exit of this.exits) {
+      if (exit.screen !== entrance.screen) continue;
+      const dx = Math.abs(exit.x - entrance.x);
+      const dy = Math.abs(exit.y - entrance.y);
+      if (dx < 24 && dy < 24) return this.rom.locations[exit.dest];
+    }
+    throw new Error(`no exit found near ${hex(this.id)}:${entranceId}`);
+  }
 }
 
 // TODO - move to a better-organized dedicated "geometry" module?
@@ -968,6 +1077,10 @@ export const Entrance = DataTuple.make(4, {
   screen: DataTuple.prop([3, 0x0f, -4], [1, 0x0f]),
   tile:   DataTuple.prop([2, 0xf0], [0, 0xf0, 4]),
   coord:  DataTuple.prop([2, 0xff, -8], [0, 0xff]),
+
+  used: {
+    get(this: any): boolean { return this.data[1] != 0xff; },
+  },
 
   toString(this: any): string {
     return `Entrance ${this.hex()}: (${hex(this.x)}, ${hex(this.y)})`;

@@ -661,10 +661,17 @@ const ADJUSTMENTS = [
   [0x14db9, 0x08, 0x80],
   // Fix garbage map square in bottom-left of Lime Tree Valley
   [0x1545d, 0xff, 0x00],
+  // Mark bad entrance/exit in portoa
+  [0x1581d, 0x00, 0xff],
+  [0x1584e, 0xdb, 0xff],
   // Remove unused map screens from Evil Spirit lower
   [0x15baf, 0xf0, 0x80],
   [0x15bb6, 0xdf, 0x80],
   [0x15bb7, 0x96, 0x80],
+  // Mark bad entrance/exit in goa valley
+  [0x15f40, 0x02, 0xff],
+  [0x15f61, 0x8d, 0xff],
+  [0x15f65, 0x8d, 0xff],
   // Fix garbage at bottom of oasis cave map (it's 8x11, not 8x12 => fix height)
   [0x164ff, 0x0b, 0x0a],
   // Fix bad music in zombietown houses: $10 should be $01.

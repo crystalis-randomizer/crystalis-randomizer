@@ -17,6 +17,11 @@ export function shuffleMazes(rom: Rom, random: Random) {
   for (const cave of SHUFFLED_CAVES) {
     shuffleCave(rom.locations[cave], random);
   }
+  // TODO - uncomment?
+  // if (flags.addEastCave()) {
+  //   shuffleCave(rom.locations.EastCave1, random);
+  //   shuffleCave(rom.locations.EastCave2, random);
+  // }
 }
 
 export function prepareScreens(rom: Rom) {

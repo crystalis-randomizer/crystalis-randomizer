@@ -492,6 +492,7 @@ export class SpecSet {
     // "wrong side" of bridges.
     const reachable =
         new Set([...loc.reachableTiles(true).keys()].map(t => t >>> 8));
+    if (!reachable.size) throw new Error('No reachable tiles');
 
     // Maps entrance number to LLEE where LL is 8-bit location id, EE is
     // 8-bit entrance number (really 5-bit, but we don't compress).

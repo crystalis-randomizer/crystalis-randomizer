@@ -12,7 +12,7 @@ export function shuffleSwamp(rom: Rom, random: Random, attempts = 100): void {
   // 1. Start by fixing up the swamp tiles (note: we could possibly wait on this).
   extendSwampScreens(rom);
 
-  const swamp = rom.locations.swamp;
+  const swamp = rom.locations.Swamp;
 
   const w = swamp.width;
   const h = swamp.height;

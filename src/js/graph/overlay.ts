@@ -387,7 +387,7 @@ export class Overlay {
       if (trigger.id === 0xba &&
           !this.flags.disableTeleportSkip() &&
           !this.flags.assumeTeleportSkip()) {
-        extra.extraLocations = [this.rom.locations.cordelPlainsWest];
+        extra.extraLocations = [this.rom.locations.CordelPlainWest];
       }
       const cond =
           trigger.conditions.map(c => c < 0 && relevant(~map(c)) ?

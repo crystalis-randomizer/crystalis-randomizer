@@ -10,7 +10,7 @@ import {Monster} from '../rom/monster.js';
 export function shuffleGoa1(rom: Rom, random: Random, attempts = 1500): void {
   // NOTE: also need to move enemies...
   extendGoaScreens(rom);
-  const loc = rom.locations.goaFortressKelbesque;
+  const loc = rom.locations.GoaFortress_Kelbesque;
   const w = loc.width;
   const h = loc.height;
 
@@ -217,5 +217,5 @@ export function extendGoaScreens(rom: Rom) {
   // This defaults to a8, but that doesn't work for wide screens.
   // We should make sure this doesn't break partitions for music
   // and/or palette shuffles.
-  rom.locations.waterfallCave3.tileset = 0x88;
+  rom.locations.WaterfallCave3.tileset = 0x88;
 }

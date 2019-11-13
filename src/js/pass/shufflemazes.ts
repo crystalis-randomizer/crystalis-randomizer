@@ -19,8 +19,8 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
     shuffleCave(rom.locations[cave], random);
   }
   if (flags.addEastCave()) {
-    shuffleCave(rom.locations[0x0b], random);
-    shuffleCave(rom.locations[0x0d], random);
+    shuffleCave(rom.locations.EastCave1, random);
+    shuffleCave(rom.locations.EastCave2, random);
   }
 }
 

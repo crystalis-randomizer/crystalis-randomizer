@@ -16,15 +16,17 @@ import {shuffleTrades} from './pass/shuffletrades.js';
 import {unidentifiedItems} from './pass/unidentifieditems.js';
 import {Random} from './random.js';
 import {Rom} from './rom.js';
+import {Area} from './rom/area.js';
+import {Constraint} from './rom/constraint.js';
+import {Graphics} from './rom/graphics.js';
 import {Location, Spawn} from './rom/location.js';
+import {Monster} from './rom/monster.js';
 import {ShopType, Shop} from './rom/shop.js';
 import * as slots from './rom/slots.js';
 import {Spoiler} from './rom/spoiler.js';
 import {hex, seq, watchArray, writeLittleEndian} from './rom/util.js';
+import {DefaultMap} from './util.js';
 import * as version from './version.js';
-import {Graphics} from './rom/graphics.js';
-import {Constraint} from './rom/constraint.js';
-import {Monster} from './rom/monster.js';
 
 const EXPAND_PRG: boolean = true;
 
@@ -400,9 +402,11 @@ function randomizeWalls(rom: Rom, flags: FlagSet, random: Random): void {
     return spawn.id & 3;
   }
 
-  const partition =
-      rom.locations.partition(l => l.tilePalettes.join(' '), undefined, true);
-  for (const [locations] of partition) {
+  const partition = new DefaultMap<Area, Location[]>(() => []);
+  for (const location of rom.locations) {
+    partition.get(location.data.area).push(location);
+  }
+  for (const locations of partition.values()) {
     // pick a random wall type.
     const elt = random.nextInt(4);
     const pal = random.pick(pals[elt]);
@@ -440,9 +444,7 @@ function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
     constructor(readonly addr: number) {}
     get bgm() { return rom.prg[this.addr]; }
     set bgm(x) { rom.prg[this.addr] = x; }
-    partition(): Partition { return [[this], this.bgm]; }
   }
-  type Partition = [HasMusic[], number];
   const bossAddr = [
     0x1e4b8, // vampire 1
     0x1e690, // insect
@@ -454,56 +456,49 @@ function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
     0x1f311, // draygon 2
     0x37c30, // dyna
   ];
-  const partitions =
-      rom.locations.partition((loc: Location) => loc.id !== 0x5f ? loc.bgm : 0)
-          .filter((l: Partition) => l[1]); // filter out start and dyna
-
-  const peaceful: Partition[] = [];
-  const hostile: Partition[] = [];
-  const bosses: Partition[] = bossAddr.map(a => new BossMusic(a).partition());
-
-  for (const part of partitions) {
-    let monsters = 0;
-    for (const loc of part[0]) {
-      for (const spawn of loc.spawns) {
-        if (spawn.isMonster()) monsters++;
-      }
-    }
-    (monsters >= part[0].length ? hostile : peaceful).push(part);
-  }
-  const evenWeight: boolean = true;
-  const extraMusic: boolean = false;
-  function shuffle(parts: Partition[]) {
-    const values = parts.map((x: Partition) => x[1]);
-
-    if (evenWeight) {
-      const used = [...new Set(values)];
-      if (extraMusic) used.push(0x9, 0xa, 0xb, 0x1a, 0x1c, 0x1d);
-      for (const [locs] of parts) {
-        const value = used[random.nextInt(used.length)];
-        for (const loc of locs) {
-          loc.bgm = value;
-        }
-      }
-      return;
-    }
-
-    random.shuffle(values);
-    for (const [locs] of parts) {
-      const value = values.pop()!;
-      for (const loc of locs) {
-        loc.bgm = value;
-      }
+  let neighbors: Location[] = [];
+  const musics = new DefaultMap<unknown, HasMusic[]>(() => []);
+  const all = new Set<number>();
+  for (const l of rom.locations) {
+    if (l.id === 0x5f || l.id === 0 || !l.used) continue; // skip start and dyna
+    const music = l.data.music;
+    all.add(l.bgm);
+    if (typeof music === 'number') {
+      neighbors.push(l);
+    } else {
+      musics.get(music).push(l);
     }
   }
-  // shuffle(peaceful);
-  // shuffle(hostile);
-  // shuffle(bosses);
-
-  shuffle([...peaceful, ...hostile, ...bosses]);
-
-  // TODO - consider also shuffling SFX?
-  //  - e.g. flail guy could make the flame sound?
+  for (const a of bossAddr) {
+    const b = new BossMusic(a);
+    musics.set(b, [b]);
+    all.add(b.bgm);
+  }
+  const list = [...all];
+  const updated = new Set<HasMusic>();
+  for (const partition of musics.values()) {
+    const value = random.pick(list);
+    for (const music of partition) {
+      music.bgm = value;
+      updated.add(music);
+    }
+  }
+  while (neighbors.length) {
+    const defer = [];
+    let changed = false;
+    for (const loc of neighbors) {
+      const neighbor = loc.neighborForEntrance(loc.data.music as number);
+      if (updated.has(neighbor)) {
+        loc.bgm = neighbor.bgm;
+        updated.add(loc);
+        changed = true;
+      } else {
+        defer.push(loc);
+      }
+    }
+    if (!changed) break;
+    neighbors = defer;
+  }
 }
 
 function shuffleWildWarp(rom: Rom, _flags: FlagSet, random: Random): void {

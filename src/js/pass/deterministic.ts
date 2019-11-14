@@ -503,13 +503,13 @@ function closeCaveEntrances(rom: Rom, flags: FlagSet): void {
   if (flags.connectGoaToLeaf()) {
     flagsToClear.push([GoaValley, 0x01]);
   }
-  for (const [loc, yx] of flagsToClear) {
-    loc.flags.push(Flag.of({yx, flag: 0x2f0}));
+  for (const [loc, screen] of flagsToClear) {
+    loc.flags.push(Flag.of({screen, flag: 0x2f0}));
   }
 
   function replaceFlag(loc: Location, yx: number, flag: number): void {
     for (const f of loc.flags) {
-      if (f.yx === yx) {
+      if (f.screen === yx) {
         f.flag = flag;
         return;
       }

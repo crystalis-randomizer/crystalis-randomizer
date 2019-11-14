@@ -112,8 +112,10 @@ function build(rom: Rom, flags = new FlagSet('@FullShuffle'), tracker = false): 
         const screenId = ScreenId(rowId | x);
         const flagYx = screenId & 0xff;
         const wall = walls.get(screenId);
-        const flag = wall != null ? overlay.wallCapability(wall) :
-                                    location.flags.find(f => f.yx === flagYx);
+        const flag =
+            wall != null ?
+                overlay.wallCapability(wall) :
+                location.flags.find(f => f.screen === flagYx);
         const withFlagMemoized = memoize2((t1: Terrain, t2: Terrain) => {
           if (!flag) throw new Error(`flag expected`);
           t2 = {...t2, enter: meet(t2.enter || [[]], Condition(flag.flag))};

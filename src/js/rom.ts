@@ -10,7 +10,7 @@ import {Locations} from './rom/location.js';
 import {Messages} from './rom/messages.js';
 import {Metascreens} from './rom/metascreens.js';
 import {Metasprite} from './rom/metasprite.js';
-import {Metatilesets} from './rom/metatileset.js';
+import {Metatileset, Metatilesets} from './rom/metatileset.js';
 import {Monster} from './rom/monster.js';
 import {Npc} from './rom/npc.js';
 import {ObjectData} from './rom/objectdata.js';
@@ -18,7 +18,7 @@ import {Objects} from './rom/objects.js';
 import {RomOption} from './rom/option.js';
 import {Palette} from './rom/palette.js';
 import {Pattern} from './rom/pattern.js';
-import {Screen} from './rom/screen.js';
+import {Screen, Screens} from './rom/screen.js';
 import {Shop} from './rom/shop.js';
 import {Spoiler} from './rom/spoiler.js';
 import {Telepathy} from './rom/telepathy.js';
@@ -64,7 +64,7 @@ export class Rom {
   readonly chr: Uint8Array;
 
   readonly areas: Areas;
-  readonly screens: Screen[];
+  readonly screens: Screens;
   readonly tilesets: Tilesets;
   readonly tileEffects: TileEffects[];
   readonly triggers: Trigger[];
@@ -158,7 +158,7 @@ export class Rom {
     this.areas = new Areas(this); // note: must come before locations
     this.tilesets = new Tilesets(this);
     this.tileEffects = seq(11, i => new TileEffects(this, i + 0xb3));
-    this.screens = seq(0x103, i => new Screen(this, i));
+    this.screens = new Screens(this);
     this.metatilesets = new Metatilesets(this);
     this.metascreens = new Metascreens(this);
     this.triggers = seq(0x43, i => new Trigger(this, 0x80 | i));
@@ -605,6 +605,59 @@ export class Rom {
       if (!t.used) return t;
     }
     throw new Error('Could not find an unused trigger.');
+  }
+
+  compressMapData(): void {
+    if (this.compressedMapData) return;
+    this.compressedMapData = true;
+    for (const location of this.locations) {
+      if (location.extended) location.extended = 0xa;
+    }
+    for (let i = 0; i < 3; i++) {
+      //this.screens[0xa00 | i] = this.screens[0x100 | i];
+      this.metascreens.renumber(0x100 | i, 0xa00 | i);
+      delete this.screens[0x100 | i];
+    }
+  }
+
+  // TODO - does not work...
+  moveScreens(tileset: Metatileset, page: number): void {
+    if (!this.compressedMapData) throw new Error(`Must compress maps first.`);
+    const map = new Map<number, number>();
+    let i = page << 8;
+    while ((i & 0xff) < 0x20 && this.screens[i]) {
+      i++;
+    }
+    for (const screen of tileset.screens) {
+      if (screen.id >= 0x100) continue;
+      if ((i & 0xff) === 0x20) throw new Error(`No room left on page.`);
+      const prev = screen.id;
+      if (map.has(prev)) continue;
+      const next = screen.id = i++;
+      map.set(prev, next);
+      map.set(next, next);
+      //this.metascreens.renumber(prev, next);
+    }
+    for (const loc of this.locations) {
+      if (loc.tileset != tileset.tilesetId) continue;
+      let anyMoved = false;
+      let allMoved = true;
+      for (const row of loc.screens) {
+        for (let i = 0; i < row.length; i++) {
+          const mapped = map.get(row[i]);
+          if (mapped != null) {
+            row[i] = mapped;
+            anyMoved = true;
+          } else {
+            allMoved = false;
+          }
+        }
+      }
+      if (anyMoved) {
+        if (!allMoved) throw new Error(`Inconsistent move`);
+        loc.extended = page;
+      }
+    }
   }
 
   // Use the browser API to load the ROM.  Use #reset to forget and reload.

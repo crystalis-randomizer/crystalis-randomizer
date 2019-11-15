@@ -49,14 +49,16 @@ function labyrinthVariant(parentFn: (s: Metascreens) => Metascreen,
       
 export class Metascreens { // extends Set<Metascreen> {
 
-  screens = new Set<Metascreen>();
-  screensByFix = new DefaultMap<ScreenFix, Metascreen[]>(() => []);
+  private readonly screens = new Set<Metascreen>();
+  private readonly screensByFix = new DefaultMap<ScreenFix, Metascreen[]>(() => []);
+  private readonly screensById = new DefaultMap<number, Metascreen[]>(() => []);
 
   constructor(readonly rom: Rom) {
     //super();
     $.commit(this, (key: string, data: MetascreenData) => {
       const screen = new Metascreen(rom, data);
       this.screens.add(screen);
+      this.screensById.get(screen.id)
       for (const tilesetName in data.tilesets) {
         const key = tilesetName as keyof Metatilesets;
         const tilesetData = data.tilesets[key]!;
@@ -71,6 +73,10 @@ export class Metascreens { // extends Set<Metascreen> {
       //this.add(screen);
       return screen;
     });
+  }
+
+  getById(id: number): Metascreen[] {
+    return this.screensById.has(id) ? [...this.screensById.get(id)] : [];
   }
 
   registerFix(fix: ScreenFix, seed?: number) {
@@ -97,6 +103,22 @@ export class Metascreens { // extends Set<Metascreen> {
         }
       }
     }
+  }
+
+  renumber(oldId: number, newId: number) {
+    const dest = this.screensById.get(newId);
+    if (dest.length) throw new Error(`ID already used: ${newId}: ${dest}`);
+    for (const screen of this.getById(oldId)) {
+      screen.data.id = newId;
+      dest.push(screen);
+    }
+    this.screensById.delete(oldId);
+    // TODO - should this be encapsulated in Screens? probably...
+    const oldScreen = this.rom.screens.getScreen(oldId);
+    const clone = oldScreen.clone(newId);
+    this.rom.screens.setScreen(newId, clone);
+    oldScreen.used = false;
+    if (oldId < 0) this.rom.screens.deleteScreen(oldId);
   }
 
   readonly mountain = $({

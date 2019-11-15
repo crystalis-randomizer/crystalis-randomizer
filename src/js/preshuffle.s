@@ -1012,6 +1012,30 @@ MaybeSetCheckpointActual:
 .org $35b96 ; clear dolphin bit => also clear the flag
   jsr UpdatePlayerStatusAndDolphinFlag
 
+
+.ifdef _EXTRA_EXTENDED_SCREENS
+;;; Normally the check for tile effects just looks at the
+;;; current map screen and clamps the page switch to the
+;;; first 8 pages, but if we're reading screen data from
+;;; extended locations, this won't work.  We need to patch
+;;; the tile effects reader to read from extended pages
+;;; when the extended flag is set ($62ff)
+.org $35a5e
+  lda $62ff
+  bne +
+   lda $6300,y
+   rol
+   rol
+   rol
+   rol
+   and #$07
++ jsr QuickSwapPageA
+  bne +
+.org $35a73
++:
+.endif
+
+
 ;; Adjusted stab damage for populating sword object ($02)
 .org $35c5f
   lda #$02
@@ -1556,15 +1580,19 @@ ReloadLocationGraphicsAfterChest:
   lda ($10),y
   and #$03
   sta $62fe
-  bpl $3e652
+  bpl +
 .assert < $3e652
+.org $3e652
++:
 
 .org $3ebe8
   ;; note: the AND should no longer be necessary since it's zero already
   and #$3f    ; note: we only need the 20 bit if we expand the rom
-  beq $3ebef
+  beq +
    jsr $c418  ; BankSwitch8k_8000
 .assert $3ebef
+.org $3ebef
++:
 .endif
 
 
@@ -2119,6 +2147,15 @@ TrainerData_Shields:
   .byte $11,$12,$13,$14
 
 .endif  
+
+;;; This is a faster version of page swap that destroys Y
+QuickSwapPageA:
+  sta $6f
+  ldy #$07
+  sty $50
+  sty $8000
+  sta $8001
+  rts
 
 .assert < $3fe00 ; end of free space started at 3f9ba
 

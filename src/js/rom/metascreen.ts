@@ -9,6 +9,7 @@ export class Metascreen {
 
   flag?: 'always' | 'calm';
 
+  // TODO - make data private?
   constructor(readonly rom: Rom, readonly data: MetascreenData) {
     this.screen = data.id;
     for (const tileset of Object.values(data.tilesets)) {
@@ -17,7 +18,7 @@ export class Metascreen {
   }
 
   /**
-   * TODO - what does this do?
+   * Replace occurrences of a metatile within this screen.
    */
   replace(from: number, to: number): Metascreen {
     if (this.screen == null) throw new Error(`cannot replace unused screen`);
@@ -35,5 +36,14 @@ export class Metascreen {
           this.rom.metatilesets[key as keyof Metatilesets] as Metatileset;
       tileset.screens.delete(this);
     }
+  }
+
+  get id(): number {
+    return this.data.id;
+  }
+
+  set id(id: number) {
+    if (this.id === id) return;
+    this.rom.metascreens.renumber(this.id, id);
   }
 }

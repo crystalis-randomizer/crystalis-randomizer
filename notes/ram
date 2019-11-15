@@ -345,6 +345,11 @@ TODO - why would we do DisableNMI and EnableNMI if we have this?
 
 $66..$6b
 --------
+
+$66$67: Address of tileset quadrants tables
+$68$69: Address of tileeffects table
+$6a$6b: Address of flagged tile alternatives table
+
 These are three addresses pertaining to the current map.
  - $3e6d0 writes all three of them from the middle bytes of the graphics table
    - does it use them all right away? are they temporary?

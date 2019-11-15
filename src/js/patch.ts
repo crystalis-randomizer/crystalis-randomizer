@@ -123,6 +123,7 @@ export async function shuffle(rom: Uint8Array,
     _DISABLE_WARP_BOOTS_REUSE: flags.disableShopGlitch(),
     _DISABLE_WILD_WARP: false,
     _DISPLAY_DIFFICULTY: true,
+    _EXTRA_EXTENDED_SCREENS: true,
     _EXTRA_PITY_MP: true,  // TODO: allow disabling this
     _FIX_COIN_SPRITES: true,
     _FIX_OPEL_STATUE: true,
@@ -192,6 +193,11 @@ export async function shuffle(rom: Uint8Array,
   unidentifiedItems(parsed, flags, random);
   shuffleTrades(parsed, flags, random);
   if (flags.randomizeMaps()) shuffleMazes(parsed, flags, random);
+
+  parsed.compressMapData();
+             // TODO - the screens aren't moving?!?
+  parsed.moveScreens(parsed.metatilesets.swamp, 0x20);
+  parsed.moveScreens(parsed.metatilesets.house, 0x21);
 
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.

@@ -15,16 +15,25 @@ export class Screen extends Entity {
   //    - edge and path info
   //    - required/allowed neighbors?
   //    - upgrade paths?
-  base: number;
+  // base: number;
   tiles: number[]; // always 15x16
   used: boolean;
 
   constructor(rom: Rom, id: number) {
     super(rom, id);
     this.used = true; // TODO - track unused tiles?
-    this.base = (id > 0xff ? 0x40 + id : id) << 8;
+    const base = (id > 0xff ? 0x40 + id : id) << 8;
     // metatile index
-    this.tiles = tuple(rom.prg, this.base, 0xf0);
+    this.tiles = tuple(rom.prg, base, 0xf0);
+  }
+
+  clone(newId: number): Screen {
+    // TODO - update the set of screens, too?
+    const clone = new Screen(this.rom, newId);
+    clone.used = this.used;
+    clone.tiles = [...this.tiles];
+    // clone.base = this.base;
+    return clone;
   }
 
   // tile(y: number, x: number): number {
@@ -53,19 +62,24 @@ export class Screen extends Entity {
   }
 
   write(writer: Writer): void {
-    this.base = this.rom.compressedMapData ?
-        this.id << 8 : (this.id > 0xff ? 0x40 + this.id : this.id) << 8;
-    if (this.id < 0x100) {
-      writer.rom.subarray(this.base, this.base + 0xf0).set(this.tiles);
+    let base = this.id << 8;
+    if (this.id > 0xff) {
+      if (!this.rom.compressedMapData) {
+        base += 0x4000;
+      } else {
+        base = (this.id & 0xff00) << 5 | (this.id & 0xff) << 8;
+      }
+    }
+    // this.id << 8 : (this.id > 0xff ? 0x40 + this.id : this.id) << 8;
+    if ((base & 0xfe000) !== 0x14000) {
+      writer.rom.subarray(base, base + 0xf0).set(this.tiles);
     } else {
       // we reuse the last 2 rows of extended screens (covered by HUD) for
-      // global flags in the rom.  -- only for page 7...!?
+      // global flags in the rom.  -- only for page 10...!?
 
-      // TODO - only do this for page 7
+      // TODO - only do this for page 10
 
-      for (let i = 0; i < 0xc0; i++) {
-        writer.rom[this.base + i] = this.tiles[i];
-      }
+      writer.rom.subarray(base, base + 0xc0).set(this.tiles.slice(0, 0xc0);
     }
   }
 
@@ -80,3 +94,37 @@ export class Screen extends Entity {
 //     this.id = id;
 //   }
 // }
+
+export class Screens extends Array<Screen> {
+  readonly unallocated: Array<Screen> = [];
+  constructor(readonly rom: Rom) {
+    super(0x103);
+    // TODO - if maps already compacted, read that instead?
+    //  - need locations to know where to look!
+    for (let i = 0; i < 0x103; i++) {
+      this[i] = new Screen(rom, i);
+    }
+  }
+
+  // moveScreen(oldId: number, newId: number): Screen {
+  //   // Entity.id is const, but maybe shouldn't be?
+  // }
+
+  getScreen(id: number): Screen {
+    const arr = id < 0 ? this.unallocated : this;
+    const i = id < 0 ? ~id : id;
+    return arr[i] || (arr[i] = new Screen(this.rom, id));
+  }
+
+  setScreen(id: number, screen: Screen) {
+    const arr = id < 0 ? this.unallocated : this;
+    const i = id < 0 ? ~id : id;
+    arr[i] = screen;
+  }
+
+  deleteScreen(id: number) {
+    const arr = id < 0 ? this.unallocated : this;
+    const i = id < 0 ? ~id : id;
+    delete arr[i];
+  }
+}

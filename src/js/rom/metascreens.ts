@@ -8,7 +8,7 @@ import {MetascreenData,
         rightEdge, seamlessVertical, topEdge, upStair, waterfallCave,
        } from './metascreendata.js';
 import {Metatileset, Metatilesets} from './metatileset.js';
-import {ScreenFix} from './screenfix.js';
+import {ScreenFix, withRequire} from './screenfix.js';
 
 // BASIC PLAN: Screen is the physical array, Metascreen has the extra info.
 //             Only Metascreen is tied to specific (Meta)tilesets.
@@ -2967,6 +2967,32 @@ export class Metascreens { // extends Set<Metascreen> {
     feature: ['spikes'],
     edges: 'scsc',
     connect: '26ae',
+  });
+  readonly spikesNS_hallW = $({
+    id: ~0xe0,
+    icon: icon`
+      | ░ |
+      |─░ |
+      | ░ |`,
+    tilesets: withRequire(ScreenFix.ExtraSpikes,
+                          {cave: {}, fortress: {}, pyramid: {}, iceCave: {}}),
+    // TODO - annotate the spikes?
+    feature: ['spikes'],
+    edges: 'scs ',
+    connect: '26a',
+  });
+  readonly spikesNS_hallE = $({
+    id: ~0xe1,
+    icon: icon`
+      | ░ |
+      | ░─|
+      | ░ |`,
+    tilesets: withRequire(ScreenFix.ExtraSpikes,
+                          {cave: {}, fortress: {}, pyramid: {}, iceCave: {}}),
+    // TODO - annotate the spikes?
+    feature: ['spikes'],
+    edges: 's sc',
+    connect: '2ae',
   });
   readonly riverCave_deadEndsNS = $({
     id: 0xf0,

@@ -56,9 +56,21 @@ export enum ScreenFix {
   LabyrinthParapets,
   // Adds flaggable doors to various screens.
   SwampDoors,
+  // Adds some extra spike screens.
+  ExtraSpikes,
+}
+
+type Reqs = Record<any, {requires?: ScreenFix[]}>
+export function withRequire<T extends Reqs>(requirement: ScreenFix, props: T) {
+  for (const key in props) {
+    props[key].requires = [requirement];
+  }
+  return props;
+}
+
+
   // // Adds ability to close caves.
   // CloseCaves,
-}
 
 
 // /** Adds a 'CloseCaves' requirement on all the properties. */

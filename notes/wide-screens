@@ -1,0 +1,4 @@
+Wide screens have an ugly edge to them due to c8..cb tiles that are used for
+both inside and outside edges of fortress tileset.  a4, a8, and 8c all have
+78..7b free, so we could copy the edges there, forking the c? tiles for a4/8c
+and forking any of the solid tiles (e.g. 41) in a8.

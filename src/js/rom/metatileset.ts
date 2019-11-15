@@ -44,7 +44,8 @@ export class Metatilesets {
 
   readonly fortress = this._(0xa4, {});
 
-  readonly goa1 = this._(0xa4, {});
+  // variant of the fortress metatileset, but makes use of the parapets
+  readonly labyrinth = this._(0xa4, {});
 
   // same as 88, but trades rivers for prettier ice wall
   readonly iceCave = this._(0xa8, {});

@@ -157,10 +157,10 @@ export class Rom {
     // length is known.
     this.areas = new Areas(this); // note: must come before locations
     this.tilesets = new Tilesets(this);
+    this.tileEffects = seq(11, i => new TileEffects(this, i + 0xb3));
     this.screens = seq(0x103, i => new Screen(this, i));
     this.metatilesets = new Metatilesets(this);
     this.metascreens = new Metascreens(this);
-    this.tileEffects = seq(11, i => new TileEffects(this, i + 0xb3));
     this.triggers = seq(0x43, i => new Trigger(this, 0x80 | i));
     this.patterns = seq(this.chr.length >> 4, i => new Pattern(this, i));
     this.palettes = seq(0x100, i => new Palette(this, i));

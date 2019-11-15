@@ -28,7 +28,10 @@ const $ = initializer<[MetascreenData], Metascreen>();
 type StairType = 'stair:up' | 'stair:down';
 type EdgeType = 'edge:top' | 'edge:bottom' | 'edge:left' | 'edge:right';
 type ConnectionType =
-     StairType | EdgeType | 'cave' | 'door' | 'fortress' | 'gate';
+     StairType | EdgeType | 'cave' | 'door' | 'fortress' | 'gate' | 'swamp' |
+     'seamless';
+
+// NOTE: swamp connects to edge:bottom for cave or town?
 
 export interface Connection {
   readonly type: ConnectionType;
@@ -163,17 +166,31 @@ function rightEdge(top = 7, height = 2): Connection {
 
 /** @param tile Top-left tile of transition (height 2) */
 function seamlessVertical(tile: number, width = 2): Connection {
-  //throw new Error();
-  return {} as Connection;
+  return {
+    type: 'seamless',
+    get dir(): number { throw new Error('not implemented'); },
+    get entrance(): number { throw new Error('not implemented'); },
+    get exits(): number[] { throw new Error('not implemented'); },
+  };
 }
 
 export class Metascreen {
   readonly screen?: number;
 
+  used = false;
+
+  flag?: 'always' | 'calm';
+
   constructor(readonly rom: Rom, readonly data: MetascreenData) {
     this.screen = data.id;
+    for (const tileset of Object.values(data.tilesets)) {
+      if (!tileset!.requires) this.used = true;
+    }
   }
 
+  /**
+   * TODO - what does this do?
+   */
   replace(from: number, to: number): Metascreen {
     if (this.screen == null) throw new Error(`cannot replace unused screen`);
     const scr = this.rom.screens[this.screen];
@@ -182,19 +199,32 @@ export class Metascreen {
     }
     return this;
   }
+
+  remove() {
+    // Remove self from all metatilesets.
+    for (const key in this.data.tilesets) {
+      const tileset =
+          this.rom.metatilesets[key as keyof Metatilesets] as Metatileset;
+      tileset.screens.delete(this);
+    }
+  }
 }
 
+/**
+ * Metadata about the metascreen.  Because these are created per Metascreens
+ * instance, they can actually be mutated as needed.
+ */
 interface MetascreenData {
   /**
    * If the screen exists or is shared with a screen in the vanilla rom, then
-   * this is the screen ID (0..102).  Otherwise, it is a negative number shared
-   * by all the screens that will ultimately have the same ID.
+   * this is the screen ID (0..102).  Otherwise, it is a sparse negative number
+   * shared by all the screens that will ultimately have the same ID.
    */
-  id?: number;
+  id: number;
   /** Representative icon for debug purposes. */
   icon?: Icon;
   /** List of tilesets this screen appears in. */
-  tilesets?: {[name in keyof Metatilesets]?: {
+  tilesets: {[name in keyof Metatilesets]?: {
     /** Fixes needed before screen is usable in the tileset. */
     requires?: ScreenFix[],
     /** ??? */
@@ -202,10 +232,6 @@ interface MetascreenData {
   }};
   /** List of features present. */
   feature?: Feature[];
-  /** ??? */
-  generate?: unknown;
-  /** ??? */
-  migrated?: number;
   /** List of exit specs. */
   exits?: readonly Connection[];
   /** String (length 4) of edge types for matching: up, left, down, right. */
@@ -214,7 +240,18 @@ interface MetascreenData {
    * String of connected access points for routing, grouped by connection type.
    * Points are hex digits [123] for top edge, [567] for left, [9ab] for bottom,
    * or [def] for right edge.  Separators are '|' for impassible, '=' for wall,
-   * ':' for water (i.e. flight required), and '-' for bridge.
+   * ':' for water (i.e. flight required), and '-' for bridge.  Generally only
+   * the middle number is used for each edge (26ae) but for rivers and labyrinth
+   * tilesets, the other numbers are used as well, covering the edges like so
+   * ```
+   *     .123.
+   *     5   d
+   *     6   e
+   *     7   f
+   *     .9ab.
+   * ```
+   * Thus the 4 bit indicates a vertical edge and the 8 bit indicates that it's
+   * the corresponding edge on the next tile.
    */
   connect?: string;
   /** Tile (yx) to place the wall/bridge hitbox, if present. */
@@ -226,10 +263,34 @@ interface MetascreenData {
     /** 16-bit screen coordinates (yyxx) of platform spawn position. */
     coord: number,
   };
-  /** Points of interest in the */
-  poi?: unknown;
-  flag?: unknown;
+  /**
+   * Points of interest on this screen.  Each entry is a priority (1 is most
+   * relevant, 5 is least), followed by a delta-y and a delta-x in pixels
+   * measured from the top-left corner of the screen.  The deltas may be
+   * negative or greater than 0xff, indicating that the POI is actually on a
+   * neighboring screen.
+   */
+  poi?: ReadonlyArray<readonly [number, number?, number?]>,
+
+  /** Updates to apply when applying the given fix. */
+  update?: ReadonlyArray<readonly [ScreenFix, ScreenUpdate]>;
+
+  /** Whether a special flag is needed for this screen. */
+  flag?: 'always' | 'calm' | 'cave' | 'boss';
 }
+
+// NOTE: Listing explicit flags doesn't quite work.
+// enum Flag {
+//   Always = 0x2f0,
+//   Windmill = 0x2ee,
+//   Prison = 0x2d8,
+//   Calm = 0x283,
+//   Styx = 0x2b0,
+//   Draygon1 = 0x28f,
+//   Draygon2 = 0x28d,
+// }
+
+type ScreenUpdate = (s: Metascreen, seed: number, rom: Rom) => boolean;
 
 type Feature =
   // TODO - cave? fortress? edge?  we already have connections to tell us...
@@ -272,6 +333,7 @@ function icon(arr: TemplateStringsArray): Icon {
 
 // Simple tileset-only fixes that unlock some screen-tileset combinations
 export enum ScreenFix {
+  Unknown,
   // Support "long grass" river screens on the grass tileset by copying
   // some tiles from 51..59 into 40..47.
   GrassLongGrass,
@@ -321,12 +383,57 @@ export enum ScreenFix {
   // South-facing town entrances use 07 for the top of the town wall.
   // This could be replaced with (e.g. 8c) or maybe something better.
   DesertTownEntrance,
+  // Labyrinth parapets can be blocked/unblocked with a flag.
+  LabyrinthParapets,
+  // Adds flaggable doors to various screens.
+  SwampDoors,
+  // // Adds ability to close caves.
+  // CloseCaves,
 }
 
+/**
+ * Adds a flag-togglable wall into a labyrinth screen.
+ * @param bit     Unique number for each choice. Use -1 for unconditional.
+ * @param variant 0 or 1 for each option. Use 0 with bit=-1 for unconditional.
+ * @param flag    Position(s) of flag wall.
+ * @param unflag  Position(s) of an existing wall to remove completely.
+ * @return A function to generate the variant.
+ */
+function labyrinthVariant(parentFn: (s: Metascreens) => Metascreen,
+                          bit: number, variant: 0|1,
+                          flag: number|number[], unflag?: number|number[]) {
+  return (s: Metascreen, seed: number, rom: Rom): boolean => {
+    // check variant
+    if (((seed >>> bit) & 1) !== variant) return false;
+    const parent = parentFn(rom.metascreens);
+    for (const pos of typeof flag === 'number' ? [flag] : flag) {
+      rom.screens[s.data.id].set2d(pos, [[0x19, 0x19], [0x1b, 0x1b]]);
+    }
+    for (const pos of typeof unflag === 'number' ? [unflag] : unflag || []) {
+      rom.screens[s.data.id].set2d(pos, [[0xc5, 0xc5], [0xd0, 0xc5]]);
+    }
+    if (s.flag !== 'always') {
+      // parent is a normally-open screen and we're closing it.
+      parent.flag = 'always';
+    } else if (unflag != null) {
+      // parent is the other alternative - delete it.
+      parent.remove();
+    }
+    return true;    
+  };
+}
+
+// /** Adds a 'CloseCaves' requirement on all the properties. */
+// function closeCaves<T extends Record<any, {requires: ScreenFix[]}>>(props: T) {
+//   for (const key in props) {
+//     props[key].requires = [ScreenFix.CloseCaves];
+//   }
+//   return props;
+// }
+      
 export class Metascreens { // extends Set<Metascreen> {
 
   screens = new Set<Metascreen>();
-  fixes = new Set<ScreenFix>();
   screensByFix = new DefaultMap<ScreenFix, Metascreen[]>(() => []);
 
   constructor(readonly rom: Rom) {
@@ -350,20 +457,26 @@ export class Metascreens { // extends Set<Metascreen> {
     });
   }
 
-  registerFix(fix: ScreenFix) {
-    this.fixes.add(fix);
+  registerFix(fix: ScreenFix, seed?: number) {
     for (const screen of this.screensByFix.get(fix)) {
+      // Look for an update script and run it first.  If it returns false then
+      // cancel the operation on this screen.
+      const update =
+          (screen.data.update || []).find((update) => update[0] === fix);
+      if (update) {
+        if (seed == null) throw new Error(`Seed required for update`);
+        if (!update[1](screen, seed, this.rom)) continue;
+      }
+      // For each tileset, remove the requirement, and if it's empty, add the
+      // screen to the tileset.
       for (const tilesetName in screen.data.tilesets) {
         const key = tilesetName as keyof Metatilesets;
-        const data = screen.data.tilesets[key];
-        if (!data || !data.requires) continue;
-        let match = true;
-        for (const require of data.requires) {
-          if (this.fixes.has(require)) continue;
-          match = false;
-          break;
-        }
-        if (match) {
+        const data = screen.data.tilesets[key]!;
+        if (!data.requires) continue;
+        const index = data.requires.indexOf(fix);
+        if (index < 0) continue;
+        data.requires.splice(index, 1);
+        if (!data.requires.length) {
           (this.rom.metatilesets[key] as Metatileset).screens.add(screen);
         }
       }
@@ -480,8 +593,6 @@ export class Metascreens { // extends Set<Metascreen> {
       |█∩█|
       |  █|
       |███|`,
-    // TODO - entrance
-    // TODO - edge
     tilesets: {grass: {}, river: {}, desert: {},
                sea: {requires: [ScreenFix.SeaCaveEntrance]}},
     edges: ' n  ', // n = narrow
@@ -1346,7 +1457,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |╵┃╵|
       | > |
       |   |`,
-    tilesets: {goa1: {}},
+    tilesets: {labyrinth: {}},
     edges: 'w   ',
     connect: '1|2|3',
     exits: [downStair(0xc7)],
@@ -1363,33 +1474,37 @@ export class Metascreens { // extends Set<Metascreen> {
   });
   readonly goaWideHallNS = $({
     id: 0x72,
-    // TODO - don't show this for all fortresses,
-    //        just opt in for the one where we actually use it...
-    // Consider tagging "Goa 1" as a separate tileset?? but then redundant
     icon: icon`
       |│┃│|
       |│┃│|
       |│┃│|`,
-    tilesets: {goa1: {}},
+    tilesets: {labyrinth: {}},
     edges: 'w w ',
     connect: '19|2a|3b',
   });
   readonly goaWideHallNS_blockedRight = $({
-    // NOTE: this is a possible unflagged 72?
+    id: 0x72,
     icon: icon`
       |│┃│|
       |│┃ |
       |│┃│|`,
-    tilesets: {goa1: {}},
-    generate: { // TODO - method to generate this screen
-      id: 0x72,
-      option: 0,
-      flagged: false,
-    },
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
+    update: [[ScreenFix.LabyrinthParapets,
+              labyrinthVariant(s => s.goaWideHallNS, 0, 0, 0x9d)]],
     edges: 'w w ',
     connect: '19|2a|3|b',
-    //   - probably given an existing screen?
-    //   - will need to also tell where to put itself?
+  });
+  readonly goaWideHallNS_blockedLeft = $({
+    id: 0x72,
+    icon: icon`
+      |│┃│|
+      | ┃│|
+      |│┃│|`,
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
+    update: [[ScreenFix.LabyrinthParapets,
+              labyrinthVariant(s => s.goaWideHallNS, 0, 1, 0x51)]],
+    edges: 'w w ',
+    connect: '1|9|2a|3b',
   });
   readonly goaWideArena = $({
     id: 0x73,
@@ -1397,7 +1512,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |╻<╻|
       |┡━┩|
       |│╻│|`,
-    tilesets: {goa1: {}},
+    tilesets: {labyrinth: {}},
     edges: 'w w ',
     connect: '9b|a',
     exits: [upStair(0x27)],
@@ -1431,17 +1546,18 @@ export class Metascreens { // extends Set<Metascreen> {
     edges: '   s',
     connect: 'e',
     exits: [],
-    // TODO - flaggable for door ?????
   });
   readonly swampE_door = $({
+    id: 0x76,
     icon: icon`∩
       | ∩ |
       | ╶─|
       |   |`,
-    tilesets: {swamp: {}},
+    tilesets: {swamp: {requires: [ScreenFix.SwampDoors]}},
+    flag: 'always',
     edges: '   s',
     connect: 'e',
-    exits: [upStair(0x6c)],
+    exits: [cave(0x6c, 'swamp')],
   });
   readonly swampNWSE = $({
     id: 0x77,
@@ -1489,19 +1605,19 @@ export class Metascreens { // extends Set<Metascreen> {
     edges: ' sss',
     connect: '6ae',
     exits: [leftEdge(7, 3), bottomEdge({left: 6, width: 4}), rightEdge(7, 3)],
-    // TODO - flaggable
   });
   readonly swampWSE_door = $({
+    id: 0x7a,
     icon: icon`∩
       | ∩  |
       |─┬─|
       | │ |`,
-    tilesets: {swamp: {}},
-    // NOTE: door screens should not be on an edge!
+    tilesets: {swamp: {requires: [ScreenFix.SwampDoors]}},
+    flag: 'always',
     edges: ' sss',
     connect: '6ae',
-    exits: [upStair(0x66)],
-    // TODO - flaggable
+    // NOTE: door screens should not be on an exit edge!
+    exits: [cave(0x66, 'swamp')],
   });
   readonly swampW = $({
     id: 0x7b,
@@ -1515,14 +1631,16 @@ export class Metascreens { // extends Set<Metascreen> {
     // TODO - flaggable
   });
   readonly swampW_door = $({
+    id: 0x7b,
     icon: icon`∩
       | ∩ |
       |─╴ |
       |   |`,
-    tilesets: {swamp: {}},
+    tilesets: {swamp: {requires: [ScreenFix.SwampDoors]}},
+    flag: 'always',
     edges: ' s  ',
     connect: '6',
-    exits: [upStair(0x64)],
+    exits: [cave(0x64, 'swamp')],
     // TODO - flaggable
   });
   readonly swampArena = $({
@@ -1560,12 +1678,17 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |
       |─┐ |
       | │ |`,
-    tilesets: {swamp: {}},
+    tilesets: {swamp: {requires: [ScreenFix.SwampDoors]}},
+    update: [[ScreenFix.SwampDoors, (s, seed, rom) => {
+      rom.metascreens.swampSW_door.flag = 'always';
+      return true;
+    }]],
     edges: ' ss ',
     connect: '6a',
     exits: [leftEdge(7, 3), bottomEdge({left: 6, width: 4})],
   });
   readonly swampSW_door = $({
+    id: 0x7e,
     icon: icon`∩
       | ∩ |
       |─┐ |
@@ -1573,7 +1696,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {swamp: {}},
     edges: ' ss ',
     connect: '6a',
-    exits: [upStair(0x67)],
+    exits: [cave(0x67, 'swamp')],
   });
   readonly swampEmpty = $({
     id: 0x7f,
@@ -1587,6 +1710,7 @@ export class Metascreens { // extends Set<Metascreen> {
   });
   // Missing swamp screens
   readonly swampN = $({
+    id: ~0x70,
     icon: icon`
       | │ |
       | ╵ |
@@ -1596,6 +1720,7 @@ export class Metascreens { // extends Set<Metascreen> {
     connect: '2',
   });
   readonly swampS = $({
+    id: ~0x71,
     icon: icon`
       |   |
       | ╷ |
@@ -1605,6 +1730,7 @@ export class Metascreens { // extends Set<Metascreen> {
     connect: 'a',
   });
   readonly swampNS = $({
+    id: ~0x72,
     icon: icon`
       | │ |
       | │ |
@@ -1615,6 +1741,7 @@ export class Metascreens { // extends Set<Metascreen> {
     exits: [topEdge(6, 4), bottomEdge({left: 6, width: 4})],
   });
   readonly swampWE = $({
+    id: ~0x72,
     icon: icon`
       |   |
       |───|
@@ -1625,17 +1752,20 @@ export class Metascreens { // extends Set<Metascreen> {
     exits: [leftEdge(7, 3), rightEdge(7, 3)],
   });
   readonly swampWE_door = $({
+    id: ~0x72,
     icon: icon`∩
       | ∩ |
       |───|
       |   |`,
-    tilesets: {swamp: {}},
+    tilesets: {swamp: {requires: [ScreenFix.SwampDoors]}},
+    flag: 'always',
     edges: ' s s',
     connect: '6e',
     exits: [upStair(0x66)],
     // TODO - how to link to swampWE to indicate flag=false?
   });
   readonly swampSE = $({
+    id: ~0x73,
     icon: icon`
       |   |
       | ┌─|
@@ -1646,16 +1776,19 @@ export class Metascreens { // extends Set<Metascreen> {
     exits: [leftEdge(7, 3), bottomEdge({left: 6, width: 4})],
   });
   readonly swampSE_door = $({
+    id: ~0x73,
     icon: icon`∩
       | ∩ |
       | ┌─|
       | │ |`,
-    tilesets: {swamp: {}},
+    tilesets: {swamp: {requires: [ScreenFix.SwampDoors]}},
+    flag: 'always',
     edges: '  ss',
     connect: 'ae',
-    exits: [upStair(0x6a)],
+    exits: [cave(0x6a, 'swamp')],
   });
   readonly swampNSE = $({
+    id: ~0x74,
     icon: icon`
       | │ |
       | ├─|
@@ -2757,7 +2890,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |│┃└|
       |│┗━|
       |└──|`,
-    tilesets: {goa1: {}},
+    tilesets: {labyrinth: {}},
     edges: 'w  w',
     connect: '1f|2e|3d',
   });
@@ -2767,11 +2900,23 @@ export class Metascreens { // extends Set<Metascreen> {
       |│┃└|
       | ┗━|
       |└──|`,
-    tilesets: {goa1: {}},
-    generate: { // TODO - method to generate this screen
-    },
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
+    update: [[ScreenFix.LabyrinthParapets,
+              labyrinthVariant(s => s.goaWideHallNE, 1, 0, 0x61)]],
     edges: 'w  w',
     connect: '1|f|2e|3d',
+  });
+  readonly goaWideHallNE_blockedRight = $({
+    id: 0xe0,
+    icon: icon`
+      |│┃ |
+      |│┗━|
+      |└──|`,
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
+    update: [[ScreenFix.LabyrinthParapets,
+              labyrinthVariant(s => s.goaWideHallNE, 1, 1, 0x0d)]],
+    edges: 'w  w',
+    connect: '1f|2e|3|d',
   });
   readonly wideHallNW = $({
     id: 0xe1,
@@ -2789,8 +2934,11 @@ export class Metascreens { // extends Set<Metascreen> {
       |┘┃│|
       |━┛│|
       |──┘|`,
-    tilesets: {goa1: {}},
-    generate: {}, // fix tiles, then this is the flagged version
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
+    update: [[ScreenFix.LabyrinthParapets,
+              labyrinthVariant(s => s.goaWideHallNW_blockedRight,
+                               -1, 0, 0x6d)]],
+    flag: 'always',
     edges: 'ww  ',
     connect: '15|26|37',
   });
@@ -2800,9 +2948,22 @@ export class Metascreens { // extends Set<Metascreen> {
       |┘┃│|
       |━┛ |
       |──┘|`,
-    tilesets: {goa1: {}},
+    tilesets: {labyrinth: {}},
     edges: 'ww  ',
     connect: '15|26|3|7',
+  });
+  readonly goaWideHallNW_blockedLeft = $({
+    id: 0xe1,
+    icon: icon`
+      | ┃│|
+      |━┛│|
+      |──┘|`,
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
+    update: [[ScreenFix.LabyrinthParapets,
+              labyrinthVariant(s => s.goaWideHallNW_blockedRight,
+                               2, 1, 0x01, 0x6d)]],
+    edges: 'ww  ',
+    connect: '1|5|26|37',
   });
   readonly wideHallSE = $({
     id: 0xe2,
@@ -2820,7 +2981,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |┌──|
       |│┏━|
       |│┃┌|`,
-    tilesets: {goa1: {}},
+    tilesets: {labyrinth: {}},
     edges: '  ww',
     connect: '9d|ae|bf',
   });
@@ -2830,10 +2991,23 @@ export class Metascreens { // extends Set<Metascreen> {
       |┌──|
       | ┏━|
       |│┃┌|`,
-    tilesets: {goa1: {}},
-    generate: {}, // fix tiles, then this is the UNflagged version
+    tilesets: {labyrinth: {}},
+    update: [[ScreenFix.LabyrinthParapets,
+              labyrinthVariant(s => s.goaWideHallSE, 3, 0, 0x61)]],
     edges: '  ww',
     connect: '9|d|ae|bf',
+  });
+  readonly goaWideHallSE_blockedRight = $({
+    id: 0xe2,
+    icon: icon`
+      |┌──|
+      |│┏━|
+      |│┃ |`,
+    tilesets: {labyrinth: {}},
+    update: [[ScreenFix.LabyrinthParapets,
+              labyrinthVariant(s => s.goaWideHallSE, 3, 1, 0xdd)]],
+    edges: '  ww',
+    connect: '9d|ae|b|f',
   });
   readonly wideHallWS = $({
     id: 0xe3,
@@ -2851,8 +3025,11 @@ export class Metascreens { // extends Set<Metascreen> {
       |──┐|
       |━┓│|
       |┐┃│|`,
-    tilesets: {goa1: {}},
-    generate: {}, // fix tiles, then this is the flagged version
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
+    update: [[ScreenFix.LabyrinthParapets,
+              labyrinthVariant(s => s.goaWideHallWS_blockedRight,
+                               -1, 0, 0x9d)]],
+    flag: 'always',
     edges: ' ww ',
     connect: '5b|6a|79',
   });
@@ -2862,9 +3039,22 @@ export class Metascreens { // extends Set<Metascreen> {
       |──┐|
       |━┓ |
       |┐┃│|`,
-    tilesets: {goa1: {}},
+    tilesets: {labyrinth: {}},
     edges: ' ww ',
     connect: '5|b|6a|79',
+  });
+  readonly goaWideHallWS_blockedLeft = $({
+    id: 0xe3,
+    icon: icon`
+      |──┐|
+      |━┓│|
+      | ┃│|`,
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
+    update: [[ScreenFix.LabyrinthParapets,
+              labyrinthVariant(s => s.goaWideHallWS_blockedRight,
+                               4, 0, 0xd1, 0x9d)]],
+    edges: ' ww ',
+    connect: '5b|6a|7|9',
   });
   readonly goaWideHallNS_stairs = $({
     id: 0xe4,
@@ -2872,20 +3062,35 @@ export class Metascreens { // extends Set<Metascreen> {
       |├┨│|
       |│┃│|
       |│┠┤|`,
-    tilesets: {goa1: {}},
+    tilesets: {labyrinth: {}},
     edges: 'w w ',
     connect: '1239ab',
   });
-  readonly goaWideHallNS_stairsBlocked = $({
+  readonly goaWideHallNS_stairsBlocked13 = $({
     id: 0xe4,
     icon: icon`
       |└┨│|
       |╷┃╵|
       |│┠┐|`,
-    tilesets: {goa1: {}},
-    generate: {}, // fix tiles, then this is the UNflagged version
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
+    update: [[ScreenFix.LabyrinthParapets,
+              labyrinthVariant(s => s.goaWideHallNS_stairs,
+                               5, 0, [0x41, 0x8d])]],
     edges: 'w w ',
     connect: '12ab|3|9',
+  });
+  readonly goaWideHallNS_stairsBlocked24 = $({
+    id: 0xe4,
+    icon: icon`
+      |┌┨│|
+      |│┃│|
+      |│┠┘|`,
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
+    update: [[ScreenFix.LabyrinthParapets,
+              labyrinthVariant(s => s.goaWideHallNS_stairs,
+                               5, 1, [0x01, 0xcd])]],
+    edges: 'w w ',
+    connect: '1|239a|b',
   });
   // TODO - custom inverted version of e4 with the top stair on the right
   readonly wideHallNS_deadEnds = $({
@@ -2905,20 +3110,35 @@ export class Metascreens { // extends Set<Metascreen> {
       |│╹│|
       |├─┤|
       |│╻│|`,
-    tilesets: {goa1: {}},
+    tilesets: {labyrinth: {}},
     edges: 'w w ',
     connect: '139b|2|a',
   });
-  readonly goaWideHallNS_deadEndBlocked = $({
+  readonly goaWideHallNS_deadEndBlocked24 = $({
     id: 0xe5,
     icon: icon`
       |╵╹│|
       |┌─┘|
       |│╻╷|`,
-    tilesets: {goa1: {}},
-    generate: {}, // fix tiles, then this is the UNflagged version (TODO - alt)
-    edges: '2 2 ',
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
+    update: [[ScreenFix.LabyrinthParapets,
+              labyrinthVariant(s => s.goaWideHallNS_deadEnd,
+                               6, 0, [0x61, 0xad])]],
+    edges: 'w w ',
     connect: '1|2|39|a|b',
+  });
+  readonly goaWideHallNS_deadEndBlocked13 = $({
+    id: 0xe5,
+    icon: icon`
+      |│╹╵|
+      |└─┐|
+      |╷╻│|`,
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
+    update: [[ScreenFix.LabyrinthParapets,
+              labyrinthVariant(s => s.goaWideHallNS_deadEnd,
+                               6, 1, [0x6d, 0xa1])]],
+    edges: 'w w ',
+    connect: '1b|2|3|9|a',
   });
   readonly wideHallNWSE = $({
     id: 0xe6,
@@ -2936,20 +3156,33 @@ export class Metascreens { // extends Set<Metascreen> {
       |┘┃└|
       |━╋━|
       |┐┃┌|`,
-    tilesets: {goa1: {}},
+    tilesets: {labyrinth: {}},
     edges: 'wwww',
     connect: '26ae|15|3d|79|bf',
   });
-  readonly goaWideHallNWSE_blocked = $({
+  readonly goaWideHallNWSE_blocked13 = $({
     id: 0xe6,
     icon: icon`
       |┘┃ |
       |━╋━|
       | ┃┌|`,
-    tilesets: {goa1: {}},
-    generate: {}, // fix tiles, then this is UNflagged version (TODO - alt)
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
+    update: [[ScreenFix.LabyrinthParapets,
+              labyrinthVariant(s => s.goaWideHallNWSE, 7, 0, [0x0d, 0xd1])]],
     edges: 'wwww',
     connect: '26ae|15|3|d|7|9|bf',
+  });
+  readonly goaWideHallNWSE_blocked24 = $({
+    id: 0xe6,
+    icon: icon`
+      | ┃└|
+      |━╋━|
+      |┐┃ |`,
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
+    update: [[ScreenFix.LabyrinthParapets,
+              labyrinthVariant(s => s.goaWideHallNWSE, 7, 1, [0x01, 0xdd])]],
+    edges: 'wwww',
+    connect: '26ae|1|5|3d|79|b|f',
   });
   readonly wideHallNWE = $({
     id: 0xe7,
@@ -2967,7 +3200,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |┘┃└|
       |━┻━|
       |───|`,
-    tilesets: {goa1: {}},
+    tilesets: {labyrinth: {}},
     edges: 'ww w',
     connect: '26e|15|3d|7f',
   });
@@ -2977,8 +3210,9 @@ export class Metascreens { // extends Set<Metascreen> {
       | ┃ |
       |━┻━|
       |───|`,
-    tilesets: {goa1: {}},
-    generate: {}, // fix tiles, then this is UNflagged
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
+    update: [[ScreenFix.LabyrinthParapets,
+              labyrinthVariant(s => s.goaWideHallNWE, -1, 0, [0x01, 0x0d])]],
     edges: 'ww w',
     connect: '26e|1|5|3|d|7f',
   });
@@ -2998,7 +3232,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |───|
       |━┳━|
       |┐┃┌|`,
-    tilesets: {goa1: {}},
+    tilesets: {labyrinth: {}},
     edges: ' www',
     connect: '6ae|5d|79|bf',
   });
@@ -3008,8 +3242,9 @@ export class Metascreens { // extends Set<Metascreen> {
       |───|
       |━┳━|
       | ┃ |`,
-    tilesets: {goa1: {}},
-    generate: {}, // fix tiles, then this is UNflagged
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
+    update: [[ScreenFix.LabyrinthParapets,
+              labyrinthVariant(s => s.goaWideHallWSE, -1, 0, [0xd1, 0xdd])]],
     edges: ' www',
     connect: '6ae|5d|7|9|b|f',
   });
@@ -3030,7 +3265,7 @@ export class Metascreens { // extends Set<Metascreen> {
       | ┆ |
       |╷┃╷|
       |│┃│|`,
-    tilesets: {goa1: {}},
+    tilesets: {labyrinth: {}},
     edges: 'c w ',
     connect: '2a|9|b',
     exits: [topEdge(6, 4)],
@@ -3051,7 +3286,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |───|
       |━━━|
       |───|`,
-    tilesets: {goa1: {}},
+    tilesets: {labyrinth: {}},
     edges: ' w w',
     connect: '5d|6e|7f',
   });

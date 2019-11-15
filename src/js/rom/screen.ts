@@ -39,6 +39,19 @@ export class Screen extends Entity {
     return new Set(this.tiles);
   }
 
+  /** Write a 2d block into the tile array. */
+  set2d(start: number, data: ReadonlyArray<ReadonlyArray<number | null>>) {
+    const x0 = start & 0xf;
+    const y0 = start >>> 4;
+    for (let y = 0; y < data.length; y++) {
+      const row = data[y];
+      for (let x = 0; x < row.length; x++) {
+        const tile = row[x];
+        if (tile != null) this.tiles[(y0 + y) << 4 | (x0 + x)] = tile;
+      }
+    }
+  }
+
   write(writer: Writer): void {
     this.base = this.rom.compressedMapData ?
         this.id << 8 : (this.id > 0xff ? 0x40 + this.id : this.id) << 8;

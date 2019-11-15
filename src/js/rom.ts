@@ -8,7 +8,7 @@ import {Items} from './rom/item.js';
 import {ItemGets} from './rom/itemget.js';
 import {Locations} from './rom/location.js';
 import {Messages} from './rom/messages.js';
-import {Metascreens} from './rom/metascreen.js';
+import {Metascreens} from './rom/metascreens.js';
 import {Metasprite} from './rom/metasprite.js';
 import {Metatilesets} from './rom/metatileset.js';
 import {Monster} from './rom/monster.js';

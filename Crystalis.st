@@ -38322,7 +38322,7 @@ AdHocSpawnsPart2
         $29d5c              .byte $xx,$xx,$xx,$xx ; 57
         $29d60              .byte $xx,$xx,$xx,$xx ; 58
         $29d64              .byte $xx,$xx,$xx,$xx ; 59
-        $29d68              .byte $xx,$xx,$xx,$xx ; 5a
+        $29d68              .byte $xx,$xx,$xx,$xx ; 5a Flail
         $29d6c              .byte $xx,$xx,$xx,$xx ; 5b
         $29d70              .byte $xx,$xx,$xx,$xx ; 5c
         $29d74              .byte $xx,$xx,$xx,$xx ; 5d
@@ -49769,6 +49769,9 @@ DataTable_381ba
 +       $38239  xx xx:      xxx $xx
         $3823b  xx xx:      xxx #$xx
         $3823d  xx xx:      xxx DrawMetasprite
+        ;; If $380,x:02 is set then draw a second different metasprite with
+        ;;   $380 (clearing :20, setting :01 - so no offset at all)
+        ;;   $300 <- $580
         $3823f  xx xx xx:    xxx $xxxx,x
         $38242  xx:          xxx
         $38243  xx xx xx:     xxx $xxxx,x
@@ -49804,6 +49807,8 @@ DataTable_381ba
 ;;;    $380,x:10  Sprite behind background
 ;;;    $380,x:20  Use the alternate pattern bank
 ;;;    $4e0,x:f8  Step count, affects animation frame
+;;; Additionally, if $380,x:02 is set, we draw a SECOND metasprite $580,x
+;;; with no alternate pattern bank and no direction offset.
 DrawMetasprite
         $38268  xx xx:      xxx #$xx
         $3826a  xx xx:      xxx + ; $38271

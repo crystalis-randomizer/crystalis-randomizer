@@ -68,7 +68,15 @@ export class Graphics {
           const meet = constraint.meet(child);
           if (!meet) throw new Error(`Bad meet for ${m} with ${obj.id}`);
           if (meet) constraint = meet;
-          // TODO - else error? warn?
+          // NOTE: if $380,x & #$02 then we draw a bonus sprite (e.g.
+          // mosquito wings) from $580,x with no shift.
+          if (obj.data[4] & 0x02) {
+            const child2 = this.computeConstraint([obj.data[0x14]], spawns,
+                                                  false, obj.data[1]);
+            const meet2 = constraint.meet(child2);
+            if (!meet2) throw new Error(`Bad meet for ${m} bonus ${obj.id}`);
+            constraint = meet2;
+          }
         }
         this.monsterConstraints.set(parent.id, constraint);
         parent.constraint = constraint;  // for debugging

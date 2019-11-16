@@ -295,7 +295,7 @@ export class Locations extends Array<Location> {
   readonly Crypt_DeadEndRight       = $(0xa4);
   readonly Crypt_Hall2              = $(0xa5);
   readonly Crypt_Draygon2           = $(0xa6);
-  readonly Crypt_Teleporter         = $(0xa7);
+  readonly Crypt_Teleporter         = $(0xa7, {music: 'Crypt-Teleporter'});
   readonly GoaFortress_Entrance     = $(0xa8, {area: a => a.GoaFortress,
                                                music: KELBESQUE.music});
   readonly GoaFortress_Kelbesque    = $(0xa9, {bossScreen: 0x73,
@@ -710,8 +710,13 @@ export class Location extends Entity {
       let pats = [this.spritePatterns[0], undefined];
       if (this.id === 0xa6) pats = [0x53, 0x50]; // draygon 2
       const bossBase = readLittleEndian(writer.rom, 0x1f96b + 2 * bossId) + 0x14000;
+      // Set the "restore music" byte for the boss, but if it's Draygon 2, set
+      // it to zero since no music is actually playing, and if the music in the
+      // teleporter room happens to be the same as the music in the crypt, then
+      // resetting to that means it will just remain silent, and not restart.
+      const restoreBgm = this.id === 0xa6 ? 0 : this.bgm;
       const bossRestore = [
-        ,,, this.bgm,,
+        ,,, restoreBgm,,
         ...this.tilePalettes,,,, this.spritePalettes[0],,
         ,,,, /*pats[0]*/, /*pats[1]*/,
         this.animation,

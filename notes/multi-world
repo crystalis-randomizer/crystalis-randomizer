@@ -1,0 +1,24 @@
+Goal: Multi-world co-op randomization
+
+Main problems:
+ * Need an extra layer of indirection for itemgets
+ * Need to distinguish flags for checks vs items
+
+Basic idea:
+ * Carve out an area of PRG RAM for incoming and outgoing items.
+ * Outgoing items can be a pair of bytes: player #, item #.
+   - could have a queue in case of slow connection?
+ * Incoming items probable should be a single slot: 6 bytes
+   for who it came from, 1 for item #.
+ * Whenever sending or receiving an item, automatically checkpoint.
+   (or else server needs to keep track and re-give? sequence number
+   could do that)
+ * If auto-checkpoint, then probably can't receive items while
+   screen is locked (esp. e.g. insect or draygon 2).
+ * Itemgets need two bytes: item and player who gets it.
+ * Need separate flag for
+     (1) don't respawn chest/boss, and
+     (2) got capability (teleport, telepathy, etc).
+   Currently we conflate these, but at least for (2) we'd need to
+   go back to using e.g. 01a for telepathy, rather than 243, and
+   we need to be careful what the itemget data table contains.

@@ -597,7 +597,7 @@ For monsters:
         when set, sprite is fixed at whatever it was before.
   :04 = touch inflicts poison
         or else shimmering (but not invincible?)
-  :02 = use $580,x as an additional metasprite (e.g. shield)
+  :02 = use $580,x as an additional metasprite (e.g. shield or mosquito wings)
   :01 = non-directional sprite
         when clear, sprite changes with direction,
         but $300 is fixed - seems to just add the dir.
@@ -796,6 +796,8 @@ $581 is normally $0f or $0a or something, but goes to $a3 when a spider web is d
 
 $580 is basically the player's sprite plus $c (c..f if walking; 10..13 if stab)
  - if no shield is equipped, it's 8..b for walking and always 4c for stab
+
+This is also used for mosquito wings.
 
 
 $5a0,x

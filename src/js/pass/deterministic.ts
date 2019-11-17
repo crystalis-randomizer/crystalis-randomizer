@@ -823,6 +823,11 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   rom.npcs[0x68].spawnConditions.set(0x61, [~0x09b, 0x021]);
   dialog(0x68)[0].message.action = 0x02; // disappear
 
+  // Azteca in Shyron (6e) shouldn't spawn after massacre (027)
+  rom.npcs[0x6e].spawnConditions.get(0xf2)!.push(~0x027);
+  // Also the dialog trigger (82) shouldn't happen
+  rom.trigger(0x82).conditions.push(~0x027);
+
   // Kensu in lighthouse ($74/$7e @ $62) ~ redundant flag
   //dialog(0x74, 0x62)[0].flags = [];
 

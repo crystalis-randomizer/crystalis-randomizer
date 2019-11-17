@@ -20663,7 +20663,7 @@ NpcSpawnCondition_6a ; UNUSED
 NpcSpawnCondition_6e ; azteca in shyron temple
         $1c8ee              .byte $xx ; Shyron - Temple
         $1c8ef              .byte $xx,$xx ; 05f chest:03:sword of thunder
-        $1c8f1              .byte $xx,$xx ; 02d NOT
+        $1c8f1              .byte $xx,$xx ; 02d NOT talked with wise men in shyron
         $1c8f3              .byte $xx
 NpcSpawnCondition_73 ; UNUSED
         $1c8f4              .byte $xx ; Pyramid Back - Draygon Revisited

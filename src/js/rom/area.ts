@@ -1,103 +1,162 @@
-import {initializer} from './util.js';
-import {Rom} from '../rom.js';
-
 // Abstraction for a coherent "area", used for grouping together
 // locations for (e.g.) music and palette shuffle, or overworld
 // shuffle.
 
-const area = initializer<readonly [AreaOptions?], Area>();
-interface AreaOptions {
-  // does exit information go here?!? or in areashuffle.ts?
-  //  - needs repetition of all elements in that case?
-  //  - and it's not an enum so it's harder to do (though not impossible).
-  type?: 'overworld'|'connector'|'town'|'terminal';
+// const area = initializer<readonly [AreaOptions?], Area>();
+// interface AreaOptions {
+//   // does exit information go here?!? or in areashuffle.ts?
+//   //  - needs repetition of all elements in that case?
+//   //  - and it's not an enum so it's harder to do (though not impossible).
+//   type?: 'overworld'|'connector'|'town'|'terminal';
+// }
+
+// Used for auto-generated names, but we'll replace them anyway.
+let count = 0;
+
+// TODO - is there any value in mutating areas directly?
+//        we can always just consult the rom if we need something?
+//        we could also even make accessors, WeakMap<Rom, ...>, etc?
+//         - though that breaks encapsulation pretty badly - no way to clone.
+export abstract class Area {
+  readonly name = `Area ${++count}`;
+  readonly abstract exits: readonly [number, number];
+  readonly abstract type: 'overworld' | 'town' | 'connector' | 'terminal';
+}
+
+export abstract class Overworld extends Area {
+  type = 'overworld' as const;
+}
+
+export abstract class Town extends Area {
+  type = 'town' as const;
+}
+
+export class Connector extends Area {
+  type = 'connector' as const;
+  exits = [2, 2] as const;
+}
+
+export class Terminal extends Area {
+  type = 'terminal' as const;
+  exits = [1, 1] as const;
 }
 
 // Export an enum so that we can at least refer to these statically.
-export class Areas {
-  readonly Empty = area();
+export namespace Areas {
+  export const Unused = new Terminal();
   // Overworld areas: these are the "hubs".
-  readonly ValleyOfWind = area({type: 'overworld'});
-  readonly CordelPlain = area();
-  readonly WaterfallValley = area();
-  readonly AngrySea = area();
-  readonly GoaValley = area();
-  readonly Desert1 = area();
-  readonly Desert2 = area();
+  export const ValleyOfWind = new class extends Overworld {
+    exits = [3, 6] as const;
+  };
+  export const CordelPlain = new class extends Overworld {
+    exits = [5, 8] as const;
+  };
+  export const WaterfallValley = new class extends Overworld {
+    exits = [6, 6] as const;
+  };
+  export const AngrySea = new class extends Overworld {
+    exits = [0, 0] as const;
+  };
+  export const GoaValley = new class extends Overworld {
+    exits = [0, 0] as const;
+  };
+  export const Desert1 = new class extends Overworld {
+    exits = [0, 0] as const;
+  };
+  export const Desert2 = new class extends Overworld {
+    exits = [0, 0] as const;
+  };
 
   // Towns, which may be terminal or not.
-  readonly Leaf = area();
-  readonly Brynmaer = area();
-  readonly Oak = area();
-  readonly Amazones = area();
-  readonly Nadare = area(); // TODO - tie this to sabre north????
-  readonly Portoa = area();
-  readonly Joel = area();
-  readonly ZombieTown = area();
-  readonly Swan = area();
-  readonly Shyron = area();
-  readonly Goa = area();
-  readonly Sahara = area();
+  export const Leaf = new class extends Town {
+    exits = [0, 0] as const;
+  };
+  export const Brynmaer = new class extends Town {
+    exits = [0, 0] as const;
+  };
+  export const Oak = new class extends Town {
+    exits = [0, 0] as const;
+  };
+  export const Amazones = new class extends Town {
+    exits = [0, 0] as const;
+  };
+  export const Nadare = new class extends Town {
+    // TODO - tie this to sabre north????
+    exits = [0, 0] as const;
+  };
+  export const Portoa = new class extends Town {
+    exits = [0, 0] as const;
+  };
+  export const Joel = new class extends Town {
+    exits = [0, 0] as const;
+  };
+  export const ZombieTown = new class extends Town {
+    exits = [0, 0] as const;
+  };
+  export const Swan = new class extends Town {
+    exits = [0, 0] as const;
+  };
+  export const Shyron = new class extends Town {
+    exits = [0, 0] as const;
+  };
+  export const Goa = new class extends Town {
+    exits = [0, 0] as const;
+  };
+  export const Sahara = new class extends Town {
+    exits = [0, 0] as const;
+  };
 
   // Connectors.
-  readonly EastCave = area(); // new map
-  readonly WindmillCave = area();
-  readonly SealedCave = area();
-  readonly ZebuCave = area();
-  readonly Swamp = area();
-  readonly MtSabreWest = area();
-  readonly MtSabreNorth = area();
-  readonly LimeTreeValley = area();
-  readonly PortoaPalace = area();
-  readonly FishermanHouse = area(); // connected to new beach map
-  readonly UndergroundChannel = area();
-  readonly JoelPassage = area();
-  readonly EvilSpiritIslandEntrance = area();
-  readonly EvilSpiritIsland = area(); // main cave
-  readonly KirisaPlantCave = area();
-  readonly SwanGate = area();
-  readonly MtHydra = area();
+  export const WindmillCave = new class extends Connector {};
+  export const SealedCave = new class extends Connector {};
+  export const ZebuCave = new class extends Connector {};
+  export const MtSabreWest = new class extends Connector {};
+  export const MtSabreNorth = new class extends Connector {};
+  export const LimeTreeValley = new class extends Connector {};
+  export const PortoaPalace = new class extends Connector {};
+  export const FishermanHouse = new class extends Connector {}; // includes new beach
+  export const UndergroundChannel = new class extends Connector {};
+  export const JoelPassage = new class extends Connector {};
+  export const EvilSpiritIslandEntrance = new class extends Connector {};
+  export const EvilSpiritIsland = new class extends Connector {}; // main cave
+  export const KirisaPlantCave = new class extends Connector {};
+  export const SwanGate = new class extends Connector {};
+  export const MtHydra = new class extends Connector {}; // 3-way
   // TODO - stitch neighboring music/palette ar sages?
-  readonly GoaFortress = area();
-  readonly OasisEntrance = area();
-  readonly OasisCave = area();
-  readonly DesertCave1 = area();
-  readonly SaharaMeadow = area();
-  readonly DesertCave2 = area();
+  export const GoaFortress = new class extends Connector {};
+  export const OasisEntrance = new class extends Connector {};
+  export const OasisCave = new class extends Connector {};
+  export const DesertCave1 = new class extends Connector {};
+  export const SaharaMeadow = new class extends Connector {};
+  export const DesertCave2 = new class extends Connector {};
+
+  // Maybe connectors
+  export const EastCave = new class extends Connector {}; // new map
+  export const Swamp = new class extends Connector {};
 
   // Terminals.
-  readonly Mezame = area(); // includes both shrine and right outside
-                            // TODO - indicate to stitch music with neighbor?
-  readonly Windmill = area(); // incudes the section of wind valley
-  readonly StomHouse = area();
-  readonly WaterfallCave = area();
-  readonly KirisaMeadow = area();
-  readonly FogLampCave = area();
-  readonly LimeTreeLake = area(); // includes mesia shrine
-  readonly Lighthouse = area(); // includes immediate outside
-  readonly SaberaFortress = area();
-  readonly ShyronTemple = area();
-  readonly Styx = area();
-  readonly FortressBasement = area();
-  readonly Pyramid = area();
-  readonly Crypt = area();
-  readonly Tower = area();
-
-  constructor(readonly rom: Rom) {
-    area.commit(this, (key: string, opts?: AreaOptions) =>
-                makeArea(this, key, opts || {}));
-  }
+  export const Mezame = new class extends Terminal {}; // includes maps 0 and 1
+  export const Windmill = new class extends Terminal {}; // incudes part of wind valley
+  export const StomHouse = new class extends Terminal {};
+  export const WaterfallCave = new class extends Terminal {};
+  export const KirisaMeadow = new class extends Terminal {};
+  export const FogLampCave = new class extends Terminal {};
+  export const LimeTreeLake = new class extends Terminal {}; // includes mesia shrine
+  export const Lighthouse = new class extends Terminal {}; // includes immediate outside
+  export const SaberaFortress = new class extends Terminal {};
+  export const ShyronTemple = new class extends Terminal {};
+  export const Styx = new class extends Terminal {};
+  export const FortressBasement = new class extends Terminal {};
+  export const Pyramid = new class extends Terminal {};
+  export const Crypt = new Terminal();
+  export const Tower = new Terminal();
 }
 
-function makeArea(areas: Areas, key: string, opts: AreaOptions): Area {
-  // Transform the key into a (obviously presupposes no property renaming)
-  const name = key.replace(/([a-z])([A-Z0-9])/g, '$1 $2').replace('Of', 'of');
-  return new Area(areas, name, opts);
+function capitalize(key: string): string {
+  return key.replace(/([a-z])([A-Z0-9])/g, '$1 $2').replace('Of', 'of');
 }
 
-
-export class Area {
-  constructor(readonly areas: Areas,
-              readonly name: string,
-              readonly opts: AreaOptions) {}
+// Fix the names
+for (const [key, area] of Object.entries(Areas)) {
+  (area as {name: string}).name = capitalize(key);
 }

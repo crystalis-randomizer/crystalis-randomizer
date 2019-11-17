@@ -152,8 +152,10 @@ export function fixTilesets(rom: Rom) {
   sea.getTile(0xad).copyFrom(0x0a)
       .replaceIn($.beachExitN, $.lighthouseEntrance, $.oceanShrine);
   sea.getTile(0x0a).copyFrom(0xa2); // don't bother setting an alternative.
-  sea.screens.add($.boundaryW_cave);
-  sea.screens.add($.desertCaveEntrance);
+  $.boundaryN_cave.screen.set2d(0x39, [[0x00, 0x00], [0x0a, 0x0a]]);
+  $.boundarySE_cave.screen.set2d(0x4a, [[0x00, 0x00], [0x0a, 0x0a]]);
+  // sea.screens.add($.boundaryW_cave);
+  // sea.screens.add($.desertCaveEntrance);
 
   // sea.getTile(0x0a).copyFrom(0xa2).setTiles([,,0x91,0x91]).setAttrs(0);
   // This does open up screen $ce (desert cave entrance) for use in the sea,

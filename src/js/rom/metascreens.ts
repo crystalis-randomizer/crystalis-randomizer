@@ -2188,7 +2188,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |███|
       |▀∩▀|
       |   |`,
-    tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
+    tilesets: {grass: {}, sea: {}, desert: {},
+               river: {requires: [ScreenFix.SeaCaveEntrance]}},
     edges: ' vov', // o = open, v = open down
     exits: [cave(0x49)],
   });
@@ -2329,6 +2330,7 @@ export class Metascreens { // extends Set<Metascreen> {
       | ╳ |`,
     tilesets: {desert: {},
                // TODO - probably need to pull this out since flags differ
+               // TODO - we could also make this workable in river if we want
                sea: {requires: [ScreenFix.SeaCaveEntrance]}},
     edges: 'oooo',
     exits: [cave(0xa7)],

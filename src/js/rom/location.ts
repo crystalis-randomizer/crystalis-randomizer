@@ -16,7 +16,7 @@ import {Random} from '../random.js';
 type Key = string | symbol | number;
 // Local for defining names on Locations objects.
 interface LocationInit {
-  area?: (areas: Areas) => Area;
+  area?: Area;
   subArea?: string;
   music?: Key | ((area: Area) => Key);
   palette?: Key | ((area: Area) => Key);
@@ -85,17 +85,16 @@ type Init = {(...args: InitParams): Location,
              commit(locations: Locations): void};
 const $: Init = (() => {
   const $ = initializer<[number, LocationInit], Location>();
-  let area!: (areas: Areas) => Area;
+  let area!: Area;
   function $$(id: number, data: LocationInit = {}): Location {
     data = {...data};
     area = data.area = data.area || area;
     return $(id, data);
   };
   ($$ as Init).commit = (locations: Locations) => {
-    const areas = locations.rom.areas;
     $.commit(locations, (prop: string, id: number, init: LocationInit) => {
       const name = upperCamelToSpaces(prop);
-      const area = init.area!(areas);
+      const area = init.area!;
       const music = typeof init.music === 'function' ?
           init.music(area) : init.music != null ?
           init.music : area.name;
@@ -115,11 +114,11 @@ const $: Init = (() => {
 
 export class Locations extends Array<Location> {
 
-  readonly MezameShrine             = $(0x00, {area: a => a.Mezame});
+  readonly MezameShrine             = $(0x00, {area: Areas.Mezame});
   readonly Leaf_OutsideStart        = $(0x01, {music: 1});
-  readonly Leaf                     = $(0x02, {area: a => a.Leaf});
-  readonly ValleyOfWind             = $(0x03, {area: a => a.ValleyOfWind});
-  readonly SealedCave1              = $(0x04, {area: a => a.SealedCave});
+  readonly Leaf                     = $(0x02, {area: Areas.Leaf});
+  readonly ValleyOfWind             = $(0x03, {area: Areas.ValleyOfWind});
+  readonly SealedCave1              = $(0x04, {area: Areas.SealedCave});
   readonly SealedCave2              = $(0x05);
   readonly SealedCave6              = $(0x06);
   readonly SealedCave4              = $(0x07);
@@ -129,27 +128,27 @@ export class Locations extends Array<Location> {
   // INVALID: 0x0b
   readonly SealedCave8              = $(0x0c);
   // INVALID: 0x0d
-  readonly WindmillCave             = $(0x0e, {area: a => a.WindmillCave});
-  readonly Windmill                 = $(0x0f, {area: a => a.Windmill, music: 0});
-  readonly ZebuCave                 = $(0x10, {area: a => a.ZebuCave});
-  readonly MtSabreWest_Cave1        = $(0x11, {area: a => a.MtSabreWest, ...CAVE});
+  readonly WindmillCave             = $(0x0e, {area: Areas.WindmillCave});
+  readonly Windmill                 = $(0x0f, {area: Areas.Windmill, music: 0});
+  readonly ZebuCave                 = $(0x10, {area: Areas.ZebuCave});
+  readonly MtSabreWest_Cave1        = $(0x11, {area: Areas.MtSabreWest, ...CAVE});
   // INVALID: 0x12
   // INVALID: 0x13
-  readonly CordelPlainWest          = $(0x14, {area: a => a.CordelPlain});
+  readonly CordelPlainWest          = $(0x14, {area: Areas.CordelPlain});
   readonly CordelPlainEast          = $(0x15);
   // INVALID: 0x16 -- unused copy of 18
   // INVALID: 0x17
-  readonly Brynmaer                 = $(0x18, {area: a => a.Brynmaer});
-  readonly OutsideStomHouse         = $(0x19, {area: a => a.StomHouse,
+  readonly Brynmaer                 = $(0x18, {area: Areas.Brynmaer});
+  readonly OutsideStomHouse         = $(0x19, {area: Areas.StomHouse,
                                                music: 0});
-  readonly Swamp                    = $(0x1a, {area: a => a.Swamp,
+  readonly Swamp                    = $(0x1a, {area: Areas.Swamp,
                                                bossScreen: 0x7c});
-  readonly Amazones                 = $(0x1b, {area: a => a.Amazones});
-  readonly Oak                      = $(0x1c, {area: a => a.Oak});
+  readonly Amazones                 = $(0x1b, {area: Areas.Amazones});
+  readonly Oak                      = $(0x1c, {area: Areas.Oak});
   // INVALID: 0x1d
-  readonly StomHouse                = $(0x1e, {area: a => a.StomHouse});
+  readonly StomHouse                = $(0x1e, {area: Areas.StomHouse});
   // INVALID: 0x1f
-  readonly MtSabreWest_Lower        = $(0x20, {area: a => a.MtSabreWest});
+  readonly MtSabreWest_Lower        = $(0x20, {area: Areas.MtSabreWest});
   readonly MtSabreWest_Upper        = $(0x21);
   readonly MtSabreWest_Cave2        = $(0x22, CAVE);
   readonly MtSabreWest_Cave3        = $(0x23, CAVE);
@@ -157,7 +156,7 @@ export class Locations extends Array<Location> {
   readonly MtSabreWest_Cave5        = $(0x25, CAVE);
   readonly MtSabreWest_Cave6        = $(0x26, CAVE);
   readonly MtSabreWest_Cave7        = $(0x27, CAVE);
-  readonly MtSabreNorth_Main        = $(0x28, {area: a => a.MtSabreNorth,
+  readonly MtSabreNorth_Main        = $(0x28, {area: Areas.MtSabreNorth,
                                               bossScreen: 0xb5});
   readonly MtSabreNorth_Middle      = $(0x29);
   readonly MtSabreNorth_Cave2       = $(0x2a, CAVE);
@@ -178,21 +177,21 @@ export class Locations extends Array<Location> {
   readonly MtSabreNorth_Cave7       = $(0x39, CAVE);
   // INVALID: 0x3a
   // INVALID: 0x3b
-  readonly Nadare_Inn               = $(0x3c, {area: a => a.Nadare, ...HOUSE});
+  readonly Nadare_Inn               = $(0x3c, {area: Areas.Nadare, ...HOUSE});
   readonly Nadare_ToolShop          = $(0x3d, HOUSE);
   readonly Nadare_BackRoom          = $(0x3e, HOUSE);
   // INVALID: 0x3f
-  readonly WaterfallValleyNorth     = $(0x40, {area: a => a.WaterfallValley});
+  readonly WaterfallValleyNorth     = $(0x40, {area: Areas.WaterfallValley});
   readonly WaterfallValleySouth     = $(0x41);
-  readonly LimeTreeValley           = $(0x42, {area: a => a.LimeTreeValley,
+  readonly LimeTreeValley           = $(0x42, {area: Areas.LimeTreeValley,
                                                music: 0});
-  readonly LimeTreeLake             = $(0x43, {area: a => a.LimeTreeLake,
+  readonly LimeTreeLake             = $(0x43, {area: Areas.LimeTreeLake,
                                                music: 0});
-  readonly KirisaPlantCave1         = $(0x44, {area: a => a.KirisaPlantCave});
+  readonly KirisaPlantCave1         = $(0x44, {area: Areas.KirisaPlantCave});
   readonly KirisaPlantCave2         = $(0x45);
   readonly KirisaPlantCave3         = $(0x46);
-  readonly KirisaMeadow             = $(0x47, {area: a => a.KirisaMeadow});
-  readonly FogLampCave1             = $(0x48, {area: a => a.FogLampCave});
+  readonly KirisaMeadow             = $(0x47, {area: Areas.KirisaMeadow});
+  readonly FogLampCave1             = $(0x48, {area: Areas.FogLampCave});
   readonly FogLampCave2             = $(0x49);
   readonly FogLampCave3             = $(0x4a);
   readonly FogLampCaveDeadEnd       = $(0x4b);
@@ -200,17 +199,17 @@ export class Locations extends Array<Location> {
   readonly FogLampCave5             = $(0x4d);
   readonly FogLampCave6             = $(0x4e);
   readonly FogLampCave7             = $(0x4f);
-  readonly Portoa                   = $(0x50, {area: a => a.Portoa});
-  readonly Portoa_FishermanIsland   = $(0x51, {area: a => a.FishermanHouse,
+  readonly Portoa                   = $(0x50, {area: Areas.Portoa});
+  readonly Portoa_FishermanIsland   = $(0x51, {area: Areas.FishermanHouse,
                                                music: 0});
-  readonly MesiaShrine              = $(0x52, {area: a => a.LimeTreeLake,
+  readonly MesiaShrine              = $(0x52, {area: Areas.LimeTreeLake,
                                                ...MESIA});
   // INVALID: 0x53
-  readonly WaterfallCave1           = $(0x54, {area: a => a.WaterfallCave});
+  readonly WaterfallCave1           = $(0x54, {area: Areas.WaterfallCave});
   readonly WaterfallCave2           = $(0x55);
   readonly WaterfallCave3           = $(0x56);
   readonly WaterfallCave4           = $(0x57);
-  readonly TowerEntrance            = $(0x58, {area: a => a.Tower});
+  readonly TowerEntrance            = $(0x58, {area: Areas.Tower});
   readonly Tower1                   = $(0x59);
   readonly Tower2                   = $(0x5a);
   readonly Tower3                   = $(0x5b);
@@ -218,39 +217,39 @@ export class Locations extends Array<Location> {
   readonly TowerOutsideDyna         = $(0x5d);
   readonly TowerMesia               = $(0x5e, MESIA);
   readonly TowerDyna                = $(0x5f, DYNA);
-  readonly AngrySea                 = $(0x60, {area: a => a.AngrySea});
+  readonly AngrySea                 = $(0x60, {area: Areas.AngrySea});
   readonly BoatHouse                = $(0x61);
-  readonly JoelLighthouse           = $(0x62, {area: a => a.Lighthouse,
+  readonly JoelLighthouse           = $(0x62, {area: Areas.Lighthouse,
                                                music: 0});
   // INVALID: 0x63
-  readonly UndergroundChannel       = $(0x64, {area: a => a.UndergroundChannel});
-  readonly ZombieTown               = $(0x65, {area: a => a.ZombieTown});
+  readonly UndergroundChannel       = $(0x64, {area: Areas.UndergroundChannel});
+  readonly ZombieTown               = $(0x65, {area: Areas.ZombieTown});
   // INVALID: 0x66
   // INVALID: 0x67
-  readonly EvilSpiritIsland1        = $(0x68, {area: a => a.EvilSpiritIslandEntrance,
+  readonly EvilSpiritIsland1        = $(0x68, {area: Areas.EvilSpiritIslandEntrance,
                                                music: 1});
-  readonly EvilSpiritIsland2        = $(0x69, {area: a => a.EvilSpiritIsland});
+  readonly EvilSpiritIsland2        = $(0x69, {area: Areas.EvilSpiritIsland});
   readonly EvilSpiritIsland3        = $(0x6a);
   readonly EvilSpiritIsland4        = $(0x6b);
-  readonly SaberaPalace1            = $(0x6c, {area: a => a.SaberaFortress,
+  readonly SaberaPalace1            = $(0x6c, {area: Areas.SaberaFortress,
                                                bossScreen: 0xfd});
   readonly SaberaPalace2            = $(0x6d);
   readonly SaberaPalace3            = $(0x6e, {bossScreen: 0xfd});
   // INVALID: 0x6f -- Sabera Palace 3 unused copy
-  readonly JoelSecretPassage        = $(0x70, {area: a => a.JoelPassage});
-  readonly Joel                     = $(0x71, {area: a => a.Joel});
-  readonly Swan                     = $(0x72, {area: a => a.Swan, music: 1});
-  readonly SwanGate                 = $(0x73, {area: a => a.SwanGate,
+  readonly JoelSecretPassage        = $(0x70, {area: Areas.JoelPassage});
+  readonly Joel                     = $(0x71, {area: Areas.Joel});
+  readonly Swan                     = $(0x72, {area: Areas.Swan, music: 1});
+  readonly SwanGate                 = $(0x73, {area: Areas.SwanGate,
                                                music: 1});
   // INVALID: 0x74
   // INVALID: 0x75
   // INVALID: 0x76
   // INVALID: 0x77
-  readonly GoaValley                = $(0x78, {area: a => a.GoaValley});
+  readonly GoaValley                = $(0x78, {area: Areas.GoaValley});
   // INVALID: 0x79
   // INVALID: 0x7a
   // INVALID: 0x7b
-  readonly MtHydra                  = $(0x7c, {area: a => a.MtHydra});
+  readonly MtHydra                  = $(0x7c, {area: Areas.MtHydra});
   readonly MtHydra_Cave1            = $(0x7d, CAVE);
   readonly MtHydra_OutsideShyron    = $(0x7e);
   readonly MtHydra_Cave2            = $(0x7f, CAVE);
@@ -262,33 +261,33 @@ export class Locations extends Array<Location> {
   readonly MtHydra_Cave8            = $(0x85, CAVE);
   readonly MtHydra_Cave9            = $(0x86, CAVE);
   readonly MtHydra_Cave10           = $(0x87, CAVE);
-  readonly Styx1                    = $(0x88, {area: a => a.Styx});
+  readonly Styx1                    = $(0x88, {area: Areas.Styx});
   readonly Styx2                    = $(0x89);
   readonly Styx3                    = $(0x8a);
   // INVALID: 0x8b
-  readonly Shyron                   = $(0x8c, {area: a => a.Shyron});
+  readonly Shyron                   = $(0x8c, {area: Areas.Shyron});
   // INVALID: 0x8d
-  readonly Goa                      = $(0x8e, {area: a => a.Goa});
-  readonly GoaFortressBasement      = $(0x8f, {area: a => a.FortressBasement,
+  readonly Goa                      = $(0x8e, {area: Areas.Goa});
+  readonly GoaFortressBasement      = $(0x8f, {area: Areas.FortressBasement,
                                                music: 0});
-  readonly Desert1                  = $(0x90, {area: a => a.Desert1});
-  readonly OasisCaveMain            = $(0x91, {area: a => a.OasisCave});
-  readonly DesertCave1              = $(0x92, {area: a => a.DesertCave1,
+  readonly Desert1                  = $(0x90, {area: Areas.Desert1});
+  readonly OasisCaveMain            = $(0x91, {area: Areas.OasisCave});
+  readonly DesertCave1              = $(0x92, {area: Areas.DesertCave1,
                                                music: 0});
-  readonly Sahara                   = $(0x93, {area: a => a.Sahara});
+  readonly Sahara                   = $(0x93, {area: Areas.Sahara});
   readonly SaharaOutsideCave        = $(0x94, {music: 0}); // TODO - sahara?? generic??
-  readonly DesertCave2              = $(0x95, {area: a => a.DesertCave2, music: 1});
-  readonly SaharaMeadow             = $(0x96, {area: a => a.SaharaMeadow, music: 0});
+  readonly DesertCave2              = $(0x95, {area: Areas.DesertCave2, music: 1});
+  readonly SaharaMeadow             = $(0x96, {area: Areas.SaharaMeadow, music: 0});
   // INVALID: 0x97
-  readonly Desert2                  = $(0x98, {area: a => a.Desert2});
+  readonly Desert2                  = $(0x98, {area: Areas.Desert2});
   // INVALID: 0x99
   // INVALID: 0x9a
   // INVALID: 0x9b
-  readonly Pyramid_Entrance         = $(0x9c, {area: a => a.Pyramid});
+  readonly Pyramid_Entrance         = $(0x9c, {area: Areas.Pyramid});
   readonly Pyramid_Branch           = $(0x9d);
   readonly Pyramid_Main             = $(0x9e);
   readonly Pyramid_Draygon          = $(0x9f);
-  readonly Crypt_Entrance           = $(0xa0, {area: a => a.Crypt});
+  readonly Crypt_Entrance           = $(0xa0, {area: Areas.Crypt});
   readonly Crypt_Hall1              = $(0xa1);
   readonly Crypt_Branch             = $(0xa2);
   readonly Crypt_DeadEndLeft        = $(0xa3);
@@ -296,8 +295,8 @@ export class Locations extends Array<Location> {
   readonly Crypt_Hall2              = $(0xa5);
   readonly Crypt_Draygon2           = $(0xa6);
   readonly Crypt_Teleporter         = $(0xa7, {music: 'Crypt-Teleporter'});
-  readonly GoaFortress_Entrance     = $(0xa8, {area: a => a.GoaFortress,
-                                               music: 1});
+  readonly GoaFortress_Entrance     = $(0xa8, {area: Areas.GoaFortress,
+                                               music: 1}); // same as next area
   readonly GoaFortress_Kelbesque    = $(0xa9, {bossScreen: 0x73,
                                                ...KELBESQUE});
   readonly GoaFortress_Zebu         = $(0xaa, {...KELBESQUE, palette: 1});
@@ -316,91 +315,91 @@ export class Locations extends Array<Location> {
   readonly GoaFortress_Karmine6     = $(0xb5, KARMINE_LOWER);
   readonly GoaFortress_Karmine7     = $(0xb6, {bossScreen: 0xfd,
                                                ...KARMINE_LOWER});
-  readonly GoaFortress_Exit         = $(0xb7, {music: 0});
-  readonly OasisCave_Entrance       = $(0xb8, {area: a => a.OasisEntrance,
+  readonly GoaFortress_Exit         = $(0xb7, {music: 0}); // same as top goa
+  readonly OasisCave_Entrance       = $(0xb8, {area: Areas.OasisEntrance,
                                                music: 2});
-  readonly GoaFortress_Asina        = $(0xb9, {area: a => a.GoaFortress,
+  readonly GoaFortress_Asina        = $(0xb9, {area: Areas.GoaFortress,
                                                ...MADO_UPPER,
                                                bossScreen: 0x91});
   readonly GoaFortress_Kensu        = $(0xba, KARMINE_UPPER);
-  readonly Goa_House                = $(0xbb, {area: a => a.Goa, ...HOUSE});
+  readonly Goa_House                = $(0xbb, {area: Areas.Goa, ...HOUSE});
   readonly Goa_Inn                  = $(0xbc, HOUSE);
   // INVALID: 0xbd
   readonly Goa_ToolShop             = $(0xbe, HOUSE);
   readonly Goa_Tavern               = $(0xbf, HOUSE);
-  readonly Leaf_ElderHouse          = $(0xc0, {area: a => a.Leaf, ...HOUSE});
+  readonly Leaf_ElderHouse          = $(0xc0, {area: Areas.Leaf, ...HOUSE});
   readonly Leaf_RabbitHut           = $(0xc1, HOUSE);
   readonly Leaf_Inn                 = $(0xc2, HOUSE);
   readonly Leaf_ToolShop            = $(0xc3, HOUSE);
   readonly Leaf_ArmorShop           = $(0xc4, HOUSE);
   readonly Leaf_StudentHouse        = $(0xc5, HOUSE);
-  readonly Brynmaer_Tavern          = $(0xc6, {area: a => a.Brynmaer, ...HOUSE});
+  readonly Brynmaer_Tavern          = $(0xc6, {area: Areas.Brynmaer, ...HOUSE});
   readonly Brynmaer_PawnShop        = $(0xc7, HOUSE);
   readonly Brynmaer_Inn             = $(0xc8, HOUSE);
   readonly Brynmaer_ArmorShop       = $(0xc9, HOUSE);
   // INVALID: 0xca
   readonly Brynmaer_ItemShop        = $(0xcb, HOUSE);
   // INVALID: 0xcc
-  readonly Oak_ElderHouse           = $(0xcd, {area: a => a.Oak, ...HOUSE});
+  readonly Oak_ElderHouse           = $(0xcd, {area: Areas.Oak, ...HOUSE});
   readonly Oak_MotherHouse          = $(0xce, HOUSE);
   readonly Oak_ToolShop             = $(0xcf, HOUSE);
   readonly Oak_Inn                  = $(0xd0, HOUSE);
-  readonly Amazones_Inn             = $(0xd1, {area: a => a.Amazones, ...HOUSE});
+  readonly Amazones_Inn             = $(0xd1, {area: Areas.Amazones, ...HOUSE});
   readonly Amazones_ItemShop        = $(0xd2, HOUSE);
   readonly Amazones_ArmorShop       = $(0xd3, HOUSE);
   readonly Amazones_Elder           = $(0xd4, HOUSE);
-  readonly Nadare                   = $(0xd5, {area: a => a.Nadare}); // edge-door?
-  readonly Portoa_FishermanHouse    = $(0xd6, {area: a => a.FishermanHouse,
+  readonly Nadare                   = $(0xd5, {area: Areas.Nadare}); // edge-door?
+  readonly Portoa_FishermanHouse    = $(0xd6, {area: Areas.FishermanHouse,
                                                ...HOUSE, music: 0});
-  readonly Portoa_PalaceEntrance    = $(0xd7, {area: a => a.PortoaPalace});
-  readonly Portoa_FortuneTeller     = $(0xd8, {area: a => a.Portoa,
+  readonly Portoa_PalaceEntrance    = $(0xd7, {area: Areas.PortoaPalace});
+  readonly Portoa_FortuneTeller     = $(0xd8, {area: Areas.Portoa,
                                                ...FORTUNE_TELLER});
   readonly Portoa_PawnShop          = $(0xd9, HOUSE);
   readonly Portoa_ArmorShop         = $(0xda, HOUSE);
   // INVALID: 0xdb
   readonly Portoa_Inn               = $(0xdc, HOUSE);
   readonly Portoa_ToolShop          = $(0xdd, HOUSE);
-  readonly PortoaPalace_Left        = $(0xde, {area: a => a.PortoaPalace,
+  readonly PortoaPalace_Left        = $(0xde, {area: Areas.PortoaPalace,
                                                ...HOUSE});
   readonly PortoaPalace_ThroneRoom  = $(0xdf, HOUSE);
   readonly PortoaPalace_Right       = $(0xe0, HOUSE);
-  readonly Portoa_AsinaRoom         = $(0xe1, {area: a => a.UndergroundChannel,
+  readonly Portoa_AsinaRoom         = $(0xe1, {area: Areas.UndergroundChannel,
                                                ...HOUSE, music: 'asina'});
-  readonly Amazones_ElderDownstairs = $(0xe2, {area: a => a.Amazones,
+  readonly Amazones_ElderDownstairs = $(0xe2, {area: Areas.Amazones,
                                                ...HOUSE});
-  readonly Joel_ElderHouse          = $(0xe3, {area: a => a.Joel, ...HOUSE});
+  readonly Joel_ElderHouse          = $(0xe3, {area: Areas.Joel, ...HOUSE});
   readonly Joel_Shed                = $(0xe4, HOUSE);
   readonly Joel_ToolShop            = $(0xe5, HOUSE);
   // INVALID: 0xe6
   readonly Joel_Inn                 = $(0xe7, HOUSE);
-  readonly ZombieTown_House         = $(0xe8, {area: a => a.ZombieTown,
+  readonly ZombieTown_House         = $(0xe8, {area: Areas.ZombieTown,
                                                ...HOUSE});
   readonly ZombieTown_HouseBasement = $(0xe9, HOUSE);
   // INVALID: 0xea
-  readonly Swan_ToolShop            = $(0xeb, {area: a => a.Swan, ...HOUSE});
+  readonly Swan_ToolShop            = $(0xeb, {area: Areas.Swan, ...HOUSE});
   readonly Swan_StomHut             = $(0xec, HOUSE);
   readonly Swan_Inn                 = $(0xed, HOUSE);
   readonly Swan_ArmorShop           = $(0xee, HOUSE);
   readonly Swan_Tavern              = $(0xef, HOUSE);
   readonly Swan_PawnShop            = $(0xf0, HOUSE);
   readonly Swan_DanceHall           = $(0xf1, HOUSE);
-  readonly Shyron_Temple            = $(0xf2, {area: a => a.ShyronTemple,
+  readonly Shyron_Temple            = $(0xf2, {area: Areas.ShyronTemple,
                                                bossScreen: 0x70});
-  readonly Shyron_TrainingHall      = $(0xf3, {area: a => a.Shyron, ...HOUSE});
+  readonly Shyron_TrainingHall      = $(0xf3, {area: Areas.Shyron, ...HOUSE});
   readonly Shyron_Hospital          = $(0xf4, HOUSE);
   readonly Shyron_ArmorShop         = $(0xf5, HOUSE);
   readonly Shyron_ToolShop          = $(0xf6, HOUSE);
   readonly Shyron_Inn               = $(0xf7, HOUSE);
-  readonly Sahara_Inn               = $(0xf8, {area: a => a.Sahara, ...HOUSE});
+  readonly Sahara_Inn               = $(0xf8, {area: Areas.Sahara, ...HOUSE});
   readonly Sahara_ToolShop          = $(0xf9, HOUSE);
   readonly Sahara_ElderHouse        = $(0xfa, HOUSE);
   readonly Sahara_PawnShop          = $(0xfb, HOUSE);
 
   // New locations, no ID procured yet.
-  readonly EastCave1      = $(-1, {area: a => a.EastCave});
+  readonly EastCave1      = $(-1, {area: Areas.EastCave});
   readonly EastCave2      = $(-1);
   readonly EastCave3      = $(-1);
-  readonly FishermanBeach = $(-1, {area: a => a.FishermanHouse, ...HOUSE});
+  readonly FishermanBeach = $(-1, {area: Areas.FishermanHouse, ...HOUSE});
 
   constructor(readonly rom: Rom) {
     super(0x100);
@@ -409,7 +408,7 @@ export class Locations extends Array<Location> {
     for (let id = 0; id < 0x100; id++) {
       if (this[id]) continue;
       this[id] = new Location(rom, id, {
-        area: rom.areas.Empty,
+        area: Areas.Unused,
         name: '',
         music: '',
         palette: '',

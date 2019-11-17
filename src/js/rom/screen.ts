@@ -79,7 +79,7 @@ export class Screen extends Entity {
 
       // TODO - only do this for page 10
 
-      writer.rom.subarray(base, base + 0xc0).set(this.tiles.slice(0, 0xc0);
+      writer.rom.subarray(base, base + 0xc0).set(this.tiles.slice(0, 0xc0));
     }
   }
 

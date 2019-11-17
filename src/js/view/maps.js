@@ -14,7 +14,7 @@ import {shuffleSwamp} from '../maze/swamp.js';
 import {shuffleGoa1} from '../maze/goa.js';
 import {shuffleGoa} from '../pass/shufflegoa.js';
 import {prepareScreens} from '../pass/shufflemazes.js';
-import {fixTilesets} from '../rom/metascreen.js';
+import {fixTilesets} from '../rom/screenfix.js';
 
 // TODO - move colors to view.js?
 //   - maybe the API I want is drawTile(x, y, id, attr)?

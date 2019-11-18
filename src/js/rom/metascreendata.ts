@@ -62,7 +62,7 @@ export interface MetascreenData {
    * relevant, 5 is least), followed by a delta-y and a delta-x in pixels
    * measured from the top-left corner of the screen.  The deltas may be
    * negative or greater than 0xff, indicating that the POI is actually on a
-   * neighboring screen.
+   * neighboring screen.  Default dy=70 and dx=78.
    */
   poi?: ReadonlyArray<readonly [number, number?, number?]>,
 
@@ -71,6 +71,9 @@ export interface MetascreenData {
 
   /** Whether a special flag is needed for this screen. */
   flag?: 'always' | 'calm' | 'cave' | 'boss';
+
+  /** List of directions the other screen may be in relation to this. */
+  neighbors?: (s: Metascreen) => Array<0|1|2|3>;
 }
 
 export type ScreenUpdate = (s: Metascreen, seed: number, rom: Rom) => boolean;

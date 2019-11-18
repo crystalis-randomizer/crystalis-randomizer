@@ -3,8 +3,11 @@ import {Metatileset, Metatilesets} from './metatileset.js';
 import {Screen} from './screen.js';
 import {Rom} from '../rom.js';
 
+let uidCounter = 0;
+
 export class Metascreen {
   readonly screenId?: number;
+  readonly uid = ++uidCounter;
 
   used = false;
 

@@ -585,12 +585,8 @@ function eastCave(rom: Rom, flags: FlagSet): void {
     l.spritePalettes = [...SealedCave1.spritePalettes] as [number, number];
   }
 
-  // Add entrance to valley of wind
-  // TODO - maybe just do (0x33, [[0x19]]) once we fix that screen for grass
-  ValleyOfWind.writeScreens2d(0x23, [
-    [0x11, 0x0d],
-    [0x09, 0xc2]]);
-  rom.tileEffects[0].effects[0xc0] = 0;
+  // Add entrance to valley of wind (NOTE: requires SeaCave entrance fix)
+  ValleyOfWind.writeScreens2d(0x33, [[0x19]]);
   // TODO - do this once we fix the sea tileset
   // rom.screens[0xc2].tiles[0x5a] = 0x0a;
   // rom.screens[0xc2].tiles[0x5b] = 0x0a;

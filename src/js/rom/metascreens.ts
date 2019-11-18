@@ -1455,6 +1455,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
     edges: 'c c ',
     connect: '2a',
+    poi: [[4]],
   });
   readonly hallWE = $({
     id: 0x82,
@@ -1465,6 +1466,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
     edges: ' c c',
     connect: '6e',
+    poi: [[4]],
   });
   readonly hallSE = $({
     id: 0x83,
@@ -1475,6 +1477,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
     edges: '  cc',
     connect: 'ae',
+    poi: [[2]],
   });
   readonly hallWS = $({
     id: 0x84,
@@ -1485,6 +1488,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
     edges: ' cc ',
     connect: '6a',
+    poi: [[2]],
   });
   readonly hallNE = $({
     id: 0x85,
@@ -1495,6 +1499,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
     edges: 'c  c',
     connect: '2e',
+    poi: [[2]],
   });
   readonly hallNW = $({
     id: 0x86,
@@ -1505,6 +1510,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
     edges: 'cc  ',
     connect: '26',
+    poi: [[2]],
   });
   readonly branchNSE = $({
     id: 0x87,
@@ -1515,6 +1521,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
     edges: 'c cc',
     connect: '2ae',
+    poi: [[3]],
   });
   readonly branchNWSE = $({
     id: 0x88,
@@ -1525,6 +1532,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
     edges: 'cccc',
     connect: '26ae',
+    poi: [[3]],
   });
   readonly branchNWS = $({
     id: 0x89,
@@ -1535,6 +1543,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
     edges: 'ccc ',
     connect: '26a',
+    poi: [[3]],
   });
   readonly branchWSE = $({
     id: 0x8a,
@@ -1545,6 +1554,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
     edges: ' ccc',
     connect: '6ae',
+    poi: [[3]],
   });
   readonly branchNWE = $({
     id: 0x8b,
@@ -1555,6 +1565,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
     edges: 'cc c',
     connect: '26e',
+    poi: [[3]],
   });
   readonly hallNS_stairs = $({
     id: 0x8c,
@@ -1619,7 +1630,7 @@ export class Metascreens { // extends Set<Metascreen> {
     feature: ['wall'],
     edges: ' c c',
     connect: '6=e',
-    wall: 0x67
+    wall: 0x67,
   });
   readonly hallNS_arena = $({
     id: 0x91,
@@ -1631,6 +1642,7 @@ export class Metascreens { // extends Set<Metascreen> {
     feature: ['arena'],
     edges: 'n c ', // 'n' for 'narrow'
     connect: '2a',
+    poi: [[1, 0x60, 0x78]],
   });
   readonly hallNS_arenaWall = $({
     id: 0x92,
@@ -1642,6 +1654,8 @@ export class Metascreens { // extends Set<Metascreen> {
     feature: ['arena', 'wall'],
     edges: 'n c ',
     connect: '2=a',
+    wall: 0x27,
+    poi: [[1, 0x60, 0x78]],
   });
   // NOTE: screen 93 is missing!
   readonly branchNWE_wall = $({
@@ -1751,6 +1765,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
     edges: 'c c ',
     connect: '2|a',
+    poi: [[0, 0x110, 0x78], [0, -0x30, 0x78]],
   });
   readonly deadEndN = $({
     id: 0x9b,
@@ -1761,6 +1776,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
     edges: 'c   ',
     connect: '2',
+    poi: [[0, -0x30, 0x78]],
   });
   readonly deadEndS = $({
     id: 0x9b,
@@ -1771,6 +1787,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
     edges: '  c ',
     connect: 'a',
+    poi: [[0, 0x110, 0x78]],
   });
   readonly deadEndWE = $({
     id: 0x9c,
@@ -1781,6 +1798,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
     edges: ' c c',
     connect: '6|e',
+    poi: [[0, 0x70, 0x108], [0, 0x70, -0x28]],
   });
   readonly deadEndW = $({
     id: 0x9c,
@@ -1791,6 +1809,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
     edges: ' c  ',
     connect: '6',
+    poi: [[0, 0x70, -0x28]],
   });
   readonly deadEndE = $({
     id: 0x9c,
@@ -1801,6 +1820,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
     edges: '   c',
     connect: 'e',
+    poi: [[0, 0x70, 0x108]],
   });
   // NOTE: 9d missing
   readonly hallNS_entrance = $({
@@ -2386,6 +2406,7 @@ export class Metascreens { // extends Set<Metascreen> {
     edges: 'rrrr',
     connect: '15:3d:79-af',
     wall: 0xb6,
+    poi: [[4, 0x00, 0x98]],
   });
   readonly riverCaveNS = $({
     id: 0xd4,
@@ -3027,6 +3048,8 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}},
     edges: 'r r ',
     connect: '1:3|9:b',
+    poi: [[1, -0x30, 0x48], [1, -0x30, 0x98],
+          [1, 0x110, 0x48], [1, 0x110, 0x98]],
   });
   readonly riverCave_deadEndsN = $({
     id: 0xf0,
@@ -3037,6 +3060,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}},
     edges: 'r   ',
     connect: '1:3',
+    poi: [[1, -0x30, 0x48], [1, -0x30, 0x98]],
   });
   readonly riverCave_deadEndsS = $({
     id: 0xf0,
@@ -3047,6 +3071,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}},
     edges: '  r ',
     connect: '9:b',
+    poi: [[1, 0x110, 0x48], [1, 0x110, 0x98]],
   });
   readonly riverCave_deadEndsWE = $({
     id: 0xf1,
@@ -3057,6 +3082,8 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}},
     edges: ' r r',
     connect: '5:7|d:f',
+    poi: [[1, 0x60, 0x108], [1, 0xa0, 0x108],
+          [1, 0x60, -0x28], [1, 0xa0, -0x28]],
   });
   readonly riverCave_deadEndsW = $({
     id: 0xf1,
@@ -3067,6 +3094,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}},
     edges: ' r  ',
     connect: '5:7',
+    poi: [[1, 0x60, -0x28], [1, 0xa0, -0x28]],
   });
   readonly riverCave_deadEndsE = $({
     id: 0xf1,
@@ -3077,6 +3105,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}},
     edges: '   r',
     connect: 'd:f',
+    poi: [[1, 0x60, 0x108], [1, 0xa0, 0x108]],
   });
   readonly riverCaveN_bridge = $({
     id: 0xf2,
@@ -3089,6 +3118,7 @@ export class Metascreens { // extends Set<Metascreen> {
     edges: 'r   ',
     connect: '1-3',
     wall: 0x17,
+    // TODO - consider a poi(2) here?
   });
   readonly riverCaveS_bridge = $({
     id: 0xf2,
@@ -3101,6 +3131,7 @@ export class Metascreens { // extends Set<Metascreen> {
     edges: '  r ',
     connect: '9-b',
     wall: 0xc6,
+    // TODO - consider a poi(2) here?
   });
   readonly riverCaveWSE = $({
     id: 0xf3,
@@ -3131,6 +3162,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}},
     edges: 'r r ',
     connect: '19:3:b',
+    poi: [[1, 0xc0, 0x98], [1, 0x40, 0x98]],
   });
   readonly riverCaveNS_blockedLeft = $({
     id: 0xf6,
@@ -3141,6 +3173,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}},
     edges: 'r r ',
     connect: '1:3b:9',
+    poi: [[1, 0xb0, 0x48], [1, 0x30, 0x48]],
   });
   readonly spikesNS = $({
     id: 0xf7,

@@ -40,6 +40,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   reversibleSwanGate(rom);
   adjustGoaFortressTriggers(rom);
   preventNpcDespawns(rom, flags);
+  leafElderInSabreHeals(rom);
   if (flags.requireHealedDolphinToRide()) requireHealedDolphin(rom);
   if (flags.saharaRabbitsRequireTelepathy()) requireTelepathyForDeo(rom);
 
@@ -645,6 +646,12 @@ function reversibleSwanGate(rom: Rom) {
 
   // Despawn guard trigger requires 10d
   rom.trigger(0xb3).conditions.push(0x10d);
+}
+
+function leafElderInSabreHeals(rom: Rom): void {
+  const leafElder = rom.npcs[0x0d];
+  const summitDialog = leafElder.localDialogs.get(0x35)![0];
+  summitDialog.message.action = 0x17; // heal and disappear.
 }
 
 function preventNpcDespawns(rom: Rom, flags: FlagSet): void {

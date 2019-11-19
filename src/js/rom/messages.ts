@@ -128,10 +128,22 @@ class Message {
     let lineNum = 0;
     let lineLen = 0;
     let space = false;
+    // TODO - change word into something fancier - an array of
+    // (str, len, fallback) so that punctuation after an
+    // expansion doesn't screw us up.
+    // OR... just insert the fallback every time and instead memoize
+    // the expansion to replace at the end if there's no break.
     let word: string[] = [];
     function insert(str: string, len: number = str.length, fallback?: string) {
+      // TODO - what do we do with existing page breaks?
+      //      - if we ever need to _move_ one then we should IGNORE it?
+      //      - same with newlines...
+      // if (str === '#') {
+      //   newline();
+      //   return;
+      // }
       if (lineLen + len > 29) {
-        if (fallback) {
+        if (fallback && lineLen + (fallback + ' ').indexOf(' ') <= 29) {
           const split = fallback.split(/\s+/);
           for (let i = 0; i < split.length; i++) {
             if (i) insertSpace();
@@ -144,6 +156,8 @@ class Message {
       if (str === ' ') {
         parts.push(...word, ' ');
         word = [];
+      } else if (/^[[{]/.test(str)) {
+        word.push({toString: () => str, length: len} as any);
       } else {
         word.push(str);
       }
@@ -167,7 +181,7 @@ class Message {
     for (let i = 0; i < this.text.length; i++) {
       const c = this.text[i];
       const next = this.text[i + 1];
-      if (/\s/.test(c)) {
+      if (/[\s\n#]/.test(c)) {
         insertSpace();
       } else if (c === '{') {
         if (next === ':') {

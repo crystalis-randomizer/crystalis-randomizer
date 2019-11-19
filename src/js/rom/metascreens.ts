@@ -121,13 +121,14 @@ export class Metascreens { // extends Set<Metascreen> {
     if (oldId < 0) this.rom.screens.deleteScreen(oldId);
   }
 
-  readonly mountain = $({
+  readonly overworldEmpty = $({
     id: 0x00,
     icon: icon`
       |███|
       |███|
       |███|`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
+    feature: ['empty'],
     edges: '    ',
   });
   // boundaryW_trees: ???
@@ -1152,7 +1153,9 @@ export class Metascreens { // extends Set<Metascreen> {
       |┡━┩|
       |│╻│|`,
     tilesets: {labyrinth: {}},
-    edges: 'w w ',
+    feature: ['arena'],
+    edges: 'w*w*',
+    allowed: s => s.hasFeature('empty') ? [1, 3] : [],
     connect: '9b|a',
     exits: [upStair(0x27)],
   });
@@ -1290,8 +1293,11 @@ export class Metascreens { // extends Set<Metascreen> {
       | │ |`,
     tilesets: {swamp: {}},
     feature: ['arena'],
-    edges: '  s ',
+    edges: ' *s*',
     connect: 'a',
+    // For left/right neighbors, only allow edge or empty.
+    // TODO - check that this is still the case.
+    allowed: s => s.hasFeature('empty') ? [1, 3] : [],
     // NOTE: no edge exit since we don't want to go straight here...
     // TODO - constraint that we put solids on either side?
     // TODO - undo the attempt to allow this not on the right edge,
@@ -1344,6 +1350,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |
       |   |`,
     tilesets: {swamp: {}},
+    feature: ['empty'],
     edges: '    ',
     connect: '',
   });
@@ -1438,13 +1445,14 @@ export class Metascreens { // extends Set<Metascreen> {
     exits: [topEdge(6, 4), bottomEdge({left: 6, width: 4}), rightEdge(7, 3)],
   });
   // Cave screens
-  readonly empty = $({
+  readonly caveEmpty = $({
     id: 0x80,
     icon: icon`
       |   |
       |   |
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    feature: ['empty'],
     edges: '    ',
   });
   readonly hallNS = $({
@@ -1641,7 +1649,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |└┬┘|`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
     feature: ['arena'],
-    edges: 'n c ', // 'n' for 'narrow'
+    edges: 'n*c*', // 'n' for 'narrow'
+    allowed: s => s.hasFeature('empty') ? [1, 3] : [],
     connect: '2a',
     poi: [[1, 0x60, 0x78]],
   });
@@ -1653,7 +1662,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |└┬┘|`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
     feature: ['arena', 'wall'],
-    edges: 'n c ',
+    edges: 'n*c*',
+    allowed: s => s.hasFeature('empty') ? [1, 3] : [],
     connect: '2=a',
     wall: 0x27,
     poi: [[1, 0x60, 0x78]],
@@ -1929,6 +1939,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {mountainRiver: {}},
     feature: ['bridge'],
     edges: 'wpwp',
+    allowed: s => s.hasFeature('empty') ? [2] : [],
     connect: '6-e:2a',
     wall: 0x87,
   });
@@ -2064,7 +2075,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |█┋█|`,
     tilesets: {mountain: {}, mountainRiver: {}},
     feature: ['arena'],
-    edges: '  l ',
+    edges: ' *l*',
+    allowed: s => s.hasFeature('empty') ? [1, 3] : [],
     connect: 'a',
     exits: [{...upStair(0x37, 3), type: 'cave'}],
   });
@@ -2128,6 +2140,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |█║█|`,
     tilesets: {mountainRiver: {}},
     edges: 'w w ',
+    allowed: s => s.hasFeature('empty') ? [2] : [],
     connect: '2:e',
   });
   readonly mountainPathE_gate = $({
@@ -2170,6 +2183,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |█║█|`,
     tilesets: {mountainRiver: {}},
     edges: 'wpwp',
+    allowed: s => s.hasFeature('empty') ? [2] : [],
     connect: '6e|2|a',
   });
   readonly mountainSlope_underBridge = $({
@@ -2183,13 +2197,14 @@ export class Metascreens { // extends Set<Metascreen> {
     edges: 'spsp',
     connect: '2a', // '2a|6e',
   });
-  readonly mountainSolid = $({
+  readonly mountainEmpty = $({
     id: 0xbf,
     icon: icon`
       |███|
       |███|
       |███|`,
     tilesets: {mountain: {}, mountainRiver: {}},
+    feature: ['empty'],
     edges: '    ',
   });
   readonly boundaryS = $({
@@ -3195,7 +3210,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |└┬┘|`,
     tilesets: {pyramid: {}},
     feature: ['arena'],
-    edges: '  c ',
+    edges: ' *c*',
+    allowed: s => s.hasFeature('empty') ? [1, 3] : [],
     connect: 'a',
     exits: [upStair(0x47)]
   });
@@ -3207,7 +3223,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |└┬┘|`,
     tilesets: {pyramid: {}},
     feature: ['arena', 'pit'],
-    edges: '  w ',
+    edges: ' *w*',
+    allowed: s => s.hasFeature('empty') ? [1, 3] : [],
     connect: 'a',
   });
   readonly cryptArena_draygon2 = $({
@@ -3218,7 +3235,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |┗┳┛|`,
     tilesets: {pyramid: {}},
     feature: ['arena'],
-    edges: 'c w ',
+    edges: 'c*w*',
+    allowed: s => s.hasFeature('empty') ? [1, 3] : [],
     connect: '2a',
     exits: [topEdge(6, 4)],
   });
@@ -3247,7 +3265,8 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {pyramid: {}},
     // NOTE: we could use this for a pit that requires flight to cross?
     feature: ['arena'],
-    edges: 'n w ',
+    edges: 'n*w*',
+    allowed: s => s.hasFeature('empty') ? [1, 3] : [],
     connect: '2a',
     exits: [topEdge()],
   });

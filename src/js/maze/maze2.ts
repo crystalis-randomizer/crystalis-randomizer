@@ -1,7 +1,8 @@
+//import {Metascreen} from '../rom/metascreen.js';
+import {ConnectionType} from '../rom/metascreendata.js';
 import {Metatileset} from '../rom/metatileset.js';
 import {Random} from '../random.js';
 import {DefaultMap} from '../util.js';
-import {ConnectionType} from '../rom/metascreendata.js';
 
 const MapTypes = {
   Overworld: {
@@ -55,46 +56,54 @@ type Uid = number;
 type UidPair = number;
 
 // fake UIDs for the two border options.
-const BORDER = 0xffff as Uid;
-const EDGE_EXIT = 0xfffe as Uid;
+const BORDER = {uid: 0xffff};
+const EDGE_EXIT = {uid: 0xfffe};
 
 // Need a cache of neighbors?
 class NeighborCache {
   // [vertical, horizontal], indexed by dir & 1
-  readonly neighbors = [new Set<UidPair>(), new Set<UidPair>()] as const;
+  readonly allowed = [new Set<UidPair>(), new Set<UidPair>()] as const;
+  readonly neighbors = new DefaultMap<number, Set<Uid>>(() => new Set());
 
-  private add(dir: Dir, s1: Uid, s2: Uid) {
-    this.neighbors[dir & 1].add(dir & 2 ? s1 << 16 | s2 : s2 << 16 | s1);
+  private add(dir: Dir, s1: {uid: number}, s2: {uid: number}) {
+    const u1 = s1.uid;
+    const u2 = s2.uid;
+    this.allowed[dir & 1].add(dir & 2 ? u2 << 16 | u1 : u1 << 16 | u2);
+    this.neighbors.get(u1 << 2 | dir).add(u2);
+    this.neighbors.get(u2 << 2 | (dir ^ 2)).add(u1);
   }
 
   constructor({screens}: Metatileset) {
     for (const s1 of screens) {
+      const e1 = s1.data.edges || '****';
       // Register the screen pairs
       for (const s2 of screens) {
         // Basic idea: compare the edges.  But we need a way to override?
         // Specifically, if there's a * then call a method?  What about
         // allowing (say) normal cave w/ narrow?
-        const e1 = s1.data.edges || '****';
         const e2 = s2.data.edges || '****';
         if (e1[2] !== '*' && e1[2] === e2[0]) {
-          this.neighbors[0].add(s1.uid << 16 | s2.uid);
+          this.add(0, s1, s2);
         }
         if (e1[3] !== '*' && e1[3] === e2[1]) {
-          this.neighbors[1].add(s1.uid << 16 | s2.uid);
+          this.add(1, s1, s2);
         }
         // Maybe call a method if it's there?
-        for (const dir of (s1.data.neighbors ? s1.data.neighbors(s2) : [])) {
-          this.add(dir, s1.uid, s2.uid);
+        for (const dir of (s1.data.allowed ? s1.data.allowed(s2) : [])) {
+          this.add(dir, s1, s2);
         }
       }
       // Register borders
-      const edges = [BORDER, BORDER, BORDER, BORDER];
+      const edges: Array<{uid: number}> = [];
       for (const {type} of s1.data.exits || []) {
         const dir = edgeTypeMap[type];
         if (dir != null) edges[dir] = EDGE_EXIT;
       }
       for (let dir = 0 as Dir; dir < 4; dir++) {
-        this.add(dir, s1.uid, edges[dir]);
+        // Edges may be allowed as either exits, non-exits, or not at all.
+        let edge = edges[dir];
+        if (edge == null) edge = borderMap[e1[dir]];
+        if (edge != null) this.add(dir, s1, edge);
       }
     }
   }
@@ -106,6 +115,10 @@ class NeighborCache {
   // edge types in inconsistent ways (e.g. 'v' for both grass and boundary)
 }
 
+const borderMap: {[c: string]: {uid: number}} = {
+  '*': EDGE_EXIT,
+  ' ': EDGE_EXIT,
+};
 const edgeTypeMap: {[C in ConnectionType]?: number} = {
   'edge:top': 0,
   'edge:left': 1,
@@ -129,10 +142,10 @@ export class Maze {
     this.map = new Array((height + 2) << 4).fill(undefined);
     // Initialize an empty map with closed borders all around.
     for (let x = 0; x < width; x++) {
-      this.map[ind(-1, x)] = this.map[ind(height, x)] = BORDER;
+      this.map[ind(-1, x)] = this.map[ind(height, x)] = BORDER.uid;
     }
     for (let y = 0; y < width; y++) {
-      this.map[ind(y, -1)] = this.map[ind(y, width)] = BORDER;
+      this.map[ind(y, -1)] = this.map[ind(y, width)] = BORDER.uid;
     }
   }
 
@@ -146,3 +159,6 @@ export class Maze {
 function ind(y: number, x: number): number {
   return ((y + 1) << 4) + x;
 }
+
+
+// TODO - find a place for a Map<number, Metascreen> but what to do with borders?

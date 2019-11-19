@@ -64,6 +64,10 @@ export type MetatilesetNames = InitialProps<Metatilesets>;
 // Mappping from metatile ID to tile quads and palette number.
 export class Metatileset {
 
+  // TODO - maintain an invariant Map<screen-id, Set<Metascreen>>,
+  //        will need to lock down (meta)screen ID field to ensure
+  //        invariant is kept.
+
   // TODO - permanently attach behavior
   // Store more information, such as screen types, edge types, etc.
   // Names...

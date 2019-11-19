@@ -73,14 +73,14 @@ export interface MetascreenData {
   flag?: 'always' | 'calm' | 'cave' | 'boss';
 
   /** List of directions the other screen may be in relation to this. */
-  neighbors?: (s: Metascreen) => Array<0|1|2|3>;
+  allowed?: (s: Metascreen) => Array<0|1|2|3>;
 }
 
 export type ScreenUpdate = (s: Metascreen, seed: number, rom: Rom) => boolean;
 
 export type Feature =
   // TODO - cave? fortress? edge?  we already have connections to tell us...
-  'pit' | 'arena' | 'spikes' | 'bridge' | 'wall' | 'stairs' |
+  'pit' | 'arena' | 'spikes' | 'bridge' | 'wall' | 'stairs' | 'empty' |
   'portoa1' | 'portoa2' | 'portoa3' | // path from sabre to portoa
   'lake' | 'overBridge' | 'underBridge' | 'whirlpool' |
   'lighthouse' | 'cabin' | 'windmill' | 'altar' | 'pyramid' | 'crypt';

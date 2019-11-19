@@ -1,4 +1,4 @@
-import {MetascreenData} from './metascreendata.js';
+import {Feature, MetascreenData} from './metascreendata.js';
 import {Metatileset, Metatilesets} from './metatileset.js';
 import {Screen} from './screen.js';
 import {Rom} from '../rom.js';
@@ -8,6 +8,8 @@ let uidCounter = 0;
 export class Metascreen {
   readonly screenId?: number;
   readonly uid = ++uidCounter;
+
+  private readonly _features = new Set<Feature>();
 
   used = false;
 
@@ -19,6 +21,17 @@ export class Metascreen {
     for (const tileset of Object.values(data.tilesets)) {
       if (!tileset!.requires) this.used = true;
     }
+    for (const feature of data.feature || []) {
+      this._features.add(feature);
+    }
+  }
+
+  features(): Iterable<Feature> {
+    return this._features.values();
+  }
+
+  hasFeature(feature: Feature): boolean {
+    return this._features.has(feature);
   }
 
   /**

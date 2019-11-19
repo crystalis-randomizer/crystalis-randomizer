@@ -1,0 +1,26 @@
+export const MONSTER_FLAGS = {
+    section: 'Monsters',
+    text: `Monster stats are always normalized by scaling level.`,
+    prefix: 'M',
+    flags: [
+        {
+            flag: 'Mr',
+            name: 'Randomize monsters',
+            text: `Monster locations are shuffled, with the exception of sea creatures
+             and tower robots.`,
+        },
+        {
+            flag: 'Me',
+            name: 'Shuffle monster weaknesses',
+            text: `Monster and boss elemental weaknesses are shuffled.`,
+        },
+        {
+            flag: 'Mt',
+            hard: true,
+            name: 'Shuffle tower robots',
+            text: `Tower robots will be shuffled into the normal pool.  At some
+             point, normal monsters may be shuffled into the tower as well.`,
+        }
+    ],
+};
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoibW9uc3RlcnMuanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi8uLi8uLi9zcmMvanMvZmxhZ3MvbW9uc3RlcnMudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBRUEsTUFBTSxDQUFDLE1BQU0sYUFBYSxHQUFnQjtJQUN4QyxPQUFPLEVBQUUsVUFBVTtJQUNuQixJQUFJLEVBQUUsdURBQXVEO0lBQzdELE1BQU0sRUFBRSxHQUFHO0lBRVgsS0FBSyxFQUFFO1FBQ0w7WUFDRSxJQUFJLEVBQUUsSUFBSTtZQUNWLElBQUksRUFBRSxvQkFBb0I7WUFDMUIsSUFBSSxFQUNBOytCQUNxQjtTQUMxQjtRQUNEO1lBQ0UsSUFBSSxFQUFFLElBQUk7WUFDVixJQUFJLEVBQUUsNEJBQTRCO1lBQ2xDLElBQUksRUFBRSxxREFBcUQ7U0FDNUQ7UUFDRDtZQUNFLElBQUksRUFBRSxJQUFJO1lBQ1YsSUFBSSxFQUFFLElBQUk7WUFDVixJQUFJLEVBQUUsc0JBQXNCO1lBQzVCLElBQUksRUFBRTs0RUFDZ0U7U0FxQnZFO0tBQ0Y7Q0FDRixDQUFDIiwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHtGbGFnU2VjdGlvbn0gZnJvbSAnLi9mbGFnLmpzJztcblxuZXhwb3J0IGNvbnN0IE1PTlNURVJfRkxBR1M6IEZsYWdTZWN0aW9uID0ge1xuICBzZWN0aW9uOiAnTW9uc3RlcnMnLFxuICB0ZXh0OiBgTW9uc3RlciBzdGF0cyBhcmUgYWx3YXlzIG5vcm1hbGl6ZWQgYnkgc2NhbGluZyBsZXZlbC5gLFxuICBwcmVmaXg6ICdNJyxcblxuICBmbGFnczogW1xuICAgIHtcbiAgICAgIGZsYWc6ICdNcicsXG4gICAgICBuYW1lOiAnUmFuZG9taXplIG1vbnN0ZXJzJyxcbiAgICAgIHRleHQ6XG4gICAgICAgICAgYE1vbnN0ZXIgbG9jYXRpb25zIGFyZSBzaHVmZmxlZCwgd2l0aCB0aGUgZXhjZXB0aW9uIG9mIHNlYSBjcmVhdHVyZXNcbiAgICAgICAgICAgICBhbmQgdG93ZXIgcm9ib3RzLmAsXG4gICAgfSxcbiAgICB7XG4gICAgICBmbGFnOiAnTWUnLFxuICAgICAgbmFtZTogJ1NodWZmbGUgbW9uc3RlciB3ZWFrbmVzc2VzJyxcbiAgICAgIHRleHQ6IGBNb25zdGVyIGFuZCBib3NzIGVsZW1lbnRhbCB3ZWFrbmVzc2VzIGFyZSBzaHVmZmxlZC5gLFxuICAgIH0sXG4gICAge1xuICAgICAgZmxhZzogJ010JyxcbiAgICAgIGhhcmQ6IHRydWUsXG4gICAgICBuYW1lOiAnU2h1ZmZsZSB0b3dlciByb2JvdHMnLFxuICAgICAgdGV4dDogYFRvd2VyIHJvYm90cyB3aWxsIGJlIHNodWZmbGVkIGludG8gdGhlIG5vcm1hbCBwb29sLiAgQXQgc29tZVxuICAgICAgICAgICAgIHBvaW50LCBub3JtYWwgbW9uc3RlcnMgbWF5IGJlIHNodWZmbGVkIGludG8gdGhlIHRvd2VyIGFzIHdlbGwuYCxcblxuICAgICAgLy8gfSwge1xuICAgICAgLy8gICBmbGFnOiAnTSEnLFxuICAgICAgLy8gICBuYW1lOiAnTm8gc2FmZXR5IGNoZWNrcycsXG4gICAgICAvLyAgIHRleHQ6IGBOb3JtYWxseSB0aGVyZSBhcmUgc29tZSByZWFzb25hYmlsaXR5IGxpbWl0cyBvbiB0aGUgbW9uc3RlcnNcbiAgICAgIC8vICAgICAgICAgIHRoYXQgY2FuIGJlIHNodWZmbGVkIChmbHllcnMgb25seSBpbiBsYXJnZXIgYXJlYXMsIGFuZCBhdCBtb3N0XG4gICAgICAvLyAgICAgICAgICBvbmUgb3IgdHdvOyAoZnV0dXJlOiBsYXJnZSBtb25zdGVycyBhbmQgZmxhaWwgc3dpbmdlcnMgZG9uJ3RcbiAgICAgIC8vICAgICAgICAgIGNyb3dkIG91dCBzbWFsbCBoYWxsd2F5cywgZXRjKSwgYnV0IHRoZXNlIGNoZWNrcyBjYW4gYmVcbiAgICAgIC8vICAgICAgICAgIGRpc2FibGVkIGZvciBleHRyYSBjcmF6aW5lc3MgYW5kIGNoYWxsZW5nZS5gLFxuICAgICAgLy8gfSwge1xuICAgICAgLy8gICBmbGFnOiAnTXMnLFxuICAgICAgLy8gICBoYXJkOiB0cnVlLFxuICAgICAgLy8gICBuYW1lOiAnRG9uXFwndCBzY2FsZSBtb25zdGVyIGRpZmZpY3VsdHknLFxuICAgICAgLy8gICB0ZXh0OiBgTW9uc3RlciBkaWZmaWN1bHR5IG5vcm1hbGx5IHNjYWxlcyB3aXRoIGdhbWUgcHJvZ3Jlc3Npb25cbiAgICAgIC8vICAgcmF0aGVyXG4gICAgICAvLyAgICAgICAgICB0aGFuIGJlaW5nIGhhcmQtY29kZWQgYmFzZWQgb24gbG9jYXRpb24gdG8gZW5zdXJlIHRoYXRcbiAgICAgIC8vICAgICAgICAgIG1vbnN0ZXJzIHN0YXkgcmVsZXZhbnQgdGhyb3VnaG91dCB0aGUgZ2FtZS4gIFRoZSBjdXJyZW50XG4gICAgICAvLyAgICAgICAgICBkaWZmaWN1bHR5IGxldmVsIGNhbiBiZSBzZWVuIG5leHQgdG8gdGhlIHBsYXllcidzIGV4cGVyaWVuY2VcbiAgICAgIC8vICAgICAgICAgIGxldmVsIG9uIHRoZSByaWdodCBzaWRlIG9mIHRoZSBIVUQuICBUaGlzIHNjYWxpbmcgY2FuIGJlXG4gICAgICAvLyAgICAgICAgICB0dXJuZWQgb2ZmLCBidXQgaXQgaXMgbm90IHJlY29tbWVuZGVkLmAsXG4gICAgfVxuICBdLFxufTtcbiJdfQ==

@@ -316,7 +316,7 @@ export class Metascreens { // extends Set<Metascreen> {
     // TODO - this is super custom, no edges for it?
     // It needs special handling, at least.
     feature: ['portoa3'],
-    edges: '**>r',
+    edges: '2*>r',
     exits: [leftEdge(1)],
   });
   readonly slopeAbovePortoa = $({
@@ -327,7 +327,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |│  |`,
     tilesets: {river: {}},
     feature: ['portoa2'],
-    edges: '***v',
+    edges: '1*2v',
   });
   readonly riverBendSE = $({
     id: 0x14,
@@ -402,6 +402,7 @@ export class Metascreens { // extends Set<Metascreen> {
                desert: {requires: [ScreenFix.DesertRocks]},
                // Sea has no need for this screen?  Go to some other beach?
                sea: {requires: [ScreenFix.SeaRocks]}},
+    // NOTE: the edge is not 'n' because it's off-center.
     edges: '>* ^',
     exits: [leftEdge(0xb)],
   });
@@ -752,7 +753,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |█∩█|
       |█↓█|`,
     tilesets: {river: {}},
-    edges: '  * ',
+    edges: '  1 ',
     exits: [cave(0x66)],
   });
   readonly cornerNE_flowers = $({
@@ -2340,7 +2341,7 @@ export class Metascreens { // extends Set<Metascreen> {
       | vv|`,
     tilesets: {desert: {}},
     feature: ['lake'],
-    edges: 'oolo',
+    edges: 'oo3o',
   });
   readonly desertCaveEntrance = $({
     id: 0xce,
@@ -2362,7 +2363,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |▄∩v|
       |█▌ |`,
     tilesets: {desert: {}},
-    edges: 'l^>o',
+    edges: '3^>o',
     exits: [upStair(0x47)],
   });
   readonly channelEndW_cave = $({

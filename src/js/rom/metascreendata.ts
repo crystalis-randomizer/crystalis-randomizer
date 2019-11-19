@@ -102,9 +102,9 @@ export function icon(arr: TemplateStringsArray): Icon {
 }
 
 
-type StairType = 'stair:up' | 'stair:down';
-type EdgeType = 'edge:top' | 'edge:bottom' | 'edge:left' | 'edge:right';
-type ConnectionType =
+export type StairType = 'stair:up' | 'stair:down';
+export type EdgeType = 'edge:top' | 'edge:bottom' | 'edge:left' | 'edge:right';
+export type ConnectionType =
      StairType | EdgeType | 'cave' | 'door' | 'fortress' | 'gate' | 'swamp' |
      'seamless';
 

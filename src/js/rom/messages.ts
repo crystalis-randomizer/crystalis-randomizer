@@ -134,7 +134,8 @@ class Message {
     // OR... just insert the fallback every time and instead memoize
     // the expansion to replace at the end if there's no break.
     let word: string[] = [];
-    function insert(str: string, len: number = str.length, fallback?: string) {
+    const expansions = new Map<string, string>();
+    function insert(str: string, len: number = str.length) {
       // TODO - what do we do with existing page breaks?
       //      - if we ever need to _move_ one then we should IGNORE it?
       //      - same with newlines...
@@ -142,21 +143,11 @@ class Message {
       //   newline();
       //   return;
       // }
-      if (lineLen + len > 29) {
-        if (fallback && lineLen + (fallback + ' ').indexOf(' ') <= 29) {
-          const split = fallback.split(/\s+/);
-          for (let i = 0; i < split.length; i++) {
-            if (i) insertSpace();
-            insert(split[i]);
-          }
-          return;
-        }
-        newline();
-      }
+      if (lineLen + len > 29) newline();
       if (str === ' ') {
         parts.push(...word, ' ');
         word = [];
-      } else if (/^[[{]/.test(str)) {
+      } else if (/^[[{]:/.test(str)) {
         word.push({toString: () => str, length: len} as any);
       } else {
         word.push(str);
@@ -167,6 +158,13 @@ class Message {
     function insertSpace() {
       if (!space) insert(' ');
       space = true;
+    }
+    function insertAll(str: string) {
+      const split = str.split(/\s+/);
+      for (let i = 0; i < split.length; i++) {
+        if (i) insertSpace();
+        insert(split[i]);
+      }
     }
     function newline() {
       lineLen = 1 + word.reduce((a, b) => a + b.length, 0);
@@ -190,7 +188,8 @@ class Message {
           const colon = this.text.indexOf(':', i);
           const id = Number.parseInt(this.text.substring(i + 1, colon), 16);
           const name = this.messages.extraWords[6][id];
-          insert(`{${id.toString(16)}:${name}}`, name.length, name);
+          expansions.set(name, `{${id.toString(16)}:${name}}`);
+          insertAll(name);
         }
         i = this.text.indexOf('}', i);
       } else if (c === '[') {
@@ -201,7 +200,8 @@ class Message {
           const colon = this.text.indexOf(':', i);
           const id = Number.parseInt(this.text.substring(i + 1, colon), 16);
           const name = this.messages.rom.items[id].messageName;
-          insert(`[${id.toString(16)}:${name}]`, name.length, name);
+          expansions.set(name, `[${id.toString(16)}:${name}]`);
+          insertAll(name);
         }
         i = this.text.indexOf(']', i);
       } else {
@@ -209,7 +209,11 @@ class Message {
       }
     }
     parts.push(...word);
-    this.text = parts.join('');
+    let text = parts.join('');
+    for (const [full, abbr] of expansions) {
+      if (text.includes(full)) text = text.split(full).join(abbr);
+    }
+    this.text = text;
   }
 
   checkText(): boolean {

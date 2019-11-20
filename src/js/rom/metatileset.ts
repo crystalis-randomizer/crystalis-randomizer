@@ -62,7 +62,7 @@ export class Metatilesets {
 export type MetatilesetNames = InitialProps<Metatilesets>;
 
 // Mappping from metatile ID to tile quads and palette number.
-export class Metatileset {
+export class Metatileset implements Iterable<Metascreen> {
 
   // TODO - maintain an invariant Map<screen-id, Set<Metascreen>>,
   //        will need to lock down (meta)screen ID field to ensure
@@ -73,11 +73,16 @@ export class Metatileset {
   // Names...
   // Does palette info belong here?  Maybe...
 
-  readonly screens = new Set<Metascreen>();
+  private readonly _screens = new Set<Metascreen>();
+  private _screenMultimap: Map<number, Set<Metascreen>> | null = null;
 
   constructor(readonly rom: Rom,
               readonly tilesetId: number,
               readonly data: MetatilesetData) {}
+
+  [Symbol.iterator]() {
+    return this._screens[Symbol.iterator]();
+  }
 
   // TODO - is this unused?
   get tileset(): Tileset {
@@ -91,6 +96,35 @@ export class Metatileset {
   getTile(id: number): Metatile {
     // TODO - does this rather belong in tileset.ts?
     return new Metatile(this.tileset, id);
+  }
+
+  addScreen(screen: Metascreen) {
+    this._screens.add(screen);
+    screen.unsafeAddTileset(this);
+    this.invalidateScreenMultimap();
+  }
+
+  deleteScreen(screen: Metascreen) {
+    this._screens.delete(screen);
+    screen.unsafeRemoveTileset(this);
+    this.invalidateScreenMultimap();
+  }
+
+  getMetascreens(screenId: number): ReadonlySet<Metascreen> {
+    let map = this._screenMultimap;
+    if (!map) {
+      map = this._screenMultimap = new Map();
+      for (const screen of this._screens) {
+        let set = map.get(screen.id);
+        if (!set) map.set(screen.id, set = new Set());
+        set.add(screen);
+      }
+    }
+    return EMPTY_SET;
+  }
+
+  invalidateScreenMultimap() {
+    this._screenMultimap = null;
   }
 
   // passage(tileId: number, tileEffects = this.effects()): Terrain {
@@ -359,3 +393,7 @@ function r(a: number, b: number): readonly number[] {
 }
 
 const [] = [TERRAIN_BY_PALETTE, ALLOWED_PALETTES];
+
+const EMPTY_SET: Set<any> = new class extends Set {
+  add(): this { throw new Error(); }
+}

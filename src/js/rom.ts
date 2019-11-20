@@ -625,7 +625,7 @@ export class Rom {
     while ((i & 0xff) < 0x20 && this.screens[i]) {
       i++;
     }
-    for (const screen of tileset.screens) {
+    for (const screen of tileset) {
       if (screen.id >= 0x100) continue;
       if ((i & 0xff) === 0x20) throw new Error(`No room left on page.`);
       const prev = screen.id;

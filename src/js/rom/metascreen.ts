@@ -6,10 +6,10 @@ import {Rom} from '../rom.js';
 let uidCounter = 0;
 
 export class Metascreen {
-  readonly screenId?: number;
   readonly uid = ++uidCounter;
 
   private readonly _features = new Set<Feature>();
+  private readonly _tilesets = new Set<Metatileset>();
 
   used = false;
 
@@ -17,7 +17,6 @@ export class Metascreen {
 
   // TODO - make data private?
   constructor(readonly rom: Rom, readonly data: MetascreenData) {
-    this.screenId = data.id;
     for (const tileset of Object.values(data.tilesets)) {
       if (!tileset!.requires) this.used = true;
     }
@@ -38,20 +37,21 @@ export class Metascreen {
    * Replace occurrences of a metatile within this screen.
    */
   replace(from: number, to: number): Metascreen {
-    if (this.screenId == null) throw new Error(`cannot replace unused screen`);
-    const scr = this.rom.screens[this.screenId];
-    for (let i = 0; i < scr.tiles.length; i++) {
-      if (scr.tiles[i] === from) scr.tiles[i] = to;
+    const {tiles} = this.screen;
+    for (let i = 0; i < tiles.length; i++) {
+      if (tiles[i] === from) tiles[i] = to;
     }
     return this;
   }
 
   remove() {
-    // Remove self from all metatilesets.
+    // Remove self from all metatilesets.  Used by labyrinthVariant to
+    // ensure impossible variants aren't added (note: with a dedicated
+    // page we could make more available).
     for (const key in this.data.tilesets) {
       const tileset =
           this.rom.metatilesets[key as keyof Metatilesets] as Metatileset;
-      tileset.screens.delete(this);
+      tileset.deleteScreen(this);
     }
   }
 
@@ -67,5 +67,21 @@ export class Metascreen {
   get screen(): Screen {
     const {id, rom: {screens}} = this;
     return id < 0 ? screens.unallocated[~id] : screens[id];
+  }
+
+  // Only Metascreens.renumber should call this.
+  unsafeSetId(id: number) {
+    (this.data as {id: number}).id = id;
+    for (const tileset of this._tilesets) {
+      tileset.invalidateScreenMultimap();
+    }
+  }
+  // Only Metatileset.addScreen should call this.
+  unsafeAddTileset(tileset: Metatileset) {
+    this._tilesets.add(tileset);
+  }
+  // Only Metatileset.removeScreen should call this.
+  unsafeRemoveTileset(tileset: Metatileset) {
+    this._tilesets.delete(tileset);
   }
 }

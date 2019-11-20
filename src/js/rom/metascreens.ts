@@ -67,7 +67,7 @@ export class Metascreens { // extends Set<Metascreen> {
             this.screensByFix.get(fix).push(screen);
           }
         } else {
-          (rom.metatilesets[key] as Metatileset).screens.add(screen)
+          (rom.metatilesets[key] as Metatileset).addScreen(screen)
         }
       }
       //this.add(screen);
@@ -99,17 +99,21 @@ export class Metascreens { // extends Set<Metascreen> {
         if (index < 0) continue;
         data.requires.splice(index, 1);
         if (!data.requires.length) {
-          (this.rom.metatilesets[key] as Metatileset).screens.add(screen);
+          (this.rom.metatilesets[key] as Metatileset).addScreen(screen);
         }
       }
     }
   }
 
+  /**
+   * Change the screen whose current id is `oldId` to have `newId` as its
+   * screen ID.  Updates all relevant links.
+   */
   renumber(oldId: number, newId: number) {
     const dest = this.screensById.get(newId);
     if (dest.length) throw new Error(`ID already used: ${newId}: ${dest}`);
     for (const screen of this.getById(oldId)) {
-      screen.data.id = newId;
+      screen.unsafeSetId(newId);
       dest.push(screen);
     }
     this.screensById.delete(oldId);

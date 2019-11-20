@@ -14,7 +14,7 @@ export interface MetascreenData {
    * this is the screen ID (0..102).  Otherwise, it is a sparse negative number
    * shared by all the screens that will ultimately have the same ID.
    */
-  id: number;
+  readonly id: number;
   /** Representative icon for debug purposes. */
   icon?: Icon;
   /** List of tilesets this screen appears in. */
@@ -252,5 +252,3 @@ export function seamlessVertical(tile: number, width = 2): Connection {
     get exits(): number[] { throw new Error('not implemented'); },
   };
 }
-
-

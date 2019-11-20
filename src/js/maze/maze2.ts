@@ -73,11 +73,11 @@ class NeighborCache {
     this.neighbors.get(u2 << 2 | (dir ^ 2)).add(u1);
   }
 
-  constructor({screens}: Metatileset) {
-    for (const s1 of screens) {
+  constructor(tileset: Metatileset) {
+    for (const s1 of tileset) {
       const e1 = s1.data.edges || '****';
       // Register the screen pairs
-      for (const s2 of screens) {
+      for (const s2 of tileset) {
         // Basic idea: compare the edges.  But we need a way to override?
         // Specifically, if there's a * then call a method?  What about
         // allowing (say) normal cave w/ narrow?
@@ -125,7 +125,7 @@ const edgeTypeMap: {[C in ConnectionType]?: number} = {
   'edge:bottom': 2,
   'edge:right': 3,
 };
-  
+
 
 const caches =
     new DefaultMap<Metatileset, NeighborCache>(t => new NeighborCache(t));
@@ -152,6 +152,13 @@ export class Maze {
   inBounds(pos: number): boolean {
     return (pos & 15) < this.width && pos > 15 && pos >>> 4 <= this.height;
   }
+
+  static from(location: Location): Maze {
+    // Pick out the metatileset, figure out metascreens.
+    throw new Error('not implemented');
+
+  }
+
 }
 
 // Map (y, x) screen position to an index.  Note that we use padding for

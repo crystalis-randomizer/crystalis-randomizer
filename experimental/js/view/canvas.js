@@ -68,7 +68,7 @@ export class Canvas {
     const loc = this.rom.locations[locid];
     const patterns = loc.tilePatterns;
     const palettes = [...loc.tilePalettes, 0x7f];
-    const tileset = rom.tilesets[loc.tileset];
+    const tileset = rom.tilesets[(loc.tileset & 0x7f) >>> 2];
     const palette = palettes[tileset.attrs[id]];
     for (let r = 0; r < 2; r++) {
       for (let c = 0; c < 2; c++) {

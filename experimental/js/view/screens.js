@@ -30,7 +30,7 @@ const run = async () => {
         ].join(' ');
     for (const row of loc.screens) {
       for (let s of row) {
-        s |= loc.screenPage;
+        if (loc.extended) s += 0x100;
         const screen = screens[s] || (screens[s] = {});
         screen[config] || (screen[config] = new Set()).add(loc);
       }
@@ -47,7 +47,7 @@ const run = async () => {
       const locs = [...screens[i][config]];
       const [loc] = locs;
       const screen = rom.screens[i];
-      const tileset = rom.tilesets[loc.tileset];
+      const tileset = rom.tilesets[(loc.tileset & 0x7f) >>> 2];
       let flag = false;
       for (let f = 0; !f || f == 1 && flag; f++) { 
         canvas.clear(locs[0].tilePalettes[0]);
@@ -73,14 +73,6 @@ const run = async () => {
       }
     }
   }
-
-  document.body.addEventListener('mousemove', e => {
-    if (e.target.tagName.toLowerCase() !== 'img') return;
-    const x = e.offsetX >>> 4 & 0xf;
-    const y = e.offsetY >>> 4 & 0xf;
-    document.getElementById('coord').textContent = y.toString(16) + x.toString(16);
-    
-  });
 };
 
 const hex = (x) => x.toString(16).padStart(2, 0);

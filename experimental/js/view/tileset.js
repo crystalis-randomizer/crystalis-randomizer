@@ -51,7 +51,7 @@ const run = async () => {
     const text = document.createElement('p');
     text.textContent = configs[key].map(l => `${l.name} ${hex(l.id)}`).join(', ');
     document.body.appendChild(text);
-    const tileset = rom.tilesets[loc.tileset];
+    const tileset = rom.tilesets[(loc.tileset & 0x7f) >>> 2];
     const tileEffects = rom.tileEffects[loc.tileEffects - 0xb3];
 
     // Determine which tiles are used
@@ -60,11 +60,11 @@ const run = async () => {
     for (const l of configs[key]) {
       for (const row of l.screens) {
         for (const s of row) {
-          usedScreens.add(l.screenPage | s);
+          usedScreens.add(l.extended ? s + 0x100 : s);
         }
       }
       for (const flag of l.flags) {
-        flaggedScreens.add(l.screens[flag.ys][flag.xs] | l.screenPage);
+        flaggedScreens.add(l.screens[flag.ys][flag.xs] + (l.extended ? 0x100 : 0));
       }
     }
     const usedTiles = new Set();

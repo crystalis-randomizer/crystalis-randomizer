@@ -1280,11 +1280,6 @@ GrantItemInRegisterA:
 .org $3d56b
   .word (InitialAction)
 
-.ifdef _MASSACRE_DOES_NOT_REQUIRE_THUNDER
-.org $3d5c9
-  lda #$8c  ; shyron
-.endif
-
 .org $3d91f
   jsr PostInventoryMenu
 .org $3d971

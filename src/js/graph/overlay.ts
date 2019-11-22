@@ -299,8 +299,9 @@ export class Overlay {
     // Sword of Thunder warp
     // TODO - entrance shuffle will break the auto-warp-point affordance.
     if (this.flags.teleportOnThunderSword()) {
+      const warp = this.rom.townWarp.thunderSwordWarp;
       routes.push({
-        tile: entrance(0x8c, 1), // not f2 since no-thunder-sword-for-massacre
+        tile: entrance(warp[0], warp[1] & 0x1f),
         condition: or(and(Item.SWORD_OF_THUNDER, Capability.BUY_WARP),
                       and(Item.SWORD_OF_THUNDER, Magic.TELEPORT)),
       });

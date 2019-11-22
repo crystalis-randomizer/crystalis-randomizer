@@ -58869,6 +58869,7 @@ DataTable_3dbdc
         $3dc53  xx xx:      xxx $xx
         $3dc55  xx xx xx:   xxx $3dbec
 ;;; --------------------------------
+;;; List of warp points for warp boots/teleport.
 TownWarpTable
         $3dc58              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------

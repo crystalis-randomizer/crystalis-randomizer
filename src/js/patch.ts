@@ -10,6 +10,7 @@ import {World} from './graph/world.js';
 import {crumblingPlatforms} from './pass/crumblingplatforms.js';
 import {deterministic, deterministicPreParse} from './pass/deterministic.js';
 import {fixDialog} from './pass/fixdialog.js';
+import {randomizeThunderWarp} from './pass/randomizethunderwarp.js';
 import {shuffleMazes} from './pass/shufflemazes.js';
 import {shufflePalettes} from './pass/shufflepalettes.js';
 import {shuffleTrades} from './pass/shuffletrades.js';
@@ -128,7 +129,6 @@ export async function shuffle(rom: Uint8Array,
     _HARDCORE_MODE: flags.hardcoreMode(),
     _HAZMAT_SUIT: flags.changeGasMaskToHazmatSuit(),
     _LEATHER_BOOTS_GIVE_SPEED: flags.leatherBootsGiveSpeed(),
-    _MASSACRE_DOES_NOT_REQUIRE_THUNDER: true,
     _NERF_FLIGHT: true,
     _NERF_MADO: true,
     _NERF_WILD_WARP: flags.nerfWildWarp(),
@@ -183,6 +183,7 @@ export async function shuffle(rom: Uint8Array,
   crumblingPlatforms(parsed, random);
 
   if (flags.randomizeWildWarp()) shuffleWildWarp(parsed, flags, random);
+  if (flags.randomizeThunderTeleport()) randomizeThunderWarp(parsed, random);
   rescaleMonsters(parsed, flags, random);
   unidentifiedItems(parsed, flags, random);
   shuffleTrades(parsed, flags, random);

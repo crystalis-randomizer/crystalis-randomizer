@@ -32,7 +32,6 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   normalizeSwords(rom, flags);
 
   fixCoinSprites(rom);
-  fixMimics(rom);
 
   makeBraceletsProgressive(rom);
 
@@ -51,6 +50,8 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   brokahanaWantsMado1(rom);
   if (flags.teleportOnThunderSword()) {
     teleportOnThunderSword(rom);
+    // not Shyron_Temple since no-thunder-sword-for-massacre
+    rom.townWarp.thunderSwordWarp = [rom.locations.Shyron.id, 0x41];
   } else {
     noTeleportOnThunderSword(rom);
   }
@@ -59,6 +60,9 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
 
   if (flags.addEastCave()) {
     eastCave(rom, flags);
+    if (flags.connectGoaToLeaf()) {
+      connectGoaToLeaf(rom);
+    }
   } else if (flags.connectLimeTreeToLeaf()) {
     connectLimeTreeToLeaf(rom);
   }
@@ -71,6 +75,8 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   fixReverseWalls(rom);
   if (flags.chargeShotsOnly()) disableStabs(rom);
   if (flags.orbsOptional()) orbsOptional(rom);
+
+  fixMimics(rom); // NOTE: after all mimics
 }
 
 // Adds a trigger action to mezame.  Use 87 leftover from rescuing zebu.
@@ -433,14 +439,16 @@ function closeCaveEntrances(rom: Rom, flags: FlagSet): void {
 
   // Destructure out a few locations by name
   const {
-    ValleyOfWind,
     CordelPlainWest,
     CordelPlainEast,
-    WaterfallValleyNorth,
-    WaterfallValleySouth,
+    Desert2,
+    GoaValley,
+    LimeTreeValley,
     KirisaMeadow,
     SaharaOutsideCave,
-    Desert2,
+    ValleyOfWind,
+    WaterfallValleyNorth,
+    WaterfallValleySouth,
   } = rom.locations;
 
   // NOTE: flag 2f0 is ALWAYS set - use it as a baseline.
@@ -456,7 +464,10 @@ function closeCaveEntrances(rom: Rom, flags: FlagSet): void {
     [Desert2, 0x41],
   ];
   if (flags.addEastCave() && flags.connectLimeTreeToLeaf()) {
-    flagsToClear.push([rom.locations.LimeTreeValley, 0x10]);
+    flagsToClear.push([LimeTreeValley, 0x10]);
+  }
+  if (flags.connectGoaToLeaf()) {
+    flagsToClear.push([GoaValley, 0x01]);
   }
   for (const [loc, yx] of flagsToClear) {
     loc.flags.push(Flag.of({yx, flag: 0x2f0}));
@@ -507,6 +518,7 @@ function eastCave(rom: Rom, flags: FlagSet): void {
 
   const loc1 = rom.locations.allocate(rom.locations.EastCave1);
   const loc2 = rom.locations.allocate(rom.locations.EastCave2);
+  const loc3 = rom.locations.EastCave3;
 
   // NOTE: 0x9c can become 0x99 in top left or 0x97 in top right or bottom middle for a cave exit
   loc1.screens = [[0x9c, 0x84, 0x80, 0x83, 0x9c],
@@ -521,7 +533,7 @@ function eastCave(rom: Rom, flags: FlagSet): void {
                   [0x80, 0x8c, 0x80, 0x85, 0x84],
                   [0x9c, 0x86, 0x80, 0x80, 0x9a]];
 
-  for (const l of [loc1, loc2]) {
+  for (const l of [loc1, loc2, loc3]) {
     l.bgm = 0x17; // mt sabre cave music?
     l.entrances = [];
     l.exits = [];
@@ -531,7 +543,7 @@ function eastCave(rom: Rom, flags: FlagSet): void {
     l.height = l.screens.length;
     l.width = l.screens[0].length;
     l.extended = 0;
-    l.tilePalettes = [0x1a, 0x1b, 0x05];
+    l.tilePalettes = [0x1a, 0x1b, 0x6a]; // ember wall by default
     l.tileset = 0x88;
     l.tileEffects = 0xb5;
     l.tilePatterns = [0x14, 0x02];
@@ -589,7 +601,37 @@ function eastCave(rom: Rom, flags: FlagSet): void {
     // chest: alarm flute
     loc2.spawns.push(Spawn.of({y: 0x110, x: 0x478, type: 2, id: 0x31}));
   }
+  if (flags.addExtraChecksToEastCave()) {
+    // chest: medical herb
+    loc2.spawns.push(Spawn.of({y: 0x110, x: 0x478, type: 2, id: 0x59}));
+    // chest: mimic
+    loc2.spawns.push(Spawn.of({y: 0x070, x: 0x108, type: 2, id: 0x70}));
+  }
 };
+
+function connectGoaToLeaf(rom: Rom): void {
+  const {GoaValley, EastCave2, EastCave3} = rom.locations;
+  // Add a new cave to the top-left corner of Goa Valley.
+  GoaValley.writeScreens2d(0x00, [
+      [0x0c, 0xc1, 0x0d],
+      [0x0e, 0x37, 0x35]]);
+  // Add an extra down-stair to EastCave2 and a new 3-screen EastCave3 map.
+
+  rom.locations.allocate(EastCave3);
+  EastCave3.screens = [[0x9a],
+                       [0x8f],
+                       [0x9e]];
+  EastCave3.height = 3;
+  EastCave3.width = 1;
+
+  EastCave3.spawns.push(Spawn.from([0x18, 0x07, 0x23, 0x02]));
+  EastCave3.flags.push(Flag.of({screen: 0x10, flag: rom.flags.alloc(0x200)}));
+
+  // Make the connections.
+  EastCave2.screens[4][0] = 0x99;
+  EastCave2.connect(0x40, EastCave3, ~0x00);
+  EastCave3.connect(0x20, GoaValley, 0x01);
+}
 
 function addZombieWarp(rom: Rom) {
   // Make space for the new flag between Joel and Swan
@@ -616,13 +658,10 @@ function addZombieWarp(rom: Rom) {
   for (const spawn of rom.locations.ZombieTown.spawns) {
     if (spawn.isTrigger() && spawn.id === 0x8a) {
       spawn.id = trigger.id;
-    }    
+    }
   }
-  // Insert into the warp table.
-  for (let i = 0x3dc62; i >= 0x3dc5f; i--) {
-    rom.prg[i + 1] = rom.prg[i];
-  }
-  rom.prg[0x3dc5f] = rom.locations.ZombieTown.id;
+  rom.townWarp.locations.splice(7, 0, rom.locations.ZombieTown.id);
+  if (rom.townWarp.locations.pop() !== 0xff) throw new Error('unexpected');
   // ASM fixes should have happened in preshuffle.s
 }
 

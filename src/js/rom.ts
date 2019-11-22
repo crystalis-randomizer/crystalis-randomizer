@@ -2,6 +2,7 @@ import {AdHocSpawn} from './rom/adhocspawn.js';
 import {Areas} from './rom/area.js';
 import {BossKill} from './rom/bosskill.js';
 import {Bosses} from './rom/bosses.js';
+import {Flags} from './rom/flags.js';
 import {Hitbox} from './rom/hitbox.js';
 import {Item} from './rom/item.js';
 import {ItemGet} from './rom/itemget.js';
@@ -22,6 +23,7 @@ import {Telepathy} from './rom/telepathy.js';
 import {TileAnimation} from './rom/tileanimation.js';
 import {TileEffects} from './rom/tileeffects.js';
 import {Tileset} from './rom/tileset.js';
+import {TownWarp} from './rom/townwarp.js';
 import {Trigger} from './rom/trigger.js';
 import {hex, seq} from './rom/util.js';
 import {WildWarp} from './rom/wildwarp.js';
@@ -78,6 +80,8 @@ export class Rom {
   readonly bossKills: BossKill[];
   readonly bosses: Bosses;
   readonly wildWarp: WildWarp;
+  readonly townWarp: TownWarp;
+  readonly flags: Flags;
 
   readonly telepathy: Telepathy;
   readonly messages: Messages;
@@ -168,6 +172,8 @@ export class Rom {
     this.bossKills = seq(0xe, i => new BossKill(this, i));
     this.bosses = new Bosses(this);
     this.wildWarp = new WildWarp(this);
+    this.townWarp = new TownWarp(this);
+    this.flags = new Flags(this);
   }
 
   trigger(id: number): Trigger {
@@ -358,6 +364,7 @@ export class Rom {
     writeAll(this.bossKills);
     writeAll(this.patterns);
     this.wildWarp.write(writer);
+    this.townWarp.write(writer);
     promises.push(this.telepathy.write(writer));
     promises.push(this.messages.write(writer));
     promises.push(writer.commit());

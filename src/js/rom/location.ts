@@ -400,6 +400,7 @@ export class Locations extends Array<Location> {
   // New locations, no ID procured yet.
   readonly EastCave1      = $(-1, {area: a => a.EastCave});
   readonly EastCave2      = $(-1);
+  readonly EastCave3      = $(-1);
   readonly FishermanBeach = $(-1, {area: a => a.FishermanHouse, ...HOUSE});
 
   constructor(readonly rom: Rom) {
@@ -1018,15 +1019,20 @@ export class Location extends Entity {
   // Connect two screens via entrances.
   // Assumes exits and entrances are completely absent.
   // Screen IDs must be in screenExits.
+  // SUPER HACKY - if pos is negative, use complement and alternate stairs.
   connect(pos: number, that: Location, thatPos: number) {
+    const thisAlt = pos < 0 ? 0x100 : 0;
+    const thatAlt = thatPos < 0 ? 0x100 : 0;
+    pos = pos < 0 ? ~pos : pos;
+    thatPos = thatPos < 0 ? ~thatPos : thatPos;
     const thisY = pos >>> 4;
     const thisX = pos & 0xf;
     const thatY = thatPos >>> 4;
     const thatX = thatPos & 0xf;
     const thisTile = this.screens[thisY][thisX];
     const thatTile = that.screens[thatY][thatX];
-    const [thisEntrance, thisExits] = screenExits[thisTile];
-    const [thatEntrance, thatExits] = screenExits[thatTile];
+    const [thisEntrance, thisExits] = screenExits[thisAlt | thisTile];
+    const [thatEntrance, thatExits] = screenExits[thatAlt | thatTile];
     const thisEntranceIndex = this.entrances.length;
     const thatEntranceIndex = that.entrances.length;
     this.entrances.push(Entrance.of({y: thisY << 8 | thisEntrance >>> 8,
@@ -1517,7 +1523,9 @@ const screenExits: {[id: number]: readonly [number, readonly [number, number]]} 
   0x99: [0xaf_d0, [0xbc, 0xbd]], // down stair from right
   0x9a: [0x1f_80, [0x27, 0x28]], // down stair (double - just use down!)
   0x9e: [0xdf_80, [0xe7, 0xe8]], // bottom edge
+  0xc1: [0x50_a0, [0x49, 0x4a]], // cave on top boundary
   0xc2: [0x60_b0, [0x5a, 0x5b]], // cave on bottom-right boundary
+  0x19a: [0xd0_80, [0xc7, 0xc8]], // up stair on double
 };
 
 // building the CSV for the location table.

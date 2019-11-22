@@ -10,6 +10,7 @@ import {ROUTING_FLAGS} from './flags/routing.js';
 import {SHOP_FLAGS} from './flags/shops.js';
 import {TWEAK_FLAGS} from './flags/tweaks.js';
 import {WORLD_FLAGS} from './flags/world.js';
+import {EXPERIMENTAL_FLAGS} from './flags/experimental.js';
 import {UsageError} from './util.js';
 
 const REPEATABLE_FLAGS: Set<string> = new Set(['S']);
@@ -30,24 +31,24 @@ export const PRESETS: Preset[] = [
     title: 'Full Shuffle',
     descr:
         `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
-    flags: 'Em Fsw Gt Mert Ps Rprt Sckmt Tabmp Wmtuw',
+    flags: 'Em Fsw Gt Mert Ps Rprt Sckmt Tabmp Wmtuw Xegw',
   },
   {
     title: 'Glitchless',
     descr: `Full shuffle but with no glitches.`,
-    flags: 'Em Fcpstw Mert Ps Rprt Sckmt Tab Wmtuw',
+    flags: 'Em Fcpstw Mert Ps Rprt Sckmt Tab Wmtuw Xcegw',
   },
   {
     // TODO: add 'Ht' for maxing out tower scaling
     title: 'Advanced',
     descr: `A balanced randomization with quite a bit more difficulty.`,
-    flags: 'Fsw Gfprt Hbdgw Mert Ps Roprst Sckt Sm Tabmp Wmtuw',
+    flags: 'Fsw Gfprt Hbdgw Mert Ps Roprst Sckt Sm Tabmp Wmtuw Xcegw',
   },
   {
     // TODO: add 'Ht'
     title: 'Ludicrous',
     descr: `Pulls out all the stops, may require superhuman feats.`,
-    flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Roprst Sckmt Tabmp Wmtuw',
+    flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Roprst Sckmt Tabmp Wmtuw Xcegw',
   },
   {
     title: 'Mattrick',
@@ -84,9 +85,18 @@ for (const {title, flags} of PRESETS) {
 }
 
 export const FLAGS: FlagSection[] = [
-  ITEM_FLAGS, WORLD_FLAGS, MONSTER_FLAGS, SHOP_FLAGS, HARD_MODE_FLAGS,
-  TWEAK_FLAGS, ROUTING_FLAGS, GLITCH_FLAGS, GLITCH_FIX_FLAGS, EASY_MODE_FLAGS,
-  DEBUG_MODE_FLAGS
+  ITEM_FLAGS,
+  WORLD_FLAGS,
+  MONSTER_FLAGS,
+  SHOP_FLAGS,
+  HARD_MODE_FLAGS,
+  TWEAK_FLAGS,
+  ROUTING_FLAGS,
+  GLITCH_FLAGS,
+  GLITCH_FIX_FLAGS,
+  EASY_MODE_FLAGS,
+  EXPERIMENTAL_FLAGS,
+  DEBUG_MODE_FLAGS,
 ];
 
 export class FlagSet {
@@ -222,11 +232,17 @@ export class FlagSet {
   connectLimeTreeToLeaf() {
     return this.check('Rp');
   }
+  connectGoaToLeaf() {
+    return this.check('Xe') && this.check('Xg');
+  }
   zebuStudentGivesItem() {
-    return !this.check('Re');;
+    return !this.check('Xe') || this.check('Xc');
   }
   addEastCave() {
-    return this.check('Re');
+    return this.check('Xe');
+  }
+  addExtraChecksToEastCave() {
+    return this.check('Xe') && this.check('Xc');
   }
   storyMode() {
     return this.check('Rs');
@@ -239,6 +255,9 @@ export class FlagSet {
   }
   teleportOnThunderSword() {
     return this.check('Rt');
+  }
+  randomizeThunderTeleport() {
+    return this.check('Xw');
   }
   orbsOptional() {
     return this.check('Ro');

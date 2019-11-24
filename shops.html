@@ -1,0 +1,89 @@
+<style>
+fieldset {
+  width: 31em;
+  font-size: 8pt;
+  padding: 0 1em .2em;
+  /*font-family: monospace;*/
+}
+label {
+  margin-right: .4em;
+}
+.good {
+  background-color: #bfb;
+}
+</style>
+<fieldset>
+  <legend>Inn</legend>
+  <label><input type="checkbox">L</label>
+  <label><input type="checkbox">B</label>
+  <label><input type="checkbox">O</label>
+  <label><input type="checkbox">A</label>
+  <label><input type="checkbox">P</label>
+  <label><input type="checkbox">J</label>
+  <label><input type="checkbox">Sw</label>
+  <label><input type="checkbox">Sh</label>
+  <label><input type="checkbox">G</label>
+  <label><input type="checkbox">Sa</label>
+</fieldset>
+<fieldset class="ind">
+  <legend>Warp</legend>
+  <label><input type="checkbox">L</label>
+  <label><input type="checkbox">B</label>
+  <label><input type="checkbox">O</label>
+  <label><input type="checkbox">A</label>
+  <label><input type="checkbox">P</label>
+  <label><input type="checkbox">J</label>
+  <label><input type="checkbox">Sw</label>
+  <label><input type="checkbox">Sh</label>
+  <label><input type="checkbox">G</label>
+  <label><input type="checkbox">Sa</label>
+</fieldset>
+<fieldset class="ind">
+  <legend>Herb</legend>
+  <label><input type="checkbox">L</label>
+  <label><input type="checkbox">B</label>
+  <label><input type="checkbox">O</label>
+  <label><input type="checkbox">A</label>
+  <label><input type="checkbox">P</label>
+  <label><input type="checkbox">J</label>
+  <label><input type="checkbox">Sw</label>
+  <label><input type="checkbox">Sh</label>
+  <label><input type="checkbox">G</label>
+  <label><input type="checkbox">Sa</label>
+</fieldset>
+<fieldset class="off">
+  <legend>Ring</legend>
+  <label><input type="checkbox">L</label>
+  <label><input type="checkbox">B</label>
+  <label><input type="checkbox">O</label>
+  <label><input type="checkbox">A</label>
+  <label><input type="checkbox">P</label>
+  <label><input type="checkbox">J</label>
+  <label><input type="checkbox">Sw</label>
+  <label><input type="checkbox">Sh</label>
+  <label><input type="checkbox">G</label>
+  <label><input type="checkbox">Sa</label>
+</fieldset>
+
+<script>
+for (const e of document.querySelectorAll('fieldset.ind input')) {
+  e.checked = true;
+  e.indeterminate = true;
+  e.addEventListener('dblclick', () => {
+    e.indeterminate = true;
+  });
+}
+for (const e of document.querySelectorAll('fieldset.off input')) {
+  e.addEventListener('change', () => {
+    e.indeterminate = !e.checked;
+  });
+  e.addEventListener('dblclick', () => {
+    e.indeterminate = e.checked = false;
+  });
+}
+for (const e of document.querySelectorAll('input')) {
+  e.addEventListener('change', () => {
+    e.parentElement.classList.toggle('good', e.checked);
+  });
+}
+</script>

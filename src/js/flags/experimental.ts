@@ -26,6 +26,13 @@ export const EXPERIMENTAL_FLAGS: FlagSection = {
              will be a second exit from this cave leading to Lime Tree Valley.`,
     },
     {
+      flag: 'Xf',
+      name: 'Fog Lamp not required for dolphin',
+      text: `Can summon dolphin immediately with only shell flute.  Fog lamp
+             provides one point of access to the sea, which comes with an item
+             under Kensu.  Talking to Kensu is not required for dolphin.`,
+    },
+    {
       flag: 'Xg',
       name: 'Goa passage',
       text: `Add a passage between East Cave and Goa Valley.  There will be an

@@ -119,6 +119,14 @@ export class Item extends Entity {
   get solid(): boolean { return !!(this.itemDataValue & 0x80); }
   set solid(s: boolean) { this.itemDataValue = this.itemDataValue & ~0x80 | (s ? 0x80 : 0); }
 
+  get itemUseData(): Uint8Array {
+    // NOTE: this is hacky, it should really be less than 24, and variable!
+    // Moreover, some items have overlapping data, which is awkward.
+    // So really we need separate ItemUse and ItemJump entities and then just
+    // point to which one we want here.
+    return this.rom.prg.subarray(this.itemUseDataBase, 24);
+  }
+
   async write(writer: Writer): Promise<void> {
     writer.rom[this.itemDataPointer] = this.itemDataValue;
     writer.rom[this.selectedItemPointer] = this.selectedItemValue;

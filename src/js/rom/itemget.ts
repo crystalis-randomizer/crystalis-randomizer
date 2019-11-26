@@ -54,6 +54,14 @@ export class ItemGet extends Entity {
     }
   }
 
+  copyFrom(that: ItemGet) {
+    this.inventoryRowStart = that.inventoryRowStart;
+    this.inventoryRowLength = that.inventoryRowLength;
+    this.acquisitionAction = that.acquisitionAction;
+    this.flags = [...that.flags];
+    this.key = that.key;
+  }
+
   async write(writer: Writer): Promise<void> {
     // First write (itemget -> item) mapping
     writer.rom[this.itemPointer] = this.itemId;

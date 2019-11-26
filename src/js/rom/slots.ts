@@ -117,11 +117,16 @@ class Slots {
         for (const d of ds) {
           switch (d.message.action) {
           case 0x03:
+          case 0x0a: // moved version of kensu chest drop
             addSlot(new PersonDataSlot(npc.data[0], npc.id, 0));
             break;
-          case 0x09:
           case 0x11:
             addSlot(new PersonDataSlot(npc.data[1], npc.id, 1));
+            break;
+          case 0x09: // only add slot if it's not explicitly disabled
+            if (npc.data[1] < 0x80) {
+              addSlot(new PersonDataSlot(npc.data[1], npc.id, 1));
+            }
             break;
           }
         }
@@ -183,7 +188,7 @@ const hardcodedItems: ReadonlyArray<readonly [number, string?]> = [
   [0x3d18f, 'Slimed Kensu'],
   [0x3d1f9, 'Asina'],
   [0x3d2af, 'Stoned Akahana'],
-  [0x3d30e, 'Lighthouse Kensu'],
+  //[0x3d30e, 'Lighthouse Kensu'],
   [0x3d337, 'Rage'],
   [0x3d655, 'Mt Sabre summit trigger'], // paralysis
   [0x3d6d9, 'Whirlpool trigger'],

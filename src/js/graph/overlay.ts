@@ -463,6 +463,9 @@ export class Overlay {
       result.hitbox = {x0: -1, x1: 2, y0: 0, y1: 1};
       statueOr(Magic.CHANGE, Event.ENTERED_SHYRON);
       break;
+    case 0x68: // kensu in cabin
+      result.hitbox = {x0: -1, x1: 2, y0: -1, y1: 2};
+      break;
     case 0x80: // goa guards
       statueOr(...spawnConditions.map(c => Condition(~c))); // Event.ENTERED_SHYRON
       break;
@@ -591,7 +594,7 @@ export class Overlay {
           (this.relevantFlags.has(~d.condition) ? Condition(~d.condition) : null);
       if (negative != null) requirements.push(negative);
       const action = d.message.action;
-      if (action === 0x03) {
+      if (action === 0x03 || action === 0x0a) {
         result.check.push({slot: Slot.item(npc.data[0]), condition});
       } else if (action === 0x11
                  || (this.flags.zebuStudentGivesItem() && action === 0x09)) {
@@ -667,6 +670,9 @@ export class Overlay {
 
     if (this.flags.assumeGhettoFlight()) {
       capabilities.push([Capability.CLIMB_WATERFALL, and(Event.RIDE_DOLPHIN, Item.RABBIT_BOOTS)]);
+    }
+    if (this.flags.fogLampNotRequired()) {
+      capabilities.push([Event.RIDE_DOLPHIN, Item.SHELL_FLUTE]);
     }
 
     if (!this.flags.guaranteeBarrier()) {

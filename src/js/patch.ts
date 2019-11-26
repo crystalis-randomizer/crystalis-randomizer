@@ -1212,7 +1212,7 @@ class MonsterPool {
         } else if (spawn.isNpc() || spawn.isBoss()) {
           const c = graphics.getNpcConstraint(location.id, spawn.id);
           constraint = constraint.meet(c, true);
-          if (spawn.isNpc() && spawn.id === 0x6b) {
+          if (spawn.isNpc() && (spawn.id === 0x6b || spawn.id === 0x68)) {
             // sleeping kensu (6b) leaves behind a treasure chest
             constraint = constraint.meet(Constraint.KENSU_CHEST, true);
           }

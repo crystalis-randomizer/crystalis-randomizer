@@ -460,6 +460,33 @@ ItemGet_FindOpenSlotWithOverflow:
 .endif
 
 
+
+;;; Boss chest action jump has some special handling for bosskill 3 (rage)
+;;; which is instead used for Kensu dropping a chest.  We'll rearrange the
+;;; special case to consolidate.
+;; .org $1f766
+;;   lda #$8d
+;;   sta $03a0,x
+;;   lda #$aa
+;;   sta $0300,x
+;;   lda $0600,x
+;;   asl
+;;   asl
+;;   ;clc
+;;   adc $0600,x
+;;   tay
+;;   cpy #$0f
+.org $1f76b
+  beq HandleKensuChestInit
+.org $1f77b
+ReturnFromKensuChest:
+.org $1f7c2
+HandleKensuChestInit:
+  jmp HandleKensuChest
+.org $1f7d0
+  .byte $00  
+
+
 ;;; We moved the LV(menu) display from 06 to 0e so display that instead
 .org $1fd27
   lda #$0e
@@ -479,6 +506,11 @@ ComputeVampireAnimationStart:
    bcc ++
 +  lda #$ff
 ++ rts
+
+HandleKensuChest:
+  lda #$09
+  sta $033e
+  jmp ReturnFromKensuChest
 
 .assert < $20000
 
@@ -1234,6 +1266,13 @@ WarpMenuNametableData:
 .endif
 
 
+;;; NOTE: we could use this in several more places, including dialog action
+;;; jump 10, 
+.org $3d196
+  jsr $9897 ; WriteObjectCoordinatesFrom_34_37
+  jmp $ff80 ; LoadOneObjectData
+
+
 .org $3d223 ; part of DialogFollowupActionJump_11 (give 2nd item)
   bpl GrantItemInRegisterA ; change from bne to handle sword of wind
 
@@ -1258,6 +1297,26 @@ GrantItemInRegisterA:
 .org $3d29d ; Just set dolphin status bit => also set the flag
   jsr UpdatePlayerStatusAndDolphinFlag
 
+;;; Dialog action $0a is kensu dropping a chest behind - update it to
+;;; no longer hardcode an item but instead check persondata[0]
+.org $3d2f9
+  ldx $0623
+  lda $0680,x
+  pha
+  jsr $98a8 ; ReadObjectCoordinatesInto_34_37
+  ldx #$1e  ; slot 1e
+  stx $10
+  lda #$0f  ; boss chest
+  sta $11
+  jsr $d196 ; Write coords AND load object data
+  pla
+  sta $057e
+  ldx #$02
+  stx $055e
+  inx
+  stx $061e
+  nop
+.assert $3d31c
 
 ;;; Convert a beq to a bcs for mimic spawns - any chest between $70 and $80
 ;;; will now spawn a mimic.
@@ -2150,14 +2209,17 @@ CheckToRedisplayDifficulty:
 ;;; but this value is never read.  Start by changing all jumps to $3e148
 ;;; to instead jump to $3e144.  Then we grab some space and have a nonzero
 ;;; value in $18 return early.
-.org $3d199
-  jmp $3e144 ; unused?
 .org $3e6ff
   jmp $3e144
 .org $3d21a
   jmp $3e144
 .org $3d6d5
   jmp $3e144
+
+;;; NOTE: the following would also need to change, except we've repurposed it
+;;; since it seems to have been unused...
+;;;.org $3d199
+;;;  jmp $3e144 ; unused?
 
 ;;; Now fix the LoadNpcDataForLocation code
 .org $3e19a

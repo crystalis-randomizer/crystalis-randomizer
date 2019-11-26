@@ -260,6 +260,7 @@ export class ShuffleRules {
       const item = rom.items[i];
       if (chests.has(i)) return item && item.unique ? Type.KEY : Type.CONSUMABLE;
       if (bossDrops.has(i)) return Type.BOSS_DROP;
+      if (i === 0x67) return Type.NPC; // NOTE: repurposed, but we don't see dialog actions
       return item && item.unique ? Type.NPC : Type.EMPTY;
     });
 

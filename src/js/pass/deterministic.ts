@@ -57,6 +57,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   }
 
   undergroundChannelLandBridge(rom);
+  if (flags.fogLampNotRequired()) fogLampNotRequired(rom);
 
   if (flags.addEastCave()) {
     eastCave(rom, flags);
@@ -173,6 +174,31 @@ function undergroundChannelLandBridge(rom: Rom) {
   tiles[0x58] = 0x8c;
 }
 
+function fogLampNotRequired(rom: Rom) {
+  // Need to make several changes.
+  // (1) dolphin only requires shell flute, make the flag check free (~000)
+  rom.items[0x36].itemUseData[0] = 0xa0;
+  rom.items[0x36].itemUseData[1] = 0x00;
+  // (2) kensu 68 (@61) drops an item (67 magic ring)
+  rom.npcs[0x68].data[0] = 0x67;
+  rom.npcs[0x68].localDialogs.get(-1)![0].message.action = 0x0a;
+  rom.npcs[0x68].localDialogs.get(-1)![0].flags = [];
+  rom.npcs[0x68].spawnConditions.set(0x61, [0x21, ~0x0c1])
+  // (3) fisherman 64 spawns on fog lamp rather than shell flute
+  rom.npcs[0x64].spawnConditions.set(0xd6, [0x235]);
+
+  // (4) fix up itemget 67 from itemget 64 (delete the flag)
+  rom.itemGets[0x64].flags = [];
+  rom.itemGets[0x67].copyFrom(rom.itemGets[0x64]);
+  rom.itemGets[0x67].flags = [0x0c1];
+
+  // TODO - graphics screwed up - figure out if object action is changing
+  // the pattern tables based on (e.g.) $600,x maybe?  Can we prevent it?
+
+  // TODO - add a notes file about this.
+
+}
+
 /**
  * Remove timer spawns, renumbers mimic spawns so that they're unique.
  * Runs before shuffle because we need to identify the slot.  Requires
@@ -225,6 +251,8 @@ function alarmFluteIsKeyItem(rom: Rom, flags: FlagSet): void {
   if (flags.zebuStudentGivesItem()) {
     // Person 14 (Zebu's student): secondary item -> alarm flute
     rom.npcs[0x14].data[1] = 0x31; // NOTE: Clobbers shuffled item!!!
+  } else {
+    rom.npcs[0x14].data[1] = 0xff; // indicate nothing there: no slot.
   }
 
   // Remove alarm flute from shops (replace with other items)
@@ -720,6 +748,7 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   }
 
   // Link some redundant NPCs: Kensu (7e, 74) and Akahana (88, 16)
+  // Use 74 for only Kensu in dance hall - nobody else will accept trade-in.
   rom.npcs[0x74].link(0x7e);
   rom.npcs[0x74].used = true;
   rom.npcs[0x74].data = [...rom.npcs[0x7e].data] as any;
@@ -728,6 +757,9 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
 
   // dialog is shared between 88 and 16.
   rom.npcs[0x88].linkDialog(0x16);
+
+  // Given Kensu 7e a glowing lamp instead of change (Kensu 74 has that now)
+  rom.npcs[0x7e].data[0] = 0x39; // glowing lamp
 
   // Make a new NPC for Akahana in Brynmaer; others won't accept the Statue of Onyx.
   // Linking spawn conditions and dialogs is sufficient, since the actual NPC ID

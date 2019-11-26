@@ -247,6 +247,9 @@ export class FlagSet {
   addExtraChecksToEastCave() {
     return this.check('Xe') && this.check('Xc');
   }
+  fogLampNotRequired() {
+    return this.check('Xf');
+  }
   storyMode() {
     return this.check('Rs');
   }

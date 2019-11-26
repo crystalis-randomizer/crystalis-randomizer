@@ -1,0 +1,79 @@
+Goal: Separate the fog lamp from the dolphin
+
+Idea: Shell flute alone is required for dolphin.  When statue glitch disabled
+then fog lamp is one possible way to get to a beach where the dolphin can be
+summoned, e.g. is paralysis and water sword are both missing.  To make sure
+fog lamp still worth _something_, we make Kensu in the cabin drop a chest.
+
+Kensu in the cabin already has his own separate NPC id (68), but we need to
+share the dialog action with Kensu in the lighthouse (7e).  We already split
+off Kensu 74 as the one in Swan to ensure nobody else would accept Love Pendant,
+but Kensu 7e already has both item slots occupied with 47 (change) and 48
+(flight).  We can clear slot 0 (47, change) and give it to 74.  This leaves
+slot 0 free for both 7e and 68.
+
+The disappear-and-drop-a-chest action is 0a, but it hard-codes the contents
+at 3d30d.  We need to instead read PersonData[0] for this, which is difficult
+because we need to call LoadOneObjectData beforehand (destroying registers)
+and we need to read the looked-at object before that to get the location,
+and we're tight on space.
+
+Problems:
+ * Dialog action 0a needs to be tweaked to read from PersonData[0]
+    - Save 3 bytes by pulling out (jsr WriteObjCoordsFrom34; jsr LoadObjData)
+      into a single call (looks like there's 6 free bytes at 3d196).
+    - Push the value from 0623 onto the stack, then pull it back after
+      loading the object data to read PersonData[0] to find what to write
+      into 57e.
+    - Write 2 and 3 at the end from X so that we can `inx` rather than `lda #`.
+ * Kensu 7e doesn't need 47 (change) in that spot => 39 (glowing lamp)
+ * Write the new item (67, magic ring) into 68's data[0]
+ * Update the slot code to not look for hardcoded locus
+ * Update the overlay to read action 0a properly, as well as to allow
+   getting items from the statue (increased hitbox??) and to not hardcode
+   the glowing lamp item
+ * The shuffle logic doesn't know how to figure out that 67 is a chest item,
+   so it defaults to "empty" which ultimately doesn't shuffle it.  Start by
+   hardcoding 67 as a known NPC drop, but ultimately we should read the
+   dialog tables to figure out what each is, and possibly even add a new
+   drop type for NPC_CHEST, which is equivalent to a major item chest,
+   except it can't be a mimic.
+ * Flag 09b (talked to kensu) no longer works as intended:
+    (1) change Shell Flute's ItemUseData to check ~000 rather than 09b
+        (note: need to be able to write ItemUseData from rom);
+    (2) change the overlay to allow riding dolphin with only shell flute;
+    (3) Give Kensu a new flag to trigger off of (0c1 is the itemget flag
+        from 64, which we copied into 67 - just delete it from 64 and reuse
+        that as Kensu's spawn condition).
+ * Dialog action 0a drops a "boss chest" (object 0f) which changes the graphics
+   and breaks the soldier in the cabin temporarily.
+ * Graphics are broken when the chest spawns in the cabin.
+
+================================================================
+
+Graphics issues:
+
+;; pat0 pat1 pal2 pal3
+;; In the lighthouse: 51 78 0c 0c
+;; After the chest:   51 62 0c 2f
+;; In the cabin:      4a 51 0c 0e
+;; 
+;; The pattern 62 is useless since the chest loads from pat0.
+;; The palette is also useless, since chests load from pal0.
+;; We need to just skip it...
+;;  - setting 0 in the first slot might do it?
+
+The bosskill 03 is odd.  The first two bytes are unused,
+what matters is the third byte (stored in $320,x) that
+adds an offset of $09 to the graphics, making a treasure
+chest viable in pattern table $51 (kensu).
+
+To make this work, we just need to skip the normal table
+lookup and instead just store the $09 in $33e.  We branch
+through an unused row of the bosskill table to jump away
+to some free space at the end of the bank (around $1ff97).
+
+Finally, we need to make sure Kensu loads in pat0, which
+is easy enough because we have unique NPC ids and already
+have a KENSU_CHEST constraint, so we just expand that check
+to also check for Kensu 68.

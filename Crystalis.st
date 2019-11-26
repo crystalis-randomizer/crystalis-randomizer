@@ -17482,6 +17482,7 @@ ObjectData_Object0D                                      ; Object 0d
         $1ae48              .byte $xx
         $1ae49              .byte $xx
 ;;; ----------------------------------------------------------------
+;;; Boss chest.
 ObjectData_Object0F                                      ; Object 0f
         $1ae4a              .byte $xx
         $1ae4b              .byte $xx,$xx,$xx,$xx,$xx,$xx
@@ -26318,7 +26319,7 @@ ObjectActionJump_6e
         $1f764  xx xx:      xxx - ; $1f740
         ;; no matching object found
         $1f766  xx xx xx:   xxx $xxxx,x
-        $1f769  xx xx:      xxx #$xx ; skip Kensu
+        $1f769  xx xx:      xxx #$xx ; skip Kensu chest
         $1f76b  xx xx:      xxx + ; $1f77b
         $1f76d  xx xx xx:    xxx $xxxx,x
         $1f770  xx xx xx:    xxx $xxxx
@@ -57460,7 +57461,7 @@ DialogFollowupActionJump_14
         $3d190  xx xx xx:   xxx GrantItemInRegisterA
         $3d193  xx xx xx:   xxx DialogFollowupActionJump_17_HealPlayerAndDisappear
 ;;; --------------------------------
-;;; UNUSED?!?
+;;; UNUSED?!? - repurpose for WriteObjectCoordinatesAndLoadObjectData
         $3d196  xx xx xx:   xxx $3d88b
         $3d199  xx xx xx:   xxx $3e148
 ;;; --------------------------------
@@ -59597,7 +59598,7 @@ CheckForNpcSpawn
         ;; --------------------------------
         ;; Looks like we're going to actually try to spawn something?
         ;; Start by just saving the four bytes into $2c..$2f
-TryNpcSpawn
+TryNpcSpawn                             ; TrySpawn
         $3e1b6  xx xx:      xxx ($xx),y ; y=5, 9, ...
         $3e1b8  xx xx:      xxx $xx
         $3e1ba  xx:         xxx

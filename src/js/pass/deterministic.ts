@@ -543,7 +543,7 @@ function eastCave(rom: Rom, flags: FlagSet): void {
     l.height = l.screens.length;
     l.width = l.screens[0].length;
     l.extended = 0;
-    l.tilePalettes = [0x1a, 0x1b, 0x6a]; // ember wall by default
+    l.tilePalettes = [0x1a, 0x1b, 0x05]; // rock wall
     l.tileset = 0x88;
     l.tileEffects = 0xb5;
     l.tilePatterns = [0x14, 0x02];
@@ -624,7 +624,8 @@ function connectGoaToLeaf(rom: Rom): void {
   EastCave3.height = 3;
   EastCave3.width = 1;
 
-  EastCave3.spawns.push(Spawn.from([0x18, 0x07, 0x23, 0x02]));
+  // Add a rock wall (id=0).
+  EastCave3.spawns.push(Spawn.from([0x18, 0x07, 0x23, 0x00]));
   EastCave3.flags.push(Flag.of({screen: 0x10, flag: rom.flags.alloc(0x200)}));
 
   // Make the connections.

@@ -235,6 +235,9 @@ export class FlagSet {
   connectGoaToLeaf() {
     return this.check('Xe') && this.check('Xg');
   }
+  removeEarlyWall() {
+    return this.check('Xb');
+  }
   zebuStudentGivesItem() {
     return !this.check('Xe') || this.check('Xc');
   }

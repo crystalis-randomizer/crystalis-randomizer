@@ -1053,36 +1053,28 @@ SetTriggerTileGameMode:
    adc $0421  ; player level
    sta $03e1  ; player attack
    lda $0421  ; player level
-   sta $62
-;; Max out armor and shield def at 2*level
-   sta $61
    asl
-   adc $62
-   sta $61
-   ldy $0713
+   sta $62    ; $62 <- 2*player level
+   asl
+   sta $61    ; $61 <- 4*player level
+   ldy $0713  ; equipped armor
    lda ArmorDefense,y
-   cmp $61
-   bcc +
-    lda $61
-+  ldy $0716 ; equipped passive item
-   cpy #$10  ; iron necklace
-   bne +
-    asl
-+  clc
-   adc $62   ; armor defense
-   jsr PatchUpdateShieldDefense
+   ldy #$10   ; iron necklace
+   jsr ComputeDefense
+   sta $0401  ; armor defense
+   ldy $0714  ; equipped shield
+   lda ShieldDefense,y
+   ldy #$14   ; shield ring
+   jsr ComputeDefense
+   sta $0400  ; shield defense
+   nop
    nop
 .assert $3c04f ; NOTE: must be exact!
-  ; STA PLAYER_DEF
-
-
-
 
 
 .org $3c0f8
   jsr PostUpdateEquipment
   jmp RestoreBanksAndReturn
-
 
 
 .org $3c446
@@ -2091,25 +2083,19 @@ PatchGrantItemInRegisterA:
    pla
 + rts
 
-PatchUpdateShieldDefense:
-  sta $0401
-  ldy $0714
-  lda ShieldDefense,y
-  cmp $61
-  bcc +
-   lda $61
-+ ldy $0716 ; equipped passive item
-  cpy #$14  ; shield ring
-  bne +
-   asl
-+ clc
-  adc $62 ; shield defense
-  sta $0400
-  rts
-
-;; We could try to be cleverer about not reloading the equipped item.
-;; If we just ASL the whole defense then we can do them simultaneously,
-;; and then go into power ring.
+ComputeDefense:
+  cpy $0716   ; equipped worn item
+  php         ; remember whether it was equal or not
+   clc
+   adc $0421  ; add the level
+   cmp $61    ; compare to 4*level
+   bcc +      ; if less then skip
+    lda $61   ; if greater then cap
++ plp         ; pull the Z flag
+  bne +       ; if not wearing correct item then skip
+   clc
+   adc $62    ; add 2*level
++ rts
 
 .ifdef _ZEBU_STUDENT_GIVES_ITEM
 PatchZebuStudentFollowUp:

@@ -195,8 +195,8 @@ function fixMimics(rom: Rom): void {
 
 function adjustGoaFortressTriggers(rom: Rom): void {
   const l = rom.locations;
-  // Move Kelbesque 2 one tile left.
-  l.GoaFortress_Kelbesque.spawns[0].x -= 8;
+  // Move Kelbesque 2 one full tile left.
+  l.GoaFortress_Kelbesque.spawns[0].x -= 16;
   // Remove sage screen locks (except Kensu).
   l.GoaFortress_Zebu.spawns.splice(1, 1); // zebu screen lock trigger
   l.GoaFortress_Tornel.spawns.splice(2, 1); // tornel screen lock trigger

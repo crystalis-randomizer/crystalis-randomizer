@@ -14,6 +14,7 @@ import {randomizeThunderWarp} from './pass/randomizethunderwarp.js';
 import {shuffleMazes} from './pass/shufflemazes.js';
 import {shufflePalettes} from './pass/shufflepalettes.js';
 import {shuffleTrades} from './pass/shuffletrades.js';
+import {toggleMaps} from './pass/togglemaps.js';
 import {unidentifiedItems} from './pass/unidentifieditems.js';
 import {Random} from './random.js';
 import {Rom} from './rom.js';
@@ -171,6 +172,7 @@ export async function shuffle(rom: Uint8Array,
 
   // Make deterministic changes.
   deterministic(parsed, flags);
+  toggleMaps(parsed, flags, random);
 
   // Set up shop and telepathy
   await assemble('postparse.s');

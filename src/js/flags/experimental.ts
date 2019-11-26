@@ -6,6 +6,11 @@ export const EXPERIMENTAL_FLAGS: FlagSection = {
 
   flags: [
     {
+      flag: 'Xb',
+      name: 'Remove one early wall',
+      text: `Remove either the wall in East Cave or the wall behind Zebu.`,
+    },
+    {
       flag: 'Xc',
       name: 'Extra checks',
       text: `Add two extra checks in the initial area.  This requires Re and
@@ -24,7 +29,7 @@ export const EXPERIMENTAL_FLAGS: FlagSection = {
       flag: 'Xg',
       name: 'Goa passage',
       text: `Add a passage between East Cave and Goa Valley.  There will be an
-             "ember wall" (requires water) blocking the exit.  Requires Re`,
+             "ember wall" (requires water) blocking the exit.  Requires Xe`,
     },
     {
       flag: 'Xw',

@@ -650,7 +650,20 @@ ReloadInventoryAfterLoad:
 .endif
 
 
+.bank $24000 $8000:$2000
 .bank $26000 $a000:$2000
+
+;;; Rewrite the page boundary to avoid code crossing it.
+.org $25fef
+  ;; Need to fit this in 17 bytes
+  sta $09     ; 85 09
+  ldy #$03    ; a0 04
+- sta $06f0,y ; 99 f0 06
+  sta $0002,y ; 99 02 00
+  dey         ; 88
+  bpl -       ; 10 f7
+  jmp $a005   ; 4c 05 a0
+.assert < $26000
 
 .ifdef _DISPLAY_DIFFICULTY
 ;;; Start the loop at 6 instead of 5 to also show the difficulty

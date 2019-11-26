@@ -16,7 +16,10 @@ let race = false;
 
 const permalink = typeof CR_PERMALINK === 'boolean' && CR_PERMALINK;
 
-const ga = window.ga || (() => {});
+function ga(cmd, ...args) {
+  // TODO - use gtag correctly...
+  (window.ga || (() => {}))('gtag_UA_131783670_1.' + cmd, ...args);
+}
 
 const initRace = () => {
   race = true;

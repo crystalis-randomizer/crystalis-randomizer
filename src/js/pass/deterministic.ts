@@ -593,7 +593,7 @@ function eastCave(rom: Rom, flags: FlagSet): void {
 
   // Connect maps
   loc1.connect(0x43, loc2, 0x44);
-  loc1.connect(0x40, ValleyOfWind, 0x34);
+  loc1.connect(0x40, ValleyOfWind, 0x33);
 
   if (flags.connectLimeTreeToLeaf()) {
     // Add entrance to lime tree valley

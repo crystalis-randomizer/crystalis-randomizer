@@ -643,7 +643,7 @@ function connectGoaToLeaf(rom: Rom): void {
   const {GoaValley, EastCave2, EastCave3} = rom.locations;
   // Add a new cave to the top-left corner of Goa Valley.
   GoaValley.writeScreens2d(0x00, [
-      [0x0c, 0xc1, 0x0d],
+      [0x0c, 0xc1, 0x3f],
       [0x0e, 0x37, 0x35]]);
   // Add an extra down-stair to EastCave2 and a new 3-screen EastCave3 map.
 

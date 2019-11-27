@@ -46,6 +46,8 @@ export function fixDialog(rom: Rom) {
 
   const queen = rom.npcs[0x38];
   replaceMessage('0a:0c', '[28:Flute of Lime]', item(queen.data[0]));
+  replaceMessage('0a:0d', '[02:Sword of Water]',
+                 item(queen.localDialogs.get(-1)![3].condition & 0xff));
   // TODO - consider replacing 0a:0d but we need to also replace condition?
   const recoverSlot = rom.prg[0x3d1f9];
   if (recoverSlot < 0x41) unmagic('0b:01');

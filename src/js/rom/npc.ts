@@ -168,6 +168,19 @@ export class Npc extends Entity {
     this.localDialogs = other.localDialogs;
   }
 
+  localDialog(index: number): LocalDialog;
+  localDialog(location: number, index?: number): LocalDialog {
+    if (index == null) {
+      index = location;
+      location = -1;
+    }
+    const dialogs = this.localDialogs.get(location);
+    if (dialogs == null || index >= dialogs.length) {
+      throw new Error(`No local dialog ${index} for location ${hex(location)}`);
+    }
+    return dialogs[index];
+  }
+
   async write(writer: Writer): Promise<void> {
     if (!this.used) return;
     const promises = [];
@@ -300,3 +313,11 @@ export const NAMES = {
   mesia: [0x8e, 'Mesia'],
   rage: [0xc3, 'Rage'],
 };
+
+export class PortoaQueen extends Npc {
+  // TODO - extend NamedNpc? actually add it to the class.
+  readonly id = 0x38;
+  readonly name = 'Portoa Queen';
+  get expectedSword(): number { return this.localDialog(3).condition & 0xff; }
+  set expectedSword(id: number) { this.localDialog(3).condition = 0x200 | id; }
+}

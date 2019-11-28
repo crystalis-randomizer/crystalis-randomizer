@@ -140,8 +140,7 @@ export namespace Item {
   export const EYE_GLASSES = Item(0x37);
   export const BROKEN_STATUE = Item(0x38);
   export const GLOWING_LAMP = Item(0x39);
-  // TODO - consider making this an actual item.
-  export const STATUE_OF_GOLD = and(Item.BROKEN_STATUE, Item.GLOWING_LAMP);
+  export const STATUE_OF_GOLD = Item(0x3a);
   export const LOVE_PENDANT = Item(0x3b);
   export const KIRISA_PLANT = Item(0x3c);
   export const IVORY_STATUE = Item(0x3d);

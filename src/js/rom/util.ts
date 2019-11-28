@@ -160,12 +160,16 @@ export class FlagListType {
       const hi = data[offset++];
       const lo = data[offset++];
       const flag = (hi & 3) << 8 | lo;
-      flags.push(hi & this.clear ? ~flag : flag);
+      const signed = hi & this.clear ? ~flag : flag;
+      //if (signed !== ~0)
+      flags.push(signed);
       if (hi & this.last) return flags;
     }
   }
 
   bytes(flags: number[]): number[] {
+    //flags = flags.filter(f => f !== ~0);
+    //if (!flags.length) flags = [~0];
     const bytes = [];
     for (let i = 0; i < flags.length; i++) {
       let flag = flags[i];
@@ -187,6 +191,7 @@ export class FlagListType {
 
 export const DIALOG_FLAGS = new FlagListType(0x40, 0x80);
 export const ITEM_GET_FLAGS = new FlagListType(0x40, 0x80);
+export const ITEM_USE_FLAGS = new FlagListType(0x40, 0x80);
 export const SPAWN_CONDITION_FLAGS = new FlagListType(0x80, 0x20);
 
 ////////////////////////////////////////////////////////////////

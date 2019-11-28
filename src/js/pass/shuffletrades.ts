@@ -1,34 +1,37 @@
 import {FlagSet} from '../flagset.js';
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
+import {Item} from '../rom/item.js';
 
 // Shuffle the palettes.
 export function shuffleTrades(rom: Rom, flags: FlagSet, random: Random) {
   if (!flags.randomizeTrades()) return;
+  const {StatueOfOnyx, FogLamp, LovePendant,
+         KirisaPlant, IvoryStatue} = rom.items;
 
-  const items = [
-    [rom.items[0x25], 0, 'Akahana'],            // statue of onyx
-    // [rom.items[0x28], 18, 'Stoned Akahana'], // flute of lime
-    [rom.items[0x35], 0, 'Fisherman'],          // fog lamp
-    [rom.items[0x3b], 0, 'Kensu'],              // love pendant
-    [rom.items[0x3c], 0, 'Aryllis'],            // kirisa plant
-    [rom.items[0x3d], 0, 'Slimed Kensu'],       // ivory statue
+  const items: ReadonlyArray<readonly [Item, number, string]> = [
+    [StatueOfOnyx, 0, 'Akahana'],
+    [FogLamp, 0, 'Fisherman'],
+    [LovePendant, 0, 'Kensu'],
+    [KirisaPlant, 0, 'Aryllis'],
+    [IvoryStatue, 0, 'Slimed Kensu'],
+    // [FluteOfLime, 3, 'Stoned Akahana'],
   ] as const;
-
-  const npcs: Array<[string, number[]]> = [];
-  for (const [item, offset, npcName] of items) {
-    if (!item.tradeIn) throw new Error(`Expected trade-in for ${item.id}`);
-    // save expected NPC, along with message id and flag
-    npcs.push([npcName, item.tradeIn.slice(offset, offset + 6)]);
-  }
-
+  const npcs = items.map(([item, trade, npcName]) => {
+    if (item.trades.indexOf(trade) < 0 || trade >= item.itemUseData.length) {
+      throw new Error(`not a trade: ${item} ${trade}`);
+    }
+    const want = item.itemUseData[trade].want; // NPC id | 100
+    return [want, npcName] as const;
+  });
   random.shuffle(npcs);
 
-  for (const [item, offset] of items) {
-    const [npcName, npc] = npcs.pop()!;
-    item.tradeIn!.splice(offset, 6, ...npc);
+  for (const [item, trade] of items) {
+    const [want, npcName] = npcs.pop()!;
+    item.itemUseData[trade].want = want;
     if (rom.spoiler) rom.spoiler.addTrade(item.id, item.messageName, npcName);
-    if (npc[0] === 0x23) { // aryllis item requires being a girl
+    if (want === 0x123) { // aryllis item requires being a girl
+      // TODO - consider moving this to Item.write?
       rom.prg[0x3d4b5] = item.id - 0x1c;
     }
   }
@@ -61,9 +64,8 @@ export function shuffleTrades(rom: Rom, flags: FlagSet, random: Random) {
 export function buildTradeInMap(rom: Rom): Map<number, number> {
   const map = new Map();
   for (const item of rom.items) {
-    if (!item.tradeIn) continue;
-    for (let i = 0; i < item.tradeIn.length; i += 6) {
-      map.set(item.tradeIn[i], item.id);
+    for (const trade of item.trades) {
+      map.set(item.itemUseData[trade].want & 0xff, item.id);
     }
   }
   return map;

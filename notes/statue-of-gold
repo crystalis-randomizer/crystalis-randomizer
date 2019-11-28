@@ -1,0 +1,42 @@
+Goal: Randomize statue of gold trade-in
+
+Problem:
+ * Current ItemUse action jump just swaps out the broken statue with
+   the statue of gold, but doesn't run any of the ItemGet actions.
+ * Calling GrantItemInRegisterA or ItemGet or anything else causes
+   a crash.
+
+But there _are_ items that give other items.  We just need to consolidate
+the other turn-ins to share the same action.  Maybe add a data table to
+look up the current item and what it trades for.
+
+Glowing Lamp:
+  - Message 20:06 action 05 (rts)
+
+Statue of Onyx:
+  - Expect NPC 16
+  - Message 02:02 action 1c
+  - Set 050
+
+Love Pendant:
+  - Expect NPC 7e
+  - Message 13:02 action 0c
+  - Set 03c
+
+Kirisa Plant:
+  - Expect NPC 23
+  - Message 12:10 action 0d
+  - Set 010
+
+Ivory Statue:
+  - Expect NPC 75
+  - Message 00:00 action 0e
+  - Set 065
+
+
+ItemOrTriggerActionJump_0d ($3d6e7)
+When this runs, it looks like $23 is the item that was traded in.
+We need to switch it to look it up from a table to see what item to give.
+
+Then switch the statue fix to just return normally and use the itemuse data
+to trigger the action.

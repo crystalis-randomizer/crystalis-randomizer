@@ -196,6 +196,37 @@ DisplayNumber:
 
 
 .org $1c399 ; 58 bytes of free/unused space at start of itemuse jump
+FixStatue:
+  ;; sta $61
+  ;; sta $643f,x
+  ;; ;; also need to set the item flags...
+  ;; lda $24
+  ;; pha
+  ;;  lda $25
+  ;;  pha
+    
+  jmp $d22b
+
+  ;; tay
+  ;; lda $23
+  ;; pha
+  ;;  sty $23
+  ;;  lda #$ff
+  ;;  sta $643f,x
+  ;;  lda $24
+  ;;  pha
+  ;;   lda $25
+  ;;   pha
+  ;;    jsr $8271
+  ;;   pla
+  ;;   sta $25
+  ;;  pla
+  ;;  sta $24
+  ;; pla
+  ;; sta $23
+  ;; rts
+
+
 .assert < $1c3d3
 
 .org $1c3eb ; 16 bytes of free/unused space in middle of itemuse jump
@@ -207,6 +238,13 @@ DisplayNumber:
 
 .org $1c157
   .word (PowersOfTwo) ; no need for multiple copies
+
+
+;;; Allow giving arbitrary items for broken statue trade-in
+.org $1c596
+;  jsr $d22b ; grant item in register A
+;  jsr FixStatue
+  jmp FixStatue
 
 
 ;; Count uses of Flute of Lime and Alarm Flute - discard after two.

@@ -4,7 +4,7 @@ import {BossKill} from './rom/bosskill.js';
 import {Bosses} from './rom/bosses.js';
 import {Flags} from './rom/flags.js';
 import {Hitbox} from './rom/hitbox.js';
-import {Item} from './rom/item.js';
+import {Items} from './rom/item.js';
 import {ItemGet} from './rom/itemget.js';
 import {Locations} from './rom/location.js';
 import {Messages} from './rom/messages.js';
@@ -74,7 +74,7 @@ export class Rom {
   readonly adHocSpawns: AdHocSpawn[];
   readonly metasprites: Metasprite[];
   readonly itemGets: ItemGet[];
-  readonly items: Item[];
+  readonly items: Items;
   readonly shops: Shop[];
   readonly npcs: Npc[];
   readonly bossKills: BossKill[];
@@ -166,7 +166,7 @@ export class Rom {
     this.messages = new Messages(this);
     this.telepathy = new Telepathy(this);
     this.itemGets = seq(0x71, i => new ItemGet(this, i));
-    this.items = seq(0x49, i => new Item(this, i));
+    this.items = new Items(this);
     this.shops = seq(44, i => new Shop(this, i)); // NOTE: depends on locations and objects
     this.npcs = seq(0xcd, i => new Npc(this, i));
     this.bossKills = seq(0xe, i => new BossKill(this, i));
@@ -316,8 +316,8 @@ export class Rom {
     writer.alloc(0x1c77a, 0x1c95d);
     // NpcDialog
     writer.alloc(0x1cae5, 0x1d8f4);
-    // ItemGetData
-    writer.alloc(0x1dde6, 0x1e065);
+    // ItemGetData (to 1e065) + ItemUseData
+    writer.alloc(0x1dde6, 0x1e106);
     // TriggerData
     // NOTE: There's some free space at 1e3c0..1e3f0, but we use this for the
     // CheckBelowBoss triggers.

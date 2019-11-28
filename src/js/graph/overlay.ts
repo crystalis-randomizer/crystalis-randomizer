@@ -61,6 +61,7 @@ const RELEVANT_FLAGS = [
   0x200, 0x201, 0x202, 0x203,
   // balls and bracelets may be needed for teleport
   0x205, 0x206, 0x207, 0x208, 0x209, 0x20a, 0x20b, 0x20c,
+  0x235, // fog lamp (for fisherman spawn maybe?)
   0x236, // shell flute (for fisherman spawn)
   0x243, // telepathy (for rabbit, oak, deo)
   0x244, // teleport (for mt sabre trigger)
@@ -137,10 +138,10 @@ export class Overlay {
       this.relevantFlags.add(flag);
     }
     for (const item of rom.items) {
-      if (!item.tradeIn) continue;
+      if (!item.trades.length) continue;
       const cond = item.id === 0x1d ? Capability.BUY_HEALING : Item(item.id);
-      for (let i = 0; i < item.tradeIn.length; i += 6) {
-        this.tradeIns.set(item.tradeIn[i], cond);
+      for (const trade of item.trades) {
+        this.tradeIns.set(item.itemUseData[trade].want & 0xff, cond);
       }
     }
     for (const loc of rom.locations) {
@@ -664,6 +665,7 @@ export class Overlay {
       [Capability.CLIMB_WATERFALL, Magic.FLIGHT],
       [Capability.SHOOTING_STATUE, Magic.BARRIER], // TODO - allow shield ring?
       [Capability.CLIMB_SLOPE, Item.RABBIT_BOOTS, Magic.FLIGHT],
+      [Item.STATUE_OF_GOLD, and(Item.BROKEN_STATUE, Item.GLOWING_LAMP)],
       // [Event.GENERALS_DEFEATED, Item.IVORY_STATUE], // TODO - fix this
       [Event.OPENED_SEALED_CAVE, Event.STARTED_WINDMILL], // TODO - merge completely?
     ];

@@ -19704,6 +19704,7 @@ DeleteUsedItem
 ;;; NOTE: we can get back 40 or so bytes here by just shrinking the
 ;;; table and having it jump into garbage for invalid values.  We could
 ;;; also fill in the 16-byte gap if needed.
+;;; STRIP: word=$14000
 ItemUseJumpTable
         $1c399              .word ($1c4db)
         $1c39b              .word ($1c4db)
@@ -19873,7 +19874,9 @@ ItemUseJump_AlarmFlute
         $1c4ae  xx:          xxx
         ;;                   ---
 +       $1c4af  xx xx:      xxx #$xx ; second try at 6
-        $1c4b1  xx xx:      xxx ItemUseJump_GiveItem
+        $1c4b1  xx xx:      xxx ItemUseJump_GiveItem ; uncond
+;;; --------------------------------
+ItemUseJump_InsectFlute
         $1c4b3  xx:         xxx
         $1c4b4  xx xx:      xxx $xx
         $1c4b6  xx xx:      xxx #$xx
@@ -20071,8 +20074,7 @@ ItemUseJump_FluteOfLime
 ;;; Within a location are two-byte pairs referencing a flag.  The :80 bit of the
 ;;; first byte is always set.  The :20 bit indicates what value is needed to match
 ;;; (i.e. set means clear matches - see ReadFlagFromBytePair_24y).  If ANY flag
-;;; in a location-entry FAILS to match, then the NPC will NOT spawn.  Note - this
-;;; seems backwards, so it's probably wrong.
+;;; in a location-entry FAILS to match, then the NPC will NOT spawn.
 ;;; STRIP: word=$14000
 NpcSpawnConditionTable
         $1c5e0              .word ($1c780) ; 00 portoa pink man on fortune teller island; sahara orange man left
@@ -23328,9 +23330,9 @@ ItemUseData_26 ; OpelStatue 1c450
         $1e07b              .byte $xx,$xx ; action 05 (rts)
         $1e07d              .byte $xx,$xx
 ItemUseData_27 ; InsectFlute 1c4bb3
-        $1e07f              .byte $xx,$xx
-        $1e081              .byte $xx,$xx
-        $1e083              .byte $xx
+        $1e07f              .byte $xx     ; UNUSED (wanted location $1a)
+        $1e080              .byte $xx,$xx ; action 03 (rts)
+        $1e082              .byte $xx,$xx
 ItemUseData_24 ; WarpBoots 1c564
         $1e084              .byte $xx,$xx ; action 04 (rts)
         $1e086              .byte $xx,$xx
@@ -23380,7 +23382,7 @@ ItemUseData_37 ; EyeGlasses 1c45f
         $1e0c6              .byte $xx,$xx ; 20:07 (action 10)
         $1e0c8              .byte $xx,$xx
 ItemUseData_3b ; LovePendant 1c439
-        $1e0ca              .byte $xx,$xx ; kensu
+        $1e0ca              .byte $xx,$xx ; Expect NPC 7e kensu
         $1e0cc              .byte $xx,$xx ; 13:02 (action 0c)
         $1e0ce              .byte $xx,$xx ; Set: 03c chest:3b:love pendant
 ItemUseData_3c ; KirisaPlant 1c491

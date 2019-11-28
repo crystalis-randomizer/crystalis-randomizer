@@ -138,24 +138,31 @@ export class Writer {
       this.rom.subarray(chunk.pos, chunk.pos + write.data.length).set(write.data);
       write.resolve(chunk.pos);
       this.free[chunk.page] -= write.data.length;
-      // console.log(`${write.name}: writing ${write.data.length} bytes at ${
-      //              hex(chunk.pos)}: ${Array.from(write.data, hex).join(' ')} | FREE ${
-      //              this.free.map((v:number,k:number)=>`${hex(2*k)}:${v}`).join('/')}`);
+
+      if (DEBUG && DEBUG_PAGE.has(chunk.page)) {
+        console.log(`${write.name}: writing ${write.data.length} bytes at ${
+                     hex(chunk.pos)}: ${Array.from(write.data, hex).join(' ')} | FREE ${
+                     this.free.map((v:number,k:number)=>`${hex(2*k)}:${v}`).join('/')}`);
+      }
+
       chunk.pos += write.data.length;
       return;
     }
 
-    // console.log(`LOOKING FOR CHUNK: ${write.data.length} bytes in ${hex(write.startPage)
-    //                  }..${hex(write.endPage)}`);
-    // for (const chunk of this.chunks) {
-    //   if (chunk.page < write.startPage || chunk.page > write.endPage) {
-    //     console.log(`wrong page: ${hex(chunk.pos)}..${hex(chunk.end)} -> ${hex(chunk.page)}`); continue;
-    //   }
-    //   if (chunk.free() < write.data.length) {
-    //     console.log(`not enough free: ${hex(chunk.pos)}..${hex(chunk.end)} -> ${chunk.free()}`); continue;
-    //   }
-    // }
-    //console.log(this.chunks);
+    if (DEBUG) {
+      console.log(`LOOKING FOR CHUNK: ${write.data.length} bytes in ${hex(write.startPage)
+                       }..${hex(write.endPage)}`);
+      for (const chunk of this.chunks) {
+        if (chunk.page < write.startPage || chunk.page > write.endPage) {
+          console.log(`wrong page: ${hex(chunk.pos)}..${hex(chunk.end)} -> ${hex(chunk.page)}`); continue;
+        }
+        if (chunk.free() < write.data.length) {
+          console.log(`not enough free: ${hex(chunk.pos)}..${hex(chunk.end)} -> ${chunk.free()}`); continue;
+        }
+      }
+      console.log(this.chunks);
+    }
+
     console.log(`${write.name}: WRITE FAILED ${write.data.length} bytes: ${
                  Array.from(write.data, hex).join(' ')}`);
     write.reject(
@@ -163,3 +170,6 @@ export class Writer {
                        }..${hex(write.endPage)} to write ${write.name}: ${write.data}`));
   }
 }
+
+const DEBUG: boolean = false;
+const DEBUG_PAGE = new Set([0xe, 0xf]);

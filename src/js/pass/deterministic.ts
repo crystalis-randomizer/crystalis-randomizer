@@ -177,8 +177,7 @@ function undergroundChannelLandBridge(rom: Rom) {
 function fogLampNotRequired(rom: Rom) {
   // Need to make several changes.
   // (1) dolphin only requires shell flute, make the flag check free (~000)
-  rom.items[0x36].itemUseData[0] = 0xa0;
-  rom.items[0x36].itemUseData[1] = 0x00;
+  rom.items[0x36].itemUseData[0].want = ~0;
   // (2) kensu 68 (@61) drops an item (67 magic ring)
   rom.npcs[0x68].data[0] = 0x67;
   rom.npcs[0x68].localDialogs.get(-1)![0].message.action = 0x0a;
@@ -753,7 +752,7 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   rom.npcs[0x74].used = true;
   rom.npcs[0x74].data = [...rom.npcs[0x7e].data] as any;
   rom.locations.Swan_DanceHall.spawns.find(s => s.isNpc() && s.id === 0x7e)!.id = 0x74;
-  rom.items[0x3b].tradeIn![0] = 0x74;
+  rom.items.LovePendant.itemUseData[0].want = 0x174;
 
   // dialog is shared between 88 and 16.
   rom.npcs[0x88].linkDialog(0x16);
@@ -768,7 +767,7 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
   rom.npcs[0x82].link(0x16);
   rom.npcs[0x82].data = [...rom.npcs[0x16].data] as any; // ensure give item
   rom.locations.Brynmaer.spawns.find(s => s.isNpc() && s.id === 0x16)!.id = 0x82;
-  rom.items[0x25].tradeIn![0] = 0x82;
+  rom.items.StatueOfOnyx.itemUseData[0].want = 0x182;
 
   // Leaf elder in house ($0d @ $c0) ~ sword of wind redundant flag
   // dialog(0x0d, 0xc0)[2].flags = [];

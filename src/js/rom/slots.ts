@@ -196,6 +196,7 @@ const hardcodedItems: ReadonlyArray<readonly [number, string?]> = [
   [0x3d6e8, 'Aryllis'],
   [0x3d711], // refresh from trigger
   [0x3d7fe, 'Akahana statue trade-in'],
+  [0x1c595, 'Fixed statue'],
   //[0x3e3a2], // invisible flag for statue of onyx
   //[0x3e3a6], // invisible flag for kirisa plant
   //[0x3e3aa], // invisible flag for love pendant

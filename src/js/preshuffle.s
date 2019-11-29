@@ -164,6 +164,23 @@ DisplayNumber:
 .bank $1c000 $8000:$4000
 
 
+;;; We want to be able to determine which trigger ran from the trigger action.
+;;; In vanilla, the trigger ID starts out in $23 but is clobbered by the code
+;;; that checks the conditions.  We clobber $10 instead for that.
+.org $1c0ed ; trigger square init to false
+  sta $61
+.org $1c10d ; trigger square condition met
+  sta $61
+.org $1c33b ; item use postcondition
+  lda $61
+.org $1c4dd ; item use invalid (programmatic)
+  sta $61
+.org $3d544 ; execute dialog action
+  lda $61
+.org $3d856 ; display dialog
+  lda $61
+
+
 .ifdef _BUFF_DYNA
 .ifdef _REMOVE_MAGIC_FOR_DYNA
 ;;; Patch ItemGet_Crystalis to remove magics, too
@@ -196,7 +213,7 @@ DisplayNumber:
 
 
 .org $1c399 ; 58 bytes of free/unused space at start of itemuse jump
-FixStatue:
+;; FixStatue:
   ;; sta $61
   ;; sta $643f,x
   ;; ;; also need to set the item flags...
@@ -204,8 +221,18 @@ FixStatue:
   ;; pha
   ;;  lda $25
   ;;  pha
+
+
+;;;  TODO - this is broken - we probably need to update
+;;;  the ItemUseData to do give the item, but that's also
+;;;  tricky because how to store what the result is?!?
+;;;   --> move all the trade-ins to be embedded in itemuse?!?
+;;;  No, itemusejump should be able to do it?
+;;;    --- see ???
+;;;  ItemOrTriggerActionJump_0d currently hard-codes bow of moon
+;;;    --- instead lookup table
     
-  jmp $d22b
+  ;; jmp $d22b
 
   ;; tay
   ;; lda $23
@@ -241,10 +268,15 @@ FixStatue:
 
 
 ;;; Allow giving arbitrary items for broken statue trade-in
-.org $1c596
+.org $1c594
+  rts
+  ;; 9 free bytes, could be more if we remove the unused Flute of Lime checks
+.assert < $1c59e
+
+;.org $1c596
 ;  jsr $d22b ; grant item in register A
 ;  jsr FixStatue
-  jmp FixStatue
+ ; jmp FixStatue
 
 
 ;; Count uses of Flute of Lime and Alarm Flute - discard after two.
@@ -2251,8 +2283,91 @@ CheckToRedisplayDifficulty:
   jmp $3e144
 .org $3d21a
   jmp $3e144
+;;; For these, just eliminate the indirection: update the jump table directly.
+.org $3d56f
+  .word ($e144)  ; ItemOrTriggerActionJumpTable[$06]
+.org $3d585
+  .word ($e144)  ; ItemOrTriggerActionJumpTable[$11]
+
+;;; Consolidate some of the ItemOrTrigger -> itemget logic.
+;;; A number of different message actions can be combined into a single
+;;; one once we expose the active trigger ID at $23.
+
+;;; TODO - change the actions on the messageids rather than repeat jumps
+.org $3d579                       ; ItemOrTriggerActionJumpTable + 2*$0b
+  .word (GrantItemFromTable)      ; 0b get barrier
+  .word (GrantItemThenDisappear)  ; 0c love pendant -> kensu change
+  .word (GrantItemFromTable)      ; 0d kirisa plant -> bow of moon
+  .word (UseIvoryStatue)          ; 0e
+  .word (GrantItemFromTable)      ; 0f learn refresh
+
+;;; TODO - change the actions on the messageids rather than repeat jumps
+.org $3d589                       ; ItemOrTriggerActionJumpTable + 2*$13
+  .word (DestroyStatue)           ; 13 use bow of moon
+  .word (DestroyStatue)           ; 14 use bow of sun
+
 .org $3d6d5
-  jmp $3e144
+GrantItemTable:
+  .byte $84,$46  ; 84 angry sea trigger -> 46 barrier
+  .byte $3b,$47  ; 3b love pendant use -> 47 change
+  .byte $3c,$3e  ; 3c kirisa plant use -> 3e bow of moon
+  .byte $b4,$41  ; b4 windmill cave trigger -> 41 refresh
+  .byte $39,$3a  ; 39 glowing lamp use -> 3a statue of gold
+
+GrantItemFromTable:
+  ldy #$00
+  lda $23
+-  iny
+   iny
+   ;; beq >rts    ; do we need a safety?
+   cmp GrantItemTable-2,y
+  bne -
++ lda GrantItemTable-1,y
+  jmp GrantItemInRegisterA
+
+GrantItemThenDisappear:  ; Used by Kensu in granting change (action 0c)
+  jsr GrantItemFromTable
+  ldy #$0e
+  jmp $d31f
+
+UseIvoryStatue:  ; Move bytes from $3d6ec
+  jsr $e144 ; LoadNpcDataForCurrentLocation
+  ldx #$0f
+  lda #$1a
+  jsr $c418 ; BankSwitch8k_8000
+  jsr $98a8 ; ReadObjectCoordinatesInto_34_37
+  ldx #$1e
+  stx $10
+  jsr $9897 ; WriteObjectCoordinatesFrom_34_37
+  lda #$df
+  sta $11
+  jsr $c25d ; LoadOneObjectDataInternal
+  lda #$a0
+  sta $033e
+UseIvoryStatueRts:
+  rts
+
+DestroyStatue:
+  ;; Modified version to use the ID of the used bow rather than have
+  ;; a separate action for each bow.
+  lda #$00
+  ldy $23  ; $3e for moon -> 4ad, $3f for sun -> 4ae ==> add 46f
+  sta $046f,y
+  lda #$6b
+  jsr $c125 ; StartAudioTrack
+  jsr $3d88b
+  lda $04ad
+  ora $04ae
+  bne UseIvoryStatueRts
+  lda #$7f
+  sta $07d7
+  lda $04cf
+  sta $11
+  lda #$0f
+  sta $10
+  jmp $c25d ; LoadOneObjectDataInternal
+.assert < $3d746    
+
 
 ;;; NOTE: the following would also need to change, except we've repurposed it
 ;;; since it seems to have been unused...

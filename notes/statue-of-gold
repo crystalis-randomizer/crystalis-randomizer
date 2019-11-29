@@ -40,3 +40,35 @@ We need to switch it to look it up from a table to see what item to give.
 
 Then switch the statue fix to just return normally and use the itemuse data
 to trigger the action.
+
+================================================================
+
+Generalizing the ItemOrTriggerActionJumps:
+
+Currently many of these are hard-coded, but it would be nice to instead
+use a sparse lookup table to map used item ID or trigger ID (these are
+disjoint) to the item to grant.  Unfortunately, the current trigger ID
+is not normally available by the time the action is run because the code
+that matches conditions reuses $23 (where all three routines - ItemGet,
+ItemUse, and Trigger - store the ID) as a signal.  We can instead use
+a temp var, like $10 (which was most recently used for a jump table when
+this check happens).
+
+================================================================
+
+Follow-up:
+
+This generalization is a pretty significant change.
+ * hardcoded trade-ins are now moved to a weird location that may not be
+   as stable as they were before
+ * randomized trades is even more complicated, because now we need to
+   change TWO things - the item whose use points to the action, and the
+   lookup table key!
+ * the barrier trigger seems to have lost its text?
+   - triggers aren't quite working as intended...? seems like we broke something
+   - found a few more refs to $23 in the trigger AND item routines,
+     still wonky -> no "nothing happens" message anymore???
+
+
+TODO - still need to fix trade-ins and dialogs ("... statue of gold; you get power ring")
+TODO - fixdialog is reading hardcoded slots, too (in addition to slots.ts)

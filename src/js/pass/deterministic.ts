@@ -26,6 +26,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   // NOTE: this is done very early, make sure any references to warp
   // point flags are updated to reflect the new ones!
   addZombieWarp(rom);
+  consolidateItemGrants(rom);
 
   addMezameTrigger(rom);
 
@@ -78,6 +79,12 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   if (flags.orbsOptional()) orbsOptional(rom);
 
   fixMimics(rom); // NOTE: after all mimics
+}
+
+// Updates a few itemuse and trigger actions in light of consolidation we
+// around item granting.
+function consolidateItemGrants(rom: Rom): void {
+  rom.items.GlowingLamp.itemUseData[0].message.action = 0x0b;
 }
 
 // Adds a trigger action to mezame.  Use 87 leftover from rescuing zebu.

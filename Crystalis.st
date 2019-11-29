@@ -23839,12 +23839,12 @@ Trigger_b4
         ;; b4 learn refresh
         $1e352              .byte $xx,$xx ; Condition: 00a windmill key used
         $1e354              .byte $xx,$xx ; Condition: 039 NOT learned refresh
-        $1e356              .byte $xx,$xx ; Action: 0f learn refresh $3d70d (1b)
+        $1e356              .byte $xx,$xx ; Action: 0f learn refresh $3d70d
         $1e358              .byte $xx,$xx ; Set: 039 learned refresh
 Trigger_b5
         ;; b5 learn teleport (UNUSED)
         $1e35a              .byte $xx,$xx ; Condition: 03f NOT learned teleport
-        $1e35c              .byte $xx,$xx ; Action: 0f (ab)
+        $1e35c              .byte $xx,$xx ; Action: 0f
         $1e35e              .byte $xx,$xx ; Set: 03f learned teleport
 Trigger_b6
         ;; b6 sabera trap
@@ -26411,7 +26411,7 @@ ObjectActionJump_6f
         $1f836  xx:           xxx
         $1f837  xx:           xxx
         $1f838  xx xx:         xxx #$xx
-        $1f83a  xx xx:         xxx #$xx
+        $1f83a  xx xx:         xxx #OP_JMP_ABS
         $1f83c  xx xx:         xxx $xx
         $1f83e  xx xx:         xxx ($xx),y
         $1f840  xx xx:         xxx $xx
@@ -56904,7 +56904,7 @@ MainGameModeJump_1f_DynaAppears
         ;;                    ----------
 +       $3cd06  xx:          xxx
         $3cd07  xx:          xxx
-        $3cd08  xx xx:       xxx #$xx
+        $3cd08  xx xx:       xxx #OP_JMP_ABS
         $3cd0a  xx xx:       xxx $xx
         $3cd0c  xx xx xx:    xxx ObjectActionJump,y
         $3cd0f  xx xx:       xxx $xx
@@ -57819,7 +57819,7 @@ MainGameModeJump_07_TriggerSquareOrTreasureChest
         $3d450  xx xx xx:   xxx $xxxx
         $3d453  xx xx:      xxx #$xx
         $3d455  xx xx xx:   xxx $xxxx,y
-        $3d458  xx xx xx:   xxx ExecuteItemOrTriggerAction
+        $3d458  xx xx xx:   xxx ExecuteItemOrTriggerAction ; ItemGet message action
 ;;; --------------------------------
         $3d45b  xx:         xxx
 ;;; --------------------------------
@@ -57919,7 +57919,7 @@ ItemUse_Main
         $3d51c  xx xx xx:   xxx HandleItemOrTrigger ; $3d834
         $3d51f  xx xx:      xxx $xx                 ; Was the item used successfully?
         $3d521  xx xx:      xxx ItemUseError ; $3d526
-        $3d523  xx xx xx:   xxx ExecuteItemOrTriggerAction
+        $3d523  xx xx xx:   xxx ExecuteItemOrTriggerAction ; ItemUse message action
 ;;; --------------------------------
 ItemUseError
         $3d526  xx xx:      xxx #GAME_MODE_STATUS_MSG
@@ -57940,7 +57940,7 @@ ActivateTriggerSquare
         $3d544  xx xx:      xxx $xx
         $3d546  xx xx:      xxx + ; $3d54b
         ;;                   condition was met
-        $3d548  xx xx xx:    xxx ExecuteItemOrTriggerAction
+        $3d548  xx xx xx:    xxx ExecuteItemOrTriggerAction ; Trigger message action
 +       $3d54b  xx xx:      xxx #GAME_MODE_NORMAL
         $3d54d  xx xx:      xxx GameMode
         $3d54f  xx xx xx:   xxx MainLoop_01_Game
@@ -57950,9 +57950,9 @@ ExecuteItemOrTriggerAction
         $3d552  xx xx:      xxx $xx
         $3d554  xx:         xxx
         $3d555  xx:         xxx
-        $3d556  xx xx xx:   xxx $3d563,y
+        $3d556  xx xx xx:   xxx ItemOrTriggerActionJump,y
         $3d559  xx xx:      xxx $xx
-        $3d55b  xx xx xx:   xxx $3d564,y
+        $3d55b  xx xx xx:   xxx ItemOrTriggerActionJump+1,y
         $3d55e  xx xx:      xxx $xx
         $3d560  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
@@ -57978,7 +57978,7 @@ ItemOrTriggerActionJump                 ; TODO - Label the destinations
         $3d585              .word ($3d6d5) ; 11 unused?
         $3d587              .word ($3d5a3) ; 12 unused?
         $3d589              .word ($3d718) ; 13 use bow of moon
-        $3d58b              .word ($3d71f) ; 14
+        $3d58b              .word ($3d71f) ; 14 use bow of sun
         $3d58d              .word ($3d746) ; 15
         $3d58f              .word ($3d78c) ; 16 sword get
         $3d591              .word ($3d791) ; 17

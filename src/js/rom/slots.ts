@@ -191,12 +191,15 @@ const hardcodedItems: ReadonlyArray<readonly [number, string?]> = [
   //[0x3d30e, 'Lighthouse Kensu'],
   [0x3d337, 'Rage'],
   [0x3d655, 'Mt Sabre summit trigger'], // paralysis
-  [0x3d6d9, 'Whirlpool trigger'],
-  [0x3d6de, 'Swan Kensu'],
-  [0x3d6e8, 'Aryllis'],
-  [0x3d711], // refresh from trigger
+  [0x3d6d6, 'Whirlpool trigger'],
+  [0x3d6d8, 'Swan Kensu'],
+  [0x3d6da, 'Aryllis'],
+  [0x3d6dc], // refresh from trigger
+  [0x3d6de, 'Fixed statue'],
+
+  // TODO - trade-ins are still broken!!!!
+
   [0x3d7fe, 'Akahana statue trade-in'],
-  [0x1c595, 'Fixed statue'],
   //[0x3e3a2], // invisible flag for statue of onyx
   //[0x3e3a6], // invisible flag for kirisa plant
   //[0x3e3aa], // invisible flag for love pendant

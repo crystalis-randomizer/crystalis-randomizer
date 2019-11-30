@@ -30,11 +30,13 @@ export class ItemGets extends EntityArray<ItemGet> {
   }
 
   async write(writer: Writer): Promise<void> {
+    const promises = [];
     for (const itemget of this) {
-      await itemget.write(writer);
+      promises.push(itemget.write(writer));
     }
+    await Promise.all(promises);
     let addr = GRANT_ITEM_TABLE;
-    for (const [key, value] of this) {
+    for (const [key, value] of this.actionGrants) {
       writer.rom[addr++] = key;
       writer.rom[addr++] = value;
     }

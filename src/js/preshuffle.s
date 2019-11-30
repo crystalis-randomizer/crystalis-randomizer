@@ -163,24 +163,6 @@ DisplayNumber:
 
 .bank $1c000 $8000:$4000
 
-
-;;; We want to be able to determine which trigger ran from the trigger action.
-;;; In vanilla, the trigger ID starts out in $23 but is clobbered by the code
-;;; that checks the conditions.  We clobber $10 instead for that.
-.org $1c0ed ; trigger square init to false
-  sta $61
-.org $1c10d ; trigger square condition met
-  sta $61
-.org $1c33b ; item use postcondition
-  lda $61
-.org $1c4dd ; item use invalid (programmatic)
-  sta $61
-.org $3d544 ; execute dialog action
-  lda $61
-.org $3d856 ; display dialog
-  lda $61
-
-
 .ifdef _BUFF_DYNA
 .ifdef _REMOVE_MAGIC_FOR_DYNA
 ;;; Patch ItemGet_Crystalis to remove magics, too
@@ -267,10 +249,20 @@ DisplayNumber:
   .word (PowersOfTwo) ; no need for multiple copies
 
 
+;;; Fix the overly-long loop to find broken statue
+;; .org $1c585
+;;   ldx #$08
+;; - lda $6450,x
+;;   cmp #$38    ; broken statue
+;;   beq +
+;;   dex
+;;   bpl -
+;;   jmp $84db
 ;;; Allow giving arbitrary items for broken statue trade-in
 .org $1c594
-  ;lda #$ff
-  rts
+  lda #$ff
+;  sta $6450,x
+  ;rts
 ;;   ;; 9 free bytes, could be more if we remove the unused Flute of Lime checks
 ;; .assert < $1c59e
 
@@ -309,6 +301,8 @@ PatchTradeInItem:
      sta $642e
      rts
 ++++ jmp ItemUse_TradeIn
+
+;;; Plenty of free space here!
 
 .assert < $1c760
 
@@ -517,7 +511,8 @@ ItemGet_FindOpenSlotWithOverflow:
     lda #$00
     sta $23
     rts
-;; TODO - still plenty of space here
+
+;; TODO - still 7 bytes here?
 .assert < $1e17a
 
 
@@ -2290,31 +2285,29 @@ CheckToRedisplayDifficulty:
 .org $3d585
   .word ($e144)  ; ItemOrTriggerActionJumpTable[$11]
 
-;;; Consolidate some of the ItemOrTrigger -> itemget logic.
+.org $3d654
+    ;; 5 free bytes
+.assert < $3d659
+
+;;; ================================================================
+;;; Consolidate some of the ItemOrTrigger -> itemget logic. (@@sog)
 ;;; A number of different message actions can be combined into a single
 ;;; one once we expose the active trigger ID at $23.
 
 ;;; TODO - change the actions on the messageids rather than repeat jumps
+;;;   08,0d,0f -> 0b, 14 -> 13
+;;; We could free up 4 new actions (in addition to the 3 or so unused ones)
+.org $3d573                       ; ItemOrTriggerActionJumpTable + 2*$08
+  .word (GrantItemFromTable)      ; 08 learn paralysis
 .org $3d579                       ; ItemOrTriggerActionJumpTable + 2*$0b
   .word (GrantItemFromTable)      ; 0b learn barrier
   .word (GrantItemThenDisappear)  ; 0c love pendant -> kensu change
   .word (GrantItemFromTable)      ; 0d kirisa plant -> bow of moon
   .word (UseIvoryStatue)          ; 0e
   .word (GrantItemFromTable)      ; 0f learn refresh
-
-;;; TODO - change the actions on the messageids rather than repeat jumps
-.org $3d573                       ; ItemOrTriggerActionJumpTable + 2*$08
-  .word (GrantItemFromTable)      ; 08 learn paralysis
 .org $3d589                       ; ItemOrTriggerActionJumpTable + 2*$13
   .word (DestroyStatue)           ; 13 use bow of moon
   .word (DestroyStatue)           ; 14 use bow of sun
-.org $3d59b                       ; ItemOrTriggerActionJumpTable + 2*$1c
-  .word (GrantItemFromTable)      ; 1c trade in statue of onyx
-  .word (GrantItemThenDisappear)  ; 0c love pendant -> kensu change
-
-.org $3d654
-    ;; 5 free bytes
-.assert < $3d659
 
 .org $3d6d5
 GrantItemTable:
@@ -2327,9 +2320,10 @@ GrantItemTable:
   .byte $b4,$41  ; b4 windmill cave trigger -> 41 refresh
   .byte $ff      ; for bookkeeping purposes, not actually used
 
+.assert $3d6e4
 GrantItemFromTable:
   ldy #$00
-  lda $23
+  lda $34
 -  iny
    iny
    ;; beq >rts    ; do we need a safety?
@@ -2364,7 +2358,7 @@ DestroyStatue:
   ;; Modified version to use the ID of the used bow rather than have
   ;; a separate action for each bow.
   lda #$00
-  ldy $23  ; $3e for moon -> 4ad, $3f for sun -> 4ae ==> add 46f
+  ldy $34  ; $3e for moon -> 4ad, $3f for sun -> 4ae ==> add 46f
   sta $046f,y
   lda #$6b
   jsr $c125 ; StartAudioTrack
@@ -2381,17 +2375,20 @@ DestroyStatue:
   jmp $c25d ; LoadOneObjectDataInternal
 .assert < $3d746    
 
-
 .org $3d7fd ; itemuse action jump 1c - statue of onyx -> akahana
   jsr GrantItemFromTable
   nop
   nop
 
+;;; In HandleItemOrTrigger, backup $23 in $10 rather than using it for the
+;;; JMP opcode, and then call Jmp11 instead.
+.org $3d845
+  lda $23
+  sta $34
+.org $3d853
+  jsr Jmp11
 
-;;; NOTE: the following would also need to change, except we've repurposed it
-;;; since it seems to have been unused...
-;;;.org $3d199
-;;;  jmp $3e144 ; unused?
+;;; ================================================================
 
 ;;; Now fix the LoadNpcDataForLocation code
 .org $3e19a
@@ -2404,6 +2401,9 @@ DestroyStatue:
   jsr $3e1b6 ; TryNpcSpawn
   inx
   jmp $3e18f ; Check next NPC spawn.
+
+Jmp11: ;;; More efficient version of `jsr $0010`, just `jsr Jmp11`
+  jmp ($0011)
 .assert < $3e1ae
 .org $3e1ae
 LoadNpcDataForLocation_Rts:

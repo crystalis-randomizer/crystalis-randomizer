@@ -57,14 +57,14 @@ class ActionGrantSlot implements Slot {
     rom.itemGets.actionGrants.set(this.key, item);
 
     if (rom.spoiler) {
-      const names = {
+      const names: Record<number, string> = {
         0x84: 'Whirlpool trigger',
         0xb2: 'Mt Sabre summit trigger',
         0xb4: '',
       }
       const name =
           this.key < 0x80 ?
-              rom.items[this.key].name + ' trade-in' :
+              rom.items[this.key].messageName + ' trade-in' :
               names[this.key];
       if (name) {
         rom.spoiler.addSlot(this.slot, name, item);

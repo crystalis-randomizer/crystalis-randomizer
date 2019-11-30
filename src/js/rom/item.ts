@@ -389,6 +389,14 @@ export class Items extends EntityArray<Item> {
   constructor(readonly rom: Rom) {
     super(0x49);
   }
+
+  async write(writer: Writer): Promise<void> {
+    const promises = [];
+    for (const item of this) {
+      promises.push(item.write(writer));
+    }
+    await Promise.all(promises);
+  }
 }
 
 const DEFAULT_ITEM_USE_JUMPS: {[addr: number]: ItemUseKind[]} = {

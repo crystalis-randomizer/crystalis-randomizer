@@ -1,6 +1,6 @@
 // Polyfill Array.protoype.flatMap
 
-if (!Array.prototype.flatMap) {
+if (!(Array.prototype as any).flatMap) {
   Object.defineProperties(Array.prototype, {
     flatMap: {
       value<T, U>(this: Array<T>, f: (x: T, i: number) => U[]): U[] {

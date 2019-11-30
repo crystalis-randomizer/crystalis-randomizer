@@ -20005,6 +20005,8 @@ ItemUseJump_ShellFlute
 ;;; --------------------------------
 ItemUseJump_39                  ; Glowing Lamp
         ;; Look for broken statue in inventory
+        ;; NOTE: the game loops through 3x as much inventory as necessary
+        ;; because something later expects X to offset $643f, not $6450???
         $1c585  xx xx:      xxx #$xx
 -       $1c587  xx xx xx:    xxx $xxxx,x
         $1c58a  xx xx:       xxx #INV_BROKEN_STATUE
@@ -55355,6 +55357,8 @@ DataTable_3c121
 ;;;       if(i<0x100) playAll(i+1);
 ;;;     }, 5000);
 ;;;   }
+;;; 
+;;; NOTE: This function preserves the value of the X register.
 StartAudioTrack
         ;; TODO - figure out what these even are
         ;; first stash y, then look at a.
@@ -57779,12 +57783,13 @@ MainGameModeJump_07_TriggerSquareOrTreasureChest
         $3d3f6  xx xx:      xxx + ; $3d3fb
         $3d3f8  xx xx xx:    xxx ActivateTriggerSquare ; $3d539
         ;; --------------------------------
+HandleTreasureChest
 +       $3d3fb  xx xx:      xxx #$xx
         $3d3fd  xx xx:       xxx SpawnMimic
         $3d3ff  xx xx:      xxx #$xx ; ItemGet
         $3d401  xx xx xx:   xxx HandleItemOrTrigger ; $3d834 ; ultimately calls ItemGet
         $3d404  xx xx:      xxx $xx
-        $3d406  xx xx:      xxx HandleTrigger
+        $3d406  xx xx:      xxx HandleTreasureChest_TooManyItems
         $3d408  xx xx xx:   xxx $3d9d8
         $3d40b  xx xx xx:   xxx $xxxx
         $3d40e  xx xx xx:   xxx $xxxx,y
@@ -57830,7 +57835,7 @@ DataTable_3d45c
         $3d45c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $3d46c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-HandleTrigger
+HandleTreasureChest_TooManyItems
         $3d47c  xx xx:      xxx $xx
         $3d47e  xx xx:      xxx #$xx
         $3d480  xx xx:      xxx $xx

@@ -43,7 +43,7 @@ export function shuffleTrades(rom: Rom, flags: FlagSet, random: Random) {
   // Fix up the actionGrants
   rom.itemGets.actionGrants =
       new Map([...rom.itemGets.actionGrants]
-              .map(([k, v]) => [(map.has(k) ? map.get(k) : k), v]));
+              .map(([k, v]) => [map.get(k) ?? k, v]));
 
   // Also randomize Rage and Tornel
   const rage = rom.items[random.nextInt(4)];

@@ -269,9 +269,10 @@ DisplayNumber:
 
 ;;; Allow giving arbitrary items for broken statue trade-in
 .org $1c594
+  ;lda #$ff
   rts
-  ;; 9 free bytes, could be more if we remove the unused Flute of Lime checks
-.assert < $1c59e
+;;   ;; 9 free bytes, could be more if we remove the unused Flute of Lime checks
+;; .assert < $1c59e
 
 ;.org $1c596
 ;  jsr $d22b ; grant item in register A
@@ -2295,24 +2296,36 @@ CheckToRedisplayDifficulty:
 
 ;;; TODO - change the actions on the messageids rather than repeat jumps
 .org $3d579                       ; ItemOrTriggerActionJumpTable + 2*$0b
-  .word (GrantItemFromTable)      ; 0b get barrier
+  .word (GrantItemFromTable)      ; 0b learn barrier
   .word (GrantItemThenDisappear)  ; 0c love pendant -> kensu change
   .word (GrantItemFromTable)      ; 0d kirisa plant -> bow of moon
   .word (UseIvoryStatue)          ; 0e
   .word (GrantItemFromTable)      ; 0f learn refresh
 
 ;;; TODO - change the actions on the messageids rather than repeat jumps
+.org $3d573                       ; ItemOrTriggerActionJumpTable + 2*$08
+  .word (GrantItemFromTable)      ; 08 learn paralysis
 .org $3d589                       ; ItemOrTriggerActionJumpTable + 2*$13
   .word (DestroyStatue)           ; 13 use bow of moon
   .word (DestroyStatue)           ; 14 use bow of sun
+.org $3d59b                       ; ItemOrTriggerActionJumpTable + 2*$1c
+  .word (GrantItemFromTable)      ; 1c trade in statue of onyx
+  .word (GrantItemThenDisappear)  ; 0c love pendant -> kensu change
+
+.org $3d654
+    ;; 5 free bytes
+.assert < $3d659
 
 .org $3d6d5
 GrantItemTable:
-  .byte $84,$46  ; 84 angry sea trigger -> 46 barrier
+  .byte $25,$29  ; 25 statue of onyx use -> 29 gas mask
+  .byte $39,$3a  ; 39 glowing lamp use -> 3a statue of gold
   .byte $3b,$47  ; 3b love pendant use -> 47 change
   .byte $3c,$3e  ; 3c kirisa plant use -> 3e bow of moon
+  .byte $84,$46  ; 84 angry sea trigger -> 46 barrier
+  .byte $b2,$42  ; b2 summit trigger -> 42 paralysis
   .byte $b4,$41  ; b4 windmill cave trigger -> 41 refresh
-  .byte $39,$3a  ; 39 glowing lamp use -> 3a statue of gold
+  .byte $ff      ; for bookkeeping purposes, not actually used
 
 GrantItemFromTable:
   ldy #$00
@@ -2367,6 +2380,12 @@ DestroyStatue:
   sta $10
   jmp $c25d ; LoadOneObjectDataInternal
 .assert < $3d746    
+
+
+.org $3d7fd ; itemuse action jump 1c - statue of onyx -> akahana
+  jsr GrantItemFromTable
+  nop
+  nop
 
 
 ;;; NOTE: the following would also need to change, except we've repurposed it

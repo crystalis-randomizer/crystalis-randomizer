@@ -85,7 +85,7 @@ const FLAG_MAP: Map<number, readonly [readonly [Condition]]> = new Map([
   //[0x03f, Magic.TELEPORT],
   [0x013, Boss.SABERA1],
   // Queen will give flute of lime w/o paralysis in this case.
-  [0x017, Item.SWORD_OF_WATER],
+  // [0x017, Item.SWORD_OF_WATER],
   [0x028, Magic.CHANGE],
   [0x029, Magic.CHANGE],
   [0x02a, Magic.CHANGE],

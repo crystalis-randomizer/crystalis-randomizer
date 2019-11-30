@@ -665,7 +665,9 @@ function preventNpcDespawns(rom: Rom, flags: FlagSet): void {
 
   // Queen's ($38) dialog needs quite a bit of work
   // Give item (flute of lime) even if got the sword of water
-  dialog(0x38)[3].message.action = 0x03; // "you found sword" => action 3
+  dialog(0x38)[3].condition = 0x202; // "you found sword" (condition 202)
+  dialog(0x38)[3].message.action = 0x03; //  => action 3
+  // Ensure you can always make the queen go away.
   dialog(0x38)[4].flags.push(0x09c);     // set 09c queen going away
   // Queen spawn condition depends on 01b (mesia recording) not 01f (ball of water)
   // This ensures you have both sword and ball to get to her (???)

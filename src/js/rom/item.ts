@@ -1,6 +1,7 @@
-import {Entity} from './entity.js';
+import {Entity, EntityArray} from './entity.js';
 import {MessageId} from './messageid.js';
-import {hex, readLittleEndian, readString, seq, writeLittleEndian, ITEM_USE_FLAGS, SPAWN_CONDITION_FLAGS} from './util.js';
+import {hex, readLittleEndian, readString, seq, writeLittleEndian,
+        ITEM_USE_FLAGS, SPAWN_CONDITION_FLAGS} from './util.js';
 import {Writer} from './writer.js';
 import {Data} from './util.js';
 import {Rom} from '../rom.js';
@@ -296,10 +297,7 @@ export class ItemUse {
   }
 }
 
-export class Items extends Array<Item> {
-  // 'map' should return a plain array.
-  static get [Symbol.species]() { return Array; }
-
+export class Items extends EntityArray<Item> {
   // NOTE: this must be initialized first.
   readonly itemUseJumps = DEFAULT_ITEM_USE_JUMPS;
 

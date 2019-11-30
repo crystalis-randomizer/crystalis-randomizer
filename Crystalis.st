@@ -57966,7 +57966,7 @@ ItemOrTriggerActionJump                 ; TODO - Label the destinations
         $3d56d              .word ($3d5a3) ; 05 noop - use opel statue (?)
         $3d56f              .word ($3d6d5) ; 06 reload npcs - alarm flute, flute of lime
         $3d571              .word ($3d5e6) ; 07
-        $3d573              .word ($3d654) ; 08
+        $3d573              .word ($3d654) ; 08 learn paralysis
         $3d575              .word ($3d659) ; 09 use shell flute
         $3d577              .word ($3d63a) ; 0a use statue of gold
         $3d579              .word ($3d6d8) ; 0b learn barrier

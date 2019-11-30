@@ -49,6 +49,30 @@ class BossDropSlot implements Slot {
   }
 }
 
+class ActionGrantSlot implements Slot {
+  constructor(readonly slot: number, readonly key: number) {}
+
+  set(rom: Rom, item: number): void {
+    if (item >= 0x70) throw new Error('no mimics on action grants');
+    rom.itemGets.actionGrants.set(this.key, item);
+
+    if (rom.spoiler) {
+      const names = {
+        0x84: 'Whirlpool trigger',
+        0xb2: 'Mt Sabre summit trigger',
+        0xb4: '',
+      }
+      const name =
+          this.key < 0x80 ?
+              rom.items[this.key].name + ' trade-in' :
+              names[this.key];
+      if (name) {
+        rom.spoiler.addSlot(this.slot, name, item);
+      }
+    }
+  }
+}
+
 class PersonDataSlot implements Slot {
   constructor(readonly slot: number, readonly person: number, readonly index: number) {}
 
@@ -141,6 +165,11 @@ class Slots {
       }
     }
 
+    // Action grants
+    for (const [key, orig] of rom.itemGets.actionGrants) {
+      addSlot(new ActionGrantSlot(orig, key));
+    }
+
     // Record hardcoded slots
     for (const [addr, name] of hardcodedItems) {
       addSlot(new HardcodedSlot(this.rom.prg[addr], addr, name));
@@ -190,16 +219,16 @@ const hardcodedItems: ReadonlyArray<readonly [number, string?]> = [
   [0x3d2af, 'Stoned Akahana'],
   //[0x3d30e, 'Lighthouse Kensu'],
   [0x3d337, 'Rage'],
-  [0x3d655, 'Mt Sabre summit trigger'], // paralysis
-  [0x3d6d6, 'Whirlpool trigger'],
-  [0x3d6d8, 'Swan Kensu'],
-  [0x3d6da, 'Aryllis'],
-  [0x3d6dc], // refresh from trigger
-  [0x3d6de, 'Fixed statue'],
+  //[0x3d655, 'Mt Sabre summit trigger'], // paralysis
+  //[0x3d6d6, 'Whirlpool trigger'],
+  //[0x3d6d8, 'Swan Kensu'],
+  //[0x3d6da, 'Aryllis'],
+  //[0x3d6dc], // refresh from trigger
+  //[0x3d6de, 'Fixed statue'],
 
   // TODO - trade-ins are still broken!!!!
 
-  [0x3d7fe, 'Akahana statue trade-in'],
+  //[0x3d7fe, 'Akahana statue trade-in'],
   //[0x3e3a2], // invisible flag for statue of onyx
   //[0x3e3a6], // invisible flag for kirisa plant
   //[0x3e3aa], // invisible flag for love pendant

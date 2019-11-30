@@ -1,8 +1,46 @@
-import {Entity} from './entity.js';
+import {Entity, EntityArray} from './entity.js';
 import {MessageId} from './messageid.js';
 import {ITEM_GET_FLAGS, hex, readLittleEndian, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
 import {Rom} from '../rom.js';
+
+const GRANT_ITEM_TABLE = 0x3d6d5;
+
+/**
+ * Array of ItemGetData table entries, together with the map of
+ * trigger/itemuse grants (added for statue of gold shuffle),
+ * for programmatic access.
+ */
+export class ItemGets extends EntityArray<ItemGet> {
+
+  actionGrants = new Map<number, number>();
+
+  constructor(readonly rom: Rom) {
+    super(0x71);
+    for (let i = 0; i < 0x71; i++) {
+      this[i] = new ItemGet(rom, i);
+    }
+
+    let addr = GRANT_ITEM_TABLE;
+    while (rom.prg[addr] !== 0xff) {
+      const key = rom.prg[addr++];
+      const value = rom.prg[addr++];
+      this.actionGrants.set(key, value);
+    }
+  }
+
+  async write(writer: Writer): Promise<void> {
+    for (const itemget of this) {
+      await itemget.write(writer);
+    }
+    let addr = GRANT_ITEM_TABLE;
+    for (const [key, value] of this) {
+      writer.rom[addr++] = key;
+      writer.rom[addr++] = value;
+    }
+  }
+
+}
 
 // A gettable item slot/check.  Each ItemGet maps to a single item,
 // but non-unique items may map to multiple ItemGets.

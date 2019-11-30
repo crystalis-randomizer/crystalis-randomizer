@@ -23,7 +23,7 @@ export function fixDialog(rom: Rom) {
     replaceMessage('02:02', 'a statue', `the ${commonNoun(akahanaTradeIn)}`);
   }
 
-  const gasMaskSlot = rom.prg[0x3d7fe];
+  const gasMaskSlot = actionGrant(akahanaTradeIn); // opel statue
   replaceMessage('02:02', '[29:Gas Mask]', item(gasMaskSlot));
 
   const telepathySlot = rom.prg[0x367f4];
@@ -49,13 +49,13 @@ export function fixDialog(rom: Rom) {
   replaceMessage('0a:0d', '[02:Sword of Water]',
                  item(queen.localDialogs.get(-1)![3].condition & 0xff));
   // TODO - consider replacing 0a:0d but we need to also replace condition?
-  const recoverSlot = rom.prg[0x3d1f9];
+  const recoverSlot = rom.prg[0x3d1f9]; // TODO - consolidate in table?
   if (recoverSlot < 0x41) unmagic('0b:01');
   replaceMessage('0b:01', '[45:Recover]', item(recoverSlot));
 
-  const barrierSlot = rom.prg[0x3d6d9];
+  const barrierSlot = actionGrant(0x84);
   if (barrierSlot < 0x41) {
-    replaceMessage('0b:01', 'teach you\n the magic of', 'give you\n ');
+    unmagic('0b:01');
     unmagic('1d:12');
   }
   replaceMessage('0b:01', '[46:Barrier]', item(barrierSlot));
@@ -98,9 +98,9 @@ export function fixDialog(rom: Rom) {
   if (lovePendantTradeIn != null) {
     replaceMessage('13:02', '[3b:Love Pendant]', item(lovePendantTradeIn));
   }
-  const changeSlot = rom.prg[0x3d6de];
+  const changeSlot = actionGrant(lovePendantTradeIn);
   if (changeSlot < 0x41) {
-    replaceMessage('13:02', 'teach\s+you the magic of', 'bestow\n upon you the');
+    unmagic('13:02');
   }
   replaceMessage('13:02', '[47:Change]', item(changeSlot));
 
@@ -110,22 +110,23 @@ export function fixDialog(rom: Rom) {
     replaceMessage('18:07', '[3d:Ivory Statue]', item(ivoryStatueTradeIn));
   }
   replaceMessage('18:06', `It's in a room`, '{0b:Karmine} is');
-  const flightSlot = rom.prg[0x3d18f];
+  const flightSlot = rom.prg[0x3d18f]; // TODO - consolidate?
   if (flightSlot < 0x41) replaceMessage('18:07', 'teach', 'give');
   replaceMessage('18:07', '[48:Flight]', item(flightSlot));
 
-  const paralysisSlot = rom.prg[0x3d655];
+  const paralysisSlot = actionGrant(0xb2);
   if (paralysisSlot < 0x41) unmagic('1c:10');
   replaceMessage('1c:10', '[42:Paralysis]', item(paralysisSlot));
 
-  replaceMessage('20:06', 'Statue of Gold', item(0x3a));
+  // TODO - shuffle which item reconstructs which other?
+  replaceMessage('20:06', 'Statue of Gold', item(actionGrant(0x39))));
 
   // TODO - consider warping on a random sword? - message 1c:11
 
   ////////////////////////////////////////////////////////////////
 
   function unmagic(mid: string) {
-    replaceMessage(mid, 'teach you the magic of', 'bestow upon you the');
+    replaceMessage(mid, /teach\s+you\s+the\s+magic\s+of/, 'bestow upon you the');
   }
   function item(id: number): string {
     const item = itemget(id);
@@ -150,6 +151,11 @@ export function fixDialog(rom: Rom) {
   function itemget(id: number): Item {
     const itemget = rom.itemGets[id];
     return rom.items[itemget.itemId];
+  }
+  function actionGrant(key: number): number {
+    const grant = rom.itemGets.actionGrants.get(key);
+    if (grant == null) throw new Error(`Missing actionGrant for ${hex(key)}`);
+    return grant;
   }
 }
 

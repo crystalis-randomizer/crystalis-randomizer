@@ -9,6 +9,9 @@ export function shuffleTrades(rom: Rom, flags: FlagSet, random: Random) {
   const {StatueOfOnyx, FogLamp, LovePendant,
          KirisaPlant, IvoryStatue} = rom.items;
 
+  // Map the original trade to the new trade, for updating actionGrants.
+  const map = new Map<number, number>();
+
   const items: ReadonlyArray<readonly [Item, number, string]> = [
     [StatueOfOnyx, 0, 'Akahana'],
     [FogLamp, 0, 'Fisherman'],
@@ -22,19 +25,25 @@ export function shuffleTrades(rom: Rom, flags: FlagSet, random: Random) {
       throw new Error(`not a trade: ${item} ${trade}`);
     }
     const want = item.itemUseData[trade].want; // NPC id | 100
-    return [want, npcName] as const;
+    return [want, item.id /* original item */, npcName] as const;
   });
   random.shuffle(npcs);
 
   for (const [item, trade] of items) {
-    const [want, npcName] = npcs.pop()!;
+    const [want, originalItem, npcName] = npcs.pop()!;
     item.itemUseData[trade].want = want;
     if (rom.spoiler) rom.spoiler.addTrade(item.id, item.messageName, npcName);
     if (want === 0x123) { // aryllis item requires being a girl
       // TODO - consider moving this to Item.write?
       rom.prg[0x3d4b5] = item.id - 0x1c;
     }
+    map.set(originalItem, item.id);
   }
+
+  // Fix up the actionGrants
+  rom.itemGets.actionGrants =
+      new Map([...rom.itemGets.actionGrants]
+              .map(([k, v]) => [(map.has(k) ? map.get(k) : k), v]));
 
   // Also randomize Rage and Tornel
   const rage = rom.items[random.nextInt(4)];

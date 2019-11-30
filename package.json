@@ -35,7 +35,7 @@
     "gulp": "^4.0.2",
     "mocha": "^5.2.0",
     "tslint": "^5.17.0",
-    "typescript": "^3.5.2",
+    "typescript": "^3.7.2",
     "typescript-language-server": "^0.3.8",
     "viz.js": "^2.1.2"
   },

@@ -24,7 +24,6 @@ import {TileAnimation} from './rom/tileanimation.js';
 import {TileEffects} from './rom/tileeffects.js';
 import {Tileset} from './rom/tileset.js';
 import {TownWarp} from './rom/townwarp.js';
-import {Trades} from './rom/trades.js';
 import {Trigger} from './rom/trigger.js';
 import {hex, seq} from './rom/util.js';
 import {WildWarp} from './rom/wildwarp.js';
@@ -83,7 +82,6 @@ export class Rom {
   readonly wildWarp: WildWarp;
   readonly townWarp: TownWarp;
   readonly flags: Flags;
-  readonly trades: Trades;
 
   readonly telepathy: Telepathy;
   readonly messages: Messages;
@@ -360,8 +358,8 @@ export class Rom {
     writeAll(this.tileEffects);
     writeAll(this.screens);
     writeAll(this.adHocSpawns);
-    writeAll(this.itemGets);
-    writeAll(this.items);
+    this.itemGets.write(writer);
+    this.items.write(writer);
     writeAll(this.shops);
     writeAll(this.bossKills);
     writeAll(this.patterns);

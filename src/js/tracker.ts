@@ -169,7 +169,7 @@ const SLOTS: ReadonlyArray<readonly [number, number, number]> = [
   [0x73, 256, 67], // iron necklace mimic
   [0x6e,  24, 38], // warp boots karmine
   [0x6f,  44, 97], // magic ring fortress 3 lower
-];
+] as const;
 
 // non-unique key item slots
 const KEY = new Set([0x10, 0x12, 0x23, 0x26, 0x61]);

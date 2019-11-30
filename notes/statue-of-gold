@@ -69,6 +69,23 @@ This generalization is a pretty significant change.
    - found a few more refs to $23 in the trigger AND item routines,
      still wonky -> no "nothing happens" message anymore???
 
+FIXED - trade-ins and dialogs ("... statue of gold; you get power ring")
+FIXED - fixdialog reading hardcoded slots, too (in addition to slots.ts)
+         => introduce ItemGets.actionGrants abstraction
 
-TODO - still need to fix trade-ins and dialogs ("... statue of gold; you get power ring")
-TODO - fixdialog is reading hardcoded slots, too (in addition to slots.ts)
+Note: While we were at it, we also fixed up the bow of sun/moon jumps to save
+some extra space.  Potentially we've freed up 4-5 item/trigger followup action
+slots that we could use for who knows what (if we went back and fixed all the
+pointers in the trigger/item tables).
+
+================================================================
+
+Problem:
+
+There's too much interaction between Trigger, ItemGet, and ItemUse.  Trying to
+change the signals in one causes problems for the others.  The best approach
+seemed to be backing up the value of $23 in $10 or $61 or something, but...?
+ - $61 and $10 both cause problems?
+ - $65 is free, but let's not start using it yet
+ - $34 is available and seems to work correctly
+    - it's only read BEFORE follow-up actions (which *do* use $34).

@@ -17,11 +17,9 @@ export function fixDialog(rom: Rom) {
   if (zebu.data[0] < 0x41) unmagic('00:1b');
   replaceMessage('00:1b', '[41:Refresh]', item(zebu.data[0]));
 
-  const akahanaTradeIn = tradeIns.get(0x82);
-  if (akahanaTradeIn) {
-    replaceMessage('02:01', 'an unusual statue', vague(akahanaTradeIn));
-    replaceMessage('02:02', 'a statue', `the ${commonNoun(akahanaTradeIn)}`);
-  }
+  const akahanaTradeIn = mustGet(tradeIns, 0x82);
+  replaceMessage('02:01', 'an unusual statue', vague(akahanaTradeIn));
+  replaceMessage('02:02', 'a statue', `the ${commonNoun(akahanaTradeIn)}`);
 
   const gasMaskSlot = actionGrant(akahanaTradeIn); // opel statue
   replaceMessage('02:02', '[29:Gas Mask]', item(gasMaskSlot));
@@ -94,10 +92,8 @@ export function fixDialog(rom: Rom) {
     replaceMessage('12:0a', /[^]*/, clue);
   }
 
-  const lovePendantTradeIn = tradeIns.get(0x74);
-  if (lovePendantTradeIn != null) {
-    replaceMessage('13:02', '[3b:Love Pendant]', item(lovePendantTradeIn));
-  }
+  const lovePendantTradeIn = mustGet(tradeIns, 0x74);
+  replaceMessage('13:02', '[3b:Love Pendant]', item(lovePendantTradeIn));
   const changeSlot = actionGrant(lovePendantTradeIn);
   if (changeSlot < 0x41) {
     unmagic('13:02');
@@ -119,7 +115,7 @@ export function fixDialog(rom: Rom) {
   replaceMessage('1c:10', '[42:Paralysis]', item(paralysisSlot));
 
   // TODO - shuffle which item reconstructs which other?
-  replaceMessage('20:06', 'Statue of Gold', item(actionGrant(0x39))));
+  replaceMessage('20:06', 'Statue of Gold', item(actionGrant(0x39)));
 
   // TODO - consider warping on a random sword? - message 1c:11
 
@@ -199,6 +195,12 @@ function commonNoun(id: number): string {
   }
   fail();
   return 'item';
+}
+
+function mustGet<K, V>(map: Map<K, V>, key: K): V {
+  const result = map.get(key);
+  if (result == null) throw new Error(`Expected value for ${key}`);
+  return result;
 }
 
 // function replaceDialog(npc: Npc, orig: number | RegExp, replacementId: number) {

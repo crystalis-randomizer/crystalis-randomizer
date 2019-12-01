@@ -290,6 +290,8 @@ export class ShuffleRules {
     const slotType = this.slotTypes[slot] || Type.EMPTY;
     const slotPool = this.pools.get(slotType);
     if (slotPool == null) return false;
+    // Special handling to prevent opels and unique armors on NPCs.
+    if (requiresChest(item) && slotType >= Type.BOSS_DROP) return false;
     // TODO - account for new MAGIC type and use pools instead!
     let itemPool;
     if (item >= 0x70) {
@@ -304,7 +306,7 @@ export class ShuffleRules {
       itemPool = this.pools.get(Type.KEY);
     } else if (this.pools.get(Type.CONSUMABLE) == null &&
                this.slotTypes[item] === Type.BOSS_DROP) {
-      // If consumables are *not* shuffled then all boss dropa
+      // If consumables are *not* shuffled then all boss drops
       // need to be treated as key items, not consumables.
       itemPool = this.pools.get(Type.BOSS_DROP)
     } else {
@@ -586,6 +588,10 @@ export class AssumedFill implements Shuffle {
     }
     return fill;
   }
+}
+
+function requiresChest(id: ItemId): boolean {
+  return id === 0x14 || id === 0x1b || id === 0x1c || id === 0x26;
 }
 
 // export class ForwardFill extends AssumedFill {

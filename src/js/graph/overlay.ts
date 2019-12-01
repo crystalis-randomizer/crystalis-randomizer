@@ -442,6 +442,12 @@ export class Overlay {
     case 0x14: // woken-up windmill guard
       // skip because we tie the item to the sleeping one.
       if (loc.spawns.find(l => l.isNpc() && l.id === 0x15)) return {};
+    case 0x7e: // awoken kensu in lighthouse
+      // skip because we tie the item to the sleeping one.
+      if (loc.spawns.find(l => l.isNpc() && l.id === 0x6b)) return {};
+    }
+
+    switch (id) {
     case 0x25: // amazones guard
       result.hitbox = {x0: 0, x1: 2, y0: 0, y1: 1};
       statueOr(Magic.CHANGE, Magic.PARALYSIS);

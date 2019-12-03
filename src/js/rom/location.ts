@@ -297,15 +297,14 @@ export class Locations extends Array<Location> {
   readonly Crypt_Draygon2           = $(0xa6);
   readonly Crypt_Teleporter         = $(0xa7, {music: 'Crypt-Teleporter'});
   readonly GoaFortress_Entrance     = $(0xa8, {area: a => a.GoaFortress,
-                                               music: KELBESQUE.music});
+                                               music: 1});
   readonly GoaFortress_Kelbesque    = $(0xa9, {bossScreen: 0x73,
                                                ...KELBESQUE});
-  readonly GoaFortress_Zebu         = $(0xaa, {...KELBESQUE,
-                                               palette: SABERA.palette});
+  readonly GoaFortress_Zebu         = $(0xaa, {...KELBESQUE, palette: 1});
   readonly GoaFortress_Sabera       = $(0xab, SABERA);
   readonly GoaFortress_Tornel       = $(0xac, {bossScreen: 0x91,
                                                ...SABERA,
-                                               palette: MADO_LOWER.palette});
+                                               palette: 1});
   readonly GoaFortress_Mado1        = $(0xad, MADO_LOWER);
   readonly GoaFortress_Mado2        = $(0xae, MADO_UPPER);
   readonly GoaFortress_Mado3        = $(0xaf, MADO_UPPER);
@@ -317,7 +316,7 @@ export class Locations extends Array<Location> {
   readonly GoaFortress_Karmine6     = $(0xb5, KARMINE_LOWER);
   readonly GoaFortress_Karmine7     = $(0xb6, {bossScreen: 0xfd,
                                                ...KARMINE_LOWER});
-  readonly GoaFortress_Exit         = $(0xb7, {music: KARMINE_UPPER.music});
+  readonly GoaFortress_Exit         = $(0xb7, {music: 0});
   readonly OasisCave_Entrance       = $(0xb8, {area: a => a.OasisEntrance,
                                                music: 2});
   readonly GoaFortress_Asina        = $(0xb9, {area: a => a.GoaFortress,
@@ -968,14 +967,15 @@ export class Location extends Entity {
 
 
   // TODO - use metascreen for this later
-  resizeScreens(top: number, left: number, bottom: number, right: number) {
+  resizeScreens(top: number, left: number, bottom: number, right: number,
+                fill = 0) {
     const newWidth = this.width + left + right;
     const newHeight = this.height + top + bottom;
     const newScreens = Array.from({length: newHeight}, (_, y) => {
       y -= top;
       return Array.from({length: newWidth}, (_, x) => {
         x -= left;
-        if (y < 0 || x < 0 || y >= this.height || x >= this.width) return 0;
+        if (y < 0 || x < 0 || y >= this.height || x >= this.width) return fill;
         return this.screens[y][x];
       });
     });

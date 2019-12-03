@@ -11,6 +11,7 @@ import {crumblingPlatforms} from './pass/crumblingplatforms.js';
 import {deterministic, deterministicPreParse} from './pass/deterministic.js';
 import {fixDialog} from './pass/fixdialog.js';
 import {randomizeThunderWarp} from './pass/randomizethunderwarp.js';
+import {shuffleGoa} from './pass/shufflegoa.js';
 import {shuffleMazes} from './pass/shufflemazes.js';
 import {shufflePalettes} from './pass/shufflepalettes.js';
 import {shuffleTrades} from './pass/shuffletrades.js';
@@ -181,6 +182,7 @@ export async function shuffle(rom: Uint8Array,
 
   if (flags.shuffleShops()) shuffleShops(parsed, flags, random);
 
+  shuffleGoa(parsed, random); // NOTE: must be before shuffleMazes!
   randomizeWalls(parsed, flags, random);
   crumblingPlatforms(parsed, random);
 

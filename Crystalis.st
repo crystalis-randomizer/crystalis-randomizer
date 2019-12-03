@@ -16318,7 +16318,7 @@ NpcData_ab                                   ; Goa Fortress - Sabera
         $1a1d2              .byte $xx,$xx,$xx,$xx
         $1a1d6              .byte $xx,$xx,$xx,$xx
         $1a1da              .byte $xx,$xx,$xx,$xx
-        $1a1de              .byte $xx,$xx,$xx,$xx
+        $1a1de              .byte $xx,$xx,$xx,$xx ; 12 junk (flail guy?)
         $1a1e2              .byte $xx,$xx,$xx,$xx
         $1a1e6              .byte $xx,$xx,$xx,$xx
         $1a1ea              .byte $xx,$xx,$xx,$xx

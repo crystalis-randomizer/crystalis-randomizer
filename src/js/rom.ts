@@ -681,7 +681,7 @@ const ADJUSTMENTS = [
   [0x19f02, 0x40, 0x80],
   [0x19f03, 0x33, 0x32],
   // Fix bad spawn in Sabera 2's level (probably meant to be a flail guy).
-  [0x1a1df, 0x17, 0x97], // make sure to fix pattern slot, too!
+  [0x1a1e0, 0x40, 0xc0], // make sure to fix pattern slot, too!
   [0x1a1e1, 0x3d, 0x34],
   // Point Amazones outer guard to post-overflow message that's actually shown.
   [0x1cf05, 0x47, 0x48],

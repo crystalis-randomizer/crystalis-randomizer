@@ -24,16 +24,16 @@ export function shuffleTrades(rom: Rom, flags: FlagSet, random: Random) {
     if (item.trades.indexOf(trade) < 0 || trade >= item.itemUseData.length) {
       throw new Error(`not a trade: ${item} ${trade}`);
     }
-    const want = item.itemUseData[trade].want; // NPC id | 100
-    return [want, item.id /* original item */, npcName] as const;
+    const use = item.itemUseData[trade]; // use.want === NPC id | 100
+    return [use, item.id /* original item */, npcName] as const;
   });
   random.shuffle(npcs);
 
   for (const [item, trade] of items) {
-    const [want, originalItem, npcName] = npcs.pop()!;
-    item.itemUseData[trade].want = want;
+    const [use, originalItem, npcName] = npcs.pop()!;
+    item.itemUseData[trade] = use;
     if (rom.spoiler) rom.spoiler.addTrade(item.id, item.messageName, npcName);
-    if (want === 0x123) { // aryllis item requires being a girl
+    if (use.want === 0x123) { // aryllis item requires being a girl
       // TODO - consider moving this to Item.write?
       rom.prg[0x3d4b5] = item.id - 0x1c;
     }

@@ -21,7 +21,7 @@ function removeEarlyWall(rom: Rom, flags: FlagSet, random: Random) {
   } else {
     // Unblock east cave to Goa
     const {EastCave3} = rom.locations;
-    EastCave3.screens[0][1] = 0x81;
+    EastCave3.screens[1][0] = 0x81;
     EastCave3.spawns.pop();
     EastCave3.flags.pop();    
   }

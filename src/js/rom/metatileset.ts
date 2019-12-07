@@ -5,7 +5,9 @@ import {Tileset} from './tileset.js';
 import {Initial, InitialProps} from './util.js';
 
 // NOTE: Must be initialized BEFORE Metascreens
-export class Metatilesets {
+export class Metatilesets implements Iterable<Metatileset> {
+
+  private _all: Metatileset[] = [];
 
   readonly grass = this._(0x80, {
     patterns: [0x00, 0x0c],
@@ -52,10 +54,22 @@ export class Metatilesets {
 
   readonly tower = this._(0xac, {});
 
-  constructor(private readonly rom: Rom) {}
+  constructor(private readonly rom: Rom) {
+    // Tag names for debugging...
+    for (const key in this as object) {
+      const value = (this as any)[key] as unknown;
+      if (value instanceof Metatileset) (value as any).name = key;
+    }
+  }
 
   private _(id: number, opts: MetatilesetData): Metatileset & Initial {
-    return new Metatileset(this.rom, id, opts) as Metatileset & Initial;
+    const ts = new Metatileset(this.rom, id, opts) as Metatileset & Initial;
+    this._all.push(ts);
+    return ts;
+  }
+
+  [Symbol.iterator]() {
+    return this._all[Symbol.iterator]();
   }
 }
 
@@ -120,7 +134,8 @@ export class Metatileset implements Iterable<Metascreen> {
         set.add(screen);
       }
     }
-    return EMPTY_SET;
+    const set = map.get(screenId);
+    return set || EMPTY_SET;
   }
 
   invalidateScreenMultimap() {

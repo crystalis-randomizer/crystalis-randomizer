@@ -46,8 +46,11 @@ function labyrinthVariant(parentFn: (s: Metascreens) => Metascreen,
     return true;    
   };
 }
-      
-export class Metascreens { // extends Set<Metascreen> {
+
+// extends Set<Metascreen> ???
+export class Metascreens {
+
+  readonly [index: number]: Metascreen;
 
   private readonly screens = new Set<Metascreen>();
   private readonly screensByFix = new DefaultMap<ScreenFix, Metascreen[]>(() => []);
@@ -71,6 +74,7 @@ export class Metascreens { // extends Set<Metascreen> {
         }
       }
       //this.add(screen);
+      (this as any)[screen.uid] = screen;
       return screen;
     });
   }
@@ -632,7 +636,7 @@ export class Metascreens { // extends Set<Metascreen> {
   readonly boundaryN_waterfallCave = $({
     id: 0x31,
     icon: icon`
-      |▛║█|
+      |▛/█|
       |▘║▀|
       | ║ |`,
     tilesets: {river: {}},
@@ -1455,7 +1459,8 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |
       |   |
       |   |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, labyrinth: {}, pyramid: {}, sea: {},
+               iceCave: {}, dolphinCave: {}},
     feature: ['empty'],
     edges: '    ',
   });
@@ -1745,6 +1750,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |
       | < |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    feature: ['empty'],
     edges: 'c c ',
     connect: '2|a',
     exits: [downStair(0x17), upStair(0xd7)],
@@ -1756,6 +1762,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    feature: ['empty'],
     edges: 'c   ',
     connect: '2',
     exits: [downStair(0x17)],
@@ -1767,6 +1774,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |
       | < |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    feature: ['empty'],
     edges: '  c ',
     connect: 'a',
     exits: [upStair(0xd7)],
@@ -1778,6 +1786,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |
       | ╷ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    feature: ['empty'],
     edges: 'c c ',
     connect: '2|a',
     poi: [[0, 0x110, 0x78], [0, -0x30, 0x78]],
@@ -1789,6 +1798,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    feature: ['empty'],
     edges: 'c   ',
     connect: '2',
     poi: [[0, -0x30, 0x78]],
@@ -1800,6 +1810,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |
       | ╷ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    feature: ['empty'],
     edges: '  c ',
     connect: 'a',
     poi: [[0, 0x110, 0x78]],
@@ -1811,6 +1822,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |╴ ╶|
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    feature: ['empty'],
     edges: ' c c',
     connect: '6|e',
     poi: [[0, 0x70, 0x108], [0, 0x70, -0x28]],
@@ -1822,6 +1834,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |╴  |
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    feature: ['empty'],
     edges: ' c  ',
     connect: '6',
     poi: [[0, 0x70, -0x28]],
@@ -1833,6 +1846,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |  ╶|
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    feature: ['empty'],
     edges: '   c',
     connect: 'e',
     poi: [[0, 0x70, 0x108]],
@@ -2980,7 +2994,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     // TODO - annotate the pit
     feature: ['pit'],
-    edges: 'c c',
+    edges: ' c c',
     connect: '6e',
     platform: {type: 'horizontal', coord: 0x70_38},
   });
@@ -2993,7 +3007,7 @@ export class Metascreens { // extends Set<Metascreen> {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     // TODO - annotate the pit
     feature: ['pit'],
-    edges: ' c c',
+    edges: 'c c ',
     connect: '2a',
     platform: {type: 'vertical', coord: 0x40_78},
   });
@@ -3066,6 +3080,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |
       | ╥ |`,
     tilesets: {cave: {}, fortress: {}},
+    feature: ['empty'],
     edges: 'r r ',
     connect: '1:3|9:b',
     poi: [[1, -0x30, 0x48], [1, -0x30, 0x98],
@@ -3078,6 +3093,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |
       |   |`,
     tilesets: {cave: {}, fortress: {}},
+    feature: ['empty'],
     edges: 'r   ',
     connect: '1:3',
     poi: [[1, -0x30, 0x48], [1, -0x30, 0x98]],
@@ -3089,6 +3105,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |   |
       | ╥ |`,
     tilesets: {cave: {}, fortress: {}},
+    feature: ['empty'],
     edges: '  r ',
     connect: '9:b',
     poi: [[1, 0x110, 0x48], [1, 0x110, 0x98]],
@@ -3100,6 +3117,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |╡ ╞|
       |   |`,
     tilesets: {cave: {}, fortress: {}},
+    feature: ['empty'],
     edges: ' r r',
     connect: '5:7|d:f',
     poi: [[1, 0x60, 0x108], [1, 0xa0, 0x108],
@@ -3112,6 +3130,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |╡  |
       |   |`,
     tilesets: {cave: {}, fortress: {}},
+    feature: ['empty'],
     edges: ' r  ',
     connect: '5:7',
     poi: [[1, 0x60, -0x28], [1, 0xa0, -0x28]],
@@ -3123,6 +3142,7 @@ export class Metascreens { // extends Set<Metascreen> {
       |  ╞|
       |   |`,
     tilesets: {cave: {}, fortress: {}},
+    feature: ['empty'],
     edges: '   r',
     connect: 'd:f',
     poi: [[1, 0x60, 0x108], [1, 0xa0, 0x108]],

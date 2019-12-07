@@ -23,7 +23,6 @@ import {Spoiler} from './rom/spoiler.js';
 import {Telepathy} from './rom/telepathy.js';
 import {TileAnimation} from './rom/tileanimation.js';
 import {TileEffects} from './rom/tileeffects.js';
-import {Tileset} from './rom/tileset.js';
 import {Tilesets} from './rom/tileset.js';
 import {TownWarp} from './rom/townwarp.js';
 import {Trigger} from './rom/trigger.js';

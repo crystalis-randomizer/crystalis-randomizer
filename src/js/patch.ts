@@ -30,6 +30,7 @@ import {Spoiler} from './rom/spoiler.js';
 import {hex, seq, watchArray, writeLittleEndian} from './rom/util.js';
 import {DefaultMap} from './util.js';
 import * as version from './version.js';
+import {Maze} from './maze/maze2.js';
 
 const EXPAND_PRG: boolean = true;
 
@@ -320,6 +321,12 @@ async function postParsedShuffle(rom: Uint8Array,
 
 
 function misc(rom: Rom, flags: FlagSet, random: Random) {
+// TODO - remove hack to visualize maps from the console...
+(Object.getPrototypeOf(rom.locations[0]) as any).show = function(ts: typeof rom.metatilesets.river) {
+  console.log(Maze.from(this, random, ts).show());
+
+};
+
   const {} = {rom, flags, random} as any;
   // NOTE: we still need to do some work actually adjusting
   // message texts to prevent line overflow, etc.  We should

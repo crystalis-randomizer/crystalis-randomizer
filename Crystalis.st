@@ -35577,17 +35577,17 @@ MainGameModeJump_19_ChangeMagicRevertAnimation
         $27bea  xx xx xx:   xxx $3ff8c
         $27bed  xx xx xx:   xxx $xxxx
         $27bf0  xx xx:      xxx $xx
-        $27bf2  xx xx xx:   xxx $3c008
+        $27bf2  xx xx xx:   xxx UpdateEquipmentAndStatus
         $27bf5  xx xx:      xxx #$xx
         $27bf7  xx xx xx:   xxx $xxxx
-        $27bfa  xx xx xx:   xxx $3ff8c
+        $27bfa  xx xx xx:   xxx DrawAllObjectSprites
         $27bfd  xx xx:      xxx #GAME_MODE_NORMAL
         $27bff  xx xx:      xxx GameMode
-        $27c01  xx xx xx:   xxx $3c739
+        $27c01  xx xx xx:   xxx RequestAttributeTable0Write
 ;;; --------------------------------
 MainGameModeJump_1a_SwordInAir
         $27c04  xx xx xx:   xxx $3c867
-        $27c07  xx xx xx:   xxx $3c169
+        $27c07  xx xx xx:   xxx WaitForOAMDMA
         $27c0a  xx xx:      xxx #$xx
         $27c0c  xx xx xx:   xxx $xxxx
         $27c0f  xx xx:      xxx #$xx
@@ -36018,6 +36018,7 @@ DataTable_27fe8
         $27ff0              .byte $xx,$xx ; 1b:12 simea: time to leave
 ;;; --------------------------------
 DataTable_27ff2 
+        ;; UNUSED?
         $27ff2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 RomBank_14                      ; @@ $8000

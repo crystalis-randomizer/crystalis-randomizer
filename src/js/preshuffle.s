@@ -665,11 +665,9 @@ ReloadInventoryAfterLoad:
   jmp $a005   ; 4c 05 a0
 .assert < $26000
 
-.ifdef _DISPLAY_DIFFICULTY
-;;; Start the loop at 6 instead of 5 to also show the difficulty
-.org $27aca
-  ldx #$06
-.endif
+
+.org $264b3
+.assert < $264bf
 
 
 .ifdef _FIX_OPEL_STATUE
@@ -686,6 +684,7 @@ CheckOpelStatue:
   lda #$0a
   sta EquippedConsumableItem
   jmp ActivateOpelStatue
+
 .assert < $27900 ; END OF FREE SPACE from $2788d or $278e9
 
 .org $27903
@@ -698,6 +697,28 @@ CheckOpelStatue:
 .assert < $2791c
 .endif
 
+
+.ifdef _DISPLAY_DIFFICULTY
+;;; Start the loop at 6 instead of 5 to also show the difficulty
+.org $27aca
+  ldx #$06
+.endif
+
+
+;;; Fix the graphics glitch from getting a sword while changed.
+.org $27c04
+  jsr MaybeRevertChangeOnSwordGet
+
+.org $27ff2
+    ;; probably unused, but has some structure...?
+MaybeRevertChangeOnSwordGet:
+  lda $0710
+  and #$80
+  beq +
+   jsr $bb9d ; 27b9d MainGameModeJump_19_ChangeMagicRevertAnimation
++ jmp $c867  ; 3c867 ??
+
+.assert < $28000
 
 
 

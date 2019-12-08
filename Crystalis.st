@@ -16704,6 +16704,8 @@ NpcData_a6                        ; Pyramid Back - Draygon Revisited
         $1a690              .byte $xx
 ;;; ----------------------------------------------------------------
         ;; Extra bytes, nobody points to this?
+        ;; This looks like it was supposed to be the sages appearing
+        ;; after the battle, but it's never actually read.
         $1a691              .byte $xx,$xx,$xx,$xx,$xx
         $1a696              .byte $xx,$xx,$xx,$xx
         $1a69a              .byte $xx,$xx,$xx,$xx
@@ -20379,7 +20381,7 @@ NpcSpawnCondition_7f ; zombie in zombietown
         $1c792              .byte $xx
         ;; UNUSED 
         $1c793              .byte $xx ; Amazones
-        $1c794              .byte $xx,$xx ; 099 NOT
+        $1c794              .byte $xx,$xx ; 099 NOT amazones guard paralyzed
         $1c796              .byte $xx,$xx,$xx,$xx,$xx
 NpcSpawnCondition_64 ; portoa fisherman
         $1c79b              .byte $xx ; Portoa - Fisherman House
@@ -21001,9 +21003,9 @@ NpcDialog_49 ; swan barkeep
 NpcDialog_4b ; swan dancing ladies
         $1cb12              .byte $xx,$xx,$xx,$xx,$xx
         $1cb17              .byte $xx,$xx,$xx,$xx,$xx ; 0a7 NOT -> 13:11
-        $1cb1c              .byte         $xx,$xx
-        $1cb1e              .byte $xx,$xx,$xx,$xx,$xx
-        $1cb23              .byte         $xx,$xx
+        $1cb1c              .byte         $xx,$xx     ;     Set: 0a7
+        $1cb1e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0a:0b
+        $1cb23              .byte         $xx,$xx     ;     Clear: 0a7
 ;;; ----------------------------------------------------------------
 NpcDialog_4c ; swan dance instructor
         $1cb25              .byte $xx,$xx,$xx,$xx,$xx
@@ -22411,87 +22413,87 @@ TelepathyTable
         $1da7a              .byte     $xx,$xx ; 1c:0a
         ;; --------------------------------
 	;; 00 tornel 0
-        $1da7c              .byte $xx,$xx
-        $1da7e              .byte     $xx,$xx
-        $1da80              .byte     $xx,$xx
+        $1da7c              .byte $xx,$xx ; 041 ball of fire
+        $1da7e              .byte     $xx,$xx ; 1c:13
+        $1da80              .byte     $xx,$xx ; 1c:14
 	;; 04 tornel 1
-        $1da82              .byte $xx,$xx
-        $1da84              .byte     $xx,$xx
+        $1da82              .byte $xx,$xx ; 077 flame bracelet
+        $1da84              .byte     $xx,$xx ; 1c:15
 	;; 08 tornel 2
-        $1da86              .byte $xx,$xx
-        $1da88              .byte     $xx,$xx
-        $1da8a              .byte     $xx,$xx
-        $1da8c              .byte $xx,$xx
-        $1da8e              .byte     $xx,$xx
+        $1da86              .byte $xx,$xx ; 07b ball of water
+        $1da88              .byte     $xx,$xx ; 1c:16
+        $1da8a              .byte     $xx,$xx ; 1c:17
+        $1da8c              .byte $xx,$xx ; 07a blizzard bracelet
+        $1da8e              .byte     $xx,$xx ; 1c:18
 	;; 0c tornel 3, 10 tornel 4
-        $1da90              .byte $xx,$xx
-        $1da92              .byte     $xx,$xx
-        $1da94              .byte $xx,$xx
-        $1da96              .byte     $xx,$xx
-        $1da98              .byte $xx,$xx
-        $1da9a              .byte     $xx,$xx
+        $1da90              .byte $xx,$xx ; 013 broken statue
+        $1da92              .byte     $xx,$xx ; 1c:19
+        $1da94              .byte $xx,$xx ; 063 change
+        $1da96              .byte     $xx,$xx ; 1c:1a
+        $1da98              .byte $xx,$xx ; 027 massacre
+        $1da9a              .byte     $xx,$xx ; 1c:1b
 	;; 14 tornel 5
-        $1da9c              .byte $xx,$xx
-        $1da9e              .byte     $xx,$xx
-        $1daa0              .byte $xx,$xx
-        $1daa2              .byte     $xx,$xx
-        $1daa4              .byte $xx,$xx
-        $1daa6              .byte     $xx,$xx
+        $1da9c              .byte $xx,$xx ; 056 rescued tornel
+        $1da9e              .byte     $xx,$xx ; 1c:1d
+        $1daa0              .byte $xx,$xx ; 065 unslimed kensu
+        $1daa2              .byte     $xx,$xx ; 1c:1e
+        $1daa4              .byte $xx,$xx ; 07c UNUSED (always false)
+        $1daa6              .byte     $xx,$xx ; 1c:1c
 	;; 18 tornel 6
-        $1daa8              .byte $xx,$xx
-        $1daaa              .byte     $xx,$xx
-        $1daac              .byte $xx,$xx
-        $1daae              .byte     $xx,$xx
-        $1dab0              .byte $xx,$xx
-        $1dab2              .byte     $xx,$xx
+        $1daa8              .byte $xx,$xx ; 02e deo's pendant
+        $1daaa              .byte     $xx,$xx ; 1c:1f
+        $1daac              .byte $xx,$xx ; 079 bow of truth
+        $1daae              .byte     $xx,$xx ; 1c:1c
+        $1dab0              .byte $xx,$xx ; 05e defeated draygon 2 (always false)
+        $1dab2              .byte     $xx,$xx ; 1d:00
         ;; --------------------------------
 	;; 02 asina 0, 06 asina 1
-        $1dab4              .byte $xx,$xx
-        $1dab6              .byte     $xx,$xx
+        $1dab4              .byte $xx,$xx ; 01e queen revealed
+        $1dab6              .byte     $xx,$xx ; 1d:03
 	;; 0a asina 2
-        $1dab8              .byte $xx,$xx
-        $1daba              .byte     $xx,$xx
-        $1dabc              .byte $xx,$xx
-        $1dabe              .byte     $xx,$xx
+        $1dab8              .byte $xx,$xx ; 08b shell flute
+        $1daba              .byte     $xx,$xx ; 1d:05
+        $1dabc              .byte $xx,$xx ; 010 turned in kirisa plant
+        $1dabe              .byte     $xx,$xx ; 1d:04
 	;; 0e asina 3, 12 asina 4
-        $1dac0              .byte $xx,$xx
-        $1dac2              .byte     $xx,$xx
-        $1dac4              .byte     $xx,$xx
-        $1dac6              .byte $xx,$xx
-        $1dac8              .byte     $xx,$xx
-        $1daca              .byte     $xx,$xx
+        $1dac0              .byte $xx,$xx ; 063 change
+        $1dac2              .byte     $xx,$xx ; 1d:07
+        $1dac4              .byte     $xx,$xx ; 1d:06
+        $1dac6              .byte $xx,$xx ; 027 massacre
+        $1dac8              .byte     $xx,$xx ; 1d:08
+        $1daca              .byte     $xx,$xx ; 1d:09
 	;; 16 asina 5
-        $1dacc              .byte $xx,$xx
-        $1dace              .byte     $xx,$xx
-        $1dad0              .byte $xx,$xx
-        $1dad2              .byte     $xx,$xx
+        $1dacc              .byte $xx,$xx ; 057 asina rescued
+        $1dace              .byte     $xx,$xx ; 1d:0a
+        $1dad0              .byte $xx,$xx ; 07d bow of sun
+        $1dad2              .byte     $xx,$xx ; 1d:0b
 	;; 1a asina 6
-        $1dad4              .byte $xx,$xx
-        $1dad6              .byte     $xx,$xx
-        $1dad8              .byte $xx,$xx
-        $1dada              .byte     $xx,$xx
-        $1dadc              .byte $xx,$xx
-        $1dade              .byte     $xx,$xx
+        $1dad4              .byte $xx,$xx ; 07d bow of sun
+        $1dad6              .byte     $xx,$xx ; 1d:0b
+        $1dad8              .byte $xx,$xx ; 079 bow of truth
+        $1dada              .byte     $xx,$xx ; 1d:0c
+        $1dadc              .byte $xx,$xx ; 05e draygon 2 defeated (always false)
+        $1dade              .byte     $xx,$xx ; 1d:0d
         ;; --------------------------------
 	;; 03 kensu 0, 07 kensu 1, 0b kensu 2, 0f kensu 3, 13 kensu 4
-        $1dae0              .byte $xx,$xx
-        $1dae2              .byte     $xx,$xx
-        $1dae4              .byte     $xx,$xx
-        $1dae6              .byte $xx,$xx
-        $1dae8              .byte     $xx,$xx
-        $1daea              .byte $xx,$xx
-        $1daec              .byte     $xx,$xx
-        $1daee              .byte     $xx,$xx
-        $1daf0              .byte $xx,$xx
-        $1daf2              .byte     $xx,$xx
+        $1dae0              .byte $xx,$xx ; 01e recover
+        $1dae2              .byte     $xx,$xx ; 1d:14
+        $1dae4              .byte     $xx,$xx ; 1d:15
+        $1dae6              .byte $xx,$xx ; 063 change
+        $1dae8              .byte     $xx,$xx ; 1d:16
+        $1daea              .byte $xx,$xx ; 05f sword of thunder
+        $1daec              .byte     $xx,$xx ; 1d:17
+        $1daee              .byte $xx,$xx ; 027 massacre
+        $1daf0              .byte     $xx,$xx ; 1d:18
+        $1daf2              .byte     $xx,$xx ; 1d:19
 	;; 17 kensu 5 (fall-through)
-        $1daf4              .byte $xx,$xx
-        $1daf6              .byte     $xx,$xx
+        $1daf4              .byte $xx,$xx ; 065 unslimed kensu
+        $1daf6              .byte     $xx,$xx ; 1d:14
 	;; 1b kensu 6
-        $1daf8              .byte $xx,$xx
-        $1dafa              .byte     $xx,$xx
-        $1dafc              .byte $xx,$xx
-        $1dafe              .byte     $xx,$xx
+        $1daf8              .byte $xx,$xx ; 079 bow of truth
+        $1dafa              .byte     $xx,$xx ; 1d:1a
+        $1dafc              .byte $xx,$xx ; 05e defeated draygon 2 (always false)
+        $1dafe              .byte     $xx,$xx ; 1d:1b
 ;;; --------------------------------
 ;;; This data table seems to be used by ItemGet, as well as ItemUse_ShellFlute2.
 ;;; Possibly it handles deleting the item?
@@ -23886,7 +23888,7 @@ Trigger_bb
         $1e38e              .byte $xx,$xx
 Trigger_bc
         ;; bc amazones guards move
-        $1e390              .byte $xx,$xx ; Condition: 099 NOT
+        $1e390              .byte $xx,$xx ; Condition: 099 NOT amazones guard paralyzed
         $1e392              .byte $xx,$xx ; Condition: 028 NOT change:woman
         $1e394              .byte $xx,$xx ; Action: 1b
         $1e396              .byte $xx,$xx
@@ -43427,49 +43429,56 @@ CollisionJump
 CollisionJump_03_ParalysisBeam
         $34fc4  xx xx xx:   xxx $xxxx,x
         $34fc7  xx xx:      xxx #$xx
-        $34fc9  xx xx:      xxx $xx
-        $34fcb  xx xx xx:   xxx $3506c
-;;; --------------------------------
-        $34fce  xx xx xx:   xxx $3507c
-        $34fd1  xx xx:      xxx $xx
+        $34fc9  xx xx:      xxx + ; $34fce
+        $34fcb  xx xx xx:    xxx $3506c
+        ;;                   ----------
+        ;; Paralyze an NPC
++       $34fce  xx xx xx:   xxx $3507c
+        $34fd1  xx xx:       xxx <rts ; $34fc3
         $34fd3  xx xx xx:   xxx $xxxx,y
         $34fd6  xx xx:      xxx #$xx
-        $34fd8  xx xx:      xxx $xx
+        $34fd8  xx xx:       xxx <rts ; $34fc3
         $34fda  xx xx:      xxx #$xx
         $34fdc  xx xx xx:   xxx $xxxx,x
         $34fdf  xx xx xx:   xxx $xxxx,y
         $34fe2  xx xx:      xxx #$xx
-        $34fe4  xx xx:      xxx $xx
+        $34fe4  xx xx:       xxx <rts ; $34fc3
         $34fe6  xx xx xx:   xxx $xxxx,y
-        $34fe9  xx xx:      xxx $xx
+        $34fe9  xx xx:      xxx $xx ; NPC ID
         $34feb  xx xx:      xxx #$xx
-        $34fed  xx xx:      xxx $xx
+        $34fed  xx xx:      xxx $xx ; set paralysis flag
         $34fef  xx xx:      xxx #$xx
         $34ff1  xx xx xx:   xxx $xxxx,y
         $34ff4  xx xx:      xxx $xx
         $34ff6  xx xx xx:   xxx $xxxx,y
         $34ff9  xx xx:      xxx #$xx
-        $34ffb  xx xx:      xxx $xx
+        $34ffb  xx xx:       xxx >>rts ; $35044
+        ;; Check immunity to paralysis
         $34ffd  xx xx:      xxx #$xx
-        $34fff  xx xx xx:   xxx $35058,y
-        $35002  xx xx:      xxx $xx
-        $35004  xx xx:      xxx $xx
-        $35006  xx xx:      xxx $xx
-        $35008  xx xx:      xxx #$xx
-        $3500a  xx xx xx:   xxx $xxxx,y
-        $3500d  xx:         xxx
-;;; --------------------------------
-        $3500e  xx:         xxx
-        $3500f  xx xx:      xxx $xx
+-       $34fff  xx xx xx:    xxx $35058,y
+        $35002  xx xx:       xxx $xx
+        $35004  xx xx:       xxx + ; $3500e
+        $35006  xx xx:        xxx $xx
+        $35008  xx xx:        xxx #$xx
+        $3500a  xx xx xx:     xxx $xxxx,y
+        $3500d  xx:           xxx
+        ;;                    ---
++       $3500e  xx:          xxx
+        $3500f  xx xx:      xxx - ; $34fff
+SetOrClearParalysisFlag:
+        ;; Input: $12 = FF to set, 00 to clear
+        ;;        $13 = NPC ID to handle
         $35011  xx xx:      xxx #$xx
-        $35013  xx xx xx:   xxx $35045,y
-        $35016  xx xx:      xxx $xx
-        $35018  xx xx:      xxx $xx
-        $3501a  xx xx:      xxx $xx
-        $3501c  xx:         xxx
-        $3501d  xx xx xx:   xxx $35013
-;;; --------------------------------
-        $35020  xx xx xx:   xxx $3504f,y
+-       $35013  xx xx xx:    xxx $35045,y
+        $35016  xx xx:        xxx >rts ; $35044
+        $35018  xx xx:       xxx $xx
+        $3501a  xx xx:        xxx + ; $35020
+        $3501c  xx:          xxx
+        $3501d  xx xx xx:    xxx - ; $35013
+        ;;                   --------------
+        ;; NPC was entry Y in the 35045 table
+        ;;   -> set (or clear) the parallel flag in 3504f.
++       $35020  xx xx xx:   xxx $3504f,y
         $35023  xx:         xxx
         $35024  xx xx:       xxx #$xx
         $35026  xx:          xxx
@@ -43490,10 +43499,26 @@ CollisionJump_03_ParalysisBeam
         $35041  xx xx xx:   xxx $xxxx,y
         $35044  xx:         xxx
 ;;; --------------------------------
+;;; Looks like the first 19 bytes is a paralysis flag table
+;;; But most of these are never read - it could be compressed down to
+;;; just two entries: 6d => 70 and 6e => 71.
 DataTable_35045 
-        $35045              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $35050              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $35060              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 10 bytes (terminated by 00)
+        ;; This is the key to a map => person ID of paralysis target
+        $35045              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; This next line (9 bytes) appears to reference flags?
+        $3504f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 20 NPC IDs that are immune to paralysis
+        $35058              .byte $xx,$xx ; kensu
+        $3505a              .byte $xx,$xx ; asina in various forms
+        $3505c              .byte $xx     ; unused
+        $3505d              .byte $xx,$xx ; azteca
+        $3505f              .byte $xx,$xx ; shyron guards
+        $35061              .byte $xx,$xx ; dolphin
+        $35063              .byte $xx,$xx,$xx ; dead shyron people
+        $35066              .byte $xx,$xx,$xx ; kensu in various places
+        $35069              .byte $xx     ; mesia
+        $3506a              .byte $xx,$xx ; aryllis attendants
 ;;; --------------------------------
         $3506c  xx xx xx:   xxx $3507c
         $3506f  xx xx:      xxx $xx
@@ -56883,23 +56908,27 @@ MainGameModeJump_1f_DynaAppears
 ;;; --------------------------------
         $3cccc  xx xx:      xxx #$xx
         $3ccce  xx xx xx:   xxx $xxxx
+        ;; For each object...
 @loop:  $3ccd1  xx xx:       xxx #$xx ; $8000 -> $34000
         $3ccd3  xx xx xx:    xxx BankSwitch16k
         $3ccd6  xx xx xx:    xxx $xxxx,x
         $3ccd9  xx xx:       xxx #$xx
         $3ccdb  xx xx:       xxx $xx
+        ;; Tick the "must wait to move" countdown timer 5a0,x
+        ;; If it ticks down to 0 then clear paralysis
         $3ccdd  xx xx xx:    xxx $xxxx,x
         $3cce0  xx xx:       xxx $xx
         $3cce2  xx xx xx:    xxx $xxxx,x
         $3cce5  xx xx:       xxx ++ ; $3cd2b
         $3cce7  xx xx xx:    xxx $xxxx,x
-        $3ccea  xx xx:       xxx #$xx
+        $3ccea  xx xx:       xxx #$xx ; OBJTYPE_PERSON
         $3ccec  xx xx:       xxx + ; $3ccfa
-        $3ccee  xx xx:       xxx #$xx
-        $3ccf0  xx xx:       xxx $xx
-        $3ccf2  xx xx xx:    xxx $xxxx,x
-        $3ccf5  xx xx:       xxx $xx
-        $3ccf7  xx xx xx:    xxx $35011
+        ;; Object is a person - clear paralysis
+        $3ccee  xx xx:        xxx #$xx
+        $3ccf0  xx xx:        xxx $xx
+        $3ccf2  xx xx xx:     xxx $xxxx,x
+        $3ccf5  xx xx:        xxx $xx
+        $3ccf7  xx xx xx:     xxx SetOrClearParalysisFlag:
 +       $3ccfa  xx xx xx:    xxx $xxxx,x
         $3ccfd  xx xx:       xxx #$xx
         $3ccff  xx xx:       xxx #$xx ; ObjectUpdate_1A does not run???
@@ -58293,7 +58322,7 @@ ItemOrTriggerActionJump_1b
         $3d7db  xx xx:      xxx $xx
         $3d7dd  xx xx:      xxx #$xx
         $3d7df  xx xx:      xxx $xx
-        $3d7e1  xx xx xx:   xxx $xxxx,y
+        $3d7e1  xx xx xx:   xxx $xxxx,y ; must wait to move
         $3d7e4  xx xx:      xxx $xx
         $3d7e6  xx:         xxx
         $3d7e7  xx:         xxx

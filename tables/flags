@@ -1,26 +1,44 @@
+      $6480
 000 - unused
-001
-
+001 - unused ??
+002 - unused ??
+003 - unused ??
+004 - unused ??
+005 - unused ??
+006 - unused ??
+007 - unused ??
+      $6481
+008 - unused ??
+009 - unused ??
 00a - windmill key used
 00b - talked to leaf elder
 00d - leaf villagers rescued (specifically elder)
+00c - leaf villager dialog toggle
 00e - learned telepathy (defeated stom)
 00f - woke windmill guard
+      $6482
 010 - gave kirisa plant to aryllis
 011 - welcomed to amazones
+012 - mt sabre treasure hunter dead
 013 - sabera defeated
+014 - unused ??
+015 - unused ??
 016 - portoa queen already given rage hint
 017 - chest:02:sword of water
+      $6483
 018 - entered underground channel
 019 - queen tired of talking
 01a - had initial talk with portoa queen
 01b - mesia recording played
+01c - unused ?? (mirrored shield get)
+01d - fortune teller dialog progression (first visit)
 01e - queen revealed as asina
 01f - got ball of water
       $6484
 020 - queen not in throne room
 021 - returned fog lamp
 022 - heard story from sahara elder
+023 - sahara elder daughter dialog progression
 024 - generals defeated
 025 - healed dolphin
 026 - entered shyron
@@ -30,15 +48,20 @@
 029 - change:akahana
 02a - change:soldier
 02b - change:stom
-02c
+02c - unused ????
 02d - talked with wise men in shyron
 02e - chest:2d:deo's pendant / talk to deo
-02f
+02f - unused trigger ??
+      $6486
+030 - zombietown glitched dialog condition (always false?)
+031 - zombietown dialog progression
 032 - got eye glasses from clark
+033 - unused ??
 034 - akahana left waterfall cave
 035 - cured akahana
+036 - akahana shyron dialog progression (extra set at end)
 037 - learned paralysis
-      $6486
+      $6487
 038 - leaf abducted
 039 - learned refresh (windmill started)
 03a - talked to zebu in cave
@@ -46,89 +69,143 @@
 03c - chest:3b:love pendant
 03e - found kensu in dance hall
 03f - learned teleport
-
+      $6488
+040 - tornel shyron temple dialog progression
 041 - got ball of fire
+042 - unused ??
 043 - entered oak after defeating insect (used for elder dialog)
 044 - got ball of fire
 045 - rescued child
+046 - unused ??
 047 - rescued leaf elder 
+      $6489
+048 - mt sabre treasure hunter embarked
 049 - got sword of fire from oak elder
+04a - portoa fisherman dialog progression
+04b - shyron sick men dialog toggle
+04c - shyron training men dialog toggle
+04d - shyron training men dialog toggle
 04e - chest:06:tornado bracelet
 04f - received warrior ring
+      $648a
 050 - given statue to akahana
 051 - learned barrier
 052 - talked to dwarf mother
-053 - followed by child
-054 - set when calling the dolphin
+053 - followed by child (cleared when leaving area: 3e81a)
+054 - set when calling the dolphin - UNUSED (never read?)
 055 - zebu rescued
 056 - tornel rescued
 057 - asina rescued
+      $648b
+058 - paralysis flag for 26 aryllis guard - UNUSED (no read or write)
+059 - paralysis flag for 27 aryllis guard - UNUSED (no read or write)
+05a - ???? unused ????
 05b - mt sabre guards gone
-
-05e - draygon 2 defeated
+05c - ???? unused ????
+05d - ???? unused ????
+05e - draygon 2 defeated (spawn condition for sages, telepathy)
 05f - chest:03:sword of thunder
+      $648c
+060 - unused trigger
 061 - talked to stom in swan hut
 062 - chest:51:sacred shield
 063 - learned change
+064 - entered draygonia fortress (unread - useless trigger 83???)
 065 - cured kensu
+066 - unused (always false???) - but read by spawn 2c for some reason
 067 - defeated mado 1
+      $648d
 068 - forged crystalis
 069 - UNUSED stoned people cured
 06a - stoned people cured
 06b - UNUSED stoned people cured
 06c - defeated draygon 1
-070 - kensu paralyzed in tavern
-071 - kensu paralyzed in dance hall
+06d - paralysis flag for zebu - UNUSED (never read?)
+06e - paralysis flag for tornel - UNUSED (never read?)
+06f - paralysis flag for asina - UNUSED (never read?)
+      $648e
+070 - kensu paralyzed in tavern [HARDCODED in rando]
+071 - kensu paralyzed in dance hall [HARDCODED in rando]
 072 - found kensu in tavern
+073 - startled man outside leaf cave
+074 - ???? unused ????
 075 - talked to kensu in lighthouse
 076 - talked to kensu in goa before shyron
 077 - chest:08:flame bracelet
+      $648f
 078 - chest:0c:storm bracelet
 079 - chest:40:bow of truth
 07a - chest:0a:blizzard bracelet
+07b - ball of water
+07c - UNUSED (supposed to be related to warrior ring?)
 07d - chest:3f:bow of sun
 07e - overheard mt sabre guards
 07f - heard mt sabre guards
 
-
       $6490
+080 - unused ??
+081 - unused ??
 082 - azteca gave bow of truth
 083 - rescued leaf elder ??
 084 - leaf villagers currently abducted (set in cave behind zebu, cleared on using prison key)
 085 - leaf elder currently abducted (set in cave behind zebu, cleared in elder's cell)
 086 - used bow of truth
 087 - chest:05:ball of wind
+      $6491
 088 - got windmill key
 089 - spoken to dead stom's girlfriend
 08a - spoken to dead stom
 08b - got shell flute
 08c - swan guards disappeared
 08d - got eye glasses from clark
+08e - sabera trap sprung - unused (never read?)
 08f - used statue of gold
+      $6492
 090 - stoned people gone
+091 - unused ??
 092 - got flute of lime from queen
+093 - approached prison door - UNUSED (never read?)
+094 - approached stxy door - UNUSED (never read?)
+095 - approached angry sea altar - UNUSED (never read?)
+096 - leaf elder's daughter dialog toggle
 097 - local (red man at top of leaf (0f) toggle, pre-abduction)
+      $6493
+098 - nadare npc dialog progression
+099 - amazones guard paralyzed - UNUSED (written but never read?)
+09a - unused ??
 09b - able to ride dolphin
 09c - portoa queen going away
+09d - unused ??
+09e - prevent portoa guard from moving - UNUSED (always false?)
+09f - unused spawn/trigger
+      $6494
 0a0 - got insect flute
+0a1 - portoa throne room guard paralyzed - UNUSED (written but never read?)
+0a2 - cleared outside portoa castle - UNUSED (never read?)
+0a3 - queen/fortune teller state
 0a4 - woke kensu
 0a5 - talked to zebu student
 0a6 - heard some oak elder dialog
+0a7 - swan dancer dialog toggle
+      $6495
 0a8 - heard some more oak elder dialog
 0a9 - talked to leaf rabbit
 0aa - chest:1d:medical herb
 0ab - chest:50:merical herb
+0ac - unused ??
 0ad - chest:52:medical herb
 0ae - chest:53:medical herb
 0af - chest:54:magic ring
+      $6496
 0b0 - chest:55:medical herb
 0b1 - chest:56:medical herb
 0b2 - chest:57:medical herb
 0b3 - chest:58:magic ring
-0b3 - chest:59:medical herb
+0b4 - chest:59:medical herb
 0b5 - chest:5a:fruit of power
 0b6 - chest:1f:lysis plant
 0b7 - chest:5c:lysis plant
+      $6497
 0b8 - chest:5d:lysis plant
 0b9 - chest:1e:antidote
 0ba - chest:5e:antidote
@@ -137,6 +214,7 @@
 0bd - chest:20:fruit of lime
 0be - chest:21:fruit of power
 0bf - chest:62:fruit of power
+      $6498
 0c0 - chest:63:opel statue
 0c1 - chest:64:fruit of power
 0c2 - chest:22:magic ring
@@ -145,6 +223,7 @@
 0c5 - chest:6b:magic ring
 0c6 - chest:6c:magic ring
 0c7 - chest:23:fruit of repun
+      $6499
 0c8 - chest:24:warp boots
 0c9 - chest:6a:warp boots
 0ca - chest:3d:ivory statue
@@ -153,6 +232,7 @@
 0cd - chest:14:psycho shield
 0ce - chest:25:statue of onyx
 0cf - chest:33:key to prison
+      $649a
 0d0 - chest:28:flute of lime
 0d1 - chest:35:fog lamp
 0d2 - chest:69:magic ring
@@ -161,6 +241,7 @@
 0d5 - portoa queen ???
 0d6 - portoa queen ???
 0d7 - portoa queen ???
+      $649b
 0d8 - kensu rescued
 0d9 - stoned pair in waterfall cave toggle
 0da - kensu gone from tavern
@@ -169,17 +250,42 @@
 0dd - chest:70:mimic - UNUSED
 0de - chest:2c:iron necklace
 0df - chest:1b:battle armor
+      $649c
 0e0 - spoken to dead akahana
+0e1 - unused ??
+0e2 - unused ??
+0e3 - unused ??
 0e4 - chest:3c:kirisa plant
 0e5 - chest:6e:warp boots
 0e6 - chest:6d:opel statue
 0e7 - chest:2f:leather boots
+      $649d
+0e8 - spoken to dead shyron villager
+0e9 - spoken to dead shyron guard
 0ea - received tower message 1
 0eb - received tower message 2
 0ec - received tower message 3
 0ed - mesia (8e) first dialog flag
 0ee - UNUSED ==> we use for *currently* riding dolphin
-0ef...0ff UNUSED?? (check first)
+0ef - unused
+      $649e
+0f0 - unused
+0f1 - unused
+0f2 - unused
+0f3 - unused
+0f4 - unused
+0f5 - unused
+0f6 - unused
+0f7 - unused
+      $649f
+0f8 - unused
+0f9 - unused
+0fa - unused
+0fb - unused
+0fc - unused
+0fd - unused
+0fe - unused
+0ff - unused
 
 100 - defeated vampire 1
 101 - defeated insect
@@ -194,7 +300,7 @@
 10a - defeated statue of sun
 10b - defeated draygon 1
 10c - defeated vampire 2
-10d - UNUSED ==> we use for shyron gate
+10d - UNUSED ==> we use for swan gate opened to prevent early despawn
 
 ## NOTE - we use 110..11f for scaling bookkeeping (I think - 64a2)
 ##               180..1ff is the overflow buffer

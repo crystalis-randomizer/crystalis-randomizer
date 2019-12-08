@@ -771,7 +771,7 @@ exp for killing
 
 $540,x
 ------
-const, loaded from $2e&3 for NPCs
+const, loaded from $2e&3 for NPCs (should always be 1 == NPC type?)
 if #$ff then use shield defense, anything else uses armor
  - 209 objects have 00, 45 have ff, 2 have 01.
  - CollisionJump_01_EnemyHitsPlayer takes a totally different
@@ -803,6 +803,7 @@ This is also used for mosquito wings.
 $5a0,x
 ------
 must wait to move - counts down to zero when able to move again?
+ - set by paralysis
 
 
 $5c0,x

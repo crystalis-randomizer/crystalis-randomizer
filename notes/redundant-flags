@@ -1,0 +1,93 @@
+Paralysis Flags:
+================
+3504f has 9 flags that are used to track paralysis.  7 of them are never read
+but will be written whenever the given NPC exists.  We need to clear these to
+repurpose those flags.  In particular, just defrag the table to only have two
+elements (or just hardcode it outside the table).
+
+.org $35011
+   lda #$03
+   clc
+   adc $13
+   lsr
+   cmp #$38
+    bne >rts
++  lda #$01
+   adc #$00 ; cs => 2, cc => 1
+   bit $12
+   beq +
+    ora $648e
+    bne ++ ; uncond
++  eor #$ff
+   and $648e
+++ sta $648e
+   rts
+
+Saves 22 bytes, plus eliminates 19 bytes of tables!
+
+
+Redundant Flags:
+================
+026 entered shyron => just use warp point 2fd
+032 got eye glasses from clark => 08d
+08f calmed sea => 283
+
+Unread Flags:
+=============
+
+054 used shell flute => never read?
+0a1 cleared on entering amazones, set on paralyze portoa outer guard - unread?
+    NOTE: also in NPC paralysis table 35045, so that's a wrinkle
+0a2 cleared outside portoa castle
+058 paralysis flag for 26 aryllis guard - not actually used!
+059 paralysis flag for 27 aryllis guard - not actually used!
+06d paralysis flag for zebu - never read?
+06e paralysis flag for tornel - never read?
+06f paralysis flag for asina - never read?
+
+Flags to Defrag:
+================
+0a3 queen/fortune teller state
+0a4 woke kensu
+0a5 initial dialog w/ zebu student
+0a6 oak elder dialog switch
+0a7 swan dancer dialog toggle
+0a8 oak elder dialog, oak trigger
+0a9 leaf rabbit, sabre trigger
+0d5 portoa queen dialog toggles
+0d6 portoa queen dialog toggles
+0d7 portoa queen dialog toggles
+0d9 stoned pair dialog toggles
+0da kensu chase flag
+0db sabera trap trigger flag
+0e0 dead akahana
+0e8 dead shyron villager
+0e9 dead shyron guard
+0ea tower message
+0eb tower message
+0ec tower message
+0ed mesia dialog toggle
+
+Unused Flags:
+=============
+0ac
+0e1 .. 0e3
+0ee .. 0ff
+
+
+
+REARRANGEMENT:
+==============
+ * Given that all the 0fx flags are unused, consider moving boss flags into
+   that range: 100 => 0f0, and so on.
+ * Move scaling to 64a6,64a7 (170..17f)
+ * Keep overflow buffer at 180..1ff
+
+We now have 100..16f free for actual items - only need a handful
+ - 143, 144, etc.
+
+This will allow separating items from checks cleanly.
+ - we can then go ahead and delete all the chest spawn flags...!
+
+rom/flag.ts -> include a table that incidates which flags have hardcoded
+               access, defrag the rest automatically???

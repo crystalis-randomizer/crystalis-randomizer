@@ -2,6 +2,12 @@
 
 set -ex
 
+# Bail out if (1) there's a NO_DEPLOY file, or (2) the commit message
+# contains "NO_DEPLOY".
+
+if [ -e NO_DEPLOY ]; then exit 0; fi
+case "$TRAVIS_COMMIT_MESSAGE" in; (*NO_DEPLOY*) exit 0 ;; esac
+
 # Does slightly different things based on what branch
 # was just tested.  Assumes a valid ssh-agent for pushing.
 

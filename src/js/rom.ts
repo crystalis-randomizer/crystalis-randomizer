@@ -369,6 +369,7 @@ export class Rom {
     promises.push(this.messages.write(writer));
     promises.push(writer.commit());
     await Promise.all(promises).then(() => undefined);
+    writer.report();
   }
 
   analyzeTiles() {

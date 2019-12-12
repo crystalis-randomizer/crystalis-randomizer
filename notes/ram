@@ -1010,6 +1010,14 @@ map palette data
  - written at 34cb3
 
 
+$6160..$61ff
+------------
+Unused.
+ - $61ff we use to track the need to redisplay the difficulty
+ - Use other parts of this block for multi-world.
+ - 6160..61bf  => all names
+
+
 $6200..$621f
 ------------
 PPUDATA write staging area
@@ -1026,7 +1034,7 @@ committed to the PPU, and thus lags $b.  The data go in quads:
 $62f0..$62fb
 ------------
 Some sort of nametable-initialization bitset?  might be larger?
-Location flags copied here form $64c0..$64df based on the location flags table.
+Location flags copied here from $64c0..$64df based on the location flags table.
 
 Map flags indexed by the tile position are checked when populating the nametable.
 

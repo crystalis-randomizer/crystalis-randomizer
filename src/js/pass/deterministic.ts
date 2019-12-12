@@ -91,9 +91,9 @@ function consolidateItemGrants(rom: Rom): void {
 function addMezameTrigger(rom: Rom): void {
   const trigger = rom.nextFreeTrigger();
   trigger.used = true;
-  trigger.conditions = [~0x2f0];
+  trigger.conditions = [~rom.flags.AlwaysTrue.id];
   trigger.message = MessageId.of({action: 4});
-  trigger.flags = [0x2f0];
+  trigger.flags = [rom.flags.AlwaysTrue.id];
   const mezame = rom.locations.MezameShrine;
   mezame.spawns.push(Spawn.of({tile: 0x88, type: 2, id: trigger.id}));
 }
@@ -190,14 +190,14 @@ function fogLampNotRequired(rom: Rom, flags: FlagSet) {
   rom.npcs[0x68].data[0] = 0x67;
   rom.npcs[0x68].localDialogs.get(-1)![0].message.action = 0x0a;
   rom.npcs[0x68].localDialogs.get(-1)![0].flags = [];
-  rom.npcs[0x68].spawnConditions.set(0x61, [0x21, ~0x0c1])
+  rom.npcs[0x68].spawnConditions.set(0x61, [0x21, ~rom.flags.KensuInCabin.id]);
   // (3) fisherman 64 spawns on fog lamp rather than shell flute
-  rom.npcs[0x64].spawnConditions.set(0xd6, [0x235]);
+  rom.npcs[0x64].spawnConditions.set(0xd6, [rom.flags.FogLamp.id]);
 
   // (4) fix up itemget 67 from itemget 64 (delete the flag)
   rom.itemGets[0x64].flags = [];
   rom.itemGets[0x67].copyFrom(rom.itemGets[0x64]);
-  rom.itemGets[0x67].flags = [0x0c1];
+  //rom.itemGets[0x67].flags = [0x0c1];
 
   // TODO - graphics screwed up - figure out if object action is changing
   // the pattern tables based on (e.g.) $600,x maybe?  Can we prevent it?
@@ -293,34 +293,38 @@ function alarmFluteIsKeyItem(rom: Rom, flags: FlagSet): void {
 function brokahanaWantsMado1(rom: Rom): void {
   const brokahana = rom.npcs[0x54];
   const dialog = assert(brokahana.localDialogs.get(-1))[0];
-  if (dialog.condition !== ~0x024) {
+  if (dialog.condition !== ~rom.flags.Karmine.id) {
     throw new Error(`Bad brokahana condition: ${dialog.condition}`);
   }
-  dialog.condition = ~0x067; // vanilla ball of thunder / defeated mado 1
+  dialog.condition = ~rom.flags.Mado1.id;
 }
 
 function requireHealedDolphin(rom: Rom): void {
+  const {ShellFlute, HealedDolphin} = rom.flags;
   // Normally the fisherman ($64) spawns in his house ($d6) if you have
   // the shell flute (236).  Here we also add a requirement on the healed
   // dolphin slot (025), which we keep around since it's actually useful.
-  rom.npcs[0x64].spawnConditions.set(0xd6, [0x236, 0x025]);
+  rom.npcs[0x64].spawnConditions.set(0xd6, [ShellFlute.id, HealedDolphin.id]);
   // Also fix daughter's dialog ($7b).
   const daughterDialog = rom.npcs[0x7b].localDialogs.get(-1)!;
   daughterDialog.unshift(daughterDialog[0].clone());
-  daughterDialog[0].condition = ~0x025;
-  daughterDialog[1].condition = ~0x236;
+  daughterDialog[0].condition = ~HealedDolphin.id;
+  daughterDialog[1].condition = ~ShellFlute.id;
 }
 
 function requireTelepathyForDeo(rom: Rom): void {
+  const {Telepathy} = rom.flags;
   // Not having telepathy (243) will trigger a "kyu kyu" (1a:12, 1a:13) for
   // both generic bunnies (59) and deo (5a).
-  rom.npcs[0x59].globalDialogs.push(GlobalDialog.of(~0x243, [0x1a, 0x12]));
-  rom.npcs[0x5a].globalDialogs.push(GlobalDialog.of(~0x243, [0x1a, 0x13]));
+  rom.npcs[0x59].globalDialogs.push(
+      GlobalDialog.of(~Telepathy.id, [0x1a, 0x12]));
+  rom.npcs[0x5a].globalDialogs.push(
+      GlobalDialog.of(~Telepathy.id, [0x1a, 0x13]));
 }
 
 function teleportOnThunderSword(rom: Rom): void {
   // itemget 03 sword of thunder => set 2fd shyron warp point
-  rom.itemGets[0x03].flags.push(0x2fd);
+  rom.itemGets[0x03].flags.push(rom.flags.WarpShyron.id);
   // dialog 62 asina in f2/f4 shyron -> action 1f (teleport to start)
   //   - note: f2 and f4 dialogs are linked.
   for (const i of [0, 1, 3]) {
@@ -365,8 +369,8 @@ function makeBraceletsProgressive(rom: Rom): void {
     vanilla[2].clone(), // will change to don't have orb
     vanilla[1], // have bracelet, learn teleport
   ];
-  patched[1].condition = ~0x206; // don't have bracelet
-  patched[2].condition = ~0x205; // don't have orb
+  patched[1].condition = ~rom.flags.TornadoBracelet.id; // no bracelet
+  patched[2].condition = ~rom.flags.BallOfWind.id;      // no orb
   patched[3].condition = ~0;     // default
   tornel.localDialogs.set(0x21, patched);
 }
@@ -504,7 +508,7 @@ function closeCaveEntrances(rom: Rom, flags: FlagSet): void {
     flagsToClear.push([GoaValley, 0x01]);
   }
   for (const [loc, yx] of flagsToClear) {
-    loc.flags.push(Flag.of({yx, flag: 0x2f0}));
+    loc.flags.push(Flag.of({yx, flag: rom.flags.AlwaysTrue.id}));
   }
 
   function replaceFlag(loc: Location, yx: number, flag: number): void {
@@ -660,7 +664,7 @@ function connectGoaToLeaf(rom: Rom): void {
 
   // Add a rock wall (id=0).
   EastCave3.spawns.push(Spawn.from([0x18, 0x07, 0x23, 0x00]));
-  EastCave3.flags.push(Flag.of({screen: 0x10, flag: rom.flags.allocMapFlag()}));
+  EastCave3.flags.push(Flag.of({screen: 0x10, flag: rom.flags.alloc(0x200)}));
 
   // Make the connections.
   EastCave2.screens[4][0] = 0x99;
@@ -669,10 +673,7 @@ function connectGoaToLeaf(rom: Rom): void {
 }
 
 function addZombieWarp(rom: Rom) {
-  // Make space for the new flag between Joel and Swan
-  for (let i = 0x2f5; i < 0x2fc; i++) {
-    rom.moveFlag(i, i - 1);
-  }
+  rom.flags.insertZombieWarpFlag();
   // Update the menu
   const message = rom.messages.parts[0x21][0];
   message.text = [
@@ -688,7 +689,7 @@ function addZombieWarp(rom: Rom) {
   trigger.used = true;
   trigger.conditions = [];
   trigger.message = MessageId.of({});
-  trigger.flags = [0x2fb]; // new warp point flag
+  trigger.flags = [rom.flags.WarpZombie.id]; // new warp point flag
   // Actually replace the trigger.
   for (const spawn of rom.locations.ZombieTown.spawns) {
     if (spawn.isTrigger() && spawn.id === 0x8a) {
@@ -701,7 +702,7 @@ function addZombieWarp(rom: Rom) {
 }
 
 function evilSpiritIslandRequiresDolphin(rom: Rom) {
-  rom.trigger(0x8a).conditions = [~0x0ee]; // new flag for riding dolphin
+  rom.trigger(0x8a).conditions = [~rom.flags.CurrentlyRidingDolphin.id];
   rom.messages.parts[0x1d][0x10].text = `The cave entrance appears
 to be underwater. You'll
 need to swim.`;
@@ -718,10 +719,11 @@ function reversibleSwanGate(rom: Rom) {
   );
 
   // Guards ($2d) at swan gate ($73) ~ set 10d after opening gate => condition for despawn
-  rom.npcs[0x2d].localDialogs.get(0x73)![0].flags.push(0x10d);
+  rom.npcs[0x2d].localDialogs.get(0x73)![0].flags.push(
+      rom.flags.SwanGateOpened.id);
 
   // Despawn guard trigger requires 10d
-  rom.trigger(0xb3).conditions.push(0x10d);
+  rom.trigger(0xb3).conditions.push(rom.flags.SwanGateOpened.id);
 }
 
 function leafElderInSabreHeals(rom: Rom): void {

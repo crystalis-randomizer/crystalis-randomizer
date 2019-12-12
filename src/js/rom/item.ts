@@ -1,7 +1,7 @@
 import {Entity, EntityArray} from './entity.js';
 import {MessageId} from './messageid.js';
 import {hex, readLittleEndian, readString, seq, writeLittleEndian,
-        ITEM_USE_FLAGS, SPAWN_CONDITION_FLAGS} from './util.js';
+        ITEM_USE_FLAGS, ITEM_CONDITION_FLAGS} from './util.js';
 import {Writer} from './writer.js';
 import {Data} from './util.js';
 import {Rom} from '../rom.js';
@@ -251,7 +251,7 @@ export class ItemUse {
       want = data[offset + 1] << 8 | data[offset];
       offset += 2;
     } else if (kind === 'flag') {
-      const flags = SPAWN_CONDITION_FLAGS.read(data, offset);
+      const flags = ITEM_CONDITION_FLAGS.read(data, offset);
       if (!flags.length) flags.push(~0);
       if (flags.length > 1) throw new Error(`Flag list too long: ${flags}`);
       want = flags[0];
@@ -271,7 +271,7 @@ export class ItemUse {
     if (this.kind === 'expect' || this.kind === 'screen') {
       bytes.push(this.want & 0xff, (this.want >>> 8) & 0xff);
     } else if (this.kind === 'flag') {
-      const flagBytes = SPAWN_CONDITION_FLAGS.bytes([this.want]);
+      const flagBytes = ITEM_CONDITION_FLAGS.bytes([this.want]);
       if (flagBytes.length !== 2) throw new Error(`bad data: ${flagBytes}`);
       bytes.push(...flagBytes);
     } else if (this.kind === 'location') {

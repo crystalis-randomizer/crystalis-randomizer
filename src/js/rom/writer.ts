@@ -60,6 +60,15 @@ export class Writer {
 
   // TODO: move()?
 
+  report() {
+    for (const chunk of this.chunks) {
+      const free = chunk.free();
+      if (free) {
+        console.log(`Free: ${free} bytes ${hex(chunk.pos)}..${hex(chunk.end)}`);
+      }
+    }
+  }
+
   /** Note: start and end pages must be the same!  'end' is exclusive. */
   alloc(start: number, end: number) {
     while (page(end - 1) > page(start)) {

@@ -135,3 +135,94 @@ EXTRA FLAGS
 06c -> 10b (1 usage)
 0d3 -> 105
 0c7 -> 106
+
+================================================================
+
+We can do better.
+
+Let's adjust the ItemGet to chain the lookups, rather than do them
+in parallel.  So we look up "check 36" for healed dolphin, which
+gives "item 40" bow of truth.  For combo/multi, this would also include
+a player index, though the lua needs access to more data for multi
+(i.e. flags for specific consumables)
+
+
+;;; ITEM GET PATCHES
+
+
+;; Treasure chest spawns don't need to be so complicated.
+;; Instead, just use the new dedicated ItemGet flags 200..27f
+.org $1c5c3
+  ;; Read the flag 100|chest, where chest is in $23
+  lda $23
+  and #$07
+  tay
+  lda $c000,y ; powers of two
+  pha
+   lda $23
+   lsr
+   lsr
+   lsr
+   tay
+  pla
+  and $64a0,y
+  bne +
+   inc $20
+  rts ; 24 bytes
+.assert < $1c5de
+
+;;; TODO - routines to read or set flag $24$25
+;;; Then this becomes
+
+  ;; lda $23
+  ;; sta $24
+  ;; lda #$01
+  ;; sta $25
+  ;; jsr read
+  ;; bne >rts
+  ;; inc $20
+  ;; rts  ; 16 bytes
+
+    ;; Then here we just do
+    ;;   lsr $24  ; +2 bytes
+    ;;   ror
+    ;;   lsr $24  ; +2 bytes
+    ;;   ror
+    ;;   lsr
+
+;;; Save more by using YA as the flag?
+
+  sta $24
+  sty $25
+  and #$07
+  tay
+  lda $c000,y ; powers of two
+  pha
+   lda $24
+   lsr $25
+   ror
+   lsr $25
+   ror
+   lsr
+   tay
+  pla
+  sta $24
+  and $6480,y
+    ;; could rts here and save 7 bytes -> 28
+  php
+   lda $24
+   ora $6480,y
+  plp
+  rts ; 35 bytes but could be used more generally?
+
+  lda #$96
+  ldy #$01
+  jsr flag
+  sta $6480,y  ; 10 bytes...?  not worth it for static.
+
+  lda $23
+  ldy #$01
+  jsr flag
+  bne +
+   inc $20
+  rts  ; 12 bytes

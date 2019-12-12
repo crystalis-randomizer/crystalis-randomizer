@@ -277,6 +277,7 @@ export async function shuffle(rom: Uint8Array,
     ];
   }
 
+  parsed.flags.defrag();
   await parsed.writeData();
   buffDyna(parsed, flags); // TODO - conditional
   const crc = await postParsedShuffle(rom, random, seed, flags, asm, assemble);
@@ -549,18 +550,18 @@ const storyMode = (rom: Rom) => {
   // NPC spawn conditions...
   const conditions = [
     // Note: if bosses are shuffled we'll need to detect this...
-    ~rom.npcs[0xc2].spawnConditions.get(0x28)![0], // Kelbesque 1
-    ~rom.npcs[0x84].spawnConditions.get(0x6e)![0], // Sabera 1
-    ~rom.trigger(0x9a).conditions[1], // Mado 1
-    ~rom.npcs[0xc5].spawnConditions.get(0xa9)![0], // Kelbesque 2
-    ~rom.npcs[0xc6].spawnConditions.get(0xac)![0], // Sabera 2
-    ~rom.npcs[0xc7].spawnConditions.get(0xb9)![0], // Mado 2
-    ~rom.npcs[0xc8].spawnConditions.get(0xb6)![0], // Karmine
-    ~rom.npcs[0xcb].spawnConditions.get(0x9f)![0], // Draygon 1
-    0x200, // Sword of Wind
-    0x201, // Sword of Fire
-    0x202, // Sword of Water
-    0x203, // Sword of Thunder
+    rom.flags.Kelbesque1.id,
+    rom.flags.Sabera1.id,
+    rom.flags.Mado1.id,
+    rom.flags.Kelbesque2.id,
+    rom.flags.Sabera2.id,
+    rom.flags.Mado2.id,
+    rom.flags.Karmine.id,
+    rom.flags.Draygon1.id,
+    rom.flags.SwordOfWind.id,
+    rom.flags.SwordOfFire.id,
+    rom.flags.SwordOfWater.id,
+    rom.flags.SwordOfThunder.id,
     // TODO - statues of moon and sun may be relevant if entrance shuffle?
     // TODO - vampires and insect?
   ];

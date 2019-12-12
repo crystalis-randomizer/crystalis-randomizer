@@ -1,0 +1,18 @@
+Vanilla flags
+=============
+
+Goal: change the default
+
+Flag group V for vanilla:
+ - Vs - keep shop glitch
+ - Vt - don't shuffle mimics
+ - Rg - route glitches into logic
+
+Remove all F flags, keep the G flags
+
+Add a * subflag:
+ - G* would be "all glitches on"
+ - automatically collapse?
+ - single canonical rep for any given flagset
+
+

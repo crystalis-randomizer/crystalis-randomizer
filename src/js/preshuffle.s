@@ -43,8 +43,8 @@ define InvPassive $6448
 define InvQuest $6450
 define InvMagic $6458
 define ItemFlagsStart $64c0
-define Difficulty $64a2
-define ShouldRedisplayDifficulty $64a3
+define Difficulty $648f         ; requires defrag! (flags 078 .. 07f)
+define ShouldRedisplayDifficulty $61ff
 
         
 define SelectedConsumableIndex  $642c
@@ -75,6 +75,10 @@ define ITEM_RABBIT_BOOTS     $12
 define ITEM_OPEL_STATUE      $26
 define SFX_MONSTER_HIT       $21
 define SFX_ATTACK_IMMUNE     $3a
+
+;;; see http://www.6502.org/tutorials/6502opcodes.html#BIT
+;;; note: this is dangerous if it would result in a register read
+define SKIP_TWO_BYTES   $2c
 
 ;;; Labels
 .org $1c112
@@ -235,10 +239,14 @@ DisplayNumber:
   ;; sta $23
   ;; rts
 
-
 .assert < $1c3d3
 
 .org $1c3eb ; 16 bytes of free/unused space in middle of itemuse jump
+    ;; TODO - extra item indirection preamble...
+    ;; handle different checks
+
+    
+
 .assert < $1c3fb
 
 .org $1c41b ; 30 bytes of free/unused space at end of itemuse jump
@@ -275,7 +283,7 @@ DisplayNumber:
 ;; Count uses of Flute of Lime and Alarm Flute - discard after two.
 .org $1c6f2 ; 10 free bytes in middle of spawn condition table
 PatchTradeInItem:
-  cmp #$31
+  cmp #$31  ; alarm flute
   beq +
   cmp #$28  ; flute of lime
   beq ++
@@ -284,16 +292,15 @@ PatchTradeInItem:
 
 .org $1c6fe ; free space in middle of spawn condition table
 +    lda #$40
-     sta $61
-     bne +++
+     .byte $2c ; skip the next instruction (safe b/c $80a9 is prg rom)
 ++   lda #$80
      sta $61
-+++  lda $64a1
++++  lda $648e ; check flag 076 (alarm flute) or 077 (flute of lime)
      and $61
      bne ++++
-     lda $64a1
+     lda $648e
      ora $61
-     sta $64a1
+     sta $648e
      ;; Deselect current item
      lda #$00
      sta $0715
@@ -380,21 +387,38 @@ CheckBelowBoss:
 ;; Treasure chest spawns don't need to be so complicated.
 ;; Instead, just use the new dedicated ItemGet flags 200..27f
 .org $1c5c3
-  ;; Read the flag 200+chest, where chest is in $23
-  lda #$a2
-  sta $61
+  ;; Read the flag 100|chest, where chest is in $23
   lda $23
-  sta $62
-  lda #$61
-  sta $24
-  lda #$00
-  sta $25
+  and #$07
   tay
-  jsr ReadFlagFromBytePair_24y
-  beq +
+  lda $c000,y ; powers of two
+  pha
+   lda $23
+   lsr
+   lsr
+   lsr
+   tay
+  pla
+  and $64a0,y
+  bne +
    inc $20
-+ rts
-.org $1c5de
++ rts ; 24 bytes
+.assert < $1c5de
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; TODO - finish itemget patches
+;;;  1. add a new table for indirection
+;;;  2. new table can include mimic, so divert spawn
+;;;  3. write both 1xx and 2yy flags.
+;;;  4. store both ids until after item gotten
+;;;     - may need to use something like 61fe ?
+;;;  5. ???
+;;; Also update the slots.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 
 ;; Patches to ItemGet to update the dedicated flag and
 ;; leave room for calling the difficulty methods
@@ -1482,7 +1506,7 @@ SetEquippedConsumableItem:
   lda $6c   ; check current location
   cmp #$8c  ; is it shyron?
   bne +     ; if not, then return
-  lda $6484 ; check flag $27
+  lda $6484 ; check flag 027
   bpl +     ; if it's unset then return
   lda #$51
   sta $07f4
@@ -1703,15 +1727,15 @@ CheckFlag0:
 DialogFollowupAction_1c:
 TrainerIncreaseScaling:
   ;; scaling level
-  lda $64a2
+  lda Difficulty
   clc
   adc #$02
   cmp #$2f
   bcc +
    lda #$2f
-+ sta $64a2
++ sta Difficulty
   lda #$01
-  sta $64a3
+  sta ShouldRedisplayDifficulty
   rts
 
 DialogFollowupAction_1d:
@@ -1957,12 +1981,12 @@ UpdatePlayerStatusAndDolphinFlag:
   sta $0710
   and #$40
   beq +
-   ora $649d
-   sta $649d
+   ora $648d ; flag 06e
+   sta $648d
    rts
 + lda #$bf
-  and $649d
-  sta $649d
+  and $648d
+  sta $648d
   rts
 
 ;;;  FREE SPACE

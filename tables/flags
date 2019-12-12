@@ -12,8 +12,8 @@
 009 - unused ??
 00a - windmill key used
 00b - talked to leaf elder
-00d - leaf villagers rescued (specifically elder)
 00c - leaf villager dialog toggle
+00d - leaf villagers rescued (specifically elder)
 00e - learned telepathy (defeated stom)
 00f - woke windmill guard
       $6482
@@ -67,6 +67,7 @@
 03a - talked to zebu in cave
 03b - talked to zebu in shyron
 03c - chest:3b:love pendant
+03d - asina dialog progression in shyron temple
 03e - found kensu in dance hall
 03f - learned teleport
       $6488

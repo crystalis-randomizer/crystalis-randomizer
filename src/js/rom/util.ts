@@ -100,6 +100,10 @@ export function hex(id: number): string {
   return id != null ? id.toString(16).padStart(2, '0') : String(id);
 }
 
+export function hex3(id: number): string {
+  return id.toString(16).padStart(3, '0');
+}
+
 export function hex4(id: number): string {
   return id.toString(16).padStart(4, '0');
 }
@@ -151,7 +155,9 @@ export function write(data: Uint8Array, offset: number, values: Data<number>) {
 }
 
 export class FlagListType {
-  constructor(readonly last: number, readonly clear: number) {}
+  constructor(readonly last: number,
+              readonly clear: number,
+              readonly nonEmpty: boolean = false) {}
 
   read(data: Data<number>, offset: number = 0): number[] {
     // TODO - do we ever need to invert clear/last?  If so, use ~ as signal.
@@ -161,15 +167,14 @@ export class FlagListType {
       const lo = data[offset++];
       const flag = (hi & 3) << 8 | lo;
       const signed = hi & this.clear ? ~flag : flag;
-      //if (signed !== ~0)
-      flags.push(signed);
+      if (signed !== ~0) flags.push(signed);
       if (hi & this.last) return flags;
     }
   }
 
   bytes(flags: number[]): number[] {
-    //flags = flags.filter(f => f !== ~0);
-    //if (!flags.length) flags = [~0];
+    flags = flags.filter(f => f !== ~0);
+    if (this.nonEmpty && !flags.length) flags = [~0];
     const bytes = [];
     for (let i = 0; i < flags.length; i++) {
       let flag = flags[i];
@@ -190,8 +195,9 @@ export class FlagListType {
 }
 
 export const DIALOG_FLAGS = new FlagListType(0x40, 0x80);
-export const ITEM_GET_FLAGS = new FlagListType(0x40, 0x80);
-export const ITEM_USE_FLAGS = new FlagListType(0x40, 0x80);
+export const ITEM_GET_FLAGS = new FlagListType(0x40, 0x80, true);
+export const ITEM_USE_FLAGS = new FlagListType(0x40, 0x80, true);
+export const ITEM_CONDITION_FLAGS = new FlagListType(0x80, 0x20, true);
 export const SPAWN_CONDITION_FLAGS = new FlagListType(0x80, 0x20);
 
 ////////////////////////////////////////////////////////////////
@@ -357,3 +363,5 @@ export const watchArray = (arr: Data<unknown>, watch: number) => {
   };
   return new Proxy(arr, arrayChangeHandler);
 };
+
+export type Writable<T> = {-readonly [K in keyof T]: T[K]};

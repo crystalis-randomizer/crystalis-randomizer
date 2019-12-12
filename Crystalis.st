@@ -15241,7 +15241,7 @@ NpcData_03                                          ; Valley of Wind
         $19492              .byte $xx,$xx,$xx,$xx ; 18:
         $19496              .byte $xx,$xx,$xx,$xx ; 19:
         $1949a              .byte $xx,$xx,$xx,$xx ; 1a:
-        $1949e              .byte $xx,$xx,$xx,$xx ; 1b:
+        $1949e              .byte $xx,$xx,$xx,$xx ; 1b: Sealed cave "hitbox"
         $194a2              .byte $xx,$xx,$xx,$xx ; 1c:
         $194a6              .byte $xx
 ;;; ----------------------------------------------------------------
@@ -17356,8 +17356,8 @@ ObjectDataPart2
         $1ad5a              .word ($xxxx)
         $1ad5c              .word ($xxxx)
         $1ad5e              .word ($xxxx)
-        $1ad60              .word ($xxxx) ; $1ae78: b0
-        $1ad62              .word ($xxxx) ; $1ae86: b1
+        $1ad60              .word ($xxxx) ; $1ae78: b0 Windmill blades
+        $1ad62              .word ($xxxx) ; $1ae86: b1 Windmill gears
         $1ad64              .word ($xxxx) ; $1af80: b2
         $1ad66              .word ($xxxx) ; $1af89: b3
         $1ad68              .word ($xxxx) ; $1ba5c: b4
@@ -17396,8 +17396,8 @@ ObjectDataPart2
         $1adaa              .word ($xxxx) ; $1b217: d5
         $1adac              .word ($xxxx) ; $1b222: d6
         $1adae              .word ($xxxx) ; $1b22d: d7
-        $1adb0              .word ($xxxx) ; $1ae78: d8
-        $1adb2              .word ($xxxx) ; $1ae86: d9
+        $1adb0              .word ($xxxx) ; $1ae78: d8 (unused alias of b0)
+        $1adb2              .word ($xxxx) ; $1ae86: d9 (unused alias of b1)
         $1adb4              .word ($xxxx) ; $1af92: da
         $1adb6              .word ($xxxx) ; $1b238: db
         $1adb8              .word ($xxxx) ; $1afb5: dc
@@ -17515,6 +17515,8 @@ ObjectData_Object2C                                      ; Object 2c
         $1ae76              .byte $xx
         $1ae77              .byte $xx
 ;;; ----------------------------------------------------------------
+;;; Windmill blades.  Loaded as (03 e0); 6c0 and 6e0 indicate which
+;;; flag to check, action 51 checks it and draws the animation.
 ObjectData_ObjectB0                                      ; Object b0
 ;;; ----------------------------------------------------------------
 ObjectData_ObjectD8                                      ; Object d8
@@ -17524,6 +17526,7 @@ ObjectData_ObjectD8                                      ; Object d8
         $1ae82              .byte $xx
         $1ae83              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
+;;; Gears inside windmill.  Also look for the same flag as blades.
 ObjectData_ObjectB1                                      ; Object b1
 ;;; ----------------------------------------------------------------
 ObjectData_ObjectD9                                      ; Object d9
@@ -23595,7 +23598,7 @@ Trigger_84
         $1e220              .byte $xx,$xx ; Message 1d:12  Action: 0b
         $1e222              .byte $xx,$xx ; Set: 051 learned barrier
 Trigger_85
-        ;; 85 enter stom's house -> ????
+        ;; 85 enter stom's house -> initiate fight scene
         $1e224              .byte $xx,$xx ; Condition: 2f7 warp:oak
         $1e226              .byte $xx,$xx ; Condition: 00e NOT defeated stom
         $1e228              .byte $xx,$xx ; Message 03:00  Action: 18
@@ -46581,16 +46584,23 @@ ObjectActionJump_50
         $366c2  xx xx:       xxx $xx,x
 +       $366c4  xx:         xxx
 ;;; --------------------------------
+;;; Run the windmill.
 ObjectActionJump_51
-        $366c5  xx xx xx:   xxx $366fb
+        $366c5  xx xx xx:   xxx $366fb ; Immediately below - double return unless flag set
+        ;; Windmill is running at this point.  Cycle the animation (via Metasprite).
         $366c8  xx xx xx:   xxx $xxxx,x
+        ;; Bail out of not on screen
         $366cb  xx xx xx:   xxx $xxxx,x
-        $366ce  xx xx:      xxx ++ ; $366fa
+        $366ce  xx xx:       xxx >rts ; $366fa
+        ;; Check if the flag was loaded on the map as being set.
         $366d0  xx xx xx:   xxx $xxxx
         $366d3  xx xx:      xxx + ; $366ee
         $366d5  xx xx:       xxx $xx
         $366d7  xx xx:       xxx #$xx
         $366d9  xx xx:       xxx + ; $366ee
+        ;; We're in Valley of Wind and on screen - maybe spawn an explosion
+        ;; if we haven't spawned one yet already.  The explosion will figure out
+        ;; the relevant flag to set halfway through.
         $366db  xx xx xx:     xxx $xxxx
         $366de  xx xx:        xxx #$xx
         $366e0  xx xx:        xxx + ; $366ee
@@ -46598,15 +46608,17 @@ ObjectActionJump_51
         $366e5  xx xx:         xxx $xx
         $366e7  xx xx:         xxx #$xx
         $366e9  xx xx:         xxx $xx
-        $366eb  xx xx xx:      xxx $3ff80
+        $366eb  xx xx xx:      xxx LoadOneObjectData
 +       $366ee  xx xx xx:   xxx $xxxx,x
         $366f1  xx xx:      xxx #$xx
-        $366f3  xx xx:      xxx ++ ; $366fa
+        $366f3  xx xx:       xxx >rts ; $366fa
         $366f5  xx xx:      xxx #$xx
         $366f7  xx xx xx:   xxx StartAudioTrack
         ;; --------------------------------
-++      $366fa  xx:         xxx
+        $366fa  xx:         xxx
         ;; --------------------------------
+        ;; Literally just look for "started windmill" flag, since that's the only place
+        ;; this action is ever used.
         $366fb  xx xx xx:   xxx $xxxx,x
         $366fe  xx xx xx:   xxx $xxxx,y ; note: this is flag space
         $36701  xx xx:      xxx $xx
@@ -48738,6 +48750,8 @@ DataTable_377c6
         $377e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $377f0              .byte $xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+;;; This is an explosion.  It locks the screen and then halfway through the
+;;; process it will set the relevant map data flag.
 ObjectActionJump_08
 ObjectActionJump_7c
         $377f6  xx xx xx:   xxx $37850
@@ -48748,7 +48762,7 @@ ObjectActionJump_7c
         $37803  xx xx:      xxx #$xx
         $37805  xx xx:      xxx $xx
         $37807  xx xx xx:   xxx $3c75c
-        $3780a  xx xx xx:   xxx $3c676
+        $3780a  xx xx xx:   xxx FlushNametableDataWrite
         $3780d  xx:         xxx
         $3780e  xx:         xxx
         $3780f  xx xx xx:    xxx ReadObjectCoordinatesInto_34_37
@@ -48768,10 +48782,10 @@ ObjectActionJump_7c
         $37829  xx xx:        xxx $xx
         $3782b  xx xx:        xxx $xx
         $3782d  xx xx:        xxx $xx
-        $3782f  xx xx xx:     xxx $3ff9d
+        $3782f  xx xx xx:     xxx PrepareNametableStageForVerticalScroll
         $37832  xx:          xxx
         $37833  xx xx:       xxx $xx
-        $37835  xx xx xx:    xxx $3c739
+        $37835  xx xx xx:    xxx RequestAttributeTable0Write
         $37838  xx:         xxx
         $37839  xx:         xxx
         $3783a  xx:         xxx
@@ -56227,6 +56241,7 @@ RequestAttributeTable0Write
         $3c759  xx xx:      xxx $xx
         $3c75b  xx:         xxx
 ;;; --------------------------------
+	    ;; Look for a map flag?
         $3c75c  xx xx:      xxx $xx,x
         $3c75e  xx xx xx:   xxx PowersOfTwo,y
         $3c761  xx xx:      xxx $xx,x

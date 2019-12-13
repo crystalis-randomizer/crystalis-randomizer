@@ -167,6 +167,7 @@ export async function shuffle(rom: Uint8Array,
 
   const random = new Random(newSeed);
   const parsed = new Rom(rom);
+  parsed.flags.defrag();
   if (typeof window == 'object') (window as any).rom = parsed;
   parsed.spoiler = new Spoiler(parsed);
   if (log) log.spoiler = parsed.spoiler;
@@ -277,7 +278,6 @@ export async function shuffle(rom: Uint8Array,
     ];
   }
 
-  parsed.flags.defrag();
   await parsed.writeData();
   buffDyna(parsed, flags); // TODO - conditional
   const crc = await postParsedShuffle(rom, random, seed, flags, asm, assemble);

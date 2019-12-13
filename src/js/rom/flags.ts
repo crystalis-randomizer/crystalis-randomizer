@@ -422,7 +422,8 @@ export class Flags {
   KarmineBasementLowerMiddleChest = fixed(0x158); // magic ring
   EastCaveNortheastChest = fixed(0x159); // medical herb (unused)
   OasisCaveEntranceAcrossRiverChest = fixed(0x15a); // fruit of power
-  WaterfallCaveRiverLeftChest = fixed(0x15b); // 2nd flute of lime
+  // unused 15b 2nd flute of lime - changed in rando
+  // WaterfallCaveRiverLeftChest = fixed(0x15b); // 2nd flute of lime
   EvilSpiritIslandExitChest = fixed(0x15c); // lysis plant
   FortressSaberaMiddleChest = fixed(0x15d); // lysis plant
   NoSabreNorthUnderBridgeChest = fixed(0x15e); // antidote
@@ -684,22 +685,25 @@ export class Flags {
   remapFlags(remapping: Map<number, (ctx: FlagContext) => number>) {
     function processList(list: number[], ctx: FlagContext) {
       for (let i = list.length - 1; i >= 0; i--) {
+        let f = list[i];
+        if (f < 0) f = ~f;
         const remap = remapping.get(list[i]);
         if (remap == null) continue;
-        const mapped = remap({...ctx, index: i});
+        let mapped = remap({...ctx, index: i});
         if (mapped >= 0) {
-          list[i] = mapped;
+          list[i] = list[i] < 0 ? ~mapped : mapped;
         } else {
           list.splice(i, 1);
         }
       }
     }
     function process(flag: number, ctx: FlagContext) {
-      const remap = remapping.get(flag);
+      let unsigned = flag < 0 ? ~flag : flag;
+      const remap = remapping.get(unsigned);
       if (remap == null) return flag;
-      const mapped = remap(ctx);
+      let mapped = remap(ctx);
       if (mapped < 0) throw new Error(`Bad flag delete`);
-      return mapped;
+      return flag < 0 ? ~mapped : mapped;
     }
 
     // Location flags

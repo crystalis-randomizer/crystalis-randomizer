@@ -19,6 +19,11 @@
 // the world graph.
 
 
+// TODO - need to rewrite this whole thing in terms of new flag numbers?!?!?
+//      - may want to drop the namespaces and move to classes, since it's
+//        based on an instance variable of Rom...
+
+
 export namespace Event {
   export const STARTED_WINDMILL = Condition(0x00a);
   export const LEAF_ELDER = Condition(0x00b);

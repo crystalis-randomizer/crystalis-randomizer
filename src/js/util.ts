@@ -470,3 +470,29 @@ export function isNonNull<T extends {}>(x: T|undefined|null): x is T {
 //   if (x != null) return x;
 //   throw new Error(`Expected non-null`);
 // }
+
+
+// Generalized memoization wrapper.  All arguments must be objects,
+// but any number of arguments is allowed.
+type F<A extends any[], R> = (...args: A) => R;
+export function memoize<T extends object[], R>(f: F<T, R>): F<T, R> {
+  interface V {
+    next?: WeakMap<any, V>;
+    value?: R;
+    cached?: boolean;
+  }
+  const cache: V = {};
+  return function(this: any, ...args: any[]) {
+    let c = cache;
+    for (const arg of args) {
+      if (!c.next) c.next = new WeakMap<any, V>();
+      let next = (c.next || (c.next = new WeakMap())).get(arg);
+      if (!next) c.next.set(arg, next = {});
+    }
+    if (!c.cached) {
+      c.value = f.apply(this, args);
+      c.cached = true;
+    }
+    return c.value as R;
+  };
+}

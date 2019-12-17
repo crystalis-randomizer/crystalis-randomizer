@@ -183,8 +183,8 @@ function undergroundChannelLandBridge(rom: Rom) {
 
 function fogLampNotRequired(rom: Rom) {
   // Need to make several changes.
-  // (1) dolphin only requires shell flute, make the flag check free (~000)
-  rom.items[0x36].itemUseData[0].want = ~0;
+  // (1) dolphin only requires shell flute, make the flag check free
+  rom.items[0x36].itemUseData[0].want = rom.flags.AlwaysTrue;
   // (2) kensu 68 (@61) drops an item (67 magic ring)
   rom.npcs[0x68].data[0] = 0x67;
   rom.npcs[0x68].localDialogs.get(-1)![0].message.action = 0x0a;

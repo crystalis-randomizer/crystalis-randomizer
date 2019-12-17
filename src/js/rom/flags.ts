@@ -2,13 +2,27 @@ import {Rom} from '../rom.js';
 import {Location} from './location.js';
 import {Npc} from './npc.js';
 import {Trigger} from './trigger.js';
-import { hex, hex3, upperCamelToSpaces, Writable} from './util.js';
+import {hex, hex3, upperCamelToSpaces, Writable} from './util.js';
 
 const FLAG = Symbol();
+
+// TODO - maybe alias should just be in overlay.ts?
+interface Logic {
+  assumeTrue?: boolean;
+  assumeFalse?: boolean;
+  track?: boolean;
+  //alias?: (rom: Rom) => number[]; // returns a conjunction
+}
+
+const FALSE: Logic = {assumeFalse: true};
+const TRUE: Logic = {assumeTrue: true};
+const TRACK: Logic = {track: true};
+const IGNORE: Logic = {};
 
 interface FlagData {
   fixed?: boolean;
   obsolete?: (ctx: FlagContext) => number;
+  logic?: Logic;
 }
 interface FlagContext {
   trigger?: Trigger;
@@ -27,6 +41,7 @@ export class Flag {
 
   fixed: boolean;
   obsolete?: (ctx: FlagContext) => number;
+  logic: Logic;
 
   constructor(readonly flags: Flags,
               readonly name: string,
@@ -34,6 +49,7 @@ export class Flag {
               data: FlagData) {
     this.fixed = data.fixed || false;
     this.obsolete = data.obsolete;
+    this.logic = data.logic ?? TRACK;
   }
 }
 
@@ -41,18 +57,28 @@ function obsolete(obsolete: number | ((ctx: FlagContext) => number)): Flag {
   if (typeof obsolete === 'number') obsolete = (o => () => o)(obsolete);
   return {obsolete, [FLAG]: true} as any;
 }
-function fixed(id: number): Flag {
-  return {id, fixed: true, [FLAG]: true} as any;
+function fixed(id: number, logic = IGNORE): Flag {
+  return {id, fixed: true, [FLAG]: true, logic} as any;
 }
-function movable(id: number): Flag {
-  return {id, [FLAG]: true} as any;
+function tracked(id: number): Flag {
+  return fixed(id, TRACK);
 }
-function dialogProgression(name: string): Flag {
-  return {name, [FLAG]: true} as any;
+function movable(id: number, logic = IGNORE): Flag {
+  return {id, [FLAG]: true, logic} as any;
 }
-function dialogToggle(name: string): Flag {
-  return {name, [FLAG]: true} as any;
+function dialogProgression(name: string, logic = IGNORE): Flag {
+  return {name, [FLAG]: true, logic} as any;
 }
+function dialogToggle(name: string, logic = IGNORE): Flag {
+  return {name, [FLAG]: true, logic} as any;
+}
+
+function pseudo(owner: object): Flag {
+  const id = pseudoCounter.get(owner) || 0x400;
+  pseudoCounter.set(owner, id + 1);
+  return {id, [FLAG]: true, logic: TRACK};
+}
+const pseudoCounter = new WeakMap<object, number>();
 
 // obsolete flags - delete the sets (should never be a clear)
 //                - replace the checks with the replacement
@@ -68,7 +94,7 @@ export class Flags {
   [id: number]: Flag;
 
   // 00x
-  0x000 = fixed(0x000);
+  0x000 = fixed(0x000, FALSE);
   0x001 = fixed(0x001);
   0x002 = fixed(0x002);
   0x003 = fixed(0x003);
@@ -78,7 +104,7 @@ export class Flags {
   0x007 = fixed(0x007);
   0x008 = fixed(0x008);
   0x009 = fixed(0x009);
-  UsedWindmillKey = fixed(0x00a);
+  UsedWindmillKey = fixed(0x00a, TRACK);
   0x00b = obsolete(0x100); // check: sword of wind / talked to leaf elder
   0x00c = dialogToggle('Leaf villager');
   LeafVillagersRescued = movable(0x00d);
@@ -86,7 +112,7 @@ export class Flags {
     if (s.trigger?.id === 0x85) return 0x143; // check: telepathy / stom
     return 0x243; // item: telepathy
   });
-  WokeWindmillGuard = movable(0x00f);
+  WokeWindmillGuard = movable(0x00f, TRACK);
 
   // 01x
   TurnedInKirisaPlant = movable(0x010);
@@ -96,25 +122,25 @@ export class Flags {
   // unused 014, 015
   0x016 = dialogProgression('Portoa queen Rage hint');
   0x017 = obsolete(0x102); // chest: sword of water
-  EnteredUndergroundChannel = movable(0x018);
+  EnteredUndergroundChannel = movable(0x018, TRACK);
   0x019 = dialogToggle('Portoa queen tired of talking');
   0x01a = dialogProgression('Initial talk with Portoa queen');
-  MesiaRecording = movable(0x01b);
+  MesiaRecording = movable(0x01b, TRACK);
   // unused 01c
-  0x01d = dialogProgression('Fortune teller initial');
-  QueenRevealed = movable(0x01e);
+  0x01d = dialogProgression('Fortune teller initial', TRACK);
+  QueenRevealed = movable(0x01e, TRACK);
   0x01f = obsolete(0x209); // item: ball of water
 
   // 02x
   0x020 = dialogToggle('Queen not in throne room');
-  ReturnedFogLamp = movable(0x021);
+  ReturnedFogLamp = movable(0x021, TRACK);
   0x022 = dialogProgression('Sahara elder');
   0x023 = dialogProgression('Sahara elder daughter');
   0x024 = obsolete(0x13d); // check: ivory statue / karmine
-  HealedDolphin = movable(0x025);
+  HealedDolphin = movable(0x025, TRACK);
   0x026 = obsolete(0x2fd); // warp: shyron
-  ShyronMassacre = fixed(0x027); // hardcoded in preshuffle to fix dead sprites
-  ChangeWoman = fixed(0x028);
+  ShyronMassacre = fixed(0x027, TRACK); // preshuffle hardcodes for dead sprites
+  ChangeWoman = fixed(0x028); // hardcoded in original rom
   ChangeAkahana = fixed(0x029);
   ChangeSoldier = fixed(0x02a);
   ChangeStom = fixed(0x02b);
@@ -132,13 +158,13 @@ export class Flags {
   CuredAkahana = movable(0x035);
   0x036 = dialogProgression('Akahana Shyron');
   0x037 = obsolete(0x142); // check: paralysis
-  LeafAbduction = movable(0x038); // one-way latch
+  LeafAbduction = movable(0x038, TRACK); // one-way latch
   0x039 = obsolete(0x141); // check: refresh
-  TalkedToZebuInCave = movable(0x03a);
-  TalkedToZebuInShyron = movable(0x03b);
+  TalkedToZebuInCave = movable(0x03a, TRACK);
+  TalkedToZebuInShyron = movable(0x03b, TRACK);
   0x03c = obsolete(0x13b); // chest: love pendant
   0x03d = dialogProgression('Asina in Shyron temple');
-  FoundKensuInDanceHall = movable(0x03e);
+  FoundKensuInDanceHall = movable(0x03e, TRACK);
   0x03f = obsolete((s) => {
     if (s.trigger?.id === 0xba) return 0x244 // item: teleport
     return 0x144; // check: teleport
@@ -150,7 +176,7 @@ export class Flags {
   // unused 042
   0x043 = dialogProgression('Oak');
   0x044 = obsolete(0x107); // check: ball of fire / insect
-  RescuedChild = fixed(0x045); // hardcoded $3e7d5
+  RescuedChild = fixed(0x045, TRACK); // hardcoded $3e7d5
   // unused 046
   RescuedLeafElder = movable(0x047);
   0x048 = dialogProgression('Treasure hunter embarked');
@@ -165,8 +191,8 @@ export class Flags {
   // 05x
   GivenStatueToAkahana = movable(0x050); // give it back if unsuccessful?
   0x051 = obsolete(0x146); // check: barrier / angry sea
-  TalkedToDwarfMother = movable(0x052);
-  LeadingChild = fixed(0x053); // hardcoded $3e7c4 and following
+  TalkedToDwarfMother = movable(0x052, TRACK);
+  LeadingChild = fixed(0x053, TRACK); // hardcoded $3e7c4 and following
   // unused 054
   0x055 = dialogProgression('Zebu rescued');
   0x056 = dialogProgression('Tornel rescued');
@@ -181,26 +207,32 @@ export class Flags {
 
   // 06x
   // unused 060
-  TalkedToStomInSwan = movable(0x061);
+  TalkedToStomInSwan = movable(0x061, TRACK);
   // unused 062  // obsolete(0x151); // chest: sacred shield
   0x063 = obsolete(0x147); // check: change
   // unused 064
-  SwanGateOpened = movable(~0x064);
+  // SwanGateOpened = movable(~0x064); // why would we add this? use 2b3
   CuredKensu = movable(0x065);
   // unused 066
   0x067 = obsolete(0x10b); // check: ball of thunder / mado 1
-  ForgedCrystalis = movable(0x068);
+  0x068 = obsolete(0x104); // check: forged crystalis
   // unused 069
-  StonedPeopleCured = movable(0x06a);
+  StonedPeopleCured = movable(0x06a, TRACK);
   // unused 06b
   0x06c = obsolete(0x11c); // check: psycho armor / draygon 1
   // unused 06d .. 06f
-  CurrentlyRidingDolphin = fixed(~0x06e); // NOTE: added by rando
+  CurrentlyRidingDolphin = fixed(~0x06e, TRACK); //, { // NOTE: added by rando
+  //   alias: rom => [rom.items.ShellFlute.itemUseData[0].want],
+  // });
 
   // 07x
-  ParalyzedKensuInTavern = fixed(0x070); // hardcoded in rando preshuffle.s
-  ParalyzedKensuInDanceHall = fixed(0x071); // hardcoded in rando preshuffle.s
-  FoundKensuInTavern = movable(0x072);
+  ParalyzedKensuInTavern = fixed(0x070); //, { // hardcoded in rando preshuffle.s
+  //   alias: rom => [rom.flags.Paralysis.id],
+  // });
+  ParalyzedKensuInDanceHall = fixed(0x071); //, { // hardcoded in rando preshuffle.s
+  //   alias: rom => [rom.flags.Paralysis.id],
+  // });
+  FoundKensuInTavern = movable(0x072, TRACK);
   0x073 = dialogProgression('Startled man in Leaf');
   // unused 074
   0x075 = obsolete(0x139); // check: glowing lamp
@@ -243,7 +275,7 @@ export class Flags {
   0x097 = dialogToggle('Leaf villager');
   0x098 = dialogProgression('Nadare villager');
   // unused 099, 09a
-  AbleToRideDolphin = movable(0x09b);
+  AbleToRideDolphin = movable(0x09b, TRACK);
   0x09c = dialogToggle('Portoa queen going away');
   // unused 09d .. 09f
 
@@ -251,12 +283,13 @@ export class Flags {
   0x0a0 = obsolete(0x127); // check: insect flute
   // unused 0a1, 0a2
   0x0a3 = dialogToggle('Portoa queen/fortune teller');
-  WokeKensuInLighthouse = movable(0x0a4);
+  WokeKensuInLighthouse = movable(0x0a4, TRACK);
+  // TODO: this may not be obsolete if there's no item here?
   0x0a5 = obsolete(0x131); // check: alarm flute / zebu student
   0x0a6 = dialogProgression('Oak elder 1');
   0x0a7 = dialogToggle('Swan dancer');
   0x0a8 = dialogProgression('Oak elder 2');
-  TalkedToLeafRabbit = movable(0x0a9);
+  TalkedToLeafRabbit = movable(0x0a9, TRACK);
   0x0aa = obsolete(0x11d); // chest: medical herb
   0x0ab = obsolete(0x150); // chest: medical herb
   // unused 0ac
@@ -349,202 +382,237 @@ export class Flags {
   0x10c = obsolete(0x161); // check: fruit of power / vampire 2
 
   // 100 .. 17f => fixed flags for checks.
-  LeafElder = fixed(~0x100);
-  OakElder = fixed(~0x101);
-  WaterfallCaveSwordOfWaterChest = fixed(~0x102);
-  StxyLeftUpperSwordOfThunderChest = fixed(~0x103);
-  MesiaInTower = fixed(~0x104);
-  SealedCaveBallOfWindChest = fixed(~0x105);
-  MtSabreWestTornadoBraceletChest = fixed(~0x106);
-  GiantInsect = fixed(~0x107);
-  Kelbesque1 = fixed(~0x108);
-  Rage = fixed(~0x109);
-  AryllisBasementChest = fixed(~0x10a);
-  Mado1 = fixed(~0x10b);
-  StormBraceletChest = fixed(~0x10c);
-  WaterfallCaveRiverLeftChest = fixed(0x110); // rando changed index!
-  Mado2 = fixed(0x112);
-  StxyRightMiddleChest = fixed(0x114);
-  BattleArmorChest = fixed(0x11b);
-  Draygon1 = fixed(0x11c);
-  SealedCaveSmallRoomBackChest = fixed(0x11d); // medical herb
-  SealedCaveBigRoomNortheastChest = fixed(0x11e); // antidote
-  FogLampCaveFrontChest = fixed(0x11f); // lysis plant
-  MtHydraRightChest = fixed(0x120); // fruit of lime
-  SaberaUpstairsLeftChest = fixed(0x121); // fruit of power
-  EvilSpiritIslandLowerChest = fixed(0x122); // magic ring
-  Sabera2 = fixed(0x123); // fruit of repun
-  SealedCaveSmallRoomFrontChest = fixed(0x124); // warp boots
-  CordelGrass = fixed(0x125);
-  Kelbesque2 = fixed(0x126); // opel statue
-  OakMother = fixed(0x127);
-  PortoaQueen = fixed(0x128);
-  AkahanaStatueTradein = fixed(0x129);
-  OasisCaveFortressBasementChest = fixed(0x12a);
-  Brokahana = fixed(0x12b);
-  EvilSpiritIslandRiverLeftChest = fixed(0x12c);
-  Deo = fixed(0x12d);
-  Vampire1 = fixed(0x12e);
-  OasisCaveNorthwestChest = fixed(0x12f);
-  AkahanaStoneTradein = fixed(0x130);
-  ZebuStudent = fixed(0x131); // TODO - may opt for 2 in cave instead?
-  WindmillGuard = fixed(0x132);
-  MtSabreNorthBackOfPrisonChest = fixed(0x133);
-  ZebuInShyron = fixed(0x134);
-  FogLampCaveBackChest = fixed(0x135);
-  InjuredDolphin = fixed(0x136);
-  Clark = fixed(0x137);
-  Sabera1 = fixed(0x138);
-  KensuInLighthouse = fixed(0x139);
-  RepairedStatue = fixed(0x13a);
-  UndergroundChannelUnderwaterChest = fixed(0x13b);
-  KirisaMeadow = fixed(0x13c);
-  Karmine = fixed(0x13d);
-  Aryllis = fixed(0x13e);
-  MtHydraSummitChest = fixed(0x13f);
-  AztecaInPyramid = fixed(0x140);
-  ZebuAtWindmill = fixed(0x141);
-  MtSabreNorthSummit = fixed(0x142);
-  StomFightReward = fixed(0x143);
-  MtSabreWestTornel = fixed(0x144);
-  AsinaInBackRoom = fixed(0x145);
-  BehindWhirlpool = fixed(0x146);
-  KensuInSwan = fixed(0x147);
-  SlimedKensu = fixed(0x148);
-  SealedCaveBigRoomSouthwestChest = fixed(0x150); // medical herb
+
+  // TODO - are these all TRACK or just the non-chests?!?
+
+  // TODO - basic idea - NPC hitbox extends down one tile? (is that enough?)
+  //      - statues can be entered but not exited?
+  //      - use trigger (| paralysis | glitch) for moving statues?
+  //          -> get normal requirements for free
+  //          -> better hitbox?  any way to get queen to work? too much state?
+  //             may need to have two different throne rooms? (full/empty)
+  //             and have flag state affect exit???
+  //      - at the very least we can use it for the hitbox, but we may still
+  //        need custom overlay?
+
+  // TODO - pseudo flags somewhere?  like sword? break iron? etc...
+
+  LeafElder = tracked(~0x100);
+  OakElder = tracked(~0x101);
+  WaterfallCaveSwordOfWaterChest = tracked(~0x102);
+  StxyLeftUpperSwordOfThunderChest = tracked(~0x103);
+  MesiaInTower = tracked(~0x104);
+  SealedCaveBallOfWindChest = tracked(~0x105);
+  MtSabreWestTornadoBraceletChest = tracked(~0x106);
+  GiantInsect = tracked(~0x107);
+  Kelbesque1 = tracked(~0x108);
+  Rage = tracked(~0x109);
+  AryllisBasementChest = tracked(~0x10a);
+  Mado1 = tracked(~0x10b);
+  StormBraceletChest = tracked(~0x10c);
+  WaterfallCaveRiverLeftChest = tracked(0x110); // rando changed index!
+  Mado2 = tracked(0x112);
+  StxyRightMiddleChest = tracked(0x114);
+  BattleArmorChest = tracked(0x11b);
+  Draygon1 = tracked(0x11c);
+  SealedCaveSmallRoomBackChest = tracked(0x11d); // medical herb
+  SealedCaveBigRoomNortheastChest = tracked(0x11e); // antidote
+  FogLampCaveFrontChest = tracked(0x11f); // lysis plant
+  MtHydraRightChest = tracked(0x120); // fruit of lime
+  SaberaUpstairsLeftChest = tracked(0x121); // fruit of power
+  EvilSpiritIslandLowerChest = tracked(0x122); // magic ring
+  Sabera2 = tracked(0x123); // fruit of repun
+  SealedCaveSmallRoomFrontChest = tracked(0x124); // warp boots
+  CordelGrass = tracked(0x125);
+  Kelbesque2 = tracked(0x126); // opel statue
+  OakMother = tracked(0x127);
+  PortoaQueen = tracked(0x128);
+  AkahanaStatueTradein = tracked(0x129);
+  OasisCaveFortressBasementChest = tracked(0x12a);
+  Brokahana = tracked(0x12b);
+  EvilSpiritIslandRiverLeftChest = tracked(0x12c);
+  Deo = tracked(0x12d);
+  Vampire1 = tracked(0x12e);
+  OasisCaveNorthwestChest = tracked(0x12f);
+  AkahanaStoneTradein = tracked(0x130);
+  ZebuStudent = tracked(0x131); // TODO - may opt for 2 in cave instead?
+  WindmillGuard = tracked(0x132);
+  MtSabreNorthBackOfPrisonChest = tracked(0x133);
+  ZebuInShyron = tracked(0x134);
+  FogLampCaveBackChest = tracked(0x135);
+  InjuredDolphin = tracked(0x136);
+  Clark = tracked(0x137);
+  Sabera1 = tracked(0x138);
+  KensuInLighthouse = tracked(0x139);
+  RepairedStatue = tracked(0x13a);
+  UndergroundChannelUnderwaterChest = tracked(0x13b);
+  KirisaMeadow = tracked(0x13c);
+  Karmine = tracked(0x13d);
+  Aryllis = tracked(0x13e);
+  MtHydraSummitChest = tracked(0x13f);
+  AztecaInPyramid = tracked(0x140);
+  ZebuAtWindmill = tracked(0x141);
+  MtSabreNorthSummit = tracked(0x142);
+  StomFightReward = tracked(0x143);
+  MtSabreWestTornel = tracked(0x144);
+  AsinaInBackRoom = tracked(0x145);
+  BehindWhirlpool = tracked(0x146);
+  KensuInSwan = tracked(0x147);
+  SlimedKensu = tracked(0x148);
+  SealedCaveBigRoomSouthwestChest = tracked(0x150); // medical herb
   // unused 151 sacred shield chest
-  MtSabreWestRightChest = fixed(0x152); // medical herb
-  MtSabreNorthMiddleChest = fixed(0x153); // medical herb
-  FortressMadoHellwayChest = fixed(0x154); // magic ring
-  SaberaUpstairsRightChest = fixed(0x155); // medical herb across spikes
-  MtHydraFarLeftChest = fixed(0x156); // medical herb
-  StxyLeftLowerChest = fixed(0x157); // medical herb
-  KarmineBasementLowerMiddleChest = fixed(0x158); // magic ring
-  EastCaveNortheastChest = fixed(0x159); // medical herb (unused)
-  OasisCaveEntranceAcrossRiverChest = fixed(0x15a); // fruit of power
+  MtSabreWestRightChest = tracked(0x152); // medical herb
+  MtSabreNorthMiddleChest = tracked(0x153); // medical herb
+  FortressMadoHellwayChest = tracked(0x154); // magic ring
+  SaberaUpstairsRightChest = tracked(0x155); // medical herb across spikes
+  MtHydraFarLeftChest = tracked(0x156); // medical herb
+  StxyLeftLowerChest = tracked(0x157); // medical herb
+  KarmineBasementLowerMiddleChest = tracked(0x158); // magic ring
+  EastCaveNortheastChest = tracked(0x159); // medical herb (unused)
+  OasisCaveEntranceAcrossRiverChest = tracked(0x15a); // fruit of power
   // unused 15b 2nd flute of lime - changed in rando
-  // WaterfallCaveRiverLeftChest = fixed(0x15b); // 2nd flute of lime
-  EvilSpiritIslandExitChest = fixed(0x15c); // lysis plant
-  FortressSaberaMiddleChest = fixed(0x15d); // lysis plant
-  NoSabreNorthUnderBridgeChest = fixed(0x15e); // antidote
-  KirisaPlantCaveChest = fixed(0x15f); // antidote
-  FortressMadoUpperNorthChest = fixed(0x160); // antidote
-  Vampire2 = fixed(0x161); // fruit of power
-  FortressSaberaNorthwestChest = fixed(0x162); // fruit of power
-  FortressMadoLowerCenterNorthChest = fixed(0x163); // opel statue
-  OasisCaveNearEntranceChest = fixed(0x164); // fruit of power
-  MtHydraLeftRightChest = fixed(0x165); // magic ring
-  FortressSaberaSoutheastChest = fixed(0x166); // fruit of repun
-  KensuInCabin = fixed(0x167); // added by randomizer if fog lamp not needed
+  // WaterfallCaveRiverLeftChest = tracked(0x15b); // 2nd flute of lime
+  EvilSpiritIslandExitChest = tracked(0x15c); // lysis plant
+  FortressSaberaMiddleChest = tracked(0x15d); // lysis plant
+  NoSabreNorthUnderBridgeChest = tracked(0x15e); // antidote
+  KirisaPlantCaveChest = tracked(0x15f); // antidote
+  FortressMadoUpperNorthChest = tracked(0x160); // antidote
+  Vampire2 = tracked(0x161); // fruit of power
+  FortressSaberaNorthwestChest = tracked(0x162); // fruit of power
+  FortressMadoLowerCenterNorthChest = tracked(0x163); // opel statue
+  OasisCaveNearEntranceChest = tracked(0x164); // fruit of power
+  MtHydraLeftRightChest = tracked(0x165); // magic ring
+  FortressSaberaSoutheastChest = tracked(0x166); // fruit of repun
+  KensuInCabin = tracked(0x167); // added by randomizer if fog lamp not needed
   // unused 168 magic ring chest
-  MtSabreWestNearKensuChest = fixed(0x169); // magic ring
-  MtSabreWestLeftChest = fixed(0x16a); // warp boots
-  FortressMadoUpperBehindWallChest = fixed(0x16b); // magic ring
-  PyramidChest = fixed(0x16c); // magic ring
-  CryptRightChest = fixed(0x16d); // opel statue
-  KarmineBasementLowerLeftChest = fixed(0x16e); // warp boots
-  FortressMadoLowerSoutheastChest = fixed(0x16f); // magic ring
-  // = fixed(0x170); // mimic / medical herb
+  MtSabreWestNearKensuChest = tracked(0x169); // magic ring
+  MtSabreWestLeftChest = tracked(0x16a); // warp boots
+  FortressMadoUpperBehindWallChest = tracked(0x16b); // magic ring
+  PyramidChest = tracked(0x16c); // magic ring
+  CryptRightChest = tracked(0x16d); // opel statue
+  KarmineBasementLowerLeftChest = tracked(0x16e); // warp boots
+  FortressMadoLowerSoutheastChest = tracked(0x16f); // magic ring
+  // = tracked(0x170); // mimic / medical herb
   // TODO - add all the mimics, give them stable numbers?
 
 
   // 180 .. 1ff => fixed flags for overflow buffer.
 
   // 200 .. 27f => fixed flags for items.
-  SwordOfWind = fixed(0x200);
-  SwordOfFire = fixed(0x201);
-  SwordOfWater = fixed(0x202);
-  SwordOfThunder = fixed(0x203);
-  Crystalis = fixed(0x204);
-  BallOfWind = fixed(0x205);
-  TornadoBracelet = fixed(0x206);
-  BallOfFire = fixed(0x207);
-  FlameBracelet = fixed(0x208);
-  BallOfWater = fixed(0x209);
-  BlizzardBracelet = fixed(0x20a);
-  BallOfThunder = fixed(0x20b);
-  StormBracelet = fixed(0x20c);
-  CarapaceShield = fixed(0x20d);
-  BronzeShield = fixed(0x20e);
-  PlatinumShield = fixed(0x20f);
-  MirroredShield = fixed(0x210);
-  CeramicShield = fixed(0x211);
-  SacredShield = fixed(0x212);
-  BattleShield = fixed(0x213);
-  PsychoShield = fixed(0x214);
-  TannedHide = fixed(0x215);
-  LeatherArmor = fixed(0x216);
-  BronzeArmor = fixed(0x217);
-  PlatinumArmor = fixed(0x218);
-  SoldierSuit = fixed(0x219);
-  CeramicSuit = fixed(0x21a);
-  BattleArmor = fixed(0x21b);
-  PsychoArmor = fixed(0x21c);
-  MedicalHerb = fixed(0x21d);
-  Antidote = fixed(0x21e);
-  LysisPlant = fixed(0x21f);
-  FruitOfLime = fixed(0x220);
-  FruitOfPower = fixed(0x221);
-  MagicRing = fixed(0x222);
-  FruitOfRepun = fixed(0x223);
-  WarpBoots = fixed(0x224);
-  StatueOfOnyx = fixed(0x225);
-  OpelStatue = fixed(0x226);
-  InsectFlute = fixed(0x227);
-  FluteOfLime = fixed(0x228);
-  GasMask = fixed(0x229);
-  PowerRing = fixed(0x22a);
-  WarriorRing = fixed(0x22b);
-  IronNecklace = fixed(0x22c);
-  DeosPendant = fixed(0x22d);
-  RabbitBoots = fixed(0x22e);
-  LeatherBoots = fixed(0x22f);
-  ShieldRing = fixed(0x230);
-  AlarmFlute = fixed(0x231);
-  WindmillKey = fixed(0x232);
-  KeyToPrison = fixed(0x233);
-  KeyToStyx = fixed(0x234);
-  FogLamp = fixed(0x235);
-  ShellFlute = fixed(0x236);
-  EyeGlasses = fixed(0x237);
-  BrokenStatue = fixed(0x238);
-  GlowingLamp = fixed(0x239);
-  StatueOfGold = fixed(0x23a);
-  LovePendant = fixed(0x23b);
-  KirisaPlant = fixed(0x23c);
-  IvoryStatue = fixed(0x23d);
-  BowOfMoon = fixed(0x23e);
-  BowOfSun = fixed(0x23f);
-  BowOfTruth = fixed(0x240);
-  Refresh = fixed(0x241);
-  Paralysis = fixed(0x242);
-  Telepathy = fixed(0x243);
-  Teleport = fixed(0x244);
-  Recover = fixed(0x245);
-  Barrier = fixed(0x246);
-  Change = fixed(0x247);
-  Flight = fixed(0x248);
+  SwordOfWind = tracked(0x200);
+  SwordOfFire = tracked(0x201);
+  SwordOfWater = tracked(0x202);
+  SwordOfThunder = tracked(0x203);
+  Crystalis = tracked(0x204);
+  BallOfWind = tracked(0x205);
+  TornadoBracelet = tracked(0x206);
+  BallOfFire = tracked(0x207);
+  FlameBracelet = tracked(0x208);
+  BallOfWater = tracked(0x209);
+  BlizzardBracelet = tracked(0x20a);
+  BallOfThunder = tracked(0x20b);
+  StormBracelet = tracked(0x20c);
+  CarapaceShield = tracked(0x20d);
+  BronzeShield = tracked(0x20e);
+  PlatinumShield = tracked(0x20f);
+  MirroredShield = tracked(0x210);
+  CeramicShield = tracked(0x211);
+  SacredShield = tracked(0x212);
+  BattleShield = tracked(0x213);
+  PsychoShield = tracked(0x214);
+  TannedHide = tracked(0x215);
+  LeatherArmor = tracked(0x216);
+  BronzeArmor = tracked(0x217);
+  PlatinumArmor = tracked(0x218);
+  SoldierSuit = tracked(0x219);
+  CeramicSuit = tracked(0x21a);
+  BattleArmor = tracked(0x21b);
+  PsychoArmor = tracked(0x21c);
+  MedicalHerb = tracked(0x21d);
+  Antidote = tracked(0x21e);
+  LysisPlant = tracked(0x21f);
+  FruitOfLime = tracked(0x220);
+  FruitOfPower = tracked(0x221);
+  MagicRing = tracked(0x222);
+  FruitOfRepun = tracked(0x223);
+  WarpBoots = tracked(0x224);
+  StatueOfOnyx = tracked(0x225);
+  OpelStatue = tracked(0x226);
+  InsectFlute = tracked(0x227);
+  FluteOfLime = tracked(0x228);
+  GasMask = tracked(0x229);
+  PowerRing = tracked(0x22a);
+  WarriorRing = tracked(0x22b);
+  IronNecklace = tracked(0x22c);
+  DeosPendant = tracked(0x22d);
+  RabbitBoots = tracked(0x22e);
+  LeatherBoots = tracked(0x22f);
+  ShieldRing = tracked(0x230);
+  AlarmFlute = tracked(0x231);
+  WindmillKey = tracked(0x232);
+  KeyToPrison = tracked(0x233);
+  KeyToStyx = tracked(0x234);
+  FogLamp = tracked(0x235);
+  ShellFlute = tracked(0x236);
+  EyeGlasses = tracked(0x237);
+  BrokenStatue = tracked(0x238);
+  GlowingLamp = tracked(0x239);
+  StatueOfGold = tracked(0x23a);
+  LovePendant = tracked(0x23b);
+  KirisaPlant = tracked(0x23c);
+  IvoryStatue = tracked(0x23d);
+  BowOfMoon = tracked(0x23e);
+  BowOfSun = tracked(0x23f);
+  BowOfTruth = tracked(0x240);
+  Refresh = tracked(0x241);
+  Paralysis = tracked(0x242);
+  Telepathy = tracked(0x243);
+  Teleport = tracked(0x244);
+  Recover = tracked(0x245);
+  Barrier = tracked(0x246);
+  Change = tracked(0x247);
+  Flight = tracked(0x248);
 
-  // 280 .. 2ff => fixed flags for walls.
-  CalmedAngrySea = fixed(0x283);
-  Draygon2 = fixed(0x28d);
-  // TODO - prison and stxy opened?
-
-  WarpLeaf = fixed(0x2f5);
-  WarpBrynmaer = fixed(0x2f6);
-  WarpOak = fixed(0x2f7);
-  WarpNadare = fixed(0x2f8);
-  WarpPortoa = fixed(0x2f9);
-  WarpAmazones = fixed(0x2fa);
-  WarpJoel = fixed(0x2fb);
-  WarpZombie = fixed(~0x2fb);
-  WarpSwan = fixed(0x2fc);
-  WarpShyron = fixed(0x2fd);
-  WarpGoa = fixed(0x2fe);
-  WarpSahara = fixed(0x2ff);
+  // 280 .. 2f0 => fixed flags for walls.
+  CalmedAngrySea = tracked(0x283);
+  OpenedJoelShed = tracked(0x287);
+  Draygon2 = tracked(0x28d);
+  OpenedCrypt = tracked(0x28e);
+  OpenedStyx = tracked(0x2b0);
+  SwanGate = tracked(0x2b3);
+  OpenedPrison = tracked(0x2d8);
+  OpenedSealedCave = tracked(0x2ee);
 
   // Nothing ever sets this, so just use it right out.
-  AlwaysTrue = fixed(0x2f0);
+  AlwaysTrue = fixed(0x2f0, TRUE);
+
+  WarpLeaf = tracked(0x2f5);
+  WarpBrynmaer = tracked(0x2f6);
+  WarpOak = tracked(0x2f7);
+  WarpNadare = tracked(0x2f8);
+  WarpPortoa = tracked(0x2f9);
+  WarpAmazones = tracked(0x2fa);
+  WarpJoel = tracked(0x2fb);
+  WarpZombie = tracked(~0x2fb);
+  WarpSwan = tracked(0x2fc);
+  WarpShyron = tracked(0x2fd);
+  WarpGoa = tracked(0x2fe);
+  WarpSahara = tracked(0x2ff);
+
+  // Pseudo flags
+  Sword = pseudo(this);
+  Money = pseudo(this);
+  BreakStone = pseudo(this);
+  BreakIce = pseudo(this);
+  FormBridge = pseudo(this);
+  BreakIron = pseudo(this);
+  TravelSwamp = pseudo(this);
+  ClimbWaterfall = pseudo(this);
+  BuyHealing = pseudo(this);
+  BuyWarp = pseudo(this);
+  ShootingStatue = pseudo(this);
+  ClimbSlope8 = pseudo(this); // climb slopes height 6-8
+  ClimbSlope9 = pseudo(this); // climb slopes height 9
 
   // Map of flags that are "waiting" for a previously-used ID.
   // Signified with a negative (one's complement) ID in the Flag object.

@@ -2286,12 +2286,12 @@ PatchZebuStudentFollowUp:
 CheckToRedisplayDifficulty:
   lda ShouldRedisplayDifficulty
   beq +
-   lda #$00
-   sta ShouldRedisplayDifficulty
+   lsr ShouldRedisplayDifficulty
    lda #$06
    jsr DisplayNumber
 + jmp CheckForPlayerDeath
-.assert < $3fffa ; end of free space from 3ffe3
+.assert < $3fff3      ; Used by snes.s for Jmp11 and Jmp21
+;.assert < $3fffa ; end of free space from 3ffe3
 
 
 ;;; Repurpose $3e148 to skip loading NPCs and just reset pattern table.

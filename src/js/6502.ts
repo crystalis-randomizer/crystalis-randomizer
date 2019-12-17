@@ -519,8 +519,19 @@ class Patch {
     }
   }
 
-  toHexString() {
-    return [...this.data].map(x => x.toString(16).padStart(2, '0')).join('');
+  toHexString(sep = '') {
+    return [...this.data].map(x => x.toString(16).padStart(2, '0')).join(sep);
+  }
+
+  toIpsHex() {
+    const bytes = [...this.data];
+    const lines = [];
+    for (let i = 0; i < bytes.length; i += 16) {
+      lines.push([i.toString(16).padStart(8, '0') + ':',
+                  ...bytes.slice(i, i + 16)
+                      .map(x => x.toString(16).padStart(2, '0'))].join(' '));
+    }
+    return lines.join('\n');
   }
 }
 

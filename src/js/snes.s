@@ -85,11 +85,32 @@
 ;;; Skip writing palettes if possible.
 ;;; We need to make sure to write them at some point, so we do it
 ;;; unconditionally when the game mode is 01.
+.org $3f8cd
+  jsr PatchWritePaletteDataToPpu
+.org $34c0e
+  jsr PatchLoadPalettesForLocation
+  nop
 .org $34c25
   jsr PatchPaletteWrite
 
 ;;; Patched version of PreparePaletteData
-.org $3fde5
+
+;;; we need to avoid WritePaletteDataToPpu
+
+.org $3fdcc
+PatchWritePaletteDataToPpu:
+  bpl +
+  lda $61f8
+  bpl +
+  pla
+  pla
++ rts
+PatchLoadPalettesForLocation:
+  lda #$ff
+  sta $61f8
+  lda #$00
+  sta $11
+  rts
 PatchPaletteWrite:
    pha
    lda $41   ; main loop mode
@@ -107,5 +128,7 @@ PatchPaletteWrite:
    .byte $24 ; bit zpg to skip next pla
 +  pla
 ++ sta $61f0,y
-   jmp $8c6e
+   jsr $8c6e
+   lda #$00
+   sta $61f8
 .assert $3fe00

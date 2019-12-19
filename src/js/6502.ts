@@ -27,8 +27,8 @@ export class Assembler {
     return [...this.allChunks];
   }
 
-  patch(): Patch {
-    return Patch.from(this.allChunks);
+  patch(offset: number = 0): Patch {
+    return Patch.from(this.chunks().map(c => c.shift(offset)));
   }
 
   patchRom(rom: Uint8Array): void {

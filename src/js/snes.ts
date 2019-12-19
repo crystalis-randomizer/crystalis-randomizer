@@ -20,7 +20,7 @@ export async function patch(rom: Uint8Array, reader: Reader): Promise<Uint8Array
   const asm = new Assembler();
   async function assemble(path: string) {
     asm.assemble(await reader.read(path), path);
-    console.log(asm.patch().toIpsHex());
+    console.log(asm.patch(0x10).toIpsHex());
     asm.patchRom(rom);
   }
   await assemble('snes.s');

@@ -98,12 +98,12 @@ PatchWritePaletteDataToPpu:
 +    sta $6160,x
      dex
     bpl -
+    ldx #$00
     lda $61f0
     bpl +++
-++   pla
-     pla
-+++ ldx #$00
-    rts
+++  pla
+    pla
++++ rts
 .assert < $3fe00
 
 

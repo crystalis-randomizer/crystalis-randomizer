@@ -82,53 +82,73 @@
   jmp ($0011)
   jmp ($0021)
 
-;;; Skip writing palettes if possible.
-;;; We need to make sure to write them at some point, so we do it
-;;; unconditionally when the game mode is 01.
+
+
+
+.org $3fddb
+PatchWritePaletteDataToPpu:
+    bmi ++
+    lda #$ff
+    sta $61f0
+    ldx #$1f
+-    lda $6140,x
+     cmp $6160,x
+     beq +
+      sta $61f0
++    sta $6160,x
+     dex
+    bpl -
+    lda $61f0
+    bpl +++
+++   pla
+     pla
++++ ldx #$00
+    rts
+.assert < $3fe00
+
+
+;; ;;; Skip writing palettes if possible.
+;; ;;; We need to make sure to write them at some point, so we do it
+;; ;;; unconditionally when the game mode is 01.
 .org $3f8cd
   jsr PatchWritePaletteDataToPpu
-.org $34c0e
-  jsr PatchLoadPalettesForLocation
-  nop
-.org $34c25
-  jsr PatchPaletteWrite
+;; ;.org $34c0e
+;; ;  jsr PatchLoadPalettesForLocation
+;; ;  nop
+;; .org $34cb3
+;;   jsr PatchPreparePaletteData
+;; .org $3f9b6
+;;   jmp PatchPostPaletteWrite
 
-;;; Patched version of PreparePaletteData
+;; ;;; Patched version of PreparePaletteData
 
-;;; we need to avoid WritePaletteDataToPpu
+;; ;;; we need to avoid WritePaletteDataToPpu
 
-.org $3fdcc
-PatchWritePaletteDataToPpu:
-  bpl +
-  lda $61f8
-  bpl +
-  pla
-  pla
-+ rts
-PatchLoadPalettesForLocation:
-  lda #$ff
-  sta $61f8
-  lda #$00
-  sta $11
-  rts
-PatchPaletteWrite:
-   pha
-   lda $41   ; main loop mode
-   cmp #$01
-   beq +
-    pla
-    cmp $61f0,y
-    bne ++
-     inx
-     inx
-     inx
-     inx
-     iny
-     rts
-   .byte $24 ; bit zpg to skip next pla
-+  pla
-++ sta $61f0,y
-   jsr $8c6e
-   lda #$00
-   sta $61f8
-.assert $3fe00
+;; .org $3fddb
+;; PatchWritePaletteDataToPpu:
+;;    bmi +
+;;    lda $61f0
+;;    bpl ++
+;;    lda $40
+;;    cmp #$01
+;;    beq ++
+;; +  pla
+;;    pla
+;; ++ rts
+;; PatchPostPaletteWrite: ;LoadPalettesForLocation:
+;;   sta $2006
+;;   lda #$ff
+;;   sta $61f0
+;;   rts
+;;   ;; lda #$ff
+;;   ;; sta $61f0
+;;   ;; lda #$00
+;;   ;; sta $11
+;;   ;; rts
+;; PatchPreparePaletteData:
+;;   cmp $6140,x
+;;   beq +
+;;    sta $61f0
+;; + sta $6140,x
+;;   rts
+;; .assert $3fe00

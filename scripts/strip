@@ -161,9 +161,9 @@ sub infuse {
 # Any argument that matches this regex is unchanged from what we would print
 # without any help, so don't do anything fancy with it.
 my $addrModeRegex = qr/
-  \# \$ [0-9a-f]{2} |                       # Immediate
-  \$ [0-9-a-f]{2} [0-9a-f]{2}? (?:,[xy])? | # ZeroPage[XY]?, Absolute[XY]?
-  \( \$ [0-9a-f]{2} (?: (?:,x)? \) | \),y ) # Preindexed, Postindex, Indirect
+  \# \$ [0-9a-f]{2} |                           # Immediate
+  \$ [0-9-a-f]{2} (?:[0-9a-f]{2})? (?:,[xy])? | # ZeroPage[XY]?, Absolute[XY]?
+  \( \$ [0-9a-f]{2} (?: (?:,x)? \) | \),y )     # Preindexed, Postindex, Indirect
   # NOTE: Relative is tricky, because a five-digit hex for non-relative jump
   # *is* significant.
 /x;

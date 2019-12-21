@@ -17652,6 +17652,8 @@ ObjectData_Object3A                                      ; Object 3a
         $1af61              .byte $xx
         $1af62              .byte $xx
 ;;; ----------------------------------------------------------------
+;;; This is the object that locks the screen for kensu slime (and other
+;;; screen locks, presumably).
 ObjectData_Object29                                      ; Object 29
         $1af63              .byte $xx
         $1af64              .byte $xx,$xx,$xx
@@ -46314,7 +46316,8 @@ ObjectActionJump_77
         $36518  xx:         xxx
 ;;; --------------------------------
 ObjectActionJump_39
-        ;; This appears in the hallway above zebu in the fortress.
+        ;; This appears in the hallway above zebu (and other wise men)
+        ;; in the fortress.
         ;; It MUST spawn in the slot immediately following zebu
         ;; (cf. $049f,x is actually $04a0,(x-1)) and locks the screen
         ;; as long as zebu's slot is still occupied.  we should just

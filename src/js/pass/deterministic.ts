@@ -191,6 +191,8 @@ function adjustGoaFortressTriggers(rom: Rom): void {
   l.GoaFortress_Zebu.spawns.splice(1, 1); // zebu screen lock trigger
   l.GoaFortress_Tornel.spawns.splice(2, 1); // tornel screen lock trigger
   l.GoaFortress_Asina.spawns.splice(2, 1); // asina screen lock trigger
+  l.GoaFortress_Kensu.spawns.splice(3, 1); // kensu human screen lock trigger
+  l.GoaFortress_Kensu.spawns.splice(1, 1); // kensu slime screen lock trigger
 }
 
 function alarmFluteIsKeyItem(rom: Rom): void {

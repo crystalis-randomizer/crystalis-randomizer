@@ -1,0 +1,3 @@
+Mado and Statues:
+ - ItemOrTriggerActionJump_1d ($3d805) has a hardcoded location check (f2)
+ - TODO - does the statue trigger do anything at all?

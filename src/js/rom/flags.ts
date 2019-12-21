@@ -174,7 +174,7 @@ export class Flags {
   0x040 = dialogProgression('Tornel in Shyron temple');
   0x041 = obsolete(0x107); // check: ball of fire / insect
   // unused 042
-  0x043 = dialogProgression('Oak');
+  // unused 0x043 = dialogProgression('Oak');
   0x044 = obsolete(0x107); // check: ball of fire / insect
   RescuedChild = fixed(0x045, TRACK); // hardcoded $3e7d5
   // unused 046

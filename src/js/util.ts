@@ -496,3 +496,29 @@ export function memoize<T extends object[], R>(f: F<T, R>): F<T, R> {
     return c.value as R;
   };
 }
+
+export function strcmp(left: string, right: string): number {
+  if (left < right) return -1;
+  if (right < left) return 1;
+  return 0;
+}
+
+// export class PrimeIdGenerator {
+//   private _index = 0;
+//   next(): number {
+//     if (this._index >= PRIMES.length) throw new Error('overflow');
+//     return PRIMES[this._index++];
+//   }
+// }
+// const PRIMES = (() => {
+//   const n = 10000;
+//   const out = new Set();
+//   for (let i = 2; i < n; i++) { out.add(i); }
+//   for (let i = 2; i * i < n; i++) {
+//     if (!out.has(i)) continue;
+//     for (let j = 2 * i; j < n; j += i) {
+//       out.delete(j);
+//     }
+//   }
+//   return [...out];
+// })();

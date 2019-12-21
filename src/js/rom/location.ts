@@ -29,6 +29,7 @@ interface LocationData {
   palette: Key;
   subArea?: string;
   bossScreen?: number;
+  fixed?: number[]; // fixed spawn slots?
 }
 
 const CAVE = {
@@ -144,7 +145,8 @@ export class Locations extends Array<Location> {
                                                music: 0});
   readonly Swamp                    = $(0x1a, {area: a => a.Swamp,
                                                bossScreen: 0x7c});
-  readonly Amazones                 = $(0x1b, {area: a => a.Amazones});
+  readonly Amazones                 = $(0x1b, {area: a => a.Amazones,
+                                               fixed: [0x0d, 0x0e]}); // guard/empty
   readonly Oak                      = $(0x1c, {area: a => a.Oak});
   // INVALID: 0x1d
   readonly StomHouse                = $(0x1e, {area: a => a.StomHouse});
@@ -252,7 +254,7 @@ export class Locations extends Array<Location> {
   // INVALID: 0x7b
   readonly MtHydra                  = $(0x7c, {area: a => a.MtHydra});
   readonly MtHydra_Cave1            = $(0x7d, CAVE);
-  readonly MtHydra_OutsideShyron    = $(0x7e);
+  readonly MtHydra_OutsideShyron    = $(0x7e, {fixed: [0x0d, 0x0e]}); // guards
   readonly MtHydra_Cave2            = $(0x7f, CAVE);
   readonly MtHydra_Cave3            = $(0x80, CAVE);
   readonly MtHydra_Cave4            = $(0x81, CAVE);
@@ -352,7 +354,8 @@ export class Locations extends Array<Location> {
   readonly Nadare                   = $(0xd5, {area: a => a.Nadare}); // edge-door?
   readonly Portoa_FishermanHouse    = $(0xd6, {area: a => a.FishermanHouse,
                                                ...HOUSE, music: 0});
-  readonly Portoa_PalaceEntrance    = $(0xd7, {area: a => a.PortoaPalace});
+  readonly Portoa_PalaceEntrance    = $(0xd7, {area: a => a.PortoaPalace,
+                                               fixed: [0x0d, 0x0e]}); // guard/empty
   readonly Portoa_FortuneTeller     = $(0xd8, {area: a => a.Portoa,
                                                ...FORTUNE_TELLER});
   readonly Portoa_PawnShop          = $(0xd9, HOUSE);

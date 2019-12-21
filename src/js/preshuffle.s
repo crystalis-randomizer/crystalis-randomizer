@@ -1482,6 +1482,13 @@ SetEquippedConsumableItem:
 .endif
 
 
+;;; Allow putting oak child in pocket anywhere
+.org $3e7c3
+-:
+.org $3e7cc
+  bne -
+
+
 .ifdef _SIMPLIFY_INVISIBLE_CHESTS
 ;;; We co-opt the unused npcdata[2]:20 bit to signify invisible chests
 .org $3e39f
@@ -2320,6 +2327,7 @@ CheckToRedisplayDifficulty:
 
 ;;; TODO - change the actions on the messageids rather than repeat jumps
 ;;;   08,0d,0f -> 0b, 14 -> 13
+;;;   ==> if we do this then we need to fix logic/world.ts
 ;;; We could free up 4 new actions (in addition to the 3 or so unused ones)
 .org $3d573                       ; ItemOrTriggerActionJumpTable + 2*$08
   .word (GrantItemFromTable)      ; 08 learn paralysis

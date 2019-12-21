@@ -58333,23 +58333,27 @@ ItemOrTriggerActionJump_1b
         $3d7d1  xx xx:      xxx #$xx
         $3d7d3  xx xx xx:   xxx $xxxx,y
         $3d7d6  xx xx:      xxx #$xx
-        $3d7d8  xx xx xx:   xxx $xxxx,y
-        $3d7db  xx xx:      xxx $xx
-        $3d7dd  xx xx:      xxx #$xx
-        $3d7df  xx xx:      xxx $xx
-        $3d7e1  xx xx xx:   xxx $xxxx,y ; must wait to move
-        $3d7e4  xx xx:      xxx $xx
-        $3d7e6  xx:         xxx
-        $3d7e7  xx:         xxx
-        $3d7e8  xx xx:      xxx #$xx
-        $3d7ea  xx xx xx:   xxx $xxxx,y
-        $3d7ed  xx xx:      xxx #$xx
-        $3d7ef  xx xx xx:   xxx $xxxx,y
-        $3d7f2  xx xx:      xxx #$xx
-        $3d7f4  xx xx xx:   xxx $xxxx,y
-        $3d7f7  xx:         xxx
-        $3d7f8  xx xx:      xxx #$xx
-        $3d7fa  xx xx:      xxx $xx
+        ;; Search the first two spawn slots for something w/ action !=32 and not
+        ;; paralyzed.  If found, make them move.  There's an empty/unused spawn
+        ;; in the 0e slot for both palace entrance and amazones.  TODO - how to
+        ;; ensure we don't defrag these?!?  could set a signal, like 'fefefefe'?
+-       $3d7d8  xx xx xx:    xxx $xxxx,y
+        $3d7db  xx xx:       xxx + ; $3d7f7
+        $3d7dd  xx xx:        xxx #$xx
+        $3d7df  xx xx:        xxx + ; $3d7f7
+        $3d7e1  xx xx xx:      xxx $xxxx,y ; must wait to move
+        $3d7e4  xx xx:         xxx + ; $3d7f7
+        $3d7e6  xx:             xxx
+        $3d7e7  xx:             xxx
+        $3d7e8  xx xx:          xxx #$xx
+        $3d7ea  xx xx xx:       xxx $xxxx,y
+        $3d7ed  xx xx:          xxx #$xx
+        $3d7ef  xx xx xx:       xxx $xxxx,y
+        $3d7f2  xx xx:          xxx #$xx
+        $3d7f4  xx xx xx:       xxx $xxxx,y
++       $3d7f7  xx:          xxx
+        $3d7f8  xx xx:       xxx #$xx
+        $3d7fa  xx xx:      xxx - ; $3d7d8
         $3d7fc  xx:         xxx
 ;;; --------------------------------
 ItemOrTriggerActionJump_1c
@@ -58361,9 +58365,10 @@ ItemOrTriggerActionJump_1d
         $3d805  xx xx xx:   xxx $xxxx
         $3d808  xx xx:      xxx #$xx
         $3d80a  xx xx xx:   xxx $xxxx,y
-        $3d80d  xx xx:      xxx $xx
-        $3d80f  xx xx:      xxx #$xx
-        $3d811  xx xx:      xxx $xx
+        $3d80d  xx xx:      xxx CurrentLocation
+        $3d80f  xx xx:      xxx #LOC_SHYRON_TEMPLE
+        $3d811  xx xx:       xxx >rts ; $3d826
+        ;; Spawn Mado 1 (88) into slot 0d at a specific location.
         $3d813  xx xx:      xxx #$xx
         $3d815  xx xx:      xxx $xx
         $3d817  xx xx:      xxx #$xx
@@ -58372,7 +58377,7 @@ ItemOrTriggerActionJump_1d
         $3d81d  xx xx:      xxx $xx
         $3d81f  xx xx:      xxx #$xx
         $3d821  xx xx:      xxx $xx
-        $3d823  xx xx xx:   xxx $3ff80
+        $3d823  xx xx xx:   xxx LoadOneObjectData
 ;;; --------------------------------
         $3d826  xx:         xxx
 ;;; --------------------------------

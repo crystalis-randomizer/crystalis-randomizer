@@ -10,6 +10,11 @@ import {hex} from '../rom/util.js';
 import {assert} from '../util.js';
 
 export function deterministicPreParse(prg: Uint8Array): void {
+  // Remove unnecessary statue fight triggers.  TODO - remove 1d location check
+  prg[0x1a594] = 0xff; // just cut off two objects early.
+  // Remove unnecessary oak entrance trigger (aa).  Redirect the dialog flag.
+  prg[0x1cdc5] = 0xa8; // change flag to not use 043.
+  prg[0x1a84c] = 0xff; // remove the aa trigger (last spawn in oak).
   // Remove unused item/trigger actions
   prg[0x1e06b] &= 7; // medical herb normal usage => action 05 to action 00
   prg[0x1e06f] &= 7; // magic ring itemuse[0] => action 05 to action 00

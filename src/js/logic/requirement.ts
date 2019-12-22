@@ -46,6 +46,14 @@ export namespace Requirement {
         r.label() : r.map(cs => cs.join('&')).join('|');
   }
 
+  export function isOpen(r: Requirement): boolean {
+    return r.length === 1 && !r[0].length;
+  }
+
+  export function isClosed(r: Requirement): boolean {
+    return !r.length;
+  }
+
   /** A requirement that's always met. */
   export const OPEN: Requirement = [[]];
 

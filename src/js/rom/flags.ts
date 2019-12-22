@@ -11,7 +11,6 @@ interface Logic {
   assumeTrue?: boolean;
   assumeFalse?: boolean;
   track?: boolean;
-  //alias?: (rom: Rom) => number[]; // returns a conjunction
 }
 
 const FALSE: Logic = {assumeFalse: true};
@@ -51,6 +50,8 @@ export class Flag {
     this.obsolete = data.obsolete;
     this.logic = data.logic ?? TRACK;
   }
+
+
 }
 
 function obsolete(obsolete: number | ((ctx: FlagContext) => number)): Flag {
@@ -198,7 +199,7 @@ export class Flags {
   0x056 = dialogProgression('Tornel rescued');
   0x057 = dialogProgression('Asina rescued');
   // unused 058 .. 05a
-  MtSabreGuardsDespawned = movable(0x05b);
+  MtSabreGuardsDespawned = movable(0x05b, TRUE);
   // unused 05c, 05d
   0x05e = obsolete(0x28d); // draygon 2
   0x05f = obsolete(0x203); // item: sword of thunder

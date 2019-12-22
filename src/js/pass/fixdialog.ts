@@ -96,6 +96,7 @@ export function fixDialog(rom: Rom) {
   const lovePendantTradeIn = tradeIns.get(0x74);
   if (lovePendantTradeIn != null) {
     replaceMessage('13:02', '[3b:Love Pendant]', item(lovePendantTradeIn));
+    replaceMessage('13:00', 'pendant', commonNoun(lovePendantTradeIn));
   }
   const changeSlot = rom.prg[0x3d6de];
   if (changeSlot < 0x41) {

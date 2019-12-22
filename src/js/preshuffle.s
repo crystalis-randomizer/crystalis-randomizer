@@ -674,6 +674,7 @@ ReloadInventoryAfterLoad:
 ;; Search inventory for a statue
 .org $2788d ; START OF FREE SPACE
 CheckOpelStatue:
+.ifndef _NEVER_DIE
   lda $6440,x
   cmp #$26
   beq +
@@ -684,7 +685,13 @@ CheckOpelStatue:
   lda #$0a
   sta EquippedConsumableItem
   jmp ActivateOpelStatue
-
+.else
+  ;; Special code path for "never die" mode
+  jsr ActivateOpelStatue
+  lda #$08
+  sta $41
+  rts
+.endif
 .assert < $27900 ; END OF FREE SPACE from $2788d or $278e9
 
 .org $27903
@@ -1193,17 +1200,6 @@ WarpMenuNametableData:
 .ifdef _DISPLAY_DIFFICULTY
 .org $3cb65  ; inside GameModeJump_08_Normal
   jsr CheckToRedisplayDifficulty ; was jsr CheckForPlayerDeath
-.endif
-
-
-.ifdef _NEVER_DIE
-;;; Debug mode to never actually die - wrap around to maxhp instead.
-.org $3cb89
-  lda $03c0
-  sta $03c1
-  nop
-.org $3cbaf
-  bne $cbc0  ; rts at end of CheckForSelectMenu
 .endif
 
 

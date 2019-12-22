@@ -60,8 +60,9 @@ export function fixDialog(rom: Rom) {
   replaceMessage('1d:12', '[46:Barrier]', item(barrierSlot));
 
   // Look for a key item in the fog lamp/kirisa plant caves.
-  let fogLampCaveLoot = findLoot(0x44, 0x45, 0x46, 0x47, 0x48, 0x49,
-                                 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f);
+  // Order is back of fog lamp, kirisa back-to-front, then front of fog lamp
+  let fogLampCaveLoot = findLoot(0x4f, 0x4e, 0x4d, 0x4c, 0x47, 0x46, 0x45, 0x44,
+                                 0x4b, 0x4a, 0x49, 0x48);
   if (fogLampCaveLoot >= 0) {
     replaceMessage('0d:00', '[35:Fog Lamp]', item(fogLampCaveLoot));
   } else {
@@ -135,11 +136,19 @@ export function fixDialog(rom: Rom) {
     msg.text = msg.text.replace(pat, repl);
   }
   function findLoot(...locs: number[]) {
-    for (const id of locs) {
-      const loc = rom.locations[id];
-      for (const spawn of loc.spawns) {
-        if (spawn.isChest() && spawn.id < 0x48 && itemget(spawn.id).unique) {
-          return spawn.id;
+    const conditions = [
+      (item: number) => BOWS.has(item),
+      (item: number) => SWORD_OR_MAGIC.has(item),
+      (item: number) => itemget(item).unique,
+    ];
+
+    for (const cond of conditions) {
+      for (const id of locs) {
+        const loc = rom.locations[id];
+        for (const spawn of loc.spawns) {
+          if (spawn.isChest() && spawn.id <= 0x48 && cond(spawn.id)) {
+            return spawn.id;
+          }
         }
       }
     }
@@ -150,6 +159,9 @@ export function fixDialog(rom: Rom) {
     return rom.items[itemget.itemId];
   }
 }
+
+const BOWS = new Set([0x3e, 0x3f, 0x40]);
+const SWORD_OR_MAGIC = new Set([0x00, 0x01, 0x02, 0x03, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48]);
 
 function findTornelTradeIn(tornel: Npc): number {
   // Expected structure:

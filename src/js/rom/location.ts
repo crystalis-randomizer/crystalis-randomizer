@@ -1506,6 +1506,19 @@ export const LOCATIONS = {
 // })();
 
 
+// very simple version of what we're doing with metascreens
+const screenExits: {[id: number]: readonly [number, readonly [number, number]]} = {
+  0x15: [0x90_a0, [0x89, 0x8a]], // cave on left boundary
+  0x19: [0x60_90, [0x58, 0x59]], // cave on right boundary (not on grass)
+  0x96: [0x40_30, [0x32, 0x33]], // up stair from left
+  0x97: [0xaf_30, [0xb2, 0xb3]], // down stair from left
+  0x98: [0x40_d0, [0x3c, 0x3d]], // up stair from right
+  0x99: [0xaf_d0, [0xbc, 0xbd]], // down stair from right
+  0x9a: [0x1f_80, [0x27, 0x28]], // down stair (double - just use down!)
+  0x9e: [0xdf_80, [0xe7, 0xe8]], // bottom edge
+  0xc2: [0x60_b0, [0x5a, 0x5b]], // cave on bottom-right boundary
+};
+
 // building the CSV for the location table.
 //const h=(x)=>x==null?'null':'$'+x.toString(16).padStart(2,0);
 //'id,name,bgm,width,height,animation,extended,tilepat0,tilepat1,tilepal0,tilepal1,tileset,tile effects,exits,sprpat0,sprpat1,sprpal0,sprpal1,obj0d,obj0e,obj0f,obj10,obj11,obj12,obj13,obj14,obj15,obj16,obj17,obj18,obj19,obj1a,obj1b,obj1c,obj1d,obj1e,obj1f\n'+rom.locations.map(l=>!l||!l.used?'':[h(l.id),l.name,h(l.bgm),l.layoutWidth,l.layoutHeight,l.animation,l.extended,h((l.tilePatterns||[])[0]),h((l.tilePatterns||[])[1]),h((l.tilePalettes||[])[0]),h((l.tilePalettes||[])[1]),h(l.tileset),h(l.tileEffects),[...new Set(l.exits.map(x=>h(x[2])))].join(':'),h((l.spritePatterns||[])[0]),h((l.spritePatterns||[])[1]),h((l.spritePalettes||[])[0]),h((l.spritePalettes||[])[1]),...new Array(19).fill(0).map((v,i)=>((l.objects||[])[i]||[]).slice(2).map(x=>x.toString(16)).join(':'))]).filter(x=>x).join('\n')

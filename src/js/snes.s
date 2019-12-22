@@ -83,9 +83,23 @@
   jmp ($0021)
 
 
+;;; Avoid unnecessary bank switching
+.org $3ccd3
+  jsr PatchMainLoopBankSwitch
 
 
-.org $3fddb
+.org $3fdcb
+PatchMainLoopBankSwitch:
+  asl
+  cmp $6e
+  bne +
+  ora #$01
+  cmp $6f
+  bne +
+  rts
++  lsr
+  jmp $c40e
+
 PatchWritePaletteDataToPpu:
     bmi ++
     lda #$ff

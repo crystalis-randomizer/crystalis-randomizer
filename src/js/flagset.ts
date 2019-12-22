@@ -70,6 +70,11 @@ export const PRESETS: Preset[] = [
     descr: 'Advanced flags for semifinal round of the 2019 Tournament',
     flags: 'Em Fsw Gft Hbd Mert Ps Roprst Sckmt Tab Wt',
   },
+  {
+    title: 'Tournament: Finals',
+    descr: 'Expert flags for finals round of the 2019 Tournament',
+    flags: 'Fsw Gfprt Hbdw Mert Ps Roprst Sckmt Tab Wmtw',
+  },
 ];
 
 // Just the flags, not the whole documentation.

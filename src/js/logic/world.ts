@@ -4,6 +4,13 @@ import {TileId} from './tileid.js';
 import {WallType} from './walltype.js';
 import {Location} from '../rom/location.js';
 import {Rom} from '../rom.js';
+import {FlagSet} from '../flagset.js';
+import {hex} from '../util.js';
+
+interface Check {
+  requirement: Requirement;
+  check: number;
+}
 
 // Mostly dumb data type storing all the information about the world's geometry.
 export class World {
@@ -22,7 +29,9 @@ export class World {
 
   readonly itemUseTriggers = new Map<number, ItemUseData>();
 
-  constructor(readonly rom: Rom) {
+  readonly aliases = new Map<Flag, Flag>();
+
+  constructor(readonly rom: Rom, readonly flagset: FlagSet) {
     // build itemUseTriggers
     for (const item of rom.items) {
       for (const use of item.itemUseData) {
@@ -31,6 +40,13 @@ export class World {
         }
       }
     }
+    // build aliases
+    aliases.set(rom.flags.ChangeAkahana, rom.flags.Change);
+    aliases.set(rom.flags.ChangeSoldier, rom.flags.Change);
+    aliases.set(rom.flags.ChangeStom, rom.flags.Change);
+    aliases.set(rom.flags.ChangeWoman, rom.flags.Change);
+    aliases.set(rom.flags.ParalyzedKensuInDanceHall, rom.flags.Paralysis);
+    aliases.set(rom.flags.ParalyzedKensuInTavern, rom.flags.Paralysis);
   }
 
   wallCapability(wall: WallType) {
@@ -206,50 +222,66 @@ export class World {
     const antiRequirements = this.filterAntiRequirements(trigger.conditions);
 
     const tile = TileId.from(location, spawn);
-    let hitbox = [[-16, 0], [-16, 0]];
+    let hitbox = Hitbox.trigger(location, spawn);
+
+    const checks = [];
+    for (const flag of trigger.flags) {
+      const f = this.flag(flag);
+      if (f?.logic.track) {
+        checks.push(f.id);
+      }
+    }
+    if (checks.length) this.addCheck(hitbox, requirement, checks);
 
     switch (trigger.message.action) {
     case 0x19:
       // push-down trigger
       if (trigger.id === 0x86 && !this.flags.assumeRabbitSkip()) {
         // bigger hitbox to not find the path through
-        hitbox[1] = [-32, -16, 0, 16];
+        hitbox = Hitbox.adjust(hitbox, [0, -16], [0, 16]);
       }
-      this.addTerrain(tile, hitbox, this.terrainFactory.statue(antiRequirements));
+      this.addTerrain(hitbox, this.terrainFactory.statue(antiRequirements));
       break;
 
     case 0x1d:
       // start mado 1 boss fight
-      this.addCheck(tile, hitbox, requirements, this.rom.flags.Mado1.id);
+      {
+        const req = Requirement.meet(requirements, bossRequirements(2, 3));
+        this.addCheck(hitbox, req, [this.rom.flags.Mado1.id]);
+      }
       break;
 
-    case 0x08:
-    case 0x0b:
-    case 0x0c:
-    case 0x0d:
-    case 0x0e:
-    case 0x0f:
+    case 0x08: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f:
       // find itemgrant for trigger ID => add check
-      const item = this.itemGrant(trigger.id);
-      if (item == null) {
-        throw new Error(`missing item grant for ${trigger.id.toString(16)}`);
+      {
+        const item = this.itemGrant(trigger.id);
+        if (item == null) {
+          throw new Error(`missing item grant for ${trigger.id.toString(16)}`);
+        }
+        // is the 100 flag sufficient here?  probably?
+        this.addCheck(hitbox, requirements, [0x100 | item]);
       }
-      // is the 100 flag sufficient here?  probably?
-      this.addCheck(tile, hitbox, requirements, 0x100 | item);
       break;
 
     case 0x18:
       // stom fight
-      this.addCheck(tile, hitbox, requirements, this.rom.flags.StomFightReward.id);
+      {
+        // Special case: warp boots glitch required if charge shots only.
+        const req =
+            this.flagset.chargeShotsOnly() ?
+                Requirement.meet(requirements, this.rom.flags.WarpBoots) :
+                requirements;
+        this.addCheck(hitbox, req, [this.rom.flags.StomFightReward.id]);
+      }
       break;
 
     case 0x1e:
       // forge crystalis
-      this.addCheck(tile, hitbox, requirements, this.rom.flags.Crystalis.id);
+      this.addCheck(hitbox, requirements, [this.rom.flags.Crystalis.id]);
       break;
 
     case 0x1f:
-      this.handleBoat(tile, location);
+      this.handleBoat(tile, location, requirements);
       break;
 
     case 0x1b:
@@ -257,33 +289,183 @@ export class World {
       // treat this as a statue?  but the conditions are not super useful...
       //   - only tracked conditions matter? 9e == paralysis... except not.
       // paralyzable?  check DataTable_35045
-      
+      this.handleMovingGuard(hitbox, location, antiRequirements);
       break;
+    }
+  }
 
+  processNpc(location: Location, spawn: Spawn) {
+    const npc = this.rom.npcs[spawn.id];
+    if (!npc || !npc.used) throw new Error(`Unknown npc: ${hex(spawn.id)}`);
+    const spawnConditions = npc.spawnConditions.get(location.id) || [];
+
+    // Special case: mt sabre guards move if you talk to them, and have no other
+    // effect, so just ignore them.
+
+    const tile = TileId.from(location, spawn);
+
+    if ((npc.data[2] & 0x04) && !this.flagset.assumeStatueGlitch()) {
+      const req = this.filterAntiRequirements(spawnConditions);
+      // if spawn is always false then req needs to be open?
+      if (req) this.addTerrain([tile], this.terrainFactory.statue(req));
     }
 
+    const hitbox =
+        [this.terrains.has(tile) ? tile : this.walkableNeighbor(tile)];
+    if (!hitbox[0]) throw new Error(`Unreachable NPC: ${hex(npc.id)}`);
 
-        if (trigger.terrain || trigger.check) {
-          let {x: x0, y: y0} = spawn;
-          x0 += 8;
-          for (const loc of [location, ...(trigger.extraLocations || [])]) {
-            for (const dx of trigger.dx || [-16, 0]) {
-              for (const dy of [-16, 0]) {
-                const x = x0 + dx;
-                const y = y0 + dy;
-                const tile = TileId.from(loc, {x, y});
-                if (trigger.terrain) meetTerrain(tile, trigger.terrain);
-                for (const check of trigger.check || []) {
-                  checks.get(tile).add(check);
-                }
+    // req is now mutable
+    const [[...req]] = this.filterRequirements(spawnConditions); // single
+
+    // Iterate over the global dialogs - do nothing if we can't pass them.
+    for (const d of npc.globalDialogs) {
+      const f = this.flag(~d.condition);
+      if (!f?.logic.track) continue;
+      req.push(f.id as Condition);
+    }
+
+    // Iterate over the appropriate local dialogs
+    const locals =
+        npc.localDialogs.get(location.id) ?? npc.localDialogs.get(-1) ?? [];
+    for (const d of locals) {
+      // Compute the condition 'r' for this message.
+      const r = [...req];
+      const f0 = this.flag(d.condition);
+      if (f0?.logic.track) {
+        r.push(f0.id as Condition);
+      }
+      this.processDialog(hitbox, location, npc, r, d);
+      // Add any new conditions to 'req' to get beyond this message.
+      const f1 = this.flag(~d.condition);
+      if (f1?.logic.track) {
+        req.push(f1.id as Condition);
+      }
+    }
+  }
+
+  processDialog(hitbox: Hitbox, location: Location, npc: Npc,
+                req: readonly Condition[], dialog: LocalDialog) {
+    const checks = [];
+    this.addCheckFromFlags(hitbox, requirement, dialog.flags);
+
+    switch (dialog.message.action) {
+    case 0x08: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f:
+      throw new Error(`Bad dialog action: ${dialog}`);
+
+    case 0x14:
+      checks.push(this.rom.flags.SlimedKensu.id);
+      break;
+
+    case 0x10:
+      checks.push(this.rom.flags.AsinaInBackRoom.id);
+      break;
+
+    case 0x11:
+      checks.push(0x100 | npc.data[1]);
+      break;
+
+    case 0x03:
+    case 0x0a: // normally this hard-codes glowing lamp, but we extended it
+      checks.push(0x100 | npc.data[0]);
+      break;
+
+    case 0x09:
+      // If zebu student has an item...?  TODO - store ff if unused
+      const item = npc.data[1];
+      if (item !== 0xff) checks.push(0x100 | item);
+      break;
+
+    case 0x19:
+      checks.push(this.rom.flags.AkahanaStoneTradein.id);
+      break;
+
+    case 0x1a:
+      // TODO - can we reach this spot?  may need to move down?
+      checks.push(this.rom.flags.Rage.id);
+      break;
+
+    case 0x1b:
+      // Rage throwing player out...
+      // But we need the anti-requirement for this.......
+      //   -> add a terrain blocking an expanded hitbox somehow?
+      // If we invert the dialog order so this is first then it could work.
+
+      // Probably instead just treat c3 as a statue with condition on Rage,
+      //   - add a flag for assuming skip?  ghetto rage?  ensure flier?
+
+
+      // TODO - add extra dialogs for itemuse trades, extra triggers
+      //      - if item traded but no reward, then re-give reward...
+
+
+        npcs.set(TileId.from(location, spawn), spawn.id);
+        const npc = overlay.npc(spawn.id, location);
+        if (npc.terrain || npc.check) {
+          let {x: xs, y: ys} = spawn;
+          let {x0, x1, y0, y1} = npc.hitbox || {x0: 0, y0: 0, x1: 1, y1: 1};
+          for (let dx = x0; dx < x1; dx++) {
+            for (let dy = y0; dy < y1; dy++) {
+              const x = xs + 16 * dx;
+              const y = ys + 16 * dy;
+              const tile = TileId.from(location, {x, y});
+              if (npc.terrain) meetTerrain(tile, npc.terrain);
+              for (const check of npc.check || []) {
+                checks.get(tile).add(check);
               }
             }
           }
         }
   }
 
+  addTerrain(hitbox: Hitbox, terrain: Terrain) {
+    for (const tile of hitbox) {
+      const t = this.terrains.get(tile);
+      if (t == null) continue; // unreachable tiles don't need extra reqs
+      this.terrains.set(tile, this.terrainFactory.meet(t, terrain));
+    }
+  }
 
-  handleBoat(tile: TileId, location: Location) {
+  addCheck(hitbox: Hitbox, requirement: Requirement, checks: number[]) {
+    if (Requirement.isClosed(requirement)) return; // do nothing if unreachable
+    for (const tile of hitbox) {
+      if (!this.terrains.has(tile)) continue;
+      this.checks.get(tile).add({requirement, check});
+    }
+  }
+
+  addCheckFromFlags(hitbox: Hitbox, requirement: Requirement, flags: number[]) {
+    const checks = [];
+    for (const flag of dialog.flags) {
+      const f = this.flag(flag);
+      if (f?.logic.track) {
+        checks.push(f.id);
+      }
+    }
+    if (checks.length) this.addCheck(hitbox, requirement, checks);
+  }
+
+  handleMovingGuard(hitbox: Hitbox, location: Location, req: Requirement) {
+    // This is the 1b trigger action follow-up.  It looks for an NPC in 0d or 0e
+    // and moves them over a pixel.  For the logic, it's always in a position
+    // where just making the trigger square be a no-exit square is sufficient,
+    // but we need to get the conditions right.  We pass in the requirements to
+    // NOT trigger the trigger, and then we join in paralysis and/or statue
+    // glitch if appropriate.  There could theoretically be cases where the
+    // guard is paralyzable but the geometry prevents the player from actually
+    // hitting them before they move, but it doesn't happen in practice.
+    if (this.flagset.assumeStatueGlitch()) return;
+    const extra = [];
+    for (const spawn of location.spawns.slice(0, 2)) {
+      if (spawn.isNpc() && this.rom.npcs[spawn.id].isParalyzable()) {
+        extra.push([this.rom.flags.Paralysis.id]);
+        break;
+      }
+    }
+    this.addTerrain(hitbox, this.terrainFactory.statue([...req, ...extra]));
+  }
+
+
+  handleBoat(tile: TileId, location: Location, requirements: Requirement) {
     // board boat - this amounts to adding a route edge from the tile
     // to the left, through an exit, and then continuing until finding land.
     const t0 = this.walkableNeighbor(tile);
@@ -311,6 +493,10 @@ export class World {
     }
   }
 
+  connect(t0: TileId, t1: TileId, req: Requirements) {
+    // TODO
+  }
+
   walkableNeighbor(t: TileId): TileId|undefined {
     for (let d of [-1, 1]) {
       const t1 = TileId.add(t, d, 0);
@@ -321,25 +507,6 @@ export class World {
     return undefined;
   }
 
-  processNpc(location: Location, spawn: Spawn) {
-        npcs.set(TileId.from(location, spawn), spawn.id);
-        const npc = overlay.npc(spawn.id, location);
-        if (npc.terrain || npc.check) {
-          let {x: xs, y: ys} = spawn;
-          let {x0, x1, y0, y1} = npc.hitbox || {x0: 0, y0: 0, x1: 1, y1: 1};
-          for (let dx = x0; dx < x1; dx++) {
-            for (let dy = y0; dy < y1; dy++) {
-              const x = xs + 16 * dx;
-              const y = ys + 16 * dy;
-              const tile = TileId.from(location, {x, y});
-              if (npc.terrain) meetTerrain(tile, npc.terrain);
-              for (const check of npc.check || []) {
-                checks.get(tile).add(check);
-              }
-            }
-          }
-        }
-  }
 
   processBoss(location: Location, spawn: Spawn) {
         // Bosses will clobber the entrance portion of all tiles on the screen,
@@ -364,10 +531,6 @@ export class World {
     switch (location.id) {
     case this.rom.locations.Oak.id:
       // add check for child
-    case this.rom.locations.Windmill.id:
-      // add check for windmill key usage?
-      // need to know about ItemUse data?!?
-      //   --> don't even need special case???
 
     case this.rom.locations.Crypt_Entrance.id:
       // bow of sun + moon => flag (may not need location base? just make it
@@ -379,10 +542,8 @@ export class World {
     // this should handle most trade-ins automatically?
 
     switch (use.message.action) {
-    case 0x0a:
-      // calm sea
-    case 0x10:
-      // set the current screen flag if the conditions are met...
+    case 0x10: // key
+      // set the current screen's flag if the conditions are met...
     case 0x08:
     case 0x0b:
     case 0x0c:
@@ -402,24 +563,46 @@ export class World {
   }
 
   /** Return a Requirement for all of the flags being met. */
-  filterRequirements(flags: number[]): Requirement.Frozen {
-    
+  filterRequirements(flags: number[]): Requirement.Single {
+    const conds = [];
+    for (const flag of flags) {
+      if (flag < 0) {
+        const logic = this.flag(~flag)?.logic;
+        if (logic?.assumeTrue) return Requirement.CLOSED;
+      } else {
+        const logic = this.flag(flag)?.logic;
+        if (logic?.assumeFalse) return Requirement.CLOSED;
+        if (logic?.track) conds.push([flag as Condition]);
+      }
+    }
+    return [conds];    
   }
 
-  /** Return a Requirement for all of the flags not being met. */
+  /** Return a Requirement for some flag not being met. */
   filterAntiRequirements(flags: number[]): Requirement.Frozen {
     const req = [];
     for (const flag of flags) {
-      if (flag >= 0) continue;
-      const f = this.rom.flags[~flag];
-      if (f?.logic.track) {
-        req.push([~flag as Condition]);
+      if (flag >= 0) {
+        const logic = this.flag(~flag)?.logic;
+        if (logic?.assumeFalse) return Requirement.OPEN;
+      } else {
+        const logic = this.flag(~flag)?.logic;
+        if (logic?.assumeTrue) return Requirement.OPEN;
+        if (logic?.track) req.push([~flag as Condition]);
       }
     }
     return req;
   }
 
+  flag(flag: number): Flag|undefined {
+    const f = this.rom.flags[~flag];
+    return this.aliases.get(f) ?? f;
+  }
+
 }
+
+
+
 
 
 // An interesting way to track terrain combinations is with primes.

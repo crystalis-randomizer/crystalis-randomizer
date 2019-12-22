@@ -181,6 +181,13 @@ export class Npc extends Entity {
     return dialogs[index];
   }
 
+  isParalyzable(): boolean {
+    for (let i = 0x35058; i < 0x3506c; i++) {
+      if (this.rom.prg[i] === this.id) return false;
+    }
+    return true;
+  }
+
   async write(writer: Writer): Promise<void> {
     if (!this.used) return;
     const promises = [];

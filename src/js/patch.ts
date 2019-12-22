@@ -141,6 +141,7 @@ export async function shuffle(rom: Uint8Array,
     _REVERSIBLE_SWAN_GATE: true,
     _SAHARA_RABBITS_REQUIRE_TELEPATHY: flags.saharaRabbitsRequireTelepathy(),
     _SIMPLIFY_INVISIBLE_CHESTS: true,
+    _SOFT_RESET_SHORTCUT: true,
     _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
     _TRAINER: flags.trainer(),
     _TWELVTH_WARP_POINT: true, // zombie town warp

@@ -1782,11 +1782,18 @@ QuickChangeSword:
 CheckSelectShortcuts:
   lda $4b
   cmp #$40   ; newly pressed B?
-  beq QuickChangeSword  ; yes -> change sword
+   beq QuickChangeSword  ; yes -> change sword
+
+.ifdef _SOFT_RESET
+  cmp #$10   ; newlt pressed start
+   beq SoftReset
+.endif
+
 -:
 .ifdef _TRAINER
   jmp CheckTrainerShortcuts
 .endif
+
   rts
 CheckStartShortcuts:
   lda $46
@@ -1803,6 +1810,13 @@ CheckStartShortcuts:
    and #$cf
    sta $48
    jmp $cbd3 ; yes -> wild warp
+
+.ifdef _SOFT_RESET
+SoftReset:
+  ldx #$ff
+  txs
+  jmp ($fffc)
+.endif
 
 ;;; Defines code to run on game start
 InitialAction:

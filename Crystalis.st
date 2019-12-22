@@ -57599,6 +57599,7 @@ GrantItemInRegisterA
 ;;; --------------------------------
 DialogFollowupActionJump_06
 DialogFollowupActionJump_0d
+        ;; NPC walks away (treasure hunter)?
         $3d23f  xx xx:      xxx #$xx
         $3d241  xx xx xx:   xxx $xxxx
         $3d244  xx xx:      xxx #$xx
@@ -57612,6 +57613,7 @@ DialogFollowupActionJump_0d
         $3d259  xx:         xxx
 ;;; --------------------------------
 DialogFollowupActionJump_0c
+        ;; Dwarf child starts following?
         $3d25a  xx xx xx:   xxx $xxxx
         $3d25d  xx xx:      xxx #$xx
         $3d25f  xx xx xx:   xxx $xxxx,y

@@ -15,38 +15,86 @@ interface Check {
 // Mostly dumb data type storing all the information about the world's geometry.
 export class World {
 
+  /** Builds and caches Terrain objects. */
   readonly terrainFactory = new Terrains(this.rom);
 
+  /** Terrains mapped by TileId. */
   readonly terrains = new Map<TileId, Terrain>();
 
+  /** Checks mapped by TileId. */
   readonly checks = new DefaultMap<TileId, Set<Check>>(() => new Set());
 
+  /** Flags that should be treated as direct aliases for logic. */
+  readonly aliases = new Map<Flag, Flag>();
+
+  /** Mapping from itemuse triggers to the itemuse that wants it. */
+  readonly itemUses = new DefaultMap<number, [Item, ItemUseData][]>(() => []);
+
+  /** Set of all TileIds with exits. */
   readonly allExits = new Set<TileId>();
 
+  /** Mapping from exits to entrances. */
   readonly exitSet = new Set<TilePair>();
 
+  /**
+   * Unionfind of connected components of tiles.  Note that all the
+   * above properties can be built up in parallel, but the unionfind
+   * cannot be started until after all terrains and exits are
+   * registered, since we specifically need to *not* union certain
+   * neighbors.
+   */
   readonly tiles = new UnionFind<TileId>();
-
-  readonly itemUseTriggers = new Map<number, ItemUseData>();
-
-  readonly aliases = new Map<Flag, Flag>();
 
   constructor(readonly rom: Rom, readonly flagset: FlagSet) {
     // build itemUseTriggers
     for (const item of rom.items) {
       for (const use of item.itemUseData) {
         if (use.kind === 'expect') {
-          this.itemUseTriggers.set(use.want, use);
+          this.itemUses.get(use.want).push([item, use]);
+        } else if (use.kind === 'location') {
+          this.itemUses.get(~use.want).push([item, use]);
         }
       }
     }
     // build aliases
-    aliases.set(rom.flags.ChangeAkahana, rom.flags.Change);
-    aliases.set(rom.flags.ChangeSoldier, rom.flags.Change);
-    aliases.set(rom.flags.ChangeStom, rom.flags.Change);
-    aliases.set(rom.flags.ChangeWoman, rom.flags.Change);
-    aliases.set(rom.flags.ParalyzedKensuInDanceHall, rom.flags.Paralysis);
-    aliases.set(rom.flags.ParalyzedKensuInTavern, rom.flags.Paralysis);
+    this.aliases.set(rom.flags.ChangeAkahana, rom.flags.Change);
+    this.aliases.set(rom.flags.ChangeSoldier, rom.flags.Change);
+    this.aliases.set(rom.flags.ChangeStom, rom.flags.Change);
+    this.aliases.set(rom.flags.ChangeWoman, rom.flags.Change);
+    this.aliases.set(rom.flags.ParalyzedKensuInDanceHall, rom.flags.Paralysis);
+    this.aliases.set(rom.flags.ParalyzedKensuInTavern, rom.flags.Paralysis);
+    // iterate over locations to build up information.
+    for (const location of rom.locations) {
+      this.processLocation(location);
+    }
+    this.addExtraChecks();
+    // TODO - add capabilities:
+    //  * flags.OpenedCrypt = and(flags.BowOfMoon, flags.BowOfSun)
+    //  * 
+
+  }
+
+  build(rom: Rom) {
+    
+
+  }
+
+  addExtraChecks() {
+    const {
+      locations: {
+        MezameShrine,
+        Oak,
+      },
+      flags: {
+        BowOfMoon,
+        BowOfSun,
+        OpenedCrypt,
+      },
+    } = this.rom;
+    const start = [this.entrance(MezameShrine)];
+    const enterOak = [this.entrance(Oak)];
+    this.addCheck(start, [[BowOfMoon.id, BowOfSun.id]], [OpenedCrypt.id]);
+    this.addCheck(enterOak, [[LeadingChild.id]], [RescuedChild.id]);
   }
 
   wallCapability(wall: WallType) {
@@ -64,7 +112,7 @@ export class World {
     // Look for walls, which we need to know about later.
     this.processLocationTiles(location);
     this.processLocationSpawns(location);
-    this.processLocationTriggers(location); // location-triggered trades/etc
+    this.processLocationItemUses(location);
   }
 
   processLocationTiles(location: Location) {
@@ -195,9 +243,8 @@ export class World {
         this.processMonster(location, spawn);
       }
       // At what point does this logic belong elsewhere?
-      const use = this.itemUseTriggers.get(spawn.type << 8 | spawn.id);
-      if (use != null) {
-        this.processItemUseTrigger(location, spawn, use);
+      for (const [item, use] of this.itemUses.get(spawn.type << 8 | spawn.id)) {
+        this.processItemUse([TileId.from(location, spawn)], item, use);
       }
     }
   }
@@ -231,7 +278,7 @@ export class World {
         checks.push(f.id);
       }
     }
-    if (checks.length) this.addCheck(hitbox, requirement, checks);
+    if (checks.length) this.Check(hitbox, requirement, checks);
 
     switch (trigger.message.action) {
     case 0x19:
@@ -253,14 +300,7 @@ export class World {
 
     case 0x08: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f:
       // find itemgrant for trigger ID => add check
-      {
-        const item = this.itemGrant(trigger.id);
-        if (item == null) {
-          throw new Error(`missing item grant for ${trigger.id.toString(16)}`);
-        }
-        // is the 100 flag sufficient here?  probably?
-        this.addCheck(hitbox, requirements, [0x100 | item]);
-      }
+      this.addItemGrantCheck(hitbox, requirements, trigger.id);
       break;
 
     case 0x18:
@@ -299,20 +339,28 @@ export class World {
     if (!npc || !npc.used) throw new Error(`Unknown npc: ${hex(spawn.id)}`);
     const spawnConditions = npc.spawnConditions.get(location.id) || [];
 
-    // Special case: mt sabre guards move if you talk to them, and have no other
-    // effect, so just ignore them.
-
     const tile = TileId.from(location, spawn);
 
     if ((npc.data[2] & 0x04) && !this.flagset.assumeStatueGlitch()) {
-      const req = this.filterAntiRequirements(spawnConditions);
+      let hitbox = [tile];
+      let req = this.filterAntiRequirements(spawnConditions);
+      if (npc === this.rom.npcs.Rage) {
+        // TODO - move hitbox down, change requirement?
+        hitbox = Hitbox.adjust(hitbox, [2, -1], [2, 0], [2, 1], [2, 2]);
+        hitbox = Hitbox.adjust(hitbox, [0, -6], [0, -2], [0, 2], [0, 6]);
+        // TODO - check if this works?  the ~check spawn condition should
+        // allow passing if gotten the check, which is the same as gotten
+        // the correct sword.
+        if (opts.assumeRageSkip()) req = undefined;
+      }
       // if spawn is always false then req needs to be open?
-      if (req) this.addTerrain([tile], this.terrainFactory.statue(req));
+      if (req) this.addTerrain(hitbox, this.terrainFactory.statue(req));
     }
 
-    const hitbox =
+    let hitbox =
         [this.terrains.has(tile) ? tile : this.walkableNeighbor(tile)];
     if (!hitbox[0]) throw new Error(`Unreachable NPC: ${hex(npc.id)}`);
+    if (npc === this.rom.npcs.Rage) { // rage needs to move to entrance
 
     // req is now mutable
     const [[...req]] = this.filterRequirements(spawnConditions); // single
@@ -345,9 +393,9 @@ export class World {
 
   processDialog(hitbox: Hitbox, location: Location, npc: Npc,
                 req: readonly Condition[], dialog: LocalDialog) {
-    const checks = [];
     this.addCheckFromFlags(hitbox, requirement, dialog.flags);
 
+    const checks = [];
     switch (dialog.message.action) {
     case 0x08: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f:
       throw new Error(`Bad dialog action: ${dialog}`);
@@ -386,35 +434,28 @@ export class World {
 
     case 0x1b:
       // Rage throwing player out...
-      // But we need the anti-requirement for this.......
-      //   -> add a terrain blocking an expanded hitbox somehow?
-      // If we invert the dialog order so this is first then it could work.
+      // This should actually already be handled by the statue code above?
+      break;
+    }
 
-      // Probably instead just treat c3 as a statue with condition on Rage,
-      //   - add a flag for assuming skip?  ghetto rage?  ensure flier?
+    // TODO - add extra dialogs for itemuse trades, extra triggers
+    //      - if item traded but no reward, then re-give reward...
+    if (checks.length) this.addCheck(hitbox, requirement, checks);
+  }
 
+  processLocationItemUses(location: Location) {
+    for (const [item, use] of this.itemUseTriggers.get(~location.id)) {
+      this.processItemUse([this.entrance(location)], item, use);
+    }
+  }
 
-      // TODO - add extra dialogs for itemuse trades, extra triggers
-      //      - if item traded but no reward, then re-give reward...
-
-
-        npcs.set(TileId.from(location, spawn), spawn.id);
-        const npc = overlay.npc(spawn.id, location);
-        if (npc.terrain || npc.check) {
-          let {x: xs, y: ys} = spawn;
-          let {x0, x1, y0, y1} = npc.hitbox || {x0: 0, y0: 0, x1: 1, y1: 1};
-          for (let dx = x0; dx < x1; dx++) {
-            for (let dy = y0; dy < y1; dy++) {
-              const x = xs + 16 * dx;
-              const y = ys + 16 * dy;
-              const tile = TileId.from(location, {x, y});
-              if (npc.terrain) meetTerrain(tile, npc.terrain);
-              for (const check of npc.check || []) {
-                checks.get(tile).add(check);
-              }
-            }
-          }
-        }
+  addItemGrantChecks(hitbox: Hitbox, req: Requirement, grantId: number) {
+    const item = this.itemGrant(grantId);
+    if (item == null) {
+      throw new Error(`missing item grant for ${grantId.toString(16)}`);
+    }
+    // is the 100 flag sufficient here?  probably?
+    this.addCheck(hitbox, req, [0x100 | item]);
   }
 
   addTerrain(hitbox: Hitbox, terrain: Terrain) {
@@ -427,9 +468,10 @@ export class World {
 
   addCheck(hitbox: Hitbox, requirement: Requirement, checks: number[]) {
     if (Requirement.isClosed(requirement)) return; // do nothing if unreachable
+    const check = {requirements, checks};
     for (const tile of hitbox) {
       if (!this.terrains.has(tile)) continue;
-      this.checks.get(tile).add({requirement, check});
+      this.checks.get(tile).add(check);
     }
   }
 
@@ -498,15 +540,19 @@ export class World {
   }
 
   walkableNeighbor(t: TileId): TileId|undefined {
+    if (this.isWalkable(t)) return t;
     for (let d of [-1, 1]) {
       const t1 = TileId.add(t, d, 0);
       const t2 = TileId.add(t, 0, d);
-      if (!(this.getEffects(t1) & Terrain.BITS)) return t1;
-      if (!(this.getEffects(t2) & Terrain.BITS)) return t2;
+      if (this.isWalkable(t1)) return t1;
+      if (this.isWalkable(t2)) return t2;
     }
     return undefined;
   }
 
+  isWalkable(t: TileId): boolean {
+    return !(this.getEffects(t) & Terrain.BITS);
+  }
 
   processBoss(location: Location, spawn: Spawn) {
         // Bosses will clobber the entrance portion of all tiles on the screen,
@@ -515,7 +561,10 @@ export class World {
   }
 
   processChest(location: Location, spawn: Spawn) {
-        checks.get(TileId.from(location, spawn)).add(Check.chest(spawn.id));
+    // Add a check for the 1xx flag.  TODO - keep track of the fact that it was
+    // a chest, for item eligibility purposes.
+    this.addCheck([TileId.from(location, spawn)], Requirement.OPEN,
+                  [0x100 | spawn.id]);
   }
 
   processMonster(location: Location, spawn: Spawn) {
@@ -525,34 +574,34 @@ export class World {
         if (monster.goldDrop) monsters.set(TileId.from(location, spawn), monster.elements);
   }
 
-
-
-  processLocationTriggers(location: Location) {
-    switch (location.id) {
-    case this.rom.locations.Oak.id:
-      // add check for child
-
-    case this.rom.locations.Crypt_Entrance.id:
-      // bow of sun + moon => flag (may not need location base? just make it
-      // a nonlocal check)
+  processItemUse(hitbox: Hitbox, item: Item, use: ItemUse) {
+    // this should handle most trade-ins automatically
+    hitbox = new Set([...hitbox].map(t => this.walkableNeighbor(t)));
+    const req = [[0x200 | item.id]]; // requires the item.
+    // set any flags
+    this.addCheckFromFlags(hitbox, req, use.flags);
+    // handle any extra actions
+    switch (use.message.action) {
+    case 0x10:
+      // use key
+      processKeyUse(hitbox, req);
+      break;
+    case 0x08: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f:
+      // find itemgrant for item ID => add check
+      this.addItemGrantCheck(hitbox, req, item.id);
+      break;
     }
   }
 
-  processItemUseTrigger(location: Location, spawn: Spawn, item: Item, use: ItemUse) {
-    // this should handle most trade-ins automatically?
-
-    switch (use.message.action) {
-    case 0x10: // key
-      // set the current screen's flag if the conditions are met...
-    case 0x08:
-    case 0x0b:
-    case 0x0c:
-    case 0x0d:
-    case 0x0e:
-    case 0x0f:
-      // find itemgrant for item ID => add check
-    }
-
+  processKeyUse(hitbox: Hitbox, item: Item) {
+    // set the current screen's flag if the conditions are met...
+    // make sure there's only a single screen.
+    const [screen, ...rest] = new Set([...hitbox].map(ScreenId.from));
+    if (screen == null || rest.length) throw new Error(`Expected one screen`);
+    const location = this.rom.locations[screen >>> 8];
+    const flag = location.flags.find(f => f.screen === screen & 0xff);
+    if (flag == null) throw new Error(`Expected flag on screen`);
+    this.addCheck(hitbox, [[0x200 | item.id]], [flag]);    
   }
 
   itemGrant(id: number): number {
@@ -599,6 +648,9 @@ export class World {
     return this.aliases.get(f) ?? f;
   }
 
+  entrance(location: Location, index = 0): TileId {
+    return TileId.from(location, location.entrances[index]);
+  }
 }
 
 

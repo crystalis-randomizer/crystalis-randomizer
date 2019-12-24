@@ -333,10 +333,13 @@ export class FlagSet {
     return this.check('Gt');
   }
   assumeTriggerGlitch() {
-    return false;
-  }  // TODO - only works on land?
+    return false; // TODO - only works on land?
+  }
   assumeWildWarp() {
     return this.check('Gw');
+  }
+  assumeRageSkip() {
+    return false; // TODO - need to check for a flyer to the south?
   }
 
   nerfWildWarp() {

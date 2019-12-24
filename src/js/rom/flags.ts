@@ -133,7 +133,7 @@ export class Flags {
   0x01f = obsolete(0x209); // item: ball of water
 
   // 02x
-  0x020 = dialogToggle('Queen not in throne room');
+  QueenNotInThroneRoom = movable(0x020);
   ReturnedFogLamp = movable(0x021, TRACK);
   0x022 = dialogProgression('Sahara elder');
   0x023 = dialogProgression('Sahara elder daughter');
@@ -254,8 +254,8 @@ export class Flags {
   // unused 080, 081
   0x082 = obsolete(0x140); // check: bow of truth / azteca
   0x083 = dialogProgression('Rescued Leaf elder');
-  0x084 = dialogToggle('Leaf villagers currently abducted');
-  0x085 = dialogToggle('Leaf elder currently abducted');
+  LeafVillagersCurrentlyAbducted = movable(0x084);
+  LeafElderCurrentlyAbducted = movable(0x085);
   UsedBowOfTruth = movable(0x086);
   0x087 = obsolete(0x105); // chest: ball of wind
   0x088 = obsolete(0x132); // check: windmill key
@@ -277,7 +277,7 @@ export class Flags {
   0x098 = dialogProgression('Nadare villager');
   // unused 099, 09a
   AbleToRideDolphin = movable(0x09b, TRACK);
-  0x09c = dialogToggle('Portoa queen going away');
+  PortoaQueenGoingAway = movable(0x09c);
   // unused 09d .. 09f
 
   // 0ax
@@ -495,7 +495,19 @@ export class Flags {
   FortressMadoLowerSoutheastChest = tracked(0x16f); // magic ring
   // = tracked(0x170); // mimic / medical herb
   // TODO - add all the mimics, give them stable numbers?
-
+  FogLampCaveMiddleNorthMimic = tracked(0x170);
+  FogLampCaveMiddleSouthwestMimic = tracked(0x171);
+  WaterfallCaveFrontMimic = tracked(0x172);
+  EvilSpiritIslandRiverRightMimic = tracked(0x173);
+  MtHydraFinalCaveMimic = tracked(0x174);
+  StxyLeftNorthMimic = tracked(0x175);
+  StxyRightNorthMimic = tracked(0x176);
+  StxyRightSouthMimic = tracked(0x177);
+  CryptLeftPitMimic = tracked(0x178);
+  KarmineBasementUpperMiddleMimic = tracked(0x179);
+  KarmineBasementUpperRightMimic = tracked(0x17a);
+  KarmineBasementLowerRightMimic = tracked(0x17b);
+  // TODO - mimics 13..16 ?
 
   // 180 .. 1ff => fixed flags for overflow buffer.
 
@@ -552,7 +564,7 @@ export class Flags {
   AlarmFlute = tracked(0x231);
   WindmillKey = tracked(0x232);
   KeyToPrison = tracked(0x233);
-  KeyToStyx = tracked(0x234);
+  KeyToStxy = tracked(0x234);
   FogLamp = tracked(0x235);
   ShellFlute = tracked(0x236);
   EyeGlasses = tracked(0x237);
@@ -579,7 +591,7 @@ export class Flags {
   OpenedJoelShed = tracked(0x287);
   Draygon2 = tracked(0x28d);
   OpenedCrypt = tracked(0x28e);
-  OpenedStyx = tracked(0x2b0);
+  OpenedStxy = tracked(0x2b0);
   SwanGate = tracked(0x2b3);
   OpenedPrison = tracked(0x2d8);
   OpenedSealedCave = tracked(0x2ee);

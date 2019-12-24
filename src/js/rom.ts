@@ -10,7 +10,7 @@ import {Locations} from './rom/location.js';
 import {Messages} from './rom/messages.js';
 import {Metasprite} from './rom/metasprite.js';
 import {Monster} from './rom/monster.js';
-import {Npc} from './rom/npc.js';
+import {Npc, Npcs} from './rom/npc.js';
 import {ObjectData} from './rom/objectdata.js';
 import {Objects} from './rom/objects.js';
 import {RomOption} from './rom/option.js';
@@ -76,7 +76,7 @@ export class Rom {
   readonly itemGets: ItemGets;
   readonly items: Items;
   readonly shops: Shop[];
-  readonly npcs: Npc[];
+  readonly npcs: Npcs;
   readonly bossKills: BossKill[];
   readonly bosses: Bosses;
   readonly wildWarp: WildWarp;
@@ -168,7 +168,7 @@ export class Rom {
     this.itemGets = new ItemGets(this);
     this.items = new Items(this);
     this.shops = seq(44, i => new Shop(this, i)); // NOTE: depends on locations and objects
-    this.npcs = seq(0xcd, i => new Npc(this, i));
+    this.npcs = new Npcs(this);
     this.bossKills = seq(0xe, i => new BossKill(this, i));
     this.bosses = new Bosses(this);
     this.wildWarp = new WildWarp(this);

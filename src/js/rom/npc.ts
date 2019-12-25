@@ -1,8 +1,9 @@
 import {Entity, EntityArray} from './entity.js';
+import {Location} from './location.js';
 import {MessageId} from './messageid.js';
 import {DIALOG_FLAGS, Data, SPAWN_CONDITION_FLAGS, addr, hex,
         readBigEndian, readLittleEndian, tuple,
-        writeLittleEndian} from './util.js';
+        upperCamelToSpaces, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
 import {Rom} from '../rom.js';
 
@@ -93,7 +94,7 @@ export class Npcs extends EntityArray<Npc> {
 
   // unusable 8f..bf (we've co-opted that PRG space for now)
 
-  Vamapire1 = new Npc(this, 0xc0);
+  Vampire1 = new Npc(this, 0xc0);
   Insect = new Npc(this, 0xc1);
   Kelbesque1 = new Npc(this, 0xc2);
   Rage = new Npc(this, 0xc3);
@@ -107,7 +108,14 @@ export class Npcs extends EntityArray<Npc> {
   Draygon = new Npc(this, 0xcb);
   Vampire2 = new Npc(this, 0xcc);
 
-  constructor() {
+  constructor(readonly rom: Rom) {
+    super(0xcd);
+    for (const key in this) {
+      const npc = this[key];
+      if (!this.hasOwnProperty(key) || !(npc instanceof Npc)) continue;
+      this[npc.id] = npc;
+      npc.name = upperCamelToSpaces(key);
+    }
     for (let i = 0; i < 0xcd; i++) {
       if (!this[i]) {
         this[i] = new Npc(this, i);
@@ -136,7 +144,7 @@ export class Npc extends Entity {
 
   constructor(readonly npcs: Npcs, id: number) {
     super(npcs.rom, id);
-    if (id >= 0) npcs[id] = this;
+    const rom = npcs.rom;
     if (id > 0xcc) throw new Error(`Unavailable: ${id}`);
     this._used = !UNUSED_NPCS.has(id) /*&& this.base <= 0x1c781*/ && (id < 0x8f || id >= 0xc0);
     const hasDialog = id <= 0xc3;
@@ -193,16 +201,16 @@ export class Npc extends Entity {
       }
     }
 
-    for (const i in NAMES) {
-      if (!NAMES.hasOwnProperty(i)) continue;
-      const name = (NAMES as {} as {[key: string]: [number, string, string?, string?]})[i];
-      if (name[0] === id) {
-        this.name = name[1];
-        if (name.length > 2) {
-          this.itemNames = name.slice(2, 4) as [string, string];
-        }
-      }
-    }
+    // for (const i in NAMES) {
+    //   if (!NAMES.hasOwnProperty(i)) continue;
+    //   const name = (NAMES as {} as {[key: string]: [number, string, string?, string?]})[i];
+    //   if (name[0] === id) {
+    //     this.name = name[1];
+    //     if (name.length > 2) {
+    //       this.itemNames = name.slice(2, 4) as [string, string];
+    //     }
+    //   }
+    // }
 
     // console.log(`NPC Spawn $${this.id.toString(16)} from ${this.base.toString(16)}: bytes: $${
     //              this.bytes().map(x=>x.toString(16).padStart(2,0)).join(' ')}`);

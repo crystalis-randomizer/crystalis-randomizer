@@ -1,3 +1,5 @@
+import {Location} from '../rom/location.js';
+
 // 24-bit unique ID for a single tile:
 //   LLLLLLLL YYYYXXXX yyyyxxxx
 // where L is 8-bit location ID, (Y, X) is screen, and (y, x) is tile.

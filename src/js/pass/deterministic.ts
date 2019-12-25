@@ -8,6 +8,8 @@ import {GlobalDialog, LocalDialog} from '../rom/npc.js';
 import {ShopType} from '../rom/shop.js';
 import {hex} from '../rom/util.js';
 
+const [] = [hex]; // generally useful
+
 export function deterministicPreParse(prg: Uint8Array): void {
   // Remove unused item/trigger actions
   prg[0x1e06b] &= 7; // medical herb normal usage => action 05 to action 00
@@ -41,7 +43,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   normalizeSwords(rom, flags);
 
   fixCoinSprites(rom);
-  fixMimics(rom);
+  fixChests(rom);
 
   makeBraceletsProgressive(rom);
 
@@ -632,7 +634,6 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
     Joel_Shed,
     MtSabreNorth_SummitCave,
     MtSabreWest_Upper,
-    PortoaPalace_Entrance,
     PortoaPalace_ThroneRoom,
     Portoa_AsinaRoom,
     Portoa_FortuneTeller,
@@ -642,7 +643,7 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
     WindmillCave,
     WaterfallCave4,
     WaterfallValleyNorth,
-    ZebuCave
+    ZebuCave,
     ZombieTown_HouseBasement,
   } = rom.locations;
 
@@ -698,7 +699,7 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
   AkahanaInBrynmaer.data = [...Akahana.data] as any; // ensure give item
   Brynmaer.spawns.find(s => s.isNpc() && s.id === Akahana.id)!.id =
       AkahanaInBrynmaer.id;
-  StatueOfOnyx.itemUse[0].want = AkahanaInBrynmaer.id;
+  StatueOfOnyx.itemUseData[0].want = AkahanaInBrynmaer.id;
 
   // Leaf elder in house ($0d @ $c0) ~ sword of wind redundant flag
   // dialog(0x0d, 0xc0)[2].flags = [];
@@ -775,7 +776,7 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
 
   // Queen's ($38) dialog needs quite a bit of work
   // Give item (flute of lime) even if got the sword of water
-  PortoaQueen.dialog()[3].condition = flags.SwordOfWater; // "you found sword"
+  PortoaQueen.dialog()[3].condition = flags.SwordOfWater.id; // "you found sword"
   PortoaQueen.dialog()[3].message.action = 0x03; //  => action 3 itemget
   // Ensure you can always make the queen go away.
   PortoaQueen.dialog()[4].flags.push(flags.PortoaQueenGoingAway.id);
@@ -791,7 +792,7 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
   // Clark ($44) moves after talking to him (08d) rather than calming sea (08f).
   // TODO - change 08d to whatever actual item he gives, then remove both flags
   Clark.spawnConditions.set(ZombieTown_HouseBasement.id, [~flags.Clark.id]);
-  Clark.spawnConditions.set(Joel_Shed, [flags.Clark.id]);
+  Clark.spawnConditions.set(Joel_Shed.id, [flags.Clark.id]);
   //dialog(0x44, 0xe9)[1].flags.pop(); // remove redundant itemget flag
 
   // Brokahana ($54) ~ warrior ring redundant flag

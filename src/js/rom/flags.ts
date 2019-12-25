@@ -3,6 +3,7 @@ import {Location} from './location.js';
 import {Npc} from './npc.js';
 import {Trigger} from './trigger.js';
 import {hex, hex3, upperCamelToSpaces, Writable} from './util.js';
+import {Condition, Requirement} from '../logic/requirement.js';
 
 const FLAG = Symbol();
 
@@ -51,7 +52,13 @@ export class Flag {
     this.logic = data.logic ?? TRACK;
   }
 
+  get c(): Condition {
+    return this.id as Condition;
+  }
 
+  get r(): Requirement.Single {
+    return [[this.id as Condition]];
+  }
 }
 
 function obsolete(obsolete: number | ((ctx: FlagContext) => number)): Flag {
@@ -77,7 +84,7 @@ function dialogToggle(name: string, logic = IGNORE): Flag {
 function pseudo(owner: object): Flag {
   const id = pseudoCounter.get(owner) || 0x400;
   pseudoCounter.set(owner, id + 1);
-  return {id, [FLAG]: true, logic: TRACK};
+  return {id, [FLAG]: true, logic: TRACK} as any;
 }
 const pseudoCounter = new WeakMap<object, number>();
 

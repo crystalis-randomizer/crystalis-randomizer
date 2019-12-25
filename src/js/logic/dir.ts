@@ -15,4 +15,9 @@ export namespace Dir {
   export function all(): Dir[] {
     return [0, 1, 2, 3];
   }
+
+  export const North = 0 as Dir;
+  export const West = 1 as Dir;
+  export const South = 2 as Dir;
+  export const East = 3 as Dir;
 }

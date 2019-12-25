@@ -1,5 +1,16 @@
 import {Rom} from '../rom.js';
-import {readLittleEndian} from './util.js';
+import {Flag} from './flags.js';
+import {Npc} from './npc.js';
+import {Mutable, readLittleEndian, upperCamelToSpaces} from './util.js';
+
+interface BossData {
+  readonly flag?: Flag;
+  readonly npc?: Npc;
+  readonly kill?: number;
+  readonly shuffled?: boolean;
+  readonly address?: number;
+  readonly sword?: number;
+}
 
 // TODO - we need a consistent way to refer to bosses...
 //  - maybe bosses.fromNpcId(), bosses.fromObjectId(), bosses.fromBossKill()
@@ -8,53 +19,119 @@ import {readLittleEndian} from './util.js';
 // to the boss kill (drop), rather than the specific identity of the boss.
 export class Bosses implements Iterable<Boss> {
 
-  readonly vampire1: Boss;
-  readonly insect: Boss;
-  readonly kelbesque1: Boss;
-  readonly rage: Boss;
-  readonly sabera1: Boss;
-  readonly vampire2: Boss;
-  readonly mado1: Boss;
-  readonly kelbesque2: Boss;
-  readonly sabera2: Boss;
-  readonly mado2: Boss;
-  readonly karmine: Boss;
-  readonly draygon1: Boss;
-  readonly statueOfMoon: Boss;
-  readonly statueOfSun: Boss;
-  readonly draygon2: Boss;
-  readonly dyna: Boss;
+  readonly Vampire1 = new Boss(this, {
+    flag: this.rom.flags.Vampire1,
+    kill: 0x0,
+    npc: this.rom.npcs.Vampire1,
+    shuffled: true,
+    sword: 1,
+  });
+  readonly Insect = new Boss(this, {
+    flag: this.rom.flags.GiantInsect,
+    kill: 0x1,
+    npc: this.rom.npcs.Insect,
+    sword: 1,
+  });
+  readonly Kelbesque1 = new Boss(this, {
+    flag: this.rom.flags.Kelbesque1,
+    kill: 0x2,
+    npc: this.rom.npcs.Kelbesque1,
+    shuffled: true,
+  });
+  readonly Rage = new Boss(this, {
+    flag: this.rom.flags.Rage,
+    kill: 0x3,
+    npc: this.rom.npcs.Rage,
+  });
+  readonly Sabera1 = new Boss(this, {
+    address: 0x3656e,
+    flag: this.rom.flags.Sabera1,
+    kill: 0x4,
+    npc: this.rom.npcs.SaberaDisguisedAsMesia,
+    shuffled: true,
+  });
+  readonly Vampire2 = new Boss(this, {
+    flag: this.rom.flags.Vampire2,
+    kill: 0xc,
+    npc: this.rom.npcs.Vampire2,
+    shuffled: true,
+    sword: 1,
+  });
+  readonly Mado1 = new Boss(this, {
+    address: 0x3d820,
+    flag: this.rom.flags.Mado1,
+    kill: 0x5,
+    shuffled: true,
+  });
+  readonly Kelbesque2 = new Boss(this, {
+    flag: this.rom.flags.Kelbesque2,
+    kill: 0x6,
+    npc: this.rom.npcs.Kelbesque2,
+    shuffled: true,
+  });
+  readonly Sabera2 = new Boss(this, {
+    flag: this.rom.flags.Sabera2,
+    kill: 0x7,
+    npc: this.rom.npcs.Sabera2,
+    shuffled: true,
+  });
+  readonly Mado2 = new Boss(this, {
+    flag: this.rom.flags.Mado2,
+    kill: 0x8,
+    npc: this.rom.npcs.Mado2,
+    shuffled: true,
+  });
+  readonly Karmine = new Boss(this, {
+    flag: this.rom.flags.Karmine,
+    kill: 0x9,
+    npc: this.rom.npcs.Karmine,
+    shuffled: true,
+    sword: 2,
+  });
+  readonly Draygon1 = new Boss(this, {
+    flag: this.rom.flags.Draygon1,
+    kill: 0xa,
+    npc: this.rom.npcs.Draygon,
+    shuffled: true,
+    sword: 2,
+  });
+  readonly StatueOfMoon = new Boss(this, {
+    flag: this.rom.flags.UsedBowOfMoon,
+    npc: this.rom.npcs.StatueOfMoon,
+  });
+  readonly StatueOfSun = new Boss(this, {
+    flag: this.rom.flags.UsedBowOfSun,
+    npc: this.rom.npcs.StatueOfSun,
+  });
+  readonly Draygon2 = new Boss(this, {
+    flag: this.rom.flags.Draygon2,
+    kill: 0xb,
+    npc: this.rom.npcs.Draygon,
+  });
+  readonly Dyna = new Boss(this, {
+    // TODO - address? npc?
+    kill: 0xd,
+  });
 
-  private readonly all: Boss[];
+  private readonly all: Boss[] = [];
   private flags?: Set<number>;
 
   constructor(readonly rom: Rom) {
-    this.all = [
-      this.vampire1 = new Boss(this, 'Vampire 1', 0x100, 0xc0, 0x0, true),
-      this.insect = new Boss(this, 'Insect', 0x101, 0xc1, 0x1),
-      this.kelbesque1 = new Boss(this, 'Kelbesque 1', 0x102, 0xc2, 0x2, true).sword(3),
-      this.rage = new Boss(this, 'Rage', 0x103, 0xc3, 0x3),
-      this.sabera1 = new Boss(this, 'Sabera 1', 0x013, 0x84, 0x4, true, 0x3656e).sword(3),
-      this.vampire2 = new Boss(this, 'Vampire 2', 0x10c, 0xcc, 0xc, true),
-      this.mado1 = new Boss(this, 'Mado 1', 0x067, -1, 0x5, true, 0x3d820).sword(3),
-      this.kelbesque2 = new Boss(this, 'Kelbesque 2', 0x105, 0xc5, 0x6, true).sword(3),
-      this.sabera2 = new Boss(this, 'Sabera 2', 0x106, 0xc6, 0x7, true).sword(3),
-      this.mado2 = new Boss(this, 'Mado 2', 0x107, 0xc7, 0x8, true).sword(3),
-      this.karmine = new Boss(this, 'Karmine', 0x108, 0xc8, 0x9, true).sword(2),
-      this.draygon1 = new Boss(this, 'Draygon 1', 0x10b, 0xcb, 0xa).sword(2),
-      this.statueOfMoon = new Boss(this, 'Statue of Moon', 0x109, 0xc9),
-      this.statueOfSun = new Boss(this, 'Statue of Sun', 0x10a, 0xca),
-      // TODO - give Draygon 2 a different NPC id (say, c4?)
-      this.draygon2 = new Boss(this, 'Draygon 2', 0x28d, 0xcb, 0xb).sword(3),
-      this.dyna = new Boss(this, 'Dyna', 0x300, -1, 0xd), // note: flag is a fake
-    ];
+    for (const key in this) {
+      if (!this.hasOwnProperty(key)) continue;
+      const boss = this[key];
+      if (boss instanceof Boss) {
+        (boss as Mutable<Boss>).name = upperCamelToSpaces(key);
+        this.all.push(boss);
+      }
+    }
   }
 
   isBossFlag(flag: number): boolean {
     const flags = this.flags || (this.flags = (() => {
       const f = new Set<number>();
       for (const boss of this.all) {
-        f.add(boss.flag);
+        if (boss.flag != null) f.add(boss.flag.id);
       }
       return f;
     })());
@@ -81,25 +158,29 @@ export class Bosses implements Iterable<Boss> {
 // NOTE: currently this data is read-only.
 export class Boss {
 
-  readonly objectAddress: number;
   // TODO - make object settable?
+  readonly name!: string;
   readonly object: number;
+  readonly flag?: Flag;
+  readonly npc?: Npc;
+  readonly swordLevel: number;
+  readonly shuffled: boolean;
   readonly drop?: number;
+  readonly kill?: number;
   readonly location?: number;
 
   // Only used for logic.
-  swordLevel = 1;
-
   constructor(readonly bosses: Bosses,
-              readonly name: string,
-              readonly flag: number,
-              readonly npc: number,
-              readonly kill?: number,
-              readonly shuffled?: boolean,
-              address?: number) {
-    this.objectAddress = address || (0x80f0 | (npc & 0xfc) << 6 | (npc & 3) << 2 | 1);
-    this.object = bosses.rom.prg[this.objectAddress];
+              {flag, npc, kill, shuffled, address, sword = 3}: BossData) {
     const {prg} = bosses.rom;
+    this.flag = flag;
+    this.npc = npc;
+    this.object =
+        address ? prg[address] : npc ? npc.data[1] :
+        die(`address or npc is required`);
+    this.swordLevel = sword;
+    this.shuffled = Boolean(shuffled);
+    this.kill = kill;
     if (kill != null) {
       const killAddr = 0x14000 + readLittleEndian(prg, 0x1f96b + 2 * kill);
       const drop = prg[killAddr + 4];
@@ -107,9 +188,8 @@ export class Boss {
       this.location = prg[0x1f95d + kill];
     }
   }
+}
 
-  sword(level: number): this {
-    this.swordLevel = level;
-    return this;
-  }
+function die(msg: string): never {
+  throw new Error(msg);
 }

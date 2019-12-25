@@ -1,4 +1,4 @@
-import {Condition} from './condition.js';
+import {Condition} from './requirement.js';
 
 // Slot for an item or flag to get.  Almost the same thing as a single
 // condition, but used in different contexts.

@@ -10,7 +10,7 @@ import {Locations} from './rom/location.js';
 import {Messages} from './rom/messages.js';
 import {Metasprite} from './rom/metasprite.js';
 import {Monster} from './rom/monster.js';
-import {Npc, Npcs} from './rom/npc.js';
+import {Npcs} from './rom/npc.js';
 import {ObjectData} from './rom/objectdata.js';
 import {Objects} from './rom/objects.js';
 import {RomOption} from './rom/option.js';
@@ -170,10 +170,10 @@ export class Rom {
     this.shops = seq(44, i => new Shop(this, i)); // NOTE: depends on locations and objects
     this.npcs = new Npcs(this);
     this.bossKills = seq(0xe, i => new BossKill(this, i));
-    this.bosses = new Bosses(this);
     this.wildWarp = new WildWarp(this);
     this.townWarp = new TownWarp(this);
     this.flags = new Flags(this);
+    this.bosses = new Bosses(this); // NOTE: must be after Npcs and Flags
   }
 
   trigger(id: number): Trigger {

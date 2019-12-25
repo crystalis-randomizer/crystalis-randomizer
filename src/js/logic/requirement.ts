@@ -1,6 +1,8 @@
+import {iters} from '../util.js';
+
 // NOTE: This could be exported into a non-game-specific library.
 
-// A single flag, item, or condition.
+/** A single flag, item, or condition. */
 export type Condition = number & {__condition__: never};
 
 // A DNF expression representing a satisfiable set of conditions.
@@ -19,7 +21,7 @@ export namespace Requirement {
   }
   /** Join a bunch of requirements into a new requirement. */
   export function or(...cs: Requirement[]): Frozen {
-    return ([] as Requirement).concat(...cs.map(freeze));
+    return ([] as Frozen).concat(...cs.map(freeze));
   }
 
   /** Meet a bunch of arbitrary requirements. */
@@ -35,7 +37,8 @@ export namespace Requirement {
 
   /** Freeze an arbitrary requirement into an immutable requirement. */
   export function freeze(r: Requirement): Frozen {
-    return r instanceof Builder ? [...r].map(cs => [...cs]) : r;
+    return r instanceof Builder ?
+        [...iters.map(r, (cs: Iterable<Condition>) => [...cs])] : r as Frozen;
   }
 
   /** Semi-uniquely maps a requirement to a string. */
@@ -43,22 +46,29 @@ export namespace Requirement {
     // NOTE: equivalent frozen requirements may have different labels due to
     // arbitrary ordering.
     return r instanceof Builder ?
-        r.label() : r.map(cs => cs.join('&')).join('|');
+        r.label() :
+        (r as Frozen).map((cs: Iterable<Condition>) =>
+                          (cs as Array<unknown>).join('&')).join('|');
   }
 
   export function isOpen(r: Requirement): boolean {
-    return r.length === 1 && !r[0].length;
+    const outer = r[Symbol.iterator]();
+    const {value, done} = outer.next();
+    if (done || !outer.next().done) return false;
+    const inner = value[Symbol.iterator]();
+    return inner.next().done;
   }
 
   export function isClosed(r: Requirement): boolean {
-    return !r.length;
+    const iter = r[Symbol.iterator]();
+    return !iter.next().done;
   }
 
   /** A requirement that's always met. */
-  export const OPEN: Requirement = [[]];
+  export const OPEN: Frozen = [[]];
 
   /** A requirement that's never met. */
-  export const CLOSED: Requirement = [];
+  export const CLOSED: Frozen = [];
 
   /** Mutable builder class for building up requirements piecemeal. */
   export class Builder implements Requirement {
@@ -89,7 +99,7 @@ export namespace Requirement {
     }
 
     /** Joins a single-route requirement in place. */
-    addList(conditions: readonly Iterable<Condition>): void {
+    addList(conditions: Iterable<Condition>): void {
       const sorted = [...new Set(conditions)].sort();
       const deps = new Set(sorted);
       this.add(sorted.join('&'), deps);

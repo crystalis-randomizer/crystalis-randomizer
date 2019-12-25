@@ -11,6 +11,22 @@
 (setq exec-path (cons (concat (getenv "HOME") "/local/bin") exec-path))
 
 
+(defun sdh-ts-sort-imports ()
+  (interactive)
+  (let ((start (save-excursion (beginning-of-buffer)
+                               (re-search-forward "^import ")
+                               (beginning-of-line)
+                               (point)))
+        (end (save-excursion (end-of-buffer)
+                             (re-search-backward "^import ")
+                             (beginning-of-line)
+                             (next-line)
+                             (point))))
+    (save-excursion
+      (shell-command-on-region start end
+                               (concat sdh-ts-root "/scripts/sort-imports")
+                               nil t))))
+
 ;;; NOTE: UNCOMMENT AND RUN THIS LINE???
 ;;;       May also need to run 'npm i -g typescript-language-server'
 ;;;       and/or add nvm's bin directory to the path
@@ -81,6 +97,7 @@ See URL `https://github.com/palantir/tslint'."
   ;(lsp)
   (setq lsp-javascript-format-insert-space-after-opening-and-before-closing-nonempty-braces nil)
   (define-key typescript-mode-map (kbd "C-c C-e") 'flycheck-display-error-at-point)
+  (define-key typescript-mode-map (kbd "C-c j i") 'sdh-ts-sort-imports)
   ;; Note: these default to 'typescript-insert-and-indent, which is annoying
   (define-key typescript-mode-map (kbd ",") 'self-insert-command)
   (define-key typescript-mode-map (kbd ";") 'self-insert-command)
@@ -103,4 +120,3 @@ See URL `https://github.com/palantir/tslint'."
 
 ;(add-to-list 'flycheck-checkers 'typescript-tsc)
 ;(add-to-list 'flycheck-checkers 'typescript-tslint)
-

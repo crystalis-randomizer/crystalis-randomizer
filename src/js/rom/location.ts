@@ -21,6 +21,7 @@ interface LocationInit {
   music?: Key | ((area: Area) => Key);
   palette?: Key | ((area: Area) => Key);
   bossScreen?: number;
+  fixed?: readonly number[];
 }
 interface LocationData {
   area: Area;
@@ -29,7 +30,7 @@ interface LocationData {
   palette: Key;
   subArea?: string;
   bossScreen?: number;
-  fixed?: number[]; // fixed spawn slots?
+  fixed?: readonly number[]; // fixed spawn slots?
 }
 
 const CAVE = {

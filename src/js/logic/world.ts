@@ -1,15 +1,26 @@
-import {Condition, Requirement} from './requirement.js';
-import {Terrain} from './terrain.js';
-import {TileId} from './tileid.js';
-import {WallType} from './walltype.js';
-import {Location} from '../rom/location.js';
-import {Rom} from '../rom.js';
 import {FlagSet} from '../flagset.js';
-import {hex} from '../util.js';
+import {Rom} from '../rom.js';
+import {Boss} from '../rom/bosses.js';
+import {Flag} from '../rom/flags.js';
+import {Item, ItemUse} from '../rom/item.js';
+import {Location, Spawn} from '../rom/location.js';
+import {LocalDialog, Npc} from '../rom/npc.js';
+import {hex} from '../rom/util.js';
+import {UnionFind} from '../unionfind.js';
+import {DefaultMap} from '../util.js';
+import {Hitbox} from './hitbox.js';
+import {Condition, Requirement} from './requirement.js';
+import {ScreenId} from './screenid.js';
+import {Terrain, Terrains} from './terrain.js';
+import {TileId} from './tileid.js';
+import {TilePair} from './tilepair.js';
+import {WallType} from './walltype.js';
+
+const [] = [hex];
 
 interface Check {
   requirement: Requirement;
-  check: number;
+  checks: number[];
 }
 
 // Mostly dumb data type storing all the information about the world's geometry.
@@ -28,7 +39,7 @@ export class World {
   readonly aliases = new Map<Flag, Flag>();
 
   /** Mapping from itemuse triggers to the itemuse that wants it. */
-  readonly itemUses = new DefaultMap<number, [Item, ItemUseData][]>(() => []);
+  readonly itemUses = new DefaultMap<number, [Item, ItemUse][]>(() => []);
 
   /** Set of all TileIds with exits. */
   readonly allExits = new Set<TileId>();
@@ -70,13 +81,11 @@ export class World {
     this.addExtraChecks();
     // TODO - add capabilities:
     //  * flags.OpenedCrypt = and(flags.BowOfMoon, flags.BowOfSun)
-    //  * 
+    //  *
 
   }
 
-  build(rom: Rom) {
-    
-
+  build() {
   }
 
   addExtraChecks() {
@@ -88,21 +97,23 @@ export class World {
       flags: {
         BowOfMoon,
         BowOfSun,
+        LeadingChild,
         OpenedCrypt,
+        RescuedChild,
       },
     } = this.rom;
     const start = [this.entrance(MezameShrine)];
     const enterOak = [this.entrance(Oak)];
-    this.addCheck(start, [[BowOfMoon.id, BowOfSun.id]], [OpenedCrypt.id]);
-    this.addCheck(enterOak, [[LeadingChild.id]], [RescuedChild.id]);
+    this.addCheck(start, and(BowOfMoon, BowOfSun), [OpenedCrypt.id]);
+    this.addCheck(enterOak, and(LeadingChild), [RescuedChild.id]);
   }
 
-  wallCapability(wall: WallType) {
+  wallCapability(wall: WallType): number {
     switch (wall) {
-    case WallType.WIND: return this.rom.flags.BreakStone;
-    case WallType.FIRE: return this.rom.flags.BreakIce;
-    case WallType.WATER: return this.rom.flags.FormBridge;
-    case WallType.THUNDER: return this.rom.flags.BreakIron;
+    case WallType.WIND: return this.rom.flags.BreakStone.id;
+    case WallType.FIRE: return this.rom.flags.BreakIce.id;
+    case WallType.WATER: return this.rom.flags.FormBridge.id;
+    case WallType.THUNDER: return this.rom.flags.BreakIron.id;
     default: throw new Error(`bad wall type: ${wall}`);
     }
   }
@@ -124,19 +135,19 @@ export class World {
       if (spawn.isWall()) {
         walls.set(ScreenId.from(location, spawn), (spawn.id & 3) as WallType);
       } else if (spawn.isMonster() && spawn.id === 0x3f) { // shooting statues
-        shootingStatues.add(ScreenId.from(locaction, spawn));
+        shootingStatues.add(ScreenId.from(location, spawn));
       }
     }
     const page = location.screenPage;
-    const tileset = rom.tileset(location.tileset);
-    const tileEffects = rom.tileEffects[location.tileEffects - 0xb3];
+    const tileset = this.rom.tileset(location.tileset);
+    const tileEffects = this.rom.tileEffects[location.tileEffects - 0xb3];
     const alwaysTrue = this.rom.flags.AlwaysTrue.id;
 
     const getEffects = (tile: TileId) => {
       const screen =
           location.screens[(tile & 0xf000) >>> 12][(tile & 0xf00) >>> 8] | page;
-      return tileEffects[this.rom.screens[screen].tiles[tile & 0xff]];
-    }
+      return tileEffects.effects[this.rom.screens[screen].tiles[tile & 0xff]];
+    };
 
     // Returns undefined if impassable.
     const makeTerrain = (effects: number, tile: TileId, barrier: boolean) => {
@@ -145,7 +156,7 @@ export class World {
       if (location.id === 0x1a) effects |= Terrain.SWAMP;
       if (location.id === 0x60 || location.id === 0x68) {
         effects |= Terrain.DOLPHIN;
-      }
+       }
       // NOTE: only the top half-screen in underground channel is dolphinable
       if (location.id === 0x64 && ((tile & 0xf0f0) < 0x90)) {
         effects |= Terrain.DOLPHIN;
@@ -172,20 +183,20 @@ export class World {
         }
       }
       return this.terrainFactory.tile(effects);
-    }
+    };
 
     for (let y = 0, height = location.height; y < height; y++) {
       const row = location.screens[y];
       const rowId = location.id << 8 | y << 4;
       for (let x = 0, width = location.width; x < width; x++) {
-        const screen = rom.screens[row[x] | page];
+        const screen = this.rom.screens[row[x] | page];
         const screenId = ScreenId(rowId | x);
         const barrier = shootingStatues.has(screenId);
         const flagYx = screenId & 0xff;
         const wall = walls.get(screenId);
         const flag =
             wall != null ?
-                wallCapability(wall) :
+                this.wallCapability(wall) :
                 location.flags.find(f => f.yx === flagYx)?.flag;
         for (let t = 0; t < 0xf0; t++) {
           const tid = TileId(screenId << 8 | t);
@@ -196,13 +207,16 @@ export class World {
           }
           const effects =
               location.isShop() ? 0 : tileEffects.effects[tile] & 0x26;
-          let terrain = this.makeTerrain(effects, tid, barrier);
-          if (tile < 0x20 && tileset.alternates[tile] != tile &&
+          let terrain = makeTerrain(effects, tid, barrier);
+          if (!terrain) throw new Error(`bad terrain for alternate`);
+          if (tile < 0x20 && tileset.alternates[tile] !== tile &&
               flag !== alwaysTrue) {
             const alternate =
-                this.makeTerrain(tileEffects.effects[tileset.alternates[tile]],
+                makeTerrain(tileEffects.effects[tileset.alternates[tile]],
                                  tid, barrier);
-            terrain = this.terrainFactory.flag(terrain, alternate);
+            if (!alternate) throw new Error(`bad terrain for alternate`);
+            if (flag == null) throw new Error(`missing flag`);
+            terrain = this.terrainFactory.flag(terrain, flag, alternate);
           }
           if (terrain) this.terrains.set(tid, terrain);
         }
@@ -213,7 +227,7 @@ export class World {
     for (const exit of location.exits) {
       if (exit.entrance & 0x20) {
         const tile = TileId.from(location, exit);
-        allExits.add(tile);
+        this.allExits.add(tile);
         const previous = this.terrains.get(tile);
         if (previous) {
           this.terrains.set(tile, this.terrainFactory.seamless(previous));
@@ -260,7 +274,6 @@ export class World {
 
     // TODO - consider checking trigger's action: $19 -> push-down message
 
-
     // TODO - pull out this.recordTriggerTerrain() and this.recordTriggerCheck()
     const trigger = this.rom.trigger(spawn.id);
     if (!trigger) throw new Error(`Missing trigger ${spawn.id.toString(16)}`);
@@ -278,14 +291,21 @@ export class World {
         checks.push(f.id);
       }
     }
-    if (checks.length) this.Check(hitbox, requirement, checks);
+    if (checks.length) this.addCheck(hitbox, requirements, checks);
 
     switch (trigger.message.action) {
     case 0x19:
       // push-down trigger
-      if (trigger.id === 0x86 && !this.flags.assumeRabbitSkip()) {
+      if (trigger.id === 0x86 && !this.flagset.assumeRabbitSkip()) {
         // bigger hitbox to not find the path through
         hitbox = Hitbox.adjust(hitbox, [0, -16], [0, 16]);
+      } else if (trigger.id === 0xba &&
+                 !this.flagset.assumeTeleportSkip() &&
+                 !this.flagset.disableTeleportSkip()) {
+        // copy the teleport hitbox into the other side of cordel
+        hitbox = Hitbox.atLocation(hitbox,
+                                   this.rom.locations.CordelPlainEast,
+                                   this.rom.locations.CordelPlainWest);
       }
       this.addTerrain(hitbox, this.terrainFactory.statue(antiRequirements));
       break;
@@ -293,14 +313,15 @@ export class World {
     case 0x1d:
       // start mado 1 boss fight
       {
-        const req = Requirement.meet(requirements, bossRequirements(2, 3));
+        const req = Requirement.meet(requirements,
+                                     this.bossRequirements(this.rom.bosses.Mado1));
         this.addCheck(hitbox, req, [this.rom.flags.Mado1.id]);
       }
       break;
 
     case 0x08: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f:
       // find itemgrant for trigger ID => add check
-      this.addItemGrantCheck(hitbox, requirements, trigger.id);
+      this.addItemGrantChecks(hitbox, requirements, trigger.id);
       break;
 
     case 0x18:
@@ -309,7 +330,7 @@ export class World {
         // Special case: warp boots glitch required if charge shots only.
         const req =
             this.flagset.chargeShotsOnly() ?
-                Requirement.meet(requirements, this.rom.flags.WarpBoots) :
+                Requirement.meet(requirements, and(this.rom.flags.WarpBoots)) :
                 requirements;
         this.addCheck(hitbox, req, [this.rom.flags.StomFightReward.id]);
       }
@@ -341,9 +362,13 @@ export class World {
 
     const tile = TileId.from(location, spawn);
 
+    // NOTE: Rage has no walkable neighbors, and we need the same hitbox
+    // for both the terrain and the check
+    let hitbox: Hitbox =
+        [this.terrains.has(tile) ? tile : this.walkableNeighbor(tile) ?? tile];
     if ((npc.data[2] & 0x04) && !this.flagset.assumeStatueGlitch()) {
-      let hitbox = [tile];
-      let req = this.filterAntiRequirements(spawnConditions);
+      let antiReq;
+      antiReq = this.filterAntiRequirements(spawnConditions);
       if (npc === this.rom.npcs.Rage) {
         // TODO - move hitbox down, change requirement?
         hitbox = Hitbox.adjust(hitbox, [2, -1], [2, 0], [2, 1], [2, 2]);
@@ -351,16 +376,11 @@ export class World {
         // TODO - check if this works?  the ~check spawn condition should
         // allow passing if gotten the check, which is the same as gotten
         // the correct sword.
-        if (opts.assumeRageSkip()) req = undefined;
+        if (this.flagset.assumeRageSkip()) antiReq = undefined;
       }
       // if spawn is always false then req needs to be open?
-      if (req) this.addTerrain(hitbox, this.terrainFactory.statue(req));
+      if (antiReq) this.addTerrain(hitbox, this.terrainFactory.statue(antiReq));
     }
-
-    let hitbox =
-        [this.terrains.has(tile) ? tile : this.walkableNeighbor(tile)];
-    if (!hitbox[0]) throw new Error(`Unreachable NPC: ${hex(npc.id)}`);
-    if (npc === this.rom.npcs.Rage) { // rage needs to move to entrance
 
     // req is now mutable
     const [[...req]] = this.filterRequirements(spawnConditions); // single
@@ -382,7 +402,7 @@ export class World {
       if (f0?.logic.track) {
         r.push(f0.id as Condition);
       }
-      this.processDialog(hitbox, location, npc, r, d);
+      this.processDialog(hitbox, npc, r, d);
       // Add any new conditions to 'req' to get beyond this message.
       const f1 = this.flag(~d.condition);
       if (f1?.logic.track) {
@@ -391,9 +411,9 @@ export class World {
     }
   }
 
-  processDialog(hitbox: Hitbox, location: Location, npc: Npc,
+  processDialog(hitbox: Hitbox, npc: Npc,
                 req: readonly Condition[], dialog: LocalDialog) {
-    this.addCheckFromFlags(hitbox, requirement, dialog.flags);
+    this.addCheckFromFlags(hitbox, [req], dialog.flags);
 
     const checks = [];
     switch (dialog.message.action) {
@@ -440,11 +460,11 @@ export class World {
 
     // TODO - add extra dialogs for itemuse trades, extra triggers
     //      - if item traded but no reward, then re-give reward...
-    if (checks.length) this.addCheck(hitbox, requirement, checks);
+    if (checks.length) this.addCheck(hitbox, [req], checks);
   }
 
   processLocationItemUses(location: Location) {
-    for (const [item, use] of this.itemUseTriggers.get(~location.id)) {
+    for (const [item, use] of this.itemUses.get(~location.id)) {
       this.processItemUse([this.entrance(location)], item, use);
     }
   }
@@ -468,7 +488,7 @@ export class World {
 
   addCheck(hitbox: Hitbox, requirement: Requirement, checks: number[]) {
     if (Requirement.isClosed(requirement)) return; // do nothing if unreachable
-    const check = {requirements, checks};
+    const check = {requirement, checks};
     for (const tile of hitbox) {
       if (!this.terrains.has(tile)) continue;
       this.checks.get(tile).add(check);
@@ -477,7 +497,7 @@ export class World {
 
   addCheckFromFlags(hitbox: Hitbox, requirement: Requirement, flags: number[]) {
     const checks = [];
-    for (const flag of dialog.flags) {
+    for (const flag of flags) {
       const f = this.flag(flag);
       if (f?.logic.track) {
         checks.push(f.id);
@@ -496,16 +516,15 @@ export class World {
     // guard is paralyzable but the geometry prevents the player from actually
     // hitting them before they move, but it doesn't happen in practice.
     if (this.flagset.assumeStatueGlitch()) return;
-    const extra = [];
+    const extra: Condition[][] = [];
     for (const spawn of location.spawns.slice(0, 2)) {
       if (spawn.isNpc() && this.rom.npcs[spawn.id].isParalyzable()) {
-        extra.push([this.rom.flags.Paralysis.id]);
+        extra.push([this.rom.flags.Paralysis.id as Condition]);
         break;
       }
     }
     this.addTerrain(hitbox, this.terrainFactory.statue([...req, ...extra]));
   }
-
 
   handleBoat(tile: TileId, location: Location, requirements: Requirement) {
     // board boat - this amounts to adding a route edge from the tile
@@ -529,14 +548,14 @@ export class World {
       t = TileId.add(t, 0, -1);
       const t1 = this.walkableNeighbor(tile);
       if (t1 != null) {
-        this.connect(this.walkableNeighbor(tile), t1, requirements);
+        this.connect(t0, t1, requirements);
         return;
       }
     }
   }
 
-  connect(t0: TileId, t1: TileId, req: Requirements) {
-    // TODO
+  connect(_t0: TileId, _t1: TileId, _req: Requirement) {
+    // TODO - implement!
   }
 
   walkableNeighbor(t: TileId): TileId|undefined {
@@ -554,10 +573,23 @@ export class World {
     return !(this.getEffects(t) & Terrain.BITS);
   }
 
-  processBoss(location: Location, spawn: Spawn) {
+  ensurePassable(t: TileId): TileId {
+    return this.isWalkable(t) ? t : this.walkableNeighbor(t) ?? t;
+  }
+
+  getEffects(t: TileId): number {
+    const location = this.rom.locations[t >>> 16];
+    const page = location.screenPage;
+    const effects = this.rom.tileEffects[location.tileEffects - 0xb3].effects;
+    const scr = location.screens[(t & 0xf000) >>> 12][(t & 0xf00) >>> 8] | page;
+    return effects[this.rom.screens[scr].tiles[t & 0xff]];
+  }
+
+  processBoss(_location: Location, _spawn: Spawn) {
         // Bosses will clobber the entrance portion of all tiles on the screen,
         // and will also add their drop.
-        bosses.set(TileId.from(location, spawn), spawn.id);
+
+    // bosses.set(TileId.from(location, spawn), spawn.id);
   }
 
   processChest(location: Location, spawn: Spawn) {
@@ -567,52 +599,52 @@ export class World {
                   [0x100 | spawn.id]);
   }
 
-  processMonster(location: Location, spawn: Spawn) {
+  processMonster(_location: Location, _spawn: Spawn) {
         // TODO - compute money-dropping monster vulnerabilities and add a trigger
         // for the MONEY capability dependent on any of the swords.
-        const monster = rom.objects[spawn.monsterId];
-        if (monster.goldDrop) monsters.set(TileId.from(location, spawn), monster.elements);
+    // const monster = rom.objects[spawn.monsterId];
+    // if (monster.goldDrop) monsters.set(TileId.from(location, spawn), monster.elements);
   }
 
   processItemUse(hitbox: Hitbox, item: Item, use: ItemUse) {
     // this should handle most trade-ins automatically
-    hitbox = new Set([...hitbox].map(t => this.walkableNeighbor(t)));
-    const req = [[0x200 | item.id]]; // requires the item.
+    hitbox = new Set([...hitbox].map(t => this.walkableNeighbor(t) ?? t));
+    const req = [[(0x200 | item.id) as Condition]]; // requires the item.
     // set any flags
     this.addCheckFromFlags(hitbox, req, use.flags);
     // handle any extra actions
     switch (use.message.action) {
     case 0x10:
       // use key
-      processKeyUse(hitbox, req);
+      this.processKeyUse(hitbox, req);
       break;
     case 0x08: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f:
       // find itemgrant for item ID => add check
-      this.addItemGrantCheck(hitbox, req, item.id);
+      this.addItemGrantChecks(hitbox, req, item.id);
       break;
     }
   }
 
-  processKeyUse(hitbox: Hitbox, item: Item) {
+  processKeyUse(hitbox: Hitbox, req: Requirement) {
     // set the current screen's flag if the conditions are met...
     // make sure there's only a single screen.
-    const [screen, ...rest] = new Set([...hitbox].map(ScreenId.from));
+    const [screen, ...rest] = new Set([...hitbox].map(t => ScreenId.from(t)));
     if (screen == null || rest.length) throw new Error(`Expected one screen`);
     const location = this.rom.locations[screen >>> 8];
-    const flag = location.flags.find(f => f.screen === screen & 0xff);
+    const flag = location.flags.find(f => f.screen === (screen & 0xff));
     if (flag == null) throw new Error(`Expected flag on screen`);
-    this.addCheck(hitbox, [[0x200 | item.id]], [flag]);    
+    this.addCheck(hitbox, req, [flag.flag]);
   }
 
   itemGrant(id: number): number {
     for (let i = 0x3d6d5; this.rom.prg[i] !== 0xff; i += 2) {
       if (this.rom.prg[i] === id) return this.rom.prg[i + 1];
     }
-    throw new Error(`Could not find item grant ${i.toString(16)}`);
+    throw new Error(`Could not find item grant ${id.toString(16)}`);
   }
 
   /** Return a Requirement for all of the flags being met. */
-  filterRequirements(flags: number[]): Requirement.Single {
+  filterRequirements(flags: number[]): Requirement.Frozen {
     const conds = [];
     for (const flag of flags) {
       if (flag < 0) {
@@ -621,7 +653,7 @@ export class World {
       } else {
         const logic = this.flag(flag)?.logic;
         if (logic?.assumeFalse) return Requirement.CLOSED;
-        if (logic?.track) conds.push([flag as Condition]);
+        if (logic?.track) conds.push(flag as Condition);
       }
     }
     return [conds];    
@@ -651,10 +683,20 @@ export class World {
   entrance(location: Location, index = 0): TileId {
     return TileId.from(location, location.entrances[index]);
   }
+
+  bossRequirements(_boss: Boss): Requirement {
+    throw new Error(`unimplemented`);
+  }
 }
 
+function and(...flags: Flag[]): Requirement.Single {
+  return [flags.map((f: Flag) => f.id as Condition)];
+}
 
-
+function or(...flags: Flag[]): Requirement.Frozen {
+  return flags.map((f: Flag) => [f.id as Condition]);
+}
+const [] = [or];
 
 
 // An interesting way to track terrain combinations is with primes.

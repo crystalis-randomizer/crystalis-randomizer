@@ -1,0 +1,27 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+# Only need to deal with import content (emacs already filtered out the rest).
+
+# Slurp stdin
+my @lines = <>;
+$_ = join '', @lines;
+
+# Remove extraneous newlines
+s/\n(?!import)/\\n/g;
+
+# Index lines by file
+my %imports = ();
+for (split /(?=\n)/) {
+  /'([^']*)';/ or die "bad import line: $_";
+  $imports{"$1$_"} = $_;
+}
+
+# Print sorted indexed lines
+for (sort keys %imports) {
+  $_ = $imports{$_};
+  s/\\n/\n/g;
+  print;
+}

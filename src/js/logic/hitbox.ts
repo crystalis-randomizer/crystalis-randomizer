@@ -41,7 +41,7 @@ export namespace Hitbox {
   }
 
   export function adjust(h: Hitbox, ...deltas: Delta[]): Hitbox {
-    const s = new Set();
+    const s = new Set<TileId>();
     const ts = [...h];
     for (const [dy, dx] of deltas) {
       for (const t of ts) {
@@ -50,6 +50,18 @@ export namespace Hitbox {
     }
     return s;
   }
+
+  export function atLocation(h: Hitbox, ...locations: Location[]): Hitbox {
+    const s = new Set<TileId>();
+    const ts = [...h];
+    for (const location of locations) {
+      for (const t of ts) {
+        s.add((t & 0xffff | location.id << 16) as TileId);
+      }
+    }
+    return s;
+  }
+
   type Delta = readonly [number, number];
 }
 

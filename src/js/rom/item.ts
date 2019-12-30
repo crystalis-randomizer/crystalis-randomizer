@@ -51,6 +51,9 @@ export class Item extends Entity {
   trades: number[];
   use: boolean;
 
+  // Weight for shuffling - higher numbers will be placed earlier.
+  weight: number;
+
   constructor(items: Items, id: number, opts: ItemOptions = {}) {
     super(items.rom, id);
     const rom = this.rom;

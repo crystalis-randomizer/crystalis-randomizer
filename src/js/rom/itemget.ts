@@ -94,6 +94,10 @@ export class ItemGet extends Entity {
     }
   }
 
+  isLosable(): boolean {
+    return LOSABLE_ROWS.has(this.inventoryRowStart);
+  }
+
   copyFrom(that: ItemGet) {
     this.inventoryRowStart = that.inventoryRowStart;
     this.inventoryRowLength = that.inventoryRowLength;
@@ -116,3 +120,5 @@ export class ItemGet extends Entity {
     writeLittleEndian(writer.rom, this.tablePointer, address - 0x14000);
   }
 }
+
+const LOSABLE_ROWS = new Set([4, 8, 16]);

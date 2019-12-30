@@ -1,7 +1,7 @@
-import {Location, Spawn} from "./location.js";
-import {seq} from "./util.js";
-import {iters} from "../util.js";
-import {Random} from "../random.js";
+import {Random} from '../random.js';
+import {iters} from '../util.js';
+import {Location, Spawn} from './location.js';
+import {seq} from './util.js';
 
 // Constraint for pattern and palette pages.
 // Allows multiple possibilities, and a callback when one is picked.
@@ -26,7 +26,7 @@ const ALL: CSet = {
   get size() { return Infinity; },
   has() { return true; },
   [Symbol.iterator]() { throw new Error('cannot iterate'); },
-}
+};
 
 class Bit implements CSet {
   constructor(readonly bit: number) {}
@@ -85,7 +85,7 @@ namespace CSet {
 //       if (that.allowed.has(x)) out.add(x);
 //     }
 //     return new ConstraintSet(out);
-//   }    
+//   }
 //   union(that: ConstraintSet): ConstraintSet {
 //     if (!this.allowed) return this;
 //     if (!that.allowed) return that;
@@ -168,12 +168,12 @@ export class Constraint {
     case 0x03: // valley of wind (windmill blades)
       // TODO - pattern bank is shiftable, but need to link to spawn 3,e0
       return new Constraint([ALL, bit(0x60), ALL, bit(0x20)], [], 0);
-    //case 0x1a: // swamp (child)
+    // case 0x1a: // swamp (child)
     //  return new Constraint([ALL, bit(0x4f), ALL, bit(0x23)], []);
     case 0x60: // angry sea (dolphin)
     case 0x64: // underground channel
     case 0x68: // ESI entrance
-      return new Constraint([ALL, bit(0x52), ALL,bit(0x08)], [], 0);
+      return new Constraint([ALL, bit(0x52), ALL, bit(0x08)], [], 0);
     }
     return Constraint.ALL;
   }
@@ -181,7 +181,7 @@ export class Constraint {
   // NOTE: Static spawns may be shiftable; ad-hoc spawns are not.
   static fromSpawn(palettes: Set<number>,
                    patterns: Set<number>,
-                   location: Location, 
+                   location: Location,
                    spawn: Spawn,
                    shiftable: boolean): Constraint {
     const [firstPattern, ...rest] = patterns;
@@ -208,7 +208,7 @@ export class Constraint {
       if (fixed[i] === ALL) continue;
       const size = Math.floor(5 - Math.log2(random.nextInt(15) + 2));
       const out = fixed[i] = new Set<number>();
-      for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size; j++) {
         out.add(random.pick(usedPalettes));
       }
     }
@@ -224,7 +224,7 @@ export class Constraint {
   // end up with a two-element set for its palette.
   join(that: Constraint): Constraint {
     const fixed = seq(4, i => CSet.union(this.fixed[i], that.fixed[i]));
-    if (this.float.length != that.float.length) {
+    if (this.float.length !== that.float.length) {
       console.dir(this); console.dir(that);
       throw new Error(`incompatible float: ${this.float} ${that.float}`);
     }
@@ -369,7 +369,7 @@ export class Constraint {
     // let patY = undefined;
 
     // // Instead - list of floating patterns?
-    // // 
+    // //
 
     // if (this.patX && that.patX) {
     //   // is there any overlap?

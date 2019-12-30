@@ -167,30 +167,30 @@ DisplayNumber:
 
 .bank $1c000 $8000:$4000
 
-.ifdef _BUFF_DYNA
-.ifdef _REMOVE_MAGIC_FOR_DYNA
-;;; Patch ItemGet_Crystalis to remove magics, too
-.org $1c2b7
+;; .ifdef _BUFF_DYNA
+;; .ifdef _REMOVE_MAGIC_FOR_DYNA
+;; ;;; Patch ItemGet_Crystalis to remove magics, too
+;; .org $1c2b7
 
-  ldx #$03
--  lda #$ff
-   sta $6430,x
-   sta $643c,x
-   sta $6458,x
-   sta $645c,x
-   dex
-  bpl -
-  lda #$04
-  sta $6430
-  lda #$05
-  sta $0711
-  lda #$00
-  sta $0712
-  rts
+;;   ldx #$03
+;; -  lda #$ff
+;;    sta $6430,x
+;;    sta $643c,x
+;;    sta $6458,x
+;;    sta $645c,x
+;;    dex
+;;   bpl -
+;;   lda #$04
+;;   sta $6430
+;;   lda #$05
+;;   sta $0711
+;;   lda #$00
+;;   sta $0712
+;;   rts
 
-.assert < $1c2dd
-.endif
-.endif
+;; .assert < $1c2dd
+;; .endif
+;; .endif
 
 
 ;;; Patch the end of ItemUse to check for a few more items.
@@ -419,6 +419,13 @@ CheckBelowBoss:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+;; Replace ItemGet with an extra indirection
+.org $1c26f
+  jsr PatchStartItemGet
+
+.org $1c285
+  nop ; don't update $29, it was already written in PatchStartItemGet...
+  nop
 
 ;; Patches to ItemGet to update the dedicated flag and
 ;; leave room for calling the difficulty methods
@@ -454,8 +461,67 @@ ItemGet_PickSlotAndAdd:  ; move this up a few bytes
 .endif
 
 .org $1dc82
+
+CheckToItemMap:
+  .byte $00,$01,$02,$03,$04,$05,$06,$07,$08,$09,$0a,$0b,$0c,$0d,$0e,$0f
+  .byte $10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$1a,$1b,$1c,$1d,$1e,$1f
+  .byte $20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$2a,$2b,$2c,$2d,$2e,$2f
+  .byte $30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$3a,$3b,$3c,$3d,$3e,$3f
+  .byte $40,$41,$42,$43,$44,$45,$46,$47,$48,$49,$4a,$4b,$4c,$4d,$4e,$4f
+  .byte $50,$51,$52,$53,$54,$55,$56,$57,$58,$59,$5a,$5b,$5c,$5d,$5e,$5f
+  .byte $60,$61,$62,$63,$64,$65,$66,$67,$68,$69,$6a,$6b,$6c,$6d,$6e,$6f
+  .byte $70,$71,$72,$73,$74,$75,$76,$77,$78,$79,$7a,$7b,$7c,$7d,$7e,$7f
+
+PatchStartItemGet:
+  lda $23
+  sta $61fe
+  tax
+  lda CheckToItemMap,x
+  tay
+  cmp #$70
+  bcs +
+   ;; spawn mimic instead - need to back out of 3 layers of calls
+   ;; TODO - keep track of which mimic so we can set the flag?
+   pla
+   pla
+   pla
+   pla
+   pla
+   pla
+   jmp $d3da  ; SpawnMimic
++ cmp #$49
+  bcs +
+   lda $9d66,y
++ sta $29
+  rts
+
 ;; Freed from the chest spawn pointer table
-.org $1dd64
+;;   - TODO - could free up to 1ddaf, which would give 256 bytes
+;;            but we need to only look up table if id > $49
+.assert < $1ddaf
+
+.org $3d3f7
+  .byte $07 ; skip the nops
+.org $3d3fb
+  nop ; just in case there's another entry into here
+  nop
+  nop
+  nop
+
+;; Fix dialog to work with us...
+.org $3d404
+  lda $62 ; the actual item gained (or tried to gain)
+  sta $07dc
+  lda $23
+  bmi ++ ; patched version of this message tells what was in chest
+  bpl +
+  ;; skip these bytes
+.assert < $3d41c
+.org $3d41c ; Show actual message of what you got
++:
+.org $3d47c ; HandleTreasureChest_TooManyItems
+++:
+
 
 ;; Freed from the chest spawn data
 .org $1e106
@@ -497,15 +563,22 @@ ItemGetFollowup:
     inc Difficulty
     jsr ItemGetRedisplayDifficulty
    ;; Always set the dedicated 200+chest flag.
-+ lda #$42
-  sta $61
-  ;; $62 is already the item number, saved from earlier
-  lda #$61
-  sta $24
-  lda #$00
-  sta $25
-  tay
-  jmp SetOrClearFlagsFromBytePair_24y
++:
+  ;; lda #$42
+  ;; sta $61
+  ;; ;; $62 is already the item number, saved from earlier
+  ;; lda #$61
+  ;; sta $24
+  ;; lda #$00
+  ;; sta $25
+  ;; tay
+  ;; jmp SetOrClearFlagsFromBytePair_24y
+  ldy #$02
+  lda $62
+  jsr SetFlagYA
+  ldy #$01
+  lda $61fe
+  jmp SetFlagYA
 
 ItemGet_FindOpenSlotWithOverflow:
   tay ; copied from 1c2a8
@@ -1994,6 +2067,25 @@ UpdatePlayerStatusAndDolphinFlag:
 + lda #$bf
   and $648d
   sta $648d
+  rts
+
+SetFlagYA:
+;;; 27 bytes - we can probably improve this?
+  pha
+   sty $24
+   lsr $24
+   ror
+   lsr $24
+   ror
+   lsr
+   sta $24
+  pla
+  and $#07
+  tay
+  lda PowersOfTwo,y
+  ldy $24
+  ora $6480,y
+  sta $6480,y
   rts
 
 ;;;  FREE SPACE

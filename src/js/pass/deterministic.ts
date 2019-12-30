@@ -77,6 +77,8 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   fixReverseWalls(rom);
   if (flags.chargeShotsOnly()) disableStabs(rom);
   if (flags.orbsOptional()) orbsOptional(rom);
+
+  patchTooManyItemsMessage(rom);
 }
 
 // Adds a trigger action to mezame.  Use 87 leftover from rescuing zebu.
@@ -543,6 +545,10 @@ const eastCave = (rom: Rom) => {
   // Think aobut exits and entrances...?
   console.log(rom, screens1, screens2);
 };
+
+function patchTooManyItemsMessage(rom: Rom) {
+  rom.messages.parts[0x20][0x0f].text += '\nItem: [:ITEM:]';
+}
 
 function addZombieWarp(rom: Rom) {
   // Make space for the new flag between Joel and Swan

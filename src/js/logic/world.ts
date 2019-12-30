@@ -7,14 +7,17 @@ import {Location, Spawn} from '../rom/location.js';
 import {LocalDialog, Npc} from '../rom/npc.js';
 import {hex} from '../rom/util.js';
 import {UnionFind} from '../unionfind.js';
-import {DefaultMap} from '../util.js';
+import {DefaultMap, LabeledSet} from '../util.js';
+import {Dir} from './dir.js';
+import {ItemInfo, LocationList, SlotInfo} from './graph.js';
 import {Hitbox} from './hitbox.js';
-import {Condition, Requirement} from './requirement.js';
+import {Condition, Requirement, Route} from './requirement.js';
 import {ScreenId} from './screenid.js';
 import {Terrain, Terrains} from './terrain.js';
 import {TileId} from './tileid.js';
 import {TilePair} from './tilepair.js';
 import {WallType} from './walltype.js';
+import { Slot } from '../nodes.js';
 
 const [] = [hex];
 
@@ -23,8 +26,18 @@ interface Check {
   checks: number[];
 }
 
-// Mostly dumb data type storing all the information about the world's geometry.
+// Basic algorithm:
+//  1. fill terrains from maps
+//  2. modify terrains based on npcs, triggers, bosses, etc
+//  2. fill allExits
+//  3. start unionfind
+//  4. fill ...?
+
+/** Stores all the relevant information about the world's logic. */
 export class World {
+
+  /** Whether we're building the world for the tracker. */
+  readonly tracker = false;
 
   /** Builds and caches Terrain objects. */
   readonly terrainFactory = new Terrains(this.rom);
@@ -35,17 +48,25 @@ export class World {
   /** Checks mapped by TileId. */
   readonly checks = new DefaultMap<TileId, Set<Check>>(() => new Set());
 
+  /** Slot info, built up as we discover slots. */
+  readonly slots = new Map<number, SlotInfo>();
+
   /** Flags that should be treated as direct aliases for logic. */
-  readonly aliases = new Map<Flag, Flag>();
+  readonly aliases: Map<Flag, Flag>;
 
   /** Mapping from itemuse triggers to the itemuse that wants it. */
   readonly itemUses = new DefaultMap<number, [Item, ItemUse][]>(() => []);
 
-  /** Set of all TileIds with exits. */
-  readonly allExits = new Set<TileId>();
-
   /** Mapping from exits to entrances. */
   readonly exitSet = new Set<TilePair>();
+
+  /**
+   * Set of TileIds with seamless exits.  This is used to ensure the
+   * logic understands that the player can't walk across an exit tile
+   * without changing locations (primarily for disabling teleport
+   * skip).
+   */
+  readonly seamlessExits = new Set<TileId>();
 
   /**
    * Unionfind of connected components of tiles.  Note that all the
@@ -56,8 +77,30 @@ export class World {
    */
   readonly tiles = new UnionFind<TileId>();
 
+  /**
+   * Map of TilePairs of canonical unionfind representative TileIds to
+   * a bitset of neighbor directions.  We only need to worry about
+   * representative elements because all TileIds have the same terrain.
+   * We will add a route for each direction with unique requirements.
+   */
+  readonly neighbors = new DefaultMap<TilePair, number(() => 0);
+
+  /** Requirement builder for reaching each canonical TileId. */
+  readonly routes =
+      new DefaultMap<TileId, Requirement.Builder>(
+          () => new Requirement.Builder());
+
+  /** Routes originating from each canonical tile. */
+  readonly routeEdges =
+      new DefaultMap<TileId, LabeledSet<Route>>(() => new LabeledSet());
+
+  /** Location list: this is the result of combining routes with checks. */
+  readonly requirementMap =
+      new DefaultMap<Condition, Requirement.Builder>(
+          () => new Requirement.Builder());
+
   constructor(readonly rom: Rom, readonly flagset: FlagSet) {
-    // build itemUseTriggers
+    // Build itemUses
     for (const item of rom.items) {
       for (const use of item.itemUseData) {
         if (use.kind === 'expect') {
@@ -67,63 +110,397 @@ export class World {
         }
       }
     }
-    // build aliases
-    this.aliases.set(rom.flags.ChangeAkahana, rom.flags.Change);
-    this.aliases.set(rom.flags.ChangeSoldier, rom.flags.Change);
-    this.aliases.set(rom.flags.ChangeStom, rom.flags.Change);
-    this.aliases.set(rom.flags.ChangeWoman, rom.flags.Change);
-    this.aliases.set(rom.flags.ParalyzedKensuInDanceHall, rom.flags.Paralysis);
-    this.aliases.set(rom.flags.ParalyzedKensuInTavern, rom.flags.Paralysis);
-    // iterate over locations to build up information.
+    // Build aliases
+    this.aliases = new Map([
+      [rom.flags.ChangeAkahana, rom.flags.Change],
+      [rom.flags.ChangeSoldier, rom.flags.Change],
+      [rom.flags.ChangeStom, rom.flags.Change],
+      [rom.flags.ChangeWoman, rom.flags.Change],
+      [rom.flags.ParalyzedKensuInDanceHall, rom.flags.Paralysis],
+      [rom.flags.ParalyzedKensuInTavern, rom.flags.Paralysis],
+    ]);
+    // Iterate over locations to build up info about tiles, terrains, checks.
     for (const location of rom.locations) {
       this.processLocation(location);
     }
     this.addExtraChecks();
-    // TODO - add capabilities:
-    //  * flags.OpenedCrypt = and(flags.BowOfMoon, flags.BowOfSun)
-    //  *
 
+    // Build up the UnionFind and the exits and neighbors structures.
+    this.unionNeighbors();
+    this.recordExits();
+    this.buildNeighbors();
+
+    // Build the routes/edges.
+    this.addAllRoutes();
+
+    // Build the location list.
+    this.consolidateChecks();
+    this.buildRequirementMap();
   }
 
-  build() {
-  }
-
+  /** Adds checks that are not detectable from data tables. */
   addExtraChecks() {
     const {
       locations: {
+        LeafToolShop,
         MezameShrine,
         Oak,
+        ShyronToolShop,
       },
       flags: {
-        BowOfMoon,
-        BowOfSun,
-        LeadingChild,
+        AbleToRideDolphin,
+        BallOfFire, BallOfThunder, BallOfWater, BallOfWind,
+        Barrier, BlizzardBracelet, BowOfMoon, BowOfSun,
+        BreakStone, BreakIce, BreakIron,
+        BrokenStatue, BuyHealing, BuyWarp,
+        ClimbWaterfall, ClimbSlope8, ClimbSlope9,
+        Flight, FlameBracelet, FormBridge
+        GasMask, GlowingLamp,
+        LeadingChild, LeatherBoots,
+        Money,
         OpenedCrypt,
-        RescuedChild,
+        RabbitBoots, RepairedStatue, RescuedChild,
+        ShootingStatue, StormBracelet, Sword, SwordOfFire, SwordOfThunder,
+        SwordOfWater, SwordOfWind,
+        TornadoBracelet, TravelSwamp,
+      },
+      items: {
+        MedicalHerb,
+        WarpBoots,
       },
     } = this.rom;
-    const start = [this.entrance(MezameShrine)];
-    const enterOak = [this.entrance(Oak)];
-    this.addCheck(start, and(BowOfMoon, BowOfSun), [OpenedCrypt.id]);
-    this.addCheck(enterOak, and(LeadingChild), [RescuedChild.id]);
-  }
+    const start = this.entrance(MezameShrine);
+    const enterOak = this.entrance(Oak);
+    this.addCheck([start], and(BowOfMoon, BowOfSun), [OpenedCrypt.id]);
+    this.addCheck([enterOak], and(LeadingChild), [RescuedChild.id]);
+    this.addItemCheck([start], and(GlowingLamp, BrokenStatue],
+                      RepairedStatue.id, {lossy: true, unique: true});
 
-  wallCapability(wall: WallType): number {
-    switch (wall) {
-    case WallType.WIND: return this.rom.flags.BreakStone.id;
-    case WallType.FIRE: return this.rom.flags.BreakIce.id;
-    case WallType.WATER: return this.rom.flags.FormBridge.id;
-    case WallType.THUNDER: return this.rom.flags.BreakIron.id;
-    default: throw new Error(`bad wall type: ${wall}`);
+    // Add shops
+    for (const shop of this.rom.shops) {
+      // leaf and shyron may not always be accessible, so don't rely on them.
+      if (shop.location === LeafToolShop.id) continue;
+      if (shop.location === ShyronToolShop.id) continue;
+      if (!shop.used) continue;
+      if (shop.type !== ShopType.TOOL) continue;
+      const hitbox = [TileId(shop.location << 16 | 0x88)];
+      for (const item of shop.contents) {
+        if (item === MedicalHerb.id) {
+          this.addCheck(hitbox, Money.r, [BuyHealing.id]);
+        } else if (item === WarpBoots.id) {
+          this.addCheck(hitbox, Money.r, [BuyWarp.id]);
+        }
+      }
+    }
+
+    // Add pseudo flags
+    let breakStone = SwordOfWind.r;
+    let breakIce = SwordOfFire.r;
+    let formBridge = SwordOfWater.r;
+    let breakIron = SwordOfThunder.r;
+    if (!this.flagset.orbsOptional()) {
+      const wind2 = or(BallOfWind, TornadoBracelet);
+      const fire2 = or(BallOfFire, FlameBracelet);
+      const water2 = or(BallOfWater, BlizzardBracelet);
+      const thunder2 = or(BallOfThunder, StormBracelet);
+      breakStone = Requirement.meet(breakStone, wind2);
+      breakIce = Requirement.meet(breakIce, fire2);
+      formBridge = Requirement.meet(formBridge, water2);
+      breakIron = Requirement.meet(breakIron, );
+      if (this.flagset.assumeSwordChargeGlitch()) {
+        const level2 =
+            Requirement.join(breakStone, breakIce, formBridge, breakIron);
+        function need(sword: Flag): Requirement {
+          return level2.map(c => c[0] === sword.c ? c : [condition, ...c]);
+        }
+        breakStone = need(SwordOfWind);
+        breakIce = need(SwordOfFire);
+        formBridge = need(SwordOfWater);
+        breakIron = need(SwordOfThunder);
+      }
+    }
+    this.addCheck([start], breakStone, [BreakStone.id]);
+    this.addCheck([start], breakIce, [BreakIce.id]);
+    this.addCheck([start], formBridge, [FormBridge.id]);
+    this.addCheck([start], breakIron, [BreakIron.id]);
+    this.addCheck([start],
+                  or(SwordOfWind, SwordOfFire, SwordOfWater, SwordOfThunder),
+                  [Sword.id, Money.id]);
+    this.addCheck([start], Flight.r, [ClimbWaterfall.id]);
+    this.addCheck([start], or(Flight, RabbitBoots), [ClimbSlope8.id]);
+    this.addCheck([start], or(Flight, RabbitBoots), [ClimbSlope9.id]);
+    this.addCheck([start], Barrier.r, [ShootingStatue.id]);
+    this.addCheck([start], GasMask.r, [TravelSwamp.id]);
+
+    if (this.flagset.leatherBootsGiveSpeed()) {
+      this.addCheck([start], LeatherBoots.r, [ClimbSlope8.id]);
+    }
+    if (this.flagset.assumeGhettoFlight()) {
+      this.addCheck(
+        [start], and(AbleToRideDolphin, RabbitBoots), [ClimbWaterfall.id]);
+    }
+    if (this.flagset.fogLampNotRequired()) {
+      // not actually used
+      this.addCheck([start], ShellFlute.r, [AbleToRideDolphin.id]);
+    }
+    if (!this.flagset.guaranteeBarrier()) {
+      this.addCheck([start], [[Money.c, BuyHealing.c],
+                              [Money.c, ShieldRing.c],
+                              [Money.c, Refresh.c]], [ShootingStatue.id]);
+    }
+    if (!this.flags.guaranteeGasMask()) {
+      this.addCheck([start], [[Money.c, BuyHealing.c],
+                              [Money.c, Refresh.c]], [TravelSwamp.id]);
     }
   }
 
+  /** Adds routes that are not detectable from data tables. */
+  addExtraRoutes() {
+    const {
+      locations: {
+        MezameShrine,
+      },
+      flags: {
+        BuyWarp,
+        SwordOfThunder,
+        Teleport,
+      },
+    } = this.rom;
+    // Start the game at Mezame Shrine.
+    this.addRoute(new Route(this.entrance(MezameShrine), Requirement.OPEN));
+    // Sword of Thunder warp
+    if (this.flagset.teleportOnThunderSword()) {
+      const warp = this.rom.townWarp.thunderSwordWarp;
+      this.addRoute(new Route(this.entrance(warp[0], warp[1] & 0x1f),
+                              [[SwordOfThunder.c, BuyWarp.c],
+                               [SwordOfThunder.c, Teleport.c]]));
+    }
+    // Wild warp
+    if (this.flagset.assumeWildWarp()) {
+      for (const location of this.rom.wildWarp.locations) {
+        this.addRoute(new Route(this.entrance(location)));
+      }
+    }
+  }
+
+  /** Change the key of the checks map to only be canonical TileIds. */
+  consolidateChecks() {
+    for (const [tile, checks] of this.checks) {
+      const root = this.tiles.find(tile);
+      if (tile === root) continue;
+      for (const check of checks) {
+        this.checks.get(root).add(check);
+      }
+      this.checks.delete(tile);
+    }
+  }
+
+  /** At this point we know that all of this.checks' keys are canonical. */
+  buildRequirementMap() {
+    for (const [tile, checks] of this.checks) {
+      for (const {check, requirement} of checks) {
+        const req = this.requirementMap.get(check);
+        for (const r1 of requirement) {
+          for (const r2 of this.routes.get(tile) || []) {
+            req.addList([...r1, ...r2]);
+          }
+        }
+      }
+    }
+  }
+
+  /** Returns a LocationList structure after the requirement map is built. */
+  getLocationList(): LocationList {
+    // TODO - consider just implementing this directly?
+    const itemInfos = new Map<number, ItemInfo>();
+    for (const itemget of this.rom.itemGets) {
+      const item = this.rom.items[itemget.itemId];
+      const unique = item.unique;
+      const losable = itemget.isLosable();
+      // TODO - refactor to just "can't be bought"?
+      const preventLoss = unique || item === this.rom.items.OpelStatue;
+      let weight = 1;
+      if (item === this.rom.items.SwordOfWind) weight = 5;
+      if (item === this.rom.items.SwordOfFire) weight = 5;
+      if (item === this.rom.items.SwordOfWater) weight = 10;
+      if (item === this.rom.items.SwordOfThunder) weight = 15;
+      if (item === this.rom.items.Flight) weight = 15;
+      itemInfos.set(itemget.id, {unique, losable, preventLoss, weight});
+    }
+    return {
+      requirements: this.requirementMap,
+      items: itemInfos,
+      slots: this.slotInfo,
+      name: (check: number) => this.rom.flags[check].name,
+      prefill: (random: Random) => {
+        const {Crystalis, ForgeCrystalis, LeafElder} = this.rom.flags;
+        const map = new Map([[ForgeCrystalis.id, Crystalis.id]]);
+        if (this.flagset.guaranteeSword()) {
+          // Pick a sword at random...? inverse weight?
+          map.set(LeafElder.id, 0x200 | random.nextInt(4));
+        }
+        return map;
+        // TODO - if any items shouldn't be shuffled, then do the pre-fill...
+      },
+    };
+  }
+
+  /** Add terrains and checks for a location, from tiles and spawns. */
   processLocation(location: Location) {
     if (!location.used) return;
     // Look for walls, which we need to know about later.
     this.processLocationTiles(location);
     this.processLocationSpawns(location);
     this.processLocationItemUses(location);
+  }
+
+  /** Run the first pass of unions now that all terrains are final. */
+  unionNeighbors() {
+    for (const [tile, terrain] of this.terrains) {
+      const x1 = TileId.add(tile, 0, 1);
+      if (this.terrains.get(x1) === terrain) this.tiles.union([tile, x1]);
+      const y1 = TileId.add(tile, 1, 0);
+      if (this.terrains.get(y1) === terrain) this.tiles.union([tile, y1]);
+    }
+  }
+
+  /** Builds up the routes and routeEdges data structures. */
+  addAllRoutes() {
+    // Add any extra routes first, such as the starting tile.
+    this.addExtraRoutes();
+    // Add all the edges from all neighbors.
+    for (const [pair, dirs] of this.neighbors) {
+      const [c0, c1] = TilePair.split(exit);
+      const t0 = this.terrains.get(c0);
+      const t1 = this.terrains.get(c1);
+      if (!t0 || !t1) throw new Error(`missing terrain ${hex(t0 ? c0 : c1)}`);
+      for (const [dir, exitReq] of t0.exit) {
+        if (!(dir & dirs)) continue;
+        for (const exitConds of exitReq) {
+          for (const enterConds of t1.enter) {
+            this.addRoute(new Route(c1, [...exitConds, ...enterConds], c0));
+          }
+        }
+      }
+    }
+  }
+
+  /** Adds a route, optionally with a prerequisite (canonical) source tile. */
+  addRoute(route: Route, source?: TileId) {
+    if (source != null) {
+      // Add an edge instead of a route, recursing on the source's
+      // requirements.
+      this.routeEdges.get(given).add(source);
+      for (const srcRoute of this.routes.get(source)) {
+        this.addRoute(new Route(target, [...srcRoute, ...route.deps]));
+      }
+      return;
+    }
+    // This is now an "initial route" with no prerequisite source.
+    const queue = new LabeledSet<Route>();
+    const seen = new LabeledSet<Route>();
+    const start = route; // TODO inline
+    queue.add(start);
+    const iter = queue[Symbol.iterator]();
+    while (true) {
+      const {value, done} = iter.next();
+      if (done) return;
+      seen.add(value);
+      queue.delete(value);
+      const follow = new LabeledSet<Route>();
+      const target = value.target;
+      const builder = this.routes.get(target);
+      if (builder.addRoute(value)) {
+        for (const next of this.routeEdges.get(target)) {
+          follow.add(new Route(next.target, [...value.deps, ...next.deps]));
+        }
+      }
+      for (const next of follow) {
+        if (seen.has(next)) continue;
+        queue.delete(next); // re-add at the end of the queue
+        queue.add(next);
+      }
+    }
+  }
+
+  /**
+   * Builds up `this.exitSet` to include all the "from-to" tile pairs
+   * of exits that _don't_ share the same terrain For any two-way exit
+   * that shares the same terrain, just add it directly to the
+   * unionfind.
+   */
+  recordExits() {
+    // Add exit TilePairs to exitSet from all locations' exits.
+    for (const location of this.rom.locations) {
+      if (!location.used) continue;
+      for (const exit of location.exits) {
+        const {dest, entrance} = exit;
+        const from = TileId.from(location, exit);
+        // Seamless exits (0x20) ignore the entrance index, and
+        // instead preserve the TileId, just changing the location.
+        const to = exit.isSeamless() ?
+            TileId(from & 0xffff | (dest << 16)) :
+            TileId.from(this.rom.locations[dest].entrance(entrance & 0x1f));
+        this.exitSet.add(
+            TilePair.of(this.tiles.find(from), this.tiles.find(to)));
+      }
+    }
+    // Look for two-way exits with the same terrain: remove them from
+    // exitSet and add them to the tiles unionfind.
+    for (const exit of this.exitSet) {
+      const [from, to] = TilePair.split(exit);
+      if (this.terrains.get(from) !== this.terrains.get(to)) continue;
+      const reverse = TilePair.of(to, from);
+      if (this.exitSet.has(reverse)) {
+        this.tiles.union([from, to]);
+        this.exitSet.delete(exit);
+        this.exitSet.delete(reverse);
+      }
+    }
+  }
+
+  /**
+   * Find different-terrain neighbors in the same location.  Add
+   * representative elements to `this.neighbors` with all the
+   * directions that it neighbors in.  Also add exits as neighbors.
+   * This must happen *after* the entire unionfind is complete so
+   * that we can leverage it.
+   */
+  buildNeighbors() {
+    // Adjacent different-terrain tiles.
+    for (const [tile, terrain] of this.terrains) {
+      if (!terrain) continue;
+      const y1 = TileId.add(tile, 1, 0);
+      const ty1 = this.terrains.get(y1);
+      if (ty1 !== terrain) this.handleAdjacentNeighbors(tile, y1, Dir.NORTH);
+      const x1 = TileId.add(tile, 0, 1);
+      const tx1 = this.terrains.get(x1);
+      if (tx1 !== terrain) this.handleAdjacentNeighbors(tile, x1, Dir.WEST);
+    }
+    // Exits (just use "north" for these).
+    for (const exit of this.exitSet) {
+      const [t0, t1] = TilePair.split(exit);
+      if (!this.terrains.has(t0) || !this.terrains.has(t1)) continue;
+      const p = TilePair.of(this.tiles.find(t0), this.tiles.find(t1));
+      this.neighbors.set(p, this.neighbors.get(p) | 1);
+    }
+  }
+
+  handleAdjacentNeighbors(t0: TileId, t1: TileId, dir: Dir) {
+    // NOTE: t0 < t1 because dir is always WEST or NORTH.
+    const c0 = this.tiles.find(t0);
+    const c1 = this.tiles.find(t1);
+    if (!this.exits.has(t1)) {
+      // 1 -> 0 (west/north).  If 1 is an exit then this doesn't work.
+      const p10 = TilePair.of(c1, c0);
+      this.neighbors.set(p10, this.neighbors.get(p10) | (1 << dir));
+    }
+    if (!this.exits.has(t0)) {
+      // 0 -> 1 (east/south).  If 0 is an exit then this doesn't work.
+      const opp = dir ^ 2;
+      const p01 = TilePair.of(c0, c1);
+      this.neighbors.set(p01, this.neighbors.get(p01) | (1 << opp));
+    }
   }
 
   processLocationTiles(location: Location) {
@@ -156,7 +533,7 @@ export class World {
       if (location.id === 0x1a) effects |= Terrain.SWAMP;
       if (location.id === 0x60 || location.id === 0x68) {
         effects |= Terrain.DOLPHIN;
-       }
+      }
       // NOTE: only the top half-screen in underground channel is dolphinable
       if (location.id === 0x64 && ((tile & 0xf0f0) < 0x90)) {
         effects |= Terrain.DOLPHIN;
@@ -227,7 +604,7 @@ export class World {
     for (const exit of location.exits) {
       if (exit.entrance & 0x20) {
         const tile = TileId.from(location, exit);
-        this.allExits.add(tile);
+        this.seamlessExits.add(tile);
         const previous = this.terrains.get(tile);
         if (previous) {
           this.terrains.set(tile, this.terrainFactory.seamless(previous));
@@ -235,13 +612,6 @@ export class World {
       }
     }
   }
-
-  // Basic algorithm:
-  //  1. fill terrains from maps
-  //  2. modify terrains based on npcs, triggers, bosses, etc
-  //  2. fill allExits
-  //  3. start unionfind
-  //  4. fill ...?
 
   processLocationSpawns(location: Location) {
     for (const spawn of location.spawns) {
@@ -312,11 +682,7 @@ export class World {
 
     case 0x1d:
       // start mado 1 boss fight
-      {
-        const req = Requirement.meet(requirements,
-                                     this.bossRequirements(this.rom.bosses.Mado1));
-        this.addCheck(hitbox, req, [this.rom.flags.Mado1.id]);
-      }
+      this.addBossCheck(hitbox, this.rom.bosses.Mado1, requirements);
       break;
 
     case 0x08: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f:
@@ -332,13 +698,15 @@ export class World {
             this.flagset.chargeShotsOnly() ?
                 Requirement.meet(requirements, and(this.rom.flags.WarpBoots)) :
                 requirements;
-        this.addCheck(hitbox, req, [this.rom.flags.StomFightReward.id]);
+        this.addItemCheck(hitbox, req, this.rom.flags.StomFightReward.id,
+                          {lossy: true, unique: true});
       }
       break;
 
     case 0x1e:
       // forge crystalis
-      this.addCheck(hitbox, requirements, [this.rom.flags.Crystalis.id]);
+      this.addItemCheck(hitbox, requirements, this.rom.flags.ForgeCrystalis.id,
+                        {lossy: true, unique: true});
       break;
 
     case 0x1f:
@@ -363,9 +731,16 @@ export class World {
     const tile = TileId.from(location, spawn);
 
     // NOTE: Rage has no walkable neighbors, and we need the same hitbox
-    // for both the terrain and the check
+    // for both the terrain and the check.
+    //
+    // NOTE ALSO - Rage probably shows up as a boss, not an NPC?
     let hitbox: Hitbox =
         [this.terrains.has(tile) ? tile : this.walkableNeighbor(tile) ?? tile];
+
+    if (npc === this.rom.npcs.SaberaDisguisedAsMesia) {
+      this.addBossCheck(hitbox, this.rom.bosses.Sabera1, requirements);
+    }
+
     if ((npc.data[2] & 0x04) && !this.flagset.assumeStatueGlitch()) {
       let antiReq;
       antiReq = this.filterAntiRequirements(spawnConditions);
@@ -469,43 +844,6 @@ export class World {
     }
   }
 
-  addItemGrantChecks(hitbox: Hitbox, req: Requirement, grantId: number) {
-    const item = this.itemGrant(grantId);
-    if (item == null) {
-      throw new Error(`missing item grant for ${grantId.toString(16)}`);
-    }
-    // is the 100 flag sufficient here?  probably?
-    this.addCheck(hitbox, req, [0x100 | item]);
-  }
-
-  addTerrain(hitbox: Hitbox, terrain: Terrain) {
-    for (const tile of hitbox) {
-      const t = this.terrains.get(tile);
-      if (t == null) continue; // unreachable tiles don't need extra reqs
-      this.terrains.set(tile, this.terrainFactory.meet(t, terrain));
-    }
-  }
-
-  addCheck(hitbox: Hitbox, requirement: Requirement, checks: number[]) {
-    if (Requirement.isClosed(requirement)) return; // do nothing if unreachable
-    const check = {requirement, checks};
-    for (const tile of hitbox) {
-      if (!this.terrains.has(tile)) continue;
-      this.checks.get(tile).add(check);
-    }
-  }
-
-  addCheckFromFlags(hitbox: Hitbox, requirement: Requirement, flags: number[]) {
-    const checks = [];
-    for (const flag of flags) {
-      const f = this.flag(flag);
-      if (f?.logic.track) {
-        checks.push(f.id);
-      }
-    }
-    if (checks.length) this.addCheck(hitbox, requirement, checks);
-  }
-
   handleMovingGuard(hitbox: Hitbox, location: Location, req: Requirement) {
     // This is the 1b trigger action follow-up.  It looks for an NPC in 0d or 0e
     // and moves them over a pixel.  For the logic, it's always in a position
@@ -548,14 +886,59 @@ export class World {
       t = TileId.add(t, 0, -1);
       const t1 = this.walkableNeighbor(tile);
       if (t1 != null) {
-        this.connect(t0, t1, requirements);
+        const boat = new Terrain();
+        boat.exit = () => requirements;
+        this.addTerrain([t0], boat);
+        this.exitSet.add(TilePair(t0, t1));
         return;
       }
     }
   }
 
-  connect(_t0: TileId, _t1: TileId, _req: Requirement) {
-    // TODO - implement!
+  addItemGrantChecks(hitbox: Hitbox, req: Requirement, grantId: number) {
+    const item = this.itemGrant(grantId);
+    const slot = 0x100 | item;
+    if (item == null) {
+      throw new Error(`missing item grant for ${grantId.toString(16)}`);
+    }
+    // is the 100 flag sufficient here?  probably?
+    const preventLoss = grantId >= 0x80; // granted from a trigger
+    this.addItemCheck(hitbox, req, slot,
+                      {lossy: true, unique: true, preventLoss});
+  }
+
+  addTerrain(hitbox: Hitbox, terrain: Terrain) {
+    for (const tile of hitbox) {
+      const t = this.terrains.get(tile);
+      if (t == null) continue; // unreachable tiles don't need extra reqs
+      this.terrains.set(tile, this.terrainFactory.meet(t, terrain));
+    }
+  }
+
+  addCheck(hitbox: Hitbox, requirement: Requirement, checks: number[]) {
+    if (Requirement.isClosed(requirement)) return; // do nothing if unreachable
+    const check = {requirement: Requirement.freeze(requirement), checks};
+    for (const tile of hitbox) {
+      if (!this.terrains.has(tile)) continue;
+      this.checks.get(tile).add(check);
+    }
+  }
+
+  addItemCheck(hitbox: Hitbox, requirement: Requirement,
+               check: number, slot: SlotInfo) {
+    this.addCheck(hitbox, requirement, [check]);
+    this.slots.set(check, slot);
+  }
+
+  addCheckFromFlags(hitbox: Hitbox, requirement: Requirement, flags: number[]) {
+    const checks = [];
+    for (const flag of flags) {
+      const f = this.flag(flag);
+      if (f?.logic.track) {
+        checks.push(f.id);
+      }
+    }
+    if (checks.length) this.addCheck(hitbox, requirement, checks);
   }
 
   walkableNeighbor(t: TileId): TileId|undefined {
@@ -585,18 +968,39 @@ export class World {
     return effects[this.rom.screens[scr].tiles[t & 0xff]];
   }
 
-  processBoss(_location: Location, _spawn: Spawn) {
-        // Bosses will clobber the entrance portion of all tiles on the screen,
-        // and will also add their drop.
+  processBoss(location: Location, spawn: Spawn) {
+    // Bosses will clobber the entrance portion of all tiles on the screen,
+    // and will also add their drop.
+    const isRage = spawn.id === 0xc3;
+    const boss =
+        isRage ? this.rom.bosses.Rage :
+        this.rom.bosses.fromLocation(location.id);
+    const tile = TileId.from(location, spawn);
+    if (!boss.flag) throw new Error(`Bad boss at ${location.name}`);
+    const screen = tile & ~0xff;
+    // NOTE: Rage can be exited south... but this only matters if there's
+    // anything other than Mesia's shrine behind him, which makes a lot of
+    // logic more difficult, so likely this entrance will stay put forever.
+    const bossTerrain = this.terrainFactory.boss(boss.flag.id);
+    const hitbox = seq(0xf0, t => (screen | t) as TileId);
+    this.addTerrain(hitbox, bossTerrain);
+    this.addBossCheck(hitbox, boss)
+  }
 
-    // bosses.set(TileId.from(location, spawn), spawn.id);
+  addBossCheck(hitbox: Hitbox, boss: Boss,
+               requirements: Requirements = Requirement.OPEN) {
+    const req = Requirement.meet(requirements, this.bossRequirements(boss));
+    this.addItemCheck(hitbox, req, boss.flag.id, {lossy: false, unique: true});
   }
 
   processChest(location: Location, spawn: Spawn) {
-    // Add a check for the 1xx flag.  TODO - keep track of the fact that it was
-    // a chest, for item eligibility purposes.
-    this.addCheck([TileId.from(location, spawn)], Requirement.OPEN,
-                  [0x100 | spawn.id]);
+    // Add a check for the 1xx flag.  Make sure it's not a mimic.
+    if (this.rom.slots[spawn.id] >= 0x70) return;
+    const slot = 0x100 | spawn.id;
+    const item = this.rom.items[spawn.id];
+    const unique = this.flagset.preserveUniqueChecks() ? item.unique : true;
+    this.addItemCheck([TileId.from(location, spawn)], Requirement.OPEN,
+                      slot, {lossy: false, unique});
   }
 
   processMonster(_location: Location, _spawn: Spawn) {
@@ -610,6 +1014,10 @@ export class World {
     // this should handle most trade-ins automatically
     hitbox = new Set([...hitbox].map(t => this.walkableNeighbor(t) ?? t));
     const req = [[(0x200 | item.id) as Condition]]; // requires the item.
+    // check for kirisa plant, add change as a requirement.
+    if (item.id === this.rom.prg[0x3d4b5] + 0x1c) {
+      req[0].push(this.rom.flags.Change.c);
+    }
     // set any flags
     this.addCheckFromFlags(hitbox, req, use.flags);
     // handle any extra actions
@@ -636,6 +1044,58 @@ export class World {
     this.addCheck(hitbox, req, [flag.flag]);
   }
 
+  bossRequirements(boss: Boss): Requirement {
+    // TODO - handle boss shuffle somehow?
+    if (boss === this.rom.bosses.Rage) {
+      // Special case for Rage.  Figure out what he wants from the dialog.
+      const unknownSword = this.tracker && this.flagset.randomizeTrades();
+      if (unknownSword) return this.rom.flags.Sword.r; // any sword might do.
+      return [[this.rom.npcs.Rage.dialog()[0].condition as Condition]];
+    }
+    const id = boss.object;
+    const r = new Requirement.Builder();
+    if (this.tracker && this.flagset.shuffleBossElements() ||
+        !this.flagset.guaranteeMatchingSword()) {
+      r.addAll(this.rom.flags.Sword.id);
+    } else {
+      const level = this.flagset.guaranteeSwordMagic() ? boss.swordLevel : 1;
+      const obj = this.rom.objects[id];
+      for (let i = 0; i < 4; i++) {
+        if (obj.isVulnerable(i)) r.addAll(this.swordRequirement(i, level));
+      }
+    }
+    // Can't actually kill the boss if it doesn't spawn.
+    const extra: Condition[] = [];
+    if (boss.npc != null && boss.location != null) {
+      const spawnCondition = boss.npc.spawns(this.rom.locations[boss.location]);
+      extra.push(...this.filterRequirements(spawnCondition)[0]);
+    }
+    if (boss === this.rom.bosses.Insect) {
+      extra.push(this.rom.flags.InsectFlute.c, this.rom.flags.GasMask.c);
+    }
+    if (this.flagset.guaranteeRefresh()) {
+      extra.push(this.rom.flags.Refresh.c);
+    }
+    r.restrict([extra]);
+    return r.freeze();
+  }
+
+  swordRequirement(element: number, level: number): Requirement {
+    const sword = [
+      this.rom.flags.SwordOfWind, this.rom.flags.SwordOfFire,
+      this.rom.flags.SwordOfWater, this.rom.flags.SwordOfThunder,
+    ][element];
+    if (level === 1) return sword.r;
+    const powers = [
+      [this.rom.flags.OrbOfWind, this.rom.flags.TornadoBracelet],
+      [this.rom.flags.OrbOfFire, this.rom.flags.FlameBracelet],
+      [this.rom.flags.OrbOfWater, this.rom.flags.BlizzardBracelet],
+      [this.rom.flags.OrbOfThunder, this.rom.flags.StormBracelet],
+    ][element];
+    if (level === 3) return and(sword, ...powers);
+    return powers.map(power => [sword.c, power.c]);
+  }
+
   itemGrant(id: number): number {
     for (let i = 0x3d6d5; this.rom.prg[i] !== 0xff; i += 2) {
       if (this.rom.prg[i] === id) return this.rom.prg[i + 1];
@@ -644,7 +1104,7 @@ export class World {
   }
 
   /** Return a Requirement for all of the flags being met. */
-  filterRequirements(flags: number[]): Requirement.Frozen {
+  filterRequirements(flags: number[]): Requirement.Single {
     const conds = [];
     for (const flag of flags) {
       if (flag < 0) {
@@ -680,12 +1140,19 @@ export class World {
     return this.aliases.get(f) ?? f;
   }
 
-  entrance(location: Location, index = 0): TileId {
+  entrance(location: Location|number, index = 0): TileId {
+    if (typeof location === 'number') location = this.rom.locations[location];
     return TileId.from(location, location.entrances[index]);
   }
 
-  bossRequirements(_boss: Boss): Requirement {
-    throw new Error(`unimplemented`);
+  wallCapability(wall: WallType): number {
+    switch (wall) {
+    case WallType.WIND: return this.rom.flags.BreakStone.id;
+    case WallType.FIRE: return this.rom.flags.BreakIce.id;
+    case WallType.WATER: return this.rom.flags.FormBridge.id;
+    case WallType.THUNDER: return this.rom.flags.BreakIron.id;
+    default: throw new Error(`bad wall type: ${wall}`);
+    }
   }
 }
 
@@ -696,8 +1163,6 @@ function and(...flags: Flag[]): Requirement.Single {
 function or(...flags: Flag[]): Requirement.Frozen {
   return flags.map((f: Flag) => [f.id as Condition]);
 }
-const [] = [or];
-
 
 // An interesting way to track terrain combinations is with primes.
 // If we have N elements we can label each atom with a prime and

@@ -4,7 +4,6 @@ import {Flag, FlagSection, Preset} from './flags/flag.js';
 import {GLITCH_FIX_FLAGS} from './flags/glitch-fixes.js';
 import {GLITCH_FLAGS} from './flags/glitches.js';
 import {HARD_MODE_FLAGS} from './flags/hard-mode.js';
-import {ITEM_FLAGS} from './flags/items.js';
 import {MONSTER_FLAGS} from './flags/monsters.js';
 import {ROUTING_FLAGS} from './flags/routing.js';
 import {SHOP_FLAGS} from './flags/shops.js';
@@ -13,68 +12,66 @@ import {WORLD_FLAGS} from './flags/world.js';
 import {EXPERIMENTAL_FLAGS} from './flags/experimental.js';
 import {UsageError} from './util.js';
 
-const REPEATABLE_FLAGS: Set<string> = new Set(['S']);
-
 export const PRESETS: Preset[] = [
   {
     title: 'Casual',
     descr: `Basic flags for a relatively easy playthrough.`,
-    flags: 'Ds Edmrsx Fw Mr Rp Sc Sk Sm Tab',
+    flags: 'Ds Edmrstux Fw Mr Rp Tab',
   },
   {
     title: 'Intermediate',
     descr: `Slightly more challenge than Casual but still approachable.`,
-    flags: 'Ds Edms Fsw Gt Mr Ps Rpt Sct Skm Tab',
+    flags: 'Ds Edmsu Fsw Gt Mr Ps Rpt Tab',
     default: true,
   },
   {
     title: 'Full Shuffle',
     descr:
         `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
-    flags: 'Em Fsw Gt Mert Ps Rprt Sckmt Tabmp Wmtuw Xegw',
+    flags: 'Em Fsw Gt Mert Ps Rprt Tabmp Wmtuw Xegw',
   },
   {
     title: 'Glitchless',
     descr: `Full shuffle but with no glitches.`,
-    flags: 'Em Fcpstw Mert Ps Rprt Sckmt Tab Wmtuw Xcegw',
+    flags: 'Em Fcpstw Mert Ps Rprt Tab Wmtuw Xcegw',
   },
   {
     // TODO: add 'Ht' for maxing out tower scaling
     title: 'Advanced',
     descr: `A balanced randomization with quite a bit more difficulty.`,
-    flags: 'Fsw Gfprt Hbdgw Mert Ps Roprst Sckt Sm Tabmp Wmtuw Xcegw',
+    flags: 'Fsw Gfprt Hbdgw Mert Ps Roprst Tabmp Wmtuw Xcegw',
   },
   {
     // TODO: add 'Ht'
     title: 'Ludicrous',
     descr: `Pulls out all the stops, may require superhuman feats.`,
-    flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Roprst Sckmt Tabmp Wmtuw Xcegw',
+    flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Roprst Tabmp Wmtuw Xcegw',
   },
   {
     title: 'Mattrick',
     descr: 'Not for the faint of heart. Good luck...',
-    flags: 'Fcprsw Gt Hbdhwx Mert Ps Ropst Sckmt Tabmp Wmtuw',
+    flags: 'Fcprsw Gt Hbdhwx Mert Ps Ropst Tabmp Wmtuw',
   },
   // TOURNAMENT PRESETS
   {
     title: 'Tournament: Swiss Round',
     descr: 'Quick-paced full-shuffle flags for Swiss round of 2019 Tournament',
-    flags: 'Es Fcprsw Gt Hd Mr Ps Rpt Sckmt Tab',
+    flags: 'Es Fcprsw Gt Hd Mr Ps Rpt Tab',
   },
   {
     title: 'Tournament: Elimination Round',
     descr: 'More thorough flags for the first elimination rounds of the 2019 Tournament',
-    flags: 'Em Fprsw Gft Hbd Mer Ps Rprst Sckmt Tab Wt',
+    flags: 'Em Fprsw Gft Hbd Mer Ps Rprst Tab Wt',
   },
   {
     title: 'Tournament: Semifinals',
     descr: 'Advanced flags for semifinal round of the 2019 Tournament',
-    flags: 'Em Fsw Gft Hbd Mert Ps Roprst Sckmt Tab Wt',
+    flags: 'Em Fsw Gft Hbd Mert Ps Roprst Tab Wt',
   },
   {
     title: 'Tournament: Finals',
     descr: 'Expert flags for finals round of the 2019 Tournament',
-    flags: 'Fsw Gfprt Hbdw Mert Ps Roprst Sckmt Tab Wmtw',
+    flags: 'Fsw Gfprt Hbdw Mert Ps Roprst Tab Wmtw',
   },
 ];
 
@@ -114,8 +111,7 @@ export class FlagSet {
     const re = /([A-Z])([a-z0-9!]+)/g;
     let match;
     while ((match = re.exec(str))) {
-      const [, key, value] = match;
-      const terms = REPEATABLE_FLAGS.has(key) ? [value] : value;
+      const [, key, terms] = match;
       for (const term of terms) {
         this.set(key + term, true);
       }
@@ -151,6 +147,13 @@ export class FlagSet {
   check(flag: string): boolean {
     const terms = this.flags[flag[0]];
     return !!(terms && (terms.indexOf(flag.substring(1)) >= 0));
+  }
+
+  preserveUniqueChecks() {
+    return this.check('Eu');
+  }
+  shuffleMimics() {
+    return !this.check('Et');
   }
 
   autoEquipBracelet() {
@@ -397,17 +400,10 @@ export class FlagSet {
   }
 
   private toStringKey(key: string) {
-    if (REPEATABLE_FLAGS.has(key)) {
-      return [...this.flags[key]].sort().map(v => key + v).join(' ');
-    }
     return key + [...this.flags[key]].sort().join('');
   }
 
   private exclusiveFlags(flag: string): RegExp|undefined {
-    if (flag.startsWith('S')) {
-      return new RegExp(`S.*[${flag.substring(1)}]`);
-    }
-
     const flagForName: Flag = this.getFlagForName(flag);
     if (flagForName == null) throw new Error(`Unknown flag: ${flag}`);
     return flagForName.conflict;

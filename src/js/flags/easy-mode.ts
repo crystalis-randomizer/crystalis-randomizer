@@ -4,8 +4,24 @@ export const EASY_MODE_FLAGS: FlagSection = {
   section: 'Easy Mode',
   text: `The following options make parts of the game easier.`,
   prefix: 'E',
-
   flags: [
+    {
+      flag: 'Et',
+      name: `Don't shuffle mimics.`,
+    },
+    {
+      flag: 'Eu',
+      name: 'Keep unique items and consumables separate',
+      text: `Normally all items and mimics are shuffled into a single pool and
+             distributed from there.  If this flag is set, unique items
+             (specifically, anything that cannot be sold) will only be found in
+             either (a) checks that held unique items in vanilla, or (b) boss
+             drops.  Chests containing consumables in vanilla may be safely
+             ignored, but chests containing unique items in vanilla may still
+             end up with non-unique items because of bosses like Vampire 2 that
+             drop consumables.  If mimics are shuffled, they will only be in
+             consumable locations.`,
+    },
     {
       flag: 'Ed',
       name: 'Decrease enemy damage',
@@ -31,14 +47,14 @@ export const EASY_MODE_FLAGS: FlagSection = {
       name: 'Extra buff medical herb',
       text: `Buff Medical Herb to heal 96 instead of 64 and Fruit of Power to
            restore 64 MP instead of 48.`,
-      conflict: /Hm/
+      conflict: /Hm/,
     },
     {
       flag: 'Ex',
       name: 'Experience scales faster',
       text:
           `Less grinding will be required to "keep up" with the game difficulty.`,
-      conflict: /Hx/
+      conflict: /Hx/,
     }
   ],
 };

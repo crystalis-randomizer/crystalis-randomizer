@@ -14,3 +14,12 @@ Basic idea:
    - leve behind an object that can be gotten to set flags, get item
  - items 70..7f could be repurposed as stacks of cash?
 
+Question:
+ - how do we shuffle mimics?  where do we make the swap?
+   - the spawn?
+     - will mess up naming, maybe other things.
+   - the spawn/check-to-itemget mapping?
+     --> this seems like the right answer
+   - the itemget-to-item mapping?
+     - itemget-to-item will be abbreviated so that's no good
+

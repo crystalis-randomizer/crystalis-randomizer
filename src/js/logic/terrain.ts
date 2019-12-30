@@ -3,31 +3,6 @@ import {DefaultMap} from '../util.js';
 import {Dir} from './dir.js';
 import {Condition, Requirement} from './requirement.js';
 
-export class Terrain {
-  enter(): Requirement { return Requirement.OPEN; }
-  exit(dir: Dir): Requirement { return Requirement.OPEN; }
-
-  // Built-in terrain bits
-  // 0x01 => pit
-  static readonly FLY = 0x02;
-  static readonly BLOCKED = 0x04;
-  // 0x08 => flag alternate
-  // 0x10 => behind
-  static readonly SLOPE = 0x20;
-  // 0x40 => slow
-  // 0x80 => pain
-  static readonly BITS = 0x26;
-
-  // Custom terrain bits
-  static readonly SWAMP = 0x100;
-  static readonly BARRIER = 0x200; // shooting statues
-  // slope 0..5 => no requirements
-  static readonly SLOPE8 = 0x400; // slope 6..8
-  static readonly SLOPE9 = 0x800; // slopt 9
-  // slope 10+ => flight only
-  static readonly DOLPHIN = 0x1000;
-}
-
 export class Terrains {
 
   // Aggressive memoization prevents instantiating the same terrain twice.
@@ -82,36 +57,65 @@ export class Terrains {
   }
 }
 
-class SeamlessTerrain extends Terrain {
-  constructor(private readonly _delegate: Terrain) { super(); }
-  enter() { return this._delegate.enter(); }
-  exit(dir: Dir) { return this._delegate.exit(dir); }
+type DirMask = number;
+// NOTE: missing directions are forbidden.
+type ExitRequirements = ReadonlyArray<readonly [DirMask, Requirement.Frozen]>;
+export interface Terrain {
+  enter: Requirement.Frozen;
+  exit: ExitRequirements;
+}
+
+export namespace Terrain {
+  // Built-in terrain bits
+  // 0x01 => pit
+  static readonly FLY = 0x02;
+  static readonly BLOCKED = 0x04;
+  // 0x08 => flag alternate
+  // 0x10 => behind
+  static readonly SLOPE = 0x20;
+  // 0x40 => slow
+  // 0x80 => pain
+  static readonly BITS = 0x26;
+
+  // Custom terrain bits
+  static readonly SWAMP = 0x100;
+  static readonly BARRIER = 0x200; // shooting statues
+  // slope 0..5 => no requirements
+  static readonly SLOPE8 = 0x400; // slope 6..8
+  static readonly SLOPE9 = 0x800; // slopt 9
+  // slope 10+ => flight only
+  static readonly DOLPHIN = 0x1000;
+}
+
+class SeamlessTerrain implements Terrain {
+  constructor(private readonly _delegate: Terrain) {
+    this.enter = _delegate.enter;
+    this.exit = _delegate.exit;
+  }
 }
 
 // Basic terrain with an entrance and/or undirected exit condition
-class SimpleTerrain extends Terrain {
-  constructor(private readonly _enter: Requirement,
-              private readonly _exit: Requirement = Requirement.OPEN) {
-    super();
+class SimpleTerrain implements Terrain {
+  constructor(readonly enter: Requirement.Frozen,
+              exit: Requirement.Frozen = Requirement.OPEN) {
+    this.exit = [[0xf, exit]];
   }
-  enter() { return this._enter; }
-  exit() { return this._exit; }
 }
 
 // Basic terrain with an entrance and/or non-south exit condition
-class SouthTerrain extends Terrain {
-  constructor(private readonly _enter: Requirement,
-              private readonly _exit: Requirement = Requirement.OPEN) {
-    super();
+class SouthTerrain implements Terrain {
+  constructor(readonly enter: Requirement.Frozen, exit?: Requirement.Frozen) {
+    this.exit =
+        exit ?
+            [[0xb, exit], [0x4, Requirement.OPEN]] :
+            [[0xf, Requirement.OPEN]];
   }
-  enter() { return this._enter; }
-  exit(dir: Dir) { return dir === Dir.South ? Requirement.OPEN : this._exit; }
 }
 
 // Make a terrain from a tileeffects value, augmented with a few details.
 function makeTile(rom: Rom, effects: number): Terrain {
   let enter = Requirement.OPEN;
-  let exit = Requirement.OPEN;
+  let exit = undefined;
 
   if ((effects & Terrain.DOLPHIN) && (effects & Terrain.FLY)) {
     if (effects & Terrain.SLOPE) {
@@ -139,58 +143,64 @@ function makeTile(rom: Rom, effects: number): Terrain {
   return new SouthTerrain(enter, exit);
 }
 
-class BossTerrain extends Terrain {
-  constructor(private readonly _flag: number) { super(); }
-  exit() { return [[this._flag as Condition]]; }
+class BossTerrain extends SimpleTerrain {
+  constructor(private readonly _flag: number) {
+    super(Requirement.OPEN, [[_flag as Condition]]);
+  }
 }
 
-class StatueTerrain extends Terrain {
-  constructor(private readonly _req: Requirement) { super(); }
-  exit(dir: Dir) { return dir !== Dir.South ? this._req : Requirement.OPEN; }
+class StatueTerrain extends SouthTerrain {
+  constructor(private readonly _req: Requirement) {
+    super(Requirement.OPEN, _req);
+  }
 }
 
 class FlagTerrain extends SimpleTerrain {
   constructor(base: Terrain, flag: number, alt: Terrain) {
-    for (const dir of Dir.all()) {
-      if (!Requirement.isOpen(base.exit(dir)) ||
-          !Requirement.isOpen(alt.exit(dir))) {
-        throw new Error('bad flag');
-      }
+    // NOTE: base and alt must both be simple terrains!
+    if (base.exit.length !== 1 || alt.exit.length !== 1) {
+      throw new Error('bad flag');
     }
     super(
-        Requirement.or(
-            base.enter(),
-            [...alt.enter()].map(
-                (cs: Iterable<Condition>) => [flag as Condition, ...cs])));
+        Requirement.or(base.enter, alt.enter),
+        [[0xf, Requirement.or(base.exit[0][1], alt.exit[0][1])]]);
   }
 }
 
-class MeetTerrain extends Terrain {
-  private readonly _exits: readonly Requirement[];
-  private readonly _enter: Requirement;
-
-  constructor(left: Terrain, right: Terrain) {
-    super();
-    const leftExit = Dir.all().map(d => left.exit(d));
-    const rightExit = Dir.all().map(d => right.exit(d));
-    this._enter = Requirement.meet(left.enter(), right.enter());
-    const exits: Requirement[] = [];
-    for (let i = 0; i < 4; i++) {
-      for (let j = 0; j < i; j++) {
-        if (leftExit[j] === leftExit[i] && rightExit[j] === rightExit[i]) {
-          exits[i] = exits[j];
-        }
-      }
-      exits[i] = exits[i] || Requirement.meet(leftExit[i], rightExit[i]);
+/** Returns a map from Dir to index in the exit map. */
+function directionIndex(t: Terrain): number[] {
+  const ind: number[] = [];
+  for (let i = 0, i < t.exit.length; i++) {
+    for (let b = 0; b < 4; b++) {
+      if (t.exit[i][0] & (1 << b)) ind[b] = i;
     }
-    this._exits = exits;
   }
-
-  enter() {
-    return this._enter;
+  for (let b = 0; b < 4; b++) { // sanity check
+    if (ind[b] == null) {
+      throw new Error(`Bad terrain: ${t.exit.map(e => e[0]).join(',')}`);
+    }
   }
+  return ind;
+}
 
-  exit(dir: Dir) {
-    return this._exits[dir];
+class MeetTerrain implements Terrain {
+  constructor(readonly left: Terrain, readonly right: Terrain) {
+    // This is tricky: we need to figure out which exits are in common and
+    // not repeat work.  So build up a reverse map of direction-to-index,
+    // then keep track of all the unique combinations.
+    const leftInd = directionIndex(left);
+    const rightInd = directionIndex(right);
+    const sources = new Set<number>();
+    const exit: Array<readonly [number, Requirement.Frozen]> = [];
+    for (let i = 0; i < 4; i++) {
+      sources.add(leftInd[i] << 2 | rightInd[i]);
+    }
+    for (const source of sources) {
+      const [d0, r0] = left.exit[source >> 2];
+      const [d1, r1] = right.exit[source & 3];
+      exit.push([d0 & d1, Requirement.meet(r0, r1)]);
+    }
+    this.enter = Requirement.meet(left.enter, right.enter);
+    this.exit = exit;
   }
 }

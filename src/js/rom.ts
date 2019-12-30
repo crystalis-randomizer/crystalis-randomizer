@@ -18,6 +18,7 @@ import {Palette} from './rom/palette.js';
 import {Pattern} from './rom/pattern.js';
 import {Screen} from './rom/screen.js';
 import {Shop} from './rom/shop.js';
+import {Slots} from './rom/slots.js';
 import {Spoiler} from './rom/spoiler.js';
 import {Telepathy} from './rom/telepathy.js';
 import {TileAnimation} from './rom/tileanimation.js';
@@ -76,6 +77,7 @@ export class Rom {
   readonly itemGets: ItemGets;
   readonly items: Items;
   readonly shops: Shop[];
+  readonly slots: Slots;
   readonly npcs: Npcs;
   readonly bossKills: BossKill[];
   readonly bosses: Bosses;
@@ -168,6 +170,7 @@ export class Rom {
     this.itemGets = new ItemGets(this);
     this.items = new Items(this);
     this.shops = seq(44, i => new Shop(this, i)); // NOTE: depends on locations and objects
+    this.slots = new Slots(this);
     this.npcs = new Npcs(this);
     this.bossKills = seq(0xe, i => new BossKill(this, i));
     this.wildWarp = new WildWarp(this);
@@ -359,6 +362,7 @@ export class Rom {
     writeAll(this.screens);
     writeAll(this.adHocSpawns);
     this.itemGets.write(writer);
+    this.slots.write(writer);
     this.items.write(writer);
     writeAll(this.shops);
     writeAll(this.bossKills);

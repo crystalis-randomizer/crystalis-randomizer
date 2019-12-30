@@ -1014,6 +1014,7 @@ $6160..$61ff
 ------------
 Unused.
  - $61ff we use to track the need to redisplay the difficulty
+ - $61fe - the current check
  - Use other parts of this block for multi-world.
  - 6160..61bf  => all names
 

@@ -1,4 +1,4 @@
-import {iters} from '../util.js';
+import {LabeledSet, iters} from '../util.js';
 
 // NOTE: This could be exported into a non-game-specific library.
 
@@ -20,12 +20,22 @@ export namespace Requirement {
     return [([] as Condition[]).concat(...cs.map(([c]) => c))];
   }
   /** Join a bunch of requirements into a new requirement. */
-  export function or(...cs: Requirement[]): Frozen {
-    return ([] as Frozen).concat(...cs.map(freeze));
+  export function or(...rs: Requirement[]): Frozen {
+    const out: Array<readonly Condition[]> = [];
+    for (const r of rs) {
+      if (r === OPEN) return OPEN;
+      if (r === CLOSED) continue;
+      out.push(...freeze(r));
+    }
+    if (!out.length) return CLOSED;
+    return out;
   }
 
   /** Meet a bunch of arbitrary requirements. */
   export function meet(left: Requirement, right: Requirement): Frozen {
+    if (left === OPEN) return right;
+    if (right === OPEN) return left;
+    if (left === CLOSED || right === CLOSED) return CLOSED;
     const out = new Builder();
     for (const ls of left) {
       for (const rs of right) {
@@ -79,7 +89,7 @@ export namespace Requirement {
     }
 
     /** Internal method for actually adding a route. */
-    add(newLabel: string, newDeps: Set<Condition>): boolean {
+    private addInternal(newLabel: string, newDeps: Set<Condition>): boolean {
       for (const c of newDeps) if (Array.isArray(c)) throw new Error();
 
       if (this.map.has(newLabel)) return false;
@@ -89,6 +99,11 @@ export namespace Requirement {
       }
       this.map.set(newLabel, newDeps);
       return true;
+    }
+
+    /** Joins a route's requirements. */
+    addRoute(route: Route): boolean {
+      return this.addInternal(route[DEPS_LABEL], route.deps);
     }
 
     /** Joins an arbitrary requirement in place. */
@@ -102,7 +117,7 @@ export namespace Requirement {
     addList(conditions: Iterable<Condition>): void {
       const sorted = [...new Set(conditions)].sort();
       const deps = new Set(sorted);
-      this.add(sorted.join('&'), deps);
+      this.addInternal(sorted.join('&'), deps);
     }
 
     /** Meet this requirement in-place with the given requirement. */
@@ -132,3 +147,15 @@ function containsAll<T>(left: Set<T>, right: Set<T>): boolean {
   return true;
 }
 
+export class Route {
+  readonly [DEPS_LABEL]: string; // used for direct-adding to a builder.
+  readonly deps: Set<Condition>;
+  readonly label: string;
+  constructor(readonly target: TileId, conditions: readonly Condition[]) {
+    const sorted = [...new Set(conditions)].sort();
+    this.deps = new Set(sorted);
+    this[DEPS_LABEL] = sorted.join('&');
+    this.label = `${this.target}:${this[DEPS_LABEL]}`;
+  }
+}
+const DEPS_LABEL: unique symbol = Symbol('depsLabel');

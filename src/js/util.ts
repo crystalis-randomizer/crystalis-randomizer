@@ -326,11 +326,43 @@ export namespace iters {
     }
     return count;
   }
+  export function zip<A, B>(left: Iterable<A>, right: Iterable<B>): Iterable<[A, B]>;
+  export function zip<A, B, C>(left: Iterable<A>, right: Iterable<B>,
+                               zipper: (a: A, b: B) => C = (a, b) => [a, b] as any):
+  Iterable<C> {
+    return {
+      * [Symbol.iterator]() {
+        const leftIter = left[Symbol.iterator]();
+        const rightIter = right[Symbol.iterator]();
+        let a, b;
+        while ((a = leftIter.next(), b = rightIter.next(), !a.done && !b.done)) {
+          yield zipper(a.value, b.value);
+        }
+      }
+    };
+  }
 }
 
-// export class LabeledSet<T> {
-//   private map: Map<String, T>
-// }
+/** A set of objects with unique labels (basically toString-equivalence). */
+export class LabeledSet<T extends Labeled> implements Iterable<T> {
+  private map: Map<String, T>;
+  add(elem: T) {
+    this.map.set(elem.label, elem);
+  }
+  has(elem: T): boolean {
+    return this.map.has(elem.label);
+  }
+  delete(elem: T) {
+    this.map.delete(elem.label);
+  }
+  [Symbol.iterator]() {
+    return this.map.values();
+  }
+}
+/** Superinterface for objects that can be stored in a LabeledSet. */
+export interface Labeled {
+  readonly label: string;
+}
 
 const INVALIDATED = Symbol('Invalidated');
 const SIZE = Symbol('Size');
@@ -522,3 +554,115 @@ export function strcmp(left: string, right: string): number {
 //   }
 //   return [...out];
 // })();
+
+export class Keyed<K extends number, V> implements Iterable<readonly [K, V]> {
+  constructor(private readonly data: readonly V[]) {}
+
+  get(index: K): V {
+    return this.data[index];
+  }
+
+  [Symbol.iterator]() {
+    return Array.entries(this.data);
+  }
+
+  values(): Iterator<V> {
+    return this.data[Symbol.iterator]();
+  }
+}
+
+export class ArrayMap<K extends number, V> implements Iterable {
+  protected readonly rev: ReadonlyMap<V, K>;
+  readonly length: number;
+
+  constructor(private readonly data: readonly V[]) {
+    const rev = new Map<V, K>();
+    for (let i = 0; i < values.length; i++) {
+      rev.set(values[i], i);
+    }
+    this.rev = rev;
+    this.length = data.length;
+  }
+
+  get(index: K): V {
+    return this.data[index];
+  }
+
+  hasValue(value: V): boolean {
+    return this.rev.has(value);
+  }
+
+  index(value: V): K|undefined {
+    const index = this.rev.get(value);
+    if (index == null) throw new Error(`Missing index for ${valule}`);
+    return index;
+  }
+
+  [Symbol.iterator]() {
+    return Array.entries(this.data);
+  }
+
+  values(): Iterator<V> {
+    return this.data[Symbol.iterator]();
+  }
+}
+
+export class MutableArrayBiMap<K extends number, V extends number> {
+  private readonly _fwd: V[] = [];
+  private readonly _rev: K[] = [];
+
+  * [Symbol.iterator](): IterableIterator<[K, V]> {
+    for (let i = 0; i < this._fwd.length; i++) {
+      const val = this._fwd[i];
+      if (val != null) yield [i, val];
+    }
+  }
+
+  * keys(): IterableIterator<K> {
+    for (let i = 0; i < this._fwd.length; i++) {
+      if (this._fwd[i] != null) yield i;
+    }
+  }
+
+  * values(): IterableIterator<V> {
+    for (let i = 0; i < this._rev.length; i++) {
+      if (this._rev[i] != null) yield i;
+    }
+  }
+
+  get(index: K): V {
+    return this._fwd[index];
+  }
+
+  has(key: K): boolean {
+    return this._fwd[key] != null;
+  }
+
+  hasValue(value: V): boolean {
+    return this._rev[value] != null;
+  }
+
+  index(value: V): K|undefined {
+    const index = this._rev[value];
+    if (index == null) throw new Error(`Missing index for ${valule}`);
+    return index;
+  }
+
+  set(key: K, value: V) {
+    if (this._fwd[key]) throw new Error(`already has key ${key}`);
+    if (this._rev[value]) throw new Error(`already has value ${value}`);
+    this._fwd[key] = value;
+    this._rev[value] = key;
+  }
+
+  replace(key: K, value: V): V|undefined {
+    const oldKey = this._rev[value];
+    if (oldKey != null) delete this._fwd[oldKey];
+    const oldValue = this._fwd[key];
+    if (oldValue != null) delete this._rev[oldValue];
+    this._fwd[key] = value;
+    this._rev[value] = key;
+    return oldValue;
+  }
+
+}

@@ -30,6 +30,7 @@ const MENU_NAME_ENCODE = [
 interface ItemOptions {
   trades?: number[];
   use?: boolean;
+  weight?: number;
 }
 
 // An item; note that some tables go up to $49 or even $4a - these can bbe ignored
@@ -61,6 +62,7 @@ export class Item extends Entity {
     this.itemUseData = [];
     this.trades = opts.trades || [];
     this.use = opts.use || false;
+    this.weight = opts.weight || 1;
 
     if (this.use) {
       this.itemUseJump = readLittleEndian(rom.prg, this.itemUseJumpPointer) + 0x14000;

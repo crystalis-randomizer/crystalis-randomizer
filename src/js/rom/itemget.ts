@@ -1,10 +1,12 @@
+import {Rom} from '../rom.js';
 import {Entity, EntityArray} from './entity.js';
 import {MessageId} from './messageid.js';
 import {ITEM_GET_FLAGS, hex, readLittleEndian, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
-import {Rom} from '../rom.js';
 
 const GRANT_ITEM_TABLE = 0x3d6d5;
+const GET_TO_ITEM_BASE = 0x1dd66;
+const GET_TO_ITEM_THRESHOLD = 0x49;
 
 /**
  * Array of ItemGetData table entries, together with the map of
@@ -49,7 +51,7 @@ export class ItemGets extends EntityArray<ItemGet> {
 export class ItemGet extends Entity {
 
   itemPointer: number;
-  itemId: number;
+  private _itemId: number;
 
   tablePointer: number;
   tableBase: number;
@@ -72,8 +74,8 @@ export class ItemGet extends Entity {
   constructor(rom: Rom, id: number) {
     super(rom, id);
 
-    this.itemPointer = 0x1dd66 + id;
-    this.itemId = rom.prg[this.itemPointer];
+    this.itemPointer = GET_TO_ITEM_BASE + id;
+    this._itemId = rom.prg[this.itemPointer];
     // I don't fully understand this table...
     this.tablePointer = 0x1db00 + 2 * id;
     this.tableBase = readLittleEndian(rom.prg, this.tablePointer) + 0x14000;
@@ -92,6 +94,12 @@ export class ItemGet extends Entity {
       this.key = false;
       this.flags = [];
     }
+  }
+
+  get itemId() { return this._itemId; }
+  set itemId(itemId: number) {
+    if (this.id < GET_TO_ITEM_THRESHOLD) throw new Error(`${this.id}`);
+    this._itemId = itemId;
   }
 
   isLosable(): boolean {

@@ -82,8 +82,8 @@ for (const {title, flags} of PRESETS) {
 }
 
 export const FLAGS: FlagSection[] = [
-  ITEM_FLAGS,
   WORLD_FLAGS,
+  EASY_MODE_FLAGS,
   MONSTER_FLAGS,
   SHOP_FLAGS,
   HARD_MODE_FLAGS,
@@ -91,7 +91,6 @@ export const FLAGS: FlagSection[] = [
   ROUTING_FLAGS,
   GLITCH_FLAGS,
   GLITCH_FIX_FLAGS,
-  EASY_MODE_FLAGS,
   EXPERIMENTAL_FLAGS,
   DEBUG_MODE_FLAGS,
 ];

@@ -326,7 +326,11 @@ export namespace iters {
     }
     return count;
   }
-  export function zip<A, B>(left: Iterable<A>, right: Iterable<B>): Iterable<[A, B]>;
+
+  export function zip<A, B>(left: Iterable<A>,
+                            right: Iterable<B>): Iterable<[A, B]>;
+  export function zip<A, B, C>(left: Iterable<A>, right: Iterable<B>,
+                               zipper: (a: A, b: B) => C): Iterable<C>;
   export function zip<A, B, C>(left: Iterable<A>, right: Iterable<B>,
                                zipper: (a: A, b: B) => C = (a, b) => [a, b] as any):
   Iterable<C> {
@@ -343,9 +347,13 @@ export namespace iters {
   }
 }
 
+export function spread<T>(iter: Iterable<T>): T[] {
+  return [...iter];
+}
+
 /** A set of objects with unique labels (basically toString-equivalence). */
 export class LabeledSet<T extends Labeled> implements Iterable<T> {
-  private map: Map<String, T>;
+  private map = new Map<String, T>();
   add(elem: T) {
     this.map.set(elem.label, elem);
   }
@@ -555,15 +563,15 @@ export function strcmp(left: string, right: string): number {
 //   return [...out];
 // })();
 
-export class Keyed<K extends number, V> implements Iterable<readonly [K, V]> {
+export class Keyed<K extends number, V> implements Iterable<[K, V]> {
   constructor(private readonly data: readonly V[]) {}
 
-  get(index: K): V {
+  get(index: K): V|undefined {
     return this.data[index];
   }
 
   [Symbol.iterator]() {
-    return Array.entries(this.data);
+    return this.data.entries() as IterableIterator<[K, V]>;
   }
 
   values(): Iterator<V> {
@@ -571,20 +579,20 @@ export class Keyed<K extends number, V> implements Iterable<readonly [K, V]> {
   }
 }
 
-export class ArrayMap<K extends number, V> implements Iterable {
+export class ArrayMap<K extends number, V> implements Iterable<[K, V]> {
   protected readonly rev: ReadonlyMap<V, K>;
   readonly length: number;
 
   constructor(private readonly data: readonly V[]) {
     const rev = new Map<V, K>();
-    for (let i = 0; i < values.length; i++) {
-      rev.set(values[i], i);
+    for (let i = 0 as K; i < data.length; i++) {
+      rev.set(data[i], i);
     }
     this.rev = rev;
     this.length = data.length;
   }
 
-  get(index: K): V {
+  get(index: K): V|undefined {
     return this.data[index];
   }
 
@@ -594,15 +602,15 @@ export class ArrayMap<K extends number, V> implements Iterable {
 
   index(value: V): K|undefined {
     const index = this.rev.get(value);
-    if (index == null) throw new Error(`Missing index for ${valule}`);
+    if (index == null) throw new Error(`Missing index for ${value}`);
     return index;
   }
 
   [Symbol.iterator]() {
-    return Array.entries(this.data);
+    return this.data.entries() as IterableIterator<[K, V]>;
   }
 
-  values(): Iterator<V> {
+  values(): IterableIterator<V> {
     return this.data[Symbol.iterator]();
   }
 }
@@ -612,25 +620,25 @@ export class MutableArrayBiMap<K extends number, V extends number> {
   private readonly _rev: K[] = [];
 
   * [Symbol.iterator](): IterableIterator<[K, V]> {
-    for (let i = 0; i < this._fwd.length; i++) {
+    for (let i = 0 as K; i < this._fwd.length; i++) {
       const val = this._fwd[i];
       if (val != null) yield [i, val];
     }
   }
 
   * keys(): IterableIterator<K> {
-    for (let i = 0; i < this._fwd.length; i++) {
+    for (let i = 0 as K; i < this._fwd.length; i++) {
       if (this._fwd[i] != null) yield i;
     }
   }
 
   * values(): IterableIterator<V> {
-    for (let i = 0; i < this._rev.length; i++) {
+    for (let i = 0 as V; i < this._rev.length; i++) {
       if (this._rev[i] != null) yield i;
     }
   }
 
-  get(index: K): V {
+  get(index: K): V|undefined {
     return this._fwd[index];
   }
 
@@ -644,7 +652,7 @@ export class MutableArrayBiMap<K extends number, V extends number> {
 
   index(value: V): K|undefined {
     const index = this._rev[value];
-    if (index == null) throw new Error(`Missing index for ${valule}`);
+    if (index == null) throw new Error(`Missing index for ${value}`);
     return index;
   }
 

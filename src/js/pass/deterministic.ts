@@ -634,58 +634,33 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
   // Link some redundant NPCs: Kensu (7e, 74) and Akahana (88, 16)
 
   const {
-    BoatHouse,
-    Brynmaer,
-    Crypt_Draygon2,
-    Joel_Shed,
-    MtSabreNorth_SummitCave,
-    MtSabreWest_Upper,
-    PortoaPalace_ThroneRoom,
-    Portoa_AsinaRoom,
-    Portoa_FortuneTeller,
-    Shyron_Temple,
-    StomHouse,
-    Swan_DanceHall,
-    WindmillCave,
-    WaterfallCave4,
-    WaterfallValleyNorth,
-    ZebuCave,
-    ZombieTown_HouseBasement,
-  } = rom.locations;
-
-  const {
-    KeyToPrison,
-    LovePendant,
-    StatueOfOnyx,
-  } = rom.items;
-
-  const {
-    Akahana, // 16
-    AkahanaInBrynmaer, // 82
-    Asina, // 62
-    AztecaInShyron, // 6e
-    Clark, // 44
-    Draygon, // cb
-    FortuneTeller, // 39
-    Kensu, // 7e
-    KensuInCabin, // 68
-    KensuInSwan, // 74
-    LeafRabbit, // 13
-    OakChild, // 1f
-    OakElder, // 1d
-    OakMother, // 1e
-    PortoaPalaceFrontGuard, // 34
-    PortoaQueen, // 38
-    PortoaThroneRoomBackDoorGuard, // 33
-    Rage, // c3
-    Stom, // 60
-    StonedAkahana, // 88
-    Tornel, // 5f
-    WindmillGuard, // 14
-    Zebu, // 5e
-  } = rom.npcs;
-
-  const flags = rom.flags;
+    locations: {
+      BoatHouse, Brynmaer,
+      Crypt_Draygon2,
+      Joel_Shed,
+      MtSabreNorth_SummitCave, MtSabreWest_Upper,
+      PortoaPalace_ThroneRoom, Portoa_AsinaRoom, Portoa_FortuneTeller,
+      Shyron_Temple, StomHouse, Swan_DanceHall,
+      WindmillCave, WaterfallCave4, WaterfallValleyNorth,
+      ZebuCave, ZombieTown_HouseBasement,
+    },
+    items: {
+      KeyToPrison, LovePendant, StatueOfOnyx,
+    },
+    npcs: {
+      Akahana /* 16 */, AkahanaInBrynmaer, /* 82 */ Asina /* 62 */,
+      AztecaInShyron /* 6e */,
+      Clark /* 44 */, Draygon /* cb */, FortuneTeller /* 39 */,
+      Kensu /* 7e */, KensuInCabin /* 68 */, KensuInSwan /* 74 */,
+      LeafRabbit /* 13 */,
+      OakChild /* 1f */, OakElder /* 1d */, OakMother /* 1e */,
+      PortoaPalaceFrontGuard /* 34 */, PortoaQueen /* 38 */,
+      PortoaThroneRoomBackDoorGuard /* 33 */, Rage /* c3 */,
+      Stom /* 60 */, StonedAkahana /* 88 */,
+      Tornel /* 5f */, WindmillGuard /* 14 */, Zebu /* 5e */,
+    },
+    flags,
+  } = rom;
 
   KensuInSwan.link(Kensu.id);
   KensuInSwan.used = true;

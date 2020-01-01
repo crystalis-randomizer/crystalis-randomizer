@@ -1,6 +1,5 @@
 import {Rom} from '../rom.js';
-import {seq} from './util.js';
-import { Writer } from './writer.js';
+import {Writer} from './writer.js';
 
 const BASE = 0x3ff00;
 
@@ -23,7 +22,7 @@ export class Slots extends Array<number> {
 
   write(writer: Writer) {
     for (let i = 0; i < 0x80; i++) {
-      writer.prg[BASE + i] = this[i];
+      writer.rom[BASE + i] = this[i];
     }
   }
 }

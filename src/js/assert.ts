@@ -11,3 +11,8 @@ export function assert(x: any) {
 export function fail() {
   if (assertionsEnabled) throw new Error('impossible');
 }
+
+// NOTE: not actually a disable-able assert.
+export function die(msg?: string): never {
+  throw new Error(msg);
+}

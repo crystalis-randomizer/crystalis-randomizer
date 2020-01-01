@@ -15,8 +15,8 @@ export function shuffleMimics(rom: Rom, flags: FlagSet, random: Random) {
         const slot = rom.slots[spawn.id];
         if (slot >= 0x70) mimics.push(spawn.id);
         if (flags.preserveUniqueChecks()) {
-          const itemget = rom.itemgets[slot];
-          const item = itemget ?? rom.items[itemget.itemId];
+          const itemget = rom.itemGets[slot];
+          const item = rom.items[itemget?.itemId];
           if (item?.unique) continue;
         }
         // Add eligible chests

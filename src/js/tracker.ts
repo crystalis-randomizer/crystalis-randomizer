@@ -1,12 +1,20 @@
 // Item tracker for web.
 // Uses flagset to figure out actual dependencies.
 
-import {World} from './graph/world.js';
-import {newFill, traverse} from './graph/shuffle.js';
+// import {Graph as LogicGraph} from './logic/graph.js';
+// import {World} from './logic/world.js';
 import {Bits} from './bits.js';
 import {FlagSet} from './flagset.js';
 import {Rom} from './rom.js';
 import {deterministic} from './pass/deterministic.js';
+
+// TODO - fix this!
+declare const newFill: any;
+declare const traverse: any;
+declare const World: any;
+declare const LogicGraph: any;
+type World = any;
+type LogicGraph = any;
 
 const ITEMS: string = `
 sword-of-wind $00
@@ -226,6 +234,7 @@ class Graph {
   /** only used for clearing: set of item index we just assume */
   readonly always: Bits;
 
+  readonly graph: Graph;
   readonly grid: Element;
   readonly map: Element;
 
@@ -236,9 +245,9 @@ class Graph {
               readonly flags: FlagSet) {
     // TODO - compute two depgraphs: one with glitches and one without
     //  - then we can show green vs yellow for glitchable locations..?
-
     (window as any).GRAPH = this;
 
+    this.graph = new LogicGraph(world, flags);
     this.grid = document.getElementsByClassName('grid')[0];
     this.map = document.getElementsByClassName('map')[0];
 

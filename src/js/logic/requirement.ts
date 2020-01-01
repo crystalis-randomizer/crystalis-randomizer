@@ -1,4 +1,5 @@
-import {LabeledSet, iters} from '../util.js';
+import {iters} from '../util.js';
+import {TileId} from './tileid.js';
 
 // NOTE: This could be exported into a non-game-specific library.
 
@@ -33,8 +34,8 @@ export namespace Requirement {
 
   /** Meet a bunch of arbitrary requirements. */
   export function meet(left: Requirement, right: Requirement): Frozen {
-    if (left === OPEN) return right;
-    if (right === OPEN) return left;
+    if (left === OPEN) return freeze(right);
+    if (right === OPEN) return freeze(left);
     if (left === CLOSED || right === CLOSED) return CLOSED;
     const out = new Builder();
     for (const ls of left) {
@@ -71,7 +72,7 @@ export namespace Requirement {
 
   export function isClosed(r: Requirement): boolean {
     const iter = r[Symbol.iterator]();
-    return !iter.next().done;
+    return Boolean(iter.next().done);
   }
 
   /** A requirement that's always met. */
@@ -147,6 +148,7 @@ function containsAll<T>(left: Set<T>, right: Set<T>): boolean {
   return true;
 }
 
+const DEPS_LABEL: unique symbol = Symbol('depsLabel');
 export class Route {
   readonly [DEPS_LABEL]: string; // used for direct-adding to a builder.
   readonly deps: Set<Condition>;
@@ -158,4 +160,3 @@ export class Route {
     this.label = `${this.target}:${this[DEPS_LABEL]}`;
   }
 }
-const DEPS_LABEL: unique symbol = Symbol('depsLabel');

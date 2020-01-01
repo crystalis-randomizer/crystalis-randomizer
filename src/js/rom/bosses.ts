@@ -1,3 +1,4 @@
+import {die} from '../assert.js';
 import {Rom} from '../rom.js';
 import {Flag} from './flags.js';
 import {Npc} from './npc.js';
@@ -10,6 +11,7 @@ interface BossData {
   readonly shuffled?: boolean;
   readonly address?: number;
   readonly sword?: number;
+  readonly object?: number;
 }
 
 // TODO - we need a consistent way to refer to bosses...
@@ -109,8 +111,8 @@ export class Bosses implements Iterable<Boss> {
     npc: this.rom.npcs.Draygon,
   });
   readonly Dyna = new Boss(this, {
-    // TODO - address? npc?
     kill: 0xd,
+    object: 0xa4,
   });
 
   private readonly all: Boss[] = [];
@@ -171,13 +173,14 @@ export class Boss {
 
   // Only used for logic.
   constructor(readonly bosses: Bosses,
-              {flag, npc, kill, shuffled, address, sword = 3}: BossData) {
+              {flag, npc, kill, shuffled,
+               address, sword = 3, object}: BossData) {
     const {prg} = bosses.rom;
     this.flag = flag;
     this.npc = npc;
     this.object =
         address ? prg[address] : npc ? npc.data[1] :
-        die(`address or npc is required`);
+        object ?? die(`address, npc, or object is required`);
     this.swordLevel = sword;
     this.shuffled = Boolean(shuffled);
     this.kill = kill;
@@ -188,8 +191,4 @@ export class Boss {
       this.location = prg[0x1f95d + kill];
     }
   }
-}
-
-function die(msg: string): never {
-  throw new Error(msg);
 }

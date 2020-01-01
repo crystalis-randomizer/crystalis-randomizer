@@ -1120,7 +1120,7 @@ export const Exit = DataTuple.make(4, {
 
   isSeamless(this: any): boolean {
     return Boolean(this.entrance & 0x20);
-  }
+  },
 
   toString(this: any): string {
     return `Exit ${this.hex()}: (${hex(this.x)}, ${hex(this.y)}) => ${

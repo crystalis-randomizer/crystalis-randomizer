@@ -5,7 +5,7 @@ import {ProgressTracker,
         shuffle2 as _shuffleDepgraph} from './depgraph.js';
 import {FetchReader} from './fetchreader.js';
 import {FlagSet} from './flagset.js';
-import {AssumedFill} from './logic/shuffle.js';
+import {Graph} from './logic/graph.js';
 import {World} from './logic/world.js';
 import {crumblingPlatforms} from './pass/crumblingplatforms.js';
 import {deterministic, deterministicPreParse} from './pass/deterministic.js';
@@ -23,12 +23,8 @@ import {unidentifiedItems} from './pass/unidentifieditems.js';
 import {Random} from './random.js';
 import {Rom} from './rom.js';
 import {Area} from './rom/area.js';
-import {Constraint} from './rom/constraint.js';
-import {Graphics} from './rom/graphics.js';
 import {Location, Spawn} from './rom/location.js';
-import {Monster} from './rom/monster.js';
 import {Shop, ShopType} from './rom/shop.js';
-import * as slots from './rom/slots.js';
 import {Spoiler} from './rom/spoiler.js';
 import {hex, seq, watchArray, writeLittleEndian} from './rom/util.js';
 import {DefaultMap} from './util.js';
@@ -203,8 +199,9 @@ export async function shuffle(rom: Uint8Array,
 
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.
-  const w = World.build(parsed, flags);
-  const fill = await new AssumedFill(parsed, flags).shuffle(w.graph, random, progress);
+  const world = new World(parsed, flags);
+  const graph = new Graph([world.getLocationList()]);
+  const fill = await graph.shuffle(flags, random, undefined, progress);
   if (fill) {
     // const n = (i: number) => {
     //   if (i >= 0x70) return 'Mimic';
@@ -217,9 +214,14 @@ export async function shuffle(rom: Uint8Array,
     //     console.log(`$${hex(i)} ${n(i)}: ${n(fill.items[i])} $${hex(fill.items[i])}`);
     //   }
     // }
-    w.traverse(w.graph, fill); // fill the spoiler (may also want to just be a sanity check?)
 
-    slots.update(parsed, fill.slots);
+    // TODO - fill the spoiler log!
+
+    //w.traverse(w.graph, fill); // fill the spoiler (may also want to just be a sanity check?)
+
+    for (const [slot, item] of fill) {
+      parsed.slots[slot & 0xff] = item & 0xff;
+    }
   } else {
     return [rom, -1];
     //console.error('COULD NOT FILL!');

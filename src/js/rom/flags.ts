@@ -8,7 +8,7 @@ import {Condition, Requirement} from '../logic/requirement.js';
 const FLAG = Symbol();
 
 // TODO - maybe alias should just be in overlay.ts?
-interface Logic {
+export interface Logic {
   assumeTrue?: boolean;
   assumeFalse?: boolean;
   track?: boolean;
@@ -409,7 +409,7 @@ export class Flags {
   OakElder = tracked(~0x101);
   WaterfallCaveSwordOfWaterChest = tracked(~0x102);
   StxyLeftUpperSwordOfThunderChest = tracked(~0x103);
-  MesiaInTower = tracked(~0x104);
+  MesiaInTower = tracked(0x104);
   SealedCaveBallOfWindChest = tracked(~0x105);
   MtSabreWestTornadoBraceletChest = tracked(~0x106);
   GiantInsect = tracked(~0x107);
@@ -435,14 +435,14 @@ export class Flags {
   Kelbesque2 = tracked(0x126); // opel statue
   OakMother = tracked(0x127);
   PortoaQueen = tracked(0x128);
-  AkahanaStatueTradein = tracked(0x129);
+  AkahanaStatueOfOnyxTradein = tracked(0x129);
   OasisCaveFortressBasementChest = tracked(0x12a);
   Brokahana = tracked(0x12b);
   EvilSpiritIslandRiverLeftChest = tracked(0x12c);
   Deo = tracked(0x12d);
   Vampire1 = tracked(0x12e);
   OasisCaveNorthwestChest = tracked(0x12f);
-  AkahanaStoneTradein = tracked(0x130);
+  AkahanaFluteOfLimeTradein = tracked(0x130);
   ZebuStudent = tracked(0x131); // TODO - may opt for 2 in cave instead?
   WindmillGuard = tracked(0x132);
   MtSabreNorthBackOfPrisonChest = tracked(0x133);
@@ -697,8 +697,7 @@ export class Flags {
     }
   }
 
-
-  // Saves > 470 bytes!
+  // Saves > 470 bytes of redundant flag sets!
   defrag() {
     // make a map of new IDs for everything.
     const remapping = new Map<number, (f: FlagContext) => number>();
@@ -717,12 +716,15 @@ export class Flags {
     // now move all the movable flags.
     let i = 0;
     let j = 0x2ff;
+    // WARNING: i and j are bound to the outer scope!  Closing over them
+    // will NOT work as intended.
+    function ret<T>(x: T): () => T { return () => x; }
     while (i < j) {
       if (this[i] || this.unallocated.has(i)) { i++; continue; }
       const f = this[j];
       if (!f || f.fixed) { j--; continue; }
       // f is a movable flag.  Move it to i.
-      remapping.set(j, () => i);
+      remapping.set(j, ret(i));
       (f as Writable<Flag>).id = i;
       this[i] = f;
       delete this[j];
@@ -775,7 +777,7 @@ export class Flags {
       for (let i = list.length - 1; i >= 0; i--) {
         let f = list[i];
         if (f < 0) f = ~f;
-        const remap = remapping.get(list[i]);
+        const remap = remapping.get(f);
         if (remap == null) continue;
         let mapped = remap({...ctx, index: i});
         if (mapped >= 0) {

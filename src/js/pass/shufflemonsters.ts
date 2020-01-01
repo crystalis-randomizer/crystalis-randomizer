@@ -5,6 +5,7 @@ import {Constraint} from '../rom/constraint.js';
 import {Graphics} from '../rom/graphics.js';
 import {Location} from '../rom/location.js';
 import {Monster} from '../rom/monster.js';
+import {SCALED_MONSTERS} from './rescalemonsters.js';
 
 export function shuffleMonsters(rom: Rom, flags: FlagSet, random: Random) {
   // TODO: once we have location names, compile a spoiler of shuffled monsters

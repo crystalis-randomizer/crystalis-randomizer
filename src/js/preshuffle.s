@@ -1483,8 +1483,8 @@ GrantItemInRegisterA:
 
 ;;; Convert a beq to a bcs for mimic spawns - any chest between $70 and $80
 ;;; will now spawn a mimic.
-.org $3d3fd
-  .byte $b0
+;;; .org $3d3fd
+;;;   .byte $b0
 
 
 ;; End of ActivateTriggerSquare restores game mode to normal,

@@ -354,12 +354,12 @@ const keyup = (v, e) => {
     if (shouldUpdate) v.update({[e.target.dataset.name]: true});
   } else {
     if (e.key == 's') {
-      if (v.scale == 4) {
+      if (v.scale == 9) {
         v.scale = 30;
       } else if (v.scale == 30) {
         v.scale = 0;
       } else {
-        v.scale = (v.scale + 1) % 5;
+        v.scale = (v.scale + 1) % 10;
       }
       v.update();
     } else if (e.key == 'l') {

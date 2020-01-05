@@ -552,9 +552,10 @@ function patchTooManyItemsMessage(rom: Rom) {
 
 function addZombieWarp(rom: Rom) {
   // Make space for the new flag between Joel and Swan
-  for (let i = 0x2f5; i < 0x2fc; i++) {
-    rom.moveFlag(i, i - 1);
-  }
+  rom.flags.insertZombieWarpFlag();
+  // for (let i = 0x2f5; i < 0x2fc; i++) {
+  //   rom.moveFlag(i, i - 1);
+  // }
   // Update the menu
   const message = rom.messages.parts[0x21][0];
   message.text = [
@@ -595,11 +596,14 @@ function reversibleSwanGate(rom: Rom) {
     Spawn.of({xt: 0x0e, yt: 0x0a, type: 2, id: 0xb3}), // new trigger: erase guards
   );
 
-  // Guards ($2d) at swan gate ($73) ~ set 10d after opening gate => condition for despawn
-  rom.npcs[0x2d].localDialogs.get(0x73)![0].flags.push(0x10d);
-
-  // Despawn guard trigger requires 10d
-  rom.trigger(0xb3).conditions.push(0x10d);
+  // // NOTE: just use the actual flag instead?
+  // // Guards ($2d) at swan gate ($73) ~ set 0ef after opening gate => condition for despawn
+  // rom.npcs[0x2d].localDialogs.get(0x73)![0].flags.push(0x0ef);
+  // // Despawn guard trigger requires 0ef
+  // rom.trigger(0xb3).conditions.push(0x0ef);
+  rom.npcs[0x2d].localDialogs.get(0x73)![0].flags.push(rom.flags.SwanGate.id);
+  rom.trigger(0xb3).conditions.push(rom.flags.SwanGate.id);
+  // TODO - can we do away with the trigger?  Just spawn them on the same condition...
 }
 
 function leafElderInSabreHeals(rom: Rom): void {
@@ -645,7 +649,7 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
       ZebuCave, ZombieTown_HouseBasement,
     },
     items: {
-      KeyToPrison, LovePendant, StatueOfOnyx,
+      GlowingLamp, KeyToPrison, LovePendant, StatueOfOnyx,
     },
     npcs: {
       Akahana /* 16 */, AkahanaInBrynmaer, /* 82 */ Asina /* 62 */,
@@ -665,9 +669,10 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
   KensuInSwan.link(Kensu.id);
   KensuInSwan.used = true;
   KensuInSwan.data = [...Kensu.data] as any;
+  Kensu.data[0] = GlowingLamp.id;
   Swan_DanceHall.spawns.find(s => s.isNpc() && s.id === Kensu.id)!.id =
       KensuInSwan.id;
-  LovePendant.itemUseData[0].want = KensuInSwan.id;
+  LovePendant.itemUseData[0].want = 0x100 | KensuInSwan.id;
 
   // dialog is shared between 88 and 16.
   StonedAkahana.linkDialog(Akahana.id);
@@ -680,7 +685,7 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
   AkahanaInBrynmaer.data = [...Akahana.data] as any; // ensure give item
   Brynmaer.spawns.find(s => s.isNpc() && s.id === Akahana.id)!.id =
       AkahanaInBrynmaer.id;
-  StatueOfOnyx.itemUseData[0].want = AkahanaInBrynmaer.id;
+  StatueOfOnyx.itemUseData[0].want = 0x100 | AkahanaInBrynmaer.id;
 
   // Leaf elder in house ($0d @ $c0) ~ sword of wind redundant flag
   // dialog(0x0d, 0xc0)[2].flags = [];
@@ -696,7 +701,8 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
 
   // Windmill guard ($14 @ $0e) shouldn't despawn after abduction (038),
   // but instead after giving the item (088)
-  WindmillGuard.spawns(WindmillCave)[1] = ~flags.WindmillGuard.id;
+  WindmillGuard.spawns(WindmillCave)[1] =
+      ~flags.WindmillGuardAlarmFluteTradein.id;
   //dialog(0x14, 0x0e)[0].flags = []; // remove redundant flag ~ windmill key
 
   // Akahana ($16 / 88) ~ shield ring redundant flag

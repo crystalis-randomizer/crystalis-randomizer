@@ -304,6 +304,11 @@ export namespace iters {
       yield * iter;
     }
   }
+
+  export function isEmpty(iter: Iterable<unknown>): boolean {
+    return Boolean(iter[Symbol.iterator]().next().done);
+  }
+
   export function * map<T, U>(iter: Iterable<T>, f: (elem: T) => U): IterableIterator<U> {
     for (const elem of iter) {
       yield f(elem);
@@ -325,6 +330,14 @@ export namespace iters {
       count++;
     }
     return count;
+  }
+
+  export function first<T>(iter: Iterable<T>): T;
+  export function first<T>(iter: Iterable<T>, fallback: T): T;
+  export function first<T>(iter: Iterable<T>, fallback?: T): T {
+    for (const elem of iter) return elem;
+    if (arguments.length < 2) throw new Error(`Empty iterable: ${iter}`);
+    return fallback as T;    
   }
 
   export function zip<A, B>(left: Iterable<A>,

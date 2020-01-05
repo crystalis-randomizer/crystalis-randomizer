@@ -122,7 +122,8 @@
 06b - UNUSED stoned people cured
 06c - defeated draygon 1
 06d - paralysis flag for zebu - UNUSED (never read?)
-06e - paralysis flag for tornel - UNUSED (never read?)
+06e - paralysis flag for tornel - UNUSED (never read?) ==> we use for *currently* riding dolphin
+
 06f - paralysis flag for asina - UNUSED (never read?)
       $648e
 070 - kensu paralyzed in tavern [HARDCODED in rando]
@@ -267,8 +268,8 @@
 0eb - received tower message 2
 0ec - received tower message 3
 0ed - mesia (8e) first dialog flag
-0ee - UNUSED ==> we use for *currently* riding dolphin
-0ef - unused
+0ee - unused
+0ef - UNUSED ==> we use for swan guards satisfied
       $649e
 0f0 - unused
 0f1 - unused

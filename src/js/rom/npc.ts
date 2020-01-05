@@ -137,8 +137,6 @@ export class Npc extends Entity {
   // Flags to check per location: positive means "must be set"
   spawnConditions = new Map<number, FlagList>(); // key uint8
 
-  dialogPointer: number;
-  dialogBase: number;
   globalDialogs: GlobalDialog[];
   localDialogs = new Map<number, LocalDialog[]>();
 
@@ -146,15 +144,15 @@ export class Npc extends Entity {
     super(npcs.rom, id);
     const rom = npcs.rom;
     if (id > 0xcc) throw new Error(`Unavailable: ${id}`);
-    this._used = !UNUSED_NPCS.has(id) /*&& this.base <= 0x1c781*/ && (id < 0x8f || id >= 0xc0);
-    const hasDialog = id <= 0xc3;
+    // TODO - check (this.base <= 0x1c781) for unused?
+    this._used = !UNUSED_NPCS.has(id) && (id < 0x8f || id >= 0xc0);
+    const dialogBase = addr(rom.prg, this.dialogPointer, 0x14000);
+    const hasDialog = id < 0xc4 && dialogBase !== 0x1cb39;
 
     this.dataBase = 0x80f0 | ((id & 0xfc) << 6) | ((id & 3) << 2);
     this.data = tuple(rom.prg, this.dataBase, 4);
 
     this.spawnPointer = 0x1c5e0 + (id << 1);
-    // console.log(`NPC Spawn $${this.id.toString(16)}: ${rom.prg[this.pointer].toString(16)} ${
-    //              rom.prg[this.pointer + 1].toString(16)}`);
     this.spawnBase = readLittleEndian(rom.prg, this.spawnPointer) + 0x14000;
 
     // Populate spawn conditions
@@ -167,11 +165,9 @@ export class Npc extends Entity {
     }
 
     // Populate the dialog table
-    this.dialogPointer = 0x1c95d + (id << 1);
-    this.dialogBase = hasDialog ? addr(rom.prg, this.dialogPointer, 0x14000) : 0;
     this.globalDialogs = [];
     if (hasDialog) {
-      let a = this.dialogBase;
+      let a = dialogBase;
       while (true) {
         const [dialog, last] = GlobalDialog.parse(rom.prg, a);
         a += 4;
@@ -216,6 +212,10 @@ export class Npc extends Entity {
     //              this.bytes().map(x=>x.toString(16).padStart(2,0)).join(' ')}`);
   }
 
+  get dialogPointer(): number {
+    return 0x1c95d + (this.id << 1);
+  }
+
   get used() { return this._used; }
   set used(used: boolean) {
     // quick check: we can't use some indexes because data tables co-opted.
@@ -252,7 +252,7 @@ export class Npc extends Entity {
 
   hasDialog(): boolean {
     const result = Boolean(this.globalDialogs.length || this.localDialogs.size);
-    if (this.id >= 0xc0 && this.id !== 0xc3 && result) {
+    if (this.id > 0x8e && this.id !== 0xc3 && result) {
       throw new Error(`invalid: ${this.id}`);
     }
     return result;

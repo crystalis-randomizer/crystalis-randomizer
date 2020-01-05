@@ -1,5 +1,5 @@
 import {Rom} from '../rom.js';
-import {DefaultMap} from '../util.js';
+import {DefaultMap, iters} from '../util.js';
 import {Condition, Requirement} from './requirement.js';
 
 export class Terrains {
@@ -55,6 +55,11 @@ export class Terrains {
   seamless(delegate: Terrain) {
     return this._seamless.get(delegate);
   }
+
+  label(terrain: Terrain, rom: Rom) {
+    if (terrain.label) return terrain.label(rom);
+    return 'Terrain';
+  }
 }
 
 type DirMask = number;
@@ -63,6 +68,7 @@ type ExitRequirements = ReadonlyArray<readonly [DirMask, Requirement.Frozen]>;
 export interface Terrain {
   enter: Requirement.Frozen;
   exit: ExitRequirements;
+  label?: (rom: Rom) => string;
 }
 
 export namespace Terrain {
@@ -85,6 +91,10 @@ export namespace Terrain {
   export const SLOPE9 = 0x800; // slopt 9
   // slope 10+ => flight only
   export const DOLPHIN = 0x1000;
+
+  export function label(t: Terrain, rom: Rom) {
+    return t.label?.(rom) ?? 'Terrain';
+  }
 }
 
 class SeamlessTerrain implements Terrain {
@@ -94,6 +104,10 @@ class SeamlessTerrain implements Terrain {
     this.enter = _delegate.enter;
     this.exit = _delegate.exit;
   }
+
+  label(rom: Rom) {
+    return `Seamless(${Terrain.label(this._delegate, rom)})`;
+  }
 }
 
 // Basic terrain with an entrance and/or undirected exit condition
@@ -102,6 +116,19 @@ class SimpleTerrain implements Terrain {
   constructor(readonly enter: Requirement.Frozen,
               exit: Requirement.Frozen = Requirement.OPEN) {
     this.exit = [[0xf, exit]];
+  }
+
+  get kind() { return 'Simple'; }
+
+  label(rom: Rom) {
+    const terr = [];
+    if (!Requirement.isOpen(this.enter)) {
+      terr.push(`enter = ${debugLabel(this.enter, rom)}`);
+    }
+    if (!Requirement.isOpen(this.exit[0][1])) {
+      terr.push(`exit = ${debugLabel(this.exit[0][1], rom)}`);
+    }
+    return `${this.kind}(${terr.join(', ')})`;
   }
 }
 
@@ -114,6 +141,25 @@ class SouthTerrain implements Terrain {
             [[0xb, exit], [0x4, Requirement.OPEN]] :
             [[0xf, Requirement.OPEN]];
   }
+
+  get kind() { return 'South'; }
+
+  label(rom: Rom) {
+    if (this.exit.length === 1) {
+      return SimpleTerrain.prototype.label.call(this as any, rom);
+    }
+    const terr = [];
+    if (!Requirement.isOpen(this.enter)) {
+      terr.push(`enter = ${debugLabel(this.enter, rom)}`);
+    }
+    if (!Requirement.isOpen(this.exit[0][1])) {
+      terr.push(`other = ${debugLabel(this.exit[0][1], rom)}`);
+    }
+    if (!Requirement.isOpen(this.exit[1][1])) {
+      terr.push(`south = ${debugLabel(this.exit[1][1], rom)}`);
+    }
+    return `${this.kind}(${terr.join(', ')})`;
+  }
 }
 
 // Make a terrain from a tileeffects value, augmented with a few details.
@@ -125,7 +171,7 @@ function makeTile(rom: Rom, effects: number): Terrain {
     if (effects & Terrain.SLOPE) {
       exit = rom.flags.ClimbWaterfall.r;
     }
-    enter = [[rom.flags.AbleToRideDolphin.c], [rom.flags.Flight.c]];
+    enter = [[rom.flags.CurrentlyRidingDolphin.c], [rom.flags.Flight.c]];
   } else {
     if (effects & Terrain.SLOPE9) {
       exit = rom.flags.ClimbSlope9.r;
@@ -151,12 +197,16 @@ class BossTerrain extends SimpleTerrain {
   constructor(readonly _flag: number) {
     super(Requirement.OPEN, [[_flag as Condition]]);
   }
+
+  get kind() { return 'Boss'; }
 }
 
 class StatueTerrain extends SouthTerrain {
   constructor(readonly _req: Requirement.Frozen) {
     super(Requirement.OPEN, _req);
   }
+
+  get kind() { return 'Statue'; }
 }
 
 class FlagTerrain extends SimpleTerrain {
@@ -173,6 +223,8 @@ class FlagTerrain extends SimpleTerrain {
     super(Requirement.or(base.enter, enter),
           Requirement.or(base.exit[0][1], exit));
   }
+
+  get kind() { return 'Flag'; }
 }
 const CLOSED = new SimpleTerrain(Requirement.CLOSED, Requirement.CLOSED);
 
@@ -214,4 +266,35 @@ class MeetTerrain implements Terrain {
     this.enter = Requirement.meet(left.enter, right.enter);
     this.exit = exit;
   }
+
+  get kind() { return 'Terrain'; }
+
+  label(rom: Rom): string {
+    if (this.exit.length === 1) {
+      return SimpleTerrain.prototype.label.call(this as any, rom);
+    }
+    const terr = [];
+    if (!Requirement.isOpen(this.enter)) {
+      terr.push(`enter = ${debugLabel(this.enter, rom)}`);
+    }
+    for (const [dirs, req] of this.exit) {
+      const dirstring = [dirs & 1 ? 'N' : '', dirs & 2 ? 'W' : '',
+                         dirs & 4 ? 'S' : '', dirs & 8 ? 'E' : ''];
+      terr.push(`exit${dirstring} = ${debugLabel(req, rom)}`);
+    }
+    return `${this.kind}(${terr.join(', ')})`;
+  }
 }
+
+// NOTE: this kind of wants to be in Requirement, but it's rom-specific...
+export function debugLabel(r: Requirement, rom: Rom): string {
+  const css = [...r];
+  const s = css.map(cs => iters.isEmpty(cs) ? 'open' :
+                    [...cs].map(
+                        (c: Condition) => rom.flags[c]?.debug).join(' & '))
+      .join(') | (');
+  return css.length > 1 ? `(${s})` : css.length ? s : 'never';
+}
+
+(Terrain as any).debugLabel = debugLabel;
+if (typeof window === 'object') (window as any).debugLabel = debugLabel;

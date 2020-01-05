@@ -51,6 +51,14 @@ export namespace Hitbox {
     return s;
   }
 
+  export function screen(tile: TileId): Hitbox {
+    const ts = [];
+    for (let t = 0; t < 0xf0; t++) {
+      ts.push((tile & ~0xff | t) as TileId);
+    }
+    return ts;
+  }
+
   export function atLocation(h: Hitbox, ...locations: Location[]): Hitbox {
     const s = new Set<TileId>();
     const ts = [...h];

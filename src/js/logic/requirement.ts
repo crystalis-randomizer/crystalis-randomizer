@@ -85,6 +85,8 @@ export namespace Requirement {
   export class Builder implements Requirement {
     private readonly map = new Map<string, Set<Condition>>();
 
+    constructor(readonly self?: Condition) {}
+
     [Symbol.iterator](): Iterator<Iterable<Condition>> {
       return this.map.values();
     }
@@ -93,7 +95,7 @@ export namespace Requirement {
     private addInternal(newLabel: string, newDeps: Set<Condition>): boolean {
       for (const c of newDeps) if (Array.isArray(c)) throw new Error();
 
-      if (this.map.has(newLabel)) return false;
+      if (newDeps.has(this.self!) || this.map.has(newLabel)) return false;
       for (const [curLabel, curDeps] of this.map) {
         if (containsAll(newDeps, curDeps)) return false;
         if (containsAll(curDeps, newDeps)) this.map.delete(curLabel);

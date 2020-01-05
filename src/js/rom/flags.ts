@@ -59,6 +59,10 @@ export class Flag {
   get r(): Requirement.Single {
     return [[this.id as Condition]];
   }
+
+  get debug(): string {
+    return this.id.toString(16).padStart(3, '0') + ' ' + this.name;
+  }
 }
 
 function obsolete(obsolete: number | ((ctx: FlagContext) => number)): Flag {
@@ -444,7 +448,7 @@ export class Flags {
   OasisCaveNorthwestChest = tracked(0x12f);
   AkahanaFluteOfLimeTradein = tracked(0x130);
   ZebuStudent = tracked(0x131); // TODO - may opt for 2 in cave instead?
-  WindmillGuard = tracked(0x132);
+  WindmillGuardAlarmFluteTradein = tracked(0x132);
   MtSabreNorthBackOfPrisonChest = tracked(0x133);
   ZebuInShyron = tracked(0x134);
   FogLampCaveBackChest = tracked(0x135);

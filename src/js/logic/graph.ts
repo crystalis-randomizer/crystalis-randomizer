@@ -63,12 +63,18 @@ export type ItemId = number & {__itemId__: never};
 export class Graph {
 
   //private readonly reverseWorlds: ReadonlyMap<LocationList, number>;
-  private readonly fixed: number;
+  private readonly common: number;
   private readonly slots: ArrayMap<SlotIndex, SlotId>;
   private readonly items: ArrayMap<ItemIndex, ItemId>;
   // Note that not every item gets an index - only those in the graph.
   private readonly slotInfos: ReadonlyMap<SlotId, SlotInfo>;
   private readonly itemInfos: ReadonlyMap<ItemId, ItemInfo>;
+
+  // Items that provide progression.
+  private readonly progression: Set<ItemId>;
+
+  // /** Mapping of provides to the same requires. */
+  // private readonly commonFill: ArrayMap<SlotIndex, ItemIndex>;
 
   /** Bitsets keyed by ItemIndex, represent a DNF condition. */
   readonly graph: Keyed<SlotIndex, readonly Bits[]>;
@@ -84,7 +90,6 @@ export class Graph {
     // Build up a list of all known provides/requires.
     const provided = new Set<number>();
     const required = new Set<number>();
-    const fixed = new Set<number>();
     const slots = new Map<SlotId, SlotInfo>();
     const items = new Map<ItemId, ItemInfo>();
     for (let i = 0; i < worlds.length; i++) {
@@ -92,20 +97,21 @@ export class Graph {
       const worldId = i << 24;
       for (const [providedId, requirement] of world.requirements) {
         provided.add(worldId | providedId);
-        fixed.add(worldId | providedId);
         for (const route of requirement) {
           for (const cond of route) {
             required.add(worldId | cond);
-            fixed.add(worldId | cond);
           }
         }        
       }
+
+      // Probably just make a common index fill and do a full indirection?
+      //  - if it's in the common fill, use it, otherwise fall back on the
+      //    item fill?
+
       for (const [itemId, info] of world.items) {
-        fixed.delete(worldId | itemId);
         items.set((worldId | itemId) as ItemId, info);
       }
       for (const [slotId, info] of world.slots) {
-        fixed.delete(worldId | slotId);
         slots.set((worldId | slotId) as SlotId, info);
       }
     }
@@ -114,16 +120,22 @@ export class Graph {
     this.itemInfos = new Map(items);
     this.slotInfos = new Map(slots);
 
-    // Delete anything that's not used for logical progression.
-    for (const id of slots.keys()) {
-      if (!provided.has(id) && !required.has(id)) slots.delete(id);
+    this.progression = new Set(required as Set<ItemId>);
+    for (const item of items.keys()) required.add(item); // non-progression last
+
+    const common = new Set<number>();
+    const extraProvides = new Set<number>();
+    const extraRequires = new Set<number>();
+    for (const check of required) {
+      (provided.has(check) ? common : extraRequires).add(check);
     }
-    for (const id of items.keys()) {
-      if (!provided.has(id) && !required.has(id)) items.delete(id);
+    for (const check of provided) {
+      if (!required.has(check)) extraProvides.add(check);
     }
-    this.fixed = fixed.size;
-    this.slots = new ArrayMap([...fixed as Set<SlotId>, ...slots.keys()]);
-    this.items = new ArrayMap([...fixed as Set<ItemId>, ...items.keys()]);
+
+    this.common = common.size;
+    this.slots = new ArrayMap([...common, ...extraProvides] as SlotId[]);
+    this.items = new ArrayMap([...common, ...extraRequires] as ItemId[]);
 
     // Build up the graph now that we have the array maps.
     const graph: Bits[][] = [];
@@ -161,7 +173,7 @@ export class Graph {
 
   async shuffle(flagset: FlagSet,
                 random: Random,
-                attempts = 2000,
+                attempts = 20, // 00
                 progress?: ProgressTracker): Promise<Map<SlotId, ItemId>|null> {
     if (progress) progress.addTasks(Math.floor(attempts / 100));
     for (let attempt = 0; attempt < attempts; attempt++) {
@@ -178,10 +190,14 @@ export class Graph {
       if (!this.fillInternal(indexFill, items, has, random, flagset, backtracks)) {
         continue;
       }
-      const final = this.traverse(i => indexFill.get(i) ?? die(), Bits.of());
+      const final = this.traverse(i => indexFill.get(i), Bits.of());
       // TODO - flags to loosen this requirement?
       if (final.size !== this.slots.length) {
-        console.error(`Unexpected size mismatch!`, final, this);
+        const ns = (si: SlotIndex) => this.checkName(this.slots.get(si)!);
+        const missing = new Set([...this.slots].map(x => x[0]));
+        for (const s of final) missing.delete(s);
+        console.error(`Initial fill never filled slots:
+  ${[...missing].map(ns).sort().join('\n  ')}`, final, this);
         continue;
       }
       this.expandFill(indexFill, fill);
@@ -207,7 +223,7 @@ export class Graph {
       const itemInfo = this.itemInfoFromIndex(bit);
       has = Bits.without(has, bit);
       const reachable =
-          this.expandReachable(this.traverse(i => fill.get(i) ?? die(), has),
+          this.expandReachable(this.traverse(i => fill.get(i), has),
                                flagset);
       random.shuffle(reachable);
       let found = false;
@@ -216,7 +232,7 @@ export class Graph {
         if (checked.has(slot)) continue;
         checked.add(slot);
         const slotInfo = this.slotInfoFromIndex(slot);
-        if (!this.fits(slotInfo, itemInfo, flagset)) continue;
+        if (!slotInfo || !this.fits(slotInfo, itemInfo, flagset)) continue;
         fill.set(slot, bit);
         found = true;
         break;
@@ -229,7 +245,7 @@ export class Graph {
           if (checked.has(slot) || !fill.has(slot) || fixed.has(slot)) continue;
           checked.add(slot);
           const slotInfo = this.slotInfoFromIndex(slot);
-          if (!this.fits(slotInfo, itemInfo, flagset)) continue;
+          if (!slotInfo || !this.fits(slotInfo, itemInfo, flagset)) continue;
           const previousItem = fill.replace(slot, bit) ?? die();
           has = Bits.with(has, previousItem);
           items.push(previousItem);
@@ -239,6 +255,11 @@ export class Graph {
         }
         if (found) continue;
       }
+      const ns = (si: SlotIndex) => this.checkName(this.slots.get(si)!);
+      const ni = (ii: ItemIndex) => this.checkName(this.items.get(ii)!);
+      console.log(`Pool:\n  ${items.map(ni).join('\n  ')}`);
+      console.log(`Fill:\n  ${[...fill].map(([s,i]) => `${ns(s)}: ${ni(i)}`).join('\n  ')}`);
+      console.error(`REROLL: Could not place item index ${bit}: ${ni(bit)}`);
       return false;
     }
     return true;
@@ -251,7 +272,7 @@ export class Graph {
     for (const slot of slots) {
       const info = this.slotInfoFromIndex(slot);
       // don't bother with non-unique slots at this stage.
-      if (flagset.preserveUniqueChecks() && !info.unique) continue;
+      if (!info || flagset.preserveUniqueChecks() && !info.unique) continue;
       addCopies(out, slot, info.weight || 1);
     }
     return out;
@@ -263,7 +284,9 @@ export class Graph {
     for (const [id, info] of this.itemInfos) {
       const index = this.items.index(id);
       // skip non-progression and already-placed items
-      if (index == null || excludeSet.has(index)) continue;
+      if (index == null) continue;
+      if (!this.progression.has(id)) continue;
+      if (excludeSet.has(index)) continue;
       addCopies(arr, index, info.weight || 1);
     }
     return random.shuffle(arr);
@@ -311,6 +334,14 @@ export class Graph {
       random.shuffle(pass);
     }
 
+    const n = (si: number) => this.checkName(si);
+    const sc = iters.count(iters.concat(...slotPasses));
+    const ic = iters.count(iters.concat(...itemPasses));
+    if (ic > sc) {
+      console.log(`Slots ${sc}:\n  ${[...iters.concat(...slotPasses)].map(n).join('\n  ')}`);
+      console.log(`Items ${ic}:\n  ${[...iters.concat(...itemPasses)].map(n).join('\n  ')}`);
+      throw new Error(`Too many items`);
+    }
     for (const item of iters.concat(...itemPasses)) {
       // Try to place the item, starting with earlies first.
       // Mimics come before consumables because there's fewer places they can go.
@@ -331,6 +362,9 @@ export class Graph {
       }
       if (!found) {
         // console.error(`Failed to fill extra item ${item}. Slots: ${earlySlots}, ${otherSlots}`);
+        console.log(`Slots:\n  ${[...iters.concat(...slotPasses)].map(n).join('\n  ')}`);
+        //console.log(`Fill:\n  ${[...fill].map(([s,i]) => `${ns(s)}: ${ni(i)}`).join('\n  ')}`);
+        console.error(`REROLL: Could not place item ${n(item)}`);
         return null;
       }
     }
@@ -339,7 +373,7 @@ export class Graph {
 
   // NOTE: for an IndexFill, this is just get(), but for
   // an IdFill, we need to map it back and forth...
-  traverse(fill: (slot: SlotIndex) => ItemIndex,
+  traverse(fill: (slot: SlotIndex) => ItemIndex|undefined,
            has: Bits,
            path?: number[][]): Set<SlotIndex> {
     has = Bits.clone(has);
@@ -362,8 +396,21 @@ export class Graph {
         if (!Bits.containsAll(has, needed[i])) continue;
         if (path) path.push([n, ...Bits.bits(needed[i])]);
         reachable.add(n);
-        const item = n < this.fixed ? n as unknown as ItemIndex : fill(n);
-        if (item != null) {
+        // TODO --- need to figure out what to do here.
+        //      --- fill would like to be zero-based but doesn't need to be.
+        //          could use a simple pair of Maps, possibly?
+        //          or front-load the items?
+        //   slots: 1xx others
+        //   items: 2xx others
+        // but we want same flags to have same index
+        //   slots: (fixed) (required slots) (extra slots)
+        //   items: (fixed) (required slots) (items)
+        // if n is a slot then add the item to has.
+        const items: ItemIndex[] = [];
+        if (n < this.common) items.push(n as number as ItemIndex);
+        const filled = fill(n);
+        if (filled != null) items.push(filled);
+        for (const item of items) {
           has = Bits.with(has, item);
           for (const j of this.unlocks.get(item) || []) {
             if (this.graph.get(j) == null) {
@@ -433,16 +480,17 @@ export class Graph {
     return info;
   }
 
-  slotInfoFromIndex(slot: SlotIndex): SlotInfo {
+  slotInfoFromIndex(slot: SlotIndex): SlotInfo|undefined {
     const id = this.slots.get(slot);
     if (id == null) throw new Error(`Bad slot: ${slot}`);
     return this.slotInfoFromId(id);
   }
 
-  slotInfoFromId(id: SlotId): SlotInfo {
+  slotInfoFromId(id: SlotId): SlotInfo|undefined {
     const info = this.slotInfos.get(id);
-    if (info == null) throw new Error(`Missing info: ${hex(id)}`);
-    return info;
+    if (info != null) return info;
+    // throw new Error(`Missing info: ${hex(id)}`);
+    return undefined;
   }
 }
 

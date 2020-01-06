@@ -420,7 +420,8 @@ export class World {
       if (!terrain) continue;
       const routes =
           this.routes.has(canonical) ?
-              Requirement.freeze(this.routes.get(canonical)) : [[]];
+              Requirement.freeze(this.routes.get(canonical)) : [];
+      if (!routes.length) continue;
       const area: AreaData = {
         checks: [],
         id: index++,
@@ -448,6 +449,12 @@ export class World {
     // digest the checks
     for (const [tile, checkSet] of this.checks) {
       const area = tiles.get(tile).area;
+      if (!area) {
+        console.error(`Abandoned check ${[...checkSet].map(
+                           x => [...x.checks].map(y => y.toString(16)))
+                       } at ${tile.toString(16)}`);
+        continue;
+      }
       for (const {checks, requirement} of checkSet) {
         for (const check of checks) {
           const flag = this.rom.flags[check] || die();

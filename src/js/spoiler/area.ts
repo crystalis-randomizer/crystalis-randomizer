@@ -1,6 +1,5 @@
 import {LocationMap} from './locationmap.js';
 import {Terrain, debugLabel} from '../logic/terrain.js';
-import {TileId} from '../logic/tileid.js';
 import {AreaData, WorldData} from '../logic/world.js';
 import {Rom} from '../rom.js';
 import {Location} from '../rom/location.js';
@@ -103,43 +102,11 @@ Routes:
     const map = new LocationMap(this.rom, location.id);
     map.maxWidth = 574;
     // Iterate through locations and add yellow borders.
-    const line = (t: TileId, dy1: number, dx1: number) => {
-      const [y0, x0] = yx(t);
-      for (let dy = -1; dy < dy1; dy++) {
-        const y = y0 + dy;
-        for (let dx = -1; dx < dx1; dx++) {
-          const x = x0 + dx;
-          if (x >= 0 && y >= 0 && x < map.width && y < map.height) {
-            map.overlay[y * map.width + x] = 0xff00ffff;
-          }
-        }
-      }
-    };
-    const yx = (t: TileId) => {
-      const ys = (t >> 12) & 15;
-      const xs = (t >> 8) & 15;
-      const yt = (t >> 4) & 15;
-      const xt = t & 15;
-      return [240 * ys + 16 * yt, 256 * xs + 16 * xt];
+    map.overlayShade(0x55000000);
+    for (const a of this.world.locations[location.id].areas) {
+      if (a !== area) map.overlayArea(a.tiles, 0xffff0000);
     }
-    const hline = (t: TileId) => line(t, 1, 17);
-    const vline = (t: TileId) => line(t, 17, 1);
-    map.overlay.fill(0x55000000);
-    for (const tile of area.tiles) {
-      if (tile >>> 16 !== location.id) continue;
-      const [y0, x0] = yx(tile);
-      for (let y = 0; y < 16; y++) {
-        for (let x = 0; x < 16; x++) {
-          map.overlay[(y0 + y) * map.width + (x0 + x)] = 0;
-        }
-      }
-      const tx = TileId.add(tile, 1, 0);
-      const ty = TileId.add(tile, 0, 1);
-      if (!area.tiles.has(TileId.add(tile, -1, 0))) hline(tile);
-      if (!area.tiles.has(TileId.add(tile, 0, -1))) vline(tile);
-      if (!area.tiles.has(tx)) hline(tx);
-      if (!area.tiles.has(ty)) vline(ty);
-    }
+    map.overlayArea(area.tiles, 0xff00ffff, 0);
     map.render();
     return map.element;
   }

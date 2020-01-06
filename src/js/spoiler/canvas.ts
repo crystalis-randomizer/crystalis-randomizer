@@ -1,5 +1,6 @@
 import {die} from '../assert.js';
 import {Rom} from '../rom.js';
+import { seq } from '../rom/util.js';
 
 // Wrapper around a canvas with built-in capability to do some useful
 // things like displaying specific sprites and text.  Also understands
@@ -8,7 +9,6 @@ import {Rom} from '../rom.js';
 export class Canvas {
 
   readonly element: HTMLDivElement;
-  overlay: Uint32Array;
 
   private readonly canvas: HTMLCanvasElement;
   private readonly ctx: CanvasRenderingContext2D;
@@ -21,8 +21,9 @@ export class Canvas {
   private _minX: number;
   private _maxX: number;
   private data: Uint32Array;
+  private layers: Uint32Array[];
 
-  constructor(readonly rom: Rom, height: number, width: number) {
+  constructor(readonly rom: Rom, height: number, width: number, layers = 1) {
     this._width = width;
     this._height = height;
     this.element = document.createElement('div');
@@ -33,9 +34,9 @@ export class Canvas {
     this.ctx = this.canvas.getContext('2d') || die();
     this._minX = this._minY = Infinity;
     this._maxX = this._maxY = -Infinity;
-    this.data = new Uint32Array(width * height);
-    this.overlay = new Uint32Array(width * height);
     this.palettes = new Uint32Array(0x400);
+    this.layers = seq(layers, () => new Uint32Array(width * height));
+    this.data = this.layers[0];
 
     // initialize palettes
     for (let i = 0; i < 0x100; i++) {
@@ -44,6 +45,10 @@ export class Canvas {
         this.palettes[i << 2 | j] = color | 0xff000000;
       }
     }
+  }
+
+  useLayer(layer: number) {
+    this.data = this.layers[layer] || die(`Bad layer: ${layer}`);
   }
 
   private resizeWidth(arr: Uint32Array, width: number): Uint32Array {
@@ -65,16 +70,18 @@ export class Canvas {
 
   get width() { return this._width; }
   set width(width: number) {
-    this.data = this.resizeWidth(this.data, width);
-    if (this.overlay) this.overlay = this.resizeWidth(this.overlay, width);
+    for (let i = 0; i < this.layers.length; i++) {
+      this.layers[i] = this.resizeWidth(this.layers[i], width);
+    }
     this._width = width;
     this.canvas.width = width;
   }
 
   get height() { return this._height; }
   set height(height: number) {
-    this.data = this.resizeHeight(this.data, height);
-    if (this.overlay) this.overlay = this.resizeHeight(this.overlay, height);
+    for (let i = 0; i < this.layers.length; i++) {
+      this.layers[i] = this.resizeHeight(this.layers[i], height);
+    }
     this._height = height;
     this.canvas.height = height;
   }
@@ -84,13 +91,18 @@ export class Canvas {
   get minY() { return this._minY; }
   get maxY() { return this._maxY; }
 
+  fill(color: number) {
+    this.data.fill(color);
+  }
+
   clear(background?: number) {
+    const fillColor = background != null ? this.palettes[background << 2] : 0;
     this._minX = this._minY = Infinity;
     this._maxX = this._maxY = -Infinity;
-    const fillColor = background != null ? this.palettes[background << 2] : 0;
-    this.data.fill(fillColor);
-    //this.overlay = undefined;
-    //this.overlay.fill(0);
+    this.layers[0].fill(fillColor);
+    for (let i = 1; i < this.layers.length; i++) {
+      this.layers[i].fill(0);
+    }
   }
 
   toDataUrl(cropToContent: boolean = false) {
@@ -100,26 +112,37 @@ export class Canvas {
   }
 
   render() {
-    const data = this.ctx.getImageData(0, 0, this._width, this._height);
-    const uint8 = new Uint8Array(this.data.buffer);
-    data.data.set(uint8);
-    this.ctx.putImageData(data, 0, 0);
+    let canvas = this.canvas;
+    let ctx = this.ctx;
+    for (let i = 0; i < this.layers.length; i++) {
+      if (i) {
+        canvas = document.createElement('canvas');
+        canvas.width = this.canvas.width;
+        canvas.height = this.canvas.height;
+        ctx = canvas.getContext('2d') || die();
+      }
+      const uint8 = new Uint8Array(this.layers[i].buffer);
+      const data = ctx.getImageData(0, 0, this._width, this._height);
+      data.data.set(uint8);
+      ctx.putImageData(data, 0, 0);
+      if (i) this.ctx.drawImage(canvas, 0, 0);
+    }        
+  }
 
-    // Add overlay if present
-    if (this.overlay == null) return;
-    const c2 = document.createElement('canvas');
-    c2.width = this.canvas.width;
-    c2.height = this.canvas.height;
-    const ctx2 = c2.getContext('2d') || die();
-    const data2 = ctx2.getImageData(0, 0, c2.width, c2.height);
-    const uint8_2 = new Uint8Array(this.overlay.buffer);
-    data2.data.set(uint8_2);
-    ctx2.putImageData(data2, 0, 0);
-    this.ctx.drawImage(c2, 0, 0);
+  rect(y: number, x: number, height: number, width: number, color: number) {
+    const y0 = Math.max(0, y);
+    const x0 = Math.max(0, x);
+    const y1 = Math.min(this._height, y + height);
+    const x1 = Math.min(this._width, x + width);
+    for (y = y0; y < y1; y++) {
+      for (x = x0; x < x1; x++) {
+        this.data[y * this._width + x] = color;
+      }
+    }
   }
 
   // attr = palette << 2 | vflip << 1 | hflip
-  tile(x: number, y: number, id: number, attr: number) {
+  tile(y: number, x: number, id: number, attr: number) {
     if (x < 0 || y < 0 || x + 8 >= this._width || y + 8 >= this._height) return;
     const pat = this.rom.patterns[id].flip(attr << 6);
     for (let r = 0; r < 8; r++) {
@@ -156,7 +179,7 @@ export class Canvas {
         const pattern = patterns[tile & 0x80 ? 1 : 0] << 6 | tile & 0x7f;
         const x1 = x + (c << 3);
         const y1 = y + (r << 3);
-        this.tile(x1, y1, pattern, palette << 2);
+        this.tile(y1, x1, pattern, palette << 2);
       }
     }
   }
@@ -170,8 +193,8 @@ export class Canvas {
     const loc = this.rom.locations[locid];
     let metasprite = this.rom.metasprites[id];
     // NOTE: this is sword of wind - else pat[1] and pal[1] get +1,2,3 added
-    const patterns = [0, 1, ...loc.spritePatterns];
-    const palettes = [0x40, 0x42, ...loc.spritePalettes];
+    const patterns = [0x40, 0x42, ...loc.spritePatterns];
+    const palettes = [0, 1, ...loc.spritePalettes];
     let mirrored = false;
     if (metasprite.mirrored != null) {
       metasprite = this.rom.metasprites[metasprite.mirrored];
@@ -186,20 +209,20 @@ export class Canvas {
       dy = signed(dy);
       tile = (tile + offset) & 0xff;
       const patternPage = patterns[tile >> 6];
-      const palette = palettes[attr & 3];
+      const palette = (palettes[attr & 3] + 0xb0) & 0xff;
       const pattern = patternPage << 6 | tile & 0x3f;
       if (mirrored) {
         dx = -8 - dx;
         attr ^= 0x40;
       }
-      this.tile(x + dx, y + dy, pattern, palette << 2 | attr >> 6);
+      this.tile(y + dy, x + dx, pattern, palette << 2 | attr >> 6);
     }
   }
 
   text(y: number, x: number, text: string, palette = 0x12) {
     for (let i = 0; i < text.length; i++) {
       this.tile(
-          x + 8 * i, y, text.charCodeAt(i) | 0xf00, palette << 2);
+          y, x + 8 * i, text.charCodeAt(i) | 0xf00, palette << 2);
     }            
   }
 }

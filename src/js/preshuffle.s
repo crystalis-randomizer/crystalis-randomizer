@@ -462,7 +462,7 @@ ItemGet_PickSlotAndAdd:  ; move this up a few bytes
 
 .org $1dc82
 
-CheckToItemMap:
+CheckToItemGetMap:
   .byte $00,$01,$02,$03,$04,$05,$06,$07,$08,$09,$0a,$0b,$0c,$0d,$0e,$0f
   .byte $10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$1a,$1b,$1c,$1d,$1e,$1f
   .byte $20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$2a,$2b,$2c,$2d,$2e,$2f
@@ -476,10 +476,10 @@ PatchStartItemGet:
   lda $23
   sta $61fe
   tax
-  lda CheckToItemMap,x
+  lda CheckToItemGetMap,x
   tay
   cmp #$70
-  bcs +
+  bcc +
    ;; spawn mimic instead - need to back out of 3 layers of calls
    ;; TODO - keep track of which mimic so we can set the flag?
    pla
@@ -490,9 +490,11 @@ PatchStartItemGet:
    pla
    jmp $d3da  ; SpawnMimic
 + cmp #$49
-  bcs +
+  bcc +
    lda $9d66,y
 + sta $29
+  sta $07dc   ; TODO - can we ditch the table at 3d45c now?
+              ;      - what about other writes to 07dc?
   rts
 
 ;; Freed from the chest spawn pointer table
@@ -510,17 +512,17 @@ PatchStartItemGet:
 
 ;; Fix dialog to work with us...
 .org $3d404
-  lda $62 ; the actual item gained (or tried to gain)
-  sta $07dc
+  ;lda $62 ; the actual item gained (or tried to gain)
+  ;sta $07dc   ; note: already written in PatchStartItemGet
   lda $23
-  bmi ++ ; patched version of this message tells what was in chest
-  bpl +
+  bmi HandleTreasureChest_TooManyItems ; patched version of this message tells what was in chest
+  bpl ShowTreasureChestMessage
   ;; skip these bytes
 .assert < $3d41c
 .org $3d41c ; Show actual message of what you got
-+:
+ShowTreasureChestMessage:
 .org $3d47c ; HandleTreasureChest_TooManyItems
-++:
+HandleTreasureChest_TooManyItems:
 
 
 ;; Freed from the chest spawn data
@@ -2080,7 +2082,7 @@ SetFlagYA:
    lsr
    sta $24
   pla
-  and $#07
+  and #$07
   tay
   lda PowersOfTwo,y
   ldy $24

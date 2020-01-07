@@ -19,6 +19,7 @@ export function shuffleMimics(rom: Rom, flags: FlagSet, random: Random) {
           const item = rom.items[itemget?.itemId];
           if (item?.unique) continue;
         }
+        if (spawn.isInvisible()) continue;
         // Add eligible chests
         chests.push(spawn.id);
       }

@@ -1,7 +1,7 @@
 import {Rom} from '../rom.js';
 import {Writer} from './writer.js';
 
-const BASE = 0x3ff00;
+const BASE = 0x1dc82;
 
 export class Slots extends Array<number> {
 

@@ -93,6 +93,7 @@ nav {
   background: var(--nav-bg);
   opacity: 1;
   color: var(--nav-fg);
+  z-index: 1;
 }
 nav > * {
   font-size: 112%;

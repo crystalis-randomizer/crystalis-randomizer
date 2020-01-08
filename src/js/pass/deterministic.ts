@@ -7,10 +7,18 @@ import {MessageId} from '../rom/messageid.js';
 import {GlobalDialog, LocalDialog} from '../rom/npc.js';
 import {ShopType} from '../rom/shop.js';
 import {hex} from '../rom/util.js';
+import {assert} from '../util.js';
 
 const [] = [hex]; // generally useful
 
 export function deterministicPreParse(prg: Uint8Array): void {
+  // Remove unnecessary statue fight triggers.  TODO - remove 1d location check
+  prg[0x1a594] = 0xff; // just cut off two objects early.
+
+  // Remove unnecessary oak entrance trigger (aa).  Redirect the dialog flag.
+  prg[0x1cdc5] = 0xa8; // change flag to not use 043.
+  prg[0x1a84c] = 0xff; // remove the aa trigger (last spawn in oak).
+
   // Remove unused item/trigger actions
   prg[0x1e06b] &= 7; // medical herb normal usage => action 05 to action 00
   prg[0x1e06f] &= 7; // magic ring itemuse[0] => action 05 to action 00
@@ -20,6 +28,7 @@ export function deterministicPreParse(prg: Uint8Array): void {
   prg[0x1e084] &= 7; // warp boots itemuse[0] => action 04 to action 00
   prg[0x1e09b] &= 7; // windmill key itemuse[1] => action 05 to action 00
   prg[0x1e0b9] &= 7; // glowing lamp itemuse[0] => action 05 to action 00
+
   // Renumber mimics
   prg[0x19bb1] = 0x70; // fog lamp cave 3 (4a) north mimic
   prg[0x19bb5] = 0x71; // fog lamp cave 3 (4a) southwest mimic
@@ -36,10 +45,13 @@ export function deterministicPreParse(prg: Uint8Array): void {
 }
 
 export function deterministic(rom: Rom, flags: FlagSet): void {
-
-  addMezameTrigger(rom);
+  // NOTE: do this very early to make sure refs to warp point flags are
+  // updated to reflect shifts (probably not an issue anymore now that
+  // we track flag moves separately).
   addZombieWarp(rom);
 
+  consolidateItemGrants(rom);
+  addMezameTrigger(rom);
   normalizeSwords(rom, flags);
 
   fixCoinSprites(rom);
@@ -59,9 +71,12 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   adjustItemNames(rom, flags);
 
   // TODO - consider making a Transformation interface, with ordering checks
-  alarmFluteIsKeyItem(rom); // NOTE: pre-shuffle
+  alarmFluteIsKeyItem(rom, flags); // NOTE: pre-shuffle
+  brokahanaWantsMado1(rom);
   if (flags.teleportOnThunderSword()) {
     teleportOnThunderSword(rom);
+    // not Shyron_Temple since no-thunder-sword-for-massacre
+    rom.townWarp.thunderSwordWarp = [rom.locations.Shyron.id, 0x41];
   } else {
     noTeleportOnThunderSword(rom);
   }
@@ -69,7 +84,16 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   undergroundChannelLandBridge(rom);
   if (flags.fogLampNotRequired()) fogLampNotRequired(rom, flags);
 
-  if (flags.connectLimeTreeToLeaf()) connectLimeTreeToLeaf(rom);
+  if (flags.addEastCave()) {
+    eastCave(rom, flags);
+    if (flags.connectGoaToLeaf()) {
+      connectGoaToLeaf(rom);
+    }
+  } else if (flags.connectLimeTreeToLeaf()) {
+    connectLimeTreeToLeaf(rom);
+  }
+  evilSpiritIslandRequiresDolphin(rom);
+  closeCaveEntrances(rom, flags);
   simplifyInvisibleChests(rom);
   addCordelWestTriggers(rom, flags);
   if (flags.disableRabbitSkip()) fixRabbitSkip(rom);
@@ -81,13 +105,19 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   patchTooManyItemsMessage(rom);
 }
 
+// Updates a few itemuse and trigger actions in light of consolidation
+// around item granting.
+function consolidateItemGrants(rom: Rom): void {
+  rom.items.GlowingLamp.itemUseData[0].message.action = 0x0b;
+}
+
 // Adds a trigger action to mezame.  Use 87 leftover from rescuing zebu.
 function addMezameTrigger(rom: Rom): void {
   const trigger = rom.nextFreeTrigger();
   trigger.used = true;
-  trigger.conditions = [~0x2f0];
+  trigger.conditions = [~rom.flags.AlwaysTrue.id];
   trigger.message = MessageId.of({action: 4});
-  trigger.flags = [0x2f0];
+  trigger.flags = [rom.flags.AlwaysTrue.id];
   const mezame = rom.locations.MezameShrine;
   mezame.spawns.push(Spawn.of({tile: 0x88, type: 2, id: trigger.id}));
 }
@@ -176,19 +206,27 @@ function undergroundChannelLandBridge(rom: Rom) {
 }
 
 function fogLampNotRequired(rom: Rom, flags: FlagSet) {
+  const {
+    flags: {AlwaysTrue, HealedDolphin, FogLamp, KensuInCabin, ReturnedFogLamp},
+    items: {ShellFlute},
+    locations: {BoatHouse, Portoa_FishermanHouse},
+    npcs,
+  } = rom;
+    
   // Need to make several changes.
   // (1) dolphin only requires shell flute, make the flag check free
   //     unless healing is required.
   const requireHealed = flags.requireHealedDolphinToRide();
-  rom.items[0x36].itemUseData[0].want =
-      requireHealed ? rom.flags.AlwaysTrue.id : rom.flags.HealedDolphin.id;
+  ShellFlute.itemUseData[0].want =
+      requireHealed ? AlwaysTrue.id : HealedDolphin.id;
   // (2) kensu 68 (@61) drops an item (67 magic ring)
-  rom.npcs[0x68].data[0] = 0x67;
-  rom.npcs[0x68].localDialogs.get(-1)![0].message.action = 0x0a;
-  rom.npcs[0x68].localDialogs.get(-1)![0].flags = [];
-  rom.npcs[0x68].spawnConditions.set(0x61, [0x21, ~rom.flags.KensuInCabin.id]);
+  npcs.KensuInCabin.data[0] = 0x67;
+  npcs.KensuInCabin.localDialogs.get(-1)![0].message.action = 0x0a;
+  npcs.KensuInCabin.localDialogs.get(-1)![0].flags = [];
+  npcs.KensuInCabin.spawnConditions.set(BoatHouse.id,
+                                        [ReturnedFogLamp.id, ~KensuInCabin.id]);
   // (3) fisherman 64 spawns on fog lamp rather than shell flute
-  rom.npcs[0x64].spawnConditions.set(0xd6, [rom.flags.FogLamp.id]);
+  npcs.Fisherman.spawnConditions.set(Portoa_FishermanHouse.id, [FogLamp.id]);
 
   // (4) fix up itemget 67 from itemget 64 (delete the flag)
   rom.itemGets[0x64].flags = [];
@@ -199,6 +237,7 @@ function fogLampNotRequired(rom: Rom, flags: FlagSet) {
   // the pattern tables based on (e.g.) $600,x maybe?  Can we prevent it?
 
   // TODO - add a notes file about this.
+
 }
 
 /**
@@ -250,18 +289,27 @@ function adjustGoaFortressTriggers(rom: Rom): void {
   l.GoaFortress_Kensu.spawns.splice(1, 1); // kensu slime screen lock trigger
 }
 
-function alarmFluteIsKeyItem(rom: Rom): void {
-  const {WaterfallCave4} = rom.locations;
+function alarmFluteIsKeyItem(rom: Rom, flags:FlagSet): void {
+  const {
+    locations: {WaterfallCave4},
+    npcs: {WindmillGuard},
+    items: {AlarmFlute},
+  } = rom;
 
-  // Person 14 (Zebu's student): secondary item -> alarm flute
-  rom.npcs[0x14].data[1] = 0x31; // NOTE: Clobbers shuffled item!!!
   // Move alarm flute to third row
   rom.itemGets[0x31].inventoryRowStart = 0x20;
   // Ensure alarm flute cannot be dropped
   // rom.prg[0x21021] = 0x43; // TODO - rom.items[0x31].???
-  rom.items[0x31].unique = true;
+  AlarmFlute.unique = true;
   // Ensure alarm flute cannot be sold
-  rom.items[0x31].basePrice = 0;
+  AlarmFlute.basePrice = 0;
+
+  if (flags.zebuStudentGivesItem()) {
+    // Person 14 (Zebu's student): secondary item -> alarm flute
+    WindmillGuard.data[1] = 0x31; // NOTE: Clobbers shuffled item!!!
+  } else {
+    WindmillGuard.data[1] = 0xff; // indicate nothing there: no slot.
+  }
 
   // Remove alarm flute from shops (replace with other items)
   // NOTE - we could simplify this whole thing by just hardcoding indices.
@@ -292,35 +340,48 @@ function alarmFluteIsKeyItem(rom: Rom): void {
   // TODO - require new code for two uses
 }
 
+function brokahanaWantsMado1(rom: Rom): void {
+  const {flags: {Karmine, Mado1}, npcs: {Brokahana}} = rom;
+  const dialog = assert(Brokahana.localDialogs.get(-1))[0];
+  if (dialog.condition !== ~Karmine.id) {
+    throw new Error(`Bad brokahana condition: ${dialog.condition}`);
+  }
+  dialog.condition = ~Mado1.id;
+}
+
 function requireHealedDolphin(rom: Rom): void {
+  const {
+    flags: {HealedDolphin, ShellFlute},
+    npcs: {Fisherman, FishermanDaughter},
+  } = rom;
   // Normally the fisherman ($64) spawns in his house ($d6) if you have
   // the shell flute (236).  Here we also add a requirement on the healed
   // dolphin slot (025), which we keep around since it's actually useful.
-  rom.npcs[0x64].spawnConditions.set(0xd6, [0x236, 0x025]);
+  Fisherman.spawnConditions.set(0xd6, [ShellFlute.id, HealedDolphin.id]);
   // Also fix daughter's dialog ($7b).
-  const daughterDialog = rom.npcs[0x7b].localDialogs.get(-1)!;
+  const daughterDialog = FishermanDaughter.localDialogs.get(-1)!;
   daughterDialog.unshift(daughterDialog[0].clone());
-  daughterDialog[0].condition = ~0x025;
-  daughterDialog[1].condition = ~0x236;
+  daughterDialog[0].condition = ~HealedDolphin.id;
+  daughterDialog[1].condition = ~ShellFlute.id;
 }
 
 function requireTelepathyForDeo(rom: Rom): void {
+  const {
+    flags: {Telepathy},
+    npcs: {Deo, SaharaBunny},
+  } = rom;
   // Not having telepathy (243) will trigger a "kyu kyu" (1a:12, 1a:13) for
   // both generic bunnies (59) and deo (5a).
-  rom.npcs[0x59].globalDialogs.push(GlobalDialog.of(~0x243, [0x1a, 0x12]));
-  rom.npcs[0x5a].globalDialogs.push(GlobalDialog.of(~0x243, [0x1a, 0x13]));
+  SaharaBunny.globalDialogs.push(GlobalDialog.of(~Telepathy.id, [0x1a, 0x12]));
+  Deo.globalDialogs.push(GlobalDialog.of(~Telepathy.id, [0x1a, 0x13]));
 }
 
 function teleportOnThunderSword(rom: Rom): void {
+  const {
+    flags: {WarpShyron},
+  } = rom;
   // itemget 03 sword of thunder => set 2fd shyron warp point
-  rom.itemGets[0x03].flags.push(0x2fd);
-  // dialog 62 asina in f2/f4 shyron -> action 1f (teleport to start)
-  //   - note: f2 and f4 dialogs are linked.
-  for (const i of [0, 1, 3]) {
-    for (const loc of [0xf2, 0xf4]) {
-      rom.npcs[0x62].localDialogs.get(loc)![i].message.action = 0x1f;
-    }
-  }
+  rom.itemGets[0x03].flags.push(WarpShyron.id);
 }
 
 function noTeleportOnThunderSword(rom: Rom): void {
@@ -349,25 +410,27 @@ function adjustItemNames(rom: Rom, flags: FlagSet): void {
 }
 
 function makeBraceletsProgressive(rom: Rom): void {
+  const {
+    flags: {BallOfWind, TornadoBracelet},
+    npcs: {Tornel},
+  } = rom;
   // tornel's trigger needs both items
-  const tornel = rom.npcs[0x5f];
-  const vanilla = tornel.localDialogs.get(0x21)!;
+  const vanilla = Tornel.localDialogs.get(0x21)!;
   const patched = [
     vanilla[0], // already learned teleport
     vanilla[2], // don't have tornado bracelet
     vanilla[2].clone(), // will change to don't have orb
     vanilla[1], // have bracelet, learn teleport
   ];
-  patched[1].condition = ~0x206; // don't have bracelet
-  patched[2].condition = ~0x205; // don't have orb
+  patched[1].condition = ~TornadoBracelet.id; // don't have bracelet
+  patched[2].condition = ~BallOfWind.id; // don't have orb
   patched[3].condition = ~0;     // default
-  tornel.localDialogs.set(0x21, patched);
+  Tornel.localDialogs.set(0x21, patched);
 }
 
 function simplifyInvisibleChests(rom: Rom): void {
-  for (const location of [rom.locations.CordelPlainEast,
-                          rom.locations.UndergroundChannel,
-                          rom.locations.KirisaMeadow]) {
+  const {CordelPlainEast, KirisaMeadow, UndergroundChannel} = rom.locations;
+  for (const location of [CordelPlainEast, KirisaMeadow, UndergroundChannel]) {
     for (const spawn of location.spawns) {
       // set the new "invisible" flag on the chest.
       if (spawn.isChest()) spawn.data[2] |= 0x20;
@@ -428,8 +491,25 @@ function connectLimeTreeToLeaf(rom: Rom): void {
 }
 
 function closeCaveEntrances(rom: Rom, flags: FlagSet): void {
+  // Destructure out a few locations by name
+  const {
+    flags: {AlwaysTrue},
+    locations: {
+      CordelPlainEast,
+      CordelPlainWest,
+      Desert2,
+      GoaValley,
+      KirisaMeadow,
+      LimeTreeValley,
+      SaharaOutsideCave,
+      ValleyOfWind,
+      WaterfallValleyNorth,
+      WaterfallValleySouth,
+    },
+  } = rom;
+
   // Prevent softlock from exiting sealed cave before windmill started
-  rom.locations.ValleyOfWind.entrances[1].y += 16;
+  ValleyOfWind.entrances[1].y += 16;
 
   // Clear tiles 1,2,3,4 for blockable caves in tilesets 90, 94, and 9c
   rom.swapMetatiles([0x90],
@@ -464,20 +544,8 @@ function closeCaveEntrances(rom: Rom, flags: FlagSet): void {
   rom.screens[0x3e].tiles[0x66] = 0x03;
   rom.screens[0x3e].tiles[0x67] = 0x04;
 
-  // Destructure out a few locations by name
-  const {
-    ValleyOfWind,
-    CordelPlainWest,
-    CordelPlainEast,
-    WaterfallValleyNorth,
-    WaterfallValleySouth,
-    KirisaMeadow,
-    SaharaOutsideCave,
-    Desert2,
-  } = rom.locations;
-
   // NOTE: flag 2f0 is ALWAYS set - use it as a baseline.
-  const flagsToClear = [
+  const flagsToClear: [Location, number][] = [
     [ValleyOfWind, 0x30], // valley of wind, zebu's cave
     [CordelPlainWest, 0x30], // cordel west, vampire cave
     [CordelPlainEast, 0x30], // cordel east, vampire cave
@@ -487,9 +555,15 @@ function closeCaveEntrances(rom: Rom, flags: FlagSet): void {
     [KirisaMeadow, 0x10], // kirisa meadow
     [SaharaOutsideCave, 0x00], // cave to desert
     [Desert2, 0x41],
-  ] as const;
+  ];
+  if (flags.addEastCave() && flags.connectLimeTreeToLeaf()) {
+    flagsToClear.push([LimeTreeValley, 0x10]);
+  }
+  if (flags.connectGoaToLeaf()) {
+    flagsToClear.push([GoaValley, 0x01]);
+  }
   for (const [loc, yx] of flagsToClear) {
-    loc.flags.push(Flag.of({yx, flag: 0x2f0}));
+    loc.flags.push(Flag.of({yx, flag: AlwaysTrue.id}));
   }
 
   function replaceFlag(loc: Location, yx: number, flag: number): void {
@@ -528,34 +602,141 @@ function closeCaveEntrances(rom: Rom, flags: FlagSet): void {
   // rom.triggers[0x19].flags.push(0x2f6, 0x2f7, 0x2f8);
 }
 
-// @ts-ignore: not yet used
-const eastCave = (rom: Rom) => {
-  // NOTE: 0x9c can become 0x99 in top left or 0x97 in top right or bottom middle for a cave exit
-  const screens1 = [[0x9c, 0x84, 0x80, 0x83, 0x9c],
-                    [0x80, 0x81, 0x83, 0x86, 0x80],
-                    [0x83, 0x88, 0x89, 0x80, 0x80],
-                    [0x81, 0x8c, 0x85, 0x82, 0x84],
-                    [0x9a, 0x85, 0x9c, 0x98, 0x86]];
-  const screens2 = [[0x9c, 0x84, 0x9b, 0x80, 0x9b],
-                    [0x80, 0x81, 0x81, 0x80, 0x81],
-                    [0x80, 0x87, 0x8b, 0x8a, 0x86],
-                    [0x80, 0x8c, 0x80, 0x85, 0x84],
-                    [0x9c, 0x86, 0x80, 0x80, 0x9a]];
+function eastCave(rom: Rom, flags: FlagSet): void {
   // TODO fill up graphics, etc --> $1a, $1b, $05 / $88, $b5 / $14, $02
   // Think aobut exits and entrances...?
-  console.log(rom, screens1, screens2);
-};
+
+  const {ValleyOfWind, LimeTreeValley, SealedCave1} = rom.locations;
+
+  const loc1 = rom.locations.allocate(rom.locations.EastCave1);
+  const loc2 = rom.locations.allocate(rom.locations.EastCave2);
+  const loc3 = rom.locations.EastCave3;
+
+  // NOTE: 0x9c can become 0x99 in top left or 0x97 in top right or bottom middle for a cave exit
+  loc1.screens = [[0x9c, 0x84, 0x80, 0x83, 0x9c],
+                  [0x80, 0x81, 0x83, 0x86, 0x80],
+                  [0x83, 0x88, 0x89, 0x80, 0x80],
+                  [0x81, 0x8c, 0x85, 0x82, 0x84],
+                  [0x9e, 0x85, 0x9c, 0x98, 0x86]];
+
+  loc2.screens = [[0x9c, 0x84, 0x9b, 0x80, 0x9b],
+                  [0x80, 0x81, 0x81, 0x80, 0x81],
+                  [0x80, 0x87, 0x8b, 0x8a, 0x86],
+                  [0x80, 0x8c, 0x80, 0x85, 0x84],
+                  [0x9c, 0x86, 0x80, 0x80, 0x9a]];
+
+  for (const l of [loc1, loc2, loc3]) {
+    l.bgm = 0x17; // mt sabre cave music?
+    l.entrances = [];
+    l.exits = [];
+    l.pits = [];
+    l.spawns = [];
+    l.flags = [];
+    l.height = l.screens.length;
+    l.width = l.screens[0].length;
+    l.extended = 0;
+    l.tilePalettes = [0x1a, 0x1b, 0x05]; // rock wall
+    l.tileset = 0x88;
+    l.tileEffects = 0xb5;
+    l.tilePatterns = [0x14, 0x02];
+    l.spritePatterns = [...SealedCave1.spritePatterns] as [number, number];
+    l.spritePalettes = [...SealedCave1.spritePalettes] as [number, number];
+  }
+
+  // Add entrance to valley of wind
+  // TODO - maybe just do (0x33, [[0x19]]) once we fix that screen for grass
+  ValleyOfWind.writeScreens2d(0x23, [
+    [0x11, 0x0d],
+    [0x09, 0xc2]]);
+  rom.tileEffects[0].effects[0xc0] = 0;
+  // TODO - do this once we fix the sea tileset
+  // rom.screens[0xc2].tiles[0x5a] = 0x0a;
+  // rom.screens[0xc2].tiles[0x5b] = 0x0a;
+
+  // Connect maps
+  loc1.connect(0x43, loc2, 0x44);
+  loc1.connect(0x40, ValleyOfWind, 0x34);
+
+  if (flags.connectLimeTreeToLeaf()) {
+    // Add entrance to lime tree valley
+    LimeTreeValley.resizeScreens(0, 1, 0, 0); // add one screen to left edge
+    LimeTreeValley.writeScreens2d(0x00, [
+      [0x0c, 0x11],
+      [0x15, 0x36],
+      [0x0e, 0x0f]]);
+    loc1.screens[0][4] = 0x97; // down stair
+    loc1.connect(0x04, LimeTreeValley, 0x10);
+  }
+
+  // Add monsters
+  loc1.spawns.push(
+    Spawn.of({screen: 0x21, tile: 0x87, timed: true, id: 0x2}),
+    Spawn.of({screen: 0x12, tile: 0x88, timed: false, id: 0x2}),
+    Spawn.of({screen: 0x13, tile: 0x89, timed: true, id: 0x2}),
+    Spawn.of({screen: 0x32, tile: 0x68, timed: false, id: 0x2}),
+    Spawn.of({screen: 0x41, tile: 0x88, timed: true, id: 0x2}),
+    Spawn.of({screen: 0x33, tile: 0x98, timed: true, id: 0x2}),
+    Spawn.of({screen: 0x03, tile: 0x88, timed: true, id: 0x2}),
+  );
+  loc2.spawns.push(
+    Spawn.of({screen: 0x01, tile: 0x88, timed: true, id: 0x2}),
+    Spawn.of({screen: 0x11, tile: 0x48, timed: false, id: 0x2}),
+    Spawn.of({screen: 0x12, tile: 0x77, timed: true, id: 0x2}),
+    Spawn.of({screen: 0x14, tile: 0x28, timed: false, id: 0x2}),
+    Spawn.of({screen: 0x23, tile: 0x85, timed: true, id: 0x2}),
+    Spawn.of({screen: 0x31, tile: 0x88, timed: true, id: 0x2}),
+    Spawn.of({screen: 0x33, tile: 0x8a, timed: false, id: 0x2}),
+    Spawn.of({screen: 0x34, tile: 0x98, timed: true, id: 0x2}),
+    Spawn.of({screen: 0x41, tile: 0x82, timed: true, id: 0x2}),
+  );
+  if (!flags.zebuStudentGivesItem()) {
+    // chest: alarm flute
+    loc2.spawns.push(Spawn.of({y: 0x110, x: 0x478, type: 2, id: 0x31}));
+  }
+  if (flags.addExtraChecksToEastCave()) {
+    // chest: medical herb
+    loc2.spawns.push(Spawn.of({y: 0x110, x: 0x478, type: 2, id: 0x59}));
+    // chest: mimic
+    loc2.spawns.push(Spawn.of({y: 0x070, x: 0x108, type: 2, id: 0x70}));
+  }
+}
+
+function connectGoaToLeaf(rom: Rom): void {
+  const {GoaValley, EastCave2, EastCave3} = rom.locations;
+  // Add a new cave to the top-left corner of Goa Valley.
+  GoaValley.writeScreens2d(0x00, [
+      [0x0c, 0xc1, 0x0d],
+      [0x0e, 0x37, 0x35]]);
+  // Add an extra down-stair to EastCave2 and a new 3-screen EastCave3 map.
+
+  rom.locations.allocate(EastCave3);
+  EastCave3.screens = [[0x9a],
+                       [0x8f],
+                       [0x9e]];
+  EastCave3.height = 3;
+  EastCave3.width = 1;
+
+  // Add a rock wall (id=0).
+  EastCave3.spawns.push(Spawn.from([0x18, 0x07, 0x23, 0x00]));
+  EastCave3.flags.push(Flag.of({screen: 0x10, flag: rom.flags.alloc(0x200)}));
+
+  // Make the connections.
+  EastCave2.screens[4][0] = 0x99;
+  EastCave2.connect(0x40, EastCave3, ~0x00);
+  EastCave3.connect(0x20, GoaValley, 0x01);
+}
 
 function patchTooManyItemsMessage(rom: Rom) {
   rom.messages.parts[0x20][0x0f].text += '\nItem: [:ITEM:]';
 }
 
 function addZombieWarp(rom: Rom) {
+  const {
+    flags: {WarpZombie},
+    locations: {ZombieTown},
+  } = rom;
   // Make space for the new flag between Joel and Swan
   rom.flags.insertZombieWarpFlag();
-  // for (let i = 0x2f5; i < 0x2fc; i++) {
-  //   rom.moveFlag(i, i - 1);
-  // }
   // Update the menu
   const message = rom.messages.parts[0x21][0];
   message.text = [
@@ -571,25 +752,35 @@ function addZombieWarp(rom: Rom) {
   trigger.used = true;
   trigger.conditions = [];
   trigger.message = MessageId.of({});
-  trigger.flags = [0x2fb]; // new warp point flag
+  trigger.flags = [WarpZombie.id]; // new warp point flag
   // Actually replace the trigger.
-  for (const spawn of rom.locations.ZombieTown.spawns) {
+  for (const spawn of ZombieTown.spawns) {
     if (spawn.isTrigger() && spawn.id === 0x8a) {
       spawn.id = trigger.id;
-    }    
+    }
   }
   // Insert into the warp table.
-  for (let i = 0x3dc62; i >= 0x3dc5f; i--) {
-    rom.prg[i + 1] = rom.prg[i];
-  }
-  rom.prg[0x3dc5f] = rom.locations.ZombieTown.id;
+  rom.townWarp.locations.splice(7, 0, ZombieTown.id);
+  if (rom.townWarp.locations.pop() !== 0xff) throw new Error('unexpected');
   // ASM fixes should have happened in preshuffle.s
 }
 
+function evilSpiritIslandRequiresDolphin(rom: Rom) {
+  rom.trigger(0x8a).conditions = [~rom.flags.CurrentlyRidingDolphin.id];
+  rom.messages.parts[0x1d][0x10].text = `The cave entrance appears
+to be underwater. You'll
+need to swim.`;
+}
+
 function reversibleSwanGate(rom: Rom) {
+  const {
+    flags: {OpenedSwanGate},
+    locations: {SwanGate},
+    npcs: {SoldierGuard},
+  } = rom;
   // Allow opening Swan from either side by adding a pair of guards on the
   // opposite side of the gate.
-  rom.locations[0x73].spawns.push(
+  SwanGate.spawns.push(
     // NOTE: Soldiers must come in pairs (with index ^1 from each other)
     Spawn.of({xt: 0x0a, yt: 0x02, type: 1, id: 0x2d}), // new soldier
     Spawn.of({xt: 0x0b, yt: 0x02, type: 1, id: 0x2d}), // new soldier
@@ -601,8 +792,8 @@ function reversibleSwanGate(rom: Rom) {
   // rom.npcs[0x2d].localDialogs.get(0x73)![0].flags.push(0x0ef);
   // // Despawn guard trigger requires 0ef
   // rom.trigger(0xb3).conditions.push(0x0ef);
-  rom.npcs[0x2d].localDialogs.get(0x73)![0].flags.push(rom.flags.SwanGate.id);
-  rom.trigger(0xb3).conditions.push(rom.flags.SwanGate.id);
+  SoldierGuard.localDialogs.get(SwanGate.id)![0].flags.push(OpenedSwanGate.id);
+  rom.trigger(0xb3).conditions.push(OpenedSwanGate.id);
   // TODO - can we do away with the trigger?  Just spawn them on the same condition...
 }
 

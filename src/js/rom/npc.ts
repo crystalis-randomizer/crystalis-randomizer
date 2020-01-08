@@ -32,7 +32,9 @@ export class Npcs extends EntityArray<Npc> {
   AryllisRightAttendant = new Npc(this, 0x26);
   AryllisLeftAttendant = new Npc(this, 0x27);
   Nadare = new Npc(this, 0x28);
-  // generic nadare, prisoners 29..30
+  // generic nadare 29..2c
+  SoldierGuard = new Npc(this, 0x2d); // swan, mt sabre
+  // shopkeeper prisoners 2e..30
   // unused 31
   // generic portoa palace 32
   PortoaThroneRoomBackDoorGuard = new Npc(this, 0x33);

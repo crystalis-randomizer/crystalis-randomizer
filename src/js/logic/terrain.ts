@@ -279,7 +279,7 @@ class MeetTerrain implements Terrain {
     }
     for (const [dirs, req] of this.exit) {
       const dirstring = [dirs & 1 ? 'N' : '', dirs & 2 ? 'W' : '',
-                         dirs & 4 ? 'S' : '', dirs & 8 ? 'E' : ''];
+                         dirs & 4 ? 'S' : '', dirs & 8 ? 'E' : ''].join('');
       terr.push(`exit${dirstring} = ${debugLabel(req, rom)}`);
     }
     return `${this.kind}(${terr.join(', ')})`;

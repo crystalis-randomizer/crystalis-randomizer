@@ -603,7 +603,7 @@ export class Flags {
   Draygon2 = tracked(0x28d);
   OpenedCrypt = tracked(0x28e);
   OpenedStxy = tracked(0x2b0);
-  SwanGate = tracked(0x2b3);
+  OpenedSwanGate = tracked(0x2b3);
   OpenedPrison = tracked(0x2d8);
   OpenedSealedCave = tracked(0x2ee);
 

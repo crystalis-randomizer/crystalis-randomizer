@@ -967,6 +967,12 @@ export class World {
     }
     this.addTerrain(hitbox,
                     this.terrainFactory.statue([...req, ...extra].map(spread)));
+
+
+    // TODO - Portoa guards are broken :-(
+    // The back guard needs to block on the front guard's conditions,
+    // while the front guard should block on fortune teller?
+
   }
 
   handleBoat(tile: TileId, location: Location, requirements: Requirement) {

@@ -139,7 +139,7 @@ export class Flags {
   0x01a = dialogProgression('Initial talk with Portoa queen');
   MesiaRecording = movable(0x01b, TRACK);
   // unused 01c
-  0x01d = dialogProgression('Fortune teller initial', TRACK);
+  TalkedToFortuneTeller = movable(0x1d, TRACK);
   QueenRevealed = movable(0x01e, TRACK);
   0x01f = obsolete(0x209); // item: ball of water
 
@@ -637,6 +637,7 @@ export class Flags {
   ShootingStatue = pseudo(this);
   ClimbSlope8 = pseudo(this); // climb slopes height 6-8
   ClimbSlope9 = pseudo(this); // climb slopes height 9
+  WildWarp = pseudo(this);
 
   // Map of flags that are "waiting" for a previously-used ID.
   // Signified with a negative (one's complement) ID in the Flag object.

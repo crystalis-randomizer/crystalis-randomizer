@@ -519,7 +519,15 @@ function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
 function shuffleWildWarp(rom: Rom, _flags: FlagSet, random: Random): void {
   const locations: Location[] = [];
   for (const l of rom.locations) {
-    if (l && l.used && l.id && !l.extended && (l.id & 0xf8) !== 0x58) {
+    if (l && l.used &&
+        // don't add mezame because we already add it always
+        l.id &&
+        // don't warp into shops
+        !l.extended &&
+        // don't warp into tower
+        (l.id & 0xf8) !== 0x58 &&
+        // don't warp into mesia shrine because of queen logic
+        l !== rom.locations.MesiaShrine) {
       locations.push(l);
     }
   }

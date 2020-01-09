@@ -171,6 +171,7 @@ export class World {
         ShellFlute, ShieldRing, ShootingStatue, StormBracelet,
         Sword, SwordOfFire, SwordOfThunder, SwordOfWater, SwordOfWind,
         TornadoBracelet, TravelSwamp,
+        WildWarp,
       },
       items: {
         MedicalHerb,
@@ -265,19 +266,16 @@ export class World {
       this.addCheck([start], [[Money.c, BuyHealing.c],
                               [Money.c, Refresh.c]], [TravelSwamp.id]);
     }
+    if (this.flagset.assumeWildWarp()) {
+      this.addCheck([start], Requirement.OPEN, [WildWarp.id]);
+    }
   }
 
   /** Adds routes that are not detectable from data tables. */
   addExtraRoutes() {
     const {
-      locations: {
-        MezameShrine,
-      },
-      flags: {
-        BuyWarp,
-        SwordOfThunder,
-        Teleport,
-      },
+      flags: {BuyWarp, SwordOfThunder, Teleport, WildWarp},
+      locations: {MezameShrine},
     } = this.rom;
     // Start the game at Mezame Shrine.
     this.addRoute(new Route(this.entrance(MezameShrine), []));
@@ -292,7 +290,9 @@ export class World {
     // Wild warp
     if (this.flagset.assumeWildWarp()) {
       for (const location of this.rom.wildWarp.locations) {
-        this.addRoute(new Route(this.entrance(location), []));
+        // Don't count channel in logic because you can't actually move.
+        if (location === this.rom.locations.UndergroundChannel.id) continue;
+        this.addRoute(new Route(this.entrance(location), [WildWarp.c]));
       }
     }
   }
@@ -745,7 +745,7 @@ export class World {
     if (!trigger) throw new Error(`Missing trigger ${spawn.id.toString(16)}`);
 
     const requirements = this.filterRequirements(trigger.conditions);
-    const antiRequirements = this.filterAntiRequirements(trigger.conditions);
+    let antiRequirements = this.filterAntiRequirements(trigger.conditions);
 
     const tile = TileId.from(location, spawn);
     let hitbox = Hitbox.trigger(location, spawn);
@@ -808,10 +808,20 @@ export class World {
         break;
 
       case 0x1b:
-        // portoa palace guard moves
+        // Moving guard
         // treat this as a statue?  but the conditions are not super useful...
         //   - only tracked conditions matter? 9e == paralysis... except not.
         // paralyzable?  check DataTable_35045
+        if (location === this.rom.locations.PortoaPalace_Entrance) {
+          // Portoa palace front guard normally blocks on Mesia recording.
+          // But the queen is actually accessible without seeing the recording.
+          // Instead, block access to the throne room on being able to talk to
+          // the fortune teller, in case the guard moves before we can get the
+          // item.  Also move the hitbox up since the two side rooms _are_ still
+          // accessible.
+          hitbox = Hitbox.adjust(hitbox, [-2, 0]);
+          antiRequirements = this.rom.flags.TalkedToFortuneTeller.r;
+        }
         this.handleMovingGuard(hitbox, location, antiRequirements);
         break;
     }
@@ -847,9 +857,20 @@ export class World {
         // allow passing if gotten the check, which is the same as gotten
         // the correct sword.
         if (this.flagset.assumeRageSkip()) antiReq = undefined;
+      } else if (npc === this.rom.npcs.PortoaThroneRoomBackDoorGuard) {
+        // Portoa back door guard spawns if (1) the mesia recording has not yet
+        // been played, and (2) the player didn't sneak past the earlier guard.
+        // We can simulate this by hard-coding a requirement on either to get
+        // past him.
+        antiReq = or(this.rom.flags.MesiaRecording, this.rom.flags.Paralysis);
       }
       // if spawn is always false then req needs to be open?
       if (antiReq) this.addTerrain(hitbox, this.terrainFactory.statue(antiReq));
+    }
+
+    // Fortune teller can be talked to across the desk.
+    if (npc === this.rom.npcs.FortuneTeller) {
+      hitbox = Hitbox.adjust(hitbox, [0, 0], [2, 0]);
     }
 
     // req is now mutable

@@ -163,7 +163,6 @@ DisplayNumber:
 
 .bank $1c000 $8000:$4000
 
-
 .ifdef _BUFF_DYNA
 .ifdef _REMOVE_MAGIC_FOR_DYNA
 ;;; Patch ItemGet_Crystalis to remove magics, too
@@ -196,6 +195,47 @@ DisplayNumber:
 
 
 .org $1c399 ; 58 bytes of free/unused space at start of itemuse jump
+;; FixStatue:
+  ;; sta $61
+  ;; sta $643f,x
+  ;; ;; also need to set the item flags...
+  ;; lda $24
+  ;; pha
+  ;;  lda $25
+  ;;  pha
+
+
+;;;  TODO - this is broken - we probably need to update
+;;;  the ItemUseData to do give the item, but that's also
+;;;  tricky because how to store what the result is?!?
+;;;   --> move all the trade-ins to be embedded in itemuse?!?
+;;;  No, itemusejump should be able to do it?
+;;;    --- see ???
+;;;  ItemOrTriggerActionJump_0d currently hard-codes bow of moon
+;;;    --- instead lookup table
+    
+  ;; jmp $d22b
+
+  ;; tay
+  ;; lda $23
+  ;; pha
+  ;;  sty $23
+  ;;  lda #$ff
+  ;;  sta $643f,x
+  ;;  lda $24
+  ;;  pha
+  ;;   lda $25
+  ;;   pha
+  ;;    jsr $8271
+  ;;   pla
+  ;;   sta $25
+  ;;  pla
+  ;;  sta $24
+  ;; pla
+  ;; sta $23
+  ;; rts
+
+
 .assert < $1c3d3
 
 .org $1c3eb ; 16 bytes of free/unused space in middle of itemuse jump
@@ -207,6 +247,29 @@ DisplayNumber:
 
 .org $1c157
   .word (PowersOfTwo) ; no need for multiple copies
+
+
+;;; Fix the overly-long loop to find broken statue
+;; .org $1c585
+;;   ldx #$08
+;; - lda $6450,x
+;;   cmp #$38    ; broken statue
+;;   beq +
+;;   dex
+;;   bpl -
+;;   jmp $84db
+;;; Allow giving arbitrary items for broken statue trade-in
+.org $1c594
+  lda #$ff
+;  sta $6450,x
+  ;rts
+;;   ;; 9 free bytes, could be more if we remove the unused Flute of Lime checks
+;; .assert < $1c59e
+
+;.org $1c596
+;  jsr $d22b ; grant item in register A
+;  jsr FixStatue
+ ; jmp FixStatue
 
 
 ;; Count uses of Flute of Lime and Alarm Flute - discard after two.
@@ -238,6 +301,8 @@ PatchTradeInItem:
      sta $642e
      rts
 ++++ jmp ItemUse_TradeIn
+
+;;; Plenty of free space here!
 
 .assert < $1c760
 
@@ -446,7 +511,8 @@ ItemGet_FindOpenSlotWithOverflow:
     lda #$00
     sta $23
     rts
-;; TODO - still plenty of space here
+
+;; TODO - still 7 bytes here?
 .assert < $1e17a
 
 
@@ -458,6 +524,33 @@ ItemGet_FindOpenSlotWithOverflow:
   nop
 .assert $1e57a ; match up exactly to next instruction
 .endif
+
+
+
+;;; Boss chest action jump has some special handling for bosskill 3 (rage)
+;;; which is instead used for Kensu dropping a chest.  We'll rearrange the
+;;; special case to consolidate.
+;; .org $1f766
+;;   lda #$8d
+;;   sta $03a0,x
+;;   lda #$aa
+;;   sta $0300,x
+;;   lda $0600,x
+;;   asl
+;;   asl
+;;   ;clc
+;;   adc $0600,x
+;;   tay
+;;   cpy #$0f
+.org $1f76b
+  beq HandleKensuChestInit
+.org $1f77b
+ReturnFromKensuChest:
+.org $1f7c2
+HandleKensuChestInit:
+  jmp HandleKensuChest
+.org $1f7d0
+  .byte $00  
 
 
 ;;; We moved the LV(menu) display from 06 to 0e so display that instead
@@ -479,6 +572,11 @@ ComputeVampireAnimationStart:
    bcc ++
 +  lda #$ff
 ++ rts
+
+HandleKensuChest:
+  lda #$09
+  sta $033e
+  jmp ReturnFromKensuChest
 
 .assert < $20000
 
@@ -1234,6 +1332,13 @@ WarpMenuNametableData:
 .endif
 
 
+;;; NOTE: we could use this in several more places, including dialog action
+;;; jump 10, 
+.org $3d196
+  jsr $9897 ; WriteObjectCoordinatesFrom_34_37
+  jmp $ff80 ; LoadOneObjectData
+
+
 .org $3d223 ; part of DialogFollowupActionJump_11 (give 2nd item)
   bpl GrantItemInRegisterA ; change from bne to handle sword of wind
 
@@ -1258,6 +1363,26 @@ GrantItemInRegisterA:
 .org $3d29d ; Just set dolphin status bit => also set the flag
   jsr UpdatePlayerStatusAndDolphinFlag
 
+;;; Dialog action $0a is kensu dropping a chest behind - update it to
+;;; no longer hardcode an item but instead check persondata[0]
+.org $3d2f9
+  ldx $0623
+  lda $0680,x
+  pha
+  jsr $98a8 ; ReadObjectCoordinatesInto_34_37
+  ldx #$1e  ; slot 1e
+  stx $10
+  lda #$0f  ; boss chest
+  sta $11
+  jsr $d196 ; Write coords AND load object data
+  pla
+  sta $057e
+  ldx #$02
+  stx $055e
+  inx
+  stx $061e
+  nop
+.assert $3d31c
 
 ;;; Convert a beq to a bcs for mimic spawns - any chest between $70 and $80
 ;;; will now spawn a mimic.
@@ -1279,11 +1404,6 @@ GrantItemInRegisterA:
 ;; Change trigger action 4 to do any "start game" actions.
 .org $3d56b
   .word (InitialAction)
-
-.ifdef _MASSACRE_DOES_NOT_REQUIRE_THUNDER
-.org $3d5c9
-  lda #$8c  ; shyron
-.endif
 
 .org $3d91f
   jsr PostInventoryMenu
@@ -2155,14 +2275,120 @@ CheckToRedisplayDifficulty:
 ;;; but this value is never read.  Start by changing all jumps to $3e148
 ;;; to instead jump to $3e144.  Then we grab some space and have a nonzero
 ;;; value in $18 return early.
-.org $3d199
-  jmp $3e144 ; unused?
 .org $3e6ff
   jmp $3e144
 .org $3d21a
   jmp $3e144
+;;; For these, just eliminate the indirection: update the jump table directly.
+.org $3d56f
+  .word ($e144)  ; ItemOrTriggerActionJumpTable[$06]
+.org $3d585
+  .word ($e144)  ; ItemOrTriggerActionJumpTable[$11]
+
+.org $3d654
+    ;; 5 free bytes
+.assert < $3d659
+
+;;; ================================================================
+;;; Consolidate some of the ItemOrTrigger -> itemget logic. (@@sog)
+;;; A number of different message actions can be combined into a single
+;;; one once we expose the active trigger ID at $23.
+
+;;; TODO - change the actions on the messageids rather than repeat jumps
+;;;   08,0d,0f -> 0b, 14 -> 13
+;;; We could free up 4 new actions (in addition to the 3 or so unused ones)
+.org $3d573                       ; ItemOrTriggerActionJumpTable + 2*$08
+  .word (GrantItemFromTable)      ; 08 learn paralysis
+.org $3d579                       ; ItemOrTriggerActionJumpTable + 2*$0b
+  .word (GrantItemFromTable)      ; 0b learn barrier
+  .word (GrantItemThenDisappear)  ; 0c love pendant -> kensu change
+  .word (GrantItemFromTable)      ; 0d kirisa plant -> bow of moon
+  .word (UseIvoryStatue)          ; 0e
+  .word (GrantItemFromTable)      ; 0f learn refresh
+.org $3d589                       ; ItemOrTriggerActionJumpTable + 2*$13
+  .word (DestroyStatue)           ; 13 use bow of moon
+  .word (DestroyStatue)           ; 14 use bow of sun
+
 .org $3d6d5
-  jmp $3e144
+GrantItemTable:
+  .byte $25,$29  ; 25 statue of onyx use -> 29 gas mask
+  .byte $39,$3a  ; 39 glowing lamp use -> 3a statue of gold
+  .byte $3b,$47  ; 3b love pendant use -> 47 change
+  .byte $3c,$3e  ; 3c kirisa plant use -> 3e bow of moon
+  .byte $84,$46  ; 84 angry sea trigger -> 46 barrier
+  .byte $b2,$42  ; b2 summit trigger -> 42 paralysis
+  .byte $b4,$41  ; b4 windmill cave trigger -> 41 refresh
+  .byte $ff      ; for bookkeeping purposes, not actually used
+
+.assert $3d6e4
+GrantItemFromTable:
+  ldy #$00
+  lda $34
+-  iny
+   iny
+   ;; beq >rts    ; do we need a safety?
+   cmp GrantItemTable-2,y
+  bne -
++ lda GrantItemTable-1,y
+  jmp GrantItemInRegisterA
+
+GrantItemThenDisappear:  ; Used by Kensu in granting change (action 0c)
+  jsr GrantItemFromTable
+  ldy #$0e
+  jmp $d31f
+
+UseIvoryStatue:  ; Move bytes from $3d6ec
+  jsr $e144 ; LoadNpcDataForCurrentLocation
+  ldx #$0f
+  lda #$1a
+  jsr $c418 ; BankSwitch8k_8000
+  jsr $98a8 ; ReadObjectCoordinatesInto_34_37
+  ldx #$1e
+  stx $10
+  jsr $9897 ; WriteObjectCoordinatesFrom_34_37
+  lda #$df
+  sta $11
+  jsr $c25d ; LoadOneObjectDataInternal
+  lda #$a0
+  sta $033e
+UseIvoryStatueRts:
+  rts
+
+DestroyStatue:
+  ;; Modified version to use the ID of the used bow rather than have
+  ;; a separate action for each bow.
+  lda #$00
+  ldy $34  ; $3e for moon -> 4ad, $3f for sun -> 4ae ==> add 46f
+  sta $046f,y
+  lda #$6b
+  jsr $c125 ; StartAudioTrack
+  jsr $3d88b
+  lda $04ad
+  ora $04ae
+  bne UseIvoryStatueRts
+  lda #$7f
+  sta $07d7
+  lda $04cf
+  sta $11
+  lda #$0f
+  sta $10
+  jmp $c25d ; LoadOneObjectDataInternal
+.assert < $3d746    
+
+.org $3d7fd ; itemuse action jump 1c - statue of onyx -> akahana
+  jsr GrantItemFromTable
+  nop
+  nop
+
+;;; In HandleItemOrTrigger, backup $23 in $10 rather than using it for the
+;;; JMP opcode, and then call Jmp11 instead.
+.org $3d845
+  lda $23
+  sta $34
+.org $3d853
+  jsr Jmp11
+
+;;; ================================================================
 
 ;;; Now fix the LoadNpcDataForLocation code
 .org $3e19a
@@ -2175,6 +2401,9 @@ CheckToRedisplayDifficulty:
   jsr $3e1b6 ; TryNpcSpawn
   inx
   jmp $3e18f ; Check next NPC spawn.
+
+Jmp11: ;;; More efficient version of `jsr $0010`, just `jsr Jmp11`
+  jmp ($0011)
 .assert < $3e1ae
 .org $3e1ae
 LoadNpcDataForLocation_Rts:

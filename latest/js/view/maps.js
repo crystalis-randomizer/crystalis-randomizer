@@ -12,6 +12,7 @@ import {World} from '../graph/world.js';
 import {shuffleCave} from '../maze/cave.js';
 import {shuffleSwamp} from '../maze/swamp.js';
 import {shuffleGoa1} from '../maze/goa.js';
+import {shuffleGoa} from '../pass/shufflegoa.js';
 import {prepareScreens} from '../pass/shufflemazes.js';
 
 // TODO - move colors to view.js?
@@ -38,6 +39,9 @@ class MapsView extends View {
     this.rom = rom;
     if (/extend/.test(window.location.hash)) {
       prepareScreens(rom);
+    }
+    if (/goa/.test(window.location.hash)) {
+      shuffleGoa(rom, new Random(1));
     }
 
     this.location = -1;

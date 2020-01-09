@@ -530,6 +530,7 @@ export class Rom {
           if (b < 0x20 && tileset.alternates[b] !== b) {
             if (a >= 0x20) throw new Error(`Cannot unflag: ${tsid} ${a} ${b} ${tileset.alternates[b]}`);
             tileset.alternates[a] = tileset.alternates[b];
+            
           }
         }
       }

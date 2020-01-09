@@ -1257,9 +1257,9 @@ export class World {
         const logic = this.flag(~flag)?.logic;
         if (logic?.assumeTrue) return Requirement.CLOSED;
       } else {
-        const logic = this.flag(flag)?.logic;
-        if (logic?.assumeFalse) return Requirement.CLOSED;
-        if (logic?.track) conds.push(flag as Condition);
+        const f = this.flag(flag);
+        if (f?.logic.assumeFalse) return Requirement.CLOSED;
+        if (f?.logic.track) conds.push(f.id as Condition);
       }
     }
     return [conds];
@@ -1273,9 +1273,9 @@ export class World {
         const logic = this.flag(~flag)?.logic;
         if (logic?.assumeFalse) return Requirement.OPEN;
       } else {
-        const logic = this.flag(~flag)?.logic;
-        if (logic?.assumeTrue) return Requirement.OPEN;
-        if (logic?.track) req.push([~flag as Condition]);
+        const f = this.flag(~flag);
+        if (f?.logic.assumeTrue) return Requirement.OPEN;
+        if (f?.logic.track) req.push([f.id as Condition]);
       }
     }
     return req;

@@ -93,7 +93,6 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
     connectLimeTreeToLeaf(rom);
   }
   evilSpiritIslandRequiresDolphin(rom);
-  closeCaveEntrances(rom, flags);
   simplifyInvisibleChests(rom);
   addCordelWestTriggers(rom, flags);
   if (flags.disableRabbitSkip()) fixRabbitSkip(rom);

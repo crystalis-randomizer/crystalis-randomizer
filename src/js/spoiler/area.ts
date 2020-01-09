@@ -3,6 +3,7 @@ import {Terrain, debugLabel} from '../logic/terrain.js';
 import {AreaData, WorldData} from '../logic/world.js';
 import {Rom} from '../rom.js';
 import {Location} from '../rom/location.js';
+import {hex} from '../rom/util.js';
 
 // Basic idea: a simple controller with a navigable canvas.
 //   Checks: [Leaf Elder ▽]
@@ -67,7 +68,7 @@ export class Area {
           this.world.locations[loc.id]?.areas[Symbol.iterator]().next().value;
       if (area == null) continue;
       const option = document.createElement('option');
-      option.textContent = loc.name;
+      option.textContent = `${hex(loc.id)} ${loc.name}`;
       option.value = String(area.id);
       select.appendChild(option);
     }

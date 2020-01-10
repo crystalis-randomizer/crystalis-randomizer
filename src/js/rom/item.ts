@@ -210,6 +210,10 @@ export class Item extends Entity {
     // 0x28000, 0x29fff, `ItemMessageName ${hex(this.id)}`),
     // writeLittleEndian(writer.rom, this.messageNamePointer, messageAddress - 0x20000);
   }
+
+  isMagic(): boolean {
+    return this.id >= 0x41 && this.id <= 0x48;
+  }
 }
 
 const stringToBytes = (s: string): number[] => {

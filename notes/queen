@@ -1,3 +1,44 @@
+# Disentangle the queen's logic
+
+The queen's logic is very complicated since it depends so much on state,
+and is entangled with so much:
+ - sword of water
+ - rage/mesia
+ - fortune teller
+ - two guards: a mover and a statue
+
+To accommodate this, we've made a number of guarantees:
+ - Asina in the back room will give the Flute of Lime, which is required
+   in case Rage is in logic before the queen.
+ - Mesia is the trigger instead of Rage, which ensures that when the queen
+   disappears to the back room, we don't soft lock from not being able to
+   get back there to get the first item.
+ - We also added a land bridge to ensure that we don't soft-lock by getting
+   off the dolphin in the wrong spot and going through a door, and also to
+   ensure the logic doesn't require summoning the dolphin from that beach.
+
+For the dolphin soft-lock, simply removing dolphin access from those tiles
+seems sufficient, and we need to do that independently from the land bridge
+since otherwise logic could expect dolphin to replace sword/ball of water
+or flight to cross over to the back room.  And since wild warp is now easy,
+the soft lock is further prevented (assuming anyone reads the documentation).
+
+For Sword of Water, we should just remove that check, since it's not natural.
+Sword of Water should not obviate the need to do the paralysis dance.
+
+We can move the back-room requirement back to Rage if we give the Flute of
+Lime to the guard, or leave it on the throne, or something along those lines.
+This would allow separating Mesia from Rage in entrance shuffle, leaving only
+the palace front and throne room attached at the hip (and of course, reworking
+whatever trigger squares outside the palace cause movement).
+
+We also need to verify that the fortune teller room can be cleared by talking
+to her from the back, leaving, and re-entering.
+
+
+
+# Additional notes
+
 First dialog:
  - set 09c, 019, 01a
  - 019 and 09c cleared upon leaving palace

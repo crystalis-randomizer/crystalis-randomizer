@@ -22,16 +22,11 @@ export class Spoiler {
 
   // Used for lazily displaying route
   readonly slotNames: {[id: number]: string} = [];
-  readonly conditionNames: {[id: number]: string} = {};
 
   constructor(readonly rom: Rom) {}
 
-  addCondition(condition: number, name: string): void {
-    this.conditionNames[condition] = name;
-  }
-
-  addCheck(condition: number, deps: readonly number[], item?: number): void {
-    this.route.push(new Check(this, condition, deps, item));
+  addCheck(condition: number, deps: readonly number[]): void {
+    this.route.push(new Check(this, condition, deps));
   }
 
   addSlot(slot: number, slotName: string, item: number): void {
@@ -59,13 +54,17 @@ export class Spoiler {
     this.wildWarps.push({id, name});
   }
 
-  formatCondition(id: number, item?: number): string {
-    // Ordinary symmetic conditions
-    if (id < 0x200 || id >= 0x280) return this.conditionNames[id] || conditionHex(id);
-    // Dependency items - always < 248
-    if (item == null) return slotToItem(this.rom, id & 0xff);
-    // Slot - print both slot and item name
-    return `${this.slotNames[id] || conditionHex(id)} (${this.formatCondition(item | 0x200)})`;
+  formatCondition(id: number): string {
+    return this.rom.flags[id]?.name
+  }
+
+  formatConditionList(conditions: readonly number[]): string {
+    const terms: string[] = [];
+    for (const c of conditions) {
+      const f = this.rom.flags[c];
+      if (f?.logic.track) terms.push(f.name);
+    }
+    return terms.join(', ');
   }
 }
 
@@ -101,18 +100,17 @@ interface WildWarp {
 class Check {
   constructor(readonly spoiler: Spoiler,
               readonly condition: number,
-              readonly deps: readonly number[],
-              readonly item: number | undefined) {}
+              readonly deps: readonly number[]) {}
 
   toString(): string {
-    return `${this.spoiler.formatCondition(this.condition, this.item)}: [${
-            this.deps.map(d => this.spoiler.formatCondition(d))
-                     .filter(x => x !== 'Always True').join(', ')}]`;
+    let item = 0;
+    if ((this.condition & ~0x7f) === 0x100) {
+      item = 0x200 | this.spoiler.rom.slots[this.condition & 0xff];
+    }
+    return `${this.spoiler.formatCondition(this.condition)}${
+            item ? ` (${this.spoiler.formatCondition(item)})` : ''
+            }: [${this.spoiler.formatConditionList(this.deps)}]`;
   }
-}
-
-function conditionHex(id: number): string {
-  return id < 0 ? '~' + ~id.toString(16).padStart(2, '0') : id.toString(16).padStart(3, '0');
 }
 
 class Slot {

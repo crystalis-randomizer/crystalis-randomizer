@@ -290,9 +290,10 @@ function adjustGoaFortressTriggers(rom: Rom): void {
 
 function alarmFluteIsKeyItem(rom: Rom, flags:FlagSet): void {
   const {
-    locations: {WaterfallCave4},
-    npcs: {WindmillGuard},
     items: {AlarmFlute},
+    flags: {TalkedToZebuStudent, ZebuStudent},
+    locations: {Leaf_StudentHouse, WaterfallCave4, ZebuCave},
+    npcs: {WindmillGuard, Zebu},
   } = rom;
 
   // Move alarm flute to third row
@@ -305,9 +306,13 @@ function alarmFluteIsKeyItem(rom: Rom, flags:FlagSet): void {
 
   if (flags.zebuStudentGivesItem()) {
     // Person 14 (Zebu's student): secondary item -> alarm flute
-    WindmillGuard.data[1] = 0x31; // NOTE: Clobbers shuffled item!!!
+    WindmillGuard.data[1] = 0x31;
   } else {
     WindmillGuard.data[1] = 0xff; // indicate nothing there: no slot.
+    const dialog = WindmillGuard.dialog(Leaf_StudentHouse)[0];
+    dialog.condition = ~TalkedToZebuStudent.id;
+    dialog.flags.push(TalkedToZebuStudent.id);
+    replace(Zebu.spawns(ZebuCave), ZebuStudent.id, TalkedToZebuStudent.id);
   }
 
   // Remove alarm flute from shops (replace with other items)
@@ -1151,4 +1156,13 @@ function orbsOptional(rom: Rom): void {
     // 2. Increase the level to 2
     rom.objects[obj].level = 2;
   }
+}
+
+function replace<T>(array: T[], old: T, replacement: T) {
+  for (let i = 0; i < array.length; i++) {
+    if (array[i] !== old) continue;
+    array[i] = replacement;
+    return;
+  }
+  throw new Error(`Could not find ${old} in ${array.join(',')}`);      
 }

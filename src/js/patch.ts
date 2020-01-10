@@ -201,7 +201,8 @@ export async function shuffle(rom: Uint8Array,
   // all the normalization and other handling that happened before.
   const world = new World(parsed, flags);
   const graph = new Graph([world.getLocationList()]);
-  const fill = await graph.shuffle(flags, random, undefined, progress);
+  const fill =
+      await graph.shuffle(flags, random, undefined, progress, parsed.spoiler);
   if (fill) {
     // const n = (i: number) => {
     //   if (i >= 0x70) return 'Mimic';

@@ -1,4 +1,5 @@
 import {Rom} from '../rom.js';
+import {Flag} from '../rom/flags.js';
 import {Item} from '../rom/item.js';
 import {Npc} from '../rom/npc.js';
 import {hex} from '../rom/util.js';
@@ -7,72 +8,88 @@ import {fail} from '../assert.js';
 
 /** Finds references to given items and replaces it with the actual items. */
 export function fixDialog(rom: Rom) {
+  const {
+    flags: {
+      AkahanaStatueOfOnyxTradein,
+      AsinaInBackRoom,
+      BehindWhirlpool,
+      KensuInSwan,
+      MtSabreNorthSummit,
+      MtSabreWestTornel,
+      PortoaQueen,
+      Rage,
+      RepairedStatue,
+      SlimedKensu,
+      StomFightReward,
+      ZebuAtWindmill,
+    },
+    npcs: {
+      AkahanaInBrynmaer,
+      Aryllis,
+      Fisherman,
+    },
+  } = rom;
+
   // Stom's "I'll, be waiting..." dialog - the comma is just wrong.
   replaceMessage('03:06', ',', '');
 
   const tradeIns = buildTradeInMap(rom);
+  function tradeIn(npc: Npc): Item {
+    const trade = tradeIns.get(npc.id);
+    if (!trade) throw new Error(`No trade-in for ${npc.name}`);
+    return rom.items[trade];
+  }
   // NOTE: we need to hardcode original names in case they were shuffled.
 
-  const zebu = rom.npcs[0x5e];
-  if (zebu.data[0] < 0x41) unmagic('00:1b');
-  replaceMessage('00:1b', '[41:Refresh]', item(zebu.data[0]));
+  if (!ZebuAtWindmill.item.isMagic()) unmagic('00:1b');
+  replaceMessage('00:1b', '[41:Refresh]', item(ZebuAtWindmill.item));
 
-  const akahanaTradeIn = mustGet(tradeIns, 0x82);
-  replaceMessage('02:01', 'an unusual statue', vague(akahanaTradeIn));
-  replaceMessage('02:02', 'a statue', `the ${commonNoun(akahanaTradeIn)}`);
+  const akahanaWant = tradeIn(AkahanaInBrynmaer);
+  replaceMessage('02:01', 'an unusual statue', vague(akahanaWant));
+  replaceMessage('02:02', 'a statue', `the ${commonNoun(akahanaWant)}`);
+  replaceMessage('02:02', '[29:Gas Mask]', item(AkahanaStatueOfOnyxTradein));
 
-  const gasMaskSlot = actionGrant(akahanaTradeIn); // opel statue
-  replaceMessage('02:02', '[29:Gas Mask]', item(gasMaskSlot));
+  if (!StomFightReward.item.isMagic()) unmagic('03:01');
+  replaceMessage('03:01', '[43:Telepathy]', item(StomFightReward));
 
-  const telepathySlot = rom.prg[0x367f4];
-  if (telepathySlot < 0x41) unmagic('03:01');
-  replaceMessage('03:01', '[43:Telepathy]', item(telepathySlot));
+  const tornelWant = findTornelTradeIn(rom);
+  replaceMessage('03:01', '[06:Tornado Bracelet]', item(tornelWant));
+  replaceMessage('05:0a', '[06:Tornado Bracelet]', item(tornelWant));
+  replaceMessage('05:0a', '[44:Teleport]', item(MtSabreWestTornel));
 
-  const tornel = rom.npcs[0x5f];
-  const tornelTradeIn = findTornelTradeIn(tornel);
-  replaceMessage('03:01', '[06:Tornado Bracelet]', item(tornelTradeIn));
-  replaceMessage('05:0a', '[06:Tornado Bracelet]', item(tornelTradeIn));
-  replaceMessage('05:0a', '[44:Teleport]', item(tornel.data[0]));
+  const fogLampWant = tradeIn(Fisherman);
+  replaceMessage('09:01', '[35:Fog Lamp]', item(fogLampWant));
+  replaceMessage('09:04', '[35:Fog Lamp]', item(fogLampWant));
+  replaceMessage('09:05', '[35:Fog Lamp]', item(fogLampWant));
+  replaceMessage('09:06', 'lamp', commonNoun(fogLampWant));
 
-  const fogLampTradeIn = tradeIns.get(0x64);
-  if (fogLampTradeIn != null) {
-    replaceMessage('09:01', '[35:Fog Lamp]', item(fogLampTradeIn));
-    replaceMessage('09:04', '[35:Fog Lamp]', item(fogLampTradeIn));
-    replaceMessage('09:05', '[35:Fog Lamp]', item(fogLampTradeIn));
-    replaceMessage('09:06', 'lamp', commonNoun(fogLampTradeIn));
-  }
-
-  const queen = rom.npcs[0x38];
-  replaceMessage('0a:0c', '[28:Flute of Lime]', item(queen.data[0]));
-  replaceMessage('0a:0d', '[02:Sword of Water]',
-                 item(queen.localDialogs.get(-1)![3].condition & 0xff));
+  const queenWant = rom.npcs.PortoaQueen.dialog()[3].condition;
+  replaceMessage('0a:0c', '[28:Flute of Lime]', item(PortoaQueen));
+  replaceMessage('0a:0d', '[02:Sword of Water]', item(queenWant));
   // TODO - consider replacing 0a:0d but we need to also replace condition?
-  const recoverSlot = rom.prg[0x3d1f9]; // TODO - consolidate in table?
-  if (recoverSlot < 0x41) unmagic('0b:01');
-  replaceMessage('0b:01', '[45:Recover]', item(recoverSlot));
+  if (!AsinaInBackRoom.item.isMagic()) unmagic('0b:01');
+  replaceMessage('0b:01', '[45:Recover]', item(AsinaInBackRoom));
 
-  const barrierSlot = actionGrant(0x84);
-  if (barrierSlot < 0x41) {
+  if (!BehindWhirlpool.item.isMagic()) {
     unmagic('0b:01');
     unmagic('1d:12');
   }
-  replaceMessage('0b:01', '[46:Barrier]', item(barrierSlot));
-  replaceMessage('1d:12', '[46:Barrier]', item(barrierSlot));
+  replaceMessage('0b:01', '[46:Barrier]', item(BehindWhirlpool));
+  replaceMessage('1d:12', '[46:Barrier]', item(BehindWhirlpool));
 
   // Look for a key item in the fog lamp/kirisa plant caves.
   // Order is back of fog lamp, kirisa back-to-front, then front of fog lamp
   let fogLampCaveLoot = findLoot(0x4f, 0x4e, 0x4d, 0x4c, 0x47, 0x46, 0x45, 0x44,
                                  0x4b, 0x4a, 0x49, 0x48);
-  if (fogLampCaveLoot >= 0) {
+  if (fogLampCaveLoot) {
     replaceMessage('0d:00', '[35:Fog Lamp]', item(fogLampCaveLoot));
   } else {
     replaceMessage('0d:00', 'that a [35:Fog Lamp] was', 'there was treasure');
   }
 
-  const rageTradeIn = rom.npcs[0xc3].localDialogs.get(-1)![0].condition & 0xff;
-  const rageItem = rom.prg[0x3d337];
-  replaceMessage('0e:03', '[02:Sword of Water]', item(rageTradeIn));
-  replaceMessage('0e:03', '[09:Ball of Water]', item(rageItem));
+  const rageWant = rom.npcs.Rage.dialog()[0].condition;
+  replaceMessage('0e:03', '[02:Sword of Water]', item(rageWant));
+  replaceMessage('0e:03', '[09:Ball of Water]', item(Rage));
 
   // TODO - message 10:0c is only half-correct.  If item names are randomized
   // then even without a location the message is still useful.  So just do that
@@ -80,44 +97,37 @@ export function fixDialog(rom: Rom) {
   replaceMessage('10:0c', 'that\'s', 'is');
   replaceMessage('10:0c', /, is in the\+lighthouse/, '');
 
-  const aryllisTradeIn = tradeIns.get(0x23);
-  if (aryllisTradeIn != null) {
-    replaceMessage('12:05', '[3c:Kirisa Plant]', item(aryllisTradeIn));
-    replaceMessage('12:10', 'the plant', `the ${commonNoun(aryllisTradeIn)}`);
-    replaceMessage('12:10', '[3c:Kirisa Plant]', item(aryllisTradeIn));
-    // TODO - refs in 12:09 and 12:0a have location, too.
-    // replaceMessage('12:09', /\s*\n.*/, '.');
-    // replaceMessage('12:0a', /\s*\n.*/, '.');
-    const clue = `Our illustrious chief seeks ${vague(aryllisTradeIn)}.`;
-    replaceMessage('12:09', /[^]*/, clue);
-    replaceMessage('12:0a', /[^]*/, clue);
-  }
+  const aryllisWant = tradeIn(Aryllis);
+  replaceMessage('12:05', '[3c:Kirisa Plant]', item(aryllisWant));
+  replaceMessage('12:10', 'the plant', `the ${commonNoun(aryllisWant)}`);
+  replaceMessage('12:10', '[3c:Kirisa Plant]', item(aryllisWant));
+  // TODO - refs in 12:09 and 12:0a have location, too.
+  // replaceMessage('12:09', /\s*\n.*/, '.');
+  // replaceMessage('12:0a', /\s*\n.*/, '.');
+  const aryllisClue = `Our illustrious chief seeks ${vague(aryllisWant)}.`;
+  replaceMessage('12:09', /[^]*/, aryllisClue);
+  replaceMessage('12:0a', /[^]*/, aryllisClue);
 
-  const lovePendantTradeIn = mustGet(tradeIns, 0x74);
-  replaceMessage('13:02', '[3b:Love Pendant]', item(lovePendantTradeIn));
-  replaceMessage('13:00', 'pendant', commonNoun(lovePendantTradeIn));
-  const changeSlot = actionGrant(lovePendantTradeIn);
-  if (changeSlot < 0x41) {
+  const lovePendantWant = tradeIn(rom.npcs.KensuInSwan);
+  replaceMessage('13:02', '[3b:Love Pendant]', item(lovePendantWant));
+  replaceMessage('13:00', 'pendant', commonNoun(lovePendantWant));
+  if (!KensuInSwan.item.isMagic()) {
     unmagic('13:02');
   }
-  replaceMessage('13:02', '[47:Change]', item(changeSlot));
+  replaceMessage('13:02', '[47:Change]', item(KensuInSwan));
 
-  const ivoryStatueTradeIn = tradeIns.get(0x75);
-  if (ivoryStatueTradeIn != null) {
-    replaceMessage('18:06', '[3d:Ivory Statue]', item(ivoryStatueTradeIn));
-    replaceMessage('18:07', '[3d:Ivory Statue]', item(ivoryStatueTradeIn));
-  }
+  const ivoryStatueWant = tradeIn(rom.npcs.SlimedKensu);
+  replaceMessage('18:06', '[3d:Ivory Statue]', item(ivoryStatueWant));
+  replaceMessage('18:07', '[3d:Ivory Statue]', item(ivoryStatueWant));
   replaceMessage('18:06', `It's in a room`, '{0b:Karmine} is');
-  const flightSlot = rom.prg[0x3d18f]; // TODO - consolidate?
-  if (flightSlot < 0x41) replaceMessage('18:07', 'teach', 'give');
-  replaceMessage('18:07', '[48:Flight]', item(flightSlot));
+  if (!SlimedKensu.item.isMagic()) replaceMessage('18:07', 'teach', 'give');
+  replaceMessage('18:07', '[48:Flight]', item(SlimedKensu));
 
-  const paralysisSlot = actionGrant(0xb2);
-  if (paralysisSlot < 0x41) unmagic('1c:10');
-  replaceMessage('1c:10', '[42:Paralysis]', item(paralysisSlot));
+  if (!MtSabreNorthSummit.item.isMagic()) unmagic('1c:10');
+  replaceMessage('1c:10', '[42:Paralysis]', item(MtSabreNorthSummit));
 
   // TODO - shuffle which item reconstructs which other?
-  replaceMessage('20:06', 'Statue of Gold', item(actionGrant(0x39)));
+  replaceMessage('20:06', 'Statue of Gold', item(RepairedStatue));
 
   // TODO - consider warping on a random sword? - message 1c:11
 
@@ -126,8 +136,10 @@ export function fixDialog(rom: Rom) {
   function unmagic(mid: string) {
     replaceMessage(mid, /teach\s+you\s+the\s+magic\s+of/, 'bestow upon you the');
   }
-  function item(id: number): string {
-    const item = itemget(id);
+  function item(item: number|Flag|Item): string {
+    if (typeof item === 'number') {
+      item = rom.items[rom.itemGets[item & 0xff].itemId];
+    } else if (!(item instanceof Item)) item = item.item as Item;
     return `[${hex(item.id)}:${item.messageName}]`;
   }
   function replaceMessage(mid: string, pat: string | RegExp, repl: string) {
@@ -135,7 +147,7 @@ export function fixDialog(rom: Rom) {
     const msg = rom.messages.parts[part][index];
     msg.text = msg.text.replace(pat, repl);
   }
-  function findLoot(...locs: number[]) {
+  function findLoot(...locs: number[]): Item|undefined {
     const conditions = [
       (item: number) => BOWS.has(item),
       (item: number) => SWORD_OR_MAGIC.has(item),
@@ -146,74 +158,71 @@ export function fixDialog(rom: Rom) {
       for (const id of locs) {
         const loc = rom.locations[id];
         for (const spawn of loc.spawns) {
-          if (spawn.isChest() && spawn.id <= 0x48 && cond(spawn.id)) {
-            return spawn.id;
+          if (!spawn.isChest()) continue;
+          const item = rom.slots[spawn.id];
+          if (item <= 0x48 && cond(item)) {
+            return rom.items[item];
           }
         }
       }
     }
-    return -1;
+    return undefined;
   }
   function itemget(id: number): Item {
     const itemget = rom.itemGets[id];
     return rom.items[itemget.itemId];
-  }
-  function actionGrant(key: number): number {
-    const grant = rom.itemGets.actionGrants.get(key);
-    if (grant == null) throw new Error(`Missing actionGrant for ${hex(key)}`);
-    return grant;
   }
 }
 
 const BOWS = new Set([0x3e, 0x3f, 0x40]);
 const SWORD_OR_MAGIC = new Set([0x00, 0x01, 0x02, 0x03, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48]);
 
-function findTornelTradeIn(tornel: Npc): number {
+function findTornelTradeIn(rom: Rom): Item {
   // Expected structure:
   //   ...
   //   NOT bracelet -> ...
   //   NOT ball -> ...
   //   -> give item
-  for (const ds of tornel.localDialogs.values()) {
+  const {Tornel} = rom.npcs;
+  for (const ds of Tornel.localDialogs.values()) {
     for (let i = 2; i < ds.length; i++) {
       const item = ~ds[i].condition;
       // Look for any negative condition on a bracelet (doesn't matter where)
-      if (item > 0x204 && item <= 0x20c && !(item & 1)) return item & 0xff;
+      if (item > 0x204 && item <= 0x20c && !(item & 1)) {
+        return rom.items[item & 0xff];
+      }
     }
   }
-  return 0x06; // default to tornado bracelet
+  return rom.items.TornadoBracelet; // default to tornado bracelet
 }
 
-function vague(id: number): string {
-  switch (id) {
-    case 0x25: return 'an unusual statue';
-    case 0x28: return 'a rare instrument';
-    case 0x35: return 'a brilliant lamp';
-    case 0x3b: return 'a beautiful charm';
-    case 0x3c: return 'a fragrant plant';
-    case 0x3d: return 'an exotic statue';
+function vague(item: Item): string {
+  const items = item.rom.items;
+  switch (item) {
+    case items.StatueOfOnyx: return 'an unusual statue';
+    case items.FluteOfLime:  return 'a rare instrument';
+    case items.FogLamp:      return 'a brilliant lamp';
+    case items.LovePendant:  return 'a beautiful charm';
+    case items.KirisaPlant:  return 'a fragrant plant';
+    case items.IvoryStatue:  return 'an exotic statue';
+    // TODO - statue of gold
   }
   fail();
   return 'a valuable item';
 }
 
-function commonNoun(id: number): string {
-  switch (id) {
-    case 0x25: return 'statue';
-    case 0x28: return 'instrument';
-    case 0x35: return 'lamp';
-    case 0x3b: return 'pendant';
-    case 0x3c: return 'plant';
-    case 0x3d: return 'statue';
+function commonNoun(item: Item): string {
+  const items = item.rom.items;
+  switch (item) {
+    case items.StatueOfOnyx: return 'statue';
+    case items.FluteOfLime:  return 'instrument';
+    case items.FogLamp:      return 'lamp';
+    case items.LovePendant:  return 'pendant';
+    case items.KirisaPlant:  return 'plant';
+    case items.IvoryStatue:  return 'statue';
   }
   fail();
   return 'item';
-}
-
-function mustGet<K, V>(map: Map<K, V>, key: K): V {
-  const result = map.get(key);
-  if (result == null) throw new Error(`Expected value for ${key}`);
-  return result;
 }
 
 // function replaceDialog(npc: Npc, orig: number | RegExp, replacementId: number) {

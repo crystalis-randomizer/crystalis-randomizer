@@ -1,9 +1,10 @@
-import {Rom} from '../rom.js';
+import {Item} from './item.js';
 import {Location} from './location.js';
 import {Npc} from './npc.js';
 import {Trigger} from './trigger.js';
 import {hex, hex3, upperCamelToSpaces, Writable} from './util.js';
 import {Condition, Requirement} from '../logic/requirement.js';
+import {Rom} from '../rom.js';
 
 const FLAG = Symbol();
 
@@ -62,6 +63,17 @@ export class Flag {
 
   get debug(): string {
     return this.id.toString(16).padStart(3, '0') + ' ' + this.name;
+  }
+
+  get item(): Item {
+    if (this.id < 0x100 || this.id > 0x17f) {
+      throw new Error(`not a slot: ${this.id}`);
+    }
+    const itemGetId = this.flags.rom.slots[this.id & 0xff];
+    const itemId = this.flags.rom.itemGets[itemGetId].itemId;
+    const item = this.flags.rom.items[itemId];
+    if (!item) throw new Error(`no item`);
+    return item;
   }
 }
 
@@ -377,6 +389,7 @@ export class Flags {
   0x0ec = dialogProgression('Tower message 3');
   0x0ed = dialogProgression('Mesia');
   // unused 0ee .. 0ff
+  TalkedToZebuStudent = movable(0x0ee, TRACK);
 
   // 100
   0x100 = obsolete(0x12e); // check: rabbit boots / vampire

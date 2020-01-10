@@ -1,6 +1,7 @@
 import {Bits} from '../bits.js';
 import {FlagSet} from '../flagset.js';
 import {Random} from '../random.js';
+import {Spoiler} from '../rom/spoiler.js';
 import {hex} from '../rom/util.js';
 import {Keyed, ArrayMap, MutableArrayBiMap, iters, spread} from '../util.js';
 import {die} from '../assert.js';
@@ -174,7 +175,8 @@ export class Graph {
   async shuffle(flagset: FlagSet,
                 random: Random,
                 attempts = 20, // 00
-                progress?: ProgressTracker): Promise<Map<SlotId, ItemId>|null> {
+                progress?: ProgressTracker,
+                spoiler?: Spoiler): Promise<Map<SlotId, ItemId>|null> {
     if (progress) progress.addTasks(Math.floor(attempts / 100));
     for (let attempt = 0; attempt < attempts; attempt++) {
       if (progress && (attempt % 100 === 99)) {
@@ -190,7 +192,15 @@ export class Graph {
       if (!this.fillInternal(indexFill, items, has, random, flagset, backtracks)) {
         continue;
       }
-      const final = this.traverse(i => indexFill.get(i), Bits.of());
+      const path: number[][]|undefined = spoiler ? [] : undefined;
+      const final = this.traverse(i => indexFill.get(i), Bits.of(), path);
+      if (spoiler && path) {
+        for (const [target, ...deps] of path) {
+          spoiler.addCheck(
+              this.slots.get(target as SlotIndex)!,
+              deps.map(d => this.items.get(d as ItemIndex)!));
+        }
+      }
       // TODO - flags to loosen this requirement?
       if (final.size !== this.slots.length) {
         const ns = (si: SlotIndex) => this.checkName(this.slots.get(si)!);

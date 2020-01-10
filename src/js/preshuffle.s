@@ -1003,7 +1003,8 @@ MaybeSetCheckpointActual:
 
 ;;; Numeric displays
 .org $34ee9  ; 06 - was LV(menu) but now it's difficulty
-  .byte $a2,$64,$3c,$2b,$03,$00 ; display difficulty right of lvl
+  .word (Difficulty)
+  .byte $3c,$2b,$03,$00 ; display right of lvl
 .org $34f19  ; 0e - was unused, now it's LV(menu)
   .byte $21,$04,$29,$29,$03,$00 ; copied from $34ee9
 

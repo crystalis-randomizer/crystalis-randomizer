@@ -235,14 +235,14 @@ abstract class AbstractLine {
 
 class ByteLine extends AbstractLine {
   static parse(line: string) {
-    const bytes: number[] = [];
+    const bytes: Array<number|string> = [];
     for (let part of line.split(',')) {
       part = part.trim();
       const match = /^"(.*)"$/.exec(part);
       if (match) {
         bytes.push(...[...match[1]].map(s => s.charCodeAt(0)));
       } else {
-        bytes.push(parseNumber(part));
+        bytes.push(parseNumber(part, true));
       }
     }
     return new ByteLine(bytes);
@@ -252,19 +252,25 @@ class ByteLine extends AbstractLine {
     return new ByteLine(new Array<number>(count).fill(defaultValue));
   }
 
-  constructor(private readonly bytesInternal: number[]) {
+  constructor(private readonly bytesInternal: Array<number|string>) {
     super();
   }
 
   bytes(): number[] {
-    return [...this.bytesInternal];
+    return [...this.bytesInternal] as number[];
   }
 
   size(): number {
     return this.bytesInternal.length;
   }
 
-  expand(): void {}
+  expand(context: Context): void {
+    for (let i = 0; i < this.bytesInternal.length; i++) {
+      if (typeof this.bytesInternal[i] === 'string') {
+        this.bytesInternal[i] = context.map(this.bytesInternal[i]);
+      }
+    }
+  }
 }
 
 class WordLine extends AbstractLine {

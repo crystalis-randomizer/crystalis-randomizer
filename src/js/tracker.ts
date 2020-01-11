@@ -4,13 +4,9 @@
 import {World} from './logic/world.js';
 import {FlagSet} from './flagset.js';
 import {Rom} from './rom.js';
-import {deterministic} from './pass/deterministic.js';
+import {deterministic, deterministicPreParse} from './pass/deterministic.js';
 import {LocationList, ItemId, SlotId} from './logic/graph.js';
 import {DefaultMap} from './util.js';
-
-// TODO - fix this!
-declare const newFill: any;
-declare const traverse: any;
 
 const ITEMS: string = `
 sword-of-wind $00
@@ -178,21 +174,21 @@ const SLOTS: ReadonlyArray<readonly [number, number, number]> = [
 // non-unique key item slots
 const KEY = new Set([0x10, 0x12, 0x23, 0x26, 0x61]);
 
-const BOSSES = new Set([
-  0x2e, // rabbit boots slot -> vampire 1
-  0x07, // ball of fire slot -> insect
-  0x08, // flame bracelet slot -> kelbesque 1
-  0x09, // ball of water slot -> rage
-  0x38, // broken statue slot -> sabera 1
-  0x0b, // ball of thunder slot -> mado 1
-  0x26, // opel statue slot -> kelbesque 2
-  0x23, // fruit of repun slot -> sabera 2
-  0x12, // sacred shield slot -> mado 2
-  0x3d, // ivory statue slot -> karmine
-  0x1c, // psycho armor slot -> draygon 1
-  // [, ~0x10b], // draygon 2
-  0x61, // fruit of power slot -> vampire 2
-]);
+// const BOSSES = new Set([
+//   0x2e, // rabbit boots slot -> vampire 1
+//   0x07, // ball of fire slot -> insect
+//   0x08, // flame bracelet slot -> kelbesque 1
+//   0x09, // ball of water slot -> rage
+//   0x38, // broken statue slot -> sabera 1
+//   0x0b, // ball of thunder slot -> mado 1
+//   0x26, // opel statue slot -> kelbesque 2
+//   0x23, // fruit of repun slot -> sabera 2
+//   0x12, // sacred shield slot -> mado 2
+//   0x3d, // ivory statue slot -> karmine
+//   0x1c, // psycho armor slot -> draygon 1
+//   // [, ~0x10b], // draygon 2
+//   0x61, // fruit of power slot -> vampire 2
+// ]);
 
 // slots that come from trade-ins
 //  - note: the fog lamp trade-in doesn't have a good slot for this
@@ -291,10 +287,10 @@ class Graph {
         t = t.parentElement;
       }
       if (!t) return;
-      const uid = Number(t.dataset['slot']);
+      const id = Number(t.dataset['slot']) as ItemId;
       const has = t.classList.toggle('got');
       if (t.dataset['item']) {
-        has.has(uid) ? has.delete(uid) : has.add(uid);
+        has ? this.has.add(id) : this.has.delete(id);
       }
       this.update();
       e.preventDefault();
@@ -316,7 +312,7 @@ class Graph {
       x--; y--;
     }
     x--; y--;
-    div.dataset['slot'] = String(index);
+    div.dataset['slot'] = String(slotId);
     div.style.left = x + 'px';
     div.style.top = y + 'px';
     //div.textContent = '\xa0';
@@ -329,7 +325,7 @@ class Graph {
     if (this.flags.randomizeTrades() && TRADES.has(slotId)) {
       div.classList.add('boss');
     }
-    this.slotElts.set(index, div);
+    this.slotElts.set(slotId, div);
     this.map.appendChild(div);
   }
 
@@ -362,29 +358,25 @@ class Graph {
     for (const elt of this.slotElts.values()) {
       elt.dataset['state'] = elt.classList.contains('got') ? '' : 'blocked';
     }
-    for (const slot of traverse(this.world.graph, newFill(), this.has)) {
+    const reachable = this.traverse();
+    for (const slot of reachable) {
       // figure out whether it's available or not
       // TODO - consider having multiple worlds, for glitched/hard?
       //      -> adjust flags to add all glitches/hard mode
-      const elt = this.slotElts.get(slot);
+      if ((slot & ~0x7f) !== 0x100) continue;
+      const elt = this.slotElts.get(slot & 0xff);
       if (elt && !elt.classList.contains('got')) {
         elt.dataset['state'] = 'available';
       }
     }
   }
 
-  traverse(has: Set<ItemId>): Set<SlotId> {
-    has = new Set(has);
+  traverse(): Set<SlotId> {
+    const has = new Set([...this.has].map(i => i | 0x200));
     const reachable = new Set<SlotId>();
     const slots = new Set<SlotId>();
-    const queue = new Set<SlotId>();
-    for (let i = 0 as SlotId; i < this.slots.length; i++) {
-      if (!this.graph.requirements.has(i)) {
-        console.dir(this);
-        throw new Error(`Unreachable slot ${i}`);
-      }
-      queue.add(i as SlotId);
-    }
+    const queue =
+        new Set<SlotId>(this.graph.requirements.keys() as Iterable<SlotId>);
     for (const n of queue) {
       queue.delete(n);
       if (reachable.has(n)) continue;
@@ -405,14 +397,14 @@ class Graph {
         // if n is a slot then add the item to has.
         const items: ItemId[] = [];
         if ((n & ~0x7f) === 0x100) {
-          slots.add(n & 0xff);
+          slots.add((n & 0xff) as SlotId);
         } else {
-          items.push(n as number as ItemId);
-          has.add(item);
+          if (isItem(n)) items.push((n & 0xff) as number as ItemId);
+          has.add(n);
         }
-        for (const item of items) {
-          for (const j of this.unlocks.get(item) || []) {
-            if (this.graph.get(j) == null) {
+        for (const item of has) {
+          for (const j of this.unlocks.get(item as ItemId) || []) {
+            if (!this.graph.requirements.has(j)) {
               console.dir(this);
               throw new Error(`Adding bad node ${j} from unlock ${item}`);
             }
@@ -426,8 +418,12 @@ class Graph {
   }
 }
 
-function isSlot(x: number): boolean {
-  return (x & ~0x7f) === 0x100;
+// function isSlot(x: number): boolean {
+//   return (x & ~0x7f) === 0x100;
+// }
+
+function isItem(x: number): boolean {
+  return (x & ~0x7f) === 0x200;
 }
 
 function containsAll<T>(set: Set<T>, want: Iterable<T>): boolean {
@@ -441,7 +437,7 @@ function containsAll<T>(set: Set<T>, want: Iterable<T>): boolean {
 //      - all others (minus wild warp if disabled) tracked as glitches
 //      - consider dark yellow and dark green as well as dark blue ??
 
-let flags = 'Rlpt Tb';
+let flags = '@Casual';
 for (const arg of location.hash.substring(1).split('&')) {
   const [key, value] = arg.split('=');
   if (key === 'flags') {
@@ -457,11 +453,29 @@ for (const arg of location.hash.substring(1).split('&')) {
 //   'tracker': true,
 // };
 
+function initItemGrants(rom: Rom) {
+  // NOTE: This is ugly to put here, but the normal version
+  // requires preshuffle to work correctly, and it doesn't
+  // make sense to hardcode it in ItemGets' initializer.
+  rom.itemGets.actionGrants = new Map([
+    [0x25, 0x29],
+    [0x39, 0x3a],
+    [0x3b, 0x47],
+    [0x3c, 0x3e],
+    [0x84, 0x46],
+    [0xb2, 0x42],
+    [0xb4, 0x41],
+  ]);
+}
+
 async function main() {
-  const rom = await Rom.load();
+  const rom = await Rom.load(deterministicPreParse);
+  rom.flags.defrag();
+  initItemGrants(rom);
   const flagset = new FlagSet(flags);
   deterministic(rom, flagset); // make deterministic changes
   const world = new World(rom, flagset, true); // + ' Dt'));
+  const graph = new Graph(rom, world, flagset);
   for (let item of ITEMS.split('\n')) {
     item = item.replace(/#.*/, '').trim();
     if (!item) continue;
@@ -480,7 +494,7 @@ async function main() {
     for (const e of graph.grid.querySelectorAll('.got')) {
       e.classList.remove('got');
     }
-    graph.has = graph.always;
+    graph.has = new Set(); // graph.always;
     graph.update();
   });
 };

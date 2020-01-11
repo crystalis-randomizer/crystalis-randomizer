@@ -179,7 +179,7 @@ export class Flags {
   0x032 = obsolete(0x137); // check: eye glasses
   // unused 033
   0x034 = dialogProgression('Akahana in waterfall cave'); // ???
-  CuredAkahana = movable(0x035);
+  CuredAkahana = movable(0x035, TRACK);
   0x036 = dialogProgression('Akahana Shyron');
   0x037 = obsolete(0x142); // check: paralysis
   LeafAbduction = movable(0x038, TRACK); // one-way latch

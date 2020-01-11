@@ -37043,9 +37043,9 @@ MessageDecodeJump_08_CurrentItemName
         $2877c  xx:         xxx
         $2877d  xx xx xx:   xxx $xxxx
         $28780  xx xx:      xxx #$xx
-        $28782  xx xx:      xxx $xx
-        $28784  xx xx:      xxx #$xx
-        $28786  xx:         xxx
+        $28782  xx xx:      xxx + ; $28786
+        $28784  xx xx:       xxx #$xx ; blank name if nothing
++       $28786  xx:         xxx
         $28787  xx:         xxx
         $28788  xx xx xx:   xxx ItemNames,x
         $2878b  xx xx:      xxx $xx
@@ -57877,6 +57877,8 @@ HandleTreasureChest
 ;;; NOTE: This table is accessed as $3d405,y where Y >= $50.
 ;;; This looks somewhat redundant with ItemGetTable.  It may
 ;;; make it a little more difficult to shuffle lower items.
+;;; It contains the item name for messages (it's stored in $07dc
+;;; which is read by MessageDecodeJump_08_CurrentItemName).
 DataTable_3d45c
         $3d45c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $3d46c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx

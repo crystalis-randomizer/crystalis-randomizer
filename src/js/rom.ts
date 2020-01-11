@@ -597,7 +597,7 @@ export class Rom {
   }
 
   // Use the browser API to load the ROM.  Use #reset to forget and reload.
-  static async load(patch?: (data: Uint8Array) => Promise<void>,
+  static async load(patch?: (data: Uint8Array) => void|Promise<void>,
                     receiver?: (picker: Element) => void) {
     const file = await pickFile(receiver);
     if (patch) await patch(file);

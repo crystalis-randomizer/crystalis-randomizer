@@ -318,6 +318,9 @@ export class FlagSet {
   disableStatueGlitch() {
     return this.check('Ft');
   }
+  disableFlightStatueSkip() {
+    return false;
+  }
 
   assumeSwordChargeGlitch() {
     return this.check('Gc');
@@ -336,6 +339,9 @@ export class FlagSet {
   }
   assumeTriggerGlitch() {
     return false; // TODO - only works on land?
+  }
+  assumeFlightStatueSkip() {
+    return false; // TODO - allow a flag to disable
   }
   assumeWildWarp() {
     return this.check('Gw');
@@ -403,18 +409,18 @@ export class FlagSet {
   }
 
   private exclusiveFlags(flag: string): RegExp|undefined {
-    const flagForName: Flag = this.getFlagForName(flag);
+    const flagForName = this.getFlagForName(flag);
     if (flagForName == null) throw new Error(`Unknown flag: ${flag}`);
     return flagForName.conflict;
   }
 
-  private getFlagForName(flag: string): Flag {
+  private getFlagForName(flag: string): Flag|undefined {
     const matchingFlagSection = FLAGS.find(flagSection => {
       return flag.startsWith(flagSection.prefix);
     });
-
-    return <Flag>(<FlagSection>matchingFlagSection)
-        .flags.find(flagToMatch => flagToMatch.flag === flag);
+    if (!matchingFlagSection) return undefined;
+    return matchingFlagSection.flags
+        .find(flagToMatch => flagToMatch.flag === flag);
   }
 
   toString() {

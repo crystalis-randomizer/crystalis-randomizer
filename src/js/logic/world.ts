@@ -258,7 +258,13 @@ export class World {
     if (!this.flagset.guaranteeBarrier()) {
       this.addCheck([start], [[Money.c, BuyHealing.c],
                               [Money.c, ShieldRing.c],
-                              [Money.c, Refresh.c]], [ShootingStatue.id]);
+                              [Money.c, Refresh.c]],
+                    [ShootingStatue.id]);
+    }
+    if (!this.flagset.assumeFlightStatueSkip()) {
+      // NOTE: with no money, we've got 16 MP, which isn't enough
+      // to get past seven statues.
+      this.addCheck([start], [[Money.c, Flight.c]], [ShootingStatue.id]);
     }
     if (!this.flagset.guaranteeGasMask()) {
       this.addCheck([start], [[Money.c, BuyHealing.c],

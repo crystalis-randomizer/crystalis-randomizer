@@ -216,12 +216,25 @@ export default (nes) => {
   show.spawnCondition = (id, ...x) => showTable(0x1c5e0, 0x14000, id, ...x);
   show.npcData = (id, ...x) => showTable(0x19201, 0x10000, id, ...x);
   show.object = (id) => showTable(0x1ac00, 0x10000, id, 3);
+  show.mapData = (id, part, ...x) => {
+    const table = ptr(0x14300, 0xc000, id);
+    showTable(table, 0xc000, part, ...x);
+  };
+  show.mapData.layout = (id, ...x) => show.mapData(id, 0, ...x);
+  show.mapData.graphics = (id, ...x) => show.mapData(id, 1, ...x);
+  show.mapData.entrances = (id, ...x) => show.mapData(id, 2, ...x);
+  show.mapData.exits = (id, ...x) => show.mapData(id, 3, ...x);
+  show.mapData.flags = (id, ...x) => show.mapData(id, 4, ...x);
+  show.mapData.pits = (id, ...x) => show.mapData(id, 5, ...x);
 
-  function showTable(table, offset, id, ...args) {
+  function ptr(table, offset, id) {
     const lo = nes.rom.rom[table + 2 * id];
     const hi = nes.rom.rom[table + 2 * id + 1];
-    const addr = (hi << 8 | lo) + offset;
-    show(addr, ...args);
+    return (hi << 8 | lo) + offset;
+  }
+
+  function showTable(table, offset, id, ...args) {
+    show(ptr(table, offset, id), ...args);
   }
 
   window.watchFlags = () => {

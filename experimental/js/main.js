@@ -13,6 +13,7 @@ let seed;
 let rom;
 let romName;
 let race = false;
+let debug = false;
 
 const permalink = typeof CR_PERMALINK === 'boolean' && CR_PERMALINK;
 
@@ -76,6 +77,17 @@ const main = () => {
       initializeStateFromHash(true);
     }
   });
+  if (debug) {
+    const debugSection = document.createElement('section');
+    debugSection.classList.add('expandable');
+    const header = document.createElement('h1');
+    header.textContent = 'Debug';
+    debugSection.appendChild(header);
+    const div = document.createElement('div');
+    div.id = 'debug';
+    debugSection.appendChild(div);
+    document.querySelector('main').appendChild(debugSection);
+  }
 
   // Confirm that JS works.
   initVersion();
@@ -115,6 +127,7 @@ const initializeStateFromHash = (initPresets) => {
     if (key === 'flags') flags = new FlagSet(value);
     if (key === 'seed') seed = decodeURIComponent(value);
     if (key === 'race') document.body.classList.add('race');
+    if (key === 'debug') debug = true;
     for (const preset of document.querySelectorAll('[data-flags]')) {
       preset.addEventListener('click', () => {
         flags = new FlagSet(preset.dataset['flags']);
@@ -296,6 +309,7 @@ const updateDom = () => {
   document.getElementById('seed').value = seed || '';
   const hash = ['#flags=', flagString];
   if (seed) hash.push('&seed=', encodeURIComponent(seed));
+  if (debug) hash.push('&debug');
   history.replaceState({flags: flags.flags, seed}, '', String(window.location).replace(/#.*/, '') + hash.join(''));
   if (version.STATUS == 'stable' || version.STATUS == 'rc') {
     const s = seed || Math.floor(Math.random() * 0x100000000).toString(16);

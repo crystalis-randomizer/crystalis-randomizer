@@ -583,7 +583,9 @@ export class AssumedFill implements Shuffle {
 }
 
 function requiresChest(id: ItemId): boolean {
-  return id === 0x14 || id === 0x1b || id === 0x1c || id === 0x26;
+  // psychos, battle armor, and 3 opels
+  return id === 0x14 || id === 0x1b || id === 0x1c ||
+      id === 0x26 || id === 0x63 || id === 0x6d;
 }
 
 // export class ForwardFill extends AssumedFill {

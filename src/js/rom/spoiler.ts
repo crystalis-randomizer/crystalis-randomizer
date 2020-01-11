@@ -20,9 +20,6 @@ export class Spoiler {
 
   // TODO - shops, boss weaknesses
 
-  // Used for lazily displaying route
-  readonly slotNames: {[id: number]: string} = [];
-
   constructor(readonly rom: Rom) {}
 
   addCheck(condition: number, deps: readonly number[]): void {
@@ -30,8 +27,8 @@ export class Spoiler {
   }
 
   addSlot(slot: number, slotName: string, item: number): void {
-    this.slots[slot] = new Slot(this.rom, slot, slotName, item);
-    if (slotName) this.slotNames[0x200 | slot] = slotName;
+    this.slots[slot & 0xff] =
+        new Slot(this.rom, slot & 0xff, slotName, item & 0xff);
   }
 
   addMaze(id: number, name: string, maze: string): void {

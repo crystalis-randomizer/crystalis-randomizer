@@ -39,9 +39,6 @@ interface Check {
 /** Stores all the relevant information about the world's logic. */
 export class World {
 
-  /** Whether we're building the world for the tracker. */
-  readonly tracker = false;
-
   /** Builds and caches Terrain objects. */
   readonly terrainFactory = new Terrains(this.rom);
 
@@ -107,7 +104,8 @@ export class World {
       new DefaultMap<Condition, Requirement.Builder>(
           (c: Condition) => new Requirement.Builder(c));
 
-  constructor(readonly rom: Rom, readonly flagset: FlagSet) {
+  constructor(readonly rom: Rom, readonly flagset: FlagSet,
+              readonly tracker = false) {
     // Build itemUses
     for (const item of rom.items) {
       for (const use of item.itemUseData) {
@@ -450,9 +448,9 @@ export class World {
     for (const [tile, checkSet] of this.checks) {
       const area = tiles.get(tile).area;
       if (!area) {
-        console.error(`Abandoned check ${[...checkSet].map(
-                           x => [...x.checks].map(y => y.toString(16)))
-                       } at ${tile.toString(16)}`);
+        // console.error(`Abandoned check ${[...checkSet].map(
+        //                    x => [...x.checks].map(y => y.toString(16)))
+        //                } at ${tile.toString(16)}`);
         continue;
       }
       for (const {checks, requirement} of checkSet) {
@@ -1342,7 +1340,7 @@ function or(...flags: Flag[]): Requirement.Frozen {
 // without resorting to bigint.  This is inherently order-independent.
 // If the rarer ones are higher, we can fit significantly more than 4.
 
-const DEBUG = true;
+const DEBUG = false;
 
 // Debug interface.
 export interface AreaData {

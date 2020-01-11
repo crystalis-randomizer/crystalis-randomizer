@@ -39,6 +39,16 @@ export class Screen extends Entity {
     }
   }
 
+  setTiles(start: number, tiles: Array<Array<number|null>>) {
+    for (const row of tiles) {
+      for (let i = 0; i < row.length; i++) {
+        const tile = row[i];
+        if (tile != null) this.tiles[start + i] = tile;
+      }
+      start += 16;
+    }
+  }
+
   // TODO - accessors for which palettes, tilesets, and patterns are used/allowed
 }
 

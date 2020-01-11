@@ -1,20 +1,16 @@
 // Item tracker for web.
 // Uses flagset to figure out actual dependencies.
 
-// import {Graph as LogicGraph} from './logic/graph.js';
-// import {World} from './logic/world.js';
-import {Bits} from './bits.js';
+import {World} from './logic/world.js';
 import {FlagSet} from './flagset.js';
 import {Rom} from './rom.js';
 import {deterministic} from './pass/deterministic.js';
+import {LocationList, ItemId, SlotId} from './logic/graph.js';
+import {DefaultMap} from './util.js';
 
 // TODO - fix this!
 declare const newFill: any;
 declare const traverse: any;
-declare const World: any;
-declare const LogicGraph: any;
-type World = any;
-type LogicGraph = any;
 
 const ITEMS: string = `
 sword-of-wind $00
@@ -45,7 +41,7 @@ blizzard-bracelet $0a
 storm-bracelet $0c
 love-pendant $3b
 key-to-styx $34
-opel-statue $26
+statue-of-gold $3a
 sacred-shield $12
 ivory-statue $3d
 
@@ -123,7 +119,7 @@ const SLOTS: ReadonlyArray<readonly [number, number, number]> = [
   [0x37, 233,118], // eye glasses
   [0x38, 234, 88], // broken statue
   [0x39, 295, 92], // glowing lamp
-  // 3a statue of gold
+  [0x3a, 234, 49], // statue of gold
   [0x3b, 274,117], // love pendant
   [0x3c, 338,226], // kirisa plant
   [0x3d,  23, 17], // ivory statue
@@ -182,20 +178,20 @@ const SLOTS: ReadonlyArray<readonly [number, number, number]> = [
 // non-unique key item slots
 const KEY = new Set([0x10, 0x12, 0x23, 0x26, 0x61]);
 
-const BOSSES = new Map([
-  [~0x100, 0x2e], // rabbit boots slot -> vampire 1
-  [~0x101, 0x07], // ball of fire slot -> insect
-  [~0x102, 0x08], // flame bracelet slot -> kelbesque 1
-  [~0x103, 0x09], // ball of water slot -> rage
-  [~0x104, 0x38], // broken statue slot -> sabera 1
-  [~0x105, 0x0b], // ball of thunder slot -> mado 1
-  [~0x106, 0x26], // opel statue slot -> kelbesque 2
-  [~0x107, 0x23], // fruit of repun slot -> sabera 2
-  [~0x108, 0x12], // sacred shield slot -> mado 2
-  [~0x109, 0x3d], // ivory statue slot -> karmine
-  [~0x10a, 0x1c], // psycho armor slot -> draygon 1
+const BOSSES = new Set([
+  0x2e, // rabbit boots slot -> vampire 1
+  0x07, // ball of fire slot -> insect
+  0x08, // flame bracelet slot -> kelbesque 1
+  0x09, // ball of water slot -> rage
+  0x38, // broken statue slot -> sabera 1
+  0x0b, // ball of thunder slot -> mado 1
+  0x26, // opel statue slot -> kelbesque 2
+  0x23, // fruit of repun slot -> sabera 2
+  0x12, // sacred shield slot -> mado 2
+  0x3d, // ivory statue slot -> karmine
+  0x1c, // psycho armor slot -> draygon 1
   // [, ~0x10b], // draygon 2
-  [~0x10c, 0x61], // fruit of power slot -> vampire 2
+  0x61, // fruit of power slot -> vampire 2
 ]);
 
 // slots that come from trade-ins
@@ -230,15 +226,12 @@ class Graph {
   // readonly nodeFromSlot = new Map<number, any>();
   // readonly nodes = new Map<any, any>();
   /** Maps item index to whether item is gotten */
-  has: Bits = Bits.of();
-  /** only used for clearing: set of item index we just assume */
-  readonly always: Bits;
+  has: Set<ItemId> = new Set();
 
-  readonly graph: Graph;
+  readonly graph: LocationList;
+  readonly unlocks: ReadonlyMap<ItemId, readonly SlotId[]>;
   readonly grid: Element;
   readonly map: Element;
-
-  unusedItems: number;
 
   constructor(readonly rom: Rom,
               readonly world: World,
@@ -247,26 +240,20 @@ class Graph {
     //  - then we can show green vs yellow for glitchable locations..?
     (window as any).GRAPH = this;
 
-    this.graph = new LogicGraph(world, flags);
+    this.graph = world.getLocationList();
     this.grid = document.getElementsByClassName('grid')[0];
     this.map = document.getElementsByClassName('map')[0];
 
-    let always = Bits.of();
-
-    for (const {item: id, index} of world.graph.slots) {
-      if (id == null) continue; // throw new Error(`bad slot: ${index}`);
-      this.slots.set(id, index);
+    const unlocks = new DefaultMap<number, Set<SlotId>>(() => new Set());
+    for (const [slot, req] of this.graph.requirements) {
+      for (const cs of req) {
+        for (const c of cs) {
+          unlocks.get(c).add(slot as SlotId);
+        }
+      }
     }
-    for (const {item: id, index} of world.graph.items) {
-      if (id == null) continue; // throw new Error(`bad item: ${index}`);
-      this.items.set(id, index);
-      const item = rom.items[id];
-      // TODO - setup always from non-added items?
-      if (item && !item.unique) always = Bits.with(always, index);
-    }
-    this.unusedItems = world.graph.items.length;
-
-    this.has = this.always = always;
+    this.unlocks = new Map([...unlocks].map(
+        ([i, s]: [number, Set<SlotId>]) => [i as ItemId, [...s]]));
 
       // this.nodes.set(n.uid, n.name);
       // this.route[n.uid] = 4;
@@ -300,16 +287,14 @@ class Graph {
 
     const toggle = (e: Event) => {
       let t = e.target as HTMLElement|null;
-      while (t && !t.dataset['index']) {
+      while (t && !t.dataset['slot']) {
         t = t.parentElement;
       }
       if (!t) return;
-      const uid = Number(t.dataset['index']);
+      const uid = Number(t.dataset['slot']);
       const has = t.classList.toggle('got');
       if (t.dataset['item']) {
-        this.has = has ?
-            Bits.with(this.has, uid) :
-            Bits.without(this.has, uid);
+        has.has(uid) ? has.delete(uid) : has.add(uid);
       }
       this.update();
       e.preventDefault();
@@ -320,8 +305,8 @@ class Graph {
   }
 
   addSlot(slotId: number, x: number, y: number) {
-    const index = this.slots.get(slotId);
-    if (index == null) { debugger; throw new Error(); }
+    // const index = this.slots.get(slotId);
+    // if (index == null) { debugger; throw new Error(); }
     const div = document.createElement('div');
     const itemget = this.rom.itemGets[slotId];
     const item = itemget && this.rom.items[itemget.itemId];
@@ -331,7 +316,7 @@ class Graph {
       x--; y--;
     }
     x--; y--;
-    div.dataset['index'] = String(index);
+    div.dataset['slot'] = String(index);
     div.style.left = x + 'px';
     div.style.top = y + 'px';
     //div.textContent = '\xa0';
@@ -348,37 +333,29 @@ class Graph {
     this.map.appendChild(div);
   }
 
-  addItem(cls: string, id: string) {
+  addItem(cls: string, hex: string) {
     // parse the hex, removing $ prefix
-    const uid = Number.parseInt(id.substring(1), 16);
+    const id = Number.parseInt(hex.substring(1), 16);
     const outer = document.getElementsByClassName(cls)[0] as HTMLElement;
     const inner = document.createElement('div');
     outer.appendChild(inner);
-    let index = this.items.get(uid);
-    if (index == null) {
-      // Items that don't block anything won't have shown up yet.
-      this.items.set(uid, index = this.unusedItems++);
-    }
-    outer.dataset['index'] = String(index);
-    outer.dataset['item'] = String(index);
+    outer.dataset['slot'] = String(id);
+    outer.dataset['item'] = String(id);
     //this.slotElts.set(index, outer);
   }
 
   addExtraFlags() {
-    const g = this.world.graph;
-    for (const slot of g.slots.slice(g.fixed)) {
-      const c = slot.condition;
-      const bossSlot = BOSSES.get(c);
-      const replaced = bossSlot && this.slots.get(bossSlot);
-      if (replaced == null) continue;
-      const elt = this.slotElts.get(replaced);
-      if (elt == null) throw new Error('expected');
-      this.slotElts.delete(Number(elt.dataset['index']));
-      this.slotElts.set(slot.index, elt);
-      elt.classList.add('boss');
-      elt.dataset['index'] = String(slot.index);
-      elt.dataset['item'] = String(slot.index);
-    }
+    // for (const slot of this.graph.requirements.keySet()) {
+    //   if (!isSlot(slot)) continue;
+    //   if (!BOSSES.has(slot & 0xff)) continue;
+    //   const elt = this.slotElts.get(replaced);
+    //   if (elt == null) throw new Error('expected');
+    //   this.slotElts.delete(Number(elt.dataset['slot']));
+    //   this.slotElts.set(slot.index, elt);
+    //   elt.classList.add('boss');
+    //   elt.dataset['slot'] = String(slot.index);
+    //   elt.dataset['item'] = String(slot.index);
+    // }
   }
 
   update() {
@@ -395,6 +372,69 @@ class Graph {
       }
     }
   }
+
+  traverse(has: Set<ItemId>): Set<SlotId> {
+    has = new Set(has);
+    const reachable = new Set<SlotId>();
+    const slots = new Set<SlotId>();
+    const queue = new Set<SlotId>();
+    for (let i = 0 as SlotId; i < this.slots.length; i++) {
+      if (!this.graph.requirements.has(i)) {
+        console.dir(this);
+        throw new Error(`Unreachable slot ${i}`);
+      }
+      queue.add(i as SlotId);
+    }
+    for (const n of queue) {
+      queue.delete(n);
+      if (reachable.has(n)) continue;
+      // can we reach it?
+      const needed = this.graph.requirements.get(n)!;
+      for (const route of needed) {
+        if (!containsAll(has, route)) continue;
+        reachable.add(n);
+        // TODO --- need to figure out what to do here.
+        //      --- fill would like to be zero-based but doesn't need to be.
+        //          could use a simple pair of Maps, possibly?
+        //          or front-load the items?
+        //   slots: 1xx others
+        //   items: 2xx others
+        // but we want same flags to have same index
+        //   slots: (fixed) (required slots) (extra slots)
+        //   items: (fixed) (required slots) (items)
+        // if n is a slot then add the item to has.
+        const items: ItemId[] = [];
+        if ((n & ~0x7f) === 0x100) {
+          slots.add(n & 0xff);
+        } else {
+          items.push(n as number as ItemId);
+          has.add(item);
+        }
+        for (const item of items) {
+          for (const j of this.unlocks.get(item) || []) {
+            if (this.graph.get(j) == null) {
+              console.dir(this);
+              throw new Error(`Adding bad node ${j} from unlock ${item}`);
+            }
+            queue.add(j);
+          }
+        }
+        break;
+      }
+    }
+    return reachable;
+  }
+}
+
+function isSlot(x: number): boolean {
+  return (x & ~0x7f) === 0x100;
+}
+
+function containsAll<T>(set: Set<T>, want: Iterable<T>): boolean {
+  for (const elem of want) {
+    if (!set.has(elem)) return false;
+  }
+  return true;
 }
 
 // TODO - all G flags get the glitch for free
@@ -421,8 +461,7 @@ async function main() {
   const rom = await Rom.load();
   const flagset = new FlagSet(flags);
   deterministic(rom, flagset); // make deterministic changes
-  const world = World.build(rom, flagset, true); // + ' Dt'));
-  const graph = new Graph(rom, world, flagset);
+  const world = new World(rom, flagset, true); // + ' Dt'));
   for (let item of ITEMS.split('\n')) {
     item = item.replace(/#.*/, '').trim();
     if (!item) continue;

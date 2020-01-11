@@ -216,6 +216,13 @@ export class Graph {
       if (progress) {
         progress.addCompleted(Math.floor((attempts - attempt) / 100));
       }
+      if (spoiler) {
+        for (const [slot, item] of fill) {
+          // TODO - clean this up.
+          const name = this.checkName(slot).replace(/^[0-9a-f]{3} /, '');
+          spoiler.addSlot(slot, name, item);
+        }
+      }
       return out;
     }
     return null;
@@ -265,11 +272,11 @@ export class Graph {
         }
         if (found) continue;
       }
-      const ns = (si: SlotIndex) => this.checkName(this.slots.get(si)!);
-      const ni = (ii: ItemIndex) => this.checkName(this.items.get(ii)!);
-      console.log(`Pool:\n  ${items.map(ni).join('\n  ')}`);
-      console.log(`Fill:\n  ${[...fill].map(([s,i]) => `${ns(s)}: ${ni(i)}`).join('\n  ')}`);
-      console.error(`REROLL: Could not place item index ${bit}: ${ni(bit)}`);
+      // const ns = (si: SlotIndex) => this.checkName(this.slots.get(si)!);
+      // const ni = (ii: ItemIndex) => this.checkName(this.items.get(ii)!);
+      // console.log(`Pool:\n  ${items.map(ni).join('\n  ')}`);
+      // console.log(`Fill:\n  ${[...fill].map(([s,i]) => `${ns(s)}: ${ni(i)}`).join('\n  ')}`);
+      // console.error(`REROLL: Could not place item index ${bit}: ${ni(bit)}`);
       return false;
     }
     return true;

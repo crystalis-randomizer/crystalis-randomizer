@@ -11,6 +11,12 @@ import {assert} from '../util.js';
 
 const [] = [hex]; // generally useful
 
+function write(arr: Uint8Array, start: number, ...data: number[]) {
+  for (let i = 0; i < data.length; i++) {
+    arr[start + i] = data[i];
+  }
+}
+
 export function deterministicPreParse(prg: Uint8Array): void {
   // Remove unnecessary statue fight triggers.  TODO - remove 1d location check
   prg[0x1a594] = 0xff; // just cut off two objects early.
@@ -42,6 +48,15 @@ export function deterministicPreParse(prg: Uint8Array): void {
   prg[0x1a3c1] = 0x79; // karmine basement (b5) top middle mimic
   prg[0x1a3c5] = 0x7a; // karmine basement (b5) top right mimic
   prg[0x1a3c9] = 0x7b; // karmine basement (b5) bottom right mimic
+
+  // Remove shell flute ItemUse flag set (never read)
+  write(prg, 0x1e0b7, 0xc0, 0x00);
+
+  // Swan gate guards spawn exactly based on gate being closed (2b3).
+  // Also remove the despawn trigger (we can't move the guards because
+  // the gate animation needs to be in slot e).
+  write(prg, 0x1c80d, 0xa2, 0xb3); // spawn condition 2d @ 73
+  prg[0x1aa86] = 0xfe; // trigger -> unused spawn
 }
 
 export function deterministic(rom: Rom, flags: FlagSet): void {
@@ -790,7 +805,7 @@ function reversibleSwanGate(rom: Rom) {
     // NOTE: Soldiers must come in pairs (with index ^1 from each other)
     Spawn.of({xt: 0x0a, yt: 0x02, type: 1, id: 0x2d}), // new soldier
     Spawn.of({xt: 0x0b, yt: 0x02, type: 1, id: 0x2d}), // new soldier
-    Spawn.of({xt: 0x0e, yt: 0x0a, type: 2, id: 0xb3}), // new trigger: erase guards
+    //Spawn.of({xt: 0x0e, yt: 0x0a, type: 2, id: 0xb3}), // new trigger: erase guards
   );
 
   // // NOTE: just use the actual flag instead?
@@ -799,7 +814,7 @@ function reversibleSwanGate(rom: Rom) {
   // // Despawn guard trigger requires 0ef
   // rom.trigger(0xb3).conditions.push(0x0ef);
   SoldierGuard.localDialogs.get(SwanGate.id)![0].flags.push(OpenedSwanGate.id);
-  rom.trigger(0xb3).conditions.push(OpenedSwanGate.id);
+  //rom.trigger(0xb3).conditions.push(OpenedSwanGate.id);
   // TODO - can we do away with the trigger?  Just spawn them on the same condition...
 }
 

@@ -285,7 +285,7 @@ export class Flags {
   0x089 = dialogProgression('Dead Stom\'s girlfriend');
   0x08a = dialogProgression('Dead Stom');
   0x08b = obsolete(0x236); // item: shell flute
-  0x08c = dialogProgression('Swan guards despawned');
+  // unused 0x08c = dialogProgression('Swan guards despawned');
   0x08d = obsolete(0x137); // check: eye glasses
   // unused 08e
   0x08f = obsolete(0x283); // event: calmed sea

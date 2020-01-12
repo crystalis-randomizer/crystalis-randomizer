@@ -42,6 +42,7 @@ define InvConsumables $6440
 define InvPassive $6448
 define InvQuest $6450
 define InvMagic $6458
+define SlotFlagsStart $64a0
 define ItemFlagsStart $64c0
 define Difficulty $648f         ; requires defrag! (flags 078 .. 07f)
 define ShouldRedisplayDifficulty $61ff
@@ -399,7 +400,7 @@ CheckBelowBoss:
    lsr
    tay
   pla
-  and $64a0,y
+  and SlotFlagsStart,y
   bne +
    inc $20
 + rts ; 24 bytes
@@ -2353,7 +2354,7 @@ PatchGrantItemInRegisterA:
   lda $057f
   and #$07
   tay
-  lda ItemFlagsStart,x
+  lda SlotFlagsStart,x
   and PowersOfTwo,y
   beq +
    pla

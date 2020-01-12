@@ -196,9 +196,11 @@ export class Graph {
       const final = this.traverse(i => indexFill.get(i), Bits.of(), path);
       if (spoiler && path) {
         for (const [target, ...deps] of path) {
-          spoiler.addCheck(
-              this.slots.get(target as SlotIndex)!,
-              deps.map(d => this.items.get(d as ItemIndex)!));
+          if (target < this.common || indexFill.has(target as SlotIndex)) {
+            spoiler.addCheck(
+                this.slots.get(target as SlotIndex)!,
+                deps.map(d => this.items.get(d as ItemIndex)!));
+          }
         }
       }
       // TODO - flags to loosen this requirement?

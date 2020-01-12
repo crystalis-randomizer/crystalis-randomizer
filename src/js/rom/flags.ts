@@ -499,7 +499,7 @@ export class Flags {
   // WaterfallCaveRiverLeftChest = tracked(0x15b); // 2nd flute of lime
   EvilSpiritIslandExitChest = tracked(0x15c); // lysis plant
   FortressSaberaMiddleChest = tracked(0x15d); // lysis plant
-  NoSabreNorthUnderBridgeChest = tracked(0x15e); // antidote
+  MtSabreNorthUnderBridgeChest = tracked(0x15e); // antidote
   KirisaPlantCaveChest = tracked(0x15f); // antidote
   FortressMadoUpperNorthChest = tracked(0x160); // antidote
   Vampire2 = tracked(0x161); // fruit of power

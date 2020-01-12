@@ -768,7 +768,7 @@ export class World {
         // push-down trigger
         if (trigger.id === 0x86 && !this.flagset.assumeRabbitSkip()) {
           // bigger hitbox to not find the path through
-          hitbox = Hitbox.adjust(hitbox, [0, -16], [0, 16]);
+          hitbox = Hitbox.adjust(hitbox, [0, -1], [0, 1]);
         } else if (trigger.id === 0xba &&
                    !this.flagset.assumeTeleportSkip() &&
                    !this.flagset.disableTeleportSkip()) {

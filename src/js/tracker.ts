@@ -400,6 +400,7 @@ class Graph {
 
   addVoiceRecognition() {
     try {
+      let stopped = false;
       const rec = this.recognition = new SpeechRecognition();
       const grammar = new SpeechGrammarList();
       grammar.addFromString(`
@@ -412,12 +413,14 @@ class Graph {
       rec.interimResults = false;
       //rec.continuous = true;
       rec.maxAlternatives = 10;
+      rec.onstart = () => { stopped = false; };
       rec.onresult = (e) => {
         const result = e.results[e.results.length - 1];
         if (!result.isFinal) return;
         let matched = false;
         for (const alt of result) {
           const command = alt.transcript.toLowerCase().replace(/[^a-z ]/g, '');
+          if (command === 'stop listening') stopped = true;
           const match = /([auo][nm] ?)?tr[au]c?k?(?:ed)? ?(.+)/.exec(command);
           if (!match) continue;
           //console.log(`attempt: ${match[2]}`);
@@ -433,7 +436,7 @@ class Graph {
         }
         rec.stop(); // gecko doesn't support continuous?
       };
-      rec.onend = () => rec.start();
+      rec.onend = () => { if (!stopped) rec.start(); };
       rec.start();
       return true;
     } catch (err) {

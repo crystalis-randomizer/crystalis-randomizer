@@ -1,6 +1,6 @@
 <style>
 fieldset {
-  width: 33em;
+  width: 18em;
   font-size: 8pt;
   padding: 0 1em .2em;
   /*font-family: monospace;*/
@@ -8,85 +8,179 @@ fieldset {
 label {
   margin-right: .4em;
 }
-.good {
-  background-color: #bfb;
+.g {
+  background-color: #8f8;
 }
-input[type="checkbox"]:indeterminate {
-  filter: invert(100%) hue-rotate(18deg) saturate(24);
+.r {
+  background-color: #f66;
+}
+.y {
+  background-color: #fd5;
+}
+.left {
+  float: left;
+}
+.trade {
+  width: 4em;
+  display: inline-block;
 }
 </style>
-<fieldset>
-  <legend>Inn</legend>
-  <label><input type="checkbox">L</label>
-  <label><input type="checkbox">B</label>
-  <label><input type="checkbox">O</label>
-  <label><input type="checkbox">A</label>
-  <label><input type="checkbox">P</label>
-  <label><input type="checkbox">J</label>
-  <label><input type="checkbox">Sw</label>
-  <label><input type="checkbox">Sh</label>
-  <label><input type="checkbox">G</label>
-  <label><input type="checkbox">Sa</label>
-</fieldset>
-<fieldset class="ind">
-  <legend>Warp</legend>
-  <label><input type="checkbox">L</label>
-  <label><input type="checkbox">B</label>
-  <label><input type="checkbox">O</label>
-  <label><input type="checkbox">A</label>
-  <label><input type="checkbox">P</label>
-  <label><input type="checkbox">J</label>
-  <label><input type="checkbox">Sw</label>
-  <label><input type="checkbox">Sh</label>
-  <label><input type="checkbox">G</label>
-  <label><input type="checkbox">Sa</label>
-</fieldset>
-<fieldset class="ind">
-  <legend>Herb</legend>
-  <label><input type="checkbox">L</label>
-  <label><input type="checkbox">B</label>
-  <label><input type="checkbox">O</label>
-  <label><input type="checkbox">A</label>
-  <label><input type="checkbox">P</label>
-  <label><input type="checkbox">J</label>
-  <label><input type="checkbox">Sw</label>
-  <label><input type="checkbox">Sh</label>
-  <label><input type="checkbox">G</label>
-  <label><input type="checkbox">Sa</label>
-</fieldset>
-<fieldset class="off">
-  <legend>Ring</legend>
-  <label><input type="checkbox">L</label>
-  <label><input type="checkbox">B</label>
-  <label><input type="checkbox">O</label>
-  <label><input type="checkbox">A</label>
-  <label><input type="checkbox">P</label>
-  <label><input type="checkbox">J</label>
-  <label><input type="checkbox">Sw</label>
-  <label><input type="checkbox">Sh</label>
-  <label><input type="checkbox">G</label>
-  <label><input type="checkbox">Sa</label>
-</fieldset>
-
 <script>
-for (const e of document.querySelectorAll('fieldset.ind input')) {
-  e.checked = true;
-  e.indeterminate = true;
-  e.addEventListener('dblclick', () => {
-    e.indeterminate = true;
-  });
+const template = `
+  <style>
+    :host { display: inline; }
+    :host > div {
+      display: inline;
+      padding: 3px;
+    }
+    * { user-select: none; }
+  </style>
+  <div>
+    <slot></slot>
+  </div>
+`;
+class ToggleText extends HTMLElement {
+  static get observedAttributes() {
+    return ['c'];
+  }
+  connectedCallback() {
+    this.attachShadow({mode: 'open'});
+    this.shadowRoot.innerHTML = template;
+    this.classes = this.getAttribute('c').trim().split(/ */g);
+    this.addEventListener('click', this.toggle);
+    this.toggle();
+  }
+  disconnectedCallback() {
+    this.removeEventListener('click', this.toggle);
+  }
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case 'c':
+      this.classes = this.getAttribute('c').trim().split(/ */g);
+    }
+  }
+  toggle() {
+    for (let i = 0; i < this.classes.length; i++) {
+      if (this.classList.contains(this.classes[i])) {
+        this.classList.remove(this.classes[i]);
+        this.classList.add(this.classes[(i + 1) % this.classes.length]);
+        return;
+      }
+    }
+    this.classList.add(this.classes[0]);
+  }
 }
-for (const e of document.querySelectorAll('fieldset.off input')) {
-  e.addEventListener('change', () => {
-    e.indeterminate = !e.checked;
-  });
-  e.addEventListener('dblclick', () => {
-    e.indeterminate = e.checked = false;
-  });
-}
-for (const e of document.querySelectorAll('input')) {
-  e.addEventListener('change', () => {
-    e.parentElement.classList.toggle('good', e.checked);
-  });
-}
+customElements.define('toggle-text', ToggleText);
 </script>
+<div class="left">
+  <fieldset>
+    <legend>Inn</legend>
+    <toggle-text c="w g r">L</toggle-text>
+    <toggle-text c="w g r">B</toggle-text>
+    <toggle-text c="w g r">O</toggle-text>
+    <toggle-text c="w g r">A</toggle-text>
+    <toggle-text c="w g r">P</toggle-text>
+    <toggle-text c="w g r">J</toggle-text>
+    <toggle-text c="w g r">Sw</toggle-text>
+    <toggle-text c="w g r">Sh</toggle-text>
+    <toggle-text c="w g r">G</toggle-text>
+    <toggle-text c="w g r">Sa</toggle-text>
+  </fieldset>
+  <fieldset>
+    <legend>Warp</legend>
+    <toggle-text c="w g y r">L</toggle-text>
+    <toggle-text c="w g y r">B</toggle-text>
+    <toggle-text c="w g y r">O</toggle-text>
+    <toggle-text c="w g y r">A</toggle-text>
+    <toggle-text c="w g y r">P</toggle-text>
+    <toggle-text c="w g y r">J</toggle-text>
+    <toggle-text c="w g y r">Sw</toggle-text>
+    <toggle-text c="w g y r">Sh</toggle-text>
+    <toggle-text c="w g y r">G</toggle-text>
+    <toggle-text c="w g y r">Sa</toggle-text>
+  </fieldset>
+  <fieldset>
+    <legend>Herb</legend>
+    <toggle-text c="w g y r">L</toggle-text>
+    <toggle-text c="w g y r">B</toggle-text>
+    <toggle-text c="w g y r">O</toggle-text>
+    <toggle-text c="w g y r">A</toggle-text>
+    <toggle-text c="w g y r">P</toggle-text>
+    <toggle-text c="w g y r">J</toggle-text>
+    <toggle-text c="w g y r">Sw</toggle-text>
+    <toggle-text c="w g y r">Sh</toggle-text>
+    <toggle-text c="w g y r">G</toggle-text>
+    <toggle-text c="w g y r">Sa</toggle-text>
+  </fieldset>
+  <fieldset>
+    <legend>Ring</legend>
+    <toggle-text c="w g r">L</toggle-text>
+    <toggle-text c="w g r">B</toggle-text>
+    <toggle-text c="w g r">O</toggle-text>
+    <toggle-text c="w g r">A</toggle-text>
+    <toggle-text c="w g r">P</toggle-text>
+    <toggle-text c="w g r">J</toggle-text>
+    <toggle-text c="w g r">Sw</toggle-text>
+    <toggle-text c="w g r">Sh</toggle-text>
+    <toggle-text c="w g r">G</toggle-text>
+    <toggle-text c="w g r">Sa</toggle-text>
+  </fieldset>
+</div>
+<fieldset>
+  <legend>Trades</legend>
+  <div>
+    <div class="trade">Aka</div>
+    <toggle-text c="w g r">SO</toggle-text>
+    <toggle-text c="w g r">FL</toggle-text>
+    <toggle-text c="w g r">KP</toggle-text>
+    <toggle-text c="w g r">LP</toggle-text>
+    <toggle-text c="w g r">IS</toggle-text>
+  </div>
+  <div>
+    <div class="trade">Boat</div>
+    <toggle-text c="w g r">SO</toggle-text>
+    <toggle-text c="w g r">FL</toggle-text>
+    <toggle-text c="w g r">KP</toggle-text>
+    <toggle-text c="w g r">LP</toggle-text>
+    <toggle-text c="w g r">IS</toggle-text>
+  </div>
+  <div>
+    <div class="trade">Aryllis</div>
+    <toggle-text c="w g r">SO</toggle-text>
+    <toggle-text c="w g r">FL</toggle-text>
+    <toggle-text c="w g r">KP</toggle-text>
+    <toggle-text c="w g r">LP</toggle-text>
+    <toggle-text c="w g r">IS</toggle-text>
+  </div>
+  <div>
+    <div class="trade">Kensu</div>
+    <toggle-text c="w g r">SO</toggle-text>
+    <toggle-text c="w g r">FL</toggle-text>
+    <toggle-text c="w g r">KP</toggle-text>
+    <toggle-text c="w g r">LP</toggle-text>
+    <toggle-text c="w g r">IS</toggle-text>
+  </div>
+  <div>
+    <div class="trade">Slime</div>
+    <toggle-text c="w g r">SO</toggle-text>
+    <toggle-text c="w g r">FL</toggle-text>
+    <toggle-text c="w g r">KP</toggle-text>
+    <toggle-text c="w g r">LP</toggle-text>
+    <toggle-text c="w g r">IS</toggle-text>
+  </div>
+  <hr>
+  <div>
+    <div class="trade">Rage</div>
+    <toggle-text c="w r">Wi</toggle-text>
+    <toggle-text c="w r">Fi</toggle-text>
+    <toggle-text c="w r">Wa</toggle-text>
+    <toggle-text c="w r">Th</toggle-text>
+  </div>
+  <div>
+    <div class="trade">Tornel</div>
+    <toggle-text c="w g">Wi</toggle-text>
+    <toggle-text c="w g">Fi</toggle-text>
+    <toggle-text c="w g">Wa</toggle-text>
+    <toggle-text c="w g">Th</toggle-text>
+  </div>
+</fieldset>

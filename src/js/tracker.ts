@@ -9,26 +9,26 @@ import {LocationList, ItemId, SlotId} from './logic/graph.js';
 import {DefaultMap} from './util.js';
 
 const ITEMS: string = `
-sword-of-wind $00
-sword-of-fire $01
-sword-of-water $02
-sword-of-thunder $03
+sword-of-wind $00 sort-of-wind
+sword-of-fire $01 sort-of-fire
+sword-of-water $02 sort-of-water
+sword-of-thunder $03 sort-of-thunder
 windmill-key $32
-statue-of-onyx $25
+statue-of-onyx $25 onyx-statue
 insect-flute $27
-key-to-prison $33
+key-to-prison $33 prison-key
 flute-of-lime $28
 
-ball-of-wind $05 
-ball-of-fire $07
-ball-of-water $09
-ball-of-thunder $0b
-kirisa-plant $3c
+ball-of-wind $05 orb-of-wind
+ball-of-fire $07 orb-of-fire
+ball-of-water $09 orb-of-water
+ball-of-thunder $0b orb-of-thunder
+kirisa-plant $3c carissa-plant
 alarm-flute $31
 fog-lamp $35
 shell-flute $36
 broken-statue $38
-eye-glasses $37
+eye-glasses $37 eyeglasses
 glowing-lamp $39
 
 tornado-bracelet $06
@@ -36,19 +36,19 @@ flame-bracelet $08
 blizzard-bracelet $0a
 storm-bracelet $0c
 love-pendant $3b
-key-to-styx $34
-statue-of-gold $3a
+key-to-styx $34 key-to-stxy
+statue-of-gold $3a gold-statue
 sacred-shield $12
 ivory-statue $3d
 
 rabbit-boots $2e
-gas-mask $29
+gas-mask $29 hazard-suit
 shield-ring $30
 iron-necklace $2c
-leather-boots $2f
+leather-boots $2f speed-boots
 power-ring $2a
 warrior-ring $2b
-deos-pendant $2d
+deos-pendant $2d deo dio d-o t-o deal
 bow-of-moon $3e
 bow-of-sun $3f
 
@@ -228,6 +228,9 @@ class Graph {
   readonly unlocks: ReadonlyMap<ItemId, readonly SlotId[]>;
   readonly grid: Element;
   readonly map: Element;
+  readonly names = new Map<string, HTMLElement>();
+
+  recognition?: SpeechRecognition;
 
   constructor(readonly rom: Rom,
               readonly world: World,
@@ -287,17 +290,21 @@ class Graph {
         t = t.parentElement;
       }
       if (!t) return;
-      const id = Number(t.dataset['slot']) as ItemId;
-      const has = t.classList.toggle('got');
-      if (t.dataset['item']) {
-        has ? this.has.add(id) : this.has.delete(id);
-      }
-      this.update();
+      this.toggle(t);
       e.preventDefault();
     };
 
     this.grid.addEventListener('click', toggle);
     //this.map.addEventListener('click', toggle);
+  }
+
+  toggle(t: HTMLElement, val?: boolean) {
+    const id = Number(t.dataset['slot']) as ItemId;
+    const has = t.classList.toggle('got', val);
+    if (t.dataset['item']) {
+      has ? this.has.add(id) : this.has.delete(id);
+    }
+    this.update();
   }
 
   addSlot(slotId: number, x: number, y: number) {
@@ -329,7 +336,7 @@ class Graph {
     this.map.appendChild(div);
   }
 
-  addItem(cls: string, hex: string) {
+  addItem(cls: string, hex: string, ...otherNames: string[]) {
     // parse the hex, removing $ prefix
     const id = Number.parseInt(hex.substring(1), 16);
     const outer = document.getElementsByClassName(cls)[0] as HTMLElement;
@@ -338,6 +345,10 @@ class Graph {
     outer.dataset['slot'] = String(id);
     outer.dataset['item'] = String(id);
     //this.slotElts.set(index, outer);
+    this.names.set(cls.replace(/-/g, ' '), outer);
+    for (const name of otherNames) {
+      this.names.set(name.replace(/-/g, ' '), outer);
+    }
   }
 
   addExtraFlags() {
@@ -416,7 +427,66 @@ class Graph {
     }
     return reachable;
   }
+
+  addVoiceRecognition() {
+    try {
+      const rec = this.recognition = new SpeechRecognition();
+      const grammar = new SpeechGrammarList();
+      grammar.addFromString(`
+          #JSGF V1.0;
+          grammar items;
+          public <item> = ${[...this.names.keys()].join(' | ')};
+          public <command> = hey tracker track <item>;
+      `, 1);
+      rec.grammars = grammar;
+      rec.interimResults = false;
+      //rec.continuous = true;
+      rec.maxAlternatives = 10;
+      rec.onresult = (e) => {
+        const result = e.results[e.results.length - 1];
+        if (!result.isFinal) return;
+        let matched = false;
+        for (const alt of result) {
+          const command = alt.transcript.toLowerCase().replace(/[^a-z ]/g, '');
+          const match = /([auo][nm] ?)?tr[au]c?k?(?:ed)? ?(.+)/.exec(command);
+          if (!match) continue;
+          //console.log(`attempt: ${match[2]}`);
+          const el = this.names.get(match[2]);
+          if (!el) continue;
+          this.toggle(el, !match[1]);
+          matched = true;
+          break;
+        }
+        if (!matched) {
+          console.log(`No match: ${[...result].map(
+                                   r => r.transcript).join(', ')}`);
+        }
+        rec.stop(); // gecko doesn't support continuous?
+      };
+      rec.onend = () => rec.start();
+      rec.start();
+      return true;
+    } catch (err) {
+      console.error(err);
+      return false;
+    }
+  }
 }
+
+function polyfill(...names: string[]) {
+  const win = window as any;
+  for (let n of names) {
+    if (typeof win[n] === 'function') {
+      win[names[0]] = win[n];
+      return;
+    }
+  }
+  console.error(`Could not polyfill ${names[0]}`);
+}
+polyfill('SpeechRecognition', 'webkitSpeechRecognition');
+polyfill('SpeechGrammarList', 'webkitSpeechGrammarList');
+
+
 
 // function isSlot(x: number): boolean {
 //   return (x & ~0x7f) === 0x100;
@@ -437,11 +507,15 @@ function containsAll<T>(set: Set<T>, want: Iterable<T>): boolean {
 //      - all others (minus wild warp if disabled) tracked as glitches
 //      - consider dark yellow and dark green as well as dark blue ??
 
+let voice = false;
 let flags = '@Casual';
 for (const arg of location.hash.substring(1).split('&')) {
   const [key, value] = arg.split('=');
   if (key === 'flags') {
     flags = decodeURIComponent(value);
+  }
+  if (key === 'voice') {
+    voice = true;
   }
 }
 //   'speed-boots': true,
@@ -479,7 +553,7 @@ async function main() {
   for (let item of ITEMS.split('\n')) {
     item = item.replace(/#.*/, '').trim();
     if (!item) continue;
-    graph.addItem(...(item.split(/ +/g) as [string, string]));
+    graph.addItem(...(item.split(/ +/g) as [string, string, ...string[]]));
   }
   for (const slot of SLOTS) {
     graph.addSlot(...slot);
@@ -497,6 +571,8 @@ async function main() {
     graph.has = new Set(); // graph.always;
     graph.update();
   });
+  if (voice) graph.addVoiceRecognition();
+  (window as any).graph = graph;
 };
 
 //function die(): never { throw new Error('Assertion failed'); }

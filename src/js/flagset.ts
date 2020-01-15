@@ -52,6 +52,11 @@ export const PRESETS: Preset[] = [
     descr: 'Not for the faint of heart. Good luck...',
     flags: 'Fcprsw Gt Hbdhwx Mert Ps Ropst Tabmp Wmtuw',
   },
+  {
+    title: 'The Full Stupid',
+    descr: 'Nobody has ever completed this.',
+    flags: 'Fcprsw Hbdhmwxz Mert Ps Ropst Sckmt Tab Wmtuw Xcegw',
+  },
   // TOURNAMENT PRESETS
   {
     title: 'Tournament: Swiss Round',

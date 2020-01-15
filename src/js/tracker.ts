@@ -49,8 +49,8 @@ leather-boots $2f speed-boots
 power-ring $2a
 warrior-ring $2b
 deos-pendant $2d deo dio d-o t-o deal
-bow-of-moon $3e
-bow-of-sun $3f
+bow-of-moon $3e moon
+bow-of-sun $3f sun
 
 refresh $41
 paralysis $42
@@ -61,7 +61,7 @@ barrier $46
 change $47
 flight $48
 psycho-armor $1c
-bow-of-truth $40
+bow-of-truth $40 truth
 `;
 
 const SLOTS: ReadonlyArray<readonly [number, number, number]> = [
@@ -432,13 +432,15 @@ class Graph {
     try {
       let stopped = false;
       const rec = this.recognition = new SpeechRecognition();
+      // NOTE: as far as I can tell, this does nothing...
       const grammar = new SpeechGrammarList();
       grammar.addFromString(`
           #JSGF V1.0;
-          grammar items;
+          grammar command;
           public <item> = ${[...this.names.keys()].join(' | ')};
-          public <command> = hey tracker track <item>;
+          public <command> = track <item> | untrack <item>;
       `, 1);
+      rec.lang = 'en-US';
       rec.grammars = grammar;
       rec.interimResults = false;
       //rec.continuous = true;
@@ -450,7 +452,7 @@ class Graph {
         let matched = false;
         for (const alt of result) {
           const command = alt.transcript.toLowerCase().replace(/[^a-z ]/g, '');
-          if (command === 'stop listening') stopped = true;
+          if (command === 'stop listening') matched = stopped = true;
           const match = /([auo][nm] ?)?tr[au]c?k?(?:ed)? ?(.+)/.exec(command);
           if (!match) continue;
           //console.log(`attempt: ${match[2]}`);

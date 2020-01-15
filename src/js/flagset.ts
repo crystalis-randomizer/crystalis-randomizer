@@ -17,42 +17,37 @@ const REPEATABLE_FLAGS: Set<string> = new Set(['S']);
 export const PRESETS: Preset[] = [
   {
     title: 'Casual',
-    descr: `Basic flags for a relatively easy playthrough.`,
-    flags: 'Ds Edmrsx Fw Mr Rp Sc Sk Sm Tab',
+    descr: `Basic flags for a relatively easy playthrough.
+            Note that statue glitch may be required.`,
+    flags: 'Ds Edmrsx Fw Gt Mr Rpt Sct Skm Tab',
   },
   {
-    title: 'Intermediate',
-    descr: `Slightly more challenge than Casual but still approachable.`,
-    flags: 'Ds Edms Fsw Gt Mr Ps Rpt Sct Skm Tab',
+    title: 'Standard',
+    descr: `Standard flags with full item shuffle.`,
+    flags: 'Ds Emrs Fcprsw Gt Hd Mr Ps Ropst Sckmt Tab',
     default: true,
-  },
-  {
-    title: 'Full Shuffle',
-    descr:
-        `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
-    flags: 'Em Fsw Gt Mert Ps Rprt Sckmt Tabmp Wmtuw',
-  },
-  {
-    title: 'Glitchless',
-    descr: `Full shuffle but with no glitches.`,
-    flags: 'Em Fcpstw Mert Ps Rprt Sckmt Tab Wmtuw',
   },
   {
     // TODO: add 'Ht' for maxing out tower scaling
     title: 'Advanced',
-    descr: `A balanced randomization with quite a bit more difficulty.`,
-    flags: 'Fsw Gfprt Hbdgw Mert Ps Roprst Sckt Sm Tabmp Wmtuw',
+    descr: `Advanced flags with all logic glitches in play.`,
+    flags: 'Em Fsw Gcfprt Hbdw Mert Ps Ropst Sckmt Tab Wtu',
   },
   {
-    // TODO: add 'Ht'
-    title: 'Ludicrous',
-    descr: `Pulls out all the stops, may require superhuman feats.`,
-    flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Roprst Sckmt Tabmp Wmtuw',
+    title: 'Full Shuffle',
+    descr: `Randomizes as much as possible.`,
+    flags: 'Emr Fcprsw Gt Hd Mert Ps Ropst Sckmt Tabmp Wmtuw',
   },
   {
-    title: 'Mattrick',
+    title: 'Wild Warp',
+    descr: `Opens up the whole world from the start.
+            Progression could be anywhere.`,
+    flags: 'Emr Fcprs Gtw Hd Mert Ps Ropst Sckmt Tab',
+  },
+  {
+    title: 'Hardcore',
     descr: 'Not for the faint of heart. Good luck...',
-    flags: 'Fcprsw Gt Hbdhwx Mert Ps Ropst Sckmt Tabmp Wmtuw',
+    flags: 'Fcprsw Gt Hbdhwx Mert Ps Ropst Sckmt Tab Wmtuw',
   },
   // TOURNAMENT PRESETS
   {

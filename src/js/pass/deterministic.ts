@@ -660,7 +660,7 @@ function connectGoaToLeaf(rom: Rom): void {
 
   // Add a rock wall (id=0).
   EastCave3.spawns.push(Spawn.from([0x18, 0x07, 0x23, 0x00]));
-  EastCave3.flags.push(Flag.of({screen: 0x10, flag: rom.flags.alloc(0x200)}));
+  EastCave3.flags.push(Flag.of({screen: 0x10, flag: rom.flags.allocMapFlag()}));
 
   // Make the connections.
   EastCave2.screens[4][0] = 0x99;

@@ -58,7 +58,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   }
 
   undergroundChannelLandBridge(rom);
-  if (flags.fogLampNotRequired()) fogLampNotRequired(rom);
+  if (flags.fogLampNotRequired()) fogLampNotRequired(rom, flags);
 
   if (flags.addEastCave()) {
     eastCave(rom, flags);
@@ -181,10 +181,11 @@ function undergroundChannelLandBridge(rom: Rom) {
   tiles[0x58] = 0x8c;
 }
 
-function fogLampNotRequired(rom: Rom) {
+function fogLampNotRequired(rom: Rom, flags: FlagSet) {
   // Need to make several changes.
   // (1) dolphin only requires shell flute, make the flag check free (~000)
-  rom.items[0x36].itemUseData[0].want = ~0;
+  const requireHealed = flags.requireHealedDolphinToRide();
+  rom.items[0x36].itemUseData[0].want = requireHealed ? 0x025 : ~0x000;
   // (2) kensu 68 (@61) drops an item (67 magic ring)
   rom.npcs[0x68].data[0] = 0x67;
   rom.npcs[0x68].localDialogs.get(-1)![0].message.action = 0x0a;
@@ -202,7 +203,6 @@ function fogLampNotRequired(rom: Rom) {
   // the pattern tables based on (e.g.) $600,x maybe?  Can we prevent it?
 
   // TODO - add a notes file about this.
-
 }
 
 /**

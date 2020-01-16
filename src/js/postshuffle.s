@@ -5,36 +5,46 @@
 .org $3c409
   jmp ComputeEnemyStats
 
-;;; TODO - use a labe: .org EndOfCompressedMonsterData
+;;; TODO - use a label: .org EndOfCompressedMonsterData
 .org $1bd00  ; This should leave some space after compression
 
 DiffAtk:   ; PAtk*8
-  .byte $28,$2C,$30,$33,$37,$3B,$3F,$42,$46,$4A,$4E,$51,$55,$59,$5D,$60
-  .byte $64,$68,$6C,$6F,$73,$77,$7B,$7E,$82,$86,$8A,$8D,$91,$95,$99,$9C
-  .byte $A0,$A4,$A8,$AB,$AF,$B3,$B7,$BA,$BE,$C2,$C6,$C9,$CD,$D1,$D5,$D8
+  .skip SCALING_LEVELS
 DiffDef:   ; PDef * 4
-  .byte $0C,$0F,$12,$15,$18,$1B,$1E,$21,$24,$27,$2A,$2D,$30,$33,$36,$39
-  .byte $3C,$3F,$42,$45,$48,$4B,$4E,$51,$54,$57,$5A,$5D,$60,$63,$66,$69
-  .byte $6C,$6F,$72,$75,$78,$7B,$7E,$81,$84,$87,$8A,$8D,$90,$93,$96,$99
+  .skip SCALING_LEVELS
 DiffHP:    ; PHP (0..$26)
-  .byte $30,$36,$3B,$41,$46,$4C,$51,$57,$5C,$62,$67,$6D,$72,$78,$7D,$83
-  .byte $88,$8E,$93,$99,$9E,$A4,$A9,$AF,$B4,$BA,$BF,$C5,$CA,$D0,$D5,$DB
-  .byte $E0,$E6,$EB,$F1,$F6,$FC,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+  .skip SCALING_LEVELS
 DiffExp:   ; ExpBase * 4, encoded in standard EXP encoding
-  .byte $05,$06,$08,$0A,$0C,$0E,$12,$16,$1A,$20,$27,$30,$3A,$47,$56,$69
-  .byte $88,$89,$8B,$8E,$91,$95,$99,$9F,$A6,$AE,$B8,$C4,$D2,$E4,$FA,$FF
-  .byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+  .skip SCALING_LEVELS
 
 ;;; $12 and $13 are free RAM at this point
 
-.org $1bdd0  ; Note: this follows immediately from the tables.
+;.org $1bdd0  ; Note: this follows immediately from the tables.
 ComputeEnemyStats:
   lda ObjectRecoil,x
   bmi +
    jmp $3c2af ; exit point
 + and #$7f
   sta ObjectRecoil,x
-  ldy Difficulty
+  ;; We're gonna do the rescaling - figure out the actual difficulty
+.ifdef _MAX_SCALING_IN_TOWER
+  lda $6c
+  and #$f8
+  cmp #$58
+  bne +
+-  lda #(SCALING_LEVELS-1)
+   bne ++
++   lda Difficulty
+    cmp #(SCALING_LEVELS-1)
+    bcs -
+.else
+   lda Difficulty
+   cmp #(SCALING_LEVELS-1)
+   bcc ++
+    lda #(SCALING_LEVELS-1)
+.endif
+++ tay
+   sta $63
 RescaleDefAndHP:
    ;; HP = max(PAtk + SWRD - DEF, 1) * HITS - 1
    ;; DiffAtk = 8 * PAtk
@@ -183,9 +193,9 @@ RescaleGold:   ; $1bc98
    beq RescaleExp
   lsr
   sta $61
-  lda Difficulty
+  lda $63 ; difficulty
   asl
-  adc Difficulty
+  adc $63 ; difficulty
   adc $61
   bcc +
    lda #$f0

@@ -393,6 +393,10 @@ class Context {
   }
 
   mapLabel(label: string, pc?: number): number {
+    // Recursively expand any parenthesized expressions.
+    let expandParens = label.replace(/\(([^)]*)\)/g,
+                                     (_,l) => String(this.mapLabel(l, pc)));
+    if (expandParens !== label) return this.mapLabel(expandParens, pc);
     // Support very simple arithmetic (+, -, <, and >).
     let match = /([^-+]+)([-+])(.*)/.exec(label);
     if (match) {
@@ -411,6 +415,10 @@ class Context {
       const arg = this.map(parseNumber(match[2].trim(), true), pc);
       return match[1] === '<' ? arg & 0xff : (arg >>> 8) & 0xff;
     }
+
+    // Are we left with a number?
+    const num = Number(label);
+    if (!isNaN(num)) return num;
 
     // Look up whatever's leftover.
     let addrs = this.labels[label];

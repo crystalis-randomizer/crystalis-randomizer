@@ -36,26 +36,25 @@ export const PRESETS: Preset[] = [
     flags: 'Em Fcpstw Mert Ps Rprt Tab Wmtuw Xcegw',
   },
   {
-    // TODO: add 'Ht' for maxing out tower scaling
     title: 'Advanced',
     descr: `A balanced randomization with quite a bit more difficulty.`,
-    flags: 'Fsw Gfprt Hbdgw Mert Ps Roprst Tabmp Wmtuw Xcegw',
+    flags: 'Fsw Gfprt Hbdgtw Mert Ps Roprst Tabmp Wmtuw Xcegw',
   },
   {
     // TODO: add 'Ht'
     title: 'Ludicrous',
     descr: `Pulls out all the stops, may require superhuman feats.`,
-    flags: 'Fs Gcfprtw Hbdgmswxz Mert Ps Roprst Tabmp Wmtuw Xcegw',
+    flags: 'Fs Gcfprtw Hbdgmstwxz Mert Ps Roprst Tabmp Wmtuw Xcegw',
   },
   {
     title: 'Mattrick',
     descr: 'Not for the faint of heart. Good luck...',
-    flags: 'Fcprsw Gt Hbdhwx Mert Ps Ropst Tabmp Wmtuw',
+    flags: 'Fcprsw Gt Hbdhtwx Mert Ps Ropst Tabmp Wmtuw',
   },
   {
     title: 'The Full Stupid',
     descr: 'Nobody has ever completed this.',
-    flags: 'Fcprsw Hbdhmwxz Mert Ps Ropst Sckmt Tab Wmtuw Xcegw',
+    flags: 'Fcprsw Hbdhmwtxz Mert Ps Ropst Sckmt Tab Wmtuw Xcegw',
   },
   // TOURNAMENT PRESETS
   {
@@ -373,6 +372,9 @@ export class FlagSet {
   }
   buffDyna() {
     return this.check('Hd');
+  }
+  maxScalingInTower() {
+    return this.check('Ht');
   }
 
   expScalingFactor() {

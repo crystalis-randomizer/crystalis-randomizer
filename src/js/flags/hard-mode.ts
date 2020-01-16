@@ -46,12 +46,12 @@ export const HARD_MODE_FLAGS: FlagSection = {
       name: 'Matching sword not guaranteed',
       text: `Player may be required to fight bosses with the wrong sword, which
              may require using "tink strats" dealing 1 damage per hit.`,
-      // }, {
-      //   flag: 'Ht',
-      //   hard: true,
-      //   name: 'Max out scaling level in tower',
-      //   text: `Scaling level immediately maxes out upon stepping into
-      //   tower.`,
+    },
+    {
+      flag: 'Ht',
+      hard: true,
+      name: 'Max scaling level in tower',
+      text: `Enemies in the tower spawn at max scaling level.`,
     },
     {
       flag: 'Hx',

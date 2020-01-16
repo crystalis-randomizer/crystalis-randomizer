@@ -51,7 +51,6 @@ define ShouldRedisplayDifficulty $61ff
 define SelectedConsumableIndex  $642c
 define SelectedQuestItemIndex   $642e
 
-
 .ifdef _EXTRA_PITY_MP
 define PITY_MP_AMOUNT     20
 define ONE_MINUS_PITY_MP  237
@@ -560,11 +559,8 @@ ItemGetFollowup:
   lda KeyItemData,y
   and PowersOfTwo,x
   beq +
-   lda Difficulty
-   cmp #$2f
-   bcs +
-    inc Difficulty
-    jsr ItemGetRedisplayDifficulty
+   inc Difficulty
+   jsr ItemGetRedisplayDifficulty
    ;; Always set the dedicated 200+chest flag.
 +:
   ;; lda #$42

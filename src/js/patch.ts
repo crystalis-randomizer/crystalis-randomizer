@@ -130,6 +130,7 @@ export async function shuffle(rom: Uint8Array,
     _HARDCORE_MODE: flags.hardcoreMode(),
     _HAZMAT_SUIT: flags.changeGasMaskToHazmatSuit(),
     _LEATHER_BOOTS_GIVE_SPEED: flags.leatherBootsGiveSpeed(),
+    _MAX_SCALING_IN_TOWER: flags.maxScalingInTower(),
     _NERF_FLIGHT: true,
     _NERF_MADO: true,
     _NERF_WILD_WARP: flags.nerfWildWarp(),
@@ -652,23 +653,23 @@ export function stampVersionSeedAndHash(rom: Uint8Array, seed: number, flags: Fl
   // numbers and display arbitrary hex digits.
 
   return crc;
-};
+}
 
-const patchBytes = (rom: Uint8Array, address: number, bytes: number[]) => {
+function patchBytes(rom: Uint8Array, address: number, bytes: number[]) {
   for (let i = 0; i < bytes.length; i++) {
-    rom[address + i] = bytes[i];
+    rom[address + i] = Math.max(0, Math.min(255, bytes[i]));
   }
-};
+}
 
-const patchWords = (rom: Uint8Array, address: number, words: number[]) => {
+function patchWords(rom: Uint8Array, address: number, words: number[]) {
   for (let i = 0; i < 2 * words.length; i += 2) {
     rom[address + i] = words[i >>> 1] & 0xff;
     rom[address + i + 1] = words[i >>> 1] >>> 8;
   }
-};
+}
 
 // goes with enemy stat recomputations in postshuffle.s
-const updateCoinDrops = (rom: Uint8Array, flags: FlagSet) => {
+function updateCoinDrops(rom: Uint8Array, flags: FlagSet) {
   rom = rom.subarray(0x10);
   if (flags.disableShopGlitch()) {
     // bigger gold drops if no shop glitch, particularly at the start
@@ -684,15 +685,14 @@ const updateCoinDrops = (rom: Uint8Array, flags: FlagSet) => {
       100, 200, 300, 400, 500, 600, 700, 800,
     ]);
   }
-};
+}
 
 // goes with enemy stat recomputations in postshuffle.s
+// NOTE: this should go into a rom object so that it can
+// be inspected and written in a consistent way.
 const updateDifficultyScalingTables = (rom: Uint8Array, flags: FlagSet, asm: Assembler) => {
   rom = rom.subarray(0x10);
-
-  // Currently this is three $30-byte tables, which we start at the beginning
-  // of the postshuffle ComputeEnemyStats.
-  const diff = seq(48, x => x);
+  const diff = seq(asm.expand('SCALING_LEVELS'), x => x);
 
   // PAtk = 5 + Diff * 15/32
   // DiffAtk table is 8 * PAtk = round(40 + (Diff * 15 / 4))
@@ -777,7 +777,7 @@ const rescaleShops = (rom: Rom, asm: Assembler, random?: Random) => {
   }
 
   // Also fill the scaling tables.
-  const diff = seq(48, x => x);
+  const diff = seq(asm.expand('SCALING_LEVELS'), x => x);
   // Tool shops scale as 2 ** (Diff / 10), store in 8ths
   patchBytes(rom.prg, asm.expand('ToolShopScaling'),
              diff.map(d => Math.round(8 * (2 ** (d / 10)))));

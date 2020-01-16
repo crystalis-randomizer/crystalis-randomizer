@@ -283,10 +283,13 @@ ComputeShopPrice:               ; ~71 bytes
      ;; is less than $1d then use the armor table, which is $30 bytes
      ;; after the tools table.
      lda Difficulty
-     ldx $61
+     cmp #(SCALING_LEVELS-1)
+     bcc +
+      lda #(SCALING_LEVELS-1)
++    ldx $61
      cpx #$1d
      bcs +
-      adc #$30
+      adc #SCALING_LEVELS
 +    tax
      ;; Write the scaling factor (8*s) into $61.  The shop multiplier (32*m)
      ;; is still in $62 from the original input.  Now multiply everything

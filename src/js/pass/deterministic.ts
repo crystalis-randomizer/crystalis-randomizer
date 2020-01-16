@@ -223,7 +223,8 @@ function undergroundChannelLandBridge(rom: Rom) {
 
 function fogLampNotRequired(rom: Rom, flags: FlagSet) {
   const {
-    flags: {AlwaysTrue, HealedDolphin, FogLamp, KensuInCabin, ReturnedFogLamp},
+    flags: {AlwaysTrue, InjuredDolphin, FogLamp,
+            KensuInCabin, ReturnedFogLamp},
     items: {ShellFlute},
     locations: {BoatHouse, Portoa_FishermanHouse},
     npcs,
@@ -234,7 +235,7 @@ function fogLampNotRequired(rom: Rom, flags: FlagSet) {
   //     unless healing is required.
   const requireHealed = flags.requireHealedDolphinToRide();
   ShellFlute.itemUseData[0].want =
-      requireHealed ? AlwaysTrue.id : HealedDolphin.id;
+      requireHealed ? AlwaysTrue.id : InjuredDolphin.id;
   // (2) kensu 68 (@61) drops an item (67 magic ring)
   npcs.KensuInCabin.data[0] = 0x67;
   npcs.KensuInCabin.localDialogs.get(-1)![0].message.action = 0x0a;
@@ -372,17 +373,17 @@ function brokahanaWantsMado1(rom: Rom): void {
 
 function requireHealedDolphin(rom: Rom): void {
   const {
-    flags: {HealedDolphin, ShellFlute},
+    flags: {InjuredDolphin, ShellFlute},
     npcs: {Fisherman, FishermanDaughter},
   } = rom;
   // Normally the fisherman ($64) spawns in his house ($d6) if you have
   // the shell flute (236).  Here we also add a requirement on the healed
   // dolphin slot (025), which we keep around since it's actually useful.
-  Fisherman.spawnConditions.set(0xd6, [ShellFlute.id, HealedDolphin.id]);
+  Fisherman.spawnConditions.set(0xd6, [ShellFlute.id, InjuredDolphin.id]);
   // Also fix daughter's dialog ($7b).
   const daughterDialog = FishermanDaughter.localDialogs.get(-1)!;
   daughterDialog.unshift(daughterDialog[0].clone());
-  daughterDialog[0].condition = ~HealedDolphin.id;
+  daughterDialog[0].condition = ~InjuredDolphin.id;
   daughterDialog[1].condition = ~ShellFlute.id;
 }
 

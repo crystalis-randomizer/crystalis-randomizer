@@ -161,7 +161,7 @@ export class Flags {
   0x022 = dialogProgression('Sahara elder');
   0x023 = dialogProgression('Sahara elder daughter');
   0x024 = obsolete(0x13d); // check: ivory statue / karmine
-  HealedDolphin = movable(0x025, TRACK);
+  0x025 = obsolete(0x136); // healed dolphin
   0x026 = obsolete(0x2fd); // warp: shyron
   ShyronMassacre = fixed(0x027, TRACK); // preshuffle hardcodes for dead sprites
   ChangeWoman = fixed(0x028); // hardcoded in original rom

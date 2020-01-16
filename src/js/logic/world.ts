@@ -162,6 +162,7 @@ export class World {
         ClimbWaterfall, ClimbSlope8, ClimbSlope9, CurrentlyRidingDolphin,
         Flight, FlameBracelet, FormBridge,
         GasMask, GlowingLamp,
+        InjuredDolphin,
         LeadingChild, LeatherBoots,
         Money,
         OpenedCrypt,
@@ -253,7 +254,10 @@ export class World {
     }
     if (this.flagset.fogLampNotRequired()) {
       // not actually used...?
-      this.addCheck([start], ShellFlute.r, [AbleToRideDolphin.id]);
+      const requireHealed = this.flagset.requireHealedDolphinToRide();
+      this.addCheck([start],
+                    requireHealed ? InjuredDolphin.r : [[]],
+                    [AbleToRideDolphin.id]);
     }
     if (!this.flagset.guaranteeBarrier()) {
       this.addCheck([start], [[Money.c, BuyHealing.c],

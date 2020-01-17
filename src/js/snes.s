@@ -88,7 +88,13 @@
   jsr PatchMainLoopBankSwitch
 
 
-.org $3fdcb
+.org $3fdc6
+
+FixBankShadowForIrqBug:
+  stx $8000
+  stx $50
+  rts
+
 PatchMainLoopBankSwitch:
   asl
   cmp $6e
@@ -118,7 +124,16 @@ PatchWritePaletteDataToPpu:
 ++  pla
     pla
 +++ rts
+
 .assert < $3fe00
+
+
+;;; Mark the idle loop in FlushNametableDataUntilAllOffsetsNotEqual
+;;; This changes the BEQ into an illegal operation, but one that the
+;;; emulator understands as a marker for idle loops.  NOTE: this needs
+;;; to be commented out to run on NES.
+.org $3c730
+  .byte $f2
 
 
 ;; ;;; Skip writing palettes if possible.
@@ -166,3 +181,10 @@ PatchWritePaletteDataToPpu:
 ;; + sta $6140,x
 ;;   rts
 ;; .assert $3fe00
+
+
+;;; Fix the IRQ crash from not properly restoring the pages after music update
+;;; See https://github.com/crystalis-randomizer/crystalis-randomizer/
+;;;                        commit/bce80c1cff75313ceb13ef8efc483b37252247f0
+.org $3f87f
+  jmp FixBankShadowForIrqBug

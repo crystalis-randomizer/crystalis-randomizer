@@ -769,6 +769,7 @@ export const HARDCODED_MESSAGES: Set<string> = new Set([
   '1b:03', // (st) statues monologue, exec 1f0e5
   '1b:00', // (st) draygon 1 monologue, exec 1f193
   '1b:00', // (st) draygon 1 monologue, exec 1f193
+  '1b:04', // (st) draygon 2 monologue, exec 1f193
   '06:01', // (st) kelbesque 1 escapes, exec 1fae7, table 1fb1bb
   '10:13', // (st) sabera 1 escapes, exec 1fae7, table 1fb1f
   '19:05', // (st) mado 1 escapes, exec 1fae7, table 1fb25

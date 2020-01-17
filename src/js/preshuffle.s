@@ -608,7 +608,7 @@ ItemGet_FindOpenSlotWithOverflow:
     sta $23
     rts
 
-;; TODO - still 7 bytes here?
+;; TODO - still 15 bytes here?
 .assert < $1e17a
 
 
@@ -622,6 +622,9 @@ ItemGet_FindOpenSlotWithOverflow:
 .endif
 
 
+;;; Ensure Draygon 2 spawns directly if bow of truth was used earlier.
+.org $1f1a1
+  jsr SpawnDraygon
 
 ;;; Boss chest action jump has some special handling for bosskill 3 (rage)
 ;;; which is instead used for Kensu dropping a chest.  We'll rearrange the
@@ -673,6 +676,31 @@ HandleKensuChest:
   lda #$09
   sta $033e
   jmp ReturnFromKensuChest
+
+
+;;; Once we use the Bow of Truth, it's gone, so we need to make sure
+;;; any future encounters with Draygon 2 automatically go to the
+;;; final form.  Since triggers and itemuse actions share the same
+;;; address space, we add a fake trigger $a0 that has the same reveal
+;;; action as using the Bow of Truth.  But rather than placing it on
+;;; the screen (and incurring lag by stepping on it) we instead
+;;; simulate it during the "start fight" object action by setting
+;;; 0623 and 057f as if we were standing in front of it.  To get this
+;;; right we actually need to move the UsedBowOfTruth trigger to a
+;;; fixed position (02f) that we can check easily.
+SpawnDraygon:
+  inc $0600,x ; original action
+  lda $06c3
+  beq +       ; make sure we're looking at draygon 2, not 1
+  lda $6485
+  bpl +       ; check flag 02f
+  lda #$1f
+  sta $0623
+  lda #$a0
+  sta $057f
+  lda #$07 ; trigger tile
+  sta $41
++ rts
 
 .assert < $20000
 

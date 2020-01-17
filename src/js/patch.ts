@@ -173,7 +173,7 @@ export async function shuffle(rom: Uint8Array,
   if (log) log.spoiler = parsed.spoiler;
 
   // Make deterministic changes.
-  deterministic(parsed, flags);
+  deterministic(parsed, flags, asm);
   toggleMaps(parsed, flags, random);
 
   // Set up shop and telepathy
@@ -322,7 +322,6 @@ async function postParsedShuffle(rom: Uint8Array,
   // console.log('patch applied');
   // return log.join('\n');
 };
-
 
 function misc(rom: Rom, flags: FlagSet, random: Random) {
   const {} = {rom, flags, random} as any;

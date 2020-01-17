@@ -171,7 +171,7 @@ export class Flags {
   // unused 02c
   0x02d = dialogProgression('Shyron sages');
   0x02e = obsolete(0x12d); // check: deo's pendant
-  // unused 02f
+  UsedBowOfTruth = fixed(0x02f);  // moved from 086 in preparse
 
   // 03x
   // unused 030
@@ -279,7 +279,7 @@ export class Flags {
   0x083 = dialogProgression('Rescued Leaf elder');
   LeafVillagersCurrentlyAbducted = movable(0x084);
   LeafElderCurrentlyAbducted = movable(0x085);
-  UsedBowOfTruth = movable(0x086);
+  //UsedBowOfTruth = movable(0x086);  // moved manually at preparse to 2f
   0x087 = obsolete(0x105); // chest: ball of wind
   0x088 = obsolete(0x132); // check: windmill key
   0x089 = dialogProgression('Dead Stom\'s girlfriend');

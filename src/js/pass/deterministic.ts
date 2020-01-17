@@ -35,6 +35,8 @@ export function deterministicPreParse(prg: Uint8Array): void {
   prg[0x1e09b] &= 7; // windmill key itemuse[1] => action 05 to action 00
   prg[0x1e0b9] &= 7; // glowing lamp itemuse[0] => action 05 to action 00
 
+  prg[0x1e105] = 0x2f; // change UsedBowOfTruth from 086 to fixed 02f (6485:80)
+
   // Renumber mimics
   prg[0x19bb1] = 0x70; // fog lamp cave 3 (4a) north mimic
   prg[0x19bb5] = 0x71; // fog lamp cave 3 (4a) southwest mimic
@@ -71,6 +73,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
 
   fixCoinSprites(rom);
   fixChests(rom);
+  autoBowOfTruth(rom);
 
   makeBraceletsProgressive(rom);
 
@@ -181,6 +184,16 @@ function normalizeSwords(rom: Rom, flags: FlagSet) {
     tornado.speed = 0x07;
     tornado.data[0x0c] = 0x60; // increase lifetime (480) by 20%
   }
+}
+
+function autoBowOfTruth(rom: Rom) {
+  const {flags: {UsedBowOfTruth}} = rom;
+  const id = UsedBowOfTruth.id;
+  const trigger = rom.trigger(0xa0);
+  trigger.used = true;
+  trigger.conditions = [];
+  trigger.flags = [];
+  trigger.message = MessageId.of({part: 0, index: 0, action: 0x15});
 }
 
 function fixCoinSprites(rom: Rom): void {

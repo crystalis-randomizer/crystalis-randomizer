@@ -588,7 +588,7 @@ only upper 3 bits, allowing 32 directions total, still have diagonal knockback)
 $380,x
 ------
 For monsters:
-  :80 = off screen
+  :80 = off screen (positive = on-screen)
   :40 = behind background
   :20 = something else to do with sprites? -> +#$40 to all pattern ids
   :10 = ??

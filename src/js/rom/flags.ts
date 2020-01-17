@@ -201,7 +201,7 @@ export class Flags {
   // unused 0x043 = dialogProgression('Oak');
   0x044 = obsolete(0x107); // check: ball of fire / insect
   RescuedChild = fixed(0x045, TRACK); // hardcoded $3e7d5
-  // unused 046
+  UsedInsectFlute = fixed(0x046); // custom-added $6488:40
   RescuedLeafElder = movable(0x047);
   0x048 = dialogProgression('Treasure hunter embarked');
   0x049 = obsolete(0x101); // check: sword of fire

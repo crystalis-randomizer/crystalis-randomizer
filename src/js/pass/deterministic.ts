@@ -74,7 +74,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
 
   fixCoinSprites(rom);
   fixChests(rom);
-  autoBowOfTruth(rom);
+  preventBossSoftlocks(rom);
 
   makeBraceletsProgressive(rom);
 
@@ -188,12 +188,17 @@ function normalizeSwords(rom: Rom, flags: FlagSet) {
   }
 }
 
-function autoBowOfTruth(rom: Rom) {
+// Add code to ensure Draygon 2 and Giant Insect respawn without their
+// items once they've been used.
+function preventBossSoftlocks(rom: Rom) {
   const trigger = rom.trigger(0xa0);
   trigger.used = true;
   trigger.conditions = [];
   trigger.flags = [];
   trigger.message = MessageId.of({part: 0, index: 0, action: 0x15});
+
+  rom.objects[0x5e].data[0xd] = 0xfe; // object action 7e instead of 7f
+  rom.items.InsectFlute.itemUseData[0].flags = [rom.flags.UsedInsectFlute.id];
 }
 
 function fixCoinSprites(rom: Rom): void {

@@ -518,6 +518,16 @@ PatchStartItemGet:
   bmi HandleTreasureChest_TooManyItems ; patched version of this message tells what was in chest
   bpl ShowTreasureChestMessage
   ;; skip these bytes
+
+MaybeSpawnInsect:
+  lda $038d
+  bmi +
+   bit $6488
+   bvc +
+    lda #$e2
+    sta $04ad
++ rts
+
 .assert < $3d41c
 .org $3d41c ; Show actual message of what you got
 ShowTreasureChestMessage:
@@ -1185,12 +1195,14 @@ SetTriggerTileGameMode:
   sty $0623
   dec $41
   rts
-  ;; 12 bytes free
+  ;; 12 byte free
 .assert < $36098
 .org $36098
   .byte $08,$00,$08,$08,$08,$08,$00,$08,$00,$08
 .assert $360a2
 
+.org $36410
+  .word (MaybeSpawnInsect)
 
 .ifdef _CUSTOM_SHOOTING_WALLS
 .org $1a168

@@ -6,6 +6,7 @@ import {Entrance, Exit, Flag, Location, Spawn} from '../rom/location.js';
 import {MessageId} from '../rom/messageid.js';
 import {GlobalDialog, LocalDialog} from '../rom/npc.js';
 import {ShopType} from '../rom/shop.js';
+import {Trigger} from '../rom/trigger.js';
 import {hex} from '../rom/util.js';
 import {assert} from '../util.js';
 
@@ -120,6 +121,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   fixReverseWalls(rom);
   if (flags.chargeShotsOnly()) disableStabs(rom);
   if (flags.orbsOptional()) orbsOptional(rom);
+  if (flags.noBowMode()) noBowMode(rom);
 
   patchTooManyItemsMessage(rom);
 }
@@ -187,8 +189,6 @@ function normalizeSwords(rom: Rom, flags: FlagSet) {
 }
 
 function autoBowOfTruth(rom: Rom) {
-  const {flags: {UsedBowOfTruth}} = rom;
-  const id = UsedBowOfTruth.id;
   const trigger = rom.trigger(0xa0);
   trigger.used = true;
   trigger.conditions = [];
@@ -1210,6 +1210,39 @@ function orbsOptional(rom: Rom): void {
     rom.objects[obj].terrainSusceptibility &= ~0x04;
     // 2. Increase the level to 2
     rom.objects[obj].level = 2;
+  }
+}
+
+function noBowMode(rom: Rom): void {
+  // Initial trigger gives "used bow of truth".
+  const {
+    flags: {UsedBowOfTruth},
+    locations: {Crypt_Draygon2, Crypt_Hall2, MezameShrine},
+  } = rom;
+  let trigger!: Trigger;
+  for (const spawn of MezameShrine.spawns) {
+    if (spawn.isTrigger() && spawn.tile === 0x88) {
+      trigger = rom.trigger(spawn.id);
+    }
+  }
+  if (!trigger) throw new Error(`Could not find start trigger`);
+  trigger.flags.push(UsedBowOfTruth.id);
+  // Add an exit straight to draygon
+  //MezameShrine.entrances[1].tile = 0x98;
+  rom.tileEffects[0xb9 - 0xb3].effects[0x58] = 0;
+  MezameShrine.exits.push(
+      Exit.of({tile: 0x68, dest: Crypt_Draygon2.id, entrance: 0}));
+  for (let exit of Crypt_Draygon2.exits) {
+    if (exit.dest === Crypt_Hall2.id) {
+      exit.dest = MezameShrine.id;
+      exit.entrance = 1;
+    }
+  }
+  for (let exit of Crypt_Hall2.exits) {
+    if (exit.dest === Crypt_Draygon2.id) {
+      exit.dest = MezameShrine.id;
+      exit.entrance = 0;
+    }
   }
 }
 

@@ -50,6 +50,13 @@ export const ROUTING_FLAGS: FlagSection = {
           `Walls can be broken and bridges formed with level 1 shots.  Orbs and
            bracelets are no longer considered progression items (except for
            Tornado bracelet for Tornel on Mt Sabre).`,
-    }
+    },
+    {
+      flag: 'Rb',
+      name: 'No Bow mode',
+      text: `No items are required to finish the game.  An exit is added from
+          Mezame shrine directly to the Draygon 2 fight (and the normal entrance
+          is removed).  Draygon 2 spawns automatically with no Bow of Truth.`,
+    },
   ],
 };

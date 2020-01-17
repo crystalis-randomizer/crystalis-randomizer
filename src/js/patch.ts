@@ -173,7 +173,7 @@ export async function shuffle(rom: Uint8Array,
   if (log) log.spoiler = parsed.spoiler;
 
   // Make deterministic changes.
-  deterministic(parsed, flags, asm);
+  deterministic(parsed, flags);
   toggleMaps(parsed, flags, random);
 
   // Set up shop and telepathy

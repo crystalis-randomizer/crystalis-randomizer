@@ -56,6 +56,11 @@ export const PRESETS: Preset[] = [
     descr: 'Nobody has ever completed this.',
     flags: 'Fcprsw Hbdhmwtxz Mert Ps Ropst Sckmt Tab Wmtuw Xcegw',
   },
+  {
+    title: 'No Bow Mode',
+    descr: 'The tower is open from the start, for whoever is ready for it.',
+    flags: 'Fcprstw Ht Mert Ps Rbt Sckmt Tab Xcegw',
+  },
   // TOURNAMENT PRESETS
   {
     title: 'Tournament: Swiss Round',
@@ -258,6 +263,9 @@ export class FlagSet {
   }
   storyMode() {
     return this.check('Rs');
+  }
+  noBowMode() {
+    return this.check('Rb');
   }
   requireHealedDolphinToRide() {
     return this.check('Rd');

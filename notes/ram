@@ -1050,48 +1050,60 @@ Map screen IDs, stored in 6300,(yh << 3 | xh) - this obviously implies that
 the maximum width of a map is 8, and is consistent with what we've seen
 elsewhere where yh has special handling for >8 but xh does not.
 
+$6380..63ef
+-----------
+Never written?
+
+$63fx
+-----
+8, 9, and f were read preindexed, but none ever written.
+
+$6400..$6427
+------------
+part of current game data?
 
 $6428..$642f
 ------------
 ??
-
 
 $6430..$645f
 ------------
 Inventory
 
 
-$648x, $649x
+$6480..$64df
 ------------
-condition flags (dialog: w @ $1c121, r @ $1c11c)
-                (populating presence: r @ $1c140)
-                (scanning reads at $2fcfb ... ?)
-                ($36701: reads $6481 for windmill state - sound effects, animation, etc)
- - 6481:80 = woke windmill keeper
- - 6481:20 = prisoners returned?
- - 6481:10 = green man in leaf apologized
- - 6481:08 = spoke to leaf elder
- - 6481:04 = windmill running
- - 6487:04 = spoke to zebu
- - 6487:02 = got refresh
- - 648e:08 = exited initial cave
- - 6490:80 = ball of wind chest
- - 6491:01 = first talk with windmill keeper ("huh? what was that?")
- - 6492:80 = red adult in leaf has said "did you visit the elder's house yet?"
-     (reads $6481 before checking $6492)
- - 6492:40 = elder child toggle for alarm flute clue (reads $6481 as well)
- - 6493:08 = healed the dolphin [set along with shell flute?]
-             - note: fog lamp only really matters if warps not unlocked
- - 6494:20 = spoke to zebu student
- - 6495:08 = medical herb chest in wind cave near ball
- - 6495:04 = medical herb chest in wind cave in small side room
- - 6499:01 = warp boots chest in wind cave
-
-walls (written at $3c7a0)
- - 64dd:08 = rock wall above red slime toward vampire
- - 64dd:10 = rock wall above ball of wind
+Flags 000..2ff (see flags table)
 
 
-Need to break on 1c140 and 1c11c for location-triggered dialog to get refresh spell
+$64e0..$657f
+------------
+Not read, but seems to maybe be copied?
 
-need to talk to asina before dolphin shows up - remove block??? maybe pointless
+
+$6580..$667f
+------------
+many of these are never read, seem to have been copied form 7f00,x
+
+
+$6680..$6cef
+------------
+uncovered except for 6700, 6701 which are written at least once...
+ (2853d, 28558 writes from 7df and 7de, respectively)
+
+$6cfx
+-----
+??
+
+$6d00..$6fff
+------------
+may be copied from 7d00..7fff at some point
+
+$7000..$70ff
+------------
+mostly untouched
+ - 7000 gets a fixed value (#fb at 21be3)
+ - 7001 written from Y at 20995 => save game name?
+ - 7005 from RAM $6f at 3f0ab => shadow for bank switch
+ - 700e, 700f initialized fixed #0 3f1cf
+Most seem to be written during reset handler??

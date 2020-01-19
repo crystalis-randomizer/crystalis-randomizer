@@ -1,0 +1,97 @@
+# Save files
+
+Save files appear to be $300 bytes.
+
+## Experiment 1
+
+Location $6c is stored in save[0f0].
+Save file 1 in Leaf (2)
+Save file 2 in Valley of Wind (3)
+Checkpoint in Zebu Cave ($10)
+
+Result:
+ - 6df0 == 7df0 == $10
+ - 71f0 == 74f0 == 2
+ - 77f0 == 7af0 == 3
+
+Conclusion:
+ - save files are stored in duplicate:
+ - save 1: 7100..73ff and 7400..76ff
+ - save 2: 7700..79ff and 7a00..7cff
+ - checkpoint: 6d00..6fff and 7d00..7fff
+
+On reset (both hard and soft), each pair is compared and if divergence
+is found, it attempts to compare against a checksum to identify and
+repair the corrupted replica.  Unfortunately, the checksum routine
+forgot to initialize $16 to zero, so it never matches.
+
+Save files have three magic bytes:
+ - save[0fd..0ff] = [$41, $4d, $49]
+ - if these are wrong, the save file is wiped and reset from 2fe00/0/0
+
+It looks like the files are normally read from 71 and 77.  The 74 and 7a
+replicas are only read at boot.
+
+
+TODO - figure out how to leverage the extra save space
+     - it looks like 64c0..667f is completely free?  (some of it is used in
+       theory for dialog, but we can delete those writes and they don't need
+       to ever be read.  But it's not actually replicated to the checkpoint
+       file, so it's currently unusable?).
+
+
+
+## Scratch notes
+
+7100..73fe <=> 7d00..7ffe
+7400..76fe <= 7d00..7ffe
+
+6430 <=> 7d30
+
+
+After starting with continue,
+
+7700..77ff <= 2fe00..2feff
+7800..79ff <= #0 (3f1af)
+
+7a00..7aff <= 2fe00..2feff
+7b00..7cff <= #0 (3f1af)
+
+It looks like 7d00..7fff is a staging area
+
+Just after writing 7d30 upon loading a game:
+7d00..7d30 <= 7100..7130
+7d31..7d7f <= 6431..647f
+7d80..7d9c <= 0702..071e @ 2fcfb
+7d9d..7daf <= #0 (2fc29) @ 2fc2b
+7db0..7dd3 <= 07dc..07ff
+7dd4..7def <= #0 (2fc29)
+7df0 <= 6c @ 2fd21
+7df1 <= 70
+7df2 <= 90
+7df3 <= b0
+7df4 <= d0
+7df5 <= 03c0
+7df6 <= 03c1
+7df7 <= 0421
+7df8 <= 0620
+7df9..7dff <= #0 (2fc29)
+7e00..7fff <= 6480..657f
+7f00..7fff <= #0
+
+==========
+
+On game reset, validate contents of 6d00..6fff and 7d00..7fff
+ - need to be identical
+   - if they're not, checksum them both
+   - BUT... checksum stored in $16, but had never been initialized
+     (still held over from before reset)
+ - 7dfd..7dff must be 41,4d,49
+ - reset both to 2fe00..2feff for lower page and 0s for the upper two pages
+
+Various routines to read, validate, and reset the contents of PRG RAM:
+ - 6d00..6fff | 7100..73ff | 7400..76ff | 7700..79ff | 7a00..7cff | 7d00..7fff
+
+==========
+
+Process of save:

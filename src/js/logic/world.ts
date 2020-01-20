@@ -300,7 +300,13 @@ export class World {
       for (const location of this.rom.wildWarp.locations) {
         // Don't count channel in logic because you can't actually move.
         if (location === this.rom.locations.UndergroundChannel.id) continue;
-        this.addRoute(new Route(this.entrance(location), [WildWarp.c]));
+        // NOTE: some entrance tiles has extra requirements to enter (e.g.
+        // swamp) - find them and concatente.
+        const entrance = this.entrance(location);
+        const terrain = this.terrains.get(entrance) ?? die('bad entrance');
+        for (const route of terrain.enter) {
+          this.addRoute(new Route(entrance, [WildWarp.c, ...route]));
+        }
       }
     }
   }

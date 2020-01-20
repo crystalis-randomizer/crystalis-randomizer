@@ -267,7 +267,7 @@ class ByteLine extends AbstractLine {
   expand(context: Context): void {
     for (let i = 0; i < this.bytesInternal.length; i++) {
       if (typeof this.bytesInternal[i] === 'string') {
-        this.bytesInternal[i] = context.map(this.bytesInternal[i]);
+        this.bytesInternal[i] = context.map(this.bytesInternal[i]) & 0xff;
       }
     }
   }

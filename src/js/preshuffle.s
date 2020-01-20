@@ -52,11 +52,9 @@ define SelectedConsumableIndex  $642c
 define SelectedQuestItemIndex   $642e
 
 .ifdef _EXTRA_PITY_MP
-define PITY_MP_AMOUNT     20
-define ONE_MINUS_PITY_MP  237
+define PITY_MP_AMOUNT     34
 .else
 define PITY_MP_AMOUNT     1
-define ONE_MINUS_PITY_MP  0
 .endif        
 
 define PITY_HP_AMOUNT     5
@@ -982,13 +980,12 @@ CheckForLowHpMp:
     ;; Check if we've ever found any swords
     lda ItemFlagsStart
     and #$0f
-    ;; If this is zero then we have no swords and should give 20 MP.
-    ;; If it's nonzero, set it to -19 and then we'll add 20 unconditionally.
+    ;; If this is zero then we have no swords and should give 34 MP.
     ;; Note that we can ignore the swordless check via a flag.
     beq +
-     lda #ONE_MINUS_PITY_MP
-+   clc
-    adc #PITY_MP_AMOUNT
+     lda #$01
+    .byte $2c             ; skip next instruction
++    lda #PITY_MP_AMOUNT
     ;; Now compare with MP - if it's less, set the minimum.
     cmp PlayerMP
     bcc +

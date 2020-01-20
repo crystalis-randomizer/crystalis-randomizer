@@ -282,6 +282,13 @@ export class Overlay {
         effects |= 0x40;
       }
     }
+    if ((effects & 0x08) && (((tile >>> 8) ^ (tile >>> 12)) & 1)) {
+      // Odd-parity screen positions get an extra bit for swamp tiles
+      // to ensure the swamp isn't just one giant region.  This ensures
+      // wild-warping to the swamp doesn't automatically give oak warp
+      // or child access.  Simply adding to "exit" is insufficient.
+      effects |= 1;
+    }
     return TERRAINS[effects];
   }
 
@@ -306,6 +313,7 @@ export class Overlay {
     }
     if (this.flags.assumeWildWarp()) {
       for (const location of this.rom.wildWarp.locations) {
+        if (location === 0x64) continue; // skip channel for WW
         routes.push({tile: entrance(location)});
       }
     }
@@ -765,6 +773,10 @@ const TERRAINS: Array<Terrain | undefined> = (() => {
    * @return undefined if the terrain is impassable.
    */
   function terrain(effects: number): Terrain | undefined {
+    // NOTE: swamp + shooting statues should never happen.  Instead, we use
+    // the shooting statues bit as a way to make a separate terrain so that
+    // each screen needs to be entered separately.
+    if ((effects & 0x09) === 0x09) effects &= ~0x01;
     if (effects & 0x04) return undefined; // impassible
     const terrain: Terrain = {};
     if ((effects & 0x12) === 0x12) { // dolphin or fly

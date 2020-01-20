@@ -129,7 +129,7 @@ export class Item extends Entity {
   itemUseMessages(): MessageId[] {
     const messages = new Map<string, MessageId>();
     for (const {message} of this.itemUseData) {
-      messages.set(message.mid(), message);
+      messages.set(message.mid, message);
     }
     return [...messages.values()];
   }

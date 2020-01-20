@@ -22,8 +22,16 @@ export class MessageId extends DataTuple {
 
   // Unique string ID for the message part only (no action).
   // Suitable for keying a map.
-  mid(): string {
+  get mid(): string {
     return `${hex(this.part)}:${hex(this.index)}`;
+  }
+
+  set mid(mid: string) {
+    const split = mid.split(':');
+    if (split.length !== 2) throw new Error(`oops: ${mid}`);
+    this.part = Number.parseInt(split[0], 16);
+    this.index = Number.parseInt(split[1], 16);
+    if (isNaN(this.part) || isNaN(this.index)) throw new Error(`oops: ${mid}`);
   }
 
   // Whether the mid is nonzero.

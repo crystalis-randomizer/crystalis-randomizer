@@ -6,8 +6,12 @@ import {Item} from '../rom/item.js';
 // Shuffle the palettes.
 export function shuffleTrades(rom: Rom, flags: FlagSet, random: Random) {
   if (!flags.randomizeTrades()) return;
-  const {StatueOfOnyx, FogLamp, LovePendant,
-         KirisaPlant, IvoryStatue} = rom.items;
+  const {
+    items: {StatueOfOnyx, FogLamp, LovePendant,
+            KirisaPlant, IvoryStatue},
+    locations: {Swan_DanceHall},
+    npcs: {KensuInSwan},
+  } = rom;
 
   // Map the original trade to the new trade, for updating actionGrants.
   const map = new Map<number, number>();
@@ -66,6 +70,11 @@ export function shuffleTrades(rom: Rom, flags: FlagSet, random: Random) {
       }
     }
   }
+
+  // Kensu in Swan should keep telling the player what he wants, rather
+  // than switching to "I hate people who are pushy".
+  KensuInSwan.dialog(Swan_DanceHall)[0].message.mid = '13:00';
+  // TODO - mark 13:01 as unused?
 }
 
 // NOTE - this is copied from fixdialog

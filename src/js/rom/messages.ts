@@ -325,7 +325,7 @@ export class Messages {
     for (const part of this.parts) {
       if (used) {
         for (const message of part) {
-          if (used.has(message.mid())) yield message;
+          if (used.has(message.mid)) yield message;
         }
       } else {
         yield * part;
@@ -337,7 +337,7 @@ export class Messages {
   uses(): Map<string, Set<string>> {
     const out = new Map<string, Set<string>>();
     function use(message: MessageId | string, usage: string) {
-      const str = typeof message === 'string' ? message : message.mid();
+      const str = typeof message === 'string' ? message : message.mid;
       const set = out.get(str) || new Set();
       set.add(usage);
       out.set(str, set);
@@ -422,7 +422,7 @@ export class Messages {
     for (const message of this.messages(uses)) {
       // TODO - can't land reflow until we have lipsum text.
       message.fixText();
-      const mid = message.mid();
+      const mid = message.mid;
       // Don't read the same message twice.
       const seen = addrs.get(message.addr);
       const aliases = seen != null && alias.get(seen);
@@ -634,7 +634,7 @@ export class Messages {
         return `[${bracket === '{' ? 6 : 7}][${id}]${after}`;
       });
       // Now start with the longest abbreviation and work our way down.
-      for (const {str, bytes} of abbrs.get(m.mid()) || []) {
+      for (const {str, bytes} of abbrs.get(m.mid) || []) {
         // NOTE: two spaces in a row after an expansion must be preserved as-is.
         text = text.replace(new RegExp(str + '( [ &0-9]|.|$)', 'g'), (full, after) => {
           if (after && !PUNCTUATION[after]) return full;
@@ -686,7 +686,7 @@ export class Messages {
       const offset = bank - 0xa000;
       
       promises[m.part][m.id] =
-          writer.write(bs, bank, bank + 0x2000, `Message ${m.mid()}`)
+          writer.write(bs, bank, bank + 0x2000, `Message ${m.mid}`)
               .then(a => a - offset);
     }
 

@@ -11,20 +11,20 @@ import {Rom} from './rom.js';
 import {deterministic} from './pass/deterministic.js';
 
 const ITEMS: string = `
-sword-of-wind $00 sort-of-wind
-sword-of-fire $01 sort-of-fire
-sword-of-water $02 sort-of-water
-sword-of-thunder $03 sort-of-thunder
+sword-of-wind $00
+sword-of-fire $01
+sword-of-water $02
+sword-of-thunder $03
 windmill-key $32
 statue-of-onyx $25 onyx-statue
 insect-flute $27
 key-to-prison $33 prison-key key-2-prison
 flute-of-lime $28
 
-ball-of-wind $05 orb-of-wind
-ball-of-fire $07 orb-of-fire
-ball-of-water $09 orb-of-water
-ball-of-thunder $0b orb-of-thunder
+ball-of-wind $05 ball-of-wind
+ball-of-fire $07 ball-of-fire
+ball-of-water $09 ball-of-water
+ball-of-thunder $0b ball-of-thunder
 kirisa-plant $3c
 alarm-flute $31
 fog-lamp $35
@@ -67,6 +67,9 @@ bow-of-truth $40 truth
 `;
 
 const voiceReplacements: ReadonlyArray<readonly [RegExp, string]> = [
+  [/\b(sort)\b/, 'sword'],
+  [/\b(sorta)\b/, 'sword of'],
+  [/\b(win)\b/, 'wind'],
   [/\bketostix\b/, 'key 2 styx'],
   [/\bketo\b/, 'key 2'],
   [/\b(sticks|stick c|stix e|stick sea|dixie|sticks e|stick see|sexy|60|sixty)\b/,
@@ -83,11 +86,13 @@ const voiceReplacements: ReadonlyArray<readonly [RegExp, string]> = [
   [/\bfour\b/, '4'],
   [/\bar[ck]s tom\b/, 'ark stom'],
   [/\borbit\b/, 'orb of'],
+  [/\borb\n/, 'ball'],
   [/^(contract|amtrack|ontra(c|k|ck))\b/, 'untrack'],
   [/^((ch|tr)[eu](c|k|ck))\b/, 'track'],
   [/^track ?suit\b/, 'track flute'],
-  [/\b(lyme)\b/, 'lime'],
-  [/marked\b/, 'mark'],
+  [/\b(floote|food)\b/, 'flute'],
+  [/\b(lyme|lion)\b/, 'lime'],
+  [/mark(s|ed)\b/, 'mark'],
   [/^(marc|mach|smart|[bp]ark)\b/, 'mark'],
   [/\blee felder\b/, 'leaf elder'],
   [/^markley f/, 'mark leaf '],
@@ -96,7 +101,9 @@ const voiceReplacements: ReadonlyArray<readonly [RegExp, string]> = [
   [/\beldar\b/, 'elder'],
   [/\blight\b/, 'flight'],
   [/\bmann\b/, 'moon'],
+  [/^trackball\b/, 'track bow'],
   [/\bbosemann?\b/, 'bow of moon'],
+  [/\b(bo(we)?)\b/, 'bow'],
   [/\b(certifier|start a fire)\b/, 'sword of fire'],
   [/\bwhen milky\b/, 'windmill key'],
   [/^(4 clear|faux clear|folklore|so ?clear|pho clear)\b/, 'full clear'],
@@ -113,10 +120,12 @@ const voiceReplacements: ReadonlyArray<readonly [RegExp, string]> = [
    'kelby'],
   [/\b(porter|port[eo]la|porto a)\b/, 'portoa'],
   [/\b(athena|cena|tina|isina|esquina)\b/, 'asina'],
-  [/\b((at the|ec[hk]o) hann?ah?|alcohol(ic)?)\b/, 'akahana'],
+  [/\b((at the|ec[hk]o) h[ao]nn?ah?|alcohol(ic)?)\b/, 'akahana'],
   [/\b((roca|broke[nr]|brokaw|barr?oca) hann?ah?|bro k[ao]h[ao]na|pokehana)\b/,
    'brokahana'],
   [/\b(stoned)\b/, 'stone'],
+  // support "rockahana" for stone akahana
+  [/\b(roc[ck]a? ?(honda|ohana|h[oa]nn?ah?|auto))\b/, 'stone akahana'],
   [/\b(guards)\b/, 'guard'],
   [/\b(window)\b/, 'windmill'],
   [/\b(sa[bv][eo]r)\b/, 'sabre'],
@@ -140,12 +149,16 @@ const voiceReplacements: ReadonlyArray<readonly [RegExp, string]> = [
   [/\besi\b/, 'evil spirit island'],
   [/\bsabre north summit\b/, 'sabre summit'],
   [/\bkirisa plant cave\b/, 'kirisa cave'],
-  [/\bvampire cave\b/, 'sealed cave'],
+  [/\b(windmill|vampire) cave\b/, 'sealed cave'],
   [/^((?:un)?)ma[urxkcs ]*t[io]me?(?: fight)?/, '$1mark stom'],
-  [/^((?:un)?)mark telepathy/, '$1mark stom'],
-  [/^((?:un)?)mark battle (armor|suit)/, '$1mark oasis cave flight'],
-  [/^((?:un)?)mark power ring/, '$1mark oasis cave center'],
-  [/^((?:un)?)mark grass/, '$1mark cordel grass'],
+  [/\b(bow|flute)\b/, '$1 of'],
+  [/\bof( of)+\b/, 'of'],
+  [/ of$/, ''],
+  // [/^((?:un)?)mark telepathy/, '$1mark stom'],
+  // [/^((?:un)?)mark battle (armor|suit)/, '$1mark oasis cave flight'],
+  // [/^((?:un)?)mark power ring/, '$1mark oasis cave center'],
+  // [/^((?:un)?)mark grass/, '$1mark cordel grass'],
+  // [/b(jack(et)?)\b/, 'check'],
 ];
 
 const fullClears = new Map([
@@ -168,25 +181,25 @@ const fullClears = new Map([
   ['sabera 2', ['sabera 2', 'sabera 2 level']],
 ]);  
 
-const SLOTS: ReadonlyArray<readonly [number, number, number, string]> = [
-  [0x00, 121,192, 'leaf elder'], // sword of wind
-  [0x01, 274,176, 'oak elder'], // sword of fire
-  [0x02, 335,123, 'waterfall cave'], // sword of water
-  [0x03,  77, 10, 'styx left'], // sword of thunder
-  [0x05,  89,107, 'sealed cave front'], // ball of wind
-  [0x06, 115,224, 'sabre west slope'], // tornado bracelet
-  [0x07, 282,187, 'insect'], // ball of fire
-  [0x08,  47,182, 'kelby 1'], // flame bracelet
-  [0x09, 251,232, 'rage'], // ball of water
-  [0x0a, 206,249, 'aryllis basement'], // blizzard bracelet
-  [0x0b,  83, 63, 'mado 1'], // ball of thunder
-  [0x0c,  23,  9, 'behind karmine'], // storm bracelet
-  [0x12,  49, 48, 'mado 2'], // sacred shield
-  [0x14,  77,  2, 'styx right'], // psycho shield
+const SLOTS: ReadonlyArray<readonly [number, number, number, ...string[]]> = [
+  [0x00, 121,192, 'leaf elder', 'sword of wind'],
+  [0x01, 274,176, 'oak elder', 'sword of fire'],
+  [0x02, 335,123, 'waterfall cave', 'sword of water'],
+  [0x03,  77, 10, 'styx left', 'sword of thunder'],
+  [0x05,  89,107, 'sealed cave front', 'ball of wind'],
+  [0x06, 115,224, 'sabre west slope', 'tornado bracelet'],
+  [0x07, 282,187, 'insect', 'ball of fire'],
+  [0x08,  47,182, 'kelby 1', 'flame bracelet'],
+  [0x09, 251,232, 'rage', 'ball of water'],
+  [0x0a, 206,249, 'aryllis basement', 'blizzard bracelet'],
+  [0x0b,  83, 63, 'mado 1', 'ball of thunder'],
+  [0x0c,  23,  9, 'behind karmine', 'storm bracelet'],
+  [0x12,  49, 48, 'mado 2', 'sacred shield'],
+  [0x14,  77,  2, 'styx right', 'psycho shield'],
   [0x76,  70,  3, 'styx right'], // psycho shield mimic 1
   [0x77,  84,  3, 'styx right'], // psycho shield mimic 2
-  [0x1b, 168, 96, 'oasis cave flight'], // battle suit
-  [0x1c, 199,110, 'draygon'], // psycho armor
+  [0x1b, 168, 96, 'oasis cave flight', 'battle armor'],
+  [0x1c, 199,110, 'draygon', 'psycho armor'],
   [0x1d,  82, 95, 'sealed cave back'], // medical herb sealed cave
   [0x1e,  82,101, 'sealed cave back'], // antidote sealed cave
   [0x1f, 346,147, 'fog lamp front'], // lysis plant fog lamp
@@ -197,43 +210,43 @@ const SLOTS: ReadonlyArray<readonly [number, number, number, string]> = [
   [0x22, 256, 73, 'evil spirit island'], // magic ring evil spirit island
   [0x23,  58,115, 'sabera 2'], // fruit of repun sabera 2
   [0x24,  82,113, 'sealed cave front'], // warp boots sealed cave
-  [0x25, 189,180, 'cordel grass'], // statue of onyx
+  [0x25, 189,180, 'cordel grass', 'statue of onyx'],
   [0x26,  18,172, 'kelby 2'], // opel statue
-  [0x27, 267,185, 'oak mother'], // insect flute
-  [0x28, 275,147, 'portoa queen'], // flute of lime
-  [0x29, 147,206, 'akahana'], // gas mask
-  [0x2a, 172,104, 'oasis cave center'], // power ring
-  [0x2b, 203,  5, 'brokahana'], // warrior ring
-  [0x2c, 249, 69, 'evil spirit island'], // iron necklace
-  [0x2d, 191,110, 'deo'], // deos pendant
-  [0x2e,  89, 99, 'vampire 1'], // rabbit boots
-  [0x2f, 164,104, 'oasis cave'], // leather boots
-  [0x30, 319,123, 'stone akahana'], // shield ring
+  [0x27, 267,185, 'oak mother', 'insect flute'],
+  [0x28, 275,147, 'portoa queen', 'flute of lime'],
+  [0x29, 147,206, 'akahana', 'gas mask'],
+  [0x2a, 172,104, 'oasis cave center', 'power ring'],
+  [0x2b, 203,  5, 'brokahana', 'warrior ring'],
+  [0x2c, 249, 69, 'evil spirit island', 'iron necklace'],
+  [0x2d, 191,110, 'deo', 'deos pendant'],
+  [0x2e,  89, 99, 'vampire 1', 'rabbit boots'],
+  [0x2f, 164,104, 'oasis cave', 'leather boots'],
+  [0x30, 319,123, 'stone akahana', 'shield ring'],
   [0x72, 320,130, 'waterfall cave'], // waterfall cave mimic
   // 31 alarm flute
-  [0x32, 105, 94, 'windmill guard'], // windmill key
-  [0x33,  64,198, 'sabre north'], // key to prison
-  [0x34,  83, 71, 'zebu'], // key to styx
-  [0x35, 345,140, 'fog lamp back'], // fog lamp
-  [0x36, 301,119, 'dolphin'], // shell flute
-  [0x37, 233,118, 'clark'], // eye glasses
-  [0x38, 234, 88, 'sabera 1'], // broken statue
-  [0x39, 295, 92, 'lighthouse'], // glowing lamp
+  [0x32, 105, 94, 'windmill guard', 'windmill key'],
+  [0x33,  64,198, 'sabre north', 'key 2 prison'],
+  [0x34,  83, 71, 'zebu', 'key 2 styx'],
+  [0x35, 345,140, 'fog lamp back', 'fog lamp'],
+  [0x36, 301,119, 'dolphin', 'shell flute'],
+  [0x37, 233,118, 'clark', 'eye glasses'],
+  [0x38, 234, 88, 'sabera 1', 'broken statue'],
+  [0x39, 295, 92, 'lighthouse', 'glowing lamp'],
   // 3a statue of gold
-  [0x3b, 274,117, 'channel'], // love pendant
-  [0x3c, 338,226, 'kirisa meadow'], // kirisa plant
-  [0x3d,  23, 17, 'karmine'], // ivory statue
-  [0x3e, 206,241, 'aryllis'], // bow of moon
-  [0x3f, 101,  6, 'hydra summit'], // bow of sun
-  [0x40, 207,110, 'draygon'], // bow of truth
-  [0x41,  92,117, 'windmill'], // refresh
-  [0x42, 279,126, 'sabre summit'], // paralysis
-  [0x43, 202,138, 'stom'], // telepathy
-  [0x44, 124,202, 'tornel'], // teleport
-  [0x45, 304,128, 'asina'], // recover
-  [0x46, 248, 35, 'whirlpool'], // barrier
-  [0x47, 277,  3, 'swan'], // change
-  [0x48,  15, 25, 'slime'], // flight
+  [0x3b, 274,117, 'channel', 'love pendant'],
+  [0x3c, 338,226, 'kirisa meadow', 'kirisa plant'],
+  [0x3d,  23, 17, 'karmine', 'ivory statue'],
+  [0x3e, 206,241, 'aryllis', 'bow of moon'],
+  [0x3f, 101,  6, 'hydra summit', 'bow of sun'],
+  [0x40, 207,110, 'draygon', 'bow of truth'],
+  [0x41,  92,117, 'windmill', 'refresh'],
+  [0x42, 279,126, 'sabre summit', 'paralysis'],
+  [0x43, 202,138, 'stom', 'telepathy'],
+  [0x44, 124,202, 'tornel', 'teleport'],
+  [0x45, 304,128, 'asina', 'recover'],
+  [0x46, 248, 35, 'whirlpool', 'barrier'],
+  [0x47, 277,  3, 'swan', 'change'],
+  [0x48,  15, 25, 'slime', 'flight'],
   [0x50,  82,107, 'sealed cave front'], // medical herb sealed cave front
   // 51 sacred shield
   [0x52, 134,219, 'sabre west'], // medical herb mt sabre w
@@ -423,7 +436,7 @@ class Graph {
     this.update();
   }
 
-  addSlot(slotId: number, x: number, y: number, name: string) {
+  addSlot(slotId: number, x: number, y: number, ...names: string[]) {
     const index = this.slots.get(slotId);
     if (index == null) { debugger; throw new Error(); }
     const div = document.createElement('div');
@@ -441,17 +454,19 @@ class Graph {
     //div.textContent = '\xa0';
     const inner = document.createElement('div');
     div.appendChild(inner);
-    inner.textContent =
-        slotId >= 0x70 ?
-            'Mimic' :
-            this.rom.items[itemget.itemId].messageName.replace(' ', '\xa0');
+    inner.textContent = names[0];
+        // slotId >= 0x70 ?
+        //     'Mimic' :
+        //     this.rom.items[itemget.itemId].messageName.replace(' ', '\xa0');
     if (this.flags.randomizeTrades() && TRADES.has(slotId)) {
       div.classList.add('boss');
     }
     this.slotElts.set(index, div);
-    let marks = this.marks.get(name);
-    if (marks == null) this.marks.set(name, marks = []);
-    marks.push(div);
+    for (const name of names) {
+      let marks = this.marks.get(name);
+      if (marks == null) this.marks.set(name, marks = []);
+      marks.push(div);
+    }
     this.map.appendChild(div);
   }
 
@@ -507,7 +522,7 @@ class Graph {
     }
   }
 
-  addVoiceRecognition() {
+  addVoiceRecognition(disableCallback: () => void) {
     try {
       const rec = this.recognition = new SpeechRecognition();
       // NOTE: as far as I can tell, this does nothing...
@@ -537,6 +552,7 @@ class Graph {
           if (cmd === 'stop listening') {
             matched = true;
             this.voice = false;
+            disableCallback();
           }
           for (const [re, repl] of voiceReplacements) {
             cmd = cmd.replace(re, repl);
@@ -598,8 +614,10 @@ class Graph {
     }
   }
 
-  startVoice() {
-    if (!this.recognition && !this.addVoiceRecognition()) return false;
+  startVoice(disableCallback: () => void) {
+    if (!this.recognition && !this.addVoiceRecognition(disableCallback)) {
+      return false;
+    }
     this.voice = true;
     this.recognition!.start();
     return true;
@@ -682,8 +700,10 @@ async function main() {
     if (graph.voice) {
       graph.stopVoice();
       voice.textContent = 'enable voice';
-    } else if (graph.startVoice()) {
+    } else if (graph.startVoice(() => voice.textContent = 'enable voice')) {
       voice.textContent = 'disable voice';
+    } else {
+      voice.textContent = 'voice recognition failed';
     }
   });
   (window as any).graph = graph;

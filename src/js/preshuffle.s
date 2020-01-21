@@ -960,9 +960,6 @@ MaybeRevertChangeOnSwordGet:
 .assert < $28000
 
 .bank $28000 $8000:$2000
-;.org $2853a
-;  jsr FixTriggerSkip2
-
 
 .bank $2e000 $a000:$2000
 
@@ -1117,30 +1114,6 @@ MaybeSetCheckpointActual:
 .org $353e8
 +:
 
-.ifdef _DISABLE_TRIGGER_SKIP
-;;; The jumping warp-boots trigger skip works as follows:
-;;; Because the main loop reads the controller first and
-;;; sets the mode to #$06.  The trigger square only takes
-;;; effect (by setting the mode to #$07) if the mode was
-;;; #$08 (normal mode for walking on the map).  Because
-;;; the item is being used, the trigger effect is skipped.
-;;; The solution is to add a new game mode #$05 for using
-;;; an item while on a trigger square.  After evaluating
-;;; the item use, we jump right into to the trigger mode.
-.org $354a2
-  ;; save 623 first regardless
-  lda $41
-  cmp #$08
-  beq +
-   cmp #$06
-   beq +
-    rts
-+ jmp SetTriggerTileGameMode
-.org $3cae8
-  .word (GameModeJump_05_ItemTrigger)
-
-.endif
-
 .ifdef _DISABLE_STATUE_GLITCH
 .org $3559a
   ;; Just always push down.
@@ -1165,14 +1138,10 @@ MaybeSetCheckpointActual:
   jsr CheckRabbitBoots
 .endif
 
+.ifdef _DISABLE_TRIGGER_SKIP
 .org $35d9a
-  jsr FixTriggerSkip5
-
-;.org $35e99
-;  jsr FixTriggerSkip3
-;.org $35ea1
-;  nop
-;  jsr FixTriggerSkip4
+  jsr FixTriggerSkip_CheckLatch
+.endif
 
 .bank $36000 $a000:$2000
 ;
@@ -1752,19 +1721,14 @@ ReloadLocationGraphicsAfterChest:
 
 ; possibly better to just have a bitset of modes that need to set the latch
 ; or patch the {lda 8; sta GameMode} that should be in every one?
+.ifdef _DISABLE_TRIGGER_SKIP
 .org $3d497
-  jsr FixTriggerSkip2a
+  jsr FixTriggerSkip_LatchOnItemUse
 .org $3dd70
-  jsr FixTriggerSkip2b
+  jsr FixTriggerSkip_LatchOnMagicUse
 .org $3decb
-  jsr FixTriggerSkip2b
-;; .org $3cc17
-;;   jsr FixTriggerSkip2c
-;; .org $3d8d1
-;;   jsr FixTriggerSkip2d
-;; .org $1fe07
-;;   nop
-;;   jsr FixTriggerSkip2e
+  jsr FixTriggerSkip_LatchOnMagicUse
+.endif
 
 ;;; Call 3f9ba instead of 3c008 after the inventory menu
 .org $3f9ba  ; free space from here to $3fdf0
@@ -2155,8 +2119,6 @@ SetFlagYA:
   sta $6480,y
   rts
 
-;;;  FREE SPACE
-
 .ifdef _TRAINER
 ;;; Trainer mode: provides a number of controller shortcuts
 ;;; to do a wide variety of things:
@@ -2167,6 +2129,7 @@ SetFlagYA:
 ;;;   Start+Down -> increase scaling by 2
 ;;;   Start+Left -> better armors
 ;;;   Start+Right -> better shields
+;;; TODO - move trainer to a different ROM page since it's so big.
 CheckTrainerShortcuts:
    lda $46    ; Currently pressed?
    and #$50   ; Start+B
@@ -2310,59 +2273,29 @@ TrainerData_Shields:
 
 .endif  
 
-FixTriggerSkip2:
-  lda #$01
-  sta $61fd
-  ldx $07df
-  rts
-FixTriggerSkip2a:
+.ifdef _DISABLE_TRIGGER_SKIP
+FixTriggerSkip_LatchOnItemUse:
   lda #$01
   sta $61fd
   rts
-FixTriggerSkip2b:
+FixTriggerSkip_LatchOnMagicUse:
   sta $07de
   lda #$01
   sta $61fd
   rts
-FixTriggerSkip2c:
-  lda #$01
-  sta $61fd
-  jmp $c89e
-FixTriggerSkip2d:
-  lda #$01
-  sta $61fd
-  lda $0711
-FixTriggerSkip2e:
-  lda #$01
-  sta $61fd
-  lda #$08
-  sta $41
-  rts
 
-
-FixTriggerSkip3:
-  lda $9d4d,x
-  beq + ; This is normal - exit w/ Z set
-  lsr $61fd ; Check the delay buffer -> will always set Z
-  bcs + ; If it was nonzero BEFORE shifting, exit w/ Z set
-  lda #$01 ; Unset Z flag before exit so that the next beq doesn't jump
-+ rts
-FixTriggerSkip4:
-  sta $26
-  lda $49
-  bmi + ; This is normal - exit w/ N set
-  lsr $61fd ; Check the delay buffer
-  lda #$00
-  ror ; Will set N if C
-+ rts
-
-FixTriggerSkip5:
+;;; NOTE: We should move this to 34c0e after making _FIX_COIN_SPRITES
+;;; mandatory.
+FixTriggerSkip_CheckLatch:
   lda $0710
   lsr $61fd
   bcc +
   pla
   pla
 + rts
+.endif
+
+;;; FREE SPACE
 
 .assert < $3fe00 ; end of free space started at 3f9ba
 

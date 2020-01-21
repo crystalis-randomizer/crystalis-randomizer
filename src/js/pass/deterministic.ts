@@ -253,7 +253,7 @@ function fogLampNotRequired(rom: Rom, flags: FlagSet) {
   //     unless healing is required.
   const requireHealed = flags.requireHealedDolphinToRide();
   ShellFlute.itemUseData[0].want =
-      requireHealed ? AlwaysTrue.id : InjuredDolphin.id;
+      requireHealed ? InjuredDolphin.id : AlwaysTrue.id;
   // (2) kensu 68 (@61) drops an item (67 magic ring)
   npcs.KensuInCabin.data[0] = 0x67;
   npcs.KensuInCabin.localDialogs.get(-1)![0].message.action = 0x0a;

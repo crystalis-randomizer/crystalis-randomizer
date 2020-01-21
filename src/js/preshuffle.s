@@ -959,6 +959,9 @@ MaybeRevertChangeOnSwordGet:
 
 .assert < $28000
 
+.bank $28000 $8000:$2000
+;.org $2853a
+;  jsr FixTriggerSkip2
 
 
 .bank $2e000 $a000:$2000
@@ -1162,6 +1165,14 @@ MaybeSetCheckpointActual:
   jsr CheckRabbitBoots
 .endif
 
+.org $35d9a
+  jsr FixTriggerSkip5
+
+;.org $35e99
+;  jsr FixTriggerSkip3
+;.org $35ea1
+;  nop
+;  jsr FixTriggerSkip4
 
 .bank $36000 $a000:$2000
 ;
@@ -1739,6 +1750,22 @@ ReloadLocationGraphicsAfterChest:
 .endif
 
 
+; possibly better to just have a bitset of modes that need to set the latch
+; or patch the {lda 8; sta GameMode} that should be in every one?
+.org $3d497
+  jsr FixTriggerSkip2a
+.org $3dd70
+  jsr FixTriggerSkip2b
+.org $3decb
+  jsr FixTriggerSkip2b
+;; .org $3cc17
+;;   jsr FixTriggerSkip2c
+;; .org $3d8d1
+;;   jsr FixTriggerSkip2d
+;; .org $1fe07
+;;   nop
+;;   jsr FixTriggerSkip2e
+
 ;;; Call 3f9ba instead of 3c008 after the inventory menu
 .org $3f9ba  ; free space from here to $3fdf0
 PostInventoryMenu:
@@ -2282,6 +2309,60 @@ TrainerData_Shields:
   .byte $11,$12,$13,$14
 
 .endif  
+
+FixTriggerSkip2:
+  lda #$01
+  sta $61fd
+  ldx $07df
+  rts
+FixTriggerSkip2a:
+  lda #$01
+  sta $61fd
+  rts
+FixTriggerSkip2b:
+  sta $07de
+  lda #$01
+  sta $61fd
+  rts
+FixTriggerSkip2c:
+  lda #$01
+  sta $61fd
+  jmp $c89e
+FixTriggerSkip2d:
+  lda #$01
+  sta $61fd
+  lda $0711
+FixTriggerSkip2e:
+  lda #$01
+  sta $61fd
+  lda #$08
+  sta $41
+  rts
+
+
+FixTriggerSkip3:
+  lda $9d4d,x
+  beq + ; This is normal - exit w/ Z set
+  lsr $61fd ; Check the delay buffer -> will always set Z
+  bcs + ; If it was nonzero BEFORE shifting, exit w/ Z set
+  lda #$01 ; Unset Z flag before exit so that the next beq doesn't jump
++ rts
+FixTriggerSkip4:
+  sta $26
+  lda $49
+  bmi + ; This is normal - exit w/ N set
+  lsr $61fd ; Check the delay buffer
+  lda #$00
+  ror ; Will set N if C
++ rts
+
+FixTriggerSkip5:
+  lda $0710
+  lsr $61fd
+  bcc +
+  pla
+  pla
++ rts
 
 .assert < $3fe00 ; end of free space started at 3f9ba
 

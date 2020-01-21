@@ -265,6 +265,7 @@ export class Flags {
   0x078 = obsolete(0x10c); // chest: storm bracelet
   0x079 = obsolete(0x140); // check: bow of truth
   0x07a = obsolete(0x10a); // chest: blizzard bracelet
+  0x07b = obsolete(0x109); // rage/ball of water
   // unused 07b, 07c
   0x07d = obsolete(0x13f); // chest: bow of sun
   0x07e = dialogProgression('Mt Sabre guards 1');

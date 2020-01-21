@@ -52,9 +52,11 @@ define SelectedConsumableIndex  $642c
 define SelectedQuestItemIndex   $642e
 
 .ifdef _EXTRA_PITY_MP
-define PITY_MP_AMOUNT     34
+define PITY_MP_AMOUNT     20
+define ONE_MINUS_PITY_MP  237
 .else
 define PITY_MP_AMOUNT     1
+define ONE_MINUS_PITY_MP  0
 .endif        
 
 define PITY_HP_AMOUNT     5
@@ -984,7 +986,7 @@ CheckForLowHpMp:
     ;; If it's nonzero, set it to -19 and then we'll add 20 unconditionally.
     ;; Note that we can ignore the swordless check via a flag.
     beq +
-     lda #(1-PITY_MP_AMOUNT)
+     lda #ONE_MINUS_PITY_MP
 +   clc
     adc #PITY_MP_AMOUNT
     ;; Now compare with MP - if it's less, set the minimum.

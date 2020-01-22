@@ -1,0 +1,4 @@
+35f34 - checked terrain, spending 1 MP
+  - consider also checking whether we can actually fly or not and bailing out
+    in some other way?
+359ba - treat certain tiles as impassible.

@@ -1,0 +1,24 @@
+Why does it take a while to get the "no room" message?
+
+When we come out of ItemGet (indirectly via $3d853) we check $23.
+If we couldn't gain the item, then it's negative and we jump to $3d880
+and reset the game mode.  The dialog is only shown if $23 is positive.
+
+But $3d47c (the caller) checks for zero lower nibble on global timer
+and shows a message anyway.  If we get rid of that, then the message
+pops back up immediately as soon as you dismiss it, unless you buffer
+a direction to move away.
+
+Maybe we can call into the statue dialog code to push the player away?
+Or only show the dialog if pressing a direction?
+ -> this works!
+
+=====
+
+How to show what item we would have gotten?
+
+Edit the "too many items" message (20:0f) to include [:ITEM:].
+This looks for the item ID in $07dc, and we already saved that
+earlier in PatchStartItemGet (normally it's not written until
+later).  So we don't even need to store it again, just show the
+message.

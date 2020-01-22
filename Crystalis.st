@@ -44340,22 +44340,23 @@ CollisionJump_02_PlayerInFrontOfNpcOrTrigger
         $35564  xx xx xx:   xxx $xxxx
         $35567  xx:         xxx
 ;;; --------------------------------
+        ;; Move the player back in response to touching a statue.
         $35568  xx xx xx:   xxx $xxxx,y
         $3556b  xx xx:      xxx #$xx
-        $3556d  xx xx:      xxx $xx
+        $3556d  xx xx:      xxx + ; $35585
         $3556f  xx xx xx:   xxx $xxxx,y
         $35572  xx xx:      xxx #$xx
-        $35574  xx xx:      xxx $xx
+        $35574  xx xx:      xxx + ; $35585
         $35576  xx xx xx:   xxx $xxxx
         $35579  xx xx:      xxx #$xx
-        $3557b  xx xx:      xxx $xx
+        $3557b  xx xx:      xxx + ; $35585
         $3557d  xx xx xx:   xxx $xxxx
         $35580  xx xx:      xxx #$xx
         $35582  xx xx xx:   xxx $xxxx
-        $35585  xx:         xxx
++       $35585  xx:         xxx
         $35586  xx:         xxx
         $35587  xx xx:       xxx #$xx
-        $35589  xx xx xx:    xxx ObjectKnockback,x
+-       $35589  xx xx xx:    xxx ObjectKnockback,x
         $3558c  xx:          xxx
         $3558d  xx xx xx:     xxx ObjectDirection,x
         $35590  xx:           xxx
@@ -44372,8 +44373,8 @@ CollisionJump_02_PlayerInFrontOfNpcOrTrigger
         $355a6  xx:          xxx
         $355a7  xx xx xx:    xxx ObjectKnockback,x
         $355aa  xx:          xxx
-        $355ab  xx xx:       xxx $xx
-        $355ad  xx xx xx:    xxx $3ff8c
+        $355ab  xx xx:       xxx - ; $35589
+        $355ad  xx xx xx:    xxx DrawAllObjectSprites
         $355b0  xx:         xxx
         $355b1  xx:         xxx
         $355b2  xx xx:      xxx $xx
@@ -45638,6 +45639,7 @@ ObjectActionJump_03
 +       $35e9e  xx xx xx:   xxx $xxxx,x
         $35ea1  xx xx:      xxx $xx
         $35ea3  xx xx:      xxx $xx
+        ;; If we're not moving, this is where we bail out
         $35ea5  xx xx:      xxx ++ ; $35eef
         $35ea7  xx xx xx:   xxx $xxxx,x
         $35eaa  xx xx:      xxx + ; $35eba
@@ -58003,9 +58005,10 @@ DataTable_3d45c
         $3d46c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 HandleTreasureChest_TooManyItems
+        ;; Only give a message every 16 frames.
         $3d47c  xx xx:      xxx $xx
         $3d47e  xx xx:      xxx #$xx
-        $3d480  xx xx:      xxx $xx
+        $3d480  xx xx:      xxx <rts ; $3d45b
         $3d482  xx xx xx:   xxx $3cc2e
         $3d485  xx xx:      xxx #$xx
         $3d487  xx xx xx:   xxx $xxxx
@@ -58539,7 +58542,7 @@ HandleItemOrTrigger
         $3d853  xx xx xx:   xxx $xxxx
         ;; Handle the output
         $3d856  xx xx:      xxx $xx
-        $3d858  xx xx:      xxx $xx
+        $3d858  xx xx:      xxx + ; $3d880
         $3d85a  xx xx:      xxx $xx
         $3d85c  xx xx:      xxx $xx
         $3d85e  xx xx:      xxx + ; $3d880
@@ -58806,30 +58809,30 @@ MainGameModeJump_24_EmptyShop
         $3da6d  xx xx:      xxx #$xx
         $3da6f  xx xx xx:   xxx BankSwitch16k
 ;;; --------------------------------
-        $3da72  xx xx xx:   xxx $3fe17
-        $3da75  xx xx:      xxx #$xx
-        $3da77  xx xx xx:   xxx BankSwitch8k_8000
-        $3da7a  xx xx xx:   xxx LoadPalettesForLocation
-        $3da7d  xx xx:      xxx #SCREEN_MODE_NORMAL
-        $3da7f  xx xx:      xxx ScreenMode
-        $3da81  xx xx:      xxx #$xx
-        $3da83  xx xx xx:   xxx $xxxx
-        $3da86  xx xx xx:   xxx $3dabf
-        $3da89  xx xx:      xxx $xx
-        $3da8b  xx xx:      xxx $xx
-        $3da8d  xx xx:      xxx $xx
-        $3da8f  xx xx:      xxx #$xx
-        $3da91  xx xx:      xxx $xx
+-       $3da72  xx xx xx:    xxx $3fe17
+        $3da75  xx xx:       xxx #$xx
+        $3da77  xx xx xx:    xxx BankSwitch8k_8000
+        $3da7a  xx xx xx:    xxx LoadPalettesForLocation
+        $3da7d  xx xx:       xxx #SCREEN_MODE_NORMAL
+        $3da7f  xx xx:       xxx ScreenMode
+        $3da81  xx xx:       xxx #$xx
+        $3da83  xx xx xx:    xxx $xxxx
+        $3da86  xx xx xx:    xxx $3dabf
+        $3da89  xx xx:       xxx $xx
+        $3da8b  xx xx:       xxx $xx
+        $3da8d  xx xx:       xxx $xx
+        $3da8f  xx xx:       xxx #$xx
+        $3da91  xx xx:      xxx - ; $3da72
         $3da93  xx xx:      xxx #$xx
         $3da95  xx xx xx:   xxx $xxxx
-        $3da98  xx xx xx:   xxx $3dabf
-        $3da9b  xx xx:      xxx $xx
-        $3da9d  xx xx:      xxx $xx
-        $3da9f  xx xx:      xxx $xx
-        $3daa1  xx xx:      xxx #$xx
-        $3daa3  xx xx:      xxx $xx
-        $3daa5  xx xx xx:   xxx $3ff8c
-        $3daa8  xx xx xx:   xxx $3eb09
+-       $3da98  xx xx xx:    xxx $3dabf
+        $3da9b  xx xx:       xxx $xx
+        $3da9d  xx xx:       xxx $xx
+        $3da9f  xx xx:       xxx $xx
+        $3daa1  xx xx:       xxx #$xx
+        $3daa3  xx xx:      xxx - ; $3da98
+        $3daa5  xx xx xx:   xxx DrawAllObjectSprites
+        $3daa8  xx xx xx:   xxx FindExit
         $3daab  xx xx:      xxx ($xx),y
         $3daad  xx xx:      xxx CurrentLocation
         $3daaf  xx:         xxx
@@ -60804,7 +60807,7 @@ DataTable_3e8b6
         $3e900  xx xx xx:   xxx $3eadf
 ;;; --------------------------------
         $3e903  xx xx xx:   xxx $3e90a
-        $3e906  xx xx xx:   xxx $3eb09
+        $3e906  xx xx xx:   xxx FindExit
         $3e909  xx:         xxx
 ;;; --------------------------------
         ;; Copy screen coords to $34..$37, then do stuff with them.

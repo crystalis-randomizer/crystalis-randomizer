@@ -531,7 +531,15 @@ MaybeSpawnInsect:
 ShowTreasureChestMessage:
 .org $3d47c ; HandleTreasureChest_TooManyItems
 HandleTreasureChest_TooManyItems:
-
+  ;; Rather than using the global timer to determine whether
+  ;; to show the "too many items" message, use the gamepad:
+  ;; only show if pressing a direction ($49 != #$ff)
+  lda $49
+  bpl +
+   rts
+   nop
++:
+.assert $3d482
 
 ;; Freed from the chest spawn data
 .org $1e106

@@ -1,0 +1,24 @@
+Unusable item - buffer A-B while holding 'up'.
+Telepathy works too
+ - triggers, slopes, and exits all not checked
+
+FindExit @ 3eb09
+
+ItemUseError @ 3d526
+ - sets game mode to status msg.
+
+Fix should be similar to trigger skip, but needs to be a little more general.
+ - consider setting a bit somewhere else?
+
+Probably best is to just *not* move on the first frame after a message is
+displayed (including telepathy or other menus).
+ - set a latch somewhere and then reset it at 35ec2 instead of calling MoveObject.
+ - ShowMessage will handle some of them, check game mode for telepathy
+
+This might also have some effect on statue glitch...?
+Possibly anything that looks up any text at all?
+
+Setting it in LookupMessageInternal is broken because you can't buffer
+the opposite direction while talking to statues... we can instead set
+the latch in ItemUse, TelepathyUse, etc - maybe the game modes?
+ - check the latch at the very beginning of object action jump 03

@@ -26,6 +26,10 @@ export function deterministicPreParse(prg: Uint8Array): void {
   prg[0x1cdc5] = 0xa8; // change flag to not use 043.
   prg[0x1a84c] = 0xff; // remove the aa trigger (last spawn in oak).
 
+  // Remove broken (unused) kensu dialog in swan tavern - original reads
+  // part of the next area's local dialogs as flags to set, including 140.
+  prg[0x1d843] = 0xa0; // change e0 (expecting follow-up flags) to a0.
+
   // Remove unused item/trigger actions
   prg[0x1e06b] &= 7; // medical herb normal usage => action 05 to action 00
   prg[0x1e06f] &= 7; // magic ring itemuse[0] => action 05 to action 00
@@ -899,7 +903,7 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
       Joel_Shed,
       MtSabreNorth_SummitCave, MtSabreWest_Upper,
       PortoaPalace_ThroneRoom, Portoa_AsinaRoom, Portoa_FortuneTeller,
-      Shyron_Temple, StomHouse, Swan_DanceHall,
+      Shyron_Temple, StomHouse, Swan_DanceHall, Swan_Tavern,
       WindmillCave, WaterfallCave4, WaterfallValleyNorth,
       ZebuCave, ZombieTown_HouseBasement,
     },
@@ -921,6 +925,7 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
     flags,
   } = rom;
 
+  Kensu.localDialogs.delete(Swan_Tavern.id); // unused dialog
   KensuInSwan.link(Kensu.id);
   KensuInSwan.used = true;
   KensuInSwan.data = [...Kensu.data] as any;

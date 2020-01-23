@@ -320,7 +320,8 @@ export class Graph {
         item.unique && !slot.unique) {
       return false;
     }
-    if (slot.lossy && (item.losable && item.preventLoss)) return false;
+    const preventLoss = item.preventLoss || slot.preventLoss;
+    if (slot.lossy && item.losable && preventLoss) return false;
     // TODO - flag for "protect all losable items"
     return true;
   }

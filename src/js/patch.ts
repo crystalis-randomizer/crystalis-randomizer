@@ -528,7 +528,9 @@ function shuffleWildWarp(rom: Rom, _flags: FlagSet, random: Random): void {
         // don't warp into tower
         (l.id & 0xf8) !== 0x58 &&
         // don't warp into mesia shrine because of queen logic
-        l !== rom.locations.MesiaShrine) {
+        l !== rom.locations.MesiaShrine &&
+        // don't warp into rage because it's just annoying
+        l !== rom.locations.LimeTreeLake) {
       locations.push(l);
     }
   }

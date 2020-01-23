@@ -502,7 +502,11 @@ function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
 function shuffleWildWarp(rom: Rom, _flags: FlagSet, random: Random): void {
   const locations: Location[] = [];
   for (const l of rom.locations) {
-    if (l && l.used && l.id && !l.extended && (l.id & 0xf8) !== 0x58) {
+    if (l && l.used && l.id && !l.extended &&
+        // avoid anything in the tower
+        (l.id & 0xf8) !== 0x58 &&
+        // also avoid rage and mesia shrine
+        l.id !== 0x43 && l.id !== 0x52) {
       locations.push(l);
     }
   }

@@ -685,7 +685,7 @@ function eastCave(rom: Rom, flags: FlagSet): void {
                   [0x9c, 0x86, 0x80, 0x80, 0x9a]];
 
   for (const l of [loc1, loc2, loc3]) {
-    l.bgm = 0x17; // mt sabre cave music?
+    l.bgm = l.originalBgm = 0x17; // mt sabre cave music?
     l.entrances = [];
     l.exits = [];
     l.pits = [];
@@ -695,6 +695,7 @@ function eastCave(rom: Rom, flags: FlagSet): void {
     l.width = l.screens[0].length;
     l.extended = 0;
     l.tilePalettes = [0x1a, 0x1b, 0x05]; // rock wall
+    l.originalTilePalettes = [0x1a, 0x1b, 0x05]; // rock wall
     l.tileset = 0x88;
     l.tileEffects = 0xb5;
     l.tilePatterns = [0x14, 0x02];

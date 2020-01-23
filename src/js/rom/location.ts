@@ -466,6 +466,7 @@ export class Location extends Entity {
   used: boolean;
 
   bgm: number;
+  originalBgm: number;
   layoutWidth: number;
   layoutHeight: number;
   animation: number;
@@ -474,6 +475,7 @@ export class Location extends Entity {
 
   tilePatterns: [number, number];
   tilePalettes: [number, number, number];
+  originalTilePalettes: [number, number, number];
   tileset: number;
   tileEffects: number;
 
@@ -496,13 +498,14 @@ export class Location extends Entity {
     this.used = mapDataBase > 0xc000 && !!this.name;
 
     if (!this.used) {
-      this.bgm = 0;
+      this.bgm = this.originalBgm = 0;
       this.layoutWidth = 0;
       this.layoutHeight = 0;
       this.animation = 0;
       this.extended = 0;
       this.screens = [[0]];
       this.tilePalettes = [0x24, 0x01, 0x26];
+      this.originalTilePalettes = [0x24, 0x01, 0x26];
       this.tileset = 0x80;
       this.tileEffects = 0xb3;
       this.tilePatterns = [2, 4];
@@ -551,7 +554,7 @@ export class Location extends Entity {
     const pitsBase =
         !hasPits ? 0 : readLittleEndian(rom.prg, mapDataBase + 10) + 0xc000;
 
-    this.bgm = rom.prg[layoutBase];
+    this.bgm = this.originalBgm = rom.prg[layoutBase];
     this.layoutWidth = rom.prg[layoutBase + 1];
     this.layoutHeight = rom.prg[layoutBase + 2];
     this.animation = rom.prg[layoutBase + 3];
@@ -560,6 +563,7 @@ export class Location extends Entity {
         this.height,
         y => tuple(rom.prg, layoutBase + 5 + y * this.width, this.width));
     this.tilePalettes = tuple<number>(rom.prg, graphicsBase, 3);
+    this.originalTilePalettes = tuple(this.tilePalettes, 0, 3);
     this.tileset = rom.prg[graphicsBase + 3];
     this.tileEffects = rom.prg[graphicsBase + 4];
     this.tilePatterns = tuple(rom.prg, graphicsBase + 5, 2);

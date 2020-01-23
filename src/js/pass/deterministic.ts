@@ -105,7 +105,8 @@ function normalizeSwords(rom: Rom, flags: FlagSet) {
   rom.objects[0x15].atk = 6; // water 2
   rom.objects[0x16].atk = 8; // water 3
 
-  rom.objects[0x1c].atk = 3; // thunder 1
+  rom.objects[0x1c].atk = 3; // thunder 1 (unused alias?)
+  rom.objects[0x1d].atk = 3; // thunder 1
   rom.objects[0x1e].atk = 5; // thunder 2
   rom.objects[0x1b].atk = 7; // thunder 3
   rom.objects[0x1f].atk = 7; // thunder 3

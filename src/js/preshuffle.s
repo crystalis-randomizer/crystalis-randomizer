@@ -2292,12 +2292,12 @@ FixTriggerSkip_LatchOnMagicUse:
 ;;; NOTE: We should move this to 34c0e after making _FIX_COIN_SPRITES
 ;;; mandatory.
 FixTriggerSkip_CheckLatch:
-  lda $0710
   lsr $61fd
   bcc +
   pla
   pla
-+ rts
++ lda $0710
+  rts
 .endif
 
 ;;; FREE SPACE

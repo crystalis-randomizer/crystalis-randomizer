@@ -660,10 +660,11 @@ ItemGet_FindOpenSlotWithOverflow:
 .org $1f76b
   beq HandleKensuChestInit
 .org $1f77b
-ReturnFromKensuChest:
-.org $1f7c2
-HandleKensuChestInit:
-  jmp HandleKensuChest
+  clc
+  nop
+HandleKensuChestInit: ; if we jumped here then C is set
+  jsr HandleKensuChest
+
 .org $1f7d0
   .byte $00  
 
@@ -689,9 +690,12 @@ ComputeVampireAnimationStart:
 ++ rts
 
 HandleKensuChest:
-  lda #$09
-  sta $033e
-  jmp ReturnFromKensuChest
+  lda #$8d
+  sta $03a0,x
+  bcc +
+   lda #$09
+   sta $033e
++ rts
 
 
 ;;; Once we use the Bow of Truth, it's gone, so we need to make sure

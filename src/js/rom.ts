@@ -693,13 +693,9 @@ const ADJUSTMENTS = [
   // Fix bad spawn in Mt Hydra (make it an extra puddle).
   [0x19f02, 0x40, 0x80],
   [0x19f03, 0x33, 0x32],
-  // Remove nonsense trigger 83 from goa fortress entrance
-  [0x1a176, 0x2a, 0xff],
   // Fix bad spawn in Sabera 2's level (probably meant to be a flail guy).
   [0x1a1e0, 0x40, 0xc0], // make sure to fix pattern slot, too!
   [0x1a1e1, 0x3d, 0x34],
-  // Remove nonsense trigger aa from oak entrance
-  [0x1a84c, 0x1c, 0xff],
   // Point Amazones outer guard to post-overflow message that's actually shown.
   [0x1cf05, 0x47, 0x48],
   // Remove stray flight granter in Zombietown.
@@ -708,13 +704,6 @@ const ADJUSTMENTS = [
   // Fix queen's dialog to terminate on last item, rather than overflow,
   // so that we don't parse garbage.
   [0x1cff9, 0x60, 0xe0],
-  // Remove unused flags from door triggers
-  [0x1e32a, 0x40, 0xc0], // mt sabre summit (trigger ad): set 093 => clear 000
-  [0x1e32b, 0x93, 0x00],
-  [0x1e330, 0x40, 0xc0], // stxy (trigger ae): set 094 => clear 000
-  [0x1e331, 0x94, 0x00],
-  [0x1e336, 0x40, 0xc0], // altar (trigger af): set 095 => clear 000
-  [0x1e337, 0x95, 0x00],
 
   // Fix Amazones outer guard message to not overflow.
   [0x2ca90, 0x02, 0x00],

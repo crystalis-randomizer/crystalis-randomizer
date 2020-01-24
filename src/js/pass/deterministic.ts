@@ -24,6 +24,7 @@ export function deterministicPreParse(prg: Uint8Array): void {
 
   // Remove unnecessary oak entrance trigger (aa).  Redirect the dialog flag.
   prg[0x1cdc5] = 0xa8; // change flag to not use 043.
+  prg[0x1a176] = 0xff; // remove the 83 trigger from goa fortress entrance.
   prg[0x1a84c] = 0xff; // remove the aa trigger (last spawn in oak).
 
   // Remove broken (unused) kensu dialog in swan tavern - original reads
@@ -42,6 +43,14 @@ export function deterministicPreParse(prg: Uint8Array): void {
 
   prg[0x1e105] = 0x2f; // change UsedBowOfTruth from 086 to fixed 02f (6485:80)
 
+  prg[0x1e277] = 0x00; // remove flag 0a1 from amazones warp (trigger 90)
+  prg[0x1e366] = 0x40; // remove unread 08e flag from sabera trap (trigger b6)
+  prg[0x1e371] = 0x00; // remove flag 0a2 from portoa castle bridge (trigger b7)
+
+  // guard paralysis flags are moved hardcoded now
+  prg[0x1e387] = 0x00; // remove condition 09e from palace guard (trigger bb)
+  prg[0x1e391] = 0x00; // remove condition 099 from amazones guard (trigger bc)
+
   // Renumber mimics
   prg[0x19bb1] = 0x70; // fog lamp cave 3 (4a) north mimic
   prg[0x19bb5] = 0x71; // fog lamp cave 3 (4a) southwest mimic
@@ -56,12 +65,17 @@ export function deterministicPreParse(prg: Uint8Array): void {
   prg[0x1a3c5] = 0x7a; // karmine basement (b5) top right mimic
   prg[0x1a3c9] = 0x7b; // karmine basement (b5) bottom right mimic
 
-  // Remove shell flute ItemUse flag set (never read)
-  write(prg, 0x1e0b7, 0xc0, 0x00);
+  write(prg, 0x1e0b7, 0xc0, 0x00); // Remove shell flute use flag (never read)
+  write(prg, 0x1e32a, 0xc0, 0x00); // Remove prison openable flag (trigger ad)
+  write(prg, 0x1e330, 0xc0, 0x00); // Remove stxy openable flag (trigger ae)
+  write(prg, 0x1e336, 0xc0, 0x00); // Remove altar usable flag (trigger af)
+  write(prg, 0x1e0e0, 0xc0, 0x00); // Remove unused flute of lime itemuse flag
+  write(prg, 0x1e0e6, 0xc0, 0x00); // Remove unused flute of lime itemuse flag
 
   // Swan gate guards spawn exactly based on gate being closed (2b3).
   // Also remove the despawn trigger (we can't move the guards because
   // the gate animation needs to be in slot e).
+  prg[0x1c803] = 0x00; // remove ~066 from spawn condition 2c @ 38
   write(prg, 0x1c80d, 0xa2, 0xb3); // spawn condition 2d @ 73
   prg[0x1aa86] = 0xfe; // trigger -> unused spawn
 }
@@ -1186,10 +1200,11 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
   //rom.trigger(0xb4).flags = []; // remove 039 learned refresh
 
   // Teleport block on mt sabre is from spell, not slot
-  rom.trigger(0xba).conditions[0] = ~flags.Teleport.id;
+  // NOTE: this is now done in flags.defrag
+  //replace(rom.trigger(0xba).conditions, ~0x03f, ~flags.Teleport.id);
 
   // Portoa palace guard movement trigger ($bb) stops on 01b (mesia) not 01f (orb)
-  rom.trigger(0xbb).conditions[1] = ~flags.MesiaRecording.id;
+  replace(rom.trigger(0xbb).conditions, ~flags.Rage.id, ~flags.MesiaRecording.id);
 
   // Remove redundant trigger 8a (slot 16) in zombietown ($65)
   //  -- note: no longer necessary since we repurpose it instead.

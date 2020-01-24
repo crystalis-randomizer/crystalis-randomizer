@@ -150,10 +150,10 @@ export class Flags {
   0x019 = dialogToggle('Portoa queen tired of talking');
   0x01a = dialogProgression('Initial talk with Portoa queen');
   MesiaRecording = movable(0x01b, TRACK);
-  // unused 01c
+  0x01c = obsolete(0x110); // item: mirrored shield
   TalkedToFortuneTeller = movable(0x1d, TRACK);
   QueenRevealed = movable(0x01e, TRACK);
-  0x01f = obsolete(0x209); // item: ball of water
+  0x01f = obsolete(0x109); // check: rage
 
   // 02x
   QueenNotInThroneRoom = movable(0x020);
@@ -232,7 +232,7 @@ export class Flags {
   // 06x
   // unused 060
   TalkedToStomInSwan = movable(0x061, TRACK);
-  // unused 062  // obsolete(0x151); // chest: sacred shield
+  0x062 = obsolete(0x151); // chest: sacred shield
   0x063 = obsolete(0x147); // check: change
   // unused 064
   // SwanGateOpened = movable(~0x064); // why would we add this? use 2b3
@@ -372,7 +372,7 @@ export class Flags {
   0x0da = dialogProgression('Kensu gone from tavern');
   0x0db = dialogToggle('In Sabera\'s trap');
   0x0dc = obsolete(0x16f); // chest: magic ring
-  // unused 0dd
+  0x0dd = obsolete(0x170); // mimic?? medical herb??
   0x0de = obsolete(0x12c); // chest: iron necklace
   0x0df = obsolete(0x11b); // chest: battle armor
 
@@ -720,6 +720,7 @@ export class Flags {
   defrag() {
     // make a map of new IDs for everything.
     const remapping = new Map<number, (f: FlagContext) => number>();
+    const unused = new Set<number>();
 
     // first handle all the obsolete flags - once the remapping is pulled off
     // we can simply unref them.
@@ -729,6 +730,8 @@ export class Flags {
       if (o) {
         remapping.set(i, (c: FlagContext) => c.set ? -1 : o.call(f, c));
         delete this[i];
+      } else if (!f) {
+        unused.add(i);
       }
     }
 
@@ -752,7 +755,7 @@ export class Flags {
     }
 
     // go through all the possible places we could find flags and remap!
-    this.remapFlags(remapping);
+    this.remapFlags(remapping, unused);
 
     // Unallocated flags don't need any remapping.
     for (const [want, flag] of this.unallocated) {
@@ -791,11 +794,15 @@ export class Flags {
     this.remapFlags(new Map([[src, () => dest]]));
   }
 
-  remapFlags(remapping: Map<number, (ctx: FlagContext) => number>) {
+  remapFlags(remapping: Map<number, (ctx: FlagContext) => number>,
+             unused?: Set<number>) {
     function processList(list: number[], ctx: FlagContext) {
       for (let i = list.length - 1; i >= 0; i--) {
         let f = list[i];
         if (f < 0) f = ~f;
+        if (unused && unused.has(f)) {
+          throw new Error(`SHOULD BE UNUSED: ${hex(f)}`);
+        }
         const remap = remapping.get(f);
         if (remap == null) continue;
         let mapped = remap({...ctx, index: i});
@@ -808,6 +815,9 @@ export class Flags {
     }
     function process(flag: number, ctx: FlagContext) {
       let unsigned = flag < 0 ? ~flag : flag;
+      if (unused && unused.has(unsigned)) {
+        throw new Error(`SHOULD BE UNUSED: ${hex(unsigned)}`);
+      }
       const remap = remapping.get(unsigned);
       if (remap == null) return flag;
       let mapped = remap(ctx);
@@ -817,6 +827,7 @@ export class Flags {
 
     // Location flags
     for (const location of this.rom.locations) {
+      if (!location.used) continue;
       for (const flag of location.flags) {
         flag.flag = process(flag.flag, {location});
       }
@@ -824,6 +835,7 @@ export class Flags {
 
     // NPC flags
     for (const npc of this.rom.npcs) {
+      if (!npc.used) continue;
       for (const [loc, conds] of npc.spawnConditions) {
         processList(conds, {npc, spawn: loc});
       }
@@ -840,6 +852,7 @@ export class Flags {
 
     // Trigger flags
     for (const trigger of this.rom.triggers) {
+      if (!trigger.used) continue;
       processList(trigger.conditions, {trigger});
       processList(trigger.flags, {trigger, set: true});
     }

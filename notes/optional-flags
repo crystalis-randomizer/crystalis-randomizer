@@ -53,19 +53,20 @@ An interesting consequence here is that we could actually share PRG allocations
 between code and data.  It would require a new directive in the assembler:
 
 ```
-.block $1c000:$1dfff
+.dynamic $1c000:$1dfff
 ```
 
-This would last until the next `.block` or `.org` and would allow a normal
+This would last until the next `.dynamic` or `.org` and would allow a normal
 writer to optimize placement.  One difficulty here is that the assembler
 currently assumes it knows where something is during the initial parse,
 and this would break that assumption, so it would need some rearchitecting.
-Blocks would need to have a separate label space, and would store the offset
-of each label.  There's also a dependency graph, where dependency blocks need
-to be written first so that their address is available to dependents.
+Dynamic blocks would need to have a separate label space, and would store the
+offset of each label.  There's also a dependency graph, where dependency blocks
+need to be written first so that their address is available to dependents.
 
 We could store a promise in the label slot, and write them early/eagerly.
-Detecting cycles might be difficult.
+Detecting cycles might be difficult.  One downside is that it's impossible
+to ever refer to a label in the same block via an absolute address.
 
 ## TODO
 
@@ -74,3 +75,70 @@ Detecting cycles might be difficult.
 3. Find all writes to rom.prg - pull out into a dedicated rom child
 4. Teach assembler a new directive, new label structure (with deps)
 5. Teach assembler to write using a new interface: block => Promise<number>
+
+Possible new version of assembler: remove abstraction of separate files
+and patches.  We could keep it around as a separate implementation (sharing
+the data).
+
+OR... rewrite the whole thing with a different set of assumptions.
+I.e. actually parse the file into an AST?  Use blocks for .org/etc.
+Could add support for e.g. .proc?  Any way to just _use_ .proc for this?
+Seems slightly different, since .proc doesn't affect the address.
+
+```
+.dynamic $1c000:$1dfff
+.proc Foo
+  lda #$00
+  rts
+.endproc
+```
+
+Basic plan then:
+  0. Allow defining data beforehand without parsing a "flags" file.
+  1. Parse the whole file into an AST.
+     We don't know any addresses at this point.
+  2. Traverse AST to map labels to nodes.  Allow nested scope?
+  3. Evaluate all blocks with known locations (and no dynamic deps?), storing
+     output into chunks.
+  4. Require an "allocator" for dynamic placement.  Allocator accepts a
+     constraint and returns an address.  Does not depend on specific data.
+     Add this mode to Writer (?).  May not actually need to be async, since
+     we're not trying to dedupe anything?
+
+QUESTION: how to expand addresses from outside?  Maybe can't - instead, may
+need to invert the direction - allow `.org Label` where Label is an
+externally-allocated location?  Even so, allocation doesn't happen until
+write time, so we may be out of luck if we're trying to make write() idempotent.
+
+Communication between asm and rom?
+ * shop table placement
+ * slot table placement
+
+From the Rom's perspective:
+
+```
+  chunks: Chunk[]
+  interface Chunk {
+    size: number;
+    data: (position, labels) => Uint8Array;
+    definedLabels, dependentLabels ???
+  }
+```
+
+Preallocate all the positions first (we know ahead of time which labels are
+immediate and therefore zero-page, so length can be known) but don't resolve
+data.
+
+Labels can ALL be expanded/evaulated once preallocation has happened...
+
+Assembler's output is an array of chunks.
+Each chunk has publicly-exported labels, but may have additional private labels.
+Chunk requires a label map to produce bytes.
+
+Label map baked in?, each label maps to a chunk that the label comes from,
+or an immediate defined value.
+
+But if we bake it in then we're mutating state at write time.  Could use
+chunk index and just keep all the chunks together?  Conditional compilation
+requires some labels to be defined at chunk-creation time...  Need to split
+out labels from macros!

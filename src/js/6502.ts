@@ -1,15 +1,54 @@
 const LOG = true;
 
+interface DefinedLabel {
+  type: 'byte';
+  byte: number;
+}
+
+interface ImmediateLabel {
+  type: 'immediate';
+  address: number;
+}
+
+interface DeferredLabel {
+  type: 'deferred';
+  block: string; // NOTE: all blocks require a label as the first line.
+  deps: Set<string>;
+  base: Promise<number>;
+  offset: number;
+}
+
+interface DeferredByte {
+  // used for e.g. <Label on a block...
+  type: 'deferred-byte';
+  block: string;
+  deps: Set<string>;
+  base: Promise<number>;
+  op: (base: number) => number;
+}
+
+// TODO - actually use
+export type Label = DefinedLabel | ImmediateLabel | DeferredLabel | DeferredByte;
+
 // Multimap from label to address.
 // Negative addresses are PRG ROM and need to be mapped.
 interface Labels {
-  [label: string]: number[];
+  [label: string]: number[]; // TODO - Label[]
+}
+
+interface Block {
+  range: readonly [number, number];
+  bytes: Promise<Uint8Array>;
+  label: string;
+  written: Promise<void>;
+  address?: number; // filled in once it's assigned (this.written resolved).
 }
 
 export class Assembler {
 
   readonly labels: Labels = {};
   private allChunks: Chunk[] = [];
+  private allBlocks: Block[] = [];
 
   // Input: an assembly string
   // Output: adds chunks to the state.
@@ -20,14 +59,20 @@ export class Assembler {
       f.ingest(line);
     }
     const chunks = f.assemble();
-    this.allChunks.push(...chunks);
+    this.allChunks.push(...chunks.filter(c => c instanceof Chunk));
+    // this.allBlocks.push(...chunks.filter(c => !(c instanceof Chunk)));
   }
 
   chunks(): Chunk[] {
     return [...this.allChunks];
   }
 
+  blocks(): Block[] {
+    return [...this.allBlocks];
+  }
+
   patch(): Patch {
+    if (this.allBlocks.length) throw new Error(`No patch() with blocks`);
     return Patch.from(this.allChunks);
   }
 
@@ -37,11 +82,20 @@ export class Assembler {
   }
 
   // Ensures that label is unique
-  expand(label: string): number {
+  expand(label: string): number { // TODO - Label
     const [addr = null, ...rest] = this.labels[label] || [];
     if (addr == null) throw new Error(`Missing label: ${label}`);
     if (rest.length) throw new Error(`Non-unique label: ${label}`);
     return addr < 0 ? ~addr : addr;
+    // switch (addr.type) {
+    //   case 'byte':
+    //     return addr.byte;
+    //   case 'immediate':
+    //     return addr.address;
+    //   case 'deferred':
+    //     return addr;
+    // }
+    // return addr < 0 ? ~addr : addr;
   }
 }
 

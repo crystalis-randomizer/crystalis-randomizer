@@ -685,6 +685,8 @@ const ADJUSTMENTS = [
   [0x15f40, 0x02, 0xff],
   [0x15f61, 0x8d, 0xff],
   [0x15f65, 0x8d, 0xff],
+  // Fix pattern table for desert 1 (animation glosses over it)
+  [0x164cc, 0x04, 0x20],
   // Fix garbage at bottom of oasis cave map (it's 8x11, not 8x12 => fix height)
   [0x164ff, 0x0b, 0x0a],
   // Fix bad music in zombietown houses: $10 should be $01.

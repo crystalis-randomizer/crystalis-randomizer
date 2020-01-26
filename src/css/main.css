@@ -289,6 +289,7 @@ p + .flag-list {
   font-weight: bold;
   text-align: center;
   height: 1.5em;
+  width: 3.2em;
   color: #aaa;
 }
 

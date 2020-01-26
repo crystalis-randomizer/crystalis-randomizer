@@ -1,8 +1,6 @@
 import {Assembler} from './6502.js';
 import {crc32} from './crc32.js';
-import {ProgressTracker,
-        generate as generateDepgraph,
-        shuffle2 as _shuffleDepgraph} from './depgraph.js';
+import {ProgressTracker, generate as generateDepgraph} from './depgraph.js';
 import {FetchReader} from './fetchreader.js';
 import {FlagSet} from './flagset.js';
 import {Graph} from './logic/graph.js';
@@ -18,6 +16,7 @@ import {shuffleMimics} from './pass/shufflemimics.js';
 import {shuffleMonsters} from './pass/shufflemonsters.js';
 import {shufflePalettes} from './pass/shufflepalettes.js';
 import {shuffleTrades} from './pass/shuffletrades.js';
+import {standardMapEdits} from './pass/standardmapedits.js';
 import {toggleMaps} from './pass/togglemaps.js';
 import {unidentifiedItems} from './pass/unidentifieditems.js';
 import {Random} from './random.js';
@@ -88,7 +87,6 @@ export async function shuffle(rom: Uint8Array,
                               log?: {spoiler?: Spoiler},
                               progress?: ProgressTracker): Promise<readonly [Uint8Array, number]> {
   //rom = watchArray(rom, 0x85fa + 0x10);
-
   if (EXPAND_PRG && rom.length < 0x80000) {
     const newRom = new Uint8Array(rom.length + 0x40000);
     newRom.subarray(0, 0x40010).set(rom.subarray(0, 0x40010));
@@ -99,7 +97,9 @@ export async function shuffle(rom: Uint8Array,
 
   // First reencode the seed, mixing in the flags for security.
   if (typeof seed !== 'number') throw new Error('Bad seed');
-  const newSeed = crc32(seed.toString(16).padStart(8, '0') + String(flags)) >>> 0;
+  const newSeed = crc32(seed.toString(16).padStart(8, '0') + String(flags.filterOptional())) >>> 0;
+  const random = new Random(newSeed);
+  flags = flags.filterRandom(random);
 
   const touchShops = true;
 
@@ -108,7 +108,7 @@ export async function shuffle(rom: Uint8Array,
                                  flags.shuffleBossElements(),
     _ALLOW_TELEPORT_OUT_OF_TOWER: true,
     _AUTO_EQUIP_BRACELET: flags.autoEquipBracelet(),
-    _BARRIER_REQUIRES_CALM_SEA: flags.barrierRequiresCalmSea(),
+    _BARRIER_REQUIRES_CALM_SEA: true, // flags.barrierRequiresCalmSea(),
     _BUFF_DEOS_PENDANT: flags.buffDeosPendant(),
     _BUFF_DYNA: flags.buffDyna(), // true,
     _CHECK_FLAG0: true,
@@ -148,7 +148,7 @@ export async function shuffle(rom: Uint8Array,
     _TRAINER: flags.trainer(),
     _TWELVTH_WARP_POINT: true, // zombie town warp
     _UNIDENTIFIED_ITEMS: flags.unidentifiedItems(),
-    _ZEBU_STUDENT_GIVES_ITEM: flags.zebuStudentGivesItem(),
+    _ZEBU_STUDENT_GIVES_ITEM: true, // flags.zebuStudentGivesItem(),
   };
 
   const asm = new Assembler();
@@ -165,7 +165,6 @@ export async function shuffle(rom: Uint8Array,
   asm.assemble(flagFile, 'flags.s');
   await assemble('preshuffle.s');
 
-  const random = new Random(newSeed);
   const parsed = new Rom(rom);
   parsed.flags.defrag();
   if (typeof window == 'object') (window as any).rom = parsed;
@@ -174,6 +173,7 @@ export async function shuffle(rom: Uint8Array,
 
   // Make deterministic changes.
   deterministic(parsed, flags);
+  standardMapEdits(parsed, standardMapEdits.generateOptions(flags, random));
   toggleMaps(parsed, flags, random);
 
   // Set up shop and telepathy
@@ -246,12 +246,9 @@ export async function shuffle(rom: Uint8Array,
   identifyKeyItemsForDifficultyBuffs(parsed);
 
   // Buff medical herb and fruit of power
-  if (flags.doubleBuffMedicalHerb()) {
-    rom[0x1c50c + 0x10] *= 2;  // fruit of power
-    rom[0x1c4ea + 0x10] *= 3;  // medical herb
-  } else if (flags.buffMedicalHerb()) {
-    rom[0x1c50c + 0x10] += 16; // fruit of power
-    rom[0x1c4ea + 0x10] *= 2;  // medical herb
+  if (flags.buffMedicalHerb()) {
+    rom[0x1c50c + 0x10] = 56;  // fruit of power
+    rom[0x1c4ea + 0x10] = 80;  // medical herb
   }
 
   if (flags.storyMode()) storyMode(parsed);

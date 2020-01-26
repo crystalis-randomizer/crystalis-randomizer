@@ -1,115 +1,239 @@
-import {DEBUG_MODE_FLAGS} from './flags/debug-mode.js';
-import {EASY_MODE_FLAGS} from './flags/easy-mode.js';
-import {GLITCH_FIX_FLAGS} from './flags/glitch-fixes.js';
-import {GLITCH_FLAGS} from './flags/glitches.js';
-import {HARD_MODE_FLAGS} from './flags/hard-mode.js';
-import {MONSTER_FLAGS} from './flags/monsters.js';
-import {ROUTING_FLAGS} from './flags/routing.js';
-import {SHOP_FLAGS} from './flags/shops.js';
-import {TWEAK_FLAGS} from './flags/tweaks.js';
-import {WORLD_FLAGS} from './flags/world.js';
-import {EXPERIMENTAL_FLAGS} from './flags/experimental.js';
-import {UsageError} from './util.js';
-
-class FlagSection {
-  readonly flags: Flag[] = [];
-  constructor(parent: FlagSet,
-              readonly prefix: string,
-              readonly title: string,
-              readonly text: string) {
-    parent.sections.set(prefix, this);
-  }
-}
+import {UsageError, DefaultMap} from './util.js';
+import {Random} from './random.js';
 
 interface FlagOpts {
+  name: string;
   text?: string;
   excludes?: string[];
-  requires?: string[];
   hard?: boolean;
-  optional?: boolean;
-  repeat?: number;
+  optional?: (mode: Mode) => Mode;
+  // All flags have modes false and true.  Additional modes may be
+  // specified as characters in this string (e.g. '!').
+  modes?: string;
 }
 
-class Flag {
-  constructor(parent: FlagSet,
-              readonly flag: string,
-              readonly name: string,
-              readonly opts: FlagOpts = {}) {
-    parent.sections.get(flag[0]).flags.push(this);
+type Mode = boolean|string;
+
+const OPTIONAL = (mode: Mode) => '';
+const NO_BANG = (mode: Mode) => mode === true ? false : mode;
+
+export class Flag {
+  static readonly flags = new Map<string, Flag>();
+
+  static all(): Flag[] {
+    return [...this.flags.values()];
   }
 
-  check(flags: FlagSet): boolean {
-    return false;
-  }
-
-  count(flags: FlagSet): number {
-    return 0;
+  constructor(readonly flag: string, readonly opts: FlagOpts) {
+    Flag.flags.set(flag, this);
   }
 }
 
-class Preset {
-  constructor(presets: Presets,
+export class Preset {
+  static all(): Preset[] {
+    if (!Presets.instance) Presets.instance = new Presets();
+    return [...Presets.instance.presets.values()];
+  }
+
+  private _flagString?: string;
+
+  readonly flags: ReadonlyArray<readonly [Flag, Mode]>;
+  constructor(parent: Presets, // NOTE: impossible to get an instance outside
               readonly name: string,
               readonly description: string,
-              readonly flags: Flag[]) {
-    presets.presets.push(this);
+              flags: ReadonlyArray<Flag|readonly [Flag, Mode]>) {
+    this.flags = flags.map(f => f instanceof Flag ? [f, true] : f);
+    parent.presets.set(mapPresetName(name), this);
+  }
+
+  get flagString() {
+    if (this._flagString == null) {
+      this._flagString = String(new FlagSet(`@${this.name}`));
+    }
+    return this._flagString;
   }
 }
 
+function mapPresetName(name: string) {
+  return name.toLowerCase().replace(/[^a-z]/g, '');
+}
+
+// NOT EXPORTED!
 class Presets {
-  readonly presets: Preset[] = [];
+  static instance: Presets | undefined;
+  readonly presets = new Map<string, Preset>();
+
+  static get(name: string): Preset | undefined {
+    if (!this.instance) this.instance = new Presets();
+    return this.instance.presets.get(mapPresetName(name));
+  }
 
   readonly Casual = new Preset(this, 'Casual', `
-      Basic flags for a relatively easy playthrough.`, [
-        DebugMode.SpoilerLog,
+      Basic flags for a relatively easy playthrough.  This is a good
+      place to start.`, [
         EasyMode.PreserveUniqueChecks,
         EasyMode.NoShuffleMimics,
         EasyMode.DecreaseEnemyDamage,
         EasyMode.GuaranteeRefresh,
         EasyMode.GuaranteeStartingSword,
-        EasyMode.IncreaseExperienceScaling,
+        EasyMode.ExperienceScalesFaster,
         Routing.NoThunderSwordWarp,
-        Vanilla.AllowShopGlitch,
+        Vanilla.Shops,
+        Vanilla.Dyna,
+        [Vanilla.Maps, '!'],
+        [Vanilla.WildWarp, '!'],
+        DebugMode.SpoilerLog,
       ]);
 
-  readonly Intermediate = new Preset(this, 'Intermediate', `
-      Slightly more challenge than Casual, but still approachable`, [
-        DebugMode.SpoilerLog,
-        EasyMode.PreserveUniqueChecks,
-        EasyMode.DecreaseEnemyDamage,
+  readonly Classic = new Preset(this, 'Classic', `
+      Provides a relatively quick playthough with a reasonable amount of
+      challenge.  Similar to older versions.`, [
         EasyMode.GuaranteeStartingSword,
         Glitches.StatueGlitch,
+        [Routing.NoThunderSwordWarp, '!'],
+        [Vanilla.Maps, '!'],
+        DebugMode.SpoilerLog,
       ]);
 
   readonly Standard = new Preset(this, 'Standard', `
-      Well-balanced, standard shuffle.`, [
+      Well-balanced, standard race flags.`, [
         // no flags?  all default?
+        Monsters.RandomizeWeaknesses,
+        Routing.StoryMode,
+        DebugMode.SpoilerLog,
+      ]);
+
+  readonly NoBowMode = new Preset(this, 'No Bow Mode', `
+      The tower is open from the start, as soon as you're ready for it.`, [
+        Monsters.RandomizeWeaknesses,
+        Monsters.TowerRobots,
+        HardMode.MaxScalingInTower,
+        Routing.NoBowMode,
+        DebugMode.SpoilerLog,
+      ]);
+
+  readonly Advanced = new Preset(this, 'Advanced', `
+      A balanced randomization with quite a bit more difficulty.`, [
+        Glitches.GhettoFlight,
+        Glitches.MtSabreRequirementSkip,
+        Glitches.StatueGlitch,
+        [Glitches.SwordChargeGlitch, '!'],
+        NoGuarantees.Barrier,
+        NoGuarantees.BattleMagic,
+        NoGuarantees.GasMask,
+        HardMode.MaxScalingInTower,
+        Monsters.RandomizeWeaknesses,
+        Monsters.TowerRobots,
+        Routing.OrbsNotRequired,
+        Routing.StoryMode,
+        World.RandomizeMaps,
+        World.RandomizeTrades,
+        World.RandomizeWallElements,
+        World.UnidentifiedKeyItems,
+        DebugMode.SpoilerLog,
+      ]);
+
+  readonly WildWarp = new Preset(this, 'Wild Warp', `
+      Significantly opens up the game right from the start with wild
+      warp in logic.`, [
+        EasyMode.GuaranteeRefresh,
+        World.RandomizeWildWarp,
+        Monsters.RandomizeWeaknesses,
+        Monsters.TowerRobots,
+        Routing.OrbsNotRequired,
+        Routing.StoryMode,
+        DebugMode.SpoilerLog,
+      ]);
+
+  readonly Hardcore = new Preset(this, 'Hardcore', `
+      Not for the faint of heart.  Good luck.`, [
+        NoGuarantees.Barrier,
+        NoGuarantees.BattleMagic,
+        HardMode.ExperienceScalesSlower,
+        HardMode.MaxScalingInTower,
+        HardMode.Permadeath,
+        Routing.OrbsNotRequired,
+        Routing.StoryMode,
+        World.RandomizeMaps,
+        World.RandomizeTrades,
+        World.RandomizeWallElements,
+        World.UnidentifiedKeyItems,
+      ]);
+
+  readonly FullStupid = new Preset(this, 'The Full Stupid', `
+      Nobody has ever completed this.  Be sure to record this because
+      pics or it didn't happen.`, [ 
+        NoGuarantees.Barrier,
+        NoGuarantees.BattleMagic,
+        HardMode.Blackout,
+        HardMode.ExperienceScalesSlower,
+        HardMode.MaxScalingInTower,
+        HardMode.Permadeath,
+        Routing.OrbsNotRequired,
+        Routing.StoryMode,
+        World.RandomizeMaps,
+        World.RandomizeTrades,
+        World.RandomizeWallElements,
+        World.UnidentifiedKeyItems,
+      ]);
+
+  readonly Random = new Preset(this, 'Truly Random', `
+      Even the options are random.`, [
+        [World.RandomizeMaps, '?'],
+        [World.RandomizeTrades, '?'],
+        [World.UnidentifiedKeyItems, '?'],
+        [World.RandomizeWallElements, '?'],
+        [World.ShuffleGoaFloors, '?'],
+        [World.RandomizeSpriteColors, '?'],
+        [World.RandomizeWildWarp, '?'],
+        [Routing.OrbsNotRequired, '?'],
+        [Routing.NoBowMode, '?'],
+        [Routing.StoryMode, '?'],
+        [Routing.VanillaDolphin, '?'],
+        [Routing.NoThunderSwordWarp, '?'],
+        [Glitches.RageSkip, '?'],
+        [Glitches.TriggerSkip, '?'],
+        [Glitches.StatueGlitch, '?'],
+        [Glitches.GhettoFlight, '?'],
+        [Glitches.SwordChargeGlitch, '?'],
+        [Glitches.MtSabreRequirementSkip, '?'],
+        [Aesthetics.RandomizeMusic, '?'],
+        [Aesthetics.RandomizeMapColors, '?'],
+        [Monsters.RandomizeWeaknesses, '?'],
+        [Monsters.TowerRobots, '?'],
+        [EasyMode.NoShuffleMimics, '?'],
+        [EasyMode.PreserveUniqueChecks, '?'],
+        [NoGuarantees.Barrier, '?'],
+        [NoGuarantees.BattleMagic, '?'],
+        [NoGuarantees.GasMask, '?'],
+        [Vanilla.Dyna, '?'],
+        [Vanilla.BonusItems, '?'],
+        [Vanilla.Maps, '?'],
+        DebugMode.SpoilerLog,
       ]);
 }
 
-const allSections = new Set<FlagSection>();
+export abstract class FlagSection {
+  private static instance: FlagSection;
+  private static readonly sections = new Set<FlagSection>();
 
-class FlagSection {
-  abstract readonly prefix: string;
-  abstract readonly name: string;
-  abstract readonly description?: string;
-  readonly flags: Flag[] = [];
-
-  constructor() {
-    for (const f in this.constructor) {
-      const flag = this.constructor[f];
-      if (flag instanceof Flag) this.flags.push(flag);
-    }
+  static all(): FlagSection[] {
+    return [...this.sections];
   }
 
-  static readonly instance: FlagSection;
-  static flag(name: string, opts: any): Flag {
-    allSections.add(this.instance || (this.instance = new this()));
-    const flag = new Flag(this.instance, name, opts);
+  protected static flag(name: string, opts: any): Flag {
+    FlagSection.sections.add(
+        this.instance || (this.instance = new (this as any)()));
+    const flag = new Flag(name, opts);
     if (!name.startsWith(this.instance.prefix)) throw new Error(`bad flag`);
-    this.instance.flags.push(flag);
+    this.instance.flags.set(name, flag);
     return flag;
   }
+
+  abstract readonly prefix: string;
+  abstract readonly name: string;
+  readonly description?: string;
+  readonly flags = new Map<string, Flag>();
 }
 
 class World extends FlagSection {
@@ -169,7 +293,6 @@ class World extends FlagSection {
     text: `Wild warp will go to Mezame Shrine and 15 other random locations.
            These locations will be considered in-logic.`,
     excludes: ['Vw'],
-    // requires: 'Gw'
   });
 }
 
@@ -198,7 +321,9 @@ class Routing extends FlagSection {
   static readonly NoThunderSwordWarp = Routing.flag('Rt', {
     name: 'No Sword of Thunder warp',
     text: `Normally when acquiring the thunder sword, the player is instantly
-           warped to Shyron (or elsewhere).  This flag disables the warp.`,
+           warped to a random town.  This flag disables the warp.  If set as
+           "R!t", then the warp will always go to Shyron, like in vanilla.`,
+    modes: '!',
   });
 
   static readonly VanillaDolphin = Routing.flag('Rd', {
@@ -220,9 +345,10 @@ class Glitches extends FlagSection {
   readonly name = 'Glitches';
   readonly description = `
       By default, the randomizer disables all known glitches (except ghetto
-      flight).  These flags selectively re-enable certain glitches.  Normally
-      enabling a glitch will add it to the logic.  Clicking a second time
-      will enable it outside of logic (e.g. "Gcc").`;
+      flight).  These flags selectively re-enable certain glitches.  Most of
+      these flags have two modes: normally enabling a glitch will add it as
+      possibly required by logic, but clicking a second time will add a '!'
+      and enable the glitch outside of logic (e.g. "G!c").`;
 
   static readonly GhettoFlight = Glitches.flag('Gf', {
     name: 'Ghetto flight',
@@ -239,7 +365,7 @@ class Glitches extends FlagSection {
            as well as the statues in the Waterfall Cave.  It is done by
            approaching the statue from the top right and holding down and
            left on the controller while mashing B.`,
-    repeat: 2,
+    modes: '!',
   });
 
   static readonly MtSabreRequirementSkip = Glitches.flag('Gn', {
@@ -250,7 +376,15 @@ class Glitches extends FlagSection {
            flying over the river in Cordel plain rather than crossing the
            bridge, and then by threading the needle between the hitboxes in
            Mt Sabre North.`,
-    repeat: 2,
+    modes: '!',
+  });
+
+  static readonly StatueGauntletSkip = Glitches.flag('Gg', {
+    name: 'Statue guantlet skip',
+    text: `The shooting statues in front of Goa and Stxy normally require
+           Barrier to pass safely.  With this flag, Flight can also be used
+           by flying around the edge of the statue.`,
+    modes: '!',
   });
 
   static readonly SwordChargeGlitch = Glitches.flag('Gc', {
@@ -260,7 +394,7 @@ class Glitches extends FlagSection {
            the menu, changing to the lower-level sword without exiting the
            menu, creating a hard save, resetting, and then continuing.`,
     hard: true,
-    repeat: 2,
+    modes: '!',
   });
 
   static readonly TriggerSkip = Glitches.flag('Gt', {
@@ -271,7 +405,7 @@ class Glitches extends FlagSection {
            entrance trigger, triggers for guards to move, slopes, and seamless
            map transitions.`,
     hard: true,
-    repeat: 2,
+    modes: '!',
   });
 
   static readonly RageSkip = Glitches.flag('Gr', {
@@ -280,9 +414,9 @@ class Glitches extends FlagSection {
            Tree Lake screen.  This provides access to the area beyond the
            lake if flight or bridges are available.`,
     hard: true,
-    repeat: 2,
+    modes: '!',
   });
-
+}
 
 class Aesthetics extends FlagSection {
   readonly prefix = 'A';
@@ -292,16 +426,19 @@ class Aesthetics extends FlagSection {
       affect the experience significantly enough that there are three modes
       for each: "off", "optional", and "required".  The first two are
       equivalent for seed generation purposes, so that you can play the same
-      seed with either setting.  Setting it to "required" changes the seed.`;
+      seed with either setting.  Setting it to "required" will change the
+      seed.`;
 
-  static readonly RandomizeMusic = Vanilla.flag('Am', {
+  static readonly RandomizeMusic = Aesthetics.flag('Am', {
     name: 'Randomize background music',
-    maybeOptional: true,
+    modes: '!',
+    optional: NO_BANG,
   });
 
-  static readonly RandomizeMapColors = Vanilla.flag('At', {
+  static readonly RandomizeMapColors = Aesthetics.flag('Ac', {
     name: 'Randomize map colors',
-    maybeOptional: true,
+    modes: '!',
+    optional: NO_BANG,
   });
 }
 
@@ -440,13 +577,13 @@ class HardMode extends FlagSection {
     hard: true,
   });
 
-  static readonly = HardMode.flag('Hz', {
+  static readonly Blackout = HardMode.flag('Hz', {
     name: 'Blackout',
     text: `All caves and fortresses are permanently dark.`,
     hard: true,
   });
 
-  static readonly = HardMode.flag('Hh', {
+  static readonly Permadeath = HardMode.flag('Hh', {
     name: 'Permadeath',
     text: `Hardcore mode: checkpoints and saves are removed.`,
     hard: true,
@@ -454,8 +591,10 @@ class HardMode extends FlagSection {
 }
 
 class Vanilla extends FlagSection {
-
+  readonly name = 'Vanilla';
   readonly prefix = 'V';
+  readonly description = `
+      Options to restore vanilla behavior changed by default.`;
 
   static readonly Dyna = Vanilla.flag('Vd', {
     name: `Don't buff Dyna`,
@@ -476,14 +615,19 @@ class Vanilla extends FlagSection {
   });
 
   // TODO - is it worth even allowing to turn this off?!?
-  static readonly Valley = Vanilla.flag('Vv', {
-    name: 'Vanilla Velly of Wind',
+  static readonly Maps = Vanilla.flag('Vm', {
+    name: 'Vanilla maps',
     text: `Normally the randomizer adds a new "East Cave" to Valley of Wind,
            borrowed from the GBC version of the game.  This cave contains two
-           chests (one considered a key item) on the upper floor and an 80%
-           chance each of an exit to the Portoa area (on the lower floor) and
-           an exit to Goa Valley (down the stairs and behind a rock wall from
-           the upper floor).  This flag prevents adding that cave.`,
+           chests (one considered a key item) on the upper floor and exits to
+           two random areas (chosen between Lime Tree Valley, Cordel Plain,
+           Goa Valley, or Desert 2; the quicksand is removed from the entrances
+           to Pyramid and Crypt), one unblocked on the lower floor, and one
+           down the stairs and behind a rock wall from the upper floor.  This
+           flag prevents adding that cave.  If set as "V!m" then a direct path
+           will instead be added between Valley of Wind and Lime Tree Valley
+           (as in earlier versions of the randomizer).`,
+    modes: '!',
   });
 
   static readonly Shops = Vanilla.flag('Vs', {
@@ -499,8 +643,8 @@ class Vanilla extends FlagSection {
     name: 'Vanilla wild warp',
     text: `By default, Wild Warp is nerfed to only return to Mezame Shrine.
            This flag restores it to work like normal.  Note that this will put
-           all wild warp locations in logic unless the flag is doubled (Vww).`
-    repeat: 2,
+           all wild warp locations in logic unless the flag is set as (V!w).`,
+    modes: '!',
   });
 }
 
@@ -517,7 +661,7 @@ class Quality extends FlagSection {
     name: `Don't automatically equip orbs and bracelets`,
     text: `Prevents adding a quality-of-life improvement to automatically equip
            the corresponding orb/bracelet whenever changing swords.`,
-    optional: true,
+    optional: OPTIONAL,
   });
 
   static readonly NoControllerShortcuts = Quality.flag('Qc', {
@@ -527,6 +671,7 @@ class Quality extends FlagSection {
            Select+B to quickly change swords.  To support this, the action of
            the start and select buttons is changed slightly.  This flag
            disables this change and retains normal behavior.`,
+    optional: OPTIONAL,
   });
 }
 
@@ -570,459 +715,359 @@ class DebugMode extends FlagSection {
   });
 }
 
-export const PRESETS: Preset[] = [
-  {
-    title: 'Casual',
-    descr: `Basic flags for a relatively easy playthrough.`,
-    flags: 'Ds Edmrstux Fw Mr Rp Tab',
-  },
-  {
-    title: 'Intermediate',
-    descr: `Slightly more challenge than Casual but still approachable.`,
-    flags: 'Ds Edmsu Fsw Gt Mr Ps Rpt Tab',
-    default: true,
-  },
-  {
-    title: 'Full Shuffle',
-    descr:
-        `Slightly harder than intermediate, with full shuffle and no spoiler log.`,
-    flags: 'Em Fsw Gt Mert Ps Rprt Tabmp Wmtuw Xegw',
-  },
-  {
-    title: 'Glitchless',
-    descr: `Full shuffle but with no glitches.`,
-    flags: 'Em Fcpstw Mert Ps Rprt Tab Wmtuw Xcegw',
-  },
-  {
-    title: 'Advanced',
-    descr: `A balanced randomization with quite a bit more difficulty.`,
-    flags: 'Fsw Gfprt Hbdgtw Mert Ps Roprst Tabmp Wmtuw Xcegw',
-  },
-  {
-    // TODO: add 'Ht'
-    title: 'Ludicrous',
-    descr: `Pulls out all the stops, may require superhuman feats.`,
-    flags: 'Fs Gcfprtw Hbdgmstwxz Mert Ps Roprst Tabmp Wmtuw Xcegw',
-  },
-  {
-    title: 'Mattrick',
-    descr: 'Not for the faint of heart. Good luck...',
-    flags: 'Fcprsw Gt Hbdhtwx Mert Ps Ropst Tabmp Wmtuw',
-  },
-  {
-    title: 'The Full Stupid',
-    descr: 'Nobody has ever completed this.',
-    flags: 'Fcprsw Hbdhmwtxz Mert Ps Ropst Sckmt Tab Wmtuw Xcegw',
-  },
-  {
-    title: 'No Bow Mode',
-    descr: 'The tower is open from the start, for whoever is ready for it.',
-    flags: 'Fcprstw Ht Mert Ps Rbt Sckmt Tab Xcegw',
-  },
-  // TOURNAMENT PRESETS
-  {
-    title: 'Tournament: Swiss Round',
-    descr: 'Quick-paced full-shuffle flags for Swiss round of 2019 Tournament',
-    flags: 'Es Fcprsw Gt Hd Mr Ps Rpt Tab',
-  },
-  {
-    title: 'Tournament: Elimination Round',
-    descr: 'More thorough flags for the first elimination rounds of the 2019 Tournament',
-    flags: 'Em Fprsw Gft Hbd Mer Ps Rprst Tab Wt',
-  },
-  {
-    title: 'Tournament: Semifinals',
-    descr: 'Advanced flags for semifinal round of the 2019 Tournament',
-    flags: 'Em Fsw Gft Hbd Mert Ps Roprst Tab Wt',
-  },
-  {
-    title: 'Tournament: Finals',
-    descr: 'Expert flags for finals round of the 2019 Tournament',
-    flags: 'Fsw Gfprt Hbdw Mert Ps Roprst Tab Wmtw',
-  },
-];
-
-// Just the flags, not the whole documentation.
-const PRESETS_BY_KEY: {[key: string]: string} = {};
-for (const {title, flags} of PRESETS) {
-  PRESETS_BY_KEY[`@${title.replace(/ /g, '').toLowerCase()}`] = flags;
-}
-
-export const FLAGS: FlagSection[] = [
-  WORLD_FLAGS,
-  EASY_MODE_FLAGS,
-  MONSTER_FLAGS,
-  SHOP_FLAGS,
-  HARD_MODE_FLAGS,
-  TWEAK_FLAGS,
-  ROUTING_FLAGS,
-  GLITCH_FLAGS,
-  GLITCH_FIX_FLAGS,
-  EXPERIMENTAL_FLAGS,
-  DEBUG_MODE_FLAGS,
-];
-
 export class FlagSet {
-  private flags: {[section: string]: string[]};
+  private flags: Map<Flag, Mode>;
 
-  constructor(str = '@Casual') {
-    if (str.startsWith('@')) {
-      const expanded = PRESETS_BY_KEY[str.toLowerCase()];
-      if (!expanded) throw new UsageError(`Unknown preset: ${str}`);
-      str = expanded;
-    }
-    this.flags = {};
-    // parse the string
-    str = str.replace(/[^A-Za-z0-9!]/g, '');
-    const re = /([A-Z])([a-z0-9!]+)/g;
-    let match;
-    while ((match = re.exec(str))) {
-      const [, key, terms] = match;
-      for (const term of terms) {
-        this.set(key + term, true);
-      }
-    }
-  }
-
-  set(flag: string, value: boolean) {
-    // check for incompatible flags...?
-    const key = flag[0];
-    const term = flag.substring(1);  // assert: term is only letters/numbers
-    if (!value) {
-      // Just delete - that's easy.
-      const filtered = (this.flags[key] || []).filter(t => t !== term);
-      if (filtered.length) {
-        this.flags[key] = filtered;
-      } else {
-        delete this.flags[key];
+  constructor(str: string|Map<Flag, Mode> = '@Casual') {
+    if (typeof str !== 'string') {
+      this.flags = new Map();
+      for (const [k, v] of str) {
+        this.set(k.flag, v);
       }
       return;
     }
-    // Actually add the flag.
-    this.removeConflicts(flag);
-    const terms = (this.flags[key] || []).filter(t => t !== term);
-    terms.push(term);
-    terms.sort();
-    this.flags[key] = terms;
+    if (str.startsWith('@')) {
+      // TODO - support '@Casual+Rs-Ed'
+      const expanded = Presets.get(str.substring(1));
+      if (!expanded) throw new UsageError(`Unknown preset: ${str}`);
+      this.flags = new Map(expanded.flags);
+      return;
+    }
+    this.flags = new Map();
+    // parse the string
+    str = str.replace(/[^A-Za-z0-9!?]/g, '');
+    const re = /([A-Z])([a-z0-9!?]+)/g;
+    let match;
+    while ((match = re.exec(str))) {
+      const [, key, terms] = match;
+      const re2 = /([!?]|^)([a-z0-9]+)/g;
+      while ((match = re2.exec(terms))) {
+        const [, mode, flags] = match;
+        for (const flag of flags) {
+          this.set(key + flag, mode || true);
+        }
+      }
+    }
   }
 
-  check(flag: string): boolean {
-    const terms = this.flags[flag[0]];
-    return !!(terms && (terms.indexOf(flag.substring(1)) >= 0));
+  filterOptional(): FlagSet {
+    return new FlagSet(
+        new Map(
+            [...this.flags].map(
+                ([k, v]) => [k, k.opts.optional ? k.opts.optional(v) : v])));
   }
 
-  preserveUniqueChecks() {
-    return this.check('Eu');
-  }
-  shuffleMimics() {
-    return !this.check('Et');
-  }
-
-  autoEquipBracelet() {
-    return this.check('Ta');
-  }
-  buffDeosPendant() {
-    return this.check('Tb');
-  }
-  changeGasMaskToHazmatSuit() {
-    return this.check('Tb');
-  }
-  slowDownTornado() {
-    return this.check('Tb');
-  }
-  leatherBootsGiveSpeed() {
-    return this.check('Tb');
-  }
-  rabbitBootsChargeWhileWalking() {
-    return this.check('Tb');
-  }
-  controllerShortcuts() {
-    return !this.check('Tc');
-  }
-  randomizeMusic() {
-    return this.check('Tm');
-  }
-  shuffleSpritePalettes() {
-    return this.check('Tp');
-  }
-  shuffleTilePalettes() {
-    return this.check('Tp');
+  filterRandom(random: Random): FlagSet {
+    function pick(k: Flag, v: Mode): Mode {
+      if (v !== '?') return v;
+      return random.pick([true, false, ...(k.opts.modes || '')]);
+    }
+    return new FlagSet(
+        new Map([...this.flags].map(([k, v]) => [k, pick(k, v)])));
   }
 
-  shuffleMonsters() {
-    return this.check('Mr');
+  toString() {
+    type Section = DefaultMap<string, string[]>;
+    const sections =
+        new DefaultMap<string, Section>(
+            () => new DefaultMap<string, string[]>(() => []))
+    for (const [flag, mode] of this.flags) {
+      if (flag.flag.length !== 2) throw new Error(`Bad flag ${flag.flag}`);
+      if (!mode) continue;
+      const section = sections.get(flag.flag[0]);
+      const subsection = mode === true ? '' : mode;
+      section.get(subsection).push(flag.flag[1]);
+    }
+    const out = [];
+    for (const [key, section] of sections.sortedEntries()) {
+      let sec = key;
+      for (const [subkey, subsection] of section) {
+        sec += subkey + subsection.sort().join('');
+      }
+      out.push(sec);
+    }
+    return out.join(' ');
   }
-  shuffleShops() {
-    return this.check('Ps');
+
+  toggle(name: string): Mode {  
+    const flag = Flag.flags.get(name);
+    if (!flag) {
+      // TODO - Report something
+      console.error(`Bad flag: ${name}`);
+      return false;
+    }
+    const mode: Mode = this.flags.get(flag) || false;
+    const modes = [false, true, ...(flag.opts.modes || ''), '?', false];
+    const index = modes.indexOf(mode);
+    if (index < 0) throw new Error(`Bad current mode ${mode}`);
+    const next = modes[index + 1];
+    this.flags.set(flag, next);
+    return next;
   }
-  bargainHunting() {
+
+  set(name: string, mode: Mode) {
+    const flag = Flag.flags.get(name);
+    if (!flag) {
+      // TODO - Report something
+      console.error(`Bad flag: ${name}`);
+      return;
+    }
+    if (!mode) {
+      this.flags.delete(flag);
+    } else if (mode === true || mode === '?' || flag.opts.modes?.includes(mode)) {
+      this.flags.set(flag, mode);
+    } else {
+      console.error(`Bad flag mode: ${name[0]}${mode}${name.substring(1)}`);
+      return;
+    }
+    // Remove any conflicts
+    for (const excluded of flag.opts.excludes || []) {
+      this.flags.delete(Flag.flags.get(excluded)!);
+    }
+  }
+
+  check(name: Flag|string, ...modes: Mode[]): boolean {
+    const flag = name instanceof Flag ? name : Flag.flags.get(name);
+    if (!modes.length) modes.push(true);
+    return modes.includes(flag && this.flags.get(flag) || false);
+  }
+
+  get(name: Flag|string): Mode {
+    const flag = name instanceof Flag ? name : Flag.flags.get(name);
+    return flag && this.flags.get(flag) || false;
+  }
+
+  preserveUniqueChecks(): boolean {
+    return this.check(EasyMode.PreserveUniqueChecks);
+  }
+  shuffleMimics(): boolean {
+    return this.check(EasyMode.NoShuffleMimics, false);
+  }
+
+  autoEquipBracelet(): boolean {
+    return this.check(Quality.NoAutoEquip, false);
+  }
+  buffDeosPendant(): boolean {
+    return this.check(Vanilla.BonusItems, false);
+  }
+  changeGasMaskToHazmatSuit(): boolean {
+    return this.check(Vanilla.BonusItems, false);
+  }
+  slowDownTornado(): boolean {
+    return this.check(Vanilla.BonusItems, false);
+  }
+  leatherBootsGiveSpeed(): boolean {
+    return this.check(Vanilla.BonusItems, false);
+  }
+  rabbitBootsChargeWhileWalking(): boolean {
+    return this.check(Vanilla.BonusItems, false);
+  }
+  controllerShortcuts(): boolean {
+    return this.check(Quality.NoControllerShortcuts, false);
+  }
+  randomizeMusic(): boolean {
+    return this.check(Aesthetics.RandomizeMusic);
+  }
+  shuffleSpritePalettes(): boolean {
+    return this.check(World.RandomizeSpriteColors);
+  }
+  shuffleTilePalettes(): boolean {
+    return this.check(Aesthetics.RandomizeMapColors);
+  }
+
+  shuffleMonsters(): boolean {
+    return true; // this.check('Mr');
+  }
+  shuffleShops(): boolean {
+    return this.check(Vanilla.Shops, false);
+  }
+  bargainHunting(): boolean {
     return this.shuffleShops();
   }
 
-  shuffleTowerMonsters() {
-    return this.check('Mt');
+  shuffleTowerMonsters(): boolean {
+    return this.check(Monsters.TowerRobots);
   }
-  shuffleMonsterElements() {
-    return this.check('Me');
+  shuffleMonsterElements(): boolean {
+    return this.check(Monsters.RandomizeWeaknesses);
   }
-  shuffleBossElements() {
+  shuffleBossElements(): boolean {
     return this.shuffleMonsterElements();
   }
 
-  doubleBuffMedicalHerb() {
-    return this.check('Em');
+  buffMedicalHerb(): boolean {
+    return this.check(HardMode.NoBuffMedicalHerb, false);
   }
-  buffMedicalHerb() {
-    return !this.check('Hm');
+  decreaseEnemyDamage(): boolean {
+    return this.check(EasyMode.DecreaseEnemyDamage);
   }
-  decreaseEnemyDamage() {
-    return this.check('Ed');
+  trainer(): boolean {
+    return this.check(DebugMode.TrainerMode);
   }
-  trainer() {
-    return this.check('Dt');
+  neverDie(): boolean {
+    return this.check(DebugMode.NeverDie);
   }
-  neverDie() {
-    return this.check('Di');
-  }
-  chargeShotsOnly() {
-    return this.check('Hc');
+  chargeShotsOnly(): boolean {
+    return this.check(HardMode.ChargeShotsOnly);
   }
 
-  barrierRequiresCalmSea() {
+  barrierRequiresCalmSea(): boolean {
     return true; // this.check('Rl');
   }
-  paralysisRequiresPrisonKey() {
-    return true; // this.check('Rl');
+  // paralysisRequiresPrisonKey(): boolean {
+  //   return true; // this.check('Rl');
+  // }
+  // sealedCaveRequiresWindmill(): boolean {
+  //   return true; // this.check('Rl');
+  // }
+
+  connectLimeTreeToLeaf(): boolean {
+    return this.check(Vanilla.Maps, '!');
   }
-  sealedCaveRequiresWindmill() {
-    return true; // this.check('Rl');
+  // connectGoaToLeaf() {
+  //   return this.check('Xe') && this.check('Xg');
+  // }
+  // removeEarlyWall() {
+  //   return this.check('Xb');
+  // }
+  addEastCave(): boolean {
+    return this.check(Vanilla.Maps, false);
   }
-  connectLimeTreeToLeaf() {
-    return this.check('Rp');
+  fogLampNotRequired(): boolean {
+    return this.check(Routing.VanillaDolphin, false);
   }
-  connectGoaToLeaf() {
-    return this.check('Xe') && this.check('Xg');
+  storyMode(): boolean {
+    return this.check(Routing.StoryMode);
   }
-  removeEarlyWall() {
-    return this.check('Xb');
+  noBowMode(): boolean {
+    return this.check(Routing.NoBowMode);
   }
-  zebuStudentGivesItem() {
-    return !this.check('Xe') || this.check('Xc');
+  requireHealedDolphinToRide(): boolean {
+    return this.check(Routing.VanillaDolphin);
   }
-  addEastCave() {
-    return this.check('Xe');
+  saharaRabbitsRequireTelepathy(): boolean {
+    return true; // this.check('Rr');
   }
-  addExtraChecksToEastCave() {
-    return this.check('Xe') && this.check('Xc');
-  }
-  fogLampNotRequired() {
-    return this.check('Xf');
-  }
-  storyMode() {
-    return this.check('Rs');
-  }
-  noBowMode() {
-    return this.check('Rb');
-  }
-  requireHealedDolphinToRide() {
-    return this.check('Rd');
-  }
-  saharaRabbitsRequireTelepathy() {
-    return this.check('Rr');
-  }
-  teleportOnThunderSword() {
-    return this.check('Rt');
+  teleportOnThunderSword(): boolean {
+    return this.check(Routing.NoThunderSwordWarp, false, '!');
   }
   randomizeThunderTeleport() {
-    return this.check('Xw');
+    return this.check(Routing.NoThunderSwordWarp, false);
   }
   orbsOptional() {
-    return this.check('Ro');
+    return this.check(Routing.OrbsNotRequired);
   }
 
   randomizeMaps() {
-    return this.check('Wm');
+    return this.check(World.RandomizeMaps);
   }
   randomizeTrades() {
-    return this.check('Wt');
+    return this.check(World.RandomizeTrades);
   }
   unidentifiedItems() {
-    return this.check('Wu');
+    return this.check(World.UnidentifiedKeyItems);
   }
   randomizeWalls() {
-    return this.check('Ww');
+    return this.check(World.RandomizeWallElements);
   }
 
   guaranteeSword() {
-    return this.check('Es');
+    return this.check(EasyMode.GuaranteeStartingSword);
   }
   guaranteeSwordMagic() {
-    return !this.check('Hw');
+    return this.check(NoGuarantees.BattleMagic, false);
   }
   guaranteeMatchingSword() {
-    return !this.check('Hs');
+    return this.check(NoGuarantees.MatchingSword, false);
   }
   guaranteeGasMask() {
-    return !this.check('Hg');
+    return this.check(NoGuarantees.GasMask, false);
   }
   guaranteeBarrier() {
-    return !this.check('Hb');
+    return this.check(NoGuarantees.Barrier, false);
   }
   guaranteeRefresh() {
-    return this.check('Er');
+    return this.check(EasyMode.GuaranteeRefresh);
   }
 
   disableSwordChargeGlitch() {
-    return this.check('Fc');
+    return this.check(Glitches.SwordChargeGlitch, false);
   }
   disableTeleportSkip() {
-    return this.check('Fp');
+    return this.check(Glitches.MtSabreRequirementSkip, false);
   }
   disableRabbitSkip() {
-    return this.check('Fr');
+    return this.check(Glitches.MtSabreRequirementSkip, false);
   }
   disableShopGlitch() {
-    return this.check('Fs');
+    return this.check(Vanilla.Shops, false);
   }
   disableStatueGlitch() {
-    return this.check('Ft');
+    return this.check(Glitches.StatueGlitch, false);
+  }
+  disableRageSkip() {
+    return this.check(Glitches.RageSkip, false);
   }
   disableFlightStatueSkip() {
-    return false;
+    // TODO - implement
+    return this.check(Glitches.StatueGauntletSkip, false);
   }
 
   assumeSwordChargeGlitch() {
-    return this.check('Gc');
+    return this.check(Glitches.SwordChargeGlitch);
   }
   assumeGhettoFlight() {
-    return this.check('Gf');
+    return this.check(Glitches.GhettoFlight);
   }
   assumeTeleportSkip() {
-    return this.check('Gp');
+    return this.check(Glitches.MtSabreRequirementSkip);
   }
   assumeRabbitSkip() {
-    return this.check('Gr');
+    return this.check(Glitches.MtSabreRequirementSkip);
   }
   assumeStatueGlitch() {
-    return this.check('Gt');
+    return this.check(Glitches.StatueGlitch);
   }
   assumeTriggerGlitch() {
-    return false; // TODO - only works on land?
+    return this.check(Glitches.TriggerSkip); // TODO - implement
   }
   assumeFlightStatueSkip() {
-    return false; // TODO - allow a flag to disable
+    return this.check(Glitches.StatueGauntletSkip); // TODO - implement
   }
   assumeWildWarp() {
-    return this.check('Gw');
+    return this.check(Vanilla.WildWarp) || this.check(World.RandomizeWildWarp);
   }
   assumeRageSkip() {
-    return false; // TODO - need to check for a flyer to the south?
+    return false;
+    // return this.check(Glitches.RageSkip); // TODO - implement - check flyer
   }
 
   nerfWildWarp() {
-    return this.check('Fw');
+    return this.check(Vanilla.WildWarp, false) &&
+        this.check(World.RandomizeWildWarp, false);
   }
   allowWildWarp() {
     return !this.nerfWildWarp();
   }
   randomizeWildWarp() {
-    return this.check('Tw');
+    return this.check(World.RandomizeWildWarp, true, '!');
   }
 
   blackoutMode() {
-    return this.check('Hz');
+    return this.check(HardMode.Blackout);
   }
   hardcoreMode() {
-    return this.check('Hh');
+    return this.check(HardMode.Permadeath);
   }
   buffDyna() {
-    return this.check('Hd');
+    return !this.check(Vanilla.Dyna);
   }
   maxScalingInTower() {
-    return this.check('Ht');
+    return this.check(HardMode.MaxScalingInTower);
   }
 
   expScalingFactor() {
-    return this.check('Hx') ? 0.25 : this.check('Ex') ? 2.5 : 1;
+    return this.check(HardMode.ExperienceScalesSlower) ? 0.25 :
+        this.check(EasyMode.ExperienceScalesFaster) ? 2.5 : 1;
   }
-
-  // The following didn't end up getting used.
-
-  // allows(flag) {
-  //   const re = exclusiveFlags(flag);
-  //   if (!re) return true;
-  //   for (const key in this.flags) {
-  //     if (this.flags[key].find(t => re.test(key + t))) return false;
-  //   }
-  //   return true;
-  // }
-
-  // merge(that) {
-  //   this.flags = that.flags;
-  // }
-
-  private removeConflicts(flag: string) {
-    // NOTE: this is somewhat redundant with set(flag, false)
-    const re = this.exclusiveFlags(flag);
-    if (!re) return;
-    for (const key in this.flags) {
-      if (!this.flags.hasOwnProperty(key)) continue;
-      const terms = this.flags[key].filter(t => !re.test(key + t));
-      if (terms.length) {
-        this.flags[key] = terms;
-      } else {
-        delete this.flags[key];
-      }
-    }
-  }
-
-  private toStringKey(key: string) {
-    return key + [...this.flags[key]].sort().join('');
-  }
-
-  private exclusiveFlags(flag: string): RegExp|undefined {
-    const flagForName = this.getFlagForName(flag);
-    if (flagForName == null) throw new Error(`Unknown flag: ${flag}`);
-    return flagForName.conflict;
-  }
-
-  private getFlagForName(flag: string): Flag|undefined {
-    const matchingFlagSection = FLAGS.find(flagSection => {
-      return flag.startsWith(flagSection.prefix);
-    });
-    if (!matchingFlagSection) return undefined;
-    return matchingFlagSection.flags
-        .find(flagToMatch => flagToMatch.flag === flag);
-  }
-
-  toString() {
-    const keys = Object.keys(this.flags);
-    keys.sort();
-    return keys.map(k => this.toStringKey(k)).join(' ');
-  }
-}
-
-export interface Preset {
-  descr: string;
-  flags: string;
-  title: string;
-
-  default?: boolean;
-}
-
-export interface FlagSection {
-  flags: Flag[];
-  section: string;
-  prefix: string;
-
-  text?: string;
-}
-
-export interface Flag {
-  flag: string;
-  name: string;
-
-  conflict?: RegExp;
-  hard?: boolean;
-  text?: string;
 }

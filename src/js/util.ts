@@ -280,6 +280,12 @@ export class DefaultMap<K, V extends {}> extends Map<K, V> {
     if (value == null) super.set(key, value = this.supplier(key));
     return value;
   }
+  sortedKeys(fn?: (a: K, b: K) => number): K[] {
+    return [...this.keys()].sort(fn);
+  }
+  sortedEntries(fn?: (a: K, b: K) => number): Array<[K, V]> {
+    return this.sortedKeys(fn).map(k => [k, this.get(k) as V]);
+  }
 }
 
 export class IndexedSet<T extends {}> {

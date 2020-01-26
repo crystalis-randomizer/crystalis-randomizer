@@ -71,7 +71,7 @@ const main = () => {
   // Handle URL edits directly
   window.addEventListener('popstate', (e) => {
     if (e.state) {
-      flags.flags = e.state.flags;
+      flags = new FlagSet(e.state.flags);
       seed = e.state.seed;
     } else {
       initializeStateFromHash(true);
@@ -138,7 +138,7 @@ const initializeStateFromHash = (initPresets) => {
   }
 };
 
-const click = async (e) => {
+async function click(e) {
   let t = e.target;
   const label = `${version.LABEL}: ${flags}`;
   const start = new Date().getTime();
@@ -179,7 +179,7 @@ const click = async (e) => {
     }
     t = t.parentElement;
   }
-};
+}
 
 const read = (arr, index, len) => {
   const chars = [];
@@ -270,6 +270,7 @@ const makeCheckbox = (el) => {
   cb.type = 'checkbox';
   cb.id = `flag-${flag}`;
   cb.dataset['flag'] = flag;
+  cb.dataset['mode'] = 'false';
   el.parentElement.insertBefore(cb, el);
 
   const labelBox = document.createElement('label');
@@ -295,7 +296,17 @@ const makeCheckbox = (el) => {
 
   cb.addEventListener('change', () => {
     window.FLAGS = flags;
-    flags.set(flag, cb.checked);
+    const mode = flags.toggle(flag);
+    if (!mode) {
+      cb.checked = false;
+      labelBox.textContent = flag;
+    } else if (mode === true) {
+      cb.checked = true;
+      labelBox.textContent = flag;
+    } else {
+      cb.checked = true;
+      labelBox.textContent = `${flag[0]}${mode}${flag.substring(1)}`;
+    }
     updateDom();
   });
 };
@@ -303,14 +314,18 @@ const makeCheckbox = (el) => {
 const updateDom = () => {
   for (const cb of document.querySelectorAll('input[data-flag]')) {
     const flag = cb.dataset['flag'];
-    cb.checked = flags.check(flag);
+    const mode = flags.get(flag);
+    cb.checked = mode !== false;
+    const insert = typeof mode === 'boolean' ? '' : mode;
+    cb.nextElementSibling.textContent =
+        `${flag[0]}${insert}${flag.substring(1)}`;
   }
   const flagString = String(flags).replace(/ /g, '');
   document.getElementById('seed').value = seed || '';
   const hash = ['#flags=', flagString];
   if (seed) hash.push('&seed=', encodeURIComponent(seed));
   if (debug) hash.push('&debug');
-  history.replaceState({flags: flags.flags, seed}, '', String(window.location).replace(/#.*/, '') + hash.join(''));
+  history.replaceState({flags: String(flags), seed}, '', String(window.location).replace(/#.*/, '') + hash.join(''));
   if (version.STATUS == 'stable' || version.STATUS == 'rc') {
     const s = seed || Math.floor(Math.random() * 0x100000000).toString(16);
     const v = version.VERSION;

@@ -3,8 +3,7 @@
 import './build_info.js'; // side effect global set (affects version module)
 
 import {EXPECTED_CRC32} from './rom.js';
-import {FlagSet, PRESETS} from './flagset.js';
-import {Preset} from './flags/flag.js';
+import {FlagSet, Preset} from './flagset.js';
 import {crc32} from './crc32.js';
 import * as fs from 'fs';
 import * as patch from './patch.js';
@@ -43,17 +42,17 @@ Flags
   at https://crystalisrandomizer.com.  Spaces are ignored.
 
 Presets
-${PRESETS.map(showPreset).join('\n\n')}`);
+${Preset.all().map(showPreset).join('\n\n')}`);
   process.exit(code);
 };
 
-const showPreset = ({title, flags, descr}: Preset) => {
+const showPreset = ({description, flagString, name}: Preset) => {
   const LINE_LENGTH = 68;
-  const flagLen = LINE_LENGTH - title.length - 6;
-  const flagLines = breakLines(flags, flagLen);
-  const descrLines = breakLines(descr, LINE_LENGTH - 2);
-  const indent = '\n' + ' '.repeat(title.length + 5);
-  return `  ${title}: "${flagLines.join(indent)}"
+  const flagLen = LINE_LENGTH - name.length - 6;
+  const flagLines = breakLines(flagString, flagLen);
+  const descrLines = breakLines(description, LINE_LENGTH - 2);
+  const indent = '\n' + ' '.repeat(name.length + 5);
+  return `  ${name}: "${flagLines.join(indent)}"
   ${descrLines.join('\n  ')}`;
 };
 
@@ -94,8 +93,8 @@ const main = (...args: string[]) => {
       process.exit(0);
     } else if (arg == 'list-presets') {
       // undocumented flag
-      for (const {title} of PRESETS) {
-        console.log(title.replace(/ /g, ''));
+      for (const {name} of Preset.all()) {
+        console.log(name.replace(/ /g, ''));
       }
       process.exit(0);
     } else {

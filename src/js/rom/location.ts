@@ -1011,6 +1011,7 @@ export class Location extends Entity {
     }
   }
 
+  /** NOTE: if a screen is negative, sets the AlwaysTrue flag. */
   writeScreens2d(start: number,
                  data: ReadonlyArray<ReadonlyArray<number | null>>) {
     const x0 = start & 0xf;
@@ -1018,8 +1019,14 @@ export class Location extends Entity {
     for (let y = 0; y < data.length; y++) {
       const row = data[y];
       for (let x = 0; x < row.length; x++) {
-        const tile = row[x];
-        if (tile != null) this.screens[y0 + y][x0 + x] = tile;
+        let tile = row[x];
+        if (tile == null) continue;
+        if (tile < 0) {
+          tile = ~tile;
+          this.flags.push(Flag.of({screen: (y0 + y) << 4 | (x0 + x),
+                                   flag: this.rom.flags.AlwaysTrue.id}));
+        }
+        this.screens[y0 + y][x0 + x] = tile;
       }
     }
   }

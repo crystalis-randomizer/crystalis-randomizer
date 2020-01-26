@@ -114,7 +114,6 @@ export async function shuffle(rom: Uint8Array,
     _CHECK_FLAG0: true,
     _CTRL1_SHORTCUTS: flags.controllerShortcuts(),
     _CUSTOM_SHOOTING_WALLS: true,
-    _DEBUG_DIALOG: seed === 0x17bc,
     _DISABLE_SHOP_GLITCH: flags.disableShopGlitch(),
     _DISABLE_STATUE_GLITCH: flags.disableStatueGlitch(),
     _DISABLE_SWORD_CHARGE_GLITCH: flags.disableSwordChargeGlitch(),
@@ -253,8 +252,6 @@ export async function shuffle(rom: Uint8Array,
 
   if (flags.storyMode()) storyMode(parsed);
 
-  shuffleMusic(parsed, flags, random);
-  shufflePalettes(parsed, flags, random);
   // Do this *after* shuffling palettes
   if (flags.blackoutMode()) blackoutMode(parsed);
 
@@ -285,8 +282,10 @@ export async function shuffle(rom: Uint8Array,
     ];
   }
 
+  shuffleMusic(parsed, flags, random);
+  shufflePalettes(parsed, flags, random);
+
   await parsed.writeData();
-  buffDyna(parsed, flags); // TODO - conditional
   const crc = await postParsedShuffle(rom, random, seed, flags, asm, assemble);
 
   // TODO - optional flags can possibly go here, but MUST NOT use parsed.prg!

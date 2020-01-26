@@ -368,17 +368,6 @@ CheckBelowBoss:
 ;; just reject - instead, add the item to an overflow chest.
 ;; We use the bytes at 64b8..64bf to store the overflow.
 
-.ifdef _DEBUG_DIALOG
-;;; Auto level-up and scaling-up dialogs
-.org $1cc87                     ; leaf rabbit -> action 1e
-  .byte $20,$00,$f2,$84
-.org $1cc30                     ; leaf daughter -> action 1d
-  .byte $20,$00,$e8,$1d
-;.org $1cb58                     ; leaf elder -> action 1c
-.org $1cc62                     ; leaf red girl -> action 1c
-  .byte $20,$00,$e0,$0f
-.endif
-
 ;;; ITEM GET PATCHES
 
 
@@ -1452,12 +1441,6 @@ WarpMenuNametableData:
   .res 16, 0
 .endif
 
-.ifdef _TELEPORT_ON_THUNDER_SWORD
-.org $3d161
-  .word (DialogFollowupAction_1f)
-.endif
-
-
 ;;; NOTE: we could use this in several more places, including dialog action
 ;;; jump 10, 
 .org $3d196
@@ -1843,8 +1826,6 @@ CheckFlag0:
 
 .endif ; _CHECK_FLAG0
 
-;;; NOTE: These dialog actions are debug functionality.
-DialogFollowupAction_1c:
 TrainerIncreaseScaling:
   ;; scaling level
   lda Difficulty
@@ -1858,7 +1839,6 @@ TrainerIncreaseScaling:
   sta ShouldRedisplayDifficulty
   rts
 
-DialogFollowupAction_1d:
 TrainerIncreaseLevel:
   ;; level up
   lda #$0f
@@ -1891,41 +1871,6 @@ TrainerIncreaseLevel:
    jsr $c008
   pla
   jmp $c418
-
-
-DialogFollowupAction_1e:
-  ;; fill inventory with all worn items, magic, and top shields/armor
-  ;; then warp to mesia - actually remove magic...
-  ldx #$00
-  clc
--  txa
-   adc #$11
-   sta $6438,x
-   adc #$08
-   sta $6434,x
-   inx
-   cpx #$04
-  bcc -
-  ldx #$00
-  clc
--  lda #$22
-   sta $6440,x
-   txa
-   adc #$29
-   sta $6448,x
-   adc #$18
-   ;lda #$ff
-   sta $6458,x
-   inx
-   cpx #$08
-  bcc -   
-  lda #$5e
-  sta $6c
-  lda #$00
-  sta $6d
-  lda #$01
-  sta $41
-  rts
 
 SpawnWall:
   ;; Spawns a breakable wall.  The $2e byte (3rd) determines
@@ -2340,16 +2285,6 @@ SubtractEnemyHP:
   sta ObjectHP,y
 + lda $61
   sbc #$00
-  rts
-
-DialogFollowupAction_1f:
-  ;; Patched DialogFollowupAction 1f - used for asina in shyron
-  ;; Teleport the player back to the start
-  lda #$00
-  sta $6c
-  sta $6d
-  lda #$01
-  sta $41
   rts
 
 ;;; Note: This is moved from $3db22, where we ran out of space.

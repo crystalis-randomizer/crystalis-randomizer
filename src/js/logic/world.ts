@@ -736,10 +736,6 @@ export class World {
             Hitbox.screen(TileId.from(location, spawn)),
             this.rom.flags.UsedWindmillKey.r);
       }
-      // At what point does this logic belong elsewhere?
-      for (const [item, use] of this.itemUses.get(spawn.type << 8 | spawn.id)) {
-        this.processItemUse([TileId.from(location, spawn)], item, use);
-      }
     }
   }
 
@@ -839,6 +835,11 @@ export class World {
         this.handleMovingGuard(hitbox, location, antiRequirements);
         break;
     }
+
+    for (const [item, use] of this.itemUses.get(spawn.type << 8 | spawn.id)) {
+      this.processItemUse([TileId.from(location, spawn)],
+                          Requirement.OPEN, item, use);
+    }
   }
 
   processNpc(location: Location, spawn: Spawn) {
@@ -855,6 +856,10 @@ export class World {
     // NOTE ALSO - Rage probably shows up as a boss, not an NPC?
     let hitbox: Hitbox =
         [this.terrains.has(tile) ? tile : this.walkableNeighbor(tile) ?? tile];
+
+    for (const [item, use] of this.itemUses.get(spawn.type << 8 | spawn.id)) {
+      this.processItemUse(hitbox, req, item, use);
+    }
 
     if (npc === this.rom.npcs.SaberaDisguisedAsMesia) {
       this.addBossCheck(hitbox, this.rom.bosses.Sabera1, req);
@@ -979,7 +984,8 @@ export class World {
 
   processLocationItemUses(location: Location) {
     for (const [item, use] of this.itemUses.get(~location.id)) {
-      this.processItemUse([this.entrance(location)], item, use);
+      this.processItemUse([this.entrance(location)],
+                          Requirement.OPEN, item, use);
     }
   }
 
@@ -1180,17 +1186,18 @@ export class World {
     // if (monster.goldDrop) monsters.set(TileId.from(location, spawn), monster.elements);
   }
 
-  processItemUse(hitbox: Hitbox, item: Item, use: ItemUse) {
+  processItemUse(hitbox: Hitbox, req1: Requirement, item: Item, use: ItemUse) {
     // this should handle most trade-ins automatically
     hitbox = new Set([...hitbox].map(t => this.walkableNeighbor(t) ?? t));
-    const req = [[(0x200 | item.id) as Condition]]; // requires the item.
+    const req2 = [[(0x200 | item.id) as Condition]]; // requires the item.
     // check for kirisa plant, add change as a requirement.
     if (item.id === this.rom.prg[0x3d4b5] + 0x1c) {
-      req[0].push(this.rom.flags.Change.c);
+      req2[0].push(this.rom.flags.Change.c);
     }
     if (item === this.rom.items.MedicalHerb) { // dolphin
-      req[0][0] = this.rom.flags.BuyHealing.c; // note: no other healing items
+      req2[0][0] = this.rom.flags.BuyHealing.c; // note: no other healing items
     }
+    const req = Requirement.meet(req1, req2);
     // set any flags
     this.addCheckFromFlags(hitbox, req, use.flags);
     // handle any extra actions

@@ -6,7 +6,8 @@
     "watch": "node_modules/typescript/bin/tsc --watch",
     "tsc": "node_modules/typescript/bin/tsc",
     "build": "npm run tsc && gulp",
-    "test": "npm run build && test/test_cli.sh",
+    "unit": "node_modules/mocha/bin/mocha -r esm test/parser_test.js",
+    "test": "npm run unit && npm run build && test/test_cli.sh",
     "clean": "rm -rf dist src/js/**/flycheck_*",
     "checkout": "scripts/update.sh out",
     "checkin": "scripts/update.sh in"
@@ -34,6 +35,7 @@
     "google-closure-compiler": "^20190121.0.0",
     "gulp": "^4.0.2",
     "mocha": "^5.2.0",
+    "source-map-support": "^0.5.16",
     "tslint": "^5.17.0",
     "typescript": "^3.7.2",
     "typescript-language-server": "^0.3.8",

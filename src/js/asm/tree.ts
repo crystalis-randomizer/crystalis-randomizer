@@ -92,6 +92,14 @@ extends Directive<readonly [E, Body, Body]> {
   get alt() { return this.children[2]; }
 }
 
+export class Macro extends Directive<readonly [Identifier, Body]> {
+  get ident(): Identifier { return this.children[0]; }
+  get body(): Body { return this.children[1]; }
+}
+export class Scope extends Directive<readonly [Body]> {
+  get body() { return this.children[0]; }
+}
+
 export class If extends AbstractCondition<Expr<any>> {}
 export class Ifdef extends AbstractCondition<Identifier> {}
 export class Ifndef extends AbstractCondition<Identifier> {}

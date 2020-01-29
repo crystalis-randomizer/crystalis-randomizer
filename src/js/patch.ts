@@ -10,6 +10,7 @@ import {World} from './logic/world.js';
 import {crumblingPlatforms} from './pass/crumblingplatforms.js';
 import {deterministic, deterministicPreParse} from './pass/deterministic.js';
 import {fixDialog} from './pass/fixdialog.js';
+import {madoMode} from './pass/madomode.js';
 import {randomizeThunderWarp} from './pass/randomizethunderwarp.js';
 import {rescaleMonsters} from './pass/rescalemonsters.js';
 import {shuffleGoa} from './pass/shufflegoa.js';
@@ -239,6 +240,7 @@ export async function shuffle(rom: Uint8Array,
     // shops that may have been randomized)
     rescaleShops(parsed, asm, flags.bargainHunting() ? random : undefined);
   }
+  madoMode(parsed);
 
   // NOTE: monster shuffle needs to go after item shuffle because of mimic
   // placement constraints, but it would be nice to go before in order to

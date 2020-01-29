@@ -51,6 +51,10 @@ describe('parse', function() {
                 code('pha'))))))));
   });
 
+  it('should parse a label', function() { 
+    match(parseStmt('foo:'), label('foo'));
+  });
+
   it('should parse an .assert', function() {
     match(parseStmt('.assert * = $0c:8234'),
           unary(

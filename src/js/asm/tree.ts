@@ -9,23 +9,24 @@ export interface SourceInfo {
   content?: string;
 }
 
-export abstract class AbstractNode<T extends readonly AbstractNode<any>[]> {
-  constructor(readonly children: T) {}
+export abstract class AbstractNode<T extends readonly AbstractNode<any, any>[],
+                                   D> {
+  readonly data: D;
+  constructor(readonly children: T, data?: D) { this.data = data!; }
   sourceInfo?: SourceInfo;
+  clone(): this { return this.constructor(this.children, this.data); }
 }
 
 type List<T> = readonly T[];
 type TupleRO<A, B> = readonly [A] | readonly [A, B];
 // type TupleRRO<A, B, C> = readonly [A, B] | readonly [A, B, C];
 
-class AbstractListNode<T extends AbstractNode<any>>
-extends AbstractNode<List<T>> {
-  constructor(children: readonly T[]) { super(children); }
-}
-class AbstractNode1<T extends AbstractNode<any>>
-extends AbstractNode<readonly [T]> {
-  constructor(arg1: T) { super([arg1]); }
-}
+class AbstractListNode<T extends AbstractNode<any, any>, D>
+    extends AbstractNode<List<T>, D> {}
+
+class AbstractNode1<T extends AbstractNode<any, any>>
+    extends AbstractNode<readonly [T], undefined> {}
+
 // class AbstractNode2<T extends AbstractNode<any>,
 //                     U extends AbstractNode<any>>
 //     extends AbstractNode<readonly [T, U]> {
@@ -37,9 +38,7 @@ extends AbstractNode<readonly [T]> {
 //     extends AbstractNode<readonly [T, U, V]> {
 //   constructor(arg1: T, arg2: U, arg3: V) { super([arg1, arg2, arg3]); }
 // }
-class AbstractLeafNode extends AbstractNode<readonly []> {
-  constructor() { super([]); }
-}
+abstract class AbstractLeafNode<D> extends AbstractNode<readonly [], D> {}
 
 type BodyChild = Label | Code | Block | Directive<any>;
 export class SourceFile extends AbstractNode1<Body> {
@@ -48,7 +47,7 @@ export class SourceFile extends AbstractNode1<Body> {
   }
 }
 
-export class Body extends AbstractListNode<BodyChild> {}
+export class Body extends AbstractListNode<BodyChild, undefined> {}
 
 // TODO - .proc ?
 // .reloc
@@ -63,40 +62,41 @@ export class Body extends AbstractListNode<BodyChild> {}
 // What happens when we put a .org or .reloc inside a .proc??  -> Fail?
 
 type BlockChild = Code | Label | Directive<any>;
-export class Block extends AbstractListNode<BlockChild> {
+export class Block extends AbstractListNode<BlockChild, undefined> {
 
 }
 
-export class Label extends AbstractLeafNode {
-  constructor(readonly label: string) { super(); }
+export class Label extends AbstractLeafNode<string> {
+  get label(): string { return this.data; }
 }
 
-export class Code extends AbstractNode<readonly [Identifier, ...Expr[]]> {
+export class Code
+extends AbstractNode<readonly [Identifier, ...Expr<any>[]], undefined> {
   // bank?  store in address?
   address?: number; // initially not filled
+  // TODO - does clone need to copy this?
 }
 
-export class Directive<T extends readonly AbstractNode<any>[]>
-    extends AbstractNode<T> {}
+export class Directive<T extends readonly AbstractNode<any, any>[]>
+    extends AbstractNode<T, undefined> {}
 
-export class Define extends Directive<TupleRO<Identifier, Expr>> {
-  constructor(ident: Identifier, expr?: Expr) {
-    super(expr ? [ident, expr] : [ident]);
-  }
+export class Define extends Directive<TupleRO<Identifier, Expr<any>>> {
+  get ident() { return this.children[0]; }
+  get expr() { return this.children[1]; }
 }
 
-class AbstractCondition<E extends Expr>
+class AbstractCondition<E extends Expr<any>>
 extends Directive<readonly [E, Body, Body]> {
-  constructor(cond: E, body: Body, alt: Body) { super([cond, body, alt]); }
+  get cond() { return this.children[0]; }
+  get body() { return this.children[1]; }
+  get alt() { return this.children[2]; }
 }
 
-export class If extends AbstractCondition<Expr> {}
+export class If extends AbstractCondition<Expr<any>> {}
 export class Ifdef extends AbstractCondition<Identifier> {}
 export class Ifndef extends AbstractCondition<Identifier> {}
 
-class AbstractUnaryDirective extends Directive<readonly [Expr]> {
-  constructor(arg: Expr) { super([arg]); }
-}
+class AbstractUnaryDirective extends Directive<readonly [Expr<any>]> {}
 
 export class Org extends AbstractUnaryDirective {}
 export class Assert extends AbstractUnaryDirective {}
@@ -106,51 +106,44 @@ export class Res extends AbstractUnaryDirective {}
 export class Local extends AbstractUnaryDirective {}
 export class ErrorDirective extends AbstractUnaryDirective {}
 
-class AbstractNullaryDirective extends Directive<readonly []> {
-  constructor() { super([]) }
-}
+class AbstractNullaryDirective extends Directive<readonly []> {}
+
 export class Reloc extends AbstractNullaryDirective {}
 
 export class Proc extends Directive<readonly [Identifier, Body]> {
-  constructor(ident: Identifier, body: Body) { super([ident, body]); }
+  get ident() { return this.children[0]; }
+  get body() { return this.children[1]; }
 }
 
-export abstract class Expr extends AbstractListNode<Expr> {}
-abstract class LiteralExpr extends Expr { constructor() { super([]); } }
+export abstract class Expr<D> extends AbstractListNode<Expr<any>, D> {}
+abstract class LiteralExpr<D> extends Expr<D> {}
 
-export class Blank extends LiteralExpr {}
+export class Blank extends LiteralExpr<undefined> {}
 
-export class ValueLiteral extends LiteralExpr {
-  constructor(readonly value: Value) { super(); }
+export class ValueLiteral extends LiteralExpr<Value> {
+  get value() { return this.data; }
 }
 
-export class Identifier extends LiteralExpr {
-  constructor(readonly text: string) { super(); }
+export class Identifier extends LiteralExpr<string> {
+  get text() { return this.data; }
 }
 
-export class Parenthesis extends Expr {
-  constructor(readonly child: Expr) { super([child]); }
-}
+export class Parenthesis extends Expr<undefined> {}
 
-export class Brace extends Expr {
-  constructor(readonly child: Expr) { super([child]); }
-}
+export class Brace extends Expr<undefined> {}
 
 // +, -, *, /, <<, >>, >>>, &, |, ^, <, <=, >, >=, ==, !=
 // TODO - consider : for bankaddress as a binop?
-export class BinOp extends Expr {
-  constructor(readonly op: Operator,
-              readonly left: Expr,
-              readonly right: Expr) {
-    super([left, right]);
-  }
+export class BinOp extends Expr<Operator> {
+  get left(): Expr<any> { return this.children[0]; }
+  get right(): Expr<any> { return this.children[1]; }
+  get op(): Operator { return this.data; }
 }
 
-export class Comma extends Expr {
-  constructor(children: readonly Expr[]) { super(children); }
-}
+export class Comma extends Expr<undefined> {}
 
 // <, >, ^, #, !, ~
-export class PrefixOp extends Expr {
-  constructor(readonly op: string, readonly arg: Expr) { super([arg]); }
+export class PrefixOp extends Expr<string> {
+  get arg(): Expr<any> { return this.children[0]; }
+  get op(): string { return this.data; }
 }

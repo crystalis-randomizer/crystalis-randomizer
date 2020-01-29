@@ -11,7 +11,7 @@ import {NumberValue, Operator, operators} from './value.js';
 export function parse(code: string, file = 'input.s'): SourceFile {
   const b = new Buffer(code);
   const comma = operators.get(',') || fail(`no comma`);
-  return new SourceFile(new Body(parseUntil()));
+  return new SourceFile([new Body(parseUntil())]);
 
   // Recursive functions below.
   type Child = Code | Directive<any> | Label;
@@ -29,7 +29,7 @@ export function parse(code: string, file = 'input.s'): SourceFile {
       // Look for labels
       if (b.token(/^([@a-z_][@a-z0-9_]*:\s*|-+\s+|\++\s+)/i)) {
         const label = b.group()!.replace(/\s*:?\s*$/, '');
-        children.push(source(new Label(label)));
+        children.push(source(new Label([], label)));
         continue;
       } else if (b.token(/^(\.[a-z_][a-z0-9_]*)\b/i)) {
         const m = b.match() || fail('Impossible');
@@ -95,12 +95,12 @@ export function parse(code: string, file = 'input.s'): SourceFile {
     const start = b.match();
     const arg = parseExpr() || fail(`Expected argument`);
     switch (directive) {
-      case '.org':    return source(new Org(arg), start);
-      case '.assert': return source(new Assert(arg), start);
-      case '.byte':   return source(new Byte(arg), start);
-      case '.word':   return source(new Word(arg), start);
-      case '.res':    return source(new Res(arg), start);
-      case '.error':  return source(new ErrorDirective(arg), start);
+      case '.org':    return source(new Org([arg]), start);
+      case '.assert': return source(new Assert([arg]), start);
+      case '.byte':   return source(new Byte([arg]), start);
+      case '.word':   return source(new Word([arg]), start);
+      case '.res':    return source(new Res([arg]), start);
+      case '.error':  return source(new ErrorDirective([arg]), start);
     }
     throw new Error(`Impossible: ${directive}`);
   }
@@ -108,7 +108,7 @@ export function parse(code: string, file = 'input.s'): SourceFile {
   type NullaryDirective = Reloc;
   function parseNullaryDirective(directive: string): NullaryDirective {
     switch (directive) {
-      case '.reloc': return source(new Reloc());
+      case '.reloc': return source(new Reloc([]));
     }
     throw new Error(`Impossible: ${directive}`);
   }
@@ -138,11 +138,11 @@ export function parse(code: string, file = 'input.s'): SourceFile {
     }
     let out: If|Ifdef|Ifndef;
     if (directive === '.if' || directive === '.elseif') {
-      out = new If(cond, body, elseBody);
+      out = new If([cond, body, elseBody]);
     } else if (directive === '.ifdef') {
-      out = new Ifdef(cond as Identifier, body, elseBody);
+      out = new Ifdef([cond as Identifier, body, elseBody]);
     } else if (directive === '.ifndef') {
-      out = new Ifndef(cond as Identifier, body, elseBody);
+      out = new Ifndef([cond as Identifier, body, elseBody]);
     } else {
       fail(`Unknown conditional directive: ${directive}`);
     }
@@ -155,7 +155,7 @@ export function parse(code: string, file = 'input.s'): SourceFile {
     // Find the condition
     const ident = parseIdentifier() || fail(`Expected identifier`);
     const body = new Body(parseUntil(/^\.endproc\b/i));
-    return source(new Proc(ident, body), start);
+    return source(new Proc([ident, body]), start);
   }
 
   function parseDefine(): Define {
@@ -163,20 +163,20 @@ export function parse(code: string, file = 'input.s'): SourceFile {
     const ident = parseIdentifier() || fail(`Expected identifier`);
     const expr = parseExpr();
     // || new ValueLiteral({type: 'number', value: 1});
-    return source(new Define(ident, expr), start);
+    return source(new Define(expr ? [ident, expr] : [ident]), start);
   }
 
   function parseIdentifier(): Identifier|undefined {
     // TODO - may need a stack or some way to restore the state?
     b.space();
     if (!b.token(/^[@a-z_][@a-z0-9_]*\b/i)) return undefined;
-    return source(new Identifier(b.group()!));
+    return source(new Identifier([], b.group()!));
   }
 
-  function parseExpr(singleValue = false): Expr|undefined {
+  function parseExpr(singleValue = false): Expr<any>|undefined {
     // (\s+[^;\n]*)
 
-    const exprs: Expr[] = [];
+    const exprs: Expr<any>[] = [];
     const binops: Operator[] = [];
 
     while (true) {
@@ -184,24 +184,24 @@ export function parse(code: string, file = 'input.s'): SourceFile {
       if (b.token(/^\(/)) {
         const start = b.match()!;
         exprs.push(source(
-            new Parenthesis(parseExpr() || fail('Expected expression')),
+            new Parenthesis([parseExpr() || fail('Expected expression')]),
             start));
         if (!b.token(/\)/)) fail(`Expected ')'`);
       } else if (b.token(/^\{/)) {
         const start = b.match()!;
         exprs.push(source(
-            new Brace(parseExpr() || fail('Expected expression')), start));
+            new Brace([parseExpr() || fail('Expected expression')]), start));
         if (!b.token(/\}/)) fail(`Expected '}'`);
       } else if (b.token(/^[<>^#!~]/)) {
         const start = b.match()!;
         exprs.push(source(
             new PrefixOp(
-                start[0],
-                parseExpr(true) || fail('Expected expression')),
+                [parseExpr(true) || fail('Expected expression')],
+                start[0]),
             start));
       } else if (b.token(/^[@a-z_][@a-z0-9_]*\b/i)) {
         const start = b.match()!;
-        exprs.push(source(new Identifier(start[0]), start));
+        exprs.push(source(new Identifier([], start[0]), start));
       } else if (b.token(/^\*(?![@a-z0-9_])/i)) {
         // Special identifier for "current PC".
         // NOTE: depending on the context, it may not be a full
@@ -209,11 +209,11 @@ export function parse(code: string, file = 'input.s'): SourceFile {
         // a *relative* value during assembly...?  Common use case
         // will be `.assert * == $0c:90cf`.
         const start = b.match()!;
-        exprs.push(source(new Identifier('*'), start));
+        exprs.push(source(new Identifier([], '*'), start));
       } else if (b.token(/^\$([0-9a-f]{1,2}):([0-9a-f]{4})\b/i)) {
         const start = b.match()!;
         exprs.push(
-            source(new ValueLiteral({
+            source(new ValueLiteral([], {
               type: 'bankaddress',
               value: parseInt(start[1] + start[2], 16),
             }), start));
@@ -249,7 +249,7 @@ export function parse(code: string, file = 'input.s'): SourceFile {
           value: num,
         };
         if (size) value.bytes = size;
-        exprs.push(source(new ValueLiteral(value), start));
+        exprs.push(source(new ValueLiteral([], value), start));
       } else if (b.token(/^['"]/)) {
         const start = b.match()!;
         const end = start[0];
@@ -268,9 +268,9 @@ export function parse(code: string, file = 'input.s'): SourceFile {
         }
         b.token(end);
         exprs.push(
-            source(new ValueLiteral({type: 'string', value: str}), start));
+            source(new ValueLiteral([], {type: 'string', value: str}), start));
       } else if (b.lookingAt(',')) {
-        exprs.push(source(new Blank(), b.match()));
+        exprs.push(source(new Blank([]), b.match()));
       } else {
         if (exprs.length) fail(`Expected expression`);
         return undefined;
@@ -329,7 +329,7 @@ export function parse(code: string, file = 'input.s'): SourceFile {
         ];
         exprs.push(new Comma(children));
       } else {
-        exprs.push(new BinOp(op, left, right));
+        exprs.push(new BinOp([left, right], op));
       }
     }
   }
@@ -339,7 +339,7 @@ export function parse(code: string, file = 'input.s'): SourceFile {
     throw new Error(`${msg}\n  at ${file}:${b.line}:${b.column}: '${snip}'`);
   }
 
-  function source<T extends AbstractNode<any>>(node: T, m = b.match()): T {
+  function source<T extends AbstractNode<any, any>>(node: T, m = b.match()): T {
     if (!m) throw new Error(`Missing match`);
     node.sourceInfo = {file, line: m.line, column: m.column, content: m[0]};
     return node;

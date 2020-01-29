@@ -73,6 +73,10 @@ export class Buffer {
     match.column = this.column;
     this.lastMatch = match;
     this.advance(match[0]);
+
+//    console.log(`TOKEN: ${re} "${match[0]}"`);
+//try{throw Error();}catch(e){console.log(e);}
+
     return true;
   }
 

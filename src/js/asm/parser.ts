@@ -1,7 +1,7 @@
 // Parser.
 
 import {Buffer} from './buffer.js';
-import {AbstractNode, Assert, BinOp, Body, Brace, Byte,
+import {AbstractNode, Assert, BinOp, Blank, Body, Brace, Byte,
         Code, Comma, Define, Directive, ErrorDirective, Expr,
         Identifier, If, Ifdef, Ifndef,
         Label, Org, Parenthesis, PrefixOp, Proc, Reloc, Res, SourceFile,
@@ -58,7 +58,10 @@ export function parse(code: string, file = 'input.s'): SourceFile {
           case '.reloc':
             children.push(parseNullaryDirective(directiveName));
             break;
+          default:
+            fail(`Unknown directive: ${directiveName}`);
         }
+        parseEol();
         // TODO - .local, 
       } else if (b.lookingAt(/^[@a-z_][@a-z0-9_]*\b/i)) {
         const ident = parseIdentifier() || fail(`Impossible`);
@@ -70,11 +73,20 @@ export function parse(code: string, file = 'input.s'): SourceFile {
           exprs.push(expr);
         }
         children.push(source(new Code([ident, ...exprs]), start));
+        parseEol();
       } else {
         fail(`Syntax error`);
       }
     }
     return children;
+  }
+
+  function parseEol() {
+    b.space();
+    b.token(/^;.*/);
+    if (b.newline()) return;
+    if (b.eof()) return;
+    fail(`Expected end of line`);
   }
 
   type UnaryDirective = Org|Assert|Byte|Word|Res|ErrorDirective;
@@ -90,7 +102,7 @@ export function parse(code: string, file = 'input.s'): SourceFile {
       case '.res':    return source(new Res(arg), start);
       case '.error':  return source(new ErrorDirective(arg), start);
     }
-    throw new Error(`Unknown directive: ${directive}`);
+    throw new Error(`Impossible: ${directive}`);
   }
 
   type NullaryDirective = Reloc;
@@ -98,7 +110,7 @@ export function parse(code: string, file = 'input.s'): SourceFile {
     switch (directive) {
       case '.reloc': return source(new Reloc());
     }
-    throw new Error(`Unknown directive: ${directive}`);
+    throw new Error(`Impossible: ${directive}`);
   }
 
   type ConditionDirective = If|Ifdef|Ifndef;
@@ -239,7 +251,7 @@ export function parse(code: string, file = 'input.s'): SourceFile {
         if (size) value.bytes = size;
         exprs.push(source(new ValueLiteral(value), start));
       } else if (b.token(/^['"]/)) {
-        const start = b.match();
+        const start = b.match()!;
         const end = start[0];
         let str = '';
         while (!b.lookingAt(end)) {
@@ -257,6 +269,8 @@ export function parse(code: string, file = 'input.s'): SourceFile {
         b.token(end);
         exprs.push(
             source(new ValueLiteral({type: 'string', value: str}), start));
+      } else if (b.lookingAt(',')) {
+        exprs.push(source(new Blank(), b.match()));
       } else {
         if (exprs.length) fail(`Expected expression`);
         return undefined;
@@ -268,7 +282,7 @@ export function parse(code: string, file = 'input.s'): SourceFile {
       const state = b.saveState();
       let op: Operator|undefined;
       for (const [key, value] of operators) {
-        if (!b.token(key) || !b.lookingAt(/^[ \n%$@a-z0-9_'"]/i)) {
+        if (!b.token(key) || !b.lookingAt(/^[ \n%$@a-z0-9_'"({,]/i)) {
           b.restoreState(state);
           continue;
         }

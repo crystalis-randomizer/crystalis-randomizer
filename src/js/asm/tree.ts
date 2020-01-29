@@ -61,9 +61,8 @@ export class Body extends AbstractListNode<BodyChild> {}
 // .endproc
 
 // What happens when we put a .org or .reloc inside a .proc??  -> Fail?
-// 
 
-type BlockChild = Code | Data | Label | Directive<any>;
+type BlockChild = Code | Label | Directive<any>;
 export class Block extends AbstractListNode<BlockChild> {
 
 }
@@ -75,10 +74,6 @@ export class Label extends AbstractLeafNode {
 export class Code extends AbstractNode<readonly [Identifier, ...Expr[]]> {
   // bank?  store in address?
   address?: number; // initially not filled
-}
-
-export class Data extends AbstractListNode<Expr> {
-
 }
 
 export class Directive<T extends readonly AbstractNode<any>[]>
@@ -108,6 +103,7 @@ export class Assert extends AbstractUnaryDirective {}
 export class Byte extends AbstractUnaryDirective {}
 export class Word extends AbstractUnaryDirective {}
 export class Res extends AbstractUnaryDirective {}
+export class Local extends AbstractUnaryDirective {}
 export class ErrorDirective extends AbstractUnaryDirective {}
 
 class AbstractNullaryDirective extends Directive<readonly []> {
@@ -121,6 +117,8 @@ export class Proc extends Directive<readonly [Identifier, Body]> {
 
 export abstract class Expr extends AbstractListNode<Expr> {}
 abstract class LiteralExpr extends Expr { constructor() { super([]); } }
+
+export class Blank extends LiteralExpr {}
 
 export class ValueLiteral extends LiteralExpr {
   constructor(readonly value: Value) { super(); }

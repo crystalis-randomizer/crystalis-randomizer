@@ -60,14 +60,45 @@ describe('parse', function() {
               value({type: 'bankaddress', value: 0x0c_8234}))));
   });
 
+  it('should parse a .define', function() {
+    match(parseStmt('.define x'), define('x'));
+    match(parseStmt('.define x 1'), define('x', num(1)));
+  });
+
   it('should parse a .byte', function() {
-    match(parseStmt('.byte $12,$34,"foo" ; comment'),
+    match(parseStmt('.byte $12, $34, "foo", $56,x  ; comment'),
           unary(
             tree.Byte,
             comma(
               value({type: 'number', value: 0x12, bytes: 1}),
               value({type: 'number', value: 0x34, bytes: 1}),
-              value({type: 'string', value: 'foo'}))));
+              value({type: 'string', value: 'foo'}),
+              value({type: 'number', value: 0x56, bytes: 1}),
+              ident('x'))));
+  });
+
+  it('should parse a .word', function() {
+    match(parseStmt('.word ($1234),(Addr),Addr+1  ; comment'),
+          unary(
+            tree.Word,
+            comma(
+              paren(value({type: 'number', value: 0x1234, bytes: 2})),
+              paren(ident('Addr')),
+              binop(ident('Addr'), '+', num(1)))));
+  });
+
+  it('should parse a blank', function() {
+    match(parseStmt('foo a,,b'),
+          code('foo', comma(ident('a'), blank(), ident('b'))));
+  });
+
+  it('should parse nullary directives', function() {
+    match(parseStmt('.reloc'), {constructor: tree.Reloc});
+  });
+
+  it('should parse args separated by spaces', function() {
+    match(parseStmt('foo {a,b} c'),
+          code('foo', brace(comma(ident('a'), ident('b'))), ident('c')));
   });
 
   it('should understand operator precedence', function() {
@@ -108,8 +139,29 @@ describe('parse', function() {
 
   it('should fail to parse a label at the end of a line', function() {
     expect(() => {
-      parse('   asl foo:');
-    }).to.throw(TypeError);
+      parse('  asl foo:');
+    }).to.throw(Error, /Expected end of line.*at input.s:0:9: ':'/s);
+  });
+
+  it('should fail to parse a bad operator', function() {
+    expect(() => {
+      parse('  adc $01 + + $02');
+    }).to.throw(Error, /Expected expression.*at input.s:0:12: '\+ \$02'/s);
+  });
+
+  it('should fail to parse a unary with no arg', function() {
+    expect(() => {
+      parse(`  adc #
+  lsr`);
+    }).to.throw(Error, /Expected expression.*at input.s:0:7: '\\n  lsr'/s);
+  });
+
+  it('should fail on a bad directive', function() {
+    expect(() => {
+      const f = parse('.foo');
+      console.log(util.inspect(f, {showHidden: false, depth: null}))
+
+    }).to.throw(Error, /Unknown directive: \.foo.*at input.s:0:4/s);
   });
 });
 
@@ -162,6 +214,9 @@ function comma(...children) {
 function paren(child) {
   return unary(tree.Parenthesis, child);
 }
+function brace(child) {
+  return unary(tree.Brace, child);
+}
 function binop(left, op, right) {
   return {
     constructor: tree.BinOp,
@@ -176,7 +231,9 @@ function prefix(op, arg) {
     children: [arg],
   };
 }
-    
+function blank() {
+  return {constructor: tree.Blank};
+}
 
 function match(subject, matcher, path = 'subject') {
   try {

@@ -1,4 +1,4 @@
-import { assertNever } from "../util";
+import {assertNever} from "../util";
 
 export interface NumberValue {
   type: 'number';
@@ -17,6 +17,13 @@ export interface ListValue {
   type: 'list';
   value: Value[];
 }
+export interface BlankValue {
+  type: 'blank';
+}
+export interface IndeterminateValue {
+  type: 'indeterminate';
+}
+
 // interface MacroValue {
 //   type: 'macro';
 //   value: Macro;
@@ -26,7 +33,14 @@ export interface ListValue {
 // ->  ByteValue | WordValue | StringValue | ListValue | BankAddressValue
 //     ByteValue AND WordValue can both be addresses...
 
-export type Value = NumberValue | StringValue | ListValue | BankAddressValue;
+export type Value =
+  NumberValue |
+  StringValue |
+  ListValue |
+  BankAddressValue |
+  BlankValue |
+  IndeterminateValue;
+
 // TODO - any other type of value?
 
 
@@ -84,32 +98,50 @@ function numeric(name: string, precedence: number, associativity: number,
   }
 }
 
-function toNumber(v: Value): Value {
-  if (v.type === 'number' || v.type === 'bankaddress') return v;
-  if (v.type === 'string') {
-    if (v.value.length !== 1) throw new Error(`Expected single number`);
-    return {type: 'number', value: v.value.charCodeAt(0)};
-  } else if (v.type === 'list') {
-    if (v.value.length !== 1) throw new Error(`Expected single number`);
-    return toNumber(v.value[0]);
+export function toNumber(v: Value): NumberValue|BankAddressValue {
+  switch (v.type) {
+    case 'number':
+    case 'bankaddress':
+      return v;
+    case 'string':
+      if (v.value.length === 0) return {type: 'number', value: 0};
+      if (v.value.length !== 1) throw new Error(`Expected single character`);
+      return {type: 'number', value: v.value.charCodeAt(0)};
+    case 'list':
+      if (v.value.length !== 1) {
+        throw new Error(`Expected single number but was list: ${v.value}`);
+      }
+      return toNumber(v.value[0]);
+    case 'blank':
+    case 'indeterminate':
+      throw new Error(`Expected single number but was ${v.type}`);
+    default:
+      assertNever(v);
   }
-  assertNever(v);
 }
 
 // Returns a FLATTENED list.
-function toList(v: Value): Value[] {
-  if (v.type === 'number' || v.type === 'bankaddress') return [v];
-  if (v.type === 'string') {
-    return Array.from(v.value, c => ({type: 'number', value: c.charCodeAt(0)}));
+export function toList(v: Value): Value[] {
+  switch (v.type) {
+    case 'number':
+    case 'bankaddress':
+      return [v];
+    case 'string':
+      return Array.from(v.value,
+                        c => ({type: 'number', value: c.charCodeAt(0)}));
+    case 'list':
+      const out: Value[] = [];
+      for (let x of v.value) {
+        out.push(...toList(x));
+      }
+      return out;
+    case 'blank':
+      return [];
+    case 'indeterminate':
+      throw new Error(`Expected list but was ${v.type}`);
+    default: 
+      assertNever(v);
   }
-  if (v.type === 'list') {
-    const out: Value[] = [];
-    for (let x of v.value) {
-      out.push(...toList(x));
-    }
-    return out;
-  }
-  assertNever(v);
 }
 
 const resultTypeMap = new Map<string, 'number'|'bankaddress'>([
@@ -126,7 +158,7 @@ const resultTypeMap = new Map<string, 'number'|'bankaddress'>([
   ['b<>b', 'number'],
 ]);
 
-function comma(left: Value, right: Value): Value {
+export function comma(left: Value, right: Value): Value {
   return {
     type: 'list',
     value: [...toList(left), ...toList(right)],

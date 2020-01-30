@@ -1,7 +1,7 @@
 // Parser.
 
 import {Buffer} from './buffer.js';
-import {AbstractNode, Assert, BinOp, Blank, Body, Brace, Byte,
+import {AbstractNode, Assert, BinOp, Body, Brace, Byte,
         Code, Comma, Define, Directive, ErrorDirective, Expr,
         Identifier, If, Ifdef, Ifndef,
         Label, Org, Parenthesis, PrefixOp, Proc, Reloc, Res, SourceFile,
@@ -270,7 +270,7 @@ export function parse(code: string, file = 'input.s'): SourceFile {
         exprs.push(
             source(new ValueLiteral([], {type: 'string', value: str}), start));
       } else if (b.lookingAt(',')) {
-        exprs.push(source(new Blank([]), b.match()));
+        exprs.push(source(new ValueLiteral([], {type: 'blank'}), b.match()));
       } else {
         if (exprs.length) fail(`Expected expression`);
         return undefined;

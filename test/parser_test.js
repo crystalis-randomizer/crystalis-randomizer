@@ -236,7 +236,7 @@ function prefix(op, arg) {
   };
 }
 function blank() {
-  return {constructor: tree.Blank};
+  return value({type: 'blank'})
 }
 
 function match(subject, matcher, path = 'subject') {

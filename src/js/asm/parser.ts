@@ -3,8 +3,9 @@
 import {Buffer} from './buffer.js';
 import {AbstractNode, Assert, BinOp, Body, Brace, Byte,
         Code, Comma, Define, Directive, ErrorDirective, Expr,
-        Identifier, If, Ifdef, Ifndef,
-        Label, Org, Parenthesis, PrefixOp, Proc, Reloc, Res, SourceFile,
+        Identifier, If, Ifdef, Ifndef, Label,
+        Macro, Org, Parenthesis, PrefixOp, Proc, Reloc, Res,
+        Scope, SourceFile,
         Word, ValueLiteral} from './tree.js';
 import {NumberValue, Operator, operators} from './value.js';
 
@@ -27,7 +28,7 @@ export function parse(code: string, file = 'input.s'): SourceFile {
       if (b.space() || b.newline()) continue; // skip whitespace
       if (b.token(/^;.*\n?/)) continue; // skip comments
       // Look for labels
-      if (b.token(/^([@a-z_][@a-z0-9_]*:\s*|-+\s+|\++\s+)/i)) {
+      if (b.token(/^([@a-z_][@a-z0-9_]*:\s*|-+(?::|\s+)|\++(?::|\s+))/i)) {
         const label = b.group()!.replace(/\s*:?\s*$/, '');
         children.push(source(new Label([], label)));
         continue;
@@ -47,6 +48,12 @@ export function parse(code: string, file = 'input.s'): SourceFile {
           case '.define':
             children.push(parseDefine());
             break;
+          case '.macro':
+            children.push(parseMacro());
+            break;
+          case '.scope':
+            children.push(parseScope());
+            break;
           case '.org':
           case '.assert':
           case '.byte':
@@ -56,7 +63,7 @@ export function parse(code: string, file = 'input.s'): SourceFile {
             children.push(parseUnaryDirective(directiveName));
             break;
           case '.reloc':
-            children.push(parseNullaryDirective(directiveName));
+            children.push(parseReloc());
             break;
           default:
             fail(`Unknown directive: ${directiveName}`);
@@ -105,13 +112,19 @@ export function parse(code: string, file = 'input.s'): SourceFile {
     throw new Error(`Impossible: ${directive}`);
   }
 
-  type NullaryDirective = Reloc;
-  function parseNullaryDirective(directive: string): NullaryDirective {
-    switch (directive) {
-      case '.reloc': return source(new Reloc([]));
-    }
-    throw new Error(`Impossible: ${directive}`);
+  function parseReloc(): Reloc {
+    const start = b.match();
+    const base = parseExpr();
+    return source(new Reloc(base ? [base] : []), start);
   }
+
+  // type NullaryDirective = Reloc;
+  // function parseNullaryDirective(directive: string): NullaryDirective {
+  //   switch (directive) {
+  //     case '.reloc': return source(new Reloc([]));
+  //   }
+  //   throw new Error(`Impossible: ${directive}`);
+  // }
 
   type ConditionDirective = If|Ifdef|Ifndef;
   function parseCondition(directive: string): ConditionDirective {
@@ -166,6 +179,34 @@ export function parse(code: string, file = 'input.s'): SourceFile {
     return source(new Define(expr ? [ident, expr] : [ident]), start);
   }
 
+  function parseMacro(): Macro {
+    const start = b.match();
+    const ident = parseIdentifier() || fail(`Expected identifier`);
+    let paramExpr = parseExpr();
+    const params: Identifier[] = [];
+    if (paramExpr instanceof Identifier) {
+      params.push(paramExpr);
+    } else if (paramExpr instanceof Comma) {
+      for (const term of paramExpr.children) {
+        if (!(term instanceof Identifier)) fail(`Expected identifier`);
+        params.push(term);
+      }
+    } else if (paramExpr) {
+      fail(`Expected identifier(s) but got ${paramExpr.tag}`);
+    }
+    parseEol();
+    const body = new Body(parseUntil(/^\.endm(acro)?\b/i));
+    return source(new Macro([ident, body, ...params]), start);
+  }
+
+  function parseScope(): Scope {
+    const start = b.match();
+    const ident = parseIdentifier();
+    parseEol();
+    const body = new Body(parseUntil(/^\.ends(cope)?\b/i));
+    return source(new Scope(ident ? [body, ident] : [body]), start);
+  }
+
   function parseIdentifier(): Identifier|undefined {
     // TODO - may need a stack or some way to restore the state?
     b.space();
@@ -200,6 +241,9 @@ export function parse(code: string, file = 'input.s'): SourceFile {
                 start[0]),
             start));
       } else if (b.token(/^[@a-z_][@a-z0-9_]*\b/i)) {
+        const start = b.match()!;
+        exprs.push(source(new Identifier([], start[0]), start));
+      } else if (b.token(/^(\++|-+)(?!\ *[@a-z0-9_])/)) {
         const start = b.match()!;
         exprs.push(source(new Identifier([], start[0]), start));
       } else if (b.token(/^\*(?![@a-z0-9_])/i)) {
@@ -269,7 +313,7 @@ export function parse(code: string, file = 'input.s'): SourceFile {
         b.token(end);
         exprs.push(
             source(new ValueLiteral([], {type: 'string', value: str}), start));
-      } else if (b.lookingAt(',')) {
+      } else if (b.lookingAt(/^[,}]/)) {
         exprs.push(source(new ValueLiteral([], {type: 'blank'}), b.match()));
       } else {
         if (exprs.length) fail(`Expected expression`);

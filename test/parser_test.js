@@ -97,7 +97,14 @@ describe('parse', function() {
   });
 
   it('should parse nullary directives', function() {
-    match(parseStmt('.reloc'), {constructor: tree.Reloc});
+    match(parseStmt('.reloc'), {constructor: tree.Reloc, children: []});
+  });
+
+  it('should parse optional arg for .reloc', function() {
+    match(parseStmt('.reloc $0c:1234'), {
+      constructor: tree.Reloc,
+      children: [value({type: 'bankaddress', value: 0x0c1234})],
+    });
   });
 
   it('should parse args separated by spaces', function() {
@@ -139,6 +146,54 @@ describe('parse', function() {
              inc   addr+1
           +:
       .endmacro`;
+    match(parseStmt(asm), {
+      constructor: tree.Macro,
+      children: [
+        ident('inc16'),
+        body(code('clc'),
+             code('inc', ident('addr')),
+             code('bcc', ident('+')),
+             code('inc', binop(ident('addr'), '+', num(1))),
+             label('+')),
+        ident('addr'),
+      ],
+    });
+  });
+
+  it('should understand multi-parameter .macros', function() {
+    match(parseStmt('.macro foo j,k,l\n  inc j\n  inc k\n  inc l\n.endmacro'), {
+      constructor: tree.Macro,
+      children: [
+        ident('foo'),
+        body(code('inc', ident('j')),
+             code('inc', ident('k')),
+             code('inc', ident('l'))),
+        ident('j'),
+        ident('k'),
+        ident('l'),
+      ],
+    });
+  });
+
+  it('should understand zero-parameter .macros', function() {
+    match(parseStmt('.macro foo\n  asl\n  lsr\n.endm'), {
+      constructor: tree.Macro,
+      children: [ident('foo'), body(code('asl'), code('lsr'))],
+    });
+  });
+
+  it('should parse a named .scope', function() {
+    match(parseStmt('.scope foo ; comment\n  asl\n  lsr\n.ends'), {
+      constructor: tree.Scope,
+      children: [body(code('asl'), code('lsr')), ident('foo')],
+    });
+  });
+
+  it('should parse an anonymous .scope', function() {
+    match(parseStmt('.scope ; comment\n  asl\n  lsr\n.ends'), {
+      constructor: tree.Scope,
+      children: [body(code('asl'), code('lsr'))],
+    });
   });
 
   it('should fail to parse a label at the end of a line', function() {
@@ -149,8 +204,8 @@ describe('parse', function() {
 
   it('should fail to parse a bad operator', function() {
     expect(() => {
-      parse('  adc $01 + + $02');
-    }).to.throw(Error, /Expected expression.*at input.s:0:12: '\+ \$02'/s);
+      parse('  adc $01 & & $02');
+    }).to.throw(Error, /Expected expression.*at input.s:0:12: '\& \$02'/s);
   });
 
   it('should fail to parse a unary with no arg', function() {

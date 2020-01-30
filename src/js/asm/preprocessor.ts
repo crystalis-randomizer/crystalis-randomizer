@@ -1,9 +1,9 @@
 // Preprocessor: expands macros and constant defines.
 // TODO - links labels???
 
-import {BinOp, Body, BodyChild, Brace, Comma, Define, Expr, Identifier,
-        If, Ifdef, Ifndef,
-        Macro, Node, Parenthesis, PrefixOp, SourceFile,
+import {BinOp, Body, BodyChild, Brace, Code, Comma, Define, Directive, Expr,
+        Identifier, If, Ifdef, Ifndef, Local,
+        Macro, Node, Parenthesis, PrefixOp, Proc, Scope, SourceFile,
         ValueLiteral} from './tree.js';
 import {Value, comma, toNumber} from './value.js';
 import {assertNever} from '../util.js';
@@ -96,8 +96,7 @@ function traverseBody(parent: Body, ctx: Ctx, children: BodyChild[]) {
       const name = child.ident.text;
       let result: Value;
       if (!child.expr) {
-        // TODO - should this be 1 or blank?
-        result = {type: 'number', value: 1};
+        result = {type: 'blank'};
       } else {
         result = ctx.evaluate(child.expr);
         if (result.type === 'indeterminate') {
@@ -120,7 +119,21 @@ function traverseBody(parent: Body, ctx: Ctx, children: BodyChild[]) {
       } else {
         traverseBody(child.alt, ctx, children);
       }
-    } else if (child instanceof Identifier) {
+    } else if (child instanceof Scope || child instanceof Proc) {
+      // TODO - make a new macro scope
+
+    //} else if (child instanceof Global) {
+
+    } else if (child instanceof Local) {
+      // TODO - take note, but retain for label scoping
+
+    } else if (child instanceof Directive) {
+      // TODO - expand any macros in any args...
+      
+    } else if (child instanceof Code) {
+      // Check the ident for a macro and expand it for a scope...
+      // Either way, expand any macros, but maintain parens!!!
+
       // TODO - how do we know if it's valid to substitute here?
     }
    

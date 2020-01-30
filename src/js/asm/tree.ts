@@ -102,14 +102,17 @@ extends Directive<readonly [E, Body, Body]> {
   get alt() { return this.children[2]; }
 }
 
-export class Macro extends Directive<readonly [Identifier, Body]> {
+export class Macro extends Directive<readonly [Identifier, Body, ...Identifier[]]> {
   get tag() { return 'Macro'; }
   get ident(): Identifier { return this.children[0]; }
   get body(): Body { return this.children[1]; }
+  get params(): Identifier[] { return this.children.slice(2) as Identifier[]; }
 }
-export class Scope extends Directive<readonly [Body]> {
+
+export class Scope extends Directive<TupleRO<Body, Identifier>> {
   get tag() { return 'Scope'; }
-  get body() { return this.children[0]; }
+  get body(): Body { return this.children[0]; }
+  get ident(): Identifier|undefined { return this.children[1]; }
 }
 
 export class If extends AbstractCondition<Expr<any>> {
@@ -146,10 +149,12 @@ export class ErrorDirective extends AbstractUnaryDirective {
   get tag() { return 'Error'; }
 }
 
-abstract class AbstractNullaryDirective extends Directive<readonly []> {}
+// abstract class AbstractNullaryDirective extends Directive<readonly []> {}
 
-export class Reloc extends AbstractNullaryDirective {
+export class Reloc extends Directive<readonly []|readonly [Expr<any>]> {
   get tag() { return 'Reloc'; }
+  // expression for bank information.
+  get base(): Expr<any>|undefined { return this.children[0]; }
 }
 
 export class Proc extends Directive<readonly [Identifier, Body]> {
@@ -195,6 +200,7 @@ export class Comma extends Expr<undefined> {
 }
 
 // <, >, ^, #, !, ~
+// TODO: z: and a: as prefix ops?
 export class PrefixOp extends Expr<string> {
   get tag() { return 'PrefixOp'; }
   get arg(): Expr<any> { return this.children[0]; }

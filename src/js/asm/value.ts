@@ -1,16 +1,31 @@
 import {assertNever} from "../util";
 
+// type Origin = 'zp', 'abs', 'str';
+
+// export class Value {
+//   constructor(readonly value: number[],
+//               readonly origin?: Origin,
+//               readonly bank?: number) {}
+
+//   static string(s: string): Value {
+//     return new Value(Array.from(s, c => c.charCodeAt(0)), 'str');
+//   }
+
+//   static 
+// }
+
+
 export interface NumberValue {
   type: 'number';
   value: number;
-  bytes?: number;
+  origin: Origin;
 }
 export interface StringValue {
   type: 'string';
   value: string;
 }
 export interface BankAddressValue {
-  type: 'bankaddress';
+  type: 'bankaddr';
   value: number;
 }
 export interface ListValue {
@@ -32,6 +47,9 @@ export interface IndeterminateValue {
 // Wrong formulation?
 // ->  ByteValue | WordValue | StringValue | ListValue | BankAddressValue
 //     ByteValue AND WordValue can both be addresses...
+
+// Values can be numbers or lists of numbers, or no numbers at all.
+// Values can also contain hints about their origin (string, byte/word, etc).
 
 export type Value =
   NumberValue |
@@ -75,7 +93,7 @@ function numeric(name: string, precedence: number, associativity: number,
     if (lt === 'b') lv &= 0xffff;
     if (rt === 'b') rv &= 0xffff;
 
-    let resultType: 'number'|'bankaddress'|undefined = 'number';
+    let resultType: 'number'|'bankaddr'|undefined = 'number';
     if (tt !== 'nn') {
       resultType = resultTypeMap.get(lt + name + rt);
       if (resultType == null) {
@@ -86,7 +104,7 @@ function numeric(name: string, precedence: number, associativity: number,
       throw new Error(`Cannot operate on different-bank addresses`);
     }
 
-    if (resultType === 'bankaddress') value |= ((lb | rb) << 16);
+    if (resultType === 'bankaddr') value |= ((lb | rb) << 16);
     const result = {type: resultType, value};
     if (resultType === 'number' &&
         left.type === 'number' && right.type === 'number' &&
@@ -101,7 +119,7 @@ function numeric(name: string, precedence: number, associativity: number,
 export function toNumber(v: Value): NumberValue|BankAddressValue {
   switch (v.type) {
     case 'number':
-    case 'bankaddress':
+    case 'bankaddr':
       return v;
     case 'string':
       if (v.value.length === 0) return {type: 'number', value: 0};
@@ -124,7 +142,7 @@ export function toNumber(v: Value): NumberValue|BankAddressValue {
 export function toList(v: Value): Value[] {
   switch (v.type) {
     case 'number':
-    case 'bankaddress':
+    case 'bankaddr':
       return [v];
     case 'string':
       return Array.from(v.value,
@@ -144,12 +162,12 @@ export function toList(v: Value): Value[] {
   }
 }
 
-const resultTypeMap = new Map<string, 'number'|'bankaddress'>([
+const resultTypeMap = new Map<string, 'number'|'bankaddr'>([
   ['b-b', 'number'],
-  ['b-n', 'bankaddress'],
-  ['b-n', 'bankaddress'],
-  ['b+n', 'bankaddress'],
-  ['n+b', 'bankaddress'],
+  ['b-n', 'bankaddr'],
+  ['b-n', 'bankaddr'],
+  ['b+n', 'bankaddr'],
+  ['n+b', 'bankaddr'],
   ['b<b', 'number'],
   ['b<=b', 'number'],
   ['b>b', 'number'],

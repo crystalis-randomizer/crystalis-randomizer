@@ -43,7 +43,7 @@ class Ctx {
         case '~': return {type: 'number', value: ~argnum.value};
         case '<': return {type: 'number', value: argnum.value & 0xff};
         case '>': return {type: 'number', value: argnum.value >> 8 & 0xff};
-          // TODO - error if not a bankaddress?
+          // TODO - error if not a bankaddr?
         case '^': return {type: 'number', value: argnum.value >> 16 & 0xff};
         default: return fail(expr, `Bad prefix op ${expr.data}`);
       }
@@ -71,7 +71,7 @@ function toBoolean(v: Value): boolean|null {
       return null;
     case 'string':
     case 'number':
-    case 'bankaddress':
+    case 'bankaddr':
       return Boolean(v.value);
     default:
       assertNever(v);
@@ -125,14 +125,15 @@ function traverseBody(parent: Body, ctx: Ctx, children: BodyChild[]) {
     //} else if (child instanceof Global) {
 
     } else if (child instanceof Local) {
-      // TODO - take note, but retain for label scoping
+      // TODO - take note, but retain for label scoping...?
 
     } else if (child instanceof Directive) {
       // TODO - expand any macros in any args...
       
     } else if (child instanceof Code) {
       // Check the ident for a macro and expand it for a scope...
-      // Either way, expand any macros, but maintain parens!!!
+      // Either way, expand any macros, but maintain parens that the
+      // assembler may need!!!
 
       // TODO - how do we know if it's valid to substitute here?
     }

@@ -9,8 +9,11 @@ which outputs contiguous segments.  Design goals include:
    segments".
  * full support for macros, labels, conditional assembly, etc.
 
-The design is primarily inspired by cc65, but we deviate from their
-decisions in various places where it makes sense.
+The design is primarily inspired by [ca65] and [ld65], but we deviate
+from their decisions in various places where it makes sense.
+
+[ca65]: https://cc65.github.io/doc/ca65.html
+[ld65]: https://cc65.github.io/doc/ld65.html
 
 ## Basic structure
 

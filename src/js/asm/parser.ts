@@ -9,7 +9,8 @@ import {AbstractNode, Assert, BinOp, Body, Brace, Byte,
         Word, ValueLiteral} from './tree.js';
 import {NumberValue, Operator, operators} from './value.js';
 
-export function parse(code: string, file = 'input.s'): SourceFile {
+export function parse(code: string, file = 'input.s',
+                      ctx = new Ctx()): SourceFile {
   const b = new Buffer(code);
   const comma = operators.get(',') || fail(`no comma`);
   return new SourceFile([new Body(parseUntil())]);

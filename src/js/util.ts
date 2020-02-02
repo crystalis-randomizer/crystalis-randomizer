@@ -1,10 +1,28 @@
-export class Deque<T> {
+export class Deque<T> implements Iterable<T> {
 
   private buffer: (T | undefined)[] = new Array(16);
   private mask: number = 0xf;
   private start: number = 0;
   private end: number = 0;
   private size: number = 0;
+
+  constructor(iter?: Iterable<T>) {
+    if (iter) this.push(...iter);
+  }
+
+  [Symbol.iterator](): Iterator<T> {
+    let i = 0;
+    return {
+      next: () => {
+        if (i >= this.size) return {value: undefined, done: true};
+        return {
+          value: this.buffer[(this.start + i++) & this.mask] as T,
+          done: false,
+        };
+      },
+      [Symbol.iterator]() { return this; }
+    } as Iterator<T>;
+  }
 
   get length(): number {
     return this.size;
@@ -41,9 +59,9 @@ export class Deque<T> {
 
   unshift(...elems: T[]) {
     this.upsize(this.size + elems.length);
+    let i = this.start = (this.start - elems.length) & this.mask;
     for (const elem of elems) {
-      this.start = (this.start - 1) & this.mask;
-      this.buffer[this.start] = elem;
+      this.buffer[i++ & this.mask] = elem;
     }
   }
 
@@ -58,6 +76,95 @@ export class Deque<T> {
   front(): T | undefined {
     if (!this.size) return undefined;
     return this.buffer[this.start];
+  }
+
+  get(i: number): T | undefined {
+    if (i >= this.size) return undefined;
+    return this.buffer[(this.start + i) & this.mask];
+  }
+
+  slice(start: number, end: number = this.size): T[] {
+    if (start < 0) start += this.size;
+    if (end < 0) end += this.size;
+    if (end <= start) return [];
+    start = (this.start + Math.max(0, Math.min(this.size, start))) & this.mask;
+    end = (this.start + Math.max(0, Math.min(this.size, end))) & this.mask;
+    if (start <= end) return this.buffer.slice(start, end) as T[];
+    return this.buffer.slice(start).concat(this.buffer.slice(0, end)) as T[];
+  }
+
+  splice(start: number, count: number, ...elems: T[]): T[] {
+    if (start < 0) start += this.size;
+    start = Math.max(0, Math.min(this.size, start));
+    count = Math.max(0, Math.min(this.size - start, count));
+    let end = start + count;
+    const delta = elems.length - count;
+    const out = this.slice(start, end);
+    this.upsize(this.size + delta);
+    this.size -= delta; // undo the size change so slice works
+
+    if (start === 0) {
+      this.start = (this.start - delta) & this.mask;
+      for (let i = 0; i < elems.length; i++) {
+        this.buffer[(this.start + i) & this.mask] = elems[i];
+      }
+    } else if (end === this.size) {
+      this.end = (this.end + delta) & this.mask;
+      start += this.start;
+      for (let i = 0; i < elems.length; i++) {
+        this.buffer[(start + i) & this.mask] = elems[i];
+      }
+    } else {
+      // splice out of the middle...
+      const buf = [...this.slice(0, start), ...elems, ...this.slice(end)];
+      buf.length = this.buffer.length;
+      this.buffer = buf;
+      this.start = 0;
+      this.end = this.size;
+    }
+    this.size += delta;
+    return out;
+
+    // start &= this.mask;
+    // end &= this.mask;
+    // const delta = elems.length - count;
+    // if (delta === 0) {
+    //   // no change to the size
+    //   const out =
+    //       pivot2 < pivot1 ?
+    //           this.buffer.slice(pivot1).concat(this.buffer.slice(0, pivot2)) :
+    //           this.buffer.slice(pivot1, pivot2);
+    //   for (let i = 0; i < count; i++) {
+    //     this.buffer[(pivot1 + i) & this.mask] = elems[i];
+    //   }
+    //   return out;
+    // } else if (delta < 0) {
+    //   // deque is shrinking
+    //   if (pivot1 < start) {
+    //     // break is in the first chunk
+    //     const pivot3 = pivot1 + elems.length;
+    //     this.buffer.splice(pivot1, elems.length, ...elems);
+    //     this.buffer.copyWithin(pivot3, pivot2, end);
+    //     this.end += delta;
+    //     this.size += delta;
+    //   } else if (pivot2 < pivot1) {
+    //     // break is between pivots: if the elements to insert
+    //     // can cross the gap then we can trivially copy.
+    //   } else {
+    //     // break is in the last chunk or not at all
+    //     const pivot3 = pivot2 - elems.length;
+    //     this.buffer.splice(pivot3, elems.length, ...elems);
+    //     this.buffer.copyWithin(start, pivot3, pivot1);
+    //     this.start -= delta;
+    //     this.size += delta;
+    //   } else if (
+    // }
+    // // this.start <= pivot1 <= pivot2 <= this.end
+    // // The wrap will occur in at most one of those gaps
+    // // Don't move that block.
+    // // If the wrap occurs between pivot1 and pivot2 then we may be
+    // // stuck making two copies.  In that case, just rebase to 0.
+    
   }
 
   toString() {

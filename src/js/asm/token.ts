@@ -84,6 +84,7 @@ export namespace Token {
       case 'eol': return `EOL`;
       case 'eof': return `EOF`;
       case 'ident':
+        return arg.str;
       case 'cs':
       case 'op':
         return `${arg.str.toUpperCase()}`;

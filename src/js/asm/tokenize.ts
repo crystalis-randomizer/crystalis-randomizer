@@ -3,14 +3,25 @@ import {Buffer} from './buffer.js';
 import {NumberTok, NullaryTok, StringTok, Token} from './token.js';
 
 export function* tokenize(str: string, file = 'input.s'): Generator<Token> {
+  let last: Token|undefined;
+  for (const token of tokenizeInternal(str, file)) {
+    if (Token.eq(token, Token.EOL)) {
+      if (!last || Token.eq(last, Token.EOL)) continue;
+    }
+    yield token;
+    last = token;
+  }
+  if (!last || !Token.eq(last, Token.EOL)) yield {token: 'eol'};
+  yield {token: 'eof'};
+}
+
+function* tokenizeInternal(str: string, file = 'input.s'): Generator<Token> {
   const b = new Buffer(str);
-  let last = '';
 
   while (!b.eof()) {
     if (b.space() || b.token(/^;.*/)) continue;
     if (b.token(/^\\\n/)) continue; // skip continuation tokens
     if (b.newline()) {
-      if ((last || 'eol') === 'eol') continue;
       yield token('eol');
     } else if (b.token(/^@+[a-z0-9_]*/i) ||
                b.token(/^[a-z_][a-z0-9_]*/i)) {
@@ -62,14 +73,12 @@ export function* tokenize(str: string, file = 'input.s'): Generator<Token> {
       if (b.group(2)) fail(`Invalid digits in hex number`);
       yield token('num', Number.parseInt(b.group(1)!, 16));
     } else if (b.token(/^\%([01]+)([2-9a-z_]?)/i)) {
-      if (b.group(2)) fail(`Invalid digits in hex number`);
+      if (b.group(2)) fail(`Invalid digits in binary number`);
       yield token('num', Number.parseInt(b.group(1)!, 2));
     } else {
       fail(`Syntax error`);
     }    
   }
-  if (last !== 'eol') yield token('eol');
-  yield token('eof');
 
   function token(...[token, arg]: TokenArgs): Token {
     const m = b.match();

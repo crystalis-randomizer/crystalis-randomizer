@@ -25,4 +25,13 @@ describe('Deque', function() {
       expect(deq).to.have.length(arr.length);
     }
   });
+
+  it('should be constructible with a variety of sizes of inputs', function() {
+    const arr = [];
+    for (let i = 0; i < 100; i++) {
+      const deq = new Deque(arr);
+      expect([...deq]).to.eql(arr);
+      arr.push(i);
+    }
+  });
 });

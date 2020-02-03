@@ -29,8 +29,8 @@ export class Deque<T> implements Iterable<T> {
   }
 
   upsize(target: number) {
-    while (this.mask < target) {
-      if (this.end <= this.start) this.start += this.mask + 1;
+    while (this.mask <= target) {
+      if (this.end < this.start) this.start += this.mask + 1;
       this.mask = this.mask << 1 | 1;
       this.buffer = this.buffer.concat(this.buffer);
     }

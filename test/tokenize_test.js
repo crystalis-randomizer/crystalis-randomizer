@@ -70,6 +70,12 @@ describe('tokenize', function() {
     ]);
   });
 
+  it('should ignore comments', function() { 
+    expect(strip(tokenize('x ; ignored'))).to.eql([
+      {token: 'ident', str: 'x'},
+    ]);
+  });
+
   it('should tokenize an .assert', function() {
     expect(strip(tokenize('.assert * = $0c:$8000'))).to.eql([
       {token: 'cs', str: '.assert'}, {token: 'op', str: '*'},
@@ -91,21 +97,60 @@ describe('tokenize', function() {
     ]);
   });
 
+  it('should tokenize a line with mismatched parens', function() {
+    expect(strip(tokenize('qux foo({x}, {y)}, {z})'))).to.eql([
+      {token: 'ident', str: 'qux'},
+      {token: 'ident', str: 'foo'},
+      {token: 'lp'},
+      {token: 'lc'},
+      {token: 'ident', str: 'x'},
+      {token: 'rc'},
+      {token: 'op', str: ','},
+      {token: 'lc'},
+      {token: 'ident', str: 'y'},
+      {token: 'rp'},
+      {token: 'rc'},
+      {token: 'op', str: ','},
+      {token: 'lc'},
+      {token: 'ident', str: 'z'},
+      {token: 'rc'},
+      {token: 'rp'},
+    ]);
+  });
+
+  it('should tokenize all kinds of numbers', function() {
+    expect(strip(tokenize('123 0123 %10110 $123d'))).to.eql([
+      {token: 'num', num: 123},
+      {token: 'num', num: 0o123},
+      {token: 'num', num: 0b10110},
+      {token: 'num', num: 0x123d},
+    ]);
+  });
+
   it('should fail to parse a bad number', function() {
     expect(() => {
-      tokenize('  adc $1g');
+      [...tokenize('  adc $1g')];
     }).to.throw(Error, /Invalid digits in hex number.*at input.s:0:6: '\$1g'/s);
+    expect(() => {
+      [...tokenize('  12a')];
+    }).to.throw(Error, /Invalid digits in decimal.*at input.s:0:2: '12a'/s);
+    expect(() => {
+      [...tokenize('  018')];
+    }).to.throw(Error, /Invalid digits in octal.*at input.s:0:2: '018'/s);
+    expect(() => {
+      [...tokenize('  %012')];
+    }).to.throw(Error, /Invalid digits in binary.*at input.s:0:2: '%012'/s);
   });
 
   it('should fail to parse a bad character', function() {
     expect(() => {
-      tokenize('  `abc');
+      [...tokenize('  `abc')];
     }).to.throw(Error, /Syntax error.*at input.s:0:2: '`abc'/s);
   });
 
   it('should fail to parse a bad string', function() {
     expect(() => {
-      tokenize('  "abc');
+      [...tokenize('  "abc')];
     }).to.throw(Error, /EOF while looking for "/);
   });
 });

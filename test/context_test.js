@@ -31,7 +31,7 @@ describe('Define', function() {
   }
 
   describe('with no parameters', function() {
-    it('should handle missing token lists', function() {
+    it('should expand in place', function() {
       testExpand('.define foo .bar baz',
                  'qux foo bar',
                  'qux .bar baz bar');
@@ -66,68 +66,85 @@ describe('Define', function() {
 
   describe('with n-ary C-style parameter list', function() {
     it('should expand correctly when called withut parens', function() {
-      testExpand('.define foo(a, b, c) 1 a 2 b 3 c',
+      testExpand('.define foo(a, b, c) 1 a 2 b 3 c 4',
                  'qux foo x, y, z',
-                 'qux 1 x 2 y 3 z');
+                 'qux 1 x 2 y 3 z 4');
     });
 
     it('should expand correctly with blanks in the middle', function() {
-      testExpand('.define foo(a, b, c) 1 a 2 b 3 c',
+      testExpand('.define foo(a, b, c) 1 a 2 b 3 c 4',
                  'qux foo , , z',
-                 'qux 1 2 3 z');
+                 'qux 1 2 3 z 4');
     });
 
     it('should expand correctly with one blank at the end', function() {
-      testExpand('.define foo(a, b, c) 1 a 2 b 3 c',
+      testExpand('.define foo(a, b, c) 1 a 2 b 3 c 4',
                  'qux foo x, y',
-                 'qux 1 x 2 y 3');
+                 'qux 1 x 2 y 3 4');
     });
 
     it('should expand correctly with two blanks at the end', function() {
-      testExpand('.define foo(a, b, c) 1 a 2 b 3 c',
+      testExpand('.define foo(a, b, c) 1 a 2 b 3 c 4',
                  'qux foo x',
-                 'qux 1 x 2 3');
+                 'qux 1 x 2 3 4');
     });
 
     it('should expand correctly with no parameters given', function() {
-      testExpand('.define foo(a, b, c) 1 a 2 b 3 c',
+      testExpand('.define foo(a, b, c) 1 a 2 b 3 c 4',
                  'qux foo',
-                 'qux 1 2 3');
+                 'qux 1 2 3 4');
     });
 
     it('should glob to end of line on last parameter', function() {
-      testExpand('.define foo(a, b, c) 1 a 2 b 3 c',
+      testExpand('.define foo(a, b, c) 1 a 2 b 3 c 4',
                  'qux foo a b c d e, f g h i j, k l m n o',
-                 'qux 1 a b c d e 2 f g h i j 3 k l m n o');
+                 'qux 1 a b c d e 2 f g h i j 3 k l m n o 4');
     });
 
-    it('should handle parenthesized call site', function() {
-      testExpand('.define foo(a, b, c) 1 a 2 b 3 c',
-                 'qux foo(x, y w, z)',
-                 'qux 1 x 2 y w 3 z');
+    it('should expand a parenthesized call site', function() {
+      testExpand('.define foo(a, b, c) 1 a 2 b 3 c 4',
+                 'qux foo(x, y yy, z) w',
+                 'qux 1 x 2 y yy 3 z 4 w');
     });
 
-    it('should handle braces in call-site', function() {
-      testExpand('.define foo(a, b, c) 1 a 2 b 3 c',
-                 'qux foo {x}, {y )}, {z}',
-                 'qux 1 x 2 y ) 3 z');
+    it('should pass through braces in call-site', function() {
+      testExpand('.define foo(a, b, c) 1 a 2 b 3 c 4',
+                 'qux foo x, {y )}, {z}',
+                 'qux 1 x 2 y ) 3 z 4');
     });
 
-    it('should handle braces in parenthesized call site', function() {
-      testExpand('.define foo(a, b, c) 1 a 2 b 3 c',
+    it('should pass through braces in parenthesized call site', function() {
+      testExpand('.define foo(a, b, c) 1 a 2 b 3 c 4',
                  'qux foo({x}, {y )}, {z})',
-                 'qux 1 x 2 y ) 3 z');
+                 'qux 1 x 2 y ) 3 z 4');
     });
 
-    // TODO - missing final param(s)
+    it('should stop expanding after last grouped argument', function() {
+      testExpand('.define foo(a, b, c) 1 a 2 b 3 c 4',
+                 'qux foo {x}, {y )}, {z} w',
+                 'qux 1 x 2 y ) 3 z 4 w');
+    });
+
+    it('should fail on braces with tokens afterwards', function() {
+      const define = Define.from(tok('.define foo(a, b) [a:b]'));
+      expect(define.expand(tok('({1} 2, 3)'))).to.equal(false);      
+      expect(define.expand(tok('{1} 2, 3'))).to.equal(false);      
+      expect(define.expand(tok('(1, {2} 3)'))).to.equal(false);      
+    });
+
+    it('should fail on parenthesized calls with too many args', function() {
+      const define = Define.from(tok('.define foo(a, b) [a:b]'));
+      expect(define.expand(tok('(1, 2, 3)'))).to.equal(false);      
+    });
+
     // TODO - is it possible to make an invalid call???
     // TODO - junk at end of line?
-
-
   });
   // optional parens
   // skipping args implicitly
   // extra braces
+  // don't inspect stray groups for delimiters
+  //   (e.g. (\a,b)(1 {2, 3}, 4) => a=1 {2, 3}   b=4
 });
 
 function tok(str) {

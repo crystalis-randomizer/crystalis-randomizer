@@ -61,9 +61,9 @@ class DefineOverload {
               readonly pattern: Token[],
               readonly production: Token[]) {}
 
-  // TODO - consider providing a more useful error message?
-  //      - may need to aggregate a bit?
   expand(tokens: Deque<Token>, start = 0): string {
+    // TODO - this code is a mess, but it passes unit tests...
+    // see if we can clean it up eventually?
     const enclosed =
         this.parens && start < tokens.length &&
         Token.eq(Token.LP, tokens.get(start)!);
@@ -98,11 +98,23 @@ class DefineOverload {
             const close = findBalancedCurly(tokens, i);
             if (close < 0) return `missing '})' for final param`;
             params.set(pat.str, tokens.slice(i, close));
-            //splice = close + 1;
+            splice = close + 1;
+            if (enclosed) {
+              if (splice < tokens.length &&
+                  !Token.eq(Token.RP, tokens.get(splice))) {
+                return `garbage between close curly and close paren`;
+              }
+              splice++;
+            }
             break;
           } else {
-            // return `NOT IMPLEMENTED????`;
-            // TODO - should foo (x, y) on `foo a b c` gobble c as well? yes
+            let ii = i - 1;
+            while (ii < end) {
+              const tok = tokens.get(ii)!;
+              if (Token.eq(tok, Token.COMMA)) return `too many args`;
+              if (Token.eq(tok, Token.LC)) ii = findBalancedCurly(tokens, ii);
+              ii++;
+            }
           }
         }
         params.set(pat.str, tokens.slice(i - 1, end));
@@ -120,7 +132,7 @@ class DefineOverload {
           params.set(pat.str, [tokens.get(i++)!]);
         }
       } else {
-        // delimited parameter
+        // delimited parameter (don't look inside curly braces)
         let delim = i - 1;
 //console.log(`DELIM`, [...tokens].map(Token.name), i-1, Token.name(cur), [...this.pattern].map(Token.name), 'PAT', Token.name(pat), j-1, 'NEXT', Token.name(next));
         if (this.parens && (!next || Token.eq(Token.COMMA, next)) &&
@@ -132,8 +144,12 @@ class DefineOverload {
           i = delim + 1; // should point to comma
           continue;
         }
-        while (delim < end && !Token.eq(tokens.get(delim)!, next)) {
+        let curTok;
+        while (delim < end && !Token.eq(curTok = tokens.get(delim)!, next)) {
 //console.log(`  no match: ${delim} => ${Token.name(tokens.get(delim))}`);
+          if (Token.eq(curTok, Token.LC)) {
+            delim = findBalancedCurly(tokens, delim);
+          }
           delim++
         }
         if (delim >= end && !this.parens) {

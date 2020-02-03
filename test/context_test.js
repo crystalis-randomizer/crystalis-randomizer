@@ -119,17 +119,22 @@ describe('Define', function() {
                  'qux 1 x 2 y ) 3 z 4');
     });
 
-    it('should stop expanding after last grouped argument', function() {
+    it('should expand to end of line', function() {
       testExpand('.define foo(a, b, c) 1 a 2 b 3 c 4',
                  'qux foo {x}, {y )}, {z} w',
-                 'qux 1 x 2 y ) 3 z 4 w');
+                 'qux 1 x 2 y ) 3 {z} w 4');
     });
 
-    it('should fail on braces with tokens afterwards', function() {
-      const define = Define.from(tok('.define foo(a, b) [a:b]'));
-      expect(define.expand(tok('({1} 2, 3)'))).to.equal(false);      
-      expect(define.expand(tok('{1} 2, 3'))).to.equal(false);      
-      expect(define.expand(tok('(1, {2} 3)'))).to.equal(false);      
+    it('should retain non-single-group braces', function() {
+      testExpand('.define foo(a, b) [a:b]',
+                 'foo({1} 2, 3)',
+                 '[{1} 2 : 3]');
+      testExpand('.define foo(a, b) [a:b]',
+                 'foo {1} 2, 3',
+                 '[{1} 2 : 3]'); 
+      testExpand('.define foo(a, b) [a:b]',
+                 'foo(1, {2} 3)',
+                 '[1 : {2} 3]'); 
     });
 
     it('should fail on parenthesized calls with too many args', function() {
@@ -145,6 +150,67 @@ describe('Define', function() {
   // extra braces
   // don't inspect stray groups for delimiters
   //   (e.g. (\a,b)(1 {2, 3}, 4) => a=1 {2, 3}   b=4
+
+  describe('with TeX-style argument list', function() {
+    it('should capture empty last argument', function() {
+      testExpand('.define foo {a b c} [a:b:c]',
+                 'qux foo bar baz',
+                 'qux [bar:baz:]');
+    });
+
+    it('should fail on empty undelimited argument', function() {
+      const define = Define.from(tok('.define foo {a b c} [a:b:c]'));
+      expect(define.expand(tok('bar'))).to.equal(false);      
+    });
+
+    it('should fail on missing delimiter', function() {
+      const define = Define.from(tok('.define foo {a,b} [a:b]'));
+      expect(define.expand(tok('bar baz qux'))).to.equal(false);      
+    });
+
+    it('should capture entire group for undelimited arg', function() {
+      testExpand('.define foo {a b c} [a:b:c]',
+                 'qux foo {bar baz} qux corge',
+                 'qux [bar baz:qux:corge]');
+    });
+
+    it('should capture entire group for undelimited arg', function() {
+      testExpand('.define foo {a b c} [a:b:c]',
+                 'qux foo {bar baz} qux corge',
+                 'qux [bar baz:qux:corge]');
+    });
+
+    it('should capture delimited arg', function() {
+      testExpand('.define foo {a,b,c} [a:b:c]',
+                 'qux foo bar baz, qux, corge',
+                 'qux [bar baz:qux:corge]');
+    });
+
+    it('should retain braces for delimited arg', function() {
+      testExpand('.define foo {a,b,c} [a:b:c]',
+                 'qux foo {bar baz}, qux, corge',
+                 'qux [{bar baz}:qux:corge]');
+    });
+
+    it('should skip param delimiter in braces', function() {
+      testExpand('.define foo {a,b,c} [a:b:c]',
+                 'qux foo {bar, baz}, qux, corge',
+                 'qux [{bar, baz}:qux:corge]');
+    });
+
+    it('should not gobble to end of line if delimited at end', function() {
+      testExpand('.define foo {a,b,c,} [a:b:c]',
+                 'qux foo bar, baz, qux, corge',
+                 'qux [bar:baz:qux] corge');
+    });
+
+    it('should allow arbitrary tokens as delimiters', function() {
+      testExpand('.define foo {a .d b 1 c ]} [a:b:c]',
+                 'qux foo bar .d baz 1 qux ] corge',
+                 'qux [bar:baz:qux] corge');
+    });
+  });
+
 });
 
 function tok(str) {

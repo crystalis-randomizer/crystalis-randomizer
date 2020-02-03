@@ -1,4 +1,5 @@
 import {Deque} from '../util.js';
+import {Scanner} from './scanner.js';
 import {Token} from './token.js';
 
 const DEBUG = true;
@@ -33,212 +34,226 @@ export class Define {
 
   // NOTE: macro[0] is either .define or .macro
   static from(macro: Deque<Token>) {
-    if (!Token.eq(Token.DEFINE, macro.get(0)!)) throw new Error(`invalid`);
-    // skip the name
-    if (macro.get(1)!.token !== 'ident') throw new Error(`invalid`);
+    const scanner = new Scanner([...macro]);
+    if (!scanner.lookingAt(Token.DEFINE)) throw new Error(`invalid`);
+    scanner.advance();
+    if (!scanner.lookingAtIdentifier()) throw new Error(`invalid`);
+    scanner.advance(); // don't care about name...
     // parse the parameter list, if any
-    let parens = Token.eq(Token.LP, macro.get(2)!);
-    let pattern: Token[] = [];
-    let production: Token[];
-    if (parens || Token.eq(Token.LC, macro.get(2)!)) {
-      const end = (parens ? findBalancedParen : findBalancedCurly)(macro, 3);
-      if (end < 0) {
-        fail(macro.get(0)!, `.define macro parameter list never closed`);
-      }
-      pattern = macro.slice(3, end);
-      // TODO - assert that pattern does not contain braces?
-      production = macro.slice(end + 1);
-    } else {
-      // no parameters
-      production = macro.slice(2);
+    let paren = false;
+    const patStart = scanner.pos + 1;
+    let patEnd = patStart;
+    if (scanner.lookingAt(Token.LP)) {
+      paren = true;
+      scanner.advance();
+      if (!scanner.find(Token.RP)) throw new Error(`bad .define`);
+      patEnd = scanner.pos - 1;
+    } else if (scanner.lookingAt(Token.LC)) {
+      scanner.advance(); // automatically skips balanced braces
+      patEnd = scanner.pos - 1; // exactly the RC
     }
-    return new Define([new DefineOverload(parens, pattern, production)]);
+    const pattern = macro.slice(patStart, patEnd); // could be empty...
+    const production = macro.slice(scanner.pos);
+
+    return new Define([
+      paren ?
+          new CStyleDefine(paramsFromPattern(pattern), production) :
+          new TexStyleDefine(pattern, production)
+    ]);
   }
 }
 
-class DefineOverload {
-  constructor(readonly parens: boolean,
-              readonly pattern: Token[],
+function paramsFromPattern(pattern: Token[]): string[] {
+  if (!(pattern.length & 1)) throw new Error(`Bad C-style define pattern`);
+  const out: string[] = [];
+  for (let i = 0; i < pattern.length; i += 2) {
+    const ident = pattern[i];
+    if (ident.token !== 'ident') {
+      throw new Error(`Bad C-style define parameter`);
+    } else if (i + 1 < pattern.length &&
+               !Token.eq(pattern[i + 1], Token.COMMA)) {
+      throw new Error(`Bad C-style parameter separator`);
+    }
+    out.push(ident.str);
+  }
+  return out;
+}
+
+interface DefineOverload {
+  expand(tokens: Deque<Token>, start?: number): string;
+}
+
+function produce(tokens: Deque<Token>, start: number, end: number,
+                 replacements: Map<string, Token[]>, production: Token[]) {
+  const out: Token[] = [];
+  for (const tok of production) {
+    if (tok.token === 'ident') {
+      const param = replacements.get(tok.str);
+      if (param) {
+        // this is actually a parameter
+        out.push(...param); // TODO - copy w/ child sourceinfo?
+        continue;
+      }
+    }
+    out.push(tok);
+  }
+  // Now replace
+  tokens.splice(start, end - start, ...out);
+}
+
+class CStyleDefine implements DefineOverload {
+  constructor(readonly params: string[],
               readonly production: Token[]) {}
 
   expand(tokens: Deque<Token>, start = 0): string {
-    // TODO - this code is a mess, but it passes unit tests...
-    // see if we can clean it up eventually?
-    const enclosed =
-        this.parens && start < tokens.length &&
-        Token.eq(Token.LP, tokens.get(start)!);
-    let end = tokens.length;
-    let splice = end;
-    let i = start;
-
-    if (enclosed) {
-      end = findBalancedParen(tokens, i++);
-      if (end < 0) return `missing rparen for enclosed C-style call`;
-      splice = end + 1;
-      // end: index of rparen, splice: index AFTER rparen
-    } else if (!this.pattern.length) {
-      splice = start;
-    }
-
-    // Start parsing parameters.
-    const params = new Map<string, Token[]>();
-    let j = 0;
-    while (j < this.pattern.length && i < end) {
-      const pat = this.pattern[j++];
-      const cur = tokens.get(i++)!;
-      if (pat.token !== 'ident') {
-        // move on to the next one, provided they match
-        if (Token.eq(pat, cur)) continue;
-        return `no match for pattern token ${Token.name(pat)}`;
+    let end = this.params.length ? tokens.length : start;
+    let tok = new Scanner([...tokens], start);
+    const replacements = new Map<string, Token[]>();
+    
+    if (start < tokens.length &&
+        Token.eq(Token.LP, tokens.get(start)!)) {
+      tok.advance();
+      // Question: balanced find or not?
+      if (!tok.find(Token.RP, Token.LP)) {
+        return 'missing close paren for enclosed C-style expansion';
       }
-      if (j === this.pattern.length) {
-        if (this.parens) {
-          if (Token.eq(Token.LC, cur)) {
-            // special case: braces on last param in paren macro
-            const close = findBalancedCurly(tokens, i);
-            if (close < 0) return `missing '})' for final param`;
-            params.set(pat.str, tokens.slice(i, close));
-            splice = close + 1;
-            if (enclosed) {
-              if (splice < tokens.length &&
-                  !Token.eq(Token.RP, tokens.get(splice))) {
-                return `garbage between close curly and close paren`;
-              }
-              splice++;
-            }
-            break;
+      end = tok.pos;
+      tok = new Scanner(tokens.slice(0, tok.pos - 1), start + 1);
+    }
+    // Find a comma, skipping balanced parens.
+    for (const param of this.params) {
+      let paramStart = tok.pos;
+      let singleGroup = true;
+      // TODO - consider making it an error to start with a brace but not be
+      // completely surrounded?
+      let parens = 0;
+      while (!tok.atEnd()) {
+        const cur = tok.get();
+        if (!parens && Token.eq(cur, Token.COMMA)) break;
+        if (cur.token === 'lp') parens++;
+        if (cur.token === 'rp') {
+          if (--parens < 0) return 'unbalanced right parenthesis';
+        }
+        if (cur.token !== 'lc') singleGroup = false;
+        tok.advance();
+      }
+      // whether we're at the end or not, accept the parameter.
+      let paramEnd = tok.pos;
+      if (singleGroup) { // drop the braces only if it's the whole arg
+        paramStart++;
+        paramEnd--;
+      }
+      replacements.set(param, tokens.slice(paramStart, paramEnd));
+      if (tok.lookingAt(Token.COMMA)) tok.advance();
+    }
+    if (!tok.atEnd()) {
+      return 'too many parameters'
+    }
+    // All params filled in, make replacement
+    produce(tokens, start, end, replacements, this.production);
+    return '';
+  }
+}
+
+class TexStyleDefine implements DefineOverload {
+  constructor(readonly pattern: Token[],
+              readonly production: Token[]) {}
+
+  expand(tokens: Deque<Token>, start = 0): string {
+    let end = this.pattern.length ? tokens.length : start;
+    let tok = new Scanner([...tokens], start);
+    const replacements = new Map<string, Token[]>();
+    
+    for (let patPos = 0; patPos < this.pattern.length; patPos++) {
+      const pat = this.pattern[patPos];
+      if (pat.token === 'ident') {
+        let patNext = this.pattern[patPos + 1];
+        let argStart = tok.pos;
+        let argEnd = argStart + 1;
+        if (patNext?.token === 'ident') {
+          // parse undelimited
+          if (tok.lookingAt(Token.LC)) {
+            argStart++;
+            tok.advance();
+            argEnd = tok.pos - 1;
+          } else if (tok.atEnd()) {
+            return `missing undelimited argument ${Token.name(pat)}`;
           } else {
-            let ii = i - 1;
-            while (ii < end) {
-              const tok = tokens.get(ii)!;
-              if (Token.eq(tok, Token.COMMA)) return `too many args`;
-              if (Token.eq(tok, Token.LC)) ii = findBalancedCurly(tokens, ii);
-              ii++;
+            tok.advance();
+          }
+        } else {
+          // parse delimited
+          if (!patNext) {
+            // final arg eats entire line
+            end = argEnd = tokens.length;
+          } else {
+            // non-empty next token
+            if (!tok.find(patNext)) {
+              return `could not find delimiter ${Token.name(patNext)}`;
             }
+            argEnd = tok.pos - 1;
+            end = tok.pos;
+            patPos++;
           }
         }
-        params.set(pat.str, tokens.slice(i - 1, end));
-        break;
-      }
-      const next = this.pattern[j];
-      if (next.token === 'ident') {
-        // undelimited parameter
-        if (Token.eq(Token.LC, cur)) { // enclosed in braces
-          const close = findBalancedCurly(tokens, i + 1);
-          if (close < 0) return `missing '}' for grouped undelimited param`;
-          params.set(pat.str, tokens.slice(i + 1, close));
-          i = close + 1;
-        } else { // not enclosed
-          params.set(pat.str, [tokens.get(i++)!]);
-        }
+        // all cases handled: save the replacement
+        replacements.set(pat.str, tokens.slice(argStart, argEnd));
       } else {
-        // delimited parameter (don't look inside curly braces)
-        let delim = i - 1;
-//console.log(`DELIM`, [...tokens].map(Token.name), i-1, Token.name(cur), [...this.pattern].map(Token.name), 'PAT', Token.name(pat), j-1, 'NEXT', Token.name(next));
-        if (this.parens && (!next || Token.eq(Token.COMMA, next)) &&
-            Token.eq(Token.LC, cur)) {
-          // special case: paren macro w/ comma delimiter -> allow braces
-          delim = findBalancedCurly(tokens, i);
-          params.set(pat.str, tokens.slice(i, delim));
-//console.log(`  balanced curly: ${delim}, restart at ${delim + 1}`);
-          i = delim + 1; // should point to comma
-          continue;
-        }
-        let curTok;
-        while (delim < end && !Token.eq(curTok = tokens.get(delim)!, next)) {
-//console.log(`  no match: ${delim} => ${Token.name(tokens.get(delim))}`);
-          if (Token.eq(curTok, Token.LC)) {
-            delim = findBalancedCurly(tokens, delim);
-          }
-          delim++
-        }
-        if (delim >= end && !this.parens) {
-          return `no delimiter '${Token.name(next)}' to terminate parameter ${
-                  Token.name(pat)}`;
-        }
-//console.log(`  match: ${i-1}..${delim} => ${tokens.slice(i-1, delim).map(Token.name).join(' ')}`);
-        params.set(pat.str, tokens.slice(i - 1, delim));
-        i = delim;
+        // token to match
+        if (!tok.lookingAt(pat)) return `could not match: ${Token.name(pat)}`;
+        tok.advance();
+        end = tok.pos;
       }
     }
-    // special case: paren macro w/ missing comma delimited params
-    //  -> save blank
-    while (this.parens && j < this.pattern.length) {
-      const pat = this.pattern[j++];
-      if (Token.eq(Token.COMMA, pat)) continue;
-      if (pat.token !== 'ident') {
-        return `end of call before non-optional delimiter ${Token.name(pat)}`;
-      }
-      params.set(pat.str, []);
-    }
-    if (j < this.pattern.length) {
-      return `end of call before end of pattern: ${
-              this.pattern.slice(j).map(Token.name).join(' ')}`;
-    }
-
-    // Parameters parsed.  Now sub in the token stream.
-    const out: Token[] = [];
-    for (const tok of this.production) {
-      if (tok.token === 'ident') {
-        const param = params.get(tok.str);
-        if (param) {
-          // this is actually a parameter
-          out.push(...param); // TODO - copy w/ child sourceinfo?
-          continue;
-        }
-      }
-      out.push(tok);
-    }
-
-    // Now replace
-    tokens.splice(start, splice - start, ...out);
-    return ''; // success
+console.log(replacements);
+    produce(tokens, start, end, replacements, this.production);
+    return '';
   }
 }
 
-// Given that `i` is an index into list pointing to an open brace
-// returns the index of the corresponding close brace, or -1.
-// Ignores all other delimiters.
-function findBalancedCurly(list: Deque<Token>, i: number): number {
-  let count = 1;
-  while (++i < list.length) {
-    switch (list.get(i)!.token) {
-      case 'lc':
-        count++;
-        break;
-      case 'rc':
-        if (--count === 0) return i;
-        break;
-      default:
-        // do nothing
-    }
-  }
-  return -1;
-}
+// // Given that `i` is an index into list pointing to an open brace
+// // returns the index of the corresponding close brace, or -1.
+// // Ignores all other delimiters.
+// function findBalancedCurly(list: Deque<Token>, i: number): number {
+//   let count = 1;
+//   while (++i < list.length) {
+//     switch (list.get(i)!.token) {
+//       case 'lc':
+//         count++;
+//         break;
+//       case 'rc':
+//         if (--count === 0) return i;
+//         break;
+//       default:
+//         // do nothing
+//     }
+//   }
+//   return -1;
+// }
 
-// Same as findBalancedCurly except parens are considered subordinate
-// to braces, so any braces will immediately stop counting parens.
-function findBalancedParen(list: Deque<Token>, i: number): number {
-  let count = 1;
-  while (++i < list.length) {
-    switch (list.get(i)!.token) {
-      case 'lc':
-        i = findBalancedCurly(list, i);
-        if (i < 0) return -1;
-        break;
-      case 'rc': return -1;
-      case 'lp':
-        count++;
-        break;
-      case 'rp':
-        if (--count === 0) return i;
-        break;
-      default:
-        // do nothing
-    }
-  }
-  return -1;
-}
+// // Same as findBalancedCurly except parens are considered subordinate
+// // to braces, so any braces will immediately stop counting parens.
+// function findBalancedParen(list: Deque<Token>, i: number): number {
+//   let count = 1;
+//   while (++i < list.length) {
+//     switch (list.get(i)!.token) {
+//       case 'lc':
+//         i = findBalancedCurly(list, i);
+//         if (i < 0) return -1;
+//         break;
+//       case 'rc': return -1;
+//       case 'lp':
+//         count++;
+//         break;
+//       case 'rp':
+//         if (--count === 0) return i;
+//         break;
+//       default:
+//         // do nothing
+//     }
+//   }
+//   return -1;
+// }
 
 export class Context {
   readonly macros = new Map<string, MacroExpansion>();
@@ -291,12 +306,12 @@ export class Context {
 //  - space before paren in defn doesn't change anything
 
 
-function fail(t: Token, msg: string): never {
-  let s = t.source;
-  if (s) msg += `\n  at ${s.file}:${s.line}:${s.column}: ${s.content}`;
-  while (s?.parent) {
-    s = s.parent;
-    msg += `\n  included from ${s.file}:${s.line}:${s.column}: ${s.content}`;
-  }
-  throw new Error(msg);
-}
+// function fail(t: Token, msg: string): never {
+//   let s = t.source;
+//   if (s) msg += `\n  at ${s.file}:${s.line}:${s.column}: ${s.content}`;
+//   while (s?.parent) {
+//     s = s.parent;
+//     msg += `\n  included from ${s.file}:${s.line}:${s.column}: ${s.content}`;
+//   }
+//   throw new Error(msg);
+// }

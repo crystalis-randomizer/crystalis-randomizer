@@ -62,15 +62,78 @@ fall through to the next definition.  If an undelimited parameter is
 expected at EOL, it is considered a failed match, so longer and more
 specific overloads should always be specified first.
 
-An alternative syntax is `.defined NAME (PARAMS) EXPANSION`.  This has
-two effects: (1) call sites may optionally surround all arguments with
-_balanced_ parentheses, which will delimit the final argument, and (2)
-comma-delimited parameters (including the final parameter before the
-close paren) will optionally consume a single layer of braces around
-passed arguments, mimicking the builtin `.tcount({token list})` style.
-This affordance makes these macro rules compatible with the ca65 style
-for all typical usages, while still maintaining the possibility of
-more advanced usage patterns via the TeX style.
+An alternative syntax is `.defined NAME (PARAMS) EXPANSION`, which
+enables simpler syntax: (1) params _must_ be a comma-separated list of
+identifiers, (2) call sites may optionally surround all arguments with
+_balanced_ parentheses, which will delimit the final argument, and (3)
+parameters will optionally consume a single layer of braces if it
+surrounds the entire argument, mimicking the builtin `.tcount({token
+list})` style.  This affordance makes these macro rules compatible
+with the ca65 style for all typical usages, while still maintaining
+the possibility of more advanced usage patterns via the TeX style.
 
 We adhere much more faithfully to ca65's rules for `.macro`-style
 expansions: they must be in the mnemonic position
+
+## Assembled object file format
+
+The output of the assembler is a JSON object with the following format:
+
+```
+interface Object {
+  // All the chunks.
+  chunks: Chunk[];
+  // All the symbols.
+  symbols: Symbol[];
+  // TODO: pagesize information
+}
+interface Chunk {
+  // ROM bank for this chunk.
+  bank?: number;
+  // Absolute address (within the bank) to start.
+  org?: number;
+  // Region of CPU memory for relocatable chunk (i.e. $8000 or
+  // $A000 will place the result in the same part of the ROM
+  // image, but symbols will be exported differently).
+  reloc?: number;
+  // Base64-encoded data for the chunk.  This may be a Uint8Array
+  // in memory.
+  data: string;
+  // Substitutions to insert into the data based on other chunks.
+  subs?: Substitution[];
+}
+interface Symbol {
+  // Name to export this symbol as.
+  export?: string;
+  // Name to import this symbol from.
+  import?: string;
+  // Expression for the symbol.
+  expr: Expr;
+  // TODO: size data?
+}
+interface Substitution {
+  // Offset into the chunk to substitute the expression into.
+  offset: number;
+  // Number of bytes to substitute (little-endian).
+  size: number;
+  // Expression whose value to substitute.
+  expr: Expr;
+}
+interface Expr {
+  // Operator to apply to args.  Typically this is the operator
+  // as a string (e.g. '+' or '.max'), and args will have one
+  // or more nested expressions.  Three special operators exist
+  // that use the 'num' field:
+  //  * 'sym' indicates an offset into the 'symbols' array,
+  //  * 'num' is a number literal,
+  //  * 'off' is the address of an offset into this chunk.
+  op: string;
+  // Args for operators.
+  args?: Expr[];
+  // Numeric arg for 'sym', 'num', or 'off'.
+  num?: number;
+}
+```
+
+By producing this format, external applications can reuse the linker's
+logic to link data from different (non-assembly) sources.

@@ -11,7 +11,7 @@ interface MacroExpansion {
   expand(tokens: Deque<Token>, start?: number): boolean;
 }
 
-export class Define {
+export class Define implements MacroExpansion {
   private constructor(readonly overloads: readonly DefineOverload[]) {}
 
   override(macro: MacroExpansion): MacroExpansion {
@@ -134,7 +134,7 @@ class CStyleDefine implements DefineOverload {
         if (cur.token === 'rp') {
           if (--parens < 0) return 'unbalanced right parenthesis';
         }
-        if (cur.token !== 'lc') singleGroup = false;
+        if (cur.token !== 'lc' || tok.pos !== paramStart) singleGroup = false;
         tok.advance();
       }
       // whether we're at the end or not, accept the parameter.
@@ -205,7 +205,7 @@ class TexStyleDefine implements DefineOverload {
         end = tok.pos;
       }
     }
-console.log(replacements);
+    //console.log(replacements);
     produce(tokens, start, end, replacements, this.production);
     return '';
   }

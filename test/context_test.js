@@ -125,6 +125,12 @@ describe('Define', function() {
                  'qux 1 x 2 y ) 3 {z} w 4');
     });
 
+    it('should not retain a pair of braces in a single arg', function() {
+      testExpand('.define foo(a, b) [a:b]',
+                 'foo({1}{2}, 3)',
+                 '[{1}{2} : 3]');
+    });
+
     it('should retain non-single-group braces', function() {
       testExpand('.define foo(a, b) [a:b]',
                  'foo({1} 2, 3)',

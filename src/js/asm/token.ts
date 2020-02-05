@@ -48,6 +48,7 @@ export namespace Token {
   export const ENDIF: Token = {token: 'cs', str: '.endif'};
   export const ELSE: Token = {token: 'cs', str: '.else'};
   export const ELSEIF: Token = {token: 'cs', str: '.elseif'};
+  export const SKIP: Token = {token: 'cs', str: '.skip'};
   // Important operator tokens
   export const COLON: Token = {token: 'op', str: ':'};
   export const DCOLON: Token = {token: 'op', str: '::'};
@@ -64,7 +65,8 @@ export namespace Token {
     return true;
   }
 
-  export function eq(left: Token, right: Token): boolean {
+  export function eq(left: Token|undefined, right: Token|undefined): boolean {
+    if (!left || !right) return false;
     if (left.token !== right.token) return false;
     if ((left as StringToken).str !== (right as StringToken).str) return false;
     if ((left as NumberToken).num !== (right as NumberToken).num) return false;
@@ -91,5 +93,13 @@ export namespace Token {
       default:
         assertNever(arg);
     }
+  }
+
+  export function nameAt(arg: Token): string {
+    let n = name(arg);
+    const s = arg.source;
+    if (s) n += `\n  at ${s.file}:${s.line}:${s.colon}`;
+    // TODO - definition vs usage?
+    return n;
   }
 }

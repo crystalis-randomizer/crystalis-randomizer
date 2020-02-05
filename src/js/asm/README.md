@@ -35,7 +35,104 @@ the largest remaining independent segment is written first.
 This allows using the patching linker for both normal assembly code,
 but also for patching and writing new data tables throughout the
 program.
-    
+
+## Generators
+
+Each part of the assembler is handled as a generator.  The tokenizer
+emits a stream of tokens.  The output to the generator is fed into
+the line splitter, which generates lines as separate token arrays.
+The lines are passed to the macro subsystem, which contains a map of
+identifiers to `(Define|Macro)` and expands the defines in lines
+as they come in, then ...
+
+Alternative plan: continuation passing?
+
+```
+interface Tokenizer {
+  tokenize(str: string, file?: string): Generator<Token>;
+}
+interface Expander {
+  ingestLine(line: Token[]);
+}
+interface Assembler {
+  ingestLabel(label: string);
+  ingestMnemonic(mnemonic: string, args: Expr[]);
+  ingestDirective(directive: string, arg: Expr[]);
+  end();
+}
+```
+
+Probably want Expander to be at the top level, since it sees all directives,
+while the tokenizer is dumb.  Then the Expander can configure the Tokenizer,
+ask it for the next line, etc.
+
+How to handle `.exitmacro`?
+
+```
+class Expander {
+  handleCall() {
+    const macroExpander = new MacroExpander({
+      stopped = false,
+      ingestLabel(label) { this.delegate.ingestLabel(label); },
+      ingestMne(...) { this.delegate.ingestMne(...); },
+      ingestDirec(...) { if (directive==='.exitmacro'){...} },
+    });
+    for (const line of replacement.lines) {
+      if (Token.eq(line, Token.EXITMACRO)) break;
+      macroExpander.ingestLine(line);
+    }
+  }
+}
+```
+
+What about `.define` and `.macro`?  The latter is tricky because it
+spans multiple lines...
+
+What about `.proc`?  It's a label and a scope.  Scopes need to be
+findable.  The assembler keeps track of the current scope chain.
+When it sees a symbol definition, it assigns it a new identifier.
+When it sees a reference to a symbol that's not defined in the
+current scope, it likewise makes a new identifier.  There's no way
+to tell until after the end of the enclosing scopes which scope
+actually defined the symbol...
+
+We can handle `+++` and `--` and `:` labels easily enough.  When
+we see a label `--`, we override the current version of that and
+use it whenever we see the backreference.  When we see a forward
+reference `+++` we give it a label, and then delete it whenever
+we see the definition.  When we see a label `:` or a reference `:+`,
+we have a list of such labels and we move an index along it.  Do
+these interact with scopes?  Macros?  How do local symbols work
+in a macro?  There's an implicit scope for the expansion.  Scopes
+don't affect anonymous labels.  Cheap local labels need to be cleared
+at every real label.
+
+Here's a difficulty:
+
+```
+.scope S1
+L1:
+  .scope S2
+    bne L1
+  L2:
+    bne L2
+  L1:
+  .endscope
+L2:
+.endscope
+```
+
+When we see `L1:` in `S1` we assign a new symbol ID (0) for [`S1`,
+`L1`].  When we see `bne L1` in `S2`, we can't tell if this is a new
+label or not, so we assign it ID 1 for [`S1`, `S2`, `L1`].
+
+It's very difficult to keep track of what's what when we haven't seen
+all the scoped symbols yet.  The best we can do is guess and then assign
+aliases for inner uses of outer symbols.  When we see an explicit scope,
+we know exactly where it is, but for unscoped symbols, we need to keep
+a list of ref'd but never def'd symbols in the scope, mapping to the ID
+we'd assigned, and then roll them up to the higher-level scopes...?
+
 ## Macro expansion
 
 After studying ca65's macro expansion rules, I decided I'm not

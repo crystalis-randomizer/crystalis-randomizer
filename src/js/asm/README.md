@@ -234,3 +234,111 @@ interface Expr {
 
 By producing this format, external applications can reuse the linker's
 logic to link data from different (non-assembly) sources.
+
+## Expansion, Evaluation, Execution
+
+The assembler goes through a number of interleaved stages.  After
+source is tokenized into a stream of tokens, expansion begins.  Each
+line is expanded individually from the first token to produce a single
+expanded line that can be executed.  Execution entails changing the
+state of the (pre)processor.  i.e. by ingesting a directive or
+mnemonic, entering a block (e.g. `.if` or `.proc`), or defining a
+macro.  Expansion entails looking up `.define`d macros or processing
+expandable directives (e.g. `.tcount`, `.cond`, `.concat`, or
+`.ident`).  Expandable directives require statically constant inputs.
+
+An interesting directive is `.skip`, which suppresses expansion on the
+following token (and expanding the one after).  The `.define`,
+`.macro`, and `.undefine` tokens have a permanent built-in `.skip`
+effect, which allows prevents the to-be-defined identifier from
+getting expanded before it can be defined, but this itself can be
+skipped:
+
+```
+.define defFoo {n} \
+    .skip .define .ident(.sprintf("foo%d", n))
+defFoo 5 42
+```
+
+The above example would expand `defFoo 5` to `.define foo5` so that
+the result is `.define foo5 42`.  Note that in practice this is not
+necessary because the `.define` _will_ expand a directive, such as
+`.ident` or `.skip`.  A better example is
+
+```
+.define unary (name, func) name (x) func
+.skip .define unary(inc, x + 1)
+```
+
+This could be further improved as
+
+```
+.define unary (name, func) .define name (x) func
+unary(inc, x + 1)
+```
+
+The body of a `.define` macro is not expanded at definition time,
+since expansion would destroy a lot of the things that we'd want to
+keep.  This allows, for instance, to define a recursive macro.  If
+expansion is desired, it can be achieved by skipping ahead of both the
+`.define` and the identifier to expand the body, e.g. by defining a
+separate macro for the body:
+
+```
+.define body .tcount({foo})
+.undefined foo
+.define .skip foo body
+.undefine body
+```
+
+In this example if `foo` were a list of tokens then it would get
+redefined to just be the number of tokens.  This could be important
+if the dependent value may potentially change.
+
+Expression evaluation ties into expansion because there are a number
+of functions that are evaluated at expansion time.  At the center is
+the `.cond` directive, which takes a comma-separated list of terms
+and applies an expansion-time "if-elseif-else", with proper short
+circuiting so that uncovered clauses are not expanded.  Thus,
+
+```
+.cond(.def(foo), foo, .ref(bar), bar, baz > 1, baz, qux)
+```
+
+would expand to `foo` if it's defined, `bar` if it's referenced,
+`baz` if it's greater than 1, and otherwise `qux`.  But because
+of short-circuiting, only one "then" branch is ever expanded.
+
+To determine what to expand, the conditions must be not only expanded,
+but _evaluated_.  Evaluation during expansion requires a
+back-and-forth between the evaluator, which is looking for literals
+and prefix/infix operators, and the expander, which is looking for
+tokens that can be expanded.  In the case of
+evaluation-during-expansion, we can "cheat" because anything requiring
+evaluation will always be enclosed in parentheses.  So we separately
+(recursively) expand the entire contents of the balanced parentheses
+(or the corresponding argument in the list).
+
+For example, the following will define a new unique label.  It also
+demonstrates mixing `.define` with `.macro` to execute multiple
+lines.
+
+```
+.define trylabel(i) \
+    .cond( \
+        .defined(.ident(.sprintf("label%d", i))), \
+        trylabel(i+1), makelabel i)
+.macro makelabel i
+.define .skip lastlabel .ident(.sprintf("label%d", i))
+lastlabel:
+.endmacro
+    
+.macro newlabel
+trylabel(1)
+.endmacro
+
+  ldx #$07
+newlabel
+  dex
+  bne lastlabel
+```

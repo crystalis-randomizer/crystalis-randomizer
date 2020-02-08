@@ -1,17 +1,110 @@
-import {Deque} from '../util.js';
+import {IdGenerator} from './idgenerator.js';
 import {Scanner} from './scanner.js';
 import {Token} from './token.js';
 
 const DEBUG = true;
 
-export class Define {
-  private constructor(readonly overloads: readonly DefineOverload[]) {}
+interface TokenSource {
+  next(): Token[];
+}
 
-  override(macro: MacroExpansion): MacroExpansion {
-    if (macro instanceof Define) {
-      return new Define([...this.overloads, ...macro.overloads]);
+export class Macro {
+  private constructor(readonly params: string[],
+                      readonly production: Token[][]) {}
+
+  static from(line: Token[], source: TokenSource) {
+    // First line must start with .macro <name> [args]
+    // Last line is the line BEFORE the .endmacro
+    // Nested macro definitions are not allowed!
+    if (!Token.eq(line[0], Token.MACRO)) throw new Error(`invalid`);
+    if (line[1]?.token !== 'ident') throw new Error(`invalid`);
+    const params = Token.identsFromCList(line.slice(2));
+    const lines = [];
+    let line;
+    while ((line = source.next()).length) {
+      if (Token.eq(line[0], Token.ENDMACRO)) return new Macro(params, lines);
+      lines.push(line);
     }
-    return macro;
+    throw new Error(`EOF looking for .endmacro: ${Token.nameAt(line[1])}`);
+  }
+
+  expand(tokens: Token[], idGen: IdGenerator): Token[][] {
+    // Find the parameters.
+    // This is a little more principled than Define, but we do need to be
+    // a little careful.
+    let tok = new Scanner(tokens, 1); // start looking _after_ macro ident
+    const replacements = new Map<string, Token[]>();
+    const lines = [];
+    
+    // Find a comma, skipping balanced curlies.  Parens are not special.
+    for (const param of this.params) {
+      let paramStart = tok.pos;
+      while (!tok.atEnd()) {
+        if (tok.lookingAt(Token.LC)) {
+          paramStart++;
+          const paramEnd = tok.pos;
+          tok.advance(); // advanced past entire block
+          if (!tok.atEnd() && !tok.lookingAt(Token.COMMA)) {
+            throw new Error(
+                `Garbage at end of line: ${Token.nameAt(tok.get())}`);
+          }
+          tok.advance();
+          replacements.set(param, tokens.slice(paramStart, paramEnd));
+        } else {
+          tok.find(Token.COMMA); // or EOL...
+          const paramEnd = tok.pos - 1;
+          replacements.set(param, tokens.slice(paramStart, paramEnd));
+        }
+      }
+    }
+    if (!tok.atEnd()) {
+      return 'too many parameters'
+    }
+    // All params filled in, make replacement
+    const locals = new Map<string, string>();
+    for (const line of production) {
+      if (Token.eq(line[0], Token.LOCAL)) {
+        for (const local of Token.identsFromCList(line.slice(1))) {
+          locals.set(local, `${local}~${idGen.next()}`);
+        }
+      }
+      // TODO - check for .local here and rename?  move into assemlber
+      // or preprocessing...?  probably want to keep track elsewhere.
+      const mapped = [];
+      for (const tok of line) {
+        if (tok.token === 'ident') {
+          const param = replacements.get(tok.str);
+          if (param) {
+            // this is actually a parameter
+            mapped.push(...param); // TODO - copy w/ child sourceinfo?
+            continue;
+          }
+          const local = locals.get(tok.str);
+          if (local) {
+            mapped.push({token: 'ident', str: local});
+            continue;
+          }
+        }
+        mapped.push(tok);
+      }
+      out.push(line);
+    }
+    return lines;
+  }
+}
+
+export class Define {
+  private constructor(private readonly overloads: DefineOverload[]) {}
+
+  // override(macro: MacroExpansion): MacroExpansion {
+  //   if (macro instanceof Define) {
+  //     return new Define([...this.overloads, ...macro.overloads]);
+  //   }
+  //   return macro;
+  // }
+
+  append(define: Define) {
+    this.overloads.push(...define.overloads);
   }
 
   /**
@@ -55,26 +148,10 @@ export class Define {
 
     return new Define([
       paren ?
-          new CStyleDefine(paramsFromPattern(pattern), production) :
+          new CStyleDefine(Token.identsFromCList(pattern), production) :
           new TexStyleDefine(pattern, production)
     ]);
   }
-}
-
-function paramsFromPattern(pattern: Token[]): string[] {
-  if (!(pattern.length & 1)) throw new Error(`Bad C-style define pattern`);
-  const out: string[] = [];
-  for (let i = 0; i < pattern.length; i += 2) {
-    const ident = pattern[i];
-    if (ident.token !== 'ident') {
-      throw new Error(`Bad C-style define parameter`);
-    } else if (i + 1 < pattern.length &&
-               !Token.eq(pattern[i + 1], Token.COMMA)) {
-      throw new Error(`Bad C-style parameter separator`);
-    }
-    out.push(ident.str);
-  }
-  return out;
 }
 
 interface DefineOverload {

@@ -798,5 +798,90 @@ export class MutableArrayBiMap<K extends number, V extends number> {
     this._rev[value] = key;
     return oldValue;
   }
+}
 
+// cancellation
+
+export interface CancelTokenRegistration {
+  unregister(): void;
+}
+class CancelTokenReg {
+  constructor(readonly callback: () => void,
+              readonly source: CancelTokenSource) {}
+  unregister() { this.source.unregister(this); }
+}
+export class CancelTokenSource {
+  readonly token: CancelToken;
+  private cancelled = false;
+  private registrations = new Set<CancelTokenReg>();
+
+  constructor() {
+    const source = this;
+    this.token = {
+      get requested() { return source.cancelled; },
+      throwIfRequested() {
+        if (source.cancelled) throw new Error(`Cancelled`);
+      },
+      register(callback: () => void) {
+        const reg = new CancelTokenReg(callback, source);
+        source.registrations.add(reg);
+        return reg;
+      },
+    };
+  }
+
+  // TODO - parent/child?
+
+  cancel() {
+    if (this.cancelled) return;
+    this.cancelled = true;
+    const regs = [...this.registrations];
+    this.registrations.clear();
+    for (const reg of regs) {
+      reg.callback();
+    }
+  }
+
+  unregister(reg: CancelTokenReg) {
+    this.registrations.delete(reg);
+  }
+}
+
+export interface CancelToken {
+  readonly requested: boolean;
+  throwIfRequested(): void;
+  register(callback: () => void): CancelTokenRegistration;
+}
+export namespace CancelToken {
+  export const NONE: CancelToken = {
+    get requested() { return false; },
+    throwIfRequested() {},
+    register() { return {unregister() {}}; },
+  };
+  export const CANCELLED: CancelToken = {
+    get requested() { return true; },
+    throwIfRequested() { throw new Error('cancelled'); },
+    register() { return {unregister() {}}; },
+  };
+}
+
+//////////////
+
+/**
+ * A string-to-V map that can be used either case-sensitively
+ * or case-insensitively.
+ */
+export class CaseMap<V> {
+  s = new Map<string, V>();
+  i = new Map<string, V>();
+  sensitive = true;
+
+  set(key: string, val: V) {
+    const ki = key = key.toUpperCase();
+    if (this.sensitive) {
+      // TODO - check!
+      this.s.set(key, val);
+      this.i.set(ki, val);
+    }
+  }
 }

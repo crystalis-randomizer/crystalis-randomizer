@@ -4,6 +4,7 @@
   "main": "dist/js/patch.js",
   "scripts": {
     "watch": "node_modules/typescript/bin/tsc --watch",
+    "flycheck": "elisp/flycheck-tsc-watch",
     "tsc": "node_modules/typescript/bin/tsc",
     "build": "npm run tsc && gulp",
     "unit": "node_modules/mocha/bin/mocha -r esm test/util_test.js test/tokenize_test.js",

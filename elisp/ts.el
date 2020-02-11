@@ -44,7 +44,7 @@
 (flycheck-define-checker typescript-tsc
   "A TypeScript syntax checker using tsc, the TypeScript compiler.
 See URL `http://www.typescriptlang.org/'."
-  :command ("flycheck-tsc" source-inplace)
+  :command ("flycheck-tsc" source-original)
   :working-directory (lambda (x) sdh-ts-root)
   :error-patterns
   ((error line-start (file-name) "(" line "," column "): error"
@@ -52,8 +52,23 @@ See URL `http://www.typescriptlang.org/'."
                    (zero-or-more "\n\t" (one-or-more not-newline)))
           line-end))
   :modes typescript-mode
-  :next-checkers ((warnings-only . typescript-tslint))
+  ;; :next-checkers ((warnings-only . typescript-tslint))
 )
+
+;; 2020/02/10: The lint checks are just annoying...
+;; (flycheck-define-checker typescript-tslint
+;;   "A TypeScript style checker using tslint.
+
+;; See URL `https://github.com/palantir/tslint'."
+;;   :command ("tslint"
+;;             ;"--project" "tsconfig.json"
+;;             "--config" "tslint.json"
+;;             ;source-inplace)
+;;             source)
+;;   :working-directory (lambda (x) sdh-ts-root)
+;;   :error-patterns ((warning "ERROR: " (file-name) ":" line ":" column " - " (message)))
+;;   :modes typescript-mode)
+;; ;(flycheck-add-next-checker 'lsp-ui 'typescript-tslint)
 
 ;; (flycheck-define-generic-checker 'lsp-ts
 ;;   "A syntax checker using the Language Server Protocol (RLS)
@@ -67,25 +82,11 @@ See URL `http://www.typescriptlang.org/'."
 ;;   :next-checkers ((warnings-only . typescript-tslint))
 ;; )
 
-(flycheck-def-config-file-var flycheck-tslint.json typescript-tslint "tslint.json")
-
-(flycheck-define-checker typescript-tslint
-  "A TypeScript style checker using tslint.
-
-See URL `https://github.com/palantir/tslint'."
-  :command ("tslint"
-            ;"--project" "tsconfig.json"
-            "--config" "tslint.json"
-            ;source-inplace)
-            source)
-  :working-directory (lambda (x) sdh-ts-root)
-  :error-patterns ((warning "ERROR: " (file-name) ":" line ":" column " - " (message)))
-  :modes typescript-mode)
-;(flycheck-add-next-checker 'lsp-ui 'typescript-tslint)
+;; (flycheck-def-config-file-var flycheck-tslint.json typescript-tslint "tslint.json")
 
 ;; Link to the correct checker script...?
 (setq flycheck-typescript-tsc-executable (concat (file-name-directory load-file-name) "flycheck-tsc"))
-(setq flycheck-typescript-tslint-executable (concat sdh-ts-root "node_modules/tslint/bin/tslint"))
+;; (setq flycheck-typescript-tslint-executable (concat sdh-ts-root "node_modules/tslint/bin/tslint"))
 ;(setq flycheck-typescript-tsc-executable (concat (file-name-directory load-file-name) "flycheck-tslint"))
 
 
@@ -93,7 +94,7 @@ See URL `https://github.com/palantir/tslint'."
   (tide-setup)
   (tide-mode)
   (company-mode t)
-  ;(flycheck-mode)
+  (flycheck-mode)
   ;(lsp)
   (setq lsp-javascript-format-insert-space-after-opening-and-before-closing-nonempty-braces nil)
   (define-key typescript-mode-map (kbd "C-c C-e") 'flycheck-display-error-at-point)
@@ -118,5 +119,5 @@ See URL `https://github.com/palantir/tslint'."
 
 (add-hook 'typescript-mode-hook 'sdh-ts-init)
 
-;(add-to-list 'flycheck-checkers 'typescript-tsc)
+(add-to-list 'flycheck-checkers 'typescript-tsc)
 ;(add-to-list 'flycheck-checkers 'typescript-tslint)

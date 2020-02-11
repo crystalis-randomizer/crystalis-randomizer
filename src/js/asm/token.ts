@@ -7,10 +7,19 @@ export interface SourceInfo {
   parent?: SourceInfo; // macro-expansion stack...
 }
 
+export type GroupTok = 'grp';
 export type StringTok = 'ident' | 'op' | 'cs' | 'str';
 export type NumberTok = 'num';
-export type NullaryTok = 'lb' | 'lc' | 'lp' | 'rb' | 'rc' | 'rp' | 'eol' | 'eof';
+export type NullTok = 'lb' | 'lc' | 'lp' | 'rb' | 'rc' | 'rp' | 'eol' | 'eof';
 
+// NOTE: This is not tokenized initially, but is added *very* early for
+// curly-brace groups since basically everything wants to skip over them
+// in a single go.  We don't treat any other grouping operators as strongly.
+export interface GroupToken {
+  token: GroupTok;
+  inner: Token[];
+  source?: SourceInfo;
+}
 export interface StringToken {
   token: StringTok;
   str: string;
@@ -22,11 +31,11 @@ export interface NumberToken {
   source?: SourceInfo;
 }
 export interface NullaryToken {
-  token: NullaryTok;
+  token: NullTok;
   source?: SourceInfo;
 }
 
-export type Token = StringToken | NumberToken | NullaryToken;  
+export type Token = GroupToken | StringToken | NumberToken | NullaryToken;
 
 export namespace Token {
   // Grouping tokens
@@ -48,6 +57,7 @@ export namespace Token {
   export const ELSE: Token = {token: 'cs', str: '.else'};
   export const ELSEIF: Token = {token: 'cs', str: '.elseif'};
   export const LOCAL: Token = {token: 'cs', str: '.local'};
+  export const SET: Token = {token: 'cs', str: '.set'};
   export const SKIP: Token = {token: 'cs', str: '.skip'};
   // Important operator tokens
   export const COLON: Token = {token: 'op', str: ':'};
@@ -79,6 +89,7 @@ export namespace Token {
       case 'str': return `STR[$${arg.str}]`;
       case 'lb': return `[`;
       case 'rb': return `]`;
+      case 'grp': return `{`;
       case 'lc': return `{`;
       case 'rc': return `}`;
       case 'lp': return `(`;
@@ -103,6 +114,10 @@ export namespace Token {
 
   export function nameAt(arg: Token): string {
     return name(arg) + at(arg);
+  }
+
+  export function expectEol(token: Token|undefined) {
+    if (token) throw new Error(`Expected end of line: ${Token.nameAt(token)}`);
   }
 
   export function expectIdentifier(token: Token|undefined, prev?: Token) {
@@ -145,104 +160,71 @@ export namespace Token {
     return out;
   }
 
-  function parseExprAtom(tokens: Token[],
-                         index: number): [Expr, number]|undefined {
-    const next = tokens[index];
-    if (!next) return undefined;
-    if (next.token === 'lp' || next.token === 'lb') {
-      // find a balanced RP
-      let i = index;
-      let paren = 1;
-      let brace = 0;
-      const close = eq(next, LP) ? RP : RB;
-      while (++i < tokens.length && paren) {
-        const tok = tokens[i];
-        if (!brace && eq(tok, close)) paren--;
-        if (!brace && eq(tok, next)) paren++;
-        if (eq(tok, LC)) brace++;
-        if (eq(tok, RC)) brace--;
-      }
-      if (paren) throw new Error(`No balanced close paren ${nameAt(next)}`);
-      return [{expr: next.token, tokens: tokens.slice(index + 1, i - 1)}, i];
-    } else if (eq(next, LC)) {
-      // find a balanced RC
-      let i = index;
-      let brace = 0;
-      while (++i < tokens.length && brace) {
-        const tok = tokens[i];
-        if (eq(tok, LC)) brace++;
-        if (eq(tok, RC)) brace--;
-      }
-      if (brace) throw new Error(`No balanced close curly ${nameAt(next)}`);
-      return [{op: 'lc', tokens: tokens.slice(index + 1, i - 1)}, i];
-    } else if (next.token === 'num' || next.token === 'str' ||
-               next.token === 'ident' || eq(next, STAR)) {
-      return [{op: 'lit', token: next}, index + 1];
+  /** Finds a balanced paren/bracket: returns its index, or -1. */
+  export function findBalanced(tokens: Token[], i: number): number {
+    const open = tokens[i].token;
+    if (open !== 'lp' && open !== 'lb') throw new Error(`non-grouping token`);
+    const close = open === 'lp' ? 'rp' : 'rb';
+    let depth = 1;
+    while (depth && i < tokens.length) {
+      const tok = tokens[++i].token;
+      depth += Number(tok === open) - Number(tok === close);
     }
-    console.error(`No atom: ${name(next)}`);
-    return undefined;
+    return depth ? -1 : i;
   }
 
-  // returns the expr and a number
-  export function parseExpr(tokens: Token[],
-                            index: number,
-                            context?: OperatorMeta): [Expr, number]|undefined {
-    const next = tokens[index];
-    if (!next) return undefined;
-    let left: Expr | undefined;
-    if (next.token === 'op' || next.token === 'cs') {
-      const prefixop = PREFIXOPS.get(next.str);
-      if (prefixop) {
-        // prefix op is always faster than whatever is before it, even
-        // if it's a lower number: e.g. '2 - .not 2 - 2' will evaluate
-        // as '2 - .not(2 - 2) => 2 - 1 => 1' rather than '2 - 0 - 2'.
-        const inner = parseExpr(tokens, index + 1, prefixop);
-        if (!inner) return undefined; // anything else to do?  throw?
-        [left, index] = inner;
-      } else if (next.token === 'cs' && eq(tokens[index + 1], LP)) {
-        // function directive?
-        const [inner, nextIndex] = parseExprAtom(tokens, index + 1)!;
-        // split based on commas?
-        if (inner.expr !== 'lp') throw new Error(`impossible`);
-        inner.tokens
-        
+  /**
+   * Splits on commas not enclosed in balanced parens.  Braces are
+   * ignored/not allowed at this point.  This is intended for arithmetic.
+   */
+  export function parseArgList(tokens: Token[]): Token[][] {
+    let arg: Token[] = [];
+    const args = [arg];
+    let parens = 0;
+    for (const token of tokens) {
+      if (eq(token, LP)) {
+        parens++;
+      } else if (eq(token, RP)) {
+        parens--;
+      } else if (!parens && eq(token, COMMA)) {
+        args.push(arg = []);
+      } else {
+        arg.push(token);
       }
     }
-    if (!left)
-
-}
-    
-    
+    return args;
   }
 
+  /** Finds a comma or EOL. */
+  export function findComma(tokens: Token[], start: number): number {
+    const index = find(tokens, COMMA, start);
+    return index < 0 ? tokens.length : index;
+  }
 
+  /** Finds a token, or -1 if not found. */
+  export function find(tokens: Token[], want: Token, start: number): number {
+    for (let i = start; i < tokens.length; i++) {
+      if (eq(tokens[i], want)) return i;
+    }
+    return -1;
+  }
 
-}
+  export function count(ts: Token[]): number {
+    let total = 0;
+    for (const t of ts) {
+      if (t.token === 'grp') {
+        total += 2 + count(t.inner);
+      } else {
+        total++;
+      }
+    }
+    return total;
+  }
 
-interface GroupExpr {
-  expr: 'lb' | 'lc' | 'lp';
-  tokens: Token[];
+  export function isRegister(t: Token, reg: 'a'|'x'|'y'): boolean {
+    return t.token === 'ident' && t.str.toLowerCase() === reg;
+  }
 }
-interface LitExpr {
-  expr: 'lit';
-  token: Token;
-}
-interface UnaryExpr {
-  expr: 'unary';
-  op: string;
-  arg: Expr;
-}
-interface InfixExpr {
-  expr: 'infix';
-  op: string;
-  left: Expr;
-  right: Expr;
-}
-interface CommaExpr {
-  expr: 'comma';
-  terms: Expr;
-}
-type Expr = GroupExpr | LitExpr | UnaryExpr | InfixExpr | CommaExpr;
 
 // interface Expr {
 //   // operator, function name, '()', '{}', 'num', 'str', 'ident'
@@ -290,54 +272,3 @@ export const DIRECTIVES = [
   '.scope',
   '.skip',
 ] as const;
-
-type OperatorMeta = readonly [number, number]; // precedence, associativity
-export const BINOPS = new Map<string, OperatorMeta>([
-  // Multiplicative operators: note that bitwise and arithmetic cannot associate
-  ['*', [5, 4]],
-  ['/', [5, 4]],
-  ['.mod', [5, 3]],
-  ['&', [5, 2]],
-  ['.bitand', [5, 2]],
-  ['^', [5, 1]],
-  ['.bitxor', [5, 1]],
-  ['<<', [5, 0]],
-  ['.shl', [5, 0]],
-  ['>>', [5, 0]],
-  ['.shr', [5, 0]],
-  // Arithmetic operators: note that bitwise and arithmetic cannot associate
-  ['+', [4, 2]],
-  ['-', [4, 2]],
-  ['|', [4, 1]],
-  ['.bitor', [5, 1]],
-  // Comparison operators
-  ['<', [3, 0]],
-  ['<=', [3, 0]],
-  ['>', [3, 0]],
-  ['>=', [3, 0]],
-  ['=', [3, 0]],
-  ['<>', [3, 0]],
-  // Logical operators: different kinds cannot associate
-  ['&&', [2, 3]],
-  ['.and', [2, 3]],
-  ['.xor', [2, 2]],
-  ['||', [2, 1]],
-  ['.or', [2, 1]],
-  // Comma
-  [',', [1, 1]],
-]);
-
-const PREFIXOPS = new Map<string, OperatorMeta>([
-  ['+', [6, -1]],
-  ['-', [6, -1]],
-  ['~', [6, -1]],
-  ['.bitnot', [6, -1]],
-  ['<', [6, -1]],
-  ['.lobyte', [6, -1]],
-  ['>', [6, -1]],
-  ['.hibyte', [6, -1]],
-  ['^', [6, -1]],
-  ['.bankbyte', [6, -1]],
-  ['!', [2, -1]],
-  ['.not', [2, -1]],
-]);

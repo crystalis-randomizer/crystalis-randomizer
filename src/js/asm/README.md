@@ -186,26 +186,35 @@ interface Object {
 }
 interface Chunk {
   // ROM bank for this chunk.
-  bank?: number;
+  segments?: string[];  // bank?: number;
   // Absolute address (within the bank) to start.
   org?: number;
-  // Region of CPU memory for relocatable chunk (i.e. $8000 or
-  // $A000 will place the result in the same part of the ROM
-  // image, but symbols will be exported differently).
-  reloc?: number;
+
+  //// Region of CPU memory for relocatable chunk (i.e. $8000 or
+  //// $A000 will place the result in the same part of the ROM
+  //// image, but symbols will be exported differently).
+  //reloc?: number;
+
   // Base64-encoded data for the chunk.  This may be a Uint8Array
   // in memory.
   data: string;
   // Substitutions to insert into the data based on other chunks.
   subs?: Substitution[];
+
+  // TODO - assertions?
 }
 interface Symbol {
   // Name to export this symbol as.
   export?: string;
   // Name to import this symbol from.
   import?: string;
+  // Chunk the symbol is defined in (necessary for determining what
+  // any given offset actually means).
+  chunk?: number;
+  // Offset into the chunk.
+  offset?: number;
   // Expression for the symbol.
-  expr: Expr;
+  expr?: Expr;
   // TODO: size data?
 }
 interface Substitution {
@@ -223,12 +232,17 @@ interface Expr {
   // that use the 'num' field:
   //  * 'sym' indicates an offset into the 'symbols' array,
   //  * 'num' is a number literal,
-  //  * 'off' is the address of an offset into this chunk.
+  //  * 'off' is the address of an offset into this chunk (used
+  //    for label definitions in the symbol table).  NOTE: this
+  //    may not actually be useful.
   op: string;
   // Args for operators.
   args?: Expr[];
   // Numeric arg for 'sym', 'num', or 'off'.
   num?: number;
+  // Symbol name for 'sym' before assembling (not emitted by the
+  // assembler or understood by the linker).
+  sym?: string;
 }
 ```
 
@@ -342,3 +356,87 @@ newlabel
   dex
   bne lastlabel
 ```
+
+## Preprocessor
+
+The basic structure of the preprocessor is to expand and then run
+various things.  We expand many _directives_ at the token level, such
+as `.tcount`, `.match`, `.cond`, `.concat`, `.ident`.  All of these
+require constant arguments (after expanding `.define`s).  Some of the
+directives take numeric arguments (`.sprintf`, `.cond`) which need to
+be parsed as expressions, but the tokens will have been expanded
+recursively first.  Thus, expressions need not deal with any
+complicated syntactic edge cases, and can be restricted to just
+numbers (blanks should also be excluded here).
+
+One tricky question is how to handle `.ifdef`.  In ca65, it is defined
+to only apply to symbols, not macro definitions (i.e. `.define X;
+.ifdef X` evaluates to false since the `X` expands to blank), but this
+is inconsistent with the CPP usage, which evaluates to true.  We
+choose to diverge from this by introducing `.ifsym`, `.ifnsym`, and
+`.definedsymbol` as the definition analogues to `.ifref` and
+`.referenced`.
+
+## Bank hints
+
+One odd bit we introduce that I've never see elsewhere is bank hints.
+We reuse the `:` operator (which ca65 already uses to hint that a
+given number should be treated as zero-page, absolute, or far) with a
+numeric prefix to indicate the bank for an address.  This may map
+similarly to segments (though I'm unclear on how segments work).
+
+```
+.segment "18"
+.org $8150
+  ; code here
+
+; .reloc can take a list of eligible segments
+.reloc "1a:8000", "1b:a000", "fe", "ff"
+Foo:
+  ; more code
+
+.segment "fe"
+.org $c125
+  ; overwrite stuff
+```
+
+## Segment definitions
+
+If we're using segments to indicate banks, we'll need to actually
+declare segment information.
+
+```
+interface Segment {
+  // name of the segment (e.g. "1a:8000")
+  name: string;
+  // bank byte (e.g. $1a).
+  bank: number;
+  // start address in CPU address space (e.g. $8000).
+  start: number;
+  // size of the segment in bytes (e.g. $2000).
+  size: number;
+  // offset of the segment in the actual rom (e.g. $34000).
+  offset: number;
+}
+```
+
+Note that multiple segments can share the same offset, and this will
+be considered during linking.
+
+As such, we will define segments like "1a:8000", "1a:a000", "1b:a000",
+and "1a1b", which all address overlapping rom offsets.
+
+Relocatable code may be specified to be eligible for multiple
+different segments, as specified by string arguments to `.reloc`.  For
+example, if the following routine is run when banks 1a and 1b are
+loaded, then it can be relocated into any of the four banks 1a, 1b,
+fe, or ff:
+
+```
+.reloc "1a1b", "fe", "ff"
+DoStuff:
+```
+
+The assembler will split out all independent chunks (i.e. separate
+procedures with no relative jumps between them) and mark them each as
+being eligible for multiple segments.

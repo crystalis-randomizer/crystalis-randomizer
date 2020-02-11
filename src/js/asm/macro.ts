@@ -1,5 +1,4 @@
 import {IdGenerator} from './idgenerator.js';
-import {Scanner} from './scanner.js';
 import {Token} from './token.js';
 
 const DEBUG = true;
@@ -20,10 +19,10 @@ export class Macro {
     if (line[1]?.token !== 'ident') throw new Error(`invalid`);
     const params = Token.identsFromCList(line.slice(2));
     const lines = [];
-    let line;
-    while ((line = source.next()).length) {
-      if (Token.eq(line[0], Token.ENDMACRO)) return new Macro(params, lines);
-      lines.push(line);
+    let next: Token[];
+    while ((next = source.next()).length) {
+      if (Token.eq(next[0], Token.ENDMACRO)) return new Macro(params, lines);
+      lines.push(next);
     }
     throw new Error(`EOF looking for .endmacro: ${Token.nameAt(line[1])}`);
   }
@@ -32,37 +31,27 @@ export class Macro {
     // Find the parameters.
     // This is a little more principled than Define, but we do need to be
     // a little careful.
-    let tok = new Scanner(tokens, 1); // start looking _after_ macro ident
+    let i = 1; // start looking _after_ macro ident
     const replacements = new Map<string, Token[]>();
-    const lines = [];
+    const lines: Token[][] = [];
     
     // Find a comma, skipping balanced curlies.  Parens are not special.
     for (const param of this.params) {
-      let paramStart = tok.pos;
-      while (!tok.atEnd()) {
-        if (tok.lookingAt(Token.LC)) {
-          paramStart++;
-          const paramEnd = tok.pos;
-          tok.advance(); // advanced past entire block
-          if (!tok.atEnd() && !tok.lookingAt(Token.COMMA)) {
-            throw new Error(
-                `Garbage at end of line: ${Token.nameAt(tok.get())}`);
-          }
-          tok.advance();
-          replacements.set(param, tokens.slice(paramStart, paramEnd));
-        } else {
-          tok.find(Token.COMMA); // or EOL...
-          const paramEnd = tok.pos - 1;
-          replacements.set(param, tokens.slice(paramStart, paramEnd));
-        }
+      const comma = Token.findComma(tokens, i);
+      let slice = tokens.slice(i, comma);
+      i = comma + 1;
+      if (slice.length === 1 && slice[0].token === 'grp') {
+        // unwrap one layer
+        slice = slice[0].inner;
       }
+      replacements.set(param, slice);
     }
-    if (!tok.atEnd()) {
-      return 'too many parameters'
+    if (i < tokens.length) {
+      throw new Error(`Too many macro parameters: ${Token.nameAt(tokens[i])}`);
     }
     // All params filled in, make replacement
     const locals = new Map<string, string>();
-    for (const line of production) {
+    for (const line of this.production) {
       if (Token.eq(line[0], Token.LOCAL)) {
         for (const local of Token.identsFromCList(line.slice(1))) {
           locals.set(local, `${local}~${idGen.next()}`);
@@ -85,9 +74,9 @@ export class Macro {
             continue;
           }
         }
-        mapped.push(tok);
+        mapped.push(tok); 
       }
-      out.push(line);
+      lines.push(line);
     }
     return lines;
   }
@@ -103,7 +92,12 @@ export class Define {
   //   return macro;
   // }
 
+  canOverload(): boolean {
+    return this.overloads[this.overloads.length - 1].canOverload();
+  }
+
   append(define: Define) {
+    if (!this.canOverload()) throw new Error(`non-overloadable`);
     this.overloads.push(...define.overloads);
   }
 
@@ -123,39 +117,39 @@ export class Define {
     return false;
   }
 
-  // NOTE: macro[0] is either .define or .macro
+  // NOTE: macro[0] is .define
   static from(macro: Token[]) {
-    const scanner = new Scanner(macro);
-    if (!scanner.lookingAt(Token.DEFINE)) throw new Error(`invalid`);
-    scanner.advance();
-    if (!scanner.lookingAtIdentifier()) throw new Error(`invalid`);
-    scanner.advance(); // don't care about name...
+    if (!Token.eq(macro[0], Token.DEFINE)) throw new Error(`invalid`);
+    if (macro[1]?.token !== 'ident') throw new Error(`invalid`);
     // parse the parameter list, if any
-    let paren = false;
-    const patStart = scanner.pos + 1;
-    let patEnd = patStart;
-    if (scanner.lookingAt(Token.LP)) {
-      paren = true;
-      scanner.advance();
-      if (!scanner.find(Token.RP)) throw new Error(`bad .define`);
-      patEnd = scanner.pos - 1;
-    } else if (scanner.lookingAt(Token.LC)) {
-      scanner.advance(); // automatically skips balanced braces
-      patEnd = scanner.pos - 1; // exactly the RC
+    const paramStart = macro[2];
+    let overload: DefineOverload;
+    if (!paramStart) {
+      // blank macro
+      overload = new TexStyleDefine([], []);
+    } else if (paramStart.token === 'grp') {
+      // TeX-style param list
+      overload = new TexStyleDefine(paramStart.inner, macro.slice(3));
+    } else if (paramStart.token === 'lp') {
+      // C-style param list
+      const paramEnd = Token.findBalanced(macro, 2);
+      if (paramEnd < 0) {
+        throw new Error(`Expected close paren ${Token.nameAt(macro[2])}`);
+      }
+      overload =
+          new CStyleDefine(Token.identsFromCList(macro.slice(3, paramEnd)),
+                           macro.slice(paramEnd + 1));
+    } else {
+      // no param list
+      overload = new TexStyleDefine([], macro.slice(2));
     }
-    const pattern = macro.slice(patStart, patEnd); // could be empty...
-    const production = macro.slice(scanner.pos);
-
-    return new Define([
-      paren ?
-          new CStyleDefine(Token.identsFromCList(pattern), production) :
-          new TexStyleDefine(pattern, production)
-    ]);
+    return new Define([overload]);
   }
 }
 
 interface DefineOverload {
   expand(tokens: Token[], start: number, out: Token[]): string;
+  canOverload(): boolean;
 }
 
 function produce(out: Token[],
@@ -180,48 +174,52 @@ class CStyleDefine implements DefineOverload {
 
   expand(tokens: Token[], start: number, out: Token[]): string {
     start++; // skip past the macro call identifier
-    let end = this.params.length ? tokens.length : start;
-    let tok = new Scanner(tokens, start);
+    let i = start;
+    let splice = this.params.length ? tokens.length : start;
+    let end = splice;
     const replacements = new Map<string, Token[]>();
     
-    if (start < tokens.length &&
-        Token.eq(Token.LP, tokens[start])) {
-      tok.advance();
-      // Question: balanced find or not?
-      if (!tok.find(Token.RP, Token.LP)) {
+    if (start < tokens.length && Token.eq(Token.LP, tokens[start])) {
+      end = Token.findBalanced(tokens, start);
+      if (end < 0) {
+        // throw?
         return 'missing close paren for enclosed C-style expansion';
       }
-      end = tok.pos;
-      tok = new Scanner(tokens.slice(0, tok.pos - 1), start + 1);
+      splice = end + 1;
+      i++;
+      //tok = new Scanner(tokens.slice(0, i), start + 1);
     }
     // Find a comma, skipping balanced parens.
-    for (const param of this.params) {
-      let paramStart = tok.pos;
-      let singleGroup = true;
-      // TODO - consider making it an error to start with a brace but not be
-      // completely surrounded?
-      let parens = 0;
-      while (!tok.atEnd()) {
-        const cur = tok.get();
-        if (!parens && Token.eq(cur, Token.COMMA)) break;
-        if (cur.token === 'lp') parens++;
-        if (cur.token === 'rp') {
-          if (--parens < 0) return 'unbalanced right parenthesis';
+    let arg: Token[] = [];
+    const args = [arg];
+    let parens = 0;
+    while (i < end) {
+      const tok = tokens[i++];
+      if (!parens && Token.eq(tok, Token.COMMA)) {
+        args.push(arg = []);
+      } else {
+        arg.push(tok)
+        if (tok.token === 'lp') {
+          parens++;
+        } else if (tok.token === 'rp') {
+          if (--parens < 0) return 'unbalanced parens';
         }
-        if (cur.token !== 'lc' || tok.pos !== paramStart) singleGroup = false;
-        tok.advance();
       }
-      // whether we're at the end or not, accept the parameter.
-      let paramEnd = tok.pos;
-      if (singleGroup) { // drop the braces only if it's the whole arg
-        paramStart++;
-        paramEnd--;
-      }
-      replacements.set(param, tokens.slice(paramStart, paramEnd));
-      if (tok.lookingAt(Token.COMMA)) tok.advance();
     }
-    if (!tok.atEnd()) {
-      return 'too many parameters'
+    if (parens) return 'unbalaned parens';
+    if (!arg.length) args.pop();
+
+    if (args.length > this.params.length) {
+      return 'too many args';
+    }
+
+    for (i = 0; i < this.params.length; i++) {
+      let arg = args[i] || [];
+      const front = arg[0];
+      if (arg.length === 1 && front.token === 'grp') {
+        arg = front.inner;
+      }
+      replacements.set(this.params[i], arg);
     }
     // All params filled in, make replacement
     produce(out, replacements, this.production);
@@ -229,57 +227,45 @@ class CStyleDefine implements DefineOverload {
     out.push(...tokens.slice(end));
     return '';
   }
+
+  canOverload() { return Boolean(this.params.length); }
 }
 
 class TexStyleDefine implements DefineOverload {
   constructor(readonly pattern: Token[],
               readonly production: Token[]) {}
-
   expand(tokens: Token[], start: number, out: Token[]): string {
-    start++; // skip past the macro call identifier
+    let i = ++start; // skip past the macro call identifier
     let end = this.pattern.length ? tokens.length : start;
-    let tok = new Scanner(tokens, start);
     const replacements = new Map<string, Token[]>();
-    
     for (let patPos = 0; patPos < this.pattern.length; patPos++) {
       const pat = this.pattern[patPos];
       if (pat.token === 'ident') {
-        let patNext = this.pattern[patPos + 1];
-        let argStart = tok.pos;
-        let argEnd = argStart + 1;
-        if (patNext?.token === 'ident') {
+        const delim = this.pattern[patPos + 1];
+        if (delim?.token === 'ident') {
           // parse undelimited
-          if (tok.lookingAt(Token.LC)) {
-            argStart++;
-            tok.advance();
-            argEnd = tok.pos - 1;
-          } else if (tok.atEnd()) {
-            return `missing undelimited argument ${Token.name(pat)}`;
-          } else {
-            tok.advance();
-          }
+          const tok = tokens[i];
+          if (!tok) return `missing undelimited argument ${Token.name(pat)}`;
+          replacements.set(pat.str, tok.token === 'grp' ? tok.inner : [tok]);
         } else {
           // parse delimited
-          if (!patNext) {
-            // final arg eats entire line
-            end = argEnd = tokens.length;
+          if (delim) {
+            end = Token.find(tokens, delim, i);
+            if (end < 0) return `could not find delimiter ${Token.name(delim)}`;
           } else {
-            // non-empty next token
-            if (!tok.find(patNext)) {
-              return `could not find delimiter ${Token.name(patNext)}`;
-            }
-            argEnd = tok.pos - 1;
-            end = tok.pos;
-            patPos++;
+            // final arg eats entire line
+            end = tokens.length;
           }
+          patPos++;
+          replacements.set(pat.str, tokens.slice(i, end));
+          i = end + 1;
         }
-        // all cases handled: save the replacement
-        replacements.set(pat.str, tokens.slice(argStart, argEnd));
       } else {
         // token to match
-        if (!tok.lookingAt(pat)) return `could not match: ${Token.name(pat)}`;
-        tok.advance();
-        end = tok.pos;
+        if (!Token.eq(tokens[i++], pat)) {
+          return `could not match: ${Token.name(pat)}`;
+        }
+        end = i;
       }
     }
     //console.log(replacements);
@@ -288,6 +274,8 @@ class TexStyleDefine implements DefineOverload {
     out.push(...tokens.slice(end));
     return '';
   }
+
+  canOverload() { return Boolean(this.pattern.length); }
 }
 
 

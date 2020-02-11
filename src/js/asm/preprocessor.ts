@@ -1,10 +1,19 @@
-import {Deque} from '../util.js';
+import {Expr} from './expr.js';
 import {IdGenerator} from './idgenerator.js';
-import {Scanner} from './scanner.js';
+import {Define, Macro} from './macro.js';
 import {Token} from './token.js';
+import {Tokenizer} from './tokenizer.js';
 
+// TODO - figure out how to actually keep track of stack depth?
+//  - might need to insert a special token at the end of an expansion
+//    to know when to release the frame?
 const MAX_STACK_DEPTH = 100;
+const [] = [MAX_STACK_DEPTH];
 
+export interface PreprocessedLine {
+  kind: 'assign' | 'label' | 'mnemonic' | 'directive';
+  tokens: Token[];
+}
 
 interface TokenSource {
   next(): Token[];
@@ -19,59 +28,71 @@ interface Evaluator {
   // These need to come from Processor and will depend on scope...
   definedSymbol(sym: string): boolean;
   referencedSymbol(sym: string): boolean;
+  evaluate(expr: Expr): number;
   // also want methods to apply shunting yard to token list?
   //  - turn it into a json tree...?
 }
 
-export class Preprocessor {
+export class Preprocessor implements AsyncIterableIterator<PreprocessedLine> {
   private readonly macros = new Map<string, Define|Macro>();
-  private sink: AsyncIterator<Token[]>|undefined;
+  private sink: AsyncIterator<PreprocessedLine|undefined>|undefined;
   private leftovers: Token[]|undefined = undefined;
   // NOTE: there is no scope here... - not for macros
   //  - only symbols have scope
   // TODO - evaluate constants...
 
   constructor(readonly source: TokenSource,
-              readonly idGenerator: IdGenerator) {}
+              readonly idGenerator: IdGenerator,
+              readonly evaluator: Evaluator) {}
+
+  [Symbol.asyncIterator](): this {
+    return this;
+  }
 
   // For use as a token source in the next stage.
-  async next(): Promise<Token[]> {
+  async next(): Promise<{value: PreprocessedLine, done: boolean}> {
     while (true) {
       if (!this.sink) this.sink = this.pump();
-      const {value, done} = await this.sink.next();
+      const {value, done} = await this.sink!.next();
       if (done) {
         this.sink = undefined;
         continue;
       }
-      return value;
+      return {value: value!, done: !value.length};
     }
   }
 
   /** Attempt to emit a new line. */
-  private async * pump(): AsyncGenerator<Token[]> {
+  private async * pump(): AsyncGenerator<PreprocessedLine|undefined> {
     const line = this.readLine();
-    const first = line[0];
-    if (!first) return void (yield line); // EOF
-    switch (first.token) {
+    const front = line[0];
+    if (!front) return void (yield undefined); // EOF
+    switch (front.token) {
       case 'ident':
         // Possibilities: (1) label, (2) mnemonic/assign, (3) macro
         // Labels get split out.  We don't distinguish assigns yet.
         if (Token.eq(line[1], Token.COLON)) {
-          yield line.splice(0, 2);
+          yield {kind: 'label', tokens: line.splice(0, 2)};
           this.putBack(line);
           return;
         }
-        if (!this.tryExpandMacro(line)) yield line;
+        if (this.tryExpandMacro(line)) return;
+        if (Token.eq(line[1], Token.ASSIGN) || Token.eq(line[1], Token.SET)) {
+          yield {kind: 'assign', tokens: line};
+        } else {
+          yield {kind: 'mnemonic', tokens: line};
+        }
         return;
 
       case 'cs':
-        if (!this.tryRunDirective(line)) yield line;
+        if (this.tryRunDirective(line)) return;
+        yield {kind: 'directive', tokens: line};
         return;
 
       case 'op':
         // Probably an anonymous label...
         if (/^[-+]+$/.test(front.str)) {
-          const label = [front];
+          const label: Token[] = [front];
           const second = line[1];
           if (second && Token.eq(second, Token.COLON)) {
             label.push(second);
@@ -80,10 +101,10 @@ export class Preprocessor {
             label.push({token: 'op', str: ':'});
             line.splice(0, 1);
           }
-          yield label;
+          yield {kind: 'label', tokens: label};
           return;
         } else if (front.str === ':') {
-          yield line.splice(0, 1);
+          yield {kind: 'label', tokens: line.splice(0, 1)};
           return;
         }
 
@@ -93,11 +114,11 @@ export class Preprocessor {
   }
 
   tryExpandMacro(line: Token[]): boolean {
-    const [first, ...args] = line;
+    const [first] = line;
     if (first.token !== 'ident') throw new Error(`impossible`);
     const macro = this.macros.get(first.str);
     if (!(macro instanceof Macro)) return false;
-    const expansion = macro.expand(line);
+    const expansion = macro.expand(line, this.idGenerator);
     this.source.enter();
     this.source.unshift(...expansion); // process them all over again...
     return true;
@@ -112,36 +133,46 @@ export class Preprocessor {
     return true;
   }
 
-  private readonly runDirectives = {
+  private readonly runDirectives: Record<string, (ts: Token[]) => void> = {
     '.define': (line) => this.parseDefine(line),
     '.else': ([cs]) => badClose('.if', cs),
     '.elseif': ([cs]) => badClose('.if', cs),
     '.endif': ([cs]) => badClose('.if', cs),
     '.endmacro': ([cs]) => badClose('.macro', cs),
     '.exitmacro': ([, a]) => { noGarbage(a); this.source.exit(); },
-    '.if': ([cs, ...args]) => this.parseIf(parseOneExpr(args, cs)),
+    '.if': ([cs, ...args]) =>
+        this.parseIf(!!this.evaluator.evaluate(parseOneExpr(args, cs))),
     '.ifdef': ([cs, ...args]) =>
-        this.parseIf(this.def(parseOneIdent(args, cs))),
+        this.parseIf(this.macros.has(parseOneIdent(args, cs))),
     '.ifndef': ([cs, ...args]) =>
-        this.parseIf(!this.def(parseOneIdent(args, cs))),
+        this.parseIf(!this.macros.has(parseOneIdent(args, cs))),
     '.ifblank': ([, ...args]) => this.parseIf(!args.length),
     '.ifnblank': ([, ...args]) => this.parseIf(!!args.length),
     '.ifref': ([cs, ...args]) =>
-        this.parseIf(this.ref(parseOneIdent(args, cs))),
+        this.parseIf(this.evaluator.referencedSymbol(parseOneIdent(args, cs))),
     '.ifnref': ([cs, ...args]) =>
-        this.parseIf(!this.ref(parseOneIdent(args, cs))),
+        this.parseIf(!this.evaluator.referencedSymbol(parseOneIdent(args, cs))),
+    '.ifsym': ([cs, ...args]) =>
+        this.parseIf(this.evaluator.definedSymbol(parseOneIdent(args, cs))),
+    '.ifnsym': ([cs, ...args]) =>
+        this.parseIf(!this.evaluator.definedSymbol(parseOneIdent(args, cs))),
     '.macro': (line) => this.parseMacro(line),
   };
 
-  private readonly expandDirectives = {
-    '.define': (line, i) => {
-    },
+  private readonly expandDirectives: Record<string, ExpandDirective> = {
+    // NOTE: the following should avoid expanding identifiers because
+    // they expect define macro names.
+    '.define': (line, i) => this.skipIdentifier(line, i),
+    '.defined': (line, i) => this.skipIdentifier(line, i),
+    '.ifdef': (line, i) => this.skipIdentifier(line, i),
+    '.ifndef': (line, i) => this.skipIdentifier(line, i),
+    '.undefine': (line, i) => this.skipIdentifier(line, i),
+    // Other directives
     '.skip': (line, i) => {
       // expand i + 1, then splice self out
-      const rest = line.splice(i + 2, line.length - i - 2);
-      const skipped = line.pop();
+      const rest = line.splice(i + 1, line.length - i - 1);
       line.pop(); // .skip
-      this.expandToken(rest, 0);
+      this.expandToken(rest, 1);
       line.push(...rest);
       return i;
     },
@@ -149,17 +180,16 @@ export class Preprocessor {
       return [{token: 'num', num: arg.length}];
     }, 1),  // at most one arg
     '.ident': parseArgs((cs, arg) => {
-      const str = this.parseConstStr(arg, cs);
-      if (result.valueType !== 'str') {
-        throw new Error(`Expected a constant string: ${Token.nameAt(arg[0])}`);
-      }
-      return [{token: 'ident', str: result.str}];
+      return [{token: 'ident', str: this.parseConstStr(arg, cs)}];
+    }, 1),
+    '.string': parseArgs((cs, arg) => {
+      return [{token: 'str', str: parseOneIdent(arg)}];
     }, 1),
     '.concat': parseArgs((cs, ...args) => {
       const strs = [];
       for (const arg of args) {
         if (!arg.length) continue; // blanks ok
-        strs.push(this.parseConstStr(arg));
+        strs.push(this.parseConstStr(arg, cs));
       }
       return [{token: 'ident', str: strs.join('')}];
     }), // as many args as wanted
@@ -169,6 +199,33 @@ export class Preprocessor {
     '.cond': parseArgs((cs, ...args) => {
       throw new Error('not impl');
     }),
+    // TODO - does .byte expand its strings into bytes here?
+    //   -- maybe not...
+    //   -- do we need to handle string exprs at all?
+    //   -- maybe not - maybe just tokens?
+  }
+
+  private parseConstStr(tokens: Token[], prev?: Token): string {
+    const front = tokens[0];
+    if (!front) {
+      if (!prev) throw new Error(`Expected a constant string`);
+      throw new Error(`Expected a constant string: ${Token.nameAt(prev)}`);
+    }
+    if (front.token !== 'str') {
+      throw new Error(`Expected a constant string: ${Token.nameAt(front)}`);
+    } else if (tokens.length > 1) {
+      throw new Error(`Garbage after string: ${Token.nameAt(tokens[1])}`);
+    }
+    return front.str;
+  }
+
+  /**
+   * If the following is an identifier, skip it.  This is used when
+   * expanding .define, .undefine, .defined, .ifdef, and .ifndef.
+   * Does not skip scoped identifiers, since macros can't be scoped.
+   */
+  private skipIdentifier(line: Token[], i: number): number {
+    return line[i + 1]?.token === 'ident' ? i + 2 : i + 1;
   }
 
   private parseDefine(line: Token[]) {
@@ -212,7 +269,7 @@ export class Preprocessor {
           continue;
         } else if (Token.eq(front, Token.ELSEIF)) {
           // if false ... else if .....
-          cond = parseOneExpr(line.slice(1), front);
+          cond = !!this.evaluator.evaluate(parseOneExpr(line.slice(1), front));
           continue;
         } else if (Token.eq(front, Token.ELSE)) {
           // if false ... else .....
@@ -245,188 +302,197 @@ export class Preprocessor {
 
   /** Returns the next position to expand. */
   private expandToken(line: Token[], pos: number): number {
-    const front = line[i]!;
+    const front = line[pos]!;
     if (front.token === 'ident') {
       const define = this.macros.get(front.str);
-      if (define) {
-        const out = [];
-        if (define.expand(line, i, out)) {
+      if (define instanceof Define) {
+        const out: Token[] = [];
+        if (define.expand(line, pos, out)) {
           // need to re-expand...
-          line.splice(i, line.length - i, ...out);
-          return i;
+          line.splice(pos, line.length - pos, ...out);
+          return pos;
         }
       }
     } else if (front.token === 'cs') {
       if (front.str === '.define' || front.str === '.undefine') {
-        const next = line[i + 1];
+        const next = line[pos + 1];
         if (next?.token === 'cs') {
-          this.expandToken(line, i + 1);
-          return i;
+          this.expandToken(line, pos + 1);
+          return pos;
         } else if (next?.token === 'ident') {
-          return i + 2; // skip the identifier
+          return pos + 2; // skip the identifier
         }
       } else if (front.str === '.skip') {
-        const rest = line.splice(i + 2, line.length - i - 2);
+        const rest = line.splice(pos + 2, line.length - pos - 2);
         line.pop();
         this.expandToken(rest, 0);
         line.push(...rest);
-        return i;
+        return pos;
       } else {
         const directive = this.expandDirectives[front.str];
         if (directive) {
-          // say whether to look for parens?
-          // look for parens
-          return directive(line, i);
+          // TODO - say whether to look for parens?
+          // TODO - look for parens
+          return directive(line, pos);
         }
       }
     }
-    return i + 1;
+    return pos + 1;
   }
 
   private expandLine(line: Token[], pos = 0): Token[] {
-    for (let i = 0; i < line.length; i++) {
+    for (let pos = 0; pos < line.length; pos++) {
     }
+    throw new Error(`not implemented`);
   }
 
-  defined(name: string): boolean {
-    return this.macros.has(name) ||
-        this.parent && this.parent.defined(name) ||
-        false;
-  }
+  // defined(name: string): boolean {
+  //   return this.macros.has(name) ||
+  //       this.parent && this.parent.defined(name) ||
+  //       false;
+  // }
 
-  undefine(name: string) {
-    this.macros.delete(name);
-  }
+  // undefine(name: string) {
+  //   this.macros.delete(name);
+  // }
 
-  // Expands a single line of tokens from the front of toks.
-  // .define macros are expanded inline, but .macro style macros
-  // are left as-is.  Don't expand defines in certain circumstances,
-  // such as when trying to override.
-  private line(toks: Deque<Token>): Deque<Token> {
-    // find the next end of line
-    const line = new Deque<Token>();
-    let curlies = 0;
-    while (toks.length) {
-      const tok = toks.shift();
-      if (Token.eq(Token.EOL, tok)) break;
-      if (Token.eq(Token.LC, tok)) {
-        curlies++;
-      } else if (Token.eq(Token.RC, tok)) {
-        if (--curlies < 0) throw new Eror(`unbalanced curly`);
-      }
-      line.push(tok);
-    }
-    if (curlies) throw new Error(`unbalanced curly`);
-    // now do the early expansions
-    for (let i = 0; i < line.length; i++) {
-      const tok = line.get(i)!;
-      if (Token.eq(Token.SKIP, tok)) {
-        const next = line.get(i + 1);
-        const count = next?.token === 'num' ? next.num : 1;
-        i += count;
-        continue;
-      }
-      if (tok.token === 'ident') {
-        const macro = this.macros.get(tok.str);
-        if (macro?.expandsEarly) {
-          if (!macro.expand(line, i)) fail(tok, `Could not expand ${tok.str}`);
-          i = -1; // start back at the beginning
-          continue;
-        }
-      }
-    }
-    return line;
-  }
+  // // Expands a single line of tokens from the front of toks.
+  // // .define macros are expanded inline, but .macro style macros
+  // // are left as-is.  Don't expand defines in certain circumstances,
+  // // such as when trying to override.
+  // private line(toks: Deque<Token>): Deque<Token> {
+  //   // find the next end of line
+  //   const line = new Deque<Token>();
+  //   let curlies = 0;
+  //   while (toks.length) {
+  //     const tok = toks.shift();
+  //     if (Token.eq(Token.EOL, tok)) break;
+  //     if (Token.eq(Token.LC, tok)) {
+  //       curlies++;
+  //     } else if (Token.eq(Token.RC, tok)) {
+  //       if (--curlies < 0) throw new Eror(`unbalanced curly`);
+  //     }
+  //     line.push(tok);
+  //   }
+  //   if (curlies) throw new Error(`unbalanced curly`);
+  //   // now do the early expansions
+  //   for (let i = 0; i < line.length; i++) {
+  //     const tok = line.get(i)!;
+  //     if (Token.eq(Token.SKIP, tok)) {
+  //       const next = line.get(i + 1);
+  //       const count = next?.token === 'num' ? next.num : 1;
+  //       i += count;
+  //       continue;
+  //     }
+  //     if (tok.token === 'ident') {
+  //       const macro = this.macros.get(tok.str);
+  //       if (macro?.expandsEarly) {
+  //         if (!macro.expand(line, i)) fail(tok, `Could not expand ${tok.str}`);
+  //         i = -1; // start back at the beginning
+  //         continue;
+  //       }
+  //     }
+  //   }
+  //   return line;
+  // }
 
-  * lines(rest: Deque<Token>, depth = 0): Generator<Line> {
-    if (depth > MAX_STACK_DEPTH) throw new Error(`max recursion depth`);
-    while (rest.length) {
-      // lines should have no define-macros in it at this point
-      let labels = [];
-      let line = this.line(rest);
-      while (line.length) {
-        // look for labels, but could be a mnemonic or macro
-        const front = line.front()!;
-        if (front.token === 'ident') {
-          if (Token.eq(Token.COLON, line.get(1))) {
-            // it's a label
-            labels.push(front.str);
-            line.splice(0, 2);
-            continue;
-          }
-          // check for a macro
-          const macro = this.macros.get(front.str);
-          if (macro) {
-            if (macro.expandsEarly) throw new Error(`early macro late`);
-            if (!macro.expand(line)) throw new Error(`bad expansion`);
-            // by recursing rather than unshifting we can support .exitmacro?
-            yield * this.lines(line, depth + 1);
-            break;
-          }
-          // it's a regular mnemonic
-          yield {labels, tokens: [...line]};
-          break;
-        } else if (Token.eq(Token.COLON, front)) { // special label
-          labels.push(':');
-          line.shift();
-          continue;
-        } else if (front.token === 'op') {
-          // other special labels
-          if (/^(\++|-+)$/.test(front.str)) {
-            labels.push(front.str);
-            line.shift();
-            if (Token.eq(Token.COLON, line.front())) line.shift();
-            continue;
-          }
-          // otherwise... syntax error? any other operator allowed?
-          throw new Error(`Syntax error: unexpected ${Token.nameAt(front)}`);
-        } else if (front.token === 'cs') {
-          switch (front.str) {
-            case '.exitmacro':
-              line = new Deque(); // no more expansion
-              break;
-            case '.ifdef':
-              // TODO - call helper method? but how? closure?
+  // * lines(rest: Deque<Token>, depth = 0): Generator<Line> {
+  //   if (depth > MAX_STACK_DEPTH) throw new Error(`max recursion depth`);
+  //   while (rest.length) {
+  //     // lines should have no define-macros in it at this point
+  //     let labels = [];
+  //     let line = this.line(rest);
+  //     while (line.length) {
+  //       // look for labels, but could be a mnemonic or macro
+  //       const front = line.front()!;
+  //       if (front.token === 'ident') {
+  //         if (Token.eq(Token.COLON, line.get(1))) {
+  //           // it's a label
+  //           labels.push(front.str);
+  //           line.splice(0, 2);
+  //           continue;
+  //         }
+  //         // check for a macro
+  //         const macro = this.macros.get(front.str);
+  //         if (macro) {
+  //           if (macro.expandsEarly) throw new Error(`early macro late`);
+  //           if (!macro.expand(line)) throw new Error(`bad expansion`);
+  //           // by recursing rather than unshifting we can support .exitmacro?
+  //           yield * this.lines(line, depth + 1);
+  //           break;
+  //         }
+  //         // it's a regular mnemonic
+  //         yield {labels, tokens: [...line]};
+  //         break;
+  //       } else if (Token.eq(Token.COLON, front)) { // special label
+  //         labels.push(':');
+  //         line.shift();
+  //         continue;
+  //       } else if (front.token === 'op') {
+  //         // other special labels
+  //         if (/^(\++|-+)$/.test(front.str)) {
+  //           labels.push(front.str);
+  //           line.shift();
+  //           if (Token.eq(Token.COLON, line.front())) line.shift();
+  //           continue;
+  //         }
+  //         // otherwise... syntax error? any other operator allowed?
+  //         throw new Error(`Syntax error: unexpected ${Token.nameAt(front)}`);
+  //       } else if (front.token === 'cs') {
+  //         switch (front.str) {
+  //           case '.exitmacro':
+  //             line = new Deque(); // no more expansion
+  //             break;
+  //           case '.ifdef':
+  //             // TODO - call helper method? but how? closure?
               
-              break;
-            case '.define':
-              break;
-            case '.macro':
-              break;
-          }
-        }
-      }
-      
-    }
-  }
+  //             break;
+  //           case '.define':
+  //             break;
+  //           case '.macro':
+  //             break;
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 }
 
+// Handles scoped names, too.
 function parseOneIdent(ts: Token[], prev?: Token): string {
-  // TODO - .ident?
-  noGarbage(ts[1]);
-  return Token.expectIdentifier(ts[0], prev);
+  const e = parseOneExpr(ts, prev);
+  return Expr.identifier(e);
 }
 
-function parseOneExpr(ts: Token[], prev?: Token): string {
-
+function parseOneExpr(ts: Token[], prev?: Token): Expr {
+  if (!ts.length) {
+    if (!prev) throw new Error(`Expected expression`);
+    throw new Error(`Expected expression: ${Token.nameAt(prev)}`);
+  }
+  return Expr.parseOnly(ts);
 }
 
 function parseArgs(fn: (cs: Token, ...args: Token[][]) => Token[],
-                   count?: number) {
-  return (line: Token[], start: number) => {
+                   count?: number): ExpandDirective {
+  return (line: Token[], start: number): number => {
     // look for paren, then comma-separated args
     // unwrap any braces
+    return null!;
   };
 }
 
-function fail(t: Token, msg: string): never {
-  const s = t.source;
-  if (s) {
-    msg += `\n  at ${s.file}:${s.line}:${s.column}: ${s.content}`;
-    // TODO - expanded from?
-  }
-  throw new Error(msg);
+function noGarbage(token: Token|undefined): void {
+  if (token) throw new Error(`garbage at end of line: ${Token.nameAt(token)}`);
 }
+
+// function fail(t: Token, msg: string): never {
+//   const s = t.source;
+//   if (s) {
+//     msg += `\n  at ${s.file}:${s.line}:${s.column}: Token.name(t)`;
+//     // TODO - expanded from?
+//   }
+//   throw new Error(msg);
+// }
 
 function badClose(open: string, tok: Token): never {
   throw new Error(`${Token.name(tok)} with no ${open}${Token.at(tok)}`);
@@ -436,3 +502,5 @@ export interface Line {
   labels: string[];
   tokens: Token[];
 }
+
+type ExpandDirective = (toks: Token[], i: number) => number;

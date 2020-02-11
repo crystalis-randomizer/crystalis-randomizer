@@ -16,12 +16,28 @@ export class Tokenizer {
       // Skip EOLs at beginning of line.
       tok = this.token();
     }
-    const out: Token[] = [];
+    // Group curly brace groups into a single effective token.
+    const stack: Token[][] = [[]];
+    let depth = 0;
     while (!Token.eq(tok, Token.EOL) && !Token.eq(tok, Token.EOF)) {
-      out.push(tok);
+      if (Token.eq(tok, Token.LC)) {
+        stack[depth++].push(tok);
+        stack.push([]);
+      } else if (Token.eq(tok, Token.RC)) {
+        if (!depth) throw new Error(`Missing open curly: ${Token.nameAt(tok)}`);
+        const inner = stack.pop()!;
+        const source = stack[--depth].pop()!.source;
+        stack[depth].push({token: 'grp', inner, source});
+      } else {
+        stack[depth].push(tok);
+      }
       tok = this.token();
     }
-    return out;
+    if (depth) {
+      const open = stack[depth - 1].pop()!;
+      throw new Error(`Missing close curly: ${Token.nameAt(open)}`);
+    }
+    return stack[0];
   }
 
   token(): Token {
@@ -50,7 +66,7 @@ export class Tokenizer {
     }
   }
 
-  tokenInternal(): Token {
+  private tokenInternal(): Token {
     if (this.buffer.newline()) return {token: 'eol'};
     if (this.buffer.token(/^@+[a-z0-9_]*/i) ||
         this.buffer.token(/^[a-z_][a-z0-9_]*/i)) return this.strTok('ident');
@@ -72,7 +88,7 @@ export class Tokenizer {
     throw new Error(`Syntax error`);
   }
 
-  tokenizeStr(): Token {
+  private tokenizeStr(): Token {
     const b = this.buffer;
     const m = b.match()!;
     const end = m[0];
@@ -94,11 +110,11 @@ export class Tokenizer {
     return {token: 'str', str};
   }
 
-  strTok(token: StringToken['token']): Token {
+  private strTok(token: StringToken['token']): Token {
     return {token, str: this.buffer.group()!};
   }
 
-  tokenizeNum(str: string = this.buffer.group()!): Token {
+  private tokenizeNum(str: string = this.buffer.group()!): Token {
     if (this.opts.numberSeparators) str = str.replace(/_/g, '');
     if (str[0] === '$') return parseNum(str, 16, 'hex');
     if (str[0] === '%') return parseNum(str, 2, 'binary');

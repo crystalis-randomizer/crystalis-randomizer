@@ -2,12 +2,17 @@
 // Has a tokenizer, feeds lines from there into expander and cpu.
 // All symbols live at the CPU level.
 
+import {Cpu} from './cpu.js';
 import {IdGenerator} from './idgenerator.js';
-import {Tokenizer} from './tokenizer.js';
+import {ObjectFile} from './objectfile.js';
 import {Preprocessor} from './preprocessor.js';
-// TOFO - ObjAssembler, Cpu, ObjectFile
+import {Processor} from './processor.js';
+import {Token} from './token.js';
+import {Tokenizer} from './tokenizer.js';
+import {Evaluator} from './evaluator.js';
+import { CancelToken } from '../util.js';
 
-interface Options extends Tokenizer.Options, Preprocessor.Options {
+interface Options extends Tokenizer.Options {
 }
 
 export class Assembler {
@@ -15,7 +20,7 @@ export class Assembler {
   // stack? when parsing new files, etc...?
   // use a promise for output in case we need to load another file...
 
-  constructor(readonly cpu = Cpu.MOS6502, readonly opts: Options = {}) {}
+  constructor(readonly cpu = Cpu.P02, readonly opts: Options = {}) {}
 
   // TODO - how to handle includes?
   //  template method?  property?  ctor parameter?
@@ -24,10 +29,10 @@ export class Assembler {
   }
 
   async assemble(code: string, file = 'input.s'): Promise<ObjectFile> {
-    const proc = new Processor(this.cpu);
-    const task = new Task(this, code, file, proc);
+    //const proc = new Processor(this.cpu);
+    const task = new Task(this, code, file, this.opts);
     await task.assemble();
-    return proc.result();
+    return task.processor.result();
   }
 
   
@@ -36,14 +41,14 @@ export class Assembler {
 class TokenStream {
   private stack: Array<readonly [Tokenizer|undefined, Token[][]]>;
   constructor(readonly task: Task, code: string, file: string) {
-    stack = [[new Tokenizer(code, file, task.opts), []]];
+    this.stack = [[new Tokenizer(code, file, task.opts), []]];
   }
   next(): Token[] {
     while (this.stack.length) {
       const [tok, front] = this.stack[this.stack.length - 1];
       if (front.length) return front.pop()!;
       const line = tok?.line();
-      if (line.length) return line;
+      if (line?.length) return line;
       this.stack.pop();
     }
     return [];
@@ -88,8 +93,13 @@ class Task {
               file: string,
               readonly opts = {...parent.opts}) {
     this.tokenStream = new TokenStream(this, code, file);
-    this.preprocessor = new Preprocessor(this.tokenStream, this.idGen);
-    this.processor = new Processor(this.preprocessor);
+    this.preprocessor =
+        new Preprocessor(this.tokenStream, this.idGen, new Evaluator(this));
+    this.processor = new Processor(this.preprocessor, parent.cpu);
+  }
+
+  pc(): number|undefined {
+    throw new Error(`unimplemented`);
   }
 
   // async include(file: string) {
@@ -103,24 +113,25 @@ class Task {
   // }
 
   async assemble(cancel = CancelToken.NONE) {
-    while (true) {
-      const line = this.tokenizer.line();
-      if (!line.length) {
-        if (!this.tokenizerStack.length) break;
-        this.tokenizer = this.tokenizerStack.pop();
-        continue;
-      }
-      // We have a line: expand it with the expander, maybe into multiple lines.
-      for (const expanded of this.preprocessor.expand(line)) {
-        // Handle certain directives, like .include, right here
-        if (Token.eq(expanded[0], Token.INCLUDE)) {
-          if (expanded[1]?.token !== 'str') throw new Error(`Bad .include`);
-          const file = expanded[1].str;
-          continue;
-        }
-        // TODO - possibly just give the assembler directly to the expander?
-        this.handle(expanded);
-      }      
-    }
+    await this.processor.process();
+    // while (true) {
+    //   const line = this.tokenStream.next();
+    //   if (!line.length) {
+    //     if (!this.tokenizerStack.length) break;
+    //     this.tokenizer = this.tokenizerStack.pop();
+    //     continue;
+    //   }
+    //   // We have a line: expand it with the expander, maybe into multiple lines.
+    //   for (const expanded of this.preprocessor.expand(line)) {
+    //     // Handle certain directives, like .include, right here
+    //     if (Token.eq(expanded[0], Token.INCLUDE)) {
+    //       if (expanded[1]?.token !== 'str') throw new Error(`Bad .include`);
+    //       const file = expanded[1].str;
+    //       continue;
+    //     }
+    //     // TODO - possibly just give the assembler directly to the expander?
+    //     this.handle(expanded);
+    //   }      
+    // }
   }
 }

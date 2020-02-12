@@ -221,10 +221,12 @@ const PREFIXOPS = new Map<string, OperatorMeta>([
 //           .byteat(* + 2) >= $60 .or \
 //           .byteat(* + 1) & $07 .in [2,3,4]
 // .endmacro
+// NOTE: dangerous reads are 2002, 2004, 2007 (plus mirrors), 4015
 // Then the assembler needs to understand the flow of these two ops...
 // or just disassemble it on the fly?
 const FUNCTIONS = new Set<string>([
   '.byteat',
+  '.wordat',
   '.max', '.min',
 ]);
 

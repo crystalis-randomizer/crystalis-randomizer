@@ -7,6 +7,8 @@ deploy/*
 deploy_key
 deploy_key.enc
 deploy_key.pub
+dist/test
+dist/test/*
 elisp/*
 notes/*
 patches/*

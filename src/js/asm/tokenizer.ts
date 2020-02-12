@@ -40,7 +40,7 @@ export class Tokenizer {
     return stack[0];
   }
 
-  token(): Token {
+  private token(): Token {
     // skip whitespace
     while (this.buffer.space() ||
            this.buffer.token(/^;.*/) ||
@@ -116,10 +116,10 @@ export class Tokenizer {
 
   private tokenizeNum(str: string = this.buffer.group()!): Token {
     if (this.opts.numberSeparators) str = str.replace(/_/g, '');
-    if (str[0] === '$') return parseNum(str, 16, 'hex');
-    if (str[0] === '%') return parseNum(str, 2, 'binary');
-    if (str[0] === '0') return parseNum(str, 8, 'octal');
-    return parseNum(str, 10, 'decimal');
+    if (str[0] === '$') return parseHex(str.substring(1));
+    if (str[0] === '%') return parseBin(str.substring(1));
+    if (str[0] === '0') return parseOct(str);
+    return parseDec(str);
   }
 }
 
@@ -131,8 +131,22 @@ export namespace Tokenizer {
   }
 }
 
-function parseNum(str: string, radix: number, radixName: string): Token {
-  const num = Number.parseInt(str, radix);
-  if (isNaN(num)) throw new Error(`Bad ${radixName} number: ${str}`);
-  return {token: 'num', num};
+function parseHex(str: string): Token {
+  if (!/^[0-9a-f]+$/i.test(str)) throw new Error(`Bad hex number: $${str}`);
+  return {token: 'num', num: Number.parseInt(str, 16)};
+}
+
+function parseDec(str: string): Token {
+  if (!/^[0-9]+$/.test(str)) throw new Error(`Bad decimal number: ${str}`);
+  return {token: 'num', num: Number.parseInt(str, 10)};
+}
+
+function parseOct(str: string): Token {
+  if (!/^[0-7]+$/.test(str)) throw new Error(`Bad octal number: ${str}`);
+  return {token: 'num', num: Number.parseInt(str, 8)};
+}
+
+function parseBin(str: string): Token {
+  if (!/^[01]+$/.test(str)) throw new Error(`Bad binary number: %${str}`);
+  return {token: 'num', num: Number.parseInt(str, 2)};
 }

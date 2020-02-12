@@ -42,9 +42,15 @@ export class Evaluator {
     return {op: 'num', num: result};
   }
 
+  private byteAt(addr: number): number {
+    throw new Error(`not implemented`);
+  }
+
   private readonly functions: Map<string, FuncType> = new Map([
     ['.min', Math.min],
     ['.max', Math.max],
+    ['.byteat', (addr) => this.byteAt(addr)],
+    ['.wordat', (addr) => this.byteAt(addr) | this.byteAt(addr + 1) << 8],
   ]);
 
   private readonly prefix: Map<string, (x: number) => number> = new Map([

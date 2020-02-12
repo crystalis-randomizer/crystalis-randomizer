@@ -7,8 +7,8 @@
     "flycheck": "elisp/flycheck-tsc-watch",
     "tsc": "node_modules/typescript/bin/tsc",
     "build": "npm run tsc && gulp",
-    "unit": "node_modules/mocha/bin/mocha -r esm test/util_test.js test/tokenize_test.js",
-    "mocha": "node_modules/mocha/bin/mocha -r esm",
+    "unit": "npm run mocha test/**/*.ts",
+    "mocha": "TS_NODE_PROJECT=./tsconfig.test.json node_modules/mocha/bin/mocha -r ts-node/register -r esm",
     "test": "npm run unit && npm run build && test/test_cli.sh",
     "clean": "rm -rf dist src/js/**/flycheck_*",
     "checkout": "scripts/update.sh out",
@@ -28,9 +28,13 @@
   },
   "homepage": "https://github.com/shicks/crystalis-randomizer#readme",
   "dependencies": {
+    "@types/chai": "^4.2.9",
+    "@types/mocha": "^7.0.1",
     "@types/node": "^12.7.10",
     "esm": "^3.2.25",
-    "lorem-ipsum": "^2.0.3"
+    "lorem-ipsum": "^2.0.3",
+    "module-alias": "^2.2.2",
+    "ts-node": "^8.6.2"
   },
   "devDependencies": {
     "chai": "^4.2.0",

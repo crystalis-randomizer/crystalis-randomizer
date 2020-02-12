@@ -3,19 +3,16 @@ import {Expr} from './expr.js';
 import {ObjectFile} from './objectfile.js';
 import {PreprocessedLine} from './preprocessor.js';
 import {Token} from './token.js';
-import {assertNever} from '../util.js';
-
-interface Options {
-  allowBrackets?: boolean;
-}
+import {assertNever, CancelToken} from '../util.js';
 
 export class Processor {
 
   constructor(readonly lines: AsyncIterable<PreprocessedLine>,
-              readonly cpu: Cpu, readonly opts: Options = {}) {}
+              readonly cpu: Cpu, readonly opts: Processor.Options = {}) {}
 
-  async process() {
+  async process(cancel: CancelToken) {
     for await (const {kind, tokens} of this.lines) {
+      cancel.throwIfRequested(); // TODO - propagate this into preprocessor
       // handle the line...
       if (kind === 'label') {
         await this.label(str(tokens[0]));
@@ -165,3 +162,10 @@ function str(t: Token) {
 
 type ArgMode = 'add' | 'a,x' | 'a,y' | 'imm' | 'ind' | 'inx' | 'iny';
 type Arg = ['acc' | 'imp'] | [ArgMode, Expr];
+
+export namespace Processor {
+  export interface Options {
+    allowBrackets?: boolean;
+  }
+}
+

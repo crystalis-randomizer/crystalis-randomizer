@@ -10,9 +10,9 @@ import {Processor} from './processor.js';
 import {Token} from './token.js';
 import {Tokenizer} from './tokenizer.js';
 import {Evaluator} from './evaluator.js';
-import { CancelToken } from '../util.js';
+import {CancelToken} from '../util.js';
 
-interface Options extends Tokenizer.Options {
+interface Options extends Tokenizer.Options, Processor.Options {
 }
 
 export class Assembler {
@@ -113,7 +113,8 @@ class Task {
   // }
 
   async assemble(cancel = CancelToken.NONE) {
-    await this.processor.process();
+    await this.processor.process(cancel);
+    return this.processor.result;
     // while (true) {
     //   const line = this.tokenStream.next();
     //   if (!line.length) {

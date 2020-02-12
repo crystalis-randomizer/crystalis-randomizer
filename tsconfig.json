@@ -1,25 +1,11 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "allowJs": false,
     "rootDir": "src/js",
     "outDir": "dist/js",
     "module": "es6",
-    "target": "es2018",
-    "inlineSourceMap": true,
-    "inlineSources": true,
-    "removeComments": true,
-    "noImplicitAny": true,
-    "noImplicitThis": true,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictPropertyInitialization": true
   },
   "include": [
     "src/js/**/*.ts"
   ],
-  "exclude": [
-    "unused/*.ts"
-  ]
 }

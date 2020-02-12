@@ -9,7 +9,7 @@ use warnings;
 use FindBin;
 use File::Basename qw/dirname/;
 
-open TSC, '-|', 'npm', 'run', 'watch';
+open TSC, '-|', 'npx', 'ttsc', '--watch';
 
 my $root = dirname($FindBin::Bin);
 my $out = "$root/.tsc.out";

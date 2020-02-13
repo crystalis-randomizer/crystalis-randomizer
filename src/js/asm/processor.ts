@@ -60,7 +60,7 @@ export class Processor {
         (this.opts.allowBrackets && Token.eq(front, Token.LB))) {
       const close = Token.findBalanced(tokens, 1);
       if (close < 0) throw new Error(`Unbalanced ${Token.nameAt(front)}`);
-      const args = Token.parseArgList(tokens.slice(2, close));
+      const args = Token.parseArgList(tokens, 2, close);
       if (!args.length) throw new Error(`Bad argument${Token.at(front)}`);
       const expr = Expr.parseOnly(args[0]);
       if (args.length === 1) {
@@ -78,7 +78,7 @@ export class Processor {
       }
       throw new Error(`Bad argument${Token.at(front)}`);
     }
-    const args = Token.parseArgList(tokens.slice(1));
+    const args = Token.parseArgList(tokens, 1);
     if (!args.length) throw new Error(`Bad arg${Token.at(front)}`);
     const expr = Expr.parseOnly(args[0]);
     if (args.length === 1) return ['add', expr];

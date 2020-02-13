@@ -78,6 +78,7 @@ export namespace Token {
   export function eq(left: Token|undefined, right: Token|undefined): boolean {
     if (!left || !right) return false;
     if (left.token !== right.token) return false;
+    if (left.token === 'grp') return false; // don't check groups.
     if ((left as StringToken).str !== (right as StringToken).str) return false;
     if ((left as NumberToken).num !== (right as NumberToken).num) return false;
     return true;
@@ -120,7 +121,8 @@ export namespace Token {
     if (token) throw new Error(`Expected end of line: ${Token.nameAt(token)}`);
   }
 
-  export function expectIdentifier(token: Token|undefined, prev?: Token) {
+  export function expectIdentifier(token: Token|undefined,
+                                   prev?: Token): string {
     if (!token) {
       if (!prev) throw new Error(`Expected identifier`);
       throw new Error(`Expected identifier after ${nameAt(prev)}`);
@@ -162,34 +164,37 @@ export namespace Token {
 
   /** Finds a balanced paren/bracket: returns its index, or -1. */
   export function findBalanced(tokens: Token[], i: number): number {
-    const open = tokens[i].token;
+    const open = tokens[i++].token;
     if (open !== 'lp' && open !== 'lb') throw new Error(`non-grouping token`);
     const close = open === 'lp' ? 'rp' : 'rb';
     let depth = 1;
-    while (depth && i < tokens.length) {
-      const tok = tokens[++i].token;
+    for (; i < tokens.length; i++) {
+      const tok = tokens[i].token;
       depth += Number(tok === open) - Number(tok === close);
+      if (!depth) return i;
     }
-    return depth ? -1 : i;
+    return -1;
   }
 
   /**
    * Splits on commas not enclosed in balanced parens.  Braces are
    * ignored/not allowed at this point.  This is intended for arithmetic.
    */
-  export function parseArgList(tokens: Token[]): Token[][] {
+  export function parseArgList(tokens: Token[],
+                               start = 0, end = tokens.length): Token[][] {
     let arg: Token[] = [];
     const args = [arg];
     let parens = 0;
-    for (const token of tokens) {
-      if (eq(token, LP)) {
-        parens++;
-      } else if (eq(token, RP)) {
-        parens--;
-      } else if (!parens && eq(token, COMMA)) {
+    for (let i = start; i < end; i++) {
+      const token = tokens[i];
+      if (!parens && eq(token, COMMA)) {
         args.push(arg = []);
       } else {
         arg.push(token);
+        if (eq(token, LP)) parens++;
+        if (eq(token, RP)) {
+          if (--parens < 0) throw new Error(`Unbalanced paren${at(token)}`);
+        }
       }
     }
     return args;

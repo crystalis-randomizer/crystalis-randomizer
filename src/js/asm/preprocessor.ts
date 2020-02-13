@@ -1,6 +1,7 @@
+import {Define} from './define.js';
 import {Expr} from './expr.js';
 import {IdGenerator} from './idgenerator.js';
-import {Define, Macro} from './macro.js';
+import {Macro} from './macro.js';
 import {Token} from './token.js';
 import {Tokenizer} from './tokenizer.js';
 
@@ -305,14 +306,7 @@ export class Preprocessor implements AsyncIterableIterator<PreprocessedLine> {
     const front = line[pos]!;
     if (front.token === 'ident') {
       const define = this.macros.get(front.str);
-      if (define instanceof Define) {
-        const out: Token[] = [];
-        if (define.expand(line, pos, out)) {
-          // need to re-expand...
-          line.splice(pos, line.length - pos, ...out);
-          return pos;
-        }
-      }
+      if (define instanceof Define && define.expand(line, pos)) return pos;
     } else if (front.token === 'cs') {
       if (front.str === '.define' || front.str === '.undefine') {
         const next = line[pos + 1];

@@ -82,7 +82,7 @@ export class Tokenizer {
     if (this.buffer.token('}')) return {token: 'rc'};
     if (this.buffer.token(')')) return {token: 'rp'};
     if (this.buffer.token(/^["']/)) return this.tokenizeStr();
-    if (this.buffer.token(/^[1-9][0-9a-z_]+/i)) return this.tokenizeNum();
+    if (this.buffer.token(/^[1-9][0-9a-z_]*/i)) return this.tokenizeNum();
     if (this.buffer.token(/^0[0-9a-z_]+/i)) return this.tokenizeNum();
     if (this.buffer.token(/^[$%][0-9a-z_]+/i)) return this.tokenizeNum();
     throw new Error(`Syntax error`);

@@ -1,33 +1,31 @@
-require('source-map-support').install();
-const {describe, it} = require('mocha');
-const {expect} = require('chai');
-const {Context, Define} = require('../dist/js/asm/context.js');
-const {Token} = require('../dist/js/asm/token.js');
-const {tokenize} = require('../dist/js/asm/tokenize.js');
-const {Deque} = require('../dist/js/util.js');
-const util = require('util');
-//const value = require('../dist/js/asm/value.js');
+import {describe, it} from 'mocha';
+import {expect} from 'chai';
+import {Define} from '../../src/js/asm/define';
+import {Token} from '../../src/js/asm/token';
+import {Tokenizer} from '../../src/js/asm/tokenizer';
+import * as util from 'util';
 
-const MATCH = Symbol();
+const [] = [util];
+//const value = require('../dist/js/asm/value.js');
 
 describe('Define', function() {
 
-  function testExpand(define, input, output) {
+  function testExpand(define: string, input: string, output: string) {
     const defTok = tok(define);
-    const defName = defTok.get(1) || expect.fail('no name');
+    const defName = defTok[1] || expect.fail('no name');
     const def = Define.from(defTok);
     const deq = tok(input);
     // TODO - handle this better...
     let found = -1;
     for (let i = 0; i < deq.length; i++) {
-      if (Token.eq(defName, deq.get(i))) {
-        deq.splice(found = i, 1);
+      if (Token.eq(defName, deq[i])) {
+        found = i;
         break;
       }
     }
     expect(found).to.not.equal(-1);
     expect(def.expand(deq, found)).to.equal(true);
-    expect([...deq]).to.eql([...tok(output)]);
+    expect(deq.map(strip)).to.eql(tok(output));
   }
 
   describe('with no parameters', function() {
@@ -145,7 +143,7 @@ describe('Define', function() {
 
     it('should fail on parenthesized calls with too many args', function() {
       const define = Define.from(tok('.define foo(a, b) [a:b]'));
-      expect(define.expand(tok('(1, 2, 3)'))).to.equal(false);      
+      expect(define.expand(tok('foo(1, 2, 3)'), 0)).to.equal(false);      
     });
 
     // TODO - is it possible to make an invalid call???
@@ -166,12 +164,12 @@ describe('Define', function() {
 
     it('should fail on empty undelimited argument', function() {
       const define = Define.from(tok('.define foo {a b c} [a:b:c]'));
-      expect(define.expand(tok('bar'))).to.equal(false);      
+      expect(define.expand(tok('foo bar'), 0)).to.equal(false);      
     });
 
     it('should fail on missing delimiter', function() {
       const define = Define.from(tok('.define foo {a,b} [a:b]'));
-      expect(define.expand(tok('bar baz qux'))).to.equal(false);      
+      expect(define.expand(tok('foo bar baz qux'), 0)).to.equal(false);      
     });
 
     it('should capture entire group for undelimited arg', function() {
@@ -219,10 +217,12 @@ describe('Define', function() {
 
 });
 
-function tok(str) {
-  const d = new Deque([...tokenize(str)].map(s => {
-    delete s.source;
-    return s;
-  }).filter(s => s.token !== 'eof' && s.token !== 'eol'));
-  return d;
+function strip(t: Token): Token {
+  delete t.source;
+  if (t.token === 'grp') t.inner.map(strip);
+  return t;
+};
+
+function tok(str: string): Token[] {
+  return new Tokenizer(str).line().map(strip);
 }

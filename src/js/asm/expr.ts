@@ -84,7 +84,7 @@ export namespace Expr {
               throw new Error(`Never closed: ${Token.nameAt(next)}`);
             }
             const args: Expr[] = [];
-            for (const arg of Token.parseArgList(tokens.slice(i + 2, close))) {
+            for (const arg of Token.parseArgList(tokens, i + 2, close)) {
               args.push(parseOnly(arg));
             }
             i = close;

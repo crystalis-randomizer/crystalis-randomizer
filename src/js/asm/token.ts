@@ -261,6 +261,11 @@ export namespace Token {
     }
     throw new Error(`Non-string token: ${Token.nameAt(t)}`);
   }
+
+  export function strip(t: Token): Token {
+    delete t.source;
+    return t;
+  }
 }
 
 // interface Expr {

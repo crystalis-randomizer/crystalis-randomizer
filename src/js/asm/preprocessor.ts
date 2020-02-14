@@ -62,7 +62,7 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
         this.sink = undefined;
         continue;
       }
-      return {value: value!, done: !value.length};
+      return {value: value!, done: !value};
     }
   }
 
@@ -117,6 +117,49 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
     }
   }
 
+  // Expand a single line of tokens from the front of toks.
+  private readLine(): Token[] {
+    if (this.leftovers) { // check for leftovers first
+      const out = this.leftovers;
+      this.leftovers = undefined;
+      return out;
+    }
+    // Apply .define expansions as necessary.
+    return this.expandLine(this.stream.next());
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // EXPANSION
+
+  private expandLine(line: Token[], pos = 0): Token[] {
+    const front = line[0];
+    let depth = 0;
+    let maxPos = 0;
+    while (pos < line.length) {
+      if (pos > maxPos) {
+        maxPos = pos;
+        depth = 0;
+      } else if (depth++ > MAX_STACK_DEPTH) {
+        throw new Error(`Maximum expansion depth reached: ${
+                         line.map(Token.name).join(' ')}${Token.at(front)}`);
+      }
+      pos = this.expandToken(line, pos);
+    }
+    return line;
+  }
+
+  /** Returns the next position to expand. */
+  private expandToken(line: Token[], pos: number): number {
+    const front = line[pos]!;
+    if (front.token === 'ident') {
+      const define = this.macros.get(front.str);
+      if (define instanceof Define && define.expand(line, pos)) return pos;
+    } else if (front.token === 'cs') {
+      return this.expandDirective(front.str, line, pos);
+    }
+    return pos + 1;
+  }
+
   tryExpandMacro(line: Token[]): boolean {
     const [first] = line;
     if (first.token !== 'ident') throw new Error(`impossible`);
@@ -127,41 +170,6 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
     this.stream.unshift(...expansion); // process them all over again...
     return true;
   }
-
-  tryRunDirective(line: Token[]): boolean {
-    const first = line[0];
-    if (first.token !== 'cs') throw new Error(`impossible`);
-    const handler = this.runDirectives[first.str];
-    if (!handler) return false;
-    handler(line);
-    return true;
-  }
-
-  private readonly runDirectives: Record<string, (ts: Token[]) => void> = {
-    '.define': (line) => this.parseDefine(line),
-    '.else': ([cs]) => badClose('.if', cs),
-    '.elseif': ([cs]) => badClose('.if', cs),
-    '.endif': ([cs]) => badClose('.if', cs),
-    '.endmacro': ([cs]) => badClose('.macro', cs),
-    '.exitmacro': ([, a]) => { noGarbage(a); this.stream.exit(); },
-    '.if': ([cs, ...args]) =>
-        this.parseIf(!!this.env.evaluate(parseOneExpr(args, cs))),
-    '.ifdef': ([cs, ...args]) =>
-        this.parseIf(this.macros.has(parseOneIdent(args, cs))),
-    '.ifndef': ([cs, ...args]) =>
-        this.parseIf(!this.macros.has(parseOneIdent(args, cs))),
-    '.ifblank': ([, ...args]) => this.parseIf(!args.length),
-    '.ifnblank': ([, ...args]) => this.parseIf(!!args.length),
-    '.ifref': ([cs, ...args]) =>
-        this.parseIf(this.env.referencedSymbol(parseOneIdent(args, cs))),
-    '.ifnref': ([cs, ...args]) =>
-        this.parseIf(!this.env.referencedSymbol(parseOneIdent(args, cs))),
-    '.ifsym': ([cs, ...args]) =>
-        this.parseIf(this.env.definedSymbol(parseOneIdent(args, cs))),
-    '.ifnsym': ([cs, ...args]) =>
-        this.parseIf(!this.env.definedSymbol(parseOneIdent(args, cs))),
-    '.macro': (line) => this.parseMacro(line),
-  };
 
   private expandDirective(directive: string, line: Token[], i: number): number {
     switch (directive) {
@@ -191,8 +199,9 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
     return i;
   }
 
-  parseArgs(line: Token[], i: number, argCount: number,
-            fn: (this: this, cs: Token, ...args: Token[][]) => void): number {
+  private parseArgs(line: Token[], i: number, argCount: number,
+                    fn: (this: this, cs: Token,
+                         ...args: Token[][]) => void): number {
     const cs = line[i];
     Token.expect(Token.LP, line[i + 1], cs);
     const end = Token.findBalanced(line, i + 1);
@@ -258,6 +267,44 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
     return line[i + 1]?.token === 'ident' ? i + 2 : i + 1;
   }
 
+  ////////////////////////////////////////////////////////////////
+  // RUN DIRECTIVES
+
+  tryRunDirective(line: Token[]): boolean {
+    const first = line[0];
+    if (first.token !== 'cs') throw new Error(`impossible`);
+    const handler = this.runDirectives[first.str];
+    if (!handler) return false;
+    handler(line);
+    return true;
+  }
+
+  private readonly runDirectives: Record<string, (ts: Token[]) => void> = {
+    '.define': (line) => this.parseDefine(line),
+    '.else': ([cs]) => badClose('.if', cs),
+    '.elseif': ([cs]) => badClose('.if', cs),
+    '.endif': ([cs]) => badClose('.if', cs),
+    '.endmacro': ([cs]) => badClose('.macro', cs),
+    '.exitmacro': ([, a]) => { noGarbage(a); this.stream.exit(); },
+    '.if': ([cs, ...args]) =>
+        this.parseIf(!!this.env.evaluate(parseOneExpr(args, cs))),
+    '.ifdef': ([cs, ...args]) =>
+        this.parseIf(this.macros.has(parseOneIdent(args, cs))),
+    '.ifndef': ([cs, ...args]) =>
+        this.parseIf(!this.macros.has(parseOneIdent(args, cs))),
+    '.ifblank': ([, ...args]) => this.parseIf(!args.length),
+    '.ifnblank': ([, ...args]) => this.parseIf(!!args.length),
+    '.ifref': ([cs, ...args]) =>
+        this.parseIf(this.env.referencedSymbol(parseOneIdent(args, cs))),
+    '.ifnref': ([cs, ...args]) =>
+        this.parseIf(!this.env.referencedSymbol(parseOneIdent(args, cs))),
+    '.ifsym': ([cs, ...args]) =>
+        this.parseIf(this.env.definedSymbol(parseOneIdent(args, cs))),
+    '.ifnsym': ([cs, ...args]) =>
+        this.parseIf(!this.env.definedSymbol(parseOneIdent(args, cs))),
+    '.macro': (line) => this.parseMacro(line),
+  };
+
   private parseDefine(line: Token[]) {
     const name = Token.expectIdentifier(line[1], line[0]);
     const define = Define.from(line);
@@ -317,46 +364,6 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
   private putBack(tokens: Token[]) {
     if (this.leftovers) throw new Error(`Impossible`);
     if (tokens.length) this.leftovers = tokens;
-  }
-
-  // Expand a single line of tokens from the front of toks.
-  private readLine(): Token[] {
-    if (this.leftovers) { // check for leftovers first
-      const out = this.leftovers;
-      this.leftovers = undefined;
-      return out;
-    }
-    // Apply .define expansions as necessary.
-    return this.expandLine(this.stream.next());
-  }
-
-  private expandLine(line: Token[], pos = 0): Token[] {
-    const front = line[0];
-    let depth = 0;
-    let maxPos = 0;
-    while (pos < line.length) {
-      if (pos > maxPos) {
-        maxPos = pos;
-        depth = 0;
-      } else if (depth++ > MAX_STACK_DEPTH) {
-        throw new Error(`Maximum expansion depth reached: ${
-                         line.map(Token.name).join(' ')}${Token.at(front)}`);
-      }
-      pos = this.expandToken(line, pos);
-    }
-    return line;
-  }
-
-  /** Returns the next position to expand. */
-  private expandToken(line: Token[], pos: number): number {
-    const front = line[pos]!;
-    if (front.token === 'ident') {
-      const define = this.macros.get(front.str);
-      if (define instanceof Define && define.expand(line, pos)) return pos;
-    } else if (front.token === 'cs') {
-      return this.expandDirective(front.str, line, pos);
-    }
-    return pos + 1;
   }
 
       // if (front.str === '.define' || front.str === '.undefine') {

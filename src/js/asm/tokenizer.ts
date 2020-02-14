@@ -27,7 +27,9 @@ export class Tokenizer {
         if (!depth) throw new Error(`Missing open curly: ${Token.nameAt(tok)}`);
         const inner = stack.pop()!;
         const source = stack[--depth].pop()!.source;
-        stack[depth].push({token: 'grp', inner, source});
+        const token: Token = {token: 'grp', inner};
+        if (source) token.source = source;
+        stack[depth].push(token);
       } else {
         stack[depth].push(tok);
       }
@@ -55,7 +57,7 @@ export class Tokenizer {
     };
     try {
       const tok = this.tokenInternal();
-      tok.source = source;
+      if (!this.opts.skipSourceAnnotations) tok.source = source;
       return tok;
     } catch (err) {
       const {file, line, column} = source;
@@ -123,14 +125,6 @@ export class Tokenizer {
   }
 }
 
-export namespace Tokenizer {
-  export interface Options {
-    // caseInsensitive?: boolean; // handle elsewhere?
-    lineContinuations?: boolean;
-    numberSeparators?: boolean;
-  }
-}
-
 function parseHex(str: string): Token {
   if (!/^[0-9a-f]+$/i.test(str)) throw new Error(`Bad hex number: $${str}`);
   return {token: 'num', num: Number.parseInt(str, 16)};
@@ -149,4 +143,13 @@ function parseOct(str: string): Token {
 function parseBin(str: string): Token {
   if (!/^[01]+$/.test(str)) throw new Error(`Bad binary number: %${str}`);
   return {token: 'num', num: Number.parseInt(str, 2)};
+}
+
+export namespace Tokenizer {
+  export interface Options {
+    // caseInsensitive?: boolean; // handle elsewhere?
+    lineContinuations?: boolean;
+    numberSeparators?: boolean;
+    skipSourceAnnotations?: boolean;
+  }
 }

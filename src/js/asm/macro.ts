@@ -54,7 +54,8 @@ export class Macro {
     for (const line of this.production) {
       if (Token.eq(line[0], Token.LOCAL)) {
         for (const local of Token.identsFromCList(line.slice(1))) {
-          locals.set(local, `${local}~${idGen.next()}`);
+          // pick a name that is impossible to type due to the '@' in the middle
+          locals.set(local, `${local}@${idGen.next()}`);
         }
       }
       // TODO - check for .local here and rename?  move into assemlber

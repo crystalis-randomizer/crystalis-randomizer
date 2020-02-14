@@ -117,22 +117,43 @@ export namespace Token {
     return name(arg) + at(arg);
   }
 
-  export function expectEol(token: Token|undefined) {
-    if (token) throw new Error(`Expected end of line: ${Token.nameAt(token)}`);
+  export function expectEol(token: Token|undefined, name = 'end of line') {
+    if (token) throw new Error(`Expected ${name}: ${Token.nameAt(token)}`);
+  }
+
+  export function expect(want: Token, token: Token, prev?: Token) {
+    if (!token) {
+      if (!prev) throw new Error(`Expected ${name(want)}`);
+      throw new Error(`Expected ${name(want)} after ${nameAt(token)}`);
+    }
+    if (!eq(want, token)) {
+      throw new Error(`Expected ${name(want)}: ${nameAt(token)}`);
+    }
   }
 
   export function expectIdentifier(token: Token|undefined,
                                    prev?: Token): string {
+    return expectStringToken('ident', 'identifier', token, prev);
+  }
+
+  export function expectString(token: Token|undefined, prev?: Token): string {
+    return expectStringToken('str', 'constant string', token, prev);
+  }
+
+  function expectStringToken(want: StringTok,
+                             name: string,
+                             token: Token|undefined,
+                             prev?: Token): string {
     if (!token) {
-      if (!prev) throw new Error(`Expected identifier`);
-      throw new Error(`Expected identifier after ${nameAt(prev)}`);
+      if (!prev) throw new Error(`Expected ${name}`);
+      throw new Error(`Expected ${name} after ${nameAt(prev)}`);
     }
-    if (token.token !== 'ident') {
-      throw new Error(`Expected identifier: ${nameAt(token)}`);
+    if (token.token !== want) {
+      throw new Error(`Expected ${name}: ${nameAt(token)}`);
     }
     return token.str;
   }
-
+    
   // export function fail(token: Token, msg: string): never {
   //   if 
   //   throw new Error(msg + 
@@ -228,6 +249,17 @@ export namespace Token {
 
   export function isRegister(t: Token, reg: 'a'|'x'|'y'): boolean {
     return t.token === 'ident' && t.str.toLowerCase() === reg;
+  }
+
+  export function str(t: Token) {
+    switch (t.token) {
+      case 'cs':
+      case 'ident':
+      case 'str':
+      case 'op':
+        return t.str;
+    }
+    throw new Error(`Non-string token: ${Token.nameAt(t)}`);
   }
 }
 

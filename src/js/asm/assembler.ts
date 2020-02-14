@@ -5,12 +5,13 @@
 import {Cpu} from './cpu.js';
 import {IdGenerator} from './idgenerator.js';
 import {ObjectFile} from './objectfile.js';
-import {Preprocessor} from './preprocessor.js';
+import {Preprocessor, PreprocessedLine} from './preprocessor.js';
 import {Processor} from './processor.js';
 import {Token} from './token.js';
+import {TokenStream} from './tokenstream.js';
 import {Tokenizer} from './tokenizer.js';
 import {Evaluator} from './evaluator.js';
-import {CancelToken} from '../util.js';
+import {CancelToken, assertNever} from '../util.js';
 
 interface Options extends Tokenizer.Options, Processor.Options {
 }
@@ -38,45 +39,6 @@ export class Assembler {
   
 }
 
-class TokenStream {
-  private stack: Array<readonly [Tokenizer|undefined, Token[][]]>;
-  constructor(readonly task: Task, code: string, file: string) {
-    this.stack = [[new Tokenizer(code, file, task.opts), []]];
-  }
-  next(): Token[] {
-    while (this.stack.length) {
-      const [tok, front] = this.stack[this.stack.length - 1];
-      if (front.length) return front.pop()!;
-      const line = tok?.line();
-      if (line?.length) return line;
-      this.stack.pop();
-    }
-    return [];
-  }
-  unshift(...lines: Token[][]) {
-    if (!this.stack.length) throw new Error(`Cannot unshift after EOF`);
-    const front = this.stack[this.stack.length - 1][1];
-    for (let i = lines.length - 1; i >= 0; i--) {
-      front.push(lines[i]);
-    }
-  }
-  async include(file: string) {
-    const code = await this.task.parent.readFile(file);
-    this.stack.push([new Tokenizer(code, file, this.task.opts),  []]);
-  }
-  // Enter a macro scope.
-  enter() {
-    this.stack.push([undefined, []]);
-  }
-  // Exit a macro scope prematurely.
-  exit() {
-    this.stack.pop();
-  }
-  options(): Tokenizer.Options {
-    return this.task.opts;
-  }
-}
-
 // TODO - expose a new Tokenizer-like interface that allows pulling
 //        lines, but will also allow (1) unshifting macro expansions,
 //        and (2) inserting included files.
@@ -92,7 +54,8 @@ class Task {
               code: string,
               file: string,
               readonly opts = {...parent.opts}) {
-    this.tokenStream = new TokenStream(this, code, file);
+    this.tokenStream = new TokenStream(opts);
+    this.tokenStream.enter(code, file);
     this.preprocessor =
         new Preprocessor(this.tokenStream, this.idGen, new Evaluator(this));
     this.processor = new Processor(this.preprocessor, parent.cpu);
@@ -112,8 +75,42 @@ class Task {
   //   await task.assemble();
   // }
 
+  private async process({kind, tokens}: PreprocessedLine) {
+    switch (kind) {
+      case 'label': return this.processor.label(Token.str(tokens[0]));
+      case 'directive': return await this.directive(tokens);
+      case 'assign': return this.processor.assign(tokens);
+      case 'mnemonic': return this.processor.mnemonic(tokens);
+    }
+    assertNever(kind);
+  }
+
+  private async directive(tokens: Token[]) {
+    const directive = Token.str(tokens[0]);
+    if (directive === '.include') return await this.include(tokens);
+    if (directive === '.out') return await this.out(tokens);
+    this.processor.directive(directive, tokens);
+  }
+
+  private async include(tokens: Token[]) {
+    const file = Token.expectString(tokens[1], tokens[0]);
+    Token.expectEol(tokens[2]);
+    const code = await this.parent.readFile(file);
+    this.tokenStream.enter(code, file);
+  }
+
+  private async out(tokens: Token[]) {
+    // TODO - something other than console.log??
+    const str = Token.expectString(tokens[1], tokens[0]);
+    Token.expectEol(tokens[2]);
+    console.log(str);
+  }
+
   async assemble(cancel = CancelToken.NONE) {
-    await this.processor.process(cancel);
+    for (const line of this.preprocessor) {
+      cancel.throwIfRequested();
+      await this.process(line);
+    }
     return this.processor.result;
     // while (true) {
     //   const line = this.tokenStream.next();

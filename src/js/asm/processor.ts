@@ -1,50 +1,74 @@
 import {Cpu} from './cpu.js';
 import {Expr} from './expr.js';
 import {ObjectFile} from './objectfile.js';
-import {PreprocessedLine} from './preprocessor.js';
 import {Token} from './token.js';
-import {assertNever, CancelToken} from '../util.js';
 
 export class Processor {
 
-  constructor(readonly lines: AsyncIterable<PreprocessedLine>,
-              readonly cpu: Cpu, readonly opts: Processor.Options = {}) {}
-
-  async process(cancel: CancelToken) {
-    for await (const {kind, tokens} of this.lines) {
-      cancel.throwIfRequested(); // TODO - propagate this into preprocessor
-      // handle the line...
-      if (kind === 'label') {
-        await this.label(str(tokens[0]));
-      } else if (kind === 'directive') {
-        const directive = this.directives.get(str(tokens[0]));
-        if (!directive) {
-          throw new Error(`Bad directive: ${Token.nameAt(tokens[0])}`);
-        }
-        await directive.call(this, tokens);
-      } else if (kind === 'assign') {
-        const mut = Token.eq(tokens[1], Token.SET);
-        this.assign(str(tokens[0]), mut, Expr.parseOnly(tokens, 2));
-      } else if (kind === 'mnemonic') {
-        // look at the rest of the tokens for calling convention...
-        const mnemonic = str(tokens[0]).toLowerCase();
-        const argument = this.parseArg(tokens);
-        await this.mnemonic(mnemonic, argument);
-      } else {
-        assertNever(kind);
-      }
-    }
-  }
+  constructor(readonly cpu: Cpu, readonly opts: Processor.Options = {}) {}
 
   result(): Promise<ObjectFile> {
     throw new Error(`not implemented`);
   }
 
-  readonly directives = new Map<string, (tokens: Token[]) => Promise<void>>([
-    ['.org', this.org],
-    ['.reloc', this.reloc],
-    ['.segment', this.segment],
-  ]);
+  directive(directive: string, tokens: Token[]) {
+    switch (directive) {
+      case '.org': return this.org(tokens);
+      case '.reloc': return this.reloc(tokens);
+      case '.assert': return this.assert(tokens);
+      case '.segment': return this.segment(tokens);
+    }
+    throw new Error(`Unknown directive: ${Token.nameAt(tokens[0])}`);
+  }
+
+  assign(tokens: Token[]) {
+    // Pull the line apart, figure out if it's mutable or not.
+    const ident = Token.expectIdentifier(tokens[0]);
+    const mut = Token.eq(tokens[1], Token.SET);
+    const expr = Expr.parseOnly(tokens.slice(2));
+    // Now make the assignment.
+    const [] = [ident, mut, expr];
+
+  }
+
+
+  mnemonic(tokens: Token[]) {
+    // handle the line...
+    const mnemonic = Token.expectIdentifier(tokens[0]).toLowerCase();
+    const arg = this.parseArg(tokens);
+    // may need to size the arg, depending.
+    // cpu will take 'add', 'a,x', and 'a,y' and indicate which it actually is.
+    const ops = this.cpu.op(mnemonic); // will throw if mnemonic unknown
+    const m = arg[0];
+    if (m === 'add' || m === 'a,x' || m === 'a,y') {
+      // Special case for address mnemonics
+      const expr = arg[1]!;
+      const s = expr.size || 2;
+      if (m === 'add' && s === 1 && 'zpg' in ops) {
+        return this.opcode(ops.zpg!, 1, expr);
+      } else if (m === 'add' && 'abs' in ops) {
+        return this.opcode(ops.abs!, 2, expr);
+      } else if (m === 'add' && 'rel' in ops) {
+        const offset = {op: '-', args: [expr, null!]}; // TODO - PC
+        // TODO - check range!
+        return this.opcode(ops.rel!, 1, offset);
+      } else if (m === 'a,x' && s === 1 && 'zpx' in ops) {
+        return this.opcode(ops.zpx!, 1, expr);
+      } else if (m === 'a,x' && 'abx' in ops) {
+        return this.opcode(ops.abx!, 1, expr);
+      } else if (m === 'a,y' && s === 1 && 'zpy' in ops) {
+        return this.opcode(ops.zpy!, 1, expr);
+      } else if (m === 'a,y' && 'aby' in ops) {
+        return this.opcode(ops.aby!, 1, expr);
+      }
+      throw new Error(`Bad address mode ${m} for ${mnemonic}`);
+    }
+    // All other mnemonics
+    if (m in ops) {
+      return this.opcode(ops[m]!, this.cpu.argLen(m), arg[1]!);
+    }
+    throw new Error(`Bad address mode ${m} for ${mnemonic}`);
+  }
 
   parseArg(tokens: Token[]): Arg {
     // Look for parens/brackets and/or a comma
@@ -91,47 +115,32 @@ export class Processor {
 
   async label(label: string) {
     // Add the label to the current chunk...
+    // Record the definition, etc...
   }
 
-  async assign(symbol: string, mutable: boolean, value: Expr) {
-    throw new Error(`unimplemented`);
-  }
+  assert(tokens: Token[]) {
 
-  async mnemonic(mnemonic: string, arg: Arg) {
-    // may need to size the arg, depending.
-    // cpu will take 'add', 'a,x', and 'a,y' and indicate which it actually is.
-    const ops = this.cpu.op(mnemonic);
-    const m = arg[0];
-    if (m === 'add' || m === 'a,x' || m === 'a,y') {
-      const expr = arg[1]!;
-      const s = expr.size || 2;
-      if (m === 'add' && s === 1 && 'zpg' in ops) {
-        return this.opcode(ops.zpg!, 1, expr);
-      } else if (m === 'add' && 'abs' in ops) {
-        return this.opcode(ops.abs!, 2, expr);
-      } else if (m === 'add' && 'rel' in ops) {
-        const offset = {op: '-', args: [expr, null!]}; // TODO - PC
-        // TODO - check range!
-        return this.opcode(ops.rel!, 1, offset);
-      } else if (m === 'a,x' && s === 1 && 'zpx' in ops) {
-        return this.opcode(ops.zpx!, 1, expr);
-      } else if (m === 'a,x' && 'abx' in ops) {
-        return this.opcode(ops.abx!, 1, expr);
-      } else if (m === 'a,y' && s === 1 && 'zpy' in ops) {
-        return this.opcode(ops.zpy!, 1, expr);
-      } else if (m === 'a,y' && 'aby' in ops) {
-        return this.opcode(ops.aby!, 1, expr);
-      }
-      throw new Error(`Bad address mode ${m} for ${mnemonic}`);
-    }
-    if (m in ops) {
-      return this.opcode(ops[m]!, this.cpu.argLen(m), arg[1]!);
-    }
   }
 
   async opcode(op: number, arglen: number, arg: Expr) {
     // TODO - emit some bytes, inc the pc, etc.
     // TODO - handle symbols, add to refs
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // Directive handlers
+
+  async include(tokens: Token[]) {
+    // TODO - parse a string, read the file (await), reinsert into the token
+    // stream.  NOTE this is a bit too low-level to really go here...
+    //  - the async bit just makes it really painful to go anywhere...
+    // If we could keep ALL the async to only the assembler
+    // (i.e. it manually pumps lines out of the processor)
+    // then we could possibly avoid the async here...
+
+    // - processor shouldn't need a ref to preproc
+    // - instead, just an ingest method
+    // - assembler task directs it to do everything
   }
 
   async org(tokens: Token[]) {
@@ -147,17 +156,6 @@ export class Processor {
   async segment(tokens: Token[]) {
     // TODO - parse a list of allowed segments
   }
-}
-
-function str(t: Token) {
-  switch (t.token) {
-    case 'cs':
-    case 'ident':
-    case 'str':
-    case 'op':
-      return t.str;
-  }
-  throw new Error(`Non-string token: ${Token.nameAt(t)}`);
 }
 
 type ArgMode = 'add' | 'a,x' | 'a,y' | 'imm' | 'ind' | 'inx' | 'iny';

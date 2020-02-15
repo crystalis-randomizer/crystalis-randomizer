@@ -155,6 +155,7 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
       const define = this.macros.get(front.str);
       if (define instanceof Define) {
         const overflow = define.expand(line, pos);
+//console.log('post-expand', line);
         if (overflow) {
           if (overflow.length) this.stream.unshift(...overflow)
           return pos;
@@ -186,6 +187,7 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
       case '.undefine':
         return this.skipIdentifier(line, i);
       case '.skip': return this.skip(line, i);
+      case '.noexpand': return this.noexpand(line, i);
       case '.tcount': return this.parseArgs(line, i, 1, this.tcount);
       case '.ident': return this.parseArgs(line, i, 1, this.ident);
       case '.string': return this.parseArgs(line, i, 1, this.string);
@@ -196,16 +198,29 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
     return i + 1;
   }
 
+  // QUESTION - does skip descend into groups?
+  //          - seems like it should...
   private skip(line: Token[], i: number): number {
     // expand i + 1, then splice self out
-    const rest = line.splice(i + 1, line.length - i - 1);
-    line.pop(); // .skip
-    this.expandToken(rest, 1);
-    if (rest[0].token === 'grp') {
-      rest.splice(0, 1, ...rest[0].inner);
+    line.splice(i, 1);
+    const skipped = line[i];
+    if (skipped?.token === 'grp') {
+      this.expandToken(skipped.inner, 0);
+    } else {
+      this.expandToken(line, i + 1);
     }
-    line.push(...rest);
     return i;
+  }
+
+  private noexpand(line: Token[], i: number): number {
+    const skip = line[i + 1];
+    if (skip.token === 'grp') {
+      line.splice(i, 2, ...skip.inner);
+      i += skip.inner.length - 1;
+    } else {
+      line.splice(i, 1);
+    }
+    return i + 1;
   }
 
   private parseArgs(line: Token[], i: number, argCount: number,
@@ -215,7 +230,10 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
     Token.expect(Token.LP, line[i + 1], cs);
     const end = Token.findBalanced(line, i + 1);
     const args =
-        Token.parseArgList(line, i + 2, end).map(ts => this.expandLine(ts));
+        Token.parseArgList(line, i + 2, end).map(ts => {
+          if (ts.length === 1 && ts[0].token === 'grp') ts = ts[0].inner;
+          return this.expandLine(ts);
+        });
     if (argCount && args.length !== argCount) {
       throw new Error(`Expected ${argCount} parameters: ${Token.nameAt(cs)}`);
     }
@@ -225,7 +243,7 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
   }
 
   private tcount(cs: Token, arg: Token[]) {
-    return [{token: 'num', num: arg.length, source: cs.source}];
+    return [{token: 'num', num: Token.count(arg), source: cs.source}];
   }
 
   private ident(cs: Token, arg: Token[]) {
@@ -244,9 +262,9 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
     const strs = args.map(ts => {
       const str = Token.expectString(ts[0]);
       Token.expectEol(ts[1], 'a single string');
-      return [{token: 'str', str, source: cs.source}];
+      return str;
     });
-    return strs.join('');
+    return [{token: 'str', str: strs.join(''), source: cs.source}];
   }
 
   private sprintf(cs: Token, fmtToks: Token[], ...args: Token[][]) {
@@ -290,6 +308,7 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
 
   private readonly runDirectives: Record<string, (ts: Token[]) => void> = {
     '.define': (line) => this.parseDefine(line),
+    '.undefine': (line) => this.parseUndefine(line),
     '.else': ([cs]) => badClose('.if', cs),
     '.elseif': ([cs]) => badClose('.if', cs),
     '.endif': ([cs]) => badClose('.if', cs),
@@ -325,6 +344,16 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
     } else {
       this.macros.set(name, define);
     }
+  }
+
+  private parseUndefine(line: Token[]) {
+    const [cs, ident, eol] = line;
+    const name = Token.expectIdentifier(ident, cs);
+    Token.expectEol(eol);
+    if (!this.macros.has(name)) {
+      throw new Error(`Not defined: ${Token.nameAt(ident)}`);
+    }
+    this.macros.delete(name);
   }
 
   private parseMacro(line: Token[]) {

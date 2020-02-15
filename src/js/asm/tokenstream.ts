@@ -3,6 +3,8 @@ import {Tokenizer} from './tokenizer';
 
 type Frame = [Tokenizer|undefined, Token[][]];
 
+const MAX_DEPTH = 100;
+
 export class TokenStream {
   private stack: Frame[] = [];
   constructor(readonly opts: Tokenizer.Options) {}
@@ -32,6 +34,7 @@ export class TokenStream {
     const frame: Frame = [undefined, []];
     if (code) frame[0] = new Tokenizer(code, file, this.opts);
     this.stack.push(frame);
+    if (this.stack.length > MAX_DEPTH) throw new Error(`Stack overflow`);
   }
   // Exit a macro scope prematurely.
   exit() {

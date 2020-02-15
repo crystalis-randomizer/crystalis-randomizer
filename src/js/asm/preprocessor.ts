@@ -8,7 +8,6 @@ import {TokenStream} from './tokenstream';
 //  - might need to insert a special token at the end of an expansion
 //    to know when to release the frame?
 const MAX_STACK_DEPTH = 100;
-const [] = [MAX_STACK_DEPTH];
 
 export interface PreprocessedLine {
   kind: 'assign' | 'label' | 'mnemonic' | 'directive';

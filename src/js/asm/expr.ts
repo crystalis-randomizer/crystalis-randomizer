@@ -2,23 +2,83 @@ import {Token} from './token';
 
 export interface Expr {
   // operator (e.g. '+' or '.max') or 'sym', 'num', or 'off' (?)
-  //  - sym: an offset into the symbols array (or the name in 'sym'
-  //  - num: a number literal
+  //  - sym: an offset into the symbols array (or the name in 'sym')
+  //  - num: a number literal, or an offset into the symbols array.
   //  - off: address of an offset in this chunk
+  //  - import: an import from another object file (uses 'sym').
   // TODO - what about different address types? bank hint/etc?
   //      - does bank hint need to get stored in the object file?
   //        - probably not...?
   op: string;
   args?: Expr[];
   num?: number;
+  chunk?: number; // for labels, the index of the chunk (for bank bytes).
   sym?: string;
   size?: number; // (assumed) byte size of result
 }
 
+interface Resolver {
+  resolve(name: string): Expr|undefined;
+  chunkData(chunk: number): {bank?: number, org?: number};
+}
+
 export namespace Expr {
 
+  export function evaluate(expr: Expr, resolver?: Resolver): number|undefined {
+    const args: number[] = [];
+    for (const arg of expr.args || []) {
+      const val = evaluate(arg, resolver);
+      if (val == null) return undefined;
+      args.push(val);
+    }
+    if (args.length === 1) {
+      switch (expr.op) {
+        case '+': return args[0];
+        case '-': return -args[0];
+        case '~': return ~args[0];
+        case '!': return +!args[0];
+        case '<': return args[0] & 0xff;
+        case '>': return (args[0] >> 8) & 0xff;
+        case '^':
+          if (expr.args![0].chunk == null) return undefined;
+          return resolver?.chunkData(expr.args![0].chunk!)?.bank;
+        default: throw new Error(`Unknown unary operator: ${expr.op}`);
+      }
+    } else if (expr.op === 'off') {
+      if (expr.chunk == null) return undefined;
+      const chunk = resolver?.chunkData(expr.chunk);
+      return chunk?.org != null ? chunk.org + expr.num! : undefined;
+    }
+    switch (expr.op) {
+      case 'num': return expr.num;
+      case 'sym': return resolver?.resolve(expr.sym!)?.num;
+      case '+': return args[0] + (args[1] || 0);
+      case '-': return args.length === 1 ? -args[0] : args[0] - args[1];
+      case '*': return args[0] * args[1];
+      case '/': return Math.floor(args[0] / args[1]);
+      case '.mod': return args[0] % args[1];
+      case '&': return args[0] & args[1];
+      case '|': return args[0] | args[1];
+      case '^': return args[0] ^ args[1];
+      case '<<': return args[0] << args[1];
+      case '>>': return args[0] >>> args[1];
+      case '<': return +(args[0] < args[1]);
+      case '<=': return +(args[0] <= args[1]);
+      case '>': return +(args[0] > args[1]);
+      case '>=': return +(args[0] >= args[1]);
+      case '=': return +(args[0] == args[1]);
+      case '<>': return +(args[0] != args[1]);
+      case '&&': return args[0] && args[1];
+      case '||': return args[0] || args[1];
+      case '.xor': return !args[0] && args[1] || !args[1] && args[0] || 0;
+      case '.max': return Math.max(...args);
+      case '.min': return Math.min(...args);
+      default: throw new Error(`Unknown binary operator: ${expr.op}`);
+    }
+  }
+
   /** Returns the identifier. */
-  export function identifier(expr: Expr) : string {
+  export function identifier(expr: Expr): string {
     const terms: string[] = [];
     append(expr);
     return terms.join('::');
@@ -89,6 +149,8 @@ export namespace Expr {
             }
             i = close;
             exprs.push(fixSize({op, args}));
+          } else if (Token.eq(front, Token.STAR)) {
+            exprs.push({op: 'sym', sym: '*'});
           } else {
             throw new Error(`Unknown prefix operator: ${Token.nameAt(front)}`);
           }

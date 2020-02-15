@@ -248,6 +248,8 @@ describe('Preprocessor', function() {
     });
   });
 
+  // TODO - test .local, both for symbols AND for defines.
+
   // TODO - tests for .if, make sure it evaluates numbers, etc...
 
 });

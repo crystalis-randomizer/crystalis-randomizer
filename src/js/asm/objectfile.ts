@@ -1,21 +1,25 @@
-import {Expr} from './expr.js';
+import {Expr} from './expr';
 
 export interface ObjectFile {
   /** All chunks, in a determinstic (indexable) order. */
-  chunks: Chunk[];
+  chunks: Chunk<Uint8Array>[];
   /** All symbols, in a deterministic (indexable) order. */
   symbols: Symbol[];
   /** All segments.  Indexed by name, but we don't use a map. */
   segments: Segment[];
 }
 
-export interface Chunk {
+export interface Chunk<T extends number[]|Uint8Array|string> {
   /** Which segments this chunk may be located in. */
-  segments: string[];
+  segments: readonly string[];
   /** Absolute address of the start of the chunk, if not relocatable. */
   org?: number;
-  /** Data for the chunk, either a Uint8Array or a Base64-encoded string. */
-  data: string|Uint8Array;
+  /**
+   * Data for the chunk, either a Uint8Array or a Base64-encoded string.
+   * NOTE: While building this is a number array.  When serialized to disk, it
+   * is a base64-encoded string.  When linking, it's a Uint8Array.
+   */
+  data: T;
   /** Substitutions to insert into the data. */
   subs?: Substitution[];
   /** Assertions within this chunk. Each expression must be nonzero. */

@@ -153,7 +153,13 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
     const front = line[pos]!;
     if (front.token === 'ident') {
       const define = this.macros.get(front.str);
-      if (define instanceof Define && define.expand(line, pos)) return pos;
+      if (define instanceof Define) {
+        const overflow = define.expand(line, pos);
+        if (overflow) {
+          if (overflow.length) this.stream.unshift(...overflow)
+          return pos;
+        }
+      }
     } else if (front.token === 'cs') {
       return this.expandDirective(front.str, line, pos);
     }
@@ -195,6 +201,9 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
     const rest = line.splice(i + 1, line.length - i - 1);
     line.pop(); // .skip
     this.expandToken(rest, 1);
+    if (rest[0].token === 'grp') {
+      rest.splice(0, 1, ...rest[0].inner);
+    }
     line.push(...rest);
     return i;
   }

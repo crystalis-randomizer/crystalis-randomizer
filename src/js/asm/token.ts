@@ -49,13 +49,14 @@ export namespace Token {
   export const EOF: Token = {token: 'eof'};
   // Important macro expansion tokens
   export const DEFINE: Token = {token: 'cs', str: '.define'};
-  export const MACRO: Token = {token: 'cs', str: '.macro'};
-  export const ENDMACRO: Token = {token: 'cs', str: '.endmacro'};
-  export const ENDSCOPE: Token = {token: 'cs', str: '.endscope'};
-  export const ENDPROC: Token = {token: 'cs', str: '.endproc'};
-  export const ENDIF: Token = {token: 'cs', str: '.endif'};
   export const ELSE: Token = {token: 'cs', str: '.else'};
   export const ELSEIF: Token = {token: 'cs', str: '.elseif'};
+  export const ENDIF: Token = {token: 'cs', str: '.endif'};
+  export const ENDMACRO: Token = {token: 'cs', str: '.endmacro'};
+  export const ENDPROC: Token = {token: 'cs', str: '.endproc'};
+  export const ENDSCOPE: Token = {token: 'cs', str: '.endscope'};
+  export const DOT_EOL: Token = {token: 'cs', str: '.eol'};
+  export const MACRO: Token = {token: 'cs', str: '.macro'};
   export const LOCAL: Token = {token: 'cs', str: '.local'};
   export const SET: Token = {token: 'cs', str: '.set'};
   export const SKIP: Token = {token: 'cs', str: '.skip'};

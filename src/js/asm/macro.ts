@@ -1,7 +1,7 @@
 import {Token} from './token';
 
-const DEBUG = true;
-const [] = [DEBUG];
+// const DEBUG = true;
+// const [] = [DEBUG];
 
 interface Source<T> {
   next(): T;

@@ -10,22 +10,25 @@ const [] = [util];
 
 describe('Define', function() {
 
-  function testExpand(define: string, input: string, output: string) {
+  function testExpand(define: string, input: string, output: string,
+                      extra?: string) {
     const defTok = tok(define);
     const defName = defTok[1] || expect.fail('no name');
     const def = Define.from(defTok);
-    const deq = tok(input);
+    const tokens = tok(input);
     // TODO - handle this better...
     let found = -1;
-    for (let i = 0; i < deq.length; i++) {
-      if (Token.eq(defName, deq[i])) {
+    for (let i = 0; i < tokens.length; i++) {
+      if (Token.eq(defName, tokens[i])) {
         found = i;
         break;
       }
     }
     expect(found).to.not.equal(-1);
-    expect(def.expand(deq, found)).to.equal(true);
-    expect(deq.map(strip)).to.eql(tok(output));
+    const overflow = def.expand(tokens, found);
+    expect(overflow).to.be.ok;
+    expect(tokens.map(strip)).to.eql(tok(output));
+    expect(overflow!.map(ts => ts.map(strip))).to.eql(extra ? toks(extra) : []);
   }
 
   describe('with no parameters', function() {
@@ -143,7 +146,7 @@ describe('Define', function() {
 
     it('should fail on parenthesized calls with too many args', function() {
       const define = Define.from(tok('.define foo(a, b) [a:b]'));
-      expect(define.expand(tok('foo(1, 2, 3)'), 0)).to.equal(false);      
+      expect(define.expand(tok('foo(1, 2, 3)'), 0)).to.not.be.ok;
     });
 
     // TODO - is it possible to make an invalid call???
@@ -157,19 +160,19 @@ describe('Define', function() {
 
   describe('with TeX-style argument list', function() {
     it('should capture empty last argument', function() {
-      testExpand('.define foo {a b c} [a:b:c]',
+      testExpand('.define foo {a b c .eol} [a:b:c]',
                  'qux foo bar baz',
                  'qux [bar:baz:]');
     });
 
     it('should fail on empty undelimited argument', function() {
-      const define = Define.from(tok('.define foo {a b c} [a:b:c]'));
-      expect(define.expand(tok('foo bar'), 0)).to.equal(false);      
+      const define = Define.from(tok('.define foo {a b} [a:b]'));
+      expect(define.expand(tok('foo bar'), 0)).to.not.be.ok;      
     });
 
     it('should fail on missing delimiter', function() {
       const define = Define.from(tok('.define foo {a,b} [a:b]'));
-      expect(define.expand(tok('foo bar baz qux'), 0)).to.equal(false);      
+      expect(define.expand(tok('foo bar baz qux'), 0)).to.not.be.ok;      
     });
 
     it('should capture entire group for undelimited arg', function() {
@@ -213,6 +216,18 @@ describe('Define', function() {
                  'qux foo bar .d baz 1 qux ] corge',
                  'qux [bar:baz:qux] corge');
     });
+
+    it('should expand .eol', function() {
+      testExpand('.define foo {a b c} [a:b:c] .eol a:c .eol b',
+                 'qux foo bar baz qux',
+                 'qux [bar:baz:qux]',
+                 'bar:qux\nbaz'); // overflow
+    });
+
+    it('should not expand .eol if not at end of line', function() {
+      const define = Define.from(tok('.define foo {a b c} [a:b:c] .eol a:c'));
+      expect(define.expand(tok('foo bar baz qux not_eol'), 0)).to.not.be.ok;      
+    });
   });
 
 });
@@ -225,4 +240,13 @@ function strip(t: Token): Token {
 
 function tok(str: string): Token[] {
   return new Tokenizer(str).line().map(strip);
+}
+function toks(str: string): Token[][] {
+  const lines: Token[][] = [];
+  const tokenizer = new Tokenizer(str);
+  while (true) {
+    const line = tokenizer.line().map(strip);
+    if (!line.length) return lines;
+    lines.push(line);
+  }
 }

@@ -1,6 +1,6 @@
 import {Token} from './token';
 
-const DEBUG = true;
+const DEBUG = false;
 
 export class Define {
   private constructor(private readonly overloads: DefineOverload[]) {}
@@ -25,15 +25,15 @@ export class Define {
    * Expands in place, possibly in the middle of a line!  Returns true
    * if successful.  Otherwise return false and do nothing.
    */
-  expand(tokens: Token[], start: number): boolean {
+  expand(tokens: Token[], start: number): Token[][]|undefined {
     const reasons = [];
     for (const overload of this.overloads) {
-      const reason = overload.expand(tokens, start);
-      if (!reason) return true;
-      reasons.push(reason);
+      const result = overload.expand(tokens, start);
+      if (Array.isArray(result)) return result;
+      reasons.push(result);
     }
     if (DEBUG) console.error(reasons.join('\n'));
-    return false;
+    return undefined;
   }
 
   // NOTE: macro[0] is .define
@@ -67,32 +67,45 @@ export class Define {
 }
 
 interface DefineOverload {
-  expand(tokens: Token[], start: number): string;
+  expand(tokens: Token[], start: number): string|Token[][];
   canOverload(): boolean;
 }
 
-function produce(replacements: Map<string, Token[]>,
-                 production: Token[]): Token[] {
-  const out: Token[] = [];
+function produce(tokens: Token[],
+                 start: number,
+                 end: number,
+                 replacements: Map<string, Token[]>,
+                 production: Token[]): string|Token[][] {
+  const splice: Token[] = [];
+  let overflow: Token[][] = [];
+  let line = splice;
   for (const tok of production) {
     if (tok.token === 'ident') {
       const param = replacements.get(tok.str);
       if (param) {
         // this is actually a parameter
-        out.push(...param); // TODO - copy w/ child sourceinfo?
+        line.push(...param); // TODO - copy w/ child sourceinfo?
         continue;
       }
+    } else if (Token.eq(tok, Token.DOT_EOL)) {
+      overflow.push(line = []);
+      continue;
     }
-    out.push(tok);
+    line.push(tok);
   }
-  return out;
+  overflow = overflow.filter(l => l.length);
+  if (overflow.length && end < tokens.length) {
+    return 'cannot expand .eol without consuming to end of line';
+  }
+  tokens.splice(start, end - start, ...splice);
+  return overflow;
 }
 
 class CStyleDefine implements DefineOverload {
   constructor(readonly params: string[],
               readonly production: Token[]) {}
 
-  expand(tokens: Token[], start: number): string {
+  expand(tokens: Token[], start: number): string|Token[][] {
     let i = start + 1; // skip past the macro call identifier
     let splice = this.params.length ? tokens.length : start;
     let end = splice;
@@ -123,9 +136,7 @@ class CStyleDefine implements DefineOverload {
       replacements.set(this.params[i], arg);
     }
     // All params filled in, make replacement and fill it in.
-    tokens.splice(start, splice - start,
-                  ...produce(replacements, this.production));
-    return '';
+    return produce(tokens, start, splice, replacements, this.production);
   }
 
   canOverload() { return Boolean(this.params.length); }
@@ -134,44 +145,38 @@ class CStyleDefine implements DefineOverload {
 class TexStyleDefine implements DefineOverload {
   constructor(readonly pattern: Token[],
               readonly production: Token[]) {}
-  expand(tokens: Token[], start: number): string {
+  expand(tokens: Token[], start: number): string|Token[][] {
     let i = start + 1; // skip past the macro call identifier
-    let end = this.pattern.length ? tokens.length : i;
     const replacements = new Map<string, Token[]>();
     for (let patPos = 0; patPos < this.pattern.length; patPos++) {
       const pat = this.pattern[patPos];
       if (pat.token === 'ident') {
         const delim = this.pattern[patPos + 1];
-        if (delim?.token === 'ident') {
+        if (!delim || delim?.token === 'ident') {
           // parse undelimited
           const tok = tokens[i++];
           if (!tok) return `missing undelimited argument ${Token.name(pat)}`;
           replacements.set(pat.str, tok.token === 'grp' ? tok.inner : [tok]);
         } else {
           // parse delimited
-          if (delim) {
-            end = Token.find(tokens, delim, i);
-            if (end < 0) return `could not find delimiter ${Token.name(delim)}`;
-          } else {
-            // final arg eats entire line
-            end = tokens.length;
-          }
+          const end = Token.eq(delim, Token.DOT_EOL) ?
+              tokens.length : Token.find(tokens, delim, i);
+          if (end < 0) return `could not find delimiter ${Token.name(delim)}`;
           //patPos++;
           replacements.set(pat.str, tokens.slice(i, end));
           i = end;
         }
+      } else if (Token.eq(pat, Token.DOT_EOL)) {
+        if (i < tokens.length) return `could not match .eol`;
       } else {
         // token to match
         if (!Token.eq(tokens[i++], pat)) {
           return `could not match: ${Token.name(pat)}`;
         }
-        end = i;
       }
     }
-    // Now splice in the production and fill to end of line
-    tokens.splice(start, end - start,
-                  ...produce(replacements, this.production));
-    return '';
+    // Now splice in the production and fill to end of line 
+    return produce(tokens, start, i, replacements, this.production);
   }
 
   canOverload() { return Boolean(this.pattern.length); }

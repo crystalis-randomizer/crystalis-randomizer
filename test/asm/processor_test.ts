@@ -13,6 +13,7 @@ function ident(str: string): Token { return {token: 'ident', str}; }
 function num(num: number): Token { return {token: 'num', num}; }
 function str(str: string): Token { return {token: 'str', str}; }
 function cs(str: string): Token { return {token: 'cs', str}; }
+function op(str: string): Token { return {token: 'op', str}; }
 const {COMMA, ASSIGN, IMMEDIATE, LP, RP} = Token;
 const ORG = cs('.org');
 const RELOC = cs('.reloc');
@@ -116,23 +117,61 @@ describe('Processor', function() {
   });
 
   describe('Symbols', function() {
-    it('should fill in an immediately-available address', function() {
+    it('should fill in an immediately-available value', function() {
       const p = new Processor(Cpu.P02);
-      p.assign([ident('r'), ASSIGN, num(0x8123)]);
-      p.directive('.org', [cs('.org'), num(0x8000)]);
-      p.instruction([ident('jsr'), ident('r')]);
+      p.assign([ident('val'), ASSIGN, num(0x23)]);
+      p.instruction([ident('lda'), IMMEDIATE, ident('val')]);
       expect(strip(p.result())).to.eql({
         chunks: [{
           segments: ['code'],
-          org: 0x8000,
-          data: Uint8Array.of(0x20, 0x23, 0x81),
+          data: Uint8Array.of(0xa9, 0x23),
         }],
         symbols: [],
         segments: [],
       });
     });
 
-    it('should handle a forward reference', function() {
+    it('should fill in an immediately-available label', function() {
+      const p = new Processor(Cpu.P02);
+      p.org(0x9135);
+      p.label('foo');
+      p.instruction([ident('ldx'), IMMEDIATE, op('<'), ident('foo')]);
+      p.instruction([ident('ldy'), IMMEDIATE, op('>'), ident('foo')]);
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          org: 0x9135,
+          data: Uint8Array.of(0xa2, 0x35,
+                              0xa0, 0x91),
+        }],
+        symbols: [],
+        segments: [],
+      });
+    });
+
+    it('should substitute a forward referenced value', function() {
+      const p = new Processor(Cpu.P02);
+      p.instruction([ident('lda'), IMMEDIATE, ident('val')]);
+      p.assign([ident('val'), ASSIGN, num(0x23)]);
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(0xa9, 0xff),
+          subs: [{
+            offset: 1,
+            size: 1,
+            expr: {
+              op: 'sym',
+              num: 0,
+            }
+          }],
+        }],
+        symbols: [{expr: {op: 'num', num: 0x23, size: 1}}],
+        segments: [],
+      });
+    });
+
+    it('should substitute a forward referenced label', function() {
       const p = new Processor(Cpu.P02);
       p.directive('.org', [cs('.org'), num(0x8000)]);
       p.instruction([ident('jsr'), ident('foo')]);
@@ -157,7 +196,26 @@ describe('Processor', function() {
         segments: [],
       });
     });
+
+    it('should allow overwriting mutable symbols', function() {
+      const p = new Processor(Cpu.P02);
+      p.assign([ident('foo'), cs('.set'), num(5)]);
+      p.instruction([ident('lda'), IMMEDIATE, ident('foo')]);
+      p.assign([ident('foo'), cs('.set'), num(6)]);
+      p.instruction([ident('lda'), IMMEDIATE, ident('foo')]);
+
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(0xa9, 5, 0xa9, 6),
+        }],
+        symbols: [],
+        segments: [],
+      });
+    });
   });
+
+  // TODO - test all the error cases...
 });
 
 function strip(o: ObjectFile): ObjectFile {

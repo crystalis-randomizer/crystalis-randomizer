@@ -99,12 +99,16 @@ export class Processor implements Expr.Resolver {
 
   private get chunk(): Chunk {
     // make chunk only when needed
+    this.ensureChunk();
+    return this._chunk!;
+  }
+
+  private ensureChunk() {
     if (!this._chunk) {
       this._chunk = {segments: this.segments, data: []};
       if (this._org != null) this._chunk.org = this._org;
       this.chunks.push(this._chunk);
     }
-    return this._chunk;
   }
 
   // private get pc(): number|undefined {
@@ -114,6 +118,7 @@ export class Processor implements Expr.Resolver {
 
   resolve(name: string): Expr {
     if (name === '*') {
+      this.ensureChunk();
       return {op: 'off', chunk: this.chunks.length - 1, num: this.offset};
     }
     const sym = this.scope.resolve(name, true);
@@ -190,13 +195,16 @@ export class Processor implements Expr.Resolver {
 
   assignSymbol(ident: string, mut: boolean, expr: Expr, token?: Token) {
     let sym = this.scope.resolve(ident, !mut);
-    if (mut && expr.op != 'num') {
+    if (sym && (mut !== (sym.id! < 0))) {
+      const at = token ? Token.at(token) : '';
+      throw new Error(`Cannot change mutability of ${ident}${at}`);
+    } else if (mut && expr.op != 'num') {
       const at = token ? Token.at(token) : '';
       throw new Error(`Mutable set requires constant${at}`);
     } else if (!sym) {
       if (!mut) throw new Error(`impossible`);
-      this.scope.symbols.set(ident, sym = {});
-    } else if (sym.expr) {
+      this.scope.symbols.set(ident, sym = {id: -1});
+    } else if (!mut && sym.expr) {
       const orig =
           sym.expr.source ? `\nOriginally defined${Token.at(sym.expr)}` : '';
       const name = token ? Token.nameAt(token) : ident;

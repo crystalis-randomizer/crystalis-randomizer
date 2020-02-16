@@ -1,12 +1,12 @@
 import {Cpu} from './cpu';
 import {Expr} from './expr';
 import * as objectFile from './objectfile';
-import { Token, SourceInfo} from './token';
+import {Token} from './token';
 
 type Chunk = objectFile.Chunk<number[]>;
 type ObjectFile = objectFile.ObjectFile;
 
-interface Symbol {
+class Symbol {
   /**
    * Index into the global symbol array.  Only applies to immutable
    * symbols that need to be accessible at link time.  Mutable symbols
@@ -63,15 +63,16 @@ class Scope {
     if (scope.closed) throw new Error(`Could not resolve symbol: ${name}`);
     if (!allowForwardRef) return undefined;
     // make a new symbol - but only in an open scope
-    const symbol = {id: this.symbolArray.length};
+    //const symbol = {id: this.symbolArray.length};
 //console.log('created:',symbol);
-    this.symbolArray.push(symbol);
+    //this.symbolArray.push(symbol);
+    const symbol = {};
     scope.symbols.set(tail, symbol);
     return symbol;
   }
 }
 
-export class Processor {
+export class Processor implements Expr.Resolver {
 
   /** The currently-open segment(s). */
   private segments: readonly string[] = ['code'];
@@ -106,21 +107,29 @@ export class Processor {
     return this._chunk;
   }
 
-  private get pc(): number|undefined {
-    if (this._org == null) return undefined;
-    return this._org + this.offset;
-  }
+  // private get pc(): number|undefined {
+  //   if (this._org == null) return undefined;
+  //   return this._org + this.offset;
+  // }
 
-  resolve(name: string): Expr|undefined {
+  resolve(name: string): Expr {
     if (name === '*') {
-      const num = this.pc;
-      return {op: 'num', num};
+      return {op: 'off', chunk: this.chunks.length - 1, num: this.offset};
     }
-    return this.scope.resolve(name)?.expr;
+    const sym = this.scope.resolve(name, true);
+    if (sym.expr) return sym.expr;
+    // if the expression is not yet known then refer to the symbol table,
+    // adding it if necessary.
+    if (sym.id == null) {
+      sym.id = this.symbols.length;
+      this.symbols.push(sym);
+    }
+    return {op: 'sym', num: sym.id};
   }
 
   // No banks are resolved yet.
   chunkData(chunk: number): {org?: number} {
+    // TODO - handle zp segments?
     return {org: this.chunks[chunk].org};
   }
 
@@ -147,29 +156,53 @@ export class Processor {
     throw new Error(`Unknown directive: ${Token.nameAt(tokens[0])}`);
   }
 
+  label(label: string|Token) {
+    let ident: string;
+    let token: Token|undefined;
+    const expr = this.resolve('*');
+    if (typeof label === 'string') {
+      ident = label;
+    } else {
+      ident = Token.str(token = label);
+      if (label.source) expr.source = label.source;
+    }
+    // TODO - handle anonymous and cheap local labels...
+    this.assignSymbol(ident, false, expr, token);
+    // const symbol = this.scope.resolve(str, true);
+    // if (symbol.expr) throw new Error(`Already defined: ${label}`);
+    // if (!this.chunk) throw new Error(`Impossible?`);
+    // const chunkId = this.chunks.length - 1; // must be AFTER this.chunk
+    // symbol.expr = {op: 'off', num: this.offset, chunk: chunkId};
+    // if (source) symbol.expr.source = source;
+    // // Add the label to the current chunk...?
+    // // Record the definition, etc...?
+  }
+
   assign(tokens: Token[]) {
     // Pull the line apart, figure out if it's mutable or not.
     const ident = Token.expectIdentifier(tokens[0]);
     const mut = Token.eq(tokens[1], Token.SET);
     let expr = Expr.parseOnly(tokens.slice(2));
     // Now make the assignment.
+    expr = Expr.resolve(expr, this); // NOTE: * _will_ get current chunk!
+    this.assignSymbol(ident, mut, expr, tokens[0]);
+  }
+
+  assignSymbol(ident: string, mut: boolean, expr: Expr, token?: Token) {
     let sym = this.scope.resolve(ident, !mut);
-    const val = Expr.evaluate(expr, this);
-    if (val != null) expr = {op: 'num', num: val};
-    if (mut) {
-      if (val == null) {
-        throw new Error(`Mutable set requires constant${Token.at(tokens[0])}`);
-      } else if (!sym) { // note: mut must be true
-        this.scope.symbols.set(ident, sym = {});
-      }
-    } else if (sym!.expr) {
-      throw new Error(`Redefining symbol ${Token.nameAt(tokens[0])}`);
+    if (mut && expr.op != 'num') {
+      const at = token ? Token.at(token) : '';
+      throw new Error(`Mutable set requires constant${at}`);
+    } else if (!sym) {
+      if (!mut) throw new Error(`impossible`);
+      this.scope.symbols.set(ident, sym = {});
+    } else if (sym.expr) {
+      const orig =
+          sym.expr.source ? `\nOriginally defined${Token.at(sym.expr)}` : '';
+      const name = token ? Token.nameAt(token) : ident;
+      throw new Error(`Redefining symbol ${name}${orig}`);
     }
-    sym!.expr = expr;
-
-    // TODO - convert * to offsets?  should assign get assigned to chunks
-    // so that we can get bank bytes?
-
+    sym.expr = expr;
   }
 
   instruction(mnemonic: string, arg: Arg): void;
@@ -215,7 +248,9 @@ export class Processor {
     }
     // All other mnemonics
     if (m in ops) {
-      return this.opcode(ops[m]!, this.cpu.argLen(m), arg[1]!);
+      const argLen = this.cpu.argLen(m);
+      if (m === 'rel') return this.relative(ops[m]!, argLen, arg[1]!);
+      return this.opcode(ops[m]!, argLen, arg[1]!);
     }
     throw new Error(`Bad address mode ${m} for ${mnemonic}`);
   }
@@ -263,38 +298,33 @@ export class Processor {
     throw new Error(`Bad arg${Token.at(front)}`);
   }
 
-  label(label: string|Token) {
-    let source: SourceInfo|undefined;
-    let str: string;
-    if (typeof label === 'string') {
-      str = label;
-    } else {
-      str = Token.str(label);
-      source = label.source;
-    }
-    const symbol = this.scope.resolve(str, true);
-    if (symbol.expr) throw new Error(`Already defined: ${label}`);
-    if (!this.chunk) throw new Error(`Impossible?`);
-    const chunkId = this.chunks.length - 1; // must be AFTER this.chunk
-    symbol.expr = {op: 'off', num: this.offset, chunk: chunkId};
-    if (source) symbol.expr.source = source;
-    // Add the label to the current chunk...?
-    // Record the definition, etc...?
+  relative(op: number, arglen: number, expr: Expr) {
+    // Can arglen ever be 2? (yes - brl on 65816)
+    // Basic plan here is that we actually want a relative expr.
+    // TODO - clean this up to be more efficient.
+    // TODO - handle local/anonymous labels separately?
+    const rel: Expr = {op: '-', args: [expr, {op: 'sym', sym: '*'}]};
+    if (expr.source) rel.source = expr.source;
+    this.opcode(op, arglen, rel);
   }
 
   opcode(op: number, arglen: number, expr: Expr) {
     // Emit some bytes.
     const {chunk} = this;
     chunk.data.push(op);
-    const val = arglen && Expr.evaluate(expr, this);
-    if (arglen > 0) chunk.data.push(val != null ? val & 0xff : 0xff);
-    if (arglen > 1) chunk.data.push(val != null ? (val >> 8) & 0xff : 0xff);
-//console.log('expr:', expr, 'val:', val);
     const offset = this.offset + 1;
-    if (arglen && val == null) {
-      // add a substitution
-      (chunk.subs || (chunk.subs = [])).push({offset, size: arglen, expr});
-
+    if (arglen) {
+      // TODO - for relative, if we're in the same chunk, just compare
+      // the offset...
+      expr = Expr.resolve(expr, this);
+      const val = expr.op === 'num' ? expr.num! : 0xffffffff;
+      chunk.data.push(val & 0xff);
+      if (arglen > 1) chunk.data.push((val >> 8) & 0xff);
+//console.log('expr:', expr, 'val:', val);
+      if (expr.op !== 'num') {
+        // add a substitution
+        (chunk.subs || (chunk.subs = [])).push({offset, size: arglen, expr});
+      }
     }
     this.offset = offset + arglen;
   }
@@ -321,7 +351,8 @@ export class Processor {
   }
 
   assert(expr: Expr) {
-    const val = Expr.evaluate(expr, this);
+    expr = Expr.resolve(expr, this);
+    const val = Expr.evaluate(expr);
     if (val != null) {
       if (!val) throw new Error(`Assertion failed${Token.at(expr)}`);
     } else {
@@ -331,8 +362,8 @@ export class Processor {
   }
 
   parseConst(tokens: Token[], start = 1): number {
-    const expr = Expr.parseOnly(tokens, start);
-    const val = Expr.evaluate(expr, this);
+    const expr = Expr.resolve(Expr.parseOnly(tokens, start), this);
+    const val = Expr.evaluate(expr);
     if (val == null) {
       throw new Error(`Expression is not constant: ${Token.at(tokens[1])}`);
     }

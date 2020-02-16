@@ -18,12 +18,12 @@ export interface Expr {
   source?: SourceInfo;
 }
 
-interface Resolver {
-  resolve(name: string): Expr;
-  chunkData(chunk: number): {bank?: number, org?: number, zp?: boolean};
-}
-
 export namespace Expr {
+
+  export interface Resolver {
+    resolve(name: string): Expr;
+    chunkData(chunk: number): {bank?: number, org?: number, zp?: boolean};
+  }
 
   /** Substitutes offsets or symbol table refs for all string symbols. */
   export function resolve(expr: Expr, resolver: Resolver): Expr {

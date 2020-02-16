@@ -23,10 +23,10 @@ const [] = [str, COMMA, LP, RP, ORG, RELOC, ASSERT, SEGMENT];
 
 describe('Processor', function() {
 
-  describe('Simple mnemonics', function() {
+  describe('Simple instructions', function() {
     it('should handle `lda #$03`', function() {
       const p = new Processor(Cpu.P02);
-      p.mnemonic([ident('lda'), IMMEDIATE, num(3)]);
+      p.instruction([ident('lda'), IMMEDIATE, num(3)]);
       expect(strip(p.result())).to.eql({
         segments: [],
         chunks: [{segments: ['code'], data: Uint8Array.of(0xa9, 3)}],
@@ -36,7 +36,7 @@ describe('Processor', function() {
 
     it('should handle `sta $02`', function() {
       const p = new Processor(Cpu.P02);
-      p.mnemonic([ident('sta'), num(2)]);
+      p.instruction([ident('sta'), num(2)]);
       expect(strip(p.result())).to.eql({
         segments: [],
         chunks: [{segments: ['code'], data: Uint8Array.of(0x85, 2)}],
@@ -46,7 +46,7 @@ describe('Processor', function() {
 
     it('should handle `ldy $032f`', function() {
       const p = new Processor(Cpu.P02);
-      p.mnemonic([ident('ldy'), num(0x32f)]);
+      p.instruction([ident('ldy'), num(0x32f)]);
       expect(strip(p.result())).to.eql({
         segments: [],
         chunks: [{segments: ['code'], data: Uint8Array.of(0xac, 0x2f, 3)}],
@@ -56,7 +56,7 @@ describe('Processor', function() {
 
     it('should handle `rts`', function() {
       const p = new Processor(Cpu.P02);
-      p.mnemonic([ident('rts')]);
+      p.instruction([ident('rts')]);
       expect(strip(p.result())).to.eql({
         segments: [],
         chunks: [{segments: ['code'], data: Uint8Array.of(0x60)}],
@@ -66,7 +66,7 @@ describe('Processor', function() {
 
     it('should handle `lda ($24),y`', function() {
       const p = new Processor(Cpu.P02);
-      p.mnemonic([ident('lda'), LP, num(0x24), RP, COMMA, ident('y')]);
+      p.instruction([ident('lda'), LP, num(0x24), RP, COMMA, ident('y')]);
       expect(strip(p.result())).to.eql({
         segments: [],
         chunks: [{segments: ['code'], data: Uint8Array.of(0xb1, 0x24)}],
@@ -76,7 +76,7 @@ describe('Processor', function() {
 
     it('should handle `sta ($0320,x)`', function() {
       const p = new Processor(Cpu.P02);
-      p.mnemonic([ident('sta'), LP, num(0x320), COMMA, ident('x'), RP]);
+      p.instruction([ident('sta'), LP, num(0x320), COMMA, ident('x'), RP]);
       expect(strip(p.result())).to.eql({
         segments: [],
         chunks: [{segments: ['code'], data: Uint8Array.of(0x81, 0x20, 3)}],
@@ -86,7 +86,7 @@ describe('Processor', function() {
 
     it('should handle `lsr`', function() {
       const p = new Processor(Cpu.P02);
-      p.mnemonic([ident('lsr')]);
+      p.instruction([ident('lsr')]);
       expect(strip(p.result())).to.eql({
         segments: [],
         chunks: [{segments: ['code'], data: Uint8Array.of(0x4a)}],
@@ -96,7 +96,7 @@ describe('Processor', function() {
 
     it('should handle `lsr a`', function() {
       const p = new Processor(Cpu.P02);
-      p.mnemonic([ident('lsr'), ident('A')]);
+      p.instruction([ident('lsr'), ident('A')]);
       expect(strip(p.result())).to.eql({
         segments: [],
         chunks: [{segments: ['code'], data: Uint8Array.of(0x4a)}],
@@ -106,7 +106,7 @@ describe('Processor', function() {
 
     it('should handle `ora $480,x`', function() {
       const p = new Processor(Cpu.P02);
-      p.mnemonic([ident('ora'), num(0x480), COMMA, ident('x')]);
+      p.instruction([ident('ora'), num(0x480), COMMA, ident('x')]);
       expect(strip(p.result())).to.eql({
         segments: [],
         chunks: [{segments: ['code'], data: Uint8Array.of(0x1d, 0x80, 4)}],
@@ -120,14 +120,14 @@ describe('Processor', function() {
       const p = new Processor(Cpu.P02);
       p.assign([ident('r'), ASSIGN, num(0x8123)]);
       p.directive('.org', [cs('.org'), num(0x8000)]);
-      p.mnemonic([ident('jsr'), ident('r')]);
+      p.instruction([ident('jsr'), ident('r')]);
       expect(strip(p.result())).to.eql({
         chunks: [{
           segments: ['code'],
           org: 0x8000,
           data: Uint8Array.of(0x20, 0x23, 0x81),
         }],
-        symbols: [{expr: {op: 'num', num: 0x8123}}],
+        symbols: [],
         segments: [],
       });
     });
@@ -135,8 +135,8 @@ describe('Processor', function() {
     it('should handle a forward reference', function() {
       const p = new Processor(Cpu.P02);
       p.directive('.org', [cs('.org'), num(0x8000)]);
-      p.mnemonic([ident('jsr'), ident('foo')]);
-      p.mnemonic([ident('lda'), IMMEDIATE, num(0)]);
+      p.instruction([ident('jsr'), ident('foo')]);
+      p.instruction([ident('lda'), IMMEDIATE, num(0)]);
       p.label('foo');
       expect(strip(p.result())).to.eql({
         chunks: [{
@@ -148,13 +148,12 @@ describe('Processor', function() {
             offset: 1,
             size: 2,
             expr: {
-              op: 'off',
-              chunk: 0,
-              num: 3,
+              op: 'sym',
+              num: 0,
             }
           }]
         }],
-        symbols: [{expr: {op: 'off', chunk: 0, num: 3}}],
+        symbols: [{expr: {op: 'off', chunk: 0, num: 5}}],
         segments: [],
       });
     });

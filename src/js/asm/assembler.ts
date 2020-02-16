@@ -77,10 +77,10 @@ class Task {
 
   private async process({kind, tokens}: PreprocessedLine) {
     switch (kind) {
-      case 'label': return this.processor.label(Token.str(tokens[0]));
+      case 'label': return this.processor.label(tokens[0]);
       case 'directive': return await this.directive(tokens);
       case 'assign': return this.processor.assign(tokens);
-      case 'mnemonic': return this.processor.mnemonic(tokens);
+      case 'instruction': return this.processor.instruction(tokens);
     }
     assertNever(kind);
   }

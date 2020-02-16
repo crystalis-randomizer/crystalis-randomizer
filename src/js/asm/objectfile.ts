@@ -2,11 +2,11 @@ import {Expr} from './expr';
 
 export interface ObjectFile {
   /** All chunks, in a determinstic (indexable) order. */
-  chunks: Chunk<Uint8Array>[];
+  chunks?: Chunk<Uint8Array>[];
   /** All symbols, in a deterministic (indexable) order. */
-  symbols: Symbol[];
+  symbols?: Symbol[];
   /** All segments.  Indexed by name, but we don't use a map. */
-  segments: Segment[];
+  segments?: Segment[];
 }
 
 export interface Chunk<T extends number[]|Uint8Array|string> {
@@ -29,12 +29,10 @@ export interface Chunk<T extends number[]|Uint8Array|string> {
 export interface Symbol {
   /** Name to export this symbol as, for importing into other objects. */
   export?: string;
-  /** Name to import this symbol as from another object. */
-  import?: string;
-  /** Index of the chunk this symbol is defined in. */
-  chunk?: number; // TODO - is this actually necessary?
-  /** Byte offset into the chunk for the definition. */
-  offset?: number;
+  // /** Index of the chunk this symbol is defined in. */
+  // chunk?: number; // TODO - is this actually necessary?
+  // /** Byte offset into the chunk for the definition. */
+  // offset?: number;
   /** Value of the symbol. */
   expr?: Expr;
 }

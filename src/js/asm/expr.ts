@@ -1,7 +1,7 @@
-import {Token} from './token';
+import {SourceInfo, Token} from './token';
 
 export interface Expr {
-  // operator (e.g. '+' or '.max') or 'sym', 'num', or 'off' (?)
+  // operator (e.g. '+' or '.max') or 'sym', 'num', or 'off' or 'import'
   //  - sym: an offset into the symbols array (or the name in 'sym')
   //  - num: a number literal, or an offset into the symbols array.
   //  - off: address of an offset in this chunk
@@ -15,21 +15,62 @@ export interface Expr {
   chunk?: number; // for labels, the index of the chunk (for bank bytes).
   sym?: string;
   size?: number; // (assumed) byte size of result
+  source?: SourceInfo;
 }
 
 interface Resolver {
-  resolve(name: string): Expr|undefined;
-  chunkData(chunk: number): {bank?: number, org?: number};
+  resolve(name: string): Expr;
+  chunkData(chunk: number): {bank?: number, org?: number, zp?: boolean};
 }
 
 export namespace Expr {
 
-  export function evaluate(expr: Expr, resolver?: Resolver): number|undefined {
+  /** Substitutes offsets or symbol table refs for all string symbols. */
+  export function resolve(expr: Expr, resolver: Resolver): Expr {
+    const source = expr.source;
+    if (expr.op === 'sym' && expr.sym != null) {
+      const resolved = resolver.resolve(expr.sym);
+      if (resolved.op === 'sym' && resolved.sym) {
+        throw new Error(`Resolution must not return another named symbol`);
+      }
+      expr = resolve(resolved, resolver); // recurse
+    } else if (expr.args?.length) {
+      expr = {...expr, args: expr.args.map(a => resolve(a, resolver))};
+    } else if (expr.op === '^' && expr.args?.length === 1) {
+      // evaluate the bank byte here because it requires funny business
+      const arg = expr.args[0];
+      if (arg.op === 'off' && arg.chunk != null) {
+        const chunk = resolver.chunkData(arg.chunk);
+        if (chunk.bank != null) expr = {op: 'num', num: chunk.bank, size: 1};
+      }
+    } else if (expr.op === 'off') {
+      if (expr.chunk == null || expr.num == null) throw new Error(`Bad offset`);
+      const chunk = resolver.chunkData(expr.chunk);
+      if (chunk.org != null) {
+        expr = {op: 'num', num: expr.num + chunk.org, size: chunk.zp ? 1 : 2};
+      } else if (chunk.zp) {
+        expr = {...expr, size: 1};
+      }
+    }
+    if (expr.op !== 'num') {
+      const num = evaluate(expr);
+      if (num != null) expr = {op: 'num', num, size: size(num)};
+    }
+    if (source && !expr.source) expr.source = source;
+    return expr;
+  }
+
+  export function evaluate(expr: Expr): number|undefined {
     const args: number[] = [];
     for (const arg of expr.args || []) {
-      const val = evaluate(arg, resolver);
+      const val = evaluate(arg);
       if (val == null) return undefined;
       args.push(val);
+    }
+    switch (expr.op) { // var-arg functions
+      case '.max': return Math.max(...args);
+      case '.min': return Math.min(...args);
+      default: // fall through to later checks
     }
     if (args.length === 1) {
       switch (expr.op) {
@@ -39,41 +80,36 @@ export namespace Expr {
         case '!': return +!args[0];
         case '<': return args[0] & 0xff;
         case '>': return (args[0] >> 8) & 0xff;
-        case '^':
-          if (expr.args![0].chunk == null) return undefined;
-          return resolver?.chunkData(expr.args![0].chunk!)?.bank;
+        case '^': return undefined;
         default: throw new Error(`Unknown unary operator: ${expr.op}`);
       }
-    } else if (expr.op === 'off') {
-      if (expr.chunk == null) return undefined;
-      const chunk = resolver?.chunkData(expr.chunk);
-      return chunk?.org != null ? chunk.org + expr.num! : undefined;
     }
+    const [a, b] = args;
     switch (expr.op) {
       case 'num': return expr.num;
-      case 'sym': return resolver?.resolve(expr.sym!)?.num;
-      case '+': return args[0] + (args[1] || 0);
-      case '-': return args.length === 1 ? -args[0] : args[0] - args[1];
-      case '*': return args[0] * args[1];
-      case '/': return Math.floor(args[0] / args[1]);
-      case '.mod': return args[0] % args[1];
-      case '&': return args[0] & args[1];
-      case '|': return args[0] | args[1];
-      case '^': return args[0] ^ args[1];
-      case '<<': return args[0] << args[1];
-      case '>>': return args[0] >>> args[1];
-      case '<': return +(args[0] < args[1]);
-      case '<=': return +(args[0] <= args[1]);
-      case '>': return +(args[0] > args[1]);
-      case '>=': return +(args[0] >= args[1]);
-      case '=': return +(args[0] == args[1]);
-      case '<>': return +(args[0] != args[1]);
-      case '&&': return args[0] && args[1];
-      case '||': return args[0] || args[1];
-      case '.xor': return !args[0] && args[1] || !args[1] && args[0] || 0;
-      case '.max': return Math.max(...args);
-      case '.min': return Math.min(...args);
-      default: throw new Error(`Unknown binary operator: ${expr.op}`);
+      case 'sym': return undefined;
+      // TODO - we could actually operate (off + num) => off - just an opt?
+      case 'off': return undefined;
+      case '+': return a + b;
+      case '-': return a - b;
+      case '*': return a * b;
+      case '/': return Math.floor(a / b);
+      case '.mod': return a % b;
+      case '&': return a & b;
+      case '|': return a | b;
+      case '^': return a ^ b;
+      case '<<': return a << b;
+      case '>>': return a >>> b;
+      case '<': return +(a < b);
+      case '<=': return +(a <= b);
+      case '>': return +(a > b);
+      case '>=': return +(a >= b);
+      case '=': return +(a == b);
+      case '<>': return +(a != b);
+      case '&&': return a && b;
+      case '||': return a || b;
+      case '.xor': return !a && b || !b && a || 0;
+      default: throw new Error(`Unknown operator: ${expr.op}`);
     }
   }
 
@@ -109,20 +145,24 @@ export namespace Expr {
   // Give up on normal parsing, just use a shunting yard again...
   //  - but handle parens recursively.
   export function parse(tokens: Token[], index = 0): [Expr|undefined, number] {
+//console.log('PARSE: tokens=', tokens, 'index=', index);
+//try { throw new Error(); } catch (e) { console.log(e.stack); }
     const ops: [string, OperatorMeta][] = [];
     const exprs: Expr[] = [];
 
     function popOp() {
       const [op, [,, arity]] = ops.pop()!;
+//console.log('pop', op, arity);
       const args = exprs.splice(exprs.length - arity, arity);
       if (args.length !== arity) throw new Error('shunting parse failed?');
       exprs.push(fixSize({op, args}));
     }
 
-    let end = tokens.length;
     let val = true;
-    for (let i = index; i < tokens.length; i++) {
+    let i = index;
+    for (; i < tokens.length; i++) {
       const front = tokens[i];
+//console.log('exprs:',exprs,'ops:',ops,'tok:',front);
       if (val) {
         // looking for a value: literal, balanced parens, or prefix op.
         if (front.token === 'cs' || front.token === 'op') {
@@ -149,8 +189,10 @@ export namespace Expr {
             }
             i = close;
             exprs.push(fixSize({op, args}));
+            val = false;
           } else if (Token.eq(front, Token.STAR)) {
             exprs.push({op: 'sym', sym: '*'});
+            val = false;
           } else {
             throw new Error(`Unknown prefix operator: ${Token.nameAt(front)}`);
           }
@@ -163,6 +205,7 @@ export namespace Expr {
           const e = parseOnly(tokens.slice(i + 1, close));
           exprs.push(e);
           i = close;
+          val = false;
         } else if (front.token === 'ident') {
           // add symbol
           exprs.push({op: 'sym', sym: front.str});
@@ -171,7 +214,7 @@ export namespace Expr {
         } else if (front.token === 'num') {
           // add number
           const num = front.num;
-          exprs.push({op: 'num', num, size: 0 <= num && num < 256 ? 1 : 2});
+          exprs.push({op: 'num', num, size: size(num)});
           val = false;
         } else {
           // bad token??
@@ -183,7 +226,6 @@ export namespace Expr {
         if (Token.eq(front, Token.COMMA) /* || Token.eq(front, Token.RP) */) {
           // TODO - is rparen okay? usually should have extracted the balanced
           // paren out first?
-          end = i;
           break;
         }
         if (front.token === 'cs' || front.token === 'op') {
@@ -203,15 +245,21 @@ export namespace Expr {
             popOp();
           }
           ops.push([front.str, op]);
+          val = true;
         } else {
-          throw new Error(`Garbage after expression: ${Token.nameAt(front)}`);
+          //throw new Error(`Garbage after expression: ${Token.nameAt(front)}`);
+//console.log('bad value', i, front);
+          break;
         }
       }
     }
+//console.log('exprs:',exprs,'ops:',ops);
     // Now pop all the ops
     while (ops.length) popOp();
+//console.log('post-pop:', exprs);
     if (exprs.length !== 1) throw new Error(`shunting parse failed?`);
-    return [exprs[0], end];
+    if (tokens[index].source) exprs[0].source = tokens[index].source;
+    return [exprs[0], i];
   }
 }
 
@@ -332,4 +380,8 @@ function fixSize(expr: Expr): Expr {
   const size = xform?.(...expr.args!.map(e => Number(e.size)));
   if (size) expr.size = size;
   return expr;
+}
+
+function size(num: number): 1|2 {
+  return 0 <= num && num < 256 ? 1 : 2;
 }

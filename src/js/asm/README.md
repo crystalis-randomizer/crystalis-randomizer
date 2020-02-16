@@ -440,3 +440,41 @@ DoStuff:
 The assembler will split out all independent chunks (i.e. separate
 procedures with no relative jumps between them) and mark them each as
 being eligible for multiple segments.
+
+## Processor
+
+Processor accepts labels (and other assignments), instructions, and
+directives, and updates its state accordingly.
+
+Instructions with arguments accept expressions, which may or may not
+have a definite value, and may or may not require looking up symbols
+out of the scope (these are independent).  Additional considerations
+are the special '*' value, which must be filled in immediately upon
+_parsing_ to be the current offset into the current chunk, as well as
+cheap local and anonymous labels that exist _outside_ the scope.
+
+It's a question whether we want to allow using anonymous labels as
+values in expressions?  Probably not: `(:) + 1` is just weird.  But
+cheap locals will be allowed, and they don't generally want to show up
+in the symbol table.
+
+<!--
+When we see an expression, the initial parse is context-free, and
+symbols will be simple strings.  Rather than passing a resolver into
+Expr.evaluate, we can instead traverse the expression and pull out all
+the symbols ahead of time, so that we know (a) whether we can resolve
+it right away, (b) when we might be able to resolve it, and (c) what
+needs to be stored where.  We can then build up a substitution map in
+case it's actually resolable.
+
+For each symbol we need to resolve:
+1. look up the symbol in the scope
+2. if it has an expression, 
+-->
+
+When we see an expression, the initial parse is context-free, and
+symbols will be simple strings.  To evaluate, we pass in a resolver
+that can look up a symbol (including "*") and return an expr (which
+may have recursive symbols).  The output of an expression evaluated
+with a resolver is one that has _no_ string symbols - there _may_
+be numeric symbol references.

@@ -1,13 +1,19 @@
 import {Cpu} from './cpu';
 import {Expr} from './expr';
 import * as objectFile from './objectfile';
-import {Token} from './token';
+import { Token, SourceInfo} from './token';
 
 type Chunk = objectFile.Chunk<number[]>;
 type ObjectFile = objectFile.ObjectFile;
 
 interface Symbol {
-  /** For immutable symbols, a consecutive unique ID across this object file. */
+  /**
+   * Index into the global symbol array.  Only applies to immutable
+   * symbols that need to be accessible at link time.  Mutable symbols
+   * and symbols with known values at use time are not added to the
+   * global list and are therefore have no id.  Mutability is tracked
+   * by storing a -1 here.
+   */
   id?: number;
   /**
    * The expression for the symbol.  Must be a statically-evaluatable constant
@@ -52,12 +58,15 @@ class Scope {
       scope = child;
     }
     let sym = scope.symbols.get(tail);
+//console.log('resolve:',name,'sym=',sym,'fwd?',allowForwardRef);
     if (sym) return sym;
     if (scope.closed) throw new Error(`Could not resolve symbol: ${name}`);
     if (!allowForwardRef) return undefined;
     // make a new symbol - but only in an open scope
-    const symbol = {id: this.symbolArray.length++};
+    const symbol = {id: this.symbolArray.length};
+//console.log('created:',symbol);
     this.symbolArray.push(symbol);
+    scope.symbols.set(tail, symbol);
     return symbol;
   }
 }
@@ -120,15 +129,20 @@ export class Processor {
     for (const chunk of this.chunks) {
       chunks.push({...chunk, data: Uint8Array.from(chunk.data)});
     }
-    return {chunks, symbols: this.symbols, segments: []};
+    const symbols: objectFile.Symbol[] = [];
+    for (const {id, ...symbol} of this.symbols) {
+      symbols.push(symbol);
+    }
+    const segments: objectFile.Segment[] = [];
+    return {chunks, symbols, segments};
   }
 
   directive(directive: string, tokens: Token[]) {
     switch (directive) {
-      case '.org': return this.org(tokens);
-      case '.reloc': return this.reloc(tokens);
-      case '.assert': return this.assert(tokens);
-      case '.segment': return this.segment(tokens);
+      case '.org': return this.org(this.parseConst(tokens));
+      case '.reloc': return this.parseNoArgs(tokens), this.reloc();
+      case '.assert': return this.assert(this.parseExpr(tokens));
+      case '.segment': return this.segment(this.parseStringList(tokens));
     }
     throw new Error(`Unknown directive: ${Token.nameAt(tokens[0])}`);
   }
@@ -158,10 +172,20 @@ export class Processor {
 
   }
 
-  mnemonic(tokens: Token[]) {
-    // handle the line...
-    const mnemonic = Token.expectIdentifier(tokens[0]).toLowerCase();
-    const arg = this.parseArg(tokens);
+  instruction(mnemonic: string, arg: Arg): void;
+  instruction(tokens: Token[]): void;
+  instruction(...args: [Token[]]|[string, Arg]): void {
+    let mnemonic: string;
+    let arg: Arg;
+    if (args.length === 1) {
+      // handle the line...
+      const tokens = args[0];
+      mnemonic = Token.expectIdentifier(tokens[0]).toLowerCase();
+      arg = this.parseArg(tokens);
+    } else {
+      [mnemonic, arg] = args;
+      mnemonic = mnemonic.toLowerCase();
+    }
     // may need to size the arg, depending.
     // cpu will take 'add', 'a,x', and 'a,y' and indicate which it actually is.
     const ops = this.cpu.op(mnemonic); // will throw if mnemonic unknown
@@ -239,12 +263,21 @@ export class Processor {
     throw new Error(`Bad arg${Token.at(front)}`);
   }
 
-  label(label: string) {
-    const symbol = this.scope.resolve(label, true);
+  label(label: string|Token) {
+    let source: SourceInfo|undefined;
+    let str: string;
+    if (typeof label === 'string') {
+      str = label;
+    } else {
+      str = Token.str(label);
+      source = label.source;
+    }
+    const symbol = this.scope.resolve(str, true);
     if (symbol.expr) throw new Error(`Already defined: ${label}`);
     if (!this.chunk) throw new Error(`Impossible?`);
     const chunkId = this.chunks.length - 1; // must be AFTER this.chunk
     symbol.expr = {op: 'off', num: this.offset, chunk: chunkId};
+    if (source) symbol.expr.source = source;
     // Add the label to the current chunk...?
     // Record the definition, etc...?
   }
@@ -256,6 +289,7 @@ export class Processor {
     const val = arglen && Expr.evaluate(expr, this);
     if (arglen > 0) chunk.data.push(val != null ? val & 0xff : 0xff);
     if (arglen > 1) chunk.data.push(val != null ? (val >> 8) & 0xff : 0xff);
+//console.log('expr:', expr, 'val:', val);
     const offset = this.offset + 1;
     if (arglen && val == null) {
       // add a substitution
@@ -268,52 +302,67 @@ export class Processor {
   ////////////////////////////////////////////////////////////////
   // Directive handlers
 
-  org(tokens: Token[]) {
-    const expr = Expr.parseOnly(tokens, 1);
-    const address = Expr.evaluate(expr, this);
-    if (address == null) {
-      throw new Error(`Expression is not constant: ${Token.at(tokens[1])}`);
-    }
+  org(addr: number) {
     this.offset = 0;
-    this._org = address;
+    this._org = addr;
     this._chunk = undefined;
   }
 
-  reloc(tokens: Token[]) {
-    Token.expectEol(tokens[1]);
+  reloc() {
     this.offset = 0;
     this._org = undefined;
     this._chunk = undefined;
   }
 
-  segment(tokens: Token[]) {
+  segment(segments: string[]) {
     // Usage: .segment "1a", "1b", ...
-    this.segments = Token.parseArgList(tokens, 1).map(ts => {
-      const str = Token.expectString(ts[0]);
-      Token.expectEol(ts[1], "a single string");
-      return str;
-    });
+    this.segments = segments;
     this._chunk = undefined;
   }
 
-  assert(tokens: Token[]) {
-    const expr = Expr.parseOnly(tokens, 1);
+  assert(expr: Expr) {
     const val = Expr.evaluate(expr, this);
     if (val != null) {
-      if (!val) throw new Error(`Assertion failed${Token.at(tokens[1])}`);
+      if (!val) throw new Error(`Assertion failed${Token.at(expr)}`);
     } else {
       const {chunk} = this;
       (chunk.asserts || (chunk.asserts = [])).push(expr);
     }
   }
+
+  parseConst(tokens: Token[], start = 1): number {
+    const expr = Expr.parseOnly(tokens, start);
+    const val = Expr.evaluate(expr, this);
+    if (val == null) {
+      throw new Error(`Expression is not constant: ${Token.at(tokens[1])}`);
+    }
+    return val;
+  }
+  parseNoArgs(tokens: Token[], start = 1) {
+    Token.expectEol(tokens[1]);
+  }
+  parseExpr(tokens: Token[], start = 1): Expr {
+    return Expr.parseOnly(tokens, start);
+  }
+  parseStringList(tokens: Token[], start = 1): string[] {
+    return Token.parseArgList(tokens, 1).map(ts => {
+      const str = Token.expectString(ts[0]);
+      Token.expectEol(ts[1], "a single string");
+      return str;
+    });
+  }
 }
 
-type ArgMode = 'add' | 'a,x' | 'a,y' | 'imm' | 'ind' | 'inx' | 'iny';
-type Arg = ['acc' | 'imp'] | [ArgMode, Expr];
+type ArgMode =
+    'add' | 'a,x' | 'a,y' | // pseudo modes
+    'abs' | 'abx' | 'aby' |
+    'imm' | 'ind' | 'inx' | 'iny' |
+    'rel' | 'zpg' | 'zpx' | 'zpy';
+
+export type Arg = ['acc' | 'imp'] | [ArgMode, Expr];
 
 export namespace Processor {
   export interface Options {
     allowBrackets?: boolean;
   }
 }
-

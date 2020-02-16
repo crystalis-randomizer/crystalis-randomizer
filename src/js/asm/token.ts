@@ -108,7 +108,7 @@ export namespace Token {
     }
   }
 
-  export function at(arg: Token): string {
+  export function at(arg: {source?: SourceInfo}): string {
     const s = arg.source;
     return s ? `\n  at ${s.file}:${s.line}:${s.column}` : '';
     // TODO - definition vs usage?

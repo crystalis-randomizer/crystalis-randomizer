@@ -10,7 +10,7 @@ import {TokenStream} from './tokenstream';
 const MAX_STACK_DEPTH = 100;
 
 export interface PreprocessedLine {
-  kind: 'assign' | 'label' | 'mnemonic' | 'directive';
+  kind: 'assign' | 'label' | 'instruction' | 'directive';
   tokens: Token[];
 }
 
@@ -72,7 +72,7 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
     if (!front) return void (yield undefined); // EOF
     switch (front.token) {
       case 'ident':
-        // Possibilities: (1) label, (2) mnemonic/assign, (3) macro
+        // Possibilities: (1) label, (2) instruction/assign, (3) macro
         // Labels get split out.  We don't distinguish assigns yet.
         if (Token.eq(line[1], Token.COLON)) {
           yield {kind: 'label', tokens: line.splice(0, 2)};
@@ -83,7 +83,7 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
         if (Token.eq(line[1], Token.ASSIGN) || Token.eq(line[1], Token.SET)) {
           yield {kind: 'assign', tokens: line};
         } else {
-          yield {kind: 'mnemonic', tokens: line};
+          yield {kind: 'instruction', tokens: line};
         }
         return;
 

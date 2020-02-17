@@ -153,7 +153,7 @@ export class Processor implements Expr.Resolver {
       case '.org': return this.org(this.parseConst(tokens));
       case '.reloc': return this.parseNoArgs(tokens), this.reloc();
       case '.assert': return this.assert(this.parseExpr(tokens));
-      case '.segment': return this.segment(this.parseStringList(tokens));
+      case '.segment': return this.segment(...this.parseStringList(tokens));
       case '.byte': return this.byte(...this.parseDataList(tokens, true));
       case '.word': return this.word(...this.parseDataList(tokens));
     }
@@ -354,7 +354,7 @@ export class Processor implements Expr.Resolver {
     this._chunk = undefined;
   }
 
-  segment(segments: string[]) {
+  segment(...segments: string[]) {
     // Usage: .segment "1a", "1b", ...
     this.segments = segments;
     this._chunk = undefined;

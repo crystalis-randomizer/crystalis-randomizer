@@ -141,8 +141,7 @@ describe('Processor', function() {
         chunks: [{
           segments: ['code'],
           org: 0x9135,
-          data: Uint8Array.of(0xa2, 0x35,
-                              0xa0, 0x91),
+          data: Uint8Array.of(0xa2, 0x35, 0xa0, 0x91),
         }],
         symbols: [],
         segments: [],
@@ -157,14 +156,7 @@ describe('Processor', function() {
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0xa9, 0xff),
-          subs: [{
-            offset: 1,
-            size: 1,
-            expr: {
-              op: 'sym',
-              num: 0,
-            }
-          }],
+          subs: [{offset: 1, size: 1, expr: {op: 'sym', num: 0}}],
         }],
         symbols: [{expr: {op: 'num', num: 0x23, size: 1}}],
         segments: [],
@@ -183,14 +175,7 @@ describe('Processor', function() {
           org: 0x8000,
           data: Uint8Array.of(0x20, 0xff, 0xff,
                               0xa9, 0x00),
-          subs: [{
-            offset: 1,
-            size: 2,
-            expr: {
-              op: 'sym',
-              num: 0,
-            }
-          }]
+          subs: [{offset: 1, size: 2, expr: {op: 'sym', num: 0}}],
         }],
         symbols: [{expr: {op: 'off', chunk: 0, num: 5}}],
         segments: [],
@@ -258,8 +243,127 @@ describe('Processor', function() {
         }],
         symbols: [], segments: []});
     });
+
+    it('should support expressions with forward refs', function() {
+      const p = new Processor(Cpu.P02);
+      p.directive('.byte', [cs('.byte'), ident('q'), op('+'), num(1)]);
+      p.label('q');
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(0xff),
+          subs: [{offset: 0, size: 1,
+                  expr: {op: '+', args: [{op: 'sym', num: 0},
+                                         {op: 'num', num: 1, size: 1}]}}],
+        }],
+        symbols: [{expr: {op: 'off', chunk: 0, num: 1}}],
+        segments: []});
+    });
   });
 
+  describe('.word', function() {
+    it('should support numbers', function() {
+      const p = new Processor(Cpu.P02);
+      p.word(1, 2, 0x403);
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(1, 0, 2, 0, 3, 4),
+        }],
+        symbols: [], segments: []});
+    });
+
+    it('should support expressions', function() {
+      const p = new Processor(Cpu.P02);
+      p.directive('.word', [cs('.word'), num(1), op('+'), num(2)]);
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(3, 0),
+        }],
+        symbols: [], segments: []});
+    });
+
+    it('should support expressions with backward refs', function() {
+      const p = new Processor(Cpu.P02);
+      p.assign([ident('q'), Token.ASSIGN, num(0x305)]);
+      p.directive('.word', [cs('.word'), ident('q')]);
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(5, 3),
+        }],
+        symbols: [], segments: []});
+    });
+
+    it('should support expressions with forward refs', function() {
+      const p = new Processor(Cpu.P02);
+      p.directive('.word', [cs('.word'), ident('q'), op('+'), num(1)]);
+      p.label('q');
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(0xff, 0xff),
+          subs: [{offset: 0, size: 2,
+                  expr: {op: '+', args: [{op: 'sym', num: 0},
+                                         {op: 'num', num: 1, size: 1}]}}],
+        }],
+        symbols: [{expr: {op: 'off', chunk: 0, num: 2}}],
+        segments: []});
+    });
+  });
+
+  describe('.segment', function() {
+    it('should change the segment', function() {
+      const p = new Processor(Cpu.P02);
+      p.segment('01');
+      p.byte(4);
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['01'],
+          data: Uint8Array.of(4),
+        }], symbols: [], segments: []});
+    });
+
+    it('should allow multiple segments', function() {
+      const p = new Processor(Cpu.P02);
+      p.segment('01', '02');
+      p.byte(4);
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['01', '02'],
+          data: Uint8Array.of(4),
+        }], symbols: [], segments: []});
+    });
+  });
+
+  describe('.assert', function() {
+    it('should pass immediately when true', function() {
+      const p = new Processor(Cpu.P02);
+      p.assert({op: 'num', num: 1});
+      expect(strip(p.result())).to.eql({chunks: [], symbols: [], segments: []});
+    });
+
+    it('should fail immediately when false', function() {
+      const p = new Processor(Cpu.P02);
+      expect(() => p.assert({op: 'num', num: 0}))
+          .to.throw(Error, /Assertion failed/);
+    });
+
+    it('should defer indeterminate assertions to the linker', function() {
+      const p = new Processor(Cpu.P02);
+      p.label('Foo');
+      p.directive('.assert', [cs('.assert'), ident('Foo'), op('>'), num(8)]);
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(),
+          asserts: [{op: '>', size: 1, args: [{op: 'off', chunk: 0, num: 0},
+                                              {op: 'num', num: 8, size: 1}]}],
+        }],
+        symbols: [], segments: []});
+    });
+  });
 
   // TODO - test all the error cases...
 });

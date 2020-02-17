@@ -227,6 +227,39 @@ export namespace Token {
     return args;
   }
 
+  export function parseAttrList(tokens: Token[],
+                                start: number): Map<string, Token[]> {
+    // Expect a colon...
+    // TODO - allow colon inside balanced parens? allow a single group?
+    //   .segment "foo" :bar {foo:bar} :baz
+    const out = new Map<string, Token[]>();
+    let key: string|undefined;
+    let val: Token[] = [];
+    if (start >= tokens.length) return out;
+    if (!eq(tokens[start], COLON)) {
+      throw new Error(`Unexpected: ${nameAt(tokens[start])}`);
+    }
+    for (let i = start + 1; i < tokens.length; i++) {
+      const tok = tokens[i];
+      if (eq(tok, COLON)) {
+        if (key == null) throw new Error(`Missing key${at(tok)}`);
+        out.set(key, val);
+        key = undefined;
+        val = [];
+      } else if (key == null) {
+        key = expectIdentifier(tok);
+      } else {
+        val.push(tok);
+      }
+    }
+    if (key != null) {
+      out.set(key, val);
+    } else {
+      expectIdentifier(undefined, tokens[tokens.length - 1]);
+    }
+    return out;
+  }
+
   /** Finds a comma or EOL. */
   export function findComma(tokens: Token[], start: number): number {
     const index = find(tokens, COMMA, start);

@@ -2,7 +2,7 @@ import {describe, it} from 'mocha';
 import {expect} from 'chai';
 import {Cpu} from '../../src/js/asm/cpu';
 import {Expr} from '../../src/js/asm/expr';
-import {ObjectFile} from '../../src/js/asm/objectfile';
+import {Module} from '../../src/js/asm/module';
 import {Processor} from '../../src/js/asm/processor';
 import {Token} from '../../src/js/asm/token';
 import * as util from 'util';
@@ -368,7 +368,7 @@ describe('Processor', function() {
   // TODO - test all the error cases...
 });
 
-function strip(o: ObjectFile): ObjectFile {
+function strip(o: Module): Module {
   for (const s of o.symbols || []) {
     stripExpr(s.expr);
   }

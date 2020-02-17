@@ -1,6 +1,6 @@
 import {Expr} from './expr';
 
-export interface ObjectFile {
+export interface Module {
   /** All chunks, in a determinstic (indexable) order. */
   chunks?: Chunk<Uint8Array>[];
   /** All symbols, in a deterministic (indexable) order. */
@@ -41,13 +41,17 @@ export interface Segment {
   /** Name of the segment, as used in .segment directives. */
   name: string;
   /** Bank for the segment. */
-  bank: number;
+  bank?: number;
   /** Segment size in bytes. */
-  size: number;
+  size?: number;
   /** Offset of the segment in the rom image. */
-  offset: number;
+  offset?: number;
   /** Memory location of the segment in the CPU. */
-  memory: number;
+  memory?: number;
+  /** Address size. */
+  addressing?: number;
+  /** Unallocated ranges, half-open [a, b). */
+  free?: Array<readonly [number, number]>;
 }
 
 export interface Substitution {

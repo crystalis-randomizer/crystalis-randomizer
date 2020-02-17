@@ -1,10 +1,11 @@
 import {Cpu} from './cpu';
 import {Expr} from './expr';
-import * as objectFile from './objectfile';
+import * as mod from './module';
 import {Token} from './token';
 
-type Chunk = objectFile.Chunk<number[]>;
-type ObjectFile = objectFile.ObjectFile;
+type Chunk = mod.Chunk<number[]>;
+type Module = mod.Module;
+type Segment = mod.Segment;
 
 class Symbol {
   /**
@@ -77,6 +78,9 @@ export class Processor implements Expr.Resolver {
   /** The currently-open segment(s). */
   private segments: readonly string[] = ['code'];
 
+  /** Data on all the segments. */
+  private segmentData = new Map<string, Segment>();
+
   /** All symbols in this object. */
   private symbols: Symbol[] = [];
 
@@ -135,16 +139,16 @@ export class Processor implements Expr.Resolver {
     return {org: this.chunks[chunk].org};
   }
 
-  result(): ObjectFile {
-    const chunks: objectFile.Chunk<Uint8Array>[] = [];
+  result(): Module {
+    const chunks: mod.Chunk<Uint8Array>[] = [];
     for (const chunk of this.chunks) {
       chunks.push({...chunk, data: Uint8Array.from(chunk.data)});
     }
-    const symbols: objectFile.Symbol[] = [];
+    const symbols: mod.Symbol[] = [];
     for (const {id, ...symbol} of this.symbols) {
       symbols.push(symbol);
     }
-    const segments: objectFile.Segment[] = [];
+    const segments: Segment[] = [...this.segmentData.values()];
     return {chunks, symbols, segments};
   }
 
@@ -156,6 +160,7 @@ export class Processor implements Expr.Resolver {
       case '.segment': return this.segment(...this.parseStringList(tokens));
       case '.byte': return this.byte(...this.parseDataList(tokens, true));
       case '.word': return this.word(...this.parseDataList(tokens));
+      case '.free': return this.free(this.parseConst(tokens));
     }
     throw new Error(`Unknown directive: ${Token.nameAt(tokens[0])}`);
   }
@@ -354,9 +359,16 @@ export class Processor implements Expr.Resolver {
     this._chunk = undefined;
   }
 
-  segment(...segments: string[]) {
+  segment(...segments: Array<string|Segment>) {
     // Usage: .segment "1a", "1b", ...
-    this.segments = segments;
+    this.segments = segments.map(s => typeof s === 'string' ? s : s.name);
+    for (const s of segments) {
+      if (typeof s === 'object') {
+        const data = this.segmentData.get(s.name) || {name: s.name};
+        const free = [...(data.free || []), ...(s.free || [])];
+        this.segmentData.set(s.name, {...data, ...s, free});
+      }
+    }
     this._chunk = undefined;
   }
 
@@ -395,6 +407,12 @@ export class Processor implements Expr.Resolver {
     }
   }
 
+  free(size: number) {
+    // TODO - implement
+    //  1. must be in .org for a single segment
+
+  }
+
   // Utility methods for processing arguments
 
   parseConst(tokens: Token[], start = 1): number {
@@ -416,6 +434,30 @@ export class Processor implements Expr.Resolver {
       const str = Token.expectString(ts[0]);
       Token.expectEol(ts[1], "a single string");
       return str;
+    });
+  }
+  parseSegmentList(tokens: Token[], start = 1): Array<string|Segment> {
+    return Token.parseArgList(tokens, 1).map(ts => {
+      const str = Token.expectString(ts[0]);
+      if (ts.length === 1) return str;
+      if (!Token.eq(ts[1], Token.COLON)) {
+        throw new Error(`Expected comma or colon: ${Token.nameAt(ts[1])}`);
+      }
+      const seg = {name: str} as Segment;
+      // TODO - parse expressions...
+      const attrs = Token.parseAttrList(ts, 2); // : ident [...]
+      for (const [key, val] of attrs) {
+        switch (key) {
+          case 'bank': seg.bank = this.parseConst(val, 0); break;
+          case 'size': seg.size = this.parseConst(val, 0); break;
+          case 'off': seg.offset = this.parseConst(val, 0); break;
+          case 'mem': seg.memory = this.parseConst(val, 0); break;
+          // TODO - I don't fully understand these...
+          // case 'zeropage': seg.addressing = 1;
+          default: throw new Error(`Unknown segment attr: ${key}`);
+        }
+      }
+      return seg;
     });
   }
   parseDataList(tokens: Token[]): Array<Expr>;

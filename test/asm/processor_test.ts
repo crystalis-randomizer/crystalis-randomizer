@@ -209,11 +209,57 @@ describe('Processor', function() {
           segments: ['code'],
           data: Uint8Array.of(0xa9, 5, 0xa9, 6),
         }],
-        symbols: [],
-        segments: [],
-      });
+        symbols: [], segments: []});
     });
   });
+
+  describe('.byte', function() {
+    it('should support numbers', function() {
+      const p = new Processor(Cpu.P02);
+      p.byte(1, 2, 3);
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(1, 2, 3),
+        }],
+        symbols: [], segments: []});
+    });
+
+    it('should support strings', function() {
+      const p = new Processor(Cpu.P02);
+      p.byte('ab', 'cd');
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(0x61, 0x62, 0x63, 0x64),
+        }],
+        symbols: [], segments: []});
+    });
+
+    it('should support expressions', function() {
+      const p = new Processor(Cpu.P02);
+      p.directive('.byte', [cs('.byte'), num(1), op('+'), num(2)]);
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(3),
+        }],
+        symbols: [], segments: []});
+    });
+
+    it('should support expressions with backward refs', function() {
+      const p = new Processor(Cpu.P02);
+      p.assign([ident('q'), Token.ASSIGN, num(5)]);
+      p.directive('.byte', [cs('.byte'), ident('q')]);
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(5),
+        }],
+        symbols: [], segments: []});
+    });
+  });
+
 
   // TODO - test all the error cases...
 });

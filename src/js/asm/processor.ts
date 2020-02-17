@@ -89,9 +89,6 @@ export class Processor implements Expr.Resolver {
   /** Currently active chunk */
   private _chunk: Chunk|undefined = undefined;
 
-  /** Current PC, or offset if in a .reloc chunk. */
-  private offset = 0;
-
   /** Origin of the currnet chunk, if fixed. */
   private _org: number|undefined = undefined;
 
@@ -118,8 +115,8 @@ export class Processor implements Expr.Resolver {
 
   resolve(name: string): Expr {
     if (name === '*') {
-      this.ensureChunk();
-      return {op: 'off', chunk: this.chunks.length - 1, num: this.offset};
+      const num = this.chunk.data.length; // NOTE: before counting chunks
+      return {op: 'off', chunk: this.chunks.length - 1, num};
     }
     const sym = this.scope.resolve(name, true);
     if (sym.expr) return sym.expr;
@@ -157,6 +154,8 @@ export class Processor implements Expr.Resolver {
       case '.reloc': return this.parseNoArgs(tokens), this.reloc();
       case '.assert': return this.assert(this.parseExpr(tokens));
       case '.segment': return this.segment(this.parseStringList(tokens));
+      case '.byte': return this.byte(...this.parseDataList(tokens, true));
+      case '.word': return this.word(...this.parseDataList(tokens));
     }
     throw new Error(`Unknown directive: ${Token.nameAt(tokens[0])}`);
   }
@@ -320,34 +319,37 @@ export class Processor implements Expr.Resolver {
     // Emit some bytes.
     const {chunk} = this;
     chunk.data.push(op);
-    const offset = this.offset + 1;
     if (arglen) {
       // TODO - for relative, if we're in the same chunk, just compare
       // the offset...
       expr = Expr.resolve(expr, this);
-      const val = expr.op === 'num' ? expr.num! : 0xffffffff;
-      chunk.data.push(val & 0xff);
-      if (arglen > 1) chunk.data.push((val >> 8) & 0xff);
-//console.log('expr:', expr, 'val:', val);
-      if (expr.op !== 'num') {
-        // add a substitution
-        (chunk.subs || (chunk.subs = [])).push({offset, size: arglen, expr});
-      }
+      this.append(expr, arglen);
     }
-    this.offset = offset + arglen;
+  }
+
+  append(expr: Expr, size: number) {
+    const {chunk} = this;
+    let val = expr.num!;
+//console.log('expr:', expr, 'val:', val);
+    if (expr.op !== 'num') {
+      // use a placeholder and add a substitution
+      const offset = chunk.data.length;
+      (chunk.subs || (chunk.subs = [])).push({offset, size, expr});
+      writeNumber(chunk.data, size); // write goes after subs
+    } else {
+      writeNumber(chunk.data, size, val);
+    }
   }
 
   ////////////////////////////////////////////////////////////////
   // Directive handlers
 
   org(addr: number) {
-    this.offset = 0;
     this._org = addr;
     this._chunk = undefined;
   }
 
   reloc() {
-    this.offset = 0;
     this._org = undefined;
     this._chunk = undefined;
   }
@@ -369,6 +371,32 @@ export class Processor implements Expr.Resolver {
     }
   }
 
+  byte(...args: Array<Expr|string|number>) {
+    const {chunk} = this;
+    for (const arg of args) {
+      if (typeof arg === 'number') {
+        writeNumber(chunk.data, 1, arg);
+      } else if (typeof arg === 'string') {
+        writeString(chunk.data, arg);
+      } else {
+        this.append(arg, 1);
+      }
+    }
+  }
+
+  word(...args: Array<Expr|number>) {
+    const {chunk} = this;
+    for (const arg of args) {
+      if (typeof arg === 'number') {
+        writeNumber(chunk.data, 2, arg);
+      } else {
+        this.append(arg, 2);
+      }
+    }
+  }
+
+  // Utility methods for processing arguments
+
   parseConst(tokens: Token[], start = 1): number {
     const expr = Expr.resolve(Expr.parseOnly(tokens, start), this);
     const val = Expr.evaluate(expr);
@@ -389,6 +417,38 @@ export class Processor implements Expr.Resolver {
       Token.expectEol(ts[1], "a single string");
       return str;
     });
+  }
+  parseDataList(tokens: Token[]): Array<Expr>;
+  parseDataList(tokens: Token[], allowString: true): Array<Expr|string>;
+  parseDataList(tokens: Token[], allowString = false): Array<Expr|string> {
+    const out: Array<Expr|string> = [];
+    for (const term of Token.parseArgList(tokens, 1)) {
+      if (allowString && term.length === 1 && term[0].token === 'str') {
+        out.push(term[0].str);
+      } else {
+        out.push(Expr.resolve(Expr.parseOnly(term), this));
+      }
+    }
+    return out;
+  }
+}
+
+function writeNumber(data: number[], size: number, val?: number) {
+  if (val != null && (val < 0 || val >= (1 << ((size + 1) << 3)))) {
+    const name = ['byte', 'word', 'farword', 'dword'][size - 1];
+    throw new Error(`Not a ${name}: $${val.toString(16)}`);
+  }
+  if (val == null) val = 0xffffffff;
+  for (let i = 0; i < size; i++) {
+    data.push(val & 0xff);
+    val >>>= 8;
+  }
+}
+
+function writeString(data: number[], str: string) {
+  // TODO - support character maps (pass as third arg?)
+  for (let i = 0; i < str.length; i++) {
+    data.push(str.charCodeAt(i));
   }
 }
 

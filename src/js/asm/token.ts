@@ -60,6 +60,11 @@ export namespace Token {
   export const LOCAL: Token = {token: 'cs', str: '.local'};
   export const SET: Token = {token: 'cs', str: '.set'};
   export const SKIP: Token = {token: 'cs', str: '.skip'};
+
+  // Tokens we match
+  export const BYTE: Token = {token: 'cs', str: '.byte'};
+  export const WORD: Token = {token: 'cs', str: '.word'};
+
   // Important operator tokens
   export const COLON: Token = {token: 'op', str: ':'};
   export const DCOLON: Token = {token: 'op', str: '::'};

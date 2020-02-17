@@ -36,14 +36,14 @@ describe('Preprocessor', function() {
   }
 
   describe('pass-through', function() {
-    it('should pass through a mnemonic', function() {
-      test(['lda #$01'], mnemonic('lda #$01'));
+    it('should pass through an instruction', function() {
+      test(['lda #$01'], instruction('lda #$01'));
     });
 
-    it('should pass through two mnemonics', function() {
+    it('should pass through two instructions', function() {
       test(['lda #$01', 'sta $02'],
-           mnemonic('lda #$01'),
-           mnemonic('sta $02'));
+           instruction('lda #$01'),
+           instruction('sta $02'));
     });
 
     it('should pass through a label', function() {
@@ -66,32 +66,32 @@ describe('Preprocessor', function() {
   describe('.define', function() {
     it('should expand with no parameters', function() {
       test(['.define foo x 1 y 2 z', 'foo foo'],
-           mnemonic('x 1 y 2 z x 1 y 2 z'));
+           instruction('x 1 y 2 z x 1 y 2 z'));
     });
 
     it('should expand a C-style macro with parameters', function() {
       test(['.define foo(x, y) [ x : y ]', 'a foo(2, 3)'],
-           mnemonic('a [ 2 : 3 ]'));
+           instruction('a [ 2 : 3 ]'));
     });
 
     it('should expand a TeX-style macro with parameters', function() {
       test(['.define foo {x y} [ x : y ]', 'a foo 2 3'],
-           mnemonic('a [ 2 : 3 ]'));
+           instruction('a [ 2 : 3 ]'));
     });
 
     it('should expand an overloaded TeX-style macro', function() {
       test(['.define foo {x, rest .eol} [ x ] foo rest',
             '.define foo {x} [x]',
             'a foo 1, 2, 3'],
-           mnemonic('a [ 1 ] [ 2 ] [ 3 ]'));
+           instruction('a [ 1 ] [ 2 ] [ 3 ]'));
     });
 
     it('should expand a macro with .eol in the production', function() {
       test(['.define foo {x y} [ x ] .eol b y 5',
             '.define bar {x} ( x )',
             'a foo 1 bar'],
-           mnemonic('a [ 1 ]'),
-           mnemonic('b ( 5 )'));
+           instruction('a [ 1 ]'),
+           instruction('b ( 5 )'));
     });
 
     it('should be able to refer to not-yet-defined macros', function() {
@@ -111,7 +111,7 @@ describe('Preprocessor', function() {
       test(['.define foo (x) .noexpand .tcount(x(a b))',
             '.define bar (x) x x x',
             'a foo bar'],
-           mnemonic('a 6'));
+           instruction('a 6'));
     });
 
     it('should terminate instead of recursing infinitely', function() {
@@ -122,44 +122,44 @@ describe('Preprocessor', function() {
   describe('.tcount', function() {
     it('should count the number of tokens', function() {
       test(['a .tcount(1 1 1)'],
-           mnemonic('a 3'));
+           instruction('a 3'));
     });
 
     it('should absorb one layer of braces', function() {
       test(['a .tcount({1 1 1})'],
-           mnemonic('a 3'));
+           instruction('a 3'));
     });
 
     it('should count the second layer of braces', function() {
       test(['a .tcount({{1 1 1}})'],
-           mnemonic('a 5'));
+           instruction('a 5'));
     });
   });
 
   describe('.string', function() {
     it('should produce a string', function() {
-      test(['a .string(b)'], mnemonic('a "b"'));
+      test(['a .string(b)'], instruction('a "b"'));
     });
   });
 
   describe('.concat', function() {
     it('should join strings', function() {
-      test(['a .concat("b", "c", "d")'], mnemonic('a "bcd"'));
+      test(['a .concat("b", "c", "d")'], instruction('a "bcd"'));
     });
 
     it('should expand its argument first', function() {
-      test(['a .concat("b", .string(c), "d")'], mnemonic('a "bcd"'));
+      test(['a .concat("b", .string(c), "d")'], instruction('a "bcd"'));
     });
   });
 
   describe('.ident', function() {
     it('should produce an identifier', function() {
-      test(['.ident("b")'], mnemonic('b'));
+      test(['.ident("b")'], instruction('b'));
     });
 
     it('should expand its argument first', function() {
       test(['.ident(.concat("a", .string(b), "c"))'],
-           mnemonic('abc'));
+           instruction('abc'));
     });
   });
 
@@ -169,7 +169,7 @@ describe('Preprocessor', function() {
             '.skip .define abc xyz',
             '.undefine abc',
             'def'],
-           mnemonic('xyz'));
+           instruction('xyz'));
     });
 
     it('should descend into groups', function() {
@@ -177,7 +177,7 @@ describe('Preprocessor', function() {
             '.define foo (x) .skip .noexpand .skip { bar bar x }',
             '.undefine bar',
             'foo 5'],
-           mnemonic('a bar 5'));
+           instruction('a bar 5'));
     });
   });
 
@@ -189,9 +189,9 @@ describe('Preprocessor', function() {
             'c a',
             '.endmacro',
             'q x, y, z'],
-           mnemonic('x y'),
-           mnemonic('y z'),
-           mnemonic('z x'));
+           instruction('x y'),
+           instruction('y z'),
+           instruction('z x'));
     });
 
     it('should not pre-expand production', function() {
@@ -201,7 +201,7 @@ describe('Preprocessor', function() {
             '.endmacro',
             '.undefine b',
             'q a b c d e'],
-           mnemonic('b 5'));
+           instruction('b 5'));
     });
 
     it('should fill in unfilled args with blank', function() {
@@ -209,7 +209,7 @@ describe('Preprocessor', function() {
             'x .tcount({a}) .tcount({b}) .tcount({c})',
             '.endmacro',
             'q ,a a c c'],
-           mnemonic('x 0 4 0'));
+           instruction('x 0 4 0'));
     });
 
     it('should recurse', function() {
@@ -220,9 +220,9 @@ describe('Preprocessor', function() {
             '.endif',
             '.endmacro',
             'q 3,1,2'],
-           mnemonic('x 3'),
-           mnemonic('x 1'),
-           mnemonic('x 2'));
+           instruction('x 3'),
+           instruction('x 1'),
+           instruction('x 2'));
     });
 
     it('should support .exitmacro', function() {
@@ -234,9 +234,9 @@ describe('Preprocessor', function() {
             'q b,c',
             '.endmacro',
             'q 3,1,2'],
-           mnemonic('x 3'),
-           mnemonic('x 1'),
-           mnemonic('x 2'));
+           instruction('x 3'),
+           instruction('x 1'),
+           instruction('x 2'));
     });
 
     it('should terminate instead of recursing infinitely', function() {
@@ -254,7 +254,7 @@ describe('Preprocessor', function() {
 
 });
 
-function mnemonic(line: string) { return parseLine('mnemonic', line); }
+function instruction(line: string) { return parseLine('instruction', line); }
 function label(line: string) { return parseLine('label', line); }
 function assign(line: string) { return parseLine('assign', line); }
 function directive(line: string) { return parseLine('directive', line); }

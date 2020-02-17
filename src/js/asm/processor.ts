@@ -157,10 +157,10 @@ export class Processor implements Expr.Resolver {
       case '.org': return this.org(this.parseConst(tokens));
       case '.reloc': return this.parseNoArgs(tokens), this.reloc();
       case '.assert': return this.assert(this.parseExpr(tokens));
-      case '.segment': return this.segment(...this.parseStringList(tokens));
+      case '.segment': return this.segment(...this.parseSegmentList(tokens));
       case '.byte': return this.byte(...this.parseDataList(tokens, true));
       case '.word': return this.word(...this.parseDataList(tokens));
-      case '.free': return this.free(this.parseConst(tokens));
+      case '.free': return this.free(this.parseConst(tokens), tokens[0]);
     }
     throw new Error(`Unknown directive: ${Token.nameAt(tokens[0])}`);
   }
@@ -365,8 +365,10 @@ export class Processor implements Expr.Resolver {
     for (const s of segments) {
       if (typeof s === 'object') {
         const data = this.segmentData.get(s.name) || {name: s.name};
+        const seg = {...data, ...s};
         const free = [...(data.free || []), ...(s.free || [])];
-        this.segmentData.set(s.name, {...data, ...s, free});
+        if (free.length) seg.free = free;
+        this.segmentData.set(s.name, seg);
       }
     }
     this._chunk = undefined;
@@ -407,10 +409,19 @@ export class Processor implements Expr.Resolver {
     }
   }
 
-  free(size: number) {
-    // TODO - implement
-    //  1. must be in .org for a single segment
-
+  free(size: number, token?: Token) {
+    // Must be in .org for a single segment
+    if (this.segments.length !== 1) {
+      const at = token ? Token.at(token) : '';
+      throw new Error(`.free with non-unique segment: ${this.segments}${at}`);
+    } else if (this._org == null) {
+      const at = token ? Token.at(token) : '';
+      throw new Error(`.free in .reloc mode${at}`);
+    }
+    const name = this.segments[0];
+    let s = this.segmentData.get(name);
+    if (!s) this.segmentData.set(name, s = {name});
+    (s.free || (s.free = [])).push([this._org, this._org + size]);
   }
 
   // Utility methods for processing arguments
@@ -429,13 +440,13 @@ export class Processor implements Expr.Resolver {
   parseExpr(tokens: Token[], start = 1): Expr {
     return Expr.parseOnly(tokens, start);
   }
-  parseStringList(tokens: Token[], start = 1): string[] {
-    return Token.parseArgList(tokens, 1).map(ts => {
-      const str = Token.expectString(ts[0]);
-      Token.expectEol(ts[1], "a single string");
-      return str;
-    });
-  }
+  // parseStringList(tokens: Token[], start = 1): string[] {
+  //   return Token.parseArgList(tokens, 1).map(ts => {
+  //     const str = Token.expectString(ts[0]);
+  //     Token.expectEol(ts[1], "a single string");
+  //     return str;
+  //   });
+  // }
   parseSegmentList(tokens: Token[], start = 1): Array<string|Segment> {
     return Token.parseArgList(tokens, 1).map(ts => {
       const str = Token.expectString(ts[0]);
@@ -445,7 +456,7 @@ export class Processor implements Expr.Resolver {
       }
       const seg = {name: str} as Segment;
       // TODO - parse expressions...
-      const attrs = Token.parseAttrList(ts, 2); // : ident [...]
+      const attrs = Token.parseAttrList(ts, 1); // : ident [...]
       for (const [key, val] of attrs) {
         switch (key) {
           case 'bank': seg.bank = this.parseConst(val, 0); break;

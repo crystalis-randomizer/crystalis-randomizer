@@ -14,7 +14,7 @@ function num(num: number): Token { return {token: 'num', num}; }
 function str(str: string): Token { return {token: 'str', str}; }
 function cs(str: string): Token { return {token: 'cs', str}; }
 function op(str: string): Token { return {token: 'op', str}; }
-const {COMMA, ASSIGN, IMMEDIATE, LP, RP} = Token;
+const {COLON, COMMA, ASSIGN, IMMEDIATE, LP, RP} = Token;
 const ORG = cs('.org');
 const RELOC = cs('.reloc');
 const ASSERT = cs('.assert');
@@ -334,6 +334,48 @@ describe('Processor', function() {
           segments: ['01', '02'],
           data: Uint8Array.of(4),
         }], symbols: [], segments: []});
+    });
+
+    it('should configure the segment', function() {
+      const p = new Processor(Cpu.P02);
+      p.assign([ident('size'), ASSIGN, num(100)])
+      p.directive('.segment', [cs('.segment'), str('03'),
+                               COLON, ident('bank'), num(2), op('+'), num(1),
+                               COLON, ident('size'), ident('size')]);
+      expect(strip(p.result())).to.eql({
+        chunks: [], symbols: [], segments: [{
+          name: '03',
+          bank: 3,
+          size: 100,
+        }]});
+    });
+
+    it('should merge multiple attr lists', function() {
+      const p = new Processor(Cpu.P02);
+      p.directive('.segment', [cs('.segment'), str('02'),
+                               COLON, ident('bank'), num(2)]);
+      p.directive('.segment', [cs('.segment'), str('02'),
+                               COLON, ident('size'), num(200)]);
+      expect(strip(p.result())).to.eql({
+        chunks: [], symbols: [], segments: [{
+          name: '02',
+          bank: 2,
+          size: 200,
+        }]});
+    });
+
+    it('should track free regions', function() {
+      const p = new Processor(Cpu.P02);
+      p.segment('02');
+      p.org(0x8000);
+      p.free(0x200);
+      p.org(0x9000);
+      p.free(0x400);
+      expect(strip(p.result())).to.eql({
+        chunks: [], symbols: [], segments: [{
+          name: '02',
+          free: [[0x8000, 0x8200], [0x9000, 0x9400]],
+        }]});
     });
   });
 

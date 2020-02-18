@@ -1,7 +1,7 @@
 import {Cpu} from './cpu';
 import {Expr} from './expr';
 import * as mod from './module';
-import {Token} from './token';
+import {SourceInfo, Token} from './token';
 
 type Chunk = mod.Chunk<number[]>;
 type Module = mod.Module;
@@ -23,22 +23,48 @@ class Symbol {
   expr?: Expr;
   /** Name this symbol is exported as. */
   export?: string;
+  /** Token where this symbol was ref'd. */
+  ref?: {source?: SourceInfo}; // TODO - plumb this through
 }
 
-class Scope {
+abstract class BaseScope {
   closed = false;
-  readonly global: Scope;
-  readonly children = new Map<string, Scope>();
   readonly symbols = new Map<string, Symbol>();
 
-  constructor(readonly symbolArray: Symbol[], readonly parent?: Scope) {
-    this.global = parent ? parent.global : this;
+  protected pickScope(name: string): [string, BaseScope] {
+    return [name, this];
   }
 
-  // TODO - plumb the source information through here?
   resolve(name: string, allowForwardRef: true): Symbol;
   resolve(name: string, allowForwardRef?: boolean): Symbol|undefined;
   resolve(name: string, allowForwardRef?: boolean): Symbol|undefined {
+    const [tail, scope] = this.pickScope(name);
+    let sym = scope.symbols.get(tail);
+//console.log('resolve:',name,'sym=',sym,'fwd?',allowForwardRef);
+    if (sym) return sym;
+    if (scope.closed) throw new Error(`Could not resolve symbol: ${name}`);
+    if (!allowForwardRef) return undefined;
+    // make a new symbol - but only in an open scope
+    //const symbol = {id: this.symbolArray.length};
+//console.log('created:',symbol);
+    //this.symbolArray.push(symbol);
+    const symbol = {};
+    scope.symbols.set(tail, symbol);
+    return symbol;
+  }
+}
+
+class Scope extends BaseScope {
+  readonly global: Scope;
+  readonly children = new Map<string, Scope>();
+
+  constructor(readonly parent?: Scope) {
+    super();
+    this.global = parent ? parent.global : this;
+  }
+
+  pickScope(name: string): [string, Scope] {
+    // TODO - plumb the source information through here?
     let scope: Scope = this;
     const split = name.split(/::/g);
     const tail = split.pop()!;
@@ -58,18 +84,21 @@ class Scope {
       }
       scope = child;
     }
-    let sym = scope.symbols.get(tail);
-//console.log('resolve:',name,'sym=',sym,'fwd?',allowForwardRef);
-    if (sym) return sym;
-    if (scope.closed) throw new Error(`Could not resolve symbol: ${name}`);
-    if (!allowForwardRef) return undefined;
-    // make a new symbol - but only in an open scope
-    //const symbol = {id: this.symbolArray.length};
-//console.log('created:',symbol);
-    //this.symbolArray.push(symbol);
-    const symbol = {};
-    scope.symbols.set(tail, symbol);
-    return symbol;
+    return [tail, scope];
+  }
+}
+
+class CheapScope extends BaseScope {
+
+  /** Clear everything out, making sure everything was defined. */
+  clear() {
+    for (const [name, sym] of this.symbols) {
+      if (!sym.expr) {
+        const at = sym.ref ? Token.at(sym.ref) : '';
+        throw new Error(`Cheap local label never defined: ${name}${at}`);
+      }
+    }
+    this.symbols.clear();
   }
 }
 
@@ -85,7 +114,10 @@ export class Processor implements Expr.Resolver {
   private symbols: Symbol[] = [];
 
   /** The current scope. */
-  private scope = new Scope(this.symbols);
+  private scope = new Scope();
+
+  /** A scope for cheap local labels. */
+  private cheapLocals = new CheapScope();
 
   /** All the chunks so far. */
   private chunks: Chunk[] = [];
@@ -95,6 +127,9 @@ export class Processor implements Expr.Resolver {
 
   /** Origin of the currnet chunk, if fixed. */
   private _org: number|undefined = undefined;
+
+  /** Prefix to prepend to all segment names. */
+  private _segmentPrefix = '';
 
   constructor(readonly cpu: Cpu, readonly opts: Processor.Options = {}) {}
 
@@ -122,7 +157,8 @@ export class Processor implements Expr.Resolver {
       const num = this.chunk.data.length; // NOTE: before counting chunks
       return {op: 'off', chunk: this.chunks.length - 1, num};
     }
-    const sym = this.scope.resolve(name, true);
+    const scope = name.startsWith('@') ? this.cheapLocals : this.scope;
+    const sym = scope.resolve(name, true);
     if (sym.expr) return sym.expr;
     // if the expression is not yet known then refer to the symbol table,
     // adding it if necessary.
@@ -140,12 +176,13 @@ export class Processor implements Expr.Resolver {
   }
 
   result(): Module {
+    this.cheapLocals.clear();
     const chunks: mod.Chunk<Uint8Array>[] = [];
     for (const chunk of this.chunks) {
       chunks.push({...chunk, data: Uint8Array.from(chunk.data)});
     }
     const symbols: mod.Symbol[] = [];
-    for (const {id, ...symbol} of this.symbols) {
+    for (const {id, ref, ...symbol} of this.symbols) {
       symbols.push(symbol);
     }
     const segments: Segment[] = [...this.segmentData.values()];
@@ -161,6 +198,7 @@ export class Processor implements Expr.Resolver {
       case '.byte': return this.byte(...this.parseDataList(tokens, true));
       case '.word': return this.word(...this.parseDataList(tokens));
       case '.free': return this.free(this.parseConst(tokens), tokens[0]);
+      case '.segmentprefix': return this.segmentPrefix(this.parseStr(tokens));
     }
     throw new Error(`Unknown directive: ${Token.nameAt(tokens[0])}`);
   }
@@ -175,6 +213,7 @@ export class Processor implements Expr.Resolver {
       ident = Token.str(token = label);
       if (label.source) expr.source = label.source;
     }
+    if (!ident.startsWith('@')) this.cheapLocals.clear();
     // TODO - handle anonymous and cheap local labels...
     this.assignSymbol(ident, false, expr, token);
     // const symbol = this.scope.resolve(str, true);
@@ -190,6 +229,10 @@ export class Processor implements Expr.Resolver {
   assign(tokens: Token[]) {
     // Pull the line apart, figure out if it's mutable or not.
     const ident = Token.expectIdentifier(tokens[0]);
+    if (ident.startsWith('@')) {
+      const name = Token.nameAt(tokens[0]);
+      throw new Error(`Cheap locals may only be labels: ${name}`);
+    }
     const mut = Token.eq(tokens[1], Token.SET);
     let expr = Expr.parseOnly(tokens.slice(2));
     // Now make the assignment.
@@ -198,7 +241,8 @@ export class Processor implements Expr.Resolver {
   }
 
   assignSymbol(ident: string, mut: boolean, expr: Expr, token?: Token) {
-    let sym = this.scope.resolve(ident, !mut);
+    const scope = ident.startsWith('@') ? this.cheapLocals : this.scope;
+    let sym = scope.resolve(ident, !mut);
     if (sym && (mut !== (sym.id! < 0))) {
       const at = token ? Token.at(token) : '';
       throw new Error(`Cannot change mutability of ${ident}${at}`);
@@ -207,7 +251,7 @@ export class Processor implements Expr.Resolver {
       throw new Error(`Mutable set requires constant${at}`);
     } else if (!sym) {
       if (!mut) throw new Error(`impossible`);
-      this.scope.symbols.set(ident, sym = {id: -1});
+      scope.symbols.set(ident, sym = {id: -1});
     } else if (!mut && sym.expr) {
       const orig =
           sym.expr.source ? `\nOriginally defined${Token.at(sym.expr)}` : '';
@@ -424,6 +468,11 @@ export class Processor implements Expr.Resolver {
     (s.free || (s.free = [])).push([this._org, this._org + size]);
   }
 
+  segmentPrefix(prefix: string) {
+    // TODO - make more of a todo about changing this?
+    this._segmentPrefix = prefix;
+  }
+
   // Utility methods for processing arguments
 
   parseConst(tokens: Token[], start = 1): number {
@@ -447,9 +496,14 @@ export class Processor implements Expr.Resolver {
   //     return str;
   //   });
   // }
+  parseStr(tokens: Token[], start = 1): string {
+    const str = Token.expectString(tokens[start]);
+    Token.expectEol(tokens[start + 1], "a single string");
+    return str;
+  }
   parseSegmentList(tokens: Token[], start = 1): Array<string|Segment> {
     return Token.parseArgList(tokens, 1).map(ts => {
-      const str = Token.expectString(ts[0]);
+      const str = this._segmentPrefix + Token.expectString(ts[0]);
       if (ts.length === 1) return str;
       if (!Token.eq(ts[1], Token.COLON)) {
         throw new Error(`Expected comma or colon: ${Token.nameAt(ts[1])}`);

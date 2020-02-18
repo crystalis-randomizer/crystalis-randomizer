@@ -196,6 +196,112 @@ describe('Processor', function() {
         }],
         symbols: [], segments: []});
     });
+
+    it('should not allow redefining immutable symbols', function() {
+      const p = new Processor(Cpu.P02);
+      p.assign([ident('foo'), op('='), num(5)]);
+      expect(() => p.assign([ident('foo'), op('='), num(5)]))
+          .to.throw(Error, /Redefining symbol foo/);
+      expect(() => p.label('foo')).to.throw(Error, /Redefining symbol foo/);
+    });
+
+    it('should not allow redefining labels', function() {
+      const p = new Processor(Cpu.P02);
+      p.label('foo');
+      expect(() => p.assign([ident('foo'), op('='), num(5)]))
+          .to.throw(Error, /Redefining symbol foo/);
+      expect(() => p.label('foo')).to.throw(Error, /Redefining symbol foo/);
+    });
+  });
+
+  describe('Cheap locals', function() {
+    it('should handle backward refs', function() {
+      const p = new Processor(Cpu.P02);
+      p.label('@foo');
+      p.instruction([ident('ldx'), IMMEDIATE, op('<'), ident('@foo')]);
+      p.instruction([ident('ldy'), IMMEDIATE, op('>'), ident('@foo')]);
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(0xa2, 0xff, 0xa0, 0xff),
+          subs: [{
+            offset: 1, size: 1,
+            expr: {op: '<', size: 1, args: [{op: 'off', chunk: 0, num: 0}]},
+          }, {
+            offset: 3, size: 1,
+            expr: {op: '>', size: 1, args: [{op: 'off', chunk: 0, num: 0}]},
+          }],
+        }],
+        symbols: [],
+        segments: [],
+      });
+    });
+
+    it('should hanle forward refs', function() {
+      const p = new Processor(Cpu.P02);
+      p.instruction([ident('jsr'), ident('@foo')]);
+      p.instruction([ident('lda'), IMMEDIATE, num(0)]);
+      p.label('@foo');
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(0x20, 0xff, 0xff,
+                              0xa9, 0x00),
+          subs: [{offset: 1, size: 2, expr: {op: 'sym', num: 0}}],
+        }],
+        symbols: [{expr: {op: 'off', chunk: 0, num: 5}}],
+        segments: [],
+      });
+    });
+
+    it('should not allow using a cheap local name for non-labels', function() {
+      const p = new Processor(Cpu.P02);
+      expect(() => p.assign([ident('@foo'), op('='), num(5)]))
+          .to.throw(Error, /Cheap locals may only be labels: @foo/);
+    });
+
+    it('should not allow reusing names in the same cheap scope', function() {
+      const p = new Processor(Cpu.P02);
+      p.label('@foo');
+      expect(() => p.label('@foo')).to.throw(Error, /Redefining symbol @foo/);
+    });
+
+    it('should clear the scope on a non-cheap label', function() {
+      const p = new Processor(Cpu.P02);
+      p.label('@foo');
+      p.instruction([ident('jsr'), ident('@foo')]);
+      p.label('bar');
+      p.instruction([ident('jsr'), ident('@foo')]);
+      p.label('@foo');
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(0x20, 0xff, 0xff,
+                              0x20, 0xff, 0xff),
+          subs: [
+            {offset: 1, size: 2, expr: {op: 'off', chunk: 0, num: 0}},
+            {offset: 4, size: 2, expr: {op: 'sym', num: 0}}],
+        }],
+        symbols: [{expr: {op: 'off', chunk: 0, num: 6}}],
+        segments: [],
+      });
+    });
+
+    it('should not clear the scope on a symbol', function() {
+      const p = new Processor(Cpu.P02);
+      p.label('@foo');
+      p.assign([ident('bar'), op('='), num(2)]);
+      expect(() => p.label('@foo')).to.throw(Error, /Redefining symbol @foo/);
+    });
+
+    it('should be an error if a cheap label is never defined', function() {
+      const p = new Processor(Cpu.P02);
+      p.instruction([ident('jsr'), ident('@foo')]);
+      expect(() => p.label('bar'))
+          .to.throw(Error, /Cheap local label never defined: @foo/);
+      expect(() => p.result())
+          .to.throw(Error, /Cheap local label never defined: @foo/);
+    });
   });
 
   describe('.byte', function() {
@@ -376,6 +482,17 @@ describe('Processor', function() {
           name: '02',
           free: [[0x8000, 0x8200], [0x9000, 0x9400]],
         }]});
+    });
+
+    it('should allow setting a prefix', function() {
+      const p = new Processor(Cpu.P02);
+      p.segmentPrefix('cr:');
+      p.directive('.segment', [cs('.segment'), str('02')]);
+      p.instruction([ident('lsr')]);
+      expect(strip(p.result())).to.eql({
+        chunks: [{segments: ['cr:02'], data: Uint8Array.of(0x4a)}],
+        segments: [], symbols: [],
+      });          
     });
   });
 

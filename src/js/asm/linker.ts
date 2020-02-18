@@ -2,13 +2,18 @@ import {Expr} from './expr';
 import {Chunk, Module, Substitution, Symbol} from './module';
 import {Patch} from './patch';
 
-export function link(...files: ObjectFile[]): Patch {
+export function link(...files: Module[]): Patch {
   const linker = new Linker();
   for (const file of files) {
     linker.read(file);
   }
   return linker.link();
 }
+
+// TODO - link-time only function for getting either the original or the
+//        patched byte.  Would allow e.g. copy($8000, $2000, "1e") to move
+//        a bunch of code around without explicitly copy-pasting it in the
+//        asm patch.
 
 class LinkChunk {
   segments: readonly string[];

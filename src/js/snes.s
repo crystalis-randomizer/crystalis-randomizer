@@ -135,6 +135,10 @@ PatchWritePaletteDataToPpu:
 .org $3c730
   .byte $f2
 
+;;; Mark idle loop at 3dcac (warp menu).
+.org $3dcac
+  .byte $d2
+
 
 ;; ;;; Skip writing palettes if possible.
 ;; ;;; We need to make sure to write them at some point, so we do it

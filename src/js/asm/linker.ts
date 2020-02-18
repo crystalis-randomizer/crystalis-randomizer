@@ -68,7 +68,7 @@ class Linker {
   chunks: LinkChunk[] = [];
   symbols: Symbol[] = [];
 
-  read(file: ObjectFile) {
+  read(file: Module) {
     const dc = this.chunks.length;
     const ds = this.symbols.length;
     for (const chunk of file.chunks || []) {

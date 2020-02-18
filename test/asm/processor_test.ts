@@ -304,6 +304,114 @@ describe('Processor', function() {
     });
   });
 
+  describe('Anonymous labels', function() {
+    it('should work for forward references', function() {
+      const p = new Processor(Cpu.P02);
+      p.instruction([ident('bne'), op(':'), op('++')]);
+      p.label(':');
+      p.instruction([ident('bcc'), op(':'), op('+++')]);
+      p.label(':'); // first target
+      p.instruction([ident('lsr')]);
+      p.label(':');
+      p.instruction([ident('lsr')]);
+      p.label(':'); // second target
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(0xd0, 0xff, 0x90, 0xff, 0x4a, 0x4a),
+          subs: [{offset: 1, size: 1,
+                  expr: {op: '-', args: [{op: 'sym', num: 0},
+                                         {op: 'off', num: 2, chunk: 0}]}},
+                 {offset: 3, size: 1,
+                  expr: {op: '-', args: [{op: 'sym', num: 1},
+                                         {op: 'off', num: 4, chunk: 0}]}}],
+        }],
+        symbols: [{expr: {op: 'off', chunk: 0, num: 4}},
+                  {expr: {op: 'off', chunk: 0, num: 6}}],
+        segments: []});
+    });
+
+    it('should work for backward references', function() {
+      const p = new Processor(Cpu.P02);
+      p.label(':'); // first target
+      p.instruction([ident('lsr')]);
+      p.label(':');
+      p.instruction([ident('lsr')]);
+      p.instruction([ident('lsr')]);
+      p.label(':'); // second target
+      p.instruction([ident('bne'), op(':'), op('---')]);
+      p.label(':');
+      p.instruction([ident('bcc'), op(':'), op('--')]);
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(0x4a, 0x4a, 0x4a, 0xd0, 0xfb, 0x90, 0xfc),
+        }],
+        symbols: [], segments: []});
+    });
+
+    it('should allow one label for both forward directions', function() {
+      const p = new Processor(Cpu.P02);
+      p.instruction([ident('bne'), op(':'), op('+')]);
+      p.label(':');
+      p.instruction([ident('bcc'), op(':'), op('-')]);
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(0xd0, 0xff, 0x90, 0xfe),
+          subs: [{offset: 1, size: 1,
+                  expr: {op: '-', args: [{op: 'sym', num: 0},
+                                         {op: 'off', num: 2, chunk: 0}]}}],
+        }],
+        symbols: [{expr: {op: 'off', num: 2, chunk: 0}}],
+        segments: []});
+    });
+  });
+
+  describe('Relative labels', function() {
+    it('should work for forward references', function() {
+      const p = new Processor(Cpu.P02);
+      p.instruction([ident('bne'), op('++')]);
+      p.label('+');
+      p.instruction([ident('bcc'), op('+++')]);
+      p.label('++');
+      p.instruction([ident('lsr')]);
+      p.instruction([ident('lsr')]);
+      p.label('+++');
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(0xd0, 0xff, 0x90, 0xff, 0x4a, 0x4a),
+          subs: [{offset: 1, size: 1,
+                  expr: {op: '-', args: [{op: 'sym', num: 0},
+                                         {op: 'off', num: 2, chunk: 0}]}},
+                 {offset: 3, size: 1,
+                  expr: {op: '-', args: [{op: 'sym', num: 1},
+                                         {op: 'off', num: 4, chunk: 0}]}}],
+        }],
+        symbols: [{expr: {op: 'off', chunk: 0, num: 4}},
+                  {expr: {op: 'off', chunk: 0, num: 6}}],
+        segments: []});
+    });
+
+    it('should work for backward references', function() {
+      const p = new Processor(Cpu.P02);
+      p.label('--'); // first target
+      p.instruction([ident('lsr')]);
+      p.instruction([ident('lsr')]);
+      p.instruction([ident('lsr')]);
+      p.label('-'); // second target
+      p.instruction([ident('bne'), op('--')]);
+      p.instruction([ident('bcc'), op('-')]);
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(0x4a, 0x4a, 0x4a, 0xd0, 0xfb, 0x90, 0xfc),
+        }],
+        symbols: [], segments: []});
+    });
+  });
+
   describe('.byte', function() {
     it('should support numbers', function() {
       const p = new Processor(Cpu.P02);

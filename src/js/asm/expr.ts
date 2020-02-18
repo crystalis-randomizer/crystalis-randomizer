@@ -52,6 +52,13 @@ export namespace Expr {
         expr = {...expr, size: 1};
       }
     }
+    if (expr.op === '-' && expr.args?.length === 2 &&
+               expr.args[0].op === 'off' && expr.args[1].op === 'off' &&
+               expr.args[0].chunk === expr.args[1].chunk) {
+      const num = expr.args[0].num! - expr.args[1].num!;
+      const size = num > 127 || num < -128 ? 2 : 1;
+      expr = {op: 'num', num, size};
+    }
     if (expr.op !== 'num') {
       const num = evaluate(expr);
       if (num != null) expr = {op: 'num', num, size: size(num)};

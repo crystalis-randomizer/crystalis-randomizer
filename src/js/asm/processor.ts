@@ -119,6 +119,18 @@ export class Processor implements Expr.Resolver {
   /** A scope for cheap local labels. */
   private cheapLocals = new CheapScope();
 
+  /** List of global symbol indices used by forward refs to anonymous labels. */
+  private anonymousForward: number[] = [];
+
+  /** List of chunk/offset positions of previous anonymous labels. */
+  private anonymousReverse: Expr[] = [];
+
+  /** Map of global symbol incides used by forward refs to relative labels. */
+  private relativeForward: number[] = [];
+
+  /** Map of chunk/offset positions of back-referable relative labels. */
+  private relativeReverse: Expr[] = [];
+
   /** All the chunks so far. */
   private chunks: Chunk[] = [];
 
@@ -154,8 +166,34 @@ export class Processor implements Expr.Resolver {
 
   resolve(name: string): Expr {
     if (name === '*') {
+      // PC
       const num = this.chunk.data.length; // NOTE: before counting chunks
       return {op: 'off', chunk: this.chunks.length - 1, num};
+    } else if (/^:\++$/.test(name)) {
+      // anonymous forward ref
+      const i = name.length - 2;
+      let num = this.anonymousForward[i];
+      if (num != null) return {op: 'sym', num};
+      this.anonymousForward[i] = num = this.symbols.length;
+      this.symbols.push({id: num});
+      return {op: 'sym', num};
+    } else if (/^\++$/.test(name)) {
+      // relative forward ref
+      let num = this.relativeForward[name.length - 1];
+      if (num != null) return {op: 'sym', num};
+      this.relativeForward[name.length - 1] = num = this.symbols.length;
+      this.symbols.push({id: num});
+      return {op: 'sym', num};
+    } else if (/^:-+$/.test(name)) {
+      // anonymous back ref
+      const i = this.anonymousReverse.length - name.length + 1;
+      if (i < 0) throw new Error(`Bad anonymous backref: ${name}`);
+      return this.anonymousReverse[i];
+    } else if (/^-+$/.test(name)) {
+      // relative back ref
+      const expr = this.relativeReverse[name.length - 1];
+      if (expr == null) throw new Error(`Bad relative backref: ${name}`);
+      return expr;
     }
     const scope = name.startsWith('@') ? this.cheapLocals : this.scope;
     const sym = scope.resolve(name, true);
@@ -213,6 +251,24 @@ export class Processor implements Expr.Resolver {
       ident = Token.str(token = label);
       if (label.source) expr.source = label.source;
     }
+    if (ident === ':') {
+      // anonymous label - shift any forward refs off, and push onto the backs.
+      this.anonymousReverse.push(expr);
+      const sym = this.anonymousForward.shift();
+      if (sym != null) this.symbols[sym].expr = expr;
+      return;
+    } else if (/^\++$/.test(ident)) {
+      // relative forward ref - fill in global symbol we made earlier
+      const sym = this.relativeForward[ident.length - 1];
+      delete this.relativeForward[ident.length - 1];
+      if (sym != null) this.symbols[sym].expr = expr;
+      return;
+    } else if (/^-+$/.test(ident)) {
+      // relative backref - store the expr for later
+      this.relativeReverse[ident.length - 1] = expr;
+      return;
+    }
+
     if (!ident.startsWith('@')) this.cheapLocals.clear();
     // TODO - handle anonymous and cheap local labels...
     this.assignSymbol(ident, false, expr, token);
@@ -288,9 +344,7 @@ export class Processor implements Expr.Resolver {
       } else if (m === 'add' && 'abs' in ops) {
         return this.opcode(ops.abs!, 2, expr);
       } else if (m === 'add' && 'rel' in ops) {
-        const offset = {op: '-', args: [expr, null!]}; // TODO - PC
-        // TODO - check range!
-        return this.opcode(ops.rel!, 1, offset);
+        return this.relative(ops.rel!, 1, expr);
       } else if (m === 'a,x' && s === 1 && 'zpx' in ops) {
         return this.opcode(ops.zpx!, 1, expr);
       } else if (m === 'a,x' && 'abx' in ops) {
@@ -319,6 +373,16 @@ export class Processor implements Expr.Resolver {
       if (Token.isRegister(front, 'a')) return ['acc'];
     } else if (Token.eq(front, Token.IMMEDIATE)) {
       return ['imm', Expr.parseOnly(tokens, 2)];
+    }
+    // Look for relative or anonymous labels, which are not valid on their own
+    if (Token.eq(front, Token.COLON) && tokens.length === 3 &&
+        tokens[2].token === 'op' && /^[-+]+$/.test(tokens[2].str)) {
+      // anonymous label
+      return ['add', {op: 'sym', sym: ':' + tokens[2].str}];
+    } else if (tokens.length === 2 && tokens[1].token === 'op' &&
+               /^[-+]+$/.test(tokens[1].str)) {
+      // relative label
+      return ['add', {op: 'sym', sym: tokens[1].str}];
     }
     // it must be an address of some sort - is it indirect?
     if (Token.eq(front, Token.LP) ||
@@ -359,21 +423,22 @@ export class Processor implements Expr.Resolver {
     // Basic plan here is that we actually want a relative expr.
     // TODO - clean this up to be more efficient.
     // TODO - handle local/anonymous labels separately?
-    const rel: Expr = {op: '-', args: [expr, {op: 'sym', sym: '*'}]};
+    // TODO - check the range somehow?
+    const num = this.chunk.data.length + arglen + 1;
+    const nextPc = {op: 'off', num, chunk: this.chunks.length - 1};
+    const rel: Expr = {op: '-', args: [expr, nextPc]};
     if (expr.source) rel.source = expr.source;
     this.opcode(op, arglen, rel);
   }
 
   opcode(op: number, arglen: number, expr: Expr) {
     // Emit some bytes.
+    if (arglen) expr = Expr.resolve(expr, this); // BEFORE opcode (in case of *)
     const {chunk} = this;
     chunk.data.push(op);
-    if (arglen) {
-      // TODO - for relative, if we're in the same chunk, just compare
-      // the offset...
-      expr = Expr.resolve(expr, this);
-      this.append(expr, arglen);
-    }
+    if (arglen) this.append(expr, arglen);
+    // TODO - for relative, if we're in the same chunk, just compare
+    // the offset...
   }
 
   append(expr: Expr, size: number) {
@@ -541,14 +606,18 @@ export class Processor implements Expr.Resolver {
 }
 
 function writeNumber(data: number[], size: number, val?: number) {
-  if (val != null && (val < 0 || val >= (1 << ((size + 1) << 3)))) {
+  // TODO - if val is a signed/unsigned 32-bit number, it's not clear
+  // whether we need to treat it one way or the other...?  but maybe
+  // it doesn't matter since we're only looking at 32 bits anyway.
+  const s = (size) << 3;
+  if (val != null && (val < (-1 << s) || val >= (1 << s))) {
     const name = ['byte', 'word', 'farword', 'dword'][size - 1];
     throw new Error(`Not a ${name}: $${val.toString(16)}`);
   }
   if (val == null) val = 0xffffffff;
   for (let i = 0; i < size; i++) {
     data.push(val & 0xff);
-    val >>>= 8;
+    val >>= 8;
   }
 }
 

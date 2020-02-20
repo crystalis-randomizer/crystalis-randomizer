@@ -62,13 +62,16 @@ export class SparseArray<T> {
     if (this._chunks[~i1]?.[0] === end) i1 = ~i1;
     if (i0 >= 0) {
       const [s0, a0] = this._chunks[i0];
-      //values = spliceHead(a0, start - s0, values);
-      values.unshift(...a0.slice(0, start - s0));
+      if (i1 !== i0) {
+        values = spliceHead(a0, start - s0, values);
+      } else {
+        values.unshift(...a0.slice(0, start - s0));
+      }
       start = s0;
     }
     if (i1 >= 0) {
       const [s1, a1] = this._chunks[i1];
-      values.push(...a1.slice(end - s1));
+      values = spliceTail(values, end - s1, a1)
     }
     let s = i0 < 0 ? ~i0 : i0;
     let e = i1 < 0 ? ~i1 : i1;
@@ -114,13 +117,24 @@ export class SparseArray<T> {
 
 // Helper functions to avoid doing expensive array operations, given the
 // assumption that we can destroy the input.
-function arrayTail<T>(arr: T[], i: number): T[] {
-  const l = arr.length;
-  if ((i << 1) < l) {
-    arr.splice(0, i);
-    return arr;
+function spliceHead<T>(a0: T[], i: number, a1: T[]): T[] {
+  const l0 = a0.length;
+  if (a1.length < l0) {
+    a0.splice(i, l0 - i, ...a1);
+    return a0;
   }
-  return arr.slice(i);
+  a1.unshift(...arrayHead(a0, i));
+  return a1;
+}
+
+function spliceTail<T>(a0: T[], i: number, a1: T[]): T[] {
+  const l1 = a1.length;
+  if (a0.length < l1) {
+    a1.splice(0, i, ...a0);
+    return a1;
+  }
+  a0.push(...arrayTail(a1, i));
+  return a0;
 }
 
 function arrayHead<T>(arr: T[], i: number): T[] {
@@ -130,6 +144,15 @@ function arrayHead<T>(arr: T[], i: number): T[] {
   }
   arr.splice(i, l - i);
   return arr;
+}
+
+function arrayTail<T>(arr: T[], i: number): T[] {
+  const l = arr.length;
+  if ((i << 1) < l) {
+    arr.splice(0, i);
+    return arr;
+  }
+  return arr.slice(i);
 }
 
 // export function linearSearch<T>(T[] haystack, T[] needle,

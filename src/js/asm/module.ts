@@ -54,6 +54,15 @@ export interface Segment {
   free?: Array<readonly [number, number]>;
 }
 
+export namespace Segment {
+  export function merge(a: Segment, b: Segment): Segment {
+    const seg = {...a, ...b};
+    const free = [...(a.free || []), ...(b.free || [])];
+    if (free.length) seg.free = free;
+    return seg;
+  }
+}
+
 export interface Substitution {
   /** Offset into the chunk to substitute the expression into. */
   offset: number;

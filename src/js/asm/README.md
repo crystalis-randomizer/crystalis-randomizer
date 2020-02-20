@@ -478,3 +478,56 @@ that can look up a symbol (including "*") and return an expr (which
 may have recursive symbols).  The output of an expression evaluated
 with a resolver is one that has _no_ string symbols - there _may_
 be numeric symbol references.
+
+## Linker
+
+Basic strategy is to link bigger chunks and dependency chunks first.
+For example, given the following:
+
+```
+.org MapData
+  .word (MapData_00)
+  .word (MapData_01)
+  ; ...
+  .word (MapData_ff)
+
+.reloc
+MapData_00:
+  .word (MapData_00_0)
+  .word (MapData_00_1)
+  .word (MapData_00_2)
+
+.reloc
+MapData_00_0:
+  .byte DATA
+
+.reloc
+MapData_00_1:
+  .byte DATA
+```
+
+we would start with resolving the main `MapData` table, but would see
+that it required resolving `MapData_00`, which ultimately required
+resolving `MapData_00_0` and others.  This means we write a bunch of
+shorter chunks first, deferring some longer ones until later, but
+these already needed to be deferred (and were before).  One trick is
+that we need some sort of barrier (or anticipatory scheduling)
+mechanism - we don't just want to write all the deps in the order they
+appear, we'd like to queue them in a priority queue so that larger
+ones come first.
+
+Probably need to keep reverse deps so that when we resolve one dep we
+can reevaluate all the remaining ones, removing them from the waiting
+area and replacing them where appropriate.  We then keep two queues:
+(1) unblocked, sorted by size descending, and (2) blocked on deps,
+sorted by the number of reverse deps descending.  This will allow
+unblocking the most things when the unblocked list is empty by simply
+popping off a single element.  Possibly we can avoid bothering with a
+second separate list and re-sorting it by just skipping over the
+blocked items and keeping a max of the skipped items so we have
+something to do at the end if everything is blocked.  This could avoid
+the need for keeping the reverse deps list.  Alternatively, keep the
+revdeps and then if everything is blocked, just handle all the revdeps
+of the largest remaining chunk.  Any chunk with an unresolvable
+self-dep is not counted as blocked since it will never be
+sufficiently unblocked.

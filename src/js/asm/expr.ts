@@ -25,6 +25,93 @@ export namespace Expr {
     chunkData(chunk: number): {bank?: number, org?: number, zp?: boolean};
   }
 
+  /** Performs a post-order traversal. */
+  export function traverse(expr: Expr,
+                           post: (e: Expr) => Expr,
+                           pre?: (e: Expr) => Expr): Expr {
+    const source = expr.source;
+    if (pre) expr = pre(expr);
+
+    // First traverse children.
+    if (expr.args?.length) {
+      const args = [];
+      let edit = false;
+      for (const arg of expr.args) {
+        const mapped = traverse(arg, post, pre);
+        if (mapped !== arg) edit = true;
+        args.push(mapped);
+      }
+      if (edit) expr = expr = {...expr, args};
+    }
+
+    // Then call function.
+    expr = post(expr);
+
+    // Now simplify the expression if possible.  Pre-evalulate offset
+    const [a, b] = expr.args || [];
+    if (expr.op === '+' && a?.op === 'off' && b?.op === 'num') {
+      expr = {op: 'off', num: a.num! + b.num!, chunk: a.chunk!};
+    } else if (expr.op === '+' && b?.op === 'off' && a?.op === 'num') {
+      expr = {op: 'off', num: a.num! + b.num!, chunk: b.chunk!};
+    } else if (expr.op === '-' && a?.op === 'off' && b?.op === 'off'
+               && a.chunk === b.chunk) {
+      expr = {op: 'num', num: a.num! - b.num!};
+    } else if (expr.op !== 'num') {
+      const num = evaluate(expr, true); // shallow
+      if (num != null) expr = {op: 'num', num, size: size(num)};
+    }
+    if (source && !expr.source) expr.source = source;
+    return expr;
+  }
+
+  // export function resolveImports(expr: Expr,
+  //                                map: ReadonlyMap<string, number>,
+  //                                symbols: Array<{expr: Expr}>): Expr {
+  //   const source = expr.source;
+  //   if (expr.op === 'import' && expr.sym != null) {
+  //     const sym = map.get(expr.sym);
+  //     if (sym == null) {
+  //       const at = Token.at(expr);
+  //       throw new Error(`Nothing exported ${expr.sym}${at}`);
+  //     }
+  //     expr = resolve(resolved, resolver); // recurse
+  //   } else if (expr.args?.length) {
+  //     expr = {...expr,
+  //             args: expr.args.map(a => resolveImports(a, map, symbols))};
+
+  //     // NOTE - this is still nonsense... vvvv
+
+  //   } else if (expr.op === '^' && expr.args?.length === 1) {
+  //     // evaluate the bank byte here because it requires funny business
+  //     const arg = expr.args[0];
+  //     if (arg.op === 'off' && arg.chunk != null) {
+  //       const chunk = resolver.chunkData(arg.chunk);
+  //       if (chunk.bank != null) expr = {op: 'num', num: chunk.bank, size: 1};
+  //     }
+  //   } else if (expr.op === 'off') {
+  //     if (expr.chunk == null || expr.num == null) throw new Error(`Bad offset`);
+  //     const chunk = resolver.chunkData(expr.chunk);
+  //     if (chunk.org != null) {
+  //       expr = {op: 'num', num: expr.num + chunk.org, size: chunk.zp ? 1 : 2};
+  //     } else if (chunk.zp) {
+  //       expr = {...expr, size: 1};
+  //     }
+  //   }
+  //   if (expr.op === '-' && expr.args?.length === 2 &&
+  //              expr.args[0].op === 'off' && expr.args[1].op === 'off' &&
+  //              expr.args[0].chunk === expr.args[1].chunk) {
+  //     const num = expr.args[0].num! - expr.args[1].num!;
+  //     const size = num > 127 || num < -128 ? 2 : 1;
+  //     expr = {op: 'num', num, size};
+  //   }
+  //   if (expr.op !== 'num') {
+  //     const num = evaluate(expr);
+  //     if (num != null) expr = {op: 'num', num, size: size(num)};
+  //   }
+  //   if (source && !expr.source) expr.source = source;
+  //   return expr;
+  // }
+
   /** Substitutes offsets or symbol table refs for all string symbols. */
   export function resolve(expr: Expr, resolver: Resolver): Expr {
     const source = expr.source;
@@ -67,12 +154,17 @@ export namespace Expr {
     return expr;
   }
 
-  export function evaluate(expr: Expr): number|undefined {
+  export function evaluate(expr: Expr, shallow = false): number|undefined {
     const args: number[] = [];
     for (const arg of expr.args || []) {
-      const val = evaluate(arg);
-      if (val == null) return undefined;
-      args.push(val);
+      if (shallow) {
+        if (arg.op !== 'num') return undefined;
+        args.push(arg.num!);
+      } else {
+        const val = evaluate(arg);
+        if (val == null) return undefined;
+        args.push(val);
+      }
     }
     switch (expr.op) { // var-arg functions
       case '.max': return Math.max(...args);

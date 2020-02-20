@@ -474,10 +474,7 @@ export class Processor implements Expr.Resolver {
     for (const s of segments) {
       if (typeof s === 'object') {
         const data = this.segmentData.get(s.name) || {name: s.name};
-        const seg = {...data, ...s};
-        const free = [...(data.free || []), ...(s.free || [])];
-        if (free.length) seg.free = free;
-        this.segmentData.set(s.name, seg);
+        this.segmentData.set(Segment.merge(data, s));
       }
     }
     this._chunk = undefined;

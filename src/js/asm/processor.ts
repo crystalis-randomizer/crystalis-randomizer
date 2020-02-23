@@ -163,6 +163,21 @@ export class Processor implements Expr.Resolver {
     }
   }
 
+  definedSymbol(sym: string): boolean {
+    const s = this.scope.resolve(sym, false);
+    return Boolean(s && s.expr);
+  }
+
+  referencedSymbol(sym: string): boolean {
+    const s = this.scope.resolve(sym, false);
+    return s != null; // NOTE: this counts definitions.
+  }
+
+  evaluate(expr: Expr): number|undefined {
+    expr = Expr.resolve(expr, this);
+    return Expr.evaluate(expr);
+  }
+
   // private get pc(): number|undefined {
   //   if (this._org == null) return undefined;
   //   return this._org + this.offset;

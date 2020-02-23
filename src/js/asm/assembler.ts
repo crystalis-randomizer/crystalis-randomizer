@@ -4,13 +4,12 @@
 
 import {Cpu} from './cpu.js';
 import {IdGenerator} from './idgenerator.js';
-import {ObjectFile} from './objectfile.js';
+import {Module} from './module.js';
 import {Preprocessor, PreprocessedLine} from './preprocessor.js';
 import {Processor} from './processor.js';
 import {Token} from './token.js';
 import {TokenStream} from './tokenstream.js';
 import {Tokenizer} from './tokenizer.js';
-import {Evaluator} from './evaluator.js';
 import {CancelToken, assertNever} from '../util.js';
 
 interface Options extends Tokenizer.Options, Processor.Options {
@@ -29,14 +28,14 @@ export class Assembler {
     throw new Error(`Not implemented`);
   }
 
-  async assemble(code: string, file = 'input.s'): Promise<ObjectFile> {
+  async assemble(code: string, file = 'input.s',
+                 defines?: Record<string, boolean|number>): Promise<Module> {
     //const proc = new Processor(this.cpu);
     const task = new Task(this, code, file, this.opts);
+    if (defines) task.unshiftDefines(defines);
     await task.assemble();
     return task.processor.result();
   }
-
-  
 }
 
 // TODO - expose a new Tokenizer-like interface that allows pulling
@@ -56,13 +55,9 @@ class Task {
               readonly opts = {...parent.opts}) {
     this.tokenStream = new TokenStream(opts);
     this.tokenStream.enter(code, file);
+    this.processor = new Processor(parent.cpu);
     this.preprocessor =
-        new Preprocessor(this.tokenStream, this.idGen, new Evaluator(this));
-    this.processor = new Processor(this.preprocessor, parent.cpu);
-  }
-
-  pc(): number|undefined {
-    throw new Error(`unimplemented`);
+        new Preprocessor(this.tokenStream, this.idGen, this.processor);
   }
 
   // async include(file: string) {
@@ -74,6 +69,23 @@ class Task {
   //                this.processor, new Preprocessor(this, this.preprocessor));
   //   await task.assemble();
   // }
+
+  unshiftDefines(defines: Record<string, number|boolean>) {
+    const lines: Token[][] = [];
+    for (const key in defines) {
+      const val = defines[key];
+      if (val === false) continue;
+      const line: Token[] = [
+        {token: 'cs', str: '.define'},
+        {token: 'ident', str: key},
+      ];
+      lines.push(line);
+      if (val === true) continue;
+      line.push({token: 'num', num: val});
+    }
+    if (!lines.length) return;
+    this.tokenStream.unshift(...lines);
+  }
 
   private async process({kind, tokens}: PreprocessedLine) {
     switch (kind) {
@@ -111,7 +123,6 @@ class Task {
       cancel.throwIfRequested();
       await this.process(line);
     }
-    return this.processor.result;
     // while (true) {
     //   const line = this.tokenStream.next();
     //   if (!line.length) {

@@ -27,7 +27,7 @@ interface Env {
   // These need to come from Processor and will depend on scope...
   definedSymbol(sym: string): boolean;
   referencedSymbol(sym: string): boolean;
-  evaluate(expr: Expr): number;
+  evaluate(expr: Expr): number|undefined;
   // also want methods to apply shunting yard to token list?
   //  - turn it into a json tree...?
 }
@@ -305,6 +305,13 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
     return true;
   }
 
+  evaluateConst(expr: Expr): number {
+    const v = this.env.evaluate(expr);
+    if (v != null) return v;
+    const at = Token.at(expr);
+    throw new Error(`Expected a constant${at}`);
+  }
+
   private readonly runDirectives: Record<string, (ts: Token[]) => void> = {
     '.define': (line) => this.parseDefine(line),
     '.undefine': (line) => this.parseUndefine(line),
@@ -314,7 +321,7 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
     '.endmacro': ([cs]) => badClose('.macro', cs),
     '.exitmacro': ([, a]) => { noGarbage(a); this.stream.exit(); },
     '.if': ([cs, ...args]) =>
-        this.parseIf(!!this.env.evaluate(parseOneExpr(args, cs))),
+        this.parseIf(!!this.evaluateConst(parseOneExpr(args, cs))),
     '.ifdef': ([cs, ...args]) =>
         this.parseIf(this.macros.has(parseOneIdent(args, cs))),
     '.ifndef': ([cs, ...args]) =>
@@ -383,7 +390,7 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
           continue;
         } else if (Token.eq(front, Token.ELSEIF)) {
           // if false ... else if .....
-          cond = !!this.env.evaluate(parseOneExpr(line.slice(1), front));
+          cond = !!this.evaluateConst(parseOneExpr(line.slice(1), front));
           continue;
         } else if (Token.eq(front, Token.ELSE)) {
           // if false ... else .....

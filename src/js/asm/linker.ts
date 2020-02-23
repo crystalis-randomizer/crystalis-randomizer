@@ -14,12 +14,14 @@ export class Linker {
 
   private _link = new Link();
 
-  read(file: Module) {
+  read(file: Module): Linker {
     this._link.read(file);
+    return this;
   }
 
-  base(data: Uint8Array, offset = 0) {
+  base(data: Uint8Array, offset = 0): Linker {
     this._link.base(data, offset);
+    return this;
   }
 
   link(): SparseByteArray {
@@ -87,6 +89,12 @@ class LinkChunk {
 
   follow = new Map<Substitution, LinkChunk>();
 
+  /**
+   * Whether the chunk is placed overlapping with something else.
+   * Overlaps aren't written to the patch.
+   */
+  overlaps = false;
+
   private _data?: Uint8Array;
 
   private _org?: number;
@@ -106,24 +114,27 @@ class LinkChunk {
     }
     this.asserts = (chunk.asserts || [])
         .map(e => translateExpr(e, chunkOffset, symbolOffset));
-
-    // Invariant: exactly one of (data) or (org, _offset, _segment) is present.
-    // If (org, ...) filled in then we use linker.data instead.
-    // mirror of 
-    if (chunk.org != null) {
-      if (this.segments.length !== 1) {
-        throw new Error(`Non-unique segment: ${this.segments}`);
-      }
-      const segment = this.linker.segments.get(this.segments[0]);
-      if (!segment) throw new Error(`Unknown segment: ${this.segments[0]}`);
-      this.place(chunk.org, segment);
-    }
+    if (chunk.org) this._org = chunk.org;
   }
 
   get org() { return this._org; }
   get offset() { return this._offset; }
   get segment() { return this._segment; }
   get data() { return this._data ?? fail('no data'); }
+
+  initialPlacement() {
+    // Invariant: exactly one of (data) or (org, _offset, _segment) is present.
+    // If (org, ...) filled in then we use linker.data instead.
+    // We don't call this in the ctor because it depends on all the segments
+    // being loaded, but it's the first thing we do in link().
+    if (this._org == null) return;
+    if (this.segments.length !== 1) {
+      throw new Error(`Non-unique segment: ${this.segments}`);
+    }
+    const segment = this.linker.segments.get(this.segments[0]);
+    if (!segment) throw new Error(`Unknown segment: ${this.segments[0]}`);
+    this.place(this._org, segment);
+  }
 
   place(org: number, segment: LinkSegment) {
     this._org = org;
@@ -327,16 +338,45 @@ class Link {
     //  4. for reloc chunks, find the biggest chunk with no deps.
   }
 
-  resolveChunk(chunk: LinkChunk) {
-    //if (chunk.resolving) return; // break any cycles
+  // resolveChunk(chunk: LinkChunk) {
+  //   //if (chunk.resolving) return; // break any cycles
     
-  }
+  // }
 
-  resolveExpr(expr: Expr) {
-    // 
+  // NOTE: so far this is only used for asserts?
+  // It basically copy-pastes from resolveSubs... :-(
+  resolveExpr(expr: Expr): number {
+    expr = Expr.traverse(expr, (e) => {
+      if (e.op === 'off') {
+        const c = this.chunks[e.chunk!];
+        if (c.org != null) return {op: 'num', num: c.org + e.num!};
+      }
+      return e;
+    }, (e) => { // pre-traverse to resolve banks
+      if (e.op === '^' && e.args?.length === 1) {
+        // TODO - resolve bank bytes here, before we turn it into a number...
+        const child = e.args[0];
+        if (child.op !== 'off') {
+          const at = Token.at(child);
+          throw new Error(`Cannot get bank of non-offset: ${child.op}${at}`);
+        }
+        const c = this.chunks[child.chunk!];
+        if (c.org) return {op: 'num', num: c.segment!.bank};
+      }
+      // will traverse child but will only record info, can't resolve it
+      return e;
+    });
+
+    if (expr.op === 'num') return expr.num!;
+    const at = Token.at(expr);
+    throw new Error(`Unable to fully resolve expr${at}`);
   }
 
   link(): SparseByteArray {
+    // Set up all the initial placements.
+    for (const chunk of this.chunks) {
+      chunk.initialPlacement();
+    }
     // Find all the exports.
     for (let i = 0; i < this.symbols.length; i++) {
       const symbol = this.symbols[i];
@@ -435,6 +475,13 @@ class Link {
 
     const patch = new SparseByteArray();
     for (const c of this.chunks) {
+      for (const a of c.asserts) {
+        const v = this.resolveExpr(a);
+        if (v) continue;
+        const at = Token.at(a);
+        throw new Error(`Assertion failed${at}`);
+      }
+      if (c.overlaps) continue;
       patch.set(c.offset!, ...this.data.slice(c.offset!, c.offset! + c.size!));
     }
     return patch;
@@ -453,6 +500,8 @@ class Link {
         const index = pattern.search(start, end);
         if (index < 0) continue;
         chunk.place(index, segment);
+        chunk.overlaps = true;
+        return;
       }
     }
     // either unresolved, or didn't find a match; just allocate space.
@@ -460,7 +509,7 @@ class Link {
       const segment = this.segments.get(name)!;
       const s0 = segment.offset!;
       const s1 = s0 + segment.size!;
-      for (const [f0, f1] of this.free.tail(segment.offset!)) {
+      for (const [f0, f1] of this.free.tail(s0)) {
         if (f1 > s1) break;
         if (f1 - f0 >= size) {
           // found a region
@@ -495,22 +544,22 @@ class Link {
     });
   }
 
-  resolveBankBytes(expr: Expr): Expr {
-    return Expr.traverse(expr, (e: Expr) => {
-      if (e.op !== '^' || e.args?.length !== 1) return e;
-      const child = e.args[0];
-      if (child.op !== 'off') return e;
-      const chunk = this.chunks[child.num!];
-      const banks = new Set<number>();
-      for (const s of chunk.segments) {
-        const segment = this.segments.get(s);
-        if (segment?.bank != null) banks.add(segment.bank);
-      }
-      if (banks.size !== 1) return e;
-      const [b] = banks;
-      return {op: 'num', size: 1, num: b};
-    });
-  }
+  // resolveBankBytes(expr: Expr): Expr {
+  //   return Expr.traverse(expr, (e: Expr) => {
+  //     if (e.op !== '^' || e.args?.length !== 1) return e;
+  //     const child = e.args[0];
+  //     if (child.op !== 'off') return e;
+  //     const chunk = this.chunks[child.num!];
+  //     const banks = new Set<number>();
+  //     for (const s of chunk.segments) {
+  //       const segment = this.segments.get(s);
+  //       if (segment?.bank != null) banks.add(segment.bank);
+  //     }
+  //     if (banks.size !== 1) return e;
+  //     const [b] = banks;
+  //     return {op: 'num', size: 1, num: b};
+  //   });
+  // }
 
   //     if (expr.op === 'import') {
   //       if (!expr.sym) throw new Error(`Import with no symbol.`);

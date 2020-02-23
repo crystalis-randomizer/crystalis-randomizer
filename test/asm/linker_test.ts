@@ -1,12 +1,14 @@
 import {describe, it} from 'mocha';
 import {expect} from 'chai';
 //import {Expr} from '../../src/js/asm/expr';
-import {link} from '../../src/js/asm/linker';
+import {Linker} from '../../src/js/asm/linker';
 //import {Module} from '../../src/js/asm/module';
 //import {Token} from '../../src/js/asm/token';
 import * as util from 'util';
 
 const [] = [util];
+
+const link = Linker.link;
 
 // function ident(str: string): Token { return {token: 'ident', str}; }
 // function num(num: number): Token { return {token: 'num', num}; }
@@ -144,5 +146,47 @@ describe('Linker', function() {
     };
     expect([...link(m).chunks()])
         .to.eql([[0x0210, [2, 4, 0x00, 0xc2, 1, 3, 0x02, 0xc2]]]);
+  });
+
+  it('should fail to relocate chunks with no free allocations', function() {
+    const m = {
+      chunks: [{
+        segments: ['code'],
+        data: Uint8Array.of(2, 4, 0xff, 0xff),
+        subs: [{offset: 2, size: 2, expr: {op: 'off', num: 0, chunk: 0}}],
+      }, {
+        segments: ['code'],
+        data: Uint8Array.of(1, 3, 0xff, 0xff),
+        subs: [{offset: 2, size: 2, expr: {op: 'off', num: 2, chunk: 0}}],
+      }],
+      segments: [{
+        name: 'code',
+        size: 0x400, offset: 0x0010, memory: 0xc000,
+      }],
+    };
+    expect(() => link(m)).to.throw(Error, /Could not find space for chunk/);
+  });
+
+  it('should choose an eligible segment for .reloc chunks', function() {
+    const m = {
+      chunks: [{
+        segments: ['a', 'b'],
+        data: Uint8Array.of(1, 3, 5, 7),
+      }, {
+        segments: ['a'],
+        org: 0x80,
+        data: Uint8Array.of(2, 4, 0xff, 0xff),
+        subs: [{offset: 2, size: 2, expr: {op: 'off', num: 2, chunk: 0}}],
+      }],
+      segments: [{
+        name: 'a', size: 6, offset: 0, memory: 0x80,
+        free: [[0x80, 0x84] as const],
+      }, {
+        name: 'b', size: 100, offset: 100, memory: 0x100,
+        free: [[0x100, 0x164] as const],
+      }],
+    };
+    expect([...link(m).chunks()])
+        .to.eql([[0, [2, 4, 0x02, 0x01]], [100, [1, 3, 5, 7]]]);
   });
 });

@@ -3,12 +3,35 @@ import {Expr} from './expr';
 import {Chunk, Module, Segment, Substitution, Symbol} from './module';
 import {Token} from './token';
 
-export function link(...files: Module[]): SparseByteArray {
-  const linker = new Linker();
-  for (const file of files) {
-    linker.read(file);
+export class Linker {
+  static link(...files: Module[]): SparseByteArray {
+    const linker = new Linker();
+    for (const file of files) {
+      linker.read(file);
+    }
+    return linker.link();
   }
-  return linker.link();
+
+  private _link = new Link();
+
+  read(file: Module) {
+    this._link.read(file);
+  }
+
+  base(data: Uint8Array, offset = 0) {
+    this._link.base(data, offset);
+  }
+
+  link(): SparseByteArray {
+    return this._link.link();
+  }
+}
+
+export namespace Linker {
+  export interface Options {
+    
+
+  }
 }
 
 // TODO - link-time only function for getting either the original or the
@@ -70,7 +93,7 @@ class LinkChunk {
   private _offset?: number;
   private _segment?: Segment;
 
-  constructor(readonly linker: Linker,
+  constructor(readonly linker: Link,
               readonly index: number,
               chunk: Chunk<Uint8Array>,
               chunkOffset: number,
@@ -129,6 +152,8 @@ class LinkChunk {
     for (const [sub, chunk] of this.follow) {
       chunk.resolveSub(sub, false);
     }
+
+    this.linker.free.delete(this.offset!, this.offset! + this.size);
   }
 
   resolveSubs(initial = false) { //: Map<number, Substitution[]> {
@@ -254,7 +279,7 @@ function translateSymbol(s: Symbol, dc: number, ds: number): Symbol {
 }
 
 // This class is single-use.
-class Linker {
+class Link {
   data = new SparseByteArray();
   // Maps symbol to symbol # // [symbol #, dependent chunks]
   exports = new Map<string, number>(); // readonly [number, Set<number>]>();
@@ -272,8 +297,8 @@ class Linker {
     binaryInsert(this.resolvedChunks, c => c.size, chunk);
   }
 
-  base(data: Uint8Array) {
-    this.data.set(0, data);
+  base(data: Uint8Array, offset = 0) {
+    this.data.set(offset, data);
   }
 
   read(file: Module) {
@@ -522,12 +547,4 @@ class Linker {
     }
   }
 
-}
-
-
-export namespace Linker {
-  export interface Options {
-    
-
-  }
 }

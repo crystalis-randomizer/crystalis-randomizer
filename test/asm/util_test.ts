@@ -1,6 +1,6 @@
 import {describe, it} from 'mocha';
 import {expect} from 'chai';
-import {BitSet, IntervalSet, SparseArray,
+import {BitSet, IntervalSet, SparseArray, SparseByteArray,
         binaryInsert, binarySearch} from '../../src/js/asm/util';
 import * as util from 'util';
 
@@ -481,7 +481,7 @@ describe('SparseArray', function() {
     });
   });
 
-  describe('IntervalSet#splice', function() {
+  describe('SparseArray#splice', function() {
     it('should splice an absent chunk', function() {
       const a = new SparseArray<number>();
       a.set(3, 5);
@@ -571,6 +571,65 @@ describe('SparseArray', function() {
       a.set(8, 4);
       a.splice(2, 6);
       expect([...a.chunks()]).to.eql([[1, [1]], [8, [4]]]);
+    });
+  });
+
+  describe('SparseArray.slice', function() {
+    it('should return a slice', function() {
+      const a = new SparseArray<number>();
+      a.set(5, 1, 2, 3, 4, 5);
+      expect(a.slice(6, 8)).to.eql([2, 3]);
+    });
+
+    it('should return an entire chunk', function() {
+      const a = new SparseArray<number>();
+      a.set(5, 1, 2);
+      expect(a.slice(5, 7)).to.eql([1, 2]);
+    });
+
+    it('should throw if across a gap', function() {
+      const a = new SparseArray<number>();
+      a.set(5, 1, 2);
+      a.set(8, 3, 4);
+      expect(() => a.slice(6, 9)).to.throw(Error, /^Absent: 7/);
+    });
+
+    it('should throw if left edge is missing', function() {
+      const a = new SparseArray<number>();
+      a.set(5, 1, 2);
+      expect(() => a.slice(4, 6)).to.throw(Error, /^Absent: 4/);
+    });
+
+    it('should throw if right edge is missing', function() {
+      const a = new SparseArray<number>();
+      a.set(5, 1, 2);
+      expect(() => a.slice(5, 8)).to.throw(Error, /^Absent: 7/);
+    });
+  });
+
+  describe('SparseByteArray search', function() {
+    const a = new SparseByteArray();
+    a.set(0, 1, 2, 3, 4, 2, 3, 5, 6);
+    a.set(10, 1, 2, 3, 5, 2, 3, 6, 8);
+
+    it('should find the first occurrence of a pattern', function() {
+      expect(a.search([2, 3, 5])).to.equal(4);
+    });
+
+    it('should respect the bounds', function() {
+      expect(a.search([2, 3, 5], 8)).to.equal(11);
+    });
+
+    it('should return -1 if the pattern is not found', function() {
+      expect(a.search([2, 3, 7])).to.equal(-1);
+    });
+
+    it('should return -1 if the bounds are right of the data', function() {
+      expect(a.search([2, 3, 4], 20)).to.equal(-1);
+    });
+
+    it('should return -1 if the bounds are left of the match', function() {
+      expect(a.search([2, 3, 4], 0, 3)).to.equal(-1);
     });
   });
 });

@@ -1,10 +1,9 @@
-import { BitSet, IntervalSet, binaryInsert} from './util';
+import {IntervalSet, SparseByteArray, binaryInsert} from './util';
 import {Expr} from './expr';
 import {Chunk, Module, Segment, Substitution, Symbol} from './module';
-import {Patch} from './patch';
 import {Token} from './token';
 
-export function link(...files: Module[]): Patch {
+export function link(...files: Module[]): SparseByteArray {
   const linker = new Linker();
   for (const file of files) {
     linker.read(file);
@@ -18,18 +17,43 @@ export function link(...files: Module[]): Patch {
 //        asm patch.
 
 // Tracks an export.
-interface Export {
-  chunks: Set<number>;
-  symbol: number;
+// interface Export {
+//   chunks: Set<number>;
+//   symbol: number;
+// }
+
+function fail(msg: string): never {
+  throw new Error(msg);
+}
+
+class LinkSegment {
+  readonly name: string;
+  readonly bank: number;
+  readonly size: number;
+  readonly offset: number;
+  readonly memory: number;
+  readonly addressing: number;
+
+  constructor(segment: Segment) {
+    const name = this.name = segment.name;
+    this.bank = segment.bank ?? 0;
+    this.addressing = segment.addressing ?? 2;
+    this.size = segment.size ?? fail(`Size must be specified: ${name}`);
+    this.offset = segment.offset ?? fail(`OFfset must be specified: ${name}`);
+    this.memory = segment.memory ?? fail(`OFfset must be specified: ${name}`);
+  }
+
+  // offset = org + delta
+  get delta(): number { return this.offset - this.memory; }
 }
 
 class LinkChunk {
+  readonly size: number;
   segments: readonly string[];
-  /** Note: will be filled in once placed. */
-  org: number|undefined;
-  data: Uint8Array;
-  subs: Substitution[];
   asserts: Expr[];
+
+  subs = new Set<Substitution>();
+  selfSubs = new Set<Substitution>();
 
   /** Global IDs of chunks needed to locate before we can complete this one. */
   deps = new Set<number>();
@@ -38,28 +62,175 @@ class LinkChunk {
   // /** Symbols that are exported from this chunk. */
   // exports = new Set<string>();
 
-  constructor(chunk: Chunk<Uint8Array>,
+  follow = new Map<Substitution, LinkChunk>();
+
+  private _data?: Uint8Array;
+
+  private _org?: number;
+  private _offset?: number;
+  private _segment?: Segment;
+
+  constructor(readonly linker: Linker,
+              readonly index: number,
+              chunk: Chunk<Uint8Array>,
               chunkOffset: number,
               symbolOffset: number) {
+    this.size = chunk.data.length;
     this.segments = chunk.segments;
-    this.org = chunk.org;
-    this.data = chunk.data;
-    this.subs = (chunk.subs || [])
-        .map(s => translateSub(s, chunkOffset, symbolOffset));
+    this._data = chunk.data;
+    for (const sub of chunk.subs || []) {
+      this.subs.add(translateSub(sub, chunkOffset, symbolOffset));
+    }
     this.asserts = (chunk.asserts || [])
         .map(e => translateExpr(e, chunkOffset, symbolOffset));
+
+    // Invariant: exactly one of (data) or (org, _offset, _segment) is present.
+    // If (org, ...) filled in then we use linker.data instead.
+    // mirror of 
+    if (chunk.org != null) {
+      if (this.segments.length !== 1) {
+        throw new Error(`Non-unique segment: ${this.segments}`);
+      }
+      const segment = this.linker.segments.get(this.segments[0]);
+      if (!segment) throw new Error(`Unknown segment: ${this.segments[0]}`);
+      this.place(chunk.org, segment);
+    }
   }
 
-  write(offset: number, val: number, size: number) {
+  get org() { return this._org; }
+  get offset() { return this._offset; }
+  get segment() { return this._segment; }
+  get data() { return this._data ?? fail('no data'); }
+
+  place(org: number, segment: LinkSegment) {
+    this._org = org;
+    this._segment = segment;
+    const offset = this._offset = org + segment.delta;
+    // Copy data, leaving out any holes
+    const full = this.linker.data;
+    const data = this._data ?? fail(`No data`);
+    this._data = undefined;
+
+    if (this.subs.size) {
+      full.splice(offset, data.length);
+      const sparse = new SparseByteArray();
+      sparse.set(0, data);
+      for (const sub of this.subs) {
+        sparse.splice(sub.offset, sub.size);
+      }
+      for (const [start, chunk] of sparse.chunks()) {
+        full.set(offset + start, ...chunk);
+      }
+    } else {
+      full.set(offset, data);
+    }
+
+    // Mark the follow-ons
+    for (const [sub, chunk] of this.follow) {
+      chunk.resolveSub(sub, false);
+    }
+  }
+
+  resolveSubs(initial = false) { //: Map<number, Substitution[]> {
+    // iterate over the subs, see what progress we can make?
+    // result: list of dependent chunks.
+
+    // NOTE: if we depend on ourself then we will return empty deps,
+    //       and may be placed immediately, but will still have holes.
+    //      - NO, it's responsibility of caller to check that
+    for (const sub of this.selfSubs) {
+      this.resolveSub(sub, initial);
+    }
+
+    // const deps = new Set();
+    for (const sub of this.subs) {
+      // const subDeps = 
+      this.resolveSub(sub, initial);
+      // if (!subDeps) continue;
+      // for (const dep of subDeps) {
+      //   let subs = deps.get(dep);
+      //   if (!subs) deps.set(dep, subs = []);
+      //   subs.push(sub);
+      // }
+    }
+    // if (this.org != null) return new Set();
+    // return deps;
+  }
+
+  // Returns a list of dependent chunks, or undefined if successful.
+  resolveSub(sub: Substitution, initial: boolean) { //: Iterable<number>|undefined {
+    // Do a full traverse of the expression - see what's blocking us.
+    //   TODO - resolve bank here if possible, since nobody else is gonna do it.
+    if (!this.subs.has(sub) && !this.selfSubs.has(sub)) return;
+    sub.expr = Expr.traverse(sub.expr, (e) => {
+      if (e.op === 'off') {
+        const dep = this.linker.chunks[e.chunk!];
+        if (dep.org != null) {
+          return {op: 'num', num: dep.org + e.num!};
+        } else {
+          if (initial && e.chunk === this.index && this.subs.delete(sub)) {
+            this.selfSubs.add(sub);
+          }
+          // if (e.chunk !== this.index) this.resolved = false;
+          if (initial) {
+            this.linker.chunks[e.chunk!].follow.set(sub, this);
+            this.deps.add(e.chunk!);
+          }
+        }
+      }
+      return e;
+    }, (e) => { // pre-traverse to resolve banks
+      if (e.op === '^' && e.args?.length === 1) {
+        // TODO - resolve bank bytes here, before we turn it into a number...
+        const child = e.args[0];
+        if (child.op !== 'off') {
+          const at = Token.at(child);
+          throw new Error(`Cannot get bank of non-offset: ${child.op}${at}`);
+        }
+        const dep = this.linker.chunks[child.chunk!];
+        if (dep.org) return {op: 'num', num: dep._segment!.bank};
+      }
+      // will traverse child but will only record info, can't resolve it
+      return e;
+    });
+
+    // See if we can do it immediately.
+    if (sub.expr.op === 'num') {
+      this.writeValue(sub.offset, sub.expr.num!, sub.size);
+      this.subs.delete(sub) || this.selfSubs.delete(sub);
+      if (!this.subs.size) { // NEW: ignores self-subs now
+      // if (!this.subs.size || (deps.size === 1 && deps.has(this.index)))  {
+        // add to resolved queue - ready to be placed!
+        // Question: should we place it right away?  We place the fixed chunks
+        // immediately in the ctor, but there's no choice to defer.  For reloc
+        // chunks, it's better to wait until we've resolved as much as possible
+        // before placing anything.  Fortunately, placing a chunk will
+        // automatically resolve all deps now!
+        if (this.linker.unresolvedChunks.delete(this)) {
+          this.linker.insertResolved(this);
+        }
+      }
+    }
+  }
+
+  writeValue(offset: number, val: number, size: number) {
     // TODO - this is almost entirely copied from processor writeNumber
-    const s = (size) << 3;
-    if (val != null && (val < (-1 << s) || val >= (1 << s))) {
+    const bits = (size) << 3;
+    if (val != null && (val < (-1 << bits) || val >= (1 << bits))) {
       const name = ['byte', 'word', 'farword', 'dword'][size - 1];
       throw new Error(`Not a ${name}: $${val.toString(16)}`);
     }
+    const bytes = new Uint8Array(size);
     for (let i = 0; i < size; i++) {
-      this.data[offset + i] = val & 0xff;
+      bytes[i] = val & 0xff;
       val >>= 8;
+    }
+    if (this._data) {
+      this._data.subarray(offset, offset + size).set(bytes);
+    } else if (this._offset != null) {
+      this.linker.data.set(this._offset + offset, bytes);
+    } else {
+      throw new Error(`Impossible`);
     }
   }
 }
@@ -84,38 +255,40 @@ function translateSymbol(s: Symbol, dc: number, ds: number): Symbol {
 
 // This class is single-use.
 class Linker {
-
-  patch = new Patch();
+  data = new SparseByteArray();
   // Maps symbol to symbol # // [symbol #, dependent chunks]
   exports = new Map<string, number>(); // readonly [number, Set<number>]>();
   chunks: LinkChunk[] = [];
   symbols: Symbol[] = [];
-  unresolved = new BitSet();
   free = new IntervalSet();
-  segments = new Map<string, Segment>();
+  segments = new Map<string, LinkSegment>();
+
+  resolvedChunks: LinkChunk[] = [];
+  unresolvedChunks = new Set<LinkChunk>();
 
   // TODO - deferred - store some sort of dependency graph?
+
+  insertResolved(chunk: LinkChunk) {
+    binaryInsert(this.resolvedChunks, c => c.size, chunk);
+  }
+
+  base(data: Uint8Array) {
+    this.data.set(0, data);
+  }
 
   read(file: Module) {
     const dc = this.chunks.length;
     const ds = this.symbols.length;
+    // segments come first, since LinkChunk constructor needs them
+    for (const segment of file.segments || []) {
+      this.addSegment(segment);
+    }
     for (const chunk of file.chunks || []) {
-      this.chunks.push(new LinkChunk(chunk, dc, ds));
-      if (chunk.org != null) {
-        for (let i = 0; i < chunk.data.length; i++) {
-
-          // TODO - need to get chunk's OFFSET, not .org
-          //   - REQUIRE .org chunks to have a single segment?
-          throw new Error(`need to get chunk offset`);
-          this.unresolved.add(chunk.org + i);
-        }
-      }
+      const lc = new LinkChunk(this, this.chunks.length, chunk, dc, ds);
+      this.chunks.push(lc);
     }
     for (const symbol of file.symbols || []) {
       this.symbols.push(translateSymbol(symbol, dc, ds));
-    }
-    for (const segment of file.segments || []) {
-      this.addSegment(segment);
     }
     // TODO - what the heck do we do with segments?
     //      - in particular, who is responsible for defining them???
@@ -138,7 +311,7 @@ class Linker {
     // 
   }
 
-  link(): Patch {
+  link(): SparseByteArray {
     // Find all the exports.
     for (let i = 0; i < this.symbols.length; i++) {
       const symbol = this.symbols[i];
@@ -149,13 +322,12 @@ class Linker {
         this.exports.set(symbol.export, i);
       }
     }
-    // Resolve all the imports.
+    // Resolve all the imports in all symbol and chunk.subs exprs.
     for (const symbol of this.symbols) {
       symbol.expr = this.resolveSymbols(symbol.expr!);
     }
     for (const chunk of this.chunks) {
-      for (let i = 0; i < chunk.subs.length; i++) {
-        const sub = chunk.subs[i];
+      for (const sub of [...chunk.subs, ...chunk.selfSubs]) {
         sub.expr = this.resolveSymbols(sub.expr);
       }
       for (let i = 0; i < chunk.asserts.length; i++) {
@@ -164,91 +336,98 @@ class Linker {
     }
     // At this point, we don't care about this.symbols at all anymore.
     // Now figure out the full dependency tree: chunk #X requires chunk #Y
-    const fwdDeps = this.chunks.map(() => new Set<number>());
-    const revDeps = this.chunks.map(() => new Set<number>());
-    const unblocked: number[] = []; // ordered by chunk size decreasing
-    const blocked: number[] = []; // ordered by chunk size decreasing
-    let index = 0;
-    for (const chunk of this.chunks) {
-      if (chunk.org != null) continue;
-      const remaining: Substitution[] = [];
-      for (const sub of chunk.subs) {
-        const deps = this.resolveSub(chunk, sub);
-        if (!deps) continue;
-        remaining.push(sub);
-        for (const dep of deps) {
-          fwdDeps[index].add(dep);
-          revDeps[dep].add(index);
-        }
-      }
-      chunk.subs = remaining;
-      insert(
-          !remaining.length || fwdDeps[index].has(index) ? unblocked : blocked,
-          index);
+    for (const c of this.chunks) {
+      c.resolveSubs(true);
     }
 
-    // At this point the dep graph is built - now traverse it.
-    const insert = (arr: number[], x: number) => {
-      binaryInsert(arr, c => -this.chunks[c].data.length, x);
-    }
-    const place = (i: number) => {
-      const chunk = this.chunks[i];
-      if (chunk.org != null) return;
-      // resolve first
-      const remaining: Substitution[] = [];
-      for (const sub of chunk.subs) {
-        if (this.resolveSub(chunk, sub)) remaining.push(sub);
-      }
-      chunk.subs = remaining;
-      // now place the chunk
-      this.placeChunk(chunk); // TODO ...
-      // update the graph; don't bother deleting form blocked.
-      for (const revDep of revDeps[i]) {
-        const fwd = fwdDeps[revDep];
-        fwd.delete(i);
-        if (!fwd.size) insert(unblocked, revDep);
+    // TODO - fill (un)resolvedChunks
+    //   - gets 
+
+    const chunks = [...this.chunks];
+    chunks.sort((a, b) => b.size - a.size);
+
+    for (const chunk of chunks) {
+      chunk.resolveSubs();
+      if (chunk.subs.size) {
+        this.unresolvedChunks.add(chunk);
+      } else {
+        this.insertResolved(chunk);
       }
     }
-    while (unblocked.length || blocked.length) {
-      let next = unblocked.shift();
-      if (next) {
-        place(next);
-        continue;
-      }
-      next = blocked[0];
-      for (const rev of revDeps[next]) {
-        if (this.chunks[rev].org != null) { // already placed
-          blocked.shift();
-          continue;
+
+    while (this.resolvedChunks.length || this.unresolvedChunks.size) {
+      const c = this.resolvedChunks.pop();
+      if (c) {
+        this.placeChunk(c);
+      } else {
+        // resolve all the first unresolved chunks' deps
+        const [first] = this.unresolvedChunks;
+        for (const dep of first.deps) {
+          const chunk = this.chunks[dep];
+          if (chunk.org == null) this.placeChunk(chunk);
         }
-        place(rev);
       }
     }
+
+    // if (!chunk.org && !chunk.subs.length) this.placeChunk(chunk);
+
+    // At this point the dep graph is built - now traverse it.
+
+    // const place = (i: number) => {
+    //   const chunk = this.chunks[i];
+    //   if (chunk.org != null) return;
+    //   // resolve first
+    //   const remaining: Substitution[] = [];
+    //   for (const sub of chunk.subs) {
+    //     if (this.resolveSub(chunk, sub)) remaining.push(sub);
+    //   }
+    //   chunk.subs = remaining;
+    //   // now place the chunk
+    //   this.placeChunk(chunk); // TODO ...
+    //   // update the graph; don't bother deleting form blocked.
+    //   for (const revDep of revDeps[i]) {
+    //     const fwd = fwdDeps[revDep];
+    //     fwd.delete(i);
+    //     if (!fwd.size) insert(unblocked, revDep);
+    //   }
+    // }
+    // while (unblocked.length || blocked.length) {
+    //   let next = unblocked.shift();
+    //   if (next) {
+    //     place(next);
+    //     continue;
+    //   }
+    //   next = blocked[0];
+    //   for (const rev of revDeps[next]) {
+    //     if (this.chunks[rev].org != null) { // already placed
+    //       blocked.shift();
+    //       continue;
+    //     }
+    //     place(rev);
+    //   }
+    // }
     // At this point, everything should be placed, so do one last resolve.
+
+    const patch = new SparseByteArray();
+    for (const c of this.chunks) {
+      patch.set(c.offset!, ...this.data.slice(c.offset!, c.offset! + c.size!));
+    }
+    return patch;
   }
 
   placeChunk(chunk: LinkChunk) {
-    const size = chunk.data.length;
-    if (!chunk.subs.length) {
+    if (chunk.org) return; // don't re-place.
+    const size = chunk.size;
+    if (!chunk.subs.size && !chunk.selfSubs.size) {
       // chunk is resolved: search for an existing copy of it first
+      const pattern = this.data.pattern(chunk.data);
       for (const name of chunk.segments) {
         const segment = this.segments.get(name)!;
-        const end = segment.offset! + segment.size!;
-        for (let i = segment.offset!; i < end - size ; i++) {
-          // TODO - consider a Boyer-Moore algorithm for more efficiency
-          let match = true;
-          for (let j = 0; j < size; j++) {
-            if (chunk.data[j] !== this.getByte(i + j)) {
-              match = false;
-              break;
-            }
-          }
-          if (match) {
-            chunk.segments = [name];
-            chunk.org = i - segment.memory! + segment.offset!;
-            return;
-          }
-        }
+        const start = segment.offset!;
+        const end = start + segment.size!;
+        const index = pattern.search(start, end);
+        if (index < 0) continue;
+        chunk.place(index, segment);
       }
     }
     // either unresolved, or didn't find a match; just allocate space.
@@ -260,69 +439,14 @@ class Linker {
         if (f1 > s1) break;
         if (f1 - f0 >= size) {
           // found a region
-          chunk.segments = [name];
-          chunk.org = f1 - segment.memory! + segment.offset!;
+          chunk.place(f0 - segment.delta, segment);
           this.free.delete(f0, f0 + size);
+          // TODO - factor out the subs-aware copy method!
           return;
         }
       }
     }
     throw new Error(`Could not find space for chunk`);
-  }
-
-  getByte(i: number): number|undefined {
-    if (this.unresolved.has(i)) return undefined;
-    // TODO - allow matching original contents, too?
-
-    // TODO - change unresolved, instead rangemap to chunk?
-    throw new Error('');
-  }
-
-  // Returns a list of dependent chunks, or undefined if successful.
-  resolveSub(chunk: LinkChunk, sub: Substitution): Iterable<number>|undefined {
-    // Do a full traverse of the expression - see what's blocking us.
-    //   TODO - resolve bank here if possible, since nobody else is gonna do it.
-    const deps = new Set<number>();
-    sub.expr = Expr.traverse(sub.expr, (e) => {
-      if (e.op === 'off') {
-        const dep = this.chunks[e.chunk!];
-        if (dep.org != null && dep.segments.length === 1) {
-          return {op: 'num', num: dep.org + e.num!};
-        } else {
-          deps.add(e.chunk!);
-        }
-      }
-      return e;
-    }, (e) => { // pre-traverse to resolve banks
-      if (e.op === '^' && e.args?.length === 1) {
-        // TODO - resolve bank bytes here, before we turn it into a number...
-        const child = e.args[0];
-        if (child.op !== 'off') {
-          const at = Token.at(child);
-          throw new Error(`Cannot get bank of non-offset: ${child.op}${at}`);
-        }
-        const dep = this.chunks[child.chunk!];
-        if (dep.segments.length === 1) {
-          const name = dep.segments[0];
-          const segment = this.segments.get(name);
-          if (!segment) throw new Error(`Unknown segment: ${name}`);
-          if (segment.bank == null) {
-            throw new Error(`Segment has no bank data: ${name}`);
-          }
-          return {op: 'num', num: segment.bank};
-        }
-      }
-      return e;
-    });
-
-    // See if we can do it immediately.
-    if (sub.expr.op === 'num') {
-      chunk.write(sub.offset, sub.expr.num!, sub.size);
-      return undefined;
-    }
-
-    if (!deps.size) throw new Error(`No deps, but not resolved: ${sub.expr}`);
-    return deps;
   }
 
   resolveSymbols(expr: Expr): Expr {
@@ -384,17 +508,18 @@ class Linker {
   // }
 
   addSegment(segment: Segment) {
-    // Add the free space
-    for (const [start, end] of segment.free || []) {
-      this.free.add(start, end);
-      for (let i = start; i < end; i++) {
-        this.unresolved.add(i);
-      }
-    }
-    // First merge with any existing segment.
+    // Save out 'free' first, don't merge it.
+    const free = segment.free;
+    // Merge with any existing segment.
     const prev = this.segments.get(segment.name);
     if (prev) segment = Segment.merge(prev, segment);
-    this.segments.set(segment.name, segment);
+    const s = new LinkSegment(segment);
+    this.segments.set(segment.name, s);
+    // Add the free space
+    for (const [start, end] of free || []) {
+      this.free.add(start + s.delta, end + s.delta);
+      this.data.splice(start + s.delta, end - start);
+    }
   }
 
 }

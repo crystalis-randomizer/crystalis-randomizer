@@ -50,7 +50,7 @@ export interface Segment {
   memory?: number;
   /** Address size. */
   addressing?: number;
-  /** Unallocated ranges, half-open [a, b). */
+  /** Unallocated ranges (org), half-open [a, b). */
   free?: Array<readonly [number, number]>;
 }
 

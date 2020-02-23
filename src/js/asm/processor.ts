@@ -6,6 +6,7 @@ import {SourceInfo, Token} from './token';
 type Chunk = mod.Chunk<number[]>;
 type Module = mod.Module;
 type Segment = mod.Segment;
+const Segment = mod.Segment;
 
 class Symbol {
   /**
@@ -153,6 +154,9 @@ export class Processor implements Expr.Resolver {
 
   private ensureChunk() {
     if (!this._chunk) {
+      if (this._org != null && this.segments.length !== 1) {
+        throw new Error(`.org chunks must be single-segment`);
+      }
       this._chunk = {segments: this.segments, data: []};
       if (this._org != null) this._chunk.org = this._org;
       this.chunks.push(this._chunk);
@@ -474,7 +478,7 @@ export class Processor implements Expr.Resolver {
     for (const s of segments) {
       if (typeof s === 'object') {
         const data = this.segmentData.get(s.name) || {name: s.name};
-        this.segmentData.set(Segment.merge(data, s));
+        this.segmentData.set(s.name, Segment.merge(data, s));
       }
     }
     this._chunk = undefined;
@@ -516,7 +520,7 @@ export class Processor implements Expr.Resolver {
   }
 
   free(size: number, token?: Token) {
-    // Must be in .org for a single segment
+    // Must be in .org for a single segment.
     if (this.segments.length !== 1) {
       const at = token ? Token.at(token) : '';
       throw new Error(`.free with non-unique segment: ${this.segments}${at}`);
@@ -524,10 +528,18 @@ export class Processor implements Expr.Resolver {
       const at = token ? Token.at(token) : '';
       throw new Error(`.free in .reloc mode${at}`);
     }
+    // If we've got an open chunk, end it.
+    if (this._chunk) {
+      this._org += this._chunk.data.length;
+    }
+    this._chunk = undefined;
+    // Ensure a segment object exists.
     const name = this.segments[0];
     let s = this.segmentData.get(name);
     if (!s) this.segmentData.set(name, s = {name});
     (s.free || (s.free = [])).push([this._org, this._org + size]);
+    // Advance past the free space.
+    this._org += size;
   }
 
   segmentPrefix(prefix: string) {

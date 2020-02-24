@@ -650,8 +650,151 @@ describe('Processor', function() {
         symbols: [], segments: [],
       });
     });
+
+    it('should inherit outer definitions', function() {
+      const p = new Processor(Cpu.P02);
+      p.scope();
+      p.scope('foo');
+      p.byte({op: 'sym', sym: 'bar'});
+      p.endScope();
+      p.scope();
+      p.byte({op: 'sym', sym: 'bar'});
+      p.endScope();
+      p.endScope();
+      p.assign([ident('bar'), ASSIGN, num(14)]);
+      
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(0xff, 0xff),
+          subs: [
+            {offset: 0, size: 1, expr: {op: 'sym', num: 0}},
+            {offset: 1, size: 1, expr: {op: 'sym', num: 1}},
+          ],
+        }],
+        symbols: [
+          {expr: {op: 'num', num: 14, size: 1}},
+          {expr: {op: 'sym', num: 0}},
+        ],
+        segments: [],
+      });
+    });
+
+    it('should allow writing into a scope', function() {
+      const p = new Processor(Cpu.P02);
+      p.scope('foo');
+      p.byte({op: 'sym', sym: 'bar'});
+      p.endScope();
+      p.assign([ident('foo::bar'), ASSIGN, num(13)]);
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(0xff),
+          subs: [{offset: 0, size: 1, expr: {op: 'sym', num: 0}}],
+        }],
+        symbols: [
+          {expr: {op: 'num', num: 13, size: 1}},
+        ],
+        segments: [],
+      });
+    });
+
+    it('should allow reading out of a scope', function() {
+      const p = new Processor(Cpu.P02);
+      p.scope('foo');
+      p.assign([ident('bar'), ASSIGN, num(5)]);
+      p.endScope();
+      p.byte({op: 'sym', sym: 'foo::bar'});
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(0x05),
+        }],
+        symbols: [], segments: [],
+      });
+    });
   });
 
+  describe('.import', function() {
+    it('should work before the reference', function() {
+      const p = new Processor(Cpu.P02);
+      p.import('foo');
+      p.byte({op: 'sym', sym: 'foo'});
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(0xff),
+          subs: [{offset: 0, size: 1, expr: {op: 'sym', num: 0}}],
+        }],
+        symbols: [{expr: {op: 'import', sym: 'foo'}}],
+        segments: [],
+      });
+    });
+
+    it('should work after the reference', function() {
+      const p = new Processor(Cpu.P02);
+      p.byte({op: 'sym', sym: 'foo'});
+      p.import('foo');
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(0xff),
+          subs: [{offset: 0, size: 1, expr: {op: 'sym', num: 0}}],
+        }],
+        symbols: [{expr: {op: 'import', sym: 'foo'}}],
+        segments: [],
+      });
+    });
+
+    it('should work in a scope', function() {
+      const p = new Processor(Cpu.P02);
+      p.scope();
+      p.byte({op: 'sym', sym: 'foo'});
+      p.endScope();
+      p.import('foo');
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(0xff),
+          subs: [{offset: 0, size: 1, expr: {op: 'sym', num: 0}}],
+        }],
+        symbols: [{expr: {op: 'import', sym: 'foo'}}],
+        segments: [],
+      });
+    });
+
+    it('should emit nothing if unused', function() {
+      const p = new Processor(Cpu.P02);
+      p.import('foo');
+      p.byte(2);
+      expect(strip(p.result())).to.eql({
+        chunks: [{segments: ['code'], data: Uint8Array.of(2)}],
+        symbols: [], segments: [],
+      });
+    });
+  });
+
+  describe('.export', function() {
+    it('should export a later value', function() {
+      const p = new Processor(Cpu.P02);
+      p.export('qux');
+      p.assign([ident('qux'), ASSIGN, num(12)]);
+      expect(strip(p.result())).to.eql({
+        symbols: [{export: 'qux', expr: {op: 'num', num: 12, size: 1}}],
+        chunks: [], segments: [],
+      });
+    });
+
+    it('should export an earlier value', function() {
+      const p = new Processor(Cpu.P02);
+      p.assign([ident('qux'), ASSIGN, num(12)]);
+      p.export('qux');
+      expect(strip(p.result())).to.eql({
+        symbols: [{export: 'qux', expr: {op: 'num', num: 12, size: 1}}],
+        chunks: [], segments: [],
+      });
+    });
+  });
 
   // TODO - test all the error cases...
 });

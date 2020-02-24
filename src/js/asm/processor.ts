@@ -193,11 +193,26 @@ export class Processor implements Expr.Resolver {
   }
 
   definedSymbol(sym: string): boolean {
+    // In this case, it's okay to traverse up the scope chain since if we
+    // were to reference the symbol, it's guaranteed to be defined somehow.
+    let scope: Scope|undefined = this.currentScope;
+    const unscoped = !sym.includes('::');
+    do {
+      const s = scope.resolve(sym, false);
+      if (s) return Boolean(s.expr);
+    } while (unscoped && (scope = scope.parent));
+    return false;
+  }
+
+  constantSymbol(sym: string): boolean {
+    // If there's a symbol in a different scope, it's not actually constant.
     const s = this.currentScope.resolve(sym, false);
-    return Boolean(s && s.expr);
+    return Boolean(s && s.expr && !(s.id! < 0));
   }
 
   referencedSymbol(sym: string): boolean {
+    // If not referenced in this scope, we don't know which it is...
+    // NOTE: this is different from ca65.
     const s = this.currentScope.resolve(sym, false);
     return s != null; // NOTE: this counts definitions.
   }
@@ -577,6 +592,7 @@ export class Processor implements Expr.Resolver {
 
   append(expr: Expr, size: number) {
     const {chunk} = this;
+    expr = Expr.resolve(expr, this);
     let val = expr.num!;
 //console.log('expr:', expr, 'val:', val);
     if (expr.op !== 'num') {

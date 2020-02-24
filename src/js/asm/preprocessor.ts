@@ -26,6 +26,7 @@ export interface PreprocessedLine {
 interface Env {
   // These need to come from Processor and will depend on scope...
   definedSymbol(sym: string): boolean;
+  constantSymbol(sym: string): boolean;
   referencedSymbol(sym: string): boolean;
   evaluate(expr: Expr): number|undefined;
   // also want methods to apply shunting yard to token list?
@@ -179,10 +180,9 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
 
   private expandDirective(directive: string, line: Token[], i: number): number {
     switch (directive) {
-      case '.define':
-      case '.defined':
-      case '.ifdef':
-      case '.ifndef':
+      case '.define': 
+      case '.ifdef':  
+      case '.ifndef': 
       case '.undefine':
         return this.skipIdentifier(line, i);
       case '.skip': return this.skip(line, i);
@@ -193,6 +193,15 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
       case '.concat': return this.parseArgs(line, i, 0, this.concat);
       case '.sprintf': return this.parseArgs(line, i, 0, this.sprintf);
       case '.cond': return this.parseArgs(line, i, 0, this.cond);
+      case '.def':
+      case '.defined':
+        return this.parseArgs(line, i, 1, this.defined);
+      case '.definedsymbol':
+        return this.parseArgs(line, i, 1, this.definedSymbol);
+      case '.constantsymbol':
+        return this.parseArgs(line, i, 1, this.constantSymbol);
+      case '.referencedsymbol':
+        return this.parseArgs(line, i, 1, this.referencedSymbol);
     }
     return i + 1;
   }
@@ -279,6 +288,30 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
     throw new Error('unimplemented');
   }
 
+  private defined(cs: Token, arg: Token[]) {
+    const ident = Token.expectIdentifier(arg[0], cs);
+    Token.expectEol(arg[1], 'a single identifier');
+    return [{token: 'num', num: this.macros.has(ident) ? 1 : 0}];
+  }
+
+  private definedSymbol(cs: Token, arg: Token[]) {
+    const ident = Token.expectIdentifier(arg[0], cs);
+    Token.expectEol(arg[1], 'a single identifier');
+    return [{token: 'num', num: this.env.definedSymbol(ident) ? 1 : 0}];
+  }
+
+  private constantSymbol(cs: Token, arg: Token[]) {
+    const ident = Token.expectIdentifier(arg[0], cs);
+    Token.expectEol(arg[1], 'a single identifier');
+    return [{token: 'num', num: this.env.constantSymbol(ident) ? 1 : 0}];
+  }
+
+  private referencedSymbol(cs: Token, arg: Token[]) {
+    const ident = Token.expectIdentifier(arg[0], cs);
+    Token.expectEol(arg[1], 'a single identifier');
+    return [{token: 'num', num: this.env.referencedSymbol(ident) ? 1 : 0}];
+  }
+
   // TODO - does .byte expand its strings into bytes here?
   //   -- maybe not...
   //   -- do we need to handle string exprs at all?
@@ -336,6 +369,10 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
         this.parseIf(this.env.definedSymbol(parseOneIdent(args, cs))),
     '.ifnsym': ([cs, ...args]) =>
         this.parseIf(!this.env.definedSymbol(parseOneIdent(args, cs))),
+    '.ifconst': ([cs, ...args]) =>
+        this.parseIf(this.env.constantSymbol(parseOneIdent(args, cs))),
+    '.ifnconst': ([cs, ...args]) =>
+        this.parseIf(!this.env.constantSymbol(parseOneIdent(args, cs))),
     '.macro': (line) => this.parseMacro(line),
   };
 

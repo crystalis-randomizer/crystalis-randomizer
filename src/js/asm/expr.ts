@@ -212,22 +212,27 @@ export namespace Expr {
     }
   }
 
-  /** Returns the identifier. */
   export function identifier(expr: Expr): string {
-    const terms: string[] = [];
-    append(expr);
-    return terms.join('::');
-    function append(e: Expr) {
-      if (e.op === 'ident') {
-        terms.push(e.sym!);
-      } else if (e.op === '::') {
-        if (e.args!.length === 1) terms.push('');
-        e.args!.forEach(append);
-      } else {
-        throw new Error(`Expected identifier but got op: ${e.op}`);
-      }
-    }
+    if (expr.op === 'ident') return expr.sym!;
+    throw new Error(`Expected identifier but got op: ${expr.op}`);
   }
+
+  // /** Returns the identifier. */
+  // export function identifier(expr: Expr): string {
+  //   const terms: string[] = [];
+  //   append(expr);
+  //   return terms.join('::');
+  //   function append(e: Expr) {
+  //     if (e.op === 'ident') {
+  //       terms.push(e.sym!);
+  //     } else if (e.op === '::') {
+  //       if (e.args!.length === 1) terms.push('');
+  //       e.args!.forEach(append);
+  //     } else {
+  //       throw new Error(`Expected identifier but got op: ${e.op}`);
+  //     }
+  //   }
+  // }
 
   /** Parse a single expression, must occupy the rest of the line. */
   export function parseOnly(tokens: Token[], index = 0): Expr {
@@ -379,7 +384,7 @@ const BINARY = 2;
 const UNARY = 1;
 export const BINOPS = new Map<string, OperatorMeta>([
   // Scoping operator
-  ['::', [8, 1, BINARY]],
+  // ['::', [8, 1, BINARY]],
   // Memory hints
   //[':', [6, 0]],
   // Multiplicative operators: note that bitwise and arithmetic cannot associate
@@ -410,7 +415,7 @@ export const BINOPS = new Map<string, OperatorMeta>([
 ]);
 
 const PREFIXOPS = new Map<string, OperatorMeta>([
-  ['::', [9, -1, UNARY]], // global scope
+  // ['::', [9, -1, UNARY]], // global scope
   ['+', [9, -1, UNARY]],
   ['-', [9, -1, UNARY]],
   ['~', [9, -1, UNARY]],

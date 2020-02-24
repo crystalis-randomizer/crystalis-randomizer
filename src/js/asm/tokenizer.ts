@@ -71,10 +71,12 @@ export class Tokenizer {
   private tokenInternal(): Token {
     if (this.buffer.newline()) return {token: 'eol'};
     if (this.buffer.token(/^@+[a-z0-9_]*/i) ||
-        this.buffer.token(/^[a-z_][a-z0-9_]*/i)) return this.strTok('ident');
+        this.buffer.token(/^((::)?[a-z_][a-z0-9_]*)+/i)) {
+      return this.strTok('ident');
+    }
     if (this.buffer.token(/^\.[a-z]+/i)) return this.strTok('cs');
     if (this.buffer.token(/^:(\++|-+)/)) return this.strTok('ident');
-    if (this.buffer.token(/^(::?|\++|-+|&&?|\|\|?|[#*/,=~!^]|<[<>=]?|>[>=]?)/)) {
+    if (this.buffer.token(/^(:|\++|-+|&&?|\|\|?|[#*/,=~!^]|<[<>=]?|>[>=]?)/)) {
       return this.strTok('op');
     }
     if (this.buffer.token('[')) return {token: 'lb'};

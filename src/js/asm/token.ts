@@ -67,7 +67,7 @@ export namespace Token {
 
   // Important operator tokens
   export const COLON: Token = {token: 'op', str: ':'};
-  export const DCOLON: Token = {token: 'op', str: '::'};
+  //export const DCOLON: Token = {token: 'op', str: '::'};
   export const COMMA: Token = {token: 'op', str: ','};
   export const STAR: Token = {token: 'op', str: '*'};
   export const IMMEDIATE: Token = {token: 'op', str: '#'};

@@ -632,6 +632,27 @@ describe('Processor', function() {
     });
   });
 
+  describe('.scope', function() {
+    it('should not leak inner symbols to outer scopes', function() {
+      const p = new Processor(Cpu.P02);
+      p.assign([ident('bar'), ASSIGN, num(12)]);
+      p.scope('foo');
+      p.assign([ident('bar'), ASSIGN, num(42)]);
+      p.byte({op: 'sym', sym: 'bar'});
+      p.endScope();
+      p.byte({op: 'sym', sym: 'bar'});
+
+      expect(strip(p.result())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(42, 12),
+        }],
+        symbols: [], segments: [],
+      });
+    });
+  });
+
+
   // TODO - test all the error cases...
 });
 

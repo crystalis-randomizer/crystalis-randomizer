@@ -195,6 +195,11 @@ class LinkChunk {
 
   // Returns a list of dependent chunks, or undefined if successful.
   resolveSub(sub: Substitution, initial: boolean) { //: Iterable<number>|undefined {
+
+
+    // TODO - resolve(resolver) via chunkData to resolve banks!!
+
+
     // Do a full traverse of the expression - see what's blocking us.
     //   TODO - resolve bank here if possible, since nobody else is gonna do it.
     if (!this.subs.has(sub) && !this.selfSubs.has(sub)) return;

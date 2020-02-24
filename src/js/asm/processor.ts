@@ -2,6 +2,7 @@ import {Cpu} from './cpu';
 import {Expr} from './expr';
 import * as mod from './module';
 import {SourceInfo, Token} from './token';
+import { assertNever } from '../util';
 
 type Chunk = mod.Chunk<number[]>;
 type Module = mod.Module;
@@ -17,6 +18,8 @@ class Symbol {
    * by storing a -1 here.
    */
   id?: number;
+  /** Whether the symbol has been explicitly scoped. */
+  scoped?: boolean;
   /**
    * The expression for the symbol.  Must be a statically-evaluatable constant
    * for mutable symbols.  Undefined for forward-referenced symbols.
@@ -29,28 +32,38 @@ class Symbol {
 }
 
 abstract class BaseScope {
-  closed = false;
+  //closed = false;
   readonly symbols = new Map<string, Symbol>();
 
   protected pickScope(name: string): [string, BaseScope] {
     return [name, this];
   }
 
+  // TODO - may need additional options:
+  //   - lookup constant - won't return a mutable value or a value from
+  //     a parent scope, implies no forward ref
+  //   - shallow - don't recurse up the chain, for assignment only??
+  // Might just mean allowForwardRef is actually just a mode string?
+  //  * ca65's .definedsymbol is more permissive than .ifconst
   resolve(name: string, allowForwardRef: true): Symbol;
   resolve(name: string, allowForwardRef?: boolean): Symbol|undefined;
   resolve(name: string, allowForwardRef?: boolean): Symbol|undefined {
     const [tail, scope] = this.pickScope(name);
     let sym = scope.symbols.get(tail);
 //console.log('resolve:',name,'sym=',sym,'fwd?',allowForwardRef);
-    if (sym) return sym;
-    if (scope.closed) throw new Error(`Could not resolve symbol: ${name}`);
+    if (sym) {
+      if (tail !== name) sym.scoped = true;
+      return sym;
+    }
     if (!allowForwardRef) return undefined;
+    // if (scope.closed) throw new Error(`Could not resolve symbol: ${name}`);
     // make a new symbol - but only in an open scope
     //const symbol = {id: this.symbolArray.length};
 //console.log('created:',symbol);
     //this.symbolArray.push(symbol);
-    const symbol = {};
+    const symbol: Symbol = {};
     scope.symbols.set(tail, symbol);
+    if (tail !== name) symbol.scoped = true;
     return symbol;
   }
 }
@@ -58,8 +71,9 @@ abstract class BaseScope {
 class Scope extends BaseScope {
   readonly global: Scope;
   readonly children = new Map<string, Scope>();
+  readonly anonymousChildren: Scope[] = [];
 
-  constructor(readonly parent?: Scope) {
+  constructor(readonly parent?: Scope, readonly kind?: 'scope'|'proc') {
     super();
     this.global = parent ? parent.global : this;
   }
@@ -87,6 +101,17 @@ class Scope extends BaseScope {
     }
     return [tail, scope];
   }
+
+  // close() {
+  //   if (!this.parent) throw new Error(`Cannot close global scope`);
+  //   this.closed = true;
+  //   // Any undefined identifiers in the scope are automatically
+  //   // promoted to the parent scope.
+  //   for (const [name, sym] of this.symbols) {
+  //     if (sym.expr) continue; // if it's defined in the scope, do nothing
+  //     const parentSym = this.parent.symbols.get(sym);
+  //   }
+  // }
 }
 
 class CheapScope extends BaseScope {
@@ -114,8 +139,12 @@ export class Processor implements Expr.Resolver {
   /** All symbols in this object. */
   private symbols: Symbol[] = [];
 
+  /** Global symbols. */
+  // NOTE: we could add 'force-import', 'detect', or others...
+  private globals = new Map<string, 'export'|'import'>();
+
   /** The current scope. */
-  private scope = new Scope();
+  private currentScope = new Scope();
 
   /** A scope for cheap local labels. */
   private cheapLocals = new CheapScope();
@@ -164,12 +193,12 @@ export class Processor implements Expr.Resolver {
   }
 
   definedSymbol(sym: string): boolean {
-    const s = this.scope.resolve(sym, false);
+    const s = this.currentScope.resolve(sym, false);
     return Boolean(s && s.expr);
   }
 
   referencedSymbol(sym: string): boolean {
-    const s = this.scope.resolve(sym, false);
+    const s = this.currentScope.resolve(sym, false);
     return s != null; // NOTE: this counts definitions.
   }
 
@@ -214,7 +243,7 @@ export class Processor implements Expr.Resolver {
       if (expr == null) throw new Error(`Bad relative backref: ${name}`);
       return expr;
     }
-    const scope = name.startsWith('@') ? this.cheapLocals : this.scope;
+    const scope = name.startsWith('@') ? this.cheapLocals : this.currentScope;
     const sym = scope.resolve(name, true);
     if (sym.expr) return sym.expr;
     // if the expression is not yet known then refer to the symbol table,
@@ -232,21 +261,95 @@ export class Processor implements Expr.Resolver {
     return {org: this.chunks[chunk].org};
   }
 
-  result(): Module {
+  closeScopes() {
     this.cheapLocals.clear();
+    // Need to find any undeclared symbols in nested scopes and link
+    // them to a parent scope symbol if possible.
+    function close(scope: Scope) {
+      for (const child of scope.children.values()) {
+        close(child);
+      }
+      for (const child of scope.anonymousChildren) {
+        close(child);
+      }
+      for (const [name, sym] of scope.symbols) {
+        if (sym.expr || sym.id == null) continue;
+        if (scope.parent) {
+          // TODO - record where it was referenced?
+          if (sym.scoped) throw new Error(`Symbol '${name}' undefined`);
+          const parentSym = scope.parent.symbols.get(name);
+          if (!parentSym) {
+            // just alias it directly in the parent scope
+            scope.parent.symbols.set(name, sym);
+          } else if (parentSym.id != null) {
+            sym.expr = {op: 'sym', num: parentSym.id};
+          } else if (parentSym.expr) {
+            sym.expr = parentSym.expr;
+          } else {
+            // must have either id or expr...?
+            throw new Error(`Impossible: ${name}`);
+          }
+        }
+        // handle global scope separately...
+      }
+    }
+
+    // test case: ref a name in two child scopes, define it in grandparent
+
+    if (this.currentScope.parent) {
+      // TODO - record where it was opened?
+      throw new Error(`Scope never closed`);
+    }
+    close(this.currentScope);
+
+    for (const [name, global] of this.globals) {
+      const sym = this.currentScope.symbols.get(name);
+      if (global === 'export') {
+        if (!sym?.expr) throw new Error(`Symbol '${name}' undefined`);
+        if (sym.id == null) {
+          sym.id = this.symbols.length;
+          this.symbols.push(sym);
+        }
+        sym.export = name;
+      } else if (global === 'import') {
+        if (!sym) continue; // okay to import but not use.
+        // TODO - record both positions?
+        if (sym.expr) throw new Error(`Already defined: ${name}`);
+        sym.expr = {op: 'import', sym: name};
+      } else {
+        assertNever(global);
+      }
+    }
+
+    for (const [name, sym] of this.currentScope.symbols) {
+      if (!sym.expr) throw new Error(`Symbol '${name}' undefined`);
+    }
+  }
+
+  result(): Module {
+    this.closeScopes();
+
+    // TODO - handle imports and exports out of the scope
+    // TODO - add .scope and .endscope and forward scope vars at end to parent
+
+    // Process and write the data
     const chunks: mod.Chunk<Uint8Array>[] = [];
     for (const chunk of this.chunks) {
       chunks.push({...chunk, data: Uint8Array.from(chunk.data)});
     }
     const symbols: mod.Symbol[] = [];
-    for (const {id, ref, ...symbol} of this.symbols) {
-      symbols.push(symbol);
+    for (const symbol of this.symbols) {
+      if (symbol.expr == null) throw new Error(`Symbol undefined`);
+      const out: mod.Symbol = {expr: symbol.expr};
+      if (symbol.export != null) out.export = symbol.export;
+      symbols.push(out);
     }
     const segments: Segment[] = [...this.segmentData.values()];
     return {chunks, symbols, segments};
   }
 
   directive(directive: string, tokens: Token[]) {
+    // TODO - record line information, rewrap error messages?
     switch (directive) {
       case '.org': return this.org(this.parseConst(tokens));
       case '.reloc': return this.parseNoArgs(tokens), this.reloc();
@@ -256,6 +359,12 @@ export class Processor implements Expr.Resolver {
       case '.word': return this.word(...this.parseDataList(tokens));
       case '.free': return this.free(this.parseConst(tokens), tokens[0]);
       case '.segmentprefix': return this.segmentPrefix(this.parseStr(tokens));
+      case '.import': return this.import(...this.parseIdentifierList(tokens));
+      case '.export': return this.export(...this.parseIdentifierList(tokens));
+      case '.scope': return this.scope(this.parseOptionalIdentifier(tokens));
+      case '.endscope': return this.parseNoArgs(tokens), this.endScope();
+      case '.proc': return this.proc(this.parseRequiredIdentifier(tokens));
+      case '.endproc': return this.parseNoArgs(tokens), this.endScope();
     }
     throw new Error(`Unknown directive: ${Token.nameAt(tokens[0])}`);
   }
@@ -316,7 +425,13 @@ export class Processor implements Expr.Resolver {
   }
 
   assignSymbol(ident: string, mut: boolean, expr: Expr, token?: Token) {
-    const scope = ident.startsWith('@') ? this.cheapLocals : this.scope;
+    const scope = ident.startsWith('@') ? this.cheapLocals : this.currentScope;
+    // NOTE: This is incorrect - it will look up the scope chain when it
+    // shouldn't.  Mutables may or may not want this, immutables must not.
+    // Whether this is tied to allowFwdRef or not is unclear.  It's also
+    // unclear whether we want to allow defining symbols in outside scopes:
+    //   ::foo = 43
+    // FWIW, ca65 _does_ allow this, as well as foo::bar = 42 after the scope.
     let sym = scope.resolve(ident, !mut);
     if (sym && (mut !== (sym.id! < 0))) {
       const at = token ? Token.at(token) : '';
@@ -562,6 +677,55 @@ export class Processor implements Expr.Resolver {
     this._segmentPrefix = prefix;
   }
 
+  import(...idents: string[]) {
+    for (const ident of idents) {
+      this.globals.set(ident, 'import');
+    }
+  }
+
+  export(...idents: string[]) {
+    for (const ident of idents) {
+      this.globals.set(ident, 'export');
+    }
+  }
+
+  scope(name?: string) {
+    this.enterScope(name, 'scope');
+  }
+
+  proc(name: string) {
+    this.label(name);
+    this.enterScope(name, 'proc');
+  }
+
+  enterScope(name: string|undefined, kind: 'scope'|'proc') {
+    const existing = name ? this.currentScope.children.get(name) : undefined;
+    if (existing) {
+      if (this.opts.reentrantScopes) {
+        this.currentScope = existing;
+        return;
+      }
+      throw new Error(`Cannot re-enter scope ${name}`);
+    }
+    const child = new Scope(this.currentScope, kind);
+    if (name) {
+      this.currentScope.children.set(name, child);
+    } else {
+      this.currentScope.anonymousChildren.push(child);
+    }
+    this.currentScope = child;
+  }
+
+  endScope() { this.exitScope('scope'); }
+  endProc() { this.exitScope('proc'); }
+
+  exitScope(kind: 'scope'|'proc') {
+    if (this.currentScope.kind !== kind || !this.currentScope.parent) {
+      throw new Error(`.end${kind} without .${kind}`);
+    }
+    this.currentScope = this.currentScope.parent;
+  }
+
   // Utility methods for processing arguments
 
   parseConst(tokens: Token[], start = 1): number {
@@ -590,7 +754,11 @@ export class Processor implements Expr.Resolver {
     Token.expectEol(tokens[start + 1], "a single string");
     return str;
   }
+
   parseSegmentList(tokens: Token[], start = 1): Array<string|Segment> {
+    if (tokens.length < start + 1) {
+      throw new Error(`Expected a segment list${Token.at(tokens[start - 1])}`);
+    }
     return Token.parseArgList(tokens, 1).map(ts => {
       const str = this._segmentPrefix + Token.expectString(ts[0]);
       if (ts.length === 1) return str;
@@ -614,9 +782,13 @@ export class Processor implements Expr.Resolver {
       return seg;
     });
   }
+
   parseDataList(tokens: Token[]): Array<Expr>;
   parseDataList(tokens: Token[], allowString: true): Array<Expr|string>;
   parseDataList(tokens: Token[], allowString = false): Array<Expr|string> {
+    if (tokens.length < 2) {
+      throw new Error(`Expected a data list${Token.at(tokens[0])}`);
+    }
     const out: Array<Expr|string> = [];
     for (const term of Token.parseArgList(tokens, 1)) {
       if (allowString && term.length === 1 && term[0].token === 'str') {
@@ -626,6 +798,34 @@ export class Processor implements Expr.Resolver {
       }
     }
     return out;
+  }
+
+  parseIdentifierList(tokens: Token[]): string[] {
+    if (tokens.length < 2) {
+      throw new Error(`Expected identifier(s)${Token.at(tokens[0])}`);
+    }
+    const out: string[] = [];
+    for (const term of Token.parseArgList(tokens, 1)) {
+      if (term.length !== 1 || term[0].token !== 'ident') {
+        throw new Error(`Expected identifier: ${Token.nameAt(term[0])}`);
+      }
+      out.push(Token.str(term[0]));
+    }
+    return out;
+  }
+
+  parseOptionalIdentifier(tokens: Token[]): string|undefined {
+    const tok = tokens[1];
+    if (!tok) return undefined;
+    const ident = Token.expectIdentifier(tok);
+    Token.expectEol(tokens[2]);
+    return ident;
+  }
+
+  parseRequiredIdentifier(tokens: Token[]): string {
+    const ident = Token.expectIdentifier(tokens[1]);
+    Token.expectEol(tokens[2]);
+    return ident;
   }
 }
 
@@ -663,5 +863,6 @@ export type Arg = ['acc' | 'imp'] | [ArgMode, Expr];
 export namespace Processor {
   export interface Options {
     allowBrackets?: boolean;
+    reentrantScopes?: boolean;
   }
 }

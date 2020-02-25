@@ -12,8 +12,7 @@ const [] = [util];
 function tokenize(str: string, opts: Tokenizer.Options = {}): Token[][] {
   const out = [];
   const tokenizer = new Tokenizer(str, 'input.s', opts);
-  let line;
-  while ((line = tokenizer.line()).length) {
+  for (let line = tokenizer.next(); line; line = tokenizer.next()) {
     out.push(line.map(strip));
   }
   return out;

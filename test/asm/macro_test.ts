@@ -59,10 +59,8 @@ function strip(t: Token): Token {
 function tok(str: string): Token[][] {
   const t = new Tokenizer(str);
   const out = [];
-  while (true) {
-    const line = t.line().map(strip);
-    if (!line.length) break;
-    out.push(line);
+  for (let line = t.next(); line; line = t.next()) {
+    out.push(line.map(strip));
   }
   return out;
 }

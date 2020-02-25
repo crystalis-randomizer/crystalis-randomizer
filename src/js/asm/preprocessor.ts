@@ -1,18 +1,13 @@
 import {Define} from './define';
 import {Expr} from './expr';
 import {Macro} from './macro';
-import {Token} from './token';
+import {Token, TokenSource} from './token';
 import {TokenStream} from './tokenstream';
 
 // TODO - figure out how to actually keep track of stack depth?
 //  - might need to insert a special token at the end of an expansion
 //    to know when to release the frame?
 const MAX_STACK_DEPTH = 100;
-
-export interface PreprocessedLine {
-  kind: 'assign' | 'label' | 'instruction' | 'directive';
-  tokens: Token[];
-}
 
 // interface TokenSource {
 //   next(): Token[];
@@ -22,6 +17,16 @@ export interface PreprocessedLine {
 //   exit(): void;
 //   //options(): Tokenizer.Options;
 // }
+
+// Since the Env is most closely tied to the Assembler, we tie the
+// unique ID generation to it as well, without adding additional
+// constraints on the Assembler API.
+const ID_MAP = new WeakMap<Env, {next(): number}>();
+function idGen(env: Env): {next(): number} {
+  let id = ID_MAP.get(env);
+  if (!id) ID_MAP.set(env, id = (num => ({next: () => num++}))(0));
+  return id;
+}
 
 interface Env {
   // These need to come from Processor and will depend on scope...
@@ -33,64 +38,36 @@ interface Env {
   //  - turn it into a json tree...?
 }
 
-interface Source<T> {
-  next(): T;
-}
-
-export class Preprocessor implements IterableIterator<PreprocessedLine> {
+export class Preprocessor extends TokenSource.Abstract {
   private readonly macros = new Map<string, Define|Macro>();
-  private sink: Iterator<PreprocessedLine|undefined>|undefined;
   private leftovers: Token[]|undefined = undefined;
   // NOTE: there is no scope here... - not for macros
   //  - only symbols have scope
   // TODO - evaluate constants...
 
-  constructor(readonly stream: TokenStream,
-              readonly idGenerator: Source<number>,
-              readonly env: Env) {}
-
-  [Symbol.iterator](): this {
-    return this;
+  constructor(readonly stream: TokenStream, readonly env: Env) {
+    super();
   }
 
   // For use as a token source in the next stage.
-  next(): {value: PreprocessedLine, done: boolean} {
-    while (true) {
-      if (!this.sink) this.sink = this.pump();
-      const {value, done} = this.sink!.next();
-      if (done) {
-        this.sink = undefined;
-        continue;
-      }
-      return {value: value!, done: !value};
-    }
-  }
-
-  /** Attempt to emit a new line. */
-  private * pump(): Generator<PreprocessedLine|undefined> {
+  * pump(): Generator<Token[]|undefined> {
     const line = this.readLine();
+    if (line == null) return void (yield line); // EOF
     const front = line[0];
-    if (!front) return void (yield undefined); // EOF
     switch (front.token) {
       case 'ident':
         // Possibilities: (1) label, (2) instruction/assign, (3) macro
         // Labels get split out.  We don't distinguish assigns yet.
         if (Token.eq(line[1], Token.COLON)) {
-          yield {kind: 'label', tokens: line.splice(0, 2)};
+          yield line.splice(0, 2);
           this.putBack(line);
           return;
         }
-        if (this.tryExpandMacro(line)) return;
-        if (Token.eq(line[1], Token.ASSIGN) || Token.eq(line[1], Token.SET)) {
-          yield {kind: 'assign', tokens: line};
-        } else {
-          yield {kind: 'instruction', tokens: line};
-        }
+        if (!this.tryExpandMacro(line)) yield line;
         return;
 
       case 'cs':
-        if (this.tryRunDirective(line)) return;
-        yield {kind: 'directive', tokens: line};
+        if (!this.tryRunDirective(line)) yield line;
         return;
 
       case 'op':
@@ -105,10 +82,10 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
             label.push({token: 'op', str: ':'});
             line.splice(0, 1);
           }
-          yield {kind: 'label', tokens: label};
+          yield label;
           return;
         } else if (front.str === ':') {
-          yield {kind: 'label', tokens: line.splice(0, 1)};
+          yield line.splice(0, 1);
           return;
         }
 
@@ -118,14 +95,16 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
   }
 
   // Expand a single line of tokens from the front of toks.
-  private readLine(): Token[] {
+  private readLine(): Token[]|undefined {
     if (this.leftovers) { // check for leftovers first
       const out = this.leftovers;
       this.leftovers = undefined;
       return out;
     }
     // Apply .define expansions as necessary.
-    return this.expandLine(this.stream.next());
+    const line = this.stream.next();
+    if (line == null) return line;
+    return this.expandLine(line);
   }
 
   ////////////////////////////////////////////////////////////////
@@ -172,7 +151,7 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
     if (first.token !== 'ident') throw new Error(`impossible`);
     const macro = this.macros.get(first.str);
     if (!(macro instanceof Macro)) return false;
-    const expansion = macro.expand(line, this.idGenerator);
+    const expansion = macro.expand(line, idGen(this.env));
     this.stream.enter();
     this.stream.unshift(...expansion); // process them all over again...
     return true;
@@ -413,8 +392,8 @@ export class Preprocessor implements IterableIterator<PreprocessedLine> {
     const result: Token[][] = [];
     while (depth > 0) {
       const line = this.stream.next();
+      if (!line) throw new Error(`EOF looking for .endif`); // TODO: start?
       const front = line[0];
-      if (!front) throw new Error(`EOF looking for .endif`); // TODO: start?
       if (Token.eq(front, Token.ENDIF)) {
         depth--;
         continue;
@@ -605,9 +584,4 @@ function noGarbage(token: Token|undefined): void {
 
 function badClose(open: string, tok: Token): never {
   throw new Error(`${Token.name(tok)} with no ${open}${Token.at(tok)}`);
-}
-
-export interface Line {
-  labels: string[];
-  tokens: Token[];
 }

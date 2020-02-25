@@ -3,7 +3,7 @@ import {expect} from 'chai';
 import {Cpu} from '../../src/js/asm/cpu';
 import {Expr} from '../../src/js/asm/expr';
 import {Module} from '../../src/js/asm/module';
-import {Processor} from '../../src/js/asm/processor';
+import {Assembler} from '../../src/js/asm/assembler';
 import {Token} from '../../src/js/asm/token';
 import * as util from 'util';
 
@@ -14,7 +14,7 @@ function num(num: number): Token { return {token: 'num', num}; }
 function str(str: string): Token { return {token: 'str', str}; }
 function cs(str: string): Token { return {token: 'cs', str}; }
 function op(str: string): Token { return {token: 'op', str}; }
-const {COLON, COMMA, ASSIGN, IMMEDIATE, LP, RP} = Token;
+const {COLON, COMMA, IMMEDIATE, LP, RP} = Token;
 const ORG = cs('.org');
 const RELOC = cs('.reloc');
 const ASSERT = cs('.assert');
@@ -22,13 +22,13 @@ const SEGMENT = cs('.segment');
 
 const [] = [str, COMMA, LP, RP, ORG, RELOC, ASSERT, SEGMENT];
 
-describe('Processor', function() {
+describe('Assembler', function() {
 
   describe('Simple instructions', function() {
     it('should handle `lda #$03`', function() {
-      const p = new Processor(Cpu.P02);
-      p.instruction([ident('lda'), IMMEDIATE, num(3)]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.instruction([ident('lda'), IMMEDIATE, num(3)]);
+      expect(strip(a.module())).to.eql({
         segments: [],
         chunks: [{segments: ['code'], data: Uint8Array.of(0xa9, 3)}],
         symbols: [],
@@ -36,9 +36,9 @@ describe('Processor', function() {
     });
 
     it('should handle `sta $02`', function() {
-      const p = new Processor(Cpu.P02);
-      p.instruction([ident('sta'), num(2)]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.instruction([ident('sta'), num(2)]);
+      expect(strip(a.module())).to.eql({
         segments: [],
         chunks: [{segments: ['code'], data: Uint8Array.of(0x85, 2)}],
         symbols: [],
@@ -46,9 +46,9 @@ describe('Processor', function() {
     });
 
     it('should handle `ldy $032f`', function() {
-      const p = new Processor(Cpu.P02);
-      p.instruction([ident('ldy'), num(0x32f)]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.instruction([ident('ldy'), num(0x32f)]);
+      expect(strip(a.module())).to.eql({
         segments: [],
         chunks: [{segments: ['code'], data: Uint8Array.of(0xac, 0x2f, 3)}],
         symbols: [],
@@ -56,9 +56,9 @@ describe('Processor', function() {
     });
 
     it('should handle `rts`', function() {
-      const p = new Processor(Cpu.P02);
-      p.instruction([ident('rts')]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.instruction([ident('rts')]);
+      expect(strip(a.module())).to.eql({
         segments: [],
         chunks: [{segments: ['code'], data: Uint8Array.of(0x60)}],
         symbols: [],
@@ -66,9 +66,9 @@ describe('Processor', function() {
     });
 
     it('should handle `lda ($24),y`', function() {
-      const p = new Processor(Cpu.P02);
-      p.instruction([ident('lda'), LP, num(0x24), RP, COMMA, ident('y')]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.instruction([ident('lda'), LP, num(0x24), RP, COMMA, ident('y')]);
+      expect(strip(a.module())).to.eql({
         segments: [],
         chunks: [{segments: ['code'], data: Uint8Array.of(0xb1, 0x24)}],
         symbols: [],
@@ -76,9 +76,9 @@ describe('Processor', function() {
     });
 
     it('should handle `sta ($0320,x)`', function() {
-      const p = new Processor(Cpu.P02);
-      p.instruction([ident('sta'), LP, num(0x320), COMMA, ident('x'), RP]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.instruction([ident('sta'), LP, num(0x320), COMMA, ident('x'), RP]);
+      expect(strip(a.module())).to.eql({
         segments: [],
         chunks: [{segments: ['code'], data: Uint8Array.of(0x81, 0x20, 3)}],
         symbols: [],
@@ -86,9 +86,9 @@ describe('Processor', function() {
     });
 
     it('should handle `lsr`', function() {
-      const p = new Processor(Cpu.P02);
-      p.instruction([ident('lsr')]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.instruction([ident('lsr')]);
+      expect(strip(a.module())).to.eql({
         segments: [],
         chunks: [{segments: ['code'], data: Uint8Array.of(0x4a)}],
         symbols: [],
@@ -96,9 +96,9 @@ describe('Processor', function() {
     });
 
     it('should handle `lsr a`', function() {
-      const p = new Processor(Cpu.P02);
-      p.instruction([ident('lsr'), ident('A')]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.instruction([ident('lsr'), ident('A')]);
+      expect(strip(a.module())).to.eql({
         segments: [],
         chunks: [{segments: ['code'], data: Uint8Array.of(0x4a)}],
         symbols: [],
@@ -106,9 +106,9 @@ describe('Processor', function() {
     });
 
     it('should handle `ora $480,x`', function() {
-      const p = new Processor(Cpu.P02);
-      p.instruction([ident('ora'), num(0x480), COMMA, ident('x')]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.instruction([ident('ora'), num(0x480), COMMA, ident('x')]);
+      expect(strip(a.module())).to.eql({
         segments: [],
         chunks: [{segments: ['code'], data: Uint8Array.of(0x1d, 0x80, 4)}],
         symbols: [],
@@ -118,10 +118,10 @@ describe('Processor', function() {
 
   describe('Symbols', function() {
     it('should fill in an immediately-available value', function() {
-      const p = new Processor(Cpu.P02);
-      p.assign([ident('val'), ASSIGN, num(0x23)]);
-      p.instruction([ident('lda'), IMMEDIATE, ident('val')]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.assign('val', 0x23);
+      a.instruction([ident('lda'), IMMEDIATE, ident('val')]);
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0xa9, 0x23),
@@ -132,12 +132,12 @@ describe('Processor', function() {
     });
 
     it('should fill in an immediately-available label', function() {
-      const p = new Processor(Cpu.P02);
-      p.org(0x9135);
-      p.label('foo');
-      p.instruction([ident('ldx'), IMMEDIATE, op('<'), ident('foo')]);
-      p.instruction([ident('ldy'), IMMEDIATE, op('>'), ident('foo')]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.org(0x9135);
+      a.label('foo');
+      a.instruction([ident('ldx'), IMMEDIATE, op('<'), ident('foo')]);
+      a.instruction([ident('ldy'), IMMEDIATE, op('>'), ident('foo')]);
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           org: 0x9135,
@@ -149,27 +149,27 @@ describe('Processor', function() {
     });
 
     it('should substitute a forward referenced value', function() {
-      const p = new Processor(Cpu.P02);
-      p.instruction([ident('lda'), IMMEDIATE, ident('val')]);
-      p.assign([ident('val'), ASSIGN, num(0x23)]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.instruction([ident('lda'), IMMEDIATE, ident('val')]);
+      a.assign('val', 0x23);
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0xa9, 0xff),
           subs: [{offset: 1, size: 1, expr: {op: 'sym', num: 0}}],
         }],
-        symbols: [{expr: {op: 'num', num: 0x23, size: 1}}],
+        symbols: [{expr: {op: 'num', num: 0x23}}],
         segments: [],
       });
     });
 
     it('should substitute a forward referenced label', function() {
-      const p = new Processor(Cpu.P02);
-      p.directive('.org', [cs('.org'), num(0x8000)]);
-      p.instruction([ident('jsr'), ident('foo')]);
-      p.instruction([ident('lda'), IMMEDIATE, num(0)]);
-      p.label('foo');
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.directive([cs('.org'), num(0x8000)]);
+      a.instruction([ident('jsr'), ident('foo')]);
+      a.instruction([ident('lda'), IMMEDIATE, num(0)]);
+      a.label('foo');
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           org: 0x8000,
@@ -183,13 +183,13 @@ describe('Processor', function() {
     });
 
     it('should allow overwriting mutable symbols', function() {
-      const p = new Processor(Cpu.P02);
-      p.assign([ident('foo'), cs('.set'), num(5)]);
-      p.instruction([ident('lda'), IMMEDIATE, ident('foo')]);
-      p.assign([ident('foo'), cs('.set'), num(6)]);
-      p.instruction([ident('lda'), IMMEDIATE, ident('foo')]);
+      const a = new Assembler(Cpu.P02);
+      a.set('foo', 5);
+      a.instruction([ident('lda'), IMMEDIATE, ident('foo')]);
+      a.set('foo', 6);
+      a.instruction([ident('lda'), IMMEDIATE, ident('foo')]);
 
-      expect(strip(p.result())).to.eql({
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0xa9, 5, 0xa9, 6),
@@ -198,29 +198,48 @@ describe('Processor', function() {
     });
 
     it('should not allow redefining immutable symbols', function() {
-      const p = new Processor(Cpu.P02);
-      p.assign([ident('foo'), op('='), num(5)]);
-      expect(() => p.assign([ident('foo'), op('='), num(5)]))
+      const a = new Assembler(Cpu.P02);
+      a.assign('foo', 5);
+      expect(() => a.assign('foo', 5))
           .to.throw(Error, /Redefining symbol foo/);
-      expect(() => p.label('foo')).to.throw(Error, /Redefining symbol foo/);
+      expect(() => a.label('foo')).to.throw(Error, /Redefining symbol foo/);
     });
 
     it('should not allow redefining labels', function() {
-      const p = new Processor(Cpu.P02);
-      p.label('foo');
-      expect(() => p.assign([ident('foo'), op('='), num(5)]))
+      const a = new Assembler(Cpu.P02);
+      a.label('foo');
+      expect(() => a.assign('foo', 5))
           .to.throw(Error, /Redefining symbol foo/);
-      expect(() => p.label('foo')).to.throw(Error, /Redefining symbol foo/);
+      expect(() => a.label('foo')).to.throw(Error, /Redefining symbol foo/);
+    });
+
+    it('should substitute a formula', function() {
+      const a = new Assembler(Cpu.P02);
+      a.assign('val', {op: '+', args: [{op: 'num', num: 1},
+                                       {op: 'sym', sym: 'x'}]});
+      a.instruction([ident('lda'), IMMEDIATE, ident('val')]);
+      a.assign('x', 2);
+      expect(strip(a.module())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(0xa9, 0xff),
+          subs: [{offset: 1, size: 1,
+                  expr: {op: '+', args: [{op: 'num', num: 1},
+                                         {op: 'sym', num: 0}]}}],
+        }],
+        symbols: [{expr: {op: 'num', num: 2}}],
+        segments: [],
+      });
     });
   });
 
   describe('Cheap locals', function() {
     it('should handle backward refs', function() {
-      const p = new Processor(Cpu.P02);
-      p.label('@foo');
-      p.instruction([ident('ldx'), IMMEDIATE, op('<'), ident('@foo')]);
-      p.instruction([ident('ldy'), IMMEDIATE, op('>'), ident('@foo')]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.label('@foo');
+      a.instruction([ident('ldx'), IMMEDIATE, op('<'), ident('@foo')]);
+      a.instruction([ident('ldy'), IMMEDIATE, op('>'), ident('@foo')]);
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0xa2, 0xff, 0xa0, 0xff),
@@ -238,11 +257,11 @@ describe('Processor', function() {
     });
 
     it('should hanle forward refs', function() {
-      const p = new Processor(Cpu.P02);
-      p.instruction([ident('jsr'), ident('@foo')]);
-      p.instruction([ident('lda'), IMMEDIATE, num(0)]);
-      p.label('@foo');
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.instruction([ident('jsr'), ident('@foo')]);
+      a.instruction([ident('lda'), IMMEDIATE, num(0)]);
+      a.label('@foo');
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0x20, 0xff, 0xff,
@@ -255,25 +274,25 @@ describe('Processor', function() {
     });
 
     it('should not allow using a cheap local name for non-labels', function() {
-      const p = new Processor(Cpu.P02);
-      expect(() => p.assign([ident('@foo'), op('='), num(5)]))
+      const a = new Assembler(Cpu.P02);
+      expect(() => a.assign('@foo', 5))
           .to.throw(Error, /Cheap locals may only be labels: @foo/);
     });
 
     it('should not allow reusing names in the same cheap scope', function() {
-      const p = new Processor(Cpu.P02);
-      p.label('@foo');
-      expect(() => p.label('@foo')).to.throw(Error, /Redefining symbol @foo/);
+      const a = new Assembler(Cpu.P02);
+      a.label('@foo');
+      expect(() => a.label('@foo')).to.throw(Error, /Redefining symbol @foo/);
     });
 
     it('should clear the scope on a non-cheap label', function() {
-      const p = new Processor(Cpu.P02);
-      p.label('@foo');
-      p.instruction([ident('jsr'), ident('@foo')]);
-      p.label('bar');
-      p.instruction([ident('jsr'), ident('@foo')]);
-      p.label('@foo');
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.label('@foo');
+      a.instruction([ident('jsr'), ident('@foo')]);
+      a.label('bar');
+      a.instruction([ident('jsr'), ident('@foo')]);
+      a.label('@foo');
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0x20, 0xff, 0xff,
@@ -288,34 +307,34 @@ describe('Processor', function() {
     });
 
     it('should not clear the scope on a symbol', function() {
-      const p = new Processor(Cpu.P02);
-      p.label('@foo');
-      p.assign([ident('bar'), op('='), num(2)]);
-      expect(() => p.label('@foo')).to.throw(Error, /Redefining symbol @foo/);
+      const a = new Assembler(Cpu.P02);
+      a.label('@foo');
+      a.assign('bar', 2);
+      expect(() => a.label('@foo')).to.throw(Error, /Redefining symbol @foo/);
     });
 
     it('should be an error if a cheap label is never defined', function() {
-      const p = new Processor(Cpu.P02);
-      p.instruction([ident('jsr'), ident('@foo')]);
-      expect(() => p.label('bar'))
+      const a = new Assembler(Cpu.P02);
+      a.instruction([ident('jsr'), ident('@foo')]);
+      expect(() => a.label('bar'))
           .to.throw(Error, /Cheap local label never defined: @foo/);
-      expect(() => p.result())
+      expect(() => a.module())
           .to.throw(Error, /Cheap local label never defined: @foo/);
     });
   });
 
   describe('Anonymous labels', function() {
     it('should work for forward references', function() {
-      const p = new Processor(Cpu.P02);
-      p.instruction([ident('bne'), op(':'), op('++')]);
-      p.label(':');
-      p.instruction([ident('bcc'), op(':'), op('+++')]);
-      p.label(':'); // first target
-      p.instruction([ident('lsr')]);
-      p.label(':');
-      p.instruction([ident('lsr')]);
-      p.label(':'); // second target
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.instruction([ident('bne'), op(':'), op('++')]);
+      a.label(':');
+      a.instruction([ident('bcc'), op(':'), op('+++')]);
+      a.label(':'); // first target
+      a.instruction([ident('lsr')]);
+      a.label(':');
+      a.instruction([ident('lsr')]);
+      a.label(':'); // second target
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0xd0, 0xff, 0x90, 0xff, 0x4a, 0x4a),
@@ -332,17 +351,17 @@ describe('Processor', function() {
     });
 
     it('should work for backward references', function() {
-      const p = new Processor(Cpu.P02);
-      p.label(':'); // first target
-      p.instruction([ident('lsr')]);
-      p.label(':');
-      p.instruction([ident('lsr')]);
-      p.instruction([ident('lsr')]);
-      p.label(':'); // second target
-      p.instruction([ident('bne'), op(':'), op('---')]);
-      p.label(':');
-      p.instruction([ident('bcc'), op(':'), op('--')]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.label(':'); // first target
+      a.instruction([ident('lsr')]);
+      a.label(':');
+      a.instruction([ident('lsr')]);
+      a.instruction([ident('lsr')]);
+      a.label(':'); // second target
+      a.instruction([ident('bne'), op(':'), op('---')]);
+      a.label(':');
+      a.instruction([ident('bcc'), op(':'), op('--')]);
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0x4a, 0x4a, 0x4a, 0xd0, 0xfb, 0x90, 0xfc),
@@ -351,11 +370,11 @@ describe('Processor', function() {
     });
 
     it('should allow one label for both forward directions', function() {
-      const p = new Processor(Cpu.P02);
-      p.instruction([ident('bne'), op(':'), op('+')]);
-      p.label(':');
-      p.instruction([ident('bcc'), op(':'), op('-')]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.instruction([ident('bne'), op(':'), op('+')]);
+      a.label(':');
+      a.instruction([ident('bcc'), op(':'), op('-')]);
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0xd0, 0xff, 0x90, 0xfe),
@@ -370,15 +389,15 @@ describe('Processor', function() {
 
   describe('Relative labels', function() {
     it('should work for forward references', function() {
-      const p = new Processor(Cpu.P02);
-      p.instruction([ident('bne'), op('++')]);
-      p.label('+');
-      p.instruction([ident('bcc'), op('+++')]);
-      p.label('++');
-      p.instruction([ident('lsr')]);
-      p.instruction([ident('lsr')]);
-      p.label('+++');
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.instruction([ident('bne'), op('++')]);
+      a.label('+');
+      a.instruction([ident('bcc'), op('+++')]);
+      a.label('++');
+      a.instruction([ident('lsr')]);
+      a.instruction([ident('lsr')]);
+      a.label('+++');
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0xd0, 0xff, 0x90, 0xff, 0x4a, 0x4a),
@@ -395,15 +414,15 @@ describe('Processor', function() {
     });
 
     it('should work for backward references', function() {
-      const p = new Processor(Cpu.P02);
-      p.label('--'); // first target
-      p.instruction([ident('lsr')]);
-      p.instruction([ident('lsr')]);
-      p.instruction([ident('lsr')]);
-      p.label('-'); // second target
-      p.instruction([ident('bne'), op('--')]);
-      p.instruction([ident('bcc'), op('-')]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.label('--'); // first target
+      a.instruction([ident('lsr')]);
+      a.instruction([ident('lsr')]);
+      a.instruction([ident('lsr')]);
+      a.label('-'); // second target
+      a.instruction([ident('bne'), op('--')]);
+      a.instruction([ident('bcc'), op('-')]);
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0x4a, 0x4a, 0x4a, 0xd0, 0xfb, 0x90, 0xfc),
@@ -414,9 +433,9 @@ describe('Processor', function() {
 
   describe('.byte', function() {
     it('should support numbers', function() {
-      const p = new Processor(Cpu.P02);
-      p.byte(1, 2, 3);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.byte(1, 2, 3);
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(1, 2, 3),
@@ -425,9 +444,9 @@ describe('Processor', function() {
     });
 
     it('should support strings', function() {
-      const p = new Processor(Cpu.P02);
-      p.byte('ab', 'cd');
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.byte('ab', 'cd');
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0x61, 0x62, 0x63, 0x64),
@@ -436,9 +455,9 @@ describe('Processor', function() {
     });
 
     it('should support expressions', function() {
-      const p = new Processor(Cpu.P02);
-      p.directive('.byte', [cs('.byte'), num(1), op('+'), num(2)]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.directive([cs('.byte'), num(1), op('+'), num(2)]);
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(3),
@@ -447,10 +466,10 @@ describe('Processor', function() {
     });
 
     it('should support expressions with backward refs', function() {
-      const p = new Processor(Cpu.P02);
-      p.assign([ident('q'), Token.ASSIGN, num(5)]);
-      p.directive('.byte', [cs('.byte'), ident('q')]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.assign('q', 5);
+      a.directive([cs('.byte'), ident('q')]);
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(5),
@@ -459,10 +478,10 @@ describe('Processor', function() {
     });
 
     it('should support expressions with forward refs', function() {
-      const p = new Processor(Cpu.P02);
-      p.directive('.byte', [cs('.byte'), ident('q'), op('+'), num(1)]);
-      p.label('q');
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.directive([cs('.byte'), ident('q'), op('+'), num(1)]);
+      a.label('q');
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0xff),
@@ -477,9 +496,9 @@ describe('Processor', function() {
 
   describe('.word', function() {
     it('should support numbers', function() {
-      const p = new Processor(Cpu.P02);
-      p.word(1, 2, 0x403);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.word(1, 2, 0x403);
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(1, 0, 2, 0, 3, 4),
@@ -488,9 +507,9 @@ describe('Processor', function() {
     });
 
     it('should support expressions', function() {
-      const p = new Processor(Cpu.P02);
-      p.directive('.word', [cs('.word'), num(1), op('+'), num(2)]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.directive([cs('.word'), num(1), op('+'), num(2)]);
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(3, 0),
@@ -499,10 +518,10 @@ describe('Processor', function() {
     });
 
     it('should support expressions with backward refs', function() {
-      const p = new Processor(Cpu.P02);
-      p.assign([ident('q'), Token.ASSIGN, num(0x305)]);
-      p.directive('.word', [cs('.word'), ident('q')]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.assign('q', 0x305);
+      a.directive([cs('.word'), ident('q')]);
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(5, 3),
@@ -511,10 +530,10 @@ describe('Processor', function() {
     });
 
     it('should support expressions with forward refs', function() {
-      const p = new Processor(Cpu.P02);
-      p.directive('.word', [cs('.word'), ident('q'), op('+'), num(1)]);
-      p.label('q');
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.directive([cs('.word'), ident('q'), op('+'), num(1)]);
+      a.label('q');
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0xff, 0xff),
@@ -529,10 +548,10 @@ describe('Processor', function() {
 
   describe('.segment', function() {
     it('should change the segment', function() {
-      const p = new Processor(Cpu.P02);
-      p.segment('01');
-      p.byte(4);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.segment('01');
+      a.byte(4);
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['01'],
           data: Uint8Array.of(4),
@@ -540,10 +559,10 @@ describe('Processor', function() {
     });
 
     it('should allow multiple segments', function() {
-      const p = new Processor(Cpu.P02);
-      p.segment('01', '02');
-      p.byte(4);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.segment('01', '02');
+      a.byte(4);
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['01', '02'],
           data: Uint8Array.of(4),
@@ -551,12 +570,12 @@ describe('Processor', function() {
     });
 
     it('should configure the segment', function() {
-      const p = new Processor(Cpu.P02);
-      p.assign([ident('size'), ASSIGN, num(100)])
-      p.directive('.segment', [cs('.segment'), str('03'),
-                               COLON, ident('bank'), num(2), op('+'), num(1),
-                               COLON, ident('size'), ident('size')]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.assign('size', 100)
+      a.directive([cs('.segment'), str('03'),
+                   COLON, ident('bank'), num(2), op('+'), num(1),
+                   COLON, ident('size'), ident('size')]);
+      expect(strip(a.module())).to.eql({
         chunks: [], symbols: [], segments: [{
           name: '03',
           bank: 3,
@@ -565,12 +584,10 @@ describe('Processor', function() {
     });
 
     it('should merge multiple attr lists', function() {
-      const p = new Processor(Cpu.P02);
-      p.directive('.segment', [cs('.segment'), str('02'),
-                               COLON, ident('bank'), num(2)]);
-      p.directive('.segment', [cs('.segment'), str('02'),
-                               COLON, ident('size'), num(200)]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.directive([cs('.segment'), str('02'), COLON, ident('bank'), num(2)]);
+      a.directive([cs('.segment'), str('02'), COLON, ident('size'), num(200)]);
+      expect(strip(a.module())).to.eql({
         chunks: [], symbols: [], segments: [{
           name: '02',
           bank: 2,
@@ -579,13 +596,13 @@ describe('Processor', function() {
     });
 
     it('should track free regions', function() {
-      const p = new Processor(Cpu.P02);
-      p.segment('02');
-      p.org(0x8000);
-      p.free(0x200);
-      p.org(0x9000);
-      p.free(0x400);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.segment('02');
+      a.org(0x8000);
+      a.free(0x200);
+      a.org(0x9000);
+      a.free(0x400);
+      expect(strip(a.module())).to.eql({
         chunks: [], symbols: [], segments: [{
           name: '02',
           free: [[0x8000, 0x8200], [0x9000, 0x9400]],
@@ -593,11 +610,11 @@ describe('Processor', function() {
     });
 
     it('should allow setting a prefix', function() {
-      const p = new Processor(Cpu.P02);
-      p.segmentPrefix('cr:');
-      p.directive('.segment', [cs('.segment'), str('02')]);
-      p.instruction([ident('lsr')]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.segmentPrefix('cr:');
+      a.directive([cs('.segment'), str('02')]);
+      a.instruction([ident('lsr')]);
+      expect(strip(a.module())).to.eql({
         chunks: [{segments: ['cr:02'], data: Uint8Array.of(0x4a)}],
         segments: [], symbols: [],
       });          
@@ -606,22 +623,22 @@ describe('Processor', function() {
 
   describe('.assert', function() {
     it('should pass immediately when true', function() {
-      const p = new Processor(Cpu.P02);
-      p.assert({op: 'num', num: 1});
-      expect(strip(p.result())).to.eql({chunks: [], symbols: [], segments: []});
+      const a = new Assembler(Cpu.P02);
+      a.assert({op: 'num', num: 1});
+      expect(strip(a.module())).to.eql({chunks: [], symbols: [], segments: []});
     });
 
     it('should fail immediately when false', function() {
-      const p = new Processor(Cpu.P02);
-      expect(() => p.assert({op: 'num', num: 0}))
+      const a = new Assembler(Cpu.P02);
+      expect(() => a.assert({op: 'num', num: 0}))
           .to.throw(Error, /Assertion failed/);
     });
 
     it('should defer indeterminate assertions to the linker', function() {
-      const p = new Processor(Cpu.P02);
-      p.label('Foo');
-      p.directive('.assert', [cs('.assert'), ident('Foo'), op('>'), num(8)]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.label('Foo');
+      a.directive([cs('.assert'), ident('Foo'), op('>'), num(8)]);
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(),
@@ -634,15 +651,15 @@ describe('Processor', function() {
 
   describe('.scope', function() {
     it('should not leak inner symbols to outer scopes', function() {
-      const p = new Processor(Cpu.P02);
-      p.assign([ident('bar'), ASSIGN, num(12)]);
-      p.scope('foo');
-      p.assign([ident('bar'), ASSIGN, num(42)]);
-      p.byte({op: 'sym', sym: 'bar'});
-      p.endScope();
-      p.byte({op: 'sym', sym: 'bar'});
+      const a = new Assembler(Cpu.P02);
+      a.assign('bar', 12);
+      a.scope('foo');
+      a.assign('bar', 42);
+      a.byte({op: 'sym', sym: 'bar'});
+      a.endScope();
+      a.byte({op: 'sym', sym: 'bar'});
 
-      expect(strip(p.result())).to.eql({
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(42, 12),
@@ -652,18 +669,18 @@ describe('Processor', function() {
     });
 
     it('should inherit outer definitions', function() {
-      const p = new Processor(Cpu.P02);
-      p.scope();
-      p.scope('foo');
-      p.byte({op: 'sym', sym: 'bar'});
-      p.endScope();
-      p.scope();
-      p.byte({op: 'sym', sym: 'bar'});
-      p.endScope();
-      p.endScope();
-      p.assign([ident('bar'), ASSIGN, num(14)]);
+      const a = new Assembler(Cpu.P02);
+      a.scope();
+      a.scope('foo');
+      a.byte({op: 'sym', sym: 'bar'});
+      a.endScope();
+      a.scope();
+      a.byte({op: 'sym', sym: 'bar'});
+      a.endScope();
+      a.endScope();
+      a.assign('bar', 14);
       
-      expect(strip(p.result())).to.eql({
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0xff, 0xff),
@@ -673,7 +690,7 @@ describe('Processor', function() {
           ],
         }],
         symbols: [
-          {expr: {op: 'num', num: 14, size: 1}},
+          {expr: {op: 'num', num: 14}},
           {expr: {op: 'sym', num: 0}},
         ],
         segments: [],
@@ -681,31 +698,31 @@ describe('Processor', function() {
     });
 
     it('should allow writing into a scope', function() {
-      const p = new Processor(Cpu.P02);
-      p.scope('foo');
-      p.byte({op: 'sym', sym: 'bar'});
-      p.endScope();
-      p.assign([ident('foo::bar'), ASSIGN, num(13)]);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.scope('foo');
+      a.byte({op: 'sym', sym: 'bar'});
+      a.endScope();
+      a.assign('foo::bar', 13);
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0xff),
           subs: [{offset: 0, size: 1, expr: {op: 'sym', num: 0}}],
         }],
         symbols: [
-          {expr: {op: 'num', num: 13, size: 1}},
+          {expr: {op: 'num', num: 13}},
         ],
         segments: [],
       });
     });
 
     it('should allow reading out of a scope', function() {
-      const p = new Processor(Cpu.P02);
-      p.scope('foo');
-      p.assign([ident('bar'), ASSIGN, num(5)]);
-      p.endScope();
-      p.byte({op: 'sym', sym: 'foo::bar'});
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.scope('foo');
+      a.assign('bar', 5);
+      a.endScope();
+      a.byte({op: 'sym', sym: 'foo::bar'});
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0x05),
@@ -717,10 +734,10 @@ describe('Processor', function() {
 
   describe('.import', function() {
     it('should work before the reference', function() {
-      const p = new Processor(Cpu.P02);
-      p.import('foo');
-      p.byte({op: 'sym', sym: 'foo'});
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.import('foo');
+      a.byte({op: 'sym', sym: 'foo'});
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0xff),
@@ -732,10 +749,10 @@ describe('Processor', function() {
     });
 
     it('should work after the reference', function() {
-      const p = new Processor(Cpu.P02);
-      p.byte({op: 'sym', sym: 'foo'});
-      p.import('foo');
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.byte({op: 'sym', sym: 'foo'});
+      a.import('foo');
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0xff),
@@ -747,12 +764,12 @@ describe('Processor', function() {
     });
 
     it('should work in a scope', function() {
-      const p = new Processor(Cpu.P02);
-      p.scope();
-      p.byte({op: 'sym', sym: 'foo'});
-      p.endScope();
-      p.import('foo');
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.scope();
+      a.byte({op: 'sym', sym: 'foo'});
+      a.endScope();
+      a.import('foo');
+      expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(0xff),
@@ -764,10 +781,10 @@ describe('Processor', function() {
     });
 
     it('should emit nothing if unused', function() {
-      const p = new Processor(Cpu.P02);
-      p.import('foo');
-      p.byte(2);
-      expect(strip(p.result())).to.eql({
+      const a = new Assembler(Cpu.P02);
+      a.import('foo');
+      a.byte(2);
+      expect(strip(a.module())).to.eql({
         chunks: [{segments: ['code'], data: Uint8Array.of(2)}],
         symbols: [], segments: [],
       });
@@ -776,21 +793,21 @@ describe('Processor', function() {
 
   describe('.export', function() {
     it('should export a later value', function() {
-      const p = new Processor(Cpu.P02);
-      p.export('qux');
-      p.assign([ident('qux'), ASSIGN, num(12)]);
-      expect(strip(p.result())).to.eql({
-        symbols: [{export: 'qux', expr: {op: 'num', num: 12, size: 1}}],
+      const a = new Assembler(Cpu.P02);
+      a.export('qux');
+      a.assign('qux', 12);
+      expect(strip(a.module())).to.eql({
+        symbols: [{export: 'qux', expr: {op: 'num', num: 12}}],
         chunks: [], segments: [],
       });
     });
 
     it('should export an earlier value', function() {
-      const p = new Processor(Cpu.P02);
-      p.assign([ident('qux'), ASSIGN, num(12)]);
-      p.export('qux');
-      expect(strip(p.result())).to.eql({
-        symbols: [{export: 'qux', expr: {op: 'num', num: 12, size: 1}}],
+      const a = new Assembler(Cpu.P02);
+      a.assign('qux', 12);
+      a.export('qux');
+      expect(strip(a.module())).to.eql({
+        symbols: [{export: 'qux', expr: {op: 'num', num: 12}}],
         chunks: [], segments: [],
       });
     });

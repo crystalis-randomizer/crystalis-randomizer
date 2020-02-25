@@ -1,7 +1,7 @@
 import {Buffer} from './buffer';
-import {StringToken, Token} from './token';
+import {StringToken, Token, TokenSource} from './token';
 
-export class Tokenizer {
+export class Tokenizer implements TokenSource {
   readonly buffer: Buffer;
 
   constructor(str: string,
@@ -10,7 +10,7 @@ export class Tokenizer {
     this.buffer = new Buffer(str);
   }
 
-  line(): Token[] {
+  next(): Token[]|undefined {
     let tok = this.token();
     while (Token.eq(tok, Token.EOL)) {
       // Skip EOLs at beginning of line.
@@ -39,7 +39,7 @@ export class Tokenizer {
       const open = stack[depth - 1].pop()!;
       throw new Error(`Missing close curly: ${Token.nameAt(open)}`);
     }
-    return stack[0];
+    return stack[0].length ? stack[0] : undefined;
   }
 
   private token(): Token {

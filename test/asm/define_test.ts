@@ -239,14 +239,13 @@ function strip(t: Token): Token {
 };
 
 function tok(str: string): Token[] {
-  return new Tokenizer(str).line().map(strip);
+  return new Tokenizer(str).next()!.map(strip);
 }
 function toks(str: string): Token[][] {
   const lines: Token[][] = [];
   const tokenizer = new Tokenizer(str);
-  while (true) {
-    const line = tokenizer.line().map(strip);
-    if (!line.length) return lines;
-    lines.push(line);
+  for (let line = tokenizer.next(); line; line = tokenizer.next()) {
+    lines.push(line.map(strip));
   }
+  return lines;
 }

@@ -1,4 +1,4 @@
-import {Token} from './token';
+import {Token, TokenSource} from './token';
 
 // const DEBUG = true;
 // const [] = [DEBUG];
@@ -11,7 +11,7 @@ export class Macro {
   private constructor(readonly params: string[],
                       readonly production: Token[][]) {}
 
-  static from(line: Token[], source: Source<Token[]>) {
+  static from(line: Token[], source: TokenSource) {
     // First line must start with .macro <name> [args]
     // Last line is the line BEFORE the .endmacro
     // Nested macro definitions are not allowed!
@@ -19,8 +19,8 @@ export class Macro {
     if (line[1]?.token !== 'ident') throw new Error(`invalid`);
     const params = Token.identsFromCList(line.slice(2));
     const lines = [];
-    let next: Token[];
-    while ((next = source.next()).length) {
+    let next: Token[]|undefined;
+    while ((next = source.next())) {
       if (Token.eq(next[0], Token.ENDMACRO)) return new Macro(params, lines);
       lines.push(next);
     }

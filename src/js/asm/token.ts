@@ -1,5 +1,36 @@
 import {assertNever} from "../util";
 
+export interface TokenSource {
+  next(): Token[]|undefined;
+}
+
+export namespace TokenSource {
+  export interface Async {
+    nextAsync(): Promise<Token[]|undefined>;
+  }
+
+  // TODO - consider moving into a namespace?
+  export abstract class Abstract implements TokenSource {
+    // TODO - move pump() into here, refactor Preprocessor as a TokenSource
+    // TODO - rename Processor into Assembler, fix up the clunky methods
+    //      - add line(Token[]), tokens(TokenSource) and asyncTokens(ATS)
+    //        the latter returns Promise<void> and must be awaited.
+    // Delegate the 
+    private sink: Iterator<Token[]|undefined>|undefined;
+
+    abstract pump(): Generator<Token[]|undefined>;
+
+    next(): Token[]|undefined {
+      while (true) {
+        if (!this.sink) this.sink = this.pump();
+        const {value, done} = this.sink.next();
+        if (!done) return value;
+        this.sink = undefined;
+      }
+    }
+  }
+}
+
 export interface SourceInfo {
   file: string;
   line: number;

@@ -3,6 +3,7 @@ import {expect} from 'chai';
 import {Preprocessor} from '../../src/js/asm/preprocessor';
 import {Token} from '../../src/js/asm/token';
 import {TokenStream} from '../../src/js/asm/tokenstream';
+import {Tokenizer} from '../../src/js/asm/tokenizer';
 import * as util from 'util';
 
 const [] = [util];
@@ -12,26 +13,24 @@ describe('Preprocessor', function() {
 
   function test(lines: string[], ...want: string[]) {
     const code = lines.join('\n');
-    const toks = new TokenStream({});
-    toks.enter(code, 'input.s');
-    let id = 0;
-    const idGen = {next: () => ++id};
+    const toks = new TokenStream();
+    toks.enter(new Tokenizer(code, 'input.s'));
     // TODO - figure out what's up with env
-    const out = [...new Preprocessor(toks, idGen, null!)];
-    const mapped = out
-            .map(({kind, tokens}) => `${kind}(${
-                                      tokens.map(Token.name).join(' ')})`);
-    expect(mapped).to.eql(want);
+    const out: string[] = [];
+    const preprocessor = new Preprocessor(toks, {} as any);
+    for (let line = preprocessor.next(); line; line = preprocessor.next()) {
+      out.push(line.map(Token.name).join(' '));
+    }
+    expect(out).to.eql(want);
   }
 
   function testError(lines: string[], msg: RegExp) {
     const code = lines.join('\n');
-    const toks = new TokenStream({});
-    toks.enter(code, 'input.s');
-    let id = 0;
-    const idGen = {next: () => ++id};
+    const toks = new TokenStream();
+    toks.enter(new Tokenizer(code, 'input.s'));
     // TODO - figure out what's up with env
-    expect(() => [...new Preprocessor(toks, idGen, null!)])
+    const preprocessor = new Preprocessor(toks, {} as any);
+    expect(() => { while (preprocessor.next()); })
         .to.throw(Error, msg);
   }
 
@@ -254,13 +253,13 @@ describe('Preprocessor', function() {
 
 });
 
-function instruction(line: string) { return parseLine('instruction', line); }
-function label(line: string) { return parseLine('label', line); }
-function assign(line: string) { return parseLine('assign', line); }
-function directive(line: string) { return parseLine('directive', line); }
+function instruction(line: string) { return parseLine(line); }
+function label(line: string) { return parseLine(line); }
+function assign(line: string) { return parseLine(line); }
+function directive(line: string) { return parseLine(line); }
 
-function parseLine(type: string, line: string): string {
-  const ts = new TokenStream({});
-  ts.enter(line);
-  return `${type}(${ts.next().map(Token.name).join(' ')})`;
+function parseLine(line: string): string {
+  const ts = new TokenStream();
+  ts.enter(new Tokenizer(line));
+  return ts.next()!.map(Token.name).join(' ');
 }

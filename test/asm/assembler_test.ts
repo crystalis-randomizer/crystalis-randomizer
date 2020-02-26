@@ -621,6 +621,82 @@ describe('Assembler', function() {
     });
   });
 
+  describe('.pushseg/.popseg', function() {
+    it('should switch and restore the segment', function() {
+      const a = new Assembler(Cpu.P02);
+      a.segment('a', 'b');
+      a.byte(4);
+      a.pushSeg('a', 'c');
+      a.byte(5);
+      a.popSeg();
+      a.byte(6);
+      expect(strip(a.module())).to.eql({
+        chunks: [{
+          segments: ['a', 'b'],
+          data: Uint8Array.of(4, 6),
+        }, {
+          segments: ['a', 'c'],
+          data: Uint8Array.of(5),
+        }],
+        symbols: [], segments: []});
+    });
+
+    it('should allow nesting', function() {
+      const a = new Assembler(Cpu.P02);
+      a.segment('a', 'b');
+      a.byte(4);
+      a.pushSeg('a');
+      a.byte(5);
+      a.pushSeg('a', 'c');
+      a.byte(6);
+      a.popSeg();
+      a.byte(7);
+      a.popSeg();
+      a.byte(8);
+      expect(strip(a.module())).to.eql({
+        chunks: [{
+          segments: ['a', 'b'],
+          data: Uint8Array.of(4, 8),
+        }, {
+          segments: ['a'],
+          data: Uint8Array.of(5, 7),
+        }, {
+          segments: ['a', 'c'],
+          data: Uint8Array.of(6),
+        }],
+        symbols: [], segments: []});
+    });
+
+    it('should allow switching segments in the middle', function() {
+      const a = new Assembler(Cpu.P02);
+      a.segment('a', 'b');
+      a.byte(4);
+      a.pushSeg('a');
+      a.byte(5);
+      a.segment('a', 'c');
+      a.byte(6);
+      a.segment('a');
+      a.byte(7);
+      a.popSeg();
+      a.byte(8);
+      expect(strip(a.module())).to.eql({
+        chunks: [{
+          segments: ['a', 'b'],
+          data: Uint8Array.of(4, 8),
+        }, {
+          segments: ['a'],
+          data: Uint8Array.of(5),
+        }, {
+          segments: ['a', 'c'],
+          data: Uint8Array.of(6),
+        }, {
+          segments: ['a'],
+          data: Uint8Array.of(7),
+        }],
+        symbols: [], segments: []});
+    });
+  });
+
   describe('.assert', function() {
     it('should pass immediately when true', function() {
       const a = new Assembler(Cpu.P02);

@@ -136,6 +136,9 @@ export class Assembler implements Expr.Resolver {
   /** Data on all the segments. */
   private segmentData = new Map<string, Segment>();
 
+  /** Stack of segments for .pushseg/.popseg. */
+  private segmentStack: Array<readonly [readonly string[], Chunk?]> = [];
+
   /** All symbols in this object. */
   private symbols: Symbol[] = [];
 
@@ -412,7 +415,10 @@ export class Assembler implements Expr.Resolver {
       case '.scope': return this.scope(this.parseOptionalIdentifier(tokens));
       case '.endscope': return this.parseNoArgs(tokens), this.endScope();
       case '.proc': return this.proc(this.parseRequiredIdentifier(tokens));
-      case '.endproc': return this.parseNoArgs(tokens), this.endScope();
+      case '.endproc': return this.parseNoArgs(tokens), this.endProc();
+      case '.pushseg': return this.pushSeg(...this.parseSegmentList(tokens));
+      case '.popseg': return this.parseNoArgs(tokens), this.popSeg();
+      case '.move': return this.move(...this.parseMoveArgs(tokens));
     }
     this.fail(`Unknown directive: ${Token.nameAt(tokens[0])}`);
   }
@@ -778,6 +784,20 @@ export class Assembler implements Expr.Resolver {
     this.currentScope = this.currentScope.parent;
   }
 
+  pushSeg(...segments: Array<string|Segment>) {
+    this.segmentStack.push([this.segments, this._chunk]);
+    this.segment(...segments);
+  }
+
+  popSeg() {
+    if (!this.segmentStack.length) this.fail(`.popseg without .pushseg`);
+    [this.segments, this._chunk] = this.segmentStack.pop()!;
+  }
+
+  move(size: number, source: Expr) {
+    this.append({op: '.move', args: [source], size}, size);
+  }
+
   // Utility methods for processing arguments
 
   parseConst(tokens: Token[], start = 1): number {
@@ -878,6 +898,34 @@ export class Assembler implements Expr.Resolver {
     return ident;
   }
 
+  parseMoveArgs(tokens: Token[]): [number, Expr] {
+    // .move 10, ident        ; must be an offset
+    // .move 10, $1234, "seg" ; maybe support this?
+    const args = Token.parseArgList(tokens, 1);
+    if (args.length !== 2 /* && args.length !== 3 */) {
+      this.fail(`Expected constant number, then identifier`);
+    }
+    const num = Expr.evaluate(Expr.resolve(Expr.parseOnly(args[0]), this));
+    if (num == null) this.fail(`Expected a constant number`);
+
+    // let segName = this.segments.length === 1 ? this.segments[0] : undefined;
+    // if (args.length === 3) {
+    //   if (args[2].length !== 1 || args[2][0].token !== 'str') {
+    //     this.fail(`Expected a single segment name`, this.args[2][0]);
+    //   }
+    //   segName = args[2][0].str;
+    // }
+    // const seg = segName ? this.segmentData.get(segName) : undefined;
+
+    let offset = Expr.resolve(Expr.parseOnly(args[1]), this);
+    if (offset.op === 'off') {
+      return [num, offset];
+    // } else if (offset.op === 'num') {
+    } else {
+      this.fail(`Expected a constant offset`, args[1][0]);
+    }
+  }
+
   // Diagnostics
 
   fail(msg: string, at?: {source?: SourceInfo}): never {
@@ -894,10 +942,9 @@ export class Assembler implements Expr.Resolver {
       const name = ['byte', 'word', 'farword', 'dword'][size - 1];
       this.fail(`Not a ${name}: $${val.toString(16)}`);
     }
-    if (val == null) val = 0xffffffff;
     for (let i = 0; i < size; i++) {
-      data.push(val & 0xff);
-      val >>= 8;
+      data.push(val != null ? val & 0xff : 0xff);
+      if (val != null) val >>= 8;
     }
   }
 }

@@ -247,6 +247,44 @@ describe('Preprocessor', function() {
     });
   });
 
+  describe('.repeat', function() {
+    it('should repeat its argument', function() {
+      test(['.repeat 5',
+            'foo',
+            '.endrep'],
+           instruction('foo'),
+           instruction('foo'),
+           instruction('foo'),
+           instruction('foo'),
+           instruction('foo'));
+    });
+
+    it('should expand the current position', function() {
+      test(['.repeat 5, i',
+            'foo i',
+            '.endrep'],
+           instruction('foo 0'),
+           instruction('foo 1'),
+           instruction('foo 2'),
+           instruction('foo 3'),
+           instruction('foo 4'));
+    });
+
+    it('should support nested repeats', function() {
+      test(['.repeat 4, i',
+            '.repeat i, j',
+            'foo j i',
+            '.endrep',
+            '.endrep'],
+           instruction('foo 0 1'),
+           instruction('foo 0 2'),
+           instruction('foo 1 2'),
+           instruction('foo 0 3'),
+           instruction('foo 1 3'),
+           instruction('foo 2 3'));
+    });
+  });
+
   // TODO - test .local, both for symbols AND for defines.
 
   // TODO - tests for .if, make sure it evaluates numbers, etc...

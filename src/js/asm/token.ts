@@ -80,15 +80,19 @@ export namespace Token {
   export const EOF: Token = {token: 'eof'};
   // Important macro expansion tokens
   export const DEFINE: Token = {token: 'cs', str: '.define'};
+  export const DOT_EOL: Token = {token: 'cs', str: '.eol'};
   export const ELSE: Token = {token: 'cs', str: '.else'};
   export const ELSEIF: Token = {token: 'cs', str: '.elseif'};
   export const ENDIF: Token = {token: 'cs', str: '.endif'};
+  export const ENDMAC: Token = {token: 'cs', str: '.endmac'};
   export const ENDMACRO: Token = {token: 'cs', str: '.endmacro'};
+  export const ENDREP: Token = {token: 'cs', str: '.endrep'};
+  export const ENDREPEAT: Token = {token: 'cs', str: '.endrepeat'};
   export const ENDPROC: Token = {token: 'cs', str: '.endproc'};
   export const ENDSCOPE: Token = {token: 'cs', str: '.endscope'};
-  export const DOT_EOL: Token = {token: 'cs', str: '.eol'};
-  export const MACRO: Token = {token: 'cs', str: '.macro'};
   export const LOCAL: Token = {token: 'cs', str: '.local'};
+  export const MACRO: Token = {token: 'cs', str: '.macro'};
+  export const REPEAT: Token = {token: 'cs', str: '.repeat'};
   export const SET: Token = {token: 'cs', str: '.set'};
   export const SKIP: Token = {token: 'cs', str: '.skip'};
 

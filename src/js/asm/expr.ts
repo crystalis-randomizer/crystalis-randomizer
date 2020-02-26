@@ -27,17 +27,18 @@ export namespace Expr {
 
   /** Performs a post-order traversal. */
   export function traverse(expr: Expr,
-                           post: (e: Expr) => Expr,
-                           pre?: (e: Expr) => Expr): Expr {
+                           post: (e: Expr, parent: Expr|undefined) => Expr,
+                           pre?: (e: Expr, parent: Expr|undefined) => Expr,
+                           parent?: Expr): Expr {
     const source = expr.source;
-    if (pre) expr = pre(expr);
+    if (pre) expr = pre(expr, parent);
 
     // First traverse children.
     if (expr.args?.length) {
       const args = [];
       let edit = false;
       for (const arg of expr.args) {
-        const mapped = traverse(arg, post, pre);
+        const mapped = traverse(arg, post, pre, expr);
         if (mapped !== arg) edit = true;
         args.push(mapped);
       }
@@ -45,7 +46,7 @@ export namespace Expr {
     }
 
     // Then call function.
-    expr = post(expr);
+    expr = post(expr, parent);
 
     // Now simplify the expression if possible.  Pre-evalulate offset
     const [a, b] = expr.args || [];
@@ -169,6 +170,7 @@ export namespace Expr {
     switch (expr.op) { // var-arg functions
       case '.max': return Math.max(...args);
       case '.min': return Math.min(...args);
+      case '.move': return undefined;
       default: // fall through to later checks
     }
     if (args.length === 1) {

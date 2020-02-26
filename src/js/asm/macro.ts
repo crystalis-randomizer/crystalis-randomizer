@@ -22,6 +22,7 @@ export class Macro {
     let next: Token[]|undefined;
     while ((next = source.next())) {
       if (Token.eq(next[0], Token.ENDMACRO)) return new Macro(params, lines);
+      if (Token.eq(next[0], Token.ENDMAC)) return new Macro(params, lines);
       lines.push(next);
     }
     throw new Error(`EOF looking for .endmacro: ${Token.nameAt(line[1])}`);

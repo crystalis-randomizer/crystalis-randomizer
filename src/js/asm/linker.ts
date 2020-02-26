@@ -15,7 +15,7 @@ export class Linker {
   private _link = new Link();
 
   read(file: Module): Linker {
-    this._link.read(file);
+    this._link.readFile(file);
     return this;
   }
 
@@ -99,7 +99,7 @@ class LinkChunk {
 
   private _org?: number;
   private _offset?: number;
-  private _segment?: Segment;
+  private _segment?: LinkSegment;
 
   constructor(readonly linker: Link,
               readonly index: number,
@@ -168,7 +168,7 @@ class LinkChunk {
   }
 
   resolveSubs(initial = false) { //: Map<number, Substitution[]> {
-    // iterate over the subs, see what progress we can make?
+    // iterate over the subs, see what progres we can make?
     // result: list of dependent chunks.
 
     // NOTE: if we depend on ourself then we will return empty deps,
@@ -203,10 +203,11 @@ class LinkChunk {
     // Do a full traverse of the expression - see what's blocking us.
     //   TODO - resolve bank here if possible, since nobody else is gonna do it.
     if (!this.subs.has(sub) && !this.selfSubs.has(sub)) return;
-    sub.expr = Expr.traverse(sub.expr, (e) => {
+    sub.expr = Expr.traverse(sub.expr, (e, parent) => {
       if (e.op === 'off') {
         const dep = this.linker.chunks[e.chunk!];
-        if (dep.org != null) {
+        const parentOp = parent?.op;
+        if (dep.org != null && parentOp !== '^' && parentOp !== '.move') {
           return {op: 'num', num: dep.org + e.num!};
         } else {
           if (initial && e.chunk === this.index && this.subs.delete(sub)) {
@@ -235,9 +236,32 @@ class LinkChunk {
       return e;
     });
 
+    // PROBLEM - off is relative to the chunk, but we want to be able to
+    // specify an ABSOLUTE org within a segment...!
+    // An absolute offset within the whole orig is no good, either
+    // want to write it as .segment "foo"; Sym = $1234
+    // Could also just do .move count, "seg", $1234 and store a special op
+    // that uses both sym and num?
+
     // See if we can do it immediately.
+    let del = false;
     if (sub.expr.op === 'num') {
       this.writeValue(sub.offset, sub.expr.num!, sub.size);
+      del = true;
+    } else if (sub.expr.op === '.move') {
+      if (sub.expr.args!.length !== 1) throw new Error(`bad .move`);
+      const child = sub.expr.args![0];
+      if (child.op === 'off') {
+        const segment = this.linker.chunks[child.chunk!].segment;
+        if (segment) {
+          const start = segment.delta + child.num!;
+          const slice = this.linker.orig.slice(start, start + sub.size);
+          this.writeBytes(sub.offset, Uint8Array.from(slice));
+          del = true;
+        }
+      }
+    }
+    if (del) {
       this.subs.delete(sub) || this.selfSubs.delete(sub);
       if (!this.subs.size) { // NEW: ignores self-subs now
       // if (!this.subs.size || (deps.size === 1 && deps.has(this.index)))  {
@@ -254,6 +278,16 @@ class LinkChunk {
     }
   }
 
+  writeBytes(offset: number, bytes: Uint8Array) {
+    if (this._data) {
+      this._data.subarray(offset, offset + bytes.length).set(bytes);
+    } else if (this._offset != null) {
+      this.linker.data.set(this._offset + offset, bytes);
+    } else {
+      throw new Error(`Impossible`);
+    }
+  }
+
   writeValue(offset: number, val: number, size: number) {
     // TODO - this is almost entirely copied from processor writeNumber
     const bits = (size) << 3;
@@ -266,13 +300,7 @@ class LinkChunk {
       bytes[i] = val & 0xff;
       val >>= 8;
     }
-    if (this._data) {
-      this._data.subarray(offset, offset + size).set(bytes);
-    } else if (this._offset != null) {
-      this.linker.data.set(this._offset + offset, bytes);
-    } else {
-      throw new Error(`Impossible`);
-    }
+    this.writeBytes(offset, bytes);
   }
 }
 
@@ -297,6 +325,7 @@ function translateSymbol(s: Symbol, dc: number, ds: number): Symbol {
 // This class is single-use.
 class Link {
   data = new SparseByteArray();
+  orig = new SparseByteArray();
   // Maps symbol to symbol # // [symbol #, dependent chunks]
   exports = new Map<string, number>(); // readonly [number, Set<number>]>();
   chunks: LinkChunk[] = [];
@@ -315,9 +344,10 @@ class Link {
 
   base(data: Uint8Array, offset = 0) {
     this.data.set(offset, data);
+    this.orig.set(offset, data);
   }
 
-  read(file: Module) {
+  readFile(file: Module) {
     const dc = this.chunks.length;
     const ds = this.symbols.length;
     // segments come first, since LinkChunk constructor needs them
@@ -351,8 +381,8 @@ class Link {
   // NOTE: so far this is only used for asserts?
   // It basically copy-pastes from resolveSubs... :-(
   resolveExpr(expr: Expr): number {
-    expr = Expr.traverse(expr, (e) => {
-      if (e.op === 'off') {
+    expr = Expr.traverse(expr, (e, parent) => {
+      if (e.op === 'off' && parent?.op !== '.move') {
         const c = this.chunks[e.chunk!];
         if (c.org != null) return {op: 'num', num: c.org + e.num!};
       }
@@ -367,6 +397,18 @@ class Link {
         }
         const c = this.chunks[child.chunk!];
         if (c.org) return {op: 'num', num: c.segment!.bank};
+      } else if (e.op === '.orig' && e.args?.length === 1) {
+        // TODO - resolve bank bytes here, before we turn it into a number...
+        const child = e.args[0];
+        if (child.op !== 'off') {
+          const at = Token.at(child);
+          throw new Error(`Cannot read from non-offset: ${child.op}${at}`);
+        }
+        const c = this.chunks[child.chunk!];
+        if (c.offset) {
+          const num = this.orig.get(c.offset + child.num!);
+          if (num != null) return {op: 'num', num};
+        }
       }
       // will traverse child but will only record info, can't resolve it
       return e;

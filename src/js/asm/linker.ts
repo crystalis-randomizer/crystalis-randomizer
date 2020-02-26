@@ -128,11 +128,21 @@ class LinkChunk {
     // We don't call this in the ctor because it depends on all the segments
     // being loaded, but it's the first thing we do in link().
     if (this._org == null) return;
-    if (this.segments.length !== 1) {
-      throw new Error(`Non-unique segment: ${this.segments}`);
+    const eligibleSegments: LinkSegment[] = [];
+    for (const name of this.segments) {
+      const s = this.linker.segments.get(name);
+      if (!s) throw new Error(`Unknown segment: ${name}`);
+      if (this._org >= s.memory && this._org < s.memory + s.size) {
+        eligibleSegments.push(s);
+      }
     }
-    const segment = this.linker.segments.get(this.segments[0]);
-    if (!segment) throw new Error(`Unknown segment: ${this.segments[0]}`);
+    if (eligibleSegments.length !== 1) {
+      throw new Error(`Non-unique segment: ${eligibleSegments}`);
+    }
+    const segment = eligibleSegments[0];
+    if (this._org >= segment.memory + segment.size) {
+      throw new Error(`Chunk does not fit in segment ${segment.name}`);
+    }
     this.place(this._org, segment);
   }
 

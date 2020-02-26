@@ -189,9 +189,10 @@ export class Assembler implements Expr.Resolver {
 
   private ensureChunk() {
     if (!this._chunk) {
-      if (this._org != null && this.segments.length !== 1) {
-        this.fail(`.org chunks must be single-segment`);
-      }
+      // NOTE: multiple segments OK if disjoint memory...
+      // if (this._org != null && this.segments.length !== 1) {
+      //   this.fail(`.org chunks must be single-segment`);
+      // }
       this._chunk = {segments: this.segments, data: []};
       if (this._org != null) this._chunk.org = this._org;
       this.chunks.push(this._chunk);

@@ -48,6 +48,26 @@ describe('Linker', function() {
         .to.eql([[50, [2, 4, 6, 8]], [150, [3, 5, 7, 9]]]);
   });
 
+  it('should link .org chunks into the right segment', function() {
+    const m = {
+      chunks: [{
+        segments: ['a', 'b'],
+        org: 100,
+        data: Uint8Array.of(2, 4, 6, 8),
+      }, {
+        segments: ['a', 'b'],
+        org: 500,
+        data: Uint8Array.of(1, 2, 3, 4),
+      }],
+      segments: [
+        {name: 'a', size: 400, offset: 30, memory: 80},
+        {name: 'b', size: 400, offset: 1030, memory: 480},
+      ],
+    };
+    expect([...link(m).chunks()])
+        .to.eql([[50, [2, 4, 6, 8]], [1050, [1, 2, 3, 4]]]);
+  });
+
   it('should fill in a same-chunk offset expression', function() {
     const m = {
       chunks: [{

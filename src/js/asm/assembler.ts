@@ -408,6 +408,7 @@ export class Assembler implements Expr.Resolver {
       case '.assert': return this.assert(this.parseExpr(tokens));
       case '.segment': return this.segment(...this.parseSegmentList(tokens));
       case '.byte': return this.byte(...this.parseDataList(tokens, true));
+      case '.res': return this.res(...this.parseResArgs(tokens));
       case '.word': return this.word(...this.parseDataList(tokens));
       case '.free': return this.free(this.parseConst(tokens), tokens[0]);
       case '.segmentprefix': return this.segmentPrefix(this.parseStr(tokens));
@@ -699,6 +700,11 @@ export class Assembler implements Expr.Resolver {
     }
   }
 
+  res(count: number, value?: number) {
+    if (!count) return;
+    this.byte(...new Array(count).fill(value ?? 0));
+  }
+
   word(...args: Array<Expr|number>) {
     const {chunk} = this;
     for (const arg of args) {
@@ -716,6 +722,8 @@ export class Assembler implements Expr.Resolver {
       this.fail(`.free with non-unique segment: ${this.segments}`, token);
     } else if (this._org == null) {
       this.fail(`.free in .reloc mode`, token);
+    } else if (size < 0) {
+      this.fail(`.free with negative size: ${size}`, token);
     }
     // If we've got an open chunk, end it.
     if (this._chunk) {
@@ -852,6 +860,17 @@ export class Assembler implements Expr.Resolver {
       }
       return seg;
     });
+  }
+
+  parseResArgs(tokens: Token[]): [number, number?] {
+    const data = this.parseDataList(tokens);
+    if (data.length > 2) this.fail(`Expected at most 2 args`, data[2]);
+    if (!data.length) this.fail(`Expected at least 1 arg`);
+    const count = Expr.evaluate(Expr.resolve(data[0], this));
+    if (count == null) this.fail(`Expected constant count`);
+    const val = data[1] && Expr.evaluate(Expr.resolve(data[1], this));
+    if (data[1] && val == null) this.fail(`Expected constant value`);
+    return [count, val];
   }
 
   parseDataList(tokens: Token[]): Array<Expr>;

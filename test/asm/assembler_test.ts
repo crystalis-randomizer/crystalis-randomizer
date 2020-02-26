@@ -494,6 +494,19 @@ describe('Assembler', function() {
     });
   });
 
+  describe('.res', function() {
+    it('should reserve space', function() {
+      const a = new Assembler(Cpu.P02);
+      a.res(10, 3);
+      expect(strip(a.module())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(3, 3, 3, 3, 3, 3, 3, 3, 3, 3),
+        }],
+        symbols: [], segments: []});
+    });
+  });
+
   describe('.word', function() {
     it('should support numbers', function() {
       const a = new Assembler(Cpu.P02);

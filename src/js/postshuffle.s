@@ -1,12 +1,11 @@
-.bank $3c000 $c000:$4000 ; fixed bank
 
-.bank $1a000 $a000:$2000 ; object data
+.segment "0d", "fe", "ff" ; object data
 
-.org $3c409
+.org $c409
   jmp ComputeEnemyStats
 
 ;;; TODO - use a label: .org EndOfCompressedMonsterData
-.org $1bd00  ; This should leave some space after compression
+.org $bd00  ; This should leave some space after compression
 
 DiffAtk:   ; PAtk*8
   .skip SCALING_LEVELS
@@ -23,7 +22,7 @@ DiffExp:   ; ExpBase * 4, encoded in standard EXP encoding
 ComputeEnemyStats:
   lda ObjectRecoil,x
   bmi +
-   jmp $3c2af ; exit point
+   jmp $c2af ; exit point
 + and #$7f
   sta ObjectRecoil,x
   ;; We're gonna do the rescaling - figure out the actual difficulty
@@ -246,7 +245,7 @@ RescaleExp:   ; $1bcbd
 +    lda #$ff
 +++ sta ObjectExp,x
 RescaleDone:
-   jmp $3c2af
+   jmp $c2af
 
-.assert < $1c000
+.assert < $c000
 ;.assert < $1bff0

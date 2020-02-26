@@ -1,14 +1,12 @@
 ;;; Must come after preshuffle.s for various constants.
 
-.bank $3c000 $c000:$4000
-
-.bank $1c000 $8000:$2000
+.segment "0e", "fe", "ff"
 
 .ifdef _NORMALIZE_TELEPATHY
 ;;; Basic plan: rip out minimum level, result mapping, etc
 ;;; Also removed the extra powers of two table, so we have
 ;;; room to inline CheckTelepathyResult.
-.org $1c167
+.org $8167
     sec
     lda PlayerMP
     sbc #$08 ; should never overflow because already checked
@@ -83,48 +81,48 @@ Telepathy_ShowDefaultMessage:
     lda TelepathyTable+1,x
     sta $20
     rts
-.assert < $1c22f
+.assert * < $822f
 TelepathyResults:
 
-.org $1d8f4
+.org $98f4
 TelepathyTable:
   .skip 32
 
 .endif
 
 
-.bank $20000 $8000:$2000
+.segment "10", "fe", "ff"
 
 .ifdef _NORMALIZE_SHOP_PRICES
 
 ;;; Initialize tool shop
-.org $218ee
+.org $98ee
   lda ToolShopIdTable,x
-.org $218ff
+.org $98ff
   clc
   adc #SHOP_COUNT*4 ; 44 = delta between shop tables
   tax
   jsr CopyShopPrices
   jmp PostInitializeShop
-.assert < $21912
+.assert * < $9912
 
 ;;; Initialize armor shop
-.org $21895
+.org $9895
   lda ArmorShopIdTable,x ; should be unchanged, but just in case...
-.org $218a6
+.org $98a6
   tax
   jsr CopyShopPrices
   jmp PostInitializeShop
 ShopItemHorizontalPositions:
   .byte 8,13,18,23
-.assert < $218b6
+.assert * < $98b6
 PostInitializeShop:
 
-.org $218bc  ; use the new position table
+.org $98bc  ; use the new position table
   lda ShopItemHorizontalPositions,x
 
 ;;; Initialize inn price
-.org $215cb
+.org $95cb
   ldx $646d
   lda InnPrices,x
   sta $62
@@ -132,10 +130,10 @@ PostInitializeShop:
   sta $61
   ldy #$04
   jsr ComputeShopPrice
-.assert $215dc ; next display the price
+.assert * = $95dc ; next display the price
 
 ;;; Fix pawn shop sell price
-.org $201c1
+.org $81c1
   sta $61
   lda #$10
   sta $62
@@ -144,10 +142,10 @@ PostInitializeShop:
   nop
   nop
   nop
-.assert $201cf
+.assert * = $81cf
 ;;; Second version of the same thing (this one happens only
 ;;; once, when you say "yes" to "sell another?").
-.org $204c7
+.org $84c7
   sta $61
   lda #$10
   sta $62
@@ -156,9 +154,9 @@ PostInitializeShop:
   nop
   nop
   nop
-.assert $204d5
+.assert * = $84d5
 ;;; Third read of price is immediately when selling.
-.org $20634
+.org $8634
   sta $61
   lda #$10
   sta $62
@@ -180,11 +178,11 @@ PostInitializeShop:
   nop
   nop
   nop
-.assert $2065f
+.assert * = $865f
 
 
 ;;; Set up code to stripe the shop locations table.
-.org $21953
+.org $9953
   ldx #$00
 - lda $6c
    cmp ShopLocations,x
@@ -198,9 +196,9 @@ PostInitializeShop:
   lsr
   sta $646d  ; current shop index   
   rts
-.assert < $21970
+.assert * < $9970
 
-.org $21da4
+.org $9da4
 ShopData:
 ;;; NOTE: This structure is hard-coded in the RomOption, with two parameters:
 ;;;  1. SHOP_COUNT (11)
@@ -360,14 +358,15 @@ Multiply32Bit:
   bne -
   rts
 
-.assert < $22000
+.assert * < $a000
 
 .endif
 
 
+.segment "1a", "fe", "ff"
 
 .ifdef _EXPAND_SPEEDS
-.org $34480
+.org $8480
 ComputeDisplacementVector:
 ;;; Inputs:
 ;;;   A - direction, from $360,x (0-7, or 0-f, or 0-3f)
@@ -518,7 +517,7 @@ BitsTable:
   .byte $ff,$fe ; 15 => 11111111 11111110
 
 ;;; Update KnockbackObject to work for 64-dir projectiles
-.org $355d4
+.org $95d4
     lda $0340,x
     asl
     php

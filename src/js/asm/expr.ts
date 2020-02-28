@@ -113,7 +113,7 @@ export namespace Expr {
   }
 
   export function identifier(expr: Expr): string {
-    if (expr.op === 'ident') return expr.sym!;
+    if (expr.op === 'sym' && expr.sym) return expr.sym;
     throw new Error(`Expected identifier but got op: ${expr.op}`);
   }
 

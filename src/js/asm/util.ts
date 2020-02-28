@@ -144,6 +144,7 @@ export class SparseArray<T> {
   }
 
   slice(start: number, end: number): T[] {
+    if (end <= start) return [];
     const i = this._find(start);
     if (i < 0) throw new Error(`Absent: ${start}`);
     const [s, a] = this._chunks[i];

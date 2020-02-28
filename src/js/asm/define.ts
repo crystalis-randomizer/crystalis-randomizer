@@ -17,7 +17,14 @@ export class Define {
   }
 
   append(define: Define) {
-    if (!this.canOverload()) throw new Error(`non-overloadable`);
+    if (!this.canOverload()) {
+      const prevDef = this.overloads[this.overloads.length - 1].definition;
+      const at = prevDef ? Token.at(prevDef) : '';
+      const prev = at.replace(/at/, 'previously defined at');
+      const nextDef = define.overloads[0].definition;
+      const next = nextDef ? Token.nameAt(nextDef) : '';
+      throw new Error(`Non-overloadable: ${next}${prev}`);
+    }
     this.overloads.push(...define.overloads);
   }
 
@@ -45,10 +52,10 @@ export class Define {
     let overload: DefineOverload;
     if (!paramStart) {
       // blank macro
-      overload = new TexStyleDefine([], []);
+      overload = new TexStyleDefine([], [], macro[1]);
     } else if (paramStart.token === 'grp') {
       // TeX-style param list
-      overload = new TexStyleDefine(paramStart.inner, macro.slice(3));
+      overload = new TexStyleDefine(paramStart.inner, macro.slice(3), macro[1]);
     } else if (paramStart.token === 'lp') {
       // C-style param list
       const paramEnd = Token.findBalanced(macro, 2);
@@ -57,16 +64,17 @@ export class Define {
       }
       overload =
           new CStyleDefine(Token.identsFromCList(macro.slice(3, paramEnd)),
-                           macro.slice(paramEnd + 1));
+                           macro.slice(paramEnd + 1), macro[1]);
     } else {
       // no param list
-      overload = new TexStyleDefine([], macro.slice(2));
+      overload = new TexStyleDefine([], macro.slice(2), macro[1]);
     }
     return new Define([overload]);
   }
 }
 
 interface DefineOverload {
+  readonly definition?: Token;
   expand(tokens: Token[], start: number): string|Token[][];
   canOverload(): boolean;
 }
@@ -103,7 +111,8 @@ function produce(tokens: Token[],
 
 class CStyleDefine implements DefineOverload {
   constructor(readonly params: string[],
-              readonly production: Token[]) {}
+              readonly production: Token[],
+              readonly definition?: Token) {}
 
   expand(tokens: Token[], start: number): string|Token[][] {
     let i = start + 1; // skip past the macro call identifier
@@ -144,7 +153,8 @@ class CStyleDefine implements DefineOverload {
 
 class TexStyleDefine implements DefineOverload {
   constructor(readonly pattern: Token[],
-              readonly production: Token[]) {}
+              readonly production: Token[],
+              readonly definition?: Token) {}
   expand(tokens: Token[], start: number): string|Token[][] {
     let i = start + 1; // skip past the macro call identifier
     const replacements = new Map<string, Token[]>();

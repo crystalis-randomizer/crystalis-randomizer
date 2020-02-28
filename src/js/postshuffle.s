@@ -29,8 +29,8 @@
 .segment "1b"   :bank $1b :size $2000 :off $36000 :mem $a000
 .segment "1c"   :bank $1c :size $2000 :off $38000 :mem $8000
 .segment "1d"   :bank $1d :size $2000 :off $3a000 :mem $a000
-.segment "fe"   :bank $1e :size $2000 :off $7c000 :mem $c000
-.segment "ff"   :bank $1f :size $2000 :off $7e000 :mem $e000
+.segment "fe"   :bank $1e :size $2000 :off $3c000 :mem $c000
+.segment "ff"   :bank $1f :size $2000 :off $3e000 :mem $e000
 
 .segment "0d", "fe", "ff" ; object data
 

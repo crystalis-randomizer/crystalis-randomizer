@@ -33,7 +33,6 @@ interface Env {
   definedSymbol(sym: string): boolean;
   constantSymbol(sym: string): boolean;
   referencedSymbol(sym: string): boolean;
-  evaluate(expr: Expr): number|undefined;
   // also want methods to apply shunting yard to token list?
   //  - turn it into a json tree...?
 }
@@ -316,8 +315,8 @@ export class Preprocessor extends TokenSource.Abstract {
   }
 
   evaluateConst(expr: Expr): number {
-    const v = this.env.evaluate(expr);
-    if (v != null) return v;
+    expr = Expr.traversePost(expr, Expr.evaluate);
+    if (expr.op === 'num' && !expr.meta?.rel) return expr.num!;
     const at = Token.at(expr);
     throw new Error(`Expected a constant${at}`);
   }
@@ -392,7 +391,7 @@ export class Preprocessor extends TokenSource.Abstract {
     const [expr, end] = Expr.parse(line, 1);
     const at = line[1] || line[0];
     if (!expr) throw new Error(`Expected expression: ${Token.nameAt(at)}`);
-    const times = Expr.evaluate(expr);
+    const times = this.evaluateConst(expr);
     if (times == null) throw new Error(`Expected a constant${Token.at(expr)}`);
     let ident: string|undefined;
     if (end < line.length) {

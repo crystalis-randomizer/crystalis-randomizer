@@ -182,7 +182,7 @@ class LinkChunk {
       full.set(offset, data);
     }
 
-    // Mark the follow-ons
+    // Retry the follow-ons
     for (const [sub, chunk] of this.follow) {
       chunk.resolveSub(sub, false);
     }
@@ -216,46 +216,31 @@ class LinkChunk {
     // return deps;
   }
 
+  addDep(sub: Substitution, dep: number) {
+    if (dep === this.index && this.subs.delete(sub)) this.selfSubs.add(sub);
+    this.linker.chunks[dep].follow.set(sub, this);
+    this.deps.add(dep);
+  }
+
   // Returns a list of dependent chunks, or undefined if successful.
   resolveSub(sub: Substitution, initial: boolean) { //: Iterable<number>|undefined {
-
 
     // TODO - resolve(resolver) via chunkData to resolve banks!!
 
 
     // Do a full traverse of the expression - see what's blocking us.
-    //   TODO - resolve bank here if possible, since nobody else is gonna do it.
     if (!this.subs.has(sub) && !this.selfSubs.has(sub)) return;
-    sub.expr = Expr.traverse(sub.expr, (e, parent) => {
-      if (e.op === 'off') {
-        const dep = this.linker.chunks[e.chunk!];
-        const parentOp = parent?.op;
-        if (dep.org != null && parentOp !== '^' && parentOp !== '.move') {
-          return {op: 'num', num: dep.org + e.num!};
-        } else {
-          if (initial && e.chunk === this.index && this.subs.delete(sub)) {
-            this.selfSubs.add(sub);
-          }
-          // if (e.chunk !== this.index) this.resolved = false;
-          if (initial) {
-            this.linker.chunks[e.chunk!].follow.set(sub, this);
-            this.deps.add(e.chunk!);
-          }
+    sub.expr = Expr.traverse(sub.expr, (e, rec, p) => {
+      // First handle most common bank byte case, since it triggers on a
+      // different type of resolution.
+      if (initial && p?.op === '^' && p.args!.length === 1 && e.meta) {
+        if (e.meta.bank == null) {
+          this.addDep(sub, e.meta.chunk!);
         }
+        return e; // skip recursion either way.
       }
-      return e;
-    }, (e) => { // pre-traverse to resolve banks
-      if (e.op === '^' && e.args?.length === 1) {
-        // TODO - resolve bank bytes here, before we turn it into a number...
-        const child = e.args[0];
-        if (child.op !== 'off') {
-          const at = Token.at(child);
-          throw new Error(`Cannot get bank of non-offset: ${child.op}${at}`);
-        }
-        const dep = this.linker.chunks[child.chunk!];
-        if (dep.org) return {op: 'num', num: dep._segment!.bank};
-      }
-      // will traverse child but will only record info, can't resolve it
+      e = this.linker.resolveLink(Expr.evaluate(rec(e)));
+      if (initial && e.meta?.rel) this.addDep(sub, e.meta.chunk!);
       return e;
     });
 
@@ -268,20 +253,17 @@ class LinkChunk {
 
     // See if we can do it immediately.
     let del = false;
-    if (sub.expr.op === 'num') {
+    if (sub.expr.op === 'num' && !sub.expr.meta?.rel) {
       this.writeValue(sub.offset, sub.expr.num!, sub.size);
       del = true;
     } else if (sub.expr.op === '.move') {
       if (sub.expr.args!.length !== 1) throw new Error(`bad .move`);
       const child = sub.expr.args![0];
-      if (child.op === 'off') {
-        const segment = this.linker.chunks[child.chunk!].segment;
-        if (segment) {
-          const start = segment.delta + child.num!;
-          const slice = this.linker.orig.slice(start, start + sub.size);
-          this.writeBytes(sub.offset, Uint8Array.from(slice));
-          del = true;
-        }
+      if (child.op === 'num' && child.meta?.offset != null) {
+        const start = child.meta!.offset! + child.num!;
+        const slice = this.linker.orig.slice(start, start + sub.size);
+        this.writeBytes(sub.offset, Uint8Array.from(slice));
+        del = true;
       }
     }
     if (del) {
@@ -401,43 +383,40 @@ class Link {
     
   // }
 
+  resolveLink(expr: Expr): Expr {
+    if (expr.op === '.orig' && expr.args?.length === 1) {
+      const child = expr.args[0];
+      const offset = child.meta?.offset;
+      if (offset != null) {
+        const num = this.orig.get(offset + child.num!);
+        if (num != null) return {op: 'num', num};
+      }
+    } else if (expr.op === 'num' && expr.meta?.chunk != null) {
+      const meta = expr.meta;
+      const chunk = this.chunks[meta.chunk!];
+      if (chunk.org !== meta.org ||
+          chunk.segment?.bank !== meta.bank ||
+          chunk.offset !== meta.offset) {
+        const meta2 = {
+          org: chunk.org,
+          offset: chunk.offset,
+          bank: chunk.segment?.bank,
+        };
+        expr = Expr.evaluate({...expr, meta: {...meta, ...meta2}});
+      }
+    }
+    return expr;
+  }
+
   // NOTE: so far this is only used for asserts?
   // It basically copy-pastes from resolveSubs... :-(
+
   resolveExpr(expr: Expr): number {
-    expr = Expr.traverse(expr, (e, parent) => {
-      if (e.op === 'off' && parent?.op !== '.move') {
-        const c = this.chunks[e.chunk!];
-        if (c.org != null) return {op: 'num', num: c.org + e.num!};
-      }
-      return e;
-    }, (e) => { // pre-traverse to resolve banks
-      if (e.op === '^' && e.args?.length === 1) {
-        // TODO - resolve bank bytes here, before we turn it into a number...
-        const child = e.args[0];
-        if (child.op !== 'off') {
-          const at = Token.at(child);
-          throw new Error(`Cannot get bank of non-offset: ${child.op}${at}`);
-        }
-        const c = this.chunks[child.chunk!];
-        if (c.org) return {op: 'num', num: c.segment!.bank};
-      } else if (e.op === '.orig' && e.args?.length === 1) {
-        // TODO - resolve bank bytes here, before we turn it into a number...
-        const child = e.args[0];
-        if (child.op !== 'off') {
-          const at = Token.at(child);
-          throw new Error(`Cannot read from non-offset: ${child.op}${at}`);
-        }
-        const c = this.chunks[child.chunk!];
-        if (c.offset) {
-          const num = this.orig.get(c.offset + child.num!);
-          if (num != null) return {op: 'num', num};
-        }
-      }
-      // will traverse child but will only record info, can't resolve it
-      return e;
+    expr = Expr.traverse(expr, (e, rec) => {
+      return this.resolveLink(Expr.evaluate(rec(e)));
     });
 
-    if (expr.op === 'num') return expr.num!;
+    if (expr.op === 'num' && !expr.meta?.rel) return expr.num!;
     const at = Token.at(expr);
     throw new Error(`Unable to fully resolve expr${at}`);
   }
@@ -490,7 +469,8 @@ class Link {
       }
     }
 
-    while (this.resolvedChunks.length || this.unresolvedChunks.size) {
+    let count = this.resolvedChunks.length + 2 * this.unresolvedChunks.size;
+    while (count) {
       const c = this.resolvedChunks.pop();
       if (c) {
         this.placeChunk(c);
@@ -502,6 +482,12 @@ class Link {
           if (chunk.org == null) this.placeChunk(chunk);
         }
       }
+      const next = this.resolvedChunks.length + 2 * this.unresolvedChunks.size;
+      if (next === count) {
+        console.error(this.resolvedChunks, this.unresolvedChunks);
+        throw new Error(`Not making progress`);
+      }
+      count = next;
     }
 
     // if (!chunk.org && !chunk.subs.length) this.placeChunk(chunk);
@@ -558,7 +544,7 @@ class Link {
   }
 
   placeChunk(chunk: LinkChunk) {
-    if (chunk.org) return; // don't re-place.
+    if (chunk.org != null) return; // don't re-place.
     const size = chunk.size;
     if (!chunk.subs.size && !chunk.selfSubs.size) {
       // chunk is resolved: search for an existing copy of it first
@@ -595,7 +581,7 @@ class Link {
 
   resolveSymbols(expr: Expr): Expr {
     // pre-traverse so that transitive imports work
-    return Expr.traverse(expr, e => e, (e: Expr) => {
+    return Expr.traverse(expr, (e, rec) => {
       while (e.op === 'im' || e.op === 'sym') {
         if (e.op === 'im') {
           const name = e.sym!;
@@ -610,7 +596,7 @@ class Link {
           e = this.symbols[e.num].expr!;
         }
       }
-      return e;
+      return Expr.evaluate(rec(e));
     });
   }
 

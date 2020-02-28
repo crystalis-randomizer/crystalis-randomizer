@@ -9,7 +9,7 @@ const [] = [util];
 const link = Linker.link;
 
 function off(chunk: number, num: number): Expr {
-  return {op: 'off', chunk, num};
+  return {op: 'num', num, meta: {rel: true, chunk}};
 }
 function op(op: string, ...args: Expr[]): Expr {
   return {op, args};
@@ -316,7 +316,7 @@ describe('Linker', function() {
       chunks: [{
         segments: ['a'],
         data: Uint8Array.of(3, 5, 0xff),
-        subs: [{offset: 2, size: 1, expr: {op: 'import', sym: 'foo'}}],
+        subs: [{offset: 2, size: 1, expr: {op: 'im', sym: 'foo'}}],
       }],
       segments: [{
         name: 'a', size: 100, offset: 0, memory: 0,

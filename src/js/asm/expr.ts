@@ -35,20 +35,21 @@ export namespace Expr {
   }
 
   type Rec = (expr: Expr) => Expr; // recurses into children
-  type Traverser = (expr: Expr, rec: Rec) => Expr;
+  type Traverser = (expr: Expr, rec: Rec, parent?: Expr) => Expr;
 
   /** Performs a post-order traversal. */
-  export function traverse(expr: Expr, f: Traverser, rec?: Rec): Expr {
-    const source = expr.source;
-    if (!rec) {
-      rec = (e: Expr) => {
-        if (!e.args) return e;
-        return {...e, args: e.args.map(c => traverse(c, f, rec))};
-      };
+  export function traverse(expr: Expr, f: Traverser) {
+    function rec(e: Expr) {
+      if (!e.args) return e;
+      return {...e, args: e.args.map(c => t(c, e))};
+    };
+    function t(e: Expr, p?: Expr) {
+      const source = e.source;
+      e = f(e, rec, p);
+      if (source && !e.source) e.source = source;
+      return e;
     }
-    expr = f(expr, rec);
-    if (source && !expr.source) expr.source = source;
-    return expr;
+    return t(expr);
   }
 
   export function traversePost(expr: Expr, f: Rec): Expr {

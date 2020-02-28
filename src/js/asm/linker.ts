@@ -7,7 +7,7 @@ export interface Export {
   value: number;
   offset?: number;
   bank?: number;
-  segment?: string;
+  //segment?: string;
 }
 
 export class Linker {
@@ -653,14 +653,21 @@ class Link {
   }
 
   buildExports(): Map<string, Export> {
-    throw new Error();
-    // const result = new Map<string, Export>();
-    // for (const symbol of this.symbols) {
-    //   if (!symbol.export) continue;
-    //   Expr.resolve(symbol.expr, this);
-    //   const e: Export = {
-    //     value
-    //   };
-    // }
+    const map = new Map<string, Export>();
+    for (const symbol of this.symbols) {
+      if (!symbol.export) continue;
+      const e = Expr.traverse(symbol.expr!, (e, rec) => {
+        return this.resolveLink(Expr.evaluate(rec(e)));
+      });
+      if (e.op !== 'num') throw new Error(`never resolved: ${symbol.export}`);
+      const value = e.num!;
+      const out: Export = {value};
+      if (e.meta?.offset != null && e.meta.org != null) {
+        out.offset = e.meta.offset + value - e.meta.org;
+      }
+      if (e.meta?.bank != null) out.bank = e.meta.bank;
+      map.set(symbol.export, out);
+    }
+    return map;
   }
 }

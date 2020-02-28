@@ -38,7 +38,7 @@ interface Env {
 }
 
 export class Preprocessor extends TokenSource.Abstract {
-  private readonly macros = new Map<string, Define|Macro>();
+  private readonly macros: Map<string, Define|Macro>;
 
   // builds up repeating tokens...
   private repeats: Array<[Token[][], number, number, string?]> = [];
@@ -46,8 +46,10 @@ export class Preprocessor extends TokenSource.Abstract {
   //  - only symbols have scope
   // TODO - evaluate constants...
 
-  constructor(readonly stream: TokenStream, readonly env: Env) {
+  constructor(readonly stream: TokenStream, readonly env: Env,
+              parent?: Preprocessor) {
     super();
+    this.macros = parent ? parent.macros : new Map();
   }
 
   // For use as a token source in the next stage.

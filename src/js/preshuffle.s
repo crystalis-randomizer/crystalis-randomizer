@@ -1211,7 +1211,7 @@ SetTriggerTileGameMode:
   lda $0300,x
   cmp #$90
   bne +
-   inc $0300,y
+   inc $0300,x
 + rts
   ;; freed 5 bytes
 .assert < $37a2c

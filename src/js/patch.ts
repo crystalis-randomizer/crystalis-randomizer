@@ -1,4 +1,9 @@
-import {Assembler} from './6502.js';
+import {Assembler} from './asm/assembler.js';
+import {Cpu} from './asm/cpu.js';
+import {Linker} from './asm/linker.js';
+import {Preprocessor} from './asm/preprocessor.js';
+import {TokenStream} from './asm/tokenstream.js';
+import {Tokenizer} from './asm/tokenizer.js';
 import {crc32} from './crc32.js';
 import {ProgressTracker, generate as generateDepgraph} from './depgraph.js';
 import {FetchReader} from './fetchreader.js';
@@ -30,6 +35,41 @@ import {DefaultMap} from './util.js';
 import * as version from './version.js';
 
 const EXPAND_PRG: boolean = true;
+
+class ShimAssembler {
+  pre: Preprocessor;
+  exports = new Map<string, number>();
+
+  constructor(code: string, file: string) {
+    const asm = new Assembler(Cpu.P02);
+    const toks = new TokenStream();
+    toks.enter(new Tokenizer(code, file));
+    this.pre = new Preprocessor(toks, asm);
+    while (this.pre.next()) {}
+  }
+
+  assemble(code: string, file: string, rom: Uint8Array) {
+    const asm = new Assembler(Cpu.P02);
+    const toks = new TokenStream();
+    toks.enter(new Tokenizer(code, file));
+    const pre = new Preprocessor(toks, asm, this.pre);
+    asm.tokens(pre);
+    const link = new Linker();
+    link.read(asm.module());
+    link.link().addOffset(0x10).apply(rom);
+    for (const [s, v] of link.exports()) {
+      //if (!v.offset) throw new Error(`no offset: ${s}`);
+      this.exports.set(s, v.offset ?? v.value);
+    }
+  }
+
+  expand(s: string) {
+    const v = this.exports.get(s);
+    if (!v) throw new Error(`missing export: ${s}`);
+    return v;
+  }
+}
+
 
 // TODO - to shuffle the monsters, we need to find the sprite palttes and
 // patterns for each monster.  Each location supports up to two matchups,
@@ -150,19 +190,18 @@ export async function shuffle(rom: Uint8Array,
     _ZEBU_STUDENT_GIVES_ITEM: true, // flags.zebuStudentGivesItem(),
   };
 
-  const asm = new Assembler();
   async function assemble(path: string) {
-    asm.assemble(await reader.read(path), path);
-    asm.patchRom(rom);
+    asm.assemble(await reader.read(path), path, rom);
   }
 
   deterministicPreParse(rom.subarray(0x10)); // TODO - trainer...
 
   const flagFile =
       Object.keys(defines)
-          .filter(d => defines[d]).map(d => `define ${d} 1\n`).join('');
-  asm.assemble(flagFile, 'flags.s');
+          .filter(d => defines[d]).map(d => `.define ${d} 1\n`).join('');
+  const asm = new ShimAssembler(flagFile, 'flags.s');
   await assemble('preshuffle.s');
+//console.log('Multiply16Bit:', asm.expand('Multiply16Bit').toString(16));
 
   const parsed = new Rom(rom);
   parsed.flags.defrag();
@@ -302,7 +341,7 @@ async function postParsedShuffle(rom: Uint8Array,
                                  random: Random,
                                  seed: number,
                                  flags: FlagSet,
-                                 asm: Assembler,
+                                 asm: ShimAssembler,
                                  assemble: (path: string) => Promise<void>): Promise<number> {
   await assemble('postshuffle.s');
   updateDifficultyScalingTables(rom, flags, asm);
@@ -687,9 +726,9 @@ function updateCoinDrops(rom: Uint8Array, flags: FlagSet) {
 // goes with enemy stat recomputations in postshuffle.s
 // NOTE: this should go into a rom object so that it can
 // be inspected and written in a consistent way.
-const updateDifficultyScalingTables = (rom: Uint8Array, flags: FlagSet, asm: Assembler) => {
+const updateDifficultyScalingTables = (rom: Uint8Array, flags: FlagSet, asm: ShimAssembler) => {
   rom = rom.subarray(0x10);
-  const diff = seq(asm.expand('SCALING_LEVELS'), x => x);
+  const diff = seq(asm.expand('ScalingLevels'), x => x);
 
   // PAtk = 5 + Diff * 15/32
   // DiffAtk table is 8 * PAtk = round(40 + (Diff * 15 / 4))
@@ -744,7 +783,7 @@ const updateDifficultyScalingTables = (rom: Uint8Array, flags: FlagSet, asm: Ass
   ]);
 };
 
-const rescaleShops = (rom: Rom, asm: Assembler, random?: Random) => {
+const rescaleShops = (rom: Rom, asm: ShimAssembler, random?: Random) => {
   // Populate rescaled prices into the various rom locations.
   // Specifically, we read the available item IDs out of the
   // shop tables and then compute new prices from there.
@@ -774,7 +813,7 @@ const rescaleShops = (rom: Rom, asm: Assembler, random?: Random) => {
   }
 
   // Also fill the scaling tables.
-  const diff = seq(asm.expand('SCALING_LEVELS'), x => x);
+  const diff = seq(asm.expand('ScalingLevels'), x => x);
   // Tool shops scale as 2 ** (Diff / 10), store in 8ths
   patchBytes(rom.prg, asm.expand('ToolShopScaling'),
              diff.map(d => Math.round(8 * (2 ** (d / 10)))));

@@ -78,6 +78,17 @@ export function deterministicPreParse(prg: Uint8Array): void {
   prg[0x1c803] = 0x00; // remove ~066 from spawn condition 2c @ 38
   write(prg, 0x1c80d, 0xa2, 0xb3); // spawn condition 2d @ 73
   prg[0x1aa86] = 0xfe; // trigger -> unused spawn
+
+  // TODO - these are transitional until we move the logic elsewhere
+  write(prg, 0x3d6d5,
+        0x25, 0x29,  // 25 statue of onyx use -> 29 gas mask
+        0x39, 0x3a,  // 39 glowing lamp use -> 3a statue of gold
+        0x3b, 0x47,  // 3b love pendant use -> 47 change
+        0x3c, 0x3e,  // 3c kirisa plant use -> 3e bow of moon
+        0x84, 0x46,  // 84 angry sea trigger -> 46 barrier
+        0xb2, 0x42,  // b2 summit trigger -> 42 paralysis
+        0xb4, 0x41,  // b4 windmill cave trigger -> 41 refresh
+        0xff);       // for bookkeeping purposes, not actually used
 }
 
 export function deterministic(rom: Rom, flags: FlagSet): void {

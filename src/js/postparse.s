@@ -1,5 +1,40 @@
 ;;; Must come after preshuffle.s for various constants.
 
+.define Multiply16Bit $fa01
+.segment "00"   :bank $00 :size $2000 :off $00000 :mem $8000
+.segment "01"   :bank $01 :size $2000 :off $02000 :mem $a000
+.segment "02"   :bank $02 :size $2000 :off $04000 :mem $8000
+.segment "03"   :bank $03 :size $2000 :off $06000 :mem $a000
+.segment "04"   :bank $04 :size $2000 :off $08000 :mem $8000
+.segment "05"   :bank $05 :size $2000 :off $0a000 :mem $a000
+.segment "06"   :bank $06 :size $2000 :off $0c000 :mem $8000
+.segment "07"   :bank $07 :size $2000 :off $0e000 :mem $a000
+.segment "08"   :bank $08 :size $2000 :off $10000 :mem $8000
+.segment "09"   :bank $09 :size $2000 :off $12000 :mem $a000
+.segment "0a"   :bank $0a :size $2000 :off $14000 :mem $8000
+.segment "0b"   :bank $0b :size $2000 :off $16000 :mem $a000
+.segment "0c"   :bank $0c :size $2000 :off $18000 :mem $8000
+.segment "0d"   :bank $0d :size $2000 :off $1a000 :mem $a000
+.segment "0e"   :bank $0e :size $2000 :off $1c000 :mem $8000
+.segment "0f"   :bank $0f :size $2000 :off $1e000 :mem $a000
+.segment "10"   :bank $10 :size $2000 :off $20000 :mem $8000
+.segment "11"   :bank $11 :size $2000 :off $22000 :mem $a000
+.segment "12"   :bank $12 :size $2000 :off $24000 :mem $8000
+.segment "13"   :bank $13 :size $2000 :off $26000 :mem $a000
+.segment "14"   :bank $14 :size $2000 :off $28000 :mem $8000
+.segment "15"   :bank $15 :size $2000 :off $2a000 :mem $a000
+.segment "16"   :bank $16 :size $2000 :off $2c000 :mem $8000
+.segment "17"   :bank $17 :size $2000 :off $2e000 :mem $a000
+.segment "18"   :bank $18 :size $2000 :off $30000 :mem $8000
+.segment "19"   :bank $19 :size $2000 :off $32000 :mem $a000
+.segment "1a"   :bank $1a :size $2000 :off $34000 :mem $8000
+.segment "1b"   :bank $1b :size $2000 :off $36000 :mem $a000
+.segment "1c"   :bank $1c :size $2000 :off $38000 :mem $8000
+.segment "1d"   :bank $1d :size $2000 :off $3a000 :mem $a000
+.segment "fe"   :bank $1e :size $2000 :off $7c000 :mem $c000
+.segment "ff"   :bank $1f :size $2000 :off $7e000 :mem $e000
+
+
 .segment "0e", "fe", "ff"
 
 .ifdef _NORMALIZE_TELEPATHY
@@ -81,7 +116,7 @@ Telepathy_ShowDefaultMessage:
     lda TelepathyTable+1,x
     sta $20
     rts
-.assert * < $822f
+.assert * <= $822f
 TelepathyResults:
 
 .org $98f4
@@ -104,7 +139,7 @@ TelepathyTable:
   tax
   jsr CopyShopPrices
   jmp PostInitializeShop
-.assert * < $9912
+.assert * <= $9912
 
 ;;; Initialize armor shop
 .org $9895
@@ -115,7 +150,7 @@ TelepathyTable:
   jmp PostInitializeShop
 ShopItemHorizontalPositions:
   .byte 8,13,18,23
-.assert * < $98b6
+.assert * <= $98b6
 PostInitializeShop:
 
 .org $98bc  ; use the new position table
@@ -196,7 +231,7 @@ PostInitializeShop:
   lsr
   sta $646d  ; current shop index   
   rts
-.assert * < $9970
+.assert * <= $9970
 
 .org $9da4
 ShopData:
@@ -204,25 +239,25 @@ ShopData:
 ;;;  1. SHOP_COUNT (11)
 ;;;  2. SCALING_LEVELS (48)
 ArmorShopIdTable:
-  .skip SHOP_COUNT*4
+  .org * + SHOP_COUNT*4
 ToolShopIdTable:
-  .skip SHOP_COUNT*4
+  .org * + SHOP_COUNT*4
 ArmorShopPriceTable:
-  .skip SHOP_COUNT*4
+  .org * + SHOP_COUNT*4
 ToolShopPriceTable:
-  .skip SHOP_COUNT*4
+  .org * + SHOP_COUNT*4
 InnPrices:
-  .skip SHOP_COUNT
+  .org * + SHOP_COUNT
 ShopLocations:
-  .skip SHOP_COUNT*4
+  .org * + SHOP_COUNT*4
 ToolShopScaling:
-  .skip SCALING_LEVELS
+  .org * + SCALING_LEVELS
 ArmorShopScaling:
-  .skip SCALING_LEVELS
+  .org * + SCALING_LEVELS
 BasePrices:
-  .skip 52             ; 0 = $0d, 50 = $26, 51 = "$27" (inn)
+  .org * + 52             ; 0 = $0d, 50 = $26, 51 = "$27" (inn)
 InnBasePrice:
-  .skip 2
+  .org * + 2
 
 ;;; This is the space freed up by compressing the shop tables
 
@@ -358,7 +393,7 @@ Multiply32Bit:
   bne -
   rts
 
-.assert * < $a000
+.assert * <= $a000
 
 .endif
 
@@ -528,3 +563,5 @@ BitsTable:
     and #$70
 
 .endif
+
+.export ShopData, InnBasePrice, ToolShopScaling, ArmorShopScaling

@@ -1,215 +1,112 @@
 import {SourceInfo, Token} from './token';
 
 export interface Expr {
-  // operator (e.g. '+' or '.max') or 'sym', 'num', or 'off' or 'import'
+  // operator (e.g. '+' or '.max') or 'sym', 'num', or 'im'
   //  - sym: an offset into the symbols array (or the name in 'sym')
   //  - num: a number literal, or an offset into the symbols array.
-  //  - off: address of an offset in this chunk
-  //  - import: an import from another object file (uses 'sym').
+  //  - im: an import from another object file (uses 'sym').
   // TODO - what about different address types? bank hint/etc?
   //      - does bank hint need to get stored in the object file?
   //        - probably not...?
   op: string;
   args?: Expr[];
   num?: number;
-  chunk?: number; // for labels, the index of the chunk (for bank bytes).
+  meta?: Expr.Meta;
   sym?: string;
-  size?: number; // (assumed) byte size of result
   source?: SourceInfo;
 }
 
 export namespace Expr {
 
-  export interface Resolver {
-    resolve(name: string): Expr;
-    chunkData(chunk: number): {bank?: number, org?: number, zp?: boolean};
+  /** Extra information for 'num' values. */
+  export interface Meta {
+    /** Whether this is relative to the start of the chunk. */
+    rel?: boolean;
+    /** Relative chunk the value is defined in. */
+    chunk?: number;
+    /** Org value of chunk, if known. */
+    org?: number;
+    /** Bank value of chunk, if known. */
+    bank?: number;
+    /** Offset value of chunk, if known. */
+    offset?: number;
+    /** Size hint for number. */
+    size?: number;
   }
+
+  type Rec = (expr: Expr) => Expr; // recurses into children
+  type Traverser = (expr: Expr, rec: Rec) => Expr;
 
   /** Performs a post-order traversal. */
-  export function traverse(expr: Expr,
-                           post: (e: Expr, parent: Expr|undefined) => Expr,
-                           pre?: (e: Expr, parent: Expr|undefined) => Expr,
-                           parent?: Expr): Expr {
+  export function traverse(expr: Expr, f: Traverser, rec?: Rec): Expr {
     const source = expr.source;
-    if (pre) expr = pre(expr, parent);
-
-    // First traverse children.
-    if (expr.args?.length) {
-      const args = [];
-      let edit = false;
-      for (const arg of expr.args) {
-        const mapped = traverse(arg, post, pre, expr);
-        if (mapped !== arg) edit = true;
-        args.push(mapped);
-      }
-      if (edit) expr = expr = {...expr, args};
+    if (!rec) {
+      rec = (e: Expr) => {
+        if (!e.args) return e;
+        return {...e, args: e.args.map(c => traverse(c, f, rec))};
+      };
     }
-
-    // Then call function.
-    expr = post(expr, parent);
-
-    // Now simplify the expression if possible.  Pre-evalulate offset
-    const [a, b] = expr.args || [];
-    if (expr.op === '+' && a?.op === 'off' && b?.op === 'num') {
-      expr = {op: 'off', num: a.num! + b.num!, chunk: a.chunk!};
-    } else if (expr.op === '+' && b?.op === 'off' && a?.op === 'num') {
-      expr = {op: 'off', num: a.num! + b.num!, chunk: b.chunk!};
-    } else if (expr.op === '-' && a?.op === 'off' && b?.op === 'off'
-               && a.chunk === b.chunk) {
-      expr = {op: 'num', num: a.num! - b.num!};
-    } else if (expr.op !== 'num') {
-      const num = evaluate(expr, true); // shallow
-      if (num != null) expr = {op: 'num', num, size: size(num)};
-    }
+    expr = f(expr, rec);
     if (source && !expr.source) expr.source = source;
     return expr;
   }
 
-  // export function resolveImports(expr: Expr,
-  //                                map: ReadonlyMap<string, number>,
-  //                                symbols: Array<{expr: Expr}>): Expr {
-  //   const source = expr.source;
-  //   if (expr.op === 'import' && expr.sym != null) {
-  //     const sym = map.get(expr.sym);
-  //     if (sym == null) {
-  //       const at = Token.at(expr);
-  //       throw new Error(`Nothing exported ${expr.sym}${at}`);
-  //     }
-  //     expr = resolve(resolved, resolver); // recurse
-  //   } else if (expr.args?.length) {
-  //     expr = {...expr,
-  //             args: expr.args.map(a => resolveImports(a, map, symbols))};
-
-  //     // NOTE - this is still nonsense... vvvv
-
-  //   } else if (expr.op === '^' && expr.args?.length === 1) {
-  //     // evaluate the bank byte here because it requires funny business
-  //     const arg = expr.args[0];
-  //     if (arg.op === 'off' && arg.chunk != null) {
-  //       const chunk = resolver.chunkData(arg.chunk);
-  //       if (chunk.bank != null) expr = {op: 'num', num: chunk.bank, size: 1};
-  //     }
-  //   } else if (expr.op === 'off') {
-  //     if (expr.chunk == null || expr.num == null) throw new Error(`Bad offset`);
-  //     const chunk = resolver.chunkData(expr.chunk);
-  //     if (chunk.org != null) {
-  //       expr = {op: 'num', num: expr.num + chunk.org, size: chunk.zp ? 1 : 2};
-  //     } else if (chunk.zp) {
-  //       expr = {...expr, size: 1};
-  //     }
-  //   }
-  //   if (expr.op === '-' && expr.args?.length === 2 &&
-  //              expr.args[0].op === 'off' && expr.args[1].op === 'off' &&
-  //              expr.args[0].chunk === expr.args[1].chunk) {
-  //     const num = expr.args[0].num! - expr.args[1].num!;
-  //     const size = num > 127 || num < -128 ? 2 : 1;
-  //     expr = {op: 'num', num, size};
-  //   }
-  //   if (expr.op !== 'num') {
-  //     const num = evaluate(expr);
-  //     if (num != null) expr = {op: 'num', num, size: size(num)};
-  //   }
-  //   if (source && !expr.source) expr.source = source;
-  //   return expr;
-  // }
-
-  /** Substitutes offsets or symbol table refs for all string symbols. */
-  export function resolve(expr: Expr, resolver: Resolver): Expr {
-    const source = expr.source;
-    if (expr.op === 'sym' && expr.sym != null) {
-      const resolved = resolver.resolve(expr.sym);
-      if (resolved.op === 'sym' && resolved.sym) {
-        throw new Error(`Resolution must not return another named symbol`);
-      }
-      expr = resolve(resolved, resolver); // recurse
-    } else if (expr.args?.length) {
-      expr = {...expr, args: expr.args.map(a => resolve(a, resolver))};
-    } else if (expr.op === '^' && expr.args?.length === 1) {
-      // evaluate the bank byte here because it requires funny business
-      const arg = expr.args[0];
-      if (arg.op === 'off' && arg.chunk != null) {
-        const chunk = resolver.chunkData(arg.chunk);
-        if (chunk.bank != null) expr = {op: 'num', num: chunk.bank, size: 1};
-      }
-    } else if (expr.op === 'off') {
-      if (expr.chunk == null || expr.num == null) throw new Error(`Bad offset`);
-      const chunk = resolver.chunkData(expr.chunk);
-      if (chunk.org != null) {
-        expr = {op: 'num', num: expr.num + chunk.org, size: chunk.zp ? 1 : 2};
-      } else if (chunk.zp) {
-        expr = {...expr, size: 1};
-      }
-    }
-    if (expr.op === '-' && expr.args?.length === 2 &&
-               expr.args[0].op === 'off' && expr.args[1].op === 'off' &&
-               expr.args[0].chunk === expr.args[1].chunk) {
-      const num = expr.args[0].num! - expr.args[1].num!;
-      const size = num > 127 || num < -128 ? 2 : 1;
-      expr = {op: 'num', num, size};
-    }
-    if (expr.op !== 'num') {
-      const num = evaluate(expr);
-      if (num != null) expr = {op: 'num', num, size: size(num)};
-    }
-    if (source && !expr.source) expr.source = source;
-    return expr;
+  export function traversePost(expr: Expr, f: Rec): Expr {
+    return traverse(expr, (expr, rec) => f(rec(expr)));
   }
 
-  export function evaluate(expr: Expr, shallow = false): number|undefined {
-    const args: number[] = [];
-    for (const arg of expr.args || []) {
-      if (shallow) {
-        if (arg.op !== 'num') return undefined;
-        args.push(arg.num!);
-      } else {
-        const val = evaluate(arg);
-        if (val == null) return undefined;
-        args.push(val);
-      }
-    }
+  export function evaluate(expr: Expr): Expr {
     switch (expr.op) { // var-arg functions
-      case '.max': return Math.max(...args);
-      case '.min': return Math.min(...args);
-      case '.move': return undefined;
+      case '.move':
+      case 'im':
+      case 'sym':
+        return expr;
+      case 'num':
+        if (expr.meta?.rel && expr.meta.org != null) {
+          const {rel, ...meta} = expr.meta;
+          // TODO - pull size from meta?
+          return {op: 'num', num: expr.num! + meta.org!, meta};
+        }
+        return expr;
+      case '.max': return sameChunk(expr, Math.max);
+      case '.min': return sameChunk(expr, Math.min);
       default: // fall through to later checks
     }
-    if (args.length === 1) {
+
+    // Special case for unaries
+    if (expr.args?.length === 1) {
       switch (expr.op) {
-        case '+': return args[0];
-        case '-': return -args[0];
-        case '~': return ~args[0];
-        case '!': return +!args[0];
-        case '<': return args[0] & 0xff;
-        case '>': return (args[0] >> 8) & 0xff;
-        case '^': return undefined;
+        case '+': return expr.args![0];
+        case '-': return unary(expr, x => -x);
+        case '~': return unary(expr, x => ~x);
+        case '!': return unary(expr, x => +!x);
+        case '<': return unary(expr, x => x & 0xff);
+        case '>': return unary(expr, x => (x >> 8) & 0xff);
+        case '^': return num(expr.args![0].meta?.bank) ?? expr;
         default: throw new Error(`Unknown unary operator: ${expr.op}`);
       }
     }
-    const [a, b] = args;
+
     switch (expr.op) {
-      case 'num': return expr.num;
-      case 'sym': return undefined;
-      // TODO - we could actually operate (off + num) => off - just an opt?
-      case 'off': return undefined;
-      case '+': return a + b;
-      case '-': return a - b;
-      case '*': return a * b;
-      case '/': return Math.floor(a / b);
-      case '.mod': return a % b;
-      case '&': return a & b;
-      case '|': return a | b;
-      case '^': return a ^ b;
-      case '<<': return a << b;
-      case '>>': return a >>> b;
-      case '<': return +(a < b);
-      case '<=': return +(a <= b);
-      case '>': return +(a > b);
-      case '>=': return +(a >= b);
-      case '=': return +(a == b);
-      case '<>': return +(a != b);
-      case '&&': return a && b;
-      case '||': return a || b;
-      case '.xor': return !a && b || !b && a || 0;
+      case '+': return plus(expr);
+      case '-': return minus(expr);
+      case '*': return binary(expr, (a, b) => a * b);
+      case '/': return binary(expr, (a, b) => Math.floor(a / b));
+      case '.mod': return binary(expr, (a, b) => a % b);
+      case '&': return binary(expr, (a, b) => a & b);
+      case '|': return binary(expr, (a, b) => a | b);
+      case '^': return binary(expr, (a, b) => a ^ b);
+      case '<<': return binary(expr, (a, b) => a << b);
+      case '>>': return binary(expr, (a, b) => a >>> b);
+      case '<': return binary(expr, (a, b) => +(a < b));
+      case '<=': return binary(expr, (a, b) => +(a <= b));
+      case '>': return binary(expr, (a, b) => +(a > b));
+      case '>=': return binary(expr, (a, b) => +(a >= b));
+      case '=': return binary(expr, (a, b) => +(a == b));
+      case '<>': return binary(expr, (a, b) => +(a != b));
+      case '&&': return binary(expr, (a, b) => a && b);
+      case '||': return binary(expr, (a, b) => a || b);
+      case '.xor': return binary(expr, (a, b) => !a && b || !b && a || 0);
       default: throw new Error(`Unknown operator: ${expr.op}`);
     }
   }
@@ -320,7 +217,7 @@ export namespace Expr {
         } else if (front.token === 'num') {
           // add number
           const num = front.num;
-          exprs.push({op: 'num', num, size: size(num)});
+          exprs.push({op: 'num', num, meta: size(num)});
           val = false;
         } else {
           // bad token??
@@ -366,6 +263,72 @@ export namespace Expr {
     if (exprs.length !== 1) throw new Error(`shunting parse failed?`);
     if (tokens[index].source) exprs[0].source = tokens[index].source;
     return [exprs[0], i];
+  }
+
+
+  // works on absolute numbers, or relative numbers if all in same chunk.
+  // may not mix relative + absolute.
+  function sameChunk(expr: Expr, f: (...nums: number[]) => number): Expr {
+    throw new Error();
+  }
+
+  function num(num: number|undefined): Expr|undefined {
+    if (num == null) return undefined;
+    return {op: 'num', num, meta: size(num)};
+  }
+
+  function unary(expr: Expr, f: (x: number) => number): Expr {
+    // require absolute
+    const arg = expr.args![0];
+    if (!isAbs(arg)) return expr;
+    const num = f(arg.num!);
+    return {op: 'num', num, meta: size(num)};
+  }
+
+  function binary(expr: Expr, f: (x: number, y: number) => number): Expr {
+    // require both to be absolute
+    const [a, b] = expr.args!;
+    if (!isAbs(a) || !isAbs(b)) return expr;
+    const num = f(a.num!, b.num!);
+    return {op: 'num', num, meta: size(num)};
+  }
+
+  function plus(expr: Expr): Expr {
+    // allow some relative, but only if adding a non-address?
+    const [a, b] = expr.args!;
+    if (a.op !== 'num' || b.op !== 'num') return expr;
+    const out: Expr = {op: 'num', num: a.num! + b.num!};
+    if (a.meta || b.meta) {
+      if (a.meta?.rel && b.meta?.rel) return expr; // basically nonsense
+      if (a.meta?.rel) {
+        out.meta = a.meta;
+      } else if (b.meta?.rel) {
+        out.meta = b.meta;
+      }
+    }
+    if (!out.meta?.rel && out.meta?.size == null) {
+      (out.meta || (out.meta = {})).size = size(out.num!).size;
+    }
+    return out;
+  }
+
+  function minus(expr: Expr): Expr {
+    // allow rel - rel for delta
+    const [a, b] = expr.args!;
+    if (a.op !== 'num' || b.op !== 'num') return expr;
+    const out: Expr = {op: 'num', num: a.num! - b.num!};
+    if (b.meta?.rel) {
+      return a.meta?.rel && a.meta.chunk === b.meta.chunk ? out : expr;
+    }
+    if (a.meta?.rel) out.meta = a.meta;
+    if (!out.meta?.rel && out.meta?.size == null) {
+      (out.meta || (out.meta = {})).size = size(out.num!).size;
+    }
+    return out;
+  }
+
+  function isAbs(expr: Expr): boolean {
+    return expr.op === 'num' && !expr.meta?.rel;
   }
 }
 
@@ -483,11 +446,15 @@ const SIZE_TRANSFORMS = new Map<string, (...args: number[]) => number>([
   
 function fixSize(expr: Expr): Expr {
   const xform = SIZE_TRANSFORMS.get(expr.op);
-  const size = xform?.(...expr.args!.map(e => Number(e.size)));
-  if (size) expr.size = size;
+  const size = xform?.(...expr.args!.map(e => Number(e.meta?.size)));
+  if (size) (expr.meta || (expr.meta = {})).size = size;
   return expr;
 }
 
-function size(num: number): 1|2 {
-  return 0 <= num && num < 256 ? 1 : 2;
+function size(num: number): Expr.Meta {
+  return {size: 0 <= num && num < 256 ? 1 : 2};
 }
+
+// function fail(msg: string): never {
+//   throw new Error(msg);
+// }

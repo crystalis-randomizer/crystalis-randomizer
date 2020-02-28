@@ -128,7 +128,7 @@ class CheapScope extends BaseScope {
   }
 }
 
-export class Assembler implements Expr.Resolver {
+export class Assembler {
 
   /** The currently-open segment(s). */
   private segments: readonly string[] = ['code'];
@@ -225,8 +225,9 @@ export class Assembler implements Expr.Resolver {
   }
 
   evaluate(expr: Expr): number|undefined {
-    expr = Expr.resolve(expr, this);
-    return Expr.evaluate(expr);
+    expr = this.resolve(expr);
+    if (expr.op === 'num' && !expr.meta?.rel) return expr.num;
+    return undefined;
   }
 
   // private get pc(): number|undefined {
@@ -234,11 +235,22 @@ export class Assembler implements Expr.Resolver {
   //   return this._org + this.offset;
   // }
 
-  resolve(name: string): Expr {
+  resolve(expr: Expr): Expr {
+    return Expr.traverse(expr, (e, rec) => {
+      while (e.op === 'sym' && e.sym) {
+        e = this.resolveSymbol(e.sym);
+      }
+      return Expr.evaluate(rec(e));
+    });
+  }
+
+  resolveSymbol(name: string): Expr {
     if (name === '*') {
       // PC
       const num = this.chunk.data.length; // NOTE: before counting chunks
-      return {op: 'off', chunk: this.chunks.length - 1, num};
+      const meta: Expr.Meta = {rel: true, chunk: this.chunks.length - 1};
+      if (this._chunk?.org != null) meta.org = this._chunk.org;
+      return Expr.evaluate({op: 'num', num, meta});
     } else if (/^:\++$/.test(name)) {
       // anonymous forward ref
       const i = name.length - 2;
@@ -337,7 +349,7 @@ export class Assembler implements Expr.Resolver {
         if (!sym) continue; // okay to import but not use.
         // TODO - record both positions?
         if (sym.expr) throw new Error(`Already defined: ${name}`);
-        sym.expr = {op: 'import', sym: name};
+        sym.expr = {op: 'im', sym: name};
       } else {
         assertNever(global);
       }
@@ -428,7 +440,7 @@ export class Assembler implements Expr.Resolver {
   label(label: string|Token) {
     let ident: string;
     let token: Token|undefined;
-    const expr = this.resolve('*');
+    const expr = this.resolveSymbol('*');
     if (typeof label === 'string') {
       ident = label;
     } else {
@@ -471,7 +483,7 @@ export class Assembler implements Expr.Resolver {
       this.fail(`Cheap locals may only be labels: ${ident}`);
     }
     // Now make the assignment.
-    if (typeof expr !== 'number') expr = Expr.resolve(expr, this);
+    if (typeof expr !== 'number') expr = this.resolve(expr);
     this.assignSymbol(ident, false, expr);
   }
 
@@ -480,7 +492,7 @@ export class Assembler implements Expr.Resolver {
       this.fail(`Cheap locals may only be labels: ${ident}`);
     }
     // Now make the assignment.
-    if (typeof expr !== 'number') expr = Expr.resolve(expr, this);
+    if (typeof expr !== 'number') expr = this.resolve(expr);
     this.assignSymbol(ident, true, expr);
   }
 
@@ -533,7 +545,7 @@ export class Assembler implements Expr.Resolver {
     if (m === 'add' || m === 'a,x' || m === 'a,y') {
       // Special case for address mnemonics
       const expr = arg[1]!;
-      const s = expr.size || 2;
+      const s = expr.meta?.size || 2;
       if (m === 'add' && s === 1 && 'zpg' in ops) {
         return this.opcode(ops.zpg!, 1, expr);
       } else if (m === 'add' && 'abs' in ops) {
@@ -620,7 +632,9 @@ export class Assembler implements Expr.Resolver {
     // TODO - handle local/anonymous labels separately?
     // TODO - check the range somehow?
     const num = this.chunk.data.length + arglen + 1;
-    const nextPc = {op: 'off', num, chunk: this.chunks.length - 1};
+    const meta: Expr.Meta = {rel: true, chunk: this.chunks.length - 1};
+    if (this._chunk?.org) meta.org = this._chunk.org;
+    const nextPc = {op: 'num', num, meta};
     const rel: Expr = {op: '-', args: [expr, nextPc]};
     if (expr.source) rel.source = expr.source;
     this.opcode(op, arglen, rel);
@@ -628,7 +642,7 @@ export class Assembler implements Expr.Resolver {
 
   opcode(op: number, arglen: number, expr: Expr) {
     // Emit some bytes.
-    if (arglen) expr = Expr.resolve(expr, this); // BEFORE opcode (in case of *)
+    if (arglen) expr = this.resolve(expr); // BEFORE opcode (in case of *)
     const {chunk} = this;
     chunk.data.push(op);
     if (arglen) this.append(expr, arglen);
@@ -638,10 +652,10 @@ export class Assembler implements Expr.Resolver {
 
   append(expr: Expr, size: number) {
     const {chunk} = this;
-    expr = Expr.resolve(expr, this);
+    expr = this.resolve(expr);
     let val = expr.num!;
 //console.log('expr:', expr, 'val:', val);
-    if (expr.op !== 'num') {
+    if (expr.op !== 'num' || expr.meta?.rel) {
       // use a placeholder and add a substitution
       const offset = chunk.data.length;
       (chunk.subs || (chunk.subs = [])).push({offset, size, expr});
@@ -677,8 +691,8 @@ export class Assembler implements Expr.Resolver {
   }
 
   assert(expr: Expr) {
-    expr = Expr.resolve(expr, this);
-    const val = Expr.evaluate(expr);
+    expr = this.resolve(expr);
+    const val = this.evaluate(expr);
     if (val != null) {
       if (!val) this.fail(`Assertion failed`, expr);
     } else {
@@ -804,14 +818,13 @@ export class Assembler implements Expr.Resolver {
   }
 
   move(size: number, source: Expr) {
-    this.append({op: '.move', args: [source], size}, size);
+    this.append({op: '.move', args: [source], meta: {size}}, size);
   }
 
   // Utility methods for processing arguments
 
   parseConst(tokens: Token[], start = 1): number {
-    const expr = Expr.resolve(Expr.parseOnly(tokens, start), this);
-    const val = Expr.evaluate(expr);
+    const val = this.evaluate(Expr.parseOnly(tokens, start));
     if (val != null) return val;
     this.fail(`Expression is not constant`, tokens[1]);
   }
@@ -866,9 +879,9 @@ export class Assembler implements Expr.Resolver {
     const data = this.parseDataList(tokens);
     if (data.length > 2) this.fail(`Expected at most 2 args`, data[2]);
     if (!data.length) this.fail(`Expected at least 1 arg`);
-    const count = Expr.evaluate(Expr.resolve(data[0], this));
+    const count = this.evaluate(data[0]);
     if (count == null) this.fail(`Expected constant count`);
-    const val = data[1] && Expr.evaluate(Expr.resolve(data[1], this));
+    const val = data[1] && this.evaluate(data[1]);
     if (data[1] && val == null) this.fail(`Expected constant value`);
     return [count, val];
   }
@@ -884,7 +897,7 @@ export class Assembler implements Expr.Resolver {
       if (allowString && term.length === 1 && term[0].token === 'str') {
         out.push(term[0].str);
       } else {
-        out.push(Expr.resolve(Expr.parseOnly(term), this));
+        out.push(this.resolve(Expr.parseOnly(term)));
       }
     }
     return out;
@@ -925,7 +938,7 @@ export class Assembler implements Expr.Resolver {
     if (args.length !== 2 /* && args.length !== 3 */) {
       this.fail(`Expected constant number, then identifier`);
     }
-    const num = Expr.evaluate(Expr.resolve(Expr.parseOnly(args[0]), this));
+    const num = this.evaluate(Expr.parseOnly(args[0]));
     if (num == null) this.fail(`Expected a constant number`);
 
     // let segName = this.segments.length === 1 ? this.segments[0] : undefined;
@@ -937,10 +950,9 @@ export class Assembler implements Expr.Resolver {
     // }
     // const seg = segName ? this.segmentData.get(segName) : undefined;
 
-    let offset = Expr.resolve(Expr.parseOnly(args[1]), this);
-    if (offset.op === 'off') {
+    const offset = this.resolve(Expr.parseOnly(args[1]));
+    if (offset.op === 'num' && offset.meta?.chunk != null) {
       return [num, offset];
-    // } else if (offset.op === 'num') {
     } else {
       this.fail(`Expected a constant offset`, args[1][0]);
     }

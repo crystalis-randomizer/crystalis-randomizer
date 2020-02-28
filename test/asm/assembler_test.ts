@@ -20,6 +20,10 @@ const RELOC = cs('.reloc');
 const ASSERT = cs('.assert');
 const SEGMENT = cs('.segment');
 
+function off(num: number, chunk = 0): Expr {
+  return {op: 'num', num, meta: {chunk, rel: true}};
+}
+
 const [] = [str, COMMA, LP, RP, ORG, RELOC, ASSERT, SEGMENT];
 
 describe('Assembler', function() {
@@ -177,7 +181,8 @@ describe('Assembler', function() {
                               0xa9, 0x00),
           subs: [{offset: 1, size: 2, expr: {op: 'sym', num: 0}}],
         }],
-        symbols: [{expr: {op: 'off', chunk: 0, num: 5}}],
+        symbols: [{expr: {op: 'num', num: 0x8005,
+                          meta: {org: 0x8000, chunk: 0}}}],
         segments: [],
       });
     });
@@ -245,10 +250,10 @@ describe('Assembler', function() {
           data: Uint8Array.of(0xa2, 0xff, 0xa0, 0xff),
           subs: [{
             offset: 1, size: 1,
-            expr: {op: '<', size: 1, args: [{op: 'off', chunk: 0, num: 0}]},
+            expr: {op: '<', meta: {size: 1}, args: [off(0)]},
           }, {
             offset: 3, size: 1,
-            expr: {op: '>', size: 1, args: [{op: 'off', chunk: 0, num: 0}]},
+            expr: {op: '>', meta: {size: 1}, args: [off(0)]},
           }],
         }],
         symbols: [],
@@ -268,7 +273,7 @@ describe('Assembler', function() {
                               0xa9, 0x00),
           subs: [{offset: 1, size: 2, expr: {op: 'sym', num: 0}}],
         }],
-        symbols: [{expr: {op: 'off', chunk: 0, num: 5}}],
+        symbols: [{expr: off(5)}],
         segments: [],
       });
     });
@@ -298,10 +303,10 @@ describe('Assembler', function() {
           data: Uint8Array.of(0x20, 0xff, 0xff,
                               0x20, 0xff, 0xff),
           subs: [
-            {offset: 1, size: 2, expr: {op: 'off', chunk: 0, num: 0}},
+            {offset: 1, size: 2, expr: off(0)},
             {offset: 4, size: 2, expr: {op: 'sym', num: 0}}],
         }],
-        symbols: [{expr: {op: 'off', chunk: 0, num: 6}}],
+        symbols: [{expr: off(6)}],
         segments: [],
       });
     });
@@ -339,14 +344,12 @@ describe('Assembler', function() {
           segments: ['code'],
           data: Uint8Array.of(0xd0, 0xff, 0x90, 0xff, 0x4a, 0x4a),
           subs: [{offset: 1, size: 1,
-                  expr: {op: '-', args: [{op: 'sym', num: 0},
-                                         {op: 'off', num: 2, chunk: 0}]}},
+                  expr: {op: '-', args: [{op: 'sym', num: 0}, off(2)]}},
                  {offset: 3, size: 1,
-                  expr: {op: '-', args: [{op: 'sym', num: 1},
-                                         {op: 'off', num: 4, chunk: 0}]}}],
+                  expr: {op: '-', args: [{op: 'sym', num: 1}, off(4)]}}],
         }],
-        symbols: [{expr: {op: 'off', chunk: 0, num: 4}},
-                  {expr: {op: 'off', chunk: 0, num: 6}}],
+        symbols: [{expr: off(4)},
+                  {expr: off(6)}],
         segments: []});
     });
 
@@ -379,10 +382,9 @@ describe('Assembler', function() {
           segments: ['code'],
           data: Uint8Array.of(0xd0, 0xff, 0x90, 0xfe),
           subs: [{offset: 1, size: 1,
-                  expr: {op: '-', args: [{op: 'sym', num: 0},
-                                         {op: 'off', num: 2, chunk: 0}]}}],
+                  expr: {op: '-', args: [{op: 'sym', num: 0}, off(2)]}}],
         }],
-        symbols: [{expr: {op: 'off', num: 2, chunk: 0}}],
+        symbols: [{expr: off(2)}],
         segments: []});
     });
   });
@@ -402,14 +404,12 @@ describe('Assembler', function() {
           segments: ['code'],
           data: Uint8Array.of(0xd0, 0xff, 0x90, 0xff, 0x4a, 0x4a),
           subs: [{offset: 1, size: 1,
-                  expr: {op: '-', args: [{op: 'sym', num: 0},
-                                         {op: 'off', num: 2, chunk: 0}]}},
+                  expr: {op: '-', args: [{op: 'sym', num: 0}, off(2)]}},
                  {offset: 3, size: 1,
-                  expr: {op: '-', args: [{op: 'sym', num: 1},
-                                         {op: 'off', num: 4, chunk: 0}]}}],
+                  expr: {op: '-', args: [{op: 'sym', num: 1}, off(4)]}}],
         }],
-        symbols: [{expr: {op: 'off', chunk: 0, num: 4}},
-                  {expr: {op: 'off', chunk: 0, num: 6}}],
+        symbols: [{expr: off(4)},
+                  {expr: off(6)}],
         segments: []});
     });
 
@@ -487,9 +487,10 @@ describe('Assembler', function() {
           data: Uint8Array.of(0xff),
           subs: [{offset: 0, size: 1,
                   expr: {op: '+', args: [{op: 'sym', num: 0},
-                                         {op: 'num', num: 1, size: 1}]}}],
+                                         {op: 'num', num: 1,
+                                          meta: {size: 1}}]}}],
         }],
-        symbols: [{expr: {op: 'off', chunk: 0, num: 1}}],
+        symbols: [{expr: off(1)}],
         segments: []});
     });
   });
@@ -552,9 +553,10 @@ describe('Assembler', function() {
           data: Uint8Array.of(0xff, 0xff),
           subs: [{offset: 0, size: 2,
                   expr: {op: '+', args: [{op: 'sym', num: 0},
-                                         {op: 'num', num: 1, size: 1}]}}],
+                                         {op: 'num', num: 1,
+                                          meta: {size: 1}}]}}],
         }],
-        symbols: [{expr: {op: 'off', chunk: 0, num: 2}}],
+        symbols: [{expr: off(2)}],
         segments: []});
     });
   });
@@ -731,8 +733,8 @@ describe('Assembler', function() {
         chunks: [{
           segments: ['code'],
           data: Uint8Array.of(),
-          asserts: [{op: '>', size: 1, args: [{op: 'off', chunk: 0, num: 0},
-                                              {op: 'num', num: 8, size: 1}]}],
+          asserts: [{op: '>', meta: {size: 1},
+                     args: [off(0), {op: 'num', num: 8, meta: {size: 1}}]}],
         }],
         symbols: [], segments: []});
     });
@@ -832,7 +834,7 @@ describe('Assembler', function() {
           data: Uint8Array.of(0xff),
           subs: [{offset: 0, size: 1, expr: {op: 'sym', num: 0}}],
         }],
-        symbols: [{expr: {op: 'import', sym: 'foo'}}],
+        symbols: [{expr: {op: 'im', sym: 'foo'}}],
         segments: [],
       });
     });
@@ -847,7 +849,7 @@ describe('Assembler', function() {
           data: Uint8Array.of(0xff),
           subs: [{offset: 0, size: 1, expr: {op: 'sym', num: 0}}],
         }],
-        symbols: [{expr: {op: 'import', sym: 'foo'}}],
+        symbols: [{expr: {op: 'im', sym: 'foo'}}],
         segments: [],
       });
     });
@@ -864,7 +866,7 @@ describe('Assembler', function() {
           data: Uint8Array.of(0xff),
           subs: [{offset: 0, size: 1, expr: {op: 'sym', num: 0}}],
         }],
-        symbols: [{expr: {op: 'import', sym: 'foo'}}],
+        symbols: [{expr: {op: 'im', sym: 'foo'}}],
         segments: [],
       });
     });

@@ -3,6 +3,13 @@ import {Expr} from './expr';
 import {Chunk, Module, Segment, Substitution, Symbol} from './module';
 import {Token} from './token';
 
+export interface Export {
+  value: number;
+  offset?: number;
+  bank?: number;
+  segment?: string;
+}
+
 export class Linker {
   static link(...files: Module[]): SparseByteArray {
     const linker = new Linker();
@@ -13,6 +20,7 @@ export class Linker {
   }
 
   private _link = new Link();
+  private _exports?: Map<string, Export>;
 
   read(file: Module): Linker {
     this._link.readFile(file);
@@ -26,6 +34,11 @@ export class Linker {
 
   link(): SparseByteArray {
     return this._link.link();
+  }
+
+  exports(): Map<string, Export> {
+    if (this._exports) return this._exports;
+    return this._exports = this._link.buildExports();
   }
 }
 
@@ -322,7 +335,7 @@ function translateSub(s: Substitution, dc: number, ds: number): Substitution {
 function translateExpr(e: Expr, dc: number, ds: number): Expr {
   e = {...e};
   if (e.args) e.args = e.args.map(a => translateExpr(a, dc, ds));
-  if (e.chunk != null) e.chunk += dc;
+  if (e.meta?.chunk != null) e.meta.chunk += dc;
   if (e.op === 'sym' && e.num != null) e.num += ds;
   return e;
 }
@@ -583,8 +596,8 @@ class Link {
   resolveSymbols(expr: Expr): Expr {
     // pre-traverse so that transitive imports work
     return Expr.traverse(expr, e => e, (e: Expr) => {
-      while (e.op === 'import' || e.op === 'sym') {
-        if (e.op === 'import') {
+      while (e.op === 'im' || e.op === 'sym') {
+        if (e.op === 'im') {
           const name = e.sym!;
           const imported = this.exports.get(name);
           if (imported == null) {
@@ -653,4 +666,15 @@ class Link {
     }
   }
 
+  buildExports(): Map<string, Export> {
+    throw new Error();
+    // const result = new Map<string, Export>();
+    // for (const symbol of this.symbols) {
+    //   if (!symbol.export) continue;
+    //   Expr.resolve(symbol.expr, this);
+    //   const e: Export = {
+    //     value
+    //   };
+    // }
+  }
 }

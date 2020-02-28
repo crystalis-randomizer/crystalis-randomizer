@@ -236,6 +236,14 @@ export class SparseByteArray extends SparseArray<number> {
     }
   }
 
+  addOffset(offset: number): SparseByteArray {
+    const out = new SparseByteArray();
+    for (const [start, data] of this._chunks) {
+      out._chunks.push([start + offset, data]);
+    }
+    return out;
+  }
+
   toIpsPatch(): Uint8Array {
     let size = 8;
     for (const [, chunk] of this._chunks) {

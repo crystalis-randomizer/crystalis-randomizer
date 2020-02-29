@@ -30,7 +30,7 @@ import {Area} from './rom/area.js';
 import {Location, Spawn} from './rom/location.js';
 import {Shop, ShopType} from './rom/shop.js';
 import {Spoiler} from './rom/spoiler.js';
-import {hex, seq, watchArray, writeLittleEndian} from './rom/util.js';
+import {hex, seq, watchArray} from './rom/util.js';
 import {DefaultMap} from './util.js';
 import * as version from './version.js';
 
@@ -770,9 +770,6 @@ const rescaleShops = (rom: Rom, asm: ShimAssembler, random?: Random) => {
   rom.shopCount = 11; // 11 of all types of shop for some reason.
   rom.shopDataTablesAddress = asm.expand('ShopData');
 
-  // NOTE: This isn't in the Rom object yet...
-  writeLittleEndian(rom.prg, asm.expand('InnBasePrice'), 20);
-
   for (const shop of rom.shops) {
     if (shop.type === ShopType.PAWN) continue;
     for (let i = 0, len = shop.prices.length; i < len; i++) {
@@ -786,22 +783,21 @@ const rescaleShops = (rom: Rom, asm: ShimAssembler, random?: Random) => {
       }
     }
   }
-
   // Also fill the scaling tables.
   const diff = seq(asm.expand('ScalingLevels'), x => x);
+  rom.shops.rescale = (label: string) => asm.expand(label);
   // Tool shops scale as 2 ** (Diff / 10), store in 8ths
-  patchBytes(rom.prg, asm.expand('ToolShopScaling'),
-             diff.map(d => Math.round(8 * (2 ** (d / 10)))));
+  rom.shops.toolShopScaling = diff.map(d => Math.round(8 * (2 ** (d / 10))));
   // Armor shops scale as 2 ** ((47 - Diff) / 12), store in 8ths
-  patchBytes(rom.prg, asm.expand('ArmorShopScaling'),
-             diff.map(d => Math.round(8 * (2 ** ((47 - d) / 12)))));
+  rom.shops.armorShopScaling =
+      diff.map(d => Math.round(8 * (2 ** ((47 - d) / 12))));
 
   // Set the item base prices.
   for (let i = 0x0d; i < 0x27; i++) {
     rom.items[i].basePrice = BASE_PRICES[i];
   }
-
-  // TODO - separate flag for rescaling monsters???
+ 
+ // TODO - separate flag for rescaling monsters???
 };
 
 // Map of base prices.  (Tools are positive, armors are ones-complement.)

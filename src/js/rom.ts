@@ -20,7 +20,7 @@ import {RomOption} from './rom/option.js';
 import {Palette} from './rom/palette.js';
 import {Pattern} from './rom/pattern.js';
 import {Screen} from './rom/screen.js';
-import {Shop} from './rom/shop.js';
+import {Shops} from './rom/shop.js';
 import {Slots} from './rom/slots.js';
 import {Spoiler} from './rom/spoiler.js';
 import {Telepathy} from './rom/telepathy.js';
@@ -82,7 +82,7 @@ export class Rom {
   readonly metasprites: Metasprite[];
   readonly itemGets: ItemGets;
   readonly items: Items;
-  readonly shops: Shop[];
+  readonly shops: Shops;
   readonly slots: Slots;
   readonly npcs: Npcs;
   readonly bossKills: BossKill[];
@@ -176,7 +176,7 @@ export class Rom {
     this.telepathy = new Telepathy(this);
     this.itemGets = new ItemGets(this);
     this.items = new Items(this);
-    this.shops = seq(44, i => new Shop(this, i)); // NOTE: depends on locations and objects
+    this.shops = new Shops(this); // NOTE: depends on locations and objects
     this.slots = new Slots(this);
     this.npcs = new Npcs(this);
     this.bossKills = seq(0xe, i => new BossKill(this, i));
@@ -372,7 +372,7 @@ export class Rom {
     this.itemGets.write(writer);
     this.slots.write(writer);
     this.items.write(writer);
-    writeAll(this.shops);
+    this.shops.write(writer);
     writeAll(this.bossKills);
     writeAll(this.patterns);
     this.wildWarp.write(writer);

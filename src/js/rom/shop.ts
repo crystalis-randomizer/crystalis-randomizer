@@ -1,11 +1,39 @@
-import {Entity} from './entity.js';
+import {Entity, EntityArray} from './entity.js';
 import {readLittleEndian, seq, tuple, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
 import {Rom} from '../rom.js';
 
+
+export class Shops extends EntityArray<Shop> {
+
+  rescale?: (label: string) => number;
+  innBasePrice = 20;
+  toolShopScaling: number[] = new Array(48).fill(0);
+  armorShopScaling: number[] = new Array(48).fill(0);
+
+  constructor(readonly rom: Rom) {
+    super(44); // 4 * rom.shopCount);
+    for (let i = 0; i < 44; i++) {
+      this[i] = new Shop(rom, i);
+    }
+  }
+
+  write(writer: Writer) {
+    for (const shop of this) {
+      shop.write(writer);
+    }
+    if (this.rescale) {
+      const org = (name: string) => writer.org(this.rescale!(name));
+      org('ToolShopScaling').byte(...this.toolShopScaling);
+      org('ArmorShopScaling').byte(...this.armorShopScaling);
+      org('InnBasePrice').word(this.innBasePrice);
+    }
+  }
+}
+
+
 // Shops are striped: tool, armor, inn, pawn
 // So the tool shops have ID 0, 4, 8, ..., 40; etc
-
 export enum ShopType {
   ARMOR = 0,
   TOOL = 1,

@@ -1,4 +1,8 @@
-import {Data, hex} from './util.js';
+import {Data, hex} from './util';
+import {Assembler} from '../asm/assembler';
+import {Cpu} from '../asm/cpu';
+import {Linker} from '../asm/linker';
+import {Module} from '../asm/module';
 
 function page(addr: number): number {
   return addr >>> 13;
@@ -54,11 +58,40 @@ export class Writer {
   private writes: Write[] = [];
   private promises: Promise<unknown>[] = [];
 
-  constructor(readonly rom: Uint8Array, readonly chr: Uint8Array) {}
+  private modules: Module[] = [];
+  private assembler = new Assembler(Cpu.P02);
 
   private free: number[] = [];
 
+  constructor(readonly rom: Uint8Array, readonly chr: Uint8Array) {
+    for (let i = 0; i < 0x1e; i++) {
+      this.assembler.segment({name: i.toString(16).padStart(2, '0'),
+                              bank: i,
+                              size: 0x2000,
+                              offset: i << 13,
+                              memory: 0x8000 | ((i & 1) << 13)});
+    }
+    this.assembler.segment({
+      name: 'fe', bank: 0x1e, size: 0x2000, offset: 0x3c000, memory: 0xc000});
+    this.assembler.segment({
+      name: 'ff', bank: 0x1f, size: 0x2000, offset: 0x3e000, memory: 0xe000});
+  }
+
   // TODO: move()?
+
+  writePrg(address: number, ...data: number[]) {
+    let segNum = address >>> 13;
+    let org = (address & 0x3fff) | 0x8000;
+    if (segNum === 0x1e || segNum === 0x1f) {
+      org |= 0x4000;
+      segNum |= 0xfe;
+    }
+    const seg = segNum.toString(16).padStart(2, '0');
+    console.log(`seg ${seg} org ${org.toString(16)} data`, data);
+    this.assembler.segment(seg);
+    this.assembler.org(org);
+    this.assembler.byte(...data);
+  }
 
   report() {
     for (const chunk of this.chunks) {
@@ -97,6 +130,15 @@ export class Writer {
   }
 
   async commit(): Promise<void> {
+    // Write the link result first.
+    const linker = new Linker();
+    linker.read(this.assembler.module());
+    for (const mod of this.modules) {
+      linker.read(mod);
+    }
+    linker.link().apply(this.rom);
+
+    // Then write everything else.
     //this.writing = true;
     while (this.writes.length) {
       const writes = this.writes;

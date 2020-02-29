@@ -491,22 +491,6 @@ function randomizeWalls(rom: Rom, flags: FlagSet, random: Random): void {
 function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
   if (!flags.randomizeMusic()) return;
   interface HasMusic { bgm: number; }
-  class BossMusic implements HasMusic {
-    constructor(readonly addr: number) {}
-    get bgm() { return rom.prg[this.addr]; }
-    set bgm(x) { rom.prg[this.addr] = x; }
-  }
-  const bossAddr = [
-    0x1e4b8, // vampire 1
-    0x1e690, // insect
-    0x1e99b, // kelbesque
-    0x1ecb1, // sabera
-    0x1ee0f, // mado
-    0x1ef83, // karmine
-    0x1f187, // draygon 1
-    0x1f311, // draygon 2
-    0x37c30, // dyna
-  ];
   let neighbors: Location[] = [];
   const musics = new DefaultMap<unknown, HasMusic[]>(() => []);
   const all = new Set<number>();
@@ -520,8 +504,7 @@ function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
       musics.get(music).push(l);
     }
   }
-  for (const a of bossAddr) {
-    const b = new BossMusic(a);
+  for (const b of rom.bosses.musics) {
     musics.set(b, [b]);
     all.add(b.bgm);
   }

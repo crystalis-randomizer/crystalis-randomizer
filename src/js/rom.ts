@@ -1,3 +1,5 @@
+// import {Assembler} from './asm/assembler.js';
+// import {Module} from './asm/module.js';
 import {AdHocSpawn} from './rom/adhocspawn.js';
 import {Areas} from './rom/area.js';
 import {BossKill} from './rom/bosskill.js';
@@ -369,6 +371,7 @@ export class Rom {
     writeAll(this.patterns);
     this.wildWarp.write(writer);
     this.townWarp.write(writer);
+    this.bosses.write(writer);
     promises.push(this.telepathy.write(writer));
     promises.push(this.messages.write(writer));
     promises.push(writer.commit());

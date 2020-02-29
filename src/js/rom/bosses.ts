@@ -3,6 +3,7 @@ import {Rom} from '../rom.js';
 import {Flag} from './flags.js';
 import {Npc} from './npc.js';
 import {Mutable, readLittleEndian, upperCamelToSpaces} from './util.js';
+import { Writer } from './writer.js';
 
 interface BossData {
   readonly flag?: Flag;
@@ -115,6 +116,18 @@ export class Bosses implements Iterable<Boss> {
     object: 0xa4,
   });
 
+  readonly musics = [
+    new BossMusic(0x1e4b8, [this.Vampire1, this.Vampire2]),
+    new BossMusic(0x1e690, [this.Insect]),
+    new BossMusic(0x1e99b, [this.Kelbesque1, this.Kelbesque2]),
+    new BossMusic(0x1ecb1, [this.Sabera1, this.Sabera2]),
+    new BossMusic(0x1ee0f, [this.Mado1, this.Mado2]),
+    new BossMusic(0x1ef83, [this.Karmine]),
+    new BossMusic(0x1f187, [this.Draygon1]),
+    new BossMusic(0x1f311, [this.Draygon2]),
+    new BossMusic(0x37c30, [this.Dyna]),
+  ];
+
   private readonly all: Boss[] = [];
   private flags?: Set<number>;
 
@@ -154,6 +167,20 @@ export class Bosses implements Iterable<Boss> {
 
   [Symbol.iterator](): IterableIterator<Boss> {
     return this.all[Symbol.iterator]();
+  }
+
+  write(writer: Writer) {
+    for (const music of this.musics) {
+      writer.writePrg(music.addr, music.bgm);
+    }
+  }
+}
+
+export class BossMusic {
+  bgm: number;
+
+  constructor(readonly addr: number, readonly bosses: readonly Boss[]) {
+    this.bgm = bosses[0].bosses.rom.prg[addr];
   }
 }
 

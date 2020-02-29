@@ -171,7 +171,7 @@ export class Bosses implements Iterable<Boss> {
 
   write(writer: Writer) {
     for (const music of this.musics) {
-      writer.writePrg(music.addr, music.bgm);
+      writer.org(music.addr).byte(music.bgm);
     }
   }
 }

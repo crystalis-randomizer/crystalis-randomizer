@@ -4,6 +4,7 @@ import {AdHocSpawn} from './rom/adhocspawn.js';
 import {Areas} from './rom/area.js';
 import {BossKill} from './rom/bosskill.js';
 import {Bosses} from './rom/bosses.js';
+import {CoinDrops} from './rom/coindrops.js';
 import {Flags} from './rom/flags.js';
 import {Hitbox} from './rom/hitbox.js';
 import {Items} from './rom/item.js';
@@ -63,6 +64,9 @@ export class Rom {
   readonly prg: Uint8Array;
   readonly chr: Uint8Array;
 
+  // TODO - would be nice to eliminate the duplication by moving
+  // the ctors here, but there's lots of prereqs and dependency
+  // ordering, and we need to make the ADJUSTMENTS, etc.
   readonly areas: Areas;
   readonly screens: Screen[];
   readonly tilesets: Tileset[];
@@ -86,6 +90,7 @@ export class Rom {
   readonly wildWarp: WildWarp;
   readonly townWarp: TownWarp;
   readonly flags: Flags;
+  readonly coinDrops: CoinDrops;
 
   readonly telepathy: Telepathy;
   readonly messages: Messages;
@@ -177,6 +182,7 @@ export class Rom {
     this.bossKills = seq(0xe, i => new BossKill(this, i));
     this.wildWarp = new WildWarp(this);
     this.townWarp = new TownWarp(this);
+    this.coinDrops = new CoinDrops(this);
     this.flags = new Flags(this);
     this.bosses = new Bosses(this); // NOTE: must be after Npcs and Flags
   }
@@ -371,6 +377,7 @@ export class Rom {
     writeAll(this.patterns);
     this.wildWarp.write(writer);
     this.townWarp.write(writer);
+    this.coinDrops.write(writer);
     this.bosses.write(writer);
     promises.push(this.telepathy.write(writer));
     promises.push(this.messages.write(writer));

@@ -323,6 +323,7 @@ export async function shuffle(rom: Uint8Array,
 
   shuffleMusic(parsed, flags, random);
   shufflePalettes(parsed, flags, random);
+  updateCoinDrops(parsed, flags);
 
   await parsed.writeData();
   const crc = await postParsedShuffle(rom, random, seed, flags, asm, assemble);
@@ -345,7 +346,6 @@ async function postParsedShuffle(rom: Uint8Array,
                                  assemble: (path: string) => Promise<void>): Promise<number> {
   await assemble('postshuffle.s');
   updateDifficultyScalingTables(rom, flags, asm);
-  updateCoinDrops(rom, flags);
 
   shuffleRandomNumbers(rom, random);
 
@@ -680,29 +680,21 @@ function patchBytes(rom: Uint8Array, address: number, bytes: number[]) {
   }
 }
 
-function patchWords(rom: Uint8Array, address: number, words: number[]) {
-  for (let i = 0; i < 2 * words.length; i += 2) {
-    rom[address + i] = words[i >>> 1] & 0xff;
-    rom[address + i + 1] = words[i >>> 1] >>> 8;
-  }
-}
-
 // goes with enemy stat recomputations in postshuffle.s
-function updateCoinDrops(rom: Uint8Array, flags: FlagSet) {
-  rom = rom.subarray(0x10);
+function updateCoinDrops(rom: Rom, flags: FlagSet) {
   if (flags.disableShopGlitch()) {
     // bigger gold drops if no shop glitch, particularly at the start
     // - starts out fibonacci, then goes linear at 600
-    patchWords(rom, 0x34bde, [
+    rom.coinDrops.values = [
         0,   5,  10,  15,  25,  40,  65,  105,
       170, 275, 445, 600, 700, 800, 900, 1000,
-    ]);
+    ];
   } else {
     // this table is basically meaningless b/c shop glitch
-    patchWords(rom, 0x34bde, [
+    rom.coinDrops.values = [
         0,   1,   2,   4,   8,  16,  30,  50,
       100, 200, 300, 400, 500, 600, 700, 800,
-    ]);
+    ];
   }
 }
 

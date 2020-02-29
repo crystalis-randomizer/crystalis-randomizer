@@ -79,7 +79,7 @@ export class Writer {
 
   // TODO: move()?
 
-  writePrg(address: number, ...data: number[]) {
+  org(address: number): Assembler {
     let segNum = address >>> 13;
     let org = (address & 0x3fff) | 0x8000;
     if (segNum === 0x1e || segNum === 0x1f) {
@@ -87,10 +87,9 @@ export class Writer {
       segNum |= 0xfe;
     }
     const seg = segNum.toString(16).padStart(2, '0');
-    console.log(`seg ${seg} org ${org.toString(16)} data`, data);
     this.assembler.segment(seg);
     this.assembler.org(org);
-    this.assembler.byte(...data);
+    return this.assembler;
   }
 
   report() {

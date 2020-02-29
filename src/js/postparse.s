@@ -151,6 +151,7 @@ TelepathyTable:
 ShopItemHorizontalPositions:
   .byte 8,13,18,23
 .assert * <= $98b6
+.org $98b6
 PostInitializeShop:
 
 .org $98bc  ; use the new position table

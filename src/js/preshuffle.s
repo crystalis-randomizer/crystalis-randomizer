@@ -1235,10 +1235,12 @@ SetTriggerTileGameMode:
   .word (MaybeSpawnInsect)
 
 .ifdef _CUSTOM_SHOOTING_WALLS
+.pushseg "0d"
 .org $a168
   .byte $33,$33 ; make the wall at the front of goa shoot
 .org $a48e
   .byte $33,$33 ; make the oasis cave wall shoot
+.popseg
 .org $a864
   lda $06c0,x
   nop

@@ -31,6 +31,8 @@ interface ItemOptions {
   trades?: number[];
   use?: boolean;
   weight?: number;
+  // address of the value specifying how much to heal.
+  valueAddr?: number;
 }
 
 // An item; note that some tables go up to $49 or even $4a - these can bbe ignored
@@ -52,6 +54,9 @@ export class Item extends Entity {
   trades: number[];
   use: boolean;
 
+  valueAddr?: number;
+  value?: number;
+
   // Weight for shuffling - higher numbers will be placed earlier.
   weight: number;
 
@@ -63,6 +68,8 @@ export class Item extends Entity {
     this.trades = opts.trades || [];
     this.use = opts.use || false;
     this.weight = opts.weight || 1;
+    this.valueAddr = opts.valueAddr;
+    if (this.valueAddr != null) this.value = rom.prg[this.valueAddr];
 
     if (this.use) {
       this.itemUseJump = readLittleEndian(rom.prg, this.itemUseJumpPointer) + 0x14000;
@@ -206,6 +213,10 @@ export class Item extends Entity {
                         this.itemUseDataPointer, itemUseAddress - 0x14000);
     }
 
+    if (this.valueAddr != null) {
+      writer.org(this.valueAddr).byte(this.value!);
+    }
+
     // writer.write([...stringToBytes(this.messageName), 0],
     // 0x28000, 0x29fff, `ItemMessageName ${hex(this.id)}`),
     // writeLittleEndian(writer.rom, this.messageNamePointer, messageAddress - 0x20000);
@@ -344,11 +355,14 @@ export class Items extends EntityArray<Item> {
   readonly BattleArmor      = new Item(this, 0x1b);
   readonly PsychoArmor      = new Item(this, 0x1c);
   // Consumables
-  readonly MedicalHerb      = new Item(this, 0x1d, {use: true, trades: [0]});
+  readonly MedicalHerb      = new Item(this, 0x1d, {use: true,
+                                                    trades: [0],
+                                                    valueAddr: 0x1c4ea});
   readonly Antidote         = new Item(this, 0x1e, {use: true});
   readonly LysisPlant       = new Item(this, 0x1f, {use: true});
   readonly FruitOfLime      = new Item(this, 0x20, {use: true});
-  readonly FruitOfPower     = new Item(this, 0x21, {use: true});
+  readonly FruitOfPower     = new Item(this, 0x21, {use: true,
+                                                    valueAddr: 0x1c50c});
   readonly MagicRing        = new Item(this, 0x22, {use: true});
   readonly FruitOfRepun     = new Item(this, 0x23, {use: true});
   readonly WarpBoots        = new Item(this, 0x24, {use: true});

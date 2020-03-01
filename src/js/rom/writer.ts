@@ -129,15 +129,6 @@ export class Writer {
   }
 
   async commit(): Promise<void> {
-    // Write the link result first.
-    const linker = new Linker();
-    linker.read(this.assembler.module());
-    for (const mod of this.modules) {
-      linker.read(mod);
-    }
-    linker.link().apply(this.rom);
-
-    // Then write everything else.
     //this.writing = true;
     while (this.writes.length) {
       const writes = this.writes;
@@ -168,6 +159,14 @@ export class Writer {
     //              }.  ${this.end - this.pos} bytes free`);
     // TODO - summarize all free chunks???
     //   -- feed free chunk given page into define for assembler?
+
+    // Write the link result last.
+    const linker = new Linker();
+    linker.read(this.assembler.module());
+    for (const mod of this.modules) {
+      linker.read(mod);
+    }
+    linker.link().apply(this.rom);
   }
 
   private find({data, startPage, endPage}: Write): number {

@@ -285,8 +285,8 @@ export async function shuffle(rom: Uint8Array,
 
   // Buff medical herb and fruit of power
   if (flags.buffMedicalHerb()) {
-    rom[0x1c50c + 0x10] = 56;  // fruit of power
-    rom[0x1c4ea + 0x10] = 80;  // medical herb
+    parsed.items.MedicalHerb.value = 80;
+    parsed.items.FruitOfPower.value = 56;
   }
 
   if (flags.storyMode()) storyMode(parsed);

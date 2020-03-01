@@ -43,6 +43,7 @@ export class Item extends Entity {
 
   itemDataValue: number; // :03 is palette, :80 is sword and magic (solid bg)
                          // :40 is unique, :20 is worn (sword/amor/orb/ring/magic)
+  // only used for disabling opel statue use
   selectedItemValue: number;
 
   basePrice: number;
@@ -440,10 +441,15 @@ export class Items extends EntityArray<Item> {
   async write(writer: Writer): Promise<void> {
     writer.org(0x34bc0).byte(...this.armorDefense);
     writer.org(0x34bc9).byte(...this.shieldDefense);
+
+    // Unique items table for difficulty
+    const uniqueTable = new Array(10).fill(0);
     const promises = [];
     for (const item of this) {
       promises.push(item.write(writer));
+      if (item.unique) uniqueTable[item.id >>> 3] |= (1 << (item.id & 7));
     }
+    writer.org(0x1e110).byte(...uniqueTable);
     await Promise.all(promises);
   }
 }

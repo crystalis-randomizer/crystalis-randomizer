@@ -190,18 +190,7 @@ export async function shuffle(rom: Uint8Array,
     _ZEBU_STUDENT_GIVES_ITEM: true, // flags.zebuStudentGivesItem(),
   };
 
-  async function assemble(path: string) {
-    asm.assemble(await reader.read(path), path, rom);
-  }
-
   deterministicPreParse(rom.subarray(0x10)); // TODO - trainer...
-
-  const flagFile =
-      Object.keys(defines)
-          .filter(d => defines[d]).map(d => `.define ${d} 1\n`).join('');
-  const asm = new ShimAssembler(flagFile, 'flags.s');
-  await assemble('preshuffle.s');
-//console.log('Multiply16Bit:', asm.expand('Multiply16Bit').toString(16));
 
   const parsed = new Rom(rom);
   parsed.flags.defrag();
@@ -215,9 +204,7 @@ export async function shuffle(rom: Uint8Array,
   toggleMaps(parsed, flags, random);
 
   // Set up shop and telepathy
-  await assemble('postparse.s');
   parsed.scalingLevels = 48;
-  parsed.uniqueItemTableAddress = asm.expand('KeyItemData');
 
   if (flags.shuffleShops()) shuffleShops(parsed, flags, random);
 
@@ -281,7 +268,7 @@ export async function shuffle(rom: Uint8Array,
   // NOTE: monster shuffle needs to go after item shuffle because of mimic
   // placement constraints, but it would be nice to go before in order to
   // guarantee money.
-  identifyKeyItemsForDifficultyBuffs(parsed);
+  //identifyKeyItemsForDifficultyBuffs(parsed);
 
   // Buff medical herb and fruit of power
   if (flags.buffMedicalHerb()) {
@@ -326,8 +313,22 @@ export async function shuffle(rom: Uint8Array,
   updateTablesPreCommit(parsed, flags);
   random.shuffle(parsed.randomNumbers.values);
 
-  await parsed.writeData();
+
+  async function assemble(path: string) {
+    asm.assemble(await reader.read(path), path, rom);
+  }
+  const flagFile =
+      Object.keys(defines)
+          .filter(d => defines[d]).map(d => `.define ${d} 1\n`).join('');
+  const asm = new ShimAssembler(flagFile, 'flags.s');
+//console.log('Multiply16Bit:', asm.expand('Multiply16Bit').toString(16));
+  await assemble('preshuffle.s');
+  await assemble('postparse.s');
   await assemble('postshuffle.s');
+  parsed.uniqueItemTableAddress = asm.expand('KeyItemData');
+  parsed.shopCount = 11; // 11 of all types of shop for some reason.
+  parsed.shopDataTablesAddress = asm.expand('ShopData');
+  await parsed.writeData();
   const crc = stampVersionSeedAndHash(rom, seed, flags);
 
   // TODO - optional flags can possibly go here, but MUST NOT use parsed.prg!
@@ -710,9 +711,6 @@ const rescaleShops = (rom: Rom, asm: ShimAssembler, random?: Random) => {
   // 50% to 150% of the base price.  The pawn shop price is
   // always 50% of the base price.
 
-  rom.shopCount = 11; // 11 of all types of shop for some reason.
-  rom.shopDataTablesAddress = asm.expand('ShopData');
-
   for (const shop of rom.shops) {
     if (shop.type === ShopType.PAWN) continue;
     for (let i = 0, len = shop.prices.length; i < len; i++) {
@@ -727,7 +725,7 @@ const rescaleShops = (rom: Rom, asm: ShimAssembler, random?: Random) => {
     }
   }
   // Also fill the scaling tables.
-  const diff = seq(asm.expand('ScalingLevels'), x => x);
+  const diff = seq(48 /*asm.expand('ScalingLevels')*/, x => x);
   rom.shops.rescale = (label: string) => asm.expand(label);
   // Tool shops scale as 2 ** (Diff / 10), store in 8ths
   rom.shops.toolShopScaling = diff.map(d => Math.round(8 * (2 ** (d / 10))));
@@ -776,22 +774,22 @@ const BASE_PRICES: {[itemId: number]: number} = {
 /////////
 /////////
 
-const identifyKeyItemsForDifficultyBuffs = (rom: Rom) => {
-  // // Tag key items for difficulty buffs
-  // for (const get of rom.itemGets) {
-  //   const item = ITEMS.get(get.itemId);
-  //   if (!item || !item.key) continue;
-  //   get.key = true;
-  // }
-  // // console.log(report);
-  for (let i = 0; i < 0x49; i++) {
-    // NOTE - special handling for alarm flute until we pre-patch
-    const unique = (rom.prg[0x20ff0 + i] & 0x40) || i === 0x31;
-    const bit = 1 << (i & 7);
-    const addr = 0x1e110 + (i >>> 3);
-    rom.prg[addr] = rom.prg[addr] & ~bit | (unique ? bit : 0);
-  }
-};
+// const identifyKeyItemsForDifficultyBuffs = (rom: Rom) => {
+//   // // Tag key items for difficulty buffs
+//   // for (const get of rom.itemGets) {
+//   //   const item = ITEMS.get(get.itemId);
+//   //   if (!item || !item.key) continue;
+//   //   get.key = true;
+//   // }
+//   // // console.log(report);
+//   for (let i = 0; i < 0x49; i++) {
+//     // NOTE - special handling for alarm flute until we pre-patch
+//     const unique = (rom.prg[0x20ff0 + i] & 0x40) || i === 0x31;
+//     const bit = 1 << (i & 7);
+//     const addr = 0x1e110 + (i >>> 3);
+//     rom.prg[addr] = rom.prg[addr] & ~bit | (unique ? bit : 0);
+//   }
+// };
 
 // When dealing with constraints, it's basically ksat
 //  - we have a list of requirements that are ANDed together

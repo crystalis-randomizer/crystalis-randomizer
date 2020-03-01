@@ -311,14 +311,6 @@ export class Rom {
 
   async writeData() {
     // Write the options first
-    Rom.SHOP_COUNT.set(this.prg, this.shopCount);
-    Rom.SCALING_LEVELS.set(this.prg, this.scalingLevels);
-    Rom.UNIQUE_ITEM_TABLE.set(this.prg, this.uniqueItemTableAddress);
-    Rom.SHOP_DATA_TABLES.set(this.prg, this.shopDataTablesAddress);
-    Rom.OMIT_ITEM_GET_DATA_SUFFIX.set(this.prg, this.omitItemGetDataSuffix);
-    Rom.OMIT_LOCAL_DIALOG_SUFFIX.set(this.prg, this.omitLocalDialogSuffix);
-    Rom.COMPRESSED_MAPDATA.set(this.prg, this.compressedMapData);
-
     const writer = new Writer(this.prg, this.chr);
     // MapData
     writer.alloc(0x144f8, 0x17e00);
@@ -392,6 +384,14 @@ export class Rom {
     promises.push(writer.commit());
     await Promise.all(promises).then(() => undefined);
     writer.report();
+
+    Rom.SHOP_COUNT.set(this.prg, this.shopCount);
+    Rom.SCALING_LEVELS.set(this.prg, this.scalingLevels);
+    Rom.UNIQUE_ITEM_TABLE.set(this.prg, this.uniqueItemTableAddress);
+    Rom.SHOP_DATA_TABLES.set(this.prg, this.shopDataTablesAddress);
+    Rom.OMIT_ITEM_GET_DATA_SUFFIX.set(this.prg, this.omitItemGetDataSuffix);
+    Rom.OMIT_LOCAL_DIALOG_SUFFIX.set(this.prg, this.omitLocalDialogSuffix);
+    Rom.COMPRESSED_MAPDATA.set(this.prg, this.compressedMapData);
   }
 
   analyzeTiles() {

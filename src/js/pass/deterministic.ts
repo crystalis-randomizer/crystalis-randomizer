@@ -51,6 +51,10 @@ export function deterministicPreParse(prg: Uint8Array): void {
   prg[0x1e387] = 0x00; // remove condition 09e from palace guard (trigger bb)
   prg[0x1e391] = 0x00; // remove condition 099 from amazones guard (trigger bc)
 
+  // Custom shooting walls: mark walls as shooting
+  write(prg, 0x1a168, 0x33, 0x33); // front of goa fortress
+  write(prg, 0x1a48e, 0x33, 0x33); // oasis cave
+
   // Renumber mimics
   prg[0x19bb1] = 0x70; // fog lamp cave 3 (4a) north mimic
   prg[0x19bb5] = 0x71; // fog lamp cave 3 (4a) southwest mimic
@@ -101,6 +105,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   addMezameTrigger(rom);
   normalizeSwords(rom, flags);
 
+  fixOpelStatue(rom);
   fixCoinSprites(rom);
   fixChests(rom);
   preventBossSoftlocks(rom);
@@ -218,6 +223,14 @@ function preventBossSoftlocks(rom: Rom) {
 
   rom.objects[0x5e].data[0xd] = 0xfe; // object action 7e instead of 7f
   rom.items.InsectFlute.itemUseData[0].flags = [rom.flags.UsedInsectFlute.id];
+}
+
+function fixOpelStatue(rom: Rom) {
+  // Don't select Opel Statue at all.  This patches the table at $2103b
+  // that translates an item ID to a "selected item" index, i.e. each
+  // type of item maps to a series 1..N.  In this case, we just remap
+  // Opel Statue to zero so that it looks like nothing is selected.
+  rom.items.OpelStatue.selectedItemValue = 0;
 }
 
 function fixCoinSprites(rom: Rom): void {

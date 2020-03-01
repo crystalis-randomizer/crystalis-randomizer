@@ -592,7 +592,7 @@ ItemGetRedisplayDifficulty:
   rts
 .org $a110
 KeyItemData:
-  .res 10, 0
+.org * + 10
 ItemGetFollowup:
   ;; The vanilla code checks whether the last byte at ($24),y is negative
   ;; and if not, then it stores the positive value in $23 as some sort of
@@ -910,15 +910,6 @@ ReloadInventoryAfterLoad:
 
 
 
-.ifdef _FIX_OPEL_STATUE
-;;; Don't select Opel Statue at all.  This patches the table at $2103b
-;;; that translates an item ID to a "selected item" index, i.e. each
-;;; type of item maps to a series 1..N.  In this case, we just remap
-;;; Opel Statue to zero so that it looks like nothing is selected.
-.org $9061
-  .byte $00
-.endif
-
 
 
 
@@ -1235,12 +1226,6 @@ SetTriggerTileGameMode:
   .word (MaybeSpawnInsect)
 
 .ifdef _CUSTOM_SHOOTING_WALLS
-.pushseg "0d"
-.org $a168
-  .byte $33,$33 ; make the wall at the front of goa shoot
-.org $a48e
-  .byte $33,$33 ; make the oasis cave wall shoot
-.popseg
 .org $a864
   lda $06c0,x
   nop

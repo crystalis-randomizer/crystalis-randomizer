@@ -19,6 +19,8 @@ import {Objects} from './rom/objects.js';
 import {RomOption} from './rom/option.js';
 import {Palette} from './rom/palette.js';
 import {Pattern} from './rom/pattern.js';
+import {RandomNumbers} from './rom/randomnumbers.js';
+import {Scaling} from './rom/scaling.js';
 import {Screen} from './rom/screen.js';
 import {Shops} from './rom/shop.js';
 import {Slots} from './rom/slots.js';
@@ -91,6 +93,8 @@ export class Rom {
   readonly townWarp: TownWarp;
   readonly flags: Flags;
   readonly coinDrops: CoinDrops;
+  readonly scaling: Scaling;
+  readonly randomNumbers: RandomNumbers;
 
   readonly telepathy: Telepathy;
   readonly messages: Messages;
@@ -185,6 +189,8 @@ export class Rom {
     this.coinDrops = new CoinDrops(this);
     this.flags = new Flags(this);
     this.bosses = new Bosses(this); // NOTE: must be after Npcs and Flags
+    this.scaling = new Scaling(this);
+    this.randomNumbers = new RandomNumbers(this);
   }
 
   trigger(id: number): Trigger {
@@ -378,7 +384,9 @@ export class Rom {
     this.wildWarp.write(writer);
     this.townWarp.write(writer);
     this.coinDrops.write(writer);
+    this.scaling.write(writer);
     this.bosses.write(writer);
+    this.randomNumbers.write(writer);
     promises.push(this.telepathy.write(writer));
     promises.push(this.messages.write(writer));
     promises.push(writer.commit());

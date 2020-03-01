@@ -324,9 +324,11 @@ export async function shuffle(rom: Uint8Array,
   shuffleMusic(parsed, flags, random);
   shufflePalettes(parsed, flags, random);
   updateTablesPreCommit(parsed, flags);
+  random.shuffle(parsed.randomNumbers.values);
 
   await parsed.writeData();
-  const crc = await postParsedShuffle(rom, random, seed, flags, asm, assemble);
+  await assemble('postshuffle.s');
+  const crc = stampVersionSeedAndHash(rom, seed, flags);
 
   // TODO - optional flags can possibly go here, but MUST NOT use parsed.prg!
 
@@ -336,27 +338,6 @@ export async function shuffle(rom: Uint8Array,
   }
   return [rom, crc];
 }
-
-// Separate function to guarantee we no longer have access to the parsed rom...
-async function postParsedShuffle(rom: Uint8Array,
-                                 random: Random,
-                                 seed: number,
-                                 flags: FlagSet,
-                                 asm: ShimAssembler,
-                                 assemble: (path: string) => Promise<void>): Promise<number> {
-  await assemble('postshuffle.s');
-  updateDifficultyScalingTables(rom, flags, asm);
-
-  shuffleRandomNumbers(rom, random);
-
-  return stampVersionSeedAndHash(rom, seed, flags);
-
-  // BELOW HERE FOR OPTIONAL FLAGS:
-
-  // do any "vanity" patches here...
-  // console.log('patch applied');
-  // return log.join('\n');
-};
 
 function misc(rom: Rom, flags: FlagSet, random: Random) {
   const {} = {rom, flags, random} as any;
@@ -674,57 +655,12 @@ export function stampVersionSeedAndHash(rom: Uint8Array, seed: number, flags: Fl
   return crc;
 }
 
-function patchBytes(rom: Uint8Array, address: number, bytes: number[]) {
-  for (let i = 0; i < bytes.length; i++) {
-    rom[address + i] = Math.max(0, Math.min(255, bytes[i]));
-  }
-}
-
-// goes with enemy stat recomputations in postshuffle.s
-// NOTE: this should go into a rom object so that it can
-// be inspected and written in a consistent way.
-const updateDifficultyScalingTables = (rom: Uint8Array, flags: FlagSet, asm: ShimAssembler) => {
-  rom = rom.subarray(0x10);
-  const diff = seq(asm.expand('ScalingLevels'), x => x);
-
-  // PAtk = 5 + Diff * 15/32
-  // DiffAtk table is 8 * PAtk = round(40 + (Diff * 15 / 4))
-  patchBytes(rom, asm.expand('DiffAtk'),
-             diff.map(d => Math.round(40 + d * 15 / 4)));
-
-  // NOTE: Old DiffDef table (4 * PDef) was 12 + Diff * 3, but we no longer
-  // use this table since nerfing armors.
-  // (PDef = 3 + Diff * 3/4)
-  // patchBytes(rom, asm.expand('DiffDef'),
-  //            diff.map(d => 12 + d * 3));
-
-  // NOTE: This is the armor-nerfed DiffDef table.
-  // PDef = 2 + Diff / 2
-  // DiffDef table is 4 * PDef = 8 + Diff * 2
-  // patchBytes(rom, asm.expand('DiffDef'),
-  //            diff.map(d => 8 + d * 2));
-
-  // NOTE: For armor cap at 3 * Lvl, set PDef = Diff
-  patchBytes(rom, asm.expand('DiffDef'),
-             diff.map(d => d * 4));
-
-  // DiffHP table is PHP = min(255, 48 + round(Diff * 11 / 2))
-  const phpStart = flags.decreaseEnemyDamage() ? 16 : 48;
-  const phpIncr = flags.decreaseEnemyDamage() ? 6 : 5.5;
-  patchBytes(rom, asm.expand('DiffHP'),
-             diff.map(d => Math.min(255, phpStart + Math.round(d * phpIncr))));
-
-  // DiffExp table is ExpB = compress(floor(4 * (2 ** ((16 + 9 * Diff) / 32))))
-  // where compress maps values > 127 to $80|(x>>4)
-
-  const expFactor = flags.expScalingFactor();
-  patchBytes(rom, asm.expand('DiffExp'), diff.map(d => {
-    const exp = Math.floor(4 * (2 ** ((16 + 9 * d) / 32)) * expFactor);
-    return exp < 0x80 ? exp : Math.min(0xff, 0x80 + (exp >> 4));
-  }));
-};
-
 function updateTablesPreCommit(rom: Rom, flags: FlagSet) {
+  // Change some enemy scaling from the default, if flags ask for it.
+  if (flags.decreaseEnemyDamage()) {
+    rom.scaling.setPhpFormula(s => 16 + 6 * s);
+  }
+  rom.scaling.setExpScalingFactor(flags.expScalingFactor());
 
   // Update the coin drop buckets (goes with enemy stat recomputations
   // in postshuffle.s)
@@ -900,11 +836,6 @@ const identifyKeyItemsForDifficultyBuffs = (rom: Rom) => {
 //   return out;
 // }
 
-
-const shuffleRandomNumbers = (rom: Uint8Array, random: Random) => {
-  const table = rom.subarray(0x357e4 + 0x10, 0x35824 + 0x10);
-  random.shuffle(table);
-};
 
 // useful for debug even if not currently used
 const [] = [hex];

@@ -360,7 +360,7 @@ export class Rom {
         promises.push(w.write(writer));
       }
     };
-    writeAll(this.locations);
+    promises.push(this.locations.write(writer));
     writeAll(this.objects);
     writeAll(this.hitboxes);
     writeAll(this.triggers);

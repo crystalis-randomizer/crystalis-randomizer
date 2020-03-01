@@ -433,31 +433,13 @@ export class Locations extends Array<Location> {
     throw new Error('No unused location');
   }
 
-  // // Find all groups of neighboring locations with matching properties.
-  // // TODO - optional arg: check adjacent # IDs...?
-  // partition<T>(func: (loc: Location) => T, eq: Eq<T> = (a, b) => a === b, joinNexuses = false): [Location[], T][] {
-  //   const seen = new Set<Location>();
-  //   const out: [Location[], T][] = [];
-  //   for (let loc of this) {
-  //     if (seen.has(loc) || !loc.used) continue;
-  //     seen.add(loc);
-  //     const value = func(loc);
-  //     const group = [];
-  //     const queue = [loc];
-  //     while (queue.length) {
-  //       const next = queue.pop()!;
-  //       group.push(next);
-  //       for (const n of next.neighbors(joinNexuses)) {
-  //         if (!seen.has(n) && eq(func(n), value)) {
-  //           seen.add(n);
-  //           queue.push(n);
-  //         }
-  //       }
-  //     }
-  //     out.push([[...group], value]);
-  //   }
-  //   return out;
-  // }
+  async write(writer: Writer): Promise<void> {
+    const promises: Array<Promise<void>> = [];
+    for (const location of this) {
+      promises.push(location.write(writer));
+    }
+    await Promise.all(promises);
+  }
 }
 
 // Location entities

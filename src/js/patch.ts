@@ -323,7 +323,7 @@ export async function shuffle(rom: Uint8Array,
 
   shuffleMusic(parsed, flags, random);
   shufflePalettes(parsed, flags, random);
-  updateCoinDrops(parsed, flags);
+  updateTablesPreCommit(parsed, flags);
 
   await parsed.writeData();
   const crc = await postParsedShuffle(rom, random, seed, flags, asm, assemble);
@@ -681,24 +681,6 @@ function patchBytes(rom: Uint8Array, address: number, bytes: number[]) {
 }
 
 // goes with enemy stat recomputations in postshuffle.s
-function updateCoinDrops(rom: Rom, flags: FlagSet) {
-  if (flags.disableShopGlitch()) {
-    // bigger gold drops if no shop glitch, particularly at the start
-    // - starts out fibonacci, then goes linear at 600
-    rom.coinDrops.values = [
-        0,   5,  10,  15,  25,  40,  65,  105,
-      170, 275, 445, 600, 700, 800, 900, 1000,
-    ];
-  } else {
-    // this table is basically meaningless b/c shop glitch
-    rom.coinDrops.values = [
-        0,   1,   2,   4,   8,  16,  30,  50,
-      100, 200, 300, 400, 500, 600, 700, 800,
-    ];
-  }
-}
-
-// goes with enemy stat recomputations in postshuffle.s
 // NOTE: this should go into a rom object so that it can
 // be inspected and written in a consistent way.
 const updateDifficultyScalingTables = (rom: Uint8Array, flags: FlagSet, asm: ShimAssembler) => {
@@ -740,23 +722,48 @@ const updateDifficultyScalingTables = (rom: Uint8Array, flags: FlagSet, asm: Shi
     const exp = Math.floor(4 * (2 ** ((16 + 9 * d) / 32)) * expFactor);
     return exp < 0x80 ? exp : Math.min(0xff, 0x80 + (exp >> 4));
   }));
-
-  // // Halve shield and armor defense values
-  // patchBytes(rom, 0x34bc0, [
-  //   // Armor defense
-  //   0, 1, 3, 5, 7, 9, 12, 10, 16,
-  //   // Shield defense
-  //   0, 1, 3, 4, 6, 9, 8, 12, 16,
-  // ]);
-
-  // Adjust shield and armor defense values
-  patchBytes(rom, 0x34bc0, [
-    // Armor defense
-    0, 2, 6, 10, 14, 18, 32, 24, 20,
-    // Shield defense
-    0, 2, 6, 10, 14, 18, 16, 32, 20,
-  ]);
 };
+
+function updateTablesPreCommit(rom: Rom, flags: FlagSet) {
+
+  // Update the coin drop buckets (goes with enemy stat recomputations
+  // in postshuffle.s)
+  if (flags.disableShopGlitch()) {
+    // bigger gold drops if no shop glitch, particularly at the start
+    // - starts out fibonacci, then goes linear at 600
+    rom.coinDrops.values = [
+        0,   5,  10,  15,  25,  40,  65,  105,
+      170, 275, 445, 600, 700, 800, 900, 1000,
+    ];
+  } else {
+    // this table is basically meaningless b/c shop glitch
+    rom.coinDrops.values = [
+        0,   1,   2,   4,   8,  16,  30,  50,
+      100, 200, 300, 400, 500, 600, 700, 800,
+    ];
+  }
+
+  // Update shield and armor defense values.
+  // Some of the "middle" shields are 2 points weaker than the corresponding
+  // armors.  If we instead average the shield/armor values and bump +1 for
+  // the carapace level, we get a pretty decent progression: 3, 6, 9, 13, 18,
+  // which is +3, +3, +3, +4, +5.
+  rom.items.CarapaceShield.defense = rom.items.TannedHide.defense = 3;
+  rom.items.PlatinumShield.defense = rom.items.BronzeArmor.defense = 9;
+  rom.items.MirroredShield.defense = rom.items.PlatinumArmor.defense = 13;
+  // For the high-end armors, we want to balance out the top three a bit
+  // better.  Sacred shield already has lower defense (16) than the previous
+  // one, as does battle armor (20), so we leave them be.  Psychos are
+  // demoted from 32 to 20, and the no-extra-power armors get the 32.
+  rom.items.PsychoArmor.defense = rom.items.PsychoShield.defense = 20;
+  rom.items.CeramicSuit.defense = rom.items.BattleShield.defense = 32;
+
+  // BUT... for now we don't want to make any changes, so fix it back.
+  rom.items.CarapaceShield.defense = rom.items.TannedHide.defense = 2;
+  rom.items.PlatinumShield.defense = rom.items.BronzeArmor.defense = 10;
+  rom.items.MirroredShield.defense = rom.items.PlatinumArmor.defense = 14;
+  rom.items.BattleArmor.defense = 24;
+}
 
 const rescaleShops = (rom: Rom, asm: ShimAssembler, random?: Random) => {
   // Populate rescaled prices into the various rom locations.

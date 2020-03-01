@@ -1,6 +1,6 @@
 import {Entity, EntityArray} from './entity.js';
 import {MessageId} from './messageid.js';
-import {hex, readLittleEndian, readString, seq, writeLittleEndian,
+import {hex, readLittleEndian, readString, seq, tuple, writeLittleEndian,
         ITEM_USE_FLAGS, ITEM_CONDITION_FLAGS} from './util.js';
 import {Writer} from './writer.js';
 import {Data} from './util.js';
@@ -60,7 +60,7 @@ export class Item extends Entity {
   // Weight for shuffling - higher numbers will be placed earlier.
   weight: number;
 
-  constructor(items: Items, id: number, opts: ItemOptions = {}) {
+  constructor(readonly items: Items, id: number, opts: ItemOptions = {}) {
     super(items.rom, id);
     const rom = this.rom;
     items[id] = this;
@@ -317,9 +317,31 @@ export class ItemUse {
   }
 }
 
+class Shield extends Item {
+  get defense(): number {
+    return this.items.shieldDefense[this.id - 0x0c];
+  }
+  set defense(def: number) {
+    this.items.shieldDefense[this.id - 0x0c] = def;
+  }
+}
+
+class Armor extends Item {
+  get defense(): number {
+    return this.items.armorDefense[this.id - 0x14];
+  }
+  set defense(def: number) {
+    this.items.armorDefense[this.id - 0x14] = def;
+  }
+}
+
+
 export class Items extends EntityArray<Item> {
   // NOTE: this must be initialized first.
   readonly itemUseJumps = DEFAULT_ITEM_USE_JUMPS;
+
+  armorDefense: number[];
+  shieldDefense: number[];
 
   // Swords
   readonly SwordOfWind      = new Item(this, 0x00);
@@ -337,23 +359,23 @@ export class Items extends EntityArray<Item> {
   readonly BallOfThunder    = new Item(this, 0x0b);
   readonly StormBracelet    = new Item(this, 0x0c);
   // Shields
-  readonly CarapaceShield   = new Item(this, 0x0d);
-  readonly BronzeShield     = new Item(this, 0x0e);
-  readonly PlatinumShield   = new Item(this, 0x0f);
-  readonly MirroredShield   = new Item(this, 0x10);
-  readonly CeramicShield    = new Item(this, 0x11);
-  readonly SacredShield     = new Item(this, 0x12);
-  readonly BattleShield     = new Item(this, 0x13);
-  readonly PsychoShield     = new Item(this, 0x14);
+  readonly CarapaceShield   = new Shield(this, 0x0d);
+  readonly BronzeShield     = new Shield(this, 0x0e);
+  readonly PlatinumShield   = new Shield(this, 0x0f);
+  readonly MirroredShield   = new Shield(this, 0x10);
+  readonly CeramicShield    = new Shield(this, 0x11);
+  readonly SacredShield     = new Shield(this, 0x12);
+  readonly BattleShield     = new Shield(this, 0x13);
+  readonly PsychoShield     = new Shield(this, 0x14);
   // Armor
-  readonly TannedHide       = new Item(this, 0x15);
-  readonly LeatherArmor     = new Item(this, 0x16);
-  readonly BronzeArmor      = new Item(this, 0x17);
-  readonly PlatinumArmor    = new Item(this, 0x18);
-  readonly SoldierSuit      = new Item(this, 0x19);
-  readonly CeramicSuit      = new Item(this, 0x1a);
-  readonly BattleArmor      = new Item(this, 0x1b);
-  readonly PsychoArmor      = new Item(this, 0x1c);
+  readonly TannedHide       = new Armor(this, 0x15);
+  readonly LeatherArmor     = new Armor(this, 0x16);
+  readonly BronzeArmor      = new Armor(this, 0x17);
+  readonly PlatinumArmor    = new Armor(this, 0x18);
+  readonly SoldierSuit      = new Armor(this, 0x19);
+  readonly CeramicSuit      = new Armor(this, 0x1a);
+  readonly BattleArmor      = new Armor(this, 0x1b);
+  readonly PsychoArmor      = new Armor(this, 0x1c);
   // Consumables
   readonly MedicalHerb      = new Item(this, 0x1d, {use: true,
                                                     trades: [0],
@@ -411,9 +433,13 @@ export class Items extends EntityArray<Item> {
 
   constructor(readonly rom: Rom) {
     super(0x49);
+    this.armorDefense = tuple(rom.prg, 0x34bc0, 9);
+    this.shieldDefense = tuple(rom.prg, 0x34bc9, 9);
   }
 
   async write(writer: Writer): Promise<void> {
+    writer.org(0x34bc0).byte(...this.armorDefense);
+    writer.org(0x34bc9).byte(...this.shieldDefense);
     const promises = [];
     for (const item of this) {
       promises.push(item.write(writer));

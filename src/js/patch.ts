@@ -1,7 +1,7 @@
 import {Assembler} from './asm/assembler.js';
 import {Cpu} from './asm/cpu.js';
-import {Linker} from './asm/linker.js';
 import {Preprocessor} from './asm/preprocessor.js';
+import {TokenSource} from './asm/token.js';
 import {TokenStream} from './asm/tokenstream.js';
 import {Tokenizer} from './asm/tokenizer.js';
 import {crc32} from './crc32.js';
@@ -36,39 +36,39 @@ import * as version from './version.js';
 
 const EXPAND_PRG: boolean = true;
 
-class ShimAssembler {
-  pre: Preprocessor;
-  exports = new Map<string, number>();
+// class ShimAssembler {
+//   pre: Preprocessor;
+//   exports = new Map<string, number>();
 
-  constructor(code: string, file: string) {
-    const asm = new Assembler(Cpu.P02);
-    const toks = new TokenStream();
-    toks.enter(new Tokenizer(code, file));
-    this.pre = new Preprocessor(toks, asm);
-    while (this.pre.next()) {}
-  }
+//   constructor(code: string, file: string) {
+//     const asm = new Assembler(Cpu.P02);
+//     const toks = new TokenStream();
+//     toks.enter(new Tokenizer(code, file));
+//     this.pre = new Preprocessor(toks, asm);
+//     while (this.pre.next()) {}
+//   }
 
-  assemble(code: string, file: string, rom: Uint8Array) {
-    const asm = new Assembler(Cpu.P02);
-    const toks = new TokenStream();
-    toks.enter(new Tokenizer(code, file));
-    const pre = new Preprocessor(toks, asm, this.pre);
-    asm.tokens(pre);
-    const link = new Linker();
-    link.read(asm.module());
-    link.link().addOffset(0x10).apply(rom);
-    for (const [s, v] of link.exports()) {
-      //if (!v.offset) throw new Error(`no offset: ${s}`);
-      this.exports.set(s, v.offset ?? v.value);
-    }
-  }
+//   assemble(code: string, file: string, rom: Uint8Array) {
+//     const asm = new Assembler(Cpu.P02);
+//     const toks = new TokenStream();
+//     toks.enter(new Tokenizer(code, file));
+//     const pre = new Preprocessor(toks, asm, this.pre);
+//     asm.tokens(pre);
+//     const link = new Linker();
+//     link.read(asm.module());
+//     link.link().addOffset(0x10).apply(rom);
+//     for (const [s, v] of link.exports()) {
+//       //if (!v.offset) throw new Error(`no offset: ${s}`);
+//       this.exports.set(s, v.offset ?? v.value);
+//     }
+//   }
 
-  expand(s: string) {
-    const v = this.exports.get(s);
-    if (!v) throw new Error(`missing export: ${s}`);
-    return v;
-  }
-}
+//   expand(s: string) {
+//     const v = this.exports.get(s);
+//     if (!v) throw new Error(`missing export: ${s}`);
+//     return v;
+//   }
+// }
 
 
 // TODO - to shuffle the monsters, we need to find the sprite palttes and
@@ -262,7 +262,7 @@ export async function shuffle(rom: Uint8Array,
   if (touchShops) {
     // TODO - separate logic for handling shops w/o Pn specified (i.e. vanilla
     // shops that may have been randomized)
-    rescaleShops(parsed, asm, flags.bargainHunting() ? random : undefined);
+    rescaleShops(parsed, flags.bargainHunting() ? random : undefined);
   }
 
   // NOTE: monster shuffle needs to go after item shuffle because of mimic
@@ -314,20 +314,43 @@ export async function shuffle(rom: Uint8Array,
   random.shuffle(parsed.randomNumbers.values);
 
 
-  async function assemble(path: string) {
-    asm.assemble(await reader.read(path), path, rom);
+  // async function assemble(path: string) {
+  //   asm.assemble(await reader.read(path), path, rom);
+  // }
+  async function tokenizer(path: string) {
+    return new Tokenizer(await reader.read(path), path);
   }
   const flagFile =
       Object.keys(defines)
           .filter(d => defines[d]).map(d => `.define ${d} 1\n`).join('');
-  const asm = new ShimAssembler(flagFile, 'flags.s');
+  const asm = new Assembler(Cpu.P02);
+  const toks = new TokenStream();
+  toks.enter(TokenSource.concat(
+      new Tokenizer(flagFile, 'flags.s'),
+      await tokenizer('preshuffle.s'),
+      await tokenizer('postparse.s'),
+      await tokenizer('postshuffle.s')));
+  const pre = new Preprocessor(toks, asm);
+  asm.tokens(pre);
+  parsed.modules.push(asm.module());
+//     const asm = new Assembler(Cpu.P02);
+//     const toks = new TokenStream();
+//     toks.enter(new Tokenizer(code, file));
+//     this.pre = new Preprocessor(toks, asm);
+//     while (this.pre.next()) {}
+//   }
+
+//   assemble(code: string, file: string, rom: Uint8Array) {
+//     const asm = new Assembler(Cpu.P02);
+//     const toks = new TokenStream();
+//     toks.enter(new Tokenizer(code, file));
+//     const pre = new Preprocessor(toks, asm, this.pre);
+//     asm.tokens(pre);
+//     const link = new Linker();
+//     link.read(asm.module());
+  
+  // const asm = new ShimAssembler(flagFile, 'flags.s');
 //console.log('Multiply16Bit:', asm.expand('Multiply16Bit').toString(16));
-  await assemble('preshuffle.s');
-  await assemble('postparse.s');
-  await assemble('postshuffle.s');
-  parsed.uniqueItemTableAddress = asm.expand('KeyItemData');
-  parsed.shopCount = 11; // 11 of all types of shop for some reason.
-  parsed.shopDataTablesAddress = asm.expand('ShopData');
   await parsed.writeData();
   const crc = stampVersionSeedAndHash(rom, seed, flags);
 
@@ -702,7 +725,7 @@ function updateTablesPreCommit(rom: Rom, flags: FlagSet) {
   rom.items.BattleArmor.defense = 24;
 }
 
-const rescaleShops = (rom: Rom, asm: ShimAssembler, random?: Random) => {
+const rescaleShops = (rom: Rom, random?: Random) => {
   // Populate rescaled prices into the various rom locations.
   // Specifically, we read the available item IDs out of the
   // shop tables and then compute new prices from there.
@@ -726,7 +749,7 @@ const rescaleShops = (rom: Rom, asm: ShimAssembler, random?: Random) => {
   }
   // Also fill the scaling tables.
   const diff = seq(48 /*asm.expand('ScalingLevels')*/, x => x);
-  rom.shops.rescale = (label: string) => asm.expand(label);
+  rom.shops.rescale = true;
   // Tool shops scale as 2 ** (Diff / 10), store in 8ths
   rom.shops.toolShopScaling = diff.map(d => Math.round(8 * (2 ** (d / 10))));
   // Armor shops scale as 2 ** ((47 - Diff) / 12), store in 8ths

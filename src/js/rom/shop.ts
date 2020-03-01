@@ -1,32 +1,119 @@
-import {Entity, EntityArray} from './entity.js';
-import {readLittleEndian, seq, tuple, writeLittleEndian} from './util.js';
-import {Writer} from './writer.js';
-import {Rom} from '../rom.js';
+import {Entity, EntityArray} from './entity';
+import {readLittleEndian, seq, tuple, writeLittleEndian} from './util';
+import {Writer} from './writer';
+import {Rom} from '../rom';
+import {Assembler} from '../asm/assembler';
+import {Cpu} from '../asm/cpu';
 
 
 export class Shops extends EntityArray<Shop> {
 
-  rescale?: (label: string) => number;
+  rescale?: boolean;
   innBasePrice = 20;
   toolShopScaling: number[] = new Array(48).fill(0);
   armorShopScaling: number[] = new Array(48).fill(0);
+  basePrices: number[];
 
   constructor(readonly rom: Rom) {
     super(44); // 4 * rom.shopCount);
     for (let i = 0; i < 44; i++) {
       this[i] = new Shop(rom, i);
     }
+
+    if (rom.shopDataTablesAddress != null) {
+      const address =
+          rom.shopDataTablesAddress +
+          21 * rom.shopCount +
+          2 * rom.scalingLevels;
+      this.basePrices = seq(0x49, id => id >= 0xd && id < 0x27 ?
+                            readLittleEndian(rom.prg,
+                                             address + 2 * (id - 0xd)) :
+                            0);
+    } else {
+      this.basePrices =
+          seq(0x49,
+              id => readLittleEndian(rom.prg,
+                                     VANILLA_PAWN_PRICE_TABLE + 2 * id) * 2);
+    }
+    
+  }
+
+  armorShops(): Shop[] {
+    return seq(11, i => this[4 * i]);
+  }
+
+  toolShops(): Shop[] {
+    return seq(11, i => this[4 * i + 1]);
+  }
+
+  inns(): Shop[] {
+    return seq(11, i => this[4 * i + 2]);
+  }
+
+  pawnShops(): Shop[] {
+    return seq(11, i => this[4 * i + 3]);
   }
 
   write(writer: Writer) {
     for (const shop of this) {
       shop.write(writer);
     }
+    // TODO - can we even write non-defragged shops?
+    if (!this.rescale) throw new Error('invalid');
     if (this.rescale) {
-      const org = (name: string) => writer.org(this.rescale!(name));
-      org('ToolShopScaling').byte(...this.toolShopScaling);
-      org('ArmorShopScaling').byte(...this.armorShopScaling);
-      org('InnBasePrice').word(this.innBasePrice);
+      const assembler = new Assembler(Cpu.P02);
+      function exportLabel(label: string) {
+        assembler.export(label);
+        assembler.label(label);
+      }
+      assembler.segment("10", "fe", "ff");
+      assembler.org(0x9da4); // TODO - reloc, break it up a bit?
+      // NOTE: This structure is hard-coded in RomOption, with two parameters:
+      //  1. SHOP_COUNT (11)
+      //  2. SCALING_LEVELS (48)
+      //  3. Pawn prices: 52 bytes   ; 0 = $0d, 50 = $26, 51 = "$27" (inn)
+      exportLabel('ShopData');
+      exportLabel('ArmorShopIdTable');
+      for (const shop of this.armorShops()) {
+        for (let i = 0; i < 4; i++) {
+          assembler.byte(shop.contents[i] ?? 0xff);
+        }
+      }
+      exportLabel('ToolShopIdTable');
+      for (const shop of this.toolShops()) {
+        for (let i = 0; i < 4; i++) {
+          assembler.byte(shop.contents[i] ?? 0xff);
+        }
+      }
+      exportLabel('ArmorShopPriceTable');
+      for (const shop of this.armorShops()) {
+        for (let i = 0; i < 4; i++) {
+          assembler.byte(Math.round((shop.prices[i] ?? 0) * 32));
+        }
+      }
+      exportLabel('ToolShopPriceTable');
+      for (const shop of this.toolShops()) {
+        for (let i = 0; i < 4; i++) {
+          assembler.byte(Math.round((shop.prices[i] ?? 0) * 32));
+        }
+      }
+      exportLabel('InnPrices');
+      for (const shop of this.inns()) {
+        assembler.byte(Math.round((shop.prices[0] ?? 0) * 32));
+      }
+      exportLabel('ShopLocations');
+      for (const shop of this) {
+        assembler.byte(shop.location);
+      }
+      exportLabel('ToolShopScaling');
+      assembler.byte(...this.toolShopScaling);
+      exportLabel('ArmorShopScaling');
+      assembler.byte(...this.armorShopScaling);
+      exportLabel('BasePrices');
+      assembler.word(...this.basePrices.slice(0x0d, 0x27).map(x => x ?? 0));
+      exportLabel('InnBasePrice');
+      assembler.word(this.innBasePrice);
+      writer.modules.push(assembler.module());
     }
   }
 }
@@ -146,6 +233,9 @@ export class Shop extends Entity {
   }
 
   write(writer: Writer): void {
+    // NOTE: This no longer does anything because shops makes the
+    // single table all at once.
+    if (this.rom.shops.rescale) return;
     // TODO: throw an error if shopkeeper doesn't match?
     const shopData = this.rom.shopDataTablesAddress;
     const prg = writer.rom;
@@ -154,8 +244,7 @@ export class Shop extends Entity {
             (i, p) => prg[this.pricesAddress + i] = Math.round(p * 32) :
             (i, p) => writeLittleEndian(prg, this.pricesAddress + 2 * i, p);
     for (let i = 0; i < CONTENTS_COUNTS[this.type]; i++) {
-      prg[this.contentsAddress + i] =
-          this.contents[i] != null ? this.contents[i] : 0xff;
+      prg[this.contentsAddress + i] = this.contents[i] ?? 0xff;
     }
     for (let i = 0; i < PRICES_COUNTS[this.type]; i++) {
       writePrice(i, this.prices[i] || 0);
@@ -175,3 +264,4 @@ const VANILLA_ARMOR_SHOP_PRICES = 0x21dd0;
 const VANILLA_TOOL_SHOP_ITEMS = 0x21e28;
 const VANILLA_TOOL_SHOP_PRICES = 0x21e54;
 const VANILLA_INN_PRICES = 0x21eac;
+const VANILLA_PAWN_PRICE_TABLE = 0x21ec2;

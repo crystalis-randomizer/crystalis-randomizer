@@ -1,7 +1,7 @@
 import {Cpu} from './cpu';
 import {Expr} from './expr';
 import * as mod from './module';
-import { SourceInfo, Token, TokenSource} from './token';
+import {SourceInfo, Token, TokenSource} from './token';
 import {assertNever} from '../util';
 
 type Chunk = mod.Chunk<number[]>;

@@ -58,23 +58,24 @@ export class Writer {
   private writes: Write[] = [];
   private promises: Promise<unknown>[] = [];
 
-  private modules: Module[] = [];
+  modules: Module[] = [];
+  linker = new Linker();
   private assembler = new Assembler(Cpu.P02);
 
   private free: number[] = [];
 
   constructor(readonly rom: Uint8Array, readonly chr: Uint8Array) {
-    for (let i = 0; i < 0x1e; i++) {
-      this.assembler.segment({name: i.toString(16).padStart(2, '0'),
-                              bank: i,
-                              size: 0x2000,
-                              offset: i << 13,
-                              memory: 0x8000 | ((i & 1) << 13)});
-    }
-    this.assembler.segment({
-      name: 'fe', bank: 0x1e, size: 0x2000, offset: 0x3c000, memory: 0xc000});
-    this.assembler.segment({
-      name: 'ff', bank: 0x1f, size: 0x2000, offset: 0x3e000, memory: 0xe000});
+    // for (let i = 0; i < 0x1e; i++) {
+    //   this.assembler.segment({name: i.toString(16).padStart(2, '0'),
+    //                           bank: i,
+    //                           size: 0x2000,
+    //                           offset: i << 13,
+    //                           memory: 0x8000 | ((i & 1) << 13)});
+    // }
+    // this.assembler.segment({
+    //   name: 'fe', bank: 0x1e, size: 0x2000, offset: 0x3c000, memory: 0xc000});
+    // this.assembler.segment({
+    //   name: 'ff', bank: 0x1f, size: 0x2000, offset: 0x3e000, memory: 0xe000});
   }
 
   // TODO: move()?
@@ -161,12 +162,12 @@ export class Writer {
     //   -- feed free chunk given page into define for assembler?
 
     // Write the link result last.
-    const linker = new Linker();
-    linker.read(this.assembler.module());
+    this.linker.read(this.assembler.module());
     for (const mod of this.modules) {
-      linker.read(mod);
+      this.linker.read(mod);
     }
-    linker.link().apply(this.rom);
+    this.linker.link().apply(this.rom);
+    // Now linker exports are available...
   }
 
   private find({data, startPage, endPage}: Write): number {

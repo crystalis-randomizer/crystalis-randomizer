@@ -29,6 +29,21 @@ export namespace TokenSource {
       }
     }
   }
+
+  export function concat(...sources: TokenSource[]): TokenSource {
+    let source: TokenSource|undefined;
+    return {
+      next: (): Token[]|undefined => {
+        while (true) {
+          if (!source) source = sources.shift();
+          if (!source) return undefined;
+          const line = source.next();
+          if (line) return line;
+          source = undefined;
+        }
+      },
+    };
+  }
 }
 
 export interface SourceInfo {

@@ -11,7 +11,6 @@ const ITEM_USE_JUMP_TABLE = 0x1c399;
 const ITEM_USE_DATA_TABLE = 0x1dbe2;
 const ITEM_DATA_TABLE = 0x20ff0;
 const SELECTED_ITEM_TABLE = 0x2103b;
-const VANILLA_PAWN_PRICE_TABLE = 0x21ec2;
 const MENU_NAME_TABLE = 0x21086;
 const MESSAGE_NAME_TABLE = 0x28a5c; // NOTE: integrate with messages entity?
 
@@ -45,8 +44,6 @@ export class Item extends Entity {
                          // :40 is unique, :20 is worn (sword/amor/orb/ring/magic)
   // only used for disabling opel statue use
   selectedItemValue: number;
-
-  basePrice: number;
 
   // PROBLEM - read in one format, write in another...?
   messageName: string; // TODO - this should live link into Messages table
@@ -87,18 +84,6 @@ export class Item extends Entity {
     this.itemDataValue = rom.prg[this.itemDataPointer];
     this.selectedItemValue = rom.prg[this.selectedItemPointer];
 
-    if (rom.shopDataTablesAddress != null) {
-      const address =
-          rom.shopDataTablesAddress +
-          21 * rom.shopCount +
-          2 * rom.scalingLevels +
-          2 * (id - 0xd);
-      this.basePrice = id >= 0xd && id < 0x27 ? readLittleEndian(rom.prg, address) : 0;
-    } else {
-      const address = VANILLA_PAWN_PRICE_TABLE + 2 * id;
-      this.basePrice = readLittleEndian(rom.prg, address) * 2;
-    }
-
     const messageNameBase = readLittleEndian(rom.prg, this.messageNamePointer) + 0x20000;
     this.messageName = readString(rom.prg, messageNameBase);
 
@@ -113,6 +98,13 @@ export class Item extends Entity {
     // console.log(`Item ${this.menuName} base price ${this.basePrice}`);
     // TODO - rom.uniqueItemTableAddress
     //  -> current hard-coded in patch.identifyKeyItemsForDifficultyBuffs
+  }
+
+  get basePrice(): number {
+    return this.rom.shops.basePrices[this.id];
+  }
+  set basePrice(price: number) {
+    this.rom.shops.basePrices[this.id] = price;
   }
 
   get itemUseJumpPointer(): number {
@@ -178,19 +170,6 @@ export class Item extends Entity {
   async write(writer: Writer): Promise<void> {
     writer.rom[this.itemDataPointer] = this.itemDataValue;
     writer.rom[this.selectedItemPointer] = this.selectedItemValue;
-    if (this.rom.shopDataTablesAddress != null) {
-      if (this.id >= 0xd && this.id < 0x27) {
-        const address =
-            this.rom.shopDataTablesAddress +
-            21 * this.rom.shopCount +
-            2 * this.rom.scalingLevels +
-            2 * (this.id - 0xd);
-        writeLittleEndian(writer.rom, address, this.basePrice);
-      }
-    } else {
-      const address = VANILLA_PAWN_PRICE_TABLE + 2 * this.id;
-      writeLittleEndian(writer.rom, address, this.basePrice >>> 1);
-    }
 
     const menuNameEncoded =
         MENU_NAME_ENCODE.reduce((s, [d, e]) => s.replace(d, e), this.menuName);

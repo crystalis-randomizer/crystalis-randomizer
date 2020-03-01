@@ -1,5 +1,5 @@
 // import {Assembler} from './asm/assembler.js';
-// import {Module} from './asm/module.js';
+import {Module} from './asm/module.js';
 import {AdHocSpawn} from './rom/adhocspawn.js';
 import {Areas} from './rom/area.js';
 import {BossKill} from './rom/bosskill.js';
@@ -98,6 +98,8 @@ export class Rom {
 
   readonly telepathy: Telepathy;
   readonly messages: Messages;
+
+  readonly modules: Module[] = [];
 
   spoiler?: Spoiler;
 
@@ -312,6 +314,7 @@ export class Rom {
   async writeData() {
     // Write the options first
     const writer = new Writer(this.prg, this.chr);
+    writer.modules.push(...this.modules);
     // MapData
     writer.alloc(0x144f8, 0x17e00);
     // NpcData
@@ -385,6 +388,11 @@ export class Rom {
     await Promise.all(promises).then(() => undefined);
     writer.report();
 
+    const exports = writer.linker.exports();
+    this.uniqueItemTableAddress = exports.get('KeyItemData')!.offset!;
+    this.shopCount = 11;
+    this.shopDataTablesAddress = exports.get('ShopData')!.offset!;
+    // Don't include these in the linker???
     Rom.SHOP_COUNT.set(this.prg, this.shopCount);
     Rom.SCALING_LEVELS.set(this.prg, this.scalingLevels);
     Rom.UNIQUE_ITEM_TABLE.set(this.prg, this.uniqueItemTableAddress);

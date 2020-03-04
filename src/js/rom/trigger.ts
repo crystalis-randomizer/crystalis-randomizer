@@ -1,8 +1,8 @@
-import {Entity} from './entity.js';
-import {MessageId} from './messageid.js';
-import {addr, hex, readBigEndian} from './util.js';
-import {Writer} from './writer.js';
-import {Rom} from '../rom.js';
+import {Entity} from './entity';
+import {MessageId} from './messageid';
+import {addr, hex, readBigEndian} from './util';
+import {Writer} from './writer';
+import {Rom} from '../rom';
 
 const UNUSED_TRIGGERS = new Set([
   0x83, 0x87, 0x88, 0x89, 0x8f, 0x93, 0x96, 0x98, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f,
@@ -75,6 +75,7 @@ export class Trigger extends Entity {
 
   async write(writer: Writer, base: number = 0x1e17a) {
     if (!this.used) return;
+    
     const address = await writer.write(this.bytes(), 0x1e000, 0x1ffff,
                                        `Trigger ${hex(this.id)}`);
     writer.rom[base + 2 * (this.id & 0x7f)] = address & 0xff;

@@ -3,7 +3,6 @@ import {readLittleEndian, seq, tuple, writeLittleEndian} from './util';
 import {Writer} from './writer';
 import {Rom} from '../rom';
 import {Assembler} from '../asm/assembler';
-import {Cpu} from '../asm/cpu';
 
 
 export class Shops extends EntityArray<Shop> {
@@ -61,7 +60,7 @@ export class Shops extends EntityArray<Shop> {
     // TODO - can we even write non-defragged shops?
     if (!this.rescale) throw new Error('invalid');
     if (this.rescale) {
-      const assembler = new Assembler(Cpu.P02);
+      const assembler = new Assembler();
       function exportLabel(label: string) {
         assembler.export(label);
         assembler.label(label);

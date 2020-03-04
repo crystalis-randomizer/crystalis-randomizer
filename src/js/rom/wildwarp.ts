@@ -1,6 +1,7 @@
-import {Rom} from '../rom.js';
-import {tuple} from './util.js';
-import {Writer} from './writer.js';
+import {Rom} from '../rom';
+import {tuple} from './util';
+import {Writer} from './writer';
+import {Assembler} from '../asm/assembler';
 
 // List of wild warp locations.
 export class WildWarp {
@@ -12,9 +13,19 @@ export class WildWarp {
   }
 
   write(w: Writer): void {
-    w.rom.subarray(ADDRESS, ADDRESS + COUNT).set(this.locations);
+    const a = new Assembler();
+    a.segment(...SEGMENTS);
+    a.org(ORG);
+    a.label('WildWarpLocations');
+    a.byte(...this.locations);
+    a.org(0xcbd9);
+    a.instruction('lda', 'WildWarpLocations,y');
+    w.modules.push(a.module());
   }
 }
+
+const SEGMENTS = ['fe', 'ff'];
+const ORG = 0xcbec;
 
 const ADDRESS = 0x3cbec;
 const COUNT = 16;

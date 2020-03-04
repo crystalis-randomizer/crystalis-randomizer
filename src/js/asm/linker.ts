@@ -570,7 +570,7 @@ class Link {
         if (f1 - f0 >= size) {
           // found a region
           chunk.place(f0 - segment.delta, segment);
-          this.free.delete(f0, f0 + size);
+          // this.free.delete(f0, f0 + size);
           // TODO - factor out the subs-aware copy method!
           return;
         }

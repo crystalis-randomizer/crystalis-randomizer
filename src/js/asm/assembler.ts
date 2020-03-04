@@ -2,6 +2,7 @@ import {Cpu} from './cpu';
 import {Expr} from './expr';
 import * as mod from './module';
 import {SourceInfo, Token, TokenSource} from './token';
+import {Tokenizer} from './tokenizer';
 import {assertNever} from '../util';
 
 type Chunk = mod.Chunk<number[]>;
@@ -179,7 +180,7 @@ export class Assembler {
   /** Current source location, for error messages. */
   private _source?: SourceInfo;
 
-  constructor(readonly cpu: Cpu, readonly opts: Assembler.Options = {}) {}
+  constructor(readonly cpu = Cpu.P02, readonly opts: Assembler.Options = {}) {}
 
   private get chunk(): Chunk {
     // make chunk only when needed
@@ -524,18 +525,24 @@ export class Assembler {
     sym.expr = expr;
   }
 
-  instruction(mnemonic: string, arg: Arg): void;
+  instruction(mnemonic: string, arg?: Arg|string): void;
   instruction(tokens: Token[]): void;
-  instruction(...args: [Token[]]|[string, Arg]): void {
+  instruction(...args: [Token[]]|[string, (Arg|string)?]): void {
     let mnemonic: string;
     let arg: Arg;
-    if (args.length === 1) {
+    if (args.length === 1 && Array.isArray(args[0])) {
       // handle the line...
       const tokens = args[0];
       mnemonic = Token.expectIdentifier(tokens[0]).toLowerCase();
       arg = this.parseArg(tokens);
+    } else if (typeof args[1] === 'string') {
+      // parse the tokens first
+      mnemonic = args[0] as string;
+      const tokenizer = new Tokenizer(args[1]);
+      arg = this.parseArg(tokenizer.next()!, 0);
     } else {
-      [mnemonic, arg] = args;
+      [mnemonic, arg] = args as [string, Arg];
+      if (!arg) arg = ['imp'];
       mnemonic = mnemonic.toLowerCase();
     }
     // may need to size the arg, depending.
@@ -572,31 +579,32 @@ export class Assembler {
     this.fail(`Bad address mode ${m} for ${mnemonic}`);
   }
 
-  parseArg(tokens: Token[]): Arg {
+  parseArg(tokens: Token[], start = 1): Arg {
     // Look for parens/brackets and/or a comma
-    if (tokens.length === 1) return ['imp'];
-    const front = tokens[1];
-    if (tokens.length === 2) {
+    if (tokens.length === start) return ['imp'];
+    const front = tokens[start];
+    const next = tokens[start + 1];
+    if (tokens.length === start + 1) {
       if (Token.isRegister(front, 'a')) return ['acc'];
     } else if (Token.eq(front, Token.IMMEDIATE)) {
-      return ['imm', Expr.parseOnly(tokens, 2)];
+      return ['imm', Expr.parseOnly(tokens, start + 1)];
     }
     // Look for relative or anonymous labels, which are not valid on their own
-    if (Token.eq(front, Token.COLON) && tokens.length === 3 &&
-        tokens[2].token === 'op' && /^[-+]+$/.test(tokens[2].str)) {
+    if (Token.eq(front, Token.COLON) && tokens.length === start + 2 &&
+        next.token === 'op' && /^[-+]+$/.test(next.str)) {
       // anonymous label
-      return ['add', {op: 'sym', sym: ':' + tokens[2].str}];
-    } else if (tokens.length === 2 && tokens[1].token === 'op' &&
-               /^[-+]+$/.test(tokens[1].str)) {
+      return ['add', {op: 'sym', sym: ':' + next.str}];
+    } else if (tokens.length === start + 1 && front.token === 'op' &&
+               /^[-+]+$/.test(front.str)) {
       // relative label
-      return ['add', {op: 'sym', sym: tokens[1].str}];
+      return ['add', {op: 'sym', sym: front.str}];
     }
     // it must be an address of some sort - is it indirect?
     if (Token.eq(front, Token.LP) ||
         (this.opts.allowBrackets && Token.eq(front, Token.LB))) {
-      const close = Token.findBalanced(tokens, 1);
+      const close = Token.findBalanced(tokens, start);
       if (close < 0) this.fail(`Unbalanced ${Token.name(front)}`, front);
-      const args = Token.parseArgList(tokens, 2, close);
+      const args = Token.parseArgList(tokens, start + 1, close);
       if (!args.length) this.fail(`Bad argument`, front);
       const expr = Expr.parseOnly(args[0]);
       if (args.length === 1) {
@@ -614,7 +622,7 @@ export class Assembler {
       }
       this.fail(`Bad argument`, front);
     }
-    const args = Token.parseArgList(tokens, 1);
+    const args = Token.parseArgList(tokens, start);
     if (!args.length) this.fail(`Bad arg`, front);
     const expr = Expr.parseOnly(args[0]);
     if (args.length === 1) return ['add', expr];

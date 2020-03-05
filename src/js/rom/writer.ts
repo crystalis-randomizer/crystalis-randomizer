@@ -64,7 +64,7 @@ export class Writer {
 
   private free: number[] = [];
 
-  constructor(private readonly rom: Uint8Array, readonly chr: Uint8Array) {
+  constructor(readonly rom: Uint8Array, readonly chr: Uint8Array) {
     // for (let i = 0; i < 0x1e; i++) {
     //   this.assembler.segment({name: i.toString(16).padStart(2, '0'),
     //                           bank: i,

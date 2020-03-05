@@ -1,12 +1,12 @@
+import {Assembler} from '../asm/assembler.js';
+import {Rom} from '../rom.js';
 import {Entity} from './entity.js';
 import {readLittleEndian, writeLittleEndian} from './util.js';
 import {Writer} from './writer.js';
-import {Rom} from '../rom.js';
 
 // Data for when a boss is killed
 export class BossKill extends Entity {
 
-  readonly pointer: number;
   readonly base: number;
 
   readonly data: Uint8Array;
@@ -15,11 +15,14 @@ export class BossKill extends Entity {
 
   constructor(rom: Rom, id: number) {
     super(rom, id);
-    this.pointer = 0x1f96b + 2 * id;
     this.base = readLittleEndian(rom.prg, this.pointer) + 0x14000;
     this.data = rom.prg.slice(this.base, this.base + 21);
     this.palettes = this.data.subarray(5, 13);
     this.patterns = this.data.subarray(13, 19);
+  }
+
+  get pointer(): number {
+    return 0x1f96b + 2 * this.id;
   }
 
   get routine(): number {
@@ -50,8 +53,14 @@ export class BossKill extends Entity {
 
     // NOTE: we're only going to write the bits that aren't owned by
     // the Location object.
-    for (const i of [0, 1, 4]) {
-      writer.rom[this.base + i] = this.data[i];
-    }
+    if (this.base === 0x14000) return;
+    const a = new Assembler();
+    a.segment('0f');
+    const org = this.base & 0x3fff | 0x8000;
+    a.org(org);
+    a.byte(this.data[0], this.data[1]);
+    a.org(org + 4);
+    a.byte(this.data[4]);
+    writer.modules.push(a.module());
   }
 }

@@ -2,18 +2,21 @@ import {Entity} from './entity.js';
 import {tuple} from './util.js';
 import {Writer} from './writer.js';
 import {Rom} from '../rom.js';
+import { Assembler } from '../asm/assembler.js';
 
 // An entry of the ad-hoc spawn table, which can be spawned arbitrarily
 // by AdHocSpawnObject (provided there's an available spawn slot in range).
 export class AdHocSpawn extends Entity {
 
-  base: number;
   data: [number, number, number, number];
 
   constructor(rom: Rom, id: number) {
     super(rom, id);
-    this.base = (id << 2) + 0x29c00;
     this.data = tuple(rom.prg, this.base, 4);
+  }
+
+  get base(): number {
+    return (this.id << 2) + 0x29c00;
   }
 
   // Closed lower bound of allowed spawn slot range
@@ -33,6 +36,10 @@ export class AdHocSpawn extends Entity {
   set count(arg: number) { this.data[3] = arg; }
 
   write(writer: Writer) {
-    writer.rom.subarray(this.base, this.base + 4).set(this.data);
+    const a = new Assembler();
+    a.segment('14');
+    a.org(0x9c00 + (this.id << 2));
+    a.byte(...this.data);
+    writer.modules.push(a.module());
   }
 }

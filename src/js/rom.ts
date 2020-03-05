@@ -316,14 +316,14 @@ export class Rom {
     const writer = new Writer(this.prg, this.chr);
     writer.modules.push(...this.modules);
     // MapData
-    writer.alloc(0x144f8, 0x17e00);
+    //writer.alloc(0x144f8, 0x17e00);
     // NpcData
     // NOTE: 193f9 is assuming $fb is the last location ID.  If we add more locations at
     // the end then we'll need to push this back a few more bytes.  We could possibly
     // detect the bad write and throw an error, and/or compute the max location ID.
-    writer.alloc(0x193f9, 0x1ac00);
+    //writer.alloc(0x193f9, 0x1ac00);
     // ObjectData (index at 1ac00..1ae00)
-    writer.alloc(0x1ae00, 0x1bd00); // save 512 bytes at end for some extra code
+    //writer.alloc(0x1ae00, 0x1bd00); // save 512 bytes at end for some extra code
     // NpcSpawnConditions
     writer.alloc(0x1c77a, 0x1c95d);
     // NpcDialog
@@ -361,7 +361,7 @@ export class Rom {
         promises.push(w.write(writer));
       }
     };
-    promises.push(this.locations.write(writer));
+    this.locations.write(writer);
     writeAll(this.objects);
     writeAll(this.hitboxes);
     writeAll(this.triggers);
@@ -391,12 +391,12 @@ export class Rom {
     const exports = writer.linker.exports();
     this.uniqueItemTableAddress = exports.get('KeyItemData')!.offset!;
     this.shopCount = 11;
-    this.shopDataTablesAddress = exports.get('ShopData')!.offset!;
+    this.shopDataTablesAddress = exports.get('ShopData')?.offset || 0;
     // Don't include these in the linker???
     Rom.SHOP_COUNT.set(this.prg, this.shopCount);
     Rom.SCALING_LEVELS.set(this.prg, this.scalingLevels);
     Rom.UNIQUE_ITEM_TABLE.set(this.prg, this.uniqueItemTableAddress);
-    Rom.SHOP_DATA_TABLES.set(this.prg, this.shopDataTablesAddress);
+    Rom.SHOP_DATA_TABLES.set(this.prg, this.shopDataTablesAddress || 0);
     Rom.OMIT_ITEM_GET_DATA_SUFFIX.set(this.prg, this.omitItemGetDataSuffix);
     Rom.OMIT_LOCAL_DIALOG_SUFFIX.set(this.prg, this.omitLocalDialogSuffix);
     Rom.COMPRESSED_MAPDATA.set(this.prg, this.compressedMapData);

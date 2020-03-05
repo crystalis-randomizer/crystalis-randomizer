@@ -141,8 +141,6 @@ export async function shuffle(rom: Uint8Array,
   const random = new Random(newSeed);
   flags = flags.filterRandom(random);
 
-  const touchShops = true;
-
   const defines: {[name: string]: boolean} = {
     _ALLOW_TELEPORT_OUT_OF_BOSS: flags.hardcoreMode() &&
                                  flags.shuffleBossElements(),
@@ -174,7 +172,7 @@ export async function shuffle(rom: Uint8Array,
     _NERF_MADO: true,
     _NERF_WILD_WARP: flags.nerfWildWarp(),
     _NEVER_DIE: flags.neverDie(),
-    _NORMALIZE_SHOP_PRICES: touchShops,
+    _NORMALIZE_SHOP_PRICES: flags.shuffleShops(),
     _PITY_HP_AND_MP: true,
     _PROGRESSIVE_BRACELET: true,
     _RABBIT_BOOTS_CHARGE_WHILE_WALKING: flags.rabbitBootsChargeWhileWalking(),
@@ -259,7 +257,7 @@ export async function shuffle(rom: Uint8Array,
   //await shuffleDepgraph(parsed, random, log, flags, progress);
 
   // TODO - rewrite rescaleShops to take a Rom instead of an array...
-  if (touchShops) {
+  if (flags.shuffleShops()) {
     // TODO - separate logic for handling shops w/o Pn specified (i.e. vanilla
     // shops that may have been randomized)
     rescaleShops(parsed, flags.bargainHunting() ? random : undefined);

@@ -15,8 +15,8 @@ export class BossKill extends Entity {
 
   constructor(rom: Rom, id: number) {
     super(rom, id);
-    this.base = readLittleEndian(rom.prg, this.pointer) + 0x14000;
-    this.data = rom.prg.slice(this.base, this.base + 21);
+    this.base = readLittleEndian(rom.prg, this.pointer);
+    this.data = rom.prg.slice(this.base + 0x14000, this.base + 0x14015);
     this.palettes = this.data.subarray(5, 13);
     this.patterns = this.data.subarray(13, 19);
   }
@@ -53,13 +53,12 @@ export class BossKill extends Entity {
 
     // NOTE: we're only going to write the bits that aren't owned by
     // the Location object.
-    if (this.base === 0x14000) return;
+    if (!this.base) return;
     const a = new Assembler();
     a.segment('0f');
-    const org = this.base & 0x3fff | 0x8000;
-    a.org(org);
+    a.org(this.base);
     a.byte(this.data[0], this.data[1]);
-    a.org(org + 4);
+    a.org(this.base + 4);
     a.byte(this.data[4]);
     writer.modules.push(a.module());
   }

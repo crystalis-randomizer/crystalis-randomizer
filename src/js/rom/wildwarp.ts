@@ -1,7 +1,7 @@
-import {Rom} from '../rom';
-import {tuple} from './util';
-import {Writer} from './writer';
-import {Assembler} from '../asm/assembler';
+import {Rom} from '../rom.js';
+import {tuple} from './util.js';
+import {Writer} from './writer.js';
+import {Assembler} from '../asm/assembler.js';
 
 // List of wild warp locations.
 export class WildWarp {

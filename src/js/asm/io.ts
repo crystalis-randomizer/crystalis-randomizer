@@ -1,6 +1,6 @@
-import {Token, TokenSource} from './token';
-import {Tokenizer} from './tokenizer';
-import {TokenStream} from './tokenstream';
+import {Token, TokenSource} from './token.js';
+import {Tokenizer} from './tokenizer.js';
+import {TokenStream} from './tokenstream.js';
 
 export class IncludeWrapper implements TokenSource.Async {
   constructor(

@@ -1,4 +1,4 @@
-import {SourceInfo, Token} from './token';
+import {SourceInfo, Token} from './token.js';
 
 export interface Expr {
   // operator (e.g. '+' or '.max') or 'sym', 'num', or 'im'

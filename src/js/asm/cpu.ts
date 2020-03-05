@@ -1,4 +1,4 @@
-import {assertNever} from '../util';
+import {assertNever} from '../util.js';
 
 type AddressingMode =
   'acc' | 'imp' | 'imm' |

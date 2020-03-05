@@ -1,7 +1,7 @@
-import {IntervalSet, SparseByteArray, binaryInsert} from './util';
-import {Expr} from './expr';
-import {Chunk, Module, Segment, Substitution, Symbol} from './module';
-import {Token} from './token';
+import {IntervalSet, SparseByteArray, binaryInsert} from './util.js';
+import {Expr} from './expr.js';
+import {Chunk, Module, Segment, Substitution, Symbol} from './module.js';
+import {Token} from './token.js';
 
 export interface Export {
   value: number;

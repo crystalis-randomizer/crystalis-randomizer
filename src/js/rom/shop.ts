@@ -1,8 +1,8 @@
-import {Entity, EntityArray} from './entity';
-import {readLittleEndian, seq, tuple, writeLittleEndian} from './util';
-import {Writer} from './writer';
-import {Rom} from '../rom';
-import {Assembler} from '../asm/assembler';
+import {Entity, EntityArray} from './entity.js';
+import {readLittleEndian, seq, tuple, writeLittleEndian} from './util.js';
+import {Writer} from './writer.js';
+import {Rom} from '../rom.js';
+import {Assembler} from '../asm/assembler.js';
 
 
 export class Shops extends EntityArray<Shop> {

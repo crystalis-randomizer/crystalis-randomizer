@@ -1,5 +1,5 @@
-import {Rom} from '../rom';
-import {Writer} from '../rom/writer';
+import {Rom} from '../rom.js';
+import {Writer} from '../rom/writer.js';
 
 // Data structure for scaling tables.  Goes with postshuffle.s.
 export class Scaling {

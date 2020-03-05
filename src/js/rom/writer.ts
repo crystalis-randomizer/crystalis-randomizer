@@ -1,8 +1,8 @@
-import {Data, hex} from './util';
-import {Assembler} from '../asm/assembler';
-import {Cpu} from '../asm/cpu';
-import {Linker} from '../asm/linker';
-import {Module} from '../asm/module';
+import {Data, hex} from './util.js';
+import {Assembler} from '../asm/assembler.js';
+import {Cpu} from '../asm/cpu.js';
+import {Linker} from '../asm/linker.js';
+import {Module} from '../asm/module.js';
 
 function page(addr: number): number {
   return addr >>> 13;

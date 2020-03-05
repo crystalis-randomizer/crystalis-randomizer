@@ -1,5 +1,5 @@
-import {Buffer} from './buffer';
-import {StringToken, Token, TokenSource} from './token';
+import {Buffer} from './buffer.js';
+import {StringToken, Token, TokenSource} from './token.js';
 
 export class Tokenizer implements TokenSource {
   readonly buffer: Buffer;

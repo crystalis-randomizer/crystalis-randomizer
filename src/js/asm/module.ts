@@ -1,4 +1,4 @@
-import {Expr} from './expr';
+import {Expr} from './expr.js';
 
 export interface Module {
   /** All chunks, in a determinstic (indexable) order. */

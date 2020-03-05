@@ -1,5 +1,5 @@
 import {Entity, EntityArray} from './entity.js';
-import {readLittleEndian, seq, tuple, writeLittleEndian} from './util.js';
+import {readLittleEndian, seq, tuple} from './util.js';
 import {Writer} from './writer.js';
 import {Rom} from '../rom.js';
 import {Assembler} from '../asm/assembler.js';
@@ -54,19 +54,14 @@ export class Shops extends EntityArray<Shop> {
   }
 
   write(writer: Writer) {
-    for (const shop of this) {
-      shop.write(writer);
-    }
-    // TODO - can we even write non-defragged shops?
-    if (!this.rescale) throw new Error('invalid');
+    const a = new Assembler();
     if (this.rescale) {
-      const assembler = new Assembler();
       function exportLabel(label: string) {
-        assembler.export(label);
-        assembler.label(label);
+        a.export(label);
+        a.label(label);
       }
-      assembler.segment("10", "fe", "ff");
-      assembler.org(0x9da4); // TODO - reloc, break it up a bit?
+      a.segment("10", "fe", "ff");
+      a.org(0x9da4); // TODO - reloc, break it up a bit?
       // NOTE: This structure is hard-coded in RomOption, with two parameters:
       //  1. SHOP_COUNT (11)
       //  2. SCALING_LEVELS (48)
@@ -75,45 +70,69 @@ export class Shops extends EntityArray<Shop> {
       exportLabel('ArmorShopIdTable');
       for (const shop of this.armorShops()) {
         for (let i = 0; i < 4; i++) {
-          assembler.byte(shop.contents[i] ?? 0xff);
+          a.byte(shop.contents[i] ?? 0xff);
         }
       }
       exportLabel('ToolShopIdTable');
       for (const shop of this.toolShops()) {
         for (let i = 0; i < 4; i++) {
-          assembler.byte(shop.contents[i] ?? 0xff);
+          a.byte(shop.contents[i] ?? 0xff);
         }
       }
       exportLabel('ArmorShopPriceTable');
       for (const shop of this.armorShops()) {
         for (let i = 0; i < 4; i++) {
-          assembler.byte(Math.round((shop.prices[i] ?? 0) * 32));
+          a.byte(Math.round((shop.prices[i] ?? 0) * 32));
         }
       }
       exportLabel('ToolShopPriceTable');
       for (const shop of this.toolShops()) {
         for (let i = 0; i < 4; i++) {
-          assembler.byte(Math.round((shop.prices[i] ?? 0) * 32));
+          a.byte(Math.round((shop.prices[i] ?? 0) * 32));
         }
       }
       exportLabel('InnPrices');
       for (const shop of this.inns()) {
-        assembler.byte(Math.round((shop.prices[0] ?? 0) * 32));
+        a.byte(Math.round((shop.prices[0] ?? 0) * 32));
       }
       exportLabel('ShopLocations');
       for (const shop of this) {
-        assembler.byte(shop.location);
+        a.byte(shop.location);
       }
       exportLabel('ToolShopScaling');
-      assembler.byte(...this.toolShopScaling);
+      a.byte(...this.toolShopScaling);
       exportLabel('ArmorShopScaling');
-      assembler.byte(...this.armorShopScaling);
+      a.byte(...this.armorShopScaling);
       exportLabel('BasePrices');
-      assembler.word(...this.basePrices.slice(0x0d, 0x27).map(x => x ?? 0));
+      a.word(...this.basePrices.slice(0x0d, 0x27).map(x => x ?? 0));
       exportLabel('InnBasePrice');
-      assembler.word(this.innBasePrice);
-      writer.modules.push(assembler.module());
+      a.word(this.innBasePrice);
+    } else {
+      // TODO - can we even write non-defragged shops?
+      a.segment('10');
+      a.org(0x9da4);
+      for (const shop of this.armorShops()) {
+        for (let i = 0; i < 4; i++) {
+          a.byte(shop.contents[i] ?? 0xff);
+        }
+      }
+      for (const shop of this.armorShops()) {
+        for (let i = 0; i < 4; i++) {
+          a.word(shop.prices[i] ?? 0);
+        }
+      }
+      for (const shop of this.toolShops()) {
+        for (let i = 0; i < 4; i++) {
+          a.byte(shop.contents[i] ?? 0xff);
+        }
+      }
+      for (const shop of this.toolShops()) {
+        for (let i = 0; i < 4; i++) {
+          a.word(shop.prices[i] ?? 0);
+        }
+      }
     }
+    writer.modules.push(a.module());
   }
 }
 
@@ -229,30 +248,6 @@ export class Shop extends Entity {
     //   we can also make new ones as needed using the unused object slots
     // we could alternatively make location and/or type a getter/setter pair
     throw new Error('not implemented');
-  }
-
-  write(writer: Writer): void {
-    // NOTE: This no longer does anything because shops makes the
-    // single table all at once.
-    if (this.rom.shops.rescale) return;
-    // TODO: throw an error if shopkeeper doesn't match?
-    const shopData = this.rom.shopDataTablesAddress;
-    const prg = writer.rom;
-    const writePrice: (i: number, price: number) => void =
-        shopData ?
-            (i, p) => prg[this.pricesAddress + i] = Math.round(p * 32) :
-            (i, p) => writeLittleEndian(prg, this.pricesAddress + 2 * i, p);
-    for (let i = 0; i < CONTENTS_COUNTS[this.type]; i++) {
-      prg[this.contentsAddress + i] = this.contents[i] ?? 0xff;
-    }
-    for (let i = 0; i < PRICES_COUNTS[this.type]; i++) {
-      writePrice(i, this.prices[i] || 0);
-    }
-    // TODO: handle vanilla write (location + index, skipping unused)
-    if (shopData) {
-      const shopLocations = shopData + this.rom.shopCount * 17;
-      prg[shopLocations + this.id] = this.location;
-    }
   }
 }
 

@@ -2,6 +2,7 @@ import {Entity} from './entity.js';
 import {tuple} from './util.js';
 import {Writer} from './writer.js';
 import {Rom} from '../rom.js';
+import { Assembler } from '../asm/assembler.js';
 
 export class Screen extends Entity {
 
@@ -28,15 +29,19 @@ export class Screen extends Entity {
   }
 
   write(writer: Writer): void {
+    const a = new Assembler();
     if (this.id < 0x100) {
-      writer.rom.subarray(this.base, this.base + 0xf0).set(this.tiles);
+      a.segment((this.id >> 5).toString(16).padStart(2, '0'));
+      a.org(0x8000 | (this.id & 0x3f) << 8);
+      a.byte(...this.tiles);
     } else {
+      a.segment('0a'); // 14000
+      a.org(0x8000 | (this.id & 0x3) << 8)
       // we reuse the last 2 rows of extended screens (covered by HUD) for
       // global flags in the rom.
-      for (let i = 0; i < 0xc0; i++) {
-        writer.rom[this.base + i] = this.tiles[i];
-      }
+      a.byte(...this.tiles.slice(0, 0xc0));
     }
+    writer.modules.push(a.module());
   }
 
   setTiles(start: number, tiles: Array<Array<number|null>>) {

@@ -1,7 +1,6 @@
 import {Rom} from '../rom.js';
 import {Writer} from './writer.js';
-
-const BASE = 0x1dc82;
+import {Assembler} from '../asm/assembler.js';
 
 export class Slots extends Array<number> {
 
@@ -21,8 +20,10 @@ export class Slots extends Array<number> {
   }
 
   write(writer: Writer) {
-    for (let i = 0; i < 0x80; i++) {
-      writer.rom[BASE + i] = this[i];
-    }
+    const a = new Assembler();
+    a.segment('0e');
+    a.org(0x9c82);
+    a.byte(...this);
+    writer.modules.push(a.module());
   }
 }

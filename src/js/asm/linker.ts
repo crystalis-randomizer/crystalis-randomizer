@@ -338,6 +338,7 @@ class Link {
   chunks: LinkChunk[] = [];
   symbols: Symbol[] = [];
   free = new IntervalSet();
+  rawSegments = new Map<string, Segment[]>();
   segments = new Map<string, LinkSegment>();
 
   resolvedChunks: LinkChunk[] = [];
@@ -359,7 +360,7 @@ class Link {
     const ds = this.symbols.length;
     // segments come first, since LinkChunk constructor needs them
     for (const segment of file.segments || []) {
-      this.addSegment(segment);
+      this.addRawSegment(segment);
     }
     for (const chunk of file.chunks || []) {
       const lc = new LinkChunk(this, this.chunks.length, chunk, dc, ds);
@@ -424,6 +425,26 @@ class Link {
   }
 
   link(): SparseByteArray {
+    // Build up the LinkSegment objects
+    for (const [name, segments] of this.rawSegments) {
+      let s = segments[0];
+      for (let i = 1; i < segments.length; i++) {
+        s = Segment.merge(s, segments[i]);
+      }
+      this.segments.set(name, new LinkSegment(s));
+    }
+    // Add the free space
+    for (const [name, segments] of this.rawSegments) {
+      const s = this.segments.get(name)!;
+      for (const segment of segments) {
+        const free = segment.free;
+        // Add the free space
+        for (const [start, end] of free || []) {
+          this.free.add(start + s.delta, end + s.delta);
+          this.data.splice(start + s.delta, end - start);
+        }
+      }
+    }
     // Set up all the initial placements.
     for (const chunk of this.chunks) {
       chunk.initialPlacement();
@@ -639,19 +660,10 @@ class Link {
   //   return patch;
   // }
 
-  addSegment(segment: Segment) {
-    // Save out 'free' first, don't merge it.
-    const free = segment.free;
-    // Merge with any existing segment.
-    const prev = this.segments.get(segment.name);
-    if (prev) segment = Segment.merge(prev, segment);
-    const s = new LinkSegment(segment);
-    this.segments.set(segment.name, s);
-    // Add the free space
-    for (const [start, end] of free || []) {
-      this.free.add(start + s.delta, end + s.delta);
-      this.data.splice(start + s.delta, end - start);
-    }
+  addRawSegment(segment: Segment) {
+    let list = this.rawSegments.get(segment.name);
+    if (!list) this.rawSegments.set(segment.name, list = []);
+    list.push(segment);
   }
 
   buildExports(): Map<string, Export> {

@@ -246,12 +246,12 @@ describe('Linker', function() {
         subs: [{offset: 0, size: 2, expr: off(0, 0)}],
       }],
       segments: [{
-        name: 'a', size: 100, offset: 0, memory: 0,
-        free: [[50, 100] as const],
+        name: 'a', size: 100, offset: 0, memory: 0x8000,
+        free: [[0x8005, 0x800a] as const],
       }],
     };
     const patch = new Linker().base(base, 10).read(m).link();      
-    expect([...patch.chunks()]).to.eql([[50, [21, 0]]]);
+    expect([...patch.chunks()]).to.eql([[5, [21, 0x80]]]);
   });
 
   it('should .move existing data', function() {

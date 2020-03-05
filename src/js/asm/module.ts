@@ -10,6 +10,8 @@ export interface Module {
 }
 
 export interface Chunk<T extends number[]|Uint8Array|string> {
+  /** Human-readable identifier. */
+  name?: string;
   /** Which segments this chunk may be located in. */
   segments: readonly string[];
   /** Absolute address of the start of the chunk, if not relocatable. */

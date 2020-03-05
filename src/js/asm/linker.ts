@@ -86,6 +86,7 @@ class LinkSegment {
 }
 
 class LinkChunk {
+  readonly name: string|undefined;
   readonly size: number;
   segments: readonly string[];
   asserts: Expr[];
@@ -119,6 +120,7 @@ class LinkChunk {
               chunk: Chunk<Uint8Array>,
               chunkOffset: number,
               symbolOffset: number) {
+    this.name = chunk.name;
     this.size = chunk.data.length;
     this.segments = chunk.segments;
     this._data = chunk.data;
@@ -555,7 +557,7 @@ class Link {
         const end = start + segment.size!;
         const index = pattern.search(start, end);
         if (index < 0) continue;
-        chunk.place(index, segment);
+        chunk.place(index - segment.delta, segment);
         chunk.overlaps = true;
         return;
       }

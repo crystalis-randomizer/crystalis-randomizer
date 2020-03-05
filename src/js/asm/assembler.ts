@@ -171,6 +171,9 @@ export class Assembler {
   /** Currently active chunk */
   private _chunk: Chunk|undefined = undefined;
 
+  /** Name of the next chunk */
+  private _name: string|undefined = undefined;
+
   /** Origin of the currnet chunk, if fixed. */
   private _org: number|undefined = undefined;
 
@@ -196,6 +199,7 @@ export class Assembler {
       // }
       this._chunk = {segments: this.segments, data: []};
       if (this._org != null) this._chunk.org = this._org;
+      if (this._name) this._chunk.name = this._name;
       this.chunks.push(this._chunk);
     }
   }
@@ -236,6 +240,13 @@ export class Assembler {
   //   return this._org + this.offset;
   // }
 
+  pc(): Expr {
+    const num = this.chunk.data.length; // NOTE: before counting chunks
+    const meta: Expr.Meta = {rel: true, chunk: this.chunks.length - 1};
+    if (this._chunk?.org != null) meta.org = this._chunk.org;
+    return Expr.evaluate({op: 'num', num, meta});
+  }
+
   resolve(expr: Expr): Expr {
     return Expr.traverse(expr, (e, rec) => {
       while (e.op === 'sym' && e.sym) {
@@ -247,11 +258,7 @@ export class Assembler {
 
   resolveSymbol(name: string): Expr {
     if (name === '*') {
-      // PC
-      const num = this.chunk.data.length; // NOTE: before counting chunks
-      const meta: Expr.Meta = {rel: true, chunk: this.chunks.length - 1};
-      if (this._chunk?.org != null) meta.org = this._chunk.org;
-      return Expr.evaluate({op: 'num', num, meta});
+      return this.pc();
     } else if (/^:\++$/.test(name)) {
       // anonymous forward ref
       const i = name.length - 2;
@@ -441,7 +448,7 @@ export class Assembler {
   label(label: string|Token) {
     let ident: string;
     let token: Token|undefined;
-    const expr = this.resolveSymbol('*');
+    const expr = this.pc();
     if (typeof label === 'string') {
       ident = label;
     } else {
@@ -676,14 +683,16 @@ export class Assembler {
   ////////////////////////////////////////////////////////////////
   // Directive handlers
 
-  org(addr: number) {
+  org(addr: number, name?: string) {
     this._org = addr;
     this._chunk = undefined;
+    this._name = name;
   }
 
-  reloc() {
+  reloc(name?: string) {
     this._org = undefined;
     this._chunk = undefined;
+    this._name = name;
   }
 
   segment(...segments: Array<string|Segment>) {
@@ -696,6 +705,7 @@ export class Assembler {
       }
     }
     this._chunk = undefined;
+    this._name = undefined;
   }
 
   assert(expr: Expr) {

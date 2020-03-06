@@ -325,9 +325,9 @@ export class Rom {
     // ObjectData (index at 1ac00..1ae00)
     //writer.alloc(0x1ae00, 0x1bd00); // save 512 bytes at end for some extra code
     // NpcSpawnConditions
-    writer.alloc(0x1c77a, 0x1c95d);
+    writer.free('0e', 0x877a, 0x895d);
     // NpcDialog
-    writer.alloc(0x1cae5, 0x1d8f4);
+    writer.free('0e', 0x8ae5, 0x98f4);
     // ItemGetData (to 1e065) + ItemUseData
     writer.alloc(0x1dde6, 0x1e106);
     // TriggerData
@@ -349,11 +349,11 @@ export class Rom {
     // TODO - we don't use the writer to allocate the abbreviation tables, but we could
     writer.alloc(0x2a000, 0x2fc00);
 
-    if (this.telepathyTablesAddress) {
-      writer.alloc(0x1d8f4, 0x1db00); // location table all the way thru main
-    } else {
-      writer.alloc(0x1da4c, 0x1db00); // existing main table is here.
-    }
+    // if (this.telepathyTablesAddress) {
+    //   writer.alloc(0x1d8f4, 0x1db00); // location table all the way thru main
+    // } else {
+    //   writer.alloc(0x1da4c, 0x1db00); // existing main table is here.
+    // }
 
     const promises = [];
     const writeAll = (writables: {write(writer: Writer): unknown}[]) => {

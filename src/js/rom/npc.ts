@@ -3,9 +3,10 @@ import {Location} from './location.js';
 import {MessageId} from './messageid.js';
 import {DIALOG_FLAGS, Data, SPAWN_CONDITION_FLAGS, addr, hex,
         readBigEndian, readLittleEndian, tuple,
-        upperCamelToSpaces, writeLittleEndian} from './util.js';
+        upperCamelToSpaces} from './util.js';
 import {Writer} from './writer.js';
 import {Rom} from '../rom.js';
+import { Assembler } from '../asm/assembler.js';
 
 type FlagList = number[];
 
@@ -132,10 +133,7 @@ export class Npc extends Entity {
   name?: string;
   itemNames?: [string, string];
 
-  dataBase: number;
   data: [number, number, number, number]; // uint8
-  spawnPointer: number;
-  spawnBase: number;
   // Flags to check per location: positive means "must be set"
   spawnConditions = new Map<number, FlagList>(); // key uint8
 
@@ -151,14 +149,12 @@ export class Npc extends Entity {
     const dialogBase = addr(rom.prg, this.dialogPointer, 0x14000);
     const hasDialog = id < 0xc4 && dialogBase !== 0x1cb39;
 
-    this.dataBase = 0x80f0 | ((id & 0xfc) << 6) | ((id & 3) << 2);
     this.data = tuple(rom.prg, this.dataBase, 4);
 
-    this.spawnPointer = 0x1c5e0 + (id << 1);
-    this.spawnBase = readLittleEndian(rom.prg, this.spawnPointer) + 0x14000;
+    const spawnBase = readLittleEndian(rom.prg, this.spawnPointer) + 0x14000;
 
     // Populate spawn conditions
-    let i = this.spawnBase;
+    let i = spawnBase;
     let loc;
     while (this.used && (loc = rom.prg[i++]) !== 0xff) {
       const flags = SPAWN_CONDITION_FLAGS.read(rom.prg, i);
@@ -212,6 +208,14 @@ export class Npc extends Entity {
 
     // console.log(`NPC Spawn $${this.id.toString(16)} from ${this.base.toString(16)}: bytes: $${
     //              this.bytes().map(x=>x.toString(16).padStart(2,0)).join(' ')}`);
+  }
+
+  get dataBase(): number {
+    return 0x80f0 | ((this.id & 0xfc) << 6) | ((this.id & 3) << 2);
+  }
+
+  get spawnPointer(): number {
+    return 0x1c5e0 + (this.id << 1);
   }
 
   get dialogPointer(): number {
@@ -337,20 +341,30 @@ export class Npc extends Entity {
     return true;
   }
 
-  async write(writer: Writer): Promise<void> {
+  write(w: Writer) {
     if (!this.used) return;
-    const promises = [];
-    writer.rom.subarray(this.dataBase, this.dataBase + 4).set(this.data);
-    promises.push(writer.write(this.spawnConditionsBytes(), 0x1c000, 0x1dfff,
-                               `SpawnCondition ${hex(this.id)}`).then(
-        address => writeLittleEndian(writer.rom, this.spawnPointer, address - 0x14000)));
+    const id = hex(this.id);
+    const a = new Assembler();
+
+    a.segment('04', '05');
+    a.org(this.dataBase); // lucky coincidence for this segment...
+    a.byte(...this.data);
+
+    a.segment('0e', 'fe', 'ff');
+    a.reloc(`SpawnCondition_${id}`);
+    const spawn = a.pc();
+    a.byte(...this.spawnConditionsBytes());
+    a.org(this.spawnPointer & ~0x14000, `SpawnCondition_${id}_Pointer`)
+    a.word(spawn);
 
     if (this.hasDialog()) {
-      promises.push(writer.write(this.dialogBytes(), 0x1c000, 0x1dfff,
-                                 `Dialog ${hex(this.id)}`).then(
-          address => writeLittleEndian(writer.rom, this.dialogPointer, address - 0x14000)));
+      a.reloc(`Dialog_${id}`);
+      const dialog = a.pc();
+      a.byte(...this.dialogBytes());
+      a.org(this.dialogPointer & ~0x14000, `Dialog_${id}_Pointer`);
+      a.word(dialog);
     }
-    await Promise.all(promises);
+    w.modules.push(a.module());
   }
 }
 

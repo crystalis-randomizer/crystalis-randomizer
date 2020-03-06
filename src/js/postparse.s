@@ -82,11 +82,14 @@ Telepathy_ShowDefaultMessage:
     sta $20
     rts
 .assert * <= $822f
+.org $822f
 TelepathyResults:
 
-.org $98f4
-TelepathyTable:
-  .skip 32
+.import TelepathyTable
+
+;; .org $98f4
+;; TelepathyTable:
+;;   .skip 32
 
 .endif
 

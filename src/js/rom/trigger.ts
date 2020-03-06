@@ -87,10 +87,5 @@ export class Trigger extends Entity {
     writer.modules.push(a.module());
       // TODO - need to hit telepathy, npc spawns, dialogs, itemget
       // (checkbelowboss) as well at the same time as this!
-    
-    // const address = await writer.write(this.bytes(), 0x1e000, 0x1ffff,
-    //                                    `Trigger ${hex(this.id)}`);
-    // writer.rom[base + 2 * (this.id & 0x7f)] = address & 0xff;
-    // writer.rom[base + 2 * (this.id & 0x7f) + 1] = (address >>> 8) - 0x40;
   }
 }

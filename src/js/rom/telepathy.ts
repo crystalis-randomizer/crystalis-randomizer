@@ -1,7 +1,9 @@
-import {MessageId} from './messageid.js';
-import {Data, readBigEndian, readLittleEndian, seq, tuple, write, writeLittleEndian} from './util.js';
-import {Writer} from './writer.js';
+import {Assembler} from '../asm/assembler.js';
 import {Rom} from '../rom.js';
+import {MessageId} from './messageid.js';
+import {Data, readBigEndian, readLittleEndian, seq, tuple} from './util.js';
+import {Writer} from './writer.js';
+import { Expr } from '../asm/expr.js';
 
 export enum Sage {
   TORNEL = 0,
@@ -54,44 +56,63 @@ export class Telepathy {
     }
   }
 
-  write(writer: Writer): Promise<void> {
+  write(w: Writer) {
     let table = this.rom.telepathyTablesAddress;
-    const promises = [];
-    if (table) {
+    const a = new Assembler();
+    a.segment('0e', 'fe', 'ff');
+    if (table) { // TODO - this is always falsy?!?
+      w.free('0e', 0x98f4, 0x9b00);
       // telepathy normalized, write to new location
       // also, crunch down the results.
-      write(writer.rom, RESULT_TABLE, this.resultTable.map(x => x < 4 ? x : x >>> 1));
-      for (let i = 0; i < 4; i++) {
-        const sage = this.sages[i];
-        for (let j = 1; j < 4; j++) {
-          const a = table + 8 * j + 2 * i;
-          write(writer.rom, a, this.sages[i].defaultMessages[j].data);
+
+      const mainTable = this.sages.map((sage, i) => {
+        a.reloc(`Telepathy_Sage_${i}`);
+        const pc = a.pc();
+        a.byte(...sage.messageGroups[0].bytes());
+        return pc;
+      });
+
+      a.org(0x822f, 'Telepathy_ResultTable');
+      a.byte(...this.resultTable.map(x => x < 4 ? x : x >>> 1));
+
+      a.reloc('TelepathyTable');
+      a.export('TelepathyTable');
+      a.label('TelepathyTable');
+      a.word(...mainTable);
+      for (let j = 1; j < 4; j++) {
+        for (let i = 0; i < 4; i++) {
+          a.byte(...this.sages[i].defaultMessages[j].data);
         }
-        promises.push(
-            writer.write(sage.messageGroups[0].bytes(), 0x1c000, 0x1e000, `Sage ${i}`)
-                .then(a => writeLittleEndian(writer.rom, table + 2 * i, a - 0x14000)));
       }
     } else {
-      write(writer.rom, RESULT_TABLE, this.resultTable);
-      write(writer.rom, VANILLA_LEVELS_TABLE, this.minimumLevels);
-      write(writer.rom, VANILLA_LOCATION_TABLE, this.groupsByLocation);
-      for (let i = 0; i < 4; i++) {
-        const sage = this.sages[i];
-        table = VANILLA_DEFAULTS_TABLE + 2 * i;
-        for (let j = 0; j < 4; j++) {
-          write(writer.rom, table + 8 * j,
-                sage.defaultMessages[j].data);
-        }
-        table = VANILLA_MAIN_TABLE + 2 * i;
-        for (let j = 0, len = sage.messageGroups.length; j < len; j++) {
-          promises.push(
-              writer.write(sage.messageGroups[j].bytes(), 0x1c000, 0x1e000, `Sage ${i}`)
-                  .then(a => writeLittleEndian(writer.rom,
-                                               table + 8 * j, a - 0x14000)));
+      w.free('0e', 0x9a4c, 0x9b00);
+      a.org(0x822f, 'Telepathy_ResultTable');
+      a.byte(...this.resultTable);
+      a.org(0x8213, 'Telepathy_LevelsTable');
+      a.byte(...this.minimumLevels);
+      a.org(0x98f4, 'Telepathy_LocationTable');
+      a.byte(...this.groupsByLocation);
+
+      a.org(0x9a2c, 'Telepathy_VanillaDefaultsTable');
+      for (let j = 0; j < 4; j++) {
+        for (let i = 0; i < 4; i++) {
+          const sage = this.sages[i];
+          a.byte(...sage.defaultMessages[j].data);
         }
       }
+      const mainTable: Expr[] = [];
+      for (let i = 0; i < 4; i++) {
+        const sage = this.sages[i];
+        for (let j = 0, len = sage.messageGroups.length; j < len; j++) {
+          a.reloc(`Telepathy_Sage_${i}_Group_${j}`);
+          mainTable[4 * j + i] = a.pc();
+          a.byte(...sage.messageGroups[j].bytes());
+        }
+      }
+      a.org(0x99f4, 'Telepathy_VanillaMainTable');
+      a.word(...mainTable);
     }
-    return Promise.all(promises).then(() => {});
+    w.modules.push(a.module());
   }
 }
 

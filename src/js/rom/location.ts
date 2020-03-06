@@ -435,22 +435,17 @@ export class Locations extends Array<Location> {
     throw new Error('No unused location');
   }
 
-  write(writer: Writer) {
+  write(w: Writer) {
     const a = new Assembler();
-    function free(segment: string, start: number, end: number) {
-      a.segment(segment);
-      a.org(start);
-      a.free(end - start);
-    }
-    free('0a', 0x84f8, 0xa000);
-    free('0b', 0xa000, 0xbe00);
-    free('0c', 0x93f9, 0xa000);
-    free('0d', 0xa000, 0xac00);
-    free('0d', 0xae00, 0xbd00); // TODO - bf00
+    w.free('0a', 0x84f8, 0xa000);
+    w.free('0b', 0xa000, 0xbe00);
+    w.free('0c', 0x93f9, 0xa000);
+    w.free('0d', 0xa000, 0xac00);
+    w.free('0d', 0xae00, 0xbd00); // TODO - bf00
     for (const location of this) {
       location.assemble(a);
     }
-    writer.modules.push(a.module());
+    w.modules.push(a.module());
   }
 }
 

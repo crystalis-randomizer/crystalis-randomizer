@@ -333,7 +333,7 @@ export class Rom {
     // TriggerData
     // NOTE: There's some free space at 1e3c0..1e3f0, but we use this for the
     // CheckBelowBoss triggers.
-    writer.alloc(0x1e200, 0x1e3c0);
+    writer.free('0f', 0xa200, 0xa3c0);
     // ItemMenuName
     writer.alloc(0x2111a, 0x21468);
     // keep item $49 "        " which is actually used somewhere?

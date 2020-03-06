@@ -62,7 +62,7 @@ export class Writer {
   linker = new Linker();
   private assembler = new Assembler(Cpu.P02);
 
-  private free: number[] = [];
+  private _free: number[] = [];
 
   constructor(readonly rom: Uint8Array, readonly chr: Uint8Array) {
     // for (let i = 0; i < 0x1e; i++) {
@@ -79,6 +79,12 @@ export class Writer {
   }
 
   // TODO: move()?
+
+  free(segment: string, start: number, end: number) {
+    this.assembler.segment(segment);
+    this.assembler.org(start);
+    this.assembler.free(end - start);
+  }
 
   org(address: number): Assembler {
     let segNum = address >>> 13;
@@ -114,7 +120,7 @@ export class Writer {
 
   addChunk(c: Chunk) {
     this.chunks.push(c);
-    this.free[c.page] = (this.free[c.page] || 0) + c.free();
+    this._free[c.page] = (this._free[c.page] || 0) + c.free();
   }
 
   // TODO: consider renaming this to queue() or plan() or something?
@@ -187,12 +193,12 @@ export class Writer {
       // looks like it fits!
       this.rom.subarray(chunk.pos, chunk.pos + write.data.length).set(write.data);
       write.resolve(chunk.pos);
-      this.free[chunk.page] -= write.data.length;
+      this._free[chunk.page] -= write.data.length;
 
       if (DEBUG && DEBUG_PAGE.has(chunk.page)) {
         console.log(`${write.name}: writing ${write.data.length} bytes at ${
                      hex(chunk.pos)}: ${Array.from(write.data, hex).join(' ')} | FREE ${
-                     this.free.map((v:number,k:number)=>`${hex(2*k)}:${v}`).join('/')}`);
+                     this._free.map((v:number,k:number)=>`${hex(2*k)}:${v}`).join('/')}`);
       }
 
       chunk.pos += write.data.length;

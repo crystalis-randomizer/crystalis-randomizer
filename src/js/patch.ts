@@ -170,7 +170,6 @@ export async function shuffle(rom: Uint8Array,
     _MAX_SCALING_IN_TOWER: flags.maxScalingInTower(),
     _NERF_FLIGHT: true,
     _NERF_MADO: true,
-    _NERF_WILD_WARP: flags.nerfWildWarp(),
     _NEVER_DIE: flags.neverDie(),
     _NORMALIZE_SHOP_PRICES: flags.shuffleShops(),
     _PITY_HP_AND_MP: true,
@@ -210,6 +209,7 @@ export async function shuffle(rom: Uint8Array,
   randomizeWalls(parsed, flags, random);
   crumblingPlatforms(parsed, random);
 
+  if (flags.nerfWildWarp()) parsed.wildWarp.locations.fill(0);
   if (flags.randomizeWildWarp()) shuffleWildWarp(parsed, flags, random);
   if (flags.randomizeThunderTeleport()) randomizeThunderWarp(parsed, random);
   rescaleMonsters(parsed, flags, random);

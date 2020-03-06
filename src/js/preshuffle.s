@@ -1478,11 +1478,6 @@ WarpMenuNametableData:
   rts
 .endif
 
-.ifdef _NERF_WILD_WARP
-.org $cbec
-  .res 16, 0
-.endif
-
 ;;; NOTE: we could use this in several more places, including dialog action
 ;;; jump 10, 
 .org $d196

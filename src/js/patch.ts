@@ -349,6 +349,7 @@ export async function shuffle(rom: Uint8Array,
   
   // const asm = new ShimAssembler(flagFile, 'flags.s');
 //console.log('Multiply16Bit:', asm.expand('Multiply16Bit').toString(16));
+  parsed.messages.compress(); // pull this out to make writeData a pure function
   await parsed.writeData();
   const crc = stampVersionSeedAndHash(rom, seed, flags);
 

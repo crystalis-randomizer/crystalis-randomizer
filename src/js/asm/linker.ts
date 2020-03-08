@@ -36,6 +36,10 @@ export class Linker {
     return this._link.link();
   }
 
+  report() {
+    this._link.report();
+  }
+
   exports(): Map<string, Export> {
     if (this._exports) return this._exports;
     return this._exports = this._link.buildExports();
@@ -318,6 +322,7 @@ function translateSub(s: Substitution, dc: number, ds: number): Substitution {
 }
 function translateExpr(e: Expr, dc: number, ds: number): Expr {
   e = {...e};
+  if (e.meta) e.meta = {...e.meta};
   if (e.args) e.args = e.args.map(a => translateExpr(a, dc, ds));
   if (e.meta?.chunk != null) e.meta.chunk += dc;
   if (e.op === 'sym' && e.num != null) e.num += ds;
@@ -584,22 +589,36 @@ class Link {
       }
     }
     // either unresolved, or didn't find a match; just allocate space.
+    // look for the smallest possible free block.
     for (const name of chunk.segments) {
       const segment = this.segments.get(name)!;
       const s0 = segment.offset!;
       const s1 = s0 + segment.size!;
+      let found: number|undefined;
+      let smallest = Infinity;
       for (const [f0, f1] of this.free.tail(s0)) {
-        if (f1 > s1) break;
-        if (f1 - f0 >= size) {
-          // found a region
-          chunk.place(f0 - segment.delta, segment);
-          // this.free.delete(f0, f0 + size);
-          // TODO - factor out the subs-aware copy method!
-          return;
+        if (f0 >= s1) break;
+        const df = Math.min(f1, s1) - f0;
+        if (df < size) continue;
+        if (df < smallest) {
+          found = f0;
+          smallest = df;
         }
       }
+      if (found != null) {
+        // found a region
+        chunk.place(found - segment.delta, segment);
+        // this.free.delete(f0, f0 + size);
+        // TODO - factor out the subs-aware copy method!
+        return;
+      }
     }
-    throw new Error(`Could not find space for chunk`);
+    console.log(`After filling:`);
+    this.report();
+    const name = chunk.name ? `${chunk.name} ` : '';
+    console.log(this.segments.get(chunk.segments[0]));
+    throw new Error(`Could not find space for ${size}-byte chunk ${name}in ${
+                     chunk.segments.join(', ')}`);
   }
 
   resolveSymbols(expr: Expr): Expr {
@@ -683,5 +702,11 @@ class Link {
       map.set(symbol.export, out);
     }
     return map;
+  }
+
+  report() {
+    for (const [s,e] of this.free) {
+      console.log(`Free: ${s.toString(16)}..${e.toString(16)}`);
+    }
   }
 }

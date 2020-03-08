@@ -1,6 +1,6 @@
+import {Module} from '../asm/module.js';
 import {Rom} from '../rom.js';
-import {tuple} from './util.js';
-import {Writer} from './writer.js';
+import {tuple, Address, Segment} from './util.js';
 
 // Random number table.
 export class RandomNumbers {
@@ -8,13 +8,16 @@ export class RandomNumbers {
   values: number[];
 
   constructor(readonly rom: Rom) {
-    this.values = tuple(rom.prg, ADDRESS, COUNT);
+    this.values = tuple(rom.prg, ADDRESS.offset, COUNT);
   }
 
-  write(w: Writer): void {
-    w.org(ADDRESS).byte(...this.values);
+  write(): Module[] {
+    const a = this.rom.assembler();
+    ADDRESS.loc(a);
+    a.byte(...this.values);
+    return [a.module()];
   }
 }
 
-const ADDRESS = 0x357e4;
+const ADDRESS = Address.of(Segment.$1a, 0x97e4);
 const COUNT = 64;

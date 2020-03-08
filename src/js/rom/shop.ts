@@ -1,8 +1,7 @@
+import {Module} from '../asm/module.js';
+import {Rom} from '../rom.js';
 import {Entity, EntityArray} from './entity.js';
 import {readLittleEndian, seq, tuple} from './util.js';
-import {Writer} from './writer.js';
-import {Rom} from '../rom.js';
-import {Assembler} from '../asm/assembler.js';
 
 
 export class Shops extends EntityArray<Shop> {
@@ -53,8 +52,8 @@ export class Shops extends EntityArray<Shop> {
     return seq(11, i => this[4 * i + 3]);
   }
 
-  write(writer: Writer) {
-    const a = new Assembler();
+  write(): Module[] {
+    const a = this.rom.assembler();
     if (this.rescale) {
       function exportLabel(label: string) {
         a.export(label);
@@ -132,7 +131,7 @@ export class Shops extends EntityArray<Shop> {
         }
       }
     }
-    writer.modules.push(a.module());
+    return [a.module()];
   }
 }
 

@@ -1,8 +1,7 @@
+import {Module} from '../asm/module.js';
+import {Rom} from '../rom.js';
 import {Entity} from './entity.js';
 import {tuple} from './util.js';
-import {Writer} from './writer.js';
-import {Rom} from '../rom.js';
-import { Assembler } from '../asm/assembler.js';
 
 // Mappping from metatile ID to a bitfield of terrain effects
 export class TileEffects extends Entity {
@@ -23,13 +22,13 @@ export class TileEffects extends Entity {
     return (this.id << 8) & 0x1fff | 0xa000;
   }
 
-  write(writer: Writer) {
-    const a = new Assembler();
+  write(): Module[] {
+    const a = this.rom.assembler();
     a.segment('09', 'fe', 'ff');
     // NOTE: cannot reloc this for now, too hard-coded...
     a.org(this.org);
     a.byte(...this.effects);
-    writer.modules.push(a.module());
+    return [a.module()];
   }
 
   // Bits: e.g. mountain is 6, river is 2, plain is 0

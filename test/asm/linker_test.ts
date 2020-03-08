@@ -178,7 +178,7 @@ describe('Linker', function() {
         size: 0x400, offset: 0x0010, memory: 0xc000,
       }],
     };
-    expect(() => link(m)).to.throw(Error, /Could not find space for chunk/);
+    expect(() => link(m)).to.throw(Error, /Could not find space/);
   });
 
   it('should choose an eligible segment for .reloc chunks', function() {

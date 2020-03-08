@@ -39,6 +39,8 @@
 .segment "14"   :bank $14 :size $2000 :off $28000 :mem $8000
 .segment "15"   :bank $15 :size $2000 :off $2a000 :mem $a000
 .segment "16"   :bank $16 :size $2000 :off $2c000 :mem $8000
+;;; 15..17 store messages, all accessed via the a000 slot
+.segment "16:a" :bank $16 :size $2000 :off $2c000 :mem $a000
 .segment "17"   :bank $17 :size $2000 :off $2e000 :mem $a000
 .segment "18"   :bank $18 :size $2000 :off $30000 :mem $8000
 .segment "19"   :bank $19 :size $2000 :off $32000 :mem $a000

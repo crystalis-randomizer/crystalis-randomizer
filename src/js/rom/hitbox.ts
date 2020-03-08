@@ -1,8 +1,7 @@
+import {Module} from '../asm/module.js';
+import {Rom} from '../rom.js';
 import {Entity} from './entity.js';
 import {signed, tuple, unsigned} from './util.js';
-import {Writer} from './writer.js';
-import {Rom} from '../rom.js';
-import { Assembler } from '../asm/assembler.js';
 
 // A pattern page sequence for animating background tiles.  ID in 0..3
 export class Hitbox extends Entity {
@@ -34,11 +33,11 @@ export class Hitbox extends Entity {
 
   get y1(): number { return this.y0 + this.h; }
 
-  write(writer: Writer) {
-    const a = new Assembler();
+  write(): Module[] {
+    const a = this.rom.assembler();
     a.segment('1a');
     a.org(0x9691 + (this.id << 2));
     a.byte(...this.coordinates);
-    writer.modules.push(a.module());
+    return [a.module()];
   }
 }

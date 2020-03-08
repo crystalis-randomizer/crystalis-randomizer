@@ -1,9 +1,8 @@
+import {Module} from '../asm/module.js';
+import {Rom} from '../rom.js';
 import {Entity} from './entity.js';
 import {MessageId} from './messageid.js';
 import {addr, hex, readBigEndian} from './util.js';
-import {Writer} from './writer.js';
-import {Rom} from '../rom.js';
-import { Assembler } from '../asm/assembler.js';
 
 const UNUSED_TRIGGERS = new Set([
   0x83, 0x87, 0x88, 0x89, 0x8f, 0x93, 0x96, 0x98, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f,
@@ -74,9 +73,9 @@ export class Trigger extends Entity {
     return bytes;
   }
 
-  write(writer: Writer, base: number = 0x1e17a) {
-    if (!this.used) return;
-    const a = new Assembler();
+  write(): Module[] {
+    if (!this.used) return [];
+    const a = this.rom.assembler();
     const name = `Trigger_${hex(this.id)}`;
     a.segment('0f');
     a.reloc(name);
@@ -84,7 +83,7 @@ export class Trigger extends Entity {
     a.byte(...this.bytes());
     a.org(0xa17a + 2 * (this.id & 0x7f), name + '_Ptr');
     a.word(addr);
-    writer.modules.push(a.module());
+    return [a.module()];
       // TODO - need to hit telepathy, npc spawns, dialogs, itemget
       // (checkbelowboss) as well at the same time as this!
   }

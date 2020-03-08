@@ -1,18 +1,24 @@
+import {Assembler} from '../asm/assembler.js';
+import {Module} from '../asm/module.js';
 import {Entity, EntityArray} from './entity.js';
 import {MessageId} from './messageid.js';
-import {hex, readLittleEndian, readString, seq, tuple, writeLittleEndian,
+import {hex, readString, tuple,
         ITEM_USE_FLAGS, ITEM_CONDITION_FLAGS} from './util.js';
-import {Writer} from './writer.js';
-import {Data} from './util.js';
+import {Address, Data, Segment} from './util.js';
 import {Rom} from '../rom.js';
 import {assertNever} from '../util.js';
 
-const ITEM_USE_JUMP_TABLE = 0x1c399;
-const ITEM_USE_DATA_TABLE = 0x1dbe2;
-const ITEM_DATA_TABLE = 0x20ff0;
-const SELECTED_ITEM_TABLE = 0x2103b;
-const MENU_NAME_TABLE = 0x21086;
-const MESSAGE_NAME_TABLE = 0x28a5c; // NOTE: integrate with messages entity?
+const {$0e, $0f, $10, $1a} = Segment;
+
+const ITEM_USE_JUMP_TABLE = Address.of($0e, 0x8399);
+const ITEM_USE_DATA_TABLE = Address.of($0e, 0x9be2);
+const ITEM_DATA_TABLE = Address.of($10, 0x8ff0);
+const SELECTED_ITEM_TABLE = Address.of($10, 0x903b);
+const MENU_NAME_TABLE = Address.of($10, 0x9086);
+
+const ARMOR_DEFENSE_TABLE = Address.of($1a, 0x8bc0);
+const SHIELD_DEFENSE_TABLE = Address.of($1a, 0x8bc9);
+const UNIQUE_ITEM_SCALING_TABLE = Address.of($0f, 0xa110);
 
 // Map to pattern entries for combinations of letters.
 const MENU_NAME_ENCODE = [
@@ -30,14 +36,14 @@ interface ItemOptions {
   trades?: number[];
   use?: boolean;
   weight?: number;
-  // address of the value specifying how much to heal.
+  // address (within segment 0e) of the value specifying how much to heal.
   valueAddr?: number;
 }
 
 // An item; note that some tables go up to $49 or even $4a - these can bbe ignored
 export class Item extends Entity {
 
-  itemUseJump = 0;
+  itemUseJump?: Address;
   itemUseData: ItemUse[];
 
   itemDataValue: number; // :03 is palette, :80 is sword and magic (solid bg)
@@ -46,13 +52,12 @@ export class Item extends Entity {
   selectedItemValue: number;
 
   // PROBLEM - read in one format, write in another...?
-  messageName: string; // TODO - this should live link into Messages table
   menuName: string;
 
   trades: number[];
   use: boolean;
 
-  valueAddr?: number;
+  valueAddr?: Address;
   value?: number;
 
   // Weight for shuffling - higher numbers will be placed earlier.
@@ -66,30 +71,31 @@ export class Item extends Entity {
     this.trades = opts.trades || [];
     this.use = opts.use || false;
     this.weight = opts.weight || 1;
-    this.valueAddr = opts.valueAddr;
-    if (this.valueAddr != null) this.value = rom.prg[this.valueAddr];
+    this.valueAddr =
+        opts.valueAddr != null ? Address.of($0e, opts.valueAddr) : undefined;
+    if (this.valueAddr != null) this.value = this.valueAddr.read(rom.prg);
 
     if (this.use) {
-      this.itemUseJump = readLittleEndian(rom.prg, this.itemUseJumpPointer) + 0x14000;
-      const entries = items.itemUseJumps[this.itemUseJump];
+      this.itemUseJump =
+          this.itemUseJumpPointer.readAddress(rom.prg, $0e, $0f);
+      const entries = items.itemUseJumps[this.itemUseJump.org];
       if (!entries) throw new Error(`Bad ItemUseJump: ${this.itemUseJump}`);
-      let itemUseOffset = readLittleEndian(rom.prg, this.itemUseDataPointer) + 0x14000;
+      let itemUseOffset =
+          this.itemUseDataPointer.readAddress(rom.prg, $0e, $0f);
       for (const entry of entries) {
         const data = ItemUse.from(entry, rom.prg, itemUseOffset);
         this.itemUseData.push(data);
-        itemUseOffset += data.length;
+        itemUseOffset = itemUseOffset.plus(data.length);
       }
     }
 
-    this.itemDataValue = rom.prg[this.itemDataPointer];
-    this.selectedItemValue = rom.prg[this.selectedItemPointer];
+    this.itemDataValue = this.itemDataPointer.read(rom.prg);
+    this.selectedItemValue = this.selectedItemPointer.read(rom.prg);
 
-    const messageNameBase = readLittleEndian(rom.prg, this.messageNamePointer) + 0x20000;
-    this.messageName = readString(rom.prg, messageNameBase);
-
-    const menuNameBase = readLittleEndian(rom.prg, this.menuNamePointer) + 0x18000;
-    this.menuName = MENU_NAME_ENCODE.reduce((s, [d, e]) => s.replace(e, d),
-                                            readString(rom.prg, menuNameBase, 0xff));
+    const menuNameBase = this.menuNamePointer.readAddress(rom.prg);
+    this.menuName =
+        MENU_NAME_ENCODE.reduce((s, [d, e]) => s.replace(e, d),
+                                readString(rom.prg, menuNameBase.offset, 0xff));
 
     // const tradeInCount = TRADE_INS.get(id);
     // this.tradeIn =
@@ -100,6 +106,13 @@ export class Item extends Entity {
     //  -> current hard-coded in patch.identifyKeyItemsForDifficultyBuffs
   }
 
+  get messageName(): string {
+    return this.rom.messages.itemNames[this.id];
+  }
+  set messageName(name: string) {
+    this.rom.messages.itemNames[this.id] = name;
+  }
+
   get basePrice(): number {
     return this.rom.shops.basePrices[this.id];
   }
@@ -107,28 +120,24 @@ export class Item extends Entity {
     this.rom.shops.basePrices[this.id] = price;
   }
 
-  get itemUseJumpPointer(): number {
-    return ITEM_USE_JUMP_TABLE + 2 * this.id;
+  get itemUseJumpPointer(): Address {
+    return ITEM_USE_JUMP_TABLE.plus(this.id << 1);
   }
 
-  get itemUseDataPointer(): number {
-    return ITEM_USE_DATA_TABLE + 2 * this.id;
+  get itemUseDataPointer(): Address {
+    return ITEM_USE_DATA_TABLE.plus(this.id << 1);
   }
 
-  get itemDataPointer(): number {
-    return ITEM_DATA_TABLE + this.id;
+  get itemDataPointer(): Address {
+    return ITEM_DATA_TABLE.plus(this.id);
   }
 
-  get selectedItemPointer(): number {
-    return SELECTED_ITEM_TABLE + this.id;
+  get selectedItemPointer(): Address {
+    return SELECTED_ITEM_TABLE.plus(this.id);
   }
 
-  get messageNamePointer(): number {
-    return MESSAGE_NAME_TABLE + 2 * this.id;
-  }
-
-  get menuNamePointer(): number {
-    return MENU_NAME_TABLE + 2 * this.id;
+  get menuNamePointer(): Address {
+    return MENU_NAME_TABLE.plus(this.id << 1);
   }
 
   itemUseMessages(): MessageId[] {
@@ -167,34 +176,42 @@ export class Item extends Entity {
   //   return this.rom.prg.subarray(this.itemUseDataBase, 24);
   // }
 
-  async write(writer: Writer): Promise<void> {
-    writer.rom[this.itemDataPointer] = this.itemDataValue;
-    writer.rom[this.selectedItemPointer] = this.selectedItemValue;
+  assemble(a: Assembler) {
+    this.itemDataPointer.loc(a);
+    a.byte(this.itemDataValue);
+    this.selectedItemPointer.loc(a);
+    a.byte(this.selectedItemValue);
 
     const menuNameEncoded =
         MENU_NAME_ENCODE.reduce((s, [d, e]) => s.replace(d, e), this.menuName);
+    a.segment($10);
+    a.reloc(`ItemMenuName_${hex(this.id)}`);
+    const menuNameAddr = a.pc();
+    a.byte(menuNameEncoded, 0xff);
 
-    const menuAddress = await writer.write(
-        [...stringToBytes(menuNameEncoded), 0xff],
-        0x20000, 0x21fff, `ItemMenuName ${hex(this.id)}`);
-    writeLittleEndian(writer.rom, this.menuNamePointer, menuAddress - 0x18000);
+    this.menuNamePointer.loc(a);
+    a.word(menuNameAddr);
 
-    if (this.use) {
-      writeLittleEndian(writer.rom,
-                        this.itemUseJumpPointer, this.itemUseJump - 0x14000);
+    if (this.itemUseJump) {
+      this.itemUseJumpPointer.loc(a);
+      a.word(this.itemUseJump.org);
 
       const itemUseData: number[] = [];
       for (const use of this.itemUseData) {
         itemUseData.push(...use.bytes());
       }
-      const itemUseAddress = await writer.write(
-          itemUseData, 0x1c000, 0x1ffff, `ItemUseData ${hex(this.id)}`);
-      writeLittleEndian(writer.rom,
-                        this.itemUseDataPointer, itemUseAddress - 0x14000);
+
+      a.segment($0e.name, $0f.name);
+      a.reloc(`ItemUseData_${hex(this.id)}`);
+      const usePtr = a.pc();
+      a.byte(...itemUseData);
+      this.itemUseDataPointer.loc(a)
+      a.word(usePtr);
     }
 
-    if (this.valueAddr != null) {
-      writer.org(this.valueAddr).byte(this.value!);
+    if (this.valueAddr) {
+      this.valueAddr.loc(a);
+      a.byte(this.value!);
     }
 
     // writer.write([...stringToBytes(this.messageName), 0],
@@ -206,10 +223,6 @@ export class Item extends Entity {
     return this.id >= 0x41 && this.id <= 0x48;
   }
 }
-
-const stringToBytes = (s: string): number[] => {
-  return seq(s.length, i => s.charCodeAt(i));
-};
 
 // Trade-in slots could be customized quite a bit:
 //  - NPC
@@ -245,7 +258,8 @@ export class ItemUse {
               public message: MessageId,
               public flags: number[]) {}
 
-  static from(kind: ItemUseKind, data: Data<number>, offset: number) {
+  static from(kind: ItemUseKind, data: Data<number>, addr: Address) {
+    let {offset} = addr;
     let want = 0;
     if (kind === 'expect' || kind === 'screen') {
       want = data[offset + 1] << 8 | data[offset];
@@ -359,12 +373,12 @@ export class Items extends EntityArray<Item> {
   // Consumables
   readonly MedicalHerb      = new Item(this, 0x1d, {use: true,
                                                     trades: [0],
-                                                    valueAddr: 0x1c4ea});
+                                                    valueAddr: 0x84ea});
   readonly Antidote         = new Item(this, 0x1e, {use: true});
   readonly LysisPlant       = new Item(this, 0x1f, {use: true});
   readonly FruitOfLime      = new Item(this, 0x20, {use: true});
   readonly FruitOfPower     = new Item(this, 0x21, {use: true,
-                                                    valueAddr: 0x1c50c});
+                                                    valueAddr: 0x850c});
   readonly MagicRing        = new Item(this, 0x22, {use: true});
   readonly FruitOfRepun     = new Item(this, 0x23, {use: true});
   readonly WarpBoots        = new Item(this, 0x24, {use: true});
@@ -413,69 +427,73 @@ export class Items extends EntityArray<Item> {
 
   constructor(readonly rom: Rom) {
     super(0x49);
-    this.armorDefense = tuple(rom.prg, 0x34bc0, 9);
-    this.shieldDefense = tuple(rom.prg, 0x34bc9, 9);
+    this.armorDefense = tuple(rom.prg, ARMOR_DEFENSE_TABLE.offset, 9);
+    this.shieldDefense = tuple(rom.prg, SHIELD_DEFENSE_TABLE.offset, 9);
   }
 
-  async write(writer: Writer): Promise<void> {
-    writer.org(0x34bc0).byte(...this.armorDefense);
-    writer.org(0x34bc9).byte(...this.shieldDefense);
+  write(): Module[] {
+    const a = this.rom.assembler();
+    ARMOR_DEFENSE_TABLE.loc(a);
+    a.byte(...this.armorDefense);
+    SHIELD_DEFENSE_TABLE.loc(a);
+    a.byte(...this.shieldDefense);
 
     // Unique items table for difficulty
     const uniqueTable = new Array(10).fill(0);
-    const promises = [];
     for (const item of this) {
-      promises.push(item.write(writer));
+      item.assemble(a);
       if (item.unique) uniqueTable[item.id >>> 3] |= (1 << (item.id & 7));
     }
-    writer.org(0x1e110).byte(...uniqueTable);
-    await Promise.all(promises);
+    UNIQUE_ITEM_SCALING_TABLE.loc(a);
+    a.byte(...uniqueTable);
+    return [a.module()];
   }
 }
 
+// Key is .org address in segment 0e (i.e. offset 1cxxx)
 const DEFAULT_ITEM_USE_JUMPS: {[addr: number]: ItemUseKind[]} = {
   // 3b love pendant
-  0x1c439: ['expect'],
+  0x8439: ['expect'],
   // 40 bow of truth
-  0x1c442: ['screen'],
+  0x8442: ['screen'],
   // 26 opel statue
-  0x1c450: ['empty'],
+  0x8450: ['empty'],
   // 3e bow of moon, 3f bow of sun
-  0x1c451: ['screen'],
+  0x8451: ['screen'],
   // 32 windmill key, 37 eye glasses
-  0x1c45f: ['location'],
+  0x845f: ['location'],
   // 33 prison key, 34 stxy, 35 fog lamp, 3c kirisa plant, 3d ivory statue
-  0x1c491: ['expect'],
+  0x8491: ['expect'],
   // 31 alarm flute
-  0x1c4a9: ['expect', 'expect'],
+  0x84a9: ['expect', 'expect'],
   // 27 insect flute
-  0x1c4b3: ['location'],
+  0x84b3: ['location'],
   // 3a statue of gold
-  0x1c4d0: ['expect'],
+  0x84d0: ['expect'],
   // invalid
-  0x1c4db: [],
+  0x84db: [],
   // 1d medical herb
-  0x1c4e0: ['expect', 'empty'],
+  0x84e0: ['expect', 'empty'],
   // 21 fruit of power
-  0x1c507: ['empty'],
+  0x8507: ['empty'],
   // 22 magic ring
-  0x1c51d: ['empty'],
+  0x851d: ['empty'],
   // 1e antidote
-  0x1c524: ['empty'],
+  0x8524: ['empty'],
   // 1f lysis plant
-  0x1c52f: ['empty'],
+  0x852f: ['empty'],
   // 20 fruit of lime
-  0x1c53a: ['empty'],
+  0x853a: ['empty'],
   // 23 fruit of repun
-  0x1c54a: ['empty'],
+  0x854a: ['empty'],
   // 24 warp boots -> rts
-  0x1c564: ['empty'],
+  0x8564: ['empty'],
   // 25 statue of onyx
-  0x1c565: ['expect'],
+  0x8565: ['expect'],
   // 36 shell flute
-  0x1c56b: ['flag'],
+  0x856b: ['flag'],
   // 39 glowing lamp
-  0x1c585: ['empty'],
+  0x8585: ['empty'],
   // 28 flute of lime
-  0x1c59e: ['expect', 'expect', 'expect', 'expect'],
+  0x859e: ['expect', 'expect', 'expect', 'expect'],
 };

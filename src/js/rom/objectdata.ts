@@ -1,9 +1,8 @@
+import {Module} from '../asm/module.js';
+import {Rom} from '../rom.js';
 import {Entity} from './entity.js';
 import {Location} from './location.js';
 import {readLittleEndian} from './util.js';
-import {Writer} from './writer.js';
-import {Rom} from '../rom.js';
-import {Assembler} from '../asm/assembler.js';
 
 // NOTE: Would be nice to call this Object, but that seems confusing...
 export class ObjectData extends Entity {
@@ -54,8 +53,8 @@ export class ObjectData extends Entity {
     return out;
   }
 
-  async write(writer: Writer) {
-    const a = new Assembler();
+  write(): Module[] {
+    const a = this.rom.assembler();
     const label = `Object_${this.id.toString(16).padStart(2, '0')}`;
     a.segment('0d');
     a.reloc();
@@ -63,7 +62,7 @@ export class ObjectData extends Entity {
     a.byte(...this.serialize());
     a.org(0xac00 + (this.id << 1));
     a.word({op: 'sym', sym: label});
-    writer.modules.push(a.module());
+    return [a.module()];
   }
 
   get(addr: number): number {

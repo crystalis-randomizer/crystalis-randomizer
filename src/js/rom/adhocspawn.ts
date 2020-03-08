@@ -1,8 +1,7 @@
+import {Module} from '../asm/module.js';
+import {Rom} from '../rom.js';
 import {Entity} from './entity.js';
 import {tuple} from './util.js';
-import {Writer} from './writer.js';
-import {Rom} from '../rom.js';
-import { Assembler } from '../asm/assembler.js';
 
 // An entry of the ad-hoc spawn table, which can be spawned arbitrarily
 // by AdHocSpawnObject (provided there's an available spawn slot in range).
@@ -35,11 +34,11 @@ export class AdHocSpawn extends Entity {
   get count(): number { return this.data[3]; }
   set count(arg: number) { this.data[3] = arg; }
 
-  write(writer: Writer) {
-    const a = new Assembler();
+  write(): Module[] {
+    const a = this.rom.assembler();
     a.segment('14');
     a.org(0x9c00 + (this.id << 2));
     a.byte(...this.data);
-    writer.modules.push(a.module());
+    return [a.module()];
   }
 }

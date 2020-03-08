@@ -1,5 +1,6 @@
+import {Module} from '../asm/module.js';
 import {Rom} from '../rom.js';
-import {Writer} from '../rom/writer.js';
+import {Address, Segment} from './util.js';
 
 // Data structure for scaling tables.  Goes with postshuffle.s.
 export class Scaling {
@@ -54,8 +55,16 @@ export class Scaling {
     });
   }
 
-  write(writer: Writer) {
-    writer.org(0x1bd00).byte(
-        ...this.patk, ...this.pdef, ...this.php, ...this.exp);
+  write(): Module[] {
+    const a = this.rom.assembler();
+    ADDRESS.loc(a);
+    a.byte(
+        ...this.patk,
+        ...this.pdef,
+        ...this.php,
+        ...this.exp);
+    return [a.module()];
   }
 }
+
+const ADDRESS = Address.of(Segment.$0d, 0xbd00);

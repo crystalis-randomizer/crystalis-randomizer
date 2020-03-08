@@ -1,8 +1,7 @@
-import {Assembler} from '../asm/assembler.js';
+import {Module} from '../asm/module.js';
 import {Rom} from '../rom.js';
 import {Entity} from './entity.js';
 import {readLittleEndian, writeLittleEndian} from './util.js';
-import {Writer} from './writer.js';
 
 // Data for when a boss is killed
 export class BossKill extends Entity {
@@ -45,7 +44,7 @@ export class BossKill extends Entity {
   get explode(): boolean { return !!this.data[20]; }
   set explode(x: boolean) { this.data[20] = x ? 1 : 0; }
 
-  write(writer: Writer) {
+  write(): Module[] {
     // NOTE: we could compress this table quite a bit if we wanted to,
     // there's a lot of zeros in the restore sections.  Something as
     // simple as a bitmask before each could help.
@@ -53,13 +52,13 @@ export class BossKill extends Entity {
 
     // NOTE: we're only going to write the bits that aren't owned by
     // the Location object.
-    if (!this.base) return;
-    const a = new Assembler();
+    if (!this.base) return [];
+    const a = this.rom.assembler();
     a.segment('0f');
     a.org(this.base);
     a.byte(this.data[0], this.data[1]);
     a.org(this.base + 4);
     a.byte(this.data[4]);
-    writer.modules.push(a.module());
+    return [a.module()];
   }
 }

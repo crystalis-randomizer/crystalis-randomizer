@@ -1,8 +1,7 @@
+import {Module} from '../asm/module.js';
+import {Rom} from '../rom.js';
 import {Entity} from './entity.js';
 import {tuple} from './util.js';
-import {Writer} from './writer.js';
-import {Rom} from '../rom.js';
-import { Assembler } from '../asm/assembler.js';
 
 export class Screen extends Entity {
 
@@ -28,8 +27,8 @@ export class Screen extends Entity {
     return new Set(this.tiles);
   }
 
-  write(writer: Writer): void {
-    const a = new Assembler();
+  write(): Module[] {
+    const a = this.rom.assembler();
     if (this.id < 0x100) {
       a.segment((this.id >> 5).toString(16).padStart(2, '0'));
       a.org(0x8000 | (this.id & 0x3f) << 8);
@@ -41,7 +40,7 @@ export class Screen extends Entity {
       // global flags in the rom.
       a.byte(...this.tiles.slice(0, 0xc0));
     }
-    writer.modules.push(a.module());
+    return [a.module()];
   }
 
   setTiles(start: number, tiles: Array<Array<number|null>>) {

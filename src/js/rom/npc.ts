@@ -1,12 +1,13 @@
+import {Module} from '../asm/module.js';
 import {Entity, EntityArray} from './entity.js';
 import {Location} from './location.js';
 import {MessageId} from './messageid.js';
-import {DIALOG_FLAGS, Data, SPAWN_CONDITION_FLAGS, addr, hex,
-        readBigEndian, readLittleEndian, tuple,
-        upperCamelToSpaces} from './util.js';
-import {Writer} from './writer.js';
+import {DIALOG_FLAGS, SPAWN_CONDITION_FLAGS,
+        Address, Data, Segment,
+        hex, readBigEndian, tuple, upperCamelToSpaces} from './util.js';
 import {Rom} from '../rom.js';
-import { Assembler } from '../asm/assembler.js';
+
+const {$04, $05, $0e} = Segment;
 
 type FlagList = number[];
 
@@ -146,15 +147,15 @@ export class Npc extends Entity {
     if (id > 0xcc) throw new Error(`Unavailable: ${id}`);
     // TODO - check (this.base <= 0x1c781) for unused?
     this._used = !UNUSED_NPCS.has(id) && (id < 0x8f || id >= 0xc0);
-    const dialogBase = addr(rom.prg, this.dialogPointer, 0x14000);
-    const hasDialog = id < 0xc4 && dialogBase !== 0x1cb39;
+    let dialogBase = id < 0xc4 ? this.dialogPointer.readAddress(rom.prg) : null;
+    if (dialogBase && dialogBase.org === 0x8b39) dialogBase = null;
 
-    this.data = tuple(rom.prg, this.dataBase, 4);
+    this.data = tuple(rom.prg, this.dataBase.offset, 4);
 
-    const spawnBase = readLittleEndian(rom.prg, this.spawnPointer) + 0x14000;
+    const spawnBase = this.spawnPointer.readAddress(rom.prg);
 
     // Populate spawn conditions
-    let i = spawnBase;
+    let i = spawnBase.offset;
     let loc;
     while (this.used && (loc = rom.prg[i++]) !== 0xff) {
       const flags = SPAWN_CONDITION_FLAGS.read(rom.prg, i);
@@ -164,8 +165,8 @@ export class Npc extends Entity {
 
     // Populate the dialog table
     this.globalDialogs = [];
-    if (hasDialog) {
-      let a = dialogBase;
+    if (dialogBase) {
+      let a = dialogBase.offset;
       while (true) {
         const [dialog, last] = GlobalDialog.parse(rom.prg, a);
         a += 4;
@@ -210,16 +211,18 @@ export class Npc extends Entity {
     //              this.bytes().map(x=>x.toString(16).padStart(2,0)).join(' ')}`);
   }
 
-  get dataBase(): number {
-    return 0x80f0 | ((this.id & 0xfc) << 6) | ((this.id & 3) << 2);
+  get dataBase(): Address {
+    const seg = this.id & 0x80 ? $05 : $04;
+    const org = 0x80f0 | ((this.id & 0xfc) << 6) | ((this.id & 3) << 2);
+    return Address.of(seg, org);
   }
 
-  get spawnPointer(): number {
-    return 0x1c5e0 + (this.id << 1);
+  get spawnPointer(): Address {
+    return Address.of($0e, 0x85e0 + (this.id << 1));
   }
 
-  get dialogPointer(): number {
-    return 0x1c95d + (this.id << 1);
+  get dialogPointer(): Address {
+    return Address.of($0e, 0x895d + (this.id << 1));
   }
 
   get used() { return this._used; }
@@ -341,30 +344,30 @@ export class Npc extends Entity {
     return true;
   }
 
-  write(w: Writer) {
-    if (!this.used) return;
+  write(): Module[] {
+    if (!this.used) return [];
     const id = hex(this.id);
-    const a = new Assembler();
+    const a = this.rom.assembler();
 
-    a.segment('04', '05');
-    a.org(this.dataBase); // lucky coincidence for this segment...
+    this.dataBase.loc(a);
     a.byte(...this.data);
 
     a.segment('0e', 'fe', 'ff');
     a.reloc(`SpawnCondition_${id}`);
     const spawn = a.pc();
     a.byte(...this.spawnConditionsBytes());
-    a.org(this.spawnPointer & ~0x14000, `SpawnCondition_${id}_Pointer`)
+    this.spawnPointer.loc(a, `SpawnCondition_${id}_Pointer`);
     a.word(spawn);
 
     if (this.hasDialog()) {
+      a.segment('0e', 'fe', 'ff');
       a.reloc(`Dialog_${id}`);
       const dialog = a.pc();
       a.byte(...this.dialogBytes());
-      a.org(this.dialogPointer & ~0x14000, `Dialog_${id}_Pointer`);
+      this.dialogPointer.loc(a, `Dialog_${id}_Pointer`);
       a.word(dialog);
     }
-    w.modules.push(a.module());
+    return [a.module()];
   }
 }
 

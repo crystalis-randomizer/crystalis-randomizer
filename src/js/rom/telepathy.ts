@@ -1,9 +1,11 @@
-import {Assembler} from '../asm/assembler.js';
+import {Expr} from '../asm/expr.js';
+import {Module} from '../asm/module.js';
 import {Rom} from '../rom.js';
 import {MessageId} from './messageid.js';
-import {Data, readBigEndian, readLittleEndian, seq, tuple} from './util.js';
-import {Writer} from './writer.js';
-import { Expr } from '../asm/expr.js';
+import {Data, Segment, free,
+        readBigEndian, readLittleEndian, seq, tuple} from './util.js';
+
+const {$0e, $fe, $ff} = Segment;
 
 export enum Sage {
   TORNEL = 0,
@@ -56,12 +58,12 @@ export class Telepathy {
     }
   }
 
-  write(w: Writer) {
+  write(): Module[] {
     let table = this.rom.telepathyTablesAddress;
-    const a = new Assembler();
-    a.segment('0e', 'fe', 'ff');
+    const a = this.rom.assembler();
+    a.segment($0e.name, $fe.name, $ff.name);
     if (table) { // TODO - this is always falsy?!?
-      w.free('0e', 0x98f4, 0x9b00);
+      free(a, $0e, 0x98f4, 0x9b00);
       // telepathy normalized, write to new location
       // also, crunch down the results.
 
@@ -85,7 +87,7 @@ export class Telepathy {
         }
       }
     } else {
-      w.free('0e', 0x9a4c, 0x9b00);
+      free(a, $0e, 0x9a4c, 0x9b00);
       a.org(0x822f, 'Telepathy_ResultTable');
       a.byte(...this.resultTable);
       a.org(0x8213, 'Telepathy_LevelsTable');
@@ -112,7 +114,7 @@ export class Telepathy {
       a.org(0x99f4, 'Telepathy_VanillaMainTable');
       a.word(...mainTable);
     }
-    w.modules.push(a.module());
+    return [a.module()];
   }
 }
 

@@ -1,6 +1,6 @@
+import {Module} from '../asm/module.js';
 import {Rom} from '../rom.js';
-import {tuple} from './util.js';
-import {Writer} from './writer.js';
+import {Address, Segment, tuple} from './util.js';
 
 // List of coin drops
 export class CoinDrops {
@@ -8,13 +8,16 @@ export class CoinDrops {
   values: number[];
 
   constructor(readonly rom: Rom) {
-    this.values = tuple(rom.prg, ADDRESS, COUNT);
+    this.values = tuple(rom.prg, ADDRESS.offset, COUNT);
   }
 
-  write(w: Writer): void {
-    w.org(ADDRESS).word(...this.values);
+  write(): Module[] {
+    const a = this.rom.assembler();
+    ADDRESS.loc(a);
+    a.word(...this.values);
+    return [a.module()];
   }
 }
 
-const ADDRESS = 0x34bde;
+const ADDRESS = Address.of(Segment.$1a, 0x8bde);
 const COUNT = 16;

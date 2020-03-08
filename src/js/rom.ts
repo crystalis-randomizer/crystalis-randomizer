@@ -1,4 +1,6 @@
 // import {Assembler} from './asm/assembler.js';
+import {Assembler} from './asm/assembler.js';
+import {Linker} from './asm/linker.js';
 import {Module} from './asm/module.js';
 import {AdHocSpawn} from './rom/adhocspawn.js';
 import {Areas} from './rom/area.js';
@@ -31,10 +33,11 @@ import {TileEffects} from './rom/tileeffects.js';
 import {Tileset} from './rom/tileset.js';
 import {TownWarp} from './rom/townwarp.js';
 import {Trigger} from './rom/trigger.js';
-import {hex, seq} from './rom/util.js';
+import {Segment, hex, seq, free} from './rom/util.js';
 import {WildWarp} from './rom/wildwarp.js';
-import {Writer} from './rom/writer.js';
 import {UnionFind} from './unionfind.js';
+
+const {$0e, $0f, $10} = Segment;
 
 // A known location for data about structural changes we've made to the rom.
 // The trick is to find a suitable region of ROM that's both unused *and*
@@ -311,10 +314,15 @@ export class Rom {
 //     return addr;
 //   }
 
-  async writeData() {
+  assembler(): Assembler {
+    // TODO - consider setting a segment prefix
+    return new Assembler();
+  }
+
+  writeData() {
     // Write the options first
-    const writer = new Writer(this.prg, this.chr);
-    writer.modules.push(...this.modules);
+    // const writer = new Writer(this.chr);
+    // writer.modules.push(...this.modules);
     // MapData
     //writer.alloc(0x144f8, 0x17e00);
     // NpcData
@@ -324,18 +332,20 @@ export class Rom {
     //writer.alloc(0x193f9, 0x1ac00);
     // ObjectData (index at 1ac00..1ae00)
     //writer.alloc(0x1ae00, 0x1bd00); // save 512 bytes at end for some extra code
+    const a = this.assembler();
     // NpcSpawnConditions
-    writer.free('0e', 0x877a, 0x895d);
+    free(a, $0e, 0x877a, 0x895d);
     // NpcDialog
-    writer.free('0e', 0x8ae5, 0x98f4);
+    free(a, $0e, 0x8ae5, 0x98f4);
     // ItemGetData (to 1e065) + ItemUseData
-    writer.alloc(0x1dde6, 0x1e106);
+    free(a, $0e, 0x9de6, 0xa000);
+    free(a, $0f, 0xa000, 0xa106);
     // TriggerData
     // NOTE: There's some free space at 1e3c0..1e3f0, but we use this for the
     // CheckBelowBoss triggers.
-    writer.free('0f', 0xa200, 0xa3c0);
+    free(a, $0f, 0xa200, 0xa3c0);
     // ItemMenuName
-    writer.alloc(0x2111a, 0x21468);
+    free(a, $10, 0x911a, 0x9468);
     // keep item $49 "        " which is actually used somewhere?
     // writer.alloc(0x21471, 0x214f1); // TODO - do we need any of this?
     // ItemMessageName
@@ -347,7 +357,7 @@ export class Rom {
     // writer.alloc(0x28000, 0x283fe);
     // Message tables
     // TODO - we don't use the writer to allocate the abbreviation tables, but we could
-    writer.alloc(0x2a000, 0x2fc00);
+    //writer.free('0x2a000, 0x2fc00);
 
     // if (this.telepathyTablesAddress) {
     //   writer.alloc(0x1d8f4, 0x1db00); // location table all the way thru main
@@ -355,13 +365,13 @@ export class Rom {
     //   writer.alloc(0x1da4c, 0x1db00); // existing main table is here.
     // }
 
-    const promises = [];
-    const writeAll = (writables: {write(writer: Writer): unknown}[]) => {
+    const modules = [...this.modules, a.module()];
+    const writeAll = (writables: {write(): Module[]}[]) => {
       for (const w of writables) {
-        promises.push(w.write(writer));
+        modules.push(...w.write());
       }
     };
-    this.locations.write(writer);
+    modules.push(...this.locations.write());
     writeAll(this.objects);
     writeAll(this.hitboxes);
     writeAll(this.triggers);
@@ -370,25 +380,29 @@ export class Rom {
     writeAll(this.tileEffects);
     writeAll(this.screens);
     writeAll(this.adHocSpawns);
-    this.itemGets.write(writer);
-    this.slots.write(writer);
-    this.items.write(writer);
-    this.shops.write(writer);
+    modules.push(...this.itemGets.write());
+    modules.push(...this.slots.write());
+    modules.push(...this.items.write());
+    modules.push(...this.shops.write());
     writeAll(this.bossKills);
     writeAll(this.patterns);
-    this.wildWarp.write(writer);
-    this.townWarp.write(writer);
-    this.coinDrops.write(writer);
-    this.scaling.write(writer);
-    this.bosses.write(writer);
-    this.randomNumbers.write(writer);
-    promises.push(this.telepathy.write(writer));
-    promises.push(this.messages.write(writer));
-    promises.push(writer.commit());
-    await Promise.all(promises).then(() => undefined);
-    writer.report();
+    modules.push(...this.wildWarp.write());
+    modules.push(...this.townWarp.write());
+    modules.push(...this.coinDrops.write());
+    modules.push(...this.scaling.write());
+    modules.push(...this.bosses.write());
+    modules.push(...this.randomNumbers.write());
+    modules.push(...this.telepathy.write());
+    modules.push(...this.messages.write());
 
-    const exports = writer.linker.exports();
+    const linker = new Linker();
+    for (const m of modules) {
+      linker.read(m);
+    }
+    linker.link().apply(this.prg);
+    linker.report();
+
+    const exports = linker.exports();
     this.uniqueItemTableAddress = exports.get('KeyItemData')!.offset!;
     this.shopCount = 11;
     this.shopDataTablesAddress = exports.get('ShopData')?.offset || 0;

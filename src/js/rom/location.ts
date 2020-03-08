@@ -1,18 +1,20 @@
+import {Assembler} from '../asm/assembler.js';
+import {Expr} from '../asm/expr.js';
+import {Module} from '../asm/module.js';
 import {Area, Areas} from './area.js';
 import {Entity} from './entity.js';
 import {Screen} from './screen.js';
-import {DataTuple,
-        concatIterables, group, hex, initializer,
+import {DataTuple, Segment,
+        concatIterables, free, group, hex, initializer,
         readLittleEndian, seq, tuple, varSlice,
         upperCamelToSpaces} from './util.js';
-import {Writer} from './writer.js';
 import {Rom} from '../rom.js';
 import {UnionFind} from '../unionfind.js';
 import {assertNever, iters, DefaultMap} from '../util.js';
 import {Monster} from './monster.js';
 import {Random} from '../random.js';
-import {Assembler} from '../asm/assembler.js';
-import {Expr} from '../asm/expr.js';
+
+const {$0a, $0b, $0c, $0d} = Segment;
 
 // Number indicates to copy whatever's at the given exit
 type Key = string | symbol | number;
@@ -435,17 +437,17 @@ export class Locations extends Array<Location> {
     throw new Error('No unused location');
   }
 
-  write(w: Writer) {
-    const a = new Assembler();
-    w.free('0a', 0x84f8, 0xa000);
-    w.free('0b', 0xa000, 0xbe00);
-    w.free('0c', 0x93f9, 0xa000);
-    w.free('0d', 0xa000, 0xac00);
-    w.free('0d', 0xae00, 0xbd00); // TODO - bf00
+  write(): Module[] {
+    const a = this.rom.assembler();
+    free(a, $0a, 0x84f8, 0xa000);
+    free(a, $0b, 0xa000, 0xbe00);
+    free(a, $0c, 0x93f9, 0xa000);
+    free(a, $0d, 0xa000, 0xac00);
+    free(a, $0d, 0xae00, 0xbd00); // TODO - bf00
     for (const location of this) {
       location.assemble(a);
     }
-    w.modules.push(a.module());
+    return [a.module()];
   }
 }
 

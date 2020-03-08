@@ -1,10 +1,9 @@
-import {Assembler} from '../asm/assembler.js';
+import {Module} from '../asm/module.js';
 import {Rom} from '../rom.js';
 import {Entity} from './entity.js';
 import {MapScreen} from './mapscreen.js';
 import {TileEffects} from './tileeffects.js';
 import {seq, tuple} from './util.js';
-import {Writer} from './writer.js';
 
 // Mappping from metatile ID to tile quads and palette number.
 export class Tileset extends Entity {
@@ -45,13 +44,13 @@ export class Tileset extends Entity {
         seq(256, i => new MapScreen(this.rom.screens[i], this));
   }
 
-  write(writer: Writer) {
+  write(): Module[] {
     const attr = seq(0x40, i => {
       const j = i << 2;
       return (this.attrs[j] & 3) | (this.attrs[j + 1] & 3) << 2 |
              (this.attrs[j + 2] & 3) << 4 | (this.attrs[j + 3] & 3) << 6;
     });
-    const a = new Assembler();
+    const a = this.rom.assembler();
     a.segment('08', '09');
     a.org(0x8000 | this.map << 8);
     a.byte(...([] as number[]).concat(...this.tiles));
@@ -59,7 +58,7 @@ export class Tileset extends Entity {
     a.byte(...attr);
     a.org(0xbe00 | this.map << 3);
     a.byte(...this.alternates);
-    writer.modules.push(a.module());
+    return [a.module()];
   }
 
   effects(): TileEffects {

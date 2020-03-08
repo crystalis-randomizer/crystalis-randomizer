@@ -55,65 +55,65 @@
 
 
 ;;; Various global definitions.
-.define ObjectRecoil $340
-.define ObjectHP $3c0
-.define PlayerHP $3c1
-.define PlayerMaxHP $3c0
-.define ObjectAtk $3e0
-.define PlayerAtk $3e1
-.define ObjectDef $400
-.define PlayerLevel $421
-.define ObjectActionScript $4a0
-.define ObjectGold $500
-.define ObjectElementalDefense $500
-.define ObjectExp $520
-.define PlayerMP $708
-.define EquippedConsumableItem  $715
-.define EquippedPassiveItem     $716
+ObjectRecoil = $340
+ObjectHP = $3c0
+PlayerHP = $3c1
+PlayerMaxHP = $3c0
+ObjectAtk = $3e0
+PlayerAtk = $3e1
+ObjectDef = $400
+PlayerLevel = $421
+ObjectActionScript = $4a0
+ObjectGold = $500
+ObjectElementalDefense = $500
+ObjectExp = $520
+PlayerMP = $708
+EquippedConsumableItem = $715
+EquippedPassiveItem    = $716
 
 
-.define InvSwords $6430
-.define InvConsumables $6440
-.define InvPassive $6448
-.define InvQuest $6450
-.define InvMagic $6458
-.define SlotFlagsStart $64a0
-.define ItemFlagsStart $64c0
-.define Difficulty $648f         ; requires defrag! (flags 078 .. 07f)
-.define ShouldRedisplayDifficulty $61ff
+InvSwords = $6430
+InvConsumables = $6440
+InvPassive = $6448
+InvQuest = $6450
+InvMagic = $6458
+SlotFlagsStart = $64a0
+ItemFlagsStart = $64c0
+Difficulty = $648f         ; requires defrag! (flags 078 .. 07f)
+ShouldRedisplayDifficulty = $61ff
 
         
-.define SelectedConsumableIndex  $642c
-.define SelectedQuestItemIndex   $642e
+SelectedConsumableIndex = $642c
+SelectedQuestItemIndex  = $642e
 
 .ifdef _EXTRA_PITY_MP
-.define PITY_MP_AMOUNT     34
+PITY_MP_AMOUNT    = 34
 .else
-.define PITY_MP_AMOUNT     1
+PITY_MP_AMOUNT    = 1
 .endif        
 
-.define PITY_HP_AMOUNT     5
+PITY_HP_AMOUNT    = 5
 
-.define SHOP_COUNT         11
-.define SCALING_LEVELS     48
+SHOP_COUNT        = 11
+SCALING_LEVELS    = 48
 
 .ifdef _UNIDENTIFIED_ITEMS
-.define SORT_START_ROW     3
+SORT_START_ROW    = 3
 .else
-.define SORT_START_ROW     2
+SORT_START_ROW    = 2
 .endif
 
 ;;; Constants
-.define ITEM_RABBIT_BOOTS     $12
-.define ITEM_OPEL_STATUE      $26
-.define SFX_MONSTER_HIT       $21
-.define SFX_ATTACK_IMMUNE     $3a
+ITEM_RABBIT_BOOTS    = $12
+ITEM_OPEL_STATUE     = $26
+SFX_MONSTER_HIT      = $21
+SFX_ATTACK_IMMUNE    = $3a
 
 ;;; see http://www.6502.org/tutorials/6502opcodes.html#BIT
 ;;; note: this is dangerous if it would result in a register read
-.define SKIP_TWO_BYTES   $2c
+SKIP_TWO_BYTES  = $2c
 
-;;; Labels
+;;; Labels (TODO: add a .addr() function?)
 .segment "0e"
 .org $8112
 SetOrClearFlagsFromBytePair_24y:

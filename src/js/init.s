@@ -177,8 +177,7 @@ FREE "0e" [$83eb, $83fb)
 FREE "0e" [$841b, $8439)
 
 ;;; TODO - move these into ROM - as we discover they're unused,
-
-;;; free them directly there...
+;;; free them directly there... (could allow for defragging).
 ;;; Free space in middle of spawn condition table (lots of unused IDs)
 FREE "0e" [$86f2, $86fc)
 FREE "0e" [$86fe, $8760)

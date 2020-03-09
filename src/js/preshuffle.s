@@ -361,7 +361,6 @@ ItemGet_FindOpenSlotWithOverflow:
   nop
 .assert * = $a57a ; match up exactly to next instruction
 
-.pushseg "0e"   ;; @@@ TODO - figure out if 0e is allowed on top of 0f fe ff
 .reloc
 ComputeVampireAnimationStart:
    bcs +
@@ -371,10 +370,10 @@ ComputeVampireAnimationStart:
    bcc ++
 +  lda #$ff
 ++ rts
-.popseg
 
 .endif
 
+.segment "0f", "fe", "ff"  ;; NOTE: 0e is not valid below here.
 
 ;;; Ensure Draygon 2 spawns directly if bow of truth was used earlier.
 .org $b1a1
@@ -390,7 +389,6 @@ ComputeVampireAnimationStart:
 ;;; 0623 and 057f as if we were standing in front of it.  To get this
 ;;; right we actually need to move the UsedBowOfTruth trigger to a
 ;;; fixed position (02f) that we can check easily.
-.pushseg "0e"  ;; @@@ TODO - check 0e valid!
 .reloc
 SpawnDraygon:
   inc $0600,x ; original action
@@ -405,7 +403,6 @@ SpawnDraygon:
   lda #$07 ; trigger tile
   sta $41
 + rts
-.popseg
 
 ;;; Boss chest action jump has some special handling for bosskill 3 (rage)
 ;;; which is instead used for Kensu dropping a chest.  We'll rearrange the
@@ -437,7 +434,7 @@ SpawnDraygon:
 .org $bd27
   lda #$0e
 
-.pushseg "0e"    ; @@@ TODO - check 0e valid?
+.pushseg "0f"    ; NOTE: 0e does not work here.
 .reloc
 HandleKensuChest:
   lda #$8d
@@ -930,7 +927,6 @@ CheckSacredShieldForCurse:
 
   .reloc
   ContinuousMagicTable:
-    ;; @@@ TODO - MOVE 10, ContinuousMagicTable_Orig (at a092)
     .move 10, ContinuousMagicTable_Orig
     ;.byte $08,$00,$08,$08,$08,$08,$00,$08,$00,$08
 .endscope
@@ -940,7 +936,6 @@ CheckSacredShieldForCurse:
 .org $a410
   .word (MaybeSpawnInsect)      ; ObjectActionJump_7e
 
-;;; @@@ TODO - does this need to be in segment 0e?
 .reloc
 MaybeSpawnInsect:
   lda $038d

@@ -1,6 +1,8 @@
 import {Module} from '../asm/module.js';
 import {Rom} from '../rom.js';
-import {Address, Segment} from './util.js';
+import {Segment, relocExportLabel} from './util.js';
+
+const {$0d, $fe, $ff} = Segment;
 
 // Data structure for scaling tables.  Goes with postshuffle.s.
 export class Scaling {
@@ -57,14 +59,14 @@ export class Scaling {
 
   write(): Module[] {
     const a = this.rom.assembler();
-    ADDRESS.loc(a);
-    a.byte(
-        ...this.patk,
-        ...this.pdef,
-        ...this.php,
-        ...this.exp);
+    relocExportLabel(a, [$0d, $fe, $ff], 'DiffAtk');
+    a.byte(...this.patk);
+    relocExportLabel(a, [$0d, $fe, $ff], 'DiffDef');
+    a.byte(...this.pdef);
+    relocExportLabel(a, [$0d, $fe, $ff], 'DiffHP');
+    a.byte(...this.php);
+    relocExportLabel(a, [$0d, $fe, $ff], 'DiffExp');
+    a.byte(...this.exp);
     return [a.module()];
   }
 }
-
-const ADDRESS = Address.of(Segment.$0d, 0xbd00);

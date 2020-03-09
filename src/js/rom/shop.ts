@@ -60,7 +60,7 @@ export class Shops extends EntityArray<Shop> {
         a.label(label);
       }
       a.segment("10", "fe", "ff");
-      a.org(0x9da4); // TODO - reloc, break it up a bit?
+      a.reloc('ShopData'); // TODO - break this up a bit?
       // NOTE: This structure is hard-coded in RomOption, with two parameters:
       //  1. SHOP_COUNT (11)
       //  2. SCALING_LEVELS (48)
@@ -108,8 +108,8 @@ export class Shops extends EntityArray<Shop> {
       a.word(this.innBasePrice);
     } else {
       // TODO - can we even write non-defragged shops?
-      a.segment('10');
-      a.org(0x9da4);
+      a.segment('10', 'fe', 'ff');
+      a.reloc('ShopData'); //a.org(0x9da4);
       for (const shop of this.armorShops()) {
         for (let i = 0; i < 4; i++) {
           a.byte(shop.contents[i] ?? 0xff);

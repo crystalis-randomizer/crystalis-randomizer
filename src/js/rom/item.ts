@@ -3,7 +3,7 @@ import {Module} from '../asm/module.js';
 import {Entity, EntityArray} from './entity.js';
 import {MessageId} from './messageid.js';
 import {hex, readString, tuple,
-        ITEM_USE_FLAGS, ITEM_CONDITION_FLAGS} from './util.js';
+  ITEM_USE_FLAGS, ITEM_CONDITION_FLAGS, relocExportLabel} from './util.js';
 import {Address, Data, Segment} from './util.js';
 import {Rom} from '../rom.js';
 import {assertNever} from '../util.js';
@@ -18,7 +18,6 @@ const MENU_NAME_TABLE = Address.of($10, 0x9086);
 
 const ARMOR_DEFENSE_TABLE = Address.of($1a, 0x8bc0);
 const SHIELD_DEFENSE_TABLE = Address.of($1a, 0x8bc9);
-const UNIQUE_ITEM_SCALING_TABLE = Address.of($0f, 0xa110);
 
 // Map to pattern entries for combinations of letters.
 const MENU_NAME_ENCODE = [
@@ -444,7 +443,7 @@ export class Items extends EntityArray<Item> {
       item.assemble(a);
       if (item.unique) uniqueTable[item.id >>> 3] |= (1 << (item.id & 7));
     }
-    UNIQUE_ITEM_SCALING_TABLE.loc(a);
+    relocExportLabel(a, [$0e, $0f], 'KeyItemData');
     a.byte(...uniqueTable);
     return [a.module()];
   }

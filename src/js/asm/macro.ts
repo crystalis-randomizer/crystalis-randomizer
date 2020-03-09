@@ -80,7 +80,11 @@ export class Macro {
             mapped.push({token: 'grp', inner: map(tok.inner)});
             continue;
           }
-          mapped.push(tok);
+          const source =
+              tok.source && tokens[0].source ?
+                  {...tok.source, parent: tokens[0].source} :
+                  tok.source || tokens[0].source;
+          mapped.push(source ? {...tok, source} : tok);
         }
         return mapped;
       }

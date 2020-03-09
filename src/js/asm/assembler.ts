@@ -7,8 +7,6 @@ import {assertNever} from '../util.js';
 
 type Chunk = mod.Chunk<number[]>;
 type Module = mod.Module;
-type Segment = mod.Segment;
-const Segment = mod.Segment;
 
 class Symbol {
   /**
@@ -135,7 +133,7 @@ export class Assembler {
   private segments: readonly string[] = ['code'];
 
   /** Data on all the segments. */
-  private segmentData = new Map<string, Segment>();
+  private segmentData = new Map<string, mod.Segment>();
 
   /** Stack of segments for .pushseg/.popseg. */
   private segmentStack: Array<readonly [readonly string[], Chunk?]> = [];
@@ -386,7 +384,7 @@ export class Assembler {
       if (symbol.export != null) out.export = symbol.export;
       symbols.push(out);
     }
-    const segments: Segment[] = [...this.segmentData.values()];
+    const segments: mod.Segment[] = [...this.segmentData.values()];
     return {chunks, symbols, segments};
   }
 
@@ -695,13 +693,13 @@ export class Assembler {
     this._name = name;
   }
 
-  segment(...segments: Array<string|Segment>) {
+  segment(...segments: Array<string|mod.Segment>) {
     // Usage: .segment "1a", "1b", ...
     this.segments = segments.map(s => typeof s === 'string' ? s : s.name);
     for (const s of segments) {
       if (typeof s === 'object') {
         const data = this.segmentData.get(s.name) || {name: s.name};
-        this.segmentData.set(s.name, Segment.merge(data, s));
+        this.segmentData.set(s.name, mod.Segment.merge(data, s));
       }
     }
     this._chunk = undefined;
@@ -750,10 +748,16 @@ export class Assembler {
 
   free(size: number, token?: Token) {
     // Must be in .org for a single segment.
-    if (this.segments.length !== 1) {
+    if (this._org == null) this.fail(`.free in .reloc mode`, token);
+    const segments = this.segments.length > 1 ? this.segments.filter(s => {
+      const data = this.segmentData.get(s);
+      if (!data || data.memory == null || data.size == null) return false;
+      if (data.memory > this._org!) return false;
+      if (data.memory + data.size <= this._org!) return false;
+      return true;
+    }) : this.segments;
+    if (segments.length !== 1) {
       this.fail(`.free with non-unique segment: ${this.segments}`, token);
-    } else if (this._org == null) {
-      this.fail(`.free in .reloc mode`, token);
     } else if (size < 0) {
       this.fail(`.free with negative size: ${size}`, token);
     }
@@ -763,7 +767,7 @@ export class Assembler {
     }
     this._chunk = undefined;
     // Ensure a segment object exists.
-    const name = this.segments[0];
+    const name = segments[0];
     let s = this.segmentData.get(name);
     if (!s) this.segmentData.set(name, s = {name});
     (s.free || (s.free = [])).push([this._org, this._org + size]);
@@ -825,7 +829,7 @@ export class Assembler {
     this.currentScope = this.currentScope.parent;
   }
 
-  pushSeg(...segments: Array<string|Segment>) {
+  pushSeg(...segments: Array<string|mod.Segment>) {
     this.segmentStack.push([this.segments, this._chunk]);
     this.segment(...segments);
   }
@@ -865,7 +869,7 @@ export class Assembler {
     return str;
   }
 
-  parseSegmentList(tokens: Token[], start = 1): Array<string|Segment> {
+  parseSegmentList(tokens: Token[], start = 1): Array<string|mod.Segment> {
     if (tokens.length < start + 1) {
       this.fail(`Expected a segment list`, tokens[start - 1]);
     }
@@ -875,7 +879,7 @@ export class Assembler {
       if (!Token.eq(ts[1], Token.COLON)) {
         this.fail(`Expected comma or colon: ${Token.name(ts[1])}`, ts[1]);
       }
-      const seg = {name: str} as Segment;
+      const seg = {name: str} as mod.Segment;
       // TODO - parse expressions...
       const attrs = Token.parseAttrList(ts, 1); // : ident [...]
       for (const [key, val] of attrs) {

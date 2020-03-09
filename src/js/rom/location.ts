@@ -443,7 +443,7 @@ export class Locations extends Array<Location> {
     free(a, $0b, 0xa000, 0xbe00);
     free(a, $0c, 0x93f9, 0xa000);
     free(a, $0d, 0xa000, 0xac00);
-    free(a, $0d, 0xae00, 0xbd00); // TODO - bf00
+    free(a, $0d, 0xae00, 0xc000); // bf00 ???
     for (const location of this) {
       location.assemble(a);
     }

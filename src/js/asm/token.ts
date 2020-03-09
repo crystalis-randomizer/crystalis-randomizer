@@ -165,7 +165,9 @@ export namespace Token {
 
   export function at(arg: {source?: SourceInfo}): string {
     const s = arg.source;
-    return s ? `\n  at ${s.file}:${s.line}:${s.column}` : '';
+    if (!s) return '';
+    const parent = s.parent ? at({source: s.parent}) : '';
+    return `\n  at ${s.file}:${s.line}:${s.column}${parent}`;
     // TODO - definition vs usage?
   }
 

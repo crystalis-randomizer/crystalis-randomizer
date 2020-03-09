@@ -316,7 +316,8 @@ export async function shuffle(rom: Uint8Array,
   //   asm.assemble(await reader.read(path), path, rom);
   // }
   async function tokenizer(path: string) {
-    return new Tokenizer(await reader.read(path), path);
+    return new Tokenizer(await reader.read(path), path,
+                         {lineContinuations: true});
   }
   const flagFile =
       Object.keys(defines)
@@ -325,6 +326,7 @@ export async function shuffle(rom: Uint8Array,
   const toks = new TokenStream();
   toks.enter(TokenSource.concat(
       new Tokenizer(flagFile, 'flags.s'),
+      await tokenizer('init.s'),
       await tokenizer('preshuffle.s'),
       await tokenizer('postparse.s'),
       await tokenizer('postshuffle.s')));

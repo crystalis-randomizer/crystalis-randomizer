@@ -44,6 +44,10 @@ export class Linker {
     if (this._exports) return this._exports;
     return this._exports = this._link.buildExports();
   }
+
+  watch(...offset: number[]) {
+    this._link.watches.push(...offset);
+  }
 }
 
 export namespace Linker {
@@ -169,6 +173,9 @@ class LinkChunk {
     this._org = org;
     this._segment = segment;
     const offset = this._offset = org + segment.delta;
+    for (const w of this.linker.watches) {
+      if (w >= offset && w < offset + this.size) debugger;
+    }
     // Copy data, leaving out any holes
     const full = this.linker.data;
     const data = this._data ?? fail(`No data`);
@@ -348,6 +355,8 @@ class Link {
 
   resolvedChunks: LinkChunk[] = [];
   unresolvedChunks = new Set<LinkChunk>();
+
+  watches: number[] = []; // debugging aid: offsets to watch.
 
   // TODO - deferred - store some sort of dependency graph?
 

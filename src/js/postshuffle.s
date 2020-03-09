@@ -3,20 +3,23 @@
 .org $c409
   jmp ComputeEnemyStats
 
-;;; TODO - use a label: .org EndOfCompressedMonsterData
-.org $bd00  ; This should leave some space after compression
-DiffAtk:   ; PAtk*8
-.org * + SCALING_LEVELS
-DiffDef:   ; PDef * 4
-.org * + SCALING_LEVELS
-DiffHP:    ; PHP (0..$26)
-.org * + SCALING_LEVELS
-DiffExp:   ; ExpBase * 4, encoded in standard EXP encoding
-.org * + SCALING_LEVELS
+.import DiffAtk, DiffDef, DiffHP, DiffExp
+
+;; ;;; TODO - use a label: .org EndOfCompressedMonsterData
+;; .org $bd00  ; This should leave some space after compression
+;; DiffAtk:   ; PAtk*8
+;; .org * + SCALING_LEVELS
+;; DiffDef:   ; PDef * 4
+;; .org * + SCALING_LEVELS
+;; DiffHP:    ; PHP (0..$26)
+;; .org * + SCALING_LEVELS
+;; DiffExp:   ; ExpBase * 4, encoded in standard EXP encoding
+;; .org * + SCALING_LEVELS
 
 ;;; $12 and $13 are free RAM at this point
 
 ;.org $1bdd0  ; Note: this follows immediately from the tables.
+.reloc
 ComputeEnemyStats:
   lda ObjectRecoil,x
   bmi +
@@ -245,7 +248,5 @@ RescaleExp:   ; $1bcbd
 RescaleDone:
    jmp $c2af
 
-.assert * <= $c000
+; .assert * <= $c000
 ;.assert < $1bff0
-
-.export DiffAtk, DiffDef, DiffHP, DiffExp

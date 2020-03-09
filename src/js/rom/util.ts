@@ -470,10 +470,20 @@ interface IAssembler {
   segment(...s: string[]): void;
   org(o: number, n?: string): void;
   free(size: number): void;
+  reloc(name?: string): void;
+  label(name: string): void;
+  export(name: string): void;
 }
 
 export function free(a: IAssembler, seg: Segment, start: number, end: number) {
   a.segment(seg.name);
   a.org(start);
   a.free(end - start);
+}
+
+export function relocExportLabel(a: IAssembler, seg: Segment[], name: string) {
+  a.segment(...seg.map(s => s.name));
+  a.reloc(name);
+  a.label(name);
+  a.export(name);
 }

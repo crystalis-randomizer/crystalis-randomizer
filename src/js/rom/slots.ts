@@ -1,5 +1,8 @@
 import {Module} from '../asm/module.js';
 import {Rom} from '../rom.js';
+import {Segment, relocExportLabel} from './util.js';
+
+const {$0e} = Segment;
 
 export class Slots extends Array<number> {
 
@@ -20,8 +23,7 @@ export class Slots extends Array<number> {
 
   write(): Module[] {
     const a = this.rom.assembler();
-    a.segment('0e');
-    a.org(0x9c82);
+    relocExportLabel(a, [$0e], 'CheckToItemGetMap');
     a.byte(...this);
     return [a.module()];
   }

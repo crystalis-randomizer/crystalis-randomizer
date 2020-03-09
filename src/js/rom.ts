@@ -396,6 +396,7 @@ export class Rom {
     modules.push(...this.messages.write());
 
     const linker = new Linker();
+    linker.base(this.prg, 0);
     for (const m of modules) {
       linker.read(m);
     }

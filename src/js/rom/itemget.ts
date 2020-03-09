@@ -4,13 +4,13 @@ import {Rom} from '../rom.js';
 import {Entity, EntityArray} from './entity.js';
 import {MessageId} from './messageid.js';
 import {ITEM_GET_FLAGS, Address, Segment,
-        hex, readLittleEndian} from './util.js';
+  hex, readLittleEndian, relocExportLabel} from './util.js';
 
-const {$0e, $0f, $fe} = Segment;
+const {$0e, $0f /*, $fe */} = Segment;
 
 // TODO - this depends on a preparse change, we should reconsider that.
 const ITEMGET_TABLE = Address.of($0e, 0x9b00);
-const GRANT_ITEM_TABLE = Address.of($fe, 0xd6d5);
+//const GRANT_ITEM_TABLE = Address.of($fe, 0xd6d5);
 const GET_TO_ITEM_BASE = Address.of($0e, 0x9d66);
 const GET_TO_ITEM_THRESHOLD = 0x49;
 
@@ -29,12 +29,25 @@ export class ItemGets extends EntityArray<ItemGet> {
       this[i] = new ItemGet(rom, i);
     }
 
-    let addr = GRANT_ITEM_TABLE.offset;
-    while (rom.prg[addr] !== 0xff) {
-      const key = rom.prg[addr++];
-      const value = rom.prg[addr++];
-      this.actionGrants.set(key, value);
-    }
+    // TODO - encode GRANT_ITEM_TABLE offset into rom
+    // since it's really hard to read otherwise.
+
+    // Probably the thing to do if the table doesn't exist is to
+    // read these values from their vanilla loci?
+    this.actionGrants.set(0x25, 0x29);
+    this.actionGrants.set(0x39, 0x3a);
+    this.actionGrants.set(0x3b, 0x47);
+    this.actionGrants.set(0x3c, 0x3e);
+    this.actionGrants.set(0x84, 0x46);
+    this.actionGrants.set(0xb2, 0x42);
+    this.actionGrants.set(0xb4, 0x41);
+
+    // let addr = GRANT_ITEM_TABLE.offset;
+    // while (rom.prg[addr] !== 0xff) {
+    //   const key = rom.prg[addr++];
+    //   const value = rom.prg[addr++];
+    //   this.actionGrants.set(key, value);
+    // }
   }
 
   write(): Module[] {
@@ -42,7 +55,8 @@ export class ItemGets extends EntityArray<ItemGet> {
     for (const itemget of this) {
       itemget.assemble(a);
     }
-    GRANT_ITEM_TABLE.loc(a);
+    relocExportLabel(a, [$0e], 'GrantItemTable');
+    //GRANT_ITEM_TABLE.loc(a);
     for (const [key, value] of this.actionGrants) {
       a.byte(key, value);
     }

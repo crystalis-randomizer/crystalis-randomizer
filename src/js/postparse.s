@@ -3,10 +3,17 @@
 .segment "0e", "fe", "ff"
 
 .ifdef _NORMALIZE_TELEPATHY
+FREE "0e" [$8167, $822f)
+;FREE "0e" [$98f4, $9b00) -- currently declared in rom/telepathy.ts
+
 ;;; Basic plan: rip out minimum level, result mapping, etc
 ;;; Also removed the extra powers of two table, so we have
 ;;; room to inline CheckTelepathyResult.
-.org $8167
+.org $de14  ; Ref from MainGameModeJump_16 jumped to 816f before
+    jsr CastTelepathy
+
+.reloc
+CastTelepathy:
     sec
     lda PlayerMP
     sbc #$08 ; should never overflow because already checked
@@ -81,15 +88,10 @@ Telepathy_ShowDefaultMessage:
     lda TelepathyTable+1,x
     sta $20
     rts
-.assert * <= $822f
-.org $822f
-TelepathyResults:
+
+TelepathyResults = $822f
 
 .import TelepathyTable
-
-;; .org $98f4
-;; TelepathyTable:
-;;   .skip 32
 
 .endif
 
@@ -101,26 +103,30 @@ TelepathyResults:
 ;;; Initialize tool shop
 .org $98ee
   lda ToolShopIdTable,x
+
 .org $98ff
   clc
   adc #SHOP_COUNT*4 ; 44 = delta between shop tables
   tax
   jsr CopyShopPrices
   jmp PostInitializeShop
-.assert * <= $9912
+FREE_UNTIL $9912
 
 ;;; Initialize armor shop
 .org $9895
   lda ArmorShopIdTable,x ; should be unchanged, but just in case...
+
 .org $98a6
   tax
   jsr CopyShopPrices
   jmp PostInitializeShop
+FREE_UNTIL $98b6
+
+.reloc
 ShopItemHorizontalPositions:
   .byte 8,13,18,23
-.assert * <= $98b6
-.org $98b6
-PostInitializeShop:
+
+PostInitializeShop = $98b6
 
 .org $98bc  ; use the new position table
   lda ShopItemHorizontalPositions,x
@@ -147,6 +153,7 @@ PostInitializeShop:
   nop
   nop
 .assert * = $81cf
+
 ;;; Second version of the same thing (this one happens only
 ;;; once, when you say "yes" to "sell another?").
 .org $84c7
@@ -159,6 +166,7 @@ PostInitializeShop:
   nop
   nop
 .assert * = $84d5
+
 ;;; Third read of price is immediately when selling.
 .org $8634
   sta $61
@@ -200,14 +208,23 @@ PostInitializeShop:
   lsr
   sta $646d  ; current shop index   
   rts
-.assert * <= $9970
+FREE_UNTIL $9970
 
 ;;; These are exported by the Shops writer.
 .import ShopData, ArmorShopIdTable, ToolShopIdTable, ArmorShopPriceTable
 .import ToolShopPriceTable, InnPrices, ShopLocations
 .import ToolShopScaling, ArmorShopScaling, BasePrices, InnBasePrice
 
-.org $9da4 + SHOP_COUNT*21 + SCALING_LEVELS*2 + 54
+
+
+
+
+;;; TODO - probably mark this whole area as freed and dispense
+;;; with the concrete .org math...?!?
+
+FREE "10" [$9da4, $a000]
+
+;; .org $9da4 + SHOP_COUNT*21 + SCALING_LEVELS*2 + 54
 
 ;;; This is the space freed up by compressing the shop tables
 
@@ -220,6 +237,7 @@ PostInitializeShop:
 ;;; Could get 48 or 72 bytes back by densifying it?
 ;;;   -> only scale every 2 or 4 levels...
 
+.reloc
 ComputeShopPrice:               ; ~71 bytes
     ;; Inputs:
     ;;   Difficulty - scaling level
@@ -297,6 +315,7 @@ ComputeShopPrice:               ; ~71 bytes
 
 ;;; NOTE: we could move this to a smaller chunk if needed, but it's nice to
 ;;; store all the shop normalization code in the space it recovered.
+.reloc
 CopyShopPrices:
   ;; Input:
   ;;   x: first item in the shop
@@ -316,6 +335,7 @@ CopyShopPrices:
   bcc -
   rts
 
+.reloc
 Multiply32Bit:
   ;; Inputs: $61$62 and $63$64
   ;; Output: $10$11$12$13
@@ -341,8 +361,6 @@ Multiply32Bit:
   dex
   bne -
   rts
-
-.assert * <= $a000
 
 .endif
 

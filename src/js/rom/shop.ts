@@ -109,7 +109,7 @@ export class Shops extends EntityArray<Shop> {
     } else {
       // TODO - can we even write non-defragged shops?
       a.segment('10', 'fe', 'ff');
-      a.reloc('ShopData'); //a.org(0x9da4);
+      a.org(0x9da4, 'ShopData');
       for (const shop of this.armorShops()) {
         for (let i = 0; i < 4; i++) {
           a.byte(shop.contents[i] ?? 0xff);

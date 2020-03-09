@@ -471,8 +471,10 @@ export class Assembler {
       return;
     }
 
-    if (!ident.startsWith('@')) this.cheapLocals.clear();
-    // TODO - handle anonymous and cheap local labels...
+    if (!ident.startsWith('@')) {
+      this.cheapLocals.clear();
+      if (!this.chunk.name && !this.chunk.data.length) this.chunk.name = ident;
+    }
     this.assignSymbol(ident, false, expr, token);
     // const symbol = this.scope.resolve(str, true);
     // if (symbol.expr) throw new Error(`Already defined: ${label}`);

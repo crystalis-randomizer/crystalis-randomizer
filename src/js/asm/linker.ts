@@ -36,8 +36,8 @@ export class Linker {
     return this._link.link();
   }
 
-  report() {
-    this._link.report();
+  report(verbose = false) {
+    console.log(this._link.report(verbose));
   }
 
   exports(): Map<string, Export> {
@@ -176,6 +176,7 @@ class LinkChunk {
     for (const w of this.linker.watches) {
       if (w >= offset && w < offset + this.size) debugger;
     }
+    binaryInsert(this.linker.placed, x => x[0], [offset, this]);
     // Copy data, leaving out any holes
     const full = this.linker.data;
     const data = this._data ?? fail(`No data`);
@@ -357,6 +358,7 @@ class Link {
   unresolvedChunks = new Set<LinkChunk>();
 
   watches: number[] = []; // debugging aid: offsets to watch.
+  placed: Array<[number, LinkChunk]> = [];
 
   // TODO - deferred - store some sort of dependency graph?
 
@@ -462,6 +464,9 @@ class Link {
     // Set up all the initial placements.
     for (const chunk of this.chunks) {
       chunk.initialPlacement();
+    }
+    if (DEBUG) {
+      console.log(`Initial:\n${this.report(true)}`);
     }
     // Find all the exports.
     for (let i = 0; i < this.symbols.length; i++) {
@@ -622,8 +627,7 @@ class Link {
         return;
       }
     }
-    console.log(`After filling:`);
-    this.report();
+    console.log(`After filling:\n${this.report(true)}`);
     const name = chunk.name ? `${chunk.name} ` : '';
     console.log(this.segments.get(chunk.segments[0]));
     throw new Error(`Could not find space for ${size}-byte chunk ${name}in ${
@@ -713,9 +717,22 @@ class Link {
     return map;
   }
 
-  report() {
-    for (const [s,e] of this.free) {
-      console.log(`Free: ${s.toString(16)}..${e.toString(16)}`);
+  report(verbose = false): string {
+    // TODO - accept a segment to filter?
+    let out = '';
+    for (const [s, e] of this.free) {
+      out += `Free: ${s.toString(16)}..${e.toString(16)}: ${e - s} bytes\n`;
     }
+    if (verbose) {
+      for (const [s, c] of this.placed) {
+        const name = c.name ?? `Chunk ${c.index}`;
+        const end = c.offset! + c.size;
+        out += `${s.toString(16).padStart(5, '0')} .. ${
+            end.toString(16).padStart(5, '0')}: ${name} (${end - s} bytes)\n`;
+      }
+    }
+    return out;
   }
 }
+
+const DEBUG = false;

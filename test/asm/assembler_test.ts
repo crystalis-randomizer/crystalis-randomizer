@@ -144,6 +144,7 @@ describe('Assembler', function() {
       expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
+          name: 'foo',
           org: 0x9135,
           data: Uint8Array.of(0xa2, 0x35, 0xa0, 0x91),
         }],
@@ -732,6 +733,7 @@ describe('Assembler', function() {
       expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
+          name: 'Foo',
           data: Uint8Array.of(),
           asserts: [{op: '>', meta: {size: 1},
                      args: [off(0), {op: 'num', num: 8, meta: {size: 1}}]}],

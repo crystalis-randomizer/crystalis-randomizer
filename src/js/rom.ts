@@ -319,7 +319,7 @@ export class Rom {
     return new Assembler();
   }
 
-  writeData() {
+  writeData(data = this.prg) {
     // Write the options first
     // const writer = new Writer(this.chr);
     // writer.modules.push(...this.modules);
@@ -400,10 +400,13 @@ export class Rom {
     for (const m of modules) {
       linker.read(m);
     }
-    linker.link().apply(this.prg);
+    const out = linker.link();
+    out.apply(data);
+    if (data !== this.prg) return; // TODO - clean this up
     linker.report();
-
     const exports = linker.exports();
+
+    
     this.uniqueItemTableAddress = exports.get('KeyItemData')!.offset!;
     this.shopCount = 11;
     this.shopDataTablesAddress = exports.get('ShopData')?.offset || 0;

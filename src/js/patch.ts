@@ -120,37 +120,18 @@ export interface Reader {
 // prevent unused errors about watchArray - it's used for debugging.
 const {} = {watchArray} as any;
 
-export async function shuffle(rom: Uint8Array,
-                              seed: number,
-                              flags: FlagSet,
-                              reader: Reader,
-                              log?: {spoiler?: Spoiler},
-                              progress?: ProgressTracker): Promise<readonly [Uint8Array, number]> {
-  //rom = watchArray(rom, 0x85fa + 0x10);
-  if (EXPAND_PRG && rom.length < 0x80000) {
-    const newRom = new Uint8Array(rom.length + 0x40000);
-    newRom.subarray(0, 0x40010).set(rom.subarray(0, 0x40010));
-    newRom.subarray(0x80010).set(rom.subarray(0x40010));
-    newRom[4] <<= 1;
-    rom = newRom;
-  }
-
-  // First reencode the seed, mixing in the flags for security.
-  if (typeof seed !== 'number') throw new Error('Bad seed');
-  const newSeed = crc32(seed.toString(16).padStart(8, '0') + String(flags.filterOptional())) >>> 0;
-  const random = new Random(newSeed);
-  flags = flags.filterRandom(random);
-
-  const defines: {[name: string]: boolean} = {
+function defines(flags: FlagSet,
+                 pass: 'early' | 'late'): string {
+  const defines: Record<string, boolean> = {
     _ALLOW_TELEPORT_OUT_OF_BOSS: flags.hardcoreMode() &&
                                  flags.shuffleBossElements(),
     _ALLOW_TELEPORT_OUT_OF_TOWER: true,
-    _AUTO_EQUIP_BRACELET: flags.autoEquipBracelet(),
+    _AUTO_EQUIP_BRACELET: flags.autoEquipBracelet(pass),
     _BARRIER_REQUIRES_CALM_SEA: true, // flags.barrierRequiresCalmSea(),
     _BUFF_DEOS_PENDANT: flags.buffDeosPendant(),
     _BUFF_DYNA: flags.buffDyna(), // true,
     _CHECK_FLAG0: true,
-    _CTRL1_SHORTCUTS: flags.controllerShortcuts(),
+    _CTRL1_SHORTCUTS: flags.controllerShortcuts(pass),
     _CUSTOM_SHOOTING_WALLS: true,
     _DISABLE_SHOP_GLITCH: flags.disableShopGlitch(),
     _DISABLE_STATUE_GLITCH: flags.disableStatueGlitch(),
@@ -186,6 +167,30 @@ export async function shuffle(rom: Uint8Array,
     _UNIDENTIFIED_ITEMS: flags.unidentifiedItems(),
     _ZEBU_STUDENT_GIVES_ITEM: true, // flags.zebuStudentGivesItem(),
   };
+  return Object.keys(defines)
+      .filter(d => defines[d]).map(d => `.define ${d} 1\n`).join('');
+}
+
+export async function shuffle(rom: Uint8Array,
+                              seed: number,
+                              flags: FlagSet,
+                              reader: Reader,
+                              log?: {spoiler?: Spoiler},
+                              progress?: ProgressTracker): Promise<readonly [Uint8Array, number]> {
+  //rom = watchArray(rom, 0x85fa + 0x10);
+  if (EXPAND_PRG && rom.length < 0x80000) {
+    const newRom = new Uint8Array(rom.length + 0x40000);
+    newRom.subarray(0, 0x40010).set(rom.subarray(0, 0x40010));
+    newRom.subarray(0x80010).set(rom.subarray(0x40010));
+    newRom[4] <<= 1;
+    rom = newRom;
+  }
+
+  // First reencode the seed, mixing in the flags for security.
+  if (typeof seed !== 'number') throw new Error('Bad seed');
+  const newSeed = crc32(seed.toString(16).padStart(8, '0') + String(flags.filterOptional())) >>> 0;
+  const random = new Random(newSeed);
+  flags = flags.filterRandom(random);
 
   deterministicPreParse(rom.subarray(0x10)); // TODO - trainer...
 
@@ -306,8 +311,12 @@ export async function shuffle(rom: Uint8Array,
     ];
   }
 
-  shuffleMusic(parsed, flags, random);
-  shufflePalettes(parsed, flags, random);
+  if (flags.randomizeMusic('early')) {
+    shuffleMusic(parsed, flags, random);
+  }
+  if (flags.shuffleTilePalettes('early')) {
+    shufflePalettes(parsed, flags, random);
+  }
   updateTablesPreCommit(parsed, flags);
   random.shuffle(parsed.randomNumbers.values);
 
@@ -315,24 +324,31 @@ export async function shuffle(rom: Uint8Array,
   // async function assemble(path: string) {
   //   asm.assemble(await reader.read(path), path, rom);
   // }
-  async function tokenizer(path: string) {
-    return new Tokenizer(await reader.read(path), path,
-                         {lineContinuations: true});
+
+  // TODO - clean this up to not re-read the entire thing twice.
+  // Probably just want to move the optional passes into a separate
+  // file that runs afterwards all on its own.
+
+  async function asm(pass: 'early' | 'late') {
+    async function tokenizer(path: string) {
+      return new Tokenizer(await reader.read(path), path,
+                           {lineContinuations: true});
+    }
+
+    const flagFile = defines(flags, pass);
+    const asm = new Assembler(Cpu.P02);
+    const toks = new TokenStream();
+    toks.enter(TokenSource.concat(
+        new Tokenizer(flagFile, 'flags.s'),
+        await tokenizer('init.s'),
+        await tokenizer('preshuffle.s'),
+        await tokenizer('postparse.s'),
+        await tokenizer('postshuffle.s')));
+    const pre = new Preprocessor(toks, asm);
+    asm.tokens(pre);
+    return asm.module();
   }
-  const flagFile =
-      Object.keys(defines)
-          .filter(d => defines[d]).map(d => `.define ${d} 1\n`).join('');
-  const asm = new Assembler(Cpu.P02);
-  const toks = new TokenStream();
-  toks.enter(TokenSource.concat(
-      new Tokenizer(flagFile, 'flags.s'),
-      await tokenizer('init.s'),
-      await tokenizer('preshuffle.s'),
-      await tokenizer('postparse.s'),
-      await tokenizer('postshuffle.s')));
-  const pre = new Preprocessor(toks, asm);
-  asm.tokens(pre);
-  parsed.modules.push(asm.module());
+
 //     const asm = new Assembler(Cpu.P02);
 //     const toks = new TokenStream();
 //     toks.enter(new Tokenizer(code, file));
@@ -352,9 +368,27 @@ export async function shuffle(rom: Uint8Array,
   // const asm = new ShimAssembler(flagFile, 'flags.s');
 //console.log('Multiply16Bit:', asm.expand('Multiply16Bit').toString(16));
   parsed.messages.compress(); // pull this out to make writeData a pure function
-  await parsed.writeData();
-  const crc = stampVersionSeedAndHash(rom, seed, flags);
+  const prgCopy = rom.slice(16);
 
+  parsed.modules.push(await asm('early'));
+  parsed.writeData(prgCopy);
+  parsed.modules.pop();
+
+  parsed.modules.push(await asm('late'));
+  const crc = stampVersionSeedAndHash(rom, seed, flags, prgCopy);
+
+  // Do optional randomization now...
+  if (flags.randomizeMusic('late')) {
+    shuffleMusic(parsed, flags, random);
+  }
+  if (flags.noMusic('late')) {
+    noMusic(parsed);
+  }
+  if (flags.shuffleTilePalettes('late')) {
+    shufflePalettes(parsed, flags, random);
+  }
+
+  parsed.writeData();
   // TODO - optional flags can possibly go here, but MUST NOT use parsed.prg!
 
   if (EXPAND_PRG) {
@@ -494,8 +528,13 @@ function randomizeWalls(rom: Rom, flags: FlagSet, random: Random): void {
   }
 }
 
+function noMusic(rom: Rom): void {
+  for (const m of [...rom.locations, ...rom.bosses.musics]) {
+    m.bgm = 0;
+  }
+}
+
 function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
-  if (!flags.randomizeMusic()) return;
   interface HasMusic { bgm: number; }
   let neighbors: Location[] = [];
   const musics = new DefaultMap<unknown, HasMusic[]>(() => []);
@@ -612,12 +651,12 @@ const storyMode = (rom: Rom) => {
 };
 
 // Stamp the ROM
-export function stampVersionSeedAndHash(rom: Uint8Array, seed: number, flags: FlagSet): number {
+export function stampVersionSeedAndHash(rom: Uint8Array, seed: number, flags: FlagSet, early: Uint8Array): number {
   // Use up to 26 bytes starting at PRG $25ea8
   // Would be nice to store (1) commit, (2) flags, (3) seed, (4) hash
   // We can use base64 encoding to help some...
   // For now just stick in the commit and seed in simple hex
-  const crc = crc32(rom);
+  const crc = crc32(early);
   const crcString = crc.toString(16).padStart(8, '0').toUpperCase();
   const hash = version.STATUS === 'unstable' ?
       version.HASH.substring(0, 7).padStart(7, '0').toUpperCase() + '     ' :

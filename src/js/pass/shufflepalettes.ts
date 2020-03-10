@@ -21,8 +21,6 @@ class Shuffle {
   }
 
   shuffleBackgrounds() {
-    if (!this.flags.shuffleTilePalettes()) return;
-
     // function eq(a: Location, b: Location): boolean {
     //   return a.tilePalettes[0] === b.tilePalettes[0] &&
     //       a.tilePalettes[1] === b.tilePalettes[1] &&
@@ -110,8 +108,6 @@ class Shuffle {
 
   // TODO - this algorithm is much less satisfying.
   shuffleBackgrounds2() {
-    if (!this.flags.shuffleTilePalettes()) return;
-
     function eq(a: Location, b: Location): boolean {
       return a.tilePalettes[0] === b.tilePalettes[0] &&
           a.tilePalettes[1] === b.tilePalettes[1] &&

@@ -424,15 +424,20 @@ class Aesthetics extends FlagSection {
   readonly description = `
       These flags don't directly affect gameplay or shuffling, but they do
       affect the experience significantly enough that there are three modes
-      for each: "off", "optional", and "required".  The first two are
-      equivalent for seed generation purposes, so that you can play the same
-      seed with either setting.  Setting it to "required" will change the
-      seed.`;
+      for each: "off", "optional" (no exclamation point), and "required"
+      (exclamation point).  The first two are equivalent for seed generation
+      purposes, so that you can play the same seed with either setting.
+      Setting it to "!" will change the seed.`;
 
   static readonly RandomizeMusic = Aesthetics.flag('Am', {
     name: 'Randomize background music',
     modes: '!',
     optional: NO_BANG,
+  });
+
+  static readonly NoMusic = Aesthetics.flag('As', {
+    name: 'No background music',
+    optional: OPTIONAL,
   });
 
   static readonly RandomizeMapColors = Aesthetics.flag('Ac', {
@@ -844,9 +849,6 @@ export class FlagSet {
     return this.check(EasyMode.NoShuffleMimics, false);
   }
 
-  autoEquipBracelet(): boolean {
-    return this.check(Quality.NoAutoEquip, false);
-  }
   buffDeosPendant(): boolean {
     return this.check(Vanilla.BonusItems, false);
   }
@@ -862,19 +864,10 @@ export class FlagSet {
   rabbitBootsChargeWhileWalking(): boolean {
     return this.check(Vanilla.BonusItems, false);
   }
-  controllerShortcuts(): boolean {
-    return this.check(Quality.NoControllerShortcuts, false);
-  }
-  randomizeMusic(): boolean {
-    return this.check(Aesthetics.RandomizeMusic);
-  }
+
   shuffleSpritePalettes(): boolean {
     return this.check(World.RandomizeSpriteColors);
   }
-  shuffleTilePalettes(): boolean {
-    return this.check(Aesthetics.RandomizeMapColors);
-  }
-
   shuffleMonsters(): boolean {
     return true; // this.check('Mr');
   }
@@ -1035,7 +1028,8 @@ export class FlagSet {
     return this.check(Glitches.StatueGauntletSkip); // TODO - implement
   }
   assumeWildWarp() {
-    return this.check(Vanilla.WildWarp) || this.check(World.RandomizeWildWarp);
+    return this.check(Vanilla.WildWarp, true) ||
+        this.check(World.RandomizeWildWarp);
   }
   assumeRageSkip() {
     return false;
@@ -1050,7 +1044,7 @@ export class FlagSet {
     return !this.nerfWildWarp();
   }
   randomizeWildWarp() {
-    return this.check(World.RandomizeWildWarp, true, '!');
+    return this.check(World.RandomizeWildWarp, true);
   }
 
   blackoutMode() {
@@ -1069,5 +1063,23 @@ export class FlagSet {
   expScalingFactor() {
     return this.check(HardMode.ExperienceScalesSlower) ? 0.25 :
         this.check(EasyMode.ExperienceScalesFaster) ? 2.5 : 1;
+  }
+
+  // OPTIONAL FLAGS
+  autoEquipBracelet(pass: 'early' | 'late'): boolean {
+    return pass === 'early' || this.check(Quality.NoAutoEquip, false);
+  }
+  controllerShortcuts(pass: 'early' | 'late'): boolean {
+    return pass === 'early' || this.check(Quality.NoControllerShortcuts, false);
+  }
+  randomizeMusic(pass: 'early' | 'late'): boolean {
+    return this.check(Aesthetics.RandomizeMusic, pass === 'early' ? '!' : true);
+  }
+  shuffleTilePalettes(pass: 'early' | 'late'): boolean {
+    return this.check(Aesthetics.RandomizeMapColors,
+                      pass === 'early' ? '!' : true);
+  }
+  noMusic(pass: 'early' | 'late'): boolean {
+    return pass === 'late' && this.check(Aesthetics.NoMusic);
   }
 }

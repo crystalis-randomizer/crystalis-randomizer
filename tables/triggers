@@ -48,7 +48,7 @@ af - trigger to be able to repair broken statue
 b0 - boat on portoa fisherman island
 b1 - start fighting statues
 b2 - learn paralysis in summit cave
-b3 - despawn swan guards
+b3 - despawn swan guards (DELETED in deterministicPreParse)
 b4 - learn refresh outside cave
 b5 - learn teleport (UNUSED)
 b6 - sabera trap

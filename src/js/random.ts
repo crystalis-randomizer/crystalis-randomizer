@@ -81,7 +81,7 @@ export class Random {
     }
   }
 
-  shuffle<T extends unknown[] | Uint8Array>(array: T): T {
+  shuffle<T extends MutableArrayLike<unknown>>(array: T): T {
     for (let i = array.length; i;) {
       const j = this.nextInt(i--);
       [array[i], array[j]] = [array[j], array[i]];
@@ -158,6 +158,11 @@ function hasSize<T>(iter: Iterable<T>): iter is HasSize<T> {
 }
 
 const TWOPI = 2 * Math.PI;
+
+interface MutableArrayLike<T> {
+  length: number;
+  [index: number]: T;
+}
 
 // // Provide a static singleton instance.
 // let random = (() => {

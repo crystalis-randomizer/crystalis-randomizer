@@ -1,0 +1,44 @@
+#!/usr/bin/perl
+
+# Basic idea: pipe 'run tsc watch' to this - it will keep a file updated
+# with the result of the watch, and flycheck will simply read that file.
+
+use strict;
+use warnings;
+
+use FindBin;
+use File::Basename qw/dirname/;
+
+open TSC, '-|', 'npx', 'ttsc', '--watch';
+
+my $root = dirname($FindBin::Bin);
+my $out = "$root/.tsc.out";
+my $run = "$root/.tsc.run";
+open FILE, '>', $out;
+my $fh = select(FILE);
+$| = 1;
+select($fh);
+
+# Start by documenting the call, just so that we can get some diagnostics.
+while (<TSC>) {
+  s/\ec//g;
+  if (/^\d+:\d+:\d+.*Starting incremental compilation/) {
+    #print "touching $run\n";
+    system 'touch', $run;
+    close FILE;
+    open FILE, '>', $out;
+    $fh = select(FILE);
+    $| = 1;
+    select($fh);
+  }
+  if (/^\d+:\d+:\d+.*Watching for file changes/) {
+    #print "deleting $run\n";
+    unlink $run;
+  }
+  #print $_;
+  print FILE $_;
+  flush FILE;
+}
+
+close FILE;
+close TSC;

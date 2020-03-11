@@ -1,7 +1,8 @@
-import {Entity} from './entity.js';
-import {tuple} from './util.js';
-import {Writer} from './writer.js';
+import {Module} from '../asm/module.js';
 import {Rom} from '../rom.js';
+import {Entity} from './entity.js';
+import { tuple, hex} from './util.js';
+import { Assembler } from '../asm/assembler.js';
 
 export class Screen extends Entity {
 
@@ -61,27 +62,64 @@ export class Screen extends Entity {
     }
   }
 
-  write(writer: Writer): void {
-    let base = this.id << 8;
-    if (this.id > 0xff) {
-      if (!this.rom.compressedMapData) {
-        base += 0x4000;
-      } else {
-        base = (this.id & 0xff00) << 5 | (this.id & 0xff) << 8;
-      }
+  assemble(a: Assembler) {
+    if (this.id < 0x100) {
+      a.segment((this.id >> 5).toString(16).padStart(2, '0'));
+      a.org(0x8000 | (this.id & 0x3f) << 8);
+      a.byte(...this.tiles);
+      return;
     }
-    // this.id << 8 : (this.id > 0xff ? 0x40 + this.id : this.id) << 8;
-    if ((base & 0xfe000) !== 0x14000) {
-      writer.rom.subarray(base, base + 0xf0).set(this.tiles);
-    } else {
-      // we reuse the last 2 rows of extended screens (covered by HUD) for
-      // global flags in the rom.  -- only for page 10...!?
-
-      // TODO - only do this for page 10
-
-      writer.rom.subarray(base, base + 0xc0).set(this.tiles.slice(0, 0xc0));
-    }
+    // Extended screens - figure out which variant we're on
+    // 0a => 14000
+    const segment = !this.rom.compressedMapData ? '0a' : hex(this.id >> 8);
+    a.segment(segment);
+    a.org((this.id & 0xff) << 8 | 0x8000);
+    // NOTE: reuse last 2 rows of '0a' screens for global metadata.
+    a.byte(...(segment === '0a' ? this.tiles.slice(0, 0xc0) : this.tiles));
   }
+
+//   write(writer: Writer): void {
+//     let base = this.id << 8;
+//     if (this.id > 0xff) {
+//       if (!this.rom.compressedMapData) {
+//         base += 0x4000;
+//       } else {
+//         base = (this.id & 0xff00) << 5 | (this.id & 0xff) << 8;
+//       }
+//     }
+//     // this.id << 8 : (this.id > 0xff ? 0x40 + this.id : this.id) << 8;
+//     if ((base & 0xfe000) !== 0x14000) {
+//       writer.rom.subarray(base, base + 0xf0).set(this.tiles);
+// >>>>>>> add NO_DEPLOY file
+//     } else {
+//       a.segment('0a'); // 14000
+//       a.org(0x8000 | (this.id & 0x3) << 8)
+//       // we reuse the last 2 rows of extended screens (covered by HUD) for
+// <<<<<<< HEAD
+
+
+
+//   setTiles(start: number, tiles: Array<Array<number|null>>) {
+//     for (const row of tiles) {
+//       for (let i = 0; i < row.length; i++) {
+//         const tile = row[i];
+//         if (tile != null) this.tiles[start + i] = tile;
+//       }
+//       start += 16;
+// ||||||| constructed merge base
+//       // global flags in the rom.
+//       for (let i = 0; i < 0xc0; i++) {
+//         writer.rom[this.base + i] = this.tiles[i];
+//       }
+// =======
+//       // global flags in the rom.  -- only for page 10...!?
+
+//       // TODO - only do this for page 10
+
+//       writer.rom.subarray(base, base + 0xc0).set(this.tiles.slice(0, 0xc0));
+// >>>>>>> add NO_DEPLOY file
+//     }
+//   }
 
   // TODO - accessors for which palettes, tilesets, and patterns are used/allowed
 }
@@ -126,5 +164,26 @@ export class Screens extends Array<Screen> {
     const arr = id < 0 ? this.unallocated : this;
     const i = id < 0 ? ~id : id;
     delete arr[i];
+  }
+
+  write(): Module[] {
+    const a = this.rom.assembler();
+    if (this.rom.compressedMapData) {
+      for (let s = 0; s < 0x100; s++) {
+        const scr = this.screens[s];
+        if (scr.used) scr.assemble(a);
+      }
+      for (let p = 1; p < 0x40; p++) {
+        for (let s = 0; s < 0x20; s++) {
+          const scr = this.screens[p << 8 | s];
+          if (scr && scr.used) scr.assemble(a);
+        }
+      }
+    } else {
+      for (const screen of this.screens) {
+        screen.assemble(a);
+      }
+    }
+    return [a.module()];
   }
 }

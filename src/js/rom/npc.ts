@@ -1,46 +1,161 @@
-import {Entity} from './entity.js';
+import {Module} from '../asm/module.js';
+import {Entity, EntityArray} from './entity.js';
+import {Location} from './location.js';
 import {MessageId} from './messageid.js';
-import {DIALOG_FLAGS, Data, SPAWN_CONDITION_FLAGS, addr, hex,
-        readBigEndian, readLittleEndian, tuple,
-        writeLittleEndian} from './util.js';
-import {Writer} from './writer.js';
+import {DIALOG_FLAGS, SPAWN_CONDITION_FLAGS,
+        Address, Data, Segment,
+        hex, readBigEndian, tuple, upperCamelToSpaces} from './util.js';
 import {Rom} from '../rom.js';
+
+const {$04, $05, $0e} = Segment;
 
 type FlagList = number[];
 
+export class Npcs extends EntityArray<Npc> {
+  // generic 00..0a
+  GoaSoldier = new Npc(this, 0x0b);
+  // generic 0c
+  LeafElder = new Npc(this, 0x0d);
+  // generic leaf 0e..10
+  LeafElderDaughter = new Npc(this, 0x11);
+  // generic leaf 12
+  LeafRabbit = new Npc(this, 0x13);
+  WindmillGuard = new Npc(this, 0x14);
+  SleepingWindmillGuard = new Npc(this, 0x15);
+  Akahana = new Npc(this, 0x16);
+  // generic brynmaer 17..1c
+  OakElder = new Npc(this, 0x1d);
+  OakMother = new Npc(this, 0x1e);
+  OakChild = new Npc(this, 0x1f);
+  // generic oak 20..22
+  Aryllis = new Npc(this, 0x23);
+  // generic amazones 24
+  AmazonesGuard = new Npc(this, 0x25);
+  AryllisRightAttendant = new Npc(this, 0x26);
+  AryllisLeftAttendant = new Npc(this, 0x27);
+  Nadare = new Npc(this, 0x28);
+  // generic nadare 29..2c
+  SoldierGuard = new Npc(this, 0x2d); // swan, mt sabre
+  // shopkeeper prisoners 2e..30
+  // unused 31
+  // generic portoa palace 32
+  PortoaThroneRoomBackDoorGuard = new Npc(this, 0x33);
+  PortoaPalaceFrontGuard = new Npc(this, 0x34);
+  // generic portoa palace 35..37
+  PortoaQueen = new Npc(this, 0x38);
+  FortuneTeller = new Npc(this, 0x39);
+  WaterfallCaveAdventurers = new Npc(this, 0x3a);
+  // unused 3b..3c
+  JoelElder = new Npc(this, 0x3d);
+  // generic joel 3e..43
+  Clark = new Npc(this, 0x44);
+  // generic zombie town 45..47
+  // generic swan 49..4d
+  ShyronGuard = new Npc(this, 0x4e);
+  // generic shyron 4f..53
+  Brokahana = new Npc(this, 0x54);
+  // generic goa 55..58
+  SaharaBunny = new Npc(this, 0x59);
+  Deo = new Npc(this, 0x5a);
+  SaharaElder = new Npc(this, 0x5b);
+  SaharaElderDaughter = new Npc(this, 0x5c);
+  // generic 5d
+  Zebu = new Npc(this, 0x5e);
+  Tornel = new Npc(this, 0x5f);
+  Stom = new Npc(this, 0x60);
+  MesiaRecording = new Npc(this, 0x61);
+  Asina = new Npc(this, 0x62);
+  HurtDolphin = new Npc(this, 0x63);
+  Fisherman = new Npc(this, 0x64);
+  // generic/unsed 65..67
+  KensuInCabin = new Npc(this, 0x68);
+  Dolphin = new Npc(this, 0x69);
+  // unused 6a
+  SleepingKensu = new Npc(this, 0x6b);
+  KensuDisguisedAsDancer = new Npc(this, 0x6c);
+  KensuDisguisedAsSoldier = new Npc(this, 0x6d);
+  AztecaInShyron = new Npc(this, 0x6e);
+  // generic 6f
+  DeadAkahana = new Npc(this, 0x70);
+  DeadStomsGirlfriend = new Npc(this, 0x71);
+  DeadStom = new Npc(this, 0x72);
+  // unused 73
+  KensuInSwan = new Npc(this, 0x74); // note: unused in vanilla (7e)
+  SlimedKensu = new Npc(this, 0x75);
+  // generic 76..7a
+  FishermanDaughter = new Npc(this, 0x7b);
+  // generic 7c..7d
+  Kensu = new Npc(this, 0x7e);
+  // generic/unused 7f..82
+  AkahanaInBrynmaer = new Npc(this, 0x82); // note: unused in vanilla (16)
+  AztecaInPyramid = new Npc(this, 0x83);
+  SaberaDisguisedAsMesia = new Npc(this, 0x84);
+  StonedWaterfallCaveAdventurers = new Npc(this, 0x85);
+  // unused 86..87
+  StonedAkahana = new Npc(this, 0x88);
+  // unused 89..8d
+  Mesia = new Npc(this, 0x8e);
+
+  // unusable 8f..bf (we've co-opted that PRG space for now)
+
+  Vampire1 = new Npc(this, 0xc0);
+  Insect = new Npc(this, 0xc1);
+  Kelbesque1 = new Npc(this, 0xc2);
+  Rage = new Npc(this, 0xc3);
+  // unused - Mado1 = new Npc(this, 0xc4);
+  Kelbesque2 = new Npc(this, 0xc5);
+  Sabera2 = new Npc(this, 0xc6);
+  Mado2 = new Npc(this, 0xc7);
+  Karmine = new Npc(this, 0xc8);
+  StatueOfMoon = new Npc(this, 0xc9);
+  StatueOfSun = new Npc(this, 0xca);
+  Draygon = new Npc(this, 0xcb);
+  Vampire2 = new Npc(this, 0xcc);
+
+  constructor(readonly rom: Rom) {
+    super(0xcd);
+    for (const key in this) {
+      const npc = this[key];
+      if (!this.hasOwnProperty(key) || !(npc instanceof Npc)) continue;
+      this[npc.id] = npc;
+      npc.name = upperCamelToSpaces(key);
+    }
+    for (let i = 0; i < 0xcd; i++) {
+      if (!this[i]) {
+        this[i] = new Npc(this, i);
+      }
+    }
+  }
+}
+
 export class Npc extends Entity {
 
-  used: boolean;
+  private _used: boolean;
   name?: string;
   itemNames?: [string, string];
 
-  dataBase: number;
   data: [number, number, number, number]; // uint8
-  spawnPointer: number;
-  spawnBase: number;
   // Flags to check per location: positive means "must be set"
   spawnConditions = new Map<number, FlagList>(); // key uint8
 
-  dialogPointer: number;
-  dialogBase: number;
   globalDialogs: GlobalDialog[];
   localDialogs = new Map<number, LocalDialog[]>();
 
-  constructor(rom: Rom, id: number) {
-    super(rom, id);
-    this.used = !UNUSED_NPCS.has(id) /*&& this.base <= 0x1c781*/ && (id < 0x8f || id >= 0xc0);
-    const hasDialog = id <= 0xc3;
+  constructor(readonly npcs: Npcs, id: number) {
+    super(npcs.rom, id);
+    const rom = npcs.rom;
+    if (id > 0xcc) throw new Error(`Unavailable: ${id}`);
+    // TODO - check (this.base <= 0x1c781) for unused?
+    this._used = !UNUSED_NPCS.has(id) && (id < 0x8f || id >= 0xc0);
+    let dialogBase = id < 0xc4 ? this.dialogPointer.readAddress(rom.prg) : null;
+    if (dialogBase && dialogBase.org === 0x8b39) dialogBase = null;
 
-    this.dataBase = 0x80f0 | ((id & 0xfc) << 6) | ((id & 3) << 2);
-    this.data = tuple(rom.prg, this.dataBase, 4);
+    this.data = tuple(rom.prg, this.dataBase.offset, 4);
 
-    this.spawnPointer = 0x1c5e0 + (id << 1);
-    // console.log(`NPC Spawn $${this.id.toString(16)}: ${rom.prg[this.pointer].toString(16)} ${
-    //              rom.prg[this.pointer + 1].toString(16)}`);
-    this.spawnBase = readLittleEndian(rom.prg, this.spawnPointer) + 0x14000;
+    const spawnBase = this.spawnPointer.readAddress(rom.prg);
 
     // Populate spawn conditions
-    let i = this.spawnBase;
+    let i = spawnBase.offset;
     let loc;
     while (this.used && (loc = rom.prg[i++]) !== 0xff) {
       const flags = SPAWN_CONDITION_FLAGS.read(rom.prg, i);
@@ -49,11 +164,9 @@ export class Npc extends Entity {
     }
 
     // Populate the dialog table
-    this.dialogPointer = 0x1c95d + (id << 1);
-    this.dialogBase = hasDialog ? addr(rom.prg, this.dialogPointer, 0x14000) : 0;
     this.globalDialogs = [];
-    if (hasDialog) {
-      let a = this.dialogBase;
+    if (dialogBase) {
+      let a = dialogBase.offset;
       while (true) {
         const [dialog, last] = GlobalDialog.parse(rom.prg, a);
         a += 4;
@@ -83,19 +196,44 @@ export class Npc extends Entity {
       }
     }
 
-    for (const i in NAMES) {
-      if (!NAMES.hasOwnProperty(i)) continue;
-      const name = (NAMES as {} as {[key: string]: [number, string, string?, string?]})[i];
-      if (name[0] === id) {
-        this.name = name[1];
-        if (name.length > 2) {
-          this.itemNames = name.slice(2, 4) as [string, string];
-        }
-      }
-    }
+    // for (const i in NAMES) {
+    //   if (!NAMES.hasOwnProperty(i)) continue;
+    //   const name = (NAMES as {} as {[key: string]: [number, string, string?, string?]})[i];
+    //   if (name[0] === id) {
+    //     this.name = name[1];
+    //     if (name.length > 2) {
+    //       this.itemNames = name.slice(2, 4) as [string, string];
+    //     }
+    //   }
+    // }
 
     // console.log(`NPC Spawn $${this.id.toString(16)} from ${this.base.toString(16)}: bytes: $${
     //              this.bytes().map(x=>x.toString(16).padStart(2,0)).join(' ')}`);
+  }
+
+  get dataBase(): Address {
+    const seg = this.id & 0x80 ? $05 : $04;
+    const org = 0x80f0 | ((this.id & 0xfc) << 6) | ((this.id & 3) << 2);
+    return Address.of(seg, org);
+  }
+
+  get spawnPointer(): Address {
+    return Address.of($0e, 0x85e0 + (this.id << 1));
+  }
+
+  get dialogPointer(): Address {
+    return Address.of($0e, 0x895d + (this.id << 1));
+  }
+
+  get used() { return this._used; }
+  set used(used: boolean) {
+    // quick check: we can't use some indexes because data tables co-opted.
+    // 1ca6f..1ca79, 1ca7b..1cae3 (c0..c2 are used but have no dialog...)
+    // 1c6f2..1c6fc, 1c6fe..1c760
+    if (used && (this.id > 0x88 && this.id < 0xc0 && this.id !== 0x8e)) {
+      throw new Error(`invalid: ${this.id}`);
+    }
+    this._used = used;
   }
 
   spawnConditionsBytes(): number[] {
@@ -107,8 +245,26 @@ export class Npc extends Entity {
     return bytes;
   }
 
+  dialog(location?: Location): LocalDialog[] {
+    const id = location ? location.id : -1;
+    const dialogs = this.localDialogs.get(id);
+    if (dialogs) return dialogs;
+    throw new Error(`No local dialog for NPC ${hex(this.id)} at ${hex(id)}`);
+  }
+
+  spawns(location: Location): number[] {
+    const id = location.id;
+    const conditions = this.spawnConditions.get(location.id);
+    if (conditions) return conditions;
+    throw new Error(`No spawn condition for NPC ${hex(this.id)} at ${hex(id)}`);
+  }
+
   hasDialog(): boolean {
-    return Boolean(this.globalDialogs.length || this.localDialogs.size);
+    const result = Boolean(this.globalDialogs.length || this.localDialogs.size);
+    if (this.id > 0x8e && this.id !== 0xc3 && result) {
+      throw new Error(`invalid: ${this.id}`);
+    }
+    return result;
   }
 
   * allDialogs(): Iterable<LocalDialog | GlobalDialog> {
@@ -181,20 +337,37 @@ export class Npc extends Entity {
     return dialogs[index];
   }
 
-  async write(writer: Writer): Promise<void> {
-    if (!this.used) return;
-    const promises = [];
-    writer.rom.subarray(this.dataBase, this.dataBase + 4).set(this.data);
-    promises.push(writer.write(this.spawnConditionsBytes(), 0x1c000, 0x1dfff,
-                               `SpawnCondition ${hex(this.id)}`).then(
-        address => writeLittleEndian(writer.rom, this.spawnPointer, address - 0x14000)));
+  isParalyzable(): boolean {
+    for (let i = 0x35058; i < 0x3506c; i++) {
+      if (this.rom.prg[i] === this.id) return false;
+    }
+    return true;
+  }
+
+  write(): Module[] {
+    if (!this.used) return [];
+    const id = hex(this.id);
+    const a = this.rom.assembler();
+
+    this.dataBase.loc(a);
+    a.byte(...this.data);
+
+    a.segment('0e', 'fe', 'ff');
+    a.reloc(`SpawnCondition_${id}`);
+    const spawn = a.pc();
+    a.byte(...this.spawnConditionsBytes());
+    this.spawnPointer.loc(a, `SpawnCondition_${id}_Pointer`);
+    a.word(spawn);
 
     if (this.hasDialog()) {
-      promises.push(writer.write(this.dialogBytes(), 0x1c000, 0x1dfff,
-                                 `Dialog ${hex(this.id)}`).then(
-          address => writeLittleEndian(writer.rom, this.dialogPointer, address - 0x14000)));
+      a.segment('0e', 'fe', 'ff');
+      a.reloc(`Dialog_${id}`);
+      const dialog = a.pc();
+      a.byte(...this.dialogBytes());
+      this.dialogPointer.loc(a, `Dialog_${id}_Pointer`);
+      a.word(dialog);
     }
-    await Promise.all(promises);
+    return [a.module()];
   }
 }
 
@@ -275,44 +448,11 @@ export class LocalDialog {
 }
 
 const UNUSED_NPCS = new Set([
-  0x31, 0x3c, 0x6a, 0x73, 0x82, 0x86, 0x87, 0x89, 0x8a, 0x8b, 0x8c, 0x8d,
+  0x31, 0x3b, 0x3c, 0x66, 0x67, 0x6a, 0x73, 0x74,
+  0x82, 0x86, 0x87, 0x89, 0x8a, 0x8b, 0x8c, 0x8d,
+  0xc4,
   // also everything from 8f..c0, but that's implicit.
 ]);
-
-export const NAMES = {
-  leafElder: [0x0d, 'Leaf elder'],
-  leafRabbit: [0x13, 'Leaf rabbit'],
-  windmillGuard: [0x14, 'Windmill guard', 'in cave', 'in house'],
-  windmillGuardSleeping: [0x15, 'Sleeping windmill guard'],
-  akahanaShyron: [0x16, 'Akahana in Shyron'], // also in cave
-  oakElder: [0x1d, 'Oak elder'],
-  oakMother: [0x1e, 'Oak mother'],
-  dwarfChild: [0x1f, 'Dwarf child'],
-  aryllis: [0x23, 'Aryllis'],
-  portoaQueen: [0x38, 'Portoa queen'],
-  fortuneTeller: [0x39, 'Fortune teller'],
-  clark: [0x44, 'Clark'],
-  brokahana: [0x54, 'Akahana\'s friend'],
-  deo: [0x5a, 'Deo'],
-  zebu: [0x5e, 'Zebu', 'in cave', 'in Shyron'],
-  tornel: [0x5f, 'Tornel'],
-  stom: [0x60, 'Stom'],
-  mesiaShrine: [0x61, 'Mesia in Shrine'],
-  asina: [0x62, 'Asina', 'in back room', ''],
-  hurtDolphin: [0x63, 'Hurt dolphin'],
-  fisherman: [0x64, 'Fisherman'],
-  kensuCabin: [0x68, 'Kensu in cabin'],
-  kensuSleeping: [0x6b, 'Sleeping kensu'],
-  kensuSwan: [0x74, 'Kensu in Swan'],
-  kensuSlime: [0x75, 'Slimed Kensu'],
-  kensuLighthouse: [0x7e, 'Kensu in lighthouse'],
-  akahanaBrynmaer: [0x82, 'Akahana in Brynmaer'], // Note: originally $16
-  azteca: [0x83, 'Azteca'],
-  fakeMesia: [0x84, 'Fake Mesia'],
-  akahanaStoned: [0x88, 'Stoned Akahana'],
-  mesia: [0x8e, 'Mesia'],
-  rage: [0xc3, 'Rage'],
-};
 
 export class PortoaQueen extends Npc {
   // TODO - extend NamedNpc? actually add it to the class.

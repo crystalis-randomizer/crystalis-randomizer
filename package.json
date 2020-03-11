@@ -3,10 +3,13 @@
   "version": "0.0.0",
   "main": "dist/js/patch.js",
   "scripts": {
-    "watch": "node_modules/typescript/bin/tsc --watch",
-    "tsc": "node_modules/typescript/bin/tsc",
-    "build": "npm run tsc && gulp",
-    "test": "npm run build && test/test_cli.sh",
+    "watch": "npx ttsc --watch",
+    "flycheck": "elisp/flycheck-tsc-watch",
+    "tsc": "npx ttsc",
+    "build": "npx ttsc && gulp",
+    "unit": "npm run mocha test/**/*.ts test/*.ts",
+    "mocha": "TS_NODE_PROJECT=./tsconfig.test.json npx mocha -r ./test/ts-node",
+    "test": "npm run unit && npm run build && test/test_cli.sh",
     "clean": "rm -rf dist src/js/**/flycheck_*",
     "checkout": "scripts/update.sh out",
     "checkin": "scripts/update.sh in"
@@ -25,16 +28,23 @@
   },
   "homepage": "https://github.com/shicks/crystalis-randomizer#readme",
   "dependencies": {
+    "@types/chai": "^4.2.9",
+    "@types/mocha": "^7.0.1",
     "@types/node": "^12.7.10",
     "esm": "^3.2.25",
-    "lorem-ipsum": "^2.0.3"
+    "lorem-ipsum": "^2.0.3",
+    "module-alias": "^2.2.2",
+    "ts-node": "^8.6.2"
   },
   "devDependencies": {
+    "@zoltu/typescript-transformer-append-js-extension": "^1.0.1",
     "chai": "^4.2.0",
     "google-closure-compiler": "^20190121.0.0",
     "gulp": "^4.0.2",
     "mocha": "^5.2.0",
+    "source-map-support": "^0.5.16",
     "tslint": "^5.17.0",
+    "ttypescript": "^1.5.10",
     "typescript": "^3.7.2",
     "typescript-language-server": "^0.3.8",
     "viz.js": "^2.1.2"

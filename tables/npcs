@@ -141,7 +141,7 @@
 8c UNUSED
 8d UNUSED
 8e mesia
-8f
+8f ----------- unusable below here ----------
 90
 91
 92
@@ -189,7 +189,7 @@ bb
 bc
 bd
 be
-bf
+bf----------- unusable above here ----------
 c0 vampire 1
 c1 insect
 c2 kelbesque 1

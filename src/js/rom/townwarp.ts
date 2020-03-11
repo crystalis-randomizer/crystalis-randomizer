@@ -1,6 +1,6 @@
+import {Module} from '../asm/module.js';
 import {Rom} from '../rom.js';
-import {tuple} from './util.js';
-import {Writer} from './writer.js';
+import {Address, Segment, tuple} from './util.js';
 
 // List of town warp locations.
 export class TownWarp {
@@ -11,15 +11,24 @@ export class TownWarp {
   thunderSwordWarp: readonly [number, number];
 
   constructor(readonly rom: Rom) {
-    this.locations = tuple(rom.prg, ADDRESS, COUNT);
+    this.locations = tuple(rom.prg, ADDRESS.offset, COUNT);
     this.thunderSwordWarp = [rom.prg[0x3d5ca], rom.prg[0x3d5ce]];
   }
 
-  write(w: Writer): void {
-    w.rom.subarray(ADDRESS, ADDRESS + COUNT).set(this.locations);
-    [w.rom[0x3d5ca], w.rom[0x3d5ce]] = this.thunderSwordWarp;
+  write(): Module[] {
+    const a = this.rom.assembler();
+    ADDRESS.loc(a);
+    a.label('TownWarpTable');
+    a.byte(...this.locations);
+    a.org(0xdc8c);
+    a.instruction('lda', 'TownWarpTable,y');
+    a.org(0xd5c9);
+    a.instruction('lda', '#' + this.thunderSwordWarp[0]);
+    a.org(0xd5cd);
+    a.instruction('lda', '#' + this.thunderSwordWarp[1]);
+    return [a.module()];
   }
 }
 
-const ADDRESS = 0x3dc58;
+const ADDRESS = Address.of(Segment.$fe, 0xdc58);
 const COUNT = 12;

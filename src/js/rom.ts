@@ -1,6 +1,11 @@
+// import {Assembler} from './asm/assembler.js';
+import {Assembler} from './asm/assembler.js';
+import {Linker} from './asm/linker.js';
+import {Module} from './asm/module.js';
 import {AdHocSpawn} from './rom/adhocspawn.js';
 import {BossKill} from './rom/bosskill.js';
 import {Bosses} from './rom/bosses.js';
+import {CoinDrops} from './rom/coindrops.js';
 import {Flags} from './rom/flags.js';
 import {Hitbox} from './rom/hitbox.js';
 import {Items} from './rom/item.js';
@@ -11,14 +16,17 @@ import {Metascreens} from './rom/metascreens.js';
 import {Metasprite} from './rom/metasprite.js';
 import {Metatileset, Metatilesets} from './rom/metatileset.js';
 import {Monster} from './rom/monster.js';
-import {Npc} from './rom/npc.js';
+import {Npcs} from './rom/npc.js';
 import {ObjectData} from './rom/objectdata.js';
 import {Objects} from './rom/objects.js';
 import {RomOption} from './rom/option.js';
 import {Palette} from './rom/palette.js';
 import {Pattern} from './rom/pattern.js';
+import {RandomNumbers} from './rom/randomnumbers.js';
+import {Scaling} from './rom/scaling.js';
 import {Screen, Screens} from './rom/screen.js';
-import {Shop} from './rom/shop.js';
+import {Shops} from './rom/shop.js';
+import {Slots} from './rom/slots.js';
 import {Spoiler} from './rom/spoiler.js';
 import {Telepathy} from './rom/telepathy.js';
 import {TileAnimation} from './rom/tileanimation.js';
@@ -26,10 +34,11 @@ import {TileEffects} from './rom/tileeffects.js';
 import {Tilesets} from './rom/tileset.js';
 import {TownWarp} from './rom/townwarp.js';
 import {Trigger} from './rom/trigger.js';
-import {hex, seq} from './rom/util.js';
+import {Segment, hex, seq, free} from './rom/util.js';
 import {WildWarp} from './rom/wildwarp.js';
-import {Writer} from './rom/writer.js';
 import {UnionFind} from './unionfind.js';
+
+const {$0e, $0f, $10} = Segment;
 
 // A known location for data about structural changes we've made to the rom.
 // The trick is to find a suitable region of ROM that's both unused *and*
@@ -61,6 +70,10 @@ export class Rom {
   readonly prg: Uint8Array;
   readonly chr: Uint8Array;
 
+  // TODO - would be nice to eliminate the duplication by moving
+  // the ctors here, but there's lots of prereqs and dependency
+  // ordering, and we need to make the ADJUSTMENTS, etc.
+  readonly areas: Areas;
   readonly screens: Screens;
   readonly tilesets: Tilesets;
   readonly tileEffects: TileEffects[];
@@ -77,16 +90,22 @@ export class Rom {
   readonly metatilesets: Metatilesets;
   readonly itemGets: ItemGets;
   readonly items: Items;
-  readonly shops: Shop[];
-  readonly npcs: Npc[];
+  readonly shops: Shops;
+  readonly slots: Slots;
+  readonly npcs: Npcs;
   readonly bossKills: BossKill[];
   readonly bosses: Bosses;
   readonly wildWarp: WildWarp;
   readonly townWarp: TownWarp;
   readonly flags: Flags;
+  readonly coinDrops: CoinDrops;
+  readonly scaling: Scaling;
+  readonly randomNumbers: RandomNumbers;
 
   readonly telepathy: Telepathy;
   readonly messages: Messages;
+
+  readonly modules: Module[] = [];
 
   spoiler?: Spoiler;
 
@@ -170,13 +189,17 @@ export class Rom {
     this.telepathy = new Telepathy(this);
     this.itemGets = new ItemGets(this);
     this.items = new Items(this);
-    this.shops = seq(44, i => new Shop(this, i)); // NOTE: depends on locations and objects
-    this.npcs = seq(0xcd, i => new Npc(this, i));
+    this.shops = new Shops(this); // NOTE: depends on locations and objects
+    this.slots = new Slots(this);
+    this.npcs = new Npcs(this);
     this.bossKills = seq(0xe, i => new BossKill(this, i));
-    this.bosses = new Bosses(this);
     this.wildWarp = new WildWarp(this);
     this.townWarp = new TownWarp(this);
+    this.coinDrops = new CoinDrops(this);
     this.flags = new Flags(this);
+    this.bosses = new Bosses(this); // NOTE: must be after Npcs and Flags
+    this.scaling = new Scaling(this);
+    this.randomNumbers = new RandomNumbers(this);
   }
 
   trigger(id: number): Trigger {
@@ -290,38 +313,38 @@ export class Rom {
 //     return addr;
 //   }
 
-  async writeData() {
-    // Write the options first
-    Rom.SHOP_COUNT.set(this.prg, this.shopCount);
-    Rom.SCALING_LEVELS.set(this.prg, this.scalingLevels);
-    Rom.UNIQUE_ITEM_TABLE.set(this.prg, this.uniqueItemTableAddress);
-    Rom.SHOP_DATA_TABLES.set(this.prg, this.shopDataTablesAddress);
-    Rom.OMIT_ITEM_GET_DATA_SUFFIX.set(this.prg, this.omitItemGetDataSuffix);
-    Rom.OMIT_LOCAL_DIALOG_SUFFIX.set(this.prg, this.omitLocalDialogSuffix);
-    Rom.COMPRESSED_MAPDATA.set(this.prg, this.compressedMapData);
+  assembler(): Assembler {
+    // TODO - consider setting a segment prefix
+    return new Assembler();
+  }
 
-    const writer = new Writer(this.prg, this.chr);
+  writeData(data = this.prg) {
+    // Write the options first
+    // const writer = new Writer(this.chr);
+    // writer.modules.push(...this.modules);
     // MapData
-    writer.alloc(0x144f8, 0x17e00);
+    //writer.alloc(0x144f8, 0x17e00);
     // NpcData
     // NOTE: 193f9 is assuming $fb is the last location ID.  If we add more locations at
     // the end then we'll need to push this back a few more bytes.  We could possibly
     // detect the bad write and throw an error, and/or compute the max location ID.
-    writer.alloc(0x193f9, 0x1ac00);
+    //writer.alloc(0x193f9, 0x1ac00);
     // ObjectData (index at 1ac00..1ae00)
-    writer.alloc(0x1ae00, 0x1bd00); // save 512 bytes at end for some extra code
+    //writer.alloc(0x1ae00, 0x1bd00); // save 512 bytes at end for some extra code
+    const a = this.assembler();
     // NpcSpawnConditions
-    writer.alloc(0x1c77a, 0x1c95d);
+    free(a, $0e, 0x877a, 0x895d);
     // NpcDialog
-    writer.alloc(0x1cae5, 0x1d8f4);
+    free(a, $0e, 0x8ae5, 0x98f4);
     // ItemGetData (to 1e065) + ItemUseData
-    writer.alloc(0x1dde6, 0x1e106);
+    free(a, $0e, 0x9de6, 0xa000);
+    free(a, $0f, 0xa000, 0xa106);
     // TriggerData
     // NOTE: There's some free space at 1e3c0..1e3f0, but we use this for the
     // CheckBelowBoss triggers.
-    writer.alloc(0x1e200, 0x1e3c0);
+    free(a, $0f, 0xa200, 0xa3c0);
     // ItemMenuName
-    writer.alloc(0x2111a, 0x21468);
+    free(a, $10, 0x911a, 0x9468);
     // keep item $49 "        " which is actually used somewhere?
     // writer.alloc(0x21471, 0x214f1); // TODO - do we need any of this?
     // ItemMessageName
@@ -333,21 +356,21 @@ export class Rom {
     // writer.alloc(0x28000, 0x283fe);
     // Message tables
     // TODO - we don't use the writer to allocate the abbreviation tables, but we could
-    writer.alloc(0x2a000, 0x2fc00);
+    //writer.free('0x2a000, 0x2fc00);
 
-    if (this.telepathyTablesAddress) {
-      writer.alloc(0x1d8f4, 0x1db00); // location table all the way thru main
-    } else {
-      writer.alloc(0x1da4c, 0x1db00); // existing main table is here.
-    }
+    // if (this.telepathyTablesAddress) {
+    //   writer.alloc(0x1d8f4, 0x1db00); // location table all the way thru main
+    // } else {
+    //   writer.alloc(0x1da4c, 0x1db00); // existing main table is here.
+    // }
 
-    const promises = [];
-    const writeAll = (writables: Iterable<{write(writer: Writer): unknown}>) => {
+    const modules = [...this.modules, a.module()];
+    const writeAll = (writables: {write(): Module[]}[]) => {
       for (const w of writables) {
-        promises.push(w.write(writer));
+        modules.push(...w.write());
       }
     };
-    writeAll(this.locations);
+    modules.push(...this.locations.write());
     writeAll(this.objects);
     writeAll(this.hitboxes);
     writeAll(this.triggers);
@@ -355,33 +378,45 @@ export class Rom {
     writeAll(this.tilesets);
     writeAll(this.tileEffects);
     writeAll(this.adHocSpawns);
-    this.itemGets.write(writer);
-    this.items.write(writer);
-    writeAll(this.shops);
+    modules.push(...this.itemGets.write());
+    modules.push(...this.slots.write());
+    modules.push(...this.items.write());
+    modules.push(...this.shops.write());
     writeAll(this.bossKills);
     writeAll(this.patterns);
+    modules.push(...this.wildWarp.write());
+    modules.push(...this.townWarp.write());
+    modules.push(...this.coinDrops.write());
+    modules.push(...this.scaling.write());
+    modules.push(...this.bosses.write());
+    modules.push(...this.randomNumbers.write());
+    modules.push(...this.telepathy.write());
+    modules.push(...this.messages.write());
+    modules.push(...this.screens.write());
 
-    if (this.compressedMapData) {
-      for (let s = 0; s < 0x100; s++) {
-        const scr = this.screens[s];
-        if (scr.used) promises.push(scr.write(writer));
-      }
-      for (let p = 1; p < 0x40; p++) {
-        for (let s = 0; s < 0x20; s++) {
-          const scr = this.screens[p << 8 | s];
-          if (scr && scr.used) promises.push(scr.write(writer));
-        }
-      }
-    } else {
-      writeAll(this.screens);
+    const linker = new Linker();
+    linker.base(this.prg, 0);
+    for (const m of modules) {
+      linker.read(m);
     }
+    const out = linker.link();
+    out.apply(data);
+    if (data !== this.prg) return; // TODO - clean this up
+    //linker.report();
+    const exports = linker.exports();
 
-    this.wildWarp.write(writer);
-    this.townWarp.write(writer);
-    promises.push(this.telepathy.write(writer));
-    promises.push(this.messages.write(writer));
-    promises.push(writer.commit());
-    await Promise.all(promises).then(() => undefined);
+    
+    this.uniqueItemTableAddress = exports.get('KeyItemData')!.offset!;
+    this.shopCount = 11;
+    this.shopDataTablesAddress = exports.get('ShopData')?.offset || 0;
+    // Don't include these in the linker???
+    Rom.SHOP_COUNT.set(this.prg, this.shopCount);
+    Rom.SCALING_LEVELS.set(this.prg, this.scalingLevels);
+    Rom.UNIQUE_ITEM_TABLE.set(this.prg, this.uniqueItemTableAddress);
+    Rom.SHOP_DATA_TABLES.set(this.prg, this.shopDataTablesAddress || 0);
+    Rom.OMIT_ITEM_GET_DATA_SUFFIX.set(this.prg, this.omitItemGetDataSuffix);
+    Rom.OMIT_LOCAL_DIALOG_SUFFIX.set(this.prg, this.omitLocalDialogSuffix);
+    Rom.COMPRESSED_MAPDATA.set(this.prg, this.compressedMapData);
   }
 
   analyzeTiles() {
@@ -538,6 +573,7 @@ export class Rom {
           if (b < 0x20 && tileset.alternates[b] !== b) {
             if (a >= 0x20) throw new Error(`Cannot unflag: ${tsid} ${a} ${b} ${tileset.alternates[b]}`);
             tileset.alternates[a] = tileset.alternates[b];
+            
           }
         }
       }
@@ -657,7 +693,7 @@ export class Rom {
   }
 
   // Use the browser API to load the ROM.  Use #reset to forget and reload.
-  static async load(patch?: (data: Uint8Array) => Promise<void>,
+  static async load(patch?: (data: Uint8Array) => void|Promise<void>,
                     receiver?: (picker: Element) => void) {
     const file = await pickFile(receiver);
     if (patch) await patch(file);
@@ -745,6 +781,8 @@ const ADJUSTMENTS = [
   [0x15f40, 0x02, 0xff],
   [0x15f61, 0x8d, 0xff],
   [0x15f65, 0x8d, 0xff],
+  // Fix pattern table for desert 1 (animation glosses over it)
+  [0x164cc, 0x04, 0x20],
   // Fix garbage at bottom of oasis cave map (it's 8x11, not 8x12 => fix height)
   [0x164ff, 0x0b, 0x0a],
   // Fix bad music in zombietown houses: $10 should be $01.
@@ -764,6 +802,7 @@ const ADJUSTMENTS = [
   // Fix queen's dialog to terminate on last item, rather than overflow,
   // so that we don't parse garbage.
   [0x1cff9, 0x60, 0xe0],
+
   // Fix Amazones outer guard message to not overflow.
   [0x2ca90, 0x02, 0x00],
   // Fix seemingly-unused kensu message 1d:17 overflowing into 1d:18

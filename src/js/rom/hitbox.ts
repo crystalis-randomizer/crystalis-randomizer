@@ -1,18 +1,20 @@
+import {Module} from '../asm/module.js';
+import {Rom} from '../rom.js';
 import {Entity} from './entity.js';
 import {signed, tuple, unsigned} from './util.js';
-import {Writer} from './writer.js';
-import {Rom} from '../rom.js';
 
 // A pattern page sequence for animating background tiles.  ID in 0..3
 export class Hitbox extends Entity {
 
-  readonly base: number;
   coordinates: [number, number, number, number];
 
   constructor(rom: Rom, id: number) {
     super(rom, id);
-    this.base = 0x35691 + (id << 2);
     this.coordinates = tuple(rom.prg, this.base, 4);
+  }
+
+  get base(): number {
+    return 0x35691 + (this.id << 2);
   }
 
   get w(): number { return this.coordinates[1]; }
@@ -31,7 +33,11 @@ export class Hitbox extends Entity {
 
   get y1(): number { return this.y0 + this.h; }
 
-  write(writer: Writer) {
-    writer.rom.subarray(this.base, this.base + 4).set(this.coordinates);
+  write(): Module[] {
+    const a = this.rom.assembler();
+    a.segment('1a');
+    a.org(0x9691 + (this.id << 2));
+    a.byte(...this.coordinates);
+    return [a.module()];
   }
 }

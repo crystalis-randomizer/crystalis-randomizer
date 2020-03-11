@@ -1,12 +1,13 @@
+import {Module} from '../asm/module.js';
+import {Rom} from '../rom.js';
 import {Entity} from './entity.js';
 import {MessageId} from './messageid.js';
 import {addr, hex, readBigEndian} from './util.js';
-import {Writer} from './writer.js';
-import {Rom} from '../rom.js';
 
 const UNUSED_TRIGGERS = new Set([
-  0x87, 0x88, 0x89, 0x8f, 0x93, 0x96, 0x98, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f,
-  0xa0, 0xb5, 0xb9, 0xbe, 0xc0, // c2 is last one
+  0x83, 0x87, 0x88, 0x89, 0x8f, 0x93, 0x96, 0x98, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f,
+  /*0xa0,*/ 0xaa, 0xb3, 0xb5, 0xb9, 0xbe, 0xc0, // c2 is last one
+  // NOTE: b3 is only unused after deterministic pre-parse deletes it.
 ]);
 
 export class Trigger extends Entity {
@@ -72,11 +73,18 @@ export class Trigger extends Entity {
     return bytes;
   }
 
-  async write(writer: Writer, base: number = 0x1e17a) {
-    if (!this.used) return;
-    const address = await writer.write(this.bytes(), 0x1e000, 0x1ffff,
-                                       `Trigger ${hex(this.id)}`);
-    writer.rom[base + 2 * (this.id & 0x7f)] = address & 0xff;
-    writer.rom[base + 2 * (this.id & 0x7f) + 1] = (address >>> 8) - 0x40;
+  write(): Module[] {
+    if (!this.used) return [];
+    const a = this.rom.assembler();
+    const name = `Trigger_${hex(this.id)}`;
+    a.segment('0f');
+    a.reloc(name);
+    const addr = a.pc();
+    a.byte(...this.bytes());
+    a.org(0xa17a + 2 * (this.id & 0x7f), name + '_Ptr');
+    a.word(addr);
+    return [a.module()];
+      // TODO - need to hit telepathy, npc spawns, dialogs, itemget
+      // (checkbelowboss) as well at the same time as this!
   }
 }

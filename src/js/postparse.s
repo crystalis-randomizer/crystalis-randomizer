@@ -1,14 +1,19 @@
 ;;; Must come after preshuffle.s for various constants.
 
-.bank $3c000 $c000:$4000
-
-.bank $1c000 $8000:$2000
+.segment "0e", "fe", "ff"
 
 .ifdef _NORMALIZE_TELEPATHY
+FREE "0e" [$8167, $822f)
+;FREE "0e" [$98f4, $9b00) -- currently declared in rom/telepathy.ts
+
 ;;; Basic plan: rip out minimum level, result mapping, etc
 ;;; Also removed the extra powers of two table, so we have
 ;;; room to inline CheckTelepathyResult.
-.org $1c167
+.org $de14  ; Ref from MainGameModeJump_16 jumped to 816f before
+    jsr CastTelepathy
+
+.reloc
+CastTelepathy:
     sec
     lda PlayerMP
     sbc #$08 ; should never overflow because already checked
@@ -83,48 +88,51 @@ Telepathy_ShowDefaultMessage:
     lda TelepathyTable+1,x
     sta $20
     rts
-.assert < $1c22f
-TelepathyResults:
 
-.org $1d8f4
-TelepathyTable:
-  .skip 32
+TelepathyResults = $822f
+
+.import TelepathyTable
 
 .endif
 
 
-.bank $20000 $8000:$2000
+.segment "10", "fe", "ff"
 
 .ifdef _NORMALIZE_SHOP_PRICES
 
 ;;; Initialize tool shop
-.org $218ee
+.org $98ee
   lda ToolShopIdTable,x
-.org $218ff
+
+.org $98ff
   clc
   adc #SHOP_COUNT*4 ; 44 = delta between shop tables
   tax
   jsr CopyShopPrices
   jmp PostInitializeShop
-.assert < $21912
+FREE_UNTIL $9912
 
 ;;; Initialize armor shop
-.org $21895
+.org $9895
   lda ArmorShopIdTable,x ; should be unchanged, but just in case...
-.org $218a6
+
+.org $98a6
   tax
   jsr CopyShopPrices
   jmp PostInitializeShop
+FREE_UNTIL $98b6
+
+.reloc
 ShopItemHorizontalPositions:
   .byte 8,13,18,23
-.assert < $218b6
-PostInitializeShop:
 
-.org $218bc  ; use the new position table
+PostInitializeShop = $98b6
+
+.org $98bc  ; use the new position table
   lda ShopItemHorizontalPositions,x
 
 ;;; Initialize inn price
-.org $215cb
+.org $95cb
   ldx $646d
   lda InnPrices,x
   sta $62
@@ -132,10 +140,10 @@ PostInitializeShop:
   sta $61
   ldy #$04
   jsr ComputeShopPrice
-.assert $215dc ; next display the price
+.assert * = $95dc ; next display the price
 
 ;;; Fix pawn shop sell price
-.org $201c1
+.org $81c1
   sta $61
   lda #$10
   sta $62
@@ -144,10 +152,11 @@ PostInitializeShop:
   nop
   nop
   nop
-.assert $201cf
+.assert * = $81cf
+
 ;;; Second version of the same thing (this one happens only
 ;;; once, when you say "yes" to "sell another?").
-.org $204c7
+.org $84c7
   sta $61
   lda #$10
   sta $62
@@ -156,9 +165,10 @@ PostInitializeShop:
   nop
   nop
   nop
-.assert $204d5
+.assert * = $84d5
+
 ;;; Third read of price is immediately when selling.
-.org $20634
+.org $8634
   sta $61
   lda #$10
   sta $62
@@ -180,11 +190,11 @@ PostInitializeShop:
   nop
   nop
   nop
-.assert $2065f
+.assert * = $865f
 
 
 ;;; Set up code to stripe the shop locations table.
-.org $21953
+.org $9953
   ldx #$00
 - lda $6c
    cmp ShopLocations,x
@@ -198,33 +208,23 @@ PostInitializeShop:
   lsr
   sta $646d  ; current shop index   
   rts
-.assert < $21970
+FREE_UNTIL $9970
 
-.org $21da4
-ShopData:
-;;; NOTE: This structure is hard-coded in the RomOption, with two parameters:
-;;;  1. SHOP_COUNT (11)
-;;;  2. SCALING_LEVELS (48)
-ArmorShopIdTable:
-  .skip SHOP_COUNT*4
-ToolShopIdTable:
-  .skip SHOP_COUNT*4
-ArmorShopPriceTable:
-  .skip SHOP_COUNT*4
-ToolShopPriceTable:
-  .skip SHOP_COUNT*4
-InnPrices:
-  .skip SHOP_COUNT
-ShopLocations:
-  .skip SHOP_COUNT*4
-ToolShopScaling:
-  .skip SCALING_LEVELS
-ArmorShopScaling:
-  .skip SCALING_LEVELS
-BasePrices:
-  .skip 52             ; 0 = $0d, 50 = $26, 51 = "$27" (inn)
-InnBasePrice:
-  .skip 2
+;;; These are exported by the Shops writer.
+.import ShopData, ArmorShopIdTable, ToolShopIdTable, ArmorShopPriceTable
+.import ToolShopPriceTable, InnPrices, ShopLocations
+.import ToolShopScaling, ArmorShopScaling, BasePrices, InnBasePrice
+
+
+
+
+
+;;; TODO - probably mark this whole area as freed and dispense
+;;; with the concrete .org math...?!?
+
+FREE "10" [$9da4, $a000]
+
+;; .org $9da4 + SHOP_COUNT*21 + SCALING_LEVELS*2 + 54
 
 ;;; This is the space freed up by compressing the shop tables
 
@@ -237,7 +237,7 @@ InnBasePrice:
 ;;; Could get 48 or 72 bytes back by densifying it?
 ;;;   -> only scale every 2 or 4 levels...
 
-
+.reloc
 ComputeShopPrice:               ; ~71 bytes
     ;; Inputs:
     ;;   Difficulty - scaling level
@@ -283,10 +283,13 @@ ComputeShopPrice:               ; ~71 bytes
      ;; is less than $1d then use the armor table, which is $30 bytes
      ;; after the tools table.
      lda Difficulty
-     ldx $61
+     cmp #(SCALING_LEVELS-1)
+     bcc +
+      lda #(SCALING_LEVELS-1)
++    ldx $61
      cpx #$1d
      bcs +
-      adc #$30
+      adc #SCALING_LEVELS
 +    tax
      ;; Write the scaling factor (8*s) into $61.  The shop multiplier (32*m)
      ;; is still in $62 from the original input.  Now multiply everything
@@ -312,6 +315,7 @@ ComputeShopPrice:               ; ~71 bytes
 
 ;;; NOTE: we could move this to a smaller chunk if needed, but it's nice to
 ;;; store all the shop normalization code in the space it recovered.
+.reloc
 CopyShopPrices:
   ;; Input:
   ;;   x: first item in the shop
@@ -331,6 +335,7 @@ CopyShopPrices:
   bcc -
   rts
 
+.reloc
 Multiply32Bit:
   ;; Inputs: $61$62 and $63$64
   ;; Output: $10$11$12$13
@@ -357,14 +362,13 @@ Multiply32Bit:
   bne -
   rts
 
-.assert < $22000
-
 .endif
 
 
+.segment "1a", "fe", "ff"
 
 .ifdef _EXPAND_SPEEDS
-.org $34480
+.org $8480
 ComputeDisplacementVector:
 ;;; Inputs:
 ;;;   A - direction, from $360,x (0-7, or 0-f, or 0-3f)
@@ -515,7 +519,7 @@ BitsTable:
   .byte $ff,$fe ; 15 => 11111111 11111110
 
 ;;; Update KnockbackObject to work for 64-dir projectiles
-.org $355d4
+.org $95d4
     lda $0340,x
     asl
     php

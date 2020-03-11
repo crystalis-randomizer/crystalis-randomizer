@@ -1,9 +1,9 @@
+import {Module} from '../asm/module.js';
+import {Rom} from '../rom.js';
 import {Entity} from './entity.js';
 import {MapScreen} from './mapscreen.js';
 import {TileEffects} from './tileeffects.js';
 import {seq, tuple} from './util.js';
-import {Writer} from './writer.js';
-import {Rom} from '../rom.js';
 
 export class Tilesets implements Iterable<Tileset> {
 
@@ -30,10 +30,6 @@ export class Tileset extends Entity {
   // Names...
   // Does palette info belong here?  Maybe...
 
-  tileBase: number;
-  attrBase: number;
-  alternatesBase: number;
-
   tiles: number[][];    // tile info, outer is 4 quadrants (TL, TR, BL, BR)
   attrs: number[];      // palette info
   alternates: number[]; // 32-element mapping for flag-based alternates
@@ -43,13 +39,25 @@ export class Tileset extends Entity {
   constructor(rom: Rom, id: number) {
     // `id` is MapData[1][3], ranges from $80..$bc in increments of 4.
     super(rom, id);
-    const map = id & 0x3f;
-    this.tileBase = 0x10000 | map << 8;
-    this.attrBase = 0x13000 | map << 4;
-    this.alternatesBase = 0x13e00 | map << 3;
     this.tiles = seq(4, q => tuple(rom.prg, this.tileBase | q << 8 , 256));
     this.attrs = seq(256, i => rom.prg[this.attrBase | i >> 2] >> ((i & 3) << 1) & 3);
     this.alternates = tuple(rom.prg, this.alternatesBase, 32);
+  }
+
+  private get map(): number {
+    return this.id & 0x3f;
+  }
+
+  get tileBase(): number {
+    return 0x10000 | this.map << 8;
+  }
+
+  get attrBase(): number {
+    return 0x13000 | this.map << 4;
+  }
+
+  get alternatesBase(): number {
+    return 0x13e00 | this.map << 3;
   }
 
   // TODO - is this unused?
@@ -59,21 +67,21 @@ export class Tileset extends Entity {
         seq(256, i => new MapScreen(this.rom.screens[i], this));
   }
 
-  write(writer: Writer) {
-    for (let i = 0; i < 0x100; i++) {
-      if (i < 0x20) {
-        writer.rom[this.alternatesBase + i] = this.alternates[i];
-      }
-      for (let j = 0; j < 4; j++) {
-        writer.rom[this.tileBase + (j << 8) + i] = this.tiles[j][i];
-      }
-    }
-    for (let i = 0; i < 0x40; i++) {
+  write(): Module[] {
+    const attr = seq(0x40, i => {
       const j = i << 2;
-      writer.rom[this.attrBase + i] =
-          (this.attrs[j] & 3) | (this.attrs[j + 1] & 3) << 2 |
-          (this.attrs[j + 2] & 3) << 4 | (this.attrs[j + 3] & 3) << 6;
-    }
+      return (this.attrs[j] & 3) | (this.attrs[j + 1] & 3) << 2 |
+             (this.attrs[j + 2] & 3) << 4 | (this.attrs[j + 3] & 3) << 6;
+    });
+    const a = this.rom.assembler();
+    a.segment('08', '09');
+    a.org(0x8000 | this.map << 8);
+    a.byte(...([] as number[]).concat(...this.tiles));
+    a.org(0xb000 | this.map << 4);
+    a.byte(...attr);
+    a.org(0xbe00 | this.map << 3);
+    a.byte(...this.alternates);
+    return [a.module()];
   }
 
   effects(): TileEffects {

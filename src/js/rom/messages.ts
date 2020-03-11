@@ -1,49 +1,55 @@
-import {MessageId} from './messageid.js';
-import {Data, hex, readLittleEndian, readString,
-        seq, slice, writeLittleEndian, writeString} from './util.js';
-import {Writer} from './writer.js';
+import {Expr} from '../asm/expr.js';
+import {Module} from '../asm/module.js';
 import {Rom} from '../rom.js';
+import {MessageId} from './messageid.js';
+import {Address, Data, Segment, hex, readString,
+        seq, free, tuple} from './util.js';
+
+const {$14, $15, $16_a, $17} = Segment;
+
 // import {SuffixTrie} from '../util.js';
 
-class DataTable<T> extends Array<T> {
+// class DataTable<T> extends Array<T> {
 
-  constructor(readonly rom: Rom,
-              readonly base: number,
-              readonly count: number,
-              readonly width: number,
-              // TODO - what was this supposed to be?!?
-              func: (...x: number[]) => T =
-                  width > 1 ? (...i) => i as any : i => i as any) {
-    super(count);
-    for (let i = 0; i < count; i++) {
-      this[i] = func(...slice(rom.prg, base + i * width, width));
-    }
-  }
-}
+//   constructor(readonly rom: Rom,
+//               readonly base: Address,
+//               readonly count: number,
+//               readonly width: number,
+//               // TODO - what was this supposed to be?!?
+//               func: (...x: number[]) => T =
+//                   width > 1 ? (...i) => i as any : i => i as any) {
+//     super(count);
+//     for (let i = 0; i < count; i++) {
+//       this[i] = func(...slice(rom.prg, base + i * width, width));
+//     }
+//   }
+// }
 
-class AddressTable<T> extends Array<T> {
+// class AddressTable<T> extends Array<T> {
 
-  readonly addresses: number[];
+//   readonly addresses: number[];
 
-  constructor(readonly rom: Rom,
-              readonly base: number,
-              readonly count: number,
-              readonly offset: number,
-              func: (x: number, i: number, arr: number[]) => T = i => i as any) {
-    super(count);
-    this.addresses = seq(this.count,
-                         (i: number) => {
-                           const a = readLittleEndian(rom.prg, base + 2 * i);
-                           return a && a + offset;
-                         });
+//   constructor(readonly rom: Rom,
+//               readonly base: Address,
+//               readonly count: number,
+//               readonly segment: string,
+//               func: (x: number, i: number, arr: number[]) => T = i => i as any) {
+//     super(count);
+//     this.addresses = seq(this.count,
+//                          (i: number) => {
+//                            const a = readLittleEndian(rom.prg, base + 2 * i);
+//                            return a && a + offset;
+//                          });
                          
-    for (let i = 0; i < count; i++) {
-      this[i] = func(this.addresses[i], i, this.addresses);
-    }
-  }
-}
+//     for (let i = 0; i < count; i++) {
+//       this[i] = func(this.addresses[i], i, this.addresses);
+//     }
+//   }
+// }
 
 const DELIMITERS = new Map<number, string>([[6, '{}'], [7, '[]']]);
+
+type WordFactory = (id: number, group: number) => string;
 
 class Message {
 
@@ -55,20 +61,20 @@ class Message {
   constructor(readonly messages: Messages,
               readonly part: number,
               readonly id: number,
-              readonly addr: number,
-              readonly pointer: number) {
+              offset: number,
+              words: WordFactory) {
 
     // Parse the message
     const prg: Data<number> = messages.rom.prg;
     const parts = [];
-    for (let i = addr; addr && prg[i]; i++) {
+    for (let i = offset; offset && prg[i]; i++) {
       const b = prg[i];
       this.bytes.push(b);
       if (b === 1) {
         // NOTE - there is one case where two messages seem to abut without a
         // null terminator - $2ca91 ($12:$08) falls through from 12:07.  We fix
-        // that with an adjustment in rom.ts.
-        if (i !== addr && prg[i - 1] !== 3) {
+        // that with an adjustment in rom.ts, but this detects it just in case.
+        if (i !== offset && prg[i - 1] !== 3) {
           throw new Error(`Unexpected start message signal at ${i.toString(16)}`);
         }
       } else if (b === 2) {
@@ -81,6 +87,7 @@ class Message {
         parts.push('[:ITEM:]');
       } else if (b >= 5 && b <= 9) {
         const next = prg[++i];
+        this.bytes.push(next);
         if (b === 9) {
           parts.push(' '.repeat(next));
           continue;
@@ -91,13 +98,13 @@ class Message {
           parts.push(next.toString(16).padStart(2, '0'));
           parts.push(':');
         }
-        parts.push(messages.extraWords[b][next]);
+        parts.push(words(next, b));
         if (delims) parts.push(delims[1]);
         if (!PUNCTUATION[String.fromCharCode(prg[i + 1])]) {
           parts.push(' ');
         }
       } else if (b >= 0x80) {
-        parts.push(messages.basicWords[b - 0x80]);
+        parts.push(words(b, 0));
         if (!PUNCTUATION[String.fromCharCode(prg[i + 1])]) {
           parts.push(' ');
         }
@@ -110,7 +117,7 @@ class Message {
     this.text = parts.join('');
   }
 
-  mid(): string {
+  get mid(): string {
     return `${hex(this.part)}:${hex(this.id)}`;
   }
 
@@ -273,12 +280,36 @@ const PUNCTUATION: {[char: string]: boolean} = {
   '#': true,  // page separator
 };
 
+// NOTE: the +1 version is always at +5 from the pointer
+const COMMON_WORDS_BASE_PTR = Address.of($14, 0x8704);
+const UNCOMMON_WORDS_BASE_PTR = Address.of($14, 0x868a);
+const PERSON_NAMES_BASE_PTR = Address.of($14, 0x86d5);
+const ITEM_NAMES_BASE_PTR = Address.of($14, 0x86e9);
+const ITEM_NAMES_BASE_PTR2 = Address.of($14, 0x8789);
+
+const BANKS_PTR = Address.of($14, 0x8541);
+const BANKS_PTR2 = Address.of($14, 0x864c);
+const PARTS_PTR = Address.of($14, 0x854c);
+
+const SEGMENTS: Record<number, Segment> = {
+  0x15: $15,
+  0x16: $16_a,
+  0x17: $17,
+};
+
+
 export class Messages {
 
-  basicWords: AddressTable<string>;
-  extraWords: {[group: number]: AddressTable<string>};
-  banks: DataTable<number>;
-  parts: AddressTable<AddressTable<Message>>;
+  // TODO - we might want to encode this in the spare rom data
+  partCount: number = 0x22;
+
+  commonWords: string[] = [];
+  uncommonWords: string[] = [];
+  personNames: string[] = [];
+  itemNames: string[] = [];
+  extraWords: {[group: number]: string[]};
+  banks: number[];
+  parts: Message[][] = [];
 
   // NOTE: these data structures are redundant with the above.
   // Once we get things working smoothly, we should clean it up
@@ -290,34 +321,81 @@ export class Messages {
   static readonly CONTINUED = '#';
 
   constructor(readonly rom: Rom) {
-    const commonWordsBase = readLittleEndian(rom.prg, 0x28704) + 0x20000;
-    const extraWordsBase = readLittleEndian(rom.prg, 0x2868a) + 0x20000;
-    const personNamesBase = readLittleEndian(rom.prg, 0x286d5) + 0x20000;
-    const itemNamesBase = readLittleEndian(rom.prg, 0x286e9) + 0x20000;
+    const commonWordsBase = COMMON_WORDS_BASE_PTR.readAddress(rom.prg);
+    const uncommonWordsBase = UNCOMMON_WORDS_BASE_PTR.readAddress(rom.prg);
+    const personNamesBase = PERSON_NAMES_BASE_PTR.readAddress(rom.prg);
+    const itemNamesBase = ITEM_NAMES_BASE_PTR.readAddress(rom.prg);
+    const banksBase = BANKS_PTR.readAddress(rom.prg);
+    const partsBase = PARTS_PTR.readAddress(rom.prg);
 
-    const str = (a: number) => readString(rom.prg, a);
-    // TODO - read these addresses directly from the code, in case they move
-    this.basicWords = new AddressTable(rom, commonWordsBase, 0x80, 0x20000, str);
-    this.extraWords = {
-      5: new AddressTable(rom, extraWordsBase,
-                          (personNamesBase - extraWordsBase) >>> 1, 0x20000,
-                          str), // less common
-      6: new AddressTable(rom, personNamesBase, 36, 0x20000, str), // people/places
-      7: new AddressTable(rom, itemNamesBase, 74, 0x20000, str), // items (also 8?)
+    const bases: Record<number, Address> = {
+      5: uncommonWordsBase,
+      6: personNamesBase,
+      7: itemNamesBase,
     };
 
-    this.banks = new DataTable(rom, 0x283fe, 0x24, 1);
-    this.parts = new AddressTable(
-        rom, 0x28422, 0x22, 0x20000,
-        (addr, part, addrs) => {
-          // need to compute the end based on the array?
-          const count = part === 0x21 ? 3 : (addrs[part + 1] - addr) >>> 1;
-          // offset: bank=$15 => $20000, bank=$16 => $22000, bank=$17 => $24000
-          // subtract $a000 because that's the page we're loading at.
-          return new AddressTable(
-              rom, addr, count, (this.banks[part] << 13) - 0xa000,
-              (m, id) => new Message(this, part, id, m, addr + 2 * id));
-        });
+    //const str = (a: number) => readString(rom.prg, a);
+    // TODO - read these addresses directly from the code, in case they move
+    // this.commonWords = new AddressTable(rom, commonWordsBase, 0x80, 0x20000, str);
+    // uncommonWords = new AddressTable(rom, extraWordsBase,
+    //                       (personNamesBase.minus(extraWordsBase)) >>> 1,
+    //                       '10', str), // less common
+    // personNames = personNamesBase, 36, '10', str), // people/places
+    // itemNames = new AddressTable(rom, itemNamesBase, 74, '10', str), // items (also 8?)
+    this.extraWords = {
+      5: this.uncommonWords,
+      6: this.personNames,
+      7: this.itemNames,
+    };
+
+    const getWord = (arr: string[], base: Address, index: number) => {
+      let word = arr[index];
+      if (word != null) return word;
+      word = readString(rom.prg,
+                        base.plus(2 * index).readAddress(rom.prg).offset);
+      return (arr[index] = word);
+    };
+
+    // Lazily read the words
+    const words = (id: number, group: number) => {
+      if (!group) return getWord(this.commonWords, commonWordsBase, id - 0x80);
+      return getWord(this.extraWords[group], bases[group], id);
+    };
+    // but eagerly read item names
+    for (let i = 0; i < 0x49 /*rom.items.length*/; i++) {
+      words(i, 7);
+    }
+
+    // NOTE: we maintain the invariant that the banks table directly
+    // follows the parts tables, which are in order, so that we can
+    // detect the end of each part.  Otherwise there is no guarantee
+    // how large the part actually is.
+
+    let lastPart = banksBase.offset;
+    this.banks = tuple(rom.prg, lastPart, this.partCount);
+    for (let p = this.partCount - 1; p >= 0; p--) {
+      const start = partsBase.plus(2 * p).readAddress(rom.prg);
+      const len = (lastPart - start.offset) >>> 1;
+      lastPart = start.offset;
+      const seg = SEGMENTS[this.banks[p]];
+      const part: Message[] = this.parts[p] = [];
+      for (let i = 0; i < len; i++) {
+        const addr = start.plus(2 * i).readAddress(rom.prg, seg);
+        part[i] = new Message(this, p, i, addr.offset, words);
+      }
+    }
+
+  //   this.parts = new AddressTable(
+  //       rom, 0x28422, 0x22, 0x20000,
+  //       (addr, part, addrs) => {
+  //         // need to compute the end based on the array?
+  //         const count = part === 0x21 ? 3 : (addrs[part + 1] - addr) >>> 1;
+  //         // offset: bank=$15 => $20000, bank=$16 => $22000, bank=$17 => $24000
+  //         // subtract $a000 because that's the page we're loading at.
+  //         return new AddressTable(
+  //             rom, addr, count, (this.banks[part] << 13) - 0xa000,
+  //             (m, id) => new Message(this, part, id, m, addr + 2 * id));
+  //       });
   }
 
   // Flattens the messages.  NOTE: returns unused messages.
@@ -415,7 +493,7 @@ export class Messages {
     // Ordered list of words
     const words: Word[] = [];
     // Keep track of addresses we've seen, mapping to message IDs for aliasing.
-    const addrs = new Map<number, string>();
+    const addrs = new Map<string, string>();
     // Aliases mapping multiple message IDs to already-seen ones.
     const alias = new Map<string, string[]>();
 
@@ -424,13 +502,13 @@ export class Messages {
       message.fixText();
       const mid = message.mid;
       // Don't read the same message twice.
-      const seen = addrs.get(message.addr);
+      const seen = addrs.get(message.text);
       const aliases = seen != null && alias.get(seen);
       if (aliases) {
         aliases.push(mid);
         continue;
       }
-      addrs.set(message.addr, mid);
+      addrs.set(message.text, mid);
       alias.set(mid, []);
       // Split up the message text into words.
       const text = message.text;
@@ -444,12 +522,14 @@ export class Messages {
           const next = text[i + 1];
           if (closer) i = Math.max(i, text.indexOf(closer, i));
           if (!letters.length) continue;
-          const chain = (c === ' ' || c === '\'') && next && !PUNCTUATION[next] ? c : '';
+          const chain =
+              (c === ' ' || c === '\'') && next && !PUNCTUATION[next] ? c : '';
           const str = letters.join('');
           const id = words.length;
           const bytes = str.length + (c === ' ' ? 1 : 0);
           letters = [];
-          words.push({str, id, chain, bytes, used: 0, suffixes: new Set(), mid});
+          words.push(
+              {str, id, chain, bytes, used: 0, suffixes: new Set(), mid});
         } else {
           letters.push(c);
         }
@@ -547,63 +627,20 @@ export class Messages {
     return abbr;
   }
 
-  async write(writer: Writer): Promise<void> {
+  /** Rebuild the word tables and message encodings. */
+  compress() {
     const uses = this.uses();
     const table = this.buildAbbreviationTable(uses);
-    // plan: analyze all the msesages, finding common suffixes.
-    // eligible suffixes must be followed by either space, punctuation, or eol
-    // todo - reformat/flow messages based on current substitution lengths
-
-    // build up a suffix trie based on the abbreviations.
-    // const trie = new SuffixTrie<number[]>();
-    // for (let i = 0, len = table.length; i < len; i++) {
-    //   trie.set(table[i].str, i < 0x80 ? [i + 0x80] : [5, i - 0x80]);
-    // }
-
-    // write the abbreviation tables (all, rewriting hardcoded coderefs)
-    function updateCoderef(loc: number, addr: number) {
-      writeLittleEndian(writer.rom, loc, addr - 0x20000);
-      // second ref is always 5 bytes later
-      writeLittleEndian(writer.rom, loc + 5, addr + 1 - 0x20000);
-    }
-
-    // start at 288a5, go to 29400
-    let a = 0x288a5;
-    let d = a + 2 * (table.length + this.rom.items.length + this.extraWords[6].count);
-    updateCoderef(0x28704, a);
-    for (let i = 0, len = table.length; i < len; i++) {
-      if (i === 0x80) updateCoderef(0x2868a, a);
-      writeLittleEndian(writer.rom, a, d);
-      a += 2;
-      writeString(writer.rom, d, table[i].str);
-      d += table[i].str.length;
-      writer.rom[d++] = 0;
-    }
-    if (table.length < 0x80) updateCoderef(0x2868a, a);
-    // move on to people
-    updateCoderef(0x286d5, a);
-    const names = this.extraWords[6];
-    for (const name of names) {
-      writeLittleEndian(writer.rom, a, d);
-      a += 2;
-      writeString(writer.rom, d, name);
-      d += name.length;
-      writer.rom[d++] = 0;
-    }
-    // finally update item names
-    updateCoderef(0x286e9, a);
-    updateCoderef(0x28789, a);
-    for (const item of this.rom.items) {
-      writeLittleEndian(writer.rom, a, d);
-      a += 2;
-      writeString(writer.rom, d, item.messageName);
-      d += item.messageName.length;
-      writer.rom[d++] = 0;
-    }
-
     // group abbreviations by message and sort by length.
     const abbrs = new Map<string, Abbreviation[]>(); // by mid
+    this.commonWords.splice(0, this.commonWords.length);
+    this.uncommonWords.splice(0, this.uncommonWords.length);
     for (const abbr of table) {
+      if (abbr.bytes.length === 1) {
+        this.commonWords[abbr.bytes[0] & 0x7f] = abbr.str;
+      } else {
+        this.extraWords[abbr.bytes[0]][abbr.bytes[1]] = abbr.str;
+      }
       for (const mid of abbr.mids) {
         let abbrList = abbrs.get(mid);
         if (!abbrList) abbrs.set(mid, (abbrList = []));
@@ -614,8 +651,6 @@ export class Messages {
       abbrList.sort(({str: {length: x}}: Abbreviation, {str: {length: y}}: Abbreviation) => y - x);
     }
 
-    // iterate over the messages and serialize.
-    const promises: Promise<number>[][] = seq(this.parts.length, () => []);
     for (const m of this.messages(uses)) {
       let text = m.text;
       // First replace any items or other names with their bytes.
@@ -682,38 +717,108 @@ export class Messages {
       m.hex = hexParts.join('');
 
       // Figure out which page it needs to be on
-      const bank = this.banks[m.part] << 13;
-      const offset = bank - 0xa000;
-      
-      promises[m.part][m.id] =
-          writer.write(bs, bank, bank + 0x2000, `Message ${m.mid}`)
-              .then(a => a - offset);
+      // const bank = this.banks[m.part] << 13;
+      // const offset = bank - 0xa000;
     }
+  }
 
-    const addresses = await Promise.all(promises.map(ps => Promise.all(ps))) as number[][];
-    const parts: Promise<void>[] = [];
-    let pos = 0x28000;
-    for (let part = 0; part < addresses.length; part++) {
-      const bytes: number[] = [];
-      for (let i = 0; i < addresses[part].length; i++) {
-        writeLittleEndian(bytes, 2 * i, addresses[part][i]);
+  write(): Module[] {
+    const a = this.rom.assembler();
+    free(a, $14,   0x8000, 0x8500);
+    free(a, $14,   0x8520, 0x8528);
+    free(a, $14,   0x8586, 0x8593);
+    free(a, $14,   0x8900, 0x9400);
+    free(a, $14,   0x9685, 0x9706);
+    //free(a, '14',   0x9b4e, 0x9c00);
+    free(a, $14,   0x9e80, 0xa000);
+    free(a, $15,   0xa000, 0xc000);
+    free(a, $16_a, 0xa000, 0xc000);
+    free(a, $17,   0xa000, 0xbc00);
+    // plan: analyze all the msesages, finding common suffixes.
+    // eligible suffixes must be followed by either space, punctuation, or eol
+    // todo - reformat/flow messages based on current substitution lengths
+
+    // build up a suffix trie based on the abbreviations.
+    // const trie = new SuffixTrie<number[]>();
+    // for (let i = 0, len = table.length; i < len; i++) {
+    //   trie.set(table[i].str, i < 0x80 ? [i + 0x80] : [5, i - 0x80]);
+    // }
+
+    // write the abbreviation tables (all, rewriting hardcoded coderefs)
+    function updateCoderef(ptr: Address, base: Expr, ...offsets: number[]) {
+      ptr.loc(a);
+      a.word(base);
+      // second ref (usually 5 bytes later)
+      let i = 0;
+      for (const offset of offsets) {
+        ptr.plus(offset).loc(a);
+        a.word({op: '+', args: [base, {op: 'num', num: ++i}]});
       }
-      // TODO - would be nice to let the writer pick where to put the parts, but
-      // then we don't know how many to read from each.  So do it sequentially.
-      // parts.push(writer.write(bytes, 0x28000, 0x2a000, `MessagePart ${hex(part)}`)
-      //            .then(a => writeLittleEndian(writer.rom, 0x28422 + 2 * part,
-      //                                         a - 0x20000)));
-      writer.rom.subarray(pos, pos + bytes.length).set(bytes)
-      writeLittleEndian(writer.rom, 0x28422 + 2 * part, pos - 0x20000);
-      pos += bytes.length;
     }
 
-    // Write the banks
-    for (let i = 0; i < this.banks.length; i++) {
-      writer.rom[0x283fe + i] = this.banks[i];
+    // First step: write the messages.
+    const addresses: Expr[][] = seq(this.partCount, () => [])
+    for (let partId = 0; partId < this.partCount; partId++) {
+      const partAddrs = addresses[partId];
+      const part = this.parts[partId];
+      const bank = this.banks[partId];
+      const segment = SEGMENTS[bank];
+      a.segment(segment.name);
+      for (const m of part) {
+        a.reloc(`Message_${m.mid}`);
+        partAddrs.push(a.pc());
+        a.byte(...m.bytes, 0);
+      }
     }
 
-    await Promise.all(parts);
+    // Now write a single chunk with all the parts.
+    const partTables: Expr[] = [];
+    a.segment($14.name);
+    a.reloc(`MessagesTable`);
+    for (let partId = 0; partId < this.partCount; partId++) {
+      partTables.push(a.pc());
+      a.word(...addresses[partId]);
+    }
+    const bankTable = a.pc();
+    a.byte(...this.banks);
+
+    a.reloc(`MessageParts`);
+    const partsTable = a.pc();
+    a.word(...partTables);
+
+    // Finally update the bank and parts pointers.
+    updateCoderef(BANKS_PTR, bankTable);
+    updateCoderef(BANKS_PTR2, bankTable);
+    updateCoderef(PARTS_PTR, partsTable, 5);
+
+    // Now write the words tables.
+    const wordTables = [
+      [`CommonWords`, this.commonWords, [COMMON_WORDS_BASE_PTR]],
+      [`UncommonWords`, this.uncommonWords, [UNCOMMON_WORDS_BASE_PTR]],
+      [`PersonNames`, this.personNames, [PERSON_NAMES_BASE_PTR]],
+      [`ItemNames`, this.itemNames, [ITEM_NAMES_BASE_PTR,
+                                     ITEM_NAMES_BASE_PTR2]],
+    ] as const;
+    for (const [name, words, ptrs] of wordTables) {
+      const addrs: (number|Expr)[] = [];
+      let i = 0;
+      for (const word of words) {
+        if (!word) {
+          addrs.push(0);
+          continue;
+        }
+        a.reloc(`${name}_${hex(i++)}`);
+        addrs.push(a.pc());
+        a.byte(word, 0);
+      }
+      a.reloc(name);
+      const base = a.pc();
+      a.word(...addrs);
+      for (const ptr of ptrs) {
+        updateCoderef(ptr, base, 5);
+      }
+    }
+    return [a.module()];
   }
 }
 
@@ -769,6 +874,7 @@ export const HARDCODED_MESSAGES: Set<string> = new Set([
   '1b:03', // (st) statues monologue, exec 1f0e5
   '1b:00', // (st) draygon 1 monologue, exec 1f193
   '1b:00', // (st) draygon 1 monologue, exec 1f193
+  '1b:04', // (st) draygon 2 monologue, exec 1f193
   '06:01', // (st) kelbesque 1 escapes, exec 1fae7, table 1fb1bb
   '10:13', // (st) sabera 1 escapes, exec 1fae7, table 1fb1f
   '19:05', // (st) mado 1 escapes, exec 1fae7, table 1fb25

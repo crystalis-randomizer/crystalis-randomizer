@@ -15241,7 +15241,7 @@ NpcData_03                                          ; Valley of Wind
         $19492              .byte $xx,$xx,$xx,$xx ; 18:
         $19496              .byte $xx,$xx,$xx,$xx ; 19:
         $1949a              .byte $xx,$xx,$xx,$xx ; 1a:
-        $1949e              .byte $xx,$xx,$xx,$xx ; 1b:
+        $1949e              .byte $xx,$xx,$xx,$xx ; 1b: Sealed cave "hitbox"
         $194a2              .byte $xx,$xx,$xx,$xx ; 1c:
         $194a6              .byte $xx
 ;;; ----------------------------------------------------------------
@@ -16704,6 +16704,8 @@ NpcData_a6                        ; Pyramid Back - Draygon Revisited
         $1a690              .byte $xx
 ;;; ----------------------------------------------------------------
         ;; Extra bytes, nobody points to this?
+        ;; This looks like it was supposed to be the sages appearing
+        ;; after the battle, but it's never actually read.
         $1a691              .byte $xx,$xx,$xx,$xx,$xx
         $1a696              .byte $xx,$xx,$xx,$xx
         $1a69a              .byte $xx,$xx,$xx,$xx
@@ -17354,8 +17356,8 @@ ObjectDataPart2
         $1ad5a              .word ($xxxx)
         $1ad5c              .word ($xxxx)
         $1ad5e              .word ($xxxx)
-        $1ad60              .word ($xxxx) ; $1ae78: b0
-        $1ad62              .word ($xxxx) ; $1ae86: b1
+        $1ad60              .word ($xxxx) ; $1ae78: b0 Windmill blades
+        $1ad62              .word ($xxxx) ; $1ae86: b1 Windmill gears
         $1ad64              .word ($xxxx) ; $1af80: b2
         $1ad66              .word ($xxxx) ; $1af89: b3
         $1ad68              .word ($xxxx) ; $1ba5c: b4
@@ -17394,8 +17396,8 @@ ObjectDataPart2
         $1adaa              .word ($xxxx) ; $1b217: d5
         $1adac              .word ($xxxx) ; $1b222: d6
         $1adae              .word ($xxxx) ; $1b22d: d7
-        $1adb0              .word ($xxxx) ; $1ae78: d8
-        $1adb2              .word ($xxxx) ; $1ae86: d9
+        $1adb0              .word ($xxxx) ; $1ae78: d8 (unused alias of b0)
+        $1adb2              .word ($xxxx) ; $1ae86: d9 (unused alias of b1)
         $1adb4              .word ($xxxx) ; $1af92: da
         $1adb6              .word ($xxxx) ; $1b238: db
         $1adb8              .word ($xxxx) ; $1afb5: dc
@@ -17513,6 +17515,8 @@ ObjectData_Object2C                                      ; Object 2c
         $1ae76              .byte $xx
         $1ae77              .byte $xx
 ;;; ----------------------------------------------------------------
+;;; Windmill blades.  Loaded as (03 e0); 6c0 and 6e0 indicate which
+;;; flag to check, action 51 checks it and draws the animation.
 ObjectData_ObjectB0                                      ; Object b0
 ;;; ----------------------------------------------------------------
 ObjectData_ObjectD8                                      ; Object d8
@@ -17522,6 +17526,7 @@ ObjectData_ObjectD8                                      ; Object d8
         $1ae82              .byte $xx
         $1ae83              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
+;;; Gears inside windmill.  Also look for the same flag as blades.
 ObjectData_ObjectB1                                      ; Object b1
 ;;; ----------------------------------------------------------------
 ObjectData_ObjectD9                                      ; Object d9
@@ -20379,7 +20384,7 @@ NpcSpawnCondition_7f ; zombie in zombietown
         $1c792              .byte $xx
         ;; UNUSED 
         $1c793              .byte $xx ; Amazones
-        $1c794              .byte $xx,$xx ; 099 NOT
+        $1c794              .byte $xx,$xx ; 099 NOT amazones guard paralyzed
         $1c796              .byte $xx,$xx,$xx,$xx,$xx
 NpcSpawnCondition_64 ; portoa fisherman
         $1c79b              .byte $xx ; Portoa - Fisherman House
@@ -21001,9 +21006,9 @@ NpcDialog_49 ; swan barkeep
 NpcDialog_4b ; swan dancing ladies
         $1cb12              .byte $xx,$xx,$xx,$xx,$xx
         $1cb17              .byte $xx,$xx,$xx,$xx,$xx ; 0a7 NOT -> 13:11
-        $1cb1c              .byte         $xx,$xx
-        $1cb1e              .byte $xx,$xx,$xx,$xx,$xx
-        $1cb23              .byte         $xx,$xx
+        $1cb1c              .byte         $xx,$xx     ;     Set: 0a7
+        $1cb1e              .byte $xx,$xx,$xx,$xx,$xx ; default -> 0a:0b
+        $1cb23              .byte         $xx,$xx     ;     Clear: 0a7
 ;;; ----------------------------------------------------------------
 NpcDialog_4c ; swan dance instructor
         $1cb25              .byte $xx,$xx,$xx,$xx,$xx
@@ -22411,87 +22416,87 @@ TelepathyTable
         $1da7a              .byte     $xx,$xx ; 1c:0a
         ;; --------------------------------
 	;; 00 tornel 0
-        $1da7c              .byte $xx,$xx
-        $1da7e              .byte     $xx,$xx
-        $1da80              .byte     $xx,$xx
+        $1da7c              .byte $xx,$xx ; 041 ball of fire
+        $1da7e              .byte     $xx,$xx ; 1c:13
+        $1da80              .byte     $xx,$xx ; 1c:14
 	;; 04 tornel 1
-        $1da82              .byte $xx,$xx
-        $1da84              .byte     $xx,$xx
+        $1da82              .byte $xx,$xx ; 077 flame bracelet
+        $1da84              .byte     $xx,$xx ; 1c:15
 	;; 08 tornel 2
-        $1da86              .byte $xx,$xx
-        $1da88              .byte     $xx,$xx
-        $1da8a              .byte     $xx,$xx
-        $1da8c              .byte $xx,$xx
-        $1da8e              .byte     $xx,$xx
+        $1da86              .byte $xx,$xx ; 07b ball of water
+        $1da88              .byte     $xx,$xx ; 1c:16
+        $1da8a              .byte     $xx,$xx ; 1c:17
+        $1da8c              .byte $xx,$xx ; 07a blizzard bracelet
+        $1da8e              .byte     $xx,$xx ; 1c:18
 	;; 0c tornel 3, 10 tornel 4
-        $1da90              .byte $xx,$xx
-        $1da92              .byte     $xx,$xx
-        $1da94              .byte $xx,$xx
-        $1da96              .byte     $xx,$xx
-        $1da98              .byte $xx,$xx
-        $1da9a              .byte     $xx,$xx
+        $1da90              .byte $xx,$xx ; 013 broken statue
+        $1da92              .byte     $xx,$xx ; 1c:19
+        $1da94              .byte $xx,$xx ; 063 change
+        $1da96              .byte     $xx,$xx ; 1c:1a
+        $1da98              .byte $xx,$xx ; 027 massacre
+        $1da9a              .byte     $xx,$xx ; 1c:1b
 	;; 14 tornel 5
-        $1da9c              .byte $xx,$xx
-        $1da9e              .byte     $xx,$xx
-        $1daa0              .byte $xx,$xx
-        $1daa2              .byte     $xx,$xx
-        $1daa4              .byte $xx,$xx
-        $1daa6              .byte     $xx,$xx
+        $1da9c              .byte $xx,$xx ; 056 rescued tornel
+        $1da9e              .byte     $xx,$xx ; 1c:1d
+        $1daa0              .byte $xx,$xx ; 065 unslimed kensu
+        $1daa2              .byte     $xx,$xx ; 1c:1e
+        $1daa4              .byte $xx,$xx ; 07c UNUSED (always false)
+        $1daa6              .byte     $xx,$xx ; 1c:1c
 	;; 18 tornel 6
-        $1daa8              .byte $xx,$xx
-        $1daaa              .byte     $xx,$xx
-        $1daac              .byte $xx,$xx
-        $1daae              .byte     $xx,$xx
-        $1dab0              .byte $xx,$xx
-        $1dab2              .byte     $xx,$xx
+        $1daa8              .byte $xx,$xx ; 02e deo's pendant
+        $1daaa              .byte     $xx,$xx ; 1c:1f
+        $1daac              .byte $xx,$xx ; 079 bow of truth
+        $1daae              .byte     $xx,$xx ; 1c:1c
+        $1dab0              .byte $xx,$xx ; 05e defeated draygon 2 (always false)
+        $1dab2              .byte     $xx,$xx ; 1d:00
         ;; --------------------------------
 	;; 02 asina 0, 06 asina 1
-        $1dab4              .byte $xx,$xx
-        $1dab6              .byte     $xx,$xx
+        $1dab4              .byte $xx,$xx ; 01e queen revealed
+        $1dab6              .byte     $xx,$xx ; 1d:03
 	;; 0a asina 2
-        $1dab8              .byte $xx,$xx
-        $1daba              .byte     $xx,$xx
-        $1dabc              .byte $xx,$xx
-        $1dabe              .byte     $xx,$xx
+        $1dab8              .byte $xx,$xx ; 08b shell flute
+        $1daba              .byte     $xx,$xx ; 1d:05
+        $1dabc              .byte $xx,$xx ; 010 turned in kirisa plant
+        $1dabe              .byte     $xx,$xx ; 1d:04
 	;; 0e asina 3, 12 asina 4
-        $1dac0              .byte $xx,$xx
-        $1dac2              .byte     $xx,$xx
-        $1dac4              .byte     $xx,$xx
-        $1dac6              .byte $xx,$xx
-        $1dac8              .byte     $xx,$xx
-        $1daca              .byte     $xx,$xx
+        $1dac0              .byte $xx,$xx ; 063 change
+        $1dac2              .byte     $xx,$xx ; 1d:07
+        $1dac4              .byte     $xx,$xx ; 1d:06
+        $1dac6              .byte $xx,$xx ; 027 massacre
+        $1dac8              .byte     $xx,$xx ; 1d:08
+        $1daca              .byte     $xx,$xx ; 1d:09
 	;; 16 asina 5
-        $1dacc              .byte $xx,$xx
-        $1dace              .byte     $xx,$xx
-        $1dad0              .byte $xx,$xx
-        $1dad2              .byte     $xx,$xx
+        $1dacc              .byte $xx,$xx ; 057 asina rescued
+        $1dace              .byte     $xx,$xx ; 1d:0a
+        $1dad0              .byte $xx,$xx ; 07d bow of sun
+        $1dad2              .byte     $xx,$xx ; 1d:0b
 	;; 1a asina 6
-        $1dad4              .byte $xx,$xx
-        $1dad6              .byte     $xx,$xx
-        $1dad8              .byte $xx,$xx
-        $1dada              .byte     $xx,$xx
-        $1dadc              .byte $xx,$xx
-        $1dade              .byte     $xx,$xx
+        $1dad4              .byte $xx,$xx ; 07d bow of sun
+        $1dad6              .byte     $xx,$xx ; 1d:0b
+        $1dad8              .byte $xx,$xx ; 079 bow of truth
+        $1dada              .byte     $xx,$xx ; 1d:0c
+        $1dadc              .byte $xx,$xx ; 05e draygon 2 defeated (always false)
+        $1dade              .byte     $xx,$xx ; 1d:0d
         ;; --------------------------------
 	;; 03 kensu 0, 07 kensu 1, 0b kensu 2, 0f kensu 3, 13 kensu 4
-        $1dae0              .byte $xx,$xx
-        $1dae2              .byte     $xx,$xx
-        $1dae4              .byte     $xx,$xx
-        $1dae6              .byte $xx,$xx
-        $1dae8              .byte     $xx,$xx
-        $1daea              .byte $xx,$xx
-        $1daec              .byte     $xx,$xx
-        $1daee              .byte     $xx,$xx
-        $1daf0              .byte $xx,$xx
-        $1daf2              .byte     $xx,$xx
+        $1dae0              .byte $xx,$xx ; 01e recover
+        $1dae2              .byte     $xx,$xx ; 1d:14
+        $1dae4              .byte     $xx,$xx ; 1d:15
+        $1dae6              .byte $xx,$xx ; 063 change
+        $1dae8              .byte     $xx,$xx ; 1d:16
+        $1daea              .byte $xx,$xx ; 05f sword of thunder
+        $1daec              .byte     $xx,$xx ; 1d:17
+        $1daee              .byte $xx,$xx ; 027 massacre
+        $1daf0              .byte     $xx,$xx ; 1d:18
+        $1daf2              .byte     $xx,$xx ; 1d:19
 	;; 17 kensu 5 (fall-through)
-        $1daf4              .byte $xx,$xx
-        $1daf6              .byte     $xx,$xx
+        $1daf4              .byte $xx,$xx ; 065 unslimed kensu
+        $1daf6              .byte     $xx,$xx ; 1d:14
 	;; 1b kensu 6
-        $1daf8              .byte $xx,$xx
-        $1dafa              .byte     $xx,$xx
-        $1dafc              .byte $xx,$xx
-        $1dafe              .byte     $xx,$xx
+        $1daf8              .byte $xx,$xx ; 079 bow of truth
+        $1dafa              .byte     $xx,$xx ; 1d:1a
+        $1dafc              .byte $xx,$xx ; 05e defeated draygon 2 (always false)
+        $1dafe              .byte     $xx,$xx ; 1d:1b
 ;;; --------------------------------
 ;;; This data table seems to be used by ItemGet, as well as ItemUse_ShellFlute2.
 ;;; Possibly it handles deleting the item?
@@ -23593,7 +23598,7 @@ Trigger_84
         $1e220              .byte $xx,$xx ; Message 1d:12  Action: 0b
         $1e222              .byte $xx,$xx ; Set: 051 learned barrier
 Trigger_85
-        ;; 85 enter stom's house -> ????
+        ;; 85 enter stom's house -> initiate fight scene
         $1e224              .byte $xx,$xx ; Condition: 2f7 warp:oak
         $1e226              .byte $xx,$xx ; Condition: 00e NOT defeated stom
         $1e228              .byte $xx,$xx ; Message 03:00  Action: 18
@@ -23886,7 +23891,7 @@ Trigger_bb
         $1e38e              .byte $xx,$xx
 Trigger_bc
         ;; bc amazones guards move
-        $1e390              .byte $xx,$xx ; Condition: 099 NOT
+        $1e390              .byte $xx,$xx ; Condition: 099 NOT amazones guard paralyzed
         $1e392              .byte $xx,$xx ; Condition: 028 NOT change:woman
         $1e394              .byte $xx,$xx ; Action: 1b
         $1e396              .byte $xx,$xx
@@ -25576,9 +25581,9 @@ BossPatternJump_27              ; Draygon 0
         $1f18b  xx xx:      xxx #$xx
         $1f18d  xx xx:      xxx $xx
         $1f18f  xx xx:      xxx #$xx
-        $1f191  xx xx:      xxx $xx
-        $1f193  xx xx:      xxx #$xx
-        $1f195  xx xx xx:   xxx $xxxx
+        $1f191  xx xx:      xxx + ; $1f195
+        $1f193  xx xx:       xxx #$xx
++       $1f195  xx xx xx:   xxx $xxxx
         $1f198  xx xx:      xxx #$xx
         $1f19a  xx xx xx:   xxx $xxxx
         $1f19d  xx xx:      xxx #GAME_MODE_STATUS_MSG
@@ -28443,24 +28448,25 @@ ShowMenuMessage
 ;;; --------------------------------
 MenuMessage_SaveGameName
         $20994  xx:         xxx
-        $20995  xx xx xx:   xxx $xxxx
+        $20995  xx xx xx:   xxx $xxxx ; looks like just temp space?
         $20998  xx xx:      xxx ($xx),y
         $2099a  xx xx:      xxx #$xx
         $2099c  xx:         xxx
-        $2099d  xx xx xx:   xxx $209b6,x
+        $2099d  xx xx xx:   xxx SaveFileLocationTable,x
         $209a0  xx xx:      xxx $xx
         $209a2  xx xx:      xxx #$xx
         $209a4  xx xx:      xxx $xx
         $209a6  xx xx:      xxx #$xx
-        $209a8  xx xx:      xxx ($xx),y
-        $209aa  xx xx xx:   xxx $20a02
-        $209ad  xx xx:      xxx #$xx
-        $209af  xx xx:      xxx $xx
+        ;; Copy 6 bytes from the file to the nametable
+-       $209a8  xx xx:       xxx ($xx),y
+        $209aa  xx xx xx:    xxx RenderSaveGameDataToNametable
+        $209ad  xx xx:       xxx #$xx
+        $209af  xx xx:      xxx - ; $209a8
         $209b1  xx xx xx:   xxx $xxxx
         $209b4  xx:         xxx
         $209b5  xx:         xxx
 ;;; --------------------------------
-DataTable_209b6 
+SaveFileLocationTable
         $209b6              .byte $xx,$xx
 ;;; --------------------------------
 MenuMessage_SaveGameLevel
@@ -28470,25 +28476,39 @@ MenuMessage_SaveGameLevel
         $209be  xx xx:      xxx + ; $209c6
         $209c0  xx xx xx:     xxx $xxxx
         $209c3  xx xx xx:     xxx ++ ; $209c9
-;;; --------------------------------
 +       $209c6  xx xx xx:    xxx $xxxx
 ++      $209c9  xx:         xxx
         $209ca  xx:         xxx
-        $209cb  xx xx xx:   xxx $209e0,y
+        $209cb  xx xx xx:   xxx SaveGameLevelHexToDecimalTable,y
         $209ce  xx xx:      xxx $xx
-        $209d0  xx xx xx:   xxx $20a02
-        $209d3  xx xx xx:   xxx $209e0,y
+        $209d0  xx xx xx:   xxx RenderSaveGameDataToNametable ; inc's y
+        $209d3  xx xx xx:   xxx SaveGameLevelHexToDecimalTable,y
         $209d6  xx xx:      xxx $xx
-        $209d8  xx xx xx:   xxx $20a02
+        $209d8  xx xx xx:   xxx RenderSaveGameDataToNametable
         $209db  xx xx xx:   xxx $xxxx
         $209de  xx:         xxx
         $209df  xx:         xxx
 ;;; --------------------------------
-DataTable_209e0 
-        $209e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $209f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+SaveGameLevelHexToDecimalTable
+        $209e0              .byte $xx,$xx
+        $209e2              .byte $xx,$xx
+        $209e4              .byte $xx,$xx
+        $209e6              .byte $xx,$xx
+        $209e8              .byte $xx,$xx
+        $209ea              .byte $xx,$xx
+        $209ec              .byte $xx,$xx
+        $209ee              .byte $xx,$xx
+        $209f0              .byte $xx,$xx
+        $209f2              .byte $xx,$xx
+        $209f4              .byte $xx,$xx
+        $209f6              .byte $xx,$xx
+        $209f8              .byte $xx,$xx
+        $209fa              .byte $xx,$xx
+        $209fc              .byte $xx,$xx
+        $209fe              .byte $xx,$xx
         $20a00              .byte $xx,$xx
 ;;; --------------------------------
+RenderSaveGameDataToNametable
         $20a02  xx xx:      xxx $xx
         $20a04  xx xx xx:   xxx $xxxx,x
         $20a07  xx:         xxx
@@ -32264,20 +32284,96 @@ DataTable_22b95
         $23fe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23ff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 RomBank_12                      ; @@ $8000
-        $24000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $24010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $24020              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $24030              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $24040              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $24050              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $24060              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $24070              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $24080              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $24090              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $240a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $240b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $240c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $240d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+SNKLogoRectanglePointer
+        $24000              .word (SNKLogoRectangle)  ; $02,$80
+SNKLogoRectangle
+        $24002              .byte $xx,$xx ; 12 columns, 3 rows
+        $24004              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $24010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $2401c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+AnimateSNKLogo
+        $24028  xx xx xx:   xxx ClearMapPaletteSpace
+        $2402b  xx xx xx:   xxx ClearSpriteOAMSpace
+        ;; Select Pattern tables.
+        $2402e  xx xx:      xxx #$xx
+        $24030  xx xx xx:   xxx $xxxx
+        $24033  xx xx:      xxx #$xx
+        $24035  xx xx xx:   xxx $xxxx
+        $24038  xx xx:      xxx #$xx ; probably the SNK logo animation?
+        $2403a  xx xx:      xxx ScreenMode
+        $2403c  xx xx:      xxx #$xx
+        $2403e  xx xx:      xxx $xx
+        $24040  xx xx:      xxx #$xx
+        $24042  xx xx:      xxx $xx
+        $24044  xx xx:      xxx #$xx
+        $24046  xx xx:      xxx $xx
+        $24048  xx xx:      xxx #$xx
+        $2404a  xx xx:      xxx #$xx
+        $2404c  xx xx:      xxx #$xx
+        $2404e  xx xx xx:   xxx BlankNametable
+        $24051  xx xx:      xxx #$xx
+        $24053  xx xx:      xxx #$xx
+        $24055  xx xx:      xxx #$xx
+        $24057  xx xx xx:   xxx BlankNametable
+        $2405a  xx xx:      xxx #$xx
+        $2405c  xx xx xx:   xxx $xxxx
+        ;; Tile data at $24002
+        $2405f  xx xx xx:   xxx SNKLogoRectanglePointer
+        $24062  xx xx:      xxx $xx
+        $24064  xx xx xx:   xxx SNKLogoRectanglePointer+1
+        $24067  xx xx:      xxx $xx
+        ;; PPUADDR start: $21ca: (11.25, 10) to NT0
+        $24069  xx xx:      xxx #$xx
+        $2406b  xx xx:      xxx $xx
+        $2406d  xx xx:      xxx #$xx
+        $2406f  xx xx:      xxx $xx
+        ;; 12 columns, 3 rows
+        $24071  xx xx xx:   xxx WriteRectangleToNametable
+        $24074  xx xx:      xxx #$xx
+        $24076  xx xx:      xxx $xx
+        $24078  xx xx:      xxx $xx
+        $2407a  xx xx:      xxx $xx
+        $2407c  xx xx:      xxx #$xx
+        $2407e  xx xx:      xxx $xx
+        $24080  xx xx:      xxx #$xx
+        $24082  xx xx:      xxx $xx
+        $24084  xx xx xx:   xxx EnableNMI_alt2
+        $24087  xx xx xx:   xxx WaitForNMI_alt2
+        $2408a  xx xx:      xxx #$xx
+        $2408c  xx xx xx:   xxx $242be
+        $2408f  xx xx:      xxx #$xx
+        $24091  xx xx xx:   xxx $242be
+        $24094  xx xx xx:   xxx $242fd
+-       $24097  xx xx xx:    xxx $24198
+        $2409a  xx xx xx:    xxx $xxxx
+        $2409d  xx xx xx:    xxx $24310
+        $240a0  xx xx xx:    xxx $xxxx
+        $240a3  xx xx:      xxx - ; $24097
+-       $240a5  xx xx xx:     xxx $24198
+        $240a8  xx xx xx:     xxx $xxxx
+        $240ab  xx xx xx:     xxx $xxxx
+        $240ae  xx xx:        xxx #$xx
+        $240b0  xx xx:       xxx - ; $240a5
+        $240b2  xx xx:       xxx $xx
+        $240b4  xx xx:       xxx $xx
+        $240b6  xx xx:       xxx #$xx
+        $240b8  xx xx:      xxx - ; $240a5
+        $240ba  xx xx:      xxx #$xx
+        $240bc  xx xx:      xxx $xx
+        $240be  xx xx:      xxx $xx
+        $240c0  xx xx:      xxx #$xx
+        $240c2  xx xx xx:   xxx $xxxx
+-       $240c5  xx xx xx:    xxx $24198
+        $240c8  xx xx xx:    xxx $xxxx
+        $240cb  xx xx:      xxx - ; $240c5
+        $240cd  xx xx xx:   xxx $24344
+-       $240d0  xx xx xx:    xxx $24198
+        $240d3  xx xx xx:    xxx $xxxx
+        $240d6  xx xx xx:    xxx $2434a
+        $240d9  xx xx xx:    xxx $xxxx
+        $240dc  xx xx:      xxx - ; $240d0
+        $240de  xx:         xxx   ; animation finished, return.
 ;;; --------------------------------
         $240df  xx xx:      xxx #$xx
         $240e1  xx xx xx:   xxx $xxxx
@@ -32359,71 +32455,79 @@ RomBank_12                      ; @@ $8000
         $2416e  xx xx xx:   xxx $xxxx
         $24171  xx xx xx:   xxx $2412d
 ;;; --------------------------------
+DisableNMI_alt2
         $24174  xx xx:      xxx $xx
         $24176  xx xx:      xxx #$xx
-        $24178  xx xx xx:   xxx $xxxx
+        $24178  xx xx xx:   xxx PPUCTRL
         $2417b  xx:         xxx
 ;;; --------------------------------
+EnableNMI_alt2
         $2417c  xx xx:      xxx $xx
         $2417e  xx xx:      xxx #$xx
-        $24180  xx xx xx:   xxx $xxxx
+        $24180  xx xx xx:   xxx PPUCTRL
         $24183  xx:         xxx
 ;;; --------------------------------
+DisableSpritesAndLeftColumnRendering
         $24184  xx xx:      xxx $xx
         $24186  xx xx:      xxx #$xx
-        $24188  xx xx xx:   xxx $xxxx
+        $24188  xx xx xx:   xxx PPUMASK
         $2418b  xx xx:      xxx $xx
         $2418d  xx:         xxx
 ;;; --------------------------------
+EnableSpritesAndLeftColumnRendering
         $2418e  xx xx:      xxx $xx
         $24190  xx xx:      xxx #$xx
-        $24192  xx xx xx:   xxx $xxxx
+        $24192  xx xx xx:   xxx PPUMASK
         $24195  xx xx:      xxx $xx
         $24197  xx:         xxx
 ;;; --------------------------------
-        $24198  xx xx:      xxx $xx
-        $2419a  xx xx:      xxx $xx
+WaitForNMI_alt2
+-       $24198  xx xx:       xxx $xx
+        $2419a  xx xx:      xxx - ; $24198
         $2419c  xx xx:      xxx #$xx
         $2419e  xx xx:      xxx $xx
         $241a0  xx:         xxx
 ;;; --------------------------------
+;;; Args: X: background tile ID to fill
+;;;       Y: attribute to fill
+BlankNametable
         $241a1  xx xx:      xxx $xx
         $241a3  xx xx:      xxx $xx
         $241a5  xx:         xxx
-        $241a6  xx xx xx:    xxx $24174
-        $241a9  xx xx xx:    xxx $24184
+        $241a6  xx xx xx:    xxx DisableNMI_alt2
+        $241a9  xx xx xx:    xxx DisableSpritesAndLeftColumnRendering
         $241ac  xx:         xxx
-        $241ad  xx xx xx:   xxx $xxxx
-;;; --------------------------------
-;;; called by $2665f when continuing (starting?) a new game;
-;;; appears to blank out a bunch of nametables (maybe only the second table?)
-;;; also blanks between screens in title movie
+        $241ad  xx xx xx:   xxx PPUADDR
         $241b0  xx xx:      xxx #$xx
         $241b2  xx xx xx:   xxx PPUADDR ; $2006
+        ;; Writes $72 to PPUDATA 4 * 240 times, filling the nametable.
         $241b5  xx xx:      xxx #$xx
         $241b7  xx xx:      xxx $xx
         $241b9  xx xx:      xxx $xx
---      $241bb  xx xx:      xxx #$xx
--       $241bd  xx xx xx:   xxx PPUDATA ; $2007
-        $241c0  xx:         xxx
-        $241c1  xx xx:      xxx - ; $241bd
-        $241c3  xx xx:      xxx $xx
+--      $241bb  xx xx:       xxx #$xx
+-       $241bd  xx xx xx:     xxx PPUDATA ; $2007
+        $241c0  xx:           xxx
+        $241c1  xx xx:       xxx - ; $241bd
+        $241c3  xx xx:       xxx $xx
         $241c5  xx xx:      xxx -- ; $241bb
+        ;; Write $73 to PPUDATA 4 * 16 times, filling the attribute table.
         $241c7  xx xx:      xxx #$xx
         $241c9  xx xx:      xxx $xx
--       $241cb  xx xx xx:   xxx PPUDATA
-        $241ce  xx:         xxx
+-       $241cb  xx xx xx:    xxx PPUDATA
+        $241ce  xx:          xxx
         $241cf  xx xx:      xxx - ; $241cb
-        $241d1  xx xx xx:   xxx $2418e
-        $241d4  xx xx xx:   xxx $2417c
+        $241d1  xx xx xx:   xxx EnableSpritesAndLeftColumnRendering
+        $241d4  xx xx xx:   xxx EnableNMI_alt2
         $241d7  xx:         xxx
 ;;; --------------------------------
+ClearSpriteOAMSpace
         $241d8  xx xx:      xxx #$xx
         $241da  xx xx:      xxx #$xx
-        $241dc  xx xx:      xxx $xx
+        $241dc  xx xx:      xxx ScreenMode
         $241de  xx xx:      xxx + ; $241e6
         $241e0  xx xx:      xxx #$xx
         $241e2  xx xx:      xxx + ; $241e6
+        ;; Screen mode was neither 0 (normal) or 3 (intro movie)
         $241e4  xx xx:      xxx #$xx
 - +     $241e6  xx xx xx:   xxx $xxxx,x
         $241e9  xx:         xxx
@@ -32433,14 +32537,24 @@ RomBank_12                      ; @@ $8000
         $241ed  xx xx:      xxx - ; $241e6
         $241ef  xx:         xxx
 ;;; --------------------------------
-        $241f0  xx xx xx:   xxx $24174
-        $241f3  xx xx xx:   xxx $24184
+;;; Args:
+;;;   8e8f: address of data to write: COLS ROWS DATA(R1C1 R1C2...RnCm)
+;;;   8d8c: PPUADDR to start
+;;;         NOTE: 8d8c = 00yy NNYY YYYX XXXX
+;;;         Where  YYYYY.0yy is the coarse.fine Y coordinate
+;;;                XXXXX     is the coarse X coordinate
+;;;                   NN     is the nametable index
+WriteRectangleToNametable
+        $241f0  xx xx xx:   xxx DisableNMI_alt2
+        $241f3  xx xx xx:   xxx DisableSpritesAndLeftColumnRendering
+        ;; Read 2 bytes from 8e8f
         $241f6  xx xx:      xxx #$xx
         $241f8  xx xx:      xxx ($xx),y
         $241fa  xx xx:      xxx $xx
         $241fc  xx:         xxx
         $241fd  xx xx:      xxx ($xx),y
         $241ff  xx xx:      xxx $xx
+        ;; Add 2 to 8e8f
         $24201  xx xx:      xxx $xx
         $24203  xx:         xxx
         $24204  xx xx:      xxx #$xx
@@ -32448,36 +32562,40 @@ RomBank_12                      ; @@ $8000
         $24208  xx xx:      xxx $xx
         $2420a  xx xx:      xxx #$xx
         $2420c  xx xx:      xxx $xx
---      $2420e  xx xx:      xxx $xx
-        $24210  xx xx:      xxx #$xx
-        $24212  xx xx:      xxx $xx
-        $24214  xx xx xx:   xxx PPUADDR
-        $24217  xx xx:      xxx $xx
-        $24219  xx xx xx:   xxx PPUADDR
-        $2421c  xx:         xxx
-        $2421d  xx xx:      xxx #$xx
-        $2421f  xx xx:      xxx $xx
-        $24221  xx xx:      xxx $xx
-        $24223  xx xx:      xxx #$xx
-        $24225  xx xx:      xxx $xx
--       $24227  xx xx:      xxx ($xx),y
-        $24229  xx:         xxx
-        $2422a  xx xx xx:   xxx $xxxx
-        $2422d  xx xx xx:   xxx PPUDATA
-        $24230  xx:         xxx
-        $24231  xx:         xxx
-        $24232  xx xx:      xxx - ; $24227
-        $24234  xx:         xxx
-        $24235  xx:         xxx
-        $24236  xx xx:      xxx $xx
-        $24238  xx xx:      xxx $xx
-        $2423a  xx xx:      xxx $xx
-        $2423c  xx xx:      xxx #$xx
-        $2423e  xx xx:      xxx $xx
-        $24240  xx xx:      xxx $xx
+        ;; Outer loop: $73 iterations
+--      $2420e  xx xx:       xxx $xx
+        $24210  xx xx:       xxx #$xx
+        $24212  xx xx:       xxx $xx
+        $24214  xx xx xx:    xxx PPUADDR
+        $24217  xx xx:       xxx $xx
+        $24219  xx xx xx:    xxx PPUADDR
+        ;; Add 32 to PPUADDR for next time (i.e. next row)
+        $2421c  xx:          xxx
+        $2421d  xx xx:       xxx #$xx
+        $2421f  xx xx:       xxx $xx
+        $24221  xx xx:       xxx $xx
+        $24223  xx xx:       xxx #$xx
+        $24225  xx xx:       xxx $xx
+        ;; Inner loop: $72 iterations
+-       $24227  xx xx:        xxx ($xx),y
+        $24229  xx:           xxx
+        $2422a  xx xx xx:     xxx $xxxx
+        $2422d  xx xx xx:     xxx PPUDATA
+        $24230  xx:           xxx
+        $24231  xx:           xxx
+        $24232  xx xx:       xxx - ; $24227
+        $24234  xx:          xxx
+        ;; Advance 8e8f by the amount we've read, to keep up
+        $24235  xx:          xxx
+        $24236  xx xx:       xxx $xx
+        $24238  xx xx:       xxx $xx
+        $2423a  xx xx:       xxx $xx
+        $2423c  xx xx:       xxx #$xx
+        $2423e  xx xx:       xxx $xx
+        $24240  xx xx:       xxx $xx
         $24242  xx xx:      xxx -- ; $2420e
-        $24244  xx xx xx:   xxx $2418e
-        $24247  xx xx xx:   xxx $2417c
+        $24244  xx xx xx:   xxx EnableSpritesAndLeftColumnRendering
+        $24247  xx xx xx:   xxx EnableNMI_alt2
         $2424a  xx:         xxx
 ;;; --------------------------------
         $2424b  xx xx:      xxx #$xx
@@ -32534,43 +32652,49 @@ RomBank_12                      ; @@ $8000
         $242b0  xx xx:      xxx $xx
         $242b2  xx:         xxx
 ;;; --------------------------------
+ClearMapPaletteSpace
         $242b3  xx xx:      xxx #$xx
         $242b5  xx xx:      xxx #$xx
-        $242b7  xx xx xx:   xxx $xxxx,x
-        $242ba  xx:         xxx
-        $242bb  xx xx:      xxx $xx
+-       $242b7  xx xx xx:    xxx $xxxx,x
+        $242ba  xx:          xxx
+        $242bb  xx xx:      xxx - ; $242b7
         $242bd  xx:         xxx
 ;;; --------------------------------
+;;; Input: A = s000 rrrr
+;;; Copies the r-th 16-byte row into S ? 6e0 : 6d0.
         $242be  xx:         xxx
         $242bf  xx xx:      xxx #$xx
         $242c1  xx xx:      xxx #$xx
-        $242c3  xx xx:      xxx $xx
-        $242c5  xx xx:      xxx #$xx
-        $242c7  xx:         xxx
+        $242c3  xx xx:      xxx + ; $242c7
+        $242c5  xx xx:       xxx #$xx
++       $242c7  xx:         xxx
         $242c8  xx xx:      xxx #$xx
         $242ca  xx:         xxx
         $242cb  xx:         xxx
         $242cc  xx:         xxx
         $242cd  xx:         xxx
         $242ce  xx:         xxx
+        ;; Copy the A-th 16 bytes from the table into 6d0 or 6e0
+        ;; (depending on the sign of A).
         $242cf  xx xx:      xxx #$xx
         $242d1  xx xx:      xxx $xx
-        $242d3  xx xx xx:   xxx $2438b,y
-        $242d6  xx xx xx:   xxx $xxxx,x
-        $242d9  xx:         xxx
-        $242da  xx:         xxx
-        $242db  xx xx:      xxx $xx
-        $242dd  xx xx:      xxx $xx
+-       $242d3  xx xx xx:    xxx $2438b,y
+        $242d6  xx xx xx:    xxx $xxxx,x
+        $242d9  xx:          xxx
+        $242da  xx:          xxx
+        $242db  xx xx:       xxx $xx
+        $242dd  xx xx:      xxx - ; $242d3
+        ;; Copy some more??? TODO - what?
         $242df  xx xx xx:   xxx $xxxx
         $242e2  xx xx:      xxx #$xx
         $242e4  xx xx:      xxx #$xx
-        $242e6  xx xx xx:   xxx $xxxx,x
-        $242e9  xx:         xxx
-        $242ea  xx:         xxx
-        $242eb  xx:         xxx
-        $242ec  xx:         xxx
-        $242ed  xx:         xxx
-        $242ee  xx xx:      xxx $xx
+-       $242e6  xx xx xx:    xxx $xxxx,x
+        $242e9  xx:          xxx
+        $242ea  xx:          xxx
+        $242eb  xx:          xxx
+        $242ec  xx:          xxx
+        $242ed  xx:          xxx
+        $242ee  xx xx:      xxx - ; $242e6
         $242f0  xx:         xxx
 ;;; --------------------------------
         $242f1  xx xx:      xxx #$xx
@@ -32659,16 +32783,16 @@ RomBank_12                      ; @@ $8000
         $2438a  xx:         xxx
 ;;; --------------------------------
 ;;; This looks like it contains graphics for the title screen and maybe movies.
-DataTable_2438b 
-        $2438b              .byte $xx,$xx,$xx,$xx,$xx
-        $24390              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $243a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $243b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $243c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $243d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $243e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $243f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $24400              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+DataTable_2438b
+        $2438b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $2439b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $243ab              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $243bb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $243cb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $243db              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $243eb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $243fb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $2440b              .byte $xx,$xx,$xx,$xx,$xx
         $24410              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $24420              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $24430              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -33940,7 +34064,7 @@ DataTable_2656e
         $26659  xx xx:      xxx #$xx
         $2665b  xx xx:      xxx #$xx
         $2665d  xx xx:      xxx #$xx
-        $2665f  xx xx xx:   xxx $241a1
+        $2665f  xx xx xx:   xxx BlankNametable
         $26662  xx xx:      xxx #$xx
         $26664  xx xx xx:   xxx $xxxx
         $26667  xx xx:      xxx #$xx
@@ -34154,7 +34278,7 @@ JumpTable_267bc_02
         $26806  xx xx:      xxx #$xx
         $26808  xx xx:      xxx #$xx
         $2680a  xx xx:      xxx #$xx
-        $2680c  xx xx xx:   xxx $241a1
+        $2680c  xx xx xx:   xxx BlankNametable
         $2680f  xx xx xx:   xxx $27162
         $26812  xx xx:      xxx $xx
         $26814  xx xx xx:   xxx $27163
@@ -34190,7 +34314,7 @@ JumpTable_267bc_06
         $26859  xx xx:      xxx #$xx
         $2685b  xx xx:      xxx #$xx
         $2685d  xx xx:      xxx #$xx
-        $2685f  xx xx xx:   xxx $241a1
+        $2685f  xx xx xx:   xxx BlankNametable
         $26862  xx xx:      xxx #$xx
         $26864  xx xx xx:   xxx $xxxx
         $26867  xx xx xx:   xxx $2447b
@@ -34304,7 +34428,7 @@ JumpTable_267bc_0b
         $2695e  xx xx:      xxx #$xx
         $26960  xx xx:      xxx #$xx
         $26962  xx xx:      xxx #$xx
-        $26964  xx xx xx:   xxx $241a1
+        $26964  xx xx xx:   xxx BlankNametable
         $26967  xx xx:      xxx #$xx
         $26969  xx xx xx:   xxx $xxxx
         $2696c  xx xx xx:   xxx $24607
@@ -34340,7 +34464,7 @@ JumpTable_267bc_0b
         $269b3  xx xx:      xxx #$xx
         $269b5  xx xx:      xxx #$xx
         $269b7  xx xx:      xxx #$xx
-        $269b9  xx xx xx:   xxx $241a1
+        $269b9  xx xx xx:   xxx BlankNametable
         $269bc  xx xx:      xxx #$xx
         $269be  xx xx xx:   xxx $xxxx
         $269c1  xx xx xx:   xxx $24793
@@ -34416,7 +34540,7 @@ JumpTable_267bc_10
         $26a51  xx xx:      xxx #$xx
         $26a53  xx xx:      xxx #$xx
         $26a55  xx xx:      xxx #$xx
-        $26a57  xx xx xx:   xxx $241a1
+        $26a57  xx xx xx:   xxx BlankNametable
         $26a5a  xx xx:      xxx #$xx
         $26a5c  xx xx:      xxx $xx
         $26a5e  xx xx:      xxx #$xx
@@ -34509,7 +34633,7 @@ JumpTable_267bc_14
         $26b1e  xx xx:      xxx #$xx
         $26b20  xx xx:      xxx #$xx
         $26b22  xx xx:      xxx #$xx
-        $26b24  xx xx xx:   xxx $241a1
+        $26b24  xx xx xx:   xxx BlankNametable
         $26b27  xx xx:      xxx #$xx
         $26b29  xx xx xx:   xxx $xxxx
         $26b2c  xx xx xx:   xxx $24aab
@@ -34638,11 +34762,11 @@ DataTable_26c07
         $26c61  xx xx:      xxx #$xx
         $26c63  xx xx:      xxx #$xx
         $26c65  xx xx:      xxx #$xx
-        $26c67  xx xx xx:   xxx $241a1
+        $26c67  xx xx xx:   xxx BlankNametable
         $26c6a  xx xx:      xxx #$xx
         $26c6c  xx xx:      xxx #$xx
         $26c6e  xx xx:      xxx #$xx
-        $26c70  xx xx xx:   xxx $241a1
+        $26c70  xx xx xx:   xxx BlankNametable
         $26c73  xx xx:      xxx #$xx
         $26c75  xx xx xx:   xxx $xxxx
         $26c78  xx xx xx:   xxx $24c7f
@@ -34821,7 +34945,7 @@ DataTable_26df5
         $26e09  xx xx:      xxx #$xx
         $26e0b  xx xx:      xxx #$xx
         $26e0d  xx xx:      xxx #$xx
-        $26e0f  xx xx xx:   xxx $241a1
+        $26e0f  xx xx xx:   xxx BlankNametable
         $26e12  xx xx:      xxx #$xx
         $26e14  xx xx xx:   xxx $xxxx
         $26e17  xx xx xx:   xxx $2742f
@@ -34844,11 +34968,11 @@ DataTable_26df5
         $26e3d  xx xx:      xxx #$xx
         $26e3f  xx xx:      xxx #$xx
         $26e41  xx xx:      xxx #$xx
-        $26e43  xx xx xx:   xxx $241a1
+        $26e43  xx xx xx:   xxx BlankNametable
         $26e46  xx xx:      xxx #$xx
         $26e48  xx xx:      xxx #$xx
         $26e4a  xx xx:      xxx #$xx
-        $26e4c  xx xx xx:   xxx $241a1
+        $26e4c  xx xx xx:   xxx BlankNametable
         $26e4f  xx xx:      xxx #$xx
         $26e51  xx xx:      xxx $xx
         $26e53  xx xx:      xxx $xx
@@ -35008,7 +35132,7 @@ DataTable_26fbb
         $26fd5  xx xx:      xxx #$xx
         $26fd7  xx xx:      xxx #$xx
         $26fd9  xx xx:      xxx #$xx
-        $26fdb  xx xx xx:   xxx $241a1
+        $26fdb  xx xx xx:   xxx BlankNametable
         $26fde  xx xx:      xxx #$xx
         $26fe0  xx xx xx:   xxx $xxxx
         $26fe3  xx xx xx:   xxx $27505
@@ -35032,7 +35156,7 @@ DataTable_26fbb
         $2700c  xx xx:      xxx #$xx
         $2700e  xx xx:      xxx #$xx
         $27010  xx xx:      xxx #$xx
-        $27012  xx xx xx:   xxx $241a1
+        $27012  xx xx xx:   xxx BlankNametable
         $27015  xx xx:      xxx #$xx
         $27017  xx xx xx:   xxx $xxxx
         $2701a  xx xx:      xxx #$xx
@@ -35138,7 +35262,7 @@ DataTable_26fbb
         $270fe  xx xx:      xxx #$xx
         $27100  xx xx:      xxx #$xx
         $27102  xx xx:      xxx #$xx
-        $27104  xx xx xx:   xxx $241a1
+        $27104  xx xx xx:   xxx BlankNametable
         $27107  xx xx:      xxx #$xx
         $27109  xx xx xx:   xxx $xxxx
         $2710c  xx xx xx:   xxx $24e8b
@@ -37038,9 +37162,9 @@ MessageDecodeJump_08_CurrentItemName
         $2877c  xx:         xxx
         $2877d  xx xx xx:   xxx $xxxx
         $28780  xx xx:      xxx #$xx
-        $28782  xx xx:      xxx $xx
-        $28784  xx xx:      xxx #$xx
-        $28786  xx:         xxx
+        $28782  xx xx:      xxx + ; $28786
+        $28784  xx xx:       xxx #$xx ; blank name if nothing
++       $28786  xx:         xxx
         $28787  xx:         xxx
         $28788  xx xx xx:   xxx ItemNames,x
         $2878b  xx xx:      xxx $xx
@@ -40376,7 +40500,7 @@ SetCarryIfCheckpoint
 DataTable_2fdfd 
         $2fdfd              .byte $xx,$xx,$xx
 ;;; --------------------------------
-;;; Initial contents of $6300..$63ff for continuing a bad save... (cf $3f121)
+;;; Initial contents of $6400..$64ff for continuing a bad save... (cf $3f121)
 ;;; It does not seem to affect starting a new game, tho.
 InitialPrg_6400
         $2fe00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -43079,7 +43203,7 @@ UpdateHPDisplayInternal
         $34cc0  xx:         xxx
         $34cc1  xx:         xxx
         $34cc2  xx xx:       xxx #$xx
-        $34cc4  xx xx xx:    xxx $3c72b
+        $34cc4  xx xx xx:    xxx FlushNametableDataUntilAllOffsetsNonzero
         $34cc7  xx xx:       xxx #$xx
         $34cc9  xx xx:       xxx #$xx
 -       $34ccb  xx xx xx:     xxx $xxxx,x
@@ -43155,7 +43279,7 @@ DataTable_34d49
         $34d59  xx:         xxx
         $34d5a  xx:         xxx
         $34d5b  xx xx:       xxx #$xx
-        $34d5d  xx xx xx:    xxx $3c72b
+        $34d5d  xx xx xx:    xxx FlushNametableDataUntilAllOffsetsNonzero
         $34d60  xx xx:       xxx #$xx
         $34d62  xx xx:       xxx #$xx
         $34d64  xx xx xx:    xxx $xxxx,x
@@ -43427,49 +43551,56 @@ CollisionJump
 CollisionJump_03_ParalysisBeam
         $34fc4  xx xx xx:   xxx $xxxx,x
         $34fc7  xx xx:      xxx #$xx
-        $34fc9  xx xx:      xxx $xx
-        $34fcb  xx xx xx:   xxx $3506c
-;;; --------------------------------
-        $34fce  xx xx xx:   xxx $3507c
-        $34fd1  xx xx:      xxx $xx
+        $34fc9  xx xx:      xxx + ; $34fce
+        $34fcb  xx xx xx:    xxx $3506c
+        ;;                   ----------
+        ;; Paralyze an NPC
++       $34fce  xx xx xx:   xxx $3507c
+        $34fd1  xx xx:       xxx <rts ; $34fc3
         $34fd3  xx xx xx:   xxx $xxxx,y
         $34fd6  xx xx:      xxx #$xx
-        $34fd8  xx xx:      xxx $xx
+        $34fd8  xx xx:       xxx <rts ; $34fc3
         $34fda  xx xx:      xxx #$xx
         $34fdc  xx xx xx:   xxx $xxxx,x
         $34fdf  xx xx xx:   xxx $xxxx,y
         $34fe2  xx xx:      xxx #$xx
-        $34fe4  xx xx:      xxx $xx
+        $34fe4  xx xx:       xxx <rts ; $34fc3
         $34fe6  xx xx xx:   xxx $xxxx,y
-        $34fe9  xx xx:      xxx $xx
+        $34fe9  xx xx:      xxx $xx ; NPC ID
         $34feb  xx xx:      xxx #$xx
-        $34fed  xx xx:      xxx $xx
+        $34fed  xx xx:      xxx $xx ; set paralysis flag
         $34fef  xx xx:      xxx #$xx
         $34ff1  xx xx xx:   xxx $xxxx,y
         $34ff4  xx xx:      xxx $xx
         $34ff6  xx xx xx:   xxx $xxxx,y
         $34ff9  xx xx:      xxx #$xx
-        $34ffb  xx xx:      xxx $xx
+        $34ffb  xx xx:       xxx >>rts ; $35044
+        ;; Check immunity to paralysis
         $34ffd  xx xx:      xxx #$xx
-        $34fff  xx xx xx:   xxx $35058,y
-        $35002  xx xx:      xxx $xx
-        $35004  xx xx:      xxx $xx
-        $35006  xx xx:      xxx $xx
-        $35008  xx xx:      xxx #$xx
-        $3500a  xx xx xx:   xxx $xxxx,y
-        $3500d  xx:         xxx
-;;; --------------------------------
-        $3500e  xx:         xxx
-        $3500f  xx xx:      xxx $xx
+-       $34fff  xx xx xx:    xxx $35058,y
+        $35002  xx xx:       xxx $xx
+        $35004  xx xx:       xxx + ; $3500e
+        $35006  xx xx:        xxx $xx
+        $35008  xx xx:        xxx #$xx
+        $3500a  xx xx xx:     xxx $xxxx,y
+        $3500d  xx:           xxx
+        ;;                    ---
++       $3500e  xx:          xxx
+        $3500f  xx xx:      xxx - ; $34fff
+SetOrClearParalysisFlag:
+        ;; Input: $12 = FF to set, 00 to clear
+        ;;        $13 = NPC ID to handle
         $35011  xx xx:      xxx #$xx
-        $35013  xx xx xx:   xxx $35045,y
-        $35016  xx xx:      xxx $xx
-        $35018  xx xx:      xxx $xx
-        $3501a  xx xx:      xxx $xx
-        $3501c  xx:         xxx
-        $3501d  xx xx xx:   xxx $35013
-;;; --------------------------------
-        $35020  xx xx xx:   xxx $3504f,y
+-       $35013  xx xx xx:    xxx $35045,y
+        $35016  xx xx:        xxx >rts ; $35044
+        $35018  xx xx:       xxx $xx
+        $3501a  xx xx:        xxx + ; $35020
+        $3501c  xx:          xxx
+        $3501d  xx xx xx:    xxx - ; $35013
+        ;;                   --------------
+        ;; NPC was entry Y in the 35045 table
+        ;;   -> set (or clear) the parallel flag in 3504f.
++       $35020  xx xx xx:   xxx $3504f,y
         $35023  xx:         xxx
         $35024  xx xx:       xxx #$xx
         $35026  xx:          xxx
@@ -43490,10 +43621,26 @@ CollisionJump_03_ParalysisBeam
         $35041  xx xx xx:   xxx $xxxx,y
         $35044  xx:         xxx
 ;;; --------------------------------
+;;; Looks like the first 19 bytes is a paralysis flag table
+;;; But most of these are never read - it could be compressed down to
+;;; just two entries: 6d => 70 and 6e => 71.
 DataTable_35045 
-        $35045              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $35050              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $35060              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 10 bytes (terminated by 00)
+        ;; This is the key to a map => person ID of paralysis target
+        $35045              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; This next line (9 bytes) appears to reference flags?
+        $3504f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; 20 NPC IDs that are immune to paralysis
+        $35058              .byte $xx,$xx ; kensu
+        $3505a              .byte $xx,$xx ; asina in various forms
+        $3505c              .byte $xx     ; unused
+        $3505d              .byte $xx,$xx ; azteca
+        $3505f              .byte $xx,$xx ; shyron guards
+        $35061              .byte $xx,$xx ; dolphin
+        $35063              .byte $xx,$xx,$xx ; dead shyron people
+        $35066              .byte $xx,$xx,$xx ; kensu in various places
+        $35069              .byte $xx     ; mesia
+        $3506a              .byte $xx,$xx ; aryllis attendants
 ;;; --------------------------------
         $3506c  xx xx xx:   xxx $3507c
         $3506f  xx xx:      xxx $xx
@@ -44193,22 +44340,23 @@ CollisionJump_02_PlayerInFrontOfNpcOrTrigger
         $35564  xx xx xx:   xxx $xxxx
         $35567  xx:         xxx
 ;;; --------------------------------
+        ;; Move the player back in response to touching a statue.
         $35568  xx xx xx:   xxx $xxxx,y
         $3556b  xx xx:      xxx #$xx
-        $3556d  xx xx:      xxx $xx
+        $3556d  xx xx:      xxx + ; $35585
         $3556f  xx xx xx:   xxx $xxxx,y
         $35572  xx xx:      xxx #$xx
-        $35574  xx xx:      xxx $xx
+        $35574  xx xx:      xxx + ; $35585
         $35576  xx xx xx:   xxx $xxxx
         $35579  xx xx:      xxx #$xx
-        $3557b  xx xx:      xxx $xx
+        $3557b  xx xx:      xxx + ; $35585
         $3557d  xx xx xx:   xxx $xxxx
         $35580  xx xx:      xxx #$xx
         $35582  xx xx xx:   xxx $xxxx
-        $35585  xx:         xxx
++       $35585  xx:         xxx
         $35586  xx:         xxx
         $35587  xx xx:       xxx #$xx
-        $35589  xx xx xx:    xxx ObjectKnockback,x
+-       $35589  xx xx xx:    xxx ObjectKnockback,x
         $3558c  xx:          xxx
         $3558d  xx xx xx:     xxx ObjectDirection,x
         $35590  xx:           xxx
@@ -44225,8 +44373,8 @@ CollisionJump_02_PlayerInFrontOfNpcOrTrigger
         $355a6  xx:          xxx
         $355a7  xx xx xx:    xxx ObjectKnockback,x
         $355aa  xx:          xxx
-        $355ab  xx xx:       xxx $xx
-        $355ad  xx xx xx:    xxx $3ff8c
+        $355ab  xx xx:       xxx - ; $35589
+        $355ad  xx xx xx:    xxx DrawAllObjectSprites
         $355b0  xx:         xxx
         $355b1  xx:         xxx
         $355b2  xx xx:      xxx $xx
@@ -45491,6 +45639,7 @@ ObjectActionJump_03
 +       $35e9e  xx xx xx:   xxx $xxxx,x
         $35ea1  xx xx:      xxx $xx
         $35ea3  xx xx:      xxx $xx
+        ;; If we're not moving, this is where we bail out
         $35ea5  xx xx:      xxx ++ ; $35eef
         $35ea7  xx xx xx:   xxx $xxxx,x
         $35eaa  xx xx:      xxx + ; $35eba
@@ -46052,7 +46201,7 @@ DataTable_362ac
 ;;; This is called by $3cd28 using $4a0,x:7f as the index.
 ;;; Note that entries $60..$6f are on a different page.
 ;;; STRIP: word=$2c000
-ObjectActionJump
+ObjectActionJumpTable
         $36314              .word ($xxxx)
         $36316              .word ($35b45) ; 01
         $36318              .word ($35d81) ; 02
@@ -46181,7 +46330,7 @@ ObjectActionJump
         $3640a              .word ($37778) ; 7b
         $3640c              .word ($377f6) ; 7c
         $3640e              .word ($379aa) ; 7d - shaking for 16 frames or so btw death and coin
-        $36410              .word ($xxxx)
+        $36410              .word ($xxxx)  ; 7e --> custom insect waiting
         $36412              .word ($36419) ; 7f
 ;;; --------------------------------
 ObjectActionJump_3f
@@ -46556,16 +46705,23 @@ ObjectActionJump_50
         $366c2  xx xx:       xxx $xx,x
 +       $366c4  xx:         xxx
 ;;; --------------------------------
+;;; Run the windmill.
 ObjectActionJump_51
-        $366c5  xx xx xx:   xxx $366fb
+        $366c5  xx xx xx:   xxx $366fb ; Immediately below - double return unless flag set
+        ;; Windmill is running at this point.  Cycle the animation (via Metasprite).
         $366c8  xx xx xx:   xxx $xxxx,x
+        ;; Bail out of not on screen
         $366cb  xx xx xx:   xxx $xxxx,x
-        $366ce  xx xx:      xxx ++ ; $366fa
+        $366ce  xx xx:       xxx >rts ; $366fa
+        ;; Check if the flag was loaded on the map as being set.
         $366d0  xx xx xx:   xxx $xxxx
         $366d3  xx xx:      xxx + ; $366ee
         $366d5  xx xx:       xxx $xx
         $366d7  xx xx:       xxx #$xx
         $366d9  xx xx:       xxx + ; $366ee
+        ;; We're in Valley of Wind and on screen - maybe spawn an explosion
+        ;; if we haven't spawned one yet already.  The explosion will figure out
+        ;; the relevant flag to set halfway through.
         $366db  xx xx xx:     xxx $xxxx
         $366de  xx xx:        xxx #$xx
         $366e0  xx xx:        xxx + ; $366ee
@@ -46573,15 +46729,17 @@ ObjectActionJump_51
         $366e5  xx xx:         xxx $xx
         $366e7  xx xx:         xxx #$xx
         $366e9  xx xx:         xxx $xx
-        $366eb  xx xx xx:      xxx $3ff80
+        $366eb  xx xx xx:      xxx LoadOneObjectData
 +       $366ee  xx xx xx:   xxx $xxxx,x
         $366f1  xx xx:      xxx #$xx
-        $366f3  xx xx:      xxx ++ ; $366fa
+        $366f3  xx xx:       xxx >rts ; $366fa
         $366f5  xx xx:      xxx #$xx
         $366f7  xx xx xx:   xxx StartAudioTrack
         ;; --------------------------------
-++      $366fa  xx:         xxx
+        $366fa  xx:         xxx
         ;; --------------------------------
+        ;; Literally just look for "started windmill" flag, since that's the only place
+        ;; this action is ever used.
         $366fb  xx xx xx:   xxx $xxxx,x
         $366fe  xx xx xx:   xxx $xxxx,y ; note: this is flag space
         $36701  xx xx:      xxx $xx
@@ -48713,6 +48871,8 @@ DataTable_377c6
         $377e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $377f0              .byte $xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+;;; This is an explosion.  It locks the screen and then halfway through the
+;;; process it will set the relevant map data flag.
 ObjectActionJump_08
 ObjectActionJump_7c
         $377f6  xx xx xx:   xxx $37850
@@ -48723,7 +48883,7 @@ ObjectActionJump_7c
         $37803  xx xx:      xxx #$xx
         $37805  xx xx:      xxx $xx
         $37807  xx xx xx:   xxx $3c75c
-        $3780a  xx xx xx:   xxx $3c676
+        $3780a  xx xx xx:   xxx FlushNametableDataWrite
         $3780d  xx:         xxx
         $3780e  xx:         xxx
         $3780f  xx xx xx:    xxx ReadObjectCoordinatesInto_34_37
@@ -48743,10 +48903,10 @@ ObjectActionJump_7c
         $37829  xx xx:        xxx $xx
         $3782b  xx xx:        xxx $xx
         $3782d  xx xx:        xxx $xx
-        $3782f  xx xx xx:     xxx $3ff9d
+        $3782f  xx xx xx:     xxx PrepareNametableStageForVerticalScroll
         $37832  xx:          xxx
         $37833  xx xx:       xxx $xx
-        $37835  xx xx xx:    xxx $3c739
+        $37835  xx xx xx:    xxx RequestAttributeTable0Write
         $37838  xx:         xxx
         $37839  xx:         xxx
         $3783a  xx:         xxx
@@ -56202,6 +56362,7 @@ RequestAttributeTable0Write
         $3c759  xx xx:      xxx $xx
         $3c75b  xx:         xxx
 ;;; --------------------------------
+	    ;; Look for a map flag?
         $3c75c  xx xx:      xxx $xx,x
         $3c75e  xx xx xx:   xxx PowersOfTwo,y
         $3c761  xx xx:      xxx $xx,x
@@ -56883,23 +57044,27 @@ MainGameModeJump_1f_DynaAppears
 ;;; --------------------------------
         $3cccc  xx xx:      xxx #$xx
         $3ccce  xx xx xx:   xxx $xxxx
+        ;; For each object...
 @loop:  $3ccd1  xx xx:       xxx #$xx ; $8000 -> $34000
         $3ccd3  xx xx xx:    xxx BankSwitch16k
         $3ccd6  xx xx xx:    xxx $xxxx,x
         $3ccd9  xx xx:       xxx #$xx
         $3ccdb  xx xx:       xxx $xx
+        ;; Tick the "must wait to move" countdown timer 5a0,x
+        ;; If it ticks down to 0 then clear paralysis
         $3ccdd  xx xx xx:    xxx $xxxx,x
         $3cce0  xx xx:       xxx $xx
         $3cce2  xx xx xx:    xxx $xxxx,x
         $3cce5  xx xx:       xxx ++ ; $3cd2b
         $3cce7  xx xx xx:    xxx $xxxx,x
-        $3ccea  xx xx:       xxx #$xx
+        $3ccea  xx xx:       xxx #$xx ; OBJTYPE_PERSON
         $3ccec  xx xx:       xxx + ; $3ccfa
-        $3ccee  xx xx:       xxx #$xx
-        $3ccf0  xx xx:       xxx $xx
-        $3ccf2  xx xx xx:    xxx $xxxx,x
-        $3ccf5  xx xx:       xxx $xx
-        $3ccf7  xx xx xx:    xxx $35011
+        ;; Object is a person - clear paralysis
+        $3ccee  xx xx:        xxx #$xx
+        $3ccf0  xx xx:        xxx $xx
+        $3ccf2  xx xx xx:     xxx $xxxx,x
+        $3ccf5  xx xx:        xxx $xx
+        $3ccf7  xx xx xx:     xxx SetOrClearParalysisFlag:
 +       $3ccfa  xx xx xx:    xxx $xxxx,x
         $3ccfd  xx xx:       xxx #$xx
         $3ccff  xx xx:       xxx #$xx ; ObjectUpdate_1A does not run???
@@ -56910,9 +57075,9 @@ MainGameModeJump_1f_DynaAppears
         $3cd07  xx:          xxx
         $3cd08  xx xx:       xxx #OP_JMP_ABS
         $3cd0a  xx xx:       xxx $xx
-        $3cd0c  xx xx xx:    xxx ObjectActionJump,y
+        $3cd0c  xx xx xx:    xxx ObjectActionJumpTable,y
         $3cd0f  xx xx:       xxx $xx
-        $3cd11  xx xx xx:    xxx ObjectActionJump+1,y
+        $3cd11  xx xx xx:    xxx ObjectActionJumpTable+1,y
         $3cd14  xx xx:       xxx $xx
         $3cd16  xx xx:       xxx $xx
         $3cd18  xx xx:       xxx ++ ; $3cd2b
@@ -57555,6 +57720,7 @@ GrantItemInRegisterA
 ;;; --------------------------------
 DialogFollowupActionJump_06
 DialogFollowupActionJump_0d
+        ;; NPC walks away (treasure hunter)?
         $3d23f  xx xx:      xxx #$xx
         $3d241  xx xx xx:   xxx $xxxx
         $3d244  xx xx:      xxx #$xx
@@ -57568,6 +57734,7 @@ DialogFollowupActionJump_0d
         $3d259  xx:         xxx
 ;;; --------------------------------
 DialogFollowupActionJump_0c
+        ;; Dwarf child starts following?
         $3d25a  xx xx xx:   xxx $xxxx
         $3d25d  xx xx:      xxx #$xx
         $3d25f  xx xx xx:   xxx $xxxx,y
@@ -57831,14 +57998,17 @@ HandleTreasureChest
 ;;; NOTE: This table is accessed as $3d405,y where Y >= $50.
 ;;; This looks somewhat redundant with ItemGetTable.  It may
 ;;; make it a little more difficult to shuffle lower items.
+;;; It contains the item name for messages (it's stored in $07dc
+;;; which is read by MessageDecodeJump_08_CurrentItemName).
 DataTable_3d45c
         $3d45c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $3d46c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 HandleTreasureChest_TooManyItems
+        ;; Only give a message every 16 frames.
         $3d47c  xx xx:      xxx $xx
         $3d47e  xx xx:      xxx #$xx
-        $3d480  xx xx:      xxx $xx
+        $3d480  xx xx:      xxx <rts ; $3d45b
         $3d482  xx xx xx:   xxx $3cc2e
         $3d485  xx xx:      xxx #$xx
         $3d487  xx xx xx:   xxx $xxxx
@@ -58289,23 +58459,27 @@ ItemOrTriggerActionJump_1b
         $3d7d1  xx xx:      xxx #$xx
         $3d7d3  xx xx xx:   xxx $xxxx,y
         $3d7d6  xx xx:      xxx #$xx
-        $3d7d8  xx xx xx:   xxx $xxxx,y
-        $3d7db  xx xx:      xxx $xx
-        $3d7dd  xx xx:      xxx #$xx
-        $3d7df  xx xx:      xxx $xx
-        $3d7e1  xx xx xx:   xxx $xxxx,y
-        $3d7e4  xx xx:      xxx $xx
-        $3d7e6  xx:         xxx
-        $3d7e7  xx:         xxx
-        $3d7e8  xx xx:      xxx #$xx
-        $3d7ea  xx xx xx:   xxx $xxxx,y
-        $3d7ed  xx xx:      xxx #$xx
-        $3d7ef  xx xx xx:   xxx $xxxx,y
-        $3d7f2  xx xx:      xxx #$xx
-        $3d7f4  xx xx xx:   xxx $xxxx,y
-        $3d7f7  xx:         xxx
-        $3d7f8  xx xx:      xxx #$xx
-        $3d7fa  xx xx:      xxx $xx
+        ;; Search the first two spawn slots for something w/ action !=32 and not
+        ;; paralyzed.  If found, make them move.  There's an empty/unused spawn
+        ;; in the 0e slot for both palace entrance and amazones.  TODO - how to
+        ;; ensure we don't defrag these?!?  could set a signal, like 'fefefefe'?
+-       $3d7d8  xx xx xx:    xxx $xxxx,y
+        $3d7db  xx xx:       xxx + ; $3d7f7
+        $3d7dd  xx xx:        xxx #$xx
+        $3d7df  xx xx:        xxx + ; $3d7f7
+        $3d7e1  xx xx xx:      xxx $xxxx,y ; must wait to move
+        $3d7e4  xx xx:         xxx + ; $3d7f7
+        $3d7e6  xx:             xxx
+        $3d7e7  xx:             xxx
+        $3d7e8  xx xx:          xxx #$xx
+        $3d7ea  xx xx xx:       xxx $xxxx,y
+        $3d7ed  xx xx:          xxx #$xx
+        $3d7ef  xx xx xx:       xxx $xxxx,y
+        $3d7f2  xx xx:          xxx #$xx
+        $3d7f4  xx xx xx:       xxx $xxxx,y
++       $3d7f7  xx:          xxx
+        $3d7f8  xx xx:       xxx #$xx
+        $3d7fa  xx xx:      xxx - ; $3d7d8
         $3d7fc  xx:         xxx
 ;;; --------------------------------
 ItemOrTriggerActionJump_1c
@@ -58317,9 +58491,10 @@ ItemOrTriggerActionJump_1d
         $3d805  xx xx xx:   xxx $xxxx
         $3d808  xx xx:      xxx #$xx
         $3d80a  xx xx xx:   xxx $xxxx,y
-        $3d80d  xx xx:      xxx $xx
-        $3d80f  xx xx:      xxx #$xx
-        $3d811  xx xx:      xxx $xx
+        $3d80d  xx xx:      xxx CurrentLocation
+        $3d80f  xx xx:      xxx #LOC_SHYRON_TEMPLE
+        $3d811  xx xx:       xxx >rts ; $3d826
+        ;; Spawn Mado 1 (88) into slot 0d at a specific location.
         $3d813  xx xx:      xxx #$xx
         $3d815  xx xx:      xxx $xx
         $3d817  xx xx:      xxx #$xx
@@ -58328,7 +58503,7 @@ ItemOrTriggerActionJump_1d
         $3d81d  xx xx:      xxx $xx
         $3d81f  xx xx:      xxx #$xx
         $3d821  xx xx:      xxx $xx
-        $3d823  xx xx xx:   xxx $3ff80
+        $3d823  xx xx xx:   xxx LoadOneObjectData
 ;;; --------------------------------
         $3d826  xx:         xxx
 ;;; --------------------------------
@@ -58367,7 +58542,7 @@ HandleItemOrTrigger
         $3d853  xx xx xx:   xxx $xxxx
         ;; Handle the output
         $3d856  xx xx:      xxx $xx
-        $3d858  xx xx:      xxx $xx
+        $3d858  xx xx:      xxx + ; $3d880
         $3d85a  xx xx:      xxx $xx
         $3d85c  xx xx:      xxx $xx
         $3d85e  xx xx:      xxx + ; $3d880
@@ -58400,6 +58575,7 @@ JumpTable_3d885
         $3d889              .word ($1c0e3) ; TriggerSquare
 ;;; --------------------------------
         $3d88b  xx xx xx:   xxx WaitForOAMDMA
+        ;; Wait for an audio cue to finish???
         $3d88e  xx xx xx:   xxx $xxxx
         $3d891  xx xx:      xxx #$xx
         $3d893  xx xx:      xxx $xx
@@ -58633,30 +58809,30 @@ MainGameModeJump_24_EmptyShop
         $3da6d  xx xx:      xxx #$xx
         $3da6f  xx xx xx:   xxx BankSwitch16k
 ;;; --------------------------------
-        $3da72  xx xx xx:   xxx $3fe17
-        $3da75  xx xx:      xxx #$xx
-        $3da77  xx xx xx:   xxx BankSwitch8k_8000
-        $3da7a  xx xx xx:   xxx LoadPalettesForLocation
-        $3da7d  xx xx:      xxx #SCREEN_MODE_NORMAL
-        $3da7f  xx xx:      xxx ScreenMode
-        $3da81  xx xx:      xxx #$xx
-        $3da83  xx xx xx:   xxx $xxxx
-        $3da86  xx xx xx:   xxx $3dabf
-        $3da89  xx xx:      xxx $xx
-        $3da8b  xx xx:      xxx $xx
-        $3da8d  xx xx:      xxx $xx
-        $3da8f  xx xx:      xxx #$xx
-        $3da91  xx xx:      xxx $xx
+-       $3da72  xx xx xx:    xxx $3fe17
+        $3da75  xx xx:       xxx #$xx
+        $3da77  xx xx xx:    xxx BankSwitch8k_8000
+        $3da7a  xx xx xx:    xxx LoadPalettesForLocation
+        $3da7d  xx xx:       xxx #SCREEN_MODE_NORMAL
+        $3da7f  xx xx:       xxx ScreenMode
+        $3da81  xx xx:       xxx #$xx
+        $3da83  xx xx xx:    xxx $xxxx
+        $3da86  xx xx xx:    xxx $3dabf
+        $3da89  xx xx:       xxx $xx
+        $3da8b  xx xx:       xxx $xx
+        $3da8d  xx xx:       xxx $xx
+        $3da8f  xx xx:       xxx #$xx
+        $3da91  xx xx:      xxx - ; $3da72
         $3da93  xx xx:      xxx #$xx
         $3da95  xx xx xx:   xxx $xxxx
-        $3da98  xx xx xx:   xxx $3dabf
-        $3da9b  xx xx:      xxx $xx
-        $3da9d  xx xx:      xxx $xx
-        $3da9f  xx xx:      xxx $xx
-        $3daa1  xx xx:      xxx #$xx
-        $3daa3  xx xx:      xxx $xx
-        $3daa5  xx xx xx:   xxx $3ff8c
-        $3daa8  xx xx xx:   xxx $3eb09
+-       $3da98  xx xx xx:    xxx $3dabf
+        $3da9b  xx xx:       xxx $xx
+        $3da9d  xx xx:       xxx $xx
+        $3da9f  xx xx:       xxx $xx
+        $3daa1  xx xx:       xxx #$xx
+        $3daa3  xx xx:      xxx - ; $3da98
+        $3daa5  xx xx xx:   xxx DrawAllObjectSprites
+        $3daa8  xx xx xx:   xxx FindExit
         $3daab  xx xx:      xxx ($xx),y
         $3daad  xx xx:      xxx CurrentLocation
         $3daaf  xx:         xxx
@@ -60631,7 +60807,7 @@ DataTable_3e8b6
         $3e900  xx xx xx:   xxx $3eadf
 ;;; --------------------------------
         $3e903  xx xx xx:   xxx $3e90a
-        $3e906  xx xx xx:   xxx $3eb09
+        $3e906  xx xx xx:   xxx FindExit
         $3e909  xx:         xxx
 ;;; --------------------------------
         ;; Copy screen coords to $34..$37, then do stuff with them.
@@ -61891,120 +62067,138 @@ CheckPassiveEffects
         $3f091  xx xx xx:    xxx $xxxx
         $3f094  xx xx:       xxx #$xx
         $3f096  xx xx xx:    xxx $xxxx
-        $3f099  xx xx:       xxx ++ ; $3f0a3
+        $3f099  xx xx:       xxx >rts ; $3f0a3
 +       $3f09b  xx xx xx:   xxx $xxxx
         $3f09e  xx xx:      xxx #$xx
         $3f0a0  xx xx xx:   xxx $xxxx
-++      $3f0a3  xx:         xxx
+        $3f0a3  xx:         xxx
 ;;; --------------------------------
+ValidateSaveFiles
         ;; This runs during a soft reset
         $3f0a4  xx xx:      xxx #$xx
-        $3f0a6  xx xx xx:   xxx $xxxx
+        $3f0a6  xx xx xx:   xxx $xxxx ; unused
         $3f0a9  xx xx:      xxx $xx
         $3f0ab  xx xx xx:   xxx $xxxx
         $3f0ae  xx xx:      xxx #$xx ; a000 -> 2e000
         $3f0b0  xx xx xx:   xxx BankSwitch8k_A000
+ValidateSaveFile1
+        ;; First check that the two copies are equal
         $3f0b3  xx xx:      xxx #$xx
-        $3f0b5  xx xx xx:   xxx $xxxx,x
-        $3f0b8  xx xx xx:   xxx $xxxx,x
-        $3f0bb  xx xx:      xxx + ; $3f0e7
-        $3f0bd  xx xx xx:   xxx $xxxx,x
-        $3f0c0  xx xx xx:   xxx $xxxx,x
-        $3f0c3  xx xx:      xxx + ; $3f0e7
-        $3f0c5  xx xx xx:   xxx $xxxx,x
-        $3f0c8  xx xx xx:   xxx $xxxx,x
-        $3f0cb  xx xx:      xxx + ; $3f0e7
-        $3f0cd  xx:         xxx
-        $3f0ce  xx xx:      xxx $xx
+-       $3f0b5  xx xx xx:    xxx $xxxx,x
+        $3f0b8  xx xx xx:    xxx $xxxx,x
+        $3f0bb  xx xx:       xxx + ; $3f0e7
+        $3f0bd  xx xx xx:    xxx $xxxx,x
+        $3f0c0  xx xx xx:    xxx $xxxx,x
+        $3f0c3  xx xx:       xxx + ; $3f0e7
+        $3f0c5  xx xx xx:    xxx $xxxx,x
+        $3f0c8  xx xx xx:    xxx $xxxx,x
+        $3f0cb  xx xx:       xxx CheckSaveFile1Replica1Checksum
+        $3f0cd  xx:          xxx
+        $3f0ce  xx xx:      xxx - ; $3f0b5
+        ;; Then check the magic numbers
         $3f0d0  xx xx:      xxx #$xx
         $3f0d2  xx xx xx:   xxx $xxxx
-        $3f0d5  xx xx:      xxx ++ ; $3f11f
+        $3f0d5  xx xx:       xxx ResetSaveFile1
         $3f0d7  xx xx:      xxx #$xx
         $3f0d9  xx xx xx:   xxx $xxxx
-        $3f0dc  xx xx:      xxx ++ ; $3f11f
+        $3f0dc  xx xx:       xxx ResetSaveFile1
         $3f0de  xx xx:      xxx #$xx
         $3f0e0  xx xx xx:   xxx $xxxx
-        $3f0e3  xx xx:      xxx ++ ; $3f11f
-        $3f0e5  xx xx:      xxx $xx
-+       $3f0e7  xx xx:      xxx #$xx
-        $3f0e9  xx xx xx:   xxx $3f23d
+        $3f0e3  xx xx:       xxx ResetSaveFile1
+        $3f0e5  xx xx:      xxx ValidateSaveFile2 ; uncond
+;;; --------------------------------
+CheckSaveFile1Replica1Checksum
+        ;; Expected sum of all $300 bytes stored in 70f0
+        $3f0e7  xx xx:      xxx #$xx
+        $3f0e9  xx xx xx:   xxx ChecksumSaveFile ; sum -> $16
         $3f0ec  xx xx xx:   xxx $xxxx
         $3f0ef  xx xx:      xxx $xx
-        $3f0f1  xx xx:      xxx + ; $3f103
+        $3f0f1  xx xx:      xxx CheckSaveFile1Replica2Checksum
+        ;; Checksum matched: recover the data. R1 -> R2, store checksum in both
         $3f0f3  xx xx:      xxx #$xx
-        $3f0f5  xx xx xx:   xxx $3f273
+        $3f0f5  xx xx xx:   xxx ReplicateSaveFile ; S1 R1 -> R2
         $3f0f8  xx xx:      xxx $xx
         $3f0fa  xx xx xx:   xxx $xxxx
         $3f0fd  xx xx xx:   xxx $xxxx
-        $3f100  xx xx xx:   xxx $3f140
+        $3f100  xx xx xx:   xxx ValidateSaveFile2
 ;;; --------------------------------
-+       $3f103  xx xx:      xxx #$xx
-        $3f105  xx xx xx:   xxx $3f23d
+CheckSaveFile1Replica2Checksum
+        ;; Expected sum stored in 70f1
+        $3f103  xx xx:      xxx #$xx
+        $3f105  xx xx xx:   xxx ChecksumSaveFile
         $3f108  xx xx xx:   xxx $xxxx
         $3f10b  xx xx:      xxx $xx
-        $3f10d  xx xx:      xxx ++ ; $3f11f
+        $3f10d  xx xx:      xxx ResetSaveFile1
+        ;; Checksum matched: recover the data. R2 -> R1, store checksum in both
         $3f10f  xx xx:      xxx #$xx
-        $3f111  xx xx xx:   xxx $3f273
+        $3f111  xx xx xx:   xxx ReplicateSaveFile ; S1 R2 -> R1
         $3f114  xx xx:      xxx $xx
         $3f116  xx xx xx:   xxx $xxxx
         $3f119  xx xx xx:   xxx $xxxx
-        $3f11c  xx xx xx:   xxx $3f140
+        $3f11c  xx xx xx:   xxx ValidateSaveFile2
 ;;; --------------------------------
+ResetSaveFile1
 ++      $3f11f  xx xx:      xxx #$xx
-        $3f121  xx xx xx:   xxx $2fe00,x
-        $3f124  xx xx xx:   xxx $xxxx,x
-        $3f127  xx xx xx:   xxx $xxxx,x
-        $3f12a  xx xx:      xxx #$xx
-        $3f12c  xx xx xx:   xxx $xxxx,x
-        $3f12f  xx xx xx:   xxx $xxxx,x
-        $3f132  xx xx xx:   xxx $xxxx,x
-        $3f135  xx xx xx:   xxx $xxxx,x
-        $3f138  xx:         xxx
-        $3f139  xx xx:      xxx $xx
+-       $3f121  xx xx xx:    xxx $2fe00,x
+        $3f124  xx xx xx:    xxx $xxxx,x
+        $3f127  xx xx xx:    xxx $xxxx,x
+        $3f12a  xx xx:       xxx #$xx
+        $3f12c  xx xx xx:    xxx $xxxx,x
+        $3f12f  xx xx xx:    xxx $xxxx,x
+        $3f132  xx xx xx:    xxx $xxxx,x
+        $3f135  xx xx xx:    xxx $xxxx,x
+        $3f138  xx:          xxx
+        $3f139  xx xx:      xxx - ; $3f121
         $3f13b  xx xx:      xxx #$xx
-        $3f13d  xx xx xx:   xxx $xxxx
+        $3f13d  xx xx xx:   xxx $xxxx ; unused??
+ValidateSaveFile2
+        ;; First check replicas
         $3f140  xx xx:      xxx #$xx
-        $3f142  xx xx xx:   xxx $xxxx,x
-        $3f145  xx xx xx:   xxx $xxxx,x
-        $3f148  xx xx:      xxx $xx
-        $3f14a  xx xx xx:   xxx $xxxx,x
-        $3f14d  xx xx xx:   xxx $xxxx,x
-        $3f150  xx xx:      xxx $xx
-        $3f152  xx xx xx:   xxx $xxxx,x
-        $3f155  xx xx xx:   xxx $xxxx,x
-        $3f158  xx xx:      xxx $xx
-        $3f15a  xx:         xxx
-        $3f15b  xx xx:      xxx $xx
+-       $3f142  xx xx xx:    xxx $xxxx,x
+        $3f145  xx xx xx:    xxx $xxxx,x
+        $3f148  xx xx:       xxx $xx
+        $3f14a  xx xx xx:    xxx $xxxx,x
+        $3f14d  xx xx xx:    xxx $xxxx,x
+        $3f150  xx xx:       xxx $xx
+        $3f152  xx xx xx:    xxx $xxxx,x
+        $3f155  xx xx xx:    xxx $xxxx,x
+        $3f158  xx xx:       xxx $xx
+        $3f15a  xx:          xxx
+        $3f15b  xx xx:      xxx - ; $3f142
+        ;; Now check magic bytes
         $3f15d  xx xx:      xxx #$xx
         $3f15f  xx xx xx:   xxx $xxxx
-        $3f162  xx xx:      xxx $xx
+        $3f162  xx xx:      xxx ResetSaveFile2
         $3f164  xx xx:      xxx #$xx
         $3f166  xx xx xx:   xxx $xxxx
-        $3f169  xx xx:      xxx $xx
+        $3f169  xx xx:      xxx ResetSaveFile2
         $3f16b  xx xx:      xxx #$xx
         $3f16d  xx xx xx:   xxx $xxxx
-        $3f170  xx xx:      xxx $xx
-        $3f172  xx xx:      xxx $xx
+        $3f170  xx xx:      xxx ResetSaveFile2
+        $3f172  xx xx:      xxx ValidateCheckpointFile ; uncond
+;;; --------------------------------
         $3f174  xx xx:      xxx #$xx
-        $3f176  xx xx xx:   xxx $3f23d
+        $3f176  xx xx xx:   xxx ChecksumSaveFile
         $3f179  xx xx xx:   xxx $xxxx
         $3f17c  xx xx:      xxx $xx
         $3f17e  xx xx:      xxx $xx
         $3f180  xx xx:      xxx #$xx
-        $3f182  xx xx xx:   xxx $3f273
+        $3f182  xx xx xx:   xxx ReplicateSaveFile
         $3f185  xx xx:      xxx $xx
         $3f187  xx xx xx:   xxx $xxxx
         $3f18a  xx xx:      xxx #$xx
-        $3f18c  xx xx xx:   xxx $3f23d
+        $3f18c  xx xx xx:   xxx ChecksumSaveFile
         $3f18f  xx xx xx:   xxx $xxxx
         $3f192  xx xx:      xxx $xx
-        $3f194  xx xx:      xxx $xx
+        $3f194  xx xx:      xxx ResetSaveFile2
         $3f196  xx xx:      xxx #$xx
-        $3f198  xx xx xx:   xxx $3f273
+        $3f198  xx xx xx:   xxx ReplicateSaveFile
         $3f19b  xx xx:      xxx $xx
         $3f19d  xx xx xx:   xxx $xxxx
         $3f1a0  xx xx xx:   xxx $3f1e2
 ;;; --------------------------------
+ResetSaveFile2
+        ;; Reset both copies of save file2 7700..79ff and 7a00..7cff
         $3f1a3  xx xx:      xxx #$xx
         $3f1a5  xx xx xx:   xxx $2fe00,x
         $3f1a8  xx xx xx:   xxx $xxxx,x
@@ -62017,48 +62211,53 @@ CheckPassiveEffects
         $3f1bc  xx:         xxx
         $3f1bd  xx xx:      xxx $xx
         $3f1bf  xx xx:      xxx #$xx
-        $3f1c1  xx xx xx:   xxx $xxxx
+        $3f1c1  xx xx xx:   xxx $xxxx ; unused here??
         $3f1c4  xx xx xx:   xxx $3f1e2
 ;;; --------------------------------
-        ;; Validation succeeded...?
-        $3f1c7  xx xx xx:   xxx $xxxx
+FinishSaveFileValidations
+        ;; All validations complete, switch the PRG bank back and return
+        $3f1c7  xx xx xx:   xxx $xxxx ; prg bank mirror
         $3f1ca  xx xx xx:   xxx BankSwitch8k_A000
 ;;; --------------------------------
+UnconditionallyResetCheckpointFile
         $3f1cd  xx xx:      xxx #$xx
         $3f1cf  xx xx xx:   xxx $xxxx
         $3f1d2  xx xx xx:   xxx $xxxx
         $3f1d5  xx xx:      xxx $xx
-        $3f1d7  xx xx xx:   xxx $xxxx
+        $3f1d7  xx xx xx:   xxx $xxxx ; save PRM bank
         $3f1da  xx xx:      xxx #$xx
         $3f1dc  xx xx xx:   xxx BankSwitch8k_A000
-        $3f1df  xx xx xx:   xxx ++ ; $3f219
+        $3f1df  xx xx xx:   xxx ResetCheckpointFile
 ;;; --------------------------------
+ValidateCheckpointFile
+        ;; Check replicas identical
         $3f1e2  xx xx:      xxx #$xx
--       $3f1e4  xx xx xx:   xxx $xxxx,x
-        $3f1e7  xx xx xx:   xxx $xxxx,x
-        $3f1ea  xx xx:      xxx + ; $3f216
-        $3f1ec  xx xx xx:   xxx $xxxx,x
-        $3f1ef  xx xx xx:   xxx $xxxx,x
-        $3f1f2  xx xx:      xxx + ; $3f216
-        $3f1f4  xx xx xx:   xxx $xxxx,x
-        $3f1f7  xx xx xx:   xxx $xxxx,x
-        $3f1fa  xx xx:      xxx + ; $3f216
-        $3f1fc  xx:         xxx
+-       $3f1e4  xx xx xx:    xxx $xxxx,x
+        $3f1e7  xx xx xx:    xxx $xxxx,x
+        $3f1ea  xx xx:       xxx ResetCheckpointFileIndirect
+        $3f1ec  xx xx xx:    xxx $xxxx,x
+        $3f1ef  xx xx xx:    xxx $xxxx,x
+        $3f1f2  xx xx:       xxx ResetCheckpointFileIndirect
+        $3f1f4  xx xx xx:    xxx $xxxx,x
+        $3f1f7  xx xx xx:    xxx $xxxx,x
+        $3f1fa  xx xx:       xxx ResetCheckpointFileIndirect
+        $3f1fc  xx:          xxx
         $3f1fd  xx xx:      xxx - ; $3f1e4
+        ;; Check magic bytes
         $3f1ff  xx xx:      xxx #$xx
         $3f201  xx xx xx:   xxx $xxxx
-        $3f204  xx xx:      xxx ++ ; $3f219
+        $3f204  xx xx:      xxx ResetCheckpointFile
         $3f206  xx xx:      xxx #$xx
         $3f208  xx xx xx:   xxx $xxxx
-        $3f20b  xx xx:      xxx ++ ; $3f219
+        $3f20b  xx xx:      xxx ResetCheckpointFile
         $3f20d  xx xx:      xxx #$xx
         $3f20f  xx xx xx:   xxx $xxxx
-        $3f212  xx xx:      xxx ++ ; $3f219
-        $3f214  xx xx:      xxx $xx ; unconditional
-+       $3f216  xx xx xx:   xxx ++ ; $3f219
-;;; --------------------------------
-        ;; Validation failed?  zero it out
-++      $3f219  xx xx:      xxx #$xx
+        $3f212  xx xx:      xxx ResetCheckpointFile
+        $3f214  xx xx:      xxx FinishSaveFileValidations ; unconditional
+ResetCheckpointFileIndirect
+        $3f216  xx xx xx:   xxx ResetCheckpointFile
+ResetCheckpointFile
+        $3f219  xx xx:      xxx #$xx
         $3f21b  xx xx xx:   xxx $2fe00,x
         $3f21e  xx xx xx:   xxx $xxxx,x
         $3f221  xx xx xx:   xxx $xxxx,x
@@ -62070,60 +62269,74 @@ CheckPassiveEffects
         $3f232  xx:         xxx
         $3f233  xx xx:      xxx $xx
         $3f235  xx xx:      xxx #$xx
-        $3f237  xx xx xx:   xxx $xxxx
-        $3f23a  xx xx xx:   xxx $3f1c7
+        $3f237  xx xx xx:   xxx $xxxx ; unused??
+        $3f23a  xx xx xx:   xxx FinishSaveFileValidations
 ;;; --------------------------------
+;;; enters with x=0 or x=1 when file 1 replicas mismatch, 2 or 3 for file 2
+;;; x indicates save file index (0 and 1 are Save 1 replicas, 2 and 3 are
+;;; Save 2 replicas, and 4 and 5 are both 7d, but seem unused)
+ChecksumSaveFile
         $3f23d  xx:         xxx
-        $3f23e  xx xx xx:   xxx $3f26d,x
-        $3f241  xx xx:      xxx $xx
+        $3f23e  xx xx xx:   xxx $3f26d,x ; 71, 74, 77, 7a (7d, 7d)
+        $3f241  xx xx:      xxx $xx   ; 11 <- (e.g.) 71
         $3f243  xx xx:      xxx #$xx
-        $3f245  xx xx:      xxx $xx
+        $3f245  xx xx:      xxx $xx   ; 13 <- (e.g.) 72
         $3f247  xx xx:      xxx #$xx
-        $3f249  xx xx:      xxx $xx
+        $3f249  xx xx:      xxx $xx   ; 15 <- (e.g.) 73
         $3f24b  xx xx:      xxx #$xx
-        $3f24d  xx xx:      xxx $xx
+        $3f24d  xx xx:      xxx $xx   ; 10, 12, 14 <- 00
         $3f24f  xx xx:      xxx $xx
         $3f251  xx xx:      xxx $xx
-        $3f253  xx:         xxx
-        $3f254  xx xx:      xxx ($xx),y
-        $3f256  xx:         xxx
-        $3f257  xx xx:      xxx $xx
-        $3f259  xx xx:      xxx $xx
-        $3f25b  xx xx:      xxx ($xx),y
-        $3f25d  xx:         xxx
-        $3f25e  xx xx:      xxx $xx
-        $3f260  xx xx:      xxx $xx
-        $3f262  xx xx:      xxx ($xx),y
-        $3f264  xx:         xxx
-        $3f265  xx xx:      xxx $xx
-        $3f267  xx xx:      xxx $xx
-        $3f269  xx:         xxx
-        $3f26a  xx xx:      xxx $xx
+        $3f253  xx:         xxx       ; y <- 0
+-       $3f254  xx xx:       xxx ($xx),y
+        $3f256  xx:          xxx
+        $3f257  xx xx:       xxx $xx
+        $3f259  xx xx:       xxx $xx
+        $3f25b  xx xx:       xxx ($xx),y
+        $3f25d  xx:          xxx
+        $3f25e  xx xx:       xxx $xx
+        $3f260  xx xx:       xxx $xx
+        $3f262  xx xx:       xxx ($xx),y
+        $3f264  xx:          xxx
+        $3f265  xx xx:       xxx $xx
+        $3f267  xx xx:       xxx $xx
+        $3f269  xx:          xxx
+        $3f26a  xx xx:      xxx - ; $3f254
         $3f26c  xx:         xxx
 ;;; --------------------------------
-        $3f26d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $3f26d              .byte $xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+;;; Input: A = replication index
+;;;   0: Save 1 R1 -> R2
+;;;   1: Save 1 R2 -> R1
+;;;   2: Save 2 R1 -> R2
+;;;   3: Save 2 R2 -> R1
+;;;   4, 5: Checkpoint file nonsense (both 7d...)
+ReplicateSaveFile
+        $3f273  xx:         xxx
         $3f274  xx:         xxx
-        $3f275  xx xx xx:   xxx $3f298,x
+        $3f275  xx xx xx:   xxx SaveFileReplicationProfileTable,x
         $3f278  xx xx:      xxx $xx
-        $3f27a  xx xx xx:   xxx $3f299,x
+        $3f27a  xx xx xx:   xxx SaveFileReplicationProfileTable+1,x
         $3f27d  xx xx:      xxx $xx
         $3f27f  xx xx:      xxx #$xx
         $3f281  xx xx:      xxx $xx
         $3f283  xx xx:      xxx $xx
+        ;; Loop for 3 full cycles, copying $300 bytes
         $3f285  xx:         xxx
         $3f286  xx:         xxx
-        $3f287  xx xx:      xxx ($xx),y
-        $3f289  xx xx:      xxx ($xx),y
-        $3f28b  xx:         xxx
-        $3f28c  xx xx:      xxx $xx
-        $3f28e  xx xx:      xxx $xx
-        $3f290  xx xx:      xxx $xx
-        $3f292  xx:         xxx
-        $3f293  xx xx:      xxx #$xx
-        $3f295  xx xx:      xxx $xx
+-       $3f287  xx xx:        xxx ($xx),y
+        $3f289  xx xx:        xxx ($xx),y
+        $3f28b  xx:           xxx
+        $3f28c  xx xx:       xxx - ; $3f287
+        $3f28e  xx xx:       xxx $xx
+        $3f290  xx xx:       xxx $xx
+        $3f292  xx:          xxx
+        $3f293  xx xx:       xxx #$xx
+        $3f295  xx xx:      xxx - ; $3f287
         $3f297  xx:         xxx
 ;;; --------------------------------
-DataTable_3f298 
+SaveFileReplicationProfileTable
         $3f298              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 HandleReset
@@ -62216,14 +62429,18 @@ HandleReset
         ;; to minimize the chance of random memory values on boot conflicting.
         $3f35f  xx xx xx:   xxx $xxxx
         $3f362  xx xx:      xxx #$xx
-        $3f364  xx xx:      xxx + ; $3f374
+        $3f364  xx xx:      xxx HandleColdBoot
         $3f366  xx xx xx:    xxx $xxxx
         $3f369  xx xx:       xxx #$xx
-        $3f36b  xx xx:       xxx + ; $3f374
+        $3f36b  xx xx:       xxx HandleColdBoot
         $3f36d  xx xx xx:     xxx $xxxx
         $3f370  xx xx:        xxx #$xx
-        $3f372  xx xx:        xxx ++ ; $3f39f
-+       $3f374  xx xx xx:   xxx $3f1cd
+        $3f372  xx xx:        xxx HandleWarmBoot
+HandleColdBoot
+        ;; Wipe the checkpoint file on cold boot, then set the magic bytes
+        ;; in volatile RAM to identify as a warm boot in the future.  Reset
+        ;; debug mode to "off".
+        $3f374  xx xx xx:   xxx UnconditionallyResetCheckpointFile
         $3f377  xx xx:      xxx #$xx
         $3f379  xx xx:      xxx $xx
         $3f37b  xx xx:      xxx #$xx
@@ -62232,16 +62449,21 @@ HandleReset
         $3f382  xx xx xx:   xxx $xxxx
         $3f385  xx xx:      xxx #$xx
         $3f387  xx xx xx:   xxx $xxxx
+        ;; If pressing start or select on hard boot,
+        ;; set [0f] nonzero to indicate debug mode.
         $3f38a  xx xx xx:   xxx ReadControllersWithDirections
         $3f38d  xx xx:      xxx Ctrl1CurrentlyPressed
         $3f38f  xx xx:      xxx #$xx
-        $3f391  xx xx:      xxx $xx
-        $3f393  xx xx:      xxx #$xx
-        $3f395  xx xx:      xxx $xx
-        $3f397  xx xx:      xxx #$xx ; 8000 -> 24000
+        $3f391  xx xx:      xxx + ; $3f397
+        $3f393  xx xx:       xxx #$xx
+        $3f395  xx xx:       xxx $xx
++       $3f397  xx xx:      xxx #$xx ; 8000 -> 24000
         $3f399  xx xx xx:   xxx BankSwitch16k
-        $3f39c  xx xx xx:   xxx $24028
-++      $3f39f  xx xx xx:   xxx $3f0a4
+        $3f39c  xx xx xx:   xxx AnimateSNKLogo
+HandleWarmBoot
+        $3f39f  xx xx xx:   xxx ValidateSaveFiles
+        ;; Replicate the checkpoint directly into 6480..667f
+        ;; Except this is incorrect alignment... seems pointless.
         $3f3a2  xx xx:      xxx #$xx
 -       $3f3a4  xx xx xx:    xxx $xxxx,x
         $3f3a7  xx xx xx:    xxx $xxxx,x

@@ -1,0 +1,144 @@
+# Optional Flags
+
+Goal: Compute a checksum BEFORE applying selected edits to the Rom object.
+
+## Problem
+
+Currently the data flow looks like this:
+  1. Given (prg: Uint8Array)
+  2. Apply deterministicPreParse(prg)
+  3. Apply preshuffle.s (computes addresses required by rom parser)
+  4. Parse the rom -> (rom: Rom)
+  5. Defrag the flags (may not matter?)
+  6. Apply postparse.s (clobbers tables read by rom parser)
+  7. Edit rom object
+  8. Write rom object data -> prg
+  9. Write a few additional things into prg (including random number shuffle
+     and applying postshuffle.s)
+ 10. Compute checksum, stamp into various spots, return
+
+This is bad because edits are all over the place rather than contained - some
+edits go directly to the PRG, some clobber others, etc.  Worse, there are
+meaningul changes after the data is written back, which means we can't edit
+the rom object at that point.
+
+## Solution
+
+What we need to do is consolidate this so that
+ * all writes go into the object throughout the entire process (including asm).
+ * writing the rom data is idempotent.  We could write to a different object.
+
+Alternatively we could add a "hash" function to everything in the rom.  Keeping
+the writes idempotent seems like an easier invariant to maintain, though it will
+require duplicating work since we'll need to serialize the entire rom object
+twice.
+
+The new data flow should be:
+  1. Apply deterministicPreParse(prg)  <- this is okay if it's deterministic
+  2. Parse the rom -> (rom: Rom)
+  3. Defrag the flags
+  4. Edit the rom object
+  5. Apply all the asm
+  6. Write rom -> fake prg, compute and stamp checksum
+  7. Apply optional flags
+  8. Write rom -> actual prg and return
+
+This requires adding "raw chunks" to the Rom object?  They will be written
+later.  As long as they're not actually *read* from the PRG, it should be
+fine?
+
+## Late code writes
+
+An interesting consequence here is that we could actually share PRG allocations
+between code and data.  It would require a new directive in the assembler:
+
+```
+.dynamic $1c000:$1dfff
+```
+
+This would last until the next `.dynamic` or `.org` and would allow a normal
+writer to optimize placement.  One difficulty here is that the assembler
+currently assumes it knows where something is during the initial parse,
+and this would break that assumption, so it would need some rearchitecting.
+Dynamic blocks would need to have a separate label space, and would store the
+offset of each label.  There's also a dependency graph, where dependency blocks
+need to be written first so that their address is available to dependents.
+
+We could store a promise in the label slot, and write them early/eagerly.
+Detecting cycles might be difficult.  One downside is that it's impossible
+to ever refer to a label in the same block via an absolute address.
+
+## TODO
+
+1. Find all write() functions in rom - ensure no state changes
+2. Find all reads from rom.prg - ensure they all happen at parse time
+3. Find all writes to rom.prg - pull out into a dedicated rom child
+4. Teach assembler a new directive, new label structure (with deps)
+5. Teach assembler to write using a new interface: block => Promise<number>
+
+Possible new version of assembler: remove abstraction of separate files
+and patches.  We could keep it around as a separate implementation (sharing
+the data).
+
+OR... rewrite the whole thing with a different set of assumptions.
+I.e. actually parse the file into an AST?  Use blocks for .org/etc.
+Could add support for e.g. .proc?  Any way to just _use_ .proc for this?
+Seems slightly different, since .proc doesn't affect the address.
+
+```
+.dynamic $1c000:$1dfff
+.proc Foo
+  lda #$00
+  rts
+.endproc
+```
+
+Basic plan then:
+  0. Allow defining data beforehand without parsing a "flags" file.
+  1. Parse the whole file into an AST.
+     We don't know any addresses at this point.
+  2. Traverse AST to map labels to nodes.  Allow nested scope?
+  3. Evaluate all blocks with known locations (and no dynamic deps?), storing
+     output into chunks.
+  4. Require an "allocator" for dynamic placement.  Allocator accepts a
+     constraint and returns an address.  Does not depend on specific data.
+     Add this mode to Writer (?).  May not actually need to be async, since
+     we're not trying to dedupe anything?
+
+QUESTION: how to expand addresses from outside?  Maybe can't - instead, may
+need to invert the direction - allow `.org Label` where Label is an
+externally-allocated location?  Even so, allocation doesn't happen until
+write time, so we may be out of luck if we're trying to make write() idempotent.
+
+Communication between asm and rom?
+ * shop table placement
+ * slot table placement
+
+From the Rom's perspective:
+
+```
+  chunks: Chunk[]
+  interface Chunk {
+    size: number;
+    data: (position, labels) => Uint8Array;
+    definedLabels, dependentLabels ???
+  }
+```
+
+Preallocate all the positions first (we know ahead of time which labels are
+immediate and therefore zero-page, so length can be known) but don't resolve
+data.
+
+Labels can ALL be expanded/evaulated once preallocation has happened...
+
+Assembler's output is an array of chunks.
+Each chunk has publicly-exported labels, but may have additional private labels.
+Chunk requires a label map to produce bytes.
+
+Label map baked in?, each label maps to a chunk that the label comes from,
+or an immediate defined value.
+
+But if we bake it in then we're mutating state at write time.  Could use
+chunk index and just keep all the chunks together?  Conditional compilation
+requires some labels to be defined at chunk-creation time...  Need to split
+out labels from macros!

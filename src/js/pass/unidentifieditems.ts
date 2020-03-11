@@ -11,6 +11,7 @@ const KEY_NAMES = [
   'Shiny Key',
   'Mysterious Key',
   'Magic Key',
+  'Piano Key',
 ];
 const FLUTE_NAMES = [
   'Wooden Flute',
@@ -27,6 +28,7 @@ const FLUTE_NAMES = [
   'Accordion',
   'Harmonica',
   'Sousaphone',
+  'Trombone',
   'Violin',
   'Cello',
 ];
@@ -37,6 +39,8 @@ const LAMP_NAMES = [
   'Shimmering Lamp',
   'Oil Lamp',
   'Broken Lamp',
+  'Frog Lamp',
+  'Smog Lamp',
 ];
 const STATUE_NAMES = [
   'Rusty Statue',
@@ -57,6 +61,8 @@ const STATUE_NAMES = [
   'Dragondarch Statue',
   'Overswarm Statue',
   'Trueblue83 Statue',
+  'Flail Guy Trophy',
+  'Metroid Amiibo',
 ];
 
 

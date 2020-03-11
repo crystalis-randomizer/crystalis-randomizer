@@ -1,15 +1,54 @@
 const LOG = true;
 
+interface DefinedLabel {
+  type: 'byte';
+  byte: number;
+}
+
+interface ImmediateLabel {
+  type: 'immediate';
+  address: number;
+}
+
+interface DeferredLabel {
+  type: 'deferred';
+  block: string; // NOTE: all blocks require a label as the first line.
+  deps: Set<string>;
+  base: Promise<number>;
+  offset: number;
+}
+
+interface DeferredByte {
+  // used for e.g. <Label on a block...
+  type: 'deferred-byte';
+  block: string;
+  deps: Set<string>;
+  base: Promise<number>;
+  op: (base: number) => number;
+}
+
+// TODO - actually use
+export type Label = DefinedLabel | ImmediateLabel | DeferredLabel | DeferredByte;
+
 // Multimap from label to address.
 // Negative addresses are PRG ROM and need to be mapped.
 interface Labels {
-  [label: string]: number[];
+  [label: string]: number[]; // TODO - Label[]
+}
+
+interface Block {
+  range: readonly [number, number];
+  bytes: Promise<Uint8Array>;
+  label: string;
+  written: Promise<void>;
+  address?: number; // filled in once it's assigned (this.written resolved).
 }
 
 export class Assembler {
 
   readonly labels: Labels = {};
   private allChunks: Chunk[] = [];
+  private allBlocks: Block[] = [];
 
   // Input: an assembly string
   // Output: adds chunks to the state.
@@ -20,14 +59,20 @@ export class Assembler {
       f.ingest(line);
     }
     const chunks = f.assemble();
-    this.allChunks.push(...chunks);
+    this.allChunks.push(...chunks.filter(c => c instanceof Chunk));
+    // this.allBlocks.push(...chunks.filter(c => !(c instanceof Chunk)));
   }
 
   chunks(): Chunk[] {
     return [...this.allChunks];
   }
 
+  blocks(): Block[] {
+    return [...this.allBlocks];
+  }
+
   patch(): Patch {
+    if (this.allBlocks.length) throw new Error(`No patch() with blocks`);
     return Patch.from(this.allChunks);
   }
 
@@ -37,11 +82,20 @@ export class Assembler {
   }
 
   // Ensures that label is unique
-  expand(label: string): number {
+  expand(label: string): number { // TODO - Label
     const [addr = null, ...rest] = this.labels[label] || [];
     if (addr == null) throw new Error(`Missing label: ${label}`);
     if (rest.length) throw new Error(`Non-unique label: ${label}`);
     return addr < 0 ? ~addr : addr;
+    // switch (addr.type) {
+    //   case 'byte':
+    //     return addr.byte;
+    //   case 'immediate':
+    //     return addr.address;
+    //   case 'deferred':
+    //     return addr;
+    // }
+    // return addr < 0 ? ~addr : addr;
   }
 }
 
@@ -235,14 +289,14 @@ abstract class AbstractLine {
 
 class ByteLine extends AbstractLine {
   static parse(line: string) {
-    const bytes: number[] = [];
+    const bytes: Array<number|string> = [];
     for (let part of line.split(',')) {
       part = part.trim();
       const match = /^"(.*)"$/.exec(part);
       if (match) {
         bytes.push(...[...match[1]].map(s => s.charCodeAt(0)));
       } else {
-        bytes.push(parseNumber(part));
+        bytes.push(parseNumber(part, true));
       }
     }
     return new ByteLine(bytes);
@@ -252,19 +306,25 @@ class ByteLine extends AbstractLine {
     return new ByteLine(new Array<number>(count).fill(defaultValue));
   }
 
-  constructor(private readonly bytesInternal: number[]) {
+  constructor(private readonly bytesInternal: Array<number|string>) {
     super();
   }
 
   bytes(): number[] {
-    return [...this.bytesInternal];
+    return [...this.bytesInternal] as number[];
   }
 
   size(): number {
     return this.bytesInternal.length;
   }
 
-  expand(): void {}
+  expand(context: Context): void {
+    for (let i = 0; i < this.bytesInternal.length; i++) {
+      if (typeof this.bytesInternal[i] === 'string') {
+        this.bytesInternal[i] = context.map(this.bytesInternal[i]) & 0xff;
+      }
+    }
+  }
 }
 
 class WordLine extends AbstractLine {
@@ -387,6 +447,10 @@ class Context {
   }
 
   mapLabel(label: string, pc?: number): number {
+    // Recursively expand any parenthesized expressions.
+    let expandParens = label.replace(/\(([^)]*)\)/g,
+                                     (_,l) => String(this.mapLabel(l, pc)));
+    if (expandParens !== label) return this.mapLabel(expandParens, pc);
     // Support very simple arithmetic (+, -, <, and >).
     let match = /([^-+]+)([-+])(.*)/.exec(label);
     if (match) {
@@ -405,6 +469,10 @@ class Context {
       const arg = this.map(parseNumber(match[2].trim(), true), pc);
       return match[1] === '<' ? arg & 0xff : (arg >>> 8) & 0xff;
     }
+
+    // Are we left with a number?
+    const num = Number(label);
+    if (!isNaN(num)) return num;
 
     // Look up whatever's leftover.
     let addrs = this.labels[label];

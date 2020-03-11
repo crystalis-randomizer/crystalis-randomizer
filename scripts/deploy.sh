@@ -33,7 +33,7 @@ if [ -d "deploy/$dir" ]; then
   rm -rf "deploy/$dir"
 fi
 
-dirs="edit flags graph maze pass rom view"
+dirs="asm edit logic maze pass rom spoiler view"
 # Make directories and copy the relevant files.
 mkdir -p "deploy/$dir/view"
 mkdir -p "deploy/$dir/css/view"

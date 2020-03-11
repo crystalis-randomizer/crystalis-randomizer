@@ -1,8 +1,8 @@
+import {Module} from '../asm/module.js';
+import {Rom} from '../rom.js';
 import {Entity} from './entity.js';
 import {Location} from './location.js';
-import {hex, readLittleEndian, writeLittleEndian} from './util.js';
-import {Writer} from './writer.js';
-import {Rom} from '../rom.js';
+import {readLittleEndian} from './util.js';
 
 // NOTE: Would be nice to call this Object, but that seems confusing...
 export class ObjectData extends Entity {
@@ -10,7 +10,6 @@ export class ObjectData extends Entity {
   used: boolean;
   name: string;
 
-  pointer: number;
   base: number;
 
   sfx: number;
@@ -20,7 +19,6 @@ export class ObjectData extends Entity {
     super(rom, id);
     this.used = true;
     this.name = '';
-    this.pointer = 0x1ac00 + (id << 1);
     this.base = readLittleEndian(rom.prg, this.pointer) + 0x10000;
     this.sfx = rom.prg[this.base];
     this.data = [];
@@ -33,6 +31,10 @@ export class ObjectData extends Entity {
       this.data.push(m & 0x80 ? rom.prg[a++] : 0);
       m <<= 1;
     }
+  }
+
+  get pointer(): number {
+    return 0x1ac00 + (this.id << 1);
   }
 
   // Returns a byte array for this entry
@@ -51,10 +53,15 @@ export class ObjectData extends Entity {
     return out;
   }
 
-  async write(writer: Writer) {
-    const address = await writer.write(this.serialize(), 0x1a000, 0x1bfff,
-                                       `Object ${hex(this.id)}`);
-    writeLittleEndian(writer.rom, this.pointer, address - 0x10000);
+  write(): Module[] {
+    const a = this.rom.assembler();
+    a.segment('0d');
+    a.reloc(`Object_${this.id.toString(16).padStart(2, '0')}`);
+    const label = a.pc();
+    a.byte(...this.serialize());
+    a.org(0xac00 + (this.id << 1));
+    a.word(label);
+    return [a.module()];
   }
 
   get(addr: number): number {

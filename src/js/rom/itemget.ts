@@ -1,10 +1,18 @@
+import {Assembler} from '../asm/assembler.js';
+import {Module} from '../asm/module.js';
+import {Rom} from '../rom.js';
 import {Entity, EntityArray} from './entity.js';
 import {MessageId} from './messageid.js';
-import {ITEM_GET_FLAGS, hex, readLittleEndian, writeLittleEndian} from './util.js';
-import {Writer} from './writer.js';
-import {Rom} from '../rom.js';
+import {ITEM_GET_FLAGS, Address, Segment,
+  hex, readLittleEndian, relocExportLabel} from './util.js';
 
-const GRANT_ITEM_TABLE = 0x3d6d5;
+const {$0e, $0f, $14, $fe, $ff} = Segment;
+
+// TODO - this depends on a preparse change, we should reconsider that.
+const ITEMGET_TABLE = Address.of($0e, 0x9b00);
+//const GRANT_ITEM_TABLE = Address.of($fe, 0xd6d5);
+const GET_TO_ITEM_BASE = Address.of($0e, 0x9d66);
+const GET_TO_ITEM_THRESHOLD = 0x49;
 
 /**
  * Array of ItemGetData table entries, together with the map of
@@ -21,25 +29,38 @@ export class ItemGets extends EntityArray<ItemGet> {
       this[i] = new ItemGet(rom, i);
     }
 
-    let addr = GRANT_ITEM_TABLE;
-    while (rom.prg[addr] !== 0xff) {
-      const key = rom.prg[addr++];
-      const value = rom.prg[addr++];
-      this.actionGrants.set(key, value);
-    }
+    // TODO - encode GRANT_ITEM_TABLE offset into rom
+    // since it's really hard to read otherwise.
+
+    // Probably the thing to do if the table doesn't exist is to
+    // read these values from their vanilla loci?
+    this.actionGrants.set(0x25, 0x29);
+    this.actionGrants.set(0x39, 0x3a);
+    this.actionGrants.set(0x3b, 0x47);
+    this.actionGrants.set(0x3c, 0x3e);
+    this.actionGrants.set(0x84, 0x46);
+    this.actionGrants.set(0xb2, 0x42);
+    this.actionGrants.set(0xb4, 0x41);
+
+    // let addr = GRANT_ITEM_TABLE.offset;
+    // while (rom.prg[addr] !== 0xff) {
+    //   const key = rom.prg[addr++];
+    //   const value = rom.prg[addr++];
+    //   this.actionGrants.set(key, value);
+    // }
   }
 
-  async write(writer: Writer): Promise<void> {
-    const promises = [];
+  write(): Module[] {
+    const a = this.rom.assembler();
     for (const itemget of this) {
-      promises.push(itemget.write(writer));
+      itemget.assemble(a);
     }
-    await Promise.all(promises);
-    let addr = GRANT_ITEM_TABLE;
+    relocExportLabel(a, [$14, $fe, $ff], 'GrantItemTable');
+    //GRANT_ITEM_TABLE.loc(a);
     for (const [key, value] of this.actionGrants) {
-      writer.rom[addr++] = key;
-      writer.rom[addr++] = value;
+      a.byte(key, value);
     }
+    return [a.module()];
   }
 
 }
@@ -48,11 +69,7 @@ export class ItemGets extends EntityArray<ItemGet> {
 // but non-unique items may map to multiple ItemGets.
 export class ItemGet extends Entity {
 
-  itemPointer: number;
-  itemId: number;
-
-  tablePointer: number;
-  tableBase: number;
+  private _itemId: number;
 
   // What part of inventory to search when acquiring.
   inventoryRowStart: number;
@@ -72,12 +89,10 @@ export class ItemGet extends Entity {
   constructor(rom: Rom, id: number) {
     super(rom, id);
 
-    this.itemPointer = 0x1dd66 + id;
-    this.itemId = rom.prg[this.itemPointer];
+    this._itemId = this.itemPointer.read(rom.prg);
     // I don't fully understand this table...
-    this.tablePointer = 0x1db00 + 2 * id;
-    this.tableBase = readLittleEndian(rom.prg, this.tablePointer) + 0x14000;
-    let a = this.tableBase;
+    const tableBase = this.tablePointer.readAddress(rom.prg, $0e, $0f);
+    let a = tableBase.offset;
 
     this.inventoryRowStart = rom.prg[a++];
     this.inventoryRowLength = rom.prg[a++];
@@ -87,11 +102,29 @@ export class ItemGet extends Entity {
     // TODO: remove this check
     this.key = rom.prg[a + 2 + 2 * this.flags.length + 1] === 0xfe;
 
-    if (id !== 0 && this.tableBase === readLittleEndian(rom.prg, 0x1dd66) + 0x14000) {
+    if (id !== 0 && tableBase.org === readLittleEndian(rom.prg, 0x1dd66)) {
       // This is one of the unused items that point to sword of wind.
       this.key = false;
       this.flags = [];
     }
+  }
+
+  get itemPointer(): Address {
+    return GET_TO_ITEM_BASE.plus(this.id);
+  }
+
+  get tablePointer(): Address {
+    return ITEMGET_TABLE.plus(this.id << 1)
+  }
+
+  get itemId() { return this._itemId; }
+  set itemId(itemId: number) {
+    if (this.id < GET_TO_ITEM_THRESHOLD) throw new Error(`${this.id}`);
+    this._itemId = itemId;
+  }
+
+  isLosable(): boolean {
+    return LOSABLE_ROWS.has(this.inventoryRowStart);
   }
 
   copyFrom(that: ItemGet) {
@@ -102,17 +135,24 @@ export class ItemGet extends Entity {
     this.key = that.key;
   }
 
-  async write(writer: Writer): Promise<void> {
+  assemble(a: Assembler) {
     // First write (itemget -> item) mapping
-    writer.rom[this.itemPointer] = this.itemId;
+    this.itemPointer.loc(a);
+    a.byte(this.itemId);
+
     const table = [
       this.inventoryRowStart, this.inventoryRowLength,
       ...this.acquisitionAction.data,
       ...ITEM_GET_FLAGS.bytes(this.flags),
       this.key ? 0xfe : 0xff,  // TODO: remove this byte when no longer needed
     ];
-    const address = await writer.write(table, 0x1c000, 0x1ffff,
-                                       `ItemGetData ${hex(this.id)}`);
-    writeLittleEndian(writer.rom, this.tablePointer, address - 0x14000);
+    a.segment($0e.name, $0f.name);
+    a.reloc(`ItemGetData ${hex(this.id)}`);
+    const tableAddr = a.pc();
+    a.byte(...table);
+    this.tablePointer.loc(a);
+    a.word(tableAddr);
   }
 }
+
+const LOSABLE_ROWS = new Set([4, 8, 16]);

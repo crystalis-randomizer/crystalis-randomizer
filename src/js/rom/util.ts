@@ -100,6 +100,10 @@ export function hex(id: number): string {
   return id != null ? id.toString(16).padStart(2, '0') : String(id);
 }
 
+export function hex3(id: number): string {
+  return id.toString(16).padStart(3, '0');
+}
+
 export function hex4(id: number): string {
   return id.toString(16).padStart(4, '0');
 }
@@ -151,7 +155,9 @@ export function write(data: Uint8Array, offset: number, values: Data<number>) {
 }
 
 export class FlagListType {
-  constructor(readonly last: number, readonly clear: number) {}
+  constructor(readonly last: number,
+              readonly clear: number,
+              readonly nonEmpty: boolean = false) {}
 
   read(data: Data<number>, offset: number = 0): number[] {
     // TODO - do we ever need to invert clear/last?  If so, use ~ as signal.
@@ -161,15 +167,14 @@ export class FlagListType {
       const lo = data[offset++];
       const flag = (hi & 3) << 8 | lo;
       const signed = hi & this.clear ? ~flag : flag;
-      //if (signed !== ~0)
-      flags.push(signed);
+      if (signed !== ~0) flags.push(signed);
       if (hi & this.last) return flags;
     }
   }
 
   bytes(flags: number[]): number[] {
-    //flags = flags.filter(f => f !== ~0);
-    //if (!flags.length) flags = [~0];
+    flags = flags.filter(f => f !== ~0);
+    if (this.nonEmpty && !flags.length) flags = [~0];
     const bytes = [];
     for (let i = 0; i < flags.length; i++) {
       let flag = flags[i];
@@ -190,8 +195,9 @@ export class FlagListType {
 }
 
 export const DIALOG_FLAGS = new FlagListType(0x40, 0x80);
-export const ITEM_GET_FLAGS = new FlagListType(0x40, 0x80);
-export const ITEM_USE_FLAGS = new FlagListType(0x40, 0x80);
+export const ITEM_GET_FLAGS = new FlagListType(0x40, 0x80, true);
+export const ITEM_USE_FLAGS = new FlagListType(0x40, 0x80, true);
+export const ITEM_CONDITION_FLAGS = new FlagListType(0x80, 0x20, true);
 export const SPAWN_CONDITION_FLAGS = new FlagListType(0x80, 0x20);
 
 ////////////////////////////////////////////////////////////////
@@ -505,3 +511,127 @@ export const watchArray = (arr: Data<unknown>, watch: number) => {
   };
   return new Proxy(arr, arrayChangeHandler);
 };
+
+export type Writable<T> = {-readonly [K in keyof T]: T[K]};
+
+export class Segment {
+  constructor(readonly name: string,
+              readonly bank: number,
+              readonly org: number) {}
+
+  get offset(): number {
+    // TODO - offset depends on expansion or not for fixed banks
+    // It should probably only be used for READING, so we use 1f
+    return (this.bank & 0x1f) << 13;
+  }
+
+  static readonly $04 = new Segment('04', 0x04, 0x8000);
+  static readonly $05 = new Segment('05', 0x05, 0xa000);
+
+  static readonly $0a = new Segment('0a', 0x0a, 0x8000);
+  static readonly $0b = new Segment('0b', 0x0b, 0xa000);
+  static readonly $0c = new Segment('0c', 0x0c, 0x8000);
+  static readonly $0d = new Segment('0d', 0x0d, 0xa000);
+  static readonly $0e = new Segment('0e', 0x0e, 0x8000);
+  static readonly $0f = new Segment('0f', 0x0f, 0xa000);
+  static readonly $10 = new Segment('10', 0x10, 0x8000);
+
+  static readonly $14 = new Segment('14', 0x14, 0x8000);
+  static readonly $15 = new Segment('15', 0x15, 0xa000);
+  static readonly $16_a = new Segment('16:a', 0x16, 0xa000); // NOTE: anomalous
+  static readonly $17 = new Segment('17', 0x17, 0xa000);
+  static readonly $18 = new Segment('18', 0x18, 0x8000);
+  static readonly $19 = new Segment('19', 0x19, 0xa000);
+  static readonly $1a = new Segment('1a', 0x1a, 0x8000);
+  static readonly $1b = new Segment('1b', 0x1b, 0xa000);
+
+  static readonly $fe = new Segment('fe', 0x1e, 0xc000);
+  static readonly $ff = new Segment('ff', 0x1f, 0xe000);
+}
+
+// TODO - it may be a mistake to use segment strings here?
+//      - we'll see if that comes back to byte us later.
+export class Address {
+  static of(segment: Segment, org: number) {
+    return new Address(segment, org - segment.org);
+  }
+
+  private constructor(readonly seg: Segment, readonly delta: number) {}
+
+  get offset() {
+    return this.seg.offset + this.delta;
+  }
+  get org() {
+    return this.seg.org + this.delta;
+  }
+  get segment() {
+    return this.seg.name;
+  }
+  plus(offset: number, nextSegment?: Segment) {
+    const newDelta = this.delta + offset;
+    if (newDelta >= 0x2000) {
+      if (!nextSegment) throw new Error(`Segment changed`);
+      if (this.seg.org & 0x2000) throw new Error(`Bad segment cross`);
+      return new Address(nextSegment, newDelta & 0x1fff);
+    }
+    return new Address(this.seg, newDelta);
+  }
+  minus(addr: Address) {
+    if (addr.seg !== this.seg) throw new Error(`Incompatible segments`);
+    return this.delta - addr.delta;
+  }
+  read<T>(data: Data<T>): T {
+    return data[this.offset];
+  }
+  readLittleEndian(data: Data<number>): number {
+    const off = this.offset;
+    return data[off] | data[off + 1] << 8;
+  }
+  readAddress(data: Data<number>, ...segments: Segment[]): Address {
+    const org = this.readLittleEndian(data);
+    if (!segments.length) segments = [this.seg];
+    // Figure out which segment it's in.
+    for (const s of segments) {
+      if ((org & 0xe000) === (s.org & 0xe000)) return Address.of(s, org);
+    }
+    throw new Error(`Could not find valid segment for ${hex(org)}`);
+  }
+  loc(assembler: IAssembler, name?: string) {
+    assembler.segment(this.segment);
+    assembler.org(this.org, name);
+  }
+  // locWide(assembler: IAssembler, name?: string) {
+  //   assembler.segment(this.segment, hex(this.seg ^ 1));
+  //   assembler.org(this.org, name);
+  // }
+  // locFixed(assembler: IAssembler, name?: string) {
+  //   assembler.segment(this.segment, 'fe', 'ff');
+  //   assembler.org(this.org, name);
+  // }
+  // locWideFixed(assembler: IAssembler, name?: string) {
+  //   assembler.segment(this.segment, hex(this.seg ^ 1), 'fe', 'ff');
+  //   assembler.org(this.org, name);
+  // }
+}
+
+interface IAssembler {
+  segment(...s: string[]): void;
+  org(o: number, n?: string): void;
+  free(size: number): void;
+  reloc(name?: string): void;
+  label(name: string): void;
+  export(name: string): void;
+}
+
+export function free(a: IAssembler, seg: Segment, start: number, end: number) {
+  a.segment(seg.name);
+  a.org(start);
+  a.free(end - start);
+}
+
+export function relocExportLabel(a: IAssembler, seg: Segment[], name: string) {
+  a.segment(...seg.map(s => s.name));
+  a.reloc(name);
+  a.label(name);
+  a.export(name);
+}

@@ -22,3 +22,155 @@ Basic idea:
    Currently we conflate these, but at least for (2) we'd need to
    go back to using e.g. 01a for telepathy, rather than 243, and
    we need to be careful what the itemget data table contains.
+
+RAM Area:
+ * There are several unused areas of PRG RAM that we could use.
+    - 6160 .. 61ff
+    - 6220 .. 62ef
+ * What do we need to store?
+    - Each player's name: 6*n bytes
+        - Probably set a max of 16 players, so this is $60 bytes.
+          If we use the smaller space at 6160 that takes us to 61c0.
+    - Outgoing items: two bytes each (who it goes to, which item).
+    - Incoming items: two bytes each (who it came from, which item).
+ * How big of a buffer do we need?
+    - The lua should be able to pick up outgoing items immediately
+      and should buffer incoming items?  Need to test this.
+    - That means we only need a single slot: 61c0 .. 61c3
+
+================================================================
+
+Code considerations:
+
+ItemGet (1c26f) needs an extra preamble.  Currently it's a big mess.
+It takes $23 as an argument and *immediately* looks it up in both
+the ItemGetTable and the ItemGetDataTable.  The ItemGetDataTable
+stores flags and follow-up actions, etc.  The flags are used for
+very different purposes:
+
+ * Telepathy (00e) is used for dialog checks
+ * Teleport (03f) is used for teleport trigger
+
+ * Flame Bracelet (102) is used for kelbesque's spawn
+ * Key to Stxy (03b) is used for massacre trigger
+
+The former need to go with the item, the latter with the check.
+We should consolidate ALL of these into a single block...?
+Some items don't have any flags in their ItemGet (i.e. ones that
+come from NPCs in certain non-repeatable conditions, like Gas Mask
+and Shield Ring).  We add 2xx flags that travel with the item, but
+also use it for the chest spawn, which is unfortunate.  An extra
+block of flags could be helpful here.
+
+Here are the flags for all items:
+ 00b 00 sword of wind - leaf elder (+dialogs)
+ 00e 43 telepathy - tornel spawn, oak dialog, stom trigger 85 
+ 010 3e bow of moon - ItemUse (not ItemGet), dialog
+ 013 38 broken statue - sab+zomb spawns, trap trigger, clark+joel dlg, telepathy
+ 017 02 sword of water - chest (+dialogs)
+ 01c 10 mirrored shield - UNUSED
+ 01e 45 recover - asina dialog (not ItemGet) +various spawns/dialog/telepathy
+ 01f 09 ball of water - queen/fortune teller/guard dialog, trigger
+ 020 09 ball of water - queen NOT in throne room (TOGGLED STATE)
+ 024 3d ivory statue - generals defeated (soldier spawns, dialogs)
+ 025 36 shell flute - dolphin spawn (ItemUse, not ItemGet)
+ 02e 2d deos pendant - dialog (+telepathy)
+ 034 30 shield ring - akahana spawn, dialog (Dialog, not ItemGet; see also 035)
+ 037 42 paralysis - trigger (redundant set), extra trigger 8d
+ 039 41 refresh - dialog (redundant set), trigger (redundant set)
+ 03b 34 key to styx - dialog (not ItemGet) (+asina dialog, bad warp trigger) 
+ 03c 3b love pendant - chest (+asina dialog, nonsense love pendant itemuse)
+ 03f 44 teleport - tornel dialog (redundant set), trigger ba
+ 041 07 ball of fire - keys some dwarf dialog (also stom)
+ 044 07 ball of fire - keys some other dwarf dialog (elder + child)
+ 049 01 sword of fire - oak elder (+dialogs)
+ 04e 06 tornado bracelet - chest (+dialog, telepathy, etc)
+ 04f 2b warrior ring - dialog (NOT on ItemGet!)
+ 050 29 gas mask - akahana spawn (ItemUse, not ItemGet)
+ 051 46 barrier - trigger 84 (Trigger, not ItemGet), various spawns
+ 05f 03 sword of thunder - chest (+triggers, sages spawn)
+ 062 51 sacred shield - chest (UNUSED???)
+ 063 47 change - kensu spawn (see also 03e, others) +telepathy
+ 067 0b ball of thunder - mado fight trigger condition
+ 06c 1c psycho armor - azteca in pyramid spawn
+ 075 39 glowing lamp - kensu spawn, dialog (not ItemGet; see 0a4) +telepathy
+ 077 08 flame bracelet - chest (+telepathy)
+ 078 0c storm bracelet - chest
+ 079 40 bow of truth - azteca spawn/dialog (+telepathy)
+ 07a 0a blizzard bracelet - chest (+telepathy)
+ 07b 09 ball of water - UNUSED trigger condition (+telepathy)
+ 07d 3f bow of sun - chest (+telepathy)
+ 087 05 ball of wind - chest
+ 088 32 windmill key - dialog (not ItemGet)
+ 08b 36 shell flute - fisherman spawn, daughter dialog +telepathy
+ 08d 37 eye glasses - dialog (not ItemGet)
+ 0a0 27 insect flute - dialog (NOT on ItemGet!)
+ 0aa 1d medical herb - chest
+ 0ab 50 medical herb - chest
+ 0ad 52 medical herb - chest
+ 0ae 53 medical herb - chest
+ 0af 54 magic ring - chest
+ 0b0 55 medical herb - chest
+ 0b1 56 medical herb - chest
+ 0b2 57 medical herb - chest
+ 0b3 58 magic ring - chest
+ 0b4 59 medical herb - chest
+ 0b5 5a fruit of power - chest
+ 0b6 1f lysis plant - chest
+ 0b7 5c lysis plant - chest
+ 0b8 5d lysis plant - chest
+ 0b9 1e antidote - chest
+ 0ba 5e antidote - chest
+ 0bb 5f antidote - chest
+ 0bc 60 antidote - chest
+ 0bd 20 fruit of lime - chest
+ 0be 21 fruit of power - chest
+ 0bf 62 fruit of power - chest
+ 0c0 63 opel statue - chest
+ 0c1 64 fruit of power - chest
+ 0c2 22 magic ring - chest
+ 0c3 65 magic ring - chest
+ 0c4 66 fruit of repun - chest
+ 0c5 6b magic ring - chest
+ 0c6 6c magic ring - chest
+ 0c7 23 fruit of repun - chest
+ 0c8 24 warp boots - chest
+ 0c9 6a warp boots - chest
+ 0ca 3d ivory statue - chest
+ 0cb 2a power ring - chest
+ 0cc 1c psycho armor - chest
+ 0cd 14 psycho shield - chest
+ 0ce 25 statue of onyx - chest
+ 0cf 33 key to prison - chest
+ 0d0 28 flute of lime - chest
+ 0d1 35 fog lamp - chest
+ 0d2 69 magic ring - chest
+ 0d3 26 opel statue - chest
+ 0d4 5b flute of lime - chest
+ 0d8 48 flight - kensu spawn, dialog (not ItemGet; see also 065)
+ 0dc 6f magic ring - chest
+ 0dd 70 mimic - UNUSED
+ 0de 2c iron necklace - chest
+ 0df 1b battle armor - chest
+ 0e4 3c kirisa plant - chest
+ 0e5 6e warp boots - chest
+ 0e6 6d opel statue - chest
+ 0e7 2f leather boots - chest
+ 100 2e rabbit boots - vampire 1 spawn
+ 101 07 ball of fire - insect spawn (c1) checked by flute's ItemUseJump
+ 102 08 flame bracelet - kelbesque 1 spawn (c2)
+ 103 09 ball of water - rage spawn (c3)
+ 105 26 opel statue - kelbesque 2 spawn (c5)
+ 106 23 fruit of repun - sabera 2 spawn (c6)
+ 107 12 sacred shield - mado 2 spawn (c6)
+ 108 3d ivory statue - karmine spawn (c8)
+ 10b 1c psycho armor - draygon 1 spawn (cb)
+ 10c 61 fruit of power - vampire 2 spawn (cc)
+
+================================================================
+
+We should be able to simplify slots quite a bit.
+ - but still may need the indirection table for > 48?? (but could be shorter)
+ - lua needs to be able to determine if (say) the Nth herb is still gotten
+ - then we need both flag tables to go up to 6f...?
+

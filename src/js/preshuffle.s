@@ -1,253 +1,17 @@
-;;; Main patch data.  Note that the shuffle takes place in three steps:
-;;;
-;;;   1. Initial patch.
-;;;   2. Shuffle.
-;;;   3. Delayed patch.
-;;;
-;;; This file takes care of steps 1 and 3, as indicated by a prepended
-;;; define clause.  After the initial patch, the shuffle step will read
-;;; and parse various tables in the ROM, and will potentially write
-;;; rearranged and defragmented tables back.  The upshot is that the
-;;; initial step will write data that the parser will read, but cannot
-;;; make use of any of the recovered space.  The delayed step can write
-;;; to this space, but may not know where certain tables ended up.
-;;; 
 ;;; Various flag-based defines will be prepended to this file, indicated
 ;;; by a `_` prefix.
 
-
-;;; Indicate the fixed bank - this is always the case.
-.bank $3c000 $c000:$4000
-
-;;; Various global definitions.
-define ObjectRecoil $340
-define ObjectHP $3c0
-define PlayerHP $3c1
-define PlayerMaxHP $3c0
-define ObjectAtk $3e0
-define PlayerAtk $3e1
-define ObjectDef $400
-define PlayerLevel $421
-define ObjectActionScript $4a0
-define ObjectGold $500
-define ObjectElementalDefense $500
-define ObjectExp $520
-define PlayerMP $708
-define EquippedConsumableItem  $715
-define EquippedPassiveItem     $716
-
-
-define InvSwords $6430
-define InvConsumables $6440
-define InvPassive $6448
-define InvQuest $6450
-define InvMagic $6458
-define ItemFlagsStart $64c0
-define Difficulty $64a2
-define ShouldRedisplayDifficulty $64a3
-
-        
-define SelectedConsumableIndex  $642c
-define SelectedQuestItemIndex   $642e
-
-
-.ifdef _EXTRA_PITY_MP
-define PITY_MP_AMOUNT     20
-define ONE_MINUS_PITY_MP  237
-.else
-define PITY_MP_AMOUNT     1
-define ONE_MINUS_PITY_MP  0
-.endif        
-
-define PITY_HP_AMOUNT     5
-
-define SHOP_COUNT         11
-define SCALING_LEVELS     48
-
-.ifdef _UNIDENTIFIED_ITEMS
-define SORT_START_ROW     3
-.else
-define SORT_START_ROW     2
-.endif
-
-;;; Constants
-define ITEM_RABBIT_BOOTS     $12
-define ITEM_OPEL_STATUE      $26
-define SFX_MONSTER_HIT       $21
-define SFX_ATTACK_IMMUNE     $3a
-
-;;; Labels
-.org $1c112
-SetOrClearFlagsFromBytePair_24y:
-.org $1c135
-ReadFlagFromBytePair_24y:
-.org $1c26f
-ItemGet:
-.org $1c2f4
-ItemGet_Bracelet:
-.org $1c308
-ItemGet_FindOpenSlot:
-.org $1c354
-ItemUse_TradeIn:
-.org $217cd
-Shop_NothingPressed:
-.org $21c7a
-AfterLoadGame:
-.org $2791c
-PlayerDeath:
-.org $279b0
-ActivateOpelStatue:
-.org $34bc0
-ArmorDefense:
-.org $34bc9
-ShieldDefense:
-.org $34e46
-DisplayNumberInternal:
-.org $35152
-KillObject:
-.org $355c0
-KnockbackObject:
-.org $3c000
-PowersOfTwo:
-.org $3c008
-UpdateEquipmentAndStatus:
-.org $3c125
-StartAudioTrack:
-.org $3c25d
-LoadOneObjectDataInternal:
-.org $3cab6
-MainLoop_01_Game:
-.org $3cb84
-CheckForPlayerDeath:
-.org $3d21d
-DialogAction_11:
-.org $3d347
-LoadAndShowDialog:
-.org $3d354
-WaitForDialogToBeDismissed:
-.org $3d3ff
-MainLoopItemGet:
-.org $3e756
-RestoreBanksAndReturn:
-.org $3fe80
-ReadControllersWithDirections:
-.org $3ffa9
-DisplayNumber:
-
-
-.bank $14000 $8000:$4000
-
-;;; NOTE: there's space here, but we glob it into the space
-;;; recovered from defragging MapData... if we want it back
-;;; we'll need to change the "end" address there.
-;.org $17cfa
-;;; just over 256 bytes free in map space
-;.assert < $17e00
-
-
-.org $17f00
-;; another 256 free in map space
-.assert < $18000
-
-
-.bank $18000 $8000:$4000
-
-
-.org $183fc
-;; ~80 bytes free in middle of SFX data that could be used on the npc data page?
-.assert < $1844d
-
-.org $1aba3 ; empty space at end of npcdata
-        ;; unused
-.assert < $1ac00 ; end of free space started at $1aba3
-
-.bank $1c000 $8000:$4000
-
-.ifdef _BUFF_DYNA
-.ifdef _REMOVE_MAGIC_FOR_DYNA
-;;; Patch ItemGet_Crystalis to remove magics, too
-.org $1c2b7
-
-  ldx #$03
--  lda #$ff
-   sta $6430,x
-   sta $643c,x
-   sta $6458,x
-   sta $645c,x
-   dex
-  bpl -
-  lda #$04
-  sta $6430
-  lda #$05
-  sta $0711
-  lda #$00
-  sta $0712
-  rts
-
-.assert < $1c2dd
-.endif
-.endif
-
+.segment "0e", "0f"
 
 ;;; Patch the end of ItemUse to check for a few more items.
-.org $1c34d
+.org $834d
   jmp PatchTradeInItem
 
+;; TODO - extra item indirection preamble...
+;; handle different checks
 
-.org $1c399 ; 58 bytes of free/unused space at start of itemuse jump
-;; FixStatue:
-  ;; sta $61
-  ;; sta $643f,x
-  ;; ;; also need to set the item flags...
-  ;; lda $24
-  ;; pha
-  ;;  lda $25
-  ;;  pha
-
-
-;;;  TODO - this is broken - we probably need to update
-;;;  the ItemUseData to do give the item, but that's also
-;;;  tricky because how to store what the result is?!?
-;;;   --> move all the trade-ins to be embedded in itemuse?!?
-;;;  No, itemusejump should be able to do it?
-;;;    --- see ???
-;;;  ItemOrTriggerActionJump_0d currently hard-codes bow of moon
-;;;    --- instead lookup table
-    
-  ;; jmp $d22b
-
-  ;; tay
-  ;; lda $23
-  ;; pha
-  ;;  sty $23
-  ;;  lda #$ff
-  ;;  sta $643f,x
-  ;;  lda $24
-  ;;  pha
-  ;;   lda $25
-  ;;   pha
-  ;;    jsr $8271
-  ;;   pla
-  ;;   sta $25
-  ;;  pla
-  ;;  sta $24
-  ;; pla
-  ;; sta $23
-  ;; rts
-
-
-.assert < $1c3d3
-
-.org $1c3eb ; 16 bytes of free/unused space in middle of itemuse jump
-.assert < $1c3fb
-
-.org $1c41b ; 30 bytes of free/unused space at end of itemuse jump
-.assert < $1c439
-
-
-.org $1c157
+.org $8157
   .word (PowersOfTwo) ; no need for multiple copies
-
 
 ;;; Fix the overly-long loop to find broken statue
 ;; .org $1c585
@@ -259,12 +23,12 @@ DisplayNumber:
 ;;   bpl -
 ;;   jmp $84db
 ;;; Allow giving arbitrary items for broken statue trade-in
-.org $1c594
+.org $8594
   lda #$ff
 ;  sta $6450,x
   ;rts
 ;;   ;; 9 free bytes, could be more if we remove the unused Flute of Lime checks
-;; .assert < $1c59e
+;; .assert * <= $1c59e
 
 ;.org $1c596
 ;  jsr $d22b ; grant item in register A
@@ -273,50 +37,40 @@ DisplayNumber:
 
 
 ;; Count uses of Flute of Lime and Alarm Flute - discard after two.
-.org $1c6f2 ; 10 free bytes in middle of spawn condition table
+.segment "0e", "0f", "fe", "ff"
+.reloc
 PatchTradeInItem:
-  cmp #$31
-  beq +
-  cmp #$28  ; flute of lime
-  beq ++
-  bne ++++
-.assert < $1c6fc
+    cmp #$28  ; flute of lime
+    beq @FluteOfLime
+    cmp #$31  ; alarm flute
+    bne @DoTradeIn
+    lda #$40
+    SKIP_TWO_BYTES ; skip the next instruction (safe b/c $80a9 is prg rom)
+@FluteOfLime:
+    lda #$80
+    sta $61
+    lda $648e ; check flag 076 (alarm flute) or 077 (flute of lime)
+    and $61
+    bne @DoTradeIn
+    lda $648e
+    ora $61
+    sta $648e
+    ;; Deselect current item
+    lda #$00
+    sta $0715
+    lda #$80
+    sta $642e
+    rts
+@DoTradeIn:
+    jmp ItemUse_TradeIn
 
-.org $1c6fe ; free space in middle of spawn condition table
-+    lda #$40
-     sta $61
-     bne +++
-++   lda #$80
-     sta $61
-+++  lda $64a1
-     and $61
-     bne ++++
-     lda $64a1
-     ora $61
-     sta $64a1
-     ;; Deselect current item
-     lda #$00
-     sta $0715
-     lda #$80
-     sta $642e
-     rts
-++++ jmp ItemUse_TradeIn
-
-;;; Plenty of free space here!
-
-.assert < $1c760
-
-.org $1ca6f ; 10 free bytes in middle of dialog table
-.assert < $1ca79
-
-.org $1ca7b ; free space in middle of dialog table
-.assert < $1cae3
+.segment "0f", "fe", "ff"
 
 
 ;; Prevent soft-lock when encountering sabera and mado from reverse
 ;; Double-returns if the boss's sprite is not in the top quarter of
 ;; the screen. This is unused space after triggers.
-.org $1e3c0
+.reloc
 CheckBelowBoss:
    lda $0380,x
     bmi ++
@@ -337,7 +91,6 @@ CheckBelowBoss:
     bmi ++
    sbc #$40
 ++ rts
-.assert < $1e3f0
 
 .ifdef _NERF_MADO
 ;;; Mado's cannonball time is a function of his HP: framecount = HP + #$20.
@@ -345,75 +98,90 @@ CheckBelowBoss:
 ;;; sure he bounces for less time by dividing by two instead of clearing
 ;;; carry.  We also change the shift to #$18, making the range 24..152
 ;;; rather than 0..255.
-.org $1ee53
+.org $ae53
   lsr
   adc #$18
 .endif
 
-.org $1e48b  ; vampire pattern 0
+.org $a48b  ; vampire pattern 0
   jsr CheckBelowBoss
-.org $1e971  ; kelbesque pattern 0
+.org $a971  ; kelbesque pattern 0
   jsr CheckBelowBoss
-.org $1ec8f  ; sabera pattern 0
+.org $ac8f  ; sabera pattern 0
   jsr CheckBelowBoss
-.org $1ede8  ; mado pattern 0
+.org $ade8  ; mado pattern 0
   jsr CheckBelowBoss
 
 ;; If LookingAt is $1f and the item goes into the $20 row then we can't
 ;; just reject - instead, add the item to an overflow chest.
 ;; We use the bytes at 64b8..64bf to store the overflow.
 
-.ifdef _DEBUG_DIALOG
-;;; Auto level-up and scaling-up dialogs
-.org $1cc87                     ; leaf rabbit -> action 1e
-  .byte $20,$00,$f2,$84
-.org $1cc30                     ; leaf daughter -> action 1d
-  .byte $20,$00,$e8,$1d
-;.org $1cb58                     ; leaf elder -> action 1c
-.org $1cc62                     ; leaf red girl -> action 1c
-  .byte $20,$00,$e0,$0f
-.endif
-
 ;;; ITEM GET PATCHES
-
+.segment "0e", "fe", "ff"
 
 ;; Treasure chest spawns don't need to be so complicated.
 ;; Instead, just use the new dedicated ItemGet flags 200..27f
-.org $1c5c3
-  ;; Read the flag 200+chest, where chest is in $23
-  lda #$a2
-  sta $61
+.org $85c3
+  ;; Read the flag 100|chest, where chest is in $23
   lda $23
-  sta $62
-  lda #$61
-  sta $24
-  lda #$00
-  sta $25
+  and #$07
   tay
-  jsr ReadFlagFromBytePair_24y
-  beq +
+  lda $c000,y ; powers of two
+  pha
+   lda $23
+   lsr
+   lsr
+   lsr
+   tay
+  pla
+  and SlotFlagsStart,y
+  bne +
    inc $20
 + rts
-.org $1c5de
+FREE_UNTIL $85de  ; ~24 bytes
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; TODO - finish itemget patches
+;;;  1. add a new table for indirection
+;;;  2. new table can include mimic, so divert spawn
+;;;  3. write both 1xx and 2yy flags.
+;;;  4. store both ids until after item gotten
+;;;     - may need to use something like 61fe ?
+;;;  5. ???
+;;; Also update the slots.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;; Replace ItemGet with an extra indirection
+.org $826f
+  jsr PatchStartItemGet
+
+.org $8285
+  nop ; don't update $29, it was already written in PatchStartItemGet...
+  nop
 
 ;; Patches to ItemGet to update the dedicated flag and
 ;; leave room for calling the difficulty methods
-.org $1c287
+.org $8287
   jsr ItemGet_PickSlotAndAdd
-.org $1c297
+
+.org $8297
   jmp ItemGetFollowup
-        ;; 4 bytes free here
-.assert < $1c29e
-.org $1c29e
+FREE_UNTIL $829e  ; ~4 bytes
+
+.org $829e
 ItemGet_PickSlotAndAdd:  ; move this up a few bytes
   sty $62
-.assert $1c2a0
+.assert * = $82a0
 
-.org $1c2a8
+.org $82a8
   jsr ItemGet_FindOpenSlotWithOverflow
 
 .ifdef _PROGRESSIVE_BRACELET
-.org $1c2de
+;;; NOTE: this code replaces the WeaponBallOrBracelet_NotCrystalis branch
+;;; of ItemGet, along with the Bracelet-only branch down to 1c308
+.org $82de
    lda $29
    bcc +          ; just compared #$o4, swords are good to go
     inc $6430,x   ; try incrementing the power slot
@@ -426,27 +194,94 @@ ItemGet_PickSlotAndAdd:  ; move this up a few bytes
 ++ lda $6430,x    ; read the item back again (in case we jumped here)
    sta $07dc      ; store the actual item in the dialog spot to get right message
    rts ; jmp PostInventoryMenu (note: would be nice to get items right)
-.assert < $1c308
+FREE_UNTIL $8308
 .endif
 
-.org $1dc82
-;; Freed from the chest spawn pointer table
-.org $1dd64
+;;; Exported by rom/slots.ts
+.import CheckToItemGetMap
 
-;; Freed from the chest spawn data
-.org $1e106
+;;; NOTE: The start of this table is in the middle of some freed section
+;;; [$9c82, $9daf); we only preserve the second half of the table, starting
+;;; at $9daf (y=$49).
+OriginalItemGetTable = $9d66
+
+.reloc
+PatchStartItemGet:
+  lda $23
+  sta $61fe
+  tax
+  lda CheckToItemGetMap,x
+  tay
+  cmp #$70
+  bcc +
+   ;; spawn mimic instead - need to back out of 3 layers of calls
+   ;; TODO - keep track of which mimic so we can set the flag?
+   pla
+   pla
+   pla
+   pla
+   pla
+   pla
+   jmp SpawnMimic
++ cmp #$49
+  bcc +
+   lda OriginalItemGetTable,y  ; NOTE: y>=$49, so this is really [$9daf...)
++ sta $29
+  sta $07dc   ; TODO - can we ditch the table at 3d45c now?
+  rts         ;      - what about other writes to 07dc?
+
+;; TODO - why is this here?
+
+.org $d3f6              ; Within game mode jump 07 (trigger / chest)
+  ;; This is only a minor optimization to skip the 4 nops we add below
+  bcc +
+.org $d3fb              ; HandleTreasureChest
+  ;; This normally checks for a mimic spawn, but we check that elsewhere
+  ;; so just replace it with nops.
+  nop ; just in case there's another entry into here
+  nop
+  nop
+  nop
++:
+
+;; Fix dialog to work with us... (patch in the middle here)
+ShowTreasureChestMessage = $d41c
+.org $d404
+  ;lda $62 ; the actual item gained (or tried to gain)
+  ;sta $07dc   ; note: already written in PatchStartItemGet
+  lda $23
+  bmi HandleTreasureChest_TooManyItems ; patched version of this message tells what was in chest
+  bpl ShowTreasureChestMessage
+  ;; skip these bytes
+FREE_UNTIL $d41c
+
+.org $d47c ; HandleTreasureChest_TooManyItems
+HandleTreasureChest_TooManyItems:
+  ;; Rather than using the global timer to determine whether
+  ;; to show the "too many items" message, use the gamepad:
+  ;; only show if pressing a direction ($49 != #$ff)
+  lda $49
+  bpl +
+   rts
+   nop
++:
+.assert * = $d482
+
+
+;;; Redisplay scaling level when it changes
+.segment "0e", "0f", "fe", "ff"
+.reloc
 ItemGetRedisplayDifficulty:
-.ifdef _DISPLAY_DIFFICULTY
-  nop  ; TODO - just remove the path?
-.else
+.ifndef _DISPLAY_DIFFICULTY ; TODO - just remove the path?
   rts
 .endif
   lda #$01
   sta ShouldRedisplayDifficulty
   rts
-.org $1e110
-KeyItemData:
-  .res 10, 0
+
+;;; Exported by rom/item.ts
+.import KeyItemData
+.reloc
 ItemGetFollowup:
   ;; The vanilla code checks whether the last byte at ($24),y is negative
   ;; and if not, then it stores the positive value in $23 as some sort of
@@ -467,22 +302,27 @@ ItemGetFollowup:
   lda KeyItemData,y
   and PowersOfTwo,x
   beq +
-   lda Difficulty
-   cmp #$2f
-   bcs +
-    inc Difficulty
-    jsr ItemGetRedisplayDifficulty
+   inc Difficulty
+   jsr ItemGetRedisplayDifficulty
    ;; Always set the dedicated 200+chest flag.
-+ lda #$42
-  sta $61
-  ;; $62 is already the item number, saved from earlier
-  lda #$61
-  sta $24
-  lda #$00
-  sta $25
-  tay
-  jmp SetOrClearFlagsFromBytePair_24y
++:
+  ;; lda #$42
+  ;; sta $61
+  ;; ;; $62 is already the item number, saved from earlier
+  ;; lda #$61
+  ;; sta $24
+  ;; lda #$00
+  ;; sta $25
+  ;; tay
+  ;; jmp SetOrClearFlagsFromBytePair_24y
+  ldy #$02
+  lda $62
+  jsr SetFlagYA
+  ldy #$01
+  lda $61fe
+  jmp SetFlagYA
 
+.reloc
 ItemGet_FindOpenSlotWithOverflow:
   tay ; copied from 1c2a8
   bmi +
@@ -512,20 +352,57 @@ ItemGet_FindOpenSlotWithOverflow:
     sta $23
     rts
 
-;; TODO - still 7 bytes here?
-.assert < $1e17a
-
 
 .ifdef _FIX_VAMPIRE
 ;;; Fix vampire to allow >60 HP.  Normally at 61 HP there's an overflow
 ;;; and the teleport animation gets really fast until HP drops below 61.
-.org $1e576
+.org $a576
   jsr ComputeVampireAnimationStart
   nop
-.assert $1e57a ; match up exactly to next instruction
+.assert * = $a57a ; match up exactly to next instruction
+
+.reloc
+ComputeVampireAnimationStart:
+   bcs +
+   asl
+   bcs +
+   adc #$10
+   bcc ++
++  lda #$ff
+++ rts
+
 .endif
 
+.segment "0f", "fe", "ff"  ;; NOTE: 0e is not valid below here.
 
+;;; Ensure Draygon 2 spawns directly if bow of truth was used earlier.
+.org $b1a1
+  jsr SpawnDraygon
+
+;;; Once we use the Bow of Truth, it's gone, so we need to make sure
+;;; any future encounters with Draygon 2 automatically go to the
+;;; final form.  Since triggers and itemuse actions share the same
+;;; address space, we add a fake trigger $a0 that has the same reveal
+;;; action as using the Bow of Truth.  But rather than placing it on
+;;; the screen (and incurring lag by stepping on it) we instead
+;;; simulate it during the "start fight" object action by setting
+;;; 0623 and 057f as if we were standing in front of it.  To get this
+;;; right we actually need to move the UsedBowOfTruth trigger to a
+;;; fixed position (02f) that we can check easily.
+.reloc
+SpawnDraygon:
+  inc $0600,x ; original action
+  lda $06c3
+  beq +       ; make sure we're looking at draygon 2, not 1
+  lda $6485
+  bpl +       ; check flag 02f
+  lda #$1f
+  sta $0623
+  lda #$a0
+  sta $057f
+  lda #$07 ; trigger tile
+  sta $41
++ rts
 
 ;;; Boss chest action jump has some special handling for bosskill 3 (rage)
 ;;; which is instead used for Kensu dropping a chest.  We'll rearrange the
@@ -542,65 +419,52 @@ ItemGet_FindOpenSlotWithOverflow:
 ;;   adc $0600,x
 ;;   tay
 ;;   cpy #$0f
-.org $1f76b
-  beq HandleKensuChestInit
-.org $1f77b
-ReturnFromKensuChest:
-.org $1f7c2
-HandleKensuChestInit:
-  jmp HandleKensuChest
-.org $1f7d0
+.org $b76b
+  beq @HandleKensuChestInit
+.org $b77b
+  clc
+  nop
+@HandleKensuChestInit: ; if we jumped here then C is set
+  jsr HandleKensuChest
+
+.org $b7d0
   .byte $00  
 
-
 ;;; We moved the LV(menu) display from 06 to 0e so display that instead
-.org $1fd27
+.org $bd27
   lda #$0e
 
-.org $1ff46
-;;; TODO - consider grafting in our own debug mode here?
-.assert < $1ff97
-
-;; This looks like it's just junk at the end, but we could
-;; probably go to $1ff47 if we don't care about developer mode
-.org $1ff97
-ComputeVampireAnimationStart:
-   bcs +
-   asl
-   bcs +
-   adc #$10
-   bcc ++
-+  lda #$ff
-++ rts
-
+.pushseg "0f"    ; NOTE: 0e does not work here.
+.reloc
 HandleKensuChest:
-  lda #$09
-  sta $033e
-  jmp ReturnFromKensuChest
+  lda #$8d
+  sta $03a0,x
+  bcc +
+   lda #$09
+   sta $033e
++ rts
+.popseg
 
-.assert < $20000
-
-.bank $20000 $8000:$2000
+.segment "10", "fe", "ff"  ; TODO - is 11 valid here, too?
 
 ;; Replace "drop item" code for key items to use an overflow buffer
 
-.org $20372
+.org $8372
   jsr CheckDroppable
 
-.org $20434
+.org $8434
   jsr MaybeDrop
   nop
   nop
 
-.org $20ff0
-InvItemData:
+InvItemData = $8ff0
 
 
 ;; MUST BE EXACTLY 4 BYTES
-.org $20534
+.org $8534
   nop
   jsr FillQuestItemsFromBuffer
-.assert $20538
+.assert * = $8538
 
 ;; NOTE: This prevents swords and orbs from sorting to avoid out-of-order
 ;; swords from clobbering one another.  We swap the second and fourth
@@ -608,12 +472,12 @@ InvItemData:
 ;; of zero, we end up skipping exactly the first and fourth rows.
 ;; We change the sort order more generally so that we can prevent sorting
 ;; the key item row as well if unidentified items is set.
-.org $2059e
+.org $859e
   .byte $04,$04,$08,$08,$08,$08,$04,$04
   .byte $00,$0c,$20,$10,$18,$28,$04,$08
 
 
-.org $21471 ; unused space, 130 or so bytes
+.reloc
 CheckDroppable:
   ;; Loads A with something that has the :40 bit set if the item
   ;; is not droppable.
@@ -628,6 +492,8 @@ CheckDroppable:
     rts
 + lda InvItemData,x
   rts
+
+.reloc
 MaybeDrop:  ; 21486
   txa
   and #$f0
@@ -651,7 +517,9 @@ MaybeDrop:  ; 21486
 + pla
   sta $64b8,x
   rts
-FillQuestItemsFromBuffer: ; 214af
+
+.reloc
+FillQuestItemsFromBuffer:
   ;; First fill in any gaps in the quest item row
   ;; Note: we're very short space, but we need to increment x and y.
   ;; Start them at -9 (due to preincr) and -8 so that they end at zero.
@@ -705,54 +573,37 @@ FillQuestItemsFromBuffer: ; 214af
   rts
 
 ;;; Support for fixing sword charge glitch
+.reloc
 ReloadInventoryAfterLoad:
   jsr PostInventoryMenu
   jmp AfterLoadGame
-
-        ;; FREE: 3 bytes?
-.assert < $21500
-
-.org $20a37
-        ;; FREE: 35 bytes
-.assert < $20a5a
 
 
 
 .ifdef _DISABLE_SHOP_GLITCH
 ;;; Disable the shop glitch by ensuring prices are updated immediately
 ;;; after moving the cursor, rather than a few frames later.
-.org $21812
+.org $9812
     jmp Shop_NothingPressed
 .endif
 
 
 
 
-.ifdef _FIX_OPEL_STATUE
-;;; Don't select Opel Statue at all.  This patches the table at $2103b
-;;; that translates an item ID to a "selected item" index, i.e. each
-;;; type of item maps to a series 1..N.  In this case, we just remap
-;;; Opel Statue to zero so that it looks like nothing is selected.
-.org $21061
-  .byte $00
-.endif
-
 
 
 
 .ifdef _DISABLE_SWORD_CHARGE_GLITCH
-.org $21bce
+.org $9bce
   jmp ReloadInventoryAfterLoad
-.org $21bde
+.org $9bde
   jmp ReloadInventoryAfterLoad
 .endif
 
 
-.bank $24000 $8000:$2000
-.bank $26000 $a000:$2000
-
 ;;; Rewrite the page boundary to avoid code crossing it.
-.org $25fef
+.segment "12"
+.org $9fef
   ;; Need to fit this in 17 bytes
   sta $09     ; 85 09
   ldy #$03    ; a0 04
@@ -761,16 +612,19 @@ ReloadInventoryAfterLoad:
   dey         ; 88
   bpl -       ; 10 f7
   jmp $a005   ; 4c 05 a0
-.assert < $26000
+FREE_UNTIL $a000
 
 
-.org $264b3
-.assert < $264bf
+.segment "13"
+.org $a000
+FREE_UNTIL $a005
 
+
+.segment "13", "fe", "ff"   ; TODO - check 12
 
 .ifdef _FIX_OPEL_STATUE
 ;; Search inventory for a statue
-.org $2788d ; START OF FREE SPACE
+.reloc
 CheckOpelStatue:
 .ifndef _NEVER_DIE
   lda $6440,x
@@ -785,37 +639,37 @@ CheckOpelStatue:
   jmp ActivateOpelStatue
 .else
   ;; Special code path for "never die" mode
+  ;; (just automatically activate opels)
   jsr ActivateOpelStatue
   lda #$08
   sta $41
   rts
 .endif
-.assert < $27900 ; END OF FREE SPACE from $2788d or $278e9
 
-.org $27903
+;;; Fix opel statue bug that undid change/dolphin rather than status
+.org $b903
   and #$f0
-  ;; Now check opel statue
-.org $27912
+
+.org $b912
   ldx #$07
   jmp CheckOpelStatue
-        ;; 5 free bytes
-.assert < $2791c
+FREE_UNTIL $b91c
 .endif
 
 
 .ifdef _DISPLAY_DIFFICULTY
 ;;; Start the loop at 6 instead of 5 to also show the difficulty
-.org $27aca
+.org $baca
   ldx #$06
 .endif
 
 
 ;;; Fix the graphics glitch from getting a sword while changed.
-.org $27c04
+.org $bc04
   jsr MaybeRevertChangeOnSwordGet
 
-.org $27ff2
-    ;; probably unused, but has some structure...?
+
+.reloc
 MaybeRevertChangeOnSwordGet:
   lda $0710
   and #$80
@@ -823,13 +677,11 @@ MaybeRevertChangeOnSwordGet:
    jsr $bb9d ; 27b9d MainGameModeJump_19_ChangeMagicRevertAnimation
 + jmp $c867  ; 3c867 ??
 
-.assert < $28000
 
-
-
-.bank $2e000 $a000:$2000
-
-.org $2fbd5 ; NOTE: start of an unused block
+;.segment "14" ; TODO - do these _actually_ go together?
+.segment "17", "fe", "ff"
+;.bank $28000 $8000:$2000
+;.bank $2e000 $a000:$2000
 
 ;;; Prevent softlock from saving or checkpointing with zero health or MP.
 ;;; This handles cases such as (1) swamp runs when the last HP was lost
@@ -840,6 +692,11 @@ MaybeRevertChangeOnSwordGet:
 ;;; unless the player is swordless, in which case 20 MP are given (since
 ;;; it may be impossible to stay at an inn or buy magic-restoring items).
 ;;; This is entered by a patched call at $2fd82.
+.ifdef _PITY_HP_AND_MP
+.org $bd82 ; normally "sta $03c1"
+  jsr CheckForLowHpMp
+
+.reloc
 CheckForLowHpMp:
     cmp #PITY_HP_AMOUNT
     bcs +
@@ -848,18 +705,18 @@ CheckForLowHpMp:
     ;; Check if we've ever found any swords
     lda ItemFlagsStart
     and #$0f
-    ;; If this is zero then we have no swords and should give 20 MP.
-    ;; If it's nonzero, set it to -19 and then we'll add 20 unconditionally.
+    ;; If this is zero then we have no swords and should give 34 MP.
     ;; Note that we can ignore the swordless check via a flag.
     beq +
-     lda #ONE_MINUS_PITY_MP
-+   clc
-    adc #PITY_MP_AMOUNT
+     lda #$01
+    .byte $2c             ; skip next instruction
++    lda #PITY_MP_AMOUNT
     ;; Now compare with MP - if it's less, set the minimum.
     cmp PlayerMP
     bcc +
      sta PlayerMP
 +   rts
+.endif ; _PITY_HP_AND_MP
 
 ;;; This glitch works because the game sets three separate checkpoints
 ;;; when using warp boots: one from $3e538 (ExitTypeJump_2_Warp) after
@@ -870,50 +727,55 @@ CheckForLowHpMp:
 ;;; is unique to Warp Boots (Teleport only does the first two), and is
 ;;; also the only one that does not run with GameMode == #$06.  The fix
 ;;; is simple: don't set the checkpoint in GameMode_06.
+
+.org $bbd5
+;;; Space freed from unused "revert change magic" routine.  We specify
+;;; this directly so that we can use a branch to MaybeSetCheckpointActual
+;;; and thus save 3 bytes.
 FixWarpBootsReuseGlitch:
   lda $41  ; GameMode
   cmp #$06 ; item use
   bne MaybeSetCheckpointActual
   rts
-
-.assert < $2fc00 ; end of unused block from $2fbd5
+FREE_UNTIL $bc00
 
 .ifdef _DISABLE_WARP_BOOTS_REUSE
-.org $2fc00
+.org $bc00
+MaybeSetCheckpoint:
   ;; Normally this just jumps to MaybeSetCheckpointActual, which is kind
   ;; of pointless, but it provides a convenient point of indirection for
   ;; us to use here.
   jmp FixWarpBootsReuseGlitch
 .endif
 
-.org $2fc09
+.org $bc09
 MaybeSetCheckpointActual:
 
-.ifdef _PITY_HP_AND_MP
-.org $2fd82 ; normally "sta $03c1"
-  jsr CheckForLowHpMp
-.endif ; _PITY_HP_AND_MP
 
 .ifdef _HARDCORE_MODE
-.org $2ff00
+;;; Zero out the checkpoint table!
+.org $bf00
   .res 256, 0
 .endif
 
 
-.bank $34000 $8000:$4000
+.segment "1a", "1b", "fe", "ff"
+;.bank $34000 $8000:$4000
 
 ;;; Numeric displays
-.org $34ee9  ; 06 - was LV(menu) but now it's difficulty
-  .byte $a2,$64,$3c,$2b,$03,$00 ; display difficulty right of lvl
-.org $34f19  ; 0e - was unused, now it's LV(menu)
-  .byte $21,$04,$29,$29,$03,$00 ; copied from $34ee9
+.org $8ee9  ; 06 - was LV(menu) but now it's difficulty
+  .word (Difficulty)
+  .byte $3c,$2b,$03,$00 ; display right of lvl
+.org $8f19  ; 0e - was unused, now it's LV(menu)
+  .word (PlayerLevel)
+  .byte $29,$29,$03,$00 ; copied from $34ee9
 
 
-;; ADJUSTED DAMAGE CALCULATIONS
+;; ADJUSTED DAMAGE CALCULATIONS (in the middle of sword-enemy collision jump)
 ;; $61 is extra HP bit(s)
 ;; $62 is DEF
 ;; $63 is damage
-.org $350fa
+.org $90fa
     lda #$00
     sta $61
     sta $63 ; damage we're actually going to do
@@ -958,58 +820,42 @@ MaybeSetCheckpointActual:
     sta ObjectDef,y
     rts
 ;;; NOTE: must finish before 35152
-.assert < $35152
+FREE_UNTIL $9152
 
 
 ;;; Change sacred shield to block curse instead of paralysis
-.org $352ce
+.org $92ce
   cmp #$05 ; ceramic shield blocks paralysis
-.org $3534c
+
+.org $934c
   jsr CheckSacredShieldForCurse
 
+.reloc
+CheckSacredShieldForCurse:
+  lda $0714 ; equipped shield
+  cmp #$06  ; sacred shield
+  bne +
+   pla
+   pla
++ rts
 
 ;;; Allow other negative numbers to indicate projectile damage.
 ;;; Only $ff exactly will cause it to despawn.  This allows marking
 ;;; flails as $fe so that they still do projectile damage, but won't
 ;;; disappear.
-.org $353df
+.org $93df
   nop
   nop
-  bpl + ; $353e8
-.org $353e8
-+:
+  bpl $93e8
 
-.ifdef _DISABLE_TRIGGER_SKIP
-;;; The jumping warp-boots trigger skip works as follows:
-;;; Because the main loop reads the controller first and
-;;; sets the mode to #$06.  The trigger square only takes
-;;; effect (by setting the mode to #$07) if the mode was
-;;; #$08 (normal mode for walking on the map).  Because
-;;; the item is being used, the trigger effect is skipped.
-;;; The solution is to add a new game mode #$05 for using
-;;; an item while on a trigger square.  After evaluating
-;;; the item use, we jump right into to the trigger mode.
-.org $354a2
-  ;; save 623 first regardless
-  lda $41
-  cmp #$08
-  beq +
-   cmp #$06
-   beq +
-    rts
-+ jmp SetTriggerTileGameMode
-.org $3cae8
-  .word (GameModeJump_05_ItemTrigger)
-
-.endif
 
 .ifdef _DISABLE_STATUE_GLITCH
-.org $3559a
+.org $959a
   ;; Just always push down.
   lda #$04
 .endif
 
-.org $35b96 ; clear dolphin bit => also clear the flag
+.org $9b96 ; clear dolphin bit => also clear the flag
   jsr UpdatePlayerStatusAndDolphinFlag
 
 
@@ -1020,7 +866,7 @@ MaybeSetCheckpointActual:
 ;;; extended locations, this won't work.  We need to patch
 ;;; the tile effects reader to read from extended pages
 ;;; when the extended flag is set ($62ff)
-.org $35a5e
+.org $9a5e
   lda $62ff
   bne +
    lda $6300,y
@@ -1030,14 +876,24 @@ MaybeSetCheckpointActual:
    rol
    and #$07
 + jsr QuickSwapPageA
-  bne +
-.org $35a73
-+:
+  bne $9a73
+FREE_UNTIL $9a73
+
+;;; This is a faster version of page swap that destroys Y
+.reloc
+QuickSwapPageA:
+  sta $6f
+  ldy #$07
+  sty $50
+  sty $8000
+  sta $8001
+  rts
+
 .endif
 
 
 ;; Adjusted stab damage for populating sword object ($02)
-.org $35c5f
+.org $9c5f
   lda #$02
 .ifdef _NERF_FLIGHT
   jmp CheckSwordCollisionPlane
@@ -1047,18 +903,22 @@ MaybeSetCheckpointActual:
   rts
 
 .ifdef _RABBIT_BOOTS_CHARGE_WHILE_WALKING
-.org $35e00
+.org $9e00
   jsr CheckRabbitBoots
 .endif
 
+.ifdef _DISABLE_TRIGGER_SKIP
+.org $9d9a
+  jsr FixTriggerSkip_CheckLatch
+.endif
 
-.bank $36000 $a000:$2000
+;.bank $36000 $a000:$2000
 ;
 ;.org $36086
 ;
 ;        ;; Free space at end of UseMagicJump
 ;        
-;.assert < $36092 
+;.assert * <= $36092 
 ;
 ;;;; Make gate opening independent of locations
 ;.org $37879
@@ -1070,39 +930,67 @@ MaybeSetCheckpointActual:
 ;  cmp #$73
 ;  beq GateCheckPassed
 ;  bne GateCheckFailed
-;.assert < $3788f
+;.assert * <= $3788f
 ;.org $3788f
 ;GateCheckFailed:
 ;.org $37896
 ;GateCheckPassed:
 
+;;; This is for fixing trigger glitch?
+;;; @@@ TODO - this seems to have been orphaned somewhere?
+;; .reloc
+;; SetTriggerTileGameMode:
+;;   sty $0623
+;;   dec $41
+;;   rts
+
 ;;; Free up some space in the magic table by consolidating the used magics.
-.org $36033
-  .byte $98 ; this table moved back 6 bytes, to 36098
-.org $36086
-SetTriggerTileGameMode:
-  sty $0623
-  dec $41
-  rts
-  ;; 12 bytes free
-.assert < $36098
-.org $36098
-  .byte $08,$00,$08,$08,$08,$08,$00,$08,$00,$08
-.assert $360a2
+.scope
+  .org $a092
+  ContinuousMagicTable_Orig:
+
+  .org $a032 ; refer to moved table
+    lda ContinuousMagicTable,y
+
+  .org $a072
+    .word (NoMagic)  ; UseMagicJump_00
+
+  .reloc
+  NoMagic:
+    rts
+
+  .reloc
+  ContinuousMagicTable:
+    .move 10, ContinuousMagicTable_Orig
+    ;.byte $08,$00,$08,$08,$08,$08,$00,$08,$00,$08
+.endscope
+
+
+;;; This is a far entry in the jump table (????)
+.org $a410
+  .word (MaybeSpawnInsect)      ; ObjectActionJump_7e
+
+.reloc
+MaybeSpawnInsect:
+  lda $038d
+  bmi +
+   bit $6488
+   bvc +
+    lda #$e2
+    sta $04ad
++ rts
 
 
 .ifdef _CUSTOM_SHOOTING_WALLS
-.org $1a168
-  .byte $33,$33 ; make the wall at the front of goa shoot
-.org $1a48e
-  .byte $33,$33 ; make the oasis cave wall shoot
-.org $36864
+;;; This is in object jump 07, replacing the hardcoded location check
+.org $a864
   lda $06c0,x
   nop
   nop
   nop
   cmp #$ff
 .endif
+
 
 .ifdef _FIX_COIN_SPRITES
 ;;; Normally this code reads from a table to give the 16 different coin drop
@@ -1112,18 +1000,15 @@ SetTriggerTileGameMode:
 ;;; Now everything shows a single big coin.  This leads to slightly less
 ;;; variety, but less glitchy graphics.  Mimics should load $aa instead.
 ;;; We can tell because $300,x == $90.  This also frees up metasprite a8.
-.org $34bfe
-  ;; this table is no longer read, free up 16 bytes
-.assert < $34c0e
+FREE "1a" [$8bfe, $8c0e) ; this table is no longer read, free up 16 bytes
 
-.org $37a1c
+.org $ba1c
   lda $0300,x
   cmp #$90
   bne +
-   inc $0300,y
+   inc $0300,x
 + rts
-  ;; freed 5 bytes
-.assert < $37a2c
+FREE_UNTIL $ba2c
 .endif
   
 
@@ -1131,7 +1016,8 @@ SetTriggerTileGameMode:
 
 .ifdef _BUFF_DYNA
 
-.org $37c9c
+;;; This is near the beginning of object action 70:06 (dyna eye)
+.org $bc9c
   ;; Don't check pod's status before shooting eye laser
   nop
   nop
@@ -1142,7 +1028,9 @@ SetTriggerTileGameMode:
 ;  nop
 ;.org $37d3c
 ;  and #$01 ; each cannon shoots 1 in 2 rather than 1 in 8
-.org $37d35
+
+;;; Middle of object action 70:08 (dyna pod)
+.org $bd35
   txa
   asl ; clears carry
   adc $08
@@ -1154,18 +1042,59 @@ SetTriggerTileGameMode:
   lsr
   lsr
   jmp $bd4c    ; 37d4c
-.assert < $37d4c
+.assert * <= $bd4c
 ;;; TODO - change ItemGet_Crystalis to remove magics!
 
-.org $37d55
+.org $bd55
   ;; Change shots to start from a random location
   jmp DynaShoot
-.org $37d86
+
+.org $bd86
   jmp DynaShoot2
 
-.org $37d6c
+.org $bd6c
   nop
   nop
+
+.reloc
+DynaShoot:
+  sta $61        ; Store the spawn ID for later
+  lda $70,x      ; Save pod's position on stack
+  pha            ;
+   tya           ; Store the shot's direction on stack
+   pha           ;
+    lda $70      ; Seed the random number by player's position
+    adc $08      ; Also seed it with the global counter
+    and #$3f     ; Don't overflow
+    tay          ;
+    lda $97e4,y  ; Read from Random number table
+    asl          ; Multiply by 8: range is 0..$3f
+    asl          ;
+    asl          ;
+    adc #$e0     ; Subtract $20
+    adc $70,x    ; Add to pod's position
+    sta $70,x    ; And store it back (temporarily)
+   pla           ; Pull off the direction
+   tay           ;   ...and save it back in Y
+   lda $61       ; Pull off the spawn ID
+   jsr $972d     ; AdHocSpawnObject
+  pla            ; Pull off the pod's position
+  sta $70,x      ;   ...and restore it
+  rts
+
+.reloc
+DynaShoot2:
+  pha
+  lda $08
+  asl
+  bcc +
+   iny
++ asl
+  bcc +
+   dey
++ pla
+  jmp $972d     ; AdHocSpawnObject
+
 .endif
 
 ;;.org $3c010
@@ -1187,7 +1116,9 @@ SetTriggerTileGameMode:
 ;;.org $3c02d   ; NOTE - MUST BE EXACT!!!!
 
 
-.org $3c010
+.segment "fe", "ff"
+
+.org $c010
 ;; Adjusted inventory update - use level instead of sword
 ;; Also nerf power ring to only double the sword value, rather than the level.
    ldy $0719  ; max charge level
@@ -1219,26 +1150,23 @@ SetTriggerTileGameMode:
    sta $0400  ; shield defense
    nop
    nop
-.assert $3c04f ; NOTE: must be exact!
+.assert * = $c04f ; NOTE: must be exact!
 
 
-.org $3c0f8
+.org $c0f8
   jsr PostUpdateEquipment
   jmp RestoreBanksAndReturn
 
 
-.org $3c446
+.reloc
 PostUpdateEquipment:
   ;; Change 'lda' (ad) to 'jsr' (20) to enable these
 .ifdef _LEATHER_BOOTS_GIVE_SPEED
   jsr ApplySpeedBoots
-.else
-  nop
-  nop
-  nop
 .endif
   rts
 
+.reloc
 ApplySpeedBoots:
   lda #$06   ; normal speed
   sta $0341  ; player speed
@@ -1248,21 +1176,8 @@ ApplySpeedBoots:
    inc $0341 ; speed up by 1
 + rts
 
-CheckSacredShieldForCurse:
-  lda $0714 ; equipped shield
-  cmp #$06  ; sacred shield
-  bne +
-   pla
-   pla
-+ rts
-
-;;; For fixing sword charge glitch
-ReloadInventoryAfterContinue:
-  sta $07e8
-  jsr PostInventoryMenu
-  rts
-
 ;;; Remove the '10' bit if the player is flying ('20')
+.reloc
 CheckSwordCollisionPlane:
   sta $03e2 ; copied from $35c62
   lda $03a1
@@ -1277,17 +1192,12 @@ CheckSwordCollisionPlane:
    sta $03a2
 + rts
 
-        ;; 8 bytes free
-
-.assert < $3c482  ; end of empty area from $3c446
 
 .ifdef _TWELVTH_WARP_POINT
-.org $3c5b8
-StageCustomNametableWrite:
-  jsr $c676 ; FlushNametableDataWrite
-  txa
-  pha
-  jmp $3c4b8
+;;; Remove 11 (5-byte) lines from the nametable write table
+FREE "fe" [$c5b8, $c5ef)
+
+.reloc
 StageWarpMenuNametableWrite:
   ;; 20=a8, 21=DATA, 22=09, 23=00, 24=01
   sta $21
@@ -1299,97 +1209,162 @@ StageWarpMenuNametableWrite:
   stx $23
   inx
   stx $24
-  bne StageCustomNametableWrite ; uncond
+  ;bne StageCustomNametableWrite ; uncond
+StageCustomNametableWrite:  ; NOTE: was before the prev block
+  jsr FlushNametableDataWrite
+  txa
+  pha
+  jmp $c4b8  ; resume into the middle of StageNametableWrite
+
+.reloc
 WarpMenuNametableData:
   .byte $23,$2d,$36,$63,$6d,$76,$a3,$ad,$b6,$e3,$ed,$f6
-  ;; should be 16 bytes free, still!
-.assert < $3c5ef
+
+.org $dc7b
+  cmp #$0c  ; $0c is the first invalid slot (probably could just nop here)
+
+.org $dd40
+  lda #$0b  ; start drawing menu at $b
+
+.org $dd4b
+  ldx $11
+  lda WarpMenuNametableData,x
+  jsr StageWarpMenuNametableWrite
+.assert * = $dd53
+
+.org $dd59
+  adc #$04  ; lower offset, start at 2f4 instead
 .endif
 
 
 .ifdef _DISABLE_SWORD_CHARGE_GLITCH
-.org $3c9fb
-  jsr ReloadInventoryAfterContinue
+.org $c9fb
+  jsr @ReloadInventoryAfterContinue
+
+.reloc
+@ReloadInventoryAfterContinue:
+  sta $07e8
+  jsr PostInventoryMenu
+  rts
 .endif
+
 
 .ifdef _CHECK_FLAG0
 ;;; Note: this is a debugging aid added to determine if anything
 ;;; is accidentally setting flag 0.  It should not make a difference, 
-.org $3cb62 ; main game mode jump 08
+.org $cb62 ; main game mode jump 08
     jsr CheckFlag0              ; was jsr ReadControllersWithDirections
+
+.reloc
+CheckFlag0:
+    lda $6480
+    lsr
+    bcc +
+     asl
+     sta $6480
+     lda #$00
+     sta $20
+     sta $21
+     ldx #$0c
+-     lda $6140,x
+      eor #$ff
+      sta $6140,x
+      dex
+     bpl -
+     jsr LoadAndShowDialog
+
+.ifdef _CTRL1_SHORTCUTS
++  jmp ReadControllersWithButtonUp
+.else
++  jmp ReadControllersWithDirections
+.endif
 .endif ; _CHECK_FLAG0
 
+
 .ifdef _DISPLAY_DIFFICULTY
-.org $3cb65  ; inside GameModeJump_08_Normal
+.org $cb65  ; inside GameModeJump_08_Normal
   jsr CheckToRedisplayDifficulty ; was jsr CheckForPlayerDeath
 .endif
 
 
 .ifdef _CTRL1_SHORTCUTS
 ;;; These cases need to watch for button-up instead of button-down
-.org $3cb90 ; enter start menu
+.org $cb90 ; enter start menu
   lda $4a
-.org $3cbb4 ; enter select menu
+.org $cbb4 ; enter select menu
   lda $4a
 
 .ifndef _CHECK_FLAG0
-.org $3cb62 ; game mode 8
+.org $cb62 ; game mode 8
   jsr ReadControllersWithButtonUp
 .endif
-
-.endif
+.endif ; _CTRL1_SHORTCUTS
 
 
 .ifdef _DISABLE_WILD_WARP
-.org $3cbc7
+.org $cbc7
   rts
 .endif
 
-.ifdef _NERF_WILD_WARP
-.org $3cbec
-  .res 16, 0
-.endif
-
-.ifdef _TELEPORT_ON_THUNDER_SWORD
-.org $3d161
-  .word (DialogFollowupAction_1f)
-.endif
-
-
-;;; NOTE: we could use this in several more places, including dialog action
-;;; jump 10, 
-.org $3d196
+;;; TODO - use this in several more places (i.e. dialog action jump 10 ??)
+.reloc
+WriteCoordsAndLoadOneObject:
   jsr $9897 ; WriteObjectCoordinatesFrom_34_37
   jmp $ff80 ; LoadOneObjectData
 
-
-.org $3d223 ; part of DialogFollowupActionJump_11 (give 2nd item)
+.org $d223 ; part of DialogFollowupActionJump_11 (give 2nd item)
   bpl GrantItemInRegisterA ; change from bne to handle sword of wind
 
-.org $3d22b
+.org $d22b
 GrantItemInRegisterA:
   jsr PatchGrantItemInRegisterA
 
+.reloc
+PatchGrantItemInRegisterA:
+  ;; Version of GrantItemInRegisterA that bails out if the
+  ;; item is already owned.
+  sta $057f
+  lsr
+  lsr
+  lsr
+  tax
+  lda $057f
+  and #$07
+  tay
+  lda SlotFlagsStart,x
+  and PowersOfTwo,y
+  beq +
+   pla
+   pla
++ rts
 
 
 ;;; Fix bug in dialog action 9 where carrying from the low byte of money
 ;;; would just increment the low byte again instead of the high byte.
-.org $3d273
+.org $d273
   inc $0703
 
 
 
 .ifdef _ZEBU_STUDENT_GIVES_ITEM
-.org $3d27d
-  jmp PatchZebuStudentFollowUp
+.org $d27d
+  jmp PatchZebuStudentFollowUp ; replace jmp DisplayNumberInternal
+
+.pushseg "1a", "fe", "ff"
+.reloc
+PatchZebuStudentFollowUp:
+;.bank $34000 $8000:$2000
+  jsr DisplayNumberInternal
+  jmp DialogAction_11
+.popseg
 .endif
 
-.org $3d29d ; Just set dolphin status bit => also set the flag
+.org $d29d ; Just set dolphin status bit => also set the flag
   jsr UpdatePlayerStatusAndDolphinFlag
 
 ;;; Dialog action $0a is kensu dropping a chest behind - update it to
 ;;; no longer hardcode an item but instead check persondata[0]
-.org $3d2f9
+.org $d2f9
   ldx $0623
   lda $0680,x
   pha
@@ -1398,7 +1373,7 @@ GrantItemInRegisterA:
   stx $10
   lda #$0f  ; boss chest
   sta $11
-  jsr $d196 ; Write coords AND load object data
+  jsr WriteCoordsAndLoadOneObject
   pla
   sta $057e
   ldx #$02
@@ -1406,12 +1381,12 @@ GrantItemInRegisterA:
   inx
   stx $061e
   nop
-.assert $3d31c
+.assert * = $d31c
 
 ;;; Convert a beq to a bcs for mimic spawns - any chest between $70 and $80
 ;;; will now spawn a mimic.
-.org $3d3fd
-  .byte $b0
+;;; .org $3d3fd
+;;;   .byte $b0
 
 
 ;; End of ActivateTriggerSquare restores game mode to normal,
@@ -1419,26 +1394,25 @@ GrantItemInRegisterA:
 ;; clobber the LOCATION_CHANGE mode.  Patch it to call out to
 ;; FinishTriggerSquare to check for mode 02 and if it is, don't
 ;; change it back.
-.org $3d54b ; change this to call FinishTriggerSquare
+.org $d54b ; change this to call FinishTriggerSquare
   lda $41
   cmp #$01  ; game mode: location change
   jmp FinishTriggerSquare
-.assert $3d552
+.assert * = $d552
 
 ;; Change trigger action 4 to do any "start game" actions.
-.org $3d56b
+.org $d56b
   .word (InitialAction)
 
-.org $3d91f
+.org $d91f
   jsr PostInventoryMenu
-.org $3d971
+.org $d971
   jsr PostInventoryMenu
 
 .ifdef _FIX_OPEL_STATUE
 ;;; Prevent ever "equipping" opel statue
-.org $3db0d
-OpelStatueReturn:
-.org $3db0e
+OpelStatueReturn = $db0d
+.org $db0e
 SetEquippedConsumableItem:
     ;; Figure out what's equipped
     ldy SelectedConsumableIndex
@@ -1451,40 +1425,31 @@ SetEquippedConsumableItem:
     lda InvQuest,y
 ++  sec
     jmp FinishEquippingConsumable
-.org $3db28 ; Next routine starts here.
-.endif
-
-
-.ifdef _ALLOW_TELEPORT_OUT_OF_TOWER
-.org $3db39
-  .byte $00   ; don't jump away to prevent warp, just goto next line
+FREE_UNTIL $db28
 .endif
 
 
 .ifdef _ALLOW_TELEPORT_OUT_OF_BOSS
-.org $3db31
+.org $db31
   .byte $00   ; don't jump
 .endif
 
-
-.ifdef _TWELVTH_WARP_POINT
-.org $3dc7b
-  cmp #$0c  ; $0c is the first invalid slot (probably could just nop here)
-.org $3dd40
-  lda #$0b  ; start drawing menu at $b
-.org $3dd4b
-  ldx $11
-  lda WarpMenuNametableData,x
-  jsr StageWarpMenuNametableWrite
-.assert $3dd53
-.org $3dd59
-  adc #$04  ; lower offset, start at 2f4 instead
+.ifdef _ALLOW_TELEPORT_OUT_OF_TOWER
+.org $db39
+  .byte $00   ; don't jump away to prevent warp, just goto next line
 .endif
+
+
+;;; Allow putting oak child in pocket anywhere
+.org $e7c3
+-:
+.org $e7cc
+  bne -
 
 
 .ifdef _SIMPLIFY_INVISIBLE_CHESTS
 ;;; We co-opt the unused npcdata[2]:20 bit to signify invisible chests
-.org $3e39f
+.org $e39f
   lda $2e
   and #$20
   beq $e3ad  ; normal chest
@@ -1492,7 +1457,7 @@ SetEquippedConsumableItem:
   ;; 6 free bytes now
 .endif
 
-.org $3e7b3 ; just cleared dolphin status => also clear the flag
+.org $e7b3 ; just cleared dolphin status => also clear the flag
   jsr UpdatePlayerStatusAndDolphinFlag
 
 ;;; Fix post-massacre Shyron sprites.  When we do sprite calculations,
@@ -1502,17 +1467,24 @@ SetEquippedConsumableItem:
 ;;; to flip the pattern slots.  Also, the changes to the color palettes
 ;;; are irrelevant, since it only changes pal3, which seems to be unused.
 ;;; So stop doing that so that peoples' colors don't change.
-.org $3e823
+.org $e823
   lda $6c   ; check current location
   cmp #$8c  ; is it shyron?
   bne +     ; if not, then return
-  lda $6484 ; check flag $27
+  lda $6484 ; check flag 027
   bpl +     ; if it's unset then return
   lda #$51
   sta $07f4
   sta $07f5
 + rts
   ;; and we save 14 bytes, to boot.
+FREE_UNTIL $e845
+
+.org $d458
+    ;; Once we pick up a chest, reset the graphics?
+    jmp ReloadLocationGraphicsAfterChest
+
+.reloc
 ReloadLocationGraphicsAfterChest:
     ;; After player picks up a chest, reload the location's graphics.
     ;; NOTE: we make an exception for Stom's house, since it needs to
@@ -1521,29 +1493,26 @@ ReloadLocationGraphicsAfterChest:
     lda $6c
     cmp #$1e
     beq +
-     jsr $3e148 ; reload just graphics, not objects
-+   jmp $3d552 ; ExecuteItemOrTriggerAction
-    ;; 2 bytes free
-.assert < $3e845
+     jsr $e148 ; reload just graphics, not objects
++   jmp $d552 ; ExecuteItemOrTriggerAction
 
-.org $3d458
-    ;; Once we pick up a chest, reset the graphics?
-    jmp ReloadLocationGraphicsAfterChest
 
 ;;; Allow any negative number to terminate an exit table.  Since X coordinates
 ;;; are constrained to 0..7f, this is safe, and it gives 7 extra bits for
 ;;; storing additional information that we can read when parsing the rom.
 ;;; For now, we will store %1p0eeeee where p is 1 if there is a pits table
 ;;; and eeeee is the number of entrances (0..1f).
-.org $3eb40
+.org $eb40
   bpl +
    rts
   nop
 +:
-.assert $3eb44
+.assert * = $eb44
 
 
 .ifdef _EXTRA_EXTENDED_SCREENS
+FREE "0a" [$80f0, $8100)
+.pushseg "0a", "fe", "ff"
 ;;; In this setup, we compress the map data by two bytes:
 ;;;  - The layout table (0) is now [music], [yx], [ext+anim],
 ;;;    where (x, y, anim, ext) have been compressed into only
@@ -1554,7 +1523,8 @@ ReloadLocationGraphicsAfterChest:
 ;;;    and the animation into the lower 2.  Thus, $28 would
 ;;;    indicate that screen 00 is at $14000, up through screen
 ;;;    $1f at $15f00.
-.org $140f0
+.reloc
+DecomposeScreenYX:
   lda ($10),y
   and #$0f
   sta $62fc
@@ -1565,11 +1535,11 @@ ReloadLocationGraphicsAfterChest:
   lsr
   sta $13
   rts
-.assert < $14100  
+.popseg
 
-.org $3e639
+.org $e639
   ;; read the y=1 byte into both 62fc AND 62fd/13
-  jsr $80f0 ; $140f0
+  jsr DecomposeScreenYX ; $140f0
   sta $62fd
   iny
   lda ($10),y
@@ -1580,20 +1550,16 @@ ReloadLocationGraphicsAfterChest:
   lda ($10),y
   and #$03
   sta $62fe
-  bpl +
-.assert < $3e652
-.org $3e652
-+:
+  bpl $e652
+FREE_UNTIL $e652
 
-.org $3ebe8
+.org $ebe8
   ;; note: the AND should no longer be necessary since it's zero already
   and #$3f    ; note: we only need the 20 bit if we expand the rom
-  beq +
+  beq $ebef
    jsr $c418  ; BankSwitch8k_8000
-.assert $3ebef
-.org $3ebef
-+:
-.endif
+.assert * = $ebef
+.endif ; _EXTRA_EXTENDED_SCREENS
 
 
 .ifdef _BUFF_DEOS_PENDANT
@@ -1603,7 +1569,7 @@ ReloadLocationGraphicsAfterChest:
 ;;; lsr if stationary, so that MP recovers quickly when still, but at half
 ;;; speed when moving?  We might want to consider how this plays with
 ;;; refresh and psycho armor...
-.org $3f026
+.org $f026
   nop
   nop
 .endif
@@ -1613,18 +1579,29 @@ ReloadLocationGraphicsAfterChest:
 
 .ifdef _FIX_SHAKING
 ;;; Fix the shaking issues by tweaking the delay times in IRQ callbacks.
-.org $3f455
+.org $f455
   ldx #$07
   nop
-.org $3f4eb
+.org $f4eb
   ldx #$03
 - dex
   bpl -
 .endif
 
 
-;;; Call 3f9ba instead of 3c008 after the inventory menu
-.org $3f9ba  ; free space from here to $3fdf0
+; possibly better to just have a bitset of modes that need to set the latch
+; or patch the {lda 8; sta GameMode} that should be in every one?
+.ifdef _DISABLE_TRIGGER_SKIP
+.org $d497
+  jsr FixTriggerSkip_LatchOnItemUse
+.org $dd70
+  jsr FixTriggerSkip_LatchOnMagicUse
+.org $decb
+  jsr FixTriggerSkip_LatchOnMagicUse
+.endif
+
+;;; Call this instead of 3c008 after the inventory menu
+.reloc
 PostInventoryMenu:
   ;; Change 'lda' (ad) to 'jsr' (20) to enable these
 .ifdef _AUTO_EQUIP_BRACELET
@@ -1633,6 +1610,8 @@ PostInventoryMenu:
   lda AutoEquipBracelets ; basically just a 3-byte no-op
 .endif
   jmp UpdateEquipmentAndStatus
+
+.reloc
 AutoEquipBracelets:
   lda $6428
   bpl +
@@ -1664,12 +1643,14 @@ AutoEquipBracelets:
   sta $0718
   rts
 
+.reloc
 FinishTriggerSquare:
   beq +
    lda #$08  ; game mode normal
    sta $41
 + jmp MainLoop_01_Game
   
+.reloc
 Multiply16Bit:
   ;; Multiplies inputs in $61 and $62, then shifts
   ;; right A times.
@@ -1693,6 +1674,7 @@ Multiply16Bit:
   tax
   rts
 
+;.export Multiply16Bit
 
 ;;; a <- 0, x <- 8
 ;;; ror a -> ror $61
@@ -1700,49 +1682,21 @@ Multiply16Bit:
 ;;; carry goes into upper of A
 
 
-.ifdef _CHECK_FLAG0
-;.org $3fdd0
-CheckFlag0:
-    lda $6480
-    lsr
-    bcc +
-     asl
-     sta $6480
-     lda #$00
-     sta $20
-     sta $21
-     ldx #$0c
--     lda $6140,x
-      eor #$ff
-      sta $6140,x
-      dex
-     bpl -
-     jsr LoadAndShowDialog
-
-.ifdef _CTRL1_SHORTCUTS
-+  jmp ReadControllersWithButtonUp
-.else
-+  jmp ReadControllersWithDirections
-.endif
-
-.endif ; _CHECK_FLAG0
-
-;;; NOTE: These dialog actions are debug functionality.
-DialogFollowupAction_1c:
+.reloc
 TrainerIncreaseScaling:
   ;; scaling level
-  lda $64a2
+  lda Difficulty
   clc
   adc #$02
   cmp #$2f
   bcc +
    lda #$2f
-+ sta $64a2
++ sta Difficulty
   lda #$01
-  sta $64a3
+  sta ShouldRedisplayDifficulty
   rts
 
-DialogFollowupAction_1d:
+.reloc
 TrainerIncreaseLevel:
   ;; level up
   lda #$0f
@@ -1777,40 +1731,10 @@ TrainerIncreaseLevel:
   jmp $c418
 
 
-DialogFollowupAction_1e:
-  ;; fill inventory with all worn items, magic, and top shields/armor
-  ;; then warp to mesia - actually remove magic...
-  ldx #$00
-  clc
--  txa
-   adc #$11
-   sta $6438,x
-   adc #$08
-   sta $6434,x
-   inx
-   cpx #$04
-  bcc -
-  ldx #$00
-  clc
--  lda #$22
-   sta $6440,x
-   txa
-   adc #$29
-   sta $6448,x
-   adc #$18
-   ;lda #$ff
-   sta $6458,x
-   inx
-   cpx #$08
-  bcc -   
-  lda #$5e
-  sta $6c
-  lda #$00
-  sta $6d
-  lda #$01
-  sta $41
-  rts
+.org $e2ac ; normally loads object data for wall
+  jsr SpawnWall  
 
+.reloc
 SpawnWall:
   ;; Spawns a breakable wall.  The $2e byte (3rd) determines
   ;; several changes if type:$20 bit is set:
@@ -1842,8 +1766,12 @@ SpawnWall:
   lda WallElements,y
   sta $0500,x
 + rts
+
+.reloc
 WallElements:
   .byte $0e,$0d,$0b,$07
+
+.reloc
 GameModeJump_05_ItemTrigger:
   lda $0623
   pha
@@ -1870,13 +1798,18 @@ GameModeJump_05_ItemTrigger:
 ;;; but we remove bits from 48 to prevent button-up when a shortcut
 ;;; activates, but keep them in 46.
 ;;; $4c is the indicator that we're in button-up mode
+.reloc
 ReadControllersWithButtonUp:
   lda #$01
   jmp $fe82 ; ReadControllersWithDirections+2
+
+.reloc
 StartReadCtrl1:
   sta $4c
   ldx #$00
   jmp $ff17 ; ReadControllerX
+
+.reloc
 RegisterButtonRelease:
   ;; do nothing if not read with button up
   lda $4c
@@ -1967,6 +1900,7 @@ SoftReset:
 .endif
 
 ;;; Defines code to run on game start
+.reloc
 InitialAction:
 .ifdef _TRAINER
   jsr TrainerStart
@@ -1980,20 +1914,39 @@ InitialAction:
 ;;; 7 bytes to define and 7 bytes to call, so this ends up costing
 ;;; 34 bytes total, but only 20 on the margin.  It would take
 ;;; a number of calls to pay off.
+.reloc
 UpdatePlayerStatusAndDolphinFlag:
   ;; Args: A = new value for $0710, bit 40 will go into flag 0ee (649d:40)
   sta $0710
   and #$40
   beq +
-   ora $649d
-   sta $649d
+   ora $648d ; flag 06e
+   sta $648d
    rts
 + lda #$bf
-  and $649d
-  sta $649d
+  and $648d
+  sta $648d
   rts
 
-;;;  FREE SPACE
+.reloc
+SetFlagYA:
+;;; 27 bytes - we can probably improve this?
+  pha
+   sty $24
+   lsr $24
+   ror
+   lsr $24
+   ror
+   lsr
+   sta $24
+  pla
+  and #$07
+  tay
+  lda PowersOfTwo,y
+  ldy $24
+  ora $6480,y
+  sta $6480,y
+  rts
 
 .ifdef _TRAINER
 ;;; Trainer mode: provides a number of controller shortcuts
@@ -2005,6 +1958,8 @@ UpdatePlayerStatusAndDolphinFlag:
 ;;;   Start+Down -> increase scaling by 2
 ;;;   Start+Left -> better armors
 ;;;   Start+Right -> better shields
+;;; TODO - move trainer to a different ROM page since it's so big.
+.reloc
 CheckTrainerShortcuts:
    lda $46    ; Currently pressed?
    and #$50   ; Start+B
@@ -2078,6 +2033,7 @@ TrainerStart:
   pla
   jmp $c418
 
+.reloc
 TrainerData:
   .word (TrainerData_Swords)      ; 0 swords, armors, shields
   .word (TrainerData_Magic)       ; 1 accessories, bow of truth, magic
@@ -2087,6 +2043,7 @@ TrainerData:
   .word (TrainerData_Armors)      ; 5
   .word (TrainerData_Shields)     ; 6
 
+.reloc
 TrainerGetItems:
     ;; Input: A = index into TrainerData table
     asl
@@ -2122,47 +2079,73 @@ TrainerGetItems:
     sta $48
     rts  
 
+.reloc
 TrainerData_Swords:
   .byte $00,$0c
   .byte $00,$01,$02,$03,$15,$16,$17,$18,$0d,$0e,$0f,$10
+
+.reloc
 TrainerData_Magic:
   .byte $18,$18
   .byte $29,$2a,$2b,$2c,$2d,$2e,$2f,$30
   .byte $ff,$ff,$ff,$ff,$ff,$ff,$ff,$40
   .byte $41,$42,$43,$44,$45,$46,$47,$48
+
+.reloc
 TrainerData_Balls:
   .byte $0c,$04
   .byte $05,$07,$09,$0b
+
+.reloc
 TrainerData_Bracelets:
   .byte $0c,$04
   .byte $06,$08,$0a,$0c
+
+.reloc
 TrainerData_Consumables:
   .byte $10,$08
   .byte $1d,$1d,$21,$21,$22,$22,$24,$26
+
+.reloc
 TrainerData_Armors:
   .byte $04,$04
   .byte $19,$1a,$1b,$1c
+
+.reloc
 TrainerData_Shields:
   .byte $08,$04
   .byte $11,$12,$13,$14
 
 .endif  
 
-;;; This is a faster version of page swap that destroys Y
-QuickSwapPageA:
-  sta $6f
-  ldy #$07
-  sty $50
-  sty $8000
-  sta $8001
+.ifdef _DISABLE_TRIGGER_SKIP
+.reloc
+FixTriggerSkip_LatchOnItemUse:
+  lda #$01
+  sta $61fd
   rts
 
-.assert < $3fe00 ; end of free space started at 3f9ba
+.reloc
+FixTriggerSkip_LatchOnMagicUse:
+  sta $07de
+  lda #$01
+  sta $61fd
+  rts
 
-.org $3e2ac ; normally loads object data for wall
-  jsr SpawnWall  
+;;; NOTE: We should move this to 34c0e after making _FIX_COIN_SPRITES
+;;; mandatory.
+.reloc
+FixTriggerSkip_CheckLatch:
+  lsr $61fd
+  bcc +
+  pla
+  pla
++ lda $0710
+  rts
+.endif
 
-.org $3fe01
+
+.reloc
 CheckRabbitBoots:
   lda EquippedPassiveItem
   cmp #ITEM_RABBIT_BOOTS ; require rabbit boots
@@ -2175,10 +2158,9 @@ CheckRabbitBoots:
 + pla
   pla
   jmp $9e39 ; 35e39
-.assert < $3fe16
 
-;; NOTE: 3fe2e might be safer than 3fe18
-.org $3fe18 ; smaller chunk of free space to 3fe78 (or 3fe80?)
+
+.reloc
 SubtractEnemyHP:
   ;; NOTE: we could probably afford to move a few of these back if needed
   lda ObjectElementalDefense,y
@@ -2193,84 +2175,15 @@ SubtractEnemyHP:
   sbc #$00
   rts
 
-DialogFollowupAction_1f:
-  ;; Patched DialogFollowupAction 1f - used for asina in shyron
-  ;; Teleport the player back to the start
-  lda #$00
-  sta $6c
-  sta $6d
-  lda #$01
-  sta $41
-  rts
-
 ;;; Note: This is moved from $3db22, where we ran out of space.
+.reloc
 FinishEquippingConsumable:
     sbc #$1c
     sta EquippedConsumableItem
     rts
 
-DynaShoot:
-  sta $61        ; Store the spawn ID for later
-  lda $70,x      ; Save pod's position on stack
-  pha            ;
-   tya           ; Store the shot's direction on stack
-   pha           ;
-    lda $70      ; Seed the random number by player's position
-    adc $08      ; Also seed it with the global counter
-    and #$3f     ; Don't overflow
-    tay          ;
-    lda $97e4,y  ; Read from Random number table
-    asl          ; Multiply by 8: range is 0..$3f
-    asl          ;
-    asl          ;
-    adc #$e0     ; Subtract $20
-    adc $70,x    ; Add to pod's position
-    sta $70,x    ; And store it back (temporarily)
-   pla           ; Pull off the direction
-   tay           ;   ...and save it back in Y
-   lda $61       ; Pull off the spawn ID
-   jsr $972d     ; AdHocSpawnObject
-  pla            ; Pull off the pod's position
-  sta $70,x      ;   ...and restore it
-  rts
 
-DynaShoot2:
-  pha
-  lda $08
-  asl
-  bcc +
-   iny
-+ asl
-  bcc +
-   dey
-+ pla
-  jmp $972d     ; AdHocSpawnObject
-
-
-;; free space
-.assert < $3fe78
-
-
-.org $3ff44 ; free space to 3ff80
-
-PatchGrantItemInRegisterA:
-  ;; Version of GrantItemInRegisterA that bails out if the
-  ;; item is already owned.
-  sta $057f
-  lsr
-  lsr
-  lsr
-  tax
-  lda $057f
-  and #$07
-  tay
-  lda ItemFlagsStart,x
-  and PowersOfTwo,y
-  beq +
-   pla
-   pla
-+ rts
-
+.reloc
 ComputeDefense:
   cpy $0716   ; equipped worn item
   php         ; remember whether it was equal or not
@@ -2285,26 +2198,15 @@ ComputeDefense:
    adc $62    ; add 2*level
 + rts
 
-.ifdef _ZEBU_STUDENT_GIVES_ITEM
-PatchZebuStudentFollowUp:
-.bank $34000 $8000:$2000
-  jsr DisplayNumberInternal
-  jmp DialogAction_11
-.endif
 
-.assert < $3ff80 ; end of free space from 3ff44
-
-
-.org $3ffe3 ; free space to 3fffa
+.reloc
 CheckToRedisplayDifficulty:
   lda ShouldRedisplayDifficulty
   beq +
-   lda #$00
-   sta ShouldRedisplayDifficulty
+   lsr ShouldRedisplayDifficulty
    lda #$06
    jsr DisplayNumber
 + jmp CheckForPlayerDeath
-.assert < $3fffa ; end of free space from 3ffe3
 
 
 ;;; Repurpose $3e148 to skip loading NPCs and just reset pattern table.
@@ -2312,19 +2214,16 @@ CheckToRedisplayDifficulty:
 ;;; but this value is never read.  Start by changing all jumps to $3e148
 ;;; to instead jump to $3e144.  Then we grab some space and have a nonzero
 ;;; value in $18 return early.
-.org $3e6ff
-  jmp $3e144
-.org $3d21a
-  jmp $3e144
+.org $e6ff
+  jmp $e144
+.org $d21a
+  jmp $e144
 ;;; For these, just eliminate the indirection: update the jump table directly.
-.org $3d56f
+.org $d56f
   .word ($e144)  ; ItemOrTriggerActionJumpTable[$06]
-.org $3d585
+.org $d585
   .word ($e144)  ; ItemOrTriggerActionJumpTable[$11]
 
-.org $3d654
-    ;; 5 free bytes
-.assert < $3d659
 
 ;;; ================================================================
 ;;; Consolidate some of the ItemOrTrigger -> itemget logic. (@@sog)
@@ -2333,31 +2232,34 @@ CheckToRedisplayDifficulty:
 
 ;;; TODO - change the actions on the messageids rather than repeat jumps
 ;;;   08,0d,0f -> 0b, 14 -> 13
+;;;   ==> if we do this then we need to fix logic/world.ts
 ;;; We could free up 4 new actions (in addition to the 3 or so unused ones)
-.org $3d573                       ; ItemOrTriggerActionJumpTable + 2*$08
+.org $d573                       ; ItemOrTriggerActionJumpTable + 2*$08
   .word (GrantItemFromTable)      ; 08 learn paralysis
-.org $3d579                       ; ItemOrTriggerActionJumpTable + 2*$0b
+.org $d579                       ; ItemOrTriggerActionJumpTable + 2*$0b
   .word (GrantItemFromTable)      ; 0b learn barrier
   .word (GrantItemThenDisappear)  ; 0c love pendant -> kensu change
   .word (GrantItemFromTable)      ; 0d kirisa plant -> bow of moon
   .word (UseIvoryStatue)          ; 0e
   .word (GrantItemFromTable)      ; 0f learn refresh
-.org $3d589                       ; ItemOrTriggerActionJumpTable + 2*$13
+.org $d589                       ; ItemOrTriggerActionJumpTable + 2*$13
   .word (DestroyStatue)           ; 13 use bow of moon
   .word (DestroyStatue)           ; 14 use bow of sun
 
-.org $3d6d5
-GrantItemTable:
-  .byte $25,$29  ; 25 statue of onyx use -> 29 gas mask
-  .byte $39,$3a  ; 39 glowing lamp use -> 3a statue of gold
-  .byte $3b,$47  ; 3b love pendant use -> 47 change
-  .byte $3c,$3e  ; 3c kirisa plant use -> 3e bow of moon
-  .byte $84,$46  ; 84 angry sea trigger -> 46 barrier
-  .byte $b2,$42  ; b2 summit trigger -> 42 paralysis
-  .byte $b4,$41  ; b4 windmill cave trigger -> 41 refresh
-  .byte $ff      ; for bookkeeping purposes, not actually used
 
-.assert $3d6e4
+.import GrantItemTable
+;;   .byte $25,$29  ; 25 statue of onyx use -> 29 gas mask
+;;   .byte $39,$3a  ; 39 glowing lamp use -> 3a statue of gold
+;;   .byte $3b,$47  ; 3b love pendant use -> 47 change
+;;   .byte $3c,$3e  ; 3c kirisa plant use -> 3e bow of moon
+;;   .byte $84,$46  ; 84 angry sea trigger -> 46 barrier
+;;   .byte $b2,$42  ; b2 summit trigger -> 42 paralysis
+;;   .byte $b4,$41  ; b4 windmill cave trigger -> 41 refresh
+;;   .byte $ff      ; for bookkeeping purposes, not actually used
+
+;; .assert * = $d6e4
+
+.reloc
 GrantItemFromTable:
   ldy #$00
   lda $34
@@ -2369,11 +2271,13 @@ GrantItemFromTable:
 + lda GrantItemTable-1,y
   jmp GrantItemInRegisterA
 
+.reloc
 GrantItemThenDisappear:  ; Used by Kensu in granting change (action 0c)
   jsr GrantItemFromTable
   ldy #$0e
   jmp $d31f
 
+.reloc
 UseIvoryStatue:  ; Move bytes from $3d6ec
   jsr $e144 ; LoadNpcDataForCurrentLocation
   ldx #$0f
@@ -2388,9 +2292,7 @@ UseIvoryStatue:  ; Move bytes from $3d6ec
   jsr $c25d ; LoadOneObjectDataInternal
   lda #$a0
   sta $033e
-UseIvoryStatueRts:
-  rts
-
+- rts
 DestroyStatue:
   ;; Modified version to use the ID of the used bow rather than have
   ;; a separate action for each bow.
@@ -2399,10 +2301,10 @@ DestroyStatue:
   sta $046f,y
   lda #$6b
   jsr $c125 ; StartAudioTrack
-  jsr $3d88b
+  jsr $d88b
   lda $04ad
   ora $04ae
-  bne UseIvoryStatueRts
+  bne -  ; rts from previous
   lda #$7f
   sta $07d7
   lda $04cf
@@ -2410,65 +2312,64 @@ DestroyStatue:
   lda #$0f
   sta $10
   jmp $c25d ; LoadOneObjectDataInternal
-.assert < $3d746    
 
-.org $3d7fd ; itemuse action jump 1c - statue of onyx -> akahana
+.org $d7fd ; itemuse action jump 1c - statue of onyx -> akahana
   jsr GrantItemFromTable
   nop
   nop
 
 ;;; In HandleItemOrTrigger, backup $23 in $10 rather than using it for the
 ;;; JMP opcode, and then call Jmp11 instead.
-.org $3d845
+.org $d845
   lda $23
   sta $34
-.org $3d853
+
+.org $d853
   jsr Jmp11
 
 ;;; ================================================================
 
 ;;; Now fix the LoadNpcDataForLocation code
-.org $3e19a
+.org $e19a  ; in the middle of CheckForNpcSpawn
   lda $18
-  beq LoadNpcDataForLocation_Rts ; $3e173 ; <rts
+  beq $e1ae ; <rts
   lda ($10),y
   dey
   asl
-  bcs LoadNpcDataForLocation_Skip ; $3e1af ; skip
-  jsr $3e1b6 ; TryNpcSpawn
+  bcs $e1af ; skip the rts
+  jsr $e1b6 ; TryNpcSpawn
   inx
-  jmp $3e18f ; Check next NPC spawn.
+  jmp $e18f ; Check next NPC spawn.
+FREE_UNTIL $e1ae
 
+.reloc
 Jmp11: ;;; More efficient version of `jsr $0010`, just `jsr Jmp11`
   jmp ($0011)
-.assert < $3e1ae
-.org $3e1ae
-LoadNpcDataForLocation_Rts:
-  rts
-LoadNpcDataForLocation_Skip:
+
 
 .ifdef _HAZMAT_SUIT
-.org $3ef66
+.org $ef66
   ;; Check for gas mask instead of leather boots for pain terrain
   cmp #$0d
 .endif
 
+
 .ifdef _CTRL1_SHORTCUTS
     ;; NOTE: we could save a bit of space by using relative jumps
     ;; and inserting the code around $3fe70
-.org $3fe80
+.org $fe80
   lda #$00
   jsr StartReadCtrl1
-.org $3fecc
+.org $fecc
   jmp RegisterButtonRelease
 
-.org $3fee0
+.org $fee0
   lda #$00
   jsr StartReadCtrl1
-.org $3ff13
+.org $ff13
   jmp RegisterButtonRelease
 
-.org $3cbc1
+.org $cbc1
   lda $46
   and #$20   ; select pressed?
   beq +
@@ -2477,7 +2378,7 @@ LoadNpcDataForLocation_Skip:
   and #$10   ; start pressed?
   beq $cbeb  ; no -> rts
    jmp CheckStartShortcuts
-.assert < $3cbd3
+.assert * <= $cbd3
 .endif
 
 ;;; TODO - quick select items
@@ -2535,21 +2436,24 @@ LoadNpcDataForLocation_Skip:
 ;;; that MaybeUpdateMusic restores $50 as well as $8000, though this takes
 ;;; an extra two bytes that we need to recover from SelectCHRRomBanks (which
 ;;; immediately follows) by using smaller instructions.
-.org $3f564
+.org $f564
   jsr SelectCHRRomBanks
-.org $3f6e2
+.org $f6e2
   jsr SelectCHRRomBanks
-.org $3f734
+.org $f734
   jsr SelectCHRRomBanks
-.org $3f779
+.org $f779
   jsr SelectCHRRomBanks
-.org $3f785
+.org $f785
   jsr SelectCHRRomBanks
-.org $3f7c8
+.org $f7c8
   jsr SelectCHRRomBanks
-.org $3f882
+.org $f882
   stx $50
   rts
+FREE_UNTIL $f8cb
+
+.reloc
 SelectCHRRomBanks:
   ldx #$05
 - stx $8000
@@ -2560,8 +2464,6 @@ SelectCHRRomBanks:
   lda $50
   sta $8000
   rts
-  ;; FREE: 50 bytes!  The loop takes 19 extra cycles to run versus unrolling.
-.assert < $3f8cb
 
 ;;; NOTE: This is an alternative implementation of SelectCHRRomBanks
 ;;; that is 4 bytes shorter than the original, but way longer than
@@ -2599,3 +2501,6 @@ SelectCHRRomBanks:
   ;; lda $50
   ;; sta ($52,x)
   ;; rts
+
+;; ScalingLevels = SCALING_LEVELS
+;; .export ScalingLevels

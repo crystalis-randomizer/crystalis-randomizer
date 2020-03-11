@@ -1,272 +1,30 @@
-import {seq} from './util.js';
+import {Module} from '../asm/module.js';
 import {Rom} from '../rom.js';
+import {Segment, relocExportLabel} from './util.js';
 
-interface Slot {
-  readonly slot: number;
-  set(rom: Rom, item: number): void;
-}
+const {$0e} = Segment;
 
-// TODO - consider a function interface instead of a class?
-//      - are we getting benefit from inspection at all?
-
-class ChestSlot implements Slot {
-  constructor(readonly slot: number, readonly location: number, readonly spawn: number) {}
-
-  set(rom: Rom, item: number): void {
-    const spawn = rom.locations[this.location].spawns[this.spawn];
-    spawn.id = item;
-    if (item >= 0x70) spawn.patternBank = 1; // mimics always use pattern bank 1
-
-    if (rom.spoiler) {
-      rom.spoiler.addSlot(this.slot, `Chest in ${rom.locations[this.location].name}`, item);
-    }
-  }
-}
-
-class HardcodedSlot implements Slot {
-  constructor(readonly slot: number, readonly address: number, readonly name?: string) {}
-
-  set(rom: Rom, item: number): void {
-    rom.prg[this.address] = item;
-
-    if (this.name && rom.spoiler) rom.spoiler.addSlot(this.slot, this.name || '', item);
-  }
-}
-
-class BossDropSlot implements Slot {
-  constructor(readonly slot: number, readonly boss: number) {}
-
-  set(rom: Rom, item: number): void {
-    //rom.bosses.fromBossKill(this.boss).drop = item;
-    //const addr = readLittleEndian(rom.prg, 0x1f96b + 2 * this.boss) + 0x14000;
-    if (item >= 0x70) throw new Error('no mimics on bosses');
-    rom.bossKills[this.boss].itemDrop = item;
-    //rom.prg[addr + 4] = item;
-
-    if (rom.spoiler) {
-      rom.spoiler.addSlot(this.slot, rom.bosses.fromBossKill(this.boss)!.name, item);
-    }
-  }
-}
-
-class ActionGrantSlot implements Slot {
-  constructor(readonly slot: number, readonly key: number) {}
-
-  set(rom: Rom, item: number): void {
-    if (item >= 0x70) throw new Error('no mimics on action grants');
-    rom.itemGets.actionGrants.set(this.key, item);
-
-    if (rom.spoiler) {
-      const names: Record<number, string> = {
-        0x84: 'Whirlpool trigger',
-        0xb2: 'Mt Sabre summit trigger',
-        0xb4: '',
-      }
-      const name =
-          this.key < 0x80 ?
-              rom.items[this.key].messageName + ' trade-in' :
-              names[this.key];
-      if (name) {
-        rom.spoiler.addSlot(this.slot, name, item);
-      }
-    }
-  }
-}
-
-class PersonDataSlot implements Slot {
-  constructor(readonly slot: number, readonly person: number, readonly index: number) {}
-
-  set(rom: Rom, item: number): void {
-    if (item >= 0x70) throw new Error(`no mimics on people`);
-    rom.npcs[this.person].data[this.index] = item;
-
-    if (rom.spoiler) {
-      const npc = rom.npcs[this.person];
-      let name = npc && npc.name;
-      if (npc && npc.itemNames) {
-        const itemName = npc.itemNames[this.index];
-        name = itemName ? name + ' ' + itemName : undefined;
-      }
-      rom.spoiler.addSlot(this.slot, name || '', item);
-    }
-  }
-}
-
-// // NOTE: this is pretty inefficient, O(n^2) in itemget slots.  But we run it
-// // once and it's a lot faster than other things, so it's not a big deal.
-// class ReverseFlagSlot implements Slot {
-//   constructor(readonly flag: number) {}
-
-//   // TODO - 013 defeated sabera should be a reverse flag slot for sabera's drop
-//   //      - then we can remove all the extra sets
-//   set(rom: Rom, item: number): void {
-//     for (const itemget of rom.itemGets) {
-//       const index = itemget.flags.indexOf(this.flag);
-//       if (items.has(itemget.id) && index < 0) itemget.flags.push(this.flag);
-//       if (!items.has(itemget.id) && index >= 0) itemget.flags.splice(index, 1);
-//     }
-//   }
-// }
-
-
-// Maps from slot to item actually in the slot.
-// Manages all the necessary updates for rearranging items.
-class Slots {
-
-  private slots: ReadonlyArray<ReadonlyArray<Slot>>;
+export class Slots extends Array<number> {
 
   constructor(readonly rom: Rom) {
-
-    // TODO - this needs to move to AFTER we've done some initial fixup...!
-    // Maybe we really do need to make it separate from the rom?
-
-    const slots: Slot[][] = seq(0x80, () => []);
-    function addSlot(slot: Slot): void {
-      slots[slot.slot].push(slot);
-    }
-
-    // Find chests
-    for (const loc of rom.locations) {
-      if (!loc.used) continue;
-      for (let i = 0; i < loc.spawns.length; i++) {
-        const spawn = loc.spawns[i];
-        if (spawn.isChest()) addSlot(new ChestSlot(spawn.id, loc.id, i));
-      }
-    }
-
-    // Find item givers
-    for (const npc of rom.npcs) {
-      if (!npc.used || !npc.hasDialog) continue;
-      for (const ds of npc.localDialogs.values()) {
-        for (const d of ds) {
-          switch (d.message.action) {
-          case 0x03:
-          case 0x0a: // moved version of kensu chest drop
-            addSlot(new PersonDataSlot(npc.data[0], npc.id, 0));
-            break;
-          case 0x11:
-            addSlot(new PersonDataSlot(npc.data[1], npc.id, 1));
-            break;
-          case 0x09: // only add slot if it's not explicitly disabled
-            if (npc.data[1] < 0x80) {
-              addSlot(new PersonDataSlot(npc.data[1], npc.id, 1));
-            }
-            break;
-          }
-        }
-      }
-    }
-
-    // Find boss drops
-    for (const boss of rom.bosses) {
-      if (boss.kill === 3 || boss.kill === 13) continue; // false alarms
-      if (boss.kill != null && boss.drop != null) {
-        addSlot(new BossDropSlot(boss.drop, boss.kill));
-      }
-    }
-
-    // Action grants
-    for (const [key, orig] of rom.itemGets.actionGrants) {
-      addSlot(new ActionGrantSlot(orig, key));
-    }
-
-    // Record hardcoded slots
-    for (const [addr, name] of hardcodedItems) {
-      addSlot(new HardcodedSlot(this.rom.prg[addr], addr, name));
-    }
-    extraSlots.forEach(addSlot);
-
-    // console.log('slots', slots);
-
-    this.slots = slots;
-  }
-
-  // NOTE: this.slots is not right - there are multiple ChestSlots in the same
-  // list, or a ChestSlot for 34 key to stxy, which should not be...?
-  update(fill: number[]): void {
-    for (let i = 0; i < fill.length; i++) {
-      if (fill[i] == null) continue;
-      for (const slot of this.slots[i]) {
-        slot.set(this.rom, fill[i]);
-      }
-    }
-
-    // Move all the flags.  First read them.
-    const flags: number[][] = this.rom.itemGets.map(() => []);
-    for (const itemget of this.rom.itemGets) {
-      const {id} = itemget;
-      for (const flag of itemget.flags) {
-        if (flag === -1) continue;
-        const target = preservedItemGetFlags.has(flag) ? id : fill[id];
-        // NOTE: it's possible the target slot is a mimic - in that case
-        // we've already guaranteed that the flag just a consumable chest
-        // flag, so it's safe to just drop it on the floor.
-        (flags[target] || []).push(flag);
-      }
-    }
-    // Now write them
-    for (const itemget of this.rom.itemGets) {
-      itemget.flags = flags[itemget.id];
+    super(0x80);
+    for (let i = 0; i < 0x80; i++) {
+      // this[i] = rom.prg[BASE + i];
+      this[i] = i;
     }
   }
+
+  swap(i: number, j: number) {
+    if (i === j) return;
+    const tmp = this[i];
+    this[i] = this[j];
+    this[j] = tmp;
+  }
+
+  write(): Module[] {
+    const a = this.rom.assembler();
+    relocExportLabel(a, [$0e], 'CheckToItemGetMap');
+    a.byte(...this);
+    return [a.module()];
+  }
 }
-
-
-const hardcodedItems: ReadonlyArray<readonly [number, string?]> = [
-  [0x367f4, 'Stom fight'],
-  [0x3d18f, 'Slimed Kensu'],
-  [0x3d1f9, 'Asina'],
-  [0x3d2af, 'Stoned Akahana'],
-  //[0x3d30e, 'Lighthouse Kensu'],
-  [0x3d337, 'Rage'],
-  //[0x3d655, 'Mt Sabre summit trigger'], // paralysis
-  //[0x3d6d6, 'Whirlpool trigger'],
-  //[0x3d6d8, 'Swan Kensu'],
-  //[0x3d6da, 'Aryllis'],
-  //[0x3d6dc], // refresh from trigger
-  //[0x3d6de, 'Fixed statue'],
-
-  // TODO - trade-ins are still broken!!!!
-
-  //[0x3d7fe, 'Akahana statue trade-in'],
-  //[0x3e3a2], // invisible flag for statue of onyx
-  //[0x3e3a6], // invisible flag for kirisa plant
-  //[0x3e3aa], // invisible flag for love pendant
-];
-
-const extraSlots = [
-  new PersonDataSlot(0x36, 0x63, 1), // shell flute (dolphin)
-];
-
-export function update(rom: Rom, fill: number[]): void {
-  new Slots(rom).update(fill);
-}
-
-
-/**
- * By default when we fill a slot, we bring the itemget flags along with.
- * This ensures that dialogs that trigger off of it aren't broken.
- * The following are not moved, though we should fix that by changing them
- * into the normal 2xx item flags.
- */
-const preservedItemGetFlags = new Set([
-  // 0x00e, // telepathy - used for talking to animals/dwarfs
-  0x024, // generals defeated - will deal with this later
-  // 0x03f, // teleport - used for trigger
-  // 0x05f, // sword of thunder - used to trigger massacre
-  0x08b, // shell flute - checked by fisherman -- TODO change to 236?
-  // 0x067, // defeated mado 1 (ball of thunder) - want slot, not item
-  // Any warp point flags need to get preserved (sword of thunder warp)
-  0x2f4,
-  0x2f5,
-  0x2f6,
-  0x2f7,
-  0x2f8,
-  0x2f9,
-  0x2fa,
-  0x2fb,
-  0x2fc,
-  0x2fd, // shyron warp point from sword of thunder
-  0x2fe,
-  0x2ff,
-]);

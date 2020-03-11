@@ -300,7 +300,7 @@ class MapsView extends View {
       metasprite = this.rom.metasprites[metasprite.mirrored];
       mirrored = true;
     }
-    if (!metasprite || !metasprite.valid) return;
+    if (!metasprite || !metasprite.used) return;
     const version = frame >> 2 & metasprite.frameMask;
     for (let [dx, dy, attr, tile] of metasprite.sprites[version]) {
       //  becomes attr byte, maybe with #$20 (priority) ORed in

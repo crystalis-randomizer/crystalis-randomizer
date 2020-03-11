@@ -1,16 +1,20 @@
+import {Assembler} from '../asm/assembler.js';
+import {Expr} from '../asm/expr.js';
+import {Module} from '../asm/module.js';
 import {Area, Areas} from './area.js';
 import {Entity} from './entity.js';
 import {Screen} from './screen.js';
-import {Data, DataTuple,
-        concatIterables, group, hex, initializer,
+import {DataTuple, Segment,
+        concatIterables, free, group, hex, initializer,
         readLittleEndian, seq, tuple, varSlice,
-        writeLittleEndian, upperCamelToSpaces} from './util.js';
-import {Writer} from './writer.js';
+        upperCamelToSpaces} from './util.js';
 import {Rom} from '../rom.js';
 import {UnionFind} from '../unionfind.js';
 import {assertNever, iters, DefaultMap} from '../util.js';
 import {Monster} from './monster.js';
 import {Random} from '../random.js';
+
+const {$0a, $0b, $0c, $0d} = Segment;
 
 // Number indicates to copy whatever's at the given exit
 type Key = string | symbol | number;
@@ -21,6 +25,7 @@ interface LocationInit {
   music?: Key | ((area: Area) => Key);
   palette?: Key | ((area: Area) => Key);
   bossScreen?: number;
+  fixed?: readonly number[];
 }
 interface LocationData {
   area: Area;
@@ -29,6 +34,7 @@ interface LocationData {
   palette: Key;
   subArea?: string;
   bossScreen?: number;
+  fixed?: readonly number[]; // fixed spawn slots?
 }
 
 const CAVE = {
@@ -143,7 +149,8 @@ export class Locations extends Array<Location> {
                                                music: 0});
   readonly Swamp                    = $(0x1a, {area: Areas.Swamp,
                                                bossScreen: 0x7c});
-  readonly Amazones                 = $(0x1b, {area: Areas.Amazones});
+  readonly Amazones                 = $(0x1b, {area: Areas.Amazones,
+                                               fixed: [0x0d, 0x0e]});
   readonly Oak                      = $(0x1c, {area: Areas.Oak});
   // INVALID: 0x1d
   readonly StomHouse                = $(0x1e, {area: Areas.StomHouse});
@@ -157,7 +164,7 @@ export class Locations extends Array<Location> {
   readonly MtSabreWest_Cave6        = $(0x26, CAVE);
   readonly MtSabreWest_Cave7        = $(0x27, CAVE);
   readonly MtSabreNorth_Main        = $(0x28, {area: Areas.MtSabreNorth,
-                                              bossScreen: 0xb5});
+                                               bossScreen: 0xb5});
   readonly MtSabreNorth_Middle      = $(0x29);
   readonly MtSabreNorth_Cave2       = $(0x2a, CAVE);
   readonly MtSabreNorth_Cave3       = $(0x2b, CAVE);
@@ -251,7 +258,7 @@ export class Locations extends Array<Location> {
   // INVALID: 0x7b
   readonly MtHydra                  = $(0x7c, {area: Areas.MtHydra});
   readonly MtHydra_Cave1            = $(0x7d, CAVE);
-  readonly MtHydra_OutsideShyron    = $(0x7e);
+  readonly MtHydra_OutsideShyron    = $(0x7e, {fixed: [0x0d, 0x0e]}); // guards
   readonly MtHydra_Cave2            = $(0x7f, CAVE);
   readonly MtHydra_Cave3            = $(0x80, CAVE);
   readonly MtHydra_Cave4            = $(0x81, CAVE);
@@ -353,6 +360,7 @@ export class Locations extends Array<Location> {
                                                ...HOUSE, music: 0});
   readonly Portoa_PalaceEntrance    = $(0xd7, {area: Areas.PortoaPalace});
   readonly Portoa_FortuneTeller     = $(0xd8, {area: Areas.Portoa,
+                                               fixed: [0x0d, 0x0e], // guard/empty
                                                ...FORTUNE_TELLER});
   readonly Portoa_PawnShop          = $(0xd9, HOUSE);
   readonly Portoa_ArmorShop         = $(0xda, HOUSE);
@@ -428,31 +436,18 @@ export class Locations extends Array<Location> {
     throw new Error('No unused location');
   }
 
-  // // Find all groups of neighboring locations with matching properties.
-  // // TODO - optional arg: check adjacent # IDs...?
-  // partition<T>(func: (loc: Location) => T, eq: Eq<T> = (a, b) => a === b, joinNexuses = false): [Location[], T][] {
-  //   const seen = new Set<Location>();
-  //   const out: [Location[], T][] = [];
-  //   for (let loc of this) {
-  //     if (seen.has(loc) || !loc.used) continue;
-  //     seen.add(loc);
-  //     const value = func(loc);
-  //     const group = [];
-  //     const queue = [loc];
-  //     while (queue.length) {
-  //       const next = queue.pop()!;
-  //       group.push(next);
-  //       for (const n of next.neighbors(joinNexuses)) {
-  //         if (!seen.has(n) && eq(func(n), value)) {
-  //           seen.add(n);
-  //           queue.push(n);
-  //         }
-  //       }
-  //     }
-  //     out.push([[...group], value]);
-  //   }
-  //   return out;
-  // }
+  write(): Module[] {
+    const a = this.rom.assembler();
+    free(a, $0a, 0x84f8, 0xa000);
+    free(a, $0b, 0xa000, 0xbe00);
+    free(a, $0c, 0x93f9, 0xa000);
+    free(a, $0d, 0xa000, 0xac00);
+    free(a, $0d, 0xae00, 0xc000); // bf00 ???
+    for (const location of this) {
+      location.assemble(a);
+    }
+    return [a.module()];
+  }
 }
 
 // Location entities
@@ -461,6 +456,7 @@ export class Location extends Entity {
   used: boolean;
 
   bgm: number;
+  originalBgm: number;
   layoutWidth: number;
   layoutHeight: number;
   animation: number;
@@ -470,6 +466,7 @@ export class Location extends Entity {
 
   tilePatterns: [number, number];
   tilePalettes: [number, number, number];
+  originalTilePalettes: [number, number, number];
   tileset: number;
   tileEffects: number;
 
@@ -492,13 +489,14 @@ export class Location extends Entity {
     this.used = mapDataBase > 0xc000 && !!this.name;
 
     if (!this.used) {
-      this.bgm = 0;
+      this.bgm = this.originalBgm = 0;
       this.layoutWidth = 0;
       this.layoutHeight = 0;
       this.animation = 0;
       this.extended = 0;
       this.screens = [[0]];
       this.tilePalettes = [0x24, 0x01, 0x26];
+      this.originalTilePalettes = [0x24, 0x01, 0x26];
       this.tileset = 0x80;
       this.tileEffects = 0xb3;
       this.tilePatterns = [2, 4];
@@ -547,7 +545,7 @@ export class Location extends Entity {
     const pitsBase =
         !hasPits ? 0 : readLittleEndian(rom.prg, mapDataBase + 10) + 0xc000;
 
-    this.bgm = rom.prg[layoutBase];
+    this.bgm = this.originalBgm = rom.prg[layoutBase];
     this.layoutWidth = rom.prg[layoutBase + 1];
     this.layoutHeight = rom.prg[layoutBase + 2];
     this.animation = rom.prg[layoutBase + 3];
@@ -556,6 +554,7 @@ export class Location extends Entity {
         this.height,
         y => tuple(rom.prg, layoutBase + 5 + y * this.width, this.width));
     this.tilePalettes = tuple<number>(rom.prg, graphicsBase, 3);
+    this.originalTilePalettes = tuple(this.tilePalettes, 0, 3);
     this.tileset = rom.prg[graphicsBase + 3];
     this.tileEffects = rom.prg[graphicsBase + 4];
     this.tilePatterns = tuple(rom.prg, graphicsBase + 5, 2);
@@ -634,22 +633,33 @@ export class Location extends Entity {
   //         ]]);
   // }
 
-  async write(writer: Writer): Promise<void> {
+  assemble(a: Assembler) {
     if (!this.used) return;
-    const promises = [];
-    if (!this.spawns.length) {
-      this.spritePalettes = [0xff, 0xff];
-      this.spritePatterns = [0xff, 0xff];
-    }
+    const id = this.id.toString(16).padStart(2, '0');
+    // const $layout = `Layout_${id}`;
+    // const $graphics = `Graphics_${id}`;
+    // const $entrances = `Entrances_${id}`;
+    // const $exits = `Exits_${id}`;
+    // const $flags = `Flags_${id}`;
+    // const $pits = `Pits_${id}`;
+    // const $mapdata = `MapData_${id}`;
+    // const $npcdata = `NpcData_${id}`;
+
+    const spritePal = this.spawns.length ? this.spritePalettes : [0xff, 0xff];
+    const spritePat = this.spawns.length ? this.spritePatterns : [0xff, 0xff];
+    const mapData: Expr[] = [];
     // write NPC data first, if present...
-    const data = [0, ...this.spritePalettes, ...this.spritePatterns,
-                  ...concatIterables(this.spawns), 0xff];
-    promises.push(
-        writer.write(data, 0x18000, 0x1bfff, `NpcData ${hex(this.id)}`)
-            .then(address => writeLittleEndian(
-                writer.rom, this.npcDataPointer, address - 0x10000)));
-    const write = (data: Data<number>, name: string) =>
-        writer.write(data, 0x14000, 0x17fff, `${name} ${hex(this.id)}`);
+    const npcData = [0, ...spritePal, ...spritePat,
+                     ...concatIterables(this.spawns), 0xff];
+    a.segment('0c', '0d');
+    a.reloc(`NpcData_${id}`);
+    const $npcData = a.pc();
+    a.byte(...npcData);
+    a.org(0x9201 + (this.id << 1), `NpcDataPtr_${id}`);
+    a.word($npcData);
+
+    // wite mapdata
+    a.segment('0a', '0b');
     const layout = this.rom.compressedMapData ? [
       this.bgm,
       // Compressed version: yx in one byte, ext+anim in one byte
@@ -661,12 +671,21 @@ export class Location extends Entity {
       this.layoutWidth, this.layoutHeight, this.animation, this.extended,
       ...concatIterables(this.screens),
     ];
-    const graphics =
-        [...this.tilePalettes,
-         this.tileset, this.tileEffects,
-         ...this.tilePatterns];
+    a.reloc(`MapData_${id}_Layout`);
+    const $layout = a.pc();
+    a.byte(...layout);
+    mapData.push($layout);
+
+    a.reloc(`MapData_${id}_Graphics`);
+    const $graphics = a.pc();
+    a.byte(...this.tilePalettes,
+           this.tileset, this.tileEffects,
+           ...this.tilePatterns);
+    mapData.push($graphics);
+
     // Quick sanity check: if an entrance/exit is below the HUD on a
-    // non-vertically scrolling map, then we need to move it up.
+    // non-vertically scrolling map, then we need to move it up
+    // NOTE: this is idempotent..
     if (this.height === 1) {
       for (const entrance of this.entrances) {
         if (!entrance.used) continue;
@@ -676,40 +695,44 @@ export class Location extends Entity {
         if (exit.yt > 0x0c) exit.yt = 0x0c;
       }
     }
-    const entrances = concatIterables(this.entrances);
-    const exits = [...concatIterables(this.exits),
-                   0x80 | (this.pits.length ? 0x40 : 0) | this.entrances.length,
-                  ];
-    const flags = [...concatIterables(this.flags), 0xff];
+    a.reloc(`MapData_${id}_Entrances`);
+    const $entrances = a.pc();
+    a.byte(...concatIterables(this.entrances));
+    mapData.push($entrances);
+
+    a.reloc(`MapData_${id}_Exits`);
+    const $exits = a.pc();
+    a.byte(...concatIterables(this.exits),
+           0x80 | (this.pits.length ? 0x40 : 0) | this.entrances.length);
+    mapData.push($exits);
+
+    a.reloc(`MapData_${id}_Flags`);
+    const $flags = a.pc();
+    a.byte(...concatIterables(this.flags), 0xff);
+    mapData.push($flags);
+
     const pits = concatIterables(this.pits);
-    const [layoutAddr, graphicsAddr, entrancesAddr, exitsAddr, flagsAddr, pitsAddr] =
-        await Promise.all([
-          write(layout, 'Layout'),
-          write(graphics, 'Graphics'),
-          write(entrances, 'Entrances'),
-          write(exits, 'Exits'),
-          write(flags, 'Flags'),
-          ...(pits.length ? [write(pits, 'Pits')] : []),
-        ]);
-    const addresses = [
-      layoutAddr & 0xff, (layoutAddr >>> 8) - 0xc0,
-      graphicsAddr & 0xff, (graphicsAddr >>> 8) - 0xc0,
-      entrancesAddr & 0xff, (entrancesAddr >>> 8) - 0xc0,
-      exitsAddr & 0xff, (exitsAddr >>> 8) - 0xc0,
-      flagsAddr & 0xff, (flagsAddr >>> 8) - 0xc0,
-      ...(pitsAddr ? [pitsAddr & 0xff, (pitsAddr >> 8) - 0xc0] : []),
-    ];
-    const base = await write(addresses, 'MapData');
-    writeLittleEndian(writer.rom, this.mapDataPointer, base - 0xc000);
-    await Promise.all(promises);
+    if (pits.length) {
+      a.reloc(`MapData_${id}_Pits`);
+      const $pits = a.pc();
+      a.byte(...pits);
+      mapData.push($pits);
+    }
+
+    a.reloc(`MapData_${id}`);
+    const $mapData = a.pc();
+    a.word(...mapData);
+
+    a.org(0x8300 + (this.id << 1), `MapDataPtr_${id}`);
+    a.word($mapData);
 
     // If this is a boss room, write the restoration.
     const bossId = this.bossId();
     if (bossId != null && this.id !== 0x5f) { // don't restore dyna
       // This table should restore pat0 but not pat1
-      let pats = [this.spritePatterns[0], undefined];
+      let pats = [spritePat[0], undefined];
       if (this.id === 0xa6) pats = [0x53, 0x50]; // draygon 2
-      const bossBase = readLittleEndian(writer.rom, 0x1f96b + 2 * bossId) + 0x14000;
+      const bossBase = this.rom.bossKills[bossId].base;
       // Set the "restore music" byte for the boss, but if it's Draygon 2, set
       // it to zero since no music is actually playing, and if the music in the
       // teleporter room happens to be the same as the music in the crypt, then
@@ -726,14 +749,17 @@ export class Location extends Entity {
       // if (readLittleEndian(writer.rom, bossBase) === 0xba98) {
       //   // escape animation: don't clobber patterns yet?
       // }
+      a.segment('0f');
       for (let j = 0; j < bossRestore.length; j++) {
         const restored = bossRestore[j];
         if (restored == null) continue;
-        writer.rom[bossBase + j] = restored;
+        a.org(bossBase + j, `Boss_${bossId}_${j}`);
+        a.byte(restored);
       }
       // later spot for pal3 and pat1 *after* explosion
-      const bossBase2 = 0x1f7c1 + 5 * bossId;
-      writer.rom[bossBase2] = this.spritePalettes[1];
+      const bossBase2 = 0xb7c1 + 5 * bossId; // 1f7c1
+      a.org(bossBase2, `Boss_${bossId}_Post`);
+      a.byte(spritePal[1]);
       // NOTE: This ruins the treasure chest.
       // TODO - add some asm after a chest is cleared to reload patterns?
       // Another option would be to add a location-specific contraint to be
@@ -1003,6 +1029,7 @@ export class Location extends Entity {
     }
   }
 
+  /** NOTE: if a screen is negative, sets the AlwaysTrue flag. */
   writeScreens2d(start: number,
                  data: ReadonlyArray<ReadonlyArray<number | null>>) {
     const x0 = start & 0xf;
@@ -1010,8 +1037,14 @@ export class Location extends Entity {
     for (let y = 0; y < data.length; y++) {
       const row = data[y];
       for (let x = 0; x < row.length; x++) {
-        const tile = row[x];
-        if (tile != null) this.screens[y0 + y][x0 + x] = tile;
+        let tile = row[x];
+        if (tile == null) continue;
+        if (tile < 0) {
+          tile = ~tile;
+          this.flags.push(Flag.of({screen: (y0 + y) << 4 | (x0 + x),
+                                   flag: this.rom.flags.AlwaysTrue.id}));
+        }
+        this.screens[y0 + y][x0 + x] = tile;
       }
     }
   }
@@ -1207,6 +1240,10 @@ export class Exit extends DataTuple {
 
   /** Destination entrance index. */
   entrance = this.prop([3]);
+
+  isSeamless(this: any): boolean {
+    return Boolean(this.entrance & 0x20);
+  },
 
   toString(): string {
     return `Exit ${this.hex()}: (${hex(this.y)}, ${hex(this.x)}) => ${

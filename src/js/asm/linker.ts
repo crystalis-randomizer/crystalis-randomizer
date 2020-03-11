@@ -359,6 +359,7 @@ class Link {
 
   watches: number[] = []; // debugging aid: offsets to watch.
   placed: Array<[number, LinkChunk]> = [];
+  initialReport: string = '';
 
   // TODO - deferred - store some sort of dependency graph?
 
@@ -466,7 +467,7 @@ class Link {
       chunk.initialPlacement();
     }
     if (DEBUG) {
-      console.log(`Initial:\n${this.report(true)}`);
+      this.initialReport = `Initial:\n${this.report(true)}`;
     }
     // Find all the exports.
     for (let i = 0; i < this.symbols.length; i++) {
@@ -582,6 +583,7 @@ class Link {
       if (c.overlaps) continue;
       patch.set(c.offset!, ...this.data.slice(c.offset!, c.offset! + c.size!));
     }
+    if (DEBUG) console.log(this.report(true));
     return patch;
   }
 
@@ -627,6 +629,7 @@ class Link {
         return;
       }
     }
+    if (DEBUG) console.log(`Initial:\n${this.initialReport}`);
     console.log(`After filling:\n${this.report(true)}`);
     const name = chunk.name ? `${chunk.name} ` : '';
     console.log(this.segments.get(chunk.segments[0]));
@@ -735,4 +738,4 @@ class Link {
   }
 }
 
-const DEBUG = false;
+const DEBUG = true;

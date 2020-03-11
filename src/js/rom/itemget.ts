@@ -6,7 +6,7 @@ import {MessageId} from './messageid.js';
 import {ITEM_GET_FLAGS, Address, Segment,
   hex, readLittleEndian, relocExportLabel} from './util.js';
 
-const {$0e, $0f /*, $fe */} = Segment;
+const {$0e, $0f, $14, $fe, $ff} = Segment;
 
 // TODO - this depends on a preparse change, we should reconsider that.
 const ITEMGET_TABLE = Address.of($0e, 0x9b00);
@@ -55,7 +55,7 @@ export class ItemGets extends EntityArray<ItemGet> {
     for (const itemget of this) {
       itemget.assemble(a);
     }
-    relocExportLabel(a, [$0e], 'GrantItemTable');
+    relocExportLabel(a, [$14, $fe, $ff], 'GrantItemTable');
     //GRANT_ITEM_TABLE.loc(a);
     for (const [key, value] of this.actionGrants) {
       a.byte(key, value);

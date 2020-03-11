@@ -403,7 +403,7 @@ export class Rom {
     const out = linker.link();
     out.apply(data);
     if (data !== this.prg) return; // TODO - clean this up
-    linker.report();
+    //linker.report();
     const exports = linker.exports();
 
     

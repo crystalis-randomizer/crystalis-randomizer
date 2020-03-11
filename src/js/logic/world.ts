@@ -1042,9 +1042,15 @@ export class World {
           enter: Requirement.freeze(requirements),
           exit: [[0xf, Requirement.OPEN]],
         };
+        // Add a terrain and exit pair for the boat trigger.
         this.addTerrain([t0], boat);
         this.exits.set(t0, t1);
         this.exitSet.add(TilePair.of(t0, t1));
+        // Add a terrain and exit pair for the entrance we passed
+        // (this is primarily necessary for wild warp to work in logic).
+        this.exits.set(entranceTile, t1);
+        this.exitSet.add(TilePair.of(entranceTile, t1));
+        this.terrains.set(entranceTile, this.terrainFactory.tile(0)!);
         return;
       }
     }

@@ -986,6 +986,9 @@ export class Assembler {
 
   fail(msg: string, at?: {source?: SourceInfo}): never {
     if (at?.source) throw new Error(msg + Token.at(at));
+    if (!this._source && this._chunk?.name) {
+      throw new Error(msg + `\n  in ${this._chunk.name}`);
+    }
     throw new Error(msg + Token.at({source: this._source}));
   }
 

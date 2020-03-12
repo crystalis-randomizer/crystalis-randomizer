@@ -171,7 +171,7 @@ export class Canvas {
       patterns[1] = this.rom.tileAnimations[loc.animation].pages[frame & 7];
     }
     const palettes = [...loc.tilePalettes, 0x7f];
-    const tileset = this.rom.tilesets[(loc.tileset & 0x7f) >>> 2];
+    const tileset = this.rom.tilesets[loc.tileset];
     const palette = palettes[tileset.attrs[id]];
     for (let r = 0; r < 2; r++) {
       for (let c = 0; c < 2; c++) {

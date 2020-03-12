@@ -604,14 +604,13 @@ export class World {
         shootingStatues.add(ScreenId.from(location, spawn));
       }
     }
-    const page = location.screenPage;
-    const tileset = this.rom.tileset(location.tileset);
+    //const page = location.screenPage;
+    const tileset = this.rom.tilesets[location.tileset];
     const tileEffects = this.rom.tileEffects[location.tileEffects - 0xb3];
 
     const getEffects = (tile: TileId) => {
-      const screen =
-          location.screens[(tile & 0xf000) >>> 12][(tile & 0xf00) >>> 8] | page;
-      return tileEffects.effects[this.rom.screens[screen].tiles[tile & 0xff]];
+      const s = location.screens[(tile & 0xf000) >>> 12][(tile & 0xf00) >>> 8];
+      return tileEffects.effects[this.rom.screens[s].tiles[tile & 0xff]];
     };
 
     // Returns undefined if impassable.
@@ -654,7 +653,7 @@ export class World {
       const row = location.screens[y];
       const rowId = location.id << 8 | y << 4;
       for (let x = 0, width = location.width; x < width; x++) {
-        const screen = this.rom.screens[row[x] | page];
+        const screen = this.rom.screens[row[x]];
         const screenId = ScreenId(rowId | x);
         const barrier = shootingStatues.has(screenId);
         const flagYx = screenId & 0xff;
@@ -662,7 +661,7 @@ export class World {
         const flag =
             inTower ? this.rom.flags.AlwaysTrue.id :
             wall != null ? this.wallCapability(wall) :
-            location.flags.find(f => f.yx === flagYx)?.flag;
+            location.flags.find(f => f.screen === flagYx)?.flag;
         const logic: Logic = this.rom.flags[flag!]?.logic ?? {};
         for (let t = 0; t < 0xf0; t++) {
           const tid = TileId(screenId << 8 | t);
@@ -822,7 +821,7 @@ export class World {
         // treat this as a statue?  but the conditions are not super useful...
         //   - only tracked conditions matter? 9e == paralysis... except not.
         // paralyzable?  check DataTable_35045
-        if (location === this.rom.locations.PortoaPalace_Entrance) {
+        if (location === this.rom.locations.Portoa_PalaceEntrance) {
           // Portoa palace front guard normally blocks on Mesia recording.
           // But the queen is actually accessible without seeing the recording.
           // Instead, block access to the throne room on being able to talk to
@@ -1137,9 +1136,9 @@ export class World {
 
   getEffects(t: TileId): number {
     const location = this.rom.locations[t >>> 16];
-    const page = location.screenPage;
+    //const page = location.screenPage;
     const effects = this.rom.tileEffects[location.tileEffects - 0xb3].effects;
-    const scr = location.screens[(t & 0xf000) >>> 12][(t & 0xf00) >>> 8] | page;
+    const scr = location.screens[(t & 0xf000) >>> 12][(t & 0xf00) >>> 8];
     return effects[this.rom.screens[scr].tiles[t & 0xff]];
   }
 

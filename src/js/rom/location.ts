@@ -409,12 +409,17 @@ export class Locations extends Array<Location> {
   readonly EastCave3      = $(-1);
   readonly FishermanBeach = $(-1, {area: Areas.FishermanHouse, ...HOUSE});
 
+  private readonly locsByScreen = new DefaultMap<number, Location[]>(() => []);
+
   constructor(readonly rom: Rom) {
     super(0x100);
     $.commit(this);
     // Fill in any missing ones
     for (let id = 0; id < 0x100; id++) {
-      if (this[id]) continue;
+      if (this[id]) {
+        this.indexScreens(this[id]);
+        continue;
+      }
       this[id] = new Location(rom, id, {
         area: Areas.Unused,
         name: '',
@@ -425,12 +430,34 @@ export class Locations extends Array<Location> {
     // TODO - method to add an unregistered location to an empty index.
   }
 
+  indexScreens(loc: Location) {
+    for (const row of loc.screens) {
+      for (const s of row) {
+        this.locsByScreen.get(s).push(loc);
+      }
+    }
+  }
+
+  renumberScreen(oldId: number, newId: number) {
+    const locs = this.locsByScreen.get(oldId);
+    this.locsByScreen.set(newId, locs);
+    this.locsByScreen.delete(oldId);
+    for (const loc of locs) {
+      for (const row of loc.screens) {
+        for (let i = 0; i < row.length; i++) {
+          if (row[i] === oldId) row[i] = newId;
+        }
+      }
+    }
+  }
+
   allocate(location: Location): Location {
     // pick an unused location
     for (const l of this) {
       if (l.used) continue;
       (location as any).id = l.id;
       location.used = true;
+      this.indexScreens(location);
       return this[l.id] = location;
     }
     throw new Error('No unused location');
@@ -461,7 +488,7 @@ export class Location extends Entity {
   layoutHeight: number;
   animation: number;
   // Screen indices are (extended << 8 | screen)
-  extended: number;
+  // extended: number;
   screens: number[][];
 
   tilePatterns: [number, number];
@@ -493,7 +520,7 @@ export class Location extends Entity {
       this.layoutWidth = 0;
       this.layoutHeight = 0;
       this.animation = 0;
-      this.extended = 0;
+      // this.extended = 0;
       this.screens = [[0]];
       this.tilePalettes = [0x24, 0x01, 0x26];
       this.originalTilePalettes = [0x24, 0x01, 0x26];
@@ -549,10 +576,12 @@ export class Location extends Entity {
     this.layoutWidth = rom.prg[layoutBase + 1];
     this.layoutHeight = rom.prg[layoutBase + 2];
     this.animation = rom.prg[layoutBase + 3];
-    this.extended = rom.prg[layoutBase + 4];
+    // this.extended = rom.prg[layoutBase + 4];
+    const extended = rom.prg[layoutBase + 4];
     this.screens = seq(
         this.height,
-        y => tuple(rom.prg, layoutBase + 5 + y * this.width, this.width));
+        y => tuple(rom.prg, layoutBase + 5 + y * this.width, this.width)
+                 .map(s => extended | s));
     this.tilePalettes = tuple<number>(rom.prg, graphicsBase, 3);
     this.originalTilePalettes = tuple(this.tilePalettes, 0, 3);
     this.tileset = rom.prg[graphicsBase + 3];
@@ -596,10 +625,23 @@ export class Location extends Entity {
     return this.spawns.length > 0;
   }
 
-  // Offset to OR with screen IDs.
-  get screenPage(): number {
-    if (!this.rom.compressedMapData) return this.extended ? 0x100 : 0;
-    return this.extended << 8;
+  // // Offset to OR with screen IDs.
+  // get screenPage(): number {
+  //   if (!this.rom.compressedMapData) return this.extended ? 0x100 : 0;
+  //   return this.extended << 8;
+  // }
+
+  ext(): number {
+    const set = new Set<number>();
+    for (const row of this.screens) {
+      for (const s of row) {
+        set.add(s >>> 8);
+      }
+    }
+    if (set.size !== 1) {
+      throw new Error(`Non-unique screen page: ${[...set].join(', ')}`);
+    }
+    return set[Symbol.iterator]().next().value;
   }
 
   isShop(): boolean {
@@ -660,16 +702,19 @@ export class Location extends Entity {
 
     // wite mapdata
     a.segment('0a', '0b');
+    //const ext = new Set(this.screens.map(s => s >> 8));
+    const screens = [];
+    for (const s of concatIterables(this.screens)) {
+      screens.push(s & 0xff);
+    }
     const layout = this.rom.compressedMapData ? [
       this.bgm,
       // Compressed version: yx in one byte, ext+anim in one byte
       this.layoutHeight << 4 | this.layoutWidth,
-      this.extended << 2 | this.animation,
-      ...concatIterables(this.screens),
+      this.ext() << 2 | this.animation, ...screens,
     ] : [
-      this.bgm,
-      this.layoutWidth, this.layoutHeight, this.animation, this.extended,
-      ...concatIterables(this.screens),
+      this.bgm, this.layoutWidth, this.layoutHeight,
+      this.animation, this.ext(), ...screens,
     ];
     a.reloc(`MapData_${id}_Layout`);
     const $layout = a.pc();
@@ -770,10 +815,9 @@ export class Location extends Entity {
 
   allScreens(): Set<Screen> {
     const screens = new Set<Screen>();
-    const ext = this.screenPage;
     for (const row of this.screens) {
       for (const screen of row) {
-        screens.add(this.rom.screens[screen + ext]);
+        screens.add(this.rom.screens[screen]);
       }
     }
     return screens;
@@ -827,7 +871,7 @@ export class Location extends Entity {
     for (let y = 0; y < this.height; y++) {
       const row = this.screens[y];
       for (let x = 0; x < this.width; x++) {
-        const screen = this.rom.screens[row[x] | this.screenPage];
+        const screen = this.rom.screens[row[x]];
         const pos = y << 4 | x;
         const flag = this.flags.find(f => f.screen === pos);
         for (let t = 0; t < 0xf0; t++) {
@@ -868,7 +912,7 @@ export class Location extends Entity {
     for (const set of sets) {
       for (const t of set) {
         const scr = this.screens[t >>> 12][(t >>> 8) & 0x0f];
-        const screen = this.rom.screens[scr | this.screenPage];
+        const screen = this.rom.screens[scr];
         out.set(t, tileEffects.effects[screen.tiles[t & 0xff]]);
       }
     }
@@ -912,19 +956,19 @@ export class Location extends Entity {
     // Start with list of reachable tiles.
     const reachable = this.reachableTiles(false);
     // Do a breadth-first search of all tiles to find "distance" (1-norm).
-    const extended = new Map<number, number>([...reachable.keys()].map(x => [x, 0]));
+    const far = new Map<number, number>([...reachable.keys()].map(x => [x, 0]));
     const normal: number[] = []; // reachable, not slope or water
     const moths: number[] = [];  // distance ∈ 3..7
     const birds: number[] = [];  // distance > 12
     const plants: number[] = []; // distance ∈ 2..4
     const placed: Array<[Monster, number, number, number]> = [];
     const normalTerrainMask = this.hasDolphin() ? 0x25 : 0x27;
-    for (const [t, distance] of extended) {
+    for (const [t, distance] of far) {
       const scr = this.screens[t >>> 12][(t >>> 8) & 0xf];
       if (scr === boss) continue;
       for (const n of neighbors(t, this.width, this.height)) {
-        if (extended.has(n)) continue;
-        extended.set(n, distance + 1);
+        if (far.has(n)) continue;
+        far.set(n, distance + 1);
       }
       if (!distance && !(reachable.get(t)! & normalTerrainMask)) normal.push(t);
       if (this.id === 0x1a) {
@@ -1243,7 +1287,7 @@ export class Exit extends DataTuple {
 
   isSeamless(this: any): boolean {
     return Boolean(this.entrance & 0x20);
-  },
+  }
 
   toString(): string {
     return `Exit ${this.hex()}: (${hex(this.y)}, ${hex(this.x)}) => ${

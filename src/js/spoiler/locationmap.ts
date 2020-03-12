@@ -147,7 +147,7 @@ export class LocationMap extends Canvas {
     // Draw the background
     for (let y = 0; y < this.location.height; y++) {
       for (let x = 0; x < this.location.width; x++) {
-        const screenId = this.location.screens[y][x] | this.location.screenPage;
+        const screenId = this.location.screens[y][x];
         this.drawScreen(this.rom.screens[screenId], y, x);
       }
     }
@@ -191,7 +191,7 @@ export class LocationMap extends Canvas {
   drawScreen(screen: Screen, ys: number, xs: number) {
     const y0 = ys * 240;
     const x0 = xs * 256;
-    const tileset = this.rom.tileset(this.location.tileset);
+    const tileset = this.rom.tilesets[this.location.tileset];
     let flag: number|undefined;
     let alwaysTrue = false;
     for (const f of this.location.flags) {

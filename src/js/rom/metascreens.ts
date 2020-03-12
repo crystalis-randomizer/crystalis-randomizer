@@ -127,6 +127,7 @@ export class Metascreens {
     this.rom.screens.setScreen(newId, clone);
     oldScreen.used = false;
     if (oldId < 0) this.rom.screens.deleteScreen(oldId);
+    this.rom.locations.renumberScreen(oldId, newId);
   }
 
   readonly overworldEmpty = $({

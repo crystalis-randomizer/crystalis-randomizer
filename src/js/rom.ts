@@ -3,6 +3,7 @@ import {Assembler} from './asm/assembler.js';
 import {Linker} from './asm/linker.js';
 import {Module} from './asm/module.js';
 import {AdHocSpawn} from './rom/adhocspawn.js';
+//import {Areas} from './rom/area.js';
 import {BossKill} from './rom/bosskill.js';
 import {Bosses} from './rom/bosses.js';
 import {CoinDrops} from './rom/coindrops.js';
@@ -73,7 +74,7 @@ export class Rom {
   // TODO - would be nice to eliminate the duplication by moving
   // the ctors here, but there's lots of prereqs and dependency
   // ordering, and we need to make the ADJUSTMENTS, etc.
-  readonly areas: Areas;
+  //readonly areas: Areas;
   readonly screens: Screens;
   readonly tilesets: Tilesets;
   readonly tileEffects: TileEffects[];
@@ -365,7 +366,7 @@ export class Rom {
     // }
 
     const modules = [...this.modules, a.module()];
-    const writeAll = (writables: {write(): Module[]}[]) => {
+    const writeAll = (writables: Iterable<{write(): Module[]}>) => {
       for (const w of writables) {
         modules.push(...w.write());
       }
@@ -471,10 +472,10 @@ export class Rom {
     for (const loc of this.locations) {
       if (!loc.used) continue;
       const tileset = loc.tileset;
-      const ext = loc.screenPage;
+      //const ext = loc.screenPage;
       for (const row of loc.screens) {
         for (const s of row) {
-          (tilesetByScreen[s + ext] || (tilesetByScreen[s + ext] = new Set())).add(tileset);
+          (tilesetByScreen[s] || (tilesetByScreen[s] = new Set())).add(tileset);
         }
       }
     }
@@ -642,9 +643,9 @@ export class Rom {
   compressMapData(): void {
     if (this.compressedMapData) return;
     this.compressedMapData = true;
-    for (const location of this.locations) {
-      if (location.extended) location.extended = 0xa;
-    }
+    // for (const location of this.locations) {
+    //   if (location.extended) location.extended = 0xa;
+    // }
     for (let i = 0; i < 3; i++) {
       //this.screens[0xa00 | i] = this.screens[0x100 | i];
       this.metascreens.renumber(0x100 | i, 0xa00 | i);
@@ -687,7 +688,7 @@ export class Rom {
       }
       if (anyMoved) {
         if (!allMoved) throw new Error(`Inconsistent move`);
-        loc.extended = page;
+        //loc.extended = page;
       }
     }
   }

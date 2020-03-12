@@ -56,6 +56,12 @@
 .segment "fe"   :bank $1e :size $2000 :off $3c000 :mem $c000
 .segment "ff"   :bank $1f :size $2000 :off $3e000 :mem $e000
 
+;;; Expanded rom segments??? consider doing these programmatically?
+.segment "20"   :bank $20 :size $2000 :off $40000 :mem $8000
+.segment "21"   :bank $21 :size $2000 :off $42000 :mem $a000
+.segment "22"   :bank $22 :size $2000 :off $44000 :mem $8000
+.segment "23"   :bank $23 :size $2000 :off $48000 :mem $a000
+
 
 ;;; Various global definitions.
 ObjectRecoil = $340

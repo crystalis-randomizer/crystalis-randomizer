@@ -73,7 +73,9 @@ export class Screen extends Entity {
     // 0a => 14000
     const segment = !this.rom.compressedMapData ? '0a' : hex(this.id >> 8);
     a.segment(segment);
-    a.org((this.id & 0xff) << 8 | 0x8000);
+    let org = (this.id & 0xff) << 8 | 0x8000;
+    if (this.rom.compressedMapData && (this.id & 0x100)) org |= 0x2000;
+    a.org(org);
     // NOTE: reuse last 2 rows of '0a' screens for global metadata.
     a.byte(...(segment === '0a' ? this.tiles.slice(0, 0xc0) : this.tiles));
   }
@@ -170,17 +172,17 @@ export class Screens extends Array<Screen> {
     const a = this.rom.assembler();
     if (this.rom.compressedMapData) {
       for (let s = 0; s < 0x100; s++) {
-        const scr = this.screens[s];
+        const scr = this[s];
         if (scr.used) scr.assemble(a);
       }
       for (let p = 1; p < 0x40; p++) {
         for (let s = 0; s < 0x20; s++) {
-          const scr = this.screens[p << 8 | s];
+          const scr = this[p << 8 | s];
           if (scr && scr.used) scr.assemble(a);
         }
       }
     } else {
-      for (const screen of this.screens) {
+      for (const screen of this) {
         screen.assemble(a);
       }
     }

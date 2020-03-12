@@ -1,6 +1,7 @@
 import {FlagSet} from '../flagset.js';
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
+import * as flags from '../rom/flags.js';
 import {Entrance, Exit, Flag, Location, Spawn} from '../rom/location.js';
 
 type EastCaveExit = 'cordel' | 'lime' | 'goa' | 'desert';
@@ -74,7 +75,6 @@ function eastCave(rom: Rom, opts: EastCaveOptions) {
     l.flags = [];
     l.height = l.screens.length;
     l.width = l.screens[0].length;
-    l.extended = 0;
     l.tilePalettes = [0x1a, 0x1b, 0x05]; // rock wall
     l.originalTilePalettes = [0x1a, 0x1b, 0x05]; // rock wall
     l.tileset = 0x88;
@@ -300,8 +300,12 @@ function closeCaveEntrances(rom: Rom): void {
     [SaharaOutsideCave, 0x00], // cave to desert
     [Desert2, 0x41],
   ];
-  for (const [loc, yx] of flagsToClear) {
-    loc.flags.push(Flag.of({yx, flag: AlwaysTrue.id}));
+  function pushFlag(loc: Location, screen: number, flag: flags.Flag) {
+    loc.flags.push(Flag.of({screen, flag: flag.id}));
+  }
+
+  for (const [loc, screen] of flagsToClear) {
+    pushFlag(loc, screen, AlwaysTrue);
   }
 
   // NOTE - this used to be configurable...
@@ -319,9 +323,9 @@ function closeCaveEntrances(rom: Rom): void {
   // NOTE: we could also close it off until boss killed...?
   //  - const vampireFlag = ~rom.npcSpawns[0xc0].conditions[0x0a][0];
   //  -> kelbesque for the other one.
-  CordelPlainWest.flags.push(Flag.of({yx: 0x30, flag: OpenedSealedCave.id}));
-  CordelPlainEast.flags.push(Flag.of({yx: 0x30, flag: OpenedSealedCave.id}));
-  WaterfallValleyNorth.flags.push(Flag.of({yx: 0x00, flag: OpenedPrison.id}));
+  pushFlag(CordelPlainWest, 0x30, OpenedSealedCave);
+  pushFlag(CordelPlainEast, 0x30, OpenedSealedCave);
+  pushFlag(WaterfallValleyNorth, 0x00, OpenedPrison);
   const explosion = Spawn.of({y: 0x060, x: 0x060, type: 4, id: 0x2c});
   const keyTrigger = Spawn.of({y: 0x070, x: 0x070, type: 2, id: 0xad});
   WaterfallValleyNorth.spawns.splice(1, 0, explosion);

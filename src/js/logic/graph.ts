@@ -402,7 +402,8 @@ export class Graph {
     for (let i = 0 as SlotIndex; i < this.slots.length; i++) {
       if (this.graph.get(i) == null) {
         console.dir(this);
-        throw new Error(`Unreachable slot ${i}`);
+        const id = this.slots.get(i);
+        throw new Error(`Unreachable slot ${id?.toString(16)}`);
       }
       queue.add(i as SlotIndex);
     }

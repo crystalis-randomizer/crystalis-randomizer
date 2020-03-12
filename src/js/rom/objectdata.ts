@@ -54,12 +54,13 @@ export class ObjectData extends Entity {
   }
 
   write(): Module[] {
+    const name = `Object_${this.id.toString(16).padStart(2, '0')}`;
     const a = this.rom.assembler();
     a.segment('0d');
-    a.reloc(`Object_${this.id.toString(16).padStart(2, '0')}`);
+    a.reloc(name);
     const label = a.pc();
     a.byte(...this.serialize());
-    a.org(0xac00 + (this.id << 1));
+    a.org(0xac00 + (this.id << 1), `${name}_Ptr`);
     a.word(label);
     return [a.module()];
   }

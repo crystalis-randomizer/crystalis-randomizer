@@ -661,6 +661,7 @@ export class Assembler {
     const {chunk} = this;
     chunk.data.push(op);
     if (arglen) this.append(expr, arglen);
+    if (!chunk.name) chunk.name = `Code`;
     // TODO - for relative, if we're in the same chunk, just compare
     // the offset...
   }

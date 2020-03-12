@@ -46,7 +46,7 @@ export class TileEffects extends Entity {
     const a = this.rom.assembler();
     a.segment('09', 'fe', 'ff');
     // NOTE: cannot reloc this for now, too hard-coded...
-    a.org(this.org);
+    a.org(this.org, `TileEffects_${this.id.toString(16)}_Tiles`);
     a.byte(...this.effects);
     return [a.module()];
   }

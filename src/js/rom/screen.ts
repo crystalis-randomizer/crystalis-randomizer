@@ -63,9 +63,10 @@ export class Screen extends Entity {
   }
 
   assemble(a: Assembler) {
+    const id = this.id.toString(16).padStart(2, '0');
     if (this.id < 0x100) {
       a.segment((this.id >> 5).toString(16).padStart(2, '0'));
-      a.org(0x8000 | (this.id & 0x3f) << 8);
+      a.org(0x8000 | (this.id & 0x3f) << 8, `Screen_${id}`);
       a.byte(...this.tiles);
       return;
     }
@@ -75,7 +76,7 @@ export class Screen extends Entity {
     a.segment(segment);
     let org = (this.id & 0xff) << 8 | 0x8000;
     if (this.rom.compressedMapData && (this.id & 0x100)) org |= 0x2000;
-    a.org(org);
+    a.org(org, `Screen_${id}`);
     // NOTE: reuse last 2 rows of '0a' screens for global metadata.
     a.byte(...(segment === '0a' ? this.tiles.slice(0, 0xc0) : this.tiles));
   }

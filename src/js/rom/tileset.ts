@@ -74,12 +74,13 @@ export class Tileset extends Entity {
              (this.attrs[j + 2] & 3) << 4 | (this.attrs[j + 3] & 3) << 6;
     });
     const a = this.rom.assembler();
+    const name = `Tileset_${this.id.toString(16).padStart(2, '0')}`;
     a.segment('08', '09');
-    a.org(0x8000 | this.map << 8);
+    a.org(0x8000 | this.map << 8, `${name}_Tiles`);
     a.byte(...([] as number[]).concat(...this.tiles));
-    a.org(0xb000 | this.map << 4);
+    a.org(0xb000 | this.map << 4, `${name}_Attrs`);
     a.byte(...attr);
-    a.org(0xbe00 | this.map << 3);
+    a.org(0xbe00 | this.map << 3, `${name}_Alternates`);
     a.byte(...this.alternates);
     return [a.module()];
   }

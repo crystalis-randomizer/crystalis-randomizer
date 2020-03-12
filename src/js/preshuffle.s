@@ -1,3 +1,15 @@
+
+
+
+
+
+;;; TODO - need to update the rom methods to write the correct plane data!!!!
+;;; TODO - need to reconcile the .st changes - will be a pain to resolve!
+
+
+
+
+
 ;;; Various flag-based defines will be prepended to this file, indicated
 ;;; by a `_` prefix.
 
@@ -879,7 +891,9 @@ CheckSacredShieldForCurse:
   bne $9a73
 FREE_UNTIL $9a73
 
-;;; This is a faster version of page swap that destroys Y
+;;; This is a faster version of page swap ($a000) that destroys Y
+;;; (Remove "1b" because it would change the page out from under itself).
+.pushseg "1a", "fe", "ff"
 .reloc
 QuickSwapPageA:
   sta $6f
@@ -888,6 +902,7 @@ QuickSwapPageA:
   sty $8000
   sta $8001
   rts
+.popseg
 
 .endif
 
@@ -1559,6 +1574,45 @@ FREE_UNTIL $e652
   beq $ebef
    jsr $c418  ; BankSwitch8k_8000
 .assert * = $ebef
+
+.org $ef36
+FREE_UNTIL $ef46
+
+.pushseg "fe", "ff"
+.reloc
+PrepareScreenMapRead:
+    ;; First swap in the correct page into the $8000 bank.
+    ;; Ultimately we want A = %00pp_paaa where ppp is $62ff (the low
+    ;; 3 bits) and aaa is the upper 3 bits of the input ($11 for temp).
+    pha
+     sta $11
+     lda $62ff
+     asl $11
+     rol
+     asl $11
+     rol
+     asl $11
+     rol
+     jsr BankSwitch8k_8000
+    pla
+    and #$1f
+    ora #$80
+    sta $11
+    jmp $ef46  ; Pick up where we left off in the original code
+.popseg
+  
+
+;;; TODO - PrepareMapScreenRead (ff:ef36) hardcodes assumptions about the
+;;; segments - we probably need to patch into it to do something else.
+;;; There's 4 calls to this.  Consider always loading out of the 8000
+;;; bank rather than using both?  Will need to follow up on all 4 calls to
+;;; see about swapping in the correct bank always?
+
+
+
+
+
+
 .endif ; _EXTRA_EXTENDED_SCREENS
 
 

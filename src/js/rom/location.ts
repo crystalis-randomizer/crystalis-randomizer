@@ -697,7 +697,7 @@ export class Location extends Entity {
     a.reloc(`NpcData_${id}`);
     const $npcData = a.pc();
     a.byte(...npcData);
-    a.org(0x9201 + (this.id << 1), `NpcDataPtr_${id}`);
+    a.org(0x9201 + (this.id << 1), `NpcData_${id}_Ptr`);
     a.word($npcData);
 
     // wite mapdata
@@ -768,7 +768,7 @@ export class Location extends Entity {
     const $mapData = a.pc();
     a.word(...mapData);
 
-    a.org(0x8300 + (this.id << 1), `MapDataPtr_${id}`);
+    a.org(0x8300 + (this.id << 1), `MapData_${id}_Ptr`);
     a.word($mapData);
 
     // If this is a boss room, write the restoration.

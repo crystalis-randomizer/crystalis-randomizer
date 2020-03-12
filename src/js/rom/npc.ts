@@ -349,7 +349,7 @@ export class Npc extends Entity {
     const id = hex(this.id);
     const a = this.rom.assembler();
 
-    this.dataBase.loc(a);
+    this.dataBase.loc(a, 'PersonData_${id}');
     a.byte(...this.data);
 
     a.segment('0e', 'fe', 'ff');

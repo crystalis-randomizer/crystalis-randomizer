@@ -1,0 +1,20 @@
+See also "compression".
+
+Basic idea is to overload the "ext" bit/byte (in vanilla it's a full byte
+but only stores 1 bit of real information) to specify the "plane" for the
+maps.  Plane 0 is 0000..ffff, Plane 1 is 10000..1ffff, and so on.  Thus
+there are possibly as many as 7 separate planes for maps.
+
+We change the Location#screens array to store screen indices from 000..7ff
+where the upper 3 bits stores the plane.  All screens in a single location
+must share a single plane.
+
+Various map read routines need to be updated to account for this.  $62ff
+will store the current map's plane in RAM.
+
+
+
+
+TODO - update rom methods for new (denser) plane scheme, particularly write
+TODO - merge conflicting .st changes (where did the hooks go?)
+

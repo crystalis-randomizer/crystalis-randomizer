@@ -176,9 +176,10 @@ export class Item extends Entity {
   // }
 
   assemble(a: Assembler) {
-    this.itemDataPointer.loc(a);
+    const id = hex(this.id);
+    this.itemDataPointer.loc(a, `ItemData_${id}`);
     a.byte(this.itemDataValue);
-    this.selectedItemPointer.loc(a);
+    this.selectedItemPointer.loc(a, `ItemSelectedValue_${id}`);
     a.byte(this.selectedItemValue);
 
     const menuNameEncoded =
@@ -188,11 +189,11 @@ export class Item extends Entity {
     const menuNameAddr = a.pc();
     a.byte(menuNameEncoded, 0xff);
 
-    this.menuNamePointer.loc(a);
+    this.menuNamePointer.loc(a, `ItemMenuName_${id}`);
     a.word(menuNameAddr);
 
     if (this.itemUseJump) {
-      this.itemUseJumpPointer.loc(a);
+      this.itemUseJumpPointer.loc(a, `ItemUseJump_${id}_Ptr`);
       a.word(this.itemUseJump.org);
 
       const itemUseData: number[] = [];
@@ -201,15 +202,15 @@ export class Item extends Entity {
       }
 
       a.segment($0e.name, $0f.name);
-      a.reloc(`ItemUseData_${hex(this.id)}`);
+      a.reloc(`ItemUseData_${id}`);
       const usePtr = a.pc();
       a.byte(...itemUseData);
-      this.itemUseDataPointer.loc(a)
+      this.itemUseDataPointer.loc(a, `ItemUseData_${id}_Ptr`)
       a.word(usePtr);
     }
 
     if (this.valueAddr) {
-      this.valueAddr.loc(a);
+      this.valueAddr.loc(a, `ItemValue_${id}`);
       a.byte(this.value!);
     }
 

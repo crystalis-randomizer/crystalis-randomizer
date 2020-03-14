@@ -10,6 +10,7 @@ import {FetchReader} from './fetchreader.js';
 import {FlagSet} from './flagset.js';
 import {Graph} from './logic/graph.js';
 import {World} from './logic/world.js';
+import {compressMapData} from './pass/compressmapdata.js';
 import {crumblingPlatforms} from './pass/crumblingplatforms.js';
 import {deterministic, deterministicPreParse} from './pass/deterministic.js';
 import {fixDialog} from './pass/fixdialog.js';
@@ -228,10 +229,10 @@ export async function shuffle(rom: Uint8Array,
   if (flags.shuffleMimics()) shuffleMimics(parsed, flags, random);
   if (flags.shuffleMonsters()) shuffleMonsters(parsed, flags, random);
 
-  parsed.compressMapData();
+  compressMapData(parsed);
              // TODO - the screens aren't moving?!?
-  parsed.moveScreens(parsed.metatilesets.swamp, 0x20);
-  parsed.moveScreens(parsed.metatilesets.house, 0x21);
+  parsed.moveScreens(parsed.metatilesets.swamp, 4); // move to new plane
+  parsed.moveScreens(parsed.metatilesets.house, 4); // move to new plane
 
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.

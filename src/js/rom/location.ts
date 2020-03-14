@@ -577,7 +577,7 @@ export class Location extends Entity {
     this.layoutHeight = rom.prg[layoutBase + 2];
     this.animation = rom.prg[layoutBase + 3];
     // this.extended = rom.prg[layoutBase + 4];
-    const extended = rom.prg[layoutBase + 4];
+    const extended = rom.prg[layoutBase + 4] ? 0x100 : 0;
     this.screens = seq(
         this.height,
         y => tuple(rom.prg, layoutBase + 5 + y * this.width, this.width)
@@ -631,7 +631,7 @@ export class Location extends Entity {
   //   return this.extended << 8;
   // }
 
-  ext(): number {
+  mapPlane(): number {
     const set = new Set<number>();
     for (const row of this.screens) {
       for (const s of row) {
@@ -711,10 +711,10 @@ export class Location extends Entity {
       this.bgm,
       // Compressed version: yx in one byte, ext+anim in one byte
       this.layoutHeight << 4 | this.layoutWidth,
-      this.ext() << 2 | this.animation, ...screens,
+      this.mapPlane() << 2 | this.animation, ...screens,
     ] : [
       this.bgm, this.layoutWidth, this.layoutHeight,
-      this.animation, this.ext(), ...screens,
+      this.animation, this.mapPlane() ? 0x80 : 0, ...screens,
     ];
     a.reloc(`MapData_${id}_Layout`);
     const $layout = a.pc();

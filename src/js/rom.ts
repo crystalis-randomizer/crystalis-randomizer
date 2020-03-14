@@ -395,6 +395,9 @@ export class Rom {
     modules.push(...this.messages.write());
     modules.push(...this.screens.write());
 
+    // Reserve the global space 142c0...142f0 ???
+    // const this.assembler().
+
     const linker = new Linker();
     linker.base(this.prg, 0);
     for (const m of modules) {
@@ -640,30 +643,33 @@ export class Rom {
     throw new Error('Could not find an unused trigger.');
   }
 
-  compressMapData(): void {
-    if (this.compressedMapData) return;
-    this.compressedMapData = true;
-    // for (const location of this.locations) {
-    //   if (location.extended) location.extended = 0xa;
-    // }
-    for (let i = 0; i < 3; i++) {
-      //this.screens[0xa00 | i] = this.screens[0x100 | i];
-      this.metascreens.renumber(0x100 | i, 0xa00 | i);
-      delete this.screens[0x100 | i];
-    }
-  }
+  // compressMapData(): void {
+  //   if (this.compressedMapData) return;
+  //   this.compressedMapData = true;
+  //   // for (const location of this.locations) {
+  //   //   if (location.extended) location.extended = 0xa;
+  //   // }
+  //   for (let i = 0; i < 3; i++) {
+  //     //this.screens[0xa00 | i] = this.screens[0x100 | i];
+  //     this.metascreens.renumber(0x100 | i, 0xa00 | i);
+  //     delete this.screens[0x100 | i];
+  //   }
+  // }
 
   // TODO - does not work...
+  // TODO - clean this up somehow... would be nice to use the assembler/linker
+  //        w/ an .align option for this, but then we have to hold onto weird
+  //        data in many places, which isn't great.
   moveScreens(tileset: Metatileset, page: number): void {
     if (!this.compressedMapData) throw new Error(`Must compress maps first.`);
     const map = new Map<number, number>();
     let i = page << 8;
-    while ((i & 0xff) < 0x20 && this.screens[i]) {
+    while (this.screens[i]) {
       i++;
     }
     for (const screen of tileset) {
       if (screen.id >= 0x100) continue;
-      if ((i & 0xff) === 0x20) throw new Error(`No room left on page.`);
+      //if ((i & 0xff) === 0x20) throw new Error(`No room left on page.`);
       const prev = screen.id;
       if (map.has(prev)) continue;
       const next = screen.id = i++;
@@ -676,10 +682,10 @@ export class Rom {
       let anyMoved = false;
       let allMoved = true;
       for (const row of loc.screens) {
-        for (let i = 0; i < row.length; i++) {
-          const mapped = map.get(row[i]);
+        for (let j = 0; j < row.length; j++) {
+          const mapped = map.get(row[j]);
           if (mapped != null) {
-            row[i] = mapped;
+            row[j] = mapped;
             anyMoved = true;
           } else {
             allMoved = false;

@@ -1,15 +1,3 @@
-
-
-
-
-
-;;; TODO - need to update the rom methods to write the correct plane data!!!!
-;;; TODO - need to reconcile the .st changes - will be a pain to resolve!
-
-
-
-
-
 ;;; Various flag-based defines will be prepended to this file, indicated
 ;;; by a `_` prefix.
 
@@ -878,18 +866,40 @@ CheckSacredShieldForCurse:
 ;;; extended locations, this won't work.  We need to patch
 ;;; the tile effects reader to read from extended pages
 ;;; when the extended flag is set ($62ff)
-.org $9a5e
-  lda $62ff
-  bne +
-   lda $6300,y
-   rol
-   rol
-   rol
-   rol
-   and #$07
-+ jsr QuickSwapPageA
+
+;;; NOTE: We could save some space by just calling directly
+;;; into PatchPrepareScreenMapRead, but possibly the original
+;;; code used the quick version for a reason?  It looks like
+;;; it's not generally called more than a handful of times
+;;; per frame (12-14, maybe a few more with a lot of objects)
+;;; and it only saves 3 cycles each (the jsr and rts also
+;;; o few instructions).
+.if 1
+
+.org $9a58
+  jsr PatchPrepareScreenMapRead
   bne $9a73
 FREE_UNTIL $9a73
+
+.else ; false
+
+.org $9a58
+  pha
+   sta $11
+   lda $62ff
+   asl $11
+   rol
+   asl $11
+   rol
+   asl $11
+   rol
+   sta $6f
+   jsr QuickSwapPageA
+  pla
+  and #$1f
+  ora #$a0
+  sta $11
+.assert * = $9a73
 
 ;;; This is a faster version of page swap ($a000) that destroys Y
 ;;; (Remove "1b" because it would change the page out from under itself).
@@ -904,7 +914,9 @@ QuickSwapPageA:
   rts
 .popseg
 
-.endif
+.endif ; 1
+
+.endif ; _EXTRA_EXTENDED_SCREENS
 
 
 ;; Adjusted stab damage for populating sword object ($02)
@@ -1525,8 +1537,12 @@ ReloadLocationGraphicsAfterChest:
 .assert * = $eb44
 
 
+;;; These are available because the "0a" screens are all for single-screen maps.
+;;; We do use the 48 bytes at the end of the 142 screen for extra global data.
+FREE "0a" [$80c0, $8100)
+FREE "0a" [$81c0, $8200)
+
 .ifdef _EXTRA_EXTENDED_SCREENS
-FREE "0a" [$80f0, $8100)
 .pushseg "0a", "fe", "ff"
 ;;; In this setup, we compress the map data by two bytes:
 ;;;  - The layout table (0) is now [music], [yx], [ext+anim],
@@ -1576,11 +1592,13 @@ FREE_UNTIL $e652
 .assert * = $ebef
 
 .org $ef36
+  jsr PatchPrepareScreenMapRead
+  bne $ef46  ; uncond
 FREE_UNTIL $ef46
 
 .pushseg "fe", "ff"
 .reloc
-PrepareScreenMapRead:
+PatchPrepareScreenMapRead:
     ;; First swap in the correct page into the $8000 bank.
     ;; Ultimately we want A = %00pp_paaa where ppp is $62ff (the low
     ;; 3 bits) and aaa is the upper 3 bits of the input ($11 for temp).
@@ -1593,12 +1611,13 @@ PrepareScreenMapRead:
      rol
      asl $11
      rol
-     jsr BankSwitch8k_8000
+     jsr BankSwitch8k_a000
     pla
     and #$1f
-    ora #$80
+    ora #$a0
     sta $11
-    jmp $ef46  ; Pick up where we left off in the original code
+    rts
+    ; jmp $ef46  ; Pick up where we left off in the original code
 .popseg
   
 

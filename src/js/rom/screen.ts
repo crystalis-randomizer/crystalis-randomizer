@@ -1,8 +1,8 @@
+import {Assembler} from '../asm/assembler.js';
 import {Module} from '../asm/module.js';
 import {Rom} from '../rom.js';
 import {Entity} from './entity.js';
-import { tuple, hex} from './util.js';
-import { Assembler } from '../asm/assembler.js';
+import {tuple} from './util.js';
 
 export class Screen extends Entity {
 
@@ -64,21 +64,17 @@ export class Screen extends Entity {
 
   assemble(a: Assembler) {
     const id = this.id.toString(16).padStart(2, '0');
-    if (this.id < 0x100) {
-      a.segment((this.id >> 5).toString(16).padStart(2, '0'));
-      a.org(0x8000 | (this.id & 0x3f) << 8, `Screen_${id}`);
-      a.byte(...this.tiles);
-      return;
+    let tiles = this.tiles;
+    if (this.rom.compressedMapData || this.id < 0x100) {
+      const seg = (this.id >> 5).toString(16).padStart(2, '0');
+      a.segment(seg);
+      if (seg === '0a') tiles = tiles.slice(0xc0);
+    } else {
+      a.segment('0a');
+      tiles = tiles.slice(0, 0xc0);
     }
-    // Extended screens - figure out which variant we're on
-    // 0a => 14000
-    const segment = !this.rom.compressedMapData ? '0a' : hex(this.id >> 8);
-    a.segment(segment);
-    let org = (this.id & 0xff) << 8 | 0x8000;
-    if (this.rom.compressedMapData && (this.id & 0x100)) org |= 0x2000;
-    a.org(org, `Screen_${id}`);
-    // NOTE: reuse last 2 rows of '0a' screens for global metadata.
-    a.byte(...(segment === '0a' ? this.tiles.slice(0, 0xc0) : this.tiles));
+    a.org(0x8000 | (this.id & 0x3f) << 8, `Screen_${id}`);
+    a.byte(...tiles);
   }
 
 //   write(writer: Writer): void {
@@ -171,21 +167,8 @@ export class Screens extends Array<Screen> {
 
   write(): Module[] {
     const a = this.rom.assembler();
-    if (this.rom.compressedMapData) {
-      for (let s = 0; s < 0x100; s++) {
-        const scr = this[s];
-        if (scr.used) scr.assemble(a);
-      }
-      for (let p = 1; p < 0x40; p++) {
-        for (let s = 0; s < 0x20; s++) {
-          const scr = this[p << 8 | s];
-          if (scr && scr.used) scr.assemble(a);
-        }
-      }
-    } else {
-      for (const screen of this) {
-        screen.assemble(a);
-      }
+    for (const screen of this) {
+      if (screen?.used) screen.assemble(a);
     }
     return [a.module()];
   }

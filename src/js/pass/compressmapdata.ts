@@ -17,7 +17,7 @@ export function compressMapData(rom: Rom) {
 
   for (let i = 0; i < 3; i++) {
     //this.screens[0xa00 | i] = this.screens[0x100 | i];
-    rom.metascreens.renumber(0x100 | i, 0xa00 | i);
+    rom.metascreens.renumber(0x100 | i, 0x140 | i);
     delete rom.screens[0x100 | i];
   }
 

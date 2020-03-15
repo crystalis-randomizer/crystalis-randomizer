@@ -3,20 +3,17 @@ import {Metatileset, Metatilesets} from './metatileset.js';
 import {Screen} from './screen.js';
 import {Rom} from '../rom.js';
 
-let uidCounter = 0;
-
 export class Metascreen {
-  readonly uid = ++uidCounter;
-
   private readonly _features = new Set<Feature>();
   private readonly _tilesets = new Set<Metatileset>();
 
   used = false;
 
-  flag?: 'always' | 'calm';
+  flag?: 'always' | 'calm' | 'cave';
 
   // TODO - make data private?
-  constructor(readonly rom: Rom, readonly data: MetascreenData) {
+  constructor(readonly rom: Rom, readonly uid: number,
+              readonly data: MetascreenData) {
     for (const tileset of Object.values(data.tilesets)) {
       if (!tileset!.requires) this.used = true;
     }
@@ -73,7 +70,7 @@ export class Metascreen {
   unsafeSetId(id: number) {
     (this.data as {id: number}).id = id;
     for (const tileset of this._tilesets) {
-      tileset.invalidateScreenMultimap();
+      tileset.invalidate();
     }
   }
   // Only Metatileset.addScreen should call this.

@@ -72,8 +72,16 @@ export interface MetascreenData {
   /** Whether a special flag is needed for this screen. */
   flag?: 'always' | 'calm' | 'cave' | 'boss';
 
-  /** List of directions the other screen may be in relation to this. */
+  /**
+   * List of directions the other screen may be in relation to this.
+   * This is on top of anything that matches on edge types, and is
+   * particularly useful for matching '*' edge types.
+   */
   allowed?: (s: Metascreen) => Array<0|1|2|3>;
+
+  /** Conditions for matching this tile. */
+  match?: (reachable: (dy: number, dx: number) => boolean,
+           flag: boolean) => boolean;
 }
 
 export type ScreenUpdate = (s: Metascreen, seed: number, rom: Rom) => boolean;
@@ -83,7 +91,8 @@ export type Feature =
   'pit' | 'arena' | 'spikes' | 'bridge' | 'wall' | 'stairs' | 'empty' |
   'portoa1' | 'portoa2' | 'portoa3' | // path from sabre to portoa
   'lake' | 'overBridge' | 'underBridge' | 'whirlpool' |
-  'lighthouse' | 'cabin' | 'windmill' | 'altar' | 'pyramid' | 'crypt';
+  'lighthouse' | 'cabin' | 'windmill' | 'altar' | 'pyramid' | 'crypt' |
+  'consolidate'; // indicates we can consolidate this screen.
 
 export interface Icon {
   short: string; // single character
@@ -116,7 +125,7 @@ export interface Connection {
   readonly entrance: number;         // pos YyXx
   readonly exits: readonly number[]; // tile YX
   // TODO - singleHeightEntrance - for dir=2 just subtract 0x20 ??
-  // TODO - opposite direction? waterfall cave is a right/down matchup...
+  // TODO - opposite direction? watererfall cave is a right/down matchup...
 }
 
 /** @param tile position of lower-left metatile (e.g. 0x42 for 40_30). */

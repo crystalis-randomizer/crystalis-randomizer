@@ -1,9 +1,9 @@
 import {Rom} from '../rom.js';
 //import {Screen} from './screen.js';
-import {initializer} from './util.js';
+import {Mutable} from './util.js';
 import {DefaultMap} from '../util.js';
 import {Metascreen} from './metascreen.js';
-import {MetascreenData,
+import {MetascreenData, ConnectionType,
         bottomEdge, bottomEdgeHouse, cave, door, downStair, icon, leftEdge,
         rightEdge, seamlessVertical, topEdge, upStair, waterfallCave,
        } from './metascreendata.js';
@@ -12,8 +12,6 @@ import {ScreenFix, withRequire} from './screenfix.js';
 
 // BASIC PLAN: Screen is the physical array, Metascreen has the extra info.
 //             Only Metascreen is tied to specific (Meta)tilesets.
-
-const $ = initializer<[MetascreenData], Metascreen>();
 
 /**
  * Adds a flag-togglable wall into a labyrinth screen.
@@ -51,32 +49,30 @@ function labyrinthVariant(parentFn: (s: Metascreens) => Metascreen,
 export class Metascreens {
 
   readonly [index: number]: Metascreen;
+  readonly length = 0;
 
-  private readonly screens = new Set<Metascreen>();
   private readonly screensByFix = new DefaultMap<ScreenFix, Metascreen[]>(() => []);
   private readonly screensById = new DefaultMap<number, Metascreen[]>(() => []);
 
-  constructor(readonly rom: Rom) {
-    //super();
-    $.commit(this, (key: string, data: MetascreenData) => {
-      const screen = new Metascreen(rom, data);
-      this.screens.add(screen);
-      this.screensById.get(screen.id)
-      for (const tilesetName in data.tilesets) {
-        const key = tilesetName as keyof Metatilesets;
-        const tilesetData = data.tilesets[key]!;
-        if (tilesetData.requires) {
-          for (const fix of tilesetData.requires) {
-            this.screensByFix.get(fix).push(screen);
-          }
-        } else {
-          (rom.metatilesets[key] as Metatileset).addScreen(screen)
+  constructor(readonly rom: Rom) {}
+
+  private metascreen(data: MetascreenData): Metascreen {
+    const mut = this as Mutable<this>;
+    const screen = new Metascreen(this.rom, mut.length, data);
+    mut[mut.length++] = screen;
+    this.screensById.get(screen.id).push(screen);
+    for (const tilesetName in data.tilesets) {
+      const key = tilesetName as keyof Metatilesets;
+      const tilesetData = data.tilesets[key]!;
+      if (tilesetData.requires) {
+        for (const fix of tilesetData.requires) {
+          this.screensByFix.get(fix).push(screen);
         }
+      } else {
+        (this.rom.metatilesets[key] as Metatileset).addScreen(screen)
       }
-      //this.add(screen);
-      (this as any)[screen.uid] = screen;
-      return screen;
-    });
+    }
+    return screen;
   }
 
   getById(id: number): Metascreen[] {
@@ -130,7 +126,7 @@ export class Metascreens {
     this.rom.locations.renumberScreen(oldId, newId);
   }
 
-  readonly overworldEmpty = $({
+  readonly overworldEmpty = this.metascreen({
     id: 0x00,
     icon: icon`
       |███|
@@ -141,7 +137,7 @@ export class Metascreens {
     edges: '    ',
   });
   // boundaryW_trees: ???
-  readonly boundaryW_trees = $({
+  readonly boundaryW_trees = this.metascreen({
     id: 0x01,
     icon: icon`
       |█▌ |
@@ -152,7 +148,7 @@ export class Metascreens {
                sea: {requires: [ScreenFix.SeaTrees]}},
     edges: '> >o', // o = open
   });
-  readonly boundaryW = $({
+  readonly boundaryW = this.metascreen({
     id: 0x02,
     icon: icon`
       |█▌ |
@@ -161,7 +157,7 @@ export class Metascreens {
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
     edges: '> >o',
   });
-  readonly boundaryE_rocks = $({
+  readonly boundaryE_rocks = this.metascreen({
     id: 0x03,
     icon: icon`
       |.▐█|
@@ -172,7 +168,7 @@ export class Metascreens {
                sea: {requires: [ScreenFix.SeaRocks]}},
     edges: '<o< ',
   });
-  readonly boundaryE = $({
+  readonly boundaryE = this.metascreen({
     id: 0x04,
     icon: icon`
       | ▐█|
@@ -181,7 +177,7 @@ export class Metascreens {
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
     edges: '<o< ',
   });
-  readonly longGrassS = $({
+  readonly longGrassS = this.metascreen({
     id: 0x05,
     icon: icon`
       |vv |
@@ -191,7 +187,7 @@ export class Metascreens {
                grass: {requires: [ScreenFix.GrassLongGrass]}},
     edges: 'looo', // l = long grass
   });
-  readonly longGrassN = $({
+  readonly longGrassN = this.metascreen({
     id: 0x06,
     icon: icon`
       |   |
@@ -201,7 +197,7 @@ export class Metascreens {
                grass: {requires: [ScreenFix.GrassLongGrass]}},
     edges: 'oolo',
   });
-  readonly boundaryS_rocks = $({
+  readonly boundaryS_rocks = this.metascreen({
     id: 0x07,
     icon: icon`
       | . |
@@ -212,7 +208,7 @@ export class Metascreens {
                sea: {requires: [ScreenFix.SeaRocks]}},
     edges: 'o^ ^',
   });
-  readonly fortressTownEntrance = $({ // goa
+  readonly fortressTownEntrance = this.metascreen({ // goa
     id: 0x08,
     icon: icon`
       |███|
@@ -226,7 +222,7 @@ export class Metascreens {
     edges: ' vov',
     exits: [cave(0xa7, 'fortress')],
   });
-  readonly bendSE_longGrass = $({
+  readonly bendSE_longGrass = this.metascreen({
     id: 0x09,
     icon: icon`▗
       | v |
@@ -235,7 +231,7 @@ export class Metascreens {
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
     edges: 'oo<^',
   });
-  readonly exitW_cave = $({ // near sahara, fog lamp
+  readonly exitW_cave = this.metascreen({ // near sahara, fog lamp
     id: 0x0a,
     icon: icon`∩
       |█∩█|
@@ -246,7 +242,7 @@ export class Metascreens {
     edges: ' n  ', // n = narrow
     exits: [cave(0x48), leftEdge(6)],
   });
-  readonly bendNE_grassRocks = $({
+  readonly bendNE_grassRocks = this.metascreen({
     id: 0x0b,
     icon: icon`▝
       |.▐█|
@@ -258,7 +254,7 @@ export class Metascreens {
                                    ScreenFix.DesertRocks]}},
     edges: '<osv', // s = short grass
   });
-  readonly cornerNW = $({
+  readonly cornerNW = this.metascreen({
     id: 0x0c,
     icon: icon`▛
       |███|
@@ -267,7 +263,7 @@ export class Metascreens {
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
     edges: '  >v',
   });
-  readonly cornerNE = $({
+  readonly cornerNE = this.metascreen({
     id: 0x0d,
     icon: icon`▜
       |███|
@@ -276,7 +272,7 @@ export class Metascreens {
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
     edges: ' v< ',
   });
-  readonly cornerSW = $({
+  readonly cornerSW = this.metascreen({
     id: 0x0e,
     icon: icon`▙
       |█▌ |
@@ -285,7 +281,7 @@ export class Metascreens {
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
     edges: '>  ^',
   });
-  readonly cornerSE = $({
+  readonly cornerSE = this.metascreen({
     id: 0x0f,
     icon: icon`▟
       | ▐█|
@@ -294,7 +290,7 @@ export class Metascreens {
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
     edges: '<^  ',
   });
-  readonly exitE = $({
+  readonly exitE = this.metascreen({
     id: 0x10,
     icon: icon`╶
       | ▐█|
@@ -306,7 +302,7 @@ export class Metascreens {
     exits: [rightEdge(6)],
     // TODO - edge
   });
-  readonly boundaryN_trees = $({
+  readonly boundaryN_trees = this.metascreen({
     id: 0x11,
     icon: icon`
       |███|
@@ -316,7 +312,7 @@ export class Metascreens {
                sea: {requires: [ScreenFix.SeaTrees]}},
     edges: ' vov',
   });
-  readonly bridgeToPortoa = $({
+  readonly bridgeToPortoa = this.metascreen({
     id: 0x12,
     icon: icon`╴
       |═  |
@@ -329,7 +325,7 @@ export class Metascreens {
     edges: '2*>r',
     exits: [leftEdge(1)],
   });
-  readonly slopeAbovePortoa = $({
+  readonly slopeAbovePortoa = this.metascreen({
     id: 0x13,
     icon: icon`
       |█↓█|
@@ -339,7 +335,7 @@ export class Metascreens {
     feature: ['portoa2'],
     edges: '1*2v',
   });
-  readonly riverBendSE = $({
+  readonly riverBendSE = this.metascreen({
     id: 0x14,
     icon: icon`
       |w  |
@@ -348,7 +344,7 @@ export class Metascreens {
     tilesets: {river: {}},
     edges: 'oorr',
   });
-  readonly boundaryW_cave = $({
+  readonly boundaryW_cave = this.metascreen({
     id: 0x15,
     icon: icon`
       |█▌ |
@@ -360,7 +356,7 @@ export class Metascreens {
     exits: [cave(0x89)],
     // TODO - flaggable?
   });
-  readonly exitN = $({
+  readonly exitN = this.metascreen({
     id: 0x16,
     icon: icon`╵
       |█ █|
@@ -371,7 +367,7 @@ export class Metascreens {
     exits: [topEdge()],
     // TODO - edge
   });
-  readonly riverWE_woodenBridge = $({
+  readonly riverWE_woodenBridge = this.metascreen({
     id: 0x17,
     icon: icon`═
       |   |
@@ -381,7 +377,7 @@ export class Metascreens {
     edges: 'oror',
     exits: [seamlessVertical(0x77)],
   });
-  readonly riverBoundaryE_waterfall = $({
+  readonly riverBoundaryE_waterfall = this.metascreen({
     id: 0x18,
     icon: icon`╡
       | ▐█|
@@ -390,7 +386,7 @@ export class Metascreens {
     tilesets: {river: {}},
     edges: '<r< ',
   });
-  readonly boundaryE_cave = $({
+  readonly boundaryE_cave = this.metascreen({
     id: 0x19,
     icon: icon`
       | ▐█|
@@ -402,7 +398,7 @@ export class Metascreens {
     edges: '<o< ',
     exits: [cave(0x58)],
   });
-  readonly exitW_southwest = $({
+  readonly exitW_southwest = this.metascreen({
     id: 0x1a,
     icon: icon`╴
       |█▌ |
@@ -416,14 +412,14 @@ export class Metascreens {
     edges: '>* ^',
     exits: [leftEdge(0xb)],
   });
-  readonly nadare = $({
+  readonly nadare = this.metascreen({
     id: 0x1b,
     //icon: '?',
     //migrated: 0x2000,
     tilesets: {house: {}},
     exits: [bottomEdgeHouse(), door(0x23), door(0x25), door(0x2a)],
   });
-  readonly townExitW = $({
+  readonly townExitW = this.metascreen({
     id: 0x1c,
     icon: icon`╴
       |█▌ |
@@ -433,7 +429,7 @@ export class Metascreens {
     edges: '>n>o',
     exits: [leftEdge(8)],
   });
-  readonly shortGrassS = $({
+  readonly shortGrassS = this.metascreen({
     id: 0x1d,
     icon: icon` |
       |;;;|
@@ -444,7 +440,7 @@ export class Metascreens {
                                   ScreenFix.GrassLongGrassRemapping]}},
     edges: 'sooo',
   });
-  readonly townExitS = $({
+  readonly townExitS = this.metascreen({
     id: 0x1e,
     icon: icon`╷
       | ^ |
@@ -456,14 +452,14 @@ export class Metascreens {
     edges: 'o^n^',
     exits: [bottomEdge()],
   });
-  readonly swanGate = $({
+  readonly swanGate = this.metascreen({
     id: 0x1f,
     //icon: '?',
     tilesets: {town: {}},
     exits: [leftEdge(3), rightEdge(9)],
   }); 
 
-  readonly riverBranchNSE = $({
+  readonly riverBranchNSE = this.metascreen({
     id: 0x20,
     icon: icon`
       | ║ |
@@ -472,7 +468,7 @@ export class Metascreens {
     tilesets: {river: {}},
     edges: 'rorr',
   });
-  readonly riverWE = $({
+  readonly riverWE = this.metascreen({
     id: 0x21,
     icon: icon`
       |   |
@@ -481,7 +477,7 @@ export class Metascreens {
     tilesets: {river: {}},
     edges: 'oror',
   });
-  readonly riverBoundaryS_waterfall = $({
+  readonly riverBoundaryS_waterfall = this.metascreen({
     id: 0x22,
     icon: icon`╨
       | ║ |
@@ -490,7 +486,7 @@ export class Metascreens {
     tilesets: {river: {}},
     edges: 'r^ ^',
   });
-  readonly shortGrassSE = $({
+  readonly shortGrassSE = this.metascreen({
     id: 0x23,
     icon: icon`
       |;;;|
@@ -499,7 +495,7 @@ export class Metascreens {
     tilesets: {grass: {}},
     edges: 'ssoo',
   });
-  readonly shortGrassNE = $({
+  readonly shortGrassNE = this.metascreen({
     id: 0x24,
     icon: icon` |
       |;  |
@@ -508,7 +504,7 @@ export class Metascreens {
     tilesets: {grass: {}},
     edges: 'osso',
   });
-  readonly stomHouseOutside = $({
+  readonly stomHouseOutside = this.metascreen({
     id: 0x25,
     icon: icon`∩
       |███|
@@ -518,7 +514,7 @@ export class Metascreens {
     // NOTE: bottom edge entrance is cleverly shifted to align with the door.
     exits: [door(0x68), bottomEdge({shift: 0.5})],
   });
-  readonly bendNW_trees = $({
+  readonly bendNW_trees = this.metascreen({
     id: 0x26,
     icon: icon`▘
       |█▌ |
@@ -531,7 +527,7 @@ export class Metascreens {
                                 ScreenFix.SeaTrees]}},
     edges: '>voo',
   });
-  readonly shortGrassSW = $({
+  readonly shortGrassSW = this.metascreen({
     id: 0x27,
     icon: icon`
       |;;;|
@@ -541,7 +537,7 @@ export class Metascreens {
                river: {requires: [ScreenFix.RiverShortGrass]}},
     edges: 'soos',
   });
-  readonly riverBranchNWS = $({
+  readonly riverBranchNWS = this.metascreen({
     id: 0x28,
     icon: icon`
       | ║ |
@@ -550,7 +546,7 @@ export class Metascreens {
     tilesets: {river: {}},
     edges: 'rrro',
   });
-  readonly shortGrassNW = $({
+  readonly shortGrassNW = this.metascreen({
     id: 0x29,
     icon: icon`
       |  ;|
@@ -561,7 +557,7 @@ export class Metascreens {
                                   ScreenFix.GrassLongGrassRemapping]}},
     edges: 'ooss',
   });
-  readonly valleyBridge = $({
+  readonly valleyBridge = this.metascreen({
     id: 0x2a,
     icon: icon` |
       |▛║▜|
@@ -571,7 +567,7 @@ export class Metascreens {
     edges: 'n n ',
     exits: [seamlessVertical(0x77)],
   });
-  readonly exitS_cave = $({
+  readonly exitS_cave = this.metascreen({
     id: 0x2b,
     icon: icon`∩
       |█∩█|
@@ -583,7 +579,7 @@ export class Metascreens {
     edges: '  n ',
     exits: [cave(0x67), bottomEdge()]
   });
-  readonly outsideWindmill = $({
+  readonly outsideWindmill = this.metascreen({
     id: 0x2c,
     icon: icon`╳
       |██╳|
@@ -595,7 +591,7 @@ export class Metascreens {
     edges: '  n ',
     exits: [cave(0x63), bottomEdge(), door(0x89), door(0x8c)],
   });
-  readonly townExitW_cave = $({ // outside leaf (TODO - consider just deleting?)
+  readonly townExitW_cave = this.metascreen({ // outside leaf (TODO - consider just deleting?)
     id: 0x2d,
     icon: icon`∩
       |█∩█|
@@ -605,7 +601,7 @@ export class Metascreens {
     edges: ' n  ',
     exits: [cave(0x4a), leftEdge(5)],
   });
-  readonly riverNS = $({
+  readonly riverNS = this.metascreen({
     id: 0x2e,
     icon: icon`
       | ║ |
@@ -614,7 +610,7 @@ export class Metascreens {
     tilesets: {river: {}},
     edges: 'roro',
   });
-  readonly riverNS_bridge = $({
+  readonly riverNS_bridge = this.metascreen({
     id: 0x2f,
     icon: icon`
       | ║ |
@@ -625,7 +621,7 @@ export class Metascreens {
     edges: 'roro',
     wall: 0x77,
   });
-  readonly riverBendWS = $({
+  readonly riverBendWS = this.metascreen({
     id: 0x30,
     icon: icon`
       | w▜|
@@ -634,7 +630,7 @@ export class Metascreens {
     tilesets: {river: {}},
     edges: '<rrv',
   });
-  readonly boundaryN_waterfallCave = $({
+  readonly boundaryN_waterfallCave = this.metascreen({
     id: 0x31,
     icon: icon`
       |▛/█|
@@ -646,7 +642,7 @@ export class Metascreens {
     edges: ' vrv',
     exits: [waterfallCave(0x75)],
   });
-  readonly open_trees = $({
+  readonly open_trees = this.metascreen({
     id: 0x32,
     icon: icon`
       | ^ |
@@ -657,7 +653,7 @@ export class Metascreens {
                                    ScreenFix.DesertRocks]}},
     edges: 'oooo',
   });
-  readonly exitS = $({
+  readonly exitS = this.metascreen({
     id: 0x33,
     icon: icon`╷
       | w |
@@ -670,7 +666,7 @@ export class Metascreens {
     edges: 'o^n^',
     exits: [bottomEdge()],
   });
-  readonly bendNW = $({
+  readonly bendNW = this.metascreen({
     id: 0x34,
     icon: icon`▘
       |█▌ |
@@ -679,7 +675,7 @@ export class Metascreens {
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
     edges: '>voo',
   });
-  readonly bendNE = $({
+  readonly bendNE = this.metascreen({
     id: 0x35,
     icon: icon`▝
       | ▐█|
@@ -688,7 +684,7 @@ export class Metascreens {
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
     edges: '<oov',
   });
-  readonly bendSE = $({
+  readonly bendSE = this.metascreen({
     id: 0x36,
     icon: icon`▗
       |   |
@@ -697,7 +693,7 @@ export class Metascreens {
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
     edges: 'oo<^',
   });
-  readonly bendWS = $({
+  readonly bendWS = this.metascreen({
     id: 0x37,
     icon: icon`▖
       |   |
@@ -706,7 +702,7 @@ export class Metascreens {
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
     edges: 'o^>o',
   });
-  readonly towerPlain = $({
+  readonly towerPlain = this.metascreen({
     id: 0x38,
     icon: icon`┴
       | ┊ |
@@ -716,7 +712,7 @@ export class Metascreens {
     edges: 'st t',
     // TODO - annotate possible stairway w/ flag?
   });
-  readonly towerRobotDoor_downStair = $({
+  readonly towerRobotDoor_downStair = this.metascreen({
     id: 0x39,
     icon: icon`┬
       | ∩ |
@@ -726,7 +722,7 @@ export class Metascreens {
     edges: ' tst',
     // TODO - connections
   });
-  readonly towerDynaDoor = $({
+  readonly towerDynaDoor = this.metascreen({
     id: 0x3a,
     icon: icon`∩
       | ∩ |
@@ -736,7 +732,7 @@ export class Metascreens {
     edges: '  s ',
     // TODO - connections
   });
-  readonly towerLongStairs = $({
+  readonly towerLongStairs = this.metascreen({
     id: 0x3b,
     icon: icon`
       | ┊ |
@@ -746,17 +742,17 @@ export class Metascreens {
     edges: 's s ',
     // TODO - connections
   });
-  readonly towerMesiaRoom = $({
+  readonly towerMesiaRoom = this.metascreen({
     id: 0x3c,
     tilesets: {tower: {}},
     // TODO - connections (NOTE: uses bottomEdgeHouse)
   });
-  readonly towerTeleporter = $({
+  readonly towerTeleporter = this.metascreen({
     id: 0x3d,
     tilesets: {tower: {}},
     // TODO - connections (NOTE: uses bottomEdgeHouse)
   });
-  readonly caveAbovePortoa = $({
+  readonly caveAbovePortoa = this.metascreen({
     id: 0x3e,
     icon: icon`
       |███|
@@ -766,7 +762,7 @@ export class Metascreens {
     edges: '  1 ',
     exits: [cave(0x66)],
   });
-  readonly cornerNE_flowers = $({
+  readonly cornerNE_flowers = this.metascreen({
     id: 0x3f,
     icon: icon`▜
       |███|
@@ -778,7 +774,7 @@ export class Metascreens {
     // we still don't have a good sprite to use for it...
     edges: ' v< ',
   });
-  readonly towerEdge = $({
+  readonly towerEdge = this.metascreen({
     id: 0x40,
     icon: icon` |
       |   |
@@ -787,7 +783,7 @@ export class Metascreens {
     tilesets: {tower: {}},
     edges: ' t t',
   });
-  readonly towerEdgeW = $({
+  readonly towerEdgeW = this.metascreen({
     id: 0x40,
     icon: icon` |
       |   |
@@ -796,7 +792,7 @@ export class Metascreens {
     tilesets: {tower: {}},
     edges: ' t  ',
   });
-  readonly towerEdgeE = $({
+  readonly towerEdgeE = this.metascreen({
     id: 0x40,
     icon: icon` |
       |   |
@@ -805,7 +801,7 @@ export class Metascreens {
     tilesets: {tower: {}},
     edges: '   t',
   });
-  readonly towerRobotDoor = $({
+  readonly towerRobotDoor = this.metascreen({
     id: 0x41,
     icon: icon`─
       | O |
@@ -814,7 +810,7 @@ export class Metascreens {
     tilesets: {tower: {}},
     edges: ' t t',
   });
-  readonly towerDoor = $({
+  readonly towerDoor = this.metascreen({
     id: 0x42,
     icon: icon`∩
       | ∩ |
@@ -825,271 +821,271 @@ export class Metascreens {
     exits: [cave(0x68)],
     // TODO - connections
   });
-  readonly house_bedroom = $({
+  readonly house_bedroom = this.metascreen({
     id: 0x43,
     tilesets: {house: {}},
     exits: [bottomEdgeHouse()],
   });
-  readonly shed = $({
+  readonly shed = this.metascreen({
     id: 0x44,
     tilesets: {house: {}},
     exits: [bottomEdgeHouse()],
   });
   // TODO - separate metascreen for shedWithHiddenDoor
-  readonly tavern = $({
+  readonly tavern = this.metascreen({
     id: 0x45,
     tilesets: {house: {}},
     exits: [bottomEdgeHouse()],
   });
-  readonly house_twoBeds = $({
+  readonly house_twoBeds = this.metascreen({
     id: 0x46,
     tilesets: {house: {}},
     exits: [bottomEdgeHouse()],
   });
-  readonly throneRoom_amazones = $({
+  readonly throneRoom_amazones = this.metascreen({
     id: 0x47,
     tilesets: {house: {}},
     // TODO - need to fix the single-width stair!
     exits: [bottomEdgeHouse({width: 3}), downStair(0x4c, 1)],
   });
-  readonly house_ruinedUpstairs = $({
+  readonly house_ruinedUpstairs = this.metascreen({
     id: 0x48,
     tilesets: {house: {}},
     exits: [bottomEdgeHouse(), downStair(0x9c, 1)],
   });
-  readonly house_ruinedDownstairs = $({
+  readonly house_ruinedDownstairs = this.metascreen({
     id: 0x49,
     tilesets: {house: {}},
     exits: [upStair(0x56, 1)],
   });
-  readonly foyer = $({
+  readonly foyer = this.metascreen({
     id: 0x4a,
     tilesets: {house: {}},
     exits: [bottomEdgeHouse(), door(0x28), door(0x53), door(0x5c)],
   });
-  readonly throneRoom_portoa = $({
+  readonly throneRoom_portoa = this.metascreen({
     id: 0x4b,
     tilesets: {house: {}},
     exits: [bottomEdgeHouse(), door(0x2b)],
   });
-  readonly fortuneTeller = $({
+  readonly fortuneTeller = this.metascreen({
     id: 0x4c,
     tilesets: {house: {}},
     exits: [bottomEdgeHouse(), door(0x56), door(0x59)],
   });
-  readonly backRoom = $({
+  readonly backRoom = this.metascreen({
     id: 0x4d,
     tilesets: {house: {}},
     exits: [bottomEdgeHouse()],
   });
-  readonly stomHouseDojo = $({
+  readonly stomHouseDojo = this.metascreen({
     id: 0x4e,
     tilesets: {house: {}},
     // Edge entrance shifted to properly line up at start of fight.
     exits: [bottomEdgeHouse({shift: -0.5})],
   });
-  readonly windmillInside = $({
+  readonly windmillInside = this.metascreen({
     id: 0x4f,
     tilesets: {house: {}},
     exits: [bottomEdgeHouse({left: 9, width: 1})],
   });
-  readonly horizontalTownMiddle = $({
+  readonly horizontalTownMiddle = this.metascreen({
     // brynmaer + swan (TODO - split so we can move exits)
     id: 0x50,
     tilesets: {town: {}},
     exits: [door(0x4c), door(0x55)],
   });
-  readonly brynmaerRight_exitE = $({
+  readonly brynmaerRight_exitE = this.metascreen({
     // brynmaer
     id: 0x51,
     tilesets: {town: {type: 'horizontal'}},
     exits: [rightEdge(8), door(0x41)],
   });
-  readonly brynmaerLeft_deadEnd = $({
+  readonly brynmaerLeft_deadEnd = this.metascreen({
     // brynmaer
     id: 0x52,
     tilesets: {town: {type: 'horizontal'}},
     exits: [door(0x49), door(0x4c)],
   });
-  readonly swanLeft_exitW = $({
+  readonly swanLeft_exitW = this.metascreen({
     // swan
     id: 0x53,
     tilesets: {town: {type: 'horizontal'}},
     exits: [leftEdge(9), door(0x49), door(0x5e)],
   });
-  readonly swanRight_exitS = $({
+  readonly swanRight_exitS = this.metascreen({
     // swan
     id: 0x54,
     tilesets: {town: {type: 'horizontal'}},
     exits: [bottomEdge({left: 3}), door(0x41), door(0x43), door(0x57)],
   });
-  readonly horizontalTownLeft_exitN = $({
+  readonly horizontalTownLeft_exitN = this.metascreen({
     // sahara, amazones (TODO - split so we can move exits)
     id: 0x55,
     tilesets: {town: {type: 'horizontal'}},
     exits: [topEdge(0xd), door(0x46), door(0x4b)],
   });
-  readonly amazonesRight_deadEnd = $({
+  readonly amazonesRight_deadEnd = this.metascreen({
     // amazones
     id: 0x56,
     tilesets: {town: {type: 'horizontal'}},
     exits: [door(0x40), door(0x58)],
   });
-  readonly saharaRight_exitE = $({
+  readonly saharaRight_exitE = this.metascreen({
     // sahara
     id: 0x57,
     tilesets: {town: {type: 'horizontal'}},
     exits: [rightEdge(7), door(0x40), door(0x66)],
   });
-  readonly portoaNW = $({
+  readonly portoaNW = this.metascreen({
     // portoa
     id: 0x58,
     tilesets: {town: {type: 'square'}},
     exits: [cave(0x47, 'fortress'), bottomEdge()], // bottom just in case?
   });
-  readonly portoaNE = $({
+  readonly portoaNE = this.metascreen({
     // portoa
     id: 0x59,
     tilesets: {town: {type: 'square'}},
     exits: [door(0x63), door(0x8a), bottomEdge({left: 3, width: 4})],
   });
-  readonly portoaSW_exitW = $({
+  readonly portoaSW_exitW = this.metascreen({
     // portoa
     id: 0x5a,
     tilesets: {town: {type: 'square'}},
     exits: [leftEdge(9), door(0x86), topEdge()],
   });
-  readonly portoaSE_exitE = $({
+  readonly portoaSE_exitE = this.metascreen({
     // portoa
     id: 0x5b,
     tilesets: {town: {type: 'square'}},
     exits: [rightEdge(9), door(0x7a), door(0x87)],
   });
-  readonly dyna = $({
+  readonly dyna = this.metascreen({
     id: 0x5c,
     tilesets: {tower: {}},
   });
-  readonly portoaFisherman = $({
+  readonly portoaFisherman = this.metascreen({
     // portoa
     id: 0x5d,
     tilesets: {town: {type: 'square'}},
     exits: [rightEdge(6), leftEdge(4, 6), door(0x68)],
   });
-  readonly verticalTownTop_fortress = $({
+  readonly verticalTownTop_fortress = this.metascreen({
     // shyron, zombie town (probably not worth splitting this one)
     id: 0x5e,
     tilesets: {town: {type: 'vertical'}},
     exits: [cave(0x47), bottomEdge()],
   });
-  readonly shyronMiddle = $({
+  readonly shyronMiddle = this.metascreen({
     // shyron
     id: 0x5f,
     tilesets: {town: {type: 'vertical'}},
     exits: [door(0x54), door(0x5b), topEdge()],
   });
-  readonly shyronBottom_exitS = $({
+  readonly shyronBottom_exitS = this.metascreen({
     // shyron
     id: 0x60,
     tilesets: {town: {type: 'vertical'}},
     exits: [bottomEdge({left: 3}), door(0x04), door(0x06), door(0x99)],
   });
-  readonly zombieTownMiddle = $({
+  readonly zombieTownMiddle = this.metascreen({
     // zombie town
     id: 0x61,
     tilesets: {town: {type: 'vertical'}},
     exits: [door(0x99), topEdge()],
   });
-  readonly zombieTownBottom_caveExit = $({
+  readonly zombieTownBottom_caveExit = this.metascreen({
     // zombie town
     id: 0x62,
     tilesets: {town: {type: 'vertical'}},
     exits: [cave(0x92), door(0x23), door(0x4d)],
   });
-  readonly leafNW_houseShed = $({
+  readonly leafNW_houseShed = this.metascreen({
     // leaf
     id: 0x63,
     tilesets: {town: {type: 'square'}},
     exits: [door(0x8c), door(0x95)],
   });
-  readonly squareTownNE_house = $({
+  readonly squareTownNE_house = this.metascreen({
     // leaf, goa (TODO - split)
     id: 0x64,
     tilesets: {town: {type: 'square'}},
     exits: [topEdge(1), door(0xb7)],
   });
-  readonly leafSW_shops = $({
+  readonly leafSW_shops = this.metascreen({
     // leaf
     id: 0x65,
     tilesets: {town: {type: 'square'}},
     exits: [door(0x77), door(0x8a)],
   });
-  readonly leafSE_exitE = $({
+  readonly leafSE_exitE = this.metascreen({
     // leaf
     id: 0x66,
     tilesets: {town: {type: 'square'}},
     exits: [rightEdge(3), door(0x84)],
   });
-  readonly goaNW_tavern = $({
+  readonly goaNW_tavern = this.metascreen({
     // goa
     id: 0x67,
     tilesets: {town: {type: 'square'}},
     exits: [door(0xba)],
   });
-  readonly squareTownSW_exitS = $({
+  readonly squareTownSW_exitS = this.metascreen({
     // goa, joel (TODO - split)
     id: 0x68,
     tilesets: {town: {type: 'square'}},
     exits: [bottomEdge({left: 8}), door(0x84)],
   });
-  readonly goaSE_shop = $({
+  readonly goaSE_shop = this.metascreen({
     // goa
     id: 0x69,
     tilesets: {town: {type: 'square'}},
     exits: [door(0x82)],
   });
-  readonly joelNE_shop = $({
+  readonly joelNE_shop = this.metascreen({
     // joel
     id: 0x6a,
     tilesets: {town: {type: 'square'}},
     exits: [door(0x47)],
   });
-  readonly joelSE_lake = $({
+  readonly joelSE_lake = this.metascreen({
     // joel
     id: 0x6b,
     tilesets: {town: {type: 'square'}},
   });
-  readonly oakNW = $({
+  readonly oakNW = this.metascreen({
     // oak
     id: 0x6c,
     tilesets: {town: {type: 'square'}},
     exits: [door(0xe7)],
   });
-  readonly oakNE = $({
+  readonly oakNE = this.metascreen({
     // oak
     id: 0x6d,
     tilesets: {town: {type: 'square'}},
     exits: [door(0x60)],
   });
-  readonly oakSW = $({
+  readonly oakSW = this.metascreen({
     // oak
     id: 0x6e,
     tilesets: {town: {type: 'square'}},
     exits: [door(0x7c)],
   });
-  readonly oakSE = $({
+  readonly oakSE = this.metascreen({
     // oak
     id: 0x6f,
     tilesets: {town: {type: 'square'}},
     // Edge entrance shifted for child animation
     exits: [bottomEdge({left: 0, shift: 0.5}), door(0x97)],
   });
-  readonly temple = $({
+  readonly temple = this.metascreen({
     // shyron
     id: 0x70,
     tilesets: {house: {}},
     exits: [bottomEdgeHouse()],
   });
-  readonly wideDeadEndN = $({
+  readonly wideDeadEndN = this.metascreen({
     id: 0x71,
     icon: icon`
       | ┃ |
@@ -1100,7 +1096,7 @@ export class Metascreens {
     connect: '2',
     exits: [downStair(0xc7)],
   });
-  readonly goaWideDeadEndN = $({
+  readonly goaWideDeadEndN = this.metascreen({
     id: 0x71,
     icon: icon`
       |╵┃╵|
@@ -1111,7 +1107,7 @@ export class Metascreens {
     connect: '1|2|3',
     exits: [downStair(0xc7)],
   });
-  readonly wideHallNS = $({
+  readonly wideHallNS = this.metascreen({
     id: 0x72,
     icon: icon`
       | ┃ |
@@ -1121,7 +1117,7 @@ export class Metascreens {
     edges: 'w w ',
     connect: '2a',
   });
-  readonly goaWideHallNS = $({
+  readonly goaWideHallNS = this.metascreen({
     id: 0x72,
     icon: icon`
       |│┃│|
@@ -1131,7 +1127,7 @@ export class Metascreens {
     edges: 'w w ',
     connect: '19|2a|3b',
   });
-  readonly goaWideHallNS_blockedRight = $({
+  readonly goaWideHallNS_blockedRight = this.metascreen({
     id: 0x72,
     icon: icon`
       |│┃│|
@@ -1143,7 +1139,7 @@ export class Metascreens {
     edges: 'w w ',
     connect: '19|2a|3|b',
   });
-  readonly goaWideHallNS_blockedLeft = $({
+  readonly goaWideHallNS_blockedLeft = this.metascreen({
     id: 0x72,
     icon: icon`
       |│┃│|
@@ -1155,7 +1151,7 @@ export class Metascreens {
     edges: 'w w ',
     connect: '1|9|2a|3b',
   });
-  readonly goaWideArena = $({
+  readonly goaWideArena = this.metascreen({
     id: 0x73,
     icon: icon`<
       |╻<╻|
@@ -1168,14 +1164,14 @@ export class Metascreens {
     connect: '9b|a',
     exits: [upStair(0x27)],
   });
-  readonly limeTreeLake = $({
+  readonly limeTreeLake = this.metascreen({
     id: 0x74,
     tilesets: {}, // sea or mountain (94) - but not really
     exits: [bottomEdgeHouse(), cave(0x47)],
     // TODO - bridge
   });
   // Swamp screens
-  readonly swampNW = $({
+  readonly swampNW = this.metascreen({
     id: 0x75,
     icon: icon`
       | │ |
@@ -1183,40 +1179,44 @@ export class Metascreens {
       |   |`,
     tilesets: {swamp: {}},
     // TODO - do we actually want to put all these edges in?
+    feature: ['consolidate'],
     edges: 'ss  ',
     connect: '26',
     exits: [topEdge(6, 4), leftEdge(7, 3)],
   });
-  readonly swampE = $({
+  readonly swampE = this.metascreen({
     id: 0x76,
     icon: icon`
       |   |
       | ╶─|
       |   |`,
     tilesets: {swamp: {}},
+    feature: ['consolidate'],
     edges: '   s',
     connect: 'e',
     exits: [],
   });
-  readonly swampE_door = $({
+  readonly swampE_door = this.metascreen({
     id: 0x76,
     icon: icon`∩
       | ∩ |
       | ╶─|
       |   |`,
     tilesets: {swamp: {requires: [ScreenFix.SwampDoors]}},
+    feature: ['consolidate'],
     flag: 'always',
     edges: '   s',
     connect: 'e',
     exits: [cave(0x6c, 'swamp')],
   });
-  readonly swampNWSE = $({
+  readonly swampNWSE = this.metascreen({
     id: 0x77,
     icon: icon`
       | │ |
       |─┼─|
       | │ |`,
     tilesets: {swamp: {}},
+    feature: ['consolidate'],
     edges: 'ssss',
     connect: '26ae',
     exits: [topEdge(6, 4),
@@ -1224,77 +1224,83 @@ export class Metascreens {
             bottomEdge({left: 6, width: 4}),
             rightEdge(7, 3)],
   });
-  readonly swampNWS = $({
+  readonly swampNWS = this.metascreen({
     id: 0x78,
     icon: icon`
       | │ |
       |─┤ |
       | │ |`,
     tilesets: {swamp: {}},
+    feature: ['consolidate'],
     edges: 'sss ',
     connect: '26a',
     exits: [topEdge(6, 4), leftEdge(7, 3), bottomEdge({left: 6, width: 4})],
   });
-  readonly swampNE = $({
+  readonly swampNE = this.metascreen({
     id: 0x79,
     icon: icon`
       | │ |
       | └─|
       |   |`,
     tilesets: {swamp: {}},
+    feature: ['consolidate'],
     edges: 's  s',
     connect: '2e',
     exits: [topEdge(6, 4), rightEdge(7, 3)],
   });
-  readonly swampWSE = $({
+  readonly swampWSE = this.metascreen({
     id: 0x7a,
     icon: icon`
       |   |
       |─┬─|
       | │ |`,
     tilesets: {swamp: {}},
+    feature: ['consolidate'],
     edges: ' sss',
     connect: '6ae',
     exits: [leftEdge(7, 3), bottomEdge({left: 6, width: 4}), rightEdge(7, 3)],
   });
-  readonly swampWSE_door = $({
+  readonly swampWSE_door = this.metascreen({
     id: 0x7a,
     icon: icon`∩
       | ∩  |
       |─┬─|
       | │ |`,
     tilesets: {swamp: {requires: [ScreenFix.SwampDoors]}},
+    feature: ['consolidate'],
     flag: 'always',
     edges: ' sss',
     connect: '6ae',
     // NOTE: door screens should not be on an exit edge!
     exits: [cave(0x66, 'swamp')],
   });
-  readonly swampW = $({
+  readonly swampW = this.metascreen({
     id: 0x7b,
     icon: icon`
       |   |
       |─╴ |
       |   |`,
     tilesets: {swamp: {}},
+    feature: ['consolidate'],
     edges: ' s  ',
     connect: '6',
     // TODO - flaggable
   });
-  readonly swampW_door = $({
+  readonly swampW_door = this.metascreen({
     id: 0x7b,
     icon: icon`∩
       | ∩ |
       |─╴ |
       |   |`,
     tilesets: {swamp: {requires: [ScreenFix.SwampDoors]}},
+    feature: ['consolidate'],
     flag: 'always',
     edges: ' s  ',
     connect: '6',
     exits: [cave(0x64, 'swamp')],
     // TODO - flaggable
   });
-  readonly swampArena = $({
+  readonly swampArena = this.metascreen({
     id: 0x7c,
     icon: icon`
       |   |
@@ -1315,24 +1321,26 @@ export class Metascreens {
     //            the whole screen a column over, or else by changing the tiles?
     // TODO - NOTE SWAMP GRAPHICS STILL BROKEN!!
   });
-  readonly swampNWE = $({
+  readonly swampNWE = this.metascreen({
     id: 0x7d,
     icon: icon`
       | │ |
       |─┴─|
       |   |`,
     tilesets: {swamp: {}},
+    feature: ['consolidate'],
     edges: 'ss s',
     connect: '26e',
     exits: [topEdge(6, 4), leftEdge(7, 3), rightEdge(7, 3)],
   });
-  readonly swampSW = $({
+  readonly swampSW = this.metascreen({
     id: 0x7e,
     icon: icon`
       |   |
       |─┐ |
       | │ |`,
     tilesets: {swamp: {requires: [ScreenFix.SwampDoors]}},
+    feature: ['consolidate'],
     update: [[ScreenFix.SwampDoors, (s, seed, rom) => {
       rom.metascreens.swampSW_door.flag = 'always';
       return true;
@@ -1341,18 +1349,19 @@ export class Metascreens {
     connect: '6a',
     exits: [leftEdge(7, 3), bottomEdge({left: 6, width: 4})],
   });
-  readonly swampSW_door = $({
+  readonly swampSW_door = this.metascreen({
     id: 0x7e,
     icon: icon`∩
       | ∩ |
       |─┐ |
       | │ |`,
     tilesets: {swamp: {}},
+    feature: ['consolidate'],
     edges: ' ss ',
     connect: '6a',
     exits: [cave(0x67, 'swamp')],
   });
-  readonly swampEmpty = $({
+  readonly swampEmpty = this.metascreen({
     id: 0x7f,
     icon: icon`
       |   |
@@ -1364,97 +1373,105 @@ export class Metascreens {
     connect: '',
   });
   // Missing swamp screens
-  readonly swampN = $({
+  readonly swampN = this.metascreen({
     id: ~0x70,
     icon: icon`
       | │ |
       | ╵ |
       |   |`,
     tilesets: {swamp: {}},
+    feature: ['consolidate'],
     edges: 's   ',
     connect: '2',
   });
-  readonly swampS = $({
+  readonly swampS = this.metascreen({
     id: ~0x71,
     icon: icon`
       |   |
       | ╷ |
       | │ |`,
     tilesets: {swamp: {}},
+    feature: ['consolidate'],
     edges: '  s ',
     connect: 'a',
   });
-  readonly swampNS = $({
+  readonly swampNS = this.metascreen({
     id: ~0x72,
     icon: icon`
       | │ |
       | │ |
       | │ |`,
     tilesets: {swamp: {}},
+    feature: ['consolidate'],
     edges: 's s ',
     connect: '2a',
     exits: [topEdge(6, 4), bottomEdge({left: 6, width: 4})],
   });
-  readonly swampWE = $({
+  readonly swampWE = this.metascreen({
     id: ~0x72,
     icon: icon`
       |   |
       |───|
       |   |`,
     tilesets: {swamp: {}},
+    feature: ['consolidate'],
     edges: ' s s',
     connect: '6e',
     exits: [leftEdge(7, 3), rightEdge(7, 3)],
   });
-  readonly swampWE_door = $({
+  readonly swampWE_door = this.metascreen({
     id: ~0x72,
     icon: icon`∩
       | ∩ |
       |───|
       |   |`,
     tilesets: {swamp: {requires: [ScreenFix.SwampDoors]}},
+    feature: ['consolidate'],
     flag: 'always',
     edges: ' s s',
     connect: '6e',
     exits: [upStair(0x66)],
     // TODO - how to link to swampWE to indicate flag=false?
   });
-  readonly swampSE = $({
+  readonly swampSE = this.metascreen({
     id: ~0x73,
     icon: icon`
       |   |
       | ┌─|
       | │ |`,
     tilesets: {swamp: {}},
+    feature: ['consolidate'],
     edges: '  ss',
     connect: 'ae',
     exits: [leftEdge(7, 3), bottomEdge({left: 6, width: 4})],
   });
-  readonly swampSE_door = $({
+  readonly swampSE_door = this.metascreen({
     id: ~0x73,
     icon: icon`∩
       | ∩ |
       | ┌─|
       | │ |`,
     tilesets: {swamp: {requires: [ScreenFix.SwampDoors]}},
+    feature: ['consolidate'],
     flag: 'always',
     edges: '  ss',
     connect: 'ae',
     exits: [cave(0x6a, 'swamp')],
   });
-  readonly swampNSE = $({
+  readonly swampNSE = this.metascreen({
     id: ~0x74,
     icon: icon`
       | │ |
       | ├─|
       | │ |`,
     tilesets: {swamp: {}},
+    feature: ['consolidate'],
     edges: 's ss',
     connect: '2ae',
     exits: [topEdge(6, 4), bottomEdge({left: 6, width: 4}), rightEdge(7, 3)],
   });
   // Cave screens
-  readonly caveEmpty = $({
+  readonly caveEmpty = this.metascreen({
     id: 0x80,
     icon: icon`
       |   |
@@ -1465,7 +1482,7 @@ export class Metascreens {
     feature: ['empty'],
     edges: '    ',
   });
-  readonly hallNS = $({
+  readonly hallNS = this.metascreen({
     id: 0x81,
     icon: icon`
       | │ |
@@ -1476,7 +1493,7 @@ export class Metascreens {
     connect: '2a',
     poi: [[4]],
   });
-  readonly hallWE = $({
+  readonly hallWE = this.metascreen({
     id: 0x82,
     icon: icon`
       |   |
@@ -1487,7 +1504,7 @@ export class Metascreens {
     connect: '6e',
     poi: [[4]],
   });
-  readonly hallSE = $({
+  readonly hallSE = this.metascreen({
     id: 0x83,
     icon: icon`
       |   |
@@ -1498,7 +1515,7 @@ export class Metascreens {
     connect: 'ae',
     poi: [[2]],
   });
-  readonly hallWS = $({
+  readonly hallWS = this.metascreen({
     id: 0x84,
     icon: icon`
       |   |
@@ -1509,7 +1526,7 @@ export class Metascreens {
     connect: '6a',
     poi: [[2]],
   });
-  readonly hallNE = $({
+  readonly hallNE = this.metascreen({
     id: 0x85,
     icon: icon`
       | │ |
@@ -1520,7 +1537,7 @@ export class Metascreens {
     connect: '2e',
     poi: [[2]],
   });
-  readonly hallNW = $({
+  readonly hallNW = this.metascreen({
     id: 0x86,
     icon: icon`
       | │ |
@@ -1531,7 +1548,7 @@ export class Metascreens {
     connect: '26',
     poi: [[2]],
   });
-  readonly branchNSE = $({
+  readonly branchNSE = this.metascreen({
     id: 0x87,
     icon: icon`
       | │ |
@@ -1542,7 +1559,7 @@ export class Metascreens {
     connect: '2ae',
     poi: [[3]],
   });
-  readonly branchNWSE = $({
+  readonly branchNWSE = this.metascreen({
     id: 0x88,
     icon: icon`
       | │ |
@@ -1553,7 +1570,7 @@ export class Metascreens {
     connect: '26ae',
     poi: [[3]],
   });
-  readonly branchNWS = $({
+  readonly branchNWS = this.metascreen({
     id: 0x89,
     icon: icon`
       | │ |
@@ -1564,7 +1581,7 @@ export class Metascreens {
     connect: '26a',
     poi: [[3]],
   });
-  readonly branchWSE = $({
+  readonly branchWSE = this.metascreen({
     id: 0x8a,
     icon: icon`
       |   |
@@ -1575,7 +1592,7 @@ export class Metascreens {
     connect: '6ae',
     poi: [[3]],
   });
-  readonly branchNWE = $({
+  readonly branchNWE = this.metascreen({
     id: 0x8b,
     icon: icon`
       | │ |
@@ -1586,7 +1603,7 @@ export class Metascreens {
     connect: '26e',
     poi: [[3]],
   });
-  readonly hallNS_stairs = $({
+  readonly hallNS_stairs = this.metascreen({
     id: 0x8c,
     icon: icon`
       | ┋ |
@@ -1597,7 +1614,7 @@ export class Metascreens {
     edges: 'c c ',
     connect: '2a',
   });
-  readonly hallSN_overBridge = $({
+  readonly hallSN_overBridge = this.metascreen({
     id: 0x8d,
     icon: icon`
       | ╽ |
@@ -1608,7 +1625,7 @@ export class Metascreens {
     edges: 'cbcb', // TODO - 'b' for other side of bridge??
     connect: '2a',
   });
-  readonly hallWE_underBridge = $({
+  readonly hallWE_underBridge = this.metascreen({
     id: 0x8e,
     icon: icon`
       | ╽ |
@@ -1619,7 +1636,7 @@ export class Metascreens {
     edges: 'bcbc',
     connect: '6e',
   });
-  readonly hallNS_wall = $({
+  readonly hallNS_wall = this.metascreen({
     id: 0x8f,
     icon: icon`
       | │ |
@@ -1639,7 +1656,7 @@ export class Metascreens {
     wall: 0x87, 
     // TODO - record the wall
   });
-  readonly hallWE_wall = $({
+  readonly hallWE_wall = this.metascreen({
     id: 0x90,
     icon: icon`
       |   |
@@ -1651,7 +1668,7 @@ export class Metascreens {
     connect: '6=e',
     wall: 0x67,
   });
-  readonly hallNS_arena = $({
+  readonly hallNS_arena = this.metascreen({
     id: 0x91,
     icon: icon`
       |┌┸┐|
@@ -1664,7 +1681,7 @@ export class Metascreens {
     connect: '2a',
     poi: [[1, 0x60, 0x78]],
   });
-  readonly hallNS_arenaWall = $({
+  readonly hallNS_arenaWall = this.metascreen({
     id: 0x92,
     icon: icon`
       |┌┄┐|
@@ -1679,7 +1696,7 @@ export class Metascreens {
     poi: [[1, 0x60, 0x78]],
   });
   // NOTE: screen 93 is missing!
-  readonly branchNWE_wall = $({
+  readonly branchNWE_wall = this.metascreen({
     id: 0x94,
     icon: icon`
       | ┆ |
@@ -1689,7 +1706,7 @@ export class Metascreens {
     edges: 'cc c',
     connect: '2=6e',
   });
-  readonly branchNWE_upStair = $({
+  readonly branchNWE_upStair = this.metascreen({
     id: 0x95,
     icon: icon`<
       | < |
@@ -1700,7 +1717,7 @@ export class Metascreens {
     connect: '6e',
     exits: [upStair(0x47)],
   });
-  readonly deadEndW_upStair = $({
+  readonly deadEndW_upStair = this.metascreen({
     id: 0x96,
     icon: icon`<
       | < |
@@ -1711,7 +1728,7 @@ export class Metascreens {
     connect: '6',
     exits: [upStair(0x42)],
   });
-  readonly deadEndW_downStair = $({
+  readonly deadEndW_downStair = this.metascreen({
     id: 0x97,
     icon: icon`>
       |   |
@@ -1722,7 +1739,7 @@ export class Metascreens {
     connect: '6',
     exits: [downStair(0xa2)],
   });
-  readonly deadEndE_upStair = $({
+  readonly deadEndE_upStair = this.metascreen({
     id: 0x98,
     icon: icon`<
       | < |
@@ -1733,7 +1750,7 @@ export class Metascreens {
     connect: 'e',
     exits: [upStair(0x4c)],
   });
-  readonly deadEndE_downStair = $({
+  readonly deadEndE_downStair = this.metascreen({
     id: 0x99,
     icon: icon`>
       |   |
@@ -1744,7 +1761,7 @@ export class Metascreens {
     connect: 'e',
     exits: [downStair(0xac)],
   });
-  readonly deadEndNS_stairs = $({
+  readonly deadEndNS_stairs = this.metascreen({
     id: 0x9a,
     icon: icon`
       | > |
@@ -1756,7 +1773,7 @@ export class Metascreens {
     connect: '2|a',
     exits: [downStair(0x17), upStair(0xd7)],
   });
-  readonly deadEndN_stairs = $({
+  readonly deadEndN_stairs = this.metascreen({
     id: 0x9a,
     icon: icon`
       | > |
@@ -1767,8 +1784,9 @@ export class Metascreens {
     edges: 'c   ',
     connect: '2',
     exits: [downStair(0x17)],
+    match: (reachable) => !reachable(0x108, 0x78),
   });
-  readonly deadEndS_stairs = $({
+  readonly deadEndS_stairs = this.metascreen({
     id: 0x9a,
     icon: icon`
       |   |
@@ -1779,8 +1797,9 @@ export class Metascreens {
     edges: '  c ',
     connect: 'a',
     exits: [upStair(0xd7)],
+    match: (reachable) => !reachable(-0x30, 0x78),
   });
-  readonly deadEndNS = $({
+  readonly deadEndNS = this.metascreen({
     id: 0x9b,
     icon: icon`
       | ╵ |
@@ -1792,7 +1811,7 @@ export class Metascreens {
     connect: '2|a',
     poi: [[0, 0x110, 0x78], [0, -0x30, 0x78]],
   });
-  readonly deadEndN = $({
+  readonly deadEndN = this.metascreen({
     id: 0x9b,
     icon: icon`
       | ╵ |
@@ -1803,8 +1822,9 @@ export class Metascreens {
     edges: 'c   ',
     connect: '2',
     poi: [[0, -0x30, 0x78]],
+    match: (reachable) => !reachable(0x110, 0x78),
   });
-  readonly deadEndS = $({
+  readonly deadEndS = this.metascreen({
     id: 0x9b,
     icon: icon`
       |   |
@@ -1815,8 +1835,9 @@ export class Metascreens {
     edges: '  c ',
     connect: 'a',
     poi: [[0, 0x110, 0x78]],
+    match: (reachable) => !reachable(-0x30, 0x78),
   });
-  readonly deadEndWE = $({
+  readonly deadEndWE = this.metascreen({
     id: 0x9c,
     icon: icon`
       |   |
@@ -1828,7 +1849,7 @@ export class Metascreens {
     connect: '6|e',
     poi: [[0, 0x70, 0x108], [0, 0x70, -0x28]],
   });
-  readonly deadEndW = $({
+  readonly deadEndW = this.metascreen({
     id: 0x9c,
     icon: icon`
       |   |
@@ -1839,8 +1860,9 @@ export class Metascreens {
     edges: ' c  ',
     connect: '6',
     poi: [[0, 0x70, -0x28]],
+    match: (reachable) => !reachable(0x70, 0x108),
   });
-  readonly deadEndE = $({
+  readonly deadEndE = this.metascreen({
     id: 0x9c,
     icon: icon`
       |   |
@@ -1851,9 +1873,10 @@ export class Metascreens {
     edges: '   c',
     connect: 'e',
     poi: [[0, 0x70, 0x108]],
+    match: (reachable) => !reachable(0x70, -0x28),
   });
   // NOTE: 9d missing
-  readonly hallNS_entrance = $({
+  readonly hallNS_entrance = this.metascreen({
     id: 0x9e,
     icon: icon`╽
       | │ |
@@ -1864,7 +1887,7 @@ export class Metascreens {
     connect: '2a',
     exits: [bottomEdge()],
   });
-  readonly channelExitSE = $({
+  readonly channelExitSE = this.metascreen({
     id: 0x9f,
     icon: icon`
       |   |
@@ -1874,7 +1897,7 @@ export class Metascreens {
     //edges: '  rr',
     //connect: '9d:bf',  // : means water - flight needed
   });
-  readonly channelBendWS = $({
+  readonly channelBendWS = this.metascreen({
     id: 0xa0,
     icon: icon`
       |█  |
@@ -1883,7 +1906,7 @@ export class Metascreens {
     tilesets: {dolphinCave: {}},
     //edges: ' rr ',
   });
-  readonly channelHallNS = $({
+  readonly channelHallNS = this.metascreen({
     id: 0xa1,
     icon: icon`
       | ║ |
@@ -1891,7 +1914,7 @@ export class Metascreens {
       | ║ |`,
     tilesets: {dolphinCave: {}},
   });
-  readonly channelEntranceSE = $({
+  readonly channelEntranceSE = this.metascreen({
     id: 0xa2,
     icon: icon`
       |   |
@@ -1902,7 +1925,7 @@ export class Metascreens {
     // normal river cave tiles, but the river is one tile
     // taller at the top, so there's no match!
   });
-  readonly channelCross = $({
+  readonly channelCross = this.metascreen({
     id: 0xa3,
     icon: icon`
       | ║ |
@@ -1910,7 +1933,7 @@ export class Metascreens {
       |╷║╷|`,
     tilesets: {dolphinCave: {}},
   });
-  readonly channelDoor = $({
+  readonly channelDoor = this.metascreen({
     id: 0xa4,
     icon: icon`∩
       | ∩█|
@@ -1918,7 +1941,7 @@ export class Metascreens {
       |  █|`,
     tilesets: {dolphinCave: {}},
   });
-  readonly mountainFloatingIsland = $({
+  readonly mountainFloatingIsland = this.metascreen({
     id: 0xa5,
     icon: icon`*
       |═╗█|
@@ -1928,7 +1951,7 @@ export class Metascreens {
     edges: '  wp',  // w = waterfall, p = path
     connect: 'e',
   });
-  readonly mountainPathNE_stair = $({
+  readonly mountainPathNE_stair = this.metascreen({
     id: 0xa6,
     icon: icon`└
       |█┋█|
@@ -1939,7 +1962,7 @@ export class Metascreens {
     connect: '2e',
     exits: [topEdge()], // never used as an exit in vanilla
   });
-  readonly mountainBranchNWE = $({
+  readonly mountainBranchNWE = this.metascreen({
     id: 0xa7,
     icon: icon`┴
       |█ █|
@@ -1949,7 +1972,7 @@ export class Metascreens {
     edges: 'pp p',
     connect: '26e',
   });
-  readonly mountainPathWE_iceBridge = $({
+  readonly mountainPathWE_iceBridge = this.metascreen({
     id: 0xa8,
     icon: icon`╫
       |█║█|
@@ -1962,7 +1985,7 @@ export class Metascreens {
     connect: '6-e:2a',
     wall: 0x87,
   });
-  readonly mountainPathSE = $({
+  readonly mountainPathSE = this.metascreen({
     id: 0xa9,
     icon: icon`┌
       |███|
@@ -1972,7 +1995,7 @@ export class Metascreens {
     edges: '  pp',
     connect: 'ae',
   });
-  readonly mountainDeadEndW_caveEmpty = $({
+  readonly mountainDeadEndW_caveEmpty = this.metascreen({
     id: 0xaa,
     icon: icon`∩
       |█∩█|
@@ -1983,7 +2006,7 @@ export class Metascreens {
     connect: '6',
     exits: [cave(0x5a)],
   });
-  readonly mountainPathNE = $({
+  readonly mountainPathNE = this.metascreen({
     id: 0xab,
     icon: icon`└
       |█ █|
@@ -1993,7 +2016,7 @@ export class Metascreens {
     edges: 'p  p',
     connect: '2e',
   });
-  readonly mountainBranchWSE = $({
+  readonly mountainBranchWSE = this.metascreen({
     id: 0xac,
     icon: icon`┬
       |███|
@@ -2003,7 +2026,7 @@ export class Metascreens {
     edges: ' ppp',
     connect: '6ae',
   });
-  readonly mountainPathW_cave = $({
+  readonly mountainPathW_cave = this.metascreen({
     id: 0xad,
     icon: icon`∩
       |█∩█|
@@ -2014,7 +2037,7 @@ export class Metascreens {
     connect: '6',
     exits: [cave(0x55)],
   });
-  readonly mountainPathE_slopeS = $({
+  readonly mountainPathE_slopeS = this.metascreen({
     id: 0xae,
     icon: icon`╓
       |███|
@@ -2024,7 +2047,7 @@ export class Metascreens {
     edges: '  sp', // s = slope
     connect: 'ae',
   });
-  readonly mountainPathNW = $({
+  readonly mountainPathNW = this.metascreen({
     id: 0xaf,
     icon: icon`┘
       |█ █|
@@ -2034,7 +2057,7 @@ export class Metascreens {
     edges: 'pp  ',
     connect: '26',
   });
-  readonly mountainCave_empty = $({
+  readonly mountainCave_empty = this.metascreen({
     id: 0xb0,
     icon: icon`∩
       |█∩█|
@@ -2045,7 +2068,7 @@ export class Metascreens {
     connect: '',
     exits: [cave(0x58)],
   });
-  readonly mountainPathE_cave = $({
+  readonly mountainPathE_cave = this.metascreen({
     id: 0xb1,
     icon: icon`∩
       |█∩█|
@@ -2056,7 +2079,7 @@ export class Metascreens {
     connect: 'e',
     exits: [cave(0x57)],
   });
-  readonly mountainPathWE_slopeN = $({
+  readonly mountainPathWE_slopeN = this.metascreen({
     id: 0xb2,
     icon: icon`╨
       |█↓█|
@@ -2066,7 +2089,7 @@ export class Metascreens {
     edges: 'sp p',
     connect: '26e',
   });
-  readonly mountainDeadEndW = $({
+  readonly mountainDeadEndW = this.metascreen({
     id: 0xb3,
     icon: icon`╴
       |███|
@@ -2076,7 +2099,7 @@ export class Metascreens {
     edges: ' p  ',
     connect: '6',
   });
-  readonly mountainPathWE = $({
+  readonly mountainPathWE = this.metascreen({
     id: 0xb4,
     icon: icon`─
       |███|
@@ -2086,7 +2109,7 @@ export class Metascreens {
     edges: ' p p',
     connect: '6e',
   });
-  readonly mountainArena_gate = $({
+  readonly mountainArena_gate = this.metascreen({
     id: 0xb5,
     icon: icon`#
       |█#█|
@@ -2099,18 +2122,18 @@ export class Metascreens {
     connect: 'a',
     exits: [{...upStair(0x37, 3), type: 'cave'}],
   });
-  readonly mountainPathN_slopeS_cave = $({
+  readonly mountainPathN_slopeS_cave = this.metascreen({
     id: 0xb6,
     icon: icon`∩
       |█┋∩|
-      |▌  |
+      |▌ ▐|
       |█↓█|`,
     tilesets: {mountain: {}},
     edges: 'l s ',
     connect: '2a',
     exits: [cave(0x5a), topEdge()],
   });
-  readonly mountainPathWE_slopeNS = $({
+  readonly mountainPathWE_slopeNS = this.metascreen({
     id: 0xb7,
     icon: icon`╫
       |█↓█|
@@ -2120,7 +2143,7 @@ export class Metascreens {
     edges: 'spsp',
     connect: '26ae',
   });
-  readonly mountainPathWE_slopeN_cave = $({
+  readonly mountainPathWE_slopeN_cave = this.metascreen({
     id: 0xb8,
     icon: icon`∩
       |█↓∩|
@@ -2131,7 +2154,7 @@ export class Metascreens {
     connect: '26e',
     exits: [cave(0x5c)],
   });
-  readonly mountainPathWS = $({
+  readonly mountainPathWS = this.metascreen({
     id: 0xb9,
     icon: icon`┐
       |███|
@@ -2141,7 +2164,7 @@ export class Metascreens {
     edges: ' pp ',
     connect: '6a',
   });
-  readonly mountainSlope = $({
+  readonly mountainSlope = this.metascreen({
     id: 0xba,
     icon: icon`↓
       |█↓█|
@@ -2151,7 +2174,7 @@ export class Metascreens {
     edges: 's s ',
     connect: '2a',
   });
-  readonly mountainRiver = $({
+  readonly mountainRiver = this.metascreen({
     id: 0xba,
     icon: icon`║
       |█║█|
@@ -2162,7 +2185,7 @@ export class Metascreens {
     allowed: s => s.hasFeature('empty') ? [2] : [],
     connect: '2:e',
   });
-  readonly mountainPathE_gate = $({
+  readonly mountainPathE_gate = this.metascreen({
     id: 0xbb,
     icon: icon`∩
       |█∩█|
@@ -2173,7 +2196,7 @@ export class Metascreens {
     connect: 'e',
     exits: [cave(0x57, 'gate')],
   });
-  readonly mountainPathWE_inn = $({
+  readonly mountainPathWE_inn = this.metascreen({
     id: 0xbc,
     icon: icon`∩
       |█∩█|
@@ -2184,7 +2207,7 @@ export class Metascreens {
     connect: '6e',
     exits: [door(0x76)],
   });
-  readonly mountainPathWE_bridgeOverSlope = $({
+  readonly mountainPathWE_bridgeOverSlope = this.metascreen({
     id: 0xbd,
     icon: icon`═
       |█↓█|
@@ -2194,7 +2217,7 @@ export class Metascreens {
     edges: 'spsp',
     connect: '6e', // '2a|6e',
   });
-  readonly mountainPathWE_bridgeOverRiver = $({
+  readonly mountainPathWE_bridgeOverRiver = this.metascreen({
     id: 0xbd,
     icon: icon`═
       |█║█|
@@ -2205,7 +2228,7 @@ export class Metascreens {
     allowed: s => s.hasFeature('empty') ? [2] : [],
     connect: '6e|2|a',
   });
-  readonly mountainSlope_underBridge = $({
+  readonly mountainSlope_underBridge = this.metascreen({
     id: 0xbe,
     icon: icon`↓
       |█↓█|
@@ -2216,7 +2239,7 @@ export class Metascreens {
     edges: 'spsp',
     connect: '2a', // '2a|6e',
   });
-  readonly mountainEmpty = $({
+  readonly mountainEmpty = this.metascreen({
     id: 0xbf,
     icon: icon`
       |███|
@@ -2226,7 +2249,7 @@ export class Metascreens {
     feature: ['empty'],
     edges: '    ',
   });
-  readonly boundaryS = $({
+  readonly boundaryS = this.metascreen({
     id: 0xc0,
     icon: icon`
       |   |
@@ -2237,7 +2260,7 @@ export class Metascreens {
     edges: 'o^ ^', // o = open, ^ = open up
     //connect: '26e',
   });
-  readonly boundaryN_cave = $({
+  readonly boundaryN_cave = this.metascreen({
     id: 0xc1,
     icon: icon`
       |███|
@@ -2248,7 +2271,7 @@ export class Metascreens {
     edges: ' vov', // o = open, v = open down
     exits: [cave(0x49)],
   });
-  readonly boundarySE_cave = $({
+  readonly boundarySE_cave = this.metascreen({
     id: 0xc2,
     icon: icon`
       | ▐█|
@@ -2258,7 +2281,7 @@ export class Metascreens {
     edges: '<^  ',
     exits: [cave(0x5a)],
   });
-  readonly waterfall = $({
+  readonly waterfall = this.metascreen({
     id: 0xc3,
     icon: icon`
       |   |
@@ -2267,7 +2290,7 @@ export class Metascreens {
     tilesets: {sea: {}},
     edges: 'oooo',
   });
-  readonly whirlpoolBlocker = $({
+  readonly whirlpoolBlocker = this.metascreen({
     id: 0xc4,
     icon: icon`
       |   |
@@ -2279,7 +2302,7 @@ export class Metascreens {
     flag: 'calm', // calmed sea
     edges: 'oooo',
   });
-  readonly beachExitN = $({
+  readonly beachExitN = this.metascreen({
     id: 0xc5,
     icon: icon`
       |█ █|
@@ -2289,7 +2312,7 @@ export class Metascreens {
     edges: 'n >v', // n = "narrow"
     exits: [topEdge(0xa, 1)],
   });
-  readonly whirlpoolOpen = $({
+  readonly whirlpoolOpen = this.metascreen({
     id: 0xc6,
     icon: icon`
       |   |
@@ -2300,7 +2323,17 @@ export class Metascreens {
     edges: 'oooo',
     flag: 'calm', // but only if on angry sea - not desert...
   });
-  readonly lighthouseEntrance = $({
+  readonly quicksandOpen = this.metascreen({
+    id: 0xc6,
+    icon: icon`
+      |   |
+      | ╳ |
+      |   |`,
+    tilesets: {desert: {}},
+    feature: ['whirlpool'],
+    edges: 'oooo',
+  });
+  readonly lighthouseEntrance = this.metascreen({
     id: 0xc7,
     icon: icon`
       |▗▟█|
@@ -2312,7 +2345,7 @@ export class Metascreens {
     edges: '<oov',
     exits: [cave(0x2a), door(0x75)],
   });
-  readonly beachCave = $({
+  readonly beachCave = this.metascreen({
     id: 0xc8,
     icon: icon`
       |█∩█|
@@ -2322,7 +2355,7 @@ export class Metascreens {
     edges: ' vov',
     exits: [cave(0x28)],
   });
-  readonly beachCabinEntrance = $({
+  readonly beachCabinEntrance = this.metascreen({
     id: 0xc9,
     icon: icon`
       | ∩█|
@@ -2333,7 +2366,7 @@ export class Metascreens {
     edges: '<^ b', // b = "boat"
     exits: [door(0x55), rightEdge(8, 3)],
   });
-  readonly oceanShrine = $({
+  readonly oceanShrine = this.metascreen({
     id: 0xca,
     icon: icon`
       |▗▄▖|
@@ -2344,7 +2377,7 @@ export class Metascreens {
     feature: ['altar'],
     edges: 'oooo',
   });
-  readonly pyramidEntrance = $({
+  readonly pyramidEntrance = this.metascreen({
     id: 0xcb,
     icon: icon`
       | ▄ |
@@ -2356,7 +2389,7 @@ export class Metascreens {
     edges: 'oooo',
     exits: [cave(0xa7)],
   });
-  readonly cryptEntrance = $({
+  readonly cryptEntrance = this.metascreen({
     id: 0xcc,
     icon: icon`
       | ╳ |
@@ -2367,7 +2400,7 @@ export class Metascreens {
     edges: 'oooo',
     exits: [downStair(0x67)],
   });
-  readonly oasisLake = $({
+  readonly oasisLake = this.metascreen({
     id: 0xcd,
     icon: icon`
       | ^ |
@@ -2377,7 +2410,7 @@ export class Metascreens {
     feature: ['lake'],
     edges: 'oo3o',
   });
-  readonly desertCaveEntrance = $({
+  readonly desertCaveEntrance = this.metascreen({
     id: 0xce,
     icon: icon`
       |▗▄▖|
@@ -2390,7 +2423,7 @@ export class Metascreens {
     edges: 'oooo',
     exits: [cave(0xa7)],
   });
-  readonly oasisCave = $({
+  readonly oasisCave = this.metascreen({
     id: 0xcf,
     icon: icon`
       | vv|
@@ -2400,7 +2433,7 @@ export class Metascreens {
     edges: '3^>o',
     exits: [upStair(0x47)],
   });
-  readonly channelEndW_cave = $({
+  readonly channelEndW_cave = this.metascreen({
     id: 0xd0,
     icon: icon`
       |██∩|
@@ -2408,7 +2441,7 @@ export class Metascreens {
       |███|`,
     tilesets: {dolphinCave: {}},
   });
-  readonly boatChannel = $({
+  readonly boatChannel = this.metascreen({
     id: 0xd1,
     icon: icon`
       |███|
@@ -2418,7 +2451,7 @@ export class Metascreens {
     edges: ' b b',
     exits: [rightEdge(8, 3), leftEdge(8, 3)],
   });
-  readonly channelWE = $({
+  readonly channelWE = this.metascreen({
     id: 0xd2,
     icon: icon`
       |███|
@@ -2426,7 +2459,7 @@ export class Metascreens {
       |███|`,
     tilesets: {dolphinCave: {}},
   });
-  readonly riverCaveNWSE = $({
+  readonly riverCaveNWSE = this.metascreen({
     id: 0xd3,
     icon: icon`
       |┘║└|
@@ -2443,7 +2476,7 @@ export class Metascreens {
     wall: 0xb6,
     poi: [[4, 0x00, 0x98]],
   });
-  readonly riverCaveNS = $({
+  readonly riverCaveNS = this.metascreen({
     id: 0xd4,
     icon: icon`
       |│║│|
@@ -2456,7 +2489,7 @@ export class Metascreens {
     edges: 'r r ',
     connect: '19:3a',
   });
-  readonly riverCaveWE = $({
+  readonly riverCaveWE = this.metascreen({
     id: 0xd5,
     icon: icon`
       |───|
@@ -2466,7 +2499,7 @@ export class Metascreens {
     edges: ' r r',
     connect: '5d:7f',
   });
-  readonly riverCaveNS_bridge = $({
+  readonly riverCaveNS_bridge = this.metascreen({
     id: 0xd6,
     icon: icon`
       |│║│|
@@ -2478,7 +2511,7 @@ export class Metascreens {
     connect: '19-3a',
     wall: 0x87,
   });
-  readonly riverCaveWE_bridge = $({
+  readonly riverCaveWE_bridge = this.metascreen({
     id: 0xd7,
     icon: icon`
       |─┬─|
@@ -2490,7 +2523,7 @@ export class Metascreens {
     connect: '5d-7f',
     wall: 0x86,
   });
-  readonly riverCaveSE = $({
+  readonly riverCaveSE = this.metascreen({
     id: 0xd8,
     icon: icon`
       |┌──|
@@ -2500,7 +2533,7 @@ export class Metascreens {
     edges: '  rr',
     connect: '9d:af',
   });
-  readonly riverCaveWS = $({
+  readonly riverCaveWS = this.metascreen({
     id: 0xd9,
     icon: icon`
       |──┐|
@@ -2510,7 +2543,7 @@ export class Metascreens {
     edges: ' rr ',
     connect: '5a:79',
   });
-  readonly riverCaveNE = $({
+  readonly riverCaveNE = this.metascreen({
     id: 0xda,
     icon: icon`
       |│║└|
@@ -2520,7 +2553,7 @@ export class Metascreens {
     edges: 'r  r',
     connect: '1f:3d',
   });
-  readonly riverCaveNW = $({
+  readonly riverCaveNW = this.metascreen({
     id: 0xdb,
     icon: icon`
       |┘║│|
@@ -2530,7 +2563,7 @@ export class Metascreens {
     edges: 'rr  ',
     connect: '15:37',
   });
-  readonly riverCaveWE_passageN = $({
+  readonly riverCaveWE_passageN = this.metascreen({
     id: 0xdc,
     icon: icon`╧
       |─┴─|
@@ -2540,7 +2573,7 @@ export class Metascreens {
     edges: 'cr r',
     connect: '25d:7f',
   });
-  readonly riverCaveWE_passageS = $({
+  readonly riverCaveWE_passageS = this.metascreen({
     id: 0xdd,
     icon: icon`╤
       |───|
@@ -2550,7 +2583,7 @@ export class Metascreens {
     edges: ' rcr',
     connect: '5d:7af',
   });
-  readonly riverCaveNS_passageW = $({
+  readonly riverCaveNS_passageW = this.metascreen({
     id: 0xde,
     icon: icon`╢
       |│║│|
@@ -2560,7 +2593,7 @@ export class Metascreens {
     edges: 'rcr ',
     connect: '169:3b',
   });
-  readonly riverCaveNS_passageE = $({
+  readonly riverCaveNS_passageE = this.metascreen({
     id: 0xdf,
     icon: icon`╟
       |│║│|
@@ -2570,7 +2603,7 @@ export class Metascreens {
     edges: 'r rc',
     connect: '19:3be',
   });
-  readonly wideHallNE = $({
+  readonly wideHallNE = this.metascreen({
     id: 0xe0,
     icon: icon`
       | ┃ |
@@ -2580,7 +2613,7 @@ export class Metascreens {
     edges: 'w  w',
     connect: '2e',
   });
-  readonly goaWideHallNE = $({
+  readonly goaWideHallNE = this.metascreen({
     id: 0xe0,
     icon: icon`
       |│┃└|
@@ -2590,7 +2623,7 @@ export class Metascreens {
     edges: 'w  w',
     connect: '1f|2e|3d',
   });
-  readonly goaWideHallNE_blockedLeft = $({
+  readonly goaWideHallNE_blockedLeft = this.metascreen({
     id: 0xe0,
     icon: icon`
       |│┃└|
@@ -2602,7 +2635,7 @@ export class Metascreens {
     edges: 'w  w',
     connect: '1|f|2e|3d',
   });
-  readonly goaWideHallNE_blockedRight = $({
+  readonly goaWideHallNE_blockedRight = this.metascreen({
     id: 0xe0,
     icon: icon`
       |│┃ |
@@ -2614,7 +2647,7 @@ export class Metascreens {
     edges: 'w  w',
     connect: '1f|2e|3|d',
   });
-  readonly wideHallNW = $({
+  readonly wideHallNW = this.metascreen({
     id: 0xe1,
     icon: icon`
       | ┃ |
@@ -2624,7 +2657,7 @@ export class Metascreens {
     edges: 'ww  ',
     connect: '26',
   });
-  readonly goaWideHallNW = $({
+  readonly goaWideHallNW = this.metascreen({
     id: 0xe1,
     icon: icon`
       |┘┃│|
@@ -2638,7 +2671,7 @@ export class Metascreens {
     edges: 'ww  ',
     connect: '15|26|37',
   });
-  readonly goaWideHallNW_blockedRight = $({
+  readonly goaWideHallNW_blockedRight = this.metascreen({
     id: 0xe1,
     icon: icon`
       |┘┃│|
@@ -2648,7 +2681,7 @@ export class Metascreens {
     edges: 'ww  ',
     connect: '15|26|3|7',
   });
-  readonly goaWideHallNW_blockedLeft = $({
+  readonly goaWideHallNW_blockedLeft = this.metascreen({
     id: 0xe1,
     icon: icon`
       | ┃│|
@@ -2661,7 +2694,7 @@ export class Metascreens {
     edges: 'ww  ',
     connect: '1|5|26|37',
   });
-  readonly wideHallSE = $({
+  readonly wideHallSE = this.metascreen({
     id: 0xe2,
     icon: icon`
       |   |
@@ -2671,7 +2704,7 @@ export class Metascreens {
     edges: '  ww',
     connect: 'ae',
   });
-  readonly goaWideHallSE = $({
+  readonly goaWideHallSE = this.metascreen({
     id: 0xe2,
     icon: icon`
       |┌──|
@@ -2681,7 +2714,7 @@ export class Metascreens {
     edges: '  ww',
     connect: '9d|ae|bf',
   });
-  readonly goaWideHallSE_blockedLeft = $({
+  readonly goaWideHallSE_blockedLeft = this.metascreen({
     id: 0xe2,
     icon: icon`
       |┌──|
@@ -2693,7 +2726,7 @@ export class Metascreens {
     edges: '  ww',
     connect: '9|d|ae|bf',
   });
-  readonly goaWideHallSE_blockedRight = $({
+  readonly goaWideHallSE_blockedRight = this.metascreen({
     id: 0xe2,
     icon: icon`
       |┌──|
@@ -2705,7 +2738,7 @@ export class Metascreens {
     edges: '  ww',
     connect: '9d|ae|b|f',
   });
-  readonly wideHallWS = $({
+  readonly wideHallWS = this.metascreen({
     id: 0xe3,
     icon: icon`
       |   |
@@ -2715,7 +2748,7 @@ export class Metascreens {
     edges: ' ww ',
     connect: '6a',
   });
-  readonly goaWideHallWS = $({
+  readonly goaWideHallWS = this.metascreen({
     id: 0xe3,
     icon: icon`
       |──┐|
@@ -2729,7 +2762,7 @@ export class Metascreens {
     edges: ' ww ',
     connect: '5b|6a|79',
   });
-  readonly goaWideHallWS_blockedRight = $({
+  readonly goaWideHallWS_blockedRight = this.metascreen({
     id: 0xe3,
     icon: icon`
       |──┐|
@@ -2739,7 +2772,7 @@ export class Metascreens {
     edges: ' ww ',
     connect: '5|b|6a|79',
   });
-  readonly goaWideHallWS_blockedLeft = $({
+  readonly goaWideHallWS_blockedLeft = this.metascreen({
     id: 0xe3,
     icon: icon`
       |──┐|
@@ -2752,7 +2785,7 @@ export class Metascreens {
     edges: ' ww ',
     connect: '5b|6a|7|9',
   });
-  readonly goaWideHallNS_stairs = $({
+  readonly goaWideHallNS_stairs = this.metascreen({
     id: 0xe4,
     icon: icon`
       |├┨│|
@@ -2762,7 +2795,7 @@ export class Metascreens {
     edges: 'w w ',
     connect: '1239ab',
   });
-  readonly goaWideHallNS_stairsBlocked13 = $({
+  readonly goaWideHallNS_stairsBlocked13 = this.metascreen({
     id: 0xe4,
     icon: icon`
       |└┨│|
@@ -2775,7 +2808,7 @@ export class Metascreens {
     edges: 'w w ',
     connect: '12ab|3|9',
   });
-  readonly goaWideHallNS_stairsBlocked24 = $({
+  readonly goaWideHallNS_stairsBlocked24 = this.metascreen({
     id: 0xe4,
     icon: icon`
       |┌┨│|
@@ -2789,7 +2822,7 @@ export class Metascreens {
     connect: '1|239a|b',
   });
   // TODO - custom inverted version of e4 with the top stair on the right
-  readonly wideHallNS_deadEnds = $({
+  readonly wideHallNS_deadEnds = this.metascreen({
     id: 0xe5,
     icon: icon`
       | ╹ |
@@ -2800,7 +2833,7 @@ export class Metascreens {
     connect: '2|a',
   });
   // TODO - add one-way views of this?!?
-  readonly goaWideHallNS_deadEnd = $({
+  readonly goaWideHallNS_deadEnd = this.metascreen({
     id: 0xe5,
     icon: icon`
       |│╹│|
@@ -2810,7 +2843,7 @@ export class Metascreens {
     edges: 'w w ',
     connect: '139b|2|a',
   });
-  readonly goaWideHallNS_deadEndBlocked24 = $({
+  readonly goaWideHallNS_deadEndBlocked24 = this.metascreen({
     id: 0xe5,
     icon: icon`
       |╵╹│|
@@ -2823,7 +2856,7 @@ export class Metascreens {
     edges: 'w w ',
     connect: '1|2|39|a|b',
   });
-  readonly goaWideHallNS_deadEndBlocked13 = $({
+  readonly goaWideHallNS_deadEndBlocked13 = this.metascreen({
     id: 0xe5,
     icon: icon`
       |│╹╵|
@@ -2836,7 +2869,7 @@ export class Metascreens {
     edges: 'w w ',
     connect: '1b|2|3|9|a',
   });
-  readonly wideHallNWSE = $({
+  readonly wideHallNWSE = this.metascreen({
     id: 0xe6,
     icon: icon`
       | ┃ |
@@ -2846,7 +2879,7 @@ export class Metascreens {
     edges: 'wwww',
     connect: '26ae',
   });
-  readonly goaWideHallNWSE = $({
+  readonly goaWideHallNWSE = this.metascreen({
     id: 0xe6,
     icon: icon`
       |┘┃└|
@@ -2856,7 +2889,7 @@ export class Metascreens {
     edges: 'wwww',
     connect: '26ae|15|3d|79|bf',
   });
-  readonly goaWideHallNWSE_blocked13 = $({
+  readonly goaWideHallNWSE_blocked13 = this.metascreen({
     id: 0xe6,
     icon: icon`
       |┘┃ |
@@ -2868,7 +2901,7 @@ export class Metascreens {
     edges: 'wwww',
     connect: '26ae|15|3|d|7|9|bf',
   });
-  readonly goaWideHallNWSE_blocked24 = $({
+  readonly goaWideHallNWSE_blocked24 = this.metascreen({
     id: 0xe6,
     icon: icon`
       | ┃└|
@@ -2880,7 +2913,7 @@ export class Metascreens {
     edges: 'wwww',
     connect: '26ae|1|5|3d|79|b|f',
   });
-  readonly wideHallNWE = $({
+  readonly wideHallNWE = this.metascreen({
     id: 0xe7,
     icon: icon`
       | ┃ |
@@ -2890,7 +2923,7 @@ export class Metascreens {
     edges: 'ww w',
     connect: '26e',
   });
-  readonly goaWideHallNWE = $({
+  readonly goaWideHallNWE = this.metascreen({
     id: 0xe7,
     icon: icon`
       |┘┃└|
@@ -2900,7 +2933,7 @@ export class Metascreens {
     edges: 'ww w',
     connect: '26e|15|3d|7f',
   });
-  readonly goaWideHallNWE_blockedTop = $({
+  readonly goaWideHallNWE_blockedTop = this.metascreen({
     id: 0xe7,
     icon: icon`
       | ┃ |
@@ -2912,7 +2945,7 @@ export class Metascreens {
     edges: 'ww w',
     connect: '26e|1|5|3|d|7f',
   });
-  readonly wideHallWSE = $({
+  readonly wideHallWSE = this.metascreen({
     id: 0xe8,
     icon: icon`
       |   |
@@ -2922,7 +2955,7 @@ export class Metascreens {
     edges: ' www',
     connect: '6ae',
   });
-  readonly goaWideHallWSE = $({
+  readonly goaWideHallWSE = this.metascreen({
     id: 0xe8,
     icon: icon`
       |───|
@@ -2932,7 +2965,7 @@ export class Metascreens {
     edges: ' www',
     connect: '6ae|5d|79|bf',
   });
-  readonly goaWideHallWSE_blockedBottom = $({
+  readonly goaWideHallWSE_blockedBottom = this.metascreen({
     id: 0xe8,
     icon: icon`
       |───|
@@ -2944,7 +2977,7 @@ export class Metascreens {
     edges: ' www',
     connect: '6ae|5d|7|9|b|f',
   });
-  readonly wideHallNS_wallTop = $({
+  readonly wideHallNS_wallTop = this.metascreen({
     id: 0xe9,    // NOTE: the passage narrows at the top
     icon: icon`
       | ┆ |
@@ -2955,7 +2988,7 @@ export class Metascreens {
     connect: '2a',
     exits: [topEdge(6, 4)],
   });
-  readonly goaWideHallNS_wallTop = $({
+  readonly goaWideHallNS_wallTop = this.metascreen({
     id: 0xe9,    // NOTE: the passage narrows at the top
     icon: icon`
       | ┆ |
@@ -2966,7 +2999,7 @@ export class Metascreens {
     connect: '2a|9|b',
     exits: [topEdge(6, 4)],
   });
-  readonly wideHallWE = $({
+  readonly wideHallWE = this.metascreen({
     id: 0xea,
     icon: icon`
       |   |
@@ -2976,7 +3009,7 @@ export class Metascreens {
     edges: ' w w',
     connect: '6e',
   });
-  readonly goaWideHallWE = $({
+  readonly goaWideHallWE = this.metascreen({
     id: 0xea,
     icon: icon`
       |───|
@@ -2986,7 +3019,7 @@ export class Metascreens {
     edges: ' w w',
     connect: '5d|6e|7f',
   });
-  readonly pitWE = $({
+  readonly pitWE = this.metascreen({
     id: 0xeb,
     icon: icon`
       |   |
@@ -2999,7 +3032,7 @@ export class Metascreens {
     connect: '6e',
     platform: {type: 'horizontal', coord: 0x70_38},
   });
-  readonly pitNS = $({
+  readonly pitNS = this.metascreen({
     id: 0xec,
     icon: icon`
       | │ |
@@ -3012,7 +3045,7 @@ export class Metascreens {
     connect: '2a',
     platform: {type: 'vertical', coord: 0x40_78},
   });
-  readonly spikesNS_hallS = $({
+  readonly spikesNS_hallS = this.metascreen({
     id: 0xed,
     icon: icon`
       | ░ |
@@ -3024,7 +3057,7 @@ export class Metascreens {
     edges: 's c ', // s = spikes
     connect: '2a',
   });
-  readonly spikesNS_hallN = $({
+  readonly spikesNS_hallN = this.metascreen({
     id: 0xee,
     icon: icon`
       | │ |
@@ -3036,7 +3069,7 @@ export class Metascreens {
     edges: 'c s ',
     connect: '2a',
   });
-  readonly spikesNS_hallWE = $({
+  readonly spikesNS_hallWE = this.metascreen({
     id: 0xef,
     icon: icon`
       | ░ |
@@ -3048,7 +3081,7 @@ export class Metascreens {
     edges: 'scsc',
     connect: '26ae',
   });
-  readonly spikesNS_hallW = $({
+  readonly spikesNS_hallW = this.metascreen({
     id: ~0xe0,
     icon: icon`
       | ░ |
@@ -3061,7 +3094,7 @@ export class Metascreens {
     edges: 'scs ',
     connect: '26a',
   });
-  readonly spikesNS_hallE = $({
+  readonly spikesNS_hallE = this.metascreen({
     id: ~0xe1,
     icon: icon`
       | ░ |
@@ -3074,7 +3107,7 @@ export class Metascreens {
     edges: 's sc',
     connect: '2ae',
   });
-  readonly riverCave_deadEndsNS = $({
+  readonly riverCave_deadEndsNS = this.metascreen({
     id: 0xf0,
     icon: icon`
       | ╨ |
@@ -3087,7 +3120,7 @@ export class Metascreens {
     poi: [[1, -0x30, 0x48], [1, -0x30, 0x98],
           [1, 0x110, 0x48], [1, 0x110, 0x98]],
   });
-  readonly riverCave_deadEndsN = $({
+  readonly riverCave_deadEndsN = this.metascreen({
     id: 0xf0,
     icon: icon`
       | ╨ |
@@ -3098,8 +3131,9 @@ export class Metascreens {
     edges: 'r   ',
     connect: '1:3',
     poi: [[1, -0x30, 0x48], [1, -0x30, 0x98]],
+    match: (reachable) => !reachable(-0x30, 0x48) && !reachable(-0x30, 0x98),
   });
-  readonly riverCave_deadEndsS = $({
+  readonly riverCave_deadEndsS = this.metascreen({
     id: 0xf0,
     icon: icon`
       |   |
@@ -3110,8 +3144,9 @@ export class Metascreens {
     edges: '  r ',
     connect: '9:b',
     poi: [[1, 0x110, 0x48], [1, 0x110, 0x98]],
+    match: (reachable) => !reachable(-0x30, 0x48) && !reachable(-0x30, 0x98),
   });
-  readonly riverCave_deadEndsWE = $({
+  readonly riverCave_deadEndsWE = this.metascreen({
     id: 0xf1,
     icon: icon`
       |   |
@@ -3124,7 +3159,7 @@ export class Metascreens {
     poi: [[1, 0x60, 0x108], [1, 0xa0, 0x108],
           [1, 0x60, -0x28], [1, 0xa0, -0x28]],
   });
-  readonly riverCave_deadEndsW = $({
+  readonly riverCave_deadEndsW = this.metascreen({
     id: 0xf1,
     icon: icon`
       |   |
@@ -3135,8 +3170,9 @@ export class Metascreens {
     edges: ' r  ',
     connect: '5:7',
     poi: [[1, 0x60, -0x28], [1, 0xa0, -0x28]],
+    match: (reachable) => !reachable(0x60, 0x108) && !reachable(0xa0, 0x108),
   });
-  readonly riverCave_deadEndsE = $({
+  readonly riverCave_deadEndsE = this.metascreen({
     id: 0xf1,
     icon: icon`
       |   |
@@ -3147,8 +3183,9 @@ export class Metascreens {
     edges: '   r',
     connect: 'd:f',
     poi: [[1, 0x60, 0x108], [1, 0xa0, 0x108]],
+    match: (reachable) => !reachable(0x60, -0x28) && !reachable(0xa0, -0x28),
   });
-  readonly riverCaveN_bridge = $({
+  readonly riverCaveN_bridge = this.metascreen({
     id: 0xf2,
     icon: icon`
       | ┇ |
@@ -3161,7 +3198,7 @@ export class Metascreens {
     wall: 0x17,
     // TODO - consider a poi(2) here?
   });
-  readonly riverCaveS_bridge = $({
+  readonly riverCaveS_bridge = this.metascreen({
     id: 0xf2,
     icon: icon`
       |   |
@@ -3174,7 +3211,7 @@ export class Metascreens {
     wall: 0xc6,
     // TODO - consider a poi(2) here?
   });
-  readonly riverCaveWSE = $({
+  readonly riverCaveWSE = this.metascreen({
     id: 0xf3,
     icon: icon`
       |───|
@@ -3184,7 +3221,7 @@ export class Metascreens {
     edges: ' rrr',
     connect: '5d:79:bf',
   });
-  readonly riverCaveNWE = $({
+  readonly riverCaveNWE = this.metascreen({
     id: 0xf4,
     icon: icon`
       |┘║└|
@@ -3194,7 +3231,7 @@ export class Metascreens {
     edges: 'rr r',
     connect: '15:3d:7f',
   });
-  readonly riverCaveNS_blockedRight = $({
+  readonly riverCaveNS_blockedRight = this.metascreen({
     id: 0xf5,
     icon: icon`
       |│║│|
@@ -3205,7 +3242,7 @@ export class Metascreens {
     connect: '19:3:b',
     poi: [[1, 0xc0, 0x98], [1, 0x40, 0x98]],
   });
-  readonly riverCaveNS_blockedLeft = $({
+  readonly riverCaveNS_blockedLeft = this.metascreen({
     id: 0xf6,
     icon: icon`
       |│║│|
@@ -3216,7 +3253,7 @@ export class Metascreens {
     connect: '1:3b:9',
     poi: [[1, 0xb0, 0x48], [1, 0x30, 0x48]],
   });
-  readonly spikesNS = $({
+  readonly spikesNS = this.metascreen({
     id: 0xf7,
     icon: icon`
       | ░ |
@@ -3227,7 +3264,7 @@ export class Metascreens {
     edges: 's s ',
     connect: '2a',
   });
-  readonly cryptArena_statues = $({
+  readonly cryptArena_statues = this.metascreen({
     id: 0xf8,
     icon: icon`<
       |&<&|
@@ -3240,7 +3277,7 @@ export class Metascreens {
     connect: 'a',
     exits: [upStair(0x47)]
   });
-  readonly pyramidArena_draygon = $({
+  readonly pyramidArena_draygon = this.metascreen({
     id: 0xf9,
     icon: icon`
       |┌─┐|
@@ -3252,7 +3289,7 @@ export class Metascreens {
     allowed: s => s.hasFeature('empty') ? [1, 3] : [],
     connect: 'a',
   });
-  readonly cryptArena_draygon2 = $({
+  readonly cryptArena_draygon2 = this.metascreen({
     id: 0xfa,
     icon: icon`
       |┏┷┓|
@@ -3265,7 +3302,7 @@ export class Metascreens {
     connect: '2a',
     exits: [topEdge(6, 4)],
   });
-  readonly cryptArena_entrance = $({
+  readonly cryptArena_entrance = this.metascreen({
     id: 0xfb,
     icon: icon`
       | ┃ |
@@ -3276,12 +3313,12 @@ export class Metascreens {
     connect: '2a',
     exits: [bottomEdge()],
   });
-  readonly cryptTeleporter = $({
+  readonly cryptTeleporter = this.metascreen({
     id: 0xfc,
     tilesets: {pyramid: {}},
     // NOTE - uses bottomEdge (NOT the house version)
   });
-  readonly fortressArena_through = $({
+  readonly fortressArena_through = this.metascreen({
     id: 0xfd,
     icon: icon`╽
       |┌┴┐|
@@ -3295,7 +3332,7 @@ export class Metascreens {
     connect: '2a',
     exits: [topEdge()],
   });
-  // readonly fortressArena_pit = $({
+  // readonly fortressArena_pit = this.metascreen({
   //   id: 0xfd,
   //   icon: icon`╽
   //     |┌┴┐|
@@ -3308,7 +3345,7 @@ export class Metascreens {
   //   exits: [topEdge()],   // logic require flight...
   //   flagged: true,
   // });
-  readonly fortressTrap = $({
+  readonly fortressTrap = this.metascreen({
     id: 0xfe,
     icon: icon`
       |└─┘|
@@ -3320,27 +3357,43 @@ export class Metascreens {
     connect: 'a',
     exits: [bottomEdge()],
   });
-  readonly shrine = $({
+  readonly shrine = this.metascreen({
     id: 0xff,
     tilesets: {shrine: {}},
     exits: [bottomEdge({left: 6, width: 5})],
   });
-  readonly inn = $({
+  readonly inn = this.metascreen({
     id: 0x100,
     tilesets: {house: {}},
     exits: [door(0x86)],
   });
-  readonly toolShop = $({
+  readonly toolShop = this.metascreen({
     id: 0x101,
     tilesets: {house: {}},
     exits: [door(0x86)],
   });
-  readonly armorShop = $({
+  readonly armorShop = this.metascreen({
     id: 0x102,
     tilesets: {house: {}},
     exits: [door(0x86)],
   });
+  readonly exit = this.metascreen({
+    id: ~0x7fff, // will never be instantiated
+    tilesets: {}, // not directly included in any
+    // Check for edge exits in potential neighbors
+    allowed: (s) => (s.data.exits || [])
+        .map(e => edgeTypeMap[e.type] as (0 | 1 | 2 | 3))
+        .filter(d => d != null),
+  });
 }
+
+const edgeTypeMap: {[C in ConnectionType]?: number} = {
+  'edge:top': 0,
+  'edge:left': 1,
+  'edge:bottom': 2,
+  'edge:right': 3,
+};
+
 
 //   ╔╦╗         ╢  ╥
 //   ╠╬╣ ╞═╤╧╪╡  ║  ╫

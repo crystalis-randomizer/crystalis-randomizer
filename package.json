@@ -3,10 +3,10 @@
   "version": "0.0.0",
   "main": "dist/js/patch.js",
   "scripts": {
-    "watch": "npx ttsc --watch",
+    "watch": "npx tsc --watch",
     "flycheck": "elisp/flycheck-tsc-watch",
-    "tsc": "npx ttsc",
-    "build": "npx ttsc && gulp",
+    "tsc": "npx tsc",
+    "build": "npx tsc && gulp",
     "unit": "npm run mocha test/**/*.ts test/*.ts",
     "mocha": "TS_NODE_PROJECT=./tsconfig.test.json npx mocha -r ./test/ts-node",
     "test": "npm run unit && npm run build && test/test_cli.sh",

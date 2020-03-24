@@ -2,7 +2,7 @@ import {Rom} from '../rom.js';
 //import {Screen} from './screen.js';
 import {Mutable} from './util.js';
 import {DefaultMap} from '../util.js';
-import {Metascreen} from './metascreen.js';
+import {Metascreen, Uid} from './metascreen.js';
 import {MetascreenData, ConnectionType,
         bottomEdge, bottomEdgeHouse, cave, door, downStair, icon, leftEdge,
         rightEdge, seamlessVertical, topEdge, upStair, waterfallCave,
@@ -54,11 +54,16 @@ export class Metascreens {
   private readonly screensByFix = new DefaultMap<ScreenFix, Metascreen[]>(() => []);
   private readonly screensById = new DefaultMap<number, Metascreen[]>(() => []);
 
-  constructor(readonly rom: Rom) {}
+  constructor(readonly rom: Rom) {
+    for (const key in this) { // add names
+      const val = this[key];
+      if (val instanceof Metascreen) val.name = key;
+    }
+  }
 
   private metascreen(data: MetascreenData): Metascreen {
     const mut = this as Mutable<this>;
-    const screen = new Metascreen(this.rom, mut.length, data);
+    const screen = new Metascreen(this.rom, mut.length as Uid, data);
     mut[mut.length++] = screen;
     this.screensById.get(screen.id).push(screen);
     for (const tilesetName in data.tilesets) {
@@ -75,8 +80,12 @@ export class Metascreens {
     return screen;
   }
 
-  getById(id: number): Metascreen[] {
-    return this.screensById.has(id) ? [...this.screensById.get(id)] : [];
+  getById(id: number, tileset?: number): Metascreen[] {
+    let out = this.screensById.has(id) ? [...this.screensById.get(id)] : [];
+    if (tileset != null) {
+      out = out.filter(s => s.isCompatibleWithTileset(tileset));
+    }
+    return out;
   }
 
   registerFix(fix: ScreenFix, seed?: number) {
@@ -589,7 +598,7 @@ export class Metascreens {
     // TODO - annotate 3 exits, spawn for windmill blade
     feature: ['windmill'],
     edges: '  n ',
-    exits: [cave(0x63), bottomEdge(), door(0x89), door(0x8c)],
+    exits: [cave(0x63), bottomEdge(), door(0x89, 'windmill'), door(0x8c)],
   });
   readonly townExitW_cave = this.metascreen({ // outside leaf (TODO - consider just deleting?)
     id: 0x2d,
@@ -599,7 +608,8 @@ export class Metascreens {
       |███|`,
     tilesets: {grass: {}}, // cave entrance breaks river and others...
     edges: ' n  ',
-    exits: [cave(0x4a), leftEdge(5)],
+    // NOTE: special case the odd entrance/exit here (should be 4a)
+    exits: [{...cave(0x5a), entrance: 0x56b0}, leftEdge(5)],
   });
   readonly riverNS = this.metascreen({
     id: 0x2e,
@@ -1166,7 +1176,7 @@ export class Metascreens {
   });
   readonly limeTreeLake = this.metascreen({
     id: 0x74,
-    tilesets: {}, // sea or mountain (94) - but not really
+    tilesets: {lime: {}},
     exits: [bottomEdgeHouse(), cave(0x47)],
     // TODO - bridge
   });
@@ -1482,6 +1492,15 @@ export class Metascreens {
     feature: ['empty'],
     edges: '    ',
   });
+  readonly open = this.metascreen({ // NOTE: not cave
+    id: 0x80,
+    icon: icon`
+      |   |
+      |   |
+      |   |`,
+    tilesets: {desert: {}}, // NOTE: could add grass/river but trees nicer.
+    edges: 'oooo',
+  });
   readonly hallNS = this.metascreen({
     id: 0x81,
     icon: icon`
@@ -1614,7 +1633,7 @@ export class Metascreens {
     edges: 'c c ',
     connect: '2a',
   });
-  readonly hallSN_overBridge = this.metascreen({
+  readonly hallNS_overBridge = this.metascreen({
     id: 0x8d,
     icon: icon`
       | ╽ |
@@ -1680,6 +1699,7 @@ export class Metascreens {
     allowed: s => s.hasFeature('empty') ? [1, 3] : [],
     connect: '2a',
     poi: [[1, 0x60, 0x78]],
+    exits: [topEdge()],
   });
   readonly hallNS_arenaWall = this.metascreen({
     id: 0x92,
@@ -2216,6 +2236,7 @@ export class Metascreens {
     tilesets: {mountain: {}},
     edges: 'spsp',
     connect: '6e', // '2a|6e',
+    exits: [seamlessVertical(0x6b, 4)],
   });
   readonly mountainPathWE_bridgeOverRiver = this.metascreen({
     id: 0xbd,
@@ -3315,7 +3336,7 @@ export class Metascreens {
   });
   readonly cryptTeleporter = this.metascreen({
     id: 0xfc,
-    tilesets: {pyramid: {}},
+    tilesets: {pyramid: {}, tower: {}},
     // NOTE - uses bottomEdge (NOT the house version)
   });
   readonly fortressArena_through = this.metascreen({
@@ -3324,7 +3345,7 @@ export class Metascreens {
       |┌┴┐|
       |│ │|
       |┕┳┙|`,
-    tilesets: {pyramid: {}},
+    tilesets: {fortress: {}, pyramid: {}},
     // NOTE: we could use this for a pit that requires flight to cross?
     feature: ['arena'],
     edges: 'n*w*',
@@ -3351,7 +3372,7 @@ export class Metascreens {
       |└─┘|
       | ╳ |
       |╶┬╴|`,
-    tilesets: {pyramid: {}},
+    tilesets: {fortress: {}, pyramid: {}},
     feature: ['pit'],
     edges: '  n ',
     connect: 'a',
@@ -3365,17 +3386,17 @@ export class Metascreens {
   readonly inn = this.metascreen({
     id: 0x100,
     tilesets: {house: {}},
-    exits: [door(0x86)],
+    exits: [{...door(0x86), entrance: 0x94_68}],
   });
   readonly toolShop = this.metascreen({
     id: 0x101,
     tilesets: {house: {}},
-    exits: [door(0x86)],
+    exits: [{...door(0x86), entrance: 0x94_68}],
   });
   readonly armorShop = this.metascreen({
     id: 0x102,
     tilesets: {house: {}},
-    exits: [door(0x86)],
+    exits: [{...door(0x86), entrance: 0x94_68}],
   });
   readonly exit = this.metascreen({
     id: ~0x7fff, // will never be instantiated

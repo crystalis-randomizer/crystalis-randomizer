@@ -1,9 +1,9 @@
 import {Rom} from '../rom.js';
 import {Metascreen} from './metascreen.js';
+import {Metatile} from './metatile.js';
 import {TileEffects} from './tileeffects.js';
 import {Tileset} from './tileset.js';
 import {DefaultMap, iters} from '../util.js';
-import { Metatile } from './metatile.js';
 
 // NOTE: Must be initialized BEFORE Metascreens
 export class Metatilesets implements Iterable<Metatileset> {
@@ -29,6 +29,8 @@ export class Metatilesets implements Iterable<Metatileset> {
   });
 
   readonly sea = this.tileset(0x94, {}); // primarily tiles 80..ff
+
+  readonly lime = this.tileset(0x94, {}); // primarily tiles 60..7f
 
   // parts with "features": arches and houses
   readonly mountain = this.tileset(0x94, {}); // primarily tiles 0..5f
@@ -61,7 +63,7 @@ export class Metatilesets implements Iterable<Metatileset> {
     // Tag names for debugging...
     for (const key in this as object) {
       const value = (this as any)[key] as unknown;
-      if (value instanceof Metatileset) (value as any).name = key;
+      if (value instanceof Metatileset) value.name = key;
     }
   }
 
@@ -88,6 +90,7 @@ export class Metatileset implements Iterable<Metascreen> {
   // Names...
   // Does palette info belong here?  Maybe...
 
+  name?: string;
   private readonly _screens = new Set<Metascreen>();
   private _cache?: NeighborCache = undefined;
 
@@ -114,7 +117,7 @@ export class Metatileset implements Iterable<Metascreen> {
 
   get empty(): Metascreen {
     const e = this.cache.empty;
-    if (!e) throw new Error(`No empty screen for ${this}`);
+    if (!e) throw new Error(`No empty screen for ${this.name}`);
     return e;
   }
 
@@ -152,8 +155,18 @@ export class Metatileset implements Iterable<Metascreen> {
     return this.cache.fromId.get(screenId) ?? EMPTY_SET;
   }
 
+  /**
+   * Invalidate the neighbor cache.  This is necessary any time the
+   * screens change.
+   */
   invalidate() {
     this._cache = undefined;
+  }
+
+  check(s1: Uid, s2: Uid, delta: number): boolean {
+    const cache = this.cache.allowed[delta & 1];  // vertical = 0, horiz = 1
+    const index = delta > 0 ? s1 << 16 | s2 : s2 << 16 | s1;
+    return cache.has(index);
   }
 }
 
@@ -171,8 +184,16 @@ const EMPTY_SET: Set<any> = new class extends Set {
 // Specialized cache of neighbors/relationships in a tileset.
 ////////////////////////////////////////////////////////////////
  
-type Dir = 0|1|2|3;
-// must be <= 0xffff
+export type Dir = 0|1|2|3;
+
+export namespace Dir {
+  export const N: Dir = 0;
+  export const W: Dir = 1;
+  export const S: Dir = 2;
+  export const E: Dir = 3;
+}
+
+// must be 16 bits (65000 screens is plenty)
 type Uid = number;
 // (a, b) -> (a << 16 | b)
 type UidPair = number;
@@ -184,7 +205,7 @@ class NeighborCache {
   readonly allowed = [new Set<UidPair>(), new Set<UidPair>()] as const;
   readonly neighbors = new DefaultMap<UidDir, Set<Uid>>(() => new Set());
   readonly fromId = new DefaultMap<number, Set<Metascreen>>(() => new Set());
-  readonly empty?: Metascreen;
+  readonly empty: Metascreen;
   // private readonly toggles = new DefaultMap<UidDir, Set<Uid>>(() => new Set);
 
   constructor(readonly tileset: Metatileset) {
@@ -207,10 +228,10 @@ class NeighborCache {
         // allowing (say) normal cave w/ narrow?
         const e2 = s2.data.edges || '****';
         if (e1[2] !== '*' && e1[2] === e2[0]) {
-          this.add(2, s1, s2);
+          this.add(Dir.S, s1, s2);
         }
         if (e1[3] !== '*' && e1[3] === e2[1]) {
-          this.add(3, s1, s2);
+          this.add(Dir.E, s1, s2);
         }
         // Maybe call a method if it's there?
         for (const dir of (s1.data.allowed ? s1.data.allowed(s2) : [])) {
@@ -218,7 +239,7 @@ class NeighborCache {
         }
       }
     }
-    this.empty = empty;
+    this.empty = empty ?? tileset.rom.metascreens.caveEmpty;
   }
 
   private add(dir: Dir, s1: Metascreen, s2: Metascreen) {
@@ -227,12 +248,6 @@ class NeighborCache {
     this.allowed[dir & 1].add(dir & 2 ? u1 << 16 | u2 : u2 << 16 | u1);
     this.neighbors.get(u1 << 2 | dir).add(u2);
     this.neighbors.get(u2 << 2 | (dir ^ 2)).add(u1);
-  }
-
-  check(s1: number, s2: number, delta: number): boolean {
-    const cache = this.allowed[delta & 1];  // vertical = 0, horiz = 1
-    const index = delta > 0 ? s1 << 16 | s2 : s2 << 16 | s1;
-    return cache.has(index);
   }
 
   // TODO - what to do with borders?!? Can we treat them like a screen?

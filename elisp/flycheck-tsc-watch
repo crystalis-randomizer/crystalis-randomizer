@@ -9,9 +9,8 @@ use warnings;
 use FindBin;
 use File::Basename qw/dirname/;
 
-open TSC, '-|', 'npx', 'ttsc', '--watch';
-
 my $root = dirname($FindBin::Bin);
+open TSC, '-|', 'npx', 'tsc', '--watch', '-p', "$root/tsconfig.test.json";
 my $out = "$root/.tsc.out";
 my $run = "$root/.tsc.run";
 open FILE, '>', $out;

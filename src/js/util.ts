@@ -817,6 +817,38 @@ export class MutableArrayBiMap<K extends number, V extends number> {
   }
 }
 
+export class Table<R, C, V> {
+  private readonly _map = new Map<R, Map<C, V>>();
+  constructor(elems?: Iterable<readonly [R, C, V]>) {
+    if (elems) {
+      for (const [r, c, v] of elems) {
+        this.set(r, c, v);
+      }
+    }
+  }
+
+  set(r: R, c: C, v: V) {
+    let col = this._map.get(r);
+    if (!col) this._map.set(r, col = new Map());
+    col.set(c, v);
+  }
+
+  get(r: R, c: C): V|undefined {
+    return this._map.get(r)?.get(c);
+  }
+
+  has(r: R, c: C): boolean {
+    return this._map.get(r)?.has(c) || false;
+  }
+
+  delete(r: R, c: C): void {
+    const col = this._map.get(r);
+    if (!col) return;
+    col.delete(c);
+    if (!col.size) this._map.delete(r);
+  }
+}
+
 // cancellation
 
 export interface CancelTokenRegistration {

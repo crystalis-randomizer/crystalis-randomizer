@@ -3,6 +3,7 @@ import {Expr} from '../asm/expr.js';
 import {Module} from '../asm/module.js';
 import {Area, Areas} from './area.js';
 import {Entity} from './entity.js';
+import {Metalocation} from './metalocation.js';
 import {Screen} from './screen.js';
 import {DataTuple, Segment,
         concatIterables, free, group, hex, initializer,
@@ -505,6 +506,8 @@ export class Location extends Entity {
   spritePalettes: [number, number];
   spritePatterns: [number, number];
   spawns: Spawn[];
+
+  meta?: Metalocation = undefined;
 
   constructor(rom: Rom, id: number, readonly data: LocationData) {
     // will include both MapData *and* NpcData, since they share a key.
@@ -1136,6 +1139,10 @@ export class Location extends Entity {
       if (dx < 24 && dy < 24) return this.rom.locations[exit.dest];
     }
     throw new Error(`no exit found near ${hex(this.id)}:${entranceId}`);
+  }
+
+  toString() {
+    return `${super.toString()} ${this.name}`;
   }
 }
 

@@ -86,13 +86,39 @@ export interface MetascreenData {
 
 export type ScreenUpdate = (s: Metascreen, seed: number, rom: Rom) => boolean;
 
-export type Feature =
+export const featureMask = {
   // TODO - cave? fortress? edge?  we already have connections to tell us...
-  'pit' | 'arena' | 'spikes' | 'bridge' | 'wall' | 'stairs' | 'empty' |
-  'portoa1' | 'portoa2' | 'portoa3' | // path from sabre to portoa
-  'lake' | 'overBridge' | 'underBridge' | 'whirlpool' |
-  'lighthouse' | 'cabin' | 'windmill' | 'altar' | 'pyramid' | 'crypt' |
-  'consolidate'; // indicates we can consolidate this screen.
+  'pit': 0x1,
+  'arena': 0x2,
+  'spikes': 0x4,
+  'bridge': 0x8,
+  'wall': 0x10,
+  'stairs': 0x20,
+  'stair:up': 0x40, // NOTE: not actually listed, instead pulled from exitType
+  'stair:down': 0x80,
+  'empty': 0x100,
+  'portoa1': 0x200, // TODO - consider a single "unique" mask here?
+  'portoa2': 0x400, // Or - all 20 combinations of 3/6 bits: no mutual subset
+  'portoa3': 0x800, // 7,b,d,e,13,15,16,19,1a,1c,23,25,26,29,2a,2c,31,32,34,38
+  'lake': 0x1000,
+  'overBridge': 0x2000,
+  'underBridge': 0x4000,
+  'whirlpool': 0x8000,
+  'lighthouse': 0x1_0000,
+  'cabin': 0x2_0000,
+  'windmill': 0x4_0000,
+  'altar': 0x8_0000,
+  'pyramid': 0x10_0000,
+  'crypt': 0x20_0000,
+  'consolidate': 0x40_0000, // indicates we can consolidate this screen.
+} as const;
+
+export type Feature = keyof typeof featureMask;
+  // 'pit' | 'arena' | 'spikes' | 'bridge' | 'wall' | 'stairs' | 'empty' |
+  // 'portoa1' | 'portoa2' | 'portoa3' | // path from sabre to portoa
+  // 'lake' | 'overBridge' | 'underBridge' | 'whirlpool' |
+  // 'lighthouse' | 'cabin' | 'windmill' | 'altar' | 'pyramid' | 'crypt' |
+  // 'consolidate';
 
 export interface Icon {
   short: string; // single character
@@ -115,7 +141,7 @@ export type StairType = 'stair:up' | 'stair:down';
 export type EdgeType = 'edge:top' | 'edge:bottom' | 'edge:left' | 'edge:right';
 export type ConnectionType =
      StairType | EdgeType | 'cave' | 'door' | 'fortress' | 'gate' | 'swamp' |
-     'seamless';
+     'seamless' | 'windmill';
 
 // NOTE: swamp connects to edge:bottom for cave or town?
 

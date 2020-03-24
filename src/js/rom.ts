@@ -13,6 +13,7 @@ import {Items} from './rom/item.js';
 import {ItemGets} from './rom/itemget.js';
 import {Locations} from './rom/location.js';
 import {Messages} from './rom/messages.js';
+import {Metalocation} from './rom/metalocation.js';
 import {Metascreens} from './rom/metascreens.js';
 import {Metasprite} from './rom/metasprite.js';
 import {Metatileset, Metatilesets} from './rom/metatileset.js';
@@ -201,6 +202,12 @@ export class Rom {
     this.bosses = new Bosses(this); // NOTE: must be after Npcs and Flags
     this.scaling = new Scaling(this);
     this.randomNumbers = new RandomNumbers(this);
+
+    // TODO - consider populating this later?
+    // Having this available makes it easier to set exits, etc.
+    for (const loc of this.locations) {
+      if (loc.used) loc.meta = Metalocation.of(loc);
+    }
   }
 
   trigger(id: number): Trigger {
@@ -771,6 +778,8 @@ const ADJUSTMENTS = [
   [0x13646, 0x02, 0x06],
   // Fix broken (fall-through) exit outside start
   [0x1456a, 0x00, 0xff],
+  // Move Leaf north entrance to be right next to exit (consistent with Goa)
+  [0x1458f, 0x38, 0x30],
   // Redundant exit next to stom's door in $19
   [0x14aeb, 0x09, 0xff],
   // Fix garbage map square in bottom-right of Mt Sabre West cave
@@ -795,6 +804,15 @@ const ADJUSTMENTS = [
   // Fix bad music in zombietown houses: $10 should be $01.
   [0x1782a, 0x10, 0x01],
   [0x17857, 0x10, 0x01],
+  // Fix bad screens in tower
+  [0x17b8a, 0x00, 0x40], // tower 1
+  [0x17b90, 0x00, 0x40],
+  [0x17bce, 0x00, 0x40], // tower 2
+  [0x17bd4, 0x00, 0x40],
+  [0x17c0e, 0x00, 0x40], // tower 3
+  [0x17c14, 0x00, 0x40],
+  [0x17c4e, 0x00, 0x40], // tower 4
+  [0x17c54, 0x00, 0x40],
   // Fix bad spawn in Mt Hydra (make it an extra puddle).
   [0x19f02, 0x40, 0x80],
   [0x19f03, 0x33, 0x32],

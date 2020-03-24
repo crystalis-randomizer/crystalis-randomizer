@@ -91,6 +91,7 @@ See URL `http://www.typescriptlang.org/'."
 
 
 (defun sdh-ts-init ()
+  ; TODO - tide seems to be clobbering flycheck, and unneeded for company...
   (tide-setup)
   (tide-mode)
   (company-mode t)

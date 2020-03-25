@@ -776,12 +776,30 @@ export const EXPECTED_CRC32 = 0x1bd39032;
 const ADJUSTMENTS = [
   // Fix softlock in crypt due to flyable wall (effects $b6 tile $46)
   [0x13646, 0x02, 0x06],
+  // Normalize cave entrance in 01 outside start
+  [0x14548, 0x56, 0x50],
   // Fix broken (fall-through) exit outside start
   [0x1456a, 0x00, 0xff],
   // Move Leaf north entrance to be right next to exit (consistent with Goa)
   [0x1458f, 0x38, 0x30],
+  // Normalize sealed cave entrance/exit and zebu cave entrance
+  [0x14618, 0x60, 0x70],
+  [0x14626, 0xa8, 0xa0],
+  [0x14633, 0x15, 0x16],
+  [0x14637, 0x15, 0x16],
+  // Normalize cordel plain entrance from sealed cave
+  [0x14951, 0xa8, 0xa0],
+  [0x14953, 0x98, 0x90],
+  // Normalize cordel swap entrance
+  [0x14a19, 0x78, 0x70],
   // Redundant exit next to stom's door in $19
   [0x14aeb, 0x09, 0xff],
+  // Normalize swamp entrance position
+  [0x14b49, 0x80, 0x88],
+  // Normalize amazones entrance/exit position
+  [0x14b87, 0x20, 0x30],
+  [0x14b9a, 0x01, 0x02],
+  [0x14b9e, 0x01, 0x02],
   // Fix garbage map square in bottom-right of Mt Sabre West cave
   [0x14db9, 0x08, 0x80],
   // Fix garbage map square in bottom-left of Lime Tree Valley

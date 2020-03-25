@@ -166,8 +166,9 @@ export class Metascreen {
 
   findExitType(tile: number, single: boolean): ConnectionType|undefined {
     for (const exit of this.data.exits ?? []) {
-      if (exit.type === 'seamless') continue;
-      const t0 = single && exit.type === 'edge:bottom' ? tile + 0x20 : tile;
+      // if (exit.type === 'seamless') continue;
+      const t0 = single && exit.type === 'edge:bottom' && tile >= 0xc0 ?
+          tile + 0x20 : tile;
       if (exit.exits.includes(t0)) return exit.type;
     }
     return undefined;
@@ -175,8 +176,9 @@ export class Metascreen {
 
   findEntranceType(coord: number, single: boolean): ConnectionType|undefined {
     for (const exit of this.data.exits ?? []) {
-      if (exit.type === 'seamless') continue;
-      const c0 = single && exit.type === 'edge:bottom' ? coord + 0x2000 : coord;
+      if (exit.type.startsWith('seamless')) continue;
+      const c0 = single && exit.type === 'edge:bottom' && coord >= 0xbf00 ?
+          coord + 0x2000 : coord;
       if (exit.entrance === c0) return exit.type;
     }
     return undefined;

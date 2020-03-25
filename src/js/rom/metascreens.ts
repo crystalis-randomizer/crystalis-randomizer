@@ -5,7 +5,7 @@ import {DefaultMap} from '../util.js';
 import {Metascreen, Uid} from './metascreen.js';
 import {MetascreenData, ConnectionType,
         bottomEdge, bottomEdgeHouse, cave, door, downStair, icon, leftEdge,
-        rightEdge, seamlessVertical, topEdge, upStair, waterfallCave,
+        rightEdge, seamlessDown, seamlessUp, topEdge, upStair, waterfallCave,
        } from './metascreendata.js';
 import {Metatileset, Metatilesets} from './metatileset.js';
 import {ScreenFix, withRequire} from './screenfix.js';
@@ -384,7 +384,7 @@ export class Metascreens {
       |   |`,
     tilesets: {river: {}},
     edges: 'oror',
-    exits: [seamlessVertical(0x77)],
+    exits: [seamlessUp(0x77), seamlessDown(0x87)],
   });
   readonly riverBoundaryE_waterfall = this.metascreen({
     id: 0x18,
@@ -574,7 +574,7 @@ export class Metascreens {
       |▙║▟|`,
     tilesets: {grass: {}, river: {}},
     edges: 'n n ',
-    exits: [seamlessVertical(0x77)],
+    exits: [seamlessUp(0x77), seamlessDown(0x87), topEdge(), bottomEdge()],
   });
   readonly exitS_cave = this.metascreen({
     id: 0x2b,
@@ -609,7 +609,7 @@ export class Metascreens {
     tilesets: {grass: {}}, // cave entrance breaks river and others...
     edges: ' n  ',
     // NOTE: special case the odd entrance/exit here (should be 4a)
-    exits: [{...cave(0x5a), entrance: 0x56b0}, leftEdge(5)],
+    exits: [cave(0x4a), leftEdge(5)],
   });
   readonly riverNS = this.metascreen({
     id: 0x2e,
@@ -2014,6 +2014,7 @@ export class Metascreens {
     tilesets: {mountain: {}, mountainRiver: {}},
     edges: '  pp',
     connect: 'ae',
+    exits: [rightEdge(6, 4), bottomEdge({left: 6, width: 4})],
   });
   readonly mountainDeadEndW_caveEmpty = this.metascreen({
     id: 0xaa,
@@ -2035,6 +2036,7 @@ export class Metascreens {
     tilesets: {mountain: {}, mountainRiver: {}},
     edges: 'p  p',
     connect: '2e',
+    exits: [rightEdge(6, 4), topEdge(6, 4)],
   });
   readonly mountainBranchWSE = this.metascreen({
     id: 0xac,
@@ -2076,6 +2078,7 @@ export class Metascreens {
     tilesets: {mountain: {}, mountainRiver: {}},
     edges: 'pp  ',
     connect: '26',
+    exits: [leftEdge(6, 4), topEdge(6, 4)],
   });
   readonly mountainCave_empty = this.metascreen({
     id: 0xb0,
@@ -2128,6 +2131,7 @@ export class Metascreens {
     tilesets: {mountain: {}, mountainRiver: {}},
     edges: ' p p',
     connect: '6e',
+    exits: [leftEdge(6, 4), rightEdge(6, 4)],
   });
   readonly mountainArena_gate = this.metascreen({
     id: 0xb5,
@@ -2183,6 +2187,7 @@ export class Metascreens {
     tilesets: {mountain: {}, mountainRiver: {}},
     edges: ' pp ',
     connect: '6a',
+    exits: [leftEdge(6, 4), bottomEdge({left: 6, width: 4})],
   });
   readonly mountainSlope = this.metascreen({
     id: 0xba,
@@ -2236,7 +2241,7 @@ export class Metascreens {
     tilesets: {mountain: {}},
     edges: 'spsp',
     connect: '6e', // '2a|6e',
-    exits: [seamlessVertical(0x6b, 4)],
+    exits: [seamlessUp(0x6b, 4)],
   });
   readonly mountainPathWE_bridgeOverRiver = this.metascreen({
     id: 0xbd,
@@ -2259,6 +2264,7 @@ export class Metascreens {
     // TODO - could fly under bridge on mountainRiver
     edges: 'spsp',
     connect: '2a', // '2a|6e',
+    exits: [seamlessDown(0x7b, 4)],
   });
   readonly mountainEmpty = this.metascreen({
     id: 0xbf,

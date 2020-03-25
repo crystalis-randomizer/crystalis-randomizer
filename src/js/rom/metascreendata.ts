@@ -139,9 +139,10 @@ export function icon(arr: TemplateStringsArray): Icon {
 
 export type StairType = 'stair:up' | 'stair:down';
 export type EdgeType = 'edge:top' | 'edge:bottom' | 'edge:left' | 'edge:right';
+export type SeamlessType = 'seamless:up' | 'seamless:down';
 export type ConnectionType =
-     StairType | EdgeType | 'cave' | 'door' | 'fortress' | 'gate' | 'swamp' |
-     'seamless' | 'windmill';
+    StairType | EdgeType | SeamlessType |
+    'cave' | 'door' | 'fortress' | 'gate' | 'swamp' | 'windmill';
 
 // NOTE: swamp connects to edge:bottom for cave or town?
 
@@ -166,7 +167,7 @@ export function upStair(tile: number, width = 2): Connection {
     const dy = y === 0xe ? 0x2800 : 0x1800;
     const entrance = ((y << 12) + dy) | ((x << 4) + 0x0008);
     return {
-      type: 'stair:down',
+      type: 'stair:up',
       dir: 2,
       entrance,
       exits: [tile],
@@ -207,7 +208,7 @@ export function downStair(tile: number, width = 2): Connection {
 }
 
 export function cave(tile: number, type: ConnectionType = 'cave'): Connection {
-  return {...upStair(tile), type};
+  return {...upStair(tile + 16), type};
 }
 
 export function door(tile: number, type: ConnectionType = 'door'): Connection {
@@ -279,11 +280,20 @@ export function rightEdge(top = 7, height = 2): Connection {
 }
 
 /** @param tile Top-left tile of transition (height 2) */
-export function seamlessVertical(tile: number, width = 2): Connection {
+export function seamlessUp(tile: number, width = 2): Connection {
   return {
-    type: 'seamless',
+    type: 'seamless:up',
     get dir(): number { throw new Error('not implemented'); },
     get entrance(): number { throw new Error('not implemented'); },
-    get exits(): number[] { throw new Error('not implemented'); },
+    exits: seq(width, i => (tile + i)),
+  };
+}
+
+export function seamlessDown(tile: number, width = 2): Connection {
+  return {
+    type: 'seamless:up',
+    get dir(): number { throw new Error('not implemented'); },
+    get entrance(): number { throw new Error('not implemented'); },
+    exits: seq(width, i => (tile + i)),
   };
 }

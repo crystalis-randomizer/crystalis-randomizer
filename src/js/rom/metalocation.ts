@@ -178,8 +178,7 @@ export class Metalocation {
       const srcScreen = rom.metascreens[screens[srcPos + 16]];
       const srcType = srcScreen.findExitType(exit.tile, height === 1);
       if (!srcType) {
-        const all = srcScreen.data.exits?.filter(e => e.type !== 'seamless')
-                                         .map(
+        const all = srcScreen.data.exits?.map(
             e => e.type + ': ' + e.exits.map(hex).join(', ')).join('\n  ');
         console.warn(`Unknown exit ${hex(exit.tile)}: ${srcScreen.name} in ${
                       location} @ ${hex(srcPos)}:\n  ${all}`);
@@ -187,6 +186,13 @@ export class Metalocation {
       }
       if (exits.has(srcPos, srcType)) continue; // already handled
       const dest = rom.locations[exit.dest];
+      if (srcType.startsWith('seamless')) {
+        const down = srcType === 'seamless:down';
+        const destPos = srcPos + (down ? 16 : -16);
+        const destType = down ? 'seamless:up' : 'seamless:down';
+        exits.set(srcPos, srcType, [dest.id << 8 | destPos, destType]);
+        continue;
+      }
       const entrance = dest.entrances[exit.entrance];
       const destPos = entrance.screen;
       // Figure out the connection type for the destTile.
@@ -197,7 +203,7 @@ export class Metalocation {
         const lines = [];
         for (const destScr of rom.metascreens.getById(destScrId, dest.tileset)) {
           for (const exit of destScr.data.exits ?? []) {
-            if (exit.type === 'seamless') continue;
+            if (exit.type.startsWith('seamless')) continue;
             lines.push(`  ${destScr.name} ${exit.type}: ${hex(exit.entrance)}`);
           }
         }
@@ -220,7 +226,7 @@ export class Metalocation {
 
     function findEntranceType(dest: Location, scrId: number, coord: number) {
       for (const destScr of rom.metascreens.getById(scrId, dest.tileset)) {
-        const type = destScr.findEntranceType(coord, height === 1);
+        const type = destScr.findEntranceType(coord, dest.height === 1);
         if (type != null) return type;
       }
       return undefined;

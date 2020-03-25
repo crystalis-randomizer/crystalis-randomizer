@@ -177,6 +177,11 @@ export async function shuffle(rom: Uint8Array,
                               reader: Reader,
                               log?: {spoiler?: Spoiler},
                               progress?: ProgressTracker): Promise<readonly [Uint8Array, number]> {
+  // Trim overdumps (main.js already does this, but there are other entrypoints)
+  const expectedSize =
+      16 + (rom[6] & 4 ? 512 : 0) + (rom[4] << 14) + (rom[5] << 13);
+  if (rom.length > expectedSize) rom = rom.slice(0, expectedSize);
+
   //rom = watchArray(rom, 0x85fa + 0x10);
   if (EXPAND_PRG && rom.length < 0x80000) {
     const newRom = new Uint8Array(rom.length + 0x40000);

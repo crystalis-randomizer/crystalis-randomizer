@@ -230,6 +230,7 @@ const shuffleRom = async (seed) => {
   document.body.classList.remove('shuffling');
   if (log && log.spoiler) {
     const s = log.spoiler;
+    if (s.flags) replaceSpoiler('spoiler-flags', [s.flags]);
     replaceSpoiler('spoiler-items', sortBy(s.slots.filter(x => x), x => x.item));
     replaceSpoiler('spoiler-route', s.route);
     replaceSpoiler('spoiler-mazes',

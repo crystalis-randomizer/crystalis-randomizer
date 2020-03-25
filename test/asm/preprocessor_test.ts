@@ -285,6 +285,69 @@ describe('Preprocessor', function() {
     });
   });
 
+  describe('.if', function() {
+    it('should expand the then branch', function() {
+      test(['.if 1',
+            'x y',
+            '.else',
+            'a b',
+            '.endif',
+            'z'],
+           instruction('x y'),
+           instruction('z'));
+    });
+
+    it('should expand the else branch', function() {
+      test(['.if 0',
+            'x y',
+            '.else',
+            'a b',
+            '.endif',
+            'z'],
+           instruction('a b'),
+           instruction('z'));
+    });
+
+    it('should handle else-if', function() {
+      test(['.if 0',
+            'a b',
+            '.elseif 1',
+            'c d',
+            '.elseif 2',
+            'e f',
+            '.else',
+            'g h',
+            '.endif',
+            'z'],
+           instruction('c d'),
+           instruction('z'));
+    });
+
+    it.only('should handle nested ifs', function() {
+      test(['.if 0',
+            '  a',
+            '  .if 1',
+            '    b',
+            '  .else',
+            '    c',
+            '  .endif',
+            '  d',
+            '.else',
+            '  e',
+            '  .if 1',
+            '    f',
+            '  .else',
+            '    g',
+            '  .endif',
+            '  h',
+            '.endif',
+            'z'],
+           instruction('e'),
+           instruction('f'),
+           instruction('h'),
+           instruction('z'));
+    });
+  });
   // TODO - test .local, both for symbols AND for defines.
 
   // TODO - tests for .if, make sure it evaluates numbers, etc...

@@ -440,7 +440,9 @@ export class Preprocessor extends TokenSource.Abstract {
       const front = line[0];
       if (Token.eq(front, Token.ENDIF)) {
         depth--;
-        continue;
+        if (!depth) break;
+      } else if (front.token === 'cs' && front.str.startsWith('.if')) {
+        depth++;
       } else if (depth === 1 && !done) {
         if (cond && (Token.eq(front, Token.ELSE) ||
                      Token.eq(front, Token.ELSEIF))) {

@@ -169,11 +169,14 @@ class Presets {
         HardMode.ExperienceScalesSlower,
         HardMode.MaxScalingInTower,
         HardMode.Permadeath,
+        Monsters.RandomizeWeaknesses,
+        Monsters.TowerRobots,
         Routing.OrbsNotRequired,
         Routing.StoryMode,
         World.RandomizeMaps,
         World.RandomizeTrades,
         World.RandomizeWallElements,
+        World.ShuffleGoaFloors,
         World.UnidentifiedKeyItems,
       ]);
 

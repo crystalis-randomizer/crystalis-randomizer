@@ -193,6 +193,7 @@ export async function shuffle(rom: Uint8Array,
   if (typeof seed !== 'number') throw new Error('Bad seed');
   const newSeed = crc32(seed.toString(16).padStart(8, '0') + String(flags.filterOptional())) >>> 0;
   const random = new Random(newSeed);
+  const originalFlagString = String(flags);
   flags = flags.filterRandom(random);
 
   deterministicPreParse(rom.subarray(0x10)); // TODO - trainer...
@@ -383,7 +384,7 @@ export async function shuffle(rom: Uint8Array,
   parsed.modules.pop();
 
   parsed.modules.push(await asm('late'));
-  const crc = stampVersionSeedAndHash(rom, seed, flags, prgCopy);
+  const crc = stampVersionSeedAndHash(rom, seed, originalFlagString, prgCopy);
 
   // Do optional randomization now...
   if (flags.randomizeMusic('late')) {
@@ -665,7 +666,7 @@ const storyMode = (rom: Rom) => {
 };
 
 // Stamp the ROM
-export function stampVersionSeedAndHash(rom: Uint8Array, seed: number, flags: FlagSet, early: Uint8Array): number {
+export function stampVersionSeedAndHash(rom: Uint8Array, seed: number, flagString: string, early: Uint8Array): number {
   // Use up to 26 bytes starting at PRG $25ea8
   // Would be nice to store (1) commit, (2) flags, (3) seed, (4) hash
   // We can use base64 encoding to help some...
@@ -692,7 +693,6 @@ export function stampVersionSeedAndHash(rom: Uint8Array, seed: number, flags: Fl
 
   embed(0x277cf, intercalate('  VERSION     SEED      ',
                              `  ${hash}${seedStr}`));
-  let flagString = String(flags);
 
   // if (flagString.length > 36) flagString = flagString.replace(/ /g, '');
   let extraFlags;

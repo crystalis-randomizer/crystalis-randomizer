@@ -353,6 +353,8 @@ ItemGet_FindOpenSlotWithOverflow:
     rts
 
 
+.segment "0f", "fe", "ff"  ;; NOTE: 0e is not valid below here.
+
 .ifdef _FIX_VAMPIRE
 ;;; Fix vampire to allow >60 HP.  Normally at 61 HP there's an overflow
 ;;; and the teleport animation gets really fast until HP drops below 61.
@@ -372,8 +374,6 @@ ComputeVampireAnimationStart:
 ++ rts
 
 .endif
-
-.segment "0f", "fe", "ff"  ;; NOTE: 0e is not valid below here.
 
 ;;; Ensure Draygon 2 spawns directly if bow of truth was used earlier.
 .org $b1a1

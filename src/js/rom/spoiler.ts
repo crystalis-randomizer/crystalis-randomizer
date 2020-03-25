@@ -17,6 +17,7 @@ export class Spoiler {
   readonly walls: Wall[] = [];
   readonly unidentifiedItems: UnidentifiedItem[] = [];
   readonly wildWarps: WildWarp[] = [];
+  flags: string = '';
 
   // TODO - shops, boss weaknesses
 

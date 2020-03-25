@@ -197,6 +197,7 @@ export async function shuffle(rom: Uint8Array,
   const random = new Random(newSeed);
   const originalFlagString = String(flags);
   flags = flags.filterRandom(random);
+  const actualFlagString = String(flags);
 
   deterministicPreParse(rom.subarray(0x10)); // TODO - trainer...
 
@@ -205,6 +206,9 @@ export async function shuffle(rom: Uint8Array,
   if (typeof window == 'object') (window as any).rom = parsed;
   parsed.spoiler = new Spoiler(parsed);
   if (log) log.spoiler = parsed.spoiler;
+  if (actualFlagString !== originalFlagString) {
+    parsed.spoiler.flags = actualFlagString;
+  }
 
   // Make deterministic changes.
   deterministic(parsed, flags);

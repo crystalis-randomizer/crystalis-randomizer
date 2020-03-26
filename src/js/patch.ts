@@ -233,6 +233,8 @@ export async function shuffle(rom: Uint8Array,
   rescaleMonsters(parsed, flags, random);
   unidentifiedItems(parsed, flags, random);
   shuffleTrades(parsed, flags, random);
+  parsed.locations.copyFromMeta();
+
   if (flags.randomizeMaps()) shuffleMazes(parsed, flags, random);
 
   // NOTE: Shuffle mimics and monsters *after* shuffling maps.

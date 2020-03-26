@@ -3447,6 +3447,19 @@ export class Metascreens {
         .map(e => edgeTypeMap[e.type] as (0 | 1 | 2 | 3))
         .filter(d => d != null),
   });
+
+  checkExitTypes() {
+    // Does a quick check to make sure there's no conflicting exit types
+    // on any metascreens.
+    for (const s in this) {
+      const ms = this[s] as any;
+      const seen = new Set<string>();
+      for (const e of ms?.data?.exits || []) {
+        if (seen.has(e.type)) console.log(`duplicate: ${s} ${e.type}`);
+        seen.add(e.type);
+      }
+    }
+  }
 }
 
 const edgeTypeMap: {[C in ConnectionType]?: number} = {

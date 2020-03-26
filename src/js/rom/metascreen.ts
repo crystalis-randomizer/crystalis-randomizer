@@ -2,6 +2,7 @@ import { Feature, MetascreenData, ConnectionType, featureMask} from './metascree
 import {Metatileset, Metatilesets} from './metatileset.js';
 import {Screen} from './screen.js';
 import {Rom} from '../rom.js';
+import { DefaultMap } from '../util.js';
 
 export type Uid = number & {__uid__: never};
 
@@ -17,6 +18,11 @@ export class Metascreen {
 
   flag?: 'always' | 'calm' | 'cave';
   name?: string;
+
+  readonly neighbors = [
+    new DefaultMap<Metascreen, boolean>((s) => this._checkNeighbor(s, 0)),
+    new DefaultMap<Metascreen, boolean>((s) => this._checkNeighbor(s, 1)),
+  ] as const;
 
   //readonly featureCount: ReadonlyMap<Feature, number>;
 
@@ -183,6 +189,19 @@ export class Metascreen {
       if (exit.entrance === c0) return exit.type;
     }
     return undefined;
+  }
+
+  /** @param dir 0 to check if that is under this, 1 if that is right of this */
+  private _checkNeighbor(that: Metascreen, dir: 0|1): boolean {
+    return false;
+    // const e1 = this.data.edges;
+    // const e2 = that.data.edges;
+    // if (e1 && e2) {
+    //   const opp = dir | 2;
+    //   if (e1[opp] !== '*' && e1[opp] === e2[dir]) return true;
+    // }
+
+    // TODO - change allowed to return a mask.
   }
 }
 

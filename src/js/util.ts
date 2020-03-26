@@ -817,12 +817,20 @@ export class MutableArrayBiMap<K extends number, V extends number> {
   }
 }
 
-export class Table<R, C, V> {
+export class Table<R, C, V> implements Iterable<[R, C, V]>{
   private readonly _map = new Map<R, Map<C, V>>();
   constructor(elems?: Iterable<readonly [R, C, V]>) {
     if (elems) {
       for (const [r, c, v] of elems) {
         this.set(r, c, v);
+      }
+    }
+  }
+
+  * [Symbol.iterator](): Generator<[R, C, V]> {
+    for (const [r, map] of this._map) {
+      for (const [c, v] of map) {
+        yield [r, c, v];
       }
     }
   }

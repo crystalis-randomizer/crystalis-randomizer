@@ -476,6 +476,18 @@ export class Locations extends Array<Location> {
     }
     return [a.module()];
   }
+
+  copyFromMeta() {
+    for (const loc of this) {
+      if (!loc.used) continue;
+      loc.exits = [];
+      loc.entrances = [];
+    }
+    for (const loc of this) {
+      if (!loc.used) continue;
+      loc.meta.write();
+    }
+  }
 }
 
 // Location entities
@@ -662,6 +674,15 @@ export class Location extends Entity {
 
   get height(): number { return this.layoutHeight + 1; }
   set height(height: number) { this.layoutHeight = height - 1; }
+
+  findOrAddEntrance(screen: number, coord: number): number {
+    for (let i = 0; i < this.entrances.length; i++) {
+      const entrance = this.entrances[i];
+      if (entrance.screen === screen && entrance.coord === coord) return i;
+    }
+    this.entrances.push(Entrance.of({screen, coord}));
+    return this.entrances.length - 1;
+  }
 
   // monsters() {
   //   if (!this.spawns) return [];

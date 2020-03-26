@@ -1,4 +1,4 @@
-import {Location} from './location.js';
+import {Exit, Location} from './location.js';
 import {Metascreen, Uid} from './metascreen.js';
 import {Dir, Metatileset} from './metatileset.js';
 import {hex} from './util.js';
@@ -63,6 +63,8 @@ export class Metalocation {
   private _filled = 0;
   private _features = new Map<Pos, number>(); // maps to required mask
   private _exits = new Table<Pos, ConnectionType, ExitSpec>();
+
+  private _monstersInvalidated = false;
 
   constructor(readonly id: number, readonly tileset: Metatileset,
               height: number, width: number) {
@@ -277,10 +279,7 @@ export class Metalocation {
     this._pos = undefined;
   }
 
-  resize(top: number, left: number, bottom: number, right: number) {
-    // number of screens to add on any side
-    throw new Error();
-  }
+  // TODO - resize function?
 
   allPos(): readonly Pos[] {
     if (this._pos) return this._pos;
@@ -308,6 +307,8 @@ export class Metalocation {
     }
   }
 
+  invalidateMonsters() { this._monstersInvalidated = true; }
+
   inBounds(pos: Pos): boolean {
     // return inBounds(pos, this.height, this.width);
     return (pos & 15) < this.width && pos >= 0 && pos >>> 4 < this.height;
@@ -321,6 +322,47 @@ export class Metalocation {
   //   return this._fixed.has(pos);
   // }
 
+  /**
+   * Force-overwrites the given range of screens.  Does validity checking
+   * only at the end.  Does not do anything with features, since they're
+   * only set in later passes (i.e. shuffle, which is last).
+   */
+  set2d(pos: Pos, screens: ReadonlyArray<ReadonlyArray<Metascreen|null>>) {
+    this.saveExcursion(() => {
+      const pos0 = pos;
+      for (const row of screens) {
+        let dx = 0;
+        for (const scr of row) {
+          if (scr) this.setInternal(pos + dx++, scr.uid);
+        }
+        pos += 16;
+      }
+      // Now check everything, throw if failed.
+      for (let dy = screens.length; dy >= 0; dy--) {
+        const width = Math.max(screens[dy]?.length || 0,
+                               screens[dy - 1]?.length || 0);
+        pos = pos0 + (dy << 4);
+        for (let dx = 0; dx <= width; dx++) {
+          const index = pos + dx;
+          const above = this._screens[index - 16];
+          const left = this._screens[index - 1];
+          const scr = this._screens[index];
+          if (!this.tileset.check(above, scr, 16)) {
+            const aboveName = this.rom.metascreens[above].name;
+            const scrName = this.rom.metascreens[scr].name;
+            throw new Error(`bad neighbor ${aboveName} above ${scrName}`);
+          }
+          if (!this.tileset.check(left, scr, 1)) {
+            const leftName = this.rom.metascreens[left].name;
+            const scrName = this.rom.metascreens[scr].name;
+            throw new Error(`bad neighbor ${leftName} left of ${scrName}`);
+          }
+        }
+      }
+      return true;
+    });
+  }
+
   // Options for setting:
   set(pos: Pos, uid: Uid): boolean {
     const scr = this.rom.metascreens[uid];
@@ -331,7 +373,7 @@ export class Metalocation {
       const other = pos + delta;
       if (!this.tileset.check(uid, this._screens[other], delta)) return false;
     }
-    this._screens[pos + 16] = uid;
+    this.setInternal(pos, uid);
     return true;
   }
 
@@ -467,6 +509,96 @@ export class Metalocation {
              this._screens[left + 15] === exit];
       yield [right, Dir.E, this._screens[right + 16],
              this._screens[right + 17] === exit];
+    }
+  }
+
+  /**
+   * Attach an exit/entrance pair in two directions.
+   * Also reattaches the former other ends of each to each other.
+   */
+  attach(pos: Pos, type: ConnectionType,
+         dest: Metalocation, destPos: number, destType: ConnectionType) {
+    const destTile = dest.id << 8 | destPos;
+    const prevDest = this._exits.get(pos, type)!;
+    const [prevDestTile, prevDestType] = prevDest;
+    if (prevDestTile === destTile && prevDestType === destType) return;
+    const prevSrc = dest._exits.get(destPos, destType)!;
+    const [prevSrcTile, prevSrcType] = prevSrc;
+    this._exits.set(pos, type, [destTile, destType]);
+    dest._exits.set(destPos, destType, [this.id << 8 | pos, type]);
+    // also hook up previous pair
+    const prevSrcMeta = this.rom.locations[prevSrcTile >> 8].meta!;
+    const prevDestMeta = this.rom.locations[prevDestTile >> 8].meta!;
+    prevSrcMeta._exits.set(prevSrcTile & 0xff, prevSrcType, prevDest);
+    prevDestMeta._exits.set(prevDestTile & 0xff, prevDestType, prevSrc);
+  }
+
+  /**
+   * Moves an exit from one pos/type to another.
+   * Also updates the metalocation on the other end of the exit.
+   * This should typically be done atomically if rebuilding a map.
+   */
+  // TODO - rebuilding a map involves moving to a NEW metalocation...
+  //      - given this, we need a different approach?
+  moveExits(...moves: Array<[Pos, ConnectionType, Pos, ConnectionType]>) {
+    const newExits: Array<[Pos, ConnectionType, ExitSpec]> = [];
+    for (const [oldPos, oldType, newPos, newType] of moves) {
+      const destExit = this._exits.get(oldPos, oldType)!;
+      const [destTile, destType] = destExit;
+      const dest = this.rom.locations[destTile >> 8].meta!;
+      dest._exits.set(destTile & 0xff, destType,
+                      [this.id << 8 | newPos, newType]);
+      newExits.push([newPos, newType, destExit]);
+      this._exits.delete(oldPos, oldType);
+    }
+    for (const [pos, type, exit] of newExits) {
+      this._exits.set(pos, type, exit);
+    }
+  }
+
+  /**
+   * Saves the current state back into the underlying location.
+   * Currently this only deals with entrances/exits.
+   */
+  write() {
+    const srcLoc = this.rom.locations[this.id];
+    for (const [srcPos, srcType, [destTile, destType]] of this._exits) {
+      const srcScreen = this.rom.metascreens[this._screens[srcPos + 0x10]];
+      const dest = destTile >> 8;
+      const destLoc = this.rom.locations[dest];
+      const destMeta = destLoc.meta!;
+      const destScreen =
+          this.rom.metascreens[destMeta._screens[(destTile & 0xff) + 0x10]];
+      const srcExit = srcScreen.data.exits?.find(e => e.type === srcType);
+      const destExit = destScreen.data.exits?.find(e => e.type === destType);
+      if (!srcExit || !destExit) throw new Error(`Missing exit`); // TODO ... ?
+      // See if the dest entrance exists yet...
+      let destPos = destTile & 0xff;
+      let destCoord = destExit.entrance;
+      if (destCoord > 0xefff) { // handle special case in Oak
+        destPos += 0x10;
+        destCoord -= 0x10000;
+      }
+      const entrance = destLoc.findOrAddEntrance(destPos, destCoord);
+      for (const tile of srcExit.exits) {
+        srcLoc.exits.push(Exit.of({screen: srcPos, tile, dest, entrance}));
+      }
+    }
+    srcLoc.width = this._width;
+    srcLoc.height = this._height;
+    srcLoc.screens = [];
+    for (let y = 0; y < this._width; y++) {
+      const row: number[] = [];
+      srcLoc.screens.push(row);
+      for (let x = 0; x < this._height; x++) {
+        row.push(this.rom.metascreens[this._screens[(y + 1) << 4 | x]].id);
+      }
+    }
+    srcLoc.tileset = this.tileset.tilesetId;
+    srcLoc.tileEffects = this.tileset.effects().id;
+
+    if (this._monstersInvalidated) {
+      // TODO - if monsters invalidated, then replace them...
     }
   }
 }

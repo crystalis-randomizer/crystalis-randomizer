@@ -5,90 +5,174 @@
 
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
-import {Location} from '../rom/location.js';
+import {Metalocation, Pos} from '../rom/metalocation.js';
+import {ConnectionType} from '../rom/metascreendata.js';
+
+type Exit = [Metalocation, Pos, ConnectionType];
+type Exit2 = [Metalocation, Pos, ConnectionType, ((e: Exit) => void)?];
+
+function flipSaberaEntrance(exit: Exit) {
+  const loc = exit[0];
+  loc.set2d(0x71, [[loc.rom.metascreens.deadEndE_upStair],
+                   [loc.rom.metascreens.caveEmpty]]);
+  loc.moveExits([0x81, 'stair:down', 0x71, 'stair:up']);
+  exit[1] = 0x71;
+  exit[2] = 'stair:up';
+}
+
+function flipKarmineEntrance(exit: Exit) {
+  const loc = exit[0];
+  const ms = loc.rom.metascreens;
+  loc.invalidateMonsters();
+  loc.set2d(0x20, [[ms.caveEmpty, ms.hallNS],
+                   [ms.deadEndE_upStair, ms.hallNW]]);
+  loc.moveExits([0x30, 'stair:down', 0x30, 'stair:up']);
+  exit[2] = 'stair:up';
+}
+
+function flipKarmineExit(exit: Exit) {
+  const loc = exit[0];
+  const ms = loc.rom.metascreens;
+  loc.set2d(0x01, [[ms.deadEndS_stairs, ms.caveEmpty]]);
+  loc.moveExits([0x02, 'stair:down', 0x01, 'stair:up']);
+  exit[1] = 0x01;
+  exit[2] = 'stair:up';
+}
+
+function flipExit(exit: Exit) {
+  const loc = exit[0];
+  const ms = loc.rom.metascreens;
+  if (loc.width < 2) loc.width = 2; // should alredy be filled w/ empty
+  loc.set2d(0x00, [[ms.hallSE, ms.deadEndW_downStair]]);
+  loc.moveExits([0x00, 'stair:up', 0x01, 'stair:down']);
+  exit[1] = 0x01;
+  exit[2] = 'stair:down';
+}
+
+function flip(e: Exit2) {
+  e[3]!(e as Exit);
+  e[3] = undefined;
+}
 
 export function shuffleGoa(rom: Rom, random: Random) {
   const $ = rom.locations;
-  const floors = [1, 2, 3, 4];
+  const floors = [0, 1, 2, 3];
   random.shuffle(floors);
 
-  // (location, entrance ID, exit index)
-  const entrances: ReadonlyArray<readonly [Location, number, number]> = [
-    [$.GoaFortress_Exit, 0, 0], // 0 or 4
-    [$.GoaFortress_Kelbesque, 0, 0],
-    [$.GoaFortress_Sabera, 0, 0],
-    [$.GoaFortress_Mado1, 0, 0],
-    [$.GoaFortress_Karmine1, 0, 0],
+  const entrances: Exit2[] = [
+    [$.GoaFortress_Kelbesque.meta!, 0x83, 'stair:down'],
+    [$.GoaFortress_Sabera.meta!, 0x81, 'stair:down', flipSaberaEntrance],
+    [$.GoaFortress_Mado1.meta!, 0x72, 'stair:down'],
+    [$.GoaFortress_Karmine1.meta!, 0x30, 'stair:down', flipKarmineEntrance],
   ];
-  const exits: ReadonlyArray<readonly [Location, number, number]> = [
-    [$.GoaFortress_Entrance, 1, 2], // 0 or 4
-    [$.GoaFortress_Zebu, 1, 4],
-    [$.GoaFortress_Tornel, 1, 2],
-    [$.GoaFortress_Asina, 1, 2],
-    [$.GoaFortress_Kensu, 5, 10],
+  const exits: Exit2[] = [
+    [$.GoaFortress_Zebu.meta!, 0x00, 'stair:up', flipExit],
+    [$.GoaFortress_Tornel.meta!, 0x00, 'stair:up', flipExit],
+    [$.GoaFortress_Asina.meta!, 0x00, 'stair:up', flipExit],
+    [$.GoaFortress_Kensu.meta!, 0x02, 'stair:down', flipKarmineExit],
   ];
 
-  // Update the exit position of Kensu and exits[floots[4]] if not same
-  const last = floors[3];
-  if (last !== 4) {
-    flipKarmineExit(...exits[4]);
-    flipNonKarmineExit(...exits[last]);
+  // Plan: piece it together...
+  //  - probably just rearrange the arrays, then do all the mutations later????
+  const a: Exit2[] = [[$.GoaFortress_Entrance.meta!, 0x00, 'edge:top']];
+  const b: Exit2[] = [];
+  let up = true;
+  let lastA: Exit2 = a[0];
+
+  for (const f of floors) {
+    const flexible = up || entrances[f][3] || a[a.length - 1][3];
+    const reverse = flexible ? random.pick([false, true]) : true;
+    const lastB: Exit2 = reverse ? entrances[f] : exits[f];
+    b.push(lastB);
+    if (up !== (lastB[2] === 'stair:down')) {
+      if (lastB[3]) {
+        flip(lastB);
+      } else {
+        flip(lastA);
+      }
+    }
+    a.push(lastA = reverse ? exits[f] : entrances[f]);
+    up = lastA[2] === 'stair:up';
+  }
+  if (up) flip(lastA);
+  b.push([$.GoaFortress_Exit.meta!, 0x01, 'stair:up']);
+
+  for (let i = 0; i < a.length; i++) {
+    a[i][0].attach(a[i][1], a[i][2], b[i][0], b[i][1], b[i][2]);
   }
 
-  // Now go through each and do the links.
-  // exits[0] : entrances[floors[0]]
-  // exits[floors[0]] : entrances[floors[1]]
-  // ...
-  // exits[floors[3]] : entrances[0]
+  // let last = [exits[0][0], exits[0][1], 'stair:up'];
+  // for (let i = 1; i <= 4; i++) {
+  //   const floor = floors[i];
+  //   // Each floor may be reversed.  Exception: if we're coming through a down
+  //   // stair into kelby or mado's area then we MUST be reversed since these
+  //   // maps are not compatible with an up stair at the start.
+  //   const reverse =
+  //       last === 'stair:up' || (floor & 1) ? random.pick([false, true]) : true;
+  //   const entrance = (reverse ? exits : entrances)[floor];
+  //   const exit = (reverse ? entrances : exits)[floor];
+  //   if (entrance[2] === last) {
+  //     flip(entrance);
+  //   }
+  //   if (i === 4) { // exit must be down
+  //     if (exit[2] !== 'stair:down') flip(exit);
+  //   } else { // exit should be up if possible, but not required.
+  //     if (exit[2] !== 'stair:up' &&
+  //         exit[0] !== $.GoaFortress_Kelbesque.meta &&
+  //         exit[0] !== $.GoaFortress_Mado1.meta) {
+  //       flip(exit);
+  //     }
+  //   }
+  //   const prev = exits[floors[i - 1]];
+  //   prev[0].attach(prev[1], prev[2])
+  //   last = exit[2];
+  // }
 
-  function connect(from: Location, exit: number,
-                   to: Location, entrance: number) {
-    // find all exits in 'from' that map to the same entrance
-    const want = from.exits[exit];
-    const found = [];
-    for (const e of from.exits) {
-      if (e.dest === want.dest && e.entrance === want.entrance) found.push(e);
-    }
-    for (const e of found) {
-      e.dest = to.id;
-      e.entrance = entrance;
-    }
-  }
 
-  for (let i = 0; i <= 4; i++) {
-    const lower = i === 0 ? 0 : floors[i - 1];
-    const upper = i === 4 ? 0 : floors[i];
-    const [lowerLoc, lowerIn, lowerOut] = exits[lower];
-    const [upperLoc, upperIn, upperOut] = entrances[upper];
-    connect(upperLoc, upperOut, lowerLoc, lowerIn);
-    connect(lowerLoc, lowerOut, upperLoc, upperIn);
-  }
+  // // Update the exit position of Kensu and exits[floots[4]] if not same
+  // const last = floors[3];
+  // if (last !== 4) {
+  //   flipKarmineExit();
+  //   flipNonKarmineExit(last);
+  // }
 
-  // Fix the palettes and music.
-  for (const [l] of exits) {
-    if (typeof l.data.music === 'number') {
-      l.bgm = l.neighborForEntrance(l.data.music as number).bgm;
-    }
-    if (typeof l.data.palette === 'number') {
-      const n = l.neighborForEntrance(l.data.palette as number).tilePalettes;
-      l.tilePalettes = [n[0], n[1], n[2]];
-    }
-  }
-}
+  // // Now go through each and do the links.
+  // // exits[0] : entrances[floors[0]]
+  // // exits[floors[0]] : entrances[floors[1]]
+  // // ...
+  // // exits[floors[3]] : entrances[0]
 
-function flipKarmineExit(l: Location, i: number, o: number) {
-  l.writeScreens2d(0x01, [[0x9a, 0x80]]);
-  l.entrances[i].screen = l.exits[o].screen = l.exits[o + 1].screen = 0x01;
-  l.entrances[i].coord = 0xd080;
-  l.exits[o].tile = 0xc7;
-  l.exits[o + 1].tile = 0xc8;
-}
+  // function connect(from: Location, exit: number,
+  //                  to: Location, entrance: number) {
+  //   // find all exits in 'from' that map to the same entrance
+  //   const want = from.exits[exit];
+  //   const found = [];
+  //   for (const e of from.exits) {
+  //     if (e.dest === want.dest && e.entrance === want.entrance) found.push(e);
+  //   }
+  //   for (const e of found) {
+  //     e.dest = to.id;
+  //     e.entrance = entrance;
+  //   }
+  // }
 
-function flipNonKarmineExit(l: Location, i: number, o: number) {
-  if (l.width < 2) l.resizeScreens(0, 0, 0, 1, 0x80);
-  l.writeScreens2d(0x00, [[0x83, 0x97]]);
-  l.entrances[i].screen = l.exits[o].screen = l.exits[o + 1].screen = 0x01;
-  l.entrances[i].coord = 0xaf30;
-  l.exits[o].tile = 0xb2;
-  l.exits[o + 1].tile = 0xb3;
+  // for (let i = 0; i <= 4; i++) {
+  //   const lower = i === 0 ? 0 : floors[i - 1];
+  //   const upper = i === 4 ? 0 : floors[i];
+  //   const [lowerLoc, lowerIn, lowerOut] = exits[lower];
+  //   const [upperLoc, upperIn, upperOut] = entrances[upper];
+  //   connect(upperLoc, upperOut, lowerLoc, lowerIn);
+  //   connect(lowerLoc, lowerOut, upperLoc, upperIn);
+  // }
+
+  // // Fix the palettes and music.
+  // for (const [l] of exits) {
+  //   if (typeof l.data.music === 'number') {
+  //     l.bgm = l.neighborForEntrance(l.data.music as number).bgm;
+  //   }
+  //   if (typeof l.data.palette === 'number') {
+  //     const n = l.neighborForEntrance(l.data.palette as number).tilePalettes;
+  //     l.tilePalettes = [n[0], n[1], n[2]];
+  //   }
+  // }
 }

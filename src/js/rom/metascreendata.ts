@@ -300,7 +300,7 @@ export function seamlessUp(tile: number, width = 2): Connection {
 
 export function seamlessDown(tile: number, width = 2): Connection {
   return {
-    type: 'seamless:up',
+    type: 'seamless:down',
     get dir(): number { throw new Error('not implemented'); },
     get entrance(): number { throw new Error('not implemented'); },
     exits: seq(width, i => (tile + i)),

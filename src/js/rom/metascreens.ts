@@ -229,7 +229,7 @@ export class Metascreens {
     //        left-half (right-half mountain)
     tilesets: {grass: {}},
     edges: ' vov',
-    exits: [cave(0xa7, 'fortress')],
+    exits: [{...upStair(0xa6, 3), type: 'fortress'}],
   });
   readonly bendSE_longGrass = this.metascreen({
     id: 0x09,
@@ -249,7 +249,7 @@ export class Metascreens {
     tilesets: {grass: {}, river: {}, desert: {},
                sea: {requires: [ScreenFix.SeaCaveEntrance]}},
     edges: ' n  ', // n = narrow
-    exits: [cave(0x48), leftEdge(6)],
+    exits: [cave(0x48), leftEdge({top: 6})],
   });
   readonly bendNE_grassRocks = this.metascreen({
     id: 0x0b,
@@ -308,7 +308,7 @@ export class Metascreens {
     tilesets: {grass: {}, river: {},
                desert: {requires: [ScreenFix.DesertRocks]}},
     edges: '<o<n',
-    exits: [rightEdge(6)],
+    exits: [rightEdge({top: 6})],
     // TODO - edge
   });
   readonly boundaryN_trees = this.metascreen({
@@ -332,7 +332,7 @@ export class Metascreens {
     // It needs special handling, at least.
     feature: ['portoa3'],
     edges: '2*>r',
-    exits: [leftEdge(1)],
+    exits: [leftEdge({top: 1})],
   });
   readonly slopeAbovePortoa = this.metascreen({
     id: 0x13,
@@ -419,14 +419,15 @@ export class Metascreens {
                sea: {requires: [ScreenFix.SeaRocks]}},
     // NOTE: the edge is not 'n' because it's off-center.
     edges: '>* ^',
-    exits: [leftEdge(0xb)],
+    exits: [leftEdge({top: 0xb})],
   });
   readonly nadare = this.metascreen({
     id: 0x1b,
     //icon: '?',
     //migrated: 0x2000,
     tilesets: {house: {}},
-    exits: [bottomEdgeHouse(), door(0x23), door(0x25), door(0x2a)],
+    exits: [bottomEdgeHouse(), door(0x23),
+            door(0x25, 'door2'), door(0x2a, 'door3')],
   });
   readonly townExitW = this.metascreen({
     id: 0x1c,
@@ -436,7 +437,7 @@ export class Metascreens {
       |█▌ |`,
     tilesets: {grass: {}, river: {}},
     edges: '>n>o',
-    exits: [leftEdge(8)],
+    exits: [leftEdge({top: 8})],
   });
   readonly shortGrassS = this.metascreen({
     id: 0x1d,
@@ -465,7 +466,7 @@ export class Metascreens {
     id: 0x1f,
     //icon: '?',
     tilesets: {town: {}},
-    exits: [leftEdge(3), rightEdge(9)],
+    exits: [leftEdge({top: 3}), rightEdge({top: 9})],
   }); 
 
   readonly riverBranchNSE = this.metascreen({
@@ -609,7 +610,7 @@ export class Metascreens {
     tilesets: {grass: {}}, // cave entrance breaks river and others...
     edges: ' n  ',
     // NOTE: special case the odd entrance/exit here (should be 4a)
-    exits: [cave(0x4a), leftEdge(5)],
+    exits: [cave(0x4a), leftEdge({top: 5})],
   });
   readonly riverNS = this.metascreen({
     id: 0x2e,
@@ -712,7 +713,7 @@ export class Metascreens {
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
     edges: 'o^>o',
   });
-  readonly towerPlain = this.metascreen({
+  readonly towerPlain_upStair = this.metascreen({
     id: 0x38,
     icon: icon`┴
       | ┊ |
@@ -720,6 +721,7 @@ export class Metascreens {
       |   |`,
     tilesets: {tower: {}},
     edges: 'st t',
+    exits: [seamlessDown(0x08, 2), topEdge({left: 8})],
     // TODO - annotate possible stairway w/ flag?
   });
   readonly towerRobotDoor_downStair = this.metascreen({
@@ -730,7 +732,7 @@ export class Metascreens {
       | ┊ |`,
     tilesets: {tower: {}},
     edges: ' tst',
-    // TODO - connections
+    exits: [seamlessUp(0xe8, 2)],
   });
   readonly towerDynaDoor = this.metascreen({
     id: 0x3a,
@@ -740,7 +742,7 @@ export class Metascreens {
       | ┊ |`,
     tilesets: {tower: {}},
     edges: '  s ',
-    // TODO - connections
+    exits: [cave(0x67, 'door')],
   });
   readonly towerLongStairs = this.metascreen({
     id: 0x3b,
@@ -750,17 +752,18 @@ export class Metascreens {
       | ┊ |`,
     tilesets: {tower: {}},
     edges: 's s ',
+    exits: [bottomEdge()],
     // TODO - connections
   });
   readonly towerMesiaRoom = this.metascreen({
     id: 0x3c,
     tilesets: {tower: {}},
-    // TODO - connections (NOTE: uses bottomEdgeHouse)
+    exits: [bottomEdgeHouse()],
   });
   readonly towerTeleporter = this.metascreen({
     id: 0x3d,
     tilesets: {tower: {}},
-    // TODO - connections (NOTE: uses bottomEdgeHouse)
+    exits: [bottomEdgeHouse(), cave(0x57, 'teleporter')],
   });
   readonly caveAbovePortoa = this.metascreen({
     id: 0x3e,
@@ -828,7 +831,7 @@ export class Metascreens {
       |   |`,
     tilesets: {tower: {}},
     edges: ' t t',
-    exits: [cave(0x68)],
+    exits: [cave(0x58)],
     // TODO - connections
   });
   readonly house_bedroom = this.metascreen({
@@ -839,7 +842,7 @@ export class Metascreens {
   readonly shed = this.metascreen({
     id: 0x44,
     tilesets: {house: {}},
-    exits: [bottomEdgeHouse()],
+    exits: [bottomEdgeHouse(), cave(0x49)],
   });
   // TODO - separate metascreen for shedWithHiddenDoor
   readonly tavern = this.metascreen({
@@ -871,7 +874,8 @@ export class Metascreens {
   readonly foyer = this.metascreen({
     id: 0x4a,
     tilesets: {house: {}},
-    exits: [bottomEdgeHouse(), door(0x28), door(0x53), door(0x5c)],
+    exits: [bottomEdgeHouse({shift: 0.5}),
+            door(0x28), door(0x53, 'door2'), door(0x5c, 'door3')],
   });
   readonly throneRoom_portoa = this.metascreen({
     id: 0x4b,
@@ -881,17 +885,18 @@ export class Metascreens {
   readonly fortuneTeller = this.metascreen({
     id: 0x4c,
     tilesets: {house: {}},
-    exits: [bottomEdgeHouse(), door(0x56), door(0x59)],
+    exits: [bottomEdgeHouse(), door(0x56), door(0x59, 'door2')],
   });
   readonly backRoom = this.metascreen({
     id: 0x4d,
     tilesets: {house: {}},
     exits: [bottomEdgeHouse()],
   });
-  readonly stomHouseDojo = this.metascreen({
+  readonly dojo = this.metascreen({
     id: 0x4e,
     tilesets: {house: {}},
-    // Edge entrance shifted to properly line up at start of fight.
+    // Edge entrance shifted to properly line up at start of stom fight.
+    // (note that this causes us to shift all other uses as well).
     exits: [bottomEdgeHouse({shift: -0.5})],
   });
   readonly windmillInside = this.metascreen({
@@ -903,49 +908,50 @@ export class Metascreens {
     // brynmaer + swan (TODO - split so we can move exits)
     id: 0x50,
     tilesets: {town: {}},
-    exits: [door(0x4c), door(0x55)],
+    exits: [door(0x4c), door(0x55, 'door2')],
   });
   readonly brynmaerRight_exitE = this.metascreen({
     // brynmaer
     id: 0x51,
     tilesets: {town: {type: 'horizontal'}},
-    exits: [rightEdge(8), door(0x41)],
+    exits: [rightEdge({top: 8}), door(0x41)],
   });
   readonly brynmaerLeft_deadEnd = this.metascreen({
     // brynmaer
     id: 0x52,
     tilesets: {town: {type: 'horizontal'}},
-    exits: [door(0x49), door(0x4c)],
+    exits: [door(0x49), door(0x4c, 'door2')],
   });
   readonly swanLeft_exitW = this.metascreen({
     // swan
     id: 0x53,
     tilesets: {town: {type: 'horizontal'}},
-    exits: [leftEdge(9), door(0x49), door(0x5e)],
+    exits: [leftEdge({top: 9}), door(0x49), door(0x5e, 'door2')],
   });
   readonly swanRight_exitS = this.metascreen({
     // swan
     id: 0x54,
     tilesets: {town: {type: 'horizontal'}},
-    exits: [bottomEdge({left: 3}), door(0x41), door(0x43), door(0x57)],
+    exits: [bottomEdge({left: 3}), door(0x41),
+            door(0x43, 'door2'), door(0x57, 'door3')],
   });
   readonly horizontalTownLeft_exitN = this.metascreen({
     // sahara, amazones (TODO - split so we can move exits)
     id: 0x55,
     tilesets: {town: {type: 'horizontal'}},
-    exits: [topEdge(0xd), door(0x46), door(0x4b)],
+    exits: [topEdge({left: 0xd}), door(0x46), door(0x4b, 'door2')],
   });
   readonly amazonesRight_deadEnd = this.metascreen({
     // amazones
     id: 0x56,
     tilesets: {town: {type: 'horizontal'}},
-    exits: [door(0x40), door(0x58)],
+    exits: [door(0x40), door(0x58, 'door2')],
   });
   readonly saharaRight_exitE = this.metascreen({
     // sahara
     id: 0x57,
     tilesets: {town: {type: 'horizontal'}},
-    exits: [rightEdge(7), door(0x40), door(0x66)],
+    exits: [rightEdge({top: 7}), door(0x40), door(0x66, 'door2')],
   });
   readonly portoaNW = this.metascreen({
     // portoa
@@ -957,29 +963,34 @@ export class Metascreens {
     // portoa
     id: 0x59,
     tilesets: {town: {type: 'square'}},
-    exits: [door(0x63), door(0x8a), bottomEdge({left: 3, width: 4})],
+    exits: [door(0x63), door(0x8a, 'door2'), bottomEdge({left: 3, width: 4})],
   });
   readonly portoaSW_exitW = this.metascreen({
     // portoa
     id: 0x5a,
     tilesets: {town: {type: 'square'}},
-    exits: [leftEdge(9), door(0x86), topEdge()],
+    exits: [leftEdge({top: 9}), door(0x86), topEdge()],
   });
   readonly portoaSE_exitE = this.metascreen({
     // portoa
     id: 0x5b,
     tilesets: {town: {type: 'square'}},
-    exits: [rightEdge(9), door(0x7a), door(0x87)],
+    exits: [rightEdge({top: 9}), door(0x7a), door(0x87, 'door2')],
   });
   readonly dyna = this.metascreen({
     id: 0x5c,
     tilesets: {tower: {}},
+    // NOTE: not really a good exit type for this...
+    exits: [{type: 'stair:down', manual: true, dir: 2,
+             entrance: 0xbf80, exits: []}],
   });
   readonly portoaFisherman = this.metascreen({
     // portoa
     id: 0x5d,
     tilesets: {town: {type: 'square'}},
-    exits: [rightEdge(6), leftEdge(4, 6), door(0x68)],
+    exits: [rightEdge({top: 6}),
+            leftEdge({top: 4, height: 6, shift: 0.5}),
+            door(0x68)],
   });
   readonly verticalTownTop_fortress = this.metascreen({
     // shyron, zombie town (probably not worth splitting this one)
@@ -991,13 +1002,14 @@ export class Metascreens {
     // shyron
     id: 0x5f,
     tilesets: {town: {type: 'vertical'}},
-    exits: [door(0x54), door(0x5b), topEdge()],
+    exits: [door(0x54), door(0x5b, 'door2'), topEdge()],
   });
   readonly shyronBottom_exitS = this.metascreen({
     // shyron
     id: 0x60,
     tilesets: {town: {type: 'vertical'}},
-    exits: [bottomEdge({left: 3}), door(0x04), door(0x06), door(0x99)],
+    exits: [bottomEdge({left: 3}), door(0x04),
+            door(0x06, 'door2'), door(0x99, 'door3')],
   });
   readonly zombieTownMiddle = this.metascreen({
     // zombie town
@@ -1009,31 +1021,31 @@ export class Metascreens {
     // zombie town
     id: 0x62,
     tilesets: {town: {type: 'vertical'}},
-    exits: [cave(0x92), door(0x23), door(0x4d)],
+    exits: [cave(0x92), door(0x23), door(0x4d, 'door2')],
   });
   readonly leafNW_houseShed = this.metascreen({
     // leaf
     id: 0x63,
     tilesets: {town: {type: 'square'}},
-    exits: [door(0x8c), door(0x95)],
+    exits: [door(0x8c), door(0x95, 'door2')],
   });
   readonly squareTownNE_house = this.metascreen({
     // leaf, goa (TODO - split)
     id: 0x64,
     tilesets: {town: {type: 'square'}},
-    exits: [topEdge(1), door(0xb7)],
+    exits: [topEdge({left: 1}), door(0xb7)],
   });
   readonly leafSW_shops = this.metascreen({
     // leaf
     id: 0x65,
     tilesets: {town: {type: 'square'}},
-    exits: [door(0x77), door(0x8a)],
+    exits: [door(0x77), door(0x8a, 'door2')],
   });
   readonly leafSE_exitE = this.metascreen({
     // leaf
     id: 0x66,
     tilesets: {town: {type: 'square'}},
-    exits: [rightEdge(3), door(0x84)],
+    exits: [rightEdge({top: 3}), door(0x84)],
   });
   readonly goaNW_tavern = this.metascreen({
     // goa
@@ -1057,7 +1069,7 @@ export class Metascreens {
     // joel
     id: 0x6a,
     tilesets: {town: {type: 'square'}},
-    exits: [door(0x47)],
+    exits: [door(0xa7)],
   });
   readonly joelSE_lake = this.metascreen({
     // joel
@@ -1172,7 +1184,7 @@ export class Metascreens {
     edges: 'w*w*',
     allowed: s => s.hasFeature('empty') ? [1, 3] : [],
     connect: '9b|a',
-    exits: [upStair(0x27)],
+    exits: [upStair(0x37)],
   });
   readonly limeTreeLake = this.metascreen({
     id: 0x74,
@@ -1192,7 +1204,7 @@ export class Metascreens {
     feature: ['consolidate'],
     edges: 'ss  ',
     connect: '26',
-    exits: [topEdge(6, 4), leftEdge(7, 3)],
+    exits: [topEdge({left: 6, width: 4}), leftEdge({top: 7, height: 3})],
   });
   readonly swampE = this.metascreen({
     id: 0x76,
@@ -1217,7 +1229,7 @@ export class Metascreens {
     flag: 'always',
     edges: '   s',
     connect: 'e',
-    exits: [cave(0x6c, 'swamp')],
+    exits: [cave(0x5c, 'swamp')],
   });
   readonly swampNWSE = this.metascreen({
     id: 0x77,
@@ -1229,10 +1241,10 @@ export class Metascreens {
     feature: ['consolidate'],
     edges: 'ssss',
     connect: '26ae',
-    exits: [topEdge(6, 4),
-            leftEdge(7, 3),
+    exits: [topEdge({left: 6, width: 4}),
+            leftEdge({top: 7, height: 3}),
             bottomEdge({left: 6, width: 4}),
-            rightEdge(7, 3)],
+            rightEdge({top: 7, height: 3})],
   });
   readonly swampNWS = this.metascreen({
     id: 0x78,
@@ -1244,7 +1256,9 @@ export class Metascreens {
     feature: ['consolidate'],
     edges: 'sss ',
     connect: '26a',
-    exits: [topEdge(6, 4), leftEdge(7, 3), bottomEdge({left: 6, width: 4})],
+    exits: [topEdge({left: 6, width: 4}),
+            leftEdge({top: 7, height: 3}),
+            bottomEdge({left: 6, width: 4})],
   });
   readonly swampNE = this.metascreen({
     id: 0x79,
@@ -1256,7 +1270,7 @@ export class Metascreens {
     feature: ['consolidate'],
     edges: 's  s',
     connect: '2e',
-    exits: [topEdge(6, 4), rightEdge(7, 3)],
+    exits: [topEdge({left: 6, width: 4}), rightEdge({top: 7, height: 3})],
   });
   readonly swampWSE = this.metascreen({
     id: 0x7a,
@@ -1268,7 +1282,9 @@ export class Metascreens {
     feature: ['consolidate'],
     edges: ' sss',
     connect: '6ae',
-    exits: [leftEdge(7, 3), bottomEdge({left: 6, width: 4}), rightEdge(7, 3)],
+    exits: [leftEdge({top: 7, height: 3}),
+            bottomEdge({left: 6, width: 4}),
+            rightEdge({top: 7, height: 3})],
   });
   readonly swampWSE_door = this.metascreen({
     id: 0x7a,
@@ -1282,7 +1298,7 @@ export class Metascreens {
     edges: ' sss',
     connect: '6ae',
     // NOTE: door screens should not be on an exit edge!
-    exits: [cave(0x66, 'swamp')],
+    exits: [cave(0x56, 'swamp')],
   });
   readonly swampW = this.metascreen({
     id: 0x7b,
@@ -1307,7 +1323,7 @@ export class Metascreens {
     flag: 'always',
     edges: ' s  ',
     connect: '6',
-    exits: [cave(0x64, 'swamp')],
+    exits: [cave(0x54, 'swamp')],
     // TODO - flaggable
   });
   readonly swampArena = this.metascreen({
@@ -1341,9 +1357,11 @@ export class Metascreens {
     feature: ['consolidate'],
     edges: 'ss s',
     connect: '26e',
-    exits: [topEdge(6, 4), leftEdge(7, 3), rightEdge(7, 3)],
+    exits: [topEdge({left: 6, width: 4}),
+            leftEdge({top: 7, height: 3}),
+            rightEdge({top: 7, height: 3})],
   });
-  readonly swampSW = this.metascreen({
+  readonly swampWS = this.metascreen({
     id: 0x7e,
     icon: icon`
       |   |
@@ -1352,14 +1370,14 @@ export class Metascreens {
     tilesets: {swamp: {requires: [ScreenFix.SwampDoors]}},
     feature: ['consolidate'],
     update: [[ScreenFix.SwampDoors, (s, seed, rom) => {
-      rom.metascreens.swampSW_door.flag = 'always';
+      rom.metascreens.swampWS_door.flag = 'always';
       return true;
     }]],
     edges: ' ss ',
     connect: '6a',
-    exits: [leftEdge(7, 3), bottomEdge({left: 6, width: 4})],
+    exits: [leftEdge({top: 7, height: 3}), bottomEdge({left: 6, width: 4})],
   });
-  readonly swampSW_door = this.metascreen({
+  readonly swampWS_door = this.metascreen({
     id: 0x7e,
     icon: icon`∩
       | ∩ |
@@ -1369,7 +1387,7 @@ export class Metascreens {
     feature: ['consolidate'],
     edges: ' ss ',
     connect: '6a',
-    exits: [cave(0x67, 'swamp')],
+    exits: [cave(0x57, 'swamp')],
   });
   readonly swampEmpty = this.metascreen({
     id: 0x7f,
@@ -1415,7 +1433,7 @@ export class Metascreens {
     feature: ['consolidate'],
     edges: 's s ',
     connect: '2a',
-    exits: [topEdge(6, 4), bottomEdge({left: 6, width: 4})],
+    exits: [topEdge({left: 6, width: 4}), bottomEdge({left: 6, width: 4})],
   });
   readonly swampWE = this.metascreen({
     id: ~0x72,
@@ -1427,7 +1445,7 @@ export class Metascreens {
     feature: ['consolidate'],
     edges: ' s s',
     connect: '6e',
-    exits: [leftEdge(7, 3), rightEdge(7, 3)],
+    exits: [leftEdge({top: 7, height: 3}), rightEdge({top: 7, height: 3})],
   });
   readonly swampWE_door = this.metascreen({
     id: ~0x72,
@@ -1440,7 +1458,7 @@ export class Metascreens {
     flag: 'always',
     edges: ' s s',
     connect: '6e',
-    exits: [upStair(0x66)],
+    exits: [upStair(0x56)],
     // TODO - how to link to swampWE to indicate flag=false?
   });
   readonly swampSE = this.metascreen({
@@ -1453,7 +1471,7 @@ export class Metascreens {
     feature: ['consolidate'],
     edges: '  ss',
     connect: 'ae',
-    exits: [leftEdge(7, 3), bottomEdge({left: 6, width: 4})],
+    exits: [leftEdge({top: 7, height: 3}), bottomEdge({left: 6, width: 4})],
   });
   readonly swampSE_door = this.metascreen({
     id: ~0x73,
@@ -1466,7 +1484,7 @@ export class Metascreens {
     flag: 'always',
     edges: '  ss',
     connect: 'ae',
-    exits: [cave(0x6a, 'swamp')],
+    exits: [cave(0x5a, 'swamp')],
   });
   readonly swampNSE = this.metascreen({
     id: ~0x74,
@@ -1478,7 +1496,9 @@ export class Metascreens {
     feature: ['consolidate'],
     edges: 's ss',
     connect: '2ae',
-    exits: [topEdge(6, 4), bottomEdge({left: 6, width: 4}), rightEdge(7, 3)],
+    exits: [topEdge({left: 6, width: 4}),
+            bottomEdge({left: 6, width: 4}),
+            rightEdge({top: 7, height: 3})],
   });
   // Cave screens
   readonly caveEmpty = this.metascreen({
@@ -1511,6 +1531,7 @@ export class Metascreens {
     edges: 'c c ',
     connect: '2a',
     poi: [[4]],
+    exits: [bottomEdge({left: 6, width: 4, manual: true})],
   });
   readonly hallWE = this.metascreen({
     id: 0x82,
@@ -1621,6 +1642,7 @@ export class Metascreens {
     edges: 'cc c',
     connect: '26e',
     poi: [[3]],
+    exits: [seamlessUp(0x06, 4)], // kensu
   });
   readonly hallNS_stairs = this.metascreen({
     id: 0x8c,
@@ -1699,7 +1721,9 @@ export class Metascreens {
     allowed: s => s.hasFeature('empty') ? [1, 3] : [],
     connect: '2a',
     poi: [[1, 0x60, 0x78]],
-    exits: [topEdge()],
+    exits: [topEdge(), // vampire 1 room
+            bottomEdge({left: 6, width: 4, manual: true}), // goa sages
+            seamlessDown(0xe6, 4)], // kensu
   });
   readonly hallNS_arenaWall = this.metascreen({
     id: 0x92,
@@ -1714,6 +1738,9 @@ export class Metascreens {
     connect: '2=a',
     wall: 0x27,
     poi: [[1, 0x60, 0x78]],
+    // NOTE: top exit needs to move up a tile...?
+    exits: [bottomEdge({left: 6, width: 4, manual: true}),
+            topEdge({top: 1})], // prisons need extra exits
   });
   // NOTE: screen 93 is missing!
   readonly branchNWE_wall = this.metascreen({
@@ -1725,6 +1752,7 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
     edges: 'cc c',
     connect: '2=6e',
+    exits: [topEdge({left: 6, width: 4})],
   });
   readonly branchNWE_upStair = this.metascreen({
     id: 0x95,
@@ -1916,6 +1944,7 @@ export class Metascreens {
     tilesets: {dolphinCave: {}},
     //edges: '  rr',
     //connect: '9d:bf',  // : means water - flight needed
+    exits: [bottomEdge({left: 5})],
   });
   readonly channelBendWS = this.metascreen({
     id: 0xa0,
@@ -1944,6 +1973,7 @@ export class Metascreens {
     // NOTE: This would ALMOST work as a connection to the
     // normal river cave tiles, but the river is one tile
     // taller at the top, so there's no match!
+    exits: [bottomEdge({left: 2})],
   });
   readonly channelCross = this.metascreen({
     id: 0xa3,
@@ -1952,6 +1982,8 @@ export class Metascreens {
       |═╬═|
       |╷║╷|`,
     tilesets: {dolphinCave: {}},
+    // NOTE: two bottom edges on the same screen - call one a door
+    exits: [bottomEdge({left: 3}), bottomEdge({left: 0xb, type: 'door'})],
   });
   readonly channelDoor = this.metascreen({
     id: 0xa4,
@@ -1960,6 +1992,7 @@ export class Metascreens {
       |┈══|
       |  █|`,
     tilesets: {dolphinCave: {}},
+    exits: [door(0x38)],
   });
   readonly mountainFloatingIsland = this.metascreen({
     id: 0xa5,
@@ -2014,7 +2047,7 @@ export class Metascreens {
     tilesets: {mountain: {}, mountainRiver: {}},
     edges: '  pp',
     connect: 'ae',
-    exits: [rightEdge(6, 4), bottomEdge({left: 6, width: 4})],
+    exits: [rightEdge({top: 6, height: 4}), bottomEdge({left: 6, width: 4})],
   });
   readonly mountainDeadEndW_caveEmpty = this.metascreen({
     id: 0xaa,
@@ -2025,7 +2058,7 @@ export class Metascreens {
     tilesets: {mountain: {}, mountainRiver: {}},
     edges: ' p  ',
     connect: '6',
-    exits: [cave(0x5a)],
+    exits: [cave(0x38)],
   });
   readonly mountainPathNE = this.metascreen({
     id: 0xab,
@@ -2036,7 +2069,7 @@ export class Metascreens {
     tilesets: {mountain: {}, mountainRiver: {}},
     edges: 'p  p',
     connect: '2e',
-    exits: [rightEdge(6, 4), topEdge(6, 4)],
+    exits: [rightEdge({top: 6, height: 4}), topEdge({left: 6, width: 4})],
   });
   readonly mountainBranchWSE = this.metascreen({
     id: 0xac,
@@ -2078,7 +2111,7 @@ export class Metascreens {
     tilesets: {mountain: {}, mountainRiver: {}},
     edges: 'pp  ',
     connect: '26',
-    exits: [leftEdge(6, 4), topEdge(6, 4)],
+    exits: [leftEdge({top: 6, height: 4}), topEdge({left: 6, width: 4})],
   });
   readonly mountainCave_empty = this.metascreen({
     id: 0xb0,
@@ -2131,7 +2164,7 @@ export class Metascreens {
     tilesets: {mountain: {}, mountainRiver: {}},
     edges: ' p p',
     connect: '6e',
-    exits: [leftEdge(6, 4), rightEdge(6, 4)],
+    exits: [leftEdge({top: 6, height: 4}), rightEdge({top: 6, height: 4})],
   });
   readonly mountainArena_gate = this.metascreen({
     id: 0xb5,
@@ -2144,7 +2177,7 @@ export class Metascreens {
     edges: ' *l*',
     allowed: s => s.hasFeature('empty') ? [1, 3] : [],
     connect: 'a',
-    exits: [{...upStair(0x37, 3), type: 'cave'}],
+    exits: [{...upStair(0x47, 3), type: 'cave'}],
   });
   readonly mountainPathN_slopeS_cave = this.metascreen({
     id: 0xb6,
@@ -2187,7 +2220,7 @@ export class Metascreens {
     tilesets: {mountain: {}, mountainRiver: {}},
     edges: ' pp ',
     connect: '6a',
-    exits: [leftEdge(6, 4), bottomEdge({left: 6, width: 4})],
+    exits: [leftEdge({top: 6, height: 4}), bottomEdge({left: 6, width: 4})],
   });
   readonly mountainSlope = this.metascreen({
     id: 0xba,
@@ -2241,7 +2274,7 @@ export class Metascreens {
     tilesets: {mountain: {}},
     edges: 'spsp',
     connect: '6e', // '2a|6e',
-    exits: [seamlessUp(0x6b, 4)],
+    exits: [seamlessUp(0xb6, 4)],
   });
   readonly mountainPathWE_bridgeOverRiver = this.metascreen({
     id: 0xbd,
@@ -2264,7 +2297,7 @@ export class Metascreens {
     // TODO - could fly under bridge on mountainRiver
     edges: 'spsp',
     connect: '2a', // '2a|6e',
-    exits: [seamlessDown(0x7b, 4)],
+    exits: [seamlessDown(0xc6, 4)],
   });
   readonly mountainEmpty = this.metascreen({
     id: 0xbf,
@@ -2337,7 +2370,7 @@ export class Metascreens {
       |█▌ |`,
     tilesets: {sea: {}},
     edges: 'n >v', // n = "narrow"
-    exits: [topEdge(0xa, 1)],
+    exits: [topEdge({left: 9})],
   });
   readonly whirlpoolOpen = this.metascreen({
     id: 0xc6,
@@ -2391,7 +2424,7 @@ export class Metascreens {
     tilesets: {sea: {}},
     feature: ['cabin'],
     edges: '<^ b', // b = "boat"
-    exits: [door(0x55), rightEdge(8, 3)],
+    exits: [door(0x55), rightEdge({top: 8, height: 3})],
   });
   readonly oceanShrine = this.metascreen({
     id: 0xca,
@@ -2458,7 +2491,7 @@ export class Metascreens {
       |█▌ |`,
     tilesets: {desert: {}},
     edges: '3^>o',
-    exits: [upStair(0x47)],
+    exits: [upStair(0x37)],
   });
   readonly channelEndW_cave = this.metascreen({
     id: 0xd0,
@@ -2467,6 +2500,7 @@ export class Metascreens {
       |══ |
       |███|`,
     tilesets: {dolphinCave: {}},
+    exits: [upStair(0x57)],
   });
   readonly boatChannel = this.metascreen({
     id: 0xd1,
@@ -2476,7 +2510,8 @@ export class Metascreens {
       |▄▄▄|`,
     tilesets: {sea: {}},
     edges: ' b b',
-    exits: [rightEdge(8, 3), leftEdge(8, 3)],
+    exits: [{...rightEdge({top: 8, height: 3}), entrance: 0x9ce8},
+            leftEdge({top: 8, height: 3})],
   });
   readonly channelWE = this.metascreen({
     id: 0xd2,
@@ -3013,7 +3048,7 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     edges: 'c w',
     connect: '2a',
-    exits: [topEdge(6, 4)],
+    exits: [topEdge({left: 6, width: 4})],
   });
   readonly goaWideHallNS_wallTop = this.metascreen({
     id: 0xe9,    // NOTE: the passage narrows at the top
@@ -3024,7 +3059,7 @@ export class Metascreens {
     tilesets: {labyrinth: {}},
     edges: 'c w ',
     connect: '2a|9|b',
-    exits: [topEdge(6, 4)],
+    exits: [topEdge({left: 6, width: 4})],
   });
   readonly wideHallWE = this.metascreen({
     id: 0xea,
@@ -3302,7 +3337,7 @@ export class Metascreens {
     edges: ' *c*',
     allowed: s => s.hasFeature('empty') ? [1, 3] : [],
     connect: 'a',
-    exits: [upStair(0x47)]
+    exits: [upStair(0x57)]
   });
   readonly pyramidArena_draygon = this.metascreen({
     id: 0xf9,
@@ -3327,7 +3362,7 @@ export class Metascreens {
     edges: 'c*w*',
     allowed: s => s.hasFeature('empty') ? [1, 3] : [],
     connect: '2a',
-    exits: [topEdge(6, 4)],
+    exits: [topEdge({left: 6, width: 4})],
   });
   readonly cryptArena_entrance = this.metascreen({
     id: 0xfb,
@@ -3343,7 +3378,7 @@ export class Metascreens {
   readonly cryptTeleporter = this.metascreen({
     id: 0xfc,
     tilesets: {pyramid: {}, tower: {}},
-    // NOTE - uses bottomEdge (NOT the house version)
+    exits: [bottomEdge({left: 6, width: 4}), cave(0x57, 'teleporter')],
   });
   readonly fortressArena_through = this.metascreen({
     id: 0xfd,

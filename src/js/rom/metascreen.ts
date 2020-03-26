@@ -164,9 +164,10 @@ export class Metascreen {
     return mask;
   }
 
-  findExitType(tile: number, single: boolean): ConnectionType|undefined {
+  findExitType(tile: number, single: boolean,
+               seamless: boolean): ConnectionType|undefined {
     for (const exit of this.data.exits ?? []) {
-      // if (exit.type === 'seamless') continue;
+      if (exit.type.startsWith('seamless') !== seamless) continue;
       const t0 = single && exit.type === 'edge:bottom' && tile >= 0xc0 ?
           tile + 0x20 : tile;
       if (exit.exits.includes(t0)) return exit.type;

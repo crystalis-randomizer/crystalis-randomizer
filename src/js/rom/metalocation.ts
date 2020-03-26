@@ -176,8 +176,11 @@ export class Metalocation {
     for (const exit of location.exits) {
       const srcPos = exit.screen;
       const srcScreen = rom.metascreens[screens[srcPos + 16]];
-      const srcType = srcScreen.findExitType(exit.tile, height === 1);
+      const srcType = srcScreen.findExitType(exit.tile, height === 1,
+                                             !!(exit.entrance & 0x20));
       if (!srcType) {
+        const id = location.id << 16 | srcPos << 8 | exit.tile;
+        if (unknownExitWhitelist.has(id)) continue;
         const all = srcScreen.data.exits?.map(
             e => e.type + ': ' + e.exits.map(hex).join(', ')).join('\n  ');
         console.warn(`Unknown exit ${hex(exit.tile)}: ${srcScreen.name} in ${
@@ -193,11 +196,20 @@ export class Metalocation {
         exits.set(srcPos, srcType, [dest.id << 8 | destPos, destType]);
         continue;
       }
-      const entrance = dest.entrances[exit.entrance];
-      const destPos = entrance.screen;
+      const entrance = dest.entrances[exit.entrance & 0x1f];
+      let destPos = entrance.screen;
+      let destCoord = entrance.coord;
+      if (srcType === 'door' && (entrance.y & 0xf0) === 0) {
+        // NOTE: The item shop door in Oak straddles two screens (exit is on
+        // the NW screen while entrance is on SW screen).  Do a quick hack to
+        // detect this (proxying "door" for "upward exit") and adjust search
+        // target accordingly.
+        destPos -= 0x10;
+        destCoord += 0x10000;
+      }
       // Figure out the connection type for the destTile.
       const destScrId = dest.screens[destPos >> 4][destPos & 0xf];
-      const destType = findEntranceType(dest, destScrId, entrance.coord);
+      const destType = findEntranceType(dest, destScrId, destCoord);
       // NOTE: initial spawn has no type...?
       if (!destType) {
         const lines = [];
@@ -207,7 +219,7 @@ export class Metalocation {
             lines.push(`  ${destScr.name} ${exit.type}: ${hex(exit.entrance)}`);
           }
         }
-        console.warn(`Bad entrance ${hex(entrance.coord)}: raw ${hex(destScrId)
+        console.warn(`Bad entrance ${hex(destCoord)}: raw ${hex(destScrId)
                       } in ${dest} @ ${hex(destPos)}\n${lines.join('\n')}`);
         continue;
       }
@@ -468,5 +480,24 @@ interface TraverseOpts {
   readonly flight?: boolean;
 }
 
+
+const unknownExitWhitelist = new Set([
+  0x01003a, // top part of cave outside start
+  0x01003b,
+  0x010070, // beneath entrance to leaf
+  0x02115f, // leaf side of the above
+  0x1440a0, // beneath entrance to brynmaer
+  0x1540a0, // " " seamless equivalent " "
+  0x1a3060, // swamp exit
+  0x1a30a0,
+  0x402000, // bridge to fisherman island
+  0x402030,
+  0x4180d0, // below exit to lime tree valley
+  0x6087bf, // below boat channel
+  0xa10326, // crypt 2 arena north edge
+  0xa10329,
+  0xa90626, // stairs above kelby 2
+  0xa90629,
+]);
 
 const DPOS = [-16, -1, 16, 1];

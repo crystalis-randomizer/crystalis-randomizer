@@ -802,26 +802,73 @@ const ADJUSTMENTS = [
   [0x14b9e, 0x01, 0x02],
   // Fix garbage map square in bottom-right of Mt Sabre West cave
   [0x14db9, 0x08, 0x80],
+  // Normalize sabre n entrance below summit
+  [0x14ef6, 0x68, 0x60],
   // Fix garbage map square in bottom-left of Lime Tree Valley
   [0x1545d, 0xff, 0x00],
+  // Normalize lime tree valley SE entrance
+  [0x15469, 0x78, 0x70],
+  // Normalize portoa se/sw entrances
+  [0x15806, 0x98, 0xa0],
+  [0x1580a, 0x98, 0xa0],
+  // Normalize portoa palace entrance
+  [0x1580e, 0x58, 0x50],
   // Mark bad entrance/exit in portoa
   [0x1581d, 0x00, 0xff],
   [0x1584e, 0xdb, 0xff],
+  // Normalize fisherman island entrance
+  [0x15875, 0x78, 0x70],
+  // Normalize zombie town entrance from palace
+  [0x15b4f, 0x78, 0x80],
   // Remove unused map screens from Evil Spirit lower
   [0x15baf, 0xf0, 0x80],
   [0x15bb6, 0xdf, 0x80],
   [0x15bb7, 0x96, 0x80],
+  // Normalize sabera palace 1 entrance up one tile
+  [0x15ce3, 0xdf, 0xcf],
+  [0x15cee, 0x6e, 0x6d],
+  [0x15cf2, 0x6e, 0x6d],
+  // Normalize sabera palace 3 entrance up one tile
+  [0x15d8e, 0xdf, 0xcf],
+  [0x15d91, 0x2e, 0x2d],
+  [0x15d95, 0x2e, 0x2d],
+  // Normalize joel entrance
+  [0x15e3a, 0xd8, 0xdf],
+  // Normalize goa valley righthand entrance
+  [0x15f39, 0x78, 0x70],
   // Mark bad entrance/exit in goa valley
   [0x15f40, 0x02, 0xff],
   [0x15f61, 0x8d, 0xff],
   [0x15f65, 0x8d, 0xff],
+  // Normalize shyron lower entrance
+  [0x163fd, 0x48, 0x40],
+  // Normalize shyron fortress entrance
+  [0x16403, 0x55, 0x50],
+  // Normalize goa south entrance
+  [0x1645b, 0xd8, 0xdf],
   // Fix pattern table for desert 1 (animation glosses over it)
   [0x164cc, 0x04, 0x20],
   // Fix garbage at bottom of oasis cave map (it's 8x11, not 8x12 => fix height)
   [0x164ff, 0x0b, 0x0a],
+  // Normalize sahara entrance/exit position
+  [0x1660d, 0x20, 0x30],
+  [0x16624, 0x01, 0x02],
+  [0x16628, 0x01, 0x02],
+  // Normalize mado2-side heckway entrance
+  [0x16ded, 0xdf, 0xd0],
+  // Normalize aryllis entrance
+  [0x174ee, 0x80, 0x88],
+  // Normalize joel shed bottom and secret passage entrances
+  [0x177c1, 0x88, 0x80],
+  [0x177c5, 0x98, 0xa0],
+  [0x177c7, 0x58, 0x50],
   // Fix bad music in zombietown houses: $10 should be $01.
   [0x1782a, 0x10, 0x01],
   [0x17857, 0x10, 0x01],
+  // Normalize swan dance hall entrance to be consistent with stom's house
+  [0x17954, 0x80, 0x78],
+  // Normalize shyron dojo entrance to be consistent with stom's house
+  [0x179a2, 0x80, 0x78],
   // Fix bad screens in tower
   [0x17b8a, 0x00, 0x40], // tower 1
   [0x17b90, 0x00, 0x40],
@@ -845,7 +892,6 @@ const ADJUSTMENTS = [
   // Fix queen's dialog to terminate on last item, rather than overflow,
   // so that we don't parse garbage.
   [0x1cff9, 0x60, 0xe0],
-
   // Fix Amazones outer guard message to not overflow.
   [0x2ca90, 0x02, 0x00],
   // Fix seemingly-unused kensu message 1d:17 overflowing into 1d:18

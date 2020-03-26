@@ -142,12 +142,15 @@ export type EdgeType = 'edge:top' | 'edge:bottom' | 'edge:left' | 'edge:right';
 export type SeamlessType = 'seamless:up' | 'seamless:down';
 export type ConnectionType =
     StairType | EdgeType | SeamlessType |
-    'cave' | 'door' | 'fortress' | 'gate' | 'swamp' | 'windmill';
+    'cave' | 'door' | 'door2' | 'door3' | 'fortress' | 'gate' |
+    'swamp' | 'teleporter' | 'windmill';
+// TODO - is windmill just door2?
 
 // NOTE: swamp connects to edge:bottom for cave or town?
 
 export interface Connection {
   readonly type: ConnectionType;
+  readonly manual?: boolean;         // should only be placed manually
   readonly dir: number;              // 0=up, 1=left, 2=down, 3=right
   readonly entrance: number;         // pos YyXx
   readonly exits: readonly number[]; // tile YX
@@ -222,26 +225,32 @@ export function waterfallCave(tile: number): Connection {
   return {
     type: 'cave',
     dir: 0,
-    entrance: y << 12 | 0x0f00 | x << 4,
+    entrance: y << 12 | x << 4 | 0xf,
     exits: [tile - 0xf, tile + 1],
   };
 }
 
-export function topEdge(left = 7, width = 2): Connection {
+export function topEdge({left = 7, width = 2,
+                         top = 2, manual = false} = {}): Connection {
   return {
     type: 'edge:top',
+    manual,
     dir: 0,
-    entrance: 0x30_00 | ((left << 4) + (width << 3)),
-    exits: seq(width, i => 0x20 | (i + left)),
+    entrance: ((top + 1) << 12) | ((left << 4) + (width << 3)),
+    exits: seq(width, i => (top << 4) | (i + left)),
   };
 }
 
-export function bottomEdge({left = 7, width = 2, shift = 0} = {}): Connection {
+// TODO - consider separating wide vs narrow edges into separate types???
+
+export function bottomEdge({left = 7, width = 2, shift = 0,
+                            type = 'edge:bottom' as ConnectionType,
+                            manual = false} = {}): Connection {
   // NOTE: some screens can be used both in normal maps and in single-height
   // maps.  When used in single-height, we need to subtract 2 from the Y tile
   // coordinates of the entrance/exit, clamping to bf (entrance) and c (exit).
   return {
-    type: 'edge:bottom',
+    type, manual,
     dir: 2,
     entrance: 0xdf_00 | ((left << 4) + (width << 3) + 16 * shift),
     exits: seq(width, i => 0xe0 | (i + left)),
@@ -261,16 +270,16 @@ export function bottomEdgeHouse({left = 7,
   };
 }
 
-export function leftEdge(top = 7, height = 2): Connection {
+export function leftEdge({top = 7, height = 2, shift = 0} = {}): Connection {
   return {
     type: 'edge:left',
     dir: 1,
-    entrance: ((top << 12) + (height << 11)) | 0x10,
+    entrance: ((top << 12) + ((16 * shift) << 8) + (height << 11)) | 0x10,
     exits: seq(height, i => (i + top) << 4),
   };
 }
 
-export function rightEdge(top = 7, height = 2): Connection {
+export function rightEdge({top = 7, height = 2} = {}): Connection {
   return {
     type: 'edge:right',
     dir: 1,

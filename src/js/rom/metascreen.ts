@@ -1,4 +1,5 @@
-import { Feature, MetascreenData, ConnectionType, featureMask} from './metascreendata.js';
+import {Connection, ConnectionType, Feature, MetascreenData,
+        featureMask} from './metascreendata.js';
 import {Metatileset, Metatilesets} from './metatileset.js';
 import {Screen} from './screen.js';
 import {Rom} from '../rom.js';
@@ -16,7 +17,7 @@ export class Metascreen {
 
   used = false;
 
-  flag?: 'always' | 'calm' | 'cave';
+  flag?: 'always' | 'calm' | 'custom:false' | 'custom:true';
   name?: string;
 
   readonly neighbors = [
@@ -50,6 +51,7 @@ export class Metascreen {
       }
     }
     this._features = features;
+    this.flag = data.flag;
     // this.fixed = fixed;
     // this.featureCount = featureCount;
     // TODO - build "connections" by iterating over 0..3.
@@ -171,12 +173,12 @@ export class Metascreen {
   }
 
   findExitType(tile: number, single: boolean,
-               seamless: boolean): ConnectionType|undefined {
+               seamless: boolean): Connection|undefined {
     for (const exit of this.data.exits ?? []) {
       if (exit.type.startsWith('seamless') !== seamless) continue;
       const t0 = single && exit.type === 'edge:bottom' && tile >= 0xc0 ?
           tile + 0x20 : tile;
-      if (exit.exits.includes(t0)) return exit.type;
+      if (exit.exits.includes(t0)) return exit;
     }
     return undefined;
   }
@@ -189,6 +191,21 @@ export class Metascreen {
       if (exit.entrance === c0) return exit.type;
     }
     return undefined;
+  }
+
+  addCustomFlag(defaultValue: boolean) {
+    this.flag = defaultValue ? 'custom:true' : 'custom:false';
+
+    // TODO - for now, custom flags are set by default.
+
+    // if (!flagAll) return;
+    // for (const loc of this.rom.locations) {
+    //   if (!loc.used) continue;
+    //   for (const pos of loc.meta.allPos()) {
+    //     if (loc.meta.getUid(pos) !== this.uid) continue;
+    //     loc.meta.customFlags.set(pos, this.rom.flags.AlwaysTrue);
+    //   }
+    // }
   }
 
   /** @param dir 0 to check if that is under this, 1 if that is right of this */

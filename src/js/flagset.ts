@@ -954,6 +954,9 @@ export class FlagSet {
     return this.check(Routing.OrbsNotRequired);
   }
 
+  shuffleGoaFloors() {
+    return this.check(World.ShuffleGoaFloors);
+  }
   randomizeMaps() {
     return this.check(World.RandomizeMaps);
   }

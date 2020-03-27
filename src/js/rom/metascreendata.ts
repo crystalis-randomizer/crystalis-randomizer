@@ -70,7 +70,7 @@ export interface MetascreenData {
   update?: ReadonlyArray<readonly [ScreenFix, ScreenUpdate]>;
 
   /** Whether a special flag is needed for this screen. */
-  flag?: 'always' | 'calm' | 'cave' | 'boss';
+  flag?: 'always' | 'calm' | 'custom:false' | 'custom:true'; // | 'boss';
 
   /**
    * List of directions the other screen may be in relation to this.
@@ -282,7 +282,7 @@ export function leftEdge({top = 7, height = 2, shift = 0} = {}): Connection {
 export function rightEdge({top = 7, height = 2} = {}): Connection {
   return {
     type: 'edge:right',
-    dir: 1,
+    dir: 3,
     entrance: ((top << 12) + (height << 11)) | 0xef,
     exits: seq(height, i => (i + top) << 4 | 0xf),
   };
@@ -292,8 +292,8 @@ export function rightEdge({top = 7, height = 2} = {}): Connection {
 export function seamlessUp(tile: number, width = 2): Connection {
   return {
     type: 'seamless:up',
-    get dir(): number { throw new Error('not implemented'); },
-    get entrance(): number { throw new Error('not implemented'); },
+    dir: 0,
+    get entrance(): number { throw new Error('does not make sense'); },
     exits: seq(width, i => (tile + i)),
   };
 }
@@ -301,8 +301,8 @@ export function seamlessUp(tile: number, width = 2): Connection {
 export function seamlessDown(tile: number, width = 2): Connection {
   return {
     type: 'seamless:down',
-    get dir(): number { throw new Error('not implemented'); },
-    get entrance(): number { throw new Error('not implemented'); },
+    dir: 2,
+    get entrance(): number { throw new Error('does not make sense'); },
     exits: seq(width, i => (tile + i)),
   };
 }

@@ -35,6 +35,7 @@ import {hex, seq, watchArray} from './rom/util.js';
 import {DefaultMap} from './util.js';
 import * as version from './version.js';
 import {Maze} from './maze/maze2.js';
+import { fixTilesets } from './rom/screenfix.js';
 
 const EXPAND_PRG: boolean = true;
 
@@ -215,6 +216,7 @@ export async function shuffle(rom: Uint8Array,
 
   // Make deterministic changes.
   deterministic(parsed, flags);
+  fixTilesets(parsed);
   standardMapEdits(parsed, standardMapEdits.generateOptions(flags, random));
   toggleMaps(parsed, flags, random);
 
@@ -223,7 +225,7 @@ export async function shuffle(rom: Uint8Array,
 
   if (flags.shuffleShops()) shuffleShops(parsed, flags, random);
 
-  shuffleGoa(parsed, random); // NOTE: must be before shuffleMazes!
+  if (flags.shuffleGoaFloors()) shuffleGoa(parsed, random); // NOTE: must be before shuffleMazes!
   randomizeWalls(parsed, flags, random);
   crumblingPlatforms(parsed, random);
 

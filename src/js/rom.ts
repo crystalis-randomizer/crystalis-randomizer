@@ -13,7 +13,6 @@ import {Items} from './rom/item.js';
 import {ItemGets} from './rom/itemget.js';
 import {Locations} from './rom/location.js';
 import {Messages} from './rom/messages.js';
-import {Metalocation} from './rom/metalocation.js';
 import {Metascreens} from './rom/metascreens.js';
 import {Metasprite} from './rom/metasprite.js';
 import {Metatileset, Metatilesets} from './rom/metatileset.js';
@@ -203,11 +202,12 @@ export class Rom {
     this.scaling = new Scaling(this);
     this.randomNumbers = new RandomNumbers(this);
 
-    // TODO - consider populating this later?
-    // Having this available makes it easier to set exits, etc.
+    // // TODO - consider populating this later?
+    // // Having this available makes it easier to set exits, etc.
     for (const loc of this.locations) {
-      if (loc.used) loc.meta = Metalocation.of(loc);
+      if (loc.used) sink(loc.meta); // trigger the getter
     }
+    function sink(arg: unknown) {}
   }
 
   trigger(id: number): Trigger {
@@ -854,8 +854,19 @@ const ADJUSTMENTS = [
   [0x1660d, 0x20, 0x30],
   [0x16624, 0x01, 0x02],
   [0x16628, 0x01, 0x02],
+  // Remove unused screens from mado2 area
+  [0x16db0, 0x9a, 0x80],
+  [0x16db4, 0x9e, 0x80],
+  [0x16db8, 0x91, 0x80],
+  [0x16dbc, 0x9e, 0x80],
+  [0x16dc0, 0x91, 0x80],
+  // Mark bad entrance in unused mado2 area
+  [0x16de8, 0x00, 0xff],
   // Normalize mado2-side heckway entrance
   [0x16ded, 0xdf, 0xd0],
+  // Mark bogus exits in unused mado2 area
+  [0x16df7, 0x07, 0xff],
+  [0x16dfb, 0x08, 0xff],
   // Normalize aryllis entrance
   [0x174ee, 0x80, 0x88],
   // Normalize joel shed bottom and secret passage entrances

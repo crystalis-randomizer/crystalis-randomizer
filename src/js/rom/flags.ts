@@ -616,6 +616,7 @@ export class Flags {
   OpenedJoelShed = tracked(0x287);
   Draygon2 = tracked(0x28d);
   OpenedCrypt = tracked(0x28e);
+  // NOTE: 28f is flagged for draygon's floor, but is unused and unneeded
   OpenedStxy = tracked(0x2b0);
   OpenedSwanGate = tracked(0x2b3);
   OpenedPrison = tracked(0x2d8);
@@ -707,7 +708,7 @@ export class Flags {
       }
     }
     // For the remainder, find walls in maps.
-    //  - do we need to pull them form locations?? or this doing anything??
+    //  - do we need to pull them from locations?? or this doing anything??
     for (const loc of rom.locations) {
       for (const f of loc.flags) {
         if (this[f.flag]) continue;

@@ -1,4 +1,6 @@
-import {Exit, Location} from './location.js';
+import {Location} from './location.js'; // import type
+import {Exit, Flag as LocationFlag} from './locationtables.js';
+import {Flag} from './flags.js';
 import {Metascreen, Uid} from './metascreen.js';
 import {Dir, Metatileset} from './metatileset.js';
 import {hex} from './util.js';
@@ -46,6 +48,13 @@ export type ExitSpec = readonly [Pos, ConnectionType];
 
 export class Metalocation {
 
+  // TODO - store metadata about windmill flag?  two metalocs will need a pos to
+  // indicate where that flag should go...?  Or store it in the metascreen?
+
+  // Caves are assumed to be always open unless there's a flag set here...
+  customFlags = new Map<Pos, Flag>();
+  freeFlags = new Set<Flag>();
+
   readonly rom: Rom;
   private readonly _empty: Uid;
 
@@ -55,6 +64,7 @@ export class Metalocation {
   /** Key: ((y+1)<<4)|x; Value: Uid */
   private _screens: Uid[];
   private _pos: Pos[]|undefined = undefined;
+
   /** Count of consolidateable screen tile IDs. */
   private _counts?: Multiset<number>;
   /** Maps UID to ID of counted metascreens. */
@@ -137,8 +147,8 @@ export class Metalocation {
           for (const s of metascreens) {
             if (s.data.match) {
               matchers.push(s);
-            } else if (s.data.flag === 'always' && flag?.flag === 0x2fe ||
-                       !s.data.flag && !s.data.wall && !flag) {
+            } else if (s.flag === 'always' && flag?.flag === 0x2fe ||
+                       !s.flag && !s.data.wall && !flag) {
               best.unshift(s); // front-load matching flags
             } else {
               best.push(s);
@@ -178,8 +188,9 @@ export class Metalocation {
     for (const exit of location.exits) {
       const srcPos = exit.screen;
       const srcScreen = rom.metascreens[screens[srcPos + 16]];
-      const srcType = srcScreen.findExitType(exit.tile, height === 1,
+      const srcExit = srcScreen.findExitType(exit.tile, height === 1,
                                              !!(exit.entrance & 0x20));
+      const srcType = srcExit?.type;
       if (!srcType) {
         const id = location.id << 16 | srcPos << 8 | exit.tile;
         if (unknownExitWhitelist.has(id)) continue;
@@ -193,8 +204,11 @@ export class Metalocation {
       const dest = rom.locations[exit.dest];
       if (srcType.startsWith('seamless')) {
         const down = srcType === 'seamless:down';
-        const destPos = srcPos + (down ? 16 : -16);
+        // NOTE: this seems wrong - the down exit is BELOW the up exit...?
+        const tile = srcExit!.exits[0] + (down ? -16 : 16);
+        const destPos = srcPos + (tile < 0 ? -16 : tile >= 0xf0 ? 16 : -0);
         const destType = down ? 'seamless:up' : 'seamless:down';
+        //console.log(`${srcType} ${hex(location.id)} ${down} ${hex(tile)} ${hex(destPos)} ${destType} ${hex(dest.id)}`);
         exits.set(srcPos, srcType, [dest.id << 8 | destPos, destType]);
         continue;
       }
@@ -235,6 +249,24 @@ export class Metalocation {
     }
     metaloc._screens = screens;
     metaloc._exits = exits;
+
+    // Fill in custom flags
+    for (const f of location.flags) {
+      const scr = rom.metascreens[metaloc._screens[f.screen + 16]];
+      if (scr.flag?.startsWith('custom')) {
+        metaloc.customFlags.set(f.screen, rom.flags[f.flag]);
+      } else if (!scr.flag) {
+        metaloc.freeFlags.add(rom.flags[f.flag]);
+      }
+    }
+    // for (const pos of metaloc.allPos()) {
+    //   const scr = rom.metascreens[metaloc._screens[pos + 16]];
+    //   if (scr.flag === 'custom') {
+    //     const f = location.flags.find(f => f.screen === pos);
+    //     if (f) metaloc.customFlags.set(pos, rom.flags[f.flag]);
+    //   }
+    // }
+
     // TODO - store reachability map?
     return metaloc;
 
@@ -247,14 +279,18 @@ export class Metalocation {
     }
   }
 
+  getUid(pos: Pos): Uid {
+    return this._screens[pos + 16];
+  }
+
   get size(): number {
     return this._filled;
   }
 
   // Readonly accessor.
-  get screens(): readonly Uid[] {
-    return this._screens;
-  }
+  // get screens(): readonly Uid[] {
+  //   return this._screens;
+  // }
 
   get width(): number {
     return this._width;
@@ -337,33 +373,102 @@ export class Metalocation {
         }
         pos += 16;
       }
-      // Now check everything, throw if failed.
-      for (let dy = screens.length; dy >= 0; dy--) {
-        const width = Math.max(screens[dy]?.length || 0,
-                               screens[dy - 1]?.length || 0);
-        pos = pos0 + (dy << 4);
-        for (let dx = 0; dx <= width; dx++) {
-          const index = pos + dx;
-          const above = this._screens[index - 16];
-          const left = this._screens[index - 1];
-          const scr = this._screens[index];
-          if (!this.tileset.check(above, scr, 16)) {
-            const aboveName = this.rom.metascreens[above].name;
-            const scrName = this.rom.metascreens[scr].name;
-            throw new Error(`bad neighbor ${aboveName} above ${scrName}`);
-          }
-          if (!this.tileset.check(left, scr, 1)) {
-            const leftName = this.rom.metascreens[left].name;
-            const scrName = this.rom.metascreens[scr].name;
-            throw new Error(`bad neighbor ${leftName} left of ${scrName}`);
-          }
-        }
-      }
+      this.verify(pos0, screens.length,
+                  Math.max(...screens.map(r => r.length)));
       return true;
     });
   }
 
-  // Options for setting:
+  /** Check all screens in the given rectangle. Throw if invalid. */
+  verify(pos0: Pos, height: number, width: number) {
+    const maxY = (this.height + 1) << 4;
+    for (let dy = 0; dy <= height; dy++) {
+      const pos = pos0 + 16 + (dy << 4);
+      for (let dx = 0; dx <= width; dx++) {
+        const index = pos + dx;
+        const scr = this._screens[index];
+        if (scr == null) break; // happens when setting border screens via set2d
+        const above = this._screens[index - 16];
+        const left = this._screens[index - 1];
+        if ((index & 0xf) < this.width && !this.tileset.check(above, scr, 16)) {
+          const aboveName = this.rom.metascreens[above].name;
+          const scrName = this.rom.metascreens[scr].name;
+          throw new Error(`bad neighbor ${aboveName} above ${scrName} at ${
+                           this.rom.locations[this.id]} @ ${hex(index - 32)}`);
+        }
+        if (index < maxY && !this.tileset.check(left, scr, 1)) {
+          const leftName = this.rom.metascreens[left].name;
+          const scrName = this.rom.metascreens[scr].name;
+          throw new Error(`bad neighbor ${leftName} left of ${scrName} at ${
+                           this.rom.locations[this.id]} @ ${hex(index - 17)}`);
+        }
+      }
+    }
+  }
+
+  // Recomputes all the memoized data (e.g. after a large change).
+  bookkeep() {
+    this._pos = undefined;
+    this._filled = 0;
+    if (this._counts) this._counts = new Multiset();
+    for (const pos of this.allPos()) {
+      const scr = this._screens[pos + 16];
+      if (this._counts) {
+        const counted = this._counted.get(scr);
+        if (counted != null) this._counts.add(counted);
+      }
+      if (scr != this.tileset.empty.id) this._filled++;
+    }
+  }
+
+  spliceColumns(left: number, deleted: number, inserted: number,
+                screens: ReadonlyArray<ReadonlyArray<Metascreen>>) {
+    if (this._features.size) throw new Error(`bad features`);
+    this.saveExcursion(() => {
+      // First adjust the screens.
+      for (let p = 0; p < this._screens.length; p += 16) {
+        this._screens.copyWithin(p + left + inserted, p + left + deleted, p + 10);
+        this._screens.splice(p + left, inserted, ...screens[p >> 4].map(s => s.uid));
+      }
+      return true;
+    });
+    // Update dimensions and accounting
+    const delta = inserted - deleted;
+    this.width += delta;
+    this._pos = undefined;
+    this.bookkeep();
+    // Move relevant exits
+    const move: [Pos, ConnectionType, Pos, ConnectionType][] = [];
+    for (const [pos, type] of this._exits) {
+      const x = pos & 0xf;
+      if (x < left + deleted) {
+        if (x >= left) this._exits.delete(pos, type);
+        continue;
+      }
+      move.push([pos, type, pos + delta, type]);
+    }
+    this.moveExits(...move);
+    // Move flags and spawns in parent location
+    const parent = this.rom.locations[this.id];
+    const xt0 = (left + deleted) << 4;
+    for (const spawn of parent.spawns) {
+      if (spawn.xt < xt0) continue;
+      spawn.xt -= (delta << 4);
+    }
+    for (const flag of parent.flags) {
+      if (flag.xs < left + deleted) {
+        if (flag.xs >= left) flag.screen = 0xff;
+        continue;
+      }
+      flag.xs -= delta;
+    }
+    parent.flags = parent.flags.filter(f => f.screen !== 0xff);
+
+    // TODO - move pits??
+
+  }
+
+  // Options for setting: ???
   set(pos: Pos, uid: Uid): boolean {
     const scr = this.rom.metascreens[uid];
     const features = this._features.get(pos);
@@ -436,11 +541,24 @@ export class Metalocation {
       for (let r = 0; r < 3; r++) {
         line = [r === 1 ? y.toString(16) : ' ', ' '];
         for (let x = 0; x < this.width; x++) {
-          const screen = this.rom.metascreens[this.screens[(y + 1) << 4 | x]];
+          const screen = this.rom.metascreens[this._screens[(y + 1) << 4 | x]];
           line.push(screen?.data.icon?.full[r] ?? (r === 1 ? ' ? ' : '   '));
         }
         lines.push(line.join(''));
       }
+    }
+    return lines.join('\n');
+  }
+
+  screenNames(): string {
+    const lines = [];
+    for (let y = 0; y < this.height; y++) {
+      let line = [];
+      for (let x = 0; x < this.width; x++) {
+        const screen = this.rom.metascreens[this._screens[(y + 1) << 4 | x]];
+        line.push(screen?.name);
+      }
+      lines.push(line.join(' '));
     }
     return lines.join('\n');
   }
@@ -516,21 +634,47 @@ export class Metalocation {
    * Attach an exit/entrance pair in two directions.
    * Also reattaches the former other ends of each to each other.
    */
-  attach(pos: Pos, type: ConnectionType,
-         dest: Metalocation, destPos: number, destType: ConnectionType) {
+  attach(srcPos: Pos, dest: Metalocation, destPos: Pos,
+         srcType?: ConnectionType, destType?: ConnectionType) {
+    if (!srcType) srcType = this.pickTypeFromExits(srcPos);
+    if (!destType) destType = dest.pickTypeFromExits(destPos);
+
+    // TODO - what if multiple reverses?  e.g. cordel east/west?
+    //      - could determine if this and/or dest has any seamless.
+    // No: instead, do a post-process.  Only cordel matters, so go
+    // through and attach any redundant exits.
+
     const destTile = dest.id << 8 | destPos;
-    const prevDest = this._exits.get(pos, type)!;
-    const [prevDestTile, prevDestType] = prevDest;
-    if (prevDestTile === destTile && prevDestType === destType) return;
+    const prevDest = this._exits.get(srcPos, srcType)!;
+    if (prevDest) {
+      const [prevDestTile, prevDestType] = prevDest;
+      if (prevDestTile === destTile && prevDestType === destType) return;
+    }
     const prevSrc = dest._exits.get(destPos, destType)!;
-    const [prevSrcTile, prevSrcType] = prevSrc;
-    this._exits.set(pos, type, [destTile, destType]);
-    dest._exits.set(destPos, destType, [this.id << 8 | pos, type]);
+    this._exits.set(srcPos, srcType, [destTile, destType]);
+    dest._exits.set(destPos, destType, [this.id << 8 | srcPos, srcType]);
     // also hook up previous pair
-    const prevSrcMeta = this.rom.locations[prevSrcTile >> 8].meta!;
-    const prevDestMeta = this.rom.locations[prevDestTile >> 8].meta!;
-    prevSrcMeta._exits.set(prevSrcTile & 0xff, prevSrcType, prevDest);
-    prevDestMeta._exits.set(prevDestTile & 0xff, prevDestType, prevSrc);
+    if (prevSrc && prevDest) {
+      const [prevDestTile, prevDestType] = prevDest;
+      const [prevSrcTile, prevSrcType] = prevSrc;
+      const prevSrcMeta = this.rom.locations[prevSrcTile >> 8].meta!;
+      const prevDestMeta = this.rom.locations[prevDestTile >> 8].meta!;
+      prevSrcMeta._exits.set(prevSrcTile & 0xff, prevSrcType, prevDest);
+      prevDestMeta._exits.set(prevDestTile & 0xff, prevDestType, prevSrc);
+    } else if (prevSrc || prevDest) {
+      const [prevTile, prevType] = prevSrc || prevDest;
+      const prevMeta = this.rom.locations[prevTile >> 8].meta!;
+      prevMeta._exits.delete(prevTile & 0xff, prevType);      
+    }
+  }
+
+  pickTypeFromExits(pos: Pos): ConnectionType {
+    const types = [...this._exits.row(pos).keys()];
+    if (!types.length) return this.pickTypeFromScreens(pos);
+    if (types.length > 1) {
+      throw new Error(`No single type for ${hex(pos)}: [${types.join(', ')}]`);
+    }
+    return types[0];
   }
 
   /**
@@ -556,6 +700,50 @@ export class Metalocation {
     }
   }
 
+  moveExit(prev: Pos, next: Pos,
+           prevType?: ConnectionType, nextType?: ConnectionType) {
+    if (!prevType) prevType = this.pickTypeFromExits(prev);
+    if (!nextType) nextType = this.pickTypeFromScreens(next);
+    const destExit = this._exits.get(prev, prevType)!;
+    const [destTile, destType] = destExit;
+    const dest = this.rom.locations[destTile >> 8].meta!;
+    dest._exits.set(destTile & 0xff, destType,
+                    [this.id << 8 | next, nextType]);
+    this._exits.set(next, nextType, destExit);
+    this._exits.delete(prev, prevType);
+  }  
+
+  pickTypeFromScreens(pos: Pos): ConnectionType {
+    const exits = this.rom.metascreens[this._screens[pos + 16]].data.exits;
+    const types = (exits ?? []).map(e => e.type);
+    if (types.length !== 1) {
+      throw new Error(`No single type for ${hex(pos)}: [${types.join(', ')}]`);
+    }
+    return types[0];
+  }
+
+  /**
+   * Given a seamless pair location, sync up the exits.  For each exit of
+   * either, check if it's symmetric, and if so, copy it over to the other side.
+   */
+  reconcileExits(that: Metalocation) {
+    const exits: [Pos, ConnectionType, ExitSpec][] = [];
+    for (const loc of [this, that]) {
+      for (const [pos, type, [destTile, destType]] of loc._exits) {
+        const dest = this.rom.locations[destTile >>> 8];
+        const reverse = dest.meta._exits.get(destTile & 0xff, destType);
+        if (!reverse) continue;
+        const [revTile, revType] = reverse;
+        if ((revTile >>> 8) === loc.id && (revTile & 0xff) === pos &&
+            revType === type) {
+          exits.push([pos, type, [destTile, destType]]);
+        }
+      }
+    }
+    this._exits = new Table(exits);
+    that._exits = new Table(exits);
+  }
+
   /**
    * Saves the current state back into the underlying location.
    * Currently this only deals with entrances/exits.
@@ -565,37 +753,67 @@ export class Metalocation {
     for (const [srcPos, srcType, [destTile, destType]] of this._exits) {
       const srcScreen = this.rom.metascreens[this._screens[srcPos + 0x10]];
       const dest = destTile >> 8;
+      let destPos = destTile & 0xff;
       const destLoc = this.rom.locations[dest];
       const destMeta = destLoc.meta!;
       const destScreen =
           this.rom.metascreens[destMeta._screens[(destTile & 0xff) + 0x10]];
       const srcExit = srcScreen.data.exits?.find(e => e.type === srcType);
       const destExit = destScreen.data.exits?.find(e => e.type === destType);
-      if (!srcExit || !destExit) throw new Error(`Missing exit`); // TODO ... ?
-      // See if the dest entrance exists yet...
-      let destPos = destTile & 0xff;
-      let destCoord = destExit.entrance;
-      if (destCoord > 0xefff) { // handle special case in Oak
-        destPos += 0x10;
-        destCoord -= 0x10000;
+      if (!srcExit || !destExit) {
+        throw new Error(`Missing exit:
+  From: ${srcLoc} @ ${hex(srcPos)}:${srcType} ${srcScreen.name}
+  To:   ${destLoc} @ ${hex(destPos)}:${destType} ${destScreen.name}`);
       }
-      const entrance = destLoc.findOrAddEntrance(destPos, destCoord);
-      for (const tile of srcExit.exits) {
+      // See if the dest entrance exists yet...
+      let entrance = 0x20;
+      if (!destExit.type.startsWith('seamless')) {
+        let destCoord = destExit.entrance;
+        if (destCoord > 0xefff) { // handle special case in Oak
+          destPos += 0x10;
+          destCoord -= 0x10000;
+        }
+        entrance = destLoc.findOrAddEntrance(destPos, destCoord);
+      }
+      for (let tile of srcExit.exits) {
+        if (srcExit.type === 'edge:bottom' && this.height === 1) tile -= 0x20;
         srcLoc.exits.push(Exit.of({screen: srcPos, tile, dest, entrance}));
       }
     }
     srcLoc.width = this._width;
     srcLoc.height = this._height;
     srcLoc.screens = [];
-    for (let y = 0; y < this._width; y++) {
+    for (let y = 0; y < this._height; y++) {
       const row: number[] = [];
       srcLoc.screens.push(row);
-      for (let x = 0; x < this._height; x++) {
+      for (let x = 0; x < this._width; x++) {
         row.push(this.rom.metascreens[this._screens[(y + 1) << 4 | x]].id);
       }
     }
     srcLoc.tileset = this.tileset.tilesetId;
     srcLoc.tileEffects = this.tileset.effects().id;
+
+    // write flags
+    srcLoc.flags = [];
+    const freeFlags = [...this.freeFlags];
+    for (const screen of this.allPos()) {
+      const scr = this.rom.metascreens[this._screens[screen + 16]];
+      let flag: number|undefined;
+      if (scr.hasFeature('wall') || scr.hasFeature('bridge')) {
+        flag = freeFlags.pop()?.id ?? this.rom.flags.alloc(0x200);
+      } else if (scr.flag === 'always') {
+        flag = this.rom.flags.AlwaysTrue.id;
+      } else if (scr.flag === 'calm') {
+        flag = this.rom.flags.CalmedAngrySea.id;
+      } else if (scr.flag === 'custom:false') {
+        flag = this.customFlags.get(screen)?.id;
+      } else if (scr.flag === 'custom:true') {
+        flag = this.customFlags.get(screen)?.id ?? this.rom.flags.AlwaysTrue.id;
+      }
+      if (flag != null) {
+        srcLoc.flags.push(LocationFlag.of({screen, flag}));
+      }
+    }
 
     if (this._monstersInvalidated) {
       // TODO - if monsters invalidated, then replace them...

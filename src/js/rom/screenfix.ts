@@ -1,4 +1,5 @@
 import {Rom} from '../rom.js';
+import { Spawn } from './locationtables.js';
 
 // Simple tileset-only fixes that unlock some screen-tileset combinations
 export enum ScreenFix {
@@ -10,11 +11,11 @@ export enum ScreenFix {
   // also remap the existing ones in some situations to point to the
   // new ones, e.g. for screens 1d,29 to work on river, we need to use
   // the 4x tiles instead of the 5x ones to fix the surrounding.
-  GrassLongGrassRemapping,
+  GrassLongGrassRemapping, // TODO
   // River tilesets don't define 10,12,14,16,17,1a,1b,1c,22,23,24,25,26,
   // which are used for the "short grass" in the grass tileset.  These
   // would be easy to copy from somewhere else to open up a few screens.
-  RiverShortGrass,
+  RiverShortGrass, // TODO
   // Angry sea uses 0a oddly for a simple diagonal beach/mountain tile,
   // preventing parity with grass/river cave entrance bottoms.  Move this
   // tile elsewhere (ad) and fix the graphics/effects.  Note that the
@@ -25,24 +26,24 @@ export enum ScreenFix {
   // the existing tiles, used by mountain gates, elsewhere pretty easily,
   // or alternatively move all the 5a..5e in all other tilesets into
   // 89,8a,90,99,9d,d1,d2 which are free in 80,90,94,9c).
-  SeaRocks,
+  SeaRocks, // TODO
   // Allow the sea to support 34,38,3c..3f, used as marsh in river tileset.
-  // These woud need to map to simple ocean tiles.  TODO - implement.
-  SeaMarsh,
+  // These would need to map to simple ocean tiles.  TODO - implement.
+  SeaMarsh, // TODO
   // Support 6x,7x tiles (trees) on angry sea.  Probably not worth it.
   // Would need to move (e.g.) Lime Tree Lake to a totally different tileset
   // to free up the metatiles.
-  SeaTrees,
+  SeaTrees, // TODO
   // Fixing RiverShortGrass for desert is a lot harder because it touches a
   // bunch of tiles used by the mountainRiver tileset (10,14,2x).
-  DesertShortGrass,
+  DesertShortGrass, // TODO
   // Fixing GrassLongGrass for desert is difficult because the 4x tiles
   // are used by mountainRiver.
-  DesertLongGrass,
+  DesertLongGrass, // TODO
   // Desert doesn't support the 3x marsh tiles (clash with mountainRiver).
   // It's probably not feasible to add support - it would allow screen 33,
   // but there's a similar south-edge-exit screen with DesertTownEntrance.
-  DesertMarsh,
+  DesertMarsh, // TODO
   // Fix 5a..5e to be compatible with grass/river.  5b is already in use
   // on the two oasis screens, so that tile is moved to 5f to make space.
   DesertRocks,
@@ -51,13 +52,15 @@ export enum ScreenFix {
   DesertTrees,
   // South-facing town entrances use 07 for the top of the town wall.
   // This could be replaced with (e.g. 8c) or maybe something better.
-  DesertTownEntrance,
+  DesertTownEntrance, // TODO
   // Labyrinth parapets can be blocked/unblocked with a flag.
-  LabyrinthParapets,
+  LabyrinthParapets, // TODO (see maze/goa)
   // Adds flaggable doors to various screens.
-  SwampDoors,
+  SwampDoors, // TODO (see maze/swamp)
   // Adds some extra spike screens.
-  ExtraSpikes,
+  ExtraSpikes, // TODO
+  // Make caves closeable.
+  CloseCaves,
 }
 
 type Reqs = Record<any, {requires?: ScreenFix[]}>
@@ -109,8 +112,9 @@ export function withRequire<T extends Reqs>(requirement: ScreenFix, props: T) {
 // const ICE_CAVE = 0xa8;
 // const TOWER = 0xac;
 
+/** Apply standard tileset fixes.  Others may be applied later. */
 export function fixTilesets(rom: Rom) {
-  const {desert, grass, sea} = rom.metatilesets;
+  const {desert, grass, mountain, mountainRiver, river, sea} = rom.metatilesets;
   const $ = rom.metascreens;
 
   // Several of the grass/river screens with forest tiles don't work on
@@ -153,10 +157,53 @@ export function fixTilesets(rom: Rom) {
       .replaceIn($.beachExitN, $.lighthouseEntrance, $.oceanShrine);
   sea.getTile(0x0a).copyFrom(0xa2); // don't bother setting an alternative.
   $.boundaryN_cave.screen.set2d(0x39, [[0x00, 0x00], [0x0a, 0x0a]]);
-  $.boundarySE_cave.screen.set2d(0x4a, [[0x00, 0x00], [0x0a, 0x0a]]);
+  $.cornerSE_cave.screen.set2d(0x4a, [[0x00, 0x00], [0x0a, 0x0a]]);
      // , [0xf8, 0xf8], [null, 0xfd]]);
   // sea.screens.add($.boundaryW_cave);
   // sea.screens.add($.desertCaveEntrance);
+
+  // To allow caves to be closed, we clear out metatiles 01..04, to be used as
+  // the four corners of the cave: [[01, 02], [03, 04]].  These are copied from
+  // c1,c1,d7,d7.  [TODO - seems like we could just use 2 instead of 4 here].
+  // Some tilesets already have metatiles in 01..04 so we need to move them to
+  // unoccupied spots on a per-tileset basis (note that sea (94) and desert (9c)
+  // are entangled here).  [TODO - clean up 2c and 2d as well]
+  $.registerFix(ScreenFix.CloseCaves);
+  river.getTile(0x07).copyFrom(0x01).replaceIn(...river);
+  river.getTile(0x0e).copyFrom(0x02).replaceIn(...river);
+  river.getTile(0x20).copyFrom(0x03).replaceIn(...river);
+  river.getTile(0x21).copyFrom(0x04).replaceIn(...river);
+  for (const ts of [desert, sea, mountain, mountainRiver]) {
+    ts.getTile(0x68).copyFrom(0x01).replaceIn(...ts);
+    ts.getTile(0x83).copyFrom(0x02).replaceIn(...ts);
+    ts.getTile(0x88).copyFrom(0x03).replaceIn(...ts);
+    ts.getTile(0x89).copyFrom(0x04).replaceIn(...ts);
+  }
+  for (const ts of [river, desert, sea]) {
+    ts.getTile(0x01).copyFrom(0xc1).setAlternative(0x00);
+    ts.getTile(0x02).copyFrom(0xc1).setAlternative(0x00);
+    ts.getTile(0x03).copyFrom(0xd7).setAlternative(0x0a);
+    ts.getTile(0x04).copyFrom(0xd7).setAlternative(0x0a);
+  }
+  const closedCaves = [
+    [$.boundaryE_cave, 0x48], [$.boundaryW_cave, 0x79],
+    [$.exitW_cave, 0x38], [$.caveAbovePortoa, 0x56],
+  ] as const;
+  for (const [scr, pos] of closedCaves) {
+    scr.screen.set2d(pos, [[1, 2], [3, 4]]);
+    scr.addCustomFlag(true);
+  }
+  {
+    const {locations: {CordelPlainEast, CordelPlainWest, WaterfallValleyNorth},
+           flags: {OpenedSealedCave}} = rom;
+    CordelPlainEast.meta.customFlags.set(0x30, OpenedSealedCave);
+    CordelPlainWest.meta.customFlags.set(0x30, OpenedSealedCave);
+    WaterfallValleyNorth.meta.customFlags.set(0x30, OpenedSealedCave);
+    const explosion = Spawn.of({y: 0x060, x: 0x060, type: 4, id: 0x2c});
+    const keyTrigger = Spawn.of({y: 0x070, x: 0x070, type: 2, id: 0xad});
+    WaterfallValleyNorth.spawns.splice(1, 0, explosion);
+    WaterfallValleyNorth.spawns.push(keyTrigger);
+  }
 
   // sea.getTile(0x0a).copyFrom(0xa2).setTiles([,,0x91,0x91]).setAttrs(0);
   // This does open up screen $ce (desert cave entrance) for use in the sea,

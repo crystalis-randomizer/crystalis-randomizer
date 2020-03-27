@@ -855,6 +855,10 @@ export class Table<R, C, V> implements Iterable<[R, C, V]>{
     col.delete(c);
     if (!col.size) this._map.delete(r);
   }
+
+  row(r: R): ReadonlyMap<C, V> {
+    return this._map.get(r) ?? new Map();
+  }
 }
 
 // cancellation

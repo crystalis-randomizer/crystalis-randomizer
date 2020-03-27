@@ -377,16 +377,15 @@ export abstract class DataTuple implements Iterable<number> {
     this.data = arg;
   }
 
-  static of<T extends DataTuple>(this: DataTupleCtor<T>, inits: Settable<T>):
-  T {
+  static of<T extends DataTuple>(this: DataTupleCtor<T>,
+                                 inits: Settable<T>): T {
     return Object.assign(
         new (dataTupleActualClass(this) as any)(new Array(this.size).fill(0)),
         inits);
   }
 
   static from<T extends DataTuple>(this: DataTupleCtor<T>,
-                                   data: Data<number>, offset = 0):
-  T {
+                                   data: Data<number>, offset = 0): T {
     const cls: any = dataTupleActualClass(this);
     const arg =
         !offset && data.length === this.size ?

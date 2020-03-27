@@ -217,6 +217,9 @@ export class Shop extends Entity {
     this.contents = tuple(rom.prg, this.contentsAddress, CONTENTS_COUNTS[this.type]);
     this.prices = seq(PRICES_COUNTS[this.type], readPrice);
     this.used = this.location !== 0xff;
+
+    // TODO - checking for shops is really tricky for some reason...
+    //this.rom.locations[this.location].setIsShop(true);
   }
 
   // private isNormalized(): boolean {

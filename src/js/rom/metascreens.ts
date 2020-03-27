@@ -272,6 +272,18 @@ export class Metascreens {
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
     edges: '  >v',
   });
+  // NOTE: this version has slightly nicer mountains in some cases.
+  readonly overworldEmpty_alt = this.metascreen({
+    id: 0x0c,
+    icon: icon`
+      |███|
+      |███|
+      |███|`,
+    tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
+    feature: ['empty'],
+    edges: '    ',
+    match: () => false,
+  });
   readonly cornerNE = this.metascreen({
     id: 0x0d,
     icon: icon`▜
@@ -363,7 +375,6 @@ export class Metascreens {
                sea: {requires: [ScreenFix.SeaCaveEntrance]}},
     edges: '> >o',
     exits: [cave(0x89)],
-    // TODO - flaggable?
   });
   readonly exitN = this.metascreen({
     id: 0x16,
@@ -467,6 +478,7 @@ export class Metascreens {
     //icon: '?',
     tilesets: {town: {}},
     exits: [leftEdge({top: 3}), rightEdge({top: 9})],
+    flag: 'custom:false',
   }); 
 
   readonly riverBranchNSE = this.metascreen({
@@ -597,6 +609,7 @@ export class Metascreens {
       |█ █|`,
     tilesets: {grass: {}},
     // TODO - annotate 3 exits, spawn for windmill blade
+    flag: 'custom:false',
     feature: ['windmill'],
     edges: '  n ',
     exits: [cave(0x63), bottomEdge(), door(0x89, 'windmill'), door(0x8c)],
@@ -611,6 +624,7 @@ export class Metascreens {
     edges: ' n  ',
     // NOTE: special case the odd entrance/exit here (should be 4a)
     exits: [cave(0x4a), leftEdge({top: 5})],
+    flag: 'custom:true',
   });
   readonly riverNS = this.metascreen({
     id: 0x2e,
@@ -843,6 +857,7 @@ export class Metascreens {
     id: 0x44,
     tilesets: {house: {}},
     exits: [bottomEdgeHouse(), cave(0x49)],
+    flag: 'custom:false',
   });
   // TODO - separate metascreen for shedWithHiddenDoor
   readonly tavern = this.metascreen({
@@ -1507,7 +1522,7 @@ export class Metascreens {
       |   |
       |   |
       |   |`,
-    tilesets: {cave: {}, fortress: {}, labyrinth: {}, pyramid: {}, sea: {},
+    tilesets: {cave: {}, fortress: {}, labyrinth: {}, pyramid: {},
                iceCave: {}, dolphinCave: {}},
     feature: ['empty'],
     edges: '    ',
@@ -1518,7 +1533,7 @@ export class Metascreens {
       |   |
       |   |
       |   |`,
-    tilesets: {desert: {}}, // NOTE: could add grass/river but trees nicer.
+    tilesets: {desert: {}, sea: {}}, // NOTE: could add grass/river but trees nicer.
     edges: 'oooo',
   });
   readonly hallNS = this.metascreen({
@@ -1527,7 +1542,7 @@ export class Metascreens {
       | │ |
       | │ |
       | │ |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     edges: 'c c ',
     connect: '2a',
     poi: [[4]],
@@ -1539,7 +1554,7 @@ export class Metascreens {
       |   |
       |───|
       |   |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     edges: ' c c',
     connect: '6e',
     poi: [[4]],
@@ -1550,7 +1565,7 @@ export class Metascreens {
       |   |
       | ┌─|
       | │ |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     edges: '  cc',
     connect: 'ae',
     poi: [[2]],
@@ -1561,7 +1576,7 @@ export class Metascreens {
       |   |
       |─┐ |
       | │ |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     edges: ' cc ',
     connect: '6a',
     poi: [[2]],
@@ -1572,7 +1587,7 @@ export class Metascreens {
       | │ |
       | └─|
       |   |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     edges: 'c  c',
     connect: '2e',
     poi: [[2]],
@@ -1583,7 +1598,7 @@ export class Metascreens {
       | │ |
       |─┘ |
       |   |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     edges: 'cc  ',
     connect: '26',
     poi: [[2]],
@@ -1594,7 +1609,7 @@ export class Metascreens {
       | │ |
       | ├─|
       | │ |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     edges: 'c cc',
     connect: '2ae',
     poi: [[3]],
@@ -1605,7 +1620,7 @@ export class Metascreens {
       | │ |
       |─┼─|
       | │ |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     edges: 'cccc',
     connect: '26ae',
     poi: [[3]],
@@ -1616,7 +1631,7 @@ export class Metascreens {
       | │ |
       |─┤ |
       | │ |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     edges: 'ccc ',
     connect: '26a',
     poi: [[3]],
@@ -1627,7 +1642,7 @@ export class Metascreens {
       |   |
       |─┬─|
       | │ |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     edges: ' ccc',
     connect: '6ae',
     poi: [[3]],
@@ -1638,11 +1653,11 @@ export class Metascreens {
       | │ |
       |─┴─|
       |   |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     edges: 'cc c',
     connect: '26e',
     poi: [[3]],
-    exits: [seamlessUp(0x06, 4)], // kensu
+    exits: [seamlessDown(0x06, 4)], // kensu
   });
   readonly hallNS_stairs = this.metascreen({
     id: 0x8c,
@@ -1650,7 +1665,7 @@ export class Metascreens {
       | ┋ |
       | ┋ |
       | ┋ |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['stairs'],
     edges: 'c c ',
     connect: '2a',
@@ -1661,7 +1676,7 @@ export class Metascreens {
       | ╽ |
       |─┃─|
       | ╿ |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['overBridge'],
     edges: 'cbcb', // TODO - 'b' for other side of bridge??
     connect: '2a',
@@ -1672,7 +1687,7 @@ export class Metascreens {
       | ╽ |
       |───|
       | ╿ |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['underBridge'],
     edges: 'bcbc',
     connect: '6e',
@@ -1683,7 +1698,7 @@ export class Metascreens {
       | │ |
       | ┆ |
       | │ |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     edges: 'c c ',
     feature: ['wall'],
     // TODO - can we just detect the connections?
@@ -1703,7 +1718,7 @@ export class Metascreens {
       |   |
       |─┄─|
       |   |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['wall'],
     edges: ' c c',
     connect: '6=e',
@@ -1715,7 +1730,7 @@ export class Metascreens {
       |┌┸┐|
       |│&│|
       |└┬┘|`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['arena'],
     edges: 'n*c*', // 'n' for 'narrow'
     allowed: s => s.hasFeature('empty') ? [1, 3] : [],
@@ -1723,7 +1738,7 @@ export class Metascreens {
     poi: [[1, 0x60, 0x78]],
     exits: [topEdge(), // vampire 1 room
             bottomEdge({left: 6, width: 4, manual: true}), // goa sages
-            seamlessDown(0xe6, 4)], // kensu
+            seamlessUp(0xe6, 4)], // kensu
   });
   readonly hallNS_arenaWall = this.metascreen({
     id: 0x92,
@@ -1731,7 +1746,7 @@ export class Metascreens {
       |┌┄┐|
       |│&│|
       |└┬┘|`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['arena', 'wall'],
     edges: 'n*c*',
     allowed: s => s.hasFeature('empty') ? [1, 3] : [],
@@ -1749,7 +1764,7 @@ export class Metascreens {
       | ┆ |
       |─┴─|
       |   |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     edges: 'cc c',
     connect: '2=6e',
     exits: [topEdge({left: 6, width: 4})],
@@ -1760,7 +1775,7 @@ export class Metascreens {
       | < |
       |─┴─|
       |   |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     edges: ' c c',
     connect: '6e',
     exits: [upStair(0x47)],
@@ -1771,7 +1786,7 @@ export class Metascreens {
       | < |
       |─┘ |
       |   |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     edges: ' c  ',
     connect: '6',
     exits: [upStair(0x42)],
@@ -1782,7 +1797,7 @@ export class Metascreens {
       |   |
       |─┐ |
       | > |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     edges: ' c  ',
     connect: '6',
     exits: [downStair(0xa2)],
@@ -1793,7 +1808,7 @@ export class Metascreens {
       | < |
       | └─|
       |   |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     edges: '   c',
     connect: 'e',
     exits: [upStair(0x4c)],
@@ -1804,7 +1819,7 @@ export class Metascreens {
       |   |
       | ┌─|
       | > |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     edges: '   c',
     connect: 'e',
     exits: [downStair(0xac)],
@@ -1815,7 +1830,7 @@ export class Metascreens {
       | > |
       |   |
       | < |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['empty'],
     edges: 'c c ',
     connect: '2|a',
@@ -1827,7 +1842,7 @@ export class Metascreens {
       | > |
       |   |
       |   |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['empty'],
     edges: 'c   ',
     connect: '2',
@@ -1840,7 +1855,7 @@ export class Metascreens {
       |   |
       |   |
       | < |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['empty'],
     edges: '  c ',
     connect: 'a',
@@ -1853,7 +1868,7 @@ export class Metascreens {
       | ╵ |
       |   |
       | ╷ |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['empty'],
     edges: 'c c ',
     connect: '2|a',
@@ -1865,7 +1880,7 @@ export class Metascreens {
       | ╵ |
       |   |
       |   |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['empty'],
     edges: 'c   ',
     connect: '2',
@@ -1878,7 +1893,7 @@ export class Metascreens {
       |   |
       |   |
       | ╷ |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['empty'],
     edges: '  c ',
     connect: 'a',
@@ -1891,7 +1906,7 @@ export class Metascreens {
       |   |
       |╴ ╶|
       |   |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['empty'],
     edges: ' c c',
     connect: '6|e',
@@ -1903,7 +1918,7 @@ export class Metascreens {
       |   |
       |╴  |
       |   |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['empty'],
     edges: ' c  ',
     connect: '6',
@@ -1916,7 +1931,7 @@ export class Metascreens {
       |   |
       |  ╶|
       |   |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['empty'],
     edges: '   c',
     connect: 'e',
@@ -1930,7 +1945,7 @@ export class Metascreens {
       | │ |
       | │ |
       | ╽ |`,
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, sea: {}, iceCave: {}},
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     edges: 'c n ',
     connect: '2a',
     exits: [bottomEdge()],
@@ -2178,6 +2193,7 @@ export class Metascreens {
     allowed: s => s.hasFeature('empty') ? [1, 3] : [],
     connect: 'a',
     exits: [{...upStair(0x47, 3), type: 'cave'}],
+    flag: 'custom:false',
   });
   readonly mountainPathN_slopeS_cave = this.metascreen({
     id: 0xb6,
@@ -2331,7 +2347,7 @@ export class Metascreens {
     edges: ' vov', // o = open, v = open down
     exits: [cave(0x49)],
   });
-  readonly boundarySE_cave = this.metascreen({
+  readonly cornerSE_cave = this.metascreen({
     id: 0xc2,
     icon: icon`
       | ▐█|
@@ -3337,7 +3353,8 @@ export class Metascreens {
     edges: ' *c*',
     allowed: s => s.hasFeature('empty') ? [1, 3] : [],
     connect: 'a',
-    exits: [upStair(0x57)]
+    exits: [upStair(0x57)],
+    flag: 'custom:false',
   });
   readonly pyramidArena_draygon = this.metascreen({
     id: 0xf9,
@@ -3363,6 +3380,7 @@ export class Metascreens {
     allowed: s => s.hasFeature('empty') ? [1, 3] : [],
     connect: '2a',
     exits: [topEdge({left: 6, width: 4})],
+    flag: 'custom:false',
   });
   readonly cryptArena_entrance = this.metascreen({
     id: 0xfb,
@@ -3444,7 +3462,7 @@ export class Metascreens {
     tilesets: {}, // not directly included in any
     // Check for edge exits in potential neighbors
     allowed: (s) => (s.data.exits || [])
-        .map(e => edgeTypeMap[e.type] as (0 | 1 | 2 | 3))
+        .map(e => (edgeTypeMap[e.type]! ^ 2) as (0 | 1 | 2 | 3))
         .filter(d => d != null),
   });
 

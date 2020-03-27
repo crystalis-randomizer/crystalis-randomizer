@@ -12,6 +12,7 @@ type Exit = [Metalocation, Pos, ConnectionType];
 type Exit2 = [Metalocation, Pos, ConnectionType, ((e: Exit) => void)?];
 
 function flipSaberaEntrance(exit: Exit) {
+  console.log(`flip sabera entrance`);
   const loc = exit[0];
   loc.set2d(0x71, [[loc.rom.metascreens.deadEndE_upStair],
                    [loc.rom.metascreens.caveEmpty]]);
@@ -21,6 +22,7 @@ function flipSaberaEntrance(exit: Exit) {
 }
 
 function flipKarmineEntrance(exit: Exit) {
+  console.log(`flip karmine entrance`);
   const loc = exit[0];
   const ms = loc.rom.metascreens;
   loc.invalidateMonsters();
@@ -31,6 +33,7 @@ function flipKarmineEntrance(exit: Exit) {
 }
 
 function flipKarmineExit(exit: Exit) {
+  console.log(`flip karmine exit`);
   const loc = exit[0];
   const ms = loc.rom.metascreens;
   loc.set2d(0x01, [[ms.deadEndS_stairs, ms.caveEmpty]]);
@@ -40,6 +43,7 @@ function flipKarmineExit(exit: Exit) {
 }
 
 function flipExit(exit: Exit) {
+  console.log(`flip generic exit`);
   const loc = exit[0];
   const ms = loc.rom.metascreens;
   if (loc.width < 2) loc.width = 2; // should alredy be filled w/ empty
@@ -82,7 +86,9 @@ export function shuffleGoa(rom: Rom, random: Random) {
   for (const f of floors) {
     const flexible = up || entrances[f][3] || a[a.length - 1][3];
     const reverse = flexible ? random.pick([false, true]) : true;
-    const lastB: Exit2 = reverse ? entrances[f] : exits[f];
+    console.log(`FLOOR ${f}: up ${up} flexible ${!!flexible} reverse ${reverse}`);
+    const lastB: Exit2 = reverse ? exits[f] : entrances[f];
+    console.log(`push b ${rom.locations[lastB[0].id].name}`);
     b.push(lastB);
     if (up !== (lastB[2] === 'stair:down')) {
       if (lastB[3]) {
@@ -91,14 +97,16 @@ export function shuffleGoa(rom: Rom, random: Random) {
         flip(lastA);
       }
     }
-    a.push(lastA = reverse ? exits[f] : entrances[f]);
+    a.push(lastA = reverse ? entrances[f] : exits[f]);
+    console.log(`push a ${rom.locations[lastA[0].id].name}`);
     up = lastA[2] === 'stair:up';
   }
-  if (up) flip(lastA);
+  if (up) flip(lastA); // NOTE: all entrances can be down, only some can be up
   b.push([$.GoaFortress_Exit.meta!, 0x01, 'stair:up']);
 
   for (let i = 0; i < a.length; i++) {
-    a[i][0].attach(a[i][1], a[i][2], b[i][0], b[i][1], b[i][2]);
+    // TODO - simplify to remove specific type
+    a[i][0].attach(a[i][1], b[i][0], b[i][1], a[i][2], b[i][2]);
   }
 
   // let last = [exits[0][0], exits[0][1], 'stair:up'];

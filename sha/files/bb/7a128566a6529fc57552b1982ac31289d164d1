@@ -1,0 +1,8 @@
+var __VERSION__ = {
+  'STATUS': 'unstable',
+  'VERSION': 'meta',
+  'LABEL': 'meta 330ba34',
+  'HASH': '330ba34ea12131286ad265a6556ade8e402fb2e0',
+  'DATE': new Date(1585374518000),
+};
+if (typeof global !== 'undefined') global['__VERSION__'] = __VERSION__;

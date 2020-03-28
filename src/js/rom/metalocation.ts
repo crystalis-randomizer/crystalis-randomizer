@@ -776,7 +776,7 @@ export class Metalocation {
         entrance = destLoc.findOrAddEntrance(destPos, destCoord);
       }
       for (let tile of srcExit.exits) {
-        if (srcExit.type === 'edge:bottom' && this.height === 1) tile -= 0x20;
+        //if (srcExit.type === 'edge:bottom' && this.height === 1) tile -= 0x20;
         srcLoc.exits.push(Exit.of({screen: srcPos, tile, dest, entrance}));
       }
     }

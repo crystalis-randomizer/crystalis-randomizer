@@ -1,0 +1,35 @@
+Problem: Summoning the dolphin depends on the entrance.
+When we rewrite the entrance tables, we don't keep the same order.
+Moreover, if we shuffle the sea, then all the summon scripts break.
+
+Dolphin summon table at $3d6a8 (code right above).  First four
+elems in each row is coordinate for obj 1e (70,90,b0,d0) and
+fifth elem is 680,x.  Action script for summoned dolphin (object $38) is $32
+(jump at $36e31).  680 (initialized to 5..9) indexes into $36f04.
+Action script does the following:
+ * skips out if frame & 7 is an unset bit in $600,x (never?)
+ * every 16th frame, looks up 680, stores pointer in $10$11
+   and indexes into it with $620,x 
+   - if negative, do stuff; if positive, store direction, inc 620
+   negative:
+    table of follow-ups:
+     fc => 4a[de] <- 32; 68[de] <- 0d; 4e[de] <- 1; 62[de] <- 1
+     fd => 4a0,0 <- 0a; 4a0,x <- 30 ; 6e0,x <- 6; 6c0,x <- 2e
+     fe => 4a0,0 <- 0 (despawns? e.g. akahana @ 680,x = 01)
+     ff => 4a0,0 <- 30
+
+==> This function is for anything that moves on its own.
+    PersonData[0] for NPCs goes into 680,x!
+  0 = up, 2 = right, 4 = down, 6 = left
+  each byte is one tile
+
+Stoned Akahana stores $0d into destoned akahana while giving shield ring
+(in dialog followup action jump 19)
+
+Dolphin script for non-angry sea maps is hard-coded by location
+ - for angry sea maps, indexed by entrance number
+We can move the entry for underground channel and ESI to anywhere,
+in case entrances we want are taken.
+
+Plan: for each entrance connected to land connected to beach,
+      pick a beach tile, and set up a summon script.

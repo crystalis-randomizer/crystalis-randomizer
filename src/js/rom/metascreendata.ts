@@ -154,6 +154,7 @@ export interface Connection {
   readonly dir: number;              // 0=up, 1=left, 2=down, 3=right
   readonly entrance: number;         // pos YyXx
   readonly exits: readonly number[]; // tile YX
+  readonly allowedExits?: readonly number[]; // extra exits to match
   // TODO - singleHeightEntrance - for dir=2 just subtract 0x20 ??
   // TODO - opposite direction? watererfall cave is a right/down matchup...
 }
@@ -174,6 +175,7 @@ export function upStair(tile: number, width = 2): Connection {
       dir: 2,
       entrance,
       exits: [tile],
+      //allowedExits: [tile - 16, tile + 16],
     };
   }
   // TODO - if y is 0xe then we may need to adjust for screen edge?
@@ -183,6 +185,10 @@ export function upStair(tile: number, width = 2): Connection {
     dir: 0,
     entrance,
     exits: seq(width, i => tile - 0x10 + i),
+    // TODO - if we set this then we could possibly save some of the
+    //        preparse normalization that's currently required.
+    //allowedExits: [...seq(width, i => tile - 0x20 + i),
+    //               ...seq(width, i => tile + i)],
   };
 }
 
@@ -199,6 +205,7 @@ export function downStair(tile: number, width = 2): Connection {
       dir: 2,
       entrance,
       exits: [tile],
+      allowedExits: [tile + 16, tile - 16],
     };
   }
   const entrance = y << 12 | 0x0f00 | ((x << 4) + (width << 3));
@@ -207,6 +214,8 @@ export function downStair(tile: number, width = 2): Connection {
     dir: 2,
     entrance,
     exits: seq(width, i => tile + 0x10 + i),
+    allowedExits: [...seq(width, i => tile + 0x20 + i),
+                   ...seq(width, i => tile + i)],
   };
 }
 

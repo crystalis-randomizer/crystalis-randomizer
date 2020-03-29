@@ -1,13 +1,15 @@
+import {Assembler} from '../asm/assembler.js';
 import {Module} from '../asm/module.js';
 import {Entity, EntityArray} from './entity.js';
+import {Entrance} from './locationtables.js';
 import {Location} from './location.js';
 import {MessageId} from './messageid.js';
 import {DIALOG_FLAGS, SPAWN_CONDITION_FLAGS,
         Address, Data, Segment,
-        hex, readBigEndian, tuple, upperCamelToSpaces} from './util.js';
+  hex, readBigEndian, seq, tuple, upperCamelToSpaces, free} from './util.js';
 import {Rom} from '../rom.js';
 
-const {$04, $05, $0e} = Segment;
+const {$04, $05, $0e, $1b, $fe} = Segment;
 
 type FlagList = number[];
 
@@ -42,7 +44,7 @@ export class Npcs extends EntityArray<Npc> {
   PortoaThroneRoomBackDoorGuard = new Npc(this, 0x33);
   PortoaPalaceFrontGuard = new Npc(this, 0x34);
   // generic portoa palace 35..37
-  PortoaQueen = new Npc(this, 0x38);
+  PortoaQueen = new PortoaQueen(this, 0x38);
   FortuneTeller = new Npc(this, 0x39);
   WaterfallCaveAdventurers = new Npc(this, 0x3a);
   // unused 3b..3c
@@ -69,7 +71,7 @@ export class Npcs extends EntityArray<Npc> {
   Fisherman = new Npc(this, 0x64);
   // generic/unsed 65..67
   KensuInCabin = new Npc(this, 0x68);
-  Dolphin = new Npc(this, 0x69);
+  Dolphin = new Dolphin(this, 0x69);
   // unused 6a
   SleepingKensu = new Npc(this, 0x6b);
   KensuDisguisedAsDancer = new Npc(this, 0x6c);
@@ -112,6 +114,8 @@ export class Npcs extends EntityArray<Npc> {
   Draygon = new Npc(this, 0xcb);
   Vampire2 = new Npc(this, 0xcc);
 
+  movementScripts: MovementScript[];
+
   constructor(readonly rom: Rom) {
     super(0xcd);
     for (const key in this) {
@@ -125,6 +129,45 @@ export class Npcs extends EntityArray<Npc> {
         this[i] = new Npc(this, i);
       }
     }
+    // Read all the movement scripts
+    const movementBase = MOVEMENT_SCRIPT_TABLE_POINTER.readAddress(rom.prg);
+    this.movementScripts = seq(16, i => {
+      let addr = movementBase.plus(2 * i).readAddress(rom.prg).offset;
+      const steps: number[] = [];
+      while (rom.prg[addr] < 0x80) {
+        steps.push(rom.prg[addr++]);
+      }
+      const terminate = rom.prg[addr];
+      return {steps, terminate};
+    });
+  }
+
+  write(): Module[] {
+    // Write all the NPCs
+    const a = this.rom.assembler();
+    for (const npc of this) {
+      if (!npc || !npc.used) continue;
+      npc.assemble(a);
+    }
+    // Free the space from the original movement scripts
+    free(a, $1b, 0xaf04, 0xafa9);
+    // Write the movement scripts
+    const pointerTable = [];
+    a.segment('1b', 'fe', 'ff');
+    let i = 0;
+    for (const movement of this.movementScripts) {
+      const addr = (a.reloc(`MovementScript_${hex(i++)}`), a.pc());
+      a.byte(...movement.steps, movement.terminate);
+      pointerTable.push(addr);
+    }
+    const pointerTableAddr = (a.reloc('MovementScriptTable'), a.pc());
+    a.word(...pointerTable);
+    MOVEMENT_SCRIPT_TABLE_POINTER.loc(a, 'MovementScriptTablePtr');
+    a.word(pointerTableAddr);
+    MOVEMENT_SCRIPT_TABLE_POINTER.plus(5).loc(a, 'MovementScriptTablePlus1Ptr');
+    a.word({op: '+', args: [pointerTableAddr, {op: 'num', num: 1}]});
+    // Return the result
+    return [a.module()];
   }
 }
 
@@ -344,10 +387,9 @@ export class Npc extends Entity {
     return true;
   }
 
-  write(): Module[] {
-    if (!this.used) return [];
+  assemble(a: Assembler) {
+    if (!this.used) return;
     const id = hex(this.id);
-    const a = this.rom.assembler();
 
     this.dataBase.loc(a, 'PersonData_${id}');
     a.byte(...this.data);
@@ -367,7 +409,6 @@ export class Npc extends Entity {
       this.dialogPointer.loc(a, `Dialog_${id}_Pointer`);
       a.word(dialog);
     }
-    return [a.module()];
   }
 }
 
@@ -454,10 +495,97 @@ const UNUSED_NPCS = new Set([
   // also everything from 8f..c0, but that's implicit.
 ]);
 
+////////////////////////////////////////////////////////////////
+// Special cases for some NPCs.
+
 export class PortoaQueen extends Npc {
-  // TODO - extend NamedNpc? actually add it to the class.
-  readonly id = 0x38;
-  readonly name = 'Portoa Queen';
   get expectedSword(): number { return this.localDialog(3).condition & 0xff; }
   set expectedSword(id: number) { this.localDialog(3).condition = 0x200 | id; }
+}
+
+export class Dolphin extends Npc {
+  spawnScripts: DolphinSpawnScript[];
+  channelSpawn: number;
+  evilSpiritIslandSpawn: number;
+
+  constructor(parent: Npcs, id: number) {
+    super(parent, id);
+    const prg = parent.rom.prg;
+    const spawnTableBase = DOLPHIN_SPAWN_TABLE_POINTER.readAddress(prg).offset;
+    // TODO - how to know how big the table actually is, if rewritten?
+    const read = (i: number) => {
+      const entrance = Entrance.from(prg, spawnTableBase + 5 * i);
+      const movement = prg[spawnTableBase + 5 * i + 4];
+      return {entrance, movement};
+    };
+    this.spawnScripts = seq(9, read);
+    this.channelSpawn = mustBeInt(DOLPHIN_CHANNEL_SPAWN.read(prg) / 5);
+    this.evilSpiritIslandSpawn =
+        mustBeInt(DOLPHIN_EVIL_SPIRIT_ISLAND_SPAWN.read(prg) / 5);
+  }
+
+  assemble(a: Assembler) {
+    super.assemble(a);
+    // Free the original table to allow relocation and/or resizing.
+    a.segment('fe');
+    a.org(0xd6a8);
+    a.free(45);
+    // Write the new table (after trimming any empties at the end).
+    a.segment('fe', 'ff');
+    a.reloc('DolphinSpawnTable');
+    const table = a.pc();
+    while (!this.spawnScripts[this.spawnScripts.length - 1].entrance.used) {
+      this.spawnScripts.pop();
+    }
+    for (let i = 0; i < this.rom.locations.AngrySea.entrances.length; i++) {
+      const s = this.spawnScripts[i];
+      if (s) {
+        a.byte(...s.entrance.data, s.movement);
+      } else {
+        // "no-op" script.  Don't read random garbage for later entrances.
+        a.byte(0xff, 0x0f, 0xff, 0x0f, 0x0f);
+      }
+    }
+    // Write the addresses and hardcoded indices into the itemuse code.
+    DOLPHIN_CHANNEL_SPAWN.loc(a, 'DolphinChannelSpawn');
+    a.byte(this.channelSpawn * 5);
+    DOLPHIN_EVIL_SPIRIT_ISLAND_SPAWN.loc(a, 'DolphinEvilSpiritIslandSpawn');
+    a.byte(this.evilSpiritIslandSpawn * 5);
+    DOLPHIN_SPAWN_TABLE_POINTER.loc(a, 'DolphinSpawnTablePtr');
+    a.word(table);
+    for (let i = 0; i < 4; i++) {
+      DOLPHIN_SPAWN_TABLE_POINTER_1.plus(5 * i)
+          .loc(a, `DolphinSpawnTablePlus${i + 1}Ptr`);
+      a.word({op: '+', args: [table, {op: 'num', num: i + 1}]});    
+    }
+  }
+}
+
+export interface DolphinSpawnScript {
+  entrance: Entrance;
+  movement: number;
+}
+
+export interface MovementScript {
+  steps: number[];
+  terminate: number;
+}
+export namespace MovementScript {
+  export const UP = 0;
+  export const RIGHT = 2;
+  export const DOWN = 4;
+  export const LEFT = 6;
+  export const DOLPHIN = 0xff;
+  export const DESPAWN = 0xfe;
+}
+
+const DOLPHIN_CHANNEL_SPAWN = Address.of($fe, 0xd664);
+const DOLPHIN_EVIL_SPIRIT_ISLAND_SPAWN = Address.of($fe, 0xd66c);
+const DOLPHIN_SPAWN_TABLE_POINTER = Address.of($fe, 0xd67a);
+const DOLPHIN_SPAWN_TABLE_POINTER_1 = Address.of($fe, 0xd68e); // +5, 10, 15
+const MOVEMENT_SCRIPT_TABLE_POINTER = Address.of($1b, 0xae53);
+
+function mustBeInt(x: number): number {
+  if (x !== Math.floor(x)) throw new Error(`Expected integer: ${x}`);
+  return x;
 }

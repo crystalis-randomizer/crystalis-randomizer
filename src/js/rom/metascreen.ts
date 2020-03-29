@@ -178,7 +178,9 @@ export class Metascreen {
       if (exit.type.startsWith('seamless') !== seamless) continue;
       const t0 = single && exit.type === 'edge:bottom' && tile >= 0xc0 ?
           tile + 0x20 : tile;
-      if (exit.exits.includes(t0)) return exit;
+      if (exit.exits.includes(t0) || (exit.allowedExits ?? []).includes(t0)) {
+        return exit;
+      }
     }
     return undefined;
   }
@@ -188,7 +190,11 @@ export class Metascreen {
       if (exit.type.startsWith('seamless')) continue;
       const c0 = single && exit.type === 'edge:bottom' && coord >= 0xbf00 ?
           coord + 0x2000 : coord;
-      if (exit.entrance === c0) return exit.type;
+      const t0 = (c0 & 0xf0) >> 4 | (c0 & 0xf000) >> 8;
+      if (exit.entrance === c0 ||
+          exit.exits.includes(t0) || (exit.allowedExits ?? []).includes(t0)) {
+        return exit.type;
+      }
     }
     return undefined;
   }

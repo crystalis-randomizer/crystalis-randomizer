@@ -27,7 +27,7 @@ export class Entrance extends DataTuple {
 
   /** Whether the entrance has not been disabled by setting its x to ff__. */
   get used(): boolean {
-    return this.data[1] != 0xff;
+    return this.data[1] < 0x08;
   };
 
   toString(): string {
@@ -115,6 +115,11 @@ export class Pit extends DataTuple {
   fromYs = this.prop([3, 0xf0, 4]);
   /** 4-bit y-coordinate of destination screen on destination map. */
   toYs   = this.prop([3, 0x0f]);
+
+  /** 8-bit yx of "from" screen. */
+  fromScreen = this.prop([3, 0xf0], [1, 0x70, 4]);
+  /** 8-bit yx of "to" screen. */
+  toScreen = this.prop([3, 0x0f, -4], [1, 0x07]);
 
   /** Location ID of destination. */
   dest   = this.prop([0]);

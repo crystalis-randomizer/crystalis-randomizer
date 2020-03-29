@@ -44,6 +44,7 @@ export class Metatile {
   setAlternative(tile: number|null): this {
     if (this.id >= 0x20) return this;
     this.tileset.alternates[this.id] = tile != null ? tile : this.id;
+    this.tileset.effects().effects[this.id] |= 0x08;
     return this;
   }
 

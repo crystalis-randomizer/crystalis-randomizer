@@ -634,8 +634,12 @@ export class Location extends Entity {
   }
 
   get meta(): Metalocation {
+    this.ensureMeta();
+    return this._meta!;
+  }
+
+  ensureMeta() {
     if (!this._meta) this._meta = Metalocation.of(this);
-    return this._meta;
   }
 
   get name(): string {

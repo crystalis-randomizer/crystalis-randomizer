@@ -1,5 +1,6 @@
 import {Rom} from '../rom.js';
 import { Spawn } from './locationtables.js';
+import { Metascreen } from './metascreen.js';
 
 // Simple tileset-only fixes that unlock some screen-tileset combinations
 export enum ScreenFix {
@@ -114,7 +115,8 @@ export function withRequire<T extends Reqs>(requirement: ScreenFix, props: T) {
 
 /** Apply standard tileset fixes.  Others may be applied later. */
 export function fixTilesets(rom: Rom) {
-  const {desert, grass, mountain, mountainRiver, river, sea} = rom.metatilesets;
+  const {desert, grass, lime,
+         mountain, mountainRiver, river, sea} = rom.metatilesets;
   const $ = rom.metascreens;
 
   // Several of the grass/river screens with forest tiles don't work on
@@ -151,13 +153,43 @@ export function fixTilesets(rom: Rom) {
 
   // Angry sea tileset doesn't support tile 0a (used elsewhere for the
   // bottom tile in cave entrances) because it's already in use (but
-  // not as an alternative).  Move it to ad and get 0a back.
+  // not as an alternative).  Move it to ad and get 0a back.  Also adjust
+  // the tiles around the cave entrances to not have damage tiles in the
+  // desert tileset.  This changes the graphics a bit (from dark blue
+  // water to light blue), which doesn't look quite as nice.  The other
+  // alternative is to allocate 3 new tiles, copied from 0x80 in sea but
+  // from 0xf7, 0xf8, and 0xfd in desert/river/grass.  Then sea can keep
+  // its deep water but desert avoids the damage.
   $.registerFix(ScreenFix.SeaCaveEntrance);
   sea.getTile(0xad).copyFrom(0x0a)
       .replaceIn($.beachExitN, $.lighthouseEntrance, $.oceanShrine);
   sea.getTile(0x0a).copyFrom(0xa2); // don't bother setting an alternative.
-  $.boundaryN_cave.screen.set2d(0x39, [[0x00, 0x00], [0x0a, 0x0a]]);
-  $.cornerSE_cave.screen.set2d(0x4a, [[0x00, 0x00], [0x0a, 0x0a]]);
+  $.boundaryN_cave.screen.set2d(0x38, [[null, 0x00, 0x00, null],
+                                       [null, 0x0a, 0x0a, null],
+                                       [null, 0xf7, 0xf7, null],
+                                       [0xf8, 0xf8, 0xf8, 0xf8]]);
+  $.cornerSE_cave.screen.set2d(0x49, [[null, 0x00, 0x00],
+                                      [null, 0x0a, 0x0a],
+                                      [null, 0xf7, 0xf7],
+                                      [0xf8, 0xf7, 0xf7],
+                                      [null, 0xfd, 0xf7]]);
+  $.cornerSE_cave.screen.set2d(0x4a, [[0x00, 0x00],
+                                      [0x0a, 0x0a],
+                                      [0xf7, 0xf7],
+                                      [0xf8, 0xf7],
+                                      [0x80, 0xfd],
+                                      [0x80, 0xff],
+                                      [0xfa, null]]);
+
+  // NOTE: we can change the row beneath 0x0a to 0x90 and set its graphics
+  // to something nicer.
+  // sea.getTile(0x90).setTiles([0x7e, 0x7e, 0x91, 0x91]).setAttrs(2).setEffects(2);
+  // //sea.getTile(0x0a).setTiles([0x7e, 0x7e, 0x91, 0x91]).setAttrs(2).setEffects(2);
+  // river.getTile(0x90).copyFrom(0xf7);
+  // grass.getTile(0x90).copyFrom(0xf7);
+  // desert.getTile(0x90).copyFrom(0xf7);
+
+
      // , [0xf8, 0xf8], [null, 0xfd]]);
   // sea.screens.add($.boundaryW_cave);
   // sea.screens.add($.desertCaveEntrance);
@@ -173,7 +205,7 @@ export function fixTilesets(rom: Rom) {
   river.getTile(0x0e).copyFrom(0x02).replaceIn(...river);
   river.getTile(0x20).copyFrom(0x03).replaceIn(...river);
   river.getTile(0x21).copyFrom(0x04).replaceIn(...river);
-  for (const ts of [desert, sea, mountain, mountainRiver]) {
+  for (const ts of [desert, sea, mountain, mountainRiver, lime]) {
     ts.getTile(0x68).copyFrom(0x01).replaceIn(...ts);
     ts.getTile(0x83).copyFrom(0x02).replaceIn(...ts);
     ts.getTile(0x88).copyFrom(0x03).replaceIn(...ts);
@@ -185,10 +217,13 @@ export function fixTilesets(rom: Rom) {
     ts.getTile(0x03).copyFrom(0xd7).setAlternative(0x0a);
     ts.getTile(0x04).copyFrom(0xd7).setAlternative(0x0a);
   }
-  const closedCaves = [
+  const closedCaves: Array<[Metascreen, number]> = [
     [$.boundaryE_cave, 0x48], [$.boundaryW_cave, 0x79],
     [$.exitW_cave, 0x38], [$.caveAbovePortoa, 0x56],
-  ] as const;
+  ];
+  // if ($.isFixed(ScreenFix.SeaCaveEntrances)) {
+  //   // TODO - add $.boundaryN_cave and cornerSE_cave to the list...?
+  // }
   for (const [scr, pos] of closedCaves) {
     scr.screen.set2d(pos, [[1, 2], [3, 4]]);
     scr.addCustomFlag(true);

@@ -205,9 +205,8 @@ export class Rom {
     // // TODO - consider populating this later?
     // // Having this available makes it easier to set exits, etc.
     for (const loc of this.locations) {
-      if (loc.used) sink(loc.meta); // trigger the getter
+      if (loc.used) loc.ensureMeta(); // trigger the getter
     }
-    function sink(arg: unknown) {}
   }
 
   trigger(id: number): Trigger {
@@ -382,7 +381,7 @@ export class Rom {
     writeAll(this.objects);
     writeAll(this.hitboxes);
     writeAll(this.triggers);
-    writeAll(this.npcs);
+    modules.push(...this.npcs.write());
     writeAll(this.tilesets);
     writeAll(this.tileEffects);
     writeAll(this.adHocSpawns);
@@ -864,9 +863,15 @@ const ADJUSTMENTS = [
   [0x16de8, 0x00, 0xff],
   // Normalize mado2-side heckway entrance
   [0x16ded, 0xdf, 0xd0],
-  // Mark bogus exits in unused mado2 area
-  [0x16df7, 0x07, 0xff],
-  [0x16dfb, 0x08, 0xff],
+  // Fix bogus exits in unused mado2 area
+  // (exits 2 and 3 are bad, so move 4 and 5 on top of them)
+  [0x16df8, 0x0c, 0x5c],
+  [0x16df9, 0xb0, 0xb9],
+  [0x16dfa, 0x00, 0x02],
+  [0x16dfc, 0x0c, 0x5c],
+  [0x16dfd, 0xb0, 0xb9],
+  [0x16dfe, 0x00, 0x02],
+  [0x16dff, 0x07, 0xff],
   // Normalize aryllis entrance
   [0x174ee, 0x80, 0x88],
   // Normalize joel shed bottom and secret passage entrances

@@ -4,16 +4,17 @@ http://localhost:8081/#init=crystalis/debug&rom=orig.nes&patch=crystalis/patch&f
 
 ====
 
-0. doesn't work in compiled mode?
+0. doesn't work in compiled mode? -> bad use of sink on getter
 1. East cave mimic => shuffleMimics -> need to spread the iter
                                     -> standardmapedits 0x70 -> 0x7c
 2. Randomize music broken
-3. Apprentice money
-4. Fog lamp & kirisa cave closed & desert
+3. Apprentice money -> bad east cave interaction
+4. Fog lamp & kirisa cave closed & desert -> didn't set 08 on effects
 5. random goa entrances - missing exit/entrance pair!
-    - mado 2 enrtance missing one way
-6. iron wall at front of goa not staying dead
-7. rage screen borked
-8. shell flute not working - entrance index matters
-9. tiles below sabera elevator
-10. fall past entrance in sabera palace
+    - mado 2 entrance missing one way -> bad rom patch for broken exits
+6. iron wall at front of goa not staying dead -> forgot to mark
+7. rage screen borked -> close caves messed it up, didn't replace it
+8. shell flute not working -> entrance index matters
+9. tiles below sabera elevator -> vanilla
+10. fall past entrance in sabera palace -> normalized the exit
+     (but it's complicated)

@@ -47739,9 +47739,9 @@ ObjectActionJump_32
         $36e4d  xx xx xx:   xxx $xxxx,x
         $36e50  xx:         xxx
         $36e51  xx:         xxx
-        $36e52  xx xx xx:   xxx $36f04,y
+        $36e52  xx xx xx:   xxx MovementScriptTable,y
         $36e55  xx xx:      xxx $xx
-        $36e57  xx xx xx:   xxx $36f05,y
+        $36e57  xx xx xx:   xxx MovementScriptTable+1,y
         $36e5a  xx xx:      xxx $xx
         $36e5c  xx xx xx:   xxx $xxxx,x
         $36e5f  xx xx:      xxx ($xx),y
@@ -47837,6 +47837,7 @@ ObjectActionJump_32
 ;;;  fd: ??
 ;;;  fe: despawn
 ;;;  ff: stop and change action script to 30
+;;; STRIP: word=$2c000
 MovementScriptTable
         $36f04              .word (MovementScriptTable_00)
         $36f06              .word (MovementScriptTable_01_AkahanaBrynmaer)

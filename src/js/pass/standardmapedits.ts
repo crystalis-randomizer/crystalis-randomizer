@@ -47,7 +47,9 @@ export namespace standardMapEdits {
 
 function eastCave(rom: Rom, opts: EastCaveOptions) {
   const {
-    locations: {EastCave1, EastCave2, EastCave3, SealedCave1, ValleyOfWind},
+    locations: {EastCave1, EastCave2, EastCave3,
+                Leaf_StudentHouse, SealedCave1, ValleyOfWind,
+               },
     metascreens: {boundaryE_cave,
                   branchNSE, branchNWE, branchNWSE, branchNWS, branchWSE,
                   caveEmpty,
@@ -57,11 +59,12 @@ function eastCave(rom: Rom, opts: EastCaveOptions) {
                   hallNE, hallNS, hallNW, hallSE, hallWS, hallWE,
                   hallNS_entrance, hallNS_stairs, hallNS_wall,
                  },
+    npcs: {WindmillGuard},
     //flags: {AlwaysTrue},
   } = rom;
 
-  rom.locations.allocate(rom.locations.EastCave1);
-  rom.locations.allocate(rom.locations.EastCave2);
+  rom.locations.allocate(EastCave1);
+  rom.locations.allocate(EastCave2);
   if (opts.exit2) rom.locations.allocate(rom.locations.EastCave3);
 
   for (const l of [EastCave1, EastCave2, EastCave3]) {
@@ -163,9 +166,10 @@ function eastCave(rom: Rom, opts: EastCaveOptions) {
     // chest: alarm flute
     Spawn.of({y: 0x110, x: 0x478, type: 2, id: 0x31}),
     // chest: mimic
-    Spawn.of({y: 0x070, x: 0x108, type: 2, id: 0x70}),
+    Spawn.of({y: 0x070, x: 0x108, type: 2, id: 0x7c}),
   );
-  rom.npcs.WindmillGuard.data[1] = 0x59; // alarm flute -> medical herb
+  WindmillGuard.data[1] = 0x59; // alarm flute -> medical herb
+  WindmillGuard.dialog(Leaf_StudentHouse)[0].condition = ~0x159;
 }
 
 function connectEastCaveExit(loc: Location, scr: number, exit: EastCaveExit) {

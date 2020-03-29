@@ -3062,9 +3062,11 @@ export class Metascreens {
       | ┃ |
       | ┃ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['wall'],
     edges: 'c w',
     connect: '2a',
     exits: [topEdge({left: 6, width: 4})],
+    wall: 0x37,
   });
   readonly goaWideHallNS_wallTop = this.metascreen({
     id: 0xe9,    // NOTE: the passage narrows at the top
@@ -3073,9 +3075,11 @@ export class Metascreens {
       |╷┃╷|
       |│┃│|`,
     tilesets: {labyrinth: {}},
+    feature: ['wall'],
     edges: 'c w ',
     connect: '2a|9|b',
     exits: [topEdge({left: 6, width: 4})],
+    wall: 0x37,
   });
   readonly wideHallWE = this.metascreen({
     id: 0xea,

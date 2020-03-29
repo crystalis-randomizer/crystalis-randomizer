@@ -14,6 +14,8 @@ import {compressMapData} from './pass/compressmapdata.js';
 import {crumblingPlatforms} from './pass/crumblingplatforms.js';
 import {deterministic, deterministicPreParse} from './pass/deterministic.js';
 import {fixDialog} from './pass/fixdialog.js';
+import {fixMovementScripts} from './pass/fixmovementscripts.js';
+import {fixSkippableExits} from './pass/fixskippableexits.js';
 import {randomizeThunderWarp} from './pass/randomizethunderwarp.js';
 import {rescaleMonsters} from './pass/rescalemonsters.js';
 import {shuffleGoa} from './pass/shufflegoa.js';
@@ -29,13 +31,13 @@ import {Random} from './random.js';
 import {Rom} from './rom.js';
 import {Area} from './rom/area.js';
 import {Location, Spawn} from './rom/location.js';
+import {fixTilesets} from './rom/screenfix.js';
 import {Shop, ShopType} from './rom/shop.js';
 import {Spoiler} from './rom/spoiler.js';
 import {hex, seq, watchArray} from './rom/util.js';
 import {DefaultMap} from './util.js';
 import * as version from './version.js';
 import {Maze} from './maze/maze2.js';
-import { fixTilesets } from './rom/screenfix.js';
 
 const EXPAND_PRG: boolean = true;
 
@@ -308,6 +310,7 @@ export async function shuffle(rom: Uint8Array,
 
   misc(parsed, flags, random);
   fixDialog(parsed);
+  fixMovementScripts(parsed);
 
   // NOTE: This needs to happen BEFORE postshuffle
   if (flags.buffDyna()) buffDyna(parsed, flags); // TODO - conditional
@@ -409,6 +412,10 @@ export async function shuffle(rom: Uint8Array,
   if (flags.shuffleTilePalettes('late')) {
     shufflePalettes(parsed, flags, random);
   }
+
+  // Do this very late, since it's low-level on the locations.  Need to wait
+  // until after the metalocations have been written back to the locations.
+  fixSkippableExits(parsed);
 
   parsed.writeData();
   // TODO - optional flags can possibly go here, but MUST NOT use parsed.prg!

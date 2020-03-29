@@ -283,6 +283,10 @@ export class Metalocation {
     return this._screens[pos + 16];
   }
 
+  get(pos: Pos): Metascreen {
+    return this.rom.metascreens[this._screens[pos + 16]];
+  }
+
   get size(): number {
     return this._filled;
   }
@@ -799,7 +803,7 @@ export class Metalocation {
     for (const screen of this.allPos()) {
       const scr = this.rom.metascreens[this._screens[screen + 16]];
       let flag: number|undefined;
-      if (scr.hasFeature('wall') || scr.hasFeature('bridge')) {
+      if (scr.data.wall != null) {
         flag = freeFlags.pop()?.id ?? this.rom.flags.alloc(0x200);
       } else if (scr.flag === 'always') {
         flag = this.rom.flags.AlwaysTrue.id;

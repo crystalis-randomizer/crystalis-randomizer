@@ -12003,13 +12003,13 @@ MapData_af_Graphics
         $16de1              .byte $xx,$xx
 MapData_af_Entrances
         $16de3              .byte $xx,$xx,$xx,$xx
-        $16de7              .byte $xx,$xx,$xx,$xx
+        $16de7              .byte $xx,$xx,$xx,$xx ; unused
         $16deb              .byte $xx,$xx,$xx,$xx
 MapData_af_Exits
         $16def              .byte $xx,$xx,$xx,$xx
         $16df3              .byte $xx,$xx,$xx,$xx
-        $16df7              .byte $xx,$xx,$xx,$xx
-        $16dfb              .byte $xx,$xx,$xx,$xx
+        $16df7              .byte $xx,$xx,$xx,$xx ; unused
+        $16dfb              .byte $xx,$xx,$xx,$xx ; unused
         $16dff              .byte $xx,$xx,$xx,$xx
         $16e03              .byte $xx,$xx,$xx,$xx
         $16e07              .byte $xx
@@ -38342,7 +38342,9 @@ DataTable_29767
         $29b10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $29b20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $29b30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $29b40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $29b40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; This appears to be unused from here down to AdHocSpawns
+        $29b4e              .byte $xx,$xx
         $29b50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $29b60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $29b70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -47720,6 +47722,7 @@ ObjectActionJump_31
         $36e2d  xx xx xx:   xxx $xxxx,x
         $36e30  xx:         xxx
 ;;; --------------------------------
+;;; Execute a movement script.
 ObjectActionJump_32
         $36e31  xx xx:      xxx #$xx
         $36e33  xx xx xx:   xxx $xxxx
@@ -47732,7 +47735,7 @@ ObjectActionJump_32
         $36e43  xx xx xx:   xxx $xxxx,x
         $36e46  xx xx xx:   xxx $xxxx,x
         $36e49  xx xx:      xxx #$xx
-        $36e4b  xx xx:      xxx ++++ ; $36eb7
+        $36e4b  xx xx:      xxx @advance_frame ; $36eb7
         $36e4d  xx xx xx:   xxx $xxxx,x
         $36e50  xx:         xxx
         $36e51  xx:         xxx
@@ -47742,13 +47745,14 @@ ObjectActionJump_32
         $36e5a  xx xx:      xxx $xx
         $36e5c  xx xx xx:   xxx $xxxx,x
         $36e5f  xx xx:      xxx ($xx),y
-        $36e61  xx xx:      xxx + ; $36e66
-        $36e63  xx xx xx:    xxx +++ ; $36eb1
+        $36e61  xx xx:      xxx @terminate_movement ; $36e66
+        $36e63  xx xx xx:    xxx @update_direction ; $36eb1
         ;;                  ----------
-+       $36e66  xx xx:      xxx #$xx
-        $36e68  xx xx:      xxx + ; $36e7b
+@terminate_movement:
+        $36e66  xx xx:      xxx #$xx
+        $36e68  xx xx:      xxx @handle_fc ; $36e7b
         $36e6a  xx xx:      xxx #$xx
-        $36e6c  xx xx:      xxx ++ ; $36e9c
+        $36e6c  xx xx:      xxx @handle_fd ; $36e9c
         $36e6e  xx xx:      xxx #$xx
         $36e70  xx xx:      xxx #$xx
         $36e72  xx xx:      xxx + ; $36e76
@@ -47757,7 +47761,8 @@ ObjectActionJump_32
         $36e77  xx xx xx:   xxx $xxxx,x
         $36e7a  xx:         xxx
         ;;                  ---
-+       $36e7b  xx xx:      xxx #$xx
+@handle_fc:
+        $36e7b  xx xx:      xxx #$xx
         $36e7d  xx xx xx:   xxx $xxxx
         $36e80  xx xx xx:   xxx $xxxx
         $36e83  xx xx:      xxx #$xx
@@ -47771,7 +47776,8 @@ ObjectActionJump_32
         $36e98  xx xx xx:   xxx $xxxx
         $36e9b  xx:         xxx
         ;;                  ---
-++      $36e9c  xx xx:      xxx #$xx
+@handle_fd:
+        $36e9c  xx xx:      xxx #$xx
         $36e9e  xx xx xx:   xxx $xxxx
         $36ea1  xx xx:      xxx #$xx
         $36ea3  xx xx xx:   xxx $xxxx,x
@@ -47781,9 +47787,11 @@ ObjectActionJump_32
         $36ead  xx xx xx:   xxx $xxxx,x
         $36eb0  xx:         xxx
         ;;                  ---
-+++     $36eb1  xx xx xx:   xxx $xxxx,x
+@update_direction:
+        $36eb1  xx xx xx:   xxx $xxxx,x
         $36eb4  xx xx xx:   xxx $xxxx,x
-++++    $36eb7  xx xx xx:   xxx $xxxx,x
+@advance_frame:
+        $36eb7  xx xx xx:   xxx $xxxx,x
         $36eba  xx xx:      xxx #$xx
         $36ebc  xx xx:      xxx $xx
         $36ebe  xx xx xx:   xxx $xxxx,x
@@ -47818,55 +47826,66 @@ ObjectActionJump_32
         $36f00  xx xx xx:   xxx $xxxx
         $36f03  xx:         xxx
 ;;; --------------------------------
-DataDataTable_36f04 
-        $36f04              .word ($xxxx)
-        $36f06              .word ($xxxx)
-        $36f08              .word ($xxxx)
-        $36f0a              .word ($xxxx)
-        $36f0c              .word ($xxxx)
-        $36f0e              .word ($xxxx)
-        $36f10              .word ($xxxx)
-        $36f12              .word ($xxxx)
-        $36f14              .word ($xxxx)
-        $36f16              .word ($xxxx)
-        $36f18              .word ($xxxx)
-        $36f1a              .word ($xxxx)
-        $36f1c              .word ($xxxx)
-        $36f1e              .word ($xxxx)
-        $36f20              .word ($xxxx)
-        $36f22              .word ($xxxx)
-DataDataTable_36f04_00
+;;; This is a pointer table to a movement script, used by action script 32.
+;;; Movement scripts are a sequence of positive directions followed by a
+;;; negative number saying what to do at the end:
+;;;   0: up 1 tile
+;;;   2: right 1 tile
+;;;   4: down 1 tile
+;;;   6: left 1 tile
+;;;  fc: ??
+;;;  fd: ??
+;;;  fe: despawn
+;;;  ff: stop and change action script to 30
+MovementScriptTable
+        $36f04              .word (MovementScriptTable_00)
+        $36f06              .word (MovementScriptTable_01_AkahanaBrynmaer)
+        $36f08              .word (MovementScriptTable_02)
+        $36f0a              .word (MovementScriptTable_03)
+        $36f0c              .word (MovementScriptTable_04)
+        $36f0e              .word (MovementScriptTable_05_DolphinCabin)
+        $36f10              .word (MovementScriptTable_06_DolphinUndergroundChannel)
+        $36f12              .word (MovementScriptTable_07_DolphinEvilSpirit)
+        $36f14              .word (MovementScriptTable_08_DolphinJoel)
+        $36f16              .word (MovementScriptTable_09_DolphinSwan)
+        $36f18              .word (MovementScriptTable_0a)
+        $36f1a              .word (MovementScriptTable_0b)
+        $36f1c              .word (MovementScriptTable_0c)
+        $36f1e              .word (MovementScriptTable_0d_AkahanaWaterfall)
+        $36f20              .word (MovementScriptTable_0e)
+        $36f22              .word (MovementScriptTable_0f)
+MovementScriptTable_00
         $36f24              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataDataTable_36f04_01
+MovementScriptTable_01_AkahanaBrynmaer
         $36f2c              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataDataTable_36f04_02
+MovementScriptTable_02
         $36f34              .byte $xx,$xx
-DataDataTable_36f04_03
+MovementScriptTable_03
         $36f36              .byte $xx,$xx
-DataDataTable_36f04_04
+MovementScriptTable_04
         $36f38              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataDataTable_36f04_05
+MovementScriptTable_05_DolphinCabin
         $36f42              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataDataTable_36f04_06
+MovementScriptTable_06_DolphinUndergroundChannel
         $36f4e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $36f5e              .byte $xx,$xx,$xx,$xx,$xx,$xx
-DataDataTable_36f04_07
+MovementScriptTable_07_DolphinEvilSpirit
         $36f64              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataDataTable_36f04_08
+MovementScriptTable_08_DolphinJoel
         $36f6e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataDataTable_36f04_09
+MovementScriptTable_09_DolphinSwan
         $36f79              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataDataTable_36f04_0a
+MovementScriptTable_0a
         $36f85              .byte $xx,$xx,$xx,$xx,$xx
-DataDataTable_36f04_0b
+MovementScriptTable_0b
         $36f8a              .byte $xx,$xx,$xx,$xx,$xx
-DataDataTable_36f04_0c
+MovementScriptTable_0c
         $36f8f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataDataTable_36f04_0d
+MovementScriptTable_0d_AkahanaWaterfall
         $36f9b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-DataDataTable_36f04_0e
+MovementScriptTable_0e
         $36fa3              .byte $xx,$xx
-DataDataTable_36f04_0f
+MovementScriptTable_0f
         $36fa5              .byte $xx,$xx,$xx,$xx
 ;;; --------------------------------
 ObjectActionJump_38
@@ -58284,7 +58303,7 @@ ItemOrTriggerActionJump_09  ; Spawn Dolphin
         $3d675  xx:         xxx
         $3d676  xx xx:      xxx $xx
         $3d678  xx:         xxx
-+       $3d679  xx xx xx:   xxx $3d6a8,y
++       $3d679  xx xx xx:   xxx DolphinSpawnTable,y
         $3d67c  xx xx:      xxx #$xx
         $3d67e  xx xx:      xxx $xx
         $3d680  xx xx:      xxx $xx
@@ -58293,21 +58312,24 @@ ItemOrTriggerActionJump_09  ; Spawn Dolphin
         $3d686  xx xx:      xxx #$xx
         $3d688  xx xx:      xxx $xx
         $3d68a  xx xx xx:   xxx LoadOneObjectDataInternal
-        $3d68d  xx xx xx:   xxx $3d6a9,y
+        $3d68d  xx xx xx:   xxx DolphinSpawnTable+1,y
         $3d690  xx xx:      xxx $xx
-        $3d692  xx xx xx:   xxx $3d6aa,y
+        $3d692  xx xx xx:   xxx DolphinSpawnTable+2,y
         $3d695  xx xx:      xxx $xx
-        $3d697  xx xx xx:   xxx $3d6ab,y
+        $3d697  xx xx xx:   xxx DolphinSpawnTable+3,y
         $3d69a  xx xx:      xxx $xx
-        $3d69c  xx xx xx:   xxx $3d6ac,y
+        $3d69c  xx xx xx:   xxx DolphinSpawnTable+4,y
         $3d69f  xx xx xx:   xxx $xxxx
         $3d6a2  xx xx:      xxx SFX_FLUTE
         $3d6a4  xx xx xx:   xxx StartAudioTrack
 ;;; --------------------------------
         $3d6a7  xx:         xxx
 ;;; --------------------------------
-DataTable_3d6a8                 ; grouped in fives, related to dolphin
-        ;; The middle three are spawn coordinates, the index is $6d, apparently
+DolphinSpawnTable
+;;; The first four bytes are entrance coordinates (70,x .. d0,x).
+;;; The fifth byte is an index into the MovementScriptTable.
+;;; Indexed by either the last entrance ($6d) or else hardcoded
+;;; above for some locations ($64 and $68).
         $3d6a8              .byte $xx,$xx,$xx,$xx,$xx ; 00 on boat
         $3d6ad              .byte $xx,$xx,$xx,$xx,$xx ; 01 underground channel
         $3d6b2              .byte $xx,$xx,$xx,$xx,$xx ; 02 evil spirit island
@@ -58936,7 +58958,7 @@ MainGameModeJump_1d
         $3db6c  xx xx xx:   xxx BankSwitch8k_8000
         $3db6f  xx xx xx:   xxx DrawMessageBoxBackground
         $3db72  xx xx xx:   xxx ShowMessage
-        $3db75  xx xx xx:   xxx $3dd36
+        $3db75  xx xx xx:   xxx BuildWarpMenu
         $3db78  xx xx xx:   xxx WaitForOAMDMA
         $3db7b  xx xx:      xxx #$xx
         $3db7d  xx xx:      xxx $xx
@@ -59081,7 +59103,7 @@ TownWarpTable
 ;;; --------------------------------
 ;;; This runs once a warp/teleport location is selected
         $3dc8a  xx xx:      xxx $xx
-        $3dc8c  xx xx xx:   xxx $3dc58,y
+        $3dc8c  xx xx xx:   xxx TownWarpTable,y
         $3dc8f  xx xx:      xxx CurrentLocation
         $3dc91  xx xx:      xxx $xx
         $3dc93  xx xx:      xxx CurrentLocation
@@ -61307,7 +61329,7 @@ PrepareNametableStageForVerticalScrollInternal
         $3ec0d  xx xx:         xxx #$xx
         $3ec0f  xx xx:         xxx - ; $3ebef - unconditional?
 +       $3ec11  xx xx xx:   xxx WriteMetatileAttributesForVerticalScroll
-        $3ec14  xx xx:      xxx #$xx ; 8000 -> 10000
+        $3ec14  xx xx:      xxx #$xx ; 8000 -> a000
         $3ec16  xx xx xx:   xxx BankSwitch16k
         $3ec19  xx xx:      xxx $xx
         $3ec1b  xx xx:      xxx #$xx
@@ -61884,9 +61906,10 @@ PrepareScreenMapRead
         ;; be used to read tiles.
         ;; Input:
         ;;   A: the screen ID.
+        ;;   $34, $36: tile position
         ;; Output:
-        ;;   Bank a000..bfff: correct bank to read map data from.
-        ;;   $11: high byte of offset of top-left of map ($10 should be 0).
+        ;;   Bank $a000..$bfff: correct bank to read map data from.
+        ;;   $10$11: address of top-left of map ($10 is always 0).
         ;;   A: offset into the map for the current tile ($34, $36)
         $3ef36  xx:         xxx
         $3ef37  xx xx:       xxx #$xx

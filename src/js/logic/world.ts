@@ -1089,7 +1089,7 @@ export class World {
     this.addCheck(hitbox, requirement, [check]);
     this.slots.set(check, slot);
     // also add corresponding ItemInfo to keep them in parity.
-    const itemget = this.rom.itemGets[check & 0xff];
+    const itemget = this.rom.itemGets[this.rom.slots[check & 0xff]];
     const item = this.rom.items[itemget.itemId];
     const unique = item?.unique;
     const losable = itemget.isLosable();
@@ -1178,7 +1178,9 @@ export class World {
     // Add a check for the 1xx flag.  Make sure it's not a mimic.
     if (this.rom.slots[spawn.id] >= 0x70) return;
     const slot = 0x100 | spawn.id;
-    const item = this.rom.items[spawn.id];
+    const mapped = this.rom.slots[spawn.id];
+    if (mapped >= 0x70) return; // TODO - mimic% may care
+    const item = this.rom.items[mapped];
     const unique = this.flagset.preserveUniqueChecks() ? !!item?.unique : true;
     this.addItemCheck([TileId.from(location, spawn)], Requirement.OPEN,
                       slot, {lossy: false, unique});

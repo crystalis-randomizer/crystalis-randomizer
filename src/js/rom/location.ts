@@ -21,21 +21,21 @@ export {Entrance, Exit, Flag, Pit, Spawn}; // TODO - remove the re-export
 const {$0a, $0b, $0c, $0d} = Segment;
 
 // Number indicates to copy whatever's at the given exit
-type Key = string | symbol | number;
+type GroupKey = string | symbol | number;
 // Local for defining names on Locations objects.
 interface LocationInit {
   area?: Area;
   subArea?: string;
-  music?: Key | ((area: Area) => Key);
-  palette?: Key | ((area: Area) => Key);
+  music?: GroupKey | ((area: Area) => GroupKey);
+  palette?: GroupKey | ((area: Area) => GroupKey);
   bossScreen?: number;
   fixed?: readonly number[];
 }
 interface LocationData {
   area: Area;
   name: string;
-  music: Key;
-  palette: Key;
+  music: GroupKey;
+  palette: GroupKey;
   subArea?: string;
   bossScreen?: number;
   fixed?: readonly number[]; // fixed spawn slots?
@@ -527,6 +527,9 @@ export class Location extends Entity {
 
   private _isShop: boolean|undefined = undefined;
   private _meta?: Metalocation = undefined;
+  // Lazily-populated map keys for keeping consistent music and colors.
+  private _musicGroup?: string|symbol;
+  private _colorGroup?: string|symbol;
 
   constructor(rom: Rom, id: number, readonly data: LocationData) {
     // will include both MapData *and* NpcData, since they share a key.
@@ -632,14 +635,54 @@ export class Location extends Entity {
   set meta(meta: Metalocation) {
     this._meta = meta;
   }
-
   get meta(): Metalocation {
     this.ensureMeta();
     return this._meta!;
   }
-
   ensureMeta() {
     if (!this._meta) this._meta = Metalocation.of(this);
+  }
+
+  set musicGroup(group: string|symbol) {
+    this._musicGroup = group;
+  }
+  get musicGroup(): string|symbol {
+    this.ensureMusicGroup();
+    return this._musicGroup!;
+  }
+  ensureMusicGroup() {
+    if (this._musicGroup == null) {
+      const key = this.data.music;
+      this._musicGroup =
+          typeof key !== 'number' ? key :
+              this.rom.locations[this.exits[key].dest].musicGroup;
+    }
+  }
+
+  set colorGroup(group: string|symbol) {
+    this._colorGroup = group;
+  }
+  get colorGroup(): string|symbol {
+    this.ensureColorGroup();
+    return this._colorGroup!;
+  }
+  ensureColorGroup() {
+    if (this._colorGroup == null) {
+      const key = this.data.music;
+      this._colorGroup =
+          typeof key !== 'number' ? key :
+              this.rom.locations[this.exits[key].dest].colorGroup;
+    }
+  }
+
+  /**
+   * Do all the initialization that has to happen after all locations
+   * have been constructed.
+   */
+  lazyInitialization() {
+    this.ensureMeta();
+    this.ensureMusicGroup();
+    this.ensureColorGroup();
   }
 
   get name(): string {

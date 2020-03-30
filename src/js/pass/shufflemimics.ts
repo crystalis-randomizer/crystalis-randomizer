@@ -29,5 +29,5 @@ export function shuffleMimics(rom: Rom, flags: FlagSet, random: Random) {
   random.shuffle(chests);
   // 3. zip the chests and mimics together and swap.
   // NOTE: spread the result since otherwise zip is lazy.
-  [...iters.zip(mimics, chests, rom.slots.swap.bind(rom))];
+  [...iters.zip(mimics, chests, (i, j) => rom.slots.swap(i, j))];
 }

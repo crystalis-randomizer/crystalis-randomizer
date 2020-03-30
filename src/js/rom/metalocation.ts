@@ -731,21 +731,33 @@ export class Metalocation {
    * either, check if it's symmetric, and if so, copy it over to the other side.
    */
   reconcileExits(that: Metalocation) {
-    const exits: [Pos, ConnectionType, ExitSpec][] = [];
+    const add: [Metalocation, Pos, ConnectionType, ExitSpec][] = [];
+    const del: [Metalocation, Pos, ConnectionType][] = [];
     for (const loc of [this, that]) {
       for (const [pos, type, [destTile, destType]] of loc._exits) {
+        if (destType.startsWith('seamless')) continue;
         const dest = this.rom.locations[destTile >>> 8];
         const reverse = dest.meta._exits.get(destTile & 0xff, destType);
-        if (!reverse) continue;
-        const [revTile, revType] = reverse;
-        if ((revTile >>> 8) === loc.id && (revTile & 0xff) === pos &&
-            revType === type) {
-          exits.push([pos, type, [destTile, destType]]);
+        if (reverse) {
+          const [revTile, revType] = reverse;
+          if ((revTile >>> 8) === loc.id && (revTile & 0xff) === pos &&
+              revType === type) {
+            add.push([loc === this ? that : this, pos, type,
+                      [destTile, destType]]);
+            continue;
+          }
         }
+        del.push([loc, pos, type]);
       }
     }
-    this._exits = new Table(exits);
-    that._exits = new Table(exits);
+    for (const [loc, pos, type] of del) {
+      loc._exits.delete(pos, type);
+    }
+    for (const [loc, pos, type, exit] of add) {
+      loc._exits.set(pos, type, exit);
+    }
+    // this._exits = new Table(exits);
+    // that._exits = new Table(exits);
   }
 
   /**
@@ -838,8 +850,6 @@ interface TraverseOpts {
 const unknownExitWhitelist = new Set([
   0x01003a, // top part of cave outside start
   0x01003b,
-  0x010070, // beneath entrance to leaf
-  0x02115f, // leaf side of the above
   0x1440a0, // beneath entrance to brynmaer
   0x1540a0, // " " seamless equivalent " "
   0x1a3060, // swamp exit

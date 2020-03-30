@@ -288,11 +288,11 @@ export function leftEdge({top = 7, height = 2, shift = 0} = {}): Connection {
   };
 }
 
-export function rightEdge({top = 7, height = 2} = {}): Connection {
+export function rightEdge({top = 7, height = 2, shift = 0} = {}): Connection {
   return {
     type: 'edge:right',
     dir: 3,
-    entrance: ((top << 12) + (height << 11)) | 0xef,
+    entrance: ((top << 12) + ((16 * shift) << 8) + (height << 11)) | 0xef,
     exits: seq(height, i => (i + top) << 4 | 0xf),
   };
 }

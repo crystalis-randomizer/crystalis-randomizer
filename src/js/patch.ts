@@ -571,18 +571,13 @@ function noMusic(rom: Rom): void {
 
 function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
   interface HasMusic { bgm: number; }
-  let neighbors: Location[] = [];
   const musics = new DefaultMap<unknown, HasMusic[]>(() => []);
   const all = new Set<number>();
   for (const l of rom.locations) {
     if (l.id === 0x5f || l.id === 0 || !l.used) continue; // skip start and dyna
-    const music = l.data.music;
+    const music = l.musicGroup;
     all.add(l.bgm);
-    if (typeof music === 'number') {
-      neighbors.push(l);
-    } else {
-      musics.get(music).push(l);
-    }
+    musics.get(music).push(l);
   }
   for (const b of rom.bosses.musics) {
     musics.set(b, [b]);
@@ -596,22 +591,6 @@ function shuffleMusic(rom: Rom, flags: FlagSet, random: Random): void {
       music.bgm = value;
       updated.add(music);
     }
-  }
-  while (neighbors.length) {
-    const defer = [];
-    let changed = false;
-    for (const loc of neighbors) {
-      const neighbor = loc.neighborForEntrance(loc.data.music as number);
-      if (updated.has(neighbor)) {
-        loc.bgm = neighbor.bgm;
-        updated.add(loc);
-        changed = true;
-      } else {
-        defer.push(loc);
-      }
-    }
-    if (!changed) break;
-    neighbors = defer;
   }
 }
 

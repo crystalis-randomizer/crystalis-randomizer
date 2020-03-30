@@ -205,7 +205,7 @@ export class Rom {
     // // TODO - consider populating this later?
     // // Having this available makes it easier to set exits, etc.
     for (const loc of this.locations) {
-      if (loc.used) loc.ensureMeta(); // trigger the getter
+      if (loc.used) loc.lazyInitialization(); // trigger the getter
     }
   }
 

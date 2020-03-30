@@ -18,6 +18,12 @@ const GET_TO_ITEM_THRESHOLD = 0x49;
  * Array of ItemGetData table entries, together with the map of
  * trigger/itemuse grants (added for statue of gold shuffle),
  * for programmatic access.
+ *
+ * ItemGet holds onto a table mapping "get IDs" above 50 to
+ * actual items, but the mapping below 48 is 1:1, so there is
+ * no shuffling happening here.  The slot mapping happens
+ * BEFORE them ItemGet translation.  Thus, the ID of this
+ * entity is not related to the "1xx" flag that is set.
  */
 export class ItemGets extends EntityArray<ItemGet> {
 
@@ -62,7 +68,6 @@ export class ItemGets extends EntityArray<ItemGet> {
     }
     return [a.module()];
   }
-
 }
 
 // A gettable item slot/check.  Each ItemGet maps to a single item,

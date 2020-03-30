@@ -19,6 +19,7 @@ let count = 0;
 //         - though that breaks encapsulation pretty badly - no way to clone.
 export abstract class Area {
   readonly name = `Area ${++count}`;
+  /** Minimum and maximum number of exits? */
   readonly abstract exits: readonly [number, number];
   readonly abstract type: 'overworld' | 'town' | 'connector' | 'terminal';
 }

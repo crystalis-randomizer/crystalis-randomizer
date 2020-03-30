@@ -21,7 +21,7 @@ class Shuffle {
   shuffleBackgrounds() {
     const partitions = new DefaultMap<unknown, Location[]>(() => []);
     for (const l of this.rom.locations) {
-      partitions.get(l.data.palette).push(l);
+      partitions.get(l.colorGroup).push(l);
     }
 
     const pal = [new Map<number, Set<number>>(), new Map<number, Set<number>>()];

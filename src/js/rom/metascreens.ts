@@ -448,7 +448,7 @@ export class Metascreens {
       |█▌ |`,
     tilesets: {grass: {}, river: {}},
     edges: '>n>o',
-    exits: [leftEdge({top: 8})],
+    exits: [leftEdge({top: 8, height: 3, shift: -0.5})],
   });
   readonly shortGrassS = this.metascreen({
     id: 0x1d,
@@ -623,7 +623,7 @@ export class Metascreens {
     tilesets: {grass: {}}, // cave entrance breaks river and others...
     edges: ' n  ',
     // NOTE: special case the odd entrance/exit here (should be 4a)
-    exits: [cave(0x4a), leftEdge({top: 5})],
+    exits: [cave(0x4a), leftEdge({top: 5, height: 3, shift: -0.5})],
     flag: 'custom:true',
   });
   readonly riverNS = this.metascreen({
@@ -1060,7 +1060,7 @@ export class Metascreens {
     // leaf
     id: 0x66,
     tilesets: {town: {type: 'square'}},
-    exits: [rightEdge({top: 3}), door(0x84)],
+    exits: [rightEdge({top: 3, height: 3, shift: -0.5}), door(0x84)],
   });
   readonly goaNW_tavern = this.metascreen({
     // goa

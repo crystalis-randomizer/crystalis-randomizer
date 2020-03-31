@@ -1088,6 +1088,18 @@ SetTriggerTileGameMode:
 ;;; Now everything shows a single big coin.  This leads to slightly less
 ;;; variety, but less glitchy graphics.  Mimics should load $aa instead.
 ;;; We can tell because $300,x == $90.  This also frees up metasprite a8.
+
+.org $3a6f6
+  .byte $5c
+.org $3a6fa
+  .byte $5d
+.org $3a6fe
+  .byte $5c
+.org $3a702
+  .byte $5d
+.org $385ae
+  .word ($a6f1)
+
 .org $34bfe
   ;; this table is no longer read, free up 16 bytes
 .assert < $34c0e
@@ -1102,6 +1114,11 @@ SetTriggerTileGameMode:
 .assert < $37a2c
 .endif
   
+
+;;; Make white robots appear immediately outside tower.
+.org $375f3
+  jsr ReleaseWhiteRobots
+
 
 ;;; Beef up dyna
 
@@ -2120,6 +2137,21 @@ TrainerData_Shields:
 
 .endif  
 
+
+
+ReleaseWhiteRobots:
+  lda $6c
+  and #$f8
+  cmp #$58
+  bne +
+   txa
+   asl
+   asl
+   rts
++ pla
+  pla
+  jmp $b61b
+
 .assert < $3fe00 ; end of free space started at 3f9ba
 
 .org $3e2ac ; normally loads object data for wall
@@ -2208,7 +2240,6 @@ DynaShoot2:
    dey
 + pla
   jmp $972d     ; AdHocSpawnObject
-
 
 ;; free space
 .assert < $3fe78

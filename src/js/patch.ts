@@ -998,10 +998,10 @@ const SCALED_MONSTERS: Map<number, MonsterData> = new Map([
   [0x9b, 'b', 'Draygon',                    5,  6,  16,  41,  ,    110],
   [0x9e, 'b', 'Draygon 2',                  7,  6,  28,  40,  ,    ,],
   // ID  TYPE  NAME                       SDEF SWRD HITS SATK DGLD SEXP
-  [0xa0, 'm', 'Ground Sentry (1)',          4,  ,   6,   26,  ,    73],
-  [0xa1, 'm', 'Tower Defense Mech (2)',     5,  ,   8,   36,  ,    85],
-  [0xa2, 'm', 'Tower Sentinel',             ,   ,   1,   ,    ,    32],
-  [0xa3, 'm', 'Air Sentry',                 3,  ,   2,   26,  ,    65],
+  [0xa0, 'm', 'Ground Sentry (1)',          4,  ,   6,   26,  7,   73],
+  [0xa1, 'm', 'Tower Defense Mech (2)',     5,  ,   8,   36,  8,   85],
+  [0xa2, 'm', 'Tower Sentinel',             ,   ,   1,   ,    5,   32],
+  [0xa3, 'm', 'Air Sentry',                 3,  ,   2,   26,  6,   65],
   // [0xa4, 'b', 'Dyna',                       6,  5,  16,  ,    ,    ,],
   [0xa5, 'b', 'Vampire 2',                  3,  ,   12,  27,  ,    100],
   // [0xb4, 'b', 'dyna pod',                   15, ,   255, 26,  ,    ,],
@@ -1177,7 +1177,9 @@ class MonsterPool {
     }
     if (!monsters.length || skip) slots = [];
     this.locations.push({location, slots});
-    this.monsters.push(...monsters);
+    if (this.flags.shuffleTowerMonsters() === tower) {
+      this.monsters.push(...monsters);
+    }
   }
 
   shuffle(random: Random, graphics: Graphics) {

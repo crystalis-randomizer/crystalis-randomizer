@@ -87,7 +87,7 @@ export class Graphics {
   getMonsterConstraint(locationId: number, monsterId: number): Constraint {
     const c = this.monsterConstraints.get(monsterId) || Constraint.NONE;
     if ((locationId & 0x58) === 0x58) return c;
-    const m = this.rom.objects[monsterId].goldDrop;
+    const m = null; // this.rom.objects[monsterId].goldDrop;
     if (!m) return c;
     return c.meet(Constraint.COIN) || Constraint.NONE;
   }

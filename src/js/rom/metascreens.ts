@@ -65,7 +65,7 @@ export class Metascreens {
     const mut = this as Mutable<this>;
     const screen = new Metascreen(this.rom, mut.length as Uid, data);
     mut[mut.length++] = screen;
-    this.screensById.get(screen.id).push(screen);
+    this.screensById.get(screen.sid).push(screen);
     for (const tilesetName in data.tilesets) {
       const key = tilesetName as keyof Metatilesets;
       const tilesetData = data.tilesets[key]!;
@@ -280,7 +280,7 @@ export class Metascreens {
       |███|
       |███|`,
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
-    feature: ['empty'],
+    feature: ['empty', 'manual'],
     edges: '    ',
     match: () => false,
   });
@@ -1129,6 +1129,7 @@ export class Metascreens {
       | > |
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['wide'],
     edges: 'w   ',
     connect: '2',
     exits: [downStair(0xc7)],
@@ -1151,6 +1152,7 @@ export class Metascreens {
       | ┃ |
       | ┃ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['wide'],
     edges: 'w w ',
     connect: '2a',
   });
@@ -1197,7 +1199,7 @@ export class Metascreens {
     tilesets: {labyrinth: {}},
     feature: ['arena'],
     edges: 'w*w*',
-    allowed: s => s.hasFeature('empty') ? [1, 3] : [],
+    allowed: s => s.hasFeature('empty') ? 10 : 0,
     connect: '9b|a',
     exits: [upStair(0x37)],
   });
@@ -1353,7 +1355,7 @@ export class Metascreens {
     connect: 'a',
     // For left/right neighbors, only allow edge or empty.
     // TODO - check that this is still the case.
-    allowed: s => s.hasFeature('empty') ? [1, 3] : [],
+    allowed: s => s.hasFeature('empty') ? 10 : 0,
     // NOTE: no edge exit since we don't want to go straight here...
     // TODO - constraint that we put solids on either side?
     // TODO - undo the attempt to allow this not on the right edge,
@@ -1659,14 +1661,14 @@ export class Metascreens {
     poi: [[3]],
     exits: [seamlessDown(0x06, 4)], // kensu
   });
-  readonly hallNS_stairs = this.metascreen({
+  readonly hallNS_ramp = this.metascreen({
     id: 0x8c,
     icon: icon`
       | ┋ |
       | ┋ |
       | ┋ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
-    feature: ['stairs'],
+    feature: ['ramp'],
     edges: 'c c ',
     connect: '2a',
   });
@@ -1733,7 +1735,7 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['arena'],
     edges: 'n*c*', // 'n' for 'narrow'
-    allowed: s => s.hasFeature('empty') ? [1, 3] : [],
+    allowed: s => s.hasFeature('empty') ? 10 : 0,
     connect: '2a',
     poi: [[1, 0x60, 0x78]],
     exits: [topEdge(), // vampire 1 room
@@ -1749,7 +1751,7 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['arena', 'wall'],
     edges: 'n*c*',
-    allowed: s => s.hasFeature('empty') ? [1, 3] : [],
+    allowed: s => s.hasFeature('empty') ? 10 : 0,
     connect: '2=a',
     wall: 0x27,
     poi: [[1, 0x60, 0x78]],
@@ -1957,6 +1959,7 @@ export class Metascreens {
       | ╔═|
       | ║ |`,
     tilesets: {dolphinCave: {}},
+    feature: ['river'],
     //edges: '  rr',
     //connect: '9d:bf',  // : means water - flight needed
     exits: [bottomEdge({left: 5})],
@@ -1968,6 +1971,7 @@ export class Metascreens {
       |═╗ |
       |█║ |`,
     tilesets: {dolphinCave: {}},
+    feature: ['river'],
     //edges: ' rr ',
   });
   readonly channelHallNS = this.metascreen({
@@ -1977,6 +1981,7 @@ export class Metascreens {
       | ╠┈|
       | ║ |`,
     tilesets: {dolphinCave: {}},
+    feature: ['river'],
   });
   readonly channelEntranceSE = this.metascreen({
     id: 0xa2,
@@ -1985,6 +1990,7 @@ export class Metascreens {
       | ╔┈|
       |╷║ |`,
     tilesets: {dolphinCave: {}},
+    feature: ['river'],
     // NOTE: This would ALMOST work as a connection to the
     // normal river cave tiles, but the river is one tile
     // taller at the top, so there's no match!
@@ -1997,6 +2003,7 @@ export class Metascreens {
       |═╬═|
       |╷║╷|`,
     tilesets: {dolphinCave: {}},
+    feature: ['river'],
     // NOTE: two bottom edges on the same screen - call one a door
     exits: [bottomEdge({left: 3}), bottomEdge({left: 0xb, type: 'door'})],
   });
@@ -2007,6 +2014,7 @@ export class Metascreens {
       |┈══|
       |  █|`,
     tilesets: {dolphinCave: {}},
+    feature: ['river'],
     exits: [door(0x38)],
   });
   readonly mountainFloatingIsland = this.metascreen({
@@ -2049,7 +2057,7 @@ export class Metascreens {
     tilesets: {mountainRiver: {}},
     feature: ['bridge'],
     edges: 'wpwp',
-    allowed: s => s.hasFeature('empty') ? [2] : [],
+    allowed: s => s.hasFeature('empty') ? 4 : 0,
     connect: '6-e:2a',
     wall: 0x87,
   });
@@ -2190,7 +2198,7 @@ export class Metascreens {
     tilesets: {mountain: {}, mountainRiver: {}},
     feature: ['arena'],
     edges: ' *l*',
-    allowed: s => s.hasFeature('empty') ? [1, 3] : [],
+    allowed: s => s.hasFeature('empty') ? 10 : 0,
     connect: 'a',
     exits: [{...upStair(0x47, 3), type: 'cave'}],
     flag: 'custom:false',
@@ -2256,7 +2264,7 @@ export class Metascreens {
       |█║█|`,
     tilesets: {mountainRiver: {}},
     edges: 'w w ',
-    allowed: s => s.hasFeature('empty') ? [2] : [],
+    allowed: s => s.hasFeature('empty') ? 4 : 0,
     connect: '2:e',
   });
   readonly mountainPathE_gate = this.metascreen({
@@ -2300,7 +2308,7 @@ export class Metascreens {
       |█║█|`,
     tilesets: {mountainRiver: {}},
     edges: 'wpwp',
-    allowed: s => s.hasFeature('empty') ? [2] : [],
+    allowed: s => s.hasFeature('empty') ? 4 : 0,
     connect: '6e|2|a',
   });
   readonly mountainSlope_underBridge = this.metascreen({
@@ -2516,6 +2524,7 @@ export class Metascreens {
       |══ |
       |███|`,
     tilesets: {dolphinCave: {}},
+    feature: ['river'],
     exits: [upStair(0x57)],
   });
   readonly boatChannel = this.metascreen({
@@ -2536,6 +2545,7 @@ export class Metascreens {
       |═══|
       |███|`,
     tilesets: {dolphinCave: {}},
+    feature: ['river'],
   });
   readonly riverCaveNWSE = this.metascreen({
     id: 0xd3,
@@ -2548,7 +2558,7 @@ export class Metascreens {
       // |▖┆▗|`,
     // TODO - consider using solids for the corners instead?
     tilesets: {cave: {}, fortress: {}},
-    feature: ['bridge'],
+    feature: ['river', 'bridge'],
     edges: 'rrrr',
     connect: '15:3d:79-af',
     wall: 0xb6,
@@ -2564,6 +2574,7 @@ export class Metascreens {
       // |▌║▐|
       // |▌║▐|`,
     tilesets: {cave: {}, fortress: {}},
+    feature: ['river'],
     edges: 'r r ',
     connect: '19:3a',
   });
@@ -2574,6 +2585,7 @@ export class Metascreens {
       |═══|
       |───|`,
     tilesets: {cave: {}, fortress: {}},
+    feature: ['river'],
     edges: ' r r',
     connect: '5d:7f',
   });
@@ -2584,7 +2596,7 @@ export class Metascreens {
       |├┇┤|
       |│║│|`,
     tilesets: {cave: {}, fortress: {}},
-    feature: ['bridge'],
+    feature: ['river', 'bridge'],
     edges: 'r r ',
     connect: '19-3a',
     wall: 0x87,
@@ -2596,7 +2608,7 @@ export class Metascreens {
       |═┅═|
       |─┴─|`,
     tilesets: {cave: {}, fortress: {}},
-    feature: ['bridge'],
+    feature: ['river', 'bridge'],
     edges: ' r r',
     connect: '5d-7f',
     wall: 0x86,
@@ -2608,6 +2620,7 @@ export class Metascreens {
       |│╔═|
       |│║┌|`,
     tilesets: {cave: {}, fortress: {}},
+    feature: ['river'],
     edges: '  rr',
     connect: '9d:af',
   });
@@ -2618,6 +2631,7 @@ export class Metascreens {
       |═╗│|
       |┐║│|`,
     tilesets: {cave: {}, fortress: {}},
+    feature: ['river'],
     edges: ' rr ',
     connect: '5a:79',
   });
@@ -2628,6 +2642,7 @@ export class Metascreens {
       |│╚═|
       |└──|`,
     tilesets: {cave: {}, fortress: {}},
+    feature: ['river'],
     edges: 'r  r',
     connect: '1f:3d',
   });
@@ -2638,6 +2653,7 @@ export class Metascreens {
       |═╝│|
       |──┘|`,
     tilesets: {cave: {}, fortress: {}},
+    feature: ['river'],
     edges: 'rr  ',
     connect: '15:37',
   });
@@ -2648,6 +2664,7 @@ export class Metascreens {
       |═══|
       |───|`,
     tilesets: {cave: {}, fortress: {}},
+    feature: ['river'],
     edges: 'cr r',
     connect: '25d:7f',
   });
@@ -2658,6 +2675,7 @@ export class Metascreens {
       |═══|
       |─┬─|`,
     tilesets: {cave: {}, fortress: {}},
+    feature: ['river'],
     edges: ' rcr',
     connect: '5d:7af',
   });
@@ -2668,6 +2686,7 @@ export class Metascreens {
       |┤║│|
       |│║│|`,
     tilesets: {cave: {}, fortress: {}},
+    feature: ['river'],
     edges: 'rcr ',
     connect: '169:3b',
   });
@@ -2678,6 +2697,7 @@ export class Metascreens {
       |│║├|
       |│║│|`,
     tilesets: {cave: {}, fortress: {}},
+    feature: ['river'],
     edges: 'r rc',
     connect: '19:3be',
   });
@@ -2688,6 +2708,7 @@ export class Metascreens {
       | ┗━|
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['wide'],
     edges: 'w  w',
     connect: '2e',
   });
@@ -2732,6 +2753,7 @@ export class Metascreens {
       |━┛ |
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['wide'],
     edges: 'ww  ',
     connect: '26',
   });
@@ -2779,6 +2801,7 @@ export class Metascreens {
       | ┏━|
       | ┃ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['wide'],
     edges: '  ww',
     connect: 'ae',
   });
@@ -2823,6 +2846,7 @@ export class Metascreens {
       |━┓ |
       | ┃ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['wide'],
     edges: ' ww ',
     connect: '6a',
   });
@@ -2907,6 +2931,7 @@ export class Metascreens {
       |   |
       | ╻ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['wide'],
     edges: 'w w ',
     connect: '2|a',
   });
@@ -2954,6 +2979,7 @@ export class Metascreens {
       |━╋━|
       | ┃ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['wide'],
     edges: 'wwww',
     connect: '26ae',
   });
@@ -2998,6 +3024,7 @@ export class Metascreens {
       |━┻━|
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['wide'],
     edges: 'ww w',
     connect: '26e',
   });
@@ -3030,6 +3057,7 @@ export class Metascreens {
       |━┳━|
       | ┃ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['wide'],
     edges: ' www',
     connect: '6ae',
   });
@@ -3062,7 +3090,7 @@ export class Metascreens {
       | ┃ |
       | ┃ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
-    feature: ['wall'],
+    feature: ['wide', 'wall'],
     edges: 'c w',
     connect: '2a',
     exits: [topEdge({left: 6, width: 4})],
@@ -3088,6 +3116,7 @@ export class Metascreens {
       |━━━|
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['wide'],
     edges: ' w w',
     connect: '6e',
   });
@@ -3108,7 +3137,6 @@ export class Metascreens {
       |─╳─|
       |   |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
-    // TODO - annotate the pit
     feature: ['pit'],
     edges: ' c c',
     connect: '6e',
@@ -3121,7 +3149,6 @@ export class Metascreens {
       | ╳ |
       | │ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
-    // TODO - annotate the pit
     feature: ['pit'],
     edges: 'c c ',
     connect: '2a',
@@ -3134,7 +3161,6 @@ export class Metascreens {
       | ░ |
       | │ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
-    // TODO - annotate the spikes?
     feature: ['spikes'],
     edges: 's c ', // s = spikes
     connect: '2a',
@@ -3146,7 +3172,6 @@ export class Metascreens {
       | ░ |
       | ░ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
-    // TODO - annotate the spikes?
     feature: ['spikes'],
     edges: 'c s ',
     connect: '2a',
@@ -3158,7 +3183,6 @@ export class Metascreens {
       |─░─|
       | ░ |`,
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
-    // TODO - annotate the spikes?
     feature: ['spikes'],
     edges: 'scsc',
     connect: '26ae',
@@ -3171,7 +3195,6 @@ export class Metascreens {
       | ░ |`,
     tilesets: withRequire(ScreenFix.ExtraSpikes,
                           {cave: {}, fortress: {}, pyramid: {}, iceCave: {}}),
-    // TODO - annotate the spikes?
     feature: ['spikes'],
     edges: 'scs ',
     connect: '26a',
@@ -3184,7 +3207,6 @@ export class Metascreens {
       | ░ |`,
     tilesets: withRequire(ScreenFix.ExtraSpikes,
                           {cave: {}, fortress: {}, pyramid: {}, iceCave: {}}),
-    // TODO - annotate the spikes?
     feature: ['spikes'],
     edges: 's sc',
     connect: '2ae',
@@ -3196,7 +3218,7 @@ export class Metascreens {
       |   |
       | ╥ |`,
     tilesets: {cave: {}, fortress: {}},
-    feature: ['empty'],
+    feature: ['empty', 'river'],
     edges: 'r r ',
     connect: '1:3|9:b',
     poi: [[1, -0x30, 0x48], [1, -0x30, 0x98],
@@ -3209,7 +3231,7 @@ export class Metascreens {
       |   |
       |   |`,
     tilesets: {cave: {}, fortress: {}},
-    feature: ['empty'],
+    feature: ['empty', 'river'],
     edges: 'r   ',
     connect: '1:3',
     poi: [[1, -0x30, 0x48], [1, -0x30, 0x98]],
@@ -3222,7 +3244,7 @@ export class Metascreens {
       |   |
       | ╥ |`,
     tilesets: {cave: {}, fortress: {}},
-    feature: ['empty'],
+    feature: ['empty', 'river'],
     edges: '  r ',
     connect: '9:b',
     poi: [[1, 0x110, 0x48], [1, 0x110, 0x98]],
@@ -3235,7 +3257,7 @@ export class Metascreens {
       |╡ ╞|
       |   |`,
     tilesets: {cave: {}, fortress: {}},
-    feature: ['empty'],
+    feature: ['empty', 'river'],
     edges: ' r r',
     connect: '5:7|d:f',
     poi: [[1, 0x60, 0x108], [1, 0xa0, 0x108],
@@ -3248,7 +3270,7 @@ export class Metascreens {
       |╡  |
       |   |`,
     tilesets: {cave: {}, fortress: {}},
-    feature: ['empty'],
+    feature: ['empty', 'river'],
     edges: ' r  ',
     connect: '5:7',
     poi: [[1, 0x60, -0x28], [1, 0xa0, -0x28]],
@@ -3261,7 +3283,7 @@ export class Metascreens {
       |  ╞|
       |   |`,
     tilesets: {cave: {}, fortress: {}},
-    feature: ['empty'],
+    feature: ['empty', 'river'],
     edges: '   r',
     connect: 'd:f',
     poi: [[1, 0x60, 0x108], [1, 0xa0, 0x108]],
@@ -3274,7 +3296,7 @@ export class Metascreens {
       | ╨ |
       |   |`,
     tilesets: {cave: {}, fortress: {}},
-    feature: ['bridge'],
+    feature: ['river', 'bridge'],
     edges: 'r   ',
     connect: '1-3',
     wall: 0x17,
@@ -3287,7 +3309,7 @@ export class Metascreens {
       | ╥ |
       | ┇ |`,
     tilesets: {cave: {}, fortress: {}},
-    feature: ['bridge'],
+    feature: ['river', 'bridge'],
     edges: '  r ',
     connect: '9-b',
     wall: 0xc6,
@@ -3300,6 +3322,7 @@ export class Metascreens {
       |═╦═|
       |┐║┌|`,
     tilesets: {cave: {}, fortress: {}},
+    feature: ['river'],
     edges: ' rrr',
     connect: '5d:79:bf',
   });
@@ -3310,6 +3333,7 @@ export class Metascreens {
       |═╩═|
       |───|`,
     tilesets: {cave: {}, fortress: {}},
+    feature: ['river'],
     edges: 'rr r',
     connect: '15:3d:7f',
   });
@@ -3320,6 +3344,7 @@ export class Metascreens {
       |│║ |
       |│║│|`,
     tilesets: {cave: {}, fortress: {}},
+    feature: ['river'],
     edges: 'r r ',
     connect: '19:3:b',
     poi: [[1, 0xc0, 0x98], [1, 0x40, 0x98]],
@@ -3331,6 +3356,7 @@ export class Metascreens {
       | ║│|
       |│║│|`,
     tilesets: {cave: {}, fortress: {}},
+    feature: ['river'],
     edges: 'r r ',
     connect: '1:3b:9',
     poi: [[1, 0xb0, 0x48], [1, 0x30, 0x48]],
@@ -3355,7 +3381,7 @@ export class Metascreens {
     tilesets: {pyramid: {}},
     feature: ['arena'],
     edges: ' *c*',
-    allowed: s => s.hasFeature('empty') ? [1, 3] : [],
+    allowed: s => s.hasFeature('empty') ? 10 : 0,
     connect: 'a',
     exits: [upStair(0x57)],
     flag: 'custom:false',
@@ -3369,7 +3395,7 @@ export class Metascreens {
     tilesets: {pyramid: {}},
     feature: ['arena', 'pit'],
     edges: ' *w*',
-    allowed: s => s.hasFeature('empty') ? [1, 3] : [],
+    allowed: s => s.hasFeature('empty') ? 10 : 0,
     connect: 'a',
   });
   readonly cryptArena_draygon2 = this.metascreen({
@@ -3381,7 +3407,7 @@ export class Metascreens {
     tilesets: {pyramid: {}},
     feature: ['arena'],
     edges: 'c*w*',
-    allowed: s => s.hasFeature('empty') ? [1, 3] : [],
+    allowed: s => s.hasFeature('empty') ? 10 : 0,
     connect: '2a',
     exits: [topEdge({left: 6, width: 4})],
     flag: 'custom:false',
@@ -3412,7 +3438,7 @@ export class Metascreens {
     // NOTE: we could use this for a pit that requires flight to cross?
     feature: ['arena'],
     edges: 'n*w*',
-    allowed: s => s.hasFeature('empty') ? [1, 3] : [],
+    allowed: s => s.hasFeature('empty') ? 10 : 0,
     connect: '2a',
     exits: [topEdge()],
   });
@@ -3465,9 +3491,13 @@ export class Metascreens {
     id: ~0x7fff, // will never be instantiated
     tilesets: {}, // not directly included in any
     // Check for edge exits in potential neighbors
-    allowed: (s) => (s.data.exits || [])
-        .map(e => (edgeTypeMap[e.type]! ^ 2) as (0 | 1 | 2 | 3))
-        .filter(d => d != null),
+    allowed: (s) => {
+      let mask = 0;
+      for (const e of s.data.exits ?? []) {
+        mask |= edgeTypeMap[e.type]!;
+      }
+      return mask;
+    },
   });
 
   checkExitTypes() {
@@ -3485,10 +3515,10 @@ export class Metascreens {
 }
 
 const edgeTypeMap: {[C in ConnectionType]?: number} = {
-  'edge:top': 0,
-  'edge:left': 1,
-  'edge:bottom': 2,
-  'edge:right': 3,
+  'edge:top': 1,
+  'edge:left': 2,
+  'edge:bottom': 4,
+  'edge:right': 8,
 };
 
 

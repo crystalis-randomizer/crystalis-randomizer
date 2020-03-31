@@ -674,11 +674,11 @@ export class Rom {
       i++;
     }
     for (const screen of tileset) {
-      if (screen.id >= 0x100) continue;
+      if (screen.sid >= 0x100) continue;
       //if ((i & 0xff) === 0x20) throw new Error(`No room left on page.`);
-      const prev = screen.id;
+      const prev = screen.sid;
       if (map.has(prev)) continue;
-      const next = screen.id = i++;
+      const next = screen.sid = i++;
       map.set(prev, next);
       map.set(next, next);
       //this.metascreens.renumber(prev, next);

@@ -83,8 +83,9 @@ class NeighborCache {
           this.add(3, s1, s2);
         }
         // Maybe call a method if it's there?
-        for (const dir of (s1.data.allowed ? s1.data.allowed(s2) : [])) {
-          this.add(dir, s1, s2);
+        const allowed = s1.data.allowed ? s1.data.allowed(s2) : 0;
+        for (const dir of [0, 1, 2, 3] as Dir[]) {
+          if (allowed & (1 << dir)) this.add(dir, s1, s2);
         }
       }
       // Register borders

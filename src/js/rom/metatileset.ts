@@ -4,6 +4,7 @@ import {Metatile} from './metatile.js';
 import {TileEffects} from './tileeffects.js';
 import {Tileset} from './tileset.js';
 import {DefaultMap, iters} from '../util.js';
+import { ConnectionType, featureMask, Feature } from './metascreendata.js';
 
 // NOTE: Must be initialized BEFORE Metascreens
 export class Metatilesets implements Iterable<Metatileset> {
@@ -151,8 +152,24 @@ export class Metatileset implements Iterable<Metascreen> {
     this.invalidate();
   }
 
-  getMetascreens(screenId: number): ReadonlySet<Metascreen> {
-    return this.cache.fromId.get(screenId) ?? EMPTY_SET;
+  getMetascreens(screenId: number): ReadonlyArray<Metascreen> {
+    return this.cache.fromId.get(screenId) ?? [];
+  }
+
+  getExits(type: ConnectionType): ReadonlyArray<Metascreen> {
+    return this.cache.exits.get(type);
+  }
+
+  getScreensWithOnlyFeatures(...features: Feature[]): Metascreen[] {
+    let mask = 0;
+    for (const feature of features) {
+      mask |= featureMask[feature];
+    }
+    const screens: Metascreen[] = [];
+    for (const s of this) {
+      if (!(s.features & ~mask)) screens.push(s);
+    }
+    return screens;
   }
 
   /**
@@ -163,11 +180,11 @@ export class Metatileset implements Iterable<Metascreen> {
     this._cache = undefined;
   }
 
-  check(s1: Uid, s2: Uid, delta: number): boolean {
-    const cache = this.cache.allowed[delta & 1];  // vertical = 0, horiz = 1
-    const index = delta > 0 ? s1 << 16 | s2 : s2 << 16 | s1;
-    return cache.has(index);
-  }
+  // check(s1: Uid, s2: Uid, delta: number): boolean {
+  //   const cache = this.cache.allowed[delta & 1];  // vertical = 0, horiz = 1
+  //   const index = delta > 0 ? s1 << 16 | s2 : s2 << 16 | s1;
+  //   return cache.has(index);
+  // }
 }
 
 interface MetatilesetData {
@@ -176,9 +193,9 @@ interface MetatilesetData {
   consolidated?: boolean;
 }
 
-const EMPTY_SET: Set<any> = new class extends Set {
-  add(): this { throw new Error(); }
-}
+// const EMPTY_SET: Set<any> = new class extends Set {
+//   add(): this { throw new Error(); }
+// }
 
 ////////////////////////////////////////////////////////////////
 // Specialized cache of neighbors/relationships in a tileset.
@@ -193,61 +210,32 @@ export namespace Dir {
   export const E: Dir = 3;
 }
 
-// must be 16 bits (65000 screens is plenty)
-type Uid = number;
-// (a, b) -> (a << 16 | b)
-type UidPair = number;
-// (uid, dir) -> (uid << 2 | dir)
-type UidDir = number;
-
 class NeighborCache {
   // [vertical, horizontal], indexed by dir & 1
-  readonly allowed = [new Set<UidPair>(), new Set<UidPair>()] as const;
-  readonly neighbors = new DefaultMap<UidDir, Set<Uid>>(() => new Set());
-  readonly fromId = new DefaultMap<number, Set<Metascreen>>(() => new Set());
+  // readonly allowed = [new Set<UidPair>(), new Set<UidPair>()] as const;
+  // readonly neighbors = new DefaultMap<UidDir, Set<Uid>>(() => new Set());
+  readonly fromId = new DefaultMap<number, Metascreen[]>(() => []);
+  readonly exits = new DefaultMap<ConnectionType, Metascreen[]>(() => []);
   readonly empty: Metascreen;
   // private readonly toggles = new DefaultMap<UidDir, Set<Uid>>(() => new Set);
 
   constructor(readonly tileset: Metatileset) {
     let empty: Metascreen|undefined = undefined;
-    for (const s1 of iters.concat(tileset, [tileset.exit])) {
+    for (const s of tileset) {
       // Register in the fromId multimap
-      if (s1.id >= 0) this.fromId.get(s1.id).add(s1);
+      if (s.sid >= 0) this.fromId.get(s.sid).push(s);
       // Check for empty
       if (!empty &&
-          s1.data.edges === '    ' &&
-          s1.hasFeature('empty') &&
-          !s1.data.exits?.length) {
-        empty = s1;
+          s.data.edges === '    ' &&
+          s.hasFeature('empty') &&
+          !s.data.exits?.length) {
+        empty = s;
       }
-      // Register the screen pairs
-      const e1 = s1.data.edges || '****';
-      for (const s2 of iters.concat(tileset, [tileset.exit])) {
-        // Basic idea: compare the edges.  But we need a way to override?
-        // Specifically, if there's a * then call a method?  What about
-        // allowing (say) normal cave w/ narrow?
-        const e2 = s2.data.edges || '****';
-        if (e1[2] !== '*' && e1[2] === e2[0]) {
-          this.add(Dir.S, s1, s2);
-        }
-        if (e1[3] !== '*' && e1[3] === e2[1]) {
-          this.add(Dir.E, s1, s2);
-        }
-        // Maybe call a method if it's there?
-        for (const dir of (s1.data.allowed ? s1.data.allowed(s2) : [])) {
-          this.add(dir, s1, s2);
-        }
+      for (const exit of s.data.exits ?? []) {
+        this.exits.get(exit.type).push(s);
       }
     }
     this.empty = empty ?? tileset.rom.metascreens.caveEmpty;
-  }
-
-  private add(dir: Dir, s1: Metascreen, s2: Metascreen) {
-    const u1 = s1.uid;
-    const u2 = s2.uid;
-    this.allowed[dir & 1].add(dir & 2 ? u1 << 16 | u2 : u2 << 16 | u1);
-    this.neighbors.get(u1 << 2 | dir).add(u2);
-    this.neighbors.get(u2 << 2 | (dir ^ 2)).add(u1);
   }
 
   // TODO - what to do with borders?!? Can we treat them like a screen?

@@ -3,13 +3,14 @@ import {Connection, ConnectionType, Feature, MetascreenData,
 import {Metatileset, Metatilesets} from './metatileset.js';
 import {Screen} from './screen.js';
 import {Rom} from '../rom.js';
-import { DefaultMap } from '../util.js';
+import {DefaultMap} from '../util.js';
 
 export type Uid = number & {__uid__: never};
 
 export class Metascreen {
   private readonly _features: number; // = new Set<Feature>();
   private readonly _tilesets = new Set<Metatileset>();
+  private readonly _isEmpty: boolean;
   // key: bitset - 1 for flight, 2 for noFlag
   // value: segments, each containing an offset to add to pos<<8 to get
   //        connection points (e.g. 0001, 0101, 1020, etc).
@@ -51,6 +52,7 @@ export class Metascreen {
       }
     }
     this._features = features;
+    this._isEmpty = Boolean(features & featureMask.empty);
     this.flag = data.flag;
     // this.fixed = fixed;
     // this.featureCount = featureCount;
@@ -70,6 +72,10 @@ export class Metascreen {
         cxn[i][cxn[i].length - 1].push(channel | offset);
       }
     }
+  }
+
+  get features(): number {
+    return this._features;
   }
 
   get manual(): boolean {
@@ -96,6 +102,10 @@ export class Metascreen {
   withFeature(feature: Feature): Metascreen[] {
     // TODO - index this?
     throw new Error();
+  }
+
+  isEmpty(): boolean {
+    return this._isEmpty;
   }
 
   /** Return a new metascreen with the same profile but more obstructed. */
@@ -132,23 +142,23 @@ export class Metascreen {
     }
   }
 
-  get id(): number {
+  get sid(): number {
     return this.data.id;
   }
 
-  set id(id: number) {
-    if (this.id === id) return;
-    this.rom.metascreens.renumber(this.id, id);
+  set sid(sid: number) {
+    if (this.sid === sid) return;
+    this.rom.metascreens.renumber(this.sid, sid);
   }
 
   get screen(): Screen {
-    const {id, rom: {screens}} = this;
-    return id < 0 ? screens.unallocated[~id] : screens[id];
+    const {sid, rom: {screens}} = this;
+    return sid < 0 ? screens.unallocated[~sid] : screens[sid];
   }
 
   // Only Metascreens.renumber should call this.
-  unsafeSetId(id: number) {
-    (this.data as {id: number}).id = id;
+  unsafeSetId(sid: number) {
+    (this.data as {id: number}).id = sid;
     for (const tileset of this._tilesets) {
       tileset.invalidate();
     }
@@ -214,17 +224,31 @@ export class Metascreen {
     // }
   }
 
+  /**
+   * Checks if this can neighbor that in 'dir' direction.
+   * If dir is 0, checks that 'that' is above 'this'.
+   * If dir is 1, checks that 'that' is left of 'this'.
+   * If dir is 2, checks that 'that' is below 'this'.
+   * If dir is 3, checks that 'that' is right of 'this'.
+   */
+  checkNeighbor(that: Metascreen, dir: number) {
+    // check: 0 -> that[vert].get(this) -> this is under that
+    const a = dir & 2 ? this : that;
+    const b = dir & 2 ? that : this;
+    return a.neighbors[dir & 1].get(b);
+  }
+
   /** @param dir 0 to check if that is under this, 1 if that is right of this */
   private _checkNeighbor(that: Metascreen, dir: 0|1): boolean {
+    const e1 = this.data.edges;
+    const e2 = that.data.edges;
+    if (e1 && e2) {
+      const opp = dir ^ 2;
+      if (e1[opp] !== '*' && e1[opp] === e2[dir]) return true;
+    }
+    if (this.data.allowed && (this.data.allowed(that) & (dir ^ 2))) return true;
+    if (that.data.allowed && (that.data.allowed(this) & dir)) return true;
     return false;
-    // const e1 = this.data.edges;
-    // const e2 = that.data.edges;
-    // if (e1 && e2) {
-    //   const opp = dir | 2;
-    //   if (e1[opp] !== '*' && e1[opp] === e2[dir]) return true;
-    // }
-
-    // TODO - change allowed to return a mask.
   }
 }
 
@@ -248,7 +272,7 @@ const manualFeatures = new Set<Feature>([
   'lighthouse', 'cabin', 'windmill', 'altar', 'pyramid', 'crypt',
 ]);
 const countedFeatures = new Set<Feature>([
-  'pit', 'spikes', 'bridge', 'wall', 'stairs', 'whirlpool',
+  'pit', 'spikes', 'bridge', 'wall', 'ramp', 'whirlpool',
 ]);
 
 const manualFeatureMask = [...manualFeatures].map(

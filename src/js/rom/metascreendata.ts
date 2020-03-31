@@ -28,7 +28,39 @@ export interface MetascreenData {
   feature?: Feature[];
   /** List of exit specs. */
   exits?: readonly Connection[];
-  /** String (length 4) of edge types for matching: up, left, down, right. */
+  /**
+   * String (length 4) of edge types for matching: up, left, down, right.
+   * The following characters are used in various tilesets:
+   * General:
+   *   * blank = blocked
+   *   * star = special case
+   * Overworld:
+   *   * 'o' = open
+   *   * '<', '>', '^', 'v' = open on the (left, right, top, bottom).
+   *   * 'l' = long grass
+   *   * 's' = short grass
+   *   * 'r' = river
+   *   * 'n' = narrow edge exit, centered
+   *   * 'b' = boat
+   *   * '1', '2', '3' = one-off special cases around portoa/oasis
+   * Tower:
+   *   * 's' = stairs
+   *   * 't' = corridor
+   * Cave:
+   *   * 'c' = corridor
+   *   * 'w' = wide
+   *   * 'n' = narrow
+   *   * 'r' = river
+   *   * 'b' = wrong side of bridge
+   *   * 's' = spikes
+   * Swamp:
+   *   * 's' = passage
+   * Mountain:
+   *   * 'p' = path
+   *   * 's' = slope
+   *   * 'w' = waterfall
+   *   * 'l' = ladder
+   */
   edges?: string;
   /**
    * String of connected access points for routing, grouped by connection type.
@@ -73,11 +105,12 @@ export interface MetascreenData {
   flag?: 'always' | 'calm' | 'custom:false' | 'custom:true'; // | 'boss';
 
   /**
-   * List of directions the other screen may be in relation to this.
-   * This is on top of anything that matches on edge types, and is
-   * particularly useful for matching '*' edge types.
+   * Mask of directions the other screen may be in relation to this
+   * (1 is up, 2 is right, 4 is down, 8 is left).  This is on top of
+   * anything that matches on edge types, and is particularly useful
+   * for matching '*' edge types.
    */
-  allowed?: (s: Metascreen) => Array<0|1|2|3>;
+  allowed?: (s: Metascreen) => number;
 
   /** Conditions for matching this tile. */
   match?: (reachable: (dy: number, dx: number) => boolean,
@@ -88,33 +121,46 @@ export type ScreenUpdate = (s: Metascreen, seed: number, rom: Rom) => boolean;
 
 export const featureMask = {
   // TODO - cave? fortress? edge?  we already have connections to tell us...
-  'pit': 0x1,
-  'arena': 0x2,
-  'spikes': 0x4,
-  'bridge': 0x8,
-  'wall': 0x10,
-  'stairs': 0x20,
-  'stair:up': 0x40, // NOTE: not actually listed, instead pulled from exitType
-  'stair:down': 0x80,
-  'empty': 0x100,
-  'portoa1': 0x200, // TODO - consider a single "unique" mask here?
-  'portoa2': 0x400, // Or - all 20 combinations of 3/6 bits: no mutual subset
-  'portoa3': 0x800, // 7,b,d,e,13,15,16,19,1a,1c,23,25,26,29,2a,2c,31,32,34,38
-  'lake': 0x1000,
-  'overBridge': 0x2000,
-  'underBridge': 0x4000,
-  'whirlpool': 0x8000,
-  'lighthouse': 0x1_0000,
-  'cabin': 0x2_0000,
-  'windmill': 0x4_0000,
-  'altar': 0x8_0000,
-  'pyramid': 0x10_0000,
-  'crypt': 0x20_0000,
-  'consolidate': 0x40_0000, // indicates we can consolidate this screen.
+  'empty': 0x1,
+  'pit': 0x2,
+  'arena': 0x4,
+  'spikes': 0x8,
+  'wide': 0x10,
+  'river': 0x20,
+  'bridge': 0x40,
+  'wall': 0x80,
+  'ramp': 0x100,
+  'overBridge': 0x200,
+  'underBridge': 0x400,
+  'whirlpool': 0x800,
+
+  // Not actually listed as features, but added separately - we could add others
+  // (total of 8 available...?)
+  'stair:up': 0x1_0000,
+  'stair:down': 0x2_0000,
+
+  // Unique features: upper bits have various combinations of 3 of 6 bits
+  //   7,b,d,e,13,15,16,19,1a,1c,23,25,26,29,2a,2c,31,32,34,38
+  // Since they are never shared, we can pack a lot more into the same space.
+  'portoa1': 0x7_000_000,
+  'portoa2': 0xb_000_000,
+  'portoa3': 0xd_000_000,
+  'lake': 0xe_000_000,
+  'lighthouse': 0x13_000_000,
+  'cabin': 0x15_000_000,
+  'windmill': 0x16_000_000,
+  'altar': 0x19_000_000,
+  'pyramid': 0x1a_000_000,
+  'crypt': 0x1c_000_000,
+
+  // Prevents placing this by hand.
+  'manual': 0x4000_0000,
+  // Indicates we may want to consolidate this screen.
+  'consolidate': 0x8000_0000,
 } as const;
 
 export type Feature = keyof typeof featureMask;
-  // 'pit' | 'arena' | 'spikes' | 'bridge' | 'wall' | 'stairs' | 'empty' |
+  // 'pit' | 'arena' | 'spikes' | 'bridge' | 'wall' | 'ramp' | 'empty' |
   // 'portoa1' | 'portoa2' | 'portoa3' | // path from sabre to portoa
   // 'lake' | 'overBridge' | 'underBridge' | 'whirlpool' |
   // 'lighthouse' | 'cabin' | 'windmill' | 'altar' | 'pyramid' | 'crypt' |

@@ -57,7 +57,7 @@ function eastCave(rom: Rom, opts: EastCaveOptions) {
                   deadEndN_stairs, deadEndS, deadEndS_stairs,
                   deadEndW, deadEndW_downStair, exit,
                   hallNE, hallNS, hallNW, hallSE, hallWS, hallWE,
-                  hallNS_entrance, hallNS_stairs, hallNS_wall,
+                  hallNS_entrance, hallNS_ramp, hallNS_wall,
                  },
     npcs: {WindmillGuard},
     //flags: {AlwaysTrue},
@@ -88,22 +88,22 @@ function eastCave(rom: Rom, opts: EastCaveOptions) {
   // NOTE: 0x9c can become 0x99 in top left or 0x97 in top right or bottom middle for a cave exit
   EastCave1.meta = new Metalocation(EastCave1.id, rom.metatilesets.cave, 5, 5);
   EastCave1.meta.set2d(0x00, [
-    [deadEndE,        hallWS,        caveEmpty, hallSE,           deadEndW],
-    [caveEmpty,       hallNS,        hallSE,    hallNW,           caveEmpty],
-    [hallSE,          branchNWSE,    branchNWS, caveEmpty,        caveEmpty],
-    [hallNS,          hallNS_stairs, hallNE,    hallWE,           hallWS],
-    [hallNS_entrance, hallNE,        deadEndW,  deadEndE_upStair, hallNW],
+    [deadEndE,        hallWS,      caveEmpty, hallSE,           deadEndW],
+    [caveEmpty,       hallNS,      hallSE,    hallNW,           caveEmpty],
+    [hallSE,          branchNWSE,  branchNWS, caveEmpty,        caveEmpty],
+    [hallNS,          hallNS_ramp, hallNE,    hallWE,           hallWS],
+    [hallNS_entrance, hallNE,      deadEndW,  deadEndE_upStair, hallNW],
     // Border
-    [exit,            caveEmpty,     caveEmpty, caveEmpty,        caveEmpty],
+    [exit,            caveEmpty,   caveEmpty, caveEmpty,        caveEmpty],
   ]);
 
   EastCave2.meta = new Metalocation(EastCave2.id, rom.metatilesets.cave, 5, 5);
   EastCave2.meta.set2d(0x00, [
-    [deadEndE,  hallWS,        deadEndS,  caveEmpty, deadEndS],
-    [caveEmpty, hallNS,        hallNS,    caveEmpty, hallNS],
-    [caveEmpty, branchNSE,     branchNWE, branchWSE, hallNW],
-    [caveEmpty, hallNS_stairs, caveEmpty, hallNE,    hallWS],
-    [deadEndE,  hallNW,        caveEmpty, caveEmpty, deadEndN_stairs],
+    [deadEndE,  hallWS,      deadEndS,  caveEmpty, deadEndS],
+    [caveEmpty, hallNS,      hallNS,    caveEmpty, hallNS],
+    [caveEmpty, branchNSE,   branchNWE, branchWSE, hallNW],
+    [caveEmpty, hallNS_ramp, caveEmpty, hallNE,    hallWS],
+    [deadEndE,  hallNW,      caveEmpty, caveEmpty, deadEndN_stairs],
   ]);
 
 

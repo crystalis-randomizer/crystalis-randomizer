@@ -861,6 +861,36 @@ export class Table<R, C, V> implements Iterable<[R, C, V]>{
   }
 }
 
+export function format(fmt: string, ...args: unknown[]): string {
+  const split = fmt.split(/%/g);
+  let argIndex = 0;
+  let out = split[0];
+  for (let i = 1; i < split.length; i++) {
+    if (!split[i]) {
+      out += '%' + split[++i];
+      continue;
+    }
+    const match = /([-+]*)([0\D]?)(\d*)([dxs])/.exec(split[i]);
+    if (!match) {
+      out += args[argIndex++] + split[i];
+      continue;
+    } 
+    const len = parseInt(match[3]) || 0;
+    const pad = match[2] || ' ';
+    const arg = args[argIndex++];
+    let str = match[4] === 'x' ? Number(arg).toString(16) : String(arg);
+    if (match[4] !== 's' && /+/.test(match[1]) && Number(arg) >= 0) {
+      str = '+' + str;
+    }
+    if (str.length < len) {
+      const padding = pad.repeat(len - str.length);
+      str = /-/.test(match[1]) ? str + padding : padding + str;
+    }
+    out += str + split[i].substring(match[0].length);
+  }
+  return out;
+}
+
 // cancellation
 
 export interface CancelTokenRegistration {

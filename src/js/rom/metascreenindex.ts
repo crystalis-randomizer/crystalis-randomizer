@@ -3,6 +3,7 @@ import { Metatileset } from './metatileset.js';
 import { Metascreen } from './metascreen.js';
 import { Metalocation, Pos } from './metalocation.js';
 import { Random } from '../random.js';
+import { Failure, Ok } from '../failure.js';
 
 type EdgeIndex = number;
 
@@ -26,9 +27,9 @@ type EdgeIndex = number;
 export class MetascreenIndex {
 
   index = new Map<Metascreen, EdgeIndex>();
-  basics: Metascreen[][] = [];
-  empties: Metascreen[] = [];
-  variants: Metascreen[][][] = []; // indices: variants[index][features]
+  empties: Metascreen[] = []; // index: [edgeindex] singleton
+  basics: Metascreen[][] = []; // index: [edgeindex] repeated
+  variants: Metascreen[][][] = []; // indices: [edgeindex][features] repeated
 
   constructor(readonly tileset: Metatileset,
               edges: string, // edge types to consider
@@ -73,20 +74,47 @@ export class MetascreenIndex {
     }
   }
 
-  tryClear(loc: Metalocation, pos: Pos, random: Random): boolean {
+  /** Returns true if there is a tight cycle northwest of pos. */
+  isTightCycle(loc: Metalocation, pos: Pos): boolean {
+    const ul = this.index.get(loc.get(pos - 17))!;
+    const dr = this.index.get(loc.get(pos))!;
+    return !!((ul & 0x0f00) && (ul & 0x00f0) && (dr & 0xf000) && (dr & 0x000f));
+  }
+
+  /**
+   * Attempts to clear a screen out of the location, updating any
+   * neighbors that are invalidated as a result.
+   */
+  tryClear(loc: Metalocation, pos: Pos, random: Random): Ok {
     const middle = loc.get(pos);
-    if (middle.isEmpty()) return true; // nothing to do
+    if (middle.isEmpty()) return; // nothing to do
     const middleIndex = this.index.get(middle)!;
-    // const sameIndexEmpty = this.empties[middleIndex];
-    // if (sameIndexEmpty) return loc.set(pos, sameIndexEmpty);
+
+    // First see if there's an empty variant with the same edges.
+    // This may leave extra spurs around, but we can get rid of
+    // them later (if they don't end up getting spawns in them).
     const candidates =
         this.variants[middleIndex][loc.getFeatures(pos) | EMPTY] || []
     for (const candidate of random.ishuffle(candidates)) {
-      // In theory this should fit fine.  Clear out random spurs later.
-      if (loc.set(pos, candidate)) return true;
+      // Try to place each candidate, return if it just fits.
+      if (!loc.trySet(pos, candidate)) return;
     }
 
-
+    // Edges need changing.  Try inserting a full "empty".
+    loc.set(pos, loc.tileset.empty);
+    for (const [delta, mask, neighborMask] of NEIGHBOR_DIRS) {
+      if (!(middleIndex & mask)) continue; // already empty
+      const neighbor = loc.get(pos + delta);
+      const neighborIndex = this.index.get(neighbor)! & ~neighborMask;
+      const neighborFeatures = loc.getFeatures(pos + delta);
+      const next = this.pickScreen(neighborFeatures, neighborIndex, random);
+      if (!next) {
+        return Failure.of('no screen for %x %x',
+                          neighborFeatures, neighborIndex);
+      }
+      loc.set(pos + delta, next);
+    }
+    return loc.validate();
 
     // given a pos, look at neighbors in non-empty dirs and see if they're all
     // basic and can have the given edge removed.
@@ -97,11 +125,63 @@ export class MetascreenIndex {
     // how to automatically get narrow entrances?  postprocess???
   }
 
+  /** Tries to remove an edge. */
+  tryClearEdge(loc: Metalocation, pos0: Pos, dir: number, random: Random): Ok {
+    const scr0 = loc.get(pos0);
+    const features0 = loc.getFeatures(pos0);
+    const index0 = this.index.get(scr0)!;
+    const [delta, mask0, mask1] = NEIGHBOR_DIRS[dir];
+    const clear0 = index0 & ~mask0;
+    if (index0 === clear0) return;
+    const pos1 = pos0 + delta;
+    const scr1 = loc.get(pos1);
+    const features1 = loc.getFeatures(pos1);
+    const index1 = this.index.get(scr1)!;
+    const clear1 = index1 & ~mask1;
+    const next0 = this.pickScreen(features0, clear0, random);
+    const next1 = this.pickScreen(features1, clear1, random);
+    if (!next0) {
+      return Failure.of('no screen (%x, %x) at %02x', features0, clear0, pos0);
+    }
+    if (!next1) {
+      return Failure.of('no screen (%x, %x) at %02x', features1, clear1, pos1);
+    }
+    loc.set(pos0, next0);
+    loc.set(pos1, next1);
+    return loc.validate();
+  }
+
+  tryAddFeature(loc: Metalocation, pos: Pos, feature: Feature,
+                random: Random): Ok {
+    const mask = featureMask[feature] | loc.getFeatures(pos);
+    const index = this.index.get(loc.get(pos))!;
+    const scr = this.pickScreen(mask, index, random);
+    if (!scr) {
+      return Failure.of('no eligible screens for (%x,%x) at %02x',
+                        mask, index, pos);
+    }
+    return loc.trySet(pos, scr);
+    // TODO - try to be more clever?
+  }
+
   // TODO - try to add a path?!?
 
+  pickScreen(features: number, index: number, random: Random): Metascreen|null {
+    const candidates =
+        features ? this.variants[index][features] : this.basics[index];
+    if (!candidates.length) return null;
+    return random.pick(candidates);
+  }
 }
 
 const EMPTY = featureMask['empty'];
+
+const NEIGHBOR_DIRS = [
+  [-16, 0xf, 0xf00],
+  [-1, 0xf0, 0xf000],
+  [16, 0xf00, 0xf],
+  [1, 0xf000, 0xf0],
+] as const;
 
 function indexEdges(edges: string, dict: Record<string, number>): EdgeIndex {
   let index = 0;

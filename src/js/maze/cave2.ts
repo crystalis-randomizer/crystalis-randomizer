@@ -1,14 +1,65 @@
-import {Random} from '../random.js';
+import { Random } from '../random.js';
 //import {Rom} from '../rom.js';
-import {Location} from '../rom/location.js';
-import {Metalocation, Pos} from '../rom/metalocation.js';
-import {Metascreen} from '../rom/metascreen.js';
+import { Location } from '../rom/location.js';
+import { Metalocation, Pos } from '../rom/metalocation.js';
+import { Metascreen } from '../rom/metascreen.js';
 //import {Monster} from '../rom/monster.js';
-import {hex, seq} from '../rom/util.js';
-import {iters} from '../util.js';
+import { hex, seq } from '../rom/util.js';
+import { iters } from '../util.js';
 import { Dir } from '../logic/dir.js';
-import { ConnectionType, featureMask } from '../rom/metascreendata.js';
+import { ConnectionType, Feature } from '../rom/metascreendata.js';
 import { MetascreenIndex } from '../rom/metascreenindex.js';
+import { Failure, ok, Ok, FailureContext } from '../failure.js';
+
+// IDEA:
+//  - build up a more abstract (2h+1) x (2w+1) cave map.
+//  - bomberman style: impassible corners
+//     | | | |
+//    -+-+-+-+-
+//     | | | |
+//    -+-+-+-+-
+//     | | | |
+//    -+-+-+-+-
+//     | | | |
+//  - start with all valid inner points filled
+//  - add edges as needed
+//  - remove arbitrary points, keeping connected
+//  - refinement:
+//     no bendy entrance (maybe do this early)
+//     consolidate screens if necessary
+//     simple transformations to ensure actual tiles?
+//  - consider memoizing the edges on neighboring centers?
+//     easier computation...
+//  - concretize and try to add other features as needed?
+//     add blocks, etc, ...
+//  - tiles can be different colors
+//     0 for blank (-1 for permablank?)
+//     1 for cave, 2 for river, 3 for spikes, etc
+//  - double mazes are also possible
+//     mado 2 might want a triple maze where upper level has a hard
+//     partition separating the two separate maps
+//  - ensure pit above spike when possible (make both at same time)
+//     rules for pit: 3 points long, no intersection allowed
+//     all 3 points must be above non-empty spots
+//     enforce with checks at each removal?
+//  - bridge: initial fill stairs and bridge on both
+//     rule: bridge has no cross neighbor for _2_ spaces either dir
+//           bridge has non-empty straight neighbor for 2 spaces
+//  - how to represent stairs??? maybe just generic "fixed" screen?
+//     or else generalize "up" vs "down" vs "edge" exits?
+
+//  0123456789abcdef
+//   | | | | | | | |
+//  -+-+-+-+-+-+-+-+-
+//
+// doesn't fit - how to compress better?
+//   pos = yyxx, xx: 0..16
+//   (pos & 0xff) + (pos >>> 8) * 9 for maximum density, but crummier
+
+// overworld would have very different rules
+// mountain may have different as well???
+
+
 
 const DEBUG: boolean = true;
 
@@ -71,16 +122,20 @@ class BasicCaveShuffle {
       }
       this.fixed = new Set();
       this.empty = new Set();
-      this.out = new Metalocation(this.survey.id, this.survey.tileset, this.h, this.w);
+      this.out =
+          new Metalocation(this.survey.id, this.survey.tileset, this.h, this.w);
       if (this.tryShuffle()) return;
     }
     throw new Error(`Could not shuffle ${hex(this.loc.id)} ${this.loc.name}`);
   }
 
-  check(): boolean {
+  check(): Ok {
     const traverse = this.out.traverse();
-    return traverse.size > 2 &&
-        traverse.values().next().value.size === traverse.size;
+    if (traverse.size <= 2) {
+      return Failure.of('traversal too small: %d', traverse.size);
+    } else if (traverse.values().next().value.size !== traverse.size) {
+      return Failure.of('multiple disconnected domains: %s', traverse);
+    }
   }
 
   pickWidth(): number {
@@ -93,41 +148,52 @@ class BasicCaveShuffle {
     //return this.loc.height + Math.floor((this.random.nextInt(6) - 1) / 3);
   }
 
-  tryShuffle(): boolean {
-    if (DEBUG) console.log(`Shuffle ${this.loc.name}`);
-    if (!this.initializeFixedScreens()) return false;
-    if (DEBUG) console.log(`Initialized\n${this.out.show()}`);
-    if (!this.initialFillMaze()) return false;
-    if (DEBUG) console.log(`Initial fill\n${this.out.show()}`);
-    if (!this.refineMaze()) return false;
-    if (DEBUG) console.log(`Refined\n${this.out.show()}`);
-    if (!this.addFeatures()) return false;
-    if (DEBUG) console.log(`Features\n${this.out.show()}`);
-    return this.finish();
+  tryShuffle(): Ok {
+    let context = new FailureContext();
+    if (DEBUG) context.note(`Shuffle ${this.loc}`);
+    context.do('Initialize fixed screens', () => this.initializeFixedScreens());
+    if (DEBUG) context.note(`Initialized\n${this.out.show()}`);
+    context.do('Initial fill', () => this.initialFillMaze());
+    if (DEBUG) context.note(`Initial fill\n${this.out.show()}`);
+    context.do('Refine', () => this.refineMaze());
+    if (DEBUG) context.note(`Refined\n${this.out.show()}`);
+    context.do('Add features', () => this.addFeatures());
+    if (DEBUG) context.note(`Features\n${this.out.show()}`);
+    return context.do('Finish', () => this.finish());
   }
 
-  initializeFixedScreens(): boolean {
-    // TODO - what is edges?  I assume it's borders...
+  initializeFixedScreens(): Ok {
+    // First, assign any border screens that need to be exits.
     const rom = this.survey.rom;
     for (const [, dir, edge, exit] of this.survey.borders()) {
-      if (!exit) continue;
+      if (!exit) continue; // If it's not an exit, ignore for now.
+      // For each exit, find an unconstrained edge position for it.
+      let found = false;
+      const failures: Failure[] = [];
       for (const pos of this.random.ishuffle(this.edges(dir))) {
-        if (this.fixed.has(pos)) continue;
+        if (this.out.isConstrained(pos)) continue;
         //const fixedScr = edge;
-        const ok = this.out.saveExcursion(() => {
-          if (!this.out.set(pos + DELTA[dir], rom.metascreens.exit)) return false;
+        const fail1 = this.out.saveExcursion((): Ok => {
+          const fail2 = this.out.trySet(pos + DELTA[dir], rom.metascreens.exit);
+          if (fail2) return fail2;
           if (edge.hasFeature('arena')) {
-            if (!this.out.set(pos, edge)) return false;
-            this.fixed.add(pos);
+            const fail3 = this.out.trySet(pos, edge);
+            if (fail3) return fail3;
+            this.out.setFeatures(pos, edge.features);
+            // this.fixed.add(pos);
             // Arenas can't have adjacent empties.  Everything else OK.
             // TODO - allow other empty screens here?!?
             this.empty.add(pos + 1);
             this.empty.add(pos - 1);
           }
-          return true;
           // TODO - are there any other fixed features?
         });
-        if (ok) break;
+        if (fail1) {
+          failures.push(fail1);
+        } else {
+          found = true;
+          break;
+        }
         // } else {
         //   // NOTE: location 35 (sabre N summit prison) has a '1' exit edge
         //   // NOTE: can't handle edge exits for 1x? maps.
@@ -139,6 +205,7 @@ class BasicCaveShuffle {
         //   if (fixedScr.wall) this.walls--;
         // }
       }
+      // If we couldn't find a place to put the exit, bail out.
     }
 
     for (const pos0 of this.survey.allPos()) {
@@ -161,20 +228,30 @@ class BasicCaveShuffle {
       }
     }
 
-    const stairs: ConnectionType[] = [];
+    const stairs: Feature[] = [];
     for (const pos0 of this.survey.allPos()) {
       // TODO - probably better off indexing these...?
       const scr = this.survey.get(pos0);
       for (const exit of scr.data.exits ?? []) {
-        if (/stair:/.test(exit.type)) stairs.push(exit.type);
+        if (/stair:/.test(exit.type)) stairs.push(exit.type as Feature);
       }
     }
     let tries = 0;
     const allPos = this.out.allPos();
+    const failures: Failure[] = [];
     for (let i = 0; tries < 10 && i < stairs.length; tries++) {
       const pos = this.random.pick(allPos);
+      // TODO - prefilter out fixed ??? - TODO - delete fixed...
       if (this.fixed.has(pos)) continue;
-      if (!this.out.tryAddOneOf(pos, this.out.tileset.getExits(stairs[i]))) {
+      const result = this.out.saveExcursion((): Ok => {
+        const result =
+            this.caveIndex.tryAddFeature(this.out, pos, stairs[i], this.random);
+        if (result) return result;
+        return this.check();
+      });
+          // this.out.tryAddOneOf(pos, this.out.tileset.getExits(stairs[i]));
+      if (result) {
+        failures.push(result);
         continue;
       }
       this.fixed.add(pos);
@@ -182,10 +259,9 @@ class BasicCaveShuffle {
       tries = 0;
       i++;
     }
-    if (tries >= 10) return this.fail(`could not add all stairs`);
+    if (tries >= 10) return Failure.all(failures, `could not add all stairs`);
     // fill the edge screens and fixed screens and their neighbors first, since
     // they tend to have more esoteric requirements.
-    return true;
   }
 
   fixBorders(pos: Pos, scr: Metascreen) {
@@ -207,14 +283,15 @@ class BasicCaveShuffle {
     return this.out.get(pos);
   }
 
-  initialFillMaze(): boolean { // TODO - options?
+  initialFillMaze(): Ok { // TODO - options?
     const eligible = this.out.tileset.getScreensWithOnlyFeatures('empty');
     eligible.sort((a, b) => (b.data.connect || '').length -
                             (a.data.connect || '').length);
     for (const pos of this.out.allPos()) {
       if (!this.out.get(pos).isEmpty() || this.out.isConstrained(pos)) continue;
       // Start placing full connections first.
-      if (!this.out.tryAddOneOf(pos, eligible)) return false;
+      const res = this.out.tryAddOneOf(pos, eligible);
+      if (res) return res;
     }
     // const fillOpts = {
     //   edge: 1,
@@ -236,18 +313,16 @@ class BasicCaveShuffle {
     // console.log(`initial:\n${maze.show()}`);
     if (!this.check()) return this.fail(`check failed after initial setup`);
 
-    const empty = this.empty;
-    const fillOpts = {skipAlternates: true, ...(opts.fill || {})};
     for (const pos of this.random.ishuffle([...this.out.allPos()])) {
       if (this.out.size <= this.survey.size) break;
       if (!this.out.isConstrained(pos)) {
         const changed =
             this.out.saveExcursion(
-                () => this.out.set(pos, empty, fillOpts) &&
-                      this.check(maze));
+                () => this.caveIndex.tryClear(this.out, pos, this.random) &&
+                      this.check());
         //console.log(`Refinement step ${pos.toString(16)} changed ${changed}\n${maze.show()}`);
         if (changed) {
-          this.postRefine(maze, pos);
+          this.postRefine(pos);
           continue;
         }
       }
@@ -256,36 +331,53 @@ class BasicCaveShuffle {
     // console.log(`percolated:\n${maze.show()}`);
 
     // Remove any tight cycles
-    return this.removeTightCycles(maze);
+    return this.removeTightCycles();
   }
 
   // Runs after a tile is deleted during refinement.  For override.
-  postRefine(maze: Maze, pos: Pos) {}
+  postRefine(pos: Pos) {}
 
-  removeTightCycles(maze: Maze): boolean {
+  removeTightCycles(): Ok {
     for (let y = 1; y < this.h; y++) {
       for (let x = 1; x < this.w; x++) {
         const pos = (y << 4 | x) as Pos;
-        if (!isTightCycle(maze, pos)) continue;
+        if (!this.caveIndex.isTightCycle(this.out, pos)) continue;
         // remove the tight cycle
+        //const failures = new ErrorCollector();
+        const failures: Failure[] = [];
         let replaced = false;
-        for (const dir of this.random.ishuffle(Dir.ALL)) {
+        for (const dir of this.random.ishuffle([0, 1, 2, 3])) {
           // TODO - this will need to change if we invert the direction!
           const pos2 = (dir < 2 ? pos - 1 : pos - 16) as Pos;
-          const ok =
-              maze.saveExcursion(
-                  () => maze.replaceEdge(pos2, dir, 0) && this.check(maze));
-          if (!ok) continue;
-          replaced = true;
+          const result = this.out.saveExcursion((): Ok => {
+            const clear =
+                this.caveIndex.tryClearEdge(this.out, pos2, dir, this.random);
+            if (!ok(clear)) return clear;
+            const check = this.check('clearing edge %02x dir %d', pos2, dir);
+            if (!ok(check)) return check;
+          });
+          if (ok(result)) {
+            replaced = true;
+          } else {
+            failures.push(result);
+          }
         }
-        if (!replaced) return this.fail(`failed to remove tight cycle`);
+        if (!replaced) {
+          return Failure.all(failures,
+                             'failed to replace tight cycle at %02x', pos);
+        }
       }
     }
-    return true;
   }
 
-  addFeatures(maze: Maze): boolean {
-    // Add stair hallways and walls
+  addFeatures(): Ok {
+
+    // TODO - combinators for errorcollector?
+    //      -   Some? -> OK if any one passes...?
+    //      - overload set() to return void if no strategy?
+
+
+    // Add ramp hallways and walls
     //   TODO - make sure they're on *a* critical path?
     const replaced = new Set<Pos>();
     const alts = [...maze.alternates()];
@@ -329,7 +421,7 @@ class BasicCaveShuffle {
   //      - move all the SCREEN constants into there as well
   //        so that we can reuse them more widely - consolidate
   //        goa and swamp?
-  finish(maze: Maze): boolean {
+  finish(): boolean {
     if (DEBUG) console.log(`finish:\n${maze.show()}`);
     return maze.finish(this.survey, this.loc);
     // Map from priority to array of [y, x] pixel coords
@@ -429,12 +521,17 @@ class WaterfallRiverCaveShuffle extends BasicCaveShuffle {
     return true;
   }
 
-  check(maze: Maze): boolean {
-    const traverse = maze.traverse();
+  check(stage?: string, ...args: unknown[]): Ok {
+    const traverse = this.out.traverse();
     const partitions = [...new Set(traverse.values())].map(s => s.size);
-    return partitions.length === 2 &&
+    if (partitions.length === 2 &&
       partitions[0] + partitions[1] === traverse.size &&
-      partitions[0] > 2 && partitions[1] > 2;
+      partitions[0] > 2 && partitions[1] > 2) return;
+    return stage ?
+        Failure.of('Check failed after %s: partitions %s vs traverse %d',
+                   Failure.of(stage, ...args), partitions, traverse.size) :
+        Failure.of('Check failed: partitions %s vs traverse %d',
+                   partitions, traverse.size);
   }
 }
 
@@ -941,14 +1038,6 @@ class EvilSpiritRiverCaveShuffle_old extends BasicCaveShuffle {
   }
 }
 const [] = [EvilSpiritRiverCaveShuffle_old];
-
-// Check whether there's a "tight cycle" at `pos`.  We will
-// probably want to break it.
-function isTightCycle(maze: Maze, pos: Pos): boolean {
-  const ul = maze.get((pos - 17) as Pos) || 0;
-  const dr = maze.get((pos) as Pos) || 0;
-  return !!((ul & 0x0f00) && (ul & 0x00f0) && (dr & 0xf000) && (dr & 0x000f));
-}
 
 // Ensure borders are consistent with any pre-placed fixed tiles/edges.
 function fixBorders(maze: Maze, pos: Pos, scr: Scr): void {

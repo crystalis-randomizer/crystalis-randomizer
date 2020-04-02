@@ -3,8 +3,8 @@ import {Metascreen} from './metascreen.js';
 import {Metatile} from './metatile.js';
 import {TileEffects} from './tileeffects.js';
 import {Tileset} from './tileset.js';
-import {DefaultMap, iters} from '../util.js';
-import { ConnectionType, featureMask, Feature } from './metascreendata.js';
+import {DefaultMap} from '../util.js';
+import {ConnectionType, Feature, featureMask} from './metascreendata.js';
 
 // NOTE: Must be initialized BEFORE Metascreens
 export class Metatilesets implements Iterable<Metatileset> {

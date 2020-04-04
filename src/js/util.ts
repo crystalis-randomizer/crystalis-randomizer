@@ -879,7 +879,7 @@ export function format(fmt: string, ...args: unknown[]): string {
     const pad = match[2] || ' ';
     const arg = args[argIndex++];
     let str = match[4] === 'x' ? Number(arg).toString(16) : String(arg);
-    if (match[4] !== 's' && /+/.test(match[1]) && Number(arg) >= 0) {
+    if (match[4] !== 's' && /\+/.test(match[1]) && Number(arg) >= 0) {
       str = '+' + str;
     }
     if (str.length < len) {
